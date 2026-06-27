@@ -26,6 +26,8 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 **硬线（可 lint）**：公开头里出现 `#include <string>`/`<vector>`/`<unordered_map>` 且用于导出符号 = 违规。
 
+**禁 std 流（铁律）**：**全库不用 `<iostream>`/`std::cout`/`std::cerr`/`std::endl`/`<sstream>`/`std::ostream`**。理由：std 流体积大、慢（同步开销/locale/虚函数链）、ABI 不稳、错误处理糟糕——对极致性能 infra 是负担。诊断输出用 C 的 `std::fprintf(stderr, ...)`（printf 风格，已用于 `HYLE_FATAL_ASSERT`/`log_assert_failure`）；将来结构化输出走 HYLE 自己的 log（obs-01）。格式化用 `std::format`（值语义、无流），不用 `<<`。
+
 ## 2. 头文件 / include 纪律
 
 - **每模块一个 `decls.h`**：只放前向声明（`struct xxx_api_t;`、`struct Allocator;`）+ 导出宏，自身只 include `macros/platform/visibility/types` 这几个最小头（clay `sys/decls.h` 实证）。
