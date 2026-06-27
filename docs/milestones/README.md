@@ -47,7 +47,7 @@
 | simd-05 | P3 | simd | dtype fp16/bf16(F16C/AVX512-FP16/BF16) | simd-02 | 2-3k | | 占位 |
 | simd-06 | P3 | simd | sleef 数学核 adapter | simd-04 | 1-2k | | 占位 |
 | sched-01 | P4 | sched | fcontext 6 平台 + 栈池(骨架:单 worker 单队列跑一 fiber) | container-01,mem-01,platform-01 | 2-3k | ✅ | ✅ 完成(仅证切换,队列/worker 留 sched-02) |
-| sched-02 | P4 | sched | per-core 有界 run-queue + LIFO slot | sched-01,container-01 | 2-3k | | 占位 |
+| sched-02 | P4 | sched | per-core 有界 run-queue + LIFO slot | sched-01,container-01 | 2-3k | | ✅ 完成(单worker驱动,steal留sched-03) |
 | sched-03 | P4 | sched | work-stealing + spin-then-park + unpark 接力 | sched-02 | 2-3k | | 占位 |
 | sched-04 | P4 | sched | Waker completion 脊 + time 接入(deadline) | sched-02,time-02 | 1-2k | | 占位 |
 | sched-05 | P4 | sched | fiber-aware CV + mutex/waitgroup/channel | sched-04 | 2-3k | | 占位 |

@@ -43,6 +43,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 2. **ABI 布局假设用 `static_assert` 固化**——`CLAY_PAD` 显式声明每处 padding（配 `-Wpadded`）、`static_assert(sizeof(T)==N)` 钉死跨边界结构体大小。
 3. **警惕宏求值陷阱**——如 `LIKELY` 必须 `static_cast<bool>`（`__builtin_expect` 收 long），宏参数必须加括号。
 4. **前缀 `HYLE_`**，全大写。
+5. **导出宏放方法、不放类（当类有非 POD 成员时）**——`HYLE_<MOD>_API` 标在**成员函数声明**上，而非 `class X` 前。若导出整个类、而类有 `std::atomic`/`Allocator`/其它非平凡成员，MSVC 报 **C4251**（成员类型未导出）。把宏放在需跨 DLL 调用的方法上，类布局留客户端实例化即可消除。实证：Parker/Fiber/Worker 三处同款。纯 POD 成员的类（如 `Status` 单 `uintptr_t`）不受此限。
 
 **取代**：`MANUALLY_ALIGNED_STRUCT` 的 `pragma pack` → `alignas` + 独立 `static_assert`；`debugbreak()` 的 `asm("int $3")` → `__builtin_debugtrap()`/`__debugbreak()`；`CLAY_INHERITS` 伪继承 → 纯 C++ 真继承（仅 C 兼容 POD 处才保留）。
 

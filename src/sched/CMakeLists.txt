@@ -7,6 +7,7 @@ set(_fctx "${PROJECT_SOURCE_DIR}/third_party/fcontext/asm")
 hyle_add_module(sched
   SOURCES
     fiber.cc
+    worker.cc
     "${_fctx}/jump_x86_64_ms_pe_masm.asm"
     "${_fctx}/make_x86_64_ms_pe_masm.asm"
     "${_fctx}/ontop_x86_64_ms_pe_masm.asm"
