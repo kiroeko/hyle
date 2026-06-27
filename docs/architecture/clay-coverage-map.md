@@ -110,7 +110,8 @@
 ### 结论：正确的"吸纳完整性"判据
 - **不是** "HYLE 总 LOC ≥ clay 19k"。
 - **而是** 对每个 ✅/🔶 组件，HYLE 覆盖了 clay 同名文件该吸纳的 API 表面(diff 核对)；clay 中 ♻️/⛔/🔻 的部分按计划替换/不吸纳并登记在本表。
-- **吸纳完成** = 本表 sys/utils/parallel/(math 按需) 中**所有非 ♻️/⛔ 行变 ✅**，且每行经过 clay 同名文件 API diff。当前:`status/object_pool/stack_allocator ✅`、`allocator/memory_arena 🔶(已登记补漏)`,其余 📋。
+- **吸纳完成** = 本表 sys/utils/parallel/(math 按需) 中**所有非 ♻️/⛔ 行变 ✅**，且每行经过 clay 同名文件 API diff。当前:`status/object_pool/stack_allocator/carray ✅`、`allocator/memory_arena ✅(补漏后)`、`murmur 🔶(运行期 XXH3 已接)`,其余 📋。
+- **P3 = 真·吸纳,不是"略过缺的就算实现"（用户 2026-06 铁律）**：到 P3 末必须是"**该实现的都实现了 + 该替换的脚手架都换了 + 比较完整**",而**不是把缺的部分都略过就宣布完成**。每个标 ✅ 的组件,缺的子功能要么真做、要么显式登记为补漏里程碑(如 mem-03b/04b),**绝不默默略过当完成**(mem-03 曾犯,已纠)。残留脚手架(std::string_view 顶 string 等)在等价物落地后必须替换,红队每里程碑扫一遍。
 
 ## "clay 完全吸纳"在 P 几（结论）
 
