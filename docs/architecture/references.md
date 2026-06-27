@@ -68,8 +68,37 @@
 
 - **批3-4 即用**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、highway/sleef（simd）。
 - **批5 即用**：ggml + llama.cpp（compute 主力借/参考）、oneDNN/oneMath（Intel 加速，CPU/数学后端）、seastar（io reactor_backend）。
-- **批6 / 按需**：simdjson/flatbuffers/capnproto（serialize）、xxHash/wyhash（hash）、tracy（obs）、oneDPL/oneTBB/oneDAL（并行/分析，多属参考）。
+- **批6 / 按需**：simdjson/flatbuffers/capnproto（serialize）、xxHash（hash，设默认 hasher）、tracy（obs，借设计）。oneDPL/oneTBB/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）
 
-借**多年解决的通用难题**（sleef 数学核、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 全自造、sched 调度自造、simd 抽象自造）。Intel 系（oneDNN/oneMath）作为 CPU 计算加速的**可选后端**接入，走能力门控 dispatch，不强绑。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
+借**多年解决的通用难题**（sleef 数学核、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 全自造、sched 调度自造、simd 抽象自造）。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
+
+### 关键区分：加速库分两类，只借第一类（这是 oneTBB 为何边界外的原因）
+
+| 类 | 是什么 | 例 | HYLE |
+|---|---|---|---|
+| **指令/kernel 级加速**（让单次计算更快）| 优化的算子/数学核/SIMD intrinsic，**不自带调度** | oneDNN(AMX/VNNI JIT)、oneMath(BLAS)、sleef、ggml 算子、XXH3 | ✅ **借**（喂它 HYLE 的线程，结果回灌）|
+| **并行运行时级加速**（把任务铺到多核）| **自带 work-stealing 调度器 / task arena / 线程池** | **oneTBB**、oneDPL、OpenMP、asio io_context、boost.fiber | ❌ **不借**（这是 HYLE 自己的活）|
+
+**oneTBB 确实是加速库——但它加速的是"运行时层"，恰是 HYLE 要独占的那一层。** 它的 `parallel_for` 离不开 task arena（自带 work-stealing 调度器）；引它 = HYLE fiber 调度器 + TBB 调度器**两套在同一批核上抢线程、过度订阅、cache 争抢**——正是 HYLE 存在要消灭的"双调度器阻抗失配"（同拒 boost.fiber/asio 的理由）。所以 oneTBB scheduler/queue、oneDPL **边界外**；只 oneTBB 的 allocator pool 设计作 mem/ 参考。
+
+**那 CPU 数据并行（matmul 等铺满多核）靠谁？** 三层，都不需要 TBB：
+1. **借来的算子自带并行 + 可注入 HYLE 调度器**：ggml CPU 后端有 `ggml_backend_cpu_set_threadpool`（`ggml-cpu.h:135`）——**HYLE 把自己的线程池喂给 ggml，而非让 ggml 自起线程**，避免双调度器。oneDNN 同理（内部 JIT，并行跑在 HYLE 给的线程上）。
+2. **HYLE 自有 kernel 的数据并行**：work-stealing 调度器做 fork-join / parallel-for——**一个调度器同时干 IO 并发(fiber)和 CPU 数据并行**，这正是 work-stealing 的本职。
+3. **指令级加速**：借 sleef/oneDNN 的 AMX kernel（第一类），不借 TBB。
+
+### 隐藏运行时清单（引依赖前必查，防"悄悄混进第二个运行时"）
+
+凡库**自带线程/事件循环/调度器/控制流接管**的，都是红线——只借它的"叶子计算"，不借它的运行时。检测法：源码搜 `pthread_create`/`std::thread`；看它有没有要你 `run()`/`loop()`/`executor`/`pool`；看它装不装 signal handler/timer（撞 HYLE time/）。
+
+| 隐藏运行时来源 | 处置 |
+|---|---|
+| 并行框架（TBB/OpenMP/oneDPL）| 边界外；数据并行用 HYLE 调度器 |
+| 异步/IO 运行时（asio/libuv/seastar 整框架）| 只借 syscall 层（liburing），事件循环自造 |
+| 分配器后台线程（mimalloc/jemalloc 的 purge 线程）| 配置关掉或纳管，别让它自起线程 |
+| 算子库内部线程（ggml/oneDNN）| **注入 HYLE 线程池**（`set_threadpool`），不让其自起 |
+| 日志/profiler 异步刷盘（spdlog async / tracy server）| 借设计不借库，或用 HYLE 调度器驱动 |
+| 协程库自带调度器 | 只用语言级 `co_await`，调度归 HYLE sched |
+
+**铁律**：HYLE 必须独占所有 OS 线程与控制流——每个 OS 线程要么是 HYLE worker、要么归 HYLE blocking 池管。加任何依赖前先问：**它起线程吗？它想接管控制流吗？** 是 → 只借计算、运行时留在门外。

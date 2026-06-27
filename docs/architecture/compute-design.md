@@ -80,6 +80,7 @@ compute/
 |---|---|---|
 | AI 算子集（matmul/attention/conv…）| ✅ 借 ggml（上游版）| 各后端算子，不重写；**对接上游 pin 版，非 iron 旧快照** |
 | 跨后端"算子图"调度 | ✅ 借 ggml-backend | 现成跑通，封在 `ggml_bridge` adapter |
+| **CPU 算子并行注入** | 🔧 注入 HYLE 线程池 | **`ggml_backend_cpu_set_threadpool`（`ggml-cpu.h:135`）把 HYLE 调度器喂给 ggml**，不让 ggml 自起线程——避免双调度器（同理 oneDNN）。这是"借算子不借运行时"的落地点 |
 | **ggml 版本/接口隔离** | 🔧 自造 adapter | `ggml_bridge` 是唯一耦合点；ggml 升级/接口变只动这一文件 |
 | 通用 device/stream/buffer/kernel 抽象 | 🔧 自造 | ggml 没有的通用层，绑 HYLE sched，**不暴露 ggml 类型** |
 | GPU completion → fiber 唤醒 | 🔧 自造 | event/fence 接 sched，io/ 同款机制 |
