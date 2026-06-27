@@ -1,0 +1,47 @@
+# HYLE
+
+**HYLE 是一个 C++ 基础设施库**（编译成带 C-ABI 的共享库），给上层——AI agent、训练 / 推理框架——当地基。它把四样东西做在**同一套底座**上：
+
+1. **调度** — 一个调度器同时管 线程 / 进程 / 纤程 / 协程
+2. **内存** — 分配器 / arena / cache-line 对齐 / NUMA
+3. **计算** — CPU SIMD + GPU（CUDA / Vulkan），算子借 ggml
+4. **IO** — 网络（proactor）+ 文件 + 跨进程共享内存
+
+**差异点在"同一套底座"**：GPU 算完、网卡收到包、fiber 主动让出——都回到同一个调度器、唤醒同一个 fiber，而不是四个子系统各开线程池、各跑事件循环互相打架。所以 HYLE 不是"又一个 hashmap / 日志库"，而是让 计算 / 并发 / 内存 / IO 无阻抗拼在一起的那层地基。
+
+> HYLE = HYbrid LEvels。回到 C、贴硬件、混合异构、把性能做到极致。是对 `slate-render` 中 clay infra 层的重构与扩大。
+
+## 设计文档
+
+完整的设计、背景、命名、源码位置、资产负债表、scope 与各支柱选型，集中在架构设计文档（唯一信源）：
+
+**→ [`docs/architecture/README.md`](./docs/architecture/README.md)**
+
+| 文档 | 内容 |
+|---|---|
+| [架构总入口](./docs/architecture/README.md) | 定位、模块划分、贯穿性设计原则、项目背景与命名 |
+| [工程章程](./docs/architecture/engineering-charter.md) | 动手前最终依据：C++23 标准 / 错误模型 / 测试 / 边界 / 对外 FFI |
+| [编码规范](./docs/architecture/coding-conventions.md) | 每一行怎么写才不破范式：std 分层 / 宏纪律 / C-ABI 范式 / clay 写法继承表 |
+| [clay 资产负债表](./docs/architecture/clay-asset-liability.md) | clay 六子系统逐项盘点：继承 / 重写 / 从零造 |
+| [scope 定义](./docs/architecture/hyle-scope.md) | 范围边界、7 模块划分、体量估算 |
+| [io 网络设计](./docs/architecture/io-design.md) | proactor 模型 + 四后端 + 调度绑定 |
+| [sched 调度器](./docs/architecture/sched-design.md) | fcontext 切换 + 无锁 work-stealing + Waker completion 脊 + 协程/fiber 统一 |
+| [compute 异构计算](./docs/architecture/compute-design.md) | device/stream/kernel 抽象 + ggml 解耦 + shader 一等公民 |
+| [simd 向量化](./docs/architecture/simd-design.md) | 精简可移植 vector + 运行时 dispatch + dtype(fp16/bf16) + 借 sleef 数学核 |
+| [mem 内存](./docs/architecture/mem-design.md) | 通用 malloc 借 mimalloc + 自造专用分配器 + 修 5 bug + NUMA/大页/64B 对齐 |
+| [container 容器](./docs/architecture/container-design.md) | 唯一造不借的 T0 + SwissTable SIMD 探测 + SmallVector/intrusive/lock-free（供 sched）|
+| [实现路线图](./docs/architecture/roadmap.md) | 依赖图（无环）+ 6 批施工序 + 关键路径 + 验收门槛 + 决策清单 |
+
+## 目录结构
+
+```
+hyle/
+├─ README.md              本文件（项目门面）
+└─ docs/
+   └─ architecture/       架构设计文档（唯一信源）
+      ├─ README.md         总入口
+      ├─ clay-asset-liability.md
+      ├─ hyle-scope.md
+      ├─ io-design.md
+      └─ compute-design.md
+```
