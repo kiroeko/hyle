@@ -52,6 +52,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
 | [`roadmap.md`](./roadmap.md) | 实现路线图：模块依赖图（无环）+ 6 批施工序 + 关键路径 + 每批验收门槛 + 完整决策清单（已决+待决）|
 | [`performance.md`](./performance.md) | 性能预期 vs std：时间/空间分列、drop-in 可比 vs std 没有的能力两桶、Amdahl 整体观、benchmark gate 验证 |
+| [`references.md`](./references.md) | 参考库映射：clone 的 20+ 库 → HYLE 模块，借/参考标注、开工优先级（含 Intel oneMath/oneDNN）|
 
 ## 状态与下一步
 

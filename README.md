@@ -33,6 +33,7 @@
 | [container 容器](./docs/architecture/container-design.md) | 唯一造不借的 T0 + SwissTable SIMD 探测 + SmallVector/intrusive/lock-free（供 sched）|
 | [实现路线图](./docs/architecture/roadmap.md) | 依赖图（无环）+ 6 批施工序 + 关键路径 + 验收门槛 + 决策清单 |
 | [性能预期](./docs/architecture/performance.md) | vs std 的时间/空间预期（两桶分列）+ Amdahl 整体观 + benchmark 验证 |
+| [参考库映射](./docs/architecture/references.md) | clone 的 20+ 参考库 → HYLE 模块，借/参考 + 开工优先级 |
 
 ## 目录结构
 
