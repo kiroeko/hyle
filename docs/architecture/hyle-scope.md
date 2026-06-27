@@ -74,7 +74,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | **3 便利** | `obs/` 重机器（sink/格式化/聚合）、`serialize/`、外围 hash（md5/uuid/base64）、`plugin/registry`、`random/`、`text/`、`compress/`、`config/`、`graph/` | 在不在都是 HYLE | 能缓则缓、薄封装别自造 |
 
 **为什么 `container/` 在 Tier 0 而 `simd/` 在 Tier 1**（同是"性能焦点"，凭什么分开）：
-- `container/`（flat hashmap）是**地基 ∩ 差异**：clay 里 `string_buf`/`type_name`/`cstring`/`taskgraph` 等 13 处依赖它，抽掉整个 infra 裂开；且 C-ABI 边界上 abseil 的 C++ 类型过不去，没 drop-in。**核心 hasher（murmur/xxhash）喂 hashmap + 编译期类型 ID，是容器机器的一部分，跟容器一起 Tier 0**。
+- `container/`（flat hashmap）是**地基 ∩ 差异**：clay 里 `string_buf`/`type_name`/`cstring`/`taskgraph` 等 13 处依赖它，抽掉整个 infra 裂开；且 C-ABI 边界上 abseil 的 C++ 类型过不去，没 drop-in。**核心 hasher 跟容器一起 Tier 0：运行期/hashmap/内容寻址用 XXH3（借 xxHash，替换 clay murmur），编译期类型 ID 留 murmur（constexpr 友好）**。
 - `simd/` 是**差异但非地基**：是焦点，但 `string_buf`/`registry`/类型系统不依赖它才能工作（只有 compute/math 热路径用），抽掉 HYLE 仍能站立。故 Tier 1。
 
 **为什么分这个**（不是排座次，是让每个决策有依据）：

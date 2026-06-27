@@ -18,8 +18,8 @@
 |---|---|---|
 | **ggml** | 借（主力）| 算子 + 多后端（cuda/hip/metal/vulkan/sycl/webgpu/opencl…），`ggml_bridge` adapter 对接上游 pin 版；同时参考 ggml-backend 接口、dev_caps、CPU 多变体 dispatch |
 | **llama.cpp** | 参考 | 多变体 DLL+score dispatch、CMake ISA 处理、探测器隔离（-fno-LTO）、推理引擎工程范式 |
-| **oneDNN** | 借/参考 | **Intel DL 原语 + AMX/VNNI 加速正主**；CPU 后端可借其 primitive，或参考其能力门控 |
-| **oneMath** | 借/参考 | Intel 数学（**前 oneMKL 改名**）：BLAS/FFT/向量数学；需稠密线代时的工业级实现 |
+| **oneDNN** | **借（算子库）** | **Intel DL 原语 + AMX/VNNI 加速正主**；运行时 cpuid dispatch + Xbyak JIT。定位是**算子库（ggml 同级 CPU 算子供应商，接 bridge）**，非 device/stream 后端——它自带 JIT 不暴露 raw kernel launch |
+| **oneMath** | **仅参考（不借）** | Intel 数学（前 oneMKL）：BLAS/FFT。**SYCL 重依赖**（引它=引整条 SYCL/DPC++ 工具链），HYLE 已有 ggml BLAS；仅参考其 domain×device×library 三级分发表 |
 | **oneDAL** | 参考 | Intel 数据分析/经典 ML 算法；多属上层，按需参考 |
 
 ### sched/（Tier 0）+ 并发
@@ -27,7 +27,7 @@
 |---|---|---|
 | **marl** | 参考（精读）| **最贴 HYLE 的 fiber + work-stealing 调度库**，第一参考 |
 | **tokio** | 参考 | work-stealing/LIFO slot/unpark 接力/per-core 队列的设计源 |
-| **boost**(context) | 借 | **fcontext** 是 fiber 上下文切换原语来源（sched 第一节定）；boost.intrusive 参考 |
+| **boost**(context) | **借（仅 3 汇编）** | **fcontext** 是 fiber 切换原语来源；`fcontext_t`/`transfer_t` 纯 POD 零依赖，只取 `jump/make/ontop` 三例程 .S/.asm（**本地 context 是空 submodule，须从上游拉**）+ 自写 ~10 行头，不要 config/封装层。boost.intrusive 仅参考 |
 | **seastar** | 参考 | per-core 局部性、reactor_backend completion 抽象、xcpu_freelist；**不学** share-nothing 调度 |
 | **oneTBB** | 参考 | task 并行/并发容器参考；HYLE 用 fiber，不直接用其调度器 |
 | **oneDPL** | 参考 | 并行 STL 算法参考（若 algorithm 层要并行原语）|
@@ -43,20 +43,20 @@
 ### hash/（Tier 3）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **xxHash** | 借/参考 | 非加密快速哈希 |
-| **wyhash** | 借/参考 | 更快的非加密哈希，可作 hashmap 默认 hasher 候选 |
+| **xxHash** | **借（默认 hasher）** | **XXH3 设为 hashmap 默认 hasher + 内容寻址**（30+ GB/s、SMHasher 满分、自带 x86 dispatch、大小端一致）。**替换 clay 的 murmur**（murmur 仅 3.9 GB/s，留编译期 type-ID 用）|
+| **wyhash** | **不借** | 作者自承非 64-bit 抗碰撞（~62bit）、长数据 PractRand 失败；无优势盖过 XXH3 |
 
 ### serialize/（Tier 3）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **simdjson** | 参考 | **SIMD JSON 解析**（替代 rapidjson），贴 HYLE 极致哲学 |
-| **flatbuffers** | 参考 | 零拷贝序列化 + mmap 直读 |
-| **capnproto** | 参考 | 零拷贝序列化 + RPC（RPC 部分边界外）|
+| **simdjson** | **借（vendoring）** | **JSON 读+写都归它**（two-stage SIMD 解析 + on-demand；写侧 `string_builder`/`to_json` + C++26 reflection——"只读"已过时）。x64 需 `-march` 满速 |
+| **flatbuffers** | **借（vendoring）** | 权重/张量 mmap 直读；轻、footprint 小、贴 ggml/gguf 生态 |
+| **capnproto** | **借核，RPC 边界外** | 跨进程消息/shared-mem 一等公民；只取序列化核（`capnp`），不取 `capnp-rpc`（L1）|
 
 ### obs/（Tier 2 hook / Tier 3 重机器）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **tracy** | 参考 | 游戏级 profiler，instrumentation hook 设计参考 |
+| **tracy** | **参考设计，不整库引入** | obs/ hook 照搬三点：①宏埋点+编译期 no-op（零开销关闭，开 zone 仅 2.25ns）②TLS 无锁 SPSC 队列 ③scoped zone(RAII)。**支持 fiber 追踪**（`TRACY_FIBERS`，正中 HYLE）但**百万 fiber 不能 always-on**（≤65534 source location），只采样/调试子集。整库带 server/UI 是 L2 工具、非 infra |
 
 ### io/（Tier 1）
 | 库 | 角色 | 说明 |

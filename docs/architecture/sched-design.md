@@ -62,8 +62,8 @@
 ### 落地清单
 
 1. `fiber_context` 抽象接口（封 fcontext，预留 P0876 替换位）。
-2. 6 份 fcontext 汇编（或 vendder boost.context 的对应文件，仅 context 子集）。
-3. 栈分配器（固定栈 + guard page + 池化，接 mem/）。
+2. 6 份 fcontext 汇编 + ~10 行自写 `fcontext.h`。**抽取边界（深读 boost.context 后定）**：`fcontext_t`=void*、`transfer_t`={void*,void*} 是纯 POD、零 boost 依赖；唯一 boost 味是 `BOOST_CONTEXT_DECL`/`CALLDECL` 两宏（缺省即空/x64 无关），自定义两行即切断 boost/config。**只取 `jump/make/ontop_fcontext` 三例程的 `.S/.asm`（从 boost 上游 `libs/context/src/asm/` 拉——本地 context 是空 submodule），不要 config/continuation/fiber/stack 封装层。**
+3. 栈分配器（固定栈 + guard page + 池化，接 mem/）。**自造，不借 boost `stack_context`/`protected_fixedsize_stack`**（避免栈管理耦合进 boost 抽象）。
 4. 单测：百万次切换基准（对标"十亿次/秒"量级）、guard page 溢出捕获、跨平台 CI。
 
 ---
