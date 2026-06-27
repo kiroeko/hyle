@@ -20,7 +20,18 @@
 - **异常跨 C-ABI 边界是 UB**，HYLE 对外纯 C 头（charter §6），异常根本过不去。
 - **零异常让 ABI 更稳、二进制更小、无隐藏控制流**。
 
-**构建政策**：HYLE 自有代码 **`-fno-exceptions`** 编译（强制无 throw）。借入的 C 库（ggml/mimalloc/sleef）本就不 throw；simdjson 用其**错误码 API 而非异常 API**。任何第三方异常**不得跨出其 adapter**。
+**构建政策（`-fno-exceptions`，比 clay 更进一步——附 clay 真实做法对照）**：
+
+> **clay 实际怎么做（查证）**：clay **没有 `-fno-exceptions`**，异常默认开着；自有代码仅 6 处 `throw`（registry 冲突、string 转数字）；14 处 catch 集中在**边界**——`thread_pool.cc`/`worker_thread.cc` 在执行用户 task 周围 catch-all（防抛异常的 task 搞死 worker）、`graph_io.cc` 在 nlohmann JSON 解析周围 catch。即 clay 是"**异常开着但极少用 + 边界兜底**"的务实路线。
+
+HYLE 走得更纯（性能优先 + 对外纯 C 头），且**比 clay 更可行**，因为 HYLE 自带 allocator（失败返 null 不 throw）+ 自带容器，绕开了 std 抛异常的主要来源：
+
+- **自有代码 `-fno-exceptions`：不抛、不接。** bug → fail-fast abort；运营失败 → Status。
+- **clay 的 worker 边界 catch，HYLE 不需要**：那是因为 clay 异常开着、用户 task 可能抛；HYLE 关了异常，自有代码不抛，"坏 fiber"要么返 Status 要么 fail-fast，**没东西可 catch**。
+- **唯一的 catch 在 adapter 边界**：借入的 C++ 库若必须用其抛异常的 API（如 JSON），优先用 nothrow API（simdjson 有）；实在要用抛的，**隔离在异常开启的 TU、在 adapter 处 catch 转 `Status`**——这不是"吞 bug"，是"**外来异常 → Status 的边界转换器**"，异常**不得跨出该 adapter**（更不得跨 C-ABI/进入 -fno-exceptions 代码）。
+- 借入的 C 库（ggml/mimalloc/sleef/boost.context）本就不 throw，无此问题。
+
+**待调研**：`-fno-exceptions` 下个别借入 C++ 库的隔离 TU 机制（怎么分文件编译、怎么在边界转 Status）是落地细节，compute/serialize 开工时定，不在此锁死。
 
 **关键澄清——fail-fast vs 故障隔离不矛盾**：
 - HYLE infra **自身**的 bug（①）→ fail-fast，abort 整进程。infra bug 不可恢复，崩了对。
