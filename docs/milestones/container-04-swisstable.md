@@ -7,7 +7,13 @@
 | **Tier** | 0 |
 | **LOC 估** | 3-4k（大）|
 | **骨架?** | |
-| **状态** | 进行中 |
+| **状态** | ✅ 完成（find/insert/erase/grow,Win x64 MSVC + Linux x64 GCC14.2 双平台,对拍 unordered_map;type-erased core 显式延迟 container-04b）|
+
+> **cloc 留档（`cloc probe.h swiss_table.h probe_test.cc swiss_table_test.cc`）**：**474 行** = 268 头(probe+swiss) + 206 测试。非 stub。
+> **吸纳并完成 clay 只 TODO 的 SwissTable**：clay hashmap.h 是线性探测、控制字节是注释里的"待测"。HYLE 实现了:abseil 控制字节(empty/deleted/sentinel/H2)+ 16 路 SIMD group(SSE2)/SWAR portable(always 编译可测)+ 三角探测 + 7/8 负载 grow + tombstone erase。
+> **分步落地(strict 单文件验证节奏,因本里程碑触发了反复"叙述未执行"失效)**:step1 probe 层(双 group,SSE2↔portable 一致)→ step2 find/insert/grow(50k 对拍 unordered_map)→ step3 erase(tombstone)。每步真 build + 测试数移动核对。
+> **自审/抓修**:① 原 probe.h 在 x64 只编 SSE2、SWAR 测不到 → 重构两 group 都编。② grow() 防墓碑膨胀:churn(20 万次 insert/erase、活集 256)下 same-size rehash 回收 tombstone,capacity 不无界涨(ChurnBoundedCapacity 验 cap<4096)。③ erase 误写 `return nullptr`(bool 函数)→ `return false`。
+> **显式延迟(非略过,登记 container-04b)**:type-erased core(`detail::*_internal(void*,item_size)` 防 per-T DLL 膨胀,conventions §7);abseil erase 的"空槽回收"优化;NEON group(无 ARM 机)。**遵 P3 铁律:缺的子功能显式登记,不默默当完成。**
 
 ## 前置依赖
 

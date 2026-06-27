@@ -14,7 +14,7 @@
 | `sys/carray.h` + `.cc` | 436+65 | container-03 | ✅ | header-before-data 侵入数组 + type-erased 核 + RAII 壳 CArray<T>;**改进:over-align 元素(clay 固定 max_align_t 会错位)** |
 | `sys/cstring.h` + `.cc` | 1033+374 | container-06 | 📋 | string_ref(ptr+len+null 位)+零拷贝算法 |
 | `sys/string_buf.h` + `.cc` | 141+363 | container-06 | 📋 | 引用计数驻留池 |
-| `sys/hashmap.h` | 809 | container-04 | 📋 | flat open-addressing → 补 SwissTable SIMD 探测【大】 |
+| `sys/hashmap.h` | 809 | container-04 | ✅ | concept 模板重写 + **实现 clay 只 TODO 的 SwissTable**(控制字节+SIMD探测+三角探测+tombstone);type-erased core 延迟 container-04b |
 | `sys/murmur_hash.h` | 294 | container-02 | 🔶 | **运行期哈希→XXH3 已接(container-02✅,借 xxHash 替 murmur)**;murmur 仅留编译期 type_name 哈希(→ container-06/type_name 时做) |
 | `sys/error.h` + `.cc` | 222+143 | **error-02** | 📋 | error_handler vtable(跨 DLL 错误上报)——error-01 只做进程内 Status，**这层未做 → error-02** |
 | `sys/os.h`+`os.linux.cc`+`os.shared.cc` | 795+830+210 | platform-02/03 | 📋 | 虚拟内存/dynlib/env/os_info |
