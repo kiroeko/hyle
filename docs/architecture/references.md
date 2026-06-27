@@ -20,7 +20,7 @@
 | **llama.cpp** | 参考 | 多变体 DLL+score dispatch、CMake ISA 处理、探测器隔离（-fno-LTO）、推理引擎工程范式 |
 | **oneDNN** | **借（算子库）** | **Intel DL 原语 + AMX/VNNI 加速正主**；运行时 cpuid dispatch + Xbyak JIT。定位是**算子库（ggml 同级 CPU 算子供应商，接 bridge）**，非 device/stream 后端——它自带 JIT 不暴露 raw kernel launch |
 | **oneMath** | **仅参考（不借）** | Intel 数学（前 oneMKL）：BLAS/FFT。**SYCL 重依赖**（引它=引整条 SYCL/DPC++ 工具链），HYLE 已有 ggml BLAS；仅参考其 domain×device×library 三级分发表 |
-| **oneDAL** | 参考 | Intel 数据分析/经典 ML 算法；多属上层，按需参考 |
+| **oneDAL** | **边界外**（深读校正）| 经典 ML（kmeans/PCA/knn/forest）是 L1/L2 应用层，非 infra 原语 |
 
 ### sched/（Tier 0）+ 并发
 | 库 | 角色 | 说明 |
@@ -29,8 +29,8 @@
 | **tokio** | 参考 | work-stealing/LIFO slot/unpark 接力/per-core 队列的设计源 |
 | **boost**(context) | **借（仅 3 汇编）** | **fcontext** 是 fiber 切换原语来源；`fcontext_t`/`transfer_t` 纯 POD 零依赖，只取 `jump/make/ontop` 三例程 .S/.asm（**本地 context 是空 submodule，须从上游拉**）+ 自写 ~10 行头，不要 config/封装层。boost.intrusive 仅参考 |
 | **seastar** | 参考 | per-core 局部性、reactor_backend completion 抽象、xcpu_freelist；**不学** share-nothing 调度 |
-| **oneTBB** | 参考 | task 并行/并发容器参考；HYLE 用 fiber，不直接用其调度器 |
-| **oneDPL** | 参考 | 并行 STL 算法参考（若 algorithm 层要并行原语）|
+| **oneTBB** | **多为边界外**（深读校正）| task scheduler 边界外（自带 work-stealing 抢权，同拒 boost.fiber）；`concurrent_bounded_queue` **不借**（票号+分页+链 libtbb，非定长 ring，用 Vyukov/rigtorp）；仅 `scalable_allocator`/rml pool policy 设计**参考** mem/，不 vendor |
+| **oneDPL** | **边界外**（深读校正）| 并行 STL 架在 TBB/OpenMP 之上——而那层正是 HYLE 自造调度器要替换的；算法层非 infra 原语 |
 
 ### container/（Tier 0）
 | 库 | 角色 | 说明 |

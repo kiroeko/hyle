@@ -90,10 +90,10 @@ sched 的 deadline/超时只需要三样，先钉这个最小面，full timer �
 
 | 部件 | 设计 | WHY |
 |---|---|---|
-| **per-core 本地队列** | 有界 ring（256 槽），owner 一端 LIFO push/pop、thief 另一端 FIFO steal | 有界=无锁+cache 友好；本地 LIFO=热栈复用；偷 FIFO=公平、偷老任务 |
-| **LIFO slot（单槽）** | 每核一个"下一个就跑"单槽，刚被唤醒的 fiber 放这里、优先于本地队列 | **completion 脊的接入点**：io/gpu 完成唤醒的 fiber 落唤醒核 LIFO slot，热 cache 立即续跑 |
+| **per-core 本地队列** | 有界 ring（256 槽，tokio `LOCAL_QUEUE_CAPACITY`），**owner FIFO（push_back tail / pop head）**、thief 从最老端 FIFO steal 偷一半（向上取整）；满时后半 128 个甩 global | 有界=无锁+cache 友好；偷老任务=公平。**注意：LIFO 性不来自 run_queue 本身**（深读 tokio `queue.rs` 校正：run_queue 是 FIFO，owner-LIFO 是 st3/Chase-Lev 语义、非 tokio）|
+| **LIFO slot（单槽）** | 每核一个"下一个就跑"单槽，刚被唤醒的 fiber 放这里、优先于本地队列；**不可被偷**，连续轮询预算上限（tokio `MAX_LIFO_POLLS_PER_TICK=3`）超了关 slot 改走队尾（可被偷）| **completion 脊的接入点**：io/gpu 完成唤醒的 fiber 落唤醒核 LIFO slot，热 cache 立即续跑。**LIFO 热栈复用全靠这个单槽，不靠 run_queue** |
 | **global 注入队列** | 加锁 MPMC，接本地队列溢出 + 跨核 spawn + 外部线程提交 | 兜底；本地满了甩这里，不丢任务 |
-| **steal 协议** | 本地空 → 偶发查 global（防饿死）→ 随机选 victim 偷一半 | Tokio 实证：纯偷会饿死 global，需周期性查 global |
+| **steal 协议** | 本地空 → 周期查 global（**间隔按 poll 时长 EWMA 自调，目标 200µs/均值、clamp 2-127；tokio `stats.rs`，非固定 every-Nth**）防饿死 → 随机选 victim 偷一半 | Tokio 实证：纯偷会饿死 global，需周期查；长任务下自调间隔避免过频查 global |
 
 **调度循环（每个 worker 线程）**：
 ```
@@ -114,14 +114,16 @@ loop:
 
 无工作的 worker 既不能空转烧 CPU，也不能太急着睡（work 来了有延迟），更不能 work 一来就唤醒全部核（惊群）。三招解决：
 
-**① spin-then-park（睡前先转几圈）**：worker 找不到活时，先做有限次 steal 尝试（轮询若干随机 victim）+ 指数 backoff，再 park。WHY：park 要系统调用（futex/WaitOnAddress），而 work 常在微秒内出现，先自旋能避开大量 park/unpark 往返。
+**① spin-then-park（睡前先转几圈）**：worker 找不到活时，先做有限次 steal 尝试（轮询若干随机 victim）+ 指数 backoff，再 park。WHY：park 要系统调用（futex/WaitOnAddress），而 work 常在微秒内出现，先自旋能避开大量 park/unpark 往返。**归属注意（深读 tokio 校正）**：当前 tokio multi_thread **无** spin-then-park 指数 backoff（它靠"park 前末位 searcher 最后一次全队列复查"+ 0-timeout park_yield 替代）；带 spin 的是已删除的 `multi_thread_alt`。所以**这条是 HYLE 自有设计（或借 Go/alt），别归功当前 tokio**。
 
-**② 限制同时搜索的 thief 数**：原子计数 `num_searching`，封顶（如 ≤ 核数一半）。已超额则无工作的 worker 直接 park、不加入偷窃风暴。WHY：N 个 worker 同时偷 = N² 次 steal 尝试 + cache 行争抢，吞吐反降。
+**② 限制同时搜索的 thief 数**：原子计数 `num_searching`，封顶 ≤ 核数一半（**tokio `idle.rs` 印证：`2*num_searching >= num_workers` 即拒绝转 searching**）。已超额则无工作的 worker 直接 park、不加入偷窃风暴。WHY：N 个 worker 同时偷 = N² 次 steal 尝试 + cache 行争抢，吞吐反降。
 
-**③ unpark 接力（防惊群核心）**：
-- 新任务入队且 `num_searching == 0` 时，**只** `notify_one`（唤醒一个）。
-- 被唤醒的 worker 置为 searcher；它找到活、从 searching 转 running 时，**若它是最后一个 searcher，再唤醒一个**（baton-passing 接力）。
-- 净效果：醒着的 worker 数恰好匹配可用工作量，既不惊群也不漏唤醒。（参考 Go `wakep`/Tokio `transition_from_searching` 与 actives/thieves 论文。）
+**③ unpark 接力（防惊群核心，tokio `idle.rs` 一字不差印证）**：
+- 新任务入队且 `num_searching == 0`（且 `num_unparked < num_workers`）时，**只** `notify_one`（唤醒一个）。
+- 被唤醒的 worker 置为 searcher；它找到活、从 searching 转 running 时，**若它是最后一个 searcher，再唤醒一个**（baton-passing 接力，tokio `transition_worker_from_searching`）。
+- 净效果：醒着的 worker 数恰好匹配可用工作量，既不惊群也不漏唤醒。（Go `wakep` / tokio `idle.rs` / actives/thieves 论文同款。）
+
+> **HYLE 超越点（fiber vs task）**：tokio LIFO slot 仅省一次入队；HYLE 偷 fiber = 迁移其栈（跨核后栈+buffer cache 失效，比偷无栈 future 代价更高），所以"唤回 origin_core LIFO slot"（见 3.3）对 HYLE **更关键**——还省一次跨核栈迁移。这是 HYLE 相对 tokio 的强化点，非简单对齐。
 
 **park 机制跨平台**：futex(Linux) / `WaitOnAddress`(Windows) / `__ulock` 或 dispatch semaphore(macOS)，封在 `platform/` 后。
 
