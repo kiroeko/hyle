@@ -23,7 +23,7 @@
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 1-2k | ✅ | ✅ 完成 |
 | error-01 | P0 | error | Status + std::expected + ASSIGN_OR_RAISE 宏 | 00 | 1-2k | ✅ | ✅ 完成 |
 | obs-01 | P0 | obs | instrumentation hook API(编译期 no-op 空实现) | 00 | 1-2k | | 占位 |
-| platform-01 | P1 | platform | thread + park(futex/WaitOnAddress/ulock) | error-01 | 2-3k | ✅ | 占位 |
+| platform-01 | P1 | platform | thread + park(futex/WaitOnAddress/ulock) | error-01 | 2-3k | ✅ | ✅ 完成 |
 | platform-02 | P1 | platform | virtual_memory + dynlib | platform-01 | 2-3k | | 占位 |
 | platform-03 | P1 | platform | path + fs + env + os_info | platform-01 | 1-2k | | 占位 |
 | mem-01 | P2 | mem | Allocator vtable + 修 alignment（骨架版含最小 mimalloc 包装）| platform-01 | 1-2k | ✅ | 占位 |

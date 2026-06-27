@@ -7,7 +7,11 @@
 | **Tier** | 2 |
 | **LOC 估** | 2-3k |
 | **骨架?** | ✅ |
-| **状态** | 进行中（设计对齐中） |
+| **状态** | ✅ 完成（MSVC 19.50 Debug+Release，11 case 全过；POSIX 路径已写未本机验证）|
+
+> **cloc 留档（`cloc include/hyle/platform src/platform tests/platform`）**：**527 行** = 71 头 + 452 cc（wait.cc 三后端+Parker、thread.cc 双平台、wait_test/thread_test）+ 4 CMake。
+> **远低于估 2-3k，但非 stub**——解释：thread+park 这个"原语层"本就薄：`wait_on_address` 三后端各 ~10 行 syscall 包装、Parker 是 ~30 行成熟三态机（移植 Rust std）、Thread 薄包原生 spawn/join。原估 2-3k 把分量算高了；platform 的重头在 **platform-02（virtual_memory+dynlib）/ platform-03（path+fs+env）**，是另两个里程碑。POSIX 是**完整真实现**（仅未在本 Windows 机验证），macOS<14.4 是**显式 待调研**缺口（非静默 stub）。11 测试含 2000 轮单 worker + 4×500 多 worker 无丢唤醒压力。
+> **实现注记**：Parker 用 Rust std futex parker 的成熟方案（`fetch_sub(1)` 编码 EMPTY↔PARKED↔NOTIFIED，state_=PARKED(0xFFFFFFFF) 时 wait、unpark swap 进 NOTIFIED 并仅在原为 PARKED 时 wake）。`Parker` 的 `HYLE_PLATFORM_API` 放在**方法而非类**上——类级导出会把 `std::atomic` 成员拖过 DLL 边界（MSVC C4251）。Thread name/affinity 在 trampoline 内自应用（最可移植：Linux/mac 的 name/affinity API 作用于 self），name 拷进 NUL 结尾缓冲（守 string_view 不保证 NUL 的边界）。
 
 ## 前置依赖
 

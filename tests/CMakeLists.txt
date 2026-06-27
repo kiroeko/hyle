@@ -11,3 +11,4 @@ FetchContent_MakeAvailable(googletest)
 
 hyle_add_test(core SOURCES core/scaffolding_test.cc)
 hyle_add_test(error SOURCES error/status_test.cc)
+hyle_add_test(platform SOURCES platform/wait_test.cc platform/thread_test.cc)

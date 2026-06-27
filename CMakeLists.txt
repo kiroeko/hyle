@@ -75,6 +75,7 @@ endif()
 # ---- modules (added per dependency layer, roadmap P-1..P6) ------------------
 add_subdirectory(src/core)   # 00-scaffolding: empty core + macro skeleton
 add_subdirectory(src/error)  # error-01: Status + Result + propagation macros
+add_subdirectory(src/platform)  # platform-01: thread + park (wait_on_address)
 
 if(HYLE_BUILD_TESTS)
   enable_testing()
