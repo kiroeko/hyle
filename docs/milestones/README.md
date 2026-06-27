@@ -5,6 +5,8 @@
 > **粒度原则**：一个里程碑 = 一次"写完→编过→单测(覆盖达 Tier 标准)→基准→提交"的闭环。
 >
 > **生长方式（JIT）**：最先执行的 `00-scaffolding` 与 walking-skeleton 几步已写完整；其余**临到该模块开工前再补全细节**——后期里程碑依赖前面实现学到的东西，提前写=空想。索引行先占位（ID/依赖/目的/LOC），细节随推进生长。
+>
+> **clay 吸纳完整性标尺**：见 [`../architecture/clay-coverage-map.md`](../architecture/clay-coverage-map.md)——clay 每个文件 → HYLE 对应物/状态/LOC 的逐文件映射。**每个吸纳 clay 的里程碑闭环前必须 diff clay 同名文件 API 表面**，缺的补或显式登记，不许默默略过(红队核账 2026-06 立此纪律)。
 
 ## 每个里程碑文档的模板
 
@@ -27,14 +29,17 @@
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
 |---|---|---|---|---|---|---|---|
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 1-2k | 294 | ✅ 完成 |
-| error-01 | P0 | error | Status + std::expected + ASSIGN_OR_RAISE 宏 | 00 | 1-2k | 456 | ✅ 完成 |
+| error-01 | P0 | error | Status + std::expected + ASSIGN_OR_RAISE 宏 | 00 | 1-2k | 456 | ✅ 完成(进程内 Status;error_handler→error-02) |
+| error-02 | P0 | error | error_handler vtable(跨 DLL 错误上报) | error-01 | 1k | — | 占位(补漏:clay sys/error.h) |
 | obs-01 | P0 | obs | instrumentation hook API(编译期 no-op 空实现) | 00 | 1-2k | — | 占位 |
 | platform-01 | P1 | platform | thread + park(futex/WaitOnAddress/ulock) | error-01 | 2-3k | 527 | ✅ 完成 |
 | platform-02 | P1 | platform | virtual_memory + dynlib | platform-01 | 2-3k | — | 占位 |
 | platform-03 | P1 | platform | path + fs + env + os_info | platform-01 | 1-2k | — | 占位 |
-| mem-01 | P2 | mem | Allocator vtable + 修 alignment（骨架版含最小 mimalloc 包装）| platform-01 | 1-2k | 182 | ✅ 完成 |
+| mem-01 | P2 | mem | Allocator vtable + 修 alignment（骨架版含最小 mimalloc 包装）| platform-01 | 1-2k | 182 | 🔶 部分(vtable+裸alloc✅;typed便利层→mem-01b) |
+| mem-01b | P2 | mem | allocator typed 便利层(allocate<T>/construct/make_unique/destroy) | mem-01 | 1k | — | 占位(补漏:clay allocator.h 漏的层) |
 | mem-02 | P2 | mem | mimalloc backing 完整接入(封 vtable 后) | mem-01 | 1-2k | — | 占位 |
-| mem-03 | P2 | mem | MemoryArena 无锁块池 + 修 64 槽上限 | mem-01 | 2-3k | 209 | ✅ 完成(排在 mem-02 前:先吸纳 clay 自有码) |
+| mem-03 | P2 | mem | MemoryArena 无锁块池 + 修 64 槽上限 | mem-01 | 2-3k | 209 | 🔶 部分(块池✅;Arena bump+make_arena_allocator→mem-03b) |
+| mem-03b | P2 | mem | Arena bump 分配器 + ArenaAllocator 适配 + make_arena_allocator | mem-03 | 1k | — | 占位(补漏:clay memory_arena.cc 漏的半个文件) |
 | mem-04 | P2 | mem | ObjectPool + StackAllocator 推倒重写(修 UB) | mem-02 | 2-3k | 197 | ✅ 完成(坐 mem-03 上;修 bug#3/#4) |
 | mem-05 | P2 | mem | MemorySpace 组合抽象 + xcpu_freelist | mem-03 | 2-3k | — | 占位 |
 | mem-06 | P2 | mem | NUMA + 大页 + stats(修下溢) | mem-05 | 2-3k | — | 占位 |

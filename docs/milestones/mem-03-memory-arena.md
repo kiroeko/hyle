@@ -7,7 +7,9 @@
 | **Tier** | 0 |
 | **LOC 估** | 2-3k |
 | **骨架?** | |
-| **状态** | ✅ 完成（Win x64 MSVC + Linux x64 GCC14.2 双平台，14 mem case 全过；**TSan 零 data race**）|
+| **状态** | 🔶 部分完成（块池 ✅ 双平台+TSan；**Arena bump + make_arena_allocator 漏做 → mem-03b**）|
+
+> **红队核账修正（2026-06）**：本步**曾标"✅完成"是过度声明**。clay `memory_arena.cc` 有**两个**类——`MemoryArena`(块池,本步做了✅)**和 `Arena`(bump 分配器,行84-135)+ `ArenaAllocator` 适配 + `make_arena_allocator`(行167-246)**。我只做了块池就标完成,bump 那半个文件悄悄漏了。已登记 **mem-03b** 补。教训:吸纳 clay 须 diff 整个同名文件,不是做了一个类就算完。
 
 > **cloc 留档（`cloc memory_arena.h memory_arena_test.cc`）**：**209 行** = 91 头 + 118 测试。header-only(热路径内联,符合 A 范式,非模板无需 .cc),非 stub。
 > **实现/自审**：① **packed 64 位 tagged head**(index<<32|version)纯 64 位 CAS,**去掉 clay 的 16 字节 atomic + cmpxchg16b/-mcx16 依赖**(mem-design 附注隐患);version 防 ABA。② **修 clay bug #5**:block_count 构造参数,实测 1000 块远超 64 上限。③ freelist `next` 用**并行索引数组**(非 clay 的块内嵌入)——避免 std::byte slab 上 atomic_ref 的生命周期/对齐纠葛,TSan 干净,代价 4 字节/块(定长池可忽略)。④ allocate/deallocate CAS 用 acq_rel/acquire(保守正确:release 分量发布 next 写、acquire 见前次 free 的发布)。
