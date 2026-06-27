@@ -76,6 +76,7 @@ endif()
 add_subdirectory(src/core)   # 00-scaffolding: empty core + macro skeleton
 add_subdirectory(src/error)  # error-01: Status + Result + propagation macros
 add_subdirectory(src/platform)  # platform-01: thread + park (wait_on_address)
+add_subdirectory(src/mem)    # mem-01: Allocator vtable + alignment fix
 
 if(HYLE_BUILD_TESTS)
   enable_testing()
