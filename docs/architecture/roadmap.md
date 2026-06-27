@@ -1,6 +1,8 @@
 # HYLE 实现路线图
 
-> 动手前的收口：把 12 份设计里散落的硬依赖收成一张无环图，排出施工序与并行批次，给每批定验收门槛，并汇总全部决策（已决 + 待决）。这既是施工计划，也是对全部设计的最后一次端到端校验。
+> 动手前的收口：把设计里散落的硬依赖收成一张无环图，分解为**依赖层（阶段）× 里程碑（约 35-40 个，每个 1-4k 行可独立编/测）**两个轴，给每阶段定验收门槛，并汇总全部决策（已决 + 待决）。这既是施工计划，也是对全部设计的最后一次端到端校验。
+>
+> **注意区分**：依赖层（P0-P6）是"谁先能编译"的拓扑序、6 层；里程碑才是真正的实现步骤、约 35-40 个。别把 6 层当 6 步。
 
 ## 一、模块依赖图（验证无环）
 
@@ -49,31 +51,52 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 
 **无环校验**：error → platform → {mem,time} → {container,simd} → sched → {io,compute} → graph。单向，无回边。`simd/` 只依赖 `mem/`（对齐契约），**不在通往 sched 的关键路径上**，可与 container 并行、晚点喂 compute。
 
-## 二、施工批次（批内并行，批间串行）
+## 二、施工计划：两个轴别混
 
-| 批 | 模块 | 依赖 | 为什么这批 |
+**澄清（之前的错）**：上一版"6 批"是**依赖层**（谁先谁后的拓扑序），**不是 6 个实现步骤**。65-100k 行分 6 步 = 每步上万行，不可落地。正确做法分两个轴：
+
+- **轴 A — 依赖层（阶段 P0-P6）**：哪层先能编译，下面表的拓扑序。粗粒度。
+- **轴 B — 里程碑（M）**：每模块拆 2-6 个里程碑，**每个 1-4k 行、各自可编可测可基准**。全项目约 **35-40 个里程碑**，这才是真正的"步骤"。
+
+### 先走骨架（walking skeleton）——纵切，不要逐模块做完再下一个
+
+第一目标**不是**把 error/ 做到 100% 再做 platform/。而是**每层只取最小一片，纵向打通一条能跑的脊**：
+
+> **骨架里程碑 SK**：`error` 最小（Status+expected）→ `platform` 最小（thread+park）→ `mem` 最小（mimalloc 包一层，不修 bug 不加 space）→ `container` 最小（一个有界 ring，vendor 的）→ `sched` 最小（fcontext 切换 + 单 worker 单队列跑一个 fiber，**先不 work-stealing**）。
+
+打通后 = "**一个 fiber 能在一个 worker 上跑起来、让出、被唤醒**"。这验证了最高风险的 fcontext+调度脊，之后每层只是"加厚"。**骨架 ≈ 5-8k 行、是整个项目的风险试金石**，必须最先做。
+
+### 依赖层 × 里程碑分解（轴 A × 轴 B）
+
+| 阶段 | 模块 | 里程碑（每个 1-4k 行，可独立编/测）| 生产 LOC |
 |---|---|---|---|
-| **批0 基础** | `error/` + `obs/` hook 接口（空实现）| 无 | 万物用 error；埋点 API 先定，后续热路径直接嵌、免回头改 |
-| **批1** | `platform/` | error | OS 抽象，mem/time/sched 都要 |
-| **批2** | `mem/`（**先修 alignment**）+ `time/` | platform | 并行；mem 的 alignment 修复阻塞 simd，最优先 |
-| **批3** | `container/`（ring/MPMC/intrusive 优先）+ `simd/` | mem | 并行；container 的队列原语是 sched 的前置 |
-| **批4** | `sched/` 核心（fcontext+run-queue+work-stealing+Waker+fiber-sync）| container,time,platform,mem | **关键路径瓶颈**，四方汇聚 |
-| **批5** | `io/` + `compute/` | sched | 并行，都挂 Waker/completion；simd 在此喂 compute kernel |
-| **批6** | `graph/` + `obs/` 重机器 + T3 便利 + C-ABI shim 收口 | sched/io/compute | 上层便利 + 对外封口 |
+| **P0** | error / obs-hook | M:Status+expected+ASSIGN_OR_RAISE宏 / M:obs 埋点 API（空实现）| 3-5k |
+| **P1** | platform | M:thread+park(futex/WaitOnAddress) / M:vm+dynlib / M:path+fs+env | 5-8k |
+| **P2** | mem | M:Allocator vtable+修alignment / M:mimalloc backing / M:arena+修64槽 / M:pool+stack重写 / M:MemorySpace+xcpu_freelist / M:NUMA+大页 | 6-10k |
+| **P2** | time | M:单调钟 / M:分层时间轮 | 1.5-2.5k |
+| **P3** | container | M:vendor 有界 ring/MPMC / M:XXH3 接入 / M:carray+RAII / M:SwissTable 探测层重写 / M:SmallVector+intrusive / M:string_ref+buf | 7-11k |
+| **P3** | simd | M:vec D-tag 抽象+scalar后端 / M:SSE4.2+AVX2 / M:AVX512+NEON / M:运行期变体dispatch / M:dtype(fp16/bf16) / M:sleef 数学核 adapter | 10-16k |
+| **P4** | sched | M:fcontext 6平台+栈池 / M:per-core run-queue / M:work-stealing+防惊群 / M:Waker completion 脊 / M:fiber-aware CV+同步原语 / M:协程胶水 | 10-15k |
+| **P5** | io | M:proactor 抽象 / M:io_uring 后端 / M:epoll+kqueue+IOCP / M:net(tcp/udp) / M:file+shmem | 9-14k |
+| **P5** | compute | M:device/stream 薄包ggml / M:MemorySpace 注册+copy塌缩 / M:GPU completion→fiber / M:kernel 启动 / M:ggml_bridge+注入线程池 / M:Vulkan compute kernel | 10-16k |
+| **P6** | graph + 收口 | M:taskgraph 剥特化绑sched / M:C-ABI shim / M:serialize/hash/T3 / M:FFI 绑定 | 11-17k |
 
-**关键路径**（最长链，决定最早可用时间）：`error → platform → mem → container → sched`。**sched 是瓶颈**——它要等 container 的队列原语 + time + platform 的 park 全部就位。所以**批2/批3 的 container/time 要尽早动**，它们一卡，sched 就卡。
+**约 35-40 个里程碑**，每个是一次"写完→编过→单测→基准→提交"的闭环。这才是能照着干的步骤表，而非 6 个万行黑箱。
 
-## 三、每批验收门槛（立住才进下一批）
+**关键路径**（最长链）：`error → platform → mem → container → sched`。sched 是瓶颈，等 container 队列 + time + platform park 全就位。所以 **P2/P3 的 container/time 要尽早动**。simd 不在关键路径（只依赖 mem 对齐），可与 container 并行、晚点喂 compute。
 
-| 批 | 门槛 |
+## 三、每阶段验收门槛（每里程碑各自可测；阶段门槛=该层整体立住）
+
+| 阶段 | 门槛 |
 |---|---|
-| 批0 | error 跨三编译器编译；`std::expected` 往返；埋点 API 编译期零开销验证 |
-| 批1 | platform 三平台（Linux/Win/mac）编译；dynlib 加载冒烟；park 原语单测 |
-| 批2 | **mem：alignment 保证测试（64B 对齐必须真生效）**、并发分配 TSan、对标裸 mimalloc 不退化；time：单调性、时间轮到期精度 |
-| 批3 | container：hashmap 对拍 std + 基准对标 absl/F14、lock-free 队列 TSan + 线性化测试；simd：每后端对拍 scalar、数学函数 ULP 精度 |
-| 批4 | **sched：百万次 fiber 切换基准、work-stealing 公平性、fiber-sync 正确性（TSan）、防惊群验证** |
-| 批5 | io：echo/吞吐基准、proactor 四后端对齐；compute：device 枚举、CPU+GPU 后端对拍、completion 唤醒 fiber 链路通 |
-| 批6 | graph：DAG 执行正确性；C-ABI shim：FFI 冒烟（TS/Python 各调一个）；全栈 sanitizer CI |
+| SK 骨架 | **一个 fiber 在单 worker 上跑起→让出→被唤醒**（fcontext+最小脊打通，最高风险先验）|
+| P0 | error 跨三编译器编译；`std::expected` 往返；埋点 API 编译期零开销验证 |
+| P1 | platform 三平台（Linux/Win/mac）编译；dynlib 加载冒烟；park 原语单测 |
+| P2 | **mem：alignment 保证测试（64B 对齐必须真生效）**、并发分配 TSan、对标裸 mimalloc 不退化；time：单调性、时间轮到期精度 |
+| P3 | container：hashmap 对拍 std + 基准对标 absl/F14、lock-free 队列 TSan + 线性化测试；simd：每后端对拍 scalar、数学函数 ULP 精度 |
+| P4 | **sched：百万次 fiber 切换基准、work-stealing 公平性、fiber-sync 正确性（TSan）、防惊群验证** |
+| P5 | io：echo/吞吐基准、proactor 四后端对齐；compute：device 枚举、CPU+GPU 后端对拍、completion 唤醒 fiber 链路通 |
+| P6 | graph：DAG 执行正确性；C-ABI shim：FFI 冒烟（TS/Python 各调一个）；全栈 sanitizer CI |
 
 ## 四、决策清单
 
@@ -104,8 +127,6 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 | simd 向量 | **scalable-friendly 接口 + 先实现定宽后端**（x86 SSE4.2/AVX2/AVX512 + ARM NEON）；将来加 SVE/RVV 不改 API | simd-design；**用户拍板** |
 | hashmap 写法 | **concept 模板写内部 + 过边界特定类型封 C-ABI shim**；去掉 C 宏 temp/哨兵包袱 | container-design；**用户拍板** |
 
-### 待决（有建议，多数不阻塞、可采纳默认后实现期微调）
-
 ### 待决（剩余均非阻塞，有安全默认、实现期可微调）
 
 | # | 待决项 | 建议（默认采纳）| 阻塞? |
@@ -119,14 +140,12 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 
 > 三个"接口/边界形状"待决（#3 device 内存、#4 simd 向量、#7 hashmap 写法）均已拍板，见上「已决」表。**剩余 6 项全部非阻塞**——采纳默认即可开工，实现期按需微调。
 
-**剩 4、7 两个"接口/边界形状"待拍**（影响多模块接口签名）；其余有安全默认，采纳即可、实现期可调。
-
 ### 实现期选择（非设计空白，落地时定策略）
 
 阻塞 syscall 的 blocking 池 + sysmon 补线程；LIFO slot 轮询预算上限；steal 的 backoff 曲线；GPU completion 选回调还是轮询线程。这些在 sched-design 已标注，是落地参数、非设计悬念。
 
 ## 五、收口
 
-设计阶段到此完整：**定位 → 范式（charter/conventions）→ 六支柱深挖（io/sched/compute/simd/mem/container）→ 分层/规模/负空间（scope）→ 依赖图/施工序（本文）**。`docs/architecture/` 共 12 份，互相交叉引用，无环可施工。
+设计阶段完整：**动机 → 定位 → 范式（charter/conventions）→ 六支柱深挖（io/sched/compute/simd/mem/container）→ 分层/规模/负空间（scope）→ 性能预期 → 参考库映射 → 依赖图/里程碑（本文）**。`docs/architecture/` 共 15 份，互相交叉引用，无环可施工。经 4 波参考库实证校验。
 
-动手第一刀：**批0 的 `error/` + obs hook 接口**。三个接口形状决策（device 内存 D / simd scalable-friendly / hashmap concept 模板）已全部拍定，剩余待决项均非阻塞，可干净开工。
+**实现是约 35-40 个里程碑（每个 1-4k 行、可编可测可基准），不是 6 个万行黑箱。** 动手第一刀：**走骨架 SK**——纵切 error/platform/mem/container/sched 各取最小一片，打通"一个 fiber 跑起→让出→唤醒"，先验最高风险的 fcontext+调度脊。骨架立住后，按依赖层逐里程碑加厚。所有接口形状决策已拍定、待决项非阻塞，可干净开工。

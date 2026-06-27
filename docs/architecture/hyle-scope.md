@@ -120,6 +120,10 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 **对标校准**（非虚高）：Tokio（调度+io+sync+time）≈80k、Highway（仅 SIMD）≈100k、Seastar≈150k。HYLE 横跨 mem+container+sched+simd+io+compute+platform，**核心 65-100k 生产代码合理甚至偏保守**。
 
+**4 波参考库实证后微调（总量不变，造借结构变）**：lock-free 队列改 vendor（Vyukov/rigtorp，不计入自造）、hasher 借 XXH3、Intel 三件套全边界外——这些**减**自造；但 SwissTable 是"探测算法重写"非"补字节"、completion 脊 GPU 侧 100% 自造——这些**增**。一减一增，核心 65-100k 区间稳。
+
+**实现粒度（回应"6 步太大"）**：上表是体量，**不是步骤**。65-100k 行落地为**约 35-40 个里程碑**，每个 1-4k 行、可独立编/测/基准（见 [`roadmap.md`](./roadmap.md) 第二节）。6 个"阶段(P0-P6)"只是依赖层拓扑序，不是 6 步。先走 walking skeleton（纵切各层最小片 ~5-8k 行）打通调度脊、验最高风险，再逐里程碑加厚。
+
 **一句话**：clay 给了 内存+容器+原子+编排骨架 四块地基（约 1/4），而 **sched+io+simd+compute 四根支柱从零造、每根 10-16k**——这才是 HYLE 真正体量，比"重构 2 万行"大一个量级（**核心约 3-4 倍、完整含测试约 5-7 倍**）。
 
 ## 边界外（明确不做）

@@ -1,8 +1,10 @@
 # HYLE 性能预期（vs C++ std）
 
-> **免责**：HYLE 尚未实现。下表是**基于同类成熟库公开基准（mimalloc/abseil/folly/Tokio/Highway/Seastar）的推算目标**，非 HYLE 实测。真实数字由 [`roadmap.md`](./roadmap.md) 每批的 benchmark gate 产出。
+> **免责**：HYLE 尚未实现。下表是**基于同类成熟库公开基准（mimalloc/abseil/folly/Tokio/Highway/Seastar）的推算目标**，非 HYLE 实测。真实数字由 [`roadmap.md`](./roadmap.md) 每阶段的 benchmark gate 产出。
 >
 > **时间与空间分列**：HYLE 多个赢点是「以空间换时间」（arena/fiber/SmallVector），不分开看会掩盖代价。
+>
+> **已被 clone 的真实参考库源码背书（4 波深读）**：XXH3 30+GB/s（xxHash README 实测）、tracy zone 埋点 2.25ns、abseil/F14 查找对标、tokio fiber 调度机制——这些不再是道听途说，是核到源码 file:line 的。
 
 ## 先分两桶（混在一起说"快多少"会误导）
 
