@@ -11,7 +11,7 @@
 |---|---|---|---|---|
 | `sys/allocator.h` + `.cc` | 485+375 | mem-01 + mem-01b | ✅ | vtable+裸 allocate + **typed 层 allocate_n<T>/callocate/construct/destroy/release/make_unique 已补(mem-01b)**;CUSTOM_MEMORY_FUNCTIONS/allocator-printf 仍 📋(次要) |
 | `sys/memory_arena.h` + `.cc` | 65+258 | mem-03 + mem-03b | ✅ | `MemoryArena` 块池(packed CAS) + **`Arena` bump 区域分配器 + as_allocator() 适配已补(mem-03b)**;`make_arena_allocator` 等价为 `Arena::as_allocator()` |
-| `sys/carray.h` + `.cc` | 436+65 | container-03 | 📋 | header-before-data 侵入数组 + RAII 壳 |
+| `sys/carray.h` + `.cc` | 436+65 | container-03 | ✅ | header-before-data 侵入数组 + type-erased 核 + RAII 壳 CArray<T>;**改进:over-align 元素(clay 固定 max_align_t 会错位)** |
 | `sys/cstring.h` + `.cc` | 1033+374 | container-06 | 📋 | string_ref(ptr+len+null 位)+零拷贝算法 |
 | `sys/string_buf.h` + `.cc` | 141+363 | container-06 | 📋 | 引用计数驻留池 |
 | `sys/hashmap.h` | 809 | container-04 | 📋 | flat open-addressing → 补 SwissTable SIMD 探测【大】 |

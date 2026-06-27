@@ -47,7 +47,7 @@
 | time-02 | P2 | time | 分层时间轮 | time-01 | 1-1.5k | — | 占位 |
 | container-01 | P3 | container | vendor 有界 ring(Vyukov/rigtorp,骨架用) | mem-01 | 1-2k | 220 | ✅ 完成 |
 | container-02 | P3 | container | XXH3 接入(默认 hasher) | 00 | 1k | 133 | ✅ 完成(XXH3 封 .cc 不泄;小键内联) |
-| container-03 | P3 | container | carray header-before-data + RAII 壳 | mem-02 | 1-2k | — | 占位 |
+| container-03 | P3 | container | carray header-before-data + RAII 壳 | mem-02 | 1-2k | 224 | ✅ 完成(type-erased核;修over-align) |
 | container-04 | P3 | container | SwissTable 探测层重写(concept 模板)【大】 | container-02 | 3-4k | — | 占位 |
 | container-05 | P3 | container | SmallVector + intrusive list/slist | mem-02 | 1-2k | — | 占位 |
 | container-06 | P3 | container | string_ref + string_buf 驻留池 | container-02 | 1-2k | — | 占位 |
