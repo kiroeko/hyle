@@ -2,7 +2,7 @@
 
 > 本文档是 HYLE 重构的依据：把 clay infra 层逐子系统盘点为「直接继承 / 改后继承 / 推倒重写 / 从零造」，每条结论附代码证据（`file_path:line`）。
 >
-> 盘点对象：`C:\public\workspace\slate-render\slate\infra\`（与 `iron\infra\` 为镜像拷贝，命名空间 `clay::`）。
+> 盘点对象：`C:\public\project-hyle\slate-render\slate\infra\`（与 `iron\infra\` 为镜像拷贝，命名空间 `clay::`）。
 > clay 自有代码 ≈ 28,667 行（不含 thirdparty 67,544 行）。
 
 ## 体量分布（自有代码，不含 thirdparty）

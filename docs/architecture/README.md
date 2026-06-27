@@ -77,8 +77,8 @@ HYLE infra（通用、不特化、贴硬件）
 
 ### 源码位置
 
-- **clay 源码（重构对象）**：`C:\public\workspace\slate-render\slate\infra\` 与 `C:\public\workspace\slate-render\iron\infra\`（两份镜像拷贝，命名空间 `clay::`）。
-- **HYLE 工作目录**：`C:\public\workspace\hyle`（本目录）。
+- **clay 源码（重构对象）**：`C:\public\project-hyle\slate-render\slate\infra\` 与 `C:\public\project-hyle\slate-render\iron\infra\`（两份镜像拷贝，命名空间 `clay::`）。
+- **HYLE 工作目录**：`C:\public\project-hyle\hyle`（本目录）。
 - **相关 TS 项目**：`C:\public\workspace\axiomate`。
 
 ### clay 是什么
