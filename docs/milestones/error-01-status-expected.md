@@ -7,7 +7,10 @@
 | **Tier** | 2 |
 | **LOC 估** | 1-2k |
 | **骨架?** | ✅ |
-| **状态** | 未开始 |
+| **状态** | ✅ 完成（commit 8f3fb40，MSVC 19.50 Debug+Release 双配置，22 case 全过）|
+
+> **实现注记（与计划的偏差）**：Status 存储用 `StatusCode + shared_ptr<const string>`，**未**用 clay 的指针标签内联（8 字节 `uintptr_t` 低位打标）。理由：shared_ptr 方案保持可拷贝（refcount，省深拷贝）且让 `expected<T,Status>` 用着顺，OK 态/无消息错误仍零分配；指针标签虽省到 8 字节但牺牲 trivially-copyable。若后续 profiling 显示 Status 体积是热点，再回头换指针标签。
+> 传播宏用 `detail::FailReturn`（双向隐式转换 `Status` / `Result<T>`）+ `__COUNTER__` 唯一临时变量，规避 MSVC 无 GNU 语句表达式。`HYLE_FATAL_ASSERT` 早在 macros.h（00 步），本步只补软断言 `HYLE_ASSERT`。
 
 ## 前置依赖
 
