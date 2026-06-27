@@ -9,8 +9,8 @@
 
 | clay 文件 | 行 | HYLE 目标 | 状态 | 备注 |
 |---|---|---|---|---|
-| `sys/allocator.h` + `.cc` | 485+375 | mem-01 / **mem-01b** | 🔶 | vtable+裸 allocate ✅；**typed 层 `allocate<T>/construct<T>/make_unique<T>/destroy<T>` + CUSTOM_MEMORY_FUNCTIONS + allocator-printf 未做 → mem-01b** |
-| `sys/memory_arena.h` + `.cc` | 65+258 | mem-03 / **mem-03b** | 🔶 | `MemoryArena` 块池 ✅(已现代化 packed CAS)；**`Arena` bump 分配器 + `ArenaAllocator` 适配 + `make_arena_allocator` 未做 → mem-03b** |
+| `sys/allocator.h` + `.cc` | 485+375 | mem-01 + mem-01b | ✅ | vtable+裸 allocate + **typed 层 allocate_n<T>/callocate/construct/destroy/release/make_unique 已补(mem-01b)**;CUSTOM_MEMORY_FUNCTIONS/allocator-printf 仍 📋(次要) |
+| `sys/memory_arena.h` + `.cc` | 65+258 | mem-03 + mem-03b | ✅ | `MemoryArena` 块池(packed CAS) + **`Arena` bump 区域分配器 + as_allocator() 适配已补(mem-03b)**;`make_arena_allocator` 等价为 `Arena::as_allocator()` |
 | `sys/carray.h` + `.cc` | 436+65 | container-03 | 📋 | header-before-data 侵入数组 + RAII 壳 |
 | `sys/cstring.h` + `.cc` | 1033+374 | container-06 | 📋 | string_ref(ptr+len+null 位)+零拷贝算法 |
 | `sys/string_buf.h` + `.cc` | 141+363 | container-06 | 📋 | 引用计数驻留池 |
