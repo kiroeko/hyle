@@ -68,7 +68,8 @@ HYLE_ERROR_API void log_assert_failure(const char* expr, const char* file,
   if (HYLE_UNLIKELY(!tmp.has_value())) {                                       \
     return ::hyle::detail::FailReturn(std::move(tmp).error());                 \
   }                                                                            \
-  lhs = std::move(tmp).value()
+  lhs = *std::move(tmp)  /* operator*: has_value() already checked above, so   \
+                            skip .value()'s redundant check + throw path */
 
 // Soft assert: evaluates to the bool condition (usable in `if`), and on failure
 // logs (does NOT abort, unlike HYLE_FATAL_ASSERT) -- survives release builds.

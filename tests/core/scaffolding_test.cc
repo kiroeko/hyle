@@ -25,6 +25,19 @@ TEST(Scaffolding, BranchPredictionMacros) {
   EXPECT_EQ(x, 2);
 }
 
+// HYLE_PAD must yield distinct member names when used twice in one struct
+// (regression guard: the old `##__LINE__` paste produced identical names and
+// failed to compile). Two pads of 4 bytes each must occupy at least 8 bytes.
+namespace {
+struct PadProbe {
+  HYLE_PAD(4);
+  HYLE_PAD(4);
+};
+}  // namespace
+TEST(Scaffolding, PadMacroDistinctNames) {
+  EXPECT_GE(sizeof(PadProbe), 8u);
+}
+
 // C++23 std::expected must be available (charter error model basis).
 static std::expected<int, std::string> parse_pos(int v) {
   if (v < 0) return std::unexpected("negative");

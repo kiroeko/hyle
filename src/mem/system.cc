@@ -57,8 +57,11 @@ void* system_realloc(void* /*state*/, void* ptr, std::size_t old_size,
     return aligned_alloc_raw(new_size, align);
   }
   // reallocate: fresh aligned block, copy the overlap, release the old one.
+  // realloc contract: on allocation failure the ORIGINAL block must be left
+  // untouched (freeing it here would hand the caller a dangling pointer).
   void* np = aligned_alloc_raw(new_size, align);
-  if (np != nullptr && old_size != 0) {
+  if (np == nullptr) return nullptr;  // OOM: keep ptr valid, report failure
+  if (old_size != 0) {
     std::memcpy(np, ptr, old_size < new_size ? old_size : new_size);
   }
   aligned_free_raw(ptr);

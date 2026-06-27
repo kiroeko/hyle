@@ -8,6 +8,7 @@
 #include <new>
 
 #include "hyle/error/result.h"
+#include "hyle/macros.h"
 
 namespace hyle {
 
@@ -48,7 +49,10 @@ StatusRep* as_rep(std::uintptr_t rep) noexcept {
 std::uintptr_t status_make_heap(StatusCode code, const char* msg,
                                 std::size_t len) {
   void* mem = std::malloc(sizeof(StatusRep) + len + 1);
-  if (mem == nullptr) std::abort();  // OOM on the error path: fail-fast.
+  // OOM while building an error message is operational, not a bug: return 0 so
+  // the caller degrades to the message-less inline encoding (charter: OOM -> a
+  // value, never abort). The error code survives; only the message is dropped.
+  if (mem == nullptr) return 0;
   auto* rep = new (mem) StatusRep{};
   rep->refcount.store(1, std::memory_order_relaxed);
   rep->code = code;
@@ -56,9 +60,10 @@ std::uintptr_t status_make_heap(StatusCode code, const char* msg,
   std::memcpy(rep->msg(), msg, len);
   rep->msg()[len] = '\0';
   auto bits = reinterpret_cast<std::uintptr_t>(rep);
-  // Tag invariant: heap pointer must have its low 2 bits clear so it is
-  // distinguishable from the inline-code encoding.
-  if ((bits & 3) != 0) std::abort();
+  // Tag invariant: malloc must return >=8-byte aligned memory so the low 2 bits
+  // stay clear (distinguishes a heap rep from the inline-code encoding). A
+  // violation means a broken platform allocator -> fail-fast.
+  HYLE_FATAL_ASSERT((bits & 3) == 0);
   return bits;
 }
 

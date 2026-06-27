@@ -51,7 +51,9 @@
 #define HYLE_ALIGNED alignas(HYLE_CACHE_LINE_SIZE)
 
 // ---- explicit struct padding (paired with -Wpadded) ----
-#define HYLE_PAD(n) char hyle_pad_##__LINE__[n]
+// HYLE_CONCAT (not ##) so __LINE__ expands to a number: two uses in one struct
+// get distinct names (hyle_pad_42, hyle_pad_43), not a redefinition clash.
+#define HYLE_PAD(n) char HYLE_CONCAT(hyle_pad_, __LINE__)[n]
 
 // ---- delete copy / copy+move ----
 #define HYLE_DISABLE_COPY(T)        \

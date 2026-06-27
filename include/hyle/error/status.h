@@ -74,10 +74,16 @@ class [[nodiscard]] Status {
 
   Status(StatusCode code, std::string_view message) {
     if (code != StatusCode::Ok) {
+      std::uintptr_t inlined =
+          (static_cast<std::uintptr_t>(code) << kCodeShift) | kInlineTag;
       if (message.empty()) {
-        rep_ = (static_cast<std::uintptr_t>(code) << kCodeShift) | kInlineTag;
+        rep_ = inlined;
       } else {
-        rep_ = detail::status_make_heap(code, message.data(), message.size());
+        // status_make_heap returns 0 on OOM -> degrade to the message-less
+        // inline encoding (the code survives; only the message is dropped).
+        std::uintptr_t heap =
+            detail::status_make_heap(code, message.data(), message.size());
+        rep_ = heap != 0 ? heap : inlined;
       }
     }
   }
