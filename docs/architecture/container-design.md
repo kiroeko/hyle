@@ -41,20 +41,25 @@ container/
 └─ probe.h         SwissTable 的 16 路 SIMD 探测片段（自包含 SSE2/NEON，见 tier 澄清）
 ```
 
-## SwissTable SIMD 探测（完成 clay 的规划）
+## SwissTable SIMD 探测（探测层重写，非"补字节"）
 
-- **控制字节数组**：与 slot 平行的 `int8_t ctrl[]`，每字节：`0x80`=空、`0xFE`=删、`0x00-0x7F`=hash 高 7 位。
-- **探测**：取 key hash 低位定 group（16 字节对齐），SIMD 加载 16 控制字节，`_mm_cmpeq_epi8(group, broadcast(h7))` + `movemask` → 候选位图，逐候选比 key。一条 SIMD 扫 16 槽，cache 命中率高。
-- **tier 倒置澄清（重申 simd-design）**：探测只需自包含的 SSE2/NEON 片段（16 字节比较 + movemask + 标量 NEON 等价），**内联在 `probe.h`、不依赖整个 simd/（Tier 1）**。保持 container（T0）不依赖 simd（T1）。simd/ 成熟后可选复用，不强耦合。
+> **深读 abseil 校正**：clay 是**线性探测**，SwissTable 是**三角数二次探测的 group 跳跃 + 控制字节 + 特定 tombstone 降级逻辑**——这不是"补 control-byte 就完成"，是**换探测算法 + 重写 resize/erase**。工作量接近"从零造探测核"，落地清单须单列。
+
+- **控制字节数组**：与 slot 平行的 `int8_t ctrl[]`，每字节四种值（照 abseil `hashtable_control_bytes.h:184-219`，**这些值是为 SIMD 精选的，别自改**）：`0x80`(-128)=空、`0xFE`(-2)=删、`0xFF`(-1)=哨兵（kSentinel，`pcmpeqd` 免加载）、`0hhhhhhh`(MSB=0)=full 槽存 hash 高 7 位(H2)。H1=全宽做 group 索引，H2=hash>>57 取高 7 位。
+- **探测**：三角数二次探测 `offset += (index += Width)`（**非线性探测**）。每 group：SIMD 加载 16 控制字节，`_mm_set1_epi8(h2)` 广播 + `_mm_cmpeq_epi8` + `movemask` → 16 位候选位图，逐候选比 key。空槽终止探测；erase 时能证明不在任何探测链的删除位可降级为 empty（避墓碑堆积）。
+- **三套 group 实现（probe.h 必须全带）**：x86 SSE2 group 宽 16；**ARM NEON group 宽 8**（无 movemask，用 `vceq_u8` + 64 位 mask 方案，复杂度比 x86 高）；**标量 SWAR 兜底**（abseil `GroupPortableImpl`，非 x86/ARM 平台必需，否则编不过）。
+- **可借鉴 F14 的溢出计数**（folly）替代裸 tombstone——稳态 insert/erase 自动回收墓碑、免周期 rehash 抖动，对长生命周期 agent 表友好。主体抄 abseil 平坦布局 + 借 F14 溢出计数思想。
+- **tier 倒置澄清（重申 simd-design）**：探测片段自包含（三套 group 直接写 intrinsic）、**内联在 `probe.h`、不依赖整个 simd/（Tier 1）**。保持 container（T0）不依赖 simd（T1）。
 
 ## 新增类型（clay 缺、HYLE 焦点要的）
 
-| 类型 | 用途 | 谁要 |
-|---|---|---|
-| **SmallVector<T,N>** | inline storage，小集合零堆分配 | 通用热路径（参数列表、临时集合）|
-| **intrusive list/slist** | 节点内嵌 hook，零额外分配、O(1) 摘除 | **sched 的 waiter 链、run-queue** |
-| **lock-free MPMC 队列** | 多生产者多消费者无锁 | **sched 的 global 注入队列** |
-| **bounded SPSC/MPMC ring** | 有界无锁环 | **sched 的 per-core run-queue**（sched-design 2.2）|
+| 类型 | 用途 | 谁要 | 参考/来源 |
+|---|---|---|---|
+| **SmallVector<T,N>** | inline storage，小集合零堆分配 | 通用热路径（参数列表、临时集合）| 抄 **folly `small_vector`** 设计（MaxInline 策略 + size 压进 inline buffer 省头部，比 absl::InlinedVector 更抠字节），不抄代码 |
+| **intrusive list/slist** | 节点内嵌 hook，零额外分配、O(1) 摘除 | **sched 的 waiter 链、run-queue** | 参考 **folly `IntrusiveList`**（boost-free，比 boost.intrusive 轻）|
+| **lock-free bounded ring（SPSC/MPMC）** | 有界无锁环 | **sched 的 per-core run-queue + global 注入** | **vendoring 成熟实现**（Vyukov bounded MPMC：数组+每槽 seq；rigtorp SPSC），**不自造**——见下张力 |
+
+> **lock-free 队列范围收缩（深读校正，影响 roadmap 决策 #9）**：有界 MPMC/SPSC ring 是出名难写对（ABA、memory order、TSan 验证），且**不是 C++ 类型边界问题——没有 C-ABI 理由必须自造**。moodycamel 是**无界 + 非线性化 + NUMA 盲**，不符 HYLE 要的"有界 per-core ring"，只能参考其 per-producer SPSC 聚合思想。建议：**有界队列 vendoring Vyukov MPMC / rigtorp SPSC（皆单头可内联），把自造预算集中到真正差异焦点 hashmap**。即容器"自造"边界**收缩到 hashmap + carray + string**，lock-free 队列降级为"借/vendoring"。
 
 ## 与其他模块的耦合（container 是 sched 的原语供应商）
 

@@ -115,7 +115,7 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 | 5 | simd 数学核 | vendor sleef、封 adapter | 否 |
 | 6 | SVE/RVV 进首版? | v1 只 x86(SSE4.2/AVX2/AVX512)+ARM NEON，留接口 | 否 |
 | 8 | SwissTable 自实现 vs 抄 abseil | 自实现（边界+差异焦点）| 否 |
-| 9 | lock-free 队列归属 | container/（供原语），sched 消费 | 否 |
+| 9 | lock-free 队列归属/造借 | **vendoring 成熟实现**（Vyukov bounded MPMC / rigtorp SPSC，单头可内联），归 container/ 供 sched 消费；不自造（无 C-ABI 理由、难写对）。自造预算集中到 hashmap | 否 |
 
 > 三个"接口/边界形状"待决（#3 device 内存、#4 simd 向量、#7 hashmap 写法）均已拍板，见上「已决」表。**剩余 6 项全部非阻塞**——采纳默认即可开工，实现期按需微调。
 
