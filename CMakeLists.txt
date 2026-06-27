@@ -87,10 +87,19 @@ add_subdirectory(src/platform)  # platform-01: thread + park (wait_on_address)
 add_subdirectory(src/mem)    # mem-01: Allocator vtable + alignment fix
 add_subdirectory(src/container)  # container-01: bounded MPMC ring (Vyukov)
 
-# sched fiber switching needs the MASM assembler (MSVC x64). Other toolchains'
-# fcontext asm is vendored but not yet wired, so gate the module to MSVC for now.
-if(MSVC)
-  add_subdirectory(src/sched)  # sched-01: fcontext fiber switch
+# sched fiber switching needs platform fcontext asm. We have vendored x86_64 asm
+# for MS/PE (MASM) and SysV/ELF (GAS); wire those two. arm64 + macho asm are
+# vendored but not yet wired (no test machine). Gate the module on having a
+# usable asm flavor for this (platform, arch).
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  if(MSVC)
+    set(HYLE_HAS_FCONTEXT TRUE)
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(HYLE_HAS_FCONTEXT TRUE)  # GAS .S via the ASM language
+  endif()
+endif()
+if(HYLE_HAS_FCONTEXT)
+  add_subdirectory(src/sched)  # sched-01/02: fcontext fiber + run-queue/worker
 endif()
 
 if(HYLE_BUILD_TESTS)

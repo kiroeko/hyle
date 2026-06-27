@@ -7,12 +7,14 @@
 | **Tier** | 0 |
 | **LOC 估** | 2-3k |
 | **骨架?** | ✅ |
-| **状态** | ✅ 完成（MSVC 19.50 Debug+Release，fiber 4 case 全过；其余 5 平台 asm 已 vendor 未编）|
+| **状态** | ✅ 完成（MSVC 19.50 masm + **Linux/GCC14.2 GAS** 双汇编验证，fiber 12 case 全过；arm64/macOS 4 变体已 vendor 未编）|
 
 > **cloc 留档（自写 vs vendored 分账，诚实）**：HYLE **自写 226 行** = 51 头（fiber.h+fcontext.h）+ 165 cc（fiber.cc + fiber_test）+ 10 CMake；**vendored asm 737 行**（18 文件，boost.context，**非 HYLE 编写**，单独计）。
 > **自写远低于估 2-3k，非 stub**——骨架只证切换：fiber 封装 + 10 行 shim，重活在 vendored asm（不计自写）。run-queue/worker 循环/work-stealing/栈池/协程胶水全在 sched-02..08。fiber 测试**真证栈切换**（局部变量跨两次 yield 含嵌套帧存活、交替序精确、双 fiber 独立栈、yield 越界 abort），非寂寞版。
 > **实现注记**：① fcontext 选型见 sched-design §1（已锁）。② Win x64 masm 三例程经 ml64 编，`/DBOOST_CONTEXT_EXPORT=EXPORT`（仅 ASM_MASM 语言，genex 隔离）使 PROC public。③ `Fiber` 的 `HYLE_SCHED_API` 放方法非类（避 mem::Allocator 成员触发 C4251，同 Parker）。④ 栈对齐用 `HYLE_CACHE_LINE_SIZE` 单一来源、最小栈 `kMinStackSize`、默认 `kDefaultStackSize`（消魔数）。⑤ 构建坑修复：MSVC 全局/警告 flag 用 `$<COMPILE_LANGUAGE:C,CXX>` 隔离不喂给 ml64，且**每 flag 单独 quoted genex**（`;` 在 `$<>` 内会被 add_compile_options 提前 list-split）。
 > **诚实缺口**：仅 Win x64 真编测；其余 5 平台 asm 在树未编未验。Windows SEH 跨 yield 未测（没抛异常跨 fiber）。
+
+> **2026-06 更新（WSL 补验，第二平台）**：本机 WSL Ubuntu 24.04 + g++-14.2 已 wire 并真验 **Linux x86_64 SysV/ELF GAS** fcontext（`.S` 走 ASM 语言，`.globl` 导出符号、无需 BOOST_CONTEXT_EXPORT）——fiber 全 12 case 通过含嵌套 yield 栈保存铁证。**两套独立汇编（Win masm + Linux GAS）均验**，fcontext 选型与封装得到双平台印证。剩 arm64×2 + macOS×2 共 4 变体未编未验（无对应机）。SEH 跨 yield 仍未测。
 
 ## 前置依赖
 
