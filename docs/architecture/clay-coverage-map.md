@@ -15,7 +15,7 @@
 | `sys/cstring.h` + `.cc` | 1033+374 | container-06 | 📋 | string_ref(ptr+len+null 位)+零拷贝算法 |
 | `sys/string_buf.h` + `.cc` | 141+363 | container-06 | 📋 | 引用计数驻留池 |
 | `sys/hashmap.h` | 809 | container-04 | 📋 | flat open-addressing → 补 SwissTable SIMD 探测【大】 |
-| `sys/murmur_hash.h` | 294 | container-02 | 📋 | 编译期类型哈希留 murmur；运行期内容哈希 → XXH3(借) |
+| `sys/murmur_hash.h` | 294 | container-02 | 🔶 | **运行期哈希→XXH3 已接(container-02✅,借 xxHash 替 murmur)**;murmur 仅留编译期 type_name 哈希(→ container-06/type_name 时做) |
 | `sys/error.h` + `.cc` | 222+143 | **error-02** | 📋 | error_handler vtable(跨 DLL 错误上报)——error-01 只做进程内 Status，**这层未做 → error-02** |
 | `sys/os.h`+`os.linux.cc`+`os.shared.cc` | 795+830+210 | platform-02/03 | 📋 | 虚拟内存/dynlib/env/os_info |
 | `sys/path.h` + `.cc` | 202+1372 | platform-03 | 📋 | 路径操作(1372 行大头) |
