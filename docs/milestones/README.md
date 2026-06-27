@@ -34,7 +34,7 @@
 | mem-06 | P2 | mem | NUMA + 大页 + stats(修下溢) | mem-05 | 2-3k | | 占位 |
 | time-01 | P2 | time | 单调钟(CLOCK_MONOTONIC/QPC) | platform-01 | 1k | | 占位 |
 | time-02 | P2 | time | 分层时间轮 | time-01 | 1-1.5k | | 占位 |
-| container-01 | P3 | container | vendor 有界 ring(Vyukov/rigtorp,骨架用) | mem-01 | 1-2k | ✅ | 占位 |
+| container-01 | P3 | container | vendor 有界 ring(Vyukov/rigtorp,骨架用) | mem-01 | 1-2k | ✅ | ✅ 完成 |
 | container-02 | P3 | container | XXH3 接入(默认 hasher) | 00 | 1k | | 占位 |
 | container-03 | P3 | container | carray header-before-data + RAII 壳 | mem-02 | 1-2k | | 占位 |
 | container-04 | P3 | container | SwissTable 探测层重写(concept 模板)【大】 | container-02 | 3-4k | | 占位 |
