@@ -7,7 +7,7 @@
 1. **infra 本体零自有 GPU 计算**：`.cu/.cuh = 0`，唯一碰 CUDA 的是 `host_device.h`，纯宏门面（`__host__ __device__` 修饰符 + launch-bounds 宏 + `CUDA_KERNEL_ASSERT`，`host_device.h:5-75`），不含 kernel、不调 cuda runtime API。
 2. **ggml 是跨多后端的 GPU 计算抽象**，统一在 `ggml-backend.h`。iron 里那份（stable-diffusion.cpp 依赖）含 `ggml-cuda`/`ggml-hip`/`ggml-metal`/`ggml-sycl`/`ggml-vulkan`/`ggml-kompute`/`ggml-blas`/`ggml-cann`/`ggml-musa`/`ggml-rpc`/`ggml-amx`，已有 backend-registry 架构。
 3. **⚠️ 但 iron 里那份是旧快照（约 2024末–2025初）**：git 仅 `99d1082 update`，`ggml-aarch64.c` 仍在 src 顶层（新版已并入 `ggml-cpu`），**无 `ggml-webgpu`**。它是 sd.cpp 的冻结依赖、跟 sd.cpp 走，**不会为 HYLE 更新、会一直变老**。
-4. **上游 ggml 已显著演进**：新增 WebGPU 后端（浏览器/跨平台，JIT shader）、OpenCL 后端（Adreno 等移动 GPU）；**`ggml-backend.h` 接口本身在变**（Device Memory Aware API `ggml_backend_dev_memory_type`，声明统一内存 vs 独立显存）。
+4. **上游 ggml 已显著演进**：新增 WebGPU 后端（浏览器/跨平台，JIT shader）、OpenCL 后端（Adreno 等移动 GPU）。设备内存语义靠 `ggml_backend_dev_memory(dev,&free,&total)`（只给字节数）+ `enum ggml_backend_dev_type{CPU,GPU,IGPU,ACCEL,META}`（IGPU=集显走 host 内存=统一内存信号）+ `dev_caps{async,host_buffer,buffer_from_host_ptr,events}` + `ggml_backend_buffer_is_host()` 共同表达——**不是单一"统一 vs 独立"开关**（核对真实 `ggml-backend.h`）。
 5. **slate 自带 `vulkan` 库**（+ opengl + embree）——shader compute 底子现成。
 6. **2026 格局**：CUDA 仍主导但锁死 NVIDIA；Vulkan compute 在 llama.cpp 里与 CUDA/ROCm 正面竞争（FOSDEM 2026）；chipStar 把 CUDA/HIP 编译到 OpenCL/SPIR-V；SYCL 推统一后端。跨厂商 GPGPU 正从"只有 CUDA"转向"Vulkan compute / SYCL"。
 
@@ -37,6 +37,8 @@ compute/
 ```
 上层之上再挂一个 `ggml-bridge`：把 ggml-backend 当成"算子库"接进来，需要现成 AI 算子时走 ggml，需要自定义 kernel 时走 HYLE 原生 stream/kernel。
 
+> **校正（对照真实 ggml-backend.h）**：ggml-backend **已经有** device/stream/buffer/buffer_type/event/sched 全套抽象。所以 HYLE 真正"净新"的只有两处：**①任意 kernel 启动**（ggml 是固定算子集 + `graph_compute(cgraph)`，无 raw launch）；**②host 侧 completion→fiber 唤醒**（ggml 的 `synchronize` 是阻塞式，event 仅 GPU-GPU 跨后端同步，无"算完回调唤醒 host"）。device/buffer 枚举应**薄包 ggml-backend**，避免双层抽象税；只在 kernel-launch + fiber-completion 处真正自造。可直接照镜 ggml 的 `dev_caps{async,host_buffer,buffer_from_host_ptr,events}` 能力查询结构。
+
 ### 3. shader 计算是一等公民，不只绑 CUDA
 **只押 CUDA = 锁死 NVIDIA，违背 HYLE 通用定位。** Vulkan compute（SPIR-V）跨厂商——AMD/Intel/Apple(MoltenVK)/NVIDIA 全能跑，`ggml-kompute` 已用 `.comp` 示范。CUDA 与 Vulkan compute **平级**：CUDA 走成熟生态/性能上限，Vulkan compute 走"一份 SPIR-V 全平台"。
 
@@ -46,6 +48,8 @@ compute/
 - 和 io_uring/IOCP 的 CQ 一样，接进 fiber 调度器作为 completion source。
 - fiber `co_await gpu_kernel(...)`：提交到 GPU stream → 挂起 → GPU 算完经 event/fence 唤醒。与 `co_await async_read()` 完全同构。
 - **`sched/` 统一调度异构资源的真义**：CPU 线程、GPU stream、网络 IO 都是产生 completion 的可调度资源，一套挂起/唤醒机制。
+
+> **第二接缝（诚实承认，校正自"只通过 adapter / 不暴露 ggml 类型"）**：fiber 唤醒需要原生 handle（`cudaStreamAddCallback`/`cudaLaunchHostFunc`、Vulkan fence），而 ggml-backend 恰好把这些藏在不透明指针后、且只提供阻塞式 `synchronize`。所以 **GPU→fiber 唤醒这条路必然绕过 ggml-backend、直连原生**——它是 `ggml_bridge` adapter **管不住的第二接缝**。结论：算子/设备枚举走 adapter；completion 唤醒走原生 handle。这不矛盾，是两条接缝各司其职。
 
 ## 跨平台后端矩阵
 

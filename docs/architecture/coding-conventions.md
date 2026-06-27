@@ -88,21 +88,25 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 - **Registry + `HYLE_DECLARE/DEFINE` 宏对**：静态初始化期自注册、跨库 dllimport/export、优先级覆盖（插件体系刚需）。**改进**：内部 `std::unordered_map` 换 HYLE flat hashmap（与"回到底层"一致）；禁 `std::exit`，走错误返回。
 
-## 10. 能力 dispatch（编译期优先，运行期可选兜底）
+## 10. 能力 dispatch（编译期消变体，运行期最多冷跳一次）
 
 吃各家硬件独家加速（AMX/VNNI、Vulkan cooperative matrix、Blackwell FP4、DSA…）时，**绝不在热路径放运行时间接**。按"何时知道硬件"分层，**热路径任何一层都零间接**：
 
 | 层 | 何时 | 机制 | 热路径开销 | 地位 |
 |---|---|---|---|---|
-| **构建期** | 为这台/这批机器编 | 宏/feature flag + 每架构独立 TU + `-march=native` | **零**（错误路径不编出来）| **默认主路径**——大部分库（llama.cpp `GGML_NATIVE`/`-DGGML_CUDA`）就是「按架构重新编译」，运行期零 dispatch |
+| **构建期** | 为已知硬件编 | 宏/feature flag + 每架构独立 TU + `-march=native`（llama.cpp `GGML_NATIVE` 本地自编默认）| **零**（错误路径不编出来）| 一等公民（自编/已知硬件最优）|
 | **编译期** | 变体内部 | `if constexpr` + concepts + 模板单态化 | **零**（死分支消失、全内联）| 始终用 |
-| **运行期** | 一个二进制发到未知 CPU | 同源码按 ISA 编 N 份，启动探测一次，**冷入口跳一次**（IFUNC/全局指针）进对应变体 | **进去后零间接**（满速跑该变体，非每调用查表）| **可选兜底**——仅当必须「发一个二进制吃所有硬件」时才要 |
+| **运行期** | 一个二进制发到未知 CPU | 同源码按 ISA 编 N 份（**每变体独立 DLL**）+ 启动 CPUID **打分选最高分变体** + dlopen，**冷入口跳一次** | **进去后零间接**（满速跑该变体）| 一等公民（**分发二进制的常态**）|
 
-**层级关系（重要）**：**构建期特化是常态、是极致路径**；换架构就重新编译，天经地义，不是缺陷。**运行期 dispatch 不是必须**，只是发布单一二进制的便利，且只在冷入口跳一次。两种发布方式 HYLE 都支持，但**不要默认就上运行期 dispatch**。
+**层级关系（校正自真实 llama.cpp）**：两种**都是一等公民，按部署模型选，谁都不是"罕见兜底"**：
+- **自编 / 已知硬件**（你为自己机器 `-march=native`）→ 构建期，运行期零 dispatch、极致。
+- **分发单一二进制吃异构硬件** → 运行期多变体。**llama.cpp 官方分发恰是这条**（CI 用 `GGML_NATIVE=OFF` + `GGML_CPU_ALL_VARIANTS=ON` + `GGML_BACKEND_DL=ON`，把 ~13 个 x86 变体各编成独立 DLL，启动 `ggml_backend_score()` CPUID 打分选优）。**不是 IFUNC/全局指针，是"每变体独立 DLL + load 时 score"**——这个粒度反而正合下面"组合优于包含"。
 
-**组合优于包含（铁律）**：每个特化是独立组合单元（一个 TU / 一个 tag 实现 / 一个注册的后端），**不是**上帝类内部 `switch(caps)` 或 vtable 分支。验收标准：**加一个厂商特化 = 加一个组合单元、改 1 文件、0 调用点改动、0 热路径开销**。
+**探测器隔离（llama.cpp 实证的坑，必须照做）**：选变体用的 CPUID 探测代码**必须编在 baseline ISA、独立 TU、禁 LTO**。否则 LTO 把高级 arch 指令内联进探测函数，老 CPU 上"用来探测的代码"自己先 SIGILL。HYLE `simd/dispatch.h` 照此。
 
-**统一探测**：CPUID(AMX/VNNI/AVX512)、GPU caps(cooperative matrix/FP4)、加速器在场(DSA/QAT)——一处探测、各模块查。`simd/`(指令集)、`compute/`(设备/扩展)、`io/`(SPDK 等后端)、`mem/`(MemorySpace) 全走这同一套模型，只是粒度不同。
+**组合优于包含（铁律）**：每个特化是独立组合单元（一个 TU / 一个 tag 实现 / **一个注册的变体 DLL/后端**），**不是**上帝类内部 `switch(caps)` 或 vtable 分支。验收标准：**加一个厂商特化 = 加一个组合单元、改 1 文件、0 调用点改动、0 热路径开销**。
+
+**统一探测**：CPUID(AMX/VNNI/AVX512)、GPU caps(cooperative matrix/FP4)、加速器在场(DSA/QAT)——一处探测、各模块查。`simd/`(指令集)、`compute/`(设备/扩展)、`io/`(SPDK 等后端)、`mem/`(MemorySpace) 全走这同一套模型，只是粒度不同。可照镜 ggml 的 `dev_caps`/`get_proc_address`（取可选扩展函数、不破 vtable）。
 
 **HYLE 不写厂商 kernel**：框架负责「插得进、选得对、有地板兜底」；AMX GEMM/FP4 kernel 本身多数**借 ggml**（已有 ggml-amx/cuda/vulkan），少数 SIMD 级自写。kernel 不因框架变免费——这是诚实边界。
 

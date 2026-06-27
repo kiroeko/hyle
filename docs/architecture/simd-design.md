@@ -45,19 +45,21 @@ simd/
 └─ ops/           供 container/compute 用的 SIMD 原语（如 SwissTable 探测、reduce、memcpy）
 ```
 
-## dispatch：编译期优先，运行期只在冷入口跳一次（三层）
+## dispatch：编译期消变体，运行期最多冷跳一次（三层）
 
-clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只用 SSE2**，这是真缺口。但修正方向不是"运行时函数指针表每次查"（那是热路径间接、违背极致），而是**编译期优先、运行期兜底**的三层模型。**热路径任何一层都零间接。**
+clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只用 SSE2**，这是真缺口。修正方向不是"运行时函数指针表每次查"（那是热路径间接、违背极致），而是三层模型，**热路径任何一层都零间接**。
 
 | 层 | 时机 | C++ 机制 | 热路径开销 |
 |---|---|---|---|
-| **构建期（极致主路径）** | 为这台/这批机器编 | 宏/feature flag + 每 ISA 独立 TU + `-march=native`。**llama.cpp 范本**（`GGML_NATIVE`/`-DGGML_CUDA` 按硬件编一份）| **零**（错误路径根本不编出来）|
+| **构建期** | 为已知硬件编 | 宏/feature flag + 每 ISA 独立 TU + `-march=native`（llama.cpp `GGML_NATIVE` 本地自编默认）| **零**（错误路径根本不编出来）|
 | **编译期** | 变体内部 | `if constexpr` + concepts + 模板单态化 | **零**（死分支消失、全内联）|
-| **运行期（发布二进制兜底）** | 一个二进制发到未知 CPU | 同源码按 ISA 编 N 份，启动 CPUID 探测，**一次冷跳**进对应变体（IFUNC/全局指针）| **进去后零间接**（满速跑该变体，非每调用查表）|
+| **运行期** | 一个二进制发到未知 CPU | 同源码按 ISA 编 N 份（**每变体独立 DLL**），启动 CPUID **打分选最高分**变体 + dlopen，**一次冷跳**进去 | **进去后零间接**（满速跑该变体，非每调用查表）|
 
-**两者都要、非二选一**：为自己机器编 → 走构建期、零 dispatch（极致）；发库给"用户随便什么 CPU" → 留那一次冷跳。AI infra 两种发布方式都有，所以两层都备。这正是 Highway `HWY_DYNAMIC_DISPATCH`（编 N 份、一跳进对的）和 llama.cpp（构建期定死）各自的做法，HYLE 兼收。
+**两者都是一等公民、按部署选（校正自真实 llama.cpp）**：自编/已知硬件 → 构建期、零 dispatch（极致）；**分发单一二进制 → 运行期多变体，这是 llama.cpp 官方分发的常态**（`GGML_CPU_ALL_VARIANTS`+`GGML_BACKEND_DL`，~13 个 x86 变体各编独立 DLL，启动 `ggml_backend_score()` 打分选优）。**不是"运行期罕见/只是便利"，也不是 IFUNC，而是"每变体 DLL + load 时 score"**。Highway `HWY_DYNAMIC_DISPATCH` 同理。
 
-**组合优于包含**：每个 ISA kernel 是独立的组合单元（一个 TU / 一个 tag 实现），**不是**一个上帝类 `Vec` 内部 `switch(caps)`/vtable 分支。加一个厂商特化（AMX/VNNI）= 加一个组合单元、改 1 文件、0 调用点改动、0 热路径开销。
+**探测器隔离（llama.cpp 实证的坑）**：CPUID 探测代码必须编在 baseline ISA、独立 TU、**禁 LTO**——否则 LTO 把高级指令内联进探测函数，老 CPU 上探测自身先 SIGILL。`dispatch.h` 照此。
+
+**组合优于包含**：每个 ISA kernel 是独立组合单元（一个 TU / 一个 tag / 一个变体 DLL），**不是**上帝类 `Vec` 内部 `switch(caps)`/vtable 分支。加一个厂商特化（AMX/VNNI）= 加一个组合单元、改 1 文件、0 调用点、0 热路径开销。
 
 > 详见横切原则 [`coding-conventions.md` → 能力 dispatch](./coding-conventions.md)。`compute/` 的后端选择是同一模型，粒度从"指令集"换成"设备/扩展"。
 

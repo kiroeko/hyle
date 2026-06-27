@@ -28,12 +28,13 @@ clay 没死于技术差——内存/SIMD/线程池都是真的。它死于**没�
 
 ## 比 Seastar 好在哪
 
-Seastar 是参考标杆：shard-per-core + DPDK/SPDK 内核旁路 IO，io/sched 侧做得极好，**该学**。但——
+Seastar 是参考标杆：per-core + DPDK/SPDK 内核旁路 IO、completion 驱动事件循环，io/mem 侧做得极好，**该学**。但要分清学什么、不学什么（核对真实 seastar 源码）：
 
-- **Seastar 完全没有异构加速维度**（无 GPU、无 AMX/特化注册）。
-- **Seastar 是 2019 前的设计**，同样诞生在 AI-native 负载之前。
+- **Seastar 是 share-nothing + future/continuation + 线程钉核 + 无 work-stealing**。它的 "shard-per-core" 本质就是 share-nothing 调度——**和 HYLE 的 work-stealing 是对立哲学**。
+- **HYLE 选 work-stealing，不选 share-nothing**：北极星是"百万 IO-bound agent、唤醒突发且不可均分"，share-nothing 的负载不均在此是致命伤（热 shard 无法卸载、agent 无法干净分区）。
+- **Seastar 完全没有异构加速维度**（实测全库 0 个 `.cu`、无 GPU/AMX/特化注册），且是 2019 前设计、诞生在 AI-native 负载之前。
 
-"做得比它好" = **保留它的 shard-per-core 卓越 + 补上它缺的那一维：能力门控的异构加速 + GPU 统一进 completion 脊**。这正是 AI-native 负载需要、Seastar 时代不存在的维度。
+"做得比它好" = **借它的 per-core io/mem 局部性 + completion 驱动事件循环 + reactor_backend 后端抽象 + 跨核 free 的 xcpu_freelist；不借它的 share-nothing 调度（HYLE 用 work-stealing）；补上它缺的异构加速维度（能力门控 + GPU 统一进 completion 脊）**。后两者正是 AI-native 负载需要、Seastar 时代不存在的。
 
 ## 极致 = 吃尽各家硬件独家加速（HYLE 的硬要求）
 

@@ -78,6 +78,9 @@ mem/
 | **pinned（page-locked）** | `cudaHostAlloc` / `cudaHostRegister` | host↔device DMA 快得多；不锁页 GPU 拷贝走可分页内存慢 |
 | **cache-line 对齐 + 防伪共享** | `alignas(64)`，per-core 结构按 cache-line padding | 并发结构（run-queue、计数器）伪共享杀性能 |
 | **64B 对齐契约** | `allocate` 真正传递 alignment 到 backing | simd/ AVX512 load/store 要求；修 clay 的 alignment 丢弃 bug |
+| **跨核 free（xcpu_freelist）** | 跨核释放推到属主核的无锁 freelist，属主周期 drain（照镜 seastar `memory.cc` 的 `cross_cpu_free_item`）| **work-stealing 必需**：fiber 被偷到别的核运行后，其栈/buffer 在非分配核释放；per-core 分配器不能假设"同核 free"，否则数据竞争或泄漏 |
+
+> **为什么必须加 xcpu_freelist**：mem/ 的 per-core 分配器（arena/pool）天然假设"谁分配谁释放、同核"。但 sched/ 是 work-stealing——fiber 连同它的栈/buffer 会被偷到别的核、在那里结束并释放。seastar 是 share-nothing 无此问题；HYLE 选了 work-stealing，就必须补这块（seastar 已验证的方案）。这是 work-stealing 对 mem/ 的硬约束，不是可选优化。
 
 ## 与其他模块的耦合
 
