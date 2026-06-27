@@ -10,7 +10,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 ### 两条贯穿性工作纪律（用户定，统领全局）
 
-1. **失败就暴露，绝不 try-catch**（fail-fast）：bug 类失败响亮地崩（`HYLE_FATAL_ASSERT`/abort + 诊断），绝不 catch 吞掉；运营失败显式返 `Status`/`expected`；唯一的 catch 在 adapter 边界做"外来异常→Status"转换。**WHY**：bug 被 catch = 把崩溃推迟到更难查处；异常跨 C-ABI 是 UB；零异常 ABI 更稳、更小、无隐藏控制流。详见 [`lifecycle-design.md`](./lifecycle-design.md) §0。
+1. **自家 bug 绝不 catch（fail-fast）；throw 可用但谨慎、用数据说话**：bug 类失败响亮地崩（`HYLE_FATAL_ASSERT`/abort + 诊断），**绝不 catch 吞掉自己的 bug**；运营失败显式返 `Status`/`expected`。**throw 不是教条禁止**——默认 no-throw，要破例须满足"不伤热路径 + 为隔壁稳定 + catch 的是外来异常非自家 bug"且**拿测量数据/后果撑**。catch 只允许在 adapter 边界做"外来异常→Status"转换、绝不外泄。`-fno-exceptions` 旗标本身=实测决定（zero-cost 异常不伤热路径运行时，但旗标买二进制/优化，量了再定）。**WHY**：catch 自家 bug = 把崩溃推迟到更难查处；异常跨 C-ABI 是 UB。详见 [`lifecycle-design.md`](./lifecycle-design.md) §0。
 2. **没想透的硬问题标"待调研"，绝不用半成品方案带偏后续实现**：拿不准的设计点（如 GPU 在飞取消的更细粒度、-fno-exceptions 下借入 C++ 库的隔离 TU 机制），**只写"已知事实 + 参考实证 + 待调研标记"，不写处方**。**WHY**：过早锁死的半成品方案会污染后续实现、比留白更难纠偏；留到该模块开工前带专业调查+实验再定。**性能优先**——拿不准时倾向更激进的零开销选择，但标注为待验证而非既定。
 
 ---

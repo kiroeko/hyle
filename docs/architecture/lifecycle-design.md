@@ -15,23 +15,26 @@
 | **③ 取消** | 不是失败，是控制信号 | **`Status::Cancelled` 值，协作式传播**（见 §1）| agent 超时、父取消子 |
 | **④ 跨进程故障隔离** | 一个 agent 崩了不该拖垮别人 | **进程边界**（联邦模型），非进程内 catch（见 §4）| 失控 agent 段错误 |
 
-**为什么绝不 try-catch（clay 经验）**：
-- **bug 被 catch = 把崩溃推迟到更难查的地方**。use-after-free 当场 abort + 栈，胜过吞掉后在三个模块外随机炸。
+**核心纪律（铁，与编译开关无关）——bug 绝不 catch**：
+- **bug 被 catch = 把崩溃推迟到更难查的地方**。use-after-free 当场 abort + 栈，胜过吞掉后在三个模块外随机炸。**这条不动摇:自家 bug 一律 fail-fast,绝不 catch。**
 - **异常跨 C-ABI 边界是 UB**，HYLE 对外纯 C 头（charter §6），异常根本过不去。
-- **零异常让 ABI 更稳、二进制更小、无隐藏控制流**。
 
-**构建政策（`-fno-exceptions`，比 clay 更进一步——附 clay 真实做法对照）**：
+**throw 可以用,但谨慎——用数据和后果说话(非教条禁止)**：
+- **默认 no-throw**(bug→fail-fast,运营失败→Status)。要破例用 throw,**必须拿测量数据 + 后果分析撑**,不靠"感觉该用"。
+- **判据**:throw 只在 ①不影响热路径性能(zero-cost 异常不抛时运行时开销≈0,这点对热路径成立) ②或为隔壁稳定(隔离外来异常)且 ③catch 的是**外来异常不是自家 bug** ——三条都满足才考虑。
+- **`-fno-exceptions` 旗标本身 = 实测决定,不预先拍死**:happy-path 运行时它不买性能(zero-cost),但买**更小二进制 + 更强优化**(编译器可假设无 throw)。到底值多少,**量了再定**(套"硬问题用数据说话"纪律)。
 
-> **clay 实际怎么做（查证）**：clay **没有 `-fno-exceptions`**，异常默认开着；自有代码仅 6 处 `throw`（registry 冲突、string 转数字）；14 处 catch 集中在**边界**——`thread_pool.cc`/`worker_thread.cc` 在执行用户 task 周围 catch-all（防抛异常的 task 搞死 worker）、`graph_io.cc` 在 nlohmann JSON 解析周围 catch。即 clay 是"**异常开着但极少用 + 边界兜底**"的务实路线。
+**三层模型(纪律铁 / 旗标待测 / adapter 可开但封死)**：
 
-HYLE 走得更纯（性能优先 + 对外纯 C 头），且**比 clay 更可行**，因为 HYLE 自带 allocator（失败返 null 不 throw）+ 自带容器，绕开了 std 抛异常的主要来源：
+| 区 | 异常 | 说明 |
+|---|---|---|
+| **核心区**(热路径、近 C-ABI)| no-throw 纪律铁定;是否加 `-fno-exceptions` 旗标 **= 实测决定** | happy-path 零运行时成本;旗标买二进制/优化,量了再定 |
+| **adapter 区**(包会抛的 C++ 库,如 JSON)| **可开异常,但 catch 必转 Status、绝不外泄** | 隔壁稳定的正解;外来异常不得跨进核心区/C-ABI。优先用 nothrow API(simdjson 有)绕开 |
+| **任何区** | **自家 bug 绝不 catch** | fail-fast,违反=藏 bug |
 
-- **自有代码 `-fno-exceptions`：不抛、不接。** bug → fail-fast abort；运营失败 → Status。
-- **clay 的 worker 边界 catch，HYLE 不需要**：那是因为 clay 异常开着、用户 task 可能抛；HYLE 关了异常，自有代码不抛，"坏 fiber"要么返 Status 要么 fail-fast，**没东西可 catch**。
-- **唯一的 catch 在 adapter 边界**：借入的 C++ 库若必须用其抛异常的 API（如 JSON），优先用 nothrow API（simdjson 有）；实在要用抛的，**隔离在异常开启的 TU、在 adapter 处 catch 转 `Status`**——这不是"吞 bug"，是"**外来异常 → Status 的边界转换器**"，异常**不得跨出该 adapter**（更不得跨 C-ABI/进入 -fno-exceptions 代码）。
-- 借入的 C 库（ggml/mimalloc/sleef/boost.context）本就不 throw，无此问题。
+> **clay 实际怎么做（查证,作对照）**：clay **没有 `-fno-exceptions`**,异常默认开着;自有代码仅 6 处 `throw`（registry 冲突、string 转数字）;14 处 catch 集中在边界——worker 执行用户 task 周围 catch-all、`graph_io` 在 nlohmann JSON 解析周围 catch。即"异常开着但极少用 + 边界兜底"。HYLE 比 clay 更有条件收紧（自带 allocator 返 null 不 throw + 自带容器,绕开 std 抛异常主源），但**收到多紧由数据定**,不教条。
 
-**待调研**：`-fno-exceptions` 下个别借入 C++ 库的隔离 TU 机制（怎么分文件编译、怎么在边界转 Status）是落地细节，compute/serialize 开工时定，不在此锁死。
+**待调研**：①`-fno-exceptions` 给 HYLE 代码买到的二进制/优化收益（实测）②借入 C++ 库的隔离 TU 机制（分文件编译 + 边界转 Status）。compute/serialize 开工时定,不在此锁死。
 
 **关键澄清——fail-fast vs 故障隔离不矛盾**：
 - HYLE infra **自身**的 bug（①）→ fail-fast，abort 整进程。infra bug 不可恢复，崩了对。
