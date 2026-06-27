@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <new>
 
 #include "hyle/macros.h"
@@ -121,6 +122,81 @@ class MemoryArena {
   std::uint32_t count_;
   std::size_t alignment_;
   alignas(HYLE_CACHE_LINE_SIZE) std::atomic<std::uint64_t> head_;  // index|version
+};
+
+// Bump (region) allocator over ONE MemoryArena block (clay's Arena). Borrows a
+// block from the pool, hands out aligned bump slices from it (lock-free atomic
+// bump -- concurrent allocate() is safe), and returns the whole block to the
+// pool on destruction. There is NO per-allocation free: you release everything
+// at once by destroying the Arena (or reset()). Ideal for a transient phase
+// (one taskgraph pass, one request) backed by a reusable pool block.
+//
+// Difference vs StackAllocator: StackAllocator owns its own slab and is
+// single-threaded with mark/rewind; Arena borrows a pooled block and supports
+// concurrent bump. Both are "bump", different lifecycles.
+class Arena {
+ public:
+  explicit Arena(MemoryArena* pool)
+      : pool_(pool),
+        block_(static_cast<std::byte*>(pool->allocate())),
+        block_size_(pool->block_size()) {
+    HYLE_FATAL_ASSERT(block_ != nullptr);  // pool exhausted
+    offset_.store(0, std::memory_order_relaxed);
+  }
+
+  ~Arena() { pool_->deallocate(block_); }
+
+  HYLE_DISABLE_COPY_AND_MOVE(Arena);
+
+  // Bump `bytes` aligned to `alignment`. nullptr if the block is full.
+  // Lock-free: safe to call concurrently from multiple threads.
+  void* allocate(std::size_t bytes,
+                 std::size_t alignment = alignof(std::max_align_t)) noexcept {
+    auto base = reinterpret_cast<std::uintptr_t>(block_);
+    std::size_t old = offset_.load(std::memory_order_acquire);
+    for (;;) {
+      std::uintptr_t aligned = (base + old + alignment - 1) & ~(alignment - 1);
+      std::size_t start = static_cast<std::size_t>(aligned - base);
+      if (start > block_size_ || bytes > block_size_ - start) return nullptr;
+      std::size_t next = start + bytes;
+      if (offset_.compare_exchange_weak(old, next, std::memory_order_acq_rel,
+                                        std::memory_order_acquire)) {
+        return block_ + start;
+      }
+      // old reloaded; retry.
+    }
+  }
+
+  // Release everything (reuse the block from the start). HYLE addition over clay
+  // (clay relied solely on dtor); only safe when no allocations are live.
+  void reset() noexcept { offset_.store(0, std::memory_order_release); }
+
+  std::size_t block_size() const noexcept { return block_size_; }
+  std::size_t used() const noexcept {
+    return offset_.load(std::memory_order_relaxed);
+  }
+
+  // Adapt this Arena to the Allocator vtable: allocate -> bump, deallocate ->
+  // no-op (the arena frees in bulk on destruction). realloc bumps a fresh slice
+  // and copies (arenas can't grow in place).
+  Allocator as_allocator() noexcept { return Allocator(&arena_realloc, this); }
+
+ private:
+  static void* arena_realloc(void* state, void* ptr, std::size_t old_size,
+                             std::size_t new_size, std::size_t alignment) noexcept {
+    auto* self = static_cast<Arena*>(state);
+    if (new_size == 0) return nullptr;  // free is a no-op for an arena
+    void* p = self->allocate(new_size, alignment);
+    if (ptr != nullptr && p != nullptr && old_size != 0) {
+      std::memcpy(p, ptr, old_size < new_size ? old_size : new_size);
+    }
+    return p;
+  }
+
+  MemoryArena* pool_;
+  std::byte* block_;
+  std::size_t block_size_;
+  std::atomic<std::size_t> offset_{0};
 };
 
 }  // namespace hyle::mem

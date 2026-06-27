@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <atomic>
 #include <cstdint>
 #include <cstring>
 #include <vector>
@@ -98,4 +99,55 @@ TEST(Allocator, ManyDistinctNonOverlapping) {
     ps.push_back(p);
   }
   for (void* p : ps) a.deallocate(p, 64, 64);
+}
+
+// ---- typed convenience layer (mem-01b, clay allocator.h parity) -------------
+namespace {
+std::atomic<int> g_typed_live{0};
+struct TCounted {
+  int v;
+  explicit TCounted(int x) : v(x) { g_typed_live.fetch_add(1); }
+  ~TCounted() { g_typed_live.fetch_sub(1); }
+};
+}  // namespace
+
+TEST(AllocatorTyped, AllocateNAlignedAndWritable) {
+  Allocator a = system_allocator();
+  int* p = a.allocate_n<int>(5);
+  ASSERT_NE(p, nullptr);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(p) % alignof(int), 0u);
+  for (int i = 0; i < 5; ++i) p[i] = i;  // writable
+  EXPECT_EQ(p[4], 4);
+  a.release(p, 5);
+}
+
+TEST(AllocatorTyped, CallocateZeroes) {
+  Allocator a = system_allocator();
+  int* p = a.callocate<int>(8);
+  ASSERT_NE(p, nullptr);
+  for (int i = 0; i < 8; ++i) EXPECT_EQ(p[i], 0);
+  a.release(p, 8);
+}
+
+TEST(AllocatorTyped, ConstructRunsCtorDestroyRunsDtor) {
+  g_typed_live.store(0);
+  Allocator a = system_allocator();
+  TCounted* c = a.construct<TCounted>(7);
+  ASSERT_NE(c, nullptr);
+  EXPECT_EQ(c->v, 7);
+  EXPECT_EQ(g_typed_live.load(), 1);
+  a.destroy(c);  // ~T + free through THIS allocator (not global delete)
+  EXPECT_EQ(g_typed_live.load(), 0);
+}
+
+TEST(AllocatorTyped, MakeUniqueAutoDestroys) {
+  g_typed_live.store(0);
+  Allocator a = system_allocator();
+  {
+    auto u = a.make_unique<TCounted>(99);
+    ASSERT_NE(u.get(), nullptr);
+    EXPECT_EQ(u->v, 99);
+    EXPECT_EQ(g_typed_live.load(), 1);
+  }  // unique_ptr deleter destroys through the allocator
+  EXPECT_EQ(g_typed_live.load(), 0);
 }

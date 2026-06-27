@@ -136,3 +136,79 @@ TEST(MemoryArena, ConcurrentAllocFreeNoOverlap) {
   EXPECT_EQ(pool.allocate(), nullptr);
   for (void* p : all) pool.deallocate(p);
 }
+
+// ---- Arena (bump region over one pool block) --------------------------------
+using hyle::mem::Arena;
+
+TEST(Arena, BumpAlignmentAndFull) {
+  MemoryArena pool(system_allocator(), 256, 4);  // 256-byte blocks
+  Arena a(&pool);
+  EXPECT_EQ(a.block_size(), 256u);
+  void* p = a.allocate(16, 16);
+  void* q = a.allocate(16, 16);
+  ASSERT_NE(p, nullptr);
+  ASSERT_NE(q, nullptr);
+  EXPECT_LT(p, q);  // bumps upward
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(p) % 16, 0u);
+  EXPECT_EQ(a.allocate(1000, 1), nullptr);  // won't fit the 256 block
+}
+
+TEST(Arena, ResetReuses) {
+  MemoryArena pool(system_allocator(), 128, 2);
+  Arena a(&pool);
+  void* p = a.allocate(64);
+  ASSERT_NE(p, nullptr);
+  a.reset();
+  void* q = a.allocate(64);
+  EXPECT_EQ(p, q);  // same region after reset
+}
+
+TEST(Arena, ReturnsBlockToPoolOnDestruction) {
+  MemoryArena pool(system_allocator(), 64, 1);  // single block
+  { Arena a(&pool); EXPECT_NE(a.allocate(8), nullptr); }
+  // block returned -> a second Arena can take it
+  { Arena b(&pool); EXPECT_NE(b.allocate(8), nullptr); }
+}
+
+TEST(Arena, AsAllocatorBumpsDeallocNoop) {
+  MemoryArena pool(system_allocator(), 256, 1);
+  Arena a(&pool);
+  auto alloc = a.as_allocator();
+  void* p = alloc.allocate(32, 16);
+  ASSERT_NE(p, nullptr);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(p) % 16, 0u);
+  alloc.deallocate(p, 32);  // no-op for an arena; must not crash or reuse
+  void* q = alloc.allocate(32, 16);
+  EXPECT_NE(p, q);  // deallocate did NOT free -> q is a fresh bump
+}
+
+TEST(Arena, ConcurrentBumpNoOverlap) {
+  constexpr int kThreads = 8;
+  constexpr int kPerThread = 200;
+  constexpr std::size_t kBytes = 16;
+  MemoryArena pool(system_allocator(), kThreads * kPerThread * 64, 1);
+  Arena a(&pool);
+  struct Args { Arena* a; std::vector<void*> got; };
+  std::vector<Args> args(kThreads);
+  std::vector<hyle::platform::Thread> ts;
+  for (int t = 0; t < kThreads; ++t) {
+    args[t].a = &a;
+    auto r = hyle::platform::Thread::spawn(
+        [](void* p) {
+          auto* x = static_cast<Args*>(p);
+          for (int i = 0; i < kPerThread; ++i) {
+            void* q = x->a->allocate(kBytes, 16);
+            if (q) x->got.push_back(q);
+          }
+        },
+        &args[t]);
+    ASSERT_TRUE(r.has_value());
+    ts.push_back(std::move(*r));
+  }
+  for (auto& th : ts) th.join();
+  // All returned pointers must be distinct (no two bumps overlapped).
+  std::unordered_set<void*> uniq;
+  std::size_t total = 0;
+  for (auto& x : args) for (void* q : x.got) { uniq.insert(q); ++total; }
+  EXPECT_EQ(uniq.size(), total) << "overlapping bump allocations";
+}
