@@ -7,7 +7,7 @@
 | **Tier** | 0 |
 | **LOC 估** | 1-2k |
 | **骨架?** | ✅ |
-| **状态** | ✅ 完成（MSVC 19.50 Debug+Release，9 case 全过；POSIX 路径已写未验证）|
+| **状态** | ✅ 完成（MSVC 19.50 Debug+Release，9 case 全过；**Linux/GCC14.2 posix_memalign 路径也已真验**）|
 
 > **cloc 留档（`cloc include/hyle/mem src/mem tests/mem`）**：**182 行** = 41 头 + 140 cc（system.cc 裸 backing + allocator_test）+ 1 CMake。
 > **远低于估 1-2k，非 stub**——骨架版只做"vtable + 修对齐 + 裸 backing"三件事，故意精瘦：mem/ 的重头（arena/pool/stack/MemorySpace/NUMA/大页/fiber栈/xcpu_freelist/stats）全在 **mem-02..06**。本步 backing ~70 行、句柄 inline ~40 行、测试 ~140 行。对齐修复是**真生效**（16/32/64/128/256/4096 六档 `(uintptr_t)p%align==0` 全过），realloc 保数据已验。

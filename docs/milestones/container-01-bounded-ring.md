@@ -7,11 +7,13 @@
 | **Tier** | 0 |
 | **LOC 估** | 1-2k |
 | **骨架?** | ✅ |
-| **状态** | ✅ 完成（MSVC 19.50 Debug+Release，6 case 全过含 40 万项 MPMC 压力；TSan 留 Linux CI）|
+| **状态** | ✅ 完成（MSVC 19.50 Debug+Release，6 case 全过含 40 万项 MPMC 压力；**Linux/GCC14.2 + TSan 已验，零 data race**）|
 
 > **cloc 留档（`cloc include/hyle/container src/container tests/container`）**：**220 行** = 93 头（bounded_queue.h）+ 126 测试 + 1 CMake。
 > **低于估 1-2k，非 stub**——骨架 container-01 只做一个有界 MPMC ring（忠实移植 Vyukov，~95 行算法）；container 重头 hashmap/SwissTable/carray/string/SmallVector/intrusive 全在 container-02..06。MPMC 压力 4 生产者×4 消费者×10 万项总数守恒已验。
 > **实现注记**：① queue 内存序严格对齐 canonical Vyukov（per-slot seq、`seq-pos`/`seq-(pos+1)` 判满空、acquire/release/relaxed、pop 后 `seq=pos+mask+1`），非自创。② 控制变量 `enqueue_pos_`/`dequeue_pos_` 各 `alignas(64)` 分独立 cache line 防伪共享——触发 MSVC C4324（"alignas 导致填充"），已在 HyleWarnings 全局 `/wd4324` 抑制（cache-line 对齐是全库设计，C4324 是预期非 bug，abseil/folly 同样抑制）。③ 构造期 OOM 走 `HYLE_FATAL_ASSERT`（非 Status 降级）——run-queue 是启动期一次性构造，分配不到=调度器起不来，startup 不变量 fail-fast 合理（区别于 error-01 的运行期消息 OOM 降级）。④ TSan 是 lock-free 真闸门但 Windows 跑不了，留 Linux CI——诚实缺口。
+
+> **2026-06 更新（WSL 补验，缺口已闭）**：本机 WSL Ubuntu 24.04 + g++-14.2 跑 **TSan** —— MpmcStressConservation（4 生产者×4 消费者×10 万项）+ 全 6 case **零 data race**（`setarch -R` 绕过新内核 ASLR）。④ 的"TSan 缺口"已实测闭合：Vyukov 移植的内存序在真 TSan 下成立。
 
 ## 前置依赖
 

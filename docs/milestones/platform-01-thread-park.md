@@ -7,7 +7,7 @@
 | **Tier** | 2 |
 | **LOC 估** | 2-3k |
 | **骨架?** | ✅ |
-| **状态** | ✅ 完成（MSVC 19.50 Debug+Release，11 case 全过；POSIX 路径已写未本机验证）|
+| **状态** | ✅ 完成（MSVC 19.50 Debug+Release，11 case 全过；**Linux/GCC14.2 也已真验 + TSan 零 data race**；macOS 仍未验） |
 
 > **cloc 留档（`cloc include/hyle/platform src/platform tests/platform`）**：**527 行** = 71 头 + 452 cc（wait.cc 三后端+Parker、thread.cc 双平台、wait_test/thread_test）+ 4 CMake。
 > **远低于估 2-3k，但非 stub**——解释：thread+park 这个"原语层"本就薄：`wait_on_address` 三后端各 ~10 行 syscall 包装、Parker 是 ~30 行成熟三态机（移植 Rust std）、Thread 薄包原生 spawn/join。原估 2-3k 把分量算高了；platform 的重头在 **platform-02（virtual_memory+dynlib）/ platform-03（path+fs+env）**，是另两个里程碑。POSIX 是**完整真实现**（仅未在本 Windows 机验证），macOS<14.4 是**显式 待调研**缺口（非静默 stub）。11 测试含 2000 轮单 worker + 4×500 多 worker 无丢唤醒压力。
