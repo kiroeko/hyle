@@ -9,10 +9,11 @@
 | **骨架?** | ✅ |
 | **状态** | ✅ 完成（commit 8f3fb40，MSVC 19.50 Debug+Release 双配置，22 case 全过）|
 
-> **cloc 留档（完成时实测，`cloc include/hyle/error src/error tests/error`）**：**340 行** = 122 头（status.h+result.h）+ 217 cc（status.cc ~30 生产 + status_test.cc ~190 测试）+ 1 CMake。低于估 1-2k 属设计使然（靠 std::expected，密度在 X-macro 与 22 测试里），**非 stub**。
+> **cloc 留档（`cloc include/hyle/error src/error tests/error`）**：**456 行** = 163 头（status.h+result.h）+ 292 cc（status.cc 生产 + status_test.cc 测试）+ 1 CMake。低于估 1-2k 属设计使然（靠 std::expected，密度在 X-macro 与 23 测试里），**非 stub**。
 
-> **实现注记（与计划的偏差）**：Status 存储用 `StatusCode + shared_ptr<const string>`，**未**用 clay 的指针标签内联（8 字节 `uintptr_t` 低位打标）。理由：shared_ptr 方案保持可拷贝（refcount，省深拷贝）且让 `expected<T,Status>` 用着顺，OK 态/无消息错误仍零分配；指针标签虽省到 8 字节但牺牲 trivially-copyable。若后续 profiling 显示 Status 体积是热点，再回头换指针标签。
-> 传播宏用 `detail::FailReturn`（双向隐式转换 `Status` / `Result<T>`）+ `__COUNTER__` 唯一临时变量，规避 MSVC 无 GNU 语句表达式。`HYLE_FATAL_ASSERT` 早在 macros.h（00 步），本步只补软断言 `HYLE_ASSERT`。
+> **实现注记**：Status 用 **clay 式指针标签**——公开头只有一个 `uintptr_t rep_`（8 字节，`static_assert` 钉死）：`0`=OK、`(code<<2)|1`=内联码无消息（零分配）、低 2 位清零的指针=堆 `StatusRep`（仅有消息时 malloc 一次，header-before-data 内联消息字节 + 手写原子 refcount）。**公开表面零 std 拥有型**（满足 coding-conventions 行 22 + clay 自有字符串先例；起因：用户指出高性能库不该泄 std::string）。
+> `ToString` 改 **buffer-fill**（`size_t ToString(char*,size_t)`，snprintf 式返回需长），不返回 `std::string`——彻底移除公开头的 std 拥有型；要碎片就用 `status_code_name()`/`message()`（都是 `string_view`）自组。
+> 传播宏用 `detail::FailReturn`（双向隐式转换 `Status`/`Result<T>`）+ `__COUNTER__` 唯一临时变量，规避 MSVC 无 GNU 语句表达式。`HYLE_FATAL_ASSERT` 早在 macros.h（00 步），本步补软断言 `HYLE_ASSERT`。
 
 ## 前置依赖
 

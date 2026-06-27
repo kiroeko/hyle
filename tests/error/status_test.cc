@@ -13,6 +13,15 @@ using hyle::Status;
 using hyle::StatusCode;
 using hyle::status_code_name;
 
+// ToString now fills a caller buffer (no std::string across the seam). Tests may
+// use std::string freely, so wrap it for convenient comparison.
+static std::string to_str(const Status& s) {
+  char buf[128];
+  std::size_t need = s.ToString(buf, sizeof(buf));
+  EXPECT_LT(need, sizeof(buf));  // these fixtures are short; no truncation
+  return std::string(buf);
+}
+
 // ---- Status basics ----------------------------------------------------------
 
 TEST(Status, DefaultIsOk) {
@@ -21,7 +30,7 @@ TEST(Status, DefaultIsOk) {
   EXPECT_TRUE(s.IsOk());
   EXPECT_EQ(s.code(), StatusCode::Ok);
   EXPECT_FALSE(s.has_message());
-  EXPECT_EQ(s.ToString(), "OK");
+  EXPECT_EQ(to_str(s), "OK");
 }
 
 TEST(Status, FactoryWithoutMessageDoesNotAllocate) {
@@ -31,7 +40,7 @@ TEST(Status, FactoryWithoutMessageDoesNotAllocate) {
   EXPECT_EQ(s.code(), StatusCode::NotFound);
   EXPECT_FALSE(s.has_message());  // message-less error -> zero alloc
   EXPECT_EQ(s.message(), "");
-  EXPECT_EQ(s.ToString(), "NotFound");
+  EXPECT_EQ(to_str(s), "NotFound");
 }
 
 TEST(Status, FactoryWithMessage) {
@@ -39,14 +48,14 @@ TEST(Status, FactoryWithMessage) {
   EXPECT_TRUE(s.IsInternal());
   EXPECT_TRUE(s.has_message());
   EXPECT_EQ(s.message(), "boom");
-  EXPECT_EQ(s.ToString(), "Internal: boom");
+  EXPECT_EQ(to_str(s), "Internal: boom");
 }
 
 TEST(Status, OkFactoryIgnoresMessage) {
   Status s = Status::Ok("ignored");
   EXPECT_TRUE(s.ok());
   EXPECT_FALSE(s.has_message());
-  EXPECT_EQ(s.ToString(), "OK");
+  EXPECT_EQ(to_str(s), "OK");
 }
 
 TEST(Status, CodeCtorHasNoMessage) {
@@ -103,8 +112,19 @@ TEST(Status, EveryFactoryAndPredicateAgree) {
 // ---- Status is a small, cheap carrier ---------------------------------------
 
 TEST(Status, IsSmallObject) {
-  // code_ (u16) + shared_ptr. Keep it pointer-ish small; guard against bloat.
-  EXPECT_LE(sizeof(Status), 2 * sizeof(void*) + sizeof(void*));
+  // Tagged-pointer rep: exactly one word. This is the whole point of the
+  // 8-byte design -- it is the error slot in every Result<T>.
+  EXPECT_EQ(sizeof(Status), sizeof(void*));
+}
+
+TEST(Status, ToStringTruncates) {
+  Status s = Status::Internal("boom");  // "Internal: boom" = 14 chars
+  char small[5];
+  std::size_t need = s.ToString(small, sizeof(small));
+  EXPECT_EQ(need, 14u);                       // full length reported
+  EXPECT_STREQ(small, "Inte");                // 4 bytes + NUL, truncated
+  // zero-capacity must not write and must still report the needed length.
+  EXPECT_EQ(s.ToString(nullptr, 0), 14u);
 }
 
 // ---- Result<T> --------------------------------------------------------------
