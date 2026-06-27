@@ -24,8 +24,10 @@ hyle_add_module(sched
   SOURCES
     fiber.cc
     worker.cc
+    scheduler.cc
     ${_fctx_asm}
-  PUBLIC_DEPS hyle_mem)
+  DEPS hyle_platform
+  PUBLIC_DEPS hyle_mem hyle_container)
 
 if(MSVC)
   # The MASM files tag their PROCs with BOOST_CONTEXT_EXPORT (undefined in-file).
