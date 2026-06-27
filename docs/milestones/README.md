@@ -52,6 +52,8 @@
 | sched-04 | P4 | sched | Waker completion 脊 + time 接入(deadline) | sched-02,time-02 | 1-2k | | 占位 |
 | sched-05 | P4 | sched | fiber-aware CV + mutex/waitgroup/channel | sched-04 | 2-3k | | 占位 |
 | sched-06 | P4 | sched | 协程胶水(co_await→fiber 让出) | sched-04 | 1-2k | | 占位 |
+| sched-07 | P4 | sched | 取消：CancelToken 树 + await 取消点 + 结构化并发 | sched-04,sched-06 | 2-3k | | 占位 |
+| sched-08 | P4 | sched | runtime 优雅关闭(两阶段 drain + 逆序清理) | sched-03 | 1-2k | | 占位 |
 | io-01 | P5 | io | proactor 抽象(Waker 接 sched) | sched-04 | 1-2k | | 占位 |
 | io-02 | P5 | io | io_uring 后端(借 liburing) | io-01 | 2-3k | | 占位 |
 | io-03 | P5 | io | epoll + kqueue + IOCP 后端 | io-01 | 3-4k | | 占位 |
