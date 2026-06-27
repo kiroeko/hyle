@@ -6,6 +6,10 @@
 // Core macro skeleton. Every attribute macro has an #else fallback so unknown
 // compilers degrade to a safe empty/identity definition (never fail to compile).
 
+// ---- token paste (two-level expansion so __COUNTER__/__LINE__ expand first) --
+#define HYLE_CONCAT_INNER(a, b) a##b
+#define HYLE_CONCAT(a, b) HYLE_CONCAT_INNER(a, b)
+
 // ---- force inline ----
 #if defined(_MSC_VER)
 #  define HYLE_FORCE_INLINE __forceinline

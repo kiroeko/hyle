@@ -10,3 +10,4 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 hyle_add_test(core SOURCES core/scaffolding_test.cc)
+hyle_add_test(error SOURCES error/status_test.cc)
