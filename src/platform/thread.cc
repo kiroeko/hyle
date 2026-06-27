@@ -14,10 +14,17 @@ namespace {
 // name copy (string_view is not NUL-guaranteed -- we honor the C-API boundary
 // rule by copying) and optional affinity. Applied from inside the new thread so
 // one code path works across OSes (Linux/mac name+affinity APIs act on self).
+//
+// Thread-name buffer capacity (incl. NUL). 64 comfortably covers every OS limit
+// (Linux pthread_setname_np caps at 16; macOS/Windows are looser); used as the
+// SINGLE source for both the byte buffer and the wide-conversion count so they
+// can never drift apart into an overflow.
+inline constexpr int kThreadNameCap = 64;
+
 struct ThreadStart {
   void (*entry)(void*);
   void* ctx;
-  char name[64];
+  char name[kThreadNameCap];
   bool has_name;
   bool has_affinity;
   unsigned cpu;
@@ -53,8 +60,9 @@ namespace {
 DWORD WINAPI thread_trampoline(LPVOID arg) noexcept {
   auto* s = static_cast<ThreadStart*>(arg);
   if (s->has_name) {
-    wchar_t wname[64];
-    int wn = ::MultiByteToWideChar(CP_UTF8, 0, s->name, -1, wname, 64);
+    wchar_t wname[kThreadNameCap];
+    int wn = ::MultiByteToWideChar(CP_UTF8, 0, s->name, -1, wname,
+                                   kThreadNameCap);
     if (wn > 0) ::SetThreadDescription(::GetCurrentThread(), wname);
   }
   if (s->has_affinity) {
@@ -102,12 +110,12 @@ namespace this_thread {
 std::uint64_t get_id() noexcept { return ::GetCurrentThreadId(); }
 void yield() noexcept { ::SwitchToThread(); }
 void set_name(std::string_view name) noexcept {
-  char buf[64];
+  char buf[kThreadNameCap];
   std::size_t n = name.size() < sizeof(buf) - 1 ? name.size() : sizeof(buf) - 1;
   std::memcpy(buf, name.data(), n);
   buf[n] = '\0';
-  wchar_t wname[64];
-  int wn = ::MultiByteToWideChar(CP_UTF8, 0, buf, -1, wname, 64);
+  wchar_t wname[kThreadNameCap];
+  int wn = ::MultiByteToWideChar(CP_UTF8, 0, buf, -1, wname, kThreadNameCap);
   if (wn > 0) ::SetThreadDescription(::GetCurrentThread(), wname);
 }
 }  // namespace this_thread
@@ -190,7 +198,7 @@ std::uint64_t get_id() noexcept {
 }
 void yield() noexcept { ::sched_yield(); }
 void set_name(std::string_view name) noexcept {
-  char buf[64];
+  char buf[kThreadNameCap];
   std::size_t n = name.size() < sizeof(buf) - 1 ? name.size() : sizeof(buf) - 1;
   std::memcpy(buf, name.data(), n);
   buf[n] = '\0';

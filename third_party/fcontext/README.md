@@ -1,0 +1,41 @@
+# Vendored: boost.context fcontext assembly
+
+Hand-context-switch primitives (`jump_fcontext` / `make_fcontext` /
+`ontop_fcontext`) taken from **boost.context** (author Oliver Kowalke),
+distributed under the **Boost Software License 1.0** (see `LICENSE_1_0.txt`).
+
+## What and why
+
+HYLE's scheduler needs user-space stackful context switching. Per
+`docs/architecture/sched-design.md` §1, fcontext is the chosen primitive: it
+saves only callee-saved registers per the calling convention, touches no signal
+mask, and makes no syscall (unlike ucontext). We take **only the three assembly
+routines** -- NOT boost.fiber (which carries its own scheduler) and NOT
+boost.context's C++ wrappers. The HYLE-side declarations live in
+`src/sched/fcontext.h` (a ~10-line `extern "C"` shim), so there is zero
+dependency on boost headers or build system.
+
+## Source
+
+- Upstream: https://github.com/boostorg/context  (`libs/context/src/asm/`)
+- Pinned commit: `d2142b69252150dafb5f6569b7eb9a42312a92a3`
+- Files are copied **verbatim**, not modified.
+
+## Contents (6 platform/arch x 3 routines = 18 files)
+
+| platform / arch | assembler | files |
+|---|---|---|
+| Linux x86_64    | GAS  | `*_x86_64_sysv_elf_gas.S` |
+| Linux arm64     | GAS  | `*_arm64_aapcs_elf_gas.S` |
+| macOS x86_64    | GAS  | `*_x86_64_sysv_macho_gas.S` |
+| macOS arm64     | GAS  | `*_arm64_aapcs_macho_gas.S` |
+| Windows x86_64  | MASM | `*_x86_64_ms_pe_masm.asm` |
+| Windows arm64   | armasm | `*_arm64_aapcs_pe_armasm.asm` |
+
+## Build note
+
+The MASM files reference `BOOST_CONTEXT_EXPORT` (undefined in-file). It is a PROC
+visibility macro; we pass `/DBOOST_CONTEXT_EXPORT=EXPORT` to ml64 so the routines
+are PUBLIC (linkable from `fiber.cc`). Only the Windows x86_64 masm trio is built
+and tested on the current toolchain; the other five platforms are vendored for
+when CI / other machines come online (not yet verified).

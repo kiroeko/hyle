@@ -64,12 +64,20 @@ include(HyleModule)
 
 # ---- global correctness flags (apply to ALL targets incl. fetched deps) ------
 # These change language semantics, not just diagnostics, so they must be uniform
-# across the whole build (gtest included) to avoid ODR/ABI skew.
+# across the whole build (gtest included) to avoid ODR/ABI skew. Scoped to C/CXX
+# via a generator expression so they are NOT passed to the assembler (ml64 would
+# choke on /Zc:__cplusplus etc. when we compile fcontext .asm).
 if(MSVC)
   # /Zc:__cplusplus  : report the true __cplusplus value (else MSVC pins 199711L
   #                    and every C++23 feature-test macro misfires).
   # /utf-8           : treat source AND execution charset as UTF-8 (kills C4819).
-  add_compile_options(/Zc:__cplusplus /utf-8)
+  # One quoted genex PER flag: a ';' inside $<...> is list-split by
+  # add_compile_options before evaluation, which would mangle the flags.
+  add_compile_options(
+    "$<$<COMPILE_LANGUAGE:C,CXX>:/Zc:__cplusplus>"
+    "$<$<COMPILE_LANGUAGE:C,CXX>:/utf-8>")
+  # fcontext fiber switching needs an assembler. On MSVC x64 that is MASM (ml64).
+  enable_language(ASM_MASM)
 endif()
 
 # ---- modules (added per dependency layer, roadmap P-1..P6) ------------------
@@ -78,6 +86,12 @@ add_subdirectory(src/error)  # error-01: Status + Result + propagation macros
 add_subdirectory(src/platform)  # platform-01: thread + park (wait_on_address)
 add_subdirectory(src/mem)    # mem-01: Allocator vtable + alignment fix
 add_subdirectory(src/container)  # container-01: bounded MPMC ring (Vyukov)
+
+# sched fiber switching needs the MASM assembler (MSVC x64). Other toolchains'
+# fcontext asm is vendored but not yet wired, so gate the module to MSVC for now.
+if(MSVC)
+  add_subdirectory(src/sched)  # sched-01: fcontext fiber switch
+endif()
 
 if(HYLE_BUILD_TESTS)
   enable_testing()
