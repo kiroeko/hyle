@@ -7,7 +7,9 @@
 | **Tier** | — |
 | **LOC 估** | 1-2k（多为 CMake/CI 配置）|
 | **骨架?** | ✅（walking skeleton 第 0 步）|
-| **状态** | 未开始 |
+| **状态** | ✅ 完成（commit 3c8150d，后续 da95bfb 补构建配置）|
+
+> **cloc 留档（完成时实测，`cloc --vcs=git`）**：本步贡献约 **294 行**（非文档）= core/macros/visibility/platform 头 + version.h/cc + scaffolding_test + 大部分 CMake/cmake 模块。CMake 占比高属正常（脚手架以构建配置为主）。无 stub。
 
 ## 前置依赖
 
