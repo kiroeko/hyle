@@ -1,4 +1,4 @@
-# 构建产物
+# build artifacts
 /build/
 /out/
 /cmake-build-*/
@@ -19,16 +19,19 @@ CMakeFiles/
 cmake_install.cmake
 compile_commands.json
 
-# 依赖/第三方拉取
+# fetched deps / vendored
 /_deps/
 /vendor/*/
 
-# IDE / 编辑器
+# local build helper (machine-specific hardcoded paths)
+_build.bat
+
+# IDE / editors
 .vscode/
 .idea/
 *.user
 .cache/
 
-# 系统
+# OS
 .DS_Store
 Thumbs.db

@@ -27,6 +27,7 @@
 | [scope 定义](./docs/architecture/hyle-scope.md) | 范围边界、7 模块划分、体量估算 |
 | [io 网络设计](./docs/architecture/io-design.md) | proactor 模型 + 四后端 + 调度绑定 |
 | [sched 调度器](./docs/architecture/sched-design.md) | fcontext 切换 + 无锁 work-stealing + Waker completion 脊 + 协程/fiber 统一 |
+| [lifecycle 失败边界](./docs/architecture/lifecycle-design.md) | fail-fast 绝不 try-catch + 取消/背压/关闭/隔离 + 跨 C-ABI 错误 |
 | [compute 异构计算](./docs/architecture/compute-design.md) | device/stream/kernel 抽象 + ggml 解耦 + shader 一等公民 |
 | [simd 向量化](./docs/architecture/simd-design.md) | 精简可移植 vector + 运行时 dispatch + dtype(fp16/bf16) + 借 sleef 数学核 |
 | [mem 内存](./docs/architecture/mem-design.md) | 通用 malloc 借 mimalloc + 自造专用分配器 + 修 5 bug + NUMA/大页/64B 对齐 |
