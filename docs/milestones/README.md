@@ -46,7 +46,8 @@
 | container-04 | P3 | container | SwissTable 探测层重写(concept 模板)【大】 | container-02 | 3-4k | — | 占位 |
 | container-05 | P3 | container | SmallVector + intrusive list/slist | mem-02 | 1-2k | — | 占位 |
 | container-06 | P3 | container | string_ref + string_buf 驻留池 | container-02 | 1-2k | — | 占位 |
-| container-07 | P3 | container | 有界 Chase-Lev work-stealing deque(owner LIFO 免同步/thief CAS 偷) | mem-01 | 1-2k | 249 | ✅ 完成(sched-03 前置) |
+| container-07 | P3 | container | 有界 Chase-Lev work-stealing deque(owner LIFO/DFS,供 graph fork-join) | mem-01 | 1-2k | 249 | ✅ 完成(用途:graph-01,非调度器本地队列) |
+| container-08 | P3 | container | 有界 work-stealing FIFO ring(tokio queue.rs:owner push免同步/pop+thief CAS packed-head/偷半) | mem-01 | 1-2k | 279 | ✅ 完成(sched-03 真前置) |
 | simd-01 | P3 | simd | vec D-tag 抽象 + scalar 后端 | mem-01 | 2-3k | — | 占位 |
 | simd-02 | P3 | simd | SSE4.2 + AVX2 后端 | simd-01 | 2-3k | — | 占位 |
 | simd-03 | P3 | simd | AVX512 + NEON 后端 | simd-01 | 2-3k | — | 占位 |
@@ -55,7 +56,7 @@
 | simd-06 | P3 | simd | sleef 数学核 adapter | simd-04 | 1-2k | — | 占位 |
 | sched-01 | P4 | sched | fcontext 6 平台 + 栈池(骨架:单 worker 单队列跑一 fiber) | container-01,mem-01,platform-01 | 2-3k | 226 (+737 vendored asm) | ✅ 完成(仅证切换,队列/worker 留 sched-02) |
 | sched-02 | P4 | sched | per-core 有界 run-queue + LIFO slot | sched-01,container-01 | 2-3k | 205 | ✅ 完成(单worker驱动,steal留sched-03) |
-| sched-03 | P4 | sched | work-stealing + spin-then-park + unpark 接力 | sched-02,container-07 | 2-3k | — | 占位 |
+| sched-03 | P4 | sched | work-stealing + spin-then-park + unpark 接力 | sched-02,container-08 | 2-3k | — | 占位 |
 | sched-04 | P4 | sched | Waker completion 脊 + time 接入(deadline) | sched-02,time-02 | 1-2k | — | 占位 |
 | sched-05 | P4 | sched | fiber-aware CV + mutex/waitgroup/channel | sched-04 | 2-3k | — | 占位 |
 | sched-06 | P4 | sched | 协程胶水(co_await→fiber 让出) | sched-04 | 1-2k | — | 占位 |

@@ -9,6 +9,8 @@
 | **骨架?** | (sched-03 前置) |
 | **状态** | ✅ 完成（Win x64 MSVC + Linux x64 GCC14.2 双平台，13 case 全过含并发守恒）|
 
+> **用途校正（2026-06）**：本 Chase-Lev deque 是 **owner-LIFO（深度优先 / fork-join 语义）**。原打算做 sched-03 调度器本地队列，但 sched-design §2.2 明确调度器要 **owner-FIFO 公平轮转**（LIFO 会让 yield 的 fiber 在单 worker 上独占、推翻 round-robin）。故调度器本地队列改用 **container-08**（tokio 式 FIFO work-stealing ring）；**本 deque 保留给 `graph-01` 的 taskgraph fork-join 执行器**（DFS 对 fork-join 反而是优点：cache 友好）。非废弃，是各就其位。
+
 > **cloc 留档（`cloc work_stealing_deque.h work_stealing_deque_test.cc`）**：**249 行** = 98 头 + 151 测试。header-only 模板，纯算法 + 强并发测试，非 stub。
 > **对抗式自审记录**：① **slot 用 `std::atomic<T>`(relaxed)** 而非裸 `T`——Lê 论文用裸数组 + fence 携带序，但 TSan 不模型化裸访问的 fence 序、会误报 owner-写/thief-读同槽；crossbeam 同样用 atomic slot。既正确又 TSan-clean。② **空判用有符号差** `(int64_t)(b-t)`——`pop_bottom` 把 bottom 减到可能回绕低于 top（空 deque），裸无符号 `t<=b` 会误判非空；crossbeam/st3 同款有符号转换。③ 编译期发现 `StealStatus` 嵌套模板导致 `<int>`/`<uint64_t>` 枚举类型不同、无法比较——**提到 namespace 作用域**（更好的 API，单一枚举）。
 > **关键诚实缺口（必须显著记下）**：**TSan 不验 fence。** GCC `-Wtsan` 明告 `atomic_thread_fence` "is not supported with -fsanitize=thread"——TSan **不模型化独立 fence**，所以"TSan 零 data race"**没有**验证本 deque 最难的那部分（Lê 2013 的 seq_cst fence 携带的 StoreLoad 序）。且 x86 是 **TSO 强序**、本机**无 ARM**——fence 的正确性恰恰在最需要验证处（弱内存模型）**未经任何机器验证**。当前 fence 正确性仅靠：① 忠实移植已证明的 Lê 2013/crossbeam 算法；② 20 万项 1-owner-4-thief 守恒压力（能抓丢/重，抓不全 race）。**真闸门是模型检查器(loom/CDSChecker)或真 ARM 跑**——记为 sched-03/CI 的待办，不假装已验。`-Wno-tsan` 仅消警告噪音（否则刷屏 + 破 WERROR），**不消除此缺口**。
