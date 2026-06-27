@@ -160,7 +160,11 @@ loop:
 
 调度单元 = fiber handle（有栈）；执行底座 = M:N worker；协程是 fiber 内挂起点；进程是联邦边界。run-queue = per-core 有界 ring + LIFO slot + global 兜底，spin-then-park + unpark 接力防惊群，全部基于 catomics 无锁。**统一的本质是唤醒网（completion 脊），下一节就接它。**
 
+> **归属澄清（深读 marl 后）**：本节的"无锁 per-core 队列 / LIFO slot / unpark 接力防惊群"是 **Tokio/Go 血统，不是 marl**。marl 实际是 **有锁 per-worker deque（`work.mutex` 保护）+ 偷 task 不偷 fiber（裸汇编 fiber 不存 TLS，锁死在创建 worker）+ 仅 spin+notify_one（无 thief 计数封顶/无 baton 接力）**。HYLE 在三处**超越** marl：①catomics 无锁队列 ②fiber 可跨核迁移（靠 Waker 唤回 origin_core + global 兜底，见 3.3）③actives/thieves 防惊群。marl 印证了 fcontext 选型（它自写等价汇编、ucontext 仅回退）和 fiber-aware CV 收敛，但调度内核是 HYLE 自有差异点。
+
 > **缺口补记（完整性评估发现）**：sched/ 必须提供 **fiber-aware 同步原语**——fiber mutex/condvar/channel/waitgroup/latch。理由：`std::mutex` 阻塞的是 worker 线程，会连累该核所有 fiber、破坏 M:N 调度。正确做法是"竞争时让出 fiber、入等待队列，释放时把等待 fiber 重新入 run-queue"——本质又是一次 completion/唤醒（与第三节 Waker 同机制）。这套原语与 run-queue 强耦合，归 sched/，留待实现期与 ②③ 一并落地。
+>
+> **深读 marl 的收敛方案（采纳）**：marl 证明不必为 mutex/WaitGroup/Event/Ticket 各写一套唤醒——**只做一个 fiber-aware ConditionVariable（维护 waiter fiber 链表），其余全建在它上面**。且要**双模**：waiter 既可是 fiber（让出+重入 run-queue）也可是裸线程（回退 `std::condition_variable`）——HYLE 跨进程联邦/外部线程提交场景需要这个，别假设所有 waiter 都是 fiber。HYLE fiber-sync 照此收敛：一个 CV 地基 + 其上薄封装。
 
 ## 第三节：completion 接入（整个设计的收口）
 

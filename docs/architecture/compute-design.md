@@ -38,6 +38,9 @@ compute/
 上层之上再挂一个 `ggml-bridge`：把 ggml-backend 当成"算子库"接进来，需要现成 AI 算子时走 ggml，需要自定义 kernel 时走 HYLE 原生 stream/kernel。
 
 > **校正（对照真实 ggml-backend.h）**：ggml-backend **已经有** device/stream/buffer/buffer_type/event/sched 全套抽象。所以 HYLE 真正"净新"的只有两处：**①任意 kernel 启动**（ggml 是固定算子集 + `graph_compute(cgraph)`，无 raw launch）；**②host 侧 completion→fiber 唤醒**（ggml 的 `synchronize` 是阻塞式，event 仅 GPU-GPU 跨后端同步，无"算完回调唤醒 host"）。device/buffer 枚举应**薄包 ggml-backend**，避免双层抽象税；只在 kernel-launch + fiber-completion 处真正自造。可直接照镜 ggml 的 `dev_caps{async,host_buffer,buffer_from_host_ptr,events}` 能力查询结构。
+>
+> **深读补充（buffer_type 即 MemorySpace 的范本）**：ggml 的 `buffer_type_i{get_alignment/get_max_size/get_alloc_size/is_host}` 正是 HYLE MemorySpace 该照镜的 trait——且 ggml 里 **host/device/pinned/split 不是枚举开关，而是各立一个 buffer_type 实例**（`is_host()` 是唯一 host 布尔判据）。这印证方案 D：**一种内存模型 = 一个 space/buft 实例**，不是 `switch(MemKind)`。非标能力（`set_n_threads`、`split_buffer_type` 等）经 `get_proc_address` 探测取得（不破 vtable）——HYLE `ggml_bridge` 拿这些扩展走同一机制。
+> **张力收口**："buffer 薄包 ggml"与"不暴露 ggml 类型"有张力：**枚举/能力查询薄包**（照镜 buft trait），**内存所有权 + stream 绑定自造**，bridge 只在算子边界做 tensor↔buffer 翻译。另注意 ggml sched 把 INPUT 强制落 CPU、末位 backend 必须是 CPU（`ggml-backend.cpp:903/1736` ASSERT）——这是 ggml 的兜底耦合，**HYLE 自有 stream 调度不要继承**。
 
 ### 3. shader 计算是一等公民，不只绑 CUDA
 **只押 CUDA = 锁死 NVIDIA，违背 HYLE 通用定位。** Vulkan compute（SPIR-V）跨厂商——AMD/Intel/Apple(MoltenVK)/NVIDIA 全能跑，`ggml-kompute` 已用 `.comp` 示范。CUDA 与 Vulkan compute **平级**：CUDA 走成熟生态/性能上限，Vulkan compute 走"一份 SPIR-V 全平台"。
@@ -50,6 +53,8 @@ compute/
 - **`sched/` 统一调度异构资源的真义**：CPU 线程、GPU stream、网络 IO 都是产生 completion 的可调度资源，一套挂起/唤醒机制。
 
 > **第二接缝（诚实承认，校正自"只通过 adapter / 不暴露 ggml 类型"）**：fiber 唤醒需要原生 handle（`cudaStreamAddCallback`/`cudaLaunchHostFunc`、Vulkan fence），而 ggml-backend 恰好把这些藏在不透明指针后、且只提供阻塞式 `synchronize`。所以 **GPU→fiber 唤醒这条路必然绕过 ggml-backend、直连原生**——它是 `ggml_bridge` adapter **管不住的第二接缝**。结论：算子/设备枚举走 adapter；completion 唤醒走原生 handle。这不矛盾，是两条接缝各司其职。
+>
+> **深读 ggml 源码加固此判断（铁证）**：ggml-cuda 里唯一的 `cudaLaunchHostFunc` 被 `#if 0` 注释掉、标 "untested"，活路径是 `GGML_ABORT("fatal error")`（`ggml-cuda.cu:4539-4548`）。`ggml_backend_event_*` 只做 GPU↔GPU 跨 stream 同步（`cudaEventRecord`/`cudaStreamWaitEvent`），`event_synchronize` 是 host 阻塞等、**无回调**。即 **ggml 故意没接 host completion callback，连半成品都没有**——HYLE 的 completion 脊在 GPU 侧是 100% 自造，不是"补 ggml 的缺"，是 ggml 结构性不提供。这反而印证：completion 自造是刚需、非镀金。
 
 ## 跨平台后端矩阵
 
