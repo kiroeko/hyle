@@ -7,12 +7,14 @@
 | **Tier** | 0 |
 | **LOC 估** | 2-3k |
 | **骨架?** | |
-| **状态** | 进行中（step1 ✅ 完成；step2 park/unpark 待做） |
+| **状态** | ✅ 完成（step1 多worker偷取 + step2 spin-then-park，双平台 + TSan）|
 
-> **Step 1 cloc 留档（`cloc scheduler.h scheduler.cc scheduler_test.cc`）**：**259 行** = 28 头 + 231 cc(scheduler.cc + 测试)。组合层(复用 container-08/01 + Fiber),非 stub。
+> **Step 1 cloc 留档（`cloc scheduler.h scheduler.cc scheduler_test.cc`）**：**259 行**（step1 时）→ **340 行**（含 step2 park）。组合层(复用 container-08/01 + Fiber + Parker),非 stub。
 > **Step 1 状态**：✅ 完成。Win x64 MSVC + Linux x64 GCC14.2 双平台 15 sched case 全过；**WSL TSan 零 data race**(8-worker×1000-fiber 含 fiber 跨线程迁移,TSan 61ms 干净)。
-> **Step 1 实现/自审**：① **Pimpl**——Scheduler 公开头只一个 `Impl*`,std::vector/thread/queue 全在 .cc(避 C4251 + 公开头零 std)。② **fiber 跨线程迁移正确**:队列存 `Fiber*`,A yield→B 偷→B resume,fcontext 栈在堆、线程无关;同一时刻仅一个 worker 持有/resume 某 fiber(队列所有权),TSan 背书无并发 resume。③ outstanding 计数 spawn 先 add 再 publish、done 后 sub,drain 等 0;动态 spawn(seed 内 spawn 500 子)也正确等到。④ 析构调 shutdown 幂等安全(已 join 则 drain 立即返回)。⑤ idle **busy-spin**(yield)——step2 换 park。
-> **Step 2（待做,本里程碑下半）**：spin-then-park + Parker + num_searching 封顶 + unpark 接力防惊群(§2.3)。
+> **Step 1 实现/自审**：① **Pimpl**——Scheduler 公开头只一个 `Impl*`,std::vector/thread/queue 全在 .cc(避 C4251 + 公开头零 std)。② **fiber 跨线程迁移正确**:队列存 `Fiber*`,A yield→B 偷→B resume,fcontext 栈在堆、线程无关;同一时刻仅一个 worker 持有/resume 某 fiber(队列所有权),TSan 背书无并发 resume。③ outstanding 计数 spawn 先 add 再 publish、done 后 sub,drain 等 0;动态 spawn(seed 内 spawn 500 子)也正确等到。④ 析构调 shutdown 幂等安全。
+> **Step 2 状态**：✅ 完成。spin-then-park(kSpinSweeps=4 自旋再 park)+ 每 worker 一个 Parker + sleeper 注册表(冷路径 std::mutex,同 tokio idle.rs)。16 sched case 双平台 + **TSan 零 race**(含 NoLostWakeupAcrossParks:40 次带 gap 的 spawn 让 worker 真睡,丢唤醒会 hang→ctest 超时)。
+> **Step 2 关键自审（防丢唤醒 + 诚实延迟）**:① **notify() 无条件 unpark 一个**——初版我按 §2.3② 用 `num_searching==0` 门控 unpark,但 worker 先减 searching 再 park、producer 在窗口里读到 >0 就跳过 unpark → worker 睡在非空队列上 hang(StoreLoad race)。改为**每次入队无条件唤一个 sleeper**:唤醒不依赖竞态读,丢不了。② register-before-recheck + Parker 记忆 token(platform-01)共同关闭"recheck 后入队"窗口。③ shutdown 直接 unpark **所有** worker(给每个 Parker token),停止时不漏醒任何睡着的。
+> **诚实延迟(非完成项)**：§2.3 ② **限 thief 数(num_searching 封顶)** + ③ **unpark 接力 baton** 这两个**防惊群优化未做**——它们要 seq_cst Dekker 握手 + 模型检查才能不引入丢唤醒,我**刻意延迟**而非 ship 一个微妙错的接力(代价:当前每次入队唤一个、可能略多余唤醒;正确性不受影响)。留作 sched 后续/CI-模型检查待办。
 
 ## 前置依赖
 

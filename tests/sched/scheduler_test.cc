@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <chrono>
 #include <memory>
+#include <thread>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
@@ -118,4 +120,30 @@ TEST(Scheduler, SingleWorkerStillWorks) {
   }
   EXPECT_EQ(completed.load(), 1);
   EXPECT_EQ(ran.load(), 5);
+}
+
+// No lost wakeup (exercises park): spawn fibers one at a time with a gap so the
+// workers actually go to sleep between submissions. Every spawn must wake a
+// worker to take it -- a lost wakeup would strand a fiber and hang drain()
+// (ctest timeout = failure). Each fiber just runs to completion (no yield).
+TEST(Scheduler, NoLostWakeupAcrossParks) {
+  constexpr int kFibers = 40;
+  std::atomic<int> ran{0};
+  std::atomic<int> completed{0};
+  std::vector<Body> bodies(kFibers, Body{0, &ran, &completed});
+  std::vector<std::unique_ptr<Fiber>> fibers;
+  fibers.reserve(kFibers);
+
+  {
+    Scheduler sched(8, system_allocator(), 64);
+    for (int i = 0; i < kFibers; ++i) {
+      fibers.push_back(std::make_unique<Fiber>(
+          system_allocator(), kDefaultStackSize, &body_entry, &bodies[i]));
+      sched.spawn(fibers[i].get());
+      // Let the pool settle into parked state before the next spawn.
+      std::this_thread::sleep_for(std::chrono::milliseconds(2));
+    }
+    sched.shutdown();  // drains; hangs here if any wakeup was lost
+  }
+  EXPECT_EQ(completed.load(), kFibers);
 }
