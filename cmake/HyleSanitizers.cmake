@@ -16,6 +16,16 @@ function(hyle_apply_sanitizer target)
     set(flags -fsanitize=address -fno-omit-frame-pointer)
   elseif(HYLE_SANITIZER STREQUAL "tsan")
     set(flags -fsanitize=thread)
+    # GCC warns (-Wtsan) that std::atomic_thread_fence "is not supported" under
+    # TSan: TSan cannot model STANDALONE fences, so it won't observe the ordering
+    # our Chase-Lev deque (Le 2013) relies on. This is a known, universal
+    # limitation (crossbeam/folly hit it too) -- NOT a bug. We silence the
+    # repeated warning here so TSan-WERROR CI is usable; the LIMITATION itself is
+    # documented in container-07's doc: fence correctness rests on the faithful
+    # port + stress + (future) a model checker / ARM run, NOT on TSan.
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+      list(APPEND flags -Wno-tsan)
+    endif()
   elseif(HYLE_SANITIZER STREQUAL "ubsan")
     set(flags -fsanitize=undefined -fno-sanitize-recover=all)
   endif()
