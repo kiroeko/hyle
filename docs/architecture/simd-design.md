@@ -45,15 +45,21 @@ simd/
 └─ ops/           供 container/compute 用的 SIMD 原语（如 SwissTable 探测、reduce、memcpy）
 ```
 
-## 运行时 dispatch（clay 最大缺口）
+## dispatch：编译期优先，运行期只在冷入口跳一次（三层）
 
-clay 是编译期固定指令集，**跑在 AVX512 机器上却只用 SSE2**。HYLE 必须运行时选最优：
+clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只用 SSE2**，这是真缺口。但修正方向不是"运行时函数指针表每次查"（那是热路径间接、违背极致），而是**编译期优先、运行期兜底**的三层模型。**热路径任何一层都零间接。**
 
-1. **多版本编译**：热函数对每个 ISA 各编一份（`avx512_kernel` / `avx2_kernel` / `neon_kernel`…）。
-2. **CPUID 探测**（启动一次）：查 CPU 支持的最高指令集。
-3. **函数指针表**：首次调用解析到对应版本，之后直调（或 IFUNC/全局指针）。
+| 层 | 时机 | C++ 机制 | 热路径开销 |
+|---|---|---|---|
+| **构建期（极致主路径）** | 为这台/这批机器编 | 宏/feature flag + 每 ISA 独立 TU + `-march=native`。**llama.cpp 范本**（`GGML_NATIVE`/`-DGGML_CUDA` 按硬件编一份）| **零**（错误路径根本不编出来）|
+| **编译期** | 变体内部 | `if constexpr` + concepts + 模板单态化 | **零**（死分支消失、全内联）|
+| **运行期（发布二进制兜底）** | 一个二进制发到未知 CPU | 同源码按 ISA 编 N 份，启动 CPUID 探测，**一次冷跳**进对应变体（IFUNC/全局指针）| **进去后零间接**（满速跑该变体，非每调用查表）|
 
-这与 `compute/` 的后端 dispatch（CPU/CUDA/Vulkan 运行时选）是同一哲学——**运行时按硬件能力选实现**，只是粒度从"设备"到"指令集"。
+**两者都要、非二选一**：为自己机器编 → 走构建期、零 dispatch（极致）；发库给"用户随便什么 CPU" → 留那一次冷跳。AI infra 两种发布方式都有，所以两层都备。这正是 Highway `HWY_DYNAMIC_DISPATCH`（编 N 份、一跳进对的）和 llama.cpp（构建期定死）各自的做法，HYLE 兼收。
+
+**组合优于包含**：每个 ISA kernel 是独立的组合单元（一个 TU / 一个 tag 实现），**不是**一个上帝类 `Vec` 内部 `switch(caps)`/vtable 分支。加一个厂商特化（AMX/VNNI）= 加一个组合单元、改 1 文件、0 调用点改动、0 热路径开销。
+
+> 详见横切原则 [`coding-conventions.md` → 能力 dispatch](./coding-conventions.md)。`compute/` 的后端选择是同一模型，粒度从"指令集"换成"设备/扩展"。
 
 ## dtype 层（AI 数值刚需，scope 完整性评估补的缺口）
 

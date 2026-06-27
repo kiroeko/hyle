@@ -63,7 +63,7 @@ compute/
 
 - **要极限性能 / 已知跑 N 卡**（训练、大模型推理）→ CUDA（或 HIP 对 AMD）。tensor core、cuBLAS/cuDNN、生态算子最全。
 - **要"一次写、全平台跑" / 不想锁厂商**（agent 端侧、异构集群、消费级显卡）→ Vulkan compute（SPIR-V）。一份 `.comp` 编译成 SPIR-V，N/AMD/Intel/Apple 都吃。
-- **HYLE 策略**：上层抽象屏蔽差异，两条后端都建、运行时按设备能力 dispatch。默认 CPU(simd) → 有 Vulkan 走 Vulkan compute → 有 CUDA/HIP/Metal 走原生高性能后端。
+- **HYLE 策略**：上层抽象屏蔽差异，两条后端都建。选择走**编译期优先、运行期一次冷跳兜底**的统一 dispatch 模型（详见 [`coding-conventions.md` → 能力 dispatch](./coding-conventions.md)）——构建期可只编目标后端（llama.cpp 式 `-DGGML_CUDA=ON` 按机器定死，零 dispatch）；发布二进制则启动探测一次、冷跳进可用后端（CPU(simd) → Vulkan compute → CUDA/HIP/Metal 原生）。**后端选择是冷路径，kernel 内部满速无间接。**
 
 ## 借 vs 造
 

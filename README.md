@@ -19,6 +19,7 @@
 
 | 文档 | 内容 |
 |---|---|
+| [动机](./docs/architecture/motivation.md) | 为什么是现在/为谁做：AI-native 四压负载 + 蜂群 agent 北极星 + 比 Seastar 多异构维度 |
 | [架构总入口](./docs/architecture/README.md) | 定位、模块划分、贯穿性设计原则、项目背景与命名 |
 | [工程章程](./docs/architecture/engineering-charter.md) | 动手前最终依据：C++23 标准 / 错误模型 / 测试 / 边界 / 对外 FFI |
 | [编码规范](./docs/architecture/coding-conventions.md) | 每一行怎么写才不破范式：std 分层 / 宏纪律 / C-ABI 范式 / clay 写法继承表 |
@@ -31,6 +32,7 @@
 | [mem 内存](./docs/architecture/mem-design.md) | 通用 malloc 借 mimalloc + 自造专用分配器 + 修 5 bug + NUMA/大页/64B 对齐 |
 | [container 容器](./docs/architecture/container-design.md) | 唯一造不借的 T0 + SwissTable SIMD 探测 + SmallVector/intrusive/lock-free（供 sched）|
 | [实现路线图](./docs/architecture/roadmap.md) | 依赖图（无环）+ 6 批施工序 + 关键路径 + 验收门槛 + 决策清单 |
+| [性能预期](./docs/architecture/performance.md) | vs std 的时间/空间预期（两桶分列）+ Amdahl 整体观 + benchmark 验证 |
 
 ## 目录结构
 

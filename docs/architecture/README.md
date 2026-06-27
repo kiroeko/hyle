@@ -39,8 +39,9 @@ HYLE infra（通用、不特化、贴硬件）
 
 | 文档 | 内容 |
 |---|---|
+| [`motivation.md`](./motivation.md) | **动机**：为什么是现在/为谁做——AI-native 四压负载、蜂群 agent 北极星、比 Seastar 多异构维度、极致=吃尽硬件独家加速 |
 | [`engineering-charter.md`](./engineering-charter.md) | **工程章程**：动手前最终依据——C++23 标准/错误模型/命名宏、开发范式、测试方案、边界、对外 FFI 决策 |
-| [`coding-conventions.md`](./coding-conventions.md) | **编码规范**：每一行怎么写才不破范式——std 分层/include/宏纪律、C-ABI 范式、错误处理、clay 独特写法的继承/取代/淘汰三张表 |
+| [`coding-conventions.md`](./coding-conventions.md) | **编码规范**：每一行怎么写才不破范式——std 分层/include/宏纪律、C-ABI 范式、错误处理、能力 dispatch 三层模型、clay 独特写法三张表 |
 | [`clay-asset-liability.md`](./clay-asset-liability.md) | clay 资产负债表：六子系统逐个盘点（内存/DataModel/SIMD/容器/并发/taskgraph），含 5 个 bug、空位 grep 证据、继承/重写判断 |
 | [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、两条主轴、7 模块划分、50–70k 行规模、边界外明确不做的东西 |
 | [`io-design.md`](./io-design.md) | 网络库选型：proactor 模型 + io_uring/IOCP/kqueue/epoll 四后端 + 只借 syscall 封装、调度绑 fiber |
@@ -50,6 +51,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 自造专用分配器（arena/pool/stack/fiber栈/pinned）+ 修 5 bug + NUMA/大页/64B 对齐契约 |
 | [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
 | [`roadmap.md`](./roadmap.md) | 实现路线图：模块依赖图（无环）+ 6 批施工序 + 关键路径 + 每批验收门槛 + 完整决策清单（已决+待决）|
+| [`performance.md`](./performance.md) | 性能预期 vs std：时间/空间分列、drop-in 可比 vs std 没有的能力两桶、Amdahl 整体观、benchmark gate 验证 |
 
 ## 状态与下一步
 
