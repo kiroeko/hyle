@@ -49,11 +49,18 @@ inline constexpr ctrl_t kSentinel = -1;    // 0xFF
 // full slots hold 0..127 (H2). A control byte is "full" iff its top bit is 0.
 inline constexpr bool ctrl_is_full(ctrl_t c) noexcept { return c >= 0; }
 
+// abseil's split: H1 (index) = the hash itself (low bits land in the table after
+// `& mask`), H2 = the TOP 7 bits. H1 is thus identity -- NO shift, saving one insn
+// per probe vs a `hash >> 7` (the find/insert/erase inner loops all hit this).
+// Correctness rests on mix64's avalanche: low bits (index) and top 7 bits (H2) are
+// independent, so they stay disjoint -- same property our old (>>7 / low-7) split
+// had, just without the h1 shift. H2 = hash>>57 yields 0..127 (top bit clear =>
+// "full" marker), exactly what the control byte needs.
 inline constexpr std::size_t h1(std::uint64_t hash) noexcept {
-  return static_cast<std::size_t>(hash >> 7);
+  return static_cast<std::size_t>(hash);
 }
 inline constexpr ctrl_t h2(std::uint64_t hash) noexcept {
-  return static_cast<ctrl_t>(hash & 0x7F);  // low 7 bits, top bit 0 => "full"
+  return static_cast<ctrl_t>(hash >> 57);  // top 7 bits; top bit 0 => "full"
 }
 
 // A bitmask over a group's lanes (one bit per lane, low bit = lane 0);

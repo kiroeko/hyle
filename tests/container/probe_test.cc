@@ -23,16 +23,19 @@ std::vector<std::uint32_t> bits(BitMask m) {
 }
 }  // namespace
 
-TEST(Probe, H2IsLow7BitsTopClear) {
-  ctrl_t v = h2(0xABCDEF12);
+TEST(Probe, H2IsTop7BitsTopClear) {
+  // abseil split: H2 = top 7 bits (hash>>57); top bit always clear => "full".
+  std::uint64_t hash = 0xABCDEF1234567890ull;
+  ctrl_t v = h2(hash);
   EXPECT_GE(v, 0);                 // top bit clear => "full" marker
-  EXPECT_EQ(v, static_cast<ctrl_t>(0x12 & 0x7F));
+  EXPECT_EQ(v, static_cast<ctrl_t>(hash >> 57));
 }
 
 TEST(Probe, H1H2SplitDistinct) {
+  // H1 = identity (low bits used as index after &mask); H2 = top 7 bits. Disjoint.
   std::uint64_t hash = 0x123456789ABCDEF0ull;
-  EXPECT_EQ(h2(hash), static_cast<ctrl_t>(hash & 0x7F));
-  EXPECT_EQ(h1(hash), static_cast<std::size_t>(hash >> 7));
+  EXPECT_EQ(h2(hash), static_cast<ctrl_t>(hash >> 57));
+  EXPECT_EQ(h1(hash), static_cast<std::size_t>(hash));
 }
 
 // ---- GroupPortable (SWAR, always available) ---------------------------------
