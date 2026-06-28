@@ -1,17 +1,8 @@
 #include "hyle/mem/allocator.h"
 
-#include <cstring>
-
 #include "hyle/macros.h"
-#include "hyle/platform.h"
 
-#if defined(HYLE_USE_MIMALLOC)
-#  include <mimalloc.h>  // PRIVATE include -- mi_* types never leak to a header
-#elif defined(HYLE_OS_WINDOWS)
-#  include <malloc.h>  // _aligned_malloc / _aligned_free
-#else
-#  include <cstdlib>  // posix_memalign / free
-#endif
+#include <mimalloc.h>  // PRIVATE include -- mi_* types never leak to a header
 
 namespace hyle::mem {
 namespace {
@@ -24,13 +15,16 @@ std::size_t normalize_alignment(std::size_t a) noexcept {
   return a;
 }
 
-#if defined(HYLE_USE_MIMALLOC)
-
 // mimalloc backing (mem-design decision: borrow a battle-tested general malloc;
 // self-rolling one is wasted effort and necessarily worse). Wrapped behind the
 // Allocator vtable so mi_* types never appear in any HYLE header -- swapping the
 // backing later touches only this file (same discipline as the ggml bridge).
 // mimalloc tracks each block's size, so realloc needs no manual copy/old_size.
+//
+// This is the ONLY backing: the former OS aligned-malloc fallback was removed on
+// purpose (user directive). A disable/fallback path is a trap -- it lets a build
+// silently sidestep a mimalloc-dependent problem and be mis-judged as fine. If
+// something breaks with mimalloc, we face it, not hide behind glibc.
 void* system_realloc(void* /*state*/, void* ptr, std::size_t /*old_size*/,
                      std::size_t new_size, std::size_t alignment) noexcept {
   if (new_size == 0) {  // free (also covers allocate(0) -> nullptr)
@@ -53,47 +47,6 @@ void* system_realloc(void* /*state*/, void* ptr, std::size_t /*old_size*/,
   if (ptr == nullptr) return mi_malloc_aligned(new_size, align);
   return mi_realloc_aligned(ptr, new_size, align);
 }
-
-#else  // bare OS aligned malloc (mem-01 baseline; HYLE_USE_MIMALLOC=OFF fallback)
-
-void* aligned_alloc_raw(std::size_t size, std::size_t align) noexcept {
-#  if defined(HYLE_OS_WINDOWS)
-  return ::_aligned_malloc(size, align);
-#  else
-  void* p = nullptr;
-  if (::posix_memalign(&p, align, size) != 0) return nullptr;
-  return p;
-#  endif
-}
-
-void aligned_free_raw(void* p) noexcept {
-#  if defined(HYLE_OS_WINDOWS)
-  ::_aligned_free(p);  // blocks from _aligned_malloc MUST use _aligned_free
-#  else
-  ::free(p);
-#  endif
-}
-
-void* system_realloc(void* /*state*/, void* ptr, std::size_t old_size,
-                     std::size_t new_size, std::size_t alignment) noexcept {
-  if (new_size == 0) {
-    if (ptr != nullptr) aligned_free_raw(ptr);
-    return nullptr;
-  }
-  std::size_t align = normalize_alignment(alignment);
-  if (ptr == nullptr) return aligned_alloc_raw(new_size, align);
-  // realloc contract: on OOM the ORIGINAL block must stay valid (freeing it
-  // here would hand back a dangling pointer).
-  void* np = aligned_alloc_raw(new_size, align);
-  if (np == nullptr) return nullptr;
-  if (old_size != 0) {
-    std::memcpy(np, ptr, old_size < new_size ? old_size : new_size);
-  }
-  aligned_free_raw(ptr);
-  return np;
-}
-
-#endif
 
 }  // namespace
 
