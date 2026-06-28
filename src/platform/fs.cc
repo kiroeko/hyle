@@ -1,3 +1,10 @@
+// _GNU_SOURCE exposes copy_file_range (glibc 2.27+) for the Linux fast path;
+// must precede any system header. We build with -std=c++23 (extensions OFF), so
+// it isn't defined for us. Harmless on non-glibc / Windows.
+#if defined(__linux__)
+#  define _GNU_SOURCE 1
+#endif
+
 // std::fopen in touch() is flagged C4996 by MSVC; the "ab" use here is safe and
 // portable, so opt out of the CRT deprecation nag (no global override exists).
 #if defined(_WIN32)
@@ -310,29 +317,61 @@ bool copy_file(const char* from, const char* to) noexcept {
     ::close(in);
     return false;
   }
-  char buf[64 * 1024];
+
   bool ok = true;
-  for (;;) {
-    ssize_t got = ::read(in, buf, sizeof(buf));
-    if (got < 0) {
-      if (errno == EINTR) continue;  // interrupted by a signal: retry
-      ok = false;
+#if defined(__linux__)
+  // Fast path: copy_file_range keeps bytes in the kernel (and can reflink on
+  // btrfs/xfs) -- no user-space bounce. Only fall back to read/write if it fails
+  // on the FIRST call (EXDEV cross-fs / ENOSYS old kernel / EINVAL), i.e. before
+  // any bytes are written, so the fallback can't double-copy.
+  bool use_userspace = false;
+  off_t remaining = s.st_size;
+  bool any_copied = false;
+  while (remaining > 0) {
+    ssize_t n = ::copy_file_range(in, nullptr, out, nullptr,
+                                  static_cast<std::size_t>(remaining), 0);
+    if (n < 0) {
+      if (errno == EINTR) continue;
+      if (!any_copied) {
+        use_userspace = true;  // unsupported here; retry whole copy in user space
+        break;
+      }
+      ok = false;  // failed mid-copy: a real error, don't restart
       break;
     }
-    if (got == 0) break;
-    char* p = buf;
-    ssize_t left = got;
-    while (left > 0) {
-      ssize_t wrote = ::write(out, p, static_cast<std::size_t>(left));
-      if (wrote < 0) {
-        if (errno == EINTR) continue;  // retry the same chunk
+    if (n == 0) break;  // EOF
+    any_copied = true;
+    remaining -= n;
+  }
+  if (use_userspace) {
+    ::lseek(in, 0, SEEK_SET);
+    ::lseek(out, 0, SEEK_SET);
+#else
+  {
+#endif
+    char buf[64 * 1024];
+    for (;;) {
+      ssize_t got = ::read(in, buf, sizeof(buf));
+      if (got < 0) {
+        if (errno == EINTR) continue;  // interrupted by a signal: retry
         ok = false;
         break;
       }
-      left -= wrote;
-      p += wrote;
+      if (got == 0) break;
+      char* p = buf;
+      ssize_t left = got;
+      while (left > 0) {
+        ssize_t wrote = ::write(out, p, static_cast<std::size_t>(left));
+        if (wrote < 0) {
+          if (errno == EINTR) continue;  // retry the same chunk
+          ok = false;
+          break;
+        }
+        left -= wrote;
+        p += wrote;
+      }
+      if (!ok) break;
     }
-    if (!ok) break;
   }
   ::close(in);
   ::close(out);

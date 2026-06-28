@@ -119,6 +119,29 @@ TEST_F(FsTest, CopyFile) {
   EXPECT_STREQ(got, "hello");
 }
 
+// Larger-than-one-chunk copy: exercises the Linux copy_file_range loop (and the
+// userspace 64 KiB-buffer loop elsewhere) over a multi-block, byte-patterned
+// file, then verifies the bytes survive intact.
+TEST_F(FsTest, CopyFileLargeContentIntact) {
+  std::string a = path("big_src.bin"), b = path("big_dst.bin");
+  constexpr std::size_t kN = 300 * 1024;  // > 64 KiB buffer, > 1 page
+  std::vector<unsigned char> data(kN);
+  for (std::size_t i = 0; i < kN; ++i) data[i] = static_cast<unsigned char>(i * 31 + 7);
+  std::FILE* fp = std::fopen(a.c_str(), "wb");
+  ASSERT_NE(fp, nullptr);
+  ASSERT_EQ(std::fwrite(data.data(), 1, kN, fp), kN);
+  std::fclose(fp);
+
+  ASSERT_TRUE(copy_file(a.c_str(), b.c_str()));
+  EXPECT_EQ(file_size(b.c_str()), kN);
+  std::vector<unsigned char> back(kN, 0);
+  fp = std::fopen(b.c_str(), "rb");
+  ASSERT_NE(fp, nullptr);
+  EXPECT_EQ(std::fread(back.data(), 1, kN, fp), kN);
+  std::fclose(fp);
+  EXPECT_EQ(back, data);
+}
+
 TEST_F(FsTest, DirectoryIterateVisitsEntriesNotDotDot) {
   ASSERT_TRUE(touch(path("f1").c_str()));
   ASSERT_TRUE(touch(path("f2").c_str()));
