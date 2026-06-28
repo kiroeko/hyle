@@ -89,7 +89,7 @@
 
 **显式登记待办（红队挖出、本轮未修的大件，非略过）**：
 - ~~【高】platform-03c：Windows UTF-8 路径~~ **✅ 已做(platform-03c)**:fs.cc Win 分支全转 `...W` API + `WidePath`(UTF-8→UTF-16,栈+堆 RAII)/`fill_w`(UTF-16→UTF-8 buffer-fill),platform 内自包含无倒挂。**红队 UTF-8 测试还揪出 `touch()` 双重 ANSI 漏洞**(std::fopen + CreateFileA 都绕过转换)→ Win 改 CreateFileW(OPEN_ALWAYS)。双平台 UTF-8 路径(CJK+emoji)往返测试过。
-- **【中】container-04c：SwissTable `find_or_prepare_insert` 融合**。insert 新键现走 2× 哈希 + 2× 探测(find 查重 + find_insert_slot 各一趟);abseil 融合为单趟。对贵哈希键损失约半插入效率(对 std 仍远胜,对标 abseil 让步)。
+- ~~【中】container-04c：SwissTable `find_or_prepare_insert` 融合~~ **✅ 已做(container-04c)**:insert 新键改单趟探测(walk 同时查 key 命中 + 记首个 empty/deleted 槽),哈希算一次(原 2× 哈希 + 2× 探测)。**附带修掉 growth_left 复用墓碑重复扣减 bug**(只在插 empty 槽时扣)。双平台 11/11 含 oracle 对拍(50k/200k)。算法级 op 削减,未跑 before/after microbench。
 - **【中】obs log 无锁快照**:log_message 每条加 mutex 取快照;可换 atomic COW 指针(读路径零锁)。
 - **【中】platform fs copy_file 内核零拷贝**:POSIX 现 read/write 用户态弹跳;可试 `copy_file_range`/`sendfile`(失败回退)。
 - **【中】platform-03c：Win 长路径 + UNC**:`make_directory_recursive` UNC 必败;`directory_iterate` Win `pattern[MAX_PATH=260]` 截深树(POSIX 4096),跨平台分叉。需 `\\?\` 前缀 + 宽字符。

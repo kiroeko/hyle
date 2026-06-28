@@ -66,6 +66,7 @@ class SwissTable {
   using ctrl_t = detail::ctrl_t;
   static constexpr std::size_t kGroup = detail::kGroupWidth;
   static constexpr std::size_t kMinCap = 16;  // >= both group widths, pow2
+  static constexpr std::size_t kNoSlot = static_cast<std::size_t>(-1);
 
   struct Slot {
     K key;
@@ -115,19 +116,33 @@ class SwissTable {
   bool contains(const K& key) noexcept { return find(key) != nullptr; }
 
   // Insert or assign. Returns true if a new key was inserted, false if updated.
+  // ONE hash + ONE probe walk in the common case (clay/abseil's fused
+  // find_or_prepare): the walk both checks for an existing key and records the
+  // first empty/deleted slot to insert into. A second walk happens only when a
+  // grow is actually triggered (amortized rare).
   bool insert(const K& key, const V& value) {
-    if (V* existing = find(key)) {
-      *existing = value;
+    if (cap_ == 0) grow();  // fresh table: give the probe walk real storage
+    std::uint64_t h = hash_(key);
+    bool found = false;
+    std::size_t idx = find_or_prepare(key, h, &found);
+    if (found) {
+      slots_[idx].value = value;
       return false;
     }
-    if (growth_left_ == 0) grow();
-    std::uint64_t h = hash_(key);
-    std::size_t idx = find_insert_slot(h);
+    // Not present; `idx` is the first empty/deleted slot on the probe path. Only
+    // an EMPTY target consumes growth -- reusing a tombstone (deleted) does not
+    // (it was already counted against the load factor when erase made it). Grow
+    // only when we'd take an empty slot and none is budgeted.
+    if (growth_left_ == 0 && ctrl_[idx] == detail::kEmpty) {
+      grow();
+      idx = find_insert_slot(h);  // cold path: rehash invalidated idx
+    }
+    bool was_empty = ctrl_[idx] == detail::kEmpty;
     set_ctrl(idx, detail::h2(h));
     slots_[idx].key = key;
     slots_[idx].value = value;
     ++size_;
-    --growth_left_;
+    if (was_empty) --growth_left_;
     return true;
   }
 
@@ -206,6 +221,41 @@ class SwissTable {
       detail::Group g(ctrl_ + pos);
       if (detail::BitMask m = g.match_empty_or_deleted()) {
         return (pos + m.lowest()) & mask_;
+      }
+      stride += kGroup;
+      pos = (pos + stride) & mask_;
+    }
+  }
+
+  // Fused lookup + insert-slot search (one probe walk, one hash). Sets *found and
+  // returns the matching slot if `key` is present; otherwise returns the FIRST
+  // empty-or-deleted slot on the probe path (where the key would be inserted).
+  // Correctness: the probe walk for `key` is deterministic, so the first
+  // empty/deleted slot seen here is exactly where a later find() would stop --
+  // inserting there keeps every probe chain intact. Requires cap_ > 0.
+  std::size_t find_or_prepare(const K& key, std::uint64_t h,
+                              bool* found) noexcept {
+    std::size_t pos = detail::h1(h) & mask_;
+    std::size_t stride = 0;
+    ctrl_t want = detail::h2(h);
+    std::size_t insert_at = kNoSlot;  // first empty/deleted seen (insert target)
+    for (;;) {
+      detail::Group g(ctrl_ + pos);
+      for (std::uint32_t i : g.match(want)) {
+        std::size_t idx = (pos + i) & mask_;
+        if (HYLE_LIKELY(eq_(slots_[idx].key, key))) {
+          *found = true;
+          return idx;
+        }
+      }
+      // Remember the first reusable (empty/deleted) slot on the path, once.
+      if (insert_at == kNoSlot) {
+        if (detail::BitMask m = g.match_empty_or_deleted())
+          insert_at = (pos + m.lowest()) & mask_;
+      }
+      if (g.match_empty()) {  // an empty lane ends the probe: key is absent
+        *found = false;
+        return insert_at;  // guaranteed set (an empty lane is empty-or-deleted)
       }
       stride += kGroup;
       pos = (pos + stride) & mask_;
