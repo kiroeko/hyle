@@ -44,6 +44,13 @@ enum class LogLevel : int {
 // terminated message (no trailing newline required; sinks add their own). It is
 // called from whatever thread logged, possibly concurrently -- a sink that
 // touches shared state guards it itself.
+//
+// LIFETIME (hard contract): `state` must outlive every concurrent log call.
+// log_message snapshots the sink list under a lock and then calls write()
+// OUTSIDE the lock, so a sink removed on thread A can still be mid-call on
+// thread B. Therefore: remove a sink only after all logging threads are
+// quiescent, or never free its state before process exit. Removing + freeing a
+// sink while another thread may be logging is a use-after-free.
 struct LogSink {
   void* state;
   void (*write)(void* state, LogLevel level, const char* msg);
@@ -76,8 +83,8 @@ HYLE_OBS_API LogSink default_sink() noexcept;
 
 // ---- caller-side formatting (header template, no DLL hop for the format) -----
 // Build the message with std::format into a stack buffer, then hand the finished
-// C string to log_message. Truncates into a fixed buffer (no allocation on the
-// log path); a message longer than the buffer is cut with a trailing marker.
+// C string to log_message. Formats into a fixed 1 KiB stack buffer (no allocation
+// on the log path); a longer message is silently truncated at the buffer edge.
 template <class... Args>
 void log_fmt(LogLevel level, std::format_string<Args...> fmt, Args&&... args) {
   if (!should_log(level)) return;  // skip formatting entirely when gated out

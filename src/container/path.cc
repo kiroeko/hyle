@@ -79,7 +79,12 @@ std::uint32_t normalize(char* path) noexcept {
 }
 
 string_ref join(string_ref a, string_ref b, mem::Allocator alloc) {
-  const std::uint32_t n = a.size + 1 + b.size;
+  // Accumulate in size_t and check the uint32 result range: a.size+b.size can
+  // exceed 4 GiB (each is a separate <=4 GiB view), which would wrap the uint32
+  // length into an undersized allocation and a heap overflow on the memcpy.
+  std::size_t need = static_cast<std::size_t>(a.size) + 1 + b.size;
+  if (need > string_ref::npos) return string_ref{};  // result would not fit a view
+  const std::uint32_t n = static_cast<std::uint32_t>(need);
   char* s = static_cast<char*>(alloc.allocate(n + 1));
   if (s == nullptr) return string_ref{};
   if (a.size) std::memcpy(s, a.data, a.size);

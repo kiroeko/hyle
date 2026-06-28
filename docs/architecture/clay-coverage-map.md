@@ -83,7 +83,21 @@
 
 ## "clay 完全吸纳"在 P 几（见本文件末尾结论由 milestones/README 给出）
 
+## 红队核账登记（2026-06-28，4 agent 对抗审计本批 path/swiss-04b/fs/log）
+
+红队验证架构核心扎实（type-erase 热路径零回归成立、NEON 逻辑等价、erase reclaim 不变量正确、无 double-free/泄漏、零 std 流违规、无玩具空壳）。**当轮已修 7 处硬伤**：log.h 美化注释("trailing marker"→静默截断)、Win `current_directory`/`temp_directory` 超 MAX_PATH 读未初始化缓冲、POSIX `directory_iterate` DT_UNKNOWN 用 `lstat` 防递归删跟随符号链接(+ WSL 符号链接安全测试)、`copy_file` EINTR 重试 + O_CLOEXEC、log 双 OutputDebugString 合一、`path::join` uint32 溢出守卫、log sink 生命周期硬契约文档。
+
+**显式登记待办（红队挖出、本轮未修的大件，非略过）**：
+- **【高】platform-03c：Windows UTF-8 路径**。fs.cc 全程 `...A`(ANSI)API,非 ASCII 的 UTF-8 路径在 Win 按 ACP 误解(ASCII 测例掩盖)。需 Win 分支 UTF-8↔UTF-16 + `...W` API。**当前 fs 在 Win 限 ACP 路径**。
+- **【中】container-04c：SwissTable `find_or_prepare_insert` 融合**。insert 新键现走 2× 哈希 + 2× 探测(find 查重 + find_insert_slot 各一趟);abseil 融合为单趟。对贵哈希键损失约半插入效率(对 std 仍远胜,对标 abseil 让步)。
+- **【中】obs log 无锁快照**:log_message 每条加 mutex 取快照;可换 atomic COW 指针(读路径零锁)。
+- **【中】platform fs copy_file 内核零拷贝**:POSIX 现 read/write 用户态弹跳;可试 `copy_file_range`/`sendfile`(失败回退)。
+- **【中】platform-03c：Win 长路径 + UNC**:`make_directory_recursive` UNC 必败;`directory_iterate` Win `pattern[MAX_PATH=260]` 截深树(POSIX 4096),跨平台分叉。需 `\\?\` 前缀 + 宽字符。
+- **【低】Win-ARM64 NEON MSVC 编译门**:GroupNeon 仅 aarch64 GCC 交叉编译验证,`_M_ARM64`(MSVC)路径未编译验证;若 Win-ARM64 入目标需补门或排除。
+- **【低】swiss erase 复用墓碑 growth_left 重复扣减**(自愈、纯空间)、log default sink 非 tty/重定向时 ANSI 污染、`stat` exists 语义 Win(任意属性)vs POSIX(文件||目录)分叉。
+
 ## HYLE vs clay 的计划性差异（关键：吸纳 ≠ 追平 LOC）
+
 
 > **"完全吸纳 clay" 不等于 "HYLE LOC 追平 clay"。** 标尺只对"该吸纳的那部分"成立——对那些组件，HYLE 明显小于 clay = 缩水嫌疑(要查)。但整体 HYLE 会**超过** clay，因为三类计划性差异：
 

@@ -96,8 +96,11 @@ bool copy_file(const char* from, const char* to) noexcept {
 
 std::size_t current_directory(char* dst, std::size_t cap) noexcept {
   char buf[MAX_PATH];
+  // On overflow GetCurrentDirectoryA returns the REQUIRED length (> buf) without
+  // filling buf -- guard against copying uninitialized bytes (matches
+  // home_directory's `n >= sizeof(buf)` check; the two were inconsistent).
   DWORD n = GetCurrentDirectoryA(sizeof(buf), buf);
-  if (n == 0) return fill(dst, cap, "", 0);
+  if (n == 0 || n > sizeof(buf)) return fill(dst, cap, "", 0);
   return fill(dst, cap, buf, n);
 }
 
@@ -108,7 +111,7 @@ bool change_directory(const char* path) noexcept {
 std::size_t temp_directory(char* dst, std::size_t cap) noexcept {
   char buf[MAX_PATH + 1];
   DWORD n = GetTempPathA(sizeof(buf), buf);  // already honors TMP/TEMP
-  if (n == 0) return fill(dst, cap, "", 0);
+  if (n == 0 || n > sizeof(buf)) return fill(dst, cap, "", 0);
   while (n > 1 && (buf[n - 1] == '\\' || buf[n - 1] == '/')) --n;  // trim slash
   return fill(dst, cap, buf, n);
 }
@@ -200,14 +203,14 @@ bool rename_path(const char* from, const char* to) noexcept {
 }
 
 bool copy_file(const char* from, const char* to) noexcept {
-  int in = ::open(from, O_RDONLY);
+  int in = ::open(from, O_RDONLY | O_CLOEXEC);
   if (in < 0) return false;
   struct ::stat s;
   if (::fstat(in, &s) != 0) {
     ::close(in);
     return false;
   }
-  int out = ::open(to, O_WRONLY | O_CREAT | O_TRUNC, s.st_mode & 0777);
+  int out = ::open(to, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, s.st_mode & 0777);
   if (out < 0) {
     ::close(in);
     return false;
@@ -217,6 +220,7 @@ bool copy_file(const char* from, const char* to) noexcept {
   for (;;) {
     ssize_t got = ::read(in, buf, sizeof(buf));
     if (got < 0) {
+      if (errno == EINTR) continue;  // interrupted by a signal: retry
       ok = false;
       break;
     }
@@ -226,6 +230,7 @@ bool copy_file(const char* from, const char* to) noexcept {
     while (left > 0) {
       ssize_t wrote = ::write(out, p, static_cast<std::size_t>(left));
       if (wrote < 0) {
+        if (errno == EINTR) continue;  // retry the same chunk
         ok = false;
         break;
       }
@@ -287,13 +292,18 @@ bool directory_iterate(const char* path,
     if (name[0] == '.' &&
         (name[1] == '\0' || (name[1] == '.' && name[2] == '\0')))
       continue;
-    // d_type may be DT_UNKNOWN on some filesystems; fall back to stat then.
+    // d_type may be DT_UNKNOWN on some filesystems; fall back to lstat then.
     bool dir;
     if (de->d_type == DT_DIR) {
       dir = true;
     } else if (de->d_type == DT_UNKNOWN) {
+      // lstat, NOT stat: a symlink-to-directory must report as a non-directory
+      // (false), matching the DT_LNK fast path. Otherwise remove_directory_
+      // recursive would follow the link and delete OUTSIDE the tree.
       char child[4096];
-      dir = join_path(child, sizeof(child), path, name) && is_directory(child);
+      struct ::stat st;
+      dir = join_path(child, sizeof(child), path, name) &&
+            ::lstat(child, &st) == 0 && S_ISDIR(st.st_mode);
     } else {
       dir = false;
     }

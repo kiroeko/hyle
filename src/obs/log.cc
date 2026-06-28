@@ -39,8 +39,11 @@ void default_write(void*, LogLevel level, const char* msg) noexcept {
   std::fprintf(stderr, "%s%s\x1b[0m\n", color, msg);
   std::fflush(stderr);
 #if defined(_WIN32)
-  OutputDebugStringA(msg);
-  OutputDebugStringA("\n");
+  // One debugger round-trip, not two: format msg+newline into a stack buffer
+  // first (OutputDebugStringA is a relatively costly kernel/debugger crossing).
+  char dbg[1024];
+  int n = std::snprintf(dbg, sizeof(dbg), "%s\n", msg);
+  OutputDebugStringA(n > 0 ? dbg : msg);
 #endif
 }
 

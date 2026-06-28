@@ -13,6 +13,10 @@
 #include <string>
 #include <vector>
 
+#if !defined(_WIN32)
+#  include <unistd.h>  // symlink() for the recursive-delete safety test
+#endif
+
 using namespace hyle::platform;
 
 namespace {
@@ -29,11 +33,10 @@ class FsTest : public ::testing::Test {
     std::size_t n = temp_directory(tmp, sizeof(tmp));
     ASSERT_GT(n, 0u);
     ASSERT_LT(n, sizeof(tmp));
-    char buf[4096];
-    std::snprintf(buf, sizeof(buf), "%s/hyle_fs_test_%llu", tmp,
-                  static_cast<unsigned long long>(
-                      reinterpret_cast<std::uintptr_t>(this)));
-    root = buf;
+    // std::string concat (not snprintf into a fixed buffer, which GCC flags as
+    // possibly-truncated since tmp can be up to 4096 chars).
+    root = std::string(tmp, n) + "/hyle_fs_test_" +
+           std::to_string(reinterpret_cast<std::uintptr_t>(this));
     remove_directory_recursive(root.c_str());  // clear any stale leftover
     ASSERT_TRUE(make_directory(root.c_str()));
   }
@@ -111,7 +114,7 @@ TEST_F(FsTest, CopyFile) {
   char got[8] = {0};
   fp = std::fopen(b.c_str(), "rb");
   ASSERT_NE(fp, nullptr);
-  std::fread(got, 1, 5, fp);
+  EXPECT_EQ(std::fread(got, 1, 5, fp), 5u);  // also silences warn_unused_result
   std::fclose(fp);
   EXPECT_STREQ(got, "hello");
 }
@@ -162,6 +165,28 @@ TEST_F(FsTest, RemoveDirectoryRecursive) {
   EXPECT_TRUE(remove_directory_recursive(path("tree").c_str()));
   EXPECT_FALSE(exists(path("tree").c_str()));
 }
+
+#if !defined(_WIN32)
+// Recursive delete must NOT follow a symlink-to-directory and delete the target
+// (blast-radius safety). POSIX-only: symlink creation on Windows needs a
+// privilege; this guards the DT_LNK / lstat-on-DT_UNKNOWN path in fs.cc.
+TEST_F(FsTest, RemoveDirectoryRecursiveDoesNotFollowSymlink) {
+  // outside/keep.txt is the target that must SURVIVE.
+  ASSERT_TRUE(make_directory(path("outside").c_str()));
+  ASSERT_TRUE(touch(path("outside/keep.txt").c_str()));
+  // victim/ contains a symlink "link" -> ../outside.
+  ASSERT_TRUE(make_directory(path("victim").c_str()));
+  std::string link = path("victim/link");
+  std::string target = path("outside");
+  ASSERT_EQ(::symlink(target.c_str(), link.c_str()), 0);
+
+  EXPECT_TRUE(remove_directory_recursive(path("victim").c_str()));
+  EXPECT_FALSE(exists(path("victim").c_str()));
+  // The link's target and its contents must be untouched.
+  EXPECT_TRUE(exists(path("outside").c_str()));
+  EXPECT_TRUE(exists(path("outside/keep.txt").c_str()));
+}
+#endif
 
 TEST_F(FsTest, SpecialDirectoriesNonEmpty) {
   char buf[4096];
