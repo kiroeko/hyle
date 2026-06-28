@@ -9,7 +9,7 @@
 
 **差异点在"同一套底座"**：GPU 算完、网卡收到包、fiber 主动让出——都回到同一个调度器、唤醒同一个 fiber，而不是四个子系统各开线程池、各跑事件循环互相打架。所以 HYLE 不是"又一个 hashmap / 日志库"，而是让 计算 / 并发 / 内存 / IO 无阻抗拼在一起的那层地基。
 
-> HYLE = HYbrid LEvels。回到 C、贴硬件、混合异构、把性能做到极致。是对 `slate-render` 中 clay infra 层的重构与扩大。
+> HYLE = HYbrid LEvels。回到 C、贴硬件、混合异构、把性能做到极致（SOTA）。是对 `slate-render` 中 clay infra 层的重构与扩大。
 
 ## 核心目的：性能做到 SOTA（不是"比 std 快"就行）
 
