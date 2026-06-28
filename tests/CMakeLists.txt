@@ -18,7 +18,20 @@ hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc uti
 hyle_add_test(time SOURCES time/clock_test.cc)
 hyle_add_test(math SOURCES math/scalar_test.cc)
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform)
+# simd: the scalar test (dispatch + vec floor) always builds. The vec op suite is ALSO
+# compiled per real ISA backend (sse4 / avx2) -- SAME source, different HYLE_SIMD_TARGET_*
+# + -march, each pairing the backend against the naive reference. GCC/Clang need the
+# arch flag to enable the intrinsics; MSVC x64 has SSE4.2 unconditionally and uses
+# /arch:AVX2 for the 256-bit build. These variant exes run on the build host, which must
+# support the ISA (both dev platforms are AVX2 -- matches the variant-DLL test model).
 hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+  hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4)
+  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS /arch:AVX2)
+else()
+  hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS -msse4.2)
+  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS -mavx2 -mfma -mf16c)
+endif()
 if(HYLE_HAS_FCONTEXT)
   hyle_add_test(sched SOURCES sched/fiber_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc)
 endif()

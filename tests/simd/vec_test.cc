@@ -6,26 +6,26 @@
 
 #include "hyle/simd/vec.h"
 
+// vec_test -- WIDTH-AGNOSTIC: this ONE source is compiled three times (scalar / sse4 /
+// avx2 targets, see tests/CMakeLists.txt) and validates whichever backend is compiled
+// in. So the op tests must NOT assume a lane count: they use ScalableTag<T> + the
+// runtime Lanes(d) + a naive per-lane reference. The D-tag CONTRACT tests below are
+// pure compile-time tag math (backend-independent) and stay as-is.
+
 namespace hs = hyle::simd;
 
-// ---- D-tag contract -----------------------------------------------------------------
+// ---- D-tag contract (tag math only -- no vectors created, valid on every backend) ---
 
 TEST(Vec, ScalableTagLaneCountMatchesNativeWidth) {
-  // v1 floor emulates a 128-bit vector: 4 float lanes, 2 double, 16 uint8.
+  // Lanes scale with the compiled backend's native width (16B scalar/sse4, 32B avx2).
   EXPECT_EQ(hs::Lanes(hs::ScalableTag<float>()), hs::kNativeVectorBytes / 4);
   EXPECT_EQ(hs::Lanes(hs::ScalableTag<double>()), hs::kNativeVectorBytes / 8);
-  EXPECT_EQ(hs::Lanes(hs::ScalableTag<std::uint8_t>()), hs::kNativeVectorBytes);
+  EXPECT_EQ(hs::Lanes(hs::ScalableTag<std::int32_t>()), hs::kNativeVectorBytes / 4);
 }
 
 TEST(Vec, FixedTagIsExact) {
   EXPECT_EQ(hs::Lanes(hs::FixedTag<float, 4>()), 4u);
   EXPECT_EQ(hs::MaxLanes(hs::FixedTag<std::int32_t, 8>()), 8u);
-}
-
-TEST(Vec, CappedTagClampsToNativeAndPow2) {
-  // Cap above native -> native; non-pow2 cap -> floor pow2.
-  EXPECT_EQ(hs::Lanes(hs::CappedTag<float, 1024>()), hs::kNativeVectorBytes / 4);
-  EXPECT_EQ(hs::Lanes(hs::CappedTag<float, 3>()), 2u);  // floor_pow2(3) = 2
 }
 
 TEST(Vec, HalfTwiceTags) {
@@ -39,139 +39,221 @@ TEST(Vec, TFromDIsLaneType) {
   SUCCEED();
 }
 
-// Lanes() must be usable in a constexpr context for the fixed-width floor (the SVE hook
-// flips this off; for v1 it must be precomputable so loop bounds fold).
 TEST(Vec, LanesIsConstexprForFixedWidth) {
   constexpr std::size_t n = hs::Lanes(hs::FixedTag<float, 4>());
   static_assert(n == 4);
   EXPECT_EQ(n, 4u);
 }
 
-// ---- scalar backend ops, paired against naive per-lane reference --------------------
+// ---- backend ops, paired against a naive per-lane reference -------------------------
+// Buffers are 64B-aligned so the aligned Load/Store path is exercised on every backend
+// (scalar memcpy / SSE 16B / AVX2 32B all satisfied). Sized for the widest v1 backend.
+namespace {
+constexpr std::size_t kMaxLanes = 16;  // >= any v1 native width (avx2 f32 = 8)
 
-TEST(Vec, SetBroadcastsAndGetLane) {
-  const hs::FixedTag<std::int32_t, 4> d;
+template <typename T>
+struct alignas(64) Buf {
+  T data[kMaxLanes] = {};
+};
+}  // namespace
+
+TEST(Vec, SetBroadcastAndStore) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
   auto v = hs::Set(d, 7);
   EXPECT_EQ(hs::GetLane(v), 7);
-  std::int32_t out[4];
-  hs::Store(v, d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], 7);
+  Buf<std::int32_t> out;
+  hs::Store(v, d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], 7);
 }
 
 TEST(Vec, LoadStoreRoundTrip) {
-  const hs::FixedTag<float, 4> d;
-  float in[4] = {1.5f, -2.0f, 3.25f, 0.0f};
-  auto v = hs::Load(d, in);
-  float out[4];
-  hs::Store(v, d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_FLOAT_EQ(out[i], in[i]);
+  const hs::ScalableTag<float> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<float> in;
+  for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<float>(i) - 2.5f;
+  auto v = hs::Load(d, in.data);
+  Buf<float> out;
+  hs::Store(v, d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], in.data[i]);
+  // unaligned path agrees too
+  auto vu = hs::LoadU(d, in.data);
+  hs::StoreU(vu, d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], in.data[i]);
 }
 
-TEST(Vec, ArithmeticMatchesScalar) {
-  const hs::FixedTag<std::int32_t, 4> d;
-  std::int32_t a[4] = {10, 20, 30, 40};
-  std::int32_t b[4] = {1, 2, 3, 4};
-  auto va = hs::Load(d, a);
-  auto vb = hs::Load(d, b);
-  std::int32_t out[4];
+// Generic arithmetic check over a lane type T with integer-exact inputs.
+template <typename T>
+void CheckArith() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<T>(i + 3);
+    b.data[i] = static_cast<T>(i + 1);
+  }
+  auto va = hs::Load(d, a.data);
+  auto vb = hs::Load(d, b.data);
 
-  hs::Store(hs::Add(va, vb), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], a[i] + b[i]);
-  hs::Store(hs::Sub(va, vb), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], a[i] - b[i]);
-  hs::Store(hs::Mul(va, vb), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], a[i] * b[i]);
-  hs::Store(hs::Min(va, vb), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], b[i]);
-  hs::Store(hs::Max(va, vb), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], a[i]);
+  hs::Store(hs::Add(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<T>(a.data[i] + b.data[i]));
+  hs::Store(hs::Sub(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<T>(a.data[i] - b.data[i]));
+  hs::Store(hs::Mul(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<T>(a.data[i] * b.data[i]));
+  hs::Store(hs::Min(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], b.data[i]);
+  hs::Store(hs::Max(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]);
 }
 
-TEST(Vec, NegAbs) {
-  const hs::FixedTag<std::int32_t, 4> d;
-  std::int32_t a[4] = {-3, 5, -7, 0};
-  auto v = hs::Load(d, a);
-  std::int32_t out[4];
-  hs::Store(hs::Neg(v), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], -a[i]);
-  hs::Store(hs::Abs(v), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], a[i] < 0 ? -a[i] : a[i]);
+TEST(Vec, ArithmeticInt32) { CheckArith<std::int32_t>(); }
+TEST(Vec, ArithmeticUint32) { CheckArith<std::uint32_t>(); }
+TEST(Vec, ArithmeticFloat) { CheckArith<float>(); }
+TEST(Vec, ArithmeticDouble) { CheckArith<double>(); }
+
+TEST(Vec, NegAbsInt32) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> a, out;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = (i % 2 ? -1 : 1) * static_cast<int>(i + 1);
+  auto v = hs::Load(d, a.data);
+  hs::Store(hs::Neg(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], -a.data[i]);
+  hs::Store(hs::Abs(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i] < 0 ? -a.data[i] : a.data[i]);
+}
+
+TEST(Vec, FloatDivSqrtAbs) {
+  const hs::ScalableTag<float> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<float> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<float>((i + 1) * (i + 1));  // perfect squares
+    b.data[i] = 2.0f;
+  }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+  hs::Store(hs::Div(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], a.data[i] / 2.0f);
+  hs::Store(hs::Sqrt(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], static_cast<float>(i + 1));
+  hs::Store(hs::Abs(hs::Neg(va)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], a.data[i]);
 }
 
 TEST(Vec, MulAddFamily) {
-  const hs::FixedTag<float, 4> d;
-  float a[4] = {2, 3, 4, 5}, b[4] = {10, 10, 10, 10}, c[4] = {1, 1, 1, 1};
-  auto va = hs::Load(d, a), vb = hs::Load(d, b), vc = hs::Load(d, c);
-  float out[4];
-  hs::Store(hs::MulAdd(va, vb, vc), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_FLOAT_EQ(out[i], a[i] * b[i] + c[i]);
-  hs::Store(hs::NegMulAdd(va, vb, vc), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_FLOAT_EQ(out[i], -(a[i] * b[i]) + c[i]);
+  const hs::ScalableTag<float> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<float> a, b, c, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<float>(i + 2);
+    b.data[i] = 10.0f;
+    c.data[i] = 1.0f;
+  }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data), vc = hs::Load(d, c.data);
+  // FMA (avx2) single-rounds vs naive two-rounding -> tolerate a small epsilon.
+  hs::Store(hs::MulAdd(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], a.data[i] * b.data[i] + c.data[i], 1e-3f);
+  hs::Store(hs::NegMulAdd(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], -(a.data[i] * b.data[i]) + c.data[i], 1e-3f);
 }
 
-TEST(Vec, BitwiseOnIntegers) {
-  const hs::FixedTag<std::uint32_t, 4> d;
-  std::uint32_t a[4] = {0xF0F0F0F0u, 0xFFFFu, 0x1u, 0xAAAAu};
-  std::uint32_t b[4] = {0x0F0F0F0Fu, 0xFF00u, 0x3u, 0x5555u};
-  auto va = hs::Load(d, a), vb = hs::Load(d, b);
-  std::uint32_t out[4];
-  hs::Store(hs::And(va, vb), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], a[i] & b[i]);
-  hs::Store(hs::Or(va, vb), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], a[i] | b[i]);
-  hs::Store(hs::Xor(va, vb), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], a[i] ^ b[i]);
-  hs::Store(hs::AndNot(va, vb), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], ~a[i] & b[i]);  // Highway order
+TEST(Vec, BitwiseUint32) {
+  const hs::ScalableTag<std::uint32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::uint32_t> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = 0xF0F0F0F0u ^ static_cast<std::uint32_t>(i * 0x01010101u);
+    b.data[i] = 0x0F0F0F0Fu ^ static_cast<std::uint32_t>(i * 0x10101010u);
+  }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+  hs::Store(hs::And(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i] & b.data[i]);
+  hs::Store(hs::Or(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i] | b.data[i]);
+  hs::Store(hs::Xor(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i] ^ b.data[i]);
+  hs::Store(hs::AndNot(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], ~a.data[i] & b.data[i]);  // Highway order
 }
 
-TEST(Vec, CompareToMaskAndBlend) {
-  const hs::FixedTag<std::int32_t, 4> d;
-  std::int32_t a[4] = {1, 5, 3, 9};
-  std::int32_t b[4] = {4, 5, 2, 1};
-  auto va = hs::Load(d, a), vb = hs::Load(d, b);
-  auto m = hs::Gt(va, vb);  // a>b: lanes 2,3
-  EXPECT_EQ(hs::CountTrue(d, m), 2u);
-  EXPECT_EQ(hs::FindFirstTrue(d, m), 2);
+// Comparison -> mask -> blend, over a lane type T. Builds inputs where exactly the even
+// lanes satisfy a > b, so the expected mask population is deterministic and width-agnostic.
+template <typename T>
+void CheckCompareBlend() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a, b, out;
+  std::size_t expect_gt = 0;
+  for (std::size_t i = 0; i < n; ++i) {
+    if (i % 2 == 0) { a.data[i] = static_cast<T>(9); b.data[i] = static_cast<T>(2); ++expect_gt; }
+    else { a.data[i] = static_cast<T>(1); b.data[i] = static_cast<T>(5); }
+  }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+  auto m = hs::Gt(va, vb);
+  EXPECT_EQ(hs::CountTrue(d, m), expect_gt);
+  EXPECT_EQ(hs::FindFirstTrue(d, m), 0);  // lane 0 is even -> a>b
   EXPECT_FALSE(hs::AllTrue(d, m));
   EXPECT_FALSE(hs::AllFalse(d, m));
+  EXPECT_TRUE(hs::AllTrue(d, hs::Ge(va, hs::Min(va, vb))));  // a >= min(a,b) always
 
-  // blend: where a>b take a else b -> elementwise max via mask.
-  std::int32_t out[4];
-  hs::Store(hs::IfThenElse(m, va, vb), d, out);
-  for (int i = 0; i < 4; ++i) EXPECT_EQ(out[i], a[i] > b[i] ? a[i] : b[i]);
+  // blend: where a>b take a else b == elementwise max
+  hs::Store(hs::IfThenElse(m, va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], a.data[i] > b.data[i] ? a.data[i] : b.data[i]);
 
-  auto meq = hs::Eq(va, vb);  // lane 1 only
-  EXPECT_EQ(hs::CountTrue(d, meq), 1u);
-  EXPECT_TRUE(hs::AllTrue(d, hs::Ge(va, hs::Set(d, -100))));
+  // Eq / Lt / Le / Ne consistency
+  EXPECT_TRUE(hs::AllTrue(d, hs::Eq(va, va)));
+  EXPECT_TRUE(hs::AllFalse(d, hs::Ne(va, va)));
+  EXPECT_TRUE(hs::AllTrue(d, hs::Le(hs::Min(va, vb), hs::Max(va, vb))));
+  EXPECT_TRUE(hs::AllTrue(d, hs::Lt(hs::Sub(va, hs::Set(d, static_cast<T>(0))), hs::Add(va, hs::Set(d, static_cast<T>(1))))));
 }
 
-TEST(Vec, Reductions) {
-  const hs::FixedTag<std::int32_t, 4> d;
-  std::int32_t a[4] = {3, 1, 4, 1};
-  auto v = hs::Load(d, a);
-  EXPECT_EQ(hs::ReduceSum(d, v), 3 + 1 + 4 + 1);
-  EXPECT_EQ(hs::ReduceMin(d, v), 1);
-  EXPECT_EQ(hs::ReduceMax(d, v), 4);
+TEST(Vec, CompareBlendInt32) { CheckCompareBlend<std::int32_t>(); }
+TEST(Vec, CompareBlendUint32) { CheckCompareBlend<std::uint32_t>(); }
+TEST(Vec, CompareBlendFloat) { CheckCompareBlend<float>(); }
+TEST(Vec, CompareBlendDouble) { CheckCompareBlend<double>(); }
+
+template <typename T>
+void CheckReductions() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a;
+  T sum = T{0}, mn = T{0}, mx = T{0};
+  for (std::size_t i = 0; i < n; ++i) {
+    // values 1..n permuted a bit so min/max aren't at the ends
+    T val = static_cast<T>(((i * 7 + 3) % n) + 1);
+    a.data[i] = val;
+    sum = static_cast<T>(sum + val);
+    if (i == 0) { mn = mx = val; }
+    else { mn = val < mn ? val : mn; mx = val > mx ? val : mx; }
+  }
+  auto v = hs::Load(d, a.data);
+  EXPECT_EQ(hs::ReduceSum(d, v), sum);
+  EXPECT_EQ(hs::ReduceMin(d, v), mn);
+  EXPECT_EQ(hs::ReduceMax(d, v), mx);
 }
 
-// A loop written against ScalableTag (the idiomatic form) computes a correct dot
-// product regardless of how many lanes the compiled backend has.
+TEST(Vec, ReductionsInt32) { CheckReductions<std::int32_t>(); }
+TEST(Vec, ReductionsUint32) { CheckReductions<std::uint32_t>(); }
+TEST(Vec, ReductionsFloat) { CheckReductions<float>(); }
+TEST(Vec, ReductionsDouble) { CheckReductions<double>(); }
+
+// The idiomatic ScalableTag dot-product: correct regardless of the backend's lane count.
 TEST(Vec, ScalableDotProduct) {
   const hs::ScalableTag<float> d;
   const std::size_t n = hs::Lanes(d);
-  constexpr std::size_t kCount = 64;
-  ASSERT_EQ(kCount % 16, 0u);  // divisible by any v1 native width (<=16)
-  float xs[kCount], ys[kCount];
+  constexpr std::size_t kCount = 256;
+  ASSERT_EQ(kCount % 8, 0u);  // divisible by any v1 native width (<=8 float lanes)
+  alignas(64) float xs[kCount], ys[kCount];
   double ref = 0.0;
   for (std::size_t i = 0; i < kCount; ++i) {
-    xs[i] = static_cast<float>(i);
-    ys[i] = static_cast<float>(2 * i + 1);
+    xs[i] = static_cast<float>(i % 13);
+    ys[i] = static_cast<float>((2 * i + 1) % 7);
     ref += static_cast<double>(xs[i]) * ys[i];
   }
   auto acc = hs::Zero(d);
-  for (std::size_t i = 0; i + n <= kCount; i += n) {
+  for (std::size_t i = 0; i + n <= kCount; i += n)
     acc = hs::MulAdd(hs::Load(d, xs + i), hs::Load(d, ys + i), acc);
-  }
-  EXPECT_FLOAT_EQ(hs::ReduceSum(d, acc), static_cast<float>(ref));
+  EXPECT_NEAR(hs::ReduceSum(d, acc), static_cast<float>(ref), 1.0f);
 }

@@ -96,13 +96,13 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 | P2 | mem | ✅ 主力完成 | Allocator vtable、mimalloc(v2.3.2,强制常开)、arena;pool/MemorySpace/NUMA/大页 📋未做 |
 | P2 | time | 🔶 部分 | 单调钟(time-01)✅;分层时间轮 📋未做 |
 | P3 | container | ✅ 主力完成 | BoundedQueue/WsFifoQueue、XXH3、CArray、SwissTable、string_ref/buf、concurrent_vector;SmallVector/intrusive 🔶部分 |
-| P3 | **simd** | 🔶 起步 | simd-01 已落:运行期 CPUID dispatch 骨架(探测器隔离禁 LTO)+ vec D-tag 抽象(照搬 Highway 契约)+ scalar 地板后端,双平台 22/22。各 ISA intrinsic 后端(SSE2/AVX2/AVX512/NEON)/变体 DLL dispatch/dtype/数学核 📋未做 |
+| P3 | **simd** | 🔶 起步 | simd-01(dispatch 骨架+vec D-tag+scalar)+ simd-02(SSE4.2+AVX2 实后端,对标 Highway 追平/4.6x over auto-vec)已落,双平台真编真测。NEON/AVX512(simd-03)、变体 DLL dispatch(simd-04)、dtype(simd-05)、sleef 数学核(simd-06) 📋未做 |
 | P4 | sched | 🔶 核心done | fiber(fcontext)、work-stealing 调度器、Waker completion 脊(sched-03/04a)✅;fiber-aware CV/同步原语、协程胶水 📋未做 |
 | P5 | **io** | ⛔ **未动** | 整条支柱未开工(proactor/io_uring/epoll/IOCP/net/file) |
 | P5 | **compute** | ⛔ **未动** | 整条支柱未开工(device/stream/ggml_bridge/GPU completion/Vulkan) |
 | P6 | **graph** | ⛔ **未动** | taskgraph/C-ABI shim/FFI 未开工 |
 
-**已闭环里程碑**(真编真测双平台):error-02、obs-01、platform-02/03、mem-01/01b/02/03/03b、time-01、container-02/03/04/04b/04c/06/06b/06c/09、util-01..05、sched-03/04a、**simd-01**。**下一步候选**:① 续 simd 支柱(simd-02 SSE2/AVX2 实后端对拍 scalar——dispatch 骨架+对拍地板已就位);② 补 sched 后段(CV/同步原语/协程胶水);③ 补 mem 后段(pool/MemorySpace)。
+**已闭环里程碑**(真编真测双平台):error-02、obs-01、platform-02/03、mem-01/01b/02/03/03b、time-01、container-02/03/04/04b/04c/06/06b/06c/09、util-01..05、sched-03/04a、**simd-01/02**。**下一步候选**:① 续 simd 支柱(simd-03 NEON+AVX512,或 simd-04 变体 DLL 运行期选择,或 simd-05 dtype);② 补 sched 后段(CV/同步原语/协程胶水);③ 补 mem 后段(pool/MemorySpace)。
 
 
 

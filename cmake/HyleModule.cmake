@@ -33,12 +33,25 @@ function(hyle_add_module name)
   add_library(hyle::${name} ALIAS ${target})
 endfunction()
 
-# hyle_add_test(<module> SOURCES ...) -> test exe linked to hyle_<module> + gtest
+# hyle_add_test(<module> SOURCES ... [NAME <suffix>] [DEFINES ...] [OPTIONS ...] [DEPS ...])
+# -> test exe linked to hyle_<module> + gtest. NAME gives a distinct target suffix so a
+# module can have several test exes (e.g. simd compiles the SAME source per ISA variant
+# with different DEFINES/OPTIONS -- HYLE_SIMD_TARGET_AVX2 + -mavx2 etc.).
 function(hyle_add_test module)
-  cmake_parse_arguments(ARG "" "" "SOURCES;DEPS" ${ARGN})
-  set(target "hyle_${module}_test")
+  cmake_parse_arguments(ARG "" "NAME" "SOURCES;DEPS;DEFINES;OPTIONS" ${ARGN})
+  if(ARG_NAME)
+    set(target "hyle_${module}_${ARG_NAME}_test")
+  else()
+    set(target "hyle_${module}_test")
+  endif()
   add_executable(${target} ${ARG_SOURCES})
   target_link_libraries(${target} PRIVATE hyle_${module} GTest::gtest GTest::gtest_main ${ARG_DEPS})
+  if(ARG_DEFINES)
+    target_compile_definitions(${target} PRIVATE ${ARG_DEFINES})
+  endif()
+  if(ARG_OPTIONS)
+    target_compile_options(${target} PRIVATE ${ARG_OPTIONS})
+  endif()
   hyle_apply_warnings(${target})
   hyle_apply_sanitizer(${target})
   add_test(NAME ${target} COMMAND ${target})

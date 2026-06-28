@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <cmath>
 #include <type_traits>
 
 #include "hyle/macros.h"
@@ -125,6 +126,13 @@ HYLE_FORCE_INLINE Vec<T, N> Abs(Vec<T, N> a) noexcept {
     const T x = a.raw[i];
     r.raw[i] = x < T{0} ? static_cast<T>(-x) : x;
   }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Sqrt(Vec<T, N> a) noexcept {
+  static_assert(std::is_floating_point_v<T>, "Sqrt is float/double only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = std::sqrt(a.raw[i]);
   return r;
 }
 

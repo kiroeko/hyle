@@ -108,7 +108,7 @@ HYLE_SIMD_LANES_CONSTEXPR std::size_t Lanes(D) noexcept {
 inline constexpr std::size_t kNativeVectorBytes = 64;
 #elif defined(HYLE_SIMD_TARGET_AVX2)
 inline constexpr std::size_t kNativeVectorBytes = 32;
-#elif defined(HYLE_SIMD_TARGET_SSE2) || defined(HYLE_SIMD_TARGET_NEON)
+#elif defined(HYLE_SIMD_TARGET_SSE4) || defined(HYLE_SIMD_TARGET_NEON)
 inline constexpr std::size_t kNativeVectorBytes = 16;
 #else
 // Scalar floor: emulate a 128-bit vector (matches Highway's EMU128), so lane counts
@@ -121,9 +121,9 @@ inline constexpr std::size_t kNativeVectorBytes = 16;
 // Selected by the SAME HYLE_SIMD_TARGET_* ladder as kNativeVectorBytes, ONE backend per
 // translation unit (the variant-DLL model, conventions §10): a TU compiled with
 // -DHYLE_SIMD_TARGET_AVX2 pulls in backend/avx2.h and nothing else, so backends never
-// coexist in one TU and their Vec/op symbols never collide. simd-01 ships only the
-// scalar floor (#else); simd-02/03 add `#elif defined(HYLE_SIMD_TARGET_SSE2) #include
-// "backend/sse2.h"` etc. + the per-variant CMake targets that define the macro -- this
+// coexist in one TU and their Vec/op symbols never collide. simd-01 shipped only the
+// scalar floor (#else); simd-02 added the SSE4.2 + AVX2 backends below. simd-03 adds
+// `#elif defined(HYLE_SIMD_TARGET_NEON) #include "backend/neon.h"` (+ AVX-512) -- this
 // ladder is the only thing that changes per ISA.
 }  // namespace hyle::simd
 
@@ -131,8 +131,8 @@ inline constexpr std::size_t kNativeVectorBytes = 16;
 #  include "hyle/simd/backend/avx512.h"
 #elif defined(HYLE_SIMD_TARGET_AVX2)
 #  include "hyle/simd/backend/avx2.h"
-#elif defined(HYLE_SIMD_TARGET_SSE2)
-#  include "hyle/simd/backend/sse2.h"
+#elif defined(HYLE_SIMD_TARGET_SSE4)
+#  include "hyle/simd/backend/sse4.h"
 #elif defined(HYLE_SIMD_TARGET_NEON)
 #  include "hyle/simd/backend/neon.h"
 #else

@@ -34,7 +34,7 @@
 | **util** | **Ref<T> 引用计数 + ScopeGuard/DEFER + 编译期 type_name + Registry 自注册** | ✅ |
 | **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 + **Waker completion 脊(suspend/wake)** | 🔶 deadline/协程/取消 待 |
 | **bench** | nanobench 设施 + SwissTable/string 对标 std | ✅ |
-| **simd** | 运行期 CPUID dispatch 骨架(探测器隔离禁 LTO) + vec<T,N> D-tag 抽象(照搬 Highway 契约,Lanes 留 SVE 口) + scalar 地板后端 | 🔶 各 ISA 后端/变体 dispatch/dtype 待 |
+| **simd** | 运行期 CPUID dispatch 骨架 + vec<T,N> D-tag 抽象(照搬 Highway 契约) + **scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec)** | 🔶 NEON/AVX512/变体 dispatch/dtype 待 |
 | io / compute / graph | — | 📋 规划 |
 
 **性能验证(已落地部分)**:SwissTable vs `std::unordered_map`(100k keys,双平台):find-hit 2.7x、find-miss 2.3x、insert 6.1x、erase 4.1x。
@@ -42,6 +42,8 @@
 **边界诚实**:已实现件局限于 **x86-64 Windows/Linux 真验**;ARM64 + macOS 路径多为"已写未验"(无测试机);simd 仅 scalar 后端+dispatch 骨架(各 ISA intrinsic 后端未落);io/compute/graph 三支柱尚未开工。
 
 ## 设计文档
+
+> **想把 HYLE 当依赖用？先看 [`docs/usage-guide.md`](./docs/usage-guide.md)**——构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界（面向库使用者）。
 
 完整的设计、背景、命名、源码位置、资产负债表、scope 与各支柱选型，集中在架构设计文档（唯一信源）：
 

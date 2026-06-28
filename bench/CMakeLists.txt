@@ -22,6 +22,47 @@ hyle_add_bench(mem SOURCES mem/allocator_bench.cc)
 # IN the build on purpose: if it ever recurs, we investigate head-on, not hide it.
 hyle_add_bench(sched SOURCES sched/scheduler_bench.cc)
 
+# simd bench: dot/saxpy raced across scalar-autovec / HYLE sse4 / HYLE avx2 (+ Highway if
+# enabled). Each kernel TU is compiled with ITS OWN -march so the per-ISA codegen is real
+# and isolated (one backend per TU). The scalar baseline TU gets NO -march (auto-vec only
+# = the honest "free from the optimizer" reference). Built into one exe.
+add_executable(hyle_simd_bench
+  simd/simd_bench.cc
+  simd/simd_kernels_scalar.cc
+  simd/simd_kernels_sse4.cc
+  simd/simd_kernels_avx2.cc
+  simd/simd_kernels_highway.cc)
+target_link_libraries(hyle_simd_bench PRIVATE hyle_simd nanobench)
+target_include_directories(hyle_simd_bench PRIVATE "${PROJECT_SOURCE_DIR}")
+if(NOT MSVC)
+  set_source_files_properties(simd/simd_kernels_sse4.cc PROPERTIES COMPILE_OPTIONS "-msse4.2")
+  set_source_files_properties(simd/simd_kernels_avx2.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
+else()
+  # MSVC x64 has SSE4.2 intrinsics unconditionally; AVX2 needs /arch:AVX2. scalar TU gets
+  # neither (stays SSE2 auto-vec baseline).
+  set_source_files_properties(simd/simd_kernels_avx2.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+endif()
+hyle_apply_warnings(hyle_simd_bench)
+
+# Optional SOTA parity: HYLE avx2 vs Highway avx2, head to head (same ISA). Enable with
+# -DHYLE_BENCH_HIGHWAY=ON; point HYLE_HIGHWAY_DIR at the cloned highway (sibling default).
+option(HYLE_BENCH_HIGHWAY "build the simd-vs-Highway parity bench" OFF)
+if(HYLE_BENCH_HIGHWAY)
+  set(HYLE_HIGHWAY_DIR "${PROJECT_SOURCE_DIR}/../highway" CACHE PATH "cloned highway")
+  if(NOT EXISTS "${HYLE_HIGHWAY_DIR}/hwy/highway.h")
+    message(FATAL_ERROR "HYLE_BENCH_HIGHWAY=ON but no highway at ${HYLE_HIGHWAY_DIR}")
+  endif()
+  target_compile_definitions(hyle_simd_bench PRIVATE HYLE_BENCH_HIGHWAY)
+  target_include_directories(hyle_simd_bench SYSTEM PRIVATE "${HYLE_HIGHWAY_DIR}")
+  # Highway static-dispatch ops are header-only; the kernel TU is built at -mavx2 so its
+  # HWY_STATIC_TARGET resolves to AVX2 (parity with HYLE avx2).
+  if(NOT MSVC)
+    set_source_files_properties(simd/simd_kernels_highway.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
+  else()
+    set_source_files_properties(simd/simd_kernels_highway.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+  endif()
+endif()
+
 # Optional SOTA parity bench: SwissTable vs absl::flat_hash_map. Off by default
 # (abseil is a heavy external build). Enable with -DHYLE_BENCH_ABSL=ON; point
 # HYLE_ABSL_DIR at a cloned abseil-cpp (defaults to a sibling of the repo).

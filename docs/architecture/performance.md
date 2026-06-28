@@ -28,6 +28,19 @@
 
 **这就是"对标 SOTA"的意义**:只对标 std 会得出"全面 2-5x 碾压"的虚假安心;对标 absl 才暴露 **find 有 ~25% 真实差距**。**已排除三个错误候选**(读码查实):① `eq_` 对 uint64 在 -O3 完全内联成裸 `==`,**无间接可去**;② `Hash<uint64>` 已是内联 `mix64`(splitmix64),**非 XXH3**,hash 不慢;③ **控制字节尾部镜像已实现**(`swiss_table.cc` core_set_ctrl 镜像前 kGroupWidth 字节 + 分配 `cap+kGroupWidth` + memset 尾),group near-end 加载已无回绕掩码。**find 循环结构已几乎等价 absl**——25% 来源**无法从源码结构看出**,需 **profile(perf/objdump 对比两个 find 内循环 codegen)** 定位真因;唯一已知结构差异是 absl 在 probe 起点 **预取槽数组**(100k 表常驻 cache 时收益小,待测)。**结论:这是一个需要 profile-guided 的真优化,非猜改**——留作下一步 container 性能待办。insert/erase 反超 absl 证明设计本身到位。
 
+### simd（向量后端 vs Highway + auto-vec，simd-02）
+
+> 环境:WSL Ubuntu24.04 原生 ext4(非 9p)、GCC14.2 Release、nanobench。4096 个 f32(L1 常驻,隔离计算吞吐非内存带宽)。`bench/simd/`。**Highway = SOTA 标尺**(同 -mavx2 静态 dispatch,与 HYLE avx2 同 ISA、同 kernel 形状,只差抽象层)。
+
+| kernel | scalar(auto-vec SSE2) | HYLE sse4(128b) | HYLE avx2(256b+FMA) | Highway avx2(**SOTA**) | 结论 |
+|---|---|---|---|---|---|
+| **dot product** | 2.73 G op/s (1.0x) | 11.3 G (4.14x) | **12.5 G (4.58x)** | 10.7 G (3.93x) | **追平/微超 Highway**;4.6x over auto-vec |
+| **saxpy** y=a*x+y | 17.6 G (1.0x) | 16.5 G (0.94x) | **25.0 G (1.42x)** | 20.0 G (1.14x) | avx2 追平 Highway;saxpy 内存带宽受限故倍数低 |
+
+**结论(回答"比 SOTA 有下降么")**:**没有——HYLE 向量后端与 Highway 统计平局**。dot 上 HYLE avx2 那 ~17% 名义领先落在微基准噪声内(0.08 ns/op 量级,两边内循环都编成同一条 `vfmadd231ps`,objdump 可证);诚实表述是**追平 SOTA**,非"赢"。compute-bound 的 dot 上 **4.6x over 自动向量化标量**,落在性能文档"SIMD 4-16x / vs auto-vec 1.5-4x"区间(dot 含 reduction,略超 4x 合理)。saxpy 是 3 流内存操作(读 x/读 y/写 y),标量 auto-vec 已近饱和带宽,故 SIMD 倍数天然低——AVX2 靠更宽 load 仍取 1.42x。**SSE4 saxpy 0.94x(略输标量)**诚实留账:128 位宽度下该 kernel 已带宽受限,SIMD 无加速空间,非 bug。
+>
+> **意义**:这验证了"自造精简抽象不牺牲性能"——HYLE 的 vec.h+后端(~340+360 行)在热路径上与 vendor 整个 Highway(单后端 ~3k 行)同速。抽象层零成本(全内联到 intrinsic),没有为"可移植"付性能税。
+
 ### sched（fiber 调度）
 
 | 项 | 实测(Linux GCC14) | 参考 |
