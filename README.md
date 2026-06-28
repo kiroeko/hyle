@@ -18,7 +18,7 @@
 | 模块 | 已实现 | 状态 |
 |---|---|---|
 | **error** | Status(8B 指针标签内联) + `std::expected` + ASSIGN_OR_RAISE | ✅ |
-| **platform** | thread + park(futex/WaitOnAddress) + **dynlib(RAII)** | 🔶 vm/fs 待 |
+| **platform** | thread + park(futex/WaitOnAddress) + **dynlib(RAII)** + **fs/env(stat/mkdir/iterate/cwd/temp/home/getenv,buffer-fill+visitor)** | 🔶 vm 待 |
 | **mem** | Allocator vtable(修 alignment) + **mimalloc backing(Win 4–12x>默认堆)** + MemoryArena(无锁) + Arena bump + ObjectPool + StackAllocator | 🔶 NUMA/大页 待 |
 | **time** | 单调钟 + 墙钟 + sleep + Instant(ns) | ✅ |
 | **container** | XXH3 哈希 + CArray + **SwissTable(SIMD 探测,对 std 快 2.7–6.1x;type-erased 冷核 + NEON)** + SmallVector + intrusive list + lock-free MPMC/SPSC/work-stealing 队列 + **string_ref/string_buf + 字节串算法 + path 路径操作** | ✅ |

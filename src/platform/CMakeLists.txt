@@ -1,4 +1,4 @@
-hyle_add_module(platform SOURCES wait.cc thread.cc dynlib.cc PUBLIC_DEPS hyle_error)
+hyle_add_module(platform SOURCES wait.cc thread.cc dynlib.cc fs.cc PUBLIC_DEPS hyle_error)
 
 # WaitOnAddress / WakeByAddress* are exported from Synchronization.lib (API set).
 if(WIN32)
