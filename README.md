@@ -43,7 +43,7 @@
 
 ## 设计文档
 
-> **想把 HYLE 当依赖用？先看 [`docs/usage-guide.md`](./docs/usage-guide.md)**——构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界（面向库使用者）。
+> **想把 HYLE 当依赖用？先看 [`docs/guide/usage-guide.md`](./docs/guide/usage-guide.md)**——构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界（面向库使用者）。可运行的示例工程见最外层 [`samples/`](./samples/)。
 
 完整的设计、背景、命名、源码位置、资产负债表、scope 与各支柱选型，集中在架构设计文档（唯一信源）：
 

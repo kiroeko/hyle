@@ -15,6 +15,12 @@ function(hyle_add_module name)
     target_include_directories(${target}
       PUBLIC  "${PROJECT_SOURCE_DIR}/include"
       PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}")
+    # Export the C++23 requirement to CONSUMERS: a downstream target linking hyle::<mod>
+    # includes our headers (which use `concept`, std::expected, etc.), so it must compile
+    # at C++23 too. CMAKE_CXX_STANDARD only governs HYLE's OWN build; PUBLIC compile
+    # features propagate the floor to consumers (verified by samples/ -- a consumer that
+    # didn't set the standard failed on `concept` until this was added).
+    target_compile_features(${target} PUBLIC cxx_std_23)
     target_link_libraries(${target} PRIVATE ${ARG_DEPS} PUBLIC ${ARG_PUBLIC_DEPS})
     hyle_apply_warnings(${target})
     hyle_apply_sanitizer(${target})
@@ -27,6 +33,7 @@ function(hyle_add_module name)
     endif()
   else()
     target_include_directories(${target} INTERFACE "${PROJECT_SOURCE_DIR}/include")
+    target_compile_features(${target} INTERFACE cxx_std_23)  # header-only modules too
     target_link_libraries(${target} INTERFACE ${ARG_PUBLIC_DEPS})
   endif()
 

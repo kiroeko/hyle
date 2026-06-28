@@ -41,7 +41,7 @@ simd-01 造了 CPUID 探测器（`best_isa()`），simd-02 造了各 ISA 后端�
 
 - **编译**：✅ Win MSVC 19.50（/W4 零告警）+ Linux GCC14.2 Release（零告警）。
 - **正确性**：✅ 双平台 `hyle_simd_test` 36/36（31 既有 + 5 派发）。派发结果对拍 double 精度参考（相对容差，容 fp reorder 但抓逻辑 bug——精确 per-op 数学在 vec_test 整数 oracle 钉死）；`active_variant()` 本机 = kAvx2（证 best_isa 真被消费选 kernel）。全量 ctest 13/13 无回归。
-- **SIGILL 安全（红队核实成立）**：老 CPU（无 AVX2）→ `selected_tier()` 返 kSse42/kScalar → `&dot_f32_avx2` **永不取址、永不调用**；avx2 符号在二进制中但不执行=安全；baseline dispatcher + LTO off + 独立 TU = 无跨 TU 内联。**FMA gating 闭合 AVX2-without-FMA 漏洞**（kAvx2 要求 fma 位，故 AVX2 kernel 的 `_mm256_fmadd` 永不在无 FMA CPU 跑）。
+- **SIGILL 安全（红队代码分析核实，未在非 AVX2 机实跑——本机即 AVX2,无老硬件可验,同 NEON"仅未跑"口径）**：老 CPU（无 AVX2）→ `selected_tier()` 返 kSse42/kScalar → `&dot_f32_avx2` **永不取址、永不调用**；avx2 符号在二进制中但不执行=安全；baseline dispatcher + LTO off + 独立 TU = 无跨 TU 内联。**FMA gating 闭合 AVX2-without-FMA 漏洞**（kAvx2 要求 fma 位，故 AVX2 kernel 的 `_mm256_fmadd` 永不在无 FMA CPU 跑）。**待补真验**：在禁 AVX2 的环境（如 QEMU `-cpu` 限 SSE4.2、或 `sde -snb`）实跑确认不 SIGILL，登记为后续。
 - **对抗自审修掉的真 bug**：`kNativeVectorBytes` 原 `inline constexpr`（外部链接）但**各 TU 值不同**（avx2 TU=32，其余=16）——inline 变量须各 TU 定义一致,divergent = IFNDR。simd-02 时各变体在独立测试 exe 故潜伏；simd-04 把 scalar+sse4+avx2 kernel TU 链进**同一 hyle_simd.dll**,变真 ODR 雷。改 `static constexpr`(内部链接,各 TU 自有正确值,仅常量折叠入模板参数不 odr-use)。
 
 ## 参考

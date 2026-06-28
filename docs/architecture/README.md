@@ -55,7 +55,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`roadmap.md`](./roadmap.md) | 实现路线图：模块依赖图（无环）+ 6 批施工序 + 关键路径 + 每批验收门槛 + 完整决策清单（已决+待决）|
 | [`performance.md`](./performance.md) | 性能预期 vs std：时间/空间分列、drop-in 可比 vs std 没有的能力两桶、Amdahl 整体观、benchmark gate 验证 |
 | [`references.md`](./references.md) | 参考库映射：clone 的 20+ 库 → HYLE 模块，借/参考标注、开工优先级（含 Intel oneMath/oneDNN）|
-| [`usage-contract.md`](./usage-contract.md) | **调用安全边界**：为 SOTA 性能保留的特定调用约束（fiber 勿跨 yield 持有 thread_local；分配器跨线程 free 安全/勿 static+LTO 内联进 fiber 体），每条带机制+安全模式+后果 |
+| [`usage-contract.md`](../guide/usage-contract.md) | **调用安全边界**：为 SOTA 性能保留的特定调用约束（fiber 勿跨 yield 持有 thread_local；分配器跨线程 free 安全/勿 static+LTO 内联进 fiber 体），每条带机制+安全模式+后果 |
 
 ## 状态与下一步
 

@@ -85,24 +85,16 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 
 **关键路径**（最长链）：`error → platform → mem → container → sched`。sched 是瓶颈，等 container 队列 + time + platform park 全就位。所以 **P2/P3 的 container/time 要尽早动**。simd 不在关键路径（只依赖 mem 对齐），可与 container 并行、晚点喂 compute。
 
-### 当前实现状态（2026-06-28 快照，cloc 实测 HYLE 生产 5,383 行 / 目标 50–70k）
+### 当前实现状态 → 见 milestones/README（唯一进度信源）
 
-> 口径:整体 ≈ **25–30%**(模块权重)。**地基层基本立住,四大支柱(simd/io/compute/graph)未动**。这是 5,383 生产行的真实分布,不是"覆盖 clay 85%"(那是符号计数误读,见 clay-coverage-map 头部口径)。
-
-| 阶段 | 模块 | 状态 | 说明 |
-|---|---|---|---|
-| P0 | error / obs | ✅ 基本完成 | error-02(vtable sink)、obs-01(log) |
-| P1 | platform | ✅ 基本完成 | thread/park、dynlib、path/fs/env/os_info(platform-02/03) |
-| P2 | mem | ✅ 主力完成 | Allocator vtable、mimalloc(v2.3.2,强制常开)、arena;pool/MemorySpace/NUMA/大页 📋未做 |
-| P2 | time | 🔶 部分 | 单调钟(time-01)✅;分层时间轮 📋未做 |
-| P3 | container | ✅ 主力完成 | BoundedQueue/WsFifoQueue、XXH3、CArray、SwissTable、string_ref/buf、concurrent_vector;SmallVector/intrusive 🔶部分 |
-| P3 | **simd** | 🔶 起步 | simd-01(dispatch 骨架+vec D-tag+scalar)+ simd-02(SSE4.2+AVX2 实后端,对标 Highway 追平/4.6x over auto-vec)已落,双平台真编真测。NEON/AVX512(simd-03)、变体 DLL dispatch(simd-04)、dtype(simd-05)、sleef 数学核(simd-06) 📋未做 |
-| P4 | sched | 🔶 核心done | fiber(fcontext)、work-stealing 调度器、Waker completion 脊(sched-03/04a)✅;fiber-aware CV/同步原语、协程胶水 📋未做 |
-| P5 | **io** | ⛔ **未动** | 整条支柱未开工(proactor/io_uring/epoll/IOCP/net/file) |
-| P5 | **compute** | ⛔ **未动** | 整条支柱未开工(device/stream/ggml_bridge/GPU completion/Vulkan) |
-| P6 | **graph** | ⛔ **未动** | taskgraph/C-ABI shim/FFI 未开工 |
-
-**已闭环里程碑**(真编真测双平台):error-02、obs-01、platform-02/03、mem-01/01b/02/03/03b、time-01、container-02/03/04/04b/04c/06/06b/06c/09、util-01..05、sched-03/04a、**simd-01/02**。**下一步候选**:① 续 simd 支柱(simd-03 NEON+AVX512,或 simd-04 变体 DLL 运行期选择,或 simd-05 dtype);② 补 sched 后段(CV/同步原语/协程胶水);③ 补 mem 后段(pool/MemorySpace)。
+> **进度不在这里维护**（避免两处状态表互相 drift）。逐里程碑的真实状态 + cloc 实测 LOC +
+> clay API diff 是 [`../milestones/README.md`](../milestones/README.md) 的"全部里程碑"表，**那是唯一信源**。
+> 本文件只管**拓扑序、施工计划、决策、验收门槛**这些慢变内容。
+>
+> 一句话现状（粗粒度，细节看 milestones）：**地基层（error/platform/mem/container/time/util/obs）基本立住；
+> sched 核心 done（work-stealing + Waker 脊），后段（CV/协程胶水）待；simd 起步（dispatch + vec 抽象 +
+> scalar/SSE4.2/AVX2 后端 + 运行期变体派发，对标 Highway 追平）；io/compute/graph 三支柱未开工。**
+> 整体 ≈ 30%（模块权重）。
 
 
 
