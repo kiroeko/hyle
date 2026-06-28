@@ -46,6 +46,20 @@
 #  define HYLE_UNREACHABLE() ((void)0)
 #endif
 
+// ---- prefetch (read into L1/all caches, high temporal locality) ----
+// Hides a load's latency by issuing it ahead of the dependent use. A pure hint:
+// never faults (a bad address is dropped), so it's safe to prefetch a slot before
+// confirming it's the match. Used in SwissTable::find to overlap the slot load
+// with the control-byte SIMD match (abseil's find_large does the same).
+#if defined(__GNUC__) || defined(__clang__)
+#  define HYLE_PREFETCH(addr) __builtin_prefetch((addr), 0 /*read*/, 3 /*T0*/)
+#elif defined(_MSC_VER)
+#  define HYLE_PREFETCH(addr) _mm_prefetch(reinterpret_cast<const char*>(addr), _MM_HINT_T0)
+#else
+#  define HYLE_PREFETCH(addr) ((void)0)
+#endif
+
+
 // ---- cache line + alignment ----
 #define HYLE_CACHE_LINE_SIZE 64
 #define HYLE_ALIGNED alignas(HYLE_CACHE_LINE_SIZE)

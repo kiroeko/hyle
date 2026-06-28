@@ -102,6 +102,7 @@ class SwissTable {
     std::size_t stride = 0;
     ctrl_t want = detail::h2(h);
     for (;;) {
+      HYLE_PREFETCH(&slots_[pos]);  // overlap slot load with the ctrl SIMD match
       detail::Group g(ctrl_ + pos);
       for (std::uint32_t i : g.match(want)) {
         std::size_t idx = (pos + i) & mask_;

@@ -12,12 +12,15 @@
 
 | 操作 | vs `std::unordered_map` | vs `absl::flat_hash_map`(**SOTA 标尺**) | 结论 |
 |---|---|---|---|
-| find-hit | **2.42x** 赢 | **~0.76x 输**(absl ~2.1ns / 我 ~2.8ns) | 赢 std,**慢 absl ~25%→优化目标** |
-| find-miss | **2.26x** 赢 | **~0.79x 输** | 同上 |
-| insert | **5.3x** 赢 | **~1.37x 赢**(我 ~11.8ns / absl ~16.3ns) | **超 SOTA**(04c 融合之功) |
-| erase | **3.5x** 赢 | **~1.21x 赢** | **超 SOTA** |
+| find-hit | **2.42x** 赢 | **~0.88x 输**(prefetch 后,曾 0.76x) | 赢 std,**差距砍半→~12%** |
+| find-miss | **2.26x** 赢 | **~0.78x 输** | prefetch 不助(miss 不碰 slot) |
+| insert | **5.3x** 赢 | **~1.30x 赢**(我 ~12.3ns / absl ~16.2ns) | **超 SOTA**(04c 融合之功) |
+| erase | **3.5x** 赢 | **~1.25x 赢** | **超 SOTA** |
 
-> **2026-06-28 原生 ext4 复测确认(跑 3 遍,非噪声)**:find-hit 72.6/77.1/75.6%、find-miss 77.3/80.5/80.3%、insert 134-142%、erase 119-123%。**find 差距真实稳定**,insert/erase 稳赢。
+> **2026-06-28 原生 ext4 复测(跑 3 遍,非噪声)**:
+> - **改前**:find-hit 72.6/77.1/75.6%(慢 25%)、find-miss 77.3/80.5/80.3%。
+> - **学 absl 加 probe 预取后**(`HYLE_PREFETCH` slot,镜像 absl `find_large` 的 `PrefetchToLocalCache`):**find-hit 86.5/86.9/91.2%**(差距 25%→~12%,**砍半**);find-miss 78.0/77.8/77.8%(**不变**——miss 多在 match_empty 终止、不碰 slot,无 load 可藏);insert/erase 仍稳赢。双平台测试全过(Linux 133/133 + Win 10/10)。
+> - **剩余 ~12% find-hit / ~22% find-miss**:需 profile/objdump 对比 codegen 进一步定位(候选:H1=identity 省一移位、match_empty codegen)。prefetch 是 find 优化的第一刀,已落地。
 
 **这就是"对标 SOTA"的意义**:只对标 std 会得出"全面 2-5x 碾压"的虚假安心;对标 absl 才暴露 **find 有 ~25% 真实差距**。**已排除三个错误候选**(读码查实):① `eq_` 对 uint64 在 -O3 完全内联成裸 `==`,**无间接可去**;② `Hash<uint64>` 已是内联 `mix64`(splitmix64),**非 XXH3**,hash 不慢;③ **控制字节尾部镜像已实现**(`swiss_table.cc` core_set_ctrl 镜像前 kGroupWidth 字节 + 分配 `cap+kGroupWidth` + memset 尾),group near-end 加载已无回绕掩码。**find 循环结构已几乎等价 absl**——25% 来源**无法从源码结构看出**,需 **profile(perf/objdump 对比两个 find 内循环 codegen)** 定位真因;唯一已知结构差异是 absl 在 probe 起点 **预取槽数组**(100k 表常驻 cache 时收益小,待测)。**结论:这是一个需要 profile-guided 的真优化,非猜改**——留作下一步 container 性能待办。insert/erase 反超 absl 证明设计本身到位。
 
