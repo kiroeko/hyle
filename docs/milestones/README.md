@@ -44,13 +44,13 @@
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 1-2k | 294 | ✅ 完成 |
 | error-01 | P0 | error | Status + std::expected + ASSIGN_OR_RAISE 宏 | 00 | 1-2k | 456 | ✅ 完成(进程内 Status;error_handler→error-02) |
 | error-02 | P0 | error | error_handler vtable(跨 DLL 错误上报) | error-01 | 1k | 127 (+74 测试) | ✅ 完成(非变参 vtable ABI 安全;干净 HYLE_TRAP fatal;补 charter §5 HYLE_ASSERT;record 无分配) |
-| obs-01 | P0 | obs | 结构化日志产出:level 门控 + sink 注册表 + 默认 stderr 彩色 sink | 00 | 1-2k | 132 (+103 测试) | ✅ 完成(吸纳 clay log;新建 obs 模块;非变参 sink+caller-side std::format 避 clay 变参 fn-ptr ABI 坑;atomic level 无锁门+mutex 快照锁外 I/O 修 clay 裸数组 race;双平台 11/11。instrumentation hook=obs 后续步) |
+| obs-01 | P0 | obs | 结构化日志产出:level 门控 + sink 注册表 + 默认 stderr 彩色 sink | 00 | 1-2k | 132 (+128 测试) | ✅ 完成(吸纳 clay log;新建 obs 模块;非变参 sink+caller-side std::format 避 clay 变参 fn-ptr ABI 坑;atomic level 无锁门+mutex 快照锁外 I/O 修 clay 裸数组 race;双平台 12/12 + 并发压测过 WSL TSan;曾试 seqlock 无锁读被 TSan 判 UB 撤回。instrumentation hook=obs 后续步) |
 | platform-01 | P1 | platform | thread + park(futex/WaitOnAddress/ulock) | error-01 | 2-3k | 527 | ✅ 完成 |
 | platform-02 | P1 | platform | virtual_memory + dynlib | platform-01 | 2-3k | 158 (dynlib) | 🔶 dynlib ✅(DynLib RAII,Win/Linux 真测);virtual_memory→platform-02b |
 | platform-03 | P1 | platform | path + fs + env + os_info | platform-01 | 1-2k | — | 🔶 拆分 |
 | platform-03a | P1 | container | path 字符串操作(join/dirname/basename/extension/normalize/split/is_absolute) | container-06,container-03 | 0.6-1k | 232 (+166 测试) | ✅ 完成(吸纳 clay path_api_t 16 函数纯字符串半;落 container 非 platform——避 P1 反向依赖 P3;3 处语义升级:splitext extension/真 is_absolute/normalize native;修 directory 的 //x OOB;clay path.cc 1372 行无美化空函数,vtable 外 ~1100 行 fs/blend/Win 域分流登记) |
 | platform-03b | P1 | platform | fs/env/os_info syscall:stat/mkdir/remove/rename/copy/iterate/cwd/temp/home + getenv | platform-01,platform-03a | 0.5-1k | 379 (+162 测试) | ✅ 完成(file_system_api 13 fn + helper;buffer-fill+visitor 保 P1 零 mem/container 依赖,比 clay 分配式更精简;改进:mkdir 幂等/temp 认环境变量/copy 可移植替 sendfile/env 读净增;双平台 14/14 fs,platform 19→33;file_io/mmap→io-05、avx→simd、absolute 组合登记) |
-| platform-03c | P1 | platform | Win UTF-8 路径(fs ...A→...W + UTF-8↔UTF-16 转换) | platform-03b | 0.1k | +85(fs.cc 320→405) | ✅ 完成(WidePath/fill_w 自包含转换;12 个 ...A 全转 ...W;红队 UTF-8 测试揪出 touch() 双重 ANSI 漏洞一并修;CJK+emoji 路径双平台往返测试。长路径/UNC→后续) |
+| platform-03c | P1 | platform | Win UTF-8(...A→...W)+ 长路径 \\?\ + copy_file 内核零拷贝 | platform-03b | 0.1k | fs.cc 320→475 | ✅ 完成(WidePath/fill_w 自包含 UTF-8↔UTF-16,12 个 ...A 全转 ...W;揪出+修 touch() 双重 ANSI;\\?\ 扩展前缀 >260 长路径(drive 测过/UNC 写不验);Linux copy_file_range 内核零拷贝失败回退。双平台 36/18,含 UTF-8/长路径/大文件拷贝测试。UNC 实跑待网络共享) |
 | mem-01 | P2 | mem | Allocator vtable + 修 alignment（骨架版含最小 mimalloc 包装）| platform-01 | 1-2k | 182 | ✅ 完成(vtable+裸alloc+typed层) |
 | mem-01b | P2 | mem | allocator typed 便利层(allocate<T>/construct/make_unique/destroy) | mem-01 | 1k | 并入allocator.h | ✅ 完成(补漏:clay allocator.h typed层) |
 | mem-02 | P2 | mem | mimalloc backing 完整接入(封 vtable 后) | mem-01 | 1-2k | vendored(system.cc+~30) | ✅ 完成(透明替换31测试不变;Win 4-12x>默认堆/Linux真实模式5.2x;快路径修复) |
@@ -67,6 +67,7 @@
 | container-03 | P3 | container | carray header-before-data + RAII 壳 | mem-02 | 1-2k | 224 | ✅ 完成(type-erased核;修over-align) |
 | container-04 | P3 | container | SwissTable 探测层重写(concept 模板)【大】 | container-02 | 3-4k | 474 | ✅ 完成(find/insert/erase/grow;type-erased→04b) |
 | container-04b | P3 | container | SwissTable type-erased core(防per-T膨胀)+ erase空槽回收 + NEON | container-04 | 1-2k | 68 (+62 probe +84 shell重构) | ✅ 完成(type-erase 仅冷路径 resize/free 进 DLL,hot find/insert/erase 留 inline 零回归;erase abseil reclaim-to-empty 还 growth;NEON aarch64 GCC14 编过+指令验证、无 ARM 机未跑;双平台 11/11,132→133) |
+| container-04c | P3 | container | SwissTable insert find_or_prepare 融合(单趟探测) | container-04b | 0.05k | +50(shell) | ✅ 完成(红队点名:新键原 2×哈希+2×探测→单趟同时查命中+记空/删槽,哈希算一次;附带修 growth_left 复用墓碑双扣 bug;双平台 11/11 含 oracle 对拍 50k/200k) |
 | container-05 | P3 | container | SmallVector + intrusive list/slist | mem-02 | 1-2k | 255 | ✅ 完成(新增,抄 folly 设计) |
 | container-06 | P3 | container | string_ref + string_buf 驻留池 | container-02 | 1-2k | 363 (+341 测试) | ✅ 完成(string_ref 类型核心+零拷贝算法;StringBuf pimpl 复用 SwissTable;高层工具→06b) |
 | container-06b | P3 | container | string_algo 字节串算法(hex/escape/capitalize/UTF-8/ASCII case) | container-06 | 1-2k | 175 (+92 测试) | ✅ 完成(吸纳 clay 真实现部分;重大发现 format_si/find_path_matches 等 clay 只声明无实现→06c;修 hex_to_int 静默0 bug) |
