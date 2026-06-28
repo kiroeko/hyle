@@ -12,7 +12,7 @@
 
 | 操作 | vs `std::unordered_map` | vs `absl::flat_hash_map`(**SOTA 标尺**) | 结论 |
 |---|---|---|---|
-| find-hit | **2.42x** 赢 | **~1.07x 赢**(prefetch+mix64+H1,曾 0.76x) | **反超 SOTA** |
+| find-hit | **2.42x** 赢 | **~1.10x 赢**(12 遍 avg 110.1%;prefetch+mix64+H1,曾 0.76x) | **反超 SOTA** |
 | find-miss | **2.26x** 赢 | **≈1.00x 统计平局**(12 遍 avg 97.5%,spread 6.3% > 差距,2/12 遍赢) | **追平 SOTA** |
 | insert | **5.3x** 赢 | **~1.40x 赢** | **超 SOTA** |
 | erase | **3.5x** 赢 | **~1.39x 赢** | **超 SOTA** |
