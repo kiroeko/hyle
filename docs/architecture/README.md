@@ -39,6 +39,7 @@ HYLE infra（通用、不特化、贴硬件）
 
 | 文档 | 内容 |
 |---|---|
+| ⭐ [`implementation-cheatsheet.md`](./implementation-cheatsheet.md) | **实现速查表（写代码前只读这一张）**：聚合每次实现都要用的硬规则——std 红线/失败模型/分层判据/C-ABI/调用边界/里程碑 CHECKLIST/构建环境。深层 nuance 按需深读下面各 design 文档 |
 | [`motivation.md`](./motivation.md) | **动机**：为什么是现在/为谁做——AI-native 四压负载、蜂群 agent 北极星、比 Seastar 多异构维度、极致=吃尽硬件独家加速 |
 | [`engineering-charter.md`](./engineering-charter.md) | **工程章程**：动手前最终依据——C++23 标准/错误模型/命名宏、开发范式、测试方案、边界、对外 FFI 决策 |
 | [`coding-conventions.md`](./coding-conventions.md) | **编码规范**：每一行怎么写才不破范式——std 分层/include/宏纪律、C-ABI 范式、错误处理、能力 dispatch 三层模型、clay 独特写法三张表 |
