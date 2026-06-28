@@ -27,11 +27,11 @@
 | spawn 2000 任务 + drain | **比 `std::async(launch::async)` 快 ~7-9x** | std::async 每任务起 OS 线程(~30μs);fiber ~3-4μs |
 
 > sched bench(`bench/sched/scheduler_bench.cc`)默认 build 暂不编入:数值有效,但
-> bench1(主线程 fiber 栈高频 churn)+ bench2(10万+ std::async 线程 + worker)**合跑**
-> 时崩溃,**已隔离为 mimalloc 相关**(mimalloc OFF:8/8 干净;ON:5/5 崩)——是 vendored
-> 分配器在该极端 churn 下的交互,**非 HYLE 调度器/fiber 缺陷**(scheduler/fiber 过
-> 单测 + TSan + 1500 轮 churn 复现 + bench 各自单跑 21 次全清)。待根因 mimalloc×
-> fcontext×线程 churn 后再编入。
+> 触发一个**未解决的 P0 缺陷**——纤程经 mimalloc 分配 + 跨 worker 迁移 + 跨线程
+> free,在重负载下崩溃。**这是 HYLE 责任**(默认 mimalloc + 核心 fiber 场景),不甩
+> 第三方。已严格定位条件、排除调度器逻辑(详见 [`known-issues.md`](./known-issues.md)
+> KI-1),但**尚未解决、当前无法在空闲机器按需复现**。fiber 切换 ~23ns / spawn
+> ~7-9x vs std::async 的数值在崩溃前已取得,有效。
 
 ## 预期表（开工前推算目标,vs std）
 
