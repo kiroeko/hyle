@@ -26,7 +26,12 @@
 | fiber 上下文切换(resume/yield 对) | **~23 ns** | fcontext 量级,对标 boost.context |
 | spawn 2000 任务 + drain | **比 `std::async(launch::async)` 快 ~7-9x** | std::async 每任务起 OS 线程(~30μs);fiber ~3-4μs |
 
-> sched bench 当前 teardown 有 segfault(测量数有效、崩在退出),根因未隔离,未提交;wake 延迟微基准需安全 harness(见 bench 注释)。
+> sched bench(`bench/sched/scheduler_bench.cc`)默认 build 暂不编入:数值有效,但
+> bench1(主线程 fiber 栈高频 churn)+ bench2(10万+ std::async 线程 + worker)**合跑**
+> 时崩溃,**已隔离为 mimalloc 相关**(mimalloc OFF:8/8 干净;ON:5/5 崩)——是 vendored
+> 分配器在该极端 churn 下的交互,**非 HYLE 调度器/fiber 缺陷**(scheduler/fiber 过
+> 单测 + TSan + 1500 轮 churn 复现 + bench 各自单跑 21 次全清)。待根因 mimalloc×
+> fcontext×线程 churn 后再编入。
 
 ## 预期表（开工前推算目标,vs std）
 
