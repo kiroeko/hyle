@@ -119,6 +119,9 @@ class GroupPortable {
 
 #if defined(HYLE_ARCH_X64)
 #  include <emmintrin.h>  // SSE2
+#  if defined(__SSSE3__)
+#    include <tmmintrin.h>  // SSSE3: _mm_sign_epi8 (1-insn match_empty)
+#  endif
 namespace hyle::container::detail {
 // ---- x86-64 SSE2 group (16-wide) --------------------------------------------
 class GroupSse2 {
@@ -131,8 +134,18 @@ class GroupSse2 {
         _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_set1_epi8(h), ctrl_))));
   }
   BitMask match_empty() const noexcept {
+#if defined(__SSSE3__)
+    // abseil's trick: _mm_sign_epi8(c,c) negates per byte -> c<0:-c, 0:0, c>0:c.
+    // Only kEmpty=0x80(-128) negates to itself (overflow), keeping its top bit
+    // set; kDeleted/kSentinel(-2/-1) become +2/+1 (top bit clear) and full(0..127)
+    // stays positive. So movemask flags exactly the empty lanes -- ONE insn, no
+    // broadcast constant to rebuild each probe (vs the SSE2 cmpeq path below).
+    return BitMask(
+        static_cast<std::uint32_t>(_mm_movemask_epi8(_mm_sign_epi8(ctrl_, ctrl_))));
+#else
     return BitMask(static_cast<std::uint32_t>(
         _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_set1_epi8(kEmpty), ctrl_))));
+#endif
   }
   BitMask match_empty_or_deleted() const noexcept {
     // empty/deleted/sentinel all have the top bit set; full does not.
