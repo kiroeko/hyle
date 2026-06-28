@@ -7,6 +7,10 @@
 | **状态** | ✅ 完成（Win x64 MSVC + Linux x64 GCC14.2 双平台；mem 31/31 不变 + 全套 8 suite 回归通过）|
 
 > **吸纳方式**:mem-design 决策(§23/96/106)——通用 malloc **借 mimalloc v2.1.9**(vendored `third_party/mimalloc`),封在 `Allocator` vtable 后,`mi_*` 类型**不出任何 HYLE 头**(同 ggml 解耦)。换 backing 只动 `system.cc`。`HYLE_USE_MIMALLOC` 选项(默认 ON),OS aligned-malloc 路径留 fallback。
+>
+> **⚠️ 后续变更(提交 92f8ec8,见 [`../debug/ki-1-crash-hunt.md`](../debug/ki-1-crash-hunt.md))**:`HYLE_USE_MIMALLOC` 选项与 OS aligned-malloc 后备路径**已移除**。mimalloc 现为**硬依赖、无 off-switch**——理由:后备开关是陷阱,会让构建静默绕过 mimalloc 依赖问题、被误判为"无事"。本节以上描述为 mem-02 当时状态,保留作历史。
+>
+> **⚠️ 版本升级(本轮)**:vendored mimalloc **v2.1.9 → v2.3.2**(MI_MALLOC_VERSION 219→20302,2025 dev-main:多 segment cookie/SpecBot 不变量校验 + 性能更新)。只 vendor `include/src/cmake/CMakeLists.txt/LICENSE`,排除 doc(SVG)/bin/test/CI。双平台真测:Win MSVC 10/10 + Linux GCC14 10/10;强制迁移 687 万次跨线程 free **rc=0 净**(v2.3.2 段完整性校验更严,仍净=分配器路径安全加固)。
 > **LOC**:mimalloc 是 vendored 第三方,**不计入 HYLE 生产 LOC**;HYLE 侧改动只有 `system.cc` 的 mimalloc 分支(~30 行)+ CMake。**透明替换**:31 个 mem 测试(对齐/realloc 契约)零改动全过,证明 vtable 接缝设计成功。
 
 ## 真实基准（nanobench,诚实记录——不 cherry-pick）

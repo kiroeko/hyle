@@ -28,8 +28,14 @@ terms of the MIT license. A copy of the license can be found in the file
 #define MI_SEGMENT_MAP_PART_SIZE      (MI_INTPTR_SIZE*MI_KiB - 128)      // 128 > sizeof(mi_memid_t) ! 
 #define MI_SEGMENT_MAP_PART_BITS      (8*MI_SEGMENT_MAP_PART_SIZE)
 #define MI_SEGMENT_MAP_PART_ENTRIES   (MI_SEGMENT_MAP_PART_SIZE / MI_INTPTR_SIZE)
-#define MI_SEGMENT_MAP_PART_BIT_SPAN  (MI_SEGMENT_ALIGN)
+#define MI_SEGMENT_MAP_PART_BIT_SPAN  (MI_SEGMENT_ALIGN)                 // memory area covered by 1 bit
+
+#if (MI_SEGMENT_MAP_PART_BITS < (MI_SEGMENT_MAP_MAX_ADDRESS / MI_SEGMENT_MAP_PART_BIT_SPAN)) // prevent overflow on 32-bit (issue #1017)
 #define MI_SEGMENT_MAP_PART_SPAN      (MI_SEGMENT_MAP_PART_BITS * MI_SEGMENT_MAP_PART_BIT_SPAN)
+#else
+#define MI_SEGMENT_MAP_PART_SPAN      MI_SEGMENT_MAP_MAX_ADDRESS
+#endif
+
 #define MI_SEGMENT_MAP_MAX_PARTS      ((MI_SEGMENT_MAP_MAX_ADDRESS / MI_SEGMENT_MAP_PART_SPAN) + 1)
 
 // A part of the segment map.
@@ -52,10 +58,10 @@ static mi_segmap_part_t* mi_segment_map_index_of(const mi_segment_t* segment, bo
   mi_segmap_part_t* part = mi_atomic_load_ptr_relaxed(mi_segmap_part_t, &mi_segment_map[segindex]);
 
   // allocate on demand to reduce .bss footprint
-  if (part == NULL) {
+  if mi_unlikely(part == NULL) {
     if (!create_on_demand) return NULL;
     mi_memid_t memid;
-    part = (mi_segmap_part_t*)_mi_os_alloc(sizeof(mi_segmap_part_t), &memid);
+    part = (mi_segmap_part_t*)_mi_os_zalloc(sizeof(mi_segmap_part_t), &memid);
     if (part == NULL) return NULL;
     part->memid = memid;
     mi_segmap_part_t* expected = NULL;
@@ -107,11 +113,16 @@ static mi_segment_t* _mi_segment_of(const void* p) {
   size_t bitidx;
   mi_segmap_part_t* part = mi_segment_map_index_of(segment, false /* dont alloc if not present */, &index, &bitidx);
   if (part == NULL) return NULL;  
-  const uintptr_t mask = mi_atomic_load_relaxed(&part->map[index]);
+  const uintptr_t mask = mi_atomic_load_relaxed(&part->map[index]);  
   if mi_likely((mask & ((uintptr_t)1 << bitidx)) != 0) {
-    bool cookie_ok = (_mi_ptr_cookie(segment) == segment->cookie);
-    mi_assert_internal(cookie_ok); MI_UNUSED(cookie_ok);
-    return segment; // yes, allocated by us
+    // yes, allocated by us
+    const bool cookie_ok = (_mi_ptr_cookie(segment) == segment->cookie);
+    if mi_likely(cookie_ok) {
+      return segment; // yes, allocated by us and valid
+    }
+    else {
+      _mi_error_message(EFAULT, "segment map found an invalid segment, possibly corrupted meta-data (address=%p, segment=%p)\n", p, segment);
+    }
   }
   return NULL;
 }

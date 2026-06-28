@@ -69,10 +69,11 @@
 
 ## 5. 待办（下一步）
 
-- [ ] **E9 重跑**:9p ninja + 9p bench 并发(字面原始条件)。崩=坐实 9p 元凶;净=主假说更强但仍需更激进的 9p 内存压力测试。
-- [ ] 若 E9 净:加内存压力(填 28G 逼真实代码页换出)+ 9p,再试。
-- [ ] 红队 A(调度器并发正确性)+ B(mimalloc×fcontext 机制)静态分析结论回填(后台跑中)。
-- [ ] 结论落定后:清理 `bench/CMakeLists.txt` 甩锅注释 → 中性化;更新 known-issues.md KI-1。
+- [x] 红队 A(调度器并发正确性)+ B(mimalloc×fcontext 机制)结论回填 → 见 §8。
+- [x] 验证红队的 TLS-缓存机制是否在 HYLE 真实路径成立 → §8(机制真实,但 HYLE 当前路径安全)。
+- [x] 清理 `bench/CMakeLists.txt` 甩锅注释 → 中性化;更新 known-issues.md KI-1(已提交 92f8ec8)。
+- [ ] (可选)上游 mimalloc 版本对比——被 github TLS 网络阻断,非必需(崩溃不可复现=无修没修可测)。
+- [ ] (可选,防御性)在 docs 写一条 fiber 编程铁律:**fiber 体不得跨 `yield()` 持有 thread_local 派生值**(见 §8)。
 
 ## 6. 复现器清单（scratchpad / 原生 /root/repro）
 
@@ -88,3 +89,31 @@
 - `/mnt/...` 路径作 wsl.exe 参数被 git-bash 转换坏:**对策** `MSYS_NO_PATHCONV=1`。
 - `pkill -f <宽模式>`:会误杀承载命令的 wsl bash 自身(exit 15)。**对策**:用 stop-flag 文件优雅停,或精确 PID。
 - 一切重 IO(构建/复现器)必须在原生 ext4(`/root`),**不碰 `/mnt/c`**(9p 不稳定 + 慢)。
+
+## 8. 红队验证：TLS-缓存机制【真实】，但 HYLE 当前路径【安全】
+
+> 两支红队(调度器并发 / mimalloc×fcontext)**独立收敛到同一机制**,且它挑战了 §4 的"环境假象"结论。我**没有为护结论而无视**,而是设计了决定性实验逐条验证。结论:机制真实,我之前对 -O3 依赖的解释不够精确(红队补上了);但 HYLE 真实路径不触发,原始崩溃仍最可能是环境假象。
+
+**红队机制**:`jump_fcontext` 换栈+通用寄存器但**不换 `%fs`**(TLS 基址)。-O3 下编译器把 `thread_local` 的 `%fs` 相对地址当作"跨调用稳定",缓存进 callee-saved 寄存器、跨 `yield()` 复用。fiber 迁移到别的线程后,该缓存地址仍指向**原线程**的 TLS → 读/写错堆。
+
+**强制迁移实验**(patch `reschedule` 永远走 global,使 ~75% resume 真跨线程,几百万次):
+
+| # | 测什么 | 结果 | 判读 |
+|---|---|---|---|
+| E13 | HYLE 真实路径:fiber 体经 vtable→.so 调 mi_malloc/free,跨迁移 | **净,689 万次跨线程 free rc=0** | 真实路径**安全** |
+| E14 | 裸 `thread_local`,**不**强制保活,比对两次 TLS 读 | **0 stale**(可能被 CSE 掩盖) | 自然代码不触发 |
+| E15 | 裸 `thread_local`,`asm` **强制**地址跨 yield 保活,比对 `gettid()` 真值 | **899 万 stale**(几乎全部) | 机制**真实**,红队对 |
+| E16 | 在 E15 上加 `asm volatile(memory)` 屏障 / yield 后重取地址 | **两者都仍 899 万 stale** | memory 屏障**救不了**;GCC 把 TLS 基址提升到函数入口,整个体内 CSE 复用 |
+| E17 | **mimalloc v2.1.9→v2.3.2 升级后**重跑强制迁移(真实路径) | **净,687 万次跨线程 free rc=0** | 新版段完整性/cookie 校验更严仍净 → 分配器路径安全加固;双平台 10/10 测试通过 |
+
+**精确规则**(E13–E16 钉定):
+- **危险**:fiber 体在**可内联范围内直接** `thread_local`,且跨 `yield()` 使用 → -O3 缓存 TLS 基址 → 迁移后 stale。memory 屏障与"重取地址"都无效(基址在函数入口已 CSE)。
+- **安全**:fiber 体只通过**不透明(非内联)调用**碰 TLS(每次在当前线程新解析)。**HYLE 分配器走 vtable 函数指针 + 跨 `.so` 边界 = 正属此类** → E13 的 689 万次净是铁证。
+
+**为何这不推翻"原始崩溃=环境假象"**:原始崩溃在 mimalloc 路径;E13 证明该路径即使强制迁移也净。若原始崩溃是 TLS 机制,E13 必崩。故原始崩溃另有其因(最可能 9p/WSL,§4)。
+
+**真实残留风险(应设防)**:
+1. **用户 fiber 体直接跨 `yield()` 用 `thread_local`** —— 这是所有有栈协程(Boost.Context/ucontext)的**通用铁律**,非 HYLE 独有。应在文档立硬约束。
+2. **static + LTO** 把 `mi_*` 内联进 fiber 体 —— 会打破"不透明边界",使分配器 TLS 读被缓存跨 yield。HYLE 默认 shared lib + 无 LTO,不触发;若改 static+LTO 发布,需 pin fiber 或保持分配器不可内联。(未实测 LTO 变体,留作 characterize。)
+
+**HYLE 自身代码已合规**:`fiber.cc` 的 `yield()/resume()` 把 `t_current` 读进**局部变量**再切换(L92/L102),不跨切换复用 TLS;`scheduler.cc` 的 `t_current/t_worker_idx/tls_owner` 只在**不迁移的 worker 主循环**用。两处都安全。
