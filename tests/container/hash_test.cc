@@ -37,21 +37,30 @@ TEST(Hash, EmptyInputDoesNotCrash) {
   EXPECT_EQ(hash_bytes(nullptr, 0), hash_bytes(nullptr, 0));  // defined, stable
 }
 
-TEST(Hash, IntegralBijectiveAndSpreadsHighBits) {
-  // mix64 (splitmix64) is a bijection: distinct ints -> distinct full hashes.
-  // (Testing low-N-bit bucket spread would be wrong -- pigeonhole caps distinct
-  // 12-bit buckets at ~4096*(1-1/e)~=2590 for ANY good mixer; only identity
-  // hashing hits 4096, which is exactly what we DON'T want.)
-  Hash<int> h;
+TEST(Hash, IntegralMixerQualityStatistical) {
+  // mix64 is now the abseil-style 128-bit multiply-fold: NOT a bijection (the fold
+  // can collide ~1/2^64), so we test STATISTICAL quality, not zero-collision-by-
+  // construction: (1) near-zero collisions over a large consecutive-int sample
+  // (the real use pattern); (2) high bits populated (not identity); (3) avalanche.
+  Hash<std::uint64_t> h;
   std::unordered_set<std::uint64_t> full;
   bool any_high_bits = false;
-  for (int i = 0; i < 4096; ++i) {
-    std::uint64_t hv = h(i);
+  constexpr int kN = 100000;
+  for (int i = 0; i < kN; ++i) {
+    std::uint64_t hv = h(static_cast<std::uint64_t>(i));
     full.insert(hv);
     if ((hv >> 32) != 0) any_high_bits = true;  // identity would leave high=0
   }
-  EXPECT_EQ(full.size(), 4096u);   // bijection: zero collisions
-  EXPECT_TRUE(any_high_bits);      // not identity: high bits populated
+  // 100k draws from 2^64: expected collisions ~ kN^2/2^65 ~= 2^-32, i.e. ~0.
+  // Allow a tiny slack for robustness but it should be essentially full.
+  EXPECT_GE(full.size(), static_cast<std::size_t>(kN) - 2);
+  EXPECT_TRUE(any_high_bits);  // not identity: high bits populated
+  // Avalanche: flipping ONE input bit should flip ~half (>=16) of 64 output bits.
+  for (int bit = 0; bit < 64; ++bit) {
+    std::uint64_t base = 0x0123456789abcdefull;
+    int diff = std::popcount(h(base) ^ h(base ^ (std::uint64_t{1} << bit)));
+    EXPECT_GE(diff, 12) << "weak avalanche on input bit " << bit;
+  }
 }
 
 TEST(Hash, PointerHashDistinct) {

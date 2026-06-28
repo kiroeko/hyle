@@ -12,15 +12,16 @@
 
 | 操作 | vs `std::unordered_map` | vs `absl::flat_hash_map`(**SOTA 标尺**) | 结论 |
 |---|---|---|---|
-| find-hit | **2.42x** 赢 | **~0.88x 输**(prefetch 后,曾 0.76x) | 赢 std,**差距砍半→~12%** |
-| find-miss | **2.26x** 赢 | **~0.78x 输** | prefetch 不助(miss 不碰 slot) |
-| insert | **5.3x** 赢 | **~1.30x 赢**(我 ~12.3ns / absl ~16.2ns) | **超 SOTA**(04c 融合之功) |
-| erase | **3.5x** 赢 | **~1.25x 赢** | **超 SOTA** |
+| find-hit | **2.42x** 赢 | **~1.10x 赢**(prefetch + mix64 后,曾 0.76x) | **反超 SOTA** |
+| find-miss | **2.26x** 赢 | **~0.92x 输**(曾 0.78x) | 差距 22%→~8% |
+| insert | **5.3x** 赢 | **~1.35x 赢** | **超 SOTA** |
+| erase | **3.5x** 赢 | **~1.32x 赢** | **超 SOTA** |
 
-> **2026-06-28 原生 ext4 复测(跑 3 遍,非噪声)**:
-> - **改前**:find-hit 72.6/77.1/75.6%(慢 25%)、find-miss 77.3/80.5/80.3%。
-> - **学 absl 加 probe 预取后**(`HYLE_PREFETCH` slot,镜像 absl `find_large` 的 `PrefetchToLocalCache`):**find-hit 86.5/86.9/91.2%**(差距 25%→~12%,**砍半**);find-miss 78.0/77.8/77.8%(**不变**——miss 多在 match_empty 终止、不碰 slot,无 load 可藏);insert/erase 仍稳赢。双平台测试全过(Linux 133/133 + Win 10/10)。
-> - **剩余 ~12% find-hit / ~22% find-miss**:需 profile/objdump 对比 codegen 进一步定位(候选:H1=identity 省一移位、match_empty codegen)。prefetch 是 find 优化的第一刀,已落地。
+> **2026-06-28 原生 ext4 复测(每步跑 3 遍,非噪声)——两刀优化,学自 absl**:
+> 1. **probe 预取**(`HYLE_PREFETCH` slot,镜像 absl `find_large` 的 `PrefetchToLocalCache`):find-hit 0.76x→**0.88x**(slot load 藏进 ctrl SIMD match);find-miss 不变(miss 不碰 slot)。
+> 2. **mix64 换 absl 式 128 位乘折叠**(`(x^k)*k → hi^lo`,单乘短依赖链 vs splitmix64 的 2 串行乘):find-hit **0.88x→1.10x 反超**、find-miss **0.78x→0.92x**(hash 占 miss 成本大头,短链直接砍)。代价:整数 hash 从双射(零碰撞)降为统计级(~1/2⁶⁴),correctness 由 eq_ 兜底;insert/erase **未退化**(1.35x/1.32x)证明碰撞质量没崩。
+> - 双平台真编真测:Linux 133/133(含雪崩/分布质量测试)+ Win MSVC `_umul128` 分支编译干净 + 测试过。`__extension__` 消 `__int128` 的 -Wpedantic。
+> - **剩余 ~8% find-miss**:下一杠杆 H1=identity(absl `H1=hash` 省一 `>>7`),待试。**find-hit 已反超 absl,SOTA 反例消除。**
 
 **这就是"对标 SOTA"的意义**:只对标 std 会得出"全面 2-5x 碾压"的虚假安心;对标 absl 才暴露 **find 有 ~25% 真实差距**。**已排除三个错误候选**(读码查实):① `eq_` 对 uint64 在 -O3 完全内联成裸 `==`,**无间接可去**;② `Hash<uint64>` 已是内联 `mix64`(splitmix64),**非 XXH3**,hash 不慢;③ **控制字节尾部镜像已实现**(`swiss_table.cc` core_set_ctrl 镜像前 kGroupWidth 字节 + 分配 `cap+kGroupWidth` + memset 尾),group near-end 加载已无回绕掩码。**find 循环结构已几乎等价 absl**——25% 来源**无法从源码结构看出**,需 **profile(perf/objdump 对比两个 find 内循环 codegen)** 定位真因;唯一已知结构差异是 absl 在 probe 起点 **预取槽数组**(100k 表常驻 cache 时收益小,待测)。**结论:这是一个需要 profile-guided 的真优化,非猜改**——留作下一步 container 性能待办。insert/erase 反超 absl 证明设计本身到位。
 
