@@ -87,7 +87,7 @@
 | simd-01 | P3 | simd | vec D-tag 抽象 + scalar 后端 + 运行期 CPUID dispatch 骨架 | mem-01 | 2-3k | 496 (+210 测试) | ✅ 完成(dispatch.h/cc 运行期 CPUID+XGETBV 探测,探测器独立 TU+禁 LTO 防自身 SIGILL;vec.h 照搬 Highway D-tag 契约 Simd<T,N,kPow2>/Lanes(d) 可运行期求值留 SVE 口;scalar 地板后端核心 op 全集作后续后端对拍参照;双平台 22/22。用户铁律"一开张就搭 dispatch 骨架"已落实。3 红队 agent+oracle 核账揪修 4 硬伤(0x80000001/LZCNT 真补、tier 真对标 Highway group、死码、过度承诺注释诚实化)。SSE2/AVX2/AVX512/NEON 各后端→simd-02/03,变体 DLL 选择→simd-04) |
 | simd-02 | P3 | simd | SSE4.2 + AVX2 后端 | simd-01 | 2-3k | 730 (后端) +161 bench | ✅ 完成(sse4.h 128b + avx2.h 256b,lane f32/f64/i32/u32 native 全宽;每 op 对拍 scalar,双平台三后端各 24/24;**对标 Highway 追平**——dot 12.5G vs Highway 10.7G/4.6x over auto-vec,saxpy avx2 1.42x;intrinsic 逐个对照 Highway x86_128/256;AndNot 折进 bitop 宏。i8/u8/i16/u16→simd-05,i64/u64+partial 宽→待需,变体 DLL 选择→simd-04) |
 | simd-03 | P3 | simd | AVX512 + NEON 后端 | simd-01 | 2-3k | — | 占位 |
-| simd-04 | P3 | simd | 运行期变体 dispatch(探测器隔离+score) | simd-02 | 1-2k | — | 占位 |
+| simd-04 | P3 | simd | 运行期变体 dispatch(fn-ptr 表,best_isa 选 kernel) | simd-02 | 1-2k | 111 (+67 测试) | ✅ 完成(ops.h dot_f32/saxpy_f32/active_variant 派发入口;fn-ptr 表模型像 Highway HWY_DYNAMIC_DISPATCH——每 ISA kernel 独立 -march TU,baseline dispatcher 按 best_isa 选 fn-ptr Meyers 缓存;**闭合 simd-01 审计的 best_isa 死代码**;红队核 SIGILL 安全成立(老 CPU 永不取址 avx2 符号+FMA gating);修掉 kNativeVectorBytes inline→static 的 IFNDR ODR bug;双平台 36/36。变体 DLL 零间接模型→后续) |
 | simd-05 | P3 | simd | dtype fp16/bf16(F16C/AVX512-FP16/BF16) | simd-02 | 2-3k | — | 占位 |
 | simd-06 | P3 | simd | sleef 数学核 adapter | simd-04 | 1-2k | — | 占位 |
 | sched-01 | P4 | sched | fcontext 6 平台 + 栈池(骨架:单 worker 单队列跑一 fiber) | container-01,mem-01,platform-01 | 2-3k | 226 (+737 vendored asm) | ✅ 完成(仅证切换,队列/worker 留 sched-02) |

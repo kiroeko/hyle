@@ -99,22 +99,26 @@ HYLE_SIMD_LANES_CONSTEXPR std::size_t Lanes(D) noexcept {
 // the matching width below; the runtime selector (simd-04) then dlopens whichever
 // variant matches best_isa().
 //
-// HONEST STATUS (simd-01): NO HYLE_SIMD_TARGET_* macro is defined by the build yet --
-// simd-01 ships only the scalar floor, so today this ALWAYS takes the #else (16 bytes).
-// The non-scalar branches are the forward seam simd-02/03 will activate when they add
-// real backends + the per-variant CMake targets that define these macros. They are
-// intentionally inert now, not wired-and-broken.
+// STATUS: simd-02 activated the SSE4/AVX2 branches; simd-04 links scalar+sse4+avx2 kernel
+// TUs into ONE binary, each TU defining its own HYLE_SIMD_TARGET_* and thus its own width.
+//
+// LINKAGE = `static constexpr` (internal), NOT `inline constexpr` (external) ON PURPOSE:
+// this value is DIFFERENT per TU by design (32 in the avx2 TU, 16 in the sse4/scalar TUs).
+// An `inline` variable must be defined IDENTICALLY in every TU -- divergent values are
+// IFNDR (the linker would silently keep one TU's width). Internal linkage gives each TU
+// its own correct copy. Safe because it's only ever constant-folded into template args
+// (Lanes/ScalableTag), never odr-used (address taken / bound to a reference).
 #if defined(HYLE_SIMD_TARGET_AVX512)
-inline constexpr std::size_t kNativeVectorBytes = 64;
+static constexpr std::size_t kNativeVectorBytes = 64;
 #elif defined(HYLE_SIMD_TARGET_AVX2)
-inline constexpr std::size_t kNativeVectorBytes = 32;
+static constexpr std::size_t kNativeVectorBytes = 32;
 #elif defined(HYLE_SIMD_TARGET_SSE4) || defined(HYLE_SIMD_TARGET_NEON)
-inline constexpr std::size_t kNativeVectorBytes = 16;
+static constexpr std::size_t kNativeVectorBytes = 16;
 #else
 // Scalar floor: emulate a 128-bit vector (matches Highway's EMU128), so lane counts
 // are sane and code written against ScalableTag still vectorizes once a real backend
 // is compiled in.
-inline constexpr std::size_t kNativeVectorBytes = 16;
+static constexpr std::size_t kNativeVectorBytes = 16;
 #endif
 
 // ---- the backend: defines Vec<T,N>, Zero(D)->VFromD, and all ops -------------------

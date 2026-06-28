@@ -1,0 +1,38 @@
+#pragma once
+
+#include <cstddef>
+
+#include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
+
+// ops.h -- RUNTIME-DISPATCHED numeric primitives (simd-04). This is the half simd-01/02
+// left open: simd-01 built the CPUID DETECTOR (best_isa()), simd-02 built the per-ISA
+// backends, but nothing connected them -- best_isa() was dead. These entry points close
+// that gap: call dot_f32() and it runs the AVX2 kernel on an AVX2 CPU, the SSE4 kernel on
+// an older one, the scalar floor otherwise -- chosen ONCE at first use from best_isa().
+//
+// DISPATCH MODEL (be honest about the cost): this is the FUNCTION-POINTER-TABLE model
+// (like Highway's HWY_DYNAMIC_DISPATCH). Each call goes through one cached function
+// pointer -> ONE indirect call, then the selected kernel runs at full speed. That single
+// indirection is the price of "one binary, any CPU". The ZERO-indirection alternative
+// (per-variant DLLs, dlopen the winner, then all calls inside are direct -- llama.cpp's
+// GGML_BACKEND_DL) is a heavier, later milestone; conventions §10 documents both. For an
+// in-process library entry point, the fn-ptr table is the right first cut.
+//
+// SAFETY: the AVX2 kernel TU is compiled with -mavx2 but is ONLY ever entered when
+// best_isa() >= kAvx2, so an older CPU never executes an instruction it lacks (no SIGILL).
+// The variant TUs are isolated (one ISA per TU, LTO off) so the baseline dispatcher never
+// inlines a wide instruction.
+
+namespace hyle::simd {
+
+// dot product: sum(x[i]*y[i]) over n floats. Dispatched to the best ISA kernel.
+HYLE_SIMD_API float dot_f32(const float* x, const float* y, std::size_t n) noexcept;
+
+// saxpy: y[i] = a*x[i] + y[i] over n floats (BLAS level-1). Dispatched.
+HYLE_SIMD_API void saxpy_f32(float a, const float* x, float* y, std::size_t n) noexcept;
+
+// The ISA tier the dispatcher actually selected (resolved once from best_isa()). For
+// tests/diagnostics: proves dispatch picked the host's best variant, not just the floor.
+HYLE_SIMD_API Isa active_variant() noexcept;
+
+}  // namespace hyle::simd
