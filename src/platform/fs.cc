@@ -14,6 +14,7 @@
 #if defined(_WIN32)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
+#  include <cwchar>  // std::wcslen for the directory_iterate pattern
 #else
 #  include <dirent.h>
 #  include <fcntl.h>
@@ -56,11 +57,80 @@ bool join_path(char* dst, std::size_t cap, const char* a,
 #if defined(_WIN32)
 
 // ---- Windows ----------------------------------------------------------------
+//
+// All path I/O goes through the wide (...W) API: the ...A variants interpret
+// bytes as the active code page, NOT UTF-8, so a UTF-8 path with non-ASCII chars
+// would be mis-decoded. We convert UTF-8 <-> UTF-16 at the boundary so callers
+// pass UTF-8 everywhere (matching POSIX, which is byte-transparent).
+
+namespace {
+
+// UTF-8 const char* -> UTF-16, with a stack buffer and heap fallback for long
+// paths (RAII frees the heap copy). Self-contained in platform: no mem/container
+// dependency. On conversion failure `w()` is nullptr (callers treat as error).
+class WidePath {
+ public:
+  explicit WidePath(const char* utf8) noexcept {
+    if (utf8 == nullptr) return;
+    int need = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, nullptr, 0);
+    if (need <= 0) return;
+    wchar_t* dst = stack_;
+    if (static_cast<std::size_t>(need) > kStack) {
+      heap_ = static_cast<wchar_t*>(std::malloc(need * sizeof(wchar_t)));
+      if (heap_ == nullptr) return;
+      dst = heap_;
+    }
+    if (MultiByteToWideChar(CP_UTF8, 0, utf8, -1, dst, need) <= 0) return;
+    w_ = dst;
+  }
+  ~WidePath() { std::free(heap_); }
+  WidePath(const WidePath&) = delete;
+  WidePath& operator=(const WidePath&) = delete;
+
+  const wchar_t* w() const noexcept { return w_; }
+
+ private:
+  static constexpr std::size_t kStack = 512;
+  wchar_t stack_[kStack];
+  wchar_t* heap_ = nullptr;
+  const wchar_t* w_ = nullptr;
+};
+
+// UTF-16 -> UTF-8 buffer-fill (snprintf semantics): write into dst[cap], always
+// NUL-terminate when cap>0, return the FULL UTF-8 length (>= cap => truncated).
+// `wlen` is the UTF-16 length excluding any terminator (-1 lets it scan).
+std::size_t fill_w(char* dst, std::size_t cap, const wchar_t* src,
+                   int wlen) noexcept {
+  int need = WideCharToMultiByte(CP_UTF8, 0, src, wlen, nullptr, 0, nullptr,
+                                 nullptr);
+  if (need <= 0) return fill(dst, cap, "", 0);
+  if (static_cast<std::size_t>(need) < cap) {
+    int got = WideCharToMultiByte(CP_UTF8, 0, src, wlen, dst,
+                                  static_cast<int>(cap - 1), nullptr, nullptr);
+    if (got < 0) got = 0;
+    dst[got] = '\0';
+    return static_cast<std::size_t>(got);
+  }
+  // Won't fit: convert into a heap scratch, then buffer-fill (truncates).
+  char* tmp = static_cast<char*>(std::malloc(need + 1));
+  if (tmp == nullptr) return fill(dst, cap, "", 0);
+  int got = WideCharToMultiByte(CP_UTF8, 0, src, wlen, tmp, need, nullptr,
+                                nullptr);
+  if (got < 0) got = 0;
+  tmp[got] = '\0';
+  std::size_t r = fill(dst, cap, tmp, static_cast<std::size_t>(got));
+  std::free(tmp);
+  return r;
+}
+
+}  // namespace
 
 FileInfo stat(const char* path) noexcept {
   FileInfo r;
+  WidePath wp(path);
+  if (wp.w() == nullptr) return r;
   WIN32_FILE_ATTRIBUTE_DATA d;
-  if (!GetFileAttributesExA(path, GetFileExInfoStandard, &d)) return r;
+  if (!GetFileAttributesExW(wp.w(), GetFileExInfoStandard, &d)) return r;
   bool dir = (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
   r.exists = true;
   r.is_directory = dir;
@@ -76,97 +146,122 @@ FileInfo stat(const char* path) noexcept {
 }
 
 bool make_directory(const char* path) noexcept {
-  if (CreateDirectoryA(path, nullptr)) return true;
+  WidePath wp(path);
+  if (wp.w() == nullptr) return false;
+  if (CreateDirectoryW(wp.w(), nullptr)) return true;
   return GetLastError() == ERROR_ALREADY_EXISTS && is_directory(path);
 }
 
 bool remove_directory(const char* path) noexcept {
-  return RemoveDirectoryA(path) != 0;
+  WidePath wp(path);
+  return wp.w() != nullptr && RemoveDirectoryW(wp.w()) != 0;
 }
 
-bool remove_file(const char* path) noexcept { return DeleteFileA(path) != 0; }
+bool remove_file(const char* path) noexcept {
+  WidePath wp(path);
+  return wp.w() != nullptr && DeleteFileW(wp.w()) != 0;
+}
 
 bool rename_path(const char* from, const char* to) noexcept {
-  return MoveFileExA(from, to, MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED) != 0;
+  WidePath wf(from), wt(to);
+  if (wf.w() == nullptr || wt.w() == nullptr) return false;
+  return MoveFileExW(wf.w(), wt.w(),
+                     MOVEFILE_REPLACE_EXISTING | MOVEFILE_COPY_ALLOWED) != 0;
 }
 
 bool copy_file(const char* from, const char* to) noexcept {
-  return CopyFileA(from, to, /*bFailIfExists=*/FALSE) != 0;
+  WidePath wf(from), wt(to);
+  if (wf.w() == nullptr || wt.w() == nullptr) return false;
+  return CopyFileW(wf.w(), wt.w(), /*bFailIfExists=*/FALSE) != 0;
 }
 
 std::size_t current_directory(char* dst, std::size_t cap) noexcept {
-  char buf[MAX_PATH];
-  // On overflow GetCurrentDirectoryA returns the REQUIRED length (> buf) without
-  // filling buf -- guard against copying uninitialized bytes (matches
-  // home_directory's `n >= sizeof(buf)` check; the two were inconsistent).
-  DWORD n = GetCurrentDirectoryA(sizeof(buf), buf);
-  if (n == 0 || n > sizeof(buf)) return fill(dst, cap, "", 0);
-  return fill(dst, cap, buf, n);
+  wchar_t buf[MAX_PATH];
+  // On overflow GetCurrentDirectoryW returns the REQUIRED length (> buf) without
+  // filling buf -- guard against converting uninitialized bytes.
+  DWORD n = GetCurrentDirectoryW(MAX_PATH, buf);
+  if (n == 0 || n > MAX_PATH) return fill(dst, cap, "", 0);
+  return fill_w(dst, cap, buf, static_cast<int>(n));
 }
 
 bool change_directory(const char* path) noexcept {
-  return SetCurrentDirectoryA(path) != 0;
+  WidePath wp(path);
+  return wp.w() != nullptr && SetCurrentDirectoryW(wp.w()) != 0;
 }
 
 std::size_t temp_directory(char* dst, std::size_t cap) noexcept {
-  char buf[MAX_PATH + 1];
-  DWORD n = GetTempPathA(sizeof(buf), buf);  // already honors TMP/TEMP
-  if (n == 0 || n > sizeof(buf)) return fill(dst, cap, "", 0);
-  while (n > 1 && (buf[n - 1] == '\\' || buf[n - 1] == '/')) --n;  // trim slash
-  return fill(dst, cap, buf, n);
+  wchar_t buf[MAX_PATH + 1];
+  DWORD n = GetTempPathW(MAX_PATH + 1, buf);  // already honors TMP/TEMP
+  if (n == 0 || n > MAX_PATH + 1) return fill(dst, cap, "", 0);
+  while (n > 1 && (buf[n - 1] == L'\\' || buf[n - 1] == L'/')) --n;  // trim sep
+  return fill_w(dst, cap, buf, static_cast<int>(n));
 }
 
 std::size_t home_directory(char* dst, std::size_t cap) noexcept {
-  char buf[MAX_PATH];
-  DWORD n = GetEnvironmentVariableA("USERPROFILE", buf, sizeof(buf));
-  if (n == 0 || n >= sizeof(buf)) return fill(dst, cap, "", 0);
-  return fill(dst, cap, buf, n);
+  wchar_t buf[MAX_PATH];
+  DWORD n = GetEnvironmentVariableW(L"USERPROFILE", buf, MAX_PATH);
+  if (n == 0 || n >= MAX_PATH) return fill(dst, cap, "", 0);
+  return fill_w(dst, cap, buf, static_cast<int>(n));
 }
 
 std::size_t get_env_var(const char* name, char* dst, std::size_t cap) noexcept {
-  // Two-call pattern: first query the length, then read. GetEnvironmentVariable
-  // returns 0 with ERROR_ENVVAR_NOT_FOUND when unset (vs set-but-empty -> 0 too,
-  // disambiguated by the error code).
-  DWORD need = GetEnvironmentVariableA(name, nullptr, 0);
+  WidePath wn(name);
+  if (wn.w() == nullptr) return kEnvNotSet;
+  // Query length first. 0 with ERROR_ENVVAR_NOT_FOUND => unset (vs set-empty).
+  DWORD need = GetEnvironmentVariableW(wn.w(), nullptr, 0);
   if (need == 0) {
     if (GetLastError() == ERROR_ENVVAR_NOT_FOUND) return kEnvNotSet;
     return fill(dst, cap, "", 0);  // set but empty
   }
-  // `need` includes the NUL. Read into a scratch buffer sized to need.
-  if (need <= cap) {
-    DWORD got = GetEnvironmentVariableA(name, dst, static_cast<DWORD>(cap));
-    return got;  // chars written (excl NUL) == full length when it fit
+  wchar_t stackw[512];
+  wchar_t* wbuf = stackw;
+  wchar_t* heapw = nullptr;
+  if (need > 512) {
+    heapw = static_cast<wchar_t*>(std::malloc(need * sizeof(wchar_t)));
+    if (heapw == nullptr) return fill(dst, cap, "", 0);
+    wbuf = heapw;
   }
-  // Caller buffer too small: report the full length (need-1) after filling.
-  char* tmp = static_cast<char*>(std::malloc(need));
-  if (tmp == nullptr) return fill(dst, cap, "", 0);
-  DWORD got = GetEnvironmentVariableA(name, tmp, need);
-  std::size_t r = fill(dst, cap, tmp, got);
-  std::free(tmp);
+  DWORD got = GetEnvironmentVariableW(wn.w(), wbuf, need);
+  std::size_t r = fill_w(dst, cap, wbuf, static_cast<int>(got));
+  std::free(heapw);
   return r;
 }
 
 bool directory_iterate(const char* path,
                        bool (*visit)(const char*, bool, void*),
                        void* ctx) noexcept {
-  char pattern[MAX_PATH];
-  std::size_t n = std::strlen(path);
-  if (n + 3 >= sizeof(pattern)) return false;
-  std::memcpy(pattern, path, n);
-  pattern[n] = '\\';
-  pattern[n + 1] = '*';
-  pattern[n + 2] = '\0';
-  WIN32_FIND_DATAA fd;
-  HANDLE h = FindFirstFileA(pattern, &fd);
+  // Build the UTF-16 search pattern "<path>\*". Heap-size it off the path length
+  // so long paths aren't capped at MAX_PATH.
+  WidePath wp(path);
+  if (wp.w() == nullptr) return false;
+  std::size_t wl = std::wcslen(wp.w());
+  wchar_t stackp[MAX_PATH];
+  wchar_t* pat = stackp;
+  wchar_t* heapp = nullptr;
+  if (wl + 3 > MAX_PATH) {
+    heapp = static_cast<wchar_t*>(std::malloc((wl + 3) * sizeof(wchar_t)));
+    if (heapp == nullptr) return false;
+    pat = heapp;
+  }
+  std::memcpy(pat, wp.w(), wl * sizeof(wchar_t));
+  pat[wl] = L'\\';
+  pat[wl + 1] = L'*';
+  pat[wl + 2] = L'\0';
+
+  WIN32_FIND_DATAW fd;
+  HANDLE h = FindFirstFileW(pat, &fd);
+  std::free(heapp);
   if (h == INVALID_HANDLE_VALUE) return false;
   do {
-    const char* name = fd.cFileName;
-    if (name[0] == '.' &&
-        (name[1] == '\0' || (name[1] == '.' && name[2] == '\0')))
+    const wchar_t* wname = fd.cFileName;
+    if (wname[0] == L'.' &&
+        (wname[1] == L'\0' || (wname[1] == L'.' && wname[2] == L'\0')))
       continue;
+    char name[1024];
+    fill_w(name, sizeof(name), wname, -1);  // entry name -> UTF-8 for the visitor
     bool dir = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
     if (!visit(name, dir, ctx)) break;
-  } while (FindNextFileA(h, &fd));
+  } while (FindNextFileW(h, &fd));
   FindClose(h);
   return true;
 }
@@ -322,23 +417,28 @@ bool is_directory(const char* path) noexcept { return stat(path).is_directory; }
 std::uint64_t file_size(const char* path) noexcept { return stat(path).size; }
 
 bool touch(const char* path) noexcept {
+#if defined(_WIN32)
+  // CreateFileW with OPEN_ALWAYS creates the file if absent, opens it if present
+  // -- no std::fopen (which is ANSI on Windows and would mis-decode a UTF-8
+  // path). Then stamp mtime to now.
+  WidePath wp(path);
+  if (wp.w() == nullptr) return false;
+  HANDLE h = CreateFileW(wp.w(), FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, nullptr,
+                         OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (h == INVALID_HANDLE_VALUE) return false;
+  FILETIME now;
+  GetSystemTimeAsFileTime(&now);
+  SetFileTime(h, nullptr, nullptr, &now);
+  CloseHandle(h);
+  return true;
+#else
   std::FILE* f = std::fopen(path, "ab");  // append: create if absent, no truncate
   if (f == nullptr) return false;
   std::fclose(f);
   // Bump mtime to now even when the file already existed and append wrote 0 bytes.
-#if defined(_WIN32)
-  HANDLE h = CreateFileA(path, FILE_WRITE_ATTRIBUTES, FILE_SHARE_READ, nullptr,
-                         OPEN_EXISTING, 0, nullptr);
-  if (h != INVALID_HANDLE_VALUE) {
-    FILETIME now;
-    GetSystemTimeAsFileTime(&now);
-    SetFileTime(h, nullptr, nullptr, &now);
-    CloseHandle(h);
-  }
-#else
   ::utimensat(AT_FDCWD, path, nullptr, 0);  // nullptr times => now
-#endif
   return true;
+#endif
 }
 
 bool make_directory_recursive(const char* path) noexcept {

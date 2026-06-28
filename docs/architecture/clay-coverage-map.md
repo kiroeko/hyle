@@ -88,7 +88,7 @@
 红队验证架构核心扎实（type-erase 热路径零回归成立、NEON 逻辑等价、erase reclaim 不变量正确、无 double-free/泄漏、零 std 流违规、无玩具空壳）。**当轮已修 7 处硬伤**：log.h 美化注释("trailing marker"→静默截断)、Win `current_directory`/`temp_directory` 超 MAX_PATH 读未初始化缓冲、POSIX `directory_iterate` DT_UNKNOWN 用 `lstat` 防递归删跟随符号链接(+ WSL 符号链接安全测试)、`copy_file` EINTR 重试 + O_CLOEXEC、log 双 OutputDebugString 合一、`path::join` uint32 溢出守卫、log sink 生命周期硬契约文档。
 
 **显式登记待办（红队挖出、本轮未修的大件，非略过）**：
-- **【高】platform-03c：Windows UTF-8 路径**。fs.cc 全程 `...A`(ANSI)API,非 ASCII 的 UTF-8 路径在 Win 按 ACP 误解(ASCII 测例掩盖)。需 Win 分支 UTF-8↔UTF-16 + `...W` API。**当前 fs 在 Win 限 ACP 路径**。
+- ~~【高】platform-03c：Windows UTF-8 路径~~ **✅ 已做(platform-03c)**:fs.cc Win 分支全转 `...W` API + `WidePath`(UTF-8→UTF-16,栈+堆 RAII)/`fill_w`(UTF-16→UTF-8 buffer-fill),platform 内自包含无倒挂。**红队 UTF-8 测试还揪出 `touch()` 双重 ANSI 漏洞**(std::fopen + CreateFileA 都绕过转换)→ Win 改 CreateFileW(OPEN_ALWAYS)。双平台 UTF-8 路径(CJK+emoji)往返测试过。
 - **【中】container-04c：SwissTable `find_or_prepare_insert` 融合**。insert 新键现走 2× 哈希 + 2× 探测(find 查重 + find_insert_slot 各一趟);abseil 融合为单趟。对贵哈希键损失约半插入效率(对 std 仍远胜,对标 abseil 让步)。
 - **【中】obs log 无锁快照**:log_message 每条加 mutex 取快照;可换 atomic COW 指针(读路径零锁)。
 - **【中】platform fs copy_file 内核零拷贝**:POSIX 现 read/write 用户态弹跳;可试 `copy_file_range`/`sendfile`(失败回退)。

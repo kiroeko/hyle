@@ -195,6 +195,28 @@ TEST_F(FsTest, SpecialDirectoriesNonEmpty) {
   EXPECT_GT(home_directory(buf, sizeof(buf)), 0u);
 }
 
+// Non-ASCII UTF-8 path round-trips through every fs op. POSIX is byte-
+// transparent; Windows must convert UTF-8 <-> UTF-16 (else the ...A APIs would
+// mis-decode under the active code page). The directory name mixes CJK + emoji.
+TEST_F(FsTest, Utf8NonAsciiPath) {
+  std::string dir = path("\xE6\xB5\x8B\xE8\xAF\x95_\xF0\x9F\x9A\x80");  // 测试_🚀
+  ASSERT_TRUE(make_directory(dir.c_str()));
+  EXPECT_TRUE(is_directory(dir.c_str()));
+
+  std::string file = dir + "/\xE6\x96\x87\xE4\xBB\xB6.txt";  // 文件.txt
+  ASSERT_TRUE(touch(file.c_str()));
+  EXPECT_TRUE(exists(file.c_str()));
+
+  // The non-ASCII entry name comes back intact through the visitor (UTF-8).
+  bool found = false;
+  for_each_entry(dir.c_str(), [&](const char* name, bool is_dir) {
+    if (!is_dir && std::strcmp(name, "\xE6\x96\x87\xE4\xBB\xB6.txt") == 0)
+      found = true;
+  });
+  EXPECT_TRUE(found);
+  EXPECT_TRUE(remove_directory_recursive(dir.c_str()));
+}
+
 TEST_F(FsTest, ChangeDirectoryRoundTrip) {
   char before[4096];
   ASSERT_GT(current_directory(before, sizeof(before)), 0u);
