@@ -44,7 +44,7 @@
 | **00-scaffolding** | P-1 | 构建 | CMake 多模块结构+GoogleTest/nanobench/sanitizer/CI+HYLE_宏骨架 | — | 1-2k | 294 | ✅ 完成 |
 | error-01 | P0 | error | Status + std::expected + ASSIGN_OR_RAISE 宏 | 00 | 1-2k | 456 | ✅ 完成(进程内 Status;error_handler→error-02) |
 | error-02 | P0 | error | error_handler vtable(跨 DLL 错误上报) | error-01 | 1k | 127 (+74 测试) | ✅ 完成(非变参 vtable ABI 安全;干净 HYLE_TRAP fatal;补 charter §5 HYLE_ASSERT;record 无分配) |
-| obs-01 | P0 | obs | instrumentation hook API(编译期 no-op 空实现) | 00 | 1-2k | — | 占位 |
+| obs-01 | P0 | obs | 结构化日志产出:level 门控 + sink 注册表 + 默认 stderr 彩色 sink | 00 | 1-2k | 132 (+103 测试) | ✅ 完成(吸纳 clay log;新建 obs 模块;非变参 sink+caller-side std::format 避 clay 变参 fn-ptr ABI 坑;atomic level 无锁门+mutex 快照锁外 I/O 修 clay 裸数组 race;双平台 11/11。instrumentation hook=obs 后续步) |
 | platform-01 | P1 | platform | thread + park(futex/WaitOnAddress/ulock) | error-01 | 2-3k | 527 | ✅ 完成 |
 | platform-02 | P1 | platform | virtual_memory + dynlib | platform-01 | 2-3k | 158 (dynlib) | 🔶 dynlib ✅(DynLib RAII,Win/Linux 真测);virtual_memory→platform-02b |
 | platform-03 | P1 | platform | path + fs + env + os_info | platform-01 | 1-2k | — | 🔶 拆分 |

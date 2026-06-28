@@ -18,6 +18,7 @@
 | 模块 | 已实现 | 状态 |
 |---|---|---|
 | **error** | Status(8B 指针标签内联) + `std::expected` + ASSIGN_OR_RAISE | ✅ |
+| **obs** | 结构化日志:level 门控 + sink 注册表 + stderr 彩色 sink(非变参 vtable + std::format) | 🔶 hook 待 |
 | **platform** | thread + park(futex/WaitOnAddress) + **dynlib(RAII)** + **fs/env(stat/mkdir/iterate/cwd/temp/home/getenv,buffer-fill+visitor)** | 🔶 vm 待 |
 | **mem** | Allocator vtable(修 alignment) + **mimalloc backing(Win 4–12x>默认堆)** + MemoryArena(无锁) + Arena bump + ObjectPool + StackAllocator | 🔶 NUMA/大页 待 |
 | **time** | 单调钟 + 墙钟 + sleep + Instant(ns) | ✅ |
