@@ -1,10 +1,35 @@
-# HYLE 性能预期（vs C++ std）
+# HYLE 性能预期与实测（核心目的：做到 SOTA）
 
-> **免责**：HYLE 尚未实现。下表是**基于同类成熟库公开基准（mimalloc/abseil/folly/Tokio/Highway/Seastar）的推算目标**，非 HYLE 实测。真实数字由 [`roadmap.md`](./roadmap.md) 每阶段的 benchmark gate 产出。
+> **第一性目的**：HYLE 是高性能 infra 库，**唯一存在理由是性能做到 SOTA**。标尺不是 `std`(赢它是最低门槛),而是**各领域 SOTA 参考库**(hashmap→absl/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway)。**做到等同或超过参考库才算数;只赢 std 不算价值。**
 >
-> **时间与空间分列**：HYLE 多个赢点是「以空间换时间」（arena/fiber/SmallVector），不分开看会掩盖代价。
->
-> **已被 clone 的真实参考库源码背书（4 波深读）**：XXH3 30+GB/s（xxHash README 实测）、tracy zone 埋点 2.25ns、abseil/F14 查找对标、tokio fiber 调度机制——这些不再是道听途说，是核到源码 file:line 的。
+> **两段式**：① 下面"预期表"是开工前基于参考库公开基准的**推算目标**;② 实现后必须有**对标 SOTA 的真实 benchmark**(非推算),数字诚实印出——赢/平/输都登记,差距是优化目标。
+
+## 实测铁证（持续回填,真跑非推算）
+
+> 环境:Linux x86_64 GCC14.2 Release,nanobench。100k uint64 键。`bench/container/`。
+
+### SwissTable hashmap
+
+| 操作 | vs `std::unordered_map` | vs `absl::flat_hash_map`(**SOTA 标尺**) | 结论 |
+|---|---|---|---|
+| find-hit | **2.42x** 赢 | **0.77x 输**(absl 2.08ns / 我 2.69ns) | 赢 std,**慢 absl ~25%→优化目标** |
+| find-miss | **2.26x** 赢 | **0.80x 输** | 同上 |
+| insert | **5.3x** 赢 | **1.38x 赢**(我 11.65ns / absl 16.04ns) | **超 SOTA**(04c 融合之功) |
+| erase | **3.5x** 赢 | **1.29x 赢** | **超 SOTA** |
+
+**这就是"对标 SOTA"的意义**:只对标 std 会得出"全面 2-5x 碾压"的虚假安心;对标 absl 才暴露 **find 有 ~25% 真实差距**——absl 的 find 内循环更精瘦(probe 预取 + 更激进内联)。**find 优化登记为 container 性能待办**(候选:probe 预取、`eq_` 去 `std::equal_to` 间接、BitMask 迭代精简)。insert/erase 反超 absl 证明设计本身到位。
+
+### sched（fiber 调度）
+
+| 项 | 实测(Linux GCC14) | 参考 |
+|---|---|---|
+| fiber 上下文切换(resume/yield 对) | **~23 ns** | fcontext 量级,对标 boost.context |
+| spawn 2000 任务 + drain | **比 `std::async(launch::async)` 快 ~7-9x** | std::async 每任务起 OS 线程(~30μs);fiber ~3-4μs |
+
+> sched bench 当前 teardown 有 segfault(测量数有效、崩在退出),根因未隔离,未提交;wake 延迟微基准需安全 harness(见 bench 注释)。
+
+## 预期表（开工前推算目标,vs std）
+
 
 ## 先分两桶（混在一起说"快多少"会误导）
 

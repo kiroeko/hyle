@@ -11,9 +11,17 @@
 
 > HYLE = HYbrid LEvels。回到 C、贴硬件、混合异构、把性能做到极致。是对 `slate-render` 中 clay infra 层的重构与扩大。
 
+## 核心目的：性能做到 SOTA（不是"比 std 快"就行）
+
+**HYLE 是一个高性能基础设施库，唯一的存在理由是把性能做到业界顶尖（SOTA）。** 这条是第一性的，凌驾于"功能完整""代码量"之上：
+
+- **标尺是参考库，不是 std**：赢 `std::unordered_map`/`std::async` 是**最低门槛**——std 在这些点上本就不是为极致性能设计的。真正的标尺是**各领域的 SOTA 参考库**:hashmap→`absl::flat_hash_map`/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway/xsimd、调度→tokio/Seastar。**做到等同或超过它们，HYLE 才有价值；只赢 std 不算数。**
+- **用数据说话,输了也报**:每个性能件必须有**对标 SOTA 的真实 benchmark**(非推算),诚实印出数字——赢在哪、输多少、差距登记为优化目标。掩盖差距 = 自欺。
+- **当前实测铁证**:SwissTable 100k uint64(Linux GCC14)——vs `std::unordered_map` find 2.4x/insert 5.3x/erase 3.5x(轻松赢 std);**vs `absl::flat_hash_map`** insert **1.38x**、erase **1.29x**(超 SOTA),但 find **0.77x**(慢 absl ~25%,**已登记为优化目标**)。这就是"对标 SOTA"的意义:它逼出了 std 对标永远看不到的真实差距。
+
 ## 当前实现状态
 
-> 诚实标尺:**已实现的都经双平台(Win MSVC + Linux GCC14)真编真测**,lock-free/并发件过 WSL ThreadSanitizer。逐里程碑进度(预测 vs 真实 LOC + clay API diff)见 [`docs/milestones/README.md`](./docs/milestones/README.md);clay 吸纳完整度见 [`clay-coverage-map.md`](./docs/architecture/clay-coverage-map.md)。
+> 诚实标尺:**已实现的都经双平台(Win MSVC + Linux GCC14)真编真测**,lock-free/并发件过 WSL ThreadSanitizer。逐里程碑进度(预测 vs 真实 LOC + clay API diff)见 [`docs/milestones/README.md`](./docs/milestones/README.md);clay 吸纳完整度见 [`clay-coverage-map.md`](./docs/architecture/clay-coverage-map.md)。性能对标见 [`performance.md`](./docs/architecture/performance.md)。
 
 | 模块 | 已实现 | 状态 |
 |---|---|---|
