@@ -12,9 +12,15 @@
 #include "hyle/platform/thread.h"
 #include "hyle/platform/wait.h"
 #include "hyle/sched/fiber.h"
+#include "hyle/sched/waker.h"
 
 namespace hyle::sched {
 namespace {
+
+// The Scheduler running on this worker thread, for current_waker(). File-local
+// (not an Impl member) so the free functions below can read it without naming
+// the private nested Impl type.
+thread_local Scheduler* tls_owner = nullptr;
 
 // Per-worker xorshift64 for cheap random victim selection.
 std::uint64_t xorshift(std::uint64_t& s) noexcept {
@@ -55,9 +61,11 @@ struct Scheduler::Impl {
   std::mutex idle_mu;              // guards `sleepers` (cold path: park/unpark)
   std::vector<unsigned> sleepers;  // ids of currently-parked workers
   unsigned n;
+  Scheduler* owner;  // for tls_owner / current_waker()
 
-  Impl(unsigned num_workers, mem::Allocator alloc, std::size_t cap)
-      : global(alloc, cap), n(num_workers) {
+  Impl(unsigned num_workers, mem::Allocator alloc, std::size_t cap,
+       Scheduler* sched)
+      : global(alloc, cap), n(num_workers), owner(sched) {
     HYLE_FATAL_ASSERT(num_workers >= 1);
     workers.reserve(num_workers);
     ctxs.reserve(num_workers);
@@ -135,14 +143,32 @@ struct Scheduler::Impl {
     f->resume();
     if (f->done()) {
       outstanding.fetch_sub(1, std::memory_order_acq_rel);
+    } else if (f->consume_wait_request()) {
+      // The fiber suspended to WAIT on an external event (sched-04). Don't
+      // reschedule -- it leaves the run loop until a Waker re-injects it. But a
+      // wake() may have already fired (wake-before-suspend): the rendezvous tells
+      // us if THIS side must do the re-injection now (wake got here first) or
+      // leave it for wake() (we got here first). Re-injection is always post-
+      // resume(), so the fiber is fully suspended -- never resumed on two threads.
+      if (f->wake_rendezvous()) reschedule(w, f);
     } else {
-      reschedule(w, f);
+      reschedule(w, f);  // ordinary cooperative yield
     }
+  }
+
+  // Hand a (suspended) fiber back to the run loop from ANY thread. Goes through
+  // the global queue + notify so it's correct whether wake() runs on a worker or
+  // a foreign thread. Does NOT touch `outstanding` -- a waiting fiber was never
+  // decremented, it stayed counted while parked.
+  void reinject(Fiber* f) noexcept {
+    while (!global.try_push(f)) platform::this_thread::yield();
+    notify();
   }
 
   void run_worker(unsigned idx) noexcept {
     t_current = this;
     t_worker_idx = static_cast<int>(idx);
+    tls_owner = owner;
     Worker& w = *workers[idx];
 
     while (!stop.load(std::memory_order_acquire)) {
@@ -224,7 +250,7 @@ thread_local int Scheduler::Impl::t_worker_idx = -1;
 
 Scheduler::Scheduler(unsigned num_workers, mem::Allocator alloc,
                      std::size_t queue_capacity)
-    : impl_(new Impl(num_workers, alloc, queue_capacity)) {}
+    : impl_(new Impl(num_workers, alloc, queue_capacity, this)) {}
 
 Scheduler::~Scheduler() {
   impl_->shutdown();
@@ -234,5 +260,25 @@ Scheduler::~Scheduler() {
 void Scheduler::spawn(Fiber* fiber) { impl_->spawn(fiber); }
 void Scheduler::drain() { impl_->drain(); }
 void Scheduler::shutdown() { impl_->shutdown(); }
+
+// ---- completion spine (sched-04a) -------------------------------------------
+
+void Waker::wake() const noexcept {
+  // Rendezvous: whichever of {worker dispatch, this wake()} sees the other has
+  // already arrived performs the single re-injection. If we arrived first, the
+  // worker's dispatch will re-inject post-suspend.
+  if (fiber_->wake_rendezvous()) sched_->impl_->reinject(fiber_);
+}
+
+Waker current_waker() noexcept {
+  return Waker{tls_owner, Fiber::current()};  // both null if not on a worker fiber
+}
+
+void suspend() noexcept {
+  Fiber* self = Fiber::current();
+  HYLE_FATAL_ASSERT(self != nullptr);  // suspend() outside a fiber is a bug
+  self->request_wait();  // tell dispatch: don't reschedule me, I'm waiting
+  Fiber::yield();        // control returns to the worker; resumes when re-injected
+}
 
 }  // namespace hyle::sched

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 
 #include "hyle/macros.h"
@@ -66,6 +67,37 @@ class Fiber {
   // Must be called from within a fiber's call stack (asserts otherwise).
   HYLE_SCHED_API static void yield() noexcept;
 
+  // The fiber currently running on this thread, or nullptr if none. Lets the
+  // scheduler's suspend()/current_waker() name "this fiber" without the caller
+  // threading a handle through (sched-04).
+  HYLE_SCHED_API static Fiber* current() noexcept;
+
+  // ---- wait/wake coordination (used by the scheduler's Waker, sched-04) -------
+  // A fiber that yields to WAIT on an external event (vs an ordinary cooperative
+  // yield) sets this flag before yielding; the scheduler reads+clears it after
+  // resume() returns and, if set, does NOT reschedule -- the fiber sits out of
+  // the run loop until a Waker re-injects it.
+  void request_wait() noexcept { wait_requested_ = true; }
+  bool consume_wait_request() noexcept {
+    bool r = wait_requested_;
+    wait_requested_ = false;
+    return r;
+  }
+
+  // Symmetric rendezvous closing the wake-before-suspend race. BOTH the worker
+  // (after resume() returns, having seen a wait request) and Waker::wake() call
+  // this; whichever observes the OTHER already arrived returns true and must do
+  // the (single) re-injection. Because the worker only calls it AFTER resume()
+  // returned, re-injection can never resume a fiber that is still on-stack.
+  // Resets to 0 after a completed rendezvous, ready for the next wait episode.
+  bool wake_rendezvous() noexcept {
+    if (wake_state_.exchange(1, std::memory_order_acq_rel) == 1) {
+      wake_state_.store(0, std::memory_order_release);
+      return true;  // the other side got here first -> THIS side re-injects
+    }
+    return false;  // we arrived first -> the other side will re-inject
+  }
+
  private:
   // friend so the file-local fcontext trampoline can drive private state without
   // exposing transfer_t/fcontext_t in this public header.
@@ -79,6 +111,8 @@ class Fiber {
   EntryFn entry_ = nullptr;
   void* arg_ = nullptr;
   bool finished_ = false;
+  bool wait_requested_ = false;       // set by request_wait(), read by scheduler
+  std::atomic<int> wake_state_{0};    // wake/suspend rendezvous (see wake_rendezvous)
 };
 
 }  // namespace hyle::sched

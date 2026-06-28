@@ -93,7 +93,9 @@
 | sched-01 | P4 | sched | fcontext 6 平台 + 栈池(骨架:单 worker 单队列跑一 fiber) | container-01,mem-01,platform-01 | 2-3k | 226 (+737 vendored asm) | ✅ 完成(仅证切换,队列/worker 留 sched-02) |
 | sched-02 | P4 | sched | per-core 有界 run-queue + LIFO slot | sched-01,container-01 | 2-3k | 205 | ✅ 完成(单worker驱动,steal留sched-03) |
 | sched-03 | P4 | sched | work-stealing + spin-then-park + unpark 接力 | sched-02,container-08 | 2-3k | 340 | ✅ 完成(多worker偷取+park;§2.3②③防惊群优化诚实延迟) |
-| sched-04 | P4 | sched | Waker completion 脊 + time 接入(deadline) | sched-02,time-02 | 1-2k | — | 占位 |
+| sched-04 | P4 | sched | Waker completion 脊 + time 接入(deadline) | sched-02,time-02 | 1-2k | — | 🔶 拆分 |
+| sched-04a | P4 | sched | Waker completion 脊(suspend/wake,race-free) | sched-03 | 1k | ~114 (+96 测试) | ✅ 完成(架构拱顶:io/compute/timer 共用的唤醒接缝;wake-before-suspend 对称原子 rendezvous;双平台 4/4 + WSL TSan 8/8 零 race。deadline 半→04b 待 time-02) |
+| sched-04b | P4 | sched | Waker × timer(deadline 到期 wake) | sched-04a,time-02 | 0.5-1k | — | 占位(依赖 time-02 时间轮,按"不依赖后面功能"拆出) |
 | sched-05 | P4 | sched | fiber-aware CV + mutex/waitgroup/channel | sched-04 | 2-3k | — | 占位 |
 | sched-06 | P4 | sched | 协程胶水(co_await→fiber 让出) | sched-04 | 1-2k | — | 占位 |
 | sched-07 | P4 | sched | 取消：CancelToken 树 + await 取消点 + 结构化并发 | sched-04,sched-06 | 2-3k | — | 占位 |

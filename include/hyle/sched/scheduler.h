@@ -17,6 +17,7 @@
 namespace hyle::sched {
 
 class Fiber;
+class Waker;  // sched-04: re-injects a suspended fiber (needs impl_ via friend)
 
 // M:N work-stealing scheduler: N OS-thread workers, each with its own FIFO local
 // run-queue (container WsFifoQueue), a shared global injection queue (Vyukov
@@ -50,6 +51,7 @@ class HYLE_SCHED_API Scheduler {
   void shutdown();
 
  private:
+  friend class Waker;  // Waker::wake() re-injects via impl_ (completion spine)
   struct Impl;
   Impl* impl_;
 };

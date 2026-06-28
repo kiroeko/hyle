@@ -107,4 +107,6 @@ void Fiber::yield() noexcept {
   self->return_ctx_ = t.fctx;
 }
 
+Fiber* Fiber::current() noexcept { return t_current; }
+
 }  // namespace hyle::sched
