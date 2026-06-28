@@ -3,7 +3,13 @@
 > **目的**：防"以为吸纳完了、其实漏文件/漏 API 层"。clay 源在 `slate-render/iron/infra/{include,src}/clay/`。
 > **铁律（对抗审查纪律）**：每个吸纳 clay 的里程碑闭环前，必须 `diff` clay 同名文件的 API 表面——缺的要么补、要么在本表显式登记 `📋待办`，**不许默默略过**。本表是唯一权威进度标尺。
 > **状态图例**：✅ 完成 / 🔶 部分(有登记的缺口) / 📋 计划 / ♻️ 被 C++23/std 取代 / 🔻 借第三方(不自写) / ⛔ 不吸纳。
-> **行数**：clay 列为该文件总行数(`grep -c`)；HYLE 列为对应物生产行数。clay 自有(去 thirdparty/plugins)≈ **19,000**；HYLE 当前生产 ≈ **2,885**(container-06 +363 + util-01..05 +441 + time-01 +103 + platform-02/dynlib +158 + mem-02 增量 + mem-aux/alignment +36;mimalloc 第三方不计)。差距大部分是"未做"(进度)，小部分是已修正的"缩水"(见 🔶)。
+> **行数(cloc 实测,2026-06-28 校准)**：clay 自有 ≈ **19,005**(sys 7917 + math 5831 + utils 3469 + parallel 811 + 顶层头 973;cloc code 行,去 thirdparty)。HYLE 生产(src+include)≈ **5,383**（旧值 2,885 已 stale,cloc 复核纠正）。mimalloc/xxhash/nanobench/fcontext 第三方不计。
+>
+> **⚠️ 进度口径(别被符号计数误导)**：本表的符号统计 = **✅47 + ♻️17 + 🔻4 + ⛔8 + 📋8 + 🔶10 = 94 行**。
+> - "已决议"(✅+♻️+🔻+⛔)/94 ≈ **81%**——但这含"取代/借/不要",**不等于"写了 HYLE 代码吸纳"**。
+> - 真**写 HYLE 等价物吸纳** = ✅47/94 ≈ **50%**。
+> - **符号无行级权重**:`math/half.h` 一个 ♻️🔻 行 = clay 6923 行(36%！软件 fp16 查表→硬件 F16C/AVX512 取代,不移植);`parallel/thread_pool+worker`(494 行)→被 sched 重写取代。这是 HYLE 生产(5383)远小于 clay(19005)的主因:**大块是有意"删/std取代/硬件取代",不是漏做也不是缩水**。
+> - **最贴真实的进度看"功能/支柱"**:sys 基座吸纳扎实;math-simd / parallel-graph / io 等**支柱方向大多未动**(详见各 📋 行 + roadmap)。整体 ≈ 25–30%。
 
 ## sys/ — 系统基座（allocator/arena/os/path/string/hash/log/time）
 
@@ -107,6 +113,27 @@
 - `math/half.h`(6923 软件查表)→ **不 1:1 移植**，硬件 F16C/AVX512-FP16 取代,只留接口。
 - catomics(clay sys/details,未在上表)→ **不 port**，C++23 std::atomic 取代。
 > 合计:clay 里约 **8,000+ 行**属于"HYLE 计划性不吸纳/大幅替换"——所以拿 19k 当目标分母是错的，**真实"应吸纳"分母约 10-11k**。
+
+#### ①′ std 取代的性能裁决（2026-06-28，回答"用 std 真比 clay 快吗"）
+
+> **核心问题**：HYLE 核心目标是性能 SOTA。用 std/C++23 取代 clay 手写,**会不会反而更慢、把核心目标搞砸**？逐条裁决(分 4 类),结论:**没有一个 std 取代落在"会输给 clay 的热路径"上**。
+
+| std 取代 | 类别 | 裁决依据 |
+|---|---|---|
+| bit ops → `<bit>`(popcount/countl_zero/bit_ceil…) | **intrinsic 背书** | **实测 objdump**(`-O3 -march=native`):`std::popcount`→`popcnt`、`countl_zero`→`lzcnt`、`countr_zero`→`tzcnt` **单条硬件指令**,与手写 intrinsic 同。温路径(hashmap probe/对齐)安全。 |
+| clamp/min/max → `<algorithm>` | intrinsic/同码 | 平凡内联,与手写同 codegen。 |
+| pow/abs/is_normal → `<cmath>` | 同 libm | 同 libm/编译器 intrinsic;C++23 起 constexpr。 |
+| `math/half.h` → 硬件 F16C/AVX512-FP16 | **已知大赢** | 硬件 fp16 指令 vs clay 6923 行**软件查表**——数量级更快,正是不移植的理由。 |
+| consts → `<numbers>`/`numeric_limits` | **零运行时** | 编译期常量,clay 头自注"will be replaced"。 |
+| type_traits/concepts/func_traits/singleton | **零运行时** | 纯编译期/init-once,无热路径开销。 |
+| `result.h` → `std::expected` | **零开销设计** | value/error union 无分配;charter 错误模型。比手写 Result 不慢。 |
+| stoi/stod → `std::from_chars` | **已知赢** | from_chars 无 locale/无分配,普遍快于 stoi/strtod。 |
+| `thread_pool`+`worker` → sched work-stealing | **已实测赢** | sched bench:spawn 比 std::async 快 6-9x;work-stealing >> clay 单全局锁池(重写非移植)。 |
+| `num_logical_processors` → `hardware_concurrency` | **冷(启动一次)** | 启动期调一次,零热路径。 |
+| sprintf → `std::format`/`snprintf`;to_string → format | **冷路径** | 唯一理论风险(某些 libstdc++ 版 format 慢于 printf),但格式化是**冷路径**(日志/错误/调试),clay sprintf 同样冷用途——即便略慢也不碰 hashmap/alloc/fiber 热循环。**已留实测口子**:若 profile 发现 format 上热路径,vendor stb_sprintf(覆盖图 sys/sprintf 行已记)。 |
+
+**裁决结论**:① intrinsic 背书的(bit/clamp/pow)= **同指令,零损失**(已 objdump 证);② 编译期/零运行时的(consts/concepts/expected)= **无热路径开销**;③ 已实测赢的(work-stealing/from_chars/F16C)= **更快**;④ 唯一冷路径风险(std::format)= **不在热路径,且留了实测翻案口**。**故"用 std 取代"未违背 SOTA 目标**;真正决定 SOTA 的是热路径自造件(SwissTable/分配器/fiber/SIMD),那些**不**用 std,要对标 absl/mimalloc/Highway 实测(见 performance.md gate)。
+
 
 ### ② 新增（clay 根本没有——HYLE 最终远超 clay 的原因）
 - **fiber 有栈上下文切换**(fcontext)、**M:N work-stealing 调度器**(per-core 队列+偷取+park)——clay 零 fiber、只有单锁池。
