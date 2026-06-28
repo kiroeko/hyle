@@ -26,8 +26,10 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem)  # 按需选�
 | [`01_mem_container/`](./01_mem_container/) | mem + container | 显式 `Allocator` 注入 + `SwissTable`（对标 absl 的 flat hashmap）——HYLE 的"无隐藏全局堆"范式 + 旗舰容器 |
 | [`02_simd/`](./02_simd/) | simd | 运行期 ISA 派发的 `dot_f32`/`saxpy_f32` + 直接用 `vec<T,N>` D-tag 写宽度无关 kernel + 打印选中的 ISA 变体 |
 | [`03_sched_fibers/`](./03_sched_fibers/) | sched | `Scheduler` + `Fiber`：spawn 多个纤程、`yield()` 协作、`shutdown()` 排空 |
+| [`04_prebuilt_lib/`](./04_prebuilt_lib/) | 构建/集成 | 把 HYLE 编成**预构建库**(动态/静态)再链接的集成方式——验证 `HYLE_<MOD>_API` 导出/导入边界(对比 01-03 的源码 `add_subdirectory` 集成) |
 
 > 只列**已就绪**模块（见 [`../docs/guide/usage-guide.md`](../docs/guide/usage-guide.md) §0 就绪度表）。io/compute/graph 尚未实现，无示例。
+> 01-03 用源码 `add_subdirectory` 集成；04 用**预构建库**集成（两种姿势都演示）。
 
 ## 构建单个示例
 
