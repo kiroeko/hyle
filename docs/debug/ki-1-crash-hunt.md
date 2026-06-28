@@ -22,7 +22,7 @@
 |---|---|---|
 | mimalloc 被偷偷关成 OS 分配器 | `nm build-wsl/libhyle_mem.so` → 212 个 `mi_` 符号,`HYLE_USE_MIMALLOC=ON` | **排除**,mimalloc 真在用 |
 | 代码里有抑制/规避(catch/sigaction/sleep/retry/.supp) | grep `src/sched/**` + 全仓 `*.supp` | **排除**,调度器干净,无任何抑制 |
-| bench WITHHELD 注释残留甩锅结论 | 读 `bench/CMakeLists.txt:15-21` | **确认是缓解**:含被用户否决的"NOT a HYLE bug""in the vendored allocator"。**待清理**(改成中性指向 known-issues) |
+| bench WITHHELD 注释残留甩锅结论 | 读 `bench/CMakeLists.txt:15-21` | **确认是缓解**:含被用户否决的"NOT a HYLE bug""in the vendored allocator"。**已清理**:bench 编入默认 + 注释中性化(2702df2)。 |
 
 ## 3. 实验记录（全部在原生 ext4，除非注明）
 
