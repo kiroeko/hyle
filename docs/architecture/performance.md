@@ -12,12 +12,14 @@
 
 | 操作 | vs `std::unordered_map` | vs `absl::flat_hash_map`(**SOTA 标尺**) | 结论 |
 |---|---|---|---|
-| find-hit | **2.42x** 赢 | **0.77x 输**(absl 2.08ns / 我 2.69ns) | 赢 std,**慢 absl ~25%→优化目标** |
-| find-miss | **2.26x** 赢 | **0.80x 输** | 同上 |
-| insert | **5.3x** 赢 | **1.38x 赢**(我 11.65ns / absl 16.04ns) | **超 SOTA**(04c 融合之功) |
-| erase | **3.5x** 赢 | **1.29x 赢** | **超 SOTA** |
+| find-hit | **2.42x** 赢 | **~0.76x 输**(absl ~2.1ns / 我 ~2.8ns) | 赢 std,**慢 absl ~25%→优化目标** |
+| find-miss | **2.26x** 赢 | **~0.79x 输** | 同上 |
+| insert | **5.3x** 赢 | **~1.37x 赢**(我 ~11.8ns / absl ~16.3ns) | **超 SOTA**(04c 融合之功) |
+| erase | **3.5x** 赢 | **~1.21x 赢** | **超 SOTA** |
 
-**这就是"对标 SOTA"的意义**:只对标 std 会得出"全面 2-5x 碾压"的虚假安心;对标 absl 才暴露 **find 有 ~25% 真实差距**——absl 的 find 内循环更精瘦(probe 预取 + 更激进内联)。**find 优化登记为 container 性能待办**(候选:probe 预取、`eq_` 去 `std::equal_to` 间接、BitMask 迭代精简)。insert/erase 反超 absl 证明设计本身到位。
+> **2026-06-28 原生 ext4 复测确认(跑 3 遍,非噪声)**:find-hit 72.6/77.1/75.6%、find-miss 77.3/80.5/80.3%、insert 134-142%、erase 119-123%。**find 差距真实稳定**,insert/erase 稳赢。
+
+**这就是"对标 SOTA"的意义**:只对标 std 会得出"全面 2-5x 碾压"的虚假安心;对标 absl 才暴露 **find 有 ~25% 真实差距**。**已排除三个错误候选**(读码查实):① `eq_` 对 uint64 在 -O3 完全内联成裸 `==`,**无间接可去**;② `Hash<uint64>` 已是内联 `mix64`(splitmix64),**非 XXH3**,hash 不慢;③ **控制字节尾部镜像已实现**(`swiss_table.cc` core_set_ctrl 镜像前 kGroupWidth 字节 + 分配 `cap+kGroupWidth` + memset 尾),group near-end 加载已无回绕掩码。**find 循环结构已几乎等价 absl**——25% 来源**无法从源码结构看出**,需 **profile(perf/objdump 对比两个 find 内循环 codegen)** 定位真因;唯一已知结构差异是 absl 在 probe 起点 **预取槽数组**(100k 表常驻 cache 时收益小,待测)。**结论:这是一个需要 profile-guided 的真优化,非猜改**——留作下一步 container 性能待办。insert/erase 反超 absl 证明设计本身到位。
 
 ### sched（fiber 调度）
 
