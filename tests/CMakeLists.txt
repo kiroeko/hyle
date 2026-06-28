@@ -18,6 +18,7 @@ hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc uti
 hyle_add_test(time SOURCES time/clock_test.cc)
 hyle_add_test(math SOURCES math/scalar_test.cc)
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform)
+hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc)
 if(HYLE_HAS_FCONTEXT)
   hyle_add_test(sched SOURCES sched/fiber_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc)
 endif()

@@ -84,7 +84,7 @@
 | math-01 | P3 | math | scalar 标量助手(div_ceil/round_up_to_multiple/sgn/approx_eq) | 00 | 0.5k | 28 (+51 测试) | ✅ 完成(clay consts/utils 458 行绝大多数♻️ C++20/23 `<bit>`/`<numbers>`/`<cmath>`;只自写 std 真缺的4个;div_ceil 改溢出安全) |
 | bench-01 | P3 | bench | nanobench 设施 + SwissTable/StringBuf 对标 std | container-04/06 | — | bench设施 | ✅ 完成(SwissTable find2.7x/insert6.1x/erase4.1x>std;intern基准驱动优化0.94→1.31x;absl/F14对标→bench-02) |
 | bench-02 | P3+ | bench | 对标 SOTA(absl/F14/moodycamel/oneTBB/highway/marl,不止 std) | 各模块 | — | — | 📋 规划(用户提:对比 project-hyle 高性能库;拆 02a hashmap/02b 队列/02c hash+wyhash/02d simd-sched) |
-| simd-01 | P3 | simd | vec D-tag 抽象 + scalar 后端 | mem-01 | 2-3k | — | 占位 |
+| simd-01 | P3 | simd | vec D-tag 抽象 + scalar 后端 + 运行期 CPUID dispatch 骨架 | mem-01 | 2-3k | 496 (+210 测试) | ✅ 完成(dispatch.h/cc 运行期 CPUID+XGETBV 探测,探测器独立 TU+禁 LTO 防自身 SIGILL;vec.h 照搬 Highway D-tag 契约 Simd<T,N,kPow2>/Lanes(d) 可运行期求值留 SVE 口;scalar 地板后端核心 op 全集作后续后端对拍参照;双平台 22/22。用户铁律"一开张就搭 dispatch 骨架"已落实。3 红队 agent+oracle 核账揪修 4 硬伤(0x80000001/LZCNT 真补、tier 真对标 Highway group、死码、过度承诺注释诚实化)。SSE2/AVX2/AVX512/NEON 各后端→simd-02/03,变体 DLL 选择→simd-04) |
 | simd-02 | P3 | simd | SSE4.2 + AVX2 后端 | simd-01 | 2-3k | — | 占位 |
 | simd-03 | P3 | simd | AVX512 + NEON 后端 | simd-01 | 2-3k | — | 占位 |
 | simd-04 | P3 | simd | 运行期变体 dispatch(探测器隔离+score) | simd-02 | 1-2k | — | 占位 |

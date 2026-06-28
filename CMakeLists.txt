@@ -90,6 +90,7 @@ add_subdirectory(src/time)   # time-01: monotonic + realtime clock + sleep
 add_subdirectory(src/util)   # util-01: ref_counted (Ref<T>) + scope_guard (DEFER)
 add_subdirectory(src/math)   # math: scalar helpers (div_ceil/sgn/approx_eq)
 add_subdirectory(src/container)  # container-01: bounded MPMC ring (Vyukov)
+add_subdirectory(src/simd)   # simd-01: runtime CPUID dispatch + vec<T,N> D-tag + scalar
 
 # sched fiber switching needs platform fcontext asm. We have vendored x86_64 asm
 # for MS/PE (MASM) and SysV/ELF (GAS); wire those two. arm64 + macho asm are
