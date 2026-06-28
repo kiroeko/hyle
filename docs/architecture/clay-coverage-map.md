@@ -92,7 +92,7 @@
 - ~~【中】container-04c：SwissTable `find_or_prepare_insert` 融合~~ **✅ 已做(container-04c)**:insert 新键改单趟探测(walk 同时查 key 命中 + 记首个 empty/deleted 槽),哈希算一次(原 2× 哈希 + 2× 探测)。**附带修掉 growth_left 复用墓碑重复扣减 bug**(只在插 empty 槽时扣)。双平台 11/11 含 oracle 对拍(50k/200k)。算法级 op 削减,未跑 before/after microbench。
 - **【中】obs log 无锁快照** — **尝试后撤销(诚实记录)**:试了 seqlock 让并发 logger 无锁 fan-out,但读端 memcpy 非原子 g_sinks 与写端并发 = C++ 内存模型 data race/UB,**WSL TSan 正确报 race**(log.cc add_sink)。标准洁净的无锁替代(atomic<shared_ptr> 快照、逐字段原子)开销≈mutex 的原子 RMW 且更复杂,而 mutex 临界区只是 tiny memcpy、被 sink I/O 淹没。**遵 CHECKLIST"lock-free 必过 TSan"撤回 seqlock,保留 mutex**。净收获:新增并发压力测试(6 logger 并行 + churn add/remove)且**过 TSan**,验证 mutex 注册表 race-free。
 - ~~【中】platform fs copy_file 内核零拷贝~~ **✅ 已做**:Linux 走 `copy_file_range`(内核内拷贝,btrfs/xfs 可 reflink),仅首调失败(EXDEV/ENOSYS/EINVAL,未写字节)才回退用户态 read/write。`_GNU_SOURCE` 暴露声明。macOS/其他 POSIX 留用户态(无 fcopyfile 测试机)。300 KiB 字节图样往返测试过。
-- **【中】platform-03c：Win 长路径 + UNC**:`make_directory_recursive` UNC 必败;`directory_iterate` Win `pattern[MAX_PATH=260]` 截深树(POSIX 4096),跨平台分叉。需 `\\?\` 前缀 + 宽字符。
+- ~~【中】platform-03c：Win 长路径 + UNC~~ **🔶 部分已做**:`directory_iterate` 的 MAX_PATH 截断已在 03c 消除(堆分配宽 pattern)。**`\\?\` 扩展前缀已做+测**:WidePath 对 ≥248 的绝对路径自动加 `\\?\`(drive `C:\`→`\\?\C:\`,slash 归一为 backslash),320+ 字符深树 make/touch/iterate/recursive-remove 双平台测过(Win 无前缀会 MAX_PATH 失败)。**UNC `\\?\UNC\` 代码带上但未测**(无网络共享,写不验,登记)。`make_directory_recursive` 的 UNC 前缀跳过仍待(需共享测)。
 - **【低】Win-ARM64 NEON MSVC 编译门**:GroupNeon 仅 aarch64 GCC 交叉编译验证,`_M_ARM64`(MSVC)路径未编译验证;若 Win-ARM64 入目标需补门或排除。
 - **【低】swiss erase 复用墓碑 growth_left 重复扣减**(自愈、纯空间)、log default sink 非 tty/重定向时 ANSI 污染、`stat` exists 语义 Win(任意属性)vs POSIX(文件||目录)分叉。
 

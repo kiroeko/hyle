@@ -189,6 +189,26 @@ TEST_F(FsTest, RemoveDirectoryRecursive) {
   EXPECT_FALSE(exists(path("tree").c_str()));
 }
 
+// A directory whose TOTAL path exceeds MAX_PATH (260). On Windows this only
+// works if fs prefixes "\\?\" (the ...W APIs otherwise reject > 260); without
+// it make_directory_recursive would fail partway. On POSIX it just exercises a
+// deep mkdir (limit is 4096). Builds many short segments so each component is
+// legal but the cumulative path is long, then creates/stats/removes it.
+TEST_F(FsTest, LongPathBeyondMaxPath) {
+  std::string deep = path("L");
+  while (deep.size() < 320) deep += "/abcdefgh";  // push well past 260
+  ASSERT_LT(deep.size(), 1024u);
+  ASSERT_TRUE(make_directory_recursive(deep.c_str()));
+  EXPECT_TRUE(is_directory(deep.c_str()));
+  // A file at the deep leaf round-trips too (touch -> exists).
+  std::string leaf = deep + "/leaf.txt";
+  ASSERT_TRUE(touch(leaf.c_str()));
+  EXPECT_TRUE(exists(leaf.c_str()));
+  // Recursive remove must also handle the long path (iterate + rebuild children).
+  EXPECT_TRUE(remove_directory_recursive(path("L").c_str()));
+  EXPECT_FALSE(exists(path("L").c_str()));
+}
+
 #if !defined(_WIN32)
 // Recursive delete must NOT follow a symlink-to-directory and delete the target
 // (blast-radius safety). POSIX-only: symlink creation on Windows needs a

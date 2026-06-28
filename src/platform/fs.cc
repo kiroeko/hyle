@@ -75,12 +75,41 @@ namespace {
 // UTF-8 const char* -> UTF-16, with a stack buffer and heap fallback for long
 // paths (RAII frees the heap copy). Self-contained in platform: no mem/container
 // dependency. On conversion failure `w()` is nullptr (callers treat as error).
+//
+// Long ABSOLUTE paths (>= kLongThreshold) are rewritten to the `\\?\` extended
+// form so the Win32 ...W APIs aren't capped at MAX_PATH (260) -- without the
+// prefix even the wide APIs reject longer paths unless a manifest opts in (a DLL
+// can't). Short paths are converted verbatim (zero behavior change). `\\?\`
+// requires backslash separators and no `.`/`..` (not resolved under it), so the
+// body is slash-normalized; callers needing collapse should normalize first.
 class WidePath {
  public:
   explicit WidePath(const char* utf8) noexcept {
     if (utf8 == nullptr) return;
     int need = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, nullptr, 0);
-    if (need <= 0) return;
+    if (need <= 0) return;  // includes the NUL
+    int wlen = need - 1;
+
+    if (wlen >= kLongThreshold) {
+      auto is_alpha = [](char c) {
+        return (c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z');
+      };
+      bool already = (utf8[0] == '\\' || utf8[0] == '/') &&
+                     (utf8[1] == '\\' || utf8[1] == '/') && utf8[2] == '?';
+      if (!already) {
+        if (is_alpha(utf8[0]) && utf8[1] == ':' &&
+            (utf8[2] == '\\' || utf8[2] == '/')) {
+          if (build_extended(utf8, need, L"\\\\?\\", 0)) return;  // C:\... -> \\?\C:\...
+        } else if ((utf8[0] == '\\' || utf8[0] == '/') &&
+                   (utf8[1] == '\\' || utf8[1] == '/')) {
+          // UNC \\server\share -> \\?\UNC\server\share (code present; untested,
+          // needs a network share -- registered in the coverage map).
+          if (build_extended(utf8, need, L"\\\\?\\UNC\\", 2)) return;
+        }
+      }
+      // not absolute (or build failed): fall through to a plain conversion.
+    }
+
     wchar_t* dst = stack_;
     if (static_cast<std::size_t>(need) > kStack) {
       heap_ = static_cast<wchar_t*>(std::malloc(need * sizeof(wchar_t)));
@@ -97,7 +126,34 @@ class WidePath {
   const wchar_t* w() const noexcept { return w_; }
 
  private:
+  // Build prefix + (body minus `skip` leading chars), slash-normalized to '\'.
+  bool build_extended(const char* utf8, int need, const wchar_t* prefix,
+                      int skip) noexcept {
+    int plen = static_cast<int>(std::wcslen(prefix));
+    int cap = plen + need;  // prefix + full body + NUL (skip only shrinks it)
+    wchar_t* dst = stack_;
+    if (static_cast<std::size_t>(cap) > kStack) {
+      heap_ = static_cast<wchar_t*>(std::malloc(cap * sizeof(wchar_t)));
+      if (heap_ == nullptr) return false;
+      dst = heap_;
+    }
+    for (int i = 0; i < plen; ++i) dst[i] = prefix[i];
+    if (MultiByteToWideChar(CP_UTF8, 0, utf8, -1, dst + plen, need) <= 0)
+      return false;
+    if (skip) {  // drop the leading "\\" of a UNC path (prefix supplies its own)
+      std::memmove(dst + plen, dst + plen + skip,
+                   (need - skip) * sizeof(wchar_t));
+    }
+    for (wchar_t* p = dst + plen; *p != L'\0'; ++p)
+      if (*p == L'/') *p = L'\\';  // \\?\ form requires backslashes
+    w_ = dst;
+    return true;
+  }
+
   static constexpr std::size_t kStack = 512;
+  // Prefix below 260 (MAX_PATH) with margin for the API's own additions (e.g.
+  // FindFirstFile appends "\*"); over-prefixing a <260 path is harmless.
+  static constexpr int kLongThreshold = 248;
   wchar_t stack_[kStack];
   wchar_t* heap_ = nullptr;
   const wchar_t* w_ = nullptr;
