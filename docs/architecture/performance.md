@@ -23,15 +23,16 @@
 
 | 项 | 实测(Linux GCC14) | 参考 |
 |---|---|---|
-| fiber 上下文切换(resume/yield 对) | **~23 ns** | fcontext 量级,对标 boost.context |
-| spawn 2000 任务 + drain | **比 `std::async(launch::async)` 快 ~7-9x** | std::async 每任务起 OS 线程(~30μs);fiber ~3-4μs |
+| fiber 上下文切换(resume/yield 对) | **~23 ns**(v2.3.2 实测 22.84ns) | fcontext 量级,对标 boost.context |
+| spawn 2000 任务 + drain | **比 `std::async(launch::async)` 快 ~6-9x** | std::async 每任务起 OS 线程(~30μs);fiber ~3-4μs |
 
-> sched bench(`bench/sched/scheduler_bench.cc`)默认 build 暂不编入:数值有效,但
-> 触发一个**未解决的 P0 缺陷**——纤程经 mimalloc 分配 + 跨 worker 迁移 + 跨线程
-> free,在重负载下崩溃。**这是 HYLE 责任**(默认 mimalloc + 核心 fiber 场景),不甩
-> 第三方。已严格定位条件、排除调度器逻辑(详见 [`known-issues.md`](./known-issues.md)
-> KI-1),但**尚未解决、当前无法在空闲机器按需复现**。fiber 切换 ~23ns / spawn
-> ~7-9x vs std::async 的数值在崩溃前已取得,有效。
+> sched bench(`bench/sched/scheduler_bench.cc`)**现已编入默认 build**(提交后解封)。
+> 它曾被认为触发一个 P0 崩溃,但一轮穷尽调查(见 [`../debug/ki-1-crash-hunt.md`](../debug/ki-1-crash-hunt.md)
+> + [`known-issues.md`](./known-issues.md) KI-1)**排除了 HYLE 逻辑缺陷**:TSan 无源码级
+> race、MI_DEBUG=3 全量堆校验无损坏、原始崩溃器本体在 Linux 原生 + Windows MSVC 本机
+> 重负载下 + 强制迁移 687 万次跨线程 free 均**不复现**。证据(SIGILL = 代码页问题 +
+> 全部 instrumented 净 + 原始崩溃全在 9p)指向 **9p/WSL demand-paging 环境假象**,非
+> HYLE 缺陷。fiber 切换 ~23ns / spawn ~6-9x vs std::async 数值有效(mimalloc v2.3.2 复测一致)。
 
 ## 预期表（开工前推算目标,vs std）
 
