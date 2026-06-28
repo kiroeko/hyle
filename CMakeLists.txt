@@ -85,6 +85,9 @@ add_subdirectory(src/core)   # 00-scaffolding: empty core + macro skeleton
 add_subdirectory(src/error)  # error-01: Status + Result + propagation macros
 add_subdirectory(src/platform)  # platform-01: thread + park (wait_on_address)
 add_subdirectory(src/mem)    # mem-01: Allocator vtable + alignment fix
+add_subdirectory(src/time)   # time-01: monotonic + realtime clock + sleep
+add_subdirectory(src/util)   # util-01: ref_counted (Ref<T>) + scope_guard (DEFER)
+add_subdirectory(src/math)   # math: scalar helpers (div_ceil/sgn/approx_eq)
 add_subdirectory(src/container)  # container-01: bounded MPMC ring (Vyukov)
 
 # sched fiber switching needs platform fcontext asm. We have vendored x86_64 asm

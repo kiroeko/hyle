@@ -11,6 +11,26 @@
 
 > HYLE = HYbrid LEvels。回到 C、贴硬件、混合异构、把性能做到极致。是对 `slate-render` 中 clay infra 层的重构与扩大。
 
+## 当前实现状态
+
+> 诚实标尺:**已实现的都经双平台(Win MSVC + Linux GCC14)真编真测**,lock-free/并发件过 WSL ThreadSanitizer。逐里程碑进度(预测 vs 真实 LOC + clay API diff)见 [`docs/milestones/README.md`](./docs/milestones/README.md);clay 吸纳完整度见 [`clay-coverage-map.md`](./docs/architecture/clay-coverage-map.md)。
+
+| 模块 | 已实现 | 状态 |
+|---|---|---|
+| **error** | Status(8B 指针标签内联) + `std::expected` + ASSIGN_OR_RAISE | ✅ |
+| **platform** | thread + park(futex/WaitOnAddress) + **dynlib(RAII)** | 🔶 vm/path 待 |
+| **mem** | Allocator vtable(修 alignment) + **mimalloc backing(Win 4–12x>默认堆)** + MemoryArena(无锁) + Arena bump + ObjectPool + StackAllocator | 🔶 NUMA/大页 待 |
+| **time** | 单调钟 + 墙钟 + sleep + Instant(ns) | ✅ |
+| **container** | XXH3 哈希 + CArray + **SwissTable(SIMD 探测,对 std 快 2.7–6.1x)** + SmallVector + intrusive list + lock-free MPMC/SPSC/work-stealing 队列 + **string_ref/string_buf** | 🔶 type-erased core 待 |
+| **util** | **Ref<T> 引用计数 + ScopeGuard/DEFER + 编译期 type_name + Registry 自注册** | ✅ |
+| **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 | 🔶 completion/协程/取消 待 |
+| **bench** | nanobench 设施 + SwissTable/string 对标 std | ✅ |
+| simd / io / compute / graph | — | 📋 规划 |
+
+**性能验证(已落地部分)**:SwissTable vs `std::unordered_map`(100k keys,双平台):find-hit 2.7x、find-miss 2.3x、insert 6.1x、erase 4.1x。
+
+**边界诚实**:已实现件局限于 **x86-64 Windows/Linux 真验**;ARM64 + macOS 路径多为"已写未验"(无测试机);simd/io/compute/graph 四支柱尚未开工。
+
 ## 设计文档
 
 完整的设计、背景、命名、源码位置、资产负债表、scope 与各支柱选型，集中在架构设计文档（唯一信源）：

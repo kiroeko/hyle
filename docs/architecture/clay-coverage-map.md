@@ -3,29 +3,29 @@
 > **目的**：防"以为吸纳完了、其实漏文件/漏 API 层"。clay 源在 `slate-render/iron/infra/{include,src}/clay/`。
 > **铁律（对抗审查纪律）**：每个吸纳 clay 的里程碑闭环前，必须 `diff` clay 同名文件的 API 表面——缺的要么补、要么在本表显式登记 `📋待办`，**不许默默略过**。本表是唯一权威进度标尺。
 > **状态图例**：✅ 完成 / 🔶 部分(有登记的缺口) / 📋 计划 / ♻️ 被 C++23/std 取代 / 🔻 借第三方(不自写) / ⛔ 不吸纳。
-> **行数**：clay 列为该文件总行数(`grep -c`)；HYLE 列为对应物生产行数。clay 自有(去 thirdparty/plugins)≈ **19,000**；HYLE 当前生产 ≈ **1,784**。差距大部分是"未做"(进度)，小部分是已修正的"缩水"(见 🔶)。
+> **行数**：clay 列为该文件总行数(`grep -c`)；HYLE 列为对应物生产行数。clay 自有(去 thirdparty/plugins)≈ **19,000**；HYLE 当前生产 ≈ **2,885**(container-06 +363 + util-01..05 +441 + time-01 +103 + platform-02/dynlib +158 + mem-02 增量 + mem-aux/alignment +36;mimalloc 第三方不计)。差距大部分是"未做"(进度)，小部分是已修正的"缩水"(见 🔶)。
 
 ## sys/ — 系统基座（allocator/arena/os/path/string/hash/log/time）
 
 | clay 文件 | 行 | HYLE 目标 | 状态 | 备注 |
 |---|---|---|---|---|
-| `sys/allocator.h` + `.cc` | 485+375 | mem-01 + mem-01b | ✅ | vtable+裸 allocate + **typed 层 allocate_n<T>/callocate/construct/destroy/release/make_unique 已补(mem-01b)**;CUSTOM_MEMORY_FUNCTIONS/allocator-printf 仍 📋(次要) |
+| `sys/allocator.h` + `.cc` | 485+375 | mem-01 + mem-01b + mem-02 | ✅ | vtable+裸 allocate + typed 层(mem-01b) + **backing 换 mimalloc(mem-02,封 vtable 后不外露,Win 4–12x>默认堆/Linux 真实模式 5.2x)**;CUSTOM_MEMORY_FUNCTIONS 仍 📋(次要) |
 | `sys/memory_arena.h` + `.cc` | 65+258 | mem-03 + mem-03b | ✅ | `MemoryArena` 块池(packed CAS) + **`Arena` bump 区域分配器 + as_allocator() 适配已补(mem-03b)**;`make_arena_allocator` 等价为 `Arena::as_allocator()` |
 | `sys/carray.h` + `.cc` | 436+65 | container-03 | ✅ | header-before-data 侵入数组 + type-erased 核 + RAII 壳 CArray<T>;**改进:over-align 元素(clay 固定 max_align_t 会错位)** |
-| `sys/cstring.h` + `.cc` | 1033+374 | container-06 | 📋 | string_ref(ptr+len+null 位)+零拷贝算法 |
-| `sys/string_buf.h` + `.cc` | 141+363 | container-06 | 📋 | 引用计数驻留池 |
+| `sys/cstring.h` + `.cc` | 1033+374 | container-06 | ✅ | string_ref(ptr+len+null 位)+零拷贝算法(find/rfind/find_first/last_of/not_of/substr/trim/starts/ends_with/contains/count/split/rsplit/slice/concat/dup/c_str/equal_ignore_case)+ operator<=> + Hash<string_ref> + `_sr` 字面量。**类型核心 API diff 过 clay**;clay `capitalize`/UTF-8/hex/escape 真实现归 `string_algo.h`(container-06b✅);`score_similarity`/`format_si` 等 **clay 只声明无实现**→container-06c(净新) |
+| `sys/string_buf.h` + `.cc` | 141+363 | container-06 | ✅ | 引用计数驻留池 `StringBuf`(pimpl 藏 SwissTable 反查+mutex)+ make/destroy 工厂;每唯一串单独分配(地址稳定)。**改进**:hash 命中 memcmp 校验(XXH3 碰撞 fail-fast 而非静默别名);复用 container-04 SwissTable→.cc 仅 83 行(非 stub,是复用红利)。**全局单例 intern/usprintf 📋待补**(见下) |
 | `sys/hashmap.h` | 809 | container-04 | ✅ | concept 模板重写 + **实现 clay 只 TODO 的 SwissTable**(控制字节+SIMD探测+三角探测+tombstone);type-erased core 延迟 container-04b |
-| `sys/murmur_hash.h` | 294 | container-02 | 🔶 | **运行期哈希→XXH3 已接(container-02✅,借 xxHash 替 murmur)**;murmur 仅留编译期 type_name 哈希(→ container-06/type_name 时做) |
-| `sys/error.h` + `.cc` | 222+143 | **error-02** | 📋 | error_handler vtable(跨 DLL 错误上报)——error-01 只做进程内 Status，**这层未做 → error-02** |
-| `sys/os.h`+`os.linux.cc`+`os.shared.cc` | 795+830+210 | platform-02/03 | 📋 | 虚拟内存/dynlib/env/os_info |
+| `sys/murmur_hash.h` | 294 | container-02 | 🔶 | **运行期哈希→XXH3 已接(container-02✅,借 xxHash 替 murmur)**;编译期 type 哈希→**FNV-1a constexpr 已做(util-02 type_hash)**;murmur 本体未移植(无剩余用途) |
+| `sys/error.h` + `.cc` | 222+143 | **error-02** | ✅ | error_handler vtable(跨 DLL 诊断 sink)。改进:非变参 vtable(ABI 安全,clay 变参函数指针隐患)、干净 fatal(HYLE_TRAP vs clay rand+空写+exit)、补 charter §5 `HYLE_ASSERT`、record handler 无分配。NOT_IMPLEMENTED 等便利宏 gap 登记 |
+| `sys/os.h`+`os.linux.cc`+`os.shared.cc` | 795+830+210 | platform-02/03 | 🔶 | **dynlib ✅(platform-02)**;**path/fs/env/os_info→platform-03**(file_system_api/getcwd/absolute/temp_dir/app_folder/directory_entries 等)。**virtual_memory(reserve/commit)clay 无此 API**(os.h 只有 mmap_file=映射文件,io 域)→ HYLE-new,随 mem-05 MemorySpace/mem-06 大页落地,非 clay 吸纳项;mmap_file→io-05 |
 | `sys/path.h` + `.cc` | 202+1372 | platform-03 | 📋 | 路径操作(1372 行大头) |
 | `sys/log.h` + `.cc` | 150+178 | obs-01 / platform | 📋 | 日志 |
-| `sys/random.h` + `.cc` | 112+143 | (util 待排) | 📋 | RNG |
-| `sys/time.h` + `.cc` | 47+112 | time-01 | 📋 | 单调钟 |
-| `sys/sprintf.h` + `.cc` | 96+69 | (util 待排) | 📋 | 安全 sprintf |
-| `sys/scope_guard.h` | 74 | (util 待排) | 📋 | ScopeGuard/DEFER |
-| `sys/alignment.h` | 37 | macros/mem | 🔶 | 对齐工具——部分进了 mem-01 的 round_up；独立头未建 |
-| `sys/demangle.h` + `.cc` | 28+45 | container/util type_name | 📋 | 符号 demangle |
+| `sys/random.h` + `.cc` | 112+143 | util-04 | ✅ | `Rng`(xoshiro256++ 升级 clay xoroshiro128+)+ **无偏 range(Lemire,修 clay `%` 偏差)** + SplitMix64 seed + jump + thread_rng。header-only |
+| `sys/time.h` + `.cc` | 47+112 | time-01 | ✅ | **单调钟(monotonic_ns,clay 缺)** + 墙钟(realtime_ns) + sleep_for_ns + Instant;ns 精度替 clay float us/ms |
+| `sys/sprintf.h` + `.cc` | 96+69 | ♻️ std::format | ♻️ | clay sprintf=`stb_sprintf` 薄封装;头广告的 "UTF-8 安全截断" **实为注释掉未实现**(.cc 行42/54,clay 美化现状一例)。HYLE:格式化→`std::format`/`std::format_to_n`(类型安全 `{}`+编译期查错=no-throw+buffer-fill 截断等同 snprintf,conventions §8);printf-`%`/va_list 转发→`std::snprintf`(C 标准已有)。不投机 vendor stb_sprintf(快 printf 属实测决定);真 UTF-8 安全截断归 container-06b string_utils |
+| `sys/scope_guard.h` | 74 | util-01 | ✅ | `ScopeGuard` CTAD(省 clay scope_guard/finally 工厂) + `HYLE_DEFER`;单向 dismiss(enable 重启用未做,非缺口) |
+| `sys/alignment.h` | 37 | mem-aux | ✅ | `align_up/align_down/is_aligned`(size + `_ptr` 变体)+ is_pow2 + kMaxSimdAlignment;升级 clay 只有 align_size(独立头已建,mem/alignment.h) |
+| `sys/demangle.h` + `.cc` | 28+45 | container/util type_name | ✅ | **util-06**：运行期 demangle(`__cxa_demangle`/`UnDecorateSymbolName`)。改进:buffer-fill 无分配(clay 用 Allocator+std::function deleter)、MSVC 真反修饰(clay 只回显)。`demangle_type<T>` gap→`type_name<T>`(util-02)更优替代(无 RTTI) |
 | `sys/murmur_hash.h` | (见上) | | | |
 | `sys/assert.cc` | 31 | macros.h | ✅ | HYLE_FATAL_ASSERT 已覆盖等价 |
 | `sys/types.h`/`decls.h`/`version.h` | 67/72/55 | 00-scaffolding | 🔶 | platform.h/visibility.h/version.h 覆盖思路；decls.h include 纪律待坐实 |
@@ -38,16 +38,16 @@
 | `utils/result.h` + `.cc` | 470+18 | error-01 | ♻️ | `std::expected` 取代手写 Result(charter 定) |
 | `utils/object_pool.h` | 205 | mem-04 | ✅ | 修 bug#3(坐 MemoryArena) |
 | `utils/stack_allocator.h` | 122 | mem-04 | ✅ | 修 bug#4(禁拷贝、无堆回退) |
-| `utils/memory_pool.h` | 170 | (mem 待排) | 📋 | 另一种池变体 |
-| `utils/ref_counted.h` | 317 | container/util | 📋 | 侵入式 RefCounted + Ref<T> |
-| `utils/registry.h` | 340 | (util 待排) | 📋 | 自注册 + DECLARE/DEFINE |
+| `utils/memory_pool.h` | 170 | mem-07 | ✅ | **`GrowablePool<T>`**:growable+single-threaded 池(无原子,填 ObjectPool 固定+lock-free 之外的空位)。几何块+侵入 free-list。**修 clay move-assign bug**(从不转移 allocator_) |
+| `utils/ref_counted.h` | 317 | util-01 | ✅ | 侵入式 `RefCounted<Sub>` CRTP + `Ref<T>` + make/adopt/retain_ref。**改进**:修 clay destroy() 不 CRTP-dispatch bug、decref release+末次acquire-fence(性能)、删隐式 operator T*/全局计数器、concepts 替 SFINAE |
+| `utils/registry.h` | 340 | util-03 | ✅ | 自注册 + DECLARE/DEFINE 宏。**改进**:SwissTable 替 3 个 unordered_map、Creator 函数指针(Entry 内联,非 std::function)、同优先级 fail-fast 替 std::exit、Meyers 替 leaky new、三套(typed/ref/shared)收一套泛型 |
 | `utils/type_traits.h` | 240 | (编译期) | 🔶♻️ | 多数被 C++23 concepts 取代；保留底层兼容部分待评 |
-| `utils/type_name.h` | 146 | (util 待排) | 📋 | 编译期 type_name + 哈希 |
+| `utils/type_name.h` | 146 | util-02 | ✅ | 编译期 type_name<T>()(probe 派生偏移,比 clay 硬编码签名矩阵 robust) + type_hash<T>()(FNV-1a constexpr) |
 | `utils/func_traits.h`/`meta_funcs.h`/`C++17.h`/`comparable.h` | 105/80/253/53 | (编译期) | ♻️ | 多数被 C++23(concepts/`<=>`)取代,按需保留 |
-| `utils/string_utils.h` + `.cc` | 673+449 | container-06 | 📋 | 字符串算法 |
-| `utils/generic_allocator.h`/`stl_allocator.h` | 62/196 | mem pmr adapter | 📋 | std::pmr 互操作 |
+| `utils/string_utils.h` + `.cc` | 673+449 | container-06b | ✅(真实现部分) | 字节串算法吸纳 `string_algo.h`:hex_encode/escape/capitalize/UTF-8(decode/length/icmp)/ASCII case+分类器(全 buffer-fill 无 std 流)。**重大发现**:clay `format_si/find_path_matches/cscore_path_match/cstr_score_similarity` **只声明无实现**(src/ 全无),与 sprintf 假截断同款美化→无可吸纳,净新设计登记 container-06c。str/join/to_string→std::format♻️;stoi/stod→std::from_chars♻️;to_utf8/from_utf8(wchar)→platform-03 |
+| `utils/generic_allocator.h`/`stl_allocator.h` | 62/196 | mem-07 | ✅⛔ | **stl_allocator→`mem::PmrResource`**(std::pmr::memory_resource 包 Allocator,一个 resource 服务所有 T,取代每类型 rebind 样板)。**generic_allocator→⛔**:HYLE `Allocator` 值句柄已是它(type-erased {fn,state} 转发) |
 | `utils/singleton.h` | 133 | (util 待排) | 🔶♻️ | Meyers 单例(C++11 起 std 保证),薄封装待评 |
-| `utils/spin_lock.h` | 43 | (并发原语) | 📋♻️ | 可能被 std::atomic 自旋取代 |
+| `utils/spin_lock.h` | 43 | util-05 | ✅ | `SpinLock`(TTAS + cpu_relax pause + cache-line padding,升级 clay 裸 TAS)满足 Lockable 配 std::lock_guard |
 | `utils/vector_utils.h`/`device_utils.h`/`float16.h` | 98/125/52 | 各相关 | 📋 | 杂项工具 |
 
 ## parallel/ — 并发（thread_pool/async_value/concurrent_vector）
@@ -57,7 +57,7 @@
 | `parallel/thread_pool.h` + `.cc` | 130+167 | sched/ | ♻️ | 单全局锁池 → **被 sched-03 work-stealing 调度器取代(重写非移植)** |
 | `parallel/worker_thread.h` + `.cc` | 88+109 | sched/ | ♻️ | 同上,被 sched worker 取代 |
 | `parallel/async_value.h` + `.cc` | 465+42 | sched-04/05 | 📋 | promise/future + waiter → completion 脊/同步原语 |
-| `parallel/concurrent_vector.h` | 145 | container | 📋 | 读优化并发 vector(lock-free 化) |
+| `parallel/concurrent_vector.h` | 145 | container-09 | ✅ | 读优化 append-only 并发 vector(读 lock-free/写 SpinLock 串行)。**分段存储**修 clay 五问题:外层 reserve(65)→定长 C 数组(结构性不变量)、copy-on-grow 2x 内存→零拷贝 1x、T copyable→move-only 可、每读边界检查→去除、std::vector→Allocator。**WSL TSan 零 race**。归 container(不依赖 sched)|
 | `parallel/barrier.h` | 46 | sched 原语 | 📋 | 屏障 |
 
 ## math/ — 数学（half/utils/consts）
@@ -65,8 +65,8 @@
 | clay 文件 | 行 | HYLE 目标 | 状态 | 备注 |
 |---|---|---|---|---|
 | `math/half.h` | 6923 | simd-05 | 🔻♻️ | fp16 软件查表(巨)→ **硬件 F16C/AVX512-FP16 取代,不 1:1 移植**;只留必要接口 |
-| `math/utils.h` | 353 | (math 待排) | 📋 | 数学工具 |
-| `math/consts.h` | 105 | (math 待排) | 📋 | 常量 |
+| `math/utils.h` | 353 | math-01 | ✅♻️ | **绝大多数被 C++20/23 取代**(现代化红利):bit 操作→`<bit>`、clamp/minmax→`<algorithm>`、pow/abs→`<cmath>`、align_up→mem/alignment。std 真缺的 4 个自写进 `math/scalar.h`:`div_ceil`(改溢出安全)、`round_up_to_multiple`、`sgn`(死区)、`approx_eq`(相对eps);deg2rad 等图形域⛔ |
+| `math/consts.h` | 105 | math-01 | ♻️ | clay 头自注"same as C++20 `<numbers>`, will be replaced"——`<numbers>` + `std::numeric_limits` 取代 |
 
 ## 已修正的"完成"状态（红队核账发现的缩水）
 
@@ -79,6 +79,7 @@
 - **mem-01b**：allocator typed 便利层(`allocate<T>/construct<T>/make_unique<T>/destroy<T>` + pmr 钩子)。
 - **mem-03b**：`Arena` bump 分配器 + `ArenaAllocator` 适配 + `make_arena_allocator`。
 - **error-02**：error_handler vtable(跨 DLL 错误上报)。
+- **container-06b**：`string_utils` 高层字符串工具(score_similarity/path_match/format_si/capitalize/replace/find_path_matches)+ `StringBuf` 全局单例 intern/usprintf。container-06 只做 string_ref 类型核心 + StringBuf 实例,这些高层/全局便利层显式登记待补,**非略过**。
 
 ## "clay 完全吸纳"在 P 几（见本文件末尾结论由 milestones/README 给出）
 

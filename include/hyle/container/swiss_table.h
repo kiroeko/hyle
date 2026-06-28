@@ -18,8 +18,10 @@ namespace hyle::container {
 // group probing (probe.h) + triangular group probing. This is the rewrite clay
 // only sketched (its hashmap.h is linear-probing; control bytes were a TODO).
 //
-// step 2 (this file as written): storage + control-byte mirror + find + insert
-// + grow/rehash. step 3 adds erase (tombstones). erase is NOT here yet.
+// find + insert + grow/rehash + erase (tombstones) + for_each iteration are all
+// here. erase marks a tombstone (find probes past it, insert reuses it, grow
+// drops it); abseil's "reclaim tombstone to empty when the group has an empty"
+// is deferred to container-04b.
 //
 // K, V trivially copyable (slots relocate via assignment on rehash), consistent
 // with CArray/SmallVector. Non-trivial element support is deferred.
@@ -124,6 +126,17 @@ class SwissTable {
       stride += kGroup;
       pos = (pos + stride) & mask_;
     }
+  }
+
+  // Visit every live (key, value): calls fn(const K&, V&) once per full slot, in
+  // unspecified order. A function template (not std::function) so it inlines and
+  // adds no allocation. Needed by any owner of heap-pointer values (e.g.
+  // StringBuf) to release them on teardown, since there is no iterator yet.
+  // fn must not insert/erase/grow the table while iterating.
+  template <class Fn>
+  void for_each(Fn&& fn) {
+    for (std::size_t i = 0; i < cap_; ++i)
+      if (detail::ctrl_is_full(ctrl_[i])) fn(slots_[i].key, slots_[i].value);
   }
 
  private:

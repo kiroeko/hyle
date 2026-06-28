@@ -1,0 +1,63 @@
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+
+#include "hyle/macros.h"
+
+// Compile-time alignment helpers (clay alignment.h, generalized). All take a
+// power-of-two alignment; bit tricks below are only valid for powers of two, so
+// each asserts it. Sizes and pointers both covered -- mem/ rounds block sizes,
+// simd/ aligns load/store addresses, carray aligns element storage.
+//
+// clay had only CLAY_ALIGNMENT + align_size() (which min-clamps to alignment, an
+// allocation-sizing quirk); HYLE provides the full up/down/is_aligned set with
+// no surprising clamp.
+
+namespace hyle::mem {
+
+// 64 covers up to AVX512 loads/stores; matches HYLE_CACHE_LINE_SIZE.
+inline constexpr std::size_t kMaxSimdAlignment = 64;
+
+HYLE_FORCE_INLINE constexpr bool is_pow2(std::size_t a) noexcept {
+  return a != 0 && (a & (a - 1)) == 0;
+}
+
+// Smallest multiple of `a` that is >= n.
+HYLE_FORCE_INLINE constexpr std::size_t align_up(std::size_t n,
+                                                 std::size_t a) noexcept {
+  HYLE_FATAL_ASSERT(is_pow2(a));
+  return (n + (a - 1)) & ~(a - 1);
+}
+
+// Largest multiple of `a` that is <= n.
+HYLE_FORCE_INLINE constexpr std::size_t align_down(std::size_t n,
+                                                   std::size_t a) noexcept {
+  HYLE_FATAL_ASSERT(is_pow2(a));
+  return n & ~(a - 1);
+}
+
+HYLE_FORCE_INLINE constexpr bool is_aligned(std::size_t n,
+                                            std::size_t a) noexcept {
+  HYLE_FATAL_ASSERT(is_pow2(a));
+  return (n & (a - 1)) == 0;
+}
+
+// ---- pointer variants -------------------------------------------------------
+// Distinct names (not overloads): an integer literal like 0 is a null-pointer
+// constant, so overloading size vs pointer is ambiguous (is_aligned(0u,16) could
+// mean either). Separate names also read clearer -- the caller states whether a
+// size or an address is being aligned.
+HYLE_FORCE_INLINE void* align_up_ptr(void* p, std::size_t a) noexcept {
+  return reinterpret_cast<void*>(
+      align_up(reinterpret_cast<std::uintptr_t>(p), a));
+}
+HYLE_FORCE_INLINE void* align_down_ptr(void* p, std::size_t a) noexcept {
+  return reinterpret_cast<void*>(
+      align_down(reinterpret_cast<std::uintptr_t>(p), a));
+}
+HYLE_FORCE_INLINE bool is_aligned_ptr(const void* p, std::size_t a) noexcept {
+  return is_aligned(reinterpret_cast<std::uintptr_t>(p), a);
+}
+
+}  // namespace hyle::mem

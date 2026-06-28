@@ -1,0 +1,99 @@
+#include "hyle/mem/growable_pool.h"
+
+#include <gtest/gtest.h>
+
+#include <atomic>
+#include <unordered_set>
+#include <utility>
+
+#include "hyle/mem/allocator.h"
+
+using hyle::mem::GrowablePool;
+using hyle::mem::system_allocator;
+
+TEST(GrowablePool, CreateDestroyRoundTrip) {
+  GrowablePool<int> pool(system_allocator(), 8);
+  int* a = pool.create(42);
+  ASSERT_NE(a, nullptr);
+  EXPECT_EQ(*a, 42);
+  EXPECT_EQ(pool.live(), 1u);
+  pool.destroy(a);
+  EXPECT_EQ(pool.live(), 0u);
+}
+
+// Growth across many blocks (tiny initial -> geometric doubling). All pointers
+// stay valid (slots never move once handed out).
+TEST(GrowablePool, GrowsAndKeepsPointersValid) {
+  GrowablePool<int> pool(system_allocator(), 2);
+  std::vector<int*> ptrs;
+  for (int i = 0; i < 1000; ++i) ptrs.push_back(pool.create(i));
+  EXPECT_EQ(pool.live(), 1000u);
+  for (int i = 0; i < 1000; ++i) EXPECT_EQ(*ptrs[i], i);  // none moved/corrupted
+  for (int* p : ptrs) pool.destroy(p);
+  EXPECT_EQ(pool.live(), 0u);
+}
+
+// A freed slot is reused by the next create (free-list works).
+TEST(GrowablePool, ReusesFreedSlots) {
+  GrowablePool<long> pool(system_allocator(), 4);
+  long* a = pool.create(1);
+  pool.destroy(a);
+  long* b = pool.create(2);
+  EXPECT_EQ(a, b);  // same slot recycled
+  pool.destroy(b);
+}
+
+// Non-trivial destructor runs once per destroy().
+TEST(GrowablePool, DestructorRunsOnDestroy) {
+  static std::atomic<int> live{0};
+  struct Counted {
+    Counted() { live.fetch_add(1); }
+    ~Counted() { live.fetch_sub(1); }
+  };
+  GrowablePool<Counted> pool(system_allocator(), 4);
+  Counted* objs[20];
+  for (auto& o : objs) o = pool.create();
+  EXPECT_EQ(live.load(), 20);
+  for (auto* o : objs) pool.destroy(o);
+  EXPECT_EQ(live.load(), 0);
+}
+
+// Move transfers ownership (and the allocator -- clay's move-assign bug). The
+// moved-from pool is empty; the moved-to frees correctly via the right allocator.
+TEST(GrowablePool, MoveTransfersOwnership) {
+  GrowablePool<int> a(system_allocator(), 8);
+  int* p = a.create(7);
+  EXPECT_EQ(a.live(), 1u);
+
+  GrowablePool<int> b(std::move(a));
+  EXPECT_EQ(b.live(), 1u);
+  EXPECT_EQ(*p, 7);  // object survived the move (slot didn't move)
+  b.destroy(p);
+
+  // Move-assignment: the destination's old blocks are released, then it adopts c.
+  GrowablePool<int> c(system_allocator(), 8);
+  int* q = c.create(9);
+  b = std::move(c);
+  EXPECT_EQ(b.live(), 1u);
+  EXPECT_EQ(*q, 9);
+  b.destroy(q);
+}
+
+// Interleaved create/destroy keeps live() and reuse consistent.
+TEST(GrowablePool, InterleavedChurn) {
+  GrowablePool<std::uint64_t> pool(system_allocator(), 16);
+  std::unordered_set<std::uint64_t*> live;
+  for (int round = 0; round < 5; ++round) {
+    for (int i = 0; i < 500; ++i) live.insert(pool.create(i));
+    EXPECT_EQ(pool.live(), live.size());
+    // Free half.
+    int k = 0;
+    for (auto it = live.begin(); it != live.end() && k < 250;) {
+      pool.destroy(*it);
+      it = live.erase(it);
+      ++k;
+    }
+  }
+  for (auto* p : live) pool.destroy(p);
+  EXPECT_EQ(pool.live(), 0u);
+}
