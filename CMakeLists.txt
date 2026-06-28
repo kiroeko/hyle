@@ -56,6 +56,10 @@ endif()
 # exes find the shared libs they link against without PATH juggling.
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
+# Static archives (.a/.lib) land in the SAME bin/ as shared libs, so a prebuilt-library
+# consumer (samples/04) finds the artifact in one predictable place regardless of
+# HYLE_STATIC. Without this, static .a defaults to per-target build subdirs.
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
 
 list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(HyleWarnings)
