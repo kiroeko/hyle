@@ -158,3 +158,23 @@ TEST(SwissTable, EraseMatchesOracleUnderMixedOps) {
     EXPECT_EQ(*tv, v);
   }
 }
+
+// erase/re-insert churn on a sparse table stays correct and capacity-bounded.
+// (The reclaim-to-empty path's CORRECTNESS is exercised hard by the two oracle
+// tests above -- 50k/200k erases; if reclaim ever set a slot empty that a later
+// key probed through, those would diverge. This test pins the bounded-capacity
+// behavior: survivors intact, the churned key gone, no unbounded growth.)
+TEST(SwissTable, EraseReinsertChurnStaysBounded) {
+  SwissTable<int, int> t(system_allocator());
+  t.insert(1, 100);
+  t.insert(2, 200);  // a couple of live keys so the table isn't trivially empty
+  for (int i = 0; i < 100000; ++i) {
+    ASSERT_TRUE(t.insert(7, i));   // new key each cycle (erased below)
+    ASSERT_TRUE(t.erase(7));
+  }
+  EXPECT_LT(t.capacity(), 64u);    // bounded (tombstones never accumulate)
+  EXPECT_EQ(t.size(), 2u);
+  EXPECT_EQ(*t.find(1), 100);      // survivors intact
+  EXPECT_EQ(*t.find(2), 200);
+  EXPECT_EQ(t.find(7), nullptr);
+}
