@@ -16,9 +16,18 @@ namespace {
 constexpr std::size_t kMaxSinks = 64;
 
 // Global registry. The level is a lock-free relaxed atomic so the hot gate
-// (should_log) never locks. The sink array is guarded by a mutex used ONLY for
-// add/remove and for taking a snapshot in log_message -- the actual sink I/O
-// runs outside the lock (never hold a lock across a write() that may block).
+// (should_log) never locks. The sink array is guarded by a mutex used ONLY to
+// add/remove and to copy a snapshot in log_message; the actual sink I/O runs
+// OUTSIDE the lock (never hold a lock across a write() that may block or re-enter).
+//
+// NOTE: a seqlock read path was tried to let concurrent loggers fan out without
+// the mutex, but reading the non-atomic g_sinks while a writer mutates it is a
+// data race / UB in the C++ memory model (TSan flags it, correctly). The
+// standards-clean lock-free alternatives (atomic<shared_ptr> snapshot, per-field
+// atomics) cost ~a mutex's worth of atomic RMW anyway, and the critical section
+// here is a tiny memcpy dwarfed by the sink's I/O -- so the mutex is the right
+// call. Kept TSan-clean over a marginal, UB-prone optimization (CHECKLIST: lock-
+// free must pass TSan; this stays plain-locked instead).
 std::atomic<LogLevel> g_level{LogLevel::Info};
 std::mutex g_mutex;
 LogSink g_sinks[kMaxSinks];

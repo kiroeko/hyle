@@ -2,7 +2,10 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
+#include <cstdint>
 #include <string>
+#include <thread>
 #include <vector>
 
 using namespace hyle::obs;
@@ -128,4 +131,55 @@ TEST(LogDefault, DefaultLevelIsInfo) {
   EXPECT_FALSE(should_log(LogLevel::Trace));
   EXPECT_FALSE(should_log(LogLevel::Debug));
   EXPECT_TRUE(should_log(LogLevel::Info));
+}
+
+// Concurrency stress: many threads log_message in parallel while another churns
+// add_sink/remove_sink. Validates the registry stays race-free under the lock
+// (snapshot-under-lock, emit-outside-lock) -- the hard assertion is "no crash, no
+// TSan race, no hang, every logger's message delivered". Run under WSL TSan
+// (setarch -R): this is the lock gate for obs. (A seqlock read path was tried for
+// lock-free fan-out but TSan flagged it as UB; reverted to the mutex.)
+TEST(LogConcurrency, ParallelLogVsChurn) {
+  set_level(LogLevel::Trace);
+  std::atomic<std::uint64_t> calls{0};
+  struct Counter {
+    std::atomic<std::uint64_t>* c;
+  } counter{&calls};
+  LogSink counting{&counter,
+                   [](void* s, LogLevel, const char* ) {
+                     static_cast<Counter*>(s)->c->fetch_add(
+                         1, std::memory_order_relaxed);
+                   }};
+  remove_sink(default_sink());  // keep stderr quiet during the storm
+  add_sink(counting);
+
+  constexpr int kLoggers = 6;
+  constexpr int kPerThread = 5000;
+  std::atomic<bool> stop{false};
+  std::vector<std::thread> ts;
+  for (int t = 0; t < kLoggers; ++t)
+    ts.emplace_back([&] {
+      for (int i = 0; i < kPerThread; ++i) log_message(LogLevel::Info, "x");
+    });
+  // Churn thread: repeatedly add/remove a second sink to drive the seqlock.
+  Counter c2{&calls};
+  LogSink churn{&c2, counting.write};
+  std::thread churner([&] {
+    while (!stop.load(std::memory_order_relaxed)) {
+      add_sink(churn);
+      remove_sink(churn);
+    }
+  });
+
+  for (auto& th : ts) th.join();
+  stop.store(true, std::memory_order_relaxed);
+  churner.join();
+
+  // At least the counting sink saw every message from every logger (the churn
+  // sink may have added more; we only assert a sane lower bound + no crash/hang).
+  EXPECT_GE(calls.load(), static_cast<std::uint64_t>(kLoggers) * kPerThread);
+
+  remove_sink(counting);
+  set_level(LogLevel::Info);
+  add_sink(default_sink());
 }

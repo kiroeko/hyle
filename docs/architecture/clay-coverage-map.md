@@ -90,7 +90,7 @@
 **显式登记待办（红队挖出、本轮未修的大件，非略过）**：
 - ~~【高】platform-03c：Windows UTF-8 路径~~ **✅ 已做(platform-03c)**:fs.cc Win 分支全转 `...W` API + `WidePath`(UTF-8→UTF-16,栈+堆 RAII)/`fill_w`(UTF-16→UTF-8 buffer-fill),platform 内自包含无倒挂。**红队 UTF-8 测试还揪出 `touch()` 双重 ANSI 漏洞**(std::fopen + CreateFileA 都绕过转换)→ Win 改 CreateFileW(OPEN_ALWAYS)。双平台 UTF-8 路径(CJK+emoji)往返测试过。
 - ~~【中】container-04c：SwissTable `find_or_prepare_insert` 融合~~ **✅ 已做(container-04c)**:insert 新键改单趟探测(walk 同时查 key 命中 + 记首个 empty/deleted 槽),哈希算一次(原 2× 哈希 + 2× 探测)。**附带修掉 growth_left 复用墓碑重复扣减 bug**(只在插 empty 槽时扣)。双平台 11/11 含 oracle 对拍(50k/200k)。算法级 op 削减,未跑 before/after microbench。
-- **【中】obs log 无锁快照**:log_message 每条加 mutex 取快照;可换 atomic COW 指针(读路径零锁)。
+- **【中】obs log 无锁快照** — **尝试后撤销(诚实记录)**:试了 seqlock 让并发 logger 无锁 fan-out,但读端 memcpy 非原子 g_sinks 与写端并发 = C++ 内存模型 data race/UB,**WSL TSan 正确报 race**(log.cc add_sink)。标准洁净的无锁替代(atomic<shared_ptr> 快照、逐字段原子)开销≈mutex 的原子 RMW 且更复杂,而 mutex 临界区只是 tiny memcpy、被 sink I/O 淹没。**遵 CHECKLIST"lock-free 必过 TSan"撤回 seqlock,保留 mutex**。净收获:新增并发压力测试(6 logger 并行 + churn add/remove)且**过 TSan**,验证 mutex 注册表 race-free。
 - ~~【中】platform fs copy_file 内核零拷贝~~ **✅ 已做**:Linux 走 `copy_file_range`(内核内拷贝,btrfs/xfs 可 reflink),仅首调失败(EXDEV/ENOSYS/EINVAL,未写字节)才回退用户态 read/write。`_GNU_SOURCE` 暴露声明。macOS/其他 POSIX 留用户态(无 fcopyfile 测试机)。300 KiB 字节图样往返测试过。
 - **【中】platform-03c：Win 长路径 + UNC**:`make_directory_recursive` UNC 必败;`directory_iterate` Win `pattern[MAX_PATH=260]` 截深树(POSIX 4096),跨平台分叉。需 `\\?\` 前缀 + 宽字符。
 - **【低】Win-ARM64 NEON MSVC 编译门**:GroupNeon 仅 aarch64 GCC 交叉编译验证,`_M_ARM64`(MSVC)路径未编译验证;若 Win-ARM64 入目标需补门或排除。
