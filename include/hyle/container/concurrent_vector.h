@@ -10,6 +10,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/system_inline.h"
 #include "hyle/util/spin_lock.h"
 
 // Read-optimized append-only concurrent vector (clay parallel/concurrent_vector).
@@ -42,13 +43,19 @@
 
 namespace hyle::container {
 
-template <class T>
+template <class T, class Alloc = mem::SystemAllocator>
 class ConcurrentVector {
  public:
   // `initial_capacity` sizes the first segment (rounded up to a power of two);
-  // later segments double. Nothing is allocated until the first insert.
-  explicit ConcurrentVector(mem::Allocator alloc,
-                            std::size_t initial_capacity = 16) noexcept
+  // later segments double. Nothing is allocated until the first insert. Alloc defaults to
+  // compile-time SystemAllocator ([[no_unique_address]] -> 0 bytes); pass mem::Allocator to
+  // opt into injection.
+  explicit ConcurrentVector(std::size_t initial_capacity = 16) noexcept
+      requires std::is_default_constructible_v<Alloc> {
+    std::size_t first = std::bit_ceil(initial_capacity < 1 ? 1 : initial_capacity);
+    first_shift_ = static_cast<std::uint32_t>(std::countr_zero(first));
+  }
+  explicit ConcurrentVector(Alloc alloc, std::size_t initial_capacity = 16) noexcept
       : alloc_(alloc) {
     std::size_t first = std::bit_ceil(initial_capacity < 1 ? 1 : initial_capacity);
     first_shift_ = static_cast<std::uint32_t>(std::countr_zero(first));
@@ -135,7 +142,7 @@ class ConcurrentVector {
     return locate(i);
   }
 
-  mem::Allocator alloc_;
+  HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
   std::atomic<std::size_t> size_{0};       // published count (release/acquire)
   util::SpinLock write_lock_;              // serializes writers (rare by design)
   std::uint32_t first_shift_ = 0;          // log2(first segment capacity)

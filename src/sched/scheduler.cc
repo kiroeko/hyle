@@ -44,7 +44,7 @@ constexpr int kYieldsBeforePark = 4;   // then cede the core a few times
 
 struct Scheduler::Impl {
   struct Worker {
-    container::WsFifoQueue<Fiber*> local;
+    container::WsFifoQueue<Fiber*, mem::Allocator> local;
     platform::Parker parker;  // non-movable -> Worker lives in a unique_ptr
     std::uint64_t rng;
     unsigned idx;             // own worker index: shard hint + pop-cursor seed

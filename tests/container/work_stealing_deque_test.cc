@@ -10,13 +10,14 @@
 #include "hyle/platform/thread.h"
 
 using hyle::container::WorkStealingDeque;
+using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 using Status = hyle::container::StealStatus;
 
 // ---- single-thread owner semantics ------------------------------------------
 
 TEST(WorkStealingDeque, OwnerLifoPushPop) {
-  WorkStealingDeque<int> d(system_allocator(), 8);
+  WorkStealingDeque<int> d(8);
   EXPECT_TRUE(d.push_bottom(10));
   EXPECT_TRUE(d.push_bottom(20));
   EXPECT_TRUE(d.push_bottom(30));
@@ -33,7 +34,7 @@ TEST(WorkStealingDeque, OwnerLifoPushPop) {
 }
 
 TEST(WorkStealingDeque, EmptyPopReturnsNotOk) {
-  WorkStealingDeque<int> d(system_allocator(), 8);
+  WorkStealingDeque<int> d(8);
   EXPECT_FALSE(d.pop_bottom().ok);
   // and stays usable afterwards (bottom was restored correctly)
   EXPECT_TRUE(d.push_bottom(1));
@@ -43,14 +44,14 @@ TEST(WorkStealingDeque, EmptyPopReturnsNotOk) {
 }
 
 TEST(WorkStealingDeque, FullPushRejected) {
-  WorkStealingDeque<int> d(system_allocator(), 2);
+  WorkStealingDeque<int> d(2);
   EXPECT_TRUE(d.push_bottom(1));
   EXPECT_TRUE(d.push_bottom(2));
   EXPECT_FALSE(d.push_bottom(3));  // capacity 2 -> full
 }
 
 TEST(WorkStealingDeque, StealTakesOldestThenOwnerNewest) {
-  WorkStealingDeque<int> d(system_allocator(), 8);
+  WorkStealingDeque<int> d(8);
   d.push_bottom(10);
   d.push_bottom(20);
   d.push_bottom(30);
@@ -63,12 +64,12 @@ TEST(WorkStealingDeque, StealTakesOldestThenOwnerNewest) {
 }
 
 TEST(WorkStealingDeque, StealEmptyReportsEmpty) {
-  WorkStealingDeque<int> d(system_allocator(), 8);
+  WorkStealingDeque<int> d(8);
   EXPECT_EQ(d.steal().status, Status::kEmpty);
 }
 
 TEST(WorkStealingDeque, WrapsAroundManyLaps) {
-  WorkStealingDeque<int> d(system_allocator(), 4);
+  WorkStealingDeque<int> d(4);
   for (int i = 0; i < 1000; ++i) {
     ASSERT_TRUE(d.push_bottom(i));
     auto r = d.pop_bottom();
@@ -84,20 +85,20 @@ TEST(WorkStealingDeque, WrapsAroundManyLaps) {
 TEST(WorkStealingDeque, ConcurrentConservation) {
   constexpr std::uint64_t kN = 200000;
   constexpr int kThieves = 4;
-  WorkStealingDeque<std::uint64_t> d(system_allocator(), 1024);
+  WorkStealingDeque<std::uint64_t, Allocator> d(system_allocator(), 1024);
 
   std::atomic<bool> done_pushing{false};
   std::vector<std::uint64_t> owner_got;
   std::vector<std::vector<std::uint64_t>> thief_got(kThieves);
 
   struct OwnerArgs {
-    WorkStealingDeque<std::uint64_t>* d;
+    WorkStealingDeque<std::uint64_t, Allocator>* d;
     std::atomic<bool>* done;
     std::vector<std::uint64_t>* got;
   } oargs{&d, &done_pushing, &owner_got};
 
   struct ThiefArgs {
-    WorkStealingDeque<std::uint64_t>* d;
+    WorkStealingDeque<std::uint64_t, Allocator>* d;
     std::atomic<bool>* done;
     std::vector<std::uint64_t>* got;
   };

@@ -11,16 +11,17 @@
 #include "hyle/mem/allocator.h"
 
 using hyle::container::ConcurrentVector;
+using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
 TEST(ConcurrentVector, EmptyOnConstruction) {
-  ConcurrentVector<int> v(system_allocator());
+  ConcurrentVector<int> v;
   EXPECT_EQ(v.size(), 0u);
   EXPECT_TRUE(v.empty());
 }
 
 TEST(ConcurrentVector, AppendAndIndex) {
-  ConcurrentVector<int> v(system_allocator(), 4);
+  ConcurrentVector<int> v(4);
   for (int i = 0; i < 1000; ++i) {
     std::size_t idx = v.emplace_back(i * 10);
     EXPECT_EQ(idx, static_cast<std::size_t>(i));
@@ -32,7 +33,7 @@ TEST(ConcurrentVector, AppendAndIndex) {
 // Growth crosses many segment boundaries; every element must remain readable
 // and unchanged (segmented storage never moves an element).
 TEST(ConcurrentVector, StableAcrossGrowth) {
-  ConcurrentVector<int> v(system_allocator(), 1);  // tiny first seg -> many grows
+  ConcurrentVector<int> v(1);  // tiny first seg -> many grows
   std::vector<int*> addrs;
   for (int i = 0; i < 500; ++i) {
     v.emplace_back(i);
@@ -47,7 +48,7 @@ TEST(ConcurrentVector, StableAcrossGrowth) {
 
 // Move-only T: clay's copy-on-grow couldn't hold these; HYLE's no-copy growth can.
 TEST(ConcurrentVector, MoveOnlyType) {
-  ConcurrentVector<std::unique_ptr<int>> v(system_allocator(), 2);
+  ConcurrentVector<std::unique_ptr<int>> v(2);
   for (int i = 0; i < 100; ++i) v.emplace_back(std::make_unique<int>(i));
   EXPECT_EQ(v.size(), 100u);
   for (int i = 0; i < 100; ++i) EXPECT_EQ(*v[i], i);
@@ -63,7 +64,7 @@ TEST(ConcurrentVector, DestructorRunsPerElement) {
     ~Counted() { live.fetch_sub(1); }
   };
   {
-    ConcurrentVector<Counted> v(system_allocator(), 4);
+    ConcurrentVector<Counted> v(4);
     for (int i = 0; i < 50; ++i) v.emplace_back();
     EXPECT_EQ(live.load(), 50);
   }
@@ -73,7 +74,7 @@ TEST(ConcurrentVector, DestructorRunsPerElement) {
 // Many concurrent readers while one writer appends: readers never see a torn or
 // uninitialized element. (TSan build is the real gate; this is the logic check.)
 TEST(ConcurrentVector, ConcurrentReadersOneWriter) {
-  ConcurrentVector<std::uint64_t> v(system_allocator(), 8);
+  ConcurrentVector<std::uint64_t, Allocator> v(system_allocator(), 8);
   constexpr int kN = 20000;
   std::atomic<bool> stop{false};
 
@@ -98,7 +99,7 @@ TEST(ConcurrentVector, ConcurrentReadersOneWriter) {
 
 // Concurrent writers: all indices returned are unique and cover [0, total).
 TEST(ConcurrentVector, ConcurrentWritersUniqueIndices) {
-  ConcurrentVector<int> v(system_allocator(), 8);
+  ConcurrentVector<int> v(8);
   constexpr int kPerThread = 5000;
   constexpr int kThreads = 4;
   std::vector<std::thread> ts;

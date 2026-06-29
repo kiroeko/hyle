@@ -10,12 +10,13 @@
 #include "hyle/platform/thread.h"
 
 using hyle::container::WsFifoQueue;
+using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
 // ---- single-thread owner FIFO -----------------------------------------------
 
 TEST(WsFifoQueue, OwnerFifoPushPop) {
-  WsFifoQueue<int> q(system_allocator(), 8);
+  WsFifoQueue<int> q(8);  // default = compile-time SystemAllocator
   EXPECT_TRUE(q.push_back(10));
   EXPECT_TRUE(q.push_back(20));
   EXPECT_TRUE(q.push_back(30));
@@ -33,14 +34,14 @@ TEST(WsFifoQueue, OwnerFifoPushPop) {
 }
 
 TEST(WsFifoQueue, FullPushRejected) {
-  WsFifoQueue<int> q(system_allocator(), 2);
+  WsFifoQueue<int> q(2);
   EXPECT_TRUE(q.push_back(1));
   EXPECT_TRUE(q.push_back(2));
   EXPECT_FALSE(q.push_back(3));  // capacity 2 -> full
 }
 
 TEST(WsFifoQueue, WrapsAroundManyLaps) {
-  WsFifoQueue<int> q(system_allocator(), 4);
+  WsFifoQueue<int> q(4);
   for (int i = 0; i < 1000; ++i) {
     ASSERT_TRUE(q.push_back(i));
     auto r = q.pop();
@@ -52,8 +53,8 @@ TEST(WsFifoQueue, WrapsAroundManyLaps) {
 // ---- steal_into semantics (single-thread, deterministic) --------------------
 
 TEST(WsFifoQueue, StealMovesAboutHalfOldestFirst) {
-  WsFifoQueue<int> victim(system_allocator(), 16);
-  WsFifoQueue<int> thief(system_allocator(), 16);
+  WsFifoQueue<int> victim(16);
+  WsFifoQueue<int> thief(16);
   for (int i = 0; i < 8; ++i) victim.push_back(i);  // 0..7
 
   // Steal ~half (4): one returned directly, rest land in `thief`, oldest first.
@@ -72,8 +73,8 @@ TEST(WsFifoQueue, StealMovesAboutHalfOldestFirst) {
 }
 
 TEST(WsFifoQueue, StealFromEmptyReturnsNotOk) {
-  WsFifoQueue<int> victim(system_allocator(), 8);
-  WsFifoQueue<int> thief(system_allocator(), 8);
+  WsFifoQueue<int> victim(8);
+  WsFifoQueue<int> thief(8);
   EXPECT_FALSE(victim.steal_into(thief).ok);
 }
 
@@ -85,20 +86,20 @@ TEST(WsFifoQueue, StealFromEmptyReturnsNotOk) {
 TEST(WsFifoQueue, ConcurrentConservation) {
   constexpr std::uint64_t kN = 200000;
   constexpr int kThieves = 4;
-  WsFifoQueue<std::uint64_t> q(system_allocator(), 256);
+  WsFifoQueue<std::uint64_t, Allocator> q(system_allocator(), 256);
 
   std::atomic<bool> done_pushing{false};
   std::vector<std::uint64_t> owner_got;
   std::vector<std::vector<std::uint64_t>> thief_got(kThieves);
 
   struct OwnerArgs {
-    WsFifoQueue<std::uint64_t>* q;
+    WsFifoQueue<std::uint64_t, Allocator>* q;
     std::atomic<bool>* done;
     std::vector<std::uint64_t>* got;
   } oargs{&q, &done_pushing, &owner_got};
 
   struct ThiefArgs {
-    WsFifoQueue<std::uint64_t>* victim;
+    WsFifoQueue<std::uint64_t, Allocator>* victim;
     std::atomic<bool>* done;
     std::vector<std::uint64_t>* got;
   };
@@ -133,7 +134,7 @@ TEST(WsFifoQueue, ConcurrentConservation) {
     auto r = hyle::platform::Thread::spawn(
         [](void* p) {
           auto* a = static_cast<ThiefArgs*>(p);
-          WsFifoQueue<std::uint64_t> local(system_allocator(), 256);
+          WsFifoQueue<std::uint64_t, Allocator> local(system_allocator(), 256);
           // Record a successful steal: the directly-returned task + everything
           // it dumped into our local queue. (One helper so no return value is
           // ever dropped -- that would silently lose an id.)

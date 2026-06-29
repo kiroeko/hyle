@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <cstring>
+#include <type_traits>
 
 #include "hyle/macros.h"
 
@@ -61,6 +63,26 @@ struct SystemAllocator {
     }
     return ptr == nullptr ? mi_malloc_aligned(new_size, alignment)
                           : mi_realloc_aligned(ptr, new_size, alignment);
+  }
+
+  // ---- typed convenience layer (mirrors mem::Allocator's, so containers that call
+  // allocate_n<T>/callocate/release work uniformly with either allocator). All inline. ----
+  template <class T>
+  static T* allocate_n(std::size_t numel = 1, std::size_t alignment = alignof(T)) noexcept {
+    return static_cast<T*>(allocate(sizeof(T) * numel, alignment));
+  }
+  template <class T>
+  static T* callocate(std::size_t numel = 1) noexcept {
+    static_assert(std::is_trivially_constructible_v<T>,
+                  "callocate requires trivially-constructible T");
+    std::size_t sz = sizeof(T) * numel;
+    void* p = allocate(sz, alignof(T));
+    if (p != nullptr) std::memset(p, 0, sz);
+    return static_cast<T*>(p);
+  }
+  template <class T>
+  static void release(T* ptr, std::size_t numel = 1) noexcept {
+    deallocate(ptr, sizeof(T) * numel, alignof(T));
   }
 };
 

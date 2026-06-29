@@ -264,7 +264,7 @@ void bench_ws_owner() {
       .minEpochIterations(2000);
 
   b.run("HYLE WsFifoQueue (FIFO owner)", [&] {
-    static WsFifoQueue<std::uint64_t> q(system_allocator(), kCap);
+    static WsFifoQueue<std::uint64_t> q(kCap);
     for (int i = 0; i < kBatch; ++i) q.push_back(static_cast<std::uint64_t>(i));
     std::uint64_t sum = 0;
     for (int i = 0; i < kBatch; ++i) {
@@ -275,7 +275,7 @@ void bench_ws_owner() {
   });
 
   b.run("HYLE WorkStealingDeque (LIFO owner)", [&] {
-    static WorkStealingDeque<std::uint64_t> d(system_allocator(), kCap);
+    static WorkStealingDeque<std::uint64_t> d(kCap);
     for (int i = 0; i < kBatch; ++i)
       d.push_bottom(static_cast<std::uint64_t>(i));
     std::uint64_t sum = 0;
@@ -311,8 +311,8 @@ void bench_ws_steal() {
       .minEpochIterations(1000);
 
   b.run("HYLE WsFifoQueue steal_into", [&] {
-    static WsFifoQueue<std::uint64_t> victim(system_allocator(), kCap);
-    static WsFifoQueue<std::uint64_t> thief(system_allocator(), kCap);
+    static WsFifoQueue<std::uint64_t> victim(kCap);
+    static WsFifoQueue<std::uint64_t> thief(kCap);
     for (int i = 0; i < kBatch; ++i)
       victim.push_back(static_cast<std::uint64_t>(i));
     std::uint64_t sum = 0;
@@ -332,7 +332,7 @@ void bench_ws_steal() {
   });
 
   b.run("HYLE WorkStealingDeque steal", [&] {
-    static WorkStealingDeque<std::uint64_t> d(system_allocator(), kCap);
+    static WorkStealingDeque<std::uint64_t> d(kCap);
     for (int i = 0; i < kBatch; ++i)
       d.push_bottom(static_cast<std::uint64_t>(i));
     std::uint64_t sum = 0;
@@ -354,7 +354,7 @@ void bench_concurrent_vector() {
         .batch(kN)
         .minEpochIterations(20);
     b.run("HYLE ConcurrentVector", [&] {
-      ConcurrentVector<std::uint64_t> v(system_allocator());
+      ConcurrentVector<std::uint64_t> v;
       for (int i = 0; i < kN; ++i) v.push_back(static_cast<std::uint64_t>(i));
       ankerl::nanobench::doNotOptimizeAway(v.size());
     });
@@ -368,7 +368,7 @@ void bench_concurrent_vector() {
   }
   {
     // Lock-free read hot path: sequential index sum over a prebuilt vector.
-    ConcurrentVector<std::uint64_t> hv(system_allocator());
+    ConcurrentVector<std::uint64_t> hv;
     for (int i = 0; i < kN; ++i) hv.push_back(static_cast<std::uint64_t>(i));
     ankerl::nanobench::Bench b;
     b.title("ConcurrentVector sequential read sum (100k)")

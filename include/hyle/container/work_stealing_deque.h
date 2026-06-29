@@ -8,6 +8,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/system_inline.h"
 
 namespace hyle::container {
 
@@ -39,7 +40,9 @@ enum class StealStatus : std::uint8_t {
 // growth (the resize path is a separate hard problem HYLE doesn't need).
 //
 // T must be trivially copyable (fiber handles / pointers / PODs).
-template <class T>
+// Alloc defaults to compile-time SystemAllocator ([[no_unique_address]] -> 0 bytes; buf is
+// allocated once at construction). Opt into mem::Allocator for injection.
+template <class T, class Alloc = mem::SystemAllocator>
 class WorkStealingDeque {
   static_assert(std::is_trivially_copyable_v<T>,
                 "WorkStealingDeque<T>: T must be trivially copyable");
@@ -54,16 +57,14 @@ class WorkStealingDeque {
     T value;
   };
 
-  WorkStealingDeque(mem::Allocator alloc, std::size_t capacity)
+  explicit WorkStealingDeque(std::size_t capacity)
+      requires std::is_default_constructible_v<Alloc>
+      : mask_(capacity - 1) {
+    init(capacity);
+  }
+  WorkStealingDeque(Alloc alloc, std::size_t capacity)
       : alloc_(alloc), mask_(capacity - 1) {
-    HYLE_FATAL_ASSERT(capacity >= 2 && (capacity & (capacity - 1)) == 0);
-    HYLE_FATAL_ASSERT(alloc_.valid());
-    void* mem = alloc_.allocate(sizeof(Slot) * capacity, alignof(Slot));
-    HYLE_FATAL_ASSERT(mem != nullptr);
-    buf_ = static_cast<Slot*>(mem);
-    for (std::size_t i = 0; i < capacity; ++i) new (&buf_[i]) Slot();
-    top_.store(0, std::memory_order_relaxed);
-    bottom_.store(0, std::memory_order_relaxed);
+    init(capacity);
   }
 
   ~WorkStealingDeque() {
@@ -150,7 +151,17 @@ class WorkStealingDeque {
     std::atomic<T> v;
   };
 
-  mem::Allocator alloc_;
+  void init(std::size_t capacity) {
+    HYLE_FATAL_ASSERT(capacity >= 2 && (capacity & (capacity - 1)) == 0);
+    void* mem = alloc_.allocate(sizeof(Slot) * capacity, alignof(Slot));
+    HYLE_FATAL_ASSERT(mem != nullptr);
+    buf_ = static_cast<Slot*>(mem);
+    for (std::size_t i = 0; i < capacity; ++i) new (&buf_[i]) Slot();
+    top_.store(0, std::memory_order_relaxed);
+    bottom_.store(0, std::memory_order_relaxed);
+  }
+
+  HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
   Slot* buf_ = nullptr;
   std::uint64_t mask_;
   // top (thief end) and bottom (owner end) are hammered by different threads;

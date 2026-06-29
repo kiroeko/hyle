@@ -8,6 +8,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/system_inline.h"
 
 namespace hyle::container {
 
@@ -30,7 +31,9 @@ namespace hyle::container {
 // steal cost, sched-design §2.3), returning one to run immediately.
 //
 // T must be trivially copyable (fiber handles / pointers / PODs).
-template <class T>
+// Alloc defaults to compile-time SystemAllocator ([[no_unique_address]] -> 0 bytes; buf is
+// the only alloc, once at construction). Opt into mem::Allocator for injection (sched does).
+template <class T, class Alloc = mem::SystemAllocator>
 class WsFifoQueue {
   static_assert(std::is_trivially_copyable_v<T>,
                 "WsFifoQueue<T>: T must be trivially copyable");
@@ -41,17 +44,14 @@ class WsFifoQueue {
     T value;
   };
 
-  WsFifoQueue(mem::Allocator alloc, std::size_t capacity)
+  explicit WsFifoQueue(std::size_t capacity)
+      requires std::is_default_constructible_v<Alloc>
+      : mask_(static_cast<std::uint32_t>(capacity - 1)) {
+    init(capacity);
+  }
+  WsFifoQueue(Alloc alloc, std::size_t capacity)
       : alloc_(alloc), mask_(static_cast<std::uint32_t>(capacity - 1)) {
-    HYLE_FATAL_ASSERT(capacity >= 2 && capacity <= (1u << 31) &&
-                      (capacity & (capacity - 1)) == 0);
-    HYLE_FATAL_ASSERT(alloc_.valid());
-    void* mem = alloc_.allocate(sizeof(Slot) * capacity, alignof(Slot));
-    HYLE_FATAL_ASSERT(mem != nullptr);
-    buf_ = static_cast<Slot*>(mem);
-    for (std::size_t i = 0; i < capacity; ++i) new (&buf_[i]) Slot();
-    head_.store(0, std::memory_order_relaxed);
-    tail_.store(0, std::memory_order_relaxed);
+    init(capacity);
   }
 
   ~WsFifoQueue() {
@@ -182,7 +182,18 @@ class WsFifoQueue {
     return static_cast<std::uint32_t>(h & 0xFFFFFFFFu);
   }
 
-  mem::Allocator alloc_;
+  void init(std::size_t capacity) {
+    HYLE_FATAL_ASSERT(capacity >= 2 && capacity <= (1u << 31) &&
+                      (capacity & (capacity - 1)) == 0);
+    void* mem = alloc_.allocate(sizeof(Slot) * capacity, alignof(Slot));
+    HYLE_FATAL_ASSERT(mem != nullptr);
+    buf_ = static_cast<Slot*>(mem);
+    for (std::size_t i = 0; i < capacity; ++i) new (&buf_[i]) Slot();
+    head_.store(0, std::memory_order_relaxed);
+    tail_.store(0, std::memory_order_relaxed);
+  }
+
+  HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
   Slot* buf_ = nullptr;
   std::uint32_t mask_;
   alignas(HYLE_CACHE_LINE_SIZE) std::atomic<std::uint64_t> head_;  // packed steal|real
