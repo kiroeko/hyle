@@ -228,9 +228,13 @@ class MemoryArena {
 // at once by destroying the Arena (or reset()). Ideal for a transient phase
 // (one taskgraph pass, one request) backed by a reusable pool block.
 //
-// Difference vs StackAllocator: StackAllocator owns its own slab and is
-// single-threaded with mark/rewind; Arena borrows a pooled block and supports
-// concurrent bump. Both are "bump", different lifecycles.
+// Difference vs StackAllocator: StackAllocator owns its own slab and has
+// mark/rewind; Arena borrows a pooled block and returns it on destruction. Both
+// are SINGLE-THREADED bump (no atomics -- a bump cursor is inherently one serial
+// pointer; making it atomic only adds a per-alloc CAS and, shared across threads,
+// the same single-point contention MemoryArena's head had). Concurrency = one
+// Arena PER THREAD/fiber (each over its own pooled block) -- the SOTA model
+// (per-core scratch arenas), not a contended shared cursor.
 class Arena {
  public:
   explicit Arena(MemoryArena* pool)
@@ -238,40 +242,30 @@ class Arena {
         block_(static_cast<std::byte*>(pool->allocate())),
         block_size_(pool->block_size()) {
     HYLE_FATAL_ASSERT(block_ != nullptr);  // pool exhausted
-    offset_.store(0, std::memory_order_relaxed);
   }
 
   ~Arena() { pool_->deallocate(block_); }
 
   HYLE_DISABLE_COPY_AND_MOVE(Arena);
 
-  // Bump `bytes` aligned to `alignment`. nullptr if the block is full.
-  // Lock-free: safe to call concurrently from multiple threads.
+  // Bump `bytes` aligned to `alignment`. nullptr if the block is full. Single-
+  // threaded: a plain pointer bump (no atomic). One Arena is owned by one thread.
   void* allocate(std::size_t bytes,
                  std::size_t alignment = alignof(std::max_align_t)) noexcept {
     auto base = reinterpret_cast<std::uintptr_t>(block_);
-    std::size_t old = offset_.load(std::memory_order_acquire);
-    for (;;) {
-      std::uintptr_t aligned = (base + old + alignment - 1) & ~(alignment - 1);
-      std::size_t start = static_cast<std::size_t>(aligned - base);
-      if (start > block_size_ || bytes > block_size_ - start) return nullptr;
-      std::size_t next = start + bytes;
-      if (offset_.compare_exchange_weak(old, next, std::memory_order_acq_rel,
-                                        std::memory_order_acquire)) {
-        return block_ + start;
-      }
-      // old reloaded; retry.
-    }
+    std::uintptr_t aligned = (base + offset_ + alignment - 1) & ~(alignment - 1);
+    std::size_t start = static_cast<std::size_t>(aligned - base);
+    if (start > block_size_ || bytes > block_size_ - start) return nullptr;
+    offset_ = start + bytes;
+    return block_ + start;
   }
 
   // Release everything (reuse the block from the start). HYLE addition over clay
   // (clay relied solely on dtor); only safe when no allocations are live.
-  void reset() noexcept { offset_.store(0, std::memory_order_release); }
+  void reset() noexcept { offset_ = 0; }
 
   std::size_t block_size() const noexcept { return block_size_; }
-  std::size_t used() const noexcept {
-    return offset_.load(std::memory_order_relaxed);
-  }
+  std::size_t used() const noexcept { return offset_; }
 
   // Adapt this Arena to the Allocator vtable: allocate -> bump, deallocate ->
   // no-op (the arena frees in bulk on destruction). realloc bumps a fresh slice
@@ -293,7 +287,7 @@ class Arena {
   MemoryArena* pool_;
   std::byte* block_;
   std::size_t block_size_;
-  std::atomic<std::size_t> offset_{0};
+  std::size_t offset_ = 0;  // bump cursor (single-threaded; one Arena per thread)
 };
 
 }  // namespace hyle::mem

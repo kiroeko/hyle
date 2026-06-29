@@ -182,22 +182,27 @@ TEST(Arena, AsAllocatorBumpsDeallocNoop) {
   EXPECT_NE(p, q);  // deallocate did NOT free -> q is a fresh bump
 }
 
-TEST(Arena, ConcurrentBumpNoOverlap) {
+// Arena is single-threaded by design; concurrency = one Arena PER THREAD (the SOTA
+// per-core scratch model). Each thread owns its own Arena over its own pool block and
+// bumps it independently -- no shared cursor, no contention. Verifies the per-thread
+// arenas hand out disjoint memory (own block each) with zero atomics.
+TEST(Arena, PerThreadArenasNoOverlap) {
   constexpr int kThreads = 8;
   constexpr int kPerThread = 200;
   constexpr std::size_t kBytes = 16;
-  MemoryArena pool(system_allocator(), kThreads * kPerThread * 64, 1);
-  Arena a(&pool);
-  struct Args { Arena* a; std::vector<void*> got; };
+  // One pool block per thread, each big enough for kPerThread bumps.
+  MemoryArena pool(system_allocator(), kPerThread * 64, kThreads);
+  struct Args { MemoryArena* pool; std::vector<void*> got; };
   std::vector<Args> args(kThreads);
   std::vector<hyle::platform::Thread> ts;
   for (int t = 0; t < kThreads; ++t) {
-    args[t].a = &a;
+    args[t].pool = &pool;
     auto r = hyle::platform::Thread::spawn(
         [](void* p) {
           auto* x = static_cast<Args*>(p);
+          Arena a(x->pool);  // this thread's OWN arena over its OWN pooled block
           for (int i = 0; i < kPerThread; ++i) {
-            void* q = x->a->allocate(kBytes, 16);
+            void* q = a.allocate(kBytes, 16);
             if (q) x->got.push_back(q);
           }
         },
@@ -206,9 +211,9 @@ TEST(Arena, ConcurrentBumpNoOverlap) {
     ts.push_back(std::move(*r));
   }
   for (auto& th : ts) th.join();
-  // All returned pointers must be distinct (no two bumps overlapped).
+  // All returned pointers across all per-thread arenas must be distinct.
   std::unordered_set<void*> uniq;
   std::size_t total = 0;
   for (auto& x : args) for (void* q : x.got) { uniq.insert(q); ++total; }
-  EXPECT_EQ(uniq.size(), total) << "overlapping bump allocations";
+  EXPECT_EQ(uniq.size(), total) << "per-thread arenas overlapped";
 }
