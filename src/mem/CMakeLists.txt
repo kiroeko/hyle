@@ -27,5 +27,8 @@ else()
   target_compile_options(mimalloc_static PRIVATE -w)
 endif()
 target_link_libraries(hyle_mem PRIVATE mimalloc_static)
+# memory_arena.h (public header) calls platform::hardware_concurrency() to size its shard
+# count -> PUBLIC so every consumer of MemoryArena links hyle_platform transitively.
+target_link_libraries(hyle_mem PUBLIC hyle_platform)
 target_include_directories(hyle_mem PRIVATE "${_mi}/include")
 target_compile_definitions(hyle_mem PRIVATE HYLE_USE_MIMALLOC)

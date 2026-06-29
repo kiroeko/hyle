@@ -8,6 +8,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/platform/thread.h"  // hardware_concurrency() -> shard count
 
 namespace hyle::mem {
 
@@ -49,8 +50,13 @@ class MemoryArena {
         alloc_.allocate(sizeof(std::atomic<std::uint32_t>) * count_,
                         alignof(std::atomic<std::uint32_t>)));
     HYLE_FATAL_ASSERT(next_ != nullptr);
-    // Shard count: cap at kMaxShards, never more than blocks (each shard needs >=1).
-    num_shards_ = count_ < kMaxShards ? count_ : kMaxShards;
+    // Shard count = the host's core count rounded up to a power of two (capped), but never
+    // more than blocks (each shard needs >=1). Scaling to cores keeps it O(1) up to the
+    // real concurrency level: a FIXED count (e.g. 16) would re-introduce O(ceil(T/16))
+    // contention once threads > shards (the 64-core box pays again). Pow2 makes the homing
+    // modulo cheap and (with the rotating tls seq) collision-free while live threads <= cores.
+    num_shards_ = default_shards();
+    if (num_shards_ > count_) num_shards_ = count_;  // <= blocks
     per_ = count_ / num_shards_;  // >=1; the last shard absorbs the remainder
     heads_ = static_cast<ShardHead*>(
         alloc_.allocate(sizeof(ShardHead) * num_shards_, alignof(ShardHead)));
@@ -139,16 +145,27 @@ class MemoryArena {
   }
 
   static constexpr std::uint32_t kNull = 0xFFFFFFFFu;
-  // Shard the free list into independent Treiber stacks, one per (up to) this many
-  // cache-line-isolated heads. clay inherited a SINGLE head -> every thread CAS'd the
-  // same cache line, serializing (O(threads), measured 278x slower than mimalloc's
-  // per-thread heaps under 8-way churn). Per-core/per-thread sharding is the SOTA fix
-  // mem-design called a HARD constraint (the per-core pool + xcpu_freelist note) but
-  // that the toy single-stack never implemented. A thread homes on one shard (tls
-  // round-robin) so same-thread alloc/free hits an UNCONTENDED head; free routes by
-  // ADDRESS back to the block's owning shard (so each shard's list holds only its own
+  // Shard the free list into independent Treiber stacks, one per cache-line-isolated head.
+  // clay inherited a SINGLE head -> every thread CAS'd the same cache line, serializing
+  // (O(threads), measured 278x slower than mimalloc's per-thread heaps under 8-way churn).
+  // Per-core sharding is the SOTA fix mem-design called a HARD constraint (the per-core
+  // pool + xcpu_freelist note) but the toy single-stack never implemented. A thread homes
+  // on one shard (tls round-robin) so same-thread alloc/free hits an UNCONTENDED head; free
+  // routes by ADDRESS back to the block's owning shard (each shard's list holds only its own
   // index range -> per-shard ABA version stays valid, no cross-shard next_ aliasing).
-  static constexpr std::uint32_t kMaxShards = 16;
+  //
+  // Count = core count rounded up to pow2, clamped to [1, kShardCap]. NOT a fixed 16: a
+  // fixed count re-introduces O(ceil(T/16)) contention once live threads exceed it (the
+  // many-core box would pay again). kShardCap bounds the heads_ array (128 -> 8 KB) for
+  // absurd core counts; beyond it sharing resumes, but 128-way is far past current hosts.
+  static constexpr std::uint32_t kShardCap = 128;
+  static std::uint32_t default_shards() noexcept {
+    unsigned c = hyle::platform::hardware_concurrency();
+    if (c == 0) c = 8;  // unknown -> a sane default
+    std::uint32_t p = 1;
+    while (p < c && p < kShardCap) p <<= 1;  // round up to pow2, capped
+    return p;
+  }
 
   static std::uint64_t pack(std::uint32_t idx, std::uint32_t ver) noexcept {
     return (static_cast<std::uint64_t>(ver) << 32) | idx;
