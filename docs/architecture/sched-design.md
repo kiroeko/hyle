@@ -169,7 +169,7 @@ loop:
 > **深读 marl 的收敛方案（采纳,sched-05 已落地+实测纠错）**：fiber-awareness 按**等待时长**分工,不是一刀切——
 > - **长等待 → fiber-aware**:`ConditionVariable` 是唯一 fiber-aware 地基(FIFO waiter 链表 + SpinLock),`WaitGroup`/`Latch`/`Channel` 全建其上。**双模**:waiter 是 fiber 则 `suspend()` 让出+重入 run-queue(复用第三节 Waker rendezvous,`current_waker()` 判定);是裸线程则回退 `platform::Parker`(跨进程联邦/外部线程提交,**非** `std::condition_variable`,HYLE 自有 Parker 无 std 依赖)。
 > - **短等待(mutex)→ 不 fiber-aware,用 futex**:`Mutex` 是建在 `platform::wait_on_address` 上的 Drepper 3 态 futex(无争用单 CAS、争用 park worker),**不**让出 fiber。**实测纠错**:初版把 Mutex 也做成 fiber-aware(争用让出),benchmark 慢 marl **5.8x**——短临界区让出 fiber(~100ns)远贵于就地 park 几 ns。改 futex 后**打平 marl**(marl 同理:其 mutex 就是 std::mutex=futex,只 CV 才 fiber-aware)。契约:**别跨 fiber 让出/阻塞调用持 Mutex,那种场景用 CV**。
-> - `wait_for`/`wait_until` 定时变体依赖 time-02 时间轮(→ sched-04b),登记延后,不阻塞无定时主体。**spawn 重负载(fork-join)待 fiber 栈池**(§1 计划未做)追平 marl,登记独立里程碑。
+> - `wait_for`/`wait_until` 定时变体依赖 time-02 时间轮(→ sched-04b),登记延后,不阻塞无定时主体。**spawn 重负载(fork-join)已反超 marl 1.49x**——靠 §2.3 ① 的 spin-then-park(idle worker 先 `cpu_relax` 自旋桥接生产间隙再 park,消除 spawn burst 的 futex 唤醒风暴);栈池(`MemoryArena::as_allocator`)再加 ~13%。**实测纠错:此前误把 fork-join 慢 17x 归因到"无栈池",诊断证明真因是急泊车 futex 风暴**(详见 performance.md)。
 
 ## 第三节：completion 接入（整个设计的收口）
 

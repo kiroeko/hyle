@@ -102,7 +102,32 @@ class MemoryArena {
   std::size_t block_size() const noexcept { return block_size_; }
   std::uint32_t capacity() const noexcept { return count_; }
 
+  // Adapt this pool to the Allocator vtable: allocate -> pop a fixed block (the
+  // requested size must fit block_size_; the pool serves one size class),
+  // deallocate -> push the block back. A pool block can't grow, so realloc of an
+  // existing pointer is rejected (nullptr). Ideal as a Fiber stack source: the
+  // 64 KB stack churns through the lock-free free-list instead of malloc/mmap.
+  Allocator as_allocator() noexcept { return Allocator(&pool_realloc, this); }
+
  private:
+  static void* pool_realloc(void* state, void* ptr, std::size_t /*old_size*/,
+                            std::size_t new_size, std::size_t alignment) noexcept {
+    auto* self = static_cast<MemoryArena*>(state);
+    if (ptr == nullptr) {
+      if (new_size == 0) return nullptr;
+      // One size class: the caller's request must fit a pool block and not need
+      // stronger alignment than the slab was built with.
+      HYLE_FATAL_ASSERT(new_size <= self->block_size_ &&
+                        alignment <= self->alignment_);
+      return self->allocate();
+    }
+    if (new_size == 0) {  // free
+      self->deallocate(ptr);
+      return nullptr;
+    }
+    return nullptr;  // a fixed-size pool block cannot be reallocated in place
+  }
+
   static constexpr std::uint32_t kNull = 0xFFFFFFFFu;
   static std::uint64_t pack(std::uint32_t idx, std::uint32_t ver) noexcept {
     return (static_cast<std::uint64_t>(ver) << 32) | idx;

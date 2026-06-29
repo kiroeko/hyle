@@ -13,6 +13,7 @@
 #include "hyle/platform/wait.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/waker.h"
+#include "hyle/util/spin_lock.h"  // util::cpu_relax (pause hint)
 
 namespace hyle::sched {
 namespace {
@@ -30,10 +31,18 @@ std::uint64_t xorshift(std::uint64_t& s) noexcept {
   return s;
 }
 
-// Bounded spin sweeps before an idle worker parks. Park is a syscall and work
-// often arrives within microseconds, so a little spinning avoids park/unpark
-// churn (sched-design §2.3 ①; HYLE/Go-style, not current tokio).
-constexpr int kSpinSweeps = 4;
+// Idle backoff before an idle worker parks. Park is a futex round-trip AND
+// forces the producer's enqueue to do an unpark syscall; under a spawn burst
+// that becomes a wake STORM (measured: fork-join spawn ran ~17x slower than marl
+// purely from eager parking + per-enqueue unpark). Work from a cross-thread
+// spawn or a finishing neighbor usually lands within microseconds, so we first
+// SPIN on cpu_relax (cheap, no syscall) to bridge the gap, then yield a few
+// times (cede the core if oversubscribed), and only then park. (sched-design
+// §2.3 ①; HYLE/Go-style. The §2.3 ②③ searching-thief gate + baton relay --
+// which would also cut redundant wakes -- remain deferred: they need a seq_cst
+// Dekker handshake + model-checking, see notify().)
+constexpr int kSpinPolls = 4096;       // cpu_relax polls (sub-µs, no syscall)
+constexpr int kYieldsBeforePark = 4;   // then cede the core a few times
 
 }  // namespace
 
@@ -177,15 +186,19 @@ struct Scheduler::Impl {
         dispatch(w, f);
         continue;
       }
-      // Idle: spin a few sweeps (work often arrives fast) before parking.
+      // Idle: spin cheaply (cpu_relax, no syscall) to bridge the brief gap until
+      // a producer/neighbor delivers work, then yield a few times, before the
+      // expensive park. Avoids the park/unpark futex storm under a spawn burst.
       bool got = false;
-      for (int sweep = 0; sweep < kSpinSweeps; ++sweep) {
+      for (int spin = 0; spin < kSpinPolls && !got; ++spin) {
+        util::cpu_relax();
+        f = find_task(w, idx);
+        if (f != nullptr) got = true;
+      }
+      for (int y = 0; y < kYieldsBeforePark && !got; ++y) {
         platform::this_thread::yield();
         f = find_task(w, idx);
-        if (f != nullptr) {
-          got = true;
-          break;
-        }
+        if (f != nullptr) got = true;
       }
       if (got) {
         dispatch(w, f);

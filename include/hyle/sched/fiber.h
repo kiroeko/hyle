@@ -113,6 +113,14 @@ class Fiber {
   bool finished_ = false;
   bool wait_requested_ = false;       // set by request_wait(), read by scheduler
   std::atomic<int> wake_state_{0};    // wake/suspend rendezvous (see wake_rendezvous)
+  // ThreadSanitizer fiber handles (null/unused unless built with TSan). fcontext
+  // swaps stacks behind TSan's back; without telling TSan which fiber is now
+  // running, its per-thread shadow corrupts and SEGVs once fibers migrate across
+  // worker threads. tsan_fiber_ is this fiber's handle; tsan_return_ is the
+  // resumer's, captured each resume() so yield() can hand control back. See
+  // fiber.cc (mirrors boost.context's BOOST_USE_TSAN integration).
+  void* tsan_fiber_ = nullptr;
+  void* tsan_return_ = nullptr;
 };
 
 }  // namespace hyle::sched

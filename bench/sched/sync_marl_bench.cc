@@ -25,6 +25,7 @@
 #include "marl/waitgroup.h"
 
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/memory_arena.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
@@ -140,7 +141,7 @@ int main() {
 
     {
       hyle::sched::Scheduler sched(kWorkers, system_allocator(), 2048);
-      b.run("HYLE WaitGroup", [&] {
+      b.run("HYLE WaitGroup (malloc stacks)", [&] {
         hyle::sched::WaitGroup wg;
         wg.add(kWgTasks);
         HyleWg arg{&wg};
@@ -151,6 +152,30 @@ int main() {
         for (int i = 0; i < kWgTasks; ++i)
           fibers.push_back(std::make_unique<Fiber>(
               system_allocator(), kDefaultStackSize, &hyle_wg_done, &arg));
+        for (auto& f : fibers) sched.spawn(f.get());
+        sched.drain();
+      });
+      sched.shutdown();
+    }
+
+    // Same workload, but fiber stacks come from a lock-free MemoryArena pool
+    // (recycled across epochs) instead of malloc -- isolates the stack-alloc cost.
+    {
+      hyle::sched::Scheduler sched(kWorkers, system_allocator(), 2048);
+      hyle::mem::MemoryArena stack_pool(system_allocator(), kDefaultStackSize,
+                                        kWgTasks + 8, kDefaultStackSize);
+      hyle::mem::Allocator pool = stack_pool.as_allocator();
+      b.run("HYLE WaitGroup (pooled stacks)", [&] {
+        hyle::sched::WaitGroup wg;
+        wg.add(kWgTasks);
+        HyleWg arg{&wg};
+        std::vector<std::unique_ptr<Fiber>> fibers;
+        fibers.reserve(kWgTasks + 1);
+        fibers.push_back(std::make_unique<Fiber>(pool, kDefaultStackSize,
+                                                 &hyle_wg_wait, &arg));
+        for (int i = 0; i < kWgTasks; ++i)
+          fibers.push_back(std::make_unique<Fiber>(pool, kDefaultStackSize,
+                                                   &hyle_wg_done, &arg));
         for (auto& f : fibers) sched.spawn(f.get());
         sched.drain();
       });

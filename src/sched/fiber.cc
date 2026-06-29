@@ -5,6 +5,38 @@
 #include "fcontext.h"
 #include "hyle/macros.h"
 
+// ---- ThreadSanitizer fiber integration --------------------------------------
+// fcontext swaps the stack pointer invisibly to TSan. TSan keeps shadow state
+// per logical context and assumes one known context per OS thread; once a fiber
+// suspended on worker A resumes on worker B (work-stealing migration), TSan is
+// applying A's stack bounds to code running under B and eventually SEGVs inside
+// its own runtime. The fix (mandated by TSan, used by boost.context/folly) is to
+// announce each switch via __tsan_switch_to_fiber. Compiles to nothing unless
+// built with -fsanitize=thread, so the shipped/benchmarked build pays ZERO.
+#if defined(__has_feature)
+#  if __has_feature(thread_sanitizer)
+#    define HYLE_TSAN 1
+#  endif
+#elif defined(__SANITIZE_THREAD__)
+#  define HYLE_TSAN 1
+#endif
+
+#if defined(HYLE_TSAN)
+#  include <sanitizer/tsan_interface.h>
+#  define HYLE_TSAN_CREATE_FIBER() __tsan_create_fiber(0)
+#  define HYLE_TSAN_DESTROY_FIBER(f) \
+    do {                             \
+      if (f) __tsan_destroy_fiber(f); \
+    } while (0)
+#  define HYLE_TSAN_CURRENT_FIBER() __tsan_get_current_fiber()
+#  define HYLE_TSAN_SWITCH(f) __tsan_switch_to_fiber((f), 0)
+#else
+#  define HYLE_TSAN_CREATE_FIBER() nullptr
+#  define HYLE_TSAN_DESTROY_FIBER(f) ((void)(f))
+#  define HYLE_TSAN_CURRENT_FIBER() nullptr
+#  define HYLE_TSAN_SWITCH(f) ((void)(f))
+#endif
+
 namespace hyle::sched {
 namespace {
 
@@ -31,7 +63,9 @@ struct FiberLaunch {
     self->return_ctx_ = t.fctx;  // where to jump back when we yield/finish
     self->entry_(self->arg_);    // run user code (may yield repeatedly)
     self->finished_ = true;
-    // Final switch back to the resumer; control never returns here.
+    // Hand TSan back to the resumer before the final stack switch (control never
+    // returns here, so there is no finish-switch on this side).
+    HYLE_TSAN_SWITCH(self->tsan_return_);
     jump_fcontext(self->return_ctx_, nullptr);
   }
 };
@@ -47,12 +81,14 @@ Fiber::Fiber(mem::Allocator alloc, std::size_t stack_size, EntryFn entry,
   // Stack grows down: make_fcontext wants the TOP (highest address).
   void* top = static_cast<char*>(stack_) + stack_size_;
   fctx_ = make_fcontext(top, stack_size_, &FiberLaunch::trampoline);
+  tsan_fiber_ = HYLE_TSAN_CREATE_FIBER();  // null in non-TSan builds
 }
 
 Fiber::~Fiber() {
   if (stack_ != nullptr) {
     alloc_.deallocate(stack_, stack_size_, kStackAlign);
   }
+  HYLE_TSAN_DESTROY_FIBER(tsan_fiber_);
 }
 
 Fiber::Fiber(Fiber&& o) noexcept
@@ -63,9 +99,11 @@ Fiber::Fiber(Fiber&& o) noexcept
       alloc_(o.alloc_),
       entry_(o.entry_),
       arg_(o.arg_),
-      finished_(o.finished_) {
+      finished_(o.finished_),
+      tsan_fiber_(o.tsan_fiber_) {
   o.stack_ = nullptr;
   o.fctx_ = nullptr;
+  o.tsan_fiber_ = nullptr;  // moved-from must not destroy the handle
 }
 
 Fiber& Fiber::operator=(Fiber&& o) noexcept {
@@ -73,6 +111,7 @@ Fiber& Fiber::operator=(Fiber&& o) noexcept {
     // Overwriting a live stack would leak it; a half-run fiber can't be dropped
     // mid-flight safely -> fail-fast (mirrors Thread's joinable assert).
     HYLE_FATAL_ASSERT(stack_ == nullptr);
+    HYLE_TSAN_DESTROY_FIBER(tsan_fiber_);  // null on a moved-from target; safe
     fctx_ = o.fctx_;
     return_ctx_ = o.return_ctx_;
     stack_ = o.stack_;
@@ -81,8 +120,10 @@ Fiber& Fiber::operator=(Fiber&& o) noexcept {
     entry_ = o.entry_;
     arg_ = o.arg_;
     finished_ = o.finished_;
+    tsan_fiber_ = o.tsan_fiber_;
     o.stack_ = nullptr;
     o.fctx_ = nullptr;
+    o.tsan_fiber_ = nullptr;
   }
   return *this;
 }
@@ -91,8 +132,16 @@ void Fiber::resume() {
   HYLE_FATAL_ASSERT(!finished_);
   Fiber* prev = t_current;
   t_current = this;  // this fiber is now the running one
+  // Tell TSan we are leaving the resumer (worker) context for this fiber's. The
+  // resumer handle is captured EACH resume so a fiber that migrated to another
+  // worker hands control back to the right one on yield. Both are no-ops unless
+  // built with TSan.
+  tsan_return_ = HYLE_TSAN_CURRENT_FIBER();
+  HYLE_TSAN_SWITCH(tsan_fiber_);
   // Switch into the fiber, handing it `this`. We come back here when it yields
-  // (or finishes); t.fctx is the fiber's freshly-suspended context.
+  // (or finishes); t.fctx is the fiber's freshly-suspended context. yield()/the
+  // trampoline switch TSan back to tsan_return_ before jumping here, so TSan is
+  // already on the resumer context on return -- nothing to do.
   transfer_t t = jump_fcontext(fctx_, this);
   t_current = prev;
   if (!finished_) fctx_ = t.fctx;
@@ -101,6 +150,10 @@ void Fiber::resume() {
 void Fiber::yield() noexcept {
   Fiber* self = t_current;
   HYLE_FATAL_ASSERT(self != nullptr);  // yield() called outside any fiber
+  // Hand TSan back to the resumer before switching stacks. On the next resume(),
+  // resume() switches TSan back to this fiber before its jump, so when we return
+  // below TSan is already on this fiber.
+  HYLE_TSAN_SWITCH(self->tsan_return_);
   // Switch back to the resumer. When resumed again, jump_fcontext returns here
   // with t.fctx = the (possibly new) resumer context to return to next time.
   transfer_t t = jump_fcontext(self->return_ctx_, nullptr);
