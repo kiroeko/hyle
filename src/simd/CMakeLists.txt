@@ -14,18 +14,28 @@ hyle_add_module(simd SOURCES
   ops/dispatch_ops.cc
   ops/kernels_scalar.cc
   ops/kernels_sse4.cc
-  ops/kernels_avx2.cc)
+  ops/kernels_avx2.cc
+  dtype/dtype_dispatch.cc
+  dtype/cvt_scalar.cc
+  dtype/cvt_f16c.cc)
 
 # Per-variant ISA flags: each kernel TU gets ONLY its target's -march; the dispatcher and
 # probe stay baseline. MSVC x64 has SSE4.2 intrinsics unconditionally (sse4/scalar need no
-# flag) and uses /arch:AVX2 for the 256-bit TU. The "src/..."-rooted #includes in the
+# flag) and uses /arch:AVX2 for the 256-bit TUs. The "src/..."-rooted #includes in the
 # kernel TUs need PROJECT_SOURCE_DIR on the include path.
 target_include_directories(hyle_simd PRIVATE "${PROJECT_SOURCE_DIR}")
 if(MSVC)
   set_source_files_properties(ops/kernels_avx2.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+  # f16c TU: cap at /arch:AVX (NOT AVX2). F16C shipped WITH AVX on Ivy Bridge, which lacks
+  # AVX2; /arch:AVX2 would let the auto-vectorized scalar tail emit AVX2 int ops that SIGILL
+  # there. /arch:AVX + the (always-available) F16C intrinsics = exactly Ivy Bridge's level.
+  set_source_files_properties(dtype/cvt_f16c.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX")
 else()
   set_source_files_properties(ops/kernels_sse4.cc PROPERTIES COMPILE_OPTIONS "-msse4.2")
   set_source_files_properties(ops/kernels_avx2.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
+  # f16c TU: -mf16c -mavx (NOT -mavx2) -- caps codegen at F16C+AVX so neither the intrinsics
+  # nor the auto-vectorized tail can emit an AVX2 instruction that SIGILLs on Ivy Bridge.
+  set_source_files_properties(dtype/cvt_f16c.cc PROPERTIES COMPILE_OPTIONS "-mf16c;-mavx")
 endif()
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:

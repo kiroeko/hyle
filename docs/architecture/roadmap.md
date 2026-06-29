@@ -93,7 +93,7 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 >
 > 一句话现状（粗粒度，细节看 milestones）：**地基层（error/platform/mem/container/time/util/obs）基本立住；
 > sched 核心 done（work-stealing + Waker 脊），后段（CV/协程胶水）待；simd 起步（dispatch + vec 抽象 +
-> scalar/SSE4.2/AVX2 后端 + 运行期变体派发，对标 Highway 追平）；io/compute/graph 三支柱未开工。**
+> scalar/SSE4.2/AVX2 后端 + 运行期变体派发 + fp16/bf16 dtype 转换，对标 Highway 追平）；io/compute/graph 三支柱未开工。**
 > 整体 ≈ 30%（模块权重）。
 
 
