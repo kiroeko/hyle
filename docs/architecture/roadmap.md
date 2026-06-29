@@ -94,7 +94,7 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 > 本文件只管**拓扑序、施工计划、决策、验收门槛**这些慢变内容。
 >
 > 一句话现状（粗粒度，细节看 milestones）：**地基层（error/platform/mem/container/time/util/obs）基本立住；
-> sched 核心 done（work-stealing + Waker 脊），后段（CV/协程胶水）待；**simd 支柱基本完成**（dispatch + vec 抽象 +
+> sched 核心 + fiber 同步原语 done（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超），后段（协程胶水/取消/优雅关闭）待；**simd 支柱基本完成**（dispatch + vec 抽象 +
 > scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 dtype + sleef 数学核,对标 Highway 追平；NEON/AVX512 写+编+objdump 验未跑存疑）；io/compute/graph 三支柱未开工。**
 > 整体 ≈ 32%（模块权重）。
 
