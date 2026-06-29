@@ -55,6 +55,7 @@ bool ConditionVariable::prepare_wait_(Waiter* node) noexcept {
     tail_->next = node;
   }
   tail_ = node;
+  waiters_.fetch_add(1, std::memory_order_relaxed);  // published via mu_/monitor
   mu_.unlock();
   return fiber;
 }
@@ -92,6 +93,10 @@ static void wake_one(const Waker& waker, void* token) noexcept {
 }
 
 void ConditionVariable::notify_one() noexcept {
+  // Fast path: nobody parked. A waiter publishes waiters_ under the monitor lock
+  // before suspending; a notifier holding that same lock therefore sees it, so
+  // skipping here cannot drop a wake (see header contract).
+  if (waiters_.load(std::memory_order_acquire) == 0) return;
   Waker waker;
   void* token = nullptr;
   bool have = false;
@@ -101,6 +106,7 @@ void ConditionVariable::notify_one() noexcept {
     if (node != nullptr) {
       head_ = node->next;
       if (head_ == nullptr) tail_ = nullptr;
+      waiters_.fetch_sub(1, std::memory_order_relaxed);
       // Copy out everything we need BEFORE releasing the lock / waking: the node
       // may be destroyed the instant its owner resumes.
       waker = node->waker;
@@ -113,6 +119,7 @@ void ConditionVariable::notify_one() noexcept {
 }
 
 void ConditionVariable::notify_all() noexcept {
+  if (waiters_.load(std::memory_order_acquire) == 0) return;  // nobody parked
   // Detach the whole list under the lock, then wake each outside it (wake/unpark
   // can run scheduler code / a syscall -- not under our tiny spinlock).
   Waiter* node;
@@ -121,6 +128,7 @@ void ConditionVariable::notify_all() noexcept {
     node = head_;
     head_ = nullptr;
     tail_ = nullptr;
+    waiters_.store(0, std::memory_order_relaxed);  // detached the whole list
     mu_.unlock();
   }
   while (node != nullptr) {

@@ -22,6 +22,12 @@ hyle_add_bench(mem SOURCES mem/allocator_bench.cc)
 # IN the build on purpose: if it ever recurs, we investigate head-on, not hide it.
 hyle_add_bench(sched SOURCES sched/scheduler_bench.cc)
 
+# sched-05 fiber-aware sync primitives bench (own exe: scheduler_bench.cc already
+# owns main(), so this is a second target rather than another source in it).
+add_executable(hyle_sched_sync_bench sched/sync_bench.cc)
+target_link_libraries(hyle_sched_sync_bench PRIVATE hyle_sched nanobench)
+hyle_apply_warnings(hyle_sched_sync_bench)
+
 # simd bench: dot/saxpy raced across scalar-autovec / HYLE sse4 / HYLE avx2 (+ Highway if
 # enabled). Each kernel TU is compiled with ITS OWN -march so the per-ISA codegen is real
 # and isolated (one backend per TU). The scalar baseline TU gets NO -march (auto-vec only

@@ -58,7 +58,22 @@
 > 全部 instrumented 净 + 原始崩溃全在 9p)指向 **9p/WSL demand-paging 环境假象**,非
 > HYLE 缺陷。fiber 切换 ~23ns / spawn ~6-9x vs std::async 数值有效(mimalloc v2.3.2 复测一致)。
 
-## 预期表（开工前推算目标,vs std）
+### sched-05 fiber-aware 同步原语(`bench/sched/sync_bench.cc`)
+
+> 环境:Linux x86_64 GCC14.2 Release(原生 ext4)+ Win MSVC19.50 Release,nanobench。
+
+| 项 | Linux GCC14 | Win MSVC | 说明 |
+|---|---|---|---|
+| **无争用 Mutex lock/unlock 对** | 9.88 ns(**std::mutex 2.41 ns 的 4.1x**) | 14.94 ns(std::mutex 11.22ns 的 1.33x) | 见下"诚实背景" |
+| 争用 Mutex(8 fiber / 4 worker) | 196 ns/op(5.1M op/s) | 148 ns/op | HYLE 自有(无同模型 std 基线) |
+| Channel 收发(cap 16,1p1c) | **66 ns/item(15.1M/s)** | 98 ns/item | fiber-aware 有界 MPMC |
+| WaitGroup fork-join(64 worker) | 9.4 µs/批 | 1.9 µs/批 | 由 fiber 创建/调度主导,非 sync 本身 |
+
+**waiter-count 门优化(本步实测驱动)**:基准揭示 Linux glibc `std::mutex` 无争用仅 2.5ns(单 CAS),HYLE Mutex 原 14.74ns(慢 **5.9x**)——根因每次 `unlock` 无条件 `notify` 取一次 CV 自旋锁。加 `waiters_` 原子门(无 waiter 停靠时跳过 notify 锁,靠 monitor 锁 handoff 的 happens-before 保证不丢唤醒)后:无争用 Mutex **14.74→9.88ns(1.5x)**、Channel **96→66ns(1.45x)**,**TSan 仍零 race**。这是"先正确、优化靠实测"的范例:门是实测暴露差距后才加的安全优化,非投机。
+
+**诚实背景(为什么 4.1x 不等于"输")**:① `std::mutex` **根本不能用在 fiber 里**——它阻塞的是 worker OS 线程,会卡死该核所有其他 fiber、破坏 M:N。所以这不是同任务对标,std::mutex 是"裸锁成本"基线,4.1x 是**完全 fiber-aware(争用让出而非阻塞)的代价**(绝对值 ~10ns / 1 亿 op/s 仍快)。② marl 的 mutex 其实就是 `std::mutex`(只 CV 才 fiber-aware),故 marl mutex 无争用 = std 速度;HYLE Mutex 更强(本身 fiber-aware)但更贵。**剩余优化登记**:futex 式单原子快路径(`held_` 直接 CAS、3 态编码 waiter)可把无争用降到 ~1.5x std,但 lost-wakeup 面更微妙,需独立 TSan campaign——按"不在压力下赶 lock-free"纪律登记,不本步赶工。**SOTA parity vs marl**(fiber-sync 真标尺)需接 marl 自有 scheduler → 登记 bench-02d。
+
+
 
 
 ## 先分两桶（混在一起说"快多少"会误导）

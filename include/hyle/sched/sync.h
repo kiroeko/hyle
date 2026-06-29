@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <cstddef>
 #include <new>
 #include <utility>
@@ -78,7 +79,11 @@ class ConditionVariable {
   // Wake one / all blocked waiters. Safe to call from any thread or fiber. The
   // caller should hold whatever lock guards the predicate the waiters test (so a
   // state change + notify is not split by a sleeping waiter -- classic monitor
-  // discipline); notify itself takes only the CV's own internal lock.
+  // discipline); notify itself takes only the CV's own internal lock. Fast-path:
+  // when no waiter is parked, returns without touching the internal lock (the
+  // `waiters_` count is published under the monitor lock by a parking waiter, so
+  // a notifier holding that same monitor lock sees a non-zero count -- no missed
+  // wake). This is what keeps an uncontended Mutex::unlock cheap.
   HYLE_SCHED_API void notify_one() noexcept;
   HYLE_SCHED_API void notify_all() noexcept;
 
@@ -106,6 +111,11 @@ class ConditionVariable {
   util::SpinLock mu_;        // guards the waiter list (tiny critical sections)
   Waiter* head_ = nullptr;   // FIFO: notify pops head
   Waiter* tail_ = nullptr;   // FIFO: prepare_wait appends here
+  // Count of parked waiters, so notify can skip the lock when none. Mutated
+  // under mu_ (++ in prepare_wait_, -= when popped by notify); read lock-free on
+  // the notify fast-path. Correctness rests on the monitor-lock handoff, not on
+  // this count alone (the under-lock head_ check is still authoritative).
+  std::atomic<int> waiters_{0};
 };
 
 // ---- Mutex ------------------------------------------------------------------
@@ -137,12 +147,9 @@ class Mutex {
     state_.lock();
     held_ = false;
     state_.unlock();
-    // Hand the mutex to one waiter (Mesa: it re-checks held_). This notifies
-    // UNCONDITIONALLY, so an uncontended unlock still takes the CV's spinlock
-    // once. A waiter-count fast-path (skip notify when none parked) is a known,
-    // safe optimization -- the monitor-lock discipline gives it a clean
-    // happens-before -- but deferred until a benchmark shows this matters
-    // (correct-first; optimize on evidence). TODO sched: gate on waiter count.
+    // Hand the mutex to one waiter (Mesa: it re-checks held_). notify_one's
+    // waiter-count fast-path makes this near-free when nobody is parked (the
+    // common uncontended case): no waiter list lock is taken.
     cv_.notify_one();
   }
 
