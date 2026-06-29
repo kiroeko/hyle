@@ -6,7 +6,7 @@
 #include <mutex>
 #include <vector>
 
-#include "hyle/container/bounded_queue.h"
+#include "hyle/container/sharded_queue.h"
 #include "hyle/container/ws_fifo_queue.h"
 #include "hyle/macros.h"
 #include "hyle/platform/thread.h"
@@ -47,8 +47,10 @@ struct Scheduler::Impl {
     container::WsFifoQueue<Fiber*> local;
     platform::Parker parker;  // non-movable -> Worker lives in a unique_ptr
     std::uint64_t rng;
-    Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed)
-        : local(a, cap), rng(seed) {}
+    unsigned idx;             // own worker index: shard hint + pop-cursor seed
+    std::size_t pop_cursor;   // round-robin cursor into the global ShardedQueue
+    Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed, unsigned i)
+        : local(a, cap), rng(seed), idx(i), pop_cursor(i) {}
   };
 
   struct Ctx {
@@ -56,7 +58,17 @@ struct Scheduler::Impl {
     unsigned idx;
   };
 
-  container::BoundedQueue<Fiber*> global;
+  // Global inject queue: SHARDED bounded MPMC (one ring per worker). The single
+  // ring this used to be was a single-point CAS bottleneck under many concurrent
+  // injectors (bench-02b: ~1.7x slower than moodycamel at 4P, diagnosed to the one
+  // contended enqueue_pos_). Sharding gives each producer its own ring -> the
+  // global queue scales with injectors (sharded bench: reversed to ~2.6-3x FASTER
+  // than moodycamel, flat with producer count). Order across shards is not global
+  // FIFO -- fine here: a work-stealing scheduler has no global order, it only needs
+  // no-starvation + rough fairness. workers pop with their own round-robin cursor;
+  // worker-context pushes hint to their own shard (locality), foreign pushes
+  // round-robin via inject_rr_.
+  container::ShardedQueue<Fiber*> global;
   std::vector<std::unique_ptr<Worker>> workers;
   std::vector<Ctx> ctxs;
   std::vector<platform::Thread> threads;
@@ -72,19 +84,23 @@ struct Scheduler::Impl {
   // StoreLoad "Dekker" handshake between notify() and a worker about to park
   // (documented at both sites). tokio idle.rs / Go wakep / actives-thieves paper.
   std::atomic<int> num_searching_{0};
+  // Round-robin shard selector for FOREIGN (non-worker) injects (reinject/spawn
+  // off a worker thread) -- they have no worker idx, so spread them across shards.
+  std::atomic<std::size_t> inject_rr_{0};
   unsigned n;
   Scheduler* owner;  // for tls_owner / current_waker()
 
   Impl(unsigned num_workers, mem::Allocator alloc, std::size_t cap,
        Scheduler* sched)
-      : global(alloc, cap), n(num_workers), owner(sched) {
+      : global(alloc, num_workers, cap), n(num_workers), owner(sched) {
     HYLE_FATAL_ASSERT(num_workers >= 1);
     workers.reserve(num_workers);
     ctxs.reserve(num_workers);
     threads.reserve(num_workers);
     for (unsigned i = 0; i < num_workers; ++i) {
       workers.push_back(std::make_unique<Worker>(
-          alloc, cap, 0x9e3779b97f4a7c15ull ^ (static_cast<std::uint64_t>(i) + 1)));
+          alloc, cap, 0x9e3779b97f4a7c15ull ^ (static_cast<std::uint64_t>(i) + 1),
+          i));
       ctxs.push_back(Ctx{this, i});
     }
     for (unsigned i = 0; i < num_workers; ++i) {
@@ -103,7 +119,7 @@ struct Scheduler::Impl {
     auto r = w.local.pop();
     if (r.ok) return r.value;
     Fiber* g = nullptr;
-    if (global.try_pop(g)) return g;
+    if (global.try_pop(w.pop_cursor, g)) return g;
     for (unsigned a = 0; a < n; ++a) {
       unsigned v = static_cast<unsigned>(xorshift(w.rng) % n);
       if (v == self_idx) continue;
@@ -115,7 +131,8 @@ struct Scheduler::Impl {
 
   void reschedule(Worker& w, Fiber* f) noexcept {
     if (!w.local.push_back(f)) {
-      while (!global.try_push(f)) platform::this_thread::yield();
+      // Spill to OUR OWN shard (locality: our pop_cursor checks it first).
+      while (!global.try_push(w.idx, f)) platform::this_thread::yield();
       notify();  // landed in global -> a parked worker may need to take it
     }
   }
@@ -180,7 +197,9 @@ struct Scheduler::Impl {
   // a foreign thread. Does NOT touch `outstanding` -- a waiting fiber was never
   // decremented, it stayed counted while parked.
   void reinject(Fiber* f) noexcept {
-    while (!global.try_push(f)) platform::this_thread::yield();
+    // Foreign-thread inject (Waker may fire anywhere): round-robin across shards.
+    while (!global.try_push(inject_rr_.fetch_add(1, std::memory_order_relaxed), f))
+      platform::this_thread::yield();
     notify();
   }
 
@@ -257,7 +276,8 @@ struct Scheduler::Impl {
         return;
       }
     }
-    while (!global.try_push(f)) platform::this_thread::yield();
+    while (!global.try_push(inject_rr_.fetch_add(1, std::memory_order_relaxed), f))
+      platform::this_thread::yield();
     notify();
   }
 
