@@ -61,7 +61,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 - **vtable 结构体 `xxx_api_t`**：纯函数指针结构体，`struct { inst* ; ret(*fn)(handle*, ...); }`；用 designated initializer 填表。
 - **不透明实例**：只前向声明，后缀约定 **`_o`**（实例）/ **`_t`**（vtable/值类型）；调用方持指针、不知布局。
 - **make/destroy 工厂**：`make_X()/destroy_X()` 配对，分配责任锁在 DLL 内（防 CRT 堆不匹配），禁客户端 `new/delete`。可返回带自定义 deleter 的 `unique_ptr`。
-- **显式 `Allocator*` 注入**贯穿所有分配型 API，无隐藏全局堆。
+- **分配显式可控,默认零开销**:默认走编译期 `SystemAllocator`(可内联直调 mimalloc,无运行时间接);需自定义分配器(arena/mock/跨 DLL)时**显式 opt-in 注入** `Allocator` 句柄。无隐藏全局堆。注入是能力非强制默认(详见 mem-design「分配器分层」)。
 - **`extern "C"` 只在真需要 C 链接的自由函数上用**——别误以为"包个 extern C 就算合规"，clay 的 ABI 稳定主要靠 vtable+不透明指针，不是 extern "C"。
 
 **WHY**：C++ 无稳定 ABI（mangling/模板/异常跨边界）；vtable+不透明指针是同时满足"跨编译器稳定 + 可运行时替换实现 + 纯 C 可调"的唯一解。
@@ -78,7 +78,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 ## 6. 内存与对象生命周期
 
 - **侵入式 `RefCounted` + `Ref<T>`**（CRTP 内嵌 `atomic refcount`）：跨边界比 `shared_ptr` 省控制块、可定制 `destroy()`。`incref` 用 `relaxed`、`decref` 用 `acq_rel`（教科书级正确，照搬）。**改进**：转换运算符设 `explicit`，避免隐式误用。
-- **显式 allocator 注入**（见 §4）。
+- **默认编译期 `SystemAllocator`,注入 opt-in**（见 §4）。
 - **单例默认 Meyers**（`static T inst` C++11 起线程安全），leaky 仅按需——丢掉 clay 的 leaky 默认。
 
 ## 7. 容器与数据布局
@@ -121,7 +121,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 **组合优于包含（铁律）**：每个特化是独立组合单元（一个 TU / 一个 tag 实现 / **一个注册的变体 DLL/后端**），**不是**上帝类内部 `switch(caps)` 或 vtable 分支。验收标准：**加一个厂商特化 = 加一个组合单元、改 1 文件、0 调用点改动、0 热路径开销**。
 
-**统一探测**：CPUID(AMX/VNNI/AVX512)、GPU caps(cooperative matrix/FP4)、加速器在场(DSA/QAT)——一处探测、各模块查。`simd/`(指令集)、`compute/`(设备/扩展)、`io/`(SPDK 等后端)、`mem/`(MemorySpace) 全走这同一套模型，只是粒度不同。可照镜 ggml 的 `dev_caps`/`get_proc_address`（取可选扩展函数、不破 vtable）。
+**统一探测**：CPUID(AMX/VNNI/AVX512)、GPU caps(cooperative matrix/FP4)、加速器在场(DSA/QAT)——一处探测、各模块查。`simd/`(指令集)、`compute/`(设备/扩展)、`io/`(SPDK 等后端)、`mem/`(大页/NUMA 拓扑) 全走这同一套模型，只是粒度不同。可照镜 ggml 的 `dev_caps`/`get_proc_address`（取可选扩展函数、不破 vtable）。
 
 **HYLE 不写厂商 kernel**：框架负责「插得进、选得对、有地板兜底」；AMX GEMM/FP4 kernel 本身多数**借 ggml**（已有 ggml-amx/cuda/vulkan），少数 SIMD 级自写。kernel 不因框架变免费——这是诚实边界。
 

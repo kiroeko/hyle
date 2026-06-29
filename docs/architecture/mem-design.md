@@ -64,6 +64,26 @@ mem/
 
 **tier 干净**:`mem/`(T0)只管 host RAM——通用分配器(mimalloc backing)+ 专用分配器(arena/pool/stack/fiber 栈),**零 GPU 代码、随处可测**;`compute/`(T1)自己管 device/pinned/unified buffer(绑 stream),`copy(src,dst,stream)` 归 compute/(同 coherent 内存时硬件本就无需拷贝)。方向 `compute→mem` 正确,但 mem/ 不向上暴露任何 device 概念。
 
+## 分配器分层:默认编译期绑定(零开销),注入是 opt-in
+
+**问题**:把运行时 `Allocator` vtable(函数指针 `{alloc,free,realloc,state}`)当**强制默认**,让每个容器每次分配都付一次不可内联的间接调用——实测 churn +8%/touch +12%(vtable 拆 3 指针 + fast-path 后的地板,原 +21%)。这 8% 是"为没用到的运行时多态买单":绝大多数分配就是 host RAM 走 mimalloc,编译期已知。
+
+**方案:两层,std `vector` vs `pmr::vector` 同款分层**
+
+- **默认 = 无状态 `SystemAllocator`(编译期绑定,可内联)**。容器模板 `Container<T, Alloc = SystemAllocator>`。`SystemAllocator::allocate` 内联**直接 `call mi_malloc`**,无函数指针、无双跳、无派发分支 → 与裸 mimalloc 同(merged/static build 下 8% 地板归零)。
+- **`Allocator` 运行时 vtable = opt-in**,给真要多态的少数场景(per-request arena、mock 测试、跨 DLL 注入)。显式声明 allocator 类型才付间接。
+
+**两个技术点(解决"内联 vs 不暴露 mimalloc.h"的假两难,用户 2026-06 点破)**:
+
+1. **前向声明替代暴露头**:不需要 `#include <mimalloc.h>`(数百行声明)。只需在 `system_inline.h` 里**前向声明用到的 5 个 C 函数**——`extern "C" void* mi_malloc(size_t) noexcept;` 等(`mi_decl_*`/`mi_attr_*` 是优化提示,不影响 ABI;签名只用 `void*`/`size_t`,无 mi_* 类型泄漏)。`SystemAllocator::allocate` 即可内联直调,**mimalloc.h 不进任何头**。原以为"内联=必暴露头"是假绑定。
+2. **模板元编程做编译期派发**:容器默认模板参 `SystemAllocator`(无状态、空基类优化、`allocate` 全 inline)→ 单态化后调用点直接是 `mi_malloc`。要注入时换类型参为运行时 `Allocator`,同一份容器代码两条路径,编译期选定零运行时开销。
+
+**DLL 边界的诚实权衡(不回避)**:
+- **merged / 静态链接 / 单 binary**:`mi_malloc` 符号在场 → `SystemAllocator::allocate` **真内联**,8% 全消。**SOTA-parity 的判据就锚在这个 build**(也是部署默认)。
+- **多 DLL(consumer 在别的 .so/.dll)**:跨模块调用 `mi_malloc` 经 IAT/PLT,**物理上必有一次间接**(任何跨 DLL 函数调用都如此,非本设计缺陷)。但仍比现状好:**去掉了函数指针层 + 双跳**,退化为一次直接 import 调用。且每个 DLL 各自静态链 mimalloc 会**多堆**(分配/释放跨堆=损坏),故跨 DLL 用单一共享 mimalloc 或显式 `Allocator` 注入——这是 opt-in 路径的正当场景。
+- 结论:**默认部署(merged/static)达 SOTA;跨 DLL 是次要场景,接受一次 import 间接**,且调用规约写明"默认零开销,跨边界/异构注入需显式声明 allocator 类型"——用户已确认"调用方可严格、文档写清即可"。
+
+
 ## 新增能力（clay 没有的"极致")
 
 | 能力 | 做法 | 为什么 |

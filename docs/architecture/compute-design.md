@@ -95,8 +95,7 @@ compute/
 compute/
 ├─ device.h        设备枚举/能力查询/选择
 ├─ stream.h        异步执行队列（可调度资源，产生 completion）
-├─ mem_space.cc    实现并注册 device/pinned/unified 的 mem/ MemorySpace（device 内存方案 D）+ copy(src,dst,stream)，同 coherent space 时塌缩为 no-op
-├─ buffer.h        基于注册的 MemorySpace 的设备 buffer（分配走 mem/ 的 Arena<Space>，绑 stream）
+├─ buffer.h        设备 buffer:自管 device/pinned/unified 内存 + 绑 stream(ggml buft 式:枚举/能力查询薄包,所有权自造)。host↔device = 显式 copy(src,dst,stream),同 coherent 内存硬件无需拷贝。**不走 mem/ 的 allocator 抽象**(旧"mem/ MemorySpace + Arena<Space>"方案D 已证伪废弃,见 mem-design「device 内存」节)
 ├─ kernel.h        任意 kernel 提交/启动抽象
 ├─ backend/
 │  ├─ cuda.cc      原生 or 桥 ggml-cuda
