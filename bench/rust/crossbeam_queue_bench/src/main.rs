@@ -133,8 +133,9 @@ fn bench_steal_one() {
 }
 
 fn main() {
-    // Version is the LOCAL crossbeam-deque clone (path dep in Cargo.toml), 0.8.3.
-    println!("# crossbeam-deque 0.8.3 (local clone) parity (cap={}, batch={})", CAP, BATCH);
+    // crossbeam-deque resolved from crates.io 0.8.x (or a local clone if patched
+    // in via --config; see Cargo.toml). API is identical across 0.8.* either way.
+    println!("# crossbeam-deque 0.8.x parity (cap={}, batch={})", CAP, BATCH);
     println!("# rival for HYLE WsFifoQueue (FIFO) + WorkStealingDeque (LIFO/Chase-Lev)");
     bench_owner_fifo();
     bench_owner_lifo();

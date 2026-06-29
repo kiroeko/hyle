@@ -6,14 +6,16 @@ publish = false
 
 # SOTA parity rival for HYLE's work-stealing queues (task #9). crossbeam-deque is
 # the same-family C++/Rust counterpart that CAN'T link into a C++ TU, so it lives
-# here as a standalone Rust bench run side-by-side. We pin to the LOCAL clone via a
-# path dep (reproducible, offline, version-locked to 0.8.3) -- NOT crates.io.
+# here as a standalone Rust bench run side-by-side.
 #
-# PATH ASSUMPTION: this points at ../../../../crossbeam-deque, i.e. a sibling of the
-# hyle/ repo inside project-hyle/. If your layout differs, override the path here or
-# swap to `crossbeam-deque = "0.8"` to pull the registry version (same API).
+# PORTABLE BY DEFAULT: depend on the crates.io release (API-identical to any local
+# clone; offline builds resolve from the ~/.cargo registry cache). No machine-
+# specific path. To pin a LOCAL clone instead (e.g. the one fetched by
+# scripts/setup-bench-libs.sh), build with a path patch -- no edit needed:
+#   cargo build --release --config \
+#     'patch.crates-io.crossbeam-deque.path="../../../../crossbeam-deque"'
 [dependencies]
-crossbeam-deque = { path = "../../../../crossbeam-deque" }
+crossbeam-deque = "0.8"
 
 # Match the C++ bench's optimization level: full opt + LTO + single codegen unit so
 # the cross-language ns/op comparison isn't an artifact of a weaker Rust build.
