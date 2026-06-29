@@ -61,10 +61,12 @@ io/
 
 一句话：**对上一套 proactor 抽象，对下 4 个后端，中间只借 syscall 封装、调度自己管。**
 
-## 待深挖（下一步）
+## 待深挖（io-01 开工时定，非现在）
+
+> 选型决策（借谁/proactor/后端矩阵）已全部锁定——那是设计阶段必须拍的。下面 3 项是**实现机制**，按 JIT 原则**有意延到 io-01 开工时定**：它们依赖 sched completion 脊实现中学到的东西，现在写 = 空想。这是 io 作为 P5 未开工支柱的正常状态，非遗漏。
 
 1. reactor 后端（mac kqueue / Linux epoll）如何把"就绪"模拟成"完成"而不丢性能。
-2. io_uring SQ/CQ 如何与 fiber 挂起/唤醒对接（completion → 唤醒哪个 fiber 的映射）。
+2. io_uring SQ/CQ 如何与 fiber 挂起/唤醒对接（completion → 唤醒哪个 fiber 的映射）——直接复用 `sched-design.md` 第三节的 Waker 脊。
 3. proactor.h 统一抽象的具体接口形状（提交/取消/超时/批量）。
 
 ## 参考
