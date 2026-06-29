@@ -132,6 +132,14 @@ add_executable(hyle_math_bench simd/math_bench.cc)
 target_link_libraries(hyle_math_bench PRIVATE hyle_simd nanobench)
 hyle_apply_warnings(hyle_math_bench)
 
+# dtype cvt bench: fp16/bf16<->f32 batch. HYLE F16C dispatch vs scalar reference (+ Highway
+# gated). The *_batch ops live in hyle_simd; the bench TU only needs special ISA flags when
+# the Highway path is compiled in (PromoteTo/DemoteTo intrinsics) -- added in the Highway
+# block below. Own exe (math_bench owns main()).
+add_executable(hyle_dtype_bench simd/dtype_bench.cc)
+target_link_libraries(hyle_dtype_bench PRIVATE hyle_simd nanobench)
+hyle_apply_warnings(hyle_dtype_bench)
+
 # Optional SOTA parity: HYLE avx2 vs Highway avx2, head to head (same ISA). Enable with
 # -DHYLE_BENCH_HIGHWAY=ON; point HYLE_HIGHWAY_DIR at the cloned highway (sibling default).
 option(HYLE_BENCH_HIGHWAY "build the simd-vs-Highway parity bench" OFF)
@@ -148,6 +156,14 @@ if(HYLE_BENCH_HIGHWAY)
     set_source_files_properties(simd/simd_kernels_highway.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
   else()
     set_source_files_properties(simd/simd_kernels_highway.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+  endif()
+  # dtype bench's Highway f16 PromoteTo/DemoteTo path (same gate + ISA flags on its TU).
+  target_compile_definitions(hyle_dtype_bench PRIVATE HYLE_BENCH_HIGHWAY)
+  target_include_directories(hyle_dtype_bench SYSTEM PRIVATE "${HYLE_HIGHWAY_DIR}")
+  if(NOT MSVC)
+    set_source_files_properties(simd/dtype_bench.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
+  else()
+    set_source_files_properties(simd/dtype_bench.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
   endif()
 endif()
 
