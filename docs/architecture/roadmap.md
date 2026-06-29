@@ -78,7 +78,7 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 | **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | ~0.3k 🔶(时间轮待) |
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | ~2k ✅主力 |
 | **P3** | simd | vec+scalar / SSE4.2+AVX2 / AVX512+NEON / 变体dispatch / dtype / sleef | 10-16k | ~2.3k 已做 + ~3-5k 广度补全 = **~5-8k** |
-| **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~0.7k 核心✅ + ~2-4k 后段 |
+| **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~1k 核心+同步✅(fcontext/work-stealing/Waker/conditional-notify/CV+Mutex+WaitGroup+Latch+Channel,对标 marl 追平/反超) + ~2-4k 后段(协程胶水/取消/优雅关闭) |
 | **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem | 9-14k | **~5-8k**(借 liburing 写适配) |
 | **P5** | compute | device/stream包ggml / MemorySpace / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
 | **P6** | graph + 收口 | taskgraph绑sched / C-ABI shim / serialize/hash/T3 / FFI | 11-17k | **~6-11k**(多借 simdjson 等) |
