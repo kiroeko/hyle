@@ -69,6 +69,21 @@ if(HYLE_BENCH_HIGHWAY)
   endif()
 endif()
 
+# Optional SOTA parity: HYLE fiber sync vs marl (the fiber-sync library this
+# design converged from). Off by default (marl is an external build). Enable with
+# -DHYLE_BENCH_MARL=ON; point HYLE_MARL_DIR at a cloned marl (sibling default).
+option(HYLE_BENCH_MARL "build the fiber-sync-vs-marl parity bench" OFF)
+if(HYLE_BENCH_MARL)
+  set(HYLE_MARL_DIR "${PROJECT_SOURCE_DIR}/../marl" CACHE PATH "cloned marl")
+  if(NOT EXISTS "${HYLE_MARL_DIR}/CMakeLists.txt")
+    message(FATAL_ERROR "HYLE_BENCH_MARL=ON but no marl at ${HYLE_MARL_DIR}")
+  endif()
+  add_subdirectory("${HYLE_MARL_DIR}" "${CMAKE_BINARY_DIR}/marl" EXCLUDE_FROM_ALL)
+  add_executable(hyle_sched_marl_bench sched/sync_marl_bench.cc)
+  target_link_libraries(hyle_sched_marl_bench PRIVATE hyle_sched nanobench marl)
+  hyle_apply_warnings(hyle_sched_marl_bench)
+endif()
+
 # Optional SOTA parity bench: SwissTable vs absl::flat_hash_map. Off by default
 # (abseil is a heavy external build). Enable with -DHYLE_BENCH_ABSL=ON; point
 # HYLE_ABSL_DIR at a cloned abseil-cpp (defaults to a sibling of the repo).
