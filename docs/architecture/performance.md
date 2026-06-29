@@ -187,7 +187,7 @@
 **诚实结论(两层:运行时注入 vtable + 编译期默认)**:
 - **运行时 `Allocator` vtable**(opt-in 路径,给 arena/mock/跨 DLL):churn +11.6%(原 +21%)。原 +21% 不是 C-ABI 税,是两处设计失误已修——① 单 5 参 `ReallocFn` 在 Win64 压第 5 参 + "一函数干三件事"派发分支 → 拆 3 函数指针(仍 100% C-ABI 干净,同 jemalloc/pmr);② `normalize_alignment` 常开 FATAL_ASSERT → 默认对齐短路。剩 ~8-11% 是 vtable 的间接调用,这是**运行时多态本身的物理代价**(= 一次虚调用),只有这条 opt-in 路径才付。
 - **编译期 `SystemAllocator`**(默认路径,host RAM):`allocate` 内联直调 `mi_malloc`,**实测 7.95ns = 97.1% 裸 mi(噪声内≈平)**。前向声明 5 个 mi_* 不暴露 mimalloc.h(用户点破"内联≠暴露头"假两难)。**默认场景零接缝税,与裸 mimalloc 持平**——这就是"C-ABI 也能最强":默认编译期绑定 0 税,运行时注入是显式 opt-in 才付间接。
-- **结论:8% 不再是"不可约地板"**——它只是 opt-in 运行时注入的代价;默认编译期路径已实测追平裸 mimalloc。容器默认参 `SystemAllocator` 的全量迁移(28 文件)进行中,完成后所有容器默认零接缝税。
+- **结论:8% 不再是"不可约地板"**——它只是 opt-in 运行时注入的代价;默认编译期路径已实测追平裸 mimalloc。**头内联容器簇已全量迁移**(SmallVector/BoundedQueue/ShardedQueue/WsFifoQueue/WorkStealingDeque/ConcurrentVector):默认参 `SystemAllocator`,`[[no_unique_address]]` 去掉每实例 32 字节运行时句柄(空间复杂度↓),运行时 `mem::Allocator` 降 opt-in(sched 等需注入者显式用)。type-erased 核容器(CArray/SwissTable/string_buf)保持运行时句柄(出线核服务所有 T,不内联,这是正确模型非缺口)。双平台 + WSL TSan 验证。
 
 ### mem 专用分配器簇（arena/pool/stack vs `std::pmr` + 裸 mimalloc，`arena_pool_bench.cc`）
 
