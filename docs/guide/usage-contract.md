@@ -43,7 +43,15 @@ g_ctx.use();               // ✓ 在当前线程(B)重新解析
 
 **无 off-switch**：`HYLE_USE_MIMALLOC` 开关与 OS 分配器后备**已移除**（提交 92f8ec8）。理由:后备是陷阱——会让构建静默绕过 mimalloc 依赖问题、被误判为"无事"。mimalloc 是出厂分配器,出问题就正面查。
 
-## 3. 通用纪律
+## 3. SIMD：CPUID 探测器 TU 必须 LTO-free（分发型构建）
+
+**契约**：分发给未知 CPU 的二进制（非 `-march=native` 自用），**不要对 `simd/` 模块开全局 LTO/IPO**。
+
+**为什么**：`dispatch.cc` 是 CPUID 探测 TU——它在一台**尚未探明的 CPU** 上**最先**运行，去发现这台 CPU 能跑什么。若 LTO 把某个高 ISA 变体 kernel（AVX2/AVX512）的指令内联进探测器或 baseline dispatcher，探测器会在老 CPU 上**还没来得及报告"这是老 CPU"就先 SIGILL**（llama.cpp 踩过的硬伤，conventions §10）。
+
+**安全模式**：HYLE 的 `src/simd/CMakeLists.txt` 已**强制整个 simd 模块 IPO/LTO off**（防御性，即便未来全局开 LTO 也不波及），探测器 + baseline dispatcher + 各变体 kernel TU 互不内联。**你只要别在消费侧用全局 LTO 重新内联跨 TU 边界**即可；自用 `-march=native` 构建无此约束（无变体、无运行期探测）。**后果**：违反 = 老 CPU 上启动即 SIGILL。
+
+## 4. 通用纪律
 
 - **跨平台代价讲在明处**：HYLE 的所有权/生命周期约定见 [`lifecycle-design.md`](../architecture/lifecycle-design.md)；`string_ref`/`CArray` 等非拥有型视图的生命周期由调用者保证。
 - **线程/迁移模型**：除非文档另述,假定 fiber 可在任意 worker 间迁移;不要假设"同一 fiber 总在同一 OS 线程"。

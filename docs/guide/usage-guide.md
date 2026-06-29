@@ -206,6 +206,34 @@ sched.shutdown();   // 排空（等所有 fiber 完成）再 join worker
 HYLE_LOG_INFO("loaded {} items", count);   // caller-side std::format，非流
 ```
 
+### 3.6 time —— 单调钟 / 计时
+```cpp
+#include "hyle/time/clock.h"
+using hyle::time::Instant;
+auto t0 = Instant::now();           // 单调钟快照（不受系统墙钟调整影响）
+// ... 干活 ...
+uint64_t ns = t0.elapsed_ns();      // 自 t0 起经过的纳秒
+hyle::time::sleep_for_ms(10);       // 睡 10ms（另有 sleep_for_us / sleep_for_ns）
+```
+`Instant` 全 header-inline（算术不过 DLL），适合热路径打点。
+
+### 3.7 util —— Ref<T> 侵入式引用计数 + DEFER
+```cpp
+#include "hyle/util/ref_counted.h"
+#include "hyle/util/scope_guard.h"
+using hyle::util::RefCounted; using hyle::util::Ref; using hyle::util::make_ref;
+
+struct Node : RefCounted<Node> {     // CRTP：计数内嵌对象，Ref<T> 就一个指针、无控制块
+  int v; explicit Node(int v) : v(v) {}
+};
+Ref<Node> a = make_ref<Node>(42);    // 起始 +1，离开作用域自动 decref
+Ref<Node> b = a;                     // 共享所有权（retain），析构各自 -1
+
+FILE* fp = std::fopen("x", "r");
+HYLE_DEFER(std::fclose(fp));         // 作用域退出时执行（C++23 仍无 std defer）
+```
+`make_ref` 收下初始 +1（adopt 语义）；要"保留已有裸指针"用 `retain_ref`，二者在调用点显式区分。
+
 ## 4. C-ABI 边界（跨 DLL / FFI）
 
 HYLE 内部 C++23，对外稳定边界走 **vtable 结构体 `xxx_api_t` + 不透明实例 + `make_X()/destroy_X()` 工厂**（分配责任锁在 DLL 内，禁客户端 `new/delete` HYLE 对象）。若你跨 DLL 边界用 HYLE 类型或做 FFI 绑定，遵此范式；纯 `extern "C"` C 头 shim 正在逐模块封（P6）。细节见 [`architecture/coding-conventions.md` §4](../architecture/coding-conventions.md)。
