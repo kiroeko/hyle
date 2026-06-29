@@ -28,6 +28,17 @@
 #  define HYLE_NOINLINE
 #endif
 
+// ---- empty-member optimization (zero-size stateless members) ----
+// [[no_unique_address]] lets a zero-size member (e.g. a stateless SystemAllocator) occupy
+// NO storage. MSVC SILENTLY IGNORES the standard spelling (ABI freeze) and requires its
+// vendor attribute [[msvc::no_unique_address]] -- using the wrong one on MSVC wastes a byte
+// + breaks the "stateless allocator is free" guarantee. This macro picks the right one.
+#if defined(_MSC_VER)
+#  define HYLE_NO_UNIQUE_ADDRESS [[msvc::no_unique_address]]
+#else
+#  define HYLE_NO_UNIQUE_ADDRESS [[no_unique_address]]
+#endif
+
 // ---- branch prediction ----
 #if defined(__GNUC__) || defined(__clang__)
 #  define HYLE_LIKELY(x)   (__builtin_expect(!!(x), 1))

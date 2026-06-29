@@ -9,6 +9,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/system_inline.h"
 
 namespace hyle::container {
 
@@ -19,7 +20,12 @@ namespace hyle::container {
 // T must be trivially copyable (relocation on spill/grow is memcpy). Non-trivial
 // T (move-relocate) is deferred -- the scheduler's uses (handles/pointers/PODs)
 // are all trivial.
-template <class T, std::size_t N>
+//
+// Alloc defaults to the compile-time SystemAllocator (stateless, inlines to mi_malloc,
+// zero seam tax -- and [[no_unique_address]] gives it ZERO bytes in the object). Pass a
+// runtime mem::Allocator (SmallVector<T,N,mem::Allocator>) to opt into injection (arena,
+// mock, cross-DLL). Either way the body is identical (alloc_.allocate(...)).
+template <class T, std::size_t N, class Alloc = mem::SystemAllocator>
 class SmallVector {
   static_assert(std::is_trivially_copyable_v<T>,
                 "SmallVector<T,N>: T must be trivially copyable");
@@ -30,10 +36,21 @@ class SmallVector {
   using iterator = T*;
   using const_iterator = const T*;
 
-  explicit SmallVector(mem::Allocator alloc) noexcept
+  // Default: only when Alloc is default-constructible (SystemAllocator is) -- the common
+  // zero-overhead path, no allocator argument needed.
+  SmallVector() noexcept requires std::is_default_constructible_v<Alloc>
+      : data_(inline_ptr()), cap_(N) {}
+  // Explicit allocator (runtime mem::Allocator injection, or any stateful Alloc).
+  explicit SmallVector(Alloc alloc) noexcept
       : alloc_(alloc), data_(inline_ptr()), cap_(N) {}
-  SmallVector(mem::Allocator alloc, std::initializer_list<T> init)
+  SmallVector(Alloc alloc, std::initializer_list<T> init)
       : SmallVector(alloc) {
+    reserve(init.size());
+    for (const T& v : init) push_back(v);
+  }
+  explicit SmallVector(std::initializer_list<T> init)
+      requires std::is_default_constructible_v<Alloc>
+      : SmallVector() {
     reserve(init.size());
     for (const T& v : init) push_back(v);
   }
@@ -100,7 +117,7 @@ class SmallVector {
     if (!inline_storage()) alloc_.deallocate(data_, cap_ * sizeof(T), alignof(T));
   }
 
-  mem::Allocator alloc_;
+  HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
   T* data_;
   std::size_t size_ = 0;
   std::size_t cap_;

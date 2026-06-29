@@ -49,9 +49,11 @@ hyle_apply_warnings(hyle_queue_sota_bench)
 
 # task #19 breadth: the two claim-bearing containers with no prior bench. SmallVector
 # (inline storage, "省 malloc") vs std::vector; IntrusiveList ("O(1) 无分配") vs
-# std::list. SmallVector needs system_allocator -> link hyle_mem too.
+# std::list. SmallVector defaults to the compile-time SystemAllocator, which INLINES
+# mi_malloc into THIS exe -> link mimalloc_static directly (its symbols are internal to
+# hyle_mem.dll, not re-exported). This is the merged/static-build inline path.
 add_executable(hyle_container_misc_bench container/container_misc_bench.cc)
-target_link_libraries(hyle_container_misc_bench PRIVATE hyle_container hyle_mem nanobench)
+target_link_libraries(hyle_container_misc_bench PRIVATE hyle_container hyle_mem nanobench mimalloc_static)
 hyle_apply_warnings(hyle_container_misc_bench)
 
 # task #23: hash cluster. HYLE hash_bytes(XXH3)/mix64 vs raw XXH3 (vendored, always)

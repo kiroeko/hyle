@@ -16,8 +16,6 @@
 using hyle::container::IntrusiveList;
 using hyle::container::IntrusiveListHook;
 using hyle::container::SmallVector;
-using hyle::mem::Allocator;
-using hyle::mem::system_allocator;
 
 namespace {
 namespace nb = ankerl::nanobench;
@@ -27,11 +25,9 @@ constexpr int kNodes = 4096;   // intrusive vs std::list node count
 }  // namespace
 
 int main() {
-  Allocator sys = system_allocator();
-
   // ---- SmallVector vs std::vector: small-N churn (the "省 malloc" claim) ----
   // Each round: build a fresh container, push kSmall ints, destroy. SmallVector<int,16>
-  // stays inline (zero heap); std::vector mallocs its buffer every round.
+  // (default compile-time SystemAllocator) stays inline (zero heap); std::vector mallocs.
   {
     nb::Bench b;
     b.title("small-N churn: build+fill 8 ints+destroy")
@@ -40,7 +36,7 @@ int main() {
         .minEpochIterations(200);
     b.run("HYLE SmallVector<int,16> (inline)", [&] {
       for (int r = 0; r < kRounds; ++r) {
-        SmallVector<int, 16> v(sys);
+        SmallVector<int, 16> v;
         for (int i = 0; i < kSmall; ++i) v.push_back(i);
         nb::doNotOptimizeAway(v.data());
       }

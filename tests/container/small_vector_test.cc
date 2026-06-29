@@ -11,12 +11,13 @@
 using hyle::container::IntrusiveList;
 using hyle::container::IntrusiveListHook;
 using hyle::container::SmallVector;
+using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
 // ---- SmallVector ------------------------------------------------------------
 
 TEST(SmallVector, StaysInlineUnderN) {
-  SmallVector<int, 4> v(system_allocator());
+  SmallVector<int, 4> v;  // default = compile-time SystemAllocator (zero-overhead path)
   v.push_back(1);
   v.push_back(2);
   v.push_back(3);
@@ -27,7 +28,8 @@ TEST(SmallVector, StaysInlineUnderN) {
 }
 
 TEST(SmallVector, SpillsToHeapPastN) {
-  SmallVector<int, 4> v(system_allocator());
+  // Runtime-injection path (opt-in mem::Allocator): exercises the vtable allocator + spill.
+  SmallVector<int, 4, Allocator> v(system_allocator());
   for (int i = 0; i < 100; ++i) v.push_back(i);
   EXPECT_EQ(v.size(), 100u);
   EXPECT_FALSE(v.inline_storage());  // spilled
@@ -35,7 +37,7 @@ TEST(SmallVector, SpillsToHeapPastN) {
 }
 
 TEST(SmallVector, PopClearIterate) {
-  SmallVector<int, 2> v(system_allocator(), {10, 20, 30});  // forces spill
+  SmallVector<int, 2> v({10, 20, 30});  // default alloc, forces spill
   EXPECT_EQ(v.size(), 3u);
   EXPECT_EQ(std::accumulate(v.begin(), v.end(), 0), 60);
   v.pop_back();
@@ -45,7 +47,7 @@ TEST(SmallVector, PopClearIterate) {
 }
 
 TEST(SmallVector, MoveStealsHeap) {
-  SmallVector<int, 2> a(system_allocator());
+  SmallVector<int, 2> a;
   for (int i = 0; i < 50; ++i) a.push_back(i);  // on heap
   int* p = a.data();
   SmallVector<int, 2> b(std::move(a));
@@ -55,7 +57,7 @@ TEST(SmallVector, MoveStealsHeap) {
 }
 
 TEST(SmallVector, MoveInlineCopies) {
-  SmallVector<int, 4> a(system_allocator());
+  SmallVector<int, 4> a;
   a.push_back(7);
   a.push_back(8);
   SmallVector<int, 4> b(std::move(a));  // inline -> element copy
