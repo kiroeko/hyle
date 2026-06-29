@@ -67,8 +67,7 @@
 | 项 | HYLE | SOTA(marl / std) | 结论 |
 |---|---|---|---|
 | **争用 Mutex**(8 任务/4 worker,lock+inc+unlock) | **30.7 ns** | marl 32.1 ns(=std::mutex) | ✅ **打平 marl**(±噪声,本轮略胜) |
-| 无争用 Mutex(单线程 microbench) | 6.5 ns | std::mutex 2.2 ns | ⚠️ 看似 2.9x,**实为假象**,见下 |
-| 无争用 Mutex(**多线程进程**,真实场景) | **6.5 ns** | std::mutex **9.1 ns** | ✅ **HYLE 快 1.40x**(揭穿假象) |
+| **无争用 Mutex**(多线程进程=真实场景) | **6.5 ns** | std::mutex 9.1 ns | ✅ **HYLE 快 1.40x**(单线程 microbench 的"2.9x 慢"是 glibc 假象,见下) |
 | **spawn 2000 noop**(纯派发) | **141 ns/task** | marl 306 ns | ✅ **HYLE 快 2.17x**(对标真 SOTA,非 std::async) |
 | Channel 收发(cap 16,1p1c) | **63 ns/item(15.9M/s)** | (marl 无 channel) | HYLE 自有 |
 | **WaitGroup fork-join**(1024 任务) | **205 ns/批**(池化栈 179) | marl 306 ns | ✅ **反超 marl 1.49x**(池化 1.71x) |
