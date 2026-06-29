@@ -3,13 +3,14 @@
 > **目的**：防"以为吸纳完了、其实漏文件/漏 API 层"。clay 源在 `slate-render/iron/infra/{include,src}/clay/`。
 > **铁律（对抗审查纪律）**：每个吸纳 clay 的里程碑闭环前，必须 `diff` clay 同名文件的 API 表面——缺的要么补、要么在本表显式登记 `📋待办`，**不许默默略过**。本表是唯一权威进度标尺。
 > **状态图例**：✅ 完成 / 🔶 部分(有登记的缺口) / 📋 计划 / ♻️ 被 C++23/std 取代 / 🔻 借第三方(不自写) / ⛔ 不吸纳。
-> **行数(cloc 实测,2026-06-28 校准)**：clay 自有 ≈ **19,005**(sys 7917 + math 5831 + utils 3469 + parallel 811 + 顶层头 973;cloc code 行,去 thirdparty)。HYLE 生产(src+include)≈ **5,383**（旧值 2,885 已 stale,cloc 复核纠正）。mimalloc/xxhash/nanobench/fcontext 第三方不计。
+> **行数(cloc 实测)**：clay 自有 ≈ **19,005**(sys 7917 + math 5831 + utils 3469 + parallel 811 + 顶层头 973;去 thirdparty)。HYLE 生产(src+include)≈ **7,757**（2026-06-29 cloc 复核；旧值 5,383/2,885 已 stale，simd 支柱完成后增长）。mimalloc/xxhash/nanobench/fcontext/sleef 第三方不计。
 >
-> **⚠️ 进度口径(别被符号计数误导)**：本表的符号统计 = **✅47 + ♻️17 + 🔻4 + ⛔8 + 📋8 + 🔶10 = 94 行**。
-> - "已决议"(✅+♻️+🔻+⛔)/94 ≈ **81%**——但这含"取代/借/不要",**不等于"写了 HYLE 代码吸纳"**。
-> - 真**写 HYLE 等价物吸纳** = ✅47/94 ≈ **50%**。
-> - **符号无行级权重**:`math/half.h` 一个 ♻️🔻 行 = clay 6923 行(36%！软件 fp16 查表→硬件 F16C/AVX512 取代,不移植);`parallel/thread_pool+worker`(494 行)→被 sched 重写取代。这是 HYLE 生产(5383)远小于 clay(19005)的主因:**大块是有意"删/std取代/硬件取代",不是漏做也不是缩水**。
-> - **最贴真实的进度看"功能/支柱"**:sys 基座吸纳扎实;math-simd / parallel-graph / io 等**支柱方向大多未动**(详见各 📋 行 + roadmap)。整体 ≈ 25–30%。
+> **⚠️ 进度口径(2026-06-29 重核，旧 tally 已 stale)**：按**实际表行**重数(52 个 clay 文件行,非旧"94 符号"细粒度估):
+> - **含 ✅(写了 HYLE 等价物)= 28/52 ≈ 54%**(旧称 50%,里程碑推进后多行翻 ✅,旧 tally 偏低)。
+> - **已决议(✅ + ♻️std取代 + 🔻硬件取代 + ⛔不吸纳)≈ 42/52 ≈ 81%**——含"取代/借/不要",不等于"写了代码"。
+> - **剩余未决:仅 4 行 🔶(有登记缺口)+ 5 行 📋**,且 2026-06-29 逐文件复核判定**这些基本是终态或归别处**:murmur(XXH3 已替,无剩用途)、type_traits/singleton(C++23 concepts/Meyers 取代)、float16/device_utils(CUDA 域→compute)、vector_utils(concepts 取代)、async_value/barrier(归 P5 sched)。**真·clay 吸纳欠账≈零。**
+> - **符号无行级权重**:`math/half.h` 一行 🔻♻️ = clay 6923 行(软件 fp16→硬件 F16C/AVX512 取代,不移植,且 simd-05 dtype 已落可移植 fp16/bf16);`parallel/thread_pool+worker`(494 行)→ sched 重写取代。HYLE 生产远小于 clay 的主因=**有意删/std取代/硬件取代**,非漏做。
+> - **进度真相**:clay 地基(sys/utils/container 主体)**吸纳基本收口**;距 50–70k 目标的差距=**净新增支柱**(simd ✅本轮完成;io/compute/graph 未开工),那不是 clay 吸纳范畴。整体 ≈ **32%**(模块权重)。
 
 ## sys/ — 系统基座（allocator/arena/os/path/string/hash/log/time）
 
@@ -54,7 +55,7 @@
 | `utils/generic_allocator.h`/`stl_allocator.h` | 62/196 | mem-07 | ✅⛔ | **stl_allocator→`mem::PmrResource`**(std::pmr::memory_resource 包 Allocator,一个 resource 服务所有 T,取代每类型 rebind 样板)。**generic_allocator→⛔**:HYLE `Allocator` 值句柄已是它(type-erased {fn,state} 转发) |
 | `utils/singleton.h` | 133 | (util 待排) | 🔶♻️ | Meyers 单例(C++11 起 std 保证),薄封装待评 |
 | `utils/spin_lock.h` | 43 | util-05 | ✅ | `SpinLock`(TTAS + cpu_relax pause + cache-line padding,升级 clay 裸 TAS)满足 Lockable 配 std::lock_guard |
-| `utils/vector_utils.h`/`device_utils.h`/`float16.h` | 98/125/52 | 各相关 | 📋 | 杂项工具 |
+| `utils/vector_utils.h`/`device_utils.h`/`float16.h` | 98/125/52 | ♻️ / compute | ♻️⛔ | **2026-06-29 逐文件判定终态**:`vector_utils`(has_resize SFINAE 探测器等)→**♻️ C++23 concepts 取代**;`device_utils`(identity 函子=`std::identity` C++20 + host/device)→**♻️ + compute 域**;`float16`(`using float16=__half` CUDA 别名 + is_half traits,依赖 cuda_fp16.h)→**compute 域**(注意:simd-05 已落可移植 fp16/bf16 存储+转换,clay 这个是 CUDA 类型别名,非同物)。三者均**非 P3 clay 吸纳欠账** |
 
 ## parallel/ — 并发（thread_pool/async_value/concurrent_vector）
 
@@ -175,4 +176,4 @@ clay 各组件落到 HYLE 依赖层(P0-P6):
 - clay **parallel/** → **P4 被 work-stealing 调度器重写取代**(thread_pool,已 sched-03✅)+ **P5 初收掉 async_value**(→ completion 脊)。
 - clay **math/** → half 在 **P3 由硬件 fp16 取代**(只留接口);utils+consts 排后期 math 簇。
 - **一句话:盯 `P3 末`(container-02..06 + mem 全部 + 01b/03b)——跑完且每文件 diff 过 clay,clay 主体即吸纳完毕;`P5 初` 补完 async_value 为完整收口。** P6(graph/C-ABI/FFI)是 HYLE 净新增,与 clay 吸纳无关。
-- **当前位置:P0-P4 部分推进(12 里程碑),clay 吸纳实际刚起步——离 `P3 末` 还有 container 全簇 + mem-05/06 + 01b/03b + platform-02/03 + time 等一大段。"吸纳完 clay"远未到,之前我表述过于乐观,据此修正。**
+- **当前位置(2026-06-29 重核,纠旧"刚起步"陈述):clay 地基吸纳基本收口。** sys/utils/container 主体已 ✅(allocator 家族 + arena/pool/stack + 全部容器 + string/hashmap/registry/ref-counted/类型设施 + path/fs/log/time/random),container-02..06 全簇 + mem-01..04/07 + platform-02/03 + time-01 + util-01..06 均完成。剩余 clay 行(4 🔶 + 5 📋)经逐文件判定**基本是终态(std/硬件取代)或归别处(compute/P5 sched)**,真·clay 吸纳欠账 ≈ 零。**未到完全 ✅ 的尾巴**:`decls.h` include 纪律坐实、mem-05/06(MemorySpace/NUMA——**净新增非 clay**)、async_value/barrier(P5 sched)。**结论:clay 吸纳从"刚起步"修正为"主体收口、尾巴是净新增/别模块",剩下的工程量是 io/compute/graph 三大净新增支柱,与 clay 无关。**
