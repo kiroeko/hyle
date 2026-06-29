@@ -34,7 +34,7 @@
 | **util** | **Ref<T> 引用计数 + ScopeGuard/DEFER + 编译期 type_name + Registry 自注册** | ✅ |
 | **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 + **Waker completion 脊(suspend/wake)** + **同步原语(futex Mutex 打平 marl;fiber-aware CV/WaitGroup/Latch/Channel,双模 fiber/裸线程)** | 🔶 栈池/deadline/协程/取消 待 |
 | **bench** | nanobench 设施 + 对标各域 SOTA(absl/mimalloc/moodycamel/oneTBB/marl/Highway/crossbeam):SwissTable、分配器、队列簇、fiber 同步/调度、SIMD 核 | ✅ |
-| **simd** | 运行期 CPUID dispatch(探测+变体选择) + vec<T,N> D-tag 抽象(照搬 Highway 契约) + scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec) + fp16/bf16 dtype(F16C) + **exp/log/tanh 数学核(借 SLEEF)** + NEON/AVX512(写+编+objdump 验,未跑) | 🔶 NEON/AVX512 待目标硬件实跑;gelu/softmax 待 |
+| **simd** | 运行期 CPUID dispatch(探测+变体选择) + vec<T,N> D-tag 抽象(照搬 Highway 契约) + scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec) + fp16/bf16 dtype(F16C) + **exp/log/tanh 数学核(SLEEF AVX2 opt-in:实测 exp 6.5x/log 3.2x/tanh 4.0x over 标量 libm;默认构建走标量,未向量化)** + NEON/AVX512(写+编+objdump 验,未跑) | 🔶 NEON/AVX512 待目标硬件实跑;gelu/softmax 待 |
 | io / compute / graph | — | 📋 规划 |
 
 **性能验证(已落地部分)**:SwissTable vs `std::unordered_map`(100k keys,Linux GCC14,mix64+prefetch+H1 优化后复测):find-hit 2.42x、find-miss 2.26x、insert 5.3x、erase 3.5x;vs `absl::flat_hash_map` 四项全部追平或反超。**fiber 同步/调度 vs marl(SOTA 标尺)**:fiber 切换 21ns(=boost.context)、spawn 2.17x、争用 Mutex 打平、无争用 Mutex(多线程)1.40x、fork-join 反超 1.49–1.71x。详见 [`performance.md`](./docs/architecture/performance.md)。

@@ -59,7 +59,12 @@ if(HYLE_SIMD_SLEEF)
   if(NOT EXISTS "${HYLE_SLEEF_DIR}/include/sleef.h")
     message(FATAL_ERROR "HYLE_SIMD_SLEEF=ON but no sleef.h at ${HYLE_SLEEF_DIR}/include")
   endif()
-  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_SLEEF)
+  # HYLE_SLEEF_DIR points at a STATIC SLEEF (libsleef.a / sleef.lib). On MSVC,
+  # sleef.h declares every entry __declspec(dllimport) UNLESS SLEEF_STATIC_LIBS is
+  # defined -- so consuming the static lib without it fails to link (__imp_Sleef_*
+  # unresolved). Define it so the declarations match the static lib (harmless on
+  # non-MSVC, where SLEEF_IMPORT is already empty).
+  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_SLEEF SLEEF_STATIC_LIBS)
   target_include_directories(hyle_simd SYSTEM PRIVATE "${HYLE_SLEEF_DIR}/include")
   target_link_libraries(hyle_simd PRIVATE "${HYLE_SLEEF_LIB}")
   # the SLEEF TU calls _mm256_* SLEEF entries; needs AVX2+FMA codegen (gated by best_isa).

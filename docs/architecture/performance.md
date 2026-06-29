@@ -43,6 +43,23 @@
 >
 > **范围诚实**:此对标只覆盖 **dot/saxpy 两个 compute/memory-bound 数值核**(AI 热路径主力)。Highway 还有 ~200 op(swizzle/gather/scatter/compress/transcendental)+ 6 ISA,HYLE 现做 ~25 op + 2 ISA 实跑——**"追平"指已实现的核上追平,非功能对等**。广度补全(int 量化类型/更多 op/AVX512 启用)见 milestones simd 延期登记。**正确性**:Ne(NaN)/Neg(±0) 等边界经红队批量审计揪修(2026-06,见 milestones simd-02/03),已加 FloatEdgeCases 覆盖。
 
+### simd 数学核（exp/log/tanh vs 标量 libm，`math_bench.cc`）
+
+> 环境:Win MSVC19.50 Release,nanobench,4096 f32(L1 常驻)。**SLEEF IS the transcendental SOTA**(HYLE 借其验证过的核,不手搓多项式),故对标 = SLEEF AVX2 8-wide vs 标量 `std::exp/log/tanh` 循环,测的是**向量化加速本身**。`active_math_variant()` 打印当前层。
+
+| kernel | 标量 libm | HYLE(SLEEF AVX2) | 加速 | 结论 |
+|---|---|---|---|---|
+| **exp f32** | 2.04 ns | **0.31 ns** | **6.5x** | 超 8-wide 理论的多项式部分 |
+| **log f32** | 2.71 ns | **0.85 ns** | **3.2x** | 落在 transcendental 区间 |
+| **tanh f32** | 6.26 ns | **1.56 ns** | **4.0x** | — |
+
+**核心诚实结论(两个真相,一好一须澄清)**:
+
+1. **"SIMD 数值核 transcendental 4-16x"声明坐实——但仅 SLEEF opt-in**:启用 `-DHYLE_SIMD_SLEEF=ON` 后 exp 6.5x/log 3.2x/tanh 4.0x 真兑现(`active_math_variant()` 报 `AVX2 (SLEEF)`)。**默认构建无 SLEEF → exp/log/tanh 走标量 libm,加速 = 1x(零向量化)**。README/状态表已据实标"SLEEF 为 opt-in,默认标量"。
+
+2. **真编暴露并修了一个 Windows 链接 bug**:SLEEF opt-in 路径**此前从未在 Windows 实际构建过**(零 bench = 零真编)。本次首编即撞:`sleef.h` 在 MSVC 下默认 `__declspec(dllimport)`,消费**静态** sleef.lib 必须定义 `SLEEF_STATIC_LIBS`,否则 `__imp_Sleef_*` 全部未解析。已在 `src/simd/CMakeLists.txt` 补该定义(跨平台无害)。**这正是"benchmark 覆盖 = 真编真测"价值的活例**:不真跑,这条 opt-in 路径会一直"声称可用"实则链接不过。
+
+
 ### sched（fiber 调度）
 
 | 项 | 实测(Linux GCC14) | 参考 |
@@ -154,6 +171,18 @@
 2. **两个"无锁旗舰"(`Arena`/`MemoryArena`)是全场最慢**:`Arena` 无锁 bump 比裸 malloc 还慢、慢 std::pmr arena **4.6x**;`MemoryArena` 无锁池单线程慢裸 malloc **2.88x**,8 线程共享(**它存在的理由**)慢 mimalloc per-thread heap **278x**。**根因=单 `offset_`/`head_` 原子,每次 alloc/dealloc CAS 同一 cache line**(BoundedQueue 单点 CAS 同病,因 churn 更密而惨烈得多)。mem-design 称 `MemoryArena` "最亮的资产"——benchmark 证伪:**无锁≠快,它是一个被争用的单原子**。
 
 3. **诚实边界 + 为何暂不重写**:① 278x 是 alloc-立即-free 的 tight-churn 最坏争用;真实用途(fiber 栈池:借栈→跑 μs 级→还栈,低频借还)争用远小于此——但作为**通用并发池**,它被 per-thread 分配(mimalloc 的设计)架构性压制。② `Arena`/`MemoryArena`/`StackAllocator`/`GrowablePool`/`ObjectPool` 当前 **src/ 零内部用户**(io/compute/graph 未开工,fiber 栈直接走注入 allocator 未接池),故这是**潜在缺陷非活跃 bug**。不投机重写无人用的代码(避免为假想需求加复杂度);**修复方向已明确**(若将来接 fiber 栈池且需并发:per-core 分片 free-list,照 mimalloc/ShardedQueue),留待真实消费者出现时按其访问模式定。单线程消费者直接用 `StackAllocator`/`GrowablePool` 即可,无需碰无锁变体。
+
+### container 杂项（SmallVector / IntrusiveList vs std，`container_misc_bench.cc`）
+
+> 环境:Win MSVC19.50 Release,nanobench。两个有性能声明却此前零 bench 的容器。标尺 = std 等价物(`std::vector`/`std::list`,无外部依赖)。
+
+| 场景 | HYLE | std | vs std | 结论 |
+|---|---|---|---|---|
+| **小 N churn**(建+填 8 int+析构) | SmallVector<int,16> **0.50 ns** | vector 16.57 ns / vector+reserve 3.06 ns | **33x / 6.1x** | ✅ "小 N 省 malloc 大赢"坐实 |
+| **list churn**(push 4096 + pop 全) | IntrusiveList **2.55 ns** | list 24.07 ns | **9.4x** | ✅ "O(1) 摘除、无分配"坐实 |
+
+**诚实结论(这两个是真兑现,非欺骗)**:SmallVector<int,16> 全程 inline 零堆分配,小集合 churn **33x 赢 std::vector**(连给 std::vector 预 reserve 也赢 6.1x——省的是构造期那次 malloc);IntrusiveList 链接内嵌节点,push/pop 纯指针操作零分配,**9.4x 赢 std::list**(后者每 push 分配节点)。这俩声明无水分,与无锁分配器的反例对照鲜明:**单线程、无共享、零原子的设计才是 HYLE 真正快的地方**。
+
 
 
 

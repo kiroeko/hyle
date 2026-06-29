@@ -47,6 +47,13 @@ add_executable(hyle_queue_sota_bench container/queue_sota_bench.cc)
 target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench)
 hyle_apply_warnings(hyle_queue_sota_bench)
 
+# task #19 breadth: the two claim-bearing containers with no prior bench. SmallVector
+# (inline storage, "省 malloc") vs std::vector; IntrusiveList ("O(1) 无分配") vs
+# std::list. SmallVector needs system_allocator -> link hyle_mem too.
+add_executable(hyle_container_misc_bench container/container_misc_bench.cc)
+target_link_libraries(hyle_container_misc_bench PRIVATE hyle_container hyle_mem nanobench)
+hyle_apply_warnings(hyle_container_misc_bench)
+
 # Optional: moodycamel::ConcurrentQueue (header-only -> just an include path).
 # Enable with -DHYLE_BENCH_MOODYCAMEL=ON; point HYLE_MOODYCAMEL_DIR at the cloned
 # repo (sibling of hyle/ by default).
@@ -100,6 +107,14 @@ else()
   set_source_files_properties(simd/simd_kernels_avx2.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
 endif()
 hyle_apply_warnings(hyle_simd_bench)
+
+# math bench: vectorized exp/log/tanh (SLEEF AVX2 when hyle_simd built with
+# -DHYLE_SIMD_SLEEF=ON) vs scalar libm. Own exe (simd_bench.cc owns main()). The
+# *_f32_batch ops live in hyle_simd; SLEEF is its PRIVATE dep, so this just links
+# hyle_simd. Without SLEEF the HYLE row ties the scalar baseline (honest no-vec).
+add_executable(hyle_math_bench simd/math_bench.cc)
+target_link_libraries(hyle_math_bench PRIVATE hyle_simd nanobench)
+hyle_apply_warnings(hyle_math_bench)
 
 # Optional SOTA parity: HYLE avx2 vs Highway avx2, head to head (same ISA). Enable with
 # -DHYLE_BENCH_HIGHWAY=ON; point HYLE_HIGHWAY_DIR at the cloned highway (sibling default).
