@@ -6,11 +6,13 @@
 #define XXH_INLINE_ALL
 #include "xxhash.h"
 
-namespace hyle::container {
+namespace hyle::container::detail {
 
-std::uint64_t hash_bytes(const void* data, std::size_t len,
-                         std::uint64_t seed) noexcept {
+// XXH3 core for len > 16 (small inputs are handled inline in hash.h, never reach
+// here). Kept out-of-line so xxhash.h stays out of every consumer TU.
+std::uint64_t hash_bytes_xxh3(const void* data, std::size_t len,
+                              std::uint64_t seed) noexcept {
   return XXH3_64bits_withSeed(data, len, seed);
 }
 
-}  // namespace hyle::container
+}  // namespace hyle::container::detail

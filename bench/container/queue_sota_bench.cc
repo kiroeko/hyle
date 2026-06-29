@@ -6,14 +6,22 @@
 // HYLE baselines ALWAYS compile (no gate). SOTA references are opt-in:
 //   -DHYLE_BENCH_MOODYCAMEL=ON  -> moodycamel::ConcurrentQueue (header-only)
 //   -DHYLE_BENCH_TBB=ON         -> tbb::concurrent_bounded_queue + concurrent_vector
+//   -DHYLE_BENCH_RIGTORP=ON     -> rigtorp::mpmc::Queue (the SAME-CONTRACT rival:
+//                                  strict-bounded MPMC, single ring -- the canonical
+//                                  SOTA for exactly BoundedQueue's contract)
 // The Rust crossbeam-deque parity (the true same-family work-stealing rival) is a
 // SEPARATE crate (bench/rust/), since it cannot link into a C++ TU.
 //
 // FAIRNESS NOTES (read before trusting a ratio):
-//  * BoundedQueue is BOUNDED (try_push fails when full). moodycamel ConcurrentQueue
-//    is UNBOUNDED (grows). tbb::concurrent_bounded_queue is bounded (set_capacity)
-//    -> tbb is the apples-to-apples MPMC rival; moodycamel is the "industry default"
-//    reference whose unboundedness we call out, not hide.
+//  * BoundedQueue is BOUNDED + strict global FIFO (try_push fails when full). Its
+//    APPLES-TO-APPLES rival is rigtorp::mpmc::Queue (also bounded single-ring MPMC)
+//    -- both pay ONE enqueue/dequeue CAS serialization point, which is a THEOREM
+//    WALL for strict-global-FIFO+bounded MPMC, not a HYLE defect. moodycamel is
+//    UNBOUNDED + WEAK order (per-producer subqueues) -> it trades FIFO for producer-
+//    side parallelism; the apples-to-apples answer to THAT trade is HYLE ShardedQueue
+//    (same trade), which wins moodycamel 2.6-3x. tbb::concurrent_bounded_queue is
+//    bounded too. So: vs rigtorp = "is our strict-bounded ring SOTA?"; vs moodycamel
+//    single-ring = "the cost of the FIFO contract" (answered by ShardedQueue).
 //  * WsFifoQueue / WorkStealingDeque OWNER paths are single-owner (no CAS on the
 //    hot push/pop). Racing them against a general MPMC queue is NOT "HYLE beats
 //    moodycamel": it shows the cost a general MPMC pays that a per-core local
@@ -39,6 +47,9 @@
 #if defined(HYLE_BENCH_TBB)
 #include "oneapi/tbb/concurrent_queue.h"
 #include "oneapi/tbb/concurrent_vector.h"
+#endif
+#if defined(HYLE_BENCH_RIGTORP)
+#include "rigtorp/MPMCQueue.h"  // strict-bounded-MPMC SAME-CONTRACT rival
 #endif
 
 using hyle::container::BoundedQueue;
@@ -97,6 +108,17 @@ void bench_single_thread() {
     for (int i = 0; i < kBatch; ++i) {
       q.try_pop(out);
       sum += out;
+    }
+    ankerl::nanobench::doNotOptimizeAway(sum);
+  });
+#endif
+#if defined(HYLE_BENCH_RIGTORP)
+  b.run("rigtorp MPMCQueue (same-contract SOTA)", [&] {
+    static rigtorp::mpmc::Queue<std::uint64_t> q(kCap);
+    for (int i = 0; i < kBatch; ++i) q.try_push(static_cast<std::uint64_t>(i));
+    std::uint64_t out = 0, sum = 0;
+    for (int i = 0; i < kBatch; ++i) {
+      if (q.try_pop(out)) sum += out;
     }
     ankerl::nanobench::doNotOptimizeAway(sum);
   });
@@ -223,6 +245,37 @@ void bench_mpmc() {
   b.run("tbb concurrent_bounded_queue", [&] {
     tbb::concurrent_bounded_queue<std::uint64_t> q;
     q.set_capacity(kCap);
+    std::atomic<int> producers_done{0};
+    std::vector<std::thread> ts;
+    for (int p = 0; p < kProducers; ++p)
+      ts.emplace_back([&q, &producers_done, p] {
+        std::uint64_t base = 1 + static_cast<std::uint64_t>(p) * kPerThread;
+        for (int k = 0; k < kPerThread; ++k)
+          while (!q.try_push(base + k)) std::this_thread::yield();
+        producers_done.fetch_add(1, std::memory_order_release);
+      });
+    for (int c = 0; c < kConsumers; ++c)
+      ts.emplace_back([&q, &producers_done] {
+        std::uint64_t out = 0, local = 0;
+        for (;;) {
+          if (q.try_pop(out)) {
+            ++local;
+          } else if (producers_done.load(std::memory_order_acquire) == kProducers) {
+            break;
+          } else {
+            std::this_thread::yield();
+          }
+        }
+        ankerl::nanobench::doNotOptimizeAway(local);
+      });
+    for (auto& t : ts) t.join();
+  });
+#endif
+#if defined(HYLE_BENCH_RIGTORP)
+  // Same-contract rival: strict-bounded single-ring MPMC. Spin-retry on full (like
+  // HYLE BoundedQueue) -> isolates the single-CAS serialization both pay at 4P.
+  b.run("rigtorp MPMCQueue (same-contract SOTA)", [&] {
+    rigtorp::mpmc::Queue<std::uint64_t> q(kCap);
     std::atomic<int> producers_done{0};
     std::vector<std::thread> ts;
     for (int p = 0; p < kProducers; ++p)

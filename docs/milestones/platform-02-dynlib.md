@@ -6,7 +6,7 @@
 | **模块** | platform/ |
 | **状态** | ✅ 完成（Win x64 MSVC + Linux x64 GCC14.2 双平台；platform +8 case）|
 
-> **范围说明**:roadmap platform-02 是 "virtual_memory + dynlib"。本里程碑只做 **dynlib**(自包含、解锁 compute/simd 变体 DLL 加载);**virtual_memory 另立 platform-02b**(mem-02 mimalloc 自带 VM,HYLE VM 优先级随 mem-05 MemorySpace);**path/fs/env/os_info → platform-03**。
+> **范围说明**:roadmap platform-02 是 "virtual_memory + dynlib"。本里程碑只做 **dynlib**(自包含、解锁 compute/simd 变体 DLL 加载);**virtual_memory 另立 platform-02b**(mem-02 mimalloc 自带 VM,HYLE VM 优先级低、按需再做);**path/fs/env/os_info → platform-03**。
 > **cloc**：**生产 158 行**(dynlib.h 39 + dynlib.cc 119) + **测试 73 行**。
 
 ## clay API diff + 改进

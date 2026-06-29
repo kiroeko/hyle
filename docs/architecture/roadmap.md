@@ -74,13 +74,13 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 |---|---|---|---|---|
 | **P0** | error / obs-hook | Status+expected+ASSIGN_OR_RAISE / obs 埋点 | 3-5k | ~0.8k ✅ |
 | **P1** | platform | thread+park / vm+dynlib / path+fs+env | 5-8k | ~1.2k ✅(vm 待) |
-| **P2** | mem | Allocator+alignment / mimalloc / arena / pool+stack / MemorySpace / NUMA | 6-10k | ~0.9k ✅主力(05/06 净新 +~2-3k) |
+| **P2** | mem | Allocator+alignment / mimalloc / arena / pool+stack / NUMA | 6-10k | ~0.9k ✅主力(arena/pool/stack/growable 净新;方案D-MemorySpace 已证伪删除) |
 | **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | ~0.3k 🔶(时间轮待) |
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | ~2k ✅主力 |
 | **P3** | simd | vec+scalar / SSE4.2+AVX2 / AVX512+NEON / 变体dispatch / dtype / sleef | 10-16k | ~2.3k 已做 + ~3-5k 广度补全 = **~5-8k** |
 | **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~1k 核心+同步✅(fcontext/work-stealing/Waker/conditional-notify/CV+Mutex+WaitGroup+Latch+Channel,对标 marl 追平/反超) + ~2-4k 后段(协程胶水/取消/优雅关闭) |
 | **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem | 9-14k | **~5-8k**(借 liburing 写适配) |
-| **P5** | compute | device/stream包ggml / MemorySpace / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
+| **P5** | compute | device/stream包ggml / device buffer(compute 自有) / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
 | **P6** | graph + 收口 | taskgraph绑sched / C-ABI shim / serialize/hash/T3 / FFI | 11-17k | **~6-11k**(多借 simdjson 等) |
 
 **HYLE 自有合计:~30-45k 生产 / ~48-72k 含测试**(实测 test/prod≈0.62)。**约 47 个里程碑**(milestones/README 为准),每个"写完→编过→单测→基准→提交"闭环。
@@ -136,7 +136,7 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 | 模块分层 | Tier 0-3 + 双轴判据（地基性 × 差异性）| scope；**用户参与**（container 提到 T0）|
 | 边界外 | 负空间 + L0/L1/L2 分层（协议/框架在 L1 另一项目）| scope |
 | tier 倒置 | container(T0) 内联自包含探测片段，不依赖 simd(T1) | simd/container-design |
-| device 内存 | **方案 D（MemorySpace 组合式）**：mem/ 定义 MemorySpace 接口+通用分配器+SystemRAM；compute/ 注册 device/pinned/unified space；分配器组合在 space 上；统一内存(DGX Spark/Mac) copy 塌缩为 no-op | mem/compute-design；**用户拍板**（组合优于继承 + 统一内存零损失）|
+| device 内存 | **compute/ 自有 stream-bound buffer（不走 mem/ allocator 抽象）**：device/pinned/unified buffer 各立一个 ggml 式 buffer_type 实例，所有权 + stream 绑定在 compute/;host↔device 边界是显式 copy/command-submit。统一内存(DGX Spark/Mac)无"互传"概念,本就无拷贝可省 | mem/compute-design；**用户证伪方案D**（异构内存强行统一是错误设计:device 走 drawcall/提交、统一内存无互传）|
 | simd 向量 | **scalable-friendly 接口 + 先实现定宽后端**（x86 SSE4.2/AVX2/AVX512 + ARM NEON）；将来加 SVE/RVV 不改 API | simd-design；**用户拍板** |
 | hashmap 写法 | **concept 模板写内部 + 过边界特定类型封 C-ABI shim**；去掉 C 宏 temp/哨兵包袱 | container-design；**用户拍板** |
 

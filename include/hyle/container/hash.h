@@ -24,12 +24,15 @@
 
 namespace hyle::container {
 
-// Hash an arbitrary byte range with XXH3 (xxHash). Defined in hash.cc so the
-// 7490-line xxhash.h stays out of this header (ABI-clean + no compile-time
-// bloat in every consumer). This is HYLE's default RUNTIME hasher (clay's murmur
-// is retained only for compile-time type IDs).
-HYLE_CONTAINER_API std::uint64_t hash_bytes(const void* data, std::size_t len,
-                                            std::uint64_t seed = 0) noexcept;
+// XXH3 core for LONGER byte ranges (len > 16). Defined in hash.cc so the 7490-line
+// xxhash.h stays out of this header (ABI-clean + no compile-time bloat in every
+// consumer). Small inputs (<= 16B) DON'T come here -- hash_bytes() short-circuits
+// them to an inline mix below (no call), so the common small-key case pays zero
+// seam cost. This is HYLE's default RUNTIME byte hasher.
+namespace detail {
+HYLE_CONTAINER_API std::uint64_t hash_bytes_xxh3(const void* data, std::size_t len,
+                                                 std::uint64_t seed) noexcept;
+}  // namespace detail
 
 namespace detail {
 // 64-bit integer/pointer mixer. abseil-style: ONE 128-bit multiply of (x^k)*k,
@@ -79,6 +82,33 @@ HYLE_FORCE_INLINE std::uint64_t hash_small(const void* p, std::size_t n) noexcep
   return h;
 }
 }  // namespace detail
+
+// Hash an arbitrary byte range. SMALL inputs (len <= 16 -- the common map-key /
+// short-string case) take an INLINE mix here (seed + len folded in, no call): the
+// non-inlinable XXH3 call's fixed cost dominated tiny inputs (measured ~1.85x at
+// 8B), and that whole cost is the wrapper, not the algorithm. LARGER inputs go to
+// the out-of-line XXH3 core (detail::hash_bytes_xxh3), where the bytes dominate so
+// the one call amortizes and xxhash.h stays hidden from this header. Output is NOT
+// bit-identical to pure XXH3 for <= 16B (HYLE's contract is "good 64-bit hash +
+// seed-sensitive + deterministic-within-build", not XXH3 byte-compat); nothing
+// persists a hash across builds, so this is safe. >16B is unchanged (real XXH3).
+HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
+                                           std::uint64_t seed = 0) noexcept {
+  if (len <= 16) {
+    // Fold seed + len so different seeds AND different lengths diverge (XXH3 does
+    // both). One mix for <=8B, a second folded mix for 9..16B. Avalanche and
+    // distinctness are covered by the hash tests (StringView 10k + SmallStruct).
+    std::uint64_t lo = 0, hi = 0;
+    if (len != 0) {  // memcpy(_,nullptr,0) is UB; len==0 -> pure seed/len mix
+      std::memcpy(&lo, data, len < 8 ? len : 8);
+      if (len > 8) std::memcpy(&hi, static_cast<const char*>(data) + 8, len - 8);
+    }
+    std::uint64_t h = detail::mix64(lo ^ seed ^ (len * 0x9e3779b97f4a7c15ull));
+    if (len > 8) h = detail::mix64(h ^ hi);
+    return h;
+  }
+  return detail::hash_bytes_xxh3(data, len, seed);
+}
 
 // Default hasher. Specialized for the common cheap cases. For SMALL trivially-copyable T
 // (<= 16 bytes -- the typical map key) it uses an inline mix (no XXH3 call); larger blobs

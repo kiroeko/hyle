@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # setup-bench-libs.sh -- clone the SOTA reference libraries HYLE's *gated*
 # benchmarks compare against (abseil/folly/moodycamel/oneTBB/highway/marl/
-# crossbeam-deque/xxHash/wyhash/mimalloc/sleef/xsimd).
+# crossbeam-deque/rigtorp-MPMCQueue/xxHash/wyhash/mimalloc/sleef/xsimd).
 #
 # WHY: the gated benches (-DHYLE_BENCH_ABSL / _TBB / _MARL / _HIGHWAY /
-# _MOODYCAMEL, and the Rust crossbeam crate) point at these libs via the
-# HYLE_<LIB>_DIR CMake cache vars, whose DEFAULTS are a sibling of this repo
-# (../<lib>). That made benchmarking impossible on a fresh machine that didn't
-# happen to have the exact sibling layout. This script reproduces that layout
-# anywhere, idempotently, with no hard-coded absolute path.
+# _MOODYCAMEL / _RIGTORP / _XSIMD / _BOOST, and the Rust crossbeam crate) point
+# at these libs via the HYLE_<LIB>_DIR CMake cache vars, whose DEFAULTS are a
+# sibling of this repo (../<lib>). That made benchmarking impossible on a fresh
+# machine that didn't happen to have the exact sibling layout. This script
+# reproduces that layout anywhere, idempotently, with no hard-coded absolute path.
 #
 # USAGE:
 #   scripts/setup-bench-libs.sh            # clone into the repo's parent dir
@@ -50,6 +50,7 @@ LIBS=(
   "highway|https://github.com/google/highway.git"
   "marl|https://github.com/google/marl.git"
   "crossbeam-deque|https://github.com/k-sareen/crossbeam-deque.git"
+  "rigtorp-MPMCQueue|https://github.com/rigtorp/MPMCQueue.git"
   "xxHash|https://github.com/Cyan4973/xxHash.git"
   "wyhash|https://github.com/wangyi-fudan/wyhash.git"
   "mimalloc|https://github.com/microsoft/mimalloc.git"

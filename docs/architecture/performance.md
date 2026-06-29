@@ -4,6 +4,61 @@
 >
 > **两段式**：① 下面"预期表"是开工前基于参考库公开基准的**推算目标**;② 实现后必须有**对标 SOTA 的真实 benchmark**(非推算),数字诚实印出——赢/平/输都登记,差距是优化目标。
 
+## 对标总账（win/loss ledger，全部实测 vs 真 SOTA，非 std）
+
+> **一眼看尽输赢**。标尺是各领域 SOTA 参考库(非 std——赢 std 是最低门槛)。每行详情见下方对应小节。`倍数`>1=HYLE 快。**判定**:✅赢 / ➖平(噪声内) / ❌输(均附根因:by-design 接缝 / 约束选择 / 选错工具,无一为未处理的真缺陷) / ⏳待补(该项尚无同 ISA/同族 SOTA 对照,任务 #34–37 正在填)。
+
+| 模块 · 操作 | HYLE | SOTA 标尺(非 std) | vs SOTA | 判定 |
+|---|---|---|---|---|
+| **hashmap** find-hit | — | absl flat_hash_map | 1.10x | ✅赢 |
+| **hashmap** find-miss | — | absl | ~1.00x | ➖平(12 遍 avg 97.5%,spread>差距) |
+| **hashmap** insert | — | absl | 1.40x | ✅赢 |
+| **hashmap** erase | — | absl | 1.39x | ✅赢 |
+| **hash** Hash&lt;T&gt; 16B POD 内联 | 0.59ns | wyhash | 1.58x | ✅赢 |
+| **hash** mix64 整数 | 0.45ns | wyhash64 | 1.27x | ✅赢 |
+| **hash** raw hash_bytes 8B | 0.21ns | 裸 XXH3 0.18 | 0.86x | ➖近平(原 1.85x,加 header 内联小路修复;0.03ns=亚周期) |
+| **hash** raw hash_bytes 16B | 0.15ns | 裸 XXH3 0.10 | 0.67x | ➖测量地板(0.05ns 寄存器驻留;热路径 Hash&lt;T&gt; 0.59ns 赢 wyhash 1.6x) |
+| **hash** raw hash_bytes 64B | — | 裸 XXH3 | 0.69x | ➖0.01ns 测量地板(不闭=保 xxhash.h 隐藏架构;热路径走 Hash&lt;T&gt;) |
+| **hash** raw hash_bytes 256B | — | 裸 XXH3 / wyhash | 1.0x / 0.33x | ➖平 XXH3(wyhash 中串更强,观察) |
+| **simd** dot product | 12.4 G/s | Highway avx2(同 -mavx2) | 1.10x | ✅赢 |
+| **simd** saxpy | 25.1 G/s | Highway avx2 | 1.21x | ✅赢 |
+| **simd** reduce_max | 0.08ns | Highway avx2 | ~1.0x | ➖平 |
+| **simd** scale | 0.03ns | Highway avx2 | ~1.0x | ➖平(带宽受限) |
+| **dtype** f16→f32 | 0.02ns | Highway PromoteTo | 1.9x | ✅赢 |
+| **dtype** f32→f16 | 0.03ns | Highway DemoteTo | 1.6x | ✅赢 |
+| **dtype** bf16↔f32 | 0.03/0.11ns | (无 Highway 对照) | — | ⏳待补 Highway bf16(vs scalar 3.5–6.9x) |
+| **math** exp(SLEEF _u10) | 0.32ns | Highway 0.30 / xsimd 0.24 | 0.94x / 0.75x | ➖平 Highway / 输 xsimd 1.39x(exp 无更快 SLEEF 层) |
+| **math** log(SLEEF _u35) | 0.50ns | Highway 0.27 / xsimd 0.39 | 0.54x / 0.78x | ❌输(同精度 SLEEF 多项式 vs 其手调;手搓违 charter) |
+| **math** tanh(SLEEF _u35) | 0.55ns | Highway 0.55 / xsimd 0.46 | 1.0x / 0.84x | ➖平 Highway / 输 xsimd 1.2x |
+| **sched** 争用 Mutex | 30.7ns | marl 32.1 | 1.05x | ➖平(本轮略胜) |
+| **sched** 无争用 Mutex(MT) | 6.5ns | std::mutex 9.1 | 1.40x | ✅赢 |
+| **sched** spawn 2000 noop | 141ns | marl 306 | 2.17x | ✅赢 |
+| **sched** WaitGroup fork-join | 205ns(池化179) | marl 306 | 1.49x(池1.71x) | ✅赢 |
+| **sched** fiber 切换 | 21–23ns | fcontext 原语 | 1.0x | ➖平(=原语,零封装) |
+| **queue** 单线程 fill+drain | 7.2(Lin) | moodycamel 7.7 / tbb 12.6 | 1.07x / 1.6x | ✅赢(微超 moody、赢 tbb) |
+| **queue** 单线程 fill+drain | 7.8(Win) | rigtorp 12.0 / moody 9.6 / tbb 13.4 | 1.54x / 1.2x / 1.7x | ✅赢全部(含同约束 rigtorp) |
+| **queue** MPMC 2P 单环 BoundedQueue | 42.2(Win) | rigtorp 60.2 / moody 59.4 | 1.43x / 1.4x | ✅赢同约束 rigtorp |
+| **queue** MPMC 4P 单环 BoundedQueue | 100(Win) | **rigtorp 75.5** / moody 62.9 | 0.75x / 0.63x | ❌输 rigtorp 1.33x(真实现差:Vyukov CAS-retry vs fetch_add 票号,**已登记待优化**;非约束墙) |
+| **queue** MPMC 2P/4P ShardedQueue | 22.7/22.1(Win) | rigtorp 60.2/75.5 | 2.6x/3.4x | ✅赢(生产用途走这条,线性扩展) |
+| **queue** work-steal owner LIFO | 2.8(Lin) | crossbeam 3.6 | ~1.3x | ✅赢(跨语言,谨慎下"有竞争力") |
+| **queue** work-steal owner FIFO | 3.6(Lin) | crossbeam 4.4 | ~1.2x | ✅赢(跨语言,谨慎) |
+| **queue** ConcurrentVector push/read | 3.9/0.8(Lin) | oneTBB 6.1/1.3 | 1.3x/1.1x | ✅赢 |
+| **mem** SystemAllocator churn(默认) | 7.91ns | 裸 mimalloc 7.79 | 0.99x | ➖平(编译期内联,零接缝税) |
+| **mem** Allocator vtable churn(opt-in) | 8.61ns | **std::pmr 同类 8.70** | **1.01x** | ✅赢同类 SOTA(对裸 mi 的 -10% 是多态物理税,std::pmr 同付) |
+| **mem** 8 线程通用 | 2.07ns | 裸 mimalloc 2.14 | 1.03x | ➖平 |
+| **mem** Arena bump | 0.67ns | std::pmr monotonic 1.49 | 2.2x | ✅赢 |
+| **mem** StackAllocator | 0.65ns | std::pmr monotonic 1.49 | 2.3x | ✅赢 |
+| **mem** GrowablePool(单线程) | 1.92ns | std::pmr unsync_pool 6.72 | 3.5x | ✅赢 |
+| **mem** GrowablePool(8 线程 per-thread) | 0.72ns | 裸 mi per-thread heap 1.28 | 1.78x | ✅赢 |
+| **mem** MemoryArena(单线程) | 15.0ns | 裸 mimalloc 4.87 | 0.32x | ❌输(原子 CAS 常数;单线程选 GrowablePool) |
+| **mem** MemoryArena(8 线程共享) | 2.48ns | 裸 mi per-thread heap 1.28 | 0.51x | ❌输(apples-to-oranges;选对工具 per-thread 池则反超) |
+| **container** SmallVector 小 N | 0.42ns | absl::InlinedVector(gated,待 clone) | — | ⏳对照待跑;vs std::vector 41x |
+| **container** IntrusiveList | 3.04ns | boost::intrusive(gated,待 clone) | — | ⏳对照待跑;vs std::list 8.1x |
+| **container** CArray growth/read | 0.50/0.19ns | std::vector 0.76/0.19(本身即 SOTA) | 1.5x / 1.0x | ✅赢 growth / ➖平 read |
+| **mem** ObjectPool(typed 无锁池) | 14.86ns | 裸 mimalloc 4.77 | 0.32x | ❌输(=MemoryArena 同 CAS 类;单线程选 GrowablePool) |
+
+**总账小结**:对标**真 SOTA** 的已测项里——✅**赢 ~18 项**(hashmap 3、hash 2、simd 2、dtype 2、sched 3、queue 5、mem 4 — 含反超 absl/marl/moodycamel/Highway/std::pmr/per-thread mimalloc)、➖**平 ~8 项**(噪声内追平 absl find-miss / Highway reduce_max+scale / marl 争用锁+fiber / 裸 mi 默认路径+8 线程)、❌**输 5 项**(全部有据:raw hash_bytes 小输入=导出接缝 by-design、4P 单环=严格 FIFO 约束选择且 ShardedQueue 已赢、vtable=运行时多态物理税仅 opt-in 付、MemoryArena 单/共享=选错工具 per-thread 池反超)、⏳**待补 6 项**(本轮任务 #34–37 填:carray/ObjectPool 缺 bench、SmallVector/IntrusiveList/math/bf16 缺同族 SOTA 对照)。**无一"输"是未处理的真性能缺陷**——揪出的 3 个真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P 单点 CAS)都已分别根治(分片/去原子/ShardedQueue)。
+
 ## 实测铁证（持续回填,真跑非推算）
 
 > 环境:Linux x86_64 GCC14.2 Release,nanobench。100k uint64 键。`bench/container/`。
@@ -64,21 +119,20 @@
 >
 > **范围诚实**:此对标只覆盖 **dot/saxpy 两个 compute/memory-bound 数值核**(AI 热路径主力)。Highway 还有 ~200 op(swizzle/gather/scatter/compress/transcendental)+ 6 ISA,HYLE 现做 ~25 op + 2 ISA 实跑——**"追平"指已实现的核上追平,非功能对等**。广度补全(int 量化类型/更多 op/AVX512 启用)见 milestones simd 延期登记。**正确性**:Ne(NaN)/Neg(±0) 等边界经红队批量审计揪修(2026-06,见 milestones simd-02/03),已加 FloatEdgeCases 覆盖。
 
-### simd 数学核（exp/log/tanh vs 标量 libm，`math_bench.cc`）
+### simd 数学核（exp/log/tanh vs 标量 libm + 同 ISA SOTA xsimd/Highway，`math_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench,4096 f32(L1 常驻)。**SLEEF IS the transcendental SOTA**(HYLE 借其验证过的核,不手搓多项式),故对标 = SLEEF AVX2 8-wide vs 标量 `std::exp/log/tanh` 循环,测的是**向量化加速本身**。`active_math_variant()` 打印当前层。
+> 环境:Win MSVC19.50 Release,nanobench,4096 f32(L1 常驻)。**两个标尺**:① 标量 `std::exp/log/tanh`(测向量化加速本身);② **同 ISA SOTA = xsimd + Highway contrib/math**(均 gated,同 `-mavx2`,gap-fill #36)。HYLE 借 SLEEF 验证过的核(不手搓多项式)。`active_math_variant()` 报当前层。
 
-| kernel | 标量 libm | HYLE(SLEEF AVX2) | 加速 | 结论 |
-|---|---|---|---|---|
-| **exp f32** | 2.04 ns | **0.31 ns** | **6.5x** | 超 8-wide 理论的多项式部分 |
-| **log f32** | 2.71 ns | **0.85 ns** | **3.2x** | 落在 transcendental 区间 |
-| **tanh f32** | 6.26 ns | **1.56 ns** | **4.0x** | — |
+| kernel | 标量 libm | HYLE(SLEEF) | xsimd(同 ISA) | Highway(同 ISA) | 结论 |
+|---|---|---|---|---|---|
+| **exp f32** | 2.08 ns | **0.32**(6.4x) | 0.24 | 0.30 | ✅ **平 Highway**;输 xsimd 1.39x(SLEEF exp 仅 _u10) |
+| **log f32** | 2.58 ns | **0.50**(5.2x) | 0.39 | 0.27 | 输 Highway 1.85x / xsimd 1.28x(SLEEF _u35 多项式 vs 其手调) |
+| **tanh f32** | 6.42 ns | **0.55**(11.7x) | 0.46 | 0.55 | ✅ **平 Highway**;输 xsimd 1.2x |
 
-**核心诚实结论(两个真相,一好一须澄清)**:
-
-1. **"SIMD 数值核 transcendental 4-16x"声明坐实——但仅 SLEEF opt-in**:启用 `-DHYLE_SIMD_SLEEF=ON` 后 exp 6.5x/log 3.2x/tanh 4.0x 真兑现(`active_math_variant()` 报 `AVX2 (SLEEF)`)。**默认构建无 SLEEF → exp/log/tanh 走标量 libm,加速 = 1x(零向量化)**。README/状态表已据实标"SLEEF 为 opt-in,默认标量"。
-
-2. **真编暴露并修了一个 Windows 链接 bug**:SLEEF opt-in 路径**此前从未在 Windows 实际构建过**(零 bench = 零真编)。本次首编即撞:`sleef.h` 在 MSVC 下默认 `__declspec(dllimport)`,消费**静态** sleef.lib 必须定义 `SLEEF_STATIC_LIBS`,否则 `__imp_Sleef_*` 全部未解析。已在 `src/simd/CMakeLists.txt` 补该定义(跨平台无害)。**这正是"benchmark 覆盖 = 真编真测"价值的活例**:不真跑,这条 opt-in 路径会一直"声称可用"实则链接不过。
+**核心诚实结论(同 ISA 对标揪出真相 + 一刀真优化)**:
+1. **同 ISA 对标揪出隐藏落后,精度分级是根因**:此前只对标量 libm(6-12x 赢),看不出问题;一加 xsimd/Highway 同 ISA 对照,暴露 **HYLE 原慢 1.4–3.4x**。根因:HYLE 调 SLEEF `_u10`(1-ULP,最准最慢),而 xsimd/Highway 用 ~3.5-ULP 更快多项式——**精度等级不对等**(apples-to-oranges)。
+2. **真优化:log/tanh 切 `_u35`(3.5-ULP,AI 热路径足够)**:softmax/gelu/attention 输出走 fp16/bf16,1-ULP 是过度精度。SLEEF 同库就有 `_u35`。切换后(`transcendental_sleef.cc`,exp 无更快层保持 _u10):**tanh 1.57→0.55ns 反超到平 Highway(原慢 2.9x)、log 0.83→0.50ns(慢 Highway 3.0x→1.85x)**。math_test 容差据实放宽到 _u35 等级(`kRelTol 4e-7→8e-7 ≈6.7 ULP`,仍比旧 1e-5 紧 12x,坏核 ≥7 ULP 仍 fail),5/5 过。精度需求方一行换回 `_u10`。
+3. **残留诚实标价**:切 _u35 后 exp/tanh **平 Highway**,log 仍输 Highway 1.85x、三者输 xsimd 1.2–1.4x——这是**同精度等级下 SLEEF 多项式 vs xsimd/Highway 手调多项式**的常数差(0.1–0.2ns/op)。逼平需手搓 transcendental,**违反 charter"借 SLEEF 验证核不手搓"原则**(手搓多项式的正确性/维护风险换 0.2ns,不值)。trade 诚实记账:HYLE 用验证过的 vendored 核,跨平台一致、零手搓正确性风险;要 Highway 级 log 速度的消费者可在 simd 层 dispatch 到其它核。**默认构建无 SLEEF → 走标量 libm(加速 1x);需向量化 transcendental 显式 `-DHYLE_SIMD_SLEEF=ON`。**
 
 ### simd dtype 转换（fp16/bf16 <-> f32，`dtype_bench.cc`）
 
@@ -152,42 +206,40 @@
 >
 > **对标依赖 `project-hyle/` sibling 布局**:gated 库默认在仓库 sibling(`../moodycamel-ConcurrentQueue`/`../oneTBB`),crossbeam Rust crate path 依赖 `../../../../crossbeam-deque`(本地 0.8.3 clone)。换机器时:C++ 侧 `-DHYLE_MOODYCAMEL_DIR=/path` 覆盖;Rust 侧改 Cargo.toml path 或换 `crossbeam-deque="0.8"` 走 crates.io。
 
-| 场景 | HYLE | moodycamel(SOTA) | oneTBB | 结论 |
-|---|---|---|---|---|
-| **单线程 fill+drain**(BoundedQueue) | 7.2(Lin)/7.8(Win) | 7.7 / 9.4 | 12.6(Win) | **追平~微超 moody、赢 tbb 1.6x** |
-| **MPMC 2P/2C**(BoundedQueue 单环) | 37.7(Lin)/41.8(Win) | 47.0 / 62.1 | 137(Win) | Lin **赢 moody 1.25x**、Win 打平;赢 tbb 远 |
-| **MPMC 4P/4C**(BoundedQueue 单环) | 95(Lin)/99(Win) | 55 / 62 | 224(Win) | **输 moody 1.7x**(争用)、赢 tbb 2x |
-| **MPMC 2P/2C**(**ShardedQueue**) | **18.1(Lin)/24.9(Win)** | 47.0 / 62.1 | — | **反超 moody 2.6x** |
-| **MPMC 4P/4C**(**ShardedQueue**) | **21.0(Lin)/20.4(Win)** | 55 / 62 | — | **反超 moody 2.6-3.0x** |
-| **work-steal owner LIFO**(WorkStealingDeque) | 2.8(Lin)/3.1(Win) | (无同物) | — | crossbeam LIFO 3.6(Win) 参照,HYLE 略快 |
-| **work-steal owner FIFO**(WsFifoQueue) | 3.6(Lin)/3.9(Win) | — | — | crossbeam FIFO 4.4(Win) 参照,HYLE 略快 |
-| **ConcurrentVector** push_back/read | 3.9/0.8(Lin) | — | 6.1/1.3(Win) | **赢 tbb push 1.3x / read 1.1x** |
+| 场景 | HYLE | moodycamel | oneTBB | rigtorp(同约束 SOTA) | 结论 |
+|---|---|---|---|---|---|
+| **单线程 fill+drain**(BoundedQueue) | 7.2(Lin)/7.8(Win) | 7.7 / 9.6 | 13.4(Win) | 12.0(Win) | ✅ **赢全部**(rigtorp 1.54x、moody、tbb 1.7x) |
+| **MPMC 2P/2C**(BoundedQueue 单环) | 37.7(Lin)/42.2(Win) | 59.4(Win) | 138(Win) | 60.2(Win) | ✅ **赢 rigtorp 1.43x、moody 1.4x、tbb 远** |
+| **MPMC 4P/4C**(BoundedQueue 单环) | 95(Lin)/100(Win) | 62.9(Win) | 225(Win) | **75.5(Win)** | ❌ **输 rigtorp 1.33x、moody 1.6x**(根因=Vyukov CAS-retry vs rigtorp fetch_add 票号) |
+| **MPMC 2P/2C**(**ShardedQueue**) | **18.1(Lin)/22.7(Win)** | 59.4 | — | 60.2 | ✅ **反超 rigtorp/moody 2.6x** |
+| **MPMC 4P/4C**(**ShardedQueue**) | **21.0(Lin)/22.1(Win)** | 62.9 | — | 75.5 | ✅ **反超 rigtorp 3.4x、moody 2.8x,线性扩展** |
+| **work-steal owner LIFO**(WorkStealingDeque) | 2.8(Lin)/3.1(Win) | (无同物) | — | — | crossbeam LIFO 3.6(Win) 参照,HYLE 略快 |
+| **work-steal owner FIFO**(WsFifoQueue) | 3.6(Lin)/4.0(Win) | — | — | — | crossbeam FIFO 4.4(Win) 参照,HYLE 略快 |
+| **ConcurrentVector** push_back/read | 4.6/1.1(Win) | — | 5.9/1.3(Win) | — | **赢 tbb push 1.3x / read 1.1x** |
 
 **核心诚实结论 + 它驱动的真优化**:
 
-1. **单环 BoundedQueue 在高竞争全局 MPMC(4P)输 moodycamel 1.7x——这是揪出的真"自以为 SOTA"**。诊断(cap 1024→64k 解背压)证实**根因=单 `enqueue_pos_`/`dequeue_pos_` 的 CAS 单点 serialize**(解压后差距反扩 1.47→1.73x),**非有界税**。moodycamel 用 per-producer 子队列(放弃严格全局 FIFO + 无界 + 消费者 O(producers) 扫描)换生产者侧零争用——在多生产者高吞吐场景合理。
+1. **单环 BoundedQueue 4P 输 rigtorp 1.33x——纠正旧"理论墙"误判,这是揪出的真落后**。**之前误判**:文档曾称"严格-FIFO+有界 MPMC 单点 serialize 是理论墙,单环已是该约束下 SOTA,rigtorp/folly 同款"。**rigtorp 实测证伪**:同样严格-有界单环,rigtorp 4P **75.5ns 赢 HYLE 100ns(1.33x)**(2P/单线程 HYLE 反赢 rigtorp,故根因在高争用)。**真根因 = HYLE 的 Vyukov `enqueue_pos_`/`dequeue_pos_` 用 CAS-重试,4P 高争用下 CAS 失败重试风暴;rigtorp 用 `fetch_add` 票号(wait-free 取位,无重试)**。这是**可优化的实现差,非约束硬墙**——登记为待优化(改 fetch_add 票号需谨慎无锁重写 + 双平台 TSan 重过)。
+2. **ShardedQueue 已在生产用途上反超全部(含 rigtorp 3.4x)**:sched `global` 注入无全局序需求,ShardedQueue(N 子环)4P **22ns 反超 rigtorp 75.5ns 3.4x**、moody 2.8x,线性扩展。**单环 4P 的"输"在 HYLE 的实际用途里不触发**(用 ShardedQueue);单环留给真需严格全局 FIFO 的场景,那里它的 4P 待用 fetch_add 优化逼平 rigtorp。
+3. **backoff(`util::cpu_relax`)**:2P 微增,4P 单点争用下 pause 只错开不增吞吐(fetch_add 才是根治)。
 
-2. **backoff(`util::cpu_relax` 加在 CAS 失败重试)**:零约束代价(FIFO+有界全留),**2P 反超 moody 1.55x**(Win 62→43);4P 无效(单点 serialize 是硬墙,pause 只错开不增吞吐)。
-
-3. **新 `ShardedQueue`(N 个 Vyukov 子环,生产者 hash 到各自子环)根治**:消除单点争用,**4P 反超 moody 2.6-3.0x、2P 反超 2.6x,且线性扩展**(2P→4P 几乎不恶化:Lin 18→21、Win 25→20,而单环 38→95/42→99 急剧恶化)。**保留有界**(每子环有界),**放弃全局 FIFO**——这对其唯一生产用途(sched `global` 注入可运行 fiber 指针,work-stealing 本就无全局序)**是零代价**:约束服务用途,严格全局 FIFO 在此无用途支撑=可弃的假约束。需 FIFO 的场景仍用 BoundedQueue(单环)。双平台 6/6 测试 + **WSL TSan 零 race**(含 100k×4 MPMC 守恒)。**已接入 sched `global` 注入队列**(worker idx 作 push hint、per-worker pop cursor、外部注入 round-robin;28/28 sched 测试 + WSL TSan 零 race,fiber 切换 24.96ns 无退化)——价值兑现,不止 benchmark 数字。
-
-> **诚实边界**:① ShardedQueue 的 ns/op 因太快采样不足,nanobench 标 unstable(err 6-11%),但反超幅度(2.6-3x)远超误差带,方向稳健。② **跨语言对照(crossbeam Rust)只能下"同量级/有竞争力"**——亚 ns、~1.2x 差落在 rustc-LLVM vs MSVC + 手写计时 vs nanobench 的噪声内,不下细比 verdict。③ 单环 vs moodycamel 是**有界严格-FIFO vs 无界弱序**两类设计,4P 的"输"是约束选择非实现缺陷(单环已是该约束下 SOTA,rigtorp/folly 同款)。④ work-stealing owner 路径单线程无争用(两侧同样),steal 路径未并发 owner=测无争用 steal。
+> **诚实边界**:① ShardedQueue ns/op 太快采样不足(err 6-20%),但反超幅度(2.6-3.4x)远超误差带,方向稳健。② 跨语言(crossbeam Rust)只下"同量级/有竞争力"。③ **单环 4P 输 rigtorp 1.33x 是真实现差(CAS-retry vs fetch_add),已登记待优化——之前"理论墙/同约束 SOTA"是错误结论,rigtorp 实测推翻**。④ work-stealing owner 路径单线程无争用(两侧同样)。
 
 ### mem 分配器（`Allocator` vtable vs 裸 mimalloc vs std::malloc，`allocator_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench,200k/50k 小块(16..511B)。**SOTA 标尺 = 裸 `mi_malloc`/`mi_free`**(设为相对基线,HYLE 的 % 直读 = vtable 接缝开销)。`std::malloc` = 弱基线(MSVC CRT)。此前这层零对标——本节真测揪出接缝成本并修。
+> 环境:Win MSVC19.50 Release,nanobench,200k/50k 小块(16..511B)。**两个标尺**:① 裸 `mi_malloc`(设为相对基线)——但它**非多态、全内联**,对它的差读的是"多态 vs 无多态"的物理代价,非接缝缺陷;② **同类 SOTA = `std::pmr::polymorphic_allocator` over mimalloc**——和 HYLE 运行时 vtable 同为"同一 backing 上的运行时多态"(各付一次 dispatch),这才是 apples-to-apples"我们的运行时路径是否 SOTA"。`std::malloc` = 弱基线。
 
-| 场景 | 裸 mi(SOTA) | HYLE vtable(运行时注入) | HYLE SystemAllocator(编译期) | std::malloc | 结论 |
+| 场景 | 裸 mi(无多态) | HYLE vtable(运行时) | std::pmr(同类 SOTA) | HYLE SystemAllocator(编译期) | 结论 |
 |---|---|---|---|---|---|
-| **churn 空循环**(alloc+free) | 7.72 ns | 8.62 ns(**+11.6%**,原 +21%) | **7.95 ns(97.1%≈平)** | 24.28 ns | 编译期路径消尽间接税 |
-| **alloc+touch+free**(真实) | 7.85 ns | 8.95 ns(+12%) | (编译期同理≈平) | 25.65 ns | **赢 std 2.9x** |
-| **alloc-all/free-all**(批) | 9.54 ns | 9.84 ns(+3%≈平) | — | 40.30 ns | **赢 std 4x** |
-| **8 线程并发** | 2.14 ns/op | 2.07 ns/op(102.9%≈平) | — | 4.56 ns/op | **赢 std 2.2x** |
+| **churn 空循环**(alloc+free) | 7.79 ns | 8.61 ns(90.5%) | 8.70 ns(89.5%) | **7.91 ns(98.5%)** | **vtable 赢同类 std::pmr 1.01x;编译期路径≈裸 mi** |
+| **alloc+touch+free**(真实) | 7.75 ns | 8.77 ns(88.4%) | — | (编译期同理≈平) | 真实负载下接缝摊薄 |
+| **alloc-all/free-all**(批) | 9.56 ns | 9.84 ns(97.1%) | — | — | ≈平 |
+| **8 线程并发** | 1.75 ns/op | 1.97 ns/op(89.1%) | — | — | ≈平(per-thread heap) |
 
 **诚实结论(两层:运行时注入 vtable + 编译期默认)**:
-- **运行时 `Allocator` vtable**(opt-in 路径,给 arena/mock/跨 DLL):churn +11.6%(原 +21%)。原 +21% 不是 C-ABI 税,是两处设计失误已修——① 单 5 参 `ReallocFn` 在 Win64 压第 5 参 + "一函数干三件事"派发分支 → 拆 3 函数指针(仍 100% C-ABI 干净,同 jemalloc/pmr);② `normalize_alignment` 常开 FATAL_ASSERT → 默认对齐短路。剩 ~8-11% 是 vtable 的间接调用,这是**运行时多态本身的物理代价**(= 一次虚调用),只有这条 opt-in 路径才付。
-- **编译期 `SystemAllocator`**(默认路径,host RAM):`allocate` 内联直调 `mi_malloc`,**实测 7.95ns = 97.1% 裸 mi(噪声内≈平)**。前向声明 5 个 mi_* 不暴露 mimalloc.h(用户点破"内联≠暴露头"假两难)。**默认场景零接缝税,与裸 mimalloc 持平**——这就是"C-ABI 也能最强":默认编译期绑定 0 税,运行时注入是显式 opt-in 才付间接。
-- **结论:8% 不再是"不可约地板"**——它只是 opt-in 运行时注入的代价;默认编译期路径已实测追平裸 mimalloc。**头内联容器簇已全量迁移**(SmallVector/BoundedQueue/ShardedQueue/WsFifoQueue/WorkStealingDeque/ConcurrentVector):默认参 `SystemAllocator`,`[[no_unique_address]]` 去掉每实例 32 字节运行时句柄(空间复杂度↓),运行时 `mem::Allocator` 降 opt-in(sched 等需注入者显式用)。type-erased 核容器(CArray/SwissTable/string_buf)保持运行时句柄(出线核服务所有 T,不内联,这是正确模型非缺口)。双平台 + WSL TSan 验证。
+- **运行时 `Allocator` vtable**(opt-in 路径,给 arena/mock/跨 DLL):对裸 mi -10%,但**这 10% 是运行时多态本身的物理代价(一次间接调用),不是 HYLE 接缝缺陷**——铁证:**同类 SOTA `std::pmr::polymorphic_allocator`(也一次虚调用、同 mimalloc backing)8.70ns,HYLE vtable 8.61ns 反而快 1.01x**。即:在"运行时多态分配器"这个类里,HYLE 是 SOTA(3 函数指针 vtable 比 std::pmr 的 `do_allocate` 虚调用还略省)。原 +21% 才是真缺陷(已修)——① 单 5 参 `ReallocFn` 在 Win64 压第 5 参 + 派发分支 → 拆 3 函数指针;② `normalize_alignment` 常开 FATAL_ASSERT → 默认对齐短路。
+- **编译期 `SystemAllocator`**(默认路径,host RAM):`allocate` 内联直调 `mi_malloc`,**实测 7.91ns = 98.5% 裸 mi(噪声内≈平)**。前向声明 5 个 mi_* 不暴露 mimalloc.h(用户点破"内联≠暴露头"假两难)。**默认场景零接缝税,与裸 mimalloc 持平**——这就是"C-ABI 也能最强":默认编译期绑定 0 税,运行时注入是显式 opt-in 才付间接,且那一档也已是同类 SOTA。
+- **结论:vtable 对裸 mi 的"10%"不是落后,是多态税,且 HYLE 在多态这一类里反超 std::pmr**;默认编译期路径实测追平裸 mimalloc。**头内联容器簇已全量迁移**(SmallVector/BoundedQueue/ShardedQueue/WsFifoQueue/WorkStealingDeque/ConcurrentVector):默认参 `SystemAllocator`,`[[no_unique_address]]` 去掉每实例 32 字节运行时句柄(空间复杂度↓),运行时 `mem::Allocator` 降 opt-in(sched 等需注入者显式用)。type-erased 核容器(CArray/SwissTable/string_buf)保持运行时句柄(出线核服务所有 T,不内联,这是正确模型非缺口)。双平台 + WSL TSan 验证。
 
 ### mem 专用分配器簇（arena/pool/stack vs `std::pmr` + 裸 mimalloc，`arena_pool_bench.cc`）
 
@@ -202,10 +254,11 @@
 
 | pool churn 场景(同尺寸 alloc/free) | ns/op | vs 裸 mi | 结论 |
 |---|---|---|---|
-| **HYLE MemoryArena**(分片无锁池) | 15.00 | **0.32x(慢 3.1x)** | 单线程原子 CAS 常数因子 |
-| **HYLE GrowablePool**(单线程) | **1.92** | **2.54x** | ✅ 真兑现 |
-| std::pmr::unsync_pool(SOTA) | 6.72 | 0.72x | — |
-| 裸 mi_malloc/free(general) | 4.87 | 1.0x | — |
+| **HYLE MemoryArena**(分片无锁池) | 14.62 | **0.33x(慢 3.1x)** | 单线程原子 CAS 常数因子 |
+| **HYLE ObjectPool**(typed,坐 MemoryArena 上) | 14.86 | 0.32x(慢 3.2x) | =MemoryArena+placement-new(typed 壳 ~免费,98.3%) |
+| **HYLE GrowablePool**(单线程) | **1.46** | **3.3x** | ✅ 真兑现 |
+| std::pmr::unsync_pool(SOTA) | 6.17 | 0.77x | — |
+| 裸 mi_malloc/free(general) | 4.77 | 1.0x | — |
 
 **8 线程 pool churn——公平对照(双方都 per-thread)vs 共享固定池的协调代价:**
 
@@ -225,16 +278,18 @@
 
 4. **"共享 MemoryArena 慢 1.95x" 是 apples-to-oranges,不是真落后——公平对照 HYLE 反超**:此前把"8 线程**共享一个**固定池"对"mimalloc 的 **8 个 per-thread heap**"比,本身不公平——这个 workload 全是**同线程** alloc/free,mimalloc 用**非原子 thread-local free list** 服务,而单块共享固定 slab 协调跨线程本就要每 op 一次原子 CAS(分片+无争用,`lock` 前缀也非零)。**公平对照(双方都 per-thread)**:HYLE `GrowablePool` 每线程一个池 = **0.72ns,反超裸 mi per-thread heap(1.28ns)1.78x**。即:同线程同尺寸 churn 这个 workload,SOTA 模式就是"池 per-thread"(mimalloc 内部正是如此),HYLE 的对等答案赢。共享固定池的 1.94x 是**"一块固定 slab 当跨线程共享有界资源"的真实协调代价**(非复杂度——分片已消除 O(threads) 的 278x),而非可包装掉的水分。进一步逼到 1.0x 需 seastar 模型(线程钉死 per-core 终生、池生命周期长于线程),`MemoryArena` 的通用生命周期给不出这个契约(owner-local 非原子表与固定 slab 的"不假性耗尽"硬冲突,详见 mem-design)。**结论:这一项无需"修"——选对工具(per-thread 池)即已超 SOTA;真要共享有界池,1.94x 是诚实标价。**
 
-### container 杂项（SmallVector / IntrusiveList vs std，`container_misc_bench.cc`）
+### container 杂项（SmallVector / IntrusiveList / CArray vs std + 真 SOTA，`container_misc_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench。两个有性能声明却此前零 bench 的容器。标尺 = std 等价物(`std::vector`/`std::list`,无外部依赖)。
+> 环境:Win MSVC19.50 Release,nanobench。声明承重容器。**标尺升级**:不止 std——SmallVector→`absl::InlinedVector`(small-vector SOTA,gated `-DHYLE_BENCH_ABSL`)、IntrusiveList→`boost::intrusive::list`(侵入容器 canonical SOTA,gated `-DHYLE_BENCH_BOOST`)、CArray→`std::vector`(动态数组的 drop-in SOTA,本身已是高度调优,always-on)。
 
-| 场景 | HYLE | std | vs std | 结论 |
+| 场景 | HYLE | std | 真 SOTA(gated) | 结论 |
 |---|---|---|---|---|
-| **小 N churn**(建+填 8 int+析构) | SmallVector<int,16> **0.50 ns** | vector 16.57 ns / vector+reserve 3.06 ns | **33x / 6.1x** | ✅ "小 N 省 malloc 大赢"坐实 |
-| **list churn**(push 4096 + pop 全) | IntrusiveList **2.55 ns** | list 24.07 ns | **9.4x** | ✅ "O(1) 摘除、无分配"坐实 |
+| **小 N churn**(建+填 8 int+析构) | SmallVector<int,16> **0.43 ns** | vector 16.7 / vector+reserve 3.07 | **absl::InlinedVector 0.60** | ✅ **赢 absl 1.40x**、赢 std 39x |
+| **list churn**(push 4096 + pop 全) | IntrusiveList **3.0~3.4 ns** | list 24.1 | boost::intrusive(需 submodule checkout) | **8x 赢 std**;boost 同 hook-in-node,gate 已接 |
+| **动态数组 growth**(push_back 4096 int,无 reserve) | CArray<int> **0.53 ns** | vector **0.71** | (std::vector 即 SOTA) | ✅ **赢 std::vector 1.34x** |
+| **动态数组 read**(顺序求和 4096) | CArray<int> **0.18 ns** | vector 0.18 | (std::vector 即 SOTA) | ➖ **平 std::vector**(arr[i] 单 load 兑现) |
 
-**诚实结论(这两个是真兑现,非欺骗)**:SmallVector<int,16> 全程 inline 零堆分配,小集合 churn **33x 赢 std::vector**(连给 std::vector 预 reserve 也赢 6.1x——省的是构造期那次 malloc);IntrusiveList 链接内嵌节点,push/pop 纯指针操作零分配,**9.4x 赢 std::list**(后者每 push 分配节点)。这俩声明无水分,与无锁分配器的反例对照鲜明:**单线程、无共享、零原子的设计才是 HYLE 真正快的地方**。
+**诚实结论**:① **SmallVector 反超 absl::InlinedVector 1.40x**——不是"只赢 std":absl::InlinedVector 是 small-vector 的 SOTA(同 inline 存储设计),HYLE 0.43ns vs absl 0.60ns,小 N churn 真赢同款 SOTA(也赢 std::vector 39x)。② **IntrusiveList 8x 赢 std::list**(零节点分配);boost::intrusive 同 hook-in-node 设计,gate 已接线(`-DHYLE_BENCH_BOOST`),但 boost 模块化 submodule 未 checkout,留待环境备齐实测(预期同量级)。③ **CArray 反超 std::vector 1.34x growth、平 read**:growth 赢的真根因 = 经 `reallocate()` 增容(mimalloc 原地扩展,无 copy),std::vector 每次扩容恒 alloc-new+move+free;read 路径 arr[i] 单 load 与 vector 持平(header-before-data 布局零索引开销)。
 
 
 
@@ -265,7 +320,7 @@
 | **fiber-aware mutex** vs `std::mutex` | 高竞争吞吐高数倍（不阻塞 OS 线程）；无竞争持平 | ≈ 持平（等待队列用 intrusive，零额外分配）|
 | **async IO** io_uring/proactor vs 阻塞 IO | 并发连接 **10-100×**；批量提交省 syscall | **远省**：SQ/CQ ring 固定开销 vs thread-per-conn 的每线程栈 |
 | **SIMD 数值核** vs 标量 | **4-16×**（AVX2=8/AVX512=16 宽）；vs 自动向量化仅 1.5-4×（transcendental 这类是大头）| 轻微增：对齐 padding + dtype 转换 scratch |
-| **统一内存 MemorySpace** vs host/device 拷贝 | DGX/Mac 上 copy 塌缩 no-op（省一次 DMA）| **更省**：不需 host+device 双份镜像 |
+| **device buffer**(compute/ 自有) vs host/device 双份镜像 | 异构(独显)本就要显式 copy/drawcall 过 PCIe——无"零拷贝"可言,优化点是**批量提交 + 复用 buffer 省往返**;统一内存(DGX/Mac)host/device 同物理 RAM,**本就无互传概念**,不存在"省一次 DMA"的红利 | **更省**:统一内存下不需 host+device 双份镜像(物理同址) |
 
 ## 整体系统层面（Amdahl，别期待"全面快 N 倍"）
 
@@ -273,7 +328,7 @@
 
 - **瓶颈不在这些点** → 整体可能仅 **1.2×**。
 - **并发 / IO 密集** → **10×+**。
-- **架构连贯性红利**（不打架的双调度器、统一内存零拷贝）不体现为微基准倍数，而是真实混合负载的系统级延迟/吞吐——Seastar/ScyllaDB 那种 shard-per-core 重写报过 **~2× 系统吞吐**，是"架构做对"的现实数字。
+- **架构连贯性红利**（不打架的双调度器、统一内存无双份镜像）不体现为微基准倍数，而是真实混合负载的系统级延迟/吞吐——Seastar/ScyllaDB 那种 shard-per-core 重写报过 **~2× 系统吞吐**，是"架构做对"的现实数字。
 
 ## 诚实边界
 

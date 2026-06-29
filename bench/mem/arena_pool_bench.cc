@@ -32,6 +32,7 @@ using hyle::mem::Allocator;
 using hyle::mem::Arena;
 using hyle::mem::GrowablePool;
 using hyle::mem::MemoryArena;
+using hyle::mem::ObjectPool;
 using hyle::mem::StackAllocator;
 using hyle::mem::system_allocator;
 
@@ -120,6 +121,20 @@ int main() {
         Obj* p = gpool.create();
         nb::doNotOptimizeAway(p);
         gpool.destroy(p);
+      }
+    });
+
+    // HYLE ObjectPool<T> (typed create/destroy over the lock-free MemoryArena).
+    // Measures the typed shell's overhead atop the arena: it adds placement-new
+    // + ~T over MemoryArena's raw alloc/free, so it should track MemoryArena (NOT
+    // GrowablePool -- ObjectPool is the lock-free/shared-capable one, the same
+    // atomic-CAS class). Was a DEAD include (object_pool.h:28) until this row.
+    ObjectPool<Obj> opool(sys, kN);
+    b.run("HYLE ObjectPool (typed, lock-free arena)", [&] {
+      for (int i = 0; i < kN; ++i) {
+        Obj* p = opool.create();
+        nb::doNotOptimizeAway(p);
+        opool.destroy(p);
       }
     });
 

@@ -15,6 +15,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <memory_resource>
 #include <thread>
 #include <vector>
 
@@ -28,6 +29,22 @@ namespace {
 constexpr int kAllocs = 200000;
 // A spread of small sizes (the common allocator workload).
 std::uint32_t size_at(int i) { return 16 + ((i * 2654435761u) % 496); }  // 16..511
+
+// std::pmr::memory_resource over mimalloc -- the SAME-CLASS rival to HYLE's
+// runtime Allocator vtable. BOTH are runtime polymorphism over the same backing
+// (mimalloc), so racing them isolates the DISPATCH cost (HYLE 3-fn fn-ptr vtable
+// vs std::pmr's virtual do_allocate). Racing the vtable against RAW mi (non-
+// polymorphic, inlined) measures "polymorphism vs none" -- not apples-to-apples;
+// THIS is the fair "is our runtime path SOTA for its class?" check.
+class MiResource final : public std::pmr::memory_resource {
+  void* do_allocate(std::size_t bytes, std::size_t align) override {
+    return mi_malloc_aligned(bytes, align);
+  }
+  void do_deallocate(void* p, std::size_t, std::size_t) override { mi_free(p); }
+  bool do_is_equal(const std::pmr::memory_resource& o) const noexcept override {
+    return this == &o;
+  }
+};
 }  // namespace
 
 int main() {
@@ -52,6 +69,17 @@ int main() {
         void* p = a.allocate(size_at(i));
         ankerl::nanobench::doNotOptimizeAway(p);
         a.deallocate(p, size_at(i));
+      }
+    });
+    // Same-class rival: std::pmr runtime polymorphism over the SAME mimalloc.
+    MiResource mr;
+    std::pmr::polymorphic_allocator<std::byte> pa(&mr);
+    b.run("std::pmr over mimalloc (same-class rival)", [&] {
+      for (int i = 0; i < kAllocs; ++i) {
+        std::uint32_t sz = size_at(i);
+        void* p = pa.allocate_bytes(sz);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        pa.deallocate_bytes(p, sz);
       }
     });
     b.run("HYLE SystemAllocator (compile-time, inlined)", [&] {

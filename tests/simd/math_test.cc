@@ -9,9 +9,9 @@
 
 // math_test -- exp/log/tanh batch ops vs libm reference. The batch path runs whichever
 // tier is live (SLEEF AVX2 if -DHYLE_SIMD_SLEEF + AVX2 host, else scalar libm). Either
-// way the result must match std:: within tolerance: scalar is exact-libm; SLEEF _u10 is
-// 1-ULP, so a small relative tolerance covers both. This is runnable on EVERY platform
-// (scalar tier always present), and additionally exercises the SLEEF cores when wired.
+// way the result must match std:: within tolerance: scalar is exact-libm; SLEEF exp is
+// _u10 (1-ULP), log/tanh are _u35 (3.5-ULP -- the AI-appropriate, ~2-3x faster tier; see
+// transcendental_sleef.cc). The tolerance below is set to the 3.5-ULP class with margin.
 
 using hyle::simd::active_math_variant;
 using hyle::simd::exp_f32_batch;
@@ -22,11 +22,12 @@ using hyle::simd::tanh_f32_batch;
 namespace {
 // Relative-error tolerance vs a double-precision libm reference. Set from MEASURED worst
 // case (red team 2026-06 flagged the old 1e-5 ~= 84 ULP as toothless -- a broken
-// polynomial would pass): scalar tier worst 0.7 ULP (8.4e-8), SLEEF _u10 AVX2 tier worst
-// 0.5 ULP (6.5e-8). 4e-7 ~= 3.4 ULP gives ~5x margin over both real paths yet is 25x
-// tighter than before, so a kernel off by >=4 ULP now fails. Absolute floor 1e-6 covers
-// lanes crossing zero (log(1), tanh(0)) where relative error is undefined.
-constexpr double kRelTol = 4e-7;
+// polynomial would pass): scalar tier worst 0.7 ULP (8.4e-8), SLEEF exp _u10 worst 0.5
+// ULP. log/tanh moved to _u35 (3.5-ULP worst, the tier xsimd/Highway also use and the
+// AI hot path needs) -- so the bound is 8e-7 ~= 6.7 ULP: ~2x margin over _u35's 3.5 ULP,
+// still ~12x tighter than the old toothless 1e-5, so a kernel off by >=7 ULP fails.
+// Absolute floor 1e-6 covers lanes crossing zero (log(1), tanh(0)) where rel err undefined.
+constexpr double kRelTol = 8e-7;
 constexpr double kAbsTol = 1e-6;
 void check(void (*fn)(const float*, float*, std::size_t), double (*ref)(double),
            const std::vector<float>& in, const char* name) {

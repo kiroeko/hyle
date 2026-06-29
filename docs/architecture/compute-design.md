@@ -39,7 +39,7 @@ compute/
 
 > **校正（对照真实 ggml-backend.h）**：ggml-backend **已经有** device/stream/buffer/buffer_type/event/sched 全套抽象。所以 HYLE 真正"净新"的只有两处：**①任意 kernel 启动**（ggml 是固定算子集 + `graph_compute(cgraph)`，无 raw launch）；**②host 侧 completion→fiber 唤醒**（ggml 的 `synchronize` 是阻塞式，event 仅 GPU-GPU 跨后端同步，无"算完回调唤醒 host"）。device/buffer 枚举应**薄包 ggml-backend**，避免双层抽象税；只在 kernel-launch + fiber-completion 处真正自造。可直接照镜 ggml 的 `dev_caps{async,host_buffer,buffer_from_host_ptr,events}` 能力查询结构。
 >
-> **深读补充（buffer_type 即 MemorySpace 的范本）**：ggml 的 `buffer_type_i{get_alignment/get_max_size/get_alloc_size/is_host}` 正是 HYLE MemorySpace 该照镜的 trait——且 ggml 里 **host/device/pinned/split 不是枚举开关，而是各立一个 buffer_type 实例**（`is_host()` 是唯一 host 布尔判据）。这印证方案 D：**一种内存模型 = 一个 space/buft 实例**，不是 `switch(MemKind)`。非标能力（`set_n_threads`、`split_buffer_type` 等）经 `get_proc_address` 探测取得（不破 vtable）——HYLE `ggml_bridge` 拿这些扩展走同一机制。
+> **深读补充（buffer_type 是 device buffer 的范本，归 compute/ 不归 mem/）**：ggml 的 `buffer_type_i{get_alignment/get_max_size/get_alloc_size/is_host}` 是 HYLE **compute/ device buffer** 该照镜的 trait——且 ggml 里 **host/device/pinned/split 不是枚举开关，而是各立一个 buffer_type 实例**（`is_host()` 是唯一 host 布尔判据）。**一种内存模型 = 一个 buffer_type 实例**(不是 `switch(MemKind)`),这条洞见正确;但它落在 **compute/ 的 device buffer**(自有所有权 + stream 绑定),**不是 mem/ 的 MemorySpace**——曾设想的"mem/ 定义 MemorySpace 统一 host+device"是**已证伪的方案D**(见下"内存模型"节 + mem-design):device 内存走显式 copy/command-submit,不经 mem/ 的 CPU allocator 抽象。非标能力（`set_n_threads`、`split_buffer_type` 等）经 `get_proc_address` 探测取得（不破 vtable）——HYLE `ggml_bridge` 拿这些扩展走同一机制。
 > **张力收口**："buffer 薄包 ggml"与"不暴露 ggml 类型"有张力：**枚举/能力查询薄包**（照镜 buft trait），**内存所有权 + stream 绑定自造**，bridge 只在算子边界做 tensor↔buffer 翻译。另注意 ggml sched 把 INPUT 强制落 CPU、末位 backend 必须是 CPU（`ggml-backend.cpp:903/1736` ASSERT）——这是 ggml 的兜底耦合，**HYLE 自有 stream 调度不要继承**。
 
 ### 3. shader 计算是一等公民，不只绑 CUDA
@@ -85,7 +85,7 @@ compute/
 | 通用 device/stream/buffer/kernel 抽象 | 🔧 自造 | ggml 没有的通用层，绑 HYLE sched，**不暴露 ggml 类型** |
 | GPU completion → fiber 唤醒 | 🔧 自造 | event/fence 接 sched，io/ 同款机制 |
 | Vulkan compute 自定义 kernel | 🔧 自造（参考 kompute）| 一等公民路径，slate vulkan 打底 |
-| 设备内存分配 | 🔧 改造 mem/ | 扩 host/device/pinned/unified（呼应 ggml 的 device-memory-aware API）|
+| 设备内存分配 | 🔧 compute/ 自有 | device/pinned/unified buffer 各立 ggml 式 buffer_type 实例,所有权+stream 绑定在 compute/;**不走 mem/ 的 CPU allocator 抽象**(host↔device 是显式 copy/command-submit)|
 
 **原则**：算子和跨后端调度借 ggml（别重造）、但**只通过 `ggml_bridge` adapter 对接上游 pin 版、不焊死 vendored 快照**；通用抽象层 + 与 sched 的 completion 统一自造（ggml 给不了），且 HYLE 抽象不暴露 ggml 类型。
 

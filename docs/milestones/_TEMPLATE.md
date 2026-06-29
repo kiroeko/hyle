@@ -27,7 +27,7 @@
 
 ## 在架构中的位置
 
-它在依赖图哪个节点、上游谁依赖它、属于哪条接缝（如 completion 脊 / C-ABI 边界 / MemorySpace）。指向 `roadmap.md` 第一节的位置。
+它在依赖图哪个节点、上游谁依赖它、属于哪条接缝（如 completion 脊 / C-ABI 边界 / allocator 注入）。指向 `roadmap.md` 第一节的位置。
 
 ## 具体事务（做什么）
 

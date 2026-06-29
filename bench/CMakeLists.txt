@@ -49,14 +49,30 @@ add_executable(hyle_queue_sota_bench container/queue_sota_bench.cc)
 target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench mimalloc_static)
 hyle_apply_warnings(hyle_queue_sota_bench)
 
-# task #19 breadth: the two claim-bearing containers with no prior bench. SmallVector
-# (inline storage, "省 malloc") vs std::vector; IntrusiveList ("O(1) 无分配") vs
-# std::list. SmallVector defaults to the compile-time SystemAllocator, which INLINES
-# mi_malloc into THIS exe -> link mimalloc_static directly (its symbols are internal to
-# hyle_mem.dll, not re-exported). This is the merged/static-build inline path.
+# task #19 breadth + gap-fill #34/#35: the claim-bearing containers. SmallVector
+# (inline storage) vs std::vector; IntrusiveList ("O(1) 无分配") vs std::list;
+# CArray (dynamic array) vs std::vector. Real SOTA rivals are opt-in: absl::
+# InlinedVector (-DHYLE_BENCH_ABSL, wired in the absl block below) and boost::
+# intrusive::list (-DHYLE_BENCH_BOOST, header-only block below). SmallVector
+# defaults to the compile-time SystemAllocator which INLINES mi_malloc into THIS
+# exe -> link mimalloc_static directly (symbols internal to hyle_mem.dll).
 add_executable(hyle_container_misc_bench container/container_misc_bench.cc)
 target_link_libraries(hyle_container_misc_bench PRIVATE hyle_container hyle_mem nanobench mimalloc_static)
 hyle_apply_warnings(hyle_container_misc_bench)
+
+# boost::intrusive::list -- the canonical intrusive-container SOTA (header-only).
+# Enable with -DHYLE_BENCH_BOOST=ON; point HYLE_BOOST_DIR at a boost tree (the
+# superproject root with boost/intrusive/list.hpp reachable, e.g. a full boost
+# clone or system boost). Header-only -> just an include path, no link/build.
+option(HYLE_BENCH_BOOST "build IntrusiveList bench vs boost::intrusive::list" OFF)
+if(HYLE_BENCH_BOOST)
+  set(HYLE_BOOST_DIR "${PROJECT_SOURCE_DIR}/../boost" CACHE PATH "boost tree root")
+  if(NOT EXISTS "${HYLE_BOOST_DIR}/boost/intrusive/list.hpp")
+    message(FATAL_ERROR "HYLE_BENCH_BOOST=ON but no boost/intrusive/list.hpp at ${HYLE_BOOST_DIR}")
+  endif()
+  target_compile_definitions(hyle_container_misc_bench PRIVATE HYLE_BENCH_BOOST)
+  target_include_directories(hyle_container_misc_bench SYSTEM PRIVATE "${HYLE_BOOST_DIR}")
+endif()
 
 # task #23: hash cluster. HYLE hash_bytes(XXH3)/mix64 vs raw XXH3 (vendored, always)
 # + std::hash. wyhash is a sibling clone -> opt-in -DHYLE_BENCH_WYHASH=ON (header-only).
@@ -106,6 +122,20 @@ if(HYLE_BENCH_TBB)
   target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
 endif()
 
+# Optional: rigtorp::mpmc::Queue -- the SAME-CONTRACT rival to BoundedQueue (strict-
+# bounded single-ring MPMC, the canonical SOTA for exactly that contract). Single
+# header -> just an include path. Enable with -DHYLE_BENCH_RIGTORP=ON; point
+# HYLE_RIGTORP_DIR at the clone (sibling `rigtorp-MPMCQueue` by default).
+option(HYLE_BENCH_RIGTORP "build queue bench vs rigtorp MPMCQueue (same-contract SOTA)" OFF)
+if(HYLE_BENCH_RIGTORP)
+  set(HYLE_RIGTORP_DIR "${PROJECT_SOURCE_DIR}/../rigtorp-MPMCQueue" CACHE PATH "cloned rigtorp MPMCQueue")
+  if(NOT EXISTS "${HYLE_RIGTORP_DIR}/include/rigtorp/MPMCQueue.h")
+    message(FATAL_ERROR "HYLE_BENCH_RIGTORP=ON but no MPMCQueue.h at ${HYLE_RIGTORP_DIR}")
+  endif()
+  target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_RIGTORP)
+  target_include_directories(hyle_queue_sota_bench SYSTEM PRIVATE "${HYLE_RIGTORP_DIR}/include")
+endif()
+
 # simd bench: dot/saxpy raced across scalar-autovec / HYLE sse4 / HYLE avx2 (+ Highway if
 # enabled). Each kernel TU is compiled with ITS OWN -march so the per-ISA codegen is real
 # and isolated (one backend per TU). The scalar baseline TU gets NO -march (auto-vec only
@@ -129,11 +159,27 @@ endif()
 hyle_apply_warnings(hyle_simd_bench)
 
 # math bench: vectorized exp/log/tanh (SLEEF AVX2 when hyle_simd built with
-# -DHYLE_SIMD_SLEEF=ON) vs scalar libm. Own exe (simd_bench.cc owns main()). The
-# *_f32_batch ops live in hyle_simd; SLEEF is its PRIVATE dep, so this just links
-# hyle_simd. Without SLEEF the HYLE row ties the scalar baseline (honest no-vec).
+# -DHYLE_SIMD_SLEEF=ON) vs scalar libm + same-ISA SOTA rivals (gap-fill #36):
+# xsimd (-DHYLE_BENCH_XSIMD, below) and Highway contrib/math (-DHYLE_BENCH_HIGHWAY,
+# wired in the Highway block further down where HYLE_HIGHWAY_DIR is defined). Both
+# lower to AVX2 transcendentals so they match HYLE's SLEEF AVX2 path. Own exe.
 add_executable(hyle_math_bench simd/math_bench.cc)
 target_link_libraries(hyle_math_bench PRIVATE hyle_simd nanobench)
+option(HYLE_BENCH_XSIMD "build math bench vs xsimd (same-ISA transcendental SOTA)" OFF)
+if(HYLE_BENCH_XSIMD)
+  set(HYLE_XSIMD_DIR "${PROJECT_SOURCE_DIR}/../xsimd" CACHE PATH "cloned xsimd")
+  if(NOT EXISTS "${HYLE_XSIMD_DIR}/include/xsimd/xsimd.hpp")
+    message(FATAL_ERROR "HYLE_BENCH_XSIMD=ON but no xsimd at ${HYLE_XSIMD_DIR}")
+  endif()
+  target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_XSIMD)
+  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${HYLE_XSIMD_DIR}/include")
+  # xsimd lowers to AVX2 transcendentals -> build this TU at AVX2 (match SLEEF path).
+  if(NOT MSVC)
+    set_source_files_properties(simd/math_bench.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
+  else()
+    set_source_files_properties(simd/math_bench.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+  endif()
+endif()
 hyle_apply_warnings(hyle_math_bench)
 
 # dtype cvt bench: fp16/bf16<->f32 batch. HYLE F16C dispatch vs scalar reference (+ Highway
@@ -169,6 +215,16 @@ if(HYLE_BENCH_HIGHWAY)
   else()
     set_source_files_properties(simd/dtype_bench.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
   endif()
+  # math bench's Highway contrib/math (Exp/Log/Tanh) path -- same gate + AVX2 TU flags
+  # (gap-fill #36: same-ISA transcendental SOTA). If xsimd already set the AVX2 flags
+  # on math_bench.cc, set_source_files_properties just overwrites with the same list.
+  target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_HIGHWAY)
+  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${HYLE_HIGHWAY_DIR}")
+  if(NOT MSVC)
+    set_source_files_properties(simd/math_bench.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
+  else()
+    set_source_files_properties(simd/math_bench.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+  endif()
 endif()
 
 # Optional SOTA parity: HYLE fiber sync vs marl (the fiber-sync library this
@@ -202,4 +258,7 @@ if(HYLE_BENCH_ABSL)
   target_link_libraries(hyle_absl_bench PRIVATE hyle_container nanobench
     absl::flat_hash_map)
   hyle_apply_warnings(hyle_absl_bench)
+  # absl::InlinedVector is the small-vector SOTA -> feed it to the misc bench too.
+  target_compile_definitions(hyle_container_misc_bench PRIVATE HYLE_BENCH_ABSL)
+  target_link_libraries(hyle_container_misc_bench PRIVATE absl::inlined_vector)
 endif()
