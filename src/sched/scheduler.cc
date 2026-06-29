@@ -31,16 +31,12 @@ std::uint64_t xorshift(std::uint64_t& s) noexcept {
   return s;
 }
 
-// Idle backoff before an idle worker parks. Park is a futex round-trip AND
-// forces the producer's enqueue to do an unpark syscall; under a spawn burst
-// that becomes a wake STORM (measured: fork-join spawn ran ~17x slower than marl
-// purely from eager parking + per-enqueue unpark). Work from a cross-thread
-// spawn or a finishing neighbor usually lands within microseconds, so we first
-// SPIN on cpu_relax (cheap, no syscall) to bridge the gap, then yield a few
-// times (cede the core if oversubscribed), and only then park. (sched-design
-// §2.3 ①; HYLE/Go-style. The §2.3 ②③ searching-thief gate + baton relay --
-// which would also cut redundant wakes -- remain deferred: they need a seq_cst
-// Dekker handshake + model-checking, see notify().)
+// Idle backoff while SEARCHING. The §2.3 ②③ anti-herd gate (num_searching_ +
+// notify() seq_cst Dekker, see notify()/run_worker) is what kills the spawn-burst
+// futex storm at the source: a producer skips waking parked workers while a
+// searcher exists. This spin then just keeps the searcher warm to catch the next
+// item before the (now rare) park, and bridges sub-µs producer gaps. cpu_relax,
+// no syscall. (Prior comment said §2.3 ②③ were deferred -- they are now done.)
 constexpr int kSpinPolls = 4096;       // cpu_relax polls (sub-µs, no syscall)
 constexpr int kYieldsBeforePark = 4;   // then cede the core a few times
 
@@ -69,6 +65,13 @@ struct Scheduler::Impl {
 
   std::mutex idle_mu;              // guards `sleepers` (cold path: park/unpark)
   std::vector<unsigned> sleepers;  // ids of currently-parked workers
+  // Count of workers currently SEARCHING for work (spinning/stealing, not yet
+  // parked). The §2.3 ②③ anti-herd gate: a producer skips waking a parked worker
+  // when a searcher already exists (it will find the new work), killing the
+  // per-enqueue futex storm at the source. Lost-wakeup safety is the seq_cst
+  // StoreLoad "Dekker" handshake between notify() and a worker about to park
+  // (documented at both sites). tokio idle.rs / Go wakep / actives-thieves paper.
+  std::atomic<int> num_searching_{0};
   unsigned n;
   Scheduler* owner;  // for tls_owner / current_waker()
 
@@ -117,14 +120,21 @@ struct Scheduler::Impl {
     }
   }
 
-  // Wake one parked worker, UNCONDITIONALLY on every enqueue. Correctness rests
-  // on this being unconditional: gating it on a "is anyone searching?" read
-  // (the §2.3 ② anti-herd optimization) reintroduces a StoreLoad race that can
-  // drop a wakeup (worker decrements its searching flag, a producer reads it as
-  // 0... reversed and you hang). The herd-suppression gate + baton relay (§2.3
-  // ②③) are DEFERRED: they need a seq_cst Dekker handshake and model-checking;
-  // shipping a subtly-wrong relay is worse than a few extra wakeups. TODO sched.
-  void notify() noexcept { unpark_one(); }
+  // Wake a parked worker ONLY when no worker is already searching (the §2.3 ②
+  // anti-herd gate). The caller has already enqueued the task; the seq_cst fence
+  // here pairs with the seq_cst fence a worker runs AFTER leaving the searching
+  // state and BEFORE its final pre-park recheck (run_worker). The StoreLoad
+  // "Dekker" theorem: across all seq_cst ops in one total order, two threads
+  // cannot BOTH read the other's pre-fence value -- so either this notify sees
+  // num_searching_ == 0 (and wakes a sleeper) OR the about-to-park worker's
+  // recheck sees this newly enqueued task (and doesn't park). No lost wakeup.
+  // A freshly-woken worker re-enters searching before this gate matters, so the
+  // brief window only ever costs a few EXTRA wakeups, never a missed one.
+  void notify() noexcept {
+    std::atomic_thread_fence(std::memory_order_seq_cst);
+    if (num_searching_.load(std::memory_order_relaxed) > 0) return;  // a searcher will take it
+    unpark_one();
+  }
 
   void unpark_one() noexcept {
     unsigned idx;
@@ -186,9 +196,12 @@ struct Scheduler::Impl {
         dispatch(w, f);
         continue;
       }
-      // Idle: spin cheaply (cpu_relax, no syscall) to bridge the brief gap until
-      // a producer/neighbor delivers work, then yield a few times, before the
-      // expensive park. Avoids the park/unpark futex storm under a spawn burst.
+      // No work on the first look -> become a SEARCHER. While num_searching_ > 0
+      // producers skip waking parked workers (notify() gate), so a spawn burst
+      // no longer triggers a futex per enqueue -- THIS searcher absorbs them by
+      // finding the work during its spin. The spin also just bridges the brief
+      // producer gap before the (now rarely needed) park.
+      num_searching_.fetch_add(1, std::memory_order_relaxed);
       bool got = false;
       for (int spin = 0; spin < kSpinPolls && !got; ++spin) {
         util::cpu_relax();
@@ -201,19 +214,28 @@ struct Scheduler::Impl {
         if (f != nullptr) got = true;
       }
       if (got) {
+        // Leaving searching with work in hand. If we were the LAST searcher,
+        // baton one parked worker to keep a searcher warm (tokio
+        // transition_from_searching) so the next burst item is caught without a
+        // cold park->unpark round-trip. fetch_sub returns the PRE value.
+        if (num_searching_.fetch_sub(1, std::memory_order_relaxed) == 1) {
+          unpark_one();
+        }
         dispatch(w, f);
         continue;
       }
-      // Prepare to park: register as a sleeper, then RE-CHECK once more. The
-      // register-before-recheck plus an UNCONDITIONAL notify (see notify())
-      // close the lost-wakeup window: any producer that enqueues after our
-      // recheck also runs unpark_one after we are registered, so it pops and
-      // wakes us; Parker's remembered token covers the unpark-before-park race.
+      // Give up: register as a sleeper, THEN leave searching with a seq_cst RMW,
+      // THEN recheck once. Order is load-bearing: the seq_cst fetch_sub pairs
+      // with notify()'s seq_cst fence (Dekker) so a producer either sees
+      // num_searching_ == 0 and wakes us (we are already registered) or our
+      // recheck sees its task. Registering BEFORE the fetch_sub guarantees a
+      // notify that observes 0 finds us in `sleepers`.
       {
         std::lock_guard<std::mutex> lk(idle_mu);
         sleepers.push_back(idx);
       }
-      f = find_task(w, idx);
+      num_searching_.fetch_sub(1, std::memory_order_seq_cst);  // Dekker store+fence
+      f = find_task(w, idx);                                   // Dekker recheck
       if (f != nullptr) {
         remove_sleeper(idx);
         dispatch(w, f);
