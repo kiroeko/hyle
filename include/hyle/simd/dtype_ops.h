@@ -10,12 +10,12 @@
 // precision). Same fn-ptr dispatch model as ops.h: fp16 conversions pick the F16C
 // hardware kernel when the CPU has it (cpu_features().f16c), else the scalar core.
 //
-// bf16: no AVX2-tier hardware convert exists (AVX-512-BF16's vcvtne2ps is a later
-// milestone), so bf16 batch is the scalar core. HONEST status: this is DEFERRED, not
-// "unnecessary" -- the baseline scalar TU auto-vectorizes the bf16 shift to ~4-wide (SSE2),
-// so an explicit 8-wide AVX2 bf16 kernel WOULD add throughput on AVX2 hosts. It's just not
-// the highest-value next step (fp16 has the dedicated F16C instruction; bf16's real win is
-// AVX-512-BF16). Left as a follow-up rather than hand-rolled now.
+// bf16: vectorized with plain AVX2 INTEGER ops (cpu_features().avx2), NOT a dedicated
+// AVX-512-BF16 instruction. bf16 IS the top 16 bits of f32, so bf16<->f32 is a shift
+// (bf16->f32) or a round-to-nearest-even bias + shift (f32->bf16) -- both expressible in
+// AVX2 (cvtepu16_epi32/slli, packus/permute4x64). Same approach as Highway. Falls back to
+// the scalar core on non-AVX2 CPUs. (AVX-512-BF16's vcvtne2ps would only help on AVX-512
+// hosts; the AVX2 path already beats scalar 3.5-6.9x and is bit-identical.)
 
 namespace hyle::simd {
 

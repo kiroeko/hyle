@@ -80,13 +80,14 @@
 
 > 环境:Win MSVC19.50 Release,nanobench,4096 f32。三组:HYLE F16C 硬件 dispatch / HYLE scalar 参考 / Highway(gated SOTA)。`active_dtype_variant()` 报 `AVX2/F16C`(硬件路径真启用)。std 无 fp16 批量等价物。
 
-| 转换 | HYLE F16C | HYLE scalar | Highway(SOTA) | 结论 |
+| 转换 | HYLE(AVX2/F16C) | HYLE scalar | Highway(SOTA) | 结论 |
 |---|---|---|---|---|
 | **f16→f32** | **0.02 ns** | 0.65(慢 26x) | 0.05 | **赢 Highway 1.9x** |
 | **f32→f16** | **0.03 ns** | 2.05(慢 71x) | 0.05 | **赢 Highway 1.6x** |
-| bf16→f32(无 HW) | 0.12 ns | **0.10**(scalar 反快 1.11x) | — | bf16 包装税,见下 |
+| **bf16→f32** | **0.03 ns** | 0.11(慢 3.5x) | — | ✅ AVX2 核,赢 scalar 3.5x |
+| **f32→bf16** | **0.10 ns** | 0.69(慢 6.9x) | — | ✅ AVX2 核,赢 scalar 6.9x |
 
-**结论**:① **fp16 F16C 真兑现且超 SOTA**——比 scalar 26-71x,**还赢 Highway 1.6-1.9x**,"fp16 dtype(F16C)"声明坐实。② **bf16 批量导出函数(0.12ns)比内联 scalar(0.10ns)还慢 1.11x**:bf16 无 AVX2 硬件转换(header 诚实标 deferred,只 auto-vec 移位),导出 `bf16_to_f32_batch` 付不可内联调用开销却无硬件收益摊薄——同 allocator vtable / hash_bytes 的**导出包装税**。微小,但印证模式:无硬件加速的批量导出 op 不如直接内联 scalar。
+**结论**:① **fp16 F16C 真兑现且超 SOTA**——比 scalar 26-71x,**还赢 Highway 1.6-1.9x**,"fp16 dtype(F16C)"声明坐实。② **bf16 批量曾慢内联 scalar 1.11x,已补 AVX2 核翻盘**:原以为"bf16 需 AVX-512-BF16 才能向量化"是误解——bf16 是 f32 高 16 位,转换是纯整数移位/RNE 位运算,plain AVX2 整数即可 8-wide(Highway 同法)。补 `cvt_avx2.cc`(`cvtepu16_epi32`+`slli` / RNE `incr`+`packus`+`permute4x64`)后 **bf16→f32 赢 scalar 3.5x、f32→bf16 赢 6.9x**。纯位运算故 AVX2 与 scalar bit-identical(NaN payload 也是),新增 0x10000 全模式 + f32 宽扫 bit-exact 测试验证。
 
 ### simd 逐 op 扩展（reduce_max / scale，`simd_bench.cc`）
 
