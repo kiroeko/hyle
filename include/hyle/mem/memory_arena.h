@@ -49,15 +49,30 @@ class MemoryArena {
         alloc_.allocate(sizeof(std::atomic<std::uint32_t>) * count_,
                         alignof(std::atomic<std::uint32_t>)));
     HYLE_FATAL_ASSERT(next_ != nullptr);
-    // Thread free list 0 -> 1 -> ... -> (count-1) -> null; head starts at 0.
-    for (std::uint32_t i = 0; i < count_; ++i) {
-      new (&next_[i]) std::atomic<std::uint32_t>(i + 1 < count_ ? i + 1 : kNull);
+    // Shard count: cap at kMaxShards, never more than blocks (each shard needs >=1).
+    num_shards_ = count_ < kMaxShards ? count_ : kMaxShards;
+    per_ = count_ / num_shards_;  // >=1; the last shard absorbs the remainder
+    heads_ = static_cast<ShardHead*>(
+        alloc_.allocate(sizeof(ShardHead) * num_shards_, alignof(ShardHead)));
+    HYLE_FATAL_ASSERT(heads_ != nullptr);
+    for (std::uint32_t s = 0; s < num_shards_; ++s) new (&heads_[s]) ShardHead();
+    // Build each shard's free list over its own contiguous index range [lo,hi): link
+    // lo -> lo+1 -> ... -> hi-1 -> null, head = lo. So a block's free links live only
+    // in its owning shard, and free (address-routed) returns it to the same shard.
+    for (std::uint32_t s = 0; s < num_shards_; ++s) {
+      std::uint32_t lo = s * per_;
+      std::uint32_t hi = (s + 1 == num_shards_) ? count_ : lo + per_;
+      for (std::uint32_t i = lo; i < hi; ++i) {
+        new (&next_[i]) std::atomic<std::uint32_t>(i + 1 < hi ? i + 1 : kNull);
+      }
+      heads_[s].h.store(pack(lo, 0), std::memory_order_relaxed);
     }
-    head_.store(pack(0, 0), std::memory_order_relaxed);
   }
 
   ~MemoryArena() {
     for (std::uint32_t i = 0; i < count_; ++i) next_[i].~atomic();
+    for (std::uint32_t s = 0; s < num_shards_; ++s) heads_[s].~ShardHead();
+    alloc_.deallocate(heads_, sizeof(ShardHead) * num_shards_, alignof(ShardHead));
     alloc_.deallocate(next_, sizeof(std::atomic<std::uint32_t>) * count_,
                       alignof(std::atomic<std::uint32_t>));
     alloc_.deallocate(slab_, stride_ * count_, alignment_);
@@ -65,38 +80,32 @@ class MemoryArena {
 
   HYLE_DISABLE_COPY_AND_MOVE(MemoryArena);
 
-  // Pop a free block. nullptr if the pool is exhausted.
+  // Pop a free block. nullptr if the WHOLE pool is exhausted. Tries this thread's home
+  // shard first (uncontended in the common per-thread case), then scans the others so a
+  // block is handed out as long as ANY shard has one (preserves the single-pool "not
+  // exhausted until truly empty" contract).
   void* allocate() noexcept {
-    std::uint64_t old = head_.load(std::memory_order_acquire);
-    for (;;) {
-      std::uint32_t idx = idx_of(old);
-      if (idx == kNull) return nullptr;  // exhausted
-      std::uint32_t nxt = next_[idx].load(std::memory_order_relaxed);
-      std::uint64_t desired = pack(nxt, ver_of(old) + 1);
-      if (head_.compare_exchange_weak(old, desired, std::memory_order_acq_rel,
-                                      std::memory_order_acquire)) {
-        return slab_ + static_cast<std::size_t>(idx) * stride_;
+    const std::uint32_t home = tls_thread_seq() % num_shards_;
+    std::uint32_t idx = pop_shard(home);
+    if (idx == kNull) {
+      for (std::uint32_t k = 1; k < num_shards_; ++k) {
+        idx = pop_shard((home + k) % num_shards_);
+        if (idx != kNull) break;
       }
-      // old reloaded; retry.
+      if (idx == kNull) return nullptr;  // every shard empty
     }
+    return slab_ + static_cast<std::size_t>(idx) * stride_;
   }
 
-  // Return a block previously obtained from allocate().
+  // Return a block previously obtained from allocate(). Routes back to the block's
+  // OWNING shard (by address), so each shard's free list only ever holds its own index
+  // range -- no cross-shard next_ aliasing, per-shard ABA version stays sound.
   void deallocate(void* p) noexcept {
     if (p == nullptr) return;
     auto off = static_cast<std::size_t>(static_cast<std::byte*>(p) - slab_);
     std::uint32_t idx = static_cast<std::uint32_t>(off / stride_);
     HYLE_FATAL_ASSERT(idx < count_ && off % stride_ == 0);  // belongs to this pool
-    std::uint64_t old = head_.load(std::memory_order_acquire);
-    for (;;) {
-      next_[idx].store(idx_of(old), std::memory_order_relaxed);
-      std::uint64_t desired = pack(idx, ver_of(old) + 1);
-      if (head_.compare_exchange_weak(old, desired, std::memory_order_acq_rel,
-                                      std::memory_order_acquire)) {
-        return;
-      }
-      // old reloaded; rewrite next_[idx] with the new head and retry.
-    }
+    push_shard(shard_of(idx), idx);
   }
 
   std::size_t block_size() const noexcept { return block_size_; }
@@ -129,6 +138,17 @@ class MemoryArena {
   }
 
   static constexpr std::uint32_t kNull = 0xFFFFFFFFu;
+  // Shard the free list into independent Treiber stacks, one per (up to) this many
+  // cache-line-isolated heads. clay inherited a SINGLE head -> every thread CAS'd the
+  // same cache line, serializing (O(threads), measured 278x slower than mimalloc's
+  // per-thread heaps under 8-way churn). Per-core/per-thread sharding is the SOTA fix
+  // mem-design called a HARD constraint (the per-core pool + xcpu_freelist note) but
+  // that the toy single-stack never implemented. A thread homes on one shard (tls
+  // round-robin) so same-thread alloc/free hits an UNCONTENDED head; free routes by
+  // ADDRESS back to the block's owning shard (so each shard's list holds only its own
+  // index range -> per-shard ABA version stays valid, no cross-shard next_ aliasing).
+  static constexpr std::uint32_t kMaxShards = 16;
+
   static std::uint64_t pack(std::uint32_t idx, std::uint32_t ver) noexcept {
     return (static_cast<std::uint64_t>(ver) << 32) | idx;
   }
@@ -139,14 +159,66 @@ class MemoryArena {
     return static_cast<std::uint32_t>(h >> 32);
   }
 
+  // Process-wide rotating thread sequence -> a stable per-thread home shard. Purely a
+  // DISTRIBUTION hint: correctness never depends on it (free routes by address), so the
+  // header-inline thread_local being per-DLL is fine.
+  static std::uint32_t tls_thread_seq() noexcept {
+    static std::atomic<std::uint32_t> g{0};
+    thread_local std::uint32_t id = g.fetch_add(1, std::memory_order_relaxed);
+    return id;
+  }
+
+  // Pop a free block index from shard s's Treiber stack. kNull if that shard is empty.
+  std::uint32_t pop_shard(std::uint32_t s) noexcept {
+    std::uint64_t old = heads_[s].h.load(std::memory_order_acquire);
+    for (;;) {
+      std::uint32_t idx = idx_of(old);
+      if (idx == kNull) return kNull;  // this shard empty
+      std::uint32_t nxt = next_[idx].load(std::memory_order_relaxed);
+      std::uint64_t desired = pack(nxt, ver_of(old) + 1);
+      if (heads_[s].h.compare_exchange_weak(old, desired, std::memory_order_acq_rel,
+                                            std::memory_order_acquire)) {
+        return idx;
+      }
+    }
+  }
+
+  // Push block index back onto shard s's Treiber stack.
+  void push_shard(std::uint32_t s, std::uint32_t idx) noexcept {
+    std::uint64_t old = heads_[s].h.load(std::memory_order_acquire);
+    for (;;) {
+      next_[idx].store(idx_of(old), std::memory_order_relaxed);
+      std::uint64_t desired = pack(idx, ver_of(old) + 1);
+      if (heads_[s].h.compare_exchange_weak(old, desired, std::memory_order_acq_rel,
+                                            std::memory_order_acquire)) {
+        return;
+      }
+    }
+  }
+
+  // Shard owning block idx (contiguous index ranges -> O(1) address routing). The last
+  // shard absorbs the remainder when count_ isn't a multiple of num_shards_.
+  std::uint32_t shard_of(std::uint32_t idx) const noexcept {
+    std::uint32_t s = idx / per_;
+    return s < num_shards_ ? s : num_shards_ - 1;
+  }
+
+  // One Treiber-stack head per shard, each on its OWN cache line (kill false sharing
+  // between shards -- the whole point of sharding).
+  struct alignas(HYLE_CACHE_LINE_SIZE) ShardHead {
+    std::atomic<std::uint64_t> h;  // index|version
+  };
+
   Allocator alloc_;
   std::byte* slab_ = nullptr;
   std::atomic<std::uint32_t>* next_ = nullptr;  // parallel free-list links
+  ShardHead* heads_ = nullptr;                  // num_shards_ cache-line-isolated heads
   std::size_t block_size_;
   std::size_t stride_;
   std::uint32_t count_;
   std::size_t alignment_;
-  alignas(HYLE_CACHE_LINE_SIZE) std::atomic<std::uint64_t> head_;  // index|version
+  std::uint32_t num_shards_;
+  std::uint32_t per_;  // blocks per shard (last shard takes the remainder)
 };
 
 // Bump (region) allocator over ONE MemoryArena block (clay's Arena). Borrows a
