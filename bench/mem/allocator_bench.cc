@@ -19,6 +19,7 @@
 #include <vector>
 
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/system_inline.h"
 
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
@@ -51,6 +52,13 @@ int main() {
         void* p = a.allocate(size_at(i));
         ankerl::nanobench::doNotOptimizeAway(p);
         a.deallocate(p, size_at(i));
+      }
+    });
+    b.run("HYLE SystemAllocator (compile-time, inlined)", [&] {
+      for (int i = 0; i < kAllocs; ++i) {
+        void* p = hyle::mem::SystemAllocator::allocate(size_at(i));
+        ankerl::nanobench::doNotOptimizeAway(p);
+        hyle::mem::SystemAllocator::deallocate(p, size_at(i));
       }
     });
     b.run("std::malloc/free (OS)", [&] {
