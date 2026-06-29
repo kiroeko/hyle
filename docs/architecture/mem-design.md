@@ -6,7 +6,7 @@
 
 - **`Allocator` 单函数指针 vtable**（`allocator.h:24`）：所有 alloc/free/realloc 归一到一个 `realloc_func(inst, ptr, old, new)`，C-ABI 安全、跨 DLL 稳定。**clay 最成熟资产，继承作为注入接缝。**
 - **`MemoryArena` 分片无锁定长块池**（`memory_arena.h`）：tagged-pointer CAS 防 ABA，lock-free、ABA 安全。clay 原版是**单** `head_`——8 线程 CAS 同一 cache line,O(threads) 串行化,实测慢 mimalloc per-thread heap 278x(performance.md mem 节)。**已分片根治**:内部 N 片(默认 16)各占独立 cache line,线程 homing 自己片(同线程无争用),free 按地址路由回属主片——278x→1.95x,O(N)争用→O(1) per-shard。这落地了 mem-design 列为"硬约束"却久欠的 per-core 池。残留 1.95x 是原子 CAS 常数因子(vs mimalloc 非原子 local list),进一步逼近需 xcpu_freelist(见下)。单线程仍首选 `StackAllocator`/`GrowablePool`(零原子,超 SOTA)。
-- **显式 `Allocator*` 注入贯穿**：无隐藏全局堆。继承为铁律。
+- **无隐藏全局堆**:分配显式可控。默认走编译期 `SystemAllocator`(零开销);需要自定义分配器(arena/mock/跨 DLL)时**显式 opt-in 注入** `Allocator` 句柄。注入是**能力,不是强制默认**——曾把"注入贯穿"当铁律,导致每个容器都吃运行时间接调用税(实测 8%),按性能优先纠正:默认零开销,注入按需。
 - **5 个 bug**（资产负债表已定位，重写依据）：
   1. `allocate(size, alignment)` **静默丢弃 alignment**（`allocator.h:37-40`）——**对 simd/ 是硬伤**（AVX512 要 64B 对齐），必修。
   2. 统计计数 32/64 位下溢（`allocator.cc:277`）。
@@ -34,40 +34,35 @@
 
 ```
 mem/
-├─ space.h         MemorySpace 抽象（内存空间/显存专区）：一个物理内存域 + 拓扑属性
-│                  （谁可访问 cpu/gpu/both、是否 coherent、带宽级、对齐）；mem/ 实现 SystemRAM space
-├─ allocator.h     Allocator vtable（注入接缝，继承 clay，修 alignment bug）
-├─ system.cc       SystemRAM space 的 backing = mimalloc（替换 clay 裸 malloc/posix_memalign）
-├─ arena.h         Arena<Space> bump 分配器（组合在 space 上）+ MemoryArena 无锁块池（继承）
-├─ pool.h          Pool<Space> 定长池（推倒重写，修 alloc/free 不匹配）
-├─ stack.h         StackAllocator LIFO（推倒重写，修拷贝 bug）
-├─ fiber_stack.h   fiber 栈池（定长 + guard page + 池化）→ 给 sched/
-├─ numa.h          NUMA node 作为 MemorySpace 的一种（mbind/numa_alloc / VirtualAllocExNuma）
-├─ hugepage.h      大页（madvise(MADV_HUGEPAGE) / MEM_LARGE_PAGES / mimalloc THP）
-└─ stats.h         分配统计 + 泄漏追踪（修 32/64 下溢）
-
-（device/pinned/unified 的 MemorySpace 由 compute/ 实现并注册——见下「MemorySpace 抽象」）
+├─ allocator.h     Allocator vtable(运行时注入接缝,opt-in;默认走编译期 SystemAllocator)
+├─ system.cc       host RAM backing = mimalloc(替换 clay 裸 malloc/posix_memalign)
+├─ arena.h         Arena bump 分配器 + MemoryArena 无锁块池(分片,片数随核数)
+├─ pool.h          定长池(推倒重写,修 alloc/free 不匹配)
+├─ stack.h         StackAllocator LIFO(推倒重写,修拷贝 bug)
+├─ fiber_stack.h   fiber 栈池(定长 + guard page + 池化)→ 给 sched/
+├─ numa.h          NUMA 就近放置 hint(OS 分配层:mbind/numa_alloc / VirtualAllocExNuma)
+├─ hugepage.h      大页(madvise(MADV_HUGEPAGE) / MEM_LARGE_PAGES / mimalloc THP）
+└─ stats.h         分配统计 + 泄漏追踪(修 32/64 下溢)
 ```
 
-## MemorySpace 抽象（device 内存方案 D：组合优于继承）
+（device/pinned/unified 内存归 compute/ 的 stream-bound buffer,不是 mem/ 的 space——见下「device 内存」节）
 
-**问题**：异构计算里 host RAM / 显存 VRAM / pinned / unified 是不同内存域、指针不能混用；但统一内存架构（DGX Spark GB10、Apple Silicon）下 host/device 是**同一块物理 coherent 内存**，"两种指针+拷贝"的前提不成立。
+## device 内存:边界是显式 copy/命令提交,不是注入 CPU 容器的 space
 
-**方案 D**：把"是不是显存"从**类型分支**（每个分配器 `switch(MemKind)`）改成**组合一个 `MemorySpace` 对象**：
+**纠正一个早期错误设计(用户 2026-06 证伪)**:曾设想"组合一个 `MemorySpace` 对象,同一套 `Arena<Space>` 容器代码透明跑 host/VRAM/unified,跨 space copy 在统一内存上塌缩为 no-op"(旧方案 D)。**这建模了一个不存在的用例**:
 
-- **`MemorySpace`** = 一个物理内存域 + 运行时可查属性（cpu/gpu/both 可访问、是否 coherent、带宽级、对齐）。raw alloc/free/map。
-- **离散 GPU** 枚举多 space：`{SystemRAM, VRAM, PinnedHost}`，跨 space `copy` = 真 DMA。
-- **统一内存（DGX/Mac）** 枚举**一个** coherent space：`{Unified}`，"给 GPU"和"给 CPU"来自同一 space，`copy(同一 coherent space)` **塌缩为 no-op**（抽象自然塌缩，无需特例）。
-- **分配器组合在 space 上**：`Arena<Space>` / `Pool<Space>`——同一套机器、任意 space。**「显存专区」= compute/ 提供的一个 device MemorySpace + 在其上建的 arena/pool**。
+- **离散 GPU**:VRAM 指针 CPU 不可解引用;device 由**独立 kernel/shader** operate;host↔device 边界**永远是显式 DMA / 命令提交**。不存在"同一套 CPU 容器代码换个 space 就跑 device"——你不会拿 VRAM-backed 的 `SwissTable` 在 CPU 上 `.find()`。
+- **统一内存(DGX/Mac)**:单一 coherent 地址空间,**无传输、无两种指针**。"copy 塌缩 no-op"是在为**不存在的问题**炫技——只有一个 space,没东西可注入/可换。
 
-**零开销保证（热/冷分层）**：
-- **热路径**（arena/pool 内 bump，每秒百万次）：`Arena<Space>` 编译期模板、单态化、纯指针算术，**零间接**。
-- **冷路径**（选 space / 向 OS/驱动要新 slab，很少）：运行时 `MemorySpace` vtable，一次间接，摊薄≈0。
-- clay 的 `Allocator` 本就是函数指针 vtable，D 的 space 选择**不比 clay 现状多一次间接**；统一内存上 copy 塌缩反而**比 MemKind 枚举方案更快**。
+所以 `MemorySpace` 运行时多态 + `Arena<Space>` 泛化是**过度设计**(代码从未实现,幸而)。正确模型:
 
-**红利**：NUMA node + device memory + unified **统一进同一个 `MemorySpace` 概念**——`numa.h` 不再是独立特例，是 space 的一种。
+- **device 内存 = compute/ 的 buffer,绑 device/stream**(ggml buft 式:枚举/能力查询薄包,内存所有权+stream 绑定自造)。分配走 compute 自己的 device API,**不是**注入 CPU 容器的 allocator。
+- **host↔device = 显式 `copy(src, dst, stream)` / 命令提交**(归 compute/,要绑 stream)。边界本就显式,不靠容器透明传递。
+- **pinned(page-locked)** = compute 侧为 DMA staging 选的 host allocator,在 buffer 分配点选定,不是容器注入的 space。
+- **NUMA** = host-RAM 在 **OS 分配层**的就近放置 hint(mbind/VirtualAllocExNuma 作用在 system allocator backing),**不是**一种 space。
+- **mem/ 不需要 MemorySpace 抽象**:它只管 host RAM 的通用/专用分配器。
 
-**tier 干净**：`mem/`（T0）定义 `MemorySpace` 接口 + 通用分配器 + 实现 SystemRAM，**零 GPU 代码、随处可测**；`compute/`（T1）实现 device/pinned/unified space 并注册，依赖 `compute→mem` 方向正确。`copy(src,dst,stream)` 归 compute/（要绑 stream），同 coherent space 时 no-op。
+**tier 干净**:`mem/`(T0)只管 host RAM——通用分配器(mimalloc backing)+ 专用分配器(arena/pool/stack/fiber 栈),**零 GPU 代码、随处可测**;`compute/`(T1)自己管 device/pinned/unified buffer(绑 stream),`copy(src,dst,stream)` 归 compute/(同 coherent 内存时硬件本就无需拷贝)。方向 `compute→mem` 正确,但 mem/ 不向上暴露任何 device 概念。
 
 ## 新增能力（clay 没有的"极致")
 
@@ -85,8 +80,8 @@ mem/
 ## 与其他模块的耦合
 
 - **→ sched/**：`fiber_stack.h` 供 fiber 栈（定长 + 尾部 guard page 捕溢出 + 池化复用，避免频繁 mmap）。sched 第一节的栈管理就落在这。
-- **→ compute/**：`pinned.h` 供 GPU DMA 的 page-locked 内存；device 内存分配也走 mem/ 抽象（host/device/unified 统一接口，呼应 compute-design 的 buffer 层）。
-- **→ container/**：所有容器显式注入 `Allocator*`（继承 clay 铁律），flat hashmap/carray 的分配走 mem/。
+- **→ compute/**:`pinned.h` 供 GPU DMA 的 page-locked host 内存(compute 在 buffer 分配点选用)。device 内存是 compute/ 自己的 stream-bound buffer,**不走 mem/ 的 allocator 抽象**(host↔device 边界显式 copy,见上「device 内存」节)。
+- **→ container/**:容器**默认编译期 `SystemAllocator`**(零开销);需 arena/mock 时显式 opt-in 注入 `Allocator`。flat hashmap/carray 的分配走 mem/。
 - **→ simd/**：64B 对齐契约——`mem/` 保证对齐，`simd/` 才能安全做对齐 load/store。**修 alignment 丢弃 bug 是这条契约的前提。**
 - **std::pmr 互操作**：提供薄 `pmr::memory_resource` adapter，让 std 容器也能用 HYLE 分配器（低成本、高互操作价值）。
 
@@ -103,8 +98,8 @@ mem/
 ## 决策（已定）
 
 1. **通用 backing = mimalloc**（现代、THP 内建、MIT、易嵌入、v3 2026）。jemalloc 多线程老牌但偏大；tcmalloc 强但 Google 生态绑定。
-2. **mimalloc 封在 `Allocator` vtable 后、不外露 mimalloc 类型**（同 compute 的 ggml_bridge 解耦），换 backing 只动 system.cc。
-3. **device 内存抽象 = 方案 D（MemorySpace 组合式）**——mem/ 定义 `MemorySpace` 接口 + 通用分配器 + SystemRAM 实现（GPU-free）；compute/ 实现并注册 device/pinned/unified space；分配器组合在 space 上；统一内存自然塌缩。详见上方「MemorySpace 抽象」。
+2. **mimalloc 封在 `Allocator` vtable 后、不外露 mimalloc 类型**（同 compute 的 ggml_bridge 解耦），换 backing 只动 system.cc。默认路径走编译期 `SystemAllocator`(可内联,零间接);`Allocator` 运行时 vtable 是 opt-in(per-request arena / mock / 跨 DLL)。
+3. **device 内存归 compute/ 的 stream-bound buffer,不是 mem/ 的 space**(旧"方案 D MemorySpace 组合式"已证伪并废弃——见上方「device 内存」节)。host↔device 边界是显式 copy/命令提交;mem/ 只管 host RAM。NUMA 是 OS 分配层就近 hint,非 space。
 
 ## 参考
 
