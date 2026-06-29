@@ -100,12 +100,24 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 ## 落地清单
 
-1. `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。
-2. SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。
-3. dtype 转换（先 fp16/bf16 硬件路径）。
-4. 数学函数（借 sleef 核：exp/tanh → 组合出 gelu/softmax）。
-5. `ops/`：reduce、对齐 memcpy、SwissTable 探测片段。
-6. 单测：每后端对拍 scalar 参考值、跨 ISA CI、数学函数精度 ULP 测试、benchmark 对标 Highway/手写 intrinsics。
+1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
+2. 🔶 SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02、运行期 dispatch=simd-04、NEON=simd-03(交叉编译+objdump 验,未跑)；AVX512 理由化延期(见下)。**
+3. ✅ dtype 转换（先 fp16/bf16 硬件路径）。**simd-05。**
+4. 📋 数学函数（借 sleef 核：exp/tanh → 组合出 gelu/softmax）。**simd-06。**
+5. 📋 `ops/`：reduce、对齐 memcpy、SwissTable 探测片段。
+6. 🔶 单测：每后端对拍 scalar 参考值、跨 ISA CI、数学函数精度 ULP 测试、benchmark 对标 Highway/手写 intrinsics。**scalar/SSE4.2/AVX2 对拍 + Highway bench 已做；NEON objdump 验；ULP 测试随 simd-06。**
+
+### AVX512 后端的理由化延期（2026-06，simd-03 落 NEON 时定）
+
+> simd-03 原计划"AVX512 + NEON"。NEON 已落（交叉编译+objdump 验）；**AVX512 显式延期，拆为独立后续里程碑**——不是遗漏，是有意。
+
+**为何延期（两条硬理由）**：
+1. **不可真跑 → 违背真测铁律**。本机是 AVX2 级（无 AVX512 硬件），且**无 Intel SDE 模拟器**。写出来只能 objdump 看指令、不能执行验正确性。AVX512 不是"加宽到 512 位"这么简单（mask/exec 语义复杂），盲写一个跑不了的后端正是项目禁止的假完成。NEON 能 objdump 验是因为它和 SSE/AVX2 同构（只是指令换名）；AVX512 不同构（见下），objdump 不足以背书正确性。
+2. **mask 模型根本不同 → 需要 vec.h 抽象改造**。SSE4.2/AVX2/NEON 的 mask 都是"全 1/全 0 的向量寄存器"，vec.h 的 `Mask` 契约据此设计。**AVX512 的 mask 是 `__mmask8/16/32` 专用 k 寄存器**（位掩码，非向量）——`IfThenElse`→`vpblendm*` 用 k reg、比较→`vpcmp*` 写 k reg、`AllTrue/CountTrue`→`kortest`/`kmov`+popcnt。直接套现有 mask=向量契约会**别扭且低效**（白白放弃 k reg 的 1-bit/lane 优势）。真做要先给 vec.h 的 mask 抽象加一条"k-reg 路径"——这是设计工作，不是照抄 intrinsic。
+
+**当前安全状态**：`dispatch.cc` 已正确处理——AVX512 主机的 `best_isa()` 返 `kAvx512`，但 ops/dtype 的 `selected_tier()` 把它降到 **AVX2 变体**跑（AVX512 机跑 AVX2 完全合法、安全），**永不 SIGILL**。所以延期不留隐患，只是没吃到 512 位宽度红利。
+
+**真做的前置（两个都满足才开工）**：① 有 AVX512 机 **或** 装 Intel SDE（能真跑验正确性）；② vec.h 的 mask 抽象扩出 k-reg 路径（不破坏现有 mask=向量的 SSE/AVX2/NEON 契约）。届时拆 **simd-03b（AVX512 + k-mask 抽象）** 独立里程碑。
 
 ## 待决（需主拍板）
 
