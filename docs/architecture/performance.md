@@ -65,15 +65,19 @@
 | 项 | HYLE | SOTA(marl / std) | 结论 |
 |---|---|---|---|
 | **争用 Mutex**(8 任务/4 worker,lock+inc+unlock) | **30.7 ns** | marl 32.1 ns(=std::mutex) | ✅ **打平 marl**(±噪声,本轮略胜) |
-| 无争用 Mutex lock/unlock 对 | 6.87 ns(Win 14.9ns) | std::mutex 2.44 ns | ⚠️ 2.8x,见"诚实背景" |
+| 无争用 Mutex(单线程 microbench) | 6.5 ns | std::mutex 2.2 ns | ⚠️ 看似 2.9x,**实为假象**,见下 |
+| 无争用 Mutex(**多线程进程**,真实场景) | **6.5 ns** | std::mutex **9.1 ns** | ✅ **HYLE 快 1.40x**(揭穿假象) |
+| **spawn 2000 noop**(纯派发) | **141 ns/task** | marl 306 ns | ✅ **HYLE 快 2.17x**(对标真 SOTA,非 std::async) |
 | Channel 收发(cap 16,1p1c) | **63 ns/item(15.9M/s)** | (marl 无 channel) | HYLE 自有 |
 | **WaitGroup fork-join**(1024 任务) | **205 ns/批**(池化栈 179) | marl 306 ns | ✅ **反超 marl 1.49x**(池化 1.71x) |
 
 **Mutex = futex(Drepper 3 态),不是 fiber-aware——这是学 marl 的 SOTA 决策**:最初把 Mutex 做成 fiber-aware(争用让出 fiber),实测**慢 marl 5.8x**(176ns vs 30ns)——短临界区让出 fiber(suspend+重入 ~100ns)远贵于就地 park worker 几 ns。改写成建在 `platform::wait_on_address`(futex/WaitOnAddress/ulock)上的 Drepper 3 态锁(无争用单 CAS、争用 park worker)后**追平 marl**。marl 同理:它的 mutex 就是 `std::mutex`(futex),只把 fiber-awareness 留给 ConditionVariable。**HYLE 对齐:Mutex=futex(本节),CV=fiber-aware 双模(地基),各司其职。** 双平台 TSan 8/8 零 race。
 
-**无争用 2.8x vs std 的诚实背景**:HYLE futex Mutex 与 std::mutex 算法同级(各 1 个 locked RMW)。差距大半是**测量假象**——glibc 在单线程程序里靠 `__libc_single_threaded` 跳过原子(std::mutex 因此假性快到 2.4ns);HYLE 不做单线程特化,恒付原子。**真多线程争用下(上栏)HYLE 已与 marl/std 持平**,这才是 mutex 真正被考验的场景。绝对值 6.87ns / 1.45 亿 op/s 也不慢。
+**无争用 Mutex "慢 std" 是 microbench 假象——已实测揭穿**:HYLE futex Mutex 与 std::mutex 算法同级(各 1 locked RMW)。单线程 bench 里 std::mutex 假性快到 2.2ns,因 glibc 用 `__libc_single_threaded` **跳过原子**;HYLE 不做单线程特化,恒付。**铁证**:加一个后台线程让进程变多线程(`sync_bench.cc` MT 变体),std::mutex 立刻 2.2→**9.1ns**(不能再跳原子),HYLE 纹丝不动 **6.5ns**——**HYLE 反超 std::mutex 1.40x**。在 mutex 唯一真正被用的多线程场景,HYLE 的 Drepper 3 态比 pthread_mutex_t 更轻、更快;marl mutex=std::mutex,故也赢 marl。**结论:不是性能问题,是单线程 microbench 被 glibc 优化骗了。**
 
-**WaitGroup fork-join 反超 marl 的真根因 = 调度器 spin-then-park,不是栈池(实测纠错)**:fork-join 起初慢 marl **17x**(5.4µs vs 0.30µs)。第一反应怀疑"没 fiber 栈池(每任务新建 64KB 栈)",但**诊断推翻了它**:把 worker 泊车前的自旋调高后 fork-join 立刻从 5.4µs→0.23µs(反超 marl),而单独上栈池只改善 ~5%。**真根因 = 调度器急泊车 + 每次入队无条件 unpark 的 futex 系统调用风暴**(spawn burst 下 worker 刚 drain 空就 park、producer 立即 futex-wake,往返撕扯)。改成 **spin-then-park**(idle worker 先 `cpu_relax` 自旋 ~1µs 桥接生产间隙再 park,`scheduler.cc`)后:fork-join **205 ns/批,反超 marl 1.49x**;栈池(`MemoryArena::as_allocator`)在此之上再加 ~13%(→179ns,1.71x)——所以栈池是**次要增益**,非主因。**教训:这正是"登记延后掩盖真实瓶颈"的活例——17x 一度被错误归因到栈池(连架构审计 agent 都照旧文档复述了),实为 sched-design §2.3 ① 的 spin-then-park 没做透。** 注:spin-then-park 是缓解;§2.3 ②③ 的 searching-thief 条件 notify(消除风暴而非自旋桥接)仍是更优的延后项,但需 seq_cst Dekker + model-checking(见 scheduler.cc notify() 注释)。CV 的 `waiters_` 门让 Channel/WaitGroup 的 notify 在无 waiter 时零锁。
+**spawn vs SOTA:对标 marl(非 std::async 弱基线)HYLE 快 2.17x**:scheduler_bench 的"spawn 2000 vs std::async 144x"是赢 thread-per-task 稻草人。直接对标真调度器 marl(`sync_marl_bench.cc` noop spawn-2000):marl 306ns/task vs **HYLE 141ns/task = 2.17x 反超**。spawn/dispatch 是真 SOTA,非弱基线侥幸。
+
+**WaitGroup fork-join 反超 marl 的真根因 = 调度器唤醒策略,不是栈池(实测纠错)**:fork-join 起初慢 marl **17x**(5.4µs vs 0.30µs)。第一反应怀疑"没 fiber 栈池",但**诊断推翻**:调高 worker 泊车前自旋后立刻反超,单上栈池只改善 ~5%。**真根因 = 调度器急泊车 + 每次入队无条件 unpark 的 futex 系统调用风暴**。**治本方案 = §2.3 ②③ conditional-notify(已落地)**:维护 `num_searching_` 原子计数,producer 入队后仅当无 worker 在搜才 unpark(否则搜索者会捡到),从源头消除风暴;lost-wakeup 安全靠 notify 与 worker 离开搜索的 **seq_cst StoreLoad Dekker** 握手(双平台 28/28 + TSan + NoLostWakeup 100× 零超时验证)。结果:fork-join **205-241 ns/批,反超 marl 1.49x**;栈池(`MemoryArena::as_allocator`)再加 ~13%→**1.71x**(次要增益)。**教训:17x 一度被错误归因到栈池(连架构审计 agent 都照旧文档复述),实为唤醒策略——"登记延后掩盖真瓶颈"的活例;先做的 spin-then-park 是缓解,conditional-notify 才是根治(去自旋空烧 + 去魔法常数 + 源头治本)。** CV 的 `waiters_` 门让 Channel/WaitGroup 的 notify 无 waiter 时零锁。
 
 > **TSan × fcontext(本步另一修复)**:spin-then-park 让 fiber 跨 worker 迁移更频繁,撞出 TSan 对 fcontext 栈切换的盲区(SEGV in libtsan,非逻辑 bug——无 TSan 50/50 过)。已给 `fiber.cc` 加 `__tsan_switch_to_fiber` 注解(每次切换告知 TSan 当前逻辑上下文,迁移时按 resume 重新捕获 resumer 句柄),**release 零成本**(非 TSan 构建宏全展开为空)。修复后双平台 28/28 + TSan 28/28 零 race,lock-free 闸门恢复。
 
