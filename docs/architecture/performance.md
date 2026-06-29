@@ -30,16 +30,18 @@
 
 ### simd（向量后端 vs Highway + auto-vec，simd-02）
 
-> 环境:WSL Ubuntu24.04 原生 ext4(非 9p)、GCC14.2 Release、nanobench。4096 个 f32(L1 常驻,隔离计算吞吐非内存带宽)。`bench/simd/`。**Highway = SOTA 标尺**(同 -mavx2 静态 dispatch,与 HYLE avx2 同 ISA、同 kernel 形状,只差抽象层)。
+> 环境:WSL Ubuntu24.04 原生 ext4(非 9p)、GCC14.2 Release、nanobench。4096 个 f32(L1 常驻,隔离计算吞吐非内存带宽)。`bench/simd/`。**Highway = SOTA 标尺**(同 -mavx2 静态 dispatch,与 HYLE avx2 同 ISA、同 kernel 形状,只差抽象层)。**数字 = 4 遍均值(2026-06-29 复测,沿 hashmap 那节的多遍统计纪律,非单遍)。**
 
 | kernel | scalar(auto-vec SSE2) | HYLE sse4(128b) | HYLE avx2(256b+FMA) | Highway avx2(**SOTA**) | 结论 |
 |---|---|---|---|---|---|
-| **dot product** | 2.73 G op/s (1.0x) | 11.3 G (4.14x) | **12.5 G (4.58x)** | 10.7 G (3.93x) | **追平/微超 Highway**;4.6x over auto-vec |
-| **saxpy** y=a*x+y | 17.6 G (1.0x) | 16.5 G (0.94x) | **25.0 G (1.42x)** | 20.0 G (1.14x) | avx2 追平 Highway;saxpy 内存带宽受限故倍数低 |
+| **dot product** | 2.75 G op/s (1.0x) | 11.2 G (4.07x) | **12.4 G (4.5x)** | 11.2 G (4.07x) | **追平/微超 Highway**(~1.10x,4 遍均赢);4.5x over auto-vec |
+| **saxpy** y=a*x+y | 17.3 G (1.0x) | 17.5 G (1.01x) | **25.1 G (1.45x)** | 20.7 G (1.20x) | avx2 **~1.21x 微超** Highway;saxpy 内存带宽受限故倍数低 |
 
-**结论(回答"比 SOTA 有下降么")**:**没有——HYLE 向量后端与 Highway 统计平局**。dot 上 HYLE avx2 那 ~17% 名义领先落在微基准噪声内(0.08 ns/op 量级,两边内循环都编成同一条 `vfmadd231ps`,objdump 可证);诚实表述是**追平 SOTA**,非"赢"。compute-bound 的 dot 上 **4.6x over 自动向量化标量**,落在性能文档"SIMD 4-16x / vs auto-vec 1.5-4x"区间(dot 含 reduction,略超 4x 合理)。saxpy 是 3 流内存操作(读 x/读 y/写 y),标量 auto-vec 已近饱和带宽,故 SIMD 倍数天然低——AVX2 靠更宽 load 仍取 1.42x。**SSE4 saxpy 0.94x(略输标量)**诚实留账:128 位宽度下该 kernel 已带宽受限,SIMD 无加速空间,非 bug。
+**结论(回答"比 SOTA 有下降么")**:**没有——HYLE 向量后端追平且小幅微超 Highway**。dot 上 HYLE avx2 ~1.10x、saxpy ~1.21x,**4 遍复测 HYLE avx2 两 kernel 均稳定领先**(非单遍噪声);但领先幅度小(dot 0.08 ns/op 量级,两边内循环都编成同一条 `vfmadd231ps`,objdump 可证),诚实表述是**追平/微超 SOTA**,非"碾压"。compute-bound 的 dot 上 **4.5x over 自动向量化标量**,落在性能文档"SIMD 4-16x / vs auto-vec 1.5-4x"区间(dot 含 reduction,略超 4x 合理)。saxpy 是 3 流内存操作(读 x/读 y/写 y),标量 auto-vec 已近饱和带宽,故 SIMD 倍数天然低——AVX2 靠更宽 load 仍取 1.45x。**SSE4 saxpy ~1.0x(与标量持平)**诚实留账:128 位宽度下该 kernel 已带宽受限,SIMD 无加速空间,非 bug。
 >
-> **意义**:这验证了"自造精简抽象不牺牲性能"——HYLE 的 vec.h+后端(~340+360 行)在热路径上与 vendor 整个 Highway(单后端 ~3k 行)同速。抽象层零成本(全内联到 intrinsic),没有为"可移植"付性能税。
+> **意义**:这验证了"自造精简抽象不牺牲性能"——HYLE 的 vec.h+后端(~340+360 行)在热路径上与 vendor 整个 Highway(单后端 ~3k 行)同速或微超。抽象层零成本(全内联到 intrinsic),没有为"可移植"付性能税。
+>
+> **范围诚实**:此对标只覆盖 **dot/saxpy 两个 compute/memory-bound 数值核**(AI 热路径主力)。Highway 还有 ~200 op(swizzle/gather/scatter/compress/transcendental)+ 6 ISA,HYLE 现做 ~25 op + 2 ISA 实跑——**"追平"指已实现的核上追平,非功能对等**。广度补全(int 量化类型/更多 op/AVX512 启用)见 milestones simd 延期登记。**正确性**:Ne(NaN)/Neg(±0) 等边界经红队批量审计揪修(2026-06,见 milestones simd-02/03),已加 FloatEdgeCases 覆盖。
 
 ### sched（fiber 调度）
 
@@ -106,9 +108,9 @@
 ## 验证（不是空头支票）
 
 每个数字到 [`roadmap.md`](./roadmap.md) 的 benchmark gate 实测对标：
-- 批2 mem：对标裸 mimalloc 不退化
-- 批3 container：hashmap 对标 absl/F14；simd 数学函数 ULP 精度
-- 批4 sched：百万次 fiber 切换基准
-- 批5 io：echo/吞吐；compute：CPU+GPU 后端对拍
+- 批2 mem：对标裸 mimalloc 不退化（P2）
+- 批3 container：hashmap 对标 absl/F14；simd 数学函数 ULP 精度（P3）
+- 批4 sched：百万次 fiber 切换基准（P4）
+- 批5 io：echo/吞吐；compute：CPU+GPU 后端对拍（P5）
 
 是骡子是马，gate 上遛。
