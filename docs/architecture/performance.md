@@ -108,9 +108,9 @@
 ## 验证（不是空头支票）
 
 每个数字到 [`roadmap.md`](./roadmap.md) 的 benchmark gate 实测对标：
-- 批2 mem：对标裸 mimalloc 不退化（P2）
-- 批3 container：hashmap 对标 absl/F14；simd 数学函数 ULP 精度（P3）
-- 批4 sched：百万次 fiber 切换基准（P4）
-- 批5 io：echo/吞吐；compute：CPU+GPU 后端对拍（P5）
+- P2 mem：对标裸 mimalloc 不退化
+- P3 container：hashmap 对标 absl/F14；simd 数学函数 ULP 精度
+- P4 sched：百万次 fiber 切换基准
+- P5 io：echo/吞吐；compute：CPU+GPU 后端对拍
 
 是骡子是马，gate 上遛。

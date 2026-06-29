@@ -64,11 +64,11 @@
 | **seastar**(reactor_backend) | 参考 | epoll/aio 也对上呈现 completion 语义的后端抽象范本 |
 | liburing | 借 | io_uring syscall 薄封装（仅 Linux；非本目录，构建期拉）|
 
-## 开工优先级（配合 roadmap 批次）
+## 开工优先级（按 roadmap 阶段）
 
-- **批3-4 即用**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、highway/sleef（simd）。
-- **批5 即用**：ggml + llama.cpp（compute 主力借/参考）、oneDNN/oneMath（Intel 加速，CPU/数学后端）、seastar（io reactor_backend）。
-- **批6 / 按需**：simdjson/flatbuffers/capnproto（serialize）、xxHash（hash，设默认 hasher）、tracy（obs，借设计）。oneDPL/oneTBB/oneDAL **边界外**（见下）。
+- **P3-P4 即用**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、highway/sleef（simd）。
+- **P5 即用**：ggml + llama.cpp（compute 主力借/参考）、oneDNN/oneMath（Intel 加速，CPU/数学后端）、seastar（io reactor_backend）。
+- **P6 / 按需**：simdjson/flatbuffers/capnproto（serialize）、xxHash（hash，设默认 hasher）、tracy（obs，借设计）。oneDPL/oneTBB/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）
 
