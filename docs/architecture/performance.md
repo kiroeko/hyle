@@ -125,7 +125,36 @@
 
 **诚实结论**:`Allocator` vtable(注入接缝)相对裸 mimalloc 有 **~1.4ns/对的固定开销**(churn +21%、真实负载 +18%、批量摊到 +5%、并发 +9%),但**比 std::malloc 快 2.7-2.8x**。开销来源:**单 `ReallocFn` 间接调用不可内联** + Win64 ABI 下 5 参签名**第 5 参 `alignment` 压栈** + `system_realloc` 热路径分支(`new_size==0`/`normalize_alignment`/对齐判断)。
 
-**这是接缝设计代价,非 rival-loss**:与 BoundedQueue 输给 moodycamel(真竞争缺陷,已分片修)不同,system_allocator 自身就用 mimalloc(SOTA backing),~1.4ns 是"显式注入 + 跨 DLL C-ABI + 可换 backing"(charter 铁律:单函数指针 vtable)买来的接缝。**真实负载下 alloc+touch 只 +18%,且 touch 越重越摊薄**。可削的肥肉:5 参单函数若拆 3 指针 vtable 可免 Win64 压栈(~0.7ns),但这是 charter 级 ABI 表面改动,留作显式权衡决策(单函数收敛的跨 DLL 价值 vs 0.7ns 微基准)。专用 arena/pool(应**快过**裸 mimalloc)的对标见 task #16(另一节)。
+**这是接缝设计代价,非 rival-loss**:与 BoundedQueue 输给 moodycamel(真竞争缺陷,已分片修)不同,system_allocator 自身就用 mimalloc(SOTA backing),~1.4ns 是"显式注入 + 跨 DLL C-ABI + 可换 backing"(charter 铁律:单函数指针 vtable)买来的接缝。**真实负载下 alloc+touch 只 +18%,且 touch 越重越摊薄**。可削的肥肉:5 参单函数若拆 3 指针 vtable 可免 Win64 压栈(~0.7ns),但这是 charter 级 ABI 表面改动,留作显式权衡决策(单函数收敛的跨 DLL 价值 vs 0.7ns 微基准)。
+
+### mem 专用分配器簇（arena/pool/stack vs `std::pmr` + 裸 mimalloc，`arena_pool_bench.cc`）
+
+> 环境:Win MSVC19.50 Release,nanobench,8192×64B。**SOTA 标尺 = `std::pmr`**(标准库自带的 arena=`monotonic_buffer_resource`、pool=`unsynchronized_pool_resource`,完美 drop-in,无需 clone)+ 裸 `mi_malloc`(=`new/delete` 的实际 backing,即"5-10x vs new/delete"声明的对照基线)。**此前这簇零对标——本节真测揪出无锁变体的争用灾难。**
+
+| bump 场景(alloc N + 批量释放) | ns/op | vs 裸 mi | 结论 |
+|---|---|---|---|
+| **HYLE Arena**(无锁 bump,池块) | 6.77 | **0.91x(还慢!)** | 原子 CAS 税 |
+| **HYLE StackAllocator**(单线程自有 slab) | **0.65** | **9.5x** | ✅ 真兑现"5-10x" |
+| std::pmr::monotonic_buffer(SOTA) | 1.46 | 4.2x | Arena 慢它 4.6x |
+| 裸 mi_malloc(general,无批量) | 6.32 | 1.0x | — |
+
+| pool churn 场景(同尺寸 alloc/free) | ns/op | vs 裸 mi | 结论 |
+|---|---|---|---|
+| **HYLE MemoryArena**(无锁池) | 13.59 | **0.35x(慢 2.88x!)** | 原子 CAS 税 |
+| **HYLE GrowablePool**(单线程) | **1.83** | **2.57x** | ✅ 真兑现 |
+| std::pmr::unsync_pool(SOTA) | 5.99 | 0.79x | — |
+| 裸 mi_malloc/free(general) | 4.72 | 1.0x | — |
+| **8 线程共享 MemoryArena**(无锁设计点) | **344.72** | **0.004x(慢 278x!!)** | ⛔ 单点 CAS 争用灾难 |
+| └ 裸 mi(8 线程 per-thread heap) | 1.24 | — | mimalloc 零争用 |
+
+**核心诚实结论(揪出的第三个"自以为 SOTA")**:
+
+1. **"专用分配器 5-10x vs new/delete"只对单线程变体成立**:`StackAllocator`(纯指针 bump,0.65ns)**9.5x 赢裸 mi、2.25x 赢 std::pmr arena**;`GrowablePool`(单线程 free-list,1.83ns)2.57x 赢裸 mi、3.3x 赢 std::pmr pool。这俩是真 SOTA。
+
+2. **两个"无锁旗舰"(`Arena`/`MemoryArena`)是全场最慢**:`Arena` 无锁 bump 比裸 malloc 还慢、慢 std::pmr arena **4.6x**;`MemoryArena` 无锁池单线程慢裸 malloc **2.88x**,8 线程共享(**它存在的理由**)慢 mimalloc per-thread heap **278x**。**根因=单 `offset_`/`head_` 原子,每次 alloc/dealloc CAS 同一 cache line**(BoundedQueue 单点 CAS 同病,因 churn 更密而惨烈得多)。mem-design 称 `MemoryArena` "最亮的资产"——benchmark 证伪:**无锁≠快,它是一个被争用的单原子**。
+
+3. **诚实边界 + 为何暂不重写**:① 278x 是 alloc-立即-free 的 tight-churn 最坏争用;真实用途(fiber 栈池:借栈→跑 μs 级→还栈,低频借还)争用远小于此——但作为**通用并发池**,它被 per-thread 分配(mimalloc 的设计)架构性压制。② `Arena`/`MemoryArena`/`StackAllocator`/`GrowablePool`/`ObjectPool` 当前 **src/ 零内部用户**(io/compute/graph 未开工,fiber 栈直接走注入 allocator 未接池),故这是**潜在缺陷非活跃 bug**。不投机重写无人用的代码(避免为假想需求加复杂度);**修复方向已明确**(若将来接 fiber 栈池且需并发:per-core 分片 free-list,照 mimalloc/ShardedQueue),留待真实消费者出现时按其访问模式定。单线程消费者直接用 `StackAllocator`/`GrowablePool` 即可,无需碰无锁变体。
+
 
 
 
@@ -140,7 +169,7 @@
 | 组件 vs std | 时间（speedup + 复杂度）| 空间（vs std）|
 |---|---|---|
 | **flat hashmap** vs `unordered_map` | 查找/插入 **2-4×**；均摊 O(1) 同，但常数小（连续布局 cache 命中 + SIMD 16 路探测）| **通常更省**：无 node 的指针 + 每节点分配头；代价是留负载因子（有空槽 + 1 控制字节/槽）。最坏（刚扩容）峰值略高 |
-| **专用分配器** arena/bump vs new/delete | 分配 **5-10×+**；O(1) 指针自增 vs free-list 遍历+锁 | **更费**（以空间换时间）：块尾浪费 + 不单独释放，生命周期不齐时占用更久、峰值更高 |
+| **专用分配器** 单线程 bump/pool vs new/delete | 分配 **2.5-9.5×**(实测:StackAllocator 9.5×、GrowablePool 2.57×)；O(1) 指针自增 vs free-list+锁。**注:无锁 Arena/MemoryArena 反而慢**(单点 CAS 税,见上节实测)| **更费**（以空间换时间）：块尾浪费 + 不单独释放，生命周期不齐时占用更久、峰值更高 |
 | **通用分配器** mimalloc vs malloc | 多线程 **1.5-3×** 吞吐、p99 更好；单线程仅 10-30% | 碎片通常 ≤ glibc；大页会增驻留 |
 | **SmallVector** vs `vector` | 小 N 省 malloc（大赢）；大 N 持平 | **更费**（以空间换时间）：inline 存 N 元素，sizeof 变大（没用满也占）；超 N 退化到堆 |
 | **intrusive list/map** vs `list`/`map` | O(1) 摘除、无分配；查找同 | **更省**：hook 内嵌节点，无单独分配 + 无 node 包装 |

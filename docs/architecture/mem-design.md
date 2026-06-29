@@ -5,7 +5,7 @@
 ## clay 现状：好地基 + 5 个确认 bug
 
 - **`Allocator` 单函数指针 vtable**（`allocator.h:24`）：所有 alloc/free/realloc 归一到一个 `realloc_func(inst, ptr, old, new)`，C-ABI 安全、跨 DLL 稳定。**clay 最成熟资产，继承作为注入接缝。**
-- **`MemoryArena` 无锁定长块池**（`memory_arena.cc`）：tagged-pointer CAS 防 ABA，最亮的资产，直接继承。
+- **`MemoryArena` 无锁定长块池**（`memory_arena.cc`）：tagged-pointer CAS 防 ABA，设计正确(lock-free、ABA 安全)，直接继承。**但性能非"最亮"**:实测(performance.md mem 专用分配器簇节)单 `head_` 原子是被争用的单点——单线程慢裸 mimalloc 2.88x、8 线程共享慢 278x。无锁≠快;真正快的是单线程 `StackAllocator`/`GrowablePool`。MemoryArena 的价值在 lock-free 共享安全性,不在吞吐;并发高吞吐场景应 per-core 分片(照 mimalloc)。
 - **显式 `Allocator*` 注入贯穿**：无隐藏全局堆。继承为铁律。
 - **5 个 bug**（资产负债表已定位，重写依据）：
   1. `allocate(size, alignment)` **静默丢弃 alignment**（`allocator.h:37-40`）——**对 simd/ 是硬伤**（AVX512 要 64B 对齐），必修。
