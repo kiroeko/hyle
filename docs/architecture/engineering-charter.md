@@ -102,4 +102,6 @@
 
 ## 8. 下一步
 
+> ⚠️ **本节是项目开工时的起点记录(历史)**,非当前下一步。当前真实进度见 [`../milestones/README.md`](../milestones/README.md)——sched 已大幅推进(fcontext 切换/work-stealing/Waker/同步原语 done),simd 支柱基本完成,地基层立住。
+
 动手前奠基已完成（scope/标准/范式/测试/边界/外部沟通定稿）。实现起点：深挖 `sched/`——它是 `io/`、`compute/` completion 机制的共同地基。第一块是 fiber 上下文切换选型（ucontext / boost.context / 自写汇编），结论会约束后续。
