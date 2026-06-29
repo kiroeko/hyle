@@ -83,6 +83,21 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 - **对齐**：vector load/store 要求 `CLAY_ALIGNMENT=64` 对齐，与 `mem/` 分配器对齐契约一致（AVX512 一条 512-bit load 要 64B 对齐）。
 - **SwissTable SIMD 探测的 tier 问题**：`container/`（Tier 0）的 SwissTable 要 16 路并行探测 control word，看似依赖 `simd/`（Tier 1）——**tier 倒置**。澄清：探测只需一小段自包含的 SSE2/NEON 片段（16 字节比较 + movemask），**container/ 内联这一小段、不依赖整个 simd/ 模块**。保持 T0 不依赖 T1。`simd/` 成熟后 container 可选择复用其 `ops/`，但不强耦合。
 
+### probe.h 的去留裁决（2026-06，simd/ 已成熟后回看，用户提出）
+
+> 背景：`container/probe.h` 是 simd/ 还不存在时、为做高性能 hash 自己内联的 SwissTable 控制字节探测（GroupSse2/GroupNeon/GroupPortable + `#ifdef __SSSE3__` 编译门控）。如今 simd/ 已有 vec 抽象 + 运行期 dispatch，问：probe.h 要不要改成复用 simd/？
+
+**裁决：不改，保持现状。** 理由：
+
+1. **改了就违背本节自己定的 tier 规则**。container 是 T0、simd 是 T1；让 probe.h `#include` simd/ 就是 T1→T0 倒置（依赖图 `container → simd` 是单向的，反向即架构倒置，roadmap 明令禁）。
+2. **probe 不是 vec 抽象的合适用例**。它要的是"16 字节控制字节比较 + movemask + BitMask 迭代"这一段**专用语义**，不是 `vec<T,N>` 的类型化算术。硬塞进 vec 接口反而别扭、且把 SwissTable 的探测细节泄进通用 SIMD 层。
+3. **没有正确性缺口**。SSE2 基线恒在且正确；SSSE3 快路径是 `#ifdef` 门控的纯加速（performance.md 实测：match_empty 的 SSSE3 路径是绝对小增益，**不**是 find-miss 差距来源）。NEON 已交叉编译验证。
+4. **唯一真实缺口是"分发型二进制吃不到 SSSE3"**——纯编译门控,没开 `-mssse3` 就走 SSE2 兜底,即便 CPU 支持。但这是**小加速**,不值得为它倒挂依赖。
+
+**真要做运行期 dispatch 的正确解(若将来 profile 证明 baseline SwissTable 是分发型二进制的真瓶颈)**：**不是**让 container 依赖 simd,而是**把 CPUID 探测器下沉到 `platform/`（比 container 更低层）**,让 container 和 simd 都能查同一个探测结果——这样 container 可在 hashmap 内部做"SSE2 vs SSSE3 group"的运行期分发,仍不碰 simd/。当前不做(收益小、增复杂度)。
+
+**复审触发条件（写明,免得凭感觉重提）**：① profile 显示分发型(非 `-march`)二进制的 SwissTable 探测是实测热点 **且** ② SSSE3+ 路径能显著缩差距。两条同时成立才动,且按上一段方案(下沉 CPUID 到 platform),非 container→simd 依赖。
+
 ## 落地清单
 
 1. `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。

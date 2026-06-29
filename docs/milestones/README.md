@@ -112,7 +112,7 @@
 | compute-05 | P5 | compute | ggml_bridge + 注入 HYLE 线程池 | compute-01 | 2-3k | — | 占位 |
 | compute-06 | P5 | compute | Vulkan compute 自定义 kernel | compute-04 | 2-3k | — | 占位 |
 | graph-01 | P6 | graph | taskgraph 剥特化 + 绑 sched | sched-03 | 3-4k | — | 占位 |
-| close-01 | P6 | 收口 | C-ABI shim(对外纯 C 头) | 各模块稳定 | 2-3k | — | 占位 |
+| [close-01](./close-01-c-abi-shim.md) | P6 | 收口 | C-ABI shim(对外纯 C 头) | 各模块稳定 | 2-3k | — | 📋 **承诺已锁定,实现待排期**。产品铁律:发布给用户绑定的唯一稳定 ABI 面=纯 extern "C" C shim;C++ 公开头不承诺跨编译器/跨语言。未做此前 HYLE 不具"可发布给 FFI"资格。详见里程碑文档 |
 | close-02 | P6 | 收口 | serialize(simdjson/flatbuffers) + hash + T3 便利 | container | 4-6k | — | 占位 |
 | close-03 | P6 | 收口 | FFI 绑定(TS N-API / Python ctypes) | close-01 | 2-3k | — | 占位 |
 
