@@ -21,7 +21,7 @@
 
 | clay 文件 | 行 | HYLE 目标 | 状态 | 备注 |
 |---|---|---|---|---|
-| `sys/allocator.h` + `.cc` | 485+375 | mem-01 + mem-01b + mem-02 | ✅ | vtable+裸 allocate + typed 层(mem-01b) + **backing 换 mimalloc(mem-02,封 vtable 后不外露,Win 4–12x>默认堆/Linux 真实模式 5.2x)**;CUSTOM_MEMORY_FUNCTIONS 仍 📋(次要) |
+| `sys/allocator.h` + `.cc` | 485+375 | mem-01 + mem-01b + mem-02 | ✅ | vtable+裸 allocate + typed 层(mem-01b) + **backing 换 mimalloc(mem-02,封 vtable 后不外露,Win 默认堆 2.5–12x 随负载/Linux 真实模式 5.2x)**;CUSTOM_MEMORY_FUNCTIONS 仍 📋(次要) |
 | `sys/memory_arena.h` + `.cc` | 65+258 | mem-03 + mem-03b | ✅ | `MemoryArena` 块池(packed CAS) + **`Arena` bump 区域分配器 + as_allocator() 适配已补(mem-03b)**;`make_arena_allocator` 等价为 `Arena::as_allocator()` |
 | `sys/carray.h` + `.cc` | 436+65 | container-03 | ✅ | header-before-data 侵入数组 + type-erased 核 + RAII 壳 CArray<T>;**改进:over-align 元素(clay 固定 max_align_t 会错位)** |
 | `sys/cstring.h` + `.cc` | 1033+374 | container-06 | ✅ | string_ref(ptr+len+null 位)+零拷贝算法(find/rfind/find_first/last_of/not_of/substr/trim/starts/ends_with/contains/count/split/rsplit/slice/concat/dup/c_str/equal_ignore_case)+ operator<=> + Hash<string_ref> + `_sr` 字面量。**类型核心 API diff 过 clay**;clay `capitalize`/UTF-8/hex/escape 真实现归 `string_algo.h`(container-06b✅);`score_similarity`/`format_si` 等 **clay 只声明无实现**→container-06c(净新) |
