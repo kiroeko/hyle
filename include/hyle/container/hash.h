@@ -62,17 +62,37 @@ HYLE_FORCE_INLINE std::uint64_t mix64(std::uint64_t x) noexcept {
   z ^= z >> 31; return z;
 #endif
 }
+
+// Inline hash for a SMALL fixed-size byte blob (n <= 16) -- the common map-key case
+// (PODs/small structs). absl/F14 do the same: small keys get an inline integer mix, NOT a
+// call into the general byte hasher. This avoids the non-inlinable hash_bytes (XXH3) call
+// whose fixed cost dominates tiny inputs (measured ~1.85x at 8B). Loads up to two 64-bit
+// words (zero-padded; n is constant per type so no length ambiguity) and folds them through
+// the same 128-bit-multiply mixer as the integer path -- so both words avalanche.
+HYLE_FORCE_INLINE std::uint64_t hash_small(const void* p, std::size_t n) noexcept {
+  std::uint64_t lo = 0, hi = 0;
+  std::memcpy(&lo, p, n < 8 ? n : 8);
+  if (n > 8) std::memcpy(&hi, static_cast<const char*>(p) + 8, n - 8);
+  std::uint64_t h = mix64(lo);
+  if (n > 8) h = mix64(h ^ hi);
+  return h;
+}
 }  // namespace detail
 
-// Default hasher. Specialized for the common cheap cases; falls back to hashing
-// the object's bytes via XXH3 for trivially-copyable types. Users may specialize
-// Hash<T> for their own types.
+// Default hasher. Specialized for the common cheap cases. For SMALL trivially-copyable T
+// (<= 16 bytes -- the typical map key) it uses an inline mix (no XXH3 call); larger blobs
+// fall back to XXH3 via hash_bytes (where the bytes dominate and the call is amortized).
+// Users may specialize Hash<T> for their own types.
 template <class T, class = void>
 struct Hash {
   static_assert(std::is_trivially_copyable_v<T>,
                 "Hash<T>: specialize Hash for non-trivially-copyable T");
   std::uint64_t operator()(const T& v) const noexcept {
-    return hash_bytes(&v, sizeof(T));
+    if constexpr (sizeof(T) <= 16) {
+      return detail::hash_small(&v, sizeof(T));  // inline, no call
+    } else {
+      return hash_bytes(&v, sizeof(T));  // XXH3 (bytes amortize the seam)
+    }
   }
 };
 

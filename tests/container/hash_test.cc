@@ -88,3 +88,36 @@ TEST(Hash, IntAndEnumUsable) {
   Hash<Color> h;
   EXPECT_NE(h(Color::Red), h(Color::Blue));
 }
+
+// Small trivially-copyable struct key (<=16 bytes) goes through the inline hash_small
+// path. Verify it has good quality: distinct keys -> distinct hashes, and avalanche on a
+// single-field change.
+TEST(Hash, SmallStructInlineQuality) {
+  struct Key16 { std::uint64_t a, b; };  // 16 bytes -> inline mix path
+  static_assert(sizeof(Key16) == 16);
+  Hash<Key16> h;
+  // No collisions over a large sweep of distinct keys (vary both words).
+  std::unordered_set<std::uint64_t> seen;
+  constexpr int kN = 200;
+  for (int i = 0; i < kN; ++i)
+    for (int j = 0; j < kN; ++j)
+      seen.insert(h(Key16{static_cast<std::uint64_t>(i), static_cast<std::uint64_t>(j)}));
+  EXPECT_EQ(seen.size(), static_cast<std::size_t>(kN) * kN);  // 40000 distinct
+  // Avalanche: flip one bit in either word -> ~half the output bits change.
+  Key16 base{0x0123456789abcdefull, 0xfedcba9876543210ull};
+  for (int bit = 0; bit < 64; ++bit) {
+    Key16 fa = base; fa.a ^= (std::uint64_t{1} << bit);
+    Key16 fb = base; fb.b ^= (std::uint64_t{1} << bit);
+    EXPECT_GE(std::popcount(h(base) ^ h(fa)), 12) << "weak avalanche, word a bit " << bit;
+    EXPECT_GE(std::popcount(h(base) ^ h(fb)), 12) << "weak avalanche, word b bit " << bit;
+  }
+}
+
+// A small struct <=8 bytes also uses the inline path (single mix).
+TEST(Hash, SmallStruct8BInline) {
+  struct Key8 { std::uint32_t x, y; };  // 8 bytes
+  Hash<Key8> h;
+  std::unordered_set<std::uint64_t> seen;
+  for (std::uint32_t i = 0; i < 1000; ++i) seen.insert(h(Key8{i, i * 2654435761u}));
+  EXPECT_EQ(seen.size(), 1000u);  // distinct
+}

@@ -30,6 +30,12 @@
 namespace {
 namespace nb = ankerl::nanobench;
 
+#if defined(HYLE_BENCH_WYHASH)
+// wyhash's published default secret (the 4 constants from wyhash.h's make_secret default).
+const std::uint64_t kWySecret[4] = {0xa0761d6478bd642full, 0xe7037ed1a0b428dbull,
+                                    0x8ebc6af09c88c6e3ull, 0x589965cc75374cc3ull};
+#endif
+
 std::string random_string(std::size_t len, std::uint64_t seed) {
   std::mt19937_64 rng(seed);
   std::string s(len, '\0');
@@ -56,8 +62,6 @@ int main() {
       nb::doNotOptimizeAway(XXH3_64bits(s.data(), s.size()));
     });
 #if defined(HYLE_BENCH_WYHASH)
-    static const std::uint64_t kWySecret[4] = {0xa0761d6478bd642full, 0xe7037ed1a0b428dbull,
-                                               0x8ebc6af09c88c6e3ull, 0x589965cc75374cc3ull};
     b.run("wyhash (SOTA rival)", [&] {
       nb::doNotOptimizeAway(wyhash(s.data(), s.size(), 0, kWySecret));
     });
@@ -94,6 +98,37 @@ int main() {
       for (auto k : keys) acc ^= h(k);
       nb::doNotOptimizeAway(acc);
     });
+  }
+
+  // ---- small POD key (16B struct): typed Hash<T> inline path vs the old hash_bytes call.
+  // This is the real map-key hot path. Hash<T> now inlines a mix for <=16B (absl/F14 style)
+  // instead of calling the out-of-line XXH3 -- the row "HYLE Hash<Key16> (inline)" should
+  // beat "explicit hash_bytes(&k,16)" (what the generic used to do).
+  {
+    struct Key16 { std::uint64_t a, b; };
+    std::mt19937_64 rng(7);
+    std::vector<Key16> keys(4096);
+    for (auto& k : keys) { k.a = rng(); k.b = rng(); }
+    nb::Bench b;
+    b.title("hash 16B POD key (4096)").relative(true).batch(keys.size()).minEpochIterations(20000);
+    b.run("HYLE Hash<Key16> (inline mix)", [&] {
+      std::uint64_t acc = 0;
+      hyle::container::Hash<Key16> h;
+      for (const auto& k : keys) acc ^= h(k);
+      nb::doNotOptimizeAway(acc);
+    });
+    b.run("explicit hash_bytes(&k,16) (old path, XXH3 call)", [&] {
+      std::uint64_t acc = 0;
+      for (const auto& k : keys) acc ^= hyle::container::hash_bytes(&k, sizeof(k));
+      nb::doNotOptimizeAway(acc);
+    });
+#if defined(HYLE_BENCH_WYHASH)
+    b.run("wyhash(&k,16) (SOTA rival)", [&] {
+      std::uint64_t acc = 0;
+      for (const auto& k : keys) acc ^= wyhash(&k, 16, 0, kWySecret);
+      nb::doNotOptimizeAway(acc);
+    });
+#endif
   }
 
   return 0;
