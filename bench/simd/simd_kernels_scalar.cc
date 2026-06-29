@@ -16,4 +16,15 @@ void saxpy_scalar(float a, const float* x, float* y, std::size_t n) {
   for (std::size_t i = 0; i < n; ++i) y[i] = a * x[i] + y[i];
 }
 
+float reduce_max_scalar(const float* x, std::size_t n) {
+  if (n == 0) return 0.0f;
+  float m = x[0];
+  for (std::size_t i = 1; i < n; ++i) m = x[i] > m ? x[i] : m;
+  return m;
+}
+
+void scale_scalar(float a, const float* x, float* y, std::size_t n) {
+  for (std::size_t i = 0; i < n; ++i) y[i] = a * x[i];
+}
+
 }  // namespace hyle_bench

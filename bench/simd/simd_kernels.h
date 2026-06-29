@@ -24,4 +24,23 @@ void saxpy_avx2(float a, const float* x, float* y, std::size_t n);
 void saxpy_highway(float a, const float* x, float* y, std::size_t n);
 #endif
 
+// reduce_max: max(x[i]). A NON-sum horizontal reduction (Max + ReduceMax, no FMA) -- a
+// different pattern than dot, to check the abstraction on a reduce that isn't sum.
+float reduce_max_scalar(const float* x, std::size_t n);
+float reduce_max_sse4(const float* x, std::size_t n);
+float reduce_max_avx2(const float* x, std::size_t n);
+#if defined(HYLE_BENCH_HIGHWAY)
+float reduce_max_highway(const float* x, std::size_t n);
+#endif
+
+// scale: y[i] = a*x[i]. The SIMPLEST element-wise map (Mul + Store, no add/FMA) -- checks
+// whether the vec.h abstraction is zero-cost on a trivial op the compiler auto-vectorizes
+// perfectly, or whether it adds overhead the FMA-heavy dot/saxpy hid.
+void scale_scalar(float a, const float* x, float* y, std::size_t n);
+void scale_sse4(float a, const float* x, float* y, std::size_t n);
+void scale_avx2(float a, const float* x, float* y, std::size_t n);
+#if defined(HYLE_BENCH_HIGHWAY)
+void scale_highway(float a, const float* x, float* y, std::size_t n);
+#endif
+
 }  // namespace hyle_bench

@@ -69,5 +69,48 @@ int main() {
     });
 #endif
   }
+
+  {
+    ankerl::nanobench::Bench b;
+    b.title("reduce_max (4096 f32)").relative(true).batch(kN).minEpochIterations(2000);
+    b.run("scalar (auto-vec)", [&] {
+      ankerl::nanobench::doNotOptimizeAway(hyle_bench::reduce_max_scalar(x.data(), kN));
+    });
+    b.run("HYLE sse4 (128b)", [&] {
+      ankerl::nanobench::doNotOptimizeAway(hyle_bench::reduce_max_sse4(x.data(), kN));
+    });
+    b.run("HYLE avx2 (256b)", [&] {
+      ankerl::nanobench::doNotOptimizeAway(hyle_bench::reduce_max_avx2(x.data(), kN));
+    });
+#if defined(HYLE_BENCH_HIGHWAY)
+    b.run("Highway avx2 (SOTA)", [&] {
+      ankerl::nanobench::doNotOptimizeAway(hyle_bench::reduce_max_highway(x.data(), kN));
+    });
+#endif
+  }
+
+  {
+    std::vector<float> ys(kN);
+    ankerl::nanobench::Bench b;
+    b.title("scale y=a*x (4096 f32)").relative(true).batch(kN).minEpochIterations(2000);
+    b.run("scalar (auto-vec)", [&] {
+      hyle_bench::scale_scalar(2.0f, x.data(), ys.data(), kN);
+      ankerl::nanobench::doNotOptimizeAway(ys[0]);
+    });
+    b.run("HYLE sse4 (128b)", [&] {
+      hyle_bench::scale_sse4(2.0f, x.data(), ys.data(), kN);
+      ankerl::nanobench::doNotOptimizeAway(ys[0]);
+    });
+    b.run("HYLE avx2 (256b)", [&] {
+      hyle_bench::scale_avx2(2.0f, x.data(), ys.data(), kN);
+      ankerl::nanobench::doNotOptimizeAway(ys[0]);
+    });
+#if defined(HYLE_BENCH_HIGHWAY)
+    b.run("Highway avx2 (SOTA)", [&] {
+      hyle_bench::scale_highway(2.0f, x.data(), ys.data(), kN);
+      ankerl::nanobench::doNotOptimizeAway(ys[0]);
+    });
+#endif
+  }
   return 0;
 }

@@ -20,6 +20,8 @@
 #define HYLE_BENCH_CAT(a, b) HYLE_BENCH_CAT_(a, b)
 #define DOT_FN HYLE_BENCH_CAT(dot_, HYLE_KERNEL_SUFFIX)
 #define SAXPY_FN HYLE_BENCH_CAT(saxpy_, HYLE_KERNEL_SUFFIX)
+#define REDUCE_MAX_FN HYLE_BENCH_CAT(reduce_max_, HYLE_KERNEL_SUFFIX)
+#define SCALE_FN HYLE_BENCH_CAT(scale_, HYLE_KERNEL_SUFFIX)
 
 namespace hyle_bench {
 
@@ -47,6 +49,29 @@ void SAXPY_FN(float a, const float* x, float* y, std::size_t n) {
     hs::StoreU(r, d, y + i);
   }
   for (; i < n; ++i) y[i] = a * x[i] + y[i];  // tail
+}
+
+float REDUCE_MAX_FN(const float* x, std::size_t n) {
+  namespace hs = hyle::simd;
+  const hs::ScalableTag<float> d;
+  const std::size_t w = hs::Lanes(d);
+  if (n == 0) return 0.0f;
+  auto acc = hs::Set(d, x[0]);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) acc = hs::Max(acc, hs::LoadU(d, x + i));
+  float m = hs::ReduceMax(d, acc);
+  for (; i < n; ++i) m = x[i] > m ? x[i] : m;  // tail
+  return m;
+}
+
+void SCALE_FN(float a, const float* x, float* y, std::size_t n) {
+  namespace hs = hyle::simd;
+  const hs::ScalableTag<float> d;
+  const std::size_t w = hs::Lanes(d);
+  const auto va = hs::Set(d, a);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) hs::StoreU(hs::Mul(va, hs::LoadU(d, x + i)), d, y + i);
+  for (; i < n; ++i) y[i] = a * x[i];  // tail
 }
 
 }  // namespace hyle_bench
