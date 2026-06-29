@@ -9,6 +9,8 @@
 | **骨架?** | |
 | **状态** | ✅ 完成（step1 多worker偷取 + step2 spin-then-park，双平台 + TSan）|
 
+> ⚠️ **历史快照(sched-03 当时)**:本文档的唤醒机制(`kSpinSweeps=4` 无条件 notify + §2.3②③ 诚实延迟)描述的是 sched-03 当时状态。**后于 sched-05 已升级**:`kSpinSweeps`→`kSpinPolls` cpu_relax,且 §2.3②③(`num_searching_` 条件 notify + seq_cst Dekker)**已落地**取代无条件 notify。当前调度器唤醒实现以 `scheduler.cc` 为准,性能见 `performance.md`。
+
 > **Step 1 cloc 留档（`cloc scheduler.h scheduler.cc scheduler_test.cc`）**：**259 行**（step1 时）→ **340 行**（含 step2 park）。组合层(复用 container-08/01 + Fiber + Parker),非 stub。
 > **Step 1 状态**：✅ 完成。Win x64 MSVC + Linux x64 GCC14.2 双平台 15 sched case 全过；**WSL TSan 零 data race**(8-worker×1000-fiber 含 fiber 跨线程迁移,TSan 61ms 干净)。
 > **Step 1 实现/自审**：① **Pimpl**——Scheduler 公开头只一个 `Impl*`,std::vector/thread/queue 全在 .cc(避 C4251 + 公开头零 std)。② **fiber 跨线程迁移正确**:队列存 `Fiber*`,A yield→B 偷→B resume,fcontext 栈在堆、线程无关;同一时刻仅一个 worker 持有/resume 某 fiber(队列所有权),TSan 背书无并发 resume。③ outstanding 计数 spawn 先 add 再 publish、done 后 sub,drain 等 0;动态 spawn(seed 内 spawn 500 子)也正确等到。④ 析构调 shutdown 幂等安全。

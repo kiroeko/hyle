@@ -164,7 +164,7 @@ a.release(p, 16);
 auto obj = a.make_unique<MyType>(args);  // 经此 allocator 析构的 unique_ptr
 ```
 
-### 3.2 container —— SwissTable（对标 absl，快 std 2-6x）
+### 3.2 container —— SwissTable（对标 absl 追平/超，快 std 2.4-5.3x）
 ```cpp
 #include "hyle/container/swiss_table.h"
 using hyle::container::SwissTable;

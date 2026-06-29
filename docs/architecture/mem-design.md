@@ -24,7 +24,7 @@
 | `Allocator` vtable 注入接缝 | 🔧 **继承 clay** | 最成熟资产，C-ABI 边界契约，但**修 alignment 丢弃 bug** |
 | arena / region 分配器 | 🔧 继承 MemoryArena + 修 64 槽上限 | 无锁块池是真资产 |
 | object pool / stack allocator | 🔧 **推倒重写**（bug 3/4）| clay 实现有 UB |
-| fiber 栈池 | 🔧 **自造** | sched/ 的 fiber 栈（定长 + guard page + 池化）|
+| fiber 栈池 | 🔧 **自造**(池化部分✅) | sched/ 的 fiber 栈。**池化已落地**(`MemoryArena::as_allocator` 复用定长块,fork-join +13% 实测);**guard page + 分级栈大小仍待** |
 | pinned memory | 🔧 **自造**（封 cudaHostAlloc）| compute/ GPU DMA 用 |
 | NUMA / 大页 / cache-line 对齐 | 🔧 自造（部分借 mimalloc 能力）| 极致内存焦点 |
 
