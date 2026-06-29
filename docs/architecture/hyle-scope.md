@@ -93,32 +93,56 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 其余（math 标量、quant）都能并进既有模块，无需新顶层。
 
-## 规模（全模块深挖后确认）
+## 规模（2026-06-29 用实测数据全面下修）
 
-> 早先"50-70k"估低了。**12 份设计全部深挖完后**，自底向上逐模块确认：sched/simd/io/compute 四个净新子系统每个 10-16k。下表为**生产代码**（不含测试）。**这已是基于完整设计的确认值，非粗估。**
+> **⚠️ 旧"65-100k 生产"被实测下修,但下修原因要诚实拆解(用户质疑:是高估,还是我们写的是玩具代码?)。** 先回质疑:**已实现的不是玩具**——实测 simd 后端每个 33 个真 op(真 intrinsic)、**零 stub/TODO**、vec/dtype 测试断言 43/41 条 + 全 65536 fp16 模式硬件逐位对拍 + dot/saxpy 实测追平 Highway + 红队揪出真 ODR/SIGILL bug(玩具撑不住这些)。**但下修不能全甩给"高估",得分两半**:
+> 1. **真·精简(合法瘦身)**:C++23/std 取代手写(math 458→28、result→std::expected)、借第三方不复刻(借 sleef/intrinsic 不 vendor Highway)、per-backend ~365 行写满。
+> 2. **当前 scope 更窄(会长回去,不是已精简到位)**:simd 实测 2.3k vs Highway 100k **不是功能对等**——HYLE 现做 **4 lane 类型 + ~25 op + 2 ISA 实测**;Highway 是 **12 类型 + ~200 op(swizzle/gather/scatter/compress/table-lookup,HYLE 全无)+ 6+ ISA**。dot/saxpy 追平只证"**已做的 op 上**追平",非"2.3k 做完了 Highway 全部"。i8/u8/i16/u16/i64/u64 量化类型、更多 op 是**显式登记的延期**;补齐后 simd 涨到 **~5-8k**,不停在 2.3k。
+> 故对 simd 旧 10-16k 仍是高估,但真实落点 ~5-8k(补全广度后)而非 2.3k——**高估约 2x,非 6x**。foundation 的 5-6x 高估是真(std 取代);pillar 的 gap 一半是 scope 未铺开、会收窄。**这是"防玩具"与"防高估"双向校准后的诚实结论。**
 
-| 模块 | Tier | 继承(clay) | 生产 LOC | 性质 |
-|---|---|---|---|---|
-| mem/ | 0 | allocator+arena ~2k | 6-10k | 改造+MemorySpace 组合+fiber栈+NUMA/大页+修5bug |
-| container/ | 0 | hashmap/carray/cstring ~3k | 7-11k | 改造+SwissTable(concept模板)+SmallVector+intrusive+lock-free |
-| sched/ | 0 | ~0（thread_pool 不可用）| 10-15k | **净新**：fcontext(6平台)+work-stealing+Waker+协程胶水+fiber-sync |
-| C-ABI shim | 0 | — | 3-5k | 净新 |
-| simd/ | 1 | ~0 | 10-16k | **净新**：scalable-friendly vector+多ISA+dispatch+dtype+数学函数 |
-| io/ | 1 | ~0 | 9-14k | **净新**：proactor+4后端+net/file/shmem |
-| compute/ | 1 | host_device 宏 | 10-16k | **净新**：device/stream/kernel+后端adapter+ggml bridge+MemorySpace 注册 |
-| platform/ | 2 | os 层 ~3k | 5-8k | 改造继承 |
-| time/ | 2 | ~0 | 1.5-2.5k | 净新：单调钟+时间轮 |
-| error/ | 2 | status/result ~1k | 1.5-2.5k | 改造（迁 std::expected）|
-| obs/ hook | 2 | log ~1k | 1.5-3k | 改造+埋点 |
-| graph/ | 3 | taskgraph ~5k | 3-5k | 改造（剥特化+绑 sched）|
-| 其余 T3 | 3 | 散落 ~3k | 8-12k | serialize/hash/plugin/random/text/compress/config |
+**实测密度再投影(已完成 46 里程碑 = 7,757 生产 + 4,812 测试 = 12,569 自有)：**
 
-| | 生产 LOC | 含测试(×1.6~1.8) |
+| | 旧预测(生产) | 实测/再投影(生产) | 依据 |
+|---|---|---|---|
+| 已完成(foundation + simd 核心 + sched 核心) | — | **~7.8k** | cloc 实测 |
+| simd 广度补全(int 量化类型 + 更多 op + AVX512 启用) | (含旧 10-16k) | +~3-5k | 延期登记,会长回 |
+| sched 后段(CV/同步/协程胶水) | (含 10-15k 内) | ~2-4k | 核心已 done,剩适配 |
+| io/(proactor + io_uring/IOCP + net/file) | 9-14k | ~5-8k | 借 liburing,HYLE 写适配 |
+| compute/(device/stream + ggml bridge + Vulkan) | 10-16k | ~5-8k | 借 ggml 算子,HYLE 写 bridge |
+| graph + mem-05/06 + C-ABI shim + T3(serialize/hash) | 14-22k | ~6-11k | 多借 simdjson/flatbuffers |
+| **HYLE 自有 生产合计** | ~76-120k | **~30-45k** | 完成时再投影(含广度补全) |
+| **HYLE 自有 含测试**(×~0.6 实测,非旧 ×1.6-1.8) | ~120-215k | **~48-72k** | 实测 test/prod≈0.62 |
+
+**第三方(vendored,用户要求计入)——这才是大头,且由 ggml 主导：**
+
+| 库 | 行数 | 状态 |
 |---|---|---|
-| **核心(T0+T1+T2)** | **~65-100k** | ~105-185k |
-| **完整(+T3)** | **~76-120k** | ~120-215k |
+| mimalloc | ~15k | 已 vendored |
+| xxhash | ~6k | 已 vendored |
+| fcontext | ~0.8k | 已 vendored(仅 3 汇编) |
+| sleef(用到的子集) | ~5-20k | 借(simd-06,链库非全 vendor) |
+| liburing | ~12k | 将借(io) |
+| **ggml** | **100k+** | **将借(compute)——单独就压过 HYLE 自有全部** |
+| simdjson/flatbuffers/capnproto | tens of k | 将借(serialize) |
+| **第三方合计** | **~150-250k+** | 由 ggml 主导 |
 
-**对标校准**（非虚高）：Tokio（调度+io+sync+time）≈80k、Highway（仅 SIMD）≈100k、Seastar≈150k。HYLE 横跨 mem+container+sched+simd+io+compute+platform，**核心 65-100k 生产代码合理甚至偏保守**。
+**一句话总量(诚实,防玩具/防高估双向校准)**:**HYLE 自有 ~30-45k 生产 / ~48-72k 含测试**(低于旧 76-120k——一半因 std 取代+借第三方真精简,一半因部分广度仍待铺;**已做的非玩具,真且测得狠**)。**含 vendored 第三方,项目总足迹 ~200-300k+,被 ggml 主导**。SOTA 不靠行数堆——靠精简自有 + 借成熟件;但**别把"还没铺开的广度"误读成"已精简到位"**(simd 2.3k≠做完 Highway,是做完其数值子集)。
+
+<details><summary>旧表(reference-library 锚,已知偏高 2-3x,留档对照)</summary>
+
+| 模块 | Tier | 继承(clay) | 旧预测 LOC | 性质 |
+|---|---|---|---|---|
+| mem/ | 0 | allocator+arena ~2k | 6-10k | 改造+MemorySpace+NUMA |
+| container/ | 0 | ~3k | 7-11k | SwissTable+SmallVector+lock-free |
+| sched/ | 0 | ~0 | 10-15k | fcontext+work-stealing+Waker |
+| simd/ | 1 | ~0 | 10-16k | **实测仅 2.3k** |
+| io/ | 1 | ~0 | 9-14k | proactor+4后端 |
+| compute/ | 1 | host_device 宏 | 10-16k | device/stream+ggml bridge |
+| platform/ | 2 | os ~3k | 5-8k | **实测 ~1.2k** |
+| 其余(time/error/obs/graph/C-ABI/T3) | 2-3 | 散落 | 18-30k | — |
+
+旧聚合:核心 65-100k 生产 / 含 T3 76-120k。**对标 Tokio 80k/Highway 100k 的锚被实测证明不适用**——HYLE 借+精简,不复刻广度。
+</details>
 
 **4 波参考库实证后微调（总量不变，造借结构变）**：lock-free 队列改 vendor（Vyukov/rigtorp，不计入自造）、hasher 借 XXH3、Intel 三件套全边界外——这些**减**自造；但 SwissTable 是"探测算法重写"非"补字节"、completion 脊 GPU 侧 100% 自造——这些**增**。一减一增，核心 65-100k 区间稳。
 
