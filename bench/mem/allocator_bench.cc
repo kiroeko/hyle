@@ -114,7 +114,7 @@ int main() {
     b.title("alloc-all then free-all, 50k blocks")
         .relative(true)
         .batch(kN)
-        .minEpochIterations(20);
+        .minEpochIterations(300);
     b.run("raw mi_malloc/free (SOTA)", [&] {
       std::vector<void*> ps(kN);
       for (int i = 0; i < kN; ++i) ps[i] = mi_malloc(size_at(i));
@@ -148,7 +148,7 @@ int main() {
     b.title("8-thread concurrent alloc/free")
         .relative(true)
         .batch(kThreads * kPer)
-        .minEpochIterations(10);
+        .minEpochIterations(150);
     b.run("raw mi_malloc/free (SOTA)", [&] {
       run_threads([] {
         for (int i = 0; i < kPer; ++i) {

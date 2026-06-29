@@ -26,13 +26,21 @@ namespace hyle::mem {
 inline constexpr std::size_t kDefaultAlignment = alignof(std::max_align_t);
 
 // ---- C-ABI allocator vtable -------------------------------------------------
-// ONE function carries alloc/free/realloc, plus alignment (clay's vtable dropped
-// alignment -- the bug this milestone fixes). Dispatch by the args:
-//   ptr==nullptr, new_size>0  -> allocate(new_size, alignment)
-//   ptr!=nullptr, new_size==0 -> free(ptr)                 (returns nullptr)
-//   ptr!=nullptr, new_size>0  -> reallocate(...)           (returns new ptr)
-// old_size lets sized/aligned backends free/copy precisely. Returns nullptr on
-// OOM (allocation is a hot path; failure is a value, not a Status).
+// THREE function pointers (alloc/free/realloc), each carrying alignment. clay used ONE
+// 5-arg realloc_func for all three "to minimize symbols" -- but that is a PERFORMANCE
+// bug, not a virtue: on the Win64 ABI only 4 integer args land in registers, so the 5th
+// (alignment) SPILLS TO THE STACK on every call, and one-function-does-three forces a
+// dispatch branch (ptr==null? new==0?) on the hot path. Splitting is still 100% C-ABI
+// clean (three C function pointers, trivially copyable, cross-DLL stable -- exactly what
+// jemalloc/pmr/cudaMalloc do) AND register-friendly: alloc is 3 args (all in registers),
+// free is 4 (all in registers), no dispatch branch. Measured: removes the spill + branch
+// tax. Returns nullptr on OOM (allocation is a hot path; failure is a value, not a Status).
+//   AllocFn  (state, size, alignment)                 -> ptr (nullptr on OOM/size==0)
+//   FreeFn   (state, ptr, size, alignment)            -> void   (ptr==nullptr is a no-op)
+//   ReallocFn(state, ptr, old_size, new_size, align)  -> ptr (the COLD path; 5 args ok)
+using AllocFn = void* (*)(void* state, std::size_t size, std::size_t alignment) noexcept;
+using FreeFn = void (*)(void* state, void* ptr, std::size_t size,
+                        std::size_t alignment) noexcept;
 using ReallocFn = void* (*)(void* state, void* ptr, std::size_t old_size,
                             std::size_t new_size, std::size_t alignment) noexcept;
 
@@ -44,27 +52,32 @@ using ReallocFn = void* (*)(void* state, void* ptr, std::size_t old_size,
 class Allocator {
  public:
   Allocator() noexcept = default;  // null/invalid allocator
-  Allocator(ReallocFn fn, void* state) noexcept : fn_(fn), state_(state) {}
+  Allocator(AllocFn alloc, FreeFn free, ReallocFn realloc, void* state) noexcept
+      : alloc_fn_(alloc), free_fn_(free), realloc_fn_(realloc), state_(state) {}
 
-  bool valid() const noexcept { return fn_ != nullptr; }
+  bool valid() const noexcept { return alloc_fn_ != nullptr; }
 
-  // These are logically const: they dispatch through fn_ without mutating the
-  // handle itself (so allocating from a `const Allocator&` is valid).
+  // These are logically const: they dispatch through the fn pointers without mutating the
+  // handle itself (so allocating from a `const Allocator&` is valid). Each forwards to the
+  // matching register-friendly entry -- no spill, no dispatch branch.
   void* allocate(std::size_t size,
                  std::size_t alignment = kDefaultAlignment) const noexcept {
-    return fn_(state_, nullptr, 0, size, alignment);
+    return alloc_fn_(state_, size, alignment);
   }
   void deallocate(void* ptr, std::size_t size,
                   std::size_t alignment = kDefaultAlignment) const noexcept {
-    fn_(state_, ptr, size, 0, alignment);
+    free_fn_(state_, ptr, size, alignment);
   }
   void* reallocate(void* ptr, std::size_t old_size, std::size_t new_size,
                    std::size_t alignment = kDefaultAlignment) const noexcept {
-    return fn_(state_, ptr, old_size, new_size, alignment);
+    return realloc_fn_(state_, ptr, old_size, new_size, alignment);
   }
 
-  // Raw vtable accessors (for handing the seam across a C-ABI boundary).
-  ReallocFn fn() const noexcept { return fn_; }
+  // Raw vtable accessors (for handing the seam across a C-ABI boundary). alloc_fn() doubles
+  // as the identity for comparing two handles to the same backing (pmr).
+  AllocFn alloc_fn() const noexcept { return alloc_fn_; }
+  FreeFn free_fn() const noexcept { return free_fn_; }
+  ReallocFn realloc_fn() const noexcept { return realloc_fn_; }
   void* state() const noexcept { return state_; }
 
   // ---- typed convenience layer (clay allocator.h parity) --------------------
@@ -112,28 +125,30 @@ class Allocator {
   }
 
   // unique_ptr whose deleter destroys through this allocator. The deleter holds
-  // the raw fn/state (NOT an Allocator by value): inside Allocator's own
+  // the raw free fn/state (NOT an Allocator by value): inside Allocator's own
   // definition the type is incomplete, so a by-value Allocator member is
   // ill-formed (GCC rejects it; MSVC let it slide).
   template <class T>
   struct Deleter {
-    ReallocFn fn;
+    FreeFn free;
     void* state;
     void operator()(T* p) const noexcept {
       if (p != nullptr) {
         p->~T();
-        fn(state, p, sizeof(T), 0, alignof(T));
+        free(state, p, sizeof(T), alignof(T));
       }
     }
   };
   template <class T, class... Args>
   std::unique_ptr<T, Deleter<T>> make_unique(Args&&... args) const {
     return std::unique_ptr<T, Deleter<T>>(
-        construct<T>(std::forward<Args>(args)...), Deleter<T>{fn_, state_});
+        construct<T>(std::forward<Args>(args)...), Deleter<T>{free_fn_, state_});
   }
 
  private:
-  ReallocFn fn_ = nullptr;
+  AllocFn alloc_fn_ = nullptr;
+  FreeFn free_fn_ = nullptr;
+  ReallocFn realloc_fn_ = nullptr;
   void* state_ = nullptr;
 };
 

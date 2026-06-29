@@ -40,13 +40,14 @@ TEST(PmrResource, EqualityFollowsBacking) {
   EXPECT_TRUE(a.is_equal(b));  // same {fn,state}
 
   int dummy = 0;
-  // A distinct allocator (different state pointer) is not interchangeable.
-  Allocator other(system_allocator().fn(), &dummy);
+  // A distinct allocator (same fns, different state pointer) is not interchangeable.
+  Allocator sys = system_allocator();
+  Allocator other(sys.alloc_fn(), sys.free_fn(), sys.realloc_fn(), &dummy);
   PmrResource c(other);
   EXPECT_FALSE(a.is_equal(c));
 }
 
 TEST(PmrResource, ExposesAllocator) {
   PmrResource res(system_allocator());
-  EXPECT_EQ(res.allocator().fn(), system_allocator().fn());
+  EXPECT_EQ(res.allocator().alloc_fn(), system_allocator().alloc_fn());
 }

@@ -25,25 +25,39 @@ std::size_t normalize_alignment(std::size_t a) noexcept {
 // purpose (user directive). A disable/fallback path is a trap -- it lets a build
 // silently sidestep a mimalloc-dependent problem and be mis-judged as fine. If
 // something breaks with mimalloc, we face it, not hide behind glibc.
+//
+// THREE split entries (alloc/free/realloc) instead of one 5-arg realloc_func: the hot
+// alloc path is 3 args (no Win64 stack spill) with NO dispatch branch -- the seam costs
+// only the unavoidable indirect call now. mi_malloc already guarantees >= 16-byte
+// (alignof(max_align_t)) alignment, so the common default-aligned case takes the plain
+// (faster) path; only over-aligned (>16, e.g. AVX512 64B) needs mi_*_aligned.
+void* system_alloc(void* /*state*/, std::size_t size, std::size_t alignment) noexcept {
+  if (size == 0) return nullptr;
+  // Common-case fast path: default (or weaker) alignment needs no normalization at all --
+  // mi_malloc already guarantees >= 16-byte. Skip normalize_alignment (its assert + bit
+  // test) for the hot path; only over-aligned requests pay it.
+  if (alignment <= kDefaultAlignment) return mi_malloc(size);
+  return mi_malloc_aligned(size, normalize_alignment(alignment));
+}
+
+void system_free(void* /*state*/, void* ptr, std::size_t /*size*/,
+                 std::size_t /*alignment*/) noexcept {
+  if (ptr != nullptr) mi_free(ptr);  // mi_free recovers size/alignment from the block
+}
+
 void* system_realloc(void* /*state*/, void* ptr, std::size_t /*old_size*/,
                      std::size_t new_size, std::size_t alignment) noexcept {
-  if (new_size == 0) {  // free (also covers allocate(0) -> nullptr)
+  if (new_size == 0) {  // realloc-to-0 == free
     if (ptr != nullptr) mi_free(ptr);
     return nullptr;
   }
   std::size_t align = normalize_alignment(alignment);
-  // mi_malloc already guarantees >= 16-byte (alignof(max_align_t)) alignment, so
-  // the common default-aligned case takes the plain (faster) path -- the aligned
-  // path adds bookkeeping that, in tight alloc/free loops, loses to glibc's
-  // tcache. Only over-aligned requests (>16, e.g. AVX512 64B) need mi_*_aligned.
-  // (kDefaultAlignment == alignof(max_align_t) == mimalloc's MI_MAX_ALIGN_SIZE
-  // default; that macro is internal, so use our public constant.)
+  // mi_realloc_aligned preserves alignment and returns nullptr on OOM with the
+  // original block left intact (C realloc contract) -- matches our vtable.
   if (align <= kDefaultAlignment) {
     if (ptr == nullptr) return mi_malloc(new_size);
     return mi_realloc(ptr, new_size);
   }
-  // mi_realloc_aligned preserves alignment and returns nullptr on OOM with the
-  // original block left intact (C realloc contract) -- matches our vtable.
   if (ptr == nullptr) return mi_malloc_aligned(new_size, align);
   return mi_realloc_aligned(ptr, new_size, align);
 }
@@ -51,7 +65,7 @@ void* system_realloc(void* /*state*/, void* ptr, std::size_t /*old_size*/,
 }  // namespace
 
 Allocator system_allocator() noexcept {
-  return Allocator(&system_realloc, nullptr);
+  return Allocator(&system_alloc, &system_free, &system_realloc, nullptr);
 }
 
 }  // namespace hyle::mem

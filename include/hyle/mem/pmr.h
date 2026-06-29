@@ -45,7 +45,7 @@ class PmrResource : public std::pmr::memory_resource {
   bool do_is_equal(
       const std::pmr::memory_resource& other) const noexcept override {
     const auto* o = dynamic_cast<const PmrResource*>(&other);
-    return o != nullptr && o->alloc_.fn() == alloc_.fn() &&
+    return o != nullptr && o->alloc_.alloc_fn() == alloc_.alloc_fn() &&
            o->alloc_.state() == alloc_.state();
   }
 

@@ -20,7 +20,7 @@ bool is_aligned(const void* p, std::size_t a) {
 TEST(Allocator, SystemAllocatorIsValid) {
   Allocator a = system_allocator();
   EXPECT_TRUE(a.valid());
-  EXPECT_NE(a.fn(), nullptr);
+  EXPECT_NE(a.alloc_fn(), nullptr);
 }
 
 TEST(Allocator, DefaultAllocatorIsInvalid) {

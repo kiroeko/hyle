@@ -111,29 +111,30 @@ class MemoryArena {
   std::size_t block_size() const noexcept { return block_size_; }
   std::uint32_t capacity() const noexcept { return count_; }
 
-  // Adapt this pool to the Allocator vtable: allocate -> pop a fixed block (the
-  // requested size must fit block_size_; the pool serves one size class),
-  // deallocate -> push the block back. A pool block can't grow, so realloc of an
-  // existing pointer is rejected (nullptr). Ideal as a Fiber stack source: the
-  // 64 KB stack churns through the lock-free free-list instead of malloc/mmap.
-  Allocator as_allocator() noexcept { return Allocator(&pool_realloc, this); }
+  // Adapt this pool to the Allocator vtable (split alloc/free/realloc): allocate -> pop a
+  // fixed block (the request must fit block_size_; the pool serves one size class),
+  // deallocate -> push the block back. A pool block can't grow, so realloc is rejected
+  // (nullptr). Ideal as a Fiber stack source: the 64 KB stack churns the lock-free free
+  // list instead of malloc/mmap.
+  Allocator as_allocator() noexcept {
+    return Allocator(&pool_alloc, &pool_free, &pool_realloc, this);
+  }
 
  private:
-  static void* pool_realloc(void* state, void* ptr, std::size_t /*old_size*/,
-                            std::size_t new_size, std::size_t alignment) noexcept {
+  static void* pool_alloc(void* state, std::size_t size, std::size_t alignment) noexcept {
     auto* self = static_cast<MemoryArena*>(state);
-    if (ptr == nullptr) {
-      if (new_size == 0) return nullptr;
-      // One size class: the caller's request must fit a pool block and not need
-      // stronger alignment than the slab was built with.
-      HYLE_FATAL_ASSERT(new_size <= self->block_size_ &&
-                        alignment <= self->alignment_);
-      return self->allocate();
-    }
-    if (new_size == 0) {  // free
-      self->deallocate(ptr);
-      return nullptr;
-    }
+    if (size == 0) return nullptr;
+    // One size class: the caller's request must fit a pool block and not need stronger
+    // alignment than the slab was built with.
+    HYLE_FATAL_ASSERT(size <= self->block_size_ && alignment <= self->alignment_);
+    return self->allocate();
+  }
+  static void pool_free(void* state, void* ptr, std::size_t /*size*/,
+                        std::size_t /*alignment*/) noexcept {
+    if (ptr != nullptr) static_cast<MemoryArena*>(state)->deallocate(ptr);
+  }
+  static void* pool_realloc(void* /*state*/, void* /*ptr*/, std::size_t /*old_size*/,
+                            std::size_t /*new_size*/, std::size_t /*alignment*/) noexcept {
     return nullptr;  // a fixed-size pool block cannot be reallocated in place
   }
 
@@ -267,16 +268,25 @@ class Arena {
   std::size_t block_size() const noexcept { return block_size_; }
   std::size_t used() const noexcept { return offset_; }
 
-  // Adapt this Arena to the Allocator vtable: allocate -> bump, deallocate ->
-  // no-op (the arena frees in bulk on destruction). realloc bumps a fresh slice
-  // and copies (arenas can't grow in place).
-  Allocator as_allocator() noexcept { return Allocator(&arena_realloc, this); }
+  // Adapt this Arena to the Allocator vtable (split): allocate -> bump, deallocate ->
+  // no-op (the arena frees in bulk on destruction), realloc -> bump a fresh slice + copy
+  // (arenas can't grow in place).
+  Allocator as_allocator() noexcept {
+    return Allocator(&arena_alloc, &arena_free, &arena_realloc, this);
+  }
 
  private:
+  static void* arena_alloc(void* state, std::size_t size, std::size_t alignment) noexcept {
+    return static_cast<Arena*>(state)->allocate(size, alignment);
+  }
+  static void arena_free(void* /*state*/, void* /*ptr*/, std::size_t /*size*/,
+                         std::size_t /*alignment*/) noexcept {
+    // no-op: an arena frees everything in bulk on destruction / reset().
+  }
   static void* arena_realloc(void* state, void* ptr, std::size_t old_size,
                              std::size_t new_size, std::size_t alignment) noexcept {
     auto* self = static_cast<Arena*>(state);
-    if (new_size == 0) return nullptr;  // free is a no-op for an arena
+    if (new_size == 0) return nullptr;
     void* p = self->allocate(new_size, alignment);
     if (ptr != nullptr && p != nullptr && old_size != 0) {
       std::memcpy(p, ptr, old_size < new_size ? old_size : new_size);
