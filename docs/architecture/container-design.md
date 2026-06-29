@@ -59,7 +59,7 @@ container/
 | **intrusive list/slist** | 节点内嵌 hook，零额外分配、O(1) 摘除 | **sched 的 waiter 链、run-queue** | 参考 **folly `IntrusiveList`**（boost-free，比 boost.intrusive 轻）|
 | **lock-free bounded ring（SPSC/MPMC）** | 有界无锁环 | **sched 的 per-core run-queue + global 注入** | **vendoring 成熟实现**（Vyukov bounded MPMC：数组+每槽 seq；rigtorp SPSC），**不自造**——见下张力 |
 
-> **lock-free 队列范围收缩（深读校正，影响 roadmap 决策 #9）**：有界 MPMC/SPSC ring 是出名难写对（ABA、memory order、TSan 验证），且**不是 C++ 类型边界问题——没有 C-ABI 理由必须自造**。moodycamel 是**无界 + 非线性化 + NUMA 盲**，不符 HYLE 要的"有界 per-core ring"，只能参考其 per-producer SPSC 聚合思想。建议：**有界队列 vendoring Vyukov MPMC / rigtorp SPSC（皆单头可内联），把自造预算集中到真正差异焦点 hashmap**。即容器"自造"边界**收缩到 hashmap + carray + string**，lock-free 队列降级为"借/vendoring"。
+> **lock-free 队列造借结构（按实现校正）**：分两类。**基础有界 ring（SPSC/MPMC）借/vendoring**——出名难写对（ABA、memory order、TSan），且无 C-ABI 理由必须自造，故 vendor Vyukov MPMC / rigtorp SPSC（皆单头可内联，container-01），自造预算集中到差异焦点 hashmap。**但 work-stealing 变体自写**——sched/graph 要的 owner-LIFO + steal-half + packed-head CAS 语义现成件不提供，故 container-07（Chase-Lev deque，供 graph fork-join）、container-08（tokio 式 FIFO ring，供 sched 本地队列）移植自写。即 container "自造"边界 = hashmap + carray + string + work-stealing 队列；基础 ring 借。
 
 ## 与其他模块的耦合（container 是 sched 的原语供应商）
 

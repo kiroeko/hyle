@@ -11,8 +11,8 @@
 **差异点是"同一套底座"**：GPU 算完、网卡收包、fiber 让出，都回到同一个调度器、唤醒同一个 fiber，而非四个子系统各开线程池、各跑事件循环互相打架。HYLE 不是"又一个 hashmap/日志库"，而是让计算/并发/内存/IO 无阻抗拼在一起的那层地基。
 
 - **地基（继承 clay，约占 1/3）**：内存分配器 + 容器（flat hashmap/carray/cstring）+ 跨平台原子（catomics）+ 并行编排骨架（taskgraph）。
-- **支柱（自造，约占 2/3，30–50k 行）**：统一调度（线程/进程/纤程/协程）、fiber、网络 IO、SIMD、异构计算。
-- **体量**：HYLE 粗估 50–70k 行级，是 clay 的 2–3 倍。不是"重构那 2 万行"，是"以 clay 为地基的全新 infra"。
+- **支柱（自造，约占 2/3）**：统一调度（线程/进程/纤程/协程）、fiber、网络 IO、SIMD、异构计算。
+- **体量**：HYLE 自有 ~30-45k 生产 / ~48-72k 含测试；含第三方 vendored 总足迹 ~200-300k+（ggml 主导，详见 [`hyle-scope.md`](./hyle-scope.md) 规模节）。不是"重构那 2 万行"，是"以 clay 为地基的全新 infra"。
 
 ## 模块划分
 
@@ -44,7 +44,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`engineering-charter.md`](./engineering-charter.md) | **工程章程**：动手前最终依据——C++23 标准/错误模型/命名宏、开发范式、测试方案、边界、对外 FFI 决策 |
 | [`coding-conventions.md`](./coding-conventions.md) | **编码规范**：每一行怎么写才不破范式——std 分层/include/宏纪律、C-ABI 范式、错误处理、能力 dispatch 三层模型、clay 独特写法三张表 |
 | [`clay-asset-liability.md`](./clay-asset-liability.md) | clay 资产负债表：六子系统逐个盘点（内存/DataModel/SIMD/容器/并发/taskgraph），含 5 个 bug、空位 grep 证据、继承/重写判断 |
-| [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、两条主轴、7 模块划分、50–70k 行规模、边界外明确不做的东西 |
+| [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、两条主轴、7 模块划分、规模（自有 ~30-45k / 含第三方 ~200-300k+）、边界外明确不做的东西 |
 | [`io-design.md`](./io-design.md) | 网络库选型：proactor 模型 + io_uring/IOCP/kqueue/epoll 四后端 + 只借 syscall 封装、调度绑 fiber |
 | [`sched-design.md`](./sched-design.md) | 统一调度器（4 节完整）：fcontext 上下文切换 + per-core 无锁 run-queue/work-stealing + Waker completion 脊 + 协程/fiber 统一 |
 | [`lifecycle-design.md`](./lifecycle-design.md) | **失败边界**：fail-fast 绝不 try-catch + 四类失败分类 + 取消(结构化并发/await点) + 背压 + 优雅关闭 + 故障隔离=进程边界 + 跨 C-ABI 错误约定 |
@@ -52,16 +52,16 @@ HYLE infra（通用、不特化、贴硬件）
 | [`simd-design.md`](./simd-design.md) | SIMD 选型：精简可移植 vector + 运行时 dispatch（clay 最大缺口）+ dtype(fp16/bf16) + 借 sleef 数学核 + container 探测 tier 澄清 |
 | [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 自造专用分配器（arena/pool/stack/fiber栈/pinned）+ 修 5 bug + NUMA/大页/64B 对齐契约 |
 | [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
-| [`roadmap.md`](./roadmap.md) | 实现路线图：模块依赖图（无环）+ 6 批施工序 + 关键路径 + 每批验收门槛 + 完整决策清单（已决+待决）|
+| [`roadmap.md`](./roadmap.md) | 实现路线图：模块依赖图（无环）+ 依赖层 P0-P6 拓扑序 + 关键路径 + 每阶段验收门槛 + 完整决策清单（已决+待决）|
 | [`performance.md`](./performance.md) | 性能预期 vs std：时间/空间分列、drop-in 可比 vs std 没有的能力两桶、Amdahl 整体观、benchmark gate 验证 |
 | [`references.md`](./references.md) | 参考库映射：clone 的 20+ 库 → HYLE 模块，借/参考标注、开工优先级（含 Intel oneMath/oneDNN）|
 | [`usage-contract.md`](../guide/usage-contract.md) | **调用安全边界**：为 SOTA 性能保留的特定调用约束（fiber 勿跨 yield 持有 thread_local；分配器跨线程 free 安全/勿 static+LTO 内联进 fiber 体），每条带机制+安全模式+后果 |
 
-## 状态与下一步
+## 进度
 
-- ✅ 资产负债表已出，scope 已定，io/compute 两根支柱已展开。
-- ⏭️ **建议下一步深挖 `sched/`**——它是 `io/` 和 `compute/` completion 机制的共同地基，动它最值。关键设计点：fiber 上下文切换方案、协程与 fiber 如何统一、io/gpu completion 如何映射到唤醒哪个 fiber、per-core 无锁 run-queue + work-stealing。
-- 其余支柱（`simd/` 选型、`mem/` 加固、`container/` 扩展）依赖序靠后。
+进度**不在此维护**（避免与里程碑表 drift）——逐里程碑的真实状态 + cloc 实测 LOC + clay API diff 见 [`../milestones/README.md`](../milestones/README.md)，那是**唯一进度信源**。本目录只管设计、背景、决策这些慢变内容。
+
+一句话现状（粗粒度）：地基层（error/platform/mem/container/time/util/obs）立住；**sched 核心 done**（work-stealing + Waker 脊），后段（CV/协程胶水）待；**simd 支柱基本完成**（dispatch + vec + scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 + sleef 数学核，对标 Highway 追平；NEON/AVX512 写+编+objdump 验未跑存疑）；**io/compute/graph 三支柱未开工**。
 
 ---
 

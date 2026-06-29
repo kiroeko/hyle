@@ -100,11 +100,11 @@ mem/
 6. stats 修下溢 + 泄漏追踪（debug 构建）。
 7. 单测：对齐保证、并发分配 TSan、泄漏检测、NUMA 就近性验证、benchmark 对标裸 mimalloc（专用分配器应更快）。
 
-## 待决（需主拍板）
+## 决策（已定）
 
-1. **通用 backing 选 mimalloc 还是 jemalloc/tcmalloc**？建议 **mimalloc**（现代、THP 内建、MIT、易嵌入、v3 2026）。jemalloc 多线程老牌但偏大；tcmalloc 强但 Google 生态绑定。
-2. **mimalloc 怎么集成**？建议封在 `Allocator` vtable 后、**不外露 mimalloc 类型**（同 compute 的 ggml_bridge 解耦），将来可换 backing 只动 system.cc。
-3. **device 内存抽象放 mem/ 还是 compute/**？**✅ 已决：方案 D（MemorySpace 组合式）**——mem/ 定义 `MemorySpace` 接口 + 通用分配器 + SystemRAM 实现（GPU-free）；compute/ 实现并注册 device/pinned/unified space；分配器组合在 space 上；统一内存自然塌缩。详见上方「MemorySpace 抽象」。
+1. **通用 backing = mimalloc**（现代、THP 内建、MIT、易嵌入、v3 2026）。jemalloc 多线程老牌但偏大；tcmalloc 强但 Google 生态绑定。
+2. **mimalloc 封在 `Allocator` vtable 后、不外露 mimalloc 类型**（同 compute 的 ggml_bridge 解耦），换 backing 只动 system.cc。
+3. **device 内存抽象 = 方案 D（MemorySpace 组合式）**——mem/ 定义 `MemorySpace` 接口 + 通用分配器 + SystemRAM 实现（GPU-free）；compute/ 实现并注册 device/pinned/unified space；分配器组合在 space 上；统一内存自然塌缩。详见上方「MemorySpace 抽象」。
 
 ## 参考
 

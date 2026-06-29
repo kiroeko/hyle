@@ -18,7 +18,7 @@
 | `util/` | `hyle/util/{ref_counted,registry,scope_guard,...}.h` | ✅ | `Ref<T>`、Registry、`DEFER`、type_name |
 | `obs/` | `hyle/obs/log.h` | ✅ | level 门控 + sink 注册表日志 |
 | `sched/` | `hyle/sched/{scheduler,fiber}.h` | 🔶 | fcontext 纤程 + work-stealing 调度（协程/取消 待） |
-| `simd/` | `hyle/simd/{dispatch,vec}.h` | 🔶 | 运行期 ISA 探测 + 可移植 `vec<T,N>`（scalar/SSE4.2/AVX2；NEON/AVX512/dtype/数学核 待） |
+| `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测 + 可移植 `vec<T,N>`（scalar/SSE4.2/AVX2 实跑；fp16/bf16 dtype + sleef 数学核 done；NEON/AVX512 写+编+objdump 验、未跑存疑） |
 | `io/` `compute/` `graph/` | — | 📋 | 尚未开工 |
 
 ## 1. 构建与集成
