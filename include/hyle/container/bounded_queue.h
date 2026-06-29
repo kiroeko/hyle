@@ -8,6 +8,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/util/spin_lock.h"  // util::cpu_relax (pause/yield backoff hint)
 
 namespace hyle::container {
 
@@ -68,10 +69,12 @@ class BoundedQueue {
                                                std::memory_order_relaxed)) {
           break;
         }
+        util::cpu_relax();  // lost the CAS to another producer; back off before retry
       } else if (diff < 0) {
         return false;  // full: producer lapped the consumer
       } else {
         pos = enqueue_pos_.load(std::memory_order_relaxed);  // raced, reload
+        util::cpu_relax();  // a peer advanced enqueue_pos_; back off
       }
     }
     cell->data = item;
@@ -93,10 +96,12 @@ class BoundedQueue {
                                                std::memory_order_relaxed)) {
           break;
         }
+        util::cpu_relax();  // lost the CAS to another consumer; back off before retry
       } else if (diff < 0) {
         return false;  // empty
       } else {
         pos = dequeue_pos_.load(std::memory_order_relaxed);
+        util::cpu_relax();  // a peer advanced dequeue_pos_; back off
       }
     }
     out = cell->data;

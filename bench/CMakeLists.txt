@@ -28,6 +28,48 @@ add_executable(hyle_sched_sync_bench sched/sync_bench.cc)
 target_link_libraries(hyle_sched_sync_bench PRIVATE hyle_sched nanobench)
 hyle_apply_warnings(hyle_sched_sync_bench)
 
+# task #9: lock-free queue cluster SOTA parity. HYLE baselines (BoundedQueue,
+# WsFifoQueue, WorkStealingDeque, ConcurrentVector) ALWAYS compile into this exe;
+# the SOTA rivals below are opt-in (each is a heavy/header dep we don't force).
+# The same-family work-stealing rival (crossbeam-deque) is a SEPARATE Rust crate
+# (bench/rust/crossbeam_queue_bench) since it can't link a C++ TU -- run it on its
+# own and lay the ns/op side by side (see docs/architecture/performance.md).
+add_executable(hyle_queue_sota_bench container/queue_sota_bench.cc)
+target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench)
+hyle_apply_warnings(hyle_queue_sota_bench)
+
+# Optional: moodycamel::ConcurrentQueue (header-only -> just an include path).
+# Enable with -DHYLE_BENCH_MOODYCAMEL=ON; point HYLE_MOODYCAMEL_DIR at the cloned
+# repo (sibling of hyle/ by default).
+option(HYLE_BENCH_MOODYCAMEL "build queue bench vs moodycamel ConcurrentQueue" OFF)
+if(HYLE_BENCH_MOODYCAMEL)
+  set(HYLE_MOODYCAMEL_DIR "${PROJECT_SOURCE_DIR}/../moodycamel-ConcurrentQueue"
+      CACHE PATH "cloned moodycamel ConcurrentQueue")
+  if(NOT EXISTS "${HYLE_MOODYCAMEL_DIR}/concurrentqueue.h")
+    message(FATAL_ERROR "HYLE_BENCH_MOODYCAMEL=ON but no concurrentqueue.h at ${HYLE_MOODYCAMEL_DIR}")
+  endif()
+  target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_MOODYCAMEL)
+  target_include_directories(hyle_queue_sota_bench SYSTEM PRIVATE "${HYLE_MOODYCAMEL_DIR}")
+endif()
+
+# Optional: oneTBB concurrent_bounded_queue + concurrent_vector (the apples-to-
+# apples bounded-MPMC and concurrent-vector rivals; same try_push/try_pop/push_back
+# API). Heavy external build -> add_subdirectory the cloned oneTBB. Enable with
+# -DHYLE_BENCH_TBB=ON; point HYLE_TBB_DIR at the clone (sibling by default).
+option(HYLE_BENCH_TBB "build queue/vector bench vs oneTBB" OFF)
+if(HYLE_BENCH_TBB)
+  set(HYLE_TBB_DIR "${PROJECT_SOURCE_DIR}/../oneTBB" CACHE PATH "cloned oneTBB")
+  if(NOT EXISTS "${HYLE_TBB_DIR}/CMakeLists.txt")
+    message(FATAL_ERROR "HYLE_BENCH_TBB=ON but no oneTBB at ${HYLE_TBB_DIR}")
+  endif()
+  set(TBB_TEST OFF CACHE BOOL "" FORCE)
+  set(TBBMALLOC_BUILD OFF CACHE BOOL "" FORCE)
+  set(TBB_EXAMPLES OFF CACHE BOOL "" FORCE)
+  add_subdirectory("${HYLE_TBB_DIR}" "${CMAKE_BINARY_DIR}/onetbb" EXCLUDE_FROM_ALL)
+  target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_TBB)
+  target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
+endif()
+
 # simd bench: dot/saxpy raced across scalar-autovec / HYLE sse4 / HYLE avx2 (+ Highway if
 # enabled). Each kernel TU is compiled with ITS OWN -march so the per-ISA codegen is real
 # and isolated (one backend per TU). The scalar baseline TU gets NO -march (auto-vec only
