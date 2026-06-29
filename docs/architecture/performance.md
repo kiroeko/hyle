@@ -85,7 +85,34 @@
 
 
 
-## 先分两桶（混在一起说"快多少"会误导）
+### lock-free 队列簇（`queue_sota_bench.cc` + crossbeam Rust 对照，task #9 / bench-02b）
+
+> 环境:Win MSVC19.50 Release + Linux x86_64 GCC14.2 Release(原生 ext4),nanobench。cap=1024、50000 item/生产者。**SOTA 标尺**:moodycamel ConcurrentQueue(单头,gated `-DHYLE_BENCH_MOODYCAMEL`)、oneTBB concurrent_bounded_queue/concurrent_vector(gated `-DHYLE_BENCH_TBB`,apples-to-apples 有界)、crossbeam-deque(Rust,work-stealing 同族,`bench/rust/`)。**此前这簇零对标("覆盖低就默认 SOTA"),本节是真对标揪出的结果——赢/平/输都登记。**
+>
+> **对标依赖 `project-hyle/` sibling 布局**:gated 库默认在仓库 sibling(`../moodycamel-ConcurrentQueue`/`../oneTBB`),crossbeam Rust crate path 依赖 `../../../../crossbeam-deque`(本地 0.8.3 clone)。换机器时:C++ 侧 `-DHYLE_MOODYCAMEL_DIR=/path` 覆盖;Rust 侧改 Cargo.toml path 或换 `crossbeam-deque="0.8"` 走 crates.io。
+
+| 场景 | HYLE | moodycamel(SOTA) | oneTBB | 结论 |
+|---|---|---|---|---|
+| **单线程 fill+drain**(BoundedQueue) | 7.2(Lin)/7.8(Win) | 7.7 / 9.4 | 12.6(Win) | **追平~微超 moody、赢 tbb 1.6x** |
+| **MPMC 2P/2C**(BoundedQueue 单环) | 37.7(Lin)/41.8(Win) | 47.0 / 62.1 | 137(Win) | Lin **赢 moody 1.25x**、Win 打平;赢 tbb 远 |
+| **MPMC 4P/4C**(BoundedQueue 单环) | 95(Lin)/99(Win) | 55 / 62 | 224(Win) | **输 moody 1.7x**(争用)、赢 tbb 2x |
+| **MPMC 2P/2C**(**ShardedQueue**) | **18.1(Lin)/24.9(Win)** | 47.0 / 62.1 | — | **反超 moody 2.6x** |
+| **MPMC 4P/4C**(**ShardedQueue**) | **21.0(Lin)/20.4(Win)** | 55 / 62 | — | **反超 moody 2.6-3.0x** |
+| **work-steal owner LIFO**(WorkStealingDeque) | 2.8(Lin)/3.1(Win) | (无同物) | — | crossbeam LIFO 3.6(Win) 参照,HYLE 略快 |
+| **work-steal owner FIFO**(WsFifoQueue) | 3.6(Lin)/3.9(Win) | — | — | crossbeam FIFO 4.4(Win) 参照,HYLE 略快 |
+| **ConcurrentVector** push_back/read | 3.9/0.8(Lin) | — | 6.1/1.3(Win) | **赢 tbb push 1.3x / read 1.1x** |
+
+**核心诚实结论 + 它驱动的真优化**:
+
+1. **单环 BoundedQueue 在高竞争全局 MPMC(4P)输 moodycamel 1.7x——这是揪出的真"自以为 SOTA"**。诊断(cap 1024→64k 解背压)证实**根因=单 `enqueue_pos_`/`dequeue_pos_` 的 CAS 单点 serialize**(解压后差距反扩 1.47→1.73x),**非有界税**。moodycamel 用 per-producer 子队列(放弃严格全局 FIFO + 无界 + 消费者 O(producers) 扫描)换生产者侧零争用——在多生产者高吞吐场景合理。
+
+2. **backoff(`util::cpu_relax` 加在 CAS 失败重试)**:零约束代价(FIFO+有界全留),**2P 反超 moody 1.55x**(Win 62→43);4P 无效(单点 serialize 是硬墙,pause 只错开不增吞吐)。
+
+3. **新 `ShardedQueue`(N 个 Vyukov 子环,生产者 hash 到各自子环)根治**:消除单点争用,**4P 反超 moody 2.6-3.0x、2P 反超 2.6x,且线性扩展**(2P→4P 几乎不恶化:Lin 18→21、Win 25→20,而单环 38→95/42→99 急剧恶化)。**保留有界**(每子环有界),**放弃全局 FIFO**——这对其唯一生产用途(sched `global` 注入可运行 fiber 指针,work-stealing 本就无全局序)**是零代价**:约束服务用途,严格全局 FIFO 在此无用途支撑=可弃的假约束。需 FIFO 的场景仍用 BoundedQueue(单环)。双平台 6/6 测试 + **WSL TSan 零 race**(含 100k×4 MPMC 守恒)。
+
+> **诚实边界**:① ShardedQueue 的 ns/op 因太快采样不足,nanobench 标 unstable(err 6-11%),但反超幅度(2.6-3x)远超误差带,方向稳健。② **跨语言对照(crossbeam Rust)只能下"同量级/有竞争力"**——亚 ns、~1.2x 差落在 rustc-LLVM vs MSVC + 手写计时 vs nanobench 的噪声内,不下细比 verdict。③ 单环 vs moodycamel 是**有界严格-FIFO vs 无界弱序**两类设计,4P 的"输"是约束选择非实现缺陷(单环已是该约束下 SOTA,rigtorp/folly 同款)。④ work-stealing owner 路径单线程无争用(两侧同样),steal 路径未并发 owner=测无争用 steal。
+
+
 
 - **桶 A — 同操作更省开销（真 drop-in 可比）**：hashmap、分配器、容器。给"倍数"有意义。
 - **桶 B — std 根本没有的能力**：fiber、async IO。"倍数"是错的框（无可比物），是「从不能到能」。

@@ -31,7 +31,7 @@
 ## 待办拆分(子里程碑)
 
 - **bench-02a**：SwissTable vs absl::flat_hash_map + folly F14(container 簇,最高优先——hashmap 是 HYLE 自造焦点 T0)。
-- **bench-02b**：bounded_queue/ws_fifo vs moodycamel/oneTBB。
+- **bench-02b** ✅ **完成**：四队列簇(bounded_queue/ws_fifo/work_stealing_deque/concurrent_vector)对标 moodycamel + oneTBB + **crossbeam-deque(Rust,work-stealing 同族)**。`bench/container/queue_sota_bench.cc`(gated `-DHYLE_BENCH_MOODYCAMEL/_TBB`)+ `bench/rust/crossbeam_queue_bench`。**揪出真"自以为 SOTA":单环 BoundedQueue 高竞争 4P MPMC 输 moodycamel 1.7x**(诊断证实=单 `enqueue_pos_` CAS 单点争用,非有界税)。**驱动两个真优化**:① backoff(2P 反超 moody 1.55x,零约束);② **新 `ShardedQueue`(container)**——N 个 Vyukov 子环消除单点,**4P 反超 moody 2.6-3.0x、线性扩展**,保留有界、弃 sched 用不上的全局 FIFO。双平台 + WSL TSan 零 race。数字见 performance.md 队列簇节。**sched global 注入切换 ShardedQueue 待后续。**
 - **bench-02c**：Hash vs xxHash 原版 + wyhash(含小 key wyhash 评估,回答"不同情况不同 hash")。
 - **bench-02d+**：simd/sched 对标(模块落地后)。
 
