@@ -68,20 +68,22 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 
 ### 依赖层 × 里程碑分解（轴 A × 轴 B）
 
-| 阶段 | 模块 | 里程碑（每个 1-4k 行，可独立编/测）| 生产 LOC |
-|---|---|---|---|
-| **P0** | error / obs-hook | M:Status+expected+ASSIGN_OR_RAISE宏 / M:obs 埋点 API（空实现）| 3-5k |
-| **P1** | platform | M:thread+park(futex/WaitOnAddress) / M:vm+dynlib / M:path+fs+env | 5-8k |
-| **P2** | mem | M:Allocator vtable+修alignment / M:mimalloc backing / M:arena+修64槽 / M:pool+stack重写 / M:MemorySpace+xcpu_freelist / M:NUMA+大页 | 6-10k |
-| **P2** | time | M:单调钟 / M:分层时间轮 | 1.5-2.5k |
-| **P3** | container | M:vendor 有界 ring/MPMC / M:XXH3 接入 / M:carray+RAII / M:SwissTable 探测层重写 / M:SmallVector+intrusive / M:string_ref+buf | 7-11k |
-| **P3** | simd | M:vec D-tag 抽象+scalar后端 / M:SSE4.2+AVX2 / M:AVX512+NEON / M:运行期变体dispatch / M:dtype(fp16/bf16) / M:sleef 数学核 adapter | 10-16k |
-| **P4** | sched | M:fcontext 6平台+栈池 / M:per-core run-queue / M:work-stealing+防惊群 / M:Waker completion 脊 / M:fiber-aware CV+同步原语 / M:协程胶水 | 10-15k |
-| **P5** | io | M:proactor 抽象 / M:io_uring 后端 / M:epoll+kqueue+IOCP / M:net(tcp/udp) / M:file+shmem | 9-14k |
-| **P5** | compute | M:device/stream 薄包ggml / M:MemorySpace 注册+copy塌缩 / M:GPU completion→fiber / M:kernel 启动 / M:ggml_bridge+注入线程池 / M:Vulkan compute kernel | 10-16k |
-| **P6** | graph + 收口 | M:taskgraph 剥特化绑sched / M:C-ABI shim / M:serialize/hash/T3 / M:FFI 绑定 | 11-17k |
+> **生产 LOC 列已 2026-06-29 用实测下修**(右列 = 再投影)。旧列锚"对标参考库体量"偏高 ~2x(foundation 5-6x、pillar ~2x);**已实现的非玩具**(33 真 op/零 stub/红队揪真 bug),下修一半因 std/C++23 取代 + 借第三方真精简、一半因部分广度仍待铺(会长回)。完整拆解 + 第三方(ggml 主导 ~150-250k)见 [`hyle-scope.md` 规模节](./hyle-scope.md)。
 
-**约 35-40 个里程碑**，每个是一次"写完→编过→单测→基准→提交"的闭环。这才是能照着干的步骤表，而非 6 个万行黑箱。
+| 阶段 | 模块 | 里程碑（每个可独立编/测）| 旧预测 | 再投影(实测口径) |
+|---|---|---|---|---|
+| **P0** | error / obs-hook | Status+expected+ASSIGN_OR_RAISE / obs 埋点 | 3-5k | ~0.8k ✅ |
+| **P1** | platform | thread+park / vm+dynlib / path+fs+env | 5-8k | ~1.2k ✅(vm 待) |
+| **P2** | mem | Allocator+alignment / mimalloc / arena / pool+stack / MemorySpace / NUMA | 6-10k | ~0.9k ✅主力(05/06 净新 +~2-3k) |
+| **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | ~0.3k 🔶(时间轮待) |
+| **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | ~2k ✅主力 |
+| **P3** | simd | vec+scalar / SSE4.2+AVX2 / AVX512+NEON / 变体dispatch / dtype / sleef | 10-16k | ~2.3k 已做 + ~3-5k 广度补全 = **~5-8k** |
+| **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~0.7k 核心✅ + ~2-4k 后段 |
+| **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem | 9-14k | **~5-8k**(借 liburing 写适配) |
+| **P5** | compute | device/stream包ggml / MemorySpace / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
+| **P6** | graph + 收口 | taskgraph绑sched / C-ABI shim / serialize/hash/T3 / FFI | 11-17k | **~6-11k**(多借 simdjson 等) |
+
+**HYLE 自有合计:旧 ~76-120k 生产 → 再投影 ~30-45k 生产 / ~48-72k 含测试**(实测 test/prod≈0.62)。**约 47 个里程碑**(milestones/README 为准),每个"写完→编过→单测→基准→提交"闭环。
 
 **关键路径**（最长链）：`error → platform → mem → container → sched`。sched 是瓶颈，等 container 队列 + time + platform park 全就位。所以 **P2/P3 的 container/time 要尽早动**。simd 不在关键路径（只依赖 mem 对齐），可与 container 并行、晚点喂 compute。
 

@@ -37,6 +37,17 @@
 - **真算法/容器/平台原语**(hashmap/pool/parker/clock):预测 **0.1-0.5k**。
 - **不可约大件**(path/fs 字符串处理、SIMD kernel、sched asm/调度、io 后端、compute):预测**接近 clay 体量**(path clay 1372 行→HYLE 估 0.6-1k;simd/sched/io/compute 仍 2-10k 级)。**这些若也缩成 1/10 才是真玩具信号,届时必须补实现而非改预测。**
 
+### 完成时总量再投影 + "高估 vs 玩具"双向校准(2026-06-29,simd 支柱做完后)
+
+> simd 支柱 6 里程碑做完 = **实测 ~2.3k 生产**(旧表预测 10-16k)。用户质疑:"确定高估,不是玩具?" 实测核验后的诚实拆解(两半,别只甩一边):
+>
+> 1. **不是玩具(铁证)**:simd 后端每个 **33 个真 op**(真 intrinsic)、**零 stub/TODO**、vec/dtype 测试断言 43/41 条 + 全 65536 fp16 模式硬件逐位对拍 + dot/saxpy 实测追平 Highway + 红队揪出真 ODR/SIGILL bug。玩具撑不住这些。
+> 2. **但"5-7x 纯高估"是误导**:simd 2.3k vs Highway 100k **非功能对等**——HYLE 现做 **4 lane 类型 + ~25 op + 2 ISA 实测**;Highway 是 **12 类型 + ~200 op(swizzle/gather/scatter/compress/table-lookup,HYLE 全无)+ 6+ ISA**。dot/saxpy 追平只证"**已做的 op 上**追平"。i8/u8/i16/u16/i64/u64 量化类型等是**登记延期的广度**,补齐后 simd 涨到 **~5-8k**(非停在 2.3k)。
+>
+> **故 simd 真实高估约 2x(非 6x)**;foundation 的 5-6x 高估是真(std 取代)。校准规则 #3 对 simd "2-10k 级"基本对,只是要明确**2.3k 是"核心数值子集做好",非"全广度做完"**。
+>
+> **完成时总量(实测密度再投影,含广度补全)**:HYLE 自有 **~30-45k 生产 / ~48-72k 含测试**(旧 76-120k);**第三方 vendored ~150-250k+(ggml 100k+ 主导)**;项目总足迹 ~200-300k+。详见 [`../architecture/hyle-scope.md` 规模节](../architecture/hyle-scope.md)。
+
 ## 全部里程碑（阶段 × 模块）
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |

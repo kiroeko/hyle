@@ -11,6 +11,11 @@
 > - **剩余未决:仅 4 行 🔶(有登记缺口)+ 5 行 📋**,且 2026-06-29 逐文件复核判定**这些基本是终态或归别处**:murmur(XXH3 已替,无剩用途)、type_traits/singleton(C++23 concepts/Meyers 取代)、float16/device_utils(CUDA 域→compute)、vector_utils(concepts 取代)、async_value/barrier(归 P5 sched)。**真·clay 吸纳欠账≈零。**
 > - **符号无行级权重**:`math/half.h` 一行 🔻♻️ = clay 6923 行(软件 fp16→硬件 F16C/AVX512 取代,不移植,且 simd-05 dtype 已落可移植 fp16/bf16);`parallel/thread_pool+worker`(494 行)→ sched 重写取代。HYLE 生产远小于 clay 的主因=**有意删/std取代/硬件取代**,非漏做。
 > - **进度真相**:clay 地基(sys/utils/container 主体)**吸纳基本收口**;距 50–70k 目标的差距=**净新增支柱**(simd ✅本轮完成;io/compute/graph 未开工),那不是 clay 吸纳范畴。整体 ≈ **32%**(模块权重)。
+>
+> **替换/延期核验结论(2026-06-29 逐项查 clay 源,回答"std/第三方替换的有没有暗漏 clay 逻辑、defer 的能否现在做")**:
+> - **std/第三方替换 = 真终态,无暗漏**:`result→std::expected`(ASSIGN_OR_RAISE 宏保留)、`sprintf→std::format`(clay 的"UTF-8 安全截断"本就是**注释掉的假功能**,HYLE 真 UTF-8 已落 string_algo:utf8_decode/length/icmp)、`func_traits/comparable→concepts/<=>`、`consts→<numbers>`、`thread_pool/worker→sched work-stealing`(重写超越)。逐个查过:**没有"std 其实没覆盖却被当替换"的坑**。
+> - **被当"待补"实为已做或故意**:`string_buf intern` **已实现**(等内容返同指针;"待补"只是全局单例便利层,次要);`CUSTOM_MEMORY_FUNCTIONS` **故意不做**(mimalloc 无 off-switch 是用户指令,非漏)。
+> - **唯一真·待做的 clay 逻辑 = `async_value`(promise/future)+ `barrier`**——**正确排到 P5 sched**(completion 脊/同步原语),依赖 sched 后段,**不能现在做也不能丢**;`decls.h` include 纪律是个小真空待坐实。
 
 ## sys/ — 系统基座（allocator/arena/os/path/string/hash/log/time）
 
