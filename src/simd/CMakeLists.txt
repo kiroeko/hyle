@@ -18,6 +18,7 @@ hyle_add_module(simd SOURCES
   dtype/dtype_dispatch.cc
   dtype/cvt_scalar.cc
   dtype/cvt_f16c.cc
+  dtype/cvt_avx2.cc
   math/math_dispatch.cc
   math/transcendental_scalar.cc
   math/transcendental_sleef.cc)
@@ -33,12 +34,16 @@ if(MSVC)
   # AVX2; /arch:AVX2 would let the auto-vectorized scalar tail emit AVX2 int ops that SIGILL
   # there. /arch:AVX + the (always-available) F16C intrinsics = exactly Ivy Bridge's level.
   set_source_files_properties(dtype/cvt_f16c.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX")
+  # bf16 AVX2 TU: needs /arch:AVX2 (256-bit integer ops). Only reached when cpu has AVX2.
+  set_source_files_properties(dtype/cvt_avx2.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
 else()
   set_source_files_properties(ops/kernels_sse4.cc PROPERTIES COMPILE_OPTIONS "-msse4.2")
   set_source_files_properties(ops/kernels_avx2.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
   # f16c TU: -mf16c -mavx (NOT -mavx2) -- caps codegen at F16C+AVX so neither the intrinsics
   # nor the auto-vectorized tail can emit an AVX2 instruction that SIGILLs on Ivy Bridge.
   set_source_files_properties(dtype/cvt_f16c.cc PROPERTIES COMPILE_OPTIONS "-mf16c;-mavx")
+  # bf16 AVX2 TU: -mavx2 (256-bit integer ops). Only reached when cpu_features().avx2.
+  set_source_files_properties(dtype/cvt_avx2.cc PROPERTIES COMPILE_OPTIONS "-mavx2")
 endif()
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:

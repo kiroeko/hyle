@@ -190,6 +190,54 @@ TEST(DtypeBatch, Bf16RoundTrip) {
   }
 }
 
+// bf16 AVX2 kernel vs scalar oracle over ALL 0x10000 bf16 patterns. bf16->f32 is a pure
+// shift (no rounding), so the AVX2 path is BIT-IDENTICAL to scalar -- NaN payloads too
+// (unlike F16C fp16). Exact equality everywhere.
+TEST(DtypeBatch, Bf16ToF32Avx2MatchesScalarExact) {
+#if defined(HYLE_ARCH_X64)
+  if (!hyle::simd::cpu_features().avx2)
+    GTEST_SKIP() << "no AVX2 on this host -- batch falls back to scalar (tautology)";
+#else
+  GTEST_SKIP() << "non-x86 -- no AVX2 bf16 path";
+#endif
+  std::vector<bfloat16_t> src(0x10000);
+  for (std::uint32_t b = 0; b <= 0xFFFF; ++b)
+    src[b] = bfloat16_t::from_bits(static_cast<std::uint16_t>(b));
+  std::vector<float> got(0x10000);
+  bf16_to_f32_batch(src.data(), got.data(), src.size());  // AVX2 on an AVX2 host
+  for (std::uint32_t b = 0; b <= 0xFFFF; ++b) {
+    const float ref = bf16_to_f32(src[b]);  // scalar oracle
+    EXPECT_EQ(std::memcmp(&got[b], &ref, 4), 0) << "b=" << b;  // bit-equal (NaN incl.)
+  }
+}
+
+// f32 -> bf16 AVX2 vs scalar over a wide f32 sweep incl. inf/NaN(s/q)/ties/±0. The convert
+// is integer RNE bit-math, so AVX2 must match scalar EXACTLY on the bf16 bits everywhere.
+TEST(DtypeBatch, F32ToBf16Avx2MatchesScalarExact) {
+#if defined(HYLE_ARCH_X64)
+  if (!hyle::simd::cpu_features().avx2)
+    GTEST_SKIP() << "no AVX2 on this host -- batch falls back to scalar (tautology)";
+#else
+  GTEST_SKIP() << "non-x86 -- no AVX2 bf16 path";
+#endif
+  std::vector<float> src;
+  for (int e = -30; e <= 30; ++e)
+    for (int m = 0; m < 128; ++m)
+      src.push_back(std::ldexp(1.0f + static_cast<float>(m) / 128.0f, e) * (m & 1 ? -1 : 1));
+  // ties (low f32 mantissa bits exactly at the bf16 rounding point) + specials by raw bits.
+  for (std::uint32_t bits : {0x00000000u, 0x80000000u, 0x7F800000u, 0xFF800000u,
+                             0x7FC00000u, 0x7F800001u, 0x00008000u, 0x00018000u,
+                             0x3F808000u, 0x3F818000u}) {
+    float f;
+    std::memcpy(&f, &bits, 4);
+    src.push_back(f);
+  }
+  std::vector<bfloat16_t> got(src.size());
+  f32_to_bf16_batch(src.data(), got.data(), src.size());  // AVX2 on an AVX2 host
+  for (std::size_t i = 0; i < src.size(); ++i)
+    EXPECT_EQ(got[i].bits, f32_to_bf16(src[i]).bits) << "i=" << i << " v=" << src[i];
+}
+
 // On an x86 host with F16C the dispatcher must engage the hardware tier (not the floor).
 TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
 #if defined(HYLE_ARCH_X64)

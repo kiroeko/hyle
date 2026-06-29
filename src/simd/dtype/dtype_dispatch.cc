@@ -31,6 +31,17 @@ bool use_f16c() noexcept {
 #endif
 }
 
+// The bf16 AVX2 kernel (cvt_avx2.cc) uses 256-bit integer YMM ops (_mm256_cvtepu16_epi32,
+// packus, permute4x64), so it needs AVX2 with OS-saved YMM. cpu_features().avx2 is the
+// AVX2 flag; .avx is XGETBV-gated (os_ymm), so requiring both is the honest YMM gate.
+bool use_avx2() noexcept {
+#if defined(HYLE_ARCH_X64)
+  return cpu_features().avx2 && cpu_features().avx;
+#else
+  return false;
+#endif
+}
+
 }  // namespace
 
 void f16_to_f32_batch(const float16_t* src, float* dst, std::size_t n) noexcept {
@@ -49,11 +60,20 @@ void f32_to_f16_batch(const float* src, float16_t* dst, std::size_t n) noexcept 
   detail::f32_to_f16_scalar(src, dst, n);
 }
 
-// bf16: scalar core (no AVX2-tier hardware convert; AVX-512-BF16 is a later milestone).
+// bf16: AVX2 8-wide integer kernel iff the CPU has AVX2, else the scalar core. bf16<->f32
+// is pure bit-math, so the AVX2 path is bit-identical to scalar (NaN payloads included).
 void bf16_to_f32_batch(const bfloat16_t* src, float* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw = use_avx2();
+  if (hw) { detail::bf16_to_f32_avx2(src, dst, n); return; }
+#endif
   detail::bf16_to_f32_scalar(src, dst, n);
 }
 void f32_to_bf16_batch(const float* src, bfloat16_t* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw = use_avx2();
+  if (hw) { detail::f32_to_bf16_avx2(src, dst, n); return; }
+#endif
   detail::f32_to_bf16_scalar(src, dst, n);
 }
 

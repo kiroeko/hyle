@@ -117,18 +117,30 @@ int main() {
 #endif
   }
 
-  // ---- bf16 <-> f32 (NO hardware path on AVX2 -- scalar/auto-vec; header is honest) ----
+  // ---- bf16 <-> f32 (AVX2 8-wide integer; bf16 = top 16 bits of f32) ----
   {
     std::vector<float> bout(kN);
+    std::vector<bfloat16_t> bf_out(kN);
     nb::Bench b;
-    b.title("bf16->f32 batch (4096, no HW path)").relative(true).batch(kN).minEpochIterations(1000);
-    b.run("HYLE bf16_to_f32_batch (scalar core)", [&] {
+    b.title("bf16->f32 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
+    b.run("HYLE bf16_to_f32_batch (AVX2)", [&] {
       hyle::simd::bf16_to_f32_batch(bf16.data(), bout.data(), kN);
       nb::doNotOptimizeAway(bout.data());
     });
     b.run("HYLE scalar loop (reference)", [&] {
       for (std::size_t i = 0; i < kN; ++i) bout[i] = bf16_to_f32(bf16[i]);
       nb::doNotOptimizeAway(bout.data());
+    });
+
+    nb::Bench b2;
+    b2.title("f32->bf16 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
+    b2.run("HYLE f32_to_bf16_batch (AVX2)", [&] {
+      hyle::simd::f32_to_bf16_batch(f32.data(), bf_out.data(), kN);
+      nb::doNotOptimizeAway(bf_out.data());
+    });
+    b2.run("HYLE scalar loop (reference)", [&] {
+      for (std::size_t i = 0; i < kN; ++i) bf_out[i] = f32_to_bf16(f32[i]);
+      nb::doNotOptimizeAway(bf_out.data());
     });
   }
 
