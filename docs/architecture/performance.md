@@ -28,7 +28,24 @@
 
 **这就是"对标 SOTA"的意义**:只对标 std 会得出"全面 2-5x 碾压"的虚假安心;对标 absl 才暴露 **find 有 ~25% 真实差距**。**已排除三个错误候选**(读码查实):① `eq_` 对 uint64 在 -O3 完全内联成裸 `==`,**无间接可去**;② `Hash<uint64>` 已是内联 `mix64`(splitmix64),**非 XXH3**,hash 不慢;③ **控制字节尾部镜像已实现**(`swiss_table.cc` core_set_ctrl 镜像前 kGroupWidth 字节 + 分配 `cap+kGroupWidth` + memset 尾),group near-end 加载已无回绕掩码。**find 循环结构已几乎等价 absl**——25% 来源**无法从源码结构看出**,需 **profile(perf/objdump 对比两个 find 内循环 codegen)** 定位真因;唯一已知结构差异是 absl 在 probe 起点 **预取槽数组**(100k 表常驻 cache 时收益小,待测)。**结论:这是一个需要 profile-guided 的真优化,非猜改**——留作下一步 container 性能待办。insert/erase 反超 absl 证明设计本身到位。
 
-### simd（向量后端 vs Highway + auto-vec，simd-02）
+### hash 哈希（`hash_bytes`/`mix64` vs 裸 XXH3 + wyhash + std，`hash_bench.cc`）
+
+> 环境:Win MSVC19.50 Release,nanobench。三组:HYLE / 裸 XXH3+wyhash(SOTA) / std::hash。XXH3 vendored 无条件,wyhash gated `-DHYLE_BENCH_WYHASH`。此前 hash 只在 SwissTable 内部跑过,从未单独对标(README 宣称 XXH3 默认 hasher)。
+
+| 字节哈希 | HYLE hash_bytes | 裸 XXH3(SOTA) | wyhash | std::hash | 结论 |
+|---|---|---|---|---|---|
+| 8B | 0.34 ns | **0.18**(HYLE 慢 1.85x) | 0.27 | 0.26 | 小输入 HYLE 全场最慢 |
+| 16B | 0.15 ns | 0.10(慢 1.5x) | 0.14 | 0.29 | 赢 std,输裸 XXH3 |
+| 64B | 0.05 ns | 0.04(慢 1.38x) | 0.05 | 0.44 | 赢 std 大,输裸 XXH3 |
+| 256B | 0.08 ns | 0.08(平) | **0.03**(HYLE 输 3x) | 0.62 | 中串 wyhash 碾 XXH3 |
+
+| 整数哈希(4096 key) | HYLE mix64 | wyhash64 | std::hash | 结论 |
+|---|---|---|---|---|
+| ns/op | **0.45** | 0.57(HYLE 赢 1.27x) | 1.52(赢 3.4x) | ✅ mix64 真好 |
+
+**结论(一个包装税 + 一个 SOTA 观察 + 一个真赢)**:① **`hash_bytes` 比裸 XXH3 慢 1.05-1.85x,8B 小输入最重**:它是导出函数(`HYLE_CONTAINER_API` 不可内联,藏 7490 行 xxhash.h),裸 XXH3 用 `XXH_INLINE_ALL` 全内联——同 allocator vtable / dtype batch 的**导出包装税**,小工作量下调用开销占比大。② **wyhash 在 256B 比 XXH3 快 3x**(SOTA 观察:中等串 wyhash > XXH3;HYLE 选 XXH3 是质量/分布而非纯速度,设计权衡非缺陷)。③ **`mix64` 整数哈希真赢**:赢 wyhash64 1.27x、赢 std 3.4x(内联无包装税)——这正是 SwissTable 整数键的热路径,印证 find/insert 反超 absl 的哈希基础扎实。
+
+
 
 > 环境:WSL Ubuntu24.04 原生 ext4(非 9p)、GCC14.2 Release、nanobench。4096 个 f32(L1 常驻,隔离计算吞吐非内存带宽)。`bench/simd/`。**Highway = SOTA 标尺**(同 -mavx2 静态 dispatch,与 HYLE avx2 同 ISA、同 kernel 形状,只差抽象层)。**数字 = 4 遍均值(2026-06-29 复测,沿 hashmap 那节的多遍统计纪律,非单遍)。**
 
@@ -59,8 +76,30 @@
 
 2. **真编暴露并修了一个 Windows 链接 bug**:SLEEF opt-in 路径**此前从未在 Windows 实际构建过**(零 bench = 零真编)。本次首编即撞:`sleef.h` 在 MSVC 下默认 `__declspec(dllimport)`,消费**静态** sleef.lib 必须定义 `SLEEF_STATIC_LIBS`,否则 `__imp_Sleef_*` 全部未解析。已在 `src/simd/CMakeLists.txt` 补该定义(跨平台无害)。**这正是"benchmark 覆盖 = 真编真测"价值的活例**:不真跑,这条 opt-in 路径会一直"声称可用"实则链接不过。
 
+### simd dtype 转换（fp16/bf16 <-> f32，`dtype_bench.cc`）
 
-### sched（fiber 调度）
+> 环境:Win MSVC19.50 Release,nanobench,4096 f32。三组:HYLE F16C 硬件 dispatch / HYLE scalar 参考 / Highway(gated SOTA)。`active_dtype_variant()` 报 `AVX2/F16C`(硬件路径真启用)。std 无 fp16 批量等价物。
+
+| 转换 | HYLE F16C | HYLE scalar | Highway(SOTA) | 结论 |
+|---|---|---|---|---|
+| **f16→f32** | **0.02 ns** | 0.65(慢 26x) | 0.05 | **赢 Highway 1.9x** |
+| **f32→f16** | **0.03 ns** | 2.05(慢 71x) | 0.05 | **赢 Highway 1.6x** |
+| bf16→f32(无 HW) | 0.12 ns | **0.10**(scalar 反快 1.11x) | — | bf16 包装税,见下 |
+
+**结论**:① **fp16 F16C 真兑现且超 SOTA**——比 scalar 26-71x,**还赢 Highway 1.6-1.9x**,"fp16 dtype(F16C)"声明坐实。② **bf16 批量导出函数(0.12ns)比内联 scalar(0.10ns)还慢 1.11x**:bf16 无 AVX2 硬件转换(header 诚实标 deferred,只 auto-vec 移位),导出 `bf16_to_f32_batch` 付不可内联调用开销却无硬件收益摊薄——同 allocator vtable / hash_bytes 的**导出包装税**。微小,但印证模式:无硬件加速的批量导出 op 不如直接内联 scalar。
+
+### simd 逐 op 扩展（reduce_max / scale，`simd_bench.cc`）
+
+> dot/saxpy 之外补两个 distinct pattern,验证 vec.h 抽象在非 FMA 模式下是否退化。环境同上,4 ISA 隔离 TU。
+
+| op | scalar(auto-vec) | HYLE sse4 | HYLE avx2 | Highway(SOTA) | 结论 |
+|---|---|---|---|---|---|
+| **reduce_max**(非 sum 归约) | 0.74 ns | 0.17(4.3x) | **0.08(9.7x)** | 0.08 | **平 Highway** |
+| **scale** y=a*x(纯乘) | 0.03 ns | 0.05 | **0.03(1.16x)** | 0.03 | **平 Highway**(带宽受限) |
+
+**结论(干净,无欺骗)**:**4 个 pattern(dot/saxpy/reduce_max/scale)HYLE avx2 全平 Highway**——vec.h 抽象在 sum-归约之外的 max-归约、纯 element-wise map 上同样零成本,无隐藏退化。reduce_max 9.7x 赢 scalar;scale 是 1 读 1 乘 1 写的内存受限 op,scalar auto-vec(SSE2)已近饱和带宽,故 avx2 仅 ~1.16x(正常,非缺陷)。sse4 在 scale/saxpy 这类带宽受限 op ~1x(128b 与 scalar SSE2 同宽,无更宽 load 优势)。
+
+
 
 | 项 | 实测(Linux GCC14) | 参考 |
 |---|---|---|
