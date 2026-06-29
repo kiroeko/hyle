@@ -39,6 +39,7 @@
 - **验证**：`g++-14 -mavx512f -mavx512bw -mavx512vl -mavx512dq -c` 干净(任何 x64 可编)；objdump 实证真发 zmm/k-reg——dot→`vfmadd231ps %zmm`+`vextractf64x4`;relu→`vcmpgt_oqps → %k1`+`vmovaps %zmm{%k1}{z}`(k 掩码路径通);unsigned count→`vpcmpnleud → %k0`+`kmovw`+`popcnt`。
 - **设计结论(重要)**：写 AVX512 **证明了 vec.h 的 per-backend mask 抽象够用**——`Mask` 本就每后端自定义(scalar=bool[]/SSE=向量/AVX512=k-reg),op 签名不变,vec.h 和测试零改动。先前"需 mask 改造"是误判。
 - **存疑(诚实)**：未在 AVX512 硬件/SDE **执行**,正确性=指令级验证 + 与低 ISA 同构推断,非实跑对拍。dispatch 仍把 AVX512 主机降级跑 AVX2(已验证安全),avx512.h 是"已就绪待启用",**未接进 ops/dtype 运行期 selected_tier**——真跑通过再接,不拿未跑代码上生产热路径。**待真验**:装 Intel SDE 或得 AVX512 机,`-DHYLE_SIMD_TARGET_AVX512` 编 vec_test 跑对拍(宽度无关测试直接可用)。
+- **批量红队补审（2026-06，整支柱批次，objdump 验）**：揪修 AVX512 两 bug。① `Ne(float/double)` 同 AVX2 用有序谓词 `_CMP_NEQ_OQ`(NaN 返 false)→改 `_CMP_NEQ_UQ`(objdump 确认立即数 `0x04`,无序,NaN 返 true)。② `Neg(float/double)` 用 `0-a` 得 `Neg(+0.0)=+0.0`,与 SSE4/AVX2 的 xor-符号位(`-0.0`)发散→改 `_mm512_xor_ps/pd`(objdump 确认 `vxorps/vxorpd`)。**仍未实跑**(objdump 只证编码对,NaN/符号零语义靠与已实跑的 AVX2 同构推断),并入上面的存疑账。
 
 ## 参考
 

@@ -34,6 +34,7 @@ AI 热路径（softmax/gelu/attention）被 exp/log/tanh 主导。手搓多项�
 
 - **编译**：✅ Win MSVC 19.50（默认 scalar 路径，/W4 零告警）+ Linux GCC14.2（默认 + SLEEF-wired 均零告警）。
 - **正确性**：✅ **双平台默认 scalar libm 路径**：Win+WSL `hyle_simd_test` 全过、全量 ctest 各 13/13。**WSL SLEEF-wired 路径**：exp/log/tanh 向量化(`Sleef_*f8_u10avx2`)对拍 libm 全过(5/5 Math),`active_math_variant()`=kAvx2 证 SLEEF 真生效。
+- **批量红队补审（2026-06）**：原测试相对容差 `1e-5`(≈84 ULP f32)对 broken 多项式无防护。实测两路径真实误差——scalar 0.5-0.7 ULP、SLEEF `_u10` 0.5 ULP——后收紧到 `4e-7`(≈3.4 ULP,实测 worst 5x 余量,4 ULP 起的坏核会 fail);双平台 + SLEEF-wired 两路径收紧后仍过。另补 log/tanh 的 tail 测试(原只 exp)。
 - **借非造**：向量化核是 SLEEF 的 `_u10`(1ULP)cores,HYLE 零多项式手搓——adapter 只喂 `vec.raw` 等价的 `__m256`。
 - **诚实边界**：① SLEEF 向量化 opt-in(默认 OFF,需 `-DHYLE_SIMD_SLEEF=ON -DHYLE_SLEEF_DIR=<built sleef>`);默认构建 math 经 libm 正确但非向量化。② MSVC 向量化未跑(本轮只在 WSL 链 libsleef.a;MSVC 需 winbuild-msvc 产 sleef.lib——登记待补,设计上可行因 sleef.h 可移植+winbuild-msvc 在)。
 

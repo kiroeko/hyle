@@ -53,6 +53,7 @@ simd-01 只有 scalar 地板（能跑、不快）。这步落第一批**真 intr
 
 - **"能否手写更少"（用户问）**：sse4/avx2 各 ~365 行高度并行，但**故意保持显式**——这正是 Highway 自己的选择（x86_128-inl.h 与 x86_256-inl.h 分开各万行级，不宏合并）。宏合并 SSE+AVX 可省 ~300 行但：① 违 conventions §3 宏纪律（大代码生成宏正是其警告对象）；② 两后端真有差异（float 比较谓词 / FMA 真假 / reduction 跨 128）；③ 伤硬件代码可读/可调。**已做的清理**：AndNot 折进 And/Or/Xor 的 bitop 宏（同形，省冗余）。**该借不自写的**：transcendental 数学核（exp/log/tanh）登记 simd-06 vendor sleef，不手搓多项式。结论：per-backend 已近最简，共享逻辑已在 vec.h。
 - **诚实边界**：lane 类型只 f32/f64/i32/u32；native 全宽（无 partial）；sse4 saxpy 0.94x（128 位带宽受限，无加速空间，非 bug，留账）。
+- **批量红队补审（2026-06，整支柱批次）**：揪出 AVX2 `Ne(float/double)` 用有序谓词 `_CMP_NEQ_OQ`（NaN 返 false），与 scalar(`!=`)/SSE4(`_mm_cmpneq`,无序)/NEON(`~Eq`) 发散——后果 `Eq`/`Ne` 在 NaN 上非互补，可移植 NaN 检测 `IfThenElse(Ne(x,x),..)` 静默失效。改 `_CMP_NEQ_UQ`(无序)。原 `CheckCompareBlend` 只喂有限值看不到，已加 `FloatEdgeCases`(NaN 互补 + Neg 符号零) 覆盖，AVX2 真机过。
 
 ## 参考
 
