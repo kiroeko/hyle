@@ -164,9 +164,12 @@ loop:
 
 > **归属澄清（深读 marl 后）**：本节的"无锁 per-core 队列 / LIFO slot / unpark 接力防惊群"是 **Tokio/Go 血统，不是 marl**。marl 实际是 **有锁 per-worker deque（`work.mutex` 保护）+ 偷 task 不偷 fiber（裸汇编 fiber 不存 TLS，锁死在创建 worker）+ 仅 spin+notify_one（无 thief 计数封顶/无 baton 接力）**。HYLE 在三处**超越** marl：①catomics 无锁队列 ②fiber 可跨核迁移（靠 Waker 唤回 origin_core + global 兜底，见 3.3）③actives/thieves 防惊群。marl 印证了 fcontext 选型（它自写等价汇编、ucontext 仅回退）和 fiber-aware CV 收敛，但调度内核是 HYLE 自有差异点。
 
-> **缺口补记（完整性评估发现 → sched-05 已落地）**：sched/ 提供 **fiber-aware 同步原语**——CV + mutex/waitgroup/channel/latch（`include/hyle/sched/sync.h` + `src/sched/sync.cc`）。理由：`std::mutex` 阻塞的是 worker 线程，会连累该核所有 fiber、破坏 M:N 调度。做法是"竞争时让出 fiber、入等待队列，释放时把等待 fiber 重新入 run-queue"——本质又是一次 completion/唤醒（**直接复用第三节 Waker rendezvous，非新机制**）。**已实测**：双平台真编真测，WSL TSan 下 8 个并发用例零 data race。
+> **缺口补记（完整性评估发现 → sched-05 已落地）**：sched/ 提供 fiber 同步原语——CV + mutex/waitgroup/channel/latch（`include/hyle/sched/sync.h` + `src/sched/sync.cc`）。核心洞察:`std::mutex`/`std::condition_variable` 阻塞 worker 线程,长等待会连累该核所有 fiber、破坏 M:N。但**不是所有原语都该 fiber-aware**——这取决于等待时长(见下分工)。**已实测**：双平台真编真测,WSL TSan 8 个并发用例零 data race,且 SOTA 对标 marl(Mutex 打平、见 performance.md)。
 >
-> **深读 marl 的收敛方案（采纳，sched-05 已落地）**：marl 证明不必为 mutex/WaitGroup/Event/Ticket 各写一套唤醒——**只做一个 fiber-aware ConditionVariable，其余全建在它上面**。HYLE 照此收敛并**已实现**：一个 `ConditionVariable` 地基（FIFO waiter 链表 + SpinLock 保护）+ 其上薄封装 `Mutex`/`WaitGroup`/`Latch`/`Channel`。**双模已落实**：waiter 是 fiber 则 `suspend()` 让出+重入 run-queue（fiber-mode，靠 `current_waker()` 判定）；是裸线程则回退 `platform::Parker`（thread-mode，跨进程联邦/外部线程提交场景，**非** `std::condition_variable`——HYLE 自有 Parker 已够且无 std 依赖）。`wait_for`/`wait_until` 定时变体依赖 time-02 时间轮（→ sched-04b），登记延后，不阻塞无定时主体。
+> **深读 marl 的收敛方案（采纳,sched-05 已落地+实测纠错）**：fiber-awareness 按**等待时长**分工,不是一刀切——
+> - **长等待 → fiber-aware**:`ConditionVariable` 是唯一 fiber-aware 地基(FIFO waiter 链表 + SpinLock),`WaitGroup`/`Latch`/`Channel` 全建其上。**双模**:waiter 是 fiber 则 `suspend()` 让出+重入 run-queue(复用第三节 Waker rendezvous,`current_waker()` 判定);是裸线程则回退 `platform::Parker`(跨进程联邦/外部线程提交,**非** `std::condition_variable`,HYLE 自有 Parker 无 std 依赖)。
+> - **短等待(mutex)→ 不 fiber-aware,用 futex**:`Mutex` 是建在 `platform::wait_on_address` 上的 Drepper 3 态 futex(无争用单 CAS、争用 park worker),**不**让出 fiber。**实测纠错**:初版把 Mutex 也做成 fiber-aware(争用让出),benchmark 慢 marl **5.8x**——短临界区让出 fiber(~100ns)远贵于就地 park 几 ns。改 futex 后**打平 marl**(marl 同理:其 mutex 就是 std::mutex=futex,只 CV 才 fiber-aware)。契约:**别跨 fiber 让出/阻塞调用持 Mutex,那种场景用 CV**。
+> - `wait_for`/`wait_until` 定时变体依赖 time-02 时间轮(→ sched-04b),登记延后,不阻塞无定时主体。**spawn 重负载(fork-join)待 fiber 栈池**(§1 计划未做)追平 marl,登记独立里程碑。
 
 ## 第三节：completion 接入（整个设计的收口）
 

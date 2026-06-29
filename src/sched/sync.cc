@@ -141,4 +141,28 @@ void ConditionVariable::notify_all() noexcept {
   }
 }
 
+// ---- Mutex (futex, Drepper 3-state) -----------------------------------------
+// state_: 0=unlocked, 1=locked no waiters, 2=locked waiters. lock()'s fast CAS
+// (0->1) is inline; this is the contended tail. unlock()'s fast fetch_sub is
+// inline; unlock_slow runs only when there were waiters.
+
+void Mutex::lock_slow(std::uint32_t c) noexcept {
+  // `c` is the value the fast-path CAS observed (non-zero -> contended). Flag
+  // the lock as "has waiters" (2) and futex-park while it stays 2. Each wakeup
+  // re-tries the exchange: getting 0 back means we won the lock.
+  if (c != 2) c = state_.exchange(2, std::memory_order_acquire);
+  while (c != 0) {
+    platform::detail::wait_on_address(&state_, 2);  // sleep while state_ == 2
+    c = state_.exchange(2, std::memory_order_acquire);
+  }
+}
+
+void Mutex::unlock_slow() noexcept {
+  // We already fetch_sub'd 2->1 (release) on the hot path; there were waiters.
+  // Drop to 0 and wake one. The woken waiter re-exchanges to 2, so a still-
+  // contended lock keeps its "waiters" flag (no lost wakeup).
+  state_.store(0, std::memory_order_release);
+  platform::detail::wake_one(&state_);
+}
+
 }  // namespace hyle::sched

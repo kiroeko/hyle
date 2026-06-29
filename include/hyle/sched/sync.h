@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstddef>
+#include <cstdint>
 #include <new>
 #include <utility>
 
@@ -119,44 +120,59 @@ class ConditionVariable {
 };
 
 // ---- Mutex ------------------------------------------------------------------
-// Fiber-aware mutual exclusion. On contention the loser YIELDS its fiber instead
-// of spinning a worker (util::SpinLock would burn the core). Built on one CV +
-// a SpinLock guarding the tiny held-flag. Satisfies BasicLockable/Lockable, so it
-// composes with std::lock_guard / std::unique_lock.
+// A futex-based mutex (Drepper's 3-state lock), built on HYLE's own
+// platform::wait_on_address (futex / WaitOnAddress / __ulock) -- NOT on the
+// fiber CV. Uncontended lock/unlock is a single atomic CAS, matching std::mutex
+// / marl (which is std::mutex). On contention the WORKER thread parks on the
+// futex word; it does NOT yield the fiber.
+//
+// WHY not fiber-aware (this is the SOTA call, learned from marl): a mutex guards
+// SHORT critical sections. Yielding the fiber (suspend + re-inject, ~100ns of
+// context switch) is far costlier than briefly parking on a futex while the
+// holder -- running on another worker -- finishes its few-instruction section.
+// marl deliberately keeps its mutex == std::mutex for exactly this reason; an
+// earlier fiber-aware HYLE Mutex measured 5.8x SLOWER than marl on contention.
+// For genuinely LONG / cross-yield waits, use ConditionVariable (fiber-aware) --
+// that is where yielding pays off. Contract (same as marl/std): do not hold a
+// Mutex across a blocking call or a fiber yield; use a CV for that.
+//
+// state_: 0 = unlocked, 1 = locked (no waiters), 2 = locked (waiters possible).
+// Satisfies BasicLockable/Lockable (composes with std::lock_guard).
 class Mutex {
  public:
   Mutex() noexcept = default;
   HYLE_DISABLE_COPY_AND_MOVE(Mutex);
 
   void lock() noexcept {
-    state_.lock();
-    while (held_) cv_.wait(state_);  // releases state_, yields, re-acquires
-    held_ = true;
-    state_.unlock();
+    std::uint32_t expected = 0;
+    // Fast path: claim a free lock with one CAS (0 -> 1).
+    if (!state_.compare_exchange_strong(expected, 1, std::memory_order_acquire,
+                                        std::memory_order_relaxed)) {
+      lock_slow(expected);  // contended: mark waiters + futex-park
+    }
   }
 
   bool try_lock() noexcept {
-    state_.lock();
-    const bool was_free = !held_;
-    if (was_free) held_ = true;
-    state_.unlock();
-    return was_free;
+    std::uint32_t expected = 0;
+    return state_.compare_exchange_strong(expected, 1, std::memory_order_acquire,
+                                          std::memory_order_relaxed);
   }
 
   void unlock() noexcept {
-    state_.lock();
-    held_ = false;
-    state_.unlock();
-    // Hand the mutex to one waiter (Mesa: it re-checks held_). notify_one's
-    // waiter-count fast-path makes this near-free when nobody is parked (the
-    // common uncontended case): no waiter list lock is taken.
-    cv_.notify_one();
+    // Drepper: decrement; if the previous value was not 1 (i.e. was 2, waiters),
+    // there is someone to wake.
+    if (state_.fetch_sub(1, std::memory_order_release) != 1) {
+      unlock_slow();
+    }
   }
 
  private:
-  util::SpinLock state_;  // guards `held_` (a few instructions)
-  ConditionVariable cv_;
-  bool held_ = false;
+  // Out-of-line so the header carries no futex dependency; the hot path above is
+  // pure inline atomics.
+  HYLE_SCHED_API void lock_slow(std::uint32_t c) noexcept;
+  HYLE_SCHED_API void unlock_slow() noexcept;
+
+  std::atomic<std::uint32_t> state_{0};
 };
 
 // ---- WaitGroup --------------------------------------------------------------

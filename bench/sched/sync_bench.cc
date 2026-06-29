@@ -2,13 +2,13 @@
 // honestly, with std baselines where a fair one exists.
 //
 //  1. UNCONTENDED Mutex lock/unlock vs std::mutex -- the raw primitive cost.
-//     HYLE's fiber Mutex is EXPECTED to be slower here: it pays 3 spinlock pairs
-//     + an unconditional notify_one (the registered "skip when no waiters"
-//     optimization is deferred). This number quantifies that trade.
-//  2. CONTENDED throughput: N fibers on W workers hammering one Mutex. This is
-//     the THESIS -- a blocked fiber YIELDS (worker stays busy) instead of
-//     blocking the OS thread. No clean std baseline (std::mutex on N threads is a
-//     different execution model), so it's a HYLE-own throughput figure.
+//     HYLE's Mutex is a futex (single CAS lock, single fetch_sub unlock), same
+//     family as std::mutex. Any residual gap is largely glibc's single-threaded
+//     atomic-elision (__libc_single_threaded) in this single-threaded microbench;
+//     under real contention (see the marl bench) HYLE matches std/marl.
+//  2. CONTENDED throughput: N fibers on W workers hammering one Mutex. The futex
+//     parks the WORKER on contention (like std::mutex/marl), not the fiber -- a
+//     mutex guards short sections where parking beats yielding.
 //  3. Channel ping-pong: 1 producer + 1 consumer fiber, throughput per item.
 //  4. WaitGroup fork-join: spawn N fibers that done(), one waiter -- the cost of
 //     the fork-join sync itself.
@@ -81,9 +81,9 @@ void wg_wait_body(void* p) { static_cast<WgFork*>(p)->wg->wait(); }
 }  // namespace
 
 int main() {
-  // ---- 1. uncontended Mutex lock/unlock: HYLE fiber Mutex vs std::mutex ----
-  // Uncontended lock() never suspends (pure spinlock path), so this needs no
-  // scheduler -- it measures the raw primitive cost from the calling thread.
+  // ---- 1. uncontended Mutex lock/unlock: HYLE futex Mutex vs std::mutex ----
+  // Uncontended lock() is a single CAS (no syscall, no scheduler) -- measured
+  // from the calling thread, the raw primitive cost.
   {
     constexpr int kIters = 5000;
     ankerl::nanobench::Bench b;
@@ -96,7 +96,7 @@ int main() {
         m.unlock();
       }
     });
-    b.run("HYLE fiber Mutex", [&] {
+    b.run("HYLE Mutex (futex)", [&] {
       Mutex m;
       for (int i = 0; i < kIters; ++i) {
         m.lock();
@@ -112,7 +112,7 @@ int main() {
     constexpr int kIters = 2000;  // per fiber
     ankerl::nanobench::Bench b;
     b.title("contended Mutex (8 fibers/4 workers)").batch(static_cast<std::uint64_t>(kFibers) * kIters).minEpochIterations(20);
-    b.run("HYLE fiber Mutex lock/inc/unlock", [&] {
+    b.run("HYLE Mutex (futex) lock/inc/unlock", [&] {
       MutexHammer h;
       h.iters = kIters;
       std::vector<std::unique_ptr<Fiber>> fibers;

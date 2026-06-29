@@ -1,17 +1,18 @@
-// SOTA parity: HYLE fiber-aware sync vs marl (the fiber-sync library this design
+// SOTA parity: HYLE fiber sync vs marl (the fiber-sync library this design
 // converged from). Built only with -DHYLE_BENCH_MARL=ON.
 //
 // Two head-to-head workloads, same shape on both schedulers (4 workers):
-//  1. CONTENDED Mutex: 8 tasks x K (lock / ++counter / unlock). This is the real
-//     design difference -- HYLE's Mutex is fiber-aware (yields on contention);
-//     marl::mutex IS std::mutex (blocks the worker briefly). Whichever wins,
-//     wins.
+//  1. CONTENDED Mutex: 8 tasks x K (lock / ++counter / unlock). HYLE's Mutex is
+//     a futex (Drepper 3-state, parks the worker on contention); marl::mutex IS
+//     std::mutex (also futex-backed). Same family -> expect parity.
 //  2. WaitGroup fork-join: N tasks each done(), one waiter. Both have a near-
 //     identical WaitGroup API.
 //
-// HONEST framing: marl::mutex == std::mutex (marl deliberately keeps the mutex
-// cheap and only makes its ConditionVariable fiber-aware). So #1 asks "does
-// HYLE's fiber-aware Mutex's yield-on-contention beat just blocking the worker?"
+// HONEST framing: marl::mutex == std::mutex; HYLE's Mutex is its own futex over
+// platform::wait_on_address. Both park the worker (not the fiber) on contention
+// -- a mutex guards short sections, where parking beats yielding. #1 checks
+// futex-vs-futex parity; #2 is dominated by HYLE's per-fiber 64KB stack alloc
+// (no fiber-stack pool yet) vs marl's pooled fibers, NOT by the WaitGroup sync.
 
 #include <nanobench.h>
 
@@ -99,7 +100,7 @@ int main() {
     // HYLE: persistent scheduler, per-epoch spawn 8 fibers + drain.
     {
       hyle::sched::Scheduler sched(kWorkers, system_allocator(), 1024);
-      b.run("HYLE fiber Mutex (yields)", [&] {
+      b.run("HYLE Mutex (futex)", [&] {
         HyleHammer h;
         h.iters = kMutexIters;
         std::vector<std::unique_ptr<Fiber>> fibers;

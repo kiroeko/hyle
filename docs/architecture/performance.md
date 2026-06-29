@@ -58,20 +58,22 @@
 > 全部 instrumented 净 + 原始崩溃全在 9p)指向 **9p/WSL demand-paging 环境假象**,非
 > HYLE 缺陷。fiber 切换 ~23ns / spawn ~6-9x vs std::async 数值有效(mimalloc v2.3.2 复测一致)。
 
-### sched-05 fiber-aware 同步原语(`bench/sched/sync_bench.cc`)
+### sched-05 fiber 同步原语(`sync_bench.cc` + `sync_marl_bench.cc`)
 
-> 环境:Linux x86_64 GCC14.2 Release(原生 ext4)+ Win MSVC19.50 Release,nanobench。
+> 环境:Linux x86_64 GCC14.2 Release(原生 ext4)+ Win MSVC19.50 Release,nanobench。**SOTA 标尺 = marl**(本设计收敛自的 fiber-sync 库;gated `-DHYLE_BENCH_MARL=ON`)。
 
-| 项 | Linux GCC14 | Win MSVC | 说明 |
+| 项 | HYLE | SOTA(marl / std) | 结论 |
 |---|---|---|---|
-| **无争用 Mutex lock/unlock 对** | 9.88 ns(**std::mutex 2.41 ns 的 4.1x**) | 14.94 ns(std::mutex 11.22ns 的 1.33x) | 见下"诚实背景" |
-| 争用 Mutex(8 fiber / 4 worker) | 196 ns/op(5.1M op/s) | 148 ns/op | HYLE 自有(无同模型 std 基线) |
-| Channel 收发(cap 16,1p1c) | **66 ns/item(15.1M/s)** | 98 ns/item | fiber-aware 有界 MPMC |
-| WaitGroup fork-join(64 worker) | 9.4 µs/批 | 1.9 µs/批 | 由 fiber 创建/调度主导,非 sync 本身 |
+| **争用 Mutex**(8 任务/4 worker,lock+inc+unlock) | **30.7 ns** | marl 32.1 ns(=std::mutex) | ✅ **打平 marl**(±噪声,本轮略胜) |
+| 无争用 Mutex lock/unlock 对 | 6.87 ns(Win 14.9ns) | std::mutex 2.44 ns | ⚠️ 2.8x,见"诚实背景" |
+| Channel 收发(cap 16,1p1c) | **63 ns/item(15.9M/s)** | (marl 无 channel) | HYLE 自有 |
+| WaitGroup fork-join(1024 任务) | 5.4 µs/批 | marl 0.30 µs | ❌ **慢 17x,见下根因** |
 
-**waiter-count 门优化(本步实测驱动)**:基准揭示 Linux glibc `std::mutex` 无争用仅 2.5ns(单 CAS),HYLE Mutex 原 14.74ns(慢 **5.9x**)——根因每次 `unlock` 无条件 `notify` 取一次 CV 自旋锁。加 `waiters_` 原子门(无 waiter 停靠时跳过 notify 锁,靠 monitor 锁 handoff 的 happens-before 保证不丢唤醒)后:无争用 Mutex **14.74→9.88ns(1.5x)**、Channel **96→66ns(1.45x)**,**TSan 仍零 race**。这是"先正确、优化靠实测"的范例:门是实测暴露差距后才加的安全优化,非投机。
+**Mutex = futex(Drepper 3 态),不是 fiber-aware——这是学 marl 的 SOTA 决策**:最初把 Mutex 做成 fiber-aware(争用让出 fiber),实测**慢 marl 5.8x**(176ns vs 30ns)——短临界区让出 fiber(suspend+重入 ~100ns)远贵于就地 park worker 几 ns。改写成建在 `platform::wait_on_address`(futex/WaitOnAddress/ulock)上的 Drepper 3 态锁(无争用单 CAS、争用 park worker)后**追平 marl**。marl 同理:它的 mutex 就是 `std::mutex`(futex),只把 fiber-awareness 留给 ConditionVariable。**HYLE 对齐:Mutex=futex(本节),CV=fiber-aware 双模(地基),各司其职。** 双平台 TSan 8/8 零 race。
 
-**诚实背景(为什么 4.1x 不等于"输")**:① `std::mutex` **根本不能用在 fiber 里**——它阻塞的是 worker OS 线程,会卡死该核所有其他 fiber、破坏 M:N。所以这不是同任务对标,std::mutex 是"裸锁成本"基线,4.1x 是**完全 fiber-aware(争用让出而非阻塞)的代价**(绝对值 ~10ns / 1 亿 op/s 仍快)。② marl 的 mutex 其实就是 `std::mutex`(只 CV 才 fiber-aware),故 marl mutex 无争用 = std 速度;HYLE Mutex 更强(本身 fiber-aware)但更贵。**剩余优化登记**:futex 式单原子快路径(`held_` 直接 CAS、3 态编码 waiter)可把无争用降到 ~1.5x std,但 lost-wakeup 面更微妙,需独立 TSan campaign——按"不在压力下赶 lock-free"纪律登记,不本步赶工。**SOTA parity vs marl**(fiber-sync 真标尺)需接 marl 自有 scheduler → 登记 bench-02d。
+**无争用 2.8x vs std 的诚实背景**:HYLE futex Mutex 与 std::mutex 算法同级(各 1 个 locked RMW)。差距大半是**测量假象**——glibc 在单线程程序里靠 `__libc_single_threaded` 跳过原子(std::mutex 因此假性快到 2.4ns);HYLE 不做单线程特化,恒付原子。**真多线程争用下(上栏)HYLE 已与 marl/std 持平**,这才是 mutex 真正被考验的场景。绝对值 6.87ns / 1.45 亿 op/s 也不慢。
+
+**WaitGroup fork-join 慢 17x 的根因 = 没有 fiber 栈池(非 sync 本身)**:HYLE 每个任务新建 Fiber = 分配一块 64KB 栈(1024 任务 = 65MB/轮);marl **池化复用** fiber。铁证:同样的 sync 在争用 Mutex bench(fiber 复用)只差到打平,fork-join(每任务新建)才暴出 17x——多出的全是**每任务栈分配**。`sched-design.md §1 栈池化`是计划项**尚未实现**。**这是 fiber 基建缺口(独立里程碑),不是 WaitGroup/CV sync 慢**——CV 的 `waiters_` 门优化让 Channel/WaitGroup 的 notify 在无 waiter 时零锁开销。**登记:fiber-stack pool(接 mem/ ObjectPool)= spawn 重负载追平 marl 的前置。**
 
 
 

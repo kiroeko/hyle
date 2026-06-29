@@ -32,7 +32,7 @@
 | **time** | 单调钟 + 墙钟 + sleep + Instant(ns) | ✅ |
 | **container** | XXH3 哈希 + CArray + **SwissTable(SIMD 探测,对 std 快 2.7–6.1x;type-erased 冷核 + NEON)** + SmallVector + intrusive list + lock-free MPMC/SPSC/work-stealing 队列 + **string_ref/string_buf + 字节串算法 + path 路径操作** | ✅ |
 | **util** | **Ref<T> 引用计数 + ScopeGuard/DEFER + 编译期 type_name + Registry 自注册** | ✅ |
-| **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 + **Waker completion 脊(suspend/wake)** + **fiber-aware 同步原语(CV/Mutex/WaitGroup/Latch/Channel,双模 fiber/裸线程)** | 🔶 deadline/协程/取消 待 |
+| **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 + **Waker completion 脊(suspend/wake)** + **同步原语(futex Mutex 打平 marl;fiber-aware CV/WaitGroup/Latch/Channel,双模 fiber/裸线程)** | 🔶 栈池/deadline/协程/取消 待 |
 | **bench** | nanobench 设施 + SwissTable/string 对标 std | ✅ |
 | **simd** | 运行期 CPUID dispatch(探测+变体选择) + vec<T,N> D-tag 抽象(照搬 Highway 契约) + scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec) + fp16/bf16 dtype(F16C) + **exp/log/tanh 数学核(借 SLEEF)** + NEON/AVX512(写+编+objdump 验,未跑) | 🔶 NEON/AVX512 待目标硬件实跑;gelu/softmax 待 |
 | io / compute / graph | — | 📋 规划 |
