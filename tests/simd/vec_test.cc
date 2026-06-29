@@ -2,6 +2,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cmath>
+#include <limits>
 #include <type_traits>
 
 #include "hyle/simd/vec.h"
@@ -213,6 +215,37 @@ TEST(Vec, CompareBlendInt32) { CheckCompareBlend<std::int32_t>(); }
 TEST(Vec, CompareBlendUint32) { CheckCompareBlend<std::uint32_t>(); }
 TEST(Vec, CompareBlendFloat) { CheckCompareBlend<float>(); }
 TEST(Vec, CompareBlendDouble) { CheckCompareBlend<double>(); }
+
+// NaN / signed-zero edge cases: must be identical across every backend. These caught a
+// real divergence (red team 2026-06): AVX2/AVX512 Ne used the ordered predicate
+// _CMP_NEQ_OQ (false on NaN) while scalar/SSE4/NEON return true; and AVX512 Neg used 0-a
+// (Neg(+0.0)=+0.0) vs xor-signbit (-0.0) elsewhere. CheckCompareBlend feeds only finite
+// values so it could not see either.
+template <typename T>
+void CheckFloatEdgeCases() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  const T nan = std::numeric_limits<T>::quiet_NaN();
+  Buf<T> a;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = nan;
+  auto vnan = hs::Load(d, a.data);
+  // NaN != NaN is true on every lane; NaN == NaN is false on every lane.
+  EXPECT_TRUE(hs::AllTrue(d, hs::Ne(vnan, vnan)));
+  EXPECT_TRUE(hs::AllFalse(d, hs::Eq(vnan, vnan)));
+  // Ne and Eq are logical complements even on NaN (the portable IfThenElse(Ne(x,x),..) idiom).
+  EXPECT_EQ(hs::CountTrue(d, hs::Ne(vnan, vnan)), n);
+  EXPECT_EQ(hs::CountTrue(d, hs::Eq(vnan, vnan)), 0u);
+
+  // Neg(+0.0) == -0.0: bit pattern must have the sign bit set (1/-0.0 == -inf).
+  Buf<T> zeros, out;
+  for (std::size_t i = 0; i < n; ++i) zeros.data[i] = static_cast<T>(0);
+  hs::Store(hs::Neg(hs::Load(d, zeros.data)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_TRUE(std::signbit(out.data[i])) << "Neg(+0.0) lost the sign bit at lane " << i;
+}
+
+TEST(Vec, FloatEdgeCasesFloat) { CheckFloatEdgeCases<float>(); }
+TEST(Vec, FloatEdgeCasesDouble) { CheckFloatEdgeCases<double>(); }
 
 template <typename T>
 void CheckReductions() {

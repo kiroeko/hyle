@@ -187,8 +187,9 @@ HYLE_FORCE_INLINE Vec512<T, N> Max(Vec512<T, N> a, Vec512<T, N> b) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> Neg(Vec512<T, N> a) noexcept {
   Vec512<T, N> r;
-  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_sub_ps(_mm512_setzero_ps(), a.raw);
-  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_sub_pd(_mm512_setzero_pd(), a.raw);
+  // xor sign bit (not 0-a): Neg(+0.0) must be -0.0, matching SSE4/AVX2. 0-a yields +0.0.
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_xor_ps(a.raw, _mm512_set1_ps(-0.0f));
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_xor_pd(a.raw, _mm512_set1_pd(-0.0));
   else r.raw = _mm512_sub_epi32(_mm512_setzero_si512(), a.raw);
   return r;
 }
@@ -258,8 +259,10 @@ HYLE_FORCE_INLINE Mask512<T, N> Eq(Vec512<T, N> a, Vec512<T, N> b) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask512<T, N> Ne(Vec512<T, N> a, Vec512<T, N> b) noexcept {
   Mask512<T, N> m;
-  if constexpr (std::is_same_v<T, float>) m.raw = _mm512_cmp_ps_mask(a.raw, b.raw, _CMP_NEQ_OQ);
-  else if constexpr (std::is_same_v<T, double>) m.raw = _mm512_cmp_pd_mask(a.raw, b.raw, _CMP_NEQ_OQ);
+  // _CMP_NEQ_UQ (unordered): NaN compares not-equal -> true, matching scalar (!=),
+  // SSE4 (_mm_cmpneq_ps) and NEON (~Eq). _CMP_NEQ_OQ (ordered) wrongly returns false on NaN.
+  if constexpr (std::is_same_v<T, float>) m.raw = _mm512_cmp_ps_mask(a.raw, b.raw, _CMP_NEQ_UQ);
+  else if constexpr (std::is_same_v<T, double>) m.raw = _mm512_cmp_pd_mask(a.raw, b.raw, _CMP_NEQ_UQ);
   else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = _mm512_cmpneq_epi32_mask(a.raw, b.raw);
   else m.raw = _mm512_cmpneq_epu32_mask(a.raw, b.raw);
   return m;

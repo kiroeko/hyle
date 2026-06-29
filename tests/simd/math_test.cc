@@ -20,7 +20,14 @@ using hyle::simd::log_f32_batch;
 using hyle::simd::tanh_f32_batch;
 
 namespace {
-// relative error vs a double-precision reference; tolerant of 1-ULP SLEEF + f32 rounding.
+// Relative-error tolerance vs a double-precision libm reference. Set from MEASURED worst
+// case (red team 2026-06 flagged the old 1e-5 ~= 84 ULP as toothless -- a broken
+// polynomial would pass): scalar tier worst 0.7 ULP (8.4e-8), SLEEF _u10 AVX2 tier worst
+// 0.5 ULP (6.5e-8). 4e-7 ~= 3.4 ULP gives ~5x margin over both real paths yet is 25x
+// tighter than before, so a kernel off by >=4 ULP now fails. Absolute floor 1e-6 covers
+// lanes crossing zero (log(1), tanh(0)) where relative error is undefined.
+constexpr double kRelTol = 4e-7;
+constexpr double kAbsTol = 1e-6;
 void check(void (*fn)(const float*, float*, std::size_t), double (*ref)(double),
            const std::vector<float>& in, const char* name) {
   std::vector<float> out(in.size());
@@ -28,7 +35,7 @@ void check(void (*fn)(const float*, float*, std::size_t), double (*ref)(double),
   for (std::size_t i = 0; i < in.size(); ++i) {
     const double want = ref(static_cast<double>(in[i]));
     const double got = static_cast<double>(out[i]);
-    const double tol = std::abs(want) * 1e-5 + 1e-6;
+    const double tol = std::abs(want) * kRelTol + kAbsTol;
     EXPECT_NEAR(got, want, tol) << name << " in=" << in[i] << " i=" << i;
   }
 }
@@ -52,15 +59,21 @@ TEST(Math, TanhMatchesLibm) {
   check(tanh_f32_batch, std::tanh, in, "tanh");
 }
 
-// tail handling: n not a multiple of 8 (the SLEEF kernel's vector width).
+// tail handling: n not a multiple of 8 (the SLEEF kernel's vector width). All three ops
+// exercised (red team: log/tanh tails were previously untested -- only exp).
 TEST(Math, TailSizes) {
   for (std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{8}, std::size_t{9}, std::size_t{17}}) {
     std::vector<float> in(n);
     for (std::size_t i = 0; i < n; ++i) in[i] = 0.1f + 0.3f * static_cast<float>(i);
-    std::vector<float> out(n);
-    exp_f32_batch(in.data(), out.data(), n);
-    for (std::size_t i = 0; i < n; ++i)
-      EXPECT_NEAR(out[i], std::exp(in[i]), std::exp(in[i]) * 1e-5f + 1e-6f) << "n=" << n;
+    std::vector<float> oe(n), ol(n), ot(n);
+    exp_f32_batch(in.data(), oe.data(), n);
+    log_f32_batch(in.data(), ol.data(), n);
+    tanh_f32_batch(in.data(), ot.data(), n);
+    for (std::size_t i = 0; i < n; ++i) {
+      EXPECT_NEAR(oe[i], std::exp(in[i]), std::abs(std::exp(in[i])) * kRelTol + kAbsTol) << "exp n=" << n;
+      EXPECT_NEAR(ol[i], std::log(in[i]), std::abs(std::log(in[i])) * kRelTol + kAbsTol) << "log n=" << n;
+      EXPECT_NEAR(ot[i], std::tanh(in[i]), std::abs(std::tanh(in[i])) * kRelTol + kAbsTol) << "tanh n=" << n;
+    }
   }
 }
 
