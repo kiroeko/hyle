@@ -4,7 +4,7 @@
 
 ## clay 现状：好地基 + 5 个确认 bug
 
-- **`Allocator` 单函数指针 vtable**（`allocator.h:24`）：所有 alloc/free/realloc 归一到一个 `realloc_func(inst, ptr, old, new)`，C-ABI 安全、跨 DLL 稳定。**clay 最成熟资产，继承作为注入接缝。**
+- **`Allocator` 注入 vtable**（`allocator.h`）：clay 原是**单**函数指针 `realloc_func(inst,ptr,old,new)`(挤 alloc/free/realloc 进一个、丢弃 alignment)。**HYLE 已纠正**:拆成 3 个 C 函数指针 `{alloc,free,realloc}`(各自寄存器友好、带 alignment、无派发分支,仍 C-ABI 跨 DLL 稳),且**降为 opt-in**——默认走编译期 `SystemAllocator`(内联 mimalloc,零接缝税),运行时注入只给真要多态的场景(arena/mock/跨 DLL)。
 - **`MemoryArena` 分片无锁定长块池**（`memory_arena.h`）：tagged-pointer CAS 防 ABA，lock-free、ABA 安全。clay 原版是**单** `head_`——8 线程 CAS 同一 cache line,O(threads) 串行化,实测慢 mimalloc per-thread heap 278x(performance.md mem 节)。**已分片根治**:内部 N 片(默认 16)各占独立 cache line,线程 homing 自己片(同线程无争用),free 按地址路由回属主片——278x→1.95x,O(N)争用→O(1) per-shard。这落地了 mem-design 列为"硬约束"却久欠的 per-core 池。残留 1.95x 是原子 CAS 常数因子(vs mimalloc 非原子 local list),进一步逼近需 xcpu_freelist(见下)。单线程仍首选 `StackAllocator`/`GrowablePool`(零原子,超 SOTA)。
 - **无隐藏全局堆**:分配显式可控。默认走编译期 `SystemAllocator`(零开销);需要自定义分配器(arena/mock/跨 DLL)时**显式 opt-in 注入** `Allocator` 句柄。注入是**能力,不是强制默认**——曾把"注入贯穿"当铁律,导致每个容器都吃运行时间接调用税(实测 8%),按性能优先纠正:默认零开销,注入按需。
 - **5 个 bug**（资产负债表已定位，重写依据）：
@@ -21,7 +21,8 @@
 | 部件 | 造/借 | 理由 |
 |---|---|---|
 | 通用 malloc（system allocator 的 backing）| ✅ **借 mimalloc** | 通用分配器是多年解决的难题（mimalloc/jemalloc/tcmalloc）；自造是浪费 + 必然不如。mimalloc：现代标杆、THP/大页内建、MIT、可嵌入 |
-| `Allocator` vtable 注入接缝 | 🔧 **继承 clay** | 最成熟资产，C-ABI 边界契约，但**修 alignment 丢弃 bug** |
+| `Allocator` 注入接缝 | 🔧 **改造 clay** | C-ABI 边界契约;但拆单函数→3 指针(消 Win64 压栈+派发分支)、修 alignment 丢弃、降 opt-in(默认编译期 SystemAllocator) |
+| 默认分配器 `SystemAllocator` | ✅ **自造(编译期内联)** | 无状态、内联 mimalloc、零接缝税(实测 97.1% 平裸 mi);容器默认参,注入是 opt-in |
 | arena / region 分配器 | 🔧 继承 MemoryArena + 修 64 槽上限 | 无锁块池是真资产 |
 | object pool / stack allocator | 🔧 **推倒重写**（bug 3/4）| clay 实现有 UB |
 | fiber 栈池 | 🔧 **自造**(池化部分✅) | sched/ 的 fiber 栈。**池化已落地**(`MemoryArena::as_allocator` 复用定长块,fork-join +13% 实测);**guard page + 分级栈大小仍待** |
@@ -107,7 +108,7 @@ mem/
 
 ## 落地清单
 
-1. `Allocator` vtable 继承 + **修 alignment 丢弃**（最优先，simd 依赖）。
+1. `Allocator` 注入接缝改造:拆单函数→3 指针 `{alloc,free,realloc}`(消 Win64 压栈+派发分支)+ **修 alignment 丢弃** + 默认编译期 `SystemAllocator`(内联,注入降 opt-in)。
 2. system allocator 换 mimalloc backing（封在 vtable 后，不外露 mimalloc 类型——同 ggml 解耦）。
 3. arena 继承 + 修 64 槽上限；pool/stack 推倒重写修 UB。
 4. fiber 栈池（给 sched）、pinned（给 compute）。
