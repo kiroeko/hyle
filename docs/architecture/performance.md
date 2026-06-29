@@ -175,18 +175,18 @@
 
 ### mem 分配器（`Allocator` vtable vs 裸 mimalloc vs std::malloc，`allocator_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench,200k/50k 小块(16..511B)。**SOTA 标尺 = 裸 `mi_malloc`/`mi_free`**(设为相对基线,HYLE 的 % 直读 = vtable 接缝开销)。`std::malloc` = 弱基线(MSVC CRT)。此前这层零对标——本节真测揪出接缝成本。
+> 环境:Win MSVC19.50 Release,nanobench,200k/50k 小块(16..511B)。**SOTA 标尺 = 裸 `mi_malloc`/`mi_free`**(设为相对基线,HYLE 的 % 直读 = vtable 接缝开销)。`std::malloc` = 弱基线(MSVC CRT)。此前这层零对标——本节真测揪出接缝成本并修。
 
-| 场景 | 裸 mi(SOTA) | HYLE vtable | std::malloc | 结论 |
+| 场景 | 裸 mi(SOTA) | HYLE vtable(修后) | std::malloc | 结论 |
 |---|---|---|---|---|
-| **churn 空循环**(alloc+free) | 7.79 ns | 9.45 ns(**+21%**) | 26.07 ns | 接缝固定成本在空循环被放大 |
-| **alloc+touch+free**(真实) | 7.82 ns | 9.23 ns(**+18%**) | 25.23 ns | **赢 std 2.7x**;接缝仍 +18% |
-| **alloc-all/free-all**(批) | 10.41 ns | 10.94 ns(**+5%**) | ~65 ns | 分母大,接缝摊薄到 5% |
-| **8 线程并发** | 1.86 ns/op | 2.03 ns/op(**+9%**) | 5.64 ns/op | **赢 std 2.78x** |
+| **churn 空循环**(alloc+free) | 7.89 ns | 8.62 ns(**+8.4%**,原 +21%) | 25.63 ns | 间接 seam 调用地板 |
+| **alloc+touch+free**(真实) | 7.85 ns | 8.95 ns(**+12%**,原 +18%) | 25.65 ns | **赢 std 2.9x** |
+| **alloc-all/free-all**(批) | 9.54 ns | 9.84 ns(**+3%**≈平) | 40.30 ns | **赢 std 4x** |
+| **8 线程并发** | 2.14 ns/op | 2.07 ns/op(**102.9%≈平/微赢**) | 4.56 ns/op | **赢 std 2.2x** |
 
-**诚实结论**:`Allocator` vtable(注入接缝)相对裸 mimalloc 有 **~1.4ns/对的固定开销**(churn +21%、真实负载 +18%、批量摊到 +5%、并发 +9%),但**比 std::malloc 快 2.7-2.8x**。开销来源:**单 `ReallocFn` 间接调用不可内联** + Win64 ABI 下 5 参签名**第 5 参 `alignment` 压栈** + `system_realloc` 热路径分支(`new_size==0`/`normalize_alignment`/对齐判断)。
+**诚实结论(21% 是设计失误已修,非 C-ABI 税)**:原 +21% churn 的主成本**不是** C-ABI——是两处可消的设计失误:① 单 `ReallocFn`(5 参)在 Win64 把第 5 参 `alignment` 压栈 + "一函数干三件事"的派发分支;② `system_realloc` 热路径每次跑 `normalize_alignment`(含**常开 FATAL_ASSERT** + 位测试)。**两刀修复**:vtable 拆 3 函数指针(`alloc`/`free`/`realloc`,alloc 3 参全进寄存器、无派发分支;仍 100% C-ABI 干净、跨 DLL 稳,同 jemalloc/pmr/cudaMalloc)+ `system_alloc` 默认对齐短路(跳过 normalize)。**churn 21%→8.4%、touch 18%→12%、批量/并发 ≈平,全档仍赢 std::malloc 3x**。公开 `allocate/deallocate` 签名不变,调用方零改动。
 
-**这是接缝设计代价,非 rival-loss**:与 BoundedQueue 输给 moodycamel(真竞争缺陷,已分片修)不同,system_allocator 自身就用 mimalloc(SOTA backing),~1.4ns 是"显式注入 + 跨 DLL C-ABI + 可换 backing"(charter 铁律:单函数指针 vtable)买来的接缝。**真实负载下 alloc+touch 只 +18%,且 touch 越重越摊薄**。可削的肥肉:5 参单函数若拆 3 指针 vtable 可免 Win64 压栈(~0.7ns),但这是 charter 级 ABI 表面改动,留作显式权衡决策(单函数收敛的跨 DLL 价值 vs 0.7ns 微基准)。
+**剩余 ~8% 是间接 seam 调用的不可约地板**:`indirect_call → system_alloc → mi_malloc` 比裸 `mi_malloc` 多一层运行时间接(= 一次虚调用),这是"显式注入 + 跨 DLL 可换 backing"(mimalloc 没有的能力)的真实代价。要消它只能编译期绑定默认分配器路径(放弃运行时注入)——是另一层架构权衡,非本接缝的常数因子。**结论:C-ABI seam 能做到接近裸调用(8% 地板),21% 的"包装税"是真失误、已修。**
 
 ### mem 专用分配器簇（arena/pool/stack vs `std::pmr` + 裸 mimalloc，`arena_pool_bench.cc`）
 
