@@ -4,10 +4,10 @@
 |---|---|
 | **阶段** | P0（obs 模块首步） |
 | **模块** | obs/（**本里程碑新建模块**） |
-| **状态** | ✅ 完成（Win x64 MSVC 19.50 + Linux x64 GCC14.2 双平台 11/11）|
+| **状态** | ✅ 完成（Win x64 MSVC 19.50 + Linux x64 GCC14.2 双平台 12/12）|
 
 > **范围**：吸纳 clay `sys/log.h`+`.cc`——level 门控 + sink 注册表 + 默认 stderr 彩色 sink。这是 obs/ 的"**日志产出**"半边(hyle-scope：obs 产结构化日志,聚合/采集是运维栈,不在此)。instrumentation hook(计数器/trace point)是 obs 后续步。
-> **cloc**：**生产 132 行**(log.h 47 + log.cc 85) + **测试 103 行**。
+> **cloc**：**生产 133 行**(log.h 47 + log.cc 86) + **测试 143 行**。
 
 ## 模块定位（obs-01 = log，不是 instrumentation hook）
 
@@ -42,7 +42,7 @@ scaffolding 占位把 obs-01 写成"instrumentation hook(编译期 no-op)"，cov
 
 ## 对抗式自审（六类）
 
-- **① 正确性**:11 测——到达 sink/level 门丢弃/should_log/Off 全静默/log_fmt caller-side 格式化/门控时跳过格式化/宏路由 level/多 sink 广播/add 幂等/remove 停投递/默认 level=Info。双平台 11/11。
+- **① 正确性**:12 测——到达 sink/level 门丢弃/should_log/Off 全静默/log_fmt caller-side 格式化/门控时跳过格式化/宏路由 level/多 sink 广播/add 幂等/remove 停投递/默认 level=Info/并发 log-vs-churn 压测(过 WSL TSan)。双平台 12/12。
 - **② 性能**:热路径 should_log 是 relaxed atomic 单 load(无锁);门控时 log_fmt 直接 return 不格式化;快照后锁外 I/O。
 - **③ 规范**:非变参 vtable(§4 ABI)、std::format(§8)、fprintf 非流(§1)、HYLE_OBS_API 三态;头只 include format/macros/visibility。
 - **④ clay 覆盖**:logger_api_t 逐项 diff(上表);变参 printf 显式降级为非变参+caller format(登记原因);instrumentation hook 标 obs 后续。

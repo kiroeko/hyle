@@ -36,7 +36,7 @@
 simd/
 ├─ vec.h          可移植 vector 类型 vec<T, Width>（load/store/算术/fma/compare/mask/shuffle）
 ├─ backend/       per-ISA 实现（编译多版本）
-│  ├─ sse42.h  avx2.h  avx512.h     (x86)
+│  ├─ sse4.h   avx2.h  avx512.h     (x86)
 │  ├─ neon.h   sve.h                 (arm)
 │  └─ scalar.h                       (无 SIMD fallback)
 ├─ dispatch.h     运行时 CPUID 探测 + 函数指针表选最优后端
