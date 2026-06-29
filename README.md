@@ -17,7 +17,7 @@
 
 - **标尺是参考库，不是 std**：赢 `std::unordered_map`/`std::async` 是**最低门槛**——std 在这些点上本就不是为极致性能设计的。真正的标尺是**各领域的 SOTA 参考库**:hashmap→`absl::flat_hash_map`/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway/xsimd、调度→tokio/Seastar。**做到等同或超过它们，HYLE 才有价值；只赢 std 不算数。**
 - **用数据说话,输了也报**:每个性能件必须有**对标 SOTA 的真实 benchmark**(非推算),诚实印出数字——赢在哪、输多少、差距登记为优化目标。掩盖差距 = 自欺。
-- **当前实测铁证**:SwissTable 100k uint64(Linux GCC14)——vs `std::unordered_map` find 2.4x/insert 5.3x/erase 3.5x(轻松赢 std);**vs `absl::flat_hash_map`** insert **1.38x**、erase **1.29x**(超 SOTA),但 find **0.77x**(慢 absl ~25%,**已登记为优化目标**)。这就是"对标 SOTA"的意义:它逼出了 std 对标永远看不到的真实差距。
+- **当前实测铁证**:SwissTable 100k uint64(Linux GCC14)——vs `std::unordered_map` find-hit 2.42x/insert 5.3x/erase 3.5x(轻松赢 std);**vs `absl::flat_hash_map`** find-hit **~1.10x**、insert **~1.40x**、erase **~1.39x** 均反超,find-miss **≈1.00x 统计平局**(四项全部追平或超 SOTA)。这就是"对标 SOTA"的意义:它逼出了 std 对标永远看不到的真实差距——find 起初 **0.77x 慢 absl ~25%**,学 absl 三刀优化(probe 预取 + mix64 128 位乘折叠 + H1=identity)后反超。详见 [`performance.md`](./docs/architecture/performance.md)。
 
 ## 当前实现状态
 
@@ -32,14 +32,14 @@
 | **time** | 单调钟 + 墙钟 + sleep + Instant(ns) | ✅ |
 | **container** | XXH3 哈希 + CArray + **SwissTable(SIMD 探测,对 std 快 2.7–6.1x;type-erased 冷核 + NEON)** + SmallVector + intrusive list + lock-free MPMC/SPSC/work-stealing 队列 + **string_ref/string_buf + 字节串算法 + path 路径操作** | ✅ |
 | **util** | **Ref<T> 引用计数 + ScopeGuard/DEFER + 编译期 type_name + Registry 自注册** | ✅ |
-| **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 + **Waker completion 脊(suspend/wake)** | 🔶 deadline/协程/取消 待 |
+| **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 + **Waker completion 脊(suspend/wake)** + **fiber-aware 同步原语(CV/Mutex/WaitGroup/Latch/Channel,双模 fiber/裸线程)** | 🔶 deadline/协程/取消 待 |
 | **bench** | nanobench 设施 + SwissTable/string 对标 std | ✅ |
 | **simd** | 运行期 CPUID dispatch(探测+变体选择) + vec<T,N> D-tag 抽象(照搬 Highway 契约) + scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec) + fp16/bf16 dtype(F16C) + **exp/log/tanh 数学核(借 SLEEF)** + NEON/AVX512(写+编+objdump 验,未跑) | 🔶 NEON/AVX512 待目标硬件实跑;gelu/softmax 待 |
 | io / compute / graph | — | 📋 规划 |
 
-**性能验证(已落地部分)**:SwissTable vs `std::unordered_map`(100k keys,双平台):find-hit 2.7x、find-miss 2.3x、insert 6.1x、erase 4.1x。
+**性能验证(已落地部分)**:SwissTable vs `std::unordered_map`(100k keys,Linux GCC14,mix64+prefetch+H1 优化后复测):find-hit 2.42x、find-miss 2.26x、insert 5.3x、erase 3.5x;vs `absl::flat_hash_map` 四项全部追平或反超(见 performance.md)。
 
-**边界诚实**:已实现件局限于 **x86-64 Windows/Linux 真验**;ARM64 + macOS 路径多为"已写未验"(无测试机);simd 仅 scalar 后端+dispatch 骨架(各 ISA intrinsic 后端未落);io/compute/graph 三支柱尚未开工。
+**边界诚实**:已实现件局限于 **x86-64 Windows/Linux 真验**;ARM64 + macOS 路径多为"已写未验"(无测试机);simd 的 scalar/SSE4.2/AVX2 后端 x86 实跑,**NEON/AVX512 后端写+编+objdump 验但未在目标硬件实跑**;io/compute/graph 三支柱尚未开工。
 
 ## 设计文档
 

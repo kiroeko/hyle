@@ -25,6 +25,7 @@ hyle_add_module(sched
     fiber.cc
     worker.cc
     scheduler.cc
+    sync.cc
     ${_fctx_asm}
   DEPS hyle_platform
   PUBLIC_DEPS hyle_mem hyle_container)

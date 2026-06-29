@@ -3,7 +3,7 @@
 > **目的**：防"以为吸纳完了、其实漏文件/漏 API 层"。clay 源在 `slate-render/iron/infra/{include,src}/clay/`。
 > **铁律（对抗审查纪律）**：每个吸纳 clay 的里程碑闭环前，必须 `diff` clay 同名文件的 API 表面——缺的要么补、要么在本表显式登记 `📋待办`，**不许默默略过**。本表是唯一权威进度标尺。
 > **状态图例**：✅ 完成 / 🔶 部分(有登记的缺口) / 📋 计划 / ♻️ 被 C++23/std 取代 / 🔻 借第三方(不自写) / ⛔ 不吸纳。
-> **行数(cloc 实测)**：clay 自有 ≈ **19,005**(sys 7917 + math 5831 + utils 3469 + parallel 811 + 顶层头 973;去 thirdparty)。HYLE 生产(src+include)≈ **7,757**（2026-06-29 cloc 复核；旧值 5,383/2,885 已 stale，simd 支柱完成后增长）。mimalloc/xxhash/nanobench/fcontext/sleef 第三方不计。
+> **行数(cloc 实测)**：clay 自有 ≈ **19,005**(sys 7917 + math 5831 + utils 3469 + parallel 811 + 顶层头 973;去 thirdparty)。HYLE 生产(src+include)≈ **8,048**（2026-06-29 cloc 复核;含 sched-05 fiber-aware 同步原语 +290;旧值 7,757/5,383 已 stale）。mimalloc/xxhash/nanobench/fcontext/sleef 第三方不计。
 >
 > **⚠️ 进度口径(2026-06-29 重核，旧 tally 已 stale)**：按**实际表行**重数(52 个 clay 文件行,非旧"94 符号"细粒度估):
 > - **含 ✅(写了 HYLE 等价物)= 28/52 ≈ 54%**(旧称 50%,里程碑推进后多行翻 ✅,旧 tally 偏低)。
@@ -15,7 +15,7 @@
 > **替换/延期核验结论(2026-06-29 逐项查 clay 源,回答"std/第三方替换的有没有暗漏 clay 逻辑、defer 的能否现在做")**:
 > - **std/第三方替换 = 真终态,无暗漏**:`result→std::expected`(ASSIGN_OR_RAISE 宏保留)、`sprintf→std::format`(clay 的"UTF-8 安全截断"本就是**注释掉的假功能**,HYLE 真 UTF-8 已落 string_algo:utf8_decode/length/icmp)、`func_traits/comparable→concepts/<=>`、`consts→<numbers>`、`thread_pool/worker→sched work-stealing`(重写超越)。逐个查过:**没有"std 其实没覆盖却被当替换"的坑**。
 > - **被当"待补"实为已做或故意**:`string_buf intern` **已实现**(等内容返同指针;"待补"只是全局单例便利层,次要);`CUSTOM_MEMORY_FUNCTIONS` **故意不做**(mimalloc 无 off-switch 是用户指令,非漏)。
-> - **唯一真·待做的 clay 逻辑 = `async_value`(promise/future)+ `barrier`**——**正确排到 P5 sched**(completion 脊/同步原语),依赖 sched 后段,**不能现在做也不能丢**;`decls.h` include 纪律是个小真空待坐实。
+> - **`async_value`+`barrier` 地基已吸纳(sched-05,2026-06-29)**:fiber-aware 同步原语(CV + Mutex/WaitGroup/Latch/Channel)落地——这是 async_value"等待值就绪"+ barrier 倒数的**真机制**。API diff 揪出 clay async_value **不是** promise/future+waiter 而是值状态机 cell(`.cc` 42 行纯类型注册,无阻塞逻辑);故剩余 = 类型化 future 值封装(CV 上薄层,io/compute 需要时建)+ 可重置 Barrier(薄层),均**净新非移植**。`decls.h` include 纪律仍是个小真空待坐实。**真·clay 吸纳欠账 ≈ 零。**
 
 ## sys/ — 系统基座（allocator/arena/os/path/string/hash/log/time）
 
@@ -68,9 +68,9 @@
 |---|---|---|---|---|
 | `parallel/thread_pool.h` + `.cc` | 130+167 | sched/ | ♻️ | 单全局锁池 → **被 sched-03 work-stealing 调度器取代(重写非移植)** |
 | `parallel/worker_thread.h` + `.cc` | 88+109 | sched/ | ♻️ | 同上,被 sched worker 取代 |
-| `parallel/async_value.h` + `.cc` | 465+42 | sched-04/05 | 📋 | promise/future + waiter → completion 脊/同步原语 |
+| `parallel/async_value.h` + `.cc` | 465+42 | sched-05(地基)/ 后续(值封装) | 🔶 | **API diff 重大发现(2026-06-29)**:clay async_value **不是** promise/future+waiter——它是 **refcounted 类型擦除值状态机**(kUnconstructed→kConstructed→kConcrete→kError + 16bit type-id 注册),`.cc` 42 行**纯类型注册表**,**无 waiter 链表/无阻塞/无 notify**(同 container-06b 揪出的 format_si "声明无实现"一类:头部 promise/future 是 TFRT 味期望,clay 这份只有值 cell)。真正的"等待值就绪"=**fiber-aware 阻塞**,sched-05 的 `ConditionVariable` 已落地这个**真地基**。剩"类型化 future 值封装"(在 CV 上包一层 ready 谓词)=薄层,待 io/compute 需要 promise/future 时建(净新,非 clay 移植) |
 | `parallel/concurrent_vector.h` | 145 | container-09 | ✅ | 读优化 append-only 并发 vector(读 lock-free/写 SpinLock 串行)。**分段存储**修 clay 五问题:外层 reserve(65)→定长 C 数组(结构性不变量)、copy-on-grow 2x 内存→零拷贝 1x、T copyable→move-only 可、每读边界检查→去除、std::vector→Allocator。**WSL TSan 零 race**。归 container(不依赖 sched)|
-| `parallel/barrier.h` | 46 | sched 原语 | 📋 | 屏障 |
+| `parallel/barrier.h` | 46 | sched-05 | 🔶 | clay Barrier=可重置屏障(std::mutex+cv+count)。sched-05 落地 fiber-aware **`Latch`**(一次性倒数,std::latch 形)+ **`WaitGroup`**(动态计数,Go 形)覆盖屏障的倒数语义;clay 的**可重置**(`wait(reset=true)`/`Break()`)变体=在同一 CV 上加 reset 的薄封装,需要时补(用户 sched-05 scope 列的是 CV+mutex/waitgroup/channel/latch,Barrier 未列,故登记薄层) |
 
 ## math/ — 数学（half/utils/consts）
 
@@ -172,7 +172,7 @@ clay 各组件落到 HYLE 依赖层(P0-P6):
 | `sys/os`+`path`+`time`+`log`+`random` | P1/P2 (platform-02/03, time-01) | **P2 末** |
 | `sys/carray`+`cstring`+`string_buf`+`hashmap`+`murmur`、`utils/string_utils`+`ref_counted`+`registry`+`type_name` | P3 (container-02..06 + util) | **P3 末** |
 | `parallel/thread_pool`+`worker_thread` | P4 (sched,**重写取代**) | 已取代(sched-03✅) |
-| `parallel/async_value`+`barrier`+`concurrent_vector` | P4-P5 | **P5 初** |
+| `parallel/async_value`+`barrier`+`concurrent_vector` | P4-P5 | **sched-05 地基✅** |
 | `math/utils`+`consts` | 后期 math 簇 | 排期后 |
 | `math/half` | P3 simd-05(硬件取代🔻) | P3(留接口) |
 

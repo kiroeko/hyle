@@ -107,7 +107,7 @@
 | sched-04 | P4 | sched | Waker completion 脊 + time 接入(deadline) | sched-02,time-02 | 1-2k | — | 🔶 拆分 |
 | sched-04a | P4 | sched | Waker completion 脊(suspend/wake,race-free) | sched-03 | 1k | ~114 (+96 测试) | ✅ 完成(架构拱顶:io/compute/timer 共用的唤醒接缝;wake-before-suspend 对称原子 rendezvous;双平台 4/4 + WSL TSan 8/8 零 race。deadline 半→04b 待 time-02) |
 | sched-04b | P4 | sched | Waker × timer(deadline 到期 wake) | sched-04a,time-02 | 0.5-1k | — | 占位(依赖 time-02 时间轮,按"不依赖后面功能"拆出) |
-| sched-05 | P4 | sched | fiber-aware CV + mutex/waitgroup/channel | sched-04 | 2-3k | — | 占位 |
+| sched-05 | P4 | sched | fiber-aware CV + mutex/waitgroup/channel/latch | sched-04a | 2-3k | 290 (+297 测试) | ✅ 完成(marl 收敛:一个双模 `ConditionVariable` 地基[FIFO waiter 链表+SpinLock] + 其上薄封装 Mutex/WaitGroup/Latch/Channel[有界 MPMC];**双模**:fiber waiter→`suspend()`重入 run-queue、裸线程 waiter→`platform::Parker`(跨进程/外部线程提交,非 std::cv)。**直接复用 sched-04a Waker rendezvous**,wake-before-suspend race-free 非新机制。双平台 28/28(原20+新8 Sync)+ **WSL TSan 零 data race**;clay async_value/barrier 见下。`wait_for`定时变体依赖 time-02→sched-04b 登记延后) |
 | sched-06 | P4 | sched | 协程胶水(co_await→fiber 让出) | sched-04 | 1-2k | — | 占位 |
 | sched-07 | P4 | sched | 取消：CancelToken 树 + await 取消点 + 结构化并发 | sched-04,sched-06 | 2-3k | — | 占位 |
 | sched-08 | P4 | sched | runtime 优雅关闭(两阶段 drain + 逆序清理) | sched-03 | 1-2k | — | 占位 |
