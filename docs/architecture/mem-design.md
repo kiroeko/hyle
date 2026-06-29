@@ -5,7 +5,7 @@
 ## clay 现状：好地基 + 5 个确认 bug
 
 - **`Allocator` 单函数指针 vtable**（`allocator.h:24`）：所有 alloc/free/realloc 归一到一个 `realloc_func(inst, ptr, old, new)`，C-ABI 安全、跨 DLL 稳定。**clay 最成熟资产，继承作为注入接缝。**
-- **`MemoryArena` 无锁定长块池**（`memory_arena.cc`）：tagged-pointer CAS 防 ABA，设计正确(lock-free、ABA 安全)，直接继承。**但性能非"最亮"**:实测(performance.md mem 专用分配器簇节)单 `head_` 原子是被争用的单点——单线程慢裸 mimalloc 2.88x、8 线程共享慢 278x。无锁≠快;真正快的是单线程 `StackAllocator`/`GrowablePool`。MemoryArena 的价值在 lock-free 共享安全性,不在吞吐;并发高吞吐场景应 per-core 分片(照 mimalloc)。
+- **`MemoryArena` 分片无锁定长块池**（`memory_arena.h`）：tagged-pointer CAS 防 ABA，lock-free、ABA 安全。clay 原版是**单** `head_`——8 线程 CAS 同一 cache line,O(threads) 串行化,实测慢 mimalloc per-thread heap 278x(performance.md mem 节)。**已分片根治**:内部 N 片(默认 16)各占独立 cache line,线程 homing 自己片(同线程无争用),free 按地址路由回属主片——278x→1.95x,O(N)争用→O(1) per-shard。这落地了 mem-design 列为"硬约束"却久欠的 per-core 池。残留 1.95x 是原子 CAS 常数因子(vs mimalloc 非原子 local list),进一步逼近需 xcpu_freelist(见下)。单线程仍首选 `StackAllocator`/`GrowablePool`(零原子,超 SOTA)。
 - **显式 `Allocator*` 注入贯穿**：无隐藏全局堆。继承为铁律。
 - **5 个 bug**（资产负债表已定位，重写依据）：
   1. `allocate(size, alignment)` **静默丢弃 alignment**（`allocator.h:37-40`）——**对 simd/ 是硬伤**（AVX512 要 64B 对齐），必修。

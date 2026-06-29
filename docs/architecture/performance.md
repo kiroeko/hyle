@@ -196,20 +196,20 @@
 
 | pool churn 场景(同尺寸 alloc/free) | ns/op | vs 裸 mi | 结论 |
 |---|---|---|---|
-| **HYLE MemoryArena**(无锁池) | 13.59 | **0.35x(慢 2.88x!)** | 原子 CAS 税 |
+| **HYLE MemoryArena**(分片无锁池) | 14.71 | **0.32x(慢 3.1x)** | 单线程原子 CAS 常数因子 |
 | **HYLE GrowablePool**(单线程) | **1.83** | **2.57x** | ✅ 真兑现 |
 | std::pmr::unsync_pool(SOTA) | 5.99 | 0.79x | — |
 | 裸 mi_malloc/free(general) | 4.72 | 1.0x | — |
-| **8 线程共享 MemoryArena**(无锁设计点) | **344.72** | **0.004x(慢 278x!!)** | ⛔ 单点 CAS 争用灾难 |
-| └ 裸 mi(8 线程 per-thread heap) | 1.24 | — | mimalloc 零争用 |
+| **8 线程共享 MemoryArena**(分片后,设计点) | **2.47** | **0.51x(慢 1.95x)** | ✅ **分片修复:278x→1.95x** |
+| └ 裸 mi(8 线程 per-thread heap) | 1.27 | — | mimalloc 零争用 |
 
 **核心诚实结论(揪出的第三个"自以为 SOTA")**:
 
 1. **"专用分配器 5-10x vs new/delete"只对单线程变体成立**:`StackAllocator`(纯指针 bump,0.65ns)**9.5x 赢裸 mi、2.25x 赢 std::pmr arena**;`GrowablePool`(单线程 free-list,1.83ns)2.57x 赢裸 mi、3.3x 赢 std::pmr pool。这俩是真 SOTA。
 
-2. **两个"无锁旗舰"(`Arena`/`MemoryArena`)是全场最慢**:`Arena` 无锁 bump 比裸 malloc 还慢、慢 std::pmr arena **4.6x**;`MemoryArena` 无锁池单线程慢裸 malloc **2.88x**,8 线程共享(**它存在的理由**)慢 mimalloc per-thread heap **278x**。**根因=单 `offset_`/`head_` 原子,每次 alloc/dealloc CAS 同一 cache line**(BoundedQueue 单点 CAS 同病,因 churn 更密而惨烈得多)。mem-design 称 `MemoryArena` "最亮的资产"——benchmark 证伪:**无锁≠快,它是一个被争用的单原子**。
+2. **`MemoryArena` 曾是全场最慢——单点 CAS 争用,已分片根治**:原 clay 继承的单 `head_` 让 8 线程 CAS 同一 cache line,O(threads) 串行化——8 线程共享(**它存在的理由**)慢 mimalloc per-thread heap **278x**,单线程也慢裸 mi 2.88x。诊断:与 BoundedQueue 单点 CAS 同病(churn 更密故惨烈得多)。**修复**(`memory_arena.h`):内部分 N 片(默认 16),每片独立 Treiber 头占独立 cache line,线程按 tls 序号 homing 到自己片(同线程 alloc/free 无争用),free 按地址 O(1) 路由回属主片。**8 线程 344.72→2.47ns,278x→1.95x(~140x 改善),复杂度落后(O(N)争用→O(1) per-shard)消除**。双平台 10/10 + WSL TSan 零 race。这同时补上了 mem-design 列为"硬约束"却从未实现的 per-core 池。`Arena`(无锁 bump)仍待同款处理(见下)。
 
-3. **诚实边界 + 为何暂不重写**:① 278x 是 alloc-立即-free 的 tight-churn 最坏争用;真实用途(fiber 栈池:借栈→跑 μs 级→还栈,低频借还)争用远小于此——但作为**通用并发池**,它被 per-thread 分配(mimalloc 的设计)架构性压制。② `Arena`/`MemoryArena`/`StackAllocator`/`GrowablePool`/`ObjectPool` 当前 **src/ 零内部用户**(io/compute/graph 未开工,fiber 栈直接走注入 allocator 未接池),故这是**潜在缺陷非活跃 bug**。不投机重写无人用的代码(避免为假想需求加复杂度);**修复方向已明确**(若将来接 fiber 栈池且需并发:per-core 分片 free-list,照 mimalloc/ShardedQueue),留待真实消费者出现时按其访问模式定。单线程消费者直接用 `StackAllocator`/`GrowablePool` 即可,无需碰无锁变体。
+3. **残留常数因子 + 仍待处理项**:① 分片后 `MemoryArena` 残留 1.95x(并发)/3.1x(单线程)是**原子 CAS 常数因子**(每 op 一次 CAS,vs mimalloc 同线程非原子 local list)——非复杂度,进一步逼近需 seastar 式 owner-local 非原子表 + 跨核 remote-free(mem-design 的 xcpu_freelist)。② **`Arena` 无锁 bump 仍是单 `offset_` 原子病**:单线程 6.79ns 慢 StackAllocator(0.65ns)10x、慢 std::pmr 4.6x——bump 分配器 SOTA 模式是 per-thread(零原子),并发共享一个 Arena 是反模式。待去原子化(单线程 bump,并发用 per-thread Arena)。③ 单线程消费者直接用 `StackAllocator`(0.65ns)/`GrowablePool`(1.83ns)即已超 SOTA,无需碰共享变体。
 
 ### container 杂项（SmallVector / IntrusiveList vs std，`container_misc_bench.cc`）
 
