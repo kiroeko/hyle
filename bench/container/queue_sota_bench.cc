@@ -65,7 +65,7 @@ void bench_single_thread() {
       .minEpochIterations(2000);
 
   b.run("HYLE BoundedQueue", [&] {
-    static BoundedQueue<std::uint64_t> q(system_allocator(), kCap);
+    static BoundedQueue<std::uint64_t> q(kCap);
     for (int i = 0; i < kBatch; ++i) q.try_push(static_cast<std::uint64_t>(i));
     std::uint64_t out = 0, sum = 0;
     for (int i = 0; i < kBatch; ++i) {
@@ -131,7 +131,7 @@ void bench_mpmc() {
   b.title(title).relative(true).batch(kTotal).minEpochIterations(50);
 
   b.run("HYLE BoundedQueue", [&] {
-    BoundedQueue<std::uint64_t> q(system_allocator(), kCap);
+    BoundedQueue<std::uint64_t> q(kCap);
     std::atomic<int> producers_done{0};
     std::vector<std::thread> ts;
     for (int p = 0; p < kProducers; ++p)
@@ -162,7 +162,7 @@ void bench_mpmc() {
   // per-shard cap; drops global FIFO. Quantifies the headroom sharding unlocks
   // over the single ring under the SAME workload.
   b.run("HYLE ShardedQueue (1 shard/producer)", [&] {
-    ShardedQueue<std::uint64_t> q(system_allocator(), kProducers, kCap);
+    ShardedQueue<std::uint64_t> q(kProducers, kCap);
     std::atomic<int> producers_done{0};
     std::vector<std::thread> ts;
     for (int p = 0; p < kProducers; ++p)

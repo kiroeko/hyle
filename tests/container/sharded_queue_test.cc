@@ -10,18 +10,19 @@
 #include "hyle/platform/thread.h"
 
 using hyle::container::ShardedQueue;
+using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
 // ---- single-thread structure ------------------------------------------------
 
 TEST(ShardedQueue, CapacityIsSumOfShards) {
-  ShardedQueue<int> q(system_allocator(), 4, 8);
+  ShardedQueue<int> q(4, 8);  // default = compile-time SystemAllocator
   EXPECT_EQ(q.num_shards(), 4u);
   EXPECT_EQ(q.capacity(), 32u);  // 4 shards * 8
 }
 
 TEST(ShardedQueue, PerShardFifoSameHint) {
-  ShardedQueue<int> q(system_allocator(), 4, 8);
+  ShardedQueue<int> q(4, 8);
   // Same hint -> same shard -> FIFO within it.
   EXPECT_TRUE(q.try_push(0, 10));
   EXPECT_TRUE(q.try_push(0, 20));
@@ -37,7 +38,7 @@ TEST(ShardedQueue, PerShardFifoSameHint) {
 }
 
 TEST(ShardedQueue, PopScansAllShards) {
-  ShardedQueue<int> q(system_allocator(), 4, 8);
+  ShardedQueue<int> q(4, 8);
   // Push to distinct shards via distinct hints; a single cursor must still find
   // them all (round-robin scan), regardless of where it starts.
   EXPECT_TRUE(q.try_push(0, 100));
@@ -53,7 +54,7 @@ TEST(ShardedQueue, PopScansAllShards) {
 }
 
 TEST(ShardedQueue, ShardFullRejectsButOthersHaveRoom) {
-  ShardedQueue<int> q(system_allocator(), 2, 2);  // 2 shards, cap 2 each
+  ShardedQueue<int> q(2, 2);  // 2 shards, cap 2 each
   // Fill shard chosen by hint 0 (=shard 0).
   EXPECT_TRUE(q.try_push(0, 1));
   EXPECT_TRUE(q.try_push(0, 2));
@@ -66,7 +67,7 @@ TEST(ShardedQueue, ShardFullRejectsButOthersHaveRoom) {
 
 TEST(ShardedQueue, SingleShardDegeneratesToBoundedQueue) {
   // num_shards==1 must behave exactly like one BoundedQueue (FIFO, bounded).
-  ShardedQueue<int> q(system_allocator(), 1, 4);
+  ShardedQueue<int> q(1, 4);
   EXPECT_EQ(q.capacity(), 4u);
   for (int i = 0; i < 4; ++i) EXPECT_TRUE(q.try_push(0, i));
   EXPECT_FALSE(q.try_push(0, 99));  // full
@@ -83,7 +84,8 @@ TEST(ShardedQueue, SingleShardDegeneratesToBoundedQueue) {
 // Each producer pushes a disjoint id range INTO ITS OWN shard (hint = producer
 // index); consumers round-robin-drain. The union of popped values must equal
 // exactly the pushed set -- no loss, no duplication. Mirrors the BoundedQueue
-// stress test but exercises the sharded fan-in/fan-out.
+// stress test but exercises the sharded fan-in/fan-out. Uses the OPT-IN runtime
+// mem::Allocator variant (covers the scheduler's global-inject-queue path).
 TEST(ShardedQueue, MpmcStressConservation) {
   constexpr int kProducers = 4;
   constexpr int kConsumers = 4;
@@ -92,18 +94,18 @@ TEST(ShardedQueue, MpmcStressConservation) {
 
   // One shard per producer so producers never contend; cap small to force lots
   // of wrap-around + full/empty races between producers and consumers.
-  ShardedQueue<std::uint64_t> q(system_allocator(), kProducers, 1024);
+  ShardedQueue<std::uint64_t, Allocator> q(system_allocator(), kProducers, 1024);
   std::atomic<int> producers_done{0};
   std::vector<std::vector<std::uint64_t>> got(kConsumers);
 
   struct ProdArgs {
-    ShardedQueue<std::uint64_t>* q;
+    ShardedQueue<std::uint64_t, Allocator>* q;
     int hint;
     int base;
     std::atomic<int>* done;
   };
   struct ConsArgs {
-    ShardedQueue<std::uint64_t>* q;
+    ShardedQueue<std::uint64_t, Allocator>* q;
     std::vector<std::uint64_t>* out;
     std::atomic<int>* done_producers;
     int start_cursor;

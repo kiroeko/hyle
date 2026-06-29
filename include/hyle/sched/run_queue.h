@@ -86,7 +86,9 @@ class RunQueue {
   // consume; next()'s nullptr is the single honest signal.
 
  private:
-  container::BoundedQueue<Fiber*> fifo_;
+  // Opt-in runtime allocator (the scheduler injects one); BoundedQueue's default is the
+  // compile-time SystemAllocator, so name mem::Allocator explicitly here.
+  container::BoundedQueue<Fiber*, mem::Allocator> fifo_;
   Fiber* lifo_ = nullptr;
   int lifo_polls_ = 0;
 };

@@ -9,6 +9,7 @@
 #include "hyle/container/bounded_queue.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/system_inline.h"
 
 namespace hyle::container {
 
@@ -45,7 +46,10 @@ namespace hyle::container {
 //     (spreads consumers across shards, avoids all consumers hammering shard 0).
 //
 // T must be trivially copyable (same constraint as the underlying BoundedQueue).
-template <class T>
+// Alloc defaults to compile-time SystemAllocator ([[no_unique_address]] -> 0 bytes); each
+// shard is a BoundedQueue<T,Alloc> so the choice propagates. Pass mem::Allocator to opt in
+// (the scheduler does for its global inject queue).
+template <class T, class Alloc = mem::SystemAllocator>
 class ShardedQueue {
   static_assert(std::is_trivially_copyable_v<T>,
                 "ShardedQueue<T>: T must be trivially copyable");
@@ -53,26 +57,20 @@ class ShardedQueue {
  public:
   // `num_shards` rings, each holding `cap_per_shard` (power of two >= 2) items.
   // For the contention win, size num_shards >= the expected producer count.
-  ShardedQueue(mem::Allocator alloc, std::size_t num_shards,
-               std::size_t cap_per_shard)
+  ShardedQueue(std::size_t num_shards, std::size_t cap_per_shard)
+      requires std::is_default_constructible_v<Alloc>
+      : num_shards_(num_shards) {
+    init(cap_per_shard);
+  }
+  ShardedQueue(Alloc alloc, std::size_t num_shards, std::size_t cap_per_shard)
       : alloc_(alloc), num_shards_(num_shards) {
-    HYLE_FATAL_ASSERT(num_shards >= 1);
-    HYLE_FATAL_ASSERT(alloc_.valid());
-    // Allocator-backed array of ring objects (NOT std::vector -- charter §1
-    // forbids std owning types in a header that may cross the ABI boundary).
-    // BoundedQueue is non-movable, so placement-new each shard in situ.
-    void* mem = alloc_.allocate(sizeof(BoundedQueue<T>) * num_shards,
-                                alignof(BoundedQueue<T>));
-    HYLE_FATAL_ASSERT(mem != nullptr);
-    shards_ = static_cast<BoundedQueue<T>*>(mem);
-    for (std::size_t i = 0; i < num_shards; ++i)
-      new (&shards_[i]) BoundedQueue<T>(alloc, cap_per_shard);
+    init(cap_per_shard);
   }
 
   ~ShardedQueue() {
-    for (std::size_t i = 0; i < num_shards_; ++i) shards_[i].~BoundedQueue<T>();
-    alloc_.deallocate(shards_, sizeof(BoundedQueue<T>) * num_shards_,
-                      alignof(BoundedQueue<T>));
+    for (std::size_t i = 0; i < num_shards_; ++i) shards_[i].~BoundedQueue<T, Alloc>();
+    alloc_.deallocate(shards_, sizeof(BoundedQueue<T, Alloc>) * num_shards_,
+                      alignof(BoundedQueue<T, Alloc>));
   }
 
   HYLE_DISABLE_COPY_AND_MOVE(ShardedQueue);
@@ -109,8 +107,21 @@ class ShardedQueue {
   }
 
  private:
-  mem::Allocator alloc_;
-  BoundedQueue<T>* shards_ = nullptr;  // allocator-backed array (placement-new'd)
+  void init(std::size_t cap_per_shard) {
+    HYLE_FATAL_ASSERT(num_shards_ >= 1);
+    // Allocator-backed array of ring objects (NOT std::vector -- charter §1 forbids std
+    // owning types in a header that may cross the ABI boundary). BoundedQueue is
+    // non-movable, so placement-new each shard in situ (sharing this queue's Alloc).
+    void* mem = alloc_.allocate(sizeof(BoundedQueue<T, Alloc>) * num_shards_,
+                                alignof(BoundedQueue<T, Alloc>));
+    HYLE_FATAL_ASSERT(mem != nullptr);
+    shards_ = static_cast<BoundedQueue<T, Alloc>*>(mem);
+    for (std::size_t i = 0; i < num_shards_; ++i)
+      new (&shards_[i]) BoundedQueue<T, Alloc>(alloc_, cap_per_shard);
+  }
+
+  HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
+  BoundedQueue<T, Alloc>* shards_ = nullptr;  // allocator-backed array (placement-new'd)
   std::size_t num_shards_;
 };
 

@@ -67,8 +67,9 @@ struct Scheduler::Impl {
   // FIFO -- fine here: a work-stealing scheduler has no global order, it only needs
   // no-starvation + rough fairness. workers pop with their own round-robin cursor;
   // worker-context pushes hint to their own shard (locality), foreign pushes
-  // round-robin via inject_rr_.
-  container::ShardedQueue<Fiber*> global;
+  // round-robin via inject_rr_. Uses the OPT-IN runtime mem::Allocator variant (the
+  // scheduler's public ctor injects an allocator; queues honor it).
+  container::ShardedQueue<Fiber*, mem::Allocator> global;
   std::vector<std::unique_ptr<Worker>> workers;
   std::vector<Ctx> ctxs;
   std::vector<platform::Thread> threads;

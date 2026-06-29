@@ -8,6 +8,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/system_inline.h"
 #include "hyle/util/spin_lock.h"  // util::cpu_relax (pause/yield backoff hint)
 
 namespace hyle::container {
@@ -24,27 +25,26 @@ namespace hyle::container {
 //
 // T must be trivially copyable (skeleton scope: fiber handles / pointers / PODs)
 // so the lock-free paths carry no construction/destruction semantics.
-template <class T>
+//
+// Alloc defaults to the compile-time SystemAllocator: [[no_unique_address]] makes it
+// ZERO bytes (the buffer is the only allocation, done once at construction). Pass a
+// runtime mem::Allocator (BoundedQueue<T,mem::Allocator>) to opt into injection -- the
+// scheduler does this for its run queues.
+template <class T, class Alloc = mem::SystemAllocator>
 class BoundedQueue {
   static_assert(std::is_trivially_copyable_v<T>,
                 "BoundedQueue<T>: T must be trivially copyable");
 
  public:
-  // capacity must be a power of two >= 2. Buffer is taken from the injected
-  // allocator (charter: explicit allocator injection, no hidden global heap).
-  BoundedQueue(mem::Allocator alloc, std::size_t capacity)
-      : alloc_(alloc), mask_(capacity - 1) {
-    HYLE_FATAL_ASSERT(capacity >= 2 && (capacity & (capacity - 1)) == 0);
-    HYLE_FATAL_ASSERT(alloc_.valid());
-    buffer_ = static_cast<Cell*>(
-        alloc_.allocate(sizeof(Cell) * capacity, alignof(Cell)));
-    HYLE_FATAL_ASSERT(buffer_ != nullptr);
-    for (std::size_t i = 0; i < capacity; ++i) {
-      new (&buffer_[i]) Cell;
-      buffer_[i].seq.store(i, std::memory_order_relaxed);
-    }
-    enqueue_pos_.store(0, std::memory_order_relaxed);
-    dequeue_pos_.store(0, std::memory_order_relaxed);
+  // capacity must be a power of two >= 2. Buffer is taken from Alloc. Default-alloc
+  // overload needs only the capacity; the explicit-alloc overload injects a runtime one.
+  explicit BoundedQueue(std::size_t capacity)
+      requires std::is_default_constructible_v<Alloc>
+      : mask_(capacity - 1) {
+    init(capacity);
+  }
+  BoundedQueue(Alloc alloc, std::size_t capacity) : alloc_(alloc), mask_(capacity - 1) {
+    init(capacity);
   }
 
   ~BoundedQueue() {
@@ -118,7 +118,20 @@ class BoundedQueue {
     T data;
   };
 
-  mem::Allocator alloc_;
+  void init(std::size_t capacity) {
+    HYLE_FATAL_ASSERT(capacity >= 2 && (capacity & (capacity - 1)) == 0);
+    buffer_ = static_cast<Cell*>(
+        alloc_.allocate(sizeof(Cell) * capacity, alignof(Cell)));
+    HYLE_FATAL_ASSERT(buffer_ != nullptr);
+    for (std::size_t i = 0; i < capacity; ++i) {
+      new (&buffer_[i]) Cell;
+      buffer_[i].seq.store(i, std::memory_order_relaxed);
+    }
+    enqueue_pos_.store(0, std::memory_order_relaxed);
+    dequeue_pos_.store(0, std::memory_order_relaxed);
+  }
+
+  HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
   Cell* buffer_ = nullptr;
   std::size_t mask_;
   // Keep the two contended counters on separate cache lines (canonical Vyukov

@@ -44,7 +44,9 @@ hyle_apply_warnings(hyle_sched_sync_bench)
 # (bench/rust/crossbeam_queue_bench) since it can't link a C++ TU -- run it on its
 # own and lay the ns/op side by side (see docs/architecture/performance.md).
 add_executable(hyle_queue_sota_bench container/queue_sota_bench.cc)
-target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench)
+# BoundedQueue/ShardedQueue default to compile-time SystemAllocator -> inline mi_malloc
+# into this exe; link mimalloc_static (symbols are internal to hyle_mem.dll).
+target_link_libraries(hyle_queue_sota_bench PRIVATE hyle_container nanobench mimalloc_static)
 hyle_apply_warnings(hyle_queue_sota_bench)
 
 # task #19 breadth: the two claim-bearing containers with no prior bench. SmallVector

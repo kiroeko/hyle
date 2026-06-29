@@ -11,10 +11,11 @@
 #include "hyle/platform/thread.h"
 
 using hyle::container::BoundedQueue;
+using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 
 TEST(BoundedQueue, SingleThreadFifo) {
-  BoundedQueue<int> q(system_allocator(), 4);
+  BoundedQueue<int> q(4);  // default = compile-time SystemAllocator
   EXPECT_EQ(q.capacity(), 4u);
   EXPECT_TRUE(q.try_push(10));
   EXPECT_TRUE(q.try_push(20));
@@ -26,20 +27,20 @@ TEST(BoundedQueue, SingleThreadFifo) {
 }
 
 TEST(BoundedQueue, RejectsWhenFull) {
-  BoundedQueue<int> q(system_allocator(), 2);
+  BoundedQueue<int> q(2);
   EXPECT_TRUE(q.try_push(1));
   EXPECT_TRUE(q.try_push(2));
   EXPECT_FALSE(q.try_push(3));  // full (capacity 2)
 }
 
 TEST(BoundedQueue, RejectsWhenEmpty) {
-  BoundedQueue<int> q(system_allocator(), 2);
+  BoundedQueue<int> q(2);
   int v = 0;
   EXPECT_FALSE(q.try_pop(v));
 }
 
 TEST(BoundedQueue, WrapsAroundManyLaps) {
-  BoundedQueue<int> q(system_allocator(), 4);
+  BoundedQueue<int> q(4);
   // Push/pop far more than capacity to exercise sequence wrap-around.
   for (int i = 0; i < 1000; ++i) {
     ASSERT_TRUE(q.try_push(i));
@@ -50,7 +51,7 @@ TEST(BoundedQueue, WrapsAroundManyLaps) {
 }
 
 TEST(BoundedQueue, PointerPayload) {
-  BoundedQueue<void*> q(system_allocator(), 8);
+  BoundedQueue<void*> q(8);
   int a = 1, b = 2;
   EXPECT_TRUE(q.try_push(&a));
   EXPECT_TRUE(q.try_push(&b));
@@ -62,24 +63,25 @@ TEST(BoundedQueue, PointerPayload) {
 // Lock-free correctness gate (Windows stress; TSan deferred to Linux CI).
 // N producers each push a disjoint id range; N consumers drain. The union of
 // popped values must equal exactly the pushed set -- no loss, no duplication.
+// Uses the OPT-IN runtime mem::Allocator variant (covers the scheduler's path).
 TEST(BoundedQueue, MpmcStressConservation) {
   constexpr int kProducers = 4;
   constexpr int kConsumers = 4;
   constexpr int kPerProducer = 100000;
   constexpr int kTotal = kProducers * kPerProducer;
 
-  BoundedQueue<std::uint64_t> q(system_allocator(), 1024);
+  BoundedQueue<std::uint64_t, Allocator> q(system_allocator(), 1024);
   std::atomic<int> produced_done{0};
   std::vector<std::vector<std::uint64_t>> got(kConsumers);
   std::atomic<int> popped_count{0};
 
   struct ProdArgs {
-    BoundedQueue<std::uint64_t>* q;
+    BoundedQueue<std::uint64_t, Allocator>* q;
     int base;
     std::atomic<int>* done;
   };
   struct ConsArgs {
-    BoundedQueue<std::uint64_t>* q;
+    BoundedQueue<std::uint64_t, Allocator>* q;
     std::vector<std::uint64_t>* out;
     std::atomic<int>* done_producers;
     std::atomic<int>* popped;
