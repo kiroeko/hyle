@@ -43,7 +43,11 @@
 |---|---|---|---|---|
 | ns/op | **0.45** | 0.57(HYLE 赢 1.27x) | 1.52(赢 3.4x) | ✅ mix64 真好 |
 
-**结论(一个包装税 + 一个 SOTA 观察 + 一个真赢)**:① **`hash_bytes` 比裸 XXH3 慢 1.05-1.85x,8B 小输入最重**:它是导出函数(`HYLE_CONTAINER_API` 不可内联,藏 7490 行 xxhash.h),裸 XXH3 用 `XXH_INLINE_ALL` 全内联——同 allocator vtable / dtype batch 的**导出包装税**,小工作量下调用开销占比大。② **wyhash 在 256B 比 XXH3 快 3x**(SOTA 观察:中等串 wyhash > XXH3;HYLE 选 XXH3 是质量/分布而非纯速度,设计权衡非缺陷)。③ **`mix64` 整数哈希真赢**:赢 wyhash64 1.27x、赢 std 3.4x(内联无包装税)——这正是 SwissTable 整数键的热路径,印证 find/insert 反超 absl 的哈希基础扎实。
+| 小 POD key(16B 结构,4096) | HYLE Hash<T> 内联 | 旧 hash_bytes 路径 | wyhash | 结论 |
+|---|---|---|---|---|
+| ns/op | **0.59** | 1.76(HYLE 赢 2.98x) | 0.93(赢 1.58x) | ✅ 内联 mix 修复小 key |
+
+**结论(typed 路径已修 + raw API 接缝 + SOTA 观察 + 真赢)**:① **`Hash<T>` 小 POD key 曾走出线 XXH3、慢——已改内联 mix 修复**:通用 POD 路径对 ≤16B key 现走 `detail::hash_small`(内联 mix64,absl/F14 同款),不再调 `hash_bytes`。16B 结构键 **0.59ns 赢旧 XXH3 路径 2.98x、赢 wyhash 1.58x**——这才是 map 定长 key 的真热路径。② **raw `hash_bytes` API 对小输入仍慢裸 XXH3 1.05-1.85x**:它是导出函数(`HYLE_CONTAINER_API` 不可内联,藏 7490 行 xxhash.h),裸 XXH3 全内联——这是 raw 字节 API 隐藏 xxhash 头的**接缝代价**(同 vtable,by-design;变长串 ≥256B 已摊薄至平),典型消费者(定长 key)走 ① 的内联路径不付此税。③ **wyhash 在 256B 比 XXH3 快 3x**(SOTA 观察:中等串 wyhash > XXH3;HYLE 选 XXH3 是质量/分布,设计权衡非缺陷)。④ **`mix64` 整数哈希真赢**:赢 wyhash64 1.27x、赢 std 3.4x——SwissTable 整数键热路径,印证 find/insert 反超 absl 的哈希基础扎实。
 
 
 

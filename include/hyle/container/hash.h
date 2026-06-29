@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <concepts>
+#include <cstring>  // std::memcpy (hash_small small-key load)
 #include <string_view>
 #include <type_traits>
 
