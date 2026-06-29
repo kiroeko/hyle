@@ -15,6 +15,12 @@ hyle_add_bench(container SOURCES container/container_bench_main.cc container/swi
 # links mimalloc PRIVATE, so the bench can't borrow the symbol transitively.
 hyle_add_bench(mem SOURCES mem/allocator_bench.cc DEPS mimalloc_static)
 
+# arena/pool/stack specialized-allocator cluster vs std::pmr (std's arena/pool, no
+# external clone) + raw mimalloc. Own exe (allocator_bench.cc already owns main()).
+add_executable(hyle_arena_pool_bench mem/arena_pool_bench.cc)
+target_link_libraries(hyle_arena_pool_bench PRIVATE hyle_mem nanobench mimalloc_static)
+hyle_apply_warnings(hyle_arena_pool_bench)
+
 # sched bench: fiber switch (~23ns) + spawn throughput vs std::async (~7-9x). Now
 # compiled into the default bench build (no longer withheld). It once crashed at
 # teardown with mimalloc ON, but an exhaustive hunt (docs/debug/ki-1-crash-hunt.md)
