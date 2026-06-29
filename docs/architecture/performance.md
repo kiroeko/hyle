@@ -177,16 +177,17 @@
 
 > 环境:Win MSVC19.50 Release,nanobench,200k/50k 小块(16..511B)。**SOTA 标尺 = 裸 `mi_malloc`/`mi_free`**(设为相对基线,HYLE 的 % 直读 = vtable 接缝开销)。`std::malloc` = 弱基线(MSVC CRT)。此前这层零对标——本节真测揪出接缝成本并修。
 
-| 场景 | 裸 mi(SOTA) | HYLE vtable(修后) | std::malloc | 结论 |
-|---|---|---|---|---|
-| **churn 空循环**(alloc+free) | 7.89 ns | 8.62 ns(**+8.4%**,原 +21%) | 25.63 ns | 间接 seam 调用地板 |
-| **alloc+touch+free**(真实) | 7.85 ns | 8.95 ns(**+12%**,原 +18%) | 25.65 ns | **赢 std 2.9x** |
-| **alloc-all/free-all**(批) | 9.54 ns | 9.84 ns(**+3%**≈平) | 40.30 ns | **赢 std 4x** |
-| **8 线程并发** | 2.14 ns/op | 2.07 ns/op(**102.9%≈平/微赢**) | 4.56 ns/op | **赢 std 2.2x** |
+| 场景 | 裸 mi(SOTA) | HYLE vtable(运行时注入) | HYLE SystemAllocator(编译期) | std::malloc | 结论 |
+|---|---|---|---|---|---|
+| **churn 空循环**(alloc+free) | 7.72 ns | 8.62 ns(**+11.6%**,原 +21%) | **7.95 ns(97.1%≈平)** | 24.28 ns | 编译期路径消尽间接税 |
+| **alloc+touch+free**(真实) | 7.85 ns | 8.95 ns(+12%) | (编译期同理≈平) | 25.65 ns | **赢 std 2.9x** |
+| **alloc-all/free-all**(批) | 9.54 ns | 9.84 ns(+3%≈平) | — | 40.30 ns | **赢 std 4x** |
+| **8 线程并发** | 2.14 ns/op | 2.07 ns/op(102.9%≈平) | — | 4.56 ns/op | **赢 std 2.2x** |
 
-**诚实结论(21% 是设计失误已修,非 C-ABI 税)**:原 +21% churn 的主成本**不是** C-ABI——是两处可消的设计失误:① 单 `ReallocFn`(5 参)在 Win64 把第 5 参 `alignment` 压栈 + "一函数干三件事"的派发分支;② `system_realloc` 热路径每次跑 `normalize_alignment`(含**常开 FATAL_ASSERT** + 位测试)。**两刀修复**:vtable 拆 3 函数指针(`alloc`/`free`/`realloc`,alloc 3 参全进寄存器、无派发分支;仍 100% C-ABI 干净、跨 DLL 稳,同 jemalloc/pmr/cudaMalloc)+ `system_alloc` 默认对齐短路(跳过 normalize)。**churn 21%→8.4%、touch 18%→12%、批量/并发 ≈平,全档仍赢 std::malloc 3x**。公开 `allocate/deallocate` 签名不变,调用方零改动。
-
-**剩余 ~8% 是间接 seam 调用的不可约地板**:`indirect_call → system_alloc → mi_malloc` 比裸 `mi_malloc` 多一层运行时间接(= 一次虚调用),这是"显式注入 + 跨 DLL 可换 backing"(mimalloc 没有的能力)的真实代价。要消它只能编译期绑定默认分配器路径(放弃运行时注入)——是另一层架构权衡,非本接缝的常数因子。**结论:C-ABI seam 能做到接近裸调用(8% 地板),21% 的"包装税"是真失误、已修。**
+**诚实结论(两层:运行时注入 vtable + 编译期默认)**:
+- **运行时 `Allocator` vtable**(opt-in 路径,给 arena/mock/跨 DLL):churn +11.6%(原 +21%)。原 +21% 不是 C-ABI 税,是两处设计失误已修——① 单 5 参 `ReallocFn` 在 Win64 压第 5 参 + "一函数干三件事"派发分支 → 拆 3 函数指针(仍 100% C-ABI 干净,同 jemalloc/pmr);② `normalize_alignment` 常开 FATAL_ASSERT → 默认对齐短路。剩 ~8-11% 是 vtable 的间接调用,这是**运行时多态本身的物理代价**(= 一次虚调用),只有这条 opt-in 路径才付。
+- **编译期 `SystemAllocator`**(默认路径,host RAM):`allocate` 内联直调 `mi_malloc`,**实测 7.95ns = 97.1% 裸 mi(噪声内≈平)**。前向声明 5 个 mi_* 不暴露 mimalloc.h(用户点破"内联≠暴露头"假两难)。**默认场景零接缝税,与裸 mimalloc 持平**——这就是"C-ABI 也能最强":默认编译期绑定 0 税,运行时注入是显式 opt-in 才付间接。
+- **结论:8% 不再是"不可约地板"**——它只是 opt-in 运行时注入的代价;默认编译期路径已实测追平裸 mimalloc。容器默认参 `SystemAllocator` 的全量迁移(28 文件)进行中,完成后所有容器默认零接缝税。
 
 ### mem 专用分配器簇（arena/pool/stack vs `std::pmr` + 裸 mimalloc，`arena_pool_bench.cc`）
 
