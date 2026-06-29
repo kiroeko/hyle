@@ -108,7 +108,7 @@
 
 2. **backoff(`util::cpu_relax` 加在 CAS 失败重试)**:零约束代价(FIFO+有界全留),**2P 反超 moody 1.55x**(Win 62→43);4P 无效(单点 serialize 是硬墙,pause 只错开不增吞吐)。
 
-3. **新 `ShardedQueue`(N 个 Vyukov 子环,生产者 hash 到各自子环)根治**:消除单点争用,**4P 反超 moody 2.6-3.0x、2P 反超 2.6x,且线性扩展**(2P→4P 几乎不恶化:Lin 18→21、Win 25→20,而单环 38→95/42→99 急剧恶化)。**保留有界**(每子环有界),**放弃全局 FIFO**——这对其唯一生产用途(sched `global` 注入可运行 fiber 指针,work-stealing 本就无全局序)**是零代价**:约束服务用途,严格全局 FIFO 在此无用途支撑=可弃的假约束。需 FIFO 的场景仍用 BoundedQueue(单环)。双平台 6/6 测试 + **WSL TSan 零 race**(含 100k×4 MPMC 守恒)。
+3. **新 `ShardedQueue`(N 个 Vyukov 子环,生产者 hash 到各自子环)根治**:消除单点争用,**4P 反超 moody 2.6-3.0x、2P 反超 2.6x,且线性扩展**(2P→4P 几乎不恶化:Lin 18→21、Win 25→20,而单环 38→95/42→99 急剧恶化)。**保留有界**(每子环有界),**放弃全局 FIFO**——这对其唯一生产用途(sched `global` 注入可运行 fiber 指针,work-stealing 本就无全局序)**是零代价**:约束服务用途,严格全局 FIFO 在此无用途支撑=可弃的假约束。需 FIFO 的场景仍用 BoundedQueue(单环)。双平台 6/6 测试 + **WSL TSan 零 race**(含 100k×4 MPMC 守恒)。**已接入 sched `global` 注入队列**(worker idx 作 push hint、per-worker pop cursor、外部注入 round-robin;28/28 sched 测试 + WSL TSan 零 race,fiber 切换 24.96ns 无退化)——价值兑现,不止 benchmark 数字。
 
 > **诚实边界**:① ShardedQueue 的 ns/op 因太快采样不足,nanobench 标 unstable(err 6-11%),但反超幅度(2.6-3x)远超误差带,方向稳健。② **跨语言对照(crossbeam Rust)只能下"同量级/有竞争力"**——亚 ns、~1.2x 差落在 rustc-LLVM vs MSVC + 手写计时 vs nanobench 的噪声内,不下细比 verdict。③ 单环 vs moodycamel 是**有界严格-FIFO vs 无界弱序**两类设计,4P 的"输"是约束选择非实现缺陷(单环已是该约束下 SOTA,rigtorp/folly 同款)。④ work-stealing owner 路径单线程无争用(两侧同样),steal 路径未并发 owner=测无争用 steal。
 

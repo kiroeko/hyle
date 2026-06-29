@@ -86,7 +86,7 @@
 | container-07 | P3 | container | 有界 Chase-Lev work-stealing deque(owner LIFO/DFS,供 graph fork-join) | mem-01 | 1-2k | 249 | ✅ 完成(用途:graph-01,非调度器本地队列) |
 | container-08 | P3 | container | 有界 work-stealing FIFO ring(tokio queue.rs:owner push免同步/pop+thief CAS packed-head/偷半) | mem-01 | 1-2k | 279 | ✅ 完成(sched-03 真前置) |
 | container-09 | P3 | container | ConcurrentVector 读优化并发向量(分段/读 lock-free/写 SpinLock) | mem-01,util-05 | 1-2k | 87 (+98 测试) | ✅ 完成(吸纳 clay parallel/concurrent_vector;修五问题:零拷贝1x内存/move-only/结构性不变量;WSL TSan 零 race) |
-| container-10 | P3 | container | ShardedQueue 分片有界 MPMC(N 个 Vyukov 子环,生产者 hash 分片消单点争用) | container-01 | 0.5-1k | 58 (+171 测试) | ✅ 完成(bench-02b 揪出单环 4P 输 moody 1.7x=单点 CAS 争用→分片根治;**反超 moody 2.6-3x、线性扩展**;复用 BoundedQueue placement-new 避 std 拥有型成员;保留有界弃全局 FIFO;双平台+WSL TSan 零 race。sched global 切换待) |
+| container-10 | P3 | container | ShardedQueue 分片有界 MPMC(N 个 Vyukov 子环,生产者 hash 分片消单点争用) | container-01 | 0.5-1k | 58 (+171 测试) | ✅ 完成(bench-02b 揪出单环 4P 输 moody 1.7x=单点 CAS 争用→分片根治;**反超 moody 2.6-3x、线性扩展**;复用 BoundedQueue placement-new 避 std 拥有型成员;保留有界弃全局 FIFO;双平台+WSL TSan 零 race。**已接入 sched global 注入**(28/28+TSan,fiber switch 无退化)) |
 | util-01 | P3 | util | ref_counted(Ref<T> CRTP) + scope_guard(HYLE_DEFER) | 00 | 1k | 168 (+186 测试) | ✅ 完成(修 clay destroy CRTP bug;decref release+fence;concepts 替 SFINAE) |
 | util-02 | P3 | util | 编译期 type_name<T> + type_hash<T> | 00 | 0.5k | 44 (+50 测试) | ✅ 完成(probe 派生偏移>clay 硬编码;FNV-1a constexpr) |
 | util-03 | P3 | util | registry 自注册 + DECLARE/DEFINE 宏 | util-02,container-04 | 1k | 94 (+92 测试) | ✅ 完成(SwissTable 替3map;函数指针 Entry 内联;fail-fast 替 exit;三套收一套) |
