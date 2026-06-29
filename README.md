@@ -34,7 +34,7 @@
 | **util** | **Ref<T> 引用计数 + ScopeGuard/DEFER + 编译期 type_name + Registry 自注册** | ✅ |
 | **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 + **Waker completion 脊(suspend/wake)** | 🔶 deadline/协程/取消 待 |
 | **bench** | nanobench 设施 + SwissTable/string 对标 std | ✅ |
-| **simd** | 运行期 CPUID dispatch(探测+变体选择) + vec<T,N> D-tag 抽象(照搬 Highway 契约) + scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec) + **fp16/bf16 dtype 转换(F16C 硬件)** | 🔶 NEON/AVX512/数学核 待 |
+| **simd** | 运行期 CPUID dispatch(探测+变体选择) + vec<T,N> D-tag 抽象(照搬 Highway 契约) + scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec) + fp16/bf16 dtype(F16C) + **exp/log/tanh 数学核(借 SLEEF)** + NEON/AVX512(写+编+objdump 验,未跑) | 🔶 NEON/AVX512 待目标硬件实跑;gelu/softmax 待 |
 | io / compute / graph | — | 📋 规划 |
 
 **性能验证(已落地部分)**:SwissTable vs `std::unordered_map`(100k keys,双平台):find-hit 2.7x、find-miss 2.3x、insert 6.1x、erase 4.1x。

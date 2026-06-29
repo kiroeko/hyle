@@ -24,7 +24,7 @@ hyle_add_test(container SOURCES container/bounded_queue_test.cc container/work_s
 # arch flag to enable the intrinsics; MSVC x64 has SSE4.2 unconditionally and uses
 # /arch:AVX2 for the 256-bit build. These variant exes run on the build host, which must
 # support the ISA (both dev platforms are AVX2 -- matches the variant-DLL test model).
-hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/ops_test.cc simd/dtype_test.cc)
+hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/ops_test.cc simd/dtype_test.cc simd/math_test.cc)
 if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
   hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4)
   hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS /arch:AVX2)

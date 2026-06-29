@@ -17,7 +17,10 @@ hyle_add_module(simd SOURCES
   ops/kernels_avx2.cc
   dtype/dtype_dispatch.cc
   dtype/cvt_scalar.cc
-  dtype/cvt_f16c.cc)
+  dtype/cvt_f16c.cc
+  math/math_dispatch.cc
+  math/transcendental_scalar.cc
+  math/transcendental_sleef.cc)
 
 # Per-variant ISA flags: each kernel TU gets ONLY its target's -march; the dispatcher and
 # probe stay baseline. MSVC x64 has SSE4.2 intrinsics unconditionally (sse4/scalar need no
@@ -41,6 +44,31 @@ endif()
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:
 # it keeps the AVX2 kernel TU's codegen from being inlined into the baseline dispatcher.
 set_target_properties(hyle_simd PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
+
+# --- simd-06: SLEEF-accelerated transcendentals (opt-in) ----------------------------
+# Vectorized exp/log/tanh BORROW SLEEF's verified cores. Off by default (vectorized math
+# needs a prebuilt SLEEF); enable with -DHYLE_SIMD_SLEEF=ON + -DHYLE_SLEEF_DIR=<built
+# sleef> (containing include/sleef.h + lib/libsleef.a|sleef.lib). We consume the PREBUILT
+# lib + its PORTABLE declaration header (dual-platform; SLEEF's inline headers are
+# GCC-only and are NOT used). Without this, math.h is correct via libm, just not
+# vectorized. The transcendental_sleef.cc TU compiles to a no-op unless HYLE_SIMD_SLEEF.
+option(HYLE_SIMD_SLEEF "wire SLEEF for vectorized exp/log/tanh (needs HYLE_SLEEF_DIR)" OFF)
+if(HYLE_SIMD_SLEEF)
+  set(HYLE_SLEEF_DIR "${PROJECT_SOURCE_DIR}/../sleef/build-inline" CACHE PATH "prebuilt SLEEF")
+  find_library(HYLE_SLEEF_LIB NAMES sleef PATHS "${HYLE_SLEEF_DIR}/lib" REQUIRED NO_DEFAULT_PATH)
+  if(NOT EXISTS "${HYLE_SLEEF_DIR}/include/sleef.h")
+    message(FATAL_ERROR "HYLE_SIMD_SLEEF=ON but no sleef.h at ${HYLE_SLEEF_DIR}/include")
+  endif()
+  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_SLEEF)
+  target_include_directories(hyle_simd SYSTEM PRIVATE "${HYLE_SLEEF_DIR}/include")
+  target_link_libraries(hyle_simd PRIVATE "${HYLE_SLEEF_LIB}")
+  # the SLEEF TU calls _mm256_* SLEEF entries; needs AVX2+FMA codegen (gated by best_isa).
+  if(MSVC)
+    set_source_files_properties(math/transcendental_sleef.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+  else()
+    set_source_files_properties(math/transcendental_sleef.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
+  endif()
+endif()
 
 # BASELINE ASSUMPTION (the SIGILL-safety contract): for a DISTRIBUTABLE binary, build the
 # whole module at the default baseline -- only the per-variant kernel TUs above get a wide
