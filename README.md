@@ -30,14 +30,14 @@
 | **platform** | thread + park(futex/WaitOnAddress) + **dynlib(RAII)** + **fs/env(stat/mkdir/iterate/cwd/temp/home/getenv,buffer-fill+visitor)** | 🔶 vm 待 |
 | **mem** | Allocator vtable(修 alignment) + **mimalloc backing(Win 4–12x>默认堆)** + MemoryArena(无锁) + Arena bump + ObjectPool + StackAllocator | 🔶 NUMA/大页 待 |
 | **time** | 单调钟 + 墙钟 + sleep + Instant(ns) | ✅ |
-| **container** | XXH3 哈希 + CArray + **SwissTable(SIMD 探测,对 std 快 2.7–6.1x;type-erased 冷核 + NEON)** + SmallVector + intrusive list + lock-free MPMC/SPSC/work-stealing 队列 + **string_ref/string_buf + 字节串算法 + path 路径操作** | ✅ |
+| **container** | XXH3 哈希 + CArray + **SwissTable(SIMD 探测,对 std 快 2.4–5.3x、追平/超 absl;type-erased 冷核 + NEON)** + SmallVector + intrusive list + lock-free MPMC/SPSC/work-stealing 队列 + **string_ref/string_buf + 字节串算法 + path 路径操作** | ✅ |
 | **util** | **Ref<T> 引用计数 + ScopeGuard/DEFER + 编译期 type_name + Registry 自注册** | ✅ |
 | **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 + **Waker completion 脊(suspend/wake)** + **同步原语(futex Mutex 打平 marl;fiber-aware CV/WaitGroup/Latch/Channel,双模 fiber/裸线程)** | 🔶 栈池/deadline/协程/取消 待 |
 | **bench** | nanobench 设施 + SwissTable/string 对标 std | ✅ |
 | **simd** | 运行期 CPUID dispatch(探测+变体选择) + vec<T,N> D-tag 抽象(照搬 Highway 契约) + scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec) + fp16/bf16 dtype(F16C) + **exp/log/tanh 数学核(借 SLEEF)** + NEON/AVX512(写+编+objdump 验,未跑) | 🔶 NEON/AVX512 待目标硬件实跑;gelu/softmax 待 |
 | io / compute / graph | — | 📋 规划 |
 
-**性能验证(已落地部分)**:SwissTable vs `std::unordered_map`(100k keys,Linux GCC14,mix64+prefetch+H1 优化后复测):find-hit 2.42x、find-miss 2.26x、insert 5.3x、erase 3.5x;vs `absl::flat_hash_map` 四项全部追平或反超(见 performance.md)。
+**性能验证(已落地部分)**:SwissTable vs `std::unordered_map`(100k keys,Linux GCC14,mix64+prefetch+H1 优化后复测):find-hit 2.42x、find-miss 2.26x、insert 5.3x、erase 3.5x;vs `absl::flat_hash_map` 四项全部追平或反超。**fiber 同步/调度 vs marl(SOTA 标尺)**:fiber 切换 21ns(=boost.context)、spawn 2.17x、争用 Mutex 打平、无争用 Mutex(多线程)1.40x、fork-join 反超 1.49–1.71x。详见 [`performance.md`](./docs/architecture/performance.md)。
 
 **边界诚实**:已实现件局限于 **x86-64 Windows/Linux 真验**;ARM64 + macOS 路径多为"已写未验"(无测试机);simd 的 scalar/SSE4.2/AVX2 后端 x86 实跑,**NEON/AVX512 后端写+编+objdump 验但未在目标硬件实跑**;io/compute/graph 三支柱尚未开工。
 

@@ -47,8 +47,10 @@
 
 | 项 | 实测(Linux GCC14) | 参考 |
 |---|---|---|
-| fiber 上下文切换(resume/yield 对) | **~23 ns**(v2.3.2 实测 22.84ns) | fcontext 量级,对标 boost.context |
-| spawn 2000 任务 + drain | **比 `std::async(launch::async)` 快 ~6-9x** | std::async 每任务起 OS 线程(~30μs);fiber ~3-4μs |
+| fiber 上下文切换(resume/yield 对) | **~21-23 ns**(本 session 复测 21.0ns) | fcontext 量级,= boost.context 原语本身(零封装开销) |
+| spawn 2000 任务 + drain | vs `std::async` 快 144x(**弱基线**)→ **真 SOTA 见下 sched-05 节:vs marl 快 2.17x** | std::async 每任务起 OS 线程(稻草人);真标尺是 marl 调度器 |
+
+> **注**:spawn 的权威数字在下方 sched-05 节(对标 marl,非 std::async)。此处保留 std::async 行仅作"赢最低门槛"的历史参照。
 
 > sched bench(`bench/sched/scheduler_bench.cc`)**现已编入默认 build**(提交后解封)。
 > 它曾被认为触发一个 P0 崩溃,但一轮穷尽调查(见 [`../debug/ki-1-crash-hunt.md`](../debug/ki-1-crash-hunt.md)
