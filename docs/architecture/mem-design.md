@@ -5,7 +5,7 @@
 ## clay 现状：好地基 + 5 个确认 bug
 
 - **`Allocator` 注入 vtable**（`allocator.h`）：clay 原是**单**函数指针 `realloc_func(inst,ptr,old,new)`(挤 alloc/free/realloc 进一个、丢弃 alignment)。**HYLE 已纠正**:拆成 3 个 C 函数指针 `{alloc,free,realloc}`(各自寄存器友好、带 alignment、无派发分支,仍 C-ABI 跨 DLL 稳),且**降为 opt-in**——默认走编译期 `SystemAllocator`(内联 mimalloc,零接缝税),运行时注入只给真要多态的场景(arena/mock/跨 DLL)。
-- **`MemoryArena` 分片无锁定长块池**（`memory_arena.h`）：tagged-pointer CAS 防 ABA，lock-free、ABA 安全。clay 原版是**单** `head_`——8 线程 CAS 同一 cache line,O(threads) 串行化,实测慢 mimalloc per-thread heap 278x(performance.md mem 节)。**已分片根治**:内部 N 片(默认 16)各占独立 cache line,线程 homing 自己片(同线程无争用),free 按地址路由回属主片——278x→1.95x,O(N)争用→O(1) per-shard。这落地了 mem-design 列为"硬约束"却久欠的 per-core 池。残留 1.95x 是原子 CAS 常数因子(vs mimalloc 非原子 local list),进一步逼近需 xcpu_freelist(见下)。单线程仍首选 `StackAllocator`/`GrowablePool`(零原子,超 SOTA)。
+- **`MemoryArena` 分片无锁定长块池**（`memory_arena.h`）：tagged-pointer CAS 防 ABA，lock-free、ABA 安全。clay 原版是**单** `head_`——8 线程 CAS 同一 cache line,O(threads) 串行化,实测慢 mimalloc per-thread heap 278x(performance.md mem 节)。**已分片根治**:片数 = 核数向上取 2 的幂(上限 128,非固定 16——固定数在线程>片数时又退化 O(⌈T/片⌉)),各占独立 cache line,线程 homing 自己片(同线程无争用),free 按地址路由回属主片——278x→1.94x,O(N)争用→O(1) per-shard。这落地了 mem-design 列为"硬约束"却久欠的 per-core 池。**残留 1.94x 不是真落后**:那是拿"8 线程**共享一个**固定池"对"mimalloc 的 **8 个 per-thread heap**"——apples-to-oranges(workload 全同线程 free,mimalloc 走非原子 local list;共享一块固定 slab 跨线程协调本就要每 op 一次原子 CAS)。**公平对照(双方都 per-thread)HYLE `GrowablePool` 每线程一个池 0.72ns 反超裸 mi per-thread heap 1.28ns 1.78x**(performance.md 实测)。同线程 churn 选对工具(per-thread 池)即超 SOTA;共享固定有界池的 1.94x 是诚实标价,逼到 1.0x 需 seastar 契约(线程钉死 per-core 终生、池长于线程),通用生命周期给不出(见下 xcpu_freelist)。
 - **无隐藏全局堆**:分配显式可控。默认走编译期 `SystemAllocator`(零开销);需要自定义分配器(arena/mock/跨 DLL)时**显式 opt-in 注入** `Allocator` 句柄。注入是**能力,不是强制默认**——曾把"注入贯穿"当铁律,导致每个容器都吃运行时间接调用税(实测 8%),按性能优先纠正:默认零开销,注入按需。
 - **5 个 bug**（资产负债表已定位，重写依据）：
   1. `allocate(size, alignment)` **静默丢弃 alignment**（`allocator.h:37-40`）——**对 simd/ 是硬伤**（AVX512 要 64B 对齐），必修。
@@ -94,9 +94,9 @@ mem/
 | **pinned（page-locked）** | `cudaHostAlloc` / `cudaHostRegister` | host↔device DMA 快得多；不锁页 GPU 拷贝走可分页内存慢 |
 | **cache-line 对齐 + 防伪共享** | `alignas(64)`，per-core 结构按 cache-line padding | 并发结构（run-queue、计数器）伪共享杀性能 |
 | **64B 对齐契约** | `allocate` 真正传递 alignment 到 backing | simd/ AVX512 load/store 要求；修 clay 的 alignment 丢弃 bug |
-| **跨核 free（xcpu_freelist）** | 跨核释放推到属主核的无锁 freelist，属主周期 drain（照镜 seastar `memory.cc` 的 `cross_cpu_free_item`）| **work-stealing 必需**：fiber 被偷到别的核运行后，其栈/buffer 在非分配核释放；per-core 分配器不能假设"同核 free"，否则数据竞争或泄漏 |
+| **跨核 free（已由地址路由原子 push 解决；xcpu_freelist 仅是被否决的同线程常数优化）** | 跨核释放按地址路由回属主片、原子 push(已实现,正确)。seastar 的 `cross_cpu_free_item` 式 owner-local 非原子表是**额外的同线程快路优化**,经评估**不采用**(理由见下) | 正确性已由 `MemoryArena` 的地址路由原子 free 保证(跨核 free 安全、无泄漏);xcpu_freelist 只省同线程那次原子 CAS(1.94x 常数因子),与固定 slab 的"不假性耗尽"硬冲突,且引入线程/池生命周期耦合 |
 
-> **为什么必须加 xcpu_freelist**：mem/ 的 per-core 分配器（arena/pool）天然假设"谁分配谁释放、同核"。但 sched/ 是 work-stealing——fiber 连同它的栈/buffer 会被偷到别的核、在那里结束并释放。seastar 是 share-nothing 无此问题；HYLE 选了 work-stealing，就必须补这块（seastar 已验证的方案）。这是 work-stealing 对 mem/ 的硬约束，不是可选优化。
+> **xcpu_freelist 为什么评估后不采用**(2026-06 决策,对抗式推演记录):跨核 free 的**正确性** `MemoryArena` 已经给了——free 按地址路由回块的属主片、原子 push,跨核释放安全无泄漏(work-stealing 把 fiber 栈偷到别的核释放也 OK)。xcpu_freelist 唯一多给的是**性能**:把同线程那次原子 CAS 换成非原子 owner-local 表(逼近 mimalloc 的 1.94x 常数因子)。但忠实搬 seastar 模型到 HYLE 的通用生命周期固定池,撞上一个真实健全性阻塞:**固定 slab 的"不假性耗尽"契约**(任一片空了必须能拿别片的块,测试在 join 后要全量回收 256 块)与**"非原子 local 表只许属主碰"**硬冲突——偷只能碰别片的原子 remote 表,于是块攒在 owner 的非原子 local 表时其他线程拿到 nullptr(并发期短暂假性耗尽,可容忍),但 join 后这些块必须仍可达 ⟹ local 表得放池内存(非 thread_local)⟹ owner 交接撞 **tid 复用**(没法判旧 owner 已死)⟹ 安全交接只能靠线程退出信号(thread_local 析构 splice local→remote)⟹ 引回**池生命周期耦合 + 进程级反注册表**(main 的 thread_local 在程序退出才析构,那时池早没了 → UAF,得让池析构反注册所有 owner ticket,带锁,~100 行微妙无锁代码)。seastar 没这问题是因为它 **share-nothing + 线程钉死 per-core 终生 + per-core 池可向 OS 增长(从不跨核偷)+ 池生命周期=进程**;HYLE 的 `MemoryArena` 是**通用生命周期的共享固定 slab**,给不出这三个契约。**权衡**:为一个零内部用户的组件、收一个低于"复杂度等同/超越 SOTA"既定标尺的常数因子,买入真实 UAF/竞争面 —— 不值。**正解是选对工具**:同线程 churn 用 per-thread 池(`GrowablePool` 0.72ns 已反超 mimalloc 1.78x);真要共享有界固定池,1.94x 是诚实标价。
 
 ## 与其他模块的耦合
 

@@ -34,7 +34,7 @@ Seastar 是参考标杆：per-core + DPDK/SPDK 内核旁路 IO、completion 驱�
 - **HYLE 选 work-stealing，不选 share-nothing**：北极星是"百万 IO-bound agent、唤醒突发且不可均分"，share-nothing 的负载不均在此是致命伤（热 shard 无法卸载、agent 无法干净分区）。
 - **Seastar 完全没有异构加速维度**（实测全库 0 个 `.cu`、无 GPU/AMX/特化注册），且是 2019 前设计、诞生在 AI-native 负载之前。
 
-"做得比它好" = **借它的 per-core io/mem 局部性 + completion 驱动事件循环 + reactor_backend 后端抽象 + 跨核 free 的 xcpu_freelist；不借它的 share-nothing 调度（HYLE 用 work-stealing）；补上它缺的异构加速维度（能力门控 + GPU 统一进 completion 脊）**。后两者正是 AI-native 负载需要、Seastar 时代不存在的。
+"做得比它好" = **借它的 per-core io/mem 局部性 + completion 驱动事件循环 + reactor_backend 后端抽象;不借它的 share-nothing 调度（HYLE 用 work-stealing）;补上它缺的异构加速维度（能力门控 + GPU 统一进 completion 脊）**。后两者正是 AI-native 负载需要、Seastar 时代不存在的。(注:seastar 的 xcpu_freelist 评估后未借——它依赖 share-nothing+线程钉死,HYLE 的通用生命周期固定池给不出该契约;跨核 free 的正确性 HYLE 用地址路由原子 push 已解决,详见 mem-design。)
 
 ## 极致 = 吃尽各家硬件独家加速（HYLE 的硬要求）
 

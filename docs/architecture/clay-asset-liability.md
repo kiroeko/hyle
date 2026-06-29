@@ -27,7 +27,7 @@
 |---|---|---|---|
 | Allocator 接口 + SYS_* 家族 | `sys/allocator.h` | ✅ 直接继承 | C-ABI 友好，接口层留用 |
 | SystemAllocator / AlignedAllocator | `sys/allocator.cc` | 🔧 改后继承 | 含计数 bug |
-| MemoryArena（分片无锁定长块池）| `sys/memory_arena.cc` | 🔧 改后继承 | lock-free ABA 安全;clay 单 head_ 8 线程慢 mi 278x(单点 CAS),**已分片根治→1.95x**(N 片各占 cache line,见 performance.md);残留常数因子待 xcpu_freelist |
+| MemoryArena（分片无锁定长块池）| `sys/memory_arena.cc` | 🔧 改后继承 | lock-free ABA 安全;clay 单 head_ 8 线程慢 mi 278x(单点 CAS),**已分片根治→1.94x**(片数=核数取 2 的幂,各占 cache line,见 performance.md);残留 1.94x 是"共享固定池 vs per-thread heap"apples-to-oranges,非真落后(per-thread 池 0.72ns 反超 mi 1.78x;xcpu_freelist 评估后否决,理由见 mem-design) |
 | Arena（bump 分配器）| `sys/memory_arena.cc:76` | ✅ 直接继承 | 无锁 bump |
 | MemoryPool（STL 兼容）| `utils/memory_pool.h` | ✅ 继承 | 经典第三方实现 |
 | generic_allocator / alignment | `utils/generic_allocator.h`、`sys/alignment.h` | ✅ 继承 | 薄封装，正确 |

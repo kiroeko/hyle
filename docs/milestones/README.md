@@ -68,7 +68,7 @@
 | mem-03 | P2 | mem | MemoryArena 无锁块池 + 修 64 槽上限 | mem-01 | 2-3k | 209 | ✅ 完成(块池+Arena bump) |
 | mem-03b | P2 | mem | Arena bump 分配器 + ArenaAllocator 适配 + make_arena_allocator | mem-03 | 1k | 并入memory_arena.h | ✅ 完成(补漏:clay memory_arena.cc 另半) |
 | mem-04 | P2 | mem | ObjectPool + StackAllocator 推倒重写(修 UB) | mem-02 | 2-3k | 197 | ✅ 完成(坐 mem-03 上;修 bug#3/#4) |
-| mem-05 | P2 | mem | MemorySpace 组合抽象 + xcpu_freelist | mem-03 | 2-3k | — | 占位 |
+| mem-05 | P2 | mem | ~~MemorySpace 组合抽象 + xcpu_freelist~~ | mem-03 | — | — | ⛔ 双双否决:MemorySpace=异构内存过度设计(device 边界=显式 copy,统一内存无互传,见 mem-design);xcpu_freelist=同线程常数优化,与固定 slab"不假性耗尽"硬冲突+生命周期耦合,评估后不采用(跨核 free 正确性已由地址路由原子 push 给,理由见 mem-design) |
 | mem-06 | P2 | mem | NUMA + 大页 + stats(修下溢) | mem-05 | 2-3k | — | 占位 |
 | mem-07 | P2 | mem | GrowablePool(growable/单线程池) + PmrResource(std::pmr 适配) | mem-03 | 1-2k | 145 (+116 测试) | ✅ 完成(吸纳 clay memory_pool/stl_allocator/generic_allocator;修 clay move-assign bug;generic_allocator⛔=Allocator 已是它) |
 | time-01 | P2 | time | 单调钟(CLOCK_MONOTONIC/QPC) | platform-01 | 1k | 103 (+62 测试) | ✅ 完成(加 clay 缺的单调钟;ns精度;Instant) |

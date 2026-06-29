@@ -143,13 +143,25 @@ int main() {
     });
   }
 
-  // ---- C. CONCURRENT pool churn: the lock-free design POINT ----
-  // The single-thread rows above measure MemoryArena OUTSIDE its design point --
-  // a lock-free pool pays an atomic CAS per op that a single-thread pool skips.
-  // Its reason to exist is SHARED concurrent churn. Fair read: 8 threads hammer
-  // ONE shared MemoryArena vs raw mi (per-thread heaps = the concurrent SOTA).
-  // (std::pmr::unsynchronized_pool_resource is NOT thread-safe -> not a rival
-  // here; the synchronized_pool_resource would just be a global lock.)
+  // ---- C. CONCURRENT pool churn: APPLES-TO-APPLES, not apples-to-oranges ----
+  // The headline "8-thread mimalloc beats shared MemoryArena 1.95x" is NOT a fair
+  // fight, and saying otherwise would be a self-deception. mimalloc's 8-thread
+  // number is EIGHT PER-THREAD HEAPS: every alloc/free here is SAME-THREAD, which
+  // mimalloc serves with a NON-ATOMIC thread-local free list. A single SHARED
+  // fixed-slab pool can't do that -- coordinating one slab across threads costs an
+  // atomic CAS per op (even sharded + uncontended, the `lock` prefix isn't free).
+  // So the rows below separate the two honest questions:
+  //
+  //   (1) "I want per-thread same-size churn" -> the SOTA pattern is a pool PER
+  //       THREAD (that IS what mimalloc does internally). HYLE's matching answer
+  //       is GrowablePool-per-thread: no atomics, no sharing -> parity/beat mi.
+  //   (2) "I genuinely need ONE shared fixed pool" (a bounded resource every
+  //       thread draws from) -> MemoryArena. Its 1.95x vs per-thread-heap mi is
+  //       the real, irreducible cost of that coordination, NOT a complexity gap
+  //       (sharding already killed the O(threads) 278x). Closing this constant
+  //       further needs seastar's model (threads pinned per core for life, pool
+  //       outlives them) -- a contract MemoryArena's general lifetime can't make.
+  // (std::pmr::unsynchronized_pool_resource is NOT thread-safe -> not a rival.)
   {
     constexpr int kThreads = 8;
     constexpr int kPer = 50000;
@@ -159,15 +171,32 @@ int main() {
       for (int t = 0; t < kThreads; ++t) ts.emplace_back(body);
       for (auto& th : ts) th.join();
     };
+    struct Obj { std::byte b[kObj]; };
     nb::Bench b;
-    b.title("8-thread SHARED pool churn (lock-free design point)")
+    b.title("8-thread pool churn: per-thread (fair) vs shared (coordination cost)")
         .relative(true)
         .batch(kThreads * kPer)
         .minEpochIterations(10);
 
-    // One MemoryArena shared by all 8 threads (its lock-free reason to exist).
+    // (1) APPLES-TO-APPLES: a GrowablePool PER THREAD (no sharing, no atomics) --
+    // HYLE's SOTA-parity answer for per-thread same-size churn, the SAME shape as
+    // mimalloc's per-thread heaps.
+    b.run("HYLE GrowablePool (8 threads, 1 pool EACH = fair vs mi)", [&] {
+      run_threads([&] {
+        GrowablePool<Obj> local(sys, 256);
+        for (int i = 0; i < kPer; ++i) {
+          Obj* p = local.create();
+          nb::doNotOptimizeAway(p);
+          local.destroy(p);
+        }
+      });
+    });
+
+    // (2) ONE MemoryArena shared by all 8 threads: the honest shared-fixed-slab
+    // coordination cost (atomic CAS/op), NOT a per-thread heap. Sharding removed
+    // the O(threads) contention (278x->1.95x); the residual is the CAS constant.
     MemoryArena shared(sys, kObj, kThreads * 256);  // small pool -> real reuse churn
-    b.run("HYLE MemoryArena (8 threads, 1 shared pool)", [&] {
+    b.run("HYLE MemoryArena (8 threads, 1 SHARED pool)", [&] {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
           void* p = shared.allocate();
@@ -177,8 +206,9 @@ int main() {
       });
     });
 
-    // raw mi_malloc/free, 8 threads -- mimalloc's per-thread heaps are the SOTA
-    // concurrent allocator (no inter-thread contention by design).
+    // raw mi_malloc/free, 8 threads -- mimalloc's per-thread heaps (non-atomic
+    // same-thread free). The fair rival to row (1), the apples-to-oranges baseline
+    // for row (2).
     b.run("raw mi_malloc/free (8 threads, per-thread heaps)", [&] {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {

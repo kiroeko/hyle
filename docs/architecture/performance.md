@@ -191,33 +191,39 @@
 
 ### mem 专用分配器簇（arena/pool/stack vs `std::pmr` + 裸 mimalloc，`arena_pool_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench,8192×64B。**SOTA 标尺 = `std::pmr`**(标准库自带的 arena=`monotonic_buffer_resource`、pool=`unsynchronized_pool_resource`,完美 drop-in,无需 clone)+ 裸 `mi_malloc`(=`new/delete` 的实际 backing,即"5-10x vs new/delete"声明的对照基线)。**此前这簇零对标——本节真测揪出两个无锁变体的单点 CAS 争用(已分别根治:MemoryArena 分片 278x→1.95x,Arena 去原子 10.3x)。**
+> 环境:Win MSVC19.50 Release,nanobench,8192×64B。**SOTA 标尺 = `std::pmr`**(标准库自带的 arena=`monotonic_buffer_resource`、pool=`unsynchronized_pool_resource`,完美 drop-in,无需 clone)+ 裸 `mi_malloc`(=`new/delete` 的实际 backing,即"5-10x vs new/delete"声明的对照基线)。**此前这簇零对标——本节真测揪出两个无锁变体的单点 CAS 争用(已分别根治:MemoryArena 分片 278x→1.94x,Arena 去原子 10.3x),并纠正了一处 apples-to-oranges 对照(共享固定池 vs per-thread heap,见结论 4)。**
 
 | bump 场景(alloc N + 批量释放) | ns/op | vs 裸 mi | 结论 |
 |---|---|---|---|
-| **HYLE Arena**(单线程 bump,池块) | **0.66** | **6.0x** | ✅ 去原子后平 Stack、赢 std::pmr 2.2x |
-| **HYLE StackAllocator**(单线程自有 slab) | **0.65** | **6.0x** | ✅ 真兑现 |
-| std::pmr::monotonic_buffer(SOTA) | 1.47 | 2.7x | Arena/Stack 赢它 2.2x |
-| 裸 mi_malloc(general,无批量) | 3.94 | 1.0x | — |
+| **HYLE Arena**(单线程 bump,池块) | **0.67** | **6.1x** | ✅ 去原子后平 Stack、赢 std::pmr 2.2x |
+| **HYLE StackAllocator**(单线程自有 slab) | **0.65** | **6.3x** | ✅ 真兑现 |
+| std::pmr::monotonic_buffer(SOTA) | 1.49 | 2.7x | Arena/Stack 赢它 2.2x |
+| 裸 mi_malloc(general,无批量) | 4.07 | 1.0x | — |
 
 | pool churn 场景(同尺寸 alloc/free) | ns/op | vs 裸 mi | 结论 |
 |---|---|---|---|
-| **HYLE MemoryArena**(分片无锁池) | 14.71 | **0.32x(慢 3.1x)** | 单线程原子 CAS 常数因子 |
-| **HYLE GrowablePool**(单线程) | **1.83** | **2.57x** | ✅ 真兑现 |
-| std::pmr::unsync_pool(SOTA) | 5.99 | 0.79x | — |
-| 裸 mi_malloc/free(general) | 4.72 | 1.0x | — |
-| **8 线程共享 MemoryArena**(分片后,设计点) | **2.47** | **0.51x(慢 1.95x)** | ✅ **分片修复:278x→1.95x** |
-| └ 裸 mi(8 线程 per-thread heap) | 1.27 | — | mimalloc 零争用 |
+| **HYLE MemoryArena**(分片无锁池) | 15.00 | **0.32x(慢 3.1x)** | 单线程原子 CAS 常数因子 |
+| **HYLE GrowablePool**(单线程) | **1.92** | **2.54x** | ✅ 真兑现 |
+| std::pmr::unsync_pool(SOTA) | 6.72 | 0.72x | — |
+| 裸 mi_malloc/free(general) | 4.87 | 1.0x | — |
+
+**8 线程 pool churn——公平对照(双方都 per-thread)vs 共享固定池的协调代价:**
+
+| 8 线程同尺寸 churn | ns/op | vs 裸 mi per-thread | 结论 |
+|---|---|---|---|
+| **HYLE GrowablePool**(每线程一个池) | **0.72** | **1.78x 反超** | ✅ 同线程 churn 的 apples-to-apples 答案 |
+| 裸 mi(per-thread heap) | 1.28 | 1.0x | mimalloc 同线程非原子 local list |
+| **HYLE MemoryArena**(8 线程**共享**一个固定池) | 2.48 | 0.51x(慢 1.94x) | 共享固定 slab 的协调代价(每 op 一次原子 CAS) |
 
 **核心诚实结论(揪出第三个"自以为 SOTA"——单点原子,两处已修)**:
 
-1. **"专用分配器 5-10x vs new/delete"全部坐实**:`StackAllocator`(纯指针 bump,0.65ns)+ `Arena`(去原子后 0.66ns)**6x 赢裸 mi、2.2x 赢 std::pmr arena**;`GrowablePool`(单线程 free-list,1.83ns)2.57x 赢裸 mi、3.3x 赢 std::pmr pool。四个单线程/去原子变体全是真 SOTA。
+1. **"专用分配器 5-10x vs new/delete"全部坐实**:`StackAllocator`(纯指针 bump,0.65ns)+ `Arena`(去原子后 0.67ns)**6x 赢裸 mi、2.2x 赢 std::pmr arena**;`GrowablePool`(单线程 free-list,1.92ns)2.54x 赢裸 mi、3.5x 赢 std::pmr pool。四个单线程/去原子变体全是真 SOTA。
 
-2. **`MemoryArena` 曾是全场最慢——单点 CAS 争用,已分片根治**:原 clay 继承的单 `head_` 让 8 线程 CAS 同一 cache line,O(threads) 串行化——8 线程共享(**它存在的理由**)慢 mimalloc per-thread heap **278x**,单线程也慢裸 mi 2.88x。诊断:与 BoundedQueue 单点 CAS 同病(churn 更密故惨烈得多)。**修复**(`memory_arena.h`):内部分 N 片(默认 16),每片独立 Treiber 头占独立 cache line,线程按 tls 序号 homing 到自己片(同线程 alloc/free 无争用),free 按地址 O(1) 路由回属主片。**8 线程 344.72→2.47ns,278x→1.95x(~140x 改善),复杂度落后(O(N)争用→O(1) per-shard)消除**。双平台 10/10 + WSL TSan 零 race。这同时补上了 mem-design 列为"硬约束"却从未实现的 per-core 池。
+2. **`MemoryArena` 曾是全场最慢——单点 CAS 争用,已分片根治**:原 clay 继承的单 `head_` 让 8 线程 CAS 同一 cache line,O(threads) 串行化——8 线程共享慢 mimalloc per-thread heap **278x**,单线程也慢裸 mi 2.88x。诊断:与 BoundedQueue 单点 CAS 同病(churn 更密故惨烈得多)。**修复**(`memory_arena.h`):内部分 N 片(片数=核数向上取 2 的幂,上限 128——非固定 16,固定数在线程>片数时又退化 O(⌈T/片⌉)),每片独立 Treiber 头占独立 cache line,线程按 tls 序号 homing 到自己片(同线程 alloc/free 无争用),free 按地址 O(1) 路由回属主片。**8 线程 344.72→2.48ns,278x→1.94x(~139x 改善),复杂度落后(O(N)争用→O(1) per-shard)消除**。双平台 10/10 + WSL TSan 零 race。这同时补上了 mem-design 列为"硬约束"却从未实现的 per-core 池。残留 1.94x 见结论 4(是 apples-to-oranges 对照伪影,非真落后)。
 
 3. **`Arena` 无锁 bump 同源病已修(去原子化)**:`Arena` 的单 `offset_` 原子也是单点病——单线程付每 alloc 一次 CAS(6.79ns vs `StackAllocator` 纯指针 bump 0.65ns,10x 税)。bump cursor 本质单游标无法分片,SOTA 模式是 **per-thread(各自一个 Arena,零原子)**,并发共享一个 cursor 是反模式(无内部用户的投机无锁化)。**修复**:`offset_` 改 plain `size_t`,纯指针 bump;测试改 `PerThreadArenasNoOverlap`(每线程自己的 Arena)。**6.79→0.66ns(10.3x),平 StackAllocator、赢 std::pmr 2.2x、赢裸 mi 6x**。
 
-4. **残留常数因子(仍待逼近 mimalloc)**:分片后 `MemoryArena` 残留 1.95x(并发)/3.1x(单线程)是**原子 CAS 常数因子**(每 op 一次 CAS,vs mimalloc 同线程非原子 local list)——非复杂度,进一步逼近需 seastar 式 owner-local 非原子表 + 跨核 remote-free(mem-design 的 xcpu_freelist)。单线程消费者直接用 `StackAllocator`(0.65ns)/`GrowablePool`(1.83ns)/`Arena`(0.66ns)即已超 SOTA。
+4. **"共享 MemoryArena 慢 1.95x" 是 apples-to-oranges,不是真落后——公平对照 HYLE 反超**:此前把"8 线程**共享一个**固定池"对"mimalloc 的 **8 个 per-thread heap**"比,本身不公平——这个 workload 全是**同线程** alloc/free,mimalloc 用**非原子 thread-local free list** 服务,而单块共享固定 slab 协调跨线程本就要每 op 一次原子 CAS(分片+无争用,`lock` 前缀也非零)。**公平对照(双方都 per-thread)**:HYLE `GrowablePool` 每线程一个池 = **0.72ns,反超裸 mi per-thread heap(1.28ns)1.78x**。即:同线程同尺寸 churn 这个 workload,SOTA 模式就是"池 per-thread"(mimalloc 内部正是如此),HYLE 的对等答案赢。共享固定池的 1.94x 是**"一块固定 slab 当跨线程共享有界资源"的真实协调代价**(非复杂度——分片已消除 O(threads) 的 278x),而非可包装掉的水分。进一步逼到 1.0x 需 seastar 模型(线程钉死 per-core 终生、池生命周期长于线程),`MemoryArena` 的通用生命周期给不出这个契约(owner-local 非原子表与固定 slab 的"不假性耗尽"硬冲突,详见 mem-design)。**结论:这一项无需"修"——选对工具(per-thread 池)即已超 SOTA;真要共享有界池,1.94x 是诚实标价。**
 
 ### container 杂项（SmallVector / IntrusiveList vs std，`container_misc_bench.cc`）
 
