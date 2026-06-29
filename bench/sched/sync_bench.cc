@@ -18,9 +18,11 @@
 
 #include <nanobench.h>
 
+#include <atomic>
 #include <cstdint>
 #include <memory>
 #include <mutex>
+#include <thread>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
@@ -104,6 +106,41 @@ int main() {
         m.unlock();
       }
     });
+  }
+
+  // ---- 1b. SAME, but with a live background thread (defeats glibc's
+  // __libc_single_threaded atomic-elision). If std::mutex slows to HYLE's level
+  // here, the "2.8x slower" above was a single-threaded-microbench artifact, not
+  // a real gap -- std::mutex/marl pay the same atomic once the process is MT.
+  {
+    constexpr int kIters = 5000;
+    std::atomic<bool> stop{false};
+    std::atomic<std::uint64_t> spin{0};
+    std::thread keepalive([&] {  // exists only to make the process multi-threaded
+      while (!stop.load(std::memory_order_relaxed))
+        spin.fetch_add(1, std::memory_order_relaxed);
+    });
+    ankerl::nanobench::Bench b;
+    b.title("uncontended lock/unlock pair (MT: bg thread alive)")
+        .relative(true).batch(kIters).minEpochIterations(200);
+    b.run("std::mutex (MT)", [&] {
+      std::mutex m;
+      for (int i = 0; i < kIters; ++i) {
+        m.lock();
+        ankerl::nanobench::doNotOptimizeAway(&m);
+        m.unlock();
+      }
+    });
+    b.run("HYLE Mutex (futex, MT)", [&] {
+      Mutex m;
+      for (int i = 0; i < kIters; ++i) {
+        m.lock();
+        ankerl::nanobench::doNotOptimizeAway(&m);
+        m.unlock();
+      }
+    });
+    stop.store(true, std::memory_order_relaxed);
+    keepalive.join();
   }
 
   // ---- 2. contended Mutex throughput: 8 fibers / 4 workers ----

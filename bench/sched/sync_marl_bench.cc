@@ -59,6 +59,7 @@ struct HyleWg {
 };
 void hyle_wg_done(void* p) { static_cast<HyleWg*>(p)->wg->done(); }
 void hyle_wg_wait(void* p) { static_cast<HyleWg*>(p)->wg->wait(); }
+void hyle_noop(void*) {}  // pure spawn/dispatch cost, no per-task work
 }  // namespace
 
 int main() {
@@ -176,6 +177,45 @@ int main() {
         for (int i = 0; i < kWgTasks; ++i)
           fibers.push_back(std::make_unique<Fiber>(pool, kDefaultStackSize,
                                                    &hyle_wg_done, &arg));
+        for (auto& f : fibers) sched.spawn(f.get());
+        sched.drain();
+      });
+      sched.shutdown();
+    }
+  }
+
+  // ---- 3. pure spawn throughput: 2000 noop tasks (no per-task work) ----
+  // Isolates spawn/dispatch cost vs marl (the SOTA scheduler), unlike the
+  // scheduler_bench's vs-std::async (a thread-per-task strawman).
+  {
+    constexpr int kNoop = 2000;
+    ankerl::nanobench::Bench b;
+    b.title("spawn 2000 noop tasks").relative(true).batch(kNoop).minEpochIterations(20);
+
+    {
+      marl::Scheduler::Config cfg;
+      cfg.setWorkerThreadCount(kWorkers);
+      marl::Scheduler sched(cfg);
+      sched.bind();
+      b.run("marl schedule 2000 noop", [&] {
+        marl::WaitGroup wg(kNoop);
+        for (int i = 0; i < kNoop; ++i) marl::schedule([wg] { wg.done(); });
+        wg.wait();
+      });
+      marl::Scheduler::unbind();
+    }
+
+    {
+      hyle::sched::Scheduler sched(kWorkers, system_allocator(), 4096);
+      hyle::mem::MemoryArena stack_pool(system_allocator(), kDefaultStackSize,
+                                        kNoop + 8, kDefaultStackSize);
+      hyle::mem::Allocator pool = stack_pool.as_allocator();
+      b.run("HYLE spawn 2000 noop (pooled)", [&] {
+        std::vector<std::unique_ptr<Fiber>> fibers;
+        fibers.reserve(kNoop);
+        for (int i = 0; i < kNoop; ++i)
+          fibers.push_back(std::make_unique<Fiber>(pool, kDefaultStackSize,
+                                                   &hyle_noop, nullptr));
         for (auto& f : fibers) sched.spawn(f.get());
         sched.drain();
       });
