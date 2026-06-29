@@ -54,6 +54,22 @@ add_executable(hyle_container_misc_bench container/container_misc_bench.cc)
 target_link_libraries(hyle_container_misc_bench PRIVATE hyle_container hyle_mem nanobench)
 hyle_apply_warnings(hyle_container_misc_bench)
 
+# task #23: hash cluster. HYLE hash_bytes(XXH3)/mix64 vs raw XXH3 (vendored, always)
+# + std::hash. wyhash is a sibling clone -> opt-in -DHYLE_BENCH_WYHASH=ON (header-only).
+add_executable(hyle_hash_bench container/hash_bench.cc)
+target_link_libraries(hyle_hash_bench PRIVATE hyle_container nanobench)
+target_include_directories(hyle_hash_bench SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/xxhash")
+hyle_apply_warnings(hyle_hash_bench)
+option(HYLE_BENCH_WYHASH "build hash bench vs wyhash" OFF)
+if(HYLE_BENCH_WYHASH)
+  set(HYLE_WYHASH_DIR "${PROJECT_SOURCE_DIR}/../wyhash" CACHE PATH "cloned wyhash")
+  if(NOT EXISTS "${HYLE_WYHASH_DIR}/wyhash.h")
+    message(FATAL_ERROR "HYLE_BENCH_WYHASH=ON but no wyhash.h at ${HYLE_WYHASH_DIR}")
+  endif()
+  target_compile_definitions(hyle_hash_bench PRIVATE HYLE_BENCH_WYHASH)
+  target_include_directories(hyle_hash_bench SYSTEM PRIVATE "${HYLE_WYHASH_DIR}")
+endif()
+
 # Optional: moodycamel::ConcurrentQueue (header-only -> just an include path).
 # Enable with -DHYLE_BENCH_MOODYCAMEL=ON; point HYLE_MOODYCAMEL_DIR at the cloned
 # repo (sibling of hyle/ by default).
