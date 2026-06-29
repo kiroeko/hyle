@@ -86,24 +86,24 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 ## 完整性评估
 
-**结论：scope 结构上完整——不缺顶层模块**（核心计算/并发 7 + 支撑层 4 已覆盖 计算/并发/内存/IO + 基质 全部）。但有**两个模块内的缺口**，补在既有模块里、不新增顶层：
+**结论：scope 结构上完整——不缺顶层模块**（核心计算/并发 7 + 支撑层 4 已覆盖 计算/并发/内存/IO + 基质 全部）。曾识别**两个模块内的缺口**,补在既有模块里、不新增顶层——**两者现均已落地**:
 
-1. **`sched/` 缺 fiber-aware 同步原语**（fiber mutex/condvar/channel/waitgroup/latch）。**必补**：`std::mutex` 会阻塞 worker 线程、破坏 M:N 调度——fiber 间同步必须"让出 fiber 而非阻塞线程"。归 sched/，补进 sched-design 待办。
-2. **`simd/` 缺 dtype 层**（fp16/bf16/int8/fp8 ↔ fp32 转换）+ SIMD 化数学函数（exp/tanh/gelu/softmax）。AI 数值路径刚需，归 simd/。
+1. ✅ **`sched/` fiber-aware 同步原语已落地（sched-05）**:CV 地基 + Mutex(futex)/WaitGroup/Latch/Channel,双模 fiber/裸线程,对标 marl 全线追平/反超。`std::mutex` 会阻塞 worker 破坏 M:N 的隐患由"短锁用 futex、长等待用 fiber-aware CV"分工解决。
+2. ✅ **`simd/` dtype 层已落地（simd-05/06）**:fp16/bf16 ↔ fp32 转换(F16C 硬件路径)+ SIMD 数学核(exp/log/tanh,借 sleef)。int8/fp8 + gelu/softmax 登记后续广度。
 
-其余（math 标量、quant）都能并进既有模块，无需新顶层。
+其余（math 标量、quant）都能并进既有模块,无需新顶层。
 
 ## 规模
 
 > HYLE 自有 **~30-45k 生产 / ~48-72k 含测试**；含第三方 vendored 项目总足迹 **~200-300k+**，由 ggml 主导。LOC 不是 SOTA 标尺——靠精简自有 + 借成熟件，不靠堆行数。
 
-**完成时投影（已完成 46 里程碑 = 7,757 生产 + 4,812 测试 cloc 实测，其余按实测密度再投影）：**
+**完成时投影（已完成 47 里程碑 = 8,130 生产 + 5,138 测试 cloc 实测，其余按实测密度再投影）：**
 
 | 部分 | 生产 LOC | 依据 |
 |---|---|---|
-| 已完成（foundation + simd 核心 + sched 核心） | **~7.8k** | cloc 实测 |
+| 已完成（foundation + simd 核心 + sched 核心+同步） | **~8.1k** | cloc 实测 |
 | simd 广度补全（int 量化类型 + 更多 op + AVX512 启用） | +~3-5k | 延期登记，会长回 |
-| sched 后段（CV/同步/协程胶水） | ~2-4k | 核心已 done，剩适配 |
+| sched 后段（协程胶水/取消/优雅关闭/栈 guard page） | ~2-4k | 核心+同步已 done，剩适配 |
 | io/（proactor + io_uring/IOCP + net/file） | ~5-8k | 借 liburing，HYLE 写适配 |
 | compute/（device/stream + ggml bridge + Vulkan） | ~5-8k | 借 ggml 算子，HYLE 写 bridge |
 | graph + mem-05/06 + C-ABI shim + T3（serialize/hash） | ~6-11k | 多借 simdjson/flatbuffers |
