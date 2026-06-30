@@ -43,6 +43,14 @@ The default build has NO external bench deps. Each rival is opt-in:
 | `-DHYLE_BENCH_SIMDUTF=ON` | utf8 validate+count vs simdutf (vendored — no clone) | `hyle_string_algo_bench` |
 | `-DHYLE_BENCH_MARL=ON` | fiber sync vs marl | `hyle_sched_marl_bench` |
 | `-DHYLE_BENCH_BOOST=ON` | IntrusiveList vs `boost::intrusive::list` (needs boost submodule checked out) | `hyle_container_misc_bench` |
+| `-DHYLE_BENCH_WYHASH=ON` | hash_bytes vs wyhash | `hyle_hash_bench` |
+
+**10 gates total.** 3 are **vendored** (HIGHWAY/XSIMD/SIMDUTF — the lib is in
+`third_party/`, the gate only toggles the comparison row); the other 7 are
+**clone** rivals (ABSL/MOODYCAMEL/TBB/RIGTORP/MARL/BOOST/WYHASH — each needs its
+sibling clone + a `HYLE_<LIB>_DIR` path var, defaulting to `$repo/../<lib>`). The
+difference is only *where the lib lives* (in-repo vs clone-it-yourself) — both
+are B-category dev/bench gates that never affect the shipped library.
 
 ### One command for ALL rivals — the `bench-all-sota` CMake preset
 
