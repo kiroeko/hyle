@@ -32,16 +32,37 @@ The default build has NO external bench deps. Each rival is opt-in:
 
 | flag | compares | exe |
 |---|---|---|
-| `-DHYLE_BENCH_ABSL=ON` | SwissTable vs `absl::flat_hash_map` | `hyle_absl_bench` |
+| `-DHYLE_BENCH_ABSL=ON` | SwissTable vs `absl::flat_hash_map`; SmallVector vs `absl::InlinedVector` | `hyle_absl_bench`, `hyle_container_misc_bench` |
 | `-DHYLE_BENCH_MOODYCAMEL=ON` | queues vs moodycamel | `hyle_queue_sota_bench` |
 | `-DHYLE_BENCH_TBB=ON` | queue/vector vs oneTBB | `hyle_queue_sota_bench` |
-| `-DHYLE_BENCH_HIGHWAY=ON` | simd vs Highway | `hyle_simd_bench` |
+| `-DHYLE_BENCH_RIGTORP=ON` | BoundedQueue vs `rigtorp::mpmc::Queue` (same-contract strict-bounded MPMC) | `hyle_queue_sota_bench` |
+| `-DHYLE_BENCH_HIGHWAY=ON` | simd vs Highway; dtype vs Highway PromoteTo/DemoteTo; math vs Highway contrib/math | `hyle_simd_bench`, `hyle_dtype_bench`, `hyle_math_bench` |
+| `-DHYLE_BENCH_XSIMD=ON` | math exp/log/tanh vs xsimd (same ISA) | `hyle_math_bench` |
 | `-DHYLE_BENCH_MARL=ON` | fiber sync vs marl | `hyle_sched_marl_bench` |
+| `-DHYLE_BENCH_BOOST=ON` | IntrusiveList vs `boost::intrusive::list` (needs boost submodule checked out) | `hyle_container_misc_bench` |
+
+### One command for ALL rivals — the `all-sota` CMake preset
+
+After `setup-bench-libs.sh` has cloned the siblings, the `all-sota` preset flips
+every gate ON at once (no hand-assembling 8 `-D` flags):
 
 ```sh
-# example: queue cluster vs moodycamel + oneTBB (after setup-bench-libs.sh)
+scripts/setup-bench-libs.sh            # clone the rival siblings
+cmake --preset all-sota                # configure with every -DHYLE_BENCH_*=ON
+cmake --build --preset all-sota        # build all bench exes
+```
+
+- **SLEEF is NOT a clone** (it's a prebuilt lib): for vectorized `exp/log/tanh`
+  add `-DHYLE_SIMD_SLEEF=ON -DHYLE_SLEEF_DIR=<prebuilt sleef>` on top of the preset.
+  Without it the HYLE math row falls back to scalar libm (honest, no vectorization).
+- **boost::intrusive** needs the boost `libs/intrusive` submodule checked out
+  (modular-boost clones leave submodules empty); without it `-DHYLE_BENCH_BOOST`
+  fails the header check at configure time.
+
+```sh
+# manual equivalent (single bench, e.g. queue vs moodycamel + oneTBB + rigtorp):
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
-  -DHYLE_BUILD_BENCH=ON -DHYLE_BENCH_MOODYCAMEL=ON -DHYLE_BENCH_TBB=ON
+  -DHYLE_BUILD_BENCH=ON -DHYLE_BENCH_MOODYCAMEL=ON -DHYLE_BENCH_TBB=ON -DHYLE_BENCH_RIGTORP=ON
 cmake --build build --target hyle_queue_sota_bench
 ./build/bin/hyle_queue_sota_bench
 ```

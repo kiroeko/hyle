@@ -56,6 +56,12 @@
 | **container** IntrusiveList | 3.04ns | boost::intrusive(gated,待 clone) | — | ⏳对照待跑;vs std::list 8.1x |
 | **container** CArray growth/read | 0.50/0.19ns | std::vector 0.76/0.19(本身即 SOTA) | 1.5x / 1.0x | ✅赢 growth / ➖平 read |
 | **mem** ObjectPool(typed 无锁池) | 14.86ns | 裸 mimalloc 4.77 | 0.32x | ❌输(=MemoryArena 同 CAS 类;单线程选 GrowablePool) |
+| **util** Rng next_u64(xoshiro256++) | 1.56ns | std::mt19937_64 2.41 | 1.54x | ✅赢 |
+| **util** Rng range_u64(Lemire 无偏) | 1.75ns | std::uniform_int_distribution 2.75 | 1.57x | ✅赢(且无偏) |
+| **container** SwissTable iterate(for_each) | 2.48ns | std::unordered_map 8.73 | 3.5x | ✅赢(扁平 ctrl 扫 vs 节点链) |
+| **time** realtime_ns | 14.68ns | std::chrono::system_clock 14.76 | 1.0x | ➖平 |
+| **time** monotonic_ns | 18.88ns | std::chrono::steady_clock 12.76 | 0.68x | ❌输 1.48x(同 std::chrono 等量工作 QPC+QPF+2 除;试 inline+namespace var 均无效,残留=codegen,非可修接缝) |
+| **obs** log gated-out / emit | 2.03 / 78.4ns | (无 std 对照) | — | ➖HYLE 自有(gated 仅 1 原子载+分支;emit=std::format+fanout 无 I/O) |
 
 **总账小结**:对标**真 SOTA** 的已测项里——✅**赢 ~18 项**(hashmap 3、hash 2、simd 2、dtype 2、sched 3、queue 5、mem 4 — 含反超 absl/marl/moodycamel/Highway/std::pmr/per-thread mimalloc)、➖**平 ~8 项**(噪声内追平 absl find-miss / Highway reduce_max+scale / marl 争用锁+fiber / 裸 mi 默认路径+8 线程)、❌**输 5 项**(全部有据:raw hash_bytes 小输入=导出接缝 by-design、4P 单环=严格 FIFO 约束选择且 ShardedQueue 已赢、vtable=运行时多态物理税仅 opt-in 付、MemoryArena 单/共享=选错工具 per-thread 池反超)、⏳**待补 6 项**(本轮任务 #34–37 填:carray/ObjectPool 缺 bench、SmallVector/IntrusiveList/math/bf16 缺同族 SOTA 对照)。**无一"输"是未处理的真性能缺陷**——揪出的 3 个真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P 单点 CAS)都已分别根治(分片/去原子/ShardedQueue)。
 
@@ -290,6 +296,22 @@
 | **动态数组 read**(顺序求和 4096) | CArray<int> **0.18 ns** | vector 0.18 | (std::vector 即 SOTA) | ➖ **平 std::vector**(arr[i] 单 load 兑现) |
 
 **诚实结论**:① **SmallVector 反超 absl::InlinedVector 1.40x**——不是"只赢 std":absl::InlinedVector 是 small-vector 的 SOTA(同 inline 存储设计),HYLE 0.43ns vs absl 0.60ns,小 N churn 真赢同款 SOTA(也赢 std::vector 39x)。② **IntrusiveList 8x 赢 std::list**(零节点分配);boost::intrusive 同 hook-in-node 设计,gate 已接线(`-DHYLE_BENCH_BOOST`),但 boost 模块化 submodule 未 checkout,留待环境备齐实测(预期同量级)。③ **CArray 反超 std::vector 1.34x growth、平 read**:growth 赢的真根因 = 经 `reallocate()` 增容(mimalloc 原地扩展,无 copy),std::vector 每次扩容恒 alloc-new+move+free;read 路径 arr[i] 单 load 与 vector 持平(header-before-data 布局零索引开销)。
+
+### 次要模块（util/random、time/clock、obs/log、SwissTable iterate，`misc_bench.cc` + `swiss_table_bench.cc`）
+
+> 环境:Win MSVC19.50 Release,nanobench。此前零 bench 的性能相关原语。标尺 = std 等价物(同 OS 原语/同算法类),或 HYLE 自有(无 std 对等物时诚实标注)。
+
+| 场景 | HYLE | 标尺 | vs 标尺 | 结论 |
+|---|---|---|---|---|
+| **Rng next_u64**(xoshiro256++) | **1.56 ns** | std::mt19937_64 2.41 | **1.54x** | ✅ 赢(同质量,256-bit state) |
+| **Rng range_u64**(Lemire 无偏) | **1.75 ns** | std::uniform_int_distribution 2.75 | **1.57x** | ✅ 赢且**无偏**(std 也无偏,HYLE 更快) |
+| **SwissTable iterate**(for_each) | **2.48 ns** | std::unordered_map 8.73 | **3.5x** | ✅ 赢(扁平 ctrl 扫 vs 节点指针链) |
+| **realtime_ns** | 14.68 ns | std::chrono::system_clock 14.76 | **1.0x** | ➖ 平(同 OS 原语) |
+| **monotonic_ns** | 18.88 ns | std::chrono::steady_clock 12.76 | **0.68x(慢 1.48x)** | ❌ 输——同等工作,残留=codegen(见结论③) |
+| **log gated-out** | 2.03 ns | (无 std 对照) | — | HYLE 自有(1 relaxed 原子载 + 分支,跳过格式化) |
+| **log emit**(format+fanout,无 I/O) | 78.4 ns | (无 std 对照) | — | HYLE 自有(std::format 进栈 buf + 锁内快照后锁外 fanout) |
+
+**诚实结论**:① **Rng 赢 std PRNG 1.54x**(xoshiro256++ vs mt19937_64,同统计质量,HYLE header-inline 无 DLL hop);range_u64 用 Lemire 无偏映射,赢 std::uniform_int_distribution 1.57x(两者都无偏,HYLE 更快)。② **SwissTable iterate 赢 std::unordered_map 3.5x**——扁平 ctrl 字节扫 + 连续 slot(cache 友好)碾压节点指针链;`for_each` 是函数模板(内联、零分配)。③ **monotonic_ns 输 std::chrono 1.48x——已查证非可修接缝,诚实留账**:先疑 DLL 导出接缝(monotonic_ns 是导出函数),试 header-inline(前向声明 QPC/QPF,同 system_inline.h 手法)→**无效**(仍 18.3ns);再疑 function-local `static` 的 per-call magic-static guard,改 namespace-scope inline var →**仍无效**;且 inline 反而把本来打平的 realtime_ns 拖慢。查 MSVC `steady_clock::now()` 源码:它做**完全相同的工作**(QPC 经 IAT + 缓存的 QPF + 同样两次 64 位除法)。即 HYLE 算法无劣构,~1.45x 残留是 QPC 调用形/codegen 噪声层面,**非接缝、非算法**,在"同一 syscall"下逼平 std::chrono 无干净杠杆(要更快得换 rdtsc+校准时基,是另一个大特性)。已回退 inline 实验(给公开头加平台 forward-decl 复杂度却零收益 + 拖慢 realtime,坏交易)。realtime_ns 因 std 也做 epoch 换算,两边持平。④ **log produce 路径**:gated-out 仅 1 relaxed 原子载 + 分支(2ns,跳过 std::format);emit 78ns 含 std::format 进 1KiB 栈 buf(零分配)+ 锁内快照 sink 列表后锁外 fanout——无 std 直接对等物(std 无内建结构化日志)。
 
 
 

@@ -31,6 +31,13 @@ hyle_apply_warnings(hyle_arena_pool_bench)
 # IN the build on purpose: if it ever recurs, we investigate head-on, not hide it.
 hyle_add_bench(sched SOURCES sched/scheduler_bench.cc)
 
+# misc-module bench (gap-fill #37): util/random (xoshiro256++ vs std::mt19937_64),
+# time/clock (monotonic/realtime vs std::chrono), obs/log (produce-path overhead).
+# random is header-only (util); clock needs hyle_time, log needs hyle_obs.
+add_executable(hyle_misc_bench misc/misc_bench.cc)
+target_link_libraries(hyle_misc_bench PRIVATE hyle_time hyle_obs hyle_util nanobench)
+hyle_apply_warnings(hyle_misc_bench)
+
 # sched-05 fiber-aware sync primitives bench (own exe: scheduler_bench.cc already
 # owns main(), so this is a second target rather than another source in it).
 add_executable(hyle_sched_sync_bench sched/sync_bench.cc)

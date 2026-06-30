@@ -1,0 +1,37 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "bench",
+      "displayName": "benchmarks (no external SOTA rivals)",
+      "description": "Release + microbenchmarks. HYLE baselines + std/vendored rivals only (no clones needed).",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "HYLE_BUILD_BENCH": "ON"
+      }
+    },
+    {
+      "name": "all-sota",
+      "displayName": "benchmarks + ALL gated SOTA rivals",
+      "description": "One-shot: flips every -DHYLE_BENCH_* gate ON so each bench races its real SOTA rival (not just std). Rival libs must be cloned as repo siblings first: run scripts/setup-bench-libs.sh. NOTE: SLEEF is a PREBUILT lib (not a clone) -- pass -DHYLE_SIMD_SLEEF=ON -DHYLE_SLEEF_DIR=<prebuilt> separately for vectorized exp/log/tanh; boost::intrusive needs the boost submodule checked out.",
+      "inherits": "bench",
+      "cacheVariables": {
+        "HYLE_BENCH_ABSL": "ON",
+        "HYLE_BENCH_TBB": "ON",
+        "HYLE_BENCH_MARL": "ON",
+        "HYLE_BENCH_HIGHWAY": "ON",
+        "HYLE_BENCH_MOODYCAMEL": "ON",
+        "HYLE_BENCH_RIGTORP": "ON",
+        "HYLE_BENCH_XSIMD": "ON",
+        "HYLE_BENCH_BOOST": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "bench", "configurePreset": "bench" },
+    { "name": "all-sota", "configurePreset": "all-sota" }
+  ]
+}

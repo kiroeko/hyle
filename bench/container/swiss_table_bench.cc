@@ -113,5 +113,24 @@ int bench_swiss_table() {
     });
   }
 
+  // ---- iterate (visit every live entry; both pre-filled) ----
+  // SwissTable has no iterator -- it exposes for_each(fn) (a template, inlines, no
+  // alloc). It scans flat ctrl bytes + contiguous slots (cache-friendly);
+  // std::unordered_map walks a pointer-chased node list.
+  {
+    ankerl::nanobench::Bench b;
+    b.title("iterate, 100k entries (visit all)").relative(true).batch(kN);
+    b.run("std::unordered_map", [&] {
+      std::uint64_t sum = 0;
+      for (const auto& kv : stdm) sum += kv.second;
+      ankerl::nanobench::doNotOptimizeAway(sum);
+    });
+    b.run("SwissTable", [&] {
+      std::uint64_t sum = 0;
+      hyle.for_each([&](std::uint64_t, std::uint64_t& v) { sum += v; });
+      ankerl::nanobench::doNotOptimizeAway(sum);
+    });
+  }
+
   return 0;
 }
