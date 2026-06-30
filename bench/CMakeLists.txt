@@ -10,19 +10,25 @@ find_package(Threads REQUIRED)
 target_link_libraries(nanobench PUBLIC Threads::Threads)
 
 hyle_add_bench(container SOURCES container/container_bench_main.cc container/swiss_table_bench.cc container/string_buf_bench.cc container/string_ref_bench.cc container/path_bench.cc container/string_algo_bench.cc DEPS hyle_platform)
-# string_algo utf8 bench can race simdutf (the SIMD utf8 SOTA). Off by default
-# (simdutf is an external clone). Enable with -DHYLE_BENCH_SIMDUTF=ON; point
-# HYLE_SIMDUTF_DIR at a built simdutf (single-header amalgamation simdutf.h +
-# the compiled simdutf.cpp -> we add the .cpp to the container bench sources).
+# string_algo utf8 bench races simdutf (the SIMD utf8 SOTA) for the comparison row.
+# simdutf is VENDORED in third_party and compiled into hyle_container (the product uses it
+# unconditionally), but those symbols are PRIVATE/non-exported across the hyle_container DLL
+# boundary -- the bench can't borrow them transitively. So compile simdutf.cpp into the bench
+# exe too: it's a SEPARATE binary from the DLL, so its own copy is NOT a duplicate symbol (the
+# DLL exports none of them). The gate just toggles the bench-side comparison row.
 option(HYLE_BENCH_SIMDUTF "build string_algo utf8 bench vs simdutf (SIMD SOTA)" OFF)
 if(HYLE_BENCH_SIMDUTF)
-  set(HYLE_SIMDUTF_DIR "${PROJECT_SOURCE_DIR}/../simdutf/singleheader" CACHE PATH "simdutf singleheader dir")
-  if(NOT EXISTS "${HYLE_SIMDUTF_DIR}/simdutf.h")
-    message(FATAL_ERROR "HYLE_BENCH_SIMDUTF=ON but no simdutf.h at ${HYLE_SIMDUTF_DIR}")
-  endif()
+  set(_simdutf "${PROJECT_SOURCE_DIR}/third_party/simdutf")
   target_compile_definitions(hyle_container_bench PRIVATE HYLE_BENCH_SIMDUTF)
-  target_include_directories(hyle_container_bench SYSTEM PRIVATE "${HYLE_SIMDUTF_DIR}")
-  target_sources(hyle_container_bench PRIVATE "${HYLE_SIMDUTF_DIR}/simdutf.cpp")
+  target_include_directories(hyle_container_bench SYSTEM PRIVATE "${_simdutf}")
+  target_sources(hyle_container_bench PRIVATE "${_simdutf}/simdutf.cpp")
+  # Same -Wall/-Werror exemption as the product build (src/container): the amalgamation's
+  # own -Wpedantic warnings would break a HYLE_WERROR=ON bench build.
+  if(MSVC)
+    set_source_files_properties("${_simdutf}/simdutf.cpp" PROPERTIES COMPILE_OPTIONS "/w")
+  else()
+    set_source_files_properties("${_simdutf}/simdutf.cpp" PROPERTIES COMPILE_OPTIONS "-w")
+  endif()
 endif()
 # mem bench links mimalloc_static directly so it can call raw mi_malloc/mi_free as
 # the SOTA baseline (the static lib's PUBLIC include exposes mimalloc.h). hyle_mem

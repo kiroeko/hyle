@@ -16,16 +16,17 @@
     {
       "name": "all-sota",
       "displayName": "benchmarks + ALL gated SOTA rivals",
-      "description": "One-shot: flips every -DHYLE_BENCH_* gate ON so each bench races its real SOTA rival (not just std). Rival libs must be cloned as repo siblings first: run scripts/setup-bench-libs.sh. NOTE: SLEEF is a PREBUILT lib (not a clone) -- pass -DHYLE_SIMD_SLEEF=ON -DHYLE_SLEEF_DIR=<prebuilt> separately for vectorized exp/log/tanh; boost::intrusive needs the boost submodule checked out.",
+      "description": "One-shot: flips every -DHYLE_BENCH_* gate ON so each bench races its real SOTA rival (not just std). The clone-based rivals (absl/tbb/marl/moodycamel/rigtorp/boost) must be present as repo siblings first: run scripts/setup-bench-libs.sh (boost::intrusive needs the boost submodule checked out). Highway/xsimd/simdutf are VENDORED in third_party (no clone needed) -- their gates just toggle the comparison rows. Vectorized exp/log/tanh + utf8 are already unconditional in the product build (no flag).",
       "inherits": "bench",
       "cacheVariables": {
         "HYLE_BENCH_ABSL": "ON",
         "HYLE_BENCH_TBB": "ON",
         "HYLE_BENCH_MARL": "ON",
         "HYLE_BENCH_HIGHWAY": "ON",
+        "HYLE_BENCH_XSIMD": "ON",
+        "HYLE_BENCH_SIMDUTF": "ON",
         "HYLE_BENCH_MOODYCAMEL": "ON",
         "HYLE_BENCH_RIGTORP": "ON",
-        "HYLE_BENCH_XSIMD": "ON",
         "HYLE_BENCH_BOOST": "ON"
       }
     }
