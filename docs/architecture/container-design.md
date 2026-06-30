@@ -31,14 +31,16 @@ mem/simd/io/compute 都借一个通用 substrate（mimalloc/sleef/liburing/ggml�
 ## 分层结构
 
 ```
-container/
-├─ hashmap.h       flat hashmap：改 C 宏泛型 → C++23 concept 模板，补 SwissTable 控制字节 + SIMD 探测
-├─ carray.h        侵入式动态数组（继承 header-before-data）+ RAII/迭代器薄壳
-├─ small_vector.h  inline storage（小 N 不堆分配）—— clay 没有，新增
-├─ string.h        string_ref（继承，null_terminated 位）+ string_buf 驻留池
-├─ intrusive/      侵入式 list/slist（节点内嵌 hook）—— 给 sched run-queue/waiter
-├─ lockfree/       MPMC/SPSC 队列、bounded ring —— 给 sched global queue/per-core queue
-└─ probe.h         SwissTable 的 16 路 SIMD 探测片段（自包含 SSE2/NEON，见 tier 澄清）
+container/                  (实际文件名,扁平布局)
+├─ swiss_table.h   flat hashmap(SwissTable:concept 模板 + 控制字节 + SIMD 探测)
+├─ carray.h        侵入式动态数组(header-before-data)+ RAII/迭代器薄壳
+├─ small_vector.h  inline storage(小 N 不堆分配)—— clay 没有,新增
+├─ string_ref.h    string_ref(null_terminated 位)+ string_algo
+├─ string_buf.h    string_buf 驻留池(C-ABI 字符串载体)
+├─ intrusive_list.h 侵入式 list(节点内嵌 hook)—— 给 sched run-queue/waiter
+├─ bounded_queue.h / sharded_queue.h / ws_fifo_queue.h / work_stealing_deque.h / concurrent_vector.h
+│                   无锁队列簇 —— 给 sched global/per-core queue + work-stealing
+└─ probe.h         SwissTable 的 16 路 SIMD 探测片段(自包含 SSE2/SSSE3/NEON,见 tier 澄清)
 ```
 
 ## SwissTable SIMD 探测（探测层重写，非"补字节"）
@@ -68,13 +70,13 @@ container/
 - **→ simd/**：仅 SwissTable 探测用自包含片段，不依赖整个 simd/（见上 tier 澄清）。
 - **string_buf 跨 DLL**：make/destroy + 引用计数，是 C-ABI 边界的字符串载体。
 
-## 落地清单
+## 落地状态(已实现)
 
-1. hashmap：C 宏泛型 → concept 模板重写（去掉 clay 的 `temp` 字段/哨兵/编译期 sizeof 校验技巧），补 SwissTable 控制字节 + SIMD 探测。
-2. carray RAII 壳 + 迭代器（保留 header-before-data 布局）。
-3. SmallVector、intrusive list/slist、lock-free MPMC/SPSC ring（sched 依赖，优先）。
-4. string_ref/string_buf 继承。
-5. 单测：hashmap 对拍 std::unordered_map 正确性 + benchmark 对标 absl/F14；lock-free 队列 TSan + 线性化测试；SmallVector 的 inline→heap 切换。
+1. **hashmap**:`SwissTable`(concept 模板 + 控制字节 + SIMD 探测,去 clay 的 `temp`/哨兵)——✅ 对拍 std + 对标 absl(find/insert/erase 平或反超)。
+2. **carray**:`CArray<T>` RAII 壳(header-before-data 布局保留)——✅(迭代器 begin/end 已具)。
+3. **SmallVector**(inline→heap 切换)、**intrusive list**、**lock-free 队列**(`BoundedQueue` Vyukov MPMC / `ShardedQueue` / `WsFifoQueue` / `WorkStealingDeque` / `ConcurrentVector`)——✅ 全部实现 + WSL TSan 零 race。
+4. **string_ref/string_buf**——✅ 继承实现。
+5. **单测**:hashmap 对拍 std + 对标 absl bench;lock-free 队列 TSan;SmallVector inline→heap 切换——✅ 均已覆盖。
 
 ## 待决（需主拍板）
 

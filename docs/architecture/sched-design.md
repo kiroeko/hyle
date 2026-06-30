@@ -92,7 +92,7 @@ sched 的 deadline/超时只需要三样，先钉这个最小面，full timer �
 |---|---|---|
 | **per-core 本地队列** | 有界 ring（256 槽，tokio `LOCAL_QUEUE_CAPACITY`），**owner FIFO（push_back tail / pop head）**、thief 从最老端 FIFO steal 偷一半（向上取整）；满时后半 128 个甩 global | 有界=无锁+cache 友好；偷老任务=公平。**注意：LIFO 性不来自 run_queue 本身**（深读 tokio `queue.rs` 校正：run_queue 是 FIFO，owner-LIFO 是 st3/Chase-Lev 语义、非 tokio）|
 | **LIFO slot（单槽）** | 每核一个"下一个就跑"单槽，刚被唤醒的 fiber 放这里、优先于本地队列；**不可被偷**，连续轮询预算上限（tokio `MAX_LIFO_POLLS_PER_TICK=3`）超了关 slot 改走队尾（可被偷）| **completion 脊的接入点**：io/gpu 完成唤醒的 fiber 落唤醒核 LIFO slot，热 cache 立即续跑。**LIFO 热栈复用全靠这个单槽，不靠 run_queue** |
-| **global 注入队列** | 加锁 MPMC，接本地队列溢出 + 跨核 spawn + 外部线程提交 | 兜底；本地满了甩这里，不丢任务 |
+| **global 注入队列** | **无锁分片 MPMC（`ShardedQueue`,N 子环=每 worker 一环）**,接本地队列溢出 + 跨核 spawn + 外部线程提交 | 兜底不丢任务;分片消单点 CAS 争用(bench-02b:反超 moodycamel 2.6-3x,随生产者数平坦)。放弃全局 FIFO——work-stealing 本就无全局序 |
 | **steal 协议** | 本地空 → 周期查 global（**间隔按 poll 时长 EWMA 自调，目标 200µs/均值、clamp 2-127；tokio `stats.rs`，非固定 every-Nth**）防饿死 → 随机选 victim 偷一半 | Tokio 实证：纯偷会饿死 global，需周期查；长任务下自调间隔避免过频查 global |
 
 **调度循环（每个 worker 线程）**：
@@ -180,12 +180,13 @@ loop:
 每个会阻塞的异步操作（io 读写、gpu kernel、sleep）提交时关联一个 **`Waker`**：
 
 ```
-struct Waker {
-  Fiber*   fiber;        // 等这个操作的 fiber
-  uint32_t origin_core;  // 提交它的核（用于局部性唤回）
+class Waker {                 // 现状(sched-04a 已实现)
+  Scheduler* sched_;          // 唤醒回哪个调度器
+  Fiber*     fiber_;          // 等这个操作的 fiber
 };
-// 操作完成 → backend 拿回对应 Waker → wake()：标记 fiber 就绪 → 入队
+// 操作完成 → backend 拿回对应 Waker → wake()：标记 fiber 就绪 → 经 sched 重入全局队列
 ```
+> **现状 vs 目标**:已实现的 `wake()` 把 fiber round-robin 重入 global 队列(`reinject`)。"按 origin_core 局部性唤回热核 LIFO slot"是**未实现的优化目标**(需在 Waker 带提交核 + per-core LIFO slot,见 §3.2/§3.3),现阶段不带 origin_core 字段。
 
 fiber 提交操作后**让出**（fcontext 切回 worker，栈原地保留）；完成时 `Waker::wake()` 把 fiber 重新入队。io/gpu/timer 三源共用这一个 `Waker`，这就是"唤醒网"的物理形态。
 

@@ -103,8 +103,8 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
 2. 🔶 SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02(实跑)、运行期 dispatch=simd-04、NEON+AVX512=simd-03(写+编+objdump 验,未跑存疑)。** 各后端覆盖,只剩 NEON/AVX512 待目标硬件实跑。
 3. ✅ dtype 转换（先 fp16/bf16 硬件路径）。**simd-05。**
-4. 📋 数学函数（借 sleef 核：exp/tanh → 组合出 gelu/softmax）。**simd-06。**
-5. 📋 `ops/`：reduce、对齐 memcpy、SwissTable 探测片段。
+4. 🔶 数学函数（借 SLEEF/Highway 核：exp/log/tanh 已实现并对标同 ISA SOTA;gelu/softmax 组合待补）。**simd-06。**
+5. 🔶 `ops/`：dot_f32 已跨 scalar/SSE4/AVX2 dispatch(+reduce_max/scale/saxpy 已 bench);reduce/对齐 memcpy/SwissTable 探测片段待补。
 6. 🔶 单测：每后端对拍 scalar 参考值、跨 ISA CI、数学函数精度 ULP 测试、benchmark 对标 Highway/手写 intrinsics。**scalar/SSE4.2/AVX2 对拍 + Highway bench 已做；NEON objdump 验；ULP 测试随 simd-06。**
 
 ### AVX512 后端：已实现（写+原生编+objdump 验，未跑存疑）——纠"延期"误判

@@ -32,7 +32,7 @@
 ## 3. 开发范式
 
 - **协程驱动 fiber**：`co_await` 作为 fiber 让出/唤醒的语言机制（C++20 协程三编译器已稳）。
-- **显式 `Allocator*` 注入贯穿所有分配型 API**（继承 clay，无隐藏全局堆）。
+- **分配显式可控、默认零开销**：容器默认编译期 `SystemAllocator`（内联 mi_malloc，零间接接缝），运行时 `Allocator` 句柄（按值传的 `{alloc/free/realloc fn, state}`）按需 opt-in 注入（arena/mock/跨 DLL）。无隐藏全局堆。
 - **内部完整 C++23**（模板/SIMD/容器尽情用），对外只暴露 C 接缝（见 §6），所以内部 C++ ABI 不外露。
 - **贴硬件**：cache-line 对齐、分支预测标注、无锁优先（基于 clay 的 catomics）。
 - **构建**：CMake；修掉 clay 的反模式（Clang 硬编码 `-g -O0`、`-march=native` 损害可分发性）。默认编译为共享库（见 §6）。

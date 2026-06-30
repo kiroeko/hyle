@@ -25,7 +25,7 @@ HYLE 在 clay 地基上扩张的方向是两条，不是往应用爬：
 ### 主轴 A — 极致性能（横向加宽、纵向做深）
 五个焦点：
 1. **SIMD** — 可移植 vector 抽象 + 运行时 dispatch + AVX512 + bf16
-2. **CUDA 混合计算** — 自有异构计算原语（device/stream/memory 抽象）
+2. **CUDA 混合计算** — 自有异构计算原语（device/stream/buffer 抽象）
 3. **L1/L2 cache 命中率** — cache-conscious 数据布局，cache-line 对齐
 4. **极致内存管理** — 分配器家族 + arena + NUMA/大页
 5. **超越 std 的高性能容器** — flat/intrusive/lock-free
@@ -46,7 +46,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 ├─ sched/     统一调度【核心】[T0] ← 线程/进程/纤程/协程一张表：fiber 上下文 + per-core 无锁 run-queue + work-stealing（含 completion 脊）
 ├─ simd/      SIMD 抽象     [T1] ← 推倒重写：可移植 vector 类型 + 运行时 dispatch + AVX512 + bf16
 ├─ io/        网络 IO       [T1] ← 从零：proactor（io_uring/IOCP/epoll），与 sched 一体（fiber 遇 IO 让出）
-├─ compute/   异构计算原语   [T1] ← device/stream/memory 抽象，先包装 ggml 不替算子
+├─ compute/   异构计算原语   [T1] ← device/stream/buffer 抽象，先包装 ggml 不替算子
 └─ graph/     并行任务编排   [T3] ← 继承 clay taskgraph，剥离特化，跑在 sched 之上
 
 支撑层（为上面服务的基质，进主图因被广泛依赖）
@@ -173,8 +173,6 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 - DataModel（undo/序列化/协作）——clay 是空位，HYLE 也不纳入。
 - 替换 ggml 算子 / 训练推理引擎本身——`compute/` 只做抽象层，包装而非替换。
 
-## 待办（下一步）
+## 进度
 
-完整资产负债表已出（见 `clay-asset-liability.md`）。下一步二选一：
-1. **定路线与优先级**：8 个空位排依赖序（建议 sched 先行——io 的 proactor、taskgraph 的后端都挂在它上面），出重构路线图。
-2. **先深挖某根支柱**：如 sched 的统一调度模型设计（fiber 上下文切换方案、协程与 fiber 如何统一、IO 让出机制），或 simd 抽象层选型。
+路线图见 [`roadmap.md`](./roadmap.md);逐里程碑实时状态见 [`milestones/README.md`](../milestones/README.md)。当前:mem/container/sched/simd/platform/time/util/error/obs 主体已落地,io/compute/graph 三大净新增支柱未开工。
