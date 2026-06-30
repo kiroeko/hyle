@@ -8,6 +8,8 @@
 // to nothing on non-x86 (math_dispatch falls to the scalar libm floor there). Header-only +
 // vendored in third_party, so it can't be missing -- no opt-in define gates it, only the
 // architecture does. Compiled at -mavx2; reached only when cpu_features().avx2.
+#include "hyle/platform.h"  // HYLE_ARCH_X64 -- MUST precede the guard below
+
 #if defined(HYLE_ARCH_X64)
 
 #include "src/simd/math/kernels.h"

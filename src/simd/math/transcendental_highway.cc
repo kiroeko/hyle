@@ -12,6 +12,8 @@
 // hyle_set_highway_isa, else HWY_STATIC_TARGET silently downgrades to 128-bit SSSE3), so hn::
 // lowers to 256-bit AVX2. Reached only when cpu_features().avx2 (gated in math_dispatch), so
 // the AVX2 codegen never runs on an older CPU.
+#include "hyle/platform.h"  // HYLE_ARCH_X64 -- MUST precede the guard below
+
 #if defined(HYLE_ARCH_X64)
 
 #include "src/simd/math/kernels.h"
