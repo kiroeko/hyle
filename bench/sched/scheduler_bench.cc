@@ -7,6 +7,7 @@
 
 #include <nanobench.h>
 
+#include <atomic>
 #include <cstdint>
 #include <future>
 #include <memory>
@@ -16,12 +17,16 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/run_queue.h"
 #include "hyle/sched/scheduler.h"
+#include "hyle/sched/waker.h"
 
 using hyle::mem::system_allocator;
+using hyle::sched::current_waker;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::RunQueue;
 using hyle::sched::Scheduler;
+using hyle::sched::suspend;
+using hyle::sched::Waker;
 
 namespace {
 
@@ -30,6 +35,50 @@ void yield_body(void* arg) {
   for (int i = 0; i < n; ++i) Fiber::yield();
 }
 void noop_body(void*) {}
+
+// ---- suspend/wake completion-spine ping-pong (the safe harness) -------------
+// Two long-lived fibers bounce N suspend/wake cycles between each other, all
+// under one Scheduler, retired together by drain() -- so there is NO race between
+// "fiber finished" and "worker still in dispatch()" (the hazard that kept this
+// DEFERRED for a naive flag-spin+destroy harness). Each cycle is a full
+// completion-spine round-trip: fiber A publishes its Waker + suspends (leaves the
+// run loop); fiber B sees the Waker and calls wake() (re-injects A); then B
+// suspends and A wakes it back. The published-Waker handshake (acquire/release on
+// a flag) mirrors waker_test.cc's proven pattern. This measures the suspend ->
+// wake -> resume latency that ops.h's thesis (GPU/NIC/timer all funnel here) rides
+// on. No external rival -- it's HYLE's own spine; the number is the cost itself.
+struct PingPong {
+  std::atomic<bool> a_ready{false};
+  std::atomic<bool> b_ready{false};
+  Waker a_waker;
+  Waker b_waker;
+  int cycles;
+};
+void pingpong_a(void* p) {
+  auto* s = static_cast<PingPong*>(p);
+  for (int i = 0; i < s->cycles; ++i) {
+    s->a_waker = current_waker();
+    s->a_ready.store(true, std::memory_order_release);
+    suspend();  // wait for B to wake us
+    // Once resumed, wake B (it has published its waker by now, or will; B's
+    // wake-before-suspend rendezvous makes an early wake safe).
+    while (!s->b_ready.load(std::memory_order_acquire)) Fiber::yield();
+    s->b_ready.store(false, std::memory_order_relaxed);
+    s->b_waker.wake();
+  }
+}
+void pingpong_b(void* p) {
+  auto* s = static_cast<PingPong*>(p);
+  for (int i = 0; i < s->cycles; ++i) {
+    // Wake A (it published its waker first), then suspend waiting for A's wake.
+    while (!s->a_ready.load(std::memory_order_acquire)) Fiber::yield();
+    s->a_ready.store(false, std::memory_order_relaxed);
+    s->a_waker.wake();
+    s->b_waker = current_waker();
+    s->b_ready.store(true, std::memory_order_release);
+    suspend();  // wait for A to wake us back
+  }
+}
 
 }  // namespace
 
@@ -112,12 +161,28 @@ int main() {
     });
   }
 
-  // ---- wake round-trip latency: DEFERRED (needs a safe harness) ----
-  // A naive "spin on a flag the fiber sets, then destroy the fiber" races the
-  // worker that is still finishing dispatch(f) after the fiber returned (the
-  // tests avoid this via drain(), which waits for outstanding==0). Measuring
-  // wake latency in isolation needs a harness that retires the fiber safely
-  // (e.g. a long-lived ping-pong fiber pair) -- registered, not shipped racy.
-  // Waker correctness itself is covered by waker_test.cc + WSL TSan.
+  // ---- 5. suspend/wake completion-spine round-trip (the sched-04a spine) ------
+  // Now benched via a SAFE long-lived ping-pong harness (see PingPong above): two
+  // fibers exchange `kCycles` suspend/wake round-trips under one Scheduler,
+  // retired by drain(). One epoch = kCycles full spine round-trips; batch=kCycles
+  // so the number is ns per suspend->wake->resume. Single worker (1 thread) so the
+  // two fibers genuinely hand off via suspend/wake, not run in parallel.
+  {
+    constexpr int kCycles = 5000;
+    ankerl::nanobench::Bench b;
+    b.title("suspend/wake completion-spine round-trip").batch(kCycles).minEpochIterations(20);
+    b.run("HYLE suspend()+Waker::wake() ping-pong", [&] {
+      PingPong s;
+      s.cycles = kCycles;
+      Fiber fa(system_allocator(), kDefaultStackSize, &pingpong_a, &s);
+      Fiber fb(system_allocator(), kDefaultStackSize, &pingpong_b, &s);
+      Scheduler sched(1, system_allocator(), 256);  // 1 worker: true hand-off
+      sched.spawn(&fa);
+      sched.spawn(&fb);
+      sched.drain();  // both fibers retire here -- no flag-spin+destroy race
+      ankerl::nanobench::doNotOptimizeAway(&s);
+    });
+  }
+
   return 0;
 }
