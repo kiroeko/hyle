@@ -33,7 +33,7 @@ Run under `setarch -R` on Linux if the exe is built with a sanitizer. Per the
 9p rule, run from a native-ext4 checkout, never /mnt/c.
 """
 import argparse
-import re
+import os
 import statistics
 import subprocess
 import sys
@@ -75,7 +75,11 @@ def main():
                     default=[], help="report RIVAL/BASELINE op/s ratio; repeatable")
     args = ap.parse_args()
 
-    cmd = (["setarch", "-R"] if args.setarch else []) + [args.exe]
+    # Normalize to an absolute path: on Windows, CreateProcess won't resolve a
+    # forward-slash relative path like "build/bin/foo.exe" (the shell would, but
+    # subprocess bypasses it). abspath fixes that and is a no-op on POSIX.
+    exe = os.path.abspath(args.exe)
+    cmd = (["setarch", "-R"] if args.setarch else []) + [exe]
     runs = []
     for _ in range(args.runs):
         r = subprocess.run(cmd, capture_output=True, text=True)
