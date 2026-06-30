@@ -26,9 +26,9 @@
 | **dtype** f32→f16 | 0.030 | scalar ref | 2.07 | 25–80x | Highway DemoteTo | 0.048 | Win 1.61x/Lin 1.90x | ✅赢 Highway 双平台(唯一双平台稳赢) |
 | **dtype** bf16→f32 | 0.030 | scalar ref | 0.10 | Win 3.5x/Lin 平 | Highway PromoteTo | 0.050 | Win 1.87x/Lin 平 | ✅Win 赢 Highway/Linux 平(纯位运算 GCC 也向量化) |
 | **dtype** f32→bf16 | 0.10 | scalar ref | 0.69 | 1.8–6.7x | Highway DemoteTo | 0.11 | Win 1.09x/Lin 平 | ➖平 Highway(双平台,bf16 RNE 两库同法) |
-| **math** exp(best-of-breed→xsimd) | 0.23 | libm scalar | 慢 | (大赢) | Highway / xsimd | 0.30/0.23 | 1.30x/1.0x | ✅平 xsimd 最快、反超 Highway |
-| **math** log(best-of-breed→Highway) | 0.26 | libm scalar | 慢 | (大赢) | Highway / xsimd | 0.28/0.38 | 1.08x/1.46x | ✅反超两库最快 |
-| **math** tanh(best-of-breed→xsimd) | 0.44 | libm scalar | 慢 | (大赢) | Highway / xsimd | 0.56/0.45 | 1.27x/1.02x | ✅平 xsimd、反超 Highway |
+| **math** exp(best-of-breed→xsimd) | 0.23 | libm scalar | 2.06 | 9x | Highway / xsimd | 0.30/0.22 | 1.30x/1.0x | ✅平 xsimd 最快、反超 Highway(双平台一致) |
+| **math** log(best-of-breed→Highway) | 0.27 | libm scalar | 2.0–2.6 | 4–8x | Highway / xsimd | 0.27/0.37 | 1.0x/1.45x | ✅平 Highway、反超 xsimd(修产品核 128b bug 后 Linux 同样成立) |
+| **math** tanh(best-of-breed→xsimd) | 0.44 | libm scalar | 6.3–8.7 | 14–20x | Highway / xsimd | 0.54/0.45 | 1.22x/1.0x | ✅平 xsimd、反超 Highway(双平台一致) |
 | **platform** Parker ping-pong(真阻塞) | 317(Win) | std::condition_variable ping-pong | 927(Win) | 2.99x | Rust std park(概念对照) | n/a | n/a | ✅赢 std(Win 2.99x;**Linux 统计平局**,平台差异见 ⬇ platform 详节) |
 | **platform** Parker unpark+park 快路径 | 9.6 | (无语义对等 std) | n/a | n/a | (无公平对照) | n/a | n/a | ⏳无对照:既给唤醒保证又无 syscall 的标准件不存在(裸 flag 不丢保证/semaphore 每次 futex,均不对等)。绝对值 ~10ns 无 syscall。详节 ⬇ |
 | **platform** Thread spawn+join | 40.4µs(Win) | std::thread | 40.1µs | 1.01x | std::thread(即 SOTA,同 syscall) | 40.1µs | 1.01x | ➖平(双平台一致;OS 主导,证 handle 零开销) |
@@ -198,18 +198,19 @@
 
 ### simd 数学核（exp/log/tanh vs 标量 libm + 同 ISA SOTA xsimd/Highway，`math_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench,4096 f32(L1 常驻)。**两个标尺**:① 标量 `std::exp/log/tanh`(测向量化加速本身);② **同 ISA SOTA = xsimd + Highway contrib/math**(同 `-mavx2`)。HYLE 借 Highway/xsimd 验证过的核(已 vendored、无条件默认编进生产,不手搓多项式)。`active_math_variant()` 报当前层。
+> 环境:**双平台**——Win MSVC19.50 + **Linux GCC14.2 原生 ext4,各 15 遍中位数+spread**(`scripts/bench-stat.py`),nanobench,4096 f32(L1 常驻)。**两个标尺**:① 标量 `std::exp/log/tanh`(测向量化加速本身);② **同 ISA SOTA = xsimd + Highway contrib/math**(同 `-mavx2`)。HYLE 借 Highway/xsimd 验证过的核(已 vendored、无条件默认编进生产,不手搓多项式)。`active_math_variant()` 报当前层。
 
-| kernel | 标量 libm | HYLE(best-of-breed,默认) | xsimd | Highway | 结论 |
+| kernel | 标量 libm | HYLE(best-of-breed) | xsimd | Highway | 结论(双平台 15 遍) |
 |---|---|---|---|---|---|
-| **exp f32** | 2.08 ns | **0.23**(→xsimd) | 0.23 | 0.30 | ✅ 平 xsimd(最快)、反超 Highway 1.3x |
-| **log f32** | 2.58 ns | **0.26**(→Highway) | 0.38 | 0.28 | ✅ **反超 Highway+xsimd**(两库最快) |
-| **tanh f32** | 6.42 ns | **0.44**(→xsimd) | 0.45 | 0.56 | ✅ 平 xsimd(最快)、反超 Highway 1.27x |
+| **exp f32**(→xsimd) | 2.06 ns | **0.23** | 0.22 | 0.30 | ✅ 平 xsimd(借其核)、反超 Highway 1.30x(双平台一致) |
+| **log f32**(→Highway) | 2.0–2.6 ns | **0.27** | 0.37 | 0.27 | ✅ 平 Highway(借其核)、反超 xsimd 1.45x |
+| **tanh f32**(→xsimd) | 6.3–8.7 ns | **0.44** | 0.45 | 0.54 | ✅ 平 xsimd(借其核)、反超 Highway 1.22x |
 
 **核心诚实结论(同 ISA 对标 + 逐 op best-of-breed dispatch,全 op ≥ 两库 SOTA)**:
-1. **同 ISA 对标揪出真相,精度分级是公平性前提**:只对标量 libm(6-12x 赢)看不出问题;一加 xsimd/Highway 同 ISA 对照才暴露真实差距。三库都用 ~3.5-ULP 档多项式(AI 热路径足够——softmax/gelu/attention 输出走 fp16/bf16,1-ULP 是过度精度),**精度等级对等**,对标才 apples-to-apples。math_test 容差据实定在 _u35 等级(`kRelTol 8e-7 ≈6.7 ULP`,坏核 ≥7 ULP 仍 fail)。
-2. **逐 op best-of-breed dispatch(收口)**:同 ISA 对标证实**没有单一库三 op 全胜**(xsimd 的 exp/tanh 最快、Highway 的 log 最快)。故 dispatcher **按 op 选最快核**:exp/tanh→xsimd、log→Highway(`math_dispatch.cc`),编译期选核(零运行时选库开销)。结果 **exp 0.23 平 xsimd 反超 Highway 1.3x、log 0.26 反超两库、tanh 0.44 平 xsimd 反超 Highway 1.27x**——**三个 op 全部 ≥ 两个 SOTA 库,无 math 落后残留**。
-3. **借核现状**:Highway + xsimd 均 **vendored 在 `third_party/`、无条件编进生产、默认全速**(无 `-D` 开关),运行期 `cpu_features().avx2` 门控老 CPU 落 scalar 不 SIGILL。两个后端全是验证过的核(借核不手搓)。math_test 5/5、full simd 56/56。
+1. **⚠️ 揪出并修复一个真产品 bug——Highway 数学核在 Linux 出厂 128b**:`src/simd/math/transcendental_highway.cc`(log 借核)此前用 `hyle_set_isa(AVX2)`,缺 Highway 静态 dispatch 需要的完整 baseline(bmi2/aes/pclmul),GCC/Clang 下静默降级 SSSE3/128b(objdump:shipped 核 0 ymm/170 xmm)。**后果:出厂库的 log batch 在 Linux 跑半宽,0.53ns vs 应有 0.27ns,慢两库一半**——这不是文档错,是产品代码 bug(simd 那轮编瘸 bug 的产品侧遗漏,当时只修了 bench 对照)。改 `hyle_set_highway_isa` 补全 baseline 后:产品核 0→141 ymm,**Linux log 0.53→0.27ns,追平 Highway 核**。MSVC `/arch:AVX2` 自带完整 baseline,故 Win 一直正常(0.27)——是 Linux/GCC 特有出厂 bug。**这正是双平台审查的价值:文档"log 反超两库"是 Win 真相,却掩盖了 Linux 产品库半速。**
+2. **"平 vs 反超"措辞校正**:HYLE 的 best-of-breed 是**借**对应库的核(exp/tanh 借 xsimd、log 借 Highway),所以对被借的库本质是**平局(同核)**,只对另一库反超。旧文档"log 反超两库"不确——借 Highway 核不可能反超 Highway,实测 log 0.27≈Highway 0.27 是平。诚实表述:**exp/tanh 平 xsimd + 反超 Highway;log 平 Highway + 反超 xsimd。每 op 都 ≥ 两库,但"≥"里对被借库是"平"非"超"。**
+3. **逐 op best-of-breed dispatch**:同 ISA 对标证实没有单一库三 op 全胜(xsimd 的 exp/tanh 快、Highway 的 log 快),dispatcher 按 op 选最快核(`math_dispatch.cc`,编译期选,零运行时开销)。
+4. **借核现状**:Highway + xsimd 均 vendored、无条件编进生产、默认全速,运行期 `cpu_features().avx2` 门控老 CPU 落 scalar 不 SIGILL。math_test 5/5、full simd 56/56。(注:SLEEF 已从项目移除,dispatcher 三 op 都没选它过——bench 顶部若仍有 SLEEF 注释属陈旧。)
 
 ### simd dtype 转换（fp16/bf16 <-> f32，`dtype_bench.cc`）
 

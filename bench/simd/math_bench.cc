@@ -1,15 +1,17 @@
 // math_bench -- vectorized transcendentals (exp/log/tanh f32). performance.md claims SIMD
 // math is "4-16x vs scalar". TWO questions this answers:
-//   (1) vectorization win: HYLE's *_f32_batch (SLEEF AVX2 8-wide when -DHYLE_SIMD_SLEEF=ON,
-//       else scalar libm) vs a plain std::exp/log/tanh loop.
-//   (2) SAME-ISA SOTA (gap-fill #36): is our SLEEF wiring competitive with the OTHER
+//   (1) vectorization win: HYLE's *_f32_batch (best-of-breed: borrows xsimd's exp/tanh +
+//       Highway's log core, vendored unconditionally) vs a plain std::exp/log/tanh loop.
+//   (2) SAME-ISA SOTA (gap-fill #36): is our borrow-core wiring competitive with the OTHER
 //       vectorized-math libs at the SAME -mavx2? Gated rivals, compiled at AVX2:
 //         * xsimd (-DHYLE_BENCH_XSIMD): xsimd::exp/log/tanh (its OWN polynomial cores)
 //         * Highway (-DHYLE_BENCH_HIGHWAY): hn::Exp/Log/Tanh (contrib/math)
-//       SLEEF is itself a transcendental SOTA (HYLE borrows its verified cores), so a tie
-//       with xsimd/Highway = "our wiring is SOTA"; a loss = our SLEEF dispatch has overhead.
-// active_math_variant() prints the live tier; "kScalar" => SLEEF not wired (HYLE row ties
-// the scalar baseline -- honest: no vectorization without SLEEF).
+//       HYLE borrows xsimd/Highway's verified cores, so a tie with the BORROWED lib = "our
+//       wiring is SOTA"; a loss vs the borrowed lib = our dispatch/build has overhead (this
+//       bench caught exactly that: the product Highway log core shipped 128-bit on Linux
+//       until the baseline-ISA fix -- see performance.md math section).
+// active_math_variant() prints the live tier; "kScalar" => no vectorized math wired (HYLE row
+// ties the scalar baseline -- honest: no vectorization on a non-AVX2 host).
 #include <nanobench.h>
 
 #include <cmath>
