@@ -35,6 +35,7 @@
 | **sched** spawn 2000 noop | 141ns | marl 306 | 2.17x | ✅赢 |
 | **sched** WaitGroup fork-join | 205ns(池化179) | marl 306 | 1.49x(池1.71x) | ✅赢 |
 | **sched** fiber 切换 | 21–23ns | fcontext 原语 | 1.0x | ➖平(=原语,零封装) |
+| **sched** Channel 收发(cap16,1p1c) | 63ns/item | (marl 无 channel) | — | ➖HYLE 自有(无 SOTA 对等物) |
 | **queue** 单线程 fill+drain | 7.2(Lin) | moodycamel 7.7 / tbb 12.6 | 1.07x / 1.6x | ✅赢(微超 moody、赢 tbb) |
 | **queue** 单线程 fill+drain | 7.8(Win) | rigtorp 11.8 / moody 9.6 / tbb 13.4 | 1.5x / 1.2x / 1.7x | ✅赢全部(含同约束 rigtorp) |
 | **queue** MPMC 2P 单环 BoundedQueue | 56(Win) | rigtorp 58 / moody 59.4 | 1.04x / 1.06x | ✅平/微超同约束 rigtorp |
@@ -52,18 +53,19 @@
 | **mem** GrowablePool(8 线程 per-thread) | 0.72ns | 裸 mi per-thread heap 1.28 | 1.78x | ✅赢 |
 | **mem** MemoryArena(单线程) | 15.0ns | 裸 mimalloc 4.87 | 0.32x | ❌输(原子 CAS 常数;单线程选 GrowablePool) |
 | **mem** MemoryArena(8 线程共享) | 2.48ns | 裸 mi per-thread heap 1.28 | 0.51x | ❌输(apples-to-oranges;选对工具 per-thread 池则反超) |
-| **container** SmallVector 小 N | 0.42ns | absl::InlinedVector(gated,待 clone) | — | ⏳对照待跑;vs std::vector 41x |
-| **container** IntrusiveList | 3.04ns | boost::intrusive(gated,待 clone) | — | ⏳对照待跑;vs std::list 8.1x |
+| **container** SmallVector 小 N | 0.43ns | absl::InlinedVector 0.60 | 1.40x | ✅赢同款 small-vector SOTA(也赢 std::vector 39x) |
+| **container** IntrusiveList | 3.04ns | boost::intrusive(gated,boost submodule 未 checkout) | — | ⏳对照待跑;vs std::list 8.1x |
 | **container** CArray growth/read | 0.50/0.19ns | std::vector 0.76/0.19(本身即 SOTA) | 1.5x / 1.0x | ✅赢 growth / ➖平 read |
 | **mem** ObjectPool(typed 无锁池) | 14.86ns | 裸 mimalloc 4.77 | 0.32x | ❌输(=MemoryArena 同 CAS 类;单线程选 GrowablePool) |
 | **util** Rng next_u64(xoshiro256++) | 1.56ns | std::mt19937_64 2.41 | 1.54x | ✅赢 |
 | **util** Rng range_u64(Lemire 无偏) | 1.75ns | std::uniform_int_distribution 2.75 | 1.57x | ✅赢(且无偏) |
 | **container** SwissTable iterate(for_each) | 2.48ns | std::unordered_map 8.73 | 3.5x | ✅赢(扁平 ctrl 扫 vs 节点链) |
+| **container** StringBuf intern(100k 流/2k 唯一) | 24.6ns | std::unordered_map interner 21.2 | 0.86x | ❌输 ~1.15x(3 遍稳定)——**异常待查**:StringBuf 内部用 SwissTable(find 赢 std 2.4x),intern 反慢 ⇒ 有 per-intern 额外开销,根因未诊断(不猜) |
 | **time** realtime_ns | 14.68ns | std::chrono::system_clock 14.76 | 1.0x | ➖平 |
 | **time** monotonic_ns | 18.88ns | std::chrono::steady_clock 12.76 | 0.68x | ❌输 1.48x(同 std::chrono 等量工作 QPC+QPF+2 除;试 inline+namespace var 均无效,残留=codegen,非可修接缝) |
 | **obs** log gated-out / emit | 2.03 / 78.4ns | (无 std 对照) | — | ➖HYLE 自有(gated 仅 1 原子载+分支;emit=std::format+fanout 无 I/O) |
 
-**总账小结(本轮直接1"输项必须打平/赢"推进后)**:对标**真 SOTA** 的已测项——✅**赢 ~24 项**(hashmap 3、hash 2、simd 2、dtype 2、sched 3、queue 6、mem 4、container 2、util 2 — 含反超 absl/marl/moodycamel/Highway/std::pmr/rigtorp/per-thread mimalloc)、➖**平 ~9 项**(噪声内追平 absl find-miss / Highway exp+tanh+reduce_max+scale / marl 争用锁+fiber / 裸 mi 默认+8 线程 / rigtorp 2P / realtime_ns)、❌**仍输 ~5 项**(全部有据且非缺陷:① raw hash_bytes 16/64B 小输入=导出接缝 by-design 且 0.0x 级亚周期、热路径 Hash&lt;T&gt; 内联已赢;② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数,已平主流 SOTA Highway,引第 3 后端待定;③ monotonic_ns 输 std::chrono 1.48x=同等工作 codegen 残留,试 inline+namespace var 均无效已查证;④ MemoryArena/ObjectPool 单/共享=选错工具,per-thread 池已反超)。**本轮把 4 个旧"输"扭成赢/平**:hash 8B(1.85x→1.12x)、vtable(→反超 std::pmr)、math log(→平 Highway+反超 xsimd,切核)、单环队列 4P(1.33x→反超 rigtorp 1.09x,cache-line pad+去 backoff)。**揪出的真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P 单点 CAS+伪共享)全部根治**。
+**总账小结(本轮直接1"输项必须打平/赢"推进后)**:对标**真 SOTA** 的已测项——✅**赢 ~25 项**(hashmap 3、hash 2、simd 2、dtype 2、sched 3、queue 6、mem 4、container 3〔SmallVector 反超 absl 1.40x、CArray、SwissTable iterate〕、util 2 — 含反超 absl/marl/moodycamel/Highway/std::pmr/rigtorp/per-thread mimalloc)、➖**平 ~10 项**(噪声内追平 absl find-miss / Highway exp+tanh+reduce_max+scale / marl 争用锁+fiber / 裸 mi 默认+8 线程 / rigtorp 2P / realtime_ns / Channel+log 无 std 对等物)、❌**仍输 ~6 项**:① raw hash_bytes 16/64B 小输入=导出接缝 by-design 且亚周期、热路径 Hash&lt;T&gt; 内联已赢;② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数,已平主流 SOTA Highway;③ monotonic_ns 输 std::chrono 1.48x=同等工作 codegen 残留,试 inline+namespace var 均无效已查证;④ MemoryArena/ObjectPool 单/共享=选错工具,per-thread 池已反超;⑤ **StringBuf intern 输 std interner ~1.15x=本次核对总账新揪出、尚未诊断的真落后**(异常:内部 SwissTable find 赢 std 2.4x 却 intern 反慢,有 per-intern 开销,待读码——不猜根因)。**本轮把 4 个旧"输"扭成赢/平**:hash 8B(1.85x→1.12x)、vtable(→反超 std::pmr)、math log(→平 Highway+反超 xsimd,切核)、单环队列 4P(1.33x→反超 rigtorp 1.09x)。**揪出的真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P 单点 CAS+伪共享)全部根治**;StringBuf 是待查的下一项。
 
 ## 实测铁证（持续回填,真跑非推算）
 
