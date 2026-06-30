@@ -18,3 +18,15 @@ target_include_directories(hyle_container PRIVATE
 target_compile_definitions(hyle_container PRIVATE HYLE_SIMD_SIMDUTF)
 target_include_directories(hyle_container SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/simdutf")
 target_sources(hyle_container PRIVATE "${PROJECT_SOURCE_DIR}/third_party/simdutf/simdutf.cpp")
+# Third-party amalgamation: keep our -Wall/-Wextra/-Wpedantic (+ -Werror under CI) OFF it,
+# exactly like mimalloc's static lib gets /w|-w (src/mem). Without this, simdutf.cpp's
+# own warnings (e.g. -Wpedantic zero-size-array) would break a HYLE_WERROR=ON build. The
+# SYSTEM include dir above only silences warnings from its HEADERS, not from compiling the
+# .cpp TU itself -- that needs a per-source flag.
+if(MSVC)
+  set_source_files_properties("${PROJECT_SOURCE_DIR}/third_party/simdutf/simdutf.cpp"
+    PROPERTIES COMPILE_OPTIONS "/w")
+else()
+  set_source_files_properties("${PROJECT_SOURCE_DIR}/third_party/simdutf/simdutf.cpp"
+    PROPERTIES COMPILE_OPTIONS "-w")
+endif()
