@@ -39,7 +39,7 @@ compute/
 
 > **校正（对照真实 ggml-backend.h）**：ggml-backend **已经有** device/stream/buffer/buffer_type/event/sched 全套抽象。所以 HYLE 真正"净新"的只有两处：**①任意 kernel 启动**（ggml 是固定算子集 + `graph_compute(cgraph)`，无 raw launch）；**②host 侧 completion→fiber 唤醒**（ggml 的 `synchronize` 是阻塞式，event 仅 GPU-GPU 跨后端同步，无"算完回调唤醒 host"）。device/buffer 枚举应**薄包 ggml-backend**，避免双层抽象税；只在 kernel-launch + fiber-completion 处真正自造。可直接照镜 ggml 的 `dev_caps{async,host_buffer,buffer_from_host_ptr,events}` 能力查询结构。
 >
-> **深读补充（buffer_type 是 device buffer 的范本，归 compute/ 不归 mem/）**：ggml 的 `buffer_type_i{get_alignment/get_max_size/get_alloc_size/is_host}` 是 HYLE **compute/ device buffer** 该照镜的 trait——且 ggml 里 **host/device/pinned/split 不是枚举开关，而是各立一个 buffer_type 实例**（`is_host()` 是唯一 host 布尔判据）。**一种内存模型 = 一个 buffer_type 实例**(不是 `switch(MemKind)`),这条洞见正确;但它落在 **compute/ 的 device buffer**(自有所有权 + stream 绑定),**不是 mem/ 的 MemorySpace**——曾设想的"mem/ 定义 MemorySpace 统一 host+device"是**已证伪的方案D**(见下"内存模型"节 + mem-design):device 内存走显式 copy/command-submit,不经 mem/ 的 CPU allocator 抽象。非标能力（`set_n_threads`、`split_buffer_type` 等）经 `get_proc_address` 探测取得（不破 vtable）——HYLE `ggml_bridge` 拿这些扩展走同一机制。
+> **深读补充（buffer_type 是 device buffer 的范本，归 compute/ 不归 mem/）**：ggml 的 `buffer_type_i{get_alignment/get_max_size/get_alloc_size/is_host}` 是 HYLE **compute/ device buffer** 该照镜的 trait——且 ggml 里 **host/device/pinned/split 不是枚举开关，而是各立一个 buffer_type 实例**（`is_host()` 是唯一 host 布尔判据）。**一种内存模型 = 一个 buffer_type 实例**(不是 `switch(MemKind)`),这条洞见落在 **compute/ 的 device buffer**(自有所有权 + stream 绑定),**不是 mem/**:device 内存走显式 copy/command-submit,不经 mem/ 的 CPU allocator 抽象(mem/ 只管 host RAM,见下"内存模型"节 + mem-design)。非标能力（`set_n_threads`、`split_buffer_type` 等）经 `get_proc_address` 探测取得（不破 vtable）——HYLE `ggml_bridge` 拿这些扩展走同一机制。
 > **张力收口**："buffer 薄包 ggml"与"不暴露 ggml 类型"有张力：**枚举/能力查询薄包**（照镜 buft trait），**内存所有权 + stream 绑定自造**，bridge 只在算子边界做 tensor↔buffer 翻译。另注意 ggml sched 把 INPUT 强制落 CPU、末位 backend 必须是 CPU（`ggml-backend.cpp:903/1736` ASSERT）——这是 ggml 的兜底耦合，**HYLE 自有 stream 调度不要继承**。
 
 ### 3. shader 计算是一等公民，不只绑 CUDA
@@ -95,7 +95,7 @@ compute/
 compute/
 ├─ device.h        设备枚举/能力查询/选择
 ├─ stream.h        异步执行队列（可调度资源，产生 completion）
-├─ buffer.h        设备 buffer:自管 device/pinned/unified 内存 + 绑 stream(ggml buft 式:枚举/能力查询薄包,所有权自造)。host↔device = 显式 copy(src,dst,stream),同 coherent 内存硬件无需拷贝。**不走 mem/ 的 allocator 抽象**(旧"mem/ MemorySpace + Arena<Space>"方案D 已证伪废弃,见 mem-design「device 内存」节)
+├─ buffer.h        设备 buffer:自管 device/pinned/unified 内存 + 绑 stream(ggml buft 式:枚举/能力查询薄包,所有权自造)。host↔device = 显式 copy(src,dst,stream),同 coherent 内存硬件无需拷贝。**不走 mem/ 的 allocator 抽象**(mem/ 只管 host RAM,见 mem-design「device 内存」节)
 ├─ kernel.h        任意 kernel 提交/启动抽象
 ├─ backend/
 │  ├─ cuda.cc      原生 or 桥 ggml-cuda

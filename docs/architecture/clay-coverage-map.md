@@ -153,7 +153,7 @@
 ### ③ 升级（同一组件,HYLE 比 clay 更强——LOC 可能持平或更多）
 - `hashmap`:clay 线性探测 → HYLE 补 SwissTable SIMD 三角探测(更复杂)。
 - `MemoryArena`:clay 16字节 atomic+cmcx16 → HYLE packed 64位 CAS(更稳)。
-- device 内存:clay 无 → HYLE **compute/ 自有 stream-bound buffer**(ggml buffer_type 式,所有权+stream 绑定在 compute/;不走 mem/ allocator——旧"mem/ MemorySpace 方案D"已证伪废弃)。
+- device 内存:clay 无 → HYLE **compute/ 自有 stream-bound buffer**(ggml buffer_type 式,所有权+stream 绑定在 compute/;不走 mem/ allocator 抽象,见 mem-design「device 内存」节)。
 
 ### 结论：正确的"吸纳完整性"判据
 - **不是** "HYLE 总 LOC ≥ clay 19k"。
@@ -181,4 +181,4 @@ clay 各组件落到 HYLE 依赖层(P0-P6):
 - clay **parallel/** → **P4 被 work-stealing 调度器重写取代**(thread_pool,已 sched-03✅)+ **P5 初收掉 async_value**(→ completion 脊)。
 - clay **math/** → half 在 **P3 由硬件 fp16 取代**(只留接口);utils+consts 排后期 math 簇。
 - **一句话:盯 `P3 末`(container-02..06 + mem 全部 + 01b/03b)——跑完且每文件 diff 过 clay,clay 主体即吸纳完毕;`P5 初` 补完 async_value 为完整收口。** P6(graph/C-ABI/FFI)是 HYLE 净新增,与 clay 吸纳无关。
-- **当前位置(2026-06-29 重核,纠旧"刚起步"陈述):clay 地基吸纳基本收口。** sys/utils/container 主体已 ✅(allocator 家族 + arena/pool/stack + 全部容器 + string/hashmap/registry/ref-counted/类型设施 + path/fs/log/time/random),container-02..06 全簇 + mem-01..04/07 + platform-02/03 + time-01 + util-01..06 均完成。剩余 clay 行(4 🔶 + 5 📋)经逐文件判定**基本是终态(std/硬件取代)或归别处(compute/P5 sched)**,真·clay 吸纳欠账 ≈ 零。**未到完全 ✅ 的尾巴**:`decls.h` include 纪律坐实、NUMA(**净新增非 clay**;方案D-MemorySpace 已证伪删除)、async_value/barrier(P5 sched)。**结论:clay 吸纳从"刚起步"修正为"主体收口、尾巴是净新增/别模块",剩下的工程量是 io/compute/graph 三大净新增支柱,与 clay 无关。**
+- **当前位置(2026-06-29 重核,纠旧"刚起步"陈述):clay 地基吸纳基本收口。** sys/utils/container 主体已 ✅(allocator 家族 + arena/pool/stack + 全部容器 + string/hashmap/registry/ref-counted/类型设施 + path/fs/log/time/random),container-02..06 全簇 + mem-01..04/07 + platform-02/03 + time-01 + util-01..06 均完成。剩余 clay 行(4 🔶 + 5 📋)经逐文件判定**基本是终态(std/硬件取代)或归别处(compute/P5 sched)**,真·clay 吸纳欠账 ≈ 零。**未到完全 ✅ 的尾巴**:`decls.h` include 纪律坐实、NUMA(净新增非 clay)、async_value/barrier(P5 sched)。**结论:clay 吸纳从"刚起步"修正为"主体收口、尾巴是净新增/别模块",剩下的工程量是 io/compute/graph 三大净新增支柱,与 clay 无关。**

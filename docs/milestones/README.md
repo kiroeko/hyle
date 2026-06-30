@@ -118,7 +118,7 @@
 | io-04 | P5 | io | net(tcp/udp socket) | io-02 | 2-3k | — | 占位 |
 | io-05 | P5 | io | file + 跨进程共享内存 | io-02 | 2-3k | — | 占位 |
 | compute-01 | P5 | compute | device/stream 薄包 ggml-backend | sched-04 | 2-3k | — | 占位 |
-| compute-02 | P5 | compute | device buffer(ggml buffer_type 式,compute 自有所有权+stream) + 显式 copy(src,dst,stream) | compute-01 | 2-3k | — | 占位(方案D-MemorySpace 已证伪:无"同 coherent 塌缩",统一内存本就无互传) |
+| compute-02 | P5 | compute | device buffer(ggml buffer_type 式,compute 自有所有权+stream) + 显式 copy(src,dst,stream) | compute-01 | 2-3k | — | 占位(device 内存归 compute/,走显式 copy;统一内存无互传,mem/ 不参与) |
 | compute-03 | P5 | compute | GPU completion→fiber(直连原生 handle) | compute-01,sched-04 | 1-2k | — | 占位 |
 | compute-04 | P5 | compute | kernel 启动抽象 | compute-01 | 2-3k | — | 占位 |
 | compute-05 | P5 | compute | ggml_bridge + 注入 HYLE 线程池 | compute-01 | 2-3k | — | 占位 |

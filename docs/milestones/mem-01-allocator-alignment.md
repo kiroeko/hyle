@@ -10,7 +10,7 @@
 | **状态** | ✅ 完成（MSVC 19.50 Debug+Release，9 case 全过；**Linux/GCC14.2 posix_memalign 路径也已真验**）|
 
 > **cloc 留档（`cloc include/hyle/mem src/mem tests/mem`）**：**182 行** = 41 头 + 140 cc（system.cc 裸 backing + allocator_test）+ 1 CMake。
-> **远低于估 1-2k，非 stub**——骨架版只做"vtable + 修对齐 + 裸 backing"三件事，故意精瘦：mem/ 的重头（arena/pool/stack/MemorySpace/NUMA/大页/fiber栈/xcpu_freelist/stats）全在 **mem-02..06**。本步 backing ~70 行、句柄 inline ~40 行、测试 ~140 行。对齐修复是**真生效**（16/32/64/128/256/4096 六档 `(uintptr_t)p%align==0` 全过），realloc 保数据已验。
+> **远低于估 1-2k，非 stub**——骨架版只做"vtable + 修对齐 + 裸 backing"三件事，故意精瘦：mem/ 的重头（arena/pool/stack/NUMA/大页/fiber栈/stats）全在 **mem-02..06**。本步 backing ~70 行、句柄 inline ~40 行、测试 ~140 行。对齐修复是**真生效**（16/32/64/128/256/4096 六档 `(uintptr_t)p%align==0` 全过），realloc 保数据已验。
 > **实现注记**：backing 用裸 `_aligned_malloc`/`posix_memalign`（用户拍板，mimalloc 留 mem-02 换进同一 vtable）。realloc=alloc+copy+free（可移植，mem-02 换 mi_realloc_aligned）。`Allocator` 句柄方法全 inline（纯转发零开销），公开表面只有函数指针+void*。失败返 nullptr 不用 Status，故不依赖 error/。
 
 ## 前置依赖
@@ -24,7 +24,7 @@
 
 ## 在架构中的位置
 
-`mem/`（T0）是 container/sched/simd/compute 的共同分配地基。本步是 walking skeleton 第四块（`...→ platform-01 → mem-01 → container-01 → sched-01`），给后面的有界 ring、fiber 栈池提供 `Allocator`。MemorySpace/arena/pool/NUMA 等是后续 mem-02..06。
+`mem/`（T0）是 container/sched/simd/compute 的共同分配地基。本步是 walking skeleton 第四块（`...→ platform-01 → mem-01 → container-01 → sched-01`），给后面的有界 ring、fiber 栈池提供 `Allocator`。arena/pool/NUMA 等是后续 mem-02..06。
 
 ## 关键设计决策
 
@@ -48,7 +48,7 @@
 
 - [ ] `include/hyle/mem/allocator.h`：`ReallocFn` 类型、`Allocator` 句柄（inline allocate/deallocate/reallocate）、`kDefaultAlignment`、`HYLE_MEM_API system_allocator()`。
 - [ ] `src/mem/system.cc`：裸对齐 backing realloc + `system_allocator()`。
-- [ ] **不做**：MemorySpace（mem-05）、arena/pool/stack（mem-03/04）、mimalloc（mem-02）、NUMA/大页（mem-06）、pmr adapter、stats。
+- [ ] **不做**：arena/pool/stack（mem-03/04）、mimalloc（mem-02）、NUMA/大页（mem-06）、pmr adapter、stats。
 
 ## 交付物
 

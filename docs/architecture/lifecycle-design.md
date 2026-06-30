@@ -101,7 +101,7 @@ runtime 怎么停，清理顺序怎么定：
 
 ## 4. 资源限额 / 故障隔离
 
-- **per-agent 资源预算**：内存配额（fiber 栈 + 分配，接 mem/ 的**计量 Allocator wrapper**——包一层记字节数的 `mem::Allocator`,非已废弃的 MemorySpace）、fiber 数上限。超限 → `Status::ResourceExhausted`，不崩。
+- **per-agent 资源预算**：内存配额（fiber 栈 + 分配，接 mem/ 的**计量 Allocator wrapper**——包一层记字节数的 `mem::Allocator`）、fiber 数上限。超限 → `Status::ResourceExhausted`，不崩。
 - **故障隔离 = 进程边界**（非 try-catch）：真实模型是多 agent 实例、每实例若干 fiber——隔离落在**每实例一进程（或有界组）**，实例崩只崩自己。进程内 fiber 同命（数量有界，非百万），是 fail-fast 的合理代价。
 - **失控检测**：sysmon（已在 sched 提）兼测长期占核 fiber / 内存暴涨 agent。
 
@@ -122,7 +122,7 @@ runtime 怎么停，清理顺序怎么定：
 - **sched-05（fiber-sync）**：channel 必须有界（背压）；CV/mutex 的等待要可取消。
 - **io-01（proactor 抽象）**：提交接口须支持取消 + cancel-safe 缓冲所有权契约；SQ 满的背压。
 - **新增里程碑**：`sched-07 取消(CancelToken树+await取消点)`、`close-01 C-ABI 错误约定`扩充、`runtime 关闭`(归 sched 或新 lifecycle 里程碑)。
-- **mem**：per-agent 内存计量挂在**计量 Allocator wrapper**(包一层 `mem::Allocator` 记字节;MemorySpace 已证伪废弃)。
+- **mem**：per-agent 内存计量挂在**计量 Allocator wrapper**(包一层 `mem::Allocator` 记字节)。
 
 ## 一句话
 

@@ -47,7 +47,7 @@ mem/（T0）特化分配器。ObjectPool 给 sched/容器的定长对象复用�
 
 - [ ] `include/hyle/mem/object_pool.h`：`ObjectPool<T>`（构造 `(Allocator, capacity)`、`create(Args&&...)->T*`、`destroy(T*)`、`capacity()`）。
 - [ ] `include/hyle/mem/stack_allocator.h`：`StackAllocator`（构造 `(Allocator, size)`、`allocate(bytes, align)->void*`、`mark()->Marker`、`rewind(Marker)`、`reset()`、`used()/capacity()`）。non-copyable/non-movable。
-- [ ] **不做**：mimalloc（mem-02）、MemorySpace（mem-05）、NUMA（mem-06）。
+- [ ] **不做**：mimalloc（mem-02）、NUMA（mem-06）。
 
 ## 交付物
 

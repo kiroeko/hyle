@@ -50,18 +50,18 @@ mem/
 
 ## device 内存:边界是显式 copy/命令提交,不是注入 CPU 容器的 space
 
-**纠正一个早期错误设计(用户 2026-06 证伪)**:曾设想"组合一个 `MemorySpace` 对象,同一套 `Arena<Space>` 容器代码透明跑 host/VRAM/unified,跨 space copy 在统一内存上塌缩为 no-op"(旧方案 D)。**这建模了一个不存在的用例**:
+device/pinned/unified 内存归 compute/ 的 stream-bound buffer,**不经 mem/ 的 CPU allocator 抽象**——host↔device 边界本就是显式的,不存在"同一套 CPU 容器代码换块内存就跑 device"的用例:
 
-- **离散 GPU**:VRAM 指针 CPU 不可解引用;device 由**独立 kernel/shader** operate;host↔device 边界**永远是显式 DMA / 命令提交**。不存在"同一套 CPU 容器代码换个 space 就跑 device"——你不会拿 VRAM-backed 的 `SwissTable` 在 CPU 上 `.find()`。
-- **统一内存(DGX/Mac)**:单一 coherent 地址空间,**无传输、无两种指针**。"copy 塌缩 no-op"是在为**不存在的问题**炫技——只有一个 space,没东西可注入/可换。
+- **离散 GPU**:VRAM 指针 CPU 不可解引用;device 由独立 kernel/shader operate;host↔device **永远是显式 DMA / 命令提交**。不会拿 VRAM-backed 的 `SwissTable` 在 CPU 上 `.find()`。
+- **统一内存(DGX/Mac)**:单一 coherent 地址空间,**无传输、无两种指针**——没有可"塌缩"的拷贝,也没东西可在 space 间换。
 
-所以 `MemorySpace` 运行时多态 + `Arena<Space>` 泛化是**过度设计**(代码从未实现,幸而)。正确模型:
+所以 mem/ 不引入"内存空间"抽象去统一 host/device(那建模了一个不存在的用例)。正确模型:
 
 - **device 内存 = compute/ 的 buffer,绑 device/stream**(ggml buft 式:枚举/能力查询薄包,内存所有权+stream 绑定自造)。分配走 compute 自己的 device API,**不是**注入 CPU 容器的 allocator。
 - **host↔device = 显式 `copy(src, dst, stream)` / 命令提交**(归 compute/,要绑 stream)。边界本就显式,不靠容器透明传递。
 - **pinned(page-locked)** = compute 侧为 DMA staging 选的 host allocator,在 buffer 分配点选定,不是容器注入的 space。
 - **NUMA** = host-RAM 在 **OS 分配层**的就近放置 hint(mbind/VirtualAllocExNuma 作用在 system allocator backing),**不是**一种 space。
-- **mem/ 不需要 MemorySpace 抽象**:它只管 host RAM 的通用/专用分配器。
+- **mem/ 只管 host RAM** 的通用/专用分配器,不引入"内存空间"抽象去跨 host/device 统一。
 
 **tier 干净**:`mem/`(T0)只管 host RAM——通用分配器(mimalloc backing)+ 专用分配器(arena/pool/stack/fiber 栈),**零 GPU 代码、随处可测**;`compute/`(T1)自己管 device/pinned/unified buffer(绑 stream),`copy(src,dst,stream)` 归 compute/(同 coherent 内存时硬件本就无需拷贝)。方向 `compute→mem` 正确,但 mem/ 不向上暴露任何 device 概念。
 
@@ -120,7 +120,7 @@ mem/
 
 1. **通用 backing = mimalloc**（现代、THP 内建、MIT、易嵌入、v3 2026）。jemalloc 多线程老牌但偏大；tcmalloc 强但 Google 生态绑定。
 2. **mimalloc 封在 `Allocator` vtable 后、不外露 mimalloc 类型**（同 compute 的 ggml_bridge 解耦），换 backing 只动 system.cc。默认路径走编译期 `SystemAllocator`(可内联,零间接);`Allocator` 运行时 vtable 是 opt-in(per-request arena / mock / 跨 DLL)。
-3. **device 内存归 compute/ 的 stream-bound buffer,不是 mem/ 的 space**(旧"方案 D MemorySpace 组合式"已证伪并废弃——见上方「device 内存」节)。host↔device 边界是显式 copy/命令提交;mem/ 只管 host RAM。NUMA 是 OS 分配层就近 hint,非 space。
+3. **device 内存归 compute/ 的 stream-bound buffer,不是 mem/ 的 space**(见上方「device 内存」节)。host↔device 边界是显式 copy/命令提交;mem/ 只管 host RAM。NUMA 是 OS 分配层就近 hint,非 space。
 
 ## 参考
 
