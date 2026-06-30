@@ -223,19 +223,22 @@ if(HYLE_BENCH_HIGHWAY)
   set(_hwy "${PROJECT_SOURCE_DIR}/third_party/highway")
   target_compile_definitions(hyle_simd_bench PRIVATE HYLE_BENCH_HIGHWAY)
   target_include_directories(hyle_simd_bench SYSTEM PRIVATE "${_hwy}")
-  # Highway static-dispatch ops are header-only; the kernel TU builds at AVX2 so its
-  # HWY_STATIC_TARGET resolves to AVX2 (parity with HYLE avx2).
-  hyle_set_isa(simd/simd_kernels_highway.cc AVX2)
-  # dtype bench's Highway f16 PromoteTo/DemoteTo path (same gate + ISA flags on its TU).
+  # Highway static-dispatch resolves its width from the FULL AVX2 baseline (SSE4=PCLMUL+AES,
+  # then BMI2+FMA+F16C); the bare AVX2 tier silently downgrades it to 128-bit SSSE3 on GCC/Clang,
+  # which would make this "parity" bench race HYLE-256b vs Highway-128b. hyle_set_highway_isa
+  # adds the missing baseline features so Highway picks true 256-bit AVX2 (see HyleModule.cmake).
+  hyle_set_highway_isa(simd/simd_kernels_highway.cc)
+  # dtype bench's Highway f16 PromoteTo/DemoteTo path (same gate + full-baseline ISA on its TU).
   target_compile_definitions(hyle_dtype_bench PRIVATE HYLE_BENCH_HIGHWAY)
   target_include_directories(hyle_dtype_bench SYSTEM PRIVATE "${_hwy}")
-  hyle_set_isa(simd/dtype_bench.cc AVX2)
-  # math bench's Highway contrib/math (Exp/Log/Tanh) path -- same gate + AVX2 TU flags
-  # (gap-fill #36: same-ISA transcendental SOTA). hyle_set_isa is idempotent if xsimd
-  # already set math_bench.cc to AVX2 (same tier -> same flags).
+  hyle_set_highway_isa(simd/dtype_bench.cc)
+  # math bench's Highway contrib/math (Exp/Log/Tanh) path -- same gate + full-baseline ISA
+  # (gap-fill #36: same-ISA transcendental SOTA). Note: this OVERRIDES the xsimd AVX2 tier set
+  # below/above on the same TU, but the highway baseline is a strict superset, so xsimd (which
+  # only needs -mavx2) still lowers to AVX2 transcendentals -- no regression to the xsimd rows.
   target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_HIGHWAY)
   target_include_directories(hyle_math_bench SYSTEM PRIVATE "${_hwy}")
-  hyle_set_isa(simd/math_bench.cc AVX2)
+  hyle_set_highway_isa(simd/math_bench.cc)
 endif()
 
 # Optional SOTA parity: HYLE fiber sync vs marl (the fiber-sync library this

@@ -58,6 +58,27 @@ function(hyle_set_isa src tier)
   endif()
 endfunction()
 
+# hyle_set_highway_isa(<source-file>) -- ISA flags for a *Highway static-dispatch* bench TU.
+# DISTINCT from hyle_set_isa(AVX2) on purpose: HYLE's own kernels are hand-written intrinsics
+# that emit 256-bit code from just `-mavx2 -mfma -mf16c` (the AVX2 tier = our kernel ISA
+# contract, kept minimal for SIGILL-safety). But Highway's HWY_STATIC_TARGET resolves its
+# vector width from the FULL baseline-feature macro chain in detect_targets.h:
+#   AVX2 baseline  <- SSE4 baseline (needs __PCLMUL__ + __AES__) + BMI2 + FMA + F16C + __AVX2__
+# With only `-mavx2 -mfma -mf16c`, Highway silently DOWNGRADES to SSSE3 (128-bit, Lanes=4) on
+# GCC/Clang -- so a "HYLE avx2 vs Highway avx2" parity bench would actually race HYLE-256b vs
+# Highway-128b and report a bogus ~1.1-2x "win". MSVC's /arch:AVX2 already sets the whole set,
+# so this only bites GCC/Clang. Add the missing baseline features so Highway picks true 256-bit
+# AVX2, making the parity bench apples-to-apples. (Verified: with these, HWY_STATIC_TARGET=AVX2,
+# Lanes=8, and all four kernels emit ymm.)
+function(hyle_set_highway_isa src)
+  if(MSVC)
+    set(_flags "/arch:AVX2")  # MSVC's /arch:AVX2 already implies the full AVX2 baseline
+  else()
+    set(_flags "-mavx2;-mfma;-mf16c;-mbmi;-mbmi2;-maes;-mpclmul")
+  endif()
+  set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
+endfunction()
+
 # hyle_add_module(<name> [SOURCES ...] [DEPS ...] [PUBLIC_DEPS ...])
 # Declares a HYLE module as a library target `hyle_<name>` with conventional
 # include dirs, warnings, sanitizer flags, and a tri-state export macro.

@@ -27,12 +27,12 @@
 | **hash** raw hash_bytes 16B | 0.15 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | 0.10 | 0.67x | ➖测量地板(0.05ns 寄存器驻留;热路径 Hash&lt;T&gt; 赢 wyhash 1.6x) |
 | **hash** raw hash_bytes 64B | 0.14 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | ~0.10 | 0.69x | ➖0.01ns 测量地板(保 xxhash.h 隐藏架构) |
 | **hash** raw hash_bytes 256B | ~0.20 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 / wyhash | 0.20/0.07 | 1.0x/0.33x | ➖平 XXH3(wyhash 中串更强,观察) |
-| **simd** dot product(4096 f32) | 0.08 | scalar autovec | 0.37 | 4.55x | Highway avx2 | 0.08 | ~1.0x | ✅赢 std、平 Highway |
-| **simd** saxpy(4096 f32) | 0.03 | scalar autovec | 0.05 | 1.55x | Highway avx2 | 0.03 | ~1.0x | ✅赢 std、平 Highway |
-| **simd** reduce_max(4096 f32) | 0.08 | scalar autovec | ~0.12 | ~1.5x | Highway avx2 | ~0.08 | ~1.0x | ➖平 Highway |
-| **simd** scale(4096 f32) | 0.03 | scalar autovec | ~0.03 | ~1.0x | Highway avx2 | ~0.03 | ~1.0x | ➖平(带宽受限) |
-| **simd** dot_f32 公开分发入口 | 0.08 | scalar autovec | 0.37 | 4.5x | 直调 avx2(无间接) | 0.08 | ~1.0x | ➖fn-ptr 分发税≈0(4096 batch 摊薄) |
-| **simd** saxpy_f32 公开分发入口 | 0.03 | scalar autovec | 0.05 | ~1.5x | 直调 avx2(无间接) | 0.03 | ~1.0x | ➖分发税不可测 |
+| **simd** dot product(4096 f32) | 0.079 | scalar autovec | 0.37 | 4.6x | Highway avx2 | 0.079 | 1.00x | ✅赢 std、**平 Highway(统计平局)** |
+| **simd** saxpy(4096 f32) | 0.039 | scalar autovec | 0.057 | 1.45x | Highway avx2 | 0.039 | 1.00x | ✅赢 std、**平 Highway(统计平局)** |
+| **simd** reduce_max(4096 f32) | 0.077 | scalar autovec | 0.73 | 9.5x | Highway avx2 | 0.077 | 1.00x | ➖平 Highway(统计平局) |
+| **simd** scale(4096 f32) | 0.025 | scalar autovec | 0.044 | 1.8x | Highway avx2 | 0.025 | 1.01x | ➖平 Highway(统计平局,带宽受限) |
+| **simd** dot_f32 公开分发入口 | 0.079 | scalar autovec | 0.37 | 4.6x | 直调 avx2(无间接) | 0.079 | 1.00x | ➖分发税仅在大 batch 摊薄≈0(4096 元素摊 1 次间接跳转);**小 n 未测** |
+| **simd** saxpy_f32 公开分发入口 | 0.038 | scalar autovec | 0.057 | 1.5x | 直调 avx2(无间接) | 0.039 | 1.00x | ➖同上(大 batch 摊薄≈0,小 n 未测) |
 | **dtype** f16→f32 | 0.02 | scalar ref | ~0.10 | 3.5–6.9x | Highway PromoteTo | ~0.04 | 1.9x | ✅赢 |
 | **dtype** f32→f16 | 0.03 | scalar ref | ~0.13 | 3.5–6.9x | Highway DemoteTo | ~0.05 | 1.6x | ✅赢 |
 | **dtype** bf16↔f32 | 0.03/0.11 | scalar ref | 0.2–0.4 | 3.5–6.9x | Highway bf16(未对照) | n/a | ⏳待补 | ✅赢 scalar;Highway bf16 待补 |
@@ -182,18 +182,20 @@
 
 
 
-> 环境:WSL Ubuntu24.04 原生 ext4(非 9p)、GCC14.2 Release、nanobench。4096 个 f32(L1 常驻,隔离计算吞吐非内存带宽)。`bench/simd/`。**Highway = SOTA 标尺**(同 -mavx2 静态 dispatch,与 HYLE avx2 同 ISA、同 kernel 形状,只差抽象层)。**数字 = 4 遍均值(2026-06-29 复测,沿 hashmap 那节的多遍统计纪律,非单遍)。**
+> 环境:WSL Ubuntu24.04 原生 ext4(非 9p)、GCC14.2 Release、nanobench。4096 个 f32(L1 常驻,隔离计算吞吐非内存带宽)。`bench/simd/`。**Highway = SOTA 标尺**(静态 dispatch,与 HYLE avx2 同 ISA、同 kernel 形状,只差抽象层)。**数字 = 15 遍进程级复测的中位数 op/s + run-to-run spread(`scripts/bench-stat.py` 驱动,沿 hashmap find-miss 那节的统计纪律)**;判定规则:差距 > 两变体 spread 之和才算赢/输,否则**统计平局**。
+>
+> **⚠️ 公平性更正(2026-06-30)**:此前此节标 dot"~1.10x 微超"、saxpy"~1.21x 微超" Highway——**是假象,源于对照被编瘸**。Highway 的 `HWY_STATIC_TARGET` 从完整 baseline 宏链(`detect_targets.h`)推断向量宽度:AVX2 baseline 需要 SSE4 baseline(`__PCLMUL__`+`__AES__`)再加 BMI2+FMA+F16C。bench 给 Highway 对照 TU 的是 HYLE 自家 kernel 的 AVX2 ISA 契约(`-mavx2 -mfma -mf16c`,刻意精简、关联 SIGILL-safety),在 **GCC/Clang 下让 Highway 静默降级到 SSSE3(128 位,Lanes=4)**——objdump 实证四个 `*_highway` kernel 全是 xmm 无 ymm。于是"parity"实际是 HYLE-256b vs Highway-128b,那 1.1-2x"赢"是宽度差不是抽象优势。修复:`hyle_set_highway_isa`(`HyleModule.cmake`)给对照 TU 补全 baseline(`-mbmi -mbmi2 -maes -mpclmul`),Highway 选回真 256 位 AVX2(`HWY_STATIC_TARGET=AVX2`、Lanes=8、四 kernel 全 emit ymm)。MSVC `/arch:AVX2` 本就含完整 baseline,故 Win 侧测的 dtype/math 节不受影响。下表是**修复后**的公平数据。
 
-| kernel | scalar(auto-vec SSE2) | HYLE sse4(128b) | HYLE avx2(256b+FMA) | Highway avx2(**SOTA**) | 结论 |
+| kernel | scalar(auto-vec SSE2) | HYLE sse4(128b) | HYLE avx2(256b+FMA) | Highway avx2(**真 256b SOTA**) | 结论(15 遍中位数) |
 |---|---|---|---|---|---|
-| **dot product** | 2.75 G op/s (1.0x) | 11.2 G (4.07x) | **12.4 G (4.5x)** | 11.2 G (4.07x) | **追平/微超 Highway**(~1.10x,4 遍均赢);4.5x over auto-vec |
-| **saxpy** y=a*x+y | 17.3 G (1.0x) | 17.5 G (1.01x) | **25.1 G (1.45x)** | 20.7 G (1.20x) | avx2 **~1.21x 微超** Highway;saxpy 内存带宽受限故倍数低 |
+| **dot product** | 2.73 G op/s (1.0x) | 11.3 G (4.1x) | **12.6 G (4.6x)** | 12.7 G (4.6x) | **平 Highway**(ratio 1.00,gap 0.3% « spread 10%) |
+| **saxpy** y=a*x+y | 17.4 G (1.0x) | 17.4 G (1.0x) | **25.5 G (1.46x)** | 25.6 G (1.47x) | **平 Highway**(ratio 1.00,gap 0.2% « spread 13%) |
 
-**结论(回答"比 SOTA 有下降么")**:**没有——HYLE 向量后端追平且小幅微超 Highway**。dot 上 HYLE avx2 ~1.10x、saxpy ~1.21x,**4 遍复测 HYLE avx2 两 kernel 均稳定领先**(非单遍噪声);但领先幅度小(dot 0.08 ns/op 量级,两边内循环都编成同一条 `vfmadd231ps`,objdump 可证),诚实表述是**追平/微超 SOTA**,非"碾压"。compute-bound 的 dot 上 **4.5x over 自动向量化标量**,落在性能文档"SIMD 4-16x / vs auto-vec 1.5-4x"区间(dot 含 reduction,略超 4x 合理)。saxpy 是 3 流内存操作(读 x/读 y/写 y),标量 auto-vec 已近饱和带宽,故 SIMD 倍数天然低——AVX2 靠更宽 load 仍取 1.45x。**SSE4 saxpy ~1.0x(与标量持平)**诚实留账:128 位宽度下该 kernel 已带宽受限,SIMD 无加速空间,非 bug。
+**结论(回答"比 SOTA 有下降么")**:**没有,也没有虚假领先——HYLE 向量后端与 Highway 统计平局**。公平的同 ISA 对照下,dot/saxpy 两 kernel 的 per-run op/s 比值中位数都是 ~1.00(min/max 横跨 1.0),差距远小于测量 spread——两边内循环都编成同一条 `vfmadd231ps`(objdump 可证),本就该同速。compute-bound 的 dot 上 **4.6x over 自动向量化标量**,落在性能文档"SIMD 4-16x / vs auto-vec 1.5-4x"区间(dot 含 reduction,略超 4x 合理)。saxpy 是 3 流内存操作(读 x/读 y/写 y),标量 auto-vec 已近饱和带宽,故 SIMD 倍数天然低——AVX2 靠更宽 load 仍取 1.46x。**SSE4 saxpy ~1.0x(与标量持平)**诚实留账:128 位宽度下该 kernel 已带宽受限,SIMD 无加速空间,非 bug。
 >
-> **意义**:这验证了"自造精简抽象不牺牲性能"——HYLE 的 vec.h+后端(~340+360 行)在热路径上与 vendor 整个 Highway(单后端 ~3k 行)同速或微超。抽象层零成本(全内联到 intrinsic),没有为"可移植"付性能税。
+> **意义**:这验证了"自造精简抽象不牺牲性能"——HYLE 的 vec.h+后端(~340+360 行)在热路径上与 vendor 整个 Highway(单后端 ~3k 行)**同速(统计平局)**。抽象层零成本(全内联到 intrinsic),没有为"可移植"付性能税。**平局比"微超"更可信**:同形 kernel 编出同样指令,本就不该有谁快几个百分点;之前那点"领先"恰恰是对照失真的红旗。
 >
-> **范围诚实**:此对标只覆盖 **dot/saxpy 两个 compute/memory-bound 数值核**(AI 热路径主力)。Highway 还有 ~200 op(swizzle/gather/scatter/compress/transcendental)+ 6 ISA,HYLE 现做 ~25 op + 2 ISA 实跑——**"追平"指已实现的核上追平,非功能对等**。广度补全(int 量化类型/更多 op/AVX512 启用)见 milestones simd 延期登记。**正确性**:Ne(NaN)/Neg(±0) 等边界经红队批量审计揪修(2026-06,见 milestones simd-02/03),已加 FloatEdgeCases 覆盖。
+> **范围诚实**:此对标只覆盖 **dot/saxpy/reduce_max/scale 四个 compute/memory-bound 数值核**(AI 热路径主力)。Highway 还有 ~200 op(swizzle/gather/scatter/compress/transcendental)+ 6 ISA,HYLE 现做 ~25 op + 2 ISA 实跑——**"平"指已实现的核上同速,非功能对等**。广度补全(int 量化类型/更多 op/AVX512 启用)见 milestones simd 延期登记。**正确性**:Ne(NaN)/Neg(±0) 等边界经红队批量审计揪修(2026-06,见 milestones simd-02/03),已加 FloatEdgeCases 覆盖。
 
 ### simd 数学核（exp/log/tanh vs 标量 libm + 同 ISA SOTA xsimd/Highway，`math_bench.cc`）
 
@@ -225,14 +227,14 @@
 
 ### simd 逐 op 扩展（reduce_max / scale，`simd_bench.cc`）
 
-> dot/saxpy 之外补两个 distinct pattern,验证 vec.h 抽象在非 FMA 模式下是否退化。环境同上,4 ISA 隔离 TU。
+> dot/saxpy 之外补两个 distinct pattern,验证 vec.h 抽象在非 FMA 模式下是否退化。环境同上(15 遍中位数+spread,Highway 真 256b 对照——见上节公平性更正)。
 
-| op | scalar(auto-vec) | HYLE sse4 | HYLE avx2 | Highway(SOTA) | 结论 |
+| op | scalar(auto-vec) | HYLE sse4 | HYLE avx2 | Highway(真 256b SOTA) | 结论(15 遍中位数) |
 |---|---|---|---|---|---|
-| **reduce_max**(非 sum 归约) | 0.74 ns | 0.17(4.3x) | **0.08(9.7x)** | 0.08 | **平 Highway** |
-| **scale** y=a*x(纯乘) | 0.03 ns | 0.05 | **0.03(1.16x)** | 0.03 | **平 Highway**(带宽受限) |
+| **reduce_max**(非 sum 归约) | 0.73 ns | 0.17(4.3x) | **0.077(9.5x)** | 0.077 | **平 Highway**(ratio 1.00,gap 0.2% « spread 16%) |
+| **scale** y=a*x(纯乘) | 0.044 ns | 0.043 | **0.025(1.8x)** | 0.025 | **平 Highway**(ratio 1.01,带宽受限) |
 
-**结论(干净,无欺骗)**:**4 个 pattern(dot/saxpy/reduce_max/scale)HYLE avx2 全平 Highway**——vec.h 抽象在 sum-归约之外的 max-归约、纯 element-wise map 上同样零成本,无隐藏退化。reduce_max 9.7x 赢 scalar;scale 是 1 读 1 乘 1 写的内存受限 op,scalar auto-vec(SSE2)已近饱和带宽,故 avx2 仅 ~1.16x(正常,非缺陷)。sse4 在 scale/saxpy 这类带宽受限 op ~1x(128b 与 scalar SSE2 同宽,无更宽 load 优势)。
+**结论(干净,无欺骗)**:**4 个 pattern(dot/saxpy/reduce_max/scale)HYLE avx2 全与 Highway 统计平局**——vec.h 抽象在 sum-归约之外的 max-归约、纯 element-wise map 上同样零成本,无隐藏退化。reduce_max 9.5x 赢 scalar;scale 是 1 读 1 乘 1 写的内存受限 op,scalar auto-vec(SSE2)已近饱和带宽,故 avx2 仅 ~1.8x(正常,非缺陷)。sse4 在 scale/saxpy 这类带宽受限 op ~1x(128b 与 scalar SSE2 同宽,无更宽 load 优势)。**注**:此前 reduce_max/scale 曾对 128 位瘸腿 Highway 显出 ~2x 假性领先(同上节根因);修正对照后归于平局——结论方向不变,但数字过程已诚实化。
 
 
 
