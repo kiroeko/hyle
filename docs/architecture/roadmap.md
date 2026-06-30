@@ -15,25 +15,24 @@ error/  ────────────────────────
 platform/ (thread/vm/dynlib/path/fs/park)    │
   │                                          │
   ├──────────────┐                           │
-  ▼              ▼                            │
-mem/          time/                          │  obs/ hook 接口
-(mimalloc      (单调钟+                       │  (最小埋点 API，
- backing,       时间轮)                       │   P0 先定、空实现，
- 修 alignment)   │                            │   各模块热路径嵌)
-  │              │                            │
-  ├────────┐     │                            │
-  ▼        ▼     │                            │
-container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖整个 simd/)
-(ring/MPMC/(可移植│
- intrusive/ vector+│
- SwissTable)dispatch)│
-  │        │     │
-  └────┬───┴─────┘
-       ▼
+  ▼              ▼                            │  obs/ hook 接口
+mem/          time/                          │  (最小埋点 API，
+(mimalloc      (单调钟+                       │   P0 先定、空实现，
+ backing,       时间轮)                       │   各模块热路径嵌)
+ 修 alignment)   │                            │
+  │              │                            │   simd/  ← 零 HYLE 依赖根（只用
+  ▼              │                            │   (可移植       platform.h 宏伞探 ISA，
+container/       │                            │    vector+      不 include mem；container
+(ring/MPMC/      │                            │    dispatch)    自带内联 SSE 探测片段，
+ intrusive/      │                            │    │            也不依赖 simd/)
+ SwissTable)     │                            │    │  喂 compute kernel
+  │              │                            │    │
+  └────────┬─────┴────────────────────────────────┘
+           ▼
    ┌─────────────────────────┐
    │  sched/  【关键路径瓶颈】 │  ← 依赖 container(队列原语)+time(deadline)
    │  fcontext+work-stealing  │     +platform(park)+mem(fiber栈)
-   │  +Waker completion 脊    │
+   │  +Waker completion 脊    │     （不依赖 simd）
    │  +fiber-aware sync       │
    └───────────┬─────────────┘
        ┌───────┼───────┐
@@ -49,7 +48,7 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
    C-ABI shim（各模块稳定后逐个封）+ ffi 绑定（build-time）
 ```
 
-**无环校验**：error → platform → {mem,time} → {container,simd} → sched → {io,compute} → graph。单向，无回边。`simd/` 只依赖 `mem/`（对齐契约），**不在通往 sched 的关键路径上**，可与 container 并行、晚点喂 compute。
+**无环校验**：error → platform → {mem,time} → container → sched → {io,compute} → graph。单向，无回边。`simd/` 是**零 HYLE 依赖的根**（与 error 同层，只用 `platform.h` 宏伞做编译期 ISA 探测，实现里不 include 任何 HYLE 模块，包括 mem）——可与整条链**完全并行**，最终只喂 compute 的 kernel，**不在通往 sched 的关键路径上**。（曾计划 simd 依赖 mem 的对齐契约，但 kernel 走 LoadU/StoreU 非对齐 load，该边未落地。）
 
 ## 二、施工计划：两个轴别混
 
@@ -85,7 +84,7 @@ container/ simd/ │   (container 内联自包含 SIMD 探测片段，不依赖�
 
 **HYLE 自有合计:~30-45k 生产 / ~48-72k 含测试**(实测 test/prod≈0.62)。**约 47 个里程碑**(milestones/README 为准),每个"写完→编过→单测→基准→提交"闭环。
 
-**关键路径**（最长链）：`error → platform → mem → container → sched`。sched 是瓶颈，等 container 队列 + time + platform park 全就位。所以 **P2/P3 的 container/time 要尽早动**。simd 不在关键路径（只依赖 mem 对齐），可与 container 并行、晚点喂 compute。
+**关键路径**（最长链）：`error → platform → mem → container → sched`。sched 是瓶颈，等 container 队列 + time + platform park 全就位。所以 **P2/P3 的 container/time 要尽早动**。simd 不在关键路径（**零 HYLE 依赖,只用 platform.h 宏伞探 ISA**），可与整条链完全并行、晚点喂 compute。
 
 ### 当前实现状态 → 见 milestones/README（唯一进度信源）
 

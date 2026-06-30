@@ -103,7 +103,7 @@ device/pinned/unified 内存归 compute/ 的 stream-bound buffer,**不经 mem/ �
 - **→ sched/**：`fiber_stack.h` 供 fiber 栈（定长 + 尾部 guard page 捕溢出 + 池化复用，避免频繁 mmap）。sched 第一节的栈管理就落在这。
 - **→ compute/**:`pinned.h` 供 GPU DMA 的 page-locked host 内存(compute 在 buffer 分配点选用)。device 内存是 compute/ 自己的 stream-bound buffer,**不走 mem/ 的 allocator 抽象**(host↔device 边界显式 copy,见上「device 内存」节)。
 - **→ container/**:容器**默认编译期 `SystemAllocator`**(零开销);需 arena/mock 时显式 opt-in 注入 `Allocator`。flat hashmap/carray 的分配走 mem/。
-- **→ simd/**：64B 对齐契约——`mem/` 保证对齐，`simd/` 才能安全做对齐 load/store。**修 alignment 丢弃 bug 是这条契约的前提。**
+- **→ simd/**:**无依赖边(澄清)**。曾设想 64B 对齐契约(mem 保证对齐 → simd 做对齐 load/store),但 simd kernel 实现走 `LoadU/StoreU` 非对齐 load,**不 include 任何 mem 头**——simd 是零 HYLE 依赖根,与 mem 无耦合。alignment 丢弃 bug 的修复对 mem 自身的对齐保证仍有效(arena/pool 返回对齐块),只是 simd 不通过这条契约消费它。
 - **std::pmr 互操作**：提供薄 `pmr::memory_resource` adapter，让 std 容器也能用 HYLE 分配器（低成本、高互操作价值）。
 
 ## 落地清单
