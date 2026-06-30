@@ -33,6 +33,30 @@ option(HYLE_STATIC      "build static lib (default SHARED)" OFF)
 option(HYLE_WERROR      "treat warnings as errors (CI on, local off)" OFF)
 set(HYLE_SANITIZER "off" CACHE STRING "off|asan|tsan|ubsan")
 set_property(CACHE HYLE_SANITIZER PROPERTY STRINGS off asan tsan ubsan)
+# VALIDATE + NORMALIZE the value. set_property(STRINGS) only fills the GUI dropdown; it does
+# NOT reject a bad -D value, so `-DHYLE_SANITIZER=thread` (a natural mistake -- it's the
+# compiler's own -fsanitize=THREAD name) used to fall through every STREQUAL and silently
+# build with NO instrumentation -> a green test run that proved nothing (a FALSE pass). Accept
+# the compiler-native aliases (address/thread/undefined/none) AND hard-FAIL on anything else,
+# so a typo can never again degrade to "off" unnoticed.
+string(TOLOWER "${HYLE_SANITIZER}" _san_lc)
+if(_san_lc STREQUAL "address")
+  set(_san_lc "asan")
+elseif(_san_lc STREQUAL "thread")
+  set(_san_lc "tsan")
+elseif(_san_lc STREQUAL "undefined")
+  set(_san_lc "ubsan")
+elseif(_san_lc STREQUAL "none" OR _san_lc STREQUAL "")
+  set(_san_lc "off")
+endif()
+if(NOT _san_lc MATCHES "^(off|asan|tsan|ubsan)$")
+  message(FATAL_ERROR
+    "HYLE_SANITIZER='${HYLE_SANITIZER}' is not valid. Use one of: off | asan | tsan | ubsan "
+    "(aliases address/thread/undefined/none also accepted). Refusing to silently build "
+    "WITHOUT instrumentation -- that would make a sanitizer run a false pass.")
+endif()
+set(HYLE_SANITIZER "${_san_lc}" CACHE STRING "off|asan|tsan|ubsan" FORCE)
+message(STATUS "HYLE_SANITIZER = ${HYLE_SANITIZER}")
 
 # Build configurations. Multi-config generators (VS, Xcode, Ninja Multi-Config)
 # pick per-build via --config; single-config (plain Ninja, Makefiles) via
