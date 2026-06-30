@@ -63,7 +63,15 @@ target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HIGHWAY_MATH HYLE_SIMD_XS
 target_include_directories(hyle_simd SYSTEM PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/highway"
   "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
-hyle_set_isa(math/transcendental_highway.cc AVX2)
+# transcendental_highway.cc uses Highway's STATIC dispatch (hn::Exp/Log/Tanh), whose
+# HWY_STATIC_TARGET resolves vector width from the FULL AVX2 baseline macro chain (SSE4=
+# PCLMUL+AES + BMI2+FMA+F16C). The bare AVX2 tier (-mavx2 -mfma -mf16c) is missing
+# bmi2/aes/pclmul, so on GCC/Clang Highway SILENTLY downgrades to 128-bit SSSE3 -- the
+# shipped log core ran at half width (objdump: 0 ymm, 170 xmm; log batch 0.53ns vs the
+# 256-bit 0.27ns). hyle_set_highway_isa adds the missing baseline so the PRODUCT core gets
+# true 256-bit AVX2. (MSVC /arch:AVX2 already implies the full set, so this only bit Linux.)
+# xsimd does NOT need this -- its batch<float> width comes from its own headers, -mavx2 is enough.
+hyle_set_highway_isa(math/transcendental_highway.cc)
 hyle_set_isa(math/transcendental_xsimd.cc AVX2)
 
 # BASELINE ASSUMPTION (the SIGILL-safety contract): for a DISTRIBUTABLE binary, build the

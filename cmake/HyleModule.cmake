@@ -58,18 +58,21 @@ function(hyle_set_isa src tier)
   endif()
 endfunction()
 
-# hyle_set_highway_isa(<source-file>) -- ISA flags for a *Highway static-dispatch* bench TU.
+# hyle_set_highway_isa(<source-file>) -- ISA flags for ANY TU that uses Highway's STATIC
+# dispatch (hn::Exp/PromoteTo/etc) -- both bench comparison TUs AND product-lib cores that
+# borrow Highway (e.g. src/simd/math/transcendental_highway.cc).
 # DISTINCT from hyle_set_isa(AVX2) on purpose: HYLE's own kernels are hand-written intrinsics
 # that emit 256-bit code from just `-mavx2 -mfma -mf16c` (the AVX2 tier = our kernel ISA
 # contract, kept minimal for SIGILL-safety). But Highway's HWY_STATIC_TARGET resolves its
 # vector width from the FULL baseline-feature macro chain in detect_targets.h:
 #   AVX2 baseline  <- SSE4 baseline (needs __PCLMUL__ + __AES__) + BMI2 + FMA + F16C + __AVX2__
 # With only `-mavx2 -mfma -mf16c`, Highway silently DOWNGRADES to SSSE3 (128-bit, Lanes=4) on
-# GCC/Clang -- so a "HYLE avx2 vs Highway avx2" parity bench would actually race HYLE-256b vs
-# Highway-128b and report a bogus ~1.1-2x "win". MSVC's /arch:AVX2 already sets the whole set,
-# so this only bites GCC/Clang. Add the missing baseline features so Highway picks true 256-bit
-# AVX2, making the parity bench apples-to-apples. (Verified: with these, HWY_STATIC_TARGET=AVX2,
-# Lanes=8, and all four kernels emit ymm.)
+# GCC/Clang. This bit TWICE: (1) the parity benches raced HYLE-256b vs Highway-128b (bogus
+# "win"); (2) the SHIPPED transcendental_highway core ran at 128-bit on Linux -- log batch
+# 0.53ns vs the 256-bit 0.27ns, a real product perf bug (objdump: 0 ymm/170 xmm). MSVC's
+# /arch:AVX2 already sets the whole set, so this only bites GCC/Clang. Add the missing
+# baseline so Highway picks true 256-bit AVX2. (Verified: HWY_STATIC_TARGET=AVX2, Lanes=8,
+# ymm emitted; Linux log batch 0.53->0.27ns, ties Highway core.)
 function(hyle_set_highway_isa src)
   if(MSVC)
     set(_flags "/arch:AVX2")  # MSVC's /arch:AVX2 already implies the full AVX2 baseline
