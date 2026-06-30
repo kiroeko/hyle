@@ -467,6 +467,19 @@
 - **桶 A — 同操作更省开销（真 drop-in 可比）**：hashmap、分配器、容器。给"倍数"有意义。
 - **桶 B — std 根本没有的能力**：fiber、async IO。"倍数"是错的框（无可比物），是「从不能到能」。
 
+## 遗留优化方向（服务器/AVX-512，已赢或已平但仍有天花板——留账非即做）
+
+> 逐模块性能审查(error→simd→math→dtype→platform→mem→time)后，把"已经 ✅赢 or ➖平 SOTA、但本机硬件够不到、或仍差一条指令"的优化方向**显式记账**于此，免得当成"已封顶"忘掉。**本开发机 = i9-13900K，AVX2-only 无 AVX-512**(P-core 屏蔽了 512)，故 ①②③ 在此机**无法实跑验证**——服务器(目标部署环境)上才兑现。**纪律:不在无 AVX-512 的本机盲目实现**(写了也只能 objdump 验、不能对拍，等同现存"存疑"档)；待 Intel SDE 或真 AVX-512 机到位再落地+对拍。④ 与硬件无关，是纯 codegen 空间。
+
+| # | 方向 | 当前真相(已核实) | 优化空间 | 兑现条件 |
+|---|---|---|---|---|
+| ① | **dtype `f32→bf16` 用 native `VCVTNEPS2BF16`** | 现走 AVX2 多步核(`cvt_avx2.cc`:RNE bias+shift+packus+permute，~7 条 ymm)，实测 Win 1.09x/Lin 平 Highway——dtype 唯一**没拉开**的转换 | AVX512-BF16 把整段 RNE 折成**单条** `vcvtneps2bf16`；probe 位 `avx512bf16` 已在 `dispatch.h:63` 就绪，缺的是 kernel + dispatch 档 | AVX-512-BF16 机/SDE 实跑对拍(纯位运算，与 scalar oracle bit-identical 可验) |
+| ② | **simd ops AVX-512 派发档实跑验证** | `kernels_avx512.cc` 已写+编+objdump 验(33 zmm 含 `vfmadd213ps zmm`)，但**未执行**；dispatcher 默认仍路由 AVX-512 host 进此未验证路径(`dispatch_ops.cc`) | 不是"加代码"是"**验已有代码**"——上真机/SDE 跑 `ops_test`/`vec_test`(宽度无关对拍直接可用)，把"存疑"转"已验" | 同上(共享 `kernel_impl.h` 体，与已实跑的 avx2/sse4 同源，仅宽度宏不同) |
+| ③ | **math exp/log/tanh 512b 变体** | `src/simd/math/` 仅 scalar/xsimd/Highway 三档，**无任何 512 路径**(grep 空)；现 256b 已平两库 SOTA | xsimd + Highway contrib/math 都支持 512b——加一个 512 TU + dispatch 档，AVX-512 机上吞吐应再翻倍(16 lane vs 8) | 同上 + 借库的 512 核已 vendored，主要是 TU+dispatch 接线工作 |
+| ④ | **Arena/StackAllocator 改 pointer-style bump**(硬件无关) | 现 offset-based:存 `base_`+`top_`(offset)，每次 `allocate` 重算 `base+top_`→对齐→`aligned-base`(多一条 +base、一条 -base，已 objdump 坐实)；实测 0.74ns 已平 std::pmr | canonical(libstdc++ monotonic)存 `cur_`/`end_` 双指针，纯指针 bump 省掉那两条加减 | 随时可做，但**亚-ns 天花板**(0.74ns 里这两条 ALU 占比极小，且对齐运算仍在)——低优先级，记账备查 |
+
+**诚实定性**:①②③ 全是**服务器侧才兑现**的 AVX-512 红利，本机做不了对拍，盲做=徒增"存疑"码；④ 是真实但**极小**的 codegen 空间(亚-ns 量级，bump 已经赢)。**没有一项是"本机低成本高收益"**——time/`monotonic_ns` 那种(一次频率特判换 1.48x)的机会，这轮逐模块扫描后**未再发现第二个**。此表是"待目标硬件/低优先级"的诚实备查清单，非即做项。
+
 ## 主表：时间 / 空间分列
 
 ### 桶 A：drop-in 可比
