@@ -18,6 +18,10 @@
 #              -mavx512* flags matching backend/avx512.h's compile contract. ONLY entered
 #              when best_isa() >= kAvx512 (the AVX3 group is runtime-gated), so the zmm
 #              codegen never runs on a non-AVX512 CPU.
+#   AVX512_BF16 : AVX512 + the bf16 convert extension (VCVTNEPS2BF16). MSVC's /arch:AVX512
+#              already enables the bf16 intrinsics (probe-verified, CL 19.50); GCC/Clang add
+#              -mavx512bf16 on top of the AVX512 four. ONLY entered when cpu_features().
+#              avx512bf16 (runtime-gated), so the bf16 instruction never runs without it.
 # Returns a CMake list in <out_var> (may be empty, e.g. SSE42 on MSVC).
 function(hyle_isa_flags out_var tier)
   if(MSVC)
@@ -29,6 +33,8 @@ function(hyle_isa_flags out_var tier)
       set(${out_var} "/arch:AVX2" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512")
       set(${out_var} "/arch:AVX512" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX512_BF16")
+      set(${out_var} "/arch:AVX512" PARENT_SCOPE)  # MSVC /arch:AVX512 already covers bf16 intrinsics
     else()
       message(FATAL_ERROR "hyle_isa_flags: unknown tier '${tier}'")
     endif()
@@ -43,6 +49,8 @@ function(hyle_isa_flags out_var tier)
       set(${out_var} "-mavx2" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512")
       set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX512_BF16")
+      set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512bf16" PARENT_SCOPE)
     else()
       message(FATAL_ERROR "hyle_isa_flags: unknown tier '${tier}'")
     endif()
@@ -78,6 +86,26 @@ function(hyle_set_highway_isa src)
     set(_flags "/arch:AVX2")  # MSVC's /arch:AVX2 already implies the full AVX2 baseline
   else()
     set(_flags "-mavx2;-mfma;-mf16c;-mbmi;-mbmi2;-maes;-mpclmul")
+  endif()
+  set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
+endfunction()
+
+# hyle_set_avx512_math_isa(<source-file>) -- ISA flags for the AVX-512 (16-wide) borrow-core
+# math TUs (transcendental_xsimd_avx512.cc / transcendental_highway_avx512.cc). DISTINCT from
+# the ops AVX512 tier (f/bw/vl/dq) for TWO reasons proven by compile probes:
+#   - xsimd's avx512dq kernels assume avx512cd (its headers #error "avx512dq requires
+#     avx512cd" without it), so the math group needs CD on top of the ops four.
+#   - Highway's HWY_STATIC_TARGET must see the FULL baseline macro chain to pick AVX3: the
+#     AVX2 baseline (SSE4=PCLMUL+AES + BMI2+FMA+F16C) PLUS the AVX-512 group -- else it
+#     silently downgrades (same trap as hyle_set_highway_isa, now one tier wider).
+# So this is the AVX2 highway baseline + the full AVX-512 group (f/bw/vl/dq/cd). MSVC's
+# /arch:AVX512 already implies the whole set (probe-verified, CL 19.50). Only reached when
+# best_isa() >= kAvx512 (runtime-gated in math_dispatch), so the zmm never runs on a non-512 CPU.
+function(hyle_set_avx512_math_isa src)
+  if(MSVC)
+    set(_flags "/arch:AVX512")
+  else()
+    set(_flags "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512cd;-mavx2;-mfma;-mf16c;-mbmi;-mbmi2;-maes;-mpclmul")
   endif()
   set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
 endfunction()

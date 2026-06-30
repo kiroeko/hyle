@@ -26,6 +26,18 @@ void tanh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void exp_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void tanh_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void log_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
+
+// AVX-512 (16-wide) siblings of the AVX2 borrow cores -- same xsimd/Highway cores, just
+// compiled at the AVX-512 tier so they lower to zmm. math_dispatch enters these only when
+// best_isa() >= kAvx512; else it stays on the AVX2 cores above (then scalar floor).
+void exp_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
+void tanh_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
+// log: Highway's AVX3 target is HWY_BROKEN on MSVC (it would emit ymm, not zmm), so this
+// 512 symbol exists ONLY on GCC/Clang. On MSVC, math_dispatch keeps the avx2 highway log
+// (the widest Highway gives there) -- see transcendental_highway_avx512.cc MSVC EXCLUSION.
+#if !defined(_MSC_VER)
+void log_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
+#endif
 #endif
 
 }  // namespace hyle::simd::detail

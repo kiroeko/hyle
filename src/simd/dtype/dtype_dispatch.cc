@@ -42,6 +42,19 @@ bool use_avx2() noexcept {
 #endif
 }
 
+// The native bf16 convert kernel (cvt_avx512bf16.cc) uses VCVTNEPS2BF16, gated on the
+// avx512bf16 feature. dispatch.cc already AND-folds avx512bf16 with os_zmm (XGETBV), so
+// this flag being true means BOTH the CPU has the bf16 extension AND the OS saves ZMM --
+// the honest gate for a 512-bit instruction. Only f32->bf16 has a win (the convert folds
+// the AVX2 RNE sequence into one op); bf16->f32 stays on the optimal AVX2 <<16 shift.
+bool use_avx512bf16() noexcept {
+#if defined(HYLE_ARCH_X64)
+  return cpu_features().avx512bf16;
+#else
+  return false;
+#endif
+}
+
 }  // namespace
 
 void f16_to_f32_batch(const float16_t* src, float* dst, std::size_t n) noexcept {
@@ -71,6 +84,8 @@ void bf16_to_f32_batch(const bfloat16_t* src, float* dst, std::size_t n) noexcep
 }
 void f32_to_bf16_batch(const float* src, bfloat16_t* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
+  static const bool bf16hw = use_avx512bf16();
+  if (bf16hw) { detail::f32_to_bf16_avx512bf16(src, dst, n); return; }  // VCVTNEPS2BF16
   static const bool hw = use_avx2();
   if (hw) { detail::f32_to_bf16_avx2(src, dst, n); return; }
 #endif

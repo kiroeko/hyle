@@ -238,6 +238,46 @@ TEST(DtypeBatch, F32ToBf16Avx2MatchesScalarExact) {
     EXPECT_EQ(got[i].bits, f32_to_bf16(src[i]).bits) << "i=" << i << " v=" << src[i];
 }
 
+// f32 -> bf16 NATIVE AVX-512-BF16 (VCVTNEPS2BF16) vs scalar oracle. On a host with the
+// avx512bf16 feature the batch path runs the hardware convert; for FINITE inputs hardware
+// RNE matches the scalar oracle bit-for-bit, but for NaN the hardware quiets to its own
+// QNaN pattern (need not match the oracle's mantissa), so NaN is checked equal-by-CLASS
+// (stays NaN), finite is checked bit-exact -- same stance as the F16C fp16 cross-check.
+// SKIPS on a CPU without avx512bf16 (this dev box is AVX2-only) -- there the batch falls to
+// the AVX2 path (already covered bit-exact above), so running it here would be a tautology.
+TEST(DtypeBatch, F32ToBf16Avx512MatchesScalar) {
+#if defined(HYLE_ARCH_X64)
+  if (!hyle::simd::cpu_features().avx512bf16)
+    GTEST_SKIP() << "no AVX-512-BF16 on this host -- batch uses the AVX2 path (covered above)";
+#else
+  GTEST_SKIP() << "non-x86 -- no AVX-512-BF16 path";
+#endif
+  std::vector<float> src;
+  for (int e = -30; e <= 30; ++e)
+    for (int m = 0; m < 128; ++m)
+      src.push_back(std::ldexp(1.0f + static_cast<float>(m) / 128.0f, e) * (m & 1 ? -1 : 1));
+  for (std::uint32_t bits : {0x00000000u, 0x80000000u, 0x7F800000u, 0xFF800000u,
+                             0x7FC00000u, 0x7F800001u, 0x00008000u, 0x00018000u,
+                             0x3F808000u, 0x3F818000u}) {
+    float f;
+    std::memcpy(&f, &bits, 4);
+    src.push_back(f);
+  }
+  std::vector<bfloat16_t> got(src.size());
+  f32_to_bf16_batch(src.data(), got.data(), src.size());  // VCVTNEPS2BF16 on a bf16 host
+  for (std::size_t i = 0; i < src.size(); ++i) {
+    const bfloat16_t ref = f32_to_bf16(src[i]);  // scalar oracle
+    const bool ref_nan = (ref.bits & 0x7F80) == 0x7F80 && (ref.bits & 0x007F) != 0;
+    if (ref_nan) {
+      // equal-by-class: hardware may pick a different QNaN mantissa, must still be NaN
+      EXPECT_EQ(got[i].bits & 0x7F80, 0x7F80) << "i=" << i << " v=" << src[i];
+      EXPECT_NE(got[i].bits & 0x007F, 0) << "i=" << i << " v=" << src[i];
+    } else {
+      EXPECT_EQ(got[i].bits, ref.bits) << "i=" << i << " v=" << src[i];  // finite: bit-exact
+    }
+  }
+}
+
 // On an x86 host with F16C the dispatcher must engage the hardware tier (not the floor).
 TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
 #if defined(HYLE_ARCH_X64)

@@ -30,10 +30,24 @@ bool have_avx2() noexcept {
 #endif
 }
 
+// AVX-512 group host? Mirrors dispatch.cc's avx512_group (f+bw+vl+dq+cd, all XGETBV/ZMM-gated
+// there). The 16-wide borrow cores are reached only here; an AVX2-but-not-512 host stays on
+// the 8-wide cores. best_isa()>=kAvx512 is the same condition, expressed via the features.
+bool have_avx512() noexcept {
+#if defined(HYLE_ARCH_X64)
+  const auto& f = cpu_features();
+  return f.avx512f && f.avx512bw && f.avx512vl && f.avx512dq && f.avx512cd;
+#else
+  return false;
+#endif
+}
+
 }  // namespace
 
 void exp_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::exp_f32_xsimd_avx512(src, dst, n); return; }  // 16-wide
   static const bool hw = have_avx2();
   if (hw) {
     detail::exp_f32_xsimd_avx2(src, dst, n); return;       // exp: xsimd fastest
@@ -43,6 +57,13 @@ void exp_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
 }
 void log_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
+#if !defined(_MSC_VER)
+  // Highway's AVX3 is HWY_BROKEN on MSVC (would emit ymm), so the 512 log core exists only
+  // on GCC/Clang. On MSVC we fall through to the avx2 highway log -- the widest Highway gives
+  // there (no 512 win to be had). See transcendental_highway_avx512.cc MSVC EXCLUSION.
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::log_f32_highway_avx512(src, dst, n); return; }  // 16-wide (GCC/Clang)
+#endif
   static const bool hw = have_avx2();
   if (hw) {
     detail::log_f32_highway_avx2(src, dst, n); return;     // log: Highway fastest
@@ -52,6 +73,8 @@ void log_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
 }
 void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::tanh_f32_xsimd_avx512(src, dst, n); return; }  // 16-wide
   static const bool hw = have_avx2();
   if (hw) {
     detail::tanh_f32_xsimd_avx2(src, dst, n); return;      // tanh: xsimd fastest
@@ -61,7 +84,7 @@ void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
 }
 
 Isa active_math_variant() noexcept {
-  static const Isa tier = have_avx2() ? Isa::kAvx2 : Isa::kScalar;
+  static const Isa tier = have_avx512() ? Isa::kAvx512 : (have_avx2() ? Isa::kAvx2 : Isa::kScalar);
   return tier;
 }
 

@@ -20,10 +20,13 @@ hyle_add_module(simd SOURCES
   dtype/cvt_scalar.cc
   dtype/cvt_f16c.cc
   dtype/cvt_avx2.cc
+  dtype/cvt_avx512bf16.cc
   math/math_dispatch.cc
   math/transcendental_scalar.cc
   math/transcendental_highway.cc
-  math/transcendental_xsimd.cc)
+  math/transcendental_xsimd.cc
+  math/transcendental_highway_avx512.cc
+  math/transcendental_xsimd_avx512.cc)
 
 # Per-variant ISA flags: each kernel TU gets ONLY its target's -march; the dispatcher and
 # probe stay baseline. MSVC x64 has SSE4.2 intrinsics unconditionally (sse4/scalar need no
@@ -41,6 +44,9 @@ hyle_set_isa(ops/kernels_avx512.cc AVX512)
 hyle_set_isa(dtype/cvt_f16c.cc AVX_F16C)
 # bf16 TU needs only AVX2 256-bit INTEGER ops (no FMA/F16C). Only reached when cpu has AVX2.
 hyle_set_isa(dtype/cvt_avx2.cc AVX2_INT)
+# bf16 native convert TU: AVX-512 + VCVTNEPS2BF16. Only reached when cpu_features().avx512bf16
+# (runtime-gated in dtype_dispatch), so the bf16 instruction never runs on a CPU lacking it.
+hyle_set_isa(dtype/cvt_avx512bf16.cc AVX512_BF16)
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:
 # it keeps the AVX2 kernel TU's codegen from being inlined into the baseline dispatcher.
@@ -74,6 +80,11 @@ target_include_directories(hyle_simd SYSTEM PRIVATE
 # xsimd does NOT need this -- its batch<float> width comes from its own headers, -mavx2 is enough.
 hyle_set_highway_isa(math/transcendental_highway.cc)
 hyle_set_isa(math/transcendental_xsimd.cc AVX2)
+# AVX-512 (16-wide) math borrow cores: same xsimd/Highway cores compiled one tier wider.
+# hyle_set_avx512_math_isa = full AVX-512 group (incl. cd, which xsimd's dq kernels need) +
+# the AVX2 baseline Highway's static dispatch requires. Reached only when best_isa()>=kAvx512.
+hyle_set_avx512_math_isa(math/transcendental_xsimd_avx512.cc)
+hyle_set_avx512_math_isa(math/transcendental_highway_avx512.cc)
 
 # BASELINE ASSUMPTION (the SIGILL-safety contract): for a DISTRIBUTABLE binary, build the
 # whole module at the default baseline -- only the per-variant kernel TUs above get a wide
