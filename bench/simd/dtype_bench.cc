@@ -131,6 +131,20 @@ int main() {
       for (std::size_t i = 0; i < kN; ++i) bout[i] = bf16_to_f32(bf16[i]);
       nb::doNotOptimizeAway(bout.data());
     });
+#if defined(HYLE_BENCH_HIGHWAY)
+    b.run("Highway PromoteTo bf16->f32 (SOTA)", [&] {
+      const hn::ScalableTag<float> df;
+      const hn::Rebind<hwy::bfloat16_t, decltype(df)> dbf;
+      const std::size_t w = hn::Lanes(df);
+      std::size_t i = 0;
+      for (; i + w <= kN; i += w) {
+        auto v = hn::LoadU(dbf, reinterpret_cast<const hwy::bfloat16_t*>(bf16.data()) + i);
+        hn::StoreU(hn::PromoteTo(df, v), df, bout.data() + i);
+      }
+      for (; i < kN; ++i) bout[i] = bf16_to_f32(bf16[i]);
+      nb::doNotOptimizeAway(bout.data());
+    });
+#endif
 
     nb::Bench b2;
     b2.title("f32->bf16 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
@@ -142,6 +156,21 @@ int main() {
       for (std::size_t i = 0; i < kN; ++i) bf_out[i] = f32_to_bf16(f32[i]);
       nb::doNotOptimizeAway(bf_out.data());
     });
+#if defined(HYLE_BENCH_HIGHWAY)
+    b2.run("Highway DemoteTo f32->bf16 (SOTA)", [&] {
+      const hn::ScalableTag<float> df;
+      const hn::Rebind<hwy::bfloat16_t, decltype(df)> dbf;
+      const std::size_t w = hn::Lanes(df);
+      std::size_t i = 0;
+      for (; i + w <= kN; i += w) {
+        auto v = hn::LoadU(df, f32.data() + i);
+        hn::StoreU(hn::DemoteTo(dbf, v), dbf,
+                   reinterpret_cast<hwy::bfloat16_t*>(bf_out.data()) + i);
+      }
+      for (; i < kN; ++i) bf_out[i] = f32_to_bf16(f32[i]);
+      nb::doNotOptimizeAway(bf_out.data());
+    });
+#endif
   }
 
   return 0;
