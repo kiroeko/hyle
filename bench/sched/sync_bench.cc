@@ -91,6 +91,40 @@ struct LatchFork {
 void latch_down_body(void* p) { static_cast<LatchFork*>(p)->l->count_down(); }
 void latch_wait_body(void* p) { static_cast<LatchFork*>(p)->l->wait(); }
 
+// ---- (6) CV wait+notify handoff: a consumer fiber BLOCKS in cv.wait until a
+// producer fiber flips a counter + notifies. N rounds of real block->notify->
+// resume, the CV's blocking path (the notify_one fast-path bench only covers the
+// no-waiter case). Monitor lock is a HYLE Mutex (BasicLockable, what wait() takes).
+// Single shared turn counter under the lock; classic monitor predicate loop.
+struct CvPair {
+  Mutex mu;
+  ConditionVariable cv;
+  long produced = 0;   // bumped by producer under mu
+  long consumed = 0;   // bumped by consumer under mu
+  int rounds;
+};
+void cv_producer(void* p) {
+  auto* s = static_cast<CvPair*>(p);
+  for (int i = 0; i < s->rounds; ++i) {
+    s->mu.lock();
+    ++s->produced;
+    s->cv.notify_one();                       // wake the consumer
+    // wait until the consumer has caught up before producing the next item
+    s->cv.wait(s->mu, [&] { return s->consumed > s->produced - 1; });
+    s->mu.unlock();
+  }
+}
+void cv_consumer(void* p) {
+  auto* s = static_cast<CvPair*>(p);
+  for (int i = 0; i < s->rounds; ++i) {
+    s->mu.lock();
+    s->cv.wait(s->mu, [&] { return s->produced > s->consumed; });  // BLOCK here
+    ++s->consumed;
+    s->cv.notify_one();                       // let the producer proceed
+    s->mu.unlock();
+  }
+}
+
 }  // namespace
 
 int main() {
@@ -279,6 +313,31 @@ int main() {
         cv.notify_one();
         ankerl::nanobench::doNotOptimizeAway(&cv);
       }
+    });
+  }
+
+  // ---- 7. CV wait+notify HANDOFF: consumer fiber blocks in cv.wait, producer
+  // notifies (the BLOCKING path, vs the no-waiter fast path above). Two fibers do
+  // `kRounds` block->notify->resume handoffs under one Scheduler, retired by
+  // drain() (the safe harness -- same as the suspend/wake spine). 1 worker so the
+  // wait genuinely blocks and hands off (not parallel). No std rival on fibers;
+  // the number is HYLE's fiber-aware CV blocking round-trip cost. batch=kRounds.
+  {
+    constexpr int kRounds = 5000;
+    ankerl::nanobench::Bench b;
+    b.title("CV wait+notify handoff (consumer blocks)").batch(kRounds).minEpochIterations(20);
+    b.run("HYLE ConditionVariable wait/notify ping-pong", [&] {
+      CvPair s;
+      s.rounds = kRounds;
+      auto cons = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                          &cv_consumer, &s);
+      auto prod = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                          &cv_producer, &s);
+      Scheduler sched(1, system_allocator(), 256);  // 1 worker: real block/handoff
+      sched.spawn(cons.get());
+      sched.spawn(prod.get());
+      sched.drain();
+      ankerl::nanobench::doNotOptimizeAway(s.consumed);
     });
   }
 
