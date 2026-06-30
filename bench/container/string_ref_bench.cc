@@ -169,5 +169,100 @@ int bench_string_ref() {
     });
   }
 
+  // ---- rfind(char): backward scan miss (no memchr equivalent -> scalar loop) --
+  // find(char) got memchr; rfind has no portable reverse-memchr, so it stays a
+  // backward byte loop. '~' is absent -> full backward scan. std::string_view::
+  // rfind is the rival (libc may have memrchr on Linux; MSVC scalarizes too).
+  // Opaque pos defeats hoisting symmetrically (same fairness fix as find above).
+  {
+    nb::Bench b;
+    b.title("string_ref rfind(char) full-scan miss (~4KB)")
+        .relative(true)
+        .batch(text.size());
+    b.run("std::string_view::rfind('~')", [&] {
+      std::size_t pos = std::string_view::npos;
+      nb::doNotOptimizeAway(pos);
+      nb::doNotOptimizeAway(sv.rfind('~', pos));
+    });
+    b.run("HYLE string_ref::rfind('~')", [&] {
+      std::uint32_t pos = string_ref::npos;
+      nb::doNotOptimizeAway(pos);
+      nb::doNotOptimizeAway(sr.rfind('~', pos));
+    });
+  }
+
+  // ---- find_first_not_of(set): 256-entry membership table scan ---------------
+  // DIFFERENT runtime strategy than the benched find_first_of (memchr-min): this
+  // builds a 256-bool table then scans O(n). The set is all lowercase letters +
+  // space (everything in the text) so the scan runs to the end (worst case: no
+  // char is "not in set" until... actually all are, returns npos -> full scan).
+  {
+    const std::string set_s = "abcdefghijklmnopqrstuvwxyz ";
+    const std::string_view sv_set{set_s};
+    const string_ref sr_set{set_s.data(), static_cast<std::uint32_t>(set_s.size())};
+    nb::Bench b;
+    b.title("string_ref find_first_not_of(full alphabet) miss (~4KB)")
+        .relative(true)
+        .batch(text.size());
+    b.run("std::string_view::find_first_not_of", [&] {
+      std::size_t pos = 0;
+      nb::doNotOptimizeAway(pos);
+      nb::doNotOptimizeAway(sv.find_first_not_of(sv_set, pos));
+    });
+    b.run("HYLE string_ref::find_first_not_of", [&] {
+      std::uint32_t pos = 0;
+      nb::doNotOptimizeAway(pos);
+      nb::doNotOptimizeAway(sr.find_first_not_of(sr_set, pos));
+    });
+  }
+
+  // ---- find_last_of(set): backward membership-table scan ---------------------
+  // The reverse cousin: 256-table + backward scan. Set is digits (absent) -> full
+  // backward scan to npos. Rival std::string_view::find_last_of.
+  {
+    const std::string set_s = "0123456789";
+    const std::string_view sv_set{set_s};
+    const string_ref sr_set{set_s.data(), static_cast<std::uint32_t>(set_s.size())};
+    nb::Bench b;
+    b.title("string_ref find_last_of(digits) miss (~4KB)")
+        .relative(true)
+        .batch(text.size());
+    b.run("std::string_view::find_last_of", [&] {
+      std::size_t pos = std::string_view::npos;
+      nb::doNotOptimizeAway(pos);
+      nb::doNotOptimizeAway(sv.find_last_of(sv_set, pos));
+    });
+    b.run("HYLE string_ref::find_last_of", [&] {
+      std::uint32_t pos = string_ref::npos;
+      nb::doNotOptimizeAway(pos);
+      nb::doNotOptimizeAway(sr.find_last_of(sr_set, pos));
+    });
+  }
+
+  // ---- trim(): two-sided find_first/last_not_of (the common parse hot path) ---
+  // trim composes find_first_not_of + find_last_not_of. Pad the text with leading/
+  // trailing spaces so trim does real work on both ends. Rival: std::string_view
+  // two-sided trim via find_first_not_of/find_last_not_of + substr.
+  {
+    std::string padded = "   \t  " + text + "  \t   ";
+    const std::string_view sv_pad{padded};
+    const string_ref sr_pad{padded.data(), static_cast<std::uint32_t>(padded.size())};
+    const string_ref ws{" \t\r\n"};
+    const std::string_view sv_ws{" \t\r\n"};
+    nb::Bench b;
+    b.title("string_ref trim (both ends, ~4KB)").relative(true);
+    b.run("std::string_view two-sided trim", [&] {
+      std::size_t b0 = sv_pad.find_first_not_of(sv_ws);
+      std::size_t e0 = sv_pad.find_last_not_of(sv_ws);
+      std::string_view t = (b0 == std::string_view::npos)
+                               ? std::string_view{}
+                               : sv_pad.substr(b0, e0 - b0 + 1);
+      nb::doNotOptimizeAway(t.size());
+    });
+    b.run("HYLE string_ref::trim", [&] {
+      nb::doNotOptimizeAway(sr_pad.trim(ws).size);
+    });
+  }
+
   return 0;
 }

@@ -88,5 +88,50 @@ int bench_string_buf() {
     ankerl::nanobench::doNotOptimizeAway(buf.size());
   });
 
+  // ---- add/retain/remove refcount churn (the lifecycle intern never hits) ----
+  // intern() above is steady-state insert (2000 uniques, never freed). The
+  // refcount lifecycle -- add (intern + bump), retain (bump by hash), remove (drop;
+  // on the last ref, SwissTable::erase + alloc.deallocate) -- exercises a DIFFERENT
+  // path: the erase + free churn. Workload: add each unique, retain it, then remove
+  // it twice (drives the count to zero -> storage reclaimed). Rival: a std::
+  // unordered_map<string,refcount> doing the same add/retain/remove (erase on zero).
+  {
+    std::vector<std::string> uniques;
+    uniques.reserve(kUnique);
+    {
+      std::mt19937_64 rng(11);
+      for (int i = 0; i < kUnique; ++i)
+        uniques.push_back("sym_" + std::to_string(rng() % 1000000));
+    }
+    ankerl::nanobench::Bench b2;
+    b2.title("refcount churn: add+retain+remove*2 (2k uniques)")
+        .relative(true)
+        .batch(static_cast<std::uint64_t>(kUnique) * 4);  // add+retain+2x remove
+
+    b2.run("std::unordered_map<string,int> add/retain/remove", [&] {
+      std::unordered_map<std::string, int> pool;
+      for (const auto& s : uniques) {
+        auto [it, ins] = pool.try_emplace(s, 0);  // add
+        ++it->second;
+        it->second += 1;                           // retain
+        it->second -= 1;                           // remove (1)
+        if (--it->second == 0) pool.erase(it);     // remove (2) -> reclaim
+      }
+      ankerl::nanobench::doNotOptimizeAway(pool.size());
+    });
+
+    b2.run("HYLE StringBuf add/retain/remove (SwissTable erase+free)", [&] {
+      StringBuf buf(system_allocator());
+      for (const auto& s : uniques) {
+        std::uint64_t h = buf.add(string_ref{s.data(),
+                                             static_cast<std::uint32_t>(s.size())});
+        buf.retain(h);
+        buf.remove(h);  // drop the retain
+        buf.remove(h);  // drop the add -> count zero -> erase + deallocate
+      }
+      ankerl::nanobench::doNotOptimizeAway(buf.size());
+    });
+  }
+
   return 0;
 }
