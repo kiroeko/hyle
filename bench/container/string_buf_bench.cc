@@ -5,6 +5,7 @@
 #include <nanobench.h>
 
 #include <cstdint>
+#include <mutex>
 #include <random>
 #include <string>
 #include <unordered_map>
@@ -41,10 +42,11 @@ int bench_string_buf() {
   ankerl::nanobench::Bench b;
   b.title("intern 100k-stream / 2k-unique").relative(true).batch(kStream);
 
-  // Naive std interner: hash map from content to a stable pointer (the string
-  // lives in the map's key, which is stable across rehash for node-based
-  // unordered_map). Returns the interned char*.
-  b.run("std::unordered_map interner", [&] {
+  // Floor reference: a NON-thread-safe std interner (no lock). NOT StringBuf's
+  // apples-to-apples peer -- StringBuf is thread-safe (takes a mutex per intern),
+  // so racing it against an unlocked map measures "thread-safe vs not", not the
+  // interner cores. Kept as the single-thread floor.
+  b.run("std::unordered_map interner (NO lock, floor)", [&] {
     std::unordered_map<std::string, std::uint32_t> pool;
     const char* last = nullptr;
     for (const auto& s : stream) {
@@ -56,7 +58,25 @@ int bench_string_buf() {
     ankerl::nanobench::doNotOptimizeAway(pool.size());
   });
 
-  b.run("HYLE StringBuf", [&] {
+  // Apples-to-apples peer: a THREAD-SAFE std interner (unordered_map + std::mutex),
+  // same thread-safety contract as StringBuf. Both pay one uncontended lock/op; the
+  // honest question is whose interner CORE is faster (StringBuf uses SwissTable,
+  // which beats unordered_map ~2.4x on find).
+  b.run("std::unordered_map + mutex interner (thread-safe peer)", [&] {
+    std::unordered_map<std::string, std::uint32_t> pool;
+    std::mutex mu;
+    const char* last = nullptr;
+    for (const auto& s : stream) {
+      std::lock_guard<std::mutex> lk(mu);
+      auto [it, ins] = pool.try_emplace(s, 0);
+      ++it->second;
+      last = it->first.c_str();
+    }
+    ankerl::nanobench::doNotOptimizeAway(last);
+    ankerl::nanobench::doNotOptimizeAway(pool.size());
+  });
+
+  b.run("HYLE StringBuf (thread-safe, SwissTable core)", [&] {
     StringBuf buf(system_allocator());
     const char* last = nullptr;
     for (const auto& s : stream) {
