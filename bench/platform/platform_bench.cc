@@ -4,9 +4,16 @@
 //
 //  1. Parker fast path: unpark() THEN park() (token already available) -> park
 //     consumes the token and returns without ever sleeping. The hot path the CV/
-//     scheduler hits when a wake races ahead of the wait. Rival: std::atomic flag
-//     spin (the lower bound) -- Parker should be close, since the fast path is
-//     just a fetch_sub + branch, no syscall.
+//     scheduler hits when a wake races ahead of the wait. The atomic-flag row is
+//     a NO-SYSCALL FLOOR REFERENCE, *not* a fair rival: a bare flag gives no
+//     unpark-before-park guarantee (a wake delivered before the wait is lost ->
+//     deadlock), so it cannot be Parker's apples-to-apples opponent. It only
+//     shows the fast path is in the ~10ns / no-syscall regime; the gap to it is
+//     the fixed cost of the 3-state machine's wake safety, NOT a "loss". (No
+//     standard primitive is both token-safe AND syscall-free on the fast path:
+//     std::binary_semaphore is token-safe but futexes every acquire. So this
+//     row reports an absolute floor, with no honest win/loss denominator -- see
+//     performance.md platform section.)
 //  2. Parker round-trip: two threads ping-pong via park/unpark (REAL block+wake,
 //     a futex/WaitOnAddress syscall each way). Rival: std::condition_variable
 //     ping-pong (the std equivalent of "block until told"). This is the honest
@@ -50,8 +57,10 @@ int main() {
         .relative(true)
         .batch(kIters)
         .minEpochIterations(20);
-    // Lower bound: a plain atomic store+load+branch (what a no-syscall wake costs).
-    b.run("atomic flag set+consume (lower bound)", [&] {
+    // No-syscall FLOOR REFERENCE (not a fair rival): a plain atomic store+load+
+    // branch -- what a wake with ZERO wake-safety costs. Parker's gap to this is
+    // the fixed price of unpark-before-park safety, not a loss (see file header).
+    b.run("atomic flag set+consume (floor ref, NOT fair rival)", [&] {
       std::atomic<int> flag{0};
       for (int i = 0; i < kIters; ++i) {
         flag.store(1, std::memory_order_release);
