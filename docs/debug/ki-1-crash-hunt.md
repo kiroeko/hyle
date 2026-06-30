@@ -73,7 +73,7 @@
 - [x] 验证红队的 TLS-缓存机制是否在 HYLE 真实路径成立 → §8(机制真实,但 HYLE 当前路径安全)。
 - [x] 清理 `bench/CMakeLists.txt` 甩锅注释 → 中性化;更新 known-issues.md KI-1(已提交 92f8ec8)。
 - [ ] (可选)上游 mimalloc 版本对比——被 github TLS 网络阻断,非必需(崩溃不可复现=无修没修可测)。
-- [ ] (可选,防御性)在 docs 写一条 fiber 编程铁律:**fiber 体不得跨 `yield()` 持有 thread_local 派生值**(见 §8)。
+- [x] (防御性)在 docs 写一条 fiber 编程铁律:**fiber 体不得跨 `yield()` 持有 thread_local 派生值** → 已落 `guide/usage-contract.md` §1(见 §8)。
 
 ## 6. 复现器清单（scratchpad / 原生 /root/repro）
 

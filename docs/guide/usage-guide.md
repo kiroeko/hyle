@@ -47,11 +47,13 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem hyle::simd)
 | `HYLE_WERROR` | `OFF` | `ON`/`OFF` | CI 用 ON；本地开发 OFF |
 | `HYLE_SANITIZER` | `off` | `off`/`asan`/`tsan`/`ubsan` | 查内存/数据竞争/UB 时开（配 Debug/RelWithDebInfo） |
 
-**仅当 `HYLE_BUILD_BENCH=ON` 时额外可用**（对标 SOTA 参考库，需本地 clone）：
+**仅当 `HYLE_BUILD_BENCH=ON` 时额外可用**（对标 SOTA 参考库,需本地 clone）。最常用两个:
 | 选项 | 默认 | 作用 |
 |---|---|---|
-| `HYLE_BENCH_ABSL` + `HYLE_ABSL_DIR` | `OFF` | SwissTable vs `absl::flat_hash_map` 对标 |
-| `HYLE_BENCH_HIGHWAY` + `HYLE_HIGHWAY_DIR` | `OFF` | simd vec vs Google Highway 对标 |
+| `HYLE_BENCH_ABSL` + `HYLE_ABSL_DIR` | `OFF` | SwissTable vs `absl::flat_hash_map`;SmallVector vs `absl::InlinedVector` |
+| `HYLE_BENCH_HIGHWAY` + `HYLE_HIGHWAY_DIR` | `OFF` | simd vec / dtype / math vs Google Highway |
+
+> 还有 `HYLE_BENCH_{MOODYCAMEL,TBB,RIGTORP,XSIMD,BOOST,MARL}`(队列/分配器/math/侵入容器对标)+ 向量化 math 后端 `HYLE_SIMD_{SLEEF,HIGHWAY_MATH}`。**一键全开**:`scripts/setup-bench-libs.sh` clone 全部 sibling 后 `cmake --preset all-sota`。全清单与运行法见 [`scripts/README.md`](../../scripts/README.md)。
 
 **集成方最小命令**（静态链、不编测试）：
 ```bash
@@ -153,8 +155,9 @@ if (hyle::simd::supports(hyle::simd::Isa::kAvx2)) { /* 调 AVX2 变体 */ }
 
 ## 3. 各就绪模块最小用法
 
-### 3.1 mem —— 显式 allocator 注入
-所有分配型 API 收一个 `Allocator`（值传递，无隐藏全局堆）。进程级默认堆是 `system_allocator()`（mimalloc backing）：
+### 3.1 mem —— 两层分配器模型（默认零开销，注入 opt-in）
+**默认不用传 allocator**:头内联容器(`SmallVector`/`BoundedQueue`/`ShardedQueue`/`WsFifoQueue`/`WorkStealingDeque`/`ConcurrentVector`)默认参 `mem::SystemAllocator`——编译期绑定、内联直调 mimalloc、零接缝(`[[no_unique_address]]` 不占字节)。要 arena/mock/跨 DLL 才**显式 opt-in** 传运行时 `Allocator` 句柄。
+直接用 mem/ API 或 type-erased 容器(`SwissTable`/`CArray`/`string_buf`,出线核服务所有 T,按设计收运行时句柄)时,传 `system_allocator()`(mimalloc backing):
 ```cpp
 #include "hyle/mem/allocator.h"
 using hyle::mem::system_allocator;
@@ -162,6 +165,10 @@ auto a = system_allocator();
 int* p = a.allocate_n<int>(16);        // 16 个 int 的裸存储
 a.release(p, 16);
 auto obj = a.make_unique<MyType>(args);  // 经此 allocator 析构的 unique_ptr
+
+// 头内联容器:默认无需 allocator 参数
+hyle::container::SmallVector<int, 16> v;          // 默认 SystemAllocator,零开销
+hyle::container::BoundedQueue<int> q(1024);       // 只需容量
 ```
 
 ### 3.2 container —— SwissTable（对标 absl 追平/超，快 std 2.4-5.3x）
