@@ -69,6 +69,17 @@
 | **string_algo** utf8 validate+count(2KB,同契约) | 0.41ns/B(scalar默认)/ 0.21(借 simdutf) | simdutf validate_utf8+count_utf8 0.21 | 2.0x输 / **1.0x** | ➖默认 scalar 输 2x;**-DHYLE_SIMD_SIMDUTF 借 simdutf 核则追平**(借核不手搓,同 SLEEF;simdutf 2.8MB 重故 opt-in,默认轻) |
 | **string_algo** utf8 count-only 天花板(非同契约) | — | simdutf::count_utf8 0.02 | — | (simdutf 跳校验做得更少,非 utf8_length 的 validate+count 契约,仅记 SIMD 上限) |
 | **string_algo** hex_encode 1KB→2KB | 0.45ns/B | naive 逐字节参考 0.63 | 1.41x | ✅赢(表查找;无单一 SOTA hex 库,对参考实现) |
+| **simd** dot_f32 公开分发入口 | 0.08ns | 直调 avx2 kernel(无间接)/ Highway | ~1.0x | ➖平(fn-ptr 分发税≈0;4096 batch 摊薄一次缓存间接调用,与直调同级) |
+| **simd** saxpy_f32 公开分发入口 | 0.03ns | 直调 avx2 / Highway | ~1.0x | ➖平(同上,分发税不可测) |
+| **sched** Latch fork-join(64) | 5059ns(fiber) | std::latch 64 线程 21975 | 4.3x | ✅赢(fiber vs OS 线程基底不同;HYLE 不阻塞 worker) |
+| **sched** ConditionVariable notify_one 快路径 | 1.70ns | std::condition_variable 2.59 | 1.52x | ✅赢(无 waiter 跳过内部锁) |
+| **sched** RunQueue fifo/lifo push+next | 8.3 / 2.6ns | (内部结构,无外部对手) | — | ➖HYLE 自有(完成唤醒热路径;lifo slot 快) |
+| **platform** Parker ping-pong 往返(真阻塞) | 309ns | std::condition_variable ping-pong 881 | 2.85x | ✅赢(futex/WaitOnAddress 直驱,无 mutex+predicate 开销) |
+| **platform** Parker unpark+park 快路径 | 9.6ns | 裸 atomic flag 4.6(下界) | 0.48x | ➖2x 下界(3-态 CAS 机器换 unpark-before-park 安全;非 syscall 路径) |
+| **platform** Thread spawn+join | 39.5µs | std::thread 42.0 | 1.06x | ➖平(OS 主导;证 ABI-clean handle 零开销) |
+| **platform** directory_iterate visitor | 32.4µs | std::filesystem::directory_iterator 31.9 | ~1.0x | ➖平(syscall 主导;visitor 无分配 vs 每项 entry 对象) |
+| **mem** Allocator::reallocate grow chain | 79ns | 裸 mi_realloc 67 / std::realloc 194 | 0.85x / 2.9x | ➖vtable 间接(冷路径,对裸 mi -15%;对 std::realloc 反超 2.9x) |
+| **mem** StackAllocator mark/rewind | 1.31ns | (reset 基线 0.82,无 std 对应) | — | ➖HYLE 自有(LIFO 部分回退;std::pmr monotonic 无 partial rewind) |
 | **container** SmallVector 溢出(64>内联16) | 0.88ns | absl::InlinedVector 2.42 | 2.75x | ✅赢同款(也赢 std::vector;堆溢出/增长路径) |
 | **container** ConcurrentVector 并发读(4 reader+1 writer) | 0.37ns | oneTBB 0.82 | 2.2x | ✅赢(删 operator[] 冗余 per-read acquire,HB 由 caller size() 建立;原冗余 acquire 与 writer 争线输 2.15x,WSL TSan 验零 race) |
 | **util** SpinLock lock/unlock(无争用) | 4.03ns | std::mutex 12.03 | 3.0x | ✅赢(TTAS,短临界区无 syscall 路径) |
