@@ -21,7 +21,6 @@ hyle_add_module(simd SOURCES
   dtype/cvt_avx2.cc
   math/math_dispatch.cc
   math/transcendental_scalar.cc
-  math/transcendental_sleef.cc
   math/transcendental_highway.cc
   math/transcendental_xsimd.cc)
 
@@ -52,78 +51,29 @@ endif()
 # it keeps the AVX2 kernel TU's codegen from being inlined into the baseline dispatcher.
 set_target_properties(hyle_simd PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 
-# --- simd-06: SLEEF-accelerated transcendentals (opt-in) ----------------------------
-# Vectorized exp/log/tanh BORROW SLEEF's verified cores. Off by default (vectorized math
-# needs a prebuilt SLEEF); enable with -DHYLE_SIMD_SLEEF=ON + -DHYLE_SLEEF_DIR=<built
-# sleef> (containing include/sleef.h + lib/libsleef.a|sleef.lib). We consume the PREBUILT
-# lib + its PORTABLE declaration header (dual-platform; SLEEF's inline headers are
-# GCC-only and are NOT used). Without this, math.h is correct via libm, just not
-# vectorized. The transcendental_sleef.cc TU compiles to a no-op unless HYLE_SIMD_SLEEF.
-option(HYLE_SIMD_SLEEF "wire SLEEF for vectorized exp/log/tanh (needs HYLE_SLEEF_DIR)" OFF)
-if(HYLE_SIMD_SLEEF)
-  set(HYLE_SLEEF_DIR "${PROJECT_SOURCE_DIR}/../sleef/build-inline" CACHE PATH "prebuilt SLEEF")
-  find_library(HYLE_SLEEF_LIB NAMES sleef PATHS "${HYLE_SLEEF_DIR}/lib" REQUIRED NO_DEFAULT_PATH)
-  if(NOT EXISTS "${HYLE_SLEEF_DIR}/include/sleef.h")
-    message(FATAL_ERROR "HYLE_SIMD_SLEEF=ON but no sleef.h at ${HYLE_SLEEF_DIR}/include")
-  endif()
-  # HYLE_SLEEF_DIR points at a STATIC SLEEF (libsleef.a / sleef.lib). On MSVC,
-  # sleef.h declares every entry __declspec(dllimport) UNLESS SLEEF_STATIC_LIBS is
-  # defined -- so consuming the static lib without it fails to link (__imp_Sleef_*
-  # unresolved). Define it so the declarations match the static lib (harmless on
-  # non-MSVC, where SLEEF_IMPORT is already empty).
-  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_SLEEF SLEEF_STATIC_LIBS)
-  target_include_directories(hyle_simd SYSTEM PRIVATE "${HYLE_SLEEF_DIR}/include")
-  target_link_libraries(hyle_simd PRIVATE "${HYLE_SLEEF_LIB}")
-  # the SLEEF TU calls _mm256_* SLEEF entries; needs AVX2+FMA codegen (gated by best_isa).
-  if(MSVC)
-    set_source_files_properties(math/transcendental_sleef.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-  else()
-    set_source_files_properties(math/transcendental_sleef.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
-  endif()
-endif()
-
-# --- Highway-accelerated transcendentals (opt-in, PREFERRED over SLEEF when present) -
-# The same-ISA bench found Highway's contrib/math log ~1.85x faster than SLEEF _u35 (tie
-# on exp/tanh) at the same ~3.5-ULP class, and Highway math is HEADER-ONLY (lighter than
-# SLEEF's prebuilt lib). Enable with -DHYLE_SIMD_HIGHWAY_MATH=ON + -DHYLE_HIGHWAY_DIR=
-# <highway clone>. The transcendental_highway.cc TU is a no-op unless this is set; the
-# dispatcher prefers it (Highway > SLEEF > scalar). Without it, SLEEF or scalar serve.
-option(HYLE_SIMD_HIGHWAY_MATH "wire Highway contrib/math for vectorized exp/log/tanh (needs HYLE_HIGHWAY_DIR)" OFF)
-if(HYLE_SIMD_HIGHWAY_MATH)
-  set(HYLE_HIGHWAY_DIR "${PROJECT_SOURCE_DIR}/../highway" CACHE PATH "cloned highway (header-only math)")
-  if(NOT EXISTS "${HYLE_HIGHWAY_DIR}/hwy/contrib/math/math-inl.h")
-    message(FATAL_ERROR "HYLE_SIMD_HIGHWAY_MATH=ON but no hwy/contrib/math/math-inl.h at ${HYLE_HIGHWAY_DIR}")
-  endif()
-  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HIGHWAY_MATH)
-  target_include_directories(hyle_simd SYSTEM PRIVATE "${HYLE_HIGHWAY_DIR}")
-  # Static single-target: build the TU at AVX2 so HWY_STATIC_TARGET = AVX2 (gated by best_isa).
-  if(MSVC)
-    set_source_files_properties(math/transcendental_highway.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-  else()
-    set_source_files_properties(math/transcendental_highway.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
-  endif()
-endif()
-
-# --- xsimd-accelerated transcendentals (opt-in, PER-OP best-of-breed) ----------------
-# The same-ISA bench found NO single library wins all three ops: xsimd's exp/tanh are
-# fastest, Highway's log is fastest. So the dispatcher does per-op best-of-breed
-# (exp/tanh -> xsimd, log -> Highway). Enable with -DHYLE_SIMD_XSIMD_MATH=ON +
-# -DHYLE_XSIMD_DIR=<xsimd clone>. Header-only (like Highway). transcendental_xsimd.cc is a
-# no-op unless this is set. Best results with BOTH Highway+xsimd math wired (full best-of-
-# breed); xsimd alone serves all three from xsimd.
-option(HYLE_SIMD_XSIMD_MATH "wire xsimd for vectorized exp/tanh (per-op best-of-breed; needs HYLE_XSIMD_DIR)" OFF)
-if(HYLE_SIMD_XSIMD_MATH)
-  set(HYLE_XSIMD_DIR "${PROJECT_SOURCE_DIR}/../xsimd" CACHE PATH "cloned xsimd (header-only)")
-  if(NOT EXISTS "${HYLE_XSIMD_DIR}/include/xsimd/xsimd.hpp")
-    message(FATAL_ERROR "HYLE_SIMD_XSIMD_MATH=ON but no include/xsimd/xsimd.hpp at ${HYLE_XSIMD_DIR}")
-  endif()
-  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_XSIMD_MATH)
-  target_include_directories(hyle_simd SYSTEM PRIVATE "${HYLE_XSIMD_DIR}/include")
-  if(MSVC)
-    set_source_files_properties(math/transcendental_xsimd.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-  else()
-    set_source_files_properties(math/transcendental_xsimd.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
-  endif()
+# --- Vectorized transcendentals: PER-OP best-of-breed, UNCONDITIONAL on x86 ----------
+# exp/log/tanh BORROW verified header-only vendor cores (借核不手搓). The same-ISA bench
+# found NO single library wins all three ops at the same ~3.5-ULP class: xsimd's exp/tanh
+# polynomials are fastest, Highway's contrib/math log is fastest. So math_dispatch picks
+# PER OP: exp/tanh -> xsimd, log -> Highway (scalar libm is the non-x86 / fallback floor).
+#
+# Both are VENDORED in third_party (header-only, like xxhash) and wired UNCONDITIONALLY --
+# a performance library ships its fastest path BY DEFAULT (user directive: no opt-in gate,
+# nobody cares about the extra compile time; same stance as the hard mimalloc dep). The
+# transcendental_{highway,xsimd}.cc TUs are built at AVX2; math_dispatch only enters them
+# when cpu_features().avx2 (runtime gate), so an old CPU falls to scalar -- no SIGILL.
+# (SLEEF was dropped: it needs a prebuilt lib, not header-only, and the dispatcher ranked it
+# third on every op -> with xsimd+Highway both present it was never selected, pure dead code.)
+target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HIGHWAY_MATH HYLE_SIMD_XSIMD_MATH)
+target_include_directories(hyle_simd SYSTEM PRIVATE
+  "${PROJECT_SOURCE_DIR}/third_party/highway"
+  "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+if(MSVC)
+  set_source_files_properties(math/transcendental_highway.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+  set_source_files_properties(math/transcendental_xsimd.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+else()
+  set_source_files_properties(math/transcendental_highway.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
+  set_source_files_properties(math/transcendental_xsimd.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
 endif()
 
 # BASELINE ASSUMPTION (the SIGILL-safety contract): for a DISTRIBUTABLE binary, build the

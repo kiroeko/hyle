@@ -11,18 +11,16 @@
 //
 // TIERS + PER-OP BEST-OF-BREED dispatch (math_dispatch.cc):
 //   - scalar libm reference: std::exp/log/tanh per element. ALWAYS compiled, the ULP
-//     oracle + fallback. NOT a stub.
-//   - vectorized AVX2 cores (8-wide, all ~3.5-ULP class, all opt-in, all header-only
-//     except SLEEF): Highway contrib/math (-DHYLE_SIMD_HIGHWAY_MATH), xsimd
-//     (-DHYLE_SIMD_XSIMD_MATH), SLEEF _u35 (-DHYLE_SIMD_SLEEF, prebuilt lib).
-//   - the same-ISA bench found NO single library wins all three ops: xsimd's exp/tanh
-//     polynomials are fastest, Highway's log is fastest. So the dispatcher picks PER OP:
-//     exp/tanh -> xsimd > Highway > SLEEF; log -> Highway > xsimd > SLEEF (then scalar).
+//     oracle + the non-x86 / non-AVX2 fallback. NOT a stub.
+//   - two vendored header-only AVX2 cores (8-wide, ~3.5-ULP class), wired UNCONDITIONALLY
+//     on x86 (third_party/highway + third_party/xsimd; no opt-in gate -- a perf library
+//     ships its fastest path by default). The same-ISA bench found NO single library wins
+//     all three ops: xsimd's exp/tanh polynomials are fastest, Highway's log is fastest.
+//     So the dispatcher picks PER OP: exp/tanh -> xsimd > Highway; log -> Highway > xsimd.
 //
-// BEST-OF-BREED needs BOTH Highway+xsimd wired (each op then routes to the faster of the
-// two). Wiring only one is a SUBOPTIMAL trap: that lib serves all three ops and loses on
-// the ones it isn't fastest at. Default build (none wired) = scalar libm. active_math_
-// variant() reports whether a vectorized tier is live (kAvx2) or scalar.
+// At runtime exp/log/tanh route to the best core when cpu_features().avx2, else scalar
+// libm (so an old CPU never SIGILLs). active_math_variant() reports kAvx2 vs kScalar.
+// (SLEEF was dropped: not header-only, and ranked third on every op -> never selected.)
 
 namespace hyle::simd {
 
@@ -30,7 +28,7 @@ HYLE_SIMD_API void exp_f32_batch(const float* src, float* dst, std::size_t n) no
 HYLE_SIMD_API void log_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 
-// The tier the math batch ops selected: kAvx2 if SLEEF-accelerated AVX2 is live, else
+// The tier the math batch ops selected: kAvx2 if a vectorized AVX2 core is live, else
 // kScalar (libm). For tests/diagnostics.
 HYLE_SIMD_API Isa active_math_variant() noexcept;
 
