@@ -57,6 +57,13 @@ hyle_apply_warnings(hyle_platform_bench)
 # IN the build on purpose: if it ever recurs, we investigate head-on, not hide it.
 hyle_add_bench(sched SOURCES sched/scheduler_bench.cc)
 
+# error-module bench: Status/Result (zero-dependency root, every hot-path return type)
+# vs std::expected + absl::Status/StatusOr (the same tagged-pointer design; gated
+# -DHYLE_BENCH_ABSL, absl::status/statusor linked in the absl block below). Own exe.
+add_executable(hyle_error_bench error/status_bench.cc)
+target_link_libraries(hyle_error_bench PRIVATE hyle_error nanobench)
+hyle_apply_warnings(hyle_error_bench)
+
 # misc-module bench (gap-fill #37): util/random (xoshiro256++ vs std::mt19937_64),
 # time/clock (monotonic/realtime vs std::chrono), obs/log (produce-path overhead).
 # random is header-only (util); clock needs hyle_time, log needs hyle_obs.
@@ -265,4 +272,8 @@ if(HYLE_BENCH_ABSL)
   # absl::InlinedVector is the small-vector SOTA -> feed it to the misc bench too.
   target_compile_definitions(hyle_container_misc_bench PRIVATE HYLE_BENCH_ABSL)
   target_link_libraries(hyle_container_misc_bench PRIVATE absl::inlined_vector)
+  # absl::Status/StatusOr are the same tagged-pointer design as HYLE Status -> the
+  # error bench's SOTA rival (same gate). absl::statusor pulls in absl::status.
+  target_compile_definitions(hyle_error_bench PRIVATE HYLE_BENCH_ABSL)
+  target_link_libraries(hyle_error_bench PRIVATE absl::status absl::statusor)
 endif()

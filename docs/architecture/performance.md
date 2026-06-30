@@ -10,6 +10,12 @@
 
 | 模块 · 操作 | HYLE ns | std 组件 | std ns | 比std | SOTA 组件 | SOTA ns | 比SOTA | 判定 |
 |---|---|---|---|---|---|---|---|---|
+| **error** Status::Ok 构造+ok() | 0.37 | std::expected&lt;int,ec&gt; | 0.56 | 1.51x | absl::OkStatus | 0.37 | 1.0x | ✅赢 std、平 absl |
+| **error** Status(code) inline 无消息 | 0.37 | std::unexpected&lt;ec&gt; | 0.55 | 1.49x | absl 错误(code-only 仍堆) | 1.64 | 4.6x | ✅赢 absl(HYLE inline 零堆) |
+| **error** Status(msg) 带消息→堆 | 28.2 | (无 std 等价) | n/a | n/a | absl::NotFoundError | 54.3 | 1.92x | ✅赢 absl(单 malloc header+data) |
+| **error** Status 拷贝(heap,retain/release) | 9.4 | (无 std 等价) | n/a | n/a | absl::Status copy | 10.6 | 1.13x | ✅赢 absl |
+| **error** Result&lt;int&gt; 传播 OK(解包消费) | 1.42 | std::expected unwrap | 1.40 | ~1.0x | absl::StatusOr | ~1.4 | ~1.0x | ➖平(真实用法;裸构造-析构 microbench 假象见 error 节) |
+| **error** Result&lt;int&gt; 传播 ERROR 上抛 | 10.2 | (errc 无堆消息不可比) | n/a | n/a | absl::StatusOr | 21.5 | 2.11x | ✅赢 absl |
 | **hashmap** find-hit(100k u64) | 2.21 | std::unordered_map | 10.47 | 4.74x | absl flat_hash_map | 3.03 | 1.30x | ✅赢 |
 | **hashmap** find-miss(100k) | 4.36 | std::unordered_map | 11.57 | 2.65x | absl flat_hash_map | 4.86 | 1.09x | ✅赢(噪声内略胜) |
 | **hashmap** insert(100k fresh) | 11.58 | std::unordered_map | 80.07 | 6.92x | absl flat_hash_map | 24.53 | 2.30x | ✅赢 |
@@ -104,11 +110,34 @@
 | **time** monotonic_ns | 18.88 | std::chrono::steady_clock | 12.76 | 0.68x | std::chrono(即标尺) | 12.76 | 0.68x | ❌输 1.48x(同等工作 codegen 残留,查证过) |
 | **obs** log gated-out / emit | 2.03/78.4 | (无 std log) | n/a | n/a | spdlog 等(未 clone) | n/a | ⏳待补 | ➖HYLE 自有(gated 1 原子+分支;emit=format+fanout 无 I/O) |
 
-**总账小结（两把标尺,2026-06-30 全套真跑）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD 4.5x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 codegen 残留(monotonic_ns 0.68x)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~31 项**、➖**平 ~14 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期(热路径 Hash&lt;T&gt; 内联已赢);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns 1.48x=codegen 残留(查证);④ MemoryArena/ObjectPool=选错工具(per-thread 池已反超);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(simdutf 核 vendored 无条件默认追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:string_ref scalar 反向串族可上 memrchr/SIMD。
+**总账小结（两把标尺,2026-06-30 全套真跑）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD 4.5x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 codegen 残留(monotonic_ns 0.68x)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~35 项**、➖**平 ~16 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期(热路径 Hash&lt;T&gt; 内联已赢);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns 1.48x=codegen 残留(查证);④ MemoryArena/ObjectPool=选错工具(per-thread 池已反超);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(simdutf 核 vendored 无条件默认追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:error 根模块已补测(对标同款 SOTA absl 全线平或赢:inline 码赢 4.6x、带消息赢 1.92x、ERROR 上抛赢 2.11x,空间 Result 16B<std/absl 24B;OK 传播"输 std"经隔离探针+消费变体证为 microbench 假象);string_ref scalar 反向串族可上 memrchr/SIMD。
 
 ## 实测铁证（持续回填,真跑非推算）
 
 > 环境:Linux x86_64 GCC14.2 Release,nanobench。100k uint64 键。`bench/container/`。
+
+### error Status/Result（`status_bench.cc`，对标 absl::Status/StatusOr + std::expected）
+
+> 环境:Win MSVC19.50 Release,nanobench。**两个标尺**:① **同款 SOTA = `absl::Status`/`absl::StatusOr`**(HYLE 这套 tagged-pointer + 规范 gRPC 码表正是抄它;gated `-DHYLE_BENCH_ABSL`)——这才是 apples-to-apples"带消息错误载体"这一类的真门槛;② `std::expected<int,std::error_code>` = 标准给的、但 E 平凡(俩 int,**带不了消息**)的下界。此前 error 是零依赖根却唯一无 bench 的模块。
+
+| 操作 | HYLE | absl(同款 SOTA) | std | 结论 |
+|---|---|---|---|---|
+| **Status::Ok 构造+ok()** | **0.37** | 0.37 | std::expected 0.56 | ✅ 平 absl、赢 std 1.5x(`rep_==0` 单字) |
+| **Status(code) 无消息** | **0.37** | 1.64(必堆 rep) | std::unexpected 0.55 | ✅ **赢 absl 4.6x**(HYLE inline 码零堆,absl code-only 也 malloc) |
+| **Status(msg) 带消息→堆** | **28.2** | 54.3 | (无等价) | ✅ **赢 absl 1.92x**(单 malloc(rep+len+1),消息内联尾随) |
+| **Status 拷贝(heap,refcount)** | **9.4** | 10.6 | (无等价) | ✅ 赢 absl 1.13x(3 指针 vtable refcount) |
+| **Status 拷贝(OK)** | 0.59 | 0.57 | (无等价) | ➖ 平 absl(word copy,无 retain) |
+| **Result OK 传播 4 层(裸)** | 0.73–0.94 | 0.91–0.94 | std::expected 0.39–0.55 | ➖ 平 absl;输 std=microbench 假象(见下) |
+| **Result OK 传播(解包消费,真实)** | **1.42** | ~1.4 | std::expected 1.40 | ✅ **平 std**(真实用法,假象消失) |
+| **Result ERROR 上抛 3 层** | **10.2** | 21.5 | (errc 无堆消息不可比) | ✅ **赢 absl 2.11x** |
+
+**核心诚实结论(error 是 SOTA——对标真同侪 absl 全线平或赢,空间最省)**:
+
+1. **"带消息错误载体"这一类里 HYLE ≥ absl 全项**:OK 构造平、inline 码 **赢 4.6x**、带消息构造 **赢 1.92x**、heap 拷贝赢 1.13x、ERROR 上抛 **赢 2.11x**。absl 是 HYLE 这套设计的来源(tagged ptr + gRPC 码表),逐项对标证明 HYLE 实现更精:**inline 错误码零堆**(absl 即便 code-only 也 malloc 一个 rep)是最大结构优势,直接兑现 status.h 的三态编码设计。
+
+2. **Result OK 传播"输 std 1.7x"是 microbench 假象,已用消费变体证伪**:裸 microbench(构造 Result 立即在循环里析构、不取值)HYLE 0.73–0.94ns vs std::expected 0.39–0.55ns。**三条铁证它不是缺陷**:① objdump 看 `hyle_chain_ok` 函数体 = **7 条指令、全内联、零析构调用**(OK 路径本身零开销);② **隔离探针** `expected<int,TrivialErr>`(平凡析构错误类型)穿同样传播 idiom **精确追平 std(0.39=0.39)**——证明差距来自 `Status` 的非平凡析构(它要能 OWN 堆消息 → 析构带 `is_heap()` 分支;`std::error_code` 平凡因它带不了消息),不是宏/idiom;③ **同款 SOTA absl::StatusOr 付一模一样的税(0.91–0.94,与 HYLE 并排)**——这是"可携带堆消息的错误类型"整类的固有代价,SOTA 同付。**改用真实用法(`ASSIGN_OR_RAISE` 解包 + 消费 int)后 HYLE 1.42ns 平 std 1.40ns**——紧循环里反复构造-析构临时量才会把那一个析构分支放大,真实代码取值用掉后分支与后续工作交织即消失(同 util/Ref 条目记录的同类 microbench 假象)。验证过 static 构建(`status_release` 同 TU 可内联)仍 0.95ns,**证伪了"DLL 接缝阻止内联"假设**——确认是 std::expected 对非平凡 E 的语言规则,非接缝。
+
+3. **空间维度(时间/空间冲突时优先时间,此处无冲突反而双赢)**:`sizeof(Status)=8B`(单 tagged word,= absl::Status 的 8B)、`Result<int>=Result<void>=16B` **< std::expected<int,errc> 24B、< absl::StatusOr<int> 24B**。HYLE 错误载体在两个维度都 ≤ SOTA:Status 与 absl 同宽且功能等价,Result 比 std/absl 省 1/3(8B Status vs std 的 16B error_code / absl 的内嵌 Status+对齐)。
 
 ### SwissTable hashmap
 
