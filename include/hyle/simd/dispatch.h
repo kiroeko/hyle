@@ -78,6 +78,7 @@ enum class Isa : std::uint32_t {
   kSse2 = 10,
   kSsse3 = 11,
   kSse42 = 12,
+  kAvx = 15,     // 256-bit FLOAT only (Sandy/Ivy Bridge): AVX without AVX2's 256-bit int
   kAvx2 = 20,    // implies FMA + F16C in practice (Highway's kGroupAVX2)
   kAvx512 = 30,  // AVX-512 F+BW+VL+DQ+CD (Highway's kGroupAVX3)
 

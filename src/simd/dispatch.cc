@@ -168,6 +168,12 @@ Isa compute_best(const CpuFeatures& f) noexcept {
                             f.avx512dq && f.avx512cd;
   if (avx512_group) return Isa::kAvx512;
   if (avx2_group) return Isa::kAvx2;
+  // Pure AVX (256-bit FLOAT) without the full AVX2 integer group: Sandy/Ivy Bridge. f.avx
+  // already AND's in the OS-YMM-save check (read_xcr0), so reporting kAvx here is SIGILL-
+  // safe. This is a DETECTION tier -- best_isa() tells the truth about the CPU; there is no
+  // avx-only KERNEL, so selected_tier() (dispatch_ops.cc) clamps an AVX host down to the
+  // sse4 variant. The two layers are deliberately separate (probe honesty vs shipped code).
+  if (f.avx) return Isa::kAvx;
   if (f.sse42) return Isa::kSse42;
   if (f.ssse3) return Isa::kSsse3;
   if (f.sse2) return Isa::kSse2;
@@ -207,6 +213,7 @@ const char* isa_name(Isa isa) noexcept {
     case Isa::kSse2: return "sse2";
     case Isa::kSsse3: return "ssse3";
     case Isa::kSse42: return "sse4.2";
+    case Isa::kAvx: return "avx";
     case Isa::kAvx2: return "avx2";
     case Isa::kAvx512: return "avx512";
     case Isa::kNeon: return "neon";

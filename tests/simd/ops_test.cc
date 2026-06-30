@@ -71,15 +71,16 @@ TEST(Ops, SaxpyMatchesReference) {
 }
 
 // THE simd-04 point: the dispatcher selected the host's best COMPILED tier. We ship
-// scalar/sse4/avx2, so on an x86 host active_variant() must equal min(best_isa, kAvx2)
-// mapped to {scalar,sse42,avx2} -- never below what the CPU supports, never above what we
+// scalar/sse4/avx2/avx512, so on an x86 host active_variant() must equal best_isa() mapped
+// to {scalar,sse42,avx2,avx512} -- never below what the CPU supports, never above what we
 // compiled. This proves best_isa() is actually consumed (was dead before simd-04).
 TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
   const Isa active = active_variant();
 #if defined(HYLE_ARCH_X64)
   const auto best = static_cast<std::uint32_t>(best_isa());
   Isa expect;
-  if (best >= static_cast<std::uint32_t>(Isa::kAvx2)) expect = Isa::kAvx2;
+  if (best >= static_cast<std::uint32_t>(Isa::kAvx512)) expect = Isa::kAvx512;
+  else if (best >= static_cast<std::uint32_t>(Isa::kAvx2)) expect = Isa::kAvx2;
   else if (best >= static_cast<std::uint32_t>(Isa::kSse42)) expect = Isa::kSse42;
   else expect = Isa::kScalar;
   EXPECT_EQ(active, expect);

@@ -14,6 +14,10 @@
 #   AVX2_INT : AVX2 256-bit INTEGER only (bf16 shift/pack) -- no FMA/F16C needed. MSVC has
 #              no finer knob than /arch:AVX2, so it collapses to AVX2 there; GCC/Clang can
 #              ask for just -mavx2.
+#   AVX512   : AVX-512 F+BW+VL+DQ (512-bit zmm). MSVC /arch:AVX512; GCC/Clang the four
+#              -mavx512* flags matching backend/avx512.h's compile contract. ONLY entered
+#              when best_isa() >= kAvx512 (the AVX3 group is runtime-gated), so the zmm
+#              codegen never runs on a non-AVX512 CPU.
 # Returns a CMake list in <out_var> (may be empty, e.g. SSE42 on MSVC).
 function(hyle_isa_flags out_var tier)
   if(MSVC)
@@ -23,6 +27,8 @@ function(hyle_isa_flags out_var tier)
       set(${out_var} "/arch:AVX" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX2" OR tier STREQUAL "AVX2_INT")
       set(${out_var} "/arch:AVX2" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX512")
+      set(${out_var} "/arch:AVX512" PARENT_SCOPE)
     else()
       message(FATAL_ERROR "hyle_isa_flags: unknown tier '${tier}'")
     endif()
@@ -35,6 +41,8 @@ function(hyle_isa_flags out_var tier)
       set(${out_var} "-mavx2;-mfma;-mf16c" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX2_INT")
       set(${out_var} "-mavx2" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX512")
+      set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq" PARENT_SCOPE)
     else()
       message(FATAL_ERROR "hyle_isa_flags: unknown tier '${tier}'")
     endif()

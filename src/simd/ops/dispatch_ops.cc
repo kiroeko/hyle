@@ -15,14 +15,15 @@ namespace hyle::simd {
 namespace {
 
 // Map the host's detected top tier to the BEST variant we actually compiled. On x86 we
-// shipped scalar / sse4 / avx2; an AVX-512 host still uses the avx2 variant (we have no
-// avx512 kernel yet -- it falls to the next lower compiled tier, never SIGILLs). On a
-// non-x86 build only scalar exists, so this returns kScalar. This is the function-pointer
-// equivalent of llama.cpp's startup score-and-pick.
+// shipped scalar / sse4 / avx2 / avx512; the dispatcher picks the highest tier whose kernel
+// exists, else falls to the next lower one (never SIGILLs -- each tier is runtime-gated by
+// best_isa()). On a non-x86 build only scalar exists, so this returns kScalar. This is the
+// function-pointer equivalent of llama.cpp's startup score-and-pick.
 Isa selected_tier() noexcept {
 #if defined(HYLE_ARCH_X64)
   const Isa best = best_isa();
   const auto v = static_cast<std::uint32_t>(best);
+  if (v >= static_cast<std::uint32_t>(Isa::kAvx512)) return Isa::kAvx512;
   if (v >= static_cast<std::uint32_t>(Isa::kAvx2)) return Isa::kAvx2;
   if (v >= static_cast<std::uint32_t>(Isa::kSse42)) return Isa::kSse42;
   return Isa::kScalar;
@@ -37,6 +38,7 @@ using SaxpyFn = void (*)(float, const float*, float*, std::size_t) noexcept;
 DotFn resolve_dot() noexcept {
   switch (selected_tier()) {
 #if defined(HYLE_ARCH_X64)
+    case Isa::kAvx512: return &detail::dot_f32_avx512;
     case Isa::kAvx2: return &detail::dot_f32_avx2;
     case Isa::kSse42: return &detail::dot_f32_sse4;
 #endif
@@ -46,6 +48,7 @@ DotFn resolve_dot() noexcept {
 SaxpyFn resolve_saxpy() noexcept {
   switch (selected_tier()) {
 #if defined(HYLE_ARCH_X64)
+    case Isa::kAvx512: return &detail::saxpy_f32_avx512;
     case Isa::kAvx2: return &detail::saxpy_f32_avx2;
     case Isa::kSse42: return &detail::saxpy_f32_sse4;
 #endif

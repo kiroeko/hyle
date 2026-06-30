@@ -18,7 +18,7 @@
 | `util/` | `hyle/util/{ref_counted,registry,scope_guard,...}.h` | ✅ | `Ref<T>`、Registry、`DEFER`、type_name |
 | `obs/` | `hyle/obs/log.h` | ✅ | level 门控 + sink 注册表日志 |
 | `sched/` | `hyle/sched/{scheduler,fiber}.h` | 🔶 | fcontext 纤程 + work-stealing 调度（协程/取消 待） |
-| `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测 + 可移植 `vec<T,N>`（scalar/SSE4.2/AVX2 实跑；fp16/bf16 dtype + 向量化数学核（Highway/xsimd）done；NEON/AVX512 写+编+objdump 验、未跑存疑） |
+| `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测（含纯 AVX 档 kAvx）+ 可移植 `vec<T,N>`（scalar/SSE4.2/AVX2 实跑；fp16/bf16 dtype + 向量化数学核（Highway/xsimd）done；NEON 写+编+objdump 验未跑存疑；AVX512 后端+ops kernel 已默认派发，objdump 双平台验真发 zmm，但本箱 AVX2-only 未实跑=存疑） |
 | `io/` `compute/` `graph/` | — | 📋 | 尚未开工 |
 
 ## 1. 构建与集成
@@ -163,10 +163,12 @@ if (hyle::simd::supports(hyle::simd::Isa::kAvx2)) { /* 调 AVX2 变体 */ }
 > **现状（simd-04 起）**：运行期变体选择**已就绪**。对 HYLE 自带的派发型 op（`hyle/simd/ops.h` 的 `dot_f32`/`saxpy_f32`、`hyle/simd/dtype_ops.h` 的 fp16/bf16 批量转换），**你什么都不用做**——它们内部按 `best_isa()` 选 fn-ptr（首次调用定一次、缓存），自动跑到最优 ISA：
 > ```cpp
 > #include "hyle/simd/ops.h"
-> float d = hyle::simd::dot_f32(x, y, n);          // 自动选 scalar/SSE4.2/AVX2
+> float d = hyle::simd::dot_f32(x, y, n);          // 自动选 scalar/SSE4.2/AVX2/AVX512
 > // hyle::simd::active_variant() 报实际选中的档
 > ```
 > `dispatch.h` 的 `supports()`/`best_isa()` 是给你**自己的** kernel 做同样分发用的。模型是 fn-ptr 表（每调用一次指针间接；零间接的变体-DLL 模型是更重的后续里程碑）。**自动选择对 HYLE 自带 op 已可用,不再需要手动分发。**
+>
+> **AVX512 档存疑（诚实警示）**：`dot_f32`/`saxpy_f32` 的 AVX512 变体已接进派发——一台真 AVX512 CPU 会**默认**跑它。但 HYLE 开发箱是 AVX2-only(无 AVX512 硬件/SDE),该路径**只经 objdump 双平台验证真发 zmm 指令、未经执行对拍**(标 `存疑`)。这是平台优先库的取舍(详见 [`architecture/simd-design.md`](../architecture/simd-design.md) AVX512 节)。若你在 AVX512 机上用 HYLE 且要绝对保险,可暂以 `-march=native` 自编(走编译期路径、同样吃 AVX512 但避开运行期变体),或等 HYLE 在真 AVX512 硬件跑通对拍后摘掉存疑标。
 
 ### 2.1 哪些行为是编译期定的、哪些是运行期探测的（三条轴，别混）
 
@@ -175,7 +177,7 @@ if (hyle::simd::supports(hyle::simd::Isa::kAvx2)) { /* 调 AVX2 变体 */ }
 | 轴 | 例 | 何时定 | 说明 |
 |---|---|---|---|
 | **平台/架构身份** | `HYLE_OS_*`/`HYLE_ARCH_*`/`HYLE_COMPILER_*`（`platform.h`）| **纯编译期** | 你为哪个 OS/架构编译就是哪个，无从运行期切换（syscall/ABI 在链接期已定）。不属 ISA dispatch 范畴。 |
-| **`simd/` 的 ISA 后端** | vec 后端 / `ops.h` / `dtype_ops.h` | **双重**（编译变体 + 运行期选）| 完全符合 §2 双模型：`-march` 自编(A) 或 运行期 CPUID 选变体(B)。|
+| **`simd/` 的 ISA 后端** | vec 后端 / `ops.h` / `dtype_ops.h` | **双重**（编译变体 + 运行期选）| 完全符合 §2 双模型：`-march` 自编(A) 或 运行期 CPUID 选变体(B)。**探测档 ≠ kernel 档**：`best_isa()` 如实报 CPU 能力(含纯 AVX 档 `kAvx`,Sandy/Ivy Bridge 的 256-bit float),但若该档无专属 kernel(如无 avx-only kernel),派发会向下 clamp 到有 kernel 的最近档(kAvx→sse4)——绝不 SIGILL。|
 | **`container/` SwissTable 的 SIMD 探测** | `probe.h` 的 SSSE3 `_mm_sign_epi8` 快路径 | **纯编译门控**（`HYLE_HAVE_SSSE3` 宏 + SSE2 兜底）| **故意的例外**：container 是 Tier 0,不依赖 `simd/`(Tier 1) 以免架构倒置,故内联一小段自包含探测并编译门控。**SSSE3 现为全局 baseline**(x86-64-v2)：CMake 顶层对 x86 GCC/Clang 全局加 `-mssse3`,MSVC x64 无条件,故 `HYLE_HAVE_SSSE3` 三平台默认成立、SSSE3 快路径默认生效。**无 SIGILL 风险**(SSE2 基线恒在兜底)。将来可选复用 `simd/ops` 做运行期探测,但不强耦合。|
 
 **一句话**：`simd/` 的双重探测设计是真的、自洽的；`platform.h` 是天然纯编译期的另一根轴；`container/probe.h` 是**有意的纯编译门控例外**(Tier 0 不倒挂依赖)——SSSE3 现为全局 baseline,快路径默认生效,正确安全,但不做运行期 dispatch。

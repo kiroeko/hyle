@@ -45,8 +45,14 @@ TEST(Dispatch, X64AlwaysHasSse2) {
 TEST(Dispatch, TierImpliesItsFeatureGroup) {
   const CpuFeatures& f = cpu_features();
   const Isa best = best_isa();
+  // The pure-AVX tier (Sandy/Ivy Bridge: 256-bit float, no AVX2 int) implies f.avx, which
+  // itself AND's in the OS-YMM-save check. AVX2 subsumes AVX, so this also holds above.
+  if (static_cast<std::uint32_t>(best) >= static_cast<std::uint32_t>(Isa::kAvx)) {
+    EXPECT_TRUE(f.avx);
+  }
   if (static_cast<std::uint32_t>(best) >= static_cast<std::uint32_t>(Isa::kAvx2)) {
     EXPECT_TRUE(f.avx2);
+    EXPECT_TRUE(f.avx);  // AVX2 tier subsumes pure-AVX
     EXPECT_TRUE(f.fma);
     EXPECT_TRUE(f.f16c);
     EXPECT_TRUE(f.lzcnt);
@@ -84,8 +90,8 @@ TEST(Dispatch, SupportsIsMonotone) {
 
 // isa_name covers every enumerator (no "unknown" for a real tier).
 TEST(Dispatch, IsaNameCoversAllTiers) {
-  for (Isa t : {Isa::kScalar, Isa::kSse2, Isa::kSsse3, Isa::kSse42, Isa::kAvx2,
-                Isa::kAvx512, Isa::kNeon, Isa::kSve}) {
+  for (Isa t : {Isa::kScalar, Isa::kSse2, Isa::kSsse3, Isa::kSse42, Isa::kAvx,
+                Isa::kAvx2, Isa::kAvx512, Isa::kNeon, Isa::kSve}) {
     EXPECT_STRNE(isa_name(t), "unknown");
   }
 }

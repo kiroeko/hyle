@@ -11,7 +11,7 @@
 #include "src/simd/ops/kernels.h"
 
 #ifndef HYLE_KERNEL_SUFFIX
-#error "define HYLE_KERNEL_SUFFIX (scalar|sse4|avx2) before including kernel_impl.h"
+#error "define HYLE_KERNEL_SUFFIX (scalar|sse4|avx2|avx512) before including kernel_impl.h"
 #endif
 
 #define HYLE_SIMD_CAT_(a, b) a##b

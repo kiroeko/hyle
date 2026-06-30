@@ -15,6 +15,7 @@ hyle_add_module(simd SOURCES
   ops/kernels_scalar.cc
   ops/kernels_sse4.cc
   ops/kernels_avx2.cc
+  ops/kernels_avx512.cc
   dtype/dtype_dispatch.cc
   dtype/cvt_scalar.cc
   dtype/cvt_f16c.cc
@@ -33,6 +34,7 @@ target_include_directories(hyle_simd PRIVATE "${PROJECT_SOURCE_DIR}")
 # name per TU, no hand-written /arch-vs-(-m) mapping to drift. scalar TU gets none.
 hyle_set_isa(ops/kernels_sse4.cc SSE42)
 hyle_set_isa(ops/kernels_avx2.cc AVX2)
+hyle_set_isa(ops/kernels_avx512.cc AVX512)
 # f16c TU caps at AVX+F16C (NOT AVX2): F16C shipped with AVX on Ivy Bridge (no AVX2);
 # AVX2 would let the auto-vectorized tail emit an AVX2 int op that SIGILLs there. The
 # AVX_F16C tier encodes exactly that cap (see hyle_isa_flags).
