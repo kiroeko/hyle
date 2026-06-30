@@ -126,7 +126,7 @@ class GroupPortable {
 
 #if defined(HYLE_ARCH_X64)
 #  include <emmintrin.h>  // SSE2
-#  if defined(__SSSE3__)
+#  if defined(HYLE_HAVE_SSSE3)
 #    include <tmmintrin.h>  // SSSE3: _mm_sign_epi8 (1-insn match_empty)
 #  endif
 namespace hyle::container::detail {
@@ -141,7 +141,7 @@ class GroupSse2 {
         _mm_movemask_epi8(_mm_cmpeq_epi8(_mm_set1_epi8(h), ctrl_))));
   }
   BitMask match_empty() const noexcept {
-#if defined(__SSSE3__)
+#if defined(HYLE_HAVE_SSSE3)
     // abseil's trick: _mm_sign_epi8(c,c) negates per byte -> c<0:-c, 0:0, c>0:c.
     // Only kEmpty=0x80(-128) negates to itself (overflow), keeping its top bit
     // set; kDeleted/kSentinel(-2/-1) become +2/+1 (top bit clear) and full(0..127)

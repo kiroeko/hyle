@@ -84,6 +84,24 @@ if(MSVC)
   enable_language(ASM_MASM)
 endif()
 
+# ---- x86-64-v2 baseline: SSSE3 everywhere (GCC/Clang) ------------------------
+# SwissTable's GroupSse2::match_empty (probe.h, a HEADER-inline member) has a 1-insn
+# SSSE3 fast path gated on HYLE_HAVE_SSSE3. MSVC exposes SSSE3 intrinsics on x64
+# unconditionally; GCC/Clang gate __SSSE3__ behind -mssse3. This MUST be GLOBAL (not
+# per-module): probe.h is inlined into container TUs AND test/bench TUs (via registry.h
+# etc.), so a per-module flag would compile match_empty two different ways in one binary
+# = ODR violation. Setting it project-wide makes every TU agree. SSSE3 is the x86-64-v2
+# baseline (universal since ~2009); a distributable binary requiring it is standard. This
+# does NOT touch the wide AVX2/AVX512 SIGILL contract -- those stay confined to the
+# per-ISA kernel TUs in simd/ (which add their own -mavx2 on top).
+if(NOT MSVC AND CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-mssse3" HYLE_CXX_HAS_MSSSE3)
+  if(HYLE_CXX_HAS_MSSSE3)
+    add_compile_options("$<$<COMPILE_LANGUAGE:C,CXX>:-mssse3>")
+  endif()
+endif()
+
 # ---- modules (added per dependency layer, roadmap P-1..P6) ------------------
 add_subdirectory(src/core)   # 00-scaffolding: empty core + macro skeleton
 add_subdirectory(src/error)  # error-01: Status + Result + propagation macros
