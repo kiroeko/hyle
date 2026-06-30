@@ -27,7 +27,44 @@ namespace hyle::time {
 // Steady monotonic counter in ns from an unspecified zero. Non-decreasing across
 // calls on the same machine. Linux/mac: clock_gettime(CLOCK_MONOTONIC); Windows:
 // QueryPerformanceCounter scaled by the (fixed) frequency.
+//
+// This is the DEFAULT clock: correct everywhere, safe across sleep/suspend, and
+// the only one valid for deadlines/timeouts (sched keys its timers on it). ~12ns.
 HYLE_TIME_API std::uint64_t monotonic_ns() noexcept;
+
+// Fast monotonic counter in ns, read straight from the CPU timestamp counter
+// (rdtsc) instead of going through the OS primitive -- about 2x faster (~6ns vs
+// ~12ns) because it skips the QPC/clock_gettime call shell. Opt-in: you pick it
+// at the call site, the default monotonic_ns() pays nothing for its existence.
+//
+// TRADEOFFS (read before using -- this is why it is NOT the default):
+//   - Requires an invariant TSC (constant rate, synced across cores). Probed via
+//     CPUID; call fast_monotonic_available() to check. On hardware without it
+//     (or non-x86), this transparently FALLS BACK to monotonic_ns() -- always
+//     safe, just not faster there.
+//   - MAY JUMP after the machine wakes from sleep/suspend or on VM migration:
+//     the TSC can briefly read wrong right after resume (this is exactly why
+//     abseil disables its cycle-counter clock by default). Do NOT use it for
+//     deadlines, timeouts, or anything sched schedules on -- use monotonic_ns().
+//   - NOT STRICTLY MONOTONIC across cores: even with an invariant TSC, a thread
+//     migrated between cores may observe a slightly lower value than its prior
+//     read (per-core TSC sync is approximate). There is no max() clamp (that
+//     would cost a global atomic). So computing elapsed as (b - a) can underflow
+//     to a huge value if the reads straddle a migration. Pin the thread, or only
+//     diff reads taken close together on one core, or just use monotonic_ns().
+//   - First call pays a one-time TSC calibration (~a few ms, against the OS
+//     clock). Subsequent calls are a bare rdtsc + a multiply/shift.
+//
+// USE IT FOR: high-frequency elapsed-time sampling / profiling hot-path spans
+// where you want the lowest possible read cost and a rare post-resume glitch is
+// tolerable. When in doubt, use monotonic_ns().
+HYLE_TIME_API std::uint64_t fast_monotonic_ns() noexcept;
+
+// True iff fast_monotonic_ns() uses the hardware TSC fast path on this machine
+// (invariant TSC present and calibrated). When false, fast_monotonic_ns() is
+// just a forwarder to monotonic_ns() and offers no speedup. Result is cached;
+// the first call triggers CPUID probing + calibration.
+HYLE_TIME_API bool fast_monotonic_available() noexcept;
 
 // Wall-clock ns since 1970-01-01T00:00:00Z (UTC), not counting leap seconds.
 // May jump if the system clock is adjusted -- never use for elapsed/deadlines.

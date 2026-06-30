@@ -135,6 +135,12 @@ int main() {
     b.run("HYLE monotonic_ns", [&] {
       nb::doNotOptimizeAway(hyle::time::monotonic_ns());
     });
+    // Opt-in TSC fast path: should be ~2x the QPC/clock_gettime read (skips the
+    // OS call shell). Falls back to monotonic_ns when no invariant TSC, so on
+    // such hardware this row reads the same as the one above.
+    b.run("HYLE fast_monotonic_ns (rdtsc)", [&] {
+      nb::doNotOptimizeAway(hyle::time::fast_monotonic_ns());
+    });
   }
   {
     nb::Bench b;
