@@ -28,10 +28,31 @@ std::int64_t qpc_freq() noexcept {
 std::uint64_t monotonic_ns() noexcept {
   LARGE_INTEGER c;
   QueryPerformanceCounter(&c);
-  std::int64_t f = qpc_freq();
-  // Split to avoid overflow: (ticks/f)*1e9 + (ticks%f)*1e9/f. ticks*1e9 alone
-  // overflows 64-bit after ~9 seconds at a 1 GHz freq.
   std::int64_t t = c.QuadPart;
+  std::int64_t f = qpc_freq();
+  // The frequency is a runtime value, so a plain (t/f) is a 64-bit idiv (~20-40
+  // cyc) on the hot read path -- and the split below pays it twice. Special-case
+  // the frequencies hardware actually reports so the divisor is a compile-time
+  // constant the compiler folds into a magic-number multiply (no idiv). This is
+  // exactly what MSVC's steady_clock::now() does; matching it closes the Win gap.
+  constexpr std::int64_t kTenMHz = 10'000'000;          // ubiquitous on x86/x64
+  constexpr std::int64_t kTwentyFourMHz = 24'000'000;   // common on ARM64 / emulated x86
+  if (f == kTenMHz) {
+    // 1e9 / 1e7 == 100 exactly; t*100 can't overflow u64 until ~585 yr of uptime.
+    return static_cast<std::uint64_t>(t) * 100ull;
+  }
+  // Split to avoid overflow: (t/f)*1e9 + (t%f)*1e9/f. t*1e9 alone overflows
+  // 64-bit after ~9 seconds at a 1 GHz freq. With a constant divisor the
+  // compiler emits the magic-number multiply instead of idiv.
+  if (f == kTwentyFourMHz) {
+    std::uint64_t whole =
+        static_cast<std::uint64_t>(t / kTwentyFourMHz) * 1'000'000'000ull;
+    std::uint64_t frac =
+        (static_cast<std::uint64_t>(t % kTwentyFourMHz) * 1'000'000'000ull) /
+        static_cast<std::uint64_t>(kTwentyFourMHz);
+    return whole + frac;
+  }
+  // Uncommon frequency: runtime-divisor split (the two idivs we can't fold away).
   std::uint64_t whole = static_cast<std::uint64_t>(t / f) * 1'000'000'000ull;
   std::uint64_t frac =
       (static_cast<std::uint64_t>(t % f) * 1'000'000'000ull) /
