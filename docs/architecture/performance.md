@@ -22,9 +22,10 @@
 | **simd** scale(4096 f32) | 0.025 | scalar autovec | 0.044 | 1.8x | Highway avx2 | 0.025 | 1.01x | ➖平 Highway(统计平局,带宽受限) |
 | **simd** dot_f32 公开分发入口 | 0.079 | scalar autovec | 0.37 | 4.6x | 直调 avx2(无间接) | 0.079 | 1.00x | ➖分发税仅在大 batch 摊薄≈0(4096 元素摊 1 次间接跳转);**小 n 未测** |
 | **simd** saxpy_f32 公开分发入口 | 0.038 | scalar autovec | 0.057 | 1.5x | 直调 avx2(无间接) | 0.039 | 1.00x | ➖同上(大 batch 摊薄≈0,小 n 未测) |
-| **dtype** f16→f32 | 0.02 | scalar ref | ~0.10 | 3.5–6.9x | Highway PromoteTo | ~0.04 | 1.9x | ✅赢 |
-| **dtype** f32→f16 | 0.03 | scalar ref | ~0.13 | 3.5–6.9x | Highway DemoteTo | ~0.05 | 1.6x | ✅赢 |
-| **dtype** bf16↔f32 | 0.03/0.11 | scalar ref | 0.2–0.4 | 3.5–6.9x | Highway bf16(未对照) | n/a | ⏳待补 | ✅赢 scalar;Highway bf16 待补 |
+| **dtype** f16→f32 | 0.025 | scalar ref | 0.66 | 26x | Highway PromoteTo | 0.048 | Win 1.88x/Lin 平 | ✅Win 赢 Highway/Linux 统计平局(平台差异) |
+| **dtype** f32→f16 | 0.030 | scalar ref | 2.07 | 25–80x | Highway DemoteTo | 0.048 | Win 1.61x/Lin 1.90x | ✅赢 Highway 双平台(唯一双平台稳赢) |
+| **dtype** bf16→f32 | 0.030 | scalar ref | 0.10 | Win 3.5x/Lin 平 | Highway PromoteTo | 0.050 | Win 1.87x/Lin 平 | ✅Win 赢 Highway/Linux 平(纯位运算 GCC 也向量化) |
+| **dtype** f32→bf16 | 0.10 | scalar ref | 0.69 | 1.8–6.7x | Highway DemoteTo | 0.11 | Win 1.09x/Lin 平 | ➖平 Highway(双平台,bf16 RNE 两库同法) |
 | **math** exp(best-of-breed→xsimd) | 0.23 | libm scalar | 慢 | (大赢) | Highway / xsimd | 0.30/0.23 | 1.30x/1.0x | ✅平 xsimd 最快、反超 Highway |
 | **math** log(best-of-breed→Highway) | 0.26 | libm scalar | 慢 | (大赢) | Highway / xsimd | 0.28/0.38 | 1.08x/1.46x | ✅反超两库最快 |
 | **math** tanh(best-of-breed→xsimd) | 0.44 | libm scalar | 慢 | (大赢) | Highway / xsimd | 0.56/0.45 | 1.27x/1.02x | ✅平 xsimd、反超 Highway |
@@ -212,16 +213,20 @@
 
 ### simd dtype 转换（fp16/bf16 <-> f32，`dtype_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench,4096 f32。三组:HYLE F16C 硬件 dispatch / HYLE scalar 参考 / Highway(gated SOTA)。`active_dtype_variant()` 报 `AVX2/F16C`(硬件路径真启用)。std 无 fp16 批量等价物。
+> 环境:**双平台**——Win MSVC19.50 + **Linux GCC14.2 原生 ext4,各 15 遍中位数+spread**(`scripts/bench-stat.py`),nanobench,4096。三组:HYLE F16C/AVX2 硬件 dispatch / HYLE scalar 参考 / Highway(gated SOTA,baseline 齐已验 488 ymem 非编瘸)。`active_dtype_variant()` 报 `AVX2/F16C`。std 无 fp16/bf16 批量等价物。**dtype 是平台高度依赖项**:判定按双平台分列。
 
-| 转换 | HYLE(AVX2/F16C) | HYLE scalar | Highway(SOTA) | 结论 |
+| 转换 | HYLE | vs scalar | vs Highway(SOTA) | 结论 |
 |---|---|---|---|---|
-| **f16→f32** | **0.02 ns** | 0.65(慢 26x) | 0.05 | **赢 Highway 1.9x** |
-| **f32→f16** | **0.03 ns** | 2.05(慢 71x) | 0.05 | **赢 Highway 1.6x** |
-| **bf16→f32** | **0.03 ns** | 0.11(慢 3.5x) | — | ✅ AVX2 核,赢 scalar 3.5x |
-| **f32→bf16** | **0.10 ns** | 0.69(慢 6.9x) | — | ✅ AVX2 核,赢 scalar 6.9x |
+| **f16→f32** | 0.025 ns | Win 26x / Lin 19x | **Win 1.88x / Lin 平局** | ✅Win 赢 Highway 1.88x、Linux 统计平局 |
+| **f32→f16** | 0.030 ns | Win 80x / Lin 25x | **Win 1.61x / Lin 1.90x** | ✅**双平台都赢 Highway**(唯一双平台稳赢) |
+| **bf16→f32** | 0.030/0.040 ns | Win 3.5x / Lin 平局 | **Win 1.87x / Lin 平局** | ✅Win 赢 Highway、Linux 平 |
+| **f32→bf16** | 0.10 ns | Win 6.7x / Lin 1.8x | Win 1.09x / Lin 平局 | ➖平 Highway(双平台) |
 
-**结论**:① **fp16 F16C 真兑现且超 SOTA**——比 scalar 26-71x,**还赢 Highway 1.6-1.9x**,"fp16 dtype(F16C)"声明坐实。② **bf16 批量曾慢内联 scalar 1.11x,已补 AVX2 核翻盘**:原以为"bf16 需 AVX-512-BF16 才能向量化"是误解——bf16 是 f32 高 16 位,转换是纯整数移位/RNE 位运算,plain AVX2 整数即可 8-wide(Highway 同法)。补 `cvt_avx2.cc`(`cvtepu16_epi32`+`slli` / RNE `incr`+`packus`+`permute4x64`)后 **bf16→f32 赢 scalar 3.5x、f32→bf16 赢 6.9x**。纯位运算故 AVX2 与 scalar bit-identical(NaN payload 也是),新增 0x10000 全模式 + f32 宽扫 bit-exact 测试验证。
+**结论(双平台据实,Highway 对照 baseline 完整非编瘸)**:
+- **f16/bf16 F16C/AVX2 路径真兑现**——比 scalar Win 上 3.5–80x、Linux 上 1.8–25x(fp16 两平台都大赢 scalar,"fp16 dtype(F16C)"声明坐实)。
+- **vs Highway 是平台相关,不是无条件赢**:**Win 上 HYLE 赢 Highway 1.6–1.9x**(f16→f32/f32→f16/bf16→f32 三项硬赢)——MSVC 把 Highway 的 PromoteTo/DemoteTo 编得不如 HYLE 直接用 `_mm256_cvtph_ps`/`cvtps_ph`(F16C 单指令)、`cvtepu16+slli`(bf16)紧凑;**Linux/GCC 上多数统计平局**——GCC 把 Highway 编得和 HYLE 一样好(亚-ns 量级 + Highway 那侧 spread 27–48% 噪声大)。**唯 f32→f16 双平台都赢 Highway**(Win 1.61x/Lin 1.90x,F16C 单指令 DemoteTo 的结构优势两平台都在)。诚实表述:**dtype 在 Win 赢 SOTA、在 Linux 平 SOTA,无虚假"无条件碾压"**。
+- **bf16 Highway 对照已补(原"待补"已填)**:bf16<->f32 是纯整数位运算(bf16 = f32 高 16 位),Highway 同样用 AVX2 整数做(PromoteTo/DemoteTo + Rebind&lt;hwy::bfloat16_t&gt;)。补对照后 Linux 统计平局、Win 赢 1.09–1.87x——**HYLE bf16 核与 SOTA 同法同速,无缺口**。
+- **bf16 vs scalar 也平台相关**:Win 赢 3.5x(bf16→f32)/6.7x(f32→bf16),但 **Linux 上 bf16→f32 与 scalar 统计平局**——GCC 把纯移位的 scalar 循环自动向量化到与 AVX2 核同速(MSVC 没有)。这不是 HYLE 退化,是 GCC 自动向量化够强;f32→bf16 因 RNE 比较复杂 GCC 没完全向量化,HYLE 仍赢 1.8x。**bf16 正确性**:纯位运算,AVX2 与 scalar bit-identical(NaN payload 也是),0x10000 全模式 + f32 宽扫 bit-exact 测试验证。
 
 ### simd 逐 op 扩展（reduce_max / scale，`simd_bench.cc`）
 
