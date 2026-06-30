@@ -103,8 +103,8 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
 2. 🔶 SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02(实跑)、运行期 dispatch=simd-04、NEON+AVX512=simd-03(写+编+objdump 验,未跑存疑)。** 各后端覆盖,只剩 NEON/AVX512 待目标硬件实跑。
-3. ✅ dtype 转换（先 fp16/bf16 硬件路径）。**simd-05。**
-4. 🔶 数学函数（借 Highway/xsimd 核：exp/log/tanh 已实现并对标同 ISA SOTA;gelu/softmax 组合待补）。**simd-06。**
+3. ✅ dtype 转换（先 fp16/bf16 硬件路径）。**simd-05。** f32→bf16 另加 **AVX-512-BF16 native `vcvtneps2bf16`** 档(双平台编译+objdump 验,执行待真机;见下 AVX512 节)。
+4. 🔶 数学函数（借 Highway/xsimd 核：exp/log/tanh 已实现并对标同 ISA SOTA;gelu/softmax 组合待补）。**simd-06。** 另加 **512b 变体**(exp/tanh→xsimd-512、log→highway-512,GCC 真 zmm/MSVC Highway-AVX3 broken 退 ymm 已排除),执行待真机。
 5. 🔶 `ops/`：dot_f32/saxpy_f32 已跨 scalar/SSE4/AVX2/AVX512 dispatch(AVX512 派发档存疑——本箱 AVX2-only 未实跑,objdump 双平台验真发 zmm;+reduce_max/scale 已 bench);reduce/对齐 memcpy/SwissTable 探测片段待补。
 6. 🔶 单测：每后端对拍 scalar 参考值、跨 ISA CI、数学函数精度 ULP 测试、benchmark 对标 Highway/手写 intrinsics。**scalar/SSE4.2/AVX2 对拍 + Highway bench 已做；NEON objdump 验；ULP 测试随 simd-06。**
 
@@ -121,6 +121,15 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 **仍存疑的部分（诚实）**：未在 AVX512 硬件/SDE 上**执行**,故正确性是"指令级验证(双平台 objdump)+ 与低 ISA 后端同构推断 + 共享 `kernel_impl.h` 体(与已实跑的 avx2/sse4 同一份源码,仅宽度宏不同)",非"实跑对拍"。**待真验**:装 Intel SDE 或得 AVX512 机后,`ops_test`/`vec_test` 的对拍(宽度无关)直接可用——上真机即自证,无需改测试。
 
 **派发现状(2026-06,用户指令"写且默认派发")**:`kernels_avx512.cc` 已接进 `dispatch_ops.cc` 的 `selected_tier()`——AVX512 主机**默认派发到 zmm kernel**(不再降级 AVX2)。这是用户的明确取舍:平台优先库应让 AVX512 机器跑 AVX512 路径,即便该路径在本开发箱(AVX2-only)未执行验证过;靠双平台 objdump + 同构推断兜底,真机一跑即证伪或确认。**风险显式标注**:一台真 AVX512 CPU 会跑这条未执行验证的路径(`存疑`),已在本节与代码注释(`kernels_avx512.cc` 顶部)标明。这与早先"降级 AVX2、等真跑再接"的保守立场相反——后者已被用户推翻(理由同 NEON/backend:不派发就永远不知道写没写对,落不了地)。
+
+### AVX-512 dtype/math 上架（2026-07，同"实现+接线+编译验真、执行存疑"原则）
+
+承上 ops 后端先例,把 dtype 与 math 的 AVX-512 路径也上架(performance.md AVX-512 节①③)。**同一纪律**:本机 AVX2-only,512-bit 路径双平台编译+objdump 验真发宽指令,执行对拍 `存疑` 待真机/SDE。
+
+- **① dtype `f32→bf16` native(`cvt_avx512bf16.cc`)**:`_mm512_cvtneps_pbh`(`VCVTNEPS2BF16`)把 AVX2 路径的 ~7-op RNE 序列(bias+shift+packus+permute)折成**单条**硬件 RNE 指令,16-wide。`dtype_dispatch` 的 `f32_to_bf16_batch` 优先 `avx512bf16` 档(`cpu_features().avx512bf16` 门控,该 flag 在 `dispatch.cc` 已 AND-fold XGETBV/ZMM),回退 AVX2→scalar。`bf16→f32` 无 512 win(纯 `<<16` 移位,AVX2 已最优),不加 512 变体。新 `AVX512_BF16` CMake tier(GCC `-mavx512bf16` 叠加四件套;MSVC `/arch:AVX512` 已含,probe 验)。**验真**:GCC14 `vcvtneps2bf16`(EVEX.512)、MSVC `vcvtneps2bf16 ymm,zmmword`。测试 `F32ToBf16Avx512MatchesScalar`(finite bit-exact、NaN equal-by-class——硬件 quiet 到自有 QNaN,同 F16C fp16 立场),本机无 bf16 故正确 SKIP。
+- **③ math 512b 变体(`transcendental_{xsimd,highway}_avx512.cc`)**:借同核、仅编译宽一档→zmm。`math_dispatch` 加 avx512 档优先(exp/tanh→xsimd-512、log→highway-512),回退 AVX2→scalar。新 `hyle_set_avx512_math_isa`(全 AVX-512 组**含 cd**——xsimd 的 avx512dq 核 `#error` 要求 cd;**+ AVX2 baseline**——Highway 静态 dispatch 需完整宏链选 AVX3,否则降级)。**验真**:GCC xsimd512 92zmm/highway512 43zmm、MSVC xsimd512 581zmm。
+  - **MSVC Highway-AVX3 排除(probe 实锤,非接线 bug)**:Highway 在 `detect_targets.h:192` 把整个 AVX3 标 `HWY_BROKEN_MSVC`(MSVC AVX-512 codegen 已知 bug),故 `/arch:AVX512` 下 `hn::` 仍发 ymm(dumpbin 250 ymm/0 zmm)。MSVC 上**没有 512-bit log win**(avx2 highway log 已是 Highway 能给的最宽)。故 `transcendental_highway_avx512.cc` 与 dispatch 的 log-512 分支用 `#if !defined(_MSC_VER)` 守卫,MSVC log 留 avx2 highway,**不路由到 fake-512**。xsimd(exp/tanh)不受影响——其 512 batch 是纯 AVX-512F,MSVC 真发 zmm。
+- **执行存疑边界(同 ops)**:三项 512-bit 正确性=指令级验证(双平台 objdump)+ 同构推断(borrow 同核,仅宽度宏不同)+ 共享/对 oracle 测试。真机/SDE 跑既有 `dtype_test`/`math_test`/`ops_test`(全宽度无关或对 oracle/libm)即自证,**无需改测试**。本机双平台 56 过 + 1 正确 SKIP。
 
 ## 待决（需主拍板）
 
