@@ -467,18 +467,18 @@
 - **桶 A — 同操作更省开销（真 drop-in 可比）**：hashmap、分配器、容器。给"倍数"有意义。
 - **桶 B — std 根本没有的能力**：fiber、async IO。"倍数"是错的框（无可比物），是「从不能到能」。
 
-## AVX-512 上架状态（①②③ 已接线+双平台编译验真，待真机执行对拍；④ 低优先级 codegen）
+## AVX-512 上架状态（①②③ 已接线+双平台编译验真，待真机执行对拍；④ pointer-bump 已完成）
 
-> 逐模块性能审查(error→simd→math→dtype→platform→mem→time)后，把"已 ✅赢 or ➖平 SOTA、但本机硬件够不到、或仍差一条指令"的优化**显式记账**于此。**本开发机 = i9-13900K，AVX2-only 无 AVX-512**(P-core 屏蔽 512)，故 ①②③ 的 512-bit 路径在本机**无法执行**。**用户指令(2026-07)**:照 NEON/avx512 backend 先例**实现+接线+双平台编译 objdump 验真发宽指令**,执行对拍待真机/SDE——"不做用户根本无从验证"。①②③ 现已全部上架(代码+dispatch+CMake tier+测试接线),双平台编译验真完成,执行对拍 `存疑` 待真机。④ 与硬件无关,纯 codegen 空间,低优先级。
+> 逐模块性能审查(error→simd→math→dtype→platform→mem→time)后，把"已 ✅赢 or ➖平 SOTA、但本机硬件够不到、或仍差一条指令"的优化**显式记账**于此。**本开发机 = i9-13900K，AVX2-only 无 AVX-512**(P-core 屏蔽 512)，故 ①②③ 的 512-bit 路径在本机**无法执行**。**用户指令(2026-07)**:照 NEON/avx512 backend 先例**实现+接线+双平台编译 objdump 验真发宽指令**,执行对拍待真机/SDE——"不做用户根本无从验证"。①②③ 现已全部上架(代码+dispatch+CMake tier+测试接线),双平台编译验真完成,执行对拍 `存疑` 待真机。④ 与硬件无关、纯 codegen,**已完成**(双平台测试过)。
 
 | # | 方向 | 状态(2026-07 已上架) | 验真证据 | 待真机对拍 |
 |---|---|---|---|---|
 | ① | **dtype `f32→bf16` native `VCVTNEPS2BF16`** | ✅上架:`cvt_avx512bf16.cc`(`_mm512_cvtneps_pbh` 16-wide 硬件 RNE,把 AVX2 ~7-op RNE 折成单条),`dtype_dispatch` f32→bf16 优先 `avx512bf16` 档(`cpu_features().avx512bf16` 门控)回退 AVX2/scalar;新 `AVX512_BF16` CMake tier | 双工具链编译+指令验:GCC14 `vcvtneps2bf16`(EVEX.512)、MSVC `/arch:AVX512` `vcvtneps2bf16 ymm,zmmword`。测试 `F32ToBf16Avx512MatchesScalar`(NaN equal-by-class、finite bit-exact)本机正确 SKIP | 真机/SDE 跑该测试即对拍(纯硬件 RNE,finite 与 oracle bit-identical) |
 | ② | **simd ops AVX-512 派发档** | ✅已接线(此前里程碑):`kernels_avx512.cc`(共享 `kernel_impl.h` 16-wide)+ `dispatch_ops.cc` 默认路由 AVX-512 host;本轮复核接线完整 | objdump:GCC 7 zmm/MSVC 33 zmm(含 `vfmadd213ps zmm`)。`ops_test` 宽度无关对拍 oracle,真机 `active_variant()` 自动选 kAvx512 | 真机跑 `ops_test`/`vec_test` 即对拍(共享体与已实跑 avx2/sse4 同源,仅宽度宏不同) |
 | ③ | **math exp/log/tanh 512b 变体** | ✅上架:`transcendental_{xsimd,highway}_avx512.cc`(借同核 512b/16-lane),`math_dispatch` 加 avx512 档优先(exp/tanh→xsimd-512、log→highway-512)回退 AVX2;新 `hyle_set_avx512_math_isa`(全 AVX-512 组+cd) | objdump:GCC xsimd512 92zmm/highway512 43zmm、MSVC xsimd512 581zmm。`Math.*MatchesLibm` 对 libm 对拍,本机走 AVX2 路径过 | 真机跑 `math_test` 即对拍。**MSVC log-512 已排除**(Highway AVX3=`HWY_BROKEN_MSVC` 退 ymm,故 highway512 仅 GCC/Clang;MSVC log 留 avx2 highway,同速不假装512) |
-| ④ | **Arena/StackAllocator pointer-style bump**(硬件无关) | 📋待做(本批 ①②③ 后):现 offset-based(存 `base_`+`top_`,每 `allocate` 重算 `base+top_`→对齐→`aligned-base`,多一条 +base/-base,objdump 坐实);实测 0.74ns 已平 std::pmr | — | 改 canonical `cur_`/`end_` 双指针纯指针 bump 省那两条加减。**亚-ns 天花板**(那两条 ALU 占比极小,对齐运算仍在),低优先级 |
+| ④ | **Arena/StackAllocator pointer-style bump**(硬件无关) | ✅完成:offset-based(存 `base_`+`top_`/`offset_`,每 `allocate` 重算 `base+offset`→对齐→减回 offset)改 canonical `cur_`/`end_` 双指针纯指针 bump,直接对齐活指针。Marker 从 size_t 偏移改 byte*(API 不变) | objdump(GCC -O2 inlined):load cur_/end_→`add 0xf;and`→cmp end→lea bump→store,~10 指令,**无 +base/-base**(目标那两条 ALU 已消除)。双平台 mem 48 测试过 | — |
 
-**诚实定性**:①②③ 已从"留账非即做"转为**已上架+双平台编译 objdump 验真**(用户指令:写完接线才能在真机验证,否则永远落不了地);三项的 512-bit 执行正确性是 `存疑`,待 Intel SDE/真 AVX-512 机跑既有测试(全部宽度无关/对 oracle,真机一跑即自证,无需新码)。**关键发现**:Highway 在 MSVC 把整个 AVX3 标 `HWY_BROKEN`(已知 codegen bug),故 ③ 的 highway-512 log 仅 GCC/Clang 上是真 512,MSVC 退 ymm 已显式排除——不假装 512。④ 是真实但极小的 codegen 空间(亚-ns,bump 已赢),低优先级备查。**没有一项是"本机低成本高收益"**——time/`monotonic_ns` 那种(频率特判换 1.48x)的机会,逐模块扫描后未再发现第二个。
+**诚实定性**:①②③ 已从"留账非即做"转为**已上架+双平台编译 objdump 验真**(用户指令:写完接线才能在真机验证,否则永远落不了地);三项的 512-bit 执行正确性是 `存疑`,待 Intel SDE/真 AVX-512 机跑既有测试(全部宽度无关/对 oracle,真机一跑即自证,无需新码)。**关键发现**:Highway 在 MSVC 把整个 AVX3 标 `HWY_BROKEN`(已知 codegen bug),故 ③ 的 highway-512 log 仅 GCC/Clang 上是真 512,MSVC 退 ymm 已显式排除——不假装 512。④ 已完成(pointer-style bump,objdump 证那两条 ALU 消除,双平台测试过),亚-ns 量级如预期。**没有一项是"本机低成本高收益"**——time/`monotonic_ns` 那种(频率特判换 1.48x)的机会,逐模块扫描后未再发现第二个。
 
 ## 主表：时间 / 空间分列
 
