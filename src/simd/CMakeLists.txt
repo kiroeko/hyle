@@ -21,7 +21,8 @@ hyle_add_module(simd SOURCES
   dtype/cvt_avx2.cc
   math/math_dispatch.cc
   math/transcendental_scalar.cc
-  math/transcendental_sleef.cc)
+  math/transcendental_sleef.cc
+  math/transcendental_highway.cc)
 
 # Per-variant ISA flags: each kernel TU gets ONLY its target's -march; the dispatcher and
 # probe stay baseline. MSVC x64 has SSE4.2 intrinsics unconditionally (sse4/scalar need no
@@ -77,6 +78,28 @@ if(HYLE_SIMD_SLEEF)
     set_source_files_properties(math/transcendental_sleef.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
   else()
     set_source_files_properties(math/transcendental_sleef.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
+  endif()
+endif()
+
+# --- Highway-accelerated transcendentals (opt-in, PREFERRED over SLEEF when present) -
+# The same-ISA bench found Highway's contrib/math log ~1.85x faster than SLEEF _u35 (tie
+# on exp/tanh) at the same ~3.5-ULP class, and Highway math is HEADER-ONLY (lighter than
+# SLEEF's prebuilt lib). Enable with -DHYLE_SIMD_HIGHWAY_MATH=ON + -DHYLE_HIGHWAY_DIR=
+# <highway clone>. The transcendental_highway.cc TU is a no-op unless this is set; the
+# dispatcher prefers it (Highway > SLEEF > scalar). Without it, SLEEF or scalar serve.
+option(HYLE_SIMD_HIGHWAY_MATH "wire Highway contrib/math for vectorized exp/log/tanh (needs HYLE_HIGHWAY_DIR)" OFF)
+if(HYLE_SIMD_HIGHWAY_MATH)
+  set(HYLE_HIGHWAY_DIR "${PROJECT_SOURCE_DIR}/../highway" CACHE PATH "cloned highway (header-only math)")
+  if(NOT EXISTS "${HYLE_HIGHWAY_DIR}/hwy/contrib/math/math-inl.h")
+    message(FATAL_ERROR "HYLE_SIMD_HIGHWAY_MATH=ON but no hwy/contrib/math/math-inl.h at ${HYLE_HIGHWAY_DIR}")
+  endif()
+  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HIGHWAY_MATH)
+  target_include_directories(hyle_simd SYSTEM PRIVATE "${HYLE_HIGHWAY_DIR}")
+  # Static single-target: build the TU at AVX2 so HWY_STATIC_TARGET = AVX2 (gated by best_isa).
+  if(MSVC)
+    set_source_files_properties(math/transcendental_highway.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+  else()
+    set_source_files_properties(math/transcendental_highway.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
   endif()
 endif()
 

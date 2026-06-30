@@ -44,7 +44,8 @@ std::vector<float> gen(std::size_t n, float lo, float hi, std::uint64_t seed) {
 }
 
 const char* variant_name(hyle::simd::Isa i) {
-  return i == hyle::simd::Isa::kAvx2 ? "AVX2 (SLEEF)" : "scalar libm (no SLEEF wired)";
+  return i == hyle::simd::Isa::kAvx2 ? "AVX2 (vectorized: Highway/SLEEF per build)"
+                                     : "scalar libm (no vectorized math wired)";
 }
 
 enum class Op { kExp, kLog, kTanh };
@@ -108,8 +109,9 @@ int main() {
       for (std::size_t i = 0; i < kN; ++i) dst[i] = c.scalar_fn(c.src[i]);
       nb::doNotOptimizeAway(dst.data());
     });
-    // HYLE batch op: SLEEF AVX2 when built with it, else its own scalar tier.
-    b.run("HYLE *_f32_batch (SLEEF)", [&] {
+    // HYLE batch op: the wired vectorized tier (Highway-math if -DHYLE_SIMD_HIGHWAY_MATH,
+    // else SLEEF if -DHYLE_SIMD_SLEEF, else scalar). Dispatcher prefers Highway > SLEEF.
+    b.run("HYLE *_f32_batch (vectorized)", [&] {
       c.hyle_batch(c.src.data(), dst.data(), kN);
       nb::doNotOptimizeAway(dst.data());
     });

@@ -14,10 +14,18 @@ void log_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void tanh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 
 #if defined(HYLE_SIMD_SLEEF)
-// SLEEF AVX2 (8-wide, _u10 = 1 ULP). Only built when SLEEF is wired in.
+// SLEEF AVX2 (8-wide; exp _u10, log/tanh _u35). Only built when SLEEF is wired in.
 void exp_f32_sleef_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void log_f32_sleef_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void tanh_f32_sleef_avx2(const float* src, float* dst, std::size_t n) noexcept;
+#endif
+
+#if defined(HYLE_SIMD_HIGHWAY_MATH)
+// Highway AVX2 (8-wide, contrib/math ~3.5 ULP). Only built when Highway-math is wired
+// in. Preferred over SLEEF when present (faster log, ties exp/tanh; header-only).
+void exp_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
+void log_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
+void tanh_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
 #endif
 
 }  // namespace hyle::simd::detail
