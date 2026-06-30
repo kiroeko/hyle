@@ -10,6 +10,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <filesystem>
 #include <string>
 
@@ -19,6 +20,7 @@
 using hyle::container::base;
 using hyle::container::directory;
 using hyle::container::extension;
+using hyle::container::normalize;
 using hyle::container::string_ref;
 
 namespace {
@@ -69,6 +71,29 @@ int bench_path() {
     });
     b.run("HYLE path::directory", [&] {
       nb::doNotOptimizeAway(directory(sp).size);
+    });
+  }
+
+  // ---- normalize(): in-place lexical folding ('.' / '..' / separator runs) ----
+  // The heaviest pure-string path op: a component-walk that resolves "." / ".." and
+  // collapses separators IN PLACE (zero allocation). Rival std::filesystem::path::
+  // lexically_normal() does the same lexically but constructs a path object (heap).
+  // normalize MUTATES its buffer, so each iteration works on a FRESH copy of a
+  // messy path (redundant seps + . + .. to actually exercise the folding).
+  {
+    constexpr const char* kMessy =
+        "/usr//local/./share/../share/hyle/./include/../include/container/";
+    char buf[128];
+    const std::string std_messy{kMessy};
+    nb::Bench b;
+    b.title("path normalize() lexical fold").relative(true).minEpochIterations(200000);
+    b.run("std::filesystem::path::lexically_normal", [&] {
+      std::filesystem::path p{std_messy};
+      nb::doNotOptimizeAway(p.lexically_normal().native().size());
+    });
+    b.run("HYLE path::normalize (in-place)", [&] {
+      std::memcpy(buf, kMessy, std::strlen(kMessy) + 1);  // fresh mutable copy
+      nb::doNotOptimizeAway(normalize(buf));
     });
   }
 
