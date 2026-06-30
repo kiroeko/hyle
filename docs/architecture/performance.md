@@ -16,17 +16,6 @@
 | **error** Status 拷贝(heap,retain/release) | 9.4 | (无 std 等价) | n/a | n/a | absl::Status copy | 10.6 | 1.13x | ✅赢 absl |
 | **error** Result&lt;int&gt; 传播 OK(解包消费) | 1.42 | std::expected unwrap | 1.40 | ~1.0x | absl::StatusOr | ~1.4 | ~1.0x | ➖平(真实用法;裸构造-析构 microbench 假象见 error 节) |
 | **error** Result&lt;int&gt; 传播 ERROR 上抛 | 10.2 | (errc 无堆消息不可比) | n/a | n/a | absl::StatusOr | 21.5 | 2.11x | ✅赢 absl |
-| **container·map** find-hit(100k u64) | 2.21 | std::unordered_map | 10.47 | 4.74x | absl flat_hash_map | 3.03 | 1.30x | ✅赢 |
-| **container·map** find-miss(100k) | 4.36 | std::unordered_map | 11.57 | 2.65x | absl flat_hash_map | 4.86 | 1.09x | ✅赢(噪声内略胜) |
-| **container·map** insert(100k fresh) | 11.58 | std::unordered_map | 80.07 | 6.92x | absl flat_hash_map | 24.53 | 2.30x | ✅赢 |
-| **container·map** erase(100k) | 18.01 | std::unordered_map | 93.10 | 5.17x | absl flat_hash_map | 34.60 | 1.83x | ✅赢 |
-| **container·map** iterate(100k visit) | 2.24 | std::unordered_map | 8.09 | 3.60x | absl(未测此项) | n/a | n/a | ✅赢 std 3.6x(扁平 ctrl 扫) |
-| **container·map** Hash&lt;T&gt; 16B POD 内联 | 0.59 | std::hash | ~0.9 | ~1.5x | wyhash | 0.93 | 1.58x | ✅赢 |
-| **container·map** mix64 整数 | 0.45 | std::hash | ~0.6 | ~1.3x | wyhash64 | 0.57 | 1.27x | ✅赢 |
-| **container·map** raw hash_bytes 8B | 0.21 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | 0.18 | 0.86x | ➖近平(原 1.85x,header 内联修;0.03ns=亚周期) |
-| **container·map** raw hash_bytes 16B | 0.15 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | 0.10 | 0.67x | ➖测量地板(0.05ns 寄存器驻留;热路径 Hash&lt;T&gt; 赢 wyhash 1.6x) |
-| **container·map** raw hash_bytes 64B | 0.14 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | ~0.10 | 0.69x | ➖0.01ns 测量地板(保 xxhash.h 隐藏架构) |
-| **container·map** raw hash_bytes 256B | ~0.20 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 / wyhash | 0.20/0.07 | 1.0x/0.33x | ➖平 XXH3(wyhash 中串更强,观察) |
 | **simd** dot product(4096 f32) | 0.079 | scalar autovec | 0.37 | 4.6x | Highway avx2 | 0.079 | 1.00x | ✅赢 std、**平 Highway(统计平局)** |
 | **simd** saxpy(4096 f32) | 0.039 | scalar autovec | 0.057 | 1.45x | Highway avx2 | 0.039 | 1.00x | ✅赢 std、**平 Highway(统计平局)** |
 | **simd** reduce_max(4096 f32) | 0.077 | scalar autovec | 0.73 | 9.5x | Highway avx2 | 0.077 | 1.00x | ➖平 Highway(统计平局) |
@@ -39,25 +28,21 @@
 | **math** exp(best-of-breed→xsimd) | 0.23 | libm scalar | 慢 | (大赢) | Highway / xsimd | 0.30/0.23 | 1.30x/1.0x | ✅平 xsimd 最快、反超 Highway |
 | **math** log(best-of-breed→Highway) | 0.26 | libm scalar | 慢 | (大赢) | Highway / xsimd | 0.28/0.38 | 1.08x/1.46x | ✅反超两库最快 |
 | **math** tanh(best-of-breed→xsimd) | 0.44 | libm scalar | 慢 | (大赢) | Highway / xsimd | 0.56/0.45 | 1.27x/1.02x | ✅平 xsimd、反超 Highway |
-| **sched** 争用 Mutex | 30.7 | std::mutex(争用) | 31 | ~1.0x | marl | 32.1 | 1.05x | ➖平(本轮略胜 marl) |
-| **sched** 无争用 Mutex(MT) | 6.5 | std::mutex | 9.1 | 1.40x | marl(=std::mutex) | 9.1 | 1.40x | ✅赢 |
-| **sched** spawn 2000 noop | 141 | std::async | 1020 | 7.2x | marl | 306 | 2.17x | ✅赢 |
-| **sched** WaitGroup fork-join | 205(池179) | (无 std 等价) | n/a | n/a | marl | 306 | 1.49x(池1.71x) | ✅赢 |
-| **sched** Latch fork-join(64) | 5059(fiber) | std::latch(64线程) | 21975 | 4.3x | marl(无 latch) | n/a | n/a | ✅赢 std(fiber 不阻塞 worker) |
-| **sched** CV notify_one 快路径 | 1.70 | std::condition_variable | 2.59 | 1.52x | marl(无独立 CV) | n/a | n/a | ✅赢 std |
-| **sched** CV wait+notify handoff | 280 | (无 std fiber 等价) | n/a | n/a | (HYLE 自有) | n/a | n/a | ➖HYLE 自有(阻塞 handoff,TSan 零race) |
-| **sched** fiber 切换 | 21–23 | std::thread 切换 | ~1000+ | ~50x | fcontext 原语 | 21–23 | 1.0x | ➖平 fcontext(=原语零封装) |
-| **sched** suspend/wake 完成脊柱 | 201–224 | (无 std 等价) | n/a | n/a | (HYLE 自有脊柱) | n/a | n/a | ➖HYLE 自有(GPU/NIC/timer 汇流) |
-| **sched** Channel 收发(cap16,1p1c) | 63/item | (无 std 等价) | n/a | n/a | marl(无 channel) | n/a | n/a | ➖HYLE 自有 |
-| **sched** RunQueue fifo/lifo push+next | 8.3/2.6 | (内部结构) | n/a | n/a | (无外部对手) | n/a | n/a | ➖HYLE 自有(完成唤醒热路径) |
-| **queue** 单线程 fill+drain | 7.98 | (std 无 bounded-MPMC) | n/a | n/a | rigtorp/moody/tbb | 11.40/9.39/12.86 | 1.5/1.2/1.6x | ✅赢全部(含同约束 rigtorp) |
-| **queue** MPMC 2P 单环 BoundedQueue | 56.9 | (std 无) | n/a | n/a | rigtorp/moody | 61.9/61.0 | 1.09x/1.07x | ✅平/微超同约束 rigtorp |
-| **queue** MPMC 4P 单环 BoundedQueue | 74.0 | (std 无) | n/a | n/a | rigtorp/moody | 83.1/56.3 | 1.12x/0.76x | ✅反超 rigtorp(原输 1.33x,cache-pad+去backoff) |
-| **queue** MPMC 2P/4P ShardedQueue | 21.5/18.0 | (std 无) | n/a | n/a | rigtorp/moody | 62/83·61/56 | 2.9x/4.6x | ✅赢(生产走这条,线性扩展) |
-| **queue** work-steal owner FIFO/LIFO | 3.94/3.02 | (std 无) | n/a | n/a | crossbeam(Rust) | ~3.6/4.4 | ~1.2x/1.3x | ✅赢(跨语言,谨慎) |
-| **queue** work-steal steal | 8.42 | (std 无) | n/a | n/a | crossbeam steal | (跨语言) | n/a | ➖HYLE WsFifo(本族 WSDeque 10.5) |
-| **queue** ConcurrentVector push/读 | 4.51/0.93 | (std 无并发 vec) | n/a | n/a | oneTBB | 5.99/1.29 | 1.33x/1.39x | ✅赢 |
-| **queue** ConcurrentVector 并发读(4读1写) | 0.37 | (std 无) | n/a | n/a | oneTBB | 0.82 | 2.2x | ✅赢(删冗余 acquire) |
+| **platform** Parker ping-pong(真阻塞) | 317(Win) | std::condition_variable ping-pong | 927(Win) | 2.99x | Rust std park(概念对照) | n/a | n/a | ✅赢 std(Win 2.99x;**Linux 统计平局**,平台差异见 ⬇ platform 详节) |
+| **platform** Parker unpark+park 快路径 | 9.6 | (无语义对等 std) | n/a | n/a | (无公平对照) | n/a | n/a | ⏳无对照:既给唤醒保证又无 syscall 的标准件不存在(裸 flag 不丢保证/semaphore 每次 futex,均不对等)。绝对值 ~10ns 无 syscall。详节 ⬇ |
+| **platform** Thread spawn+join | 40.4µs(Win) | std::thread | 40.1µs | 1.01x | std::thread(即 SOTA,同 syscall) | 40.1µs | 1.01x | ➖平(双平台一致;OS 主导,证 handle 零开销) |
+| **platform** directory_iterate visitor | — | std::filesystem::directory_iterator | — | — | filesystem | — | — | ➖平(Win 0.98x)/**✅Linux 赢 1.81x**(免 stat 的 d_type + 无分配 visitor;详节 ⬇) |
+| **time** realtime_ns | 14.68 | std::chrono::system_clock | 14.76 | 1.0x | std::chrono(即标尺,同 OS 原语) | 14.76 | 1.0x | ➖平 |
+| **time** monotonic_ns | 18.88 | std::chrono::steady_clock | 12.76 | 0.68x | std::chrono(即标尺) | 12.76 | 0.68x | ❌输 1.48x(同等工作 codegen 残留,查证过) |
+| **util** Rng next_u64(xoshiro256++) | 1.56 | std::mt19937_64 | 2.41 | 1.54x | (std 即标尺) | 同std | 1.54x | ✅赢 std PRNG |
+| **util** Rng range_u64(Lemire 无偏) | 1.75 | std::uniform_int_distribution | 2.75 | 1.57x | (std 即标尺) | 同std | 1.57x | ✅赢(且无偏) |
+| **util** Rng next_double [0,1) | 1.65 | std::uniform_real_distribution | 2.64 | 1.60x | (std 即标尺) | 同std | 1.60x | ✅赢(53 位缩放) |
+| **util** Rng next_float [0,1) | 1.63 | std::uniform_real_distribution | 2.66 | 1.63x | (std 即标尺) | 同std | 1.63x | ✅赢(独立 24 位路径) |
+| **util** Rng shuffle 1000(Fisher-Yates) | 3.77 | std::shuffle(mt19937_64) | 6.40 | 1.70x | (std 即标尺) | 同std | 1.70x | ✅赢(swap 回调) |
+| **util** SpinLock lock/unlock(无争用) | 4.03 | std::mutex | 12.03 | 3.0x | folly MicroSpinLock(未 clone) | n/a | ⏳待补 | ✅赢 std 3x(TTAS,无 syscall) |
+| **util** Ref copy+destroy(背靠背同线) | 10.4 | std::shared_ptr | 8.2 | 0.79x | (shared_ptr 即标尺) | 8.2 | 0.79x | ❌microbench 假象(asm 证 2 locked RMW 同工;实战见下行) |
+| **util** Ref fan-out 64 再释放(实战) | 8.15 | std::shared_ptr | 8.10 | ~1.0x | (shared_ptr 即标尺) | 8.10 | ~1.0x | ➖平(实战传 ref;算法同工) |
+| **obs** log gated-out / emit | 2.03/78.4 | (无 std log) | n/a | n/a | spdlog 等(未 clone) | n/a | ⏳待补 | ➖HYLE 自有(gated 1 原子+分支;emit=format+fanout 无 I/O) |
 | **mem** SystemAllocator churn(默认) | 7.91 | std::malloc(OS) | ~25 | ~3x | 裸 mimalloc | 7.79 | 0.99x | ➖平 SOTA(编译期内联,零接缝税) |
 | **mem** Allocator vtable churn(opt-in) | 8.61 | std::malloc(OS) | ~25 | ~3x | std::pmr / 裸 mi | 8.70/7.79 | 1.01x/0.90x | ✅赢同类 std::pmr(对裸 mi -10% 是多态物理税,pmr 同付) |
 | **mem** 8 线程通用 | 2.07 | std::malloc(OS) | ~30 | (大赢) | 裸 mimalloc | 2.14 | 1.03x | ➖平 SOTA |
@@ -68,22 +53,25 @@
 | **mem** GrowablePool(8 线程 per-thread) | 0.72 | std::malloc | ~30 | (大赢) | 裸 mi per-thread heap | 1.28 | 1.78x | ✅赢 |
 | **mem** MemoryArena(多线程共享池) | 2.51 | std::malloc | ~30 | (赢) | std::pmr::synchronized_pool(共享池 SOTA) | 112.9 | **44x** | ✅赢同契约 SOTA 44x(无锁分片 vs std mutex 串行;详节) |
 | **mem** Allocator::reallocate grow chain | 76 | std::realloc | 166 | 2.2x | 裸 mi_realloc | 72 | 0.95x | ➖平裸 mi(Linux 统计平局,gap 5.4%«spread 21%);赢 std::realloc 2.2x |
+| **container·hash** Hash&lt;T&gt; 16B POD 内联 | 0.59 | std::hash | ~0.9 | ~1.5x | wyhash | 0.93 | 1.58x | ✅赢 |
+| **container·hash** mix64 整数 | 0.45 | std::hash | ~0.6 | ~1.3x | wyhash64 | 0.57 | 1.27x | ✅赢 |
+| **container·hash** raw hash_bytes 8B | 0.21 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | 0.18 | 0.86x | ➖近平(原 1.85x,header 内联修;0.03ns=亚周期) |
+| **container·hash** raw hash_bytes 16B | 0.15 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | 0.10 | 0.67x | ➖测量地板(0.05ns 寄存器驻留;热路径 Hash&lt;T&gt; 赢 wyhash 1.6x) |
+| **container·hash** raw hash_bytes 64B | 0.14 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | ~0.10 | 0.69x | ➖0.01ns 测量地板(保 xxhash.h 隐藏架构) |
+| **container·hash** raw hash_bytes 256B | ~0.20 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 / wyhash | 0.20/0.07 | 1.0x/0.33x | ➖平 XXH3(wyhash 中串更强,观察) |
+| **container·map** find-hit(100k u64) | 2.21 | std::unordered_map | 10.47 | 4.74x | absl flat_hash_map | 3.03 | 1.30x | ✅赢 |
+| **container·map** find-miss(100k) | 4.36 | std::unordered_map | 11.57 | 2.65x | absl flat_hash_map | 4.86 | 1.09x | ✅赢(噪声内略胜) |
+| **container·map** insert(100k fresh) | 11.58 | std::unordered_map | 80.07 | 6.92x | absl flat_hash_map | 24.53 | 2.30x | ✅赢 |
+| **container·map** erase(100k) | 18.01 | std::unordered_map | 93.10 | 5.17x | absl flat_hash_map | 34.60 | 1.83x | ✅赢 |
+| **container·map** iterate(100k visit) | 2.24 | std::unordered_map | 8.09 | 3.60x | absl(未测此项) | n/a | n/a | ✅赢 std 3.6x(扁平 ctrl 扫) |
+| **container·map** SwissTable iterate(for_each) | 2.24 | std::unordered_map | 8.09 | 3.60x | absl(未测此项) | n/a | n/a | ✅赢 std 3.6x(扁平 ctrl 扫) |
 | **container·vec** SmallVector 小 N | 0.43 | std::vector | 16.7 | 39x | absl::InlinedVector | 1.01 | 2.35x | ✅赢同款 small-vector SOTA |
 | **container·vec** SmallVector 溢出(64>内联16) | 0.86 | std::vector | 4.57 | 5.3x | absl::InlinedVector | 2.38 | 2.77x | ✅赢同款(堆溢出/增长路径) |
+| **container·vec** CArray growth/read | 0.50/0.19 | std::vector(即 SOTA) | 0.79/0.19 | 1.58x/1.0x | std::vector(同 std,本身即 SOTA) | 0.79/0.19 | 1.58x/1.0x | ✅赢 growth / ➖平 read |
 | **container·list** IntrusiveList push/pop | 3.57 | std::list | 25.29 | 7.1x | boost::intrusive(未 checkout) | n/a | ⏳待补 | ✅赢 std 7.1x;boost 对照待跑 |
 | **container·list** IntrusiveList::remove(O(1)) | 2.56 | std::list::erase | 28.31 | 11.1x | boost::intrusive::erase(未 checkout) | n/a | ⏳待补 | ✅赢 std 11x;boost 对照待跑 |
-| **container·vec** CArray growth/read | 0.50/0.19 | std::vector(即 SOTA) | 0.79/0.19 | 1.58x/1.0x | std::vector(同 std,本身即 SOTA) | 0.79/0.19 | 1.58x/1.0x | ✅赢 growth / ➖平 read |
-| **container·map** SwissTable iterate(for_each) | 2.24 | std::unordered_map | 8.09 | 3.60x | absl(未测此项) | n/a | n/a | ✅赢 std 3.6x(扁平 ctrl 扫) |
 | **container·str** StringBuf intern(100k/2k 唯一) | 24.0 | 无锁 map floor | 21.2 | 0.88x | thread-safe peer(map+mutex) | 28.1 | 1.17x | ✅赢同契约 peer(对无锁 map 是 thread-safe-vs-无锁) |
 | **container·str** StringBuf add/retain/remove churn | 18.2 | 无锁 map+引用计数 | 7.54 | 0.41x | (同契约 thread-safe 待补) | n/a | ⏳ | ❌输无锁 floor(同 intern;含 erase+free) |
-| **util** Rng next_u64(xoshiro256++) | 1.56 | std::mt19937_64 | 2.41 | 1.54x | (std 即标尺) | 同std | 1.54x | ✅赢 std PRNG |
-| **util** Rng range_u64(Lemire 无偏) | 1.75 | std::uniform_int_distribution | 2.75 | 1.57x | (std 即标尺) | 同std | 1.57x | ✅赢(且无偏) |
-| **util** Rng next_double [0,1) | 1.65 | std::uniform_real_distribution | 2.64 | 1.60x | (std 即标尺) | 同std | 1.60x | ✅赢(53 位缩放) |
-| **util** Rng next_float [0,1) | 1.63 | std::uniform_real_distribution | 2.66 | 1.63x | (std 即标尺) | 同std | 1.63x | ✅赢(独立 24 位路径) |
-| **util** Rng shuffle 1000(Fisher-Yates) | 3.77 | std::shuffle(mt19937_64) | 6.40 | 1.70x | (std 即标尺) | 同std | 1.70x | ✅赢(swap 回调) |
-| **util** SpinLock lock/unlock(无争用) | 4.03 | std::mutex | 12.03 | 3.0x | folly MicroSpinLock(未 clone) | n/a | ⏳待补 | ✅赢 std 3x(TTAS,无 syscall) |
-| **util** Ref copy+destroy(背靠背同线) | 10.4 | std::shared_ptr | 8.2 | 0.79x | (shared_ptr 即标尺) | 8.2 | 0.79x | ❌microbench 假象(asm 证 2 locked RMW 同工;实战见下行) |
-| **util** Ref fan-out 64 再释放(实战) | 8.15 | std::shared_ptr | 8.10 | ~1.0x | (shared_ptr 即标尺) | 8.10 | ~1.0x | ➖平(实战传 ref;算法同工) |
 | **container·str** find(char) 全扫 miss(4KB) | 0.02/B | std::string_view::find | 0.01 | ~1.0x | string_view(即 SOTA,libc memchr) | 0.01 | ~1.0x | ➖平(切 memchr;原 scalar 输 ~20x) |
 | **container·str** find(needle) 6B 子串 | 0.20/B | std::string_view::find | 0.08 | 0.40x | string_view(即 SOTA) | 0.08 | 0.40x | ❌输 2.5x(memchr 候选+memcmp;原 naive 输 7x) |
 | **container·str** find_first_of(4 字符集) | 0.08/B | std::string_view | 0.05 | 0.62x | string_view(即 SOTA) | 0.05 | 0.62x | ➖近平 1.6x(memchr-min;原 O(n·m) 输 36x) |
@@ -100,13 +88,25 @@
 | **container·path** extension / base / directory | 44/10/9.7 | (无 std 词法) | n/a | n/a | std::filesystem 词法 | 152/164/166 | 3.4/16/17x | ✅赢 filesystem(视图原地扫 vs 构造 path 分配) |
 | **container·path** normalize 词法折叠 | 65 | (无 std 等价) | n/a | n/a | std::filesystem lexically_normal | 382 | 5.85x | ✅赢(就地 vs 堆 path 对象) |
 | **container·path** join_array 6 部件(无 alloc) | 30 | (无 std 等价) | n/a | n/a | std::filesystem operator/= | 454 | 14.9x | ✅赢(buffer-fill 折叠 vs N 次 path 分配) |
-| **platform** Parker ping-pong(真阻塞) | 317(Win) | std::condition_variable ping-pong | 927(Win) | 2.99x | Rust std park(概念对照) | n/a | n/a | ✅赢 std(Win 2.99x;**Linux 统计平局**,平台差异见 ⬇ platform 详节) |
-| **platform** Parker unpark+park 快路径 | 9.6 | (无语义对等 std) | n/a | n/a | (无公平对照) | n/a | n/a | ⏳无对照:既给唤醒保证又无 syscall 的标准件不存在(裸 flag 不丢保证/semaphore 每次 futex,均不对等)。绝对值 ~10ns 无 syscall。详节 ⬇ |
-| **platform** Thread spawn+join | 40.4µs(Win) | std::thread | 40.1µs | 1.01x | std::thread(即 SOTA,同 syscall) | 40.1µs | 1.01x | ➖平(双平台一致;OS 主导,证 handle 零开销) |
-| **platform** directory_iterate visitor | — | std::filesystem::directory_iterator | — | — | filesystem | — | — | ➖平(Win 0.98x)/**✅Linux 赢 1.81x**(免 stat 的 d_type + 无分配 visitor;详节 ⬇) |
-| **time** realtime_ns | 14.68 | std::chrono::system_clock | 14.76 | 1.0x | std::chrono(即标尺,同 OS 原语) | 14.76 | 1.0x | ➖平 |
-| **time** monotonic_ns | 18.88 | std::chrono::steady_clock | 12.76 | 0.68x | std::chrono(即标尺) | 12.76 | 0.68x | ❌输 1.48x(同等工作 codegen 残留,查证过) |
-| **obs** log gated-out / emit | 2.03/78.4 | (无 std log) | n/a | n/a | spdlog 等(未 clone) | n/a | ⏳待补 | ➖HYLE 自有(gated 1 原子+分支;emit=format+fanout 无 I/O) |
+| **queue** 单线程 fill+drain | 7.98 | (std 无 bounded-MPMC) | n/a | n/a | rigtorp/moody/tbb | 11.40/9.39/12.86 | 1.5/1.2/1.6x | ✅赢全部(含同约束 rigtorp) |
+| **queue** MPMC 2P 单环 BoundedQueue | 56.9 | (std 无) | n/a | n/a | rigtorp/moody | 61.9/61.0 | 1.09x/1.07x | ✅平/微超同约束 rigtorp |
+| **queue** MPMC 4P 单环 BoundedQueue | 74.0 | (std 无) | n/a | n/a | rigtorp/moody | 83.1/56.3 | 1.12x/0.76x | ✅反超 rigtorp(原输 1.33x,cache-pad+去backoff) |
+| **queue** MPMC 2P/4P ShardedQueue | 21.5/18.0 | (std 无) | n/a | n/a | rigtorp/moody | 62/83·61/56 | 2.9x/4.6x | ✅赢(生产走这条,线性扩展) |
+| **queue** work-steal owner FIFO/LIFO | 3.94/3.02 | (std 无) | n/a | n/a | crossbeam(Rust) | ~3.6/4.4 | ~1.2x/1.3x | ✅赢(跨语言,谨慎) |
+| **queue** work-steal steal | 8.42 | (std 无) | n/a | n/a | crossbeam steal | (跨语言) | n/a | ➖HYLE WsFifo(本族 WSDeque 10.5) |
+| **queue** ConcurrentVector push/读 | 4.51/0.93 | (std 无并发 vec) | n/a | n/a | oneTBB | 5.99/1.29 | 1.33x/1.39x | ✅赢 |
+| **queue** ConcurrentVector 并发读(4读1写) | 0.37 | (std 无) | n/a | n/a | oneTBB | 0.82 | 2.2x | ✅赢(删冗余 acquire) |
+| **sched** 争用 Mutex | 30.7 | std::mutex(争用) | 31 | ~1.0x | marl | 32.1 | 1.05x | ➖平(本轮略胜 marl) |
+| **sched** 无争用 Mutex(MT) | 6.5 | std::mutex | 9.1 | 1.40x | marl(=std::mutex) | 9.1 | 1.40x | ✅赢 |
+| **sched** spawn 2000 noop | 141 | std::async | 1020 | 7.2x | marl | 306 | 2.17x | ✅赢 |
+| **sched** WaitGroup fork-join | 205(池179) | (无 std 等价) | n/a | n/a | marl | 306 | 1.49x(池1.71x) | ✅赢 |
+| **sched** Latch fork-join(64) | 5059(fiber) | std::latch(64线程) | 21975 | 4.3x | marl(无 latch) | n/a | n/a | ✅赢 std(fiber 不阻塞 worker) |
+| **sched** CV notify_one 快路径 | 1.70 | std::condition_variable | 2.59 | 1.52x | marl(无独立 CV) | n/a | n/a | ✅赢 std |
+| **sched** CV wait+notify handoff | 280 | (无 std fiber 等价) | n/a | n/a | (HYLE 自有) | n/a | n/a | ➖HYLE 自有(阻塞 handoff,TSan 零race) |
+| **sched** fiber 切换 | 21–23 | std::thread 切换 | ~1000+ | ~50x | fcontext 原语 | 21–23 | 1.0x | ➖平 fcontext(=原语零封装) |
+| **sched** suspend/wake 完成脊柱 | 201–224 | (无 std 等价) | n/a | n/a | (HYLE 自有脊柱) | n/a | n/a | ➖HYLE 自有(GPU/NIC/timer 汇流) |
+| **sched** Channel 收发(cap16,1p1c) | 63/item | (无 std 等价) | n/a | n/a | marl(无 channel) | n/a | n/a | ➖HYLE 自有 |
+| **sched** RunQueue fifo/lifo push+next | 8.3/2.6 | (内部结构) | n/a | n/a | (无外部对手) | n/a | n/a | ➖HYLE 自有(完成唤醒热路径) |
 
 **总账小结（两把标尺,2026-06-30 全套真跑）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD 4.5x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 codegen 残留(monotonic_ns 0.68x)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~36 项**、➖**平 ~16 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期(热路径 Hash&lt;T&gt; 内联已赢);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns 1.48x=codegen 残留(查证);④ MemoryArena/ObjectPool 单线程=**选错工具已下 ledger**(单线程对象池应用 GrowablePool;多线程共享场景对同契约 SOTA `std::pmr::synchronized_pool` **赢 44x**,非输项);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(simdutf 核 vendored 无条件默认追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:error 根模块已补测(对标同款 SOTA absl 全线平或赢:inline 码赢 4.6x、带消息赢 1.92x、ERROR 上抛赢 2.11x,空间 Result 16B<std/absl 24B;OK 传播"输 std"经隔离探针+消费变体证为 microbench 假象);string_ref scalar 反向串族可上 memrchr/SIMD。
 
