@@ -15,6 +15,7 @@
 //     block" claim).
 #include <nanobench.h>
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
@@ -74,8 +75,56 @@ int main() {
       nb::doNotOptimizeAway(rng.range_u64(0, 999));
     });
   }
-
-  // ---- time/clock: read latency vs std::chrono (same OS primitive) ----
+  // next_double [0,1): HYLE 53-bit scale vs std::generate_canonical / uniform_real
+  {
+    nb::Bench b;
+    b.title("PRNG next_double [0,1)").relative(true).batch(1).minEpochIterations(1000000);
+    b.run("std::uniform_real_distribution<double>", [&] {
+      static std::mt19937_64 rng(7);
+      static std::uniform_real_distribution<double> dist(0.0, 1.0);
+      nb::doNotOptimizeAway(dist(rng));
+    });
+    b.run("HYLE Rng::next_double", [&] {
+      static hyle::util::Rng rng(7);
+      nb::doNotOptimizeAway(rng.next_double());
+    });
+  }
+  // next_float [0,1): distinct 24-bit scale path (not a forward to next_double).
+  {
+    nb::Bench b;
+    b.title("PRNG next_float [0,1)").relative(true).batch(1).minEpochIterations(1000000);
+    b.run("std::uniform_real_distribution<float>", [&] {
+      static std::mt19937_64 rng(7);
+      static std::uniform_real_distribution<float> dist(0.0f, 1.0f);
+      nb::doNotOptimizeAway(dist(rng));
+    });
+    b.run("HYLE Rng::next_float", [&] {
+      static hyle::util::Rng rng(7);
+      nb::doNotOptimizeAway(rng.next_float());
+    });
+  }
+  // Fisher-Yates shuffle of 1000 ints: HYLE Rng::shuffle (swap callback) vs
+  // std::shuffle(mt19937_64). Both are n-1 bounded draws + swaps; the rival is the
+  // std shuffle algorithm over the std PRNG (the canonical "shuffle a range").
+  {
+    constexpr int kN = 1000;
+    std::vector<int> v(kN);
+    for (int i = 0; i < kN; ++i) v[i] = i;
+    nb::Bench b;
+    b.title("shuffle 1000 ints").relative(true).batch(kN).minEpochIterations(2000);
+    b.run("std::shuffle(mt19937_64)", [&] {
+      static std::mt19937_64 rng(7);
+      std::shuffle(v.begin(), v.end(), rng);
+      nb::doNotOptimizeAway(v.data());
+    });
+    b.run("HYLE Rng::shuffle (swap callback)", [&] {
+      static hyle::util::Rng rng(7);
+      rng.shuffle(kN, [&](std::uint64_t i, std::uint64_t j) {
+        std::swap(v[i], v[j]);
+      });
+      nb::doNotOptimizeAway(v.data());
+    });
+  }
   {
     nb::Bench b;
     b.title("monotonic clock read").relative(true).batch(1).minEpochIterations(500000);

@@ -8,6 +8,7 @@
 
 #include <nanobench.h>
 
+#include <algorithm>
 #include <cstddef>
 #include <cstdint>
 #include <string>
@@ -261,6 +262,45 @@ int bench_string_ref() {
     });
     b.run("HYLE string_ref::trim", [&] {
       nb::doNotOptimizeAway(sr_pad.trim(ws).size);
+    });
+  }
+
+  // ---- rfind(needle): backward substring search (separate strategy from rfind
+  // char -- backward region_eq window walk, no memchr). 6B needle taken from near
+  // the START so the backward scan runs most of the buffer. Rival std::string_
+  // view::rfind(sv). Opaque pos defeats hoisting.
+  {
+    const std::string needle_s = text.substr(8, 6);
+    const std::string_view sv_needle{needle_s};
+    const string_ref sr_needle{needle_s.data(), static_cast<std::uint32_t>(needle_s.size())};
+    nb::Bench b;
+    b.title("string_ref rfind(needle) 6B (~4KB)")
+        .relative(true)
+        .batch(text.size());
+    b.run("std::string_view::rfind(needle)", [&] {
+      std::size_t pos = std::string_view::npos;
+      nb::doNotOptimizeAway(pos);
+      nb::doNotOptimizeAway(sv.rfind(sv_needle, pos));
+    });
+    b.run("HYLE string_ref::rfind(needle)", [&] {
+      std::uint32_t pos = string_ref::npos;
+      nb::doNotOptimizeAway(pos);
+      nb::doNotOptimizeAway(sr.rfind(sr_needle, pos));
+    });
+  }
+
+  // ---- count(char): full-scan accumulate, no early exit (clay cstrchar). std
+  // has no direct string_view::count -> std::count over the range is the rival.
+  {
+    nb::Bench b;
+    b.title("string_ref count(' ') full-scan (~4KB)")
+        .relative(true)
+        .batch(text.size());
+    b.run("std::count(begin,end,' ')", [&] {
+      nb::doNotOptimizeAway(std::count(sv.begin(), sv.end(), ' '));
+    });
+    b.run("HYLE string_ref::count", [&] {
+      nb::doNotOptimizeAway(sr.count(' '));
     });
   }
 
