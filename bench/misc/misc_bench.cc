@@ -21,6 +21,7 @@
 #include <memory>
 #include <mutex>
 #include <random>
+#include <vector>
 
 #include "hyle/obs/log.h"
 #include "hyle/time/clock.h"
@@ -121,16 +122,24 @@ int main() {
     });
   }
 
-  // ---- util/ref_counted: Ref copy+destroy vs std::shared_ptr ----
-  // One owning ref exists; each op copies it (incref) and destroys the copy
-  // (decref) -- the hot share/drop cycle. HYLE Ref is intrusive (one atomic in
-  // the object, no control block); shared_ptr touches a separate control block.
-  // Both pay atomic incref/decref; this measures the per-op overhead difference.
+  // ---- util/ref_counted: Ref vs std::shared_ptr ----
+  // TWO patterns, because they stress different things (see the asm analysis in
+  // the commit): both smart pointers emit EXACTLY 2 locked RMWs per copy+destroy
+  // (incref + decref), so the algorithmic work is identical.
+  //  (a) copy+destroy cycle: the two atomics land on the SAME cache line back-to-
+  //      back; Ref does them adjacently (2nd serializes behind the 1st draining
+  //      the store buffer) while shared_ptr happens to interleave its get()/_Rep
+  //      reload between them -- a scheduling quirk, not an algorithmic gap.
+  //  (b) fan-out then release: build a vector of N copies (N increfs) then clear
+  //      (N decrefs). Incref burst and decref burst are separated, so the back-to-
+  //      back serialization doesn't dominate -- the realistic "pass refs around"
+  //      pattern, where Ref's leanness (1 pointer, in-object counter, no control
+  //      block, no _Weaks) shows.
   {
     hyle::util::Ref<Widget> owner = hyle::util::make_ref<Widget>();
     std::shared_ptr<Widget> sp = std::make_shared<Widget>();
     nb::Bench b;
-    b.title("smart-ptr copy+destroy (incref/decref)").relative(true).batch(1).minEpochIterations(2000000);
+    b.title("smart-ptr copy+destroy (back-to-back same-line atomics)").relative(true).batch(1).minEpochIterations(2000000);
     b.run("std::shared_ptr", [&] {
       std::shared_ptr<Widget> c = sp;  // incref (control block)
       nb::doNotOptimizeAway(c.get());
@@ -139,6 +148,27 @@ int main() {
       hyle::util::Ref<Widget> c = owner;  // incref (in-object atomic)
       nb::doNotOptimizeAway(c.get());
     });                                   // decref on scope exit
+  }
+  {
+    constexpr int kFan = 64;  // refs held simultaneously (separates incref/decref bursts)
+    hyle::util::Ref<Widget> owner = hyle::util::make_ref<Widget>();
+    std::shared_ptr<Widget> sp = std::make_shared<Widget>();
+    std::vector<std::shared_ptr<Widget>> spv;
+    std::vector<hyle::util::Ref<Widget>> rv;
+    spv.reserve(kFan);
+    rv.reserve(kFan);
+    nb::Bench b;
+    b.title("smart-ptr fan-out 64 copies then release").relative(true).batch(kFan).minEpochIterations(20000);
+    b.run("std::shared_ptr", [&] {
+      for (int i = 0; i < kFan; ++i) spv.push_back(sp);  // 64 increfs
+      nb::doNotOptimizeAway(spv.data());
+      spv.clear();                                       // 64 decrefs
+    });
+    b.run("HYLE Ref (intrusive)", [&] {
+      for (int i = 0; i < kFan; ++i) rv.push_back(owner);  // 64 increfs
+      nb::doNotOptimizeAway(rv.data());
+      rv.clear();                                          // 64 decrefs
+    });
   }
 
   // ---- obs/log: produce-path overhead (no I/O) ----
