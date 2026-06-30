@@ -175,37 +175,23 @@ add_executable(hyle_simd_bench
   simd/simd_kernels_highway.cc)
 target_link_libraries(hyle_simd_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_simd_bench PRIVATE "${PROJECT_SOURCE_DIR}")
-if(NOT MSVC)
-  set_source_files_properties(simd/simd_kernels_sse4.cc PROPERTIES COMPILE_OPTIONS "-msse4.2")
-  set_source_files_properties(simd/simd_kernels_avx2.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
-else()
-  # MSVC x64 has SSE4.2 intrinsics unconditionally; AVX2 needs /arch:AVX2. scalar TU gets
-  # neither (stays SSE2 auto-vec baseline).
-  set_source_files_properties(simd/simd_kernels_avx2.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-endif()
+# Per-ISA flags via the single-source hyle_set_isa (HyleModule.cmake). scalar TU: none.
+hyle_set_isa(simd/simd_kernels_sse4.cc SSE42)
+hyle_set_isa(simd/simd_kernels_avx2.cc AVX2)
 hyle_apply_warnings(hyle_simd_bench)
 
-# math bench: vectorized exp/log/tanh (SLEEF AVX2 when hyle_simd built with
-# -DHYLE_SIMD_SLEEF=ON) vs scalar libm + same-ISA SOTA rivals (gap-fill #36):
-# xsimd (-DHYLE_BENCH_XSIMD, below) and Highway contrib/math (-DHYLE_BENCH_HIGHWAY,
-# wired in the Highway block further down where HYLE_HIGHWAY_DIR is defined). Both
-# lower to AVX2 transcendentals so they match HYLE's SLEEF AVX2 path. Own exe.
+# math bench: HYLE's dispatched exp/log/tanh (vectorized borrow core) vs scalar libm +
+# same-ISA SOTA rivals (gap-fill #36): xsimd (-DHYLE_BENCH_XSIMD) and Highway contrib/math
+# (-DHYLE_BENCH_HIGHWAY, wired in the Highway block below). Both lower to AVX2 transcendentals
+# so they match HYLE's AVX2 path. The rival libs are now VENDORED in third_party (the gates
+# just toggle the bench-side comparison rows). Own exe.
 add_executable(hyle_math_bench simd/math_bench.cc)
 target_link_libraries(hyle_math_bench PRIVATE hyle_simd nanobench)
 option(HYLE_BENCH_XSIMD "build math bench vs xsimd (same-ISA transcendental SOTA)" OFF)
 if(HYLE_BENCH_XSIMD)
-  set(HYLE_XSIMD_DIR "${PROJECT_SOURCE_DIR}/../xsimd" CACHE PATH "cloned xsimd")
-  if(NOT EXISTS "${HYLE_XSIMD_DIR}/include/xsimd/xsimd.hpp")
-    message(FATAL_ERROR "HYLE_BENCH_XSIMD=ON but no xsimd at ${HYLE_XSIMD_DIR}")
-  endif()
   target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_XSIMD)
-  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${HYLE_XSIMD_DIR}/include")
-  # xsimd lowers to AVX2 transcendentals -> build this TU at AVX2 (match SLEEF path).
-  if(NOT MSVC)
-    set_source_files_properties(simd/math_bench.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
-  else()
-    set_source_files_properties(simd/math_bench.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-  endif()
+  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+  hyle_set_isa(simd/math_bench.cc AVX2)  # xsimd lowers to AVX2 transcendentals
 endif()
 hyle_apply_warnings(hyle_math_bench)
 
@@ -217,41 +203,26 @@ add_executable(hyle_dtype_bench simd/dtype_bench.cc)
 target_link_libraries(hyle_dtype_bench PRIVATE hyle_simd nanobench)
 hyle_apply_warnings(hyle_dtype_bench)
 
-# Optional SOTA parity: HYLE avx2 vs Highway avx2, head to head (same ISA). Enable with
-# -DHYLE_BENCH_HIGHWAY=ON; point HYLE_HIGHWAY_DIR at the cloned highway (sibling default).
+# Optional SOTA parity: HYLE avx2 vs Highway avx2, head to head (same ISA). Highway is now
+# VENDORED in third_party; -DHYLE_BENCH_HIGHWAY just toggles the comparison rows.
 option(HYLE_BENCH_HIGHWAY "build the simd-vs-Highway parity bench" OFF)
 if(HYLE_BENCH_HIGHWAY)
-  set(HYLE_HIGHWAY_DIR "${PROJECT_SOURCE_DIR}/../highway" CACHE PATH "cloned highway")
-  if(NOT EXISTS "${HYLE_HIGHWAY_DIR}/hwy/highway.h")
-    message(FATAL_ERROR "HYLE_BENCH_HIGHWAY=ON but no highway at ${HYLE_HIGHWAY_DIR}")
-  endif()
+  set(_hwy "${PROJECT_SOURCE_DIR}/third_party/highway")
   target_compile_definitions(hyle_simd_bench PRIVATE HYLE_BENCH_HIGHWAY)
-  target_include_directories(hyle_simd_bench SYSTEM PRIVATE "${HYLE_HIGHWAY_DIR}")
-  # Highway static-dispatch ops are header-only; the kernel TU is built at -mavx2 so its
+  target_include_directories(hyle_simd_bench SYSTEM PRIVATE "${_hwy}")
+  # Highway static-dispatch ops are header-only; the kernel TU builds at AVX2 so its
   # HWY_STATIC_TARGET resolves to AVX2 (parity with HYLE avx2).
-  if(NOT MSVC)
-    set_source_files_properties(simd/simd_kernels_highway.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
-  else()
-    set_source_files_properties(simd/simd_kernels_highway.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-  endif()
+  hyle_set_isa(simd/simd_kernels_highway.cc AVX2)
   # dtype bench's Highway f16 PromoteTo/DemoteTo path (same gate + ISA flags on its TU).
   target_compile_definitions(hyle_dtype_bench PRIVATE HYLE_BENCH_HIGHWAY)
-  target_include_directories(hyle_dtype_bench SYSTEM PRIVATE "${HYLE_HIGHWAY_DIR}")
-  if(NOT MSVC)
-    set_source_files_properties(simd/dtype_bench.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
-  else()
-    set_source_files_properties(simd/dtype_bench.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-  endif()
+  target_include_directories(hyle_dtype_bench SYSTEM PRIVATE "${_hwy}")
+  hyle_set_isa(simd/dtype_bench.cc AVX2)
   # math bench's Highway contrib/math (Exp/Log/Tanh) path -- same gate + AVX2 TU flags
-  # (gap-fill #36: same-ISA transcendental SOTA). If xsimd already set the AVX2 flags
-  # on math_bench.cc, set_source_files_properties just overwrites with the same list.
+  # (gap-fill #36: same-ISA transcendental SOTA). hyle_set_isa is idempotent if xsimd
+  # already set math_bench.cc to AVX2 (same tier -> same flags).
   target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_HIGHWAY)
-  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${HYLE_HIGHWAY_DIR}")
-  if(NOT MSVC)
-    set_source_files_properties(simd/math_bench.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
-  else()
-    set_source_files_properties(simd/math_bench.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-  endif()
+  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${_hwy}")
+  hyle_set_isa(simd/math_bench.cc AVX2)
 endif()
 
 # Optional SOTA parity: HYLE fiber sync vs marl (the fiber-sync library this

@@ -1,3 +1,55 @@
+# hyle_isa_flags(<out_var> <TIER>) -- SINGLE SOURCE OF TRUTH for the per-compiler
+# ISA codegen flags. "Enable AVX2" is `/arch:AVX2` on MSVC but `-mavx2 -mfma -mf16c`
+# on GCC/Clang; hand-writing the if(MSVC)/else mapping at every TU drifts (e.g. one
+# AVX2 site forgetting -mf16c) -> the same logical tier compiled differently = silent
+# semantic skew. Define each tier ONCE here; every call site asks for a TIER name.
+#
+# TIERS (x86-64; the HYLE per-ISA kernel contract -- see src/simd/CMakeLists.txt):
+#   SSE42    : SSE4.2. MSVC x64 has these intrinsics unconditionally (NO flag); GCC/Clang -msse4.2.
+#   AVX_F16C : AVX + F16C, capped BELOW AVX2 on purpose. F16C shipped WITH AVX on Ivy
+#              Bridge (which lacks AVX2); going to AVX2 would let the auto-vectorized tail
+#              emit an AVX2 int op that SIGILLs there. This cap is a SIGILL-safety contract,
+#              not an oversight -- keep it distinct from AVX2.
+#   AVX2     : full AVX2 + FMA + F16C (the canonical 256-bit float tier).
+#   AVX2_INT : AVX2 256-bit INTEGER only (bf16 shift/pack) -- no FMA/F16C needed. MSVC has
+#              no finer knob than /arch:AVX2, so it collapses to AVX2 there; GCC/Clang can
+#              ask for just -mavx2.
+# Returns a CMake list in <out_var> (may be empty, e.g. SSE42 on MSVC).
+function(hyle_isa_flags out_var tier)
+  if(MSVC)
+    if(tier STREQUAL "SSE42")
+      set(${out_var} "" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX_F16C")
+      set(${out_var} "/arch:AVX" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX2" OR tier STREQUAL "AVX2_INT")
+      set(${out_var} "/arch:AVX2" PARENT_SCOPE)
+    else()
+      message(FATAL_ERROR "hyle_isa_flags: unknown tier '${tier}'")
+    endif()
+  else()  # GCC / Clang
+    if(tier STREQUAL "SSE42")
+      set(${out_var} "-msse4.2" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX_F16C")
+      set(${out_var} "-mavx;-mf16c" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX2")
+      set(${out_var} "-mavx2;-mfma;-mf16c" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX2_INT")
+      set(${out_var} "-mavx2" PARENT_SCOPE)
+    else()
+      message(FATAL_ERROR "hyle_isa_flags: unknown tier '${tier}'")
+    endif()
+  endif()
+endfunction()
+
+# hyle_set_isa(<source-file> <TIER>) -- apply the tier's flags to ONE TU's COMPILE_OPTIONS.
+# Convenience over hyle_isa_flags for the common "this kernel TU compiles at <tier>" case.
+function(hyle_set_isa src tier)
+  hyle_isa_flags(_flags "${tier}")
+  if(_flags)
+    set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
+  endif()
+endfunction()
+
 # hyle_add_module(<name> [SOURCES ...] [DEPS ...] [PUBLIC_DEPS ...])
 # Declares a HYLE module as a library target `hyle_<name>` with conventional
 # include dirs, warnings, sanitizer flags, and a tri-state export macro.

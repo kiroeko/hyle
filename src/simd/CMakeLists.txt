@@ -29,23 +29,16 @@ hyle_add_module(simd SOURCES
 # flag) and uses /arch:AVX2 for the 256-bit TUs. The "src/..."-rooted #includes in the
 # kernel TUs need PROJECT_SOURCE_DIR on the include path.
 target_include_directories(hyle_simd PRIVATE "${PROJECT_SOURCE_DIR}")
-if(MSVC)
-  set_source_files_properties(ops/kernels_avx2.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-  # f16c TU: cap at /arch:AVX (NOT AVX2). F16C shipped WITH AVX on Ivy Bridge, which lacks
-  # AVX2; /arch:AVX2 would let the auto-vectorized scalar tail emit AVX2 int ops that SIGILL
-  # there. /arch:AVX + the (always-available) F16C intrinsics = exactly Ivy Bridge's level.
-  set_source_files_properties(dtype/cvt_f16c.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX")
-  # bf16 AVX2 TU: needs /arch:AVX2 (256-bit integer ops). Only reached when cpu has AVX2.
-  set_source_files_properties(dtype/cvt_avx2.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-else()
-  set_source_files_properties(ops/kernels_sse4.cc PROPERTIES COMPILE_OPTIONS "-msse4.2")
-  set_source_files_properties(ops/kernels_avx2.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
-  # f16c TU: -mf16c -mavx (NOT -mavx2) -- caps codegen at F16C+AVX so neither the intrinsics
-  # nor the auto-vectorized tail can emit an AVX2 instruction that SIGILLs on Ivy Bridge.
-  set_source_files_properties(dtype/cvt_f16c.cc PROPERTIES COMPILE_OPTIONS "-mf16c;-mavx")
-  # bf16 AVX2 TU: -mavx2 (256-bit integer ops). Only reached when cpu_features().avx2.
-  set_source_files_properties(dtype/cvt_avx2.cc PROPERTIES COMPILE_OPTIONS "-mavx2")
-endif()
+# Per-ISA codegen flags via the single-source hyle_set_isa (HyleModule.cmake) -- one tier
+# name per TU, no hand-written /arch-vs-(-m) mapping to drift. scalar TU gets none.
+hyle_set_isa(ops/kernels_sse4.cc SSE42)
+hyle_set_isa(ops/kernels_avx2.cc AVX2)
+# f16c TU caps at AVX+F16C (NOT AVX2): F16C shipped with AVX on Ivy Bridge (no AVX2);
+# AVX2 would let the auto-vectorized tail emit an AVX2 int op that SIGILLs there. The
+# AVX_F16C tier encodes exactly that cap (see hyle_isa_flags).
+hyle_set_isa(dtype/cvt_f16c.cc AVX_F16C)
+# bf16 TU needs only AVX2 256-bit INTEGER ops (no FMA/F16C). Only reached when cpu has AVX2.
+hyle_set_isa(dtype/cvt_avx2.cc AVX2_INT)
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:
 # it keeps the AVX2 kernel TU's codegen from being inlined into the baseline dispatcher.
@@ -68,13 +61,8 @@ target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HIGHWAY_MATH HYLE_SIMD_XS
 target_include_directories(hyle_simd SYSTEM PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/highway"
   "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
-if(MSVC)
-  set_source_files_properties(math/transcendental_highway.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-  set_source_files_properties(math/transcendental_xsimd.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
-else()
-  set_source_files_properties(math/transcendental_highway.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
-  set_source_files_properties(math/transcendental_xsimd.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
-endif()
+hyle_set_isa(math/transcendental_highway.cc AVX2)
+hyle_set_isa(math/transcendental_xsimd.cc AVX2)
 
 # BASELINE ASSUMPTION (the SIGILL-safety contract): for a DISTRIBUTABLE binary, build the
 # whole module at the default baseline -- only the per-variant kernel TUs above get a wide

@@ -25,13 +25,12 @@ hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharde
 # /arch:AVX2 for the 256-bit build. These variant exes run on the build host, which must
 # support the ISA (both dev platforms are AVX2 -- matches the variant-DLL test model).
 hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/ops_test.cc simd/dtype_test.cc simd/math_test.cc)
-if(CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
-  hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4)
-  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS /arch:AVX2)
-else()
-  hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS -msse4.2)
-  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS -mavx2 -mfma -mf16c)
-endif()
+# vec_test compiled per ISA variant: same source, different HYLE_SIMD_TARGET_* + the
+# matching codegen flags from the single-source hyle_isa_flags (no MSVC/else drift here).
+hyle_isa_flags(_sse4_flags SSE42)
+hyle_isa_flags(_avx2_flags AVX2)
+hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_flags})
+hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
 if(HYLE_HAS_FCONTEXT)
   hyle_add_test(sched SOURCES sched/fiber_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc sched/sync_test.cc)
 endif()
