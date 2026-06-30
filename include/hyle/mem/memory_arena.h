@@ -260,6 +260,8 @@ class Arena {
         block_(static_cast<std::byte*>(pool->allocate())),
         block_size_(pool->block_size()) {
     HYLE_FATAL_ASSERT(block_ != nullptr);  // pool exhausted
+    cur_ = block_;
+    end_ = block_ + block_size_;
   }
 
   ~Arena() { pool_->deallocate(block_); }
@@ -270,20 +272,21 @@ class Arena {
   // threaded: a plain pointer bump (no atomic). One Arena is owned by one thread.
   void* allocate(std::size_t bytes,
                  std::size_t alignment = alignof(std::max_align_t)) noexcept {
-    auto base = reinterpret_cast<std::uintptr_t>(block_);
-    std::uintptr_t aligned = (base + offset_ + alignment - 1) & ~(alignment - 1);
-    std::size_t start = static_cast<std::size_t>(aligned - base);
-    if (start > block_size_ || bytes > block_size_ - start) return nullptr;
-    offset_ = start + bytes;
-    return block_ + start;
+    // Pointer-style bump: align cur_ directly, no +base/-base offset round-trip.
+    auto cur = reinterpret_cast<std::uintptr_t>(cur_);
+    std::uintptr_t aligned = (cur + alignment - 1) & ~(alignment - 1);
+    auto e = reinterpret_cast<std::uintptr_t>(end_);
+    if (aligned > e || bytes > e - aligned) return nullptr;
+    cur_ = reinterpret_cast<std::byte*>(aligned + bytes);
+    return reinterpret_cast<void*>(aligned);
   }
 
   // Release everything (reuse the block from the start). HYLE addition over clay
   // (clay relied solely on dtor); only safe when no allocations are live.
-  void reset() noexcept { offset_ = 0; }
+  void reset() noexcept { cur_ = block_; }
 
   std::size_t block_size() const noexcept { return block_size_; }
-  std::size_t used() const noexcept { return offset_; }
+  std::size_t used() const noexcept { return static_cast<std::size_t>(cur_ - block_); }
 
   // Adapt this Arena to the Allocator vtable (split): allocate -> bump, deallocate ->
   // no-op (the arena frees in bulk on destruction), realloc -> bump a fresh slice + copy
@@ -314,7 +317,8 @@ class Arena {
   MemoryArena* pool_;
   std::byte* block_;
   std::size_t block_size_;
-  std::size_t offset_ = 0;  // bump cursor (single-threaded; one Arena per thread)
+  std::byte* cur_ = nullptr;  // bump cursor (pointer-style; one Arena per thread)
+  std::byte* end_ = nullptr;  // one past the block end (block_ + block_size_)
 };
 
 }  // namespace hyle::mem

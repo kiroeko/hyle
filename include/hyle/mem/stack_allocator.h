@@ -21,7 +21,7 @@ namespace hyle::mem {
 // Single-threaded by design (stack/scratch lifetime is thread-local).
 class StackAllocator {
  public:
-  using Marker = std::size_t;  // an offset into the slab
+  using Marker = std::byte*;  // a saved cursor position within the slab
 
   StackAllocator(Allocator alloc, std::size_t size)
       : alloc_(alloc), size_(size) {
@@ -30,6 +30,8 @@ class StackAllocator {
     base_ = static_cast<std::byte*>(
         alloc_.allocate(size_, alignof(std::max_align_t)));
     HYLE_FATAL_ASSERT(base_ != nullptr);
+    cur_ = base_;
+    end_ = base_ + size_;
   }
 
   ~StackAllocator() {
@@ -43,39 +45,38 @@ class StackAllocator {
   void* allocate(std::size_t bytes,
                  std::size_t alignment = alignof(std::max_align_t)) noexcept {
     HYLE_FATAL_ASSERT((alignment & (alignment - 1)) == 0);
-    // Align the REAL address, not just the offset: base_ is only max_align_t-
-    // aligned, so for alignment > that, aligning top_ alone would not align the
-    // returned pointer.
-    auto base = reinterpret_cast<std::uintptr_t>(base_);
-    std::uintptr_t cur = base + top_;
+    // Pointer-style bump: align cur_ directly (the live address), no +base/-base
+    // round-trip through an offset. base_ is max_align_t-aligned so aligning the
+    // real cursor is what guarantees the returned pointer's alignment.
+    auto cur = reinterpret_cast<std::uintptr_t>(cur_);
     std::uintptr_t aligned = (cur + alignment - 1) & ~(alignment - 1);
-    std::size_t new_top = static_cast<std::size_t>(aligned - base);
-    if (new_top > size_ || bytes > size_ - new_top) return nullptr;  // overflow-safe
-    void* p = base_ + new_top;
-    top_ = new_top + bytes;
-    return p;
+    auto e = reinterpret_cast<std::uintptr_t>(end_);
+    if (aligned > e || bytes > e - aligned) return nullptr;  // overflow-safe
+    cur_ = reinterpret_cast<std::byte*>(aligned + bytes);
+    return reinterpret_cast<void*>(aligned);
   }
 
-  // Save the current top; rewind() returns the slab to exactly this point.
-  Marker mark() const noexcept { return top_; }
+  // Save the current cursor; rewind() returns the slab to exactly this point.
+  Marker mark() const noexcept { return cur_; }
 
-  // Release everything allocated since `m` (LIFO). Must be <= current top.
+  // Release everything allocated since `m` (LIFO). Must be within [base_, cur_].
   void rewind(Marker m) noexcept {
-    HYLE_FATAL_ASSERT(m <= top_);
-    top_ = m;
+    HYLE_FATAL_ASSERT(m >= base_ && m <= cur_);
+    cur_ = m;
   }
 
   // Release everything.
-  void reset() noexcept { top_ = 0; }
+  void reset() noexcept { cur_ = base_; }
 
-  std::size_t used() const noexcept { return top_; }
+  std::size_t used() const noexcept { return static_cast<std::size_t>(cur_ - base_); }
   std::size_t capacity() const noexcept { return size_; }
 
  private:
   Allocator alloc_;
   std::byte* base_ = nullptr;
   std::size_t size_;
-  std::size_t top_ = 0;  // bytes consumed from base_
+  std::byte* cur_ = nullptr;  // bump cursor (pointer-style: points at next free byte)
+  std::byte* end_ = nullptr;  // one past the slab end (base_ + size_)
 };
 
 }  // namespace hyle::mem
