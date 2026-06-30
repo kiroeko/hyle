@@ -51,24 +51,36 @@ int bench_string_algo() {
   const string_ref sr{u8.data(), static_cast<std::uint32_t>(u8.size())};
 
   // ---- utf8_length: count code points (scalar decoder vs simdutf SIMD) -------
+  // FAIRNESS: HYLE utf8_length does VALIDATE + COUNT in one pass (returns -1 on
+  // malformed input). simdutf::count_utf8 counts ONLY (assumes valid) -- racing
+  // against it alone is apples-to-oranges (HYLE does strictly more work). The
+  // matched-contract rival is simdutf validate_utf8 + count_utf8 (same validate+
+  // count semantics). Both shown: count-only marks the pure-SIMD ceiling, the
+  // validate+count row is the honest same-contract comparison.
   {
     nb::Bench b;
-    b.title("utf8 count code points (~2KB mixed)")
+    b.title("utf8 validate+count code points (~2KB mixed)")
         .relative(true)
         .batch(u8.size())
         .minEpochIterations(20000);
 #if defined(HYLE_BENCH_SIMDUTF)
-    b.run("simdutf::count_utf8 (SIMD SOTA)", [&] {
+    b.run("simdutf validate_utf8+count_utf8 (same contract)", [&] {
+      bool ok = simdutf::validate_utf8(u8.data(), u8.size());
+      std::size_t n = ok ? simdutf::count_utf8(u8.data(), u8.size()) : 0;
+      nb::doNotOptimizeAway(n);
+    });
+    b.run("simdutf::count_utf8 only (SIMD ceiling, no validate)", [&] {
       nb::doNotOptimizeAway(simdutf::count_utf8(u8.data(), u8.size()));
     });
 #endif
-    b.run("HYLE utf8_length (scalar decoder)", [&] {
+    b.run("HYLE utf8_length (dispatched: scalar | simdutf-borrow when wired)", [&] {
       nb::doNotOptimizeAway(utf8_length(sr));
     });
   }
 
-  // ---- utf8 validate: HYLE utf8_length returns -1 on invalid (validate+count)
-  // vs simdutf::validate_utf8 (pure validation). Same scan, different output.
+  // ---- utf8 validate only: HYLE has no validate-only entry, so this races -----
+  // simdutf::validate_utf8 against HYLE utf8_length>=0 (which validates AND counts
+  // -- still more work). Kept to show simdutf's pure-validate speed.
   {
     nb::Bench b;
     b.title("utf8 validate (~2KB mixed)")
@@ -76,11 +88,11 @@ int bench_string_algo() {
         .batch(u8.size())
         .minEpochIterations(20000);
 #if defined(HYLE_BENCH_SIMDUTF)
-    b.run("simdutf::validate_utf8 (SIMD SOTA)", [&] {
+    b.run("simdutf::validate_utf8 (SIMD, validate only)", [&] {
       nb::doNotOptimizeAway(simdutf::validate_utf8(u8.data(), u8.size()));
     });
 #endif
-    b.run("HYLE utf8_length>=0 (scalar validate)", [&] {
+    b.run("HYLE utf8_length>=0 (dispatched validate+count)", [&] {
       nb::doNotOptimizeAway(utf8_length(sr) >= 0);
     });
   }
