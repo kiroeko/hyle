@@ -28,4 +28,12 @@ void log_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void tanh_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
 #endif
 
+#if defined(HYLE_SIMD_XSIMD_MATH)
+// xsimd AVX2 (8-wide, ~3.5 ULP). Only built when xsimd-math wired in. Per-op best-of-
+// breed: dispatcher prefers xsimd for exp/tanh (fastest), Highway for log (fastest).
+void exp_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
+void log_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
+void tanh_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
+#endif
+
 }  // namespace hyle::simd::detail

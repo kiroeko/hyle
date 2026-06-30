@@ -22,7 +22,8 @@ hyle_add_module(simd SOURCES
   math/math_dispatch.cc
   math/transcendental_scalar.cc
   math/transcendental_sleef.cc
-  math/transcendental_highway.cc)
+  math/transcendental_highway.cc
+  math/transcendental_xsimd.cc)
 
 # Per-variant ISA flags: each kernel TU gets ONLY its target's -march; the dispatcher and
 # probe stay baseline. MSVC x64 has SSE4.2 intrinsics unconditionally (sse4/scalar need no
@@ -100,6 +101,28 @@ if(HYLE_SIMD_HIGHWAY_MATH)
     set_source_files_properties(math/transcendental_highway.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
   else()
     set_source_files_properties(math/transcendental_highway.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma;-mf16c")
+  endif()
+endif()
+
+# --- xsimd-accelerated transcendentals (opt-in, PER-OP best-of-breed) ----------------
+# The same-ISA bench found NO single library wins all three ops: xsimd's exp/tanh are
+# fastest, Highway's log is fastest. So the dispatcher does per-op best-of-breed
+# (exp/tanh -> xsimd, log -> Highway). Enable with -DHYLE_SIMD_XSIMD_MATH=ON +
+# -DHYLE_XSIMD_DIR=<xsimd clone>. Header-only (like Highway). transcendental_xsimd.cc is a
+# no-op unless this is set. Best results with BOTH Highway+xsimd math wired (full best-of-
+# breed); xsimd alone serves all three from xsimd.
+option(HYLE_SIMD_XSIMD_MATH "wire xsimd for vectorized exp/tanh (per-op best-of-breed; needs HYLE_XSIMD_DIR)" OFF)
+if(HYLE_SIMD_XSIMD_MATH)
+  set(HYLE_XSIMD_DIR "${PROJECT_SOURCE_DIR}/../xsimd" CACHE PATH "cloned xsimd (header-only)")
+  if(NOT EXISTS "${HYLE_XSIMD_DIR}/include/xsimd/xsimd.hpp")
+    message(FATAL_ERROR "HYLE_SIMD_XSIMD_MATH=ON but no include/xsimd/xsimd.hpp at ${HYLE_XSIMD_DIR}")
+  endif()
+  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_XSIMD_MATH)
+  target_include_directories(hyle_simd SYSTEM PRIVATE "${HYLE_XSIMD_DIR}/include")
+  if(MSVC)
+    set_source_files_properties(math/transcendental_xsimd.cc PROPERTIES COMPILE_OPTIONS "/arch:AVX2")
+  else()
+    set_source_files_properties(math/transcendental_xsimd.cc PROPERTIES COMPILE_OPTIONS "-mavx2;-mfma")
   endif()
 endif()
 

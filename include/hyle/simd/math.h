@@ -6,22 +6,23 @@
 
 // math.h -- vectorized transcendentals (exp/log/tanh) for f32 (simd-06). The AI hot path
 // (softmax/gelu/attention) is dominated by these; hand-rolling polynomial approximations
-// is error-prone, so the accelerated path BORROWS SLEEF's verified cores (simd-design:
-// "借 sleef 不手搓") rather than reimplementing them.
+// is error-prone, so the accelerated paths BORROW verified vendor cores (simd-design:
+// "借核不手搓") rather than reimplementing them.
 //
-// TWO TIERS (same dispatch spirit as ops.h / dtype_ops.h):
-//   - scalar libm reference: std::exp/log/tanh per element. ALWAYS compiled, correct on
-//     every platform, the ULP oracle. NOT a stub -- it's the floor + the fallback.
-//   - SLEEF AVX2 (8-wide): opt-in. Compiled only when the build is configured with
-//     -DHYLE_SIMD_SLEEF=ON + -DHYLE_SLEEF_DIR=<prebuilt sleef> (links libsleef, includes
-//     the PORTABLE declaration header sleef.h -- dual-platform, unlike SLEEF's GCC-only
-//     INLINE headers). When present + the CPU has AVX2, the batch calls run SLEEF's
-//     Sleef_expf8_u10avx2 etc. (1-ULP "_u10" accuracy).
+// TIERS + PER-OP BEST-OF-BREED dispatch (math_dispatch.cc):
+//   - scalar libm reference: std::exp/log/tanh per element. ALWAYS compiled, the ULP
+//     oracle + fallback. NOT a stub.
+//   - vectorized AVX2 cores (8-wide, all ~3.5-ULP class, all opt-in, all header-only
+//     except SLEEF): Highway contrib/math (-DHYLE_SIMD_HIGHWAY_MATH), xsimd
+//     (-DHYLE_SIMD_XSIMD_MATH), SLEEF _u35 (-DHYLE_SIMD_SLEEF, prebuilt lib).
+//   - the same-ISA bench found NO single library wins all three ops: xsimd's exp/tanh
+//     polynomials are fastest, Highway's log is fastest. So the dispatcher picks PER OP:
+//     exp/tanh -> xsimd > Highway > SLEEF; log -> Highway > xsimd > SLEEF (then scalar).
 //
-// WHY opt-in (honest): vectorized transcendentals require a SLEEF build. Mandating it would
-// force every consumer to vendor+build SLEEF; instead, like the absl/highway bench deps, it
-// is enabled explicitly and HYLE consumes the prebuilt lib. Without it, math is correct via
-// libm, just not vectorized. active_math_variant() reports which tier is live.
+// BEST-OF-BREED needs BOTH Highway+xsimd wired (each op then routes to the faster of the
+// two). Wiring only one is a SUBOPTIMAL trap: that lib serves all three ops and loses on
+// the ones it isn't fastest at. Default build (none wired) = scalar libm. active_math_
+// variant() reports whether a vectorized tier is live (kAvx2) or scalar.
 
 namespace hyle::simd {
 
