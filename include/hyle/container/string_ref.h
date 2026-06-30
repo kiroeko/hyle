@@ -85,21 +85,46 @@ struct string_ref {
   }
 
   constexpr std::uint32_t find(char c, std::uint32_t pos = 0) const noexcept {
-    for (std::uint32_t i = pos; i < size; ++i)
-      if (data[i] == c) return i;
-    return npos;
+    if (pos >= size) return npos;
+    if consteval {
+      for (std::uint32_t i = pos; i < size; ++i)
+        if (data[i] == c) return i;
+      return npos;
+    }
+    // RUNTIME: memchr lowers to SIMD in libc (~20x a scalar byte loop on long
+    // scans). The consteval branch above is discarded here (not unreachable).
+    const void* hit =
+        std::memchr(data + pos, static_cast<unsigned char>(c), size - pos);
+    return hit == nullptr
+               ? npos
+               : static_cast<std::uint32_t>(static_cast<const char*>(hit) -
+                                            data);
   }
-  // Naive O(n*m) search (region_eq bails on the first mismatching byte, and the
-  // single-char scan vectorizes). Fine for the short needles this sees; a
-  // sublinear searcher is not worth the code for view-sized strings.
+  // constexpr: naive O(n*m) window walk. RUNTIME: memchr finds first-char
+  // candidates (SIMD) and region_eq (memcmp) verifies -- the libc strategy, far
+  // fewer byte compares than the scalar walk.
   constexpr std::uint32_t find(string_ref needle,
                                std::uint32_t pos = 0) const noexcept {
     if (needle.size == 0) return pos <= size ? pos : npos;
     if (needle.size > size) return npos;
     std::uint32_t last = size - needle.size;  // no overflow: needle.size<=size
-    for (std::uint32_t i = pos; i <= last; ++i)
+    if (pos > last) return npos;
+    if consteval {
+      for (std::uint32_t i = pos; i <= last; ++i)
+        if (region_eq(i, needle)) return i;
+      return npos;
+    }
+    const char first = needle.data[0];
+    std::uint32_t i = pos;
+    for (;;) {
+      const void* hit = std::memchr(
+          data + i, static_cast<unsigned char>(first), (last - i) + 1u);
+      if (hit == nullptr) return npos;
+      i = static_cast<std::uint32_t>(static_cast<const char*>(hit) - data);
       if (region_eq(i, needle)) return i;
-    return npos;
+      if (i == last) return npos;
+      ++i;
+    }
   }
   constexpr std::uint32_t rfind(char c,
                                 std::uint32_t pos = npos) const noexcept {
@@ -125,24 +150,69 @@ struct string_ref {
     return npos;
   }
 
+  // First position of ANY char in `set`. constexpr: O(n*m) scan. RUNTIME:
+  // memchr-min -- for each set char, memchr (SIMD) its earliest occurrence in the
+  // shrinking window [pos, best); the minimum is the answer. Beats a scalar
+  // bitset scan for the small delimiter sets this normally sees (each memchr is a
+  // full SIMD scan; the window shrinks as `best` improves, pruning later chars).
   constexpr std::uint32_t find_first_of(string_ref set,
                                         std::uint32_t pos = 0) const noexcept {
-    for (std::uint32_t i = pos; i < size; ++i)
-      if (set.find(data[i]) != npos) return i;
-    return npos;
+    if (pos >= size) return npos;
+    if consteval {
+      for (std::uint32_t i = pos; i < size; ++i)
+        if (set.find(data[i]) != npos) return i;
+      return npos;
+    }
+    std::uint32_t best = npos;
+    for (std::uint32_t j = 0; j < set.size; ++j) {
+      std::uint32_t limit = (best == npos) ? size : best;
+      if (pos >= limit) continue;  // window empty -> this char can't improve
+      const void* hit = std::memchr(
+          data + pos, static_cast<unsigned char>(set.data[j]), limit - pos);
+      if (hit != nullptr) {
+        std::uint32_t idx =
+            static_cast<std::uint32_t>(static_cast<const char*>(hit) - data);
+        if (idx < best) best = idx;
+        if (best == pos) return pos;  // earliest possible -> done
+      }
+    }
+    return best;
   }
+  // First position NOT in `set`. No single-byte memchr equivalent (membership,
+  // not one byte); RUNTIME builds a 256-entry membership table then scans O(n)
+  // (vs the constexpr O(n*m)), matching std's bitmap-scan strategy.
   constexpr std::uint32_t find_first_not_of(
       string_ref set, std::uint32_t pos = 0) const noexcept {
+    if (pos >= size) return npos;
+    if consteval {
+      for (std::uint32_t i = pos; i < size; ++i)
+        if (set.find(data[i]) == npos) return i;
+      return npos;
+    }
+    bool in[256] = {};
+    for (std::uint32_t j = 0; j < set.size; ++j)
+      in[static_cast<unsigned char>(set.data[j])] = true;
     for (std::uint32_t i = pos; i < size; ++i)
-      if (set.find(data[i]) == npos) return i;
+      if (!in[static_cast<unsigned char>(data[i])]) return i;
     return npos;
   }
   constexpr std::uint32_t find_last_of(string_ref set,
                                        std::uint32_t pos = npos) const noexcept {
     if (size == 0) return npos;
+    if consteval {
+      std::uint32_t i = (pos >= size) ? size - 1 : pos;
+      for (;; --i) {
+        if (set.find(data[i]) != npos) return i;
+        if (i == 0) break;
+      }
+      return npos;
+    }
+    bool in[256] = {};
+    for (std::uint32_t j = 0; j < set.size; ++j)
+      in[static_cast<unsigned char>(set.data[j])] = true;
     std::uint32_t i = (pos >= size) ? size - 1 : pos;
     for (;; --i) {
-      if (set.find(data[i]) != npos) return i;
+      if (in[static_cast<unsigned char>(data[i])]) return i;
       if (i == 0) break;
     }
     return npos;
@@ -150,9 +220,20 @@ struct string_ref {
   constexpr std::uint32_t find_last_not_of(
       string_ref set, std::uint32_t pos = npos) const noexcept {
     if (size == 0) return npos;
+    if consteval {
+      std::uint32_t i = (pos >= size) ? size - 1 : pos;
+      for (;; --i) {
+        if (set.find(data[i]) == npos) return i;
+        if (i == 0) break;
+      }
+      return npos;
+    }
+    bool in[256] = {};
+    for (std::uint32_t j = 0; j < set.size; ++j)
+      in[static_cast<unsigned char>(set.data[j])] = true;
     std::uint32_t i = (pos >= size) ? size - 1 : pos;
     for (;; --i) {
-      if (set.find(data[i]) == npos) return i;
+      if (!in[static_cast<unsigned char>(data[i])]) return i;
       if (i == 0) break;
     }
     return npos;
@@ -196,11 +277,17 @@ struct string_ref {
   }
 
  private:
-  // Bytewise equality of the window [at, at+other.size) against `other`.
+  // Bytewise equality of the window [at, at+other.size) against `other`. At
+  // RUNTIME this is memcmp (libc lowers it to SIMD); the scalar loop is kept for
+  // the constexpr path (memcmp is not constexpr). region_eq powers starts_with/
+  // ends_with/find(needle), so the memcmp win propagates to all of them.
   constexpr bool region_eq(std::uint32_t at, string_ref other) const noexcept {
-    for (std::uint32_t i = 0; i < other.size; ++i)
-      if (data[at + i] != other.data[i]) return false;
-    return true;
+    if consteval {
+      for (std::uint32_t i = 0; i < other.size; ++i)
+        if (data[at + i] != other.data[i]) return false;
+      return true;
+    }
+    return std::memcmp(data + at, other.data, other.size) == 0;
   }
 };
 

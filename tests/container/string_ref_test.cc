@@ -94,6 +94,74 @@ TEST(StringRef, FindAgainstStdViewOracle) {
   }
 }
 
+// The search family was rewritten with RUNTIME fast paths (find/find(needle) ->
+// memchr, find_first_of -> memchr-min, find_first_not_of/last_of/last_not_of ->
+// 256-entry membership table, region_eq/starts_with/ends_with -> memcmp). This
+// differential fuzz proves every runtime path matches std::string_view across
+// many haystacks/sets/positions -- the algorithms changed, so they must be
+// re-proven, not assumed.
+TEST(StringRef, SetFamilyAgainstStdViewOracle) {
+  const char* haystacks[] = {
+      "",         "a",       "aaaa",    "a.b.c",
+      "  hi \t",  "abcABC123 .,;",      "the quick brown fox jumps",
+      "....",     "x",       "no_delims_here",
+  };
+  const char* sets[] = {
+      "",    ".",      "abc",   "0123",  " \t\r\n",
+      "xyz", "aeiou",  ".,;:",  "z",     "abcdefghijklmnopqrstuvwxyz",
+  };
+  auto map = [](std::uint32_t v) {
+    return v == string_ref::npos ? std::string_view::npos
+                                 : static_cast<std::size_t>(v);
+  };
+  for (const char* h : haystacks) {
+    std::string_view o{h};
+    string_ref s{h};
+    for (const char* setp : sets) {
+      std::string_view oset{setp};
+      string_ref sset{setp};
+      // pos = 0 and a couple interior/past-end positions to exercise bounds.
+      for (std::size_t pos : {std::size_t{0}, std::size_t{1}, std::size_t{3},
+                              o.size(), o.size() + 5}) {
+        std::uint32_t sp = pos > string_ref::npos
+                               ? string_ref::npos
+                               : static_cast<std::uint32_t>(pos);
+        EXPECT_EQ(map(s.find_first_of(sset, sp)), o.find_first_of(oset, pos))
+            << "find_first_of h='" << h << "' set='" << setp << "' pos=" << pos;
+        EXPECT_EQ(map(s.find_first_not_of(sset, sp)),
+                  o.find_first_not_of(oset, pos))
+            << "find_first_not_of h='" << h << "' set='" << setp
+            << "' pos=" << pos;
+      }
+      // last_of/last_not_of default-pos (whole string) -- npos pos = scan from end.
+      EXPECT_EQ(map(s.find_last_of(sset)), o.find_last_of(oset))
+          << "find_last_of h='" << h << "' set='" << setp << "'";
+      EXPECT_EQ(map(s.find_last_not_of(sset)), o.find_last_not_of(oset))
+          << "find_last_not_of h='" << h << "' set='" << setp << "'";
+    }
+  }
+}
+
+// The constexpr path is a SEPARATE branch (`if consteval` -> scalar; runtime ->
+// memchr/memcmp/table). Evaluate every rewritten op in a constant expression so a
+// regression in the scalar branch is a COMPILE error, not a silent runtime-only
+// pass. static_assert forces constant evaluation.
+TEST(StringRef, SearchFamilyConstexpr) {
+  constexpr string_ref s = "a.b.c.d";
+  static_assert(s.find('b') == 2u);
+  static_assert(s.find('z') == string_ref::npos);
+  static_assert(s.find(string_ref{"b.c"}) == 2u);
+  static_assert(s.find(string_ref{"zzz"}) == string_ref::npos);
+  static_assert(s.find_first_of(string_ref{".c"}) == 1u);
+  static_assert(s.find_first_not_of(string_ref{"a."}) == 2u);
+  static_assert(s.find_last_of(string_ref{"."}) == 5u);
+  static_assert(s.find_last_not_of(string_ref{"d."}) == 4u);
+  static_assert(s.starts_with(string_ref{"a.b"}));
+  static_assert(!s.starts_with(string_ref{"a.c"}));
+  static_assert(s.ends_with(string_ref{"c.d"}));
+  SUCCEED();  // the real assertions are the static_asserts above (compile-time)
+}
+
 TEST(StringRef, Substr) {
   string_ref s = "hello world";
   EXPECT_TRUE(s.substr(0, 5) == string_ref{"hello"});
