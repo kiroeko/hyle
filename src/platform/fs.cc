@@ -312,7 +312,16 @@ bool directory_iterate(const char* path,
   pat[wl + 2] = L'\0';
 
   WIN32_FIND_DATAW fd;
-  HANDLE h = FindFirstFileW(pat, &fd);
+  // FindFirstFileExW + FindExInfoBasic skips the legacy 8.3 short-name the plain
+  // FindFirstFileW computes -- work we never use. FIND_FIRST_EX_LARGE_FETCH asks the
+  // FS to batch more entries per kernel round-trip. This is what MSVC's own
+  // std::filesystem does (FindExInfoBasic, flags 0).
+  // NOTE: measured no visible speedup vs plain FindFirstFileW (~32.6us either way) --
+  // directory_iterate is syscall-bound by the per-entry FindNextFileW + UTF-16->UTF-8
+  // advance loop, and short-name suppression is a one-time open cost the loop dwarfs.
+  // Kept because it is strictly less work and matches the STL, not for a bench win.
+  HANDLE h = FindFirstFileExW(pat, FindExInfoBasic, &fd, FindExSearchNameMatch,
+                              nullptr, FIND_FIRST_EX_LARGE_FETCH);
   std::free(heapp);
   if (h == INVALID_HANDLE_VALUE) return false;
   do {
