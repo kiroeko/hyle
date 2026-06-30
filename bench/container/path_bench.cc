@@ -20,6 +20,7 @@
 using hyle::container::base;
 using hyle::container::directory;
 using hyle::container::extension;
+using hyle::container::join_array;
 using hyle::container::normalize;
 using hyle::container::string_ref;
 
@@ -94,6 +95,30 @@ int bench_path() {
     b.run("HYLE path::normalize (in-place)", [&] {
       std::memcpy(buf, kMessy, std::strlen(kMessy) + 1);  // fresh mutable copy
       nb::doNotOptimizeAway(normalize(buf));
+    });
+  }
+
+  // ---- join_array(): assemble N parts with single '/' separators (no alloc) ---
+  // Buffer-fill token walk that collapses interior separator runs + honors lead/
+  // trail seps, snprintf-style. The no-alloc producing op of path's allocating
+  // class (parallel to normalize). Rival: std::filesystem::path operator/=
+  // accumulated over the same parts (which builds a path object -> allocates).
+  {
+    const string_ref parts[] = {string_ref{"usr"}, string_ref{"local"},
+                                string_ref{"share"}, string_ref{"hyle"},
+                                string_ref{"include"}, string_ref{"container"}};
+    constexpr std::size_t kParts = sizeof(parts) / sizeof(parts[0]);
+    char dst[128];
+    const char* std_parts[] = {"usr", "local", "share", "hyle", "include", "container"};
+    nb::Bench b;
+    b.title("path join_array 6 parts (no alloc)").relative(true).minEpochIterations(200000);
+    b.run("std::filesystem::path operator/= x6", [&] {
+      std::filesystem::path p;
+      for (const char* part : std_parts) p /= part;
+      nb::doNotOptimizeAway(p.native().size());
+    });
+    b.run("HYLE path::join_array (buffer-fill)", [&] {
+      nb::doNotOptimizeAway(join_array(dst, sizeof(dst), parts, kParts));
     });
   }
 

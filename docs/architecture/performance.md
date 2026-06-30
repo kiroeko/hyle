@@ -95,6 +95,7 @@
 | **string_algo** hex_encode 1KB→2KB | 0.45ns/B | naive 逐字节 0.63 | 1.41x | (无单一 SOTA hex 库) | n/a | ✅赢参考实现(表查找) |
 | **path** extension/base/directory | 44/10/9.7ns | (无 std 词法,只 filesystem) | n/a | std::filesystem 词法 152/164/166 | 3.4/16/17x | ✅赢 filesystem(视图原地扫 vs 构造 path 分配) |
 | **path** normalize 词法折叠 | 65ns | (无 std 等价) | n/a | std::filesystem lexically_normal 382 | 5.85x | ✅赢(就地 vs 堆 path 对象) |
+| **path** join_array 6 部件(无 alloc) | 30ns | (无 std 等价) | n/a | std::filesystem operator/= 454 | 14.9x | ✅赢(buffer-fill 分隔符折叠 vs N 次 path 分配) |
 | **platform** Parker ping-pong(真阻塞) | 309ns | std::condition_variable ping-pong 881 | 2.85x | Rust std park(概念对照) | n/a | ✅赢 std(futex 直驱,无 mutex+predicate) |
 | **platform** Parker unpark+park 快路径 | 9.6ns | 裸 atomic flag 4.6(下界) | 0.48x | (3-态机下界) | n/a | ➖2x 下界(换 unpark-before-park 安全;非 syscall) |
 | **platform** Thread spawn+join | 39.5µs | std::thread 42.0 | 1.06x | (std::thread 即 SOTA,同 syscall) | 1.06x | ➖平(OS 主导;证 handle 零开销) |
