@@ -212,12 +212,14 @@ int main() {
   //       THREAD (that IS what mimalloc does internally). HYLE's matching answer
   //       is GrowablePool-per-thread: no atomics, no sharing -> parity/beat mi.
   //   (2) "I genuinely need ONE shared fixed pool" (a bounded resource every
-  //       thread draws from) -> MemoryArena. Its 1.95x vs per-thread-heap mi is
-  //       the real, irreducible cost of that coordination, NOT a complexity gap
-  //       (sharding already killed the O(threads) 278x). Closing this constant
-  //       further needs seastar's model (threads pinned per core for life, pool
-  //       outlives them) -- a contract MemoryArena's general lifetime can't make.
-  // (std::pmr::unsynchronized_pool_resource is NOT thread-safe -> not a rival.)
+  //       thread draws from) -> MemoryArena. The APPLES-TO-APPLES rival is std::
+  //       pmr::synchronized_pool_resource (the std thread-safe SHARED pool, same
+  //       contract), NOT per-thread-heap mimalloc. HYLE's lock-free sharded pool
+  //       vs std's mutex-serialized pool -> THAT is the honest ledger row. The
+  //       mimalloc per-thread-heap number is kept only as context (a different
+  //       contract), explicitly NOT the win/loss denominator.
+  // (std::pmr::unsynchronized_pool_resource is NOT thread-safe -> not a rival;
+  //  synchronized_pool_resource IS, and is the fair shared-pool SOTA below.)
   {
     constexpr int kThreads = 8;
     constexpr int kPer = 50000;
@@ -258,6 +260,24 @@ int main() {
           void* p = shared.allocate();
           nb::doNotOptimizeAway(p);
           shared.deallocate(p);
+        }
+      });
+    });
+
+    // (2-FAIR) The APPLES-TO-APPLES rival for row (2): std::pmr::synchronized_
+    // pool_resource is the STANDARD LIBRARY's thread-safe SHARED pool -- same
+    // contract as MemoryArena (one pool every thread draws from), so this is the
+    // honest "is our shared pool SOTA for its class?" check (vs the apples-to-
+    // oranges per-thread-heap mimalloc baseline). std's shared pool serializes on
+    // an internal mutex; HYLE's is lock-free sharded -> HYLE should win here, and
+    // THIS comparison (not the mimalloc one) is what belongs in the ledger.
+    b.run("std::pmr::synchronized_pool_resource (8 threads, SHARED SOTA)", [&] {
+      std::pmr::synchronized_pool_resource spr;
+      run_threads([&] {
+        for (int i = 0; i < kPer; ++i) {
+          void* p = spr.allocate(kObj, alignof(std::max_align_t));
+          nb::doNotOptimizeAway(p);
+          spr.deallocate(p, kObj, alignof(std::max_align_t));
         }
       });
     });
