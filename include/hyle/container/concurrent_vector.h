@@ -38,8 +38,10 @@
 // Memory ordering: the published size_ (release on write / acquire on read) is
 // the single synchronization point. A writer constructs the element and stores
 // the segment pointer BEFORE the size_ release; a reader does the size_ acquire
-// BEFORE touching segments_, so for any index < the acquired size both the
+// (via size()) BEFORE indexing, so for any index < the acquired size both the
 // segment pointer and the element are fully visible (no torn/!uninit reads).
+// operator[] itself is a PLAIN read -- the caller's size() acquire is the fence;
+// re-acquiring per element would be redundant and contends with the writer.
 
 namespace hyle::container {
 
@@ -95,13 +97,25 @@ class ConcurrentVector {
   std::size_t push_back(const T& v) { return emplace_back(v); }
   std::size_t push_back(T&& v) { return emplace_back(std::move(v)); }
 
-  // Unchecked indexed access (caller ensures index < size()). Lock-free.
+  // Unchecked indexed access (caller ensures index < size()). LOCK-FREE and, by
+  // design, a PLAIN read -- no per-element atomic. The synchronization point is
+  // size(): to know index < size() under a concurrent writer the caller must have
+  // observed size() >= index+1, and size() is an acquire load that synchronizes-
+  // with the writer's release-store of size_. That single acquire makes the
+  // segment pointer AND the element for every index < the observed size visible,
+  // so indexing afterwards needs no further fence (the std::vector / tbb::
+  // concurrent_vector model: observe size once, then read freely). An earlier
+  // version issued an acquire load of size_ on EVERY operator[]; that was
+  // redundant given the contract and made each read contend on the size_ cache
+  // line with the writer's release-store (a measured ~2x slowdown under a
+  // concurrent writer). locate() reads only the index and the immutable
+  // first_shift_, never size_.
   T& operator[](std::size_t index) noexcept {
-    auto [k, off] = locate_loaded(index);
+    auto [k, off] = locate(index);
     return segments_[k][off];
   }
   const T& operator[](std::size_t index) const noexcept {
-    auto [k, off] = locate_loaded(index);
+    auto [k, off] = locate(index);
     return segments_[k][off];
   }
 
@@ -128,18 +142,14 @@ class ConcurrentVector {
   }
 
   // index -> (segment, offset). With base B=2^first_shift_, segment k holds
-  // [B*(2^k - 1), B*(2^(k+1) - 1)); see header note for the derivation.
+  // [B*(2^k - 1), B*(2^(k+1) - 1)); see header note for the derivation. Reads
+  // only `i` and the immutable first_shift_ -- never size_, so it carries no
+  // ordering of its own (the caller's size() acquire is the synchronization).
   std::pair<std::uint32_t, std::size_t> locate(std::size_t i) const noexcept {
     std::size_t m = i >> first_shift_;
     std::uint32_t k = static_cast<std::uint32_t>(std::bit_width(m + 1)) - 1;
     std::size_t prefix = (std::size_t{1} << first_shift_) * ((std::size_t{1} << k) - 1);
     return {k, i - prefix};
-  }
-  // As locate(), but issues the acquire load that orders the segment/element
-  // reads after the writer's release (the lock-free read synchronization).
-  std::pair<std::uint32_t, std::size_t> locate_loaded(std::size_t i) const noexcept {
-    (void)size_.load(std::memory_order_acquire);
-    return locate(i);
   }
 
   HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
