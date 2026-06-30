@@ -59,6 +59,9 @@
 | **mem** ObjectPool(typed 无锁池) | 14.86ns | 裸 mimalloc 4.77 | 0.32x | ❌输(=MemoryArena 同 CAS 类;单线程选 GrowablePool) |
 | **util** Rng next_u64(xoshiro256++) | 1.56ns | std::mt19937_64 2.41 | 1.54x | ✅赢 |
 | **util** Rng range_u64(Lemire 无偏) | 1.75ns | std::uniform_int_distribution 2.75 | 1.57x | ✅赢(且无偏) |
+| **util** Rng next_double [0,1) | 1.65ns | std::uniform_real_distribution 2.64 | 1.60x | ✅赢(53 位缩放) |
+| **util** Rng next_float [0,1) | 1.63ns | std::uniform_real_distribution 2.66 | 1.63x | ✅赢(独立 24 位路径) |
+| **util** Rng shuffle 1000(Fisher-Yates) | 3.77ns | std::shuffle(mt19937_64) 6.40 | 1.70x | ✅赢(swap 回调,调用者拥有存储) |
 | **container** SwissTable iterate(for_each) | 2.48ns | std::unordered_map 8.73 | 3.5x | ✅赢(扁平 ctrl 扫 vs 节点链) |
 | **container** StringBuf intern(100k 流/2k 唯一) | 24.0ns | 同契约 thread-safe peer(unordered_map+mutex)28.1 / 无锁 floor 21.2 | **1.17x** / 0.88x | ✅赢同契约 peer(StringBuf 是 thread-safe 取锁,对无锁 map 比是 apples-to-oranges;同取一把锁则 SwissTable 核反超 1.17x) |
 | **string_ref** find(char) 全扫 miss(4KB) | 0.02ns/B | std::string_view::find(memchr SIMD) 0.01 | ~1.0x | ➖平(切 memchr;原 scalar 字节循环输 ~20x,都亚 ns 噪声) |
@@ -69,6 +72,8 @@
 | **string_ref** rfind(char) 后向扫 miss | 0.26ns/B | std::string_view::rfind 0.01 | 0.05x | ❌输 ~20x(无 reverse-memchr,后向字节循环;同 find(char) 修前状态,可上 memrchr) |
 | **string_ref** find_first_not_of 全字母 miss | 0.27ns/B | std::string_view 0.06 | 0.22x | ❌输 ~4.5x(256-bool 表 O(n) vs std 调优 bitmap) |
 | **string_ref** find_last_of(digits) miss | 0.25ns/B | std::string_view 0.06 | 0.23x | ❌输 ~4.4x(同上,后向表扫) |
+| **string_ref** rfind(needle) 6B(~4KB) | 2.37ns/B | std::string_view::rfind 0.12 | 0.05x | ❌输 ~20x(后向 region_eq 窗口走,无 memchr;naive 子串反搜) |
+| **string_ref** count(char) 全扫 | 0.27ns/B | std::count 0.01 | 0.04x | ❌输(scalar 累加 vs std::count 自动向量化;无早退) |
 | **string_ref** trim 两端(4KB) | 13.6ns | std::string_view 两侧 trim 16.85 | 1.24x | ✅赢(组合 find_first/last_not_of) |
 | **container** StringBuf add/retain/remove churn | 18.2ns | std::unordered_map+引用计数 7.54 / (无锁) | 0.41x | ❌输 2.4x(同 intern:thread-safe 取锁 vs 无锁 map apples-to-oranges;含 SwissTable erase+free) |
 | **string_algo** utf8 validate+count(2KB,同契约) | 0.41ns/B(scalar默认)/ 0.21(借 simdutf) | simdutf validate_utf8+count_utf8 0.21 | 2.0x输 / **1.0x** | ➖默认 scalar 输 2x;**-DHYLE_SIMD_SIMDUTF 借 simdutf 核则追平**(借核不手搓,同 SLEEF;simdutf 2.8MB 重故 opt-in,默认轻) |
