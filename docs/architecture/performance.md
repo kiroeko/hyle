@@ -36,10 +36,10 @@
 | **sched** WaitGroup fork-join | 205ns(池化179) | marl 306 | 1.49x(池1.71x) | ✅赢 |
 | **sched** fiber 切换 | 21–23ns | fcontext 原语 | 1.0x | ➖平(=原语,零封装) |
 | **queue** 单线程 fill+drain | 7.2(Lin) | moodycamel 7.7 / tbb 12.6 | 1.07x / 1.6x | ✅赢(微超 moody、赢 tbb) |
-| **queue** 单线程 fill+drain | 7.8(Win) | rigtorp 12.0 / moody 9.6 / tbb 13.4 | 1.54x / 1.2x / 1.7x | ✅赢全部(含同约束 rigtorp) |
-| **queue** MPMC 2P 单环 BoundedQueue | 42.2(Win) | rigtorp 60.2 / moody 59.4 | 1.43x / 1.4x | ✅赢同约束 rigtorp |
-| **queue** MPMC 4P 单环 BoundedQueue | 100(Win) | **rigtorp 75.5** / moody 62.9 | 0.75x / 0.63x | ❌输 rigtorp 1.33x(真实现差:Vyukov CAS-retry vs fetch_add 票号,**已登记待优化**;非约束墙) |
-| **queue** MPMC 2P/4P ShardedQueue | 22.7/22.1(Win) | rigtorp 60.2/75.5 | 2.6x/3.4x | ✅赢(生产用途走这条,线性扩展) |
+| **queue** 单线程 fill+drain | 7.8(Win) | rigtorp 11.8 / moody 9.6 / tbb 13.4 | 1.5x / 1.2x / 1.7x | ✅赢全部(含同约束 rigtorp) |
+| **queue** MPMC 2P 单环 BoundedQueue | 56(Win) | rigtorp 58 / moody 59.4 | 1.04x / 1.06x | ✅平/微超同约束 rigtorp |
+| **queue** MPMC 4P 单环 BoundedQueue | 72(Win) | rigtorp 79 / moody 62.9 | 1.09x / 0.87x | ✅反超 rigtorp(原输 1.33x,cache-line pad+去 backoff 修复) |
+| **queue** MPMC 2P/4P ShardedQueue | 22.7/22.1(Win) | rigtorp 58/79 | 2.6x/3.4x | ✅赢(生产用途走这条,线性扩展) |
 | **queue** work-steal owner LIFO | 2.8(Lin) | crossbeam 3.6 | ~1.3x | ✅赢(跨语言,谨慎下"有竞争力") |
 | **queue** work-steal owner FIFO | 3.6(Lin) | crossbeam 4.4 | ~1.2x | ✅赢(跨语言,谨慎) |
 | **queue** ConcurrentVector push/read | 3.9/0.8(Lin) | oneTBB 6.1/1.3 | 1.3x/1.1x | ✅赢 |
@@ -63,7 +63,7 @@
 | **time** monotonic_ns | 18.88ns | std::chrono::steady_clock 12.76 | 0.68x | ❌输 1.48x(同 std::chrono 等量工作 QPC+QPF+2 除;试 inline+namespace var 均无效,残留=codegen,非可修接缝) |
 | **obs** log gated-out / emit | 2.03 / 78.4ns | (无 std 对照) | — | ➖HYLE 自有(gated 仅 1 原子载+分支;emit=std::format+fanout 无 I/O) |
 
-**总账小结**:对标**真 SOTA** 的已测项里——✅**赢 ~18 项**(hashmap 3、hash 2、simd 2、dtype 2、sched 3、queue 5、mem 4 — 含反超 absl/marl/moodycamel/Highway/std::pmr/per-thread mimalloc)、➖**平 ~8 项**(噪声内追平 absl find-miss / Highway reduce_max+scale / marl 争用锁+fiber / 裸 mi 默认路径+8 线程)、❌**输 5 项**(全部有据:raw hash_bytes 小输入=导出接缝 by-design、4P 单环=严格 FIFO 约束选择且 ShardedQueue 已赢、vtable=运行时多态物理税仅 opt-in 付、MemoryArena 单/共享=选错工具 per-thread 池反超)、⏳**待补 6 项**(本轮任务 #34–37 填:carray/ObjectPool 缺 bench、SmallVector/IntrusiveList/math/bf16 缺同族 SOTA 对照)。**无一"输"是未处理的真性能缺陷**——揪出的 3 个真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P 单点 CAS)都已分别根治(分片/去原子/ShardedQueue)。
+**总账小结(本轮直接1"输项必须打平/赢"推进后)**:对标**真 SOTA** 的已测项——✅**赢 ~24 项**(hashmap 3、hash 2、simd 2、dtype 2、sched 3、queue 6、mem 4、container 2、util 2 — 含反超 absl/marl/moodycamel/Highway/std::pmr/rigtorp/per-thread mimalloc)、➖**平 ~9 项**(噪声内追平 absl find-miss / Highway exp+tanh+reduce_max+scale / marl 争用锁+fiber / 裸 mi 默认+8 线程 / rigtorp 2P / realtime_ns)、❌**仍输 ~5 项**(全部有据且非缺陷:① raw hash_bytes 16/64B 小输入=导出接缝 by-design 且 0.0x 级亚周期、热路径 Hash&lt;T&gt; 内联已赢;② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数,已平主流 SOTA Highway,引第 3 后端待定;③ monotonic_ns 输 std::chrono 1.48x=同等工作 codegen 残留,试 inline+namespace var 均无效已查证;④ MemoryArena/ObjectPool 单/共享=选错工具,per-thread 池已反超)。**本轮把 4 个旧"输"扭成赢/平**:hash 8B(1.85x→1.12x)、vtable(→反超 std::pmr)、math log(→平 Highway+反超 xsimd,切核)、单环队列 4P(1.33x→反超 rigtorp 1.09x,cache-line pad+去 backoff)。**揪出的真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P 单点 CAS+伪共享)全部根治**。
 
 ## 实测铁证（持续回填,真跑非推算）
 
@@ -215,22 +215,22 @@
 
 | 场景 | HYLE | moodycamel | oneTBB | rigtorp(同约束 SOTA) | 结论 |
 |---|---|---|---|---|---|
-| **单线程 fill+drain**(BoundedQueue) | 7.2(Lin)/7.8(Win) | 7.7 / 9.6 | 13.4(Win) | 12.0(Win) | ✅ **赢全部**(rigtorp 1.54x、moody、tbb 1.7x) |
-| **MPMC 2P/2C**(BoundedQueue 单环) | 37.7(Lin)/42.2(Win) | 59.4(Win) | 138(Win) | 60.2(Win) | ✅ **赢 rigtorp 1.43x、moody 1.4x、tbb 远** |
-| **MPMC 4P/4C**(BoundedQueue 单环) | 95(Lin)/100(Win) | 62.9(Win) | 225(Win) | **75.5(Win)** | ❌ **输 rigtorp 1.33x、moody 1.6x**(根因=Vyukov CAS-retry vs rigtorp fetch_add 票号) |
-| **MPMC 2P/2C**(**ShardedQueue**) | **18.1(Lin)/22.7(Win)** | 59.4 | — | 60.2 | ✅ **反超 rigtorp/moody 2.6x** |
-| **MPMC 4P/4C**(**ShardedQueue**) | **21.0(Lin)/22.1(Win)** | 62.9 | — | 75.5 | ✅ **反超 rigtorp 3.4x、moody 2.8x,线性扩展** |
+| **单线程 fill+drain**(BoundedQueue) | 7.8(Win) | 9.6 | 13.4(Win) | 11.8(Win) | ✅ **赢全部**(rigtorp 1.5x、moody、tbb 1.7x) |
+| **MPMC 2P/2C**(BoundedQueue 单环,cache-line pad) | 56(Win) | 59.4(Win) | 138(Win) | 58(Win) | ✅ **平/微超 rigtorp ~1.02x、赢 moody、tbb 远** |
+| **MPMC 4P/4C**(BoundedQueue 单环,cache-line pad) | **72(Win)** | 62.9(Win) | 225(Win) | 79(Win) | ✅ **反超 rigtorp 1.08–1.09x**(原输 1.33x,已修——见结论1) |
+| **MPMC 2P/2C**(**ShardedQueue**) | **18.1(Lin)/22.7(Win)** | 59.4 | — | 58 | ✅ **反超 rigtorp/moody 2.6x** |
+| **MPMC 4P/4C**(**ShardedQueue**) | **21.0(Lin)/22.1(Win)** | 62.9 | — | 79 | ✅ **反超 rigtorp 3.4x、moody 2.8x,线性扩展** |
 | **work-steal owner LIFO**(WorkStealingDeque) | 2.8(Lin)/3.1(Win) | (无同物) | — | — | crossbeam LIFO 3.6(Win) 参照,HYLE 略快 |
 | **work-steal owner FIFO**(WsFifoQueue) | 3.6(Lin)/4.0(Win) | — | — | — | crossbeam FIFO 4.4(Win) 参照,HYLE 略快 |
 | **ConcurrentVector** push_back/read | 4.6/1.1(Win) | — | 5.9/1.3(Win) | — | **赢 tbb push 1.3x / read 1.1x** |
 
 **核心诚实结论 + 它驱动的真优化**:
 
-1. **单环 BoundedQueue 4P 输 rigtorp 1.33x——纠正旧"理论墙"误判,这是揪出的真落后**。**之前误判**:文档曾称"严格-FIFO+有界 MPMC 单点 serialize 是理论墙,单环已是该约束下 SOTA,rigtorp/folly 同款"。**rigtorp 实测证伪**:同样严格-有界单环,rigtorp 4P **75.5ns 赢 HYLE 100ns(1.33x)**(2P/单线程 HYLE 反赢 rigtorp,故根因在高争用)。**真根因 = HYLE 的 Vyukov `enqueue_pos_`/`dequeue_pos_` 用 CAS-重试,4P 高争用下 CAS 失败重试风暴;rigtorp 用 `fetch_add` 票号(wait-free 取位,无重试)**。这是**可优化的实现差,非约束硬墙**——登记为待优化(改 fetch_add 票号需谨慎无锁重写 + 双平台 TSan 重过)。
-2. **ShardedQueue 已在生产用途上反超全部(含 rigtorp 3.4x)**:sched `global` 注入无全局序需求,ShardedQueue(N 子环)4P **22ns 反超 rigtorp 75.5ns 3.4x**、moody 2.8x,线性扩展。**单环 4P 的"输"在 HYLE 的实际用途里不触发**(用 ShardedQueue);单环留给真需严格全局 FIFO 的场景,那里它的 4P 待用 fetch_add 优化逼平 rigtorp。
-3. **backoff(`util::cpu_relax`)**:2P 微增,4P 单点争用下 pause 只错开不增吞吐(fetch_add 才是根治)。
+1. **单环 BoundedQueue 4P 曾输 rigtorp 1.33x——纠正两次误判,真根因"抄作业没抄全"(cell 未对齐 cache line)+ 过度 backoff,已修到反超**。**误判史(都已证伪)**:① 最早称"严格-FIFO+有界 MPMC 单点 serialize 是理论墙、单环已是该约束 SOTA、rigtorp/folly 同款"——rigtorp 实测 4P 反赢证伪;② 随后**猜**根因"HYLE Vyukov CAS-重试 vs rigtorp fetch_add 票号"——读 rigtorp 源码**再证伪**:rigtorp 的 `try_push`/`try_pop`(实测路径)也用 `compare_exchange`(只有阻塞版 `push`/`pop` 用 fetch_add),热路径同是 CAS。**真根因(读码查实)**:rigtorp 把每 slot **对齐独立 cache line**(`alignas(64)`+`sizeof%64==0`),HYLE 的 `Cell{atomic<u64> seq; T data}` 对 8B T 仅 16B → 4 cell 挤一条 line → 相邻槽被不同线程并发读写时**伪共享**——clay 移植漏掉的 Vyukov 经典调优(根因①)。另:HYLE 每次 CAS 失败调 `cpu_relax()`(~40cyc),4P 高争用纯增延迟(rigtorp/folly 的 try_ 不 backoff)。**修复**:`Cell` 加 `alignas(HYLE_CACHE_LINE_SIZE)` + 去 CAS-失败 backoff。**3 遍稳定均值:单线程赢 rigtorp 1.5x、2P 平/微超 ~1.02x、4P 反超 1.08–1.09x**——4P 落后消除,同约束 SOTA 全点位平或超。代价:buffer 增至 capacity×64B(空间换吞吐,rigtorp 同付)。6/6 测试(含 MpmcStressConservation)双平台过 + **WSL TSan 待跑**(lock-free 闸门)。
+2. **ShardedQueue 仍是生产用途首选**:sched `global` 注入无全局序需求,ShardedQueue(N 子环)4P **22ns 反超 rigtorp 79ns 3.4x**、moody 2.8x,线性扩展。单环用于真需严格全局 FIFO 的场景,现已不输同约束 SOTA。
+3. **backoff 是 2P-vs-4P 权衡(诚实记账)**:`cpu_relax` backoff 在 2P 低争用曾给更大领先,但 4P 高争用造成 1.33x 落后;去掉后 2P 回到平 rigtorp、4P 反超。directive 要"无落后",故选无 backoff(canonical rigtorp/folly 同样 try_ 路径不 backoff)。
 
-> **诚实边界**:① ShardedQueue ns/op 太快采样不足(err 6-20%),但反超幅度(2.6-3.4x)远超误差带,方向稳健。② 跨语言(crossbeam Rust)只下"同量级/有竞争力"。③ **单环 4P 输 rigtorp 1.33x 是真实现差(CAS-retry vs fetch_add),已登记待优化——之前"理论墙/同约束 SOTA"是错误结论,rigtorp 实测推翻**。④ work-stealing owner 路径单线程无争用(两侧同样)。
+> **诚实边界**:① ShardedQueue ns/op 太快采样不足(err 6-20%),但反超幅度(2.6-3.4x)远超误差带。② 跨语言(crossbeam Rust)只下"同量级/有竞争力"。③ **单环 MPMC 2P/4P 是高方差微基准(err 2-5%),上表为 3 遍稳定均值**(单遍曾见 2P 37ns 乐观离群,不取);4P 落后已修(cache-line pad + 去 backoff),非"理论墙"也非"fetch_add"(两个旧结论都被读码/实测推翻)。④ work-stealing owner 路径单线程无争用(两侧同样)。
 
 ### mem 分配器（`Allocator` vtable vs 裸 mimalloc vs std::malloc，`allocator_bench.cc`）
 

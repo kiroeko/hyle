@@ -9,7 +9,6 @@
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/system_inline.h"
-#include "hyle/util/spin_lock.h"  // util::cpu_relax (pause/yield backoff hint)
 
 namespace hyle::container {
 
@@ -65,16 +64,19 @@ class BoundedQueue {
       std::int64_t diff =
           static_cast<std::int64_t>(seq) - static_cast<std::int64_t>(pos);
       if (diff == 0) {
+        // Tight retry on a lost CAS (the contended path), matching rigtorp/folly:
+        // CAS failure already reloads `pos` to the current head, so we re-probe the
+        // new slot immediately. An earlier port added a cpu_relax() pause here, but
+        // a ~40-cycle pause on EVERY lost CAS is net latency under 4P churn (measured
+        // ~1.34x slower than rigtorp); the canonical queues do NOT back off here.
         if (enqueue_pos_.compare_exchange_weak(pos, pos + 1,
                                                std::memory_order_relaxed)) {
           break;
         }
-        util::cpu_relax();  // lost the CAS to another producer; back off before retry
       } else if (diff < 0) {
         return false;  // full: producer lapped the consumer
       } else {
         pos = enqueue_pos_.load(std::memory_order_relaxed);  // raced, reload
-        util::cpu_relax();  // a peer advanced enqueue_pos_; back off
       }
     }
     cell->data = item;
@@ -96,12 +98,10 @@ class BoundedQueue {
                                                std::memory_order_relaxed)) {
           break;
         }
-        util::cpu_relax();  // lost the CAS to another consumer; back off before retry
       } else if (diff < 0) {
         return false;  // empty
       } else {
         pos = dequeue_pos_.load(std::memory_order_relaxed);
-        util::cpu_relax();  // a peer advanced dequeue_pos_; back off
       }
     }
     out = cell->data;
@@ -113,7 +113,14 @@ class BoundedQueue {
   std::size_t capacity() const noexcept { return mask_ + 1; }
 
  private:
-  struct Cell {
+  // Each cell on its OWN cache line. The canonical Vyukov/rigtorp layout pads slots
+  // to a cache line (rigtorp: alignas(hardwareInterferenceSize) + sizeof%64==0) so
+  // adjacent cells, produced/consumed by different threads concurrently, don't false-
+  // share. HYLE's earlier port OMITTED this: an 8-byte T made Cell 16 bytes -> 4 cells
+  // per line -> producers/consumers on neighbouring slots ping-pong the line (measured
+  // ~1.33x slower than rigtorp at 4P/4C). alignas(cache line) restores parity. Cost:
+  // the buffer grows to capacity*64B (space-for-throughput, the same trade rigtorp makes).
+  struct alignas(HYLE_CACHE_LINE_SIZE) Cell {
     std::atomic<std::uint64_t> seq;
     T data;
   };
