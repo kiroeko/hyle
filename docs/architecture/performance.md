@@ -34,7 +34,7 @@
 | **platform** Thread spawn+join | 40.4µs(Win) | std::thread | 40.1µs | 1.01x | std::thread(即 SOTA,同 syscall) | 40.1µs | 1.01x | ➖平(双平台一致;OS 主导,证 handle 零开销) |
 | **platform** directory_iterate visitor | — | std::filesystem::directory_iterator | — | — | filesystem | — | — | ➖平(Win 0.98x)/**✅Linux 赢 1.81x**(免 stat 的 d_type + 无分配 visitor;详节 ⬇) |
 | **time** realtime_ns | 14.68 | std::chrono::system_clock | 14.76 | 1.0x | std::chrono(即标尺,同 OS 原语) | 14.76 | 1.0x | ➖平 |
-| **time** monotonic_ns | 18.88 | std::chrono::steady_clock | 12.76 | 0.68x | std::chrono(即标尺) | 12.76 | 0.68x | ❌输 1.48x(同等工作 codegen 残留,查证过) |
+| **time** monotonic_ns | 18.7(Win)/12.6(Lin) | std::chrono::steady_clock | 12.8/12.9 | Win 0.68x/Lin 平 | std::chrono(即标尺,同 OS 原语) | 12.8/12.9 | Win 0.68x/Lin 1.0x | ➖Win 输 1.48x(QPC split 算术)/**Linux 平**(clock_gettime 同码);平台差异详节 |
 | **util** Rng next_u64(xoshiro256++) | 1.56 | std::mt19937_64 | 2.41 | 1.54x | (std 即标尺) | 同std | 1.54x | ✅赢 std PRNG |
 | **util** Rng range_u64(Lemire 无偏) | 1.75 | std::uniform_int_distribution | 2.75 | 1.57x | (std 即标尺) | 同std | 1.57x | ✅赢(且无偏) |
 | **util** Rng next_double [0,1) | 1.65 | std::uniform_real_distribution | 2.64 | 1.60x | (std 即标尺) | 同std | 1.60x | ✅赢(53 位缩放) |
@@ -109,7 +109,7 @@
 | **sched** Channel 收发(cap16,1p1c) | 63/item | (无 std 等价) | n/a | n/a | marl(无 channel) | n/a | n/a | ➖HYLE 自有 |
 | **sched** RunQueue fifo/lifo push+next | 8.3/2.6 | (内部结构) | n/a | n/a | (无外部对手) | n/a | n/a | ➖HYLE 自有(完成唤醒热路径) |
 
-**总账小结（两把标尺,2026-06-30 全套真跑）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD 4.5x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 codegen 残留(monotonic_ns 0.68x)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~36 项**、➖**平 ~16 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期(热路径 Hash&lt;T&gt; 内联已赢);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns 1.48x=codegen 残留(查证);④ MemoryArena/ObjectPool 单线程=**选错工具已下 ledger**(单线程对象池应用 GrowablePool;多线程共享场景对同契约 SOTA `std::pmr::synchronized_pool` **赢 44x**,非输项);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(simdutf 核 vendored 无条件默认追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:error 根模块已补测(对标同款 SOTA absl 全线平或赢:inline 码赢 4.6x、带消息赢 1.92x、ERROR 上抛赢 2.11x,空间 Result 16B<std/absl 24B;OK 传播"输 std"经隔离探针+消费变体证为 microbench 假象);string_ref scalar 反向串族可上 memrchr/SIMD。
+**总账小结（两把标尺,2026-06-30 全套真跑）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD 4.5x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 Win-only codegen 残留(monotonic_ns Win 0.68x/Linux 平)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~36 项**、➖**平 ~16 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期(热路径 Hash&lt;T&gt; 内联已赢);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns **Win-only 输 1.48x、Linux 平**(QPC split 算术 vs MSVC steady_clock,已查证非接缝非算法;POSIX clock_gettime 与 glibc steady_clock 同码故 Linux 平);④ MemoryArena/ObjectPool 单线程=**选错工具已下 ledger**(单线程对象池应用 GrowablePool;多线程共享场景对同契约 SOTA `std::pmr::synchronized_pool` **赢 44x**,非输项);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(simdutf 核 vendored 无条件默认追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:error 根模块已补测(对标同款 SOTA absl 全线平或赢:inline 码赢 4.6x、带消息赢 1.92x、ERROR 上抛赢 2.11x,空间 Result 16B<std/absl 24B;OK 传播"输 std"经隔离探针+消费变体证为 microbench 假象);string_ref scalar 反向串族可上 memrchr/SIMD。
 
 ## 实测铁证（持续回填,真跑非推算）
 
@@ -444,19 +444,19 @@
 
 ### 次要模块（util/random、time/clock、obs/log、SwissTable iterate，`misc_bench.cc` + `swiss_table_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench。此前零 bench 的性能相关原语。标尺 = std 等价物(同 OS 原语/同算法类),或 HYLE 自有(无 std 对等物时诚实标注)。
+> 环境:Win MSVC19.50 + **Linux GCC14.2(time/clock 两项双平台 15 遍统计,`bench-stat.py`)**,nanobench。此前零 bench 的性能相关原语。标尺 = std 等价物(同 OS 原语/同算法类),或 HYLE 自有(无 std 对等物时诚实标注)。**time 项平台差异大,见 monotonic_ns 结论③。**(util/Rng、SwissTable iterate、log 仍 Win 单平台,待补 Linux。)
 
 | 场景 | HYLE | 标尺 | vs 标尺 | 结论 |
 |---|---|---|---|---|
 | **Rng next_u64**(xoshiro256++) | **1.56 ns** | std::mt19937_64 2.41 | **1.54x** | ✅ 赢(同质量,256-bit state) |
 | **Rng range_u64**(Lemire 无偏) | **1.75 ns** | std::uniform_int_distribution 2.75 | **1.57x** | ✅ 赢且**无偏**(std 也无偏,HYLE 更快) |
 | **SwissTable iterate**(for_each) | **2.48 ns** | std::unordered_map 8.73 | **3.5x** | ✅ 赢(扁平 ctrl 扫 vs 节点指针链) |
-| **realtime_ns** | 14.68 ns | std::chrono::system_clock 14.76 | **1.0x** | ➖ 平(同 OS 原语) |
-| **monotonic_ns** | 18.88 ns | std::chrono::steady_clock 12.76 | **0.68x(慢 1.48x)** | ❌ 输——同等工作,残留=codegen(见结论③) |
+| **realtime_ns** | 15.0(Win)/12.5(Lin) | system_clock 14.4/12.8 | **0.96x/1.02x** | ➖ 平双平台(同 OS 原语) |
+| **monotonic_ns** | 18.7(Win)/12.6(Lin) | steady_clock 12.8/12.9 | **Win 0.68x/Lin 1.0x** | ➖Win 输 1.48x(QPC split)/**Lin 平**(见结论③) |
 | **log gated-out** | 2.03 ns | (无 std 对照) | — | HYLE 自有(1 relaxed 原子载 + 分支,跳过格式化) |
 | **log emit**(format+fanout,无 I/O) | 78.4 ns | (无 std 对照) | — | HYLE 自有(std::format 进栈 buf + 锁内快照后锁外 fanout) |
 
-**诚实结论**:① **Rng 赢 std PRNG 1.54x**(xoshiro256++ vs mt19937_64,同统计质量,HYLE header-inline 无 DLL hop);range_u64 用 Lemire 无偏映射,赢 std::uniform_int_distribution 1.57x(两者都无偏,HYLE 更快)。② **SwissTable iterate 赢 std::unordered_map 3.5x**——扁平 ctrl 字节扫 + 连续 slot(cache 友好)碾压节点指针链;`for_each` 是函数模板(内联、零分配)。③ **monotonic_ns 输 std::chrono 1.48x——已查证非可修接缝,诚实留账**:先疑 DLL 导出接缝(monotonic_ns 是导出函数),试 header-inline(前向声明 QPC/QPF,同 system_inline.h 手法)→**无效**(仍 18.3ns);再疑 function-local `static` 的 per-call magic-static guard,改 namespace-scope inline var →**仍无效**;且 inline 反而把本来打平的 realtime_ns 拖慢。查 MSVC `steady_clock::now()` 源码:它做**完全相同的工作**(QPC 经 IAT + 缓存的 QPF + 同样两次 64 位除法)。即 HYLE 算法无劣构,~1.45x 残留是 QPC 调用形/codegen 噪声层面,**非接缝、非算法**,在"同一 syscall"下逼平 std::chrono 无干净杠杆(要更快得换 rdtsc+校准时基,是另一个大特性)。已回退 inline 实验(给公开头加平台 forward-decl 复杂度却零收益 + 拖慢 realtime,坏交易)。realtime_ns 因 std 也做 epoch 换算,两边持平。④ **log produce 路径**:gated-out 仅 1 relaxed 原子载 + 分支(2ns,跳过 std::format);emit 78ns 含 std::format 进 1KiB 栈 buf(零分配)+ 锁内快照 sink 列表后锁外 fanout——无 std 直接对等物(std 无内建结构化日志)。
+**诚实结论**:① **Rng 赢 std PRNG 1.54x**(xoshiro256++ vs mt19937_64,同统计质量,HYLE header-inline 无 DLL hop);range_u64 用 Lemire 无偏映射,赢 std::uniform_int_distribution 1.57x(两者都无偏,HYLE 更快)。② **SwissTable iterate 赢 std::unordered_map 3.5x**——扁平 ctrl 字节扫 + 连续 slot(cache 友好)碾压节点指针链;`for_each` 是函数模板(内联、零分配)。③ **monotonic_ns 是 Win-only 输 1.48x,Linux 平——平台差异,非无条件缺陷**:**双平台 15 遍统计澄清**:Linux/GCC **统计平局**(HYLE 12.6 vs steady_clock 12.9,ratio 1.015,gap 1.5%«spread 11%)——POSIX 实现 `clock_gettime(CLOCK_MONOTONIC)`+一个乘加,与 glibc steady_clock 几乎同码;**只有 Win MSVC 输 1.48x**(18.7 vs 12.8,gap 32%»spread 6.5%,稳定)。Win 根因:QPC 读 + split 防溢出的两次 64 位除法/取模(`t/f`、`t%f`),比 MSVC steady_clock 的标度多点算术。**已查证非可修接缝**:试 header-inline(前向声明 QPC/QPF)→无效(仍 18.3ns);试 namespace-scope inline var 去 magic-static guard →无效且拖慢 realtime;查 MSVC `steady_clock::now()` 源码做**完全相同的工作**(QPC 经 IAT+缓存 QPF+同样除法)。即算法无劣构,Win 的 ~1.45x 是 QPC 调用形/codegen 噪声层,非接缝非算法,要更快得换 rdtsc+校准时基(另一个大特性)。已回退 inline 实验(给公开头加平台 forward-decl 复杂度零收益+拖慢 realtime,坏交易)。**realtime_ns 双平台都平**(Win 0.96x/Lin 1.02x,std 也做 epoch 换算)。④ **log produce 路径**:gated-out 仅 1 relaxed 原子载 + 分支(2ns,跳过 std::format);emit 78ns 含 std::format 进 1KiB 栈 buf(零分配)+ 锁内快照 sink 列表后锁外 fanout——无 std 直接对等物(std 无内建结构化日志)。
 
 
 
