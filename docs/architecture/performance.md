@@ -66,6 +66,11 @@
 | **string_ref** find_first_of(4 字符集) | 0.08ns/B | std::string_view 0.05 | 0.62x | ➖近平 1.6x(memchr-min 窗口收缩;原 O(n·m) 输 36x) |
 | **string_ref** starts_with(16B 前缀) | 1.79ns | std::string_view 1.77 | ~1.0x | ➖平(切 memcmp;原 region_eq 字节循环输 2x) |
 | **string_ref** split 全文按空格(4KB) | 0.44ns/B | std::string_view find+remove_prefix 0.54 | 1.22x | ✅赢(无分配子视图) |
+| **string_ref** rfind(char) 后向扫 miss | 0.26ns/B | std::string_view::rfind 0.01 | 0.05x | ❌输 ~20x(无 reverse-memchr,后向字节循环;同 find(char) 修前状态,可上 memrchr) |
+| **string_ref** find_first_not_of 全字母 miss | 0.27ns/B | std::string_view 0.06 | 0.22x | ❌输 ~4.5x(256-bool 表 O(n) vs std 调优 bitmap) |
+| **string_ref** find_last_of(digits) miss | 0.25ns/B | std::string_view 0.06 | 0.23x | ❌输 ~4.4x(同上,后向表扫) |
+| **string_ref** trim 两端(4KB) | 13.6ns | std::string_view 两侧 trim 16.85 | 1.24x | ✅赢(组合 find_first/last_not_of) |
+| **container** StringBuf add/retain/remove churn | 18.2ns | std::unordered_map+引用计数 7.54 / (无锁) | 0.41x | ❌输 2.4x(同 intern:thread-safe 取锁 vs 无锁 map apples-to-oranges;含 SwissTable erase+free) |
 | **string_algo** utf8 validate+count(2KB,同契约) | 0.41ns/B(scalar默认)/ 0.21(借 simdutf) | simdutf validate_utf8+count_utf8 0.21 | 2.0x输 / **1.0x** | ➖默认 scalar 输 2x;**-DHYLE_SIMD_SIMDUTF 借 simdutf 核则追平**(借核不手搓,同 SLEEF;simdutf 2.8MB 重故 opt-in,默认轻) |
 | **string_algo** utf8 count-only 天花板(非同契约) | — | simdutf::count_utf8 0.02 | — | (simdutf 跳校验做得更少,非 utf8_length 的 validate+count 契约,仅记 SIMD 上限) |
 | **string_algo** hex_encode 1KB→2KB | 0.45ns/B | naive 逐字节参考 0.63 | 1.41x | ✅赢(表查找;无单一 SOTA hex 库,对参考实现) |
