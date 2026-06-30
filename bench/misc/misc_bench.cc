@@ -1,5 +1,5 @@
-// misc-module bench (gap-fill #37): the performance-relevant primitives that had
-// no benchmark. Each races the std/obvious equivalent (win or lose, printed):
+// misc-module bench (gap-fill #37 + #47): the performance-relevant primitives that
+// had no benchmark. Each races the std/obvious equivalent (win or lose, printed):
 //   * util/random  -- Rng (xoshiro256++) vs std::mt19937_64 (the std PRNG SOTA-ish
 //     baseline; xoshiro256++ is the modern recommended general-purpose PRNG).
 //   * time/clock    -- monotonic_ns()/realtime_ns() read latency vs std::chrono
@@ -7,16 +7,26 @@
 //   * obs/log       -- the PRODUCE path: gated-out (should_log false) cost, and a
 //     counting-sink emit (format + fan-out, NO stderr I/O) so the number is the
 //     library overhead, not the terminal.
+//   * util/spin_lock -- SpinLock lock/unlock uncontended vs std::mutex (the TTAS
+//     spinlock claim; for short critical sections a spinlock should beat a mutex's
+//     syscall-capable lock).
+//   * util/ref_counted -- Ref copy+destroy (intrusive incref/decref) vs
+//     std::shared_ptr copy+destroy (the "cheaper than shared_ptr, no control
+//     block" claim).
 #include <nanobench.h>
 
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+#include <mutex>
 #include <random>
 
 #include "hyle/obs/log.h"
 #include "hyle/time/clock.h"
 #include "hyle/util/random.h"
+#include "hyle/util/ref_counted.h"
+#include "hyle/util/spin_lock.h"
 
 namespace {
 namespace nb = ankerl::nanobench;
@@ -26,6 +36,13 @@ std::uint64_t g_log_calls = 0;
 void counting_write(void* /*state*/, hyle::obs::LogLevel, const char*) noexcept {
   ++g_log_calls;
 }
+
+// Minimal RefCounted subject for the Ref vs shared_ptr bench. One int payload, so
+// the only difference measured is the refcount mechanism (intrusive atomic in the
+// object vs shared_ptr's separate control block).
+struct Widget : hyle::util::RefCounted<Widget> {
+  int v = 0;
+};
 }  // namespace
 
 int main() {
@@ -79,6 +96,49 @@ int main() {
     b.run("HYLE realtime_ns", [&] {
       nb::doNotOptimizeAway(hyle::time::realtime_ns());
     });
+  }
+
+  // ---- util/spin_lock: uncontended lock/unlock vs std::mutex ----
+  // Single-thread lock+unlock cycle (no contention). SpinLock is a TTAS atomic
+  // exchange + release store -- a handful of instructions, no syscall path. A
+  // std::mutex uncontended lock is also fast on modern libc (futex/SRWLOCK fast
+  // path) but carries more machinery. For the very short critical sections
+  // SpinLock targets, it should win uncontended.
+  {
+    nb::Bench b;
+    b.title("uncontended lock+unlock").relative(true).batch(1).minEpochIterations(2000000);
+    b.run("std::mutex", [&] {
+      static std::mutex m;
+      m.lock();
+      nb::doNotOptimizeAway(&m);
+      m.unlock();
+    });
+    b.run("HYLE SpinLock (TTAS)", [&] {
+      static hyle::util::SpinLock s;
+      s.lock();
+      nb::doNotOptimizeAway(&s);
+      s.unlock();
+    });
+  }
+
+  // ---- util/ref_counted: Ref copy+destroy vs std::shared_ptr ----
+  // One owning ref exists; each op copies it (incref) and destroys the copy
+  // (decref) -- the hot share/drop cycle. HYLE Ref is intrusive (one atomic in
+  // the object, no control block); shared_ptr touches a separate control block.
+  // Both pay atomic incref/decref; this measures the per-op overhead difference.
+  {
+    hyle::util::Ref<Widget> owner = hyle::util::make_ref<Widget>();
+    std::shared_ptr<Widget> sp = std::make_shared<Widget>();
+    nb::Bench b;
+    b.title("smart-ptr copy+destroy (incref/decref)").relative(true).batch(1).minEpochIterations(2000000);
+    b.run("std::shared_ptr", [&] {
+      std::shared_ptr<Widget> c = sp;  // incref (control block)
+      nb::doNotOptimizeAway(c.get());
+    });                                 // decref on scope exit
+    b.run("HYLE Ref (intrusive)", [&] {
+      hyle::util::Ref<Widget> c = owner;  // incref (in-object atomic)
+      nb::doNotOptimizeAway(c.get());
+    });                                   // decref on scope exit
   }
 
   // ---- obs/log: produce-path overhead (no I/O) ----

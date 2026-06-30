@@ -85,6 +85,44 @@ int main() {
     });
   }
 
+  // ---- SmallVector SPILL path: push kSpill > inline cap (heap grow) ----------
+  // The small-N block above stays inline (the no-malloc design point). This block
+  // exercises the OTHER half: push 64 ints into SmallVector<int,16> so it spills
+  // inline->heap and then grows. absl::InlinedVector<int,16> spills the same way
+  // (the SOTA rival); std::vector mallocs from the first push (the floor). Tests
+  // whether HYLE's spill/grow path is competitive once inline storage is exceeded.
+  {
+    constexpr int kSpill = 64;  // > 16 inline cap -> forces spill + ~2 grows
+    nb::Bench b;
+    b.title("spill churn: build+fill 64 ints+destroy (>inline cap)")
+        .relative(true)
+        .batch(kRounds * kSpill)
+        .minEpochIterations(100);
+    b.run("HYLE SmallVector<int,16> (spill->heap)", [&] {
+      for (int r = 0; r < kRounds; ++r) {
+        SmallVector<int, 16> v;
+        for (int i = 0; i < kSpill; ++i) v.push_back(i);
+        nb::doNotOptimizeAway(v.data());
+      }
+    });
+#if defined(HYLE_BENCH_ABSL)
+    b.run("absl::InlinedVector<int,16> (SOTA, spill->heap)", [&] {
+      for (int r = 0; r < kRounds; ++r) {
+        absl::InlinedVector<int, 16> v;
+        for (int i = 0; i < kSpill; ++i) v.push_back(i);
+        nb::doNotOptimizeAway(v.data());
+      }
+    });
+#endif
+    b.run("std::vector<int> (heap from push 1)", [&] {
+      for (int r = 0; r < kRounds; ++r) {
+        std::vector<int> v;
+        for (int i = 0; i < kSpill; ++i) v.push_back(i);
+        nb::doNotOptimizeAway(v.data());
+      }
+    });
+  }
+
   // ---- IntrusiveList vs boost::intrusive::list vs std::list ------------------
   // push-all + pop-all (the "O(1) 无分配" claim). Intrusive: links live in the
   // node -> push/pop are pure pointer ops, ZERO allocation. boost::intrusive is
@@ -131,6 +169,62 @@ int main() {
       std::list<int> list;
       for (int i = 0; i < kNodes; ++i) list.push_back(i);
       while (!list.empty()) list.pop_front();
+      nb::doNotOptimizeAway(&list);
+    });
+  }
+
+  // ---- IntrusiveList::remove(node) vs std::list::erase(it): O(1) ANY-position-
+  // unlink. This is the intrusive headline ("O(1) 任意摘除, no traversal") that
+  // push/pop alone don't exercise. Workload: build, then remove every node in a
+  // SCRAMBLED order (not front/back) -- pure arbitrary unlink. Intrusive removes
+  // by node pointer (links in the node); std::list needs the iterator (kept in a
+  // side vector, valid across erases). boost::intrusive is the same-model SOTA.
+  {
+    struct Node {
+      int v;
+      IntrusiveListHook hook;
+    };
+    std::vector<Node> nodes(kNodes);
+    for (int i = 0; i < kNodes; ++i) nodes[i].v = i;
+    // Scrambled visit order (LCG-ish stride, coprime to kNodes=4096 via odd step).
+    std::vector<int> order(kNodes);
+    for (int i = 0; i < kNodes; ++i) order[i] = (i * 2654435761u) & (kNodes - 1);
+
+    nb::Bench b;
+    b.title("list arbitrary unlink: remove 4096 in scrambled order")
+        .relative(true)
+        .batch(kNodes)
+        .minEpochIterations(2000);
+    b.run("HYLE IntrusiveList::remove (O(1) by ptr)", [&] {
+      IntrusiveList<Node, &Node::hook> list;
+      for (int i = 0; i < kNodes; ++i) list.push_back(&nodes[i]);
+      for (int i = 0; i < kNodes; ++i) list.remove(&nodes[order[i]]);
+      nb::doNotOptimizeAway(&list);
+    });
+#if defined(HYLE_BENCH_BOOST)
+    {
+      namespace bi = boost::intrusive;
+      struct BNode : bi::list_base_hook<> {
+        int v;
+      };
+      using BList = bi::list<BNode>;
+      std::vector<BNode> bnodes(kNodes);
+      for (int i = 0; i < kNodes; ++i) bnodes[i].v = i;
+      b.run("boost::intrusive::list::erase (SOTA, O(1))", [&] {
+        BList list;
+        for (int i = 0; i < kNodes; ++i) list.push_back(bnodes[i]);
+        // erase(iterator_to(node)) -- O(1) unlink by node, same as HYLE remove.
+        for (int i = 0; i < kNodes; ++i) list.erase(BList::s_iterator_to(bnodes[order[i]]));
+        nb::doNotOptimizeAway(&list);
+      });
+    }
+#endif
+    b.run("std::list::erase(it) (O(1) given the iterator)", [&] {
+      std::list<int> list;
+      std::vector<std::list<int>::iterator> its;
+      its.reserve(kNodes);
+      for (int i = 0; i < kNodes; ++i) its.push_back(list.insert(list.end(), i));
+      for (int i = 0; i < kNodes; ++i) list.erase(its[order[i]]);
       nb::doNotOptimizeAway(&list);
     });
   }

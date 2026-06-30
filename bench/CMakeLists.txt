@@ -9,7 +9,7 @@ target_include_directories(nanobench SYSTEM PUBLIC
 find_package(Threads REQUIRED)
 target_link_libraries(nanobench PUBLIC Threads::Threads)
 
-hyle_add_bench(container SOURCES container/container_bench_main.cc container/swiss_table_bench.cc container/string_buf_bench.cc DEPS hyle_platform)
+hyle_add_bench(container SOURCES container/container_bench_main.cc container/swiss_table_bench.cc container/string_buf_bench.cc container/string_ref_bench.cc DEPS hyle_platform)
 # mem bench links mimalloc_static directly so it can call raw mi_malloc/mi_free as
 # the SOTA baseline (the static lib's PUBLIC include exposes mimalloc.h). hyle_mem
 # links mimalloc PRIVATE, so the bench can't borrow the symbol transitively.

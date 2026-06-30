@@ -444,6 +444,79 @@ void bench_concurrent_vector() {
     });
 #endif
   }
+
+  // ---- CONCURRENT lock-free read WHILE a writer appends (the headline) -------
+  // The single-thread reads above don't exercise ConcurrentVector's actual claim:
+  // "insert once, read many, FROM MANY THREADS" with LOCK-FREE readers. Here R
+  // reader threads sum a FULLY-BUILT prefix [0,kPre) in a loop while ONE writer
+  // appends another kPre items concurrently (forcing segment growth). Readers only
+  // touch the pre-built prefix, so neither HYLE nor tbb can read a half-constructed
+  // tail (fair). This stresses the real cost: HYLE's per-read acquire-load of size_
+  // shares a cache line with the writer's release-store -- does that coexist with
+  // the writer as well as tbb's index-only read? Win or lose, printed. batch =
+  // R*kPre*kRounds (total reads); the number is ns per lock-free read under writer
+  // contention. minEpochIterations low (each epoch spawns+joins R+1 threads).
+  {
+    constexpr int kPre = 100000;     // pre-built, fully-constructed prefix
+    constexpr int kReaders = 4;      // concurrent lock-free readers
+    constexpr int kRounds = 8;       // full-prefix sweeps per reader thread
+    ankerl::nanobench::Bench b;
+    b.title("ConcurrentVector 4 readers (lock-free) + 1 writer append")
+        .relative(true)
+        .batch(static_cast<std::uint64_t>(kReaders) * kPre * kRounds)
+        .minEpochIterations(10);
+
+    b.run("HYLE ConcurrentVector", [&] {
+      ConcurrentVector<std::uint64_t> v;
+      for (int i = 0; i < kPre; ++i) v.push_back(static_cast<std::uint64_t>(i));
+      std::atomic<bool> go{false};
+      std::vector<std::thread> ts;
+      std::atomic<std::uint64_t> sink{0};
+      for (int r = 0; r < kReaders; ++r)
+        ts.emplace_back([&] {
+          while (!go.load(std::memory_order_acquire)) {}
+          std::uint64_t s = 0;
+          for (int round = 0; round < kRounds; ++round)
+            for (int i = 0; i < kPre; ++i) s += v[static_cast<std::size_t>(i)];
+          sink.fetch_add(s, std::memory_order_relaxed);
+        });
+      std::thread writer([&] {
+        while (!go.load(std::memory_order_acquire)) {}
+        for (int i = 0; i < kPre; ++i)
+          v.push_back(static_cast<std::uint64_t>(kPre + i));  // forces growth
+      });
+      go.store(true, std::memory_order_release);
+      for (auto& t : ts) t.join();
+      writer.join();
+      ankerl::nanobench::doNotOptimizeAway(sink.load());
+    });
+#if defined(HYLE_BENCH_TBB)
+    b.run("tbb concurrent_vector", [&] {
+      tbb::concurrent_vector<std::uint64_t> v;
+      for (int i = 0; i < kPre; ++i) v.push_back(static_cast<std::uint64_t>(i));
+      std::atomic<bool> go{false};
+      std::vector<std::thread> ts;
+      std::atomic<std::uint64_t> sink{0};
+      for (int r = 0; r < kReaders; ++r)
+        ts.emplace_back([&] {
+          while (!go.load(std::memory_order_acquire)) {}
+          std::uint64_t s = 0;
+          for (int round = 0; round < kRounds; ++round)
+            for (int i = 0; i < kPre; ++i) s += v[static_cast<std::size_t>(i)];
+          sink.fetch_add(s, std::memory_order_relaxed);
+        });
+      std::thread writer([&] {
+        while (!go.load(std::memory_order_acquire)) {}
+        for (int i = 0; i < kPre; ++i)
+          v.push_back(static_cast<std::uint64_t>(kPre + i));
+      });
+      go.store(true, std::memory_order_release);
+      for (auto& t : ts) t.join();
+      writer.join();
+      ankerl::nanobench::doNotOptimizeAway(sink.load());
+    });
+#endif
+  }
 }
 
 }  // namespace
