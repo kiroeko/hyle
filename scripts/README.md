@@ -44,16 +44,21 @@ The default build has NO external bench deps. Each rival is opt-in:
 | `-DHYLE_BENCH_MARL=ON` | fiber sync vs marl | `hyle_sched_marl_bench` |
 | `-DHYLE_BENCH_BOOST=ON` | IntrusiveList vs `boost::intrusive::list` (needs boost submodule checked out) | `hyle_container_misc_bench` |
 
-### One command for ALL rivals — the `all-sota` CMake preset
+### One command for ALL rivals — the `bench-all-sota` CMake preset
 
-After `setup-bench-libs.sh` has cloned the siblings, the `all-sota` preset flips
-every gate ON at once (no hand-assembling 8 `-D` flags):
+After `setup-bench-libs.sh` has cloned the siblings, the `bench-all-sota` preset
+flips every gate ON at once (no hand-assembling 8 `-D` flags):
 
 ```sh
 scripts/setup-bench-libs.sh            # clone the rival siblings
-cmake --preset all-sota                # configure with every -DHYLE_BENCH_*=ON
-cmake --build --preset all-sota        # build all bench exes
+cmake --preset bench-all-sota          # configure with every -DHYLE_BENCH_*=ON
+cmake --build --preset bench-all-sota  # build all bench exes
 ```
+
+> **These `HYLE_BENCH_*` gates are DEV/BENCH-ONLY, a separate category from the
+> product build params** (`HYLE_STATIC` / `HYLE_SANITIZER` / `HYLE_WERROR` / the
+> SIMD ISA tier). They ONLY add comparison rows to the benchmarks — they never
+> affect the shipped library. The `bench-` prefix on the preset name says so.
 
 - **Vectorized `exp/log/tanh` is always-on**: the math cores (Highway + xsimd)
   are vendored in `third_party/` and compiled into production unconditionally —

@@ -36,24 +36,33 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem hyle::simd)
 
 ### 1.2 构建选项全集（这是"开关太多"的答案）
 
-所有开关在顶层 `cmake -S . -B build -D<OPT>=<VAL>` 设。**默认值已为"生产使用者"调好**——通常你只需默认 + 选 Release/静态。
+HYLE 的构建开关分**两个范畴**，别混：
+
+- **A. 产品构建参数**（`HYLE_<名>`，全大写下划线 = CMake cache 变量）——影响**出厂的库**：静态/动态、sanitizer、CI 严格度、SIMD 硬件 tier。这是你集成时唯一要管的。
+- **B. 开发/基准对照门**（`HYLE_BENCH_<名>`）——**只往 benchmark 加对照行，对出厂库零影响**，仅 `-DHYLE_BUILD_BENCH=ON` 时存在。集成方永远用不到（见 §1.2.1）。
+
+> **命名约定**：凡产品参数都是 `HYLE_<名>` cache 变量，用 `-D` 设；bench 对照门统一带 `HYLE_BENCH_` 前缀，自我标记为 B 类。CMakePresets 里的 `bench` / `bench-all-sota` 是**预设包**（不是参数本身），`--preset` 选用——它们只是"把一组 `-D` 一次设好"的快捷方式，`bench-` 前缀表明展开的全是 B 类 bench 门。
+
+**A 类——产品构建参数**（顶层 `cmake -S . -B build -D<OPT>=<VAL>` 设）。**默认值已为"生产使用者"调好**——通常你只需默认 + 选 Release/静态。
 
 | 选项 | 默认 | 取值 | 何时改 |
 |---|---|---|---|
 | `CMAKE_BUILD_TYPE` | `Release` | `Debug`/`Release`/`RelWithDebInfo` | 性能库默认 Release(-O3)；要符号调试用 RelWithDebInfo |
 | `HYLE_STATIC` | `OFF`(SHARED) | `ON`/`OFF` | 要静态链进你的二进制（无 DLL 分发）设 ON |
 | `HYLE_BUILD_TESTS` | `ON` | `ON`/`OFF` | 当依赖集成时设 `OFF`（不编 GoogleTest，省时间） |
-| `HYLE_BUILD_BENCH` | `OFF` | `ON`/`OFF` | 只有想跑微基准才开（拉 nanobench） |
+| `HYLE_BUILD_BENCH` | `OFF` | `ON`/`OFF` | 只有想跑微基准才开（拉 nanobench）。开了才解锁 B 类门 |
 | `HYLE_WERROR` | `OFF` | `ON`/`OFF` | CI 用 ON；本地开发 OFF |
 | `HYLE_SANITIZER` | `off` | `off`/`asan`/`tsan`/`ubsan` | 查内存/数据竞争/UB 时开（配 Debug/RelWithDebInfo）。**严格校验**：非法值直接 `FATAL_ERROR`（不静默降级为 off）；认编译器原生别名 `address`→asan、`thread`→tsan、`undefined`→ubsan、`none`→off。**MSVC 只支持 asan**（tsan/ubsan 在 MSVC 会 `FATAL_ERROR`，需 GCC/Clang，如 WSL） |
 
-**仅当 `HYLE_BUILD_BENCH=ON` 时额外可用**（对标 SOTA 参考库,需本地 clone）。最常用两个:
+#### 1.2.1 B 类——开发/基准对照门（集成方忽略）
+
+**仅当 `HYLE_BUILD_BENCH=ON` 时额外可用**（拿 HYLE 跟外部 SOTA 参考库赛跑，给 benchmark 加对照行；**不影响出厂库**）。最常用两个:
 | 选项 | 默认 | 作用 |
 |---|---|---|
 | `HYLE_BENCH_ABSL` + `HYLE_ABSL_DIR` | `OFF` | SwissTable vs `absl::flat_hash_map`;SmallVector vs `absl::InlinedVector` |
 | `HYLE_BENCH_HIGHWAY` | `OFF` | simd vec / dtype / math vs Google Highway（指向 `third_party/`，已 vendored，仅 toggle 对比行） |
 
-> 还有 `HYLE_BENCH_{MOODYCAMEL,TBB,RIGTORP,XSIMD,SIMDUTF,BOOST,WYHASH,MARL}`(队列/分配器/math/utf8/侵入容器/hash 对标)。其中 `HYLE_BENCH_{HIGHWAY,XSIMD,SIMDUTF}` 指向 `third_party/` 已 vendored 库(不再需 sibling clone),其余仍是 opt-in sibling clone。**一键全开**:`scripts/setup-bench-libs.sh` clone 需要 sibling 的那些后 `cmake --preset all-sota`。全清单与运行法见 [`scripts/README.md`](../../scripts/README.md)。
+> 还有 `HYLE_BENCH_{MOODYCAMEL,TBB,RIGTORP,XSIMD,SIMDUTF,BOOST,WYHASH,MARL}`(队列/分配器/math/utf8/侵入容器/hash 对标)。其中 `HYLE_BENCH_{HIGHWAY,XSIMD,SIMDUTF}` 指向 `third_party/` 已 vendored 库(不再需 sibling clone),其余仍是 opt-in sibling clone。**一键全开**:`scripts/setup-bench-libs.sh` clone 需要 sibling 的那些后 `cmake --preset bench-all-sota`。全清单与运行法见 [`scripts/README.md`](../../scripts/README.md)。
 >
 > **向量化数学核(Highway/xsimd)与 utf8 SIMD(simdutf)已 vendored 在 `third_party/`、无条件编进生产、默认全速**——无 `-D` 开关,运行期 `cpu_features().avx2` 门控(老 CPU 落 scalar 不 SIGILL)。上面的 `HYLE_BENCH_*` 仅 toggle bench 的 SOTA 对比行,不影响产品默认。
 
