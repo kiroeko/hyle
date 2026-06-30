@@ -46,7 +46,7 @@ hyle/
 │  └─ <module>/...
 ├─ tests/                      # 单测（镜像 src/ 结构）
 ├─ bench/                      # 微基准
-├─ third_party/                # vendored（mimalloc/sleef/ggml submodule + fcontext asm 等）
+├─ third_party/                # vendored（mimalloc/xxhash/highway/xsimd/simdutf + fcontext asm 等）
 └─ .github/workflows/ci.yml    # CI 矩阵
 ```
 

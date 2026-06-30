@@ -1,4 +1,6 @@
-# simd-06：transcendental 数学核（借 SLEEF：exp/log/tanh）
+# simd-06：transcendental 数学核（exp/log/tanh）
+
+> **当前状态（2026-06，SLEEF 退役后回填）**：本里程碑交付的向量化数学核**现走 Highway + xsimd**（均 vendored 在 `third_party/`、无条件默认编进生产、逐 op best-of-breed 选最快核）。**最初的 SLEEF 后端已完全删除**（代码 + `HYLE_SIMD_SLEEF`/`HYLE_SLEEF_DIR` 开关 + `transcendental_sleef.cc`）——理由：SLEEF 非 header-only（需预编库），且 dispatcher 三个 op 都把它排第三，xsimd+Highway 都在时永不被选，纯死代码。下文保留 SLEEF 时期的实现/纠错记录作历史；"借核"现读作"借 Highway+xsimd（已 vendored）"。最新性能数字见 [`../architecture/performance.md`](../architecture/performance.md) 数学核节。
 
 | 字段 | 值 |
 |---|---|
@@ -7,7 +9,7 @@
 | **Tier** | 1 |
 | **LOC 估** | 1-2k |
 | **骨架?** | 否 |
-| **状态** | ✅ 完成（scalar libm 双平台实跑；SLEEF AVX2 向量化 opt-in，WSL 实跑对拍 libm；MSVC-向量化-SLEEF 登记待补） |
+| **状态** | ✅ 完成（scalar libm 双平台实跑；向量化核 Highway+xsimd vendored 无条件默认开，exp/log/tanh 对拍 libm + 同 ISA SOTA） |
 
 ## 前置依赖
 

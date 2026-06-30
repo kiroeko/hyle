@@ -34,7 +34,7 @@
 | **util** | **Ref<T> 引用计数 + ScopeGuard/DEFER + 编译期 type_name + Registry 自注册** | ✅ |
 | **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 + **Waker completion 脊(suspend/wake)** + **同步原语(futex Mutex 打平 marl;fiber-aware CV/WaitGroup/Latch/Channel,双模 fiber/裸线程)** | 🔶 栈池/deadline/协程/取消 待 |
 | **bench** | nanobench 设施 + 对标各域 SOTA(absl/mimalloc/moodycamel/oneTBB/marl/Highway/crossbeam):SwissTable、分配器、队列簇、fiber 同步/调度、SIMD 核 | ✅ |
-| **simd** | 运行期 CPUID dispatch(探测+变体选择) + vec<T,N> D-tag 抽象(照搬 Highway 契约) + scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec) + fp16/bf16 dtype(F16C) + **exp/log/tanh 数学核(SLEEF AVX2 opt-in:实测 exp 6.5x/log 3.2x/tanh 4.0x over 标量 libm;默认构建走标量,未向量化)** + NEON/AVX512(写+编+objdump 验,未跑) | 🔶 NEON/AVX512 待目标硬件实跑;gelu/softmax 待 |
+| **simd** | 运行期 CPUID dispatch(探测+变体选择) + vec<T,N> D-tag 抽象(照搬 Highway 契约) + scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec) + fp16/bf16 dtype(F16C) + **exp/log/tanh 数学核(Highway+xsimd vendored 无条件默认开,逐 op best-of-breed:exp 0.23/log 0.26/tanh 0.44 ns,全 ≥ 两库 SOTA)** + NEON/AVX512(写+编+objdump 验,未跑) | 🔶 NEON/AVX512 待目标硬件实跑;gelu/softmax 待 |
 | io / compute / graph | — | 📋 规划 |
 
 **性能验证(已落地部分)**:SwissTable vs `std::unordered_map`(100k keys,Linux GCC14,mix64+prefetch+H1 优化后复测):find-hit 2.42x、find-miss 2.26x、insert 5.3x、erase 3.5x;vs `absl::flat_hash_map` 四项全部追平或反超。**fiber 同步/调度 vs marl(SOTA 标尺)**:fiber 切换 21ns(=boost.context)、spawn 2.17x、争用 Mutex 打平、无争用 Mutex(多线程)1.40x、fork-join 反超 1.49–1.71x。详见 [`performance.md`](./docs/architecture/performance.md)。
@@ -61,7 +61,7 @@
 | [sched 调度器](./docs/architecture/sched-design.md) | fcontext 切换 + 无锁 work-stealing + Waker completion 脊 + 协程/fiber 统一 |
 | [lifecycle 失败边界](./docs/architecture/lifecycle-design.md) | fail-fast 绝不 try-catch + 取消/背压/关闭/隔离 + 跨 C-ABI 错误 |
 | [compute 异构计算](./docs/architecture/compute-design.md) | device/stream/kernel 抽象 + ggml 解耦 + shader 一等公民 |
-| [simd 向量化](./docs/architecture/simd-design.md) | 精简可移植 vector + 运行时 dispatch + dtype(fp16/bf16) + 借 sleef 数学核 |
+| [simd 向量化](./docs/architecture/simd-design.md) | 精简可移植 vector + 运行时 dispatch + dtype(fp16/bf16) + 借 Highway/xsimd 数学核(vendored) |
 | [mem 内存](./docs/architecture/mem-design.md) | 通用 malloc 借 mimalloc + 自造专用分配器 + 修 5 bug + NUMA/大页/64B 对齐 |
 | [container 容器](./docs/architecture/container-design.md) | 唯一造不借的 T0 + SwissTable SIMD 探测 + SmallVector/intrusive/lock-free（供 sched）|
 | [实现路线图](./docs/architecture/roadmap.md) | 依赖图（无环）+ 6 批施工序 + 关键路径 + 验收门槛 + 决策清单 |

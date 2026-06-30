@@ -16,7 +16,7 @@
 
 ## 核心决策：通用 malloc 借，专用分配器造
 
-与 io（借 liburing）、compute（借 ggml）、simd（借 sleef 核）同构——**借多年解决的通用基底，造贴 HYLE 需求的专用层**：
+与 io（借 liburing）、compute（借 ggml）、simd（借 Highway/xsimd 数学核）同构——**借多年解决的通用基底，造贴 HYLE 需求的专用层**：
 
 | 部件 | 造/借 | 理由 |
 |---|---|---|

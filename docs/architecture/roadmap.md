@@ -76,7 +76,7 @@ container/       │                            │    vector+      不 include 
 | **P2** | mem | Allocator+alignment / mimalloc / arena / pool+stack / NUMA | 6-10k | ~0.9k ✅主力(arena/pool/stack/growable 净新) |
 | **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | ~0.3k 🔶(时间轮待) |
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | ~2k ✅主力 |
-| **P3** | simd | vec+scalar / SSE4.2+AVX2 / AVX512+NEON / 变体dispatch / dtype / sleef | 10-16k | ~2.3k 已做 + ~3-5k 广度补全 = **~5-8k** |
+| **P3** | simd | vec+scalar / SSE4.2+AVX2 / AVX512+NEON / 变体dispatch / dtype / 数学核(Highway+xsimd) | 10-16k | ~2.3k 已做 + ~3-5k 广度补全 = **~5-8k** |
 | **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~1k 核心+同步✅(fcontext/work-stealing/Waker/conditional-notify/CV+Mutex+WaitGroup+Latch+Channel,对标 marl 追平/反超) + ~2-4k 后段(协程胶水/取消/优雅关闭) |
 | **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem | 9-14k | **~5-8k**(借 liburing 写适配) |
 | **P5** | compute | device/stream包ggml / device buffer(compute 自有) / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
@@ -94,7 +94,7 @@ container/       │                            │    vector+      不 include 
 >
 > 一句话现状（粗粒度，细节看 milestones）：**地基层（error/platform/mem/container/time/util/obs）基本立住；
 > sched 核心 + fiber 同步原语 done（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超），后段（协程胶水/取消/优雅关闭）待；**simd 支柱基本完成**（dispatch + vec 抽象 +
-> scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 dtype + sleef 数学核,对标 Highway 追平；NEON/AVX512 写+编+objdump 验未跑存疑）；io/compute/graph 三支柱未开工。**
+> scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 dtype + 数学核(Highway+xsimd vendored),对标 Highway 追平；NEON/AVX512 写+编+objdump 验未跑存疑）；io/compute/graph 三支柱未开工。**
 > 整体 ≈ 32%（模块权重）。
 
 
@@ -145,7 +145,7 @@ container/       │                            │    vector+      不 include 
 |---|---|---|---|
 | 1 | mem backing 选哪个 | **mimalloc**（现代/THP/MIT/v3 2026）| 否 |
 | 2 | mimalloc 怎么集成 | 封 `Allocator` vtable 后、不外露类型 | 否 |
-| 5 | simd 数学核 | vendor sleef、封 adapter | 否 |
+| 5 | simd 数学核 | vendor Highway+xsimd、封 adapter | 否 |
 | 6 | SVE/RVV 进首版? | v1 只 x86(SSE4.2/AVX2/AVX512)+ARM NEON，留接口 | 否 |
 | 8 | SwissTable 自实现 vs 抄 abseil | 自实现（边界+差异焦点）| 否 |
 | 9 | lock-free 队列归属/造借 | **vendoring 成熟实现**（Vyukov bounded MPMC / rigtorp SPSC，单头可内联），归 container/ 供 sched 消费；不自造（无 C-ABI 理由、难写对）。自造预算集中到 hashmap | 否 |

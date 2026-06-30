@@ -13,9 +13,8 @@
 | 库 | 性质 | 对 HYLE |
 |---|---|---|
 | **std::simd（C++26 P1928）** | 定宽、无运行时 dispatch | ❌ 不能当核心——"表达不了 90% 真实 SIMD 代码"（gather/scatter/mask/swizzle 弱）；仅可作平凡循环的薄互操作 |
-| **Highway（Google）** | 可移植 + 运行时 dispatch + scalable vector（AVX512/NEON/SVE/RVV/WASM）| 金标准，但 C++ idiom 重、头文件庞大，整体 vendor 与"贴硬件/不过度抽象"有张力 |
-| **xsimd** | 定宽 + 优化数学函数（exp/log/trig）| 数学核可借 |
-| **sleef** | 高精度 SIMD transcendental 核 | exp/tanh 等的多项式核可借（别手搓，易错） |
+| **Highway（Google）** | 可移植 + 运行时 dispatch + scalable vector（AVX512/NEON/SVE/RVV/WASM）| 金标准；不 vendor 整套抽象（idiom 重），但其 **contrib/math 多项式核已 vendored** 借用（log 等）|
+| **xsimd** | 定宽 + 优化数学函数（exp/log/trig）| 数学核已 vendored 借用（exp/tanh）|
 
 ## 核心决策：自造精简抽象 + 运行时 dispatch + 借数学核
 
@@ -25,7 +24,7 @@
 |---|---|---|
 | 可移植 vector 抽象 `vec<T,N>` + 多 ISA 后端 | 🔧 **自造（精简）** | 焦点 #1；不 vendor 整个 Highway（idiom 重、违背贴硬件）；参考其 scalable-vector + dispatch 理念造精简版 |
 | 运行时 dispatch（CPUID + 多版本）| 🔧 **自造** | clay 完全没有，是核心缺口 |
-| transcendental 数学核（exp/log/sin）| ✅ **借 sleef-style 多项式核** | 手推多项式逼近易错，已解决问题 |
+| transcendental 数学核（exp/log/sin）| ✅ **借 Highway/xsimd 多项式核（vendored）** | 手推多项式逼近易错，已解决问题；逐 op best-of-breed 选最快核 |
 | dtype 转换（fp16/bf16/int8/fp8）| 🔧 自造（硬件路径 + 软件 fallback）| 替换 clay 纯软件 half 表 |
 | AI 数学函数（gelu/softmax/tanh）| 🔧 自造（组合数学核）| HYLE 特定，AI 热路径 |
 | std::simd 互操作 | ⚠️ 薄封装 | 平凡循环可转发给它，非核心 |
@@ -41,7 +40,7 @@ simd/
 │  └─ scalar.h                       (无 SIMD fallback)
 ├─ dispatch.h     运行时 CPUID 探测 + 函数指针表选最优后端
 ├─ dtype/         fp16/bf16/int8/fp8 ↔ fp32（F16C/AVX512-FP16/BF16 硬件 + 软件 fallback）
-├─ math/          exp/log/tanh/gelu/softmax/erf（借 sleef 核 + 组合）
+├─ math/          exp/log/tanh/gelu/softmax/erf（借 Highway/xsimd 核 + 组合）
 └─ ops/           供 container/compute 用的 SIMD 原语（如 SwissTable 探测、reduce、memcpy）
 ```
 
@@ -85,25 +84,25 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 ### probe.h 的去留裁决（2026-06，simd/ 已成熟后回看，用户提出）
 
-> 背景：`container/probe.h` 是 simd/ 还不存在时、为做高性能 hash 自己内联的 SwissTable 控制字节探测（GroupSse2/GroupNeon/GroupPortable + `#ifdef __SSSE3__` 编译门控）。如今 simd/ 已有 vec 抽象 + 运行期 dispatch，问：probe.h 要不要改成复用 simd/？
+> 背景：`container/probe.h` 是 simd/ 还不存在时、为做高性能 hash 自己内联的 SwissTable 控制字节探测（GroupSse2/GroupNeon/GroupPortable + `HYLE_HAVE_SSSE3` 编译门控）。如今 simd/ 已有 vec 抽象 + 运行期 dispatch，问：probe.h 要不要改成复用 simd/？
 
 **裁决：不改，保持现状。** 理由：
 
 1. **改了就违背本节自己定的 tier 规则**。container 是 T0、simd 是 T1；让 probe.h `#include` simd/ 就是 T1→T0 倒置（依赖图 `container → simd` 是单向的，反向即架构倒置，roadmap 明令禁）。
 2. **probe 不是 vec 抽象的合适用例**。它要的是"16 字节控制字节比较 + movemask + BitMask 迭代"这一段**专用语义**，不是 `vec<T,N>` 的类型化算术。硬塞进 vec 接口反而别扭、且把 SwissTable 的探测细节泄进通用 SIMD 层。
-3. **没有正确性缺口**。SSE2 基线恒在且正确；SSSE3 快路径是 `#ifdef` 门控的纯加速（performance.md 实测：match_empty 的 SSSE3 路径是绝对小增益，**不**是 find-miss 差距来源）。NEON 已交叉编译验证。
-4. **唯一真实缺口是"分发型二进制吃不到 SSSE3"**——纯编译门控,没开 `-mssse3` 就走 SSE2 兜底,即便 CPU 支持。但这是**小加速**,不值得为它倒挂依赖。
+3. **没有正确性缺口**。SSE2 基线恒在且正确；SSSE3 快路径由 `HYLE_HAVE_SSSE3` 门控,且 **SSSE3 现为全局 baseline**(CMake 对 x86 GCC/Clang 全局加 `-mssse3`、MSVC x64 无条件),故三平台默认生效(performance.md 实测：match_empty 的 SSSE3 路径是绝对小增益，**不**是 find-miss 差距来源)。NEON 已交叉编译验证。
+4. **无遗留分发缺口**——SSSE3 既是全局 baseline,分发型二进制默认即吃到 SSSE3 快路径,无需 `-march=native`。
 
-**真要做运行期 dispatch 的正确解(若将来 profile 证明 baseline SwissTable 是分发型二进制的真瓶颈)**：**不是**让 container 依赖 simd,而是**把 CPUID 探测器下沉到 `platform/`（比 container 更低层）**,让 container 和 simd 都能查同一个探测结果——这样 container 可在 hashmap 内部做"SSE2 vs SSSE3 group"的运行期分发,仍不碰 simd/。当前不做(收益小、增复杂度)。
+**真要做运行期 dispatch 的正确解(若将来 profile 证明 baseline SwissTable 是分发型二进制的真瓶颈)**：**不是**让 container 依赖 simd,而是**把 CPUID 探测器下沉到 `platform/`（比 container 更低层）**,让 container 和 simd 都能查同一个探测结果——这样 container 可在 hashmap 内部做"baseline(SSSE3) vs 更高 ISA(AVX2 group)"的运行期分发,仍不碰 simd/。当前不做(收益小、增复杂度)。
 
-**复审触发条件（写明,免得凭感觉重提）**：① profile 显示分发型(非 `-march`)二进制的 SwissTable 探测是实测热点 **且** ② SSSE3+ 路径能显著缩差距。两条同时成立才动,且按上一段方案(下沉 CPUID 到 platform),非 container→simd 依赖。
+**复审触发条件（写明,免得凭感觉重提）**：① profile 显示分发型(非 `-march`)二进制的 SwissTable 探测是实测热点 **且** ② 比 SSSE3 baseline 更高的 ISA(AVX2 group)路径能显著缩差距。两条同时成立才动,且按上一段方案(下沉 CPUID 到 platform),非 container→simd 依赖。
 
 ## 落地清单
 
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
 2. 🔶 SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02(实跑)、运行期 dispatch=simd-04、NEON+AVX512=simd-03(写+编+objdump 验,未跑存疑)。** 各后端覆盖,只剩 NEON/AVX512 待目标硬件实跑。
 3. ✅ dtype 转换（先 fp16/bf16 硬件路径）。**simd-05。**
-4. 🔶 数学函数（借 SLEEF/Highway 核：exp/log/tanh 已实现并对标同 ISA SOTA;gelu/softmax 组合待补）。**simd-06。**
+4. 🔶 数学函数（借 Highway/xsimd 核：exp/log/tanh 已实现并对标同 ISA SOTA;gelu/softmax 组合待补）。**simd-06。**
 5. 🔶 `ops/`：dot_f32 已跨 scalar/SSE4/AVX2 dispatch(+reduce_max/scale/saxpy 已 bench);reduce/对齐 memcpy/SwissTable 探测片段待补。
 6. 🔶 单测：每后端对拍 scalar 参考值、跨 ISA CI、数学函数精度 ULP 测试、benchmark 对标 Highway/手写 intrinsics。**scalar/SSE4.2/AVX2 对拍 + Highway bench 已做；NEON objdump 验；ULP 测试随 simd-06。**
 
@@ -123,9 +122,9 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 1. **vector 抽象用定宽 `vec<T,N>` 还是 scalable（length-agnostic）**？**✅ 已决：scalable-friendly 接口 + 先实现定宽后端**——接口按 length-agnostic 设计（参考 Highway，将来加 SVE/RVV 不改 API），但首版只实现定宽后端（x86 SSE4.2/AVX2/AVX512 + ARM NEON，它们本就定宽）。对冲：不堵未来又不先背复杂度。
    > **深读 highway 落地约束**：照搬 highway 的 **D-tag 接口契约**——传零大小标签 `D=Simd<T,N,kPow2>`，op 形如 `VFromD<D> Set(D,T)`，`Lanes(d)` 取宽度。**关键：`Lanes(d)` 必须设计成可运行期求值**（定宽后端是 constexpr、SVE 后端是 `svcntw()` 运行期），否则将来加 SVE 要改 API。highway 已证同源码 x86/SVE 共存可行。**只照搬接口契约，不 vendor 整个 highway**（其 ops/ 全平台万行级、重宏元编程，违背"贴硬件/不过度抽象"）。给 `vec.h` 设硬上限（核心 op < ~2k 行/后端），超了就是丧失了不 vendor 的理由。
-2. **数学核 vendor sleef 还是自抄多项式**？**✅ 倾向 vendor sleef**（Apache/BSL，精度经考验，主力 `_u35`(3.5ULP)/`_u10`(1ULP) 档）；adapter 几乎零成本（sleef 吃裸 intrinsic 向量，HYLE `vec.raw` 直接喂）。每 ISA 后端各封一份。**xsimd 不入依赖**，仅作 exp/log 多项式的第二参考（其 `common/*math*.hpp` 是纯 C++ 模板、可读性高于 sleef 的宏生成 C）。sleef 原生支持 SVE，不堵未来 scalable。
+2. **数学核 vendor 现成库还是自抄多项式**？**✅ 已决：vendor Highway + xsimd（均在 `third_party/`、无条件默认编进生产）**，逐 op best-of-breed 选最快核（exp/tanh→xsimd、log→Highway）；adapter 几乎零成本（吃裸 intrinsic 向量，HYLE `vec.raw` 直接喂）。两库精度同档（~3.5ULP，AI 热路径足够），互为校验。
 3. **要不要 SVE/RVV 进首版**？建议 v1 只做 x86(SSE4.2/AVX2/AVX512) + ARM NEON，SVE/RVV 留接口、缓实现。
-4. **dtype 层借谁**？**✅ 自造，但参照 highway 的 `PromoteTo/DemoteTo` intrinsic 用法**（F16C `_mm_cvtph_ps`、AVX512-BF16 `cvtne2ps`、NEON-BF16）——照抄 intrinsic 不照抄抽象。sleef/xsimd 都无 fp16/bf16，唯 highway 当原生 lane 类型且硬件路径全；但 dtype 逻辑不复杂（bf16=fp32 高 16 位移位），自造避开 vendor 整个 highway。
+4. **dtype 层借谁**？**✅ 自造，但参照 highway 的 `PromoteTo/DemoteTo` intrinsic 用法**（F16C `_mm_cvtph_ps`、AVX512-BF16 `cvtne2ps`、NEON-BF16）——照抄 intrinsic 不照抄抽象。Highway/xsimd 数学核无 fp16/bf16，唯 highway 当原生 lane 类型且硬件路径全；但 dtype 逻辑不复杂（bf16=fp32 高 16 位移位），自造避开 vendor 整个 highway。
 
 ## 参考
 

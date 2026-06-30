@@ -105,7 +105,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 吃各家硬件独家加速（AMX/VNNI、Vulkan cooperative matrix、Blackwell FP4、DSA…）时，**绝不在热路径放运行时间接**。按"何时知道硬件"分层，**热路径任何一层都零间接**：
 
-> **前置结论（2026-06-28，纠"全用编译选项"的误解）**：硬件特性代码（SIMD/CUDA/Vulkan）**不是、也不该全用编译选项搞定**。编译选项（`-march`/`#ifdef`）只覆盖 **SIMD 的"自编自用"半场**；**分发二进制（HYLE 是 C-ABI `.so`，正属此类）必须走运行期 dispatch**——否则 `-march=native` 编出的 `.so` 在老 CPU 上直接 SIGILL。这也是**普遍做法**：glibc IFUNC / NumPy / FFmpeg / OpenCV / llama.cpp 官方包**全是运行期选 ISA**，纯编译选项只见于 Gentoo/HPC 自编。**GPU 更不能用编译选项**：CUDA = fat-binary（多架构 PTX）+ 驱动运行期 JIT + dlopen（无卡不能硬链）；Vulkan = SPIR-V 可移植中间码 + 驱动运行期编。**结论：编译门控可作 SIMD 起步（如 SwissTable match_empty 的 `#ifdef __SSSE3__`），但不能停在那——simd 一开张就要搭 `dispatch.h`（运行期 CPUID 选变体）骨架；GPU 后端一律 dlopen，核心 `.so` 不硬依赖 CUDA/Vulkan 在场。** 详见下表三层模型。
+> **前置结论（2026-06-28，纠"全用编译选项"的误解）**：硬件特性代码（SIMD/CUDA/Vulkan）**不是、也不该全用编译选项搞定**。编译选项（`-march`/`#ifdef`）只覆盖 **SIMD 的"自编自用"半场**；**分发二进制（HYLE 是 C-ABI `.so`，正属此类）必须走运行期 dispatch**——否则 `-march=native` 编出的 `.so` 在老 CPU 上直接 SIGILL。这也是**普遍做法**：glibc IFUNC / NumPy / FFmpeg / OpenCV / llama.cpp 官方包**全是运行期选 ISA**，纯编译选项只见于 Gentoo/HPC 自编。**GPU 更不能用编译选项**：CUDA = fat-binary（多架构 PTX）+ 驱动运行期 JIT + dlopen（无卡不能硬链）；Vulkan = SPIR-V 可移植中间码 + 驱动运行期编。**结论：编译门控可作 SIMD 起步（如 SwissTable match_empty 的 `HYLE_HAVE_SSSE3` 门控，SSSE3 现为全局 baseline），但不能停在那——simd 一开张就要搭 `dispatch.h`（运行期 CPUID 选变体）骨架；GPU 后端一律 dlopen，核心 `.so` 不硬依赖 CUDA/Vulkan 在场。** 详见下表三层模型。
 
 | 层 | 何时 | 机制 | 热路径开销 | 地位 |
 |---|---|---|---|---|

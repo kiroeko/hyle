@@ -3,7 +3,7 @@
 > **目的**：防"以为吸纳完了、其实漏文件/漏 API 层"。clay 源在 `slate-render/iron/infra/{include,src}/clay/`。
 > **铁律（对抗审查纪律）**：每个吸纳 clay 的里程碑闭环前，必须 `diff` clay 同名文件的 API 表面——缺的要么补、要么在本表显式登记 `📋待办`，**不许默默略过**。本表是唯一权威进度标尺。
 > **状态图例**：✅ 完成 / 🔶 部分(有登记的缺口) / 📋 计划 / ♻️ 被 C++23/std 取代 / 🔻 借第三方(不自写) / ⛔ 不吸纳。
-> **行数(cloc 实测)**：clay 自有 ≈ **19,005**(sys 7917 + math 5831 + utils 3469 + parallel 811 + 顶层头 973;去 thirdparty)。HYLE 生产(src+include)≈ **8,130**（2026-06-29 cloc 复核;含 sched-05 同步原语 + conditional-notify + TSan fcontext 注解;旧值 8,048/7,757 已 stale）。mimalloc/xxhash/nanobench/fcontext/sleef 第三方不计。
+> **行数(cloc 实测)**：clay 自有 ≈ **19,005**(sys 7917 + math 5831 + utils 3469 + parallel 811 + 顶层头 973;去 thirdparty)。HYLE 生产(src+include)≈ **8,130**（2026-06-29 cloc 复核;含 sched-05 同步原语 + conditional-notify + TSan fcontext 注解;旧值 8,048/7,757 已 stale）。mimalloc/xxhash/nanobench/fcontext/highway/xsimd/simdutf 第三方不计。
 >
 > **⚠️ 进度口径(2026-06-29 重核，旧 tally 已 stale)**：按**实际表行**重数(52 个 clay 文件行,非旧"94 符号"细粒度估):
 > - **含 ✅(写了 HYLE 等价物)= 28/52 ≈ 54%**(旧称 50%,里程碑推进后多行翻 ✅,旧 tally 偏低)。

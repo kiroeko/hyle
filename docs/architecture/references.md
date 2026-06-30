@@ -9,9 +9,9 @@
 ### simd/（Tier 1）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **highway** | 参考 | 可移植 vector + 运行时多变体 dispatch 的头号范本（scalable-friendly 接口、HWY_DYNAMIC_DISPATCH）|
-| **xsimd** | 参考 | 定宽 SIMD wrapper + 数学函数实现参考 |
-| **sleef** | 借 | transcendental 数学核（exp/log/tanh），封 adapter，HYLE 不手搓多项式 |
+| **highway** | 借 | transcendental 数学核（log 等）+ dtype 对照；vendored 在 `third_party/`、无条件默认编进生产。其 scalable-friendly 接口 + HWY_DYNAMIC_DISPATCH 亦是 vec 抽象的范本 |
+| **xsimd** | 借 | transcendental 数学核（exp/tanh），vendored 在 `third_party/`、无条件默认编进生产；逐 op best-of-breed 与 highway 互选最快核 |
+| **simdutf** | 借 | utf8 validate/count SIMD 核，vendored 在 `third_party/`、无条件默认编进生产（自带内部 ISA dispatch）|
 
 ### compute/（Tier 1，含 Intel 计算加速）
 | 库 | 角色 | 说明 |
@@ -66,19 +66,19 @@
 
 ## 开工优先级（按 roadmap 阶段）
 
-- **P3-P4 即用**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、highway/sleef（simd）。
+- **P3-P4 即用**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、highway/xsimd/simdutf（simd，vendored 数学核 + utf8）。
 - **P5 即用**：ggml + llama.cpp（compute 主力借/参考）、oneDNN/oneMath（Intel 加速，CPU/数学后端）、seastar（io reactor_backend）。
 - **P6 / 按需**：simdjson/flatbuffers/capnproto（serialize）、xxHash（hash，设默认 hasher）、tracy（obs，借设计）。oneDPL/oneTBB/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）
 
-借**多年解决的通用难题**（sleef 数学核、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 全自造、sched 调度自造、simd 抽象自造）。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
+借**多年解决的通用难题**（highway/xsimd 数学核、ggml 算子、boost.context 汇编、liburing syscall）；造**贴 HYLE 需求或差异焦点**（container 全自造、sched 调度自造、simd 抽象自造）。所有借入第三方一律封 adapter / 不外露其类型（同 ggml/mimalloc 解耦原则）。
 
 ### 关键区分：加速库分两类，只借第一类（这是 oneTBB 为何边界外的原因）
 
 | 类 | 是什么 | 例 | HYLE |
 |---|---|---|---|
-| **指令/kernel 级加速**（让单次计算更快）| 优化的算子/数学核/SIMD intrinsic，**不自带调度** | oneDNN(AMX/VNNI JIT)、oneMath(BLAS)、sleef、ggml 算子、XXH3 | ✅ **借**（喂它 HYLE 的线程，结果回灌）|
+| **指令/kernel 级加速**（让单次计算更快）| 优化的算子/数学核/SIMD intrinsic，**不自带调度** | oneDNN(AMX/VNNI JIT)、oneMath(BLAS)、highway/xsimd 数学核、ggml 算子、XXH3 | ✅ **借**（喂它 HYLE 的线程，结果回灌）|
 | **并行运行时级加速**（把任务铺到多核）| **自带 work-stealing 调度器 / task arena / 线程池** | **oneTBB**、oneDPL、OpenMP、asio io_context、boost.fiber | ❌ **不借**（这是 HYLE 自己的活）|
 
 **oneTBB 确实是加速库——但它加速的是"运行时层"，恰是 HYLE 要独占的那一层。** 它的 `parallel_for` 离不开 task arena（自带 work-stealing 调度器）；引它 = HYLE fiber 调度器 + TBB 调度器**两套在同一批核上抢线程、过度订阅、cache 争抢**——正是 HYLE 存在要消灭的"双调度器阻抗失配"（同拒 boost.fiber/asio 的理由）。所以 oneTBB scheduler/queue、oneDPL **边界外**；只 oneTBB 的 allocator pool 设计作 mem/ 参考。
@@ -86,7 +86,7 @@
 **那 CPU 数据并行（matmul 等铺满多核）靠谁？** 三层，都不需要 TBB：
 1. **借来的算子自带并行 + 可注入 HYLE 调度器**：ggml CPU 后端有 `ggml_backend_cpu_set_threadpool`（`ggml-cpu.h:135`）——**HYLE 把自己的线程池喂给 ggml，而非让 ggml 自起线程**，避免双调度器。oneDNN 同理（内部 JIT，并行跑在 HYLE 给的线程上）。
 2. **HYLE 自有 kernel 的数据并行**：work-stealing 调度器做 fork-join / parallel-for——**一个调度器同时干 IO 并发(fiber)和 CPU 数据并行**，这正是 work-stealing 的本职。
-3. **指令级加速**：借 sleef/oneDNN 的 AMX kernel（第一类），不借 TBB。
+3. **指令级加速**：借 highway/xsimd 数学核、oneDNN 的 AMX kernel（第一类），不借 TBB。
 
 ### 隐藏运行时清单（引依赖前必查，防"悄悄混进第二个运行时"）
 

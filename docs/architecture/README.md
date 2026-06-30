@@ -49,7 +49,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`sched-design.md`](./sched-design.md) | 统一调度器（4 节完整）：fcontext 上下文切换 + per-core 无锁 run-queue/work-stealing + Waker completion 脊 + 协程/fiber 统一 |
 | [`lifecycle-design.md`](./lifecycle-design.md) | **失败边界**：fail-fast 绝不 try-catch + 四类失败分类 + 取消(结构化并发/await点) + 背压 + 优雅关闭 + 故障隔离=进程边界 + 跨 C-ABI 错误约定 |
 | [`compute-design.md`](./compute-design.md) | 异构计算选型：device/stream/kernel 两层抽象 + 借上游 ggml（adapter 隔离）+ shader 一等公民 + GPU completion 接 sched |
-| [`simd-design.md`](./simd-design.md) | SIMD 选型：精简可移植 vector + 运行时 dispatch（clay 最大缺口）+ dtype(fp16/bf16) + 借 sleef 数学核 + container 探测 tier 澄清 |
+| [`simd-design.md`](./simd-design.md) | SIMD 选型：精简可移植 vector + 运行时 dispatch（clay 最大缺口）+ dtype(fp16/bf16) + 借 Highway/xsimd 数学核(vendored) + container 探测 tier 澄清 |
 | [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 自造专用分配器（arena/pool/stack/fiber栈/pinned）+ 修 5 bug + NUMA/大页/64B 对齐契约 |
 | [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
 | [`roadmap.md`](./roadmap.md) | 实现路线图：模块依赖图（无环）+ 依赖层 P0-P6 拓扑序 + 关键路径 + 每阶段验收门槛 + 完整决策清单（已决+待决）|
@@ -61,7 +61,7 @@ HYLE infra（通用、不特化、贴硬件）
 
 进度**不在此维护**（避免与里程碑表 drift）——逐里程碑的真实状态 + cloc 实测 LOC + clay API diff 见 [`../milestones/README.md`](../milestones/README.md)，那是**唯一进度信源**。本目录只管设计、背景、决策这些慢变内容。
 
-一句话现状（粗粒度）：地基层（error/platform/mem/container/time/util/obs）立住;**sched 核心 + fiber 同步原语 done**（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超），**后段(协程胶水/取消/优雅关闭、fiber 栈 guard page/分级)待**;**simd 支柱基本完成**（dispatch + vec + scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 + sleef 数学核,对标 Highway 追平;NEON/AVX512 写+编+objdump 验未跑存疑）;**io/compute/graph 三支柱未开工**。
+一句话现状（粗粒度）：地基层（error/platform/mem/container/time/util/obs）立住;**sched 核心 + fiber 同步原语 done**（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超），**后段(协程胶水/取消/优雅关闭、fiber 栈 guard page/分级)待**;**simd 支柱基本完成**（dispatch + vec + scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 + Highway/xsimd 数学核 vendored,对标 Highway 追平;NEON/AVX512 写+编+objdump 验未跑存疑）;**io/compute/graph 三支柱未开工**。
 
 ---
 

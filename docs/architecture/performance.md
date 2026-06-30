@@ -91,7 +91,7 @@
 | **string_ref** find_last_of(digits) miss | 0.25/B | std::string_view | 0.06 | 0.23x | string_view(即 SOTA) | 0.06 | 0.23x | ❌输 ~4.4x(后向表扫) |
 | **string_ref** rfind(needle) 6B(4KB) | 2.37/B | std::string_view::rfind | 0.12 | 0.05x | string_view(即 SOTA) | 0.12 | 0.05x | ❌输 ~20x(后向 region_eq,无 memchr) |
 | **string_ref** count(char) 全扫 | 0.27/B | std::count | 0.01 | 0.04x | std::count(即 SOTA,自动向量化) | 0.01 | 0.04x | ❌输(scalar 累加无早退) |
-| **string_algo** utf8 validate+count(2KB) | 0.41(scalar)/0.21(借simdutf) | (无 std utf8 count) | n/a | n/a | simdutf validate+count | 0.21 | 2.0x输/1.0x | ➖默认 scalar 输 2x;借 simdutf 核追平(opt-in) |
+| **string_algo** utf8 validate+count(2KB) | 0.41(scalar)/0.21(simdutf) | (无 std utf8 count) | n/a | n/a | simdutf validate+count | 0.21 | 2.0x输/1.0x | ➖scalar 参考 2x;simdutf 核(vendored 无条件默认)追平 |
 | **string_algo** hex_encode 1KB→2KB | 0.45/B | naive 逐字节 | 0.63 | 1.41x | (无单一 SOTA hex 库) | n/a | n/a | ✅赢参考实现(表查找) |
 | **path** extension / base / directory | 44/10/9.7 | (无 std 词法) | n/a | n/a | std::filesystem 词法 | 152/164/166 | 3.4/16/17x | ✅赢 filesystem(视图原地扫 vs 构造 path 分配) |
 | **path** normalize 词法折叠 | 65 | (无 std 等价) | n/a | n/a | std::filesystem lexically_normal | 382 | 5.85x | ✅赢(就地 vs 堆 path 对象) |
@@ -104,7 +104,7 @@
 | **time** monotonic_ns | 18.88 | std::chrono::steady_clock | 12.76 | 0.68x | std::chrono(即标尺) | 12.76 | 0.68x | ❌输 1.48x(同等工作 codegen 残留,查证过) |
 | **obs** log gated-out / emit | 2.03/78.4 | (无 std log) | n/a | n/a | spdlog 等(未 clone) | n/a | ⏳待补 | ➖HYLE 自有(gated 1 原子+分支;emit=format+fanout 无 I/O) |
 
-**总账小结（两把标尺,2026-06-30 全套真跑）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD 4.5x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 codegen 残留(monotonic_ns 0.68x)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~31 项**、➖**平 ~14 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期(热路径 Hash&lt;T&gt; 内联已赢);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns 1.48x=codegen 残留(查证);④ MemoryArena/ObjectPool=选错工具(per-thread 池已反超);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(借 simdutf 核 opt-in 追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:string_ref scalar 反向串族可上 memrchr/SIMD。
+**总账小结（两把标尺,2026-06-30 全套真跑）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD 4.5x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 codegen 残留(monotonic_ns 0.68x)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~31 项**、➖**平 ~14 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期(热路径 Hash&lt;T&gt; 内联已赢);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns 1.48x=codegen 残留(查证);④ MemoryArena/ObjectPool=选错工具(per-thread 池已反超);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(simdutf 核 vendored 无条件默认追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:string_ref scalar 反向串族可上 memrchr/SIMD。
 
 ## 实测铁证（持续回填,真跑非推算）
 
@@ -123,7 +123,7 @@
 > 1. **probe 预取**(`HYLE_PREFETCH` slot,镜像 absl `find_large` 的 `PrefetchToLocalCache`):find-hit 0.76x→**0.88x**(slot load 藏进 ctrl SIMD match);find-miss 不变(miss 不碰 slot)。
 > 2. **mix64 换 absl 式 128 位乘折叠**(`(x^k)*k → hi^lo`,单乘短依赖链 vs splitmix64 的 2 串行乘):find-hit **0.88x→1.10x 反超**、find-miss **0.78x→0.92x**(hash 占 miss 成本大头,短链直接砍)。代价:整数 hash 从双射(零碰撞)降为统计级(~1/2⁶⁴),correctness 由 eq_ 兜底;insert/erase **未退化**(1.35x/1.32x)证明碰撞质量没崩。
 > - 双平台真编真测:Linux 133/133(含雪崩/分布质量测试)+ Win MSVC `_umul128` 分支编译干净 + 测试过。`__extension__` 消 `__int128` 的 -Wpedantic。
-> 3. **match_empty 加 SSSE3 快路径**(`_mm_sign_epi8(c,c)` 1 指令 vs SSE2 重建 kEmpty 广播 4 指令,`#ifdef __SSSE3__` gate + SSE2 兜底):**绝对增益/与 absl ISA 对等**,但**未缩 find-miss 相对差距**——`-mssse3` 下 absl 也用 `psignb`,两边同步提速,find-miss 仍 ~0.89x。**证伪了"match_empty 是 find-miss 差距来源"**。双 ISA 输出穷举验证一致(psignb 确认)+ SSSE3 激活下 134/134。注:默认 SSE2 ship 构建走兜底(no-op),仅 `-march`/`-mssse3` 生效。**[已登记]最终的"编译/运行期自动辨识硬件规格选 ISA 变体"与 simd 支柱统一做**(conventions §10 baseline+dispatch);现阶段 gated 着 + 文档留痕即可,认真部署可先 `-march=native`/提基线 `x86-64-v2`。
+> 3. **match_empty 加 SSSE3 快路径**(`_mm_sign_epi8(c,c)` 1 指令 vs SSE2 重建 kEmpty 广播 4 指令,`HYLE_HAVE_SSSE3` gate + SSE2 兜底):**绝对增益/与 absl ISA 对等**,但**未缩 find-miss 相对差距**——`-mssse3` 下 absl 也用 `psignb`,两边同步提速,find-miss 仍 ~0.89x。**证伪了"match_empty 是 find-miss 差距来源"**。双 ISA 输出穷举验证一致(psignb 确认)+ SSSE3 激活下 134/134。注:SSSE3 现为全局 baseline(CMake 对 x86 GCC/Clang 全局加 `-mssse3`、MSVC x64 无条件),`HYLE_HAVE_SSSE3` 默认成立、快路径默认生效。
 > - **find-miss 剩 ~10% 已排除三因**:非 hash(mix64 对齐)、非 prefetch(miss 不碰 slot)、非 match_empty(同 ISA 仍差)。**根源在别处**(probe_seq codegen / H1 的 `>>7` / BitMask 迭代),需逐指令 profile,留作 profile 引导任务。
 > 4. **H1=identity**(objdump 逐指令对比发现:absl 用 hash 低位直接当 index、top 7 位当 H2,省掉我们的 `hash>>7` 一条移位):find/insert/erase 内循环各省 1 指令。find-miss **0.89x→~0.96x**、insert/erase 升到 ~1.40x。正确性:mix64 雪崩后低位(index)与高 7 位(H2)独立,探测链不变;SSE2 基线 134/134 + Win MSVC 通过。
 > - **12 遍统计收口(回答"4% 差在哪")**:find-hit avg **110.1%**(min 102.5/max 119.4)、find-miss avg **97.5%**(min 94.9/max 101.2,**spread 6.3% > 差距 2.5%,12 遍有 2 遍赢**)、insert **146.6%**、erase **140.0%**。**find-miss 是统计平局**——那"4%"是测量噪声(微基准 ~2-4ns,find-hit 自身 spread 都 16.9%),非结构缺陷,无单点杠杆。**四项全部 ≥ 或追平 absl,SOTA 反例消除。**
@@ -168,20 +168,18 @@
 
 ### simd 数学核（exp/log/tanh vs 标量 libm + 同 ISA SOTA xsimd/Highway，`math_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench,4096 f32(L1 常驻)。**两个标尺**:① 标量 `std::exp/log/tanh`(测向量化加速本身);② **同 ISA SOTA = xsimd + Highway contrib/math**(均 gated,同 `-mavx2`,gap-fill #36)。HYLE 借 SLEEF 验证过的核(不手搓多项式)。`active_math_variant()` 报当前层。
+> 环境:Win MSVC19.50 Release,nanobench,4096 f32(L1 常驻)。**两个标尺**:① 标量 `std::exp/log/tanh`(测向量化加速本身);② **同 ISA SOTA = xsimd + Highway contrib/math**(同 `-mavx2`)。HYLE 借 Highway/xsimd 验证过的核(已 vendored、无条件默认编进生产,不手搓多项式)。`active_math_variant()` 报当前层。
 
-| kernel | 标量 libm | HYLE 默认 SLEEF _u35 | HYLE best-of-breed | xsimd | Highway | 结论 |
-|---|---|---|---|---|---|---|
-| **exp f32** | 2.08 ns | 0.32 | **0.23**(→xsimd) | 0.23 | 0.30 | ✅ 平 xsimd(最快)、反超 Highway 1.3x |
-| **log f32** | 2.58 ns | 0.50 | **0.26**(→Highway) | 0.38 | 0.28 | ✅ **反超 Highway+xsimd**(两库最快) |
-| **tanh f32** | 6.42 ns | 0.55 | **0.44**(→xsimd) | 0.45 | 0.56 | ✅ 平 xsimd(最快)、反超 Highway 1.27x |
+| kernel | 标量 libm | HYLE(best-of-breed,默认) | xsimd | Highway | 结论 |
+|---|---|---|---|---|---|
+| **exp f32** | 2.08 ns | **0.23**(→xsimd) | 0.23 | 0.30 | ✅ 平 xsimd(最快)、反超 Highway 1.3x |
+| **log f32** | 2.58 ns | **0.26**(→Highway) | 0.38 | 0.28 | ✅ **反超 Highway+xsimd**(两库最快) |
+| **tanh f32** | 6.42 ns | **0.44**(→xsimd) | 0.45 | 0.56 | ✅ 平 xsimd(最快)、反超 Highway 1.27x |
 
-**核心诚实结论(同 ISA 对标揪出真相 + 三刀真优化,最终全 op ≥ 两库 SOTA)**:
-1. **同 ISA 对标揪出隐藏落后,精度分级是根因**:此前只对标量 libm(6-12x 赢),看不出问题;一加 xsimd/Highway 同 ISA 对照,暴露 **HYLE 原慢 1.4–3.4x**。根因:HYLE 调 SLEEF `_u10`(1-ULP,最准最慢),而 xsimd/Highway 用 ~3.5-ULP 更快多项式——**精度等级不对等**(apples-to-oranges)。
-2. **真优化一:log/tanh 切 SLEEF `_u35`(3.5-ULP,AI 热路径足够)**:softmax/gelu/attention 输出走 fp16/bf16,1-ULP 是过度精度。切换后 tanh 平 Highway、log 慢 Highway 3.0x→1.85x。math_test 容差据实放宽到 _u35 等级(`kRelTol 8e-7 ≈6.7 ULP`,坏核 ≥7 ULP 仍 fail)。
-3. **真优化二:加 Highway-math 后端**——同 ISA 同精度下 Highway 的 log 多项式比 SLEEF _u35 快,log 0.50→追平 Highway。
-4. **真优化三(收口):逐 op best-of-breed dispatch**——同 ISA 对标证实**没有单一库三 op 全胜**(xsimd 的 exp/tanh 最快、Highway 的 log 最快)。故加 xsimd 作第 3 个 header-only math 后端,dispatcher **按 op 选最快核**:exp/tanh→xsimd、log→Highway(`math_dispatch.cc`)。结果 **exp 0.23 平 xsimd 反超 Highway 1.3x、log 0.26 反超两库、tanh 0.44 平 xsimd 反超 Highway 1.27x**——**三个 op 全部 ≥ 两个 SOTA 库,无 math 落后残留**。三个后端全是验证过的核(借核不手搓)。math_test 5/5(xsimd 精度在 8e-7 容差内)、full simd 56/56。
-5. **构建开关(best-of-breed 需两个都 wire,否则次优)**:默认无向量化 math → 标量 libm。**要拿到上表的 best-of-breed(每个 op 都 ≥ 两库最快),必须同时 `-DHYLE_SIMD_HIGHWAY_MATH=ON -DHYLE_SIMD_XSIMD_MATH=ON`**(都 header-only,零额外构建负担)。**只 wire 一个 = 次优陷阱**:该库供全部三 op,它不是最快的那些 op 会落后另一库(只 xsimd→log 慢 Highway 1.36x;只 Highway→exp/tanh 慢 xsimd 1.2-1.3x)。dispatch 是编译期选核(零运行时选库开销),所以两个都接=真·三 op 全拿最快、互不拖累;漏接一个才出现"一些 op 好、另一些坏"。`-DHYLE_SIMD_SLEEF=ON` 是独立的另一条路(精度 _u35,无第三方 header 但需预编译 lib,单库供全部三 op 同样有次优问题)。**推荐:两个 header-only math 后端都开。**
+**核心诚实结论(同 ISA 对标 + 逐 op best-of-breed dispatch,全 op ≥ 两库 SOTA)**:
+1. **同 ISA 对标揪出真相,精度分级是公平性前提**:只对标量 libm(6-12x 赢)看不出问题;一加 xsimd/Highway 同 ISA 对照才暴露真实差距。三库都用 ~3.5-ULP 档多项式(AI 热路径足够——softmax/gelu/attention 输出走 fp16/bf16,1-ULP 是过度精度),**精度等级对等**,对标才 apples-to-apples。math_test 容差据实定在 _u35 等级(`kRelTol 8e-7 ≈6.7 ULP`,坏核 ≥7 ULP 仍 fail)。
+2. **逐 op best-of-breed dispatch(收口)**:同 ISA 对标证实**没有单一库三 op 全胜**(xsimd 的 exp/tanh 最快、Highway 的 log 最快)。故 dispatcher **按 op 选最快核**:exp/tanh→xsimd、log→Highway(`math_dispatch.cc`),编译期选核(零运行时选库开销)。结果 **exp 0.23 平 xsimd 反超 Highway 1.3x、log 0.26 反超两库、tanh 0.44 平 xsimd 反超 Highway 1.27x**——**三个 op 全部 ≥ 两个 SOTA 库,无 math 落后残留**。
+3. **借核现状**:Highway + xsimd 均 **vendored 在 `third_party/`、无条件编进生产、默认全速**(无 `-D` 开关),运行期 `cpu_features().avx2` 门控老 CPU 落 scalar 不 SIGILL。两个后端全是验证过的核(借核不手搓)。math_test 5/5、full simd 56/56。
 
 ### simd dtype 转换（fp16/bf16 <-> f32，`dtype_bench.cc`）
 

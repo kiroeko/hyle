@@ -14,7 +14,7 @@
 
 ## 核心决策：唯一真"造不借"的 Tier 0
 
-mem/simd/io/compute 都借一个通用 substrate（mimalloc/sleef/liburing/ggml）。**container/ 不借——自己造**。三条理由：
+mem/simd/io/compute 都借一个通用 substrate（mimalloc/Highway+xsimd/liburing/ggml）。**container/ 不借——自己造**。三条理由：
 
 1. **clay 有真地基**：flat hashmap + carray + string_ref 已是 absl/folly 雏形，改造成本 < 引入外部依赖。
 2. **C-ABI 边界过不去**：abseil `flat_hash_map`、folly F14 是 C++ 类型、带 C++ ABI，**跨 DLL/FFI 过不去**——这正是 clay 当年造 carray/c-hash 的原因（也是 mem-design 里 mimalloc 要封在 vtable 后的同款约束）。

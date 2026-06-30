@@ -18,7 +18,7 @@
 | `ws_fifo_queue`(tokio 式)| tokio(语义参照)| oneTBB | owner push 免同步路径最快 |
 | `Hash`(XXH3)| xxHash 原版 | **wyhash**(小 key 备选评估)| 封装 ≈ 原版;小 key 评估 wyhash |
 | `StringBuf` intern | folly `FBString` | absl `Cord` | intern 命中快路径对标 |
-| (future)`simd/` | **highway** / xsimd | sleef(数学核)| 每后端对标 |
+| (future)`simd/` | **highway** / xsimd / simdutf | (数学核 vendored)| 每后端对标 |
 | (future)`sched/` | **marl**(fiber)| tokio(work-stealing 语义)| 切换/偷取对标 |
 
 ## 接入方式(增量,不一次接全部)

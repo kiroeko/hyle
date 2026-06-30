@@ -18,7 +18,7 @@
 | `util/` | `hyle/util/{ref_counted,registry,scope_guard,...}.h` | ✅ | `Ref<T>`、Registry、`DEFER`、type_name |
 | `obs/` | `hyle/obs/log.h` | ✅ | level 门控 + sink 注册表日志 |
 | `sched/` | `hyle/sched/{scheduler,fiber}.h` | 🔶 | fcontext 纤程 + work-stealing 调度（协程/取消 待） |
-| `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测 + 可移植 `vec<T,N>`（scalar/SSE4.2/AVX2 实跑；fp16/bf16 dtype + sleef 数学核 done；NEON/AVX512 写+编+objdump 验、未跑存疑） |
+| `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测 + 可移植 `vec<T,N>`（scalar/SSE4.2/AVX2 实跑；fp16/bf16 dtype + 向量化数学核（Highway/xsimd）done；NEON/AVX512 写+编+objdump 验、未跑存疑） |
 | `io/` `compute/` `graph/` | — | 📋 | 尚未开工 |
 
 ## 1. 构建与集成
@@ -45,15 +45,17 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem hyle::simd)
 | `HYLE_BUILD_TESTS` | `ON` | `ON`/`OFF` | 当依赖集成时设 `OFF`（不编 GoogleTest，省时间） |
 | `HYLE_BUILD_BENCH` | `OFF` | `ON`/`OFF` | 只有想跑微基准才开（拉 nanobench） |
 | `HYLE_WERROR` | `OFF` | `ON`/`OFF` | CI 用 ON；本地开发 OFF |
-| `HYLE_SANITIZER` | `off` | `off`/`asan`/`tsan`/`ubsan` | 查内存/数据竞争/UB 时开（配 Debug/RelWithDebInfo） |
+| `HYLE_SANITIZER` | `off` | `off`/`asan`/`tsan`/`ubsan` | 查内存/数据竞争/UB 时开（配 Debug/RelWithDebInfo）。**严格校验**：非法值直接 `FATAL_ERROR`（不静默降级为 off）；认编译器原生别名 `address`→asan、`thread`→tsan、`undefined`→ubsan、`none`→off。**MSVC 只支持 asan**（tsan/ubsan 在 MSVC 会 `FATAL_ERROR`，需 GCC/Clang，如 WSL） |
 
 **仅当 `HYLE_BUILD_BENCH=ON` 时额外可用**（对标 SOTA 参考库,需本地 clone）。最常用两个:
 | 选项 | 默认 | 作用 |
 |---|---|---|
 | `HYLE_BENCH_ABSL` + `HYLE_ABSL_DIR` | `OFF` | SwissTable vs `absl::flat_hash_map`;SmallVector vs `absl::InlinedVector` |
-| `HYLE_BENCH_HIGHWAY` + `HYLE_HIGHWAY_DIR` | `OFF` | simd vec / dtype / math vs Google Highway |
+| `HYLE_BENCH_HIGHWAY` | `OFF` | simd vec / dtype / math vs Google Highway（指向 `third_party/`，已 vendored，仅 toggle 对比行） |
 
-> 还有 `HYLE_BENCH_{MOODYCAMEL,TBB,RIGTORP,XSIMD,BOOST,MARL}`(队列/分配器/math/侵入容器对标)+ 向量化 math 后端 `HYLE_SIMD_{SLEEF,HIGHWAY_MATH}`。**一键全开**:`scripts/setup-bench-libs.sh` clone 全部 sibling 后 `cmake --preset all-sota`。全清单与运行法见 [`scripts/README.md`](../../scripts/README.md)。
+> 还有 `HYLE_BENCH_{MOODYCAMEL,TBB,RIGTORP,XSIMD,SIMDUTF,BOOST,WYHASH,MARL}`(队列/分配器/math/utf8/侵入容器/hash 对标)。其中 `HYLE_BENCH_{HIGHWAY,XSIMD,SIMDUTF}` 指向 `third_party/` 已 vendored 库(不再需 sibling clone),其余仍是 opt-in sibling clone。**一键全开**:`scripts/setup-bench-libs.sh` clone 需要 sibling 的那些后 `cmake --preset all-sota`。全清单与运行法见 [`scripts/README.md`](../../scripts/README.md)。
+>
+> **向量化数学核(Highway/xsimd)与 utf8 SIMD(simdutf)已 vendored 在 `third_party/`、无条件编进生产、默认全速**——无 `-D` 开关,运行期 `cpu_features().avx2` 门控(老 CPU 落 scalar 不 SIGILL)。上面的 `HYLE_BENCH_*` 仅 toggle bench 的 SOTA 对比行,不影响产品默认。
 
 **集成方最小命令**（静态链、不编测试）：
 ```bash
@@ -149,9 +151,9 @@ if (hyle::simd::supports(hyle::simd::Isa::kAvx2)) { /* 调 AVX2 变体 */ }
 |---|---|---|---|
 | **平台/架构身份** | `HYLE_OS_*`/`HYLE_ARCH_*`/`HYLE_COMPILER_*`（`platform.h`）| **纯编译期** | 你为哪个 OS/架构编译就是哪个，无从运行期切换（syscall/ABI 在链接期已定）。不属 ISA dispatch 范畴。 |
 | **`simd/` 的 ISA 后端** | vec 后端 / `ops.h` / `dtype_ops.h` | **双重**（编译变体 + 运行期选）| 完全符合 §2 双模型：`-march` 自编(A) 或 运行期 CPUID 选变体(B)。|
-| **`container/` SwissTable 的 SIMD 探测** | `probe.h` 的 SSSE3 `_mm_sign_epi8` 快路径 | **纯编译门控**（`#ifdef __SSSE3__` + SSE2 兜底）| **故意的例外**：container 是 Tier 0,不依赖 `simd/`(Tier 1) 以免架构倒置,故内联一小段自包含探测并编译门控。**无 SIGILL 风险**(SSSE3 仅在 `-mssse3` 时编出,SSE2 基线恒在),但分发型二进制若没开 `-mssse3` 则即便 CPU 支持也不会走 SSSE3 快路径。要让 SwissTable 吃满本机 ISA,自编时加 `-march=native`。将来可选复用 `simd/ops` 做运行期探测,但不强耦合。|
+| **`container/` SwissTable 的 SIMD 探测** | `probe.h` 的 SSSE3 `_mm_sign_epi8` 快路径 | **纯编译门控**（`HYLE_HAVE_SSSE3` 宏 + SSE2 兜底）| **故意的例外**：container 是 Tier 0,不依赖 `simd/`(Tier 1) 以免架构倒置,故内联一小段自包含探测并编译门控。**SSSE3 现为全局 baseline**(x86-64-v2)：CMake 顶层对 x86 GCC/Clang 全局加 `-mssse3`,MSVC x64 无条件,故 `HYLE_HAVE_SSSE3` 三平台默认成立、SSSE3 快路径默认生效。**无 SIGILL 风险**(SSE2 基线恒在兜底)。将来可选复用 `simd/ops` 做运行期探测,但不强耦合。|
 
-**一句话**：`simd/` 的双重探测设计是真的、自洽的；`platform.h` 是天然纯编译期的另一根轴；`container/probe.h` 是**有意的纯编译门控例外**(Tier 0 不倒挂依赖)——正确安全,但不做运行期 dispatch。
+**一句话**：`simd/` 的双重探测设计是真的、自洽的；`platform.h` 是天然纯编译期的另一根轴；`container/probe.h` 是**有意的纯编译门控例外**(Tier 0 不倒挂依赖)——SSSE3 现为全局 baseline,快路径默认生效,正确安全,但不做运行期 dispatch。
 
 ## 3. 各就绪模块最小用法
 

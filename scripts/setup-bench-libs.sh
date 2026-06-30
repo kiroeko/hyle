@@ -1,10 +1,14 @@
 #!/usr/bin/env bash
 # setup-bench-libs.sh -- clone the SOTA reference libraries HYLE's *gated*
-# benchmarks compare against (abseil/folly/moodycamel/oneTBB/highway/marl/
-# crossbeam-deque/rigtorp-MPMCQueue/xxHash/wyhash/mimalloc/sleef/xsimd).
+# benchmarks compare against (abseil/folly/moodycamel/oneTBB/marl/
+# crossbeam-deque/rigtorp-MPMCQueue/xxHash/wyhash/mimalloc).
 #
-# WHY: the gated benches (-DHYLE_BENCH_ABSL / _TBB / _MARL / _HIGHWAY /
-# _MOODYCAMEL / _RIGTORP / _XSIMD / _BOOST, and the Rust crossbeam crate) point
+# NOTE: Highway, xsimd and simdutf are NOT cloned here -- they are vendored in
+# third_party/ and built unconditionally, so HYLE_BENCH_{HIGHWAY,XSIMD,SIMDUTF}
+# need no sibling clone. (SLEEF was removed from the project entirely.)
+#
+# WHY: the gated benches (-DHYLE_BENCH_ABSL / _TBB / _MARL / _MOODYCAMEL /
+# _RIGTORP / _BOOST, and the Rust crossbeam crate) point
 # at these libs via the HYLE_<LIB>_DIR CMake cache vars, whose DEFAULTS are a
 # sibling of this repo (../<lib>). That made benchmarking impossible on a fresh
 # machine that didn't happen to have the exact sibling layout. This script
@@ -14,7 +18,7 @@
 #   scripts/setup-bench-libs.sh            # clone into the repo's parent dir
 #   HYLE_DEPS_DIR=/some/where scripts/setup-bench-libs.sh   # custom location
 #   scripts/setup-bench-libs.sh --shallow  # --depth 1 (faster, less history)
-#   scripts/setup-bench-libs.sh marl highway   # only the named libs
+#   scripts/setup-bench-libs.sh marl moodycamel-ConcurrentQueue   # only the named libs
 #
 # Then point the build at $HYLE_DEPS_DIR (only needed if NOT the sibling default):
 #   cmake ... -DHYLE_BENCH_MARL=ON -DHYLE_MARL_DIR=$HYLE_DEPS_DIR/marl
@@ -47,15 +51,12 @@ LIBS=(
   "folly|https://github.com/facebook/folly.git"
   "moodycamel-ConcurrentQueue|https://github.com/ikiller1/moodycamel-ConcurrentQueue.git"
   "oneTBB|https://github.com/uxlfoundation/oneTBB.git"
-  "highway|https://github.com/google/highway.git"
   "marl|https://github.com/google/marl.git"
   "crossbeam-deque|https://github.com/k-sareen/crossbeam-deque.git"
   "rigtorp-MPMCQueue|https://github.com/rigtorp/MPMCQueue.git"
   "xxHash|https://github.com/Cyan4973/xxHash.git"
   "wyhash|https://github.com/wangyi-fudan/wyhash.git"
   "mimalloc|https://github.com/microsoft/mimalloc.git"
-  "sleef|https://github.com/shibatch/sleef.git"
-  "xsimd|https://github.com/xtensor-stack/xsimd.git"
 )
 
 echo "HYLE bench deps -> $DEPS_DIR"

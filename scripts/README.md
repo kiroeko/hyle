@@ -7,10 +7,12 @@ depending on a hand-crafted directory layout.
 ## `setup-bench-libs.sh` — fetch SOTA benchmark references
 
 HYLE's headline claim is *SOTA performance*, so the benchmarks compare against the
-real reference libraries (abseil, folly, mimalloc, Highway, marl, moodycamel,
-oneTBB, crossbeam-deque, xxHash, wyhash, sleef, xsimd) — not just `std`. Those
-libs are **not vendored** (they're heavy and we only need them for opt-in benches),
-so this script clones them.
+real reference libraries (abseil, folly, mimalloc, marl, moodycamel, oneTBB,
+crossbeam-deque, wyhash) — not just `std`. Those libs are **not vendored**
+(they're heavy and we only need them for opt-in benches), so this script clones
+them. (Highway, xsimd, simdutf and xxHash are already **vendored in
+`third_party/`** — no clone needed; their `-DHYLE_BENCH_*` gates just toggle the
+comparison rows against the vendored copies.)
 
 ```sh
 scripts/setup-bench-libs.sh              # clone all into the repo's parent dir
@@ -36,8 +38,9 @@ The default build has NO external bench deps. Each rival is opt-in:
 | `-DHYLE_BENCH_MOODYCAMEL=ON` | queues vs moodycamel | `hyle_queue_sota_bench` |
 | `-DHYLE_BENCH_TBB=ON` | queue/vector vs oneTBB | `hyle_queue_sota_bench` |
 | `-DHYLE_BENCH_RIGTORP=ON` | BoundedQueue vs `rigtorp::mpmc::Queue` (same-contract strict-bounded MPMC) | `hyle_queue_sota_bench` |
-| `-DHYLE_BENCH_HIGHWAY=ON` | simd vs Highway; dtype vs Highway PromoteTo/DemoteTo; math vs Highway contrib/math | `hyle_simd_bench`, `hyle_dtype_bench`, `hyle_math_bench` |
-| `-DHYLE_BENCH_XSIMD=ON` | math exp/log/tanh vs xsimd (same ISA) | `hyle_math_bench` |
+| `-DHYLE_BENCH_HIGHWAY=ON` | simd vs Highway; dtype vs Highway PromoteTo/DemoteTo; math vs Highway contrib/math (vendored — no clone) | `hyle_simd_bench`, `hyle_dtype_bench`, `hyle_math_bench` |
+| `-DHYLE_BENCH_XSIMD=ON` | math exp/log/tanh vs xsimd, same ISA (vendored — no clone) | `hyle_math_bench` |
+| `-DHYLE_BENCH_SIMDUTF=ON` | utf8 validate+count vs simdutf (vendored — no clone) | `hyle_string_algo_bench` |
 | `-DHYLE_BENCH_MARL=ON` | fiber sync vs marl | `hyle_sched_marl_bench` |
 | `-DHYLE_BENCH_BOOST=ON` | IntrusiveList vs `boost::intrusive::list` (needs boost submodule checked out) | `hyle_container_misc_bench` |
 
@@ -52,9 +55,10 @@ cmake --preset all-sota                # configure with every -DHYLE_BENCH_*=ON
 cmake --build --preset all-sota        # build all bench exes
 ```
 
-- **SLEEF is NOT a clone** (it's a prebuilt lib): for vectorized `exp/log/tanh`
-  add `-DHYLE_SIMD_SLEEF=ON -DHYLE_SLEEF_DIR=<prebuilt sleef>` on top of the preset.
-  Without it the HYLE math row falls back to scalar libm (honest, no vectorization).
+- **Vectorized `exp/log/tanh` is always-on**: the math cores (Highway + xsimd)
+  are vendored in `third_party/` and compiled into production unconditionally —
+  no clone, no `-D` switch. The HYLE math row is full-speed SOTA by default
+  (runtime `cpu_features().avx2` gate; older CPUs fall back to scalar libm).
 - **boost::intrusive** needs the boost `libs/intrusive` submodule checked out
   (modular-boost clones leave submodules empty); without it `-DHYLE_BENCH_BOOST`
   fails the header check at configure time.
