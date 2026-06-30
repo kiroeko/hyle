@@ -52,14 +52,15 @@ set_target_properties(hyle_simd PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 # polynomials are fastest, Highway's contrib/math log is fastest. So math_dispatch picks
 # PER OP: exp/tanh -> xsimd, log -> Highway (scalar libm is the non-x86 / fallback floor).
 #
-# Both are VENDORED in third_party (header-only, like xxhash) and wired UNCONDITIONALLY --
-# a performance library ships its fastest path BY DEFAULT (user directive: no opt-in gate,
-# nobody cares about the extra compile time; same stance as the hard mimalloc dep). The
-# transcendental_{highway,xsimd}.cc TUs are built at AVX2; math_dispatch only enters them
-# when cpu_features().avx2 (runtime gate), so an old CPU falls to scalar -- no SIGILL.
-# (SLEEF was dropped: it needs a prebuilt lib, not header-only, and the dispatcher ranked it
-# third on every op -> with xsimd+Highway both present it was never selected, pure dead code.)
-target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HIGHWAY_MATH HYLE_SIMD_XSIMD_MATH)
+# Both are VENDORED in third_party (header-only, like xxhash) and ALWAYS compiled -- a
+# performance library ships its fastest path BY DEFAULT (user directive: no opt-in gate;
+# same stance as the hard mimalloc dep). No HYLE_SIMD_*_MATH define gates them: the headers
+# are in-tree so they can't be "missing", and the choice (which core per op) is fixed at
+# compile time, not machine-dependent -- so a toggle would be a no-op switch. The ONLY real
+# machine-dependent guard is architecture: the AVX2 borrow-core TUs are x86-only (highway/
+# xsimd lower to AVX2 intrinsics here), guarded by HYLE_ARCH_X64 INSIDE the TUs; on non-x86
+# they compile to nothing and math_dispatch uses the scalar floor. Runtime cpu_features().
+# avx2 then gates entry so an old x86 CPU also falls to scalar -- no SIGILL.
 target_include_directories(hyle_simd SYSTEM PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/highway"
   "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")

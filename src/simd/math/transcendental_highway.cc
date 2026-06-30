@@ -1,18 +1,18 @@
-// Highway-accelerated AVX2 transcendentals (8-wide). Built ONLY when
-// HYLE_SIMD_HIGHWAY_MATH is defined (CMake gates this TU on -DHYLE_SIMD_HIGHWAY_MATH=ON
-// + -DHYLE_HIGHWAY_DIR=<highway>). BORROWS Highway's verified contrib/math cores
-// (hn::Exp/Log/Tanh) -- HYLE does not hand-roll these (charter: 借验证核不手搓).
+// Highway-accelerated AVX2 transcendental (8-wide). BORROWS Highway's verified contrib/math
+// core (hn::Log) -- HYLE does not hand-roll these (charter: 借验证核不手搓). The same-ISA
+// bench (math_bench) found Highway's log fastest at the ~3.5-ULP class (xsimd wins exp/tanh),
+// so per-op best-of-breed (math_dispatch.cc) uses Highway for LOG ONLY -- hence only log is
+// defined here (exp/tanh would be dead code: xsimd serves those).
 //
-// WHY a second vectorized-math backend next to SLEEF: the same-ISA bench (math_bench)
-// measured Highway's log ~1.85x FASTER than SLEEF _u35 at the SAME ~3.5-ULP accuracy
-// class, and a tie on exp/tanh -- Highway's polynomial is simply better-tuned for this
-// op set. Highway contrib/math is HEADER-ONLY (lighter than SLEEF's prebuilt lib), so
-// when wired in the dispatcher PREFERS it (math_dispatch.cc: Highway > SLEEF > scalar).
+// x86-only: highway lowers to AVX2 intrinsics here, so the TU compiles to nothing on non-x86
+// (math_dispatch falls to the scalar libm floor there). Header-only + vendored in third_party,
+// so it can't be missing -- no opt-in define gates it, only the architecture does.
 //
-// Static single-target dispatch: this TU is compiled at -mavx2, so HWY_STATIC_TARGET
-// resolves to AVX2 and hn:: lowers to AVX2 intrinsics. Reached only when best_isa()
-// >= AVX2 (gated in math_dispatch), so the AVX2 codegen never runs on an older CPU.
-#if defined(HYLE_SIMD_HIGHWAY_MATH)
+// Static single-target dispatch: this TU is compiled at -mavx2 (+ full Highway baseline via
+// hyle_set_highway_isa, else HWY_STATIC_TARGET silently downgrades to 128-bit SSSE3), so hn::
+// lowers to 256-bit AVX2. Reached only when cpu_features().avx2 (gated in math_dispatch), so
+// the AVX2 codegen never runs on an older CPU.
+#if defined(HYLE_ARCH_X64)
 
 #include "src/simd/math/kernels.h"
 
@@ -26,31 +26,15 @@ namespace hn = hwy::HWY_NAMESPACE;
 
 namespace hyle::simd::detail {
 
-void exp_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
-  std::size_t i = 0;
-  for (; i + w <= n; i += w)
-    hn::StoreU(hn::Exp(d, hn::LoadU(d, src + i)), d, dst + i);
-  for (; i < n; ++i) dst[i] = std::exp(src[i]);  // tail = libm (scalar oracle)
-}
 void log_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept {
   const hn::ScalableTag<float> d;
   const std::size_t w = hn::Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
     hn::StoreU(hn::Log(d, hn::LoadU(d, src + i)), d, dst + i);
-  for (; i < n; ++i) dst[i] = std::log(src[i]);
-}
-void tanh_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
-  std::size_t i = 0;
-  for (; i + w <= n; i += w)
-    hn::StoreU(hn::Tanh(d, hn::LoadU(d, src + i)), d, dst + i);
-  for (; i < n; ++i) dst[i] = std::tanh(src[i]);
+  for (; i < n; ++i) dst[i] = std::log(src[i]);  // tail = libm (scalar oracle)
 }
 
 }  // namespace hyle::simd::detail
 
-#endif  // HYLE_SIMD_HIGHWAY_MATH
+#endif  // HYLE_ARCH_X64

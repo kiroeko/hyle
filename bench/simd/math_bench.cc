@@ -111,8 +111,8 @@ int main() {
       for (std::size_t i = 0; i < kN; ++i) dst[i] = c.scalar_fn(c.src[i]);
       nb::doNotOptimizeAway(dst.data());
     });
-    // HYLE batch op: the wired vectorized tier (Highway-math if -DHYLE_SIMD_HIGHWAY_MATH,
-    // else SLEEF if -DHYLE_SIMD_SLEEF, else scalar). Dispatcher prefers Highway > SLEEF.
+    // HYLE batch op: the wired vectorized tier (per-op best-of-breed borrow core --
+    // xsimd for exp/tanh, Highway for log -- on AVX2 x86; scalar libm otherwise).
     b.run("HYLE *_f32_batch (vectorized)", [&] {
       c.hyle_batch(c.src.data(), dst.data(), kN);
       nb::doNotOptimizeAway(dst.data());
