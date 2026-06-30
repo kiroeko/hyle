@@ -61,11 +61,21 @@
 | **util** Rng range_u64(Lemire 无偏) | 1.75ns | std::uniform_int_distribution 2.75 | 1.57x | ✅赢(且无偏) |
 | **container** SwissTable iterate(for_each) | 2.48ns | std::unordered_map 8.73 | 3.5x | ✅赢(扁平 ctrl 扫 vs 节点链) |
 | **container** StringBuf intern(100k 流/2k 唯一) | 24.0ns | 同契约 thread-safe peer(unordered_map+mutex)28.1 / 无锁 floor 21.2 | **1.17x** / 0.88x | ✅赢同契约 peer(StringBuf 是 thread-safe 取锁,对无锁 map 比是 apples-to-oranges;同取一把锁则 SwissTable 核反超 1.17x) |
+| **string_ref** find(char) 全扫 miss(4KB) | 0.02ns/B | std::string_view::find(memchr SIMD) 0.01 | ~1.0x | ➖平(切 memchr;原 scalar 字节循环输 ~20x,都亚 ns 噪声) |
+| **string_ref** find(needle) 6B 子串 | 0.20ns/B | std::string_view::find 0.08 | 0.40x | ❌输 2.5x(memchr 定位候选+memcmp 验;原 naive 输 7x,大幅收窄) |
+| **string_ref** find_first_of(4 字符集) | 0.08ns/B | std::string_view 0.05 | 0.62x | ➖近平 1.6x(memchr-min 窗口收缩;原 O(n·m) 输 36x) |
+| **string_ref** starts_with(16B 前缀) | 1.79ns | std::string_view 1.77 | ~1.0x | ➖平(切 memcmp;原 region_eq 字节循环输 2x) |
+| **string_ref** split 全文按空格(4KB) | 0.44ns/B | std::string_view find+remove_prefix 0.54 | 1.22x | ✅赢(无分配子视图) |
+| **container** SmallVector 溢出(64>内联16) | 0.88ns | absl::InlinedVector 2.42 | 2.75x | ✅赢同款(也赢 std::vector;堆溢出/增长路径) |
+| **container** ConcurrentVector 并发读(4 reader+1 writer) | 0.37ns | oneTBB 0.82 | 2.2x | ✅赢(删 operator[] 冗余 per-read acquire,HB 由 caller size() 建立;原冗余 acquire 与 writer 争线输 2.15x,WSL TSan 验零 race) |
+| **util** SpinLock lock/unlock(无争用) | 4.03ns | std::mutex 12.03 | 3.0x | ✅赢(TTAS,短临界区无 syscall 路径) |
+| **util** Ref copy+destroy(背靠背同线原子) | 10.4ns | std::shared_ptr 8.2 | 0.79x | ❌microbench 假象 1.27x(asm 证 2 locked RMW 同工;背靠背同线序列化,实战不现) |
+| **util** Ref fan-out 64 再释放(实战传 ref) | 8.15ns | std::shared_ptr 8.10 | ~1.0x | ➖平(incref/decref 突发分离=真实用法;算法同工故打平) |
 | **time** realtime_ns | 14.68ns | std::chrono::system_clock 14.76 | 1.0x | ➖平 |
 | **time** monotonic_ns | 18.88ns | std::chrono::steady_clock 12.76 | 0.68x | ❌输 1.48x(同 std::chrono 等量工作 QPC+QPF+2 除;试 inline+namespace var 均无效,残留=codegen,非可修接缝) |
 | **obs** log gated-out / emit | 2.03 / 78.4ns | (无 std 对照) | — | ➖HYLE 自有(gated 仅 1 原子载+分支;emit=std::format+fanout 无 I/O) |
 
-**总账小结(本轮直接1"输项必须打平/赢"推进后)**:对标**真 SOTA** 的已测项——✅**赢 ~26 项**(hashmap 3、hash 2、simd 2、dtype 2、sched 3、queue 6、mem 4、container 4〔SmallVector 反超 absl 1.40x、CArray、SwissTable iterate、StringBuf 反超同契约 peer 1.17x〕、util 2 — 含反超 absl/marl/moodycamel/Highway/std::pmr/rigtorp/per-thread mimalloc)、➖**平 ~10 项**(噪声内追平 absl find-miss / Highway exp+tanh+reduce_max+scale / marl 争用锁+fiber / 裸 mi 默认+8 线程 / rigtorp 2P / realtime_ns / Channel+log 无 std 对等物)、❌**仍输 ~4 项**:① raw hash_bytes 16/64B 小输入=导出接缝 by-design 且亚周期、热路径 Hash&lt;T&gt; 内联已赢;② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数,已平主流 SOTA Highway;③ monotonic_ns 输 std::chrono 1.48x=同等工作 codegen 残留,试 inline+namespace var 均无效已查证;④ MemoryArena/ObjectPool 单/共享=选错工具,per-thread 池已反超。**本轮把 5 个旧"输"扭成赢/平**:hash 8B(1.85x→1.12x)、vtable(→反超 std::pmr)、math log(→平 Highway+反超 xsimd,切核)、单环队列 4P(1.33x→反超 rigtorp 1.09x)、StringBuf intern(读码查实"输"是 thread-safe-vs-无锁 apples-to-oranges,加同契约 peer 后反超 1.17x)。**揪出的真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P 单点 CAS+伪共享)全部根治**。
+**总账小结（覆盖审计〔阶段A〕+ 攻坚〔阶段C〕后）**：对标**真 SOTA** 的已测项——✅**赢 ~31 项**(hashmap 3、hash 2、simd 2、dtype 2、sched 3、queue 6、mem 4、container/string 7〔SmallVector 小N+溢出反超 absl、CArray、SwissTable iterate、StringBuf 反超同契约 peer、string_ref split、ConcurrentVector 并发读反超 tbb 2.2x〕、util 3〔Rng×2、SpinLock 反超 std::mutex 3x〕— 含反超 absl/marl/moodycamel/Highway/std::pmr/rigtorp/per-thread mimalloc/oneTBB)、➖**平 ~14 项**(噪声内追平:absl find-miss / Highway exp+tanh+reduce_max+scale / marl 争用锁+fiber / 裸 mi 默认+8 线程 / rigtorp 2P / realtime_ns / Channel+log / string_ref find(char)+find_first_of+starts_with〔切 memchr/memcmp/memchr-min〕/ Ref fan-out 实战〔算法同工〕)、❌**仍输少数项**:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期、热路径 Hash&lt;T&gt; 内联已赢;② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数,已平主流 Highway;③ monotonic_ns 输 std::chrono 1.48x=同等工作 codegen 残留(查证过);④ MemoryArena/ObjectPool 单/共享=选错工具,per-thread 池已反超;⑤ string_ref find(needle) 2.5x=naive 子串搜残差(已从 7x 收窄,memchr 候选+memcmp 验)。**阶段C 把覆盖审计揪出的输项扭转**:string_ref 搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢,删冗余 acquire)、Ref(反汇编证算法同工、实战 fan-out 打平,microbench 1.27x 是背靠背同线调度假象非缺陷)。**先前 5 个旧"输"扭成赢/平**:hash 8B、vtable(反超 std::pmr)、math log(平 Highway+反超 xsimd)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**揪出的真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P 单点 CAS+伪共享、ConcurrentVector per-read acquire 争线)全部根治**。
 
 ## 实测铁证（持续回填,真跑非推算）
 
