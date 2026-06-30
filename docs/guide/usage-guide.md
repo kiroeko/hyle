@@ -266,6 +266,29 @@ hyle::time::sleep_for_ms(10);       // 睡 10ms（另有 sleep_for_us / sleep_fo
 ```
 `Instant` 全 header-inline（算术不过 DLL），适合热路径打点。
 
+**两个单调钟,按需选(默认用 `monotonic_ns`)**:
+
+| | `monotonic_ns()`(默认) | `fast_monotonic_ns()`(opt-in) |
+|---|---|---|
+| 实现 | QPC / clock_gettime(OS 原语) | rdtsc 直读 + 定点换算 |
+| 延迟 | ~12 ns | **~7 ns(Win)/~6.8 ns(Linux)** 快 1.7-2.0x |
+| 正确性 | ✅ 永远对、唤醒安全、跨核严格单调 | ⚠️ sleep 唤醒/VM 迁移可能跳变;跨核迁移可能小幅回退(无 max 钳制,差值会下溢) |
+| 可用于 deadline/超时 | ✅ **是**(sched 定时器键它) | ❌ **否** |
+| 硬件要求 | 无 | invariant TSC(CPUID 探测);无则透明回退默认钟 |
+| 首次调用 | 无 | 一次性校准 ~几 ms |
+
+**决策**:
+- **要算超时/deadline/sched 定时 → 永远 `monotonic_ns()`**(fast 版的跳变会让超时灾难性出错)。
+- **高频采样/profiling 打点,且偶发唤醒后毛刺可容忍 → `fast_monotonic_ns()`**;最好把线程钉核,或只对"同核近距离两次读"求差。
+- 拿不准 → `monotonic_ns()`。它已和 std::chrono 持平(~12ns),够快且零心智负担。
+
+```cpp
+// 例:profiling 热路径打点(可容忍偶发毛刺,要最低读取成本)
+uint64_t a = hyle::time::fast_monotonic_ns();
+hot_path();
+uint64_t span = hyle::time::fast_monotonic_ns() - a;  // 同核近距离两读,安全
+```
+
 ### 3.7 util —— Ref<T> 侵入式引用计数 + DEFER
 ```cpp
 #include "hyle/util/ref_counted.h"

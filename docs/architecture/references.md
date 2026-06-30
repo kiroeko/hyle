@@ -40,6 +40,14 @@
 | **moodycamel-ConcurrentQueue** | 参考 | lock-free MPMC 队列，sched 的 global 注入队列直接参考 |
 | **boost**(intrusive) | 参考 | 侵入式 list/map（sched run-queue/waiter 链）|
 
+### time/（Tier 0）
+| 库 | 角色 | 说明 |
+|---|---|---|
+| **abseil-cpp** | 参考 | TSC 校准算法（`sysinfo.cc`：GetTimeTscPair 取最低延迟样本抗抢占 + MeasureTscFrequency 倍增窗口到 1% 收敛）；`fast_monotonic_ns` 的频率标定直接照搬其思路。另：abseil 默认关闭 cycle-clock 当 wall-time（唤醒可能错），正是 HYLE 不把 rdtsc 设默认钟的依据 |
+| **tracy** | 参考 | invariant-TSC 探测（`CheckHardwareSupportsInvariantTSC`：CPUID leaf1 EDX bit4 + leaf 0x80000007 EDX bit8）+ rdtsc 仅作测量用途的范式 |
+
+> 均**读设计自实现、不引依赖**（time/ 零 HYLE 依赖定位）。MSVC `__msvc_chrono.hpp` steady_clock 的常见频率特判（10/24MHz→乘法）亦是 `monotonic_ns` 补特判的参考。
+
 ### hash/（Tier 3）
 | 库 | 角色 | 说明 |
 |---|---|---|
