@@ -66,6 +66,9 @@
 | **string_ref** find_first_of(4 字符集) | 0.08ns/B | std::string_view 0.05 | 0.62x | ➖近平 1.6x(memchr-min 窗口收缩;原 O(n·m) 输 36x) |
 | **string_ref** starts_with(16B 前缀) | 1.79ns | std::string_view 1.77 | ~1.0x | ➖平(切 memcmp;原 region_eq 字节循环输 2x) |
 | **string_ref** split 全文按空格(4KB) | 0.44ns/B | std::string_view find+remove_prefix 0.54 | 1.22x | ✅赢(无分配子视图) |
+| **string_algo** utf8 count code points(2KB 混合) | 0.68ns/B | simdutf::count_utf8(SIMD) 0.04 | 0.06x | ❌输 17x(scalar 解码器逐字节 vs simdutf 向量化;utf8 非 AI 热路径,待决是否上 SIMD 核) |
+| **string_algo** utf8 validate(2KB 混合) | 0.71ns/B | simdutf::validate_utf8(SIMD) 0.21 | 0.30x | ❌输 3.4x(同上;validate SIMD 化复杂) |
+| **string_algo** hex_encode 1KB→2KB | 0.45ns/B | naive 逐字节参考 0.63 | 1.41x | ✅赢(表查找;无单一 SOTA hex 库,对参考实现) |
 | **container** SmallVector 溢出(64>内联16) | 0.88ns | absl::InlinedVector 2.42 | 2.75x | ✅赢同款(也赢 std::vector;堆溢出/增长路径) |
 | **container** ConcurrentVector 并发读(4 reader+1 writer) | 0.37ns | oneTBB 0.82 | 2.2x | ✅赢(删 operator[] 冗余 per-read acquire,HB 由 caller size() 建立;原冗余 acquire 与 writer 争线输 2.15x,WSL TSan 验零 race) |
 | **util** SpinLock lock/unlock(无争用) | 4.03ns | std::mutex 12.03 | 3.0x | ✅赢(TTAS,短临界区无 syscall 路径) |
