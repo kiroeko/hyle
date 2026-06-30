@@ -33,16 +33,17 @@ mem/（T0）的定长分配器，sched fiber 栈池、ObjectPool 等的底座。
 
 ### D1：packed 64 位 tagged head，不用 16 字节 atomic（改进 clay）
 - clay 用 `std::atomic<Head{ptr,tag}>`（16 字节），依赖 `cmpxchg16b`/`-mcx16`，否则**静默退化加锁**（mem-design 附注点名的隐患）。
-- HYLE 改：freelist head = **一个 `atomic<uint64_t>` = `(index << 32) | version`**。块用**索引**（非指针）串 freelist（块内嵌 `next` 索引）。纯 64 位 CAS，**lock-free 处处成立、无需 -mcx16**。version 每次 push 递增防 ABA。
+- HYLE 改：freelist head = **一个 `atomic<uint64_t>` = `(index << 32) | version`**。块用**索引**(非指针)串 freelist,`next` 索引存在**并行索引数组** `next_`(非块内嵌,不碰用户存储)。纯 64 位 CAS,**lock-free 处处成立、无需 -mcx16**。version 每次 push 递增防 ABA。
+- **分片(实现期加固,根治单点争用)**:不是单个 head——内部分 N 片(片数=核数向上取 2 的幂,上限 128),每片独立 Treiber 头占独立 cache line,线程按 tls 序号 homing 自己片(同线程无争用),free 按地址 O(1) 路由回属主片。原单 head 让多线程 CAS 同一 cache line→O(threads) 串行(实测慢 mimalloc 278x),分片后 278x→1.94x。
 - 代价：块数 ≤ 2^32（远超实际）；块靠 slab base + index*stride 寻址。
 
 ### D2：修 clay bug #5——64 槽上限
 - clay `make_arena_allocator` 从固定 64 槽 static 池取对象，超 64 个并发 arena 返回 null。HYLE：`MemoryArena(alloc, block_size, block_count)` 构造参数,块数由调用方定,slab 一次性从注入 Allocator 取 `block_size*block_count`。
 
-### D3：Treiber stack freelist，块内嵌 next
-- 初始化：slab 切成 block_count 个块,每块头 4 字节存 `next` 索引,串成 0→1→...→空。head 指 0。
-- `allocate()`：CAS pop 栈顶(读 head.index → 该块的 next → CAS head 到 next，version+1)。耗尽返 null。
-- `deallocate(p)`：CAS push(块的 next = 当前 head.index → CAS head 指向该块，version+1)。
+### D3：分片 Treiber stack freelist(并行索引数组)
+- 初始化：slab 切成 block_count 个块,`next_` 并行数组按片串成各片的链(每片自己的 0→...→空),每片 head 指其首块。
+- `allocate()`：homing 片 CAS pop 栈顶(读 head.index → `next_[idx]` → CAS head 到 next,version+1);本片空则扫其它片(不假性耗尽)。耗尽返 null。
+- `deallocate(p)`：按地址算属主片,该片 CAS push(`next_[idx]` = 当前 head.index → CAS head 指向该块,version+1)。
 - 块对齐:slab 按 block 对齐分配,block_size 向上取整到对齐。
 
 ## 具体事务

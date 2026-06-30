@@ -34,16 +34,16 @@ walking skeleton 第五块（`...→ mem-01 → container-01 → sched-01`）。
 - container 总则是"自造不借"，但 **lock-free 队列是明确例外**（container-design 行60-62）：① MPMC/SPSC ring 出名难写对（ABA/内存序/TSan）；② 它装 POD/指针，**不跨 C-ABI 的 C++ 类型边界，没有自造理由**；③ 自造预算留给差异焦点 hashmap。
 - **做法：忠实移植 Dmitry Vyukov 已发表的有界 MPMC 算法**（1024cores.net，rigtorp/folly 同款），内存序严格对齐 canonical。**非 HYLE 自创**——注出处。可选的 FetchContent rigtorp 留作将来（同 mem mimalloc 思路，先内联移植验接口）。
 
-### D2：每槽 sequence 协议 + 控制变量 cache-line 分离
-- 每槽 `{atomic<u64> seq; T data}`；`enqueue_pos_`/`dequeue_pos_` 各自 `alignas(64)` 分到独立 cache line（防生产/消费侧伪共享）。**槽本身不逐个 padding**（对齐 canonical：seq 协议容忍槽间共享行，省内存）。
-- 内存序：`seq.load(acquire)` / `pos CAS(relaxed)` / `data` 读写 / `seq.store(release)`——一字不差照 canonical。
+### D2：每槽 sequence 协议 + cache-line padding
+- 每槽 `{atomic<u64> seq; T data}`,**整槽 `alignas(64)` 对齐到独立 cache line**(实现期加固:原不 padding 版相邻槽被不同线程并发读写时伪共享,4P 实测慢 rigtorp 1.33x;按 rigtorp/folly 同款 padding 后反超);`enqueue_pos_`/`dequeue_pos_` 各自 `alignas(64)` 分独立 cache line。代价 buffer 增至 capacity×64B(空间换吞吐)。
+- 内存序：`seq.load(acquire)` / `pos CAS(relaxed)` / `data` 读写 / `seq.store(release)`——一字不差照 canonical(try_ 路径不 backoff,同 rigtorp/folly)。
 
-### D3：Allocator 注入 + T 限 trivially-copyable
-- buffer 走注入的 `mem::Allocator`（铁律）。骨架期 T 限 `trivially_copyable`（fiber handle=指针），`static_assert` 钉死，避免在无锁路径上掺构造/析构语义。
+### D3：默认编译期 SystemAllocator + T 限 trivially-copyable
+- `template<class T, class Alloc=mem::SystemAllocator>`:默认编译期绑定(内联 mimalloc、`[[no_unique_address]]` 零字节、无需传 allocator),运行时 `mem::Allocator` 是 **opt-in**(sched 注入用)。骨架期 T 限 `trivially_copyable`(fiber handle=指针),`static_assert` 钉死,避免在无锁路径上掺构造/析构语义。
 
 ## 具体事务
 
-- [ ] `include/hyle/container/bounded_queue.h`：`BoundedQueue<T>`，构造 `(Allocator, capacity=pow2)`，`try_push(T)->bool` / `try_pop(T&)->bool` / `capacity()`。non-copyable/non-movable。
+- [ ] `include/hyle/container/bounded_queue.h`：`BoundedQueue<T, Alloc=SystemAllocator>`,默认构造 `(capacity=pow2)` / opt-in `(Alloc, capacity)`,`try_push(T)->bool` / `try_pop(T&)->bool` / `capacity()`。non-copyable/non-movable。
 - [ ] **不做**：SPSC 特化、hashmap/SwissTable（container-02/04）、carray/string/SmallVector/intrusive（container-03/05/06）、无界队列。
 
 ## 交付物

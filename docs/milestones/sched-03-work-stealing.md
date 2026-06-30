@@ -20,7 +20,7 @@
 
 ## 前置依赖
 
-- 硬前置：`sched-02`（Worker/RunQueue 概念 + Fiber 驱动）、`container-08`（每 worker FIFO 本地队列）、`container-01`（global MPMC 注入）、`platform-01`（Thread + Parker）。
+- 硬前置：`sched-02`（Worker/RunQueue 概念 + Fiber 驱动）、`container-08`（每 worker FIFO 本地队列）、`container-01`（有界 ring,sched-03 后 global 注入改用 `ShardedQueue`)、`platform-01`（Thread + Parker）。
 - 决策依据：`sched-design.md` §2.2（调度循环、global 注入、steal 协议）、§2.3（spin-then-park + 限 thief 数 + unpark 接力防惊群）。
 
 ## 目的（为什么做这一步）
@@ -35,7 +35,7 @@
 
 ### Step 1（提交 A）：多 worker + work-stealing + busy-spin
 - N 个 `platform::Thread` worker，每个持一个 `container::WsFifoQueue<Fiber*>` 本地队列。
-- 一个 global `container::BoundedQueue<Fiber*>`（Vyukov MPMC）注入：跨核 spawn / 外部线程提交 / 本地满溢出。
+- 一个 global **无锁 `container::ShardedQueue<Fiber*, mem::Allocator>`(N 子环=每 worker 一环)** 注入：跨核 spawn / 外部线程提交 / 本地满溢出。(初版用单环 `BoundedQueue`,bench-02b 揪出单点 CAS 争用后改分片;work-stealing 无全局序需求,放弃全局 FIFO 零代价。)
 - worker 循环（§2.2）：`local.pop()` → 周期查 `global` → `steal_into` 随机 victim → 都空则 **busy `yield()`**（先不 park）。
 - `spawn(Fiber*)`、`shutdown()`（置停止标志 + drain + join）。`thread_local` 当前 worker 指针（spawn 落本地队列）。
 - **目的**：先验多线程真跑 fiber + 偷取正确 + 关闭干净，不引入 park 的复杂度。

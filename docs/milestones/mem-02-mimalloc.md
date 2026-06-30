@@ -6,7 +6,7 @@
 | **模块** | mem/ |
 | **状态** | ✅ 完成（Win x64 MSVC + Linux x64 GCC14.2 双平台；mem 31/31 不变 + 全套 8 suite 回归通过）|
 
-> **吸纳方式**:mem-design 决策(§23/96/106)——通用 malloc **借 mimalloc v2.1.9**(vendored `third_party/mimalloc`),封在 `Allocator` vtable 后,`mi_*` 类型**不出任何 HYLE 头**(同 ggml 解耦)。换 backing 只动 `system.cc`。`HYLE_USE_MIMALLOC` 选项(默认 ON),OS aligned-malloc 路径留 fallback。
+> **吸纳方式**:mem-design 决策(§23/96/106)——通用 malloc **借 mimalloc v2.3.2**(vendored `third_party/mimalloc`),封在 `Allocator` vtable 后,`mi_*` 类型**不出任何 HYLE 头**(同 ggml 解耦)。换 backing 只动 `system.cc`。`HYLE_USE_MIMALLOC` 选项(默认 ON),OS aligned-malloc 路径留 fallback。
 >
 > **⚠️ 后续变更(提交 92f8ec8,见 [`../debug/ki-1-crash-hunt.md`](../debug/ki-1-crash-hunt.md))**:`HYLE_USE_MIMALLOC` 选项与 OS aligned-malloc 后备路径**已移除**。mimalloc 现为**硬依赖、无 off-switch**——理由:后备开关是陷阱,会让构建静默绕过 mimalloc 依赖问题、被误判为"无事"。本节以上描述为 mem-02 当时状态,保留作历史。
 >
@@ -48,7 +48,7 @@ mimalloc 相对各平台默认分配器(relative >100% = mimalloc 更快):
 
 ## 交付物
 
-- `third_party/mimalloc/`(vendored v2.1.9)+ `src/mem/system.cc` mimalloc 分支 + `src/mem/CMakeLists.txt`(HYLE_USE_MIMALLOC,MSVC 作 C++)
+- `third_party/mimalloc/`(vendored v2.3.2)+ `src/mem/system.cc` mimalloc 分支 + `src/mem/CMakeLists.txt`(HYLE_USE_MIMALLOC,MSVC 作 C++)
 - `bench/mem/allocator_bench.cc`（churn/alloc-all/concurrent 对标 OS）
 
 ## 登记后续
@@ -58,4 +58,4 @@ mimalloc 相对各平台默认分配器(relative >100% = mimalloc 更快):
 
 ## 参考
 
-- clay `sys/os.h` 裸 malloc。mem-design §23/96/106/111。[mimalloc](https://github.com/microsoft/mimalloc) v2.1.9。
+- clay `sys/os.h` 裸 malloc。mem-design §23/96/106/111。[mimalloc](https://github.com/microsoft/mimalloc) v2.3.2。
