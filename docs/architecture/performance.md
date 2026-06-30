@@ -74,6 +74,7 @@
 | **sched** Latch fork-join(64) | 5059ns(fiber) | std::latch 64 线程 21975 | 4.3x | ✅赢(fiber vs OS 线程基底不同;HYLE 不阻塞 worker) |
 | **sched** ConditionVariable notify_one 快路径 | 1.70ns | std::condition_variable 2.59 | 1.52x | ✅赢(无 waiter 跳过内部锁) |
 | **sched** RunQueue fifo/lifo push+next | 8.3 / 2.6ns | (内部结构,无外部对手) | — | ➖HYLE 自有(完成唤醒热路径;lifo slot 快) |
+| **sched** suspend/wake 完成脊柱 round-trip | 201–224ns | (HYLE 自有脊柱,无对等物) | — | ➖HYLE 自有(GPU/NIC/timer 汇流此脊柱;原 DEFERRED 现安全 harness 补测,WSL TSan 零 race) |
 | **platform** Parker ping-pong 往返(真阻塞) | 309ns | std::condition_variable ping-pong 881 | 2.85x | ✅赢(futex/WaitOnAddress 直驱,无 mutex+predicate 开销) |
 | **platform** Parker unpark+park 快路径 | 9.6ns | 裸 atomic flag 4.6(下界) | 0.48x | ➖2x 下界(3-态 CAS 机器换 unpark-before-park 安全;非 syscall 路径) |
 | **platform** Thread spawn+join | 39.5µs | std::thread 42.0 | 1.06x | ➖平(OS 主导;证 ABI-clean handle 零开销) |
