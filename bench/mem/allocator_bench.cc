@@ -214,5 +214,46 @@ int main() {
     });
   }
 
+  // ---- reallocate: grow an existing block (the COLD path, but still benched) --
+  // Allocator splits alloc/free/realloc (header rationale: register-friendly, no
+  // dispatch branch). The realloc path had no direct bench (CArray growth exercises
+  // it only indirectly). Grow a block through a sequence of sizes (16->1024 via
+  // doubling) so realloc must sometimes copy. HYLE vtable reallocate vs raw
+  // mi_realloc (SOTA) vs std::realloc (OS). Each iteration starts from a fresh
+  // small block so the grow chain is identical across rivals.
+  {
+    constexpr int kChains = 20000;
+    static constexpr std::size_t kSizes[] = {16, 32, 64, 128, 256, 512, 1024};
+    ankerl::nanobench::Bench b;
+    b.title("realloc grow chain 16->1024 (7 steps)")
+        .relative(true)
+        .batch(kChains)
+        .minEpochIterations(50);
+    b.run("raw mi_realloc (SOTA)", [&] {
+      for (int i = 0; i < kChains; ++i) {
+        void* p = mi_malloc(kSizes[0]);
+        for (int s = 1; s < 7; ++s) p = mi_realloc(p, kSizes[s]);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        mi_free(p);
+      }
+    });
+    b.run("HYLE Allocator::reallocate (vtable)", [&] {
+      for (int i = 0; i < kChains; ++i) {
+        void* p = a.allocate(kSizes[0]);
+        for (int s = 1; s < 7; ++s) p = a.reallocate(p, kSizes[s - 1], kSizes[s]);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        a.deallocate(p, kSizes[6]);
+      }
+    });
+    b.run("std::realloc (OS)", [&] {
+      for (int i = 0; i < kChains; ++i) {
+        void* p = std::malloc(kSizes[0]);
+        for (int s = 1; s < 7; ++s) p = std::realloc(p, kSizes[s]);
+        ankerl::nanobench::doNotOptimizeAway(p);
+        std::free(p);
+      }
+    });
+  }
+
   return 0;
 }

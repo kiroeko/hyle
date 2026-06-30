@@ -35,6 +35,12 @@ add_executable(hyle_arena_pool_bench mem/arena_pool_bench.cc)
 target_link_libraries(hyle_arena_pool_bench PRIVATE hyle_mem nanobench mimalloc_static)
 hyle_apply_warnings(hyle_arena_pool_bench)
 
+# platform primitive bench (red-team gap-fill): Parker park/unpark (futex/
+# WaitOnAddress) + Thread spawn/join. Links hyle_platform (Parker/Thread live there).
+add_executable(hyle_platform_bench platform/platform_bench.cc)
+target_link_libraries(hyle_platform_bench PRIVATE hyle_platform nanobench)
+hyle_apply_warnings(hyle_platform_bench)
+
 # sched bench: fiber switch (~23ns) + spawn throughput vs std::async (~7-9x). Now
 # compiled into the default bench build (no longer withheld). It once crashed at
 # teardown with mimalloc ON, but an exhaustive hunt (docs/debug/ki-1-crash-hunt.md)

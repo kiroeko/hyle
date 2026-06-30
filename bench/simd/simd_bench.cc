@@ -2,6 +2,12 @@
 // avx2 (vs Highway avx2 if -DHYLE_BENCH_HIGHWAY). nanobench .relative(true) prints each
 // relative to the first (scalar). Answers "is HYLE SIMD at SOTA?" with real numbers, and
 // "how much over auto-vec?" -- both printed, win or lose.
+//
+// ALSO races the PUBLIC dispatched entry points (hyle::simd::dot_f32 / saxpy_f32 from
+// ops.h) against the same-ISA local kernel. Those exported symbols go through one cached
+// fn-pointer (the "one binary, any CPU" dispatch model ops.h documents); this is the only
+// bench that measures that indirection cost -- the local hyle_bench::dot_avx2 above is the
+// zero-indirection ceiling, so the gap between them IS the dispatch tax, printed honestly.
 #include <nanobench.h>
 
 #include <cstddef>
@@ -10,6 +16,7 @@
 #include <vector>
 
 #include "bench/simd/simd_kernels.h"
+#include "hyle/simd/ops.h"  // public dispatched dot_f32 / saxpy_f32 / active_variant
 
 namespace {
 constexpr std::size_t kN = 4096;  // fits L1; isolates compute throughput, not memory BW
@@ -44,6 +51,11 @@ int main() {
       ankerl::nanobench::doNotOptimizeAway(hyle_bench::dot_highway(x.data(), y.data(), kN));
     });
 #endif
+    // PUBLIC dispatched entry (fn-ptr indirection): the shipped library symbol.
+    // Gap vs "HYLE avx2" above = the dispatch tax (one cached indirect call).
+    b.run("HYLE dot_f32 (public dispatch)", [&] {
+      ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot_f32(x.data(), y.data(), kN));
+    });
   }
 
   {
@@ -68,6 +80,10 @@ int main() {
       ankerl::nanobench::doNotOptimizeAway(ys[0]);
     });
 #endif
+    b.run("HYLE saxpy_f32 (public dispatch)", [&] {
+      hyle::simd::saxpy_f32(1.001f, x.data(), ys.data(), kN);
+      ankerl::nanobench::doNotOptimizeAway(ys[0]);
+    });
   }
 
   {

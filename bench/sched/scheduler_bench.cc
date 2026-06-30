@@ -14,11 +14,13 @@
 
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/fiber.h"
+#include "hyle/sched/run_queue.h"
 #include "hyle/sched/scheduler.h"
 
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
+using hyle::sched::RunQueue;
 using hyle::sched::Scheduler;
 
 namespace {
@@ -71,6 +73,43 @@ int main() {
       sched.drain();  // all fibers retired before `fibers` frees them
     });
     sched.shutdown();
+  }
+
+  // ---- 4. RunQueue schedule/next: the per-core LIFO-slot + FIFO ring ----------
+  // The worker's hot inner loop: push a runnable fiber, pick the next. schedule_
+  // fifo (ring push) + next (LIFO-slot-then-FIFO pick) are owner-only pointer ops.
+  // No external rival (it's an internal scheduler structure); measured against
+  // itself to expose the per-op cost and the LIFO-budget path. Fiber* are opaque
+  // here (RunQueue never derefs them), so dummy non-null addresses are valid.
+  {
+    constexpr int kOps = 4096;
+    // Distinct non-null dummy "fibers" -- RunQueue stores the pointers, never
+    // dereferences them. Use an array of bytes and hand out distinct addresses.
+    static char slots[64];
+    ankerl::nanobench::Bench b;
+    b.title("RunQueue schedule_fifo+next round-trip").relative(true).batch(kOps).minEpochIterations(2000);
+    b.run("HYLE RunQueue fifo push+next", [&] {
+      RunQueue rq(system_allocator(), 256);
+      std::uint64_t sink = 0;
+      for (int i = 0; i < kOps; ++i) {
+        rq.schedule_fifo(reinterpret_cast<Fiber*>(&slots[i & 63]));
+        Fiber* f = rq.next();
+        sink += reinterpret_cast<std::uintptr_t>(f);
+      }
+      ankerl::nanobench::doNotOptimizeAway(sink);
+    });
+    // LIFO-slot path: schedule_lifo (run-next) then next -- the completion-wake
+    // hot path (a just-woken fiber resumes immediately, stack hot).
+    b.run("HYLE RunQueue lifo push+next", [&] {
+      RunQueue rq(system_allocator(), 256);
+      std::uint64_t sink = 0;
+      for (int i = 0; i < kOps; ++i) {
+        rq.schedule_lifo(reinterpret_cast<Fiber*>(&slots[i & 63]));
+        Fiber* f = rq.next();
+        sink += reinterpret_cast<std::uintptr_t>(f);
+      }
+      ankerl::nanobench::doNotOptimizeAway(sink);
+    });
   }
 
   // ---- wake round-trip latency: DEFERRED (needs a safe harness) ----

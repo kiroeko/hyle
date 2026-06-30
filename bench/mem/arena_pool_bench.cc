@@ -95,6 +95,47 @@ int main() {
     });
   }
 
+  // ---- A2. StackAllocator mark/rewind: nested-scope LIFO release ----
+  // mark()/rewind() is the StackAllocator capability reset() can't express: save a
+  // checkpoint, allocate a temporary batch, roll back to the checkpoint (freeing
+  // exactly that batch) while KEEPING everything before it. The scratch/frame
+  // pattern (e.g. a taskgraph pass that allocates per-node temporaries and rewinds
+  // between nodes). Each round: alloc a base batch once, then inner loop {mark;
+  // alloc temps; rewind}. No std rival -- std::pmr::monotonic has no partial
+  // rewind (only whole-buffer release) -- so reset()-per-round is the baseline the
+  // mark/rewind cost is read against (both are pointer moves; this proves rewind
+  // is as cheap as a fresh bump, not a free-list walk).
+  {
+    constexpr int kBase = 256;     // persistent allocations kept across rewinds
+    constexpr int kInner = 64;     // temporaries per rewind cycle
+    constexpr int kCycles = 128;   // rewind cycles per round
+    StackAllocator stack(sys, kRegion);
+    nb::Bench b;
+    b.title("StackAllocator mark/rewind: 128 cycles x 64 temps")
+        .relative(true)
+        .batch(static_cast<std::uint64_t>(kCycles) * kInner)
+        .minEpochIterations(200);
+    b.run("HYLE StackAllocator mark/rewind (LIFO scratch)", [&] {
+      stack.reset();
+      for (int i = 0; i < kBase; ++i) nb::doNotOptimizeAway(stack.allocate(kObj));
+      for (int c = 0; c < kCycles; ++c) {
+        auto m = stack.mark();
+        for (int i = 0; i < kInner; ++i) nb::doNotOptimizeAway(stack.allocate(kObj));
+        stack.rewind(m);  // free exactly this cycle's temps, keep the base batch
+      }
+    });
+    // Baseline: a full reset() can't keep the base batch, but as a pure pointer-
+    // move reference it shows rewind is the same O(1) cost (re-bump the temps each
+    // cycle from a full reset of just the temp region).
+    StackAllocator stack2(sys, kRegion);
+    b.run("HYLE StackAllocator reset re-bump (baseline)", [&] {
+      for (int c = 0; c < kCycles; ++c) {
+        stack2.reset();
+        for (int i = 0; i < kInner; ++i) nb::doNotOptimizeAway(stack2.allocate(kObj));
+      }
+    });
+  }
+
   // ---- B. POOL CHURN: alloc/free same size class, slot reuse ----
   {
     nb::Bench b;

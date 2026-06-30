@@ -19,7 +19,9 @@
 #include <nanobench.h>
 
 #include <atomic>
+#include <condition_variable>
 #include <cstdint>
+#include <latch>
 #include <memory>
 #include <mutex>
 #include <thread>
@@ -32,8 +34,10 @@
 
 using hyle::mem::system_allocator;
 using hyle::sched::Channel;
+using hyle::sched::ConditionVariable;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
+using hyle::sched::Latch;
 using hyle::sched::Mutex;
 using hyle::sched::Scheduler;
 using hyle::sched::WaitGroup;
@@ -79,6 +83,13 @@ struct WgFork {
 };
 void wg_done_body(void* p) { static_cast<WgFork*>(p)->wg->done(); }
 void wg_wait_body(void* p) { static_cast<WgFork*>(p)->wg->wait(); }
+
+// ---- (5) latch fork-join (one-shot countdown, std::latch shape) ----
+struct LatchFork {
+  Latch* l;
+};
+void latch_down_body(void* p) { static_cast<LatchFork*>(p)->l->count_down(); }
+void latch_wait_body(void* p) { static_cast<LatchFork*>(p)->l->wait(); }
 
 }  // namespace
 
@@ -205,6 +216,69 @@ int main() {
       Scheduler sched(4, system_allocator(), 1024);
       for (auto& fb : fibers) sched.spawn(fb.get());
       sched.drain();
+    });
+  }
+
+  // ---- 5. Latch fork-join: 64 fibers count_down + 1 waiter (vs std::latch) ----
+  // HYLE Latch is the one-shot countdown (std::latch shape) on the fiber CV. The
+  // std::latch rival runs the SAME shape on OS threads (the std primitive's only
+  // mode) -- not apples-to-apples on the execution substrate, but it's the std
+  // baseline for "wait until N done". The HYLE row is the fiber-native cost.
+  {
+    constexpr int kWorkers = 64;
+    ankerl::nanobench::Bench b;
+    b.title("Latch fork-join (64 down + 1 wait)").relative(true).batch(kWorkers).minEpochIterations(50);
+    b.run("std::latch (64 threads)", [&] {
+      std::latch latch(kWorkers);
+      std::vector<std::thread> ts;
+      ts.reserve(kWorkers);
+      for (int i = 0; i < kWorkers; ++i)
+        ts.emplace_back([&] { latch.count_down(); });
+      latch.wait();
+      for (auto& t : ts) t.join();
+    });
+    b.run("HYLE Latch (64 fibers, fiber-aware)", [&] {
+      Latch latch(kWorkers);
+      LatchFork f{&latch};
+      std::vector<std::unique_ptr<Fiber>> fibers;
+      fibers.reserve(kWorkers + 1);
+      fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+                                               kDefaultStackSize,
+                                               &latch_wait_body, &f));
+      for (int i = 0; i < kWorkers; ++i)
+        fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+                                                 kDefaultStackSize,
+                                                 &latch_down_body, &f));
+      Scheduler sched(4, system_allocator(), 1024);
+      for (auto& fb : fibers) sched.spawn(fb.get());
+      sched.drain();
+    });
+  }
+
+  // ---- 6. ConditionVariable notify with NO waiter (the uncontended fast path) -
+  // CV is the foundation under Mutex/WaitGroup/Channel/Latch; its notify fast path
+  // (no parked waiter -> skip the internal lock entirely, per the header) is hit on
+  // every uncontended unlock/done/send. This measures that bare notify cost vs
+  // std::condition_variable's notify_one with no waiter. No fibers needed -- it's a
+  // pure primitive call. std::cv needs the mutex held convention; HYLE notify is
+  // standalone (caller holds the monitor lock by contract, none needed when empty).
+  {
+    constexpr int kIters = 10000;
+    ankerl::nanobench::Bench b;
+    b.title("CV notify_one, no waiter (fast path)").relative(true).batch(kIters).minEpochIterations(500);
+    b.run("std::condition_variable::notify_one", [&] {
+      std::condition_variable cv;
+      for (int i = 0; i < kIters; ++i) {
+        cv.notify_one();
+        ankerl::nanobench::doNotOptimizeAway(&cv);
+      }
+    });
+    b.run("HYLE ConditionVariable::notify_one", [&] {
+      ConditionVariable cv;
+      for (int i = 0; i < kIters; ++i) {
+        cv.notify_one();
+        ankerl::nanobench::doNotOptimizeAway(&cv);
+      }
     });
   }
 
