@@ -11,6 +11,21 @@
 
 namespace hyle::container {
 
+// SIMD search cores (string_ref.cc). Kept out-of-line/exported so the public
+// header pulls in no <emmintrin.h>; the runtime branch of the corresponding
+// string_ref members delegates here, the constexpr branch stays a scalar loop.
+// The ~1ns call seam is negligible on the multi-KB scans these accelerate.
+namespace detail {
+HYLE_CONTAINER_API std::uint32_t str_count(const char* data, std::uint32_t size,
+                                           char c) noexcept;
+// Reverse char scan: index of the LAST `c` in data[0,size), or npos. SSE2
+// backward blocks (no memrchr on Windows; the scalar backward loop lost std
+// ~20x). Returns string_ref::npos-equivalent 0xFFFFFFFF when absent.
+HYLE_CONTAINER_API std::uint32_t str_rfind_char(const char* data,
+                                                std::uint32_t size,
+                                                char c) noexcept;
+}  // namespace detail
+
 // Non-owning string view = pointer + length + a `null_terminated` bit. The bit
 // is the real increment over std::string_view (conventions §7): when set,
 // `data[size] == 0` is guaranteed, so the view can be handed to a C API as a
@@ -129,12 +144,17 @@ struct string_ref {
   constexpr std::uint32_t rfind(char c,
                                 std::uint32_t pos = npos) const noexcept {
     if (size == 0) return npos;
-    std::uint32_t i = (pos >= size) ? size - 1 : pos;
-    for (;; --i) {
-      if (data[i] == c) return i;
-      if (i == 0) break;
+    std::uint32_t hi = (pos >= size) ? size - 1 : pos;
+    if consteval {
+      for (std::uint32_t i = hi;; --i) {
+        if (data[i] == c) return i;
+        if (i == 0) break;
+      }
+      return npos;
     }
-    return npos;
+    // RUNTIME: SSE2 backward scan over data[0, hi+1) (no memrchr on Windows;
+    // the scalar backward byte loop lost std::string_view::rfind ~20x).
+    return detail::str_rfind_char(data, hi + 1, c);
   }
   // Last occurrence of `needle` starting at or before `pos`.
   constexpr std::uint32_t rfind(string_ref needle,
@@ -142,12 +162,28 @@ struct string_ref {
     if (needle.size == 0) return size < pos ? size : pos;
     if (needle.size > size) return npos;
     std::uint32_t last = size - needle.size;  // no overflow: needle.size<=size
-    std::uint32_t i = (pos > last) ? last : pos;
-    for (;; --i) {
-      if (region_eq(i, needle)) return i;
-      if (i == 0) break;
+    std::uint32_t hi = (pos > last) ? last : pos;
+    if consteval {
+      for (std::uint32_t i = hi;; --i) {
+        if (region_eq(i, needle)) return i;
+        if (i == 0) break;
+      }
+      return npos;
     }
-    return npos;
+    // RUNTIME: mirror find(needle)'s memchr strategy backward -- str_rfind_char
+    // (SSE2) locates first-char candidates from the high end, region_eq (memcmp)
+    // verifies. Far fewer byte compares than the scalar backward window walk
+    // (which lost std::string_view::rfind ~20x). Candidates live in [0, hi] on
+    // the FIRST char (a match at i needs needle.data[0] at i <= hi).
+    const char first = needle.data[0];
+    std::uint32_t bound = hi + 1;  // search first-char in data[0, bound)
+    for (;;) {
+      std::uint32_t cand = detail::str_rfind_char(data, bound, first);
+      if (cand == npos) return npos;
+      if (region_eq(cand, needle)) return cand;
+      if (cand == 0) return npos;
+      bound = cand;  // next candidate strictly before this one
+    }
   }
 
   // First position of ANY char in `set`. constexpr: O(n*m) scan. RUNTIME:
@@ -178,9 +214,11 @@ struct string_ref {
     }
     return best;
   }
-  // First position NOT in `set`. No single-byte memchr equivalent (membership,
-  // not one byte); RUNTIME builds a 256-entry membership table then scans O(n)
-  // (vs the constexpr O(n*m)), matching std's bitmap-scan strategy.
+  // First position NOT in `set`. Membership is not a single-byte memchr, so
+  // build a 256-entry bool table (one direct byte load per test -- measured
+  // faster than a 32-byte 4x-uint64 bitmap, whose shift+index per byte cost
+  // more than the table's extra cache lines) then scan O(n). constexpr path
+  // stays the O(n*m) set.find scan. std's tuned scalar still leads here.
   constexpr std::uint32_t find_first_not_of(
       string_ref set, std::uint32_t pos = 0) const noexcept {
     if (pos >= size) return npos;
@@ -250,11 +288,18 @@ struct string_ref {
   }
   constexpr bool contains(char c) const noexcept { return find(c) != npos; }
 
-  // Number of occurrences of `c` (clay cstrchar).
+  // Number of occurrences of `c` (clay cstrchar). RUNTIME borrows a SIMD count
+  // core (str_count in string_ref.cc: SSE2 cmpeq + psadbw accumulate, the same
+  // vectorization std::count uses); the scalar accumulate stays the constexpr
+  // path. std::count auto-vectorizes and beat the scalar loop ~25x, so this
+  // closes that gap without pulling <emmintrin.h> into the public header.
   constexpr std::uint32_t count(char c) const noexcept {
-    std::uint32_t n = 0;
-    for (std::uint32_t i = 0; i < size; ++i) n += (data[i] == c);
-    return n;
+    if consteval {
+      std::uint32_t n = 0;
+      for (std::uint32_t i = 0; i < size; ++i) n += (data[i] == c);
+      return n;
+    }
+    return detail::str_count(data, size, c);
   }
 
   // View with leading/trailing chars from `cut` removed (default: ASCII space).

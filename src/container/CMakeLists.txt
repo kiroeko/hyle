@@ -3,7 +3,9 @@
 # xxhash + wyhash single-headers (best-of-breed byte hasher: XXH3 short-mid, wyhash
 # long); those include dirs are PRIVATE so neither leaks to consumers. string_algo.cc
 # is the dispatched utf8_length entry, which BORROWS simdutf's verified SIMD core.
-hyle_add_module(container SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc PUBLIC_DEPS hyle_mem)
+# string_ref.cc holds the out-of-line SIMD search cores (SSE2) so the public header
+# stays free of <emmintrin.h>.
+hyle_add_module(container SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc string_ref.cc PUBLIC_DEPS hyle_mem)
 target_include_directories(hyle_container PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/xxhash"
   "${PROJECT_SOURCE_DIR}/third_party/wyhash")

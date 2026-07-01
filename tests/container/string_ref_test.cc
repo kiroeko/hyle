@@ -208,6 +208,53 @@ TEST(StringRef, RfindSubstrAndCount) {
   EXPECT_EQ(s.count('z'), 0u);
 }
 
+// count()'s runtime path is SSE2 (16-byte blocks + scalar tail); the ab_ab_ab
+// case above is 8B => tail-only. Exercise the vectorized main loop AND a
+// non-block-aligned tail: 70 chars = 4 full 16B groups + a 6B tail.
+TEST(StringRef, CountSimdPathCrossesBlockAndTail) {
+  std::string buf;
+  buf.reserve(70);
+  for (int i = 0; i < 70; ++i) buf.push_back((i % 3 == 0) ? 'x' : 'o');
+  string_ref s{buf.data(), static_cast<std::uint32_t>(buf.size())};
+  // 'x' at indices 0,3,6,...,69 => 24 of them; oracle-cross-check with scalar.
+  std::uint32_t oracle = 0;
+  for (char c : buf) oracle += (c == 'x');
+  EXPECT_EQ(s.count('x'), oracle);
+  EXPECT_EQ(s.count('x'), 24u);
+  EXPECT_EQ(s.count('o'), 46u);
+  EXPECT_EQ(s.count('z'), 0u);  // absent => full scan, 0
+  // exactly one 16B block, no tail
+  string_ref b16{buf.data(), 16};
+  std::uint32_t o16 = 0;
+  for (int i = 0; i < 16; ++i) o16 += (buf[i] == 'x');
+  EXPECT_EQ(b16.count('x'), o16);
+}
+
+// rfind(char) and rfind(needle) runtime paths are SSE2 backward scans (16B
+// blocks + scalar head). The short cases above are tail/head-only; drive the
+// vectorized backward loop with a >16B buffer and cross-check against an oracle.
+TEST(StringRef, RfindSimdBackwardPath) {
+  // 100 chars: 'z' seeded at a few known spots, all else 'a'. Verify rightmost.
+  std::string buf(100, 'a');
+  buf[3] = 'z';
+  buf[50] = 'z';
+  buf[97] = 'z';  // rightmost, inside the last full 16B block from the high end
+  string_ref s{buf.data(), static_cast<std::uint32_t>(buf.size())};
+  EXPECT_EQ(s.rfind('z'), 97u);
+  EXPECT_EQ(s.rfind('z', 96), 50u);  // bounded before 97 -> next is 50
+  EXPECT_EQ(s.rfind('z', 49), 3u);
+  EXPECT_EQ(s.rfind('q'), string_ref::npos);  // absent => full backward scan
+  // needle path: place "zz" so the first-char candidate walk must reject a lone
+  // 'z' before finding the real pair.
+  std::string nbuf(80, 'a');
+  nbuf[10] = 'z';            // lone 'z' (candidate, but not "zz")
+  nbuf[60] = nbuf[61] = 'z'; // the real "zz"
+  string_ref ns{nbuf.data(), static_cast<std::uint32_t>(nbuf.size())};
+  EXPECT_EQ(ns.rfind(string_ref{"zz"}), 60u);
+  EXPECT_EQ(ns.rfind(string_ref{"zz"}, 59), string_ref::npos);  // none <= 59
+  EXPECT_EQ(ns.rfind(string_ref{"qq"}), string_ref::npos);
+}
+
 TEST(StringRef, Comparison) {
   EXPECT_TRUE(string_ref{"abc"} == string_ref{"abc"});
   EXPECT_FALSE(string_ref{"abc"} == string_ref{"abd"});

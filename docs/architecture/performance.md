@@ -79,11 +79,11 @@
 | **container·str** starts_with(16B 前缀) | 1.79 | std::string_view | 1.77 | ~1.0x | string_view(即 SOTA,memcmp) | 1.77 | ~1.0x | ➖平(切 memcmp;原 字节循环输 2x) |
 | **container·str** split 全文按空格(4KB) | 0.44/B | string_view find+remove_prefix | 0.54 | 1.22x | string_view(即 SOTA) | 0.54 | 1.22x | ✅赢(无分配子视图) |
 | **container·str** trim 两端(4KB) | 13.6 | string_view 两侧 trim | 16.85 | 1.24x | string_view(即 SOTA) | 16.85 | 1.24x | ✅赢(组合 find_first/last_not_of) |
-| **container·str** rfind(char) 后向扫 miss | 0.26/B | std::string_view::rfind | 0.01 | 0.05x | string_view(即 SOTA) | 0.01 | 0.05x | ❌输 ~20x(无 reverse-memchr;可上 memrchr) |
-| **container·str** find_first_not_of 全字母 | 0.27/B | std::string_view | 0.06 | 0.22x | string_view(即 SOTA) | 0.06 | 0.22x | ❌输 ~4.5x(256-bool 表 vs std 调优 bitmap) |
-| **container·str** find_last_of(digits) miss | 0.25/B | std::string_view | 0.06 | 0.23x | string_view(即 SOTA) | 0.06 | 0.23x | ❌输 ~4.4x(后向表扫) |
-| **container·str** rfind(needle) 6B(4KB) | 2.37/B | std::string_view::rfind | 0.12 | 0.05x | string_view(即 SOTA) | 0.12 | 0.05x | ❌输 ~20x(后向 region_eq,无 memchr) |
-| **container·str** count(char) 全扫 | 0.27/B | std::count | 0.01 | 0.04x | std::count(即 SOTA,自动向量化) | 0.01 | 0.04x | ❌输(scalar 累加无早退) |
+| **container·str** rfind(char) 后向扫 miss | 0.02/B | std::string_view::rfind | 0.012 | 0.58x | string_view(即 SOTA) | 0.012 | 0.58x | ➖近平 1.7x(SSE2 后向扫;原 scalar 输 ~20x) |
+| **container·str** find_first_not_of 全字母 | 0.25/B | std::string_view | 0.06 | 0.23x | string_view(即 SOTA) | 0.06 | 0.23x | ❌输 ~4.5x(成员测试无 SIMD 解;bool 表实测胜 bitmap) |
+| **container·str** find_last_of(digits) miss | 0.26/B | std::string_view | 0.06 | 0.22x | string_view(即 SOTA) | 0.06 | 0.22x | ❌输 ~4.4x(后向成员测试,同上) |
+| **container·str** rfind(needle) 6B(4KB) | 0.47/B | std::string_view::rfind | 0.12 | 0.25x | string_view(即 SOTA) | 0.12 | 0.25x | ❌输 ~4x(SSE2 后向首字符候选+memcmp;原 region_eq 输 ~20x) |
+| **container·str** count(char) 全扫 | 0.02/B | std::count | 0.01 | 0.33x | std::count(即 SOTA,自动向量化) | 0.01 | 0.33x | ❌输 ~3x(SSE2 psadbw;std 用 AVX2;原 scalar 输 ~27x) |
 | **container·str** utf8 validate+count(2KB) | 0.41(scalar)/0.21(simdutf) | (无 std utf8 count) | n/a | n/a | simdutf validate+count | 0.21 | 2.0x输/1.0x | ➖scalar 参考 2x;simdutf 核(vendored 无条件默认)追平 |
 | **container·str** hex_encode 1KB→2KB | 0.45/B | naive 逐字节 | 0.63 | 1.41x | (无单一 SOTA hex 库) | n/a | n/a | ✅赢参考实现(表查找) |
 | **container·path** extension / base / directory | 44/10/9.7 | (无 std 词法) | n/a | n/a | std::filesystem 词法 | 152/164/166 | 3.4/16/17x | ✅赢 filesystem(视图原地扫 vs 构造 path 分配) |
@@ -420,7 +420,7 @@
 
 ### container·str —— string_ref / StringBuf / string_algo（`string_ref_bench.cc` / `string_buf_bench.cc` / `string_algo_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench,~4KB 文本(L1 常驻)。**标尺 = `std::string_view`**(string_ref 是其 drop-in 替代,conventions §7:同 16 字节 POD + null_terminated 位,同契约对照公平)+ `std::count` / simdutf。**这是 HYLE 目前 ❌ 输项最集中的一节,如实记账**:string_view 的搜索族在 libc 里是 memchr/memrchr/向量化 + 调优 bitmap,HYLE 现是 scalar 字节循环 / 256-bool 表——**前向 char 搜索已切 memchr 追平,但反向族(rfind/find_last_of)和否定/计数族(find_first_not_of/count)仍是 scalar,真输 4–20x**。
+> 环境:Win MSVC19.50 Release,nanobench,~4KB 文本(L1 常驻),15 遍统计(`bench-stat.py`)。**标尺 = `std::string_view`**(string_ref 是其 drop-in 替代,conventions §7:同 16 字节 POD + null_terminated 位,同契约对照公平)+ `std::count` / simdutf。前向 char 搜索早已切 memchr 追平;**反向族(rfind char/needle)与 count 现已上 SSE2(container 是 Tier 0,自包含 SSE2,同 probe.h 约束)**,从灾难性的 20–27x 收窄到个位数(1.7–4x)——仍输是因 MSVC STL 用 AVX2(256b)/memchr 内建,而 container 不引入运行时 ISA dispatch(自包含+避 SIGILL)。**成员族(find_first_not_of/find_last_of)无 SIMD 解,保持 bool 表(实测胜 bitmap),诚实留输。**
 
 | op | HYLE | std::string_view | vs SOTA | 结论 |
 |---|---|---|---|---|
@@ -430,17 +430,18 @@
 | **split 全文按空格** | 0.44/B | find+remove_prefix 0.54 | 1.22x | ✅赢(无分配子视图) |
 | **trim 两端** | 13.6 | 16.85 | 1.24x | ✅赢(组合 find_first/last_not_of) |
 | **find(needle) 6B 子串** | 0.20/B | 0.08 | **0.40x** | ❌输 2.5x(memchr 候选+memcmp;原 naive 输 7x) |
-| **rfind(char) 后向扫** | 0.26/B | 0.01 | **0.05x** | ❌输 ~20x(无 reverse-memchr;**可上 memrchr**) |
-| **rfind(needle) 6B** | 2.37/B | 0.12 | **0.05x** | ❌输 ~20x(后向 region_eq,无 memchr) |
-| **find_first_not_of 全字母** | 0.27/B | 0.06 | **0.22x** | ❌输 ~4.5x(256-bool 表 vs std 调优 bitmap) |
-| **find_last_of(digits)** | 0.25/B | 0.06 | **0.23x** | ❌输 ~4.4x(后向表扫) |
-| **count(char) 全扫** | 0.27/B | std::count 0.01 | **0.04x** | ❌输 ~25x(scalar 累加无早退;**std::count 自动向量化**) |
+| **rfind(char) 后向扫** | 0.02/B | 0.012 | 0.58x | ➖近平 1.7x(SSE2 后向扫;原 scalar 输 ~20x) |
+| **rfind(needle) 6B** | 0.47/B | 0.12 | **0.25x** | ❌输 ~4x(SSE2 后向首字符候选+memcmp;原 region_eq 输 ~20x) |
+| **find_first_not_of 全字母** | 0.25/B | 0.06 | **0.23x** | ❌输 ~4.5x(成员测试无 SIMD 解;bool 表实测胜 4×u64 bitmap) |
+| **find_last_of(digits)** | 0.26/B | 0.06 | **0.22x** | ❌输 ~4.4x(后向成员测试,同上) |
+| **count(char) 全扫** | 0.02/B | std::count 0.01 | **0.33x** | ❌输 ~3x(SSE2 cmpeq+psadbw;std 用 AVX2;原 scalar 输 ~27x) |
 | **StringBuf intern**(100k/2k 唯一) | 24.0 | map+mutex(同契约 thread-safe peer)28.1 | 1.17x | ✅赢同契约 peer(SwissTable 核) |
 | **StringBuf add/retain/remove churn** | 18.2 | 无锁 map floor 7.54 | 0.41x | ⚠️对手是**无锁 floor**(StringBuf 是 thread-safe);**同契约 thread-safe churn 对手待补**(参照 intern 行,公平对手下应反超)——红队待办,勿当真输 |
 
-**诚实结论(❌ 真输项集中地,不掩饰)**:
-- **6 个真输项全是 scalar vs libc 向量化/调优**,且对手 `std::string_view` 是**同契约 drop-in SOTA**(对照公平,不是选错工具)——这是 string_ref 搜索族**还没把参考库抄平**的真实缺口,非测量伪影、非对照不公平。
-- **优化方向(明确,project-hyle 有现成参考可抄)**:① 反向族 `rfind(char)`/`find_last_of` → glibc `memrchr`(Linux)/手写 SIMD 反向扫;② `count(char)` → SIMD 计数或至少让编译器向量化(std::count 已证可向量化);③ `find_first_not_of` → 学 std 的调优 bitmap(非 256-bool 表);④ `find(needle)`/`rfind(needle)` → 子串搜索用 memchr 定位首字节候选 + SIMD 比较。**抄都要抄平**——这些是后续 string 优化里程碑的明确 TODO,留账于此。
+**诚实结论**:
+- **反向族 + count 已上 SSE2(反哺 probe.h 的自包含 SIMD 手法)**:`rfind(char)`/`rfind(needle)` 走 SSE2 后向块扫(无 memrchr on Windows),`count` 走 `_mm_cmpeq_epi8`+`_mm_sad_epu8`(psadbw)横向累加——SIMD 核放 `string_ref.cc` 导出,公开头不引 `<emmintrin.h>`(C-ABI 分层)。三项从 20–27x 输收窄到 **1.7x/4x/3x 输**,是实质进步而非追平:剩余差距=**SSE2(128b) vs MSVC STL 的 AVX2(256b)/memchr 内建**,container 不引入运行时 ISA dispatch(自包含 Tier 0 + 避 SIGILL),这是有意的分层取舍,非缺陷。
+- **成员族(find_first_not_of/find_last_of/find_last_not_of)保持 256-bool 表**:试过换 4×uint64 bitmap(缩 8x cache footprint),但**实测更慢**(0.25→0.47)——bool 表是 1 次直接字节 load,bitmap 每字节多 shift+mask+数组索引,而 256B 表本就常驻 L1。任意集合的成员测试无简单 SIMD 解(需 pshufb gather 大工程),诚实留输 ~4.5x。
+- **find(needle) 前向仍 0.40x**:已是 memchr 首字符候选+memcmp,差距在 std 的调优子串匹配,留待后续。
 - **StringBuf churn 的 0.41x 是对照存疑(⚠️非确认真输)**:它的 std 对手是**无锁裸 map**(无锁),而 StringBuf 是 thread-safe(每 op 一把锁)——同 MemoryArena 那类 apples-to-oranges。intern 行换上同契约 thread-safe peer(map+mutex)后 HYLE ✅赢 1.17x;churn 的同契约对手(thread-safe add/retain/remove)尚未加,**红队待办**,加上前不算确认真输。
 
 ### container·path —— 纯词法路径操作（`path_bench.cc`）
