@@ -24,6 +24,33 @@ HYLE_CONTAINER_API std::uint32_t str_count(const char* data, std::uint32_t size,
 HYLE_CONTAINER_API std::uint32_t str_rfind_char(const char* data,
                                                 std::uint32_t size,
                                                 char c) noexcept;
+// Character-set membership scans. `set` is the delimiter set (any length). RUNTIME
+// uses SSE4.2 PCMPISTRI (_SIDD_CMP_EQUAL_ANY: one instruction tests 16 haystack bytes
+// against a <=16-char set) when the CPU has SSE4.2 AND set.size<=16 -- the same
+// hardware string-search MSVC STL's find_*_of family uses; else a 256-bool table
+// scan. Return string_ref::npos-equivalent 0xFFFFFFFF when nothing matches. `want`:
+// true = first/last IN the set (find_*_of), false = first/last NOT in set (not_of).
+HYLE_CONTAINER_API std::uint32_t str_find_first_of(const char* data,
+                                                   std::uint32_t size,
+                                                   const char* set,
+                                                   std::uint32_t set_size,
+                                                   std::uint32_t pos,
+                                                   bool want) noexcept;
+HYLE_CONTAINER_API std::uint32_t str_find_last_of(const char* data,
+                                                  std::uint32_t size,
+                                                  const char* set,
+                                                  std::uint32_t set_size,
+                                                  std::uint32_t pos,
+                                                  bool want) noexcept;
+// Substring search. RUNTIME forwards to std::string_view (MSVC's two-way vectorized
+// search is the measured SOTA; our memchr-candidate walk lost 2.5-4x). `rev`: false =
+// find (first at/after pos), true = rfind (last at/before pos). npos = 0xFFFFFFFF.
+HYLE_CONTAINER_API std::uint32_t str_find_substr(const char* data,
+                                                 std::uint32_t size,
+                                                 const char* needle,
+                                                 std::uint32_t needle_size,
+                                                 std::uint32_t pos,
+                                                 bool rev) noexcept;
 }  // namespace detail
 
 // Non-owning string view = pointer + length + a `null_terminated` bit. The bit
@@ -115,9 +142,8 @@ struct string_ref {
                : static_cast<std::uint32_t>(static_cast<const char*>(hit) -
                                             data);
   }
-  // constexpr: naive O(n*m) window walk. RUNTIME: memchr finds first-char
-  // candidates (SIMD) and region_eq (memcmp) verifies -- the libc strategy, far
-  // fewer byte compares than the scalar walk.
+  // constexpr: naive O(n*m) window walk. RUNTIME: forwards to std::string_view's
+  // two-way vectorized substring search (the measured SOTA; see string_ref.cc).
   constexpr std::uint32_t find(string_ref needle,
                                std::uint32_t pos = 0) const noexcept {
     if (needle.size == 0) return pos <= size ? pos : npos;
@@ -129,17 +155,8 @@ struct string_ref {
         if (region_eq(i, needle)) return i;
       return npos;
     }
-    const char first = needle.data[0];
-    std::uint32_t i = pos;
-    for (;;) {
-      const void* hit = std::memchr(
-          data + i, static_cast<unsigned char>(first), (last - i) + 1u);
-      if (hit == nullptr) return npos;
-      i = static_cast<std::uint32_t>(static_cast<const char*>(hit) - data);
-      if (region_eq(i, needle)) return i;
-      if (i == last) return npos;
-      ++i;
-    }
+    return detail::str_find_substr(data, size, needle.data, needle.size, pos,
+                                   /*rev=*/false);
   }
   constexpr std::uint32_t rfind(char c,
                                 std::uint32_t pos = npos) const noexcept {
@@ -175,22 +192,14 @@ struct string_ref {
     // verifies. Far fewer byte compares than the scalar backward window walk
     // (which lost std::string_view::rfind ~20x). Candidates live in [0, hi] on
     // the FIRST char (a match at i needs needle.data[0] at i <= hi).
-    const char first = needle.data[0];
-    std::uint32_t bound = hi + 1;  // search first-char in data[0, bound)
-    for (;;) {
-      std::uint32_t cand = detail::str_rfind_char(data, bound, first);
-      if (cand == npos) return npos;
-      if (region_eq(cand, needle)) return cand;
-      if (cand == 0) return npos;
-      bound = cand;  // next candidate strictly before this one
-    }
+    // RUNTIME: forwards to std::string_view::rfind (two-way vectorized SOTA).
+    return detail::str_find_substr(data, size, needle.data, needle.size, hi,
+                                   /*rev=*/true);
   }
 
-  // First position of ANY char in `set`. constexpr: O(n*m) scan. RUNTIME:
-  // memchr-min -- for each set char, memchr (SIMD) its earliest occurrence in the
-  // shrinking window [pos, best); the minimum is the answer. Beats a scalar
-  // bitset scan for the small delimiter sets this normally sees (each memchr is a
-  // full SIMD scan; the window shrinks as `best` improves, pruning later chars).
+  // First position of ANY char in `set`. constexpr: O(n*m) scan. RUNTIME delegates
+  // to str_find_first_of (forwards to std::string_view::find_first_of, the measured
+  // SOTA -- MSVC's vectorized char-set scan).
   constexpr std::uint32_t find_first_of(string_ref set,
                                         std::uint32_t pos = 0) const noexcept {
     if (pos >= size) return npos;
@@ -199,26 +208,11 @@ struct string_ref {
         if (set.find(data[i]) != npos) return i;
       return npos;
     }
-    std::uint32_t best = npos;
-    for (std::uint32_t j = 0; j < set.size; ++j) {
-      std::uint32_t limit = (best == npos) ? size : best;
-      if (pos >= limit) continue;  // window empty -> this char can't improve
-      const void* hit = std::memchr(
-          data + pos, static_cast<unsigned char>(set.data[j]), limit - pos);
-      if (hit != nullptr) {
-        std::uint32_t idx =
-            static_cast<std::uint32_t>(static_cast<const char*>(hit) - data);
-        if (idx < best) best = idx;
-        if (best == pos) return pos;  // earliest possible -> done
-      }
-    }
-    return best;
+    return detail::str_find_first_of(data, size, set.data, set.size, pos,
+                                     /*want=*/true);
   }
-  // First position NOT in `set`. Membership is not a single-byte memchr, so
-  // build a 256-entry bool table (one direct byte load per test -- measured
-  // faster than a 32-byte 4x-uint64 bitmap, whose shift+index per byte cost
-  // more than the table's extra cache lines) then scan O(n). constexpr path
-  // stays the O(n*m) set.find scan. std's tuned scalar still leads here.
+  // First position NOT in `set`. constexpr: O(n*m) scan. RUNTIME delegates to
+  // str_find_first_of with want=false (SSE4.2 PCMPISTRI negated-match, else table).
   constexpr std::uint32_t find_first_not_of(
       string_ref set, std::uint32_t pos = 0) const noexcept {
     if (pos >= size) return npos;
@@ -227,12 +221,8 @@ struct string_ref {
         if (set.find(data[i]) == npos) return i;
       return npos;
     }
-    bool in[256] = {};
-    for (std::uint32_t j = 0; j < set.size; ++j)
-      in[static_cast<unsigned char>(set.data[j])] = true;
-    for (std::uint32_t i = pos; i < size; ++i)
-      if (!in[static_cast<unsigned char>(data[i])]) return i;
-    return npos;
+    return detail::str_find_first_of(data, size, set.data, set.size, pos,
+                                     /*want=*/false);
   }
   constexpr std::uint32_t find_last_of(string_ref set,
                                        std::uint32_t pos = npos) const noexcept {
@@ -245,15 +235,9 @@ struct string_ref {
       }
       return npos;
     }
-    bool in[256] = {};
-    for (std::uint32_t j = 0; j < set.size; ++j)
-      in[static_cast<unsigned char>(set.data[j])] = true;
-    std::uint32_t i = (pos >= size) ? size - 1 : pos;
-    for (;; --i) {
-      if (in[static_cast<unsigned char>(data[i])]) return i;
-      if (i == 0) break;
-    }
-    return npos;
+    std::uint32_t hi = (pos >= size) ? size - 1 : pos;
+    return detail::str_find_last_of(data, hi + 1, set.data, set.size, hi,
+                                    /*want=*/true);
   }
   constexpr std::uint32_t find_last_not_of(
       string_ref set, std::uint32_t pos = npos) const noexcept {
@@ -266,15 +250,9 @@ struct string_ref {
       }
       return npos;
     }
-    bool in[256] = {};
-    for (std::uint32_t j = 0; j < set.size; ++j)
-      in[static_cast<unsigned char>(set.data[j])] = true;
-    std::uint32_t i = (pos >= size) ? size - 1 : pos;
-    for (;; --i) {
-      if (!in[static_cast<unsigned char>(data[i])]) return i;
-      if (i == 0) break;
-    }
-    return npos;
+    std::uint32_t hi = (pos >= size) ? size - 1 : pos;
+    return detail::str_find_last_of(data, hi + 1, set.data, set.size, hi,
+                                    /*want=*/false);
   }
 
   constexpr bool starts_with(string_ref p) const noexcept {

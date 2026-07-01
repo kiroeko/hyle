@@ -198,6 +198,59 @@ TEST(StringRef, FindFirstLastOf) {
   EXPECT_EQ(s.find_last_of("xyz"), string_ref::npos);
 }
 
+// find_*_of runtime path is SSE4.2 PCMPESTRI (set<=16), 16-byte blocks + a <16 tail
+// + a backward variant. The 5-char case above is tail-only; drive the vectorized loop
+// with a >16B buffer and oracle-cross-check every op against the scalar definition.
+TEST(StringRef, FindOfSimdCrossesBlockAndTail) {
+  // 70 bytes: mostly 'a', with '.'/';'/digits sprinkled at known indices.
+  std::string b(70, 'a');
+  b[5] = '.';
+  b[17] = ';';   // just past the first 16B block
+  b[33] = '7';
+  b[69] = '.';   // last byte
+  string_ref s{b.data(), static_cast<std::uint32_t>(b.size())};
+  const string_ref set = ".;";  // <=16 -> SSE4.2 path
+
+  auto oracle_first_of = [&](bool want) -> std::uint32_t {
+    for (std::uint32_t i = 0; i < b.size(); ++i) {
+      bool in = (b[i] == '.' || b[i] == ';');
+      if (in == want) return i;
+    }
+    return string_ref::npos;
+  };
+  auto oracle_last_of = [&](bool want) -> std::uint32_t {
+    for (std::uint32_t i = b.size(); i-- > 0;) {
+      bool in = (b[i] == '.' || b[i] == ';');
+      if (in == want) return i;
+    }
+    return string_ref::npos;
+  };
+  EXPECT_EQ(s.find_first_of(set), oracle_first_of(true));       // 5
+  EXPECT_EQ(s.find_first_of(set), 5u);
+  EXPECT_EQ(s.find_first_not_of(set), oracle_first_of(false));  // 0
+  EXPECT_EQ(s.find_last_of(set), oracle_last_of(true));         // 69
+  EXPECT_EQ(s.find_last_of(set), 69u);
+  EXPECT_EQ(s.find_last_not_of(set), oracle_last_of(false));    // 68
+  // absent set -> npos both directions (full scan)
+  EXPECT_EQ(s.find_first_of("XYZ"), string_ref::npos);
+  EXPECT_EQ(s.find_last_of("XYZ"), string_ref::npos);
+  // all-in-set from the far end
+  string_ref alldot{".;.;.;.;.;.;.;.;.;.;", 20};  // 20 bytes, crosses block
+  EXPECT_EQ(alldot.find_first_not_of(set), string_ref::npos);
+  EXPECT_EQ(alldot.find_last_not_of(set), string_ref::npos);
+  EXPECT_EQ(alldot.find_first_of(set), 0u);
+  EXPECT_EQ(alldot.find_last_of(set), 19u);
+
+  // set > 16 chars -> forces the scalar-table fallback (still correct).
+  const string_ref bigset = "0123456789abcdefgh";  // 18 chars
+  std::string t(50, 'z');
+  t[40] = 'c';  // in bigset
+  string_ref ts{t.data(), static_cast<std::uint32_t>(t.size())};
+  EXPECT_EQ(ts.find_first_of(bigset), 40u);
+  EXPECT_EQ(ts.find_last_of(bigset), 40u);
+  EXPECT_EQ(ts.find_first_not_of(bigset), 0u);  // 'z' not in bigset
+}
+
 TEST(StringRef, RfindSubstrAndCount) {
   string_ref s = "ab_ab_ab";
   EXPECT_EQ(s.rfind(string_ref{"ab"}), 6u);     // rightmost "ab"

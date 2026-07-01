@@ -1,5 +1,7 @@
 #include "hyle/container/string_ref.h"
 
+#include <string_view>  // membership/substring family forwards to std's SOTA (see below)
+
 #include "hyle/container/probe.h"  // hyle_clz32 (reverse-scan highest set lane)
 #include "hyle/macros.h"
 #include "hyle/platform.h"
@@ -11,17 +13,18 @@
 
 // Out-of-line SIMD cores for string_ref's search family. Compiled ONCE here and
 // exported (HYLE_CONTAINER_API) so the public header stays free of <emmintrin.h>
-// and keeps container at Tier 0 (same self-contained SSE2 use as probe.h). The
-// constexpr paths in the header remain scalar; only the runtime branch delegates
-// here. The ~1ns call seam is negligible against the multi-KB scans these run.
+// AND of <string_view> -- string_ref.h pulls in no std string headers, this .cc does.
 //
-// TWO ISA tiers: this TU is the BASELINE dispatcher (SSE2, always safe on x86-64).
-// When platform::cpu_features().avx2 is true it forwards to the 256-bit variant in
-// string_ref_avx2.cc (its own -mavx2 TU) -- that doubles throughput to match MSVC
-// STL's AVX2 memchr/count. The AVX2 TU is ENTERED only under that runtime gate, so a
-// non-AVX2 CPU never executes a 256-bit instruction (no SIGILL). This is the same
-// runtime-dispatch pattern simd/ uses, but self-contained in container (it borrows
-// only the CPUID probe from platform, not the simd module).
+// SPLIT STRATEGY (measured, 2026-07): HYLE self-implements the ops where it matches or
+// beats std (find(char)/rfind(char)/count via SSE2/AVX2, starts_with/split via memcmp),
+// but for the ops where MSVC STL's hand-written vectorized assembly (vector_algorithms
+// .cpp: two-way substring search, PCMPESTRI char-set scans) is genuinely ahead and hard
+// to out-engineer, it FORWARDS to std::string_view here in the .cc. The forward is
+// header-inline-free (stays out of the public header + DLL symbol table), so it neither
+// leaks <string_view> to consumers nor breaks the C-ABI seam. Net: best-of-both -- our
+// wins stay ours, std's wins are borrowed instead of lost. (clay forwarded EVERYTHING to
+// std_view incl. <iostream> in its header; HYLE forwards only the ops std actually wins,
+// and only from the .cc.)
 
 namespace hyle::container::detail {
 
@@ -102,6 +105,48 @@ std::uint32_t str_rfind_char(const char* data, std::uint32_t size,
     if (data[j] == c) return j;
   return kNpos;
 #endif
+}
+
+// Forward char-set scan. `want`=true: first index IN set (find_first_of); false:
+// first NOT in set (find_first_not_of). Forwards to std::string_view, whose MSVC
+// vectorized find_first_of/not_of is the measured SOTA here (PCMPESTRI-class asm we
+// couldn't out-engineer; our own PCMPESTRI attempt only reached ~0.78x). npos maps to
+// our 0xFFFFFFFF.
+std::uint32_t str_find_first_of(const char* data, std::uint32_t size,
+                                const char* set, std::uint32_t set_size,
+                                std::uint32_t pos, bool want) noexcept {
+  constexpr std::uint32_t kNpos = 0xFFFFFFFFu;
+  std::string_view hay(data, size);
+  std::string_view s(set, set_size);
+  std::size_t r = want ? hay.find_first_of(s, pos)
+                       : hay.find_first_not_of(s, pos);
+  return r == std::string_view::npos ? kNpos : static_cast<std::uint32_t>(r);
+}
+
+// Backward char-set scan. `pos` is the highest index to consider (inclusive).
+// want=true => find_last_of; false => find_last_not_of. Forwards to std::string_view
+// (same SOTA rationale as the forward variant).
+std::uint32_t str_find_last_of(const char* data, std::uint32_t size,
+                               const char* set, std::uint32_t set_size,
+                               std::uint32_t pos, bool want) noexcept {
+  constexpr std::uint32_t kNpos = 0xFFFFFFFFu;
+  std::string_view hay(data, size);
+  std::string_view s(set, set_size);
+  std::size_t r = want ? hay.find_last_of(s, pos)
+                       : hay.find_last_not_of(s, pos);
+  return r == std::string_view::npos ? kNpos : static_cast<std::uint32_t>(r);
+}
+
+// Substring search, forwards to std::string_view (two-way vectorized SOTA). rev=false
+// => find (first at/after pos); rev=true => rfind (last at/before pos).
+std::uint32_t str_find_substr(const char* data, std::uint32_t size,
+                              const char* needle, std::uint32_t needle_size,
+                              std::uint32_t pos, bool rev) noexcept {
+  constexpr std::uint32_t kNpos = 0xFFFFFFFFu;
+  std::string_view hay(data, size);
+  std::string_view n(needle, needle_size);
+  std::size_t r = rev ? hay.rfind(n, pos) : hay.find(n, pos);
+  return r == std::string_view::npos ? kNpos : static_cast<std::uint32_t>(r);
 }
 
 }  // namespace hyle::container::detail
