@@ -16,6 +16,10 @@
 #include <mimalloc.h>
 #include <nanobench.h>
 
+#if defined(HYLE_BENCH_TBB)
+#  include <tbb/scalable_allocator.h>  // scalable_malloc/free: tbb's MT-scaling allocator
+#endif
+
 #include <cstddef>
 #include <cstdint>
 #include <memory_resource>
@@ -281,6 +285,25 @@ int main() {
         }
       });
     });
+
+    // (2-STRONG) The STRONG same-contract rival: oneTBB's scalable_allocator is a
+    // thread-safe SHARED allocator engineered for MT scaling (per-thread caches +
+    // shared backing), unlike std's mutex-serialized synchronized_pool. This is the
+    // honest "is our shared pool SOTA vs a REAL scalable allocator, not just the weak
+    // std one?" check -- synchronized_pool (44x) flatters us because std's impl is a
+    // single mutex; tbb is what a production shared allocator actually costs. Gated
+    // on -DHYLE_BENCH_TBB (needs the cloned oneTBB + tbbmalloc).
+#if defined(HYLE_BENCH_TBB)
+    b.run("oneTBB scalable_allocator (8 threads, SHARED SOTA)", [&] {
+      run_threads([&] {
+        for (int i = 0; i < kPer; ++i) {
+          void* p = scalable_malloc(kObj);
+          nb::doNotOptimizeAway(p);
+          scalable_free(p);
+        }
+      });
+    });
+#endif
 
     // raw mi_malloc/free, 8 threads -- mimalloc's per-thread heaps (non-atomic
     // same-thread free). The fair rival to row (1), the apples-to-oranges baseline

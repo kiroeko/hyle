@@ -155,11 +155,15 @@ if(HYLE_BENCH_TBB)
     message(FATAL_ERROR "HYLE_BENCH_TBB=ON but no oneTBB at ${HYLE_TBB_DIR}")
   endif()
   set(TBB_TEST OFF CACHE BOOL "" FORCE)
-  set(TBBMALLOC_BUILD OFF CACHE BOOL "" FORCE)
+  set(TBBMALLOC_BUILD ON CACHE BOOL "" FORCE)  # need tbbmalloc for scalable_allocator (arena bench)
   set(TBB_EXAMPLES OFF CACHE BOOL "" FORCE)
   add_subdirectory("${HYLE_TBB_DIR}" "${CMAKE_BINARY_DIR}/onetbb" EXCLUDE_FROM_ALL)
   target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_TBB)
   target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
+  # arena_pool_bench: add tbb's scalable_allocator as the STRONG shared-pool rival
+  # (std::pmr::synchronized_pool is mutex-serialized/weak; tbb is a real MT allocator).
+  target_compile_definitions(hyle_arena_pool_bench PRIVATE HYLE_BENCH_TBB)
+  target_link_libraries(hyle_arena_pool_bench PRIVATE TBB::tbbmalloc)
 endif()
 
 # Optional: rigtorp::mpmc::Queue -- the SAME-CONTRACT rival to BoundedQueue (strict-
