@@ -29,11 +29,22 @@ float DOT_FN(const float* x, const float* y, std::size_t n) {
   namespace hs = hyle::simd;
   const hs::ScalableTag<float> d;
   const std::size_t w = hs::Lanes(d);
-  auto acc = hs::Zero(d);
+  // 4 independent accumulators (mirrors the shipped src/simd/ops/kernel_impl.h):
+  // a single acc chains FMAs into a 4-cycle latency dependency; 4 chains keep the
+  // 2 FMA ports busy. Kept in sync with production so this bench row reflects the
+  // real dot_f32, not a naive port.
+  auto acc0 = hs::Zero(d), acc1 = hs::Zero(d), acc2 = hs::Zero(d), acc3 = hs::Zero(d);
   std::size_t i = 0;
+  const std::size_t w4 = w * 4;
+  for (; i + w4 <= n; i += w4) {
+    acc0 = hs::MulAdd(hs::LoadU(d, x + i), hs::LoadU(d, y + i), acc0);
+    acc1 = hs::MulAdd(hs::LoadU(d, x + i + w), hs::LoadU(d, y + i + w), acc1);
+    acc2 = hs::MulAdd(hs::LoadU(d, x + i + w * 2), hs::LoadU(d, y + i + w * 2), acc2);
+    acc3 = hs::MulAdd(hs::LoadU(d, x + i + w * 3), hs::LoadU(d, y + i + w * 3), acc3);
+  }
   for (; i + w <= n; i += w)
-    acc = hs::MulAdd(hs::LoadU(d, x + i), hs::LoadU(d, y + i), acc);  // FMA on AVX2
-  float sum = hs::ReduceSum(d, acc);
+    acc0 = hs::MulAdd(hs::LoadU(d, x + i), hs::LoadU(d, y + i), acc0);
+  float sum = hs::ReduceSum(d, hs::Add(hs::Add(acc0, acc1), hs::Add(acc2, acc3)));
   for (; i < n; ++i) sum += x[i] * y[i];  // tail
   return sum;
 }
