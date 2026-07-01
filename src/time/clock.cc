@@ -133,13 +133,16 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
 // multiplier, skipping the OS clock call. Falls back to monotonic_ns() when the
 // hardware lacks an invariant TSC or on non-x86 targets.
 //
-// Calibration follows abseil's sysinfo.cc approach (read setup verified against
-// the local abseil checkout): pair each TSC read with the OS clock and keep the
-// lowest-latency pair (minimizes preemption skew), then grow the sample window
-// until the measured frequency stabilizes within 1%. References: abseil
-// GetTimeTscPair / MeasureTscFrequency; invariant-TSC probe per Tracy
-// CheckHardwareSupportsInvariantTSC (CPUID leaf 1 EDX bit4 = rdtsc present,
-// leaf 0x80000007 EDX bit8 = invariant TSC).
+// Calibration prefers the EXACT CPUID leaf 0x15 (TSC/crystal ratio + crystal Hz)
+// when the CPU enumerates it -- zero measurement, zero startup busy-spin, exact
+// (not 1%-approx) multiplier. When leaf 0x15 is masked (hypervisors: WSL/Hyper-V)
+// or absent (older CPUs), it falls back to abseil's sysinfo.cc timing approach
+// (read setup verified against the local abseil checkout): pair each TSC read with
+// the OS clock and keep the lowest-latency pair (minimizes preemption skew), then
+// grow the sample window until the measured frequency stabilizes within 1%.
+// References: Intel SDM Vol.3 leaf 0x15/0x16; abseil GetTimeTscPair /
+// MeasureTscFrequency; invariant-TSC probe per Tracy CheckHardwareSupportsInvariantTSC
+// (CPUID leaf 1 EDX bit4 = rdtsc present, leaf 0x80000007 EDX bit8 = invariant TSC).
 // ---------------------------------------------------------------------------
 
 namespace {
@@ -183,6 +186,41 @@ struct TimeTscPair {
   std::uint64_t ns;
   std::uint64_t tsc;
 };
+
+// Exact TSC frequency straight from CPUID leaf 0x15 (the "TSC/core crystal clock"
+// enumeration), no measurement. TSC_Hz = crystal_Hz * numerator / denominator:
+//   EAX = denominator of the ratio, EBX = numerator, ECX = core crystal Hz.
+// Returns 0 (=> caller falls back to timing) when the leaf is absent or does not
+// enumerate the ratio (EAX/EBX zero) -- which happens on some CPUs, and notably
+// under hypervisors (WSL/Hyper-V mask leaf 0x15 -> all zero, so Linux-under-WSL
+// takes the timing path; bare-metal Windows on this same i9 returns 2/156/38.4MHz
+// = 2.9952 GHz exactly). When EBX/EAX are present but ECX (crystal) is 0, Intel's
+// SDM says derive the crystal from leaf 0x16 (CPU base freq, MHz): a documented
+// approximation for client parts that omit the crystal. Zero everywhere -> 0.
+double tsc_hz_from_cpuid() noexcept {
+  unsigned regs[4] = {0, 0, 0, 0};
+  cpuid(0, regs);
+  if (regs[0] < 0x15u) return 0.0;  // leaf 0x15 not supported
+  cpuid(0x15u, regs);
+  const unsigned denom = regs[0], numer = regs[1];
+  unsigned crystal = regs[2];
+  if (denom == 0 || numer == 0) return 0.0;  // ratio not enumerated
+  if (crystal == 0) {
+    // Crystal not reported: derive from leaf 0x16 base MHz (SDM-sanctioned fallback).
+    unsigned r2[4] = {0, 0, 0, 0};
+    cpuid(0, r2);
+    if (r2[0] < 0x16u) return 0.0;
+    cpuid(0x16u, r2);
+    const unsigned base_mhz = r2[0] & 0xffffu;
+    if (base_mhz == 0) return 0.0;
+    // base_MHz ~= crystal * numer/denom / 1e6  =>  crystal = base_MHz*1e6*denom/numer
+    crystal = static_cast<unsigned>(
+        static_cast<std::uint64_t>(base_mhz) * 1'000'000ull * denom / numer);
+    if (crystal == 0) return 0.0;
+  }
+  return static_cast<double>(crystal) * static_cast<double>(numer) /
+         static_cast<double>(denom);
+}
 
 // Read the pair several times, keep the one whose two clock reads were closest
 // together -- that sample is least likely to have been preempted mid-read.
@@ -228,6 +266,15 @@ double measure_tsc_hz() noexcept {
   return last;
 }
 
+// Best available TSC frequency: prefer the EXACT CPUID leaf 0x15 value (no
+// measurement, no startup busy-spin, no 1% window tolerance), fall back to the
+// timing method when the leaf is masked/absent (hypervisors, older CPUs).
+double best_tsc_hz() noexcept {
+  double exact = tsc_hz_from_cpuid();
+  if (exact > 1.0) return exact;
+  return measure_tsc_hz();
+}
+
 // Fixed-point Q32 multiplier: ns = (tsc * kMult) >> 32. Computed once.
 constexpr int kTscShift = 32;
 
@@ -239,7 +286,7 @@ struct TscScale {
 const TscScale& tsc_scale() noexcept {
   static const TscScale s = [] {
     if (!hardware_has_invariant_tsc()) return TscScale{0, false};
-    double hz = measure_tsc_hz();
+    double hz = best_tsc_hz();
     if (!(hz > 1.0)) return TscScale{0, false};  // calibration failed
     double m = (1e9 / hz) * static_cast<double>(std::uint64_t{1} << kTscShift);
     return TscScale{static_cast<std::uint64_t>(m), true};

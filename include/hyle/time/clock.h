@@ -52,8 +52,10 @@ HYLE_TIME_API std::uint64_t monotonic_ns() noexcept;
 //     would cost a global atomic). So computing elapsed as (b - a) can underflow
 //     to a huge value if the reads straddle a migration. Pin the thread, or only
 //     diff reads taken close together on one core, or just use monotonic_ns().
-//   - First call pays a one-time TSC calibration (~a few ms, against the OS
-//     clock). Subsequent calls are a bare rdtsc + a multiply/shift.
+//   - First call pays a one-time TSC calibration: an exact read from CPUID leaf
+//     0x15 when the CPU enumerates it (no measurement), else a ~few-ms timing
+//     calibration against the OS clock. Subsequent calls are a bare rdtsc + a
+//     multiply/shift.
 //
 // USE IT FOR: high-frequency elapsed-time sampling / profiling hot-path spans
 // where you want the lowest possible read cost and a rare post-resume glitch is
