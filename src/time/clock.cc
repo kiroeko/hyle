@@ -85,6 +85,17 @@ std::uint64_t realtime_ns() noexcept {
   return (ticks - kEpochDiff) * 100ull;
 }
 
+std::uint64_t fast_realtime_ns() noexcept {
+  // Coarse: reads KUSER_SHARED_DATA (no syscall), ~1.8 ns vs ~13.5 for the Precise
+  // variant, at the cost of ~1-15 ms resolution (updates on the timer tick).
+  FILETIME ft;
+  GetSystemTimeAsFileTime(&ft);
+  std::uint64_t ticks =
+      (static_cast<std::uint64_t>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
+  constexpr std::uint64_t kEpochDiff = 116444736000000000ull;
+  return (ticks - kEpochDiff) * 100ull;
+}
+
 void sleep_for_ns(std::uint64_t ns) noexcept {
   if (ns == 0) {
     SwitchToThread();
@@ -108,6 +119,20 @@ std::uint64_t monotonic_ns() noexcept {
 std::uint64_t realtime_ns() noexcept {
   struct timespec ts;
   clock_gettime(CLOCK_REALTIME, &ts);
+  return static_cast<std::uint64_t>(ts.tv_sec) * 1'000'000'000ull +
+         static_cast<std::uint64_t>(ts.tv_nsec);
+}
+
+std::uint64_t fast_realtime_ns() noexcept {
+  // Linux CLOCK_REALTIME_COARSE is a vDSO read (~3 ns vs ~13 for CLOCK_REALTIME),
+  // resolution = the kernel tick (~1-4 ms). macOS/other POSIX lacking it fall back
+  // to CLOCK_REALTIME (still correct, just not faster there).
+  struct timespec ts;
+#if defined(CLOCK_REALTIME_COARSE)
+  clock_gettime(CLOCK_REALTIME_COARSE, &ts);
+#else
+  clock_gettime(CLOCK_REALTIME, &ts);
+#endif
   return static_cast<std::uint64_t>(ts.tv_sec) * 1'000'000'000ull +
          static_cast<std::uint64_t>(ts.tv_nsec);
 }
@@ -190,13 +215,20 @@ struct TimeTscPair {
 // Exact TSC frequency straight from CPUID leaf 0x15 (the "TSC/core crystal clock"
 // enumeration), no measurement. TSC_Hz = crystal_Hz * numerator / denominator:
 //   EAX = denominator of the ratio, EBX = numerator, ECX = core crystal Hz.
-// Returns 0 (=> caller falls back to timing) when the leaf is absent or does not
-// enumerate the ratio (EAX/EBX zero) -- which happens on some CPUs, and notably
-// under hypervisors (WSL/Hyper-V mask leaf 0x15 -> all zero, so Linux-under-WSL
-// takes the timing path; bare-metal Windows on this same i9 returns 2/156/38.4MHz
-// = 2.9952 GHz exactly). When EBX/EAX are present but ECX (crystal) is 0, Intel's
-// SDM says derive the crystal from leaf 0x16 (CPU base freq, MHz): a documented
-// approximation for client parts that omit the crystal. Zero everywhere -> 0.
+// Returns 0 (=> caller falls back to timing) whenever the leaf can't give a valid
+// ratio. That covers THREE distinct cases, not just VMs -- the check is "did this
+// CPU hand me a usable ratio right now", never "am I in a VM" (fragile):
+//   1. Hypervisors (WSL2/Hyper-V/KVM) mask leaf 0x15 -> all zero. Bare-metal Linux
+//      on the SAME i9 DOES enumerate it (this is not OS-dependent, it's whether a
+//      hypervisor sits in between); bare-metal Windows here returns 2/156/38.4MHz
+//      = 2.9952 GHz exactly.
+//   2. Older Intel (pre-Skylake ~2015): invariant TSC present but leaf 0x15 not
+//      enumerated -> timing path.
+//   3. AMD: has NO leaf 0x15 at all (it's an Intel-specific leaf) -> ALWAYS the
+//      timing path. Not a missed optimization -- the leaf simply doesn't exist there.
+// When EBX/EAX are present but ECX (crystal) is 0, Intel's SDM says derive the
+// crystal from leaf 0x16 (CPU base freq, MHz): a documented approximation for
+// client parts that omit the crystal. Zero everywhere -> 0 (timing fallback).
 double tsc_hz_from_cpuid() noexcept {
   unsigned regs[4] = {0, 0, 0, 0};
   cpuid(0, regs);

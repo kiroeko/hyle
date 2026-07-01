@@ -72,6 +72,24 @@ HYLE_TIME_API bool fast_monotonic_available() noexcept;
 // May jump if the system clock is adjusted -- never use for elapsed/deadlines.
 HYLE_TIME_API std::uint64_t realtime_ns() noexcept;
 
+// Fast wall-clock ns -- the realtime counterpart of fast_monotonic_ns(). Reads the
+// OS's COARSE time source (Windows GetSystemTimeAsFileTime = KUSER_SHARED_DATA
+// read; Linux CLOCK_REALTIME_COARSE = vDSO), skipping the high-precision path
+// realtime_ns() uses. Measured ~7.6x faster on Windows (1.8 vs 13.5 ns) and ~4.2x
+// on Linux (3.1 vs 13.0 ns).
+//
+// TRADEOFF (why it is NOT the default, and unconditionally "available" unlike the
+// TSC path): the coarse clock's RESOLUTION is the OS timer tick, ~1-15 ms (measured
+// ~4 ms here), NOT nanoseconds. The value is still real wall-clock ns since the
+// epoch and never needs calibration -- it just updates only once per tick, so two
+// calls within the same tick return the SAME value. Same jump-on-adjust caveat as
+// realtime_ns() (never use for elapsed/deadlines -- use monotonic_ns()).
+//
+// USE IT FOR: high-frequency wall-clock TIMESTAMPS where ms resolution is fine and
+// read cost matters -- log record stamps, trace events, sampling. When you need
+// true sub-ms wall-clock precision (rare), use realtime_ns().
+HYLE_TIME_API std::uint64_t fast_realtime_ns() noexcept;
+
 // Sleep at least `ns` (the OS may round up / wake late). 0 yields.
 HYLE_TIME_API void sleep_for_ns(std::uint64_t ns) noexcept;
 

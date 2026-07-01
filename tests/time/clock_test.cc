@@ -6,6 +6,7 @@
 
 using hyle::time::fast_monotonic_available;
 using hyle::time::fast_monotonic_ns;
+using hyle::time::fast_realtime_ns;
 using hyle::time::Instant;
 using hyle::time::monotonic_ns;
 using hyle::time::realtime_ns;
@@ -45,6 +46,38 @@ TEST(Clock, RealtimeAdvances) {
   sleep_for_ms(5);
   std::uint64_t b = realtime_ns();
   EXPECT_GT(b, a);
+}
+
+TEST(Clock, FastRealtimeIsPlausiblyNow) {
+  // Same epoch sanity as realtime_ns -- catches a wrong 1601/1970 offset or a
+  // unit error in the coarse path. Must land in [2020, 2100).
+  std::uint64_t now = fast_realtime_ns();
+  constexpr std::uint64_t k2020 = 1'577'836'800'000'000'000ull;
+  constexpr std::uint64_t k2100 = 4'102'444'800'000'000'000ull;
+  EXPECT_GT(now, k2020);
+  EXPECT_LT(now, k2100);
+}
+
+TEST(Clock, FastRealtimeTracksRealtime) {
+  // The coarse clock must agree with realtime_ns to within its resolution (~1-15
+  // ms tick) + slack. A wrong scale/epoch would drift far more than that. Compare
+  // the two taken back-to-back: |fast - precise| should be under one coarse tick
+  // plus a generous margin (50 ms covers any tick granularity + scheduling).
+  std::uint64_t p = realtime_ns();
+  std::uint64_t f = fast_realtime_ns();
+  std::uint64_t diff = p > f ? p - f : f - p;
+  EXPECT_LT(diff, 50'000'000ull) << "precise=" << p << " coarse=" << f;
+}
+
+TEST(Clock, FastRealtimeNonDecreasing) {
+  // Coarse resolution means many calls return the SAME value; it must never go
+  // backwards (a broken read could underflow the epoch subtraction).
+  std::uint64_t prev = fast_realtime_ns();
+  for (int i = 0; i < 100000; ++i) {
+    std::uint64_t now = fast_realtime_ns();
+    ASSERT_GE(now, prev) << "fast realtime went backwards at i=" << i;
+    prev = now;
+  }
 }
 
 TEST(Clock, SleepForNsSleepsAtLeastRequested) {
