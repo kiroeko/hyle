@@ -107,11 +107,22 @@ hyle_apply_warnings(hyle_container_misc_bench)
 option(HYLE_BENCH_BOOST "build IntrusiveList bench vs boost::intrusive::list" OFF)
 if(HYLE_BENCH_BOOST)
   set(HYLE_BOOST_DIR "${PROJECT_SOURCE_DIR}/../boost" CACHE PATH "boost tree root")
-  if(NOT EXISTS "${HYLE_BOOST_DIR}/boost/intrusive/list.hpp")
-    message(FATAL_ERROR "HYLE_BENCH_BOOST=ON but no boost/intrusive/list.hpp at ${HYLE_BOOST_DIR}")
+  # Accept BOTH boost layouts: monolithic (boost/intrusive/list.hpp at root, e.g.
+  # system boost) OR modular superproject (libs/<lib>/include/boost/...; a fresh
+  # boostorg clone with submodules checked out). boost::intrusive is header-only but
+  # pulls a small dep closure (config/assert/core/move/static_assert) -- add each
+  # lib's include/ dir in the modular case.
+  if(EXISTS "${HYLE_BOOST_DIR}/boost/intrusive/list.hpp")
+    target_include_directories(hyle_container_misc_bench SYSTEM PRIVATE "${HYLE_BOOST_DIR}")
+  elseif(EXISTS "${HYLE_BOOST_DIR}/libs/intrusive/include/boost/intrusive/list.hpp")
+    foreach(_bl intrusive config assert core move static_assert)
+      target_include_directories(hyle_container_misc_bench SYSTEM PRIVATE
+        "${HYLE_BOOST_DIR}/libs/${_bl}/include")
+    endforeach()
+  else()
+    message(FATAL_ERROR "HYLE_BENCH_BOOST=ON but no boost/intrusive/list.hpp at ${HYLE_BOOST_DIR} (checked monolithic + modular libs/ layout; run `git submodule update --init` in the boost tree)")
   endif()
   target_compile_definitions(hyle_container_misc_bench PRIVATE HYLE_BENCH_BOOST)
-  target_include_directories(hyle_container_misc_bench SYSTEM PRIVATE "${HYLE_BOOST_DIR}")
 endif()
 
 # task #23: hash cluster. HYLE hash_bytes(XXH3)/mix64 vs raw XXH3 (vendored, always)
