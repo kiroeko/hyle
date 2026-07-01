@@ -56,7 +56,17 @@ class MemoryArena {
     // contention once threads > shards (the 64-core box pays again). Pow2 makes the homing
     // modulo cheap and (with the rotating tls seq) collision-free while live threads <= cores.
     num_shards_ = default_shards();
-    if (num_shards_ > count_) num_shards_ = count_;  // <= blocks
+    if (num_shards_ > count_) {
+      // Keep num_shards_ a POWER OF TWO (default_shards() already is): round the
+      // clamp DOWN to the largest pow2 <= count_, never up. This lets the home-shard
+      // pick and the fallback scan both use `& shard_mask_` (exact, covers ALL shards)
+      // instead of a per-alloc `% num_shards_` idiv. A non-pow2 count would break the
+      // mask's full coverage, so we never let num_shards_ go non-pow2.
+      std::uint32_t p = 1;
+      while (p * 2u <= count_) p <<= 1;
+      num_shards_ = p;
+    }
+    shard_mask_ = num_shards_ - 1;  // num_shards_ is pow2 -> exact modulo via AND
     per_ = count_ / num_shards_;  // >=1; the last shard absorbs the remainder
     heads_ = static_cast<ShardHead*>(
         alloc_.allocate(sizeof(ShardHead) * num_shards_, alignof(ShardHead)));
@@ -91,11 +101,11 @@ class MemoryArena {
   // block is handed out as long as ANY shard has one (preserves the single-pool "not
   // exhausted until truly empty" contract).
   void* allocate() noexcept {
-    const std::uint32_t home = tls_thread_seq() % num_shards_;
+    const std::uint32_t home = tls_thread_seq() & shard_mask_;  // num_shards_ is pow2
     std::uint32_t idx = pop_shard(home);
     if (idx == kNull) {
       for (std::uint32_t k = 1; k < num_shards_; ++k) {
-        idx = pop_shard((home + k) % num_shards_);
+        idx = pop_shard((home + k) & shard_mask_);
         if (idx != kNull) break;
       }
       if (idx == kNull) return nullptr;  // every shard empty
@@ -110,7 +120,11 @@ class MemoryArena {
     if (p == nullptr) return;
     auto off = static_cast<std::size_t>(static_cast<std::byte*>(p) - slab_);
     std::uint32_t idx = static_cast<std::uint32_t>(off / stride_);
-    HYLE_FATAL_ASSERT(idx < count_ && off % stride_ == 0);  // belongs to this pool
+    // Belongs to this pool: idx in range AND p is block-aligned. The alignment check
+    // is `idx*stride_ == off` (one multiply) rather than a second `off % stride_`
+    // division -- same guarantee, one idiv instead of two on the free hot path.
+    HYLE_FATAL_ASSERT(idx < count_ &&
+                      static_cast<std::size_t>(idx) * stride_ == off);
     push_shard(shard_of(idx), idx);
   }
 
@@ -236,6 +250,7 @@ class MemoryArena {
   std::uint32_t count_;
   std::size_t alignment_;
   std::uint32_t num_shards_;
+  std::uint32_t shard_mask_;  // num_shards_ - 1 (pow2), so home = seq & shard_mask_
   std::uint32_t per_;  // blocks per shard (last shard takes the remainder)
 };
 
