@@ -228,7 +228,7 @@ if (uint64_t* v = m.find(42)) { /* *v == 100 */ }
 #include "hyle/container/hash_inline.h"   // 仅此 TU 拉入 xxhash/wyhash（编译期代价）
 uint64_t h = hyle::container::hash_bytes_inline(p, n);  // 与 hash_bytes 结果 bit-identical，无 seam
 ```
-默认 `hash.h` 不含它——不 include 就零代价。不确定就用 `hash_bytes`。
+`hash_bytes_inline` 覆盖**全部长度**（≤16 内联 mix / 17-128 XXH3 / >128 wyhash，与 `hash_bytes` 同分派）——不是每个长度一个 API，就这一个函数任意长度可用；只是它**只在短串（17~128B）上真有收益**（≤16B 默认已内联无 seam、长串 seam 已摊平，那两段调它与默认无差）。**适用边界（重要）**：`hash_bytes_inline` 是 **header-inline、非 C-ABI 导出符号**，要求你**源码内嵌 / 静态链接 HYLE**（它把 xxhash.h/wyhash.h 编进你的 TU）；**纯 DLL / C-FFI 消费者用不了它，用默认 `hash_bytes`**（那才是 C-ABI 稳定、DLL 可调的）。默认 `hash.h` 不含它——不 include 就零代价。不确定就用 `hash_bytes`。
 
 ### 3.3 error —— Status / expected
 ```cpp
