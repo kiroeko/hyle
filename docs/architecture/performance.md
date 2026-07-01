@@ -64,8 +64,8 @@
 | **container·map** find-miss(100k) | 4.36 | std::unordered_map | 11.57 | 2.65x | absl flat_hash_map | 4.86 | 1.09x | ✅赢(噪声内略胜) |
 | **container·map** insert(100k fresh) | 11.58 | std::unordered_map | 80.07 | 6.92x | absl flat_hash_map | 24.53 | 2.30x | ✅赢 |
 | **container·map** erase(100k) | 18.01 | std::unordered_map | 93.10 | 5.17x | absl flat_hash_map | 34.60 | 1.83x | ✅赢 |
-| **container·map** iterate(100k visit) | 2.24 | std::unordered_map | 8.09 | 3.60x | absl(未测此项) | n/a | n/a | ✅赢 std 3.6x(扁平 ctrl 扫) |
-| **container·map** SwissTable iterate(for_each) | 2.24 | std::unordered_map | 8.09 | 3.60x | absl(未测此项) | n/a | n/a | ✅赢 std 3.6x(扁平 ctrl 扫) |
+| **container·map** iterate(100k visit) | 0.96 | std::unordered_map | 8.37 | 8.7x | absl flat_hash_map | 1.94 | 2.0x | ✅赢 std 8.7x、**反超 absl 2.0x**(2026-07 for_each 改 SIMD 组扫:2.32→0.96=2.4x,补 absl 对标揪出旧逐字节扫曾输 absl 1.2x) |
+| **container·map** SwissTable iterate(for_each) | 0.96 | std::unordered_map | 8.37 | 8.7x | absl flat_hash_map | 1.94 | 2.0x | ✅同上(match_full 组扫 + for_each 模板无迭代器对象开销) |
 | **container·vec** SmallVector 小 N | 0.43 | std::vector | 16.7 | 39x | absl::InlinedVector | 1.01 | 2.35x | ✅赢同款 small-vector SOTA |
 | **container·vec** SmallVector 溢出(64>内联16) | 0.86 | std::vector | 4.57 | 5.3x | absl::InlinedVector | 2.38 | 2.77x | ✅赢同款(堆溢出/增长路径) |
 | **container·vec** CArray growth/read | 0.50/0.19 | std::vector(即 SOTA) | 0.79/0.19 | 1.58x/1.0x | std::vector(同 std,本身即 SOTA) | 0.79/0.19 | 1.58x/1.0x | ✅赢 growth / ➖平 read |
@@ -143,9 +143,14 @@
 | 操作 | vs `std::unordered_map` | vs `absl::flat_hash_map`(**SOTA 标尺**) | 结论 |
 |---|---|---|---|
 | find-hit | **2.42x** 赢 | **~1.10x 赢**(12 遍 avg 110.1%;prefetch+mix64+H1,曾 0.76x) | **反超 SOTA** |
-| find-miss | **2.26x** 赢 | **≈1.00x 统计平局**(12 遍 avg 97.5%,spread 6.3% > 差距,2/12 遍赢) | **追平 SOTA** |
+| find-miss | **2.26x** 赢 | **≈1.0x 平/微胜**(最新 15 遍 4.41 vs 4.86,1.12x,gap«spread) | **追平 SOTA(见下 profile 收口)** |
 | insert | **5.3x** 赢 | **~1.40x 赢** | **超 SOTA** |
 | erase | **3.5x** 赢 | **~1.39x 赢** | **超 SOTA** |
+| iterate(for_each) | **8.7x** 赢 | **2.0x 赢**(0.96 vs 1.94) | **反超 SOTA(2026-07 组扫)** |
+
+> **2026-07 补 iterate 对标 + 组扫优化(揪出真输并反转)**:此前 iterate 只对 std(赢 3.6x)、absl 标"未测此项"——补 absl 对标**揪出旧 for_each 逐字节扫(load ctrl_[i]+每 slot 分支)输 absl 迭代器 1.2x**(2.32 vs 1.94)。改**组扫**:每 kGroup 字节一次 SIMD `match_full`(SSE2 `movemask^0xFFFF`)得占用 lane 位掩码,只迭代 set bit(无每 slot 分支),= absl 迭代器形状。**iterate 2.32→0.96ns=2.4x,反超 absl 2.0x、赢 std 8.7x**——组扫 + `for_each(fn)` 模板无迭代器对象/校验开销双重优势(absl range-for 每步构造迭代器)。加 `Group::match_full()` + `ForEachVisitsExactlyLiveSet` 测试(空/插/删 tombstone/growth,守卫组扫;此前 for_each 零直接测试)。双平台 container 148/148。**教训同 dtype/dot:"只赢 std 未对 SOTA"会掩盖真输——补对标才暴露,补上就反超。**
+> **find-miss profile 待办收口(2026-07)**:历史留的"find-miss ~10% 待 profile"已过时——最新 15 遍 SwissTable 4.41 vs absl 4.86 = **HYLE 微胜 1.12x(gap«spread,统计平局偏赢)**,那 ~10% 差距在后续 mix64/H1/组 baseline 优化后已消失,HYLE 现不落后 find-miss,profile 待办关闭。
+> **hash 层提升是否反哺 map(2026-07 评估)**:SwissTable 默认 `Hash<K>`,所以 hash 层优化按 **key 类型**自动流入。① **整数/指针 key**(如本表 uint64 bench):走 `mix64`,本轮**未动**(它早是 abseil 单乘折叠、已 SOTA)——故 uint64 map 数字不变,符合预期,非遗漏。② **9-16B POD 复合 key**(如 `{u64,u64}`):走 `hash_small`,本轮 `mix64_2`(单乘替两串行乘)使其 hash 1.38x,map 用此类 key 时 find/insert 直接受益。③ **长 string key**(>128B):走 best-of-breed wyhash,map 用长串 key 时受益。**结论**:反哺是"按 key 类型条件生效"的——最热的整数 key 本就 SOTA 无可反哺,复合/长串 key 才吃到本轮红利;无需额外改 map 代码(hash 是模板参数,自动继承)。
 
 > **2026-06-28 原生 ext4 复测(每步跑 3 遍,非噪声)——两刀优化,学自 absl**:
 > 1. **probe 预取**(`HYLE_PREFETCH` slot,镜像 absl `find_large` 的 `PrefetchToLocalCache`):find-hit 0.76x→**0.88x**(slot load 藏进 ctrl SIMD match);find-miss 不变(miss 不碰 slot)。
