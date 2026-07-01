@@ -56,21 +56,23 @@ HYLE_FORCE_INLINE constexpr bool is_separator(char c) noexcept {
 //   "test.jpg" -> ".jpg"   "a.tar.gz" -> ".gz"   "test" -> {}
 //   ".bashrc"  -> {}       "a.b/c"    -> {}       "" -> {}
 constexpr string_ref extension(string_ref path) noexcept {
+  // Scan the LAST component only, back-to-front (like base()/directory()): stop
+  // at the first separator, so a deep path touches ~one filename's worth of bytes
+  // instead of the whole string. `ext` latches the LAST dot (first one seen going
+  // left); the FIRST non-dot char we then meet is necessarily to its LEFT, which
+  // is exactly the splitext rule ("a non-dot precedes the dot") -> return at once.
+  // A leading-dot name (".bashrc") never meets such a char, so it has no ext.
   std::uint32_t ext = string_ref::npos;
-  bool has_non_ext = false;
-  for (std::uint32_t i = 0; i < path.size; ++i) {
+  for (std::uint32_t i = path.size - 1; i < path.size; --i) {  // wraps below 0
     char c = path.data[i];
-    if (is_separator(c)) {
-      ext = string_ref::npos;
-      has_non_ext = false;
-    } else if (c == '.') {
-      if (has_non_ext) ext = i;
-    } else {
-      has_non_ext = true;
+    if (is_separator(c)) break;                       // reached basename start
+    if (c == '.') {
+      if (ext == string_ref::npos) ext = i;           // latch the last dot
+    } else if (ext != string_ref::npos) {
+      return path.substr(ext);  // view from the dot to the end (keeps nt bit)
     }
   }
-  if (ext == string_ref::npos) return string_ref{};
-  return path.substr(ext);  // view from the dot to the end (keeps nt bit)
+  return string_ref{};
 }
 
 // `path` with its extension() removed. Pairs with extension(): for a name with

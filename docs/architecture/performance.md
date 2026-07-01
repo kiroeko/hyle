@@ -86,9 +86,9 @@
 | **container·str** count(char) 全扫 | 0.008/B | std::count | 0.008 | ~1.0x | std::count(即 SOTA,自动向量化) | 0.008 | ~1.0x | ➖平(AVX2 4累加器 psadbw,统计平局 gap7%«spread10%;原 scalar 输 ~27x) |
 | **container·str** utf8 validate+count(2KB) | 0.41(scalar)/0.21(simdutf) | (无 std utf8 count) | n/a | n/a | simdutf validate+count | 0.21 | 2.0x输/1.0x | ➖scalar 参考 2x;simdutf 核(vendored 无条件默认)追平 |
 | **container·str** hex_encode 1KB→2KB | 0.45/B | naive 逐字节 | 0.63 | 1.41x | (无单一 SOTA hex 库) | n/a | n/a | ✅赢参考实现(表查找) |
-| **container·path** extension / base / directory | 44/10/9.7 | (无 std 词法) | n/a | n/a | std::filesystem 词法 | 152/164/166 | 3.4/16/17x | ✅赢 filesystem(视图原地扫 vs 构造 path 分配) |
-| **container·path** normalize 词法折叠 | 65 | (无 std 等价) | n/a | n/a | std::filesystem lexically_normal | 382 | 5.85x | ✅赢(就地 vs 堆 path 对象) |
-| **container·path** join_array 6 部件(无 alloc) | 30 | (无 std 等价) | n/a | n/a | std::filesystem operator/= | 454 | 14.9x | ✅赢(buffer-fill 折叠 vs N 次 path 分配) |
+| **container·path** extension / base / directory | 2.3/4.6/10 | std::string_view 手写反向扫(纯算法基线,零分配) | 2.1/8.4/9.9 | ~平/1.8x/~平 | std::filesystem 词法 | 152/169/172 | 66/37/17x | ✅平/反超**算法基线**(证扫描已最优)+ 碾 filesystem(结构差:零分配 vs 构造 path);extension 2026-07 正向全扫→反向扫遇分隔符停 40→2.3(18x) |
+| **container·path** normalize 词法折叠 | 69 | (无零分配 std 词法等价) | n/a | n/a | std::filesystem lexically_normal | 401 | 5.8x | ✅赢(就地折叠 vs 堆 path 对象;PRODUCE 型无 string_view 零分配对手) |
+| **container·path** join_array 6 部件(无 alloc) | 29 | (无零分配 std 等价) | n/a | n/a | std::filesystem operator/= | 618 | 21x | ✅赢(buffer-fill 折叠 vs N 次 path 分配;PRODUCE 型无 string_view 对手) |
 | **queue** 单线程 fill+drain | 7.98 | (std 无 bounded-MPMC) | n/a | n/a | rigtorp/moody/tbb | 11.40/9.39/12.86 | 1.5/1.2/1.6x | ✅赢全部(含同约束 rigtorp) |
 | **queue** MPMC 2P 单环 BoundedQueue | 56.9 | (std 无) | n/a | n/a | rigtorp/moody | 61.9/61.0 | 1.09x/1.07x | ✅平/微超同约束 rigtorp |
 | **queue** MPMC 4P 单环 BoundedQueue | 74.0 | (std 无) | n/a | n/a | rigtorp/moody | 83.1/56.3 | 1.12x/0.76x | ✅反超 rigtorp(原输 1.33x,cache-pad+去backoff) |
@@ -446,15 +446,23 @@
 
 ### container·path —— 纯词法路径操作（`path_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench。`path.h` 是 HYLE 的纯字符串路径层(无 syscall),`extension`/`base`/`directory`/`normalize`/`split` 在 string_ref 视图上原地走分量、**零分配**。**标尺 = `std::filesystem::path` 词法操作**——但后者构造一个 path 对象(分配 + 存字符串),HYLE 只在视图上扫,故全线赢。
+> 环境:Win MSVC19.50 Release,nanobench,**15 遍 `bench-stat.py` 中位数**。`path.h` 是 HYLE 的纯字符串路径层(无 syscall),`extension`/`base`/`directory`/`normalize`/`split` 在 string_ref 视图上原地走分量、**零分配**。**三方对标(2026-07 补公平性)**:① `std::filesystem::path` 词法操作——drop-in std SOTA,但每次操作**构造一个 path 对象(堆分配 + 存字符串副本)**;② **`std::string_view` 手写反向扫**——同零分配视图 + 同 back-to-front 扫描形状、仅 API 不同,是**纯算法基线**(隔离"算法" vs "结构");③ HYLE。**HYLE≈② 证扫描算法已最优;②③一起碾 ① 是"零分配 vs 必分配"的结构差,非更巧的算法。**
 
-| op | HYLE | std::filesystem | vs SOTA | 结论 |
-|---|---|---|---|---|
-| **extension / base / directory** | 44/10/9.7 ns | 152/164/166 | 3.4/16/17x | ✅赢(视图原地扫 vs 构造 path 分配) |
-| **normalize 词法折叠** | 65 ns | lexically_normal 382 | 5.85x | ✅赢(就地折叠 `.`/`..`/分隔符 vs 堆 path 对象) |
-| **join_array 6 部件** | 30 ns | operator/= ×6 = 454 | 14.9x | ✅赢(buffer-fill 折叠 vs N 次 path 分配) |
+| op | HYLE | std::string_view 手写(算法基线) | std::filesystem | vs 算法基线 | vs filesystem | 结论 |
+|---|---|---|---|---|---|---|
+| **extension** | **2.26 ns** | 2.13 | 152 | ~平(ratio 1.01,gap«spread) | **66x** | ✅平算法基线(证扫描最优)+ 碾 fs(结构差) |
+| **base** | **4.59 ns** | 8.41 | 169 | **1.84x 反超** | **37x** | ✅**反超算法基线**(string_ref 16B POD 返回比 string_view 构造更省)+ 碾 fs |
+| **directory** | **10.08 ns** | 9.94 | 172 | ~平(ratio 0.99,gap 1.2%«spread) | **17x** | ✅平算法基线 + 碾 fs |
+| **normalize 词法折叠** | 69 ns | (无零分配对手) | 401 | — | **5.8x** | ✅赢 fs(就地折叠 vs 堆 path;PRODUCE 型无 string_view 对手) |
+| **join_array 6 部件** | 29 ns | (无零分配对手) | 618 | — | **21x** | ✅赢 fs(buffer-fill vs N 次 path 分配) |
 
-**诚实结论**:path 全线赢 `std::filesystem` 3.4–17x,根因单一且真实——HYLE 是**视图上的纯词法扫描、零分配**,std::filesystem 每次操作都构造 path 对象(堆分配 + 存字符串副本)。这不是巧妙算法,是"不分配 vs 必分配"的结构差;对标 std::filesystem 是公平的(它就是标准库的路径词法 SOTA),但 HYLE 的优势仅在**纯词法**层(无 syscall 的 fs 操作另见 platform 节 directory_iterate)。
+**诚实结论(2026-07 re-audit:补算法基线 + extension 真优化 + 反哺检查)**:
+
+1. **对 `std::filesystem` 的 17–66x 领先是结构差,不是巧妙算法**——补上 `std::string_view` 手写反向扫这个**零分配算法基线**后诚实分离:extension/directory **平**算法基线、base 甚至**反超** 1.84x,证明 HYLE 的扫描算法本身 = 纯零分配标量扫的最优形状;而对 fs 的巨大倍数纯粹来自"HYLE 在视图上原地扫、零分配" vs "fs 每次构造 path 对象(堆分配 + 拷贝字符串)"。对标 fs 仍公平(它是标准库唯一的词法路径层),但账本如实标明**赢的是结构不是算法**。normalize/join_array 是 PRODUCE 型(产出新路径),std 无零分配对手,只两方对标 fs。
+
+2. **extension 真优化:正向全扫 → 反向扫遇分隔符停,40.4→2.26ns(~18x)**——re-audit 揪出的真算法低效:原 `extension()` **正向全扫整条路径**(深路径 54 字符每次全扫),而 base/directory 早已**反向扫遇分隔符即停**(只碰最后一个 component ~12 字符)。这精确解释了旧账本"extension 仅 3.4x、远低于 base/directory 15x+"的异常。改成同样的反向扫(latch 最后一个点,遇第一个非点字符即返回——正是 Python splitext 语义),extension 从 40.4ns 追平到 2.26ns,与算法基线 string_view 手写版统计平局。新增 6 个反向扫边界用例(`..foo`/`...`/`a..b`/`x.`/深路径/点在分隔符前)守卫语义,18/18 过。
+
+3. **反哺检查(全表 error→path,无可反哺项)**——① **string_ref 的 SIMD 反向扫核**(`str_rfind_char` SSE2、`str_find_last_of` PCMPISTRI)对 path **不适用**:path 组件短(basename ~12-20 字符,远低于 SIMD 收益阈值,账本"string_ref SIMD 仅 multi-KB 扫才划算"),且这些核是**导出符号**(有 ~1ns call seam)、会破坏 extension/base/directory 的 `constexpr`。实测 base/directory 平手 string_view **标量**反向扫已印证——短组件标量扫即最优,无 SIMD 空间。② **string_algo/hash/mem/simd** 与 path 零分配视图扫**正交**(path 不分配、不 hash、不做数值核)。结论:path 的赢点(零分配结构 + 最优标量扫)自成一体,总表其他模块的优化无一能反哺。
 
 ### 次要模块（util/random、time/clock、obs/log、SwissTable iterate，`misc_bench.cc` + `swiss_table_bench.cc`）
 

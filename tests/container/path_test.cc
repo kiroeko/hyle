@@ -36,6 +36,13 @@ TEST(Path, Extension) {
   EXPECT_TRUE(extension("dir.d/file"_sr).empty());    // dot is in a parent dir
   EXPECT_TRUE(extension(""_sr).empty());
   EXPECT_TRUE(extension("a/b.c"_sr) == ".c"_sr);
+  // Back-to-front scan edge cases (guard the reverse-scan rewrite):
+  EXPECT_TRUE(extension("..foo"_sr).empty());         // all leading dots, no ext
+  EXPECT_TRUE(extension("..."_sr).empty());           // dots only
+  EXPECT_TRUE(extension("a..b"_sr) == ".b"_sr);       // empty middle component ok
+  EXPECT_TRUE(extension("x."_sr) == "."_sr);          // trailing dot = empty ext
+  EXPECT_TRUE(extension("/a/b/c.h"_sr) == ".h"_sr);   // deep path, last comp only
+  EXPECT_TRUE(extension("/a.b/c"_sr).empty());        // dot before last separator
 }
 
 TEST(Path, StripExtension) {
