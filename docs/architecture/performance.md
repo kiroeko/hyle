@@ -47,9 +47,9 @@
 | **mem** SystemAllocator churn(默认) | 7.91 | std::malloc(OS) | ~25 | ~3x | 裸 mimalloc | 7.79 | 0.99x | ➖平 SOTA(编译期内联,零接缝税) |
 | **mem** Allocator vtable churn(opt-in) | 8.61 | std::malloc(OS) | ~25 | ~3x | std::pmr / 裸 mi | 8.70/7.79 | 1.01x/0.90x | ✅赢同类 std::pmr(对裸 mi -10% 是多态物理税,pmr 同付) |
 | **mem** 8 线程通用 | 2.07 | std::malloc(OS) | ~30 | (大赢) | 裸 mimalloc | 2.14 | 1.03x | ➖平 SOTA |
-| **mem** Arena bump | 0.67 | new/delete | ~15 | ~22x | std::pmr monotonic | 1.49 | 2.2x | ✅赢 |
-| **mem** StackAllocator | 0.65 | new/delete | ~15 | ~23x | std::pmr monotonic | 1.49 | 2.3x | ✅赢 |
-| **mem** StackAllocator mark/rewind | 1.31 | (无 std partial rewind) | n/a | n/a | std::pmr(无 partial rewind) | n/a | n/a | ➖HYLE 自有(LIFO 部分回退) |
+| **mem** Arena bump | 0.34 | new/delete | ~15 | ~44x | std::pmr monotonic | 0.74 | 2.2x | ✅赢(pointer-style bump 后 0.67→0.34,vs 裸 mi 4.0ns~12x;见 AVX-512 表④) |
+| **mem** StackAllocator | 0.34 | new/delete | ~15 | ~44x | std::pmr monotonic | 0.74 | 2.2x | ✅赢(pointer-style bump 后 0.65→0.34) |
+| **mem** StackAllocator mark/rewind | 0.43 | (无 std partial rewind) | n/a | n/a | std::pmr(无 partial rewind) | n/a | n/a | ➖HYLE 自有(LIFO 部分回退;pointer-bump 后 1.31→0.43) |
 | **mem** GrowablePool(单线程) | 1.92 | new/delete | ~15 | ~8x | std::pmr unsync_pool | 6.72 | 3.5x | ✅赢 |
 | **mem** GrowablePool(8 线程 per-thread) | 0.72 | std::malloc | ~30 | (大赢) | 裸 mi per-thread heap | 1.28 | 1.78x | ✅赢 |
 | **mem** MemoryArena(多线程共享池) | 2.51 | std::malloc | ~30 | (赢) | std::pmr::synchronized_pool(共享池 SOTA) | 112.9 | **44x** | ✅赢同契约 SOTA 44x(无锁分片 vs std mutex 串行;详节) |
@@ -357,9 +357,9 @@
 
 | bump 场景(alloc N + 批量释放) | ns/op(Linux) | vs 裸 mi | 结论 |
 |---|---|---|---|
-| **HYLE Arena**(单线程 bump,池块) | **0.74** | **5.4x** | ✅ 去原子后平 Stack;vs std::pmr 平台相关(见下) |
-| **HYLE StackAllocator**(单线程自有 slab) | **0.74** | **5.4x** | ✅ 真兑现 |
-| std::pmr::monotonic_buffer(SOTA) | 0.61(Lin)/1.49(Win) | — | **平台差异**:Win 上 HYLE 赢 2.2x,**Linux 上 pmr 0.61 反略快(HYLE 0.82x)**——GCC 的 monotonic 比 MSVC 实现更紧;均为纯指针 bump 量级,~亚 ns 难分高下 |
+| **HYLE Arena**(单线程 bump,池块) | **0.34** | **~12x** | ✅ pointer-style bump 后 0.74→0.34;赢 std::pmr monotonic 2.2x(见下) |
+| **HYLE StackAllocator**(单线程自有 slab) | **0.34** | **~12x** | ✅ pointer-style bump 后 0.68→0.34,平 Arena |
+| std::pmr::monotonic_buffer(SOTA) | 0.74(Lin)/1.49(Win) | — | **pointer-bump 后 HYLE(0.34)双平台赢**:Linux 赢 2.2x(pmr 0.74)、Win 赢(pmr 1.49)。此前 offset 版 HYLE 0.74ns 与 Linux pmr 打平/略输,改 pointer-style bump 后拉开——原"Linux pmr 反略快"结论已被 ④ 优化推翻 |
 | 裸 mi_malloc(general,无批量) | 3.98 | 1.0x | — |
 
 | pool churn 场景(**单线程**同尺寸 alloc/free) | ns/op(Linux) | vs 裸 mi | 结论 |
@@ -382,11 +382,11 @@
 
 **核心诚实结论(单点原子两处已修;并把每个工具放到正确的同契约对手上——红队纠错)**:
 
-1. **"专用分配器 5-10x vs new/delete"全部坐实**:`StackAllocator`(纯指针 bump,0.74ns)+ `Arena`(去原子后 0.74ns)**5.4x 赢裸 mi**;`GrowablePool`(单线程 free-list,1.28ns)**3.5x 赢裸 mi、3.0x 赢 std::pmr pool**(gap 252%»spread 23%,铁证)。四个单线程/去原子变体全兑现 5-10x vs general malloc。**vs std::pmr arena 是平台相关**:Win 上 Arena/Stack 赢 monotonic 2.2x,但 Linux 上 GCC 的 monotonic(0.61ns)反比 HYLE(0.74ns)略快——两者都是纯指针 bump、亚 ns 量级,这一项诚实表述为"平台相关、量级相当",不宣称稳赢 std::pmr。
+1. **"专用分配器 5-10x vs new/delete"全部坐实**:`StackAllocator`(pointer-style bump,0.34ns)+ `Arena`(0.34ns)**~12x 赢裸 mi**;`GrowablePool`(单线程 free-list,1.28ns)**3.5x 赢裸 mi、3.0x 赢 std::pmr pool**(gap 252%»spread 23%,铁证)。**vs std::pmr arena 由"平台相关"转"双平台赢"**:pointer-style bump(遗留优化④,offset→cur_/end_)把 HYLE 从 0.74→0.34ns,现赢 Linux monotonic(0.74)2.2x、赢 Win monotonic(1.49);此前 offset 版 0.74ns 与 Linux pmr 打平的结论已被 ④ 推翻。
 
 2. **`MemoryArena` 曾是全场最慢——单点 CAS 争用,已分片根治,公平对标下反超 SOTA 44x**:原 clay 继承的单 `head_` 让 8 线程 CAS 同一 cache line,O(threads) 串行化(8 线程慢 **278x**)。**修复**(`memory_arena.h`):内部分 N 片(片数=核数向上取 2 的幂,上限 128),每片独立 Treiber 头占独立 cache line,线程按 tls 序号 homing 到自己片(同线程 alloc/free 无争用),free 按地址 O(1) 路由回属主片。**复杂度落后(O(N)争用→O(1) per-shard)消除**,双平台 10/10 + WSL TSan 零 race。这同时补上了 mem-design 列为"硬约束"却从未实现的 per-core 池。**公平对标(对同契约的 `std::pmr::synchronized_pool_resource`——std 自带线程安全共享池):8 线程 HYLE 2.51ns vs std 112.9ns = 赢 44x**(HYLE 无锁分片 vs std mutex 串行)。**单线程用它是选错工具**(慢裸 mi 3.1x,该用 `GrowablePool`,见上"⚠️选错工具"),那不是缺陷而是误用。
 
-3. **`Arena` 无锁 bump 同源病已修(去原子化)**:`Arena` 的单 `offset_` 原子也是单点病——单线程付每 alloc 一次 CAS(6.79ns vs `StackAllocator` 纯指针 bump,10x 税)。bump cursor 本质单游标无法分片,SOTA 模式是 **per-thread(各自一个 Arena,零原子)**,并发共享一个 cursor 是反模式(无内部用户的投机无锁化)。**修复**:`offset_` 改 plain `size_t`,纯指针 bump;测试改 `PerThreadArenasNoOverlap`(每线程自己的 Arena)。**6.79→0.74ns(~9x),平 StackAllocator、赢裸 mi 5.4x、与 std::pmr arena 量级相当(平台相关,见结论 1)**。
+3. **`Arena` 无锁 bump 同源病已修(去原子化)+ pointer-style bump(④)**:`Arena` 的单 `offset_` 原子曾是单点病——单线程付每 alloc 一次 CAS(6.79ns vs 纯指针 bump,10x 税)。bump cursor 本质单游标无法分片,SOTA 模式是 **per-thread(各自一个 Arena,零原子)**。**修复**:`offset_` 改 plain,纯指针 bump(6.79→0.74ns);测试改 `PerThreadArenasNoOverlap`。**再经遗留优化④**(offset→cur_/end_ pointer-style bump)砍到 **0.34ns**——objdump 证 offset 版每 alloc 多一次 base load + base±offset 往返两遍,pointer 版省 ~5 指令。平 StackAllocator、赢裸 mi ~12x、双平台赢 std::pmr monotonic(见结论 1)。
 
 4. **共享池的真实对标是 std 共享池,不是 mimalloc per-thread heap——换公平对手 HYLE 赢 44x**:此前把"8 线程**共享一个**固定池"对"mimalloc 的 **8 个 per-thread heap**"比(0.51x),并把这 1.98x 写成"无法优化的诚实标价"——**这是错的**:两者契约不同(共享有界池 vs 各线程私有堆),不该当输赢分母。**红队补的公平对手 = `std::pmr::synchronized_pool_resource`**(std 自带、同契约的线程安全共享池):HYLE 2.51ns **碾压它 112.9ns,赢 44x**(15 遍 min 28.8x)。HYLE 的无锁分片在共享池这一类里远超 std 的 mutex 串行池。**教训(红队精神)**:"对照不公平"不能当免死金牌写成"无法优化"——找到**真正同契约**的对手(synchronized_pool),HYLE 不是输 2x 而是赢 44x。mimalloc per-thread heap 数(1.26ns)仅作 per-thread 模式的 context 参照,不是共享池的对手;若用户要的就是 per-thread 模式,HYLE 的对等答案是 `GrowablePool`(0.63ns,赢 mi 2.04x)。
 
@@ -476,9 +476,9 @@
 | ① | **dtype `f32→bf16` native `VCVTNEPS2BF16`** | ✅上架:`cvt_avx512bf16.cc`(`_mm512_cvtneps_pbh` 16-wide 硬件 RNE,把 AVX2 ~7-op RNE 折成单条),`dtype_dispatch` f32→bf16 优先 `avx512bf16` 档(`cpu_features().avx512bf16` 门控)回退 AVX2/scalar;新 `AVX512_BF16` CMake tier | 双工具链编译+指令验:GCC14 `vcvtneps2bf16`(EVEX.512)、MSVC `/arch:AVX512` `vcvtneps2bf16 ymm,zmmword`。测试 `F32ToBf16Avx512MatchesScalar`(NaN equal-by-class、finite bit-exact)本机正确 SKIP | 真机/SDE 跑该测试即对拍(纯硬件 RNE,finite 与 oracle bit-identical) |
 | ② | **simd ops AVX-512 派发档** | ✅已接线(此前里程碑):`kernels_avx512.cc`(共享 `kernel_impl.h` 16-wide)+ `dispatch_ops.cc` 默认路由 AVX-512 host;本轮复核接线完整 | objdump:GCC 7 zmm/MSVC 33 zmm(含 `vfmadd213ps zmm`)。`ops_test` 宽度无关对拍 oracle,真机 `active_variant()` 自动选 kAvx512 | 真机跑 `ops_test`/`vec_test` 即对拍(共享体与已实跑 avx2/sse4 同源,仅宽度宏不同) |
 | ③ | **math exp/log/tanh 512b 变体** | ✅上架:`transcendental_{xsimd,highway}_avx512.cc`(借同核 512b/16-lane),`math_dispatch` 加 avx512 档优先(exp/tanh→xsimd-512、log→highway-512)回退 AVX2;新 `hyle_set_avx512_math_isa`(全 AVX-512 组+cd) | objdump:GCC xsimd512 92zmm/highway512 43zmm、MSVC xsimd512 581zmm。`Math.*MatchesLibm` 对 libm 对拍,本机走 AVX2 路径过 | 真机跑 `math_test` 即对拍。**MSVC log-512 已排除**(Highway AVX3=`HWY_BROKEN_MSVC` 退 ymm,故 highway512 仅 GCC/Clang;MSVC log 留 avx2 highway,同速不假装512) |
-| ④ | **Arena/StackAllocator pointer-style bump**(硬件无关) | ✅完成:offset-based(存 `base_`+`top_`/`offset_`,每 `allocate` 重算 `base+offset`→对齐→减回 offset)改 canonical `cur_`/`end_` 双指针纯指针 bump,直接对齐活指针。Marker 从 size_t 偏移改 byte*(API 不变) | objdump(GCC -O2 inlined):load cur_/end_→`add 0xf;and`→cmp end→lea bump→store,~10 指令,**无 +base/-base**(目标那两条 ALU 已消除)。双平台 mem 48 测试过 | — |
+| ④ | **Arena/StackAllocator pointer-style bump**(硬件无关) | ✅完成:offset-based(存 `base_`+`top_`/`offset_`,每 `allocate` 重算 `base+offset`→对齐→减回 offset)改 canonical `cur_`/`end_` 双指针纯指针 bump,直接对齐活指针。Marker 从 size_t 偏移改 byte*(API 不变) | objdump(GCC -O2 inlined):offset 版 ~15 指令含 3 load + base+offset 往返(对齐一次、overflow 记账再算一次);pointer 版 ~10 指令 2 load 无 +base/-base。**bench-stat 15 遍实测(Linux):Arena 0.68→0.34ns、Stack 0.68→0.34ns、mark/rewind 0.63→0.43ns=~2x**(gap 50%»spread ~12%,真赢非平局) | — |
 
-**诚实定性**:①②③ 已从"留账非即做"转为**已上架+双平台编译 objdump 验真**(用户指令:写完接线才能在真机验证,否则永远落不了地);三项的 512-bit 执行正确性是 `存疑`,待 Intel SDE/真 AVX-512 机跑既有测试(全部宽度无关/对 oracle,真机一跑即自证,无需新码)。**关键发现**:Highway 在 MSVC 把整个 AVX3 标 `HWY_BROKEN`(已知 codegen bug),故 ③ 的 highway-512 log 仅 GCC/Clang 上是真 512,MSVC 退 ymm 已显式排除——不假装 512。④ 已完成(pointer-style bump,objdump 证那两条 ALU 消除,双平台测试过),亚-ns 量级如预期。**没有一项是"本机低成本高收益"**——time/`monotonic_ns` 那种(频率特判换 1.48x)的机会,逐模块扫描后未再发现第二个。
+**诚实定性**:①②③ 已从"留账非即做"转为**已上架+双平台编译 objdump 验真**(用户指令:写完接线才能在真机验证,否则永远落不了地);三项的 512-bit 执行正确性是 `存疑`,待 Intel SDE/真 AVX-512 机跑既有测试(全部宽度无关/对 oracle,真机一跑即自证,无需新码)。**关键发现**:Highway 在 MSVC 把整个 AVX3 标 `HWY_BROKEN`(已知 codegen bug),故 ③ 的 highway-512 log 仅 GCC/Clang 上是真 512,MSVC 退 ymm 已显式排除——不假装 512。④ 已完成(pointer-style bump);**实测意外——不是预期的"亚-ns 平局"而是 ~2x 真赢**(Arena/Stack 0.68→0.34ns、mark/rewind 0.63→0.43ns,15 遍 gap 50%»spread 12%):offset 版每 alloc 多一次 `base_` load + base±offset 往返算两遍(对齐一次、overflow 记账再算一次),objdump ~15 指令 vs pointer 版 ~10 指令;在 0.68ns(仅 ~3-4 指令成本)的量级上省 5 条指令直接砍半。**"亚-ns 天花板不值得做"的预判被实测推翻**——bump 成本本身太小,任何多余指令占比都放大。**没有其它"本机低成本高收益"项**——time/`monotonic_ns` 那种(频率特判换 1.48x)的机会,逐模块扫描后未再发现(④ 这个 2x 是本轮附带发现的第二个)。
 
 ## 主表：时间 / 空间分列
 
