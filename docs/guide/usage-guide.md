@@ -223,6 +223,13 @@ if (uint64_t* v = m.find(42)) { /* *v == 100 */ }
 ```
 其余：`CArray<T>`（侵入式数组）、`SmallVector<T,N>`、`string_ref`（视图字符串）、`BoundedQueue`（lock-free MPMC）。
 
+**哈希器（`hyle/container/hash.h`）**：默认 `Hash<T>` / `hash_bytes` 已 best-of-breed——整数/指针/≤16B POD 走内联 mix（无调用），字节串按长度选最快核（17-128B→XXH3、>128B→wyhash）。**绝大多数用法（map key）无需关心**。仅一个进阶开关：`hash_bytes` 对 **>16B 字节串**走出线核（把 7490 行 xxhash.h 挡在你的 TU 外），代价是一次 ~1ns 调用（在 **短串** ~64B 上占比可见,长串摊平、≤16B key 不走此路）。**若** profiler 显示你有一个热循环在 hash 大量 **短字节串（17~128B）**、且你愿意让该 TU 吃 xxhash.h 的编译期开销,用 opt-in 头消掉那 1ns:
+```cpp
+#include "hyle/container/hash_inline.h"   // 仅此 TU 拉入 xxhash/wyhash（编译期代价）
+uint64_t h = hyle::container::hash_bytes_inline(p, n);  // 与 hash_bytes 结果 bit-identical，无 seam
+```
+默认 `hash.h` 不含它——不 include 就零代价。不确定就用 `hash_bytes`。
+
 ### 3.3 error —— Status / expected
 ```cpp
 #include "hyle/error/status.h"
