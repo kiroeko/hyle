@@ -232,7 +232,7 @@
 
 ### simd 逐 op 扩展（reduce_max / scale，`simd_bench.cc`）
 
-> dot/saxpy 之外补两个 distinct pattern,验证 vec.h 抽象在非 FMA 模式下是否退化。环境同上(15 遍中位数+spread,Highway 真 256b 对照——见上节公平性更正)。
+> dot/saxpy 之外补两个 distinct pattern,验证 vec.h 抽象在非 FMA 模式下是否退化。环境同上(15 遍中位数+spread,Highway 真 256b 对照——见上节公平性更正)。**记账口径**:reduce_max/scale 是 **bench-only kernel(`simd_kernels_*.cc`),不是 `ops.h` 导出的公开 op**(公开只有 dot_f32/saxpy_f32)——此处纯为验证 vec.h 抽象在 max-归约/element-wise map 上零成本,非"已交付的 SIMD 能力"。若将来上架为公开 op,reduce_max 有归约依赖可同 dot 做多累加器展开(现为单累加器)。
 
 | op | scalar(auto-vec) | HYLE sse4 | HYLE avx2 | Highway(真 256b SOTA) | 结论(15 遍中位数) |
 |---|---|---|---|---|---|
