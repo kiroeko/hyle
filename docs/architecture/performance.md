@@ -66,9 +66,9 @@
 | **container·map** erase(100k) | 18.01 | std::unordered_map | 93.10 | 5.17x | absl flat_hash_map | 34.60 | 1.83x | ✅赢 |
 | **container·map** iterate(100k visit) | 0.96 | std::unordered_map | 8.37 | 8.7x | absl flat_hash_map | 1.94 | 2.0x | ✅赢 std 8.7x、**反超 absl 2.0x**(2026-07 for_each 改 SIMD 组扫:2.32→0.96=2.4x,补 absl 对标揪出旧逐字节扫曾输 absl 1.2x) |
 | **container·map** SwissTable iterate(for_each) | 0.96 | std::unordered_map | 8.37 | 8.7x | absl flat_hash_map | 1.94 | 2.0x | ✅同上(match_full 组扫 + for_each 模板无迭代器对象开销) |
-| **container·vec** SmallVector 小 N | 0.43 | std::vector | 16.7 | 39x | absl::InlinedVector | 1.01 | 2.35x | ✅赢同款 small-vector SOTA |
-| **container·vec** SmallVector 溢出(64>内联16) | 0.86 | std::vector | 4.57 | 5.3x | absl::InlinedVector | 2.38 | 2.77x | ✅赢同款(堆溢出/增长路径) |
-| **container·vec** CArray growth/read | 0.50/0.19 | std::vector(即 SOTA) | 0.79/0.19 | 1.58x/1.0x | std::vector(同 std,本身即 SOTA) | 0.79/0.19 | 1.58x/1.0x | ✅赢 growth / ➖平 read |
+| **container·vec** SmallVector 小 N | 0.41 | std::vector | 16.8 | 41x | absl::InlinedVector | 0.84–1.0 | 2.0–2.4x | ✅赢同款 small-vector SOTA(absl 侧 spread 大取范围) |
+| **container·vec** SmallVector 溢出(64>内联16) | 0.88 | std::vector | 4.70 | 5.3x | absl::InlinedVector | 2.40 | 2.7x | ✅赢同款(堆溢出/增长路径) |
+| **container·vec** CArray growth/read | 0.51/0.18 | std::vector(即 SOTA) | 0.75/0.18 | 1.48x/1.0x | std::vector(同 std,本身即 SOTA) | 0.75/0.18 | 1.48x/1.0x | ✅赢 growth(2026-07 grow 真改 reallocate;赢因 mimalloc 分配器质量非"原地无copy",详节纠错)/ ➖平 read |
 | **container·list** IntrusiveList push/pop | 3.57 | std::list | 25.29 | 7.1x | boost::intrusive(未 checkout) | n/a | ⏳待补 | ✅赢 std 7.1x;boost 对照待跑 |
 | **container·list** IntrusiveList::remove(O(1)) | 2.56 | std::list::erase | 28.31 | 11.1x | boost::intrusive::erase(未 checkout) | n/a | ⏳待补 | ✅赢 std 11x;boost 对照待跑 |
 | **container·str** StringBuf intern(100k/2k 唯一) | 24.0 | 无锁 map floor | 21.2 | 0.88x | thread-safe peer(map+mutex) | 28.1 | 1.17x | ✅赢同契约 peer(对无锁 map 是 thread-safe-vs-无锁) |
@@ -411,12 +411,12 @@
 
 | 场景 | HYLE | std | 真 SOTA(gated) | 结论 |
 |---|---|---|---|---|
-| **小 N churn**(建+填 8 int+析构) | SmallVector<int,16> **0.43 ns** | vector 16.7 / vector+reserve 3.07 | **absl::InlinedVector 0.60** | ✅ **赢 absl 1.40x**、赢 std 39x |
+| **小 N churn**(建+填 8 int+析构) | SmallVector<int,16> **0.41 ns** | vector 16.8 / vector+reserve 3.06 | **absl::InlinedVector 0.84–1.0** | ✅ **赢 absl 2.0–2.4x**(absl 侧 spread 大)、赢 std 41x |
 | **list churn**(push 4096 + pop 全) | IntrusiveList **3.0~3.4 ns** | list 24.1 | boost::intrusive(需 submodule checkout) | **8x 赢 std**;boost 同 hook-in-node,gate 已接 |
-| **动态数组 growth**(push_back 4096 int,无 reserve) | CArray<int> **0.53 ns** | vector **0.71** | (std::vector 即 SOTA) | ✅ **赢 std::vector 1.34x** |
+| **动态数组 growth**(push_back 4096 int,无 reserve) | CArray<int> **0.51 ns** | vector **0.75** | (std::vector 即 SOTA) | ✅ **赢 std::vector 1.48x**(grow 用 reallocate) |
 | **动态数组 read**(顺序求和 4096) | CArray<int> **0.18 ns** | vector 0.18 | (std::vector 即 SOTA) | ➖ **平 std::vector**(arr[i] 单 load 兑现) |
 
-**诚实结论**:① **SmallVector 反超 absl::InlinedVector 1.40x**——不是"只赢 std":absl::InlinedVector 是 small-vector 的 SOTA(同 inline 存储设计),HYLE 0.43ns vs absl 0.60ns,小 N churn 真赢同款 SOTA(也赢 std::vector 39x)。② **IntrusiveList 8x 赢 std::list**(零节点分配);boost::intrusive 同 hook-in-node 设计,gate 已接线(`-DHYLE_BENCH_BOOST`),但 boost 模块化 submodule 未 checkout,留待环境备齐实测(预期同量级)。③ **CArray 反超 std::vector 1.34x growth、平 read**:growth 赢的真根因 = 经 `reallocate()` 增容(mimalloc 原地扩展,无 copy),std::vector 每次扩容恒 alloc-new+move+free;read 路径 arr[i] 单 load 与 vector 持平(header-before-data 布局零索引开销)。
+**诚实结论**:① **SmallVector 反超 absl::InlinedVector 2.0–2.4x**——不是"只赢 std":absl::InlinedVector 是 small-vector 的 SOTA(同 inline 存储设计),HYLE 0.41ns vs absl 0.84–1.0ns(absl 侧 nanobench 标 unstable、spread 大,故取范围),小 N churn 真赢同款 SOTA(也赢 std::vector 41x);溢出路径同样赢 absl 2.7x。② **IntrusiveList 8x 赢 std::list**(零节点分配);boost::intrusive 同 hook-in-node 设计,gate 已接线(`-DHYLE_BENCH_BOOST`),但 boost 模块化 submodule 未 checkout,留待环境备齐实测(预期同量级)。③ **CArray 反超 std::vector ~1.48x growth、平 read**:growth 赢的**真根因(2026-07 纠错)**——旧文档称"经 `reallocate()` mimalloc 原地扩展、无 copy"是**双重错**:① 当时代码根本没用 reallocate(是 `allocate`+`memcpy`+`free`,与 std::vector 同形);② 几何增长(4→8→16…)常跨 mimalloc size-class,**即便用 reallocate 也多是 relocate+copy,in-place 很少触发**。真正赢 std 的因是 **mimalloc 分配器质量**(比 std::vector 的 `operator new` 快)+ header-before-data 零索引开销,不是"原地无 copy"。现已把 grow **真改用 `mem::reallocate`**(兑现文档、且是更简 API：≤ 手动路径,偶尔省一次 copy),实测 growth 0.53→0.51ns、1.34x→1.48x(边际,证实 in-place 少触发);read 路径 arr[i] 单 load 与 vector 持平(header-before-data 布局零索引开销)。
 
 ### container·str —— string_ref / StringBuf / string_algo（`string_ref_bench.cc` / `string_buf_bench.cc` / `string_algo_bench.cc`）
 
