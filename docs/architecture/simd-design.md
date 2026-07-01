@@ -95,9 +95,9 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 3. **没有正确性缺口**。SSE2 基线恒在且正确；SSSE3 快路径由 `HYLE_HAVE_SSSE3` 门控,且 **SSSE3 现为全局 baseline**(CMake 对 x86 GCC/Clang 全局加 `-mssse3`、MSVC x64 无条件),故三平台默认生效(performance.md 实测：match_empty 的 SSSE3 路径是绝对小增益，**不**是 find-miss 差距来源)。NEON 已交叉编译验证。
 4. **无遗留分发缺口**——SSSE3 既是全局 baseline,分发型二进制默认即吃到 SSSE3 快路径,无需 `-march=native`。
 
-**真要做运行期 dispatch 的正确解(若将来 profile 证明 baseline SwissTable 是分发型二进制的真瓶颈)**：**不是**让 container 依赖 simd,而是**把 CPUID 探测器下沉到 `platform/`（比 container 更低层）**,让 container 和 simd 都能查同一个探测结果——这样 container 可在 hashmap 内部做"baseline(SSSE3) vs 更高 ISA(AVX2 group)"的运行期分发,仍不碰 simd/。当前不做(收益小、增复杂度)。
+**运行期 dispatch 的正确解——CPUID 探测已下沉 platform(2026-07 落地)**:曾预留的方案是"**不**让 container 依赖 simd,而是**把 CPUID 探测器下沉到比 container 更低的层**,让 container 和 simd 都查同一份探测结果"。**此下沉已实施**:`CpuFeatures`/`best_isa`/`cpu_features` 从 `simd/dispatch` 搬到 `platform/cpu.{h,cc}`(`simd/dispatch.h` 转发,simd 内部零改动),container 经 `container→mem→platform` 白拿探测,无新依赖边。首个消费者是 **container·str 的 `count`/`rfind` AVX2 变体**(`string_ref_avx2.cc`,独立 `-mavx2` TU,运行期 `cpu_features().avx2` 门控)——追平 MSVC STL 的 AVX2(见 performance.md container·str 节)。**probe.h(SwissTable)本身仍未上此 dispatch**:其 SSSE3 baseline 已够(下方复审条件未触发),但下沉后的探测器已就位,将来若需要可直接查。
 
-**复审触发条件（写明,免得凭感觉重提）**：① profile 显示分发型(非 `-march`)二进制的 SwissTable 探测是实测热点 **且** ② 比 SSSE3 baseline 更高的 ISA(AVX2 group)路径能显著缩差距。两条同时成立才动,且按上一段方案(下沉 CPUID 到 platform),非 container→simd 依赖。
+**probe.h 的复审触发条件(仍适用于 SwissTable 探测)**:① profile 显示分发型(非 `-march`)二进制的 SwissTable 探测是实测热点 **且** ② 比 SSSE3 baseline 更高的 ISA(AVX2 group)路径能显著缩差距。两条同时成立才给 probe.h 上 AVX2 变体(探测器已在 platform,不再是阻碍)。
 
 ## 落地清单
 

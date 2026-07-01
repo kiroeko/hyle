@@ -20,11 +20,11 @@ mem/          time/                          │  (最小埋点 API，
 (mimalloc      (单调钟+                       │   P0 先定、空实现，
  backing,       时间轮)                       │   各模块热路径嵌)
  修 alignment)   │                            │
-  │              │                            │   simd/  ← 零 HYLE 依赖根（只用
-  ▼              │                            │   (可移植       platform.h 宏伞探 ISA，
-container/       │                            │    vector+      不 include mem；container
-(ring/MPMC/      │                            │    dispatch)    自带内联 SSE 探测片段，
- intrusive/      │                            │    │            也不依赖 simd/)
+  │              │                            │   simd/  ← 依赖 platform(借 CPUID
+  ▼              │                            │   (可移植       探测,2026-07 下沉);不 include
+container/       │                            │    vector+      mem;container 自带内联 SSE
+(ring/MPMC/      │                            │    dispatch)    探测片段,不依赖 simd/,但同样
+ intrusive/      │                            │    │            借 platform 的 CPUID 上 AVX2 变体)
  SwissTable)     │                            │    │  喂 compute kernel
   │              │                            │    │
   └────────┬─────┴────────────────────────────────┘
@@ -48,7 +48,7 @@ container/       │                            │    vector+      不 include 
    C-ABI shim（各模块稳定后逐个封）+ ffi 绑定（build-time）
 ```
 
-**无环校验**：error → platform → {mem,time} → container → sched → {io,compute} → graph。单向，无回边。`simd/` 是**零 HYLE 依赖的根**（与 error 同层，只用 `platform.h` 宏伞做编译期 ISA 探测，实现里不 include 任何 HYLE 模块，包括 mem）——可与整条链**完全并行**，最终只喂 compute 的 kernel，**不在通往 sched 的关键路径上**。（曾计划 simd 依赖 mem 的对齐契约，但 kernel 走 LoadU/StoreU 非对齐 load，该边未落地。）
+**无环校验**：error → platform → {mem,time,simd} → container → sched → {io,compute} → graph。单向，无回边。`simd/` **依赖 platform**（2026-07：CPUID 探测 `CpuFeatures`/`best_isa` 下沉 platform，simd 借它做运行期 ISA dispatch；此前 simd 是"零 HYLE 依赖根"、只用 `platform.h` 宏伞，下沉后升级为依赖 platform 模块本身）——仍可与 mem/container/sched 链**大体并行**，最终只喂 compute 的 kernel，**不在通往 sched 的关键路径上**。CPUID 下沉 platform 让 container 也能查同一探测、安全上 AVX2 变体（如 container·str 的 count/rfind），不必依赖 simd。（曾计划 simd 依赖 mem 的对齐契约，但 kernel 走 LoadU/StoreU 非对齐 load，该边未落地。）
 
 ## 二、施工计划：两个轴别混
 
@@ -84,7 +84,7 @@ container/       │                            │    vector+      不 include 
 
 **HYLE 自有合计:~30-45k 生产 / ~48-72k 含测试**(实测 test/prod≈0.62)。**约 47 个里程碑**(milestones/README 为准),每个"写完→编过→单测→基准→提交"闭环。
 
-**关键路径**（最长链）：`error → platform → mem → container → sched`。sched 是瓶颈，等 container 队列 + time + platform park 全就位。所以 **P2/P3 的 container/time 要尽早动**。simd 不在关键路径（**零 HYLE 依赖,只用 platform.h 宏伞探 ISA**），可与整条链完全并行、晚点喂 compute。
+**关键路径**（最长链）：`error → platform → mem → container → sched`。sched 是瓶颈，等 container 队列 + time + platform park 全就位。所以 **P2/P3 的 container/time 要尽早动**。simd 不在关键路径（依赖 platform 借 CPUID 探测，其余零 HYLE 依赖），可与整条链大体并行、晚点喂 compute。
 
 ### 当前实现状态 → 见 milestones/README（唯一进度信源）
 
