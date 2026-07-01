@@ -83,6 +83,36 @@ TEST(Hash, StringViewNoCollisionsOn10k) {
   EXPECT_EQ(seen.size(), 10000u);  // 64-bit XXH3: zero collisions expected
 }
 
+// LONG strings (> kWyhashThreshold=128B) take the wyhash branch of hash_bytes
+// (best-of-breed by length). Verify that branch: deterministic, seed-sensitive,
+// and collision-free over 10k distinct long strings. The short test above only
+// exercises the XXH3 branch, so without this the wyhash path is untested.
+TEST(Hash, LongStringWyhashPathNoCollisions) {
+  std::unordered_set<std::uint64_t> seen;
+  std::vector<std::string> keep;
+  keep.reserve(10000);
+  const std::string filler(200, 'x');  // 200B base -> well past the 128B threshold
+  for (int i = 0; i < 10000; ++i) {
+    keep.push_back(filler + "_key_" + std::to_string(i) + "_" + filler);
+    seen.insert(hyle::container::hash_bytes(keep.back().data(), keep.back().size()));
+  }
+  EXPECT_EQ(seen.size(), 10000u);  // wyhash 64-bit: zero collisions expected
+  // Deterministic + seed-sensitive on the long path.
+  const char* s = keep[0].data();
+  const std::size_t n = keep[0].size();
+  EXPECT_EQ(hyle::container::hash_bytes(s, n, 0), hyle::container::hash_bytes(s, n, 0));
+  EXPECT_NE(hyle::container::hash_bytes(s, n, 0), hyle::container::hash_bytes(s, n, 1));
+}
+
+// The XXH3<->wyhash crossover at kWyhashThreshold must not break determinism: both
+// sides of the boundary (128B XXH3, 129B wyhash) hash consistently to themselves.
+TEST(Hash, LengthDispatchBoundaryDeterministic) {
+  std::string a(128, 'a'), b(129, 'b');  // 128 -> XXH3, 129 -> wyhash
+  EXPECT_EQ(hyle::container::hash_bytes(a.data(), 128), hyle::container::hash_bytes(a.data(), 128));
+  EXPECT_EQ(hyle::container::hash_bytes(b.data(), 129), hyle::container::hash_bytes(b.data(), 129));
+  EXPECT_NE(hyle::container::hash_bytes(a.data(), 128), hyle::container::hash_bytes(b.data(), 129));
+}
+
 TEST(Hash, IntAndEnumUsable) {
   enum class Color : int { Red, Green, Blue };
   Hash<Color> h;

@@ -32,6 +32,18 @@ namespace hyle::container {
 namespace detail {
 HYLE_CONTAINER_API std::uint64_t hash_bytes_xxh3(const void* data, std::size_t len,
                                                  std::uint64_t seed) noexcept;
+// wyhash core for LONG byte ranges (len > kWyhashThreshold). Also out-of-line in
+// hash.cc (wyhash.h kept out of this header). Best-of-breed: XXH3 wins short-mid
+// strings, wyhash wins long ones -- hash_bytes() picks by length (see below).
+HYLE_CONTAINER_API std::uint64_t hash_bytes_wyhash(const void* data, std::size_t len,
+                                                   std::uint64_t seed) noexcept;
+
+// Length crossover between the two out-of-line hashers, from the length sweep
+// (bench/container/hash_bench.cc, 15-run medians): XXH3 is fastest for 17..~128B
+// (wins wyhash 1.1-1.26x), wyhash is fastest for >=~192B (wins 1.45-2.6x; XXH3 has
+// a midsize-path pessimum near 256B). 128 is the conservative split -- the tie
+// point sits on the XXH3 side, so wyhash only takes over where it clearly wins.
+inline constexpr std::size_t kWyhashThreshold = 128;
 }  // namespace detail
 
 namespace detail {
@@ -144,7 +156,12 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
     }
     return detail::mix64(s);
   }
-  return detail::hash_bytes_xxh3(data, len, seed);
+  // >16B: best-of-breed by length (runtime `len`). XXH3 for short-mid, wyhash for
+  // long -- a single predictable branch; both are out-of-line (their impl headers
+  // stay hidden). Both are SMHasher-quality; switching by length is deterministic
+  // per input and hashes never persist across processes, so it's safe.
+  if (len <= detail::kWyhashThreshold) return detail::hash_bytes_xxh3(data, len, seed);
+  return detail::hash_bytes_wyhash(data, len, seed);
 }
 
 // Default hasher. Specialized for the common cheap cases. For SMALL trivially-copyable T
@@ -156,10 +173,15 @@ struct Hash {
   static_assert(std::is_trivially_copyable_v<T>,
                 "Hash<T>: specialize Hash for non-trivially-copyable T");
   std::uint64_t operator()(const T& v) const noexcept {
+    // sizeof(T) is a COMPILE-TIME constant, so this whole ladder resolves at compile
+    // time (if constexpr): each Hash<T> instantiation calls exactly ONE hasher with
+    // ZERO runtime branch -- the best-of-breed pick is baked in per type.
     if constexpr (sizeof(T) <= 16) {
-      return detail::hash_small(&v, sizeof(T));  // inline, no call
+      return detail::hash_small(&v, sizeof(T));           // inline mix, no call
+    } else if constexpr (sizeof(T) <= detail::kWyhashThreshold) {
+      return detail::hash_bytes_xxh3(&v, sizeof(T), 0);   // short-mid: XXH3 fastest
     } else {
-      return hash_bytes(&v, sizeof(T));  // XXH3 (bytes amortize the seam)
+      return detail::hash_bytes_wyhash(&v, sizeof(T), 0); // long: wyhash fastest
     }
   }
 };

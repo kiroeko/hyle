@@ -65,13 +65,14 @@ int main() {
                      // so per-byte is LOW there without meaning the algorithm is faster.
         .minEpochIterations(2000);
 
-    // For len<=16 this is HYLE's INLINE mix (mix64 fold), NOT XXH3 -- hash_bytes
-    // short-circuits <=16B before the out-of-line XXH3 core. So the <=16B rows below
-    // compare HYLE-inline-mix vs a DIFFERENT algorithm (full XXH3 / wyhash-small);
-    // only the 64B/256B rows are same-algorithm (XXH3 vs XXH3 = the true wrapper/seam
-    // cost). Labels reflect this.
-    b.run(len <= 16 ? "HYLE hash_bytes (inline mix, NOT XXH3)"
-                    : "HYLE hash_bytes (XXH3 wrapper)", [&] {
+    // HYLE hash_bytes is BEST-OF-BREED by length: <=16B inline mix (NOT XXH3);
+    // 17..128B XXH3; >128B wyhash. So each row compares HYLE's CHOSEN hasher at that
+    // length against raw XXH3 + wyhash. Expect HYLE to track whichever of XXH3/wyhash
+    // wins that length (64B->XXH3, 256B->wyhash), minus the out-of-line seam (~1ns).
+    const char* hyle_label =
+        len <= 16 ? "HYLE hash_bytes (inline mix)"
+                  : (len <= 128 ? "HYLE hash_bytes (->XXH3)" : "HYLE hash_bytes (->wyhash)");
+    b.run(hyle_label, [&] {
       const auto& s = pool[it++ & (kPool - 1)];
       nb::doNotOptimizeAway(hyle::container::hash_bytes(s.data(), s.size()));
     });
