@@ -1,6 +1,6 @@
-#include "hyle/simd/dispatch.h"
+#include "hyle/platform/cpu.h"
 
-// dispatch.cc -- the ISOLATED, LTO-DISABLED probe TU (conventions §10 probe isolation).
+// cpu.cc -- the ISOLATED, LTO-DISABLED probe TU (conventions §10 probe isolation).
 // Nothing here may use an instruction above the baseline ISA: this code runs FIRST, on
 // an as-yet-unknown CPU, to discover what that CPU can run. If LTO inlined an AVX
 // instruction into FlagsFromCpuid(), an old CPU would SIGILL inside the very function
@@ -18,7 +18,7 @@
 #  endif
 #endif
 
-namespace hyle::simd {
+namespace hyle::platform {
 namespace {
 
 #if defined(HYLE_ARCH_X64)
@@ -222,4 +222,4 @@ const char* isa_name(Isa isa) noexcept {
   return "unknown";
 }
 
-}  // namespace hyle::simd
+}  // namespace hyle::platform

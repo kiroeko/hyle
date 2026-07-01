@@ -1,16 +1,14 @@
 # simd: runtime ISA dispatch + portable vec<T,N> D-tag abstraction (simd-design).
 #
-# dispatch.cc is the CPUID PROBE translation unit and MUST stay LTO-free (conventions
-# §10 / llama.cpp's hard-won bug): with LTO on, the linker can inline an advanced-ISA
-# instruction INTO the detector, which then SIGILLs on an old CPU before it can report
-# that the CPU is old. So the probe is isolated in its own TU with IPO/LTO off.
+# The CPUID PROBE moved to platform/ (platform/cpu.{h,cc}); simd/dispatch.h now forwards
+# those names into hyle::simd so the call sites below are unchanged. simd PUBLIC_DEPS
+# platform to link the detector (best_isa/cpu_features).
 #
 # simd-04 adds runtime-dispatched ops: dispatch_ops.cc (baseline dispatcher) + one kernel
 # TU per ISA variant, each compiled at its own -march. LTO stays OFF for the whole module
-# so the baseline dispatcher/probe never inlines a wide instruction from a variant TU
+# so the baseline dispatcher never inlines a wide instruction from a variant TU
 # (same isolation rule, now covering the variant kernels too).
 hyle_add_module(simd SOURCES
-  dispatch.cc
   ops/dispatch_ops.cc
   ops/kernels_scalar.cc
   ops/kernels_sse4.cc
@@ -26,7 +24,8 @@ hyle_add_module(simd SOURCES
   math/transcendental_highway.cc
   math/transcendental_xsimd.cc
   math/transcendental_highway_avx512.cc
-  math/transcendental_xsimd_avx512.cc)
+  math/transcendental_xsimd_avx512.cc
+  PUBLIC_DEPS hyle_platform)
 
 # Per-variant ISA flags: each kernel TU gets ONLY its target's -march; the dispatcher and
 # probe stay baseline. MSVC x64 has SSE4.2 intrinsics unconditionally (sse4/scalar need no
