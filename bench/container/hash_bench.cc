@@ -46,28 +46,48 @@ std::string random_string(std::size_t len, std::uint64_t seed) {
 
 int main() {
   // ---- byte/string hashing across lengths (XXH3 is a byte hasher) ----
+  // Rotate through a POOL of distinct random strings per length (not one fixed
+  // string): a single repeated input sits in L1 + trains the length-dispatch branch
+  // perfectly, making tiny inputs read sub-cycle (unrealistic). smhasher-style varied
+  // content keeps the measurement honest. We index the pool by a running counter.
+  constexpr std::size_t kPool = 256;
   for (std::size_t len : {8u, 16u, 64u, 256u}) {
-    const std::string s = random_string(len, 0xABCDEF ^ len);
-    const std::string_view sv(s);
+    std::vector<std::string> pool;
+    pool.reserve(kPool);
+    for (std::size_t i = 0; i < kPool; ++i)
+      pool.push_back(random_string(len, (0xABCDEF ^ len) * 1000003u + i));
+    std::size_t it = 0;
     nb::Bench b;
     b.title("hash " + std::to_string(len) + "B")
         .relative(true)
-        .batch(len)  // ns/op per byte; throughput visible
+        .batch(len)  // ns/op per byte; throughput visible. NOTE: multiply by `len`
+                     // for per-hash cost -- small-input rows are fixed-overhead-bound,
+                     // so per-byte is LOW there without meaning the algorithm is faster.
         .minEpochIterations(2000);
 
-    b.run("HYLE hash_bytes (XXH3 wrapper)", [&] {
+    // For len<=16 this is HYLE's INLINE mix (mix64 fold), NOT XXH3 -- hash_bytes
+    // short-circuits <=16B before the out-of-line XXH3 core. So the <=16B rows below
+    // compare HYLE-inline-mix vs a DIFFERENT algorithm (full XXH3 / wyhash-small);
+    // only the 64B/256B rows are same-algorithm (XXH3 vs XXH3 = the true wrapper/seam
+    // cost). Labels reflect this.
+    b.run(len <= 16 ? "HYLE hash_bytes (inline mix, NOT XXH3)"
+                    : "HYLE hash_bytes (XXH3 wrapper)", [&] {
+      const auto& s = pool[it++ & (kPool - 1)];
       nb::doNotOptimizeAway(hyle::container::hash_bytes(s.data(), s.size()));
     });
-    b.run("raw XXH3_64bits (SOTA, what we wrap)", [&] {
+    b.run("raw XXH3_64bits (SOTA byte hasher)", [&] {
+      const auto& s = pool[it++ & (kPool - 1)];
       nb::doNotOptimizeAway(XXH3_64bits(s.data(), s.size()));
     });
 #if defined(HYLE_BENCH_WYHASH)
     b.run("wyhash (SOTA rival)", [&] {
+      const auto& s = pool[it++ & (kPool - 1)];
       nb::doNotOptimizeAway(wyhash(s.data(), s.size(), 0, kWySecret));
     });
 #endif
     b.run("std::hash<string_view> (baseline)", [&] {
-      nb::doNotOptimizeAway(std::hash<std::string_view>{}(sv));
+      const auto& s = pool[it++ & (kPool - 1)];
+      nb::doNotOptimizeAway(std::hash<std::string_view>{}(std::string_view(s)));
     });
   }
 
