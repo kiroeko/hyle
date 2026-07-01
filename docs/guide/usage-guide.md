@@ -306,6 +306,12 @@ HYLE_DEFER(std::fclose(fp));         // 作用域退出时执行（C++23 仍无 
 ```
 `make_ref` 收下初始 +1（adopt 语义）；要"保留已有裸指针"用 `retain_ref`，二者在调用点显式区分。
 
+**性能须知（何时 Ref 划算、何处别用）**：`Ref` 拷贝 = 1 次 incref（原子加），析构 = 1 次 decref（原子减），与 `std::shared_ptr` 算法同工（各 2 个 locked RMW）。原子 RMW 不是免费的（~几 ns，且跨核共享时更贵）。据此：
+- **传参优先 `const Ref<T>&` 或裸 `T*`（借用），别按值传** —— 每次按值传拷贝都是一对 incref/decref。函数只是"看一眼"对象时收借用引用，只有真正要"延长生命周期/存起来"时才按值收 `Ref<T>`。这和 `shared_ptr` 的最佳实践一致。
+- **别在紧循环里反复拷贝+析构同一个 `Ref`** —— 背靠背的两个原子(同 cache line)会串行化(第二个卡在第一个排空 store buffer 之后)，把原子延迟暴露到极致。需要在循环内多次访问同一对象时，循环外持一个 `Ref`、循环内用 `.get()` 或 `const&`。（性能文档那条 microbench 正是这个反模式，不代表真实开销。）
+- **单线程、生命周期明确**时，直接裸指针 / 值语义 / `unique_ptr` 往往比任何引用计数都快 —— 引用计数是为"共享所有权 + 不确定谁最后释放"付的税。`Ref` 的价值在跨 DLL ABI 稳定（无控制块）和侵入式省一次分配，不在让引用计数本身变快。
+
+
 ## 4. C-ABI 边界（跨 DLL / FFI）
 
 HYLE 内部 C++23，对外稳定边界走 **vtable 结构体 `xxx_api_t` + 不透明实例 + `make_X()/destroy_X()` 工厂**（分配责任锁在 DLL 内，禁客户端 `new/delete` HYLE 对象）。若你跨 DLL 边界用 HYLE 类型或做 FFI 绑定，遵此范式；纯 `extern "C"` C 头 shim 正在逐模块封（P6）。细节见 [`architecture/coding-conventions.md` §4](../architecture/coding-conventions.md)。
