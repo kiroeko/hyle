@@ -162,8 +162,10 @@ if(HYLE_BENCH_TBB)
   target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
   # arena_pool_bench: add tbb's scalable_allocator as the STRONG shared-pool rival
   # (std::pmr::synchronized_pool is mutex-serialized/weak; tbb is a real MT allocator).
+  # Link BOTH tbbmalloc (scalable_malloc/free) and tbb (its transitive tbb12 dep, so the
+  # linker finds tbb12.lib's dir -- tbbmalloc's INTERFACE pulls tbb12 in bare otherwise).
   target_compile_definitions(hyle_arena_pool_bench PRIVATE HYLE_BENCH_TBB)
-  target_link_libraries(hyle_arena_pool_bench PRIVATE TBB::tbbmalloc)
+  target_link_libraries(hyle_arena_pool_bench PRIVATE TBB::tbbmalloc TBB::tbb)
 endif()
 
 # Optional: rigtorp::mpmc::Queue -- the SAME-CONTRACT rival to BoundedQueue (strict-
