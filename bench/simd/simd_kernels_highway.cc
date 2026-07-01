@@ -8,6 +8,7 @@
 #include <cstddef>
 
 #include "hwy/highway.h"
+#include "hwy/contrib/dot/dot-inl.h"
 #include "bench/simd/simd_kernels.h"
 
 namespace hn = hwy::HWY_NAMESPACE;
@@ -24,6 +25,14 @@ float dot_highway(const float* x, const float* y, std::size_t n) {
   float sum = hn::ReduceSum(d, acc);
   for (; i < n; ++i) sum += x[i] * y[i];
   return sum;
+}
+
+// Highway's PRODUCTION dot (contrib/dot::Compute) -- 4 accumulators + 4x unroll,
+// the true SOTA. kAtLeastOneVector: n=4096 >> N, safe. This is what dot_highway
+// (single-acc teaching form) should have been benched against all along.
+float dot_highway_contrib(const float* x, const float* y, std::size_t n) {
+  const hn::ScalableTag<float> d;
+  return hn::Dot::Compute<hwy::HWY_NAMESPACE::Dot::kAtLeastOneVector>(d, x, y, n);
 }
 
 void saxpy_highway(float a, const float* x, float* y, std::size_t n) {

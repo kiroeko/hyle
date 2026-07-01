@@ -14,6 +14,11 @@ float dot_sse4(const float* x, const float* y, std::size_t n);
 float dot_avx2(const float* x, const float* y, std::size_t n);
 #if defined(HYLE_BENCH_HIGHWAY)
 float dot_highway(const float* x, const float* y, std::size_t n);
+// Highway's PRODUCTION dot (contrib/dot::Compute): 4 independent accumulators +
+// manual 4x unroll -- the TRUE SOTA yardstick. dot_highway above is the naive
+// single-accumulator teaching form; racing against it alone hid that a reduction
+// kernel must break the FMA latency chain. This is the honest ceiling.
+float dot_highway_contrib(const float* x, const float* y, std::size_t n);
 #endif
 
 // saxpy: y[i] = a*x[i] + y[i]. The canonical elementwise FMA kernel (BLAS level 1).

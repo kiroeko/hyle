@@ -47,8 +47,11 @@ int main() {
       ankerl::nanobench::doNotOptimizeAway(hyle_bench::dot_avx2(x.data(), y.data(), kN));
     });
 #if defined(HYLE_BENCH_HIGHWAY)
-    b.run("Highway avx2 (SOTA)", [&] {
+    b.run("Highway avx2 (naive 1-acc)", [&] {
       ankerl::nanobench::doNotOptimizeAway(hyle_bench::dot_highway(x.data(), y.data(), kN));
+    });
+    b.run("Highway contrib/dot (SOTA 4-acc)", [&] {
+      ankerl::nanobench::doNotOptimizeAway(hyle_bench::dot_highway_contrib(x.data(), y.data(), kN));
     });
 #endif
     // PUBLIC dispatched entry (fn-ptr indirection): the shipped library symbol.

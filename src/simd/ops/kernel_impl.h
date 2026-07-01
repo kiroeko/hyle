@@ -24,11 +24,29 @@ namespace hyle::simd::detail {
 float DOT_FN(const float* x, const float* y, std::size_t n) noexcept {
   const ScalableTag<float> d;
   const std::size_t w = Lanes(d);
-  auto acc = Zero(d);
+  // FOUR independent accumulators, not one. A single acc chains every FMA into
+  // the next (acc = MulAdd(.., acc)), so throughput is bound by FMA LATENCY
+  // (~4 cyc) -- one FMA retires every 4 cycles. Modern x86 has 2 FMA ports, so
+  // 4 independent chains keep ~8 FMAs in flight and approach 2 FMA/cycle (load
+  // ports become the limit, not latency). This mirrors Highway's contrib/dot
+  // ("2 FMA ports * 4 cycle latency = up to 8 in-flight ... always unroll 4x").
+  // fp add is non-associative so the compiler will NOT split one acc into four
+  // on its own -- the unroll must be explicit. The 4-way partial-sum ordering is
+  // a fixed, documented reduction (deterministic across runs), just not the same
+  // rounding as a strict sequential sum -- fine for a dot product.
+  auto acc0 = Zero(d), acc1 = Zero(d), acc2 = Zero(d), acc3 = Zero(d);
   std::size_t i = 0;
-  for (; i + w <= n; i += w)
-    acc = MulAdd(LoadU(d, x + i), LoadU(d, y + i), acc);  // FMA on AVX2
-  float sum = ReduceSum(d, acc);
+  const std::size_t w4 = w * 4;
+  for (; i + w4 <= n; i += w4) {
+    acc0 = MulAdd(LoadU(d, x + i), LoadU(d, y + i), acc0);
+    acc1 = MulAdd(LoadU(d, x + i + w), LoadU(d, y + i + w), acc1);
+    acc2 = MulAdd(LoadU(d, x + i + w * 2), LoadU(d, y + i + w * 2), acc2);
+    acc3 = MulAdd(LoadU(d, x + i + w * 3), LoadU(d, y + i + w * 3), acc3);
+  }
+  for (; i + w <= n; i += w)  // up to 3 whole vectors
+    acc0 = MulAdd(LoadU(d, x + i), LoadU(d, y + i), acc0);
+  // reduction tree: pair the partials, then reduce across lanes
+  float sum = ReduceSum(d, Add(Add(acc0, acc1), Add(acc2, acc3)));
   for (; i < n; ++i) sum += x[i] * y[i];  // scalar tail (n not a multiple of w)
   return sum;
 }
