@@ -301,6 +301,11 @@ double measure_tsc_hz() noexcept {
 // Best available TSC frequency: prefer the EXACT CPUID leaf 0x15 value (no
 // measurement, no startup busy-spin, no 1% window tolerance), fall back to the
 // timing method when the leaf is masked/absent (hypervisors, older CPUs).
+// NOTE: this runs ONCE at first-call calibration (tsc_scale() Meyers singleton),
+// NOT on the hot read path -- fast_monotonic_ns() is always rdtsc + one
+// multiply-shift regardless of how mult was computed. leaf 0x15 improves STARTUP
+// cost (skips the ms-scale busy-spin) and multiplier PRECISION (exact vs ~1%), it
+// does NOT change per-call read latency.
 double best_tsc_hz() noexcept {
   double exact = tsc_hz_from_cpuid();
   if (exact > 1.0) return exact;
