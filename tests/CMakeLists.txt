@@ -18,6 +18,11 @@ hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc uti
 hyle_add_test(time SOURCES time/clock_test.cc)
 hyle_add_test(math SOURCES math/scalar_test.cc)
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
+# hash_test.cc includes the opt-in hyle/container/hash_inline.h, which pulls the
+# vendored xxhash + wyhash single-headers into that TU -- add their include dirs.
+target_include_directories(hyle_container_test SYSTEM PRIVATE
+  "${PROJECT_SOURCE_DIR}/third_party/xxhash"
+  "${PROJECT_SOURCE_DIR}/third_party/wyhash")
 # simd: the scalar test (dispatch + vec floor) always builds. The vec op suite is ALSO
 # compiled per real ISA backend (sse4 / avx2) -- SAME source, different HYLE_SIMD_TARGET_*
 # + -march, each pairing the backend against the naive reference. GCC/Clang need the
