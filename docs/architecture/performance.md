@@ -16,12 +16,12 @@
 | **error** Status 拷贝(heap,retain/release) | 9.4 | (无 std 等价) | n/a | n/a | absl::Status copy | 10.6 | 1.13x | ✅赢 absl |
 | **error** Result&lt;int&gt; 传播 OK(解包消费) | 1.42 | std::expected unwrap | 1.40 | ~1.0x | absl::StatusOr | ~1.4 | ~1.0x | ➖平(真实用法;裸构造-析构 microbench 假象见 error 节) |
 | **error** Result&lt;int&gt; 传播 ERROR 上抛 | 10.2 | (errc 无堆消息不可比) | n/a | n/a | absl::StatusOr | 21.5 | 2.11x | ✅赢 absl |
-| **simd** dot product(4096 f32) | 0.079 | scalar autovec | 0.37 | 4.6x | Highway avx2 | 0.079 | 1.00x | ✅赢 std、**平 Highway(统计平局)** |
-| **simd** saxpy(4096 f32) | 0.039 | scalar autovec | 0.057 | 1.45x | Highway avx2 | 0.039 | 1.00x | ✅赢 std、**平 Highway(统计平局)** |
-| **simd** reduce_max(4096 f32) | 0.077 | scalar autovec | 0.73 | 9.5x | Highway avx2 | 0.077 | 1.00x | ➖平 Highway(统计平局) |
-| **simd** scale(4096 f32) | 0.025 | scalar autovec | 0.044 | 1.8x | Highway avx2 | 0.025 | 1.01x | ➖平 Highway(统计平局,带宽受限) |
-| **simd** dot_f32 公开分发入口 | 0.079 | scalar autovec | 0.37 | 4.6x | 直调 avx2(无间接) | 0.079 | 1.00x | ➖分发税仅在大 batch 摊薄≈0(4096 元素摊 1 次间接跳转);**小 n 未测** |
-| **simd** saxpy_f32 公开分发入口 | 0.038 | scalar autovec | 0.057 | 1.5x | 直调 avx2(无间接) | 0.039 | 1.00x | ➖同上(大 batch 摊薄≈0,小 n 未测) |
+| **simd** dot product(4096 f32) | 0.024 | scalar autovec | 0.37 | 15x | Highway contrib/dot(真 SOTA 4-acc) | 0.024 | 1.00x | ✅**4 累加器展开后 0.079→0.024(3.3x)平真 SOTA**;旧"平 Highway 0.079"是两个都单累加器的假平局(对照用了 Highway 教学 kernel 非 contrib/dot),见 simd 详节 |
+| **simd** saxpy(4096 f32) | 0.026 | scalar autovec | 0.057 | 2.2x | Highway avx2 | 0.025 | 1.01x | ✅赢 std、平 Highway(element-wise 带宽受限,多累加器无益,未改) |
+| **simd** reduce_max(4096 f32) | 0.077 | scalar autovec | 0.73 | 9.5x | Highway avx2 | 0.077 | 1.00x | ➖平 Highway(bench-only,非公开 op;单累加器,若上架公开 op 可同 dot 展开) |
+| **simd** scale(4096 f32) | 0.025 | scalar autovec | 0.044 | 1.8x | Highway avx2 | 0.025 | 1.01x | ➖平 Highway(bench-only 非公开 op;带宽受限) |
+| **simd** dot_f32 公开分发入口 | 0.024 | scalar autovec | 0.37 | 15x | Highway contrib/dot(真 SOTA) | 0.024 | 1.00x | ✅出厂 dispatch 入口 4 累加器,平真 SOTA(分发税大 batch 摊薄≈0) |
+| **simd** saxpy_f32 公开分发入口 | 0.026 | scalar autovec | 0.057 | 2.2x | 直调 avx2(无间接) | 0.025 | 1.01x | ➖同上(大 batch 摊薄≈0,小 n 未测) |
 | **dtype** f16→f32 | 0.025 | scalar ref | 0.66 | 26x | Highway PromoteTo | 0.048 | Win 1.88x/Lin 平 | ✅Win 赢 Highway/Linux 统计平局(平台差异) |
 | **dtype** f32→f16 | 0.030 | scalar ref | 2.07 | 25–80x | Highway DemoteTo | 0.048 | Win 1.61x/Lin 1.90x | ✅赢 Highway 双平台(唯一双平台稳赢) |
 | **dtype** bf16→f32 | 0.030 | scalar ref | 0.10 | Win 3.5x/Lin 平 | Highway PromoteTo | 0.050 | Win 1.87x/Lin 平 | ✅Win 赢 Highway/Linux 平(纯位运算 GCC 也向量化) |
@@ -109,7 +109,7 @@
 | **sched** Channel 收发(cap16,1p1c) | 63/item | (无 std 等价) | n/a | n/a | marl(无 channel) | n/a | n/a | ➖HYLE 自有 |
 | **sched** RunQueue fifo/lifo push+next | 8.3/2.6 | (内部结构) | n/a | n/a | (无外部对手) | n/a | n/a | ➖HYLE 自有(完成唤醒热路径) |
 
-**总账小结（两把标尺,2026-06-30 全套真跑）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD 4.5x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 Win-only codegen 残留(monotonic_ns Win 0.68x/Linux 平)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~36 项**、➖**平 ~16 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期(热路径 Hash&lt;T&gt; 内联已赢);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns **Win-only 输 1.48x、Linux 平**(QPC split 算术 vs MSVC steady_clock,已查证非接缝非算法;POSIX clock_gettime 与 glibc steady_clock 同码故 Linux 平);④ MemoryArena/ObjectPool 单线程=**选错工具已下 ledger**(单线程对象池应用 GrowablePool;多线程共享场景对同契约 SOTA `std::pmr::synchronized_pool` **赢 44x**,非输项);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(simdutf 核 vendored 无条件默认追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:error 根模块已补测(对标同款 SOTA absl 全线平或赢:inline 码赢 4.6x、带消息赢 1.92x、ERROR 上抛赢 2.11x,空间 Result 16B<std/absl 24B;OK 传播"输 std"经隔离探针+消费变体证为 microbench 假象);string_ref scalar 反向串族可上 memrchr/SIMD。
+**总账小结（两把标尺,2026-06-30 全套真跑；simd dot 2026-07 更新）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD dot 15x/saxpy 2.2x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 Win-only codegen 残留(monotonic_ns Win 0.68x/Linux 平)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~36 项**、➖**平 ~16 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期(热路径 Hash&lt;T&gt; 内联已赢);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns **Win-only 输 1.48x、Linux 平**(QPC split 算术 vs MSVC steady_clock,已查证非接缝非算法;POSIX clock_gettime 与 glibc steady_clock 同码故 Linux 平);④ MemoryArena/ObjectPool 单线程=**选错工具已下 ledger**(单线程对象池应用 GrowablePool;多线程共享场景对同契约 SOTA `std::pmr::synchronized_pool` **赢 44x**,非输项);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(simdutf 核 vendored 无条件默认追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:error 根模块已补测(对标同款 SOTA absl 全线平或赢:inline 码赢 4.6x、带消息赢 1.92x、ERROR 上抛赢 2.11x,空间 Result 16B<std/absl 24B;OK 传播"输 std"经隔离探针+消费变体证为 microbench 假象);string_ref scalar 反向串族可上 memrchr/SIMD。
 
 ## 实测铁证（持续回填,真跑非推算）
 
@@ -185,16 +185,16 @@
 >
 > **⚠️ 公平性更正(2026-06-30)**:此前此节标 dot"~1.10x 微超"、saxpy"~1.21x 微超" Highway——**是假象,源于对照被编瘸**。Highway 的 `HWY_STATIC_TARGET` 从完整 baseline 宏链(`detect_targets.h`)推断向量宽度:AVX2 baseline 需要 SSE4 baseline(`__PCLMUL__`+`__AES__`)再加 BMI2+FMA+F16C。bench 给 Highway 对照 TU 的是 HYLE 自家 kernel 的 AVX2 ISA 契约(`-mavx2 -mfma -mf16c`,刻意精简、关联 SIGILL-safety),在 **GCC/Clang 下让 Highway 静默降级到 SSSE3(128 位,Lanes=4)**——objdump 实证四个 `*_highway` kernel 全是 xmm 无 ymm。于是"parity"实际是 HYLE-256b vs Highway-128b,那 1.1-2x"赢"是宽度差不是抽象优势。修复:`hyle_set_highway_isa`(`HyleModule.cmake`)给对照 TU 补全 baseline(`-mbmi -mbmi2 -maes -mpclmul`),Highway 选回真 256 位 AVX2(`HWY_STATIC_TARGET=AVX2`、Lanes=8、四 kernel 全 emit ymm)。MSVC `/arch:AVX2` 本就含完整 baseline,故 Win 侧测的 dtype/math 节不受影响。下表是**修复后**的公平数据。
 
-| kernel | scalar(auto-vec SSE2) | HYLE sse4(128b) | HYLE avx2(256b+FMA) | Highway avx2(**真 256b SOTA**) | 结论(15 遍中位数) |
+| kernel | scalar(auto-vec SSE2) | HYLE sse4(128b) | HYLE avx2(256b+FMA,4-acc) | Highway contrib/dot(**真 SOTA 4-acc**) | 结论(15 遍中位数) |
 |---|---|---|---|---|---|
-| **dot product** | 2.73 G op/s (1.0x) | 11.3 G (4.1x) | **12.6 G (4.6x)** | 12.7 G (4.6x) | **平 Highway**(ratio 1.00,gap 0.3% « spread 10%) |
-| **saxpy** y=a*x+y | 17.4 G (1.0x) | 17.4 G (1.0x) | **25.5 G (1.46x)** | 25.6 G (1.47x) | **平 Highway**(ratio 1.00,gap 0.2% « spread 13%) |
+| **dot product** | 2.7 G op/s (1.0x) | 26 G (9.6x) | **42 G (15x)** | 42 G (15x) | **平真 SOTA**(ratio 0.984,gap 1.6% « spread 14%);4 累加器展开后 12.6→42 G |
+| **saxpy** y=a*x+y | 17.4 G (1.0x) | 17.4 G (1.0x) | **39 G (2.2x)** | 40 G (2.3x) | **平 Highway**(element-wise 带宽受限,单累加器已够,未改) |
 
-**结论(回答"比 SOTA 有下降么")**:**没有,也没有虚假领先——HYLE 向量后端与 Highway 统计平局**。公平的同 ISA 对照下,dot/saxpy 两 kernel 的 per-run op/s 比值中位数都是 ~1.00(min/max 横跨 1.0),差距远小于测量 spread——两边内循环都编成同一条 `vfmadd231ps`(objdump 可证),本就该同速。compute-bound 的 dot 上 **4.6x over 自动向量化标量**,落在性能文档"SIMD 4-16x / vs auto-vec 1.5-4x"区间(dot 含 reduction,略超 4x 合理)。saxpy 是 3 流内存操作(读 x/读 y/写 y),标量 auto-vec 已近饱和带宽,故 SIMD 倍数天然低——AVX2 靠更宽 load 仍取 1.46x。**SSE4 saxpy ~1.0x(与标量持平)**诚实留账:128 位宽度下该 kernel 已带宽受限,SIMD 无加速空间,非 bug。
->
-> **意义**:这验证了"自造精简抽象不牺牲性能"——HYLE 的 vec.h+后端(~340+360 行)在热路径上与 vendor 整个 Highway(单后端 ~3k 行)**同速(统计平局)**。抽象层零成本(全内联到 intrinsic),没有为"可移植"付性能税。**平局比"微超"更可信**:同形 kernel 编出同样指令,本就不该有谁快几个百分点;之前那点"领先"恰恰是对照失真的红旗。
->
-> **范围诚实**:此对标只覆盖 **dot/saxpy/reduce_max/scale 四个 compute/memory-bound 数值核**(AI 热路径主力)。Highway 还有 ~200 op(swizzle/gather/scatter/compress/transcendental)+ 6 ISA,HYLE 现做 ~25 op + 2 ISA 实跑——**"平"指已实现的核上同速,非功能对等**。广度补全(int 量化类型/更多 op/AVX512 启用)见 milestones simd 延期登记。**正确性**:Ne(NaN)/Neg(±0) 等边界经红队批量审计揪修(2026-06,见 milestones simd-02/03),已加 FloatEdgeCases 覆盖。
+**结论(2026-07 红队揪出并修复第二个对照编瘸——dot 单累加器延迟链)**:
+1. **旧"dot 平 Highway 12.6 vs 12.7 G"是两个都编瘸的假平局**。HYLE `dot_f32`(`kernel_impl.h`)和 bench 的"SOTA 标尺"`dot_highway` **都是单累加器**(`acc = MulAdd(.., acc)`)——每条 FMA 串进下一条,throughput 被 FMA **延迟**(~4 cyc)绑死,每 4 周期才退休一条。bench 拿的 Highway 参照是其**教学式 `ScalableTag` 写法,不是** Highway 真正的 `contrib/dot::Compute`(4 独立累加器 + 4x 展开,注释明写"2 FMA ports × 4 cycle latency = up to 8 in-flight, always unroll 4x")。**这是继"Highway 静态 dispatch 静默降 128b"之后的第二个同类对照陷阱:对照用了非优化路径。**
+2. **修复=dot 主循环 4 独立累加器 + 归约树**(objdump 实证:主循环 4 条 `vfmadd231ps` 写 ymm0/1/2/3 + `vaddps` 树)。i9 双 FMA 端口下,4 链保持 ~8 FMA in-flight,从延迟绑定转 load 端口绑定。**dot 0.079→0.024 ns(3.3x,12.6→42 G op/s),对拍 Highway 真 `contrib/dot` 统计平局(ratio 0.984,gap 1.6%«spread 14%)**——真 SOTA 上限 42 G 而非旧标尺的 12.6 G。dot 是 AI 热路径主力(注意力/GEMM 内积),这是真收益。
+3. **saxpy/scale/reduce 未改**:saxpy(`y=a*x+y`)、scale(`y=a*x`)是 **element-wise 无跨迭代依赖**,本就带宽绑定,多累加器无益(saxpy 已 39 G 平 Highway 40 G)。reduce_max 有归约依赖(理论同 dot 可展开)但**是 bench-only kernel,非公开 op**(`ops.h` 只导出 dot_f32/saxpy_f32),故不改;若将来上架为公开 op 再同 dot 展开。
+> **意义 + 方法学印证**:这正是审查铁律"对标 SOTA 务必 objdump 确认对照真用了预期实现/宽度"的活例——第一次是对照被编瘸降 128b,这次是对照用了单累加器教学 kernel 冒充 SOTA。**两次都是"平局"掩盖了真实差距**:表面同速,实为两边都没到硬件上限。dot 真 SOTA 是 42 G,HYLE 现达到。**教训:'平 SOTA' 若对照本身可疑(如同形却都简单),要追问对照是不是该库的生产实现。**
 
 ### simd 数学核（exp/log/tanh vs 标量 libm + 同 ISA SOTA xsimd/Highway，`math_bench.cc`）
 
