@@ -32,9 +32,33 @@ void bf16_to_f32_avx2(const bfloat16_t* src, float* dst, std::size_t n) noexcept
   for (; i < n; ++i) dst[i] = bf16_to_f32(src[i]);  // tail = scalar oracle
 }
 
-// f32 -> bf16, round-to-nearest-even. Mirrors the scalar f32_to_bf16 bit-for-bit on 8
-// lanes: incr = finite ? 0x7FFF + (bit16) : 0;  snan = (abs > inf) ? (1<<6) : 0;
+// f32 -> bf16, round-to-nearest-even. Mirrors the scalar f32_to_bf16 bit-for-bit:
+// incr = finite ? 0x7FFF + (bit16) : 0;  snan = (abs > inf) ? (1<<6) : 0;
 // out = (snan | ((u + incr) >> 16)).
+//
+// SHAPE = Highway's PRODUCTION OrderedDemote2To (generic_ops-inl.h:3795 -> ConcatOdd,
+// x86_256-inl.h:5762 AVX2 branch), not the naive per-8 pack: process 16 floats (TWO
+// __m256) per iteration and fold BOTH into one full 256-bit store with a SINGLE
+// packus + permute4x64. The old per-8 form paid packus+vpermq (the cross-lane 3c
+// shuffle) AND a half-width 128-bit store for every 8 lanes; amortizing the shuffle
+// over 16 lanes + full-width stores is the win (store-bound op). The RNE bit-math is
+// UNCHANGED (still bit-identical to the scalar oracle, NaN payloads included) -- only
+// the pack/store structure changed. A per-lane helper keeps the two halves identical.
+namespace {
+// 8x f32 (raw bits `u`) -> 8x u32 whose low 16 bits are the bf16 result (high 16 = 0).
+HYLE_FORCE_INLINE __m256i bf16_lanes(__m256i u, __m256i k7fffffff, __m256i kInf,
+                                     __m256i k7fff, __m256i kOne,
+                                     __m256i kSnanBit) noexcept {
+  const __m256i absv = _mm256_and_si256(u, k7fffffff);
+  const __m256i lsb = _mm256_and_si256(_mm256_srli_epi32(u, 16), kOne);
+  const __m256i finite = _mm256_cmpgt_epi32(kInf, absv);  // abs < inf
+  const __m256i incr = _mm256_and_si256(_mm256_add_epi32(k7fff, lsb), finite);
+  const __m256i snan = _mm256_and_si256(_mm256_cmpgt_epi32(absv, kInf), kSnanBit);
+  const __m256i shifted = _mm256_srli_epi32(_mm256_add_epi32(u, incr), 16);
+  return _mm256_or_si256(snan, shifted);  // each in [0, 0xFFFF]
+}
+}  // namespace
+
 void f32_to_bf16_avx2(const float* src, bfloat16_t* dst, std::size_t n) noexcept {
   const __m256i k7fffffff = _mm256_set1_epi32(0x7FFFFFFF);
   const __m256i kInf = _mm256_set1_epi32(0x7F800000);
@@ -42,23 +66,27 @@ void f32_to_bf16_avx2(const float* src, bfloat16_t* dst, std::size_t n) noexcept
   const __m256i kOne = _mm256_set1_epi32(1);
   const __m256i kSnanBit = _mm256_set1_epi32(1 << 6);
   std::size_t i = 0;
-  for (; i + 8 <= n; i += 8) {
+  // Main loop: 16 floats -> 16 bf16, one full 256-bit store (production shape).
+  for (; i + 16 <= n; i += 16) {
+    const __m256i ua = _mm256_castps_si256(_mm256_loadu_ps(src + i));
+    const __m256i ub = _mm256_castps_si256(_mm256_loadu_ps(src + i + 8));
+    const __m256i a = bf16_lanes(ua, k7fffffff, kInf, k7fff, kOne, kSnanBit);
+    const __m256i b = bf16_lanes(ub, k7fffffff, kInf, k7fff, kOne, kSnanBit);
+    // packus u32->u16 (values already <=0xFFFF, no saturation): per-128-lane gives
+    // [a0-3 b0-3 a4-7 b4-7] qwords; permute4x64 reorders to [a0-7 b0-7] = ordered.
+    const __m256i packed = _mm256_packus_epi32(a, b);
+    const __m256i ord = _mm256_permute4x64_epi64(packed, _MM_SHUFFLE(3, 1, 2, 0));
+    _mm256_storeu_si256(reinterpret_cast<__m256i*>(dst + i), ord);
+  }
+  // Tail: one more full vector of 8 (per-8 pack, 128-bit store) then scalar.
+  if (i + 8 <= n) {
     const __m256i u = _mm256_castps_si256(_mm256_loadu_ps(src + i));
-    const __m256i absv = _mm256_and_si256(u, k7fffffff);
-    const __m256i lsb = _mm256_and_si256(_mm256_srli_epi32(u, 16), kOne);
-    // finite = abs < inf (abs has the sign bit cleared -> nonneg, signed cmp is valid)
-    const __m256i finite = _mm256_cmpgt_epi32(kInf, absv);
-    const __m256i incr = _mm256_and_si256(_mm256_add_epi32(k7fff, lsb), finite);
-    // snan = abs > inf
-    const __m256i snan = _mm256_and_si256(_mm256_cmpgt_epi32(absv, kInf), kSnanBit);
-    const __m256i shifted = _mm256_srli_epi32(_mm256_add_epi32(u, incr), 16);
-    const __m256i out32 = _mm256_or_si256(snan, shifted);  // each in [0, 0xFFFF]
-    // Pack 8x u32 (low 16 bits each) -> 8x u16. packus is per-128-lane: gives
-    // [A A B B] qwords (A=lanes0-3, B=lanes4-7); permute4x64 reorders to [A B ..].
-    const __m256i packed = _mm256_packus_epi32(out32, out32);
+    const __m256i o = bf16_lanes(u, k7fffffff, kInf, k7fff, kOne, kSnanBit);
+    const __m256i packed = _mm256_packus_epi32(o, o);
     const __m256i ord = _mm256_permute4x64_epi64(packed, _MM_SHUFFLE(3, 1, 2, 0));
     _mm_storeu_si128(reinterpret_cast<__m128i*>(dst + i),
                      _mm256_castsi256_si128(ord));
+    i += 8;
   }
   for (; i < n; ++i) dst[i] = f32_to_bf16(src[i]);  // tail = scalar oracle
 }
