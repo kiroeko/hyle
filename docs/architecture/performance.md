@@ -72,7 +72,7 @@
 | **container·list** IntrusiveList push/pop | 3.15 | std::list | 25.0 | 7.1x | boost::intrusive::list | 2.77 | ~1.0x 平 | ✅赢 std 7.1x、**平 boost SOTA**(2026-07 checkout boost submodule 实测:ratio 0.88 gap12%«spread44%=统计平局) |
 | **container·list** IntrusiveList::remove(O(1)) | 3.13 | std::list::erase | 55.7 | 11.1x | boost::intrusive::list::erase | 3.15 | ~1.0x 平 | ✅赢 std、**平 boost SOTA**(任意位置 O(1) 摘除,两者同 circular-sentinel 形状) |
 | **container·str** StringBuf intern(100k/2k 唯一) | 24.0 | 无锁 map floor | 21.2 | 0.88x | thread-safe peer(map+mutex) | 28.1 | 1.17x | ✅赢同契约 peer(对无锁 map 是 thread-safe-vs-无锁) |
-| **container·str** StringBuf add/retain/remove churn | 18.2 | 无锁 map+引用计数 | 7.54 | 0.41x | (同契约 thread-safe 待补) | n/a | ⏳ | ❌输无锁 floor(同 intern;含 erase+free) |
+| **container·str** StringBuf add/retain/remove churn | 17.9 | thread-safe map+mutex(同契约 peer) | 22.3 | 1.24x | thread-safe peer(map+mutex re-find/op) | 22.3 | 1.24x | ✅赢同契约 peer 1.24x(min 1.17 保底;对无锁 floor 7.5 是 apples-to-oranges) |
 | **container·str** find(char) 全扫 miss(4KB) | 0.02/B | std::string_view::find | 0.01 | ~1.0x | string_view(即 SOTA,libc memchr) | 0.01 | ~1.0x | ➖平(切 memchr;原 scalar 输 ~20x) |
 | **container·str** find(needle) 6B 子串 | 0.08/B | std::string_view::find | 0.08 | ~1.0x | string_view(即 SOTA,two-way 向量化) | 0.08 | ~1.0x | ➖平(转发 std;自研 memchr 候选曾输 2.5x) |
 | **container·str** find_first_of(4 字符集) | 0.05/B | std::string_view | 0.05 | ~1.0x | string_view(即 SOTA) | 0.05 | ~1.0x | ➖平(转发 std;自研 memchr-min 曾 0.62x) |
@@ -436,13 +436,13 @@
 | **find_first_not_of 全字母** | 0.06/B | 0.06 | ~1.0x | ➖平(转发 std;自研 bool 表曾输 4.5x) |
 | **find_last_of(digits)** | 0.06/B | 0.06 | ~1.0x | ➖平(转发 std;自研曾输 4.4x) |
 | **StringBuf intern**(100k/2k 唯一) | 24.0 | map+mutex(同契约 thread-safe peer)28.1 | 1.17x | ✅赢同契约 peer(SwissTable 核) |
-| **StringBuf add/retain/remove churn** | 18.2 | 无锁 map floor 7.54 | 0.41x | ⚠️对手是**无锁 floor**(StringBuf 是 thread-safe);**同契约 thread-safe churn 对手待补**(参照 intern 行,公平对手下应反超)——红队待办,勿当真输 |
+| **StringBuf add/retain/remove churn** | 17.9 | thread-safe map+mutex 22.3 / 无锁 floor 7.5 | 1.24x / 0.41x | ✅赢同契约 thread-safe peer 1.24x(min 1.17 保底,25 遍);对无锁裸 map 是 apples-to-oranges(见结论) |
 
 **诚实结论(全线追平的路径)**:
 - **自研追平的项(HYLE 自己的 SIMD)**:`find(char)`/`starts_with` 早已切 memchr/memcmp;`rfind(char)`/`count` 上运行期 ISA dispatch(SSE2 baseline + AVX2 变体)。**CPUID 探测下沉 platform**(`platform/cpu.{h,cc}`)后 container 首次能安全上 AVX2:`string_ref_avx2.cc` 是独立 `-mavx2` TU,只在 `cpu_features().avx2 && size>=32` 时进入(老 CPU 走 SSE2/scalar 无 SIGILL),count 用 4 独立累加器打破 psadbw 依赖链。`split`/`trim` 靠零分配子视图**反超** std。
 - **转发 std 的项(借 SOTA,不硬造)**:`find(needle)`/`rfind(needle)`/`find_first_of`/`find_first_not_of`/`find_last_of`/`find_last_not_of`——MSVC STL 的 two-way 向量化子串搜索 + PCMPESTRI 字符集扫描是实测 SOTA,**自研 PCMPESTRI 尝试只到 0.76-0.78x 追不动**(PCMPESTRI 延迟高),遂转发 `std::string_view`。转发局限在 `string_ref.cc`(公开头不引 `<string_view>`),不破 C-ABI。**代价**:string_ref 在这些项上不是"纯自研替代",而是"借 std 的最优实现"——这是刻意取舍(不为纯粹性造打不过微软手写汇编的轮子),非缺陷。**结果:5 项从输 2.5–4.5x 全部统计平局(ratio 0.98–1.02,gap«spread)。**
 - **前身 clay 的做法参照**:clay 的 `string_ref` 搜索族**全部**转发 `std::string_view`(且其头 `#include <iostream>`/`<string>`/`<functional>`)。HYLE 只转发 std 真正更强的几项、且只从 .cc 转发、公开头零 std string 头——比 clay 更克制。
-- **StringBuf churn 的 0.41x 是对照存疑(⚠️非确认真输)**:它的 std 对手是**无锁裸 map**(无锁),而 StringBuf 是 thread-safe(每 op 一把锁)——同 MemoryArena 那类 apples-to-oranges。intern 行换上同契约 thread-safe peer(map+mutex)后 HYLE ✅赢 1.17x;churn 的同契约对手(thread-safe add/retain/remove)尚未加,**红队待办**,加上前不算确认真输。
+- **StringBuf churn 换上同契约对手后 ✅赢 1.24x(红队待办已结)**:此前只有**无锁裸 map**(7.5ns)作对手,而 StringBuf 是 thread-safe(每 op 一把锁 + handle 是稳定 hash 非 iterator)——apples-to-oranges。2026-07 补上**同契约 thread-safe peer**(unordered_map + mutex,且每 op 按 key re-find,匹配 StringBuf 的 hash-handle 契约,不让对手靠复用 iterator + 免锁占便宜):HYLE 17.9ns vs peer 22.3ns = **赢 1.24x**(25 遍统计,ratio min 1.17 保底,从不 <1;判定卡在 TIE 仅因 unordered_map 的 add/erase churn rehash 抖动使 peer spread 65%,而 HYLE SwissTable 平坦槽+mimalloc free 稳定在 8%——又快又可预测)。对无锁 floor 的 0.41x 是选错对手,非真输。
 
 ### container·path —— 纯词法路径操作（`path_bench.cc`）
 

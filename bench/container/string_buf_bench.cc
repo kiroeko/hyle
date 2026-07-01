@@ -120,6 +120,40 @@ int bench_string_buf() {
       ankerl::nanobench::doNotOptimizeAway(pool.size());
     });
 
+    // Apples-to-apples peer: THREAD-SAFE (unordered_map + mutex) AND matching
+    // StringBuf's HANDLE contract. StringBuf's handle is a 64-bit hash (stable,
+    // cross-thread-passable), NOT an iterator -- so retain()/remove() re-find by
+    // hash rather than reusing an iterator. To compare cores fairly (not reward
+    // the no-lock rival for skipping both the lock AND the re-find), this peer
+    // takes a lock per op and re-looks-up by key each retain/remove, exactly like
+    // StringBuf. Now the honest question is whose map core is faster under the
+    // SAME work (lock + hash + find + erase/free), which is SwissTable vs
+    // unordered_map -- the naive no-lock/iterator-reuse floor above is NOT that.
+    b2.run("std::unordered_map + mutex, re-find per op (thread-safe peer)", [&] {
+      std::unordered_map<std::string, int> pool;
+      std::mutex mu;
+      for (const auto& s : uniques) {
+        {  // add: intern + bump
+          std::lock_guard<std::mutex> lk(mu);
+          ++pool[s];
+        }
+        {  // retain: re-find by key + bump
+          std::lock_guard<std::mutex> lk(mu);
+          ++pool[s];
+        }
+        {  // remove (1): re-find + drop
+          std::lock_guard<std::mutex> lk(mu);
+          --pool[s];
+        }
+        {  // remove (2): re-find + drop -> zero -> erase (reclaim)
+          std::lock_guard<std::mutex> lk(mu);
+          auto it = pool.find(s);
+          if (it != pool.end() && --it->second == 0) pool.erase(it);
+        }
+      }
+      ankerl::nanobench::doNotOptimizeAway(pool.size());
+    });
+
     b2.run("HYLE StringBuf add/retain/remove (SwissTable erase+free)", [&] {
       StringBuf buf(system_allocator());
       for (const auto& s : uniques) {
