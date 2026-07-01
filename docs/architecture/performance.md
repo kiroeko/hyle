@@ -54,12 +54,12 @@
 | **mem** GrowablePool(8 线程 per-thread) | 0.72 | std::malloc | ~30 | (大赢) | 裸 mi per-thread heap | 1.28 | 1.78x | ✅赢 |
 | **mem** MemoryArena(多线程共享池) | 2.5–2.7 | std::malloc | ~30 | (赢) | oneTBB scalable_allocator(真强 SOTA) | ~7–9 | ~3x | ✅赢 tbb 真 scalable ~3x(无锁分片 vs tbb per-thread cache+共享后备);对 std::pmr::synchronized_pool(66–113ns mutex 串行弱池)25–44x——**后者非天花板,tbb 才是**(2026-07 补强对手,详节) |
 | **mem** Allocator::reallocate grow chain | 76 | std::realloc | 166 | 2.2x | 裸 mi_realloc | 72 | 0.95x | ➖平裸 mi(Linux 统计平局,gap 5.4%«spread 21%);赢 std::realloc 2.2x |
-| **container·hash** Hash&lt;T&gt; 16B POD 内联 | 0.59 | std::hash | ~0.9 | ~1.5x | wyhash | 0.93 | 1.58x | ✅赢 |
-| **container·hash** mix64 整数 | 0.45 | std::hash | ~0.6 | ~1.3x | wyhash64 | 0.57 | 1.27x | ✅赢 |
-| **container·hash** raw hash_bytes 8B | 0.21 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | 0.18 | 0.86x | ➖近平(原 1.85x,header 内联修;0.03ns=亚周期) |
-| **container·hash** raw hash_bytes 16B | 0.15 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | 0.10 | 0.67x | ➖测量地板(0.05ns 寄存器驻留;热路径 Hash&lt;T&gt; 赢 wyhash 1.6x) |
-| **container·hash** raw hash_bytes 64B | 0.14 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 | ~0.10 | 0.69x | ➖0.01ns 测量地板(保 xxhash.h 隐藏架构) |
-| **container·hash** raw hash_bytes 256B | ~0.20 | std::hash&lt;string&gt; | 慢 | (大赢) | 裸 XXH3 / wyhash | 0.20/0.07 | 1.0x/0.33x | ➖平 XXH3(wyhash 中串更强,观察) |
+| **container·hash** Hash&lt;T&gt; 16B POD 内联 | 0.43 | std::hash | ~0.9 | ~2x | wyhash | 0.94 | 2.2x | ✅赢(2026-07 改 abseil 单 128 位乘 mix64_2:0.59→0.43,vs wyhash 1.6x→2.2x) |
+| **container·hash** mix64 整数 | 0.44 | std::hash | 1.50 | 3.4x | wyhash64 | 0.57 | 1.27x | ✅赢(已 SOTA=abseil 同款单乘折叠) |
+| **container·hash** hash_bytes 8B(inline mix,非 XXH3) | 0.23/B | std::hash&lt;string&gt; | 0.29 | 1.3x | 裸 XXH3-small / wyhash | 0.21/0.30 | ~平/赢 wyhash | ➖**≤16B 走 inline mix 非 XXH3**(两算法比,非"输 XXH3");赢 wyhash-small、近平 XXH3-small |
+| **container·hash** hash_bytes 16B(inline mix,非 XXH3) | 0.15/B | std::hash&lt;string&gt; | 0.35 | 2.3x | 裸 XXH3-small / wyhash | 0.12/0.15 | ~平 wyhash | ➖同上(inline mix vs XXH3-small,不同算法;热路径 Hash&lt;T&gt; 见上行赢 wyhash 2.2x) |
+| **container·hash** hash_bytes 64B(真 XXH3 wrapper) | 0.055/B | std::hash&lt;string&gt; | 0.45 | 8x | 裸 XXH3(同算法) | 0.043 | 0.78x | ➖wrapper/seam 税(此处才是同算法 XXH3 vs XXH3,~1.28x 接缝;>16B 出线核不可内联) |
+| **container·hash** hash_bytes 256B(真 XXH3 wrapper) | 0.082/B | std::hash&lt;string&gt; | 0.63 | 7.7x | 裸 XXH3 / wyhash | 0.075/0.029 | 0.91x / 输 wyhash 2.6x | ➖平 XXH3(同算法接缝);**wyhash 中串碾 XXH3 2.6x=SOTA 观察**(HYLE 选 XXH3 是质量权衡,非缺陷) |
 | **container·map** find-hit(100k u64) | 2.21 | std::unordered_map | 10.47 | 4.74x | absl flat_hash_map | 3.03 | 1.30x | ✅赢 |
 | **container·map** find-miss(100k) | 4.36 | std::unordered_map | 11.57 | 2.65x | absl flat_hash_map | 4.86 | 1.09x | ✅赢(噪声内略胜) |
 | **container·map** insert(100k fresh) | 11.58 | std::unordered_map | 80.07 | 6.92x | absl flat_hash_map | 24.53 | 2.30x | ✅赢 |
@@ -109,7 +109,7 @@
 | **sched** Channel 收发(cap16,1p1c) | 63/item | (无 std 等价) | n/a | n/a | marl(无 channel) | n/a | n/a | ➖HYLE 自有 |
 | **sched** RunQueue fifo/lifo push+next | 8.3/2.6 | (内部结构) | n/a | n/a | (无外部对手) | n/a | n/a | ➖HYLE 自有(完成唤醒热路径) |
 
-**总账小结（两把标尺,2026-06-30 全套真跑；simd dot 2026-07 更新）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD dot 15x/saxpy 2.2x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 Win-only codegen 残留(monotonic_ns Win 0.68x/Linux 平)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~36 项**、➖**平 ~16 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 16/64B=导出接缝 by-design 且亚周期(热路径 Hash&lt;T&gt; 内联已赢);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns **Win-only 输 1.48x、Linux 平**(QPC split 算术 vs MSVC steady_clock,已查证非接缝非算法;POSIX clock_gettime 与 glibc steady_clock 同码故 Linux 平);④ MemoryArena/ObjectPool 单线程=**选错工具已下 ledger**(单线程对象池应用 GrowablePool;多线程共享场景对真强 SOTA `oneTBB scalable_allocator` **赢 ~3x**(对 std 弱池 synchronized_pool 25–44x,后者非天花板),非输项);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(simdutf 核 vendored 无条件默认追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:error 根模块已补测(对标同款 SOTA absl 全线平或赢:inline 码赢 4.6x、带消息赢 1.92x、ERROR 上抛赢 2.11x,空间 Result 16B<std/absl 24B;OK 传播"输 std"经隔离探针+消费变体证为 microbench 假象);string_ref scalar 反向串族可上 memrchr/SIMD。
+**总账小结（两把标尺,2026-06-30 全套真跑；simd dot 2026-07 更新）**：**比 std**——HYLE 几乎全线大赢(分配器 8–23x、hashmap 2.6–6.9x、SIMD dot 15x/saxpy 2.2x、容器 5–39x、Rng 1.5–1.7x、SpinLock 3x);唯几项亚 ns 测量地板或 Win-only codegen 残留(monotonic_ns Win 0.68x/Linux 平)及 scalar 反向串族(rfind/count,可上 memrchr)。**比 SOTA**(真门槛,absl/mi/Highway/rigtorp/marl/tbb/xsimd/simdutf)——✅**赢 ~36 项**、➖**平 ~16 项**(噪声内追平)、❌**仍输少数项**且全附根因:① raw hash_bytes 64B=导出接缝 by-design(同算法 XXH3 vs 裸 XXH3 ~1.28x,>16B 出线核不可内联;≤16B 走 inline mix 无 seam,改 abseil 单乘后 16B key 赢 wyhash 2.2x);② math exp/tanh 输 xsimd ~1.2x=跨库 best-of-breed 常数(已平 Highway);③ monotonic_ns **Win-only 输 1.48x、Linux 平**(QPC split 算术 vs MSVC steady_clock,已查证非接缝非算法;POSIX clock_gettime 与 glibc steady_clock 同码故 Linux 平);④ MemoryArena/ObjectPool 单线程=**选错工具已下 ledger**(单线程对象池应用 GrowablePool;多线程共享场景对真强 SOTA `oneTBB scalable_allocator` **赢 ~3x**(对 std 弱池 synchronized_pool 25–44x,后者非天花板),非输项);⑤ string_ref scalar 反向/否定族(rfind/find_*_not_of/count)输 std::string_view 4–20x=scalar vs libc memrchr/调优 bitmap,**待优化项(可上 SIMD,非缺陷)**;⑥ string_algo utf8 默认 scalar 输 simdutf 2x(simdutf 核 vendored 无条件默认追平)。**阶段C 已扭转**:string_ref 前向搜索簇(find char 20x→平、find_first_of 36x→1.6x、starts_with 2x→平、split 反赢)、ConcurrentVector 并发读(2.15x 输→2.2x 赢)、Ref(反汇编证算法同工、实战打平,microbench 假象)、hash 8B、vtable(反超 std::pmr)、math log(反超两库)、单环队列 4P(反超 rigtorp)、StringBuf intern(反超同契约 peer)。**真复杂度/争用问题(MemoryArena 278x、Arena 10x、4P CAS+伪共享、CV per-read acquire 争线)全部根治**。**遗留优化(非覆盖缺口)**:error 根模块已补测(对标同款 SOTA absl 全线平或赢:inline 码赢 4.6x、带消息赢 1.92x、ERROR 上抛赢 2.11x,空间 Result 16B<std/absl 24B;OK 传播"输 std"经隔离探针+消费变体证为 microbench 假象);string_ref scalar 反向串族可上 memrchr/SIMD。
 
 ## 实测铁证（持续回填,真跑非推算）
 
@@ -160,24 +160,31 @@
 
 ### container·map —— hash 哈希（`hash_bytes`/`mix64` vs 裸 XXH3 + wyhash + std，`hash_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench。三组:HYLE / 裸 XXH3+wyhash(SOTA) / std::hash。XXH3 vendored 无条件,wyhash gated `-DHYLE_BENCH_WYHASH`。此前 hash 只在 SwissTable 内部跑过,从未单独对标(README 宣称 XXH3 默认 hasher)。
+> 环境:Win MSVC19.50 Release,nanobench,15 遍中位数。三组:HYLE / 裸 XXH3+wyhash(SOTA) / std::hash。XXH3 vendored 无条件,wyhash gated `-DHYLE_BENCH_WYHASH`。**2026-07 红队修 bench 公平性 + 改 abseil 单乘**——数字与结论已重做,见下。
+>
+> **⚠️ bench 公平性更正(2026-07,红队 hash)**:旧 bench/ledger 有三处误导,已修:① **≤16B 行标签 "XXH3 wrapper" 错**——`hash_bytes(len≤16)` 是 `HYLE_FORCE_INLINE` 且短路走 **inline mix(mix64 折叠)根本不调 XXH3、不跨导出 seam**;所以 8B/16B 是 HYLE-inline-mix vs **完整 XXH3**(两个不同算法),旧结论"输裸 XXH3 0.86x/0.67x"是拿 inline-mix 比 XXH3-small,非真输。**真正的 seam/wrapper 税只在 64B/256B**(那里才是同算法 XXH3 vs XXH3)。② 旧 bench **单固定串重复 hash 百万次**→数据常驻 L1、长度分派分支完美预测,小串读出亚周期(0.03ns 假地板);已改**每长度轮转 256 个随机串**(smhasher 式),8B 从假地板 0.03→真实 0.23ns。③ `batch(len)`=ns/byte,小串固定开销主导,per-byte 低≠算法快。
 
-| 字节哈希 | HYLE hash_bytes | 裸 XXH3(SOTA) | wyhash | std::hash | 结论 |
+| 字节哈希(ns/op per byte,15 遍) | HYLE | 裸 XXH3 | wyhash | std | 结论(算法归属) |
 |---|---|---|---|---|---|
-| 8B | 0.34 ns | **0.18**(HYLE 慢 1.85x) | 0.27 | 0.26 | 小输入 HYLE 全场最慢 |
-| 16B | 0.15 ns | 0.10(慢 1.5x) | 0.14 | 0.29 | 赢 std,输裸 XXH3 |
-| 64B | 0.05 ns | 0.04(慢 1.38x) | 0.05 | 0.44 | 赢 std 大,输裸 XXH3 |
-| 256B | 0.08 ns | 0.08(平) | **0.03**(HYLE 输 3x) | 0.62 | 中串 wyhash 碾 XXH3 |
+| 8B | 0.23 | 0.21 | 0.30 | 0.29 | **inline mix**(非 XXH3):赢 wyhash-small、近平 XXH3-small |
+| 16B | 0.15 | 0.12 | 0.15 | 0.35 | **inline mix**(非 XXH3):平 wyhash、近平 XXH3-small |
+| 64B | 0.055 | 0.043 | 0.052 | 0.45 | **真 XXH3 wrapper**:同算法 vs 裸 XXH3 ~1.28x 接缝税(出线核不可内联) |
+| 256B | 0.082 | 0.075 | **0.029** | 0.63 | 平裸 XXH3(接缝);**wyhash 碾 XXH3 2.6x=SOTA 观察** |
 
 | 整数哈希(4096 key) | HYLE mix64 | wyhash64 | std::hash | 结论 |
 |---|---|---|---|---|
-| ns/op | **0.45** | 0.57(HYLE 赢 1.27x) | 1.52(赢 3.4x) | ✅ mix64 真好 |
+| ns/op | **0.44** | 0.57(赢 1.27x) | 1.50(赢 3.4x) | ✅ mix64 已 SOTA(= abseil 同款单 128 位乘折叠) |
 
-| 小 POD key(16B 结构,4096) | HYLE Hash<T> 内联 | 旧 hash_bytes 路径 | wyhash | 结论 |
-|---|---|---|---|---|
-| ns/op | **0.59** | 1.76(HYLE 赢 2.98x) | 0.93(赢 1.58x) | ✅ 内联 mix 修复小 key |
+| 小 POD key(16B 结构,4096,真热路径) | HYLE Hash<T> | wyhash | 结论 |
+|---|---|---|---|
+| ns/op(改 mix64_2 前→后) | 0.595 **→ 0.43** | 0.94 | ✅ **改 abseil 单乘后 1.38x,vs wyhash 从 1.6x→2.2x** |
 
-**结论(typed 路径已修 + raw API 接缝 + SOTA 观察 + 真赢)**:① **`Hash<T>` 小 POD key 曾走出线 XXH3、慢——已改内联 mix 修复**:通用 POD 路径对 ≤16B key 现走 `detail::hash_small`(内联 mix64,absl/F14 同款),不再调 `hash_bytes`。16B 结构键 **0.59ns 赢旧 XXH3 路径 2.98x、赢 wyhash 1.58x**——这才是 map 定长 key 的真热路径。② **raw `hash_bytes` API 对小输入仍慢裸 XXH3 1.05-1.85x**:它是导出函数(`HYLE_CONTAINER_API` 不可内联,藏 7490 行 xxhash.h),裸 XXH3 全内联——这是 raw 字节 API 隐藏 xxhash 头的**接缝代价**(同 vtable,by-design;变长串 ≥256B 已摊薄至平),典型消费者(定长 key)走 ① 的内联路径不付此税。③ **wyhash 在 256B 比 XXH3 快 3x**(SOTA 观察:中等串 wyhash > XXH3;HYLE 选 XXH3 是质量/分布,设计权衡非缺陷)。④ **`mix64` 整数哈希真赢**:赢 wyhash64 1.27x、赢 std 3.4x——SwissTable 整数键热路径,印证 find/insert 反超 absl 的哈希基础扎实。
+**结论(bench 已诚实化 + 9-16B 改 abseil 单乘 + SOTA 观察)**:
+1. **9-16B key 改 abseil 单 128 位乘(mix64_2)——16B POD key 热路径 1.38x**:HYLE 原对 9-16B 用**两次串行 mix64**(各一个 128 位乘);abseil `CombineContiguousImpl9to16` 只用**一次** `Mix(a,b)=fold(a*b)`(两 word 进单乘的两操作数)。加 `detail::mix64_2` 照此改,16B POD key **0.595→0.43ns(1.38x)、vs wyhash 赢 2.2x**(原 1.6x)。短依赖链(1 乘替 2 串行乘)的真收益;质量经 `SmallStructInlineQuality`(40000 distinct + 每 bit 雪崩≥12)+ StringView 10k 无碰撞门(10/10 Hash 测试双平台过)。已知 abseil 文档的 1/2^64 corner(操作数恰 0,仅 16B 可达,XOR 常数+重叠字节 practically 不可达)。
+2. **≤16B "输 XXH3" 是伪命题(两算法比)**:纠旧结论——`hash_bytes(≤16)` 走 inline mix 非 XXH3,拿它比完整 XXH3 不是同物;正确对手是 wyhash-small(HYLE 赢/平)。旧文档"接缝代价"归因也错:≤16B 全内联无 seam,**真接缝税只在 >16B 的 XXH3 出线核**(64B ~1.28x)。
+3. **mix64 整数哈希已 SOTA**:与 abseil `Mix` 逐字同款(单乘折叠),赢 wyhash64 1.27x(后者两次 `_wymum` 更长链)、赢 std 3.4x。SwissTable 整数键热路径的哈希基础扎实。
+4. **wyhash 中串(256B)碾 XXH3 2.6x=真 SOTA 观察**:wyhash 48B/loop 三累加器,XXH3 在 256B 仍走 midsize 标量(SIMD 大块路径 >240B 才启)。HYLE 选 XXH3 是质量/分布权衡(非缺陷),此观察登记备查——若将来有中串热点可评估 wyhash。
+5. **未被 mem/simd/util 加速(确认)**:hash 不分配(mem 无关);批量 SIMD hash 需 64×64→128 高位乘,AVX2 无(要 AVX-512 `vpmullq`),本机不划算=新特性非漏接;util 的 `mul128_hi_lo` 与 hash 的 128 位乘语义略异(hi+lo out-param vs hi^lo 折叠),可后续收敛为单一 helper(纯代码复用,非性能)。
 
 
 
