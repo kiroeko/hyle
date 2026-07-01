@@ -316,10 +316,11 @@ bool directory_iterate(const char* path,
   // FindFirstFileW computes -- work we never use. FIND_FIRST_EX_LARGE_FETCH asks the
   // FS to batch more entries per kernel round-trip. This is what MSVC's own
   // std::filesystem does (FindExInfoBasic, flags 0).
-  // NOTE: measured no visible speedup vs plain FindFirstFileW (~32.6us either way) --
-  // directory_iterate is syscall-bound by the per-entry FindNextFileW + UTF-16->UTF-8
-  // advance loop, and short-name suppression is a one-time open cost the loop dwarfs.
-  // Kept because it is strictly less work and matches the STL, not for a bench win.
+  // NOTE: measured statistical tie vs std::filesystem (~31.8 vs 32.3 us, ratio 1.034,
+  // gap 3.4% < spread 9.2%). The per-entry work (one WideCharToMultiByte + visitor) is
+  // dwarfed by the FindNextFileW advance -- this loop is syscall-bound. Kept for
+  // strictly-less work + STL parity, not a bench win. (The per-entry convert was
+  // trimmed from two WCTMB calls to one; still tie -- confirms the syscall dominates.)
   HANDLE h = FindFirstFileExW(pat, FindExInfoBasic, &fd, FindExSearchNameMatch,
                               nullptr, FIND_FIRST_EX_LARGE_FETCH);
   std::free(heapp);
@@ -330,7 +331,15 @@ bool directory_iterate(const char* path,
         (wname[1] == L'\0' || (wname[1] == L'.' && wname[2] == L'\0')))
       continue;
     char name[1024];
-    fill_w(name, sizeof(name), wname, -1);  // entry name -> UTF-8 for the visitor
+    // cFileName is bounded to MAX_PATH (260) wchar, so its UTF-8 form is <= 780
+    // bytes + NUL < 1024 -- it ALWAYS fits. So skip fill_w's length-probe call
+    // (WideCharToMultiByte(...,nullptr,0,...)) and convert in ONE call straight
+    // into the fixed buffer. wlen=-1 processes the terminator too, so the output
+    // is NUL-terminated and `got` includes it. Fall back to fill_w only on the
+    // impossible failure (0 = bad input / would-truncate), keeping correctness.
+    int got = WideCharToMultiByte(CP_UTF8, 0, wname, -1, name,
+                                  static_cast<int>(sizeof(name)), nullptr, nullptr);
+    if (got <= 0) fill_w(name, sizeof(name), wname, -1);  // defensive, never hit here
     bool dir = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
     if (!visit(name, dir, ctx)) break;
   } while (FindNextFileW(h, &fd));
