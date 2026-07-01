@@ -67,6 +67,33 @@ HYLE_FORCE_INLINE std::uint64_t mix64(std::uint64_t x) noexcept {
 #endif
 }
 
+// TWO-operand mixer: fold(a * b) via hi^lo. This is abseil's `Mix` (absl/hash) --
+// it puts two independent 64-bit words into the two OPERANDS of a SINGLE 128-bit
+// multiply, so a 9..16B key avalanches both words in ONE mul instead of two serial
+// mix64() calls (saves ~one multiply's latency on the small-key hot path). Caller
+// XORs high-entropy constants into each operand so neither is trivially zero.
+// KNOWN corner (absl-documented, accepted): if one operand becomes exactly 0 the
+// product is 0 and the other operand's bits are lost -- 1 in 2^64 per side, and
+// only reachable at exactly 16B; the XOR'd constants + overlapping bytes at <16B
+// make it practically unhittable. Quality is gated by SmallStructInlineQuality
+// (40000 distinct + avalanche>=12 on every bit) and StringView 10k tests.
+HYLE_FORCE_INLINE std::uint64_t mix64_2(std::uint64_t a, std::uint64_t b) noexcept {
+#if defined(__GNUC__) || defined(__clang__)
+  __extension__ using u128 = unsigned __int128;
+  const u128 m = static_cast<u128>(a) * b;
+  return static_cast<std::uint64_t>(m) ^ static_cast<std::uint64_t>(m >> 64);
+#elif defined(_MSC_VER) && defined(_M_X64)
+  std::uint64_t hi;
+  const std::uint64_t lo = _umul128(a, b, &hi);
+  return lo ^ hi;
+#elif defined(_MSC_VER) && defined(_M_ARM64)
+  return (a * b) ^ __umulh(a, b);
+#else
+  // Portable: fall back to folding two single-operand mixes (longer, rare path).
+  return mix64(a) ^ mix64(b + 0x9e3779b97f4a7c15ull);
+#endif
+}
+
 // Inline hash for a SMALL fixed-size byte blob (n <= 16) -- the common map-key case
 // (PODs/small structs). absl/F14 do the same: small keys get an inline integer mix, NOT a
 // call into the general byte hasher. This avoids the non-inlinable hash_bytes (XXH3) call
@@ -77,9 +104,15 @@ HYLE_FORCE_INLINE std::uint64_t hash_small(const void* p, std::size_t n) noexcep
   std::uint64_t lo = 0, hi = 0;
   std::memcpy(&lo, p, n < 8 ? n : 8);
   if (n > 8) std::memcpy(&hi, static_cast<const char*>(p) + 8, n - 8);
-  std::uint64_t h = mix64(lo);
-  if (n > 8) h = mix64(h ^ hi);
-  return h;
+  if (n > 8) {
+    // 9..16B: fold both words in ONE 128-bit multiply (abseil's Mix), not two serial
+    // mix64 calls. XOR distinct high-entropy constants into each operand so neither is
+    // trivially zero.
+    constexpr std::uint64_t k1 = 0x9ddfea08eb382d69ull;
+    constexpr std::uint64_t k2 = 0xff51afd7ed558ccdull;
+    return mix64_2(lo ^ k1, hi ^ k2);
+  }
+  return mix64(lo);
 }
 }  // namespace detail
 
@@ -103,9 +136,13 @@ HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
       std::memcpy(&lo, data, len < 8 ? len : 8);
       if (len > 8) std::memcpy(&hi, static_cast<const char*>(data) + 8, len - 8);
     }
-    std::uint64_t h = detail::mix64(lo ^ seed ^ (len * 0x9e3779b97f4a7c15ull));
-    if (len > 8) h = detail::mix64(h ^ hi);
-    return h;
+    const std::uint64_t s = lo ^ seed ^ (len * 0x9e3779b97f4a7c15ull);
+    if (len > 8) {
+      // 9..16B: one 128-bit multiply of the two seed/len-folded words (abseil Mix),
+      // instead of two serial mix64 -- saves a multiply on this small-string path.
+      return detail::mix64_2(s, hi ^ 0xff51afd7ed558ccdull);
+    }
+    return detail::mix64(s);
   }
   return detail::hash_bytes_xxh3(data, len, seed);
 }
