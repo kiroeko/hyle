@@ -157,7 +157,7 @@ int main() {
       nb::doNotOptimizeAway(bf_out.data());
     });
 #if defined(HYLE_BENCH_HIGHWAY)
-    b2.run("Highway DemoteTo f32->bf16 (SOTA)", [&] {
+    b2.run("Highway DemoteTo f32->bf16 (naive 1-vec)", [&] {
       const hn::ScalableTag<float> df;
       const hn::Rebind<hwy::bfloat16_t, decltype(df)> dbf;
       const std::size_t w = hn::Lanes(df);
@@ -165,6 +165,26 @@ int main() {
       for (; i + w <= kN; i += w) {
         auto v = hn::LoadU(df, f32.data() + i);
         hn::StoreU(hn::DemoteTo(dbf, v), dbf,
+                   reinterpret_cast<hwy::bfloat16_t*>(bf_out.data()) + i);
+      }
+      for (; i < kN; ++i) bf_out[i] = f32_to_bf16(f32[i]);
+      nb::doNotOptimizeAway(bf_out.data());
+    });
+    // Highway PRODUCTION shape: OrderedDemote2To (2 f32 vecs -> 1 full bf16 vec,
+    // one packus+vpermq for 16 elems + full store). The naive DemoteTo above is the
+    // 8->8 convenience form (packus+vpermq per 8 + half store) that HYLE used to
+    // mirror -- racing only against it hid the production ceiling (same trap as the
+    // dot single-accumulator case). This is the honest SOTA yardstick.
+    b2.run("Highway OrderedDemote2To (SOTA 2-vec)", [&] {
+      const hn::ScalableTag<float> df;
+      const hn::Repartition<hwy::bfloat16_t, decltype(df)> dbf;
+      const std::size_t w = hn::Lanes(df);
+      std::size_t i = 0;
+      for (; i + 2 * w <= kN; i += 2 * w) {
+        auto a = hn::LoadU(df, f32.data() + i);
+        auto b = hn::LoadU(df, f32.data() + i + w);
+        auto packed = hn::OrderedDemote2To(dbf, a, b);
+        hn::StoreU(packed, dbf,
                    reinterpret_cast<hwy::bfloat16_t*>(bf_out.data()) + i);
       }
       for (; i < kN; ++i) bf_out[i] = f32_to_bf16(f32[i]);
