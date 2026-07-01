@@ -74,15 +74,15 @@
 | **container·str** StringBuf intern(100k/2k 唯一) | 24.0 | 无锁 map floor | 21.2 | 0.88x | thread-safe peer(map+mutex) | 28.1 | 1.17x | ✅赢同契约 peer(对无锁 map 是 thread-safe-vs-无锁) |
 | **container·str** StringBuf add/retain/remove churn | 18.2 | 无锁 map+引用计数 | 7.54 | 0.41x | (同契约 thread-safe 待补) | n/a | ⏳ | ❌输无锁 floor(同 intern;含 erase+free) |
 | **container·str** find(char) 全扫 miss(4KB) | 0.02/B | std::string_view::find | 0.01 | ~1.0x | string_view(即 SOTA,libc memchr) | 0.01 | ~1.0x | ➖平(切 memchr;原 scalar 输 ~20x) |
-| **container·str** find(needle) 6B 子串 | 0.20/B | std::string_view::find | 0.08 | 0.40x | string_view(即 SOTA) | 0.08 | 0.40x | ❌输 2.5x(memchr 候选+memcmp;原 naive 输 7x) |
-| **container·str** find_first_of(4 字符集) | 0.08/B | std::string_view | 0.05 | 0.62x | string_view(即 SOTA) | 0.05 | 0.62x | ➖近平 1.6x(memchr-min;原 O(n·m) 输 36x) |
+| **container·str** find(needle) 6B 子串 | 0.08/B | std::string_view::find | 0.08 | ~1.0x | string_view(即 SOTA,two-way 向量化) | 0.08 | ~1.0x | ➖平(转发 std;自研 memchr 候选曾输 2.5x) |
+| **container·str** find_first_of(4 字符集) | 0.05/B | std::string_view | 0.05 | ~1.0x | string_view(即 SOTA) | 0.05 | ~1.0x | ➖平(转发 std;自研 memchr-min 曾 0.62x) |
 | **container·str** starts_with(16B 前缀) | 1.79 | std::string_view | 1.77 | ~1.0x | string_view(即 SOTA,memcmp) | 1.77 | ~1.0x | ➖平(切 memcmp;原 字节循环输 2x) |
 | **container·str** split 全文按空格(4KB) | 0.44/B | string_view find+remove_prefix | 0.54 | 1.22x | string_view(即 SOTA) | 0.54 | 1.22x | ✅赢(无分配子视图) |
 | **container·str** trim 两端(4KB) | 13.6 | string_view 两侧 trim | 16.85 | 1.24x | string_view(即 SOTA) | 16.85 | 1.24x | ✅赢(组合 find_first/last_not_of) |
 | **container·str** rfind(char) 后向扫 miss | 0.012/B | std::string_view::rfind | 0.012 | ~1.0x | string_view(即 SOTA) | 0.012 | ~1.0x | ➖平(AVX2 后向扫,统计平局 gap2%«spread11%;原 scalar 输 ~20x) |
-| **container·str** find_first_not_of 全字母 | 0.25/B | std::string_view | 0.06 | 0.23x | string_view(即 SOTA) | 0.06 | 0.23x | ❌输 ~4.5x(成员测试无 SIMD 解;bool 表实测胜 bitmap) |
-| **container·str** find_last_of(digits) miss | 0.26/B | std::string_view | 0.06 | 0.22x | string_view(即 SOTA) | 0.06 | 0.22x | ❌输 ~4.4x(后向成员测试,同上) |
-| **container·str** rfind(needle) 6B(4KB) | 0.56/B | std::string_view::rfind | 0.12 | 0.21x | string_view(即 SOTA) | 0.12 | 0.21x | ❌输 ~4x(瓶颈是 region_eq/memcmp 验证,非首字符扫描;AVX2 只加速候选定位;原 region_eq 输 ~20x) |
+| **container·str** find_first_not_of 全字母 | 0.06/B | std::string_view | 0.06 | ~1.0x | string_view(即 SOTA) | 0.06 | ~1.0x | ➖平(转发 std;自研 bool 表/PCMPESTRI 曾输 4.5x/0.31x) |
+| **container·str** find_last_of(digits) miss | 0.06/B | std::string_view | 0.06 | ~1.0x | string_view(即 SOTA) | 0.06 | ~1.0x | ➖平(转发 std;自研曾输 4.4x) |
+| **container·str** rfind(needle) 6B(4KB) | 0.12/B | std::string_view::rfind | 0.12 | ~1.0x | string_view(即 SOTA,two-way 向量化) | 0.12 | ~1.0x | ➖平(转发 std;自研 region_eq 曾输 ~4x) |
 | **container·str** count(char) 全扫 | 0.008/B | std::count | 0.008 | ~1.0x | std::count(即 SOTA,自动向量化) | 0.008 | ~1.0x | ➖平(AVX2 4累加器 psadbw,统计平局 gap7%«spread10%;原 scalar 输 ~27x) |
 | **container·str** utf8 validate+count(2KB) | 0.41(scalar)/0.21(simdutf) | (无 std utf8 count) | n/a | n/a | simdutf validate+count | 0.21 | 2.0x输/1.0x | ➖scalar 参考 2x;simdutf 核(vendored 无条件默认)追平 |
 | **container·str** hex_encode 1KB→2KB | 0.45/B | naive 逐字节 | 0.63 | 1.41x | (无单一 SOTA hex 库) | n/a | n/a | ✅赢参考实现(表查找) |
@@ -420,29 +420,28 @@
 
 ### container·str —— string_ref / StringBuf / string_algo（`string_ref_bench.cc` / `string_buf_bench.cc` / `string_algo_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench,~4KB 文本(L1 常驻),15 遍统计(`bench-stat.py`)。**标尺 = `std::string_view`**(string_ref 是其 drop-in 替代,conventions §7:同 16 字节 POD + null_terminated 位,同契约对照公平)+ `std::count` / simdutf。前向 char 搜索早已切 memchr 追平;**反向族(rfind char/needle)与 count 现已上运行期 ISA dispatch(SSE2 baseline + AVX2 变体)**——CPUID 探测下沉 platform 后,container 可安全跨 SSE2 baseline 上 AVX2(查 `platform::cpu_features().avx2`,老 CPU 走 SSE2/scalar 无 SIGILL)。`count`/`rfind(char)` 由此**统计平局追平 MSVC STL 的 AVX2**。**成员族(find_first_not_of/find_last_of)无 SIMD 解,保持 bool 表(实测胜 bitmap),诚实留输。**
+> 环境:Win MSVC19.50 Release,nanobench,~4KB 文本(L1 常驻),15 遍统计(`bench-stat.py`)。**标尺 = `std::string_view`**(string_ref 是其 drop-in 替代,conventions §7:同 16 字节 POD + null_terminated 位,同契约对照公平)+ `std::count` / simdutf。**至此 container·str 无真输项——全线追平或反超。** 分两条腿走(2026-07 定策):HYLE **自研**那些它能追平/反超的(find(char)/rfind(char)/count 走 SSE2+AVX2 运行期 dispatch、starts_with 走 memcmp、split/trim 零分配子视图);对 MSVC STL 手写向量化汇编(vector_algorithms.cpp:two-way 子串搜索 + PCMPESTRI 字符集扫描)**实测更强、自研 PCMPESTRI 只到 0.76x 追不动**的子串/成员族,**转发 `std::string_view`**——转发只在 `string_ref.cc` 内(include `<string_view>`),公开头不引任何 std string 头、不进 DLL 导出符号、不破 C-ABI seam。即"自研赢得过的留自研,std 更强的就借,不为纯粹性硬造打不过的轮子"。
 
 | op | HYLE | std::string_view | vs SOTA | 结论 |
 |---|---|---|---|---|
-| **find(char) 全扫 miss** | 0.02/B | memchr 0.01 | ~1.0x | ➖平(已切 memchr;原 scalar 输 ~20x) |
-| **find_first_of(4 字符集)** | 0.08/B | 0.05 | 0.62x | ➖近平 1.6x(memchr-min;原 O(n·m) 输 36x) |
-| **starts_with(16B)** | 1.79 | memcmp 1.77 | ~1.0x | ➖平(已切 memcmp) |
-| **split 全文按空格** | 0.44/B | find+remove_prefix 0.54 | 1.22x | ✅赢(无分配子视图) |
-| **trim 两端** | 13.6 | 16.85 | 1.24x | ✅赢(组合 find_first/last_not_of) |
-| **find(needle) 6B 子串** | 0.20/B | 0.08 | **0.40x** | ❌输 2.5x(memchr 候选+memcmp;原 naive 输 7x) |
-| **rfind(char) 后向扫** | 0.012/B | 0.012 | ~1.0x | ➖平(AVX2 后向扫,统计平局;SSE2-only 时 1.7x;原 scalar 输 ~20x) |
-| **rfind(needle) 6B** | 0.56/B | 0.12 | **0.21x** | ❌输 ~4x(瓶颈=region_eq/memcmp 验证,AVX2 只加速候选定位;原 region_eq 输 ~20x) |
-| **find_first_not_of 全字母** | 0.25/B | 0.06 | **0.23x** | ❌输 ~4.5x(成员测试无 SIMD 解;bool 表实测胜 4×u64 bitmap) |
-| **find_last_of(digits)** | 0.26/B | 0.06 | **0.22x** | ❌输 ~4.4x(后向成员测试,同上) |
-| **count(char) 全扫** | 0.008/B | std::count 0.008 | ~1.0x | ➖平(AVX2 4累加器 psadbw,统计平局;SSE2-only 时 3x;原 scalar 输 ~27x) |
+| **find(char) 全扫 miss** | 0.02/B | memchr 0.01 | ~1.0x | ➖平(自研 memchr;原 scalar 输 ~20x) |
+| **starts_with(16B)** | 1.79 | memcmp 1.77 | ~1.0x | ➖平(自研 memcmp) |
+| **split 全文按空格** | 0.44/B | find+remove_prefix 0.54 | 1.22x | ✅赢(自研,无分配子视图) |
+| **trim 两端** | 13.6 | 16.85 | 1.24x | ✅赢(自研,组合 find_first/last_not_of) |
+| **rfind(char) 后向扫** | 0.012/B | 0.012 | ~1.0x | ➖平(自研 AVX2 后向扫;SSE2-only 时 1.7x;原 scalar 输 ~20x) |
+| **count(char) 全扫** | 0.008/B | std::count 0.008 | ~1.0x | ➖平(自研 AVX2 4累加器 psadbw;SSE2-only 时 3x;原 scalar 输 ~27x) |
+| **find(needle) 6B 子串** | 0.08/B | 0.08 | ~1.0x | ➖平(转发 std;自研 memchr 候选曾输 2.5x) |
+| **rfind(needle) 6B** | 0.12/B | 0.12 | ~1.0x | ➖平(转发 std;自研 region_eq 曾输 4x) |
+| **find_first_of(4 字符集)** | 0.05/B | 0.05 | ~1.0x | ➖平(转发 std;自研 memchr-min 曾 0.62x、PCMPESTRI 0.76x) |
+| **find_first_not_of 全字母** | 0.06/B | 0.06 | ~1.0x | ➖平(转发 std;自研 bool 表曾输 4.5x) |
+| **find_last_of(digits)** | 0.06/B | 0.06 | ~1.0x | ➖平(转发 std;自研曾输 4.4x) |
 | **StringBuf intern**(100k/2k 唯一) | 24.0 | map+mutex(同契约 thread-safe peer)28.1 | 1.17x | ✅赢同契约 peer(SwissTable 核) |
 | **StringBuf add/retain/remove churn** | 18.2 | 无锁 map floor 7.54 | 0.41x | ⚠️对手是**无锁 floor**(StringBuf 是 thread-safe);**同契约 thread-safe churn 对手待补**(参照 intern 行,公平对手下应反超)——红队待办,勿当真输 |
 
-**诚实结论**:
-- **反向族 + count 走运行期 ISA dispatch(SSE2 baseline + AVX2 变体)**:`rfind(char)`/`rfind(needle)` SSE2/AVX2 后向块扫(无 memrchr on Windows),`count` `cmpeq`+`sad_epu8`(psadbw)横向累加。**CPUID 探测下沉到 platform**(`platform/cpu.{h,cc}`,原在 simd/dispatch)后,container 首次能安全上 AVX2:`string_ref_avx2.cc` 是独立 `-mavx2` TU,只在 `cpu_features().avx2 && size>=32` 时进入(老 CPU 走 SSE2/scalar,无 SIGILL),IPO/LTO OFF 隔离 baseline dispatcher。SIMD 核放 `string_ref.cc` 导出,公开头不引 `<emmintrin.h>`(C-ABI 分层)。**结果:`count` 0.33→0.93x、`rfind(char)` 0.58→0.98x = 统计平局,追平 MSVC STL 的 AVX2**(count 4 独立累加器打破 psadbw 依赖链)。这不是"Tier 0 只能 SSE2"——探测下沉后 container 与 simd 都能查同一份 CPUID,是设计文档(simd-design §"下沉 CPUID 到 platform")早已裁决的正确解。
-- **rfind(needle) 仍 0.21x**:瓶颈是子串的 `region_eq`/memcmp **验证**成本,非首字符候选定位——AVX2 加速了后者(占比小),前者已是 memcmp。追平需更聪明的子串算法(如 std 的调优 two-way),留待后续。
-- **成员族(find_first_not_of/find_last_of/find_last_not_of)保持 256-bool 表**:试过换 4×uint64 bitmap(缩 8x cache footprint),但**实测更慢**(0.25→0.47)——bool 表是 1 次直接字节 load,bitmap 每字节多 shift+mask+数组索引,而 256B 表本就常驻 L1。任意集合的成员测试无简单 SIMD 解(需 pshufb gather 大工程),诚实留输 ~4.5x。
-- **find(needle) 前向仍 0.40x**:已是 memchr 首字符候选+memcmp,差距在 std 的调优子串匹配,同 rfind(needle) 留待后续。
+**诚实结论(全线追平的路径)**:
+- **自研追平的项(HYLE 自己的 SIMD)**:`find(char)`/`starts_with` 早已切 memchr/memcmp;`rfind(char)`/`count` 上运行期 ISA dispatch(SSE2 baseline + AVX2 变体)。**CPUID 探测下沉 platform**(`platform/cpu.{h,cc}`)后 container 首次能安全上 AVX2:`string_ref_avx2.cc` 是独立 `-mavx2` TU,只在 `cpu_features().avx2 && size>=32` 时进入(老 CPU 走 SSE2/scalar 无 SIGILL),count 用 4 独立累加器打破 psadbw 依赖链。`split`/`trim` 靠零分配子视图**反超** std。
+- **转发 std 的项(借 SOTA,不硬造)**:`find(needle)`/`rfind(needle)`/`find_first_of`/`find_first_not_of`/`find_last_of`/`find_last_not_of`——MSVC STL 的 two-way 向量化子串搜索 + PCMPESTRI 字符集扫描是实测 SOTA,**自研 PCMPESTRI 尝试只到 0.76-0.78x 追不动**(PCMPESTRI 延迟高),遂转发 `std::string_view`。转发局限在 `string_ref.cc`(公开头不引 `<string_view>`),不破 C-ABI。**代价**:string_ref 在这些项上不是"纯自研替代",而是"借 std 的最优实现"——这是刻意取舍(不为纯粹性造打不过微软手写汇编的轮子),非缺陷。**结果:5 项从输 2.5–4.5x 全部统计平局(ratio 0.98–1.02,gap«spread)。**
+- **前身 clay 的做法参照**:clay 的 `string_ref` 搜索族**全部**转发 `std::string_view`(且其头 `#include <iostream>`/`<string>`/`<functional>`)。HYLE 只转发 std 真正更强的几项、且只从 .cc 转发、公开头零 std string 头——比 clay 更克制。
 - **StringBuf churn 的 0.41x 是对照存疑(⚠️非确认真输)**:它的 std 对手是**无锁裸 map**(无锁),而 StringBuf 是 thread-safe(每 op 一把锁)——同 MemoryArena 那类 apples-to-oranges。intern 行换上同契约 thread-safe peer(map+mutex)后 HYLE ✅赢 1.17x;churn 的同契约对手(thread-safe add/retain/remove)尚未加,**红队待办**,加上前不算确认真输。
 
 ### container·path —— 纯词法路径操作（`path_bench.cc`）
