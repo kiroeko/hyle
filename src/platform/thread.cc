@@ -188,13 +188,25 @@ unsigned hardware_concurrency() noexcept {
 
 namespace this_thread {
 std::uint64_t get_id() noexcept {
+  // Cache the OS thread id in thread_local storage: it is INVARIANT for a thread's
+  // lifetime, so re-querying the kernel every call is pure waste. folly (ThreadId.cpp
+  // getOSThreadID) and abseil (sysinfo.cc GetCachedTID) both do this -- folly measured
+  // ~275ns uncached -> ~2ns cached. 0 is never a valid tid, so it doubles as the
+  // "not yet fetched" sentinel (lazy init on first call per thread).
+  // FORK CAVEAT: a value cached in the parent would be stale in a fork() child (new
+  // tid). HYLE ships NO fork/spawn (process mgmt is out of scope -- clay-asset-liability
+  // §进程), so there is no atfork reset; if fork support is ever added, this needs a
+  // fork epoch (folly's approach) or a pthread_atfork handler to clear the cache.
+  static thread_local std::uint64_t cached = 0;
+  if (cached != 0) return cached;
 #  if defined(HYLE_OS_LINUX)
-  return static_cast<std::uint64_t>(::syscall(SYS_gettid));
+  cached = static_cast<std::uint64_t>(::syscall(SYS_gettid));
 #  else
   std::uint64_t tid = 0;
   ::pthread_threadid_np(nullptr, &tid);
-  return tid;
+  cached = tid;
 #  endif
+  return cached;
 }
 void yield() noexcept { ::sched_yield(); }
 void set_name(std::string_view name) noexcept {
