@@ -178,3 +178,40 @@ TEST(SwissTable, EraseReinsertChurnStaysBounded) {
   EXPECT_EQ(*t.find(2), 200);
   EXPECT_EQ(t.find(7), nullptr);
 }
+
+// for_each visits EXACTLY the live set, once each, with correct key->value --
+// across empty / after inserts / after erases (tombstones present) / after growth.
+// Guards the group-scan for_each (match_full over kGroup bytes): a wrong mask would
+// miss live slots, double-visit (ctrl tail-mirror), or visit tombstones/empties.
+TEST(SwissTable, ForEachVisitsExactlyLiveSet) {
+  SwissTable<std::uint64_t, std::uint64_t> t(system_allocator());
+  // Empty: for_each is a no-op.
+  { std::size_t n = 0; t.for_each([&](std::uint64_t, std::uint64_t&) { ++n; }); EXPECT_EQ(n, 0u); }
+
+  std::mt19937_64 rng(2024);
+  std::unordered_map<std::uint64_t, std::uint64_t> oracle;
+  constexpr int kN = 5000;  // forces several growths past kMinCap
+  for (int i = 0; i < kN; ++i) {
+    std::uint64_t k = rng();
+    t.insert(k, k ^ 0x9e3779b97f4a7c15ull);
+    oracle[k] = k ^ 0x9e3779b97f4a7c15ull;
+  }
+  // Erase ~1/3 to leave tombstones interleaved with live slots.
+  {
+    std::vector<std::uint64_t> ks;
+    for (auto& kv : oracle) ks.push_back(kv.first);
+    for (std::size_t i = 0; i < ks.size(); i += 3) { t.erase(ks[i]); oracle.erase(ks[i]); }
+  }
+  // for_each must reproduce the oracle EXACTLY: same keys, same values, no dup.
+  std::unordered_map<std::uint64_t, std::uint64_t> seen;
+  t.for_each([&](std::uint64_t k, std::uint64_t& v) {
+    EXPECT_TRUE(seen.emplace(k, v).second) << "duplicate visit of key " << k;
+  });
+  EXPECT_EQ(seen.size(), oracle.size());
+  EXPECT_EQ(t.size(), oracle.size());
+  for (auto& kv : oracle) {
+    auto it = seen.find(kv.first);
+    ASSERT_NE(it, seen.end()) << "for_each missed live key " << kv.first;
+    EXPECT_EQ(it->second, kv.second) << "wrong value for key " << kv.first;
+  }
+}

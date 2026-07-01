@@ -111,6 +111,11 @@ class GroupPortable {
     constexpr std::uint64_t msb = 0x8080808080808080ull;
     return BitMask(pack(ctrl_ & msb));  // empty/deleted/sentinel: top bit set
   }
+  // Full (occupied) lanes = complement of empty/deleted within the 8-lane group.
+  BitMask match_full() const noexcept {
+    constexpr std::uint64_t msb = 0x8080808080808080ull;
+    return BitMask((pack(ctrl_ & msb) ^ 0xFFu) & 0xFFu);
+  }
 
  private:
   static std::uint32_t pack(std::uint64_t z) noexcept {
@@ -158,6 +163,13 @@ class GroupSse2 {
     // empty/deleted/sentinel all have the top bit set; full does not.
     return BitMask(static_cast<std::uint32_t>(_mm_movemask_epi8(ctrl_)));
   }
+  // Full (occupied) lanes = complement of empty/deleted within the 16-lane group.
+  // for_each scans groups and iterates only these bits -- 16 ctrl bytes per SIMD op
+  // + branchless bit iteration, vs a per-slot byte load + branch (abseil's iterator
+  // shape; the naive per-byte scan lost absl ~1.2x on iterate).
+  BitMask match_full() const noexcept {
+    return BitMask(static_cast<std::uint32_t>(_mm_movemask_epi8(ctrl_)) ^ 0xFFFFu);
+  }
 
  private:
   __m128i ctrl_;
@@ -193,6 +205,11 @@ class GroupNeon {
     // empty/deleted/sentinel all have the top bit set; full does not.
     uint8x8_t hi = vtst_u8(ctrl_, vdup_n_u8(0x80));  // 0xFF where top bit set
     return BitMask(pack(hi));
+  }
+  // Full (occupied) lanes = complement of empty/deleted within the 8-lane group.
+  BitMask match_full() const noexcept {
+    uint8x8_t hi = vtst_u8(ctrl_, vdup_n_u8(0x80));
+    return BitMask((pack(hi) ^ 0xFFu) & 0xFFu);
   }
 
  private:

@@ -180,8 +180,19 @@ class SwissTable {
   // fn must not insert/erase/grow the table while iterating.
   template <class Fn>
   void for_each(Fn&& fn) {
-    for (std::size_t i = 0; i < cap_; ++i)
-      if (detail::ctrl_is_full(ctrl_[i])) fn(slots_[i].key, slots_[i].value);
+    // Scan a GROUP (kGroup ctrl bytes) at a time: one SIMD match_full gives a
+    // bitmask of occupied lanes, then iterate only the set bits -- branchless per
+    // slot. The old byte-by-byte scan (load ctrl_[i] + branch per slot) lost absl's
+    // iterator ~1.2x on iterate; this matches absl's group-scan shape. cap_ is a
+    // pow2 >= kGroup, so groups tile [0,cap_) exactly (no partial tail; the ctrl
+    // tail-mirror is never entered).
+    if (cap_ == 0) return;
+    for (std::size_t g = 0; g < cap_; g += kGroup) {
+      for (std::uint32_t lane : detail::Group(ctrl_ + g).match_full()) {
+        const std::size_t i = g + lane;
+        fn(slots_[i].key, slots_[i].value);
+      }
+    }
   }
 
  private:

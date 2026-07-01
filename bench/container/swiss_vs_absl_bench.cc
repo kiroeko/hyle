@@ -102,6 +102,24 @@ int bench_swiss_vs_absl() {
       ankerl::nanobench::doNotOptimizeAway(t.size());
     });
   }
+  // ---- iterate (visit every live entry; both pre-filled at top) ----
+  // Fills the ledger gap "absl 未测此项": SwissTable.for_each vs absl range-for.
+  // Both are flat (ctrl-byte scan + contiguous slots) so this is a same-design
+  // check, not a walk-vs-pointer-chase blowout like vs std::unordered_map.
+  {
+    ankerl::nanobench::Bench b;
+    b.title("iterate vs absl, 100k (visit all)").relative(true).batch(kN).minEpochIterations(20);
+    b.run("absl::flat_hash_map", [&] {
+      std::uint64_t sum = 0;
+      for (const auto& kv : abslm) sum += kv.second;
+      ankerl::nanobench::doNotOptimizeAway(sum);
+    });
+    b.run("SwissTable", [&] {
+      std::uint64_t sum = 0;
+      hyle.for_each([&](std::uint64_t, std::uint64_t& v) { sum += v; });
+      ankerl::nanobench::doNotOptimizeAway(sum);
+    });
+  }
   return 0;
 }
 
