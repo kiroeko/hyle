@@ -4,6 +4,10 @@
 
 #include "hyle/macros.h"
 
+#if defined(_MSC_VER)
+#  include <intrin.h>  // _umul128 for the 64x64->128 multiply in Lemire's map
+#endif
+
 // Fast PRNG (clay random.h used xoroshiro128+). HYLE uses xoshiro256++ -- the
 // recommended general-purpose successor (better statistical quality, same speed
 // class, 256-bit state). NOT cryptographic. Header-only inline: an RNG is a hot
@@ -31,6 +35,23 @@ HYLE_FORCE_INLINE constexpr std::uint64_t splitmix64(std::uint64_t& s) noexcept 
   z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
   z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
   return z ^ (z >> 31);
+}
+
+// 64x64 -> 128 multiply, returning hi and lo halves. The core of Lemire's
+// nearly-divisionless bounded-int map (absl/numpy/rust rand all use this).
+// MSVC: _umul128 intrinsic; GCC/Clang: __uint128_t (lowered to one `mul`).
+HYLE_FORCE_INLINE std::uint64_t mul128_hi_lo(std::uint64_t a, std::uint64_t b,
+                                             std::uint64_t& lo) noexcept {
+#if defined(_MSC_VER)
+  std::uint64_t hi;
+  lo = _umul128(a, b, &hi);
+  return hi;
+#else
+  __extension__ using u128 = unsigned __int128;  // silence -Wpedantic
+  const u128 p = static_cast<u128>(a) * b;
+  lo = static_cast<std::uint64_t>(p);
+  return static_cast<std::uint64_t>(p >> 64);
+#endif
 }
 }  // namespace detail
 
@@ -68,20 +89,29 @@ class Rng {
     return static_cast<float>(next_u64() >> 40) * 0x1.0p-24f;
   }
 
-  // Unbiased integer in [lo, hi] inclusive (Lemire's nearly-divisionless map).
-  // clay used `% range`, biased unless range | 2^64.
+  // Unbiased integer in [lo, hi] inclusive via Lemire's NEARLY-DIVISIONLESS map
+  // (Lemire 2019; the method absl/numpy/rust rand ship). The map x -> hi(x*n) is
+  // unbiased once a rejection zone of size 2^64 % n is excluded. The trick that
+  // makes it "nearly divisionless": the common-case check uses `n` itself as a
+  // cheap OVERESTIMATE of the threshold (one 128-bit multiply, ZERO divisions);
+  // only when lo(x*n) < n -- probability < n/2^64, essentially never for normal
+  // ranges -- do we compute the exact `2^64 % n` (one division) and resample.
+  // The old form was modulo-rejection (two idivs EVERY call, ~15-40 cyc each);
+  // this pays one `mul` on the hot path instead.
   std::uint64_t range_u64(std::uint64_t lo, std::uint64_t hi) noexcept {
     HYLE_FATAL_ASSERT(lo <= hi);
     std::uint64_t span = hi - lo;
     if (span == UINT64_MAX) return next_u64();  // full range, no rejection
-    std::uint64_t n = span + 1;
-    // Rejection zone = 2^64 % n; reject lands above the largest multiple of n.
-    std::uint64_t threshold = (UINT64_MAX - n + 1) % n;
-    std::uint64_t r;
-    do {
-      r = next_u64();
-    } while (r < threshold);
-    return lo + (r % n);
+    const std::uint64_t n = span + 1;
+    std::uint64_t low;
+    std::uint64_t m = detail::mul128_hi_lo(next_u64(), n, low);  // m = hi(x*n)
+    if (low < n) {  // rare: only then is a divide needed to get the exact threshold
+      const std::uint64_t threshold = (UINT64_MAX - n + 1) % n;  // == 2^64 % n
+      while (low < threshold) {
+        m = detail::mul128_hi_lo(next_u64(), n, low);
+      }
+    }
+    return lo + m;  // hi(x*n) is uniform in [0, n)
   }
   std::uint32_t range_u32(std::uint32_t lo, std::uint32_t hi) noexcept {
     return static_cast<std::uint32_t>(range_u64(lo, hi));
