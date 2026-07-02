@@ -84,21 +84,26 @@ TEST(Proactor, ReapEmptyIsNonBlockingWithZeroTimeout) {
 // The cross-thread wake path the real backend relies on: a consumer blocks in
 // reap(); another thread posts a completion; the consumer wakes and gets the
 // token. This is io->Waker's physical basis (post == "an op finished elsewhere").
-TEST(Proactor, BlockedReapWokenByPostFromAnotherThread) {
+// The cross-thread wake path the park merge relies on: a consumer blocks in
+// reap(); another thread calls wake(); the consumer wakes. wake() is the
+// cross-thread-safe primitive (eventfd on io_uring, PostQueuedCompletionStatus
+// on IOCP) -- it touches no submission-queue state, unlike post() which is
+// same-thread only. This is what unparks an io-blocked worker (sched park merge).
+TEST(Proactor, BlockedReapWokenByWakeFromAnotherThread) {
   Proactor p;
   if (!p.init()) GTEST_SKIP() << "no proactor backend on this platform yet";
 
-  std::atomic<std::uint64_t> got_token{0};
+  std::atomic<bool> woke{false};
   std::thread consumer([&] {
     Completion out[4];
     std::size_t n = p.reap(out, 4, 5'000'000'000ull);  // block up to 5s
-    if (n > 0) got_token.store(out[0].user_data, std::memory_order_release);
+    if (n > 0) woke.store(true, std::memory_order_release);
   });
 
   std::this_thread::sleep_for(std::chrono::milliseconds(20));  // ensure it parked
-  EXPECT_TRUE(p.post(0xDEAD, 42));  // wake it from here
+  EXPECT_TRUE(p.wake());  // cross-thread wake from here
   consumer.join();
-  EXPECT_EQ(got_token.load(std::memory_order_acquire), 0xDEADu);
+  EXPECT_TRUE(woke.load(std::memory_order_acquire));  // reap returned the wake
 }
 
 // Batch reap: post many, confirm reap pulls them in batches (io_uring

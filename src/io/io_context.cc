@@ -52,11 +52,11 @@ void IoContext::poll_trampoline(void* ctx, unsigned worker_idx,
 }
 
 void IoContext::wake_trampoline(void* ctx, unsigned worker_idx) noexcept {
-  // Post a bare wake into worker_idx's ring so a worker blocked in reap() (the
-  // io-04 park merge) breaks out to see a spawned/stolen fiber. kWakeToken is the
-  // reserved sentinel net::complete() skips (no IoOperation to route). Safe from
-  // any thread -- post() is the cross-thread wake path.
-  static_cast<IoContext*>(ctx)->rings_[worker_idx]->post(kWakeToken);
+  // Break worker_idx's blocking reap (io-04 park merge) so it sees a spawned/
+  // stolen fiber. wake() is the cross-thread-safe path (eventfd on io_uring,
+  // PostQueuedCompletionStatus on IOCP) -- unlike post() it touches no SQ, so a
+  // foreign thread can't race the single-producer submission queue.
+  static_cast<IoContext*>(ctx)->rings_[worker_idx]->wake();
 }
 
 void IoContext::poll(unsigned worker_idx,
