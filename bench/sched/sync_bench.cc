@@ -31,6 +31,7 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
+#include "hyle/util/spin_lock.h"
 
 using hyle::mem::system_allocator;
 using hyle::sched::Channel;
@@ -41,6 +42,7 @@ using hyle::sched::Latch;
 using hyle::sched::Mutex;
 using hyle::sched::Scheduler;
 using hyle::sched::WaitGroup;
+using hyle::util::SpinLock;
 
 namespace {
 
@@ -338,6 +340,98 @@ int main() {
       sched.spawn(prod.get());
       sched.drain();
       ankerl::nanobench::doNotOptimizeAway(s.consumed);
+    });
+  }
+
+  // ---- 8. TIMED CV wait, NOTIFY-BEFORE-DEADLINE latency (sched-04c thread-mode) -
+  // The common timed-wait case: a waiter blocks with a generous deadline, a
+  // notifier wakes it well before -- so we measure the wake ROUND-TRIP (block ->
+  // notify -> return kNoTimeout), NOT the OS timer granularity. HYLE
+  // CV::wait_for (thread-mode: park_timeout + linked-flag arbitration) vs
+  // std::condition_variable::wait_for (the direct SOTA baseline; both park the OS
+  // thread with a futex deadline). One waiter thread, main notifies each round.
+  // batch=rounds. Bare threads (thread-mode), no scheduler.
+  {
+    constexpr int kRounds = 2000;
+    ankerl::nanobench::Bench b;
+    b.title("timed CV wait: notify-before-deadline round-trip")
+        .relative(true)
+        .batch(kRounds)
+        .minEpochIterations(5);
+
+    b.run("std::condition_variable::wait_for", [&] {
+      std::mutex mu;
+      std::condition_variable cv;
+      bool ready = false;
+      bool done = false;
+      std::thread waiter([&] {
+        for (int i = 0; i < kRounds; ++i) {
+          std::unique_lock<std::mutex> lk(mu);
+          cv.wait_for(lk, std::chrono::seconds(10), [&] { return ready; });
+          ready = false;
+          done = true;
+          cv.notify_one();  // ack so the main loop can proceed to the next round
+        }
+      });
+      for (int i = 0; i < kRounds; ++i) {
+        std::unique_lock<std::mutex> lk(mu);
+        ready = true;
+        cv.notify_one();
+        cv.wait(lk, [&] { return done; });
+        done = false;
+      }
+      waiter.join();
+    });
+
+    b.run("HYLE ConditionVariable::wait_for (thread-mode)", [&] {
+      SpinLock mu;
+      ConditionVariable to_waiter;   // main -> waiter
+      ConditionVariable to_main;     // waiter -> main (ack)
+      bool ready = false;
+      bool done = false;
+      std::thread waiter([&] {
+        for (int i = 0; i < kRounds; ++i) {
+          std::lock_guard<SpinLock> lk(mu);
+          to_waiter.wait_for(mu, 10'000'000'000ull, [&] { return ready; });
+          ready = false;
+          done = true;
+          to_main.notify_one();
+        }
+      });
+      for (int i = 0; i < kRounds; ++i) {
+        std::lock_guard<SpinLock> lk(mu);
+        ready = true;
+        to_waiter.notify_one();
+        to_main.wait(mu, [&] { return done; });
+        done = false;
+      }
+      waiter.join();
+    });
+  }
+
+  // ---- 9. TIMED CV wait, PURE TIMEOUT path cost (sched-04c thread-mode) --------
+  // No notifier ever comes: measure the fixed overhead AROUND the OS park (arm the
+  // node, park_timeout, retract on deadline) using a tiny 1ms deadline. This is
+  // dominated by the OS timer floor (both HYLE and std park on the same futex/OS
+  // deadline), so the two should be ~equal -- the point is to show HYLE adds no
+  // extra overhead vs std on the timeout path, not to "win" the OS clock. batch=1.
+  {
+    ankerl::nanobench::Bench b;
+    b.title("timed CV wait: pure timeout (1ms, no notify)")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(50);
+    b.run("std::condition_variable::wait_for", [&] {
+      std::mutex mu;
+      std::condition_variable cv;
+      std::unique_lock<std::mutex> lk(mu);
+      cv.wait_for(lk, std::chrono::milliseconds(1));
+    });
+    b.run("HYLE ConditionVariable::wait_for (thread-mode)", [&] {
+      SpinLock mu;
+      ConditionVariable cv;
+      std::lock_guard<SpinLock> lk(mu);
+      cv.wait_for(mu, 1'000'000ull);
     });
   }
 
