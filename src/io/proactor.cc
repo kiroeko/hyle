@@ -492,6 +492,12 @@ struct Proactor::Impl {
   // direct evidence that batching is (or isn't) happening. Zero cost when unread.
   std::uint64_t stat_enters = 0;
   std::uint64_t stat_sqes = 0;
+  // Deeper debug counters (also gated): total SQEs filled (submit_one calls) vs
+  // total completions reaped. If filled != reaped at teardown, completions were
+  // lost -> the hang. stat_overflow counts CQ-overflow recovery entries.
+  std::uint64_t stat_filled = 0;
+  std::uint64_t stat_reaped = 0;
+  std::uint64_t stat_overflow = 0;
 
   // ---- epoll backend state (reactor -> completion emulation) ----
   // epoll only signals READINESS; the proactor must remember each armed op and
@@ -526,11 +532,17 @@ Proactor::~Proactor() {
     // Bench stats (gated): report the average submit batch size = SQEs / enters.
     // >1 means batching happened; ~1 means every op still paid its own enter.
     if (impl_->stat_enters > 0 && ::getenv("HYLE_IO_BENCH_STATS") != nullptr) {
-      std::fprintf(stderr, "[io] enters=%llu sqes=%llu avg_batch=%.2f\n",
+      std::fprintf(stderr,
+                   "[io] enters=%llu sqes=%llu avg_batch=%.2f reaped=%llu "
+                   "overflow=%llu diff(sqes-reaped)=%lld\n",
                    static_cast<unsigned long long>(impl_->stat_enters),
                    static_cast<unsigned long long>(impl_->stat_sqes),
                    static_cast<double>(impl_->stat_sqes) /
-                       static_cast<double>(impl_->stat_enters));
+                       static_cast<double>(impl_->stat_enters),
+                   static_cast<unsigned long long>(impl_->stat_reaped),
+                   static_cast<unsigned long long>(impl_->stat_overflow),
+                   static_cast<long long>(impl_->stat_sqes) -
+                       static_cast<long long>(impl_->stat_reaped));
     }
     if (impl_->sqes != nullptr) ::munmap(impl_->sqes, impl_->sqes_sz);
     if (impl_->cq_ptr != nullptr && !impl_->single_mmap)
@@ -793,6 +805,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     ++head;
     ++n;
   }
+  // (stat_reaped is tallied once at function end = total n.)
   // Publish the consumed head once for the whole batch (store_release pairs with
   // the kernel; one release-store amortized over n completions).
   as_atomic(impl_->cq_head)->store(head, std::memory_order_release);
@@ -808,6 +821,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   while (n < max &&
          (as_atomic(impl_->sq_flags)->load(std::memory_order_acquire) &
           IORING_SQ_CQ_OVERFLOW)) {
+    impl_->stat_overflow += 1;
     // Enter with no new submits, min_complete 0: just flush the backlog.
     if (sys_io_uring_enter(impl_->fd, 0, 0, IORING_ENTER_GETEVENTS, nullptr, 0) < 0 &&
         errno != ETIME && errno != EINTR)
@@ -832,6 +846,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     }
     as_atomic(impl_->cq_head)->store(head, std::memory_order_release);
   }
+  impl_->stat_reaped += n;  // total real+wake completions handed back this reap
   return n;
 }
 
