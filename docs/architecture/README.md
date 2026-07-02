@@ -61,7 +61,7 @@ HYLE infra（通用、不特化、贴硬件）
 
 进度**不在此维护**（避免与里程碑表 drift）——逐里程碑的真实状态 + cloc 实测 LOC + clay API diff 见 [`../milestones/README.md`](../milestones/README.md)，那是**唯一进度信源**。本目录只管设计、背景、决策这些慢变内容。
 
-一句话现状（粗粒度）：地基层（error/platform/mem/container/time/util/obs）立住;**sched 核心 + fiber 同步原语 done**（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超），**后段(协程胶水/取消/优雅关闭、fiber 栈 guard page/分级)待**;**simd 支柱基本完成**（dispatch + vec + scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 + Highway/xsimd 数学核 vendored,对标 Highway 追平;NEON/AVX512 写+编+objdump 验未跑存疑）;**io/compute/graph 三支柱未开工**。
+一句话现状（粗粒度）：地基层（error/platform/mem/container/time/util/obs）立住;**sched 核心 + fiber 同步原语 + 协程胶水 + fiber 亲和 done**（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超 + Task/co_await→fiber 让出 + spawn_on 绑核 shard-per-core 基座），**后段(取消/优雅关闭、fiber-mode 定时、栈 guard page/分级)待**;**simd 支柱基本完成**（dispatch + vec + scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 + Highway/xsimd 数学核 vendored,对标 Highway 追平;NEON/AVX512 写+编+objdump 验未跑存疑）;**io 支柱破土**（proactor 三后端全真 op 无 stub + co_await socket + shard-per-core + TcpListener/Stream,真 loopback TCP echo 双平台+TSan;file/shmem/udp/benchmark 待）;**compute/graph 两支柱未开工**。
 
 ---
 

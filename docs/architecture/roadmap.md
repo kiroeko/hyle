@@ -77,8 +77,8 @@ container/       │                            │    vector+      mem;containe
 | **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | ~0.3k 🔶(时间轮待) |
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | ~2k ✅主力 |
 | **P3** | simd | vec+scalar / SSE4.2+AVX2 / AVX512+NEON / 变体dispatch / dtype / 数学核(Highway+xsimd) | 10-16k | ~2.3k 已做 + ~3-5k 广度补全 = **~5-8k** |
-| **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~1k 核心+同步✅(fcontext/work-stealing/Waker/conditional-notify/CV+Mutex+WaitGroup+Latch+Channel,对标 marl 追平/反超) + ~2-4k 后段(协程胶水/取消/优雅关闭) |
-| **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem | 9-14k | **~5-8k**(借 liburing 写适配) |
+| **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~1.3k 核心+同步+协程胶水+fiber亲和✅(fcontext/work-stealing/Waker/conditional-notify/CV+Mutex+WaitGroup+Latch+Channel 对标 marl 追平反超 + Task/co_await + spawn_on 绑核) + ~1.5-3k 后段(取消/优雅关闭/fiber-mode 定时) |
+| **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem | 9-14k | ~1.4k 已做(proactor 三后端全真 op + co_await + shard-per-core + Tcp 封装)✅ + ~3-5k(net udp/file/shmem/benchmark;kqueue) |
 | **P5** | compute | device/stream包ggml / device buffer(compute 自有) / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
 | **P6** | graph + 收口 | taskgraph绑sched / C-ABI shim / serialize/hash/T3 / FFI | 11-17k | **~6-11k**(多借 simdjson 等) |
 
@@ -93,9 +93,9 @@ container/       │                            │    vector+      mem;containe
 > 本文件只管**拓扑序、施工计划、决策、验收门槛**这些慢变内容。
 >
 > 一句话现状（粗粒度，细节看 milestones）：**地基层（error/platform/mem/container/time/util/obs）基本立住；
-> sched 核心 + fiber 同步原语 done（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超），后段（协程胶水/取消/优雅关闭）待；**simd 支柱基本完成**（dispatch + vec 抽象 +
-> scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 dtype + 数学核(Highway+xsimd vendored),对标 Highway 追平；NEON/AVX512 写+编+objdump 验未跑存疑）；io/compute/graph 三支柱未开工。**
-> 整体 ≈ 32%（模块权重）。
+> sched 核心 + fiber 同步原语 done（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超）+ 协程胶水（Task + co_await→fiber 让出）+ fiber 亲和（spawn_on 绑核，shard-per-core 基座），后段（取消 sched-07/优雅关闭 sched-08/fiber-mode 定时 04d）待；**simd 支柱基本完成**（dispatch + vec 抽象 +
+> scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 dtype + 数学核(Highway+xsimd vendored),对标 Highway 追平；NEON/AVX512 写+编+objdump 验未跑存疑）；**io 支柱破土并接线到 sched**（proactor 三后端 io_uring/IOCP/epoll 全真 op 无 stub + co_await socket 层 + shard-per-core 集成 + TcpListener/Stream，真 loopback TCP echo 双平台+TSan；file/shmem io-05 + udp + park 合并 + benchmark 待）；**compute/graph 两支柱未开工**（异构混合极致性能的头牌本体）。**
+> 整体 ≈ 40%（LOC 口径，见 milestones/README 三分母表；compute/graph=0 是最大剩余块）。
 
 
 
