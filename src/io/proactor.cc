@@ -479,7 +479,11 @@ struct Proactor::Impl {
   // folds them into ITS enter (to_submit = sq_pending) so N submits + the reap
   // cost ONE syscall instead of N+1. The worker loop reaps every iteration, so a
   // fiber that submits then suspends has its op flushed on the very next loop top.
-  unsigned sq_pending = 0;
+  // ATOMIC: post() (the cross-thread wake) touches this from a FOREIGN thread
+  // while the owner worker is in reap() -- so the count is a relaxed atomic
+  // (fetch_add on queue, exchange(0) on flush). The SQE ring writes themselves
+  // stay owner-driven in the batched path; post does its own immediate enter.
+  std::atomic<unsigned> sq_pending{0};
 
   // ---- epoll backend state (reactor -> completion emulation) ----
   // epoll only signals READINESS; the proactor must remember each armed op and
@@ -709,8 +713,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   // so N queued submits cost ZERO extra syscalls -- they ride the reap's enter.
   // The three cases below each account for the pending count; reset it once here
   // and pass `submit` to every enter path.
-  unsigned submit = impl_->sq_pending;
-  impl_->sq_pending = 0;
+  unsigned submit = impl_->sq_pending.exchange(0, std::memory_order_relaxed);
 
   // If the CQ is already non-empty, we normally skip the syscall entirely (pure
   // userspace reap -- the io_uring fast path). But if there are pending SQEs we
@@ -811,13 +814,14 @@ bool Proactor::queue_sqe(std::uint8_t opcode, std::int32_t fd,
   // Guard against SQ overflow: if the ring is full of un-flushed SQEs, flush now
   // (a bare submit enter) so we never overwrite an unconsumed entry. Normally the
   // per-worker in-flight count is far below sq_entries, so this never triggers.
-  if (impl_->sq_pending >= impl_->sq_entries) {
-    sys_io_uring_enter(impl_->fd, impl_->sq_pending, 0, 0, nullptr, 0);
-    impl_->sq_pending = 0;
+  if (impl_->sq_pending.load(std::memory_order_relaxed) >= impl_->sq_entries) {
+    sys_io_uring_enter(impl_->fd,
+                       impl_->sq_pending.exchange(0, std::memory_order_relaxed),
+                       0, 0, nullptr, 0);
   }
   fill_sqe(impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array, impl_->sqes,
            opcode, fd, addr, len, off, user_data, op_flags);
-  ++impl_->sq_pending;
+  impl_->sq_pending.fetch_add(1, std::memory_order_relaxed);
   return true;
 }
 
@@ -840,8 +844,9 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   // reap() on ANOTHER thread and cannot flush the SQE for us, so if we merely
   // queued it the NOP would never reach the kernel and the reaper would never
   // wake. Enter now to submit all pending SQEs (this NOP + any batched with it).
-  int r = sys_io_uring_enter(impl_->fd, impl_->sq_pending, 0, 0, nullptr, 0);
-  impl_->sq_pending = 0;
+  int r = sys_io_uring_enter(impl_->fd,
+                             impl_->sq_pending.exchange(0, std::memory_order_relaxed),
+                             0, 0, nullptr, 0);
   return r >= 0;
 }
 
