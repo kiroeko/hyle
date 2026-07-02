@@ -202,7 +202,9 @@ worker 调度循环（2.2）的第 0 步插入"收割 completion"：
 
 **per-core io_uring 是关键选择**：每个 worker 自己的 ring，提交和收割都在本核，零跨核同步——和 run-queue 的 per-core 哲学一致。GPU 因为 host 通知机制弱（不能每个 op 阻塞一线程），单设一个 completion 源翻译成 fiber 唤醒。
 
-> **落地状态(io-04, plan B)**：第 0 步收割已接线，但走的是**接缝解耦**而非 sched 直接 include io/。sched 暴露一个**纯函数指针 hook** `Scheduler::set_io_poll(fn, ctx)`（`fn` 非 io 类型，故 sched **不**依赖 io——依赖方向是 io→sched，io 用 sched 的 Waker）；io/ 的 `IoContext` 持 proactor + 注册 hook + reap 后经 `net::complete()` 把每个 completion 路由回等待 fiber（`op.result=c.result; waker.wake()`）。worker 循环顶(fire_due_timers 后)非空 hook 才调 reap(0)，无 io 注册=零成本。**plan B 简化**：单 proactor、单 worker 收割、parked worker 用 1ms 轮询上限(kIoPollNs)代替 `post()` 唤醒。**plan A**（本表的终态：per-worker ring + `post()` 即时唤醒 parked worker）是后续；hook 已带 `worker_idx`，升级无需改 sched API。co_await send/recv + 两 fiber echo 双平台真测 + TSan 净。
+> **落地状态(io-04, shard-per-core)**：第 0 步收割已接线，走**接缝解耦**（sched 不 include io/）。sched 暴露**纯函数指针 hook** `Scheduler::set_io_poll(fn, ctx)`（`fn` 非 io 类型，故 sched **不**依赖 io——依赖方向 io→sched，io 用 sched 的 Waker）；io/ 的 `IoContext` **每 worker 持一个 proactor**，注册 hook + reap **本 worker 自己的 ring** 后经 `net::complete()` 路由回等待 fiber。worker 循环顶(fire_due_timers 后)非空 hook 才 reap(0)，无 io 注册=零成本。
+>
+> **shard-per-core（share-nothing，性能天花板）已落地**：连接 fd `bind_fd(worker)` 绑定 owner 核（满足 IOCP 一 socket 一端口的硬约束），其 fiber 用 `Scheduler::spawn_on(worker, f)` **钉在该核**——submit/reap/resume 全程单核，无锁、无跨核同步、cache 热。fiber 亲和的实现**不碰防惊群 Dekker/steal CAS**：每 worker 加一条**专属 MPMC 队列**（`BoundedQueue`，任意线程 push、仅 owner pop、steal 路径不读），`spawn_on`/唤醒走它 + `unpark_specific` 定向唤醒（绕过 `num_searching_` 门，因 pinned fiber 只能在 owner 跑）。**未做（plan A park 合并）**：parked worker 目前用 1ms 轮询上限(kIoPollNs)重 poll，尚未用 `post()` 即时唤醒 ring——那是消 1ms 延迟的后续优化，非正确性问题。co_await send/recv + 两 fiber echo + 32 连接分片跨核 + 真 loopback TCP echo(TcpListener/Stream) 双平台(IOCP/io_uring/epoll)真测 + TSan 净(affinity 44/44)。
 
 ### 3.3 completion → 唤醒哪个 fiber、落哪个核
 
