@@ -862,6 +862,8 @@ bool Proactor::queue_sqe(std::uint8_t opcode, std::int32_t fd,
   }
   fill_sqe(impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array, impl_->sqes,
            opcode, fd, addr, len, off, user_data, op_flags);
+  // EXPERIMENT: flush immediately (per-submit enter) instead of deferring.
+  sys_io_uring_enter(impl_->fd, 1, 0, 0, nullptr, 0);
   ++impl_->sq_pending;
   return true;
 }
