@@ -164,3 +164,76 @@ TEST(IoNet, CoAwaitSendRecvRoundTrip) {
 
   close_pair(sp);
 }
+
+// ---- two-fiber echo: the real milestone ------------------------------------
+// Two INDEPENDENT fibers on one worker, each blocking on its own io: a server
+// fiber co_awaits recv then echoes the bytes back with co_await send; a client
+// fiber co_awaits send then co_awaits recv of the echo. Both suspend on io
+// concurrently -- the single worker interleaves them at each co_await (cooperative
+// yield), reaps both completions from its loop, and wakes each fiber
+// independently. Proves the integration handles multiple in-flight ops, not just
+// a self-send.
+namespace {
+struct EchoPair {
+  hyle::io::Proactor* p;
+  std::intptr_t server_fd;
+  std::intptr_t client_fd;
+  char server_buf[64] = {};
+  char client_reply[64] = {};
+  std::int64_t server_recv = 0;
+  std::int64_t client_recv = 0;
+};
+
+Task<int> server_coro(Allocator, EchoPair* c) {
+  // Block until the client's bytes arrive, then echo exactly them back.
+  c->server_recv = co_await RecvOp{c->p, c->server_fd, c->server_buf, 64};
+  if (c->server_recv > 0) {
+    co_await SendOp{c->p, c->server_fd, c->server_buf,
+                    static_cast<std::uint32_t>(c->server_recv)};
+  }
+  co_return 0;
+}
+
+Task<int> client_coro(Allocator, EchoPair* c) {
+  static const char kMsg[] = "two-fiber-echo";
+  const std::uint32_t len = sizeof(kMsg);
+  co_await SendOp{c->p, c->client_fd, kMsg, len};
+  c->client_recv = co_await RecvOp{c->p, c->client_fd, c->client_reply, len};
+  co_return 0;
+}
+}  // namespace
+
+TEST(IoNet, TwoFiberEcho) {
+  Scheduler sched(1, system_allocator(), 256);
+  IoContext io(sched);
+  ASSERT_TRUE(io.valid());
+
+  SocketPair sp = make_pair(io.proactor());
+  ASSERT_TRUE(sp.ok);
+
+  EchoPair c{};
+  c.p = &io.proactor();
+  c.server_fd = sp.a;
+  c.client_fd = sp.b;
+
+  auto ds = std::make_unique<Drive>();
+  auto dc = std::make_unique<Drive>();
+  ds->task = server_coro(system_allocator(), &c);
+  dc->task = client_coro(system_allocator(), &c);
+  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+
+  sched.spawn(&fs);
+  sched.spawn(&fc);
+  sched.drain();
+  sched.shutdown();
+
+  EXPECT_TRUE(ds->finished.load());
+  EXPECT_TRUE(dc->finished.load());
+  EXPECT_EQ(c.server_recv, static_cast<std::int64_t>(sizeof("two-fiber-echo")));
+  EXPECT_EQ(c.client_recv, static_cast<std::int64_t>(sizeof("two-fiber-echo")));
+  EXPECT_STREQ(c.server_buf, "two-fiber-echo");
+  EXPECT_STREQ(c.client_reply, "two-fiber-echo");  // echoed all the way back
+
+  close_pair(sp);
+}
