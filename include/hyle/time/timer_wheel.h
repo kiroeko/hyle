@@ -5,6 +5,7 @@
 #include <cstdint>
 
 #include "hyle/container/intrusive_list.h"
+#include "hyle/time/timer_source.h"
 
 // Hierarchical timing wheel: the data structure behind "millions of agents each
 // arming a timeout". The workload is add/cancel >> expire (a response usually
@@ -37,25 +38,12 @@
 
 namespace hyle::time {
 
-// One armed timer. Embed it in (or point it at) whatever the caller wants woken;
-// the wheel treats `data` as opaque and never dereferences it. The intrusive
-// hook means arming/cancelling allocates nothing.
-struct TimerEntry {
-  container::IntrusiveListHook hook;
-  // Absolute expiry in wheel ticks (1 tick = 1ms since the wheel epoch). Set by
-  // schedule(); read by cancel() to recover the (level, slot) in O(1).
-  std::uint64_t deadline_tick = 0;
-  // Opaque payload -- typically the Waker/fiber pointer the caller wants woken.
-  void* data = nullptr;
-  // True iff currently sitting in one of the wheel's slots (not yet fired and
-  // not cancelled). Distinguishes "in the wheel" from "handed back on the
-  // expired list" so the caller may reuse `hook` on its own list after firing.
-  bool scheduled = false;
-};
+// TimerEntry + TimerList + the TimerSource concept live in timer_source.h (they
+// are shared by every timer structure). This file is the general-purpose one.
 
 class TimerWheel {
  public:
-  using EntryList = container::IntrusiveList<TimerEntry, &TimerEntry::hook>;
+  using EntryList = TimerList;  // shared FIFO list type (timer_source.h)
 
   // 6 levels x 64 slots, 1ms base. 6 bits index a level's 64 slots; 6 levels
   // cover 2^(6*6) ticks ~= 2.18 years at 1ms granularity -- past any real fiber
@@ -105,7 +93,8 @@ class TimerWheel {
       tick = elapsed_ + kMaxDurationTicks;  // clamp to the horizon
     }
 
-    e->deadline_tick = tick;
+    e->deadline_ns = deadline_ns;   // canonical (shared field)
+    e->source_state = tick;         // wheel's armed-tick cache (for O(1) cancel)
     add_entry(level_for(elapsed_, tick), e);
     e->scheduled = true;
   }
@@ -115,8 +104,8 @@ class TimerWheel {
   // arm-then-cancel-heavy workload. No-op if `e` is not scheduled.
   void cancel(TimerEntry* e) noexcept {
     if (!e->scheduled) return;
-    std::uint64_t level = level_for(elapsed_, e->deadline_tick);
-    std::uint64_t slot = slot_for(e->deadline_tick, level);
+    std::uint64_t level = level_for(elapsed_, e->source_state);
+    std::uint64_t slot = slot_for(e->source_state, level);
     slots_[level][slot].remove(e);
     if (slots_[level][slot].empty()) {
       occupied_[level] &= ~slot_bit(slot);
@@ -194,7 +183,7 @@ class TimerWheel {
   }
 
   void add_entry(std::uint64_t level, TimerEntry* e) noexcept {
-    std::uint64_t slot = slot_for(e->deadline_tick, level);
+    std::uint64_t slot = slot_for(e->source_state, level);
     slots_[level][slot].push_back(e);  // FIFO within a slot
     occupied_[level] |= slot_bit(slot);
     ++count_;
@@ -255,7 +244,7 @@ class TimerWheel {
     occupied_[exp.level] &= ~slot_bit(exp.slot);
 
     while (TimerEntry* e = draining.pop_front()) {
-      if (exp.level == 0 || e->deadline_tick <= exp.deadline) {
+      if (exp.level == 0 || e->source_state <= exp.deadline) {
         // Reached 1ms granularity (or already due): fire. Hand ownership back;
         // the caller may now relink `hook` onto its own run-queue list.
         e->scheduled = false;
@@ -264,7 +253,7 @@ class TimerWheel {
       } else {
         // Still in the future: re-slot into a finer level now that elapsed_ has
         // advanced to this slot's tick. count_ is unchanged (still in the wheel).
-        add_entry_no_count(level_for(exp.deadline, e->deadline_tick), e);
+        add_entry_no_count(level_for(exp.deadline, e->source_state), e);
       }
     }
   }
@@ -272,7 +261,7 @@ class TimerWheel {
   // add_entry variant used during cascade: the entry never left the wheel's
   // population, so it must not double-count.
   void add_entry_no_count(std::uint64_t level, TimerEntry* e) noexcept {
-    std::uint64_t slot = slot_for(e->deadline_tick, level);
+    std::uint64_t slot = slot_for(e->source_state, level);
     slots_[level][slot].push_back(e);
     occupied_[level] |= slot_bit(slot);
   }
@@ -287,5 +276,8 @@ class TimerWheel {
   std::uint64_t occupied_[kNumLevels] = {};  // per-level non-empty-slot bitmap
   EntryList slots_[kNumLevels][kSlotsPerLevel];
 };
+
+static_assert(TimerSource<TimerWheel>,
+              "TimerWheel must model TimerSource (the compile-time timer API)");
 
 }  // namespace hyle::time
