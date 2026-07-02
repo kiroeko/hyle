@@ -38,14 +38,21 @@
 // threads that are NOT fibers; assuming "all waiters are fibers" would deadlock
 // them. The CV picks the mode per-wait from whether it runs inside a worker fiber.
 //
-// NOT here yet: timed waits (wait_for/wait_until). The time-02 timer wheel and
-// fiber sleep (sched-04b) now exist, but a timed CV wait adds a timeout-vs-notify
-// RACE: whichever loses must cancel the other, and since the woken fiber may
-// resume on a different worker than the one holding its timer, that needs a
-// cross-worker timer-cancel path (per-worker MPSC command queue -- the time-02
-// headline divergence point). Split out as sched-04c. Plain sleep_for_ns (see
-// sched/timer.h) has a single waker (the timer), so it needs no such cancel and
-// ships in sched-04b. The untimed CV core below does not depend on time/.
+// TIMED WAITS (wait_for/wait_until, sched-04c): THREAD-MODE ships here. A bare
+// (non-fiber) waiter parks with a bounded platform::Parker::park_timeout and
+// retracts its own node on the deadline; the notify-vs-timeout race is arbitrated
+// under the CV monitor lock via the node's `linked` flag (whoever acts first
+// wins, the loser reports the other's outcome so no wake is lost). This covers
+// external submitters and cross-process federation threads.
+//
+// FIBER-MODE timed wait is still deferred: a fiber waiter would arm a time-02
+// wheel timer whose fire races the notify, and the loser must CANCEL the other --
+// but the woken fiber may resume on a different worker than the one holding its
+// timer, so that needs the per-worker cross-worker timer-cancel command queue
+// (the time-02 headline divergence point,真正 load-bearing 于 io-timeout). Until
+// that lands, a timed wait from a worker fiber asserts. The design mirrors folly
+// fibers Baton (atomic-arbitrated timeout-vs-post, same-thread timer to dodge
+// cross-core cancel).
 
 namespace hyle::sched {
 
