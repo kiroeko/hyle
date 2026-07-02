@@ -60,6 +60,15 @@ constexpr int kMsgLen = 64;      // echo payload size
 constexpr int kRoundTrips = 64;  // round-trips per connection per epoch
 constexpr int kConns = 64;       // concurrent connections
 
+// Pipelined workload knobs: kPipeConns independent echo streams sharing a worker,
+// each doing kPipeRoundTrips round-trips. Because MANY streams live on one core,
+// a single reap wakes MANY fibers that each immediately submit -- so N SQEs pile
+// up before the next reap. THIS is the many-in-flight load that fills the SQ and
+// lets submit-batching matter (the plain 64-conn ping-pong above keeps ~1 op in
+// flight per stream at a time, so the SQ never fills -- batching can't help it).
+constexpr int kPipeConns = 512;       // concurrent streams (high fan-out)
+constexpr int kPipeRoundTrips = 16;   // round-trips per stream per epoch
+
 // A connected fd pair.
 struct Pair {
   std::intptr_t a = -1;
@@ -191,6 +200,50 @@ void run_hyle_echo(unsigned workers) {
   for (auto& p : pairs) close_pair(p);
 }
 
+// Pipelined / high-fan-out variant: kPipeConns streams x kPipeRoundTrips on
+// `workers` cores. With hundreds of streams per core, one reap wakes dozens of
+// fibers that each submit -- so many SQEs accumulate between reaps (the SQ can
+// fill). This is the load where submit-batching (one io_uring_enter for many
+// SQEs) can pay off; the plain ping-pong bench cannot exercise it.
+void run_hyle_pipelined(unsigned workers) {
+  Scheduler sched(workers, system_allocator(), 8192);
+  IoContext io(sched, workers);
+
+  std::vector<Pair> pairs(kPipeConns);
+  std::vector<std::unique_ptr<Conn>> conns;
+  std::vector<std::unique_ptr<Drive>> drives;
+  std::vector<std::unique_ptr<Fiber>> fibers;
+  for (int i = 0; i < kPipeConns; ++i) {
+    pairs[i] = make_pair();
+    unsigned owner = static_cast<unsigned>(i) % workers;
+    io.bind_fd(owner, pairs[i].a);
+    io.bind_fd(owner, pairs[i].b);
+    auto c = std::make_unique<Conn>();
+    c->io = &io;
+    c->client_fd = pairs[i].a;
+    c->server_fd = pairs[i].b;
+    c->round_trips = kPipeRoundTrips;
+    auto dc = std::make_unique<Drive>();
+    auto ds = std::make_unique<Drive>();
+    dc->task = client_task(system_allocator(), c.get());
+    ds->task = server_task(system_allocator(), c.get());
+    auto fc = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                      &drive_entry, dc.get());
+    auto fs = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                      &drive_entry, ds.get());
+    sched.spawn_on(owner, fs.get());
+    sched.spawn_on(owner, fc.get());
+    conns.push_back(std::move(c));
+    drives.push_back(std::move(dc));
+    drives.push_back(std::move(ds));
+    fibers.push_back(std::move(fc));
+    fibers.push_back(std::move(fs));
+  }
+  sched.drain();
+  sched.shutdown();
+  for (auto& p : pairs) close_pair(p);
+}
+
 #if defined(__linux__)
 // Raw epoll echo baseline: a single thread runs a classic readiness loop over
 // all connections. Each connection is a socketpair; we drive both ends. This is
@@ -279,6 +332,26 @@ int main() {
 #if defined(__linux__)
     b.run("raw epoll (1 thread, readiness loop)", [&] { run_raw_epoll_echo(); });
 #endif
+  }
+
+  // ---- pipelined / high-fan-out: many streams per core (SQ can fill) ----
+  // This is the load that can exercise submit-batching -- hundreds of streams on
+  // one core means a reap wakes many fibers that each submit before the next
+  // reap. Reported separately from the ping-pong bench above.
+  {
+    const std::uint64_t pbatch =
+        static_cast<std::uint64_t>(kPipeConns) * kPipeRoundTrips;
+    ankerl::nanobench::Bench b;
+    b.title("io pipelined: 512 streams x 16 round-trips")
+        .relative(true)
+        .batch(pbatch)
+        .unit("echo")
+        .minEpochIterations(10);
+    for (unsigned w : {1u, 2u, 4u, 8u}) {
+      char name[64];
+      std::snprintf(name, sizeof(name), "HYLE pipelined (%u workers)", w);
+      b.run(name, [&] { run_hyle_pipelined(w); });
+    }
   }
 
 #if defined(_WIN32)
