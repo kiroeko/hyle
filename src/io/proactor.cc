@@ -5,34 +5,102 @@
 #include "hyle/macros.h"
 #include "hyle/platform.h"
 
-// io-01 proactor backend. This file provides the per-OS Impl behind proactor.h.
-// io-02 wires the real submission ops (read/write/accept); io-01 establishes the
-// completion-reaping seam and proves it drives the sched Waker spine. Only the
-// Windows IOCP path is built+tested on this machine right now; the Linux
-// io_uring path lands next (borrowing only liburing's syscall shim, io-design).
+// io proactor backend: the per-OS Impl behind proactor.h. Both platforms carry
+// real IO: Windows IOCP (ReadFile/WriteFile/WSARecv/WSASend/AcceptEx/ConnectEx
+// with per-op OVERLAPPED) and Linux io_uring (raw syscalls, no liburing link) +
+// an epoll reactor fallback. The proactor is the completion-reaping seam that
+// drives the sched Waker spine -- io/ only moves completion tokens, sched/ owns
+// the wake. Mechanism heartbeat-verified per backend before each was written.
 
 #if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
+// winsock2 MUST precede windows.h (else the older winsock.h leaks in and clashes).
+#  include <winsock2.h>
+#  include <mswsock.h>   // AcceptEx/ConnectEx LPFN types + WSAID_* GUIDs
+#  include <ws2tcpip.h>  // sockaddr_storage / IN6ADDR
 #  include <windows.h>
 
-namespace hyle::io {
+#  include <cstring>
 
-// IOCP is a true proactor: an operation posts a completion to the port when the
-// kernel finishes it, carrying the completion key + OVERLAPPED we attached. We
-// use the completion KEY as the 64-bit user_data (the Waker token). The worker
-// reaps with GetQueuedCompletionStatusEx (batch), the same shape as io_uring's
-// for_each_cqe. (Mechanism heartbeat-verified before this was written.)
+namespace hyle::io {
+namespace {
+// Map a Win32/WSA error to the negative-result convention the header promises
+// (same shape as io_uring CQE res < 0). Callers store this in Completion.result.
+inline std::int64_t neg_err(DWORD e) noexcept {
+  return -static_cast<std::int64_t>(e);
+}
+// Lazily fetch a Winsock extension function (AcceptEx/ConnectEx) via WSAIoctl.
+// `slot` caches it. Takes only public types so it need not name Proactor::Impl.
+bool load_ext_fn(SOCKET s, GUID guid, void** slot) noexcept {
+  if (*slot != nullptr) return true;
+  DWORD got = 0;
+  return ::WSAIoctl(s, SIO_GET_EXTENSION_FUNCTION_POINTER, &guid, sizeof(guid),
+                    slot, sizeof(void*), &got, nullptr, nullptr) == 0;
+}
+}  // namespace
+
+// IOCP is a true proactor: a submitted op posts a completion to the port when the
+// kernel finishes it, carrying the OVERLAPPED we attached. Unlike io_uring (token
+// rides the SQE user_data), the per-op token must ride a per-op OVERLAPPED whose
+// lifetime spans the in-flight op -- so each op allocates an `IoOp` (OVERLAPPED as
+// its FIRST member, so the completion's lpOverlapped casts straight back to it).
+// The proactor OWNS that OVERLAPPED end to end; net/ never sees it. post() injects
+// a completion with lpOverlapped==nullptr, which reap uses to tell the two apart.
+// (Mechanism heartbeat-verified before this was written.)
 struct Proactor::Impl {
   HANDLE port = nullptr;
+  bool wsa_started = false;
+  LPFN_ACCEPTEX acceptex = nullptr;
+  LPFN_CONNECTEX connectex = nullptr;
+
+  enum OpKind : int { kRead, kWrite, kRecv, kSend, kAccept, kConnect };
+  struct IoOp {
+    OVERLAPPED ov{};                      // MUST be first (lpOverlapped -> IoOp*)
+    std::uint64_t user_data = 0;
+    HANDLE handle = nullptr;              // op's handle/socket (GetOverlappedResult)
+    int kind = 0;
+    WSABUF wsabuf{};                      // recv/send descriptor (outlives the op)
+    SOCKET accept_sock = INVALID_SOCKET;  // AcceptEx: the accepted socket (result)
+    IoOp* prev = nullptr;
+    IoOp* next = nullptr;
+    // AcceptEx writes local+remote addrs here (needs >= 2*(sockaddr+16)).
+    alignas(16) char addr_buf[2 * (sizeof(SOCKADDR_STORAGE) + 16)] = {};
+  };
+  IoOp* inflight = nullptr;  // intrusive doubly-linked list of in-flight ops
+
+  void link(IoOp* op) noexcept {
+    op->prev = nullptr;
+    op->next = inflight;
+    if (inflight != nullptr) inflight->prev = op;
+    inflight = op;
+  }
+  void unlink(IoOp* op) noexcept {
+    if (op->prev != nullptr)
+      op->prev->next = op->next;
+    else
+      inflight = op->next;
+    if (op->next != nullptr) op->next->prev = op->prev;
+  }
 };
 
 Proactor::~Proactor() {
-  if (impl_ != nullptr) {
-    if (impl_->port != nullptr) ::CloseHandle(impl_->port);
-    delete impl_;
-    impl_ = nullptr;
+  if (impl_ == nullptr) return;
+  // Best-effort: cancel + free any op still in flight (the per-worker drain model
+  // means the loop reaps to empty before teardown, so this list is normally empty;
+  // this guards against leaks otherwise). The port is closed right after, so no
+  // stray completion is ever reaped.
+  for (Impl::IoOp* op = impl_->inflight; op != nullptr;) {
+    Impl::IoOp* nx = op->next;
+    if (op->handle != nullptr) ::CancelIoEx(op->handle, &op->ov);
+    if (op->accept_sock != INVALID_SOCKET) ::closesocket(op->accept_sock);
+    delete op;
+    op = nx;
   }
+  if (impl_->port != nullptr) ::CloseHandle(impl_->port);
+  if (impl_->wsa_started) ::WSACleanup();
+  delete impl_;
+  impl_ = nullptr;
 }
 
 bool Proactor::init(unsigned /*entries*/) noexcept {
@@ -47,6 +115,12 @@ bool Proactor::init(unsigned /*entries*/) noexcept {
     return false;
   }
   impl_->port = p;
+  // Winsock is needed only for the socket ops; a file-only proactor never touches
+  // it. Startup here is cheap and ref-counted, so do it eagerly and keep the
+  // socket-submit paths free of a per-call init check. Non-fatal if it fails --
+  // file read/write still work.
+  WSADATA wsa;
+  if (::WSAStartup(MAKEWORD(2, 2), &wsa) == 0) impl_->wsa_started = true;
   return true;
 }
 
@@ -83,14 +157,46 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   }
 
   for (ULONG i = 0; i < removed; ++i) {
-    out[i].user_data = static_cast<std::uint64_t>(entries[i].lpCompletionKey);
-    // dwNumberOfBytesTransferred is the op's byte count; io error mapping to a
-    // negative result is an op-submission concern (io-02), so io-01 reports the
-    // raw byte count. flags/buffer_id stay 0 (IOCP has no CQE flags).
-    out[i].result =
-        static_cast<std::int64_t>(entries[i].dwNumberOfBytesTransferred);
+    if (entries[i].lpOverlapped == nullptr) {
+      // A post() synthetic completion: key = the Waker token, bytes = the posted
+      // result. (Real ops always carry an OVERLAPPED; this is how they differ.)
+      out[i].user_data = static_cast<std::uint64_t>(entries[i].lpCompletionKey);
+      out[i].result =
+          static_cast<std::int64_t>(entries[i].dwNumberOfBytesTransferred);
+      out[i].flags = 0;
+      out[i].buffer_id = 0;
+      continue;
+    }
+    // A real op: OVERLAPPED was the first member of the IoOp, so cast straight
+    // back. Its lifetime ends here -- unlink from the in-flight list and free.
+    auto* op = reinterpret_cast<Impl::IoOp*>(entries[i].lpOverlapped);
+    impl_->unlink(op);
+    out[i].user_data = op->user_data;
     out[i].flags = 0;
     out[i].buffer_id = 0;
+    DWORD xfer = 0;
+    // GetOverlappedResult (no wait -- the op is already complete) is the
+    // documented way to read a per-op error out of a batch-dequeued completion:
+    // dwNumberOfBytesTransferred alone can't distinguish 0-byte EOF from failure.
+    BOOL rok = ::GetOverlappedResult(op->handle, &op->ov, &xfer, FALSE);
+    if (!rok) {
+      out[i].result = neg_err(::GetLastError());  // negative Win32 error
+      if (op->accept_sock != INVALID_SOCKET) ::closesocket(op->accept_sock);
+    } else if (op->kind == Impl::kAccept) {
+      // Finalize the accepted socket so it inherits the listener's properties,
+      // then hand its fd back as the result (>= 0). Ownership passes to caller.
+      SOCKET ls = reinterpret_cast<SOCKET>(op->handle);
+      ::setsockopt(op->accept_sock, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
+                   reinterpret_cast<char*>(&ls), sizeof(ls));
+      out[i].result = static_cast<std::int64_t>(op->accept_sock);
+    } else if (op->kind == Impl::kConnect) {
+      ::setsockopt(reinterpret_cast<SOCKET>(op->handle), SOL_SOCKET,
+                   SO_UPDATE_CONNECT_CONTEXT, nullptr, 0);
+      out[i].result = 0;  // connected
+    } else {
+      out[i].result = static_cast<std::int64_t>(xfer);  // bytes transferred
+    }
+    delete op;
   }
   return static_cast<std::size_t>(removed);
 }
@@ -99,48 +205,171 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   if (impl_ == nullptr) return false;
   // Post a synthetic completion: key = user_data (the Waker token), bytes =
   // result. Wakes a blocked reap() from any thread AND drives tests without a
-  // real fd. OVERLAPPED is unused here (nullptr) -- io-02's real ops attach one.
+  // real fd. OVERLAPPED is nullptr -- reap() uses that to tell it from a real op.
   return ::PostQueuedCompletionStatus(
              impl_->port,
              static_cast<DWORD>(static_cast<std::uint64_t>(result)),
              static_cast<ULONG_PTR>(user_data), nullptr) != 0;
 }
 
-// IOCP real-IO ops (io-02) are NOT yet implemented: unlike io_uring (fd goes in
-// the SQE, token in user_data), IOCP needs a per-op OVERLAPPED whose lifetime
-// spans the in-flight op, and the per-op token must ride that OVERLAPPED (the
-// completion KEY is per-handle, not per-op). That request-lifetime contract is
-// designed with net/ (io-04) so it isn't guessed here. io_uring carries the real
-// read/write now (io-02 primary, WSL-tested); IOCP real ops follow. Report false
-// rather than pretend.
-bool Proactor::submit_read(std::intptr_t, void*, std::uint32_t, std::uint64_t,
-                           std::uint64_t) noexcept {
-  return false;  // io-02 IOCP real-op pending (io_uring path is done)
+bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
+                           std::uint64_t offset,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  auto* op = new (std::nothrow) Impl::IoOp{};
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kRead;
+  op->ov.Offset = static_cast<DWORD>(offset & 0xffffffffull);
+  op->ov.OffsetHigh = static_cast<DWORD>(offset >> 32);
+  impl_->link(op);
+  BOOL ok = ::ReadFile(op->handle, buf, len, nullptr, &op->ov);
+  // Async success queues a completion too (we don't set SKIP_ON_SUCCESS), so only
+  // a synchronous failure that ISN'T "pending" means the op won't complete.
+  if (ok || ::GetLastError() == ERROR_IO_PENDING) return true;
+  impl_->unlink(op);
+  delete op;
+  return false;
 }
-bool Proactor::submit_write(std::intptr_t, const void*, std::uint32_t,
-                            std::uint64_t, std::uint64_t) noexcept {
-  return false;  // io-02 IOCP real-op pending
+
+bool Proactor::submit_write(std::intptr_t fd, const void* buf,
+                            std::uint32_t len, std::uint64_t offset,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  auto* op = new (std::nothrow) Impl::IoOp{};
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kWrite;
+  op->ov.Offset = static_cast<DWORD>(offset & 0xffffffffull);
+  op->ov.OffsetHigh = static_cast<DWORD>(offset >> 32);
+  impl_->link(op);
+  BOOL ok = ::WriteFile(op->handle, buf, len, nullptr, &op->ov);
+  if (ok || ::GetLastError() == ERROR_IO_PENDING) return true;
+  impl_->unlink(op);
+  delete op;
+  return false;
 }
-bool Proactor::submit_recv(std::intptr_t, void*, std::uint32_t, std::uint32_t,
-                           std::uint64_t) noexcept {
-  return false;  // io-04 IOCP socket op pending (io_uring path done)
+
+bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
+                           std::uint32_t flags,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  auto* op = new (std::nothrow) Impl::IoOp{};
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kRecv;
+  op->wsabuf.buf = static_cast<CHAR*>(buf);  // buffer descriptor outlives the op
+  op->wsabuf.len = len;
+  impl_->link(op);
+  DWORD f = flags;
+  int r = ::WSARecv(static_cast<SOCKET>(fd), &op->wsabuf, 1, nullptr, &f,
+                    &op->ov, nullptr);
+  if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  delete op;
+  return false;
 }
-bool Proactor::submit_send(std::intptr_t, const void*, std::uint32_t,
-                           std::uint32_t, std::uint64_t) noexcept {
-  return false;  // io-04 IOCP socket op pending
+
+bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
+                           std::uint32_t flags,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  auto* op = new (std::nothrow) Impl::IoOp{};
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kSend;
+  op->wsabuf.buf = static_cast<CHAR*>(const_cast<void*>(buf));
+  op->wsabuf.len = len;
+  impl_->link(op);
+  int r = ::WSASend(static_cast<SOCKET>(fd), &op->wsabuf, 1, nullptr, flags,
+                    &op->ov, nullptr);
+  if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  delete op;
+  return false;
 }
-bool Proactor::submit_accept(std::intptr_t, void*, void*,
-                             std::uint64_t) noexcept {
-  return false;  // io-04 IOCP AcceptEx pending
+
+bool Proactor::submit_accept(std::intptr_t fd, void* /*addr*/, void* /*addrlen*/,
+                             std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  SOCKET ls = static_cast<SOCKET>(fd);
+  if (!load_ext_fn(ls, WSAID_ACCEPTEX,
+                   reinterpret_cast<void**>(&impl_->acceptex)))
+    return false;
+  // AcceptEx needs a pre-created accept socket of the same family as the listener
+  // (learn it via getsockname). The peer address the caller passed is ignored on
+  // Windows -- AcceptEx writes both addrs into the op's own addr_buf; net/ reads
+  // the peer with getpeername on the accepted socket after completion.
+  SOCKADDR_STORAGE ss;
+  int slen = static_cast<int>(sizeof(ss));
+  int fam = AF_INET;
+  if (::getsockname(ls, reinterpret_cast<sockaddr*>(&ss), &slen) == 0)
+    fam = ss.ss_family;
+  SOCKET as = ::WSASocketW(fam, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
+  if (as == INVALID_SOCKET) return false;
+  auto* op = new (std::nothrow) Impl::IoOp{};
+  if (op == nullptr) {
+    ::closesocket(as);
+    return false;
+  }
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);  // listener (for SO_UPDATE + result)
+  op->kind = Impl::kAccept;
+  op->accept_sock = as;
+  impl_->link(op);
+  constexpr DWORD kAddr = sizeof(SOCKADDR_STORAGE) + 16;
+  DWORD got = 0;
+  BOOL ok = impl_->acceptex(ls, as, op->addr_buf, 0, kAddr, kAddr, &got, &op->ov);
+  if (ok || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  ::closesocket(as);
+  delete op;
+  return false;
 }
-bool Proactor::submit_connect(std::intptr_t, const void*, std::uint32_t,
-                              std::uint64_t) noexcept {
-  return false;  // io-04 IOCP ConnectEx pending
+
+bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
+                              std::uint32_t addrlen,
+                              std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || addr == nullptr) return false;
+  SOCKET s = static_cast<SOCKET>(fd);
+  if (!load_ext_fn(s, WSAID_CONNECTEX,
+                   reinterpret_cast<void**>(&impl_->connectex)))
+    return false;
+  // ConnectEx requires the socket be already bound. Bind to the wildcard address
+  // of the target's family (a no-op error if it is already bound).
+  auto family = reinterpret_cast<const sockaddr*>(addr)->sa_family;
+  if (family == AF_INET6) {
+    sockaddr_in6 any{};
+    any.sin6_family = AF_INET6;
+    ::bind(s, reinterpret_cast<sockaddr*>(&any), sizeof(any));
+  } else {
+    sockaddr_in any{};
+    any.sin_family = AF_INET;
+    ::bind(s, reinterpret_cast<sockaddr*>(&any), sizeof(any));
+  }
+  auto* op = new (std::nothrow) Impl::IoOp{};
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kConnect;
+  impl_->link(op);
+  BOOL ok = impl_->connectex(s, reinterpret_cast<const sockaddr*>(addr),
+                             static_cast<int>(addrlen), nullptr, 0, nullptr,
+                             &op->ov);
+  if (ok || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  delete op;
+  return false;
 }
+
 bool Proactor::register_handle(std::intptr_t fd) noexcept {
   if (impl_ == nullptr) return false;
-  // Associate the handle with the port so its ops complete here. Key unused for
-  // now (per-op token rides the OVERLAPPED once real ops land). Harmless to call.
+  // Associate the handle/socket with the port so its ops complete here. The
+  // per-op token rides the OVERLAPPED, so the completion KEY is unused (0).
   return ::CreateIoCompletionPort(reinterpret_cast<HANDLE>(fd), impl_->port, 0,
                                   0) != nullptr;
 }
@@ -162,6 +391,7 @@ bool Proactor::register_handle(std::intptr_t fd) noexcept {
 #  include <linux/io_uring.h>
 #  include <sys/epoll.h>
 #  include <sys/mman.h>
+#  include <sys/socket.h>
 #  include <sys/syscall.h>
 #  include <unistd.h>
 
@@ -225,10 +455,12 @@ struct Proactor::Impl {
   // epoll only signals READINESS; the proactor must remember each armed op and
   // perform the IO itself when the fd becomes ready, then synthesize a
   // Completion. One pending op per fd (EPOLLONESHOT), which suffices for the
-  // one-in-flight-read/write-per-fd model io-04 net uses.
+  // one-in-flight-op-per-fd model io-04 net uses. `opcode` reuses the IORING_OP_*
+  // tags (READ/WRITE for byte IO, ACCEPT/CONNECT for the socket handshakes) so
+  // reap() can branch on which syscall to run when the fd fires.
   int epfd = -1;
   struct PendingOp {
-    std::uint8_t opcode;   // IORING_OP_READ / WRITE reused as the op tag
+    std::uint8_t opcode;   // IORING_OP_READ/WRITE/ACCEPT/CONNECT as the op tag
     void* buf;
     std::uint32_t len;
     std::uint64_t user_data;
@@ -412,11 +644,23 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       Impl::PendingOp op = it->second;
       impl_->pending.erase(it);
       ::epoll_ctl(impl_->epfd, EPOLL_CTL_DEL, fd, nullptr);  // one-shot done
-      // Perform the IO inline now that the fd is ready.
+      // Perform the IO inline now that the fd is ready. The op tag says which.
       std::int64_t res;
       if (op.opcode == IORING_OP_WRITE) {
         ssize_t w = ::write(fd, op.buf, op.len);
         res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
+      } else if (op.opcode == IORING_OP_ACCEPT) {
+        // Listener readable -> a connection is queued; accept it. Result is the
+        // accepted fd (>= 0) or a negative errno, matching io_uring ACCEPT.
+        int as = ::accept(fd, nullptr, nullptr);
+        res = (as < 0) ? -errno : static_cast<std::int64_t>(as);
+      } else if (op.opcode == IORING_OP_CONNECT) {
+        // Non-blocking connect signalled writable -> read SO_ERROR to learn the
+        // real outcome (0 = connected, else the errno). Result 0 or -errno.
+        int soerr = 0;
+        socklen_t sl = sizeof(soerr);
+        ::getsockopt(fd, SOL_SOCKET, SO_ERROR, &soerr, &sl);
+        res = (soerr == 0) ? 0 : -soerr;
       } else {  // READ
         ssize_t r = ::read(fd, op.buf, op.len);
         res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
@@ -616,7 +860,12 @@ bool Proactor::submit_accept(std::intptr_t fd, void* addr, void* addrlen,
                              std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
   if (impl_->backend == Impl::kEpoll) {
-    return false;  // epoll accept/connect reactor plumbing deferred (io_uring path done)
+    // Reactor accept: watch the listener for EPOLLIN (a queued connection makes
+    // it readable); reap() runs ::accept when it fires and returns the fd. The
+    // peer addr is read by net/ via getpeername on the accepted fd, so buf/len
+    // stay 0 (the caller's addr/addrlen aren't populated on the epoll path).
+    return epoll_arm(impl_, static_cast<int>(fd), EPOLLIN, IORING_OP_ACCEPT,
+                     nullptr, 0, user_data);
   }
   // accept: addr -> sqe.addr (sockaddr*), addrlen -> sqe.addr2 (socklen_t*).
   // submit_one puts its `off` arg into sqe.off which unions with addr2, so pass
@@ -633,7 +882,17 @@ bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
                               std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
   if (impl_->backend == Impl::kEpoll) {
-    return false;  // epoll connect reactor plumbing deferred
+    // Reactor connect: kick off the non-blocking connect now. If it completes
+    // synchronously (rare, e.g. UNIX socket), synthesize the completion via
+    // post() so the caller still reaps one. Otherwise EINPROGRESS -> watch
+    // EPOLLOUT; reap() reads SO_ERROR when writable to learn the outcome.
+    int r = ::connect(static_cast<int>(fd),
+                      reinterpret_cast<const sockaddr*>(addr),
+                      static_cast<socklen_t>(addrlen));
+    if (r == 0) return post(user_data, 0);            // connected immediately
+    if (errno != EINPROGRESS) return post(user_data, -errno);  // hard failure
+    return epoll_arm(impl_, static_cast<int>(fd), EPOLLOUT, IORING_OP_CONNECT,
+                     nullptr, 0, user_data);
   }
   // connect: addr -> sqe.addr (sockaddr*), addrlen -> sqe.off.
   return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,

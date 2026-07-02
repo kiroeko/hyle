@@ -17,6 +17,11 @@ hyle_add_test(mem SOURCES mem/allocator_test.cc mem/memory_arena_test.cc mem/poo
 hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc util/type_name_test.cc util/registry_test.cc util/random_test.cc util/spin_lock_test.cc util/demangle_test.cc DEPS hyle_container)
 hyle_add_test(time SOURCES time/clock_test.cc time/timer_wheel_test.cc time/common_timeout_queue_test.cc DEPS hyle_platform)
 hyle_add_test(io SOURCES io/proactor_test.cc)
+if(WIN32)
+  # The io test itself calls Winsock directly (WSASocketW/bind/getsockname/... in
+  # the IOCP TCP round-trip test), so it needs ws2_32 linked into the test exe.
+  target_link_libraries(hyle_io_test PRIVATE ws2_32)
+endif()
 hyle_add_test(math SOURCES math/scalar_test.cc)
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
 # hash_test.cc includes the opt-in hyle/container/hash_inline.h, which pulls the

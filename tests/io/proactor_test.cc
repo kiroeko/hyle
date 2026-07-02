@@ -6,11 +6,24 @@
 #include <vector>
 
 #if defined(__linux__)
+#  include <arpa/inet.h>
+#  include <fcntl.h>
+#  include <netinet/in.h>
 #  include <sys/socket.h>
 #  include <unistd.h>
 
 #  include <cstdio>
 #  include <cstdlib>
+#  include <cstring>
+#endif
+
+#if defined(_WIN32)
+#  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX
+#  include <winsock2.h>
+#  include <ws2tcpip.h>
+#  include <windows.h>
+
 #  include <cstring>
 #endif
 
@@ -20,10 +33,11 @@ using hyle::io::Completion;
 using hyle::io::Proactor;
 
 // io-01 is the completion-reaping seam; these tests prove the mechanism the real
-// backends (io-02 io_uring / IOCP) drive: attach a 64-bit token to an operation,
-// get it back verbatim on completion, reap in batch. On Windows this exercises
-// the real IOCP port (PostQueuedCompletionStatus/GetQueuedCompletionStatusEx);
-// on Linux the backend is io-02-pending so init() returns false and we skip.
+// backends (io_uring / IOCP) drive: attach a 64-bit token to an operation, get it
+// back verbatim on completion, reap in batch. On Windows this exercises the real
+// IOCP port (PostQueuedCompletionStatus/GetQueuedCompletionStatusEx); on Linux
+// io_uring (or the epoll fallback when forced). BOTH platforms now carry real IO
+// ops (file read/write + socket accept/connect/send/recv), tested below.
 
 TEST(Proactor, InitAndPostReapRoundTrip) {
   Proactor p;
@@ -247,4 +261,225 @@ TEST(Proactor, SocketSendRecvRoundTrip) {
   ::close(sv[0]);
   ::close(sv[1]);
 }
+
+// A full TCP accept+connect handshake over loopback, then a send/recv on the
+// accepted connection. Driven against WHATEVER backend `p` is (io_uring by
+// default; the epoll fallback in the forced test below) -- so the SAME closed
+// loop proves both submit_accept/submit_connect paths, not just io_uring's.
+static void RunTcpAcceptConnectRoundTrip(Proactor& p) {
+  // Listener bound to an ephemeral loopback port.
+  int ls = ::socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(ls, 0);
+  int one = 1;
+  ::setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+  sockaddr_in sa{};
+  sa.sin_family = AF_INET;
+  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_port = 0;
+  ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
+  ASSERT_EQ(::listen(ls, 8), 0);
+  socklen_t slen = sizeof(sa);
+  ASSERT_EQ(::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen), 0);
+
+  // Client socket, non-blocking so the epoll path sees EINPROGRESS (io_uring is
+  // async regardless). Arm accept on the listener, then kick off the connect.
+  int cl = ::socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(cl, 0);
+  int fl = ::fcntl(cl, F_GETFL, 0);
+  ::fcntl(cl, F_SETFL, fl | O_NONBLOCK);
+
+  ASSERT_TRUE(p.submit_accept(ls, nullptr, nullptr, /*user_data=*/0xACCE));
+  ASSERT_TRUE(
+      p.submit_connect(cl, &sa, sizeof(sa), /*user_data=*/0xC0DE));
+
+  // Reap both completions (order/batching not guaranteed): the accept carries a
+  // fresh fd (>= 0) in its result, the connect carries 0 (connected).
+  int accepted = -1;
+  bool got_accept = false, got_connect = false;
+  for (int spins = 0; spins < 100 && !(got_accept && got_connect); ++spins) {
+    Completion c[4];
+    std::size_t n = p.reap(c, 4, 1'000'000'000ull);
+    for (std::size_t i = 0; i < n; ++i) {
+      if (c[i].user_data == 0xACCE) {
+        got_accept = true;
+        ASSERT_GE(c[i].result, 0) << "accept result must be a valid fd";
+        accepted = static_cast<int>(c[i].result);
+      } else if (c[i].user_data == 0xC0DE) {
+        got_connect = true;
+        EXPECT_EQ(c[i].result, 0) << "connect result must be 0 (connected)";
+      }
+    }
+  }
+  ASSERT_TRUE(got_accept);
+  ASSERT_TRUE(got_connect);
+  ASSERT_GE(accepted, 0);
+
+  // The accepted fd is a real, usable connection: send on the client, recv on
+  // the accepted end (via the proactor, exercising submit_send/submit_recv too).
+  const char msg[] = "tcp-accept-connect";
+  const std::uint32_t len = sizeof(msg);
+  ASSERT_TRUE(p.submit_send(cl, msg, len, 0, 0x5E4D));
+  Completion cs{};
+  ASSERT_EQ(p.reap(&cs, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(cs.user_data, 0x5E4Du);
+  EXPECT_EQ(cs.result, static_cast<std::int64_t>(len));
+
+  char buf[64] = {};
+  ASSERT_TRUE(p.submit_recv(accepted, buf, len, 0, 0x8EC0));
+  Completion cr{};
+  ASSERT_EQ(p.reap(&cr, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(cr.user_data, 0x8EC0u);
+  EXPECT_EQ(cr.result, static_cast<std::int64_t>(len));
+  EXPECT_STREQ(buf, msg);
+
+  ::close(accepted);
+  ::close(cl);
+  ::close(ls);
+}
+
+// io_uring path: real IORING_OP_ACCEPT + IORING_OP_CONNECT over loopback TCP.
+TEST(Proactor, TcpAcceptConnectRoundTripUring) {
+  Proactor p;
+  if (!p.init()) GTEST_SKIP() << "no io_uring backend";
+  RunTcpAcceptConnectRoundTrip(p);
+}
+
+// epoll fallback path: submit_accept arms EPOLLIN + does ::accept when ready;
+// submit_connect kicks off the non-blocking connect + arms EPOLLOUT, reads
+// SO_ERROR when writable. Same loopback closed loop, forced onto the reactor.
+TEST(Proactor, TcpAcceptConnectRoundTripEpoll) {
+  ::setenv("HYLE_IO_FORCE_EPOLL", "1", 1);
+  Proactor p;
+  bool ok = p.init();
+  ::unsetenv("HYLE_IO_FORCE_EPOLL");
+  ASSERT_TRUE(ok);
+  RunTcpAcceptConnectRoundTrip(p);
+}
 #endif  // __linux__
+
+// ---- Windows IOCP real IO ops ----------------------------------------------
+// The IOCP counterparts of the io_uring tests above: a real file write/read
+// closed loop (ReadFile/WriteFile + per-op OVERLAPPED), a bad-handle negative
+// result, and a full TCP accept/connect/send/recv over loopback via
+// AcceptEx/ConnectEx + WSASend/WSARecv. Proves the per-op OVERLAPPED lifetime
+// and the completion->result mapping the proactor now carries on Windows.
+#if defined(_WIN32)
+TEST(Proactor, RealFileReadWriteRoundTrip) {
+  Proactor p;
+  ASSERT_TRUE(p.init());
+
+  // A temp file opened OVERLAPPED (async IO) + associated with the port.
+  char dir[MAX_PATH];
+  char path[MAX_PATH];
+  ::GetTempPathA(MAX_PATH, dir);
+  ::GetTempFileNameA(dir, "hy", 0, path);
+  HANDLE fh = ::CreateFileA(path, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
+                            CREATE_ALWAYS, FILE_FLAG_OVERLAPPED, nullptr);
+  ASSERT_NE(fh, INVALID_HANDLE_VALUE);
+  ASSERT_TRUE(p.register_handle(reinterpret_cast<std::intptr_t>(fh)));
+
+  const char msg[] = "hyle-iocp-real-op";
+  const std::uint32_t len = sizeof(msg);
+  auto fd = reinterpret_cast<std::intptr_t>(fh);
+
+  ASSERT_TRUE(p.submit_write(fd, msg, len, 0, /*user_data=*/0x111));
+  Completion c{};
+  ASSERT_EQ(p.reap(&c, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(c.user_data, 0x111u);
+  EXPECT_EQ(c.result, static_cast<std::int64_t>(len));  // bytes written
+
+  char buf[64] = {};
+  ASSERT_TRUE(p.submit_read(fd, buf, len, 0, /*user_data=*/0x222));
+  Completion c2{};
+  ASSERT_EQ(p.reap(&c2, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(c2.user_data, 0x222u);
+  EXPECT_EQ(c2.result, static_cast<std::int64_t>(len));  // bytes read
+  EXPECT_STREQ(buf, msg);  // round-tripped through the kernel
+
+  ::CloseHandle(fh);
+  ::DeleteFileA(path);
+}
+
+// A bad handle fails the submit synchronously (no completion is ever queued),
+// so submit_read returns false -- distinct from an IO error, which would submit
+// fine and surface a negative result at reap.
+TEST(Proactor, RealFileReadBadHandleSubmitFails) {
+  Proactor p;
+  ASSERT_TRUE(p.init());
+  char buf[8] = {};
+  EXPECT_FALSE(p.submit_read(reinterpret_cast<std::intptr_t>(INVALID_HANDLE_VALUE),
+                             buf, sizeof(buf), 0, 0x333));
+}
+
+TEST(Proactor, TcpAcceptConnectRoundTripIocp) {
+  Proactor p;
+  ASSERT_TRUE(p.init());
+
+  // Listener on an ephemeral loopback port (overlapped socket, port-associated).
+  SOCKET ls = ::WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0,
+                           WSA_FLAG_OVERLAPPED);
+  ASSERT_NE(ls, INVALID_SOCKET);
+  sockaddr_in sa{};
+  sa.sin_family = AF_INET;
+  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_port = 0;
+  ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
+  ASSERT_EQ(::listen(ls, 8), 0);
+  int slen = sizeof(sa);
+  ASSERT_EQ(::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen), 0);
+  ASSERT_TRUE(p.register_handle(static_cast<std::intptr_t>(ls)));
+
+  // Client socket, also overlapped + port-associated (ConnectEx completes here).
+  SOCKET cl = ::WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0,
+                           WSA_FLAG_OVERLAPPED);
+  ASSERT_NE(cl, INVALID_SOCKET);
+  ASSERT_TRUE(p.register_handle(static_cast<std::intptr_t>(cl)));
+
+  ASSERT_TRUE(p.submit_accept(static_cast<std::intptr_t>(ls), nullptr, nullptr,
+                              0xACCE));
+  ASSERT_TRUE(p.submit_connect(static_cast<std::intptr_t>(cl), &sa, sizeof(sa),
+                               0xC0DE));
+
+  SOCKET accepted = INVALID_SOCKET;
+  bool got_accept = false, got_connect = false;
+  for (int spins = 0; spins < 100 && !(got_accept && got_connect); ++spins) {
+    Completion c[4];
+    std::size_t n = p.reap(c, 4, 1'000'000'000ull);
+    for (std::size_t i = 0; i < n; ++i) {
+      if (c[i].user_data == 0xACCE) {
+        got_accept = true;
+        ASSERT_GE(c[i].result, 0);
+        accepted = static_cast<SOCKET>(c[i].result);
+      } else if (c[i].user_data == 0xC0DE) {
+        got_connect = true;
+        EXPECT_EQ(c[i].result, 0);
+      }
+    }
+  }
+  ASSERT_TRUE(got_accept);
+  ASSERT_TRUE(got_connect);
+  ASSERT_NE(accepted, INVALID_SOCKET);
+  ASSERT_TRUE(p.register_handle(static_cast<std::intptr_t>(accepted)));
+
+  const char msg[] = "iocp-accept-connect";
+  const std::uint32_t len = sizeof(msg);
+  ASSERT_TRUE(p.submit_send(static_cast<std::intptr_t>(cl), msg, len, 0, 0x5E4D));
+  Completion cs{};
+  ASSERT_EQ(p.reap(&cs, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(cs.user_data, 0x5E4Du);
+  EXPECT_EQ(cs.result, static_cast<std::int64_t>(len));
+
+  char buf[64] = {};
+  ASSERT_TRUE(
+      p.submit_recv(static_cast<std::intptr_t>(accepted), buf, len, 0, 0x8EC0));
+  Completion cr{};
+  ASSERT_EQ(p.reap(&cr, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(cr.user_data, 0x8EC0u);
+  EXPECT_EQ(cr.result, static_cast<std::int64_t>(len));
+  EXPECT_STREQ(buf, msg);
+
+  ::closesocket(accepted);
+  ::closesocket(cl);
+  ::closesocket(ls);
+}
+#endif  // _WIN32
