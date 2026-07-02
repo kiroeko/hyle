@@ -202,6 +202,8 @@ worker 调度循环（2.2）的第 0 步插入"收割 completion"：
 
 **per-core io_uring 是关键选择**：每个 worker 自己的 ring，提交和收割都在本核，零跨核同步——和 run-queue 的 per-core 哲学一致。GPU 因为 host 通知机制弱（不能每个 op 阻塞一线程），单设一个 completion 源翻译成 fiber 唤醒。
 
+> **落地状态(io-04, plan B)**：第 0 步收割已接线，但走的是**接缝解耦**而非 sched 直接 include io/。sched 暴露一个**纯函数指针 hook** `Scheduler::set_io_poll(fn, ctx)`（`fn` 非 io 类型，故 sched **不**依赖 io——依赖方向是 io→sched，io 用 sched 的 Waker）；io/ 的 `IoContext` 持 proactor + 注册 hook + reap 后经 `net::complete()` 把每个 completion 路由回等待 fiber（`op.result=c.result; waker.wake()`）。worker 循环顶(fire_due_timers 后)非空 hook 才调 reap(0)，无 io 注册=零成本。**plan B 简化**：单 proactor、单 worker 收割、parked worker 用 1ms 轮询上限(kIoPollNs)代替 `post()` 唤醒。**plan A**（本表的终态：per-worker ring + `post()` 即时唤醒 parked worker）是后续；hook 已带 `worker_idx`，升级无需改 sched API。co_await send/recv + 两 fiber echo 双平台真测 + TSan 净。
+
 ### 3.3 completion → 唤醒哪个 fiber、落哪个核
 
 - **唤醒哪个 fiber**：靠 `user_data` 关联——io_uring 的 SQE 带 64-bit `user_data`、IOCP 带 `OVERLAPPED*`、CUDA host func 带 `void*`，三者都塞 `Waker` 的指针/ID，完成时原样取回 → 定位 fiber。这是映射的物理机制。

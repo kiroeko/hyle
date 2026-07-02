@@ -19,7 +19,7 @@
 | `obs/` | `hyle/obs/log.h` | ✅ | level 门控 + sink 注册表日志 |
 | `sched/` | `hyle/sched/{scheduler,fiber,coro}.h` | 🔶 | fcontext 纤程 + work-stealing 调度 + fiber-aware 同步 + fiber sleep + 协程胶水(`Task<T>`/co_await 让出 fiber);取消/优雅关闭 待 |
 | `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测（含纯 AVX 档 kAvx）+ 可移植 `vec<T,N>`（scalar/SSE4.2/AVX2 实跑；fp16/bf16 dtype + 向量化数学核（Highway/xsimd）done；NEON 写+编+objdump 验未跑存疑；AVX512 后端+ops kernel 已默认派发，objdump 双平台验真发 zmm，但本箱 AVX2-only 未实跑=存疑） |
-| `io/` | `hyle/io/proactor.h` | 🔶 | proactor 完成收割接缝 + io_uring/IOCP/epoll 三后端;read/write + socket(recv/send/accept/connect)真 op 全通(**无 stub**,双平台真测)；net TcpListener/Stream + co_await 上层待(io↔sched 集成) |
+| `io/` | `hyle/io/{proactor,net,io_context}.h` | 🔶 | proactor 完成收割接缝 + io_uring/IOCP/epoll 三后端;read/write + socket 真 op 全通(**无 stub**);**co_await socket 层通**(`net.h` RecvOp/SendOp/AcceptOp/ConnectOp + `IoContext` 接 sched worker 循环收割,plan B 单 worker,双平台真测+TSan)；待 plan A 多 worker per-ring + TcpListener/Stream fd 封装 |
 | `compute/` `graph/` | — | 📋 | 尚未开工 |
 
 ## 1. 构建与集成
@@ -333,9 +333,9 @@ HYLE_DEFER(std::fclose(fp));         // 作用域退出时执行（C++23 仍无 
 - **别在紧循环里反复拷贝+析构同一个 `Ref`** —— 背靠背的两个原子(同 cache line)会串行化(第二个卡在第一个排空 store buffer 之后)，把原子延迟暴露到极致。需要在循环内多次访问同一对象时，循环外持一个 `Ref`、循环内用 `.get()` 或 `const&`。（性能文档那条 microbench 正是这个反模式，不代表真实开销。）
 - **单线程、生命周期明确**时，直接裸指针 / 值语义 / `unique_ptr` 往往比任何引用计数都快 —— 引用计数是为"共享所有权 + 不确定谁最后释放"付的税。`Ref` 的价值在跨 DLL ABI 稳定（无控制块）和侵入式省一次分配，不在让引用计数本身变快。
 
-### 3.8 io —— proactor 完成式 IO（🔶 proactor 层就绪，co_await 上层待 io-04）
+### 3.8 io —— proactor 完成式 IO（🔶 co_await socket 层通,plan B）
 
-**⚠️ 现状:proactor 层的 read/write + socket op 已全通(无 stub,双平台真测),但还没有 `TcpListener/TcpStream` 这样的 co_await 便利类型。** 已就绪的是 `proactor.h`:**完成收割接缝** + io_uring/IOCP/epoll 三后端 + `submit_read/write/recv/send/accept/connect` 全部真 op(io_uring 填 SQE;IOCP `ReadFile/WriteFile` + WSARecv/Send/AcceptEx/ConnectEx;epoll 降级 reactor→completion)。**能提交裸 fd 的读/写/收/发/接受/连接并收割完成**,但要自己管 fd/sockaddr;上层 socket 抽象 + `co_await` echo(io↔sched 集成)是 io-04 剩余部分。这里讲清模型与取舍。
+**⚠️ 现状:`co_await` socket op 已能真跑**——fiber `co_await RecvOp/SendOp/AcceptOp/ConnectOp` 会让出 fiber,worker 循环收割 completion 后带回字节数/errno 唤醒它。**能用**:起一个 `Scheduler` + `IoContext io(sched)`,在 fiber 里 `co_await io::SendOp{&io.proactor(), fd, buf, len}`。**已就绪三层**:① `proactor.h` 完成收割接缝 + io_uring/IOCP/epoll 三后端 + 全 submit 真 op;② `net.h` 的 co_await awaitable(`IoOperation` slot 承 result + Waker 唤醒);③ `io_context.h` 把 proactor 接进 sched worker 循环第 0 步收割。**限制(plan B,诚实标注)**:单 proactor 单 worker 收割(多 worker 并发安全是 plan A per-worker ring);还需自己管 fd/sockaddr(`TcpListener/TcpStream` RAII 薄封装未做)。这里讲清模型与取舍。
 
 **前提（模型不同于传统，必须知道）**：HYLE io 是 **proactor（完成式）**，不是 reactor（就绪式）。传统写法是 `read()` 阻塞、或 `epoll` 等"可读"后自己 `read`；HYLE 是"**提交 IO → fiber 让出 → 内核做完 → 唤醒 fiber**"。你不"等可读"，你"提交读、完成时拿到已读好的数据"。这与 fiber 天然契合（提交即让出、完成即续跑），也是 C++ 标准网络的方向（WG21 P2300/P4100）。std 无异步 IO 等价物，故非"替换 std"，是净新增机制。
 

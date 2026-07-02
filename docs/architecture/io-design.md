@@ -73,11 +73,12 @@ io/
 
 ## 待深挖(io-04+ 开工时定,非现在)
 
-> proactor 收割接缝已落地。下面是**提交侧/socket 层**的实现机制,按 JIT 延到 io-04:
+> proactor 收割接缝 + socket op + co_await 层(plan B)已落地。下面是**剩余的提交侧/集成优化**,按 JIT 延到后续:
 
-1. reactor 后端(mac kqueue / Linux epoll 降级)如何把"就绪"模拟成"完成"而不丢性能。
-2. net/ socket 的 co_await 风格 op(read/write/accept)如何填 SQE + 关联 Waker,遇 IO 让出 fiber。
+1. reactor 后端(mac kqueue)如何把"就绪"模拟成"完成"(Linux epoll 降级已做,accept→::accept/connect→SO_ERROR/read/write 内联)。
+2. **plan A 集成**:per-worker proactor(每核一 ring,worker peek 自己的 CQ 零跨核) + parked worker 用 `post()` 唤醒(免 plan B 的 1ms 轮询上限),多 worker 并发安全。plan B 的 `set_io_poll` hook 已带 `worker_idx`,升 plan A 无需改 API。
 3. 高级机制接线:registered files/buffers、multishot accept/recv、linked SQE 的 op 层 API。
+4. TcpListener/TcpStream fd 所有权薄封装(RAII socket + 地址解析) + udp。
 
 ## 参考
 
