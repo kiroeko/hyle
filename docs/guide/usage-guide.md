@@ -296,6 +296,20 @@ hot_path();
 uint64_t span = hyle::time::fast_monotonic_ns() - a;  // 同核近距离两读,安全
 ```
 
+#### 3.6.1 定时器结构选型（海量超时:选对结构,别都塞一个堆）
+
+管理海量超时(io 超时、连接空闲超时、fiber sleep)时,`time/` 提供**两种定时器数据结构**,都满足同一 `TimerSource` 接口(`schedule`/`cancel`/`advance`/`next_deadline_ns`),**按负载选、编译期定、零虚调用开销**。这不是重复造轮子——SOTA 的 libevent 同样是两套并存(min-heap + `common_timeout` 队列),因为**一个结构吃不下所有定时负载**。
+
+| 你的场景 | 用 | 为什么 / 别用啥 |
+|---|---|---|
+| **任意/混合超时时长,海量 arm/cancel**(fiber sleep 任意时长、通用定时) | `TimerWheel`(分层时间轮) | 6 层×64 槽 tokio 移植,任意时长 O(1) 摊还 arm/cancel、无墓碑。**通用默认,拿不准用它**。churn 负载赢 min-heap 2-3x(双平台)。 |
+| **海量定时器共享同一固定时长**(百万连接都是 30s 超时) | `CommonTimeoutQueue` | 单条有序侵入链:相同时长 deadline 天然递增 → arm=O(1) 尾插、到期=O(1) 头摘、cancel=O(1) 摘链。**这类负载赢 TimerWheel arm+expire 3.0-3.7x / arm+cancel 1.6-1.75x(双平台)**——省掉轮的 6KB 槽数组 + 每次 level/slot 数学。**一个队列只管一种时长**。 |
+| ~~定时器少、需精确"最近到期"、取消少~~(**非 HYLE 负载**) | ~~min-heap~~ | HYLE 未提供。堆的 O(log n) arm/cancel + 惰性墓碑污染 expire,对"海量 arm/cancel≫真到期"的 HYLE 负载是错的工具(churn 实测输轮 2-3x)。列此仅为说明为何不选。 |
+
+**一句话决策树**:任意时长 → `TimerWheel`(默认);海量**相同**时长 → `CommonTimeoutQueue`。多种固定时长并存 = 建多个 `CommonTimeoutQueue`,由**调用方**按时长路由(像 libevent 的 `common_timeout_queues[]`——路由是消费者的事,不在数据结构里)。
+
+> **就绪度**:`TimerWheel` 已接入 sched(fiber `sleep_for_ns`/`sleep_until_ns` 用它)。`CommonTimeoutQueue` 已实现 + 双平台测试 + benchmark 验证,**但其目标消费者(io reactor 的连接超时)尚未落地**——它是"就位待接入"的结构,不是已在服役。性能数据见 [`performance/benchmarks-sched.md`](../performance/benchmarks-sched.md) 时间轮节。
+
 ### 3.7 util —— Ref<T> 侵入式引用计数 + DEFER
 ```cpp
 #include "hyle/util/ref_counted.h"

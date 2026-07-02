@@ -21,7 +21,9 @@
 #include <nanobench.h>
 
 #include <cstdint>
+#include <list>
 #include <queue>
+#include <unordered_map>
 #include <vector>
 
 #include "hyle/time/common_timeout_queue.h"
@@ -34,6 +36,47 @@ using hyle::time::TimerEntry;
 using hyle::time::TimerWheel;
 
 constexpr std::uint64_t kMs = TimerWheel::kTickNs;
+
+// ---- SOTA same-algorithm baseline for CommonTimeoutQueue --------------------
+// libevent's common_timeout is a SORTED doubly-linked list (insert_common_timeout
+// _inorder): same-duration deadlines arrive in order so it appends at the tail;
+// keyed removal is O(1) by splicing the node out. We can't link libevent's
+// version out of its event_base/epoll shell, so this is the honest same-ALGORITHM
+// rival: a std::list<deadline,id> with an id->iterator map for O(1) erase (giving
+// std::list the same O(1) cancel HYLE has -- NOT hobbling it with std::find).
+// The ONLY difference vs HYLE CommonTimeoutQueue is std::list's per-node heap
+// allocation vs HYLE's intrusive zero-alloc node -- i.e. this isolates HYLE's
+// intrusive/zero-alloc implementation quality on the identical algorithm.
+struct ListTimeoutQueue {
+  struct Node {
+    std::uint64_t deadline;
+    std::uint64_t id;
+  };
+  std::list<Node> lst;  // sorted by deadline (append-ordered for same duration)
+  std::unordered_map<std::uint64_t, std::list<Node>::iterator> pos;  // O(1) erase
+
+  void schedule(std::uint64_t id, std::uint64_t deadline) {
+    lst.push_back({deadline, id});  // monotonic -> tail append keeps it sorted
+    auto it = lst.end();
+    --it;
+    pos[id] = it;
+  }
+  void cancel(std::uint64_t id) {
+    auto f = pos.find(id);
+    if (f != pos.end()) {
+      lst.erase(f->second);  // O(1) splice-out (the point of storing the iterator)
+      pos.erase(f);
+    }
+  }
+  std::uint64_t expire(std::uint64_t now, std::uint64_t& fired) {
+    while (!lst.empty() && lst.front().deadline <= now) {
+      pos.erase(lst.front().id);
+      lst.pop_front();
+      ++fired;
+    }
+    return fired;
+  }
+};
 
 // ---- honest min-heap timer (Go/libev style, lazy cancel) --------------------
 struct HeapTimer {
@@ -210,6 +253,14 @@ int main() {
       while (out.pop_front()) ++fired;
       nb::doNotOptimizeAway(fired);
     });
+    // SOTA same-algorithm baseline: libevent common_timeout = sorted list.
+    b.run("std::list sorted queue (libevent common_timeout algo)", [&] {
+      ListTimeoutQueue q;
+      for (std::uint64_t i = 0; i < kN; ++i) q.schedule(i, (i + 1) * kMs);
+      std::uint64_t fired = 0;
+      q.expire((kN + 1) * kMs, fired);
+      nb::doNotOptimizeAway(fired);
+    });
   }
 
   // ---- 5. FIXED-DURATION arm+cancel (the serving hot path): all cancelled ----
@@ -241,6 +292,13 @@ int main() {
       }
       for (std::uint64_t i = 0; i < kN; ++i) q.cancel(&e[i]);
       nb::doNotOptimizeAway(q.size());
+    });
+    // SOTA same-algorithm baseline (O(1) keyed erase via stored iterator).
+    b.run("std::list sorted queue (libevent common_timeout algo)", [&] {
+      ListTimeoutQueue q;
+      for (std::uint64_t i = 0; i < kN; ++i) q.schedule(i, (i + 1) * kMs);
+      for (std::uint64_t i = 0; i < kN; ++i) q.cancel(i);
+      nb::doNotOptimizeAway(q.lst.size());
     });
   }
 
