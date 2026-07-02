@@ -110,19 +110,221 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
 
 #elif defined(HYLE_OS_LINUX)
 
-// io_uring backend lands next (io-02): borrow liburing's 3 syscalls + mmap'd
-// ring layout, write get_sqe/submit/reap inline with the exact barriers
-// (load_acquire ktail / store_release khead). Until then, Linux has no proactor
-// backend -- init() reports failure rather than pretending.
-namespace hyle::io {
+// io_uring backend (io-02). io-design says borrow ONLY the syscall shim, not
+// liburing's helpers -- and the mechanism heartbeat proved we need even less:
+// the 3 io_uring syscalls + the uapi header + our own inline ring arithmetic.
+// The fast-path barriers are replicated exactly from liburing v2.15 (verified):
+//   submit publish  -> store_release on SQ ktail  (pairs with kernel acquire)
+//   reap read       -> load_acquire  on CQ ktail  (pairs with kernel release)
+//   reap advance    -> store_release on CQ khead  (kernel won't overwrite unread)
+// Only io_uring_enter is a syscall on the hot path; submit/reap ring writes are
+// pure userspace. No SQPOLL here (io-01/02 baseline); that is a setup-flag
+// upgrade the interface already accommodates (submit stays syscall-optional).
+#  include <linux/io_uring.h>
+#  include <sys/mman.h>
+#  include <sys/syscall.h>
+#  include <unistd.h>
 
-struct Proactor::Impl {};
-Proactor::~Proactor() { delete impl_; }
-bool Proactor::init(unsigned) noexcept { return false; }  // io-02 pending
-std::size_t Proactor::reap(Completion*, std::size_t, std::uint64_t) noexcept {
-  return 0;
+#  include <atomic>
+#  include <cerrno>
+#  include <cstring>
+
+namespace hyle::io {
+namespace {
+
+int sys_io_uring_setup(unsigned entries, io_uring_params* p) noexcept {
+  return static_cast<int>(::syscall(__NR_io_uring_setup, entries, p));
 }
-bool Proactor::post(std::uint64_t, std::int64_t) noexcept { return false; }
+// enter with the EXT_ARG timeout path (modern kernels): a timespec passed via
+// io_uring_getevents_arg on the SAME syscall -- no extra timeout SQE.
+int sys_io_uring_enter(int fd, unsigned to_submit, unsigned min_complete,
+                       unsigned flags, void* arg, std::size_t argsz) noexcept {
+  return static_cast<int>(::syscall(__NR_io_uring_enter, fd, to_submit,
+                                    min_complete, flags, arg, argsz));
+}
+
+// atomic view over a kernel-shared u32 ring counter (barriers per liburing).
+inline std::atomic<unsigned>* as_atomic(void* p) noexcept {
+  return reinterpret_cast<std::atomic<unsigned>*>(p);
+}
+
+}  // namespace
+
+struct Proactor::Impl {
+  int fd = -1;
+  void* sq_ptr = nullptr;
+  std::size_t sq_sz = 0;
+  void* cq_ptr = nullptr;        // == sq_ptr when SINGLE_MMAP
+  std::size_t cq_sz = 0;
+  io_uring_sqe* sqes = nullptr;
+  std::size_t sqes_sz = 0;
+  unsigned sq_entries = 0;
+  bool single_mmap = false;
+  // cached ring field pointers
+  unsigned* sq_tail = nullptr;
+  unsigned* sq_ring_mask = nullptr;
+  unsigned* sq_array = nullptr;
+  unsigned* cq_head = nullptr;
+  unsigned* cq_tail = nullptr;
+  unsigned* cq_ring_mask = nullptr;
+  io_uring_cqe* cqes = nullptr;
+};
+
+Proactor::~Proactor() {
+  if (impl_ == nullptr) return;
+  if (impl_->sqes != nullptr) ::munmap(impl_->sqes, impl_->sqes_sz);
+  if (impl_->cq_ptr != nullptr && !impl_->single_mmap)
+    ::munmap(impl_->cq_ptr, impl_->cq_sz);
+  if (impl_->sq_ptr != nullptr) ::munmap(impl_->sq_ptr, impl_->sq_sz);
+  if (impl_->fd >= 0) ::close(impl_->fd);
+  delete impl_;
+  impl_ = nullptr;
+}
+
+bool Proactor::init(unsigned entries) noexcept {
+  if (impl_ != nullptr) return true;  // idempotent
+  io_uring_params p;
+  std::memset(&p, 0, sizeof(p));
+  int fd = sys_io_uring_setup(entries, &p);
+  if (fd < 0) return false;
+
+  auto* impl = new (std::nothrow) Impl{};
+  if (impl == nullptr) {
+    ::close(fd);
+    return false;
+  }
+  impl->fd = fd;
+  impl->sq_entries = p.sq_entries;
+  impl->single_mmap = (p.features & IORING_FEAT_SINGLE_MMAP) != 0;
+
+  std::size_t sqring = p.sq_off.array + p.sq_entries * sizeof(unsigned);
+  std::size_t cqring = p.cq_off.cqes + p.cq_entries * sizeof(io_uring_cqe);
+  if (impl->single_mmap) {
+    if (cqring > sqring) sqring = cqring;
+    cqring = sqring;
+  }
+  impl->sq_sz = sqring;
+  impl->cq_sz = cqring;
+
+  void* sq = ::mmap(nullptr, sqring, PROT_READ | PROT_WRITE,
+                    MAP_SHARED | MAP_POPULATE, fd, IORING_OFF_SQ_RING);
+  if (sq == MAP_FAILED) {
+    ::close(fd);
+    delete impl;
+    return false;
+  }
+  impl->sq_ptr = sq;
+  void* cq = impl->single_mmap
+                 ? sq
+                 : ::mmap(nullptr, cqring, PROT_READ | PROT_WRITE,
+                          MAP_SHARED | MAP_POPULATE, fd, IORING_OFF_CQ_RING);
+  if (cq == MAP_FAILED) {
+    ::munmap(sq, sqring);
+    ::close(fd);
+    delete impl;
+    return false;
+  }
+  impl->cq_ptr = cq;
+
+  impl->sqes_sz = p.sq_entries * sizeof(io_uring_sqe);
+  void* sqes = ::mmap(nullptr, impl->sqes_sz, PROT_READ | PROT_WRITE,
+                      MAP_SHARED | MAP_POPULATE, fd, IORING_OFF_SQES);
+  if (sqes == MAP_FAILED) {
+    if (!impl->single_mmap) ::munmap(cq, cqring);
+    ::munmap(sq, sqring);
+    ::close(fd);
+    delete impl;
+    return false;
+  }
+  impl->sqes = static_cast<io_uring_sqe*>(sqes);
+
+  auto* B = static_cast<char*>(sq);
+  auto* C = static_cast<char*>(cq);
+  impl->sq_tail = reinterpret_cast<unsigned*>(B + p.sq_off.tail);
+  impl->sq_ring_mask = reinterpret_cast<unsigned*>(B + p.sq_off.ring_mask);
+  impl->sq_array = reinterpret_cast<unsigned*>(B + p.sq_off.array);
+  impl->cq_head = reinterpret_cast<unsigned*>(C + p.cq_off.head);
+  impl->cq_tail = reinterpret_cast<unsigned*>(C + p.cq_off.tail);
+  impl->cq_ring_mask = reinterpret_cast<unsigned*>(C + p.cq_off.ring_mask);
+  impl->cqes = reinterpret_cast<io_uring_cqe*>(C + p.cq_off.cqes);
+
+  impl_ = impl;
+  return true;
+}
+
+std::size_t Proactor::reap(Completion* out, std::size_t max,
+                           std::uint64_t timeout_ns) noexcept {
+  if (impl_ == nullptr || max == 0) return 0;
+
+  // If the CQ is already non-empty, skip the syscall entirely (pure userspace
+  // reap -- the io_uring fast path). Otherwise enter to wait for >=1 completion,
+  // passing the timeout via EXT_ARG so no separate timeout SQE is consumed.
+  unsigned tail = as_atomic(impl_->cq_tail)->load(std::memory_order_acquire);
+  unsigned head = *impl_->cq_head;
+  if (head == tail) {
+    if (timeout_ns == 0) return 0;  // non-blocking poll, nothing ready
+    struct __kernel_timespec ts;
+    struct io_uring_getevents_arg arg;
+    std::memset(&arg, 0, sizeof(arg));
+    unsigned flags = IORING_ENTER_GETEVENTS;
+    if (timeout_ns != UINT64_MAX) {
+      ts.tv_sec = static_cast<long long>(timeout_ns / 1'000'000'000ull);
+      ts.tv_nsec = static_cast<long long>(timeout_ns % 1'000'000'000ull);
+      arg.ts = reinterpret_cast<std::uint64_t>(&ts);
+      flags |= IORING_ENTER_EXT_ARG;
+    }
+    int r = sys_io_uring_enter(impl_->fd, 0, 1, flags,
+                               (flags & IORING_ENTER_EXT_ARG) ? &arg : nullptr,
+                               (flags & IORING_ENTER_EXT_ARG) ? sizeof(arg) : 0);
+    if (r < 0 && errno != ETIME && errno != EINTR) return 0;
+    tail = as_atomic(impl_->cq_tail)->load(std::memory_order_acquire);
+    head = *impl_->cq_head;
+  }
+
+  std::size_t n = 0;
+  const unsigned mask = *impl_->cq_ring_mask;
+  while (head != tail && n < max) {
+    const io_uring_cqe& c = impl_->cqes[head & mask];
+    out[n].user_data = c.user_data;
+    out[n].result = static_cast<std::int64_t>(c.res);  // <0 = -errno (io-02 ops)
+    // Map io_uring CQE flags onto our neutral flags.
+    out[n].flags = 0;
+    if (c.flags & IORING_CQE_F_MORE) out[n].flags |= Completion::kMore;
+    if (c.flags & IORING_CQE_F_BUFFER) {
+      out[n].flags |= Completion::kBuffer;
+      out[n].buffer_id = c.flags >> IORING_CQE_BUFFER_SHIFT;
+    } else {
+      out[n].buffer_id = 0;
+    }
+    ++head;
+    ++n;
+  }
+  // Publish the consumed head once for the whole batch (store_release pairs with
+  // the kernel; one release-store amortized over n completions).
+  as_atomic(impl_->cq_head)->store(head, std::memory_order_release);
+  return n;
+}
+
+bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
+  if (impl_ == nullptr) return false;
+  // Inject a completion via a NOP SQE carrying user_data (io-01's backend-
+  // independent "wake/inject" hook; a real op replaces NOP at io-04). NOP's res
+  // is always 0, so `result` is not delivered on Linux -- callers that need a
+  // synthetic result use it only as a wake token here. (IOCP can carry bytes;
+  // this asymmetry is documented -- post() is a wake hook, not a data channel.)
+  (void)result;
+  unsigned tail = *impl_->sq_tail;
+  unsigned index = tail & *impl_->sq_ring_mask;
+  io_uring_sqe& s = impl_->sqes[index];
+  std::memset(&s, 0, sizeof(s));
+  s.opcode = IORING_OP_NOP;
+  s.user_data = user_data;
+  impl_->sq_array[index] = index;
+  // publish SQ tail (store_release pairs with kernel load_acquire)
+  as_atomic(impl_->sq_tail)->store(tail + 1, std::memory_order_release);
+  int r = sys_io_uring_enter(impl_->fd, 1, 0, 0, nullptr, 0);
+  return r >= 0;
+}
 
 }  // namespace hyle::io
 
