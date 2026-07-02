@@ -44,6 +44,17 @@ io-01/02/03 阶段**故意不出性能数**(见总账 io 行的"缺口登记")�
 
 补齐这些后单 worker 有望追平/接近裸 epoll;但**shard-per-core 的扩展性(核心卖点)已实证**,是 io serving 北极星负载的正解。
 
+## 试过并回退的优化(2026-07-02,诚实登记失败)
+
+两个针对"单 worker 输裸 epoll"的优化被实现、实测、**回退**——它们在本 ping-pong echo 负载上是**净退步**,不该上架一个实测更慢的东西:
+
+1. **submit 批量**(填 SQE 不 enter,攒到 reap 一次 flush):本负载是**严格 ping-pong**,每连接同时只有一个 op 在飞,**没有可批量的并发**;把 flush 推迟到阻塞 reap 反而**每 op 多加一个调度往返延迟**,1 worker 从 440K 掉到 124K。
+2. **park 合并**(worker 空闲阻塞在 reap 等 completion + eventfd 跨线程唤醒,替代 parker.park_timeout(1ms)):即便 submit 立即 flush,1 worker(334K)仍慢于旧的 parker+1ms(440K);仅 4 worker 反超裸 epoll。本延迟受限负载净退步。
+
+**根因**:这两个都是**吞吐导向**优化,需要**流水线/多 op 在飞**的负载才能兑现价值;当前 ping-pong echo bench 每连接单 op 在飞,批量无从批起、park 合并的延迟收益被阻塞 reap 的开销吃掉。**教训**:优化必须过它自己的 benchmark;"机制上更优"不等于"这个负载上更快"。真要提速单 worker,方向是:①**流水线 echo bench**(每连接多个 outstanding op)才能让批量发挥;或 ②**SQPOLL**(内核侧 submit,零 per-op enter)——它对延迟受限负载也有效。均未做,登记。
+
+代码已回退到 a922baa 基线(submit_one 每 op 一 enter + parker 1ms park),即本页上表的数。
+
 ## 机制层为何"方向对"(补充)
 
 除吞吐数外,proactor 机制本身借的就是各平台 SOTA、封装零额外结构开销:
@@ -56,5 +67,5 @@ io-01/02/03 阶段**故意不出性能数**(见总账 io 行的"缺口登记")�
 
 - **裸 liburing 对标**:证 HYLE 相对 liburing echo 的 0 封装开销。WSL 缺 `liburing-dev`;HYLE 本用裸 syscall,可后续在 bench 内手写等价 liburing echo 或装库补。
 - **vs asio / libuv**:证不输成熟异步框架。
-- **submit 批量 / SQPOLL 优化后复测**:预期抬升单 worker 绝对吞吐。
+- **流水线 echo bench + SQPOLL**:让 submit 批量真正发挥(见上"试过并回退");当前 ping-pong bench 无法暴露其价值。
 - Windows IOCP 的 n=15 统计版(首轮为 3→20 epoch 指示值)。
