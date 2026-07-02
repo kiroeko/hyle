@@ -86,18 +86,42 @@ struct Proactor::Impl {
 
 Proactor::~Proactor() {
   if (impl_ == nullptr) return;
-  // Best-effort: cancel + free any op still in flight (the per-worker drain model
-  // means the loop reaps to empty before teardown, so this list is normally empty;
-  // this guards against leaks otherwise). The port is closed right after, so no
-  // stray completion is ever reaped.
+  // Cancel every in-flight op, then DRAIN the port before freeing the IoOps.
+  // The per-worker drain model means the loop normally reaps to empty before
+  // teardown, so `inflight` is usually empty and none of this runs; this handles
+  // the case where it isn't. CancelIoEx is asynchronous and a port-associated
+  // OVERLAPPED always completes via the PORT (not the OVERLAPPED's hEvent, which
+  // we never set) -- so the cancelled op's completion is posted to the port, and
+  // we must collect it there before freeing the IoOp, or we'd free an OVERLAPPED
+  // the kernel is still writing (a shutdown UAF).
+  for (Impl::IoOp* op = impl_->inflight; op != nullptr; op = op->next) {
+    if (op->handle != nullptr) ::CancelIoEx(op->handle, &op->ov);
+  }
+  OVERLAPPED_ENTRY ents[64];
+  while (impl_->inflight != nullptr) {
+    ULONG removed = 0;
+    BOOL ok = ::GetQueuedCompletionStatusEx(impl_->port, ents, 64, &removed,
+                                            1000, FALSE);
+    if (!ok || removed == 0) break;  // timed out -> stop (don't hang teardown)
+    for (ULONG i = 0; i < removed; ++i) {
+      if (ents[i].lpOverlapped == nullptr) continue;  // a stray post(), ignore
+      auto* op = reinterpret_cast<Impl::IoOp*>(ents[i].lpOverlapped);
+      impl_->unlink(op);
+      if (op->accept_sock != INVALID_SOCKET) ::closesocket(op->accept_sock);
+      delete op;
+    }
+  }
+  // Free the port FIRST to sever the kernel's path to any residual OVERLAPPED,
+  // then free any op that never came back (unreachable in practice: a cancelled
+  // op's completion is always posted -- this only guards a wedged kernel so
+  // teardown can't hang or leak).
+  if (impl_->port != nullptr) ::CloseHandle(impl_->port);
   for (Impl::IoOp* op = impl_->inflight; op != nullptr;) {
     Impl::IoOp* nx = op->next;
-    if (op->handle != nullptr) ::CancelIoEx(op->handle, &op->ov);
     if (op->accept_sock != INVALID_SOCKET) ::closesocket(op->accept_sock);
     delete op;
     op = nx;
   }
-  if (impl_->port != nullptr) ::CloseHandle(impl_->port);
   if (impl_->wsa_started) ::WSACleanup();
   delete impl_;
   impl_ = nullptr;

@@ -482,4 +482,34 @@ TEST(Proactor, TcpAcceptConnectRoundTripIocp) {
   ::closesocket(cl);
   ::closesocket(ls);
 }
+
+// Destroying the proactor with an op STILL in flight must not leak or UAF: the
+// dtor cancels the pending op and waits for the cancellation to land before
+// freeing its OVERLAPPED. Here a pending accept never gets a connection, so it
+// is live at teardown -- the dtor's CancelIoEx + GetOverlappedResult(wait) path
+// is what keeps this from freeing an OVERLAPPED the kernel still owns.
+TEST(Proactor, DestructWithInflightAcceptCancelsCleanly) {
+  // The listener is created inside the proactor's lifetime so WSAStartup (done by
+  // init) is active -- WSASocketW fails otherwise. It outlives p so the dtor runs
+  // with the accept still pending.
+  SOCKET ls = INVALID_SOCKET;
+  {
+    Proactor p;
+    ASSERT_TRUE(p.init());
+    ls = ::WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
+    ASSERT_NE(ls, INVALID_SOCKET);
+    sockaddr_in sa{};
+    sa.sin_family = AF_INET;
+    sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+    sa.sin_port = 0;
+    ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
+    ASSERT_EQ(::listen(ls, 8), 0);
+    ASSERT_TRUE(p.register_handle(static_cast<std::intptr_t>(ls)));
+    ASSERT_TRUE(p.submit_accept(static_cast<std::intptr_t>(ls), nullptr, nullptr,
+                                0xACCE));
+    // No client connects -> the accept stays in flight; p goes out of scope here
+    // with a live op. A clean run (no crash / no ASan complaint) is the pass.
+  }
+  if (ls != INVALID_SOCKET) ::closesocket(ls);
+}
 #endif  // _WIN32
