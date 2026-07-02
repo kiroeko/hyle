@@ -21,6 +21,25 @@ io-01/02/03 阶段**故意不出性能数**(见总账 io 行的"缺口登记")�
 
 **关键转折(2026-07-03,submit 批量落地后)**:单 worker 从**曾经的 440K(输裸 epoll 0.61x)提到 728K(追平/微赢)**——1.65x 提升。机制铁证:`HYLE_IO_BENCH_STATS` 打出 **`avg_batch=13~61`**(每次 `io_uring_enter` 提交 13-61 个 SQE),对比批量前恒为 1.0。这直接砍掉了曾经主导的"每 op 一次 syscall"开销。**shard-per-core 扩展仍在**(1w→4w ~2x)。
 
+## pipelined / 高扇出(512 流)+ 一个被它揪出的 P0 hang
+
+ping-pong(每流稳态 ≤1 op 在途)填不满 SQ,也测不到"海量 op 同时在途"的收割路径。故加一个 pipelined 负载:**512 条独立 echo 流共享 worker,每流 16 round-trip**——512 » ring 深度 256,一次 reap 唤醒的一批 fiber 各自 submit,几百个 op 同时在途。
+
+**Linux io_uring(单跑中位,修复后)**:
+
+| 配置 | echo/s | 相对 1w | 判定 |
+|---|---|---|---|
+| HYLE pipelined 1 worker | 328K | 1.0x | 基线 |
+| HYLE pipelined 2 workers | 1.02M | 3.1x | ✅超线性(摊 syscall)|
+| HYLE pipelined 4 workers | 1.63M | 5.0x | ✅ |
+| HYLE pipelined 8 workers | 1.71M | 5.2x | ✅(err% 高,需增迭代)|
+
+**这个负载一上来就 100% 挂死(P0)——根因是收割节奏的结构错**:批量落地时把 reap 挪到"run-queue 抽干"处,worker 空闲则走 futex parker(1ms 上限重 poll)。但那个"重 poll"是 `reap(timeout=0)`,**空 CQ 时只做 submit-only enter(不带 `IORING_ENTER_GETEVENTS`)**。io_uring 的完成 task-work **只在本线程带 GETEVENTS 进内核那一下才跑**——所以一旦 run-queue 抽干、几百 op 在途,那些 completion 永不 surface,worker 空转 `reap(0)==0`、`drain()` 死等 `outstanding!=0`。ping-pong 侥幸不挂:socketpair 的 send 在 submit enter 内联完成,CQ 稳态非空,纯用户态收割即可,从不需要 GETEVENTS。
+
+**修法(正确性,非延迟优化)**:worker 的 park 边界改为——io hook 注册且**有在途 op**时,把阻塞交给 proactor 一次 **GETEVENTS `io_uring_enter`**(上限 `kIoPollNs` 1ms),而非 futex park。hook 返回"是否有在途 op":有→在环里收割完循环重查队列;无→照常 futex park(可被跨线程 `unpark()` 立即打断,而阻塞 reap 不能——所以"无 io 在途"时仍是即时唤醒)。`Proactor::in_flight()` 三后端各自实现(io_uring 计 submit-not-completed、IOCP 查在途 OVERLAPPED 链、epoll 查 pending/posted)。**诚实纠错**:此前一版按"CQ overflow"方向加了 `IORING_SQ_CQ_OVERFLOW` 恢复循环——实测 `overflow=0`,方向错了,真修到位后已撤(真病根是压根没做 GETEVENTS enter,不是 CQ 溢出)。
+
+**方法学教训(再记一条)**:"能跑的负载"(ping-pong)绿 ≠ 机制对。是"做一个符合该机制的 benchmark"(pipelined 高扇出)才把这个结构性 hang 逼出来——**优化/机制落地后必须配一个真能压到它的负载去测**,否则潜藏的 P0 要到生产才炸。
+
 ## 曾经的"单 worker 输" + 怎么修好的(完整过程,诚实)
 
 **初版(每 op 一次 `io_uring_enter`)单 worker 输裸 epoll 0.61x**。根因诊断:HYLE 每 round-trip 4 op,每 op = submit(一次 syscall)+ fiber 挂起 + reap + Waker 唤醒 + 协程续跑;裸 epoll 是紧凑 `epoll_wait→read→write` 零上下文切换 + 批量就绪。量级核对(fiber 切换 ~21ns×8≈170ns « 900ns 差)证明**主导项是 4 次 submit syscall**,非 fiber 切换。
@@ -49,5 +68,5 @@ io-01/02/03 阶段**故意不出性能数**(见总账 io 行的"缺口登记")�
 - **裸 liburing 对标**:证 HYLE 相对 liburing echo 的 0 封装开销。WSL 缺 `liburing-dev`;HYLE 本用裸 syscall,可后续在 bench 内手写等价 liburing echo 或装库补。
 - **vs asio / libuv**:证不输成熟异步框架。
 - **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
-- **park 合并**:worker 空闲仍走 parker 1ms park(非阻塞 reap);消这 1ms 延迟需 park 合并(碰防惊群,之前一版含 eventfd 唤醒方案,已随批量回退时一起撤,可复用思路重做)。
+- **park 合并的延迟优化**(正确性部分已做):worker 空闲现已**阻塞在 GETEVENTS reap**里(见上"pipelined + P0 hang"),这是正确性要求、已落地。剩下的纯**延迟**优化=让跨线程唤醒不必等 1ms 上限——在环里注册一个 eventfd,foreign 唤醒时写它即时打断阻塞 reap(替代当前 `kIoPollNs` 1ms 轮询上限)。这才碰防惊群路径,是可选性能项,不影响正确性。
 - Windows IOCP 的批量对应物(IOCP 无 submit 攒批概念,ReadFile/WriteFile 即时下发)+ n=15 统计版。
