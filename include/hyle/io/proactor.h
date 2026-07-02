@@ -81,6 +81,33 @@ class Proactor {
   // false if the OS refused (out of fds, unsupported kernel). Call once before use.
   HYLE_IO_API bool init(unsigned entries = 256) noexcept;
 
+  // ---- submit real IO ops (io-02) -------------------------------------------
+  // Queue a read/write of `len` bytes on `fd` at file `offset` (offset ignored
+  // for streams; use 0 or the pipe/socket convention). `buf` is caller-owned and
+  // MUST stay valid until the matching completion arrives -- the kernel writes
+  // into it directly (io_uring true zero-copy; IOCP OVERLAPPED read). `user_data`
+  // is the token returned verbatim on completion (a Waker). Returns false only if
+  // the op could not be queued (ring full / bad handle); a false here is a submit
+  // failure, whereas an IO error (EPIPE, short read) comes back as a NEGATIVE
+  // Completion.result at reap time -- the io_uring CQE res convention, IOCP maps
+  // GetLastError onto it. On Linux this fills an IORING_OP_READ/WRITE SQE; on
+  // Windows a ReadFile/WriteFile with an OVERLAPPED bound to the port.
+  //
+  // fd is intptr_t so the same signature carries a POSIX int fd AND a Windows
+  // HANDLE (which is a pointer-width handle) without a per-OS type in the header.
+  HYLE_IO_API bool submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
+                               std::uint64_t offset,
+                               std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_write(std::intptr_t fd, const void* buf,
+                                std::uint32_t len, std::uint64_t offset,
+                                std::uint64_t user_data) noexcept;
+
+  // Windows only: an OVERLAPPED handle must be associated with the port ONCE
+  // before submit_read/write on it (io_uring needs no such step). No-op / returns
+  // true on Linux. Kept in the neutral interface so net/ (io-04) can register a
+  // socket the same way on both platforms.
+  HYLE_IO_API bool register_handle(std::intptr_t fd) noexcept;
+
   // Reap up to `max` finished operations into `out` (caller-provided array),
   // returning how many were written. `timeout_ns` bounds the wait: 0 = poll and
   // return immediately (the worker's non-blocking loop step), UINT64_MAX = block

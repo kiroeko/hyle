@@ -5,6 +5,12 @@
 #include <thread>
 #include <vector>
 
+#if defined(__linux__)
+#  include <unistd.h>
+
+#  include <cstdio>
+#endif
+
 #include "hyle/io/proactor.h"
 
 using hyle::io::Completion;
@@ -99,3 +105,57 @@ TEST(Proactor, BatchReapManyCompletions) {
   EXPECT_EQ(total, kN);
   EXPECT_EQ(token_sum, static_cast<std::uint64_t>(kN) * (kN + 1) / 2);  // 1..100
 }
+
+// ---- io-02 real IO ops (io_uring on Linux) ----------------------------------
+// A TRUE read/write closed loop (not NOP): write bytes to a temp file via
+// submit_write, reap the completion (result == bytes written), then submit_read
+// them back and verify the data + result. This proves the SQE fd/addr/len/off
+// path and the CQE res mapping -- the actual point of io-02. IOCP real ops are
+// still pending (submit_* returns false there), so this test is Linux-only.
+#if defined(__linux__)
+TEST(Proactor, RealReadWriteRoundTrip) {
+  Proactor p;
+  if (!p.init()) GTEST_SKIP() << "no io_uring backend";
+
+  // A temp file fd to do real IO against.
+  char path[] = "/tmp/hyle_io_XXXXXX";
+  int fd = ::mkstemp(path);
+  ASSERT_GE(fd, 0);
+  ::unlink(path);  // unlink now; fd stays valid until closed
+
+  const char msg[] = "hyle-io-uring-real-op";
+  const std::uint32_t len = sizeof(msg);  // includes NUL
+
+  // Write at offset 0.
+  ASSERT_TRUE(p.submit_write(fd, msg, len, 0, /*user_data=*/0x111));
+  Completion c{};
+  ASSERT_EQ(p.reap(&c, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(c.user_data, 0x111u);
+  EXPECT_EQ(c.result, static_cast<std::int64_t>(len));  // bytes written
+
+  // Read it back at offset 0.
+  char buf[64] = {};
+  ASSERT_TRUE(p.submit_read(fd, buf, len, 0, /*user_data=*/0x222));
+  Completion c2{};
+  ASSERT_EQ(p.reap(&c2, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(c2.user_data, 0x222u);
+  EXPECT_EQ(c2.result, static_cast<std::int64_t>(len));  // bytes read
+  EXPECT_STREQ(buf, msg);  // the actual bytes round-tripped through the kernel
+
+  ::close(fd);
+}
+
+// An IO error surfaces as a NEGATIVE result (io_uring CQE res = -errno), not a
+// submit failure: read from an invalid fd -> the submit succeeds, the completion
+// carries -EBADF.
+TEST(Proactor, RealReadBadFdReturnsNegativeResult) {
+  Proactor p;
+  if (!p.init()) GTEST_SKIP() << "no io_uring backend";
+  char buf[8] = {};
+  ASSERT_TRUE(p.submit_read(/*fd=*/-1, buf, sizeof(buf), 0, 0x333));
+  Completion c{};
+  ASSERT_EQ(p.reap(&c, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(c.user_data, 0x333u);
+  EXPECT_LT(c.result, 0);  // negative errno (-EBADF)
+}
+#endif  // __linux__

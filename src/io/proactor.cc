@@ -106,6 +106,29 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
              static_cast<ULONG_PTR>(user_data), nullptr) != 0;
 }
 
+// IOCP real-IO ops (io-02) are NOT yet implemented: unlike io_uring (fd goes in
+// the SQE, token in user_data), IOCP needs a per-op OVERLAPPED whose lifetime
+// spans the in-flight op, and the per-op token must ride that OVERLAPPED (the
+// completion KEY is per-handle, not per-op). That request-lifetime contract is
+// designed with net/ (io-04) so it isn't guessed here. io_uring carries the real
+// read/write now (io-02 primary, WSL-tested); IOCP real ops follow. Report false
+// rather than pretend.
+bool Proactor::submit_read(std::intptr_t, void*, std::uint32_t, std::uint64_t,
+                           std::uint64_t) noexcept {
+  return false;  // io-02 IOCP real-op pending (io_uring path is done)
+}
+bool Proactor::submit_write(std::intptr_t, const void*, std::uint32_t,
+                            std::uint64_t, std::uint64_t) noexcept {
+  return false;  // io-02 IOCP real-op pending
+}
+bool Proactor::register_handle(std::intptr_t fd) noexcept {
+  if (impl_ == nullptr) return false;
+  // Associate the handle with the port so its ops complete here. Key unused for
+  // now (per-op token rides the OVERLAPPED once real ops land). Harmless to call.
+  return ::CreateIoCompletionPort(reinterpret_cast<HANDLE>(fd), impl_->port, 0,
+                                  0) != nullptr;
+}
+
 }  // namespace hyle::io
 
 #elif defined(HYLE_OS_LINUX)
@@ -305,25 +328,66 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   return n;
 }
 
+namespace {
+// Fill one SQE and submit it (one io_uring_enter). Pure ring mechanics -- takes
+// the mapped ring fields directly so it needn't name the private Impl type.
+// Shared by post/read/write. addr/len/off are 0 for NOP.
+bool submit_one(int ring_fd, unsigned* sq_tail, unsigned sq_mask,
+                unsigned* sq_array, io_uring_sqe* sqes, std::uint8_t opcode,
+                std::int32_t fd, std::uint64_t addr, std::uint32_t len,
+                std::uint64_t off, std::uint64_t user_data) noexcept {
+  unsigned tail = *sq_tail;
+  unsigned index = tail & sq_mask;
+  io_uring_sqe& s = sqes[index];
+  std::memset(&s, 0, sizeof(s));
+  s.opcode = opcode;
+  s.fd = fd;
+  s.off = off;
+  s.addr = addr;
+  s.len = len;
+  s.user_data = user_data;
+  sq_array[index] = index;
+  // publish SQ tail (store_release pairs with kernel load_acquire)
+  as_atomic(sq_tail)->store(tail + 1, std::memory_order_release);
+  int r = sys_io_uring_enter(ring_fd, 1, 0, 0, nullptr, 0);
+  return r >= 0;
+}
+}  // namespace
+
 bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   if (impl_ == nullptr) return false;
-  // Inject a completion via a NOP SQE carrying user_data (io-01's backend-
-  // independent "wake/inject" hook; a real op replaces NOP at io-04). NOP's res
-  // is always 0, so `result` is not delivered on Linux -- callers that need a
-  // synthetic result use it only as a wake token here. (IOCP can carry bytes;
-  // this asymmetry is documented -- post() is a wake hook, not a data channel.)
+  // NOP SQE carrying user_data: backend-independent "wake/inject" hook. NOP res
+  // is always 0, so `result` is not delivered on Linux -- post() is a wake hook,
+  // not a data channel (IOCP can carry bytes; asymmetry documented in header).
   (void)result;
-  unsigned tail = *impl_->sq_tail;
-  unsigned index = tail & *impl_->sq_ring_mask;
-  io_uring_sqe& s = impl_->sqes[index];
-  std::memset(&s, 0, sizeof(s));
-  s.opcode = IORING_OP_NOP;
-  s.user_data = user_data;
-  impl_->sq_array[index] = index;
-  // publish SQ tail (store_release pairs with kernel load_acquire)
-  as_atomic(impl_->sq_tail)->store(tail + 1, std::memory_order_release);
-  int r = sys_io_uring_enter(impl_->fd, 1, 0, 0, nullptr, 0);
-  return r >= 0;
+  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_NOP, -1, 0, 0, 0,
+                    user_data);
+}
+
+bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
+                           std::uint64_t offset,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_READ,
+                    static_cast<std::int32_t>(fd),
+                    reinterpret_cast<std::uint64_t>(buf), len, offset, user_data);
+}
+
+bool Proactor::submit_write(std::intptr_t fd, const void* buf,
+                            std::uint32_t len, std::uint64_t offset,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_WRITE,
+                    static_cast<std::int32_t>(fd),
+                    reinterpret_cast<std::uint64_t>(buf), len, offset, user_data);
+}
+
+bool Proactor::register_handle(std::intptr_t /*fd*/) noexcept {
+  // io_uring needs no per-fd association (the fd goes straight in each SQE).
+  return impl_ != nullptr;
 }
 
 }  // namespace hyle::io
