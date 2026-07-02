@@ -18,20 +18,20 @@
 
 ### 整体进度(诚实,2026-07-02 实测)—— 三个分母别混
 
-> **实测代码 9,932 行**(生产,cloc `include`+`src` 的 header+C++,不含 CMake/测试/文档/vendored;上次 2026-06-30 为 8,543,本会话 time-02 时间轮+CommonTimeoutQueue / sched-04b fiber sleep / sched-04c 定时 CV / io-01 proactor + io-02 io_uring+IOCP 增约 1.4k)。三个"进度"说法分母不同,**混用会得出误导数字**:
+> **实测代码 10,448 行**(生产,cloc `include`+`src` 的 header+C++,不含 CMake/测试/文档/vendored;上次 2026-06-30 为 8,543,本会话 time-02 时间轮+CommonTimeoutQueue / sched-04b fiber sleep / sched-04c 定时 CV / io-01 proactor + io-02/03/04 io_uring+IOCP+epoll 全后端真 IO op(read/write/socket)增约 1.9k)。三个"进度"说法分母不同,**混用会得出误导数字**:
 >
 > | 口径 | 分母 | 当前 | 说明 |
 > |---|---|---|---|
 > | **clay 吸纳权重** | 被重构的旧 clay 库 | ~33%(coverage-map) | 基础层已基本吸纳 + time 双定时器(net-new);**分母是旧库,不是新愿景** |
-> | **自有生产 LOC 比** | 投影完成时 ~22-30k 自有(2026-07-02 下修,见下节) | **~33-45%** | 9.93k/(22-30k);但 LOC≠完成度(广度缺口不体现在比值里) |
-> | **对完整愿景的功能完成度** | 完整 HYLE 自有(全广度 + io/compute/graph,**不含借入的 ggml**) | **≈38%**(band 33-45%) | 见下方"第二轮下修"算式;io 从 0 起步(proactor 收割接缝 + 双后端 done,net/ 待) |
+> | **自有生产 LOC 比** | 投影完成时 ~22-30k 自有(2026-07-02 下修,见下节) | **~33-45%** | 10.45k/(22-30k);但 LOC≠完成度(广度缺口不体现在比值里) |
+> | **对完整愿景的功能完成度** | 完整 HYLE 自有(全广度 + io/compute/graph,**不含借入的 ggml**) | **≈40%**(band 35-48%) | 见下方"第二轮下修"算式;io 从 0 起步(proactor 收割接缝 + 双后端 done,net/ 待) |
 >
-> **"≈38%" 怎么算出来的(两法交叉验证,非拍脑袋)**:
-> - **法一 · LOC 比**:9.93k(已写生产,cloc 实测)÷ 26k(完成投影中值,band 22-30k,见"第二轮下修")= **38%**(30k 下界 33%,22k 上界 45%)。
+> **"≈40%" 怎么算出来的(两法交叉验证,非拍脑袋)**:
+> - **法一 · LOC 比**:10.45k(已写生产,cloc 实测)÷ 26k(完成投影中值,band 22-30k,见"第二轮下修")= **40%**(30k 下界 35%,22k 上界 48%)。
 > - **法二 · 能力加权**(按投影 LOC 占比加权各支柱完成度):foundation 完成度高 + simd/math f32 核 + sched 全支线(核心+同步+定时)+ **io 收割接缝(net/ 未做)+ compute/graph=0** ≈ 与法一收敛到 **~35-40%**。
-> - **为何不是更低的"个位%"**:那个数把**借入的 ggml ~100k 当成 HYLE 要写的**塞进分母。但 ggml 是 compute 支柱**借核不造**(scope 明列),不计入 HYLE 自有完成度——剔除后回到 ≈38%。
+> - **为何不是更低的"个位%"**:那个数把**借入的 ggml ~100k 当成 HYLE 要写的**塞进分母。但 ggml 是 compute 支柱**借核不造**(scope 明列),不计入 HYLE 自有完成度——剔除后回到 ≈40%。
 >
-> **38% 但"最难的一半未动工"(关键定性)**:**compute / graph 两大支柱 = 0 行**;**io 支柱刚破土**(proactor 完成收割接缝 + IOCP/io_uring 双后端真测,但 net/socket/file 未做)。它们仍占**剩余自有工作量的大头**,还是"异构混合极致性能"的卖点本体。已写的 ≈38% 是**地基 + sched 全支线(核心+同步+定时)+ io 一条收割窄缝 + simd f32 核**,质量高、SOTA 对标、双平台+WSL TSan 验证(非 stub);但**广度薄**(simd 仅 f32 9 op,无 i8/i16 量化;AVX512/NEON 未硬件实跑)、**compute/graph 未开工、io 仅收割层**。故:**按代码量 ≈38%(分母下修后),但按"差异化能力"更保守——剩余工作含全部头牌支柱的主体。**
+> **40% 但"最难的一半未动工"(关键定性)**:**compute / graph 两大支柱 = 0 行**;**io 支柱**:proactor 收割接缝 + IOCP/io_uring/epoll 三后端 + read/write/socket 真 op 全通(无 stub,双平台真测),但 net 上层(TcpListener/Stream + co_await)、file、跨进程共享内存未做。它们仍占**剩余自有工作量的大头**,还是"异构混合极致性能"的卖点本体。已写的 ≈40% 是**地基 + sched 全支线(核心+同步+定时)+ io proactor 层(收割+双平台真 IO op)+ simd f32 核**,质量高、SOTA 对标、双平台+WSL TSan 验证(非 stub);但**广度薄**(simd 仅 f32 9 op,无 i8/i16 量化;AVX512/NEON 未硬件实跑)、**compute/graph 未开工、io 无 net 上层**。故:**按代码量 ≈40%(分母下修后),但按"差异化能力"更保守——剩余工作含全部头牌支柱的主体。**
 
 > **真实LOC = 该里程碑自写代码的 cloc 实测（生产+测试，不含文档、不含 vendored 第三方）。**每步闭环后回填。
 > **预测/真实差距是"防玩具"信号**：差距大必须在该里程碑文档解释清楚——是"骨架版刻意精瘦、重活在后续里程碑"（合理），还是"偷懒 stub/空实现"（不可接受）。
@@ -69,11 +69,11 @@
 >
 > **按锚外推剩余**(置信度递减):simd 广度(+2-3k,有 f32 核密度锚,中)/ sched 后段协程·取消·关闭(+1-1.5k,中)/ **io net·socket·file(+2-3.5k,低——net/ 未开工,参照 platform 1.3k)** / **compute 借 ggml 薄层(+3-5k,很低——0 行无锚)** / **graph(+2-3k,很低)** / close C-ABI·FFI·serialize(+2-3k,低)。
 >
-> **→ 新投影 ≈22-30k 生产,中值 26k**;完成度 **9.93k ÷ 26k ≈ 38%**(band 22k→45% / 30k→33%)。
+> **→ 新投影 ≈22-30k 生产,中值 26k**;完成度 **10.45k ÷ 26k ≈ 40%**(band 22k→48% / 30k→35%)。
 >
-> **三条诚实标注(别把 38% 当"快到一半")**:
+> **三条诚实标注(别把 40% 当"快到一半")**:
 > 1. **投影不确定性几乎全在三大支柱**(io net/ + compute + graph)——0 行或刚破土,外推置信度低;foundation+sched+simd 才是实测硬锚。若 compute/graph 比预想重(GPU 抽象、Vulkan kernel),分母会回涨。
-> 2. **LOC 38% ≠ 能力 38%**:compute/graph=0 行且是"异构混合极致性能"卖点本体;按差异化能力,主观更保守(头牌未动)。
+> 2. **LOC 40% ≠ 能力 40%**:compute/graph=0 行且是"异构混合极致性能"卖点本体;按差异化能力,主观更保守(头牌未动)。
 > 3. **这是第 3 轮修正**(76-120k → 30-45k → 22-30k),每轮下修都因"实测证明剩余也享 C++23 压缩"。**收敛趋势=早期系统性高估的证据**,但三大支柱未落地前不宜再激进下修——**22-30k 是当前最诚实区间,io net/compute/graph 一落地就复核**。
 
 ## 全部里程碑（阶段 × 模块）
@@ -143,9 +143,9 @@
 | sched-07 | P4 | sched | 取消：CancelToken 树 + await 取消点 + 结构化并发 | sched-04,sched-06 | 2-3k | — | 占位 |
 | sched-08 | P4 | sched | runtime 优雅关闭(两阶段 drain + 逆序清理) | sched-03 | 1-2k | — | 占位 |
 | io-01 | P5 | io | proactor 收割接缝(Waker 接 sched)+ IOCP/io_uring 双后端收割层 | sched-04 | 1-2k | 90 头+245 后端 (+130 测试) | ✅ 完成(`proactor.h` 完成式**收割**接缝:per-worker Proactor,reap 批量收割 completion 回 token 交 sched wake、post 注入唤醒;`Completion{user_data,result,flags,buffer_id}` 含 kMore(multishot)/kBuffer(零拷贝)=接口按 liburing v2.15 SOTA 机制先研究再定形不挡任何一个。**两后端的收割层都在此**:IOCP(GetQueuedCompletionStatusEx/Post)+ io_uring(裸 syscall setup/mmap ring/reap-CQ/post-NOP,barrier 精确复刻 liburing v2.15,零 liburing 链依赖)。机制先心跳验证。4 测试双平台绿+WSL TSan 净。**注意:这是收割接缝,不含真 IO op——submit read/write/accept 是 io-02**。**⚠️ 性能对标缺口(登记)**:io-01/02/03 目前只有功能正确性测试,无性能对标——孤立测单个 read/write 是测内核 io_uring/OS 非测 HYLE 薄封装,无意义;真正的对标(HYLE echo vs 裸 liburing echo 证 0 封装开销 / vs epoll 证降级代价 / vs asio·libuv 证不输框架)**必须等 io-04 net 有真实并发连接负载**才有意义,届时补。"方向对"当前靠:接口按 liburing v2.15 SOTA 机制先研究再定形(不挡 multishot/零拷贝/SQPOLL)+ 借的就是 io_uring/IOCP 各平台 proactor SOTA 本身,非自造) |
-| io-02 | P5 | io | io_uring 真 IO 操作(read/write)+ IOCP 真 op | io-01 | 2-3k | +80 | 🔶 **io_uring read/write ✅**(`submit_read/write` 填 IORING_OP_READ/WRITE SQE:fd/addr/len/off + user_data token,CQE res→Completion.result 负 errno;WSL 真测:临时文件 write→read 回读字节校验 + bad-fd→-EBADF;TSan 净)。**IOCP 真 op 未做**(submit_ 返 false):IOCP 需 per-op OVERLAPPED 生命周期 + token-on-OVERLAPPED 契约,与 net/(io-04)一起定形不臆造。recv/send/accept 也在 io-04 net。**read/write 已通,io-04 前置解锁一半** |
+| io-02 | P5 | io | io_uring 真 IO 操作(read/write)+ IOCP 真 op | io-01 | 2-3k | +80(io_uring)+~200(IOCP) | ✅ **两后端 read/write 真 op 全通**。**io_uring**:`submit_read/write` 填 IORING_OP_READ/WRITE SQE(fd/addr/len/off + user_data token,CQE res→Completion.result 负 errno);WSL 真测 write→read 回读字节校验 + bad-fd→-EBADF;TSan 净。**IOCP**:`ReadFile/WriteFile` + per-op `OVERLAPPED`——proactor 用侵入式在途链表**自持** OVERLAPPED 生命周期(OVERLAPPED 是 IoOp 首成员,reap 把 `lpOverlapped` 直接 cast 回 IoOp,`GetOverlappedResult` 取字节/errno;`post()` 保持 `lpOverlapped==nullptr` 让 reap 区分合成唤醒 vs 真 op)。dtor 遇在途 op 先 CancelIoEx 再排空端口回收再释放(防关机 UAF)。Windows 真测文件往返 + bad-handle 同步失败→submit false + 在途 op 析构干净。**先前"IOCP 需与 net/ 一起定形"是过度谨慎**——OVERLAPPED 纯 IOCP 内部细节 proactor 自持,net/ 不可见。Windows 8/8 + Linux 11/11 + TSan 净 |
 | io-03 | P5 | io | epoll 降级后端 + SOTA-first 后端选择(kqueue mac 待) | io-01 | 3-4k | +130 | ✅ **epoll 降级 ✅ + 后端选择 ✅**。`init()` **SOTA-first**:总先试 io_uring,仅在真不可用(老内核 ENOSYS / `kernel.io_uring_disabled` sysctl / 容器 seccomp→EPERM)才退 epoll——生产有 io_uring 就走 io_uring,epoll 保住"io_uring 被禁的硬化容器/k8s"仍能跑。epoll 是 **reactor**:只报就绪,proactor 记住每 op(fd→{op,buf,len,token},EPOLLONESHOT)、就绪时自己做 IO 合成 Completion(reactor→completion 模拟)。post 走软件唤醒队列。WSL 强制 epoll 真测 pipe write/read 往返 + post 唤醒;双平台 8/8 + TSan 净。kqueue(mac)无机待做 |
-| io-04 | P5 | io | net(tcp/udp socket, co_await 风格) | io-02 | 2-3k | — | 占位(依赖 io-02 真 IO op) |
+| io-04 | P5 | io | net(tcp/udp socket, co_await 风格) | io-02 | 2-3k | proactor socket op done | 🔶 **proactor socket 层全通(两后端真 op,无 stub)**:`submit_recv/send/accept/connect`。**io_uring**:IORING_OP_RECV/SEND/ACCEPT/CONNECT。**IOCP**:WSARecv/WSASend + AcceptEx/ConnectEx(扩展 fn 经 WSAIoctl 懒加载;SO_UPDATE_ACCEPT/CONNECT_CONTEXT 收尾;accept 结果=新 fd)。**epoll 降级**:accept arm EPOLLIN→::accept;connect 非阻塞发起→arm EPOLLOUT→读 SO_ERROR。双平台 loopback accept/connect/send/recv 真测(Linux io_uring+forced-epoll 两路 + Windows IOCP)+ TSan 净。**待:TcpListener/TcpStream + co_await echo 上层(io↔sched 集成)** |
 | io-05 | P5 | io | file + 跨进程共享内存 | io-02 | 2-3k | — | 占位 |
 | compute-01 | P5 | compute | device/stream 薄包 ggml-backend | sched-04 | 2-3k | — | 占位 |
 | compute-02 | P5 | compute | device buffer(ggml buffer_type 式,compute 自有所有权+stream) + 显式 copy(src,dst,stream) | compute-01 | 2-3k | — | 占位(device 内存归 compute/,走显式 copy;统一内存无互传,mem/ 不参与) |
