@@ -120,6 +120,7 @@
 | **sched** Channel 收发(cap16,1p1c) | 63/item | (无 std 等价) | n/a | n/a | marl(无 channel) | n/a | n/a | ➖HYLE 自有 |
 | **sched** RunQueue fifo/lifo push+next | 8.3/2.6 | (内部结构) | n/a | n/a | (无外部对手) | n/a | n/a | ➖HYLE 自有(完成唤醒热路径) |
 | **time** timer churn(arm+70%cancel+expire) | 12.6/11.8 | (std 无定时器结构) | n/a | n/a | min-heap(Go/libev,惰性 cancel) | 26.3/38.7 | 2.09x/3.27x | ✅**双平台赢**(真实 agent 画像;堆墓碑穿 expire,轮 O(1) 摘链已清) |
+| **sched** fiber sleep(sched-04b) | — | (std 无 M:N fiber sleep) | n/a | n/a | tokio time driver(概念对照) | n/a | n/a | ➖SOTA 成本模型:无 sleeper 时 wheel.empty() 单比较=零税;arm O(1) 无分配;park_timeout 不空转(非逐 ms tick) |
 | **time** timer arm+cancel / arm+expire | 7.4·23/5.6·17 | (std 无) | n/a | n/a | min-heap | 7.4·25.5/2.9·38.7 | 平·平/输0.53·赢2.25 | ➖平台分歧(arm+cancel Lin 输=微基准切片假象,见 sched 详节;churn 才是负载真相) |
 | **platform** Parker park_timeout | ~底座 | (无语义对等 std) | n/a | n/a | (Rust std park_timeout 概念对照) | n/a | n/a | ➖时间轮执行底座(futex 相对 timeout;TSan 5×净) |
 

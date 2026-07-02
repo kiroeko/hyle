@@ -76,9 +76,9 @@
 
 sched 的 deadline/超时只需要三样，先钉这个最小面，full timer 留后：
 
-- **单调钟** `mono_now() -> u64`（纳秒，`CLOCK_MONOTONIC`/`QueryPerformanceCounter`，不受墙钟跳变影响——deadline 绝不能用墙钟）。
-- **timer wheel**：分层时间轮（hierarchical timing wheel），`add(deadline, fiber)` O(1) 摊还、`tick()` 批量到期。比 `priority_queue`（clay thread_pool 用的，O(log n)）更适合海量短超时（io timeout/fiber sleep）。
-- **到期动作**：超时不直接执行回调，而是**把对应 fiber 标记就绪、塞回 run-queue**——与 completion 脊同一条唤醒路径（见 ③）。
+- **单调钟** `mono_now() -> u64`（纳秒，`CLOCK_MONOTONIC`/`QueryPerformanceCounter`，不受墙钟跳变影响——deadline 绝不能用墙钟）。**已落地**=`time::monotonic_ns()`（time-01）。
+- **timer wheel**：分层时间轮（hierarchical timing wheel），`add(deadline, fiber)` O(1) 摊还、`tick()` 批量到期。比 `priority_queue`（clay thread_pool 用的，O(log n)）更适合海量短超时（io timeout/fiber sleep）。**已落地**=`time::TimerWheel`（time-02，6 层×64 槽 tokio 移植；churn 负载对 min-heap 双平台赢 2-3x）。
+- **到期动作**：超时不直接执行回调，而是**把对应 fiber 标记就绪、塞回 run-queue**——与 completion 脊同一条唤醒路径（见 ③）。**已落地**=sched-04b：每 worker 持一个 `TimerWheel`，`sched::sleep_for_ns` arm 到本 worker 轮 + suspend；worker 循环顶 `fire_due_timers`（`wheel.empty()` 门=无 timer 零税）+ 用 `next_deadline_ns` 喂 `Parker::park_timeout` 不空转；到期经 sched-04a Waker rendezvous `reinject`——与 io 完成同一 `wake_rendezvous`。`wait_for`/`wait_until` 需跨 worker cancel→sched-04c。
 
 > 为什么单列 time/ 而非塞进 sched：timer wheel 有独立设计分量，且 io/ 的 timeout 也直接用它。但它是 sched 的仆从（T2），不反向依赖 sched。
 

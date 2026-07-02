@@ -38,9 +38,14 @@
 // threads that are NOT fibers; assuming "all waiters are fibers" would deadlock
 // them. The CV picks the mode per-wait from whether it runs inside a worker fiber.
 //
-// NOT here yet: timed waits (wait_for/wait_until). Those need the time-02 timer
-// wheel to fire a Waker on deadline (sched-04b). Registered deferred, not missing
-// -- the untimed core below does not depend on time/ and ships now.
+// NOT here yet: timed waits (wait_for/wait_until). The time-02 timer wheel and
+// fiber sleep (sched-04b) now exist, but a timed CV wait adds a timeout-vs-notify
+// RACE: whichever loses must cancel the other, and since the woken fiber may
+// resume on a different worker than the one holding its timer, that needs a
+// cross-worker timer-cancel path (per-worker MPSC command queue -- the time-02
+// headline divergence point). Split out as sched-04c. Plain sleep_for_ns (see
+// sched/timer.h) has a single waker (the timer), so it needs no such cancel and
+// ships in sched-04b. The untimed CV core below does not depend on time/.
 
 namespace hyle::sched {
 

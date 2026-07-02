@@ -62,10 +62,13 @@ class Parker {
   HYLE_PLATFORM_API void park() noexcept;
 
   // Timed park: block until a token is available OR `timeout_ns` elapses.
-  // Returns true if a token was consumed, false if it returned due to timeout.
-  // Absorbs spurious wakes (re-sleeps for the remaining time). timeout_ns == 0
-  // is a non-blocking check. This is the worker's "sleep until next timer" call:
-  // the timer wheel supplies the deadline, park_timeout parks exactly to it.
+  // Returns true if a token was consumed, false otherwise (timeout OR a spurious
+  // low-level wake). SINGLE-SHOT: unlike park(), it does NOT re-loop on a
+  // spurious wake -- it may return false early, and the caller is expected to
+  // re-check its own condition and re-park with a fresh deadline (mirrors Rust
+  // std's park_timeout). timeout_ns == 0 is a non-blocking check. This is the
+  // worker's "sleep until next timer" call: the timer wheel supplies the
+  // deadline, and the worker's loop re-checks + recomputes the bound each pass.
   HYLE_PLATFORM_API bool park_timeout(std::uint64_t timeout_ns) noexcept;
 
   // Make a token available; wake a parked thread if one is waiting. Idempotent:

@@ -36,6 +36,10 @@ namespace hyle::sched {
 // Suspend the current fiber for AT LEAST `ns` nanoseconds (rounded up to the
 // wheel's 1ms tick), then resume. Must be called from inside a fiber running on
 // a Scheduler worker (asserts otherwise). ns == 0 resumes on the next tick.
+//
+// A sleeping fiber is still OUTSTANDING work: Scheduler::drain()/shutdown() block
+// until it wakes and finishes. A fiber sleeping N seconds therefore holds up
+// teardown for N seconds -- cancel long sleeps before shutdown if that matters.
 HYLE_SCHED_API void sleep_for_ns(std::uint64_t ns) noexcept;
 
 // Absolute-deadline variant: suspend until monotonic_ns() reaches at least

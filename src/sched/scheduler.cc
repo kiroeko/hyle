@@ -226,12 +226,13 @@ struct Scheduler::Impl {
     notify();
   }
 
-  // ---- sched-04b timer integration (park cold path only) --------------------
+  // ---- sched-04b timer integration ------------------------------------------
 
   // Advance THIS worker's wheel to now and re-inject every fiber whose sleep
-  // deadline passed. Called only on the park cold path (a worker with runnable
-  // work never reaches here), so a no-timer workload pays nothing. Returns the
-  // number fired -- a nonzero result means "recheck for work before parking".
+  // deadline passed. Called at the worker loop top; the wheel.empty() gate keeps
+  // it ~free when nothing is sleeping. Returns the number fired (informational --
+  // the caller's find_task re-checks the queues regardless, so the count is not
+  // load-bearing).
   std::size_t fire_due_timers(Worker& w) noexcept {
     // Cheap gate: with no sleeping fiber the wheel is empty, so this is a single
     // size_t compare -- the "no timer workload pays nothing" property holds even
