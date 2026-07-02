@@ -156,6 +156,12 @@ class Proactor {
   static Impl* try_init_epoll() noexcept;
   static bool epoll_arm(Impl* impl, int fd, unsigned events, unsigned char opcode,
                         void* buf, unsigned len, std::uint64_t user_data) noexcept;
+  // Fill one io_uring SQE + count it pending (no syscall); the next reap() flushes
+  // all pending SQEs in its enter (io-04 submit batch). Linux/io_uring only --
+  // defined in the Linux branch of proactor.cc, never odr-used elsewhere.
+  bool queue_sqe(std::uint8_t opcode, std::int32_t fd, std::uint64_t addr,
+                 std::uint32_t len, std::uint64_t off, std::uint64_t user_data,
+                 std::uint32_t op_flags = 0) noexcept;
 
   Impl* impl_ = nullptr;  // backend state (IOCP port / io_uring ring), pimpl
 };

@@ -474,6 +474,12 @@ struct Proactor::Impl {
   unsigned* cq_tail = nullptr;
   unsigned* cq_ring_mask = nullptr;
   io_uring_cqe* cqes = nullptr;
+  // Count of SQEs filled but not yet flushed to the kernel (io-04 submit batch).
+  // submit_* fill the SQE + bump this WITHOUT an io_uring_enter; the next reap
+  // folds them into ITS enter (to_submit = sq_pending) so N submits + the reap
+  // cost ONE syscall instead of N+1. The worker loop reaps every iteration, so a
+  // fiber that submits then suspends has its op flushed on the very next loop top.
+  unsigned sq_pending = 0;
 
   // ---- epoll backend state (reactor -> completion emulation) ----
   // epoll only signals READINESS; the proactor must remember each armed op and
@@ -698,13 +704,27 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     return n;
   }
 
-  // If the CQ is already non-empty, skip the syscall entirely (pure userspace
-  // reap -- the io_uring fast path). Otherwise enter to wait for >=1 completion,
-  // passing the timeout via EXT_ARG so no separate timeout SQE is consumed.
+  // Flush any SQEs that submit_* queued without a syscall (io-04 submit batch).
+  // We fold `to_submit = sq_pending` into whatever enter this reap already needs,
+  // so N queued submits cost ZERO extra syscalls -- they ride the reap's enter.
+  // The three cases below each account for the pending count; reset it once here
+  // and pass `submit` to every enter path.
+  unsigned submit = impl_->sq_pending;
+  impl_->sq_pending = 0;
+
+  // If the CQ is already non-empty, we normally skip the syscall entirely (pure
+  // userspace reap -- the io_uring fast path). But if there are pending SQEs we
+  // MUST still enter to hand them to the kernel (a non-blocking submit-only
+  // enter: to_submit = submit, min_complete = 0), then reap userspace.
   unsigned tail = as_atomic(impl_->cq_tail)->load(std::memory_order_acquire);
   unsigned head = *impl_->cq_head;
   if (head == tail) {
-    if (timeout_ns == 0) return 0;  // non-blocking poll, nothing ready
+    if (timeout_ns == 0) {
+      // Non-blocking poll, CQ empty. If we have SQEs to flush, submit them (no
+      // wait) so they actually reach the kernel; otherwise nothing to do.
+      if (submit != 0) sys_io_uring_enter(impl_->fd, submit, 0, 0, nullptr, 0);
+      return 0;
+    }
     struct __kernel_timespec ts;
     struct io_uring_getevents_arg arg;
     std::memset(&arg, 0, sizeof(arg));
@@ -715,12 +735,17 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       arg.ts = reinterpret_cast<std::uint64_t>(&ts);
       flags |= IORING_ENTER_EXT_ARG;
     }
-    int r = sys_io_uring_enter(impl_->fd, 0, 1, flags,
+    // One enter both submits the pending SQEs AND waits for >=1 completion.
+    int r = sys_io_uring_enter(impl_->fd, submit, 1, flags,
                                (flags & IORING_ENTER_EXT_ARG) ? &arg : nullptr,
                                (flags & IORING_ENTER_EXT_ARG) ? sizeof(arg) : 0);
     if (r < 0 && errno != ETIME && errno != EINTR) return 0;
     tail = as_atomic(impl_->cq_tail)->load(std::memory_order_acquire);
     head = *impl_->cq_head;
+  } else if (submit != 0) {
+    // CQ non-empty but SQEs are pending: submit-only enter (no wait) to flush
+    // them, then fall through to the userspace reap of the ready completions.
+    sys_io_uring_enter(impl_->fd, submit, 0, 0, nullptr, 0);
   }
 
   std::size_t n = 0;
@@ -748,16 +773,17 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
 }
 
 namespace {
-// Fill one SQE and submit it (one io_uring_enter). Pure ring mechanics -- takes
-// the mapped ring fields directly so it needn't name the private Impl type.
-// Shared by post/read/write/recv/send/accept/connect. addr/len/off are 0 for
-// NOP. `op_flags` sets the SQE's flags union (rw_flags aliases msg_flags for
-// recv/send and accept_flags for accept -- same 32 bits); 0 for read/write/NOP.
-bool submit_one(int ring_fd, unsigned* sq_tail, unsigned sq_mask,
-                unsigned* sq_array, io_uring_sqe* sqes, std::uint8_t opcode,
-                std::int32_t fd, std::uint64_t addr, std::uint32_t len,
-                std::uint64_t off, std::uint64_t user_data,
-                std::uint32_t op_flags = 0) noexcept {
+// Fill ONE SQE and advance the SQ tail -- but do NOT io_uring_enter. The caller
+// bumps impl_->sq_pending; the next reap() folds all pending SQEs into its enter
+// (to_submit = sq_pending), so N submits + the reap cost ONE syscall (io-04
+// submit batch). Pure ring writes here. Takes the mapped ring fields directly so
+// it needn't name the private Impl type. addr/len/off are 0 for NOP. `op_flags`
+// sets the SQE's flags union (rw_flags aliases msg_flags for recv/send and
+// accept_flags for accept -- same 32 bits); 0 for read/write/NOP.
+void fill_sqe(unsigned* sq_tail, unsigned sq_mask, unsigned* sq_array,
+              io_uring_sqe* sqes, std::uint8_t opcode, std::int32_t fd,
+              std::uint64_t addr, std::uint32_t len, std::uint64_t off,
+              std::uint64_t user_data, std::uint32_t op_flags = 0) noexcept {
   unsigned tail = *sq_tail;
   unsigned index = tail & sq_mask;
   io_uring_sqe& s = sqes[index];
@@ -770,12 +796,30 @@ bool submit_one(int ring_fd, unsigned* sq_tail, unsigned sq_mask,
   s.rw_flags = static_cast<int>(op_flags);  // union: msg_flags/accept_flags too
   s.user_data = user_data;
   sq_array[index] = index;
-  // publish SQ tail (store_release pairs with kernel load_acquire)
+  // publish SQ tail (store_release pairs with kernel load_acquire); the actual
+  // enter that tells the kernel to consume it happens in reap().
   as_atomic(sq_tail)->store(tail + 1, std::memory_order_release);
-  int r = sys_io_uring_enter(ring_fd, 1, 0, 0, nullptr, 0);
-  return r >= 0;
 }
 }  // namespace
+
+// Fill an SQE via the mapped ring + count it pending; the next reap flushes it.
+// Members call this instead of the old submit-with-enter helper.
+bool Proactor::queue_sqe(std::uint8_t opcode, std::int32_t fd,
+                         std::uint64_t addr, std::uint32_t len,
+                         std::uint64_t off, std::uint64_t user_data,
+                         std::uint32_t op_flags) noexcept {
+  // Guard against SQ overflow: if the ring is full of un-flushed SQEs, flush now
+  // (a bare submit enter) so we never overwrite an unconsumed entry. Normally the
+  // per-worker in-flight count is far below sq_entries, so this never triggers.
+  if (impl_->sq_pending >= impl_->sq_entries) {
+    sys_io_uring_enter(impl_->fd, impl_->sq_pending, 0, 0, nullptr, 0);
+    impl_->sq_pending = 0;
+  }
+  fill_sqe(impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array, impl_->sqes,
+           opcode, fd, addr, len, off, user_data, op_flags);
+  ++impl_->sq_pending;
+  return true;
+}
 
 bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   if (impl_ == nullptr) return false;
@@ -790,8 +834,7 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   // is always 0, so `result` is not delivered on Linux -- post() is a wake hook,
   // not a data channel (IOCP can carry bytes; asymmetry documented in header).
   (void)result;
-  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
-                    impl_->sq_array, impl_->sqes, IORING_OP_NOP, -1, 0, 0, 0,
+  return queue_sqe(IORING_OP_NOP, -1, 0, 0, 0,
                     user_data);
 }
 
@@ -828,8 +871,7 @@ bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
     return epoll_arm(impl_, static_cast<int>(fd), EPOLLIN, IORING_OP_READ, buf,
                      len, user_data);
   }
-  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
-                    impl_->sq_array, impl_->sqes, IORING_OP_READ,
+  return queue_sqe(IORING_OP_READ,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(buf), len, offset, user_data);
 }
@@ -842,8 +884,7 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf,
     return epoll_arm(impl_, static_cast<int>(fd), EPOLLOUT, IORING_OP_WRITE,
                      const_cast<void*>(buf), len, user_data);
   }
-  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
-                    impl_->sq_array, impl_->sqes, IORING_OP_WRITE,
+  return queue_sqe(IORING_OP_WRITE,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(buf), len, offset, user_data);
 }
@@ -858,8 +899,7 @@ bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
     return epoll_arm(impl_, static_cast<int>(fd), EPOLLIN, IORING_OP_READ, buf,
                      len, user_data);
   }
-  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
-                    impl_->sq_array, impl_->sqes, IORING_OP_RECV,
+  return queue_sqe(IORING_OP_RECV,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(buf), len, 0, user_data,
                     flags);
@@ -873,8 +913,7 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
     return epoll_arm(impl_, static_cast<int>(fd), EPOLLOUT, IORING_OP_WRITE,
                      const_cast<void*>(buf), len, user_data);
   }
-  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
-                    impl_->sq_array, impl_->sqes, IORING_OP_SEND,
+  return queue_sqe(IORING_OP_SEND,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(buf), len, 0, user_data,
                     flags);
@@ -892,10 +931,9 @@ bool Proactor::submit_accept(std::intptr_t fd, void* addr, void* addrlen,
                      nullptr, 0, user_data);
   }
   // accept: addr -> sqe.addr (sockaddr*), addrlen -> sqe.addr2 (socklen_t*).
-  // submit_one puts its `off` arg into sqe.off which unions with addr2, so pass
+  // queue_sqe puts its `off` arg into sqe.off which unions with addr2, so pass
   // addrlen as the off argument.
-  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
-                    impl_->sq_array, impl_->sqes, IORING_OP_ACCEPT,
+  return queue_sqe(IORING_OP_ACCEPT,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(addr), 0,
                     reinterpret_cast<std::uint64_t>(addrlen), user_data);
@@ -919,8 +957,7 @@ bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
                      nullptr, 0, user_data);
   }
   // connect: addr -> sqe.addr (sockaddr*), addrlen -> sqe.off.
-  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
-                    impl_->sq_array, impl_->sqes, IORING_OP_CONNECT,
+  return queue_sqe(IORING_OP_CONNECT,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(addr), 0,
                     static_cast<std::uint64_t>(addrlen), user_data);
