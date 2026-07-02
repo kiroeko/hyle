@@ -631,7 +631,7 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
     fill_sqe(impl->sq_tail, *impl->sq_ring_mask, impl->sq_array, impl->sqes,
              IORING_OP_READ, impl->wake_efd,
              reinterpret_cast<std::uint64_t>(&impl->wake_buf), sizeof(impl->wake_buf),
-             0, Proactor::Impl::kWakeUserData);
+             0, Proactor::Impl::kWakeUserData, 0);
     sys_io_uring_enter(fd, 1, 0, 0, nullptr, 0);  // submit the wake-read now
   }
   return impl;
@@ -811,7 +811,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     fill_sqe(impl_->sq_tail, *impl_->sq_ring_mask, impl_->sq_array, impl_->sqes,
              IORING_OP_READ, impl_->wake_efd,
              reinterpret_cast<std::uint64_t>(&impl_->wake_buf),
-             sizeof(impl_->wake_buf), 0, Impl::kWakeUserData);
+             sizeof(impl_->wake_buf), 0, Impl::kWakeUserData, 0);
     ++impl_->sq_pending;  // flushed by the next blocking reap
   }
   return n;
