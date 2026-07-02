@@ -81,24 +81,30 @@ TEST(Proactor, ReapEmptyIsNonBlockingWithZeroTimeout) {
   EXPECT_LT(elapsed, std::chrono::milliseconds(100));  // did not block
 }
 
-// The cross-thread wake path the real backend relies on: a consumer blocks in
-// reap(); another thread posts a completion; the consumer wakes and gets the
-// token. This is io->Waker's physical basis (post == "an op finished elsewhere").
-TEST(Proactor, BlockedReapWokenByPostFromAnotherThread) {
+// post() injects a completion carrying a token that reap() returns. On io_uring
+// post fills a NOP SQE on the SUBMITTING thread -- the submission queue is
+// single-producer, so post is a SAME-THREAD hook (the header documents this).
+// This drives it same-thread: post three tokens, then reap them back. (Cross-
+// thread wake of a blocked reap is a separate concern; the real scheduler wakes
+// a parked worker via its futex Parker, not a cross-thread post into the ring.)
+TEST(Proactor, PostInjectsTokenReapReturnsIt) {
   Proactor p;
   if (!p.init()) GTEST_SKIP() << "no proactor backend on this platform yet";
 
-  std::atomic<std::uint64_t> got_token{0};
-  std::thread consumer([&] {
-    Completion out[4];
-    std::size_t n = p.reap(out, 4, 5'000'000'000ull);  // block up to 5s
-    if (n > 0) got_token.store(out[0].user_data, std::memory_order_release);
-  });
+  EXPECT_TRUE(p.post(0xDEAD, 42));
+  EXPECT_TRUE(p.post(0xBEEF));
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(20));  // ensure it parked
-  EXPECT_TRUE(p.post(0xDEAD, 42));  // wake it from here
-  consumer.join();
-  EXPECT_EQ(got_token.load(std::memory_order_acquire), 0xDEADu);
+  std::uint64_t seen = 0;
+  Completion out[8];
+  std::size_t got = 0;
+  while (got < 2) {
+    std::size_t n = p.reap(out + got, 8 - got, 1'000'000'000ull);
+    if (n == 0) break;
+    got += n;
+  }
+  ASSERT_EQ(got, 2u);
+  for (std::size_t i = 0; i < got; ++i) seen |= out[i].user_data;
+  EXPECT_EQ(seen, 0xDEADu | 0xBEEFu);
 }
 
 // Batch reap: post many, confirm reap pulls them in batches (io_uring

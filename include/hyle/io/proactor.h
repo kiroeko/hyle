@@ -137,11 +137,14 @@ class Proactor {
   HYLE_IO_API std::size_t reap(Completion* out, std::size_t max,
                                std::uint64_t timeout_ns) noexcept;
 
-  // Manually post a completion carrying `user_data` (result defaults to 0). This
-  // is the backend-independent "inject a wake into the completion stream" hook --
-  // used to unblock a parked reap() from another thread, and to drive tests
-  // without a real fd. (IOCP PostQueuedCompletionStatus / io_uring you'd use an
-  // eventfd/nop; both present it here.)
+  // Manually inject a completion carrying `user_data` (result defaults to 0) --
+  // used to drive tests without a real fd, and (io-04) to synthesize a completion
+  // for an op that finished synchronously. SAME-THREAD on io_uring: it fills a
+  // NOP SQE, and the submission queue is single-producer, so post must run on the
+  // ring's owner thread (a foreign-thread post races the owner). IOCP's
+  // PostQueuedCompletionStatus is thread-safe, but treat post as same-thread for
+  // portability. (Cross-thread wake of a parked worker is the scheduler's job via
+  // its futex Parker, not a post into the ring.)
   HYLE_IO_API bool post(std::uint64_t user_data, std::int64_t result = 0) noexcept;
 
   bool valid() const noexcept { return impl_ != nullptr; }
