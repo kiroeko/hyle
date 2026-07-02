@@ -204,7 +204,7 @@ void run_raw_epoll_echo() {
 
   // Prime: client sends the first message on every connection.
   for (int i = 0; i < kConns; ++i)
-    ::write(static_cast<int>(pairs[i].a), kMsg, kMsgLen);
+    (void)!::write(static_cast<int>(pairs[i].a), kMsg, kMsgLen);
 
   int ep = ::epoll_create1(0);
   // Watch every server + client fd for readability. data.u32 encodes conn*2 +
@@ -234,7 +234,7 @@ void run_raw_epoll_echo() {
       if (!is_client) {
         // server side readable: read the request, echo it back.
         ssize_t r = ::read(static_cast<int>(pairs[conn].b), buf, kMsgLen);
-        if (r > 0) ::write(static_cast<int>(pairs[conn].b), buf, r);
+        if (r > 0) (void)!::write(static_cast<int>(pairs[conn].b), buf, r);
       } else {
         // client side readable: the echo arrived = one round-trip done.
         ssize_t r = ::read(static_cast<int>(pairs[conn].a), buf, kMsgLen);
@@ -242,7 +242,7 @@ void run_raw_epoll_echo() {
           if (++client_done[conn] >= kRoundTrips) {
             --live;
           } else {
-            ::write(static_cast<int>(pairs[conn].a), kMsg, kMsgLen);  // next
+            (void)!::write(static_cast<int>(pairs[conn].a), kMsg, kMsgLen);  // next
           }
         }
       }
@@ -270,7 +270,7 @@ int main() {
         .relative(true)
         .batch(batch)
         .unit("echo")
-        .minEpochIterations(3);
+        .minEpochIterations(20);
     for (unsigned w : {1u, 2u, 4u, 8u}) {
       char name[64];
       std::snprintf(name, sizeof(name), "HYLE shard-per-core (%u workers)", w);
