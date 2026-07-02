@@ -498,6 +498,7 @@ struct Proactor::Impl {
   std::uint64_t stat_filled = 0;
   std::uint64_t stat_reaped = 0;
   std::uint64_t stat_overflow = 0;
+  std::uint64_t stat_reaps = 0;
 
   // ---- epoll backend state (reactor -> completion emulation) ----
   // epoll only signals READINESS; the proactor must remember each armed op and
@@ -743,6 +744,16 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   // enter so N submits + this reap cost ONE syscall. Reset the count up front.
   unsigned submit = impl_->sq_pending;
   impl_->sq_pending = 0;
+  // Live trace (gated HYLE_IO_TRACE): every 200k reap CALLS dump the running
+  // counters so a HANG (spinning worker) is diagnosable without the dtor.
+  ++impl_->stat_reaps;
+  if (::getenv("HYLE_IO_TRACE") != nullptr && (impl_->stat_reaps % 200000) == 0) {
+    std::fprintf(stderr, "[io-trace] reaps=%llu reaped=%llu sqes=%llu overflow=%llu pending=%u\n",
+                 static_cast<unsigned long long>(impl_->stat_reaps),
+                 static_cast<unsigned long long>(impl_->stat_reaped),
+                 static_cast<unsigned long long>(impl_->stat_sqes),
+                 static_cast<unsigned long long>(impl_->stat_overflow), submit);
+  }
 
   // If the CQ is already non-empty we normally skip the syscall (pure userspace
   // reap). But pending SQEs must still be handed to the kernel -- a submit-only
