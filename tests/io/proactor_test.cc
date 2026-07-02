@@ -21,15 +21,18 @@ TEST(Proactor, InitAndPostReapRoundTrip) {
   if (!p.init()) GTEST_SKIP() << "no proactor backend on this platform yet";
   ASSERT_TRUE(p.valid());
 
-  // Post 3 completions carrying distinct tokens + results.
-  EXPECT_TRUE(p.post(0xA1, 10));
-  EXPECT_TRUE(p.post(0xB2, 20));
-  EXPECT_TRUE(p.post(0xC3, 30));
+  // Post 3 completions carrying distinct tokens. post() is the backend-neutral
+  // "inject a wake token" hook -- it guarantees the user_data (Waker token)
+  // round-trips, NOT a result payload: IOCP can carry bytes, but io_uring's NOP
+  // res is always 0. A real op's byte count is an io-04 concern; here we assert
+  // only what post() promises on BOTH backends -- the token.
+  EXPECT_TRUE(p.post(0xA1));
+  EXPECT_TRUE(p.post(0xB2));
+  EXPECT_TRUE(p.post(0xC3));
 
   // Reap them back (block up to 1s so a slow CI still catches all three).
   Completion out[8];
   std::size_t got = 0;
-  // May take more than one reap to see all three; loop until we have 3.
   while (got < 3) {
     std::size_t n = p.reap(out + got, 8 - got, 1'000'000'000ull);
     if (n == 0) break;  // timeout -> stop (test will fail the count check)
@@ -37,15 +40,10 @@ TEST(Proactor, InitAndPostReapRoundTrip) {
   }
   ASSERT_EQ(got, 3u);
 
-  // Verify every token + result came back verbatim (order not guaranteed).
+  // Verify every token came back verbatim (order not guaranteed).
   std::uint64_t seen_tokens = 0;
-  std::int64_t sum = 0;
-  for (std::size_t i = 0; i < got; ++i) {
-    seen_tokens |= out[i].user_data;
-    sum += out[i].result;
-  }
+  for (std::size_t i = 0; i < got; ++i) seen_tokens |= out[i].user_data;
   EXPECT_EQ(seen_tokens, 0xA1u | 0xB2u | 0xC3u);
-  EXPECT_EQ(sum, 60);
 }
 
 TEST(Proactor, ReapEmptyIsNonBlockingWithZeroTimeout) {
