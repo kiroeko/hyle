@@ -44,4 +44,10 @@ hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_S
 hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
 if(HYLE_HAS_FCONTEXT)
   hyle_add_test(sched SOURCES sched/fiber_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc sched/sync_test.cc sched/timer_test.cc sched/coro_test.cc DEPS hyle_time)
+  # io-04 net: the co_await socket layer needs BOTH io (proactor + IoContext) and
+  # sched (scheduler drives the reap). Only buildable where sched exists.
+  hyle_add_test(io NAME net SOURCES io/net_test.cc DEPS hyle_sched)
+  if(WIN32)
+    target_link_libraries(hyle_io_net_test PRIVATE ws2_32)  # test builds the loopback pair
+  endif()
 endif()

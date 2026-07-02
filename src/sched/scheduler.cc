@@ -50,6 +50,14 @@ std::uint64_t xorshift(std::uint64_t& s) noexcept {
 constexpr int kSpinPolls = 4096;       // cpu_relax polls (sub-µs, no syscall)
 constexpr int kYieldsBeforePark = 4;   // then cede the core a few times
 
+// io poll (io-04, plan B): when an io hook is registered, a parked worker must
+// not sleep indefinitely on the futex -- an io completion won't unpark it (plan B
+// does not yet post() a wake into the proactor; that is the plan-A park merge).
+// So bound the park at this interval and re-poll the proactor each wakeup. 1ms
+// matches the timer wheel tick, so a worker with both a sleep timer and pending
+// io wakes on whichever is nearer. Only applied when io_poll != null.
+constexpr std::uint64_t kIoPollNs = 1'000'000;  // 1ms park cap when io is active
+
 }  // namespace
 
 struct Scheduler::Impl {
@@ -97,6 +105,13 @@ struct Scheduler::Impl {
   std::vector<platform::Thread> threads;
   std::atomic<bool> stop{false};
   std::atomic<std::int64_t> outstanding{0};
+
+  // io poll hook (io-04). Registered by an io::IoContext via set_io_poll; the
+  // worker loop calls it to reap io completions. Null when no io is in use ->
+  // never called, zero cost. Plain (non-atomic) because it is set once before the
+  // scheduler does io work and cleared after; not raced in the steady state.
+  Scheduler::IoPollFn io_poll = nullptr;
+  void* io_poll_ctx = nullptr;
 
   std::mutex idle_mu;              // guards `sleepers` (cold path: park/unpark)
   std::vector<unsigned> sleepers;  // ids of currently-parked workers
@@ -279,6 +294,10 @@ struct Scheduler::Impl {
       // so a perpetually-busy worker still services its own pinned timers; a
       // fired timer re-injects its fiber, which the find_task below then runs.
       fire_due_timers(w);
+      // Reap io completions (io-04): non-blocking poll from the hot loop so a
+      // ready completion re-injects its fiber before we look for work. Null hook
+      // (no io in use) -> skipped entirely, zero cost.
+      if (io_poll != nullptr) io_poll(io_poll_ctx, idx, 0);
       Fiber* f = find_task(w, idx);
       if (f != nullptr) {
         dispatch(w, f);
@@ -334,7 +353,13 @@ struct Scheduler::Impl {
       // cost when no fiber is sleeping). A pending timer bounds the park so the
       // worker wakes to fire it; park_timeout returning false (timeout) is fine
       // -- the loop top's fire_due_timers handles the expiry uniformly.
+      //
+      // io-04 (plan B): if an io hook is registered, also cap the park at
+      // kIoPollNs so the worker periodically re-polls the proactor for
+      // completions (plan B doesn't post() a wake into the ring yet -- that park
+      // merge is plan A). Take the nearer of the timer deadline and the io cap.
       std::uint64_t timeout = park_timeout_ns(w);
+      if (io_poll != nullptr && timeout > kIoPollNs) timeout = kIoPollNs;
       if (timeout == UINT64_MAX) {
         w.parker.park();
       } else {
@@ -395,6 +420,11 @@ Scheduler::~Scheduler() {
 void Scheduler::spawn(Fiber* fiber) { impl_->spawn(fiber); }
 void Scheduler::drain() { impl_->drain(); }
 void Scheduler::shutdown() { impl_->shutdown(); }
+
+void Scheduler::set_io_poll(IoPollFn fn, void* ctx) noexcept {
+  impl_->io_poll = fn;
+  impl_->io_poll_ctx = ctx;
+}
 
 // ---- completion spine (sched-04a) -------------------------------------------
 

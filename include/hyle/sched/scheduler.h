@@ -50,6 +50,17 @@ class HYLE_SCHED_API Scheduler {
   // drain(), then stop the workers and join them. Idempotent-safe to call once.
   void shutdown();
 
+  // ---- io poll hook (io-04 integration) -------------------------------------
+  // A worker calls this at the top of its loop to reap io completions (proactor
+  // CQ). It is a raw function pointer + opaque ctx, NOT an io type: sched/ must
+  // not depend on io/ (the dependency runs the other way -- io/ uses sched's
+  // Waker). io/ registers its IoContext here; the worker invokes it with its own
+  // index and a timeout budget (0 = non-blocking poll from the hot loop). When no
+  // io is in use the hook stays null and the worker never calls it -- zero cost.
+  using IoPollFn = void (*)(void* ctx, unsigned worker_idx,
+                            unsigned long long timeout_ns) noexcept;
+  void set_io_poll(IoPollFn fn, void* ctx) noexcept;
+
  private:
   friend class Waker;  // Waker::wake() re-injects via impl_ (completion spine)
   struct Impl;
