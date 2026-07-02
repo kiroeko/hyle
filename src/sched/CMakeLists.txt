@@ -27,7 +27,7 @@ hyle_add_module(sched
     scheduler.cc
     sync.cc
     ${_fctx_asm}
-  DEPS hyle_platform
+  DEPS hyle_platform hyle_time
   PUBLIC_DEPS hyle_mem hyle_container)
 
 if(MSVC)
