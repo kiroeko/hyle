@@ -708,23 +708,22 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     return n;
   }
 
-  // Flush SQEs that submit_* queued without a syscall (io-04 submit batch): fold
-  // `to_submit = sq_pending` into this reap's enter. A non-blocking reap (the
-  // worker's hot loop-top poll) still must flush -- the worker parks on its
-  // Parker, NOT on a blocking reap, so if the poll didn't flush the queued SQEs
-  // would never reach the kernel and their completions never arrive (deadlock).
-  // Batching still helps: every fiber that submitted since the last poll rides
-  // ONE enter here. (Deeper batching -- deferring the flush to the pre-park point
-  // -- is the plan-A park merge, task 4.)
-  unsigned submit = impl_->sq_pending.exchange(0, std::memory_order_relaxed);
+  // Submit-batch policy (io-04 opt 1 + park merge): a NON-BLOCKING reap
+  // (timeout_ns == 0, the worker's hot loop-top poll) neither flushes nor resets
+  // the pending count -- it only peeks the CQ. SQEs from every fiber that ran
+  // this slice ACCUMULATE and flush in ONE enter at the next BLOCKING reap (the
+  // worker's park, which is now a blocking reap thanks to the park merge). This
+  // is safe from deadlock: when the worker has no runnable fiber it parks IN a
+  // blocking reap, which flushes -- and "no more completions" is exactly what
+  // drives it there. The SQ-overflow guard in queue_sqe bursts-flushes if the
+  // ring fills before any park.
   unsigned tail = as_atomic(impl_->cq_tail)->load(std::memory_order_acquire);
   unsigned head = *impl_->cq_head;
   if (head == tail) {
-    if (timeout_ns == 0) {
-      // Non-blocking poll, CQ empty: still submit the batched SQEs (no wait).
-      if (submit != 0) sys_io_uring_enter(impl_->fd, submit, 0, 0, nullptr, 0);
-      return 0;
-    }
+    if (timeout_ns == 0) return 0;  // non-blocking peek: nothing ready, no flush
+    // Blocking reap: flush ALL pending SQEs by folding to_submit into the wait
+    // enter -- N batched submits + this wait cost ONE syscall.
+    unsigned submit = impl_->sq_pending.exchange(0, std::memory_order_relaxed);
     struct __kernel_timespec ts;
     struct io_uring_getevents_arg arg;
     std::memset(&arg, 0, sizeof(arg));
@@ -742,11 +741,9 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     if (r < 0 && errno != ETIME && errno != EINTR) return 0;
     tail = as_atomic(impl_->cq_tail)->load(std::memory_order_acquire);
     head = *impl_->cq_head;
-  } else if (submit != 0) {
-    // CQ non-empty but SQEs pending: submit-only enter (no wait) to flush them,
-    // then fall through to the userspace reap of the ready completions.
-    sys_io_uring_enter(impl_->fd, submit, 0, 0, nullptr, 0);
   }
+  // (CQ non-empty: pure userspace reap below; any pending SQEs flush at the next
+  // blocking reap -- the worker reaches one whenever it runs out of ready work.)
 
   std::size_t n = 0;
   const unsigned mask = *impl_->cq_ring_mask;

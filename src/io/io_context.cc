@@ -21,12 +21,14 @@ IoContext::IoContext(sched::Scheduler& sched, unsigned num_workers) noexcept
     rings_.push_back(std::move(p));
   }
   sched_.set_io_poll(&IoContext::poll_trampoline, this);
+  sched_.set_io_wake(&IoContext::wake_trampoline, this);
 }
 
 IoContext::~IoContext() {
   // Unregister before we (and our rings) are destroyed so no worker calls a
   // dangling hook during teardown. The scheduler is expected already stopped
   // (its shutdown() drained fibers) by the time IoContext is destroyed.
+  sched_.set_io_wake(nullptr, nullptr);
   sched_.set_io_poll(nullptr, nullptr);
 }
 
@@ -47,6 +49,14 @@ bool IoContext::bind_fd(unsigned worker_idx, std::intptr_t fd) noexcept {
 void IoContext::poll_trampoline(void* ctx, unsigned worker_idx,
                                 unsigned long long timeout_ns) noexcept {
   static_cast<IoContext*>(ctx)->poll(worker_idx, timeout_ns);
+}
+
+void IoContext::wake_trampoline(void* ctx, unsigned worker_idx) noexcept {
+  // Post a bare wake into worker_idx's ring so a worker blocked in reap() (the
+  // io-04 park merge) breaks out to see a spawned/stolen fiber. kWakeToken is the
+  // reserved sentinel net::complete() skips (no IoOperation to route). Safe from
+  // any thread -- post() is the cross-thread wake path.
+  static_cast<IoContext*>(ctx)->rings_[worker_idx]->post(kWakeToken);
 }
 
 void IoContext::poll(unsigned worker_idx,

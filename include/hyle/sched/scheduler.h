@@ -71,6 +71,16 @@ class HYLE_SCHED_API Scheduler {
                             unsigned long long timeout_ns) noexcept;
   void set_io_poll(IoPollFn fn, void* ctx) noexcept;
 
+  // Companion wake hook (io-04 park merge): when io is registered, an idle worker
+  // BLOCKS in the io poll (reap) instead of the futex Parker, so a completion
+  // wakes it with zero latency (no 1ms re-poll). To also wake it for a spawned/
+  // stolen fiber (a non-io event), the scheduler posts a bare wake into that
+  // worker's ring via this hook -- unifying both wake sources onto the one reap
+  // wait. `fn(ctx, worker_idx)` posts the wake. Raw fn ptr for the same
+  // no-dependency reason as set_io_poll. Registered together with the poll hook.
+  using IoWakeFn = void (*)(void* ctx, unsigned worker_idx) noexcept;
+  void set_io_wake(IoWakeFn fn, void* ctx) noexcept;
+
  private:
   friend class Waker;  // Waker::wake() re-injects via impl_ (completion spine)
   struct Impl;

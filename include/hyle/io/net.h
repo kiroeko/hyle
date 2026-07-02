@@ -42,17 +42,26 @@ struct IoOperation {
   std::uint32_t flags = 0;    // Completion flags (kMore/kBuffer), if the op sets them
 };
 
-// Route one reaped completion back to the fiber waiting on it. The reaper calls
-// this for every Completion whose user_data is an IoOperation* (io ops encode the
-// slot address there). Kept inline + header-only so both the worker loop and a
-// standalone test driver use the identical routing. A post() wake (user_data is a
-// raw Waker id, not a slot) is NOT routed here -- the reaper tells them apart by
-// how the token was minted (io ops use to_token(&op)).
-inline void complete(const Completion& c) noexcept {
+// A reserved user_data sentinel for a bare WAKE post (io-04 park merge): the
+// scheduler posts this to a parked worker's ring to break its blocking reap when
+// a fiber is spawned/stolen to it. It carries NO IoOperation -- complete() must
+// skip it (routing it as a slot would deref a bogus pointer). ~0 is never a valid
+// IoOperation* (which is a real stack/heap address), so it can't collide.
+inline constexpr std::uint64_t kWakeToken = ~std::uint64_t{0};
+
+// Route one reaped completion back to the fiber waiting on it, UNLESS it is a
+// bare wake post (kWakeToken), which carries no op and is skipped. Returns true
+// if a real io op was routed. The reaper calls this for every reaped completion;
+// io ops encode their IoOperation* in user_data (via to_token), wake posts use
+// kWakeToken. Kept inline + header-only so the worker loop and a standalone test
+// driver use identical routing.
+inline bool complete(const Completion& c) noexcept {
+  if (c.user_data == kWakeToken) return false;  // bare wake: nothing to route
   auto* op = reinterpret_cast<IoOperation*>(static_cast<std::uintptr_t>(c.user_data));
   op->result = c.result;
   op->flags = c.flags;
   op->waker.wake();  // safe from any thread; re-injects the fiber (sched-04a)
+  return true;
 }
 
 // Encode an IoOperation slot as the proactor user_data token (round-trips
