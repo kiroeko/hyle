@@ -469,6 +469,12 @@ struct Proactor::Impl {
   unsigned sq_entries = 0;
   bool single_mmap = false;
   unsigned* sq_tail = nullptr;
+  // SQ ring flags word (sq_off.flags). Carries IORING_SQ_CQ_OVERFLOW: when the CQ
+  // fills, the kernel keeps completions in an internal backlog and sets this bit
+  // rather than dropping them (IORING_FEAT_NODROP). reap MUST notice it and enter
+  // to flush the backlog into the CQ, else those completions never surface and
+  // the fibers waiting on them hang forever (the >256-in-flight deadlock).
+  unsigned* sq_flags = nullptr;
   unsigned* sq_ring_mask = nullptr;
   unsigned* sq_array = nullptr;
   unsigned* cq_head = nullptr;
@@ -606,6 +612,7 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
   impl->sq_tail = reinterpret_cast<unsigned*>(B + p.sq_off.tail);
   impl->sq_ring_mask = reinterpret_cast<unsigned*>(B + p.sq_off.ring_mask);
   impl->sq_array = reinterpret_cast<unsigned*>(B + p.sq_off.array);
+  impl->sq_flags = reinterpret_cast<unsigned*>(B + p.sq_off.flags);
   impl->cq_head = reinterpret_cast<unsigned*>(C + p.cq_off.head);
   impl->cq_tail = reinterpret_cast<unsigned*>(C + p.cq_off.tail);
   impl->cq_ring_mask = reinterpret_cast<unsigned*>(C + p.cq_off.ring_mask);
@@ -789,6 +796,42 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   // Publish the consumed head once for the whole batch (store_release pairs with
   // the kernel; one release-store amortized over n completions).
   as_atomic(impl_->cq_head)->store(head, std::memory_order_release);
+
+  // CQ-overflow recovery (the >ring-depth in-flight fix): if more completions
+  // arrived than the CQ could hold, the kernel parked them in an internal backlog
+  // and set IORING_SQ_CQ_OVERFLOW instead of dropping them (IORING_FEAT_NODROP).
+  // We just freed CQ space by advancing head, so a GETEVENTS enter now flushes
+  // the backlog into the CQ; drain that into any remaining out[] slots. Loop
+  // until the overflow bit clears or out[] is full -- otherwise those completions
+  // never surface and their fibers hang. Only runs when actually overflowed
+  // (steady state: flag clear, this is skipped entirely).
+  while (n < max &&
+         (as_atomic(impl_->sq_flags)->load(std::memory_order_acquire) &
+          IORING_SQ_CQ_OVERFLOW)) {
+    // Enter with no new submits, min_complete 0: just flush the backlog.
+    if (sys_io_uring_enter(impl_->fd, 0, 0, IORING_ENTER_GETEVENTS, nullptr, 0) < 0 &&
+        errno != ETIME && errno != EINTR)
+      break;
+    tail = as_atomic(impl_->cq_tail)->load(std::memory_order_acquire);
+    head = *impl_->cq_head;
+    if (head == tail) break;  // nothing flushed -> avoid spinning
+    while (head != tail && n < max) {
+      const io_uring_cqe& c = impl_->cqes[head & mask];
+      out[n].user_data = c.user_data;
+      out[n].result = static_cast<std::int64_t>(c.res);
+      out[n].flags = 0;
+      if (c.flags & IORING_CQE_F_MORE) out[n].flags |= Completion::kMore;
+      if (c.flags & IORING_CQE_F_BUFFER) {
+        out[n].flags |= Completion::kBuffer;
+        out[n].buffer_id = c.flags >> IORING_CQE_BUFFER_SHIFT;
+      } else {
+        out[n].buffer_id = 0;
+      }
+      ++head;
+      ++n;
+    }
+    as_atomic(impl_->cq_head)->store(head, std::memory_order_release);
+  }
   return n;
 }
 
