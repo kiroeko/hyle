@@ -121,6 +121,22 @@ bool Proactor::submit_write(std::intptr_t, const void*, std::uint32_t,
                             std::uint64_t, std::uint64_t) noexcept {
   return false;  // io-02 IOCP real-op pending
 }
+bool Proactor::submit_recv(std::intptr_t, void*, std::uint32_t, std::uint32_t,
+                           std::uint64_t) noexcept {
+  return false;  // io-04 IOCP socket op pending (io_uring path done)
+}
+bool Proactor::submit_send(std::intptr_t, const void*, std::uint32_t,
+                           std::uint32_t, std::uint64_t) noexcept {
+  return false;  // io-04 IOCP socket op pending
+}
+bool Proactor::submit_accept(std::intptr_t, void*, void*,
+                             std::uint64_t) noexcept {
+  return false;  // io-04 IOCP AcceptEx pending
+}
+bool Proactor::submit_connect(std::intptr_t, const void*, std::uint32_t,
+                              std::uint64_t) noexcept {
+  return false;  // io-04 IOCP ConnectEx pending
+}
 bool Proactor::register_handle(std::intptr_t fd) noexcept {
   if (impl_ == nullptr) return false;
   // Associate the handle with the port so its ops complete here. Key unused for
@@ -466,11 +482,14 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
 namespace {
 // Fill one SQE and submit it (one io_uring_enter). Pure ring mechanics -- takes
 // the mapped ring fields directly so it needn't name the private Impl type.
-// Shared by post/read/write. addr/len/off are 0 for NOP.
+// Shared by post/read/write/recv/send/accept/connect. addr/len/off are 0 for
+// NOP. `op_flags` sets the SQE's flags union (rw_flags aliases msg_flags for
+// recv/send and accept_flags for accept -- same 32 bits); 0 for read/write/NOP.
 bool submit_one(int ring_fd, unsigned* sq_tail, unsigned sq_mask,
                 unsigned* sq_array, io_uring_sqe* sqes, std::uint8_t opcode,
                 std::int32_t fd, std::uint64_t addr, std::uint32_t len,
-                std::uint64_t off, std::uint64_t user_data) noexcept {
+                std::uint64_t off, std::uint64_t user_data,
+                std::uint32_t op_flags = 0) noexcept {
   unsigned tail = *sq_tail;
   unsigned index = tail & sq_mask;
   io_uring_sqe& s = sqes[index];
@@ -480,6 +499,7 @@ bool submit_one(int ring_fd, unsigned* sq_tail, unsigned sq_mask,
   s.off = off;
   s.addr = addr;
   s.len = len;
+  s.rw_flags = static_cast<int>(op_flags);  // union: msg_flags/accept_flags too
   s.user_data = user_data;
   sq_array[index] = index;
   // publish SQ tail (store_release pairs with kernel load_acquire)
@@ -558,6 +578,69 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf,
                     impl_->sq_array, impl_->sqes, IORING_OP_WRITE,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(buf), len, offset, user_data);
+}
+
+bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
+                           std::uint32_t flags,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    // On a socket, read() == recv(flags=0); the epoll reactor does read() when
+    // EPOLLIN fires. Non-zero recv flags aren't modeled on the epoll fallback.
+    return epoll_arm(impl_, static_cast<int>(fd), EPOLLIN, IORING_OP_READ, buf,
+                     len, user_data);
+  }
+  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_RECV,
+                    static_cast<std::int32_t>(fd),
+                    reinterpret_cast<std::uint64_t>(buf), len, 0, user_data,
+                    flags);
+}
+
+bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
+                           std::uint32_t flags,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    return epoll_arm(impl_, static_cast<int>(fd), EPOLLOUT, IORING_OP_WRITE,
+                     const_cast<void*>(buf), len, user_data);
+  }
+  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_SEND,
+                    static_cast<std::int32_t>(fd),
+                    reinterpret_cast<std::uint64_t>(buf), len, 0, user_data,
+                    flags);
+}
+
+bool Proactor::submit_accept(std::intptr_t fd, void* addr, void* addrlen,
+                             std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    return false;  // epoll accept/connect reactor plumbing deferred (io_uring path done)
+  }
+  // accept: addr -> sqe.addr (sockaddr*), addrlen -> sqe.addr2 (socklen_t*).
+  // submit_one puts its `off` arg into sqe.off which unions with addr2, so pass
+  // addrlen as the off argument.
+  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_ACCEPT,
+                    static_cast<std::int32_t>(fd),
+                    reinterpret_cast<std::uint64_t>(addr), 0,
+                    reinterpret_cast<std::uint64_t>(addrlen), user_data);
+}
+
+bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
+                              std::uint32_t addrlen,
+                              std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    return false;  // epoll connect reactor plumbing deferred
+  }
+  // connect: addr -> sqe.addr (sockaddr*), addrlen -> sqe.off.
+  return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_CONNECT,
+                    static_cast<std::int32_t>(fd),
+                    reinterpret_cast<std::uint64_t>(addr), 0,
+                    static_cast<std::uint64_t>(addrlen), user_data);
 }
 
 bool Proactor::register_handle(std::intptr_t /*fd*/) noexcept {

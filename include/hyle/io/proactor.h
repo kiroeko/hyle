@@ -102,6 +102,27 @@ class Proactor {
                                 std::uint32_t len, std::uint64_t offset,
                                 std::uint64_t user_data) noexcept;
 
+  // ---- socket ops (io-04 net) -----------------------------------------------
+  // recv/send are read/write-shaped for a socket fd (no file offset; `flags` is
+  // the recv/send msg flags, usually 0). `buf` is caller-owned and must outlive
+  // the completion (cancel-safe: valid until the CQE arrives, even on cancel).
+  HYLE_IO_API bool submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
+                               std::uint32_t flags,
+                               std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_send(std::intptr_t fd, const void* buf,
+                               std::uint32_t len, std::uint32_t flags,
+                               std::uint64_t user_data) noexcept;
+  // accept a connection on listening `fd`. `addr`/`addrlen` receive the peer
+  // address (may be null to ignore); both must outlive the completion. The
+  // completion result is the accepted fd (>=0) or a negative errno.
+  HYLE_IO_API bool submit_accept(std::intptr_t fd, void* addr, void* addrlen,
+                                 std::uint64_t user_data) noexcept;
+  // connect `fd` to `addr` (sockaddr*, `addrlen` bytes). Completion result is 0
+  // on success or a negative errno.
+  HYLE_IO_API bool submit_connect(std::intptr_t fd, const void* addr,
+                                  std::uint32_t addrlen,
+                                  std::uint64_t user_data) noexcept;
+
   // Windows only: an OVERLAPPED handle must be associated with the port ONCE
   // before submit_read/write on it (io_uring needs no such step). No-op / returns
   // true on Linux. Kept in the neutral interface so net/ (io-04) can register a

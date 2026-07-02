@@ -6,10 +6,12 @@
 #include <vector>
 
 #if defined(__linux__)
+#  include <sys/socket.h>
 #  include <unistd.h>
 
 #  include <cstdio>
 #  include <cstdlib>
+#  include <cstring>
 #endif
 
 #include "hyle/io/proactor.h"
@@ -211,5 +213,38 @@ TEST(Proactor, EpollFallbackPostWake) {
   Completion c{};
   ASSERT_EQ(p.reap(&c, 1, 1'000'000'000ull), 1u);
   EXPECT_EQ(c.user_data, 0x999u);
+}
+
+// io-04 socket ops: a real send/recv over a connected socketpair via io_uring
+// IORING_OP_SEND/RECV. Proves the socket submit path (distinct opcodes from
+// read/write) before the TcpListener/Stream layer is built on top.
+TEST(Proactor, SocketSendRecvRoundTrip) {
+  Proactor p;
+  if (!p.init()) GTEST_SKIP() << "no io_uring backend";
+
+  int sv[2];
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+
+  const char msg[] = "io-uring-socket";
+  const std::uint32_t len = sizeof(msg);
+
+  // send on sv[0].
+  ASSERT_TRUE(p.submit_send(sv[0], msg, len, 0, 0x5E4D));
+  Completion c{};
+  ASSERT_EQ(p.reap(&c, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(c.user_data, 0x5E4Du);
+  EXPECT_EQ(c.result, static_cast<std::int64_t>(len));  // bytes sent
+
+  // recv on sv[1].
+  char buf[64] = {};
+  ASSERT_TRUE(p.submit_recv(sv[1], buf, len, 0, 0x8EC0));
+  Completion c2{};
+  ASSERT_EQ(p.reap(&c2, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(c2.user_data, 0x8EC0u);
+  EXPECT_EQ(c2.result, static_cast<std::int64_t>(len));  // bytes received
+  EXPECT_STREQ(buf, msg);
+
+  ::close(sv[0]);
+  ::close(sv[1]);
 }
 #endif  // __linux__
