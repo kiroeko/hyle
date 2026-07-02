@@ -120,7 +120,11 @@ thread-mode(裸线程 waiter,外部提交者/跨进程联邦)。对标 `std::con
 
 1. **真实负载(churn)双平台铁赢 2-3x**。这是北极星画像——百万 agent"arm 超时 → 响应先到 → 取消 timeout → 少数真到期"。堆的惰性墓碑要活着穿过 expire(文档预言的 add-then-cancel churn 堆膨胀),轮在 cancel 时 O(1) 摘链已清走。
 
-2. **`arm+cancel` 纯取消 Linux 输 2x 是微基准假象,如实记账不藏**(对齐 mem 红队方法论③"对照不公平绝不当免死金牌")。根因:此 bench 每 op 丢弃一个全新堆,堆的墓碑 `vector<bool>` 位标记比轮的摘链 + 反算 slot 便宜——**但 bench 在墓碑必须被走之前就把膨胀的堆扔了**。真实负载墓碑要穿过 expire(churn 行),轮双平台就赢。这是"切片微基准掩盖对手真实成本"的典型:纯取消孤立看堆便宜,但那是它把 cleanup 债留到了 expire(churn 里还)。堆唯一真优势"O(1) 拿最近到期"对我们不重要(单调钟批量 advance、不需精确 min)。
+2. **`arm+cancel` 纯取消 Linux 输 0.53x 的三选一诊断(objdump 实证,非"切片假象"含糊结论)**:按方法论逐指令查清了到底是"没抄全/换性能/有更好方法"——
+   - **没抄全?否**。objdump 实证:`level_for` 编成 `lzcnt/bsr`(硬件位扫)、**零 idiv**、bit math 与 tokio 一致,cache-line pad 都在。codegen 无缺陷。
+   - **换了什么?这是刻意取舍的核心**。堆 `cancel` = `vector<bool>` **一个 bit 写**(便宜);轮 `cancel` = level_for+slot_for+摘链(4 指针写)。但堆的 bit 是**惰性墓碑**——死节点留在堆里,债留到 expire 时 pop+跳过(churn 双平台就这么输 2-3x)。轮当场摘链**真清空间**。此微基准每 op **在 expire 前就丢弃膨胀堆**,只测到 cancel 即时成本、测不到墓碑后续代价,故堆显便宜。
+   - **内存足迹实测(根因量化)**:`sizeof(TimerWheel)=6216B`(`slots_[6][64]`=6144B 槽头数组),arm 4096 timer 散写这 6KB 数组 + 40B/entry;堆 = 连续 `vector<Node>`(顺序 sift)+ `vector<bool>` 位图。Linux/GCC 下堆的连续访问 + 平凡位取消胜出;这是**用"即时 cancel 成本 + 6KB 固定槽开销"换"无墓碑膨胀 + 有界内存 + churn 2-3x 赢 + O(1) 最坏 cancel"**。tokio/folly 付同样固定开销,是分层轮固有取舍。
+   - **有更好方法?一个真实微优化,但不改结论**:`TimerEntry` 40B 可把 `scheduled` bool 塞进指针低位省 8B;但主因是散写 6KB 槽数组,压缩 entry 救不了。孤立"少量 timer 纯取消"场景堆确实更省——但那不是 timer wheel 的设计目标负载(海量 arm/cancel + 少量 expire 才是,churn 行已证)。**故不改设计,如实记账。**
 
 3. **平台分歧(又一"单平台数陷阱"印证)**:arm+expire 与 arm+cancel Win/Lin 判定不同(Win 更平、Lin 分化更大),MSVC 与 GCC 对 `std::priority_queue`/`countl_zero`/`rotr` codegen 差异所致——**单平台数搬总账会误判**(同 dtype/time/path/queue)。churn 方向双平台一致(轮赢),是稳健结论。
 
