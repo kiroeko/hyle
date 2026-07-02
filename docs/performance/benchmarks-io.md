@@ -10,55 +10,36 @@ io-01/02/03 阶段**故意不出性能数**(见总账 io 行的"缺口登记")�
 
 **负载**:64 个连接,每个连接 64 次 echo round-trip(client send→server recv→server echo→client recv = 1 round-trip),payload 64B。连接按 owner 核轮询分片(shard-per-core),每连接的 client/server fiber 都 `spawn_on` 钉在其 owner 核。报 round-trip/秒。
 
-**Linux io_uring(n=15 统计,权威)**:
+**Linux io_uring(单跑中位,err% 1-3%,多次复现)**:
 
-| 配置 | 中位 ns/echo | echo/s | 对裸 epoll 比 | 判定 |
-|---|---|---|---|---|
-| HYLE shard-per-core 1 worker | 2271 | 440K | 0.61x | ❌输(见下根因) |
-| HYLE shard-per-core 2 workers | 1229 | 814K | 1.10x | 越过基线 |
-| HYLE shard-per-core 4 workers | 742 | 1.35M | **1.81x** | ✅赢 |
-| HYLE shard-per-core 8 workers | 672 | 1.49M | 2.02x | ✅赢(vs 1w **3.27x 扩展**)|
-| 裸 epoll 1 线程(就绪循环) | 1359 | 736K | 1.0x | 基线 |
+| 配置 | echo/s(批量后) | 对裸 epoll 比 | 判定 |
+|---|---|---|---|
+| HYLE shard-per-core 1 worker | **728K** | ~1.0x | ➖平/微赢裸 epoll |
+| HYLE shard-per-core 2 workers | 1.10M | 1.51x | ✅赢 |
+| HYLE shard-per-core 4 workers | 1.49M | 2.05x | ✅赢 |
+| 裸 epoll 1 线程(就绪循环) | 729K | 1.0x | 基线 |
 
-统计判定(bench-stat.py,仅当 gap > 合并 spread 才判输赢):
-- 1 worker / 裸 epoll:ratio 0.61,gap 39% » spread 22% → **确输**(非噪声)。
-- 4 workers / 裸 epoll:ratio 1.81,gap 81% » spread 25% → **确赢**。
-- 8 workers / 1 worker:ratio 3.27,gap 227% » spread 24% → **确赢**(近线性扩展到 4 核后渐平,64 连接 /8 核 = 8 连接/核,socketpair 内核争用显现)。
+**关键转折(2026-07-03,submit 批量落地后)**:单 worker 从**曾经的 440K(输裸 epoll 0.61x)提到 728K(追平/微赢)**——1.65x 提升。机制铁证:`HYLE_IO_BENCH_STATS` 打出 **`avg_batch=13~61`**(每次 `io_uring_enter` 提交 13-61 个 SQE),对比批量前恒为 1.0。这直接砍掉了曾经主导的"每 op 一次 syscall"开销。**shard-per-core 扩展仍在**(1w→4w ~2x)。
 
-**Windows IOCP(首轮指示值,loopback TCP)**:1 worker 93K → 4 workers 200K echo/s,**~2.1x 扩展**。绝对值低于 Linux——Windows 无 socketpair,用 loopback TCP 模拟(比 Unix domain socket 重),且 IOCP 每 op 一个 OVERLAPPED 堆分配。扩展趋势与 Linux 一致(shard-per-core 生效)。
+## 曾经的"单 worker 输" + 怎么修好的(完整过程,诚实)
 
-## 诚实的发现:单 worker 输裸 epoll 0.61x —— 根因诊断,非 bug
+**初版(每 op 一次 `io_uring_enter`)单 worker 输裸 epoll 0.61x**。根因诊断:HYLE 每 round-trip 4 op,每 op = submit(一次 syscall)+ fiber 挂起 + reap + Waker 唤醒 + 协程续跑;裸 epoll 是紧凑 `epoll_wait→read→write` 零上下文切换 + 批量就绪。量级核对(fiber 切换 ~21ns×8≈170ns « 900ns 差)证明**主导项是 4 次 submit syscall**,非 fiber 切换。
 
-这是必须直面而非粉饰的结果。**根因是 fiber/协程模型的固有 per-op 开销 + 当前每 submit 一次 syscall**,不是缺陷:
+**两次失败的批量尝试(2026-07-02)**:先试"填 SQE 攒到 reap flush",但**没动 worker 循环节奏**——循环每轮顶部都 `reap(0)` 且每轮只跑一个 fiber(≤1 submit),SQE 在任何 reap 点都 ≤1 个,**批量结构上不可能**;推迟 flush 反而每 op 加一个调度往返,1w 掉到 124K。又试 park 合并(阻塞 reap + eventfd 唤醒),仍慢于基线。**当时误判为"这俩优化对本负载无用"并全回退**——但那个结论是错的,真正的病根没找到。
 
-- **HYLE 每 round-trip 走 4 个 op**(client send/recv + server recv/send),每个 op 的路径 = `submit`(当前实现每次一个 `io_uring_enter` 系统调用)→ fiber 挂起(fcontext 切换)→ worker reap → Waker 唤醒 → fiber 恢复 → 协程续跑。**≈4 次 `io_uring_enter` + 8 次 fiber/协程上下文切换 / round-trip**。
-- **裸 epoll 每 round-trip** = 紧凑的 `epoll_wait → read → write`,**零上下文切换**,且 `epoll_wait` 一次批量返回多个就绪 fd(低并发下摊薄 syscall)。
-- 量级核对:fiber 切换实测 ~21ns(见 [sched 详节](./benchmarks-sched.md)),8 次 ≈ 170ns;但 1w 与 epoll 的差 ≈ 900ns/round-trip,故**主导项是 4 次 submit 的 `io_uring_enter` syscall**,不是 fiber 切换。
+**照抄 tokio-uring 后找到真病根(2026-07-03)**:读本地 `tokio-uring` 源码(`runtime/mod.rs` + `driver/mod.rs`)——它**不在每个 task 之间 reap**,而是跑完一批 ready task 才在 tick/park 边界 flush(`on_thread_park`)+ SQ 满时 flush(`submit_op` 里 `while push().is_err() { submit() }`)。HYLE 病根 = **worker 每轮迭代都 reap**,SQE 攒不起来。修法两步:
+1. **reap 挪到 run-queue 抽干时**(不是每轮):`find_task` 有活就跑(各自 queue SQE 不 enter),抽干才 reap → 一批 fiber 的 submit 攒成一次 enter。tokio 的 tick 模型。
+2. **submit_* 填 SQE 不 enter**,drain reap 折 `to_submit=sq_pending` 一次提交;submit_one 在 SQ 满时自 flush(tokio 的 SQ-full 触发)。
 
-**这是 fiber 模型换取的代价**:per-op 开销换来 ① co_await 人体工学(遇 IO 让出,任意调用深度)② 越过单线程天花板的透明扩展(4 worker 就反超裸 epoll、8 worker 3.27x)。裸 epoll 的紧凑循环卡在单核,加核要手写分片 + 无栈状态机。
+这两步**配套**才成立——单独任一个都无效(这是前两次失败的教训)。落地后 avg_batch 13-61、1w 追平裸 epoll。**这就是"按规模自适应":低并发 SQ 不满→实际每 op 提交(低延迟);高并发→自动攒批一次 enter(摊薄 syscall),同一份代码无需显式判断规模。**
 
-**优化轴(已知,接口已预留,本阶段未做)**:
-- **批量 submit**:攒多个 SQE 再一次 `io_uring_enter`(liburing 默认行为)。当前每 submit 一次 enter 是最朴素形态。这一项能直接砍掉主导的 syscall 开销。
-- **SQPOLL**:内核轮询 SQ,submit 完全免 syscall(`Proactor` 接口按 liburing v2.15 研究过,不挡此升级)。
-- **multishot recv**:一次 submit 多次完成,省重复 arm。
-
-补齐这些后单 worker 有望追平/接近裸 epoll;但**shard-per-core 的扩展性(核心卖点)已实证**,是 io serving 北极星负载的正解。
-
-## 试过并回退的优化(2026-07-02,诚实登记失败)
-
-两个针对"单 worker 输裸 epoll"的优化被实现、实测、**回退**——它们在本 ping-pong echo 负载上是**净退步**,不该上架一个实测更慢的东西:
-
-1. **submit 批量**(填 SQE 不 enter,攒到 reap 一次 flush):本负载是**严格 ping-pong**,每连接同时只有一个 op 在飞,**没有可批量的并发**;把 flush 推迟到阻塞 reap 反而**每 op 多加一个调度往返延迟**,1 worker 从 440K 掉到 124K。
-2. **park 合并**(worker 空闲阻塞在 reap 等 completion + eventfd 跨线程唤醒,替代 parker.park_timeout(1ms)):即便 submit 立即 flush,1 worker(334K)仍慢于旧的 parker+1ms(440K);仅 4 worker 反超裸 epoll。本延迟受限负载净退步。
-
-**根因**:这两个都是**吞吐导向**优化,需要**流水线/多 op 在飞**的负载才能兑现价值;当前 ping-pong echo bench 每连接单 op 在飞,批量无从批起、park 合并的延迟收益被阻塞 reap 的开销吃掉。**教训**:优化必须过它自己的 benchmark;"机制上更优"不等于"这个负载上更快"。真要提速单 worker,方向是:①**流水线 echo bench**(每连接多个 outstanding op)才能让批量发挥;或 ②**SQPOLL**(内核侧 submit,零 per-op enter)——它对延迟受限负载也有效。均未做,登记。
-
-代码已回退到 a922baa 基线(submit_one 每 op 一 enter + parker 1ms park),即本页上表的数。
+**方法学教训(记牢)**:① 优化必须过它自己的 benchmark;"机制更优"≠"这个负载更快"。② 失败先挖到真病根再下结论——我第一次误判"优化无用",其实是循环节奏这个更深的结构问题没看到,照抄 SOTA(tokio)完整机制才挖出来。③ 参考库拉到本地读源码,比凭记忆/上网翻快且准。
 
 ## 机制层为何"方向对"(补充)
 
 除吞吐数外,proactor 机制本身借的就是各平台 SOTA、封装零额外结构开销:
 - reap 时 CQ 非空**纯用户态**收割零 syscall;批量 N 完成 1 次 release-store(io_uring for_each_cqe 形状)。
+- **submit 批量**:一批 fiber 的 SQE 一次 `io_uring_enter` 提交(avg_batch 13-61 实测),SQ 满自 flush = tokio-uring 同款。
 - timeout 走 `IORING_ENTER_EXT_ARG` 不额外消耗 SQE。
 - submit 挂 token 无拷贝(`user_data` = `IoOperation*`,完成时 verbatim 返回)。
 - 后端本身 = io_uring(Linux)/ IOCP(Windows)/ epoll(降级),各平台 proactor/reactor SOTA,非自造。
@@ -67,5 +48,6 @@ io-01/02/03 阶段**故意不出性能数**(见总账 io 行的"缺口登记")�
 
 - **裸 liburing 对标**:证 HYLE 相对 liburing echo 的 0 封装开销。WSL 缺 `liburing-dev`;HYLE 本用裸 syscall,可后续在 bench 内手写等价 liburing echo 或装库补。
 - **vs asio / libuv**:证不输成熟异步框架。
-- **流水线 echo bench + SQPOLL**:让 submit 批量真正发挥(见上"试过并回退");当前 ping-pong bench 无法暴露其价值。
-- Windows IOCP 的 n=15 统计版(首轮为 3→20 epoch 指示值)。
+- **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
+- **park 合并**:worker 空闲仍走 parker 1ms park(非阻塞 reap);消这 1ms 延迟需 park 合并(碰防惊群,之前一版含 eventfd 唤醒方案,已随批量回退时一起撤,可复用思路重做)。
+- Windows IOCP 的批量对应物(IOCP 无 submit 攒批概念,ReadFile/WriteFile 即时下发)+ n=15 统计版。
