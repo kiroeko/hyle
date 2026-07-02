@@ -242,6 +242,8 @@ worker 调度循环（2.2）的第 0 步插入"收割 completion"：
 - 协程的 `promise_type` 用 HYLE 的 `mem/` 分配 frame（不走默认 `operator new`，贯彻显式 allocator）。
 - 不强迫所有异步都用协程：底层热路径可直接用 fiber + Waker 裸接口，协程是上层人体工学糖。
 
+> **已落地（sched-06,`include/hyle/sched/coro.h` header-only）**:`Task<T>`(frame 走 mem::Allocator 首参惯用法)+ `SuspendFiber`(co_await 让出 fiber:await_suspend 调 suspend() fiber-yield,**返 false** 使 wake 后协程续跑而非二次挂起——这是 §4.1 "co_await 落 fiber 让出" 的正确实现关键)+ `CaptureWaker`(两步 register-then-suspend)。协程帧活在 fiber 栈,一次 fiber 挂起覆盖整条 await 链。双平台 + WSL TSan(协程帧跨 worker 迁移)净。`co_await` 的三源(io/gpu/timer)统一走 Waker,与裸 fiber 路径共存。
+
 ---
 
 ## 全节总结：sched/ 设计定稿

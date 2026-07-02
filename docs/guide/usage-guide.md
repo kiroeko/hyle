@@ -17,7 +17,7 @@
 | `time/` | `hyle/time/clock.h` | ✅ | 单调钟/墙钟/sleep（ns） |
 | `util/` | `hyle/util/{ref_counted,registry,scope_guard,...}.h` | ✅ | `Ref<T>`、Registry、`DEFER`、type_name |
 | `obs/` | `hyle/obs/log.h` | ✅ | level 门控 + sink 注册表日志 |
-| `sched/` | `hyle/sched/{scheduler,fiber}.h` | 🔶 | fcontext 纤程 + work-stealing 调度（协程/取消 待） |
+| `sched/` | `hyle/sched/{scheduler,fiber,coro}.h` | 🔶 | fcontext 纤程 + work-stealing 调度 + fiber-aware 同步 + fiber sleep + 协程胶水(`Task<T>`/co_await 让出 fiber);取消/优雅关闭 待 |
 | `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测（含纯 AVX 档 kAvx）+ 可移植 `vec<T,N>`（scalar/SSE4.2/AVX2 实跑；fp16/bf16 dtype + 向量化数学核（Highway/xsimd）done；NEON 写+编+objdump 验未跑存疑；AVX512 后端+ops kernel 已默认派发，objdump 双平台验真发 zmm，但本箱 AVX2-only 未实跑=存疑） |
 | `io/` | `hyle/io/proactor.h` | 🔶 | proactor 完成收割接缝 + io_uring/IOCP 双后端;io_uring read/write 真 op + epoll 降级(SOTA-first)done;IOCP 真 op / net socket 待(io-02 IOCP/io-04) |
 | `compute/` `graph/` | — | 📋 | 尚未开工 |
