@@ -108,10 +108,13 @@ struct Scheduler::Impl {
 
   // io poll hook (io-04). Registered by an io::IoContext via set_io_poll; the
   // worker loop calls it to reap io completions. Null when no io is in use ->
-  // never called, zero cost. Plain (non-atomic) because it is set once before the
-  // scheduler does io work and cleared after; not raced in the steady state.
-  Scheduler::IoPollFn io_poll = nullptr;
-  void* io_poll_ctx = nullptr;
+  // never called, zero cost. ATOMIC because the registering thread (IoContext
+  // ctor on the main thread) writes these while worker threads are already
+  // spinning their loops and reading them -- a genuine cross-thread publish
+  // (TSan caught the plain-field version). Write ctx first then fn with release;
+  // read fn (acquire) then ctx, so a non-null fn implies its ctx is visible.
+  std::atomic<Scheduler::IoPollFn> io_poll{nullptr};
+  std::atomic<void*> io_poll_ctx{nullptr};
 
   std::mutex idle_mu;              // guards `sleepers` (cold path: park/unpark)
   std::vector<unsigned> sleepers;  // ids of currently-parked workers
@@ -297,7 +300,8 @@ struct Scheduler::Impl {
       // Reap io completions (io-04): non-blocking poll from the hot loop so a
       // ready completion re-injects its fiber before we look for work. Null hook
       // (no io in use) -> skipped entirely, zero cost.
-      if (io_poll != nullptr) io_poll(io_poll_ctx, idx, 0);
+      if (IoPollFn poll = io_poll.load(std::memory_order_acquire); poll != nullptr)
+        poll(io_poll_ctx.load(std::memory_order_relaxed), idx, 0);
       Fiber* f = find_task(w, idx);
       if (f != nullptr) {
         dispatch(w, f);
@@ -359,7 +363,9 @@ struct Scheduler::Impl {
       // completions (plan B doesn't post() a wake into the ring yet -- that park
       // merge is plan A). Take the nearer of the timer deadline and the io cap.
       std::uint64_t timeout = park_timeout_ns(w);
-      if (io_poll != nullptr && timeout > kIoPollNs) timeout = kIoPollNs;
+      if (io_poll.load(std::memory_order_acquire) != nullptr &&
+          timeout > kIoPollNs)
+        timeout = kIoPollNs;
       if (timeout == UINT64_MAX) {
         w.parker.park();
       } else {
@@ -422,8 +428,13 @@ void Scheduler::drain() { impl_->drain(); }
 void Scheduler::shutdown() { impl_->shutdown(); }
 
 void Scheduler::set_io_poll(IoPollFn fn, void* ctx) noexcept {
-  impl_->io_poll = fn;
-  impl_->io_poll_ctx = ctx;
+  // Publish ctx BEFORE fn (release) so a worker that reads a non-null fn is
+  // guaranteed to see the matching ctx. Clearing (fn=null) is the reverse but
+  // benign: a worker reading the stale non-null fn with a now-null ctx still runs
+  // a valid (pre-teardown) hook; unregister happens only after the scheduler is
+  // stopped (IoContext dtor), so no worker is looping then anyway.
+  impl_->io_poll_ctx.store(ctx, std::memory_order_relaxed);
+  impl_->io_poll.store(fn, std::memory_order_release);
 }
 
 // ---- completion spine (sched-04a) -------------------------------------------
