@@ -45,14 +45,14 @@
 // wins, the loser reports the other's outcome so no wake is lost). This covers
 // external submitters and cross-process federation threads.
 //
-// FIBER-MODE timed wait is still deferred: a fiber waiter would arm a time-02
-// wheel timer whose fire races the notify, and the loser must CANCEL the other --
-// but the woken fiber may resume on a different worker than the one holding its
-// timer, so that needs the per-worker cross-worker timer-cancel command queue
-// (the time-02 headline divergence point,真正 load-bearing 于 io-timeout). Until
-// that lands, a timed wait from a worker fiber asserts. The design mirrors folly
-// fibers Baton (atomic-arbitrated timeout-vs-post, same-thread timer to dodge
-// cross-core cancel).
+// FIBER-MODE timed wait is a separate milestone (sched-04d): a fiber waiter would
+// arm a time-02 wheel timer whose fire races the notify, and the loser must
+// CANCEL the other -- but the woken fiber may resume on a different worker than
+// the one holding its timer, so that needs the per-worker cross-worker
+// timer-cancel command queue (the time-02 headline divergence point, truly
+// load-bearing for io-timeout). Until sched-04d lands, a timed wait from a worker
+// fiber asserts. The design mirrors folly fibers Baton (atomic-arbitrated
+// timeout-vs-post, same-thread timer to dodge cross-core cancel).
 
 namespace hyle::sched {
 
