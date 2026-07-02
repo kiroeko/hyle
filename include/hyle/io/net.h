@@ -71,6 +71,13 @@ inline std::uint64_t to_token(IoOperation* op) noexcept {
 // These take a raw proactor + fd: the higher-level TcpStream/TcpListener wrap fd
 // ownership on top. A submit failure (ring full / bad handle) surfaces as a
 // negative result without ever suspending (there is no completion to wait for).
+//
+// PLAN A INVARIANT: `p` MUST be the ring of the worker running this fiber (get it
+// from IoContext::proactor_for_current()). io_uring/IOCP don't make submit + reap
+// on one ring mutually thread-safe across threads, so an op must be submitted on,
+// and reaped by, the SAME worker. Passing a foreign worker's ring races the
+// reaper. The awaitable is constructed inside the coroutine (on the worker), so
+// resolving the ring there picks the right one.
 
 // co_await RecvOp{p, fd, buf, len} -> bytes read (>=0) or negative errno.
 struct RecvOp {

@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <memory>
+#include <vector>
 
 #include "hyle/io/net.h"
 #include "hyle/io/proactor.h"
@@ -14,53 +16,70 @@
 #  define HYLE_IO_API HYLE_IMPORT
 #endif
 
-// io-04 integration (plan B): the bridge that plugs the proactor into the sched
-// worker loop. IoContext owns a Proactor and registers a poll hook on the
-// Scheduler; each worker, at the top of its loop, calls the hook to reap io
-// completions and route each one back to the fiber that awaited it (net::complete
-// -> op.result + Waker::wake()).
+// io-04 integration (plan A): per-core proactor rings plugged into the sched
+// worker loop. IoContext owns ONE Proactor PER WORKER and registers a poll hook
+// on the Scheduler; each worker, at the top of its loop, reaps ITS OWN ring
+// (passed its worker_idx) and routes each completion back to the fiber that
+// awaited it (net::complete -> op.result + Waker::wake()).
 //
-// Plan B scope (single shared proactor, non-blocking reap from the hot loop +
-// bounded park re-poll -- see scheduler kIoPollNs): correct and simple, but the
-// reap is serialized on whichever worker runs it and a completion can wait up to
-// one poll interval when all workers are parked. Plan A (per-worker proactor +
-// post() wake into the ring so a parked worker is unparked immediately) is the
-// follow-up; this interface (a poll hook taking worker_idx) already accommodates
-// per-worker rings without an API change.
+// Why per-worker rings (sched-design §3.2 "每核一个 io_uring 实例"): io_uring and
+// IOCP do not make submit and reap on the same ring mutually thread-safe. If one
+// shared ring were reaped from whichever worker ran the loop AND submitted from
+// whichever worker ran the awaiting fiber, those would race. Per-core rings make
+// submit + the reap of that op's completion happen on the SAME worker thread:
+// an awaitable submits on current_worker_index()'s ring, and that same worker's
+// loop reaps it. A fiber may migrate between awaits, but each op is wholly owned
+// (submit + reap) by one ring/thread for its lifetime. No ring lock needed.
 //
-// Thread-safety note (plan B): the single Proactor is reaped from potentially
-// different worker threads across loop iterations, and submit_* is called from
-// whichever worker runs the awaiting fiber. io_uring/IOCP submit and reap are not
-// mutually thread-safe on the same ring, so plan B is currently exercised with a
-// SINGLE-worker scheduler in tests; multi-worker safe operation is plan A's
-// per-worker ring. This is called out honestly rather than pretended away.
+// Park (plan A-2, not yet done): a parked worker still uses the plan-B 1ms
+// re-poll cap (scheduler kIoPollNs) rather than blocking in reap() and being
+// woken by post(); merging park into reap is the follow-up that touches the
+// anti-herd Dekker path.
 
 namespace hyle::io {
 
 class IoContext {
  public:
-  // Stands up the proactor and registers the poll hook on `sched`. `sched` must
-  // outlive this IoContext. Returns via valid() whether the proactor backend came
-  // up (false only if the OS refused -- caller should check before submitting).
-  HYLE_IO_API explicit IoContext(sched::Scheduler& sched) noexcept;
+  // Stands up one proactor per worker and registers the poll hook on `sched`.
+  // `num_workers` MUST match the scheduler's worker count. `sched` must outlive
+  // this IoContext. valid() reports whether every ring came up.
+  HYLE_IO_API IoContext(sched::Scheduler& sched, unsigned num_workers) noexcept;
   HYLE_IO_API ~IoContext();
   HYLE_DISABLE_COPY_AND_MOVE(IoContext);
 
-  bool valid() const noexcept { return proactor_.valid(); }
+  bool valid() const noexcept { return valid_; }
 
-  // The proactor the co_await ops submit against (net.h awaitables take this).
-  Proactor& proactor() noexcept { return proactor_; }
+  // The proactor for a specific worker (used by the poll hook + by awaitables via
+  // proactor_for_current()). Index must be < num_workers.
+  Proactor& proactor(unsigned worker_idx) noexcept {
+    return *rings_[worker_idx];
+  }
+
+  // The proactor of the worker running the current fiber -- the ring an awaitable
+  // must submit on so submit + reap stay on one thread. Precondition: called from
+  // a fiber on a worker of the matching scheduler (else the index is -1 and this
+  // asserts). This is what net.h ops call to get their ring.
+  HYLE_IO_API Proactor& proactor_for_current() noexcept;
+
+  // Bind an fd to `worker_idx`'s ring (shard-per-core): registers it there
+  // (needed on IOCP -- a socket associates with exactly one completion port; a
+  // no-op on io_uring/epoll) and returns worker_idx so callers can pass it to
+  // Scheduler::spawn_on for the connection's fiber. All of that fd's ops then run
+  // on that one worker. Returns whether registration succeeded.
+  HYLE_IO_API bool bind_fd(unsigned worker_idx, std::intptr_t fd) noexcept;
+
+  unsigned num_workers() const noexcept {
+    return static_cast<unsigned>(rings_.size());
+  }
 
  private:
-  // The worker-loop trampoline registered as the Scheduler poll hook. Reaps up to
-  // a batch of completions and routes each to its waiting fiber. Static + ctx=this
-  // so it matches Scheduler::IoPollFn without naming a bound method.
   static void poll_trampoline(void* ctx, unsigned worker_idx,
                               unsigned long long timeout_ns) noexcept;
-  void poll(unsigned long long timeout_ns) noexcept;
+  void poll(unsigned worker_idx, unsigned long long timeout_ns) noexcept;
 
   sched::Scheduler& sched_;
-  Proactor proactor_;
+  std::vector<std::unique_ptr<Proactor>> rings_;  // one per worker (non-movable)
+  bool valid_ = false;
 };
 
 }  // namespace hyle::io

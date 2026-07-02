@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <vector>
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"
@@ -24,12 +25,11 @@
 #  include <windows.h>
 #endif
 
-// io-04 integration test (plan B): the co_await socket layer over a real fd,
-// driven by a Scheduler worker whose loop reaps the proactor via IoContext. This
-// is the payoff -- a fiber that `co_await`s a socket send/recv actually yields the
-// fiber and resumes with the byte count when the kernel completes the op. Plan B
-// uses a SINGLE worker (the shared proactor is reaped only from that worker's
-// loop; multi-worker per-ring is plan A).
+// io-04 integration test (shard-per-core): the co_await socket layer over real
+// fds. Each connection is bound to an OWNER worker -- its fds registered on that
+// worker's ring, its fibers pinned there via spawn_on -- so submit + reap +
+// resume are single-threaded on one core (share-nothing, no ring lock). Runs on
+// MULTIPLE workers with connections sharded across them.
 
 using hyle::io::IoContext;
 using hyle::io::RecvOp;
@@ -43,23 +43,26 @@ using hyle::sched::Task;
 
 namespace {
 
-// A connected pair of fds for a loopback round-trip, plus a place to register
-// them with the proactor (IOCP needs the association; io_uring/epoll don't).
+// A connected pair of fds, bound to an owner worker. On IOCP each fd associates
+// with exactly ONE completion port, so we register only on the owner's ring (a
+// no-op on io_uring/epoll) -- and the connection's fibers are pinned to that same
+// owner, so every op runs on the ring the fd is bound to.
 struct SocketPair {
-  std::intptr_t a = -1;  // one end
-  std::intptr_t b = -1;  // the other end
+  std::intptr_t a = -1;
+  std::intptr_t b = -1;
   bool ok = false;
 };
 
 #if defined(__linux__)
-SocketPair make_pair(hyle::io::Proactor&) {
+SocketPair make_pair(IoContext& io, unsigned owner) {
   int sv[2];
   SocketPair sp;
   if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sv) != 0) return sp;
   sp.a = sv[0];
   sp.b = sv[1];
-  sp.ok = true;
-  return sp;  // io_uring/epoll take the fd in each op; no registration needed
+  // register_handle is a no-op on io_uring/epoll but keeps the call site uniform.
+  sp.ok = io.bind_fd(owner, sp.a) && io.bind_fd(owner, sp.b);
+  return sp;
 }
 void close_pair(SocketPair& sp) {
   if (sp.a >= 0) ::close(static_cast<int>(sp.a));
@@ -68,9 +71,7 @@ void close_pair(SocketPair& sp) {
 #endif
 
 #if defined(_WIN32)
-// Windows has no socketpair; build a connected TCP loopback pair synchronously,
-// then register both ends with the proactor's port (IOCP requirement).
-SocketPair make_pair(hyle::io::Proactor& p) {
+SocketPair make_pair(IoContext& io, unsigned owner) {
   SocketPair sp;
   SOCKET ls = ::WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
   if (ls == INVALID_SOCKET) return sp;
@@ -82,7 +83,6 @@ SocketPair make_pair(hyle::io::Proactor& p) {
   ::listen(ls, 1);
   int slen = sizeof(sa);
   ::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen);
-  // Client connects (blocking, synchronous) while we accept.
   SOCKET c = ::WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
   ::connect(c, reinterpret_cast<sockaddr*>(&sa), sizeof(sa));
   SOCKET s = ::accept(ls, nullptr, nullptr);
@@ -90,7 +90,10 @@ SocketPair make_pair(hyle::io::Proactor& p) {
   if (c == INVALID_SOCKET || s == INVALID_SOCKET) return sp;
   sp.a = static_cast<std::intptr_t>(c);
   sp.b = static_cast<std::intptr_t>(s);
-  sp.ok = p.register_handle(sp.a) && p.register_handle(sp.b);
+  // Bind BOTH ends to the owner worker's port only. IOCP allows a socket to
+  // associate with exactly one port, and the connection's fibers are pinned to
+  // this same owner, so both ends' ops complete on this one ring.
+  sp.ok = io.bind_fd(owner, sp.a) && io.bind_fd(owner, sp.b);
   return sp;
 }
 void close_pair(SocketPair& sp) {
@@ -99,10 +102,11 @@ void close_pair(SocketPair& sp) {
 }
 #endif
 
-// The coroutine under test: co_await send on one fd, co_await recv on the other,
-// verify the bytes round-tripped through the kernel. Returns bytes received.
+// Coroutines resolve the CURRENT worker's ring at each co_await. Because the
+// connection's fibers are PINNED to their owner worker (spawn_on), the current
+// worker is always the owner, so this is the ring the fd is bound to.
 struct EchoState {
-  hyle::io::Proactor* p;
+  IoContext* io;
   std::intptr_t send_fd;
   std::intptr_t recv_fd;
   char recv_buf[64] = {};
@@ -113,17 +117,12 @@ struct EchoState {
 Task<int> echo_coro(Allocator, EchoState* st) {
   static const char kMsg[] = "co_await-socket-echo";
   const std::uint32_t len = sizeof(kMsg);
-  // Send on fd a. co_await suspends THIS fiber until the send completes; the
-  // worker loop reaps the completion and wakes us with the byte count.
-  st->sent = co_await SendOp{st->p, st->send_fd, kMsg, len};
-  // Now receive it on fd b (the send already delivered it into the socket buf).
-  st->received = co_await RecvOp{st->p, st->recv_fd, st->recv_buf, len};
+  st->sent = co_await SendOp{&st->io->proactor_for_current(), st->send_fd, kMsg, len};
+  st->received =
+      co_await RecvOp{&st->io->proactor_for_current(), st->recv_fd, st->recv_buf, len};
   co_return 0;
 }
 
-// Fiber body: drive the coroutine. One resume() runs it to completion because
-// each co_await yields the FIBER (not just the coroutine) and SuspendFiber
-// resumes the coroutine on wake -- so resume() returns only once done.
 struct Drive {
   Task<int> task;
   std::atomic<bool> finished{false};
@@ -136,16 +135,20 @@ void drive_entry(void* p) {
 
 }  // namespace
 
+// Single fiber, self send+recv, pinned to its owner worker on a multi-worker
+// scheduler. The op submits + reaps on the owner's ring.
 TEST(IoNet, CoAwaitSendRecvRoundTrip) {
-  Scheduler sched(1, system_allocator(), 256);  // plan B: single worker
-  IoContext io(sched);
-  ASSERT_TRUE(io.valid()) << "proactor backend must come up";
+  constexpr unsigned kWorkers = 4;
+  constexpr unsigned kOwner = 1;
+  Scheduler sched(kWorkers, system_allocator(), 256);
+  IoContext io(sched, kWorkers);
+  ASSERT_TRUE(io.valid()) << "every worker's proactor must come up";
 
-  SocketPair sp = make_pair(io.proactor());
+  SocketPair sp = make_pair(io, kOwner);
   ASSERT_TRUE(sp.ok) << "failed to build a connected socket pair";
 
   EchoState st{};
-  st.p = &io.proactor();
+  st.io = &io;
   st.send_fd = sp.a;
   st.recv_fd = sp.b;
 
@@ -153,7 +156,7 @@ TEST(IoNet, CoAwaitSendRecvRoundTrip) {
   d->task = echo_coro(system_allocator(), &st);
   Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
 
-  sched.spawn(&f);
+  sched.spawn_on(kOwner, &f);  // pin to the fd's owner worker
   sched.drain();
   sched.shutdown();
 
@@ -165,17 +168,13 @@ TEST(IoNet, CoAwaitSendRecvRoundTrip) {
   close_pair(sp);
 }
 
-// ---- two-fiber echo: the real milestone ------------------------------------
-// Two INDEPENDENT fibers on one worker, each blocking on its own io: a server
-// fiber co_awaits recv then echoes the bytes back with co_await send; a client
-// fiber co_awaits send then co_awaits recv of the echo. Both suspend on io
-// concurrently -- the single worker interleaves them at each co_await (cooperative
-// yield), reaps both completions from its loop, and wakes each fiber
-// independently. Proves the integration handles multiple in-flight ops, not just
-// a self-send.
+// ---- two-fiber echo, connection pinned to one core -------------------------
+// A server fiber co_awaits recv then echoes back with send; a client fiber
+// co_awaits send then recv of the echo. Both fibers are pinned to the SAME owner
+// worker (the fd's core), so all four ops run share-nothing on one ring.
 namespace {
 struct EchoPair {
-  hyle::io::Proactor* p;
+  IoContext* io;
   std::intptr_t server_fd;
   std::intptr_t client_fd;
   char server_buf[64] = {};
@@ -185,10 +184,10 @@ struct EchoPair {
 };
 
 Task<int> server_coro(Allocator, EchoPair* c) {
-  // Block until the client's bytes arrive, then echo exactly them back.
-  c->server_recv = co_await RecvOp{c->p, c->server_fd, c->server_buf, 64};
+  c->server_recv =
+      co_await RecvOp{&c->io->proactor_for_current(), c->server_fd, c->server_buf, 64};
   if (c->server_recv > 0) {
-    co_await SendOp{c->p, c->server_fd, c->server_buf,
+    co_await SendOp{&c->io->proactor_for_current(), c->server_fd, c->server_buf,
                     static_cast<std::uint32_t>(c->server_recv)};
   }
   co_return 0;
@@ -197,22 +196,25 @@ Task<int> server_coro(Allocator, EchoPair* c) {
 Task<int> client_coro(Allocator, EchoPair* c) {
   static const char kMsg[] = "two-fiber-echo";
   const std::uint32_t len = sizeof(kMsg);
-  co_await SendOp{c->p, c->client_fd, kMsg, len};
-  c->client_recv = co_await RecvOp{c->p, c->client_fd, c->client_reply, len};
+  co_await SendOp{&c->io->proactor_for_current(), c->client_fd, kMsg, len};
+  c->client_recv =
+      co_await RecvOp{&c->io->proactor_for_current(), c->client_fd, c->client_reply, len};
   co_return 0;
 }
 }  // namespace
 
-TEST(IoNet, TwoFiberEcho) {
-  Scheduler sched(1, system_allocator(), 256);
-  IoContext io(sched);
+TEST(IoNet, TwoFiberEchoPinnedToCore) {
+  constexpr unsigned kWorkers = 4;
+  constexpr unsigned kOwner = 2;
+  Scheduler sched(kWorkers, system_allocator(), 256);
+  IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
 
-  SocketPair sp = make_pair(io.proactor());
+  SocketPair sp = make_pair(io, kOwner);
   ASSERT_TRUE(sp.ok);
 
   EchoPair c{};
-  c.p = &io.proactor();
+  c.io = &io;
   c.server_fd = sp.a;
   c.client_fd = sp.b;
 
@@ -223,8 +225,8 @@ TEST(IoNet, TwoFiberEcho) {
   Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
   Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
 
-  sched.spawn(&fs);
-  sched.spawn(&fc);
+  sched.spawn_on(kOwner, &fs);
+  sched.spawn_on(kOwner, &fc);
   sched.drain();
   sched.shutdown();
 
@@ -233,7 +235,60 @@ TEST(IoNet, TwoFiberEcho) {
   EXPECT_EQ(c.server_recv, static_cast<std::int64_t>(sizeof("two-fiber-echo")));
   EXPECT_EQ(c.client_recv, static_cast<std::int64_t>(sizeof("two-fiber-echo")));
   EXPECT_STREQ(c.server_buf, "two-fiber-echo");
-  EXPECT_STREQ(c.client_reply, "two-fiber-echo");  // echoed all the way back
+  EXPECT_STREQ(c.client_reply, "two-fiber-echo");
 
   close_pair(sp);
+}
+
+// Many concurrent connections SHARDED across cores: N socket pairs, each bound to
+// a different owner worker (round-robin) with its fiber pair pinned there. This
+// is the shard-per-core payoff -- connections partitioned across cores, each core
+// driving its own share-nothing ring in parallel.
+TEST(IoNet, ManyConnectionsShardedAcrossCores) {
+  constexpr unsigned kWorkers = 4;
+  constexpr int kPairs = 32;
+  Scheduler sched(kWorkers, system_allocator(), 1024);
+  IoContext io(sched, kWorkers);
+  ASSERT_TRUE(io.valid());
+
+  std::vector<SocketPair> pairs;
+  std::vector<std::unique_ptr<EchoPair>> states;
+  std::vector<std::unique_ptr<Drive>> drives;
+  std::vector<std::unique_ptr<Fiber>> fibers;
+  pairs.reserve(kPairs);
+
+  for (int i = 0; i < kPairs; ++i) {
+    unsigned owner = static_cast<unsigned>(i) % kWorkers;  // shard across cores
+    SocketPair sp = make_pair(io, owner);
+    ASSERT_TRUE(sp.ok);
+    pairs.push_back(sp);
+    auto c = std::make_unique<EchoPair>();
+    c->io = &io;
+    c->server_fd = sp.a;
+    c->client_fd = sp.b;
+    auto ds = std::make_unique<Drive>();
+    auto dc = std::make_unique<Drive>();
+    ds->task = server_coro(system_allocator(), c.get());
+    dc->task = client_coro(system_allocator(), c.get());
+    auto fs = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                      &drive_entry, ds.get());
+    auto fc = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                      &drive_entry, dc.get());
+    sched.spawn_on(owner, fs.get());  // both fibers pinned to the fd's core
+    sched.spawn_on(owner, fc.get());
+    states.push_back(std::move(c));
+    drives.push_back(std::move(ds));
+    drives.push_back(std::move(dc));
+    fibers.push_back(std::move(fs));
+    fibers.push_back(std::move(fc));
+  }
+
+  sched.drain();
+  sched.shutdown();
+
+  for (auto& c : states) {
+    EXPECT_EQ(c->client_recv, static_cast<std::int64_t>(sizeof("two-fiber-echo")));
+    EXPECT_STREQ(c->client_reply, "two-fiber-echo");
+  }
+  for (auto& sp : pairs) close_pair(sp);
 }
