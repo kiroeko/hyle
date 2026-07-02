@@ -350,21 +350,32 @@ struct Scheduler::Impl {
       // so a perpetually-busy worker still services its own pinned timers; a
       // fired timer re-injects its fiber, which the find_task below then runs.
       fire_due_timers(w);
-      // Reap io completions (io-04): non-blocking poll from the hot loop so a
-      // ready completion re-injects its fiber before we look for work. Null hook
-      // (no io in use) -> skipped entirely, zero cost.
-      if (IoPollFn poll = io_poll.load(std::memory_order_acquire); poll != nullptr)
-        poll(io_poll_ctx.load(std::memory_order_relaxed), idx, 0);
       Fiber* f = find_task(w, idx);
       if (f != nullptr) {
         dispatch(w, f);
         continue;
       }
-      // No work on the first look -> become a SEARCHER. While num_searching_ > 0
-      // producers skip waking parked workers (notify() gate), so a spawn burst
-      // no longer triggers a futex per enqueue -- THIS searcher absorbs them by
-      // finding the work during its spin. The spin also just bridges the brief
-      // producer gap before the (now rarely needed) park.
+      // Run-queue DRAINED -> now reap io completions (io-04). Reaping HERE (on
+      // drain) rather than every loop iteration is what lets submit batching work:
+      // while the run queue had fibers, each ran and queued its SQE without a
+      // reap in between, so many SQEs accumulate; this drain-time reap flushes
+      // them in one enter and harvests the batch of completions, which re-inject
+      // the next wave of fibers. (tokio's tick model: run a batch of tasks, then
+      // service io -- not io between every task.) Null hook (no io) -> skipped,
+      // zero cost. A reaped completion re-injects a fiber, so re-check find_task.
+      if (IoPollFn poll = io_poll.load(std::memory_order_acquire); poll != nullptr) {
+        poll(io_poll_ctx.load(std::memory_order_relaxed), idx, 0);
+        f = find_task(w, idx);
+        if (f != nullptr) {
+          dispatch(w, f);
+          continue;
+        }
+      }
+      // No work after draining + reaping -> become a SEARCHER. While
+      // num_searching_ > 0 producers skip waking parked workers (notify() gate),
+      // so a spawn burst no longer triggers a futex per enqueue -- THIS searcher
+      // absorbs them by finding the work during its spin. The spin also just
+      // bridges the brief producer gap before the (now rarely needed) park.
       num_searching_.fetch_add(1, std::memory_order_relaxed);
       bool got = false;
       for (int spin = 0; spin < kSpinPolls && !got; ++spin) {
