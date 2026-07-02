@@ -54,6 +54,12 @@ class Waker {
 // (i.e. on a worker thread); returns an invalid Waker otherwise.
 HYLE_SCHED_API Waker current_waker() noexcept;
 
+// The index of the worker thread currently running this fiber, or -1 if not on a
+// worker. Lets io/ pick THIS worker's proactor (per-core ring, io-04 plan A) so a
+// submit and the reap of its completion happen on the same thread -- the per-core
+// discipline that makes multi-worker io safe without locking the ring.
+HYLE_SCHED_API int current_worker_index() noexcept;
+
 // Suspend the current fiber until its Waker fires. Unlike Fiber::yield() (which
 // reschedules immediately), this takes the fiber OUT of the run loop: it will not
 // run again until a Waker::wake() re-injects it. Call current_waker() FIRST and
