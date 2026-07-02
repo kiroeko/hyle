@@ -95,20 +95,20 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 ## 规模
 
-> HYLE 自有 **~30-45k 生产 / ~48-72k 含测试**；含第三方 vendored 项目总足迹 **~200-300k+**，由 ggml 主导。LOC 不是 SOTA 标尺——靠精简自有 + 借成熟件，不靠堆行数。
+> HYLE 自有 **~22-30k 生产 / ~40-55k 含测试**(2026-07-02 第二轮下修,io 破土后按实测密度分锚外推);含第三方 vendored 项目总足迹 **~200-300k+**，由 ggml 主导。LOC 不是 SOTA 标尺——靠精简自有 + 借成熟件，不靠堆行数。
 
-**完成时投影（已完成 47 里程碑 = 8,130 生产 + 5,138 测试 cloc 实测，其余按实测密度再投影）：**
+**完成时投影（已完成 = 9,932 生产 cloc 实测,其余按已完成模块的实测密度分锚外推）:**
 
-| 部分 | 生产 LOC | 依据 |
+| 部分 | 生产 LOC | 依据 / 置信度 |
 |---|---|---|
-| 已完成（foundation + simd 核心 + sched 核心+同步） | **~8.1k** | cloc 实测 |
-| simd 广度补全（int 量化类型 + 更多 op + AVX512 启用） | +~3-5k | 延期登记，会长回 |
-| sched 后段（协程胶水/取消/优雅关闭/栈 guard page） | ~2-4k | 核心+同步已 done，剩适配 |
-| io/（proactor + io_uring/IOCP + net/file） | ~5-8k | 借 liburing，HYLE 写适配 |
-| compute/（device/stream + ggml bridge + Vulkan） | ~5-8k | 借 ggml 算子，HYLE 写 bridge |
-| graph + mem-05/06 + C-ABI shim + T3（serialize/hash） | ~6-11k | 多借 simdjson/flatbuffers |
-| **HYLE 自有 生产合计** | **~30-45k** | — |
-| **HYLE 自有 含测试**（test/prod≈0.62 实测） | **~48-72k** | — |
+| 已完成（foundation + simd f32 核 + sched 全支线 + io 收割层） | **~9.9k** | cloc 实测(硬锚) |
+| simd 广度补全（int 量化类型 + 更多 op + AVX512 启用） | +~2-3k | 有 f32 核密度锚,中 |
+| sched 后段（协程胶水/取消/优雅关闭/栈 guard page） | +~1-1.5k | 核心已 1k,后段更薄,中 |
+| io/ net·socket·file（proactor+双后端已 done,net/ 未做） | +~2-3.5k | 参照 platform 1.3k,低(net/ 未开工) |
+| compute/（device/stream + ggml bridge + Vulkan） | +~3-5k | 借 ggml 薄层,很低(0 行无锚) |
+| graph + mem-05/06 + C-ABI shim + T3（serialize/hash） | +~4-6k | 多借 simdjson/flatbuffers,低 |
+| **HYLE 自有 生产合计** | **~22-30k**(中值 26k) | 第二轮下修;三大支柱落地即复核 |
+| **HYLE 自有 含测试**（test/prod≈0.65 实测,16.3k 含测试/9.9k 生产） | **~40-55k** | — |
 
 **第三方（vendored，计入项目足迹）——大头，由 ggml 主导：**
 

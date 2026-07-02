@@ -6,7 +6,7 @@
 
 ## 1. Scope 与形状（收口）
 
-通用高性能 C++ infra，七模块：`mem / container / simd / sched / io / compute / graph`。地基继承 clay（约 1/3），支柱自造（约 2/3）。HYLE 自有 **~30-45k 生产 / ~48-72k 含测试**；含第三方 vendored 总足迹 **~200-300k+**（ggml 主导，详见 hyle-scope.md 规模节）。不特化、不往应用层叠。详见 README 与 hyle-scope.md。
+通用高性能 C++ infra，七模块：`mem / container / simd / sched / io / compute / graph`。地基继承 clay（约 1/3），支柱自造（约 2/3）。HYLE 自有 **~22-30k 生产 / ~40-55k 含测试**（2026-07 实测密度再投影）；含第三方 vendored 总足迹 **~200-300k+**（ggml 主导，详见 hyle-scope.md 规模节）。不特化、不往应用层叠。详见 README 与 hyle-scope.md。
 
 ## 2. 标准
 

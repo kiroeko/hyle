@@ -82,7 +82,7 @@ container/       │                            │    vector+      mem;containe
 | **P5** | compute | device/stream包ggml / device buffer(compute 自有) / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
 | **P6** | graph + 收口 | taskgraph绑sched / C-ABI shim / serialize/hash/T3 / FFI | 11-17k | **~6-11k**(多借 simdjson 等) |
 
-**HYLE 自有合计:~30-45k 生产 / ~48-72k 含测试**(实测 test/prod≈0.62)。**约 47 个里程碑**(milestones/README 为准),每个"写完→编过→单测→基准→提交"闭环。
+**HYLE 自有合计:~22-30k 生产 / ~40-55k 含测试**(实测 test/prod≈0.65,2026-07 密度再投影)。**约 47 个里程碑**(milestones/README 为准),每个"写完→编过→单测→基准→提交"闭环。
 
 **关键路径**（最长链）：`error → platform → mem → container → sched`。sched 是瓶颈，等 container 队列 + time + platform park 全就位。所以 **P2/P3 的 container/time 要尽早动**。simd 不在关键路径（依赖 platform 借 CPUID 探测，其余零 HYLE 依赖），可与整条链大体并行、晚点喂 compute。
 

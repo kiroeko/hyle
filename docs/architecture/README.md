@@ -12,7 +12,7 @@
 
 - **地基（继承 clay，约占 1/3）**：内存分配器 + 容器（flat hashmap/carray/cstring）+ 跨平台原子（catomics）+ 并行编排骨架（taskgraph）。
 - **支柱（自造，约占 2/3）**：统一调度（线程/进程/纤程/协程）、fiber、网络 IO、SIMD、异构计算。
-- **体量**：HYLE 自有 ~30-45k 生产 / ~48-72k 含测试；含第三方 vendored 总足迹 ~200-300k+（ggml 主导，详见 [`hyle-scope.md`](./hyle-scope.md) 规模节）。不是"重构那 2 万行"，是"以 clay 为地基的全新 infra"。
+- **体量**：HYLE 自有 ~22-30k 生产 / ~40-55k 含测试（2026-07 实测密度再投影）；含第三方 vendored 总足迹 ~200-300k+（ggml 主导，详见 [`hyle-scope.md`](./hyle-scope.md) 规模节）。不是"重构那 2 万行"，是"以 clay 为地基的全新 infra"。
 
 ## 模块划分
 
@@ -44,7 +44,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`engineering-charter.md`](./engineering-charter.md) | **工程章程**：动手前最终依据——C++23 标准/错误模型/命名宏、开发范式、测试方案、边界、对外 FFI 决策 |
 | [`coding-conventions.md`](./coding-conventions.md) | **编码规范**：每一行怎么写才不破范式——std 分层/include/宏纪律、C-ABI 范式、错误处理、能力 dispatch 三层模型、clay 独特写法三张表 |
 | [`clay-asset-liability.md`](./clay-asset-liability.md) | clay 资产负债表：六子系统逐个盘点（内存/DataModel/SIMD/容器/并发/taskgraph），含 5 个 bug、空位 grep 证据、继承/重写判断 |
-| [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、两条主轴、7 模块划分、规模（自有 ~30-45k / 含第三方 ~200-300k+）、边界外明确不做的东西 |
+| [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、两条主轴、7 模块划分、规模（自有 ~22-30k / 含第三方 ~200-300k+）、边界外明确不做的东西 |
 | [`io-design.md`](./io-design.md) | 网络库选型：proactor 模型 + io_uring/IOCP/kqueue/epoll 四后端 + 只借 syscall 封装、调度绑 fiber |
 | [`sched-design.md`](./sched-design.md) | 统一调度器（4 节完整）：fcontext 上下文切换 + per-core 无锁 run-queue/work-stealing + Waker completion 脊 + 协程/fiber 统一 |
 | [`lifecycle-design.md`](./lifecycle-design.md) | **失败边界**：fail-fast 绝不 try-catch + 四类失败分类 + 取消(结构化并发/await点) + 背压 + 优雅关闭 + 故障隔离=进程边界 + 跨 C-ABI 错误约定 |
