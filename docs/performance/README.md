@@ -49,7 +49,7 @@
 | **time** fast_monotonic_ns(opt-in rdtsc) | 7.4(Win)/6.8(Lin) | HYLE monotonic_ns | 12.4/12.6 | 1.67x/2.0x | (std 无 opt-in TSC 钟) | n/a | n/a | ✅快 1.7-2.0x(跳过 OS 调用壳;非默认,可能跳变;leaf 0x15 只优化启动校准+乘子精度,**不改读延迟**,详节③) |
 | **time** fast_realtime_ns(opt-in coarse) | 1.8(Win)/3.1(Lin) | HYLE realtime_ns | 13.5/13.0 | 7.6x/4.2x | (std 无 opt-in coarse 钟) | n/a | n/a | ✅快 4-7.6x(coarse 时间源,~1-15ms 分辨率;日志时间戳用,详节③) |
 | **time** timer wheel churn(arm+70%cancel+expire) | 12.6/11.8 | (std 无定时器结构) | n/a | n/a | min-heap(Go/libev,惰性 cancel) | 26.3/38.7 | 2.09x/3.27x | ✅**双平台赢**(真实 agent 画像;堆墓碑穿 expire,轮 O(1) 摘链已清;time-02) |
-| **time** timer wheel arm+cancel / arm+expire | 7.4·23/5.6·17 | (std 无) | n/a | n/a | min-heap | 7.4·25.5/2.9·38.7 | 平·平/输0.53·赢2.25 | ➖平台分歧:arm+cancel Lin 输 0.53x=**刻意取舍**(O(1)摘链清空间 vs 堆惰性墓碑1bit,objdump 证无编瘸;churn 才是设计负载,见 sched 详节三选一诊断) |
+| **time** timer wheel arm+cancel / arm+expire | 7.4·23/5.6·17 | (std 无) | n/a | n/a | min-heap | 7.4·25.5/2.9·38.7 | 平·平/输0.53·赢2.25 | ➖平台分歧:arm+cancel Lin 输 0.53x=**刻意取舍**(O(1)摘链清空间 vs 堆惰性墓碑1bit,objdump 证我方代码正常编译无降级;churn 才是设计负载,见 sched 详节三选一诊断) |
 | **util** Rng next_u64(xoshiro256++) | 1.56 | std::mt19937_64 | 2.41 | 1.54x | (std 即标尺) | 同std | 1.54x | ✅赢 std PRNG |
 | **util** Rng range_u64(真 Lemire 无除法) | 1.46(microbench)/shuffle见下 | std::uniform_int_distribution | 2.75 | — | absl/numpy/rust rand(真 Lemire) | 同法 | ~1.0x | ✅改真 Lemire(128 位乘替 2 idiv);常量界 microbench 编译折除法故 1.46ns 平,**真实运行时界见 shuffle 3.2x** |
 | **util** Rng next_double [0,1) | 1.65 | std::uniform_real_distribution | 2.64 | 1.60x | (std 即标尺) | 同std | 1.60x | ✅赢(53 位缩放) |
