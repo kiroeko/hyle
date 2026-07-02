@@ -834,8 +834,15 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   // is always 0, so `result` is not delivered on Linux -- post() is a wake hook,
   // not a data channel (IOCP can carry bytes; asymmetry documented in header).
   (void)result;
-  return queue_sqe(IORING_OP_NOP, -1, 0, 0, 0,
-                    user_data);
+  queue_sqe(IORING_OP_NOP, -1, 0, 0, 0, user_data);
+  // post() MUST flush immediately, unlike submit_* (which batch onto the next
+  // reap): post is the CROSS-THREAD wake path -- the consumer is blocked in
+  // reap() on ANOTHER thread and cannot flush the SQE for us, so if we merely
+  // queued it the NOP would never reach the kernel and the reaper would never
+  // wake. Enter now to submit all pending SQEs (this NOP + any batched with it).
+  int r = sys_io_uring_enter(impl_->fd, impl_->sq_pending, 0, 0, nullptr, 0);
+  impl_->sq_pending = 0;
+  return r >= 0;
 }
 
 // epoll fallback: arm a one-shot readiness watch for `fd` and remember the op;
