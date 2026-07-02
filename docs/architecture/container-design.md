@@ -6,11 +6,11 @@
 
 | 资产 | 行数 | 性质 | 处置 |
 |---|---|---|---|
-| flat `hashmap`（C 宏泛型 open-addressing）| 715 | power-of-two 位与取模、线性探测+tombstone、keys/values 连续。**规划了 SwissTable SIMD 探测但未实现**（`hashmap.h:109-131`）| 改后继承 + **补 SwissTable** |
+| flat `hashmap`（C 宏泛型 open-addressing）| 715 | power-of-two 位与取模、线性探测+tombstone、keys/values 连续。clay **规划了 SwissTable SIMD 探测但未实现**（`hashmap.h:109-131`）| ✅ 继承 + **补全 SwissTable**（concept 模板重写，对标 absl 平或反超）|
 | `carray`（header-before-data 侵入式数组）| 423 | 指针即数据、cache 友好、可传 C API | 改后继承 + RAII 壳 |
 | `cstring`/`string_ref` | 1003 | ptr+len+null_terminated 位、零拷贝、interning | 直接继承 |
 | `string_buf`（引用计数驻留池）| — | murmur hash + make/destroy 跨 DLL | 直接继承 |
-| `concurrent_vector` | — | 读优化、写加锁 | 改后继承（lock-free 化）|
+| `concurrent_vector` | — | 读优化、写加锁 | ✅ lock-free 化（读 lock-free/写 SpinLock，赢 tbb 并发读 2.2x）|
 
 ## 核心决策：唯一真"造不借"的 Tier 0
 
@@ -59,9 +59,9 @@ container/                  (实际文件名,扁平布局)
 |---|---|---|---|
 | **SmallVector<T,N>** | inline storage，小集合零堆分配 | 通用热路径（参数列表、临时集合）| 抄 **folly `small_vector`** 设计（MaxInline 策略 + size 压进 inline buffer 省头部，比 absl::InlinedVector 更抠字节），不抄代码 |
 | **intrusive list/slist** | 节点内嵌 hook，零额外分配、O(1) 摘除 | **sched 的 waiter 链、run-queue** | 参考 **folly `IntrusiveList`**（boost-free，比 boost.intrusive 轻）|
-| **lock-free bounded ring（SPSC/MPMC）** | 有界无锁环 | **sched 的 per-core run-queue + global 注入** | **vendoring 成熟实现**（Vyukov bounded MPMC：数组+每槽 seq；rigtorp SPSC），**不自造**——见下张力 |
+| **lock-free bounded ring（MPMC）** | 有界无锁环 | **sched 的 per-core run-queue + global 注入** | **移植 Vyukov bounded MPMC 算法**（数组+每槽 seq；算法非自创、代码自写移植），**不 vendor 现成库**——见下张力 |
 
-> **lock-free 队列造借结构（按实现校正）**：分两类。**基础有界 ring（SPSC/MPMC）借/vendoring**——出名难写对（ABA、memory order、TSan），且无 C-ABI 理由必须自造，故 vendor Vyukov MPMC / rigtorp SPSC（皆单头可内联，container-01），自造预算集中到差异焦点 hashmap。**但 work-stealing 变体自写**——sched/graph 要的 owner-LIFO + steal-half + packed-head CAS 语义现成件不提供，故 container-07（Chase-Lev deque，供 graph fork-join）、container-08（tokio 式 FIFO ring，供 sched 本地队列）移植自写。即 container "自造"边界 = hashmap + carray + string + work-stealing 队列；基础 ring 借。
+> **lock-free 队列造借结构（按实现校正）**：全部**自写移植**，无 vendor 单头。**基础有界 ring（`BoundedQueue`）移植 Vyukov bounded MPMC 算法**——算法出名难写对（ABA、memory order、TSan），故忠实移植经典算法而非自创（头注释明确 `NOT a HYLE invention`），但**代码在 HYLE 仓库、自己维护 + 调优**：cache-line pad 每槽独占 line、`pos & mask` 位与寻址（rigtorp 用运行期 `% capacity` 的 idiv）、relaxed CAS——单线程实测**赢同契约 SOTA rigtorp 1.5x**、多线程统计平局（见 performance.md queue 节；rigtorp 是 **bench 对照**，不是被 vendor 进来的依赖）。**work-stealing 变体同样自写移植**——sched/graph 要的 owner-LIFO + steal-half + packed-head CAS 语义现成件不提供，故 container-07（Chase-Lev deque，供 graph fork-join）、container-08（tokio 式 FIFO ring，供 sched 本地队列）移植自写。**`ShardedQueue`（container-10）是 HYLE 组合创新**——N 个 Vyukov 子环分片消单点 CAS 争用，反超 rigtorp 2-5x（生产 sched global 注入走这条）。即 container 的 lock-free 簇全自写（移植经典算法或组合创新），无 vendor 单头。
 
 ## 与其他模块的耦合（container 是 sched 的原语供应商）
 
@@ -101,11 +101,11 @@ container/                  (实际文件名,扁平布局)
 
 **与前身 clay 的对比**：clay 的 `string_ref` 搜索族**全部**转发 `std::string_view`，且其 `cstring.h` 直接 `#include <iostream>`/`<string>`/`<functional>`。HYLE 更克制——只借 std 真正更强的几项、且只从 `.cc` 借、公开头零 std string 头。结果：container·str 全线追平或反超 `std::string_view`，无真输项（见 performance.md container·str 节）。
 
-## 待决（需主拍板）
+## 已定决策（均已落地）
 
-1. **hashmap 保持 C 宏泛型还是 C++23 concept 模板重写**？**✅ 已决：concept 模板写内部实现 + 需过边界的特定类型封薄 C-ABI shim**——去掉 C 宏的 temp/哨兵/sizeof 校验包袱，干净类型安全；hashmap 绝大多数是内部 C++ 用，过边界的少数（如 string 映射）再封 shim。即 charter「内部 C++23 / 外部 C-ABI」在容器上的落地。
-2. **SwissTable 自实现还是抄 abseil 内部**？建议**自实现**（C-ABI 边界 + 差异焦点 + clay 已规划）——这是唯一不外包的 Tier 0，参考 abseil 设计笔记但代码自写。
-3. **lock-free 队列放 container/ 还是 sched/**？建议放 **container/**（它是通用数据结构，sched 是消费者），保持"container 供原语、sched 做组合"的干净分层。
+1. **hashmap 保持 C 宏泛型还是 C++23 concept 模板重写**？**concept 模板写内部实现 + 需过边界的特定类型封薄 C-ABI shim**——去掉 C 宏的 temp/哨兵/sizeof 校验包袱，干净类型安全；hashmap 绝大多数是内部 C++ 用，过边界的少数（如 string 映射）再封 shim。即 charter「内部 C++23 / 外部 C-ABI」在容器上的落地。
+2. **SwissTable 自实现还是抄 abseil 内部**？**自实现**（C-ABI 边界 + 差异焦点 + clay 已规划）——这是唯一不外包的 Tier 0，参考 abseil 设计笔记但代码自写。已落地并对标 absl（find/insert/erase 平或反超，见 performance.md）。
+3. **lock-free 队列放 container/ 还是 sched/**？放 **container/**（它是通用数据结构，sched 是消费者），保持"container 供原语、sched 做组合"的干净分层。
 
 ## 参考
 

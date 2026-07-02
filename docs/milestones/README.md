@@ -8,10 +8,6 @@
 >
 > **clay 吸纳完整性标尺**：见 [`../architecture/clay-coverage-map.md`](../architecture/clay-coverage-map.md)——clay 每个文件 → HYLE 对应物/状态/LOC 的逐文件映射。**每个吸纳 clay 的里程碑闭环前必须 diff clay 同名文件 API 表面**，缺的补或显式登记，不许默默略过(红队核账 2026-06 立此纪律)。
 
-## 每个里程碑文档的模板
-
-见 [`_TEMPLATE.md`](./_TEMPLATE.md)。固定章节：**前置依赖 / 目的 / 在架构中的位置 / 具体事务 / 交付物 / 验收标准(含覆盖 Tier) / 参考**。
-
 ## Walking Skeleton（最先做，纵切验脊）
 
 打通"**一个 fiber 跑起→让出→被唤醒**"。= `00` + 各模块**第一个最小里程碑**串起来，**先不做 work-stealing/多后端**。验掉最高风险的 fcontext+调度脊，之后逐里程碑加厚。

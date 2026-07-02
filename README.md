@@ -1,6 +1,6 @@
 # HYLE
 
-**HYLE 是一个 C++ 基础设施库**（编译成带 C-ABI 的共享库），给上层当地基——两个一等服务对象：**① 蜂群 agent**（v1 北极星，百万 IO-bound agent）和 **② AI 推理引擎**（高并发 serving + paged KV-cache + 批调度 + GPU kernel，HYLE 当引擎下面的 infra，不与 vLLM 正面竞争）；训练框架为较弱场景。它把四样东西做在**同一套底座**上：
+**HYLE（HYbrid LEvels）是一个 C++ 基础设施库**，编译成带 C-ABI 的共享库，给上层当地基。把四样东西做在**同一套底座**上：
 
 1. **调度** — 一个调度器同时管 线程 / 进程 / 纤程 / 协程
 2. **内存** — 分配器 / arena / cache-line 对齐 / NUMA
@@ -9,75 +9,84 @@
 
 **差异点在"同一套底座"**：GPU 算完、网卡收到包、fiber 主动让出——都回到同一个调度器、唤醒同一个 fiber，而不是四个子系统各开线程池、各跑事件循环互相打架。所以 HYLE 不是"又一个 hashmap / 日志库"，而是让 计算 / 并发 / 内存 / IO 无阻抗拼在一起的那层地基。
 
-> HYLE = HYbrid LEvels。回到 C、贴硬件、混合异构、把性能做到极致（SOTA）。是对 `slate-render` 中 clay infra 层的重构与扩大。
+**两个一等服务对象**：
+1. 蜂群 agent（v1 北极星，百万 IO-bound agent）；
+2. AI 推理引擎（高并发 serving + paged KV-cache + 批调度 + GPU kernel，当引擎下面的 infra，不与 vLLM 正面竞争）。训练框架为较弱场景。
 
-## 核心目的：性能做到 SOTA（不是"比 std 快"就行）
+**唯一的存在理由是把性能做到业界顶尖（SOTA）**：回到 C、贴硬件、混合异构，把性能做到极致（时间与空间复杂度冲突时优先时间）。标尺是各领域参考库（hashmap→absl/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway/xsimd、调度→tokio/Seastar），不是 std——赢 std 只是最低门槛。每个性能件都有对标 SOTA 的真实 benchmark，赢多少、输多少都诚实登记为优化目标。对标数字见 [`performance.md`](./docs/architecture/performance.md)，逐里程碑实现进度见 [`docs/milestones/README.md`](./docs/milestones/README.md)。
 
-**HYLE 是一个高性能基础设施库，唯一的存在理由是把性能做到业界顶尖（SOTA）。** 这条是第一性的，凌驾于"功能完整""代码量"之上：
+## 上手
 
-- **标尺是参考库，不是 std**：赢 `std::unordered_map`/`std::async` 是**最低门槛**——std 在这些点上本就不是为极致性能设计的。真正的标尺是**各领域的 SOTA 参考库**:hashmap→`absl::flat_hash_map`/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway/xsimd、调度→tokio/Seastar。**做到等同或超过它们，HYLE 才有价值；只赢 std 不算数。**
-- **用数据说话,输了也报**:每个性能件必须有**对标 SOTA 的真实 benchmark**(非推算),诚实印出数字——赢在哪、输多少、差距登记为优化目标。掩盖差距 = 自欺。
-- **当前实测铁证**:SwissTable 100k uint64(Linux GCC14)——vs `std::unordered_map` find-hit 2.42x/insert 5.3x/erase 3.5x(轻松赢 std);**vs `absl::flat_hash_map`** find-hit **~1.10x**、insert **~1.40x**、erase **~1.39x** 均反超,find-miss **≈1.00x 统计平局**(四项全部追平或超 SOTA)。这就是"对标 SOTA"的意义:它逼出了 std 对标永远看不到的真实差距——find 起初 **0.77x 慢 absl ~25%**,学 absl 三刀优化(probe 预取 + mix64 128 位乘折叠 + H1=identity)后反超。详见 [`performance.md`](./docs/architecture/performance.md)。
-
-## 当前实现状态
-
-> 诚实标尺:**已实现的都经双平台(Win MSVC + Linux GCC14)真编真测**,lock-free/并发件过 WSL ThreadSanitizer。逐里程碑进度(预测 vs 真实 LOC + clay API diff)见 [`docs/milestones/README.md`](./docs/milestones/README.md);clay 吸纳完整度见 [`clay-coverage-map.md`](./docs/architecture/clay-coverage-map.md)。性能对标见 [`performance.md`](./docs/architecture/performance.md)。
-
-| 模块 | 已实现 | 状态 |
-|---|---|---|
-| **error** | Status(8B 指针标签内联) + `std::expected` + ASSIGN_OR_RAISE | ✅ |
-| **obs** | 结构化日志:level 门控 + sink 注册表 + stderr 彩色 sink(非变参 vtable + std::format) | 🔶 hook 待 |
-| **platform** | thread + park(futex/WaitOnAddress) + **dynlib(RAII)** + **fs/env(stat/mkdir/iterate/cwd/temp/home/getenv,buffer-fill+visitor)** | 🔶 vm 待 |
-| **mem** | Allocator vtable(修 alignment) + **mimalloc backing(Win 默认堆 2.5–12x,随负载:并发~2.8x、churn~4x、批量分配最高~12x)** + MemoryArena(无锁) + Arena bump + ObjectPool + StackAllocator | 🔶 NUMA/大页 待 |
-| **time** | 单调钟 + 墙钟 + sleep + Instant(ns) | ✅ |
-| **container** | XXH3 哈希 + CArray + **SwissTable(SIMD 探测,对 std 快 2.4–5.3x、追平/超 absl;type-erased 冷核 + NEON)** + SmallVector + intrusive list + lock-free MPMC/SPSC/work-stealing 队列 + **string_ref/string_buf + 字节串算法 + path 路径操作** | ✅ |
-| **util** | **Ref<T> 引用计数 + ScopeGuard/DEFER + 编译期 type_name + Registry 自注册** | ✅ |
-| **sched** | fcontext 纤程切换 + per-core run-queue + work-stealing 调度器 + **Waker completion 脊(suspend/wake)** + **同步原语(futex Mutex 打平 marl;fiber-aware CV/WaitGroup/Latch/Channel,双模 fiber/裸线程)** | 🔶 栈池/deadline/协程/取消 待 |
-| **bench** | nanobench 设施 + 对标各域 SOTA(absl/mimalloc/moodycamel/oneTBB/marl/Highway/crossbeam):SwissTable、分配器、队列簇、fiber 同步/调度、SIMD 核 | ✅ |
-| **simd** | 运行期 CPUID dispatch(探测+变体选择) + vec<T,N> D-tag 抽象(照搬 Highway 契约) + scalar/SSE4.2/AVX2 后端(对标 Highway 追平,4.6x over auto-vec) + fp16/bf16 dtype(F16C) + **exp/log/tanh 数学核(Highway+xsimd vendored 无条件默认开,逐 op best-of-breed:exp 0.23/log 0.26/tanh 0.44 ns,全 ≥ 两库 SOTA)** + NEON/AVX512(写+编+objdump 验,未跑) | 🔶 NEON/AVX512 待目标硬件实跑;gelu/softmax 待 |
-| io / compute / graph | — | 📋 规划 |
-
-**性能验证(已落地部分)**:SwissTable vs `std::unordered_map`(100k keys,Linux GCC14,mix64+prefetch+H1 优化后复测):find-hit 2.42x、find-miss 2.26x、insert 5.3x、erase 3.5x;vs `absl::flat_hash_map` 四项全部追平或反超。**fiber 同步/调度 vs marl(SOTA 标尺)**:fiber 切换 21ns(=boost.context)、spawn 2.17x、争用 Mutex 打平、无争用 Mutex(多线程)1.40x、fork-join 反超 1.49–1.71x。详见 [`performance.md`](./docs/architecture/performance.md)。
-
-**边界诚实**:已实现件局限于 **x86-64 Windows/Linux 真验**;ARM64 + macOS 路径多为"已写未验"(无测试机);simd 的 scalar/SSE4.2/AVX2 后端 x86 实跑,**NEON/AVX512 后端写+编+objdump 验但未在目标硬件实跑**;io/compute/graph 三支柱尚未开工。
+**想把 HYLE 当依赖用？先看 [使用指南 `docs/guide/usage-guide.md`](./docs/guide/usage-guide.md)**——构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界（面向库使用者）。可运行的示例工程见最外层 [`samples/`](./samples/)。
 
 ## 设计文档
 
-> **想把 HYLE 当依赖用？先看 [`docs/guide/usage-guide.md`](./docs/guide/usage-guide.md)**——构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界（面向库使用者）。可运行的示例工程见最外层 [`samples/`](./samples/)。
-
-完整的设计、背景、命名、源码位置、资产负债表、scope 与各支柱选型，集中在架构设计文档（唯一信源）：
+完整的设计、背景、命名、源码位置、资产负债表、scope 与各支柱选型，集中在架构设计文档（但代码本身仍是唯一信源）：
 
 **→ [`docs/architecture/README.md`](./docs/architecture/README.md)**
 
+### 总览与规范（写代码前必读）
+
 | 文档 | 内容 |
 |---|---|
-| [动机](./docs/architecture/motivation.md) | 为什么是现在/为谁做：AI-native 四压负载 + 蜂群 agent 北极星 + 比 Seastar 多异构维度 |
+| ⭐ [实现速查表](./docs/architecture/implementation-cheatsheet.md) | **写代码前只读这一张**：聚合每次实现都要用的硬规则——std 红线 / 失败模型 / 分层判据 / C-ABI / 里程碑 CHECKLIST / 构建环境 |
 | [架构总入口](./docs/architecture/README.md) | 定位、模块划分、贯穿性设计原则、项目背景与命名 |
+| [动机](./docs/architecture/motivation.md) | 为什么是现在/为谁做：AI-native 四压负载 + 蜂群 agent 北极星 + 比 Seastar 多异构维度 |
 | [工程章程](./docs/architecture/engineering-charter.md) | 动手前最终依据：C++23 标准 / 错误模型 / 测试 / 边界 / 对外 FFI |
 | [编码规范](./docs/architecture/coding-conventions.md) | 每一行怎么写才不破范式：std 分层 / 宏纪律 / C-ABI 范式 / clay 写法继承表 |
+
+### 背景与盘点
+
+| 文档 | 内容 |
+|---|---|
 | [clay 资产负债表](./docs/architecture/clay-asset-liability.md) | clay 六子系统逐项盘点：继承 / 重写 / 从零造 |
+| [clay 覆盖映射](./docs/architecture/clay-coverage-map.md) | clay 每个文件 → HYLE 对应物/状态/LOC 的逐文件吸纳完整度 |
 | [scope 定义](./docs/architecture/hyle-scope.md) | 范围边界、7 模块划分、体量估算 |
-| [io 网络设计](./docs/architecture/io-design.md) | proactor 模型 + 四后端 + 调度绑定 |
-| [sched 调度器](./docs/architecture/sched-design.md) | fcontext 切换 + 无锁 work-stealing + Waker completion 脊 + 协程/fiber 统一 |
-| [lifecycle 失败边界](./docs/architecture/lifecycle-design.md) | fail-fast 绝不 try-catch + 取消/背压/关闭/隔离 + 跨 C-ABI 错误 |
-| [compute 异构计算](./docs/architecture/compute-design.md) | device/stream/kernel 抽象 + ggml 解耦 + shader 一等公民 |
-| [simd 向量化](./docs/architecture/simd-design.md) | 精简可移植 vector + 运行时 dispatch + dtype(fp16/bf16) + 借 Highway/xsimd 数学核(vendored) |
+
+### 模块设计
+
+| 文档 | 内容 |
+|---|---|
 | [mem 内存](./docs/architecture/mem-design.md) | 通用 malloc 借 mimalloc + 自造专用分配器 + 修 5 bug + NUMA/大页/64B 对齐 |
 | [container 容器](./docs/architecture/container-design.md) | 唯一造不借的 T0 + SwissTable SIMD 探测 + SmallVector/intrusive/lock-free（供 sched）|
+| [simd 向量化](./docs/architecture/simd-design.md) | 精简可移植 vector + 运行时 dispatch + dtype(fp16/bf16) + 借 Highway/xsimd 数学核(vendored) |
+| [sched 调度器](./docs/architecture/sched-design.md) | fcontext 切换 + 无锁 work-stealing + Waker completion 脊 + 协程/fiber 统一 |
+| [io 网络设计](./docs/architecture/io-design.md) | proactor 模型 + 四后端 + 调度绑定 |
+| [compute 异构计算](./docs/architecture/compute-design.md) | device/stream/kernel 抽象 + ggml 解耦 + shader 一等公民 |
+| [lifecycle 失败边界](./docs/architecture/lifecycle-design.md) | fail-fast 绝不 try-catch + 取消/背压/关闭/隔离 + 跨 C-ABI 错误 |
+
+### 路线与验证
+
+| 文档 | 内容 |
+|---|---|
 | [实现路线图](./docs/architecture/roadmap.md) | 依赖图（无环）+ 6 批施工序 + 关键路径 + 验收门槛 + 决策清单 |
-| [性能预期](./docs/architecture/performance.md) | vs std 的时间/空间预期（两桶分列）+ Amdahl 整体观 + benchmark 验证 |
+| [性能对标](./docs/architecture/performance.md) | vs std / vs SOTA 两桶分列 + Amdahl 整体观 + benchmark 验证 |
 | [参考库映射](./docs/architecture/references.md) | clone 的 20+ 参考库 → HYLE 模块，借/参考 + 开工优先级 |
+| [已知问题](./docs/architecture/known-issues.md) | 悬而未决的 bug / 存疑项 / 待目标硬件复验的清单 |
+
+### 里程碑与使用指南（不在 architecture 下）
+
+| 文档 | 内容 |
+|---|---|
+| [里程碑索引](./docs/milestones/README.md) | **唯一进度信源**：约 47 个里程碑，逐步计划 + 预测 vs 真实 LOC + clay API diff + 状态 |
+| [使用指南](./docs/guide/usage-guide.md) | 面向库使用者：构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界 |
+| [调用安全契约](./docs/guide/usage-contract.md) | 为 SOTA 性能保留的特定调用约束（fiber/thread_local、分配器跨线程 free）|
 
 ## 目录结构
 
 ```
 hyle/
-├─ README.md              本文件（项目门面）
+├─ README.md              本文件（项目门面：简介 + 目录）
+├─ include/hyle/          公开头（error/obs/platform/mem/time/container/util/sched/simd/math）
+├─ src/                   实现（.cc，按模块分目录）
+├─ tests/                 GoogleTest 单元/并发/TSan 测试
+├─ bench/                 nanobench 对标 SOTA（container/mem/queue/sched/simd + rust/ crossbeam）
+├─ samples/               可运行示例工程
+├─ scripts/               工具（bench-stat.py 统计法等）
+├─ third_party/           vendored（mimalloc/Highway/xsimd/simdutf/nanobench…）
 └─ docs/
-   └─ architecture/       架构设计文档（唯一信源）
-      ├─ README.md         总入口
-      ├─ clay-asset-liability.md
-      ├─ hyle-scope.md
-      ├─ io-design.md
-      └─ compute-design.md
+   ├─ architecture/       架构设计文档（设计/背景/决策；代码才是唯一信源）
+   ├─ milestones/         里程碑逐步计划（唯一进度信源）
+   ├─ guide/              使用指南 + 调用安全契约（面向库使用者）
+   └─ debug/              调试/事故追查记录
 ```
