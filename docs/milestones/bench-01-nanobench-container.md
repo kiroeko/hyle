@@ -11,7 +11,7 @@
 
 ## 真实基准数据（WSL Ubuntu24.04 / g++-14 / -O3 / 100k uint64 keys）
 
-> ⚠️ **这是 bench-01 当时(mix64/prefetch/H1 优化*前*)的快照,作历史留档。当前权威值见 [`../architecture/performance.md`](../architecture/performance.md)**——后续优化把 find-hit 推到 2.42x、并对标 absl(此处只对 std)。本节数字不代表当前性能。
+> ⚠️ **这是 bench-01 当时(mix64/prefetch/H1 优化*前*)的快照,作历史留档。当前权威值见 [`../performance/benchmarks-error-hash.md`](../performance/benchmarks-error-hash.md)**——后续优化把 find-hit 推到 2.42x、并对标 absl(此处只对 std)。本节数字不代表当前性能。
 
 **SwissTable vs std::unordered_map**（relative = std 基线,越高越快）:
 

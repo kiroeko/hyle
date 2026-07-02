@@ -53,7 +53,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 自造专用分配器（arena/pool/stack/fiber栈/pinned）+ 修 5 bug + NUMA/大页/64B 对齐契约 |
 | [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
 | [`roadmap.md`](./roadmap.md) | 实现路线图：模块依赖图（无环）+ 依赖层 P0-P6 拓扑序 + 关键路径 + 每阶段验收门槛 + 完整决策清单（已决+待决）|
-| [`performance.md`](./performance.md) | 性能预期 vs std：时间/空间分列、drop-in 可比 vs std 没有的能力两桶、Amdahl 整体观、benchmark gate 验证 |
+| [`../performance/`](../performance/README.md) | 性能预期 vs std / vs SOTA + 实测对标(已独立成 `docs/performance/` 目录:总账 ledger + 按模块分档的 benchmarks) |
 | [`references.md`](./references.md) | 参考库映射：clone 的 20+ 库 → HYLE 模块，借/参考标注、开工优先级（含 Intel oneMath/oneDNN）|
 | [`usage-contract.md`](../guide/usage-contract.md) | **调用安全边界**：为 SOTA 性能保留的特定调用约束（fiber 勿跨 yield 持有 thread_local；分配器跨线程 free 安全/勿 static+LTO 内联进 fiber 体），每条带机制+安全模式+后果 |
 

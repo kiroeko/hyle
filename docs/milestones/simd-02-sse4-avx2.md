@@ -12,7 +12,7 @@
 ## 前置依赖
 
 - 硬前置：`simd-01`（vec.h D-tag 契约 + scalar 地板 + dispatch 探测骨架 + backend ladder）。
-- 决策依据：[`simd-design.md`](../architecture/simd-design.md) 落地清单 #2；[`performance.md`](../architecture/performance.md)（SIMD vs scalar 4-16x、SOTA 标尺=Highway）；[`references.md`](../architecture/references.md)（Highway=参考不 vendor）。
+- 决策依据：[`simd-design.md`](../architecture/simd-design.md) 落地清单 #2；[`performance/benchmarks-simd.md`](../performance/benchmarks-simd.md)（SIMD vs scalar 4-16x、SOTA 标尺=Highway）；[`references.md`](../architecture/references.md)（Highway=参考不 vendor）。
 
 ## 目的（为什么做这一步）
 

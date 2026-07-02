@@ -211,7 +211,7 @@ mem/ 提供一组**专用分配器**,各自为一种分配模式设计。**选�
 | **单线程、同一种固定大小对象反复 alloc/free**(对象池) | `GrowablePool<T>` | 单线程 free-list,无原子,3.5x 赢裸 mi。**这是单线程对象池的正解**。 |
 | **多线程共享一个有界固定池**(每线程都从同一池借/还,如 fiber 栈池) | `MemoryArena` / `ObjectPool<T>` | 无锁分片 Treiber 栈,跨线程安全。**⚠️ 只在真需要跨线程共享时用**——它每次 alloc/free 各付一次原子 CAS,**单线程用它就是选错工具**(慢裸 mi ~3x,该换 `GrowablePool`)。`ObjectPool<T>` = `MemoryArena` + typed placement-new/dtor。 |
 
-**一句话决策树**:单纯 malloc→`SystemAllocator`;批量分配整批丢→`Arena`/`StackAllocator`;单线程对象池→`GrowablePool`;**多线程共享**有界池→`MemoryArena`/`ObjectPool`。无锁池(`MemoryArena`/`ObjectPool`)的原子开销只有在真跨线程共享时才划算,单线程场景务必用 `GrowablePool` 或 bump 分配器。详细性能数据见 [`architecture/performance.md`](../architecture/performance.md) mem 节。
+**一句话决策树**:单纯 malloc→`SystemAllocator`;批量分配整批丢→`Arena`/`StackAllocator`;单线程对象池→`GrowablePool`;**多线程共享**有界池→`MemoryArena`/`ObjectPool`。无锁池(`MemoryArena`/`ObjectPool`)的原子开销只有在真跨线程共享时才划算,单线程场景务必用 `GrowablePool` 或 bump 分配器。详细性能数据见 [`performance/benchmarks-mem-container.md`](../performance/benchmarks-mem-container.md) mem 节。
 
 ### 3.2 container —— SwissTable（对标 absl 追平/超，快 std 2.4-5.3x）
 ```cpp

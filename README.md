@@ -13,7 +13,7 @@
 1. 蜂群 agent（v1 北极星，百万 IO-bound agent）；
 2. AI 推理引擎（高并发 serving + paged KV-cache + 批调度 + GPU kernel，当引擎下面的 infra，不与 vLLM 正面竞争）。训练框架为较弱场景。
 
-**唯一的存在理由是把性能做到业界顶尖（SOTA）**：回到 C、贴硬件、混合异构，把性能做到极致（时间与空间复杂度冲突时优先时间）。标尺是各领域参考库（hashmap→absl/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway/xsimd、调度→tokio/Seastar），不是 std——赢 std 只是最低门槛。每个性能件都有对标 SOTA 的真实 benchmark，赢多少、输多少都诚实登记为优化目标。对标数字见 [`performance.md`](./docs/architecture/performance.md)，逐里程碑实现进度见 [`docs/milestones/README.md`](./docs/milestones/README.md)。
+**唯一的存在理由是把性能做到业界顶尖（SOTA）**：回到 C、贴硬件、混合异构，把性能做到极致（时间与空间复杂度冲突时优先时间）。标尺是各领域参考库（hashmap→absl/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway/xsimd、调度→tokio/Seastar），不是 std——赢 std 只是最低门槛。每个性能件都有对标 SOTA 的真实 benchmark，赢多少、输多少都诚实登记为优化目标。对标数字见 [`docs/performance/`](./docs/performance/README.md)，逐里程碑实现进度见 [`docs/milestones/README.md`](./docs/milestones/README.md)。
 
 ## 上手
 
@@ -60,7 +60,7 @@
 | 文档 | 内容 |
 |---|---|
 | [实现路线图](./docs/architecture/roadmap.md) | 依赖图（无环）+ 6 批施工序 + 关键路径 + 验收门槛 + 决策清单 |
-| [性能对标](./docs/architecture/performance.md) | vs std / vs SOTA 两桶分列 + Amdahl 整体观 + benchmark 验证 |
+| [性能对标](./docs/performance/README.md) | vs std / vs SOTA 两桶分列 + Amdahl 整体观 + benchmark 验证（独立 `docs/performance/` 目录） |
 | [参考库映射](./docs/architecture/references.md) | clone 的 20+ 参考库 → HYLE 模块，借/参考 + 开工优先级 |
 | [已知问题](./docs/architecture/known-issues.md) | 悬而未决的 bug / 存疑项 / 待目标硬件复验的清单 |
 

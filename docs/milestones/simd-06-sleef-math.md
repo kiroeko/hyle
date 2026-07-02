@@ -1,6 +1,6 @@
 # simd-06：transcendental 数学核（exp/log/tanh）
 
-> **当前状态（2026-06，SLEEF 退役后回填）**：本里程碑交付的向量化数学核**现走 Highway + xsimd**（均 vendored 在 `third_party/`、无条件默认编进生产、逐 op best-of-breed 选最快核）。**最初的 SLEEF 后端已完全删除**（代码 + `HYLE_SIMD_SLEEF`/`HYLE_SLEEF_DIR` 开关 + `transcendental_sleef.cc`）——理由：SLEEF 非 header-only（需预编库），且 dispatcher 三个 op 都把它排第三，xsimd+Highway 都在时永不被选，纯死代码。下文保留 SLEEF 时期的实现/纠错记录作历史；"借核"现读作"借 Highway+xsimd（已 vendored）"。最新性能数字见 [`../architecture/performance.md`](../architecture/performance.md) 数学核节。
+> **当前状态（2026-06，SLEEF 退役后回填）**：本里程碑交付的向量化数学核**现走 Highway + xsimd**（均 vendored 在 `third_party/`、无条件默认编进生产、逐 op best-of-breed 选最快核）。**最初的 SLEEF 后端已完全删除**（代码 + `HYLE_SIMD_SLEEF`/`HYLE_SLEEF_DIR` 开关 + `transcendental_sleef.cc`）——理由：SLEEF 非 header-only（需预编库），且 dispatcher 三个 op 都把它排第三，xsimd+Highway 都在时永不被选，纯死代码。下文保留 SLEEF 时期的实现/纠错记录作历史；"借核"现读作"借 Highway+xsimd（已 vendored）"。最新性能数字见 [`../performance/benchmarks-simd.md`](../performance/benchmarks-simd.md) 数学核节。
 
 | 字段 | 值 |
 |---|---|
