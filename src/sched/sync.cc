@@ -2,9 +2,11 @@
 
 #include <atomic>
 
+#include "hyle/macros.h"
 #include "hyle/platform/wait.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/waker.h"
+#include "hyle/time/clock.h"
 
 namespace hyle::sched {
 namespace {
@@ -33,6 +35,8 @@ bool ConditionVariable::prepare_wait_(Waiter* node) noexcept {
   const Waker w = current_waker();
   const bool fiber = w.valid();
   node->next = nullptr;
+  node->prev = nullptr;
+  node->linked = true;
   if (fiber) {
     node->waker = w;
     node->token = nullptr;
@@ -49,6 +53,7 @@ bool ConditionVariable::prepare_wait_(Waiter* node) noexcept {
   // cannot squeeze its state-change + notify between our predicate check and
   // this enqueue.
   mu_.lock();
+  node->prev = tail_;
   if (tail_ == nullptr) {
     head_ = node;
   } else {
@@ -58,6 +63,25 @@ bool ConditionVariable::prepare_wait_(Waiter* node) noexcept {
   waiters_.fetch_add(1, std::memory_order_relaxed);  // published via mu_/monitor
   mu_.unlock();
   return fiber;
+}
+
+// Unlink `node` from the doubly-linked list if still linked (idempotent).
+// Caller holds mu_. A timed waiter that hit its deadline calls this to retract
+// its own (stack-resident) node so a subsequent notify can't pop a dead node.
+void ConditionVariable::remove_waiter_(Waiter* node) noexcept {
+  if (!node->linked) return;  // already popped by a notify
+  if (node->prev != nullptr) {
+    node->prev->next = node->next;
+  } else {
+    head_ = node->next;  // was head
+  }
+  if (node->next != nullptr) {
+    node->next->prev = node->prev;
+  } else {
+    tail_ = node->prev;  // was tail
+  }
+  node->linked = false;
+  waiters_.fetch_sub(1, std::memory_order_relaxed);
 }
 
 void ConditionVariable::finish_wait_(bool fiber, void* token) noexcept {
@@ -105,7 +129,12 @@ void ConditionVariable::notify_one() noexcept {
     Waiter* node = head_;
     if (node != nullptr) {
       head_ = node->next;
-      if (head_ == nullptr) tail_ = nullptr;
+      if (head_ == nullptr) {
+        tail_ = nullptr;
+      } else {
+        head_->prev = nullptr;
+      }
+      node->linked = false;  // popped: a timed waiter's remove_waiter_ is now a no-op
       waiters_.fetch_sub(1, std::memory_order_relaxed);
       // Copy out everything we need BEFORE releasing the lock / waking: the node
       // may be destroyed the instant its owner resumes.
@@ -126,6 +155,9 @@ void ConditionVariable::notify_all() noexcept {
   {
     mu_.lock();
     node = head_;
+    // Mark every node unlinked so a concurrent timed-out waiter's remove_waiter_
+    // becomes a no-op (we own them all now). Done under mu_.
+    for (Waiter* p = node; p != nullptr; p = p->next) p->linked = false;
     head_ = nullptr;
     tail_ = nullptr;
     waiters_.store(0, std::memory_order_relaxed);  // detached the whole list
@@ -141,9 +173,63 @@ void ConditionVariable::notify_all() noexcept {
   }
 }
 
-// ---- Mutex (futex, Drepper 3-state) -----------------------------------------
-// state_: 0=unlocked, 1=locked no waiters, 2=locked waiters. lock()'s fast CAS
-// (0->1) is inline; this is the contended tail. unlock()'s fast fetch_sub is
+// ---- timed wait (sched-04c, thread-mode) ------------------------------------
+
+std::uint64_t ConditionVariable::deadline_from_now_(
+    std::uint64_t timeout_ns) noexcept {
+  std::uint64_t now = time::monotonic_ns();
+  std::uint64_t d = now + timeout_ns;
+  return d < now ? UINT64_MAX : d;  // saturate on overflow
+}
+
+std::uint64_t ConditionVariable::remaining_ns_(
+    std::uint64_t deadline_ns) noexcept {
+  std::uint64_t now = time::monotonic_ns();
+  return deadline_ns > now ? deadline_ns - now : 0;
+}
+
+ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(
+    Waiter* node, std::uint64_t timeout_ns) noexcept {
+  // Thread-mode only (fiber-mode timed wait = sched-04c-pending: needs a wheel
+  // timer whose fire races notify + a cross-worker cancel). prepare_wait_ set
+  // token to this thread's ThreadToken; a fiber node would have token==nullptr.
+  HYLE_FATAL_ASSERT(node->token != nullptr &&
+                    "fiber-mode CV timed wait not yet supported (sched-04c)");
+  auto* tok = static_cast<ThreadToken*>(node->token);
+
+  // Absolute deadline so spurious/early park returns don't extend the wait.
+  const std::uint64_t deadline = deadline_from_now_(timeout_ns);
+  bool notified = tok->notified.load(std::memory_order_acquire);
+  while (!notified) {
+    std::uint64_t rem = remaining_ns_(deadline);
+    if (rem == 0) break;  // deadline reached
+    // park_timeout is single-shot: it may return early (spurious / real unpark).
+    // The loop re-checks `notified` and recomputes the remaining time, so the
+    // total wait never exceeds the deadline. A real notify unparks + sets
+    // notified (wake_one), so the next load observes it.
+    tok->parker.park_timeout(rem);
+    notified = tok->notified.load(std::memory_order_acquire);
+  }
+  if (notified) return CvStatus::kNoTimeout;
+
+  // Deadline hit. Retract our node under the monitor lock -- but a notify may
+  // have popped us in the tiny gap since the last `notified` load. Resolve it
+  // under mu_: if still linked, WE win the race (retract -> timeout). If already
+  // unlinked, a notify won (it will/did set notified) -> report no-timeout so we
+  // don't lose its wake (classic notify-vs-timeout arbitration, single-locked).
+  mu_.lock();
+  const bool still_linked = node->linked;
+  if (still_linked) remove_waiter_(node);
+  mu_.unlock();
+  if (still_linked) return CvStatus::kTimeout;
+  // A notify claimed us: wait for its unpark so the ThreadToken (thread_local,
+  // outlives this frame) isn't left with a pending unpark that leaks into the
+  // next episode. It set notified under mu_ before unparking, so this is bounded.
+  while (!tok->notified.load(std::memory_order_acquire)) tok->parker.park();
+  return CvStatus::kNoTimeout;
+}
+
+
 // inline; unlock_slow runs only when there were waiters.
 
 void Mutex::lock_slow(std::uint32_t c) noexcept {

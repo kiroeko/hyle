@@ -82,6 +82,54 @@ class ConditionVariable {
     while (!stop()) wait(lock);
   }
 
+  // Timed wait (sched-04c). Atomically release `lock` and block until notified
+  // OR `timeout_ns` elapses, then re-acquire `lock`. Returns whether it returned
+  // because of the timeout. Deadline keys on time::monotonic_ns().
+  //
+  // THREAD-MODE ONLY for now: a bare (non-fiber) waiter parks with a bounded
+  // Parker::park_timeout -- no timer wheel, no cross-worker cancel, so it is
+  // simple and correct. A FIBER waiter would need to arm a wheel timer whose
+  // fire races the notify and whose loser must cancel across workers (the
+  // per-worker cancel command queue -- still sched-04c-pending); until that
+  // lands, calling this from a worker fiber asserts. Bare-thread timed waits
+  // (external submitters, cross-process federation) ship now.
+  enum class CvStatus { kNoTimeout, kTimeout };
+
+  template <class Lock>
+  CvStatus wait_for(Lock& lock, std::uint64_t timeout_ns) {
+    Waiter node;
+    prepare_wait_(&node);  // (asserts thread-mode; sets up token)
+    lock.unlock();
+    const CvStatus st = finish_wait_timed_(&node, timeout_ns);
+    lock.lock();
+    return st;
+  }
+
+  // Predicate form: loops re-checking `stop()` until it holds or the deadline
+  // passes. Returns stop() -- true if the condition was met, false on timeout.
+  // Recomputes the remaining time each iteration so spurious wakes don't extend
+  // the total wait (deadline captured once from now + timeout_ns).
+  template <class Lock, class Pred>
+  bool wait_for(Lock& lock, std::uint64_t timeout_ns, Pred stop) {
+    return wait_until(lock, deadline_from_now_(timeout_ns), stop);
+  }
+
+  // Absolute-deadline variants (monotonic ns), mirroring std::cv wait_until.
+  template <class Lock>
+  CvStatus wait_until(Lock& lock, std::uint64_t deadline_ns) {
+    return wait_for(lock, remaining_ns_(deadline_ns));
+  }
+
+  template <class Lock, class Pred>
+  bool wait_until(Lock& lock, std::uint64_t deadline_ns, Pred stop) {
+    while (!stop()) {
+      if (wait_for(lock, remaining_ns_(deadline_ns)) == CvStatus::kTimeout) {
+        return stop();  // last check: the predicate may have become true at the wire
+      }
+    }
+    return true;
+  }
+
   // Wake one / all blocked waiters. Safe to call from any thread or fiber. The
   // caller should hold whatever lock guards the predicate the waiters test (so a
   // state change + notify is not split by a sleeping waiter -- classic monitor
@@ -98,11 +146,16 @@ class ConditionVariable {
   // into the FIFO list while parked. `waker` names the fiber to re-inject (valid
   // iff fiber-mode); `token` points at a thread-local park token (non-null iff
   // thread-mode). Fields are read by the notifier under the internal lock BEFORE
-  // the waiter is woken (after which the node may be destroyed).
+  // the waiter is woken (after which the node may be destroyed). The list is
+  // DOUBLY linked so a timed-out waiter can unlink itself in O(1) (it holds its
+  // own node but not its predecessor); `linked` makes that removal idempotent
+  // against a concurrent notify that already popped it.
   struct Waiter {
     Waiter* next;
+    Waiter* prev;
     Waker waker;
     void* token;
+    bool linked;  // true while in the list; guarded by mu_
   };
 
   // Capture mode (fiber vs thread), set up `node`, and link it onto the FIFO tail
@@ -113,6 +166,26 @@ class ConditionVariable {
   // Block until woken: fiber -> suspend() (leaves the run loop, re-injected by
   // the Waker); thread -> park() loop on the thread-local token.
   HYLE_SCHED_API static void finish_wait_(bool fiber, void* token) noexcept;
+
+  // Timed thread-mode block: park the OS thread with a bounded park_timeout
+  // until the node's token is notified or the deadline elapses. On timeout it
+  // retracts `node` from the list (remove_waiter_) so a later notify can't pop a
+  // dead node. Returns whether it timed out. (Out-of-line: pulls in time/ +
+  // platform futex, kept out of this header.)
+  HYLE_SCHED_API CvStatus finish_wait_timed_(Waiter* node,
+                                             std::uint64_t timeout_ns) noexcept;
+
+  // Unlink `node` from the list if still linked (idempotent). Caller must hold
+  // mu_. Used by a timed waiter that woke on its deadline before a notify reached
+  // it -- it retracts its own node so a later notify can't pop a dead stack node.
+  HYLE_SCHED_API void remove_waiter_(Waiter* node) noexcept;
+
+  // now + timeout_ns as an absolute monotonic deadline (saturating).
+  HYLE_SCHED_API static std::uint64_t deadline_from_now_(
+      std::uint64_t timeout_ns) noexcept;
+  // deadline - now, clamped at 0 (already passed => non-blocking).
+  HYLE_SCHED_API static std::uint64_t remaining_ns_(
+      std::uint64_t deadline_ns) noexcept;
 
   util::SpinLock mu_;        // guards the waiter list (tiny critical sections)
   Waiter* head_ = nullptr;   // FIFO: notify pops head

@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <chrono>
 #include <memory>
 #include <thread>
 #include <vector>
@@ -355,6 +356,119 @@ TEST(Sync, CvFiberWaiterWokenByThread) {
     sched.drain();
   }
   EXPECT_TRUE(a.resumed.load());
+}
+
+// ---- timed wait (sched-04c, thread-mode) ------------------------------------
+// These use BARE std::thread waiters (thread-mode: no scheduler/fiber), which is
+// the shipped path for sched-04c. A fiber-mode timed wait is not yet supported.
+
+using hyle::sched::ConditionVariable;
+using CvStatus = ConditionVariable::CvStatus;
+
+// wait_for returns kTimeout when no notify arrives within the deadline, and it
+// actually blocked for roughly the requested time (not a busy return).
+TEST(SyncTimed, WaitForTimesOut) {
+  ConditionVariable cv;
+  SpinLock mu;
+  auto t0 = std::chrono::steady_clock::now();
+  CvStatus st;
+  {
+    std::lock_guard<SpinLock> lk(mu);
+    st = cv.wait_for(mu, 30'000'000ull);  // 30ms, nobody notifies
+  }
+  auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_EQ(st, CvStatus::kTimeout);
+  EXPECT_GE(elapsed, std::chrono::milliseconds(20));  // really slept
+}
+
+// wait_for returns kNoTimeout when a notify arrives before the deadline.
+TEST(SyncTimed, WaitForNotifiedBeforeDeadline) {
+  ConditionVariable cv;
+  SpinLock mu;
+  std::atomic<bool> parked{false};
+  std::atomic<CvStatus> st{CvStatus::kTimeout};
+
+  std::thread waiter([&] {
+    std::lock_guard<SpinLock> lk(mu);
+    parked.store(true, std::memory_order_release);
+    st.store(cv.wait_for(mu, 5'000'000'000ull),  // 5s -- we notify well before
+             std::memory_order_release);
+  });
+  while (!parked.load(std::memory_order_acquire)) std::this_thread::yield();
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  {
+    std::lock_guard<SpinLock> lk(mu);
+    cv.notify_one();
+  }
+  waiter.join();
+  EXPECT_EQ(st.load(), CvStatus::kNoTimeout);
+}
+
+// Predicate wait_for: returns true when the predicate becomes true before the
+// deadline (via a notify), false purely on timeout.
+TEST(SyncTimed, WaitForPredicate) {
+  ConditionVariable cv;
+  SpinLock mu;
+  bool ready = false;
+
+  // Case A: predicate satisfied by a notify before the deadline.
+  std::thread setter([&] {
+    std::this_thread::sleep_for(std::chrono::milliseconds(15));
+    std::lock_guard<SpinLock> lk(mu);
+    ready = true;
+    cv.notify_one();
+  });
+  bool got;
+  {
+    std::lock_guard<SpinLock> lk(mu);
+    got = cv.wait_for(mu, 2'000'000'000ull, [&] { return ready; });
+  }
+  setter.join();
+  EXPECT_TRUE(got);
+
+  // Case B: predicate never set -> times out -> returns false.
+  bool never = false;
+  bool got2;
+  {
+    std::lock_guard<SpinLock> lk(mu);
+    got2 = cv.wait_for(mu, 20'000'000ull, [&] { return never; });
+  }
+  EXPECT_FALSE(got2);
+}
+
+// Stress the notify-vs-timeout arbitration: many waiters each with a short
+// deadline, notified at the wire. Every waiter must return exactly once (either
+// outcome) with no lost wake, no double-free, no hang -- TSan gate.
+TEST(SyncTimed, NotifyVsTimeoutRace) {
+  constexpr int kN = 64;
+  ConditionVariable cv;
+  SpinLock mu;
+  std::atomic<int> returned{0};
+  std::vector<std::thread> waiters;
+  waiters.reserve(kN);
+  for (int i = 0; i < kN; ++i) {
+    waiters.emplace_back([&] {
+      std::lock_guard<SpinLock> lk(mu);
+      cv.wait_for(mu, 5'000'000ull);  // 5ms: half will race a notify, half time out
+      returned.fetch_add(1, std::memory_order_acq_rel);
+    });
+  }
+  // Fire notifies concurrently with the deadlines to force the race both ways.
+  for (int i = 0; i < kN; ++i) {
+    std::this_thread::sleep_for(std::chrono::microseconds(100));
+    cv.notify_one();
+  }
+  for (auto& t : waiters) t.join();
+  EXPECT_EQ(returned.load(), kN);  // all returned, none lost/hung
+}
+
+// wait_until with an already-passed deadline returns kTimeout immediately.
+TEST(SyncTimed, WaitUntilPastDeadline) {
+  ConditionVariable cv;
+  SpinLock mu;
+  std::lock_guard<SpinLock> lk(mu);
+  CvStatus st = cv.wait_until(mu, 1);  // deadline ns=1, long in the past
+  EXPECT_EQ(st, CvStatus::kTimeout);
 }
 
 }  // namespace
