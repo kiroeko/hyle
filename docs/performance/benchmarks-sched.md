@@ -92,3 +92,23 @@
 3. **backoff 是 2P-vs-4P 权衡(诚实记账)**:`cpu_relax` backoff 在 2P 低争用曾给更大领先,但 4P 高争用造成 1.33x 落后;去掉后 2P/4P 都回到平 rigtorp。directive 要"无落后",故选无 backoff(canonical rigtorp/folly 同样 try_ 路径不 backoff)。
 
 > **诚实边界**:① ShardedQueue 赢幅(Win 1.93-3.27x/Lin 5.3x)远超误差带(gap»spread,双平台 15 遍)。② 跨语言(crossbeam Rust)只下"同量级/有竞争力"。③ **单环 MPMC 2P/4P 是高方差微基准(spread 23-40%),双平台各 15 遍 `bench-stat.py` 统计**:单线程铁赢 rigtorp、2P/4P 平 rigtorp+moody(中位数偏赢但 gap«spread,不判"赢")。旧账"3 遍手动均值 4P 反超 1.08x"已被 15 遍统计法修正为平局——"反超"是噪声带内的乐观读数。cache-line pad + 去 backoff 确实消除了原来的 1.33x 落后(那是真结构缺陷),但没到"反超",到"平"。**ShardedQueue 本身 spread 偏大(Win 21%/Lin 43%):`bench_mpmc` 的 `minEpochIterations(50)` 对快 20 倍的 sharded 采样不足(nanobench 单遍即自报 "Unstable ~54 iters, 建议 543"),故 sharded 倍数取"量级铁赢"而非精确点值——这是待修的 bench 采样缺陷,非算法问题。** ④ work-stealing owner 路径单线程无争用(两侧同样)。⑤ **lock-free 闸门:WSL TSan(setarch -R,GCC14 RelWithDebInfo)队列族 32/32 零 data race**——cache-line pad 改了 Cell 布局,TSan 复验 MpmcStressConservation(4P/4C 守恒)等压力测试确认无 race。
+
+## 分层时间轮 vs min-heap（`bench/time/timer_wheel_bench.cc`，time-02）
+
+> HYLE `TimerWheel`(6 层 × 64 槽 tokio 移植)对标 **min-heap**(Go/libev/libuv 的定时器选择)=同职算法对照。folly HHWheelTimer 焊死在 EventBase/libevent + glog + boost 上,链进 microbench 测的是事件循环不是轮,故对标算法本身(设计文档争论的正是"轮 vs 堆")。堆按真实行为建模:无 O(1) keyed 删除 → **惰性 cancel(墓碑标记)** + expire 跳墓碑。N=4096 timer/op,双平台各 15 遍 `bench-stat.py`(gap > 两变体 spread 之和才判赢/输)。
+
+| 工作负载 | HYLE 轮(Win/Lin ns/op) | min-heap(Win/Lin) | 判定(15 遍,双平台) |
+|---|---|---|---|
+| **churn(arm N + 取消 70% + expire)= 真实 agent 画像** | 12.60/11.83 | 26.28/38.66 | ✅ **双平台铁赢 2.09x/3.27x**(gap 108/226%»spread 10.5/27%) |
+| arm+expire(全触发) | 23.09/16.97 | 25.51/38.73 | Win 统计平局(1.09,gap9%«spread12%)/ Lin **赢 2.25x**(gap125%»spread16%) |
+| arm+cancel(纯取消,无 expire) | 7.39/5.57 | 7.42/2.94 | Win 统计平局(1.00)/ Lin **输 0.53x**(gap47%»spread30%) |
+
+**核心诚实结论**:
+
+1. **真实负载(churn)双平台铁赢 2-3x**。这是北极星画像——百万 agent"arm 超时 → 响应先到 → 取消 timeout → 少数真到期"。堆的惰性墓碑要活着穿过 expire(文档预言的 add-then-cancel churn 堆膨胀),轮在 cancel 时 O(1) 摘链已清走。
+
+2. **`arm+cancel` 纯取消 Linux 输 2x 是微基准假象,如实记账不藏**(对齐 mem 红队方法论③"对照不公平绝不当免死金牌")。根因:此 bench 每 op 丢弃一个全新堆,堆的墓碑 `vector<bool>` 位标记比轮的摘链 + 反算 slot 便宜——**但 bench 在墓碑必须被走之前就把膨胀的堆扔了**。真实负载墓碑要穿过 expire(churn 行),轮双平台就赢。这是"切片微基准掩盖对手真实成本"的典型:纯取消孤立看堆便宜,但那是它把 cleanup 债留到了 expire(churn 里还)。堆唯一真优势"O(1) 拿最近到期"对我们不重要(单调钟批量 advance、不需精确 min)。
+
+3. **平台分歧(又一"单平台数陷阱"印证)**:arm+expire 与 arm+cancel Win/Lin 判定不同(Win 更平、Lin 分化更大),MSVC 与 GCC 对 `std::priority_queue`/`countl_zero`/`rotr` codegen 差异所致——**单平台数搬总账会误判**(同 dtype/time/path/queue)。churn 方向双平台一致(轮赢),是稳健结论。
+
+> **诚实边界**:① 时间轮**单线程数据结构**(per-worker,无锁),非 lock-free——无 TSan 闸门需求;新增的并发面是 `Parker::park_timeout`(见 platform 节,TSan 5×净)。② 未对 folly HHWheelTimer 实测(EventBase 耦合,非同职对照;算法层已对 min-heap)。③ tokio 是 Rust,未跨语言实测,取其算法参数(6×64/1ms)移植 + 对 min-heap 验证同族优势。④ arm+cancel 微基准的堆"赢"是采样切片,churn 才是负载真相——ledger 不把纯取消孤立数当"堆更优"结论。
