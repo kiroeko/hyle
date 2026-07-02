@@ -88,8 +88,16 @@ class TimerWheel {
         deadline_ns > start_ns_ ? deadline_ns - start_ns_ : 0;
     // Round the deadline UP to a whole tick so we never fire EARLY (advance()
     // rounds `now` down; the pair guarantees "at least the requested wait",
-    // late by <=1ms -- the documented wheel contract).
-    std::uint64_t tick = (rel_ns + kTickNs - 1) / kTickNs;
+    // late by <=1ms -- the documented wheel contract). Guard the round-up add
+    // against u64 overflow for an absurd deadline within ~1ms of 2^64 (a caller
+    // value, i.e. a system boundary): saturate to the horizon instead of
+    // wrapping small and mis-slotting early.
+    std::uint64_t tick;
+    if (rel_ns > UINT64_MAX - (kTickNs - 1)) {
+      tick = elapsed_ + kMaxDurationTicks;
+    } else {
+      tick = (rel_ns + kTickNs - 1) / kTickNs;
+    }
     if (tick <= elapsed_) {
       tick = elapsed_ + 1;  // due now/past -> nearest future slot
     }

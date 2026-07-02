@@ -200,6 +200,27 @@ TEST(TimerWheel, CancelHighLevelEntry) {
   EXPECT_TRUE(advance_collect(w, 6000 * kMs).empty());
 }
 
+// Cancel an entry AFTER it has partially cascaded: arm far out (level 2), then
+// advance across a level boundary so it re-slots into a finer level, THEN
+// cancel. cancel() recomputes level_for(elapsed_, deadline) with the NEW
+// elapsed_, so it must still locate the entry in its post-cascade slot. This is
+// the trickiest cancel path (red-team gap).
+TEST(TimerWheel, CancelAfterCascade) {
+  TimerWheel w(0);
+  TimerEntry e = make_entry(1);
+  w.schedule(&e, 5000 * kMs);  // level 2 (>= 4096 ticks)
+  // Advance to 4100ms: crosses the 4096 boundary, cascading e down toward L1/L0
+  // without firing it (deadline 5000 still in the future).
+  EXPECT_TRUE(advance_collect(w, 4100 * kMs).empty());
+  EXPECT_EQ(w.size(), 1u);  // still live, just re-slotted
+  // Now cancel from its cascaded position.
+  w.cancel(&e);
+  EXPECT_EQ(w.size(), 0u);
+  EXPECT_FALSE(e.scheduled);
+  // Advancing past the original deadline must fire nothing.
+  EXPECT_TRUE(advance_collect(w, 6000 * kMs).empty());
+}
+
 // ---- reschedule --------------------------------------------------------------
 
 TEST(TimerWheel, ScheduleOnScheduledReschedules) {
@@ -252,6 +273,28 @@ TEST(TimerWheel, NextDeadlineReportsEarliest) {
   EXPECT_EQ(w.next_deadline_ns(), 100 + 50 * kMs);
   w.cancel(&a);
   EXPECT_EQ(w.next_deadline_ns(), UINT64_MAX);
+}
+
+// A far (top-level) deadline must still report a finite next_deadline_ns and
+// fire eventually -- exercises the top-level pseudo-ring path in next_expiration
+// (red-team gap: top-level next_deadline unexercised).
+TEST(TimerWheel, NextDeadlineTopLevelAndOverflowSaturates) {
+  TimerWheel w(0);
+  TimerEntry e = make_entry(1);
+  w.schedule(&e, 100'000 * kMs);  // ~100s -> a high level
+  std::uint64_t nd = w.next_deadline_ns();
+  EXPECT_NE(nd, UINT64_MAX);
+  EXPECT_LE(nd, 100'000 * kMs);  // reported no later than the deadline
+
+  // An absurd deadline near u64 max must saturate to the horizon (not wrap to a
+  // tiny tick and fire early). It should land, and NOT fire before the horizon.
+  TimerWheel w2(0);
+  TimerEntry big = make_entry(2);
+  w2.schedule(&big, UINT64_MAX - 100);  // within ~1ms of u64 max
+  EXPECT_EQ(w2.size(), 1u);
+  // Far below the horizon: must not have fired (no early fire from overflow).
+  EXPECT_TRUE(advance_collect(w2, 1000 * kMs).empty());
+  EXPECT_EQ(w2.size(), 1u);
 }
 
 // ---- scale: a million arm/cancel churn, oracle-checked -----------------------
