@@ -15,7 +15,7 @@ hyle_add_test(obs SOURCES obs/log_test.cc)
 hyle_add_test(platform SOURCES platform/wait_test.cc platform/thread_test.cc platform/dynlib_test.cc platform/fs_test.cc)
 hyle_add_test(mem SOURCES mem/allocator_test.cc mem/memory_arena_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc DEPS hyle_platform)
 hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc util/type_name_test.cc util/registry_test.cc util/random_test.cc util/spin_lock_test.cc util/demangle_test.cc DEPS hyle_container)
-hyle_add_test(time SOURCES time/clock_test.cc time/timer_wheel_test.cc DEPS hyle_platform)
+hyle_add_test(time SOURCES time/clock_test.cc time/timer_wheel_test.cc time/common_timeout_queue_test.cc DEPS hyle_platform)
 hyle_add_test(math SOURCES math/scalar_test.cc)
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
 # hash_test.cc includes the opt-in hyle/container/hash_inline.h, which pulls the

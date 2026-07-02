@@ -24,10 +24,12 @@
 #include <queue>
 #include <vector>
 
+#include "hyle/time/common_timeout_queue.h"
 #include "hyle/time/timer_wheel.h"
 
 namespace {
 namespace nb = ankerl::nanobench;
+using hyle::time::CommonTimeoutQueue;
 using hyle::time::TimerEntry;
 using hyle::time::TimerWheel;
 
@@ -165,6 +167,80 @@ int main() {
       std::uint64_t fired = 0;
       while (out.pop_front()) ++fired;
       nb::doNotOptimizeAway(fired);
+    });
+  }
+
+  // ---- 4. FIXED-DURATION serving load: wheel vs CommonTimeoutQueue ----
+  // The io-serving case: N connections all armed with the SAME timeout duration,
+  // so deadlines are monotonic. This is CommonTimeoutQueue's home turf (one
+  // sorted list, O(1) tail-append). We race it against the general wheel on the
+  // SAME load to show WHEN to pick the queue over the wheel. Both arm N in
+  // ascending-deadline order, then expire all. (Not a "wheel is bad" bench --
+  // the wheel handles arbitrary durations the queue can't; this is the narrow
+  // slice where the queue's specialization pays.)
+  {
+    nb::Bench b;
+    b.title("fixed-duration arm+expire (N=4096, same timeout)")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(200);
+    b.run("HYLE timing wheel", [&] {
+      TimerWheel w(0);
+      std::vector<TimerEntry> e(kN);
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        e[i].data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+        w.schedule(&e[i], (i + 1) * kMs);  // monotonic (same duration)
+      }
+      TimerWheel::EntryList out;
+      w.advance((kN + 1) * kMs, out);
+      std::uint64_t fired = 0;
+      while (out.pop_front()) ++fired;
+      nb::doNotOptimizeAway(fired);
+    });
+    b.run("HYLE CommonTimeoutQueue", [&] {
+      CommonTimeoutQueue q(0, kMs);
+      std::vector<TimerEntry> e(kN);
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        e[i].data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+        q.schedule(&e[i], (i + 1) * kMs);  // monotonic tail-append
+      }
+      CommonTimeoutQueue::EntryList out;
+      q.advance((kN + 1) * kMs, out);
+      std::uint64_t fired = 0;
+      while (out.pop_front()) ++fired;
+      nb::doNotOptimizeAway(fired);
+    });
+  }
+
+  // ---- 5. FIXED-DURATION arm+cancel (the serving hot path): all cancelled ----
+  // Connections that respond before timeout -> arm then cancel. Same fixed
+  // duration. Queue cancel is O(1) unlink; wheel cancel is O(1) unlink + slot
+  // math. Shows the per-op arm/cancel cost on the queue's target load.
+  {
+    nb::Bench b;
+    b.title("fixed-duration arm+cancel (N=4096, same timeout, all cancelled)")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(200);
+    b.run("HYLE timing wheel", [&] {
+      TimerWheel w(0);
+      std::vector<TimerEntry> e(kN);
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        e[i].data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+        w.schedule(&e[i], (i + 1) * kMs);
+      }
+      for (std::uint64_t i = 0; i < kN; ++i) w.cancel(&e[i]);
+      nb::doNotOptimizeAway(w.size());
+    });
+    b.run("HYLE CommonTimeoutQueue", [&] {
+      CommonTimeoutQueue q(0, kMs);
+      std::vector<TimerEntry> e(kN);
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        e[i].data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+        q.schedule(&e[i], (i + 1) * kMs);
+      }
+      for (std::uint64_t i = 0; i < kN; ++i) q.cancel(&e[i]);
+      nb::doNotOptimizeAway(q.size());
     });
   }
 
