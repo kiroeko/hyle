@@ -61,13 +61,23 @@ io/
 
 一句话：**对上一套 proactor 抽象，对下 4 个后端，中间只借 syscall 封装、调度自己管。**
 
-## 待深挖（io-01 开工时定，非现在）
+## 已落地(io-01/02 实现纪要)
 
-> 选型决策（借谁/proactor/后端矩阵）已全部锁定——那是设计阶段必须拍的。下面 3 项是**实现机制**，按 JIT 原则**有意延到 io-01 开工时定**：它们依赖 sched completion 脊实现中学到的东西，现在写 = 空想。这是 io 作为 P5 未开工支柱的正常状态，非遗漏。
+> 下面 3 项原为"待深挖"(JIT 延到开工),io-01/02 开工时已定并实现,记录当前真相:
 
-1. reactor 后端（mac kqueue / Linux epoll）如何把"就绪"模拟成"完成"而不丢性能。
-2. io_uring SQ/CQ 如何与 fiber 挂起/唤醒对接（completion → 唤醒哪个 fiber 的映射）——直接复用 `sched-design.md` 第三节的 Waker 脊。
-3. proactor.h 统一抽象的具体接口形状（提交/取消/超时/批量）。
+1. **proactor.h 接口形状**:`Proactor{init/reap/post}` + `Completion{user_data,result,flags,buffer_id}`。收割式(reap 批量取完成),平台无关。**接口在写之前先研究 liburing v2.15 的 SOTA 机制**(multishot/registered buf/SQPOLL/linked SQE),确保不挡:`flags` 带 `kMore`(multishot 一提交多完成、token 不早回收)+`kBuffer`(零拷贝 provided buffer id);reap 批量=io_uring for_each_cqe(N 完成 1 次 release-store);timeout 走 EXT_ARG 不额外 syscall。submit 侧的具体 op(read/write/accept + link/fixed-file flag)留 io-04 net/。
+2. **io_uring↔fiber 映射**:`user_data`(SQE)= Waker token,完成时原样回来(`cqe->user_data`)→ reap 交回 → sched wake。这正是 sched-design §3.3 的物理机制,IOCP 用 completion key 同构。
+3. **只借 syscall shim 的力度**:实测比 io-design 预想更省——**连 liburing 都不链**,只用 3 个 io_uring syscall + `linux/io_uring.h` uapi 头 + 自写内联环算术(barrier 精确复刻 liburing v2.15 的 4 个 fast-path 点)。IOCP/kqueue 本就 OS 原生。**零第三方链依赖。**
+
+**后端进度**:IOCP(io-01,Windows,✅)+ io_uring(io-02,Linux,✅)双平台真测 + WSL TSan 净。epoll(Linux reactor 降级)+ kqueue(mac)= io-03 待做(reactor→completion 模拟)。
+
+## 待深挖(io-04+ 开工时定,非现在)
+
+> proactor 收割接缝已落地。下面是**提交侧/socket 层**的实现机制,按 JIT 延到 io-04:
+
+1. reactor 后端(mac kqueue / Linux epoll 降级)如何把"就绪"模拟成"完成"而不丢性能。
+2. net/ socket 的 co_await 风格 op(read/write/accept)如何填 SQE + 关联 Waker,遇 IO 让出 fiber。
+3. 高级机制接线:registered files/buffers、multishot accept/recv、linked SQE 的 op 层 API。
 
 ## 参考
 

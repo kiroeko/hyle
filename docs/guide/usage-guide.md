@@ -19,7 +19,8 @@
 | `obs/` | `hyle/obs/log.h` | ✅ | level 门控 + sink 注册表日志 |
 | `sched/` | `hyle/sched/{scheduler,fiber}.h` | 🔶 | fcontext 纤程 + work-stealing 调度（协程/取消 待） |
 | `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测（含纯 AVX 档 kAvx）+ 可移植 `vec<T,N>`（scalar/SSE4.2/AVX2 实跑；fp16/bf16 dtype + 向量化数学核（Highway/xsimd）done；NEON 写+编+objdump 验未跑存疑；AVX512 后端+ops kernel 已默认派发，objdump 双平台验真发 zmm，但本箱 AVX2-only 未实跑=存疑） |
-| `io/` `compute/` `graph/` | — | 📋 | 尚未开工 |
+| `io/` | `hyle/io/proactor.h` | 🔶 | proactor 完成收割接缝(IOCP+io_uring 后端 done);net/ socket 待(io-04) |
+| `compute/` `graph/` | — | 📋 | 尚未开工 |
 
 ## 1. 构建与集成
 
