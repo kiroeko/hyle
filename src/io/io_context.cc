@@ -44,21 +44,31 @@ bool IoContext::bind_fd(unsigned worker_idx, std::intptr_t fd) noexcept {
   return rings_[worker_idx]->register_handle(fd);
 }
 
-void IoContext::poll_trampoline(void* ctx, unsigned worker_idx,
+bool IoContext::poll_trampoline(void* ctx, unsigned worker_idx,
                                 unsigned long long timeout_ns) noexcept {
-  static_cast<IoContext*>(ctx)->poll(worker_idx, timeout_ns);
+  return static_cast<IoContext*>(ctx)->poll(worker_idx, timeout_ns);
 }
 
-void IoContext::poll(unsigned worker_idx,
+bool IoContext::poll(unsigned worker_idx,
                      unsigned long long timeout_ns) noexcept {
   // Reap THIS worker's own ring only (per-core: submit + reap share this thread,
   // no lock). A batch amortizes the reap syscall. Every completion here is an io
   // op whose user_data is an IoOperation*, so net::complete() casts it back,
   // stores the result, and wakes the fiber.
+  //
+  // Return whether ops were in flight BEFORE we reaped: the scheduler uses this
+  // at the park boundary to decide whether to loop (io outstanding -> we may have
+  // blocked in the ring harvesting, so re-check the run queue) or park on its
+  // futex (nothing outstanding -> a non-blocking poll only, so a cross-thread
+  // wake should interrupt an ordinary park, which a reap block cannot). The
+  // blocking GETEVENTS reap when timeout_ns > 0 is what actually surfaces
+  // io_uring completions that a non-blocking reap(0) never would (the hang fix).
   Proactor& p = *rings_[worker_idx];
+  bool had_io = p.in_flight();
   Completion batch[64];
-  std::size_t n = p.reap(batch, 64, timeout_ns);
+  std::size_t n = p.reap(batch, 64, had_io ? timeout_ns : 0);
   for (std::size_t i = 0; i < n; ++i) complete(batch[i]);
+  return had_io;
 }
 
 }  // namespace hyle::io

@@ -66,7 +66,7 @@ constexpr int kConns = 64;       // concurrent connections
 // up before the next reap. THIS is the many-in-flight load that fills the SQ and
 // lets submit-batching matter (the plain 64-conn ping-pong above keeps ~1 op in
 // flight per stream at a time, so the SQ never fills -- batching can't help it).
-constexpr int kPipeConns = 300;       // concurrent streams (high fan-out, > ring depth 256 -> exercises CQ-overflow recovery)
+constexpr int kPipeConns = 512;       // concurrent streams (high fan-out, >> ring depth 256 -> forces the worker's blocking GETEVENTS reap path)
 constexpr int kPipeRoundTrips = 16;   // round-trips per stream per epoch
 
 // A connected fd pair.

@@ -421,15 +421,40 @@ struct Scheduler::Impl {
       // cost when no fiber is sleeping). A pending timer bounds the park so the
       // worker wakes to fire it; park_timeout returning false (timeout) is fine
       // -- the loop top's fire_due_timers handles the expiry uniformly.
-      //
-      // io-04 (plan B): if an io hook is registered, also cap the park at
-      // kIoPollNs so the worker periodically re-polls the proactor for
-      // completions (plan B doesn't post() a wake into the ring yet -- that park
-      // merge is plan A). Take the nearer of the timer deadline and the io cap.
       std::uint64_t timeout = park_timeout_ns(w);
-      if (io_poll.load(std::memory_order_acquire) != nullptr &&
-          timeout > kIoPollNs)
-        timeout = kIoPollNs;
+      if (IoPollFn poll = io_poll.load(std::memory_order_acquire);
+          poll != nullptr) {
+        // io registered: at the park boundary, hand the block to the PROACTOR
+        // when ops are in flight -- a GETEVENTS io_uring_enter -- instead of the
+        // futex parker. This is a CORRECTNESS requirement, not a latency tweak:
+        // io_uring surfaces many completions only when the owning thread makes a
+        // GETEVENTS enter (that enter runs the kernel's completion task-work). A
+        // futex park + the drain-path non-blocking reap(0) never enters with
+        // GETEVENTS, so once the run queue drains with ops in flight (notably
+        // >ring-depth in flight) those completions never surface and their fibers
+        // hang forever -- the worker just spins reap(0)==0 while drain() waits on
+        // outstanding!=0 (root-caused 2026-07-03 via a blocking-reap probe that
+        // made a 300-stream pipelined bench complete).
+        //
+        // The hook RETURNS whether ops were in flight. true -> it (may have)
+        // blocked in the ring harvesting completions; loop to run whatever those
+        // re-injected. false -> nothing in flight, so it did only a cheap poll;
+        // fall through to the futex park, which a cross-thread unpark() can
+        // interrupt IMMEDIATELY (a reap block cannot) -- so a scheduler that owns
+        // an IoContext but currently has no io pending still wakes instantly on a
+        // foreign spawn/wake. Cap the block at kIoPollNs so even while io IS in
+        // flight a pinned cross-thread wake is observed within 1ms (the loop top
+        // re-checks find_task after the bounded reap returns); consuming the
+        // parker latch immediately via an eventfd in the ring is the park-merge
+        // PERF follow-up, not needed for correctness.
+        if (timeout > kIoPollNs) timeout = kIoPollNs;
+        if (poll(io_poll_ctx.load(std::memory_order_relaxed), idx, timeout)) {
+          remove_sleeper(idx);
+          continue;  // io was in flight -> serviced in the ring, re-check queues
+        }
+        // else: nothing in flight -> park below for an immediate cross-thread wake
+        timeout = park_timeout_ns(w);  // io cap no longer applies
+      }
       if (timeout == UINT64_MAX) {
         w.parker.park();
       } else {

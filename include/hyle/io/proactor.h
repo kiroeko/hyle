@@ -147,6 +147,14 @@ class Proactor {
   // its futex Parker, not a post into the ring.)
   HYLE_IO_API bool post(std::uint64_t user_data, std::int64_t result = 0) noexcept;
 
+  // Whether the ring has ops SUBMITTED-but-not-yet-COMPLETED (the kernel still
+  // owes ≥1 completion). The scheduler integration reads this at a worker's park
+  // boundary to decide it MUST block in a GETEVENTS reap (io_uring surfaces those
+  // completions only on a kernel enter) rather than the futex parker -- else the
+  // completions never arrive and their fibers hang. False when nothing is
+  // outstanding, so the worker can park for an immediately-interruptible wake.
+  HYLE_IO_API bool in_flight() const noexcept;
+
   bool valid() const noexcept { return impl_ != nullptr; }
 
  private:

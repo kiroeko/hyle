@@ -61,13 +61,26 @@ class HYLE_SCHED_API Scheduler {
   void shutdown();
 
   // ---- io poll hook (io-04 integration) -------------------------------------
-  // A worker calls this at the top of its loop to reap io completions (proactor
-  // CQ). It is a raw function pointer + opaque ctx, NOT an io type: sched/ must
-  // not depend on io/ (the dependency runs the other way -- io/ uses sched's
-  // Waker). io/ registers its IoContext here; the worker invokes it with its own
-  // index and a timeout budget (0 = non-blocking poll from the hot loop). When no
-  // io is in use the hook stays null and the worker never calls it -- zero cost.
-  using IoPollFn = void (*)(void* ctx, unsigned worker_idx,
+  // A worker calls this when its run queue drains, to service io completions
+  // (proactor CQ). It is a raw function pointer + opaque ctx, NOT an io type:
+  // sched/ must not depend on io/ (the dependency runs the other way -- io/ uses
+  // sched's Waker). io/ registers its IoContext here; the worker invokes it with
+  // its own index and a timeout budget. When no io is in use the hook stays null
+  // and the worker never calls it -- zero cost.
+  //
+  // timeout_ns == 0 is the non-blocking drain (run-queue-drained hot path). A
+  // non-zero timeout is the worker's PARK boundary: the hook may BLOCK up to that
+  // long harvesting completions (a GETEVENTS io_uring_enter), which is a
+  // correctness requirement -- io_uring only surfaces many completions when the
+  // owning thread enters the kernel, so a worker with ops in flight MUST block in
+  // the ring rather than the futex parker or those completions never arrive.
+  //
+  // RETURNS true iff io ops were in flight (so the hook serviced/blocked on the
+  // ring): the worker then loops instead of parking. false means nothing was in
+  // flight (the hook did at most a cheap non-blocking drain), so the worker parks
+  // on its futex Parker as usual -- giving an immediate cross-thread wake when no
+  // io is pending (a reap block can't be interrupted by parker.unpark()).
+  using IoPollFn = bool (*)(void* ctx, unsigned worker_idx,
                             unsigned long long timeout_ns) noexcept;
   void set_io_poll(IoPollFn fn, void* ctx) noexcept;
 

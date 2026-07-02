@@ -73,9 +73,9 @@ class IoContext {
   }
 
  private:
-  static void poll_trampoline(void* ctx, unsigned worker_idx,
+  static bool poll_trampoline(void* ctx, unsigned worker_idx,
                               unsigned long long timeout_ns) noexcept;
-  void poll(unsigned worker_idx, unsigned long long timeout_ns) noexcept;
+  bool poll(unsigned worker_idx, unsigned long long timeout_ns) noexcept;
 
   sched::Scheduler& sched_;
   std::vector<std::unique_ptr<Proactor>> rings_;  // one per worker (non-movable)
