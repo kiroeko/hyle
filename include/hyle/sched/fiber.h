@@ -84,6 +84,15 @@ class Fiber {
     return r;
   }
 
+  // ---- worker affinity (shard-per-core, io-04) --------------------------------
+  // A pinned fiber runs ONLY on its owner worker: the scheduler routes it to that
+  // worker's private queue on spawn AND on every wake, and the work-stealing path
+  // never takes it. -1 = unpinned (ordinary stealable fiber). This is what lets a
+  // connection's fiber stay on the core that owns its io ring (submit + reap +
+  // resume all single-threaded, share-nothing). Set once before spawn_on.
+  int owner_worker() const noexcept { return owner_worker_; }
+  void set_owner_worker(int idx) noexcept { owner_worker_ = idx; }
+
   // Symmetric rendezvous closing the wake-before-suspend race. BOTH the worker
   // (after resume() returns, having seen a wait request) and Waker::wake() call
   // this; whichever observes the OTHER already arrived returns true and must do
@@ -112,6 +121,7 @@ class Fiber {
   void* arg_ = nullptr;
   bool finished_ = false;
   bool wait_requested_ = false;       // set by request_wait(), read by scheduler
+  int owner_worker_ = -1;             // shard-per-core pin (-1 = unpinned/stealable)
   std::atomic<int> wake_state_{0};    // wake/suspend rendezvous (see wake_rendezvous)
   // ThreadSanitizer fiber handles (null/unused unless built with TSan). fcontext
   // swaps stacks behind TSan's back; without telling TSan which fiber is now

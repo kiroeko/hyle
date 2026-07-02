@@ -6,6 +6,7 @@
 #include <mutex>
 #include <vector>
 
+#include "hyle/container/bounded_queue.h"
 #include "hyle/container/sharded_queue.h"
 #include "hyle/container/ws_fifo_queue.h"
 #include "hyle/macros.h"
@@ -32,6 +33,12 @@ thread_local Scheduler* tls_owner = nullptr;
 // only the owning worker thread reads/writes its own wheel (arm happens inside a
 // fiber running ON that worker; fire happens in that worker's loop).
 thread_local time::TimerWheel* tls_wheel = nullptr;
+
+// The current worker's index, published by run_worker (file-local so the
+// current_worker_index() free function can read it without naming the private
+// nested Impl). -1 when not on a worker fiber. io/ (plan A) reads this to pick
+// this worker's per-core proactor for submit, so submit + reap share a thread.
+thread_local int tls_worker_idx = -1;
 
 // Per-worker xorshift64 for cheap random victim selection.
 std::uint64_t xorshift(std::uint64_t& s) noexcept {
@@ -72,12 +79,21 @@ struct Scheduler::Impl {
     // the same core (cache-hot re-inject) and needs no wheel lock. Epoch = the
     // monotonic ns captured at construction.
     time::TimerWheel wheel;
+    // Private queue for fibers PINNED to this worker (shard-per-core, io-04). A
+    // bounded MPMC ring: any thread (a Waker firing on another core, or spawn_on)
+    // pushes here, but ONLY this worker pops it, and the work-stealing path never
+    // touches it -- so a pinned fiber can never be stolen onto another core. Kept
+    // separate from `local` (which IS stealable) precisely so stealing stays
+    // untouched (no change to the anti-herd Dekker/CAS math). Checked before
+    // `local` in find_task so a woken connection fiber resumes promptly.
+    container::BoundedQueue<Fiber*, mem::Allocator> pinned;
     std::uint64_t rng;
     unsigned idx;             // own worker index: shard hint + pop-cursor seed
     std::size_t pop_cursor;   // round-robin cursor into the global ShardedQueue
     Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed, unsigned i)
         : local(a, cap),
           wheel(time::monotonic_ns()),
+          pinned(a, cap),
           rng(seed),
           idx(i),
           pop_cursor(i) {}
@@ -157,6 +173,10 @@ struct Scheduler::Impl {
   }
 
   Fiber* find_task(Worker& w, unsigned self_idx) noexcept {
+    // Pinned fibers first: a fiber bound to THIS worker (shard-per-core) must run
+    // here and is never stolen. Popped only by this worker; MPMC push from wakers.
+    Fiber* pf = nullptr;
+    if (w.pinned.try_pop(pf)) return pf;
     auto r = w.local.pop();
     if (r.ok) return r.value;
     Fiber* g = nullptr;
@@ -171,6 +191,15 @@ struct Scheduler::Impl {
   }
 
   void reschedule(Worker& w, Fiber* f) noexcept {
+    // A pinned fiber (shard-per-core) must NOT go on the stealable local queue --
+    // a plain cooperative yield would otherwise let another core steal it. Keep it
+    // on its owner's private queue. (owner == w.idx here, since a pinned fiber only
+    // ever runs on its owner, but route via owner to be explicit + future-proof.)
+    if (f->owner_worker() >= 0) {
+      unsigned owner = static_cast<unsigned>(f->owner_worker());
+      while (!workers[owner]->pinned.try_push(f)) platform::this_thread::yield();
+      return;  // owner is THIS running worker -> it'll pop next loop; no unpark
+    }
     if (!w.local.push_back(f)) {
       // Spill to OUR OWN shard (locality: our pop_cursor checks it first).
       while (!global.try_push(w.idx, f)) platform::this_thread::yield();
@@ -202,6 +231,18 @@ struct Scheduler::Impl {
       idx = sleepers.back();
       sleepers.pop_back();
     }
+    workers[idx]->parker.unpark();
+  }
+
+  // Wake ONE specific worker (shard-per-core pinned-wake path). Unconditional: the
+  // Parker's 3-state machine latches the token, so if the target isn't parked yet
+  // its next park() returns at once -- no lost wakeup, no sleepers-list bookkeeping
+  // needed. Deliberately BYPASSES the num_searching_ anti-herd gate (notify()): a
+  // pinned fiber can run ONLY on this worker, so "some other worker is searching"
+  // is irrelevant -- that searcher can't take it. Waking the specific owner is
+  // both necessary and sufficient; it never contributes to a wake storm because it
+  // targets exactly one worker that has exactly one new task.
+  void unpark_specific(unsigned idx) noexcept {
     workers[idx]->parker.unpark();
   }
 
@@ -238,6 +279,17 @@ struct Scheduler::Impl {
   // a foreign thread. Does NOT touch `outstanding` -- a waiting fiber was never
   // decremented, it stayed counted while parked.
   void reinject(Fiber* f) noexcept {
+    // A pinned fiber (shard-per-core) must wake back onto its OWNER worker, never
+    // the global stealable pool -- so its io ring + fiber stay on one core. Push
+    // to that worker's private queue and unpark IT specifically. The queue is a
+    // bounded MPMC ring, so a Waker firing from any thread is safe.
+    int owner = f->owner_worker();
+    if (owner >= 0) {
+      while (!workers[static_cast<unsigned>(owner)]->pinned.try_push(f))
+        platform::this_thread::yield();
+      unpark_specific(static_cast<unsigned>(owner));
+      return;
+    }
     // Foreign-thread inject (Waker may fire anywhere): round-robin across shards.
     while (!global.try_push(inject_rr_.fetch_add(1, std::memory_order_relaxed), f))
       platform::this_thread::yield();
@@ -288,6 +340,7 @@ struct Scheduler::Impl {
     t_current = this;
     t_worker_idx = static_cast<int>(idx);
     tls_owner = owner;
+    tls_worker_idx = static_cast<int>(idx);  // publish for current_worker_index()
     Worker& w = *workers[idx];
     tls_wheel = &w.wheel;  // publish for sleep_*_ns (file-local, this worker only)
 
@@ -377,6 +430,7 @@ struct Scheduler::Impl {
     t_current = nullptr;
     t_worker_idx = -1;
     tls_wheel = nullptr;
+    tls_worker_idx = -1;
   }
 
   void spawn(Fiber* f) noexcept {
@@ -390,6 +444,17 @@ struct Scheduler::Impl {
     while (!global.try_push(inject_rr_.fetch_add(1, std::memory_order_relaxed), f))
       platform::this_thread::yield();
     notify();
+  }
+
+  // Spawn a fiber PINNED to worker `idx` (shard-per-core). It records its owner so
+  // every subsequent wake also routes back here (reinject), then goes onto that
+  // worker's private queue and unparks it specifically. Never stolen.
+  void spawn_on(unsigned idx, Fiber* f) noexcept {
+    HYLE_FATAL_ASSERT(idx < n);
+    f->set_owner_worker(static_cast<int>(idx));
+    outstanding.fetch_add(1, std::memory_order_acq_rel);  // count before publish
+    while (!workers[idx]->pinned.try_push(f)) platform::this_thread::yield();
+    unpark_specific(idx);
   }
 
   void drain() noexcept {
@@ -424,6 +489,10 @@ Scheduler::~Scheduler() {
 }
 
 void Scheduler::spawn(Fiber* fiber) { impl_->spawn(fiber); }
+void Scheduler::spawn_on(unsigned worker_idx, Fiber* fiber) {
+  impl_->spawn_on(worker_idx, fiber);
+}
+unsigned Scheduler::num_workers() const noexcept { return impl_->n; }
 void Scheduler::drain() { impl_->drain(); }
 void Scheduler::shutdown() { impl_->shutdown(); }
 
@@ -449,6 +518,8 @@ void Waker::wake() const noexcept {
 Waker current_waker() noexcept {
   return Waker{tls_owner, Fiber::current()};  // both null if not on a worker fiber
 }
+
+int current_worker_index() noexcept { return tls_worker_idx; }
 
 void suspend() noexcept {
   Fiber* self = Fiber::current();

@@ -44,6 +44,16 @@ class HYLE_SCHED_API Scheduler {
   // caller must keep it alive until it has finished running.
   void spawn(Fiber* fiber);
 
+  // Submit a fiber PINNED to worker `worker_idx`: it runs only on that worker and
+  // is never stolen, on spawn and on every wake (shard-per-core, io-04). Use this
+  // to keep a connection's fiber on the core that owns its io ring so submit +
+  // reap + resume stay single-threaded. `worker_idx` must be < num_workers().
+  void spawn_on(unsigned worker_idx, Fiber* fiber);
+
+  // The number of worker threads (for choosing a spawn_on target / sizing an
+  // IoContext's per-worker rings).
+  unsigned num_workers() const noexcept;
+
   // Block the calling thread until every spawned fiber has finished.
   void drain();
 
