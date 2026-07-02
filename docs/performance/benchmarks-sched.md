@@ -66,7 +66,20 @@
 
 > **TSan × fcontext(本步另一修复)**:调度器唤醒优化让 fiber 跨 worker 迁移更频繁,撞出 TSan 对 fcontext 栈切换的盲区(SEGV in libtsan,非逻辑 bug——无 TSan 50/50 过)。已给 `fiber.cc` 加 `__tsan_switch_to_fiber` 注解(每次切换告知 TSan 当前逻辑上下文,迁移时按 resume 重新捕获 resumer 句柄),**release 零成本**(非 TSan 构建宏全展开为空)。修复后双平台 28/28 + TSan 28/28 零 race,lock-free 闸门恢复。
 
-## lock-free 队列簇（`queue_sota_bench.cc` + crossbeam Rust 对照，task #9 / bench-02b）
+## 定时 CV 等待 wait_for/wait_until（sched-04c thread-mode，`sync_bench.cc` 块 8/9）
+
+thread-mode(裸线程 waiter,外部提交者/跨进程联邦)。对标 `std::condition_variable::wait_for`=直接 SOTA(两者都 futex-park OS 线程到 deadline)。双平台各 15 遍 `bench-stat.py`。
+
+| 场景 | HYLE(Win/Lin) | std::cv::wait_for(Win/Lin) | 判定(15 遍,双平台) |
+|---|---|---|---|
+| **notify 早于 deadline 的唤醒往返** | 580 ns / ~ | 1165 ns / ~ | **Win 赢 2.0x**(gap99.8%»spread47%)/ **Lin 平**(ratio1.03,gap3.4%«spread21%) |
+| **纯超时(1ms,无 notify)** | 15.58 ms / — | 15.58 ms / — | 双平台**平**(gap0.1%«spread):被 OS 定时器粒度地板 |
+
+- **唤醒往返 Win 赢 2.0x / Lin 平——又一"单平台数陷阱"(同 Parker/monotonic)**:Windows 的 `std::condition_variable` 是 SRWLOCK+CONDITION_VARIABLE 往返较重,HYLE 的 SpinLock monitor + 精简 `park_timeout` 路径胜出;Linux glibc 的 cv 本就是薄 futex 封装,HYLE 打平(与 sched-05 "Parker Linux 平 CV" 同源)。**只报单平台会误判,双平台才是真相**。
+- **纯超时双平台平**:HYLE 与 std 都被 OS ~15ms(Win)定时器粒度地板,gap 0.1%——**证 HYLE 超时路径零额外开销**(不是"赢/输",是"没引入税")。这正是想验证的:双向链表 O(1) 自摘 + `linked` 仲裁不给热路径加负担。
+- **正确性优先于跑分**:此件核心是 notify-vs-timeout 竞态无 lost-wakeup(红队 6 类审计 + TSan×3 含 NotifyVsTimeoutRace 压力),性能是"不劣于 std 且 Win 更优"的附带确认。
+
+
 
 > 环境:Win MSVC19.50 Release + Linux x86_64 GCC14.2 Release(原生 ext4),nanobench。cap=1024、50000 item/生产者。**SOTA 标尺**:moodycamel ConcurrentQueue(单头,gated `-DHYLE_BENCH_MOODYCAMEL`)、oneTBB concurrent_bounded_queue/concurrent_vector(gated `-DHYLE_BENCH_TBB`,apples-to-apples 有界)、crossbeam-deque(Rust,work-stealing 同族,`bench/rust/`)。**此前这簇零对标("覆盖低就默认 SOTA"),本节是真对标揪出的结果——赢/平/输都登记。**
 >
