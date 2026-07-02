@@ -150,6 +150,17 @@ void bench_mpmc() {
   // Each epoch is a full kTotal-item MPMC run (heavy); too few epochs and
   // nanobench flags it unstable. The sharded prototype is so fast its per-epoch
   // time shrinks, so it needs more iterations to stabilize -> 50.
+  //
+  // WHY NOT bump to nanobench's suggested ~543: at 50 iters the single ring
+  // already costs ~8s/variant (200k items * ~70ns * 50); 543 would be ~90s/
+  // variant -> a 15-run bench-stat sweep balloons past an hour. And it would not
+  // fix the sharded variant's spread: its in-process err is only ~5%, but its
+  // ACROSS-PROCESS spread is ~40% (measured, scripts/bench-stat.py -n 15). That
+  // variance is thread spawn/join + OS scheduling jitter (sharded is ~14ns/op,
+  // so per-process system noise dominates), NOT nanobench under-sampling -- more
+  // iterations churn the same jittery spawn/join. The honest fix is the cross-
+  // process median in bench-stat.py, which is what the perf doc reports; the
+  // sharded win is stated as an ORDER OF MAGNITUDE (2-5x), not a point value.
   b.title(title).relative(true).batch(kTotal).minEpochIterations(50);
 
   b.run("HYLE BoundedQueue", [&] {
