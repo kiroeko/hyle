@@ -152,6 +152,7 @@ endif()
 if(HYLE_HAS_FCONTEXT)
   add_subdirectory(src/sched)  # sched-01/02: fcontext fiber + run-queue/worker
 endif()
+add_subdirectory(src/io)     # io-01: proactor completion seam (IOCP; io_uring next)
 
 if(HYLE_BUILD_TESTS)
   enable_testing()
