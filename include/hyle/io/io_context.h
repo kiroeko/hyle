@@ -75,9 +75,6 @@ class IoContext {
  private:
   static void poll_trampoline(void* ctx, unsigned worker_idx,
                               unsigned long long timeout_ns) noexcept;
-  // The wake hook (io-04 park merge): posts a bare wake into worker_idx's ring so
-  // a worker blocked in reap() breaks out for a spawned/stolen fiber.
-  static void wake_trampoline(void* ctx, unsigned worker_idx) noexcept;
   void poll(unsigned worker_idx, unsigned long long timeout_ns) noexcept;
 
   sched::Scheduler& sched_;

@@ -138,20 +138,11 @@ class Proactor {
                                std::uint64_t timeout_ns) noexcept;
 
   // Manually post a completion carrying `user_data` (result defaults to 0). This
-  // is the "inject a completion carrying this token" hook -- used to drive tests
-  // without a real fd. SAME-THREAD ONLY on io_uring: it fills a NOP SQE, and the
-  // submission queue is single-producer, so posting from a foreign thread races
-  // the owner. For a CROSS-THREAD wake (unblock a parked reap from another
-  // thread) use wake() instead, which touches no ring state.
+  // is the backend-independent "inject a wake into the completion stream" hook --
+  // used to unblock a parked reap() from another thread, and to drive tests
+  // without a real fd. (IOCP PostQueuedCompletionStatus / io_uring you'd use an
+  // eventfd/nop; both present it here.)
   HYLE_IO_API bool post(std::uint64_t user_data, std::int64_t result = 0) noexcept;
-
-  // Cross-thread wake: unblock a worker sitting in reap() from ANY thread. Unlike
-  // post() this touches no submission-queue state (io_uring: writes a dedicated
-  // eventfd; IOCP: PostQueuedCompletionStatus; epoll: software wake queue), so it
-  // is safe from a foreign thread -- the io-04 park merge uses it to break an
-  // io-blocked worker for a spawned/stolen fiber. Delivers a reserved wake token
-  // the reaper recognizes + drains (no user payload).
-  HYLE_IO_API bool wake() noexcept;
 
   bool valid() const noexcept { return impl_ != nullptr; }
 
@@ -165,12 +156,6 @@ class Proactor {
   static Impl* try_init_epoll() noexcept;
   static bool epoll_arm(Impl* impl, int fd, unsigned events, unsigned char opcode,
                         void* buf, unsigned len, std::uint64_t user_data) noexcept;
-  // Fill one io_uring SQE + count it pending (no syscall); the next reap() flushes
-  // all pending SQEs in its enter (io-04 submit batch). Linux/io_uring only --
-  // defined in the Linux branch of proactor.cc, never odr-used elsewhere.
-  bool queue_sqe(std::uint8_t opcode, std::int32_t fd, std::uint64_t addr,
-                 std::uint32_t len, std::uint64_t off, std::uint64_t user_data,
-                 std::uint32_t op_flags = 0) noexcept;
 
   Impl* impl_ = nullptr;  // backend state (IOCP port / io_uring ring), pimpl
 };
