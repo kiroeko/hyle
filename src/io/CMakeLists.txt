@@ -12,7 +12,7 @@
 set(_io_sources proactor.cc)
 set(_io_deps hyle_platform)
 if(HYLE_HAS_FCONTEXT)
-  list(APPEND _io_sources io_context.cc)
+  list(APPEND _io_sources io_context.cc tcp.cc)
   list(APPEND _io_deps hyle_sched)
 endif()
 hyle_add_module(io SOURCES ${_io_sources} DEPS ${_io_deps})

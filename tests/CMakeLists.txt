@@ -47,7 +47,9 @@ if(HYLE_HAS_FCONTEXT)
   # io-04 net: the co_await socket layer needs BOTH io (proactor + IoContext) and
   # sched (scheduler drives the reap). Only buildable where sched exists.
   hyle_add_test(io NAME net SOURCES io/net_test.cc DEPS hyle_sched)
+  hyle_add_test(io NAME tcp SOURCES io/tcp_test.cc DEPS hyle_sched)
   if(WIN32)
     target_link_libraries(hyle_io_net_test PRIVATE ws2_32)  # test builds the loopback pair
+    target_link_libraries(hyle_io_tcp_test PRIVATE ws2_32)  # sockaddr / winsock types
   endif()
 endif()
