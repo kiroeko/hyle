@@ -333,6 +333,22 @@ HYLE_DEFER(std::fclose(fp));         // 作用域退出时执行（C++23 仍无 
 - **别在紧循环里反复拷贝+析构同一个 `Ref`** —— 背靠背的两个原子(同 cache line)会串行化(第二个卡在第一个排空 store buffer 之后)，把原子延迟暴露到极致。需要在循环内多次访问同一对象时，循环外持一个 `Ref`、循环内用 `.get()` 或 `const&`。（性能文档那条 microbench 正是这个反模式，不代表真实开销。）
 - **单线程、生命周期明确**时，直接裸指针 / 值语义 / `unique_ptr` 往往比任何引用计数都快 —— 引用计数是为"共享所有权 + 不确定谁最后释放"付的税。`Ref` 的价值在跨 DLL ABI 稳定（无控制块）和侵入式省一次分配，不在让引用计数本身变快。
 
+### 3.8 io —— proactor 完成式 IO（🔶 收割接缝就绪，socket 待 io-04）
+
+**⚠️ 现状：还不能用来做真网络 IO。** 已就绪的是 `proactor.h` 的**完成收割接缝** + io_uring/IOCP/epoll 后端 + io_uring `submit_read/write`；**net socket（accept/recv/send）是 io-04，未做**。这里只讲清模型与取舍，等 io-04 补完整用法。
+
+**前提（模型不同于传统，必须知道）**：HYLE io 是 **proactor（完成式）**，不是 reactor（就绪式）。传统写法是 `read()` 阻塞、或 `epoll` 等"可读"后自己 `read`；HYLE 是"**提交 IO → fiber 让出 → 内核做完 → 唤醒 fiber**"。你不"等可读"，你"提交读、完成时拿到已读好的数据"。这与 fiber 天然契合（提交即让出、完成即续跑），也是 C++ 标准网络的方向（WG21 P2300/P4100）。std 无异步 IO 等价物，故非"替换 std"，是净新增机制。
+
+**后端取舍（自动选，SOTA-first；调用方通常无需关心）**：
+
+| 后端 | 何时用 | 性质 |
+|---|---|---|
+| **io_uring**（Linux）| 默认，`init()` 总先试 | 真 proactor，最高性能；submit 纯用户态填 SQE + 一次 enter（SQPOLL 下零 syscall） |
+| **IOCP**（Windows）| Windows 唯一 | OS 原生真 proactor |
+| **epoll**（Linux）| **仅当 io_uring 不可用**（老内核 / `kernel.io_uring_disabled` sysctl / 容器 seccomp 挡） | reactor，内部模拟完成（就绪→内联 IO→completion），保住"io_uring 被禁的硬化容器/k8s"仍能跑 |
+
+**一句话**：正式运行走 io_uring/IOCP（SOTA），epoll 是"io_uring 被关掉时"的兜底降级，非默认——`init()` 自动按此顺序选，`HYLE_IO_FORCE_EPOLL` 仅测试用。**性能对标待 io-04 net 真实并发负载**（孤立测单 read/write 是测内核非测封装）。
+
 
 ## 4. C-ABI 边界（跨 DLL / FFI）
 
