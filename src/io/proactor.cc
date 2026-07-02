@@ -244,10 +244,14 @@ Proactor::~Proactor() {
 }
 
 namespace {
+// (io_uring ring helpers live here; backend-init + epoll-arm are Proactor static
+// members below since they must name the private Impl.)
+}  // namespace
+
 // Try to stand up the io_uring backend (the SOTA path). Returns the filled Impl
 // or nullptr if io_uring is unavailable (old kernel ENOSYS / disabled EPERM /
 // mmap failure) -- caller then falls back to epoll.
-Proactor::Impl* try_init_uring(unsigned entries) noexcept {
+Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
   io_uring_params p;
   std::memset(&p, 0, sizeof(p));
   int fd = sys_io_uring_setup(entries, &p);
@@ -317,7 +321,7 @@ Proactor::Impl* try_init_uring(unsigned entries) noexcept {
 }
 
 // Stand up the epoll fallback backend (reactor). Returns nullptr on failure.
-Proactor::Impl* try_init_epoll() noexcept {
+Proactor::Impl* Proactor::try_init_epoll() noexcept {
   int ep = ::epoll_create1(EPOLL_CLOEXEC);
   if (ep < 0) return nullptr;
   auto* impl = new (std::nothrow) Proactor::Impl{};
@@ -329,7 +333,6 @@ Proactor::Impl* try_init_epoll() noexcept {
   impl->epfd = ep;
   return impl;
 }
-}  // namespace
 
 bool Proactor::init(unsigned entries) noexcept {
   if (impl_ != nullptr) return true;  // idempotent
@@ -504,14 +507,13 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
                     user_data);
 }
 
-namespace {
 // epoll fallback: arm a one-shot readiness watch for `fd` and remember the op;
 // reap() does the actual read/write when the fd fires. `events` is EPOLLIN for
 // read, EPOLLOUT for write. Stores fd in data.u64 so reap recovers it.
-bool epoll_arm(Proactor::Impl* impl, int fd, std::uint32_t events,
-               std::uint8_t opcode, void* buf, std::uint32_t len,
-               std::uint64_t user_data) noexcept {
-  impl->pending[fd] = Proactor::Impl::PendingOp{opcode, buf, len, user_data};
+bool Proactor::epoll_arm(Impl* impl, int fd, unsigned events,
+                         unsigned char opcode, void* buf, unsigned len,
+                         std::uint64_t user_data) noexcept {
+  impl->pending[fd] = Impl::PendingOp{opcode, buf, len, user_data};
   epoll_event ev{};
   ev.events = events | EPOLLONESHOT;
   ev.data.u64 = static_cast<std::uint64_t>(fd);
@@ -529,7 +531,6 @@ bool epoll_arm(Proactor::Impl* impl, int fd, std::uint32_t events,
   }
   return true;
 }
-}  // namespace
 
 bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
                            std::uint64_t offset,

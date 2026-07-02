@@ -127,6 +127,15 @@ class Proactor {
 
  private:
   struct Impl;
+  // Backend init + epoll-arm helpers need to touch the private Impl, so they are
+  // private statics (defined per-OS in proactor.cc) rather than free functions
+  // in the .cc anonymous namespace (which cannot name a private nested type --
+  // GCC rightly rejects that; only some compilers let it slide).
+  static Impl* try_init_uring(unsigned entries) noexcept;
+  static Impl* try_init_epoll() noexcept;
+  static bool epoll_arm(Impl* impl, int fd, unsigned events, unsigned char opcode,
+                        void* buf, unsigned len, std::uint64_t user_data) noexcept;
+
   Impl* impl_ = nullptr;  // backend state (IOCP port / io_uring ring), pimpl
 };
 
