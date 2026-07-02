@@ -69,7 +69,7 @@ io/
 2. **io_uring↔fiber 映射**:`user_data`(SQE)= Waker token,完成时原样回来(`cqe->user_data`)→ reap 交回 → sched wake。这正是 sched-design §3.3 的物理机制,IOCP 用 completion key 同构。
 3. **只借 syscall shim 的力度**:实测比 io-design 预想更省——**连 liburing 都不链**,只用 3 个 io_uring syscall + `linux/io_uring.h` uapi 头 + 自写内联环算术(barrier 精确复刻 liburing v2.15 的 4 个 fast-path 点)。IOCP/kqueue 本就 OS 原生。**零第三方链依赖。**
 
-**后端进度**:IOCP(io-01,Windows,✅)+ io_uring(io-02,Linux,✅)双平台真测 + WSL TSan 净。epoll(Linux reactor 降级)+ kqueue(mac)= io-03 待做(reactor→completion 模拟)。
+**后端进度(诚实分层)**:io-01 **收割接缝**在 IOCP(Windows)+ io_uring(Linux)双后端均 ✅ 真测 + WSL TSan 净——但这只是"完成收割 + Waker 唤醒",**不含真 IO 操作**。**io-02(真 IO op:read/write/accept/recv/send 的 SQE 提交 + 结果映射)= 🔶 未做**,只有 NOP 唤醒钩子;这才是后端主体、io-04 net 的前置。epoll(Linux reactor 降级)+ kqueue(mac)= io-03 待做。
 
 ## 待深挖(io-04+ 开工时定,非现在)
 

@@ -142,10 +142,10 @@
 | sched-06 | P4 | sched | 协程胶水(co_await→fiber 让出) | sched-04 | 1-2k | — | 占位 |
 | sched-07 | P4 | sched | 取消：CancelToken 树 + await 取消点 + 结构化并发 | sched-04,sched-06 | 2-3k | — | 占位 |
 | sched-08 | P4 | sched | runtime 优雅关闭(两阶段 drain + 逆序清理) | sched-03 | 1-2k | — | 占位 |
-| io-01 | P5 | io | proactor 抽象(Waker 接 sched) | sched-04 | 1-2k | 90 头+95 IOCP (+130 测试) | ✅ 完成(`proactor.h` 完成式收割接缝:per-worker Proactor,submit 挂 64-bit token=Waker、reap 批量收割回 token 交 sched wake;`Completion{user_data,result,flags,buffer_id}` 含 kMore(multishot)/kBuffer(零拷贝)=接口按 liburing v2.15 SOTA 机制先研究再定形不挡任何一个。**IOCP 后端**先落(Windows 本机零依赖验接口,机制先心跳验证)。4 测试双平台绿:post/reap 往返、非阻塞 poll、跨线程阻塞唤醒、批量收割) |
-| io-02 | P5 | io | io_uring 后端(**裸 syscall,不链 liburing**) | io-01 | 2-3k | 150 | ✅ 完成(Linux io_uring 后端,同 proactor.h 接缝。io-design"只借 syscall 薄封装"→心跳验证证连薄封装都不用借:3 个 io_uring syscall+uapi 头+自写内联环算术,零 liburing 链依赖。fast-path barrier 精确复刻 liburing v2.15:submit store_release SQ tail、reap load_acquire CQ tail+store_release CQ head 批量摊还;reap CQ 非空跳 syscall(纯用户态)、否则 enter 走 EXT_ARG timeout 不额外 SQE。CQE flags→kMore/kBuffer。WSL 6.18 心跳先验证。双平台 4/4+WSL TSan 净) |
-| io-03 | P5 | io | epoll + kqueue 后端(IOCP 已在 io-01) | io-01 | 3-4k | — | 🔶 IOCP ✅(io-01 已落);epoll(Linux reactor→completion 模拟)+ kqueue(mac/BSD)待做 |
-| io-04 | P5 | io | net(tcp/udp socket) | io-02 | 2-3k | — | 占位 |
+| io-01 | P5 | io | proactor 收割接缝(Waker 接 sched)+ IOCP/io_uring 双后端收割层 | sched-04 | 1-2k | 90 头+245 后端 (+130 测试) | ✅ 完成(`proactor.h` 完成式**收割**接缝:per-worker Proactor,reap 批量收割 completion 回 token 交 sched wake、post 注入唤醒;`Completion{user_data,result,flags,buffer_id}` 含 kMore(multishot)/kBuffer(零拷贝)=接口按 liburing v2.15 SOTA 机制先研究再定形不挡任何一个。**两后端的收割层都在此**:IOCP(GetQueuedCompletionStatusEx/Post)+ io_uring(裸 syscall setup/mmap ring/reap-CQ/post-NOP,barrier 精确复刻 liburing v2.15,零 liburing 链依赖)。机制先心跳验证。4 测试双平台绿+WSL TSan 净。**注意:这是收割接缝,不含真 IO op——submit read/write/accept 是 io-02**) |
+| io-02 | P5 | io | io_uring/IOCP 真 IO 操作(read/write/accept/recv/send SQE 提交) | io-01 | 2-3k | — | 🔶 收割层已接(io-01);**真 IO op 未做**——只有 NOP(post 唤醒钩子)。缺 `prep_read/write/accept/recv/send` SQE 填充 + 真 fd 提交 + 结果映射(负 errno)。这才是后端主体(几 k 行),io-04 net 的直接前置 |
+| io-03 | P5 | io | epoll + kqueue 后端(IOCP/io_uring 收割已在 io-01) | io-01 | 3-4k | — | 🔶 IOCP+io_uring 收割 ✅(io-01);epoll(Linux reactor→completion 模拟)+ kqueue(mac/BSD)待做 |
+| io-04 | P5 | io | net(tcp/udp socket, co_await 风格) | io-02 | 2-3k | — | 占位(依赖 io-02 真 IO op) |
 | io-05 | P5 | io | file + 跨进程共享内存 | io-02 | 2-3k | — | 占位 |
 | compute-01 | P5 | compute | device/stream 薄包 ggml-backend | sched-04 | 2-3k | — | 占位 |
 | compute-02 | P5 | compute | device buffer(ggml buffer_type 式,compute 自有所有权+stream) + 显式 copy(src,dst,stream) | compute-01 | 2-3k | — | 占位(device 内存归 compute/,走显式 copy;统一内存无互传,mem/ 不参与) |
