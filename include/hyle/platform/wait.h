@@ -29,6 +29,15 @@ namespace hyle::platform {
 namespace detail {
 HYLE_PLATFORM_API void wait_on_address(const std::atomic<std::uint32_t>* addr,
                                        std::uint32_t expected) noexcept;
+// Timed variant: block until woken or `timeout_ns` elapses. Returns false iff it
+// returned because the timeout expired (best-effort: the OS may wake slightly
+// late, and a spurious wake still returns true -- callers loop and re-check).
+// timeout_ns == 0 is a non-blocking poll. Backs the timer wheel's park deadline:
+// the wheel computes the next-expiry ns, this hands it to futex/WaitOnAddress so
+// exactly one worker sleeps to that instant (no busy tick).
+HYLE_PLATFORM_API bool wait_on_address_for(
+    const std::atomic<std::uint32_t>* addr, std::uint32_t expected,
+    std::uint64_t timeout_ns) noexcept;
 HYLE_PLATFORM_API void wake_one(const std::atomic<std::uint32_t>* addr) noexcept;
 HYLE_PLATFORM_API void wake_all(const std::atomic<std::uint32_t>* addr) noexcept;
 }  // namespace detail
@@ -51,6 +60,13 @@ class Parker {
   // Block until a token is available, then consume it. Re-checks state in a
   // loop, so a spurious low-level wake just re-sleeps (never a false return).
   HYLE_PLATFORM_API void park() noexcept;
+
+  // Timed park: block until a token is available OR `timeout_ns` elapses.
+  // Returns true if a token was consumed, false if it returned due to timeout.
+  // Absorbs spurious wakes (re-sleeps for the remaining time). timeout_ns == 0
+  // is a non-blocking check. This is the worker's "sleep until next timer" call:
+  // the timer wheel supplies the deadline, park_timeout parks exactly to it.
+  HYLE_PLATFORM_API bool park_timeout(std::uint64_t timeout_ns) noexcept;
 
   // Make a token available; wake a parked thread if one is waiting. Idempotent:
   // repeated unparks without an intervening park collapse to a single token.

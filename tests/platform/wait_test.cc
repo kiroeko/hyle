@@ -97,7 +97,64 @@ TEST(Parker, HandoffStressNoLostWakeup) {
   EXPECT_EQ(observed.load(), kRounds);
 }
 
-// Milestone acceptance: M workers, each with its own Parker, N rounds. Main
+// ---- timed park (backs the timer wheel's "sleep to next deadline") ----------
+
+TEST(Parker, ParkTimeoutReturnsFalseOnTimeout) {
+  Parker p;
+  auto t0 = std::chrono::steady_clock::now();
+  bool got = p.park_timeout(20'000'000);  // 20ms, no unpark coming
+  auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_FALSE(got);  // timed out, no token
+  // Slept roughly the requested time (allow generous slack for CI scheduling).
+  EXPECT_GE(elapsed, std::chrono::milliseconds(10));
+}
+
+TEST(Parker, ParkTimeoutConsumesExistingToken) {
+  Parker p;
+  p.unpark();  // token already available
+  auto t0 = std::chrono::steady_clock::now();
+  bool got = p.park_timeout(1'000'000'000);  // 1s deadline we should NOT wait
+  auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_TRUE(got);  // consumed the token immediately
+  EXPECT_LT(elapsed, std::chrono::milliseconds(500));  // did not block
+}
+
+TEST(Parker, ParkTimeoutZeroIsNonBlockingPoll) {
+  Parker p;
+  EXPECT_FALSE(p.park_timeout(0));  // no token -> immediate false
+  p.unpark();
+  EXPECT_TRUE(p.park_timeout(0));  // token present -> immediate true
+}
+
+TEST(Parker, ParkTimeoutWokenByUnpark) {
+  Parker p;
+  std::atomic<bool> returned{false};
+  std::atomic<bool> got_token{false};
+
+  struct Args {
+    Parker* p;
+    std::atomic<bool>* returned;
+    std::atomic<bool>* got;
+  } args{&p, &returned, &got_token};
+
+  auto r = Thread::spawn(
+      [](void* a) {
+        auto* x = static_cast<Args*>(a);
+        bool g = x->p->park_timeout(10'000'000'000ull);  // 10s -- unpark first
+        x->got->store(g, std::memory_order_release);
+        x->returned->store(true, std::memory_order_release);
+      },
+      &args);
+  ASSERT_TRUE(r.has_value());
+  Thread t = std::move(*r);
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  EXPECT_FALSE(returned.load(std::memory_order_acquire));  // still parked
+  p.unpark();
+  t.join();
+  EXPECT_TRUE(returned.load(std::memory_order_acquire));
+  EXPECT_TRUE(got_token.load(std::memory_order_acquire));  // woke with token
+}
 // unparks all M each round and waits for every worker to consume before the
 // next round -- every per-worker counter must hit exactly N (no lost wakeup,
 // no cross-parker interference).
