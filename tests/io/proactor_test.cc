@@ -9,6 +9,7 @@
 #  include <unistd.h>
 
 #  include <cstdio>
+#  include <cstdlib>
 #endif
 
 #include "hyle/io/proactor.h"
@@ -157,5 +158,58 @@ TEST(Proactor, RealReadBadFdReturnsNegativeResult) {
   ASSERT_EQ(p.reap(&c, 1, 1'000'000'000ull), 1u);
   EXPECT_EQ(c.user_data, 0x333u);
   EXPECT_LT(c.result, 0);  // negative errno (-EBADF)
+}
+
+// io-03 epoll fallback: force the epoll (reactor) backend via the env knob and
+// drive a REAL read/write over a pipe (epoll rejects regular files, so a pipe
+// is the honest fixture). Proves the reactor->completion emulation: submit_write
+// arms EPOLLOUT + does the write when ready; submit_read arms EPOLLIN + reads.
+// This is the "io_uring disabled" production path (hardened containers), run
+// here by forcing it even though io_uring works on this box.
+TEST(Proactor, EpollFallbackRealReadWrite) {
+  ::setenv("HYLE_IO_FORCE_EPOLL", "1", /*overwrite=*/1);
+  Proactor p;
+  bool ok = p.init();
+  ::unsetenv("HYLE_IO_FORCE_EPOLL");
+  ASSERT_TRUE(ok);  // epoll backend must always stand up on Linux
+
+  int fds[2];
+  ASSERT_EQ(::pipe(fds), 0);
+  int rd = fds[0], wr = fds[1];
+
+  const char msg[] = "epoll-fallback";
+  const std::uint32_t len = sizeof(msg);
+
+  // Write to the pipe (EPOLLOUT ready immediately since the pipe has space).
+  ASSERT_TRUE(p.submit_write(wr, msg, len, 0, 0x777));
+  Completion c{};
+  ASSERT_EQ(p.reap(&c, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(c.user_data, 0x777u);
+  EXPECT_EQ(c.result, static_cast<std::int64_t>(len));
+
+  // Read it back (EPOLLIN ready now that data is in the pipe).
+  char buf[64] = {};
+  ASSERT_TRUE(p.submit_read(rd, buf, len, 0, 0x888));
+  Completion c2{};
+  ASSERT_EQ(p.reap(&c2, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(c2.user_data, 0x888u);
+  EXPECT_EQ(c2.result, static_cast<std::int64_t>(len));
+  EXPECT_STREQ(buf, msg);
+
+  ::close(rd);
+  ::close(wr);
+}
+
+// The epoll backend also honors post() (software wake queue, no fd).
+TEST(Proactor, EpollFallbackPostWake) {
+  ::setenv("HYLE_IO_FORCE_EPOLL", "1", 1);
+  Proactor p;
+  bool ok = p.init();
+  ::unsetenv("HYLE_IO_FORCE_EPOLL");
+  ASSERT_TRUE(ok);
+  ASSERT_TRUE(p.post(0x999));
+  Completion c{};
+  ASSERT_EQ(p.reap(&c, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(c.user_data, 0x999u);
 }
 #endif  // __linux__

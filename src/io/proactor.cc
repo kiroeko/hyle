@@ -144,13 +144,17 @@ bool Proactor::register_handle(std::intptr_t fd) noexcept {
 // pure userspace. No SQPOLL here (io-01/02 baseline); that is a setup-flag
 // upgrade the interface already accommodates (submit stays syscall-optional).
 #  include <linux/io_uring.h>
+#  include <sys/epoll.h>
 #  include <sys/mman.h>
 #  include <sys/syscall.h>
 #  include <unistd.h>
 
 #  include <atomic>
 #  include <cerrno>
+#  include <cstdlib>
 #  include <cstring>
+#  include <unordered_map>
+#  include <vector>
 
 namespace hyle::io {
 namespace {
@@ -174,6 +178,16 @@ inline std::atomic<unsigned>* as_atomic(void* p) noexcept {
 }  // namespace
 
 struct Proactor::Impl {
+  // Backend chosen at init: io_uring is the SOTA proactor (default, always tried
+  // first); epoll is the REACTOR fallback used ONLY when io_uring is unavailable
+  // (old kernel ENOSYS, or disabled/blocked by sysctl kernel.io_uring_disabled /
+  // container seccomp -> EPERM). Production takes io_uring wherever it exists;
+  // epoll keeps HYLE runnable where io_uring is turned off (common in hardened
+  // containers). Tests can force epoll to exercise the fallback path.
+  enum Backend { kUring, kEpoll };
+  Backend backend = kUring;
+
+  // ---- io_uring backend state ----
   int fd = -1;
   void* sq_ptr = nullptr;
   std::size_t sq_sz = 0;
@@ -183,7 +197,6 @@ struct Proactor::Impl {
   std::size_t sqes_sz = 0;
   unsigned sq_entries = 0;
   bool single_mmap = false;
-  // cached ring field pointers
   unsigned* sq_tail = nullptr;
   unsigned* sq_ring_mask = nullptr;
   unsigned* sq_array = nullptr;
@@ -191,31 +204,61 @@ struct Proactor::Impl {
   unsigned* cq_tail = nullptr;
   unsigned* cq_ring_mask = nullptr;
   io_uring_cqe* cqes = nullptr;
+
+  // ---- epoll backend state (reactor -> completion emulation) ----
+  // epoll only signals READINESS; the proactor must remember each armed op and
+  // perform the IO itself when the fd becomes ready, then synthesize a
+  // Completion. One pending op per fd (EPOLLONESHOT), which suffices for the
+  // one-in-flight-read/write-per-fd model io-04 net uses.
+  int epfd = -1;
+  struct PendingOp {
+    std::uint8_t opcode;   // IORING_OP_READ / WRITE reused as the op tag
+    void* buf;
+    std::uint32_t len;
+    std::uint64_t user_data;
+  };
+  std::unordered_map<int, PendingOp> pending;  // fd -> armed op
+  // post() has no fd (a bare wake token) and epoll has no
+  // PostQueuedCompletionStatus, so injected wakes queue here; reap drains them
+  // first. std in the .cc impl is allowed (conventions §1: internal, non-hot).
+  struct Posted {
+    std::uint64_t user_data;
+    std::int64_t result;
+  };
+  std::vector<Posted> posted;
 };
 
 Proactor::~Proactor() {
   if (impl_ == nullptr) return;
-  if (impl_->sqes != nullptr) ::munmap(impl_->sqes, impl_->sqes_sz);
-  if (impl_->cq_ptr != nullptr && !impl_->single_mmap)
-    ::munmap(impl_->cq_ptr, impl_->cq_sz);
-  if (impl_->sq_ptr != nullptr) ::munmap(impl_->sq_ptr, impl_->sq_sz);
-  if (impl_->fd >= 0) ::close(impl_->fd);
+  if (impl_->backend == Impl::kEpoll) {
+    if (impl_->epfd >= 0) ::close(impl_->epfd);
+  } else {
+    if (impl_->sqes != nullptr) ::munmap(impl_->sqes, impl_->sqes_sz);
+    if (impl_->cq_ptr != nullptr && !impl_->single_mmap)
+      ::munmap(impl_->cq_ptr, impl_->cq_sz);
+    if (impl_->sq_ptr != nullptr) ::munmap(impl_->sq_ptr, impl_->sq_sz);
+    if (impl_->fd >= 0) ::close(impl_->fd);
+  }
   delete impl_;
   impl_ = nullptr;
 }
 
-bool Proactor::init(unsigned entries) noexcept {
-  if (impl_ != nullptr) return true;  // idempotent
+namespace {
+// Try to stand up the io_uring backend (the SOTA path). Returns the filled Impl
+// or nullptr if io_uring is unavailable (old kernel ENOSYS / disabled EPERM /
+// mmap failure) -- caller then falls back to epoll.
+Proactor::Impl* try_init_uring(unsigned entries) noexcept {
   io_uring_params p;
   std::memset(&p, 0, sizeof(p));
   int fd = sys_io_uring_setup(entries, &p);
-  if (fd < 0) return false;
+  if (fd < 0) return nullptr;  // ENOSYS(old kernel) / EPERM(sysctl/seccomp disabled)
 
-  auto* impl = new (std::nothrow) Impl{};
+  auto* impl = new (std::nothrow) Proactor::Impl{};
   if (impl == nullptr) {
     ::close(fd);
-    return false;
+    return nullptr;
   }
+  impl->backend = Proactor::Impl::kUring;
   impl->fd = fd;
   impl->sq_entries = p.sq_entries;
   impl->single_mmap = (p.features & IORING_FEAT_SINGLE_MMAP) != 0;
@@ -234,7 +277,7 @@ bool Proactor::init(unsigned entries) noexcept {
   if (sq == MAP_FAILED) {
     ::close(fd);
     delete impl;
-    return false;
+    return nullptr;
   }
   impl->sq_ptr = sq;
   void* cq = impl->single_mmap
@@ -245,7 +288,7 @@ bool Proactor::init(unsigned entries) noexcept {
     ::munmap(sq, sqring);
     ::close(fd);
     delete impl;
-    return false;
+    return nullptr;
   }
   impl->cq_ptr = cq;
 
@@ -257,7 +300,7 @@ bool Proactor::init(unsigned entries) noexcept {
     ::munmap(sq, sqring);
     ::close(fd);
     delete impl;
-    return false;
+    return nullptr;
   }
   impl->sqes = static_cast<io_uring_sqe*>(sqes);
 
@@ -270,14 +313,103 @@ bool Proactor::init(unsigned entries) noexcept {
   impl->cq_tail = reinterpret_cast<unsigned*>(C + p.cq_off.tail);
   impl->cq_ring_mask = reinterpret_cast<unsigned*>(C + p.cq_off.ring_mask);
   impl->cqes = reinterpret_cast<io_uring_cqe*>(C + p.cq_off.cqes);
+  return impl;
+}
 
-  impl_ = impl;
+// Stand up the epoll fallback backend (reactor). Returns nullptr on failure.
+Proactor::Impl* try_init_epoll() noexcept {
+  int ep = ::epoll_create1(EPOLL_CLOEXEC);
+  if (ep < 0) return nullptr;
+  auto* impl = new (std::nothrow) Proactor::Impl{};
+  if (impl == nullptr) {
+    ::close(ep);
+    return nullptr;
+  }
+  impl->backend = Proactor::Impl::kEpoll;
+  impl->epfd = ep;
+  return impl;
+}
+}  // namespace
+
+bool Proactor::init(unsigned entries) noexcept {
+  if (impl_ != nullptr) return true;  // idempotent
+  // SOTA-first: always try io_uring; production runs on it wherever it exists.
+  // Fall back to epoll ONLY when io_uring is truly unavailable (old kernel /
+  // sysctl-disabled / seccomp-blocked). A test-only env var forces the epoll
+  // path so the fallback is exercised even where io_uring works (this machine).
+  const char* force = ::getenv("HYLE_IO_FORCE_EPOLL");
+  if (force == nullptr || force[0] == '0' || force[0] == '\0') {
+    Impl* u = try_init_uring(entries);
+    if (u != nullptr) {
+      impl_ = u;
+      return true;
+    }
+    // io_uring unavailable -> fall through to epoll (the whole point of io-03).
+  }
+  Impl* e = try_init_epoll();
+  if (e == nullptr) return false;
+  impl_ = e;
   return true;
 }
 
 std::size_t Proactor::reap(Completion* out, std::size_t max,
                            std::uint64_t timeout_ns) noexcept {
   if (impl_ == nullptr || max == 0) return 0;
+
+  if (impl_->backend == Impl::kEpoll) {
+    // Reactor -> completion: drain injected post()s first (they need no fd),
+    // then epoll_wait for ready fds and perform each armed op inline, turning
+    // "ready" into a synthesized Completion (bytes, or negative errno).
+    std::size_t n = 0;
+    while (n < max && !impl_->posted.empty()) {
+      Impl::Posted pd = impl_->posted.back();
+      impl_->posted.pop_back();
+      out[n].user_data = pd.user_data;
+      out[n].result = pd.result;
+      out[n].flags = 0;
+      out[n].buffer_id = 0;
+      ++n;
+    }
+    if (n > 0) return n;  // deliver wakes promptly; caller loops for more
+
+    int ms;
+    if (timeout_ns == 0) {
+      ms = 0;
+    } else if (timeout_ns == UINT64_MAX) {
+      ms = -1;  // block
+    } else {
+      std::uint64_t r = (timeout_ns + 999'999ull) / 1'000'000ull;
+      ms = r > 2'000'000'000ull ? 2'000'000'000 : static_cast<int>(r);
+    }
+    epoll_event evs[64];
+    int want = static_cast<int>(max < 64 ? max : 64);
+    int got = ::epoll_wait(impl_->epfd, evs, want, ms);
+    if (got <= 0) return 0;  // timeout / EINTR -> nothing this round
+
+    for (int i = 0; i < got && n < max; ++i) {
+      int fd = static_cast<int>(evs[i].data.u64);  // we store fd in data.u64
+      auto it = impl_->pending.find(fd);
+      if (it == impl_->pending.end()) continue;  // stale (already served)
+      Impl::PendingOp op = it->second;
+      impl_->pending.erase(it);
+      ::epoll_ctl(impl_->epfd, EPOLL_CTL_DEL, fd, nullptr);  // one-shot done
+      // Perform the IO inline now that the fd is ready.
+      std::int64_t res;
+      if (op.opcode == IORING_OP_WRITE) {
+        ssize_t w = ::write(fd, op.buf, op.len);
+        res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
+      } else {  // READ
+        ssize_t r = ::read(fd, op.buf, op.len);
+        res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
+      }
+      out[n].user_data = op.user_data;
+      out[n].result = res;
+      out[n].flags = 0;
+      out[n].buffer_id = 0;
+      ++n;
+    }
+    return n;
+  }
 
   // If the CQ is already non-empty, skip the syscall entirely (pure userspace
   // reap -- the io_uring fast path). Otherwise enter to wait for >=1 completion,
@@ -356,6 +488,13 @@ bool submit_one(int ring_fd, unsigned* sq_tail, unsigned sq_mask,
 
 bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    // epoll has no PostQueuedCompletionStatus: queue a software completion that
+    // reap() drains first. (Single-threaded per-worker use; cross-thread post to
+    // an epoll proactor is not the model -- io_uring/IOCP are the MT-wake paths.)
+    impl_->posted.push_back({user_data, result});
+    return true;
+  }
   // NOP SQE carrying user_data: backend-independent "wake/inject" hook. NOP res
   // is always 0, so `result` is not delivered on Linux -- post() is a wake hook,
   // not a data channel (IOCP can carry bytes; asymmetry documented in header).
@@ -365,10 +504,41 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
                     user_data);
 }
 
+namespace {
+// epoll fallback: arm a one-shot readiness watch for `fd` and remember the op;
+// reap() does the actual read/write when the fd fires. `events` is EPOLLIN for
+// read, EPOLLOUT for write. Stores fd in data.u64 so reap recovers it.
+bool epoll_arm(Proactor::Impl* impl, int fd, std::uint32_t events,
+               std::uint8_t opcode, void* buf, std::uint32_t len,
+               std::uint64_t user_data) noexcept {
+  impl->pending[fd] = Proactor::Impl::PendingOp{opcode, buf, len, user_data};
+  epoll_event ev{};
+  ev.events = events | EPOLLONESHOT;
+  ev.data.u64 = static_cast<std::uint64_t>(fd);
+  // ADD, or MOD if this fd is already registered from a prior op.
+  if (::epoll_ctl(impl->epfd, EPOLL_CTL_ADD, fd, &ev) < 0) {
+    if (errno == EEXIST) {
+      if (::epoll_ctl(impl->epfd, EPOLL_CTL_MOD, fd, &ev) < 0) {
+        impl->pending.erase(fd);
+        return false;
+      }
+    } else {
+      impl->pending.erase(fd);
+      return false;
+    }
+  }
+  return true;
+}
+}  // namespace
+
 bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
                            std::uint64_t offset,
                            std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    return epoll_arm(impl_, static_cast<int>(fd), EPOLLIN, IORING_OP_READ, buf,
+                     len, user_data);
+  }
   return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
                     impl_->sq_array, impl_->sqes, IORING_OP_READ,
                     static_cast<std::int32_t>(fd),
@@ -379,6 +549,10 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf,
                             std::uint32_t len, std::uint64_t offset,
                             std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    return epoll_arm(impl_, static_cast<int>(fd), EPOLLOUT, IORING_OP_WRITE,
+                     const_cast<void*>(buf), len, user_data);
+  }
   return submit_one(impl_->fd, impl_->sq_tail, *impl_->sq_ring_mask,
                     impl_->sq_array, impl_->sqes, IORING_OP_WRITE,
                     static_cast<std::int32_t>(fd),
@@ -386,7 +560,8 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf,
 }
 
 bool Proactor::register_handle(std::intptr_t /*fd*/) noexcept {
-  // io_uring needs no per-fd association (the fd goes straight in each SQE).
+  // Neither Linux backend needs a pre-registration step: io_uring puts the fd in
+  // each SQE; epoll adds the fd at submit time (with EPOLLONESHOT).
   return impl_ != nullptr;
 }
 
