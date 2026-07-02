@@ -57,6 +57,19 @@ hyle_apply_warnings(hyle_platform_bench)
 # IN the build on purpose: if it ever recurs, we investigate head-on, not hide it.
 hyle_add_bench(sched SOURCES sched/scheduler_bench.cc)
 
+# io echo bench (io-04): the concurrent-connection perf comparison the io-01/02/03
+# notes deferred until there was a real load. Drives kConns x kRoundTrips echoes
+# through HYLE's shard-per-core stack at 1/2/4/8 workers (scaling) + a raw epoll
+# readiness-loop baseline (Linux). Hard-depends on sched (io<->sched integration),
+# so gate on fcontext like sched itself. Needs ws2_32 on Windows (socketpair
+# emulation via loopback TCP).
+if(HYLE_HAS_FCONTEXT)
+  hyle_add_bench(io SOURCES io/echo_bench.cc DEPS hyle_sched)
+  if(WIN32)
+    target_link_libraries(hyle_io_bench PRIVATE ws2_32)
+  endif()
+endif()
+
 # error-module bench: Status/Result (zero-dependency root, every hot-path return type)
 # vs std::expected + absl::Status/StatusOr (the same tagged-pointer design; gated
 # -DHYLE_BENCH_ABSL, absl::status/statusor linked in the absl block below). Own exe.
