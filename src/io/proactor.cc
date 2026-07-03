@@ -54,7 +54,9 @@ struct Proactor::Impl {
   LPFN_ACCEPTEX acceptex = nullptr;
   LPFN_CONNECTEX connectex = nullptr;
 
-  enum OpKind : int { kRead, kWrite, kRecv, kSend, kAccept, kConnect };
+  enum OpKind : int {
+    kRead, kWrite, kRecv, kSend, kAccept, kConnect, kRecvFrom, kSendTo
+  };
   struct IoOp {
     OVERLAPPED ov{};                      // MUST be first (lpOverlapped -> IoOp*)
     std::uint64_t user_data = 0;
@@ -62,6 +64,11 @@ struct Proactor::Impl {
     int kind = 0;
     WSABUF wsabuf{};                      // recv/send descriptor (outlives the op)
     SOCKET accept_sock = INVALID_SOCKET;  // AcceptEx: the accepted socket (result)
+    // Datagram (WSARecvFrom/WSASendTo) only: WSARecvFrom writes the source addr
+    // into the CALLER's addr buffer, and writes its length into `fromlen` -- both
+    // must outlive the async op, so fromlen lives here (the addr buffer is caller-
+    // owned on the fiber stack). Unused (0) for stream ops.
+    int fromlen = 0;
     IoOp* prev = nullptr;
     IoOp* next = nullptr;
     // AcceptEx writes local+remote addrs here (needs >= 2*(sockaddr+16)).
@@ -400,6 +407,55 @@ bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
   return false;
 }
 
+bool Proactor::submit_recvfrom(std::intptr_t fd, void* buf, std::uint32_t len,
+                               void* addr, std::uint32_t addr_cap,
+                               void* /*scratch*/,
+                               std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  auto* op = new (std::nothrow) Impl::IoOp{};
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kRecvFrom;
+  op->wsabuf.buf = static_cast<CHAR*>(buf);
+  op->wsabuf.len = len;
+  op->fromlen = static_cast<int>(addr_cap);  // WSARecvFrom reads cap / writes len
+  impl_->link(op);
+  DWORD f = 0;
+  // WSARecvFrom writes the source address into the caller's `addr` and its length
+  // into op->fromlen; both outlive the async op (addr on the fiber stack, fromlen
+  // in the IoOp). scratch (the io_uring msghdr) is unused on IOCP.
+  int r = ::WSARecvFrom(static_cast<SOCKET>(fd), &op->wsabuf, 1, nullptr, &f,
+                        static_cast<sockaddr*>(addr),
+                        addr ? &op->fromlen : nullptr, &op->ov, nullptr);
+  if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  delete op;
+  return false;
+}
+
+bool Proactor::submit_sendto(std::intptr_t fd, const void* buf, std::uint32_t len,
+                             const void* addr, std::uint32_t addrlen,
+                             void* /*scratch*/,
+                             std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  auto* op = new (std::nothrow) Impl::IoOp{};
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->handle = reinterpret_cast<HANDLE>(fd);
+  op->kind = Impl::kSendTo;
+  op->wsabuf.buf = static_cast<CHAR*>(const_cast<void*>(buf));
+  op->wsabuf.len = len;
+  impl_->link(op);
+  int r = ::WSASendTo(static_cast<SOCKET>(fd), &op->wsabuf, 1, nullptr, 0,
+                      static_cast<const sockaddr*>(addr),
+                      static_cast<int>(addrlen), &op->ov, nullptr);
+  if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
+  impl_->unlink(op);
+  delete op;
+  return false;
+}
+
 bool Proactor::register_handle(std::intptr_t fd) noexcept {
   if (impl_ == nullptr) return false;
   // Associate the handle/socket with the port so its ops complete here. The
@@ -516,10 +572,15 @@ struct Proactor::Impl {
   // reap() can branch on which syscall to run when the fd fires.
   int epfd = -1;
   struct PendingOp {
-    std::uint8_t opcode;   // IORING_OP_READ/WRITE/ACCEPT/CONNECT as the op tag
+    std::uint8_t opcode;   // IORING_OP_READ/WRITE/ACCEPT/CONNECT/RECVMSG/SENDMSG
     void* buf;
     std::uint32_t len;
     std::uint64_t user_data;
+    // Datagram (RECVMSG/SENDMSG) only: peer address buffer. recvfrom fills it (up
+    // to addr_cap) and reports the length back via the sockaddr family; sendto
+    // reads it as the destination. Null/0 for stream ops.
+    void* addr = nullptr;
+    std::uint32_t addr_cap = 0;
   };
   std::unordered_map<int, PendingOp> pending;  // fd -> armed op
   // post() has no fd (a bare wake token) and epoll has no
@@ -731,6 +792,19 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
         socklen_t sl = sizeof(soerr);
         ::getsockopt(fd, SOL_SOCKET, SO_ERROR, &soerr, &sl);
         res = (soerr == 0) ? 0 : -soerr;
+      } else if (op.opcode == IORING_OP_RECVMSG) {
+        // Datagram readable -> recvfrom fills the peer addr the submit stashed.
+        socklen_t al = static_cast<socklen_t>(op.addr_cap);
+        ssize_t r = ::recvfrom(fd, op.buf, op.len, 0,
+                               static_cast<sockaddr*>(op.addr),
+                               op.addr ? &al : nullptr);
+        res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
+      } else if (op.opcode == IORING_OP_SENDMSG) {
+        // Datagram writable -> sendto the destination the submit stashed.
+        ssize_t w = ::sendto(fd, op.buf, op.len, 0,
+                             static_cast<const sockaddr*>(op.addr),
+                             static_cast<socklen_t>(op.addr_cap));
+        res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
       } else {  // READ
         ssize_t r = ::read(fd, op.buf, op.len);
         res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
@@ -913,11 +987,15 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
 
 // epoll fallback: arm a one-shot readiness watch for `fd` and remember the op;
 // reap() does the actual read/write when the fd fires. `events` is EPOLLIN for
-// read, EPOLLOUT for write. Stores fd in data.u64 so reap recovers it.
-bool Proactor::epoll_arm(Impl* impl, int fd, unsigned events,
-                         unsigned char opcode, void* buf, unsigned len,
-                         std::uint64_t user_data) noexcept {
-  impl->pending[fd] = Impl::PendingOp{opcode, buf, len, user_data};
+// read, EPOLLOUT for write. Stores fd in data.u64 so reap recovers it. The
+// datagram variant additionally stashes the peer-address buffer (recvfrom fills
+// it / sendto reads it); the stream variant passes addr=null.
+bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
+                               unsigned char opcode, void* buf, unsigned len,
+                               void* addr, unsigned addr_cap,
+                               std::uint64_t user_data) noexcept {
+  impl->pending[fd] =
+      Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap};
   epoll_event ev{};
   ev.events = events | EPOLLONESHOT;
   ev.data.u64 = static_cast<std::uint64_t>(fd);
@@ -934,6 +1012,13 @@ bool Proactor::epoll_arm(Impl* impl, int fd, unsigned events,
     }
   }
   return true;
+}
+
+bool Proactor::epoll_arm(Impl* impl, int fd, unsigned events,
+                         unsigned char opcode, void* buf, unsigned len,
+                         std::uint64_t user_data) noexcept {
+  return epoll_arm_dgram(impl, fd, events, opcode, buf, len, nullptr, 0,
+                         user_data);
 }
 
 bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
@@ -1040,6 +1125,65 @@ bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(addr), 0,
                     static_cast<std::uint64_t>(addrlen), user_data);
+}
+
+namespace {
+// Lay a msghdr + a single iovec into the caller's `scratch` (>= kDatagramScratch),
+// pointing the iovec at (buf,len) and msg_name at (addr,addr_len). io_uring
+// RECVMSG/SENDMSG read this msghdr WHEN THE OP COMPLETES, so it must outlive the
+// submit -- scratch lives on the awaiting fiber's frozen stack. Returns the msghdr
+// address (goes into the SQE's addr field). One iovec suffices for datagrams.
+msghdr* build_msghdr(void* scratch, void* buf, std::uint32_t len, void* addr,
+                     std::uint32_t addr_len) noexcept {
+  static_assert(sizeof(msghdr) + sizeof(iovec) <= Proactor::kDatagramScratch,
+                "kDatagramScratch too small for msghdr + iovec");
+  auto* mh = static_cast<msghdr*>(scratch);
+  auto* iov = reinterpret_cast<iovec*>(static_cast<char*>(scratch) + sizeof(msghdr));
+  std::memset(mh, 0, sizeof(*mh));
+  iov->iov_base = buf;
+  iov->iov_len = len;
+  mh->msg_iov = iov;
+  mh->msg_iovlen = 1;
+  mh->msg_name = addr;         // recv: kernel fills; send: kernel reads dest
+  mh->msg_namelen = addr_len;  // recv: capacity; send: dest length
+  return mh;
+}
+}  // namespace
+
+bool Proactor::submit_recvfrom(std::intptr_t fd, void* buf, std::uint32_t len,
+                               void* addr, std::uint32_t addr_cap, void* scratch,
+                               std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    // Reactor: arm EPOLLIN; reap() runs ::recvfrom when readable, filling addr.
+    return epoll_arm_dgram(impl_, static_cast<int>(fd), EPOLLIN,
+                           IORING_OP_RECVMSG, buf, len, addr, addr_cap, user_data);
+  }
+  // RECVMSG: sqe.addr = &msghdr, sqe.len = 1 (liburing io_uring_prep_recvmsg).
+  msghdr* mh = build_msghdr(scratch, buf, len, addr, addr_cap);
+  return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_RECVMSG,
+                    static_cast<std::int32_t>(fd),
+                    reinterpret_cast<std::uint64_t>(mh), 1, 0, user_data);
+}
+
+bool Proactor::submit_sendto(std::intptr_t fd, const void* buf, std::uint32_t len,
+                             const void* addr, std::uint32_t addrlen,
+                             void* scratch, std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    // Reactor: arm EPOLLOUT; reap() runs ::sendto to `addr` when writable.
+    return epoll_arm_dgram(impl_, static_cast<int>(fd), EPOLLOUT,
+                           IORING_OP_SENDMSG, const_cast<void*>(buf), len,
+                           const_cast<void*>(addr), addrlen, user_data);
+  }
+  // SENDMSG: same shape as RECVMSG; msg_name is the destination (kernel reads it).
+  msghdr* mh = build_msghdr(scratch, const_cast<void*>(buf), len,
+                            const_cast<void*>(addr), addrlen);
+  return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_SENDMSG,
+                    static_cast<std::int32_t>(fd),
+                    reinterpret_cast<std::uint64_t>(mh), 1, 0, user_data);
 }
 
 bool Proactor::register_handle(std::intptr_t /*fd*/) noexcept {

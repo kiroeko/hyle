@@ -175,4 +175,67 @@ struct ConnectOp {
   std::int64_t await_resume() noexcept { return op_.result; }
 };
 
+// co_await RecvFromOp{p, fd, buf, len, addr, addr_cap} -> bytes received (>=0) or
+// negative errno; the sender's address is written into `addr`. `addr` (a
+// sockaddr_storage-sized buffer) is caller-owned and must outlive the co_await
+// (keep it on the coroutine frame). scratch_ is the io_uring msghdr workspace;
+// it lives HERE, on the awaitable (== the frozen fiber stack), for exactly as
+// long as the op is in flight -- which is what proactor.h::kDatagramScratch needs.
+struct RecvFromOp {
+  Proactor* p;
+  std::intptr_t fd;
+  void* buf;
+  std::uint32_t len;
+  void* addr;
+  std::uint32_t addr_cap;
+
+  IoOperation op_{};
+  alignas(16) unsigned char scratch_[Proactor::kDatagramScratch];
+  bool submitted_ = false;
+
+  bool await_ready() noexcept { return false; }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    op_.waker = sched::current_waker();
+    submitted_ = p->submit_recvfrom(fd, buf, len, addr, addr_cap, scratch_,
+                                    to_token(&op_));
+    if (!submitted_) {
+      op_.result = -1;
+      return false;
+    }
+    sched::suspend();
+    return false;
+  }
+  std::int64_t await_resume() noexcept { return op_.result; }
+};
+
+// co_await SendToOp{p, fd, buf, len, addr, addrlen} -> bytes sent (>=0) or
+// negative errno. `addr` (the destination sockaddr) and `buf` are caller-owned and
+// must outlive the co_await. scratch_ as in RecvFromOp.
+struct SendToOp {
+  Proactor* p;
+  std::intptr_t fd;
+  const void* buf;
+  std::uint32_t len;
+  const void* addr;
+  std::uint32_t addrlen;
+
+  IoOperation op_{};
+  alignas(16) unsigned char scratch_[Proactor::kDatagramScratch];
+  bool submitted_ = false;
+
+  bool await_ready() noexcept { return false; }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    op_.waker = sched::current_waker();
+    submitted_ = p->submit_sendto(fd, buf, len, addr, addrlen, scratch_,
+                                  to_token(&op_));
+    if (!submitted_) {
+      op_.result = -1;
+      return false;
+    }
+    sched::suspend();
+    return false;
+  }
+  std::int64_t await_resume() noexcept { return op_.result; }
+};
+
 }  // namespace hyle::io

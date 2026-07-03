@@ -48,8 +48,10 @@ if(HYLE_HAS_FCONTEXT)
   # sched (scheduler drives the reap). Only buildable where sched exists.
   hyle_add_test(io NAME net SOURCES io/net_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME tcp SOURCES io/tcp_test.cc DEPS hyle_sched)
+  hyle_add_test(io NAME udp SOURCES io/udp_test.cc DEPS hyle_sched)
   if(WIN32)
     target_link_libraries(hyle_io_net_test PRIVATE ws2_32)  # test builds the loopback pair
     target_link_libraries(hyle_io_tcp_test PRIVATE ws2_32)  # sockaddr / winsock types
+    target_link_libraries(hyle_io_udp_test PRIVATE ws2_32)  # sockaddr / winsock types
   endif()
 endif()

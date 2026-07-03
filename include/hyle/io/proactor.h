@@ -123,6 +123,36 @@ class Proactor {
                                   std::uint32_t addrlen,
                                   std::uint64_t user_data) noexcept;
 
+  // ---- datagram ops (UDP) ---------------------------------------------------
+  // Scratch bytes the caller MUST provide for the datagram ops below. On io_uring
+  // recvfrom/sendto go through RECVMSG/SENDMSG, which need a `struct msghdr` +
+  // `struct iovec` that OUTLIVE the submit (the kernel reads them when the op
+  // completes, not at submit time). The backend builds those in `scratch`; it must
+  // therefore live until the completion arrives -- put it on the awaiting fiber's
+  // frozen stack (like the RecvOp/SendOp slots). IOCP (WSARecvFrom/WSASendTo) and
+  // epoll (inline recvfrom/sendto) don't use it, but the neutral signature takes it
+  // so net/ allocates it uniformly. 128 bytes covers msghdr(56)+iovec(16) with
+  // room and 16-byte alignment headroom.
+  static constexpr std::size_t kDatagramScratch = 128;
+
+  // recvfrom: receive one datagram on `fd` into `buf` (len bytes); the sender's
+  // address is written into `addr` (a sockaddr buffer of `addr_cap` bytes, e.g.
+  // sockaddr_storage). Both `buf` and `addr` are caller-owned and must outlive the
+  // completion; `scratch` (kDatagramScratch bytes) likewise. Result = bytes
+  // received (>=0) or negative errno. The peer address length is not returned
+  // separately -- read it from addr->sa_family (AF_INET => 16, AF_INET6 => 28).
+  HYLE_IO_API bool submit_recvfrom(std::intptr_t fd, void* buf, std::uint32_t len,
+                                   void* addr, std::uint32_t addr_cap,
+                                   void* scratch,
+                                   std::uint64_t user_data) noexcept;
+  // sendto: send `buf` (len bytes) on `fd` to `addr` (sockaddr*, `addrlen` bytes).
+  // `buf`, `addr`, and `scratch` (kDatagramScratch bytes) must outlive the
+  // completion. Result = bytes sent (>=0) or negative errno.
+  HYLE_IO_API bool submit_sendto(std::intptr_t fd, const void* buf,
+                                 std::uint32_t len, const void* addr,
+                                 std::uint32_t addrlen, void* scratch,
+                                 std::uint64_t user_data) noexcept;
+
   // Windows only: an OVERLAPPED handle must be associated with the port ONCE
   // before submit_read/write on it (io_uring needs no such step). No-op / returns
   // true on Linux. Kept in the neutral interface so net/ (io-04) can register a
@@ -167,6 +197,12 @@ class Proactor {
   static Impl* try_init_epoll() noexcept;
   static bool epoll_arm(Impl* impl, int fd, unsigned events, unsigned char opcode,
                         void* buf, unsigned len, std::uint64_t user_data) noexcept;
+  // Datagram variant: also stashes the peer-address buffer so reap()'s inline
+  // recvfrom/sendto can fill/read it (epoll fallback only).
+  static bool epoll_arm_dgram(Impl* impl, int fd, unsigned events,
+                              unsigned char opcode, void* buf, unsigned len,
+                              void* addr, unsigned addr_cap,
+                              std::uint64_t user_data) noexcept;
 
   Impl* impl_ = nullptr;  // backend state (IOCP port / io_uring ring), pimpl
 };
