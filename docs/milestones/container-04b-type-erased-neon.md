@@ -40,7 +40,7 @@ container-04 的 erase 只打 tombstone(靠 grow 的 same-size rehash 回收)。
 
 ## 交付物
 
-- `include/hyle/container/probe.h`(+GroupNeon + hyle_clz32 + BitMask::trailing_zeros/leading_zeros)
+- `include/hyle/container/probe.h`(+GroupNeon + detail::clz32 + BitMask::trailing_zeros/leading_zeros)
 - `include/hyle/container/swiss_table.h`(grow/free 转调核 + hash_slot_thunk + erase_at reclaim;hot 路径不动)
 - `src/container/swiss_table.cc`(detail::SwissStorage + swiss_resize + swiss_free,新)
 - `tests/container/swiss_table_test.cc`(+1:EraseReinsertChurnStaysBounded;原 10 全绿)
