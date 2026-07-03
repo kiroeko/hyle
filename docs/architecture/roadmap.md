@@ -56,6 +56,24 @@ container/       │                            │    vector+      mem;containe
 
 - **轴 A — 依赖层（阶段 P0-P6）**：哪层先能编译，下面表的拓扑序。粗粒度。
 - **轴 B — 里程碑（M）**：每模块拆 2-6 个里程碑，**每个 1-4k 行、各自可编可测可基准**。全项目约 **47 个里程碑**（milestones/README 为准），这才是真正的"步骤"。
+- **轴 C — 交付能力（C）**：用户/消费者视角"这个库能做什么"。轴 B 是**机制**（收割接缝、时间轮、work-stealing），轴 C 是**能力**（带超时的网络 io、优雅关闭、取消）。见下节。
+
+### 轴 C：交付能力清单（消费者视角）——机制的反向拉动者
+
+> **为什么需要这一轴（2026-07-03 补，源于一次真实教训）**：计划最初只有轴 A/B，两者都是**自底向上的机制**。结果做到 sched-04d（fiber 定时等待 + 跨核 cancel 队列）时发现**没有消费者**——因为它服务的能力"带超时的网络 io"从没被列出来。机制清单会堆出**悬空机制**：某块底层机制做完了却没人用，因为顶层能力没被登记来反向拉动它。轴 C 修这个：先列北极星能力，每个能力**驱动**（consumer-drives）一组机制里程碑；**没有能力驱动的机制里程碑不做**（等它，避免拍错接口——这正是 sched-04d 当初被推迟的理由）。
+>
+> **北极星**：能跑一个**真实的网络服务器**（不是 echo 玩具）——多连接、带超时、可取消、能优雅关闭。这是 HYLE io/sched 支柱的验收标尺。
+
+| 能力 | 一句话 | 驱动的机制里程碑 | 状态 |
+|---|---|---|---|
+| **C1 并发 io 服务** | 多连接 co_await recv/send/accept，shard-per-core | io-01/02/03/04 | ✅ 已交付（echo + pipelined bench 实证）|
+| **C2 带超时的 io** | `recv/accept/connect` 带 deadline，超时取消在途 op | **新增**：io-timeout（io_uring `ASYNC_CANCEL`/IOCP `CancelIoEx` 取消在途 op）**驱动** sched-04d（fiber 定时等待 + 跨核 timer cancel 队列）| 📋 未排期。**几乎所有网络库的生存能力**（tokio `timeout()`/Go `SetReadDeadline`/asio `cancel_after`/seastar `with_timeout`）——无它，慢/死连接永久占 fiber+fd+buffer。这是 sched-04d 的真实消费者 |
+| **C3 结构化取消** | CancelToken 树 + await 取消点，父取消传播子 | sched-07 | 📋 未排期。C2 的 io 取消是它的一个特例；先做 C2 定形 io 侧 cancel，再泛化到 C3 |
+| **C4 优雅关闭** | 两阶段 drain：停收新连接 → 排空在途 → 逆序清理 | sched-08（依赖 sched-07）| 📋 未排期。真服务器停机/热重启必需 |
+| **C5 文件/共享内存 io** | 异步文件读写 + 跨进程 shmem | io-05 | 📋 未排期。**独立能力**，不依赖 C2（文件 io 基本不用超时取消）|
+| **C6 可观测性** | 结构化日志 + trace 埋点（对标 tracy）| obs-01 ✅ + instrumentation hook（待）| 🔶 日志已交付；trace 埋点待 |
+
+> **读法**：轴 C 决定"下一个做什么"（选一个未交付能力 → 做它驱动的机制）；轴 B 决定"这个能力怎么拆成可编可测的步骤"。**机制里程碑若在轴 C 找不到驱动它的能力，就是投机，不做**（例：孤立的 kqueue/SQPOLL/sched-04d 都曾是这类——SQPOLL 由"延迟受限 io"驱动、sched-04d 由 C2 驱动，能力未排期前都不做）。
 
 ### 先走骨架（walking skeleton）——纵切，不要逐模块做完再下一个
 
@@ -77,7 +95,7 @@ container/       │                            │    vector+      mem;containe
 | **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | ~0.3k 🔶(时间轮待) |
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | ~2k ✅主力 |
 | **P3** | simd | vec+scalar / SSE4.2+AVX2 / AVX512+NEON / 变体dispatch / dtype / 数学核(Highway+xsimd) | 10-16k | ~2.3k 已做 + ~3-5k 广度补全 = **~5-8k** |
-| **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~1.3k 核心+同步+协程胶水+fiber亲和✅(fcontext/work-stealing/Waker/conditional-notify/CV+Mutex+WaitGroup+Latch+Channel 对标 marl 追平反超 + Task/co_await + spawn_on 绑核) + ~1.5-3k 后段(取消/优雅关闭/fiber-mode 定时) |
+| **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~1.3k 核心+同步+协程胶水+fiber亲和✅(fcontext/work-stealing/Waker/conditional-notify/CV+Mutex+WaitGroup+Latch+Channel 对标 marl 追平反超 + Task/co_await + spawn_on 绑核) + ~1.5-3k 后段(取消 07/优雅关闭 08/fiber-mode 定时 04d)——**均由轴 C 能力驱动,未排期前不做**(04d←C2,07←C3,08←C4) |
 | **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem | 9-14k | ~1.55k 已做(proactor 三后端全真 op + co_await + shard-per-core + Tcp/Udp 封装 + echo/pipelined bench)✅ + ~1-2k(file/shmem;kqueue) |
 | **P5** | compute | device/stream包ggml / device buffer(compute 自有) / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
 | **P6** | graph + 收口 | taskgraph绑sched / C-ABI shim / serialize/hash/T3 / FFI | 11-17k | **~6-11k**(多借 simdjson 等) |
@@ -93,7 +111,7 @@ container/       │                            │    vector+      mem;containe
 > 本文件只管**拓扑序、施工计划、决策、验收门槛**这些慢变内容。
 >
 > 一句话现状（粗粒度，细节看 milestones）：**地基层（error/platform/mem/container/time/util/obs）基本立住；
-> sched 核心 + fiber 同步原语 done（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超）+ 协程胶水（Task + co_await→fiber 让出）+ fiber 亲和（spawn_on 绑核，shard-per-core 基座），后段（取消 sched-07/优雅关闭 sched-08/fiber-mode 定时 04d）待；**simd 支柱基本完成**（dispatch + vec 抽象 +
+> sched 核心 + fiber 同步原语 done（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超）+ 协程胶水（Task + co_await→fiber 让出）+ fiber 亲和（spawn_on 绑核，shard-per-core 基座），后段（取消 sched-07/优雅关闭 sched-08/fiber-mode 定时 04d）**待其轴 C 能力驱动**（见轴 C：04d←C2 带超时 io、07←C3 结构化取消、08←C4 优雅关闭——孤立做=投机）；**simd 支柱基本完成**（dispatch + vec 抽象 +
 > scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 dtype + 数学核(Highway+xsimd vendored),对标 Highway 追平；NEON/AVX512 写+编+objdump 验未跑存疑）；**io 支柱破土并接线到 sched**（proactor 三后端 io_uring/IOCP/epoll 全真 op 无 stub + co_await socket 层 + shard-per-core 集成 + TcpListener/Stream + UdpSocket(recvfrom/sendto 三后端)，真 loopback TCP/UDP echo 三后端+TSan；echo+pipelined benchmark 已补，worker 空闲已阻塞 GETEVENTS reap=修了 pipelined 揪出的 P0 hang；**io-04 net 完成 ✅**（含 park 合并：空闲 worker 真睡眠、eventfd 唤醒，空闲 syscall 421→3）；file/shmem io-05 待）；**compute/graph 两支柱未开工**（异构混合极致性能的头牌本体）。**
 > 整体 ≈ 43%（LOC 口径，见 milestones/README 三分母表；compute/graph=0 是最大剩余块）。
 
