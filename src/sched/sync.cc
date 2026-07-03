@@ -231,6 +231,128 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(
 }
 
 
+// ---- Semaphore --------------------------------------------------------------
+
+bool Semaphore::try_acquire(std::size_t n) noexcept {
+  mu_.lock();
+  // Only take permits if none are queued ahead of us: honoring FIFO here is what
+  // lets RwLock's queued writer block later readers (a try_read must NOT steal a
+  // permit the writer is waiting for). If a waiter is queued, we defer.
+  if (!closed_ && head_ == nullptr && permits_ >= n) {
+    permits_ -= n;
+    mu_.unlock();
+    return true;
+  }
+  mu_.unlock();
+  return false;
+}
+
+bool Semaphore::acquire(std::size_t n) noexcept {
+  mu_.lock();
+  if (closed_) {
+    mu_.unlock();
+    return false;
+  }
+  // Fast path: enough permits AND nobody ahead of us in line (FIFO -- never jump
+  // the queue, or a big head-of-line request could starve).
+  if (head_ == nullptr && permits_ >= n) {
+    permits_ -= n;
+    mu_.unlock();
+    return true;
+  }
+  // Slow path: queue a waiter with its own CV, block until release() grants us the
+  // full request or close() aborts us. The node lives on this stack frame; it stays
+  // linked only while we are parked (unlinked by release/close before waking us).
+  Waiter node;
+  node.need = n;
+  node.prev = tail_;
+  if (tail_ == nullptr) {
+    head_ = &node;
+  } else {
+    tail_->next = &node;
+  }
+  tail_ = &node;
+  // Mesa monitor: wait on our own CV under mu_, re-checking the predicate. release
+  // sets granted (+ already debited permits_); close sets aborted. Either way the
+  // node has been UNLINKED by the setter before notify, so no dangling stack node.
+  node.cv.wait(mu_, [&] { return node.granted || node.aborted; });
+  const bool ok = node.granted;
+  mu_.unlock();
+  return ok;
+}
+
+void Semaphore::release(std::size_t n) noexcept {
+  // Collect the CVs to notify AFTER dropping mu_ (waking can run scheduler code;
+  // don't do it under the tiny spinlock). Each satisfied waiter is unlinked here.
+  // We notify by pointer into each woken node's own CV -- valid because the waiter
+  // cannot destroy its node until its cv.wait returns, which needs this notify.
+  Waiter* woken_head = nullptr;
+  Waiter* woken_tail = nullptr;  // build a temporary "to notify" list via `next`
+  mu_.lock();
+  permits_ += n;
+  // FIFO: satisfy the front waiter fully before moving on; STOP at the first
+  // waiter we cannot fully satisfy (no skip-ahead -> no large-request starvation).
+  while (head_ != nullptr && permits_ >= head_->need) {
+    Waiter* w = head_;
+    permits_ -= w->need;
+    // Unlink from the wait list.
+    head_ = w->next;
+    if (head_ == nullptr) {
+      tail_ = nullptr;
+    } else {
+      head_->prev = nullptr;
+    }
+    w->granted = true;
+    // Splice onto the local to-notify list (reuse `next`; `prev` no longer used).
+    w->next = nullptr;
+    if (woken_tail == nullptr) {
+      woken_head = w;
+    } else {
+      woken_tail->next = w;
+    }
+    woken_tail = w;
+  }
+  mu_.unlock();
+  // Wake each satisfied waiter on its own CV, outside the lock.
+  for (Waiter* w = woken_head; w != nullptr;) {
+    Waiter* next = w->next;  // read before notify: w may vanish once woken
+    w->cv.notify_one();
+    w = next;
+  }
+}
+
+void Semaphore::close() noexcept {
+  Waiter* aborted_head = nullptr;
+  mu_.lock();
+  closed_ = true;
+  // Detach the whole queue; each waiter's acquire() will see aborted and return
+  // false. Reuse `next` to build the local list (as in release()).
+  Waiter* w = head_;
+  head_ = nullptr;
+  tail_ = nullptr;
+  aborted_head = w;
+  while (w != nullptr) {
+    w->aborted = true;
+    Waiter* n = w->next;
+    w->prev = nullptr;
+    w->next = n;  // keep FIFO order for tidy waking (order is not load-bearing)
+    w = n;
+  }
+  mu_.unlock();
+  for (Waiter* p = aborted_head; p != nullptr;) {
+    Waiter* next = p->next;
+    p->cv.notify_one();
+    p = next;
+  }
+}
+
+std::size_t Semaphore::available() const noexcept {
+  mu_.lock();
+  const std::size_t p = permits_;
+  mu_.unlock();
+  return p;
+}
+
 // inline; unlock_slow runs only when there were waiters.
 
 #if !defined(HYLE_OS_WINDOWS)

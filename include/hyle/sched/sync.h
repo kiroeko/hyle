@@ -6,6 +6,8 @@
 #include <new>
 #include <utility>
 
+#include "hyle/error/result.h"
+#include "hyle/error/status.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/platform.h"  // HYLE_OS_WINDOWS (Mutex backend split)
@@ -453,5 +455,761 @@ class Channel {
   std::size_t size_ = 0;
   bool closed_ = false;
 };
+
+// ---- Semaphore --------------------------------------------------------------
+// Fiber-aware counting semaphore: `permits` tokens; acquire(n) blocks (yields the
+// fiber) until n are available, release(n) hands them back. The standard async
+// rate-limiter (cap in-flight connections/requests, gate a buffer pool). Built on
+// the CV foundation (marl's lesson: one wake mechanism, everything layers on it).
+//
+// SEMANTICS (tokio batch_semaphore, adopted): STRICT FIFO with NO head-of-line
+// skip -- a waiter that wants n permits sits at the queue head and accumulates
+// permits across release()s; releases NEVER skip past it to satisfy a smaller
+// later waiter. This is what prevents large-request starvation (and is exactly
+// why RwLock's writer -- which wants ALL permits -- can't be starved by a stream
+// of readers). Tradeoff: deliberate head-of-line blocking, chosen for fairness.
+//
+// Each waiter owns its own CV on its stack, so release() wakes EXACTLY the head
+// waiter it just satisfied (no thundering herd re-checking a shared predicate).
+// The waiter list is intrusive + doubly linked so a (future) timed/cancelled
+// acquire can unlink in O(1); the node lives on the blocking fiber/thread stack
+// and stays linked only while parked (same discipline as ConditionVariable).
+class Semaphore {
+ public:
+  explicit Semaphore(std::size_t permits) noexcept : permits_(permits) {}
+  HYLE_DISABLE_COPY_AND_MOVE(Semaphore);
+
+  // Acquire `n` permits, blocking (fiber-aware) until available. Returns false if
+  // the semaphore was closed before n could be granted (permits already handed to
+  // this waiter are returned to the pool). n may exceed the initial permit count
+  // (it just waits for enough release()s).
+  HYLE_SCHED_API bool acquire(std::size_t n = 1) noexcept;
+
+  // Non-blocking: take `n` permits iff all are available right now. Returns false
+  // if fewer than n are available OR the semaphore is closed. Never queues.
+  HYLE_SCHED_API bool try_acquire(std::size_t n = 1) noexcept;
+
+  // Return `n` permits to the pool, waking FIFO-front waiters whose full request
+  // is thereby satisfied. Wakes are delivered after the internal lock is dropped.
+  HYLE_SCHED_API void release(std::size_t n = 1) noexcept;
+
+  // Close: wake every waiter (their acquire() returns false). Post-close acquire/
+  // try_acquire return false. Idempotent. Permits already in the pool stay.
+  HYLE_SCHED_API void close() noexcept;
+
+  // Available permits right now (racy snapshot; for diagnostics/tests).
+  HYLE_SCHED_API std::size_t available() const noexcept;
+
+ private:
+  // One queued acquirer. `need` is how many permits it still wants; `granted` +
+  // its own CV are how release() hands control back to exactly this waiter.
+  struct Waiter {
+    Waiter* next = nullptr;
+    Waiter* prev = nullptr;
+    std::size_t need = 0;    // permits still required before this waiter proceeds
+    bool granted = false;    // set by release(): request fully satisfied
+    bool aborted = false;    // set by close(): give up, acquire() returns false
+    ConditionVariable cv;    // this waiter blocks here; woken 1:1
+  };
+
+  mutable util::SpinLock mu_;
+  std::size_t permits_;
+  Waiter* head_ = nullptr;   // FIFO front: release satisfies this one first
+  Waiter* tail_ = nullptr;
+  bool closed_ = false;
+};
+
+// ---- RwLock -----------------------------------------------------------------
+// Fiber-aware readers-writer lock, WRITE-PREFERRING (no writer starvation). Built
+// directly on Semaphore, tokio's design: the lock IS a Semaphore initialized with
+// kMaxReaders permits; a read holds 1 permit, a write holds ALL of them. Because
+// Semaphore never skips its FIFO head, a queued writer (wanting all permits) makes
+// subsequent readers (wanting 1) queue BEHIND it instead of stealing the lock --
+// fairness for free, no hand-rolled reader/writer counters.
+//
+// CONTRACT (same as std::shared_mutex / tokio): do not acquire a write lock while
+// holding a read lock on the same RwLock from the same fiber (self-deadlock -- the
+// write waits for all permits including the one your read holds). Guards are RAII;
+// unlock on scope exit.
+class RwLock {
+ public:
+  RwLock() noexcept : sem_(kMaxReaders) {}
+  HYLE_DISABLE_COPY_AND_MOVE(RwLock);
+
+  // RAII read guard: holds 1 permit; releases it on destruction.
+  class ReadGuard {
+   public:
+    ReadGuard() noexcept = default;
+    explicit ReadGuard(RwLock* rw) noexcept : rw_(rw) {}
+    ReadGuard(ReadGuard&& o) noexcept : rw_(std::exchange(o.rw_, nullptr)) {}
+    ReadGuard& operator=(ReadGuard&& o) noexcept {
+      if (this != &o) {
+        reset();
+        rw_ = std::exchange(o.rw_, nullptr);
+      }
+      return *this;
+    }
+    HYLE_DISABLE_COPY(ReadGuard);
+    ~ReadGuard() { reset(); }
+    bool owns_lock() const noexcept { return rw_ != nullptr; }
+
+   private:
+    void reset() noexcept {
+      if (rw_ != nullptr) rw_->sem_.release(1);
+      rw_ = nullptr;
+    }
+    RwLock* rw_ = nullptr;
+  };
+
+  // RAII write guard: holds all kMaxReaders permits; releases them on destruction.
+  class WriteGuard {
+   public:
+    WriteGuard() noexcept = default;
+    explicit WriteGuard(RwLock* rw) noexcept : rw_(rw) {}
+    WriteGuard(WriteGuard&& o) noexcept : rw_(std::exchange(o.rw_, nullptr)) {}
+    WriteGuard& operator=(WriteGuard&& o) noexcept {
+      if (this != &o) {
+        reset();
+        rw_ = std::exchange(o.rw_, nullptr);
+      }
+      return *this;
+    }
+    HYLE_DISABLE_COPY(WriteGuard);
+    ~WriteGuard() { reset(); }
+    bool owns_lock() const noexcept { return rw_ != nullptr; }
+
+   private:
+    void reset() noexcept {
+      if (rw_ != nullptr) rw_->sem_.release(kMaxReaders);
+      rw_ = nullptr;
+    }
+    RwLock* rw_ = nullptr;
+  };
+
+  // Block (fiber-aware) until the lock is held; return an RAII guard.
+  ReadGuard read() noexcept {
+    sem_.acquire(1);
+    return ReadGuard(this);
+  }
+  WriteGuard write() noexcept {
+    sem_.acquire(kMaxReaders);
+    return WriteGuard(this);
+  }
+
+  // Non-blocking. The guard's owns_lock() is false if the lock wasn't taken.
+  ReadGuard try_read() noexcept {
+    return sem_.try_acquire(1) ? ReadGuard(this) : ReadGuard();
+  }
+  WriteGuard try_write() noexcept {
+    return sem_.try_acquire(kMaxReaders) ? WriteGuard(this) : WriteGuard();
+  }
+
+ private:
+  // Max concurrent readers. Matches tokio's u32::MAX>>3 headroom idea, sized to
+  // std::size_t here; a write acquires all of them for exclusivity.
+  static constexpr std::size_t kMaxReaders = (static_cast<std::size_t>(1) << 32);
+  Semaphore sem_;
+};
+
+// ---- oneshot ----------------------------------------------------------------
+// Single-value, single-producer single-consumer channel: a Sender sends ONE value
+// (once), a Receiver receives it (once). The canonical "spawn a task, get its one
+// result back" primitive (pairs with JoinHandle) and a request/response reply
+// slot. Move-only Sender/Receiver over a refcounted shared state (charter: from an
+// injected Allocator, no hidden heap). Fiber-aware: recv() yields the fiber until
+// the value arrives or the Sender is dropped.
+//
+// SEMANTICS (tokio oneshot, adopted):
+//  - send(v) consumes the Sender; recv() consumes the Receiver (single-shot).
+//  - Sender dropped without send -> recv() returns Cancelled (the sender is gone).
+//  - Receiver dropped -> send() returns the value back in an error (nobody home).
+//  - Sender::is_closed() lets a producer learn the Receiver went away and abort
+//    expensive work before computing the value (the cancellation hook).
+namespace detail {
+
+template <class T>
+struct OneshotState {
+  mem::Allocator alloc;
+  util::SpinLock mu;
+  ConditionVariable cv;              // receiver blocks here for value/close
+  std::atomic<int> refcount{2};      // Sender + Receiver
+  bool value_set = false;            // a value is stored (sender did send)
+  bool rx_alive = true;              // Receiver not yet dropped
+  alignas(T) unsigned char storage[sizeof(T)];
+
+  void release() noexcept {
+    if (refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      if (value_set) reinterpret_cast<T*>(storage)->~T();  // unreceived value
+      mem::Allocator a = alloc;
+      this->~OneshotState();
+      a.deallocate(this, sizeof(OneshotState), alignof(OneshotState));
+    }
+  }
+};
+
+}  // namespace detail
+
+template <class T>
+class OneshotReceiver;
+
+template <class T>
+class OneshotSender {
+ public:
+  OneshotSender() noexcept = default;
+  explicit OneshotSender(detail::OneshotState<T>* s) noexcept : state_(s) {}
+  OneshotSender(OneshotSender&& o) noexcept : state_(std::exchange(o.state_, nullptr)) {}
+  OneshotSender& operator=(OneshotSender&& o) noexcept {
+    if (this != &o) {
+      reset_();
+      state_ = std::exchange(o.state_, nullptr);
+    }
+    return *this;
+  }
+  HYLE_DISABLE_COPY(OneshotSender);
+  ~OneshotSender() { reset_(); }
+
+  // Send the one value. Returns the value back (as an error payload) if the
+  // Receiver has already been dropped. Consumes the send capability (state_ is
+  // released after), so a second send is impossible.
+  Result<void> send(T v) noexcept {
+    detail::OneshotState<T>* s = state_;
+    state_ = nullptr;  // consume: this Sender is spent regardless of outcome
+    s->mu.lock();
+    if (!s->rx_alive) {
+      s->mu.unlock();
+      s->release();  // our ref; receiver already gone
+      return std::unexpected(Status::Cancelled("oneshot receiver dropped"));
+    }
+    new (s->storage) T(std::move(v));
+    s->value_set = true;
+    s->mu.unlock();
+    s->cv.notify_one();  // wake a blocked receiver
+    s->release();
+    return {};
+  }
+
+  // True once the Receiver has been dropped (cancellation hook: stop computing).
+  bool is_closed() const noexcept {
+    state_->mu.lock();
+    const bool closed = !state_->rx_alive;
+    state_->mu.unlock();
+    return closed;
+  }
+
+ private:
+  void reset_() noexcept {
+    if (state_ != nullptr) {
+      // Dropped without sending: wake the receiver so recv() returns Cancelled.
+      state_->cv.notify_one();
+      state_->release();
+      state_ = nullptr;
+    }
+  }
+  detail::OneshotState<T>* state_ = nullptr;
+};
+
+template <class T>
+class OneshotReceiver {
+ public:
+  OneshotReceiver() noexcept = default;
+  explicit OneshotReceiver(detail::OneshotState<T>* s) noexcept : state_(s) {}
+  OneshotReceiver(OneshotReceiver&& o) noexcept : state_(std::exchange(o.state_, nullptr)) {}
+  OneshotReceiver& operator=(OneshotReceiver&& o) noexcept {
+    if (this != &o) {
+      reset_();
+      state_ = std::exchange(o.state_, nullptr);
+    }
+    return *this;
+  }
+  HYLE_DISABLE_COPY(OneshotReceiver);
+  ~OneshotReceiver() { reset_(); }
+
+  // Block (fiber-aware) until the value arrives or the Sender is dropped. Consumes
+  // the receive capability. Returns the value, or Cancelled if the sender dropped
+  // without sending.
+  Result<T> recv() noexcept {
+    detail::OneshotState<T>* s = state_;
+    state_ = nullptr;
+    s->mu.lock();
+    // Wait until a value is set OR the sender is gone (its ref dropped -> refcount
+    // would be 1, i.e. only us). We detect "sender gone" via value_set staying
+    // false after a notify; encode it explicitly with the refcount check.
+    s->cv.wait(s->mu, [&] {
+      return s->value_set ||
+             s->refcount.load(std::memory_order_acquire) == 1;  // sender dropped
+    });
+    if (s->value_set) {
+      T* p = reinterpret_cast<T*>(s->storage);
+      T out = std::move(*p);
+      p->~T();
+      s->value_set = false;  // consumed; release() won't double-destroy
+      s->mu.unlock();
+      s->release();
+      return out;
+    }
+    s->mu.unlock();
+    s->release();
+    return std::unexpected(Status::Cancelled("oneshot sender dropped"));
+  }
+
+  // Non-blocking: value if present, else NotFound (empty) / Cancelled (sender gone).
+  Result<T> try_recv() noexcept {
+    state_->mu.lock();
+    if (state_->value_set) {
+      T* p = reinterpret_cast<T*>(state_->storage);
+      T out = std::move(*p);
+      p->~T();
+      state_->value_set = false;
+      state_->mu.unlock();
+      return out;
+    }
+    const bool sender_gone =
+        state_->refcount.load(std::memory_order_acquire) == 1;
+    state_->mu.unlock();
+    return std::unexpected(sender_gone ? Status::Cancelled("oneshot sender dropped")
+                                       : Status::NotFound("oneshot empty"));
+  }
+
+ private:
+  void reset_() noexcept {
+    if (state_ != nullptr) {
+      state_->mu.lock();
+      state_->rx_alive = false;  // tell the sender (is_closed) nobody's home
+      state_->mu.unlock();
+      state_->release();
+      state_ = nullptr;
+    }
+  }
+  detail::OneshotState<T>* state_ = nullptr;
+};
+
+// Create a linked oneshot Sender/Receiver pair over allocator-backed shared state.
+template <class T>
+std::pair<OneshotSender<T>, OneshotReceiver<T>> make_oneshot(
+    mem::Allocator alloc) noexcept {
+  using detail::OneshotState;
+  auto* s = static_cast<OneshotState<T>*>(
+      alloc.allocate(sizeof(OneshotState<T>), alignof(OneshotState<T>)));
+  HYLE_FATAL_ASSERT(s != nullptr);
+  new (s) OneshotState<T>{};
+  s->alloc = alloc;
+  return {OneshotSender<T>(s), OneshotReceiver<T>(s)};
+}
+
+// ---- watch ------------------------------------------------------------------
+// Latest-value broadcast: a Sender publishes a value that every Receiver can
+// observe; Receivers see only the MOST RECENT value (no accumulation), and can
+// block in changed() until it moves. The canonical config-hot-reload / shutdown-
+// signal primitive: a late subscriber immediately sees the current value, and
+// changed() wakes every waiter on each update. Distinct from a Channel (which
+// queues every item) -- watch keeps exactly one cell + a version counter.
+//
+// SEMANTICS (tokio watch, adopted):
+//  - Receivers are COPYABLE (subscribe many); each caches the version it has seen.
+//  - changed() blocks until the stored version != the receiver's seen version,
+//    then updates the seen version. Uses notify-before-recheck ordering (the CV
+//    predicate re-reads version under the lock) so an update can't be missed.
+//  - borrow() returns a COPY of the current value under the lock (no long-held Ref
+//    across a suspend point -- that would block the sender; we copy instead).
+//  - close (all Senders dropped) makes changed() return Cancelled.
+namespace detail {
+
+template <class T>
+struct WatchState {
+  mem::Allocator alloc;
+  util::SpinLock mu;
+  ConditionVariable cv;
+  std::atomic<int> refcount{0};   // senders + receivers; last drop frees
+  std::atomic<int> senders{0};    // >0 while any Sender alive
+  std::uint64_t version = 0;      // bumped on each send; receivers track it
+  alignas(T) unsigned char storage[sizeof(T)];  // the single current value
+
+  T& value() noexcept { return *reinterpret_cast<T*>(storage); }
+  void add_ref() noexcept { refcount.fetch_add(1, std::memory_order_relaxed); }
+  void release() noexcept {
+    if (refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      value().~T();
+      mem::Allocator a = alloc;
+      this->~WatchState();
+      a.deallocate(this, sizeof(WatchState), alignof(WatchState));
+    }
+  }
+};
+
+}  // namespace detail
+
+template <class T>
+class WatchReceiver {
+ public:
+  WatchReceiver() noexcept = default;
+  WatchReceiver(detail::WatchState<T>* s, std::uint64_t seen) noexcept
+      : state_(s), seen_(seen) {}
+  WatchReceiver(const WatchReceiver& o) noexcept
+      : state_(o.state_), seen_(o.seen_) {
+    if (state_) state_->add_ref();  // another subscriber
+  }
+  WatchReceiver& operator=(const WatchReceiver& o) noexcept {
+    if (this != &o) {
+      reset_();
+      state_ = o.state_;
+      seen_ = o.seen_;
+      if (state_) state_->add_ref();
+    }
+    return *this;
+  }
+  WatchReceiver(WatchReceiver&& o) noexcept
+      : state_(std::exchange(o.state_, nullptr)), seen_(o.seen_) {}
+  WatchReceiver& operator=(WatchReceiver&& o) noexcept {
+    if (this != &o) {
+      reset_();
+      state_ = std::exchange(o.state_, nullptr);
+      seen_ = o.seen_;
+    }
+    return *this;
+  }
+  ~WatchReceiver() { reset_(); }
+
+  // A COPY of the current value (does not mark it seen -- use changed() to consume
+  // the update signal). Cheap to call repeatedly (config read on every request).
+  T borrow() const noexcept {
+    state_->mu.lock();
+    T v = state_->value();  // copy under the lock
+    state_->mu.unlock();
+    return v;
+  }
+
+  // Block (fiber-aware) until the value changes since this receiver last saw it,
+  // then mark it seen. Returns Cancelled if all Senders have dropped (no more
+  // updates will ever come). A pending change already present returns at once.
+  Result<void> changed() noexcept {
+    state_->mu.lock();
+    state_->cv.wait(state_->mu, [&] {
+      return state_->version != seen_ ||
+             state_->senders.load(std::memory_order_acquire) == 0;
+    });
+    const bool changed = (state_->version != seen_);
+    seen_ = state_->version;  // mark seen (even on close, so we don't spin)
+    state_->mu.unlock();
+    if (changed) return {};
+    return std::unexpected(Status::Cancelled("watch senders dropped"));
+  }
+
+  // True if the value has changed since last seen (non-blocking peek).
+  bool has_changed() const noexcept {
+    state_->mu.lock();
+    const bool c = (state_->version != seen_);
+    state_->mu.unlock();
+    return c;
+  }
+
+ private:
+  void reset_() noexcept {
+    if (state_ != nullptr) {
+      state_->release();
+      state_ = nullptr;
+    }
+  }
+  detail::WatchState<T>* state_ = nullptr;
+  std::uint64_t seen_ = 0;
+};
+
+template <class T>
+class WatchSender {
+ public:
+  WatchSender() noexcept = default;
+  explicit WatchSender(detail::WatchState<T>* s) noexcept : state_(s) {}
+  WatchSender(WatchSender&& o) noexcept : state_(std::exchange(o.state_, nullptr)) {}
+  WatchSender& operator=(WatchSender&& o) noexcept {
+    if (this != &o) {
+      reset_();
+      state_ = std::exchange(o.state_, nullptr);
+    }
+    return *this;
+  }
+  HYLE_DISABLE_COPY(WatchSender);
+  ~WatchSender() { reset_(); }
+
+  // Publish a new value: replace the cell, bump the version, wake every waiter in
+  // changed(). Receivers subsequently see this value via borrow()/changed().
+  void send(T v) noexcept {
+    state_->mu.lock();
+    state_->value() = std::move(v);
+    ++state_->version;  // under mu_: a receiver seeing the new version reads this v
+    state_->mu.unlock();
+    state_->cv.notify_all();
+  }
+
+  // A COPY of the current value (sender-side peek).
+  T borrow() const noexcept {
+    state_->mu.lock();
+    T v = state_->value();
+    state_->mu.unlock();
+    return v;
+  }
+
+  // Subscribe a new Receiver that has ALREADY SEEN the current value (so its next
+  // changed() waits for the next send, not the current value). Matches tokio.
+  WatchReceiver<T> subscribe() const noexcept {
+    state_->mu.lock();
+    const std::uint64_t v = state_->version;
+    state_->mu.unlock();
+    state_->add_ref();
+    return WatchReceiver<T>(state_, v);
+  }
+
+ private:
+  void reset_() noexcept {
+    if (state_ != nullptr) {
+      // Last sender gone -> wake receivers so their changed() returns Cancelled.
+      if (state_->senders.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+        state_->cv.notify_all();
+      }
+      state_->release();
+      state_ = nullptr;
+    }
+  }
+  detail::WatchState<T>* state_ = nullptr;
+};
+
+// Create a watch channel seeded with `initial`. The returned Receiver has NOT yet
+// seen a change (its changed() waits for the first send after construction), but
+// borrow() returns `initial` immediately -- so a late subscriber / shutdown flag
+// reads the current state without waiting.
+template <class T>
+std::pair<WatchSender<T>, WatchReceiver<T>> make_watch(mem::Allocator alloc,
+                                                       T initial) noexcept {
+  using detail::WatchState;
+  auto* s = static_cast<WatchState<T>*>(
+      alloc.allocate(sizeof(WatchState<T>), alignof(WatchState<T>)));
+  HYLE_FATAL_ASSERT(s != nullptr);
+  new (s) WatchState<T>{};
+  s->alloc = alloc;
+  new (s->storage) T(std::move(initial));
+  s->refcount.store(2, std::memory_order_relaxed);  // 1 sender + 1 receiver
+  s->senders.store(1, std::memory_order_relaxed);
+  return {WatchSender<T>(s), WatchReceiver<T>(s, /*seen=*/0)};
+}
+
+// ---- broadcast --------------------------------------------------------------
+// Multi-consumer fan-out: every Receiver observes EVERY value a Sender sends
+// (unlike watch, which keeps only the latest). A bounded ring holds the last
+// `capacity` values; a slow Receiver that falls more than `capacity` behind gets
+// a Lagged error naming how many it missed, then resumes at the oldest retained
+// value (tokio's overwrite-oldest policy -- senders NEVER block on a slow reader).
+//
+// SEMANTICS (tokio broadcast, adopted, simplified to one lock):
+//  - Receivers COPYABLE (subscribe many); each has its own monotonic read cursor.
+//  - send() overwrites the oldest slot, bumps the write position, wakes all
+//    receiver waiters. Never blocks.
+//  - recv() blocks (fiber-aware) until its cursor < write position; if the cursor
+//    fell behind the retained window it returns Lagged and fast-forwards.
+//  - New subscribers start at the current write position (future messages only).
+//  - All Senders dropped + ring drained -> recv() returns Cancelled (closed).
+//
+// One SpinLock guards the whole ring (not tokio's per-slot mutex): correct and
+// simple; the per-slot-lock throughput refinement is deferred until a real
+// high-fanout consumer needs it (charter: no speculative complexity).
+namespace detail {
+
+template <class T>
+struct BroadcastState {
+  mem::Allocator alloc;
+  util::SpinLock mu;
+  ConditionVariable cv;            // receivers block here for the next value
+  std::atomic<int> refcount{0};    // senders + receivers; last drop frees
+  std::atomic<int> senders{0};     // >0 while any Sender alive
+  std::size_t cap;                 // ring capacity (number of retained values)
+  std::uint64_t write_pos = 0;     // monotonic id of the NEXT value to be written
+  T* buf = nullptr;                // ring of `cap` slots (index = pos % cap)
+  bool* occupied = nullptr;        // whether slot i currently holds a live T
+
+  void add_ref() noexcept { refcount.fetch_add(1, std::memory_order_relaxed); }
+  void release() noexcept {
+    if (refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+      for (std::size_t i = 0; i < cap; ++i)
+        if (occupied[i]) buf[i].~T();
+      mem::Allocator a = alloc;
+      const std::size_t c = cap;
+      T* b = buf;
+      bool* o = occupied;
+      this->~BroadcastState();
+      a.deallocate(b, sizeof(T) * c, alignof(T));
+      a.deallocate(o, sizeof(bool) * c, alignof(bool));
+      a.deallocate(this, sizeof(BroadcastState), alignof(BroadcastState));
+    }
+  }
+};
+
+}  // namespace detail
+
+template <class T>
+class BroadcastReceiver {
+ public:
+  BroadcastReceiver() noexcept = default;
+  BroadcastReceiver(detail::BroadcastState<T>* s, std::uint64_t cursor) noexcept
+      : state_(s), cursor_(cursor) {}
+  BroadcastReceiver(const BroadcastReceiver& o) noexcept
+      : state_(o.state_), cursor_(o.cursor_) {
+    if (state_) state_->add_ref();
+  }
+  BroadcastReceiver& operator=(const BroadcastReceiver& o) noexcept {
+    if (this != &o) {
+      reset_();
+      state_ = o.state_;
+      cursor_ = o.cursor_;
+      if (state_) state_->add_ref();
+    }
+    return *this;
+  }
+  BroadcastReceiver(BroadcastReceiver&& o) noexcept
+      : state_(std::exchange(o.state_, nullptr)), cursor_(o.cursor_) {}
+  BroadcastReceiver& operator=(BroadcastReceiver&& o) noexcept {
+    if (this != &o) {
+      reset_();
+      state_ = std::exchange(o.state_, nullptr);
+      cursor_ = o.cursor_;
+    }
+    return *this;
+  }
+  ~BroadcastReceiver() { reset_(); }
+
+  // Block (fiber-aware) until a value at/after this receiver's cursor is available.
+  // Returns:
+  //  - the value (cursor advances by 1);
+  //  - Unavailable("lagged N") if the cursor fell behind the retained window (the
+  //    cursor fast-forwards to the oldest retained value; retry recv() to get it);
+  //  - Cancelled if all senders dropped AND nothing remains to read.
+  Result<T> recv() noexcept {
+    auto* s = state_;
+    s->mu.lock();
+    s->cv.wait(s->mu, [&] {
+      return cursor_ < s->write_pos ||
+             s->senders.load(std::memory_order_acquire) == 0;
+    });
+    // Closed and fully drained.
+    if (cursor_ >= s->write_pos) {
+      s->mu.unlock();
+      return std::unexpected(Status::Cancelled("broadcast closed"));
+    }
+    // Lag check: the oldest retained value has pos == write_pos - cap (once the
+    // ring has wrapped). If our cursor is older than that, we missed some.
+    const std::uint64_t oldest =
+        s->write_pos > s->cap ? s->write_pos - s->cap : 0;
+    if (cursor_ < oldest) {
+      cursor_ = oldest;  // fast-forward to the oldest still-retained value
+      s->mu.unlock();
+      return std::unexpected(Status::Unavailable("broadcast lagged"));
+    }
+    T out = s->buf[cursor_ % s->cap];  // copy the value for this receiver
+    ++cursor_;
+    s->mu.unlock();
+    return out;
+  }
+
+ private:
+  void reset_() noexcept {
+    if (state_ != nullptr) {
+      state_->release();
+      state_ = nullptr;
+    }
+  }
+  detail::BroadcastState<T>* state_ = nullptr;
+  std::uint64_t cursor_ = 0;
+};
+
+template <class T>
+class BroadcastSender {
+ public:
+  BroadcastSender() noexcept = default;
+  explicit BroadcastSender(detail::BroadcastState<T>* s) noexcept : state_(s) {}
+  BroadcastSender(const BroadcastSender& o) noexcept : state_(o.state_) {
+    if (state_) {
+      state_->add_ref();
+      state_->senders.fetch_add(1, std::memory_order_relaxed);
+    }
+  }
+  BroadcastSender& operator=(const BroadcastSender& o) noexcept {
+    if (this != &o) {
+      reset_();
+      state_ = o.state_;
+      if (state_) {
+        state_->add_ref();
+        state_->senders.fetch_add(1, std::memory_order_relaxed);
+      }
+    }
+    return *this;
+  }
+  BroadcastSender(BroadcastSender&& o) noexcept
+      : state_(std::exchange(o.state_, nullptr)) {}
+  BroadcastSender& operator=(BroadcastSender&& o) noexcept {
+    if (this != &o) {
+      reset_();
+      state_ = std::exchange(o.state_, nullptr);
+    }
+    return *this;
+  }
+  ~BroadcastSender() { reset_(); }
+
+  // Publish `v` to all receivers (overwrites the oldest slot if the ring is full;
+  // never blocks). Wakes every waiting receiver.
+  void send(T v) noexcept {
+    state_->mu.lock();
+    const std::size_t idx = state_->write_pos % state_->cap;
+    if (state_->occupied[idx]) {
+      state_->buf[idx] = std::move(v);  // overwrite oldest
+    } else {
+      new (&state_->buf[idx]) T(std::move(v));
+      state_->occupied[idx] = true;
+    }
+    ++state_->write_pos;
+    state_->mu.unlock();
+    state_->cv.notify_all();
+  }
+
+  // Subscribe a new Receiver starting at the current write position (future
+  // messages only -- it does not replay history already in the ring).
+  BroadcastReceiver<T> subscribe() const noexcept {
+    state_->mu.lock();
+    const std::uint64_t pos = state_->write_pos;
+    state_->mu.unlock();
+    state_->add_ref();
+    return BroadcastReceiver<T>(state_, pos);
+  }
+
+ private:
+  void reset_() noexcept {
+    if (state_ != nullptr) {
+      if (state_->senders.fetch_sub(1, std::memory_order_acq_rel) == 1) {
+        state_->cv.notify_all();  // last sender gone -> unblock receivers to close
+      }
+      state_->release();
+      state_ = nullptr;
+    }
+  }
+  detail::BroadcastState<T>* state_ = nullptr;
+};
+
+// Create a broadcast channel retaining the last `capacity` values. Returns a
+// Sender + one Receiver (subscribe() more from the Sender). capacity >= 1.
+template <class T>
+std::pair<BroadcastSender<T>, BroadcastReceiver<T>> make_broadcast(
+    mem::Allocator alloc, std::size_t capacity) noexcept {
+  using detail::BroadcastState;
+  HYLE_FATAL_ASSERT(capacity >= 1);
+  auto* s = static_cast<BroadcastState<T>*>(
+      alloc.allocate(sizeof(BroadcastState<T>), alignof(BroadcastState<T>)));
+  HYLE_FATAL_ASSERT(s != nullptr);
+  new (s) BroadcastState<T>{};
+  s->alloc = alloc;
+  s->cap = capacity;
+  s->buf = static_cast<T*>(alloc.allocate(sizeof(T) * capacity, alignof(T)));
+  s->occupied = static_cast<bool*>(
+      alloc.allocate(sizeof(bool) * capacity, alignof(bool)));
+  HYLE_FATAL_ASSERT(s->buf != nullptr && s->occupied != nullptr);
+  for (std::size_t i = 0; i < capacity; ++i) s->occupied[i] = false;
+  s->refcount.store(2, std::memory_order_relaxed);  // 1 sender + 1 receiver
+  s->senders.store(1, std::memory_order_relaxed);
+  return {BroadcastSender<T>(s), BroadcastReceiver<T>(s, /*cursor=*/0)};
+}
 
 }  // namespace hyle::sched
