@@ -156,7 +156,7 @@ loop:
 
 **两条必须讲清的边界（否则就是错的）**：
 - **进程是联邦，不是共享表**：单进程内 thread+fiber+coroutine 真正共享一个调度器；跨进程只能靠 `io/` + 共享内存做消息传递，从 fiber 视角"等另一个进程"就是又一个 awaitable。**别假装进程是同一队列里的行**。
-- **阻塞系统调用会卡住 worker**：某 fiber 跑了阻塞 syscall，它占用的 worker 线程被卡住、连累该核其他 fiber。缓解：(a) 阻塞调用走独立 blocking 线程池；(b) 类 Go sysmon 的监控线程检测长阻塞、临时补一个 worker 顶上。这是"线程"在模型里必须处理的现实，留待实现期定策略。
+- **阻塞系统调用会卡住 worker**：某 fiber 跑了阻塞 syscall，它占用的 worker 线程被卡住、连累该核其他 fiber。缓解：(a) 阻塞调用走独立 blocking 线程池(`spawn_blocking`)；(b) 类 Go sysmon 的监控线程检测长阻塞、临时补一个 worker 顶上。这是"线程"在模型里必须处理的现实。**⚠️ 2026-07-03 审计升级**:此前标"留待实现期定策略",但这是真能力缺口不是纯 impl 细节——tokio `spawn_blocking`/marl blockingcall/seastar thread 都有公开 API,真服务器调阻塞库(DB 驱动/同步文件/`getaddrinfo`)必需。已登记为 **sched-11(能力 C8 驱动)**,不再当"实现期再说"糊过去。
 
 ### 第二节小结
 
@@ -170,6 +170,11 @@ loop:
 > - **长等待 → fiber-aware**:`ConditionVariable` 是唯一 fiber-aware 地基(FIFO waiter 链表 + SpinLock),`WaitGroup`/`Latch`/`Channel` 全建其上。**双模**:waiter 是 fiber 则 `suspend()` 让出+重入 run-queue(复用第三节 Waker rendezvous,`current_waker()` 判定);是裸线程则回退 `platform::Parker`(跨进程联邦/外部线程提交,**非** `std::condition_variable`,HYLE 自有 Parker 无 std 依赖)。
 > - **短等待(mutex)→ 不 fiber-aware,用 futex**:`Mutex` 是建在 `platform::wait_on_address` 上的 Drepper 3 态 futex(无争用单 CAS、争用 park worker),**不**让出 fiber。**实测纠错**:初版把 Mutex 也做成 fiber-aware(争用让出),benchmark 慢 marl **5.8x**——短临界区让出 fiber(~100ns)远贵于就地 park 几 ns。改 futex 后**打平 marl**(marl 同理:其 mutex 就是 std::mutex=futex,只 CV 才 fiber-aware)。契约:**别跨 fiber 让出/阻塞调用持 Mutex,那种场景用 CV**。
 > - `wait_for`/`wait_until` 定时变体依赖 time-02 时间轮(→ sched-04b),登记延后,不阻塞无定时主体。**spawn 重负载(fork-join)已反超 marl 1.49x、spawn-2000 反超 2.17x**——靠 §2.3 ②③ 的 **conditional-notify**(`num_searching_` 计数门:有 worker 在搜就不 unpark,从源头消除 spawn burst 的 futex 唤醒风暴;lost-wakeup 安全=seq_cst StoreLoad Dekker 握手,TSan + 100× 压测验证)。栈池(`MemoryArena::as_allocator`)再加 ~13%→1.71x。**实测纠错:此前误把 fork-join 慢 17x 归因到"无栈池",诊断证明真因是急泊车 futex 风暴**;先做的 spin-then-park 是缓解,conditional-notify 才是根治(详见 performance.md)。
+>
+> **同步/结构化并发缺口补记(2026-07-03 参考库审计——tokio/seastar/folly 对照)**:sched-05 补齐了 CV/Mutex/WaitGroup/Latch/Channel,但对照 SOTA 仍缺几件真原语,登记为 sched-09/10(能力 C7 驱动,未排期前不做):
+> - **Semaphore(计数信号量)**:异步限流标准件(限在途连接/请求、buffer 池)。tokio/seastar/folly 全有,HYLE 无。建在 CV 地基上成本低。
+> - **RwLock**:读多写少共享态;现只有独占 Mutex。**oneshot**(单值回传)/ **broadcast·watch**(多消费者 fan-out / 最新值传播,用于关停信号·配置热载)同缺。→ sched-09
+> - **JoinHandle + select/when_all**:`spawn` 现返 `void`——拿不到任务结果、不能 await 单任务完成、不能 abort、不能 race N 个操作。**`select`(等 N 中第一个、取消其余)是超时(C2)/可取消 io(C3)的底层机制**,缺它这两个能力做不优雅。WaitGroup 只计数不收集/不 race。对标 tokio JoinHandle·select!·seastar when_all/when_any·folly collectAll。→ sched-10
 
 ## 第三节：completion 接入（整个设计的收口）
 

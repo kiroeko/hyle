@@ -71,14 +71,20 @@ io/
 
 **后端进度(诚实分层)**:io-01 **收割接缝**在 IOCP(Windows)+ io_uring(Linux)双后端均 ✅ 真测。io-02 **read/write 真 op 两后端全通 ✅**:io_uring 填 SQE(WSL 真测 write→read + bad-fd 负 errno;TSan 净);IOCP 用 `ReadFile/WriteFile` + per-op OVERLAPPED——proactor 侵入式在途链表**自持** OVERLAPPED 生命周期(OVERLAPPED 是 IoOp 首成员;reap cast `lpOverlapped` 回 IoOp;`post()` 保持 nullptr 以区分合成唤醒;dtor 先 CancelIoEx 再排空端口回收防关机 UAF)。**先前"IOCP 真 op 需随 net/ 定形"是过度谨慎——OVERLAPPED 纯 IOCP 内部细节 proactor 自持,net/ 不可见,故此处已落地。** io-03 **epoll 降级 + SOTA-first 后端选择 ✅**:`init()` 总先试 io_uring,仅真不可用(老内核/`io_uring_disabled` sysctl/容器 seccomp)才退 epoll——生产走 io_uring,epoll 保 io_uring 被禁环境仍可跑;epoll reactor→completion 模拟(记 pending op、就绪时内联 IO)。kqueue(mac)待做。**io-04 socket 层 + co_await + shard-per-core + Tcp 封装 ✅**:recv/send/accept/connect 三后端 + `net.h` co_await awaitable + **shard-per-core**(每 worker 一 proactor + fiber 亲和 `spawn_on` 绑核 + `bind_fd` 连接绑 owner 核,submit/reap/resume 单核 share-nothing,满足 IOCP 一 socket 一端口)+ `tcp.h` RAII `TcpListener/TcpStream`。真 loopback TCP echo + 32 连接分片跨核,双平台 + TSan 净。**worker 空闲已阻塞在 GETEVENTS reap**(有在途 op 时把阻塞交给 proactor 一次 `io_uring_enter` GETEVENTS,上限 1ms;无在途则 futex park 保即时跨线程唤醒)——这是正确性要求:io_uring 完成 task-work 只在本线程带 GETEVENTS 进内核才跑,否则 >ring 深度在途 op 的 completion 永不 surface(512 流 pipelined 负载揪出的 P0 hang,已修+双平台+TSan 验证)。**缺:udp;park 合并的纯延迟优化(eventfd 即时唤醒替 1ms 上限);kqueue(mac)。连接级 benchmark 已补(echo + pipelined,见 performance/benchmarks-io.md)。**
 
-## 待深挖(io-04+ 开工时定,非现在)
+## 已落地 + 剩余缺口(2026-07-03 更新)
 
-> proactor 收割接缝 + socket op + co_await 层 + shard-per-core(per-worker ring)+ 阻塞 GETEVENTS reap 均已落地。下面是**剩余的提交侧/延迟优化**,按 JIT 延到后续:
+> proactor 收割接缝 + socket op + co_await 层 + shard-per-core(per-worker ring)+ 阻塞 GETEVENTS reap + TcpListener/Stream + UdpSocket + park 合并 **均已落地**。下面是**剩余缺口**,分两类:①JIT 延后的次要项;②参考库审计(liburing/asio/libevent 对照)揪出的真缺口,已登记为能力驱动的里程碑。
 
-1. reactor 后端(mac kqueue)如何把"就绪"模拟成"完成"(Linux epoll 降级已做,accept→::accept/connect→SO_ERROR/read/write 内联)。
-2. **park 合并 ✅ 已落地**(2026-07-03):worker 空闲以完整 timeout(timer deadline/INFINITE)阻塞 GETEVENTS reap,不再 1ms 轮询;跨线程唤醒经 `Proactor::wake()`(io_uring 专用 eventfd 上常驻 `IORING_OP_READ`,`write` 打断 reap,不碰单生产者 SQ;IOCP `PostQueuedCompletionStatus`;epoll level-triggered eventfd)。实测空闲 500ms 的 `io_uring_enter` 从 421→3(~140x),吞吐无变化。
-3. 高级机制接线:registered files/buffers、multishot accept/recv、linked SQE 的 op 层 API。
-4. TcpListener/TcpStream fd 所有权薄封装(RAII socket + 地址解析) + udp。
+**① JIT 延后(次要):**
+- reactor 后端(mac kqueue)如何把"就绪"模拟成"完成"(Linux epoll 降级已做,accept→::accept/connect→SO_ERROR/read/write 内联)。
+- **park 合并 ✅ 已落地**(2026-07-03):worker 空闲以完整 timeout(timer deadline/INFINITE)阻塞 GETEVENTS reap,不再 1ms 轮询;跨线程唤醒经 `Proactor::wake()`(io_uring 专用 eventfd 上常驻 `IORING_OP_READ`,`write` 打断 reap,不碰单生产者 SQ;IOCP `PostQueuedCompletionStatus`;epoll level-triggered eventfd)。实测空闲 500ms 的 `io_uring_enter` 从 421→3(~140x),吞吐无变化。
+
+**② 参考库审计真缺口(能力驱动,见 roadmap 轴 C / milestones):**
+- **io-06 带超时 io(C2)**:recv/accept/connect 带 deadline + 取消在途内核 op(io_uring `ASYNC_CANCEL`/`LINK_TIMEOUT`、IOCP `CancelIoEx`)。几乎所有网络库的生存能力,慢/死连接不带超时会永久占资源。
+- **io-07 multishot + provided buffer ring(C1 半成品补完)**:`Completion` **已预留 `kMore`/`kBuffer` flag 却没接 submit 侧**——`submit_accept_multishot`/`recv_multishot` + `register_buf_ring`(内核选 buffer 免预投递)+ registered files/buffers(fixed fd/buf 省 per-op refcount/pin)+ vectored readv/writev(scatter-gather)。io_uring 吞吐 SOTA 核心,留 flag 不接=没抄全。
+- **io-08 TLS(C9)**:加密 socket over co_await stream(借 BoringSSL/OpenSSL shim)。面向公网服务器必需,roadmap 原本完全没有=真漏。
+- **io-09 异步 DNS + signal(C10)**:`resolve_addr` 现是同步 `getaddrinfo`,**阻塞整个 shard worker**(违背 share-nothing);真客户端必需异步 DNS。signal_set(SIGTERM/SIGINT)是优雅关闭(C4)的触发器。
+- **io-05 文件/shmem(C5)**:原设计只写"复用 read/write",但真异步文件服务还需 async open/stat/fsync/fallocate(io_uring 均有 op)+ splice/sendfile(零拷贝代理/文件服务)。已扩充登记。
 
 ## 参考
 

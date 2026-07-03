@@ -128,7 +128,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 - **非玩具**：已实现部分零 stub/TODO、测试密（simd 全 65536 fp16 硬件逐位对拍、红队揪真 bug），玩具撑不住。
 - **scope 仍会长回**：simd 实测 2.3k 是 Highway 数值子集（4 lane 类型 + ~25 op + 2 ISA），非功能对等（Highway 12 类型 + ~200 op + 6 ISA）。量化类型/更多 op 是显式延期，补齐后涨到 ~5-8k。**别把"广度未铺开"误读成"已精简完毕"。**
 
-**实现粒度**：上表是体量、**不是步骤**。落地为**约 47 个里程碑**（milestones/README 为准），每个 1-4k 行、可独立编/测/基准。6 个"阶段 P0-P6"是依赖层拓扑序，不是 6 步。先走 walking skeleton（纵切各层最小片）打通调度脊、验最高风险，再逐里程碑加厚。
+**实现粒度**：上表是体量、**不是步骤**。落地为**约 55 个里程碑**（milestones/README 为准），每个 1-4k 行、可独立编/测/基准。6 个"阶段 P0-P6"是依赖层拓扑序，不是 6 步。先走 walking skeleton（纵切各层最小片）打通调度脊、验最高风险，再逐里程碑加厚。
 
 ## 边界外（明确不做）
 
@@ -168,6 +168,15 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 | fiber + 调度原语 | actor 模型 / 语言运行时 |
 | 结构化日志产出（obs）| 日志聚合服务 |
 | device/stream/kernel（compute）| Tensor/autograd/optimizer |
+
+### ⚠️ 边界待复核（2026-07-03 参考库审计后，用户提出）
+
+> 上面的"边界外/四类不做"是**项目早期写的**,本身可能"漏点"——把某些真该做的原语误判成 out-of-scope。**这些边界不当已决,留作后续讨论。** 一次参考库审计(拿 tokio/seastar/folly/liburing/asio/libevent/tracy/oneTBB 逐条对照)已触发若干修正与待决:
+
+- **TLS**:已从"隐性排除"改判为 **C9 真能力**(io-08)。scope §153"借不造"本就写明 TLS 借 BoringSSL——所以它是**借入的原语**不是 out-of-scope 协议,之前没登记是漏,不是有意不做。
+- **序列化原语**:边界表说"二进制序列化原语"IN、"IDL/schema 编译器"OUT——原则清楚,但 **close-02 无设计、无接口形状**,是个"看着像计划的占位"。**待决**:借 flatbuffers/capnproto 的 builder+reader 当原语落地,还是把 wire-format 全推 L1。需拍板。
+- **数据并行层**(parallel_for/reduce/scan over range,oneTBB/oneDPL):不同于 graph 的 DAG 编排,是 sched+simd 的天然消费者(大 buffer compute kernel)。**不被现边界排除**(是原语不是协议),但归 graph 还是 compute 未定。待与序列化一起复核。
+- **原则仍然成立**:HYLE 止于原语/机制,不碰策略/协议/领域。审计的所有真缺口(Semaphore/JoinHandle/select/spawn_blocking/multishot/异步DNS/TLS)**都在原语这一侧**,没有一个越界到 L1——说明缺的是"原语没抄全",不是边界画错。**明确 out-of-scope 的(HTTP/gRPC/RPC 框架/IDL 编译器/log 聚合/actor)审计确认仍在外**,但这判断也随时可被"某 L1 其实是通用原语"的论证推翻。
 
 ### 另外已明确不纳入
 
