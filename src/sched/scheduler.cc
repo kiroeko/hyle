@@ -603,7 +603,8 @@ void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
   // worker's dispatch rendezvous with the eventual timer fire (fire_due_timers
   // calls wake_rendezvous, exactly like Waker::wake). No competing waker exists
   // for a plain sleep, so the timer always fires and the entry always leaves the
-  // wheel -- no cancel needed (that's the wait_for/wait_until case, sched-04c).
+  // wheel -- no cancel needed (that's the fiber-mode wait_for/wait_until case,
+  // sched-04d).
   self->request_wait();
   Fiber::yield();
 }

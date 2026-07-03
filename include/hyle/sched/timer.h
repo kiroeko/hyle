@@ -29,7 +29,7 @@
 // race whose loser must CANCEL the other across workers (the fiber may resume on
 // a different worker than the one holding its timer) -- that needs the per-worker
 // cross-core cancel command queue (the time-02 headline divergence point), split
-// out as sched-04c. Plain sleep has a single waker (the timer), so no such race.
+// out as sched-04d. Plain sleep has a single waker (the timer), so no such race.
 
 namespace hyle::sched {
 

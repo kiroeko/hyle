@@ -14,12 +14,12 @@ io-01/02/03 阶段**故意不出性能数**(见总账 io 行的"缺口登记")�
 
 | 配置 | echo/s(批量后) | 对裸 epoll 比 | 判定 |
 |---|---|---|---|
-| HYLE shard-per-core 1 worker | **728K** | ~1.0x | ➖平/微赢裸 epoll |
-| HYLE shard-per-core 2 workers | 1.10M | 1.51x | ✅赢 |
-| HYLE shard-per-core 4 workers | 1.49M | 2.05x | ✅赢 |
-| 裸 epoll 1 线程(就绪循环) | 729K | 1.0x | 基线 |
+| HYLE shard-per-core 1 worker | **730~800K**(跑间中位波动) | ~1.0x | ➖平/微赢裸 epoll |
+| HYLE shard-per-core 2 workers | 1.1~1.2M | ~1.5x | ✅赢 |
+| HYLE shard-per-core 4 workers | 1.5~1.9M | ~2x | ✅赢 |
+| 裸 epoll 1 线程(就绪循环) | ~730-790K | 1.0x | 基线 |
 
-**关键转折(2026-07-03,submit 批量落地后)**:单 worker 从**曾经的 440K(输裸 epoll 0.61x)提到 728K(追平/微赢)**——1.65x 提升。机制铁证:`HYLE_IO_BENCH_STATS` 打出 **`avg_batch=13~61`**(每次 `io_uring_enter` 提交 13-61 个 SQE),对比批量前恒为 1.0。这直接砍掉了曾经主导的"每 op 一次 syscall"开销。**shard-per-core 扩展仍在**(1w→4w ~2x)。
+**关键转折(2026-07-03,submit 批量落地后)**:单 worker 从**曾经的 440K(输裸 epoll 0.61x)提到 ~730-800K(追平/微赢)**——约 1.7x 提升。机制铁证:`HYLE_IO_BENCH_STATS` 打出 **`avg_batch=13~61`**(每次 `io_uring_enter` 提交 13-61 个 SQE),对比批量前恒为 1.0。这直接砍掉了曾经主导的"每 op 一次 syscall"开销。**shard-per-core 扩展仍在**(1w→4w ~2x)。
 
 ## pipelined / 高扇出(512 流)+ 一个被它揪出的 P0 hang
 
@@ -36,7 +36,7 @@ ping-pong(每流稳态 ≤1 op 在途)填不满 SQ,也测不到"海量 op 同时
 
 **这个负载一上来就 100% 挂死(P0)——根因是收割节奏的结构错**:批量落地时把 reap 挪到"run-queue 抽干"处,worker 空闲则走 futex parker(1ms 上限重 poll)。但那个"重 poll"是 `reap(timeout=0)`,**空 CQ 时只做 submit-only enter(不带 `IORING_ENTER_GETEVENTS`)**。io_uring 的完成 task-work **只在本线程带 GETEVENTS 进内核那一下才跑**——所以一旦 run-queue 抽干、几百 op 在途,那些 completion 永不 surface,worker 空转 `reap(0)==0`、`drain()` 死等 `outstanding!=0`。ping-pong 侥幸不挂:socketpair 的 send 在 submit enter 内联完成,CQ 稳态非空,纯用户态收割即可,从不需要 GETEVENTS。
 
-**修法(正确性,非延迟优化)**:worker 的 park 边界改为——io hook 注册且**有在途 op**时,把阻塞交给 proactor 一次 **GETEVENTS `io_uring_enter`**(上限 `kIoPollNs` 1ms),而非 futex park。hook 返回"是否有在途 op":有→在环里收割完循环重查队列;无→照常 futex park(可被跨线程 `unpark()` 立即打断,而阻塞 reap 不能——所以"无 io 在途"时仍是即时唤醒)。`Proactor::in_flight()` 三后端各自实现(io_uring 计 submit-not-completed、IOCP 查在途 OVERLAPPED 链、epoll 查 pending/posted)。**诚实纠错**:此前一版按"CQ overflow"方向加了 `IORING_SQ_CQ_OVERFLOW` 恢复循环——实测 `overflow=0`,方向错了,真修到位后已撤(真病根是压根没做 GETEVENTS enter,不是 CQ 溢出)。
+**修法(正确性,非延迟优化)**:worker 的 park 边界改为——io hook 注册且**有在途 op**时,把阻塞交给 proactor 一次 **GETEVENTS `io_uring_enter`**,而非 futex park。hook 返回"是否有在途 op":有→在环里收割完循环重查队列;无→照常 futex park(可被跨线程 `unpark()` 立即打断,而阻塞 reap 不能——所以"无 io 在途"时仍是即时唤醒)。`Proactor::in_flight()` 三后端各自实现(io_uring 计 submit-not-completed、IOCP 查在途 OVERLAPPED 链、epoll 查 pending/posted)。阻塞 reap 用完整 timeout(timer deadline 或 INFINITE)——**跨线程唤醒经 eventfd 即时打断,见下"park 合并"节**(消除了这个正确性修复引入的空闲 busy-poll)。**诚实纠错**:此前一版按"CQ overflow"方向加了 `IORING_SQ_CQ_OVERFLOW` 恢复循环——实测 `overflow=0`,方向错了,真修到位后已撤(真病根是压根没做 GETEVENTS enter,不是 CQ 溢出)。
 
 **方法学教训(再记一条)**:"能跑的负载"(ping-pong)绿 ≠ 机制对。是"做一个符合该机制的 benchmark"(pipelined 高扇出)才把这个结构性 hang 逼出来——**优化/机制落地后必须配一个真能压到它的负载去测**,否则潜藏的 P0 要到生产才炸。
 

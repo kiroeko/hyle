@@ -97,7 +97,7 @@ class ConditionVariable {
   // Parker::park_timeout -- no timer wheel, no cross-worker cancel, so it is
   // simple and correct. A FIBER waiter would need to arm a wheel timer whose
   // fire races the notify and whose loser must cancel across workers (the
-  // per-worker cancel command queue -- still sched-04c-pending); until that
+  // per-worker cancel command queue -- still sched-04d-pending); until that
   // lands, calling this from a worker fiber asserts. Bare-thread timed waits
   // (external submitters, cross-process federation) ship now.
   enum class CvStatus { kNoTimeout, kTimeout };

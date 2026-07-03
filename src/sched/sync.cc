@@ -190,11 +190,11 @@ std::uint64_t ConditionVariable::remaining_ns_(
 
 ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(
     Waiter* node, std::uint64_t timeout_ns) noexcept {
-  // Thread-mode only (fiber-mode timed wait = sched-04c-pending: needs a wheel
+  // Thread-mode only (fiber-mode timed wait = sched-04d-pending: needs a wheel
   // timer whose fire races notify + a cross-worker cancel). prepare_wait_ set
   // token to this thread's ThreadToken; a fiber node would have token==nullptr.
   HYLE_FATAL_ASSERT(node->token != nullptr &&
-                    "fiber-mode CV timed wait not yet supported (sched-04c)");
+                    "fiber-mode CV timed wait not yet supported (sched-04d)");
   auto* tok = static_cast<ThreadToken*>(node->token);
 
   // Absolute deadline so spurious/early park returns don't extend the wait.
