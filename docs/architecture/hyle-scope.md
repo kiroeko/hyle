@@ -190,7 +190,7 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 | **③ actor 框架/语言运行时** | ✅ **KEEP OUT** | actor 是 fiber+channel 之上的**模型**(L1)。HYLE 给 fiber+channel 原语,actor 上层拼。判对。 |
 | **③ GUI/窗口系统** | ✅ **KEEP OUT** | 领域,与北极星无关。 |
 | **④ 构建/包管理/测试框架**(CMake/GoogleTest)| ✅ **KEEP OUT** | 工具链,判对。 |
-| **④ 日志聚合/监控后端** | 🔄 **部分 PULL IN** | 聚合/告警服务是运维栈(KEEP OUT),但**产出侧的 trace/counter 埋点原语**被漏了(obs 只做了日志)——已改判 obs-02(接 tracy)。"产出结构化 trace"是原语,"聚合"才是运维。 |
+| **④ 日志聚合/监控后端** | 🔄 **部分 PULL IN** | 聚合/告警服务是运维栈(KEEP OUT),但**产出侧的 trace/counter 埋点原语**被漏了(obs 只做了日志)——已改判 obs-02(接 tracy)。"产出结构化 trace"是原语,"聚合"才是运维。**⚠️ obs-02 承重约束(零成本铁律)**:trace point 嵌 fiber 切换(~21ns)/io 收割等纳秒热路径,故必须**编译期门控**(如 `HYLE_TRACE`,默认关)——不启用时宏空展开为 `((void)0)`、生成零指令(tracy 的 `TRACY_ENABLE` 模型),不是 log.h 那种运行期 `should_log` 门控(一次 relaxed load + 跨 DLL call,对日志够、对纳秒热路径不够)。"第一天嵌热路径"只有在关闭态零成本时才成立。**验收判据**:objdump 对比定义/不定义 `HYLE_TRACE` 的 fiber 切换汇编须指令数一致 + scheduler_ext_bench 前后 release 数字不变(同项目一贯的 objdump 验零成本手法)。启用态开销由 tracy 后端本身主导,那是 profiling build 主动接受的。 |
 | **④ GC** | ✅ **KEEP OUT** | 做分配器不做 GC,判对。 |
 | **DataModel(undo/序列化/协作)** | 🟡 **拆开看** | undo/协作=L2 领域(KEEP OUT);内含的**序列化**已单独在 DISCUSS-2。原"整块不纳入"太粗。 |
 | **替换 ggml 算子/训练推理引擎** | ✅ **KEEP OUT** | compute 只做抽象层,判对(借 ggml 是明确决策)。 |
