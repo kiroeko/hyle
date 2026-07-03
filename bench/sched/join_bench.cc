@@ -77,23 +77,37 @@ int main() {
     Scheduler sched(4, system_allocator(), 4096);
     Allocator a = system_allocator();
     ankerl::nanobench::Bench b;
-    b.title("spawn+join single task round-trip").relative(true).minEpochIterations(2000);
+    // Batch kB tasks per epoch, join all. batch(kB) => ns/op is PER TASK. This
+    // amortizes the OS scheduler cross-thread handoff (spawn on main -> worker
+    // runs -> wakes main via futex), which otherwise dominates + jitters a single
+    // round-trip (esp. on a loaded many-core Linux box) and drowns the layer cost.
+    // What survives amortization IS the per-task layer delta -- the thing we want.
+    constexpr int kB = 100;
+    b.title("spawn+join per task (batch 100)").relative(true).batch(kB).minEpochIterations(2000);
 
     b.run("raw fiber + WaitGroup(1) + slot", [&] {
-      RawTask rt;
-      Fiber f(a, kDefaultStackSize, &raw_entry, &rt);
-      sched.spawn(&f);
-      rt.wg.wait();          // block until the fiber signalled done
-      ankerl::nanobench::doNotOptimizeAway(rt.result);
-      // f is done() here (wg.done() is the last thing raw_entry does before the
-      // fiber returns); drain() ensures the worker finished dispatch before f dies.
-      sched.drain();
+      std::vector<std::unique_ptr<RawTask>> rts;
+      std::vector<std::unique_ptr<Fiber>> fs;
+      rts.reserve(kB);
+      fs.reserve(kB);
+      for (int i = 0; i < kB; ++i) {
+        rts.push_back(std::make_unique<RawTask>());
+        fs.push_back(std::make_unique<Fiber>(a, kDefaultStackSize, &raw_entry, rts[i].get()));
+        sched.spawn(fs[i].get());
+      }
+      std::uint64_t sink = 0;
+      for (auto& rt : rts) { rt->wg.wait(); sink += rt->result; }
+      ankerl::nanobench::doNotOptimizeAway(sink);
+      sched.drain();  // fibers retire before fs/rts free them (raw path's burden)
     });
 
     b.run("spawn_task + JoinHandle::join", [&] {
-      auto h = spawn_task(sched, a, ret_coro(a, 7));
-      auto r = h.join();
-      ankerl::nanobench::doNotOptimizeAway(r.has_value() ? *r : -1);
+      std::vector<JoinHandle<int>> hs;
+      hs.reserve(kB);
+      for (int i = 0; i < kB; ++i) hs.push_back(spawn_task(sched, a, ret_coro(a, i)));
+      std::uint64_t sink = 0;
+      for (auto& h : hs) { auto r = h.join(); sink += r.has_value() ? *r : 0; }
+      ankerl::nanobench::doNotOptimizeAway(sink);
     });
 
     sched.shutdown();
@@ -107,7 +121,7 @@ int main() {
     Scheduler sched(4, system_allocator(), 4096);
     Allocator a = system_allocator();
     ankerl::nanobench::Bench b;
-    b.title("when_all over 64 tasks").batch(kN).minEpochIterations(200);
+    b.title("when_all over 64 tasks").batch(kN).minEpochIterations(2000);
     b.run("spawn 64 + when_all + join each", [&] {
       std::vector<JoinHandle<int>> hs;
       hs.reserve(kN);
