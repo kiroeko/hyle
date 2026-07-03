@@ -446,23 +446,28 @@ TEST(Proactor, ProvidedBufRingMultishotRecv) {
   if (!p.register_buf_ring(kBgid, kEntries, kBufSize))
     GTEST_SKIP() << "provided buffer ring unsupported on this kernel";
 
+  // DGRAM pair: message boundaries preserved, so N sends == N recv completions
+  // (a STREAM socket would coalesce the sends into fewer buffers).
   int sv[2];
-  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_DGRAM, 0, sv), 0);
 
-  // ONE multishot recv arm on sv[0], drawing from the ring.
-  ASSERT_TRUE(p.submit_recv_multishot(sv[0], kBgid, /*user_data=*/0xBEEF));
-
-  // Send 3 distinct messages from the other end.
+  // Send 3 distinct messages BEFORE arming, so they're queued and delivered
+  // promptly (avoids blocking reaps waiting on data that isn't coming yet).
   const char* msgs[] = {"ring-buf-0", "ring-buf-1", "ring-buf-2"};
   constexpr int kN = 3;
   for (int i = 0; i < kN; ++i)
     ASSERT_GT(::write(sv[1], msgs[i], std::strlen(msgs[i]) + 1), 0);
 
+  // ONE multishot recv arm on sv[0], drawing from the ring.
+  ASSERT_TRUE(p.submit_recv_multishot(sv[0], kBgid, /*user_data=*/0xBEEF));
+
   int got = 0;
   int kbuf_set = 0;
-  for (int spins = 0; spins < 500 && got < kN; ++spins) {
+  for (int spins = 0; spins < 100 && got < kN; ++spins) {
     Completion c[8];
-    std::size_t n = p.reap(c, 8, 1'000'000'000ull);
+    // Short timeout: once the 3 queued datagrams are drained the arm stays live
+    // (kMore) with no more data, so a long blocking reap would stall the test.
+    std::size_t n = p.reap(c, 8, 50'000'000ull);  // 50ms
     for (std::size_t i = 0; i < n; ++i) {
       if (c[i].user_data != 0xBEEF) continue;
       if (c[i].result <= 0) continue;  // 0/neg = terminal; skip
