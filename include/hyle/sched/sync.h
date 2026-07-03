@@ -693,7 +693,15 @@ struct OneshotState {
   ConditionVariable closed_cv;       // sender blocks here in closed() (rx gone)
   std::atomic<int> refcount{2};      // Sender + Receiver
   bool value_set = false;            // a value is stored (sender did send)
-  bool rx_alive = true;              // Receiver not yet dropped
+  bool rx_alive = true;              // Receiver not yet dropped (set under mu)
+  bool tx_alive = true;              // Sender not yet dropped (set under mu) --
+                                     // the close signal recv() waits on. Must be
+                                     // flipped UNDER mu (not inferred from the
+                                     // lock-free refcount): a waiter re-checks the
+                                     // predicate under mu, so the state change that
+                                     // frees it has to serialize with that check,
+                                     // or the notify races ahead of the flag and
+                                     // the receiver parks forever (lost wakeup).
   alignas(T) unsigned char storage[sizeof(T)];
 
   void release() noexcept {
@@ -769,8 +777,13 @@ class OneshotSender {
  private:
   void reset_() noexcept {
     if (state_ != nullptr) {
-      // Dropped without sending: wake the receiver so recv() returns Cancelled.
-      state_->cv.notify_one();
+      // Dropped without sending: flip the close flag UNDER mu (so a receiver
+      // re-checking the predicate under mu sees it -- flipping it via the
+      // lock-free refcount would race the notify and lose the wakeup), THEN notify.
+      state_->mu.lock();
+      state_->tx_alive = false;
+      state_->mu.unlock();
+      state_->cv.notify_one();  // wake the receiver so recv() returns Cancelled
       state_->release();
       state_ = nullptr;
     }
@@ -801,13 +814,10 @@ class OneshotReceiver {
     detail::OneshotState<T>* s = state_;
     state_ = nullptr;
     s->mu.lock();
-    // Wait until a value is set OR the sender is gone (its ref dropped -> refcount
-    // would be 1, i.e. only us). We detect "sender gone" via value_set staying
-    // false after a notify; encode it explicitly with the refcount check.
-    s->cv.wait(s->mu, [&] {
-      return s->value_set ||
-             s->refcount.load(std::memory_order_acquire) == 1;  // sender dropped
-    });
+    // Wait until a value is set OR the sender dropped without sending. Both flags
+    // are written under mu (tx_alive by the sender's reset_, value_set by send),
+    // so the predicate re-check under mu can't miss either -- no lost wakeup.
+    s->cv.wait(s->mu, [&] { return s->value_set || !s->tx_alive; });
     if (s->value_set) {
       T* p = reinterpret_cast<T*>(s->storage);
       T out = std::move(*p);
@@ -833,8 +843,7 @@ class OneshotReceiver {
       state_->mu.unlock();
       return out;
     }
-    const bool sender_gone =
-        state_->refcount.load(std::memory_order_acquire) == 1;
+    const bool sender_gone = !state_->tx_alive;  // flipped under mu by sender drop
     state_->mu.unlock();
     return std::unexpected(sender_gone ? Status::Cancelled("oneshot sender dropped")
                                        : Status::NotFound("oneshot empty"));
@@ -891,8 +900,12 @@ struct WatchState {
   util::SpinLock mu;
   ConditionVariable cv;
   std::atomic<int> refcount{0};   // senders + receivers; last drop frees
-  std::atomic<int> senders{0};    // >0 while any Sender alive
+  std::atomic<int> senders{0};    // >0 while any Sender alive (handle bookkeeping)
   std::atomic<int> receivers{0};  // live Receiver count (send() checks for 0)
+  bool closed = false;            // all senders gone; set UNDER mu (changed()'s
+                                  // close predicate -- flipping via the lock-free
+                                  // senders count would race the notify and lose
+                                  // the wakeup, so the flag is mu-guarded)
   std::uint64_t version = 0;      // bumped on each send; receivers track it
   alignas(T) unsigned char storage[sizeof(T)];  // the single current value
 
@@ -974,9 +987,10 @@ class WatchReceiver {
   // updates will ever come). A pending change already present returns at once.
   Result<void> changed() noexcept {
     state_->mu.lock();
+    // version and closed are both written under mu (send bumps version, the last
+    // sender's reset_ sets closed) -> the predicate re-check can't miss either.
     state_->cv.wait(state_->mu, [&] {
-      return state_->version != seen_ ||
-             state_->senders.load(std::memory_order_acquire) == 0;
+      return state_->version != seen_ || state_->closed;
     });
     const bool changed = (state_->version != seen_);
     seen_ = state_->version;  // mark seen (even on close, so we don't spin)
@@ -1102,10 +1116,15 @@ class WatchSender {
  private:
   void reset_() noexcept {
     if (state_ != nullptr) {
-      // Last sender gone -> wake receivers so their changed() returns Cancelled.
-      if (state_->senders.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-        state_->cv.notify_all();
-      }
+      // Decide "last sender" and flip `closed` UNDER mu, so a receiver re-checking
+      // changed()'s predicate under mu observes closed before it re-parks (flipping
+      // via the lock-free senders count alone would let the notify race ahead of
+      // the flag -> lost wakeup -> permanent hang after all senders gone).
+      state_->mu.lock();
+      const bool last = (state_->senders.fetch_sub(1, std::memory_order_acq_rel) == 1);
+      if (last) state_->closed = true;
+      state_->mu.unlock();
+      if (last) state_->cv.notify_all();  // wake receivers -> changed() returns Cancelled
       state_->release();
       state_ = nullptr;
     }
@@ -1160,8 +1179,11 @@ struct BroadcastState {
   util::SpinLock mu;
   ConditionVariable cv;            // receivers block here for the next value
   std::atomic<int> refcount{0};    // senders + receivers; last drop frees
-  std::atomic<int> senders{0};     // >0 while any Sender alive
+  std::atomic<int> senders{0};     // >0 while any Sender alive (handle bookkeeping)
   std::atomic<int> receivers{0};   // live Receiver count (for receiver_count())
+  bool closed = false;             // all senders gone; set UNDER mu (recv()'s close
+                                   // predicate -- mu-guarded, not inferred from the
+                                   // lock-free senders count, to avoid lost wakeup)
   std::size_t cap;                 // ring capacity (number of retained values)
   std::uint64_t write_pos = 0;     // monotonic id of the NEXT value to be written
   T* buf = nullptr;                // ring of `cap` slots (index = pos % cap)
@@ -1231,10 +1253,9 @@ class BroadcastReceiver {
   Result<T> recv() noexcept {
     auto* s = state_;
     s->mu.lock();
-    s->cv.wait(s->mu, [&] {
-      return cursor_ < s->write_pos ||
-             s->senders.load(std::memory_order_acquire) == 0;
-    });
+    // write_pos (send) and closed (last sender's reset_) are both written under mu,
+    // so the predicate re-check can't miss a value or the close -> no lost wakeup.
+    s->cv.wait(s->mu, [&] { return cursor_ < s->write_pos || s->closed; });
     // Closed and fully drained.
     if (cursor_ >= s->write_pos) {
       s->mu.unlock();
@@ -1339,9 +1360,13 @@ class BroadcastSender {
  private:
   void reset_() noexcept {
     if (state_ != nullptr) {
-      if (state_->senders.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-        state_->cv.notify_all();  // last sender gone -> unblock receivers to close
-      }
+      // Flip `closed` UNDER mu when the last sender leaves (see recv()'s predicate)
+      // so a blocked receiver observes it before re-parking -- no lost wakeup.
+      state_->mu.lock();
+      const bool last = (state_->senders.fetch_sub(1, std::memory_order_acq_rel) == 1);
+      if (last) state_->closed = true;
+      state_->mu.unlock();
+      if (last) state_->cv.notify_all();  // unblock receivers -> recv() returns closed
       state_->release();
       state_ = nullptr;
     }

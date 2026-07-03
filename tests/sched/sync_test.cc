@@ -657,19 +657,38 @@ TEST(Sync, RwLockReadersShareWriterExclusive) {
 // reader fibers holding the lock at once must push the concurrent-reader gauge
 // above 1. (Separated from the writer test because dense writers fragment the
 // readers into non-overlapping batches, hiding the sharing.)
+// Readers genuinely share, verified DETERMINISTICALLY (not via a flaky timing
+// gauge): every reader takes the read lock, then spins until ALL kReaders are
+// simultaneously inside the lock. If RwLock serialized readers, they could never
+// all be in at once -> the barrier never completes -> drain() hangs -> ctest
+// timeout. So completing at all IS the proof of concurrent read holders. Needs
+// >= kReaders workers so all reader fibers can run at once.
+struct RwOverlapArg {
+  RwLock rw;
+  std::atomic<int> inside{0};
+  int target;
+};
+void rw_overlap_body(void* p) {
+  auto* a = static_cast<RwOverlapArg*>(p);
+  auto g = a->rw.read();                       // shared read lock
+  a->inside.fetch_add(1, std::memory_order_acq_rel);
+  // Spin until everyone is inside -- only possible if reads truly share.
+  while (a->inside.load(std::memory_order_acquire) < a->target)
+    hyle::sched::Fiber::yield();
+}
 TEST(Sync, RwLockReadersOverlap) {
   constexpr int kReaders = 8;
-  RwArg a;
-  a.iters = 200;
+  auto a = std::make_unique<RwOverlapArg>();
+  a->target = kReaders;
   std::vector<std::unique_ptr<Fiber>> fibers;
   fibers.reserve(kReaders);
   for (int i = 0; i < kReaders; ++i)
     fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                             &rw_reader_body, &a));
-  Scheduler sched(4, system_allocator(), 1024);
+                                             &rw_overlap_body, a.get()));
+  Scheduler sched(kReaders, system_allocator(), 1024);  // enough workers for all
   for (auto& f : fibers) sched.spawn(f.get());
-  sched.drain();
-  EXPECT_GE(a.reader_peak.load(), 2);  // reads overlapped -> truly shared
+  sched.drain();  // completes ONLY if all kReaders held the read lock at once
+  EXPECT_EQ(a->inside.load(), kReaders);
 }
 
 // try_read / try_write reflect the current holder.
@@ -937,6 +956,70 @@ TEST(Sync, WatchSendNoReceivers) {
   EXPECT_FALSE(r.has_value());        // no consumer -> error
   EXPECT_EQ(tx.send_replace(2), 0);   // but state register still updates (old=0)
   EXPECT_EQ(tx.borrow(), 2);
+}
+
+// Stress the sender-drop-vs-recv race (the lost-wakeup window a red-team review
+// found): a receiver fiber blocks in recv() while a bare thread drops the sender
+// at an unpredictable moment. If the close signal weren't published under the CV
+// monitor lock, the notify could race ahead of the flag and the receiver would
+// hang -> drain() never returns -> ctest timeout. 200 rounds to hit the window.
+TEST(Sync, OneshotSenderDropRaceNoHang) {
+  for (int round = 0; round < 200; ++round) {
+    auto [tx, rx] = make_oneshot<int>(system_allocator());
+    std::atomic<bool> got_result{false};
+    struct RaceArg {
+      hyle::sched::OneshotReceiver<int> rx;
+      std::atomic<bool>* done;
+    };
+    auto arg = std::make_unique<RaceArg>();
+    arg->rx = std::move(rx);
+    arg->done = &got_result;
+    auto body = [](void* p) {
+      auto* a = static_cast<RaceArg*>(p);
+      auto r = std::move(a->rx).recv();  // must return (Cancelled), never hang
+      a->done->store(true, std::memory_order_release);
+      (void)r;
+    };
+    auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, body,
+                                     arg.get());
+    Scheduler sched(2, system_allocator(), 256);
+    sched.spawn(f.get());
+    // Alternate: half the rounds drop immediately (racing recv's entry), half
+    // after a short delay (guaranteeing the receiver is already PARKED -- the
+    // window where a lost close-notify hangs forever). Covers both interleavings.
+    if (round % 2 == 0)
+      std::this_thread::sleep_for(std::chrono::microseconds(200));
+    { auto dead = std::move(tx); }  // drop sender vs a (maybe already parked) recv
+    sched.drain();                  // hangs here if the wakeup was lost
+    EXPECT_TRUE(got_result.load());
+  }
+}
+
+// Same race for watch: receiver blocked in changed() while the last sender drops.
+TEST(Sync, WatchSenderDropRaceNoHang) {
+  for (int round = 0; round < 200; ++round) {
+    auto [tx, rx] = make_watch<int>(system_allocator(), 0);
+    std::atomic<bool> returned{false};
+    struct RaceArg {
+      hyle::sched::WatchReceiver<int> rx;
+      std::atomic<bool>* done;
+    };
+    auto arg = std::make_unique<RaceArg>();
+    arg->rx = rx;  // copy; original rx dropped at end of loop (keeps a receiver)
+    arg->done = &returned;
+    auto body = [](void* p) {
+      auto* a = static_cast<RaceArg*>(p);
+      (void)a->rx.changed();  // must return (Cancelled on close), never hang
+      a->done->store(true, std::memory_order_release);
+    };
+    auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, body,
+                                     arg.get());
+    Scheduler sched(2, system_allocator(), 256);
+    sched.spawn(f.get());
+    { auto dead = std::move(tx); }  // last sender drops vs changed()
+    sched.drain();                  // hangs here if the wakeup was lost
+    EXPECT_TRUE(returned.load());
+  }
 }
 
 // broadcast receiver_count / sender_count track live handles.
