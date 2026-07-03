@@ -766,7 +766,7 @@ TEST(Sync, WatchSeesLatestValue) {
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(frx.get());
   std::this_thread::sleep_for(std::chrono::milliseconds(10));  // receiver blocks
-  tx.send(99);
+  EXPECT_TRUE(tx.send(99).has_value());  // has receivers -> delivered
   sched.drain();
   EXPECT_TRUE(a->changed_ok.load());
   EXPECT_EQ(a->observed.load(), 99);
@@ -845,6 +845,113 @@ TEST(Sync, BroadcastLaggedOnOverflow) {
   auto r2 = rx.recv();
   EXPECT_TRUE(r2.has_value());
   EXPECT_EQ(*r2, 6);  // oldest retained = write_pos(10) - cap(4)
+}
+
+// ---- completeness: newly-added responsibilities -----------------------------
+
+// Semaphore RAII Permit releases automatically on scope exit; forget() removes it.
+TEST(Sync, SemaphorePermitGuard) {
+  Semaphore s(2);
+  {
+    auto p = s.acquire_guard(2);
+    EXPECT_TRUE(p.owns());
+    EXPECT_EQ(s.available(), 0u);
+  }
+  EXPECT_EQ(s.available(), 2u);  // returned on scope exit
+  {
+    auto p = s.acquire_guard(1);
+    p.forget();  // permanently remove this permit from the pool
+  }
+  EXPECT_EQ(s.available(), 1u);  // forgot 1 -> capacity shrank
+  auto none = s.try_acquire_guard(5);
+  EXPECT_FALSE(none.owns());  // can't get 5 from 1
+}
+
+// oneshot Sender::closed() blocks until the receiver is dropped (async cancel).
+struct OneshotClosedArg {
+  hyle::sched::OneshotSender<int> tx;
+  std::atomic<bool> saw_closed{false};
+};
+void oneshot_closed_body(void* p) {
+  auto* a = static_cast<OneshotClosedArg*>(p);
+  a->tx.closed();  // blocks until receiver gone
+  a->saw_closed.store(true, std::memory_order_release);
+}
+TEST(Sync, OneshotClosedAwaitsReceiverDrop) {
+  auto [tx, rx] = make_oneshot<int>(system_allocator());
+  auto a = std::make_unique<OneshotClosedArg>();
+  a->tx = std::move(tx);
+  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                   &oneshot_closed_body, a.get());
+  Scheduler sched(2, system_allocator(), 256);
+  sched.spawn(f.get());
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));  // sender blocks in closed()
+  EXPECT_FALSE(a->saw_closed.load());  // receiver still alive -> still blocked
+  { auto dead = std::move(rx); }       // drop the receiver
+  sched.drain();
+  EXPECT_TRUE(a->saw_closed.load());   // closed() returned
+}
+
+// RwLock write guard downgrades to a read guard without releasing the lock (no
+// writer can slip in): the value written under the write lock is still readable.
+TEST(Sync, RwLockDowngrade) {
+  RwLock rw;
+  auto rg = [&] {
+    auto w = rw.write();
+    EXPECT_TRUE(w.owns_lock());
+    return std::move(w).downgrade();  // -> ReadGuard, still holding the lock
+  }();
+  EXPECT_TRUE(rg.owns_lock());
+  EXPECT_TRUE(rw.try_read().owns_lock());   // other readers may now share
+  EXPECT_FALSE(rw.try_write().owns_lock());  // but no writer (rg still holds 1)
+}
+
+// watch send_modify mutates in place + notifies; borrow_and_update marks seen;
+// receiver_count reflects live receivers.
+TEST(Sync, WatchModifyAndCounts) {
+  auto [tx, rx] = make_watch<int>(system_allocator(), 10);
+  EXPECT_EQ(tx.receiver_count(), 1u);
+  {
+    auto rx2 = rx;  // copy -> another receiver
+    EXPECT_EQ(tx.receiver_count(), 2u);
+  }
+  EXPECT_EQ(tx.receiver_count(), 1u);  // rx2 dropped
+
+  tx.send_modify([](int& v) { v += 5; });  // 10 -> 15, notify
+  EXPECT_TRUE(rx.has_changed());
+  EXPECT_EQ(rx.borrow_and_update(), 15);   // read + mark seen
+  EXPECT_FALSE(rx.has_changed());          // seen now aligned
+
+  int old = tx.send_replace(99);           // returns old, unconditional
+  EXPECT_EQ(old, 15);
+  EXPECT_EQ(rx.borrow(), 99);
+}
+
+// watch send() with no receivers returns Cancelled (deliver-to-consumer sematics),
+// while send_replace still updates the shared state.
+TEST(Sync, WatchSendNoReceivers) {
+  auto [tx, rx] = make_watch<int>(system_allocator(), 0);
+  { auto dead = std::move(rx); }  // drop the only receiver
+  EXPECT_EQ(tx.receiver_count(), 0u);
+  auto r = tx.send(1);
+  EXPECT_FALSE(r.has_value());        // no consumer -> error
+  EXPECT_EQ(tx.send_replace(2), 0);   // but state register still updates (old=0)
+  EXPECT_EQ(tx.borrow(), 2);
+}
+
+// broadcast receiver_count / sender_count track live handles.
+TEST(Sync, BroadcastCounts) {
+  auto [tx, rx] = make_broadcast<int>(system_allocator(), 8);
+  EXPECT_EQ(tx.receiver_count(), 1u);
+  EXPECT_EQ(tx.sender_count(), 1u);
+  {
+    auto rx2 = tx.subscribe();
+    auto tx2 = tx;
+    EXPECT_EQ(tx.receiver_count(), 2u);
+    EXPECT_EQ(tx.sender_count(), 2u);
+  }
+  EXPECT_EQ(tx.receiver_count(), 1u);
+  EXPECT_EQ(tx.sender_count(), 1u);
 }
 
 }  // namespace
