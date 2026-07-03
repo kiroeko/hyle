@@ -8,6 +8,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/platform.h"  // HYLE_OS_WINDOWS (Mutex backend split)
 #include "hyle/sched/waker.h"
 #include "hyle/util/spin_lock.h"
 #include "hyle/visibility.h"
@@ -230,10 +231,16 @@ class ConditionVariable {
 // (SRWLOCK has kernel-assisted adaptive spinning; WaitOnAddress park is heavier,
 // and a userspace pre-park spin can't be used over an M:N fiber scheduler -- it
 // burns the worker thread the lock holder's fiber may be queued on). On Linux the
-// Drepper futex over the futex syscall matches glibc; kept. SRWLOCK is pointer-
-// sized and zero-init (== SRWLOCK_INIT), stored opaquely here as void* and cast in
-// the .cc so this header pulls in no <windows.h>.
-#if defined(_WIN32)
+// Drepper futex over the futex syscall matches glibc (measured a statistical tie
+// vs marl/std::mutex, so no OS-lock win to chase there). SRWLOCK is pointer-sized
+// and zero-init (== SRWLOCK_INIT), stored opaquely here as void* and cast in the
+// .cc so this header pulls in no <windows.h>.
+//
+// macOS falls in the #else (Drepper futex over os_sync_wait_on_address, which is
+// correct + works). macOS has os_unfair_lock (its SRWLOCK-equivalent fast OS lock)
+// -- a likely win there too, but UNMEASURED (no mac to bench), so not added: adding
+// an untested platform branch would violate "write+verify". Revisit with a mac.
+#if defined(HYLE_OS_WINDOWS)
 class Mutex {
  public:
   Mutex() noexcept = default;

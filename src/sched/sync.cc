@@ -3,6 +3,7 @@
 #include <atomic>
 
 #include "hyle/macros.h"
+#include "hyle/platform.h"  // HYLE_OS_WINDOWS (Mutex backend split)
 #include "hyle/platform/wait.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/waker.h"
@@ -232,7 +233,7 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(
 
 // inline; unlock_slow runs only when there were waiters.
 
-#if !defined(_WIN32)
+#if !defined(HYLE_OS_WINDOWS)
 void Mutex::lock_slow(std::uint32_t c) noexcept {
   // `c` is the value the fast-path CAS observed (non-zero -> contended). Flag
   // the lock as "has waiters" (2) and futex-park while it stays 2. Each wakeup
@@ -259,12 +260,12 @@ void Mutex::unlock_slow() noexcept {
   state_.store(0, std::memory_order_release);
   platform::detail::wake_one(&state_);
 }
-#endif  // !_WIN32
+#endif  // !HYLE_OS_WINDOWS
 
 }  // namespace hyle::sched
 
 // ---- Windows Mutex = SRWLOCK (measured 2.66x faster contended than the futex) --
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 
@@ -286,4 +287,4 @@ void Mutex::unlock() noexcept {
 }
 
 }  // namespace hyle::sched
-#endif  // _WIN32
+#endif  // HYLE_OS_WINDOWS
