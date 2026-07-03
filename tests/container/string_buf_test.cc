@@ -10,6 +10,7 @@
 #include "hyle/mem/allocator.h"
 
 using hyle::container::destroy_string_buf;
+using hyle::container::InternId;
 using hyle::container::make_string_buf;
 using hyle::container::string_ref;
 using hyle::container::StringBuf;
@@ -17,8 +18,8 @@ using hyle::mem::system_allocator;
 
 TEST(StringBuf, AddAndLookup) {
   StringBuf buf(system_allocator());
-  std::uint64_t h = buf.add("hello");
-  EXPECT_NE(h, 0u);
+  InternId h = buf.add("hello");
+  EXPECT_FALSE(h.empty());
   string_ref s = buf.lookup(h);
   EXPECT_TRUE(s == string_ref{"hello"});
   EXPECT_TRUE(s.null_terminated);  // interned strings are always C-usable
@@ -27,15 +28,15 @@ TEST(StringBuf, AddAndLookup) {
 
 TEST(StringBuf, EmptyStringIsImplicitZero) {
   StringBuf buf(system_allocator());
-  EXPECT_EQ(buf.add(""), 0u);          // empty maps to 0, never stored
+  EXPECT_TRUE(buf.add("").empty());          // empty maps to empty id, never stored
   EXPECT_EQ(buf.size(), 0u);
-  EXPECT_TRUE(buf.lookup(0).empty());  // 0 -> empty string
-  EXPECT_TRUE(buf.lookup(0).null_terminated);
+  EXPECT_TRUE(buf.lookup(InternId{0}).empty());  // empty id -> empty string
+  EXPECT_TRUE(buf.lookup(InternId{0}).null_terminated);
 }
 
 TEST(StringBuf, MissingHashLookupIsEmpty) {
   StringBuf buf(system_allocator());
-  EXPECT_TRUE(buf.lookup(0xDEADBEEFu).empty());
+  EXPECT_TRUE(buf.lookup(InternId{0xDEADBEEF}).empty());
 }
 
 TEST(StringBuf, InternReturnsStablePointerForEqualContent) {
@@ -68,7 +69,7 @@ TEST(StringBuf, InternedAddressSurvivesMoreInterns) {
 
 TEST(StringBuf, RefcountReclaimsOnLastRemove) {
   StringBuf buf(system_allocator());
-  std::uint64_t h = buf.add("refcounted");  // refs = 1
+  InternId h = buf.add("refcounted");       // refs = 1
   buf.retain(h);                            // refs = 2  (== add again)
   EXPECT_EQ(buf.size(), 1u);
 
@@ -83,8 +84,8 @@ TEST(StringBuf, RefcountReclaimsOnLastRemove) {
 
 TEST(StringBuf, AddSameContentBumpsRefcountNotSize) {
   StringBuf buf(system_allocator());
-  std::uint64_t h1 = buf.add("dup");
-  std::uint64_t h2 = buf.add("dup");
+  InternId h1 = buf.add("dup");
+  InternId h2 = buf.add("dup");
   EXPECT_EQ(h1, h2);             // same content -> same handle
   EXPECT_EQ(buf.size(), 1u);     // one allocation
   buf.remove(h1);
@@ -95,15 +96,15 @@ TEST(StringBuf, AddSameContentBumpsRefcountNotSize) {
 
 TEST(StringBuf, RemoveUnknownOrZeroIsNoop) {
   StringBuf buf(system_allocator());
-  buf.remove(0);            // no-op (empty string)
-  buf.remove(0xABCDu);      // no-op (never added)
-  buf.retain(0xABCDu);      // no-op
+  buf.remove(InternId{0});       // no-op (empty string)
+  buf.remove(InternId{0xABCD});  // no-op (never added)
+  buf.retain(InternId{0xABCD});  // no-op
   EXPECT_EQ(buf.size(), 0u);
 }
 
 TEST(StringBuf, ManyDistinctStrings) {
   StringBuf buf(system_allocator());
-  std::vector<std::uint64_t> handles;
+  std::vector<InternId> handles;
   for (int i = 0; i < 5000; ++i)
     handles.push_back(buf.add(std::string("s") + std::to_string(i)));
   EXPECT_EQ(buf.size(), 5000u);
@@ -116,7 +117,7 @@ TEST(StringBuf, ManyDistinctStrings) {
 TEST(StringBuf, MakeDestroyFactory) {
   StringBuf* buf = make_string_buf(system_allocator());
   ASSERT_NE(buf, nullptr);
-  std::uint64_t h = buf->add("factory");
+  InternId h = buf->add("factory");
   EXPECT_TRUE(buf->lookup(h) == string_ref{"factory"});
   destroy_string_buf(buf);  // must free the pool + all interned strings
 }

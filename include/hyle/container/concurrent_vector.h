@@ -71,7 +71,7 @@ class ConcurrentVector {
     }
     for (std::uint32_t k = 0; k < num_segments_; ++k) {
       if (segments_[k] != nullptr)
-        alloc_.release(segments_[k], seg_capacity(k));
+        alloc_.deallocate_n(segments_[k], seg_capacity(k));
     }
   }
 

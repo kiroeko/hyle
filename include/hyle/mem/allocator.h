@@ -80,9 +80,12 @@ class Allocator {
   ReallocFn realloc_fn() const noexcept { return realloc_fn_; }
   void* state() const noexcept { return state_; }
 
-  // ---- typed convenience layer (clay allocator.h parity) --------------------
-  // Header-inline (hot path, no DLL hop). Mirrors clay's allocate<T>/callocate/
-  // release/construct/destroy/make_unique.
+  // ---- typed convenience layer --------------------------------------------
+  // Header-inline (hot path, no DLL hop). Names chosen for C++ clarity, NOT clay
+  // parity: clay called these callocate/release, but `release` collides with
+  // unique_ptr::release (which does the OPPOSITE -- gives up ownership WITHOUT
+  // freeing), so it's a real confusion source. HYLE uses allocate_zeroed /
+  // deallocate_n instead (paired with allocate_n; behavior unchanged).
 
   // Raw storage for `numel` T's, aligned for T. No construction.
   template <class T>
@@ -92,18 +95,18 @@ class Allocator {
 
   // Zero-initialized storage for trivially-constructible T.
   template <class T>
-  T* callocate(std::size_t numel = 1) const noexcept {
+  T* allocate_zeroed(std::size_t numel = 1) const noexcept {
     static_assert(std::is_trivially_constructible_v<T>,
-                  "callocate requires trivially-constructible T");
+                  "allocate_zeroed requires trivially-constructible T");
     std::size_t sz = sizeof(T) * numel;
     void* p = allocate(sz, alignof(T));
     if (p != nullptr) std::memset(p, 0, sz);
     return static_cast<T*>(p);
   }
 
-  // Free typed storage from allocate_n/callocate (no destructor call).
+  // Free typed storage from allocate_n/allocate_zeroed (no destructor call).
   template <class T>
-  void release(T* ptr, std::size_t numel = 1) const noexcept {
+  void deallocate_n(T* ptr, std::size_t numel = 1) const noexcept {
     deallocate(ptr, sizeof(T) * numel, alignof(T));
   }
 
@@ -120,7 +123,7 @@ class Allocator {
   void destroy(T* ptr) const noexcept {
     if (ptr != nullptr) {
       ptr->~T();
-      release(ptr);
+      deallocate_n(ptr);
     }
   }
 

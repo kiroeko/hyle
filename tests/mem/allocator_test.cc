@@ -118,15 +118,15 @@ TEST(AllocatorTyped, AllocateNAlignedAndWritable) {
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(p) % alignof(int), 0u);
   for (int i = 0; i < 5; ++i) p[i] = i;  // writable
   EXPECT_EQ(p[4], 4);
-  a.release(p, 5);
+  a.deallocate_n(p, 5);
 }
 
-TEST(AllocatorTyped, CallocateZeroes) {
+TEST(AllocatorTyped, AllocateZeroedZeroes) {
   Allocator a = system_allocator();
-  int* p = a.callocate<int>(8);
+  int* p = a.allocate_zeroed<int>(8);
   ASSERT_NE(p, nullptr);
   for (int i = 0; i < 8; ++i) EXPECT_EQ(p[i], 0);
-  a.release(p, 8);
+  a.deallocate_n(p, 8);
 }
 
 TEST(AllocatorTyped, ConstructRunsCtorDestroyRunsDtor) {

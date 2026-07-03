@@ -65,37 +65,37 @@ Entry* find_or_add_locked(SwissTable<std::uint64_t, Entry>& table,
 }
 }  // namespace
 
-std::uint64_t StringBuf::add(string_ref s) noexcept {
-  if (s.size == 0) return 0;  // empty string is implicit, never stored
+InternId StringBuf::add(string_ref s) noexcept {
+  if (s.size == 0) return InternId{0};  // empty string is implicit, never stored
   std::uint64_t h = hash_bytes(s.data, s.size);
   std::lock_guard<std::mutex> lock(impl_->mu);
   find_or_add_locked(impl_->table, alloc_, s, h);
-  return h;
+  return InternId{h};
 }
 
-void StringBuf::retain(std::uint64_t hash) noexcept {
-  if (hash == 0) return;
+void StringBuf::retain(InternId id) noexcept {
+  if (id.value == 0) return;
   std::lock_guard<std::mutex> lock(impl_->mu);
-  if (Entry* e = impl_->table.find(hash)) ++e->refs;
+  if (Entry* e = impl_->table.find(id.value)) ++e->refs;
 }
 
-void StringBuf::remove(std::uint64_t hash) noexcept {
-  if (hash == 0) return;
+void StringBuf::remove(InternId id) noexcept {
+  if (id.value == 0) return;
   std::lock_guard<std::mutex> lock(impl_->mu);
-  Entry* e = impl_->table.find(hash);
+  Entry* e = impl_->table.find(id.value);
   if (e == nullptr) return;
   if (--e->refs == 0) {
     char* data = e->data;
     std::uint32_t size = e->size;
-    impl_->table.erase(hash);  // invalidates e
+    impl_->table.erase(id.value);  // invalidates e
     alloc_.deallocate(data, size + 1);
   }
 }
 
-string_ref StringBuf::lookup(std::uint64_t hash) noexcept {
-  if (hash == 0) return string_ref{"", 0, true};
+string_ref StringBuf::lookup(InternId id) noexcept {
+  if (id.value == 0) return string_ref{"", 0, true};
   std::lock_guard<std::mutex> lock(impl_->mu);
-  if (Entry* e = impl_->table.find(hash))
+  if (Entry* e = impl_->table.find(id.value))
     return string_ref{e->data, e->size, true};
   return string_ref{};
 }

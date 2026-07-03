@@ -157,8 +157,8 @@ int bench_string_buf() {
     b2.run("HYLE StringBuf add/retain/remove (SwissTable erase+free)", [&] {
       StringBuf buf(system_allocator());
       for (const auto& s : uniques) {
-        std::uint64_t h = buf.add(string_ref{s.data(),
-                                             static_cast<std::uint32_t>(s.size())});
+        auto h = buf.add(string_ref{s.data(),
+                                    static_cast<std::uint32_t>(s.size())});
         buf.retain(h);
         buf.remove(h);  // drop the retain
         buf.remove(h);  // drop the add -> count zero -> erase + deallocate

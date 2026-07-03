@@ -26,6 +26,19 @@ namespace hyle::container {
 // mem::Allocator (a header-only, non-exported type), so exporting the class
 // whole would trip MSVC C4251. Methods that cross the DLL carry the macro; the
 // layout is instantiated client-side (conventions §3.5).
+// Opaque handle to an interned string, returned by StringBuf::add and consumed by
+// retain/remove/lookup. It IS the content hash internally, but the strong type
+// stops a caller from passing a hand-computed hash (or any random uint64) where a
+// handle is expected -- add() is the only sanctioned way to mint one. Trivially
+// copyable (fits registers / SwissTable slots). Default / kEmpty == the empty
+// string (never stored). (Was a raw uint64_t = clay's "hash is the id"; the strong
+// type is a HYLE type-safety upgrade, zero runtime cost -- it compiles away.)
+struct InternId {
+  std::uint64_t value = 0;
+  friend bool operator==(InternId, InternId) noexcept = default;
+  bool empty() const noexcept { return value == 0; }
+};
+
 class StringBuf {
  public:
   HYLE_CONTAINER_API explicit StringBuf(
@@ -33,21 +46,21 @@ class StringBuf {
   HYLE_CONTAINER_API ~StringBuf();
   HYLE_DISABLE_COPY_AND_MOVE(StringBuf);
 
-  // Adds `s` (bumping its refcount if already present). Returns its 64-bit hash,
-  // which is the handle for lookup()/retain()/remove(). The empty string always
-  // maps to 0 and is never stored.
-  HYLE_CONTAINER_API std::uint64_t add(string_ref s) noexcept;
+  // Adds `s` (bumping its refcount if already present). Returns its InternId
+  // handle for lookup()/retain()/remove(). The empty string always maps to the
+  // empty InternId (value 0) and is never stored.
+  HYLE_CONTAINER_API InternId add(string_ref s) noexcept;
 
-  // Bumps the refcount of an already-interned string by its hash (== add of the
+  // Bumps the refcount of an already-interned string by its handle (== add of the
   // same content, without needing the bytes again).
-  HYLE_CONTAINER_API void retain(std::uint64_t hash) noexcept;
+  HYLE_CONTAINER_API void retain(InternId id) noexcept;
 
   // Drops one reference. When the count reaches the number of add()s, the
   // string's storage is reclaimed and its pointer becomes invalid.
-  HYLE_CONTAINER_API void remove(std::uint64_t hash) noexcept;
+  HYLE_CONTAINER_API void remove(InternId id) noexcept;
 
-  // String for `hash`, or empty if absent. The result is always null-terminated.
-  HYLE_CONTAINER_API string_ref lookup(std::uint64_t hash) noexcept;
+  // String for `id`, or empty if absent. The result is always null-terminated.
+  HYLE_CONTAINER_API string_ref lookup(InternId id) noexcept;
 
   // Interns `s` to a stable, null-terminated pointer (== lookup(add(s))). All
   // equal-content strings intern to the same pointer.
