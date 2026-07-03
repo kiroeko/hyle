@@ -8,15 +8,19 @@ clay 没死于技术差——内存/SIMD/线程池都是真的。它死于**没�
 
 **AI-native workload 是第一个四样全压的大众负载。** 这是"一套底座"从"没人需要"变成"刚需"的临界点——也是 HYLE 区别于 clay 的根本外部条件。不是我们更聪明，是时代变了。
 
-## 北极星：蜂群 agent（v1 主攻）
+## 北极星：类 llama.cpp 推理引擎 + 通用加速库（v1 主攻）
 
-三个 AI-native 场景按契合度排序，**蜂群 agent 是最尖的刀**：
+> **2026-07-03 重排(用户纠偏)**：早期把"蜂群 agent"列为最尖的刀——**太窄、会误导**(它只压 fiber+io+channel,不压 compute/simd,且把 HYLE 引向"agent 专用"而非"通用底座")。真正第一位的是 **类 llama.cpp 的推理引擎 + 通用加速库**：它**四样全压**(io serving + sched 批调度 + mem paged-cache + compute/simd kernel),是"同一套底座吃满四样"最直接的证明。蜂群 agent 降为**消费者之一**,不再是唯一锚。
+
+三个 AI-native 场景按契合度排序：
 
 | workload | 压哪几根支柱 | std/拼装货为什么不行 | 契合度 |
 |---|---|---|---|
-| **蜂群 agent** | fiber + io + channel（百万并发 agent，几乎都在等 LLM/工具/网络）| `std::thread` 几千个就崩；thread-per-agent 是灾难 | **最强** |
-| **推理引擎** | io+sched+mem+compute 全压（高并发服务 + paged KV-cache + 批调度 + GPU kernel）| serving 层和 compute 层用胶水粘，阻抗失配 | 强（HYLE 当引擎下面的 infra，不与 vLLM 正面竞争）|
+| **推理引擎 / 加速库**(类 llama.cpp)| **四样全压**：io(RESTful serving,**HTTP 是标配**)+ sched(批调度/连续 batching)+ mem(paged KV-cache)+ compute/simd(GPU/CPU kernel)| serving 层和 compute 层用胶水粘、阻抗失配;llama.cpp 自己得 vendor cpp-httplib+ggml 拼 | **最强**——四样全压=底座价值最直接 |
+| **蜂群 agent** | fiber + io + channel（百万并发 agent，几乎都在等 LLM/工具/网络）| `std::thread` 几千个就崩；thread-per-agent 是灾难 | 强（fiber 最契合,但只压半边;是引擎的**消费者**）|
 | **训练引擎** | io+simd 数据管线 + host 编排 | 核心循环是 PyTorch/JAX/NCCL 地盘 | 较弱 |
+
+**为什么"推理引擎/加速库"是对的锚**：llama.cpp 是活证据——一个真推理引擎必然**同时**要 ①高并发 RESTful serving(它 vendor 了 cpp-httplib)②GPU/CPU kernel(它就是 ggml)③KV-cache 内存管理 ④请求批调度。这四样正是 HYLE 四支柱。**HYLE 定位=做 llama.cpp 脚下那层它现在只能东拼西凑(httplib+ggml+自写线程)的统一底座**。**RESTful API 因此是底座一等能力,不是可选 L1**——AI 服务器不可能不提供 REST。(HTTP 实现成本/借-造抉择见 scope 的 HTTP 专项评估。)
 
 **为什么蜂群 agent 最对**：
 - 一个 agent 大部分时间在**等**（LLM 返回、工具、网络），CPU 几乎闲着。
@@ -47,10 +51,19 @@ Seastar 是参考标杆：per-core + DPDK/SPDK 内核旁路 IO、completion 驱�
 
 ## 诚实边界（聚焦，不是唱衰）
 
-- **仍要选一个北极星**，否则又摊薄成「三场景都做、都 70 分」。v1 以蜂群 agent 为锚——最差异化、最契合 fiber+io、对 GPU 依赖最轻（compute 可后接）。
-- **顺序**：让北极星定义需求、HYLE 跟着砍，而非先做完通用全套再找用户。这也反过来锐化 scope——agent 北极星下，fiber/io/channel/mem 绝不妥协，simd/compute 可稍后。
+- **仍要选一个北极星**，否则又摊薄成「三场景都做、都 70 分」。v1 以**类 llama.cpp 推理引擎 + 通用加速库**为锚——四样全压、最能证明"同一套底座"的价值；蜂群 agent 是其消费者之一（fiber 最契合但只压半边）。
+- **顺序**：让北极星定义需求、HYLE 跟着砍，而非先做完通用全套再找用户。这也反过来锐化 scope——引擎北极星下，io serving/sched 批调度/mem cache/compute kernel 都要压实。
 - **采用现实**：作为「广泛采用的通用库」前景仍难（迁移成本/风险厌恶）；作为「一个具体 AI-native 引擎的专用底座」完全合理。**定位决定一切**。
+
+## 网络能力 + "超 nginx" 的诚实定位
+
+推理引擎必然要 RESTful serving（llama.cpp 自己 vendor cpp-httplib），故 **HTTP/网络是 HYLE 的一等能力**，不是可选 L1。但做法是"借纯协议 parser + 自造集成层 over 自有 io_uring/fiber"（详见 [`hyle-scope.md` HTTP 专项](./hyle-scope.md)），不结合完整网络库（C++ 无中立异步契约，asio/beast/httplib 结合都不干净）、也不自研 RFC。
+
+**"能不能建个超过 nginx 的 HTTP 服务器"——诚实拆**：
+- **纯静态文件伺服** PK nginx：能打平、**极难超过**（nginx 20 年 sendfile/内存池调优贴内核天花板），**且是伪目标**——那不是 HYLE 的战场。
+- **高并发动态 / AI serving**（HTTP serving 与 compute/GPU/KV-cache **同进程零阻抗协作**）：这里 HYLE 有**结构性架构优势**（io_uring 完成模型 + fiber co_await + 同进程），"超过 nginx 类方案"可信——但真正对手是"**nginx + AI 引擎用胶水拼装**"这个组合，HYLE 赢在**消除那层阻抗失配**，不是单挑纯 HTTP 吞吐。
+- **诚实预期**：第一版大概率多项负载不如 nginx（一如 io echo 初版输裸 epoll 0.61x，迭代后才追平），靠迭代 + 老实 benchmark 追。**别把底座降维成"又一个 HTTP 服务器"去和 nginx 单挑**——那等于放弃唯一差异化。HYLE 的北极星不是"打败 nginx"，是"做 llama.cpp 那种引擎脚下、nginx+ggml 拼不出来的统一底座"。
 
 ## 一句话
 
-clay 死于生不逢时——它要的 workload 还没来。HYLE 生于 AI-native 负载把「并发+内存+计算+IO」四样同时压满的时代，**以蜂群 agent 为北极星**，靠「同一套底座 + 吃尽硬件独家加速」做到 std/拼装货摸不到的极致。不求广泛采用，求成为一个有说服力的 AI-native 引擎的地基。
+clay 死于生不逢时——它要的 workload 还没来。HYLE 生于 AI-native 负载把「并发+内存+计算+IO」四样同时压满的时代，**以类 llama.cpp 推理引擎 + 通用加速库为北极星**（蜂群 agent 是其消费者之一），靠「同一套底座 + 吃尽硬件独家加速」做到 std/拼装货摸不到的极致。不求广泛采用，求成为一个有说服力的 AI-native 引擎的地基。

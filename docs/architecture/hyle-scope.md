@@ -128,7 +128,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 - **非玩具**：已实现部分零 stub/TODO、测试密（simd 全 65536 fp16 硬件逐位对拍、红队揪真 bug），玩具撑不住。
 - **scope 仍会长回**：simd 实测 2.3k 是 Highway 数值子集（4 lane 类型 + ~25 op + 2 ISA），非功能对等（Highway 12 类型 + ~200 op + 6 ISA）。量化类型/更多 op 是显式延期，补齐后涨到 ~5-8k。**别把"广度未铺开"误读成"已精简完毕"。**
 
-**实现粒度**：上表是体量、**不是步骤**。落地为**约 55 个里程碑**（milestones/README 为准），每个 1-4k 行、可独立编/测/基准。6 个"阶段 P0-P6"是依赖层拓扑序，不是 6 步。先走 walking skeleton（纵切各层最小片）打通调度脊、验最高风险，再逐里程碑加厚。
+**实现粒度**：上表是体量、**不是步骤**。落地为**约 57 个里程碑**（milestones/README 为准），每个 1-4k 行、可独立编/测/基准。6 个"阶段 P0-P6"是依赖层拓扑序，不是 6 步。先走 walking skeleton（纵切各层最小片）打通调度脊、验最高风险，再逐里程碑加厚。
 
 ## 边界外（明确不做）
 
@@ -180,7 +180,9 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 | **① 应用/领域层**:Tensor/autograd/optimizer/训练循环、tokenizer/sampler/KV-cache、模型格式语义、agent 逻辑/prompt、渲染 | ✅ **KEEP OUT** | 真 L2 领域。北极星是 agent 的**底座**不是 agent 本身;KV-cache/sampler 是推理引擎(消费方)的活。HYLE 给 compute/mem,拼成网络是上层事。判对。 |
 | **② 加密/TLS**(借 BoringSSL)| 🔄 **BORROW→已登记** | 原判"借不造"对,但**漏了登记**——公网 agent/服务必需。已改判 C9/io-08(借 shim,不自 roll)。 |
 | **② GPU 算子/压缩/JSON**(借 ggml/lz4/simdjson)| ✅ **BORROW**(判对)| 成熟库解决,自造=浪费/危险。北极星需要但"借"就够。JSON 借 simdjson 已明确。 |
-| **③ HTTP/gRPC/WebSocket 协议** | ✅ **KEEP OUT** | 真协议(L1)。但⚠️ 见下"DISCUSS-1":agent 大量调 LLM HTTP API,**HTTP 客户端**可能是北极星刚需——协议解析 vs 客户端能力要分开看。 |
+| **③ HTTP/1.1 协议层(client+server 骨架)** | 🔄 **改判 PULL IN(有条件)** | **北极星重排后此条翻案**:类 llama.cpp 推理引擎**必然要 RESTful serving**(llama.cpp 自己 vendor cpp-httplib)——AI 服务器不可能不提供 REST。故 HTTP over fiber/proactor 是底座一等能力,不是 L1。**但成本大、且不能抄 asio**→见下"HTTP 专项:成本与借-造抉择",借-造未定前不动手。 |
+| **③ HTTP/2·gRPC·WebSocket** | 🟡 **KEEP OUT(暂,随 HTTP/1.1 复看)** | HTTP/2(HPACK/多路复用)、gRPC(protobuf 绑定)、WebSocket 更重更偏框架。先看 HTTP/1.1 借-造结论,再定是否有必要。gRPC 依赖 protobuf 编译器=更靠 L1。 |
+| **③ 路由/中间件/handler DSL/业务端点** | ✅ **KEEP OUT** | 这才是 HTTP 框架/应用(L1/L2)。llama.cpp 的 `/v1/chat` 端点是 L2;它底下的 httplib 那层才是 HYLE 该给的。**线画在"协议骨架 vs 路由业务"之间**。 |
 | **③ IDL/schema 编译器** | ✅ **KEEP OUT** | 编译器是工具链;但**序列化运行时原语**(builder/reader)是另一回事→ DISCUSS-2。 |
 | **③ RPC 框架/服务网格/服务发现** | ✅ **KEEP OUT** | 真框架(L1)。agent 用得上但那是消费方拼。 |
 | **③ 数据库/存储引擎/KV store** | 🟡 **KEEP OUT(存疑)** | 引擎是 L1。但 agent 要**持久化状态/记忆**——嵌入式 KV(如借 RocksDB/lmdb 封装)是否算底座件?倾向 KEEP OUT(借现成),记此存疑。 |
@@ -197,11 +199,44 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 - **Semaphore / RwLock / oneshot / broadcast·watch**(C7/sched-09)、**JoinHandle + select/when_all**(C7/sched-10)、**spawn_blocking**(C8/sched-11)、**带超时 io**(C2/io-06)、**multishot+buffer ring**(C1/io-07)、**异步 DNS + signal**(C10/io-09)。全在**原语侧**、全是北极星(百万等待中的 agent + 服务底座)刚需。
 
 **待你拍板(DISCUSS)**:
-- **DISCUSS-1 HTTP 客户端**:协议解析属 L1(KEEP OUT),但蜂群 agent 的本质就是"百万个都在等 LLM HTTP API"——一个**异步 HTTP 客户端**(不是服务器/框架)是否是北极星刚需的底座件?还是借现成(且现成的多是同步/自带运行时,和 HYLE fiber 冲突)?这是北极星最尖的刀直接指向的问题,**最该先定**。
+- **DISCUSS-1 HTTP —— ✅ 已定案**(见下"HTTP/网络能力:最终结论"):三层分工=IO 自有 / 解析借纯 parser(picohttpparser 起步)/ 集成自写 / 路由业务留上层。结合完整库(asio/beast/httplib)三条死路已论证排除(C++ 无中立异步契约)。
 - **DISCUSS-2 序列化运行时原语**:借 flatbuffers/capnproto 的 builder+reader 当原语(不含 schema 编译器),还是全推 L1?agent 间消息/持久化状态要序列化。
 - **DISCUSS-3 数据并行层**(parallel_for/reduce/scan):原语无疑,归 graph 还是 compute 未定;有消费者(大 buffer kernel)故非投机,可缓。
 
-> **重审结论**:早期"四类不做"的**大框对**(领域/协议/框架/工具链确实在外),但犯了两类错——① **漏登记该借的原语**(TLS、trace 埋点),已补;② **把原语和它上面的策略捆在一起判出界**(序列化 vs IDL、trace 产出 vs 聚合、HTTP 客户端 vs 协议框架)。修正方式=**拆细粒度**:原语侧拉进来,策略/协议侧留在外。DISCUSS-1/2/3 三项需你拍板后才好动 io/compute 后段。
+> **重审结论**:早期"四类不做"的**大框对**(领域/框架/工具链确实在外),但犯了两类错——① **漏登记该借的原语**(TLS、trace 埋点),已补;② **把原语和它上面的策略捆在一起判出界**(序列化 vs IDL、trace 产出 vs 聚合、HTTP 协议骨架 vs 路由业务)。修正方式=**拆细粒度**:原语侧拉进来,策略/框架侧留在外。
+
+### HTTP / 网络能力:最终结论(2026-07-03 定案)
+
+> 一路问题收敛:自己实现所有 RFC 成本太高、完全不管网络又不对(推理引擎必需 REST)、结合现成完整库(asio/beast/httplib)在 C++ 里不干净。定案如下。
+
+**定位**:HTTP/网络是 HYLE **一等能力**(类 llama.cpp 推理引擎必然要 RESTful serving),但**只做到"协议骨架 over 自有 io",不做路由/框架/业务**。
+
+**做法——三层分工(业界自有运行时的库一致选择:seastar/tokio/folly)**:
+
+| 层 | 谁做 | 说明 |
+|---|---|---|
+| 路由 / 中间件 / handler / 业务端点(`/v1/chat`)| **上层(L1/L2)** | 真框架/应用,不是底座 |
+| **HTTP 集成层**:读循环→喂 parser→出 Request→组 Response→write | **HYLE 自写(~1-2k/协议)** | ★HYLE 的价值 + 性能所在:HTTP over fiber/proactor,非阻塞线程池 |
+| **协议解析器**(请求行/头/chunked/HPACK 等纯状态机)| **借纯 parser** | picohttpparser/llhttp(HTTP/1.1)、nghttp2(HTTP/2);零 IO 零线程,vendor 一个文件 |
+| TCP / TLS / 超时 / DNS + proactor + fiber | **HYLE 自有** | 性能命根子,io-04✅ / io-06 / io-08 / io-09 |
+
+**为什么不结合现成完整网络库(调研实证,三条死路)**:
+1. **HYLE 用 asio/libevent** → 它们的协议层焊死自己的 `io_context`/event_base,只能 `poll_one()`/`EVLOOP_NONBLOCK` **单步驱动**=**双重 poll**(asio/libevent 自己还在 epoll/io_uring,HYLE proactor 也在)→ 直接废掉 io_uring 优势。cpp-httplib 更是阻塞线程池,和 fiber 冲突。
+2. **C-ABI 让完整库反向用 HYLE 的 io** → 也不行。障碍是**运行时控制反转**(谁拥有事件循环、完成怎么通知),不是调用约定;完整库编译期就焊死"等我自己的循环",C++ 库又几乎没有"可插拔 IO 后端"插槽,C-ABI 插头再标准也无处可插(除非改库源码=fork 重写,比借 parser 还贵)。
+3. **根因:C++ 没有中立异步契约**。Rust 能干净结合(hyper 只依赖 `AsyncRead/AsyncWrite` trait,tokio-uring 换后端 hyper 零改)是因为 `Future/Poll/Waker` 是语言级契约;C++ 无等价物(asio concept 绑 executor、seastar 绑 future/reactor、P2300 sender/receiver 还没库用)。**所以"用别人的完整协议库 + 自己的运行时"在 C++ 里本质做不到干净结合。**
+
+> **活路只有一条**(seastar/tokio/folly 全走):**借纯 parser(不碰 IO)+ 自造集成层(接 HYLE io_uring/fiber)**。seastar 是最直接先例——自有 reactor→自己写 HTTP 栈(~3.5k 行)但解析交给 Ragel 生成;不手写协议。C-ABI 留给其正确用途:**把 HYLE 整体(含自集成 HTTP)对外暴露给上层引擎/TS/Py**,不是内部结合网络库。
+
+**性能怎么保证(为什么这条路能快)**:性能不来自"用了某个快库",来自**网络字节全程待在 HYLE 自己的 io_uring/shard-per-core 上,不引入第二套运行时**——① 无双重 poll(fd 只被 HYLE proactor 管);② 无阻塞线程池(连接跑 fiber,10-20ns 切换,百万连接是设计目标);③ parser 是纯用户态状态机,零 syscall,且是被千锤百炼的借来件;④ 集成层就是 `co_await stream.read/write` + 喂 parser,和 echo bench 跑出 shard-per-core 扩展性的同一条路径。**即 HTTP 性能 = HYLE 自有 io_uring/fiber 性能 + 一个借来的解析器,无额外运行时税。**
+
+**成本**:HTTP/1.1 server+client ≈ 借 parser(0 自研) + ~1-2k 自有集成层。中等可控,不是"从零一堆协议"。HTTP/2(借 nghttp2)、WebSocket、gRPC(依赖 protobuf,更靠 L1)后置增量加。
+
+**vs nginx 的诚实标尺**(避免跑偏,详见 motivation):
+- **纯静态文件伺服** PK nginx:能打平、极难超过(nginx 20 年 sendfile/内存池调优贴内核天花板),**且是伪目标**——那不是 HYLE 的战场,赢了没意义。
+- **高并发动态 / AI serving**(与 compute/GPU 同进程零阻抗协作):这里 HYLE 有**结构性架构优势**(io_uring + fiber + 同进程),"超过 nginx 类方案"可信——但真正对手是"**nginx + AI 引擎用胶水拼装**"的组合,HYLE 赢在消除那层阻抗失配,不是单挑纯 HTTP。
+- **诚实预期**:第一版大概率多项负载不如 nginx(同 io echo 初版输裸 epoll 0.61x),靠迭代 + 老实 benchmark 追。**别把底座降维成"又一个 HTTP 服务器"去和 nginx 单挑**——那放弃了唯一差异化。
+
+**parser 选型**:HTTP/1.1 起步用 **picohttpparser**(极简/最快/无依赖,~1 文件,推理引擎 REST 够用),需要更全特性再评 llhttp;HTTP/2 用 nghttp2。均属 vendor 纯 parser。
 
 ## 进度
 

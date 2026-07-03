@@ -1,6 +1,6 @@
 # HYLE 里程碑索引
 
-> 实现的真正"步骤"在这里——约 55 个里程碑，每个 1-4k 行、可独立编/测/基准。`roadmap.md` 是依赖层(阶段)的拓扑序与决策；本目录是**可执行的逐步计划**，每步一文档。
+> 实现的真正"步骤"在这里——约 57 个里程碑，每个 1-4k 行、可独立编/测/基准。`roadmap.md` 是依赖层(阶段)的拓扑序与决策；本目录是**可执行的逐步计划**，每步一文档。
 >
 > **粒度原则**：一个里程碑 = 一次"写完→编过→单测(覆盖达 Tier 标准)→基准→提交"的闭环。
 >
@@ -23,15 +23,15 @@
 > | 口径 | 分母 | 当前 | 说明 |
 > |---|---|---|---|
 > | **clay 吸纳权重** | 被重构的旧 clay 库 | ~33%(coverage-map) | 基础层已基本吸纳 + time 双定时器(net-new);**分母是旧库,不是新愿景** |
-> | **自有生产 LOC 比** | 投影完成时 ~22-30k 自有(2026-07-02 下修,见下节) | **~38-51%** | 11.28k/(22-30k);但 LOC≠完成度(广度缺口不体现在比值里) |
-> | **对完整愿景的功能完成度** | 完整 HYLE 自有(全广度 + io/compute/graph,**不含借入的 ggml**) | **≈43%**(band 38-51%) | 见下方"第二轮下修"算式;io net(tcp+udp co_await + shard-per-core)已落地,file/shmem 待 |
+> | **自有生产 LOC 比** | 投影完成时 ~28-40k 自有(2026-07-03 审计+HTTP 定案后上修) | **~28-40%** | 11.28k/(28-40k);但 LOC≠完成度(广度缺口不体现在比值里) |
+> | **对完整愿景的功能完成度** | 完整 HYLE 自有(全广度 + io/compute/graph,**不含借入的 ggml**) | **≈33%**(band 28-40%) | 见下方"审计上修"算式;io net(tcp+udp)已落地,HTTP/file/shmem 待 |
 >
-> **"≈43%" 怎么算出来的(两法交叉验证,非拍脑袋)**:
-> - **法一 · LOC 比**:11.28k(已写生产,cloc 实测)÷ 26k(完成投影中值,band 22-30k,见"第二轮下修")= **43%**(30k 下界 38%,22k 上界 51%)。
-> - **法二 · 能力加权**(按投影 LOC 占比加权各支柱完成度):foundation 完成度高 + simd/math f32 核 + sched 全支线(核心+同步+定时)+ **io(proactor 三后端 + tcp+udp net co_await + shard-per-core done,file/shmem 未做)+ compute/graph=0** ≈ 与法一收敛到 **~39-43%**。
-> - **为何不是更低的"个位%"**:那个数把**借入的 ggml ~100k 当成 HYLE 要写的**塞进分母。但 ggml 是 compute 支柱**借核不造**(scope 明列),不计入 HYLE 自有完成度——剔除后回到 ≈43%。
+> **"≈33%" 怎么算出来的(2026-07-03 现值;历史推导见下方"第二轮下修"+"审计上修")**:
+> - **法一 · LOC 比**:11.28k(已写生产,cloc 实测)÷ ~34k(审计+HTTP 定案后中值,band 28-40k)= **≈33%**。
+> - **分母为何从 26k 涨到 34k**:参考库审计补登了之前漏算的真实广度——sched 并发原语/JoinHandle/阻塞卸载 + io 超时/multishot/TLS/DNS/**HTTP serving+client** + obs 埋点。HTTP 尤其大(推理引擎北极星必需 REST)。**不是退步,是把该算的补进分母**。
+> - **为何不是更低的"个位%"**:那个数把**借入的 ggml ~100k 当成 HYLE 要写的**塞进分母。但 ggml 是 compute 支柱**借核不造**(scope 明列),不计入 HYLE 自有完成度——剔除后回到 ≈33%。
 >
-> **43% 但"最难的一半未动工"(关键定性)**:**compute / graph 两大支柱 = 0 行**;**io 支柱**:proactor 收割接缝 + IOCP/io_uring/epoll 三后端 + read/write/socket 真 op 全通 + tcp+udp net 上层(TcpListener/Stream + UdpSocket + co_await + shard-per-core,echo/pipelined benchmark + P0 hang 修复)全落地(无 stub,双平台真测),但 **file、跨进程共享内存未做**。它们仍占**剩余自有工作量的大头**,还是"异构混合极致性能"的卖点本体。已写的 ≈43% 是**地基 + sched 全支线(核心+同步+定时)+ io(proactor + tcp/udp net + shard-per-core)+ simd f32 核**,质量高、SOTA 对标、双平台+WSL TSan 验证(非 stub);但**广度薄**(simd 仅 f32 9 op,无 i8/i16 量化;AVX512/NEON 未硬件实跑)、**compute/graph 未开工、io 缺 file/shmem**。故:**按代码量 ≈43%(分母下修后),但按"差异化能力"更保守——剩余工作含全部头牌支柱的主体。**
+> **33% 但"最难的一半未动工"(关键定性)**:**compute / graph 两大支柱 = 0 行**;**io 支柱**:proactor 三后端 + read/write/socket 真 op + tcp+udp net 上层(co_await + shard-per-core + benchmark + park 合并)全落地(无 stub,双平台真测),但 **超时/TLS/DNS/HTTP serving/file/shmem 未做**(HTTP 是推理引擎刚需)。它们仍占**剩余自有工作量的大头**,还是"异构混合极致性能 + AI serving"的卖点本体。已写的 ≈33% 是**地基 + sched 全支线 + io(proactor + tcp/udp net + shard-per-core)+ simd f32 核**,质量高、SOTA 对标、双平台+WSL TSan 验证(非 stub);但**广度薄**(simd 仅 f32 9 op,无 i8/i16 量化;AVX512/NEON 未硬件实跑)、**compute/graph 未开工、io 缺 HTTP/超时/TLS/file**。故:**按代码量 ≈33%,但按"差异化能力"更保守——剩余工作含全部头牌支柱主体 + 北极星必需的 HTTP serving。**
 
 > **真实LOC = 该里程碑自写代码的 cloc 实测（生产+测试，不含文档、不含 vendored 第三方）。**每步闭环后回填。
 > **预测/真实差距是"防玩具"信号**：差距大必须在该里程碑文档解释清楚——是"骨架版刻意精瘦、重活在后续里程碑"（合理），还是"偷懒 stub/空实现"（不可接受）。
@@ -69,14 +69,14 @@
 >
 > **按锚外推剩余**(置信度递减):simd 广度(+2-3k,有 f32 核密度锚,中)/ sched 后段协程·取消·关闭(+1-1.5k,中)/ **io file·shmem(+1-2k,中——tcp+udp net 已落地=1.55k 实测锚)** / **compute 借 ggml 薄层(+3-5k,很低——0 行无锚)** / **graph(+2-3k,很低)** / close C-ABI·FFI·serialize(+2-3k,低)。
 >
-> **→ 新投影 ≈22-30k 生产,中值 26k**;完成度 **11.28k ÷ 26k ≈ 43%**(band 22k→51% / 30k→38%)。
+> **→ 新投影 ≈22-30k 生产,中值 26k**;完成度 **11.28k ÷ 26k ≈ 43%**(band 22k→51% / 30k→38%)。**⚠️ 此值已被下方"审计上修"取代(现值 33%/34k),本行保留为推导历史。**
 >
 > **三条诚实标注(别把 43% 当"快到一半")**:
 > 1. **投影不确定性几乎全在两大支柱**(compute + graph)——0 行,外推置信度低;foundation+sched+simd+io 才是实测硬锚。若 compute/graph 比预想重(GPU 抽象、Vulkan kernel),分母会回涨。
 > 2. **LOC 43% ≠ 能力 43%**:compute/graph=0 行且是"异构混合极致性能"卖点本体;按差异化能力,主观更保守(头牌未动)。
 > 3. **这是第 3 轮修正**(76-120k → 30-45k → 22-30k),每轮下修都因"实测证明剩余也享 C++23 压缩"。**收敛趋势=早期系统性高估的证据**,但 compute/graph 未落地前不宜再激进下修——**22-30k 是当前最诚实区间,compute/graph 一落地就复核**。
 >
-> **⤴ 审计上修(2026-07-03,参考库对照)**:上面的 22-30k 是审计**之前**的投影。审计补登了一批真缺口机制(sched-09/10/11 并发原语·JoinHandle·阻塞卸载 + io-06/07/08/09 超时·multishot·TLS·DNS + obs-02 埋点),这些是"漏了没抄"的真实新增工作量,**分母回涨到 ~26-36k**(见 roadmap 合计行)。故完成度按新分母 **11.28k ÷ ~31k ≈ 36%**(band ~31-44%)——**不是退步,是把之前漏算的真实广度补进了分母**。这印证了标注 1:早期"下修"部分是因为剩余广度还没被完整列出来,补全后回涨符合预期。
+> **⤴ 审计上修(2026-07-03,参考库对照 + HTTP 定案)**:上面的 22-30k 是审计**之前**的投影。审计补登了一批真缺口机制(sched-09/10/11 并发原语·JoinHandle·阻塞卸载 + io-06/07/08/09 超时·multishot·TLS·DNS + io-10/11 HTTP serving/client + obs-02 埋点),这些是"漏了没抄/北极星必需"的真实新增工作量,**分母回涨到 ~28-40k**(见 roadmap 合计行)。故完成度按新分母 **11.28k ÷ ~34k ≈ 33%**(band ~28-40%)——**不是退步,是把之前漏算的真实广度(尤其推理引擎必需的 HTTP serving)补进了分母**。这印证了标注 1:早期"下修"部分是因为剩余广度还没被完整列出来,补全后回涨符合预期。
 
 ## 全部里程碑（阶段 × 模块）
 
@@ -157,6 +157,8 @@
 | io-07 | P5 | io | multishot accept/recv + provided buffer ring(补完 C1 半成品)| io-04 | 1-2k | — | 📋 **半成品补完(审计发现)**。`proactor.h` 的 `Completion` 当初照 liburing v2.15 定形、**已预留 `kMore`(multishot)/`kBuffer`+`buffer_id`(provided buffer)两个 flag,但 submit 侧从未接**=留 flag 不接的"没抄全"。io-07 接:`submit_accept_multishot`(一次 arm 持续吐新连接,免每连接重 arm)/ `submit_recv_multishot` + `register_buf_ring`(内核选 buffer,免预投递=零拷贝 recv)。io_uring 吞吐 SOTA 的核心;IOCP 无对应物(AcceptEx 循环)。另可含 registered files/buffers(fixed fd/buf 省 per-op refcount/pin)+ vectored readv/writev(scatter-gather,框架协议必需) |
 | io-08 | P5 | io | TLS(加密 socket over co_await stream)| io-04 | 2-4k | — | ⏸️ **能力 C9(TLS)驱动**。roadmap 原本完全没有=真漏(asio ssl/libevent bufferevent_ssl 都当核心)。**任何面向公网服务器必需**。借 BoringSSL/OpenSSL 做 shim,套在现有 co_await TcpStream 上(握手/读写走 BIO ↔ 我们的 recv/send)。"借 syscall/库 shim、自持模型"的老路数 |
 | io-09 | P5 | io | 异步 DNS 解析 + signal_set(SIGTERM/SIGINT)| io-04 | 1-2k | — | ⏸️ **能力 C10 驱动**。审计发现 `resolve_addr` 是同步 `getaddrinfo`,**阻塞整个 shard worker**(非一个 fiber)→违背 share-nothing;真客户端必需异步 DNS(libevent evdns/asio resolver 都有;或经 sched-11 卸载池跑 getaddrinfo)。signal_set 处理 SIGTERM/SIGINT=**C4 优雅关闭的触发器** |
+| io-10 | P5 | io | HTTP/1.1 server+client(over 自有 io_uring/fiber)| io-04, io-06(超时), io-08(TLS), io-09(DNS) | 1-2k(自有集成)+ 借 parser | 📋 **能力 C11 驱动**。类 llama.cpp 推理引擎必需 REST=北极星一等能力。**三层分工(定案,见 scope HTTP 专项)**:①借纯 parser(**picohttpparser** 起步,~1 文件零 IO 零线程)做协议解析;②自写**集成层**——`co_await stream.read`→喂 parser→出 Request→组 Response→write,跑在 fiber/proactor 上(HTTP over 完成模型,非阻塞线程池);③Request/Response 薄模型;④路由/handler/业务端点**留上层**。**不结合完整库**(asio/beast 焊死执行模型双重 poll、httplib 阻塞线程池——C++ 无中立异步契约,详见 scope)。先 spike:vendor picohttpparser 验能干净喂给 TcpStream,再定正式接口。**验收**:比 nginx 的正确战场=高并发动态+AI serving,非纯静态伺服;第一版大概率不如 nginx 靠迭代追(同 io echo) |
+| io-11 | P5 | io | HTTP/2(HPACK/多路复用/流控)| io-10 | 2-3k + 借 nghttp2 | ⏸️ **能力 C11 后段**。借 **nghttp2** 的 parser/HPACK 部分,集成层接 io-10 的连接管理。WebSocket 同期可评(帧协议,借或自写);**gRPC 更靠 L1**(依赖 protobuf 编译器)。HTTP/1.1(io-10)稳了再动 |
 | compute-01 | P5 | compute | device/stream 薄包 ggml-backend | sched-04 | 2-3k | — | 占位 |
 | compute-02 | P5 | compute | device buffer(ggml buffer_type 式,compute 自有所有权+stream) + 显式 copy(src,dst,stream) | compute-01 | 2-3k | — | 占位(device 内存归 compute/,走显式 copy;统一内存无互传,mem/ 不参与) |
 | compute-03 | P5 | compute | GPU completion→fiber(直连原生 handle) | compute-01,sched-04 | 1-2k | — | 占位 |
@@ -169,6 +171,6 @@
 | close-02 | P6 | 收口 | serialize(simdjson/flatbuffers) + hash + T3 便利 | container | 4-6k | — | ❓ **占位 + scope 待澄清(审计发现)**。现把"serialize/hash/T3"糊成一个占位、点名 flatbuffers/simdjson 却**无设计、无接口形状**。`hyle-scope` 内部打架:"二进制序列化原语"算 IN、"IDL/schema 编译器·RPC"算 OUT。**待你拍**:① 借 flatbuffers/capnproto 的 builder+reader **当序列化原语**(不含 schema 编译器),还是 ② 把 wire-format 全推 L1。JSON 借 simdjson 已明确(scope 一致)。现状是"看着像计划的占位",需决策 |
 | close-03 | P6 | 收口 | FFI 绑定(TS N-API / Python ctypes) | close-01 | 2-3k | — | 占位 |
 
-约 55 个里程碑。状态：✅ 完成 / 进行中 / ⏸️ 占位(等轴 C 能力驱动) / ❓ 待 scope 澄清。真实LOC 闭环后回填，差距大见对应文档解释。
+约 57 个里程碑。状态：✅ 完成 / 进行中 / ⏸️ 占位(等轴 C 能力驱动) / ❓ 待 scope 澄清。真实LOC 闭环后回填，差距大见对应文档解释。
 
 > 依赖列只标**直接前置**；完整依赖图见 `roadmap.md` 第一节。`00-scaffolding` 是所有里程碑的隐含前置（万物在它上面编译）。
