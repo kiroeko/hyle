@@ -98,6 +98,15 @@ add_executable(hyle_sched_sync_bench sched/sync_bench.cc)
 target_link_libraries(hyle_sched_sync_bench PRIVATE hyle_sched nanobench)
 hyle_apply_warnings(hyle_sched_sync_bench)
 
+# sched-10 JoinHandle/spawn_task/when_all/when_any bench: proves the structured-
+# concurrency layer is ~zero-overhead vs the raw fiber+WaitGroup(1)+slot it wraps.
+# Own exe (scheduler_bench owns main). Needs fcontext like the rest of sched.
+if(HYLE_HAS_FCONTEXT)
+  add_executable(hyle_sched_join_bench sched/join_bench.cc)
+  target_link_libraries(hyle_sched_join_bench PRIVATE hyle_sched nanobench)
+  hyle_apply_warnings(hyle_sched_join_bench)
+endif()
+
 # task #9: lock-free queue cluster SOTA parity. HYLE baselines (BoundedQueue,
 # WsFifoQueue, WorkStealingDeque, ConcurrentVector) ALWAYS compile into this exe;
 # the SOTA rivals below are opt-in (each is a heavy/header dep we don't force).
