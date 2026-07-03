@@ -174,7 +174,7 @@ loop:
 > **同步/结构化并发缺口补记(2026-07-03 参考库审计——tokio/seastar/folly 对照)**:sched-05 补齐了 CV/Mutex/WaitGroup/Latch/Channel,但对照 SOTA 仍缺几件真原语,登记为 sched-09/10(能力 C7 驱动,未排期前不做):
 > - **Semaphore(计数信号量)**:异步限流标准件(限在途连接/请求、buffer 池)。tokio/seastar/folly 全有,HYLE 无。建在 CV 地基上成本低。
 > - **RwLock**:读多写少共享态;现只有独占 Mutex。**oneshot**(单值回传)/ **broadcast·watch**(多消费者 fan-out / 最新值传播,用于关停信号·配置热载)同缺。→ sched-09
-> - **JoinHandle + select/when_all**:`spawn` 现返 `void`——拿不到任务结果、不能 await 单任务完成、不能 abort、不能 race N 个操作。**`select`(等 N 中第一个、取消其余)是超时(C2)/可取消 io(C3)的底层机制**,缺它这两个能力做不优雅。WaitGroup 只计数不收集/不 race。对标 tokio JoinHandle·select!·seastar when_all/when_any·folly collectAll。→ sched-10
+> - **JoinHandle + when_all/when_any(select)** ✅ **已落地(sched-10)**:`spawn(Fiber*)` 仍返 void(契约不变),新增 **`spawn_task<T>(sched,alloc,Task<T>)→JoinHandle<T>`**——`JoinHandle<T>.join()` 拿 `Result<T>`(fiber-aware 阻塞,复用 sched-05 CV)、`abort()` 协作式取消(置 flag,task 在让出点查 `is_cancel_requested()` 后 RAII 退栈——有栈 fiber 不可抢占,folly/fibers/marl 同此)、drop=detach。`when_all`/`when_any(select)` 共用栈上 GroupSignal(目标计数),`when_any` 记 winner=超时(C2)/可取消 io(C3)的底层。**参考库通读定型(tokio/folly/seastar/marl)**:JoinHandle 不拥有 Fiber(marl 证明可薄如 WaitGroup(1)+slot);spawn_task 的 TaskDriver 拥有 Fiber,经 Fiber `on_finish` 钩子在 worker dispatch(控制已离开 fiber)析构=唯一 sched 拥有 fiber 处;GroupSignal 销毁前卸载=folly WhenN UAF 防护。真 io 层取消(io_uring ASYNC_CANCEL/IOCP CancelIoEx)留 io-06。
 
 ## 第三节：completion 接入（整个设计的收口）
 

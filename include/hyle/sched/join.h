@@ -434,8 +434,6 @@ namespace detail {
 // block until fired; then uninstall from all. Returns g.winner.
 template <class... States>
 int group_wait(GroupSignal& g, long target, States*... states) noexcept {
-  detail::JoinState<void>* dummy = nullptr;  // only for pack-size deduction guard
-  (void)dummy;
   constexpr int kN = static_cast<int>(sizeof...(States));
   g.remaining = target;
   // Install into each; collect indices of those already done to pre-account.
