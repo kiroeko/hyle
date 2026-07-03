@@ -174,6 +174,37 @@ class Proactor {
   // socket the same way on both platforms.
   HYLE_IO_API bool register_handle(std::intptr_t fd) noexcept;
 
+  // ---- provided buffer ring + multishot recv (io-07b, kBuffer half) ---------
+  // Register a kernel-shared buffer ring of `nentries` (rounded up to a power of
+  // two) buffers of `buf_size` bytes each, under group id `bgid`. The proactor
+  // owns the backing pool; the kernel picks a buffer per multishot-recv arrival
+  // and reports its id in the completion (Completion::kBuffer + buffer_id). io_uring
+  // only (returns false on IOCP/epoll -- no equivalent; net/ falls back to a
+  // pre-posted-buffer recv there). Call once before submit_recv_multishot. Returns
+  // false if unsupported or the register/mmap failed.
+  HYLE_IO_API bool register_buf_ring(int bgid, unsigned nentries,
+                                     unsigned buf_size) noexcept;
+
+  // Multishot recv on `fd`, drawing buffers from group `bgid`'s ring: ONE submit
+  // yields a completion per datagram/segment received (kMore SET while armed),
+  // each carrying the kernel-selected buffer via Completion::kBuffer + buffer_id
+  // and `result` bytes. NO caller buffer is passed -- the kernel picks one. Read
+  // the bytes at buf_ring_addr(buffer_id), then RETURN it with buf_ring_return so
+  // the ring doesn't starve. A completion with kMore CLEAR is terminal (recv ended
+  // -- peer closed, error, or buffers exhausted with IORING_CQE_F_BUF_MORE clear).
+  // io_uring only. `user_data` returns verbatim on every completion.
+  HYLE_IO_API bool submit_recv_multishot(std::intptr_t fd, int bgid,
+                                         std::uint64_t user_data) noexcept;
+
+  // Base address of buffer `buffer_id` in group `bgid`'s pool (where a kBuffer
+  // completion's bytes live). Valid until buf_ring_return recycles it.
+  HYLE_IO_API void* buf_ring_addr(int bgid, std::uint32_t buffer_id) noexcept;
+
+  // Hand buffer `buffer_id` back to group `bgid`'s ring after consuming its bytes,
+  // so the kernel can reuse it for a future recv. Must be called for every kBuffer
+  // completion or the ring runs dry and multishot recv stops delivering.
+  HYLE_IO_API bool buf_ring_return(int bgid, std::uint32_t buffer_id) noexcept;
+
   // Reap up to `max` finished operations into `out` (caller-provided array),
   // returning how many were written. `timeout_ns` bounds the wait: 0 = poll and
   // return immediately (the worker's non-blocking loop step), UINT64_MAX = block

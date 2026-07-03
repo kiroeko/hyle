@@ -430,6 +430,60 @@ TEST(Proactor, MultishotAcceptEpoll) {
   ASSERT_TRUE(ok);
   RunMultishotAccept(p);
 }
+
+// io-07b provided buffer ring + multishot recv (io_uring only). Register a small
+// buffer ring, arm ONE multishot recv on a socketpair end, send several messages
+// from the other end. Each must surface as a completion carrying kBuffer + a
+// buffer_id whose backing memory holds the sent bytes; returning the buffer lets
+// the ring keep serving. Proves the kBuffer half of the reserved Completion flags.
+TEST(Proactor, ProvidedBufRingMultishotRecv) {
+  Proactor p;
+  if (!p.init()) GTEST_SKIP() << "no io_uring backend";
+
+  constexpr int kBgid = 7;
+  constexpr unsigned kEntries = 8;
+  constexpr unsigned kBufSize = 128;
+  if (!p.register_buf_ring(kBgid, kEntries, kBufSize))
+    GTEST_SKIP() << "provided buffer ring unsupported on this kernel";
+
+  int sv[2];
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+
+  // ONE multishot recv arm on sv[0], drawing from the ring.
+  ASSERT_TRUE(p.submit_recv_multishot(sv[0], kBgid, /*user_data=*/0xBEEF));
+
+  // Send 3 distinct messages from the other end.
+  const char* msgs[] = {"ring-buf-0", "ring-buf-1", "ring-buf-2"};
+  constexpr int kN = 3;
+  for (int i = 0; i < kN; ++i)
+    ASSERT_GT(::write(sv[1], msgs[i], std::strlen(msgs[i]) + 1), 0);
+
+  int got = 0;
+  int kbuf_set = 0;
+  for (int spins = 0; spins < 500 && got < kN; ++spins) {
+    Completion c[8];
+    std::size_t n = p.reap(c, 8, 1'000'000'000ull);
+    for (std::size_t i = 0; i < n; ++i) {
+      if (c[i].user_data != 0xBEEF) continue;
+      if (c[i].result <= 0) continue;  // 0/neg = terminal; skip
+      ASSERT_TRUE(c[i].flags & Completion::kBuffer)
+          << "multishot recv completion must carry a kernel-selected buffer";
+      ++kbuf_set;
+      void* addr = p.buf_ring_addr(kBgid, c[i].buffer_id);
+      ASSERT_NE(addr, nullptr);
+      // The bytes the kernel wrote into the selected buffer must match a message.
+      EXPECT_STREQ(static_cast<const char*>(addr), msgs[got]);
+      // Return the buffer so the ring doesn't run dry.
+      EXPECT_TRUE(p.buf_ring_return(kBgid, c[i].buffer_id));
+      ++got;
+    }
+  }
+  EXPECT_EQ(got, kN) << "one multishot recv arm delivered all messages";
+  EXPECT_EQ(kbuf_set, kN) << "every delivery carried kBuffer";
+
+  ::close(sv[0]);
+  ::close(sv[1]);
+}
 #endif  // __linux__
 
 // ---- Windows IOCP real IO ops ----------------------------------------------

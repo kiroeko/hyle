@@ -506,6 +506,19 @@ bool Proactor::register_handle(std::intptr_t fd) noexcept {
                                   0) != nullptr;
 }
 
+// Provided buffer ring (io-07b) is an io_uring-only mechanism -- IOCP has no
+// equivalent (WSARecv uses caller-posted buffers). net/ detects the false return
+// and falls back to a pre-posted-buffer recv on Windows. Honest not-supported.
+bool Proactor::register_buf_ring(int, unsigned, unsigned) noexcept {
+  return false;
+}
+bool Proactor::submit_recv_multishot(std::intptr_t, int,
+                                     std::uint64_t) noexcept {
+  return false;
+}
+void* Proactor::buf_ring_addr(int, std::uint32_t) noexcept { return nullptr; }
+bool Proactor::buf_ring_return(int, std::uint32_t) noexcept { return false; }
+
 }  // namespace hyle::io
 
 #elif defined(HYLE_OS_LINUX)
@@ -549,10 +562,23 @@ int sys_io_uring_enter(int fd, unsigned to_submit, unsigned min_complete,
   return static_cast<int>(::syscall(__NR_io_uring_enter, fd, to_submit,
                                     min_complete, flags, arg, argsz));
 }
+// register op (io-07b provided buffer ring uses IORING_REGISTER_PBUF_RING). Raw
+// syscall, no liburing link -- same policy as setup/enter above.
+int sys_io_uring_register(int fd, unsigned opcode, void* arg,
+                          unsigned nr_args) noexcept {
+  return static_cast<int>(
+      ::syscall(__NR_io_uring_register, fd, opcode, arg, nr_args));
+}
 
 // atomic view over a kernel-shared u32 ring counter (barriers per liburing).
 inline std::atomic<unsigned>* as_atomic(void* p) noexcept {
   return reinterpret_cast<std::atomic<unsigned>*>(p);
+}
+// atomic view over the u16 buffer-ring tail (io-07b): the provided-buffer ring's
+// tail is a __u16, published to the kernel with a release-store (liburing
+// io_uring_buf_ring_advance uses io_uring_smp_store_release on this 16-bit field).
+inline std::atomic<std::uint16_t>* as_atomic16(void* p) noexcept {
+  return reinterpret_cast<std::atomic<std::uint16_t>*>(p);
 }
 
 }  // namespace
@@ -584,6 +610,20 @@ struct Proactor::Impl {
   unsigned* cq_tail = nullptr;
   unsigned* cq_ring_mask = nullptr;
   io_uring_cqe* cqes = nullptr;
+  // Provided buffer ring (io-07b, kBuffer half). ONE ring supported for now. The
+  // kernel picks a buffer from `buf_ring` for each multishot recv arrival and
+  // reports its id in the CQE (IORING_CQE_F_BUFFER). We own the backing buffer
+  // pool `buf_pool` (nentries * buf_size, one contiguous block) and re-hand a
+  // consumed buffer to the ring via buf_ring_return (add + release-store tail).
+  // Kernel-allocated ring (IOU_PBUF_RING_MMAP) mmap'd at IORING_OFF_PBUF_RING.
+  io_uring_buf_ring* buf_ring = nullptr;
+  std::size_t buf_ring_sz = 0;   // mmap length (nentries * sizeof(io_uring_buf))
+  void* buf_pool = nullptr;      // backing storage for all buffers (own mmap)
+  std::size_t buf_pool_sz = 0;
+  unsigned buf_ring_entries = 0; // power-of-two count (== ring mask + 1)
+  unsigned buf_ring_mask = 0;    // entries - 1
+  unsigned buf_size = 0;         // bytes per buffer
+  int buf_bgid = -1;             // buffer group id (-1 = no ring registered)
   // Submit batch (io-04 opt): SQEs filled by submit_* but not yet flushed to the
   // kernel. The worker loop now reaps only when its run-queue drains, so many
   // fibers submit between two reaps -- these accumulate here and the next reap
@@ -672,6 +712,18 @@ Proactor::~Proactor() {
                        static_cast<long long>(impl_->stat_reaped));
     }
     if (impl_->wake_efd >= 0) ::close(impl_->wake_efd);
+    // Provided buffer ring (io-07b): unregister (kernel drops its ref) then unmap
+    // our ring view + the backing pool. Order: unregister before unmap so the
+    // kernel isn't left pointing at a freed mapping.
+    if (impl_->buf_bgid >= 0) {
+      io_uring_buf_reg reg;
+      std::memset(&reg, 0, sizeof(reg));
+      reg.bgid = static_cast<std::uint16_t>(impl_->buf_bgid);
+      sys_io_uring_register(impl_->fd, IORING_UNREGISTER_PBUF_RING, &reg, 1);
+      if (impl_->buf_ring != nullptr)
+        ::munmap(impl_->buf_ring, impl_->buf_ring_sz);
+      if (impl_->buf_pool != nullptr) ::munmap(impl_->buf_pool, impl_->buf_pool_sz);
+    }
     if (impl_->sqes != nullptr) ::munmap(impl_->sqes, impl_->sqes_sz);
     if (impl_->cq_ptr != nullptr && !impl_->single_mmap)
       ::munmap(impl_->cq_ptr, impl_->cq_sz);
@@ -1228,6 +1280,124 @@ bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(buf), len, 0, user_data,
                     flags);
+}
+
+// ---- provided buffer ring + multishot recv (io-07b) -----------------------
+
+bool Proactor::register_buf_ring(int bgid, unsigned nentries,
+                                 unsigned buf_size) noexcept {
+  if (impl_ == nullptr || impl_->backend != Impl::kUring) return false;
+  if (impl_->buf_bgid >= 0) return false;  // one ring supported for now
+  if (nentries == 0 || buf_size == 0) return false;
+  // Round entries up to a power of two (the ring mask requires it).
+  unsigned n = 1;
+  while (n < nentries) n <<= 1;
+
+  // Register a KERNEL-allocated buffer ring (IOU_PBUF_RING_MMAP): the kernel owns
+  // the ring memory; we mmap it at IORING_OFF_PBUF_RING | (bgid << shift).
+  io_uring_buf_reg reg;
+  std::memset(&reg, 0, sizeof(reg));
+  reg.ring_entries = n;
+  reg.bgid = static_cast<std::uint16_t>(bgid);
+  reg.flags = IOU_PBUF_RING_MMAP;
+  if (sys_io_uring_register(impl_->fd, IORING_REGISTER_PBUF_RING, &reg, 1) < 0)
+    return false;
+
+  std::size_t ring_sz = static_cast<std::size_t>(n) * sizeof(io_uring_buf);
+  off_t off = IORING_OFF_PBUF_RING |
+              (static_cast<off_t>(bgid) << IORING_OFF_PBUF_SHIFT);
+  void* br = ::mmap(nullptr, ring_sz, PROT_READ | PROT_WRITE,
+                    MAP_SHARED | MAP_POPULATE, impl_->fd, off);
+  if (br == MAP_FAILED) {
+    reg.flags = 0;
+    sys_io_uring_register(impl_->fd, IORING_UNREGISTER_PBUF_RING, &reg, 1);
+    return false;
+  }
+
+  // Own the backing buffer pool (n * buf_size, one block).
+  std::size_t pool_sz = static_cast<std::size_t>(n) * buf_size;
+  void* pool = ::mmap(nullptr, pool_sz, PROT_READ | PROT_WRITE,
+                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+  if (pool == MAP_FAILED) {
+    ::munmap(br, ring_sz);
+    reg.flags = 0;
+    sys_io_uring_register(impl_->fd, IORING_UNREGISTER_PBUF_RING, &reg, 1);
+    return false;
+  }
+
+  impl_->buf_ring = static_cast<io_uring_buf_ring*>(br);
+  impl_->buf_ring_sz = ring_sz;
+  impl_->buf_pool = pool;
+  impl_->buf_pool_sz = pool_sz;
+  impl_->buf_ring_entries = n;
+  impl_->buf_ring_mask = n - 1;
+  impl_->buf_size = buf_size;
+  impl_->buf_bgid = bgid;
+
+  // Init the ring (tail = 0) then publish ALL n buffers to the kernel: fill each
+  // slot with (addr, len, bid) at offset i, then one release-store of tail = n.
+  impl_->buf_ring->tail = 0;
+  for (unsigned i = 0; i < n; ++i) {
+    io_uring_buf& b = impl_->buf_ring->bufs[i & impl_->buf_ring_mask];
+    b.addr = reinterpret_cast<std::uint64_t>(
+        static_cast<char*>(pool) + static_cast<std::size_t>(i) * buf_size);
+    b.len = buf_size;
+    b.bid = static_cast<std::uint16_t>(i);
+  }
+  as_atomic16(&impl_->buf_ring->tail)->store(static_cast<std::uint16_t>(n),
+                                             std::memory_order_release);
+  return true;
+}
+
+void* Proactor::buf_ring_addr(int bgid, std::uint32_t buffer_id) noexcept {
+  if (impl_ == nullptr || impl_->buf_bgid != bgid) return nullptr;
+  if (buffer_id >= impl_->buf_ring_entries) return nullptr;
+  return static_cast<char*>(impl_->buf_pool) +
+         static_cast<std::size_t>(buffer_id) * impl_->buf_size;
+}
+
+bool Proactor::buf_ring_return(int bgid, std::uint32_t buffer_id) noexcept {
+  if (impl_ == nullptr || impl_->buf_bgid != bgid) return false;
+  if (buffer_id >= impl_->buf_ring_entries) return false;
+  // Re-add the buffer at the current tail slot, then release-store tail+1 so the
+  // kernel sees it available again (liburing buf_ring_add + buf_ring_advance(1)).
+  std::uint16_t tail =
+      as_atomic16(&impl_->buf_ring->tail)->load(std::memory_order_relaxed);
+  io_uring_buf& b = impl_->buf_ring->bufs[tail & impl_->buf_ring_mask];
+  b.addr = reinterpret_cast<std::uint64_t>(
+      static_cast<char*>(impl_->buf_pool) +
+      static_cast<std::size_t>(buffer_id) * impl_->buf_size);
+  b.len = impl_->buf_size;
+  b.bid = static_cast<std::uint16_t>(buffer_id);
+  as_atomic16(&impl_->buf_ring->tail)
+      ->store(static_cast<std::uint16_t>(tail + 1), std::memory_order_release);
+  return true;
+}
+
+bool Proactor::submit_recv_multishot(std::intptr_t fd, int bgid,
+                                     std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || impl_->backend != Impl::kUring) return false;
+  if (impl_->buf_bgid != bgid) return false;  // ring must be registered first
+  // Multishot recv drawing from the provided buffer ring: IORING_RECV_MULTISHOT
+  // in ioprio + IOSQE_BUFFER_SELECT in the SQE flags + buf_group = bgid. No caller
+  // buffer (addr/len 0): the kernel picks one per arrival and reports its id in
+  // IORING_CQE_F_BUFFER. submit_one doesn't set sqe.flags/buf_group, so fill the
+  // SQE directly here.
+  unsigned tail = *impl_->sq_tail;
+  unsigned index = tail & *impl_->sq_ring_mask;
+  io_uring_sqe& s = impl_->sqes[index];
+  std::memset(&s, 0, sizeof(s));
+  s.opcode = IORING_OP_RECV;
+  s.fd = static_cast<std::int32_t>(fd);
+  s.ioprio = IORING_RECV_MULTISHOT;
+  s.flags = IOSQE_BUFFER_SELECT;
+  s.buf_group = static_cast<std::uint16_t>(bgid);
+  s.user_data = user_data;
+  impl_->sq_array[index] = index;
+  as_atomic(impl_->sq_tail)->store(tail + 1, std::memory_order_release);
+  ++impl_->sq_pending;
+  ++impl_->inflight;
+  return true;
 }
 
 bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
