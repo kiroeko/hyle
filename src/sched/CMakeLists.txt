@@ -27,6 +27,7 @@ hyle_add_module(sched
     scheduler.cc
     sync.cc
     join.cc
+    blocking.cc
     ${_fctx_asm}
   DEPS hyle_platform hyle_time
   PUBLIC_DEPS hyle_mem hyle_container)
