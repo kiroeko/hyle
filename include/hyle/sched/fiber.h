@@ -93,6 +93,23 @@ class Fiber {
   int owner_worker() const noexcept { return owner_worker_; }
   void set_owner_worker(int idx) noexcept { owner_worker_ = idx; }
 
+  // ---- finish hook (sched-10 spawn_task self-owned fibers) --------------------
+  // Optional callback the scheduler invokes AFTER this fiber has finished, from
+  // the worker's dispatch -- i.e. once control has returned from the fiber and its
+  // stack is no longer executing. This is the ONLY safe point to free a fiber that
+  // owns itself (spawn_task's TaskDriver): a fiber must never free its own stack
+  // from within its own entry (the fcontext trampoline still reads the Fiber after
+  // entry returns). Raw fn-ptr + ctx, so sched stays ignorant of TaskDriver.
+  // `ctx` is typically the owning object (the driver) to be destroyed; after the
+  // hook runs the Fiber may itself be gone, so dispatch reads nothing more from it.
+  using FinishFn = void (*)(void* ctx) noexcept;
+  void set_on_finish(FinishFn fn, void* ctx) noexcept {
+    on_finish_ = fn;
+    on_finish_ctx_ = ctx;
+  }
+  FinishFn on_finish() const noexcept { return on_finish_; }
+  void* on_finish_ctx() const noexcept { return on_finish_ctx_; }
+
   // Symmetric rendezvous closing the wake-before-suspend race. BOTH the worker
   // (after resume() returns, having seen a wait request) and Waker::wake() call
   // this; whichever observes the OTHER already arrived returns true and must do
@@ -122,6 +139,8 @@ class Fiber {
   bool finished_ = false;
   bool wait_requested_ = false;       // set by request_wait(), read by scheduler
   int owner_worker_ = -1;             // shard-per-core pin (-1 = unpinned/stealable)
+  FinishFn on_finish_ = nullptr;      // sched-10: run by dispatch after done()
+  void* on_finish_ctx_ = nullptr;     // ctx for on_finish_ (e.g. the TaskDriver)
   std::atomic<int> wake_state_{0};    // wake/suspend rendezvous (see wake_rendezvous)
   // ThreadSanitizer fiber handles (null/unused unless built with TSan). fcontext
   // swaps stacks behind TSan's back; without telling TSan which fiber is now

@@ -324,6 +324,11 @@ class JoinHandle<void> {
 // ---- spawn_task: spawn a Task<T>, get a JoinHandle<T> -----------------------
 namespace detail {
 
+// A driver owns the Task + the Fiber that runs it. It must NOT free itself from
+// inside entry (the fcontext trampoline reads the Fiber after entry returns -- a
+// self-free there is a UAF, caught by TSan as a SEGV in the trampoline). Instead
+// entry only produces the result; the scheduler's dispatch calls destroy() via
+// the Fiber finish hook AFTER control has left the fiber (safe free point).
 template <class T>
 struct TaskDriver {
   mem::Allocator alloc;
@@ -342,15 +347,20 @@ struct TaskDriver {
     } else {
       st->set_value(d->task.result());
     }
-    // Detach: destroy the driver (Task frame + Fiber stack) and drop our ref.
-    // The Fiber is done() here; destroying it from within its own entry is safe
-    // because control returns to the worker via fcontext once entry() returns --
-    // the stack is not touched after this frame unwinds (see fiber.cc: the
-    // trampoline switches back to the worker after entry returns).
+    // Do NOT free here -- entry runs ON the fiber's stack; the trampoline still
+    // uses the Fiber after we return. dispatch() runs destroy() post-return.
+  }
+
+  // Finish hook: run by the worker's dispatch after the fiber is done() and off
+  // its stack. Drops the task-side JoinState ref, then frees the driver (which
+  // destroys the Fiber + its stack -- now safe, nothing runs on it).
+  static void destroy(void* p) noexcept {
+    auto* d = static_cast<TaskDriver*>(p);
+    JoinState<T>* st = d->state;
     mem::Allocator a = d->alloc;
-    st->release();
     d->~TaskDriver();
     a.deallocate(d, sizeof(TaskDriver), alignof(TaskDriver));
+    st->release();  // after driver is gone: last ref may free the state
   }
 };
 
@@ -373,10 +383,15 @@ struct TaskDriver<void> {
       d->task.result();  // propagate exception path (no-op under no-except)
       st->set_done();
     }
+  }
+
+  static void destroy(void* p) noexcept {
+    auto* d = static_cast<TaskDriver*>(p);
+    JoinState<void>* st = d->state;
     mem::Allocator a = d->alloc;
-    st->release();
     d->~TaskDriver();
     a.deallocate(d, sizeof(TaskDriver), alignof(TaskDriver));
+    st->release();
   }
 };
 
@@ -398,6 +413,9 @@ JoinHandle<T> spawn_task(Scheduler& sched, mem::Allocator alloc, Task<T> task,
   HYLE_FATAL_ASSERT(d != nullptr);
   new (d) TaskDriver<T>{alloc, std::move(task), st,
                         Fiber(alloc, stack_size, &TaskDriver<T>::entry, d)};
+  // dispatch() frees the driver via this hook AFTER the fiber finishes and is off
+  // its stack (a fiber must never free its own stack from within entry).
+  d->fiber.set_on_finish(&TaskDriver<T>::destroy, d);
   sched.spawn(&d->fiber);
   return JoinHandle<T>(st);
 }

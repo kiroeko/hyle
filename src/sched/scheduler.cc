@@ -271,7 +271,16 @@ struct Scheduler::Impl {
   void dispatch(Worker& w, Fiber* f) noexcept {
     f->resume();
     if (f->done()) {
+      // Capture the finish hook BEFORE decrementing outstanding: a self-owned
+      // fiber (spawn_task's TaskDriver) registers a hook that frees itself. This
+      // is the only safe free point -- control has returned from the fiber, so its
+      // stack is no longer executing (unlike freeing from inside the fiber's own
+      // entry, which UAFs the fcontext trampoline). Run the hook LAST; after it
+      // `f` may be gone, so read nothing more from it.
+      Fiber::FinishFn fin = f->on_finish();
+      void* fin_ctx = f->on_finish_ctx();
       outstanding.fetch_sub(1, std::memory_order_acq_rel);
+      if (fin != nullptr) fin(fin_ctx);
     } else if (f->consume_wait_request()) {
       // The fiber suspended to WAIT on an external event (sched-04). Don't
       // reschedule -- it leaves the run loop until a Waker re-injects it. But a
