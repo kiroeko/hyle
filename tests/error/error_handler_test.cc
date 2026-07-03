@@ -4,8 +4,12 @@
 
 #include <cstring>
 
+#include "hyle/error/result.h"
+#include "hyle/error/status.h"
+
 using hyle::ErrorRecord;
 using hyle::Severity;
+using hyle::Status;
 
 // A recorder installed for the test routes diagnostics to counts + last message,
 // then restores the previous handler so other tests see the stderr default.
@@ -62,6 +66,25 @@ TEST(ErrorHandler, AssertEvaluatesConditionOnce) {
 
   EXPECT_TRUE(ok);
   EXPECT_EQ(calls, 1);
+}
+
+// The intended use (charter §5): guard a precondition and early-return a Status
+// on failure, without aborting. Exercises HYLE_ASSERT as a bool expression that
+// composes with Result/Status propagation.
+TEST(ErrorHandler, AssertUsableAsStatusGuard) {
+  ErrorRecord rec;
+  rec.install();
+  auto guarded = [](int x) -> Status {
+    if (!HYLE_ASSERT(x > 0)) return Status::InvalidArgument("x<=0");
+    return Status();
+  };
+  Status bad = guarded(-1);
+  Status good = guarded(1);
+  rec.restore();
+
+  EXPECT_TRUE(bad.IsInvalidArgument());
+  EXPECT_TRUE(good.ok());
+  EXPECT_EQ(rec.count(Severity::Error), 1u);  // only the failing guard reported
 }
 
 // Swapping handlers nests: install A, install B, restore B, A is active again.

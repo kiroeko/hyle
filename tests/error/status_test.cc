@@ -233,33 +233,3 @@ TEST(AssignOrRaise, ThreeLevelBubble) {
   EXPECT_TRUE(r.error().IsInvalidArgument());
   EXPECT_EQ(r.error().message(), "negative");
 }
-
-// ---- HYLE_ASSERT (soft, release-surviving, returns bool) --------------------
-
-TEST(Assert, TrueConditionReturnsTrueNoLog) {
-  int calls = 0;
-  if (HYLE_ASSERT(1 + 1 == 2)) ++calls;
-  EXPECT_EQ(calls, 1);
-}
-
-TEST(Assert, FalseConditionReturnsFalseDoesNotAbort) {
-  // Must NOT abort (that's HYLE_FATAL_ASSERT's job). It logs to stderr and
-  // yields false so callers can branch on it.
-  testing::internal::CaptureStderr();
-  bool v = HYLE_ASSERT(1 == 2);
-  std::string err = testing::internal::GetCapturedStderr();
-  EXPECT_FALSE(v);
-  EXPECT_NE(err.find("HYLE assert failed"), std::string::npos);
-}
-
-TEST(Assert, UsableAsGuard) {
-  auto guarded = [](int x) -> Status {
-    if (!HYLE_ASSERT(x > 0)) return Status::InvalidArgument("x<=0");
-    return Status();
-  };
-  testing::internal::CaptureStderr();
-  Status bad = guarded(-1);
-  (void)testing::internal::GetCapturedStderr();
-  EXPECT_TRUE(bad.IsInvalidArgument());
-  EXPECT_TRUE(guarded(1).ok());
-}

@@ -88,10 +88,6 @@ std::string_view status_heap_message(std::uintptr_t rep) noexcept {
   return std::string_view(r->msg(), r->len);
 }
 
-void log_assert_failure(const char* expr, const char* file, int line) noexcept {
-  std::fprintf(stderr, "HYLE assert failed: %s\n  at %s:%d\n", expr, file, line);
-}
-
 }  // namespace detail
 
 std::size_t Status::ToString(char* buf, std::size_t cap) const noexcept {

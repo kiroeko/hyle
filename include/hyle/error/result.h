@@ -36,11 +36,6 @@ class FailReturn {
   Status status_;
 };
 
-// release-surviving soft assert log (declared here, defined in the DLL so the
-// format string lives once). Returns the condition value for use in expressions.
-HYLE_ERROR_API void log_assert_failure(const char* expr, const char* file,
-                                       int line) noexcept;
-
 }  // namespace detail
 }  // namespace hyle
 
@@ -71,10 +66,7 @@ HYLE_ERROR_API void log_assert_failure(const char* expr, const char* file,
   lhs = *std::move(tmp)  /* operator*: has_value() already checked above, so   \
                             skip .value()'s redundant check + throw path */
 
-// Soft assert: evaluates to the bool condition (usable in `if`), and on failure
-// logs (does NOT abort, unlike HYLE_FATAL_ASSERT) -- survives release builds.
-#define HYLE_ASSERT(cond)                                                      \
-  (HYLE_LIKELY(!!(cond))                                                       \
-       ? true                                                                  \
-       : (::hyle::detail::log_assert_failure(#cond, __FILE__, __LINE__),       \
-          false))
+// NOTE: HYLE_ASSERT (charter §5 soft assert) lives in error/error_handler.h --
+// it routes failures through the installable diagnostic handler, not a bare
+// fprintf. result.h is the lower Status/Result layer and intentionally does NOT
+// define it (would clash + diverge by include order).
