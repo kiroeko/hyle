@@ -195,7 +195,7 @@ int main() {
     constexpr int kFibers = 8;
     constexpr int kIters = 2000;  // per fiber
     ankerl::nanobench::Bench b;
-    b.title("contended Mutex (8 fibers/4 workers)").batch(static_cast<std::uint64_t>(kFibers) * kIters).minEpochIterations(20);
+    b.title("contended Mutex (8 fibers/4 workers)").relative(true).batch(static_cast<std::uint64_t>(kFibers) * kIters).minEpochIterations(20);
     b.run("HYLE Mutex (futex) lock/inc/unlock", [&] {
       MutexHammer h;
       h.iters = kIters;
@@ -216,7 +216,7 @@ int main() {
   {
     constexpr int kN = 5000;
     ankerl::nanobench::Bench b;
-    b.title("Channel send+recv throughput").batch(kN).minEpochIterations(20);
+    b.title("Channel send+recv throughput").relative(true).batch(kN).minEpochIterations(20);
     b.run("HYLE Channel<int> 1p1c", [&] {
       Channel<int> ch(system_allocator(), 16);
       ChanPair a{&ch, kN};
@@ -235,7 +235,7 @@ int main() {
   {
     constexpr int kWorkers = 64;
     ankerl::nanobench::Bench b;
-    b.title("WaitGroup fork-join (64 workers)").batch(kWorkers).minEpochIterations(50);
+    b.title("WaitGroup fork-join (64 workers)").relative(true).batch(kWorkers).minEpochIterations(50);
     b.run("HYLE WaitGroup add/done/wait", [&] {
       WaitGroup wg;
       wg.add(kWorkers);
@@ -327,7 +327,7 @@ int main() {
   {
     constexpr int kRounds = 5000;
     ankerl::nanobench::Bench b;
-    b.title("CV wait+notify handoff (consumer blocks)").batch(kRounds).minEpochIterations(20);
+    b.title("CV wait+notify handoff (consumer blocks)").relative(true).batch(kRounds).minEpochIterations(20);
     b.run("HYLE ConditionVariable wait/notify ping-pong", [&] {
       CvPair s;
       s.rounds = kRounds;
