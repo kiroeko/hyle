@@ -1,34 +1,33 @@
 # HYLE 动机：为什么是现在，为谁做
 
-> 这份回答一个绕不开的问题：HYLE 的祖先 clay 是 19 年的通用 infra，地基不错却停更了——「scope 不足以支撑野心」。HYLE 凭什么不是 clay 2.0？答案是：**clay 死的时候，那个能拉动「同一套底座」的 workload 还不存在；现在存在了。**
+> 这份回答一个绕不开的问题：HYLE 的祖先 clay 是 19 年的通用 infra，地基不错却停更了——「scope 不足以支撑野心」。HYLE 凭什么不是 clay 2.0？答案是：**clay 死的时候，那个能拉动「同一套底座」的 workload 还不到临界压力；现在到了。**
 
 ## clay 真正的死因，和现在的不同
 
-clay 没死于技术差——内存/SIMD/线程池都是真的。它死于**没有一个非它不可的上层应用拉动**。更深一层：**2019 年没有任何大众 workload 会在单进程里同时压满「并发 + 内存 + 计算 + IO」四样**。四样分开用现成库就够，"统一成一套底座"优雅但无溢价，于是 clay 成了博物馆。
+clay 没死于技术差——内存/SIMD/线程池/**taskgraph 节点图执行引擎**都是真的（它本就服务 slate-render 的 CAD/渲染管线：`cycles` 渲染器 + `taskgraph` 参数化依赖重算）。它死于**那时的 workload 还没把「并发 + 内存 + 计算 + IO」四样同时压满**——CAD/渲染管线当年主要压 compute + graph 两根，io/并发是本地单机规模，"统一成一套底座"优雅但无溢价，于是 clay 成了博物馆。
 
-**AI-native workload 是第一个四样全压的大众负载。** 这是"一套底座"从"没人需要"变成"刚需"的临界点——也是 HYLE 区别于 clay 的根本外部条件。不是我们更聪明，是时代变了。
+**两类 workload 现在把四样同时推到临界**：① **AI-native 推理引擎**（serving + 批调度 + KV-cache + GPU/CPU kernel）；② **现代 CAD/BIM 参数化 + 渲染管线**（云端协同/实时参数化把 io+并发拉起来，叠加它本来就重的 compute+graph）。这是"一套底座"从"没人需要"变成"刚需"的临界点——也是 HYLE 区别于 clay 的根本外部条件。不是我们更聪明，是时代变了，**且 CAD/BIM 这一支正是 clay 血统里就在做、如今被重新激活的老本行**。
 
-## 北极星：类 llama.cpp 推理引擎 + 通用加速库（v1 主攻）
+## 北极星：两个「四样全压」的具体 workload——推理引擎 ＋ CAD/BIM 管线（v1 主攻）
 
-> **2026-07-03 重排(用户纠偏)**：早期把"蜂群 agent"列为最尖的刀——**太窄、会误导**(它只压 fiber+io+channel,不压 compute/simd,且把 HYLE 引向"agent 专用"而非"通用底座")。真正第一位的是 **类 llama.cpp 的推理引擎 + 通用加速库**：它**四样全压**(io serving + sched 批调度 + mem paged-cache + compute/simd kernel),是"同一套底座吃满四样"最直接的证明。蜂群 agent 降为**消费者之一**,不再是唯一锚。
+> **2026-07-03 演进**：① 早期把"蜂群 agent"列为最尖的刀——**太窄、会误导**(只压 fiber+io+channel,不压 compute/simd,把 HYLE 引向"agent 专用"而非通用底座),降为**消费者之一**。② 一度写成"推理引擎 + **通用加速库**"——但"通用加速库"太含糊,听着像 clay 2.0 摊大饼,**给不出验收标尺**。现改为**两把有血统、有压力的具体实刀**并列为锚:**类 llama.cpp 推理引擎** ＋ **CAD/BIM 参数化建模 + 渲染管线**。二者都**四样全压**,且合起来**压满 HYLE 全部五个支柱**——推理引擎拉满 io/sched/mem/compute,CAD/BIM 额外拉满 **graph**(参数化依赖重算,推理引擎不怎么碰)。"通用"不再靠形容词,靠"两个正交的具体 workload 都跑得动"来证明。
 
-三个 AI-native 场景按契合度排序：
+按契合度排序（前两个是并列北极星，其余是消费者/较弱场景）：
 
 | workload | 压哪几根支柱 | std/拼装货为什么不行 | 契合度 |
 |---|---|---|---|
-| **推理引擎 / 加速库**(类 llama.cpp)| **四样全压**：io(RESTful serving,**HTTP 是标配**)+ sched(批调度/连续 batching)+ mem(paged KV-cache)+ compute/simd(GPU/CPU kernel)| serving 层和 compute 层用胶水粘、阻抗失配;llama.cpp 自己得 vendor cpp-httplib+ggml 拼 | **最强**——四样全压=底座价值最直接 |
-| **蜂群 agent** | fiber + io + channel（百万并发 agent，几乎都在等 LLM/工具/网络）| `std::thread` 几千个就崩；thread-per-agent 是灾难 | 强（fiber 最契合,但只压半边;是引擎的**消费者**）|
+| **推理引擎**(类 llama.cpp)| io(RESTful serving,**HTTP 标配**)+ sched(连续 batching)+ mem(paged KV-cache)+ compute/simd(GPU/CPU kernel)| serving 层与 compute 层胶水粘、阻抗失配;llama.cpp 得 vendor cpp-httplib+ggml 拼 | **北极星①**——四样全压、外部热度最高 |
+| **CAD/BIM 参数化 + 渲染管线** | **graph**(参数化依赖 DAG 重算,clay taskgraph 老本行)+ compute/simd(几何核/网格/BVH/光追)+ mem(大场景图/BVH)+ io+sched(云端协同/实时协作把 io+并发拉起来)| 参数化引擎(几何核)+ 渲染器(光追)+ 协同后端(网络)各用一套 runtime 拼,graph 重算与 GPU kernel 跨子系统打架 | **北极星②**——**有 clay 血统直接背书**(taskgraph/cycles),额外拉满 graph 支柱 |
+| **蜂群 agent** | fiber + io + channel（百万并发,几乎都在等 LLM/工具/网络）| `std::thread` 几千个就崩 | 强（fiber 最契合但只压半边;是引擎的**消费者**）|
 | **训练引擎** | io+simd 数据管线 + host 编排 | 核心循环是 PyTorch/JAX/NCCL 地盘 | 较弱 |
 
-**为什么"推理引擎/加速库"是对的锚**：llama.cpp 是活证据——一个真推理引擎必然**同时**要 ①高并发 RESTful serving(它 vendor 了 cpp-httplib)②GPU/CPU kernel(它就是 ggml)③KV-cache 内存管理 ④请求批调度。这四样正是 HYLE 四支柱。**HYLE 定位=做 llama.cpp 脚下那层它现在只能东拼西凑(httplib+ggml+自写线程)的统一底座**。**RESTful API 因此是底座一等能力,不是可选 L1**——AI 服务器不可能不提供 REST。(HTTP 实现成本/借-造抉择见 scope 的 HTTP 专项评估。)
+**为什么"推理引擎"是对的锚**：llama.cpp 是活证据——一个真推理引擎必然**同时**要 ①高并发 RESTful serving(它 vendor 了 cpp-httplib)②GPU/CPU kernel(它就是 ggml)③KV-cache 内存管理 ④请求批调度。这四样正是 HYLE 四支柱。**HYLE 定位=做 llama.cpp 脚下那层它现在只能东拼西凑(httplib+ggml+自写线程)的统一底座**。RESTful API 因此是底座一等能力,不是可选 L1(HTTP 借-造抉择见 scope HTTP 专项)。
 
-**为什么蜂群 agent 最对**：
-- 一个 agent 大部分时间在**等**（LLM 返回、工具、网络），CPU 几乎闲着。
-- 要**百万个**并发跑在少数核上。`std::thread`（每个 1-2MB 栈 + 内核切换）几千个到顶；**fiber（64KB-1MB 池化栈 + 10-20ns 切换）百万级是设计目标**。
-- agent 间要轻量消息（channel）、共享状态（shmem）、IO 让出（proactor）——**全是 HYLE 的 Tier 0/1**。
-- 2026 没有一个 C++ infra 是冲着「百万 IO-bound agent」设计的——**真空地带**。
+**为什么"CAD/BIM 管线"是对的第二锚**：它不是新赌注,是 **clay 的老本行被重新激活**——clay 的 `taskgraph` 插件(Task/schema/socket/kernel/graph_io)就是**节点图执行引擎**,宿主 slate-render 带 `cycles` 渲染器。现代 CAD/BIM 的变化在于:①参数化建模=**依赖 DAG 增量重算**(改一个参数,只重算下游受影响节点)——这是 HYLE **graph 支柱**的教科书消费者,而推理引擎几乎不碰 graph;②几何核/网格布尔/BVH 遍历/光追=**compute+simd 重载**;③大装配体/场景图/BVH=**mem 大对象管理**;④云端协同/实时多人编辑把 **io+sched** 从"本地单机"拉到"高并发网络"。四样全压 + 独占拉满 graph,**正好补上推理引擎压不到的那根支柱**——两个北极星合起来才覆盖 HYLE 全部五支柱。
 
-这把 HYLE 从「通用 infra 赌有人用」重定义为「**为 clay 死后才出现的 AI-native 负载（尤其蜂群 agent）做的 infra**」。采用逻辑也变了：**不需要广泛采用，只需成为一个有说服力的 AI-native 引擎的底座**——那个引擎可以是自己的。
+**为什么蜂群 agent 降为消费者**：一个 agent 大部分时间在**等**(LLM/工具/网络),要**百万个**跑在少数核上——`std::thread`(每个 1-2MB 栈)几千个到顶,**fiber(64KB-1MB 池化栈 + 10-20ns 切换)百万级是设计目标**。它最契合 fiber,但只压 io+sched 半边,不压 compute/graph,故是引擎的消费者而非独立锚。
+
+这把 HYLE 从「通用 infra 赌有人用」重定义为「**为两个四样全压的具体 workload(AI 推理 + CAD/BIM)做的统一底座**」。采用逻辑也变了：**不需要广泛采用,只需成为一个有说服力的引擎/管线的底座**——那个引擎/管线可以是自己的。
 
 ## 比 Seastar 好在哪
 
@@ -51,9 +50,9 @@ Seastar 是参考标杆：per-core + DPDK/SPDK 内核旁路 IO、completion 驱�
 
 ## 诚实边界（聚焦，不是唱衰）
 
-- **仍要选一个北极星**，否则又摊薄成「三场景都做、都 70 分」。v1 以**类 llama.cpp 推理引擎 + 通用加速库**为锚——四样全压、最能证明"同一套底座"的价值；蜂群 agent 是其消费者之一（fiber 最契合但只压半边）。
-- **顺序**：让北极星定义需求、HYLE 跟着砍，而非先做完通用全套再找用户。这也反过来锐化 scope——引擎北极星下，io serving/sched 批调度/mem cache/compute kernel 都要压实。
-- **采用现实**：作为「广泛采用的通用库」前景仍难（迁移成本/风险厌恶）；作为「一个具体 AI-native 引擎的专用底座」完全合理。**定位决定一切**。
+- **锚是两个具体 workload，不是一句形容词**。v1 以**推理引擎 ＋ CAD/BIM 管线**双锚——都四样全压、合起来压满全部五支柱（推理拉 io/sched/mem/compute，CAD/BIM 独占拉满 graph）；蜂群 agent 是消费者之一（fiber 最契合但只压半边）。**双锚不是摊大饼**：它们正交（一个压 KV-cache/batching，一个压依赖 DAG 重算/几何核），逼 HYLE 把"同一套底座"做到真通用，而非只喂一种负载。
+- **顺序**：让北极星定义需求、HYLE 跟着砍，而非先做完通用全套再找用户。这也反过来锐化 scope——两锚下，io serving/sched 批调度/mem cache/compute kernel/**graph 依赖重算**都要压实。
+- **采用现实**：作为「广泛采用的通用库」前景仍难（迁移成本/风险厌恶）；作为「一个具体引擎/管线（AI 推理或 CAD/BIM）的专用底座」完全合理。**定位决定一切**。
 
 ## 网络能力 + "超 nginx" 的诚实定位
 
@@ -66,4 +65,4 @@ Seastar 是参考标杆：per-core + DPDK/SPDK 内核旁路 IO、completion 驱�
 
 ## 一句话
 
-clay 死于生不逢时——它要的 workload 还没来。HYLE 生于 AI-native 负载把「并发+内存+计算+IO」四样同时压满的时代，**以类 llama.cpp 推理引擎 + 通用加速库为北极星**（蜂群 agent 是其消费者之一），靠「同一套底座 + 吃尽硬件独家加速」做到 std/拼装货摸不到的极致。不求广泛采用，求成为一个有说服力的 AI-native 引擎的地基。
+clay 死于生不逢时——它服务的 CAD/渲染管线当年只压 compute+graph 两根，四样没到临界。HYLE 生于两类 workload 把「并发+内存+计算+IO」四样同时压满的时代，**以两个具体的四样全压 workload 为双北极星：类 llama.cpp 推理引擎 ＋ CAD/BIM 参数化+渲染管线**（前者拉满 io/sched/mem/compute，后者额外拉满 graph，合起来覆盖全部五支柱；蜂群 agent 是消费者之一），靠「同一套底座 + 吃尽硬件独家加速」做到 std/拼装货摸不到的极致。不求广泛采用，求成为一个有说服力的引擎/管线的地基。

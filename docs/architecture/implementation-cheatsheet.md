@@ -8,7 +8,7 @@
 
 ## 0. 北极星(一切取舍的标尺)
 - **核心目标 = 性能 SOTA**。标尺不是 std(赢它是最低门槛),是各领域**参考库**(hashmap→absl/F14、分配器→mimalloc、队列→tokio/moodycamel、SIMD→Highway)。**做到等同或超过才算数。**
-- **服务对象**:① **类 llama.cpp 推理引擎 + 通用加速库(v1 北极星,四样全压:io serving+HTTP+批调度+KV-cache+GPU/CPU kernel)** ② 蜂群 agent(消费者之一,压 fiber+io+channel)。热路径 = fiber/io/channel/mem/hashmap/SIMD。
+- **服务对象(双北极星,都四样全压,合起来压满五支柱)**:① **类 llama.cpp 推理引擎**(io serving+HTTP+批调度+KV-cache+GPU/CPU kernel,拉满 io/sched/mem/compute) ② **CAD/BIM 参数化+渲染管线**(参数化依赖 DAG 增量重算+几何/BVH kernel+大场景图+云端协同,额外拉满 **graph** 支柱——clay taskgraph 老本行);③ 蜂群 agent(消费者之一,压 fiber+io+channel)。热路径 = fiber/io/channel/mem/hashmap/SIMD/**graph 重算**。
 
 ## 1. std 使用纪律(分层,源:coding-conventions §1)
 - **公开头/跨 DLL/C-ABI 签名禁 std 拥有型**:`std::string`/`vector`/`unordered_map`/`shared_ptr`/`function`。用 `string_ref`(视图)/`CArray`/SwissTable/侵入式 `Ref<T>`/函数指针。**硬线(可 lint)**:公开头 `#include <string>/<vector>/<unordered_map>` 用于导出符号 = 违规。

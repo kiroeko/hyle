@@ -62,7 +62,7 @@ container/       │                            │    vector+      mem;containe
 
 > **为什么需要这一轴（2026-07-03 补，源于一次真实教训）**：计划最初只有轴 A/B，两者都是**自底向上的机制**。结果做到 sched-04d（fiber 定时等待 + 跨核 cancel 队列）时发现**没有消费者**——因为它服务的能力"带超时的网络 io"从没被列出来。机制清单会堆出**悬空机制**：某块底层机制做完了却没人用，因为顶层能力没被登记来反向拉动它。轴 C 修这个：先列北极星能力，每个能力**驱动**（consumer-drives）一组机制里程碑；**没有能力驱动的机制里程碑不做**（等它，避免拍错接口——这正是 sched-04d 当初被推迟的理由）。
 >
-> **北极星**：能跑一个**真实的网络服务器**（不是 echo 玩具）——多连接、带超时、可取消、能优雅关闭。这是 HYLE io/sched 支柱的验收标尺。
+> **北极星**（两个四样全压的具体 workload，见 motivation）：**① 类 llama.cpp 推理引擎**——能跑一个真实的网络服务器（不是 echo 玩具，多连接/带超时/可取消/优雅关闭）+ serving 与 compute 同进程零阻抗，验收 io/sched/mem/compute 四支柱；**② CAD/BIM 参数化 + 渲染管线**——参数化依赖 DAG 增量重算 + 几何/BVH compute kernel，验收 graph 支柱（推理引擎不碰的那根）+ compute/mem。两锚合起来是 HYLE 全部五支柱的验收标尺。
 
 | 能力 | 一句话 | 驱动的机制里程碑 | 状态 |
 |---|---|---|---|
@@ -76,7 +76,8 @@ container/       │                            │    vector+      mem;containe
 | **C8 阻塞卸载** | `spawn_blocking`：把阻塞 syscall/CPU 活扔到卸载池,不拖死 shard worker | **sched-11**（阻塞卸载线程池 + sysmon）| 📋 未排期。sched-design §2.4 **自己承认**"一个阻塞 syscall 拖死整 worker/core"却无 API。tokio/marl/seastar 都有。真服务器调用阻塞库(DB 驱动/文件/getaddrinfo)必需 |
 | **C9 TLS** | 加密 socket（over co_await stream）| **io-08**（借 BoringSSL/OpenSSL 做 shim over 现有 stream）| 📋 未排期。asio/libevent 都当核心。**任何面向公网的服务器必需**,roadmap 原本完全没有=真漏 |
 | **C10 异步 DNS + 信号** | 异步域名解析 + signal_set（SIGTERM/SIGINT）| **io-09** | 📋 未排期。审计发现 `resolve_addr` 是同步 `getaddrinfo`,**阻塞整个 shard worker**(非一个 fiber),违背 share-nothing——真客户端必需。signal 处理是 C4 优雅关闭的触发器 |
-| **C11 HTTP serving/client** | HTTP/1.1 server+client over 自有 io_uring/fiber（借纯 parser + 自造集成）| **io-10**（HTTP/1.1，借 picohttpparser + 集成层）+ **io-11**（HTTP/2，借 nghttp2，后置）| 📋 未排期,依赖 C2·C9·C10(超时/TLS/DNS)。**类 llama.cpp 推理引擎必需 REST**=北极星一等能力。定案:三层分工(IO 自有 / 解析借纯 parser / 集成自写 / 路由业务留上层);**不结合完整库**(asio/beast/httplib C++ 里结合不干净,详见 scope HTTP 专项)。性能靠"数据不离开 io_uring/fiber、无双重 poll/无阻塞线程池"。**验收标尺**:比 nginx 的正确战场=高并发动态+AI serving(与 compute 同进程零阻抗),非纯静态伺服 |
+| **C11 HTTP serving/client** | HTTP/1.1 server+client over 自有 io_uring/fiber（借纯 parser + 自造集成）| **io-10**（HTTP/1.1，借 picohttpparser + 集成层）+ **io-11**（HTTP/2，借 nghttp2，后置）| 📋 未排期,依赖 C2·C9·C10(超时/TLS/DNS)。**类 llama.cpp 推理引擎必需 REST**=北极星①一等能力。定案:三层分工(IO 自有 / 解析借纯 parser / 集成自写 / 路由业务留上层);**不结合完整库**(asio/beast/httplib C++ 里结合不干净,详见 scope HTTP 专项)。性能靠"数据不离开 io_uring/fiber、无双重 poll/无阻塞线程池"。**验收标尺**:比 nginx 的正确战场=高并发动态+AI serving(与 compute 同进程零阻抗),非纯静态伺服 |
+| **C12 参数化依赖 DAG 增量重算** | 节点图：改一个输入只重算下游脏节点，重算子图并行跑在 work-stealing sched 上、几何/数值 kernel 走 compute | **graph-01**（taskgraph 绑 sched：脏标记传播 + 拓扑并行调度 + 节点结果缓存）+ **graph-02**（数据并行 parallel_for/reduce over range，与 graph 编排区分）| 📋 未排期。**北极星② CAD/BIM 一等能力**（clay taskgraph 老本行：Task/schema/socket/kernel/graph_io）。推理引擎不碰 graph，故这是**独占拉满 graph 支柱**的驱动者。把 graph 从"P6 纯收口件"提为能力驱动的支柱；依赖 sched（节点跑 fiber/work-stealing）+ compute（kernel）。**验收标尺**：一个真实参数化模型（改参数→增量重算，对比全量重算的加速比 + 重算可中途取消，接 C3）|
 
 > **读法**：轴 C 决定"下一个做什么"（选一个未交付能力 → 做它驱动的机制）；轴 B 决定"这个能力怎么拆成可编可测的步骤"。**机制里程碑若在轴 C 找不到驱动它的能力，就是投机，不做**（例：孤立的 kqueue/SQPOLL/sched-04d 都曾是这类——SQPOLL 由"延迟受限 io"驱动、sched-04d 由 C2 驱动，能力未排期前都不做）。
 >
@@ -105,7 +106,7 @@ container/       │                            │    vector+      mem;containe
 | **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~1.3k 核心+同步+协程胶水+fiber亲和✅(fcontext/work-stealing/Waker/conditional-notify/CV+Mutex+WaitGroup+Latch+Channel 对标 marl 追平反超 + Task/co_await + spawn_on 绑核) + ~2-4k 后段(取消 07/优雅关闭 08/fiber-mode 定时 04d/**并发原语补全 09**/**JoinHandle+select 10**/**阻塞卸载 11**)——**均由轴 C 能力驱动,未排期前不做**(04d/10←C2·C7,07←C3,08←C4,09·10←C7,11←C8) |
 | **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem / HTTP | 9-14k | ~1.8k 已做(proactor 三后端全真 op + co_await + shard-per-core + Tcp/Udp 封装 + echo/pipelined bench + **multishot accept/recv + provided buffer ring 07a/b**)✅ + ~5-9k 后段(file/shmem 05·带超时 06·**TLS 08**·**异步DNS+signal 09**·**HTTP/1.1 10**·**HTTP/2 11**;kqueue)——由 C2/C5/C9/C10/C11 驱动 |
 | **P5** | compute | device/stream包ggml / device buffer(compute 自有) / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
-| **P6** | graph + 收口 | taskgraph绑sched / C-ABI shim / serialize/hash/T3 / FFI | 11-17k | **~6-11k**(多借 simdjson 等) |
+| **P6** | graph（北极星②驱动，非纯收口）+ 收口 | taskgraph绑sched（脏标记增量重算，C12 驱动）/ C-ABI shim / serialize/hash/T3 / FFI | 11-17k | **~6-11k**(多借 simdjson 等) |
 
 **HYLE 自有合计:~28-40k 生产 / ~52-68k 含测试**(实测 test/prod≈0.65;2026-07-03 参考库审计后上修——补登 sched-09/10/11 + io-06/07/08/09/**10/11(HTTP)** + obs-02 等真缺口机制,分母回涨 ~6-10k;HTTP serving+client 是推理引擎北极星的一等能力)。**约 58 个里程碑**(milestones/README 为准),每个"写完→编过→单测→基准→提交"闭环。
 
