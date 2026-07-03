@@ -5,18 +5,20 @@
 // WaitGroup(1) completion signal (exactly what test code hand-rolled before
 // sched-10). Then when_all / when_any cost per N-task group.
 //
-// MEASURED (Win MSVC Release, 2026-07-03): spawn_task+join ~869ns vs raw fiber
-// +WaitGroup ~683ns = the sugar is ~1.27x. This is NOT zero-overhead, and the
-// cost is understood, not a bug: spawn_task heap-allocates 2 control blocks
-// (JoinState result slot + TaskDriver{Task frame + Fiber}) so the CALLER manages
-// ZERO lifetime (the driver self-frees via the Fiber finish hook); the raw path
-// reuses caller-stack objects (RawTask + Fiber) and 1 stack alloc, but in turn
-// the CALLER must keep them alive + drain() before they die. So the ~186ns buys
-// "own-nothing" ergonomics + safety (no dangling-fiber footgun). spawn is not the
-// tightest hot path (that's the 23ns fiber switch / sync round-trip); paying
-// ~0.9us to launch an owned task with a result handle is the right trade. If a
-// hot path truly needs launch-heavy throughput without a result, raw fiber+
-// WaitGroup stays available (this bench is exactly why it's documented).
+// MEASURED (2026-07-03, batch-100/task amortized, de-noised to err%<3):
+//   Win MSVC Release : raw 338ns/task vs spawn_task 390ns = ~1.15x (~52ns layer)
+//   Linux GCC Release: raw 426ns/task vs spawn_task 405ns = ~1.0x (statistical tie)
+// So the layer is ESSENTIALLY FREE per task once the OS scheduler handoff is
+// amortized. (A naive SINGLE-task round-trip printed a scary ~1.3x Win / ~2x Linux
+// -- that was OS cross-thread wakeup jitter, NOT the layer; batching exposed the
+// truth. Lesson re-confirmed: sub-us sched numbers need amortization + iterations,
+// or thread-wakeup noise masquerades as "overhead".) The tiny Win delta = 2 extra
+// mimalloc allocs (JoinState slot + TaskDriver{Task frame+Fiber}) that buy the
+// caller ZERO lifetime management (driver self-frees via the Fiber finish hook),
+// vs the raw path's caller-owned stack objects that need explicit keep-alive +
+// drain(). Right trade: spawn is not the tightest hot path (that's the 23ns fiber
+// switch / sync round-trip). Raw fiber+WaitGroup stays available for launch-heavy
+// no-result hot paths -- this bench is exactly why that remains documented.
 //
 // No external rival: tokio (Rust) / folly coro use different runtimes; the honest
 // comparison is "our sugar vs our own raw primitives". Whatever prints, prints.
@@ -146,7 +148,7 @@ int main() {
     Scheduler sched(4, system_allocator(), 4096);
     Allocator a = system_allocator();
     ankerl::nanobench::Bench b;
-    b.title("when_all / when_any over 4-task pack").relative(true).minEpochIterations(500);
+    b.title("when_all / when_any over 4-task pack").relative(true).minEpochIterations(5000);
 
     b.run("when_all(4)", [&] {
       auto h0 = spawn_task(sched, a, ret_coro(a, 0));
