@@ -66,7 +66,7 @@ container/       │                            │    vector+      mem;containe
 
 | 能力 | 一句话 | 驱动的机制里程碑 | 状态 |
 |---|---|---|---|
-| **C1 并发 io 服务** | 多连接 co_await recv/send/accept，shard-per-core | io-01/02/03/04 ✅；**io-07a**（multishot accept）✅；**io-07b**（multishot recv + provided buffer ring）待 | 🔶 基础 + multishot accept 已交付。**半成品补完中**：`Completion` 当初照 liburing 预留 `kMore`(multishot)/`kBuffer`(零拷贝 buffer ring) 两 flag——**kMore 已随 io-07a multishot accept 接上**(三后端,一次 arm 持续吐连接);**kBuffer(buffer ring)待 io-07b**。留 flag 不接=没抄全,正在补 |
+| **C1 并发 io 服务** | 多连接 co_await recv/send/accept，shard-per-core | io-01/02/03/04 ✅；**io-07a**（multishot accept）✅；**io-07b**（multishot recv + provided buffer ring）✅ | ✅ **半成品全补完**：`Completion` 当初照 liburing 预留的 `kMore`(multishot)/`kBuffer`(零拷贝 buffer ring) 两 flag,**kMore 随 io-07a multishot accept、kBuffer 随 io-07b buffer ring + multishot recv 全接上**(io_uring 原生;accept 在 IOCP/epoll 有 emulation,buffer ring io_uring only)。留 flag 不接的"没抄全"已清 |
 | **C2 带超时的 io** | `recv/accept/connect` 带 deadline，超时取消在途 op | **io-06**（io_uring `ASYNC_CANCEL`/IOCP `CancelIoEx` 取消在途 op）**驱动** sched-04d（fiber 定时等待 + 跨核 timer cancel 队列）；底层需 **C7 的 select**（等 timer/io 先完成者）| 📋 未排期。**几乎所有网络库的生存能力**（tokio `timeout()`/Go `SetReadDeadline`/asio `cancel_after`/seastar `with_timeout`）——无它，慢/死连接永久占 fiber+fd+buffer。sched-04d 的真实消费者 |
 | **C3 结构化取消** | CancelToken 树 + await 取消点，父取消传播子 | sched-07 | 📋 未排期。C2 的 io 取消是它的一个特例；先做 C2 定形 io 侧 cancel，再泛化到 C3 |
 | **C4 优雅关闭** | 两阶段 drain：停收新连接 → 排空在途 → 逆序清理 | sched-08（依赖 sched-07）；触发靠 **C10 的 signal 处理**（SIGTERM/SIGINT）| 📋 未排期。真服务器停机/热重启必需 |
@@ -103,7 +103,7 @@ container/       │                            │    vector+      mem;containe
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | ~2k ✅主力 |
 | **P3** | simd | vec+scalar / SSE4.2+AVX2 / AVX512+NEON / 变体dispatch / dtype / 数学核(Highway+xsimd) | 10-16k | ~2.3k 已做 + ~3-5k 广度补全 = **~5-8k** |
 | **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~1.3k 核心+同步+协程胶水+fiber亲和✅(fcontext/work-stealing/Waker/conditional-notify/CV+Mutex+WaitGroup+Latch+Channel 对标 marl 追平反超 + Task/co_await + spawn_on 绑核) + ~2-4k 后段(取消 07/优雅关闭 08/fiber-mode 定时 04d/**并发原语补全 09**/**JoinHandle+select 10**/**阻塞卸载 11**)——**均由轴 C 能力驱动,未排期前不做**(04d/10←C2·C7,07←C3,08←C4,09·10←C7,11←C8) |
-| **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem / HTTP | 9-14k | ~1.67k 已做(proactor 三后端全真 op + co_await + shard-per-core + Tcp/Udp 封装 + echo/pipelined bench + **multishot accept 07a**)✅ + ~5-9k 后段(file/shmem 05·带超时 06·bufring+multishot recv 07b·**TLS 08**·**异步DNS+signal 09**·**HTTP/1.1 10**·**HTTP/2 11**;kqueue)——由 C2/C5/C9/C10/C11 驱动 |
+| **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem / HTTP | 9-14k | ~1.8k 已做(proactor 三后端全真 op + co_await + shard-per-core + Tcp/Udp 封装 + echo/pipelined bench + **multishot accept/recv + provided buffer ring 07a/b**)✅ + ~5-9k 后段(file/shmem 05·带超时 06·**TLS 08**·**异步DNS+signal 09**·**HTTP/1.1 10**·**HTTP/2 11**;kqueue)——由 C2/C5/C9/C10/C11 驱动 |
 | **P5** | compute | device/stream包ggml / device buffer(compute 自有) / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
 | **P6** | graph + 收口 | taskgraph绑sched / C-ABI shim / serialize/hash/T3 / FFI | 11-17k | **~6-11k**(多借 simdjson 等) |
 
