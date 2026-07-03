@@ -62,7 +62,7 @@ container/       │                            │    vector+      mem;containe
 
 > **为什么需要这一轴（2026-07-03 补，源于一次真实教训）**：计划最初只有轴 A/B，两者都是**自底向上的机制**。结果做到 sched-04d（fiber 定时等待 + 跨核 cancel 队列）时发现**没有消费者**——因为它服务的能力"带超时的网络 io"从没被列出来。机制清单会堆出**悬空机制**：某块底层机制做完了却没人用，因为顶层能力没被登记来反向拉动它。轴 C 修这个：先列北极星能力，每个能力**驱动**（consumer-drives）一组机制里程碑；**没有能力驱动的机制里程碑不做**（等它，避免拍错接口——这正是 sched-04d 当初被推迟的理由）。
 >
-> **北极星**（两个四样全压的具体 workload，见 motivation）：**① 类 llama.cpp 推理引擎**——能跑一个真实的网络服务器（不是 echo 玩具，多连接/带超时/可取消/优雅关闭）+ serving 与 compute 同进程零阻抗，验收 io/sched/mem/compute 四支柱；**② CAD/BIM 参数化 + 渲染管线**——参数化依赖 DAG 增量重算 + 几何/BVH compute kernel，验收 graph 支柱（推理引擎不碰的那根）+ compute/mem。两锚合起来是 HYLE 全部五支柱的验收标尺。
+> **北极星**（两个四样全压的具体 workload，见 motivation）：**① 类 llama.cpp 推理引擎**——能跑一个真实的网络服务器（不是 echo 玩具，多连接/带超时/可取消/优雅关闭）+ serving 与 compute 同进程零阻抗，验收 io/sched/mem/compute 四支柱；**② CAD/BIM/CAE 工程计算管线**——参数化/仿真依赖 DAG 增量重算 + 几何/BVH compute kernel + CAE 的稀疏线代/迭代求解器，验收 graph 支柱（推理引擎不碰的那根）+ compute/simd/mem（CAE 把 compute/simd 压到求解器深度）。两锚合起来是 HYLE 全部五支柱的验收标尺。
 
 | 能力 | 一句话 | 驱动的机制里程碑 | 状态 |
 |---|---|---|---|
@@ -77,7 +77,7 @@ container/       │                            │    vector+      mem;containe
 | **C9 TLS** | 加密 socket（over co_await stream）| **io-08**（借 BoringSSL/OpenSSL 做 shim over 现有 stream）| 📋 未排期。asio/libevent 都当核心。**任何面向公网的服务器必需**,roadmap 原本完全没有=真漏 |
 | **C10 异步 DNS + 信号** | 异步域名解析 + signal_set（SIGTERM/SIGINT）| **io-09** | 📋 未排期。审计发现 `resolve_addr` 是同步 `getaddrinfo`,**阻塞整个 shard worker**(非一个 fiber),违背 share-nothing——真客户端必需。signal 处理是 C4 优雅关闭的触发器 |
 | **C11 HTTP serving/client** | HTTP/1.1 server+client over 自有 io_uring/fiber（借纯 parser + 自造集成）| **io-10**（HTTP/1.1，借 picohttpparser + 集成层）+ **io-11**（HTTP/2，借 nghttp2，后置）| 📋 未排期,依赖 C2·C9·C10(超时/TLS/DNS)。**类 llama.cpp 推理引擎必需 REST**=北极星①一等能力。定案:三层分工(IO 自有 / 解析借纯 parser / 集成自写 / 路由业务留上层);**不结合完整库**(asio/beast/httplib C++ 里结合不干净,详见 scope HTTP 专项)。性能靠"数据不离开 io_uring/fiber、无双重 poll/无阻塞线程池"。**验收标尺**:比 nginx 的正确战场=高并发动态+AI serving(与 compute 同进程零阻抗),非纯静态伺服 |
-| **C12 参数化依赖 DAG 增量重算** | 节点图：改一个输入只重算下游脏节点，重算子图并行跑在 work-stealing sched 上、几何/数值 kernel 走 compute | **graph-01**（taskgraph 绑 sched：脏标记传播 + 拓扑并行调度 + 节点结果缓存）+ **graph-02**（数据并行 parallel_for/reduce over range，与 graph 编排区分）| 📋 未排期。**北极星② CAD/BIM 一等能力**（clay taskgraph 老本行：Task/schema/socket/kernel/graph_io）。推理引擎不碰 graph，故这是**独占拉满 graph 支柱**的驱动者。把 graph 从"P6 纯收口件"提为能力驱动的支柱；依赖 sched（节点跑 fiber/work-stealing）+ compute（kernel）。**验收标尺**：一个真实参数化模型（改参数→增量重算，对比全量重算的加速比 + 重算可中途取消，接 C3）|
+| **C12 参数化/仿真依赖 DAG 增量重算** | 节点图：改一个输入只重算下游脏节点，重算子图并行跑在 work-stealing sched 上、几何/数值/求解 kernel 走 compute | **graph-01**（taskgraph 绑 sched：脏标记传播 + 拓扑并行调度 + 节点结果缓存）+ **graph-02**（数据并行 parallel_for/reduce over range，与 graph 编排区分）| 📋 未排期。**北极星② CAD/BIM/CAE 一等能力**（clay taskgraph 老本行：Task/schema/socket/kernel/graph_io）。推理引擎不碰 graph，故这是**独占拉满 graph 支柱**的驱动者（CAD 参数化重算、CAE 仿真流水/求解迭代同构）。把 graph 从"P6 纯收口件"提为能力驱动的支柱；依赖 sched（节点跑 fiber/work-stealing）+ compute（几何/求解 kernel）。**验收标尺**：一个真实参数化/仿真模型（改参数→增量重算，对比全量重算的加速比 + 重算可中途取消，接 C3）|
 
 > **读法**：轴 C 决定"下一个做什么"（选一个未交付能力 → 做它驱动的机制）；轴 B 决定"这个能力怎么拆成可编可测的步骤"。**机制里程碑若在轴 C 找不到驱动它的能力，就是投机，不做**（例：孤立的 kqueue/SQPOLL/sched-04d 都曾是这类——SQPOLL 由"延迟受限 io"驱动、sched-04d 由 C2 驱动，能力未排期前都不做）。
 >

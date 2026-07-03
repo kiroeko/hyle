@@ -1,12 +1,12 @@
 # HYLE 设计文档
 
-> **HYLE = HYbrid LEvels**。一个通用高性能 C++ infra——给 AI 推理引擎 / CAD·BIM 参数化+渲染管线 / agent 共用的、贴近硬件的混合计算基底。是对 `slate-render` 中 clay infra 层的重构与扩大。
+> **HYLE = HYbrid LEvels**。一个通用高性能 C++ infra——给 AI 推理引擎 / CAD·BIM·CAE 工程计算管线 / agent 共用的、贴近硬件的混合计算基底。是对 `slate-render` 中 clay infra 层的重构与扩大。
 >
 > 本目录是 HYLE **设计/背景/决策的信源**：设计推理、背景、命名、源码位置、重构路线都集中在此。**注意：代码本身才是实现的唯一信源**——文档描述与代码冲突时以代码为准（性能结论以 `performance.md` 实测为准）。
 
 ## HYLE 是什么
 
-**一个 C++ 基础设施库**（编译成带 C-ABI 的共享库），给上层（AI 推理引擎、CAD/BIM 参数化+渲染管线、训练框架、agent）当地基。把四样东西做在**同一套底座**上：调度（线程/进程/纤程/协程一个调度器）、内存（分配器/arena/cache 对齐/NUMA）、计算（CPU SIMD + GPU CUDA/Vulkan，算子借 ggml）、IO（网络 proactor + 文件 + 跨进程共享内存）。
+**一个 C++ 基础设施库**（编译成带 C-ABI 的共享库），给上层（AI 推理引擎、CAD/BIM/CAE 工程计算管线、训练框架、agent）当地基。把四样东西做在**同一套底座**上：调度（线程/进程/纤程/协程一个调度器）、内存（分配器/arena/cache 对齐/NUMA）、计算（CPU SIMD + GPU CUDA/Vulkan，算子借 ggml）、IO（网络 proactor + 文件 + 跨进程共享内存）。
 
 **差异点是"同一套底座"**：GPU 算完、网卡收包、fiber 让出，都回到同一个调度器、唤醒同一个 fiber，而非四个子系统各开线程池、各跑事件循环互相打架。HYLE 不是"又一个 hashmap/日志库"，而是让计算/并发/内存/IO 无阻抗拼在一起的那层地基。
 
@@ -40,7 +40,7 @@ HYLE infra（通用、不特化、贴硬件）
 | 文档 | 内容 |
 |---|---|
 | ⭐ [`implementation-cheatsheet.md`](./implementation-cheatsheet.md) | **实现速查表（写代码前只读这一张）**：聚合每次实现都要用的硬规则——std 红线/失败模型/分层判据/C-ABI/调用边界/里程碑 CHECKLIST/构建环境。深层 nuance 按需深读下面各 design 文档 |
-| [`motivation.md`](./motivation.md) | **动机**：为什么是现在/为谁做——四样全压负载、双北极星(推理引擎 ＋ CAD/BIM 管线)、比 Seastar 多异构维度、极致=吃尽硬件独家加速 |
+| [`motivation.md`](./motivation.md) | **动机**：为什么是现在/为谁做——四样全压负载、双北极星(推理引擎 ＋ CAD/BIM/CAE 工程管线)、比 Seastar 多异构维度、极致=吃尽硬件独家加速 |
 | [`engineering-charter.md`](./engineering-charter.md) | **工程章程**：动手前最终依据——C++23 标准/错误模型/命名宏、开发范式、测试方案、边界、对外 FFI 决策 |
 | [`coding-conventions.md`](./coding-conventions.md) | **编码规范**：每一行怎么写才不破范式——std 分层/include/宏纪律、C-ABI 范式、错误处理、能力 dispatch 三层模型、clay 独特写法三张表 |
 | [`clay-asset-liability.md`](./clay-asset-liability.md) | clay 资产负债表：六子系统逐个盘点（内存/DataModel/SIMD/容器/并发/taskgraph），含 5 个 bug、空位 grep 证据、继承/重写判断 |

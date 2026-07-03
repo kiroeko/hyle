@@ -6,28 +6,28 @@
 
 clay 没死于技术差——内存/SIMD/线程池/**taskgraph 节点图执行引擎**都是真的（它本就服务 slate-render 的 CAD/渲染管线：`cycles` 渲染器 + `taskgraph` 参数化依赖重算）。它死于**那时的 workload 还没把「并发 + 内存 + 计算 + IO」四样同时压满**——CAD/渲染管线当年主要压 compute + graph 两根，io/并发是本地单机规模，"统一成一套底座"优雅但无溢价，于是 clay 成了博物馆。
 
-**两类 workload 现在把四样同时推到临界**：① **AI-native 推理引擎**（serving + 批调度 + KV-cache + GPU/CPU kernel）；② **现代 CAD/BIM 参数化 + 渲染管线**（云端协同/实时参数化把 io+并发拉起来，叠加它本来就重的 compute+graph）。这是"一套底座"从"没人需要"变成"刚需"的临界点——也是 HYLE 区别于 clay 的根本外部条件。不是我们更聪明，是时代变了，**且 CAD/BIM 这一支正是 clay 血统里就在做、如今被重新激活的老本行**。
+**两类 workload 现在把四样同时推到临界**：① **AI-native 推理引擎**（serving + 批调度 + KV-cache + GPU/CPU kernel）；② **现代 CAD/BIM/CAE 工程计算管线**（参数化建模 + 渲染 + 数值仿真：云端协同/实时参数化把 io+并发拉起来，叠加它本来就重的 compute+graph；CAE 的 FEA/CFD 求解更把 compute/simd 压到极致）。这是"一套底座"从"没人需要"变成"刚需"的临界点——也是 HYLE 区别于 clay 的根本外部条件。不是我们更聪明，是时代变了，**且工程管线这一支正是 clay 血统里就在做、如今被重新激活的老本行**。
 
-## 北极星：两个「四样全压」的具体 workload——推理引擎 ＋ CAD/BIM 管线（v1 主攻）
+## 北极星：两个「四样全压」的具体 workload——推理引擎 ＋ CAD/BIM/CAE 工程管线（v1 主攻）
 
-> **2026-07-03 演进**：① 早期把"蜂群 agent"列为最尖的刀——**太窄、会误导**(只压 fiber+io+channel,不压 compute/simd,把 HYLE 引向"agent 专用"而非通用底座),降为**消费者之一**。② 一度写成"推理引擎 + **通用加速库**"——但"通用加速库"太含糊,听着像 clay 2.0 摊大饼,**给不出验收标尺**。现改为**两把有血统、有压力的具体实刀**并列为锚:**类 llama.cpp 推理引擎** ＋ **CAD/BIM 参数化建模 + 渲染管线**。二者都**四样全压**,且合起来**压满 HYLE 全部五个支柱**——推理引擎拉满 io/sched/mem/compute,CAD/BIM 额外拉满 **graph**(参数化依赖重算,推理引擎不怎么碰)。"通用"不再靠形容词,靠"两个正交的具体 workload 都跑得动"来证明。
+> **2026-07-03 演进**：① 早期把"蜂群 agent"列为最尖的刀——**太窄、会误导**(只压 fiber+io+channel,不压 compute/simd,把 HYLE 引向"agent 专用"而非通用底座),降为**消费者之一**。② 一度写成"推理引擎 + **通用加速库**"——但"通用加速库"太含糊,听着像 clay 2.0 摊大饼,**给不出验收标尺**。现改为**两把有血统、有压力的具体实刀**并列为锚:**类 llama.cpp 推理引擎** ＋ **CAD/BIM/CAE 工程计算管线**(参数化建模 + 渲染 + 数值仿真)。二者都**四样全压**,且合起来**压满 HYLE 全部五个支柱**——推理引擎拉满 io/sched/mem/compute,工程管线额外拉满 **graph**(参数化/仿真依赖重算,推理引擎不怎么碰),其 CAE 分支还把 compute/simd 从"kernel"推到"稀疏线代/迭代求解器"深度。"通用"不再靠形容词,靠"两个正交的具体 workload 都跑得动"来证明。
 
 按契合度排序（前两个是并列北极星，其余是消费者/较弱场景）：
 
 | workload | 压哪几根支柱 | std/拼装货为什么不行 | 契合度 |
 |---|---|---|---|
 | **推理引擎**(类 llama.cpp)| io(RESTful serving,**HTTP 标配**)+ sched(连续 batching)+ mem(paged KV-cache)+ compute/simd(GPU/CPU kernel)| serving 层与 compute 层胶水粘、阻抗失配;llama.cpp 得 vendor cpp-httplib+ggml 拼 | **北极星①**——四样全压、外部热度最高 |
-| **CAD/BIM 参数化 + 渲染管线** | **graph**(参数化依赖 DAG 重算,clay taskgraph 老本行)+ compute/simd(几何核/网格/BVH/光追)+ mem(大场景图/BVH)+ io+sched(云端协同/实时协作把 io+并发拉起来)| 参数化引擎(几何核)+ 渲染器(光追)+ 协同后端(网络)各用一套 runtime 拼,graph 重算与 GPU kernel 跨子系统打架 | **北极星②**——**有 clay 血统直接背书**(taskgraph/cycles),额外拉满 graph 支柱 |
+| **CAD/BIM/CAE 工程管线**(参数化建模+渲染+仿真) | **graph**(参数化/仿真依赖 DAG 重算,clay taskgraph 老本行)+ compute/simd(几何核/网格/BVH/光追;**CAE 再加稀疏线代/迭代求解器/网格 stencil**)+ mem(大场景图/BVH/**刚度矩阵·网格**)+ io+sched(云端协同/**HPC 分布式求解**)| 参数化引擎(几何核)+ 求解器(FEA/CFD)+ 渲染器(光追)+ 协同/HPC 后端各用一套 runtime 拼,graph 重算与 GPU/求解 kernel 跨子系统打架 | **北极星②**——**有 clay 血统直接背书**(taskgraph/cycles),额外拉满 graph 支柱;CAE 把 compute/simd 压到最深 |
 | **蜂群 agent** | fiber + io + channel（百万并发,几乎都在等 LLM/工具/网络）| `std::thread` 几千个就崩 | 强（fiber 最契合但只压半边;是引擎的**消费者**）|
 | **训练引擎** | io+simd 数据管线 + host 编排 | 核心循环是 PyTorch/JAX/NCCL 地盘 | 较弱 |
 
 **为什么"推理引擎"是对的锚**：llama.cpp 是活证据——一个真推理引擎必然**同时**要 ①高并发 RESTful serving(它 vendor 了 cpp-httplib)②GPU/CPU kernel(它就是 ggml)③KV-cache 内存管理 ④请求批调度。这四样正是 HYLE 四支柱。**HYLE 定位=做 llama.cpp 脚下那层它现在只能东拼西凑(httplib+ggml+自写线程)的统一底座**。RESTful API 因此是底座一等能力,不是可选 L1(HTTP 借-造抉择见 scope HTTP 专项)。
 
-**为什么"CAD/BIM 管线"是对的第二锚**：它不是新赌注,是 **clay 的老本行被重新激活**——clay 的 `taskgraph` 插件(Task/schema/socket/kernel/graph_io)就是**节点图执行引擎**,宿主 slate-render 带 `cycles` 渲染器。现代 CAD/BIM 的变化在于:①参数化建模=**依赖 DAG 增量重算**(改一个参数,只重算下游受影响节点)——这是 HYLE **graph 支柱**的教科书消费者,而推理引擎几乎不碰 graph;②几何核/网格布尔/BVH 遍历/光追=**compute+simd 重载**;③大装配体/场景图/BVH=**mem 大对象管理**;④云端协同/实时多人编辑把 **io+sched** 从"本地单机"拉到"高并发网络"。四样全压 + 独占拉满 graph,**正好补上推理引擎压不到的那根支柱**——两个北极星合起来才覆盖 HYLE 全部五支柱。
+**为什么"CAD/BIM/CAE 管线"是对的第二锚**：它不是新赌注,是 **clay 的老本行被重新激活**——clay 的 `taskgraph` 插件(Task/schema/socket/kernel/graph_io)就是**节点图执行引擎**,宿主 slate-render 带 `cycles` 渲染器。现代工程软件的变化在于:①参数化建模/仿真流水=**依赖 DAG 增量重算**(改一个参数,只重算下游受影响节点/单元)——这是 HYLE **graph 支柱**的教科书消费者,而推理引擎几乎不碰 graph;②几何核/网格布尔/BVH 遍历/光追=**compute+simd 重载**,**CAE 的 FEA/CFD 求解更把 compute/simd 推到"稀疏线代 SpMV/迭代求解器/网格 stencil"的深度**(比 CAD 的几何 kernel 更吃向量化+带宽);③大装配体/场景图/BVH/**刚度矩阵·大网格**=**mem 大对象管理**;④云端协同/实时多人编辑/**HPC 分布式求解**把 **io+sched** 从"本地单机"拉到"高并发网络"。四样全压 + 独占拉满 graph,**正好补上推理引擎压不到的那根支柱**——两个北极星合起来才覆盖 HYLE 全部五支柱。CAE 与推理引擎在 compute 维度还高度同源(都是 GEMM/SpMV/stencil 类数值 kernel,共用 simd+GPU 后端)。
 
 **为什么蜂群 agent 降为消费者**：一个 agent 大部分时间在**等**(LLM/工具/网络),要**百万个**跑在少数核上——`std::thread`(每个 1-2MB 栈)几千个到顶,**fiber(64KB-1MB 池化栈 + 10-20ns 切换)百万级是设计目标**。它最契合 fiber,但只压 io+sched 半边,不压 compute/graph,故是引擎的消费者而非独立锚。
 
-这把 HYLE 从「通用 infra 赌有人用」重定义为「**为两个四样全压的具体 workload(AI 推理 + CAD/BIM)做的统一底座**」。采用逻辑也变了：**不需要广泛采用,只需成为一个有说服力的引擎/管线的底座**——那个引擎/管线可以是自己的。
+这把 HYLE 从「通用 infra 赌有人用」重定义为「**为两个四样全压的具体 workload(AI 推理 + CAD/BIM/CAE 工程管线)做的统一底座**」。采用逻辑也变了：**不需要广泛采用,只需成为一个有说服力的引擎/管线的底座**——那个引擎/管线可以是自己的。
 
 ## 比 Seastar 好在哪
 
@@ -50,9 +50,9 @@ Seastar 是参考标杆：per-core + DPDK/SPDK 内核旁路 IO、completion 驱�
 
 ## 诚实边界（聚焦，不是唱衰）
 
-- **锚是两个具体 workload，不是一句形容词**。v1 以**推理引擎 ＋ CAD/BIM 管线**双锚——都四样全压、合起来压满全部五支柱（推理拉 io/sched/mem/compute，CAD/BIM 独占拉满 graph）；蜂群 agent 是消费者之一（fiber 最契合但只压半边）。**双锚不是摊大饼**：它们正交（一个压 KV-cache/batching，一个压依赖 DAG 重算/几何核），逼 HYLE 把"同一套底座"做到真通用，而非只喂一种负载。
+- **锚是两个具体 workload，不是一句形容词**。v1 以**推理引擎 ＋ CAD/BIM/CAE 工程管线**双锚——都四样全压、合起来压满全部五支柱（推理拉 io/sched/mem/compute，工程管线独占拉满 graph、CAE 再把 compute/simd 压到求解器深度）；蜂群 agent 是消费者之一（fiber 最契合但只压半边）。**双锚不是摊大饼**：它们正交（一个压 KV-cache/batching，一个压依赖 DAG 重算/几何核/稀疏求解），逼 HYLE 把"同一套底座"做到真通用，而非只喂一种负载。
 - **顺序**：让北极星定义需求、HYLE 跟着砍，而非先做完通用全套再找用户。这也反过来锐化 scope——两锚下，io serving/sched 批调度/mem cache/compute kernel/**graph 依赖重算**都要压实。
-- **采用现实**：作为「广泛采用的通用库」前景仍难（迁移成本/风险厌恶）；作为「一个具体引擎/管线（AI 推理或 CAD/BIM）的专用底座」完全合理。**定位决定一切**。
+- **采用现实**：作为「广泛采用的通用库」前景仍难（迁移成本/风险厌恶）；作为「一个具体引擎/管线（AI 推理或 CAD/BIM/CAE）的专用底座」完全合理。**定位决定一切**。
 
 ## 网络能力 + "超 nginx" 的诚实定位
 
@@ -65,4 +65,4 @@ Seastar 是参考标杆：per-core + DPDK/SPDK 内核旁路 IO、completion 驱�
 
 ## 一句话
 
-clay 死于生不逢时——它服务的 CAD/渲染管线当年只压 compute+graph 两根，四样没到临界。HYLE 生于两类 workload 把「并发+内存+计算+IO」四样同时压满的时代，**以两个具体的四样全压 workload 为双北极星：类 llama.cpp 推理引擎 ＋ CAD/BIM 参数化+渲染管线**（前者拉满 io/sched/mem/compute，后者额外拉满 graph，合起来覆盖全部五支柱；蜂群 agent 是消费者之一），靠「同一套底座 + 吃尽硬件独家加速」做到 std/拼装货摸不到的极致。不求广泛采用，求成为一个有说服力的引擎/管线的地基。
+clay 死于生不逢时——它服务的 CAD/渲染管线当年只压 compute+graph 两根，四样没到临界。HYLE 生于两类 workload 把「并发+内存+计算+IO」四样同时压满的时代，**以两个具体的四样全压 workload 为双北极星：类 llama.cpp 推理引擎 ＋ CAD/BIM/CAE 工程计算管线（参数化建模+渲染+数值仿真）**（前者拉满 io/sched/mem/compute，后者额外拉满 graph、CAE 再把 compute/simd 压到求解器深度，合起来覆盖全部五支柱；蜂群 agent 是消费者之一），靠「同一套底座 + 吃尽硬件独家加速」做到 std/拼装货摸不到的极致。不求广泛采用，求成为一个有说服力的引擎/管线的地基。

@@ -4,7 +4,7 @@
 
 ## HYLE 是什么
 
-**一个 C++ 基础设施库**（编译成带 C-ABI 的共享库），给上层（AI 推理引擎、CAD/BIM 参数化+渲染管线、训练框架、agent）当地基。把四样东西做在**同一套底座**上：
+**一个 C++ 基础设施库**（编译成带 C-ABI 的共享库），给上层（AI 推理引擎、CAD/BIM/CAE 工程计算管线、训练框架、agent）当地基。把四样东西做在**同一套底座**上：
 
 1. **调度** — 一个调度器同时管 线程 / 进程 / 纤程 / 协程
 2. **内存** — 分配器 / arena / cache-line 对齐 / NUMA
@@ -173,11 +173,11 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 
 > **背景**：上面的"四类不做"是项目早期写的,用户指出"都不靠谱、后面都要审"——早期负空间可能把**通用原语**误判成 out-of-scope。本节逐条重审。
 >
-> **判据不是"参考库有没有",而是两问**:① 它是**原语/机制**还是**策略/协议/领域**?(scope 铁律)② **双北极星(推理引擎 ＋ CAD/BIM 管线底座,见 motivation)需不需要它作为可复用底座件?** 两问都"是原语 + 北极星需要"→ `PULL IN`(补漏);是原语但成熟库已解决→ `BORROW`(借不造);真策略/协议/领域→ `KEEP OUT`;拿不准→ `DISCUSS`(待你拍)。
+> **判据不是"参考库有没有",而是两问**:① 它是**原语/机制**还是**策略/协议/领域**?(scope 铁律)② **双北极星(推理引擎 ＋ CAD/BIM/CAE 工程管线底座,见 motivation)需不需要它作为可复用底座件?** 两问都"是原语 + 北极星需要"→ `PULL IN`(补漏);是原语但成熟库已解决→ `BORROW`(借不造);真策略/协议/领域→ `KEEP OUT`;拿不准→ `DISCUSS`(待你拍)。
 
 | 原判"不做"项 | 重审 | 理由（北极星视角）|
 |---|---|---|
-| **① 应用/领域层**:Tensor/autograd/optimizer/训练循环、tokenizer/sampler/KV-cache、模型格式语义、agent 逻辑/prompt;**光追/光栅化算法、几何核(布尔/NURBS/网格)、BIM 语义(IFC/构件)** | ✅ **KEEP OUT** | 真 L2 领域。北极星是引擎/管线的**底座**不是引擎本身;KV-cache/sampler 是推理引擎的活,光追 kernel/几何算法/IFC 是 CAD/BIM 引擎的活。HYLE 给 compute/mem/**graph 编排**,拼成渲染器/建模器是上层事。**线画在"依赖 DAG 重算/BVH 内存布局/几何数据 SIMD kernel 调度"(底座,HYLE 给) vs "光追积分器/布尔运算/IFC 解析"(应用,消费方写)**。判对。 |
+| **① 应用/领域层**:Tensor/autograd/optimizer/训练循环、tokenizer/sampler/KV-cache、模型格式语义、agent 逻辑/prompt;**光追/光栅化算法、几何核(布尔/NURBS/网格)、BIM 语义(IFC/构件);CAE 的物理模型/本构方程/网格划分器/求解器策略(FEA/CFD 具体算法)** | ✅ **KEEP OUT** | 真 L2 领域。北极星是引擎/管线的**底座**不是引擎本身;KV-cache/sampler 是推理引擎的活,光追 kernel/几何算法/IFC 是 CAD/BIM 引擎的活,本构方程/湍流模型/网格划分是 CAE 求解器的活。HYLE 给 compute/simd/mem/**graph 编排**,拼成渲染器/建模器/求解器是上层事。**线画在"依赖 DAG 重算/BVH·矩阵内存布局/几何·数值 SIMD kernel(SpMV/stencil) 调度"(底座,HYLE 给) vs "光追积分器/布尔运算/IFC 解析/有限元离散化·湍流模型"(应用,消费方写)**。判对。 |
 | **② 加密/TLS**(借 BoringSSL)| 🔄 **BORROW→已登记** | 原判"借不造"对,但**漏了登记**——公网 agent/服务必需。已改判 C9/io-08(借 shim,不自 roll)。 |
 | **② GPU 算子/压缩/JSON**(借 ggml/lz4/simdjson)| ✅ **BORROW**(判对)| 成熟库解决,自造=浪费/危险。北极星需要但"借"就够。JSON 借 simdjson 已明确。 |
 | **③ HTTP/1.1 协议层(client+server 骨架)** | 🔄 **改判 PULL IN(有条件)** | **北极星重排后此条翻案**:类 llama.cpp 推理引擎**必然要 RESTful serving**(llama.cpp 自己 vendor cpp-httplib)——AI 服务器不可能不提供 REST。故 HTTP over fiber/proactor 是底座一等能力,不是 L1。**但成本大、且不能抄 asio**→见下"HTTP 专项:成本与借-造抉择",借-造未定前不动手。 |
@@ -196,8 +196,8 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 | **替换 ggml 算子/训练推理引擎** | ✅ **KEEP OUT** | compute 只做抽象层,判对(借 ggml 是明确决策)。 |
 
 **新发现的真缺口(原负空间根本没提到,审计补)**——均已登记为能力/里程碑,属 `PULL IN`:
-- **Semaphore / RwLock / oneshot / broadcast·watch**(C7/sched-09)、**JoinHandle + select/when_all**(C7/sched-10)、**spawn_blocking**(C8/sched-11)、**带超时 io**(C2/io-06)、**multishot+buffer ring**(C1/io-07)、**异步 DNS + signal**(C10/io-09)。全在**原语侧**、全是双北极星(推理引擎服务底座 + CAD/BIM 协同后端)刚需。
-- **graph 支柱(taskgraph 绑 sched)**:CAD/BIM 北极星把它从"P6 收口件"提为**一等消费者驱动的支柱**——参数化依赖 DAG 的增量重算(改一参数只重算下游脏节点)是 CAD/BIM 核心热路径,graph 节点跑在 work-stealing sched 上、几何 kernel 走 compute。**已在 roadmap 轴 C 登记为 C12(参数化依赖 DAG 增量重算)驱动 graph-01/02**,P6 graph 行改标"北极星②驱动、非纯收口"——悬空点已闭环。
+- **Semaphore / RwLock / oneshot / broadcast·watch**(C7/sched-09)、**JoinHandle + select/when_all**(C7/sched-10)、**spawn_blocking**(C8/sched-11)、**带超时 io**(C2/io-06)、**multishot+buffer ring**(C1/io-07)、**异步 DNS + signal**(C10/io-09)。全在**原语侧**、全是双北极星(推理引擎服务底座 + CAD/BIM/CAE 协同·HPC 后端)刚需。
+- **graph 支柱(taskgraph 绑 sched)**:CAD/BIM/CAE 北极星把它从"P6 收口件"提为**一等消费者驱动的支柱**——参数化/仿真依赖 DAG 的增量重算(改一参数只重算下游脏节点/单元)是工程管线核心热路径,graph 节点跑在 work-stealing sched 上、几何/求解 kernel 走 compute。**已在 roadmap 轴 C 登记为 C12(参数化/仿真依赖 DAG 增量重算)驱动 graph-01/02**,P6 graph 行改标"北极星②驱动、非纯收口"——悬空点已闭环。
 
 **待你拍板(DISCUSS)**:
 - **DISCUSS-1 HTTP —— ✅ 已定案**(见下"HTTP/网络能力:最终结论"):三层分工=IO 自有 / 解析借纯 parser(picohttpparser 起步)/ 集成自写 / 路由业务留上层。结合完整库(asio/beast/httplib)三条死路已论证排除(C++ 无中立异步契约)。
