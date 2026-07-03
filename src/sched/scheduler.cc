@@ -194,8 +194,8 @@ struct Scheduler::Impl {
     // on its owner's private queue. (owner == w.idx here, since a pinned fiber only
     // ever runs on its owner, but route via owner to be explicit + future-proof.)
     if (f->owner_worker() >= 0) {
-      unsigned owner = static_cast<unsigned>(f->owner_worker());
-      while (!workers[owner]->pinned.try_push(f)) platform::this_thread::yield();
+      unsigned owner_idx = static_cast<unsigned>(f->owner_worker());
+      while (!workers[owner_idx]->pinned.try_push(f)) platform::this_thread::yield();
       return;  // owner is THIS running worker -> it'll pop next loop; no unpark
     }
     if (!w.local.push_back(f)) {
@@ -303,11 +303,11 @@ struct Scheduler::Impl {
     // the global stealable pool -- so its io ring + fiber stay on one core. Push
     // to that worker's private queue and unpark IT specifically. The queue is a
     // bounded MPMC ring, so a Waker firing from any thread is safe.
-    int owner = f->owner_worker();
-    if (owner >= 0) {
-      while (!workers[static_cast<unsigned>(owner)]->pinned.try_push(f))
+    int owner_idx = f->owner_worker();
+    if (owner_idx >= 0) {
+      while (!workers[static_cast<unsigned>(owner_idx)]->pinned.try_push(f))
         platform::this_thread::yield();
-      unpark_specific(static_cast<unsigned>(owner));
+      unpark_specific(static_cast<unsigned>(owner_idx));
       return;
     }
     // Foreign-thread inject (Waker may fire anywhere): round-robin across shards.
