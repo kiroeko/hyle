@@ -12,7 +12,7 @@
 
 - **地基（继承 clay，约占 1/3）**：内存分配器 + 容器（flat hashmap/carray/cstring）+ 跨平台原子（catomics）+ 并行编排骨架（taskgraph）。
 - **支柱（自造，约占 2/3）**：统一调度（线程/进程/纤程/协程）、fiber、网络 IO、SIMD、异构计算。
-- **体量**：HYLE 自有 ~22-30k 生产 / ~40-55k 含测试（2026-07 实测密度再投影）；含第三方 vendored 总足迹 ~200-300k+（ggml 主导，详见 [`hyle-scope.md`](./hyle-scope.md) 规模节）。不是"重构那 2 万行"，是"以 clay 为地基的全新 infra"。
+- **体量**：HYLE 自有 ~28-40k 生产（中值 ~34k，2026-07-03 审计 + HTTP 定案后上修）；含第三方 vendored 总足迹 ~200-300k+（ggml 主导，详见 [`hyle-scope.md`](./hyle-scope.md) 规模节）。不是"重构那 2 万行"，是"以 clay 为地基的全新 infra"。实时进度以 milestones/README 为准。
 
 ## 模块划分
 

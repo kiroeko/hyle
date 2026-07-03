@@ -6,7 +6,7 @@
 >
 > **生长方式（JIT）**：最先执行的 `00-scaffolding` 与 walking-skeleton 几步已写完整；其余**临到该模块开工前再补全细节**——后期里程碑依赖前面实现学到的东西，提前写=空想。索引行先占位（ID/依赖/目的/LOC），细节随推进生长。
 >
-> **clay 吸纳完整性标尺**：见 [`../architecture/clay-coverage-map.md`](../architecture/clay-coverage-map.md)——clay 每个文件 → HYLE 对应物/状态/LOC 的逐文件映射。**每个吸纳 clay 的里程碑闭环前必须 diff clay 同名文件 API 表面**，缺的补或显式登记，不许默默略过(红队核账 2026-06 立此纪律)。
+> **clay 能力查漏参考**：见 [`../architecture/clay-coverage-map.md`](../architecture/clay-coverage-map.md)——clay 每个文件 → HYLE 对应物/状态/LOC 的逐文件映射。目标是 **能力覆盖 clay + 性能 ≥ clay,接口不必一致**(clay 用户大多已不在,无接口兼容需求;HYLE 怎么好用/怎么 SOTA 怎么来)。**每个吸纳 clay 的里程碑闭环前对照 clay 同名文件查漏——看有没有漏掉仍需要的能力**,缺的补(或显式登记不做),不许默默略过(红队核账 2026-06 立此纪律)。**注意是"能力查漏",不是追平 clay 的 API 签名/命名。**
 
 ## Walking Skeleton（最先做，纵切验脊）
 
@@ -43,7 +43,7 @@
 
 1. **预测锚错基准**:roadmap "每里程碑 1-4k 行" 是按 **clay C++17 体量**估的。clay 满是 SFINAE/手写 Result/per-type allocator/C++17 polyfill;HYLE C++23 合法地更精简——`<bit>`/`<numbers>`/`std::expected`/concepts/`std::pmr` 把 clay 几百行样板**直接吃掉**(功能在 std 里,非没实现)。math-01 铁证:clay 458→28 行。
 2. **倍率 ∝ 可压缩性**:gap 最大的恰是样板最密的 util/math(std 吃得最多);gap 最小的是 error/platform/SwissTable 等**不可约**真逻辑(~3-7x)。**反向证明非均匀偷工**——若玩具,大件会同样缩水。
-3. **完整性真标尺 = clay API diff(coverage-map),非 LOC**。每里程碑闭环 diff clay 同名文件 API,缺的补或显式登记(container-04b/06b 即可见的登记延期)。"吸纳 ≠ 追平 LOC"。
+3. **完整性标尺 = 能力覆盖(对照 coverage-map 查漏),非 LOC、非 API 签名**。每里程碑闭环对照 clay 同名文件查有没有漏掉仍需要的**能力**,缺的补或显式登记(container-04b/06b 即可见的登记延期)。**"吸纳 ≠ 追平 LOC,也 ≠ 追平接口"**——接口怎么好用/怎么 SOTA 怎么来。
 
 **校准规则(此后预测按"可约性"分档,非一律 clay 体量):**
 - **std 现代化重的小件**(util/math/纯类型设施):预测 **0.03-0.2k**(真实多 30-200 行)。

@@ -347,7 +347,7 @@ HYLE_DEFER(std::fclose(fp));         // 作用域退出时执行（C++23 仍无 
 | **IOCP**（Windows）| Windows 唯一 | OS 原生真 proactor |
 | **epoll**（Linux）| **仅当 io_uring 不可用**（老内核 / `kernel.io_uring_disabled` sysctl / 容器 seccomp 挡） | reactor，内部模拟完成（就绪→内联 IO→completion），保住"io_uring 被禁的硬化容器/k8s"仍能跑 |
 
-**一句话**：正式运行走 io_uring/IOCP（SOTA），epoll 是"io_uring 被关掉时"的兜底降级，非默认——`init()` 自动按此顺序选，`HYLE_IO_FORCE_EPOLL` 仅测试用。**性能对标待 io-04 net 真实并发负载**（孤立测单 read/write 是测内核非测封装）。
+**一句话**：正式运行走 io_uring/IOCP（SOTA），epoll 是"io_uring 被关掉时"的兜底降级，非默认——`init()` 自动按此顺序选，`HYLE_IO_FORCE_EPOLL` 仅测试用。**性能对标已补**（io-04 echo 64 连接×64 round-trip + pipelined 512 流高扇出：submit 批量后单 worker 追平/微赢裸 epoll、shard-per-core 扩展、park 合并空闲 syscall 421→3）——见 [`performance/benchmarks-io.md`](../performance/benchmarks-io.md)。
 
 
 ## 4. C-ABI 边界（跨 DLL / FFI）

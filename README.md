@@ -5,7 +5,7 @@
 1. **调度** — 一个调度器同时管 线程 / 进程 / 纤程 / 协程
 2. **内存** — 分配器 / arena / cache-line 对齐 / NUMA
 3. **计算** — CPU SIMD + GPU（CUDA / Vulkan），算子借 ggml
-4. **IO** — 网络（proactor + HTTP serving/client）+ 文件 + 跨进程共享内存
+4. **IO** — 网络（proactor + tcp/udp co_await socket；HTTP serving/client 规划中）+ 文件 + 跨进程共享内存
 
 **差异点在"同一套底座"**：GPU 算完、网卡收到包、fiber 主动让出——都回到同一个调度器、唤醒同一个 fiber，而不是四个子系统各开线程池、各跑事件循环互相打架。所以 HYLE 不是"又一个 hashmap / 日志库"，而是让 计算 / 并发 / 内存 / IO 无阻抗拼在一起的那层地基。
 
@@ -61,14 +61,14 @@
 |---|---|
 | [实现路线图](./docs/architecture/roadmap.md) | 依赖图（无环）+ 6 批施工序 + 关键路径 + 验收门槛 + 决策清单 |
 | [性能对标](./docs/performance/README.md) | vs std / vs SOTA 两桶分列 + Amdahl 整体观 + benchmark 验证（独立 `docs/performance/` 目录） |
-| [参考库映射](./docs/architecture/references.md) | clone 的 20+ 参考库 → HYLE 模块，借/参考 + 开工优先级 |
+| [参考库映射](./docs/architecture/references.md) | clone 的 30+ 参考库 → HYLE 模块，借/参考 + 开工优先级 |
 | [已知问题](./docs/architecture/known-issues.md) | 悬而未决的 bug / 存疑项 / 待目标硬件复验的清单 |
 
 ### 里程碑与使用指南（不在 architecture 下）
 
 | 文档 | 内容 |
 |---|---|
-| [里程碑索引](./docs/milestones/README.md) | **唯一进度信源**：约 47 个里程碑，逐步计划 + 预测 vs 真实 LOC + clay API diff + 状态 |
+| [里程碑索引](./docs/milestones/README.md) | **唯一进度信源**：约 58 个里程碑，逐步计划 + 预测 vs 真实 LOC + clay API diff + 状态 |
 | [使用指南](./docs/guide/usage-guide.md) | 面向库使用者：构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界 |
 | [调用安全契约](./docs/guide/usage-contract.md) | 为 SOTA 性能保留的特定调用约束（fiber/thread_local、分配器跨线程 free）|
 
@@ -77,10 +77,10 @@
 ```
 hyle/
 ├─ README.md              本文件（项目门面：简介 + 目录）
-├─ include/hyle/          公开头（error/obs/platform/mem/time/container/util/sched/simd/math）
+├─ include/hyle/          公开头（core/error/obs/platform/mem/time/container/util/sched/simd/math/io）
 ├─ src/                   实现（.cc，按模块分目录）
 ├─ tests/                 GoogleTest 单元/并发/TSan 测试
-├─ bench/                 nanobench 对标 SOTA（container/mem/queue/sched/simd + rust/ crossbeam）
+├─ bench/                 nanobench 对标 SOTA（container/mem/sched/simd/io/time/platform/error + rust/ crossbeam）
 ├─ samples/               可运行示例工程
 ├─ scripts/               工具（bench-stat.py 统计法等）
 ├─ third_party/           vendored（mimalloc/Highway/xsimd/simdutf/nanobench…）

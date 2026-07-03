@@ -8,7 +8,7 @@
 
 ## 0. 北极星(一切取舍的标尺)
 - **核心目标 = 性能 SOTA**。标尺不是 std(赢它是最低门槛),是各领域**参考库**(hashmap→absl/F14、分配器→mimalloc、队列→tokio/moodycamel、SIMD→Highway)。**做到等同或超过才算数。**
-- **服务对象**:① 蜂群 agent(v1 北极星,百万 IO-bound)② AI 推理引擎(serving+KV-cache+GPU)。热路径 = fiber/io/channel/mem/hashmap/SIMD。
+- **服务对象**:① **类 llama.cpp 推理引擎 + 通用加速库(v1 北极星,四样全压:io serving+HTTP+批调度+KV-cache+GPU/CPU kernel)** ② 蜂群 agent(消费者之一,压 fiber+io+channel)。热路径 = fiber/io/channel/mem/hashmap/SIMD。
 
 ## 1. std 使用纪律(分层,源:coding-conventions §1)
 - **公开头/跨 DLL/C-ABI 签名禁 std 拥有型**:`std::string`/`vector`/`unordered_map`/`shared_ptr`/`function`。用 `string_ref`(视图)/`CArray`/SwissTable/侵入式 `Ref<T>`/函数指针。**硬线(可 lint)**:公开头 `#include <string>/<vector>/<unordered_map>` 用于导出符号 = 违规。
@@ -39,7 +39,7 @@
 
 ## 6. 里程碑闭环 CHECKLIST(机械跑,别靠自觉)
 1. **真做**:每步 Write/Edit/Bash → 看到真实结果再下一步;绝不在思考里"叙述"成已完成。报后台结果前先 `cat` 其 output。
-2. **吸纳 clay**:闭环前 diff clay 同名文件 API 表面(coverage-map),缺的补或显式登记。
+2. **吸纳 clay(能力查漏)**:闭环前对照 clay 同名文件(coverage-map)查有没有漏掉仍需要的**能力**,缺的补或显式登记。目标=能力覆盖+性能≥clay,**接口不必一致**(不追平 clay 签名/命名)。
 3. **真编真测**:本轮真发构建、看输出无 error(stale exe 假 PASS);**双平台** Win MSVC + Linux GCC14;lock-free 必过 WSL TSan(`setarch -R`)。
 4. **对抗自审**:闭环后挑刺——正确性/性能偏离/规范偏离/对照 clay 覆盖;发现就修或登记。
 5. **cloc 验真**:量该里程碑增长写回阶段文档 + 索引;远低预期要解释(精瘦 vs stub)。

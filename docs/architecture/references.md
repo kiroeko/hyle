@@ -12,6 +12,8 @@
 | **highway** | 借 | transcendental 数学核（log 等）+ dtype 对照；vendored 在 `third_party/`、无条件默认编进生产。其 scalable-friendly 接口 + HWY_DYNAMIC_DISPATCH 亦是 vec 抽象的范本 |
 | **xsimd** | 借 | transcendental 数学核（exp/tanh），vendored 在 `third_party/`、无条件默认编进生产；逐 op best-of-breed 与 highway 互选最快核 |
 | **simdutf** | 借 | utf8 validate/count SIMD 核，vendored 在 `third_party/`、无条件默认编进生产（自带内部 ISA dispatch）|
+| **sleef** | **已退役(clone 留存)** | 曾评估作 transcendental 核,选定 highway+xsimd 后退役;仍 clone 供对照,不进构建 |
+| **nanobench** | 借(测试期)| 微基准框架,vendored 在 `third_party/`;`scripts/bench-stat.py` 在其上做 n=15 统计判定(gap>spread 才判赢) |
 
 ### compute/（Tier 1，含 Intel 计算加速）
 | 库 | 角色 | 说明 |
@@ -26,7 +28,9 @@
 | 库 | 角色 | 说明 |
 |---|---|---|
 | **marl** | 参考（精读）| **最贴 HYLE 的 fiber + work-stealing 调度库**，第一参考 |
-| **tokio** | 参考 | work-stealing/LIFO slot/unpark 接力/per-core 队列的设计源 |
+| **tokio** | 参考 | work-stealing/LIFO slot/unpark 接力/per-core 队列的设计源;io-04 批量 submit 的 tick/park flush 节奏直接照搬 `tokio-uring` 前身 tokio runtime |
+| **tokio-uring** | 参考 | io_uring 运行时:submit/flush 模型(on_thread_park flush + SQ 满触发)、recv_from 的 `Box<msghdr>` 生命周期契约(io-04 udp 照搬)。读本地源码挖出 io P0 hang 真病根 |
+| **crossbeam-deque** | 参考(bench 对照)| Chase-Lev work-stealing deque(Rust);container-07/queue bench-02b 的 work-stealing 同族 SOTA 对照(独立 cargo crate,gated 编译) |
 | **boost**(context) | **借（仅 3 汇编）** | **fcontext** 是 fiber 切换原语来源；`fcontext_t`/`transfer_t` 纯 POD 零依赖，只取 `jump/make/ontop` 三例程 .S/.asm（**本地 context 是空 submodule，须从上游拉**）+ 自写 ~10 行头，不要 config/封装层。boost.intrusive 仅参考 |
 | **seastar** | 参考 | per-core 局部性、reactor_backend completion 抽象;**不学** share-nothing 调度;**xcpu_freelist 评估后否决**(其 owner-local 非原子表依赖 share-nothing+线程钉死+池长于进程,HYLE 通用生命周期固定池给不出,且跨核 free 正确性已由地址路由原子 push 解决,见 mem-design) |
 | **oneTBB** | **多为边界外**（深读校正）| task scheduler 边界外（自带 work-stealing 抢权，同拒 boost.fiber）；`concurrent_bounded_queue` **不借**（票号+分页+链 libtbb，非定长 ring，用 Vyukov/rigtorp）；仅 `scalable_allocator`/rml pool policy 设计**参考** mem/，不 vendor |
@@ -37,7 +41,8 @@
 |---|---|---|
 | **abseil-cpp** | 参考 | SwissTable 设计（控制字节 + SIMD 探测），hashmap 头号参考 |
 | **folly** | 参考 | F14 hashmap + 并发原语/SmallVector 等 |
-| **moodycamel-ConcurrentQueue** | 参考 | lock-free MPMC 队列，sched 的 global 注入队列直接参考 |
+| **moodycamel-ConcurrentQueue** | 参考(bench 对照)| lock-free MPMC 队列，sched global 注入队列参考;queue bench-02b 的 SOTA 对标基线 |
+| **rigtorp-MPMCQueue** / **MPMCQueue** | 参考(bench 对照)| 定长环形 MPMC(Vyukov 序号法);BoundedQueue 设计参考 + queue bench-02b 对标 |
 | **boost**(intrusive) | 参考 | 侵入式 list/map（sched run-queue/waiter 链）|
 
 ### time/（Tier 0）
@@ -69,8 +74,10 @@
 ### io/（Tier 1）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **seastar**(reactor_backend) | 参考 | epoll/aio 也对上呈现 completion 语义的后端抽象范本 |
-| liburing | 借 | io_uring syscall 薄封装（仅 Linux；非本目录，构建期拉）|
+| **seastar**(reactor_backend) | 参考 | epoll/aio 也对上呈现 completion 语义的后端抽象范本;HTTP 栈是"自有运行时→自写 HTTP(Ragel parser)"的直接先例(io HTTP 定案参考) |
+| **liburing** | **参考(不链)** | io_uring 机制权威:barrier/SQE 布局/多 op(multishot accept/recv、provided buf_ring、ASYNC_CANCEL)。**HYLE 用裸 syscall 自写,不链 liburing**——精确复刻其 v2.15 fast-path barrier + buf_ring 协议(io-01/02/07 已落地) |
+| **tokio-uring** | 参考 | 见 sched/ 段:submit/flush 节奏 + msghdr 生命周期(io-04 udp) |
+| **libevent** | 参考 | reactor 级:common_timeout 有序链算法(time CommonTimeoutQueue 同款基线)、evdns 异步 DNS(io-09 待)、bufferevent 水位(应用层不做);对 HYLE proactor 价值小于以上 |
 
 ## 开工优先级（按 roadmap 阶段）
 

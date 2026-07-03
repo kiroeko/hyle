@@ -146,4 +146,4 @@
 7. 自有异构计算原语（device/stream/memory 抽象）
 8. 新容器（SmallVector/intrusive/lock-free 队列）
 
-**HYLE 总体量**：HYLE 自有 **~22-30k 生产 / ~40-55k 含测试**（2026-07 实测密度再投影）；含第三方 vendored 总足迹 **~200-300k+**（ggml 主导，详见 hyle-scope.md 规模节）。这不是"重构 clay"，是"以 clay 为地基的全新 infra"。
+**HYLE 总体量**：HYLE 自有 **~28-40k 生产（中值 ~34k，2026-07-03 参考库审计 + HTTP 定案后上修）**；含第三方 vendored 总足迹 **~200-300k+**（ggml 主导，详见 hyle-scope.md 规模节）。实时进度以 milestones/README 为唯一信源。这不是"重构 clay"，是"以 clay 为地基的全新 infra"。

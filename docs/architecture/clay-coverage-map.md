@@ -1,7 +1,8 @@
 # clay → HYLE 覆盖映射表（吸纳完整性的持续标尺）
 
 > **目的**：防"以为吸纳完了、其实漏文件/漏 API 层"。clay 源在 `slate-render/iron/infra/{include,src}/clay/`。
-> **铁律（对抗审查纪律）**：每个吸纳 clay 的里程碑闭环前，必须 `diff` clay 同名文件的 API 表面——缺的要么补、要么在本表显式登记 `📋待办`，**不许默默略过**。本表是唯一权威进度标尺。
+> **目标口径（2026-07-03 澄清）**：HYLE 要 **能力覆盖 clay + 性能 ≥ clay,接口不必和 clay 一致**——clay 用户大多已不在,无接口兼容需求;HYLE 接口怎么好用/怎么 SOTA 怎么来。本表是 **clay 能力查漏参考**(防"以为吸纳完了、其实漏了仍需要的能力"),**不是** API 追平清单,也不是唯一权威进度标尺(进度唯一信源是 milestones/README)。
+> **纪律（对抗审查）**：每个吸纳 clay 的里程碑闭环前对照 clay 同名文件查漏——**看有没有漏掉仍需要的能力**,缺的要么补、要么显式登记 `📋待办`,不许默默略过。查的是能力,不是签名/命名。
 > **状态图例**：✅ 完成 / 🔶 部分(有登记的缺口) / 📋 计划 / ♻️ 被 C++23/std 取代 / 🔻 借第三方(不自写) / ⛔ 不吸纳。
 > **行数(cloc 实测)**：clay 自有 ≈ **19,005**(sys 7917 + math 5831 + utils 3469 + parallel 811 + 顶层头 973;去 thirdparty)。HYLE 生产(src+include)≈ **8,130**（2026-06-29 cloc 复核;含 sched-05 同步原语 + conditional-notify + TSan fcontext 注解;旧值 8,048/7,757 已 stale）。mimalloc/xxhash/nanobench/fcontext/highway/xsimd/simdutf 第三方不计。
 >
@@ -157,9 +158,9 @@
 - device 内存:clay 无 → HYLE **compute/ 自有 stream-bound buffer**(ggml buffer_type 式,所有权+stream 绑定在 compute/;不走 mem/ allocator 抽象,见 mem-design「device 内存」节)。
 
 ### 结论：正确的"吸纳完整性"判据
-- **不是** "HYLE 总 LOC ≥ clay 19k"。
-- **而是** 对每个 ✅/🔶 组件，HYLE 覆盖了 clay 同名文件该吸纳的 API 表面(diff 核对)；clay 中 ♻️/⛔/🔻 的部分按计划替换/不吸纳并登记在本表。
-- **吸纳完成** = 本表 sys/utils/parallel/(math 按需) 中**所有非 ♻️/⛔ 行变 ✅**，且每行经过 clay 同名文件 API diff。当前:`status/object_pool/stack_allocator/carray ✅`、`allocator/memory_arena ✅(补漏后)`、`murmur 🔶(运行期 XXH3 已接)`,其余 📋。
+- **不是** "HYLE 总 LOC ≥ clay 19k"，**也不是** "HYLE API 和 clay 同名/同签名"。
+- **而是** 对每个 ✅/🔶 组件，HYLE **覆盖了 clay 同名文件该有的能力**(对照查漏,不是匹配签名)且**性能 ≥ clay**;接口按 HYLE 自己怎么好用/怎么 SOTA 定,可自由背离 clay。clay 中 ♻️/⛔/🔻 的部分按计划替换/不吸纳并登记在本表。
+- **吸纳完成** = 本表 sys/utils/parallel/(math 按需) 中**所有非 ♻️/⛔ 行的能力都被 HYLE 覆盖(变 ✅)**——判据是能力齐 + 性能 ≥ clay + (发布时)C-ABI 可导出,**不是 API 表面追平**。当前:`status/object_pool/stack_allocator/carray ✅`、`allocator/memory_arena ✅(补漏后)`、`murmur 🔶(运行期 XXH3 已接)`,其余 📋。
 - **P3 = 真·吸纳,不是"略过缺的就算实现"（用户 2026-06 铁律）**：到 P3 末必须是"**该实现的都实现了 + 该替换的脚手架都换了 + 比较完整**",而**不是把缺的部分都略过就宣布完成**。每个标 ✅ 的组件,缺的子功能要么真做、要么显式登记为补漏里程碑(如 mem-03b/04b),**绝不默默略过当完成**(mem-03 曾犯,已纠)。残留脚手架(std::string_view 顶 string 等)在等价物落地后必须替换,红队每里程碑扫一遍。
 
 ## "clay 完全吸纳"在 P 几（结论）
