@@ -2,7 +2,7 @@
 
 #include <string_view>  // membership/substring family forwards to std's SOTA (see below)
 
-#include "hyle/container/probe.h"  // hyle_clz32 (reverse-scan highest set lane)
+#include "hyle/container/probe.h"  // detail::clz32 (reverse-scan highest set lane)
 #include "hyle/macros.h"
 #include "hyle/platform.h"
 #include "hyle/platform/cpu.h"  // cpu_features().avx2 -> opt into the AVX2 variant
@@ -95,7 +95,7 @@ std::uint32_t str_rfind_char(const char* data, std::uint32_t size,
         _mm_loadu_si128(reinterpret_cast<const __m128i*>(data + i));
     unsigned m = static_cast<unsigned>(
         _mm_movemask_epi8(_mm_cmpeq_epi8(chunk, needle)));
-    if (m != 0) return i + (31u - hyle_clz32(m));  // highest set lane
+    if (m != 0) return i + (31u - clz32(m));  // highest set lane
   }
   for (std::uint32_t j = i; j-- > 0;)  // scalar head (< 16 bytes)
     if (data[j] == c) return j;

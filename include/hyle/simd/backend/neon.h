@@ -34,13 +34,15 @@ template <> struct RawNeon<std::int32_t> { using type = int32x4_t; };
 template <> struct RawNeon<std::uint32_t> { using type = uint32x4_t; };
 template <typename T> using RawNeonT = typename RawNeon<T>::type;
 
-// mask raw is always an unsigned lane vector (compare results)
-template <typename T> struct MaskNeon;
-template <> struct MaskNeon<float> { using type = uint32x4_t; };
-template <> struct MaskNeon<double> { using type = uint64x2_t; };
-template <> struct MaskNeon<std::int32_t> { using type = uint32x4_t; };
-template <> struct MaskNeon<std::uint32_t> { using type = uint32x4_t; };
-template <typename T> using MaskNeonT = typename MaskNeon<T>::type;
+// mask raw is always an unsigned lane vector (compare results). Named *RawNeon
+// (paralleling RawNeon above) so the value struct MaskNeon<T,N> below owns the
+// natural name symmetric with VecNeon<T,N>.
+template <typename T> struct MaskRawNeon;
+template <> struct MaskRawNeon<float> { using type = uint32x4_t; };
+template <> struct MaskRawNeon<double> { using type = uint64x2_t; };
+template <> struct MaskRawNeon<std::int32_t> { using type = uint32x4_t; };
+template <> struct MaskRawNeon<std::uint32_t> { using type = uint32x4_t; };
+template <typename T> using MaskRawNeonT = typename MaskRawNeon<T>::type;
 
 template <typename T>
 inline constexpr bool kSupported =
@@ -56,8 +58,8 @@ struct VecNeon {
   static constexpr std::size_t kPrivateN = N;
 };
 template <typename T, std::size_t N>
-struct MaskN {
-  typename detail::MaskNeonT<T> raw;
+struct MaskNeon {
+  typename detail::MaskRawNeonT<T> raw;
   using PrivateT = T;
   static constexpr std::size_t kPrivateN = N;
 };
@@ -71,7 +73,7 @@ namespace detail {
 template <class D>
 using VN = VecNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
 template <class D>
-using MN = MaskN<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
+using MN = MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
 template <class D>
 inline constexpr bool kNativeWidth = HYLE_SIMD_MAX_LANES_D(D) * sizeof(TFromD<D>) == 16;
 }  // namespace detail
@@ -264,8 +266,8 @@ HYLE_FORCE_INLINE VecNeon<T, N> AndNot(VecNeon<T, N> a, VecNeon<T, N> b) noexcep
 
 // ---- comparison -> mask (vceqq/vcgtq/... return all-1s/all-0s unsigned lanes) --------
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE MaskN<T, N> Eq(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
-  MaskN<T, N> m;
+HYLE_FORCE_INLINE MaskNeon<T, N> Eq(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  MaskNeon<T, N> m;
   if constexpr (std::is_same_v<T, float>) m.raw = vceqq_f32(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) m.raw = vceqq_f64(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vceqq_s32(a.raw, b.raw);
@@ -273,15 +275,15 @@ HYLE_FORCE_INLINE MaskN<T, N> Eq(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   return m;
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE MaskN<T, N> Ne(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
-  MaskN<T, N> m = Eq(a, b);
+HYLE_FORCE_INLINE MaskNeon<T, N> Ne(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  MaskNeon<T, N> m = Eq(a, b);
   if constexpr (std::is_same_v<T, double>) m.raw = vreinterpretq_u64_u32(vmvnq_u32(vreinterpretq_u32_u64(m.raw)));
   else m.raw = vmvnq_u32(m.raw);
   return m;
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE MaskN<T, N> Gt(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
-  MaskN<T, N> m;
+HYLE_FORCE_INLINE MaskNeon<T, N> Gt(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  MaskNeon<T, N> m;
   if constexpr (std::is_same_v<T, float>) m.raw = vcgtq_f32(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) m.raw = vcgtq_f64(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vcgtq_s32(a.raw, b.raw);
@@ -289,8 +291,8 @@ HYLE_FORCE_INLINE MaskN<T, N> Gt(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   return m;
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE MaskN<T, N> Lt(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
-  MaskN<T, N> m;
+HYLE_FORCE_INLINE MaskNeon<T, N> Lt(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  MaskNeon<T, N> m;
   if constexpr (std::is_same_v<T, float>) m.raw = vcltq_f32(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) m.raw = vcltq_f64(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vcltq_s32(a.raw, b.raw);
@@ -298,8 +300,8 @@ HYLE_FORCE_INLINE MaskN<T, N> Lt(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   return m;
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE MaskN<T, N> Ge(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
-  MaskN<T, N> m;
+HYLE_FORCE_INLINE MaskNeon<T, N> Ge(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  MaskNeon<T, N> m;
   if constexpr (std::is_same_v<T, float>) m.raw = vcgeq_f32(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) m.raw = vcgeq_f64(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vcgeq_s32(a.raw, b.raw);
@@ -307,8 +309,8 @@ HYLE_FORCE_INLINE MaskN<T, N> Ge(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   return m;
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE MaskN<T, N> Le(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
-  MaskN<T, N> m;
+HYLE_FORCE_INLINE MaskNeon<T, N> Le(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  MaskNeon<T, N> m;
   if constexpr (std::is_same_v<T, float>) m.raw = vcleq_f32(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) m.raw = vcleq_f64(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vcleq_s32(a.raw, b.raw);
@@ -319,7 +321,7 @@ HYLE_FORCE_INLINE MaskN<T, N> Le(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
 // ---- mask ops -----------------------------------------------------------------------
 // IfThenElse via vbslq(mask, yes, no): bit-select where mask bits set -> yes.
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE VecNeon<T, N> IfThenElse(MaskN<T, N> m, VecNeon<T, N> yes, VecNeon<T, N> no) noexcept {
+HYLE_FORCE_INLINE VecNeon<T, N> IfThenElse(MaskNeon<T, N> m, VecNeon<T, N> yes, VecNeon<T, N> no) noexcept {
   VecNeon<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = vbslq_f32(m.raw, yes.raw, no.raw);
   else if constexpr (std::is_same_v<T, double>) r.raw = vbslq_f64(m.raw, yes.raw, no.raw);
@@ -328,7 +330,7 @@ HYLE_FORCE_INLINE VecNeon<T, N> IfThenElse(MaskN<T, N> m, VecNeon<T, N> yes, Vec
   return r;
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE VecNeon<T, N> IfThenElseZero(MaskN<T, N> m, VecNeon<T, N> yes) noexcept {
+HYLE_FORCE_INLINE VecNeon<T, N> IfThenElseZero(MaskNeon<T, N> m, VecNeon<T, N> yes) noexcept {
   return IfThenElse(m, yes, Zero(Simd<T, N, 0>()));
 }
 
@@ -344,26 +346,26 @@ HYLE_FORCE_INLINE unsigned mask_bits_2(uint64x2_t m) noexcept {
   return static_cast<unsigned>(vaddvq_u64(vandq_u64(m, w)));
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE unsigned mask_bits(MaskN<T, N> m) noexcept {
+HYLE_FORCE_INLINE unsigned mask_bits(MaskNeon<T, N> m) noexcept {
   if constexpr (std::is_same_v<T, double>) return mask_bits_2(m.raw);
   else return mask_bits_4(m.raw);
 }
 }  // namespace detail
 
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE bool AllTrue(Simd<T, N, 0>, MaskN<T, N> m) noexcept {
+HYLE_FORCE_INLINE bool AllTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
   return detail::mask_bits(m) == (1u << N) - 1u;
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE bool AllFalse(Simd<T, N, 0>, MaskN<T, N> m) noexcept {
+HYLE_FORCE_INLINE bool AllFalse(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
   return detail::mask_bits(m) == 0u;
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE std::size_t CountTrue(Simd<T, N, 0>, MaskN<T, N> m) noexcept {
+HYLE_FORCE_INLINE std::size_t CountTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
   return static_cast<std::size_t>(std::popcount(detail::mask_bits(m)));
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(Simd<T, N, 0>, MaskN<T, N> m) noexcept {
+HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
   const unsigned b = detail::mask_bits(m);
   return b ? static_cast<std::ptrdiff_t>(std::countr_zero(b)) : -1;
 }

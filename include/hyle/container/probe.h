@@ -21,26 +21,31 @@
 
 #if defined(_MSC_VER)
 #  include <intrin.h>
-HYLE_FORCE_INLINE unsigned hyle_ctz32(std::uint32_t x) noexcept {
+#endif
+
+namespace hyle::container::detail {
+
+// 32-bit bit-scan helpers (count trailing / leading zeros). MSVC lacks the GCC
+// builtins, so bridge to _BitScan*. Used by BitMask below (never exported).
+#if defined(_MSC_VER)
+HYLE_FORCE_INLINE unsigned ctz32(std::uint32_t x) noexcept {
   unsigned long i;
   _BitScanForward(&i, x);
   return static_cast<unsigned>(i);
 }
-HYLE_FORCE_INLINE unsigned hyle_clz32(std::uint32_t x) noexcept {
+HYLE_FORCE_INLINE unsigned clz32(std::uint32_t x) noexcept {
   unsigned long i;
   _BitScanReverse(&i, x);
   return static_cast<unsigned>(31 - i);
 }
 #else
-HYLE_FORCE_INLINE unsigned hyle_ctz32(std::uint32_t x) noexcept {
+HYLE_FORCE_INLINE unsigned ctz32(std::uint32_t x) noexcept {
   return static_cast<unsigned>(__builtin_ctz(x));
 }
-HYLE_FORCE_INLINE unsigned hyle_clz32(std::uint32_t x) noexcept {
+HYLE_FORCE_INLINE unsigned clz32(std::uint32_t x) noexcept {
   return static_cast<unsigned>(__builtin_clz(x));
 }
 #endif
-
-namespace hyle::container::detail {
 
 using ctrl_t = std::int8_t;
 inline constexpr ctrl_t kEmpty = -128;     // 0x80
@@ -69,13 +74,13 @@ class BitMask {
  public:
   explicit BitMask(std::uint32_t mask) noexcept : mask_(mask) {}
   explicit operator bool() const noexcept { return mask_ != 0; }
-  std::uint32_t lowest() const noexcept { return hyle_ctz32(mask_); }
+  std::uint32_t lowest() const noexcept { return ctz32(mask_); }
   // Lane index of the lowest set bit (alias of lowest(), abseil naming). UB if 0.
-  std::uint32_t trailing_zeros() const noexcept { return hyle_ctz32(mask_); }
+  std::uint32_t trailing_zeros() const noexcept { return ctz32(mask_); }
   // Number of clear high lanes within a `width`-lane group (UB if mask_ == 0).
   // The mask occupies the low `width` bits, so strip the 32-width high zeros.
   std::uint32_t leading_zeros(unsigned width) const noexcept {
-    return hyle_clz32(mask_) - (32 - width);
+    return clz32(mask_) - (32 - width);
   }
   BitMask begin() const noexcept { return *this; }
   BitMask end() const noexcept { return BitMask(0); }
