@@ -107,6 +107,16 @@ if(HYLE_HAS_FCONTEXT)
   hyle_apply_warnings(hyle_sched_join_bench)
 endif()
 
+# scheduler-layer gap benches (work-stealing scaling, spawn_on affinity,
+# coroutine glue vs raw fiber spine, fiber sleep). Complements scheduler_bench
+# (raw primitives) + queue_sota_bench (the work-stealing DATA STRUCTURE) by
+# measuring SCHEDULER-LEVEL behaviour. Own exe. Needs fcontext (coro + timer).
+if(HYLE_HAS_FCONTEXT)
+  add_executable(hyle_sched_ext_bench sched/scheduler_ext_bench.cc)
+  target_link_libraries(hyle_sched_ext_bench PRIVATE hyle_sched nanobench)
+  hyle_apply_warnings(hyle_sched_ext_bench)
+endif()
+
 # task #9: lock-free queue cluster SOTA parity. HYLE baselines (BoundedQueue,
 # WsFifoQueue, WorkStealingDeque, ConcurrentVector) ALWAYS compile into this exe;
 # the SOTA rivals below are opt-in (each is a heavy/header dep we don't force).
