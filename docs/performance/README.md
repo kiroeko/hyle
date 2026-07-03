@@ -11,7 +11,7 @@
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
 | [error / hash 实测](./benchmarks-error-hash.md) | error Status/Result（对标 absl）、hash 哈希（XXH3/wyhash/mix64）、SwissTable hashmap |
 | [simd 实测](./benchmarks-simd.md) | dot/saxpy、exp/log/tanh 数学核、fp16/bf16 dtype、reduce_max/scale |
-| [sched 实测](./benchmarks-sched.md) | fiber 切换、platform 原语（Parker/Thread/dir_iterate）、sched 同步（marl 对标）、lock-free 队列簇 |
+| [sched 实测](./benchmarks-sched.md) | fiber 切换、platform 原语（Parker/Thread/dir_iterate）、sched 同步（marl 对标）、调度器层（work-stealing 扩展/spawn_on 亲和/协程胶水/fiber sleep）、lock-free 队列簇 |
 | [io 实测](./benchmarks-io.md) | echo 吞吐 + shard-per-core 扩展性 + vs 裸 epoll（proactor 机制 + 单 worker 输/多 worker 赢的根因诊断）|
 | [mem / container 实测](./benchmarks-mem-container.md) | mem 分配器 vtable + 专用分配器簇、SmallVector/IntrusiveList/CArray、string_ref/StringBuf、path、次要模块 |
 | [预期与边界](./expectations.md) | AVX-512 上架状态、主表（时间/空间分列）、Amdahl 整体观、诚实边界、验证 gate |

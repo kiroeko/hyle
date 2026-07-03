@@ -52,14 +52,20 @@
 | 项 | HYLE(Win/Lin) | marl/std(Win/Lin) | 判定(15 遍,gap vs spread) |
 |---|---|---|---|
 | **争用 Mutex**(8 任务/4 worker,lock+inc+unlock) | **15.4 / 31.3 ns** | marl 19.0 / 31.2 ns | **Win ✅反超 1.23x**(gap22%>spread18%,SRWLOCK 修后)/ **Lin ➖平局**(0.98) |
-| **无争用 Mutex**(多线程进程=真实场景) | 6.5 ns(Lin) | std::mutex 9.1 ns | ✅ HYLE 快 1.40x(单线程"2.9x 慢"是 glibc 假象,见下;**单平台单遍,待双平台统计**) |
+| **无争用 Mutex(单线程 bench)** | 10.6 / 6.9 ns | std::mutex 12.1 / 2.4 ns | **Win ✅反超 1.15x**(gap15%>spread7%)/ **Lin ❌输 0.35x**——但 Lin 是 glibc 假象(见下) |
+| **无争用 Mutex(MT:后台线程活=真实场景)** | 10.8 / 6.9 ns | std::mutex 12.2 / 10.1 ns | **Win ➖平局**(MT 变体 spread 79%/64% 过大,keepalive 抢核)/ **Lin ✅反超 1.47x**(gap47%>spread29%) |
 | **spawn 2000 noop**(纯派发,pooled 栈) | 347 / 317 ns | marl 302 / 309 ns | **➖双平台统计平局**(Win 0.83 gap17%«spread40%;Lin 0.98 gap2%«spread31%)|
-| Channel 收发(cap 16,1p1c) | 63 ns/item(15.9M/s) | (marl 无 channel) | HYLE 自有(单平台单遍)|
+| Channel 收发(cap 16,1p1c) | 101 / 104 ns/item | (marl 无 channel) | HYLE 自有(双平台 15 遍:spread 5%/16%,无对手不判赢输)|
 | **WaitGroup fork-join**(1024 任务,pooled 栈) | 341 / 305 ns | marl 299 / 317 ns | **➖双平台统计平局**(Win 0.87 gap13%«spread29%;Lin 1.05 gap5%«spread37%)|
+| **CV notify_one 无 waiter**(快路径) | 2.08 / 0.56 ns | std::cv 2.56 / 1.12 ns | **双平台✅反超 1.23x / 2.0x**(Win gap23%>spread9%;Lin gap101%>spread36%) |
 
 **Mutex = 平台分叉锁,不是 fiber-aware——学 marl 的 SOTA 决策 + 平台特异后端**:最初把 Mutex 做成 fiber-aware(争用让出 fiber),实测**慢 marl 5.8x**——短临界区让出 fiber(suspend+重入 ~100ns)远贵于就地 park worker 几 ns。改成"park worker 不让 fiber"后:**Linux** 建在 futex(SYS_futex)上的 Drepper 3 态锁,与 glibc/std::mutex 同构,**统计平局**(31.3 vs 31.2ns)。**Windows** 起初也用 Drepper futex over WaitOnAddress,15 遍复核**输 marl(=std::mutex=SRWLOCK)2.66x**(52.5 vs 19ns)——WaitOnAddress park 比 SRWLOCK 的内核辅助自适应自旋重,且 userspace 预自旋在 M:N fiber 上会饿死同 worker 的持有者 fiber(实测加自旋更慢)。**改用 SRWLOCK 平台分叉后 Win 反超 marl 1.23x**(15.4 vs 19ns,spread 33%→7%,commit 4240265)。**Linux 无同类果子**(已平局;调研 folly/absl 替代均因 sizeof 膨胀/自旋饿 fiber/禁临界区 fiber 迁移被否);macOS os_unfair_lock 登记将来验证。**HYLE 对齐:Mutex=OS 快锁/futex(本节),CV=fiber-aware 双模(地基),各司其职。** 双平台 TSan 8/8 零 race。
 
-**无争用 Mutex "慢 std" 是 microbench 假象——已实测揭穿**:HYLE futex Mutex 与 std::mutex 算法同级(各 1 locked RMW)。单线程 bench 里 std::mutex 假性快到 2.2ns,因 glibc 用 `__libc_single_threaded` **跳过原子**;HYLE 不做单线程特化,恒付。**铁证**:加一个后台线程让进程变多线程(`sync_bench.cc` MT 变体),std::mutex 立刻 2.2→**9.1ns**(不能再跳原子),HYLE 纹丝不动 **6.5ns**——**HYLE 反超 std::mutex 1.40x**。在 mutex 唯一真正被用的多线程场景,HYLE 的 Drepper 3 态比 pthread_mutex_t 更轻、更快;marl mutex=std::mutex,故也赢 marl。**结论:不是性能问题,是单线程 microbench 被 glibc 优化骗了。**
+**无争用 Mutex "慢 std" 是 glibc 单线程假象——双平台 15 遍实测揭穿(又一"同现象双平台方向相反"陷阱)**:HYLE futex Mutex 与 std::mutex 算法同级(各 1 locked RMW)。双平台 15 遍 bench-stat 后现原形——
+- **Linux 单线程 bench 输 0.35x**(HYLE 6.9ns vs std 2.4ns):glibc 用 `__libc_single_threaded` 让 std::mutex 在单线程进程里**跳过原子**,假性快到 2.4ns;HYLE 不做单线程特化,恒付一个 RMW。
+- **但这是 microbench 骗局,不是真差距**:MT 变体加一个后台线程让进程变多线程,std::mutex 立刻**不能再跳原子** → 2.4→**10.1ns**,HYLE 纹丝不动 **6.9ns**——**Linux MT 下 HYLE 反超 std::mutex 1.47x**(gap47%>spread29%)。mutex 唯一真正被用的场景就是多线程,HYLE 的 Drepper 3 态比 pthread_mutex_t 更轻;marl mutex=std::mutex,故也赢 marl。
+- **Windows 无此假象**:MSVC 的 std::mutex(SRWLOCK)没有 `__libc_single_threaded` 式单线程特化,单线程 bench 里 HYLE 就已**反超 1.15x**(10.6 vs 12.1ns)。Win 的 MT 变体因 keepalive 后台线程抢核使 spread 爆到 79%/64%(测量噪声,非算法),判平局——**Win 看单线程行即可,MT 行在 Windows 无诊断价值**。
+- **结论 + 教训**:不是性能问题,是"glibc 单线程 microbench 假象",且**同一现象双平台方向相反**(Lin 单线程假输/MT 真赢;Win 单线程真赢/MT 噪声)——正是反复出现的"单平台数陷阱":只看 Linux 单线程会误判"输 std",只看 Win 又看不到 glibc 这个坑。双平台 + 单线程/MT 双变体一起看才是真相。
 
 **spawn vs SOTA:对标 marl 双平台统计平局(纠正旧"2.17x"过度声明)**:scheduler_bench 的"spawn 2000 vs std::async 144x"是赢 thread-per-task 稻草人,不算数。直接对标真调度器 marl(`sync_marl_bench.cc` noop spawn-2000,pooled 栈):**15 遍 bench-stat 双平台均统计平局**——Win HYLE 347 vs marl 302ns(ratio 0.83,gap17%«spread40%)、Lin 317 vs 309ns(0.98,gap2%«spread31%)。旧"141ns/2.17x"是单遍跑落噪声带的乐观读数(spawn fork-join 受 OS 跨线程唤醒抖动主导,spread 31-40%)。**诚实结论:spawn/dispatch 与 marl 同级(平局),非反超。** 注:HYLE 侧每 epoch `make_unique<Fiber>`+vector 背了额外堆开销(marl 是池化闭包),即便如此仍打平,说明调度脊本身不慢——但不足以声称"赢"。
 
@@ -95,6 +101,25 @@ thread-mode(裸线程 waiter,外部提交者/跨进程联邦)。对标 `std::con
 - **⚠️ 方法学教训(重要,已内化)**:初测**单任务往返** spawn_task ~869ns/Win、~9908ns/Lin,看似 ~1.3x/~2x"重开销"——**全是 OS 跨线程唤醒抖动**(spawn 在主线程→worker 跑→futex 唤醒主线程),不是层开销。改**批量 100/task 摊销 handoff + 迭代 2000** 后,Win 收敛到 1.15x、Lin 到平局,err% 从 7% 降到 <3%。**亚 μs 的 sched 数字必须摊销 + 够迭代,否则线程唤醒噪声冒充"开销"**(同 queue/CV 的"单平台数陷阱"一族)。
 - **when_any 快于 when_all 符合语义**:when_any 一个完成就返回(其余协作取消/detach),when_all 等全部——4-pack 下 when_any ~2x 快,证组引擎的"取第一即卸载"路径生效。
 - **正确性优先**:核心是 UAF(自捕获 fiber 自析构,已改 dispatch 收割)+ GroupSignal 销毁前卸载(folly WhenN 防护),双平台 53/53 + **WSL TSan 零 race**(mimalloc×TSan 地址复用误报已用可见分配器隔离,见 milestones sched-10)。
+
+## 调度器层缺口 bench：work-stealing 扩展 / spawn_on 亲和 / 协程胶水 / fiber sleep（`bench/sched/scheduler_ext_bench.cc`）
+
+> 补 sched 此前四个缺 bench 的行为。**边界(避免与既有重复)**:`scheduler_bench` 测原语(yield/spawn/suspend-wake spine),`queue_sota_bench` 已测 work-stealing **数据结构层**(WsFifoQueue steal_into 微观 ns),本节测**调度器层行为**——三者互补。双平台各 15 遍 `bench-stat.py`(Win MSVC19.50 + Linux GCC14.2 原生 ext4),gap>两变体 spread 之和才判赢/输。
+
+| 项 | HYLE(Win/Lin) | 基线 | 判定(15 遍,双平台) |
+|---|---|---|---|
+| **work-stealing 扩展 2 worker** | 1.88x / 1.91x | 1 worker 为 100% | ✅ **双平台 WIN**(gap 88/91% » spread 12/8%) |
+| **work-stealing 扩展 4 worker** | 3.30x / 3.49x | 1 worker | ✅ **双平台 WIN**(gap 230/249% » spread 15/8%) |
+| **work-stealing 扩展 8 worker** | 5.07x / 5.52x | 1 worker | ✅ **双平台 WIN**(gap 407/452% » spread 27/16%;超物理核后边际递减) |
+| **spawn_on 亲和 vs spawn** | 平局 / **1.33x** | 普通 spawn(全局注入) | **Win ➖平局**(gap27%«spread50%)/ **Lin ✅WIN**(gap33%>spread31%) |
+| **协程胶水 co_await vs 裸 fiber** | 平局 0.99 / 1.007 | 裸 suspend()/Waker::wake() | **双平台➖平局**(gap 1.0/0.7% « spread 57/23%)=零开销铁证 |
+| **fiber sleep 1 vs 64 并发 sleeper** | 平局 0.998 / 0.995 | 1 sleeper vs 64(同单 worker) | **双平台➖平局**(gap 0.2/0.5% « spread 9/3%)=不串行化铁证 |
+
+- **work-stealing 扩展双平台 WIN——sched-03 核心引擎兑现**:单个非 worker 线程点注入 512 个 compute fiber(各 ~几 μs 自旋活),全落 global 注入队列;N worker 靠 pop 自己分片 + 随机 victim steal 并行跑。**近线性到 4 核**(3.3-3.5x),8 worker 5.1-5.5x(超物理核后边际递减,exact 倍数受本机核数约束,**形状=steal 真的把点注入负载铺开了**才是结论)。这是此前完全没 bench 的调度脊主干,现补上。
+- **spawn_on 亲和 = 又一"单平台数陷阱"**:pinned 路由(私有 per-worker 队列 + `unpark_specific` 无条件唤醒,**绕过** `notify()` 的 `num_searching_` anti-herd gate,且永不被偷)对比普通 spawn(全局注入 + 条件 notify)。**Linux 真赢 1.33x**(261 vs 355ns,直达目标 worker 省掉 anti-herd 判断 + steal 竞争),**Windows 判平局**(spawn_on 中位仍偏快 26%,但 spread 50% 吞掉 gap)。只报单平台会误判——同 dtype/time/path/queue 的老陷阱。**注:spawn_on 的正职是 io shard-per-core(连接 fiber 钉在拥有其 io ring 的核),此 bench 顺带证它的派发路径不比普通 spawn 贵、Linux 还更省。**
+- **协程胶水零开销——"糖 vs 自家裸原语"**:`co_await SuspendFiber{}`/`CaptureWaker{}` ping-pong 对比**形状完全相同**的裸 `suspend()`/`current_waker()`/`Waker::wake()` ping-pong(即 scheduler_bench 的 PingPong)。**双平台统计平局**(ratio 0.99-1.007):协程帧冻结在 fiber 栈上,一次 fiber suspend 覆盖整个 co_await(await_suspend 返回 false 让协程在再注入后原地续跑,不二次挂起),所以协程语法层**没在裸 fiber spine 上加可测开销**。无外部对手(tokio/folly 是别的 runtime),标尺是自家裸原语。
+- **fiber sleep 不串行化——sched-04b 时间轮脊**:1 个 vs 64 个并发 sleeper **睡同样 2ms、都在单 worker 上**。若 sleep 烧 worker(像 `std::this_thread::sleep_for` 阻塞整条 OS 线程),64 个就得 64×2ms 串行;实测 **1 与 64 几乎相等**(ratio 0.998/0.995)=一个 worker 扛住 64 个并发 sleep 不串行(定时轮 arm O(1) + 一次 park 到最近 deadline,tick 到期批量 re-inject)。绝对值被 OS 定时器地板主导(Win ~15.6ms/Lin ~3.3ms,2ms 请求被抬到粒度整数倍),故**看两行相等这个对比,不看绝对值**。
+- **方法学**:亚 μs + fork-join 数受 OS 跨线程唤醒抖动主导(spread 8-57%),四项全 15 遍双平台复核。scaling/coro 用批量摊销(512 fiber/5000 cycle),sleep 用 batch=1(每 epoch 是真睡眠)。
 
 > 环境:Win MSVC19.50 Release + Linux x86_64 GCC14.2 Release(原生 ext4),nanobench。cap=1024、50000 item/生产者。**SOTA 标尺**:moodycamel ConcurrentQueue(单头,gated `-DHYLE_BENCH_MOODYCAMEL`)、oneTBB concurrent_bounded_queue/concurrent_vector(gated `-DHYLE_BENCH_TBB`,apples-to-apples 有界)、crossbeam-deque(Rust,work-stealing 同族,`bench/rust/`)。**此前这簇零对标("覆盖低就默认 SOTA"),本节是真对标揪出的结果——赢/平/输都登记。**
 >
