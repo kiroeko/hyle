@@ -169,21 +169,39 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 | 结构化日志产出（obs）| 日志聚合服务 |
 | device/stream/kernel（compute）| Tensor/autograd/optimizer |
 
-### ⚠️ 边界待复核（2026-07-03 参考库审计后，用户提出）
+### 边界重审（2026-07-03，参考库对照 + 北极星检验）
 
-> 上面的"边界外/四类不做"是**项目早期写的**,本身可能"漏点"——把某些真该做的原语误判成 out-of-scope。**这些边界不当已决,留作后续讨论。** 一次参考库审计(拿 tokio/seastar/folly/liburing/asio/libevent/tracy/oneTBB 逐条对照)已触发若干修正与待决:
+> **背景**：上面的"四类不做"是项目早期写的,用户指出"都不靠谱、后面都要审"——早期负空间可能把**通用原语**误判成 out-of-scope。本节逐条重审。
+>
+> **判据不是"参考库有没有",而是两问**:① 它是**原语/机制**还是**策略/协议/领域**?(scope 铁律)② **北极星(蜂群 agent / 推理引擎底座,见 motivation)需不需要它作为可复用底座件?** 两问都"是原语 + 北极星需要"→ `PULL IN`(补漏);是原语但成熟库已解决→ `BORROW`(借不造);真策略/协议/领域→ `KEEP OUT`;拿不准→ `DISCUSS`(待你拍)。
 
-- **TLS**:已从"隐性排除"改判为 **C9 真能力**(io-08)。scope §153"借不造"本就写明 TLS 借 BoringSSL——所以它是**借入的原语**不是 out-of-scope 协议,之前没登记是漏,不是有意不做。
-- **序列化原语**:边界表说"二进制序列化原语"IN、"IDL/schema 编译器"OUT——原则清楚,但 **close-02 无设计、无接口形状**,是个"看着像计划的占位"。**待决**:借 flatbuffers/capnproto 的 builder+reader 当原语落地,还是把 wire-format 全推 L1。需拍板。
-- **数据并行层**(parallel_for/reduce/scan over range,oneTBB/oneDPL):不同于 graph 的 DAG 编排,是 sched+simd 的天然消费者(大 buffer compute kernel)。**不被现边界排除**(是原语不是协议),但归 graph 还是 compute 未定。待与序列化一起复核。
-- **原则(暂)成立,但也待审**:HYLE 止于原语/机制,不碰策略/协议/领域——审计的真缺口(Semaphore/JoinHandle/select/spawn_blocking/multishot/异步DNS/TLS)确实都在原语侧,没越界 L1。**但"明确 out-of-scope"的每一条(HTTP/gRPC/RPC 框架/IDL 编译器/log 聚合/actor/DataModel)都不当已决**——早期负空间可能把"其实是通用原语"的东西误判出界。**下一轮要逐条重审整个"边界外/四类不做/已明确不纳入",不是只审这里点到的几个。**
+| 原判"不做"项 | 重审 | 理由（北极星视角）|
+|---|---|---|
+| **① 应用/领域层**:Tensor/autograd/optimizer/训练循环、tokenizer/sampler/KV-cache、模型格式语义、agent 逻辑/prompt、渲染 | ✅ **KEEP OUT** | 真 L2 领域。北极星是 agent 的**底座**不是 agent 本身;KV-cache/sampler 是推理引擎(消费方)的活。HYLE 给 compute/mem,拼成网络是上层事。判对。 |
+| **② 加密/TLS**(借 BoringSSL)| 🔄 **BORROW→已登记** | 原判"借不造"对,但**漏了登记**——公网 agent/服务必需。已改判 C9/io-08(借 shim,不自 roll)。 |
+| **② GPU 算子/压缩/JSON**(借 ggml/lz4/simdjson)| ✅ **BORROW**(判对)| 成熟库解决,自造=浪费/危险。北极星需要但"借"就够。JSON 借 simdjson 已明确。 |
+| **③ HTTP/gRPC/WebSocket 协议** | ✅ **KEEP OUT** | 真协议(L1)。但⚠️ 见下"DISCUSS-1":agent 大量调 LLM HTTP API,**HTTP 客户端**可能是北极星刚需——协议解析 vs 客户端能力要分开看。 |
+| **③ IDL/schema 编译器** | ✅ **KEEP OUT** | 编译器是工具链;但**序列化运行时原语**(builder/reader)是另一回事→ DISCUSS-2。 |
+| **③ RPC 框架/服务网格/服务发现** | ✅ **KEEP OUT** | 真框架(L1)。agent 用得上但那是消费方拼。 |
+| **③ 数据库/存储引擎/KV store** | 🟡 **KEEP OUT(存疑)** | 引擎是 L1。但 agent 要**持久化状态/记忆**——嵌入式 KV(如借 RocksDB/lmdb 封装)是否算底座件?倾向 KEEP OUT(借现成),记此存疑。 |
+| **③ 分布式共识(Raft/Paxos)** | ✅ **KEEP OUT** | 真分布式协议(L1)。 |
+| **③ actor 框架/语言运行时** | ✅ **KEEP OUT** | actor 是 fiber+channel 之上的**模型**(L1)。HYLE 给 fiber+channel 原语,actor 上层拼。判对。 |
+| **③ GUI/窗口系统** | ✅ **KEEP OUT** | 领域,与北极星无关。 |
+| **④ 构建/包管理/测试框架**(CMake/GoogleTest)| ✅ **KEEP OUT** | 工具链,判对。 |
+| **④ 日志聚合/监控后端** | 🔄 **部分 PULL IN** | 聚合/告警服务是运维栈(KEEP OUT),但**产出侧的 trace/counter 埋点原语**被漏了(obs 只做了日志)——已改判 obs-02(接 tracy)。"产出结构化 trace"是原语,"聚合"才是运维。 |
+| **④ GC** | ✅ **KEEP OUT** | 做分配器不做 GC,判对。 |
+| **DataModel(undo/序列化/协作)** | 🟡 **拆开看** | undo/协作=L2 领域(KEEP OUT);内含的**序列化**已单独在 DISCUSS-2。原"整块不纳入"太粗。 |
+| **替换 ggml 算子/训练推理引擎** | ✅ **KEEP OUT** | compute 只做抽象层,判对(借 ggml 是明确决策)。 |
 
-### 待复核的"不纳入"项(原标"已明确",现降级=后面都要审)
+**新发现的真缺口(原负空间根本没提到,审计补)**——均已登记为能力/里程碑,属 `PULL IN`:
+- **Semaphore / RwLock / oneshot / broadcast·watch**(C7/sched-09)、**JoinHandle + select/when_all**(C7/sched-10)、**spawn_blocking**(C8/sched-11)、**带超时 io**(C2/io-06)、**multishot+buffer ring**(C1/io-07)、**异步 DNS + signal**(C10/io-09)。全在**原语侧**、全是北极星(百万等待中的 agent + 服务底座)刚需。
 
-> ⚠️ 用户明确:以下两条(及上文"四类不做")都**不靠谱、后面都要审**,别当已决。
+**待你拍板(DISCUSS)**:
+- **DISCUSS-1 HTTP 客户端**:协议解析属 L1(KEEP OUT),但蜂群 agent 的本质就是"百万个都在等 LLM HTTP API"——一个**异步 HTTP 客户端**(不是服务器/框架)是否是北极星刚需的底座件?还是借现成(且现成的多是同步/自带运行时,和 HYLE fiber 冲突)?这是北极星最尖的刀直接指向的问题,**最该先定**。
+- **DISCUSS-2 序列化运行时原语**:借 flatbuffers/capnproto 的 builder+reader 当原语(不含 schema 编译器),还是全推 L1?agent 间消息/持久化状态要序列化。
+- **DISCUSS-3 数据并行层**(parallel_for/reduce/scan):原语无疑,归 graph 还是 compute 未定;有消费者(大 buffer kernel)故非投机,可缓。
 
-- DataModel（undo/序列化/协作）——clay 是空位,曾据此判 HYLE 也不纳入。**存疑**:undo/序列化里可能藏通用原语(如序列化已在复核)。待审。
-- 替换 ggml 算子 / 训练推理引擎本身——`compute/` 只做抽象层,包装而非替换。**这条相对稳**(借 ggml 是明确决策),但仍随 compute 支柱落地复核。
+> **重审结论**:早期"四类不做"的**大框对**(领域/协议/框架/工具链确实在外),但犯了两类错——① **漏登记该借的原语**(TLS、trace 埋点),已补;② **把原语和它上面的策略捆在一起判出界**(序列化 vs IDL、trace 产出 vs 聚合、HTTP 客户端 vs 协议框架)。修正方式=**拆细粒度**:原语侧拉进来,策略/协议侧留在外。DISCUSS-1/2/3 三项需你拍板后才好动 io/compute 后段。
 
 ## 进度
 
