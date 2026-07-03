@@ -63,10 +63,20 @@ ping-pong(每流稳态 ≤1 op 在途)填不满 SQ,也测不到"海量 op 同时
 - submit 挂 token 无拷贝(`user_data` = `IoOperation*`,完成时 verbatim 返回)。
 - 后端本身 = io_uring(Linux)/ IOCP(Windows)/ epoll(降级),各平台 proactor/reactor SOTA,非自造。
 
+## park 合并:空闲 worker 从 ~1kHz busy-poll 到真睡眠(2026-07-03)
+
+P0 hang 修复时,空闲 io-worker 走"阻塞 GETEVENTS reap,但上限 `kIoPollNs`=1ms"——正确(完成能收割),但**每个空闲 worker 每秒醒来重 poll ~1000 次**。诚实量化(探针:1 个 op 永久在途、worker 空转 500ms,`HYLE_IO_BENCH_STATS` 计 `io_uring_enter`):
+
+| 配置 | 500ms 空闲的 `io_uring_enter` 次数 |
+|---|---|
+| 1ms 上限(修复前)| **421**(≈1kHz busy-poll)|
+| eventfd 唤醒(park 合并后)| **3**(init 武装 + 唤醒 + 收尾;真睡眠)|
+
+**~140x 空闲 syscall 削减。** 机制:worker 有 io 在途时以**完整 timeout(timer deadline 或 INFINITE)**阻塞 reap,不再 1ms 轮询;跨线程 spawn/steal 经 `Scheduler::wake_worker` → `Proactor::wake()` 即时打断——io_uring 在专用 eventfd 上常驻一个 `IORING_OP_READ`(`wake()` 从任意线程 `write` 8 字节,**不碰单生产者 SQ**,故无 TSan race——这正是此前 NOP-SQE 版被撤的原因),IOCP 用线程安全的 `PostQueuedCompletionStatus`,epoll 用常驻 level-triggered eventfd。wake 完成带保留 `kWakeToken`:io_uring/epoll 在 reap 内丢弃并重武装、**不计入 in-flight**(否则无真 io 的 worker 永不 park futex),IOCP 经 io_context 过滤。**吞吐无变化**(ping-pong 1w 734K、pipelined 1w 323K,与合并前持平——负载下 worker 从不空闲,优化只作用于空闲态);双平台 + WSL TSan(net/tcp/udp/sched)净。
+
 ## 未做(登记)
 
 - **裸 liburing 对标**:证 HYLE 相对 liburing echo 的 0 封装开销。WSL 缺 `liburing-dev`;HYLE 本用裸 syscall,可后续在 bench 内手写等价 liburing echo 或装库补。
 - **vs asio / libuv**:证不输成熟异步框架。
 - **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
-- **park 合并的延迟优化**(正确性部分已做):worker 空闲现已**阻塞在 GETEVENTS reap**里(见上"pipelined + P0 hang"),这是正确性要求、已落地。剩下的纯**延迟**优化=让跨线程唤醒不必等 1ms 上限——在环里注册一个 eventfd,foreign 唤醒时写它即时打断阻塞 reap(替代当前 `kIoPollNs` 1ms 轮询上限)。这才碰防惊群路径,是可选性能项,不影响正确性。
 - Windows IOCP 的批量对应物(IOCP 无 submit 攒批概念,ReadFile/WriteFile 即时下发)+ n=15 统计版。

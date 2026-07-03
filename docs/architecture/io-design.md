@@ -76,7 +76,7 @@ io/
 > proactor 收割接缝 + socket op + co_await 层 + shard-per-core(per-worker ring)+ 阻塞 GETEVENTS reap 均已落地。下面是**剩余的提交侧/延迟优化**,按 JIT 延到后续:
 
 1. reactor 后端(mac kqueue)如何把"就绪"模拟成"完成"(Linux epoll 降级已做,accept→::accept/connect→SO_ERROR/read/write 内联)。
-2. **park 合并的延迟优化**:worker 空闲已阻塞在 GETEVENTS reap(正确性已达),纯延迟优化=环里注册 eventfd,foreign 唤醒写它即时打断阻塞 reap,替代当前 1ms 上限。碰防惊群路径,可选性能项。
+2. **park 合并 ✅ 已落地**(2026-07-03):worker 空闲以完整 timeout(timer deadline/INFINITE)阻塞 GETEVENTS reap,不再 1ms 轮询;跨线程唤醒经 `Proactor::wake()`(io_uring 专用 eventfd 上常驻 `IORING_OP_READ`,`write` 打断 reap,不碰单生产者 SQ;IOCP `PostQueuedCompletionStatus`;epoll level-triggered eventfd)。实测空闲 500ms 的 `io_uring_enter` 从 421→3(~140x),吞吐无变化。
 3. 高级机制接线:registered files/buffers、multishot accept/recv、linked SQE 的 op 层 API。
 4. TcpListener/TcpStream fd 所有权薄封装(RAII socket + 地址解析) + udp。
 
