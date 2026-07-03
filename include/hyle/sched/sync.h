@@ -223,6 +223,32 @@ class ConditionVariable {
 //
 // state_: 0 = unlocked, 1 = locked (no waiters), 2 = locked (waiters possible).
 // Satisfies BasicLockable/Lockable (composes with std::lock_guard).
+//
+// PLATFORM SPLIT (2026-07-03, measured): on Windows the contended lock delegates
+// to the OS SRWLOCK -- the SAME primitive std::mutex/marl use, and measured 2.66x
+// FASTER than a hand-rolled Drepper futex over WaitOnAddress under contention
+// (SRWLOCK has kernel-assisted adaptive spinning; WaitOnAddress park is heavier,
+// and a userspace pre-park spin can't be used over an M:N fiber scheduler -- it
+// burns the worker thread the lock holder's fiber may be queued on). On Linux the
+// Drepper futex over the futex syscall matches glibc; kept. SRWLOCK is pointer-
+// sized and zero-init (== SRWLOCK_INIT), stored opaquely here as void* and cast in
+// the .cc so this header pulls in no <windows.h>.
+#if defined(_WIN32)
+class Mutex {
+ public:
+  Mutex() noexcept = default;
+  HYLE_DISABLE_COPY_AND_MOVE(Mutex);
+
+  // All out-of-line: SRWLOCK's own acquire/release ARE function calls (same as
+  // std::mutex, which wraps AcquireSRWLockExclusive) -- so this is apples-to-apples.
+  HYLE_SCHED_API void lock() noexcept;
+  HYLE_SCHED_API bool try_lock() noexcept;
+  HYLE_SCHED_API void unlock() noexcept;
+
+ private:
+  void* srw_ = nullptr;  // RTL_SRWLOCK{PVOID Ptr}; nullptr == SRWLOCK_INIT
+};
+#else
 class Mutex {
  public:
   Mutex() noexcept = default;
@@ -259,6 +285,7 @@ class Mutex {
 
   std::atomic<std::uint32_t> state_{0};
 };
+#endif
 
 // ---- WaitGroup --------------------------------------------------------------
 // Go-style "wait until N tasks have finished". add(n) before spawning, done()

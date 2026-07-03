@@ -232,10 +232,19 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(
 
 // inline; unlock_slow runs only when there were waiters.
 
+#if !defined(_WIN32)
 void Mutex::lock_slow(std::uint32_t c) noexcept {
   // `c` is the value the fast-path CAS observed (non-zero -> contended). Flag
   // the lock as "has waiters" (2) and futex-park while it stays 2. Each wakeup
   // re-tries the exchange: getting 0 back means we won the lock.
+  //
+  // NO pre-park spin (deliberately, verified 2026-07-03): a bounded TTAS spin --
+  // the glibc/absl trick -- MADE IT WORSE (spread 12% -> 59%). Reason is the fiber
+  // model: spinning burns the WORKER OS THREAD, but the lock holder may be another
+  // FIBER queued on that SAME worker -- spinning the worker then starves the
+  // holder, which can never run to release. On real OS threads the holder runs on
+  // its own core so spinning pays off; over an M:N fiber scheduler it can starve.
+  // So the Linux path parks immediately. (Windows uses SRWLOCK -- see below.)
   if (c != 2) c = state_.exchange(2, std::memory_order_acquire);
   while (c != 0) {
     platform::detail::wait_on_address(&state_, 2);  // sleep while state_ == 2
@@ -250,5 +259,31 @@ void Mutex::unlock_slow() noexcept {
   state_.store(0, std::memory_order_release);
   platform::detail::wake_one(&state_);
 }
+#endif  // !_WIN32
 
 }  // namespace hyle::sched
+
+// ---- Windows Mutex = SRWLOCK (measured 2.66x faster contended than the futex) --
+#if defined(_WIN32)
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+
+// SRWLOCK is RTL_SRWLOCK{PVOID Ptr}; our void* srw_ IS that pointer field, so
+// &srw_ reinterprets cleanly as PSRWLOCK. Zero-init (nullptr) == SRWLOCK_INIT, so
+// the default-constructed Mutex is a valid unheld SRWLOCK with no explicit init.
+static_assert(sizeof(void*) == sizeof(SRWLOCK), "SRWLOCK must be pointer-sized");
+
+namespace hyle::sched {
+
+void Mutex::lock() noexcept {
+  ::AcquireSRWLockExclusive(reinterpret_cast<PSRWLOCK>(&srw_));
+}
+bool Mutex::try_lock() noexcept {
+  return ::TryAcquireSRWLockExclusive(reinterpret_cast<PSRWLOCK>(&srw_)) != 0;
+}
+void Mutex::unlock() noexcept {
+  ::ReleaseSRWLockExclusive(reinterpret_cast<PSRWLOCK>(&srw_));
+}
+
+}  // namespace hyle::sched
+#endif  // _WIN32
