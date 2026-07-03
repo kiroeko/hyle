@@ -156,7 +156,7 @@ loop:
 
 **两条必须讲清的边界（否则就是错的）**：
 - **进程是联邦，不是共享表**：单进程内 thread+fiber+coroutine 真正共享一个调度器；跨进程只能靠 `io/` + 共享内存做消息传递，从 fiber 视角"等另一个进程"就是又一个 awaitable。**别假装进程是同一队列里的行**。
-- **阻塞系统调用会卡住 worker**：某 fiber 跑了阻塞 syscall，它占用的 worker 线程被卡住、连累该核其他 fiber。缓解：(a) 阻塞调用走独立 blocking 线程池(`spawn_blocking`)；(b) 类 Go sysmon 的监控线程检测长阻塞、临时补一个 worker 顶上。这是"线程"在模型里必须处理的现实。**⚠️ 2026-07-03 审计升级**:此前标"留待实现期定策略",但这是真能力缺口不是纯 impl 细节——tokio `spawn_blocking`/marl blockingcall/seastar thread 都有公开 API,真服务器调阻塞库(DB 驱动/同步文件/`getaddrinfo`)必需。已登记为 **sched-11(能力 C8 驱动)**,不再当"实现期再说"糊过去。
+- **阻塞系统调用会卡住 worker**：某 fiber 跑了阻塞 syscall，它占用的 worker 线程被卡住、连累该核其他 fiber。**✅ 已落地(sched-11)=显式 `spawn_blocking`**：把阻塞调用扔到独立 blocking 线程池(懒创建、上限 512 远超核数、10s keep-alive 空闲自退、单 MPMC 队列+condvar),worker 保持自由;结果经现有 `JoinHandle<R>`(sched-10)回传,fiber-aware CV 唤醒 join 方。**sysmon(监控线程检测长阻塞、临时补 worker)不做**——tokio 也没有,阻塞卸载是**显式**的(调用方决定什么会阻塞、主动 `spawn_blocking`);自动检测卡住 worker 补线程是 Go runtime 风格,无消费者驱动前不投机做(轴 C 纪律)。这是"线程"在模型里必须处理的现实,已由显式卸载入口覆盖。tokio `spawn_blocking`/marl blockingcall/seastar thread 同此形状。
 
 ### 第二节小结
 
