@@ -361,6 +361,75 @@ TEST(Proactor, TcpAcceptConnectRoundTripEpoll) {
   ASSERT_TRUE(ok);
   RunTcpAcceptConnectRoundTrip(p);
 }
+
+// io-07 multishot accept: ONE submit_accept_multishot yields a completion per
+// connection (kMore SET while armed). Connect kMulti clients; each must surface a
+// distinct accepted fd from the SAME user_data with kMore set. Exercised on both
+// io_uring (native IORING_ACCEPT_MULTISHOT) and the epoll fallback (re-arm
+// emulation) via the shared helper.
+static void RunMultishotAccept(Proactor& p) {
+  constexpr int kMulti = 4;
+  int ls = ::socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(ls, 0);
+  int one = 1;
+  ::setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+  sockaddr_in sa{};
+  sa.sin_family = AF_INET;
+  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_port = 0;
+  ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
+  ASSERT_EQ(::listen(ls, 16), 0);
+  socklen_t slen = sizeof(sa);
+  ASSERT_EQ(::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen), 0);
+
+  // ONE multishot accept arm -- must serve all kMulti connections.
+  ASSERT_TRUE(p.submit_accept_multishot(ls, /*user_data=*/0xACCE));
+
+  int clients[kMulti];
+  int accepted_count = 0;
+  int more_set = 0;
+  for (int i = 0; i < kMulti; ++i) {
+    clients[i] = ::socket(AF_INET, SOCK_STREAM, 0);
+    ASSERT_GE(clients[i], 0);
+    // Blocking connect to loopback; the listener backlog holds it until accepted.
+    ASSERT_EQ(::connect(clients[i], reinterpret_cast<sockaddr*>(&sa), sizeof(sa)),
+              0);
+  }
+
+  // Reap until all kMulti accepts surface. Every one must carry user_data 0xACCE
+  // (verbatim, same token) and a valid fd; while armed each has kMore set.
+  for (int spins = 0; spins < 500 && accepted_count < kMulti; ++spins) {
+    Completion c[8];
+    std::size_t n = p.reap(c, 8, 1'000'000'000ull);
+    for (std::size_t i = 0; i < n; ++i) {
+      if (c[i].user_data != 0xACCE) continue;
+      ASSERT_GE(c[i].result, 0) << "multishot accept must carry a valid fd";
+      if (c[i].flags & Completion::kMore) ++more_set;
+      ::close(static_cast<int>(c[i].result));
+      ++accepted_count;
+    }
+  }
+  EXPECT_EQ(accepted_count, kMulti) << "one multishot submit served all conns";
+  EXPECT_GE(more_set, kMulti - 1) << "armed completions carry kMore";
+
+  for (int i = 0; i < kMulti; ++i) ::close(clients[i]);
+  ::close(ls);
+}
+
+TEST(Proactor, MultishotAcceptUring) {
+  Proactor p;
+  if (!p.init()) GTEST_SKIP() << "no io_uring backend";
+  RunMultishotAccept(p);
+}
+
+TEST(Proactor, MultishotAcceptEpoll) {
+  ::setenv("HYLE_IO_FORCE_EPOLL", "1", 1);
+  Proactor p;
+  bool ok = p.init();
+  ::unsetenv("HYLE_IO_FORCE_EPOLL");
+  ASSERT_TRUE(ok);
+  RunMultishotAccept(p);
+}
 #endif  // __linux__
 
 // ---- Windows IOCP real IO ops ----------------------------------------------
@@ -486,6 +555,59 @@ TEST(Proactor, TcpAcceptConnectRoundTripIocp) {
 
   ::closesocket(accepted);
   ::closesocket(cl);
+  ::closesocket(ls);
+}
+
+// io-07 multishot accept on IOCP: no native multishot, so submit_accept_multishot
+// arms one AcceptEx and reap RE-ARMS after each completion + stamps kMore. ONE
+// submit must serve kMulti connections, each carrying the same user_data + a valid
+// accepted socket, with kMore set while armed.
+TEST(Proactor, MultishotAcceptIocp) {
+  constexpr int kMulti = 4;
+  Proactor p;
+  ASSERT_TRUE(p.init());
+
+  SOCKET ls = ::WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0,
+                           WSA_FLAG_OVERLAPPED);
+  ASSERT_NE(ls, INVALID_SOCKET);
+  sockaddr_in sa{};
+  sa.sin_family = AF_INET;
+  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_port = 0;
+  ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
+  ASSERT_EQ(::listen(ls, 16), 0);
+  int slen = sizeof(sa);
+  ASSERT_EQ(::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen), 0);
+  ASSERT_TRUE(p.register_handle(static_cast<std::intptr_t>(ls)));
+
+  ASSERT_TRUE(p.submit_accept_multishot(static_cast<std::intptr_t>(ls), 0xACCE));
+
+  SOCKET clients[kMulti];
+  for (int i = 0; i < kMulti; ++i) {
+    clients[i] = ::WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0,
+                              WSA_FLAG_OVERLAPPED);
+    ASSERT_NE(clients[i], INVALID_SOCKET);
+    // Blocking connect to loopback; backlog holds it until AcceptEx serves it.
+    ASSERT_EQ(::connect(clients[i], reinterpret_cast<sockaddr*>(&sa), sizeof(sa)),
+              0);
+  }
+
+  int accepted_count = 0, more_set = 0;
+  for (int spins = 0; spins < 500 && accepted_count < kMulti; ++spins) {
+    Completion c[8];
+    std::size_t n = p.reap(c, 8, 1'000'000'000ull);
+    for (std::size_t i = 0; i < n; ++i) {
+      if (c[i].user_data != 0xACCE) continue;
+      ASSERT_GE(c[i].result, 0);
+      if (c[i].flags & Completion::kMore) ++more_set;
+      ::closesocket(static_cast<SOCKET>(c[i].result));
+      ++accepted_count;
+    }
+  }
+  EXPECT_EQ(accepted_count, kMulti) << "one multishot submit served all conns";
+  EXPECT_GE(more_set, kMulti - 1) << "armed completions carry kMore";
+
+  for (int i = 0; i < kMulti; ++i) ::closesocket(clients[i]);
   ::closesocket(ls);
 }
 

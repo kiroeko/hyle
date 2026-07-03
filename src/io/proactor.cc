@@ -64,6 +64,11 @@ struct Proactor::Impl {
     int kind = 0;
     WSABUF wsabuf{};                      // recv/send descriptor (outlives the op)
     SOCKET accept_sock = INVALID_SOCKET;  // AcceptEx: the accepted socket (result)
+    // Multishot accept emulation (io-07): IOCP has no native multishot, so reap
+    // re-issues AcceptEx on `handle` (the listener) after each completion and
+    // stamps Completion::kMore -- mirroring io_uring's multishot upward. Set only
+    // on a multishot accept op.
+    bool multishot = false;
     // Datagram (WSARecvFrom/WSASendTo) only: WSARecvFrom writes the source addr
     // into the CALLER's addr buffer, and writes its length into `fromlen` -- both
     // must outlive the async op, so fromlen lives here (the addr buffer is caller-
@@ -227,6 +232,15 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     } else {
       out[i].result = static_cast<std::int64_t>(xfer);  // bytes transferred
     }
+    // Multishot accept emulation: on a successful accept, re-arm AcceptEx on the
+    // listener and stamp kMore (more connections coming, same user_data) --
+    // mirrors io_uring native multishot upward. On failure leave kMore clear =
+    // terminal (the multishot ended). Re-arm failure also ends it (kMore clear).
+    if (op->multishot && op->kind == Impl::kAccept && out[i].result >= 0) {
+      if (iocp_arm_accept(impl_, reinterpret_cast<std::intptr_t>(op->handle),
+                          op->user_data, /*multishot=*/true))
+        out[i].flags |= Completion::kMore;
+    }
     delete op;
   }
   return static_cast<std::size_t>(removed);
@@ -345,12 +359,14 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
   return false;
 }
 
-bool Proactor::submit_accept(std::intptr_t fd, void* /*addr*/, void* /*addrlen*/,
-                             std::uint64_t user_data) noexcept {
-  if (impl_ == nullptr) return false;
+// Arm one AcceptEx on listener `fd`. Shared by submit_accept (one-shot),
+// submit_accept_multishot, and reap's multishot re-arm. `multishot` is stamped on
+// the IoOp so reap knows to re-arm + set kMore after this one completes.
+bool Proactor::iocp_arm_accept(Impl* impl, std::intptr_t fd,
+                               std::uint64_t user_data, bool multishot) noexcept {
   SOCKET ls = static_cast<SOCKET>(fd);
   if (!load_ext_fn(ls, WSAID_ACCEPTEX,
-                   reinterpret_cast<void**>(&impl_->acceptex)))
+                   reinterpret_cast<void**>(&impl->acceptex)))
     return false;
   // AcceptEx needs a pre-created accept socket of the same family as the listener
   // (learn it via getsockname). The peer address the caller passed is ignored on
@@ -363,24 +379,39 @@ bool Proactor::submit_accept(std::intptr_t fd, void* /*addr*/, void* /*addrlen*/
     fam = ss.ss_family;
   SOCKET as = ::WSASocketW(fam, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
   if (as == INVALID_SOCKET) return false;
-  auto* op = new (std::nothrow) Impl::IoOp{};
+  auto* op = new (std::nothrow) Proactor::Impl::IoOp{};
   if (op == nullptr) {
     ::closesocket(as);
     return false;
   }
   op->user_data = user_data;
   op->handle = reinterpret_cast<HANDLE>(fd);  // listener (for SO_UPDATE + result)
-  op->kind = Impl::kAccept;
+  op->kind = Proactor::Impl::kAccept;
   op->accept_sock = as;
-  impl_->link(op);
+  op->multishot = multishot;
+  impl->link(op);
   constexpr DWORD kAddr = sizeof(SOCKADDR_STORAGE) + 16;
   DWORD got = 0;
-  BOOL ok = impl_->acceptex(ls, as, op->addr_buf, 0, kAddr, kAddr, &got, &op->ov);
+  BOOL ok = impl->acceptex(ls, as, op->addr_buf, 0, kAddr, kAddr, &got, &op->ov);
   if (ok || ::WSAGetLastError() == WSA_IO_PENDING) return true;
-  impl_->unlink(op);
+  impl->unlink(op);
   ::closesocket(as);
   delete op;
   return false;
+}
+
+bool Proactor::submit_accept(std::intptr_t fd, void* /*addr*/, void* /*addrlen*/,
+                             std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  return iocp_arm_accept(impl_, fd, user_data, /*multishot=*/false);
+}
+
+bool Proactor::submit_accept_multishot(std::intptr_t fd,
+                                       std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // IOCP has no native multishot: arm one AcceptEx flagged multishot; reap
+  // re-arms after each completion and stamps kMore (emulation, uniform contract).
+  return iocp_arm_accept(impl_, fd, user_data, /*multishot=*/true);
 }
 
 bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
@@ -604,6 +635,10 @@ struct Proactor::Impl {
     // reads it as the destination. Null/0 for stream ops.
     void* addr = nullptr;
     std::uint32_t addr_cap = 0;
+    // Multishot accept emulation (io-07): if set, reap re-arms this ACCEPT watch
+    // after each delivery and stamps Completion::kMore, mirroring io_uring's
+    // native multishot upward. Only meaningful for IORING_OP_ACCEPT.
+    bool multishot = false;
   };
   std::unordered_map<int, PendingOp> pending;  // fd -> armed op
   // post() has no fd (a bare wake token) and epoll has no
@@ -884,6 +919,19 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       out[n].result = res;
       out[n].flags = 0;
       out[n].buffer_id = 0;
+      // Multishot accept emulation: on a successful accept, re-arm the listener
+      // watch and stamp kMore (more connections coming, same user_data) -- mirrors
+      // io_uring native multishot. On failure, leave kMore clear = terminal (the
+      // multishot ended), matching io_uring's behaviour on a fatal accept error.
+      if (op.multishot && res >= 0) {
+        out[n].flags |= Completion::kMore;
+        epoll_event rev{};
+        rev.events = EPOLLIN | EPOLLONESHOT;
+        rev.data.u64 = static_cast<std::uint64_t>(fd);
+        if (::epoll_ctl(impl_->epfd, EPOLL_CTL_ADD, fd, &rev) == 0) {
+          impl_->pending[fd] = op;  // keep multishot=true for the next delivery
+        }
+      }
       ++n;
     }
     return n;
@@ -1027,13 +1075,16 @@ namespace {
 // reaches sq_entries), flush it now with a submit-only enter (this is tokio-
 // uring's "SQ full -> submit" trigger). Takes the mapped fields + &sq_pending +
 // ring_fd/sq_entries so it needn't name the private Impl type. Shared by
-// post/read/write/recv/send/accept/connect. `op_flags` sets the SQE flags union.
+// post/read/write/recv/send/accept/connect. `op_flags` sets the SQE flags union
+// (rw_flags/accept_flags/msg_flags). `ioprio` sets the SQE ioprio field, which
+// carries the multishot bits (IORING_ACCEPT_MULTISHOT / IORING_RECV_MULTISHOT) --
+// 0 for a normal one-shot op.
 bool submit_one(int ring_fd, unsigned sq_entries, unsigned* sq_pending,
                 std::uint64_t* inflight, unsigned* sq_tail, unsigned sq_mask,
                 unsigned* sq_array, io_uring_sqe* sqes, std::uint8_t opcode,
                 std::int32_t fd, std::uint64_t addr, std::uint32_t len,
                 std::uint64_t off, std::uint64_t user_data,
-                std::uint32_t op_flags = 0) noexcept {
+                std::uint32_t op_flags = 0, std::uint16_t ioprio = 0) noexcept {
   if (*sq_pending >= sq_entries) {  // ring full of un-flushed SQEs -> flush now
     sys_io_uring_enter(ring_fd, *sq_pending, 0, 0, nullptr, 0);
     *sq_pending = 0;
@@ -1048,6 +1099,7 @@ bool submit_one(int ring_fd, unsigned sq_entries, unsigned* sq_pending,
   s.addr = addr;
   s.len = len;
   s.rw_flags = static_cast<int>(op_flags);  // union: msg_flags/accept_flags too
+  s.ioprio = ioprio;                        // multishot bits (accept/recv), else 0
   s.user_data = user_data;
   sq_array[index] = index;
   // publish SQ tail (store_release pairs with kernel load_acquire); the enter
@@ -1212,6 +1264,30 @@ bool Proactor::submit_accept(std::intptr_t fd, void* addr, void* addrlen,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(addr), 0,
                     reinterpret_cast<std::uint64_t>(addrlen), user_data);
+}
+
+bool Proactor::submit_accept_multishot(std::intptr_t fd,
+                                       std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    // epoll has no native multishot. Arm a one-shot accept watch, then flag it
+    // multishot so reap() re-arms after each delivery and stamps kMore -- the
+    // caller sees the same continuous kMore-set stream as io_uring. Peer addr is
+    // read by net/ via getpeername on the accepted fd (buf/len stay 0).
+    if (!epoll_arm(impl_, static_cast<int>(fd), EPOLLIN, IORING_OP_ACCEPT,
+                   nullptr, 0, user_data))
+      return false;
+    impl_->pending[static_cast<int>(fd)].multishot = true;
+    return true;
+  }
+  // io_uring native: IORING_OP_ACCEPT with IORING_ACCEPT_MULTISHOT in ioprio.
+  // addr/addrlen null -- multishot cannot fill a per-connection addr into one
+  // fixed buffer (net/ uses getpeername on the accepted fd). One submit yields a
+  // CQE per connection with IORING_CQE_F_MORE set until cancelled/errored.
+  return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_ACCEPT,
+                    static_cast<std::int32_t>(fd), 0, 0, 0, user_data,
+                    /*op_flags=*/0, /*ioprio=*/IORING_ACCEPT_MULTISHOT);
 }
 
 bool Proactor::submit_connect(std::intptr_t fd, const void* addr,

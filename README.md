@@ -5,13 +5,13 @@
 1. **调度** — 一个调度器同时管 线程 / 进程 / 纤程 / 协程
 2. **内存** — 分配器 / arena / cache-line 对齐 / NUMA
 3. **计算** — CPU SIMD + GPU（CUDA / Vulkan），算子借 ggml
-4. **IO** — 网络（proactor）+ 文件 + 跨进程共享内存
+4. **IO** — 网络（proactor + HTTP serving/client）+ 文件 + 跨进程共享内存
 
 **差异点在"同一套底座"**：GPU 算完、网卡收到包、fiber 主动让出——都回到同一个调度器、唤醒同一个 fiber，而不是四个子系统各开线程池、各跑事件循环互相打架。所以 HYLE 不是"又一个 hashmap / 日志库"，而是让 计算 / 并发 / 内存 / IO 无阻抗拼在一起的那层地基。
 
-**两个一等服务对象**：
-1. 蜂群 agent（v1 北极星，百万 IO-bound agent）；
-2. AI 推理引擎（高并发 serving + paged KV-cache + 批调度 + GPU kernel，当引擎下面的 infra，不与 vLLM 正面竞争）。训练框架为较弱场景。
+**一等服务对象**：
+1. **类 llama.cpp 推理引擎 + 通用加速库（v1 北极星）** — 四样全压：高并发 RESTful serving + 批调度 + paged KV-cache + GPU/CPU kernel。llama.cpp 现在只能东拼西凑（vendor cpp-httplib + ggml + 自写线程），HYLE 做它脚下那层统一底座。
+2. 蜂群 agent（百万 IO-bound agent）——引擎的消费者之一，fiber 最契合但只压半边。训练框架为较弱场景。
 
 **唯一的存在理由是把性能做到业界顶尖（SOTA）**：回到 C、贴硬件、混合异构，把性能做到极致（时间与空间复杂度冲突时优先时间）。标尺是各领域参考库（hashmap→absl/F14、分配器→mimalloc、队列→moodycamel/tokio、SIMD→Highway/xsimd、调度→tokio/Seastar），不是 std——赢 std 只是最低门槛。每个性能件都有对标 SOTA 的真实 benchmark，赢多少、输多少都诚实登记为优化目标。对标数字见 [`docs/performance/`](./docs/performance/README.md)，逐里程碑实现进度见 [`docs/milestones/README.md`](./docs/milestones/README.md)。
 
@@ -31,7 +31,7 @@
 |---|---|
 | ⭐ [实现速查表](./docs/architecture/implementation-cheatsheet.md) | **写代码前只读这一张**：聚合每次实现都要用的硬规则——std 红线 / 失败模型 / 分层判据 / C-ABI / 里程碑 CHECKLIST / 构建环境 |
 | [架构总入口](./docs/architecture/README.md) | 定位、模块划分、贯穿性设计原则、项目背景与命名 |
-| [动机](./docs/architecture/motivation.md) | 为什么是现在/为谁做：AI-native 四压负载 + 蜂群 agent 北极星 + 比 Seastar 多异构维度 |
+| [动机](./docs/architecture/motivation.md) | 为什么是现在/为谁做：AI-native 四压负载 + 类 llama.cpp 推理引擎北极星 + 比 Seastar 多异构维度 |
 | [工程章程](./docs/architecture/engineering-charter.md) | 动手前最终依据：C++23 标准 / 错误模型 / 测试 / 边界 / 对外 FFI |
 | [编码规范](./docs/architecture/coding-conventions.md) | 每一行怎么写才不破范式：std 分层 / 宏纪律 / C-ABI 范式 / clay 写法继承表 |
 

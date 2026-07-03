@@ -117,6 +117,21 @@ class Proactor {
   // completion result is the accepted fd (>=0) or a negative errno.
   HYLE_IO_API bool submit_accept(std::intptr_t fd, void* addr, void* addrlen,
                                  std::uint64_t user_data) noexcept;
+
+  // Multishot accept (io-07): ONE submit that keeps producing a completion per
+  // incoming connection until it is cancelled or errors -- no re-arm per accept.
+  // Each completion carries the accepted fd (>=0) in result and `user_data`
+  // VERBATIM (the same token every time), with Completion::kMore SET while the
+  // accept remains armed; a completion with kMore CLEAR is the terminal one (the
+  // multishot ended -- cancelled, or a fatal error in result). The caller must
+  // therefore NOT recycle `user_data`'s waker/slot until it sees kMore clear, and
+  // must be ready for many completions from one submit. Backends without a native
+  // multishot (IOCP, epoll fallback) emulate it by re-arming a one-shot accept
+  // after each delivery, presenting the SAME kMore-set stream upward -- so net/
+  // sees one uniform contract. On io_uring this sets IORING_ACCEPT_MULTISHOT.
+  // Returns false if the op could not be queued.
+  HYLE_IO_API bool submit_accept_multishot(std::intptr_t fd,
+                                           std::uint64_t user_data) noexcept;
   // connect `fd` to `addr` (sockaddr*, `addrlen` bytes). Completion result is 0
   // on success or a negative errno.
   HYLE_IO_API bool submit_connect(std::intptr_t fd, const void* addr,
@@ -222,6 +237,12 @@ class Proactor {
                               unsigned char opcode, void* buf, unsigned len,
                               void* addr, unsigned addr_cap,
                               std::uint64_t user_data) noexcept;
+  // IOCP only: arm one AcceptEx on listener `fd` (shared by submit_accept, its
+  // multishot variant, and reap's multishot re-arm). Private static since it
+  // names the private Impl. `multishot` is stamped on the IoOp so reap re-arms +
+  // stamps kMore. Defined only in the Windows branch of proactor.cc.
+  static bool iocp_arm_accept(Impl* impl, std::intptr_t fd,
+                              std::uint64_t user_data, bool multishot) noexcept;
 
   Impl* impl_ = nullptr;  // backend state (IOCP port / io_uring ring), pimpl
 };
