@@ -21,12 +21,14 @@ IoContext::IoContext(sched::Scheduler& sched, unsigned num_workers) noexcept
     rings_.push_back(std::move(p));
   }
   sched_.set_io_poll(&IoContext::poll_trampoline, this);
+  sched_.set_io_wake(&IoContext::wake_trampoline, this);
 }
 
 IoContext::~IoContext() {
   // Unregister before we (and our rings) are destroyed so no worker calls a
   // dangling hook during teardown. The scheduler is expected already stopped
   // (its shutdown() drained fibers) by the time IoContext is destroyed.
+  sched_.set_io_wake(nullptr, nullptr);
   sched_.set_io_poll(nullptr, nullptr);
 }
 
@@ -49,6 +51,13 @@ bool IoContext::poll_trampoline(void* ctx, unsigned worker_idx,
   return static_cast<IoContext*>(ctx)->poll(worker_idx, timeout_ns);
 }
 
+void IoContext::wake_trampoline(void* ctx, unsigned worker_idx) noexcept {
+  // Break worker_idx's blocking reap by waking ITS ring (park merge). Writes the
+  // ring's wake eventfd (io_uring) / posts its port (IOCP) -- thread-safe, no SQ
+  // race. The woken reap returns and the worker re-checks its run queue.
+  static_cast<IoContext*>(ctx)->rings_[worker_idx]->wake();
+}
+
 bool IoContext::poll(unsigned worker_idx,
                      unsigned long long timeout_ns) noexcept {
   // Reap THIS worker's own ring only (per-core: submit + reap share this thread,
@@ -67,7 +76,13 @@ bool IoContext::poll(unsigned worker_idx,
   bool had_io = p.in_flight();
   Completion batch[64];
   std::size_t n = p.reap(batch, 64, had_io ? timeout_ns : 0);
-  for (std::size_t i = 0; i < n; ++i) complete(batch[i]);
+  for (std::size_t i = 0; i < n; ++i) {
+    // Skip the cross-thread wake token: it carries no IoOperation* (it only broke
+    // the block). io_uring/epoll drop it inside reap, but IOCP's wake posts it as a
+    // completion, so filter here to defend all backends uniformly.
+    if (batch[i].user_data == Proactor::kWakeToken) continue;
+    complete(batch[i]);
+  }
   return had_io;
 }
 

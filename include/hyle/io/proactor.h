@@ -173,9 +173,28 @@ class Proactor {
   // NOP SQE, and the submission queue is single-producer, so post must run on the
   // ring's owner thread (a foreign-thread post races the owner). IOCP's
   // PostQueuedCompletionStatus is thread-safe, but treat post as same-thread for
-  // portability. (Cross-thread wake of a parked worker is the scheduler's job via
-  // its futex Parker, not a post into the ring.)
+  // portability. (Cross-thread wake of a blocked reap is wake(), below.)
   HYLE_IO_API bool post(std::uint64_t user_data, std::int64_t result = 0) noexcept;
+
+  // Cross-thread wake: unblock a reap() that is blocking on THIS proactor from ANY
+  // thread, WITHOUT racing the (single-producer) submission queue. This is the
+  // scheduler's park-merge primitive -- an idle worker with io in flight blocks IN
+  // reap (a GETEVENTS io_uring_enter / GetQueuedCompletionStatusEx), and a foreign
+  // thread that hands it a fiber (spawn/steal) or asks it to stop calls wake() to
+  // break that block promptly instead of waiting out a poll timeout. Mechanism per
+  // backend: io_uring writes a dedicated eventfd (a persistent IORING_OP_READ on it
+  // completes with the reserved kWakeToken; reap drains + re-arms it, and never
+  // hands it out as a user completion); IOCP posts kWakeToken via the thread-safe
+  // PostQueuedCompletionStatus; epoll writes an eventfd in its watch set. The woken
+  // reap returns (perhaps with zero user completions); the caller re-checks its
+  // queues. Idempotent and cheap; safe to call when nothing is blocked.
+  HYLE_IO_API bool wake() noexcept;
+
+  // Reserved user_data/token for wake() completions. Never a valid IoOperation*
+  // ( ~0 is kernel-space, never a heap object ), so the completion router can tell
+  // a wake apart from a real op and drop it. Consumers (io_context routing,
+  // net::complete) MUST skip a completion carrying this token.
+  static constexpr std::uint64_t kWakeToken = ~std::uint64_t{0};
 
   // Whether the ring has ops SUBMITTED-but-not-yet-COMPLETED (the kernel still
   // owes ≥1 completion). The scheduler integration reads this at a worker's park

@@ -57,13 +57,6 @@ std::uint64_t xorshift(std::uint64_t& s) noexcept {
 constexpr int kSpinPolls = 4096;       // cpu_relax polls (sub-µs, no syscall)
 constexpr int kYieldsBeforePark = 4;   // then cede the core a few times
 
-// io poll (io-04, plan B): when an io hook is registered, a parked worker must
-// not sleep indefinitely on the futex -- an io completion won't unpark it (plan B
-// does not yet post() a wake into the proactor; that is the plan-A park merge).
-// So bound the park at this interval and re-poll the proactor each wakeup. 1ms
-// matches the timer wheel tick, so a worker with both a sleep timer and pending
-// io wakes on whichever is nearer. Only applied when io_poll != null.
-constexpr std::uint64_t kIoPollNs = 1'000'000;  // 1ms park cap when io is active
 
 }  // namespace
 
@@ -131,6 +124,11 @@ struct Scheduler::Impl {
   // read fn (acquire) then ctx, so a non-null fn implies its ctx is visible.
   std::atomic<Scheduler::IoPollFn> io_poll{nullptr};
   std::atomic<void*> io_poll_ctx{nullptr};
+  // io wake hook (io-04 park merge): breaks a worker blocked in the io poll hook.
+  // Same publish discipline as io_poll (write ctx then fn with release). io_poll
+  // and io_wake are registered together by IoContext, but read independently.
+  std::atomic<Scheduler::IoWakeFn> io_wake{nullptr};
+  std::atomic<void*> io_wake_ctx{nullptr};
 
   std::mutex idle_mu;              // guards `sleepers` (cold path: park/unpark)
   std::vector<unsigned> sleepers;  // ids of currently-parked workers
@@ -223,6 +221,19 @@ struct Scheduler::Impl {
     unpark_one();
   }
 
+  // Wake worker `idx` whichever way it is sleeping. An idle worker is blocked in
+  // EITHER its futex Parker (no io in flight) OR the io poll hook's blocking reap
+  // (io in flight, park merge) -- and the waker can't cheaply tell which, and it
+  // can race the transition. So hit BOTH channels: parker.unpark() latches a token
+  // (harmless + consumed on the worker's next park if it was in reap), and
+  // io_wake() writes the ring's wake eventfd (harmless + drained on the next reap
+  // if it was in the futex). Idempotent; exactly one of the two actually unblocks.
+  void wake_worker(unsigned idx) noexcept {
+    workers[idx]->parker.unpark();
+    if (IoWakeFn w = io_wake.load(std::memory_order_acquire); w != nullptr)
+      w(io_wake_ctx.load(std::memory_order_relaxed), idx);
+  }
+
   void unpark_one() noexcept {
     unsigned idx;
     {
@@ -231,7 +242,7 @@ struct Scheduler::Impl {
       idx = sleepers.back();
       sleepers.pop_back();
     }
-    workers[idx]->parker.unpark();
+    wake_worker(idx);
   }
 
   // Wake ONE specific worker (shard-per-core pinned-wake path). Unconditional: the
@@ -243,7 +254,7 @@ struct Scheduler::Impl {
   // both necessary and sufficient; it never contributes to a wake storm because it
   // targets exactly one worker that has exactly one new task.
   void unpark_specific(unsigned idx) noexcept {
-    workers[idx]->parker.unpark();
+    wake_worker(idx);
   }
 
   void remove_sleeper(unsigned idx) noexcept {
@@ -436,24 +447,25 @@ struct Scheduler::Impl {
         // outstanding!=0 (root-caused 2026-07-03 via a blocking-reap probe that
         // made a 300-stream pipelined bench complete).
         //
-        // The hook RETURNS whether ops were in flight. true -> it (may have)
-        // blocked in the ring harvesting completions; loop to run whatever those
+        // The hook RETURNS whether ops were in flight. true -> it BLOCKED in the
+        // ring (up to `timeout`) harvesting completions; loop to run whatever they
         // re-injected. false -> nothing in flight, so it did only a cheap poll;
-        // fall through to the futex park, which a cross-thread unpark() can
-        // interrupt IMMEDIATELY (a reap block cannot) -- so a scheduler that owns
-        // an IoContext but currently has no io pending still wakes instantly on a
-        // foreign spawn/wake. Cap the block at kIoPollNs so even while io IS in
-        // flight a pinned cross-thread wake is observed within 1ms (the loop top
-        // re-checks find_task after the bounded reap returns); consuming the
-        // parker latch immediately via an eventfd in the ring is the park-merge
-        // PERF follow-up, not needed for correctness.
-        if (timeout > kIoPollNs) timeout = kIoPollNs;
+        // fall through to the futex park (a cross-thread unpark interrupts it
+        // immediately) -- so a scheduler that owns an IoContext but currently has
+        // no io pending still wakes instantly on a foreign spawn/wake.
+        //
+        // PARK MERGE (io-04 perf): the block uses the FULL timeout (the timer
+        // deadline, or INFINITE when no timer) -- NOT a 1ms re-poll cap. A truly
+        // asleep worker no longer burns ~1000 io_uring_enter/sec busy-polling
+        // (measured: 421 enters over 500ms idle before this). A foreign spawn/
+        // steal breaks the block promptly via Scheduler::wake_worker -> the ring's
+        // wake eventfd (Proactor::wake), so responsiveness is preserved without the
+        // poll. This is why set_io_wake is mandatory once the cap is gone.
         if (poll(io_poll_ctx.load(std::memory_order_relaxed), idx, timeout)) {
           remove_sleeper(idx);
           continue;  // io was in flight -> serviced in the ring, re-check queues
         }
         // else: nothing in flight -> park below for an immediate cross-thread wake
-        timeout = park_timeout_ns(w);  // io cap no longer applies
       }
       if (timeout == UINT64_MAX) {
         w.parker.park();
@@ -502,7 +514,9 @@ struct Scheduler::Impl {
   void shutdown() {
     drain();
     stop.store(true, std::memory_order_release);
-    for (auto& w : workers) w->parker.unpark();  // wake parked ones to see stop
+    // Wake every worker to observe `stop` -- via BOTH channels (wake_worker), since
+    // an io-active worker is blocked in the reap, not the futex parker.
+    for (unsigned i = 0; i < n; ++i) wake_worker(i);
     for (auto& t : threads) {
       if (t.joinable()) t.join();
     }
@@ -540,6 +554,12 @@ void Scheduler::set_io_poll(IoPollFn fn, void* ctx) noexcept {
   // stopped (IoContext dtor), so no worker is looping then anyway.
   impl_->io_poll_ctx.store(ctx, std::memory_order_relaxed);
   impl_->io_poll.store(fn, std::memory_order_release);
+}
+
+void Scheduler::set_io_wake(IoWakeFn fn, void* ctx) noexcept {
+  // Same publish discipline as set_io_poll (ctx before fn, release).
+  impl_->io_wake_ctx.store(ctx, std::memory_order_relaxed);
+  impl_->io_wake.store(fn, std::memory_order_release);
 }
 
 // ---- completion spine (sched-04a) -------------------------------------------

@@ -243,6 +243,17 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
              static_cast<ULONG_PTR>(user_data), nullptr) != 0;
 }
 
+bool Proactor::wake() noexcept {
+  if (impl_ == nullptr) return false;
+  // PostQueuedCompletionStatus IS the thread-safe cross-thread wake on IOCP: post
+  // the reserved wake token with a nullptr OVERLAPPED. reap() sees lpOverlapped ==
+  // nullptr (a synthetic completion) and, because the key is kWakeToken, the
+  // completion router (io_context/net) drops it -- it only breaks the blocking
+  // GetQueuedCompletionStatusEx so the worker re-checks its run queue.
+  return ::PostQueuedCompletionStatus(
+             impl_->port, 0, static_cast<ULONG_PTR>(kWakeToken), nullptr) != 0;
+}
+
 bool Proactor::in_flight() const noexcept {
   // A real op links an IoOp onto `inflight` for its lifetime; the list being
   // non-empty means the port still owes ≥1 completion. IOCP surfaces completions
@@ -480,6 +491,7 @@ bool Proactor::register_handle(std::intptr_t fd) noexcept {
 // upgrade the interface already accommodates (submit stays syscall-optional).
 #  include <linux/io_uring.h>
 #  include <sys/epoll.h>
+#  include <sys/eventfd.h>
 #  include <sys/mman.h>
 #  include <sys/socket.h>
 #  include <sys/syscall.h>
@@ -554,7 +566,18 @@ struct Proactor::Impl {
   // GETEVENTS, so completions requiring a kernel harvest never surface and the
   // waiting fibers hang (the >ring-depth deadlock, root-caused 2026-07-03).
   // Owner-thread-only. Bumped on each submit_*, decremented per real completion.
+  // The persistent wake-read (see wake_efd) is NOT counted here: it is permanent
+  // infrastructure, not a user op, so it must not make in_flight() report true for
+  // a worker that has no real io (else that worker would never park on the futex).
   std::uint64_t inflight = 0;
+  // Cross-thread wake channel (io-04 park merge). wake() writes 8 bytes to this
+  // eventfd from ANY thread (write() is atomic -- no single-producer SQ race); a
+  // persistent IORING_OP_READ armed on it (user_data = kWakeToken) completes on
+  // that write, breaking the owner worker's blocking GETEVENTS reap. reap detects
+  // the wake completion, drops it (never a user completion), and re-arms the read.
+  // -1 if eventfd/arming failed (park merge then falls back to a bounded reap).
+  int wake_efd = -1;
+  std::uint64_t wake_buf = 0;  // 8-byte sink the eventfd read writes into
   // Bench instrumentation (gated by HYLE_IO_BENCH_STATS env): count enters, the
   // SQEs submitted through them, and completions reaped -- to report the average
   // submit batch size (SQEs/enters, the direct evidence batching happens) and a
@@ -596,6 +619,7 @@ struct Proactor::Impl {
 Proactor::~Proactor() {
   if (impl_ == nullptr) return;
   if (impl_->backend == Impl::kEpoll) {
+    if (impl_->wake_efd >= 0) ::close(impl_->wake_efd);
     if (impl_->epfd >= 0) ::close(impl_->epfd);
   } else {
     // Bench stats (gated): report the average submit batch size = SQEs / enters.
@@ -612,6 +636,7 @@ Proactor::~Proactor() {
                    static_cast<long long>(impl_->stat_sqes) -
                        static_cast<long long>(impl_->stat_reaped));
     }
+    if (impl_->wake_efd >= 0) ::close(impl_->wake_efd);
     if (impl_->sqes != nullptr) ::munmap(impl_->sqes, impl_->sqes_sz);
     if (impl_->cq_ptr != nullptr && !impl_->single_mmap)
       ::munmap(impl_->cq_ptr, impl_->cq_sz);
@@ -696,6 +721,30 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
   impl->cq_tail = reinterpret_cast<unsigned*>(C + p.cq_off.tail);
   impl->cq_ring_mask = reinterpret_cast<unsigned*>(C + p.cq_off.ring_mask);
   impl->cqes = reinterpret_cast<io_uring_cqe*>(C + p.cq_off.cqes);
+
+  // Cross-thread wake channel (io-04 park merge): an eventfd + a persistent read
+  // armed on it. wake() writes the eventfd from any thread (no SQ race); the read
+  // completes with kWakeToken, breaking a blocking reap so the worker can park
+  // truly-asleep (no 1ms re-poll) yet still respond to a foreign spawn/steal.
+  // Non-fatal if it fails -- the proactor still serves io; the scheduler then
+  // falls back to a bounded (kIoPollNs) reap instead of an infinite one.
+  impl->wake_efd = ::eventfd(0, EFD_CLOEXEC);
+  if (impl->wake_efd >= 0) {
+    // Arm the wake-read directly (not submit_one): it must NOT bump inflight --
+    // it's permanent infra, not a user op that in_flight() should count.
+    unsigned tail = *impl->sq_tail;
+    unsigned index = tail & *impl->sq_ring_mask;
+    io_uring_sqe& s = impl->sqes[index];
+    std::memset(&s, 0, sizeof(s));
+    s.opcode = IORING_OP_READ;
+    s.fd = impl->wake_efd;
+    s.addr = reinterpret_cast<std::uint64_t>(&impl->wake_buf);
+    s.len = sizeof(impl->wake_buf);
+    s.user_data = Proactor::kWakeToken;
+    impl->sq_array[index] = index;
+    as_atomic(impl->sq_tail)->store(tail + 1, std::memory_order_release);
+    sys_io_uring_enter(fd, 1, 0, 0, nullptr, 0);  // submit the wake-read now
+  }
   return impl;
 }
 
@@ -710,6 +759,21 @@ Proactor::Impl* Proactor::try_init_epoll() noexcept {
   }
   impl->backend = Proactor::Impl::kEpoll;
   impl->epfd = ep;
+  // Cross-thread wake channel (park merge), epoll flavour: a persistent (level-
+  // triggered, NO EPOLLONESHOT) eventfd in the watch set. wake() writes it; the
+  // blocking epoll_wait returns; reap drains it (re-reads to reset the counter,
+  // then keeps it armed) and never emits it as a user completion. `data.u64 ==
+  // wake_efd` distinguishes it from armed io fds. Non-fatal on failure.
+  impl->wake_efd = ::eventfd(0, EFD_CLOEXEC | EFD_NONBLOCK);
+  if (impl->wake_efd >= 0) {
+    epoll_event ev{};
+    ev.events = EPOLLIN;  // level-triggered + persistent: stays armed across waits
+    ev.data.u64 = static_cast<std::uint64_t>(impl->wake_efd);
+    if (::epoll_ctl(ep, EPOLL_CTL_ADD, impl->wake_efd, &ev) < 0) {
+      ::close(impl->wake_efd);
+      impl->wake_efd = -1;
+    }
+  }
   return impl;
 }
 
@@ -770,6 +834,13 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
 
     for (int i = 0; i < got && n < max; ++i) {
       int fd = static_cast<int>(evs[i].data.u64);  // we store fd in data.u64
+      if (fd == impl_->wake_efd) {
+        // Cross-thread wake (park merge): drain the counter so the level-triggered
+        // watch stops firing, and emit NO completion -- it only breaks the block.
+        std::uint64_t sink;
+        while (::read(impl_->wake_efd, &sink, sizeof(sink)) == sizeof(sink)) {}
+        continue;
+      }
       auto it = impl_->pending.find(fd);
       if (it == impl_->pending.end()) continue;  // stale (already served)
       Impl::PendingOp op = it->second;
@@ -868,9 +939,18 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   }
 
   std::size_t n = 0;
+  bool wake_fired = false;
   const unsigned mask = *impl_->cq_ring_mask;
   while (head != tail && n < max) {
     const io_uring_cqe& c = impl_->cqes[head & mask];
+    if (c.user_data == Proactor::kWakeToken) {
+      // The cross-thread wake-read fired (park merge): consume it here -- it is
+      // NOT a user completion (no out[] slot, no inflight decrement -- it was
+      // never counted). Mark for re-arm after the loop so the next wake works.
+      wake_fired = true;
+      ++head;
+      continue;
+    }
     out[n].user_data = c.user_data;
     out[n].result = static_cast<std::int64_t>(c.res);  // <0 = -errno (io-02 ops)
     // Map io_uring CQE flags onto our neutral flags.
@@ -897,6 +977,25 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   // Publish the consumed head once for the whole batch (store_release pairs with
   // the kernel; one release-store amortized over n completions).
   as_atomic(impl_->cq_head)->store(head, std::memory_order_release);
+
+  // Re-arm the one-shot wake-read if it fired (the read cleared the eventfd, so a
+  // fresh read is needed for the next wake). Owner thread here (reap runs on the
+  // worker), so touching the SQ is safe; batch it (flushed by the next enter).
+  // NOT counted in inflight -- it is permanent infra, not a user op.
+  if (wake_fired && impl_->wake_efd >= 0) {
+    unsigned t = *impl_->sq_tail;
+    unsigned ix = t & *impl_->sq_ring_mask;
+    io_uring_sqe& s = impl_->sqes[ix];
+    std::memset(&s, 0, sizeof(s));
+    s.opcode = IORING_OP_READ;
+    s.fd = impl_->wake_efd;
+    s.addr = reinterpret_cast<std::uint64_t>(&impl_->wake_buf);
+    s.len = sizeof(impl_->wake_buf);
+    s.user_data = Proactor::kWakeToken;
+    impl_->sq_array[ix] = ix;
+    as_atomic(impl_->sq_tail)->store(t + 1, std::memory_order_release);
+    ++impl_->sq_pending;  // flushed by the next reap's enter
+  }
 
   // A full CQ overflows into the kernel's NODROP backlog (IORING_FEAT_NODROP sets
   // IORING_SQ_CQ_OVERFLOW rather than dropping). No explicit drain loop is needed
@@ -983,6 +1082,19 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   int r = sys_io_uring_enter(impl_->fd, impl_->sq_pending, 0, 0, nullptr, 0);
   impl_->sq_pending = 0;
   return r >= 0;
+}
+
+bool Proactor::wake() noexcept {
+  if (impl_ == nullptr || impl_->wake_efd < 0) return false;
+  // Write 8 bytes to the wake eventfd from ANY thread. eventfd write is atomic
+  // and NOT the io_uring SQ, so this never races the single-producer submission
+  // queue (that was the TSan bug that killed the earlier NOP-SQE wake). The
+  // armed IORING_OP_READ (io_uring) or the level-triggered EPOLLIN watch (epoll)
+  // then completes / fires, breaking the owner worker's blocking reap. reap drops
+  // the wake token and (io_uring) re-arms the read.
+  std::uint64_t one = 1;
+  ssize_t w = ::write(impl_->wake_efd, &one, sizeof(one));
+  return w == static_cast<ssize_t>(sizeof(one));
 }
 
 // epoll fallback: arm a one-shot readiness watch for `fd` and remember the op;

@@ -84,6 +84,17 @@ class HYLE_SCHED_API Scheduler {
                             unsigned long long timeout_ns) noexcept;
   void set_io_poll(IoPollFn fn, void* ctx) noexcept;
 
+  // Companion to set_io_poll: how the scheduler WAKES a worker that is blocked in
+  // the io poll hook (a blocking reap) from another thread. When io is active an
+  // idle worker blocks IN the proactor (a GETEVENTS reap / GQCSEx) with no poll
+  // timeout -- truly asleep, no 1ms re-poll -- so a plain futex unpark can't reach
+  // it. This hook breaks that block: io/ registers a fn that calls Proactor::wake()
+  // on worker_idx's ring (writes its eventfd / posts its port). Same raw-fn-ptr +
+  // ctx seam as set_io_poll (sched stays independent of io). Null when no io is in
+  // use -> the worker parks on its futex Parker as before (zero cost).
+  using IoWakeFn = void (*)(void* ctx, unsigned worker_idx) noexcept;
+  void set_io_wake(IoWakeFn fn, void* ctx) noexcept;
+
  private:
   friend class Waker;  // Waker::wake() re-injects via impl_ (completion spine)
   struct Impl;

@@ -75,6 +75,7 @@ class IoContext {
  private:
   static bool poll_trampoline(void* ctx, unsigned worker_idx,
                               unsigned long long timeout_ns) noexcept;
+  static void wake_trampoline(void* ctx, unsigned worker_idx) noexcept;
   bool poll(unsigned worker_idx, unsigned long long timeout_ns) noexcept;
 
   sched::Scheduler& sched_;
