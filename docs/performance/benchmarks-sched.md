@@ -7,7 +7,7 @@
 | 项 | 实测(Linux GCC14) | 参考 |
 |---|---|---|
 | fiber 上下文切换(resume/yield 对) | **~21-23 ns**(本 session 复测 21.0ns) | fcontext 量级,= boost.context 原语本身(零封装开销) |
-| spawn 2000 任务 + drain | vs `std::async` 快 144x(**弱基线**)→ **真 SOTA 见下 sched 同步节:vs marl 快 2.17x** | std::async 每任务起 OS 线程(稻草人);真标尺是 marl 调度器 |
+| spawn 2000 任务 + drain | vs `std::async` 快 144x(**弱基线**)→ **真 SOTA 见下 sched 同步节:vs marl 双平台统计平局**(旧"2.17x"是单遍噪声,已 15 遍复核纠正)| std::async 每任务起 OS 线程(稻草人);真标尺是 marl 调度器 |
 
 > **注**:spawn 的权威数字在下方 sched 同步节(对标 marl,非 std::async)。此处保留 std::async 行仅作"赢最低门槛"的历史参照。
 
@@ -17,7 +17,7 @@
 > race、MI_DEBUG=3 全量堆校验无损坏、原始崩溃器本体在 Linux 原生 + Windows MSVC 本机
 > 重负载下 + 强制迁移 687 万次跨线程 free 均**不复现**。证据(SIGILL = 代码页问题 +
 > 全部 instrumented 净 + 原始崩溃全在 9p)指向 **9p/WSL demand-paging 环境假象**,非
-> HYLE 缺陷。fiber 切换 ~21-23ns 数值有效(mimalloc v2.3.2 + 本 session 复测一致);spawn 的权威对标见下 sched 同步节(vs marl 2.17x,非此处历史的 vs std::async)。
+> HYLE 缺陷。fiber 切换 ~21-23ns 数值有效(mimalloc v2.3.2 + 本 session 复测一致);spawn 的权威对标见下 sched 同步节(vs marl 双平台统计平局,非此处历史的 vs std::async 弱基线)。
 
 ## platform 原语（Parker park/unpark、Thread、directory_iterate，`platform_bench.cc`）
 
@@ -47,22 +47,23 @@
 ## sched fiber-aware 同步（CV/Mutex/WaitGroup/Channel vs marl，`sync_bench.cc` / `sync_marl_bench.cc`）
 
 > 环境:Linux x86_64 GCC14.2 Release(原生 ext4)+ Win MSVC19.50 Release,nanobench。**SOTA 标尺 = marl**(本设计收敛自的 fiber-sync 库;gated `-DHYLE_BENCH_MARL=ON`)。
+> **⚠️ 2026-07-03 统计法复核纠正**:此前本表的 spawn"2.17x"/WaitGroup"1.49x 反超"是 **nanobench 单遍跑**写进来的,`bench-stat.py` **双平台各 15 遍**复核后**降级为统计平局**(gap«spread,单遍数落在 30-40% 噪声带内)——同 queue 那次"3遍1.08x反超实为平局"陷阱。争用 Mutex 则揪出 **Windows 真输**并已修(见下)。**数字列现为双平台 15 遍中位数。**
 
-| 项 | HYLE | SOTA(marl / std) | 结论 |
+| 项 | HYLE(Win/Lin) | marl/std(Win/Lin) | 判定(15 遍,gap vs spread) |
 |---|---|---|---|
-| **争用 Mutex**(8 任务/4 worker,lock+inc+unlock) | **30.7 ns** | marl 32.1 ns(=std::mutex) | ✅ **打平 marl**(±噪声,本轮略胜) |
-| **无争用 Mutex**(多线程进程=真实场景) | **6.5 ns** | std::mutex 9.1 ns | ✅ **HYLE 快 1.40x**(单线程 microbench 的"2.9x 慢"是 glibc 假象,见下) |
-| **spawn 2000 noop**(纯派发) | **141 ns/task** | marl 306 ns | ✅ **HYLE 快 2.17x**(对标真 SOTA,非 std::async) |
-| Channel 收发(cap 16,1p1c) | **63 ns/item(15.9M/s)** | (marl 无 channel) | HYLE 自有 |
-| **WaitGroup fork-join**(1024 任务) | **205 ns/批**(池化栈 179) | marl 306 ns | ✅ **反超 marl 1.49x**(池化 1.71x) |
+| **争用 Mutex**(8 任务/4 worker,lock+inc+unlock) | **15.4 / 31.3 ns** | marl 19.0 / 31.2 ns | **Win ✅反超 1.23x**(gap22%>spread18%,SRWLOCK 修后)/ **Lin ➖平局**(0.98) |
+| **无争用 Mutex**(多线程进程=真实场景) | 6.5 ns(Lin) | std::mutex 9.1 ns | ✅ HYLE 快 1.40x(单线程"2.9x 慢"是 glibc 假象,见下;**单平台单遍,待双平台统计**) |
+| **spawn 2000 noop**(纯派发,pooled 栈) | 347 / 317 ns | marl 302 / 309 ns | **➖双平台统计平局**(Win 0.83 gap17%«spread40%;Lin 0.98 gap2%«spread31%)|
+| Channel 收发(cap 16,1p1c) | 63 ns/item(15.9M/s) | (marl 无 channel) | HYLE 自有(单平台单遍)|
+| **WaitGroup fork-join**(1024 任务,pooled 栈) | 341 / 305 ns | marl 299 / 317 ns | **➖双平台统计平局**(Win 0.87 gap13%«spread29%;Lin 1.05 gap5%«spread37%)|
 
-**Mutex = futex(Drepper 3 态),不是 fiber-aware——这是学 marl 的 SOTA 决策**:最初把 Mutex 做成 fiber-aware(争用让出 fiber),实测**慢 marl 5.8x**(176ns vs 30ns)——短临界区让出 fiber(suspend+重入 ~100ns)远贵于就地 park worker 几 ns。改写成建在 `platform::wait_on_address`(futex/WaitOnAddress/ulock)上的 Drepper 3 态锁(无争用单 CAS、争用 park worker)后**追平 marl**。marl 同理:它的 mutex 就是 `std::mutex`(futex),只把 fiber-awareness 留给 ConditionVariable。**HYLE 对齐:Mutex=futex(本节),CV=fiber-aware 双模(地基),各司其职。** 双平台 TSan 8/8 零 race。
+**Mutex = 平台分叉锁,不是 fiber-aware——学 marl 的 SOTA 决策 + 平台特异后端**:最初把 Mutex 做成 fiber-aware(争用让出 fiber),实测**慢 marl 5.8x**——短临界区让出 fiber(suspend+重入 ~100ns)远贵于就地 park worker 几 ns。改成"park worker 不让 fiber"后:**Linux** 建在 futex(SYS_futex)上的 Drepper 3 态锁,与 glibc/std::mutex 同构,**统计平局**(31.3 vs 31.2ns)。**Windows** 起初也用 Drepper futex over WaitOnAddress,15 遍复核**输 marl(=std::mutex=SRWLOCK)2.66x**(52.5 vs 19ns)——WaitOnAddress park 比 SRWLOCK 的内核辅助自适应自旋重,且 userspace 预自旋在 M:N fiber 上会饿死同 worker 的持有者 fiber(实测加自旋更慢)。**改用 SRWLOCK 平台分叉后 Win 反超 marl 1.23x**(15.4 vs 19ns,spread 33%→7%,commit 4240265)。**Linux 无同类果子**(已平局;调研 folly/absl 替代均因 sizeof 膨胀/自旋饿 fiber/禁临界区 fiber 迁移被否);macOS os_unfair_lock 登记将来验证。**HYLE 对齐:Mutex=OS 快锁/futex(本节),CV=fiber-aware 双模(地基),各司其职。** 双平台 TSan 8/8 零 race。
 
 **无争用 Mutex "慢 std" 是 microbench 假象——已实测揭穿**:HYLE futex Mutex 与 std::mutex 算法同级(各 1 locked RMW)。单线程 bench 里 std::mutex 假性快到 2.2ns,因 glibc 用 `__libc_single_threaded` **跳过原子**;HYLE 不做单线程特化,恒付。**铁证**:加一个后台线程让进程变多线程(`sync_bench.cc` MT 变体),std::mutex 立刻 2.2→**9.1ns**(不能再跳原子),HYLE 纹丝不动 **6.5ns**——**HYLE 反超 std::mutex 1.40x**。在 mutex 唯一真正被用的多线程场景,HYLE 的 Drepper 3 态比 pthread_mutex_t 更轻、更快;marl mutex=std::mutex,故也赢 marl。**结论:不是性能问题,是单线程 microbench 被 glibc 优化骗了。**
 
-**spawn vs SOTA:对标 marl(非 std::async 弱基线)HYLE 快 2.17x**:scheduler_bench 的"spawn 2000 vs std::async 144x"是赢 thread-per-task 稻草人。直接对标真调度器 marl(`sync_marl_bench.cc` noop spawn-2000):marl 306ns/task vs **HYLE 141ns/task = 2.17x 反超**。spawn/dispatch 是真 SOTA,非弱基线侥幸。
+**spawn vs SOTA:对标 marl 双平台统计平局(纠正旧"2.17x"过度声明)**:scheduler_bench 的"spawn 2000 vs std::async 144x"是赢 thread-per-task 稻草人,不算数。直接对标真调度器 marl(`sync_marl_bench.cc` noop spawn-2000,pooled 栈):**15 遍 bench-stat 双平台均统计平局**——Win HYLE 347 vs marl 302ns(ratio 0.83,gap17%«spread40%)、Lin 317 vs 309ns(0.98,gap2%«spread31%)。旧"141ns/2.17x"是单遍跑落噪声带的乐观读数(spawn fork-join 受 OS 跨线程唤醒抖动主导,spread 31-40%)。**诚实结论:spawn/dispatch 与 marl 同级(平局),非反超。** 注:HYLE 侧每 epoch `make_unique<Fiber>`+vector 背了额外堆开销(marl 是池化闭包),即便如此仍打平,说明调度脊本身不慢——但不足以声称"赢"。
 
-**WaitGroup fork-join 反超 marl 的真根因 = 调度器唤醒策略,不是栈池(实测纠错)**:fork-join 起初慢 marl **17x**(5.4µs vs 0.30µs)。第一反应怀疑"没 fiber 栈池",但**诊断推翻**:调高 worker 泊车前自旋后立刻反超,单上栈池只改善 ~5%。**真根因 = 调度器急泊车 + 每次入队无条件 unpark 的 futex 系统调用风暴**。**治本方案 = §2.3 ②③ conditional-notify(已落地)**:维护 `num_searching_` 原子计数,producer 入队后仅当无 worker 在搜才 unpark(否则搜索者会捡到),从源头消除风暴;lost-wakeup 安全靠 notify 与 worker 离开搜索的 **seq_cst StoreLoad Dekker** 握手(双平台 28/28 + TSan + NoLostWakeup 100× 零超时验证)。结果:fork-join **205-241 ns/批,反超 marl 1.49x**;栈池(`MemoryArena::as_allocator`)再加 ~13%→**1.71x**(次要增益)。**教训:17x 一度被错误归因到栈池(连架构审计 agent 都照旧文档复述),实为唤醒策略——"登记延后掩盖真瓶颈"的活例;先做的 spin-then-park 是缓解,conditional-notify 才是根治(去自旋空烧 + 去魔法常数 + 源头治本)。** CV 的 `waiters_` 门让 Channel/WaitGroup 的 notify 无 waiter 时零锁。
+**WaitGroup fork-join:conditional-notify 修好了一个真瓶颈,但对 marl 是统计平局(纠正旧"1.49x 反超")**:fork-join 起初慢 marl **17x**(5.4µs vs 0.30µs)。第一反应怀疑"没 fiber 栈池",但**诊断推翻**:真根因 = 调度器急泊车 + 每次入队无条件 unpark 的 futex 系统调用风暴。**治本 = §2.3 ②③ conditional-notify(已落地)**:`num_searching_` 原子计数,producer 入队后仅当无 worker 在搜才 unpark;lost-wakeup 安全靠 seq_cst StoreLoad Dekker 握手(双平台 28/28 + TSan + NoLostWakeup 100× 零超时验证)。**这个修复是真的(17x→追平),但"反超 marl 1.49x"是单遍数**——15 遍 bench-stat 双平台复核后是**统计平局**(Win 341 vs marl 299ns ratio0.87 gap13%«spread29%;Lin 305 vs 317ns ratio1.05 gap5%«spread37%)。**诚实结论:conditional-notify 把 17x 落后修到与 marl 同级(平局),不是反超。** 教训双份:①17x 一度被错误归因到栈池(实为唤醒策略,"登记延后掩盖真瓶颈"的活例);②修好后又把单遍的 1.49x 当反超写进文档(fork-join spread 29-37% 极大,单遍不可信)——统计法才是裁判。CV 的 `waiters_` 门让 Channel/WaitGroup 的 notify 无 waiter 时零锁。
 
 > **TSan × fcontext(本步另一修复)**:调度器唤醒优化让 fiber 跨 worker 迁移更频繁,撞出 TSan 对 fcontext 栈切换的盲区(SEGV in libtsan,非逻辑 bug——无 TSan 50/50 过)。已给 `fiber.cc` 加 `__tsan_switch_to_fiber` 注解(每次切换告知 TSan 当前逻辑上下文,迁移时按 resume 重新捕获 resumer 句柄),**release 零成本**(非 TSan 构建宏全展开为空)。修复后双平台 28/28 + TSan 28/28 零 race,lock-free 闸门恢复。
 

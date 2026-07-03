@@ -43,7 +43,7 @@ waiter 可能是 **fiber**（yield + re-inject）**或裸 OS 线程**（回退 `
 ## 对抗式自审（六类）
 
 - **① 正确性**：8 测——Mutex 8 fiber×1000 增非原子计数总和精确（丢临界区→错和+TSan race）；WaitGroup 16 worker + 1 coordinator，wait() 后必见满计数；Latch 8 count_down 释放 8 waiter；Channel 单产单消（cap=4 逼满/空等待）+ 4P4C（cap=8，WaitGroup 驱动 close）；CV notify_all 释放 200 fiber；**双模两向**（thread waiter × fiber notify、fiber waiter × thread notify，都赶 suspend 竞态）。
-- **② 性能**：CV 快路径无 waiter 零锁；Mutex 无争用单 CAS 打平 marl（30.7 vs 32.1ns）；Channel notify 无 waiter 时零锁（63ns/15.9M/s）。**WaitGroup fork-join 反超 marl 1.49x、spawn-2000 反超 2.17x**（真根因是调度器 conditional-notify 消除 futex 唤醒风暴，非栈池——见 performance.md 与 sched-03）。
+- **② 性能**：CV 快路径无 waiter 零锁；Channel notify 无 waiter 时零锁（63ns/15.9M/s）。**WaitGroup fork-join 与 spawn-2000 对标 marl 双平台统计平局**（15 遍 bench-stat 复核；旧"反超 1.49x/2.17x"是单遍噪声，已纠正）——conditional-notify 消除 futex 唤醒风暴把原本慢 17x 修到平级（非栈池）。**争用 Mutex：Win 改 SRWLOCK 平台分叉反超 marl 1.23x**（旧 futex-over-WaitOnAddress 输 2.66x）、**Lin futex 平局**；无争用单 CAS。见 performance.md 与 sched-03。
 - **③ 规范**：`sync.h` 公开头零 std 拥有型容器；API 宏放方法不放类（SpinLock 含 atomic，整类导出触 MSVC C4251，同 Fiber/Parker/Scheduler）；Channel 存储走注入 allocator。
 - **④ TSan**：**WSL TSan 零 data race**（含 Mutex 非原子计数、Channel MPMC、CV 200 fiber notify_all）；fiber 跨 worker 迁移撞出的 TSan×fcontext 盲区已由 `fiber.cc` 的 `__tsan_switch_to_fiber` 注解处理（release 零成本）。
 - **⑤ 残留**：定时变体 `wait_for`/`wait_until` 显式拆 sched-04b（依赖 time-02 时间轮），非略过。clay `async_value`/`barrier` 语义由 WaitGroup/Latch 覆盖。
