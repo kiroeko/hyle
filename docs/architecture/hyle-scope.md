@@ -176,12 +176,14 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 - **TLS**:已从"隐性排除"改判为 **C9 真能力**(io-08)。scope §153"借不造"本就写明 TLS 借 BoringSSL——所以它是**借入的原语**不是 out-of-scope 协议,之前没登记是漏,不是有意不做。
 - **序列化原语**:边界表说"二进制序列化原语"IN、"IDL/schema 编译器"OUT——原则清楚,但 **close-02 无设计、无接口形状**,是个"看着像计划的占位"。**待决**:借 flatbuffers/capnproto 的 builder+reader 当原语落地,还是把 wire-format 全推 L1。需拍板。
 - **数据并行层**(parallel_for/reduce/scan over range,oneTBB/oneDPL):不同于 graph 的 DAG 编排,是 sched+simd 的天然消费者(大 buffer compute kernel)。**不被现边界排除**(是原语不是协议),但归 graph 还是 compute 未定。待与序列化一起复核。
-- **原则仍然成立**:HYLE 止于原语/机制,不碰策略/协议/领域。审计的所有真缺口(Semaphore/JoinHandle/select/spawn_blocking/multishot/异步DNS/TLS)**都在原语这一侧**,没有一个越界到 L1——说明缺的是"原语没抄全",不是边界画错。**明确 out-of-scope 的(HTTP/gRPC/RPC 框架/IDL 编译器/log 聚合/actor)审计确认仍在外**,但这判断也随时可被"某 L1 其实是通用原语"的论证推翻。
+- **原则(暂)成立,但也待审**:HYLE 止于原语/机制,不碰策略/协议/领域——审计的真缺口(Semaphore/JoinHandle/select/spawn_blocking/multishot/异步DNS/TLS)确实都在原语侧,没越界 L1。**但"明确 out-of-scope"的每一条(HTTP/gRPC/RPC 框架/IDL 编译器/log 聚合/actor/DataModel)都不当已决**——早期负空间可能把"其实是通用原语"的东西误判出界。**下一轮要逐条重审整个"边界外/四类不做/已明确不纳入",不是只审这里点到的几个。**
 
-### 另外已明确不纳入
+### 待复核的"不纳入"项(原标"已明确",现降级=后面都要审)
 
-- DataModel（undo/序列化/协作）——clay 是空位，HYLE 也不纳入。
-- 替换 ggml 算子 / 训练推理引擎本身——`compute/` 只做抽象层，包装而非替换。
+> ⚠️ 用户明确:以下两条(及上文"四类不做")都**不靠谱、后面都要审**,别当已决。
+
+- DataModel（undo/序列化/协作）——clay 是空位,曾据此判 HYLE 也不纳入。**存疑**:undo/序列化里可能藏通用原语(如序列化已在复核)。待审。
+- 替换 ggml 算子 / 训练推理引擎本身——`compute/` 只做抽象层,包装而非替换。**这条相对稳**(借 ggml 是明确决策),但仍随 compute 支柱落地复核。
 
 ## 进度
 
