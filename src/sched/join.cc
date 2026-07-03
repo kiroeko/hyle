@@ -2,42 +2,36 @@
 
 #include <atomic>
 
+#include "hyle/sched/fiber.h"
+
 namespace hyle::sched {
 namespace detail {
-namespace {
 
-// The cancel flag of the task currently running on THIS worker thread. A stack
-// of pointers because a task may spawn/await nested work on the same fiber stack;
-// the innermost running task's flag is the one is_cancel_requested() reports.
-// Depth is tiny (nested spawn_task on one fiber is rare) so a fixed small array
-// avoids any allocation on the hot suspend path.
-constexpr int kMaxCancelDepth = 16;
-thread_local std::atomic<bool>* t_cancel_stack[kMaxCancelDepth] = {};
-thread_local int t_cancel_depth = 0;
-
-}  // namespace
-
+// The cancel scope lives ON THE FIBER, not in thread_local storage. A task fiber
+// suspends at a co_await and may be re-injected on a DIFFERENT worker thread, so a
+// thread-local scope set on the first worker would be invisible after migration --
+// is_cancel_requested() would read false on the new thread and silently miss an
+// abort() (root cause of the Join.AbortIsCooperative flake, 2026-07-03). Storing
+// the flag on the Fiber makes it travel with the execution (like the TSan fiber
+// handle). Each spawn_task owns its own fiber, so there is exactly one cancel
+// scope per fiber -- no nesting stack needed (nested spawn_task uses a NEW fiber,
+// which carries its own flag). push sets it, pop clears it.
 void push_cancel_scope(std::atomic<bool>* flag) noexcept {
-  // Overflow just stops nesting deeper (queries fall back to the outer scope);
-  // 16 deep is already pathological. Never crash on it.
-  if (t_cancel_depth < kMaxCancelDepth) {
-    t_cancel_stack[t_cancel_depth] = flag;
+  if (Fiber* self = Fiber::current(); self != nullptr) {
+    self->set_cancel_flag(flag);
   }
-  ++t_cancel_depth;
 }
 
 void pop_cancel_scope() noexcept {
-  --t_cancel_depth;
-  if (t_cancel_depth >= 0 && t_cancel_depth < kMaxCancelDepth) {
-    t_cancel_stack[t_cancel_depth] = nullptr;
+  if (Fiber* self = Fiber::current(); self != nullptr) {
+    self->set_cancel_flag(nullptr);
   }
 }
 
 std::atomic<bool>* current_cancel_flag() noexcept {
-  int d = t_cancel_depth;
-  if (d > kMaxCancelDepth) d = kMaxCancelDepth;
-  if (d <= 0) return nullptr;
-  return t_cancel_stack[d - 1];
+  Fiber* self = Fiber::current();
+  if (self == nullptr) return nullptr;
+  return static_cast<std::atomic<bool>*>(self->cancel_flag());
 }
 
 }  // namespace detail

@@ -110,6 +110,19 @@ class Fiber {
   FinishFn on_finish() const noexcept { return on_finish_; }
   void* on_finish_ctx() const noexcept { return on_finish_ctx_; }
 
+  // ---- cooperative-cancel flag (sched-10 is_cancel_requested) -----------------
+  // The cancel flag of the task running ON this fiber. It MUST live on the fiber,
+  // not in thread_local: a task fiber suspends at a co_await and is re-injected on
+  // a POSSIBLY DIFFERENT worker thread, so a thread-local cancel scope set on the
+  // first worker is invisible after migration -> is_cancel_requested() would read
+  // false on the new thread and miss an abort() (the Join.AbortIsCooperative
+  // flake, root-caused 2026-07-03). Storing it on the fiber makes it travel WITH
+  // the execution, exactly like the TSan fiber handle. `void*` points at the
+  // task's std::atomic<bool> cancel_req; null when the fiber runs no cancellable
+  // task. is_cancel_requested() reads it via Fiber::current().
+  void set_cancel_flag(void* flag) noexcept { cancel_flag_ = flag; }
+  void* cancel_flag() const noexcept { return cancel_flag_; }
+
   // Symmetric rendezvous closing the wake-before-suspend race. BOTH the worker
   // (after resume() returns, having seen a wait request) and Waker::wake() call
   // this; whichever observes the OTHER already arrived returns true and must do
@@ -141,6 +154,7 @@ class Fiber {
   int owner_worker_ = -1;             // shard-per-core pin (-1 = unpinned/stealable)
   FinishFn on_finish_ = nullptr;      // sched-10: run by dispatch after done()
   void* on_finish_ctx_ = nullptr;     // ctx for on_finish_ (e.g. the TaskDriver)
+  void* cancel_flag_ = nullptr;       // sched-10: task's cancel_req, travels w/ fiber
   std::atomic<int> wake_state_{0};    // wake/suspend rendezvous (see wake_rendezvous)
   // ThreadSanitizer fiber handles (null/unused unless built with TSan). fcontext
   // swaps stacks behind TSan's back; without telling TSan which fiber is now
