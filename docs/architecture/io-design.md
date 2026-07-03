@@ -81,7 +81,8 @@ io/
 
 **② 参考库审计真缺口(能力驱动,见 roadmap 轴 C / milestones):**
 - **io-06 带超时 io(C2)**:recv/accept/connect 带 deadline + 取消在途内核 op(io_uring `ASYNC_CANCEL`/`LINK_TIMEOUT`、IOCP `CancelIoEx`)。几乎所有网络库的生存能力,慢/死连接不带超时会永久占资源。
-- **io-07 multishot + provided buffer ring(C1 半成品补完)**:`Completion` **已预留 `kMore`/`kBuffer` flag 却没接 submit 侧**——`submit_accept_multishot`/`recv_multishot` + `register_buf_ring`(内核选 buffer 免预投递)+ registered files/buffers(fixed fd/buf 省 per-op refcount/pin)+ vectored readv/writev(scatter-gather)。io_uring 吞吐 SOTA 核心,留 flag 不接=没抄全。
+- **io-07a multishot accept ✅(kMore 半成品补完)**:`submit_accept_multishot` 三后端(io_uring `IORING_ACCEPT_MULTISHOT` 原生;IOCP AcceptEx 循环 + epoll 重 arm 两路 emulation,对上同一 kMore 流)。一次 arm 持续吐连接,补完 `Completion.kMore` 当初留的接口。双平台 + TSan 净。
+- **io-07b provided buffer ring + multishot recv(kBuffer 半成品,待)**:`register_buf_ring`(内核选 buffer 免预投递=零拷贝 recv)+ `IORING_RECV_MULTISHOT` + registered files/buffers + vectored readv/writev。比 07a 重(碰内存/归还协议),另起。`Completion.kBuffer`/`buffer_id` reap 侧已就位,submit 侧待接。
 - **io-08 TLS(C9)**:加密 socket over co_await stream(借 BoringSSL/OpenSSL shim)。面向公网服务器必需,roadmap 原本完全没有=真漏。
 - **io-09 异步 DNS + signal(C10)**:`resolve_addr` 现是同步 `getaddrinfo`,**阻塞整个 shard worker**(违背 share-nothing);真客户端必需异步 DNS。signal_set(SIGTERM/SIGINT)是优雅关闭(C4)的触发器。
 - **io-05 文件/shmem(C5)**:原设计只写"复用 read/write",但真异步文件服务还需 async open/stat/fsync/fallocate(io_uring 均有 op)+ splice/sendfile(零拷贝代理/文件服务)。已扩充登记。

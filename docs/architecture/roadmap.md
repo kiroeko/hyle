@@ -1,8 +1,8 @@
 # HYLE 实现路线图
 
-> 动手前的收口：把设计里散落的硬依赖收成一张无环图，分解为**依赖层（阶段）× 里程碑（约 57 个，每个 1-4k 行可独立编/测）**两个轴，给每阶段定验收门槛，并汇总全部决策（已决 + 待决）。这既是施工计划，也是对全部设计的最后一次端到端校验。
+> 动手前的收口：把设计里散落的硬依赖收成一张无环图，分解为**依赖层（阶段）× 里程碑（约 58 个，每个 1-4k 行可独立编/测）**两个轴，给每阶段定验收门槛，并汇总全部决策（已决 + 待决）。这既是施工计划，也是对全部设计的最后一次端到端校验。
 >
-> **注意区分**：依赖层（P0-P6）是"谁先能编译"的拓扑序、6 层；里程碑才是真正的实现步骤、约 57 个（milestones/README 为准）。别把 6 层当 6 步。
+> **注意区分**：依赖层（P0-P6）是"谁先能编译"的拓扑序、6 层；里程碑才是真正的实现步骤、约 58 个（milestones/README 为准）。别把 6 层当 6 步。
 
 ## 一、模块依赖图（验证无环）
 
@@ -55,7 +55,7 @@ container/       │                            │    vector+      mem;containe
 **澄清**：依赖层（阶段 P0-P6）是**拓扑序**（谁先能编译），**不是实现步骤**。把总量分成 6 大步 = 每步上万行，不可落地。正确做法分两个轴：
 
 - **轴 A — 依赖层（阶段 P0-P6）**：哪层先能编译，下面表的拓扑序。粗粒度。
-- **轴 B — 里程碑（M）**：每模块拆 2-6 个里程碑，**每个 1-4k 行、各自可编可测可基准**。全项目约 **57 个里程碑**（milestones/README 为准），这才是真正的"步骤"。
+- **轴 B — 里程碑（M）**：每模块拆 2-6 个里程碑，**每个 1-4k 行、各自可编可测可基准**。全项目约 **58 个里程碑**（milestones/README 为准），这才是真正的"步骤"。
 - **轴 C — 交付能力（C）**：用户/消费者视角"这个库能做什么"。轴 B 是**机制**（收割接缝、时间轮、work-stealing），轴 C 是**能力**（带超时的网络 io、优雅关闭、取消）。见下节。
 
 ### 轴 C：交付能力清单（消费者视角）——机制的反向拉动者
@@ -66,7 +66,7 @@ container/       │                            │    vector+      mem;containe
 
 | 能力 | 一句话 | 驱动的机制里程碑 | 状态 |
 |---|---|---|---|
-| **C1 并发 io 服务** | 多连接 co_await recv/send/accept，shard-per-core | io-01/02/03/04 ✅；**io-07**（multishot accept/recv + provided buffer ring）待 | 🔶 基础已交付（echo + pipelined bench）。**半成品缺口**：`proactor.h` 的 `Completion` 当初照 liburing 定形、**已预留 `kMore`(multishot)/`kBuffer`(零拷贝 buffer ring) 两个 flag，但 submit 侧未接**——这是 io_uring 吞吐 SOTA 的核心,留 flag 不接=没抄全（io-07 补完）|
+| **C1 并发 io 服务** | 多连接 co_await recv/send/accept，shard-per-core | io-01/02/03/04 ✅；**io-07a**（multishot accept）✅；**io-07b**（multishot recv + provided buffer ring）待 | 🔶 基础 + multishot accept 已交付。**半成品补完中**：`Completion` 当初照 liburing 预留 `kMore`(multishot)/`kBuffer`(零拷贝 buffer ring) 两 flag——**kMore 已随 io-07a multishot accept 接上**(三后端,一次 arm 持续吐连接);**kBuffer(buffer ring)待 io-07b**。留 flag 不接=没抄全,正在补 |
 | **C2 带超时的 io** | `recv/accept/connect` 带 deadline，超时取消在途 op | **io-06**（io_uring `ASYNC_CANCEL`/IOCP `CancelIoEx` 取消在途 op）**驱动** sched-04d（fiber 定时等待 + 跨核 timer cancel 队列）；底层需 **C7 的 select**（等 timer/io 先完成者）| 📋 未排期。**几乎所有网络库的生存能力**（tokio `timeout()`/Go `SetReadDeadline`/asio `cancel_after`/seastar `with_timeout`）——无它，慢/死连接永久占 fiber+fd+buffer。sched-04d 的真实消费者 |
 | **C3 结构化取消** | CancelToken 树 + await 取消点，父取消传播子 | sched-07 | 📋 未排期。C2 的 io 取消是它的一个特例；先做 C2 定形 io 侧 cancel，再泛化到 C3 |
 | **C4 优雅关闭** | 两阶段 drain：停收新连接 → 排空在途 → 逆序清理 | sched-08（依赖 sched-07）；触发靠 **C10 的 signal 处理**（SIGTERM/SIGINT）| 📋 未排期。真服务器停机/热重启必需 |
@@ -103,11 +103,11 @@ container/       │                            │    vector+      mem;containe
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | ~2k ✅主力 |
 | **P3** | simd | vec+scalar / SSE4.2+AVX2 / AVX512+NEON / 变体dispatch / dtype / 数学核(Highway+xsimd) | 10-16k | ~2.3k 已做 + ~3-5k 广度补全 = **~5-8k** |
 | **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | ~1.3k 核心+同步+协程胶水+fiber亲和✅(fcontext/work-stealing/Waker/conditional-notify/CV+Mutex+WaitGroup+Latch+Channel 对标 marl 追平反超 + Task/co_await + spawn_on 绑核) + ~2-4k 后段(取消 07/优雅关闭 08/fiber-mode 定时 04d/**并发原语补全 09**/**JoinHandle+select 10**/**阻塞卸载 11**)——**均由轴 C 能力驱动,未排期前不做**(04d/10←C2·C7,07←C3,08←C4,09·10←C7,11←C8) |
-| **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem / HTTP | 9-14k | ~1.55k 已做(proactor 三后端全真 op + co_await + shard-per-core + Tcp/Udp 封装 + echo/pipelined bench)✅ + ~5-9k 后段(file/shmem 05·带超时 06·multishot+bufring 07·**TLS 08**·**异步DNS+signal 09**·**HTTP/1.1 10**·**HTTP/2 11**;kqueue)——由 C2/C5/C9/C10/C11 驱动 |
+| **P5** | io | proactor / io_uring / epoll+kqueue+IOCP / net / file+shmem / HTTP | 9-14k | ~1.67k 已做(proactor 三后端全真 op + co_await + shard-per-core + Tcp/Udp 封装 + echo/pipelined bench + **multishot accept 07a**)✅ + ~5-9k 后段(file/shmem 05·带超时 06·bufring+multishot recv 07b·**TLS 08**·**异步DNS+signal 09**·**HTTP/1.1 10**·**HTTP/2 11**;kqueue)——由 C2/C5/C9/C10/C11 驱动 |
 | **P5** | compute | device/stream包ggml / device buffer(compute 自有) / GPU completion / kernel / ggml_bridge / Vulkan | 10-16k | **~5-8k**(借 ggml 写 bridge) |
 | **P6** | graph + 收口 | taskgraph绑sched / C-ABI shim / serialize/hash/T3 / FFI | 11-17k | **~6-11k**(多借 simdjson 等) |
 
-**HYLE 自有合计:~28-40k 生产 / ~52-68k 含测试**(实测 test/prod≈0.65;2026-07-03 参考库审计后上修——补登 sched-09/10/11 + io-06/07/08/09/**10/11(HTTP)** + obs-02 等真缺口机制,分母回涨 ~6-10k;HTTP serving+client 是推理引擎北极星的一等能力)。**约 57 个里程碑**(milestones/README 为准),每个"写完→编过→单测→基准→提交"闭环。
+**HYLE 自有合计:~28-40k 生产 / ~52-68k 含测试**(实测 test/prod≈0.65;2026-07-03 参考库审计后上修——补登 sched-09/10/11 + io-06/07/08/09/**10/11(HTTP)** + obs-02 等真缺口机制,分母回涨 ~6-10k;HTTP serving+client 是推理引擎北极星的一等能力)。**约 58 个里程碑**(milestones/README 为准),每个"写完→编过→单测→基准→提交"闭环。
 
 > **⚠️ scope 负空间待复核（2026-07-03）**：审计里被判"有意不做(L1/运维栈 out-of-scope)"的项(如 TLS 一度、log 聚合、序列化边界、数据并行归属等)——其中**部分可能判错了**,`hyle-scope.md` 的负空间是项目早期写的,本身可能"漏点"。这些**不当已决**,留作后续讨论;TLS 已从"排除"改判为 C9 真能力就是一例修正。序列化 IN/OUT 边界、数据并行层归属尤其待拍。
 
@@ -187,4 +187,4 @@ LIFO slot 轮询预算上限；steal 的 backoff 曲线；GPU completion 选回�
 
 设计阶段完整：**动机 → 定位 → 范式（charter/conventions）→ 六支柱深挖（io/sched/compute/simd/mem/container）→ 分层/规模/负空间（scope）→ 性能预期 → 参考库映射 → 依赖图/里程碑（本文）**。`docs/architecture/` 共 19 份，互相交叉引用，无环可施工。经 4 波参考库实证校验。
 
-**实现是约 57 个里程碑（每个 1-4k 行、可编可测可基准），不是 6 个万行黑箱。** 动手第一刀：**走骨架 SK**——纵切 error/platform/mem/container/sched 各取最小一片，打通"一个 fiber 跑起→让出→唤醒"，先验最高风险的 fcontext+调度脊。骨架立住后，按依赖层逐里程碑加厚。所有接口形状决策已拍定、待决项非阻塞，可干净开工。
+**实现是约 58 个里程碑（每个 1-4k 行、可编可测可基准），不是 6 个万行黑箱。** 动手第一刀：**走骨架 SK**——纵切 error/platform/mem/container/sched 各取最小一片，打通"一个 fiber 跑起→让出→唤醒"，先验最高风险的 fcontext+调度脊。骨架立住后，按依赖层逐里程碑加厚。所有接口形状决策已拍定、待决项非阻塞，可干净开工。
