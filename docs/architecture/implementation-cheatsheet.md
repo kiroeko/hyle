@@ -47,10 +47,12 @@
 - **铁证信号**(任一不符=立即核对):测试数没变(14→14);commit files < git add 数。
 
 ## 7. 构建/环境(源:reference 记忆)
+> 从零建环境的完整步骤(工具链门槛 / vcpkg+OpenSSL / 各命令)见 [`docs/dev-setup.md`](../dev-setup.md);这里只留每天用的速查。
 - **Windows MSVC**:vcvars18(`Studio/18/Enterprise/...`)+ Ninja + Release(-O3);git-bash 调 `cmd //c` 易出引号/编码坑,**用 Python 写完整 bat 再跑**最稳。
 - **Linux/WSL**:`CXX=g++-14 CC=gcc-14`(默认 gcc-13 过不了 CMake 门);独立 build 目录。
 - **⚠️9p 铁律**:WSL 下一切**重 IO/压力测试**必须在**原生 ext4**(`git clone`/`rsync` 到 `/root/hyle`),**别在 `/mnt/c`(9p,不稳/CPU 不饱和)**。
 - mimalloc 强制常开(无 off-switch);TSan 用 `-DHYLE_SANITIZER=tsan` + `setarch -R`。
+- **TLS(io-08)**:可选依赖,Linux `apt install libssl-dev` 零配置;Windows vcpkg `openssl:x64-windows` + `-DOPENSSL_ROOT_DIR=C:/public/vcpkg/installed/x64-windows`。
 
 ---
 
