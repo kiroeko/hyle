@@ -1878,6 +1878,13 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
       if (it->second.user_data == target_user_data) {
         ::epoll_ctl(impl_->epfd, EPOLL_CTL_DEL, it->first, nullptr);
         impl_->pending.erase(it);
+        // Synthesize the cancellation completion. Unlike io_uring/IOCP, epoll's
+        // cancel produces NO late kernel CQE -- but the timed-op layer (net_timeout)
+        // is backend-neutral and RELIES on a final completion arriving to drop the
+        // op's kernel-ref (else the heap slot leaks). So post a -ECANCELED for the
+        // target here: complete_timed sees timer_fired and releases the kernel ref,
+        // exactly as the real -ECANCELED CQE would on io_uring. (-125 = ECANCELED.)
+        impl_->posted.push_back({target_user_data, -125});
         return true;
       }
     }

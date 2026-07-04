@@ -31,6 +31,28 @@ IoContext::~IoContext() {
   // (its shutdown() drained fibers) by the time IoContext is destroyed.
   sched_.set_io_wake(nullptr, nullptr);
   sched_.set_io_poll(nullptr, nullptr);
+
+  // io-06 orphan drain: a timed op whose TIMER won submitted a cancel and resumed
+  // its fiber, but the cancelled kernel op still owes a late completion (io_uring
+  // -ECANCELED / IOCP ABORTED / epoll's synthesized one) that drops the op's heap
+  // slot's kernel-ref. If the scheduler shut down before that landed, the workers
+  // are gone and no one will reap it -> the TimedSlot leaks. So here, with workers
+  // stopped (single-threaded, safe to touch each ring), drain every ring until it
+  // owes nothing: each late completion routes through complete_timed, which (seeing
+  // timer_fired) releases the kernel-ref and frees the slot. Bounded so a wedged
+  // ring can't hang teardown. (tokio-uring's Driver::drop does the same drain.)
+  for (auto& ring : rings_) {
+    Completion batch[64];
+    for (int guard = 0; guard < 1024 && ring->in_flight(); ++guard) {
+      std::size_t n = ring->reap(batch, 64, 1'000'000ull);  // up to 1ms per wait
+      for (std::size_t i = 0; i < n; ++i) {
+        if (batch[i].user_data == Proactor::kWakeToken) continue;
+        if (is_timed_token(batch[i].user_data)) complete_timed(batch[i]);
+        else complete(batch[i]);
+      }
+      if (n == 0) break;  // nothing came back within the wait -> stop (don't hang)
+    }
+  }
 }
 
 Proactor& IoContext::proactor_for_current() noexcept {

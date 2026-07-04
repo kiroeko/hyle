@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <cstdint>
 #include <new>
 
@@ -124,11 +123,11 @@ inline void complete_timed(const Completion& c) noexcept {
 // Timer-side arbiter, installed as TimedSlot::timer.on_fire. Runs in fire_due_timers
 // on the owner worker. Symmetric to complete_timed: mark timer_fired; wake ONLY if
 // io hasn't already won (else io already did the single wake -> touching
-// wake_rendezvous here would leak wake_state_). The timer holds NO ref (it neither
-// resumes the fiber's read nor is a kernel op), so it never release()s.
+// wake_rendezvous here would leak wake_state_). The timer holds NO ref, so it never
+// release()s. `e->data` points back to the slot (set in make_timed_slot) -- a direct
+// read, no offsetof (fire_due_timers doesn't touch data for on_fire entries).
 inline void timed_on_fire(time::TimerEntry* e) noexcept {
-  auto* s = reinterpret_cast<TimedSlot*>(
-      reinterpret_cast<char*>(e) - offsetof(TimedSlot, timer));
+  auto* s = static_cast<TimedSlot*>(e->data);
   s->timer_fired = true;
   if (s->io_done) return;  // io already won + woke the fiber: do not touch rendezvous
   s->io.waker.wake();      // timeout won -> exactly one wake_rendezvous this episode
@@ -150,6 +149,8 @@ inline TimedSlot* make_timed_slot(mem::Allocator alloc, Proactor* p,
   s->io.waker = sched::current_waker();
   s->timer.on_fire = &timed_on_fire;  // route timer fire through the arbiter
   sched::arm_timeout(&s->timer, deadline_ns);
+  s->timer.data = s;  // arbiter reads slot back via data (arm_timeout set it to the
+                      // fiber for sleep semantics; a timed entry overrides to slot)
   return s;
 }
 

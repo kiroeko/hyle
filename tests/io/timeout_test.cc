@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 
@@ -47,6 +48,43 @@ using hyle::sched::Task;
 namespace {
 
 constexpr unsigned kOwner = 0;
+
+// A counting allocator to catch TimedSlot leaks: every allocate bumps `live`, every
+// deallocate drops it. After a timed op fully retires (including the late cancel
+// completion that frees the orphan slot), live must return to 0. This is what
+// catches the "timeout path leaks kernel-ref" class of bug that functional asserts
+// and TSan both miss.
+struct CountingAlloc {
+  static std::atomic<long> live;
+  static void* a(void*, std::size_t n, std::size_t al) noexcept {
+    live.fetch_add(1, std::memory_order_relaxed);
+#if defined(_WIN32)
+    return _aligned_malloc(n, al < sizeof(void*) ? sizeof(void*) : al);
+#else
+    if (al < sizeof(void*)) al = sizeof(void*);
+    return std::aligned_alloc(al, (n + al - 1) & ~(al - 1));
+#endif
+  }
+  static void f(void*, void* p, std::size_t, std::size_t) noexcept {
+    if (p == nullptr) return;
+    live.fetch_sub(1, std::memory_order_relaxed);
+#if defined(_WIN32)
+    _aligned_free(p);
+#else
+    std::free(p);
+#endif
+  }
+  static void* r(void*, void* p, std::size_t, std::size_t nn, std::size_t al) noexcept {
+#if defined(_WIN32)
+    return _aligned_realloc(p, nn, al < sizeof(void*) ? sizeof(void*) : al);
+#else
+    (void)al;
+    return std::realloc(p, nn);
+#endif
+  }
+  static Allocator make() noexcept { return Allocator(&a, &f, &r, nullptr); }
+};
+std::atomic<long> CountingAlloc::live{0};
 
 struct Drive {
   Task<int> task;
@@ -175,3 +213,38 @@ TEST(IoTimeout, IoWinsReturnsBytes) {
   EXPECT_EQ(r->recv_rc.load(), static_cast<std::int64_t>(sizeof("prompt")));
   EXPECT_STREQ(r->got, "prompt");
 }
+
+// Leak check: run the timeout-wins path with a COUNTING allocator and assert the
+// heap TimedSlot is fully reclaimed after teardown. This is the guard for the
+// "timeout path never releases the kernel-ref" bug class (epoll synth-cancel +
+// shutdown orphan drain) that functional asserts + TSan both miss.
+TEST(IoTimeout, TimeoutPathDoesNotLeakSlot) {
+  constexpr unsigned kWorkers = 2;
+  constexpr std::uint16_t kPort = 54392;
+  CountingAlloc::live.store(0, std::memory_order_relaxed);
+  {
+    Scheduler sched(kWorkers, system_allocator(), 256);
+    IoContext io(sched, kWorkers);
+    ASSERT_TRUE(io.valid());
+    TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
+    ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+
+    auto r = std::make_unique<TimeoutResult>();
+    auto ds = std::make_unique<Drive>();
+    auto dc = std::make_unique<Drive>();
+    ds->task = timeout_server(system_allocator(), &io, &ls, r.get());
+    // The timed op's slot comes from CountingAlloc -> its alloc/free is counted.
+    dc->task = timeout_client(CountingAlloc::make(), &io, r.get(), kPort);
+    Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
+    Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+    sched.spawn_on(kOwner, &fs);
+    sched.spawn_on(kOwner, &fc);
+    sched.drain();
+    sched.shutdown();
+    EXPECT_EQ(r->recv_rc.load(), -110);  // timeout won
+    // IoContext destructor (end of scope) drains any orphaned late completion.
+  }
+  // After IoContext teardown, the orphan slot must be freed: no net allocation.
+  EXPECT_EQ(CountingAlloc::live.load(), 0) << "TimedSlot leaked on timeout path";
+}
+
