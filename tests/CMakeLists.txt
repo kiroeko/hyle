@@ -55,6 +55,16 @@ if(HYLE_HAS_FCONTEXT)
   hyle_add_test(io NAME dns SOURCES io/dns_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME signal SOURCES io/signal_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME timeout SOURCES io/timeout_test.cc DEPS hyle_sched hyle_time)
+  # io-08 TLS: only when OpenSSL is available (matches the io module's optional TLS).
+  # The test itself calls SSL_CTX_set_verify (client skips verify for the self-signed
+  # cert), so it links OpenSSL directly too.
+  if(OpenSSL_FOUND)
+    hyle_add_test(io NAME tls SOURCES io/tls_test.cc DEPS hyle_sched)
+    target_link_libraries(hyle_io_tls_test PRIVATE OpenSSL::SSL OpenSSL::Crypto)
+    if(WIN32)
+      target_link_libraries(hyle_io_tls_test PRIVATE ws2_32)
+    endif()
+  endif()
   if(WIN32)
     target_link_libraries(hyle_io_net_test PRIVATE ws2_32)  # test builds the loopback pair
     target_link_libraries(hyle_io_tcp_test PRIVATE ws2_32)  # sockaddr / winsock types
