@@ -69,6 +69,34 @@ if(HYLE_HAS_FCONTEXT)
     target_link_libraries(hyle_io_bench PRIVATE ws2_32)
   endif()
 
+  # Optional SOTA parity: echo_bench's HYLE rows vs a hand-rolled raw-liburing echo on
+  # the SAME 64-conn/64B ping-pong load (Linux only -- liburing is io_uring). This is
+  # the head-to-head "does HYLE's co_await + shard-per-core add overhead over a bare
+  # io_uring loop written with the community-standard wrapper?" comparison. Enable with
+  # -DHYLE_BENCH_LIBURING=ON; point HYLE_LIBURING_DIR at a cloned liburing (sibling
+  # default). liburing uses a Makefile (not CMake), so we configure+make its static lib
+  # once at configure time and link the resulting src/liburing.a + its headers.
+  option(HYLE_BENCH_LIBURING "build echo bench vs raw liburing (io_uring SOTA)" OFF)
+  if(HYLE_BENCH_LIBURING AND UNIX AND NOT APPLE)
+    set(HYLE_LIBURING_DIR "${PROJECT_SOURCE_DIR}/../liburing" CACHE PATH "cloned liburing")
+    if(NOT EXISTS "${HYLE_LIBURING_DIR}/src/include/liburing.h")
+      message(FATAL_ERROR "HYLE_BENCH_LIBURING=ON but no liburing at ${HYLE_LIBURING_DIR}")
+    endif()
+    if(NOT EXISTS "${HYLE_LIBURING_DIR}/src/liburing.a")
+      message(STATUS "liburing: configure + make static lib (one-time)")
+      execute_process(COMMAND ./configure WORKING_DIRECTORY "${HYLE_LIBURING_DIR}"
+        RESULT_VARIABLE _lu_cfg OUTPUT_QUIET ERROR_QUIET)
+      execute_process(COMMAND make -j -C src WORKING_DIRECTORY "${HYLE_LIBURING_DIR}"
+        RESULT_VARIABLE _lu_make OUTPUT_QUIET ERROR_QUIET)
+      if(_lu_make OR NOT EXISTS "${HYLE_LIBURING_DIR}/src/liburing.a")
+        message(FATAL_ERROR "liburing build failed (configure=${_lu_cfg} make=${_lu_make}); run `./configure && make -C src` in ${HYLE_LIBURING_DIR}")
+      endif()
+    endif()
+    target_compile_definitions(hyle_io_bench PRIVATE HYLE_BENCH_LIBURING)
+    target_include_directories(hyle_io_bench SYSTEM PRIVATE "${HYLE_LIBURING_DIR}/src/include")
+    target_link_libraries(hyle_io_bench PRIVATE "${HYLE_LIBURING_DIR}/src/liburing.a")
+  endif()
+
   # io scaling bench: the two COMPLEXITY curves echo_bench's fixed 64-conn/64B load
   # can't show -- connection-count scaling (ns/round-trip flat => O(1)/conn, the
   # "proactor beats readiness" argument) + payload-size scaling (bytes/s clean plateau

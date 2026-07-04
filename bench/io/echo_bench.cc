@@ -36,6 +36,9 @@
 #  include <sys/socket.h>
 #  include <unistd.h>
 #endif
+#if defined(__linux__) && defined(HYLE_BENCH_LIBURING)
+#  include <liburing.h>
+#endif
 #if defined(_WIN32)
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
@@ -306,6 +309,101 @@ void run_raw_epoll_echo() {
 }
 #endif
 
+#if defined(__linux__) && defined(HYLE_BENCH_LIBURING)
+// Raw liburing echo baseline: the SAME 64-conn x 64-round-trip x 64B ping-pong load
+// as run_hyle_echo(1 worker), but driven by a hand-written liburing state machine on
+// ONE ring -- no fibers, no coroutines, no scheduler. This is the honest "does HYLE's
+// co_await + shard-per-core stack add overhead over a bare io_uring loop written with
+// the community-standard wrapper?" comparison (echo_bench's other baseline, raw epoll,
+// answers "vs the OLD readiness model"; this answers "vs the SAME io_uring, hand-rolled").
+//
+// State machine per connection (encoded in user_data = conn_idx<<2 | stage):
+//   - prime: every client sends kMsg.
+//   - SERVER_RECV completes -> server sends the echo back (SERVER side).
+//   - CLIENT_RECV completes -> one round-trip done; if <kRoundTrips, client sends again.
+// The server's recv is (re)armed whenever we expect a request; the client's recv after
+// each of its sends. Loop: submit_and_wait(1) + io_uring_for_each_cqe, until every
+// connection hits kRoundTrips. Ring depth is generous (4096) so the SQ never starves.
+enum LuStage { STAGE_CLIENT_RECV = 0, STAGE_SERVER_RECV = 1 };
+
+void run_raw_liburing_echo() {
+  static const char kMsg[kMsgLen] = "hyle-io-echo-bench-payload";
+  std::vector<Pair> pairs(kConns);
+  for (int i = 0; i < kConns; ++i) pairs[i] = make_pair();
+
+  io_uring ring;
+  // 4096 SQ entries: 64 conns each with at most a couple ops in flight -> never starves.
+  if (io_uring_queue_init(4096, &ring, 0) < 0) {
+    for (auto& p : pairs) close_pair(p);
+    return;
+  }
+
+  std::vector<char> cbuf(static_cast<std::size_t>(kConns) * kMsgLen);
+  std::vector<char> sbuf(static_cast<std::size_t>(kConns) * kMsgLen);
+  std::vector<int> rt_done(kConns, 0);
+
+  auto ud = [](int conn, LuStage st) -> std::uint64_t {
+    return (static_cast<std::uint64_t>(conn) << 2) | static_cast<std::uint64_t>(st);
+  };
+
+  // Prime: arm each server recv, then each client send its first request.
+  for (int i = 0; i < kConns; ++i) {
+    io_uring_sqe* s = io_uring_get_sqe(&ring);
+    io_uring_prep_recv(s, static_cast<int>(pairs[i].b), &sbuf[i * kMsgLen], kMsgLen, 0);
+    io_uring_sqe_set_data64(s, ud(i, STAGE_SERVER_RECV));
+    io_uring_sqe* c = io_uring_get_sqe(&ring);
+    io_uring_prep_send(c, static_cast<int>(pairs[i].a), kMsg, kMsgLen, 0);
+    io_uring_sqe_set_data64(c, ~0ull);  // client-send completion: ignored
+  }
+
+  int live = kConns;
+  while (live > 0) {
+    io_uring_submit_and_wait(&ring, 1);
+    unsigned head;
+    io_uring_cqe* cqe;
+    unsigned count = 0;
+    io_uring_for_each_cqe(&ring, head, cqe) {
+      ++count;
+      std::uint64_t data = cqe->user_data;
+      std::int32_t res = cqe->res;
+      if (data == ~0ull) continue;  // a client-send completion; nothing to do
+      int conn = static_cast<int>(data >> 2);
+      LuStage st = static_cast<LuStage>(data & 3);
+      if (res <= 0) { --live; continue; }
+      if (st == STAGE_SERVER_RECV) {
+        // Server got the request -> echo it back (server send).
+        io_uring_sqe* s = io_uring_get_sqe(&ring);
+        io_uring_prep_send(s, static_cast<int>(pairs[conn].b), &sbuf[conn * kMsgLen],
+                           static_cast<unsigned>(res), 0);
+        io_uring_sqe_set_data64(s, ~0ull);  // server-send completion: ignored
+        // Arm the client's recv for the echo.
+        io_uring_sqe* c = io_uring_get_sqe(&ring);
+        io_uring_prep_recv(c, static_cast<int>(pairs[conn].a), &cbuf[conn * kMsgLen],
+                           kMsgLen, 0);
+        io_uring_sqe_set_data64(c, ud(conn, STAGE_CLIENT_RECV));
+      } else {  // STAGE_CLIENT_RECV: the echo arrived -> one round-trip complete.
+        if (++rt_done[conn] >= kRoundTrips) {
+          --live;
+        } else {
+          // Next round-trip: client sends again + re-arm server recv.
+          io_uring_sqe* c = io_uring_get_sqe(&ring);
+          io_uring_prep_send(c, static_cast<int>(pairs[conn].a), kMsg, kMsgLen, 0);
+          io_uring_sqe_set_data64(c, ~0ull);
+          io_uring_sqe* s = io_uring_get_sqe(&ring);
+          io_uring_prep_recv(s, static_cast<int>(pairs[conn].b), &sbuf[conn * kMsgLen],
+                             kMsgLen, 0);
+          io_uring_sqe_set_data64(s, ud(conn, STAGE_SERVER_RECV));
+        }
+      }
+    }
+    io_uring_cq_advance(&ring, count);
+  }
+
+  io_uring_queue_exit(&ring);
+  for (auto& p : pairs) close_pair(p);
+}
+#endif
+
 }  // namespace
 
 int main() {
@@ -331,6 +429,13 @@ int main() {
     }
 #if defined(__linux__)
     b.run("raw epoll (1 thread, readiness loop)", [&] { run_raw_epoll_echo(); });
+#endif
+#if defined(__linux__) && defined(HYLE_BENCH_LIBURING)
+    // The SAME io_uring, hand-rolled with the community-standard wrapper (no fibers,
+    // no coroutines). Compared head-to-head with the HYLE 1-worker row above: the
+    // ratio is the cost of HYLE's co_await + shard-per-core abstraction over a bare
+    // liburing loop. Gated -DHYLE_BENCH_LIBURING (links liburing.a).
+    b.run("raw liburing (1 thread, hand-rolled)", [&] { run_raw_liburing_echo(); });
 #endif
   }
 
