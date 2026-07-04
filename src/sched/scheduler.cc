@@ -63,6 +63,17 @@ constexpr int kYieldsBeforePark = 4;   // then cede the core a few times
 // the same value). See the lifo_slot field + find_task for the mechanism.
 constexpr int kMaxLifoPolls = 3;
 
+// Every Nth find_task, check the GLOBAL inject queue BEFORE the local ring, so a
+// worker whose local queue is continuously refilled (e.g. a fiber that yields in a
+// loop -> reschedule -> local.push_back) cannot starve tasks injected to the global
+// queue indefinitely (complexity opportunity ③; starvation CONFIRMED by a probe:
+// a 1-worker yield-hog did 17M yields while a globally-injected victim never ran in
+// 500ms). tokio's global_queue_interval, default 61 -- a prime, to avoid harmonic
+// resonance with power-of-two batch/queue sizes. Fixed (not EWMA-tuned): the tuning
+// only matters for very-long-poll workloads, and a fixed prime already closes the
+// starvation hole, which is the correctness point here.
+constexpr std::uint32_t kGlobalQueueInterval = 61;
+
 
 }  // namespace
 
@@ -100,6 +111,11 @@ struct Scheduler::Impl {
     // consecutive slot hits (kMaxLifoPolls) so the ring can't starve.
     Fiber* lifo_slot = nullptr;
     int lifo_polls = 0;
+    // Per-worker find_task counter for the global-queue interval check (opportunity
+    // ③). Every kGlobalQueueInterval-th call, find_task drains the global queue
+    // first so a locally-firehosing worker can't starve global inject. u32 wrapping
+    // is fine (only the modulo matters). Single-threaded: only this worker touches it.
+    std::uint32_t tick = 0;
     Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed, unsigned i)
         : local(a, cap),
           wheel(time::monotonic_ns()),
@@ -209,6 +225,17 @@ struct Scheduler::Impl {
     // here and is never stolen. Popped only by this worker; MPMC push from wakers.
     Fiber* pf = nullptr;
     if (w.pinned.try_pop(pf)) return pf;
+    // Global-queue interval (opportunity ③): every kGlobalQueueInterval-th call,
+    // drain the global inject queue BEFORE the LIFO slot / local ring. Without this
+    // a worker whose local ring is continuously refilled (yield-loop fiber) never
+    // reaches the global check below and starves injected tasks forever (probe-
+    // confirmed). Checked AFTER pinned (io latency wins) but BEFORE local, only on
+    // the interval tick, so the steady-state hot path is unchanged. tokio next_task.
+    ++w.tick;
+    if (w.tick % kGlobalQueueInterval == 0) {
+      Fiber* gi = nullptr;
+      if (global.try_pop(w.pop_cursor, gi)) return gi;
+    }
     // LIFO fast-slot next (opportunity ①): a fiber just woken ON this worker
     // resumes immediately, cache-hot, while under its poll budget. The budget cap
     // (kMaxLifoPolls) stops a hot ping-pong pair from starving the local ring: once

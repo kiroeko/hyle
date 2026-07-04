@@ -147,3 +147,55 @@ TEST(Scheduler, NoLostWakeupAcrossParks) {
   }
   EXPECT_EQ(completed.load(), kFibers);
 }
+
+// Global-queue interval / anti-starvation (complexity opportunity ③). A fiber that
+// yields in a loop keeps its worker's LOCAL ring perpetually non-empty; find_task
+// checks local before global, so without a periodic global-queue check a single
+// busy worker starves any task injected to the GLOBAL queue forever. Probe-
+// confirmed before the fix (a 1-worker yield-hog did 17M yields while a globally-
+// injected victim never ran in 500ms); this guards the regression. 1 worker so no
+// other worker can steal the victim -- it MUST come through the interval check.
+namespace {
+struct YieldHog {
+  std::atomic<bool>* stop;
+};
+void yield_hog(void* p) {
+  auto* h = static_cast<YieldHog*>(p);
+  while (!h->stop->load(std::memory_order_acquire)) Fiber::yield();
+}
+}  // namespace
+TEST(Scheduler, GlobalQueueNotStarvedByLocalFirehose) {
+  std::atomic<bool> stop{false};
+  YieldHog hog{&stop};
+  auto fh = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                    &yield_hog, &hog);
+  std::atomic<int> vran{0};
+  std::atomic<int> vdone{0};
+  Body victim{0, &vran, &vdone};  // 0 yields -> completes in one run
+  auto fv = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                    &body_entry, &victim);
+  bool ran_while_hogging = false;
+  {
+    Scheduler sched(1, system_allocator(), 1024);
+    sched.spawn(fh.get());  // once running the hog yields onto its LOCAL ring and
+                            // firehoses it, so find_task keeps serving local.
+    std::this_thread::sleep_for(std::chrono::milliseconds(20));  // let hog take over
+    sched.spawn(fv.get());  // foreign-thread spawn -> GLOBAL inject shard
+    auto t0 = std::chrono::steady_clock::now();
+    while (std::chrono::steady_clock::now() - t0 < std::chrono::seconds(2)) {
+      if (vdone.load(std::memory_order_acquire) > 0) break;
+      std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    // CAPTURE the verdict BEFORE releasing the hog. Critical: if we only checked
+    // after shutdown(), drain() would run the (starved) victim during teardown once
+    // the hog stops, flipping the flag to 1 and MASKING the starvation -- the exact
+    // "test setup hides the bug" trap. The honest signal is "did it run WHILE the
+    // hog was still firehosing the local ring?".
+    ran_while_hogging = vdone.load(std::memory_order_acquire) > 0;
+    stop.store(true, std::memory_order_release);  // let the hog exit so drain finishes
+    sched.shutdown();
+  }
+  EXPECT_TRUE(ran_while_hogging)
+      << "victim in global queue was starved by local firehose (never ran while the "
+         "hog kept the local ring full)";
+}
