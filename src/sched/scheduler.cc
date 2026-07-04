@@ -154,7 +154,17 @@ struct Scheduler::Impl {
   std::atomic<void*> io_wake_ctx{nullptr};
 
   std::mutex idle_mu;              // guards `sleepers` (cold path: park/unpark)
-  std::vector<unsigned> sleepers;  // ids of currently-parked workers
+  std::vector<unsigned> sleepers;  // ids of currently-parked workers (compact stack)
+  // Per-worker position in `sleepers` (or kNotSleeping), so remove_sleeper is O(1)
+  // instead of an O(worker-count) scan (complexity opportunity ②). HYLE calls
+  // remove_sleeper on EVERY park exit (unlike tokio, which only scans on the rare
+  // self-wake-with-local-work path and thus tolerates the scan) -- and the scan
+  // runs while holding idle_mu, so shrinking it also shortens that critical section
+  // under park/unpark churn. All three mutators (register on park, unpark_one pop,
+  // remove_sleeper) keep this in sync; a swap-remove updates the moved id's slot.
+  // Guarded by idle_mu (same lock as `sleepers`) -- no new atomics.
+  static constexpr std::size_t kNotSleeping = static_cast<std::size_t>(-1);
+  std::vector<std::size_t> sleeper_pos;  // size n; index into `sleepers` or kNotSleeping
   // Count of workers currently SEARCHING for work (spinning/stealing, not yet
   // parked). The §2.3 ②③ anti-herd gate: a producer skips waking a parked worker
   // when a searcher already exists (it will find the new work), killing the
@@ -172,6 +182,7 @@ struct Scheduler::Impl {
        Scheduler* sched)
       : global(alloc, num_workers, cap), n(num_workers), owner(sched) {
     HYLE_FATAL_ASSERT(num_workers >= 1);
+    sleeper_pos.assign(num_workers, kNotSleeping);  // O(1) sleeper-set bookkeeping
     workers.reserve(num_workers);
     ctxs.reserve(num_workers);
     threads.reserve(num_workers);
@@ -287,13 +298,26 @@ struct Scheduler::Impl {
       w(io_wake_ctx.load(std::memory_order_relaxed), idx);
   }
 
+  // Remove the sleeper at position `pos` in `sleepers` (caller holds idle_mu).
+  // O(1) swap-remove: move the last id into the hole and fix ITS stored position,
+  // then shrink. Returns the removed worker id. This is the single point that keeps
+  // `sleepers` and `sleeper_pos` consistent for both pop paths.
+  unsigned remove_at_locked(std::size_t pos) noexcept {
+    unsigned idx = sleepers[pos];
+    unsigned moved = sleepers.back();
+    sleepers[pos] = moved;
+    sleeper_pos[moved] = pos;   // the moved id now lives at `pos` (no-op if moved==idx)
+    sleepers.pop_back();
+    sleeper_pos[idx] = kNotSleeping;
+    return idx;
+  }
+
   void unpark_one() noexcept {
     unsigned idx;
     {
       std::lock_guard<std::mutex> lk(idle_mu);
       if (sleepers.empty()) return;
-      idx = sleepers.back();
-      sleepers.pop_back();
+      idx = remove_at_locked(sleepers.size() - 1);  // pop the last-parked (LIFO)
     }
     wake_worker(idx);
   }
@@ -312,13 +336,10 @@ struct Scheduler::Impl {
 
   void remove_sleeper(unsigned idx) noexcept {
     std::lock_guard<std::mutex> lk(idle_mu);
-    for (std::size_t i = 0; i < sleepers.size(); ++i) {
-      if (sleepers[i] == idx) {
-        sleepers[i] = sleepers.back();
-        sleepers.pop_back();
-        return;
-      }
-    }
+    // O(1) via the position index (opportunity ②): no scan. Idempotent -- a
+    // notifier's unpark_one may have already popped us (pos == kNotSleeping).
+    std::size_t pos = sleeper_pos[idx];
+    if (pos != kNotSleeping) remove_at_locked(pos);
   }
 
   void dispatch(Worker& w, Fiber* f) noexcept {
@@ -509,6 +530,7 @@ struct Scheduler::Impl {
       // notify that observes 0 finds us in `sleepers`.
       {
         std::lock_guard<std::mutex> lk(idle_mu);
+        sleeper_pos[idx] = sleepers.size();  // my slot = the tail I'm about to push
         sleepers.push_back(idx);
       }
       num_searching_.fetch_sub(1, std::memory_order_seq_cst);  // Dekker store+fence
