@@ -4,6 +4,7 @@
 
 #include "fcontext.h"
 #include "hyle/macros.h"
+#include "hyle/obs/trace.h"  // obs-02: HYLE_TRACE_FIBER_* (compile-time gated, OFF=0 code)
 
 // ---- ThreadSanitizer fiber integration --------------------------------------
 // fcontext swaps the stack pointer invisibly to TSan. TSan keeps shadow state
@@ -138,11 +139,20 @@ void Fiber::resume() {
   // built with TSan.
   tsan_return_ = HYLE_TSAN_CURRENT_FIBER();
   HYLE_TSAN_SWITCH(tsan_fiber_);
+  // obs-02: mark that this OS thread is now running THIS fiber, so the profiler
+  // attributes the work to the fiber track rather than the worker thread (an M:N
+  // scheduler needs this). Compile-time gated -- expands to nothing (no read of
+  // name_, no call) unless built with HYLE_TRACE. `name_` must be a stable pointer;
+  // absent one, a shared literal groups anonymous fibers under one track.
+  HYLE_TRACE_FIBER_ENTER(name_ != nullptr ? name_ : "hyle.fiber");
   // Switch into the fiber, handing it `this`. We come back here when it yields
   // (or finishes); t.fctx is the fiber's freshly-suspended context. yield()/the
   // trampoline switch TSan back to tsan_return_ before jumping here, so TSan is
   // already on the resumer context on return -- nothing to do.
   transfer_t t = jump_fcontext(fctx_, this);
+  // Back on the resumer (worker) stack: the fiber yielded or finished. Leave the
+  // fiber track so subsequent worker-thread work isn't misattributed to it.
+  HYLE_TRACE_FIBER_LEAVE();
   t_current = prev;
   if (!finished_) fctx_ = t.fctx;
 }

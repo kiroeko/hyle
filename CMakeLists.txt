@@ -89,6 +89,7 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(HyleWarnings)
 include(HyleSanitizers)
 include(HyleModule)
+include(HyleTrace)  # obs-02: HYLE_TRACE gate + optional tracy backend (default OFF)
 
 # ---- global correctness flags (apply to ALL targets incl. fetched deps) ------
 # These change language semantics, not just diagnostics, so they must be uniform
