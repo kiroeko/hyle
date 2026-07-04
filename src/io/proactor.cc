@@ -276,8 +276,9 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   // and a >2^32 result truncated. This is fine for post()'s uses (a wake token, a
   // byte count); anything needing a negative/64-bit outcome must NOT go through
   // post() -- a real op carries its int64 result via GetOverlappedResult/neg_err,
-  // and the io-05 file path uses a 64-bit syn_result IoOp instead. Assert in debug
-  // so a future negative-post caller is caught at once rather than silently mangled.
+  // and the io-05 file path uses a 64-bit syn_result IoOp instead. Assert the
+  // contract so a future negative-post caller is caught at once rather than
+  // silently mangled (post is a wake/synthetic path, not a per-op hot path).
   HYLE_FATAL_ASSERT(result >= 0 && result <= 0xFFFFFFFFll);
   return ::PostQueuedCompletionStatus(
              impl_->port,

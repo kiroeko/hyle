@@ -366,13 +366,13 @@ inline string_ref dup(string_ref s, mem::Allocator alloc) {
 
 // Owning concatenation a+b, NUL-terminated, via `alloc` (clay cstrcat).
 inline string_ref concat(string_ref a, string_ref b, mem::Allocator alloc) {
-  // Sum in 64-bit so two near-4GiB inputs can't wrap the u32 size into a small
-  // value that under-allocates and then overflows the memcpy (a clay-family
-  // integer-wrap heap overflow). A string_ref size is u32, so a total that doesn't
-  // fit is unrepresentable -> fail like an allocation failure.
-  std::uint64_t total = static_cast<std::uint64_t>(a.size) + b.size;
-  if (total > 0xFFFFFFFFull) return string_ref{};
-  std::uint32_t n = static_cast<std::uint32_t>(total);
+  // CONTRACT: a.size + b.size fits in u32 (a string_ref's size type). This is a
+  // caller obligation, asserted (not defensively branched) -- same discipline as
+  // mem/'s pow2-alignment asserts: a perf library constrains callers by contract,
+  // and a silent under-allocated result would only hide a >4GiB-concat caller bug.
+  // The u64 sum exists solely to feed the assert without itself wrapping.
+  HYLE_FATAL_ASSERT(static_cast<std::uint64_t>(a.size) + b.size <= 0xFFFFFFFFull);
+  std::uint32_t n = a.size + b.size;
   char* p = static_cast<char*>(alloc.allocate(n + 1));
   if (p == nullptr) return string_ref{};
   if (a.size) std::memcpy(p, a.data, a.size);

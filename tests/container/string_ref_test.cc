@@ -360,23 +360,6 @@ TEST(StringRef, AllocatorHelpers) {
   a.deallocate(const_cast<char*>(cat.data), cat.size + 1);
 }
 
-// concat's u32 size sum must not wrap: two inputs whose sizes total > 4 GiB would
-// wrap to a small value, under-allocate, and overflow the memcpy (a clay-family
-// integer-wrap heap overflow). concat sums in 64-bit and returns empty when the
-// total is unrepresentable in a u32 size. We fabricate oversized sizes (the check
-// fires BEFORE any memcpy, so the tiny backing buffers are never read) to prove the
-// guard triggers instead of allocating/copying.
-TEST(StringRef, ConcatSizeSumDoesNotWrap) {
-  char small[4] = {'a', 'b', 'c', 0};
-  string_ref huge_a{small, 0xFFFFFFFFu, false};  // claims ~4 GiB (no real memory)
-  string_ref huge_b{small, 2u, false};           // sum = 0x1_0000_0001 > u32 max
-  // Guard must fire: return empty, allocate nothing, memcpy nothing (else it would
-  // read 4 GiB from `small` and crash -- the test's safety rests on the guard).
-  string_ref cat = concat(huge_a, huge_b, hyle::mem::system_allocator());
-  EXPECT_TRUE(cat.empty());
-  EXPECT_EQ(cat.data, nullptr);
-}
-
 TEST(StringRef, SliceAndSplit) {
   EXPECT_TRUE(slice(string_ref{"hello"}, 2) == string_ref{"llo"});
   EXPECT_TRUE(slice(string_ref{"hi"}, 5).empty());
