@@ -53,9 +53,9 @@ io/
 │  ├─ epoll.cc      (Linux 降级, reactor→completion 模拟)
 │  ├─ iocp.cc       (Windows, OS 原生)
 │  └─ kqueue.cc     (mac/BSD, reactor→completion 模拟)
-├─ proactor.h       (统一完成式抽象, 平台无关)
-└─ net/             (socket/tcp/udp, co_await 风格, 遇 IO 让出 fiber)
-        ↓ 绑定
+├─ proactor.h       (统一完成式抽象, 平台无关; socket+file op)
+└─ net/             (socket/tcp/udp/file, co_await 风格, 遇 IO 让出 fiber
+        ↓ 绑定       + dns 异步解析(卸载 spawn_blocking)+ signal_set)
      sched/         (fiber 提交即挂起, completion 即唤醒)
 ```
 
@@ -84,8 +84,8 @@ io/
 - **io-07a multishot accept ✅(kMore 半成品补完)**:`submit_accept_multishot` 三后端(io_uring `IORING_ACCEPT_MULTISHOT` 原生;IOCP AcceptEx 循环 + epoll 重 arm 两路 emulation,对上同一 kMore 流)。一次 arm 持续吐连接,补完 `Completion.kMore` 当初留的接口。双平台 + TSan 净。
 - **io-07b provided buffer ring + multishot recv ✅(kBuffer 半成品补完)**:`register_buf_ring`(IOU_PBUF_RING_MMAP,内核选 buffer 免预投递=零拷贝 recv)+ `submit_recv_multishot`(RECV_MULTISHOT + BUFFER_SELECT)+ `buf_ring_addr`/`buf_ring_return` 归还协议。io_uring only(IOCP/epoll 诚实 return false,net 回退预投递 recv)。双验(io_uring + TSan)。**至此 kMore(07a)+ kBuffer(07b)两个当初预留的 flag 全补完**。registered files/buffers + vectored readv/writev 是新增(非半成品),可后补。
 - **io-08 TLS(C9)**:加密 socket over co_await stream(借 BoringSSL/OpenSSL shim)。面向公网服务器必需,roadmap 原本完全没有=真漏。
-- **io-09 异步 DNS + signal(C10)**:`resolve_addr` 现是同步 `getaddrinfo`,**阻塞整个 shard worker**(违背 share-nothing);真客户端必需异步 DNS。signal_set(SIGTERM/SIGINT)是优雅关闭(C4)的触发器。
-- **io-05 文件/shmem(C5)**:原设计只写"复用 read/write",但真异步文件服务还需 async open/stat/fsync/fallocate(io_uring 均有 op)+ splice/sendfile(零拷贝代理/文件服务)。已扩充登记。
+- **io-09 异步 DNS + signal ✅(C10)**:`resolve_addr`(tcp.h)只 `inet_pton` 解析 IPv4 字面量(连 getaddrinfo 都没有)——`dns.h/cc` 加 `resolve()` **经 sched-11 spawn_blocking 卸载 getaddrinfo**(抄 tokio 路线,不自造 DNS 协议),内部值拷贝 sockaddr + freeaddrinfo 不泄 addrinfo*,`JoinHandle<ResolveResult>` 回传;字面量 IP 走 getaddrinfo 同步快路径。**signal_set**(`signal.h/cc`)co_await `wait()`:POSIX self-pipe + sigaction(进程全局单例 + 引用计数;handler 只 async-signal-safe 写 pipe,免 signalfd 全线程 mask),Windows SetConsoleCtrlHandler(handler 独立线程 post 到 ring;CTRL_CLOSE/LOGOFF/SHUTDOWN handler 阻塞防提前杀,tokio 同款救命坑)。**单 waiter 模型**(优雅关闭单 fiber 用例,同 tokio Signal)。三后端真测(Win/io_uring/epoll)+ WSL TSan 净。signal 是 C4 优雅关闭的触发器。
+- **io-05 文件/shmem(C5)✅(文件 io)**:`proactor` 加 `submit_open/close/statx/fsync/fallocate` 三后端——io_uring openat/close/fsync/fallocate 真异步 SQE(fallocate 字段映射反直觉:addr=len/len=mode/off=offset,照 liburing 核对),statx 同步 fstat + posted 合成;IOCP 同步执行 + kFileMeta 合成(open 返 64 位 handle 不截断,FILETIME→ns 换算);epoll regular-file 同步降级(epoll_ctl 返 EPERM→pwrite/pread 尊重 offset + posted,因 epoll 不能异步 regular file,tokio 同理用线程池)。`file.h/cc` File RAII + co_await read/write/stat/sync/allocate/close/open_file,shard-per-core 绑核。三后端真测 + WSL TSan 净。**shmem(mmap 跨进程)未做**,留 io-05 后续。
 
 ## 参考
 
