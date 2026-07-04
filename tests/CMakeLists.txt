@@ -43,7 +43,7 @@ hyle_isa_flags(_avx2_flags AVX2)
 hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_flags})
 hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
 if(HYLE_HAS_FCONTEXT)
-  hyle_add_test(sched SOURCES sched/fiber_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc sched/sync_test.cc sched/timer_test.cc sched/coro_test.cc sched/affinity_test.cc sched/join_test.cc sched/blocking_test.cc sched/shutdown_test.cc DEPS hyle_time)
+  hyle_add_test(sched SOURCES sched/fiber_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc sched/sync_test.cc sched/timer_test.cc sched/coro_test.cc sched/affinity_test.cc sched/join_test.cc sched/blocking_test.cc sched/shutdown_test.cc sched/cancel_test.cc DEPS hyle_time)
   # io-04 net: the co_await socket layer needs BOTH io (proactor + IoContext) and
   # sched (scheduler drives the reap). Only buildable where sched exists.
   hyle_add_test(io NAME net SOURCES io/net_test.cc DEPS hyle_sched)
@@ -57,6 +57,10 @@ if(HYLE_HAS_FCONTEXT)
   hyle_add_test(io NAME timeout SOURCES io/timeout_test.cc DEPS hyle_sched hyle_time)
   # io-10 HTTP/1.1: server+client integration over loopback TCP (borrowed parser).
   hyle_add_test(io NAME http SOURCES io/http_test.cc DEPS hyle_sched)
+  # sched-07 cancellable io: token-bound recv/accept, submit_cancel on cancel.
+  hyle_add_test(io NAME net_cancel SOURCES io/net_cancel_test.cc DEPS hyle_sched hyle_time)
+  # sched-07 consumer: HTTP request fan-out connected-cancel (request -> subtask tree).
+  hyle_add_test(io NAME http_cancel SOURCES io/http_cancel_test.cc DEPS hyle_sched)
   # io-08 TLS: only when OpenSSL is available (matches the io module's optional TLS).
   # The test itself calls SSL_CTX_set_verify (client skips verify for the self-signed
   # cert), so it links OpenSSL directly too.
@@ -69,6 +73,7 @@ if(HYLE_HAS_FCONTEXT)
   endif()
   if(WIN32)
     target_link_libraries(hyle_io_net_test PRIVATE ws2_32)  # test builds the loopback pair
+    target_link_libraries(hyle_io_net_cancel_test PRIVATE ws2_32)  # loopback TCP pair
     target_link_libraries(hyle_io_tcp_test PRIVATE ws2_32)  # sockaddr / winsock types
     target_link_libraries(hyle_io_udp_test PRIVATE ws2_32)  # sockaddr / winsock types
     target_link_libraries(hyle_io_dns_test PRIVATE ws2_32)  # getaddrinfo + WSAStartup
