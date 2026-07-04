@@ -114,6 +114,12 @@ struct Scheduler::Impl {
   std::vector<platform::Thread> threads;
   std::atomic<bool> stop{false};
   std::atomic<std::int64_t> outstanding{0};
+  // sched-08 graceful shutdown, phase-1 flag. True normally; begin_shutdown() flips
+  // it false to REJECT new spawns and signal long-lived fibers to wind down. Flat
+  // (one scheduler-wide flag), broadcast to workers via wake -- no cancellation
+  // tree. Distinct from `stop` (which ends the worker LOOP in phase 2): a worker
+  // keeps running while !accepting so in-flight fibers can drain.
+  std::atomic<bool> accepting{true};
 
   // io poll hook (io-04). Registered by an io::IoContext via set_io_poll; the
   // worker loop calls it to reap io completions. Null when no io is in use ->
@@ -497,6 +503,10 @@ struct Scheduler::Impl {
   }
 
   void spawn(Fiber* f) noexcept {
+    // sched-08: reject new work once shutting down (phase 1). Not admitted -> not
+    // counted, not queued (the caller owns the Fiber and should check accepting()
+    // before building work; a spawn that races begin_shutdown is a safe no-op).
+    if (!accepting.load(std::memory_order_acquire)) return;
     outstanding.fetch_add(1, std::memory_order_acq_rel);  // count before publish
     if (t_current == this && t_worker_idx >= 0) {
       if (workers[static_cast<unsigned>(t_worker_idx)]->local.push_back(f)) {
@@ -514,6 +524,7 @@ struct Scheduler::Impl {
   // worker's private queue and unparks it specifically. Never stolen.
   void spawn_on(unsigned idx, Fiber* f) noexcept {
     HYLE_FATAL_ASSERT(idx < n);
+    if (!accepting.load(std::memory_order_acquire)) return;  // sched-08: reject new work
     f->set_owner_worker(static_cast<int>(idx));
     outstanding.fetch_add(1, std::memory_order_acq_rel);  // count before publish
     while (!workers[idx]->pinned.try_push(f)) platform::this_thread::yield();
@@ -524,6 +535,31 @@ struct Scheduler::Impl {
     while (outstanding.load(std::memory_order_acquire) != 0) {
       platform::this_thread::yield();
     }
+  }
+
+  // sched-08 phase 1: stop accepting new work + broadcast the signal so long-lived
+  // fibers (which poll shutdown_requested()) can wind down. Waking every worker
+  // (both channels) matters because a parked/reaping worker must re-check its state
+  // and let its pinned long-lived fibers observe the flag. Idempotent.
+  void begin_shutdown() noexcept {
+    accepting.store(false, std::memory_order_release);
+    for (unsigned i = 0; i < n; ++i) wake_worker(i);
+  }
+
+  // sched-08 phase 2: wait up to timeout_ns (0 == forever) for outstanding to hit
+  // zero. Returns true if drained, false on timeout. Busy-yield like drain() -- a
+  // shutdown drain is a one-shot teardown wait, not a hot path.
+  bool drain_for(std::uint64_t timeout_ns) noexcept {
+    if (timeout_ns == 0) {
+      drain();
+      return true;
+    }
+    std::uint64_t deadline = time::monotonic_ns() + timeout_ns;
+    while (outstanding.load(std::memory_order_acquire) != 0) {
+      if (time::monotonic_ns() >= deadline) return false;
+      platform::this_thread::yield();
+    }
+    return true;
   }
 
   void shutdown() {
@@ -560,6 +596,13 @@ void Scheduler::spawn_on(unsigned worker_idx, Fiber* fiber) {
 unsigned Scheduler::num_workers() const noexcept { return impl_->n; }
 void Scheduler::drain() { impl_->drain(); }
 void Scheduler::shutdown() { impl_->shutdown(); }
+bool Scheduler::accepting() const noexcept {
+  return impl_->accepting.load(std::memory_order_acquire);
+}
+void Scheduler::begin_shutdown() noexcept { impl_->begin_shutdown(); }
+bool Scheduler::drain_for(unsigned long long timeout_ns) noexcept {
+  return impl_->drain_for(timeout_ns);
+}
 
 void Scheduler::set_io_poll(IoPollFn fn, void* ctx) noexcept {
   // Publish ctx BEFORE fn (release) so a worker that reads a non-null fn is
@@ -591,6 +634,14 @@ Waker current_waker() noexcept {
 }
 
 int current_worker_index() noexcept { return tls_worker_idx; }
+
+// sched-08: a long-lived fiber polls this to learn its scheduler has begun graceful
+// shutdown, so it can break its loop. tls_owner is the Scheduler running this fiber
+// (null off a worker -> not shutting down from this call's view). One relaxed-ish
+// load through the public accepting() (acquire); cheap enough for a loop-top check.
+bool shutdown_requested() noexcept {
+  return tls_owner != nullptr && !tls_owner->accepting();
+}
 
 void suspend() noexcept {
   Fiber* self = Fiber::current();

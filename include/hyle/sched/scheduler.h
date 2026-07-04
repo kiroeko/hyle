@@ -60,6 +60,39 @@ class HYLE_SCHED_API Scheduler {
   // drain(), then stop the workers and join them. Idempotent-safe to call once.
   void shutdown();
 
+  // ---- graceful shutdown (sched-08, capability C4) --------------------------
+  // Two-phase drain for a SERVER (long-lived fibers -- accept loops, connection
+  // loops -- that never finish on their own, so plain drain() would block forever).
+  //
+  // PHASE 1: begin_shutdown() flips a flat "not accepting" flag and broadcasts it
+  // to every worker (waking parked/reaping ones). New spawn()/spawn_on() after this
+  // are REJECTED (the work isn't admitted -- like seastar's gate / tokio's closed
+  // OwnedTasks). Long-lived fibers observe shutdown_requested() (below) at their
+  // own yield points -- typically `when_any(shutdown_wait(), accept())` -- and
+  // break their loop, which lets them finish and decrement the in-flight count.
+  // This is a FLAT signal (one scheduler-wide flag broadcast), NOT a cancellation
+  // tree (sched-07): every reference runtime -- seastar abort_source, tokio's
+  // shutdown token -- uses a flat broadcast for shutdown; the tree is for the
+  // orthogonal "cancel one task subtree" problem and is not needed here.
+  //
+  // PHASE 2: drain_for(timeout_ns) waits for the in-flight fibers to finish (the
+  // count to reach zero). Returns true if drained, false on timeout. A stackful
+  // fiber CANNOT be preempted, so on timeout the caller's recourse is cooperative:
+  // request cancellation and hope fibers exit at their next yield point; a fiber
+  // that still won't exit is left to the final shutdown() (its stack leaks, which
+  // is acceptable at process exit -- tokio likewise abandons blocking threads on
+  // timeout rather than force-killing). Then call shutdown() to stop+join workers.
+  //
+  // Whether a NEW spawn is accepted. False after begin_shutdown(). Lets a producer
+  // (e.g. the accept loop) check before creating more work.
+  bool accepting() const noexcept;
+  // Enter phase 1: stop accepting new work + broadcast the shutdown signal so
+  // long-lived fibers can wind down. Idempotent.
+  void begin_shutdown() noexcept;
+  // Wait up to `timeout_ns` for all in-flight fibers to finish (0 == wait forever,
+  // same as drain()). Returns true if the count reached zero, false on timeout.
+  bool drain_for(unsigned long long timeout_ns) noexcept;
+
   // ---- io poll hook (io-04 integration) -------------------------------------
   // A worker calls this when its run queue drains, to service io completions
   // (proactor CQ). It is a raw function pointer + opaque ctx, NOT an io type:
@@ -100,5 +133,13 @@ class HYLE_SCHED_API Scheduler {
   struct Impl;
   Impl* impl_;
 };
+
+// True if the scheduler running the CURRENT fiber has begun shutting down (phase 1
+// entered via begin_shutdown()). A long-lived fiber (accept/connection loop) checks
+// this at its yield points and breaks its loop so it can finish -- the cooperative
+// half of graceful shutdown (a stackful fiber can't be preempted, so it must poll).
+// Reads a scheduler-wide flat flag via the worker's thread-local owner; returns
+// false if not called from a scheduler worker fiber. Cheap (one relaxed load).
+HYLE_SCHED_API bool shutdown_requested() noexcept;
 
 }  // namespace hyle::sched
