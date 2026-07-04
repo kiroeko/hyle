@@ -36,17 +36,18 @@
 | 能力 | 机制里程碑 | 前置 | 就绪度 | 说明 |
 |---|---|---|---|---|
 | **C2 带超时 io** | io-06 + sched-04d | io-04 ✅ / time-02 ✅ / sched-10 select ✅ | ✅ **完成(2026-07-05)** | io-06 落地:timer vs io 竞态(shard-per-core 单线程免原子仲裁)+ submit_cancel 三后端 + refcount slot 续命防迟到 CQE UAF + IoContext orphan drain。**顺带落地 sched-04d**(shard-per-core 免去其最硬的跨核 cancel 队列)。TimedRecv/Accept/ConnectOp;红队审 + 计数分配器验漏;三后端双平台 + TSan 净 |
-| **C3 结构化取消** | sched-07 | C2 已定形 io 侧 cancel ✅ | 🟢 **就绪(C2 已完成)** | **前置齐,下一顺位**。C2 落地了 io 取消(submit_cancel + 竞态仲裁 + 续命),现把它泛化成 CancelToken 树 + await 取消点 + 父取消传播子。io 取消是其特例,机制已验证 |
-| **C4 优雅关闭** | sched-08 | sched-07(C3)+ signal ✅(C10) | 🟡 **等 C3** | 触发器 signal_set 已就位(C10 ✅);只差 C3 的取消传播。**链条:C2→C3→C4** |
-| **C9 TLS** | io-08 | io-04 ✅(over co_await stream) | 🟢 **就绪** | **不依赖 C2**!借 BoringSSL/OpenSSL shim 套在现有 TcpStream 上。可与 C2 并行开工 |
-| **C11 HTTP** | io-10(HTTP/1.1)+ io-11(HTTP/2) | C2 超时 + C9 TLS + C10 DNS ✅ | 🟡 **等 C2+C9** | 北极星① 刚需。DNS 已就位;等超时+TLS。HTTP/1.1 先,HTTP/2 借 nghttp2 后置 |
+| **C3 结构化取消** | sched-07 | 无硬前置(C2 已定形 io cancel;但**无消费者**) | 🟡 **等消费者(HTTP fan-out)** | **重新定位(2026-07-05)**:sched-08 已证明优雅关闭**不需要**取消树(用平信号即可,已落地)。sched-07 的树价值="取消一请求→连带取消其派生的子 task",真实消费者是 HTTP 请求 fan-out(io-10)。现有 cancel_req/JoinHandle::abort(sched-10)+ io-06 submit_cancel 已覆盖单 task/单 io 取消。孤立做树=投机,等 io-10 驱动。最小形态已调研定案 |
+| **C4 优雅关闭** | sched-08 | signal ✅(C10);**不依赖 C3**(调研推翻) | ✅ **完成(2026-07-05)** | 调研发现关闭只需平信号广播不需取消树→与 C3 **解耦**。sched-08 落地:accepting 接纳位两阶段(begin_shutdown 拒新+广播 / drain_for 超时)+ shutdown_requested() 长命 fiber 轮询退出。有栈 fiber 超时不强杀(协作退/detach)。signal_set(C10)作触发器。双平台 sched 85/85 + TSan 净 |
+| **C9 TLS** | io-08 | io-04 ✅(over co_await stream) | 🟢 **就绪** | **不依赖 C2/C3**!借 BoringSSL/OpenSSL shim 套在现有 TcpStream 上。**当前最该开工(前置全齐 + 北极星刚需)** |
+| **C11 HTTP** | io-10(HTTP/1.1)+ io-11(HTTP/2) | C2 超时 ✅ + C9 TLS + C10 DNS ✅ | 🟡 **等 C9** | 北极星① 刚需。超时/DNS 已就位;只等 TLS。HTTP/1.1 先,HTTP/2 借 nghttp2 后置。**io-10 会驱动 C3(请求 fan-out 取消)** |
 
 **B 类结论——明确的开工顺序**:
-1. ~~io-06 / C2(带超时 io)~~ ✅ **完成(2026-07-05)**。顺带落地 sched-04d。
-2. **sched-07 / C3(取消)** 🟢 — **下一顺位**,C2 已定形 io cancel,泛化成 CancelToken 树。
-3. **io-08 / C9(TLS)** 🟢 — 前置齐(不依赖 C2/C3),**可与 C3 并行**。借 BoringSSL/OpenSSL。
-4. **sched-08 / C4(优雅关闭)** — C3 后,signal(C10 ✅)已就位,收尾快。
-5. **io-10 / C11(HTTP/1.1)** — C9 齐后(超时 C2 + DNS C10 均已就位),北极星① 的 REST 门面。
+1. ~~io-06 / C2(带超时 io)~~ ✅ **完成**。顺带落地 sched-04d。
+2. ~~sched-08 / C4(优雅关闭)~~ ✅ **完成(2026-07-05)**。调研解耦了 C3——关闭只需平信号。**sched 支柱由此收口**(01~11 全 ✅,仅 07 取消树等 HTTP 消费者)。
+3. **io-08 / C9(TLS)** 🟢 — **下一顺位**,前置全齐(不依赖 C2/C3/C4),北极星① 刚需。借 BoringSSL/OpenSSL。
+4. **io-10 / C11(HTTP/1.1)** — C9 齐后(超时+DNS 已就位),北极星① REST 门面;它会驱动 C3(sched-07 取消树)。
+5. **sched-07 / C3(取消)** — 由 io-10 HTTP fan-out 驱动,不再孤立做。
+6. **compute 支柱**(C 类)可与 io HTTP 线并行推进(0 行、前置就绪、北极星① 算力本体)。
 
 ## 四、C 类:依赖序未到的主体支柱(最大剩余块)
 
@@ -68,4 +69,4 @@
 
 ## 六、一句话排期建议
 
-**io-06(C2 带超时 io)已完成(2026-07-05)**,顺带落地 sched-04d(shard-per-core 免去跨核 cancel 队列)。**下一步:sched-07(C3 结构化取消)**——C2 已定形 io cancel + 竞态仲裁 + 续命,现把它泛化成 CancelToken 树,前置就绪。**io-08(TLS)可与 C3 并行**(不依赖 C2/C3)。C3 落地后 C4(优雅关闭,signal 已就位)收尾快,再 C11 HTTP/1.1(超时+DNS 已齐,等 TLS)——北极星① 服务器骨架就完整。**compute 支柱**作为独立大阶段并行推进(前置就绪、0 行、头牌本体)。A 类广度延期按需穿插,simd-03 硬件阻塞除外。
+**sched 支柱已收口(2026-07-05)**:C2 带超时 io + C4 优雅关闭双双落地,sched-01~11 全 ✅(仅 sched-07 结构化取消树留待 HTTP fan-out 消费者驱动,非卡住)。调研关键收获:优雅关闭只需平信号广播,**与 C3 取消树解耦**,不必先做树。**下一步:io-08(C9 TLS)**——前置全齐(不依赖 C2/C3/C4),北极星① 公网服务器刚需,借 BoringSSL/OpenSSL shim 套现有 TcpStream。之后 io-10(C11 HTTP/1.1,超时+DNS 已就位、等 TLS),它会驱动 sched-07 取消树。**compute 支柱**(0 行、前置就绪、北极星① 算力本体)作为独立大阶段并行推进——它是最大剩余愿景块。A 类广度延期按需穿插,simd-03 硬件阻塞除外。
