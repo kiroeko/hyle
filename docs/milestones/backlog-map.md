@@ -36,18 +36,18 @@
 | 能力 | 机制里程碑 | 前置 | 就绪度 | 说明 |
 |---|---|---|---|---|
 | **C2 带超时 io** | io-06 + sched-04d | io-04 ✅ / time-02 ✅ / sched-10 select ✅ | ✅ **完成(2026-07-05)** | io-06 落地:timer vs io 竞态(shard-per-core 单线程免原子仲裁)+ submit_cancel 三后端 + refcount slot 续命防迟到 CQE UAF + IoContext orphan drain。**顺带落地 sched-04d**(shard-per-core 免去其最硬的跨核 cancel 队列)。TimedRecv/Accept/ConnectOp;红队审 + 计数分配器验漏;三后端双平台 + TSan 净 |
-| **C3 结构化取消** | sched-07 | 无硬前置(C2 已定形 io cancel;但**无消费者**) | 🟡 **等消费者(HTTP fan-out)** | **重新定位(2026-07-05)**:sched-08 已证明优雅关闭**不需要**取消树(用平信号即可,已落地)。sched-07 的树价值="取消一请求→连带取消其派生的子 task",真实消费者是 HTTP 请求 fan-out(io-10)。现有 cancel_req/JoinHandle::abort(sched-10)+ io-06 submit_cancel 已覆盖单 task/单 io 取消。孤立做树=投机,等 io-10 驱动。最小形态已调研定案 |
+| **C3 结构化取消** | sched-07 | 无硬前置(C2 已定形 io cancel;io-10 HTTP 消费者已到位) | ✅ **完成(2026-07-05)** | shard-per-core 无锁取消树落地:唯一原子是 per-node cancelled 标志(兼容 is_cancel_requested seam),树/回调链/派生/传播/析构过继全非原子。借 tokio-util tree_node 拓扑+析构过继+迭代传播(去 Mutex)+ folly CancellationCallback(去原子握手)。CancelToken/CancelScope/CancelCallback/HYLE_CHECK_CANCEL + io/net_cancel.h 可取消 io(栈 slot 无 heap,经 tokio-uring 核实 oneshot cancel 恰一个 CQE)。消费者=HTTP 请求 fan-out(io-10)。红队审揪修 fire_callbacks 相邻注销 UAF。Win+WSL(io_uring+epoll)+TSan 全绿。**sched 支柱 01~11 全 ✅** |
 | **C4 优雅关闭** | sched-08 | signal ✅(C10);**不依赖 C3**(调研推翻) | ✅ **完成(2026-07-05)** | 调研发现关闭只需平信号广播不需取消树→与 C3 **解耦**。sched-08 落地:accepting 接纳位两阶段(begin_shutdown 拒新+广播 / drain_for 超时)+ shutdown_requested() 长命 fiber 轮询退出。有栈 fiber 超时不强杀(协作退/detach)。signal_set(C10)作触发器。双平台 sched 85/85 + TSan 净 |
 | **C9 TLS** | io-08 | io-04 ✅(over co_await stream) | ✅ **完成(三平台,2026-07-05)** | OpenSSL memory-BIO 泵 over co_await TcpStream:TlsContext/TlsStream + tls_handshake/read/write/shutdown。红队审净+修 2 隐患。Linux io_uring+epoll+TSan 净 + Windows IOCP 净(vcpkg OpenSSL 3.6.3)。可选依赖(不装 OpenSSL 零依赖) |
 | **C11 HTTP** | io-10(HTTP/1.1)+ io-11(HTTP/2) | 超时 C2 ✅ + TLS C9 ✅ + DNS C10 ✅ | 🔶 **io-10 ✅ 完成(2026-07-05)** / io-11 后置 | 北极星① REST 门面。io-10 落地:借 vendored picohttpparser(596 行 C)+ 自写集成层(co_await TcpStream→parser→Request/Response→write)。两级 API + client + chunked 流式(SSE)。红队审修 3 真 bug + chunked 跨平台 bug。三后端×常规+TSan 全绿。**驱动 sched-07**(请求 fan-out 取消)待做。HTTP/2(io-11)借 nghttp2 后置 |
 
 **B 类结论——明确的开工顺序**:
 1. ~~io-06 / C2(带超时 io)~~ ✅ **完成**。顺带落地 sched-04d。
-2. ~~sched-08 / C4(优雅关闭)~~ ✅ **完成**。调研解耦了 C3。**sched 支柱收口**(01~11 全 ✅,仅 07 等 HTTP 消费者)。
+2. ~~sched-08 / C4(优雅关闭)~~ ✅ **完成**。调研解耦了 C3。
 3. ~~io-08 / C9(TLS)~~ ✅ **完成(三平台,2026-07-05)**。OpenSSL memory-BIO,红队审净。
-4. ~~io-10 / C11(HTTP/1.1)~~ ✅ **完成(三平台,2026-07-05)**。借 picohttpparser + 自写集成层,两级 API + client + chunked 流式。红队审修 3 真 bug + chunked 跨平台 bug。**北极星① 服务器骨架最后一块落地**。现在**驱动 sched-07** 就绪(有真实 HTTP fan-out 消费者了)。
-5. **sched-07 / C3(取消)** 🟢 — **下一顺位**,io-10 HTTP 落地=真实 fan-out 消费者到位(一请求 handler 派生多子 task 需连带取消)。最小形态已调研定案(shard-per-core 单线程无锁 parent*/child 链)。
-6. **compute 支柱**(C 类)可与 sched-07 并行推进(0 行、前置就绪、北极星① 算力本体)。**io-11 HTTP/2**(借 nghttp2)后置。
+4. ~~io-10 / C11(HTTP/1.1)~~ ✅ **完成(三平台,2026-07-05)**。借 picohttpparser + 自写集成层,两级 API + client + chunked 流式。红队审修 3 真 bug + chunked 跨平台 bug。**北极星① 服务器骨架最后一块落地**。驱动了 sched-07。
+5. ~~sched-07 / C3(取消)~~ ✅ **完成(2026-07-05)**。io-10 HTTP fan-out 消费者驱动。shard-per-core 无锁取消树(CancelToken/Scope/Callback + 可取消 io),借 tokio-util 树拓扑 + folly callback(均去多线程锁/原子)。红队审 + Win+WSL(io_uring+epoll)+TSan 全绿。**sched 支柱 01~11 全 ✅ 真收口**。
+6. **compute 支柱**(C 类)是下一大块(0 行、前置就绪、北极星① 算力本体)。**io-11 HTTP/2**(借 nghttp2)后置。
 
 ## 四、C 类:依赖序未到的主体支柱(最大剩余块)
 

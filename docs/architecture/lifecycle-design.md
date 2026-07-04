@@ -43,13 +43,13 @@
 
 ## 1. 取消（cancellation）——serving/agent 的命门
 
-推理请求超时要取消在途 io、agent 超时要取消 LLM 调用、父任务挂了要级联取消子 fiber。这是高并发 serving 与并发 agent 的核心操作(对应 io-06 带超时 io + sched-07 结构化取消)。
+推理请求超时要取消在途 io、agent 超时要取消 LLM 调用、父任务挂了要级联取消子 fiber。这是高并发 serving 与并发 agent 的核心操作(对应 io-06 带超时 io + sched-07 结构化取消)。**sched-07 已落地(2026-07-05,`sched/cancel.h/cc` + `io/net_cancel.h`)**——下述模型即实现形态,消费者是 HTTP 请求 fan-out(io-10)。
 
 ### 模型：结构化并发 + 取消令牌树
 
-- **`CancelToken`**：共享原子标志 + waiter 链。
-- **令牌成树**：子令牌派生自父；**取消父 → 级联取消所有子**。这正好映射"父 agent 取消子 agent"。spawn 子 fiber 时传子令牌。
-- **协作式**：fiber 不被强行"杀"，而是在**取消点**检查令牌、提前返回。
+- **`CancelToken`**：树的一个节点。**shard-per-core 无锁**——一棵树的所有节点只被一个 owner worker 触碰,故树链/回调链/派生/传播/析构过继全非原子;**唯一原子是 per-node `cancelled` 标志**(为兼容 `is_cancel_requested()` seam——`Fiber::cancel_flag_` 是 `atomic<bool>*`,task fiber 跨 await 迁移 worker 时读需跨线程可见;x86 上 = 普通 mov)。move-only 单 owner,无 refcount(每 derive 新 node)。
+- **令牌成树**：子令牌 `derive()` 自父;**取消父 → 迭代级联取消所有后代**(非递归防深树爆栈)。这正好映射"父 agent 取消子 agent"/"一个 HTTP 请求 fan-out 多个子 task"。**析构过继**:中间 token 先 drop 时孙过继祖父,防漏取消(借 tokio-util tree_node,去其 Mutex)。
+- **协作式**：fiber 不被强行"杀"，而是在**取消点**检查令牌、提前返回。`CancelScope`(RAII)把 token 发布到当前 fiber 的 `cancel_flag_` seam,`is_cancel_requested()`/`HYLE_CHECK_CANCEL()` 观测;io 取消经 `CancelCallback`(借 folly CancellationCallback 侵入链,去其原子握手)注册 `submit_cancel`。
 
 ### await 点即取消点（与零异常天然契合）
 
