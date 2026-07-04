@@ -170,8 +170,8 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 
 ## 未做(登记)
 
-- **HTTP 多小 chunk 流式解码 bug(2026-07-05 发现,P2,与上面的复用优化无关)**:`GetKeepAlive` 的 3-chunk `/stream` 正常;但一个 50×1-byte chunk 的流,客户端 `decode_chunked`(http.cc)返回**空 body**(status 200 但 body_len=0)。**已隔离证明是既有 bug**:把本次的 `out` 复用改动 revert 后仍复现,故非本优化引入,而是 `phr_decode_chunked` 有状态解码器在"多次 -2(输入耗尽)跨多次 read"路径上的集成 bug(疑 `buf.size=0` 丢弃/重喂语义,同 io-10 当初修的 chunked 跨平台 bug 一族但更深)。修它需独立核对 picohttpparser decoder state 语义 + 写 many-chunk 回归测试。**不阻塞**:LLM token 流每 token 通常 >1 字节且不会 50+ 微 chunk 挤一个 read,但严格 SSE 高频小事件会踩到。
-- **计数分配器 microbench**:给上面两处热路径分配消除补一个 alloc-count 铁证(计数 Allocator 跑 N 次 TLS 读写 / M chunk 流式,断言分配次数不随 N/M 增长)。networked 版曾试但撞上上面的多-chunk decode bug + 双 scheduler 端口复用挂起,待 decode bug 修后随回归测试一起补。
+- ✅ **HTTP chunked keep-alive bug(2026-07-05 发现并修复,fce90a6)**:症状——同一 keep-alive 连接上,一个 chunked 响应**之后**紧跟的下一个请求/响应解析失败(status 0、body 空)。**系统排查(先隔离再下结论,非臆断)**:①纯 `phr_decode_chunked` 循环探针(无 socket)证 HYLE 解码循环逻辑正确(3/50 chunk 单/逐字节全 OK)→排除解码器;②网络探针 `/big` 作为**唯一**请求时 3/8/16/50 chunk 全 OK→排除流式发送;③双 chunked keep-alive 请求探针复现:req1 OK、req2 失败→定位到"chunked 之后再 keep-alive"。**真根因**(推翻我最初"多次 -2 跨读"的猜测):`phr_decode_chunked` 默认 `consume_trailer=0` 时在 last-chunk `0\r\n` 后立即 Complete,把 chunked body 的**终止 CRLF**(RFC 7230 §4.1)当作"未解码尾字节"(rv=2)返回;HYLE 把这 2 字节当"下个 pipelined 消息"留 buf,污染后续 `phr_parse_*`。**修**:`decode_chunked` 设 `dec.consume_trailer=1`,解码器吃掉 trailer+终止 CRLF。server(chunked POST body)+ client(chunked 响应)共用同一函数两侧同修。回归测试 `GetKeepAlive` 加第 5 请求(chunked-after-chunked)双向验证(pre-fix FAILED / post-fix PASSED);Win + WSL io_uring + forced-epoll + TSan 全绿。
+- **计数分配器 microbench**:给上面两处热路径分配消除补一个 alloc-count 铁证(计数 Allocator 跑 N 次 TLS 读写 / M chunk 流式,断言分配次数不随 N/M 增长)。scratchpad 探针已验证分配计数下降(structural),permanent 版可后补。
 - ✅ **裸 liburing 对标**(已做,见上"vs 裸 liburing"节):liburing 本地 clone `../liburing`,`-DHYLE_BENCH_LIBURING=ON` 自动 configure+make 链接。结论:单核输 2.3x(抽象代价)、4 核反超。
 - **vs asio / libuv**:证不输成熟异步框架。
 - **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
