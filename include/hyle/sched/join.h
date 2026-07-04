@@ -88,16 +88,21 @@ struct JoinState {
   alignas(T) unsigned char storage[sizeof(T)];  // result, live iff done&&status.ok()
 
   void complete_(Status s, T* val) noexcept {
-    GroupSignal* g;
-    int gi;
     mu.lock();
     status = std::move(s);
     if (status.ok() && val != nullptr) new (storage) T(std::move(*val));
     done = true;
-    g = group;
-    gi = group_idx;
+    // Signal the group (if any) WHILE STILL HOLDING mu. Doing this after unlock
+    // was a UAF: a loser could read `group`, unlock, then be delayed; meanwhile the
+    // winner fires the group, the waiter wakes, calls clear_group() on every state
+    // and returns -- destroying the stack GroupSignal -- and only then does the
+    // delayed loser call g->on_complete() on freed memory. clear_group() takes THIS
+    // state's mu, so holding mu across on_complete() forces the waiter's clear_group
+    // to block until we are done touching `g`, keeping the group alive. Lock order is
+    // state.mu -> g.mu (never the reverse: group_wait's clear_group/install_group
+    // take only state.mu, on_complete takes only g.mu), so no deadlock.
+    if (group != nullptr) group->on_complete(group_idx);
     mu.unlock();
-    if (g != nullptr) g->on_complete(gi);  // outside our lock: g takes its own
     cv.notify_all();
   }
   void set_value(T&& v) noexcept { complete_(Status(), &v); }
@@ -165,15 +170,13 @@ struct JoinState<void> {
   int group_idx = -1;
 
   void complete_(Status s) noexcept {
-    GroupSignal* g;
-    int gi;
     mu.lock();
     status = std::move(s);
     done = true;
-    g = group;
-    gi = group_idx;
+    // Signal the group while holding mu -- see the T-specialization's complete_ for
+    // the full rationale (loser-vs-dead-GroupSignal UAF; lock order state.mu->g.mu).
+    if (group != nullptr) group->on_complete(group_idx);
     mu.unlock();
-    if (g != nullptr) g->on_complete(gi);
     cv.notify_all();
   }
   void set_done() noexcept { complete_(Status()); }

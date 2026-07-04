@@ -225,3 +225,30 @@ TEST(Join, ManyTasksJoinAllComplete) {
   EXPECT_EQ(total.load(), kN);
   sched.shutdown();
 }
+
+// Regression: when_any where BOTH tasks complete near-simultaneously on different
+// workers -- the loser's completion races the stack GroupSignal's destruction.
+// Before the fix (JoinState::complete_ signalled the group AFTER unlocking its mu),
+// a loser could read `group`, unlock, be delayed while the winner fired the group +
+// the waiter ran clear_group() + returned (destroying the stack GroupSignal), then
+// call g->on_complete() on freed memory -- a UAF. The existing WhenAnyReturnsAWinner
+// test hides this: its loser is parked and NEVER completes. Here BOTH complete (two
+// trivial add_coro), so the loser exercises the signal-the-group path, and many
+// rounds on 8 workers widen the window. TSan-visible allocator so the free->reuse of
+// the GroupSignal's stack slot is a race TSan can see (per the note atop this file).
+TEST(Join, WhenAnyLoserCompletesConcurrently) {
+  Allocator al = tsan_visible_allocator();
+  Scheduler sched(8, al, 1024);
+  constexpr int kRounds = 2000;
+  for (int i = 0; i < kRounds; ++i) {
+    auto a = spawn_task(sched, al, add_coro(al, i, 1));
+    auto b = spawn_task(sched, al, add_coro(al, i, 2));
+    int w = when_any(a, b);       // one wins; the OTHER still completes (the loser)
+    EXPECT_TRUE(w == 0 || w == 1);
+    // Join both so their states are fully retired before the next round (and to
+    // confirm neither result was corrupted by the race).
+    EXPECT_EQ(*a.join(), i + 1);
+    EXPECT_EQ(*b.join(), i + 2);
+  }
+  sched.shutdown();
+}
