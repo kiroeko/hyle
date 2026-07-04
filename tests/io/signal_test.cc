@@ -45,14 +45,14 @@ struct SigR {
   std::atomic<bool> done{false};
 };
 // Waiter fiber: co_await the signal; record which bit fired.
-Task<int> wait_coro(SigR* r, SignalSet* s) {
+Task<int> wait_coro(Allocator, SigR* r, SignalSet* s) {
   int bit = co_await s->wait();
   r->got.store(bit, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
 }
 // Raiser fiber: fire SIGTERM (runs after the waiter has armed the pipe read).
-Task<int> raise_coro() {
+Task<int> raise_coro(Allocator) {
   ::raise(SIGTERM);
   co_return 0;
 }
@@ -74,13 +74,13 @@ TEST(IoSignal, WaitReturnsRaisedSignal) {
 
   // Waiter fiber: arm the wait, then a raiser fiber (spawned after) fires SIGTERM.
   auto dw = std::make_unique<Drive>();
-  dw->task = wait_coro(r.get(), sigs.get());
+  dw->task = wait_coro(system_allocator(), r.get(), sigs.get());
   Fiber fw(system_allocator(), kDefaultStackSize, &drive_entry, dw.get());
 
   // Raiser fiber: raise SIGTERM. Runs on the same worker (pinned) but after the
   // waiter has suspended on the pipe read (spawned second, FIFO local queue).
   auto dr = std::make_unique<Drive>();
-  dr->task = raise_coro();
+  dr->task = raise_coro(system_allocator());
   Fiber fr(system_allocator(), kDefaultStackSize, &drive_entry, dr.get());
 
   sched.spawn_on(kOwner, &fw);
