@@ -191,7 +191,7 @@ class Waker {                 // 现状(sched-04a 已实现)
 };
 // 操作完成 → backend 拿回对应 Waker → wake()：标记 fiber 就绪 → 经 sched 重入全局队列
 ```
-> **现状 vs 目标**:已实现的 `wake()` 把 fiber round-robin 重入 global 队列(`reinject`)。"按 origin_core 局部性唤回热核 LIFO slot"是**未实现的优化目标**(需在 Waker 带提交核 + per-core LIFO slot,见 §3.2/§3.3),现阶段不带 origin_core 字段。
+> **现状 vs 目标**:`wake()` 经 `reinject` 重入。**当唤醒方本身在某 worker 线程上跑**(常态:fiber A 唤 fiber B),已实现**投进本 worker 的 LIFO fast-slot**——B 下轮在本核 cache-hot 立即恢复,跳过 global CAS + `notify()` futex(复杂度机会①,ping-pong 延迟 −32%/−35% Win/Lin,见性能文档)。槽是 worker 私有纯字段(steal-exempt+无原子),`kMaxLifoPolls=3` 反饥饿。**仍未做**:Waker 带"提交核"字段以便**跨线程**唤醒也能按 origin_core 定向唤回热核(现在跨线程 wake 仍走 global 兜底);pinned fiber 已经能唤回 owner(shard-per-core),但通用非 pinned fiber 的跨核 origin 亲和还没有。
 
 fiber 提交操作后**让出**（fcontext 切回 worker，栈原地保留）；完成时 `Waker::wake()` 把 fiber 重新入队。io/gpu/timer 三源共用这一个 `Waker`，这就是"唤醒网"的物理形态。
 

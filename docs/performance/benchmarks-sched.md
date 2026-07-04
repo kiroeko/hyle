@@ -19,6 +19,20 @@
 > 全部 instrumented 净 + 原始崩溃全在 9p)指向 **9p/WSL demand-paging 环境假象**,非
 > HYLE 缺陷。fiber 切换 ~21-23ns 数值有效(mimalloc v2.3.2 + 本 session 复测一致);spawn 的权威对标见下 sched 同步节(vs marl 双平台统计平局,非此处历史的 vs std::async 弱基线)。
 
+## LIFO fast-slot：同 worker 唤醒 cache-hot 恢复（复杂度机会①，`scheduler.cc`）
+
+> 移植 tokio `lifo_slot`。**背景**:sched-02 的 `RunQueue` 本就有 LIFO 槽(`kMaxLifoPolls=3`),但迁到 steal-safe `WsFifoQueue` 时丢了——生产 scheduler 每次跨 fiber 唤醒(`reinject`)都经 global 分片 CAS + `notify()` futex 弹到别的核,即便唤醒方就在某个 worker 上跑。给 `Impl::Worker` 加回单 fiber LIFO 槽(纯字段,仅本 worker 线程碰→天然 steal-exempt + 无原子):`reinject` 在 worker 线程上唤醒非 pinned fiber 时投进本 worker 槽,下轮 `find_task` 在本核 cache-hot 立即恢复,跳过 CAS+futex。优先级 `pinned→lifo槽→local→global→steal`,`kMaxLifoPolls=3` 反饥饿(超额降级 local ring)。
+
+| 项(1 worker suspend/wake ping-pong) | 基线(无槽) | LIFO 槽 | 判定 |
+|---|---|---|---|
+| Win MSVC Release(各 3 轮) | ~240 ns/往返 | ~163 ns/往返 | **延迟 −32%** |
+| WSL2 GCC Release(各 3 轮) | ~186 ns/往返 | ~121 ns/往返 | **延迟 −35%** |
+
+- **收益来源**:一次唤醒省掉 global-shard 的 CAS enqueue + `notify()` 的 seq_cst fence(常态还免了一次 futex 系统调用),且被唤醒 fiber 在**同核**恢复——生产者刚写的 buffer 还在 L1/L2。ping-pong / channel send / RPC reply / io echo 这类"A 唤 B、B 唤 A"的往返模式最受益。
+- **无回退**:LIFO 槽只拦截 `reinject`(唤醒路径),spawn 走 `local.push_back`(不变)——spawn 吞吐仍 339ns/任务(vs std::async 69x)。work-stealing 扩展仍近线性(1→2→4→8 = 1.9x/3.5x/5.4x),槽是 worker 私有、偷取路径看不到,不动 Dekker/CAS 反羊群数学。
+- **正确性**:槽是单线程字段(仅本 worker 填/取),worker 绝不会带着非空槽去 park(`find_task` 先清空),故无跨线程访问。**WSL `setarch -R` TSan:102/102 全绿、0 warning**。cooperative yield 走 `reschedule` 不经此路,tokio"yield 不入槽"公平规则自动满足。
+
+
 ## platform 原语（Parker park/unpark、Thread、directory_iterate，`platform_bench.cc`）
 
 > **平台差异是本节主题**：platform 是 OS 原语封装层,这些项的行为在 Windows 与 Linux 上**由各自内核/运行时主导**,数字不可跨平台搬用。两侧均为 **15 遍中位数+spread**(`scripts/bench-stat.py`,2026-06-30):**Win MSVC19.50** + **Linux GCC14.2 原生 ext4**,双平台并列。判定规则同 simd:gap > 两变体 spread 之和才算赢/输,否则统计平局。
