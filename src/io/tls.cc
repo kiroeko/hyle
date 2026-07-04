@@ -138,51 +138,54 @@ TlsStream& TlsStream::operator=(TlsStream&& o) noexcept {
   return *this;
 }
 
-// ---- pump helpers ----------------------------------------------------------
+// ---- pump helpers (allocator-first free coroutines; take the raw socket + BIO so
+// they need no access to TlsStream privates) --------------------------------
 
-// Drain all pending ciphertext from wbio_ and co_await-write it to the peer.
-// Returns 0 on success, negative on a socket write error.
-sched::Task<int> TlsStream::flush_wbio(mem::Allocator) noexcept {
+// Drain all pending ciphertext from `wbio` and co_await-write it to the peer via
+// `sock`. Returns 0 on success, negative on a socket write error.
+static sched::Task<int> flush_wbio(mem::Allocator, TcpStream& sock,
+                                   bio_st* wbio) noexcept {
   char buf[kBufSize];
   for (;;) {
-    int n = BIO_read(wbio_, buf, kBufSize);  // pull ciphertext SSL queued for us
-    if (n <= 0) co_return 0;                 // nothing (more) to send
+    int n = BIO_read(wbio, buf, kBufSize);  // pull ciphertext SSL queued for us
+    if (n <= 0) co_return 0;                // nothing (more) to send
     std::uint32_t off = 0;
     while (off < static_cast<std::uint32_t>(n)) {
-      std::int64_t w = co_await sock_.write(buf + off,
-                                            static_cast<std::uint32_t>(n) - off);
+      std::int64_t w = co_await sock.write(buf + off,
+                                           static_cast<std::uint32_t>(n) - off);
       if (w <= 0) co_return -1;  // socket write failed
       off += static_cast<std::uint32_t>(w);
     }
   }
 }
 
-// co_await-read a chunk of ciphertext from the peer and feed it into rbio_ so SSL
+// co_await-read a chunk of ciphertext from the peer and feed it into `rbio` so SSL
 // can consume it. Returns 1 on data fed, 0 on peer EOF, negative on error.
-sched::Task<int> TlsStream::feed_rbio(mem::Allocator) noexcept {
+static sched::Task<int> feed_rbio(mem::Allocator, TcpStream& sock,
+                                  bio_st* rbio) noexcept {
   char buf[kBufSize];
-  std::int64_t n = co_await sock_.read(buf, kBufSize);
+  std::int64_t n = co_await sock.read(buf, kBufSize);
   if (n == 0) co_return 0;   // peer closed the transport
   if (n < 0) co_return -1;   // socket read error
-  BIO_write(rbio_, buf, static_cast<int>(n));  // memory BIO write never blocks
+  BIO_write(rbio, buf, static_cast<int>(n));  // memory BIO write never blocks
   co_return 1;
 }
 
 // ---- handshake -------------------------------------------------------------
 
-sched::Task<int> TlsStream::handshake(mem::Allocator alloc) noexcept {
-  if (ssl_ == nullptr) co_return -1;
+sched::Task<int> tls_handshake(mem::Allocator alloc, TlsStream& s) noexcept {
+  if (s.ssl_ == nullptr) co_return -1;
   for (;;) {
     ERR_clear_error();
-    int r = SSL_do_handshake(ssl_);
-    Want w = classify(ssl_, r);       // MUST be right after SSL_do_handshake
+    int r = SSL_do_handshake(s.ssl_);
+    Want w = classify(s.ssl_, r);     // MUST be right after SSL_do_handshake
     // Always flush any ciphertext the handshake produced (our ClientHello/Finished
     // etc.) before waiting to read the peer's -- the handshake is a ping-pong.
-    if ((co_await flush_wbio(alloc)) != 0) co_return -1;
+    if ((co_await flush_wbio(alloc, s.sock_, s.wbio_)) != 0) co_return -1;
     if (w == Want::kDone) co_return 0;         // SSL_is_init_finished
     if (w == Want::kError || w == Want::kEof) co_return -1;
     if (w == Want::kReadMore) {
-      int f = co_await feed_rbio(alloc);
+      int f = co_await feed_rbio(alloc, s.sock_, s.rbio_);
       if (f <= 0) co_return -1;  // EOF/err mid-handshake
     }
     // kWriteMore: the flush above already drained wbio_; loop and retry.
@@ -191,20 +194,20 @@ sched::Task<int> TlsStream::handshake(mem::Allocator alloc) noexcept {
 
 // ---- read ------------------------------------------------------------------
 
-sched::Task<long> TlsStream::read(mem::Allocator alloc, void* buf,
-                                  std::uint32_t len) noexcept {
-  if (ssl_ == nullptr) co_return -1;
+sched::Task<long> tls_read(mem::Allocator alloc, TlsStream& s, void* buf,
+                           std::uint32_t len) noexcept {
+  if (s.ssl_ == nullptr) co_return -1;
   for (;;) {
     ERR_clear_error();
-    int r = SSL_read(ssl_, buf, static_cast<int>(len));
+    int r = SSL_read(s.ssl_, buf, static_cast<int>(len));
     if (r > 0) co_return static_cast<long>(r);  // plaintext bytes
-    Want w = classify(ssl_, r);                 // right after SSL_read
+    Want w = classify(s.ssl_, r);               // right after SSL_read
     // A read may still need to WRITE (renegotiation) -- flush first either way.
-    if ((co_await flush_wbio(alloc)) != 0) co_return -1;
+    if ((co_await flush_wbio(alloc, s.sock_, s.wbio_)) != 0) co_return -1;
     if (w == Want::kEof) co_return 0;           // clean close_notify / transport EOF
     if (w == Want::kError) co_return -1;
     if (w == Want::kReadMore) {
-      int f = co_await feed_rbio(alloc);
+      int f = co_await feed_rbio(alloc, s.sock_, s.rbio_);
       if (f == 0) co_return 0;   // peer closed while we needed more ciphertext
       if (f < 0) co_return -1;
     }
@@ -214,26 +217,26 @@ sched::Task<long> TlsStream::read(mem::Allocator alloc, void* buf,
 
 // ---- write -----------------------------------------------------------------
 
-sched::Task<long> TlsStream::write(mem::Allocator alloc, const void* buf,
-                                   std::uint32_t len) noexcept {
-  if (ssl_ == nullptr) co_return -1;
+sched::Task<long> tls_write(mem::Allocator alloc, TlsStream& s, const void* buf,
+                            std::uint32_t len) noexcept {
+  if (s.ssl_ == nullptr) co_return -1;
   const char* p = static_cast<const char*>(buf);
   std::uint32_t remaining = len;
   while (remaining > 0) {
     ERR_clear_error();
-    int r = SSL_write(ssl_, p, static_cast<int>(remaining));
+    int r = SSL_write(s.ssl_, p, static_cast<int>(remaining));
     if (r > 0) {
       // Ciphertext for these bytes is now in wbio_; send it before continuing.
-      if ((co_await flush_wbio(alloc)) != 0) co_return -1;
+      if ((co_await flush_wbio(alloc, s.sock_, s.wbio_)) != 0) co_return -1;
       p += r;
       remaining -= static_cast<std::uint32_t>(r);
       continue;
     }
-    Want w = classify(ssl_, r);  // right after SSL_write
-    if ((co_await flush_wbio(alloc)) != 0) co_return -1;
+    Want w = classify(s.ssl_, r);  // right after SSL_write
+    if ((co_await flush_wbio(alloc, s.sock_, s.wbio_)) != 0) co_return -1;
     if (w == Want::kError || w == Want::kEof) co_return -1;
     if (w == Want::kReadMore) {  // renegotiation: write needs to read
-      int f = co_await feed_rbio(alloc);
+      int f = co_await feed_rbio(alloc, s.sock_, s.rbio_);
       if (f <= 0) co_return -1;
     }
     // kWriteMore: flushed above; loop and retry SSL_write.
@@ -243,22 +246,22 @@ sched::Task<long> TlsStream::write(mem::Allocator alloc, const void* buf,
 
 // ---- shutdown --------------------------------------------------------------
 
-sched::Task<int> TlsStream::shutdown(mem::Allocator alloc) noexcept {
-  if (ssl_ == nullptr) co_return 0;
+sched::Task<int> tls_shutdown(mem::Allocator alloc, TlsStream& s) noexcept {
+  if (s.ssl_ == nullptr) co_return 0;
   // Best-effort duplex close: send our close_notify, then flush. SSL_shutdown()==1
   // means the peer's close_notify was also received (full duplex done); ==0 means
-  // ours is sent and we could wait for the peer's -- we do one read attempt but
-  // don't hang forever on a peer that never replies (dirty shutdown is acceptable
-  // at teardown). WANT_* pumps the BIOs.
+  // ours is sent and we could wait for the peer's -- we do a bounded number of read
+  // attempts but don't hang forever on a peer that never replies (dirty shutdown is
+  // acceptable at teardown). WANT_* pumps the BIOs.
   for (int attempt = 0; attempt < 4; ++attempt) {
     ERR_clear_error();
-    int r = SSL_shutdown(ssl_);
-    if ((co_await flush_wbio(alloc)) != 0) co_return -1;
+    int r = SSL_shutdown(s.ssl_);
+    if ((co_await flush_wbio(alloc, s.sock_, s.wbio_)) != 0) co_return -1;
     if (r == 1) co_return 0;  // full duplex close_notify exchange complete
-    Want w = classify(ssl_, r);
+    Want w = classify(s.ssl_, r);
     if (w == Want::kError || w == Want::kEof) co_return 0;  // give up cleanly
     if (w == Want::kReadMore) {
-      int f = co_await feed_rbio(alloc);
+      int f = co_await feed_rbio(alloc, s.sock_, s.rbio_);
       if (f <= 0) co_return 0;  // peer gone -> dirty shutdown, acceptable
     }
   }

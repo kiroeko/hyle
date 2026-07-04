@@ -94,39 +94,51 @@ class TlsStream {
   bool valid() const noexcept { return ssl_ != nullptr; }
   unsigned owner_worker() const noexcept { return sock_.owner_worker(); }
 
-  // co_await tls.handshake(alloc) -> 0 on success, negative on error (bad handshake
-  // / peer closed / verify failure). Runs the TLS handshake pump: SSL_do_handshake,
-  // flushing/feeding ciphertext via the underlying TcpStream until established.
-  HYLE_IO_API sched::Task<int> handshake(mem::Allocator alloc) noexcept;
-
-  // co_await tls.read(alloc, buf, len) -> plaintext bytes read (>0), 0 on clean
-  // peer close (close_notify / EOF), or negative on error. Decrypts via SSL_read,
-  // pulling ciphertext from the socket as the pump needs it.
-  HYLE_IO_API sched::Task<long> read(mem::Allocator alloc, void* buf,
-                                     std::uint32_t len) noexcept;
-
-  // co_await tls.write(alloc, buf, len) -> plaintext bytes written (all of `len` on
-  // success) or negative on error. Encrypts via SSL_write, pushing ciphertext to
-  // the socket. Handles partial writes internally.
-  HYLE_IO_API sched::Task<long> write(mem::Allocator alloc, const void* buf,
-                                      std::uint32_t len) noexcept;
-
-  // co_await tls.shutdown(alloc) -> 0 once the TLS close_notify handshake is done
-  // (or best-effort on error). Sends our close_notify; a full duplex close also
-  // waits for the peer's. The socket is then closed by the destructor.
-  HYLE_IO_API sched::Task<int> shutdown(mem::Allocator alloc) noexcept;
+  // The co_await operations are FREE FUNCTIONS taking (mem::Allocator, TlsStream&),
+  // not member coroutines. A coroutine's frame is allocated by its promise's
+  // operator new, which requires the Allocator to be the FIRST parameter -- a
+  // member coroutine's first parameter is the implicit `this`, so the Allocator
+  // lands second and no longer matches PromiseAllocBase::operator new. Free
+  // functions keep the Allocator first (HYLE's allocator-first idiom, same as
+  // dns::resolve / spawn_task). See tls_handshake/read/write/shutdown below.
 
  private:
+  friend HYLE_IO_API sched::Task<int> tls_handshake(mem::Allocator,
+                                                    TlsStream&) noexcept;
+  friend HYLE_IO_API sched::Task<long> tls_read(mem::Allocator, TlsStream&, void*,
+                                               std::uint32_t) noexcept;
+  friend HYLE_IO_API sched::Task<long> tls_write(mem::Allocator, TlsStream&,
+                                                const void*,
+                                                std::uint32_t) noexcept;
+  friend HYLE_IO_API sched::Task<int> tls_shutdown(mem::Allocator,
+                                                   TlsStream&) noexcept;
+
   TcpStream sock_{};
   ssl_st* ssl_ = nullptr;   // per-connection SSL (owns rbio_/wbio_ after SSL_set_bio)
   bio_st* rbio_ = nullptr;  // memory BIO: SSL reads peer ciphertext from here
   bio_st* wbio_ = nullptr;  // memory BIO: SSL writes ciphertext to be sent here
-
-  // Internal pump helpers (defined in tls.cc). flush_wbio: drain wbio -> co_await
-  // sock_.write. feed_rbio: co_await sock_.read -> BIO_write rbio_ (false = EOF).
-  sched::Task<int> flush_wbio(mem::Allocator alloc) noexcept;
-  sched::Task<int> feed_rbio(mem::Allocator alloc) noexcept;
 };
+
+// ---- co_await TLS operations (free functions, allocator-first) --------------
+// Await from the fiber pinned to the stream's owner_worker(). Each runs a memory-
+// BIO pump: an SSL_* call, then flush ciphertext to / feed ciphertext from the
+// underlying TcpStream per SSL_get_error's WANT_READ/WANT_WRITE, until it resolves.
+
+// co_await tls_handshake(alloc, s) -> 0 on success, negative on error.
+HYLE_IO_API sched::Task<int> tls_handshake(mem::Allocator alloc,
+                                           TlsStream& s) noexcept;
+// co_await tls_read(alloc, s, buf, len) -> plaintext bytes (>0), 0 on clean close,
+// negative on error.
+HYLE_IO_API sched::Task<long> tls_read(mem::Allocator alloc, TlsStream& s,
+                                       void* buf, std::uint32_t len) noexcept;
+// co_await tls_write(alloc, s, buf, len) -> bytes written (== len) or negative.
+HYLE_IO_API sched::Task<long> tls_write(mem::Allocator alloc, TlsStream& s,
+                                        const void* buf,
+                                        std::uint32_t len) noexcept;
+// co_await tls_shutdown(alloc, s) -> 0 once the close_notify exchange is done
+// (best-effort on error / unresponsive peer).
+HYLE_IO_API sched::Task<int> tls_shutdown(mem::Allocator alloc,
+                                          TlsStream& s) noexcept;
 
 }  // namespace hyle::io
 
