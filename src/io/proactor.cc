@@ -1380,6 +1380,25 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
         impl->pending.erase(fd);
         return false;
       }
+    } else if (errno == EPERM) {
+      // EPERM = fd is a REGULAR FILE (or otherwise not epoll-able). epoll cannot
+      // watch regular files -- they are always "ready" but read()/write() may block
+      // on disk (io-05: only io_uring/IOCP async a regular file; tokio offloads to
+      // a thread pool for exactly this). So do the byte IO SYNCHRONOUSLY now and
+      // synthesize a completion via the posted queue -- the same synthesis the
+      // metadata file ops use. (Stream read/write only; a datagram socket is never
+      // a regular file, so addr is unused here.)
+      impl->pending.erase(fd);
+      std::int64_t res;
+      if (opcode == IORING_OP_WRITE) {
+        ssize_t w = ::write(fd, buf, len);
+        res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
+      } else {  // IORING_OP_READ
+        ssize_t r = ::read(fd, buf, len);
+        res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
+      }
+      impl->posted.push_back({user_data, res});
+      return true;
     } else {
       impl->pending.erase(fd);
       return false;
