@@ -108,10 +108,27 @@ void complete_(Status s, T* val) noexcept {
 
 **锁序论证（无死锁）**：`complete_` 走 `state.mu → g.mu`（on_complete 内取 g.mu）。反向不存在：`group_wait` 的 `clear_group`/`install_group` **只取 state.mu**（不嵌套 g.mu），`on_complete` **只取 g.mu**。无环 → 无死锁。等待方 `clear_group` 拿 loser 的 state.mu 时会短暂阻塞到 loser 的 `complete_` 释放，之后照常拆除——group 在此期间保活。T 与 void 两个特化都改。
 
-## 6. 选项 A vs 选项 B（本次选 B，A 的对比另见性能文档）
+## 6. 选项 A vs 选项 B —— 实测结案（2026-07-05：A 更"纯"但不更快，保留 B）
+
+用户问"如果选 A 更彻底，性能会更好么"。为回答它，把 A 完整实现了一遍（`util::RefCounted<GroupSignal>` 侵入式引用计数，编译期宏 `HYLE_WHENANY_REFCOUNT` 切换），双平台实测 + TSan 双向验证，然后**丢弃 A 的脚手架、保留 B**。结论如下。
 
 - **选项 B（已采用）**：on_complete 移入锁内。零新字段、零分配、锁序单向易证。代价：临界区含一次 `on_complete`（几个原子操作，非阻塞）。
-- **选项 A（folly 式）**：GroupSignal 改**堆分配 + 引用计数**，每个 install 加 ref，on_complete 后 release，`group_wait` 结束时 release 自己那份——最后一个在途 signaler drop 时才析构。更"彻底"（不依赖锁序保活），但引入堆分配 + 每次完成的 refcount 原子。A 是否更快是一个经验问题，用 `join_bench` 实测对比（见 [`../performance/benchmarks-sched.md`](../performance/benchmarks-sched.md) 的 when_any 行）。
+- **选项 A（folly 式，已实现并丢弃）**：GroupSignal 堆分配 + `util::RefCounted`，每个 `install_group` 加一份 ref，`complete_`/`clear_group` 谁先在 mu 内偷走 `group` 谁负责 decref，`when_any` 结束时 drop 等待方那份——最后一个在途 signaler drop 时才析构。`on_complete` 因此可在**锁外**调用（不依赖锁序保活）。
+
+**① 更彻底？是，但只是设计纯度。** A 消除了"锁序保活"这条需要论证的隐式依赖，把生命周期显式化为引用计数——理论上更抗未来改动（比如有人日后往 `clear_group` 里加了嵌套锁就会破坏 B 的锁序，而 A 不受影响）。但 B 在**当前**代码里已被 TSan 证明是正确且无死锁的，"更彻底"不等于"当前更对"。
+
+**② 更快？否，双平台统计打平。** `join_bench` 新增 "when_any(8) all-complete"（8 任务全完成、8 worker、走 signal 路径），A/B 各跑 3 轮：
+
+| 平台 | B（栈+锁序）中位 | A（堆+refcount）中位 | 判定 |
+|---|---|---|---|
+| Win MSVC Release | ~503 ns/op | ~511 ns/op | 打平（err% 内互换排序）|
+| WSL2 GCC Release | ~527 ns/op | ~533 ns/op | 打平（err% + WSL2 抖动内互换）|
+
+根因：when_any(8) 的耗时被 **8 次跨 worker 的 fiber 唤醒**主导（每次唤醒 ~百 ns 级），group 那把锁的"临界区多一次 on_complete"（B）与"堆 alloc+free + N 次 refcount 原子"（A）都淹没在唤醒噪声里，微观差异测不出来。而 A **确实多了一次每 group 调用的堆分配+释放**——在一条本来零分配的路径上。
+
+**③ 决策：保留 B。** A 不更快，却给零分配路径加了 alloc+free，且引入一个编译期分支。收益（设计纯度）不抵成本（分配 + 复杂度），按"三行相似代码胜过过早抽象"的取舍，删掉 A 脚手架，只把那条 8-completer bench 行留下（它照样测 B 的 signal 路径竞争，有独立价值）。
+
+**④ A 的 TSan 插曲（工具限制，非 A 的 bug）**：option A 首跑 `setarch -R` TSan 报 2 个 warning，都落在 GroupSignal 堆 `free` 与一个 size-4 原子写竞争——正是 `util::RefCounted::decref` 的 `release 存储 + 独立 acquire fence`（libc++/Boost shared_ptr 惯用法）。判别实验：把 `decref` 临时改成整体 `fetch_sub(acq_rel)`（TSan 能完整建模的形式）重编重跑 → **0 warning、PASSED**。所以那 2 个 warning 是 **TSan 对 fence 型 refcount 释放的建模不足**（与 §3.1 mimalloc 同族的工具交互问题），不是 A 的真实竞态——A 的引用计数协议本身是配平且正确的。这条也反过来给 B 的"栈+锁序"记一分：它压根不碰 refcount fence，TSan 全程干净、无需这层辨伪。
 
 ## 教训
 

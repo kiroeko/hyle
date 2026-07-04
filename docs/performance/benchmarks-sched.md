@@ -157,11 +157,13 @@ CancelToken 树是 shard-local、(几乎)无锁结构——唯一原子是 per-n
 | **when_all 64 任务** | 372 / 467 ns/任务 | (= 逐个 join) | 群等待 vs 逐 join **零额外**(≈单任务 spawn+join) |
 | **when_all(4) 组调用** | 1859 / 6264 ns | — | 4 任务全等待的组安装+等待+卸载 |
 | **when_any(4) 组调用** | 1728 / 3040 ns | — | 取第一即返,故 ~2x 快于 when_all(4) |
+| **when_any(8) 全完成** | 503 / 527 ns/完成 | — | 8 任务全走 signal 路径(loser 真完成),测 group 锁竞争 |
 
 - **层开销每任务 Win ~52ns / Lin 平局——本质"几乎免费"**:糖路径比裸多 **2 次堆分配**(JoinState 结果 slot + TaskDriver{Task 帧+Fiber}),换来**调用方零生命周期管理**(driver 经 Fiber finish 钩子自析构);裸路径复用调用方栈对象但**调用方必须保活 + drain()**。~52ns 买"啥都不用管"+ 安全(无悬空 fiber 陷阱)。spawn 非最紧热路径(那是 23ns fiber 切换 / 141ns spawn),付这点启动一个带结果句柄的自持任务是对的取舍。
 - **⚠️ 方法学教训(重要,已内化)**:初测**单任务往返** spawn_task ~869ns/Win、~9908ns/Lin,看似 ~1.3x/~2x"重开销"——**全是 OS 跨线程唤醒抖动**(spawn 在主线程→worker 跑→futex 唤醒主线程),不是层开销。改**批量 100/task 摊销 handoff + 迭代 2000** 后,Win 收敛到 1.15x、Lin 到平局,err% 从 7% 降到 <3%。**亚 μs 的 sched 数字必须摊销 + 够迭代,否则线程唤醒噪声冒充"开销"**(同 queue/CV 的"单平台数陷阱"一族)。
 - **when_any 快于 when_all 符合语义**:when_any 一个完成就返回(其余协作取消/detach),when_all 等全部——4-pack 下 when_any ~2x 快,证组引擎的"取第一即卸载"路径生效。
-- **正确性优先**:核心是 UAF(自捕获 fiber 自析构,已改 dispatch 收割)+ GroupSignal 销毁前卸载(folly WhenN 防护),双平台 53/53 + **WSL TSan 零 race**(mimalloc×TSan 地址复用误报已用可见分配器隔离,见 milestones sched-10)。
+- **when_any UAF 修复 A/B 实测(2026-07-05,回答"选 A 更彻底会不会更快")**:红队审出 loser-vs-栈上 GroupSignal 的 UAF(见 [`../debug/when-any-loser-uaf-hunt.md`](../debug/when-any-loser-uaf-hunt.md)),两个修法——**B**(已采用,on_complete 移进 state.mu、靠锁序保活 group 栈对象,零分配)vs **A**(folly 式,GroupSignal 改 `util::RefCounted` 堆分配+引用计数,on_complete 可锁外调)。完整实现 A、双平台各 3 轮跑上面那条 when_any(8) 行:**Win B~503 vs A~511、Lin B~527 vs A~533,统计打平**(err% 内互换排序)。根因=8 次跨 worker fiber 唤醒主导耗时,淹没了"锁内多一次 on_complete"(B)与"堆 alloc+free+refcount 原子"(A)的微差。A 更"纯"(生命周期显式、不依赖锁序论证)但**不更快**,还给零分配路径加了每次 alloc+free → **保留 B**,删 A 脚手架(只留这条 bench 行,它照测 B 的 signal 竞争)。附:A 首跑 TSan 报 2 warning 经判别实验(decref 临时改 acq_rel → 0 warning)坐实是 **TSan 对 `RefCounted` fence 型释放建模不足**(§3.1 mimalloc 同族),非 A 真竞态。
+- **正确性优先**:核心是 UAF(自捕获 fiber 自析构,已改 dispatch 收割)+ GroupSignal 销毁前卸载(folly WhenN 防护)+ loser 并发完成的栈对象保活(sched-10 UAF,option B 锁内 signal),双平台 53/53 + **WSL TSan 零 race**(mimalloc×TSan 地址复用误报已用可见分配器隔离,见 milestones sched-10)。
 
 ## 调度器层缺口 bench：work-stealing 扩展 / spawn_on 亲和 / 协程胶水 / fiber sleep（`bench/sched/scheduler_ext_bench.cc`）
 

@@ -179,5 +179,42 @@ int main() {
     sched.shutdown();
   }
 
+  // ---- 4. when_any where ALL losers truly complete (signal-path contention) ---
+  // The when_any(4) above already sends every loser through complete_'s signal
+  // path, but 4 tasks / 4 workers barely contends the group mutex. This case widens
+  // to 8 concurrent completers on 8 workers so the number reflects the per-
+  // completion cost of the committed UAF fix: complete_ holds state.mu ACROSS
+  // on_complete (which takes g.mu) -- a nested crit-section, g.mu the shared point.
+  // (An alternative "option A" refcount-heap GroupSignal was prototyped + measured
+  // here 2026-07-05: statistically tied on both platforms because the 8 cross-worker
+  // fiber wakeups dominate the mutex-vs-refcount microdelta, and A adds a heap
+  // alloc+free per call -- so B was kept. See docs/debug/when-any-loser-uaf-hunt.md.)
+  {
+    constexpr int kN = 8;
+    Scheduler sched(8, system_allocator(), 4096);
+    Allocator a = system_allocator();
+    ankerl::nanobench::Bench b;
+    b.title("when_any(8), all losers complete").batch(kN).minEpochIterations(3000);
+    b.run("when_any(8) all-complete [lock-order stack group]", [&] {
+      auto h0 = spawn_task(sched, a, ret_coro(a, 0));
+      auto h1 = spawn_task(sched, a, ret_coro(a, 1));
+      auto h2 = spawn_task(sched, a, ret_coro(a, 2));
+      auto h3 = spawn_task(sched, a, ret_coro(a, 3));
+      auto h4 = spawn_task(sched, a, ret_coro(a, 4));
+      auto h5 = spawn_task(sched, a, ret_coro(a, 5));
+      auto h6 = spawn_task(sched, a, ret_coro(a, 6));
+      auto h7 = spawn_task(sched, a, ret_coro(a, 7));
+      int w = when_any(h0, h1, h2, h3, h4, h5, h6, h7);
+      ankerl::nanobench::doNotOptimizeAway(w);
+      std::uint64_t sink = 0;
+      for (JoinHandle<int>* h : {&h0, &h1, &h2, &h3, &h4, &h5, &h6, &h7}) {
+        auto r = h->join();
+        sink += r.has_value() ? static_cast<std::uint64_t>(*r) : 0;
+      }
+      ankerl::nanobench::doNotOptimizeAway(sink);
+    });
+    sched.shutdown();
+  }
+
   return 0;
 }
