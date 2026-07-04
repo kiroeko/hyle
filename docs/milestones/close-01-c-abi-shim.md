@@ -41,8 +41,19 @@
 - **异常隔离**：故障注入测试确认无 C++ 异常逃逸到 C 边界。
 - **依赖**：各对外模块 C++ 实现已稳定（C shim 是薄转发层，底层没定型就封等于返工——故排在 P6）。
 
-## 参考
+## 运行时依赖 + 安装/分发（2026-07-05 登记，属 close 阶段，非各功能里程碑）
 
-- charter §6（对外沟通/FFI 决策）、§5（模块公开/内部二分、ABI 承诺只在 C 接缝）。
-- conventions §4（C-ABI 边界范式）、§2（decls.h include 纪律）。
-- usage-guide §1.5（当前诚实标注：纯 C-ABI shim 是 P6 未做，现为 C++ ABI 跨 DLL）。
+**问题来源**：io-08 TLS 引入第一个**外部动态运行时依赖**（OpenSSL 的 `libssl.so`/`libssl-3.dll`）。这暴露一个此前没有的关注点——HYLE 发布给用户时，**用户机器上怎么拿到 HYLE 依赖的第三方动态库**。这不是某个功能里程碑（io-08 只管把 TLS 机制做通）的事，是**统一的打包/分发问题**，钉在这里：
+
+- **现状**：HYLE **完全没有 `install()` / `install(EXPORT)` / `Config.cmake` 机制**——目前只本地构建 + samples 直接链 `build/bin`。发布分发从零开始，属 P6。
+- **两个维度别混**（用户提出）：
+  1. **开发者构建 HYLE**：`find_package(OpenSSL)` 找到即可（Linux 系统库零配置 / Windows `OPENSSL_ROOT_DIR` 或 vcpkg）。这层各功能里程碑自己解决（io-08 已定 `find_package` 可选依赖）。
+  2. **部署 HYLE 的最终用户**：用户机器要有 HYLE 依赖的运行时库。**动态链**（HYLE 默认，安全库随系统 CVE 更新）意味着 `libssl.so.3`/`libssl-3.dll` 必须在用户机——Linux 发行版几乎都预装 OpenSSL 运行时（不用 HYLE 带）；**Windows 不一定有，close 阶段的 `install()` 应能把依赖 DLL 随 HYLE 制品一起安装**（`install(IMPORTED_RUNTIME_ARTIFACTS OpenSSL::SSL ...)` 或 `$<TARGET_RUNTIME_DLLS>` copy）。
+- **close 阶段要做（登记，开工时细化）**：
+  - [ ] `install(TARGETS hyle_* EXPORT HyleTargets ...)` + `install(EXPORT ...)` + `HyleConfig.cmake`（+ `find_dependency(OpenSSL)` 等）——让下游 `find_package(hyle)` 可用。
+  - [ ] 运行时依赖 DLL 分发策略：Windows `install($<TARGET_RUNTIME_DLLS>)` 带上 OpenSSL 等；Linux 依赖系统库（文档声明最低版本），不打包。
+  - [ ] **静态 vs 动态的分发抉择**：动态=依赖用户机有库但制品小、安全库可独立更新；静态=单一制品无依赖但 CVE 要重编 + 体积 + 静态链 OpenSSL 的符号/初始化坑。默认动态；提供 `HYLE_STATIC` 全静态构建选项时，第三方也尽量静态链成单一制品。
+  - [ ] 每个可选依赖（OpenSSL/将来的 ggml 等）都遵循"不开该能力=零依赖"（io-08 已立此范式：TLS 独立目标，不要 TLS 就不背 OpenSSL）。
+- **为什么归 close 而非 io-08**：install/export/依赖分发是**一次性统一做**的收口件（对所有模块 + 所有第三方依赖），塞进单个功能里程碑会把它撑成打包里程碑，且要等对外 C-ABI 面（本文档主体）定型后才有意义。io-08 只需保证"TLS 可选 + 动态链干净 + 给 install 留好接口"。
+
+

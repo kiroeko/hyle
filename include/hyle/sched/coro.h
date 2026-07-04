@@ -126,6 +126,24 @@ class Task {
     return std::move(h_.promise().value_);
   }
 
+  // ---- awaiter: co_await a sub-Task from within another Task ----------------
+  // HYLE is STACKFUL: a co_await inside the sub-Task yields the whole FIBER (see
+  // SuspendFiber), freezing this parent frame with it. So awaiting a sub-Task is
+  // just "drive it to done on this fiber" -- each of its internal co_awaits parks
+  // the fiber and resumes it, and when the sub-Task finishes we lift its result.
+  // No continuation chaining is needed (the fiber suspend covers everything), which
+  // is why this minimal awaiter suffices for composing Task pumps (io-08 TLS).
+  bool await_ready() noexcept { return done(); }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    // Run the sub-Task to completion on THIS fiber. resume() returns either when it
+    // finishes or when one of its co_awaits fiber-yields; on a yield the fiber (and
+    // this whole coroutine) is frozen and control is already back at the worker, so
+    // when we're resumed the loop continues the sub-Task. Loop until it's done.
+    while (!h_.done()) h_.resume();
+    return false;  // sub-Task done -> don't park the parent; go to await_resume
+  }
+  T await_resume() { return result(); }
+
  private:
   handle_t h_{};
 };
@@ -167,6 +185,15 @@ class Task<void> {
   void result() {
     if (h_ && h_.promise().exc_) std::rethrow_exception(h_.promise().exc_);
   }
+
+  // awaiter: co_await a sub-Task<void> (see Task<T>::await_* for the stackful
+  // rationale -- the fiber suspend covers the sub-Task's internal awaits).
+  bool await_ready() noexcept { return done(); }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    while (!h_.done()) h_.resume();
+    return false;
+  }
+  void await_resume() { result(); }
 
  private:
   handle_t h_{};

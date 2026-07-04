@@ -91,6 +91,22 @@ include(HyleSanitizers)
 include(HyleModule)
 include(HyleTrace)  # obs-02: HYLE_TRACE gate + optional tracy backend (default OFF)
 
+# ---- optional OpenSSL (io-08 TLS) -------------------------------------------
+# TLS is an OPTIONAL capability: if OpenSSL is found the io module builds tls.cc
+# and links it; if not, TLS simply isn't compiled and a user who doesn't want TLS
+# carries ZERO OpenSSL dependency (same "opt-in capability = opt-in dependency"
+# rule as HYLE_TRACE/tracy). DYNAMIC link on purpose -- a security lib should
+# track the system's CVE updates, not be baked statically into HYLE's artifact.
+# Linux: found zero-config via the system libssl-dev. Windows: pass OPENSSL_ROOT_DIR
+# or use a vcpkg toolchain. Install/runtime-DLL distribution is a close-phase
+# concern (see docs/milestones/close-01), not any single io milestone.
+find_package(OpenSSL QUIET)
+if(OpenSSL_FOUND)
+  message(STATUS "HYLE: OpenSSL ${OPENSSL_VERSION} found -- io-08 TLS enabled")
+else()
+  message(STATUS "HYLE: OpenSSL not found -- io-08 TLS disabled (set OPENSSL_ROOT_DIR to enable)")
+endif()
+
 # ---- global correctness flags (apply to ALL targets incl. fetched deps) ------
 # These change language semantics, not just diagnostics, so they must be uniform
 # across the whole build (gtest included) to avoid ODR/ABI skew. Scoped to C/CXX
