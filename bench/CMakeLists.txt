@@ -168,6 +168,15 @@ if(HYLE_HAS_FCONTEXT)
   hyle_apply_warnings(hyle_sched_blocking_bench)
 endif()
 
+# sched-07 cancellation-tree bench: is_cancelled() hot-path (vs bare atomic) +
+# cancel() propagation O(N) (wide + deep trees) + derive() per-child cost. Own exe;
+# CancelScope references Fiber so it needs fcontext like the rest of sched.
+if(HYLE_HAS_FCONTEXT)
+  add_executable(hyle_sched_cancel_bench sched/cancel_bench.cc)
+  target_link_libraries(hyle_sched_cancel_bench PRIVATE hyle_sched nanobench)
+  hyle_apply_warnings(hyle_sched_cancel_bench)
+endif()
+
 # sched-10 JoinHandle/spawn_task/when_all/when_any bench: proves the structured-
 # concurrency layer is ~zero-overhead vs the raw fiber+WaitGroup(1)+slot it wraps.
 # Own exe (scheduler_bench owns main). Needs fcontext like the rest of sched.
