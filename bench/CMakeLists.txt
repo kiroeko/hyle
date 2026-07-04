@@ -68,6 +68,18 @@ if(HYLE_HAS_FCONTEXT)
   if(WIN32)
     target_link_libraries(hyle_io_bench PRIVATE ws2_32)
   endif()
+
+  # io scaling bench: the two COMPLEXITY curves echo_bench's fixed 64-conn/64B load
+  # can't show -- connection-count scaling (ns/round-trip flat => O(1)/conn, the
+  # "proactor beats readiness" argument) + payload-size scaling (bytes/s clean plateau
+  # => no hidden copy in the co_await path). Own exe (echo_bench owns main). Same sched
+  # dep + ws2_32 on Windows (socketpair emulation via loopback TCP).
+  add_executable(hyle_io_scaling_bench io/io_scaling_bench.cc)
+  target_link_libraries(hyle_io_scaling_bench PRIVATE hyle_sched hyle_io nanobench)
+  hyle_apply_warnings(hyle_io_scaling_bench)
+  if(WIN32)
+    target_link_libraries(hyle_io_scaling_bench PRIVATE ws2_32)
+  endif()
 endif()
 
 # error-module bench: Status/Result (zero-dependency root, every hot-path return type)
