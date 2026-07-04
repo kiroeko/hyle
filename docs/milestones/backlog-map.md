@@ -21,14 +21,14 @@
 
 | 里程碑 | 缺什么 | 就绪度 | 建议 |
 |---|---|---|---|
-| platform-02b | virtual_memory(mmap/VirtualAlloc 封装) | 🟢 就绪 | 小件,compute device buffer 可能用到,可随手补 |
+| platform-02b | virtual_memory(host 端 mmap/VirtualAlloc 封装:保留/提交分离 + guard page) | 🟢 就绪 | **host 内存管理,与显存无关**。真实消费者=**fiber 栈 guard page 溢出保护**(mem-design fiber_stack.h)。**纠正旧记:compute device buffer 走 ggml buffer_type、显式 DMA,不用它**——离散 GPU 在 VRAM 里算,host 不可解引用。无紧迫消费者,按需 |
 | mem-06 | NUMA + 大页 + stats 下溢修复 | 🟢 就绪 | 优先级低(单机未压 NUMA);北极星未要求,**可缓** |
 | simd-03 尾 | NEON / AVX512 真机跑 | 🔴 **缺硬件**(无 ARM 机 / 无 AVX512 机) | 已写+编+objdump 验;**硬阻塞**,待真机/QEMU/SDE。非优先级问题 |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
 
 > container-06c(模糊路径匹配)**2026-07-05 ✅ 完成**,已从本表移除(抄 fzf V1 两趟算法,benchmark 证 O(N),container 160/160)。
 
-**A 类结论**:除 simd-03(硬件硬阻塞)外全部"就绪但低优先级"。**platform-02b 值得随 compute 开工时一并补**(device buffer 要 mmap)。其余不阻塞北极星,按需。
+**A 类结论**:除 simd-03(硬件硬阻塞)外全部"就绪但低优先级"。**platform-02b 的真实用途是 host 端 fiber 栈 guard page + 保留/提交型分配(与显存无关)**,唯一现实消费者是 sched 的栈溢出保护,不阻塞 compute。其余不阻塞北极星,按需。
 
 ## 三、B 类:能力驱动的半成品机制(前置就绪度是排期关键)
 
