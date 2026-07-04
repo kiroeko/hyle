@@ -173,6 +173,16 @@ inline std::int64_t resume_timed(TimedSlot* s) noexcept {
   return result;
 }
 
+// Called when the proactor submit failed (ring full / bad fd): the kernel never
+// took the op, so no completion will drop its kernel ref -- drop it here, cancel
+// the timer, mark done so await_resume returns the error without suspending.
+inline void on_submit_failed(TimedSlot* s) noexcept {
+  sched::cancel_timeout(&s->timer);
+  s->io.result = -1;
+  s->io_done = true;
+  s->release();  // kernel ref (never materialized)
+}
+
 }  // namespace detail
 
 // co_await TimedRecvOp -> bytes read (>=0), negative errno, or -ETIMEDOUT (-110).
@@ -193,19 +203,72 @@ struct TimedRecvOp {
     slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
     if (slot_ == nullptr) return false;  // OOM -> await_resume returns error
     if (!p->submit_recv(fd, buf, len, 0, to_timed_token(slot_))) {
-      // Submit failed: the kernel never took the op, so its ref won't be dropped by
-      // a completion -- drop it here. Cancel the timer, mark done, resume at once.
-      sched::cancel_timeout(&slot_->timer);
-      slot_->io.result = -1;
-      slot_->io_done = true;
-      slot_->release();  // kernel ref (never materialized)
-      return false;
+      detail::on_submit_failed(slot_);
+      return false;  // resume immediately
     }
     sched::suspend();
     return false;
   }
   std::int64_t await_resume() noexcept {
     if (slot_ == nullptr) return -1;  // OOM
+    return detail::resume_timed(slot_);
+  }
+};
+
+// co_await TimedAcceptOp -> accepted fd (>=0), negative errno, or -ETIMEDOUT.
+// The listener's accept is raced against the deadline (a server that wants to stop
+// accepting after a quiet period, or bound its accept latency).
+struct TimedAcceptOp {
+  Proactor* p;
+  std::intptr_t fd;  // listening socket
+  mem::Allocator alloc;
+  std::uint64_t deadline_ns;
+
+  TimedSlot* slot_ = nullptr;
+
+  bool await_ready() noexcept { return false; }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    if (slot_ == nullptr) return false;
+    if (!p->submit_accept(fd, nullptr, nullptr, to_timed_token(slot_))) {
+      detail::on_submit_failed(slot_);
+      return false;
+    }
+    sched::suspend();
+    return false;
+  }
+  std::int64_t await_resume() noexcept {
+    if (slot_ == nullptr) return -1;
+    return detail::resume_timed(slot_);
+  }
+};
+
+// co_await TimedConnectOp -> 0 on success, negative errno, or -ETIMEDOUT. Bounds a
+// connect to a slow/unreachable peer (the classic "connect timeout"). `addr` must
+// outlive the co_await (keep it on the coroutine frame).
+struct TimedConnectOp {
+  Proactor* p;
+  std::intptr_t fd;
+  const void* addr;
+  std::uint32_t addrlen;
+  mem::Allocator alloc;
+  std::uint64_t deadline_ns;
+
+  TimedSlot* slot_ = nullptr;
+
+  bool await_ready() noexcept { return false; }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    if (slot_ == nullptr) return false;
+    if (!p->submit_connect(fd, addr, addrlen, to_timed_token(slot_))) {
+      detail::on_submit_failed(slot_);
+      return false;
+    }
+    sched::suspend();
+    return false;
+  }
+  std::int64_t await_resume() noexcept {
+    if (slot_ == nullptr) return -1;
     return detail::resume_timed(slot_);
   }
 };

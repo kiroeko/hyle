@@ -214,10 +214,44 @@ TEST(IoTimeout, IoWinsReturnsBytes) {
   EXPECT_STREQ(r->got, "prompt");
 }
 
-// Leak check: run the timeout-wins path with a COUNTING allocator and assert the
-// heap TimedSlot is fully reclaimed after teardown. This is the guard for the
-// "timeout path never releases the kernel-ref" bug class (epoll synth-cancel +
-// shutdown orphan drain) that functional asserts + TSan both miss.
+// Accept with a deadline: no client ever connects -> the timer must win.
+struct AcceptResult {
+  std::atomic<bool> done{false};
+  std::atomic<std::int64_t> rc{999};
+};
+
+Task<int> accept_timeout_client(Allocator alloc, IoContext* io, TcpListener* ls,
+                                AcceptResult* r) {
+  std::uint64_t deadline = hyle::time::monotonic_ns() + 50'000'000ull;
+  // No one connects; the timed accept must return -ETIMEDOUT.
+  std::int64_t rc = co_await hyle::io::TimedAcceptOp{
+      &io->proactor_for_current(), ls->fd(), alloc, deadline};
+  r->rc.store(rc, std::memory_order_release);
+  r->done.store(true, std::memory_order_release);
+  co_return 0;
+}
+
+TEST(IoTimeout, AcceptTimesOut) {
+  constexpr unsigned kWorkers = 2;
+  constexpr std::uint16_t kPort = 54393;
+  Scheduler sched(kWorkers, system_allocator(), 256);
+  IoContext io(sched, kWorkers);
+  ASSERT_TRUE(io.valid());
+  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
+  ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+
+  auto r = std::make_unique<AcceptResult>();
+  auto d = std::make_unique<Drive>();
+  d->task = accept_timeout_client(system_allocator(), &io, &ls, r.get());
+  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  sched.spawn_on(kOwner, &f);
+  sched.drain();
+  sched.shutdown();
+
+  EXPECT_TRUE(r->done.load());
+  EXPECT_EQ(r->rc.load(), -110);  // accept timed out
+}
+
 TEST(IoTimeout, TimeoutPathDoesNotLeakSlot) {
   constexpr unsigned kWorkers = 2;
   constexpr std::uint16_t kPort = 54392;
