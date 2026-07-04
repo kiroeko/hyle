@@ -21,6 +21,24 @@ io-01/02/03 阶段**故意不出性能数**(见总账 io 行的"缺口登记")�
 
 **关键转折(2026-07-03,submit 批量落地后)**:单 worker 从**曾经的 440K(输裸 epoll 0.61x)提到 ~730-800K(追平/微赢)**——约 1.7x 提升。机制铁证:`HYLE_IO_BENCH_STATS` 打出 **`avg_batch=13~61`**(每次 `io_uring_enter` 提交 13-61 个 SQE),对比批量前恒为 1.0。这直接砍掉了曾经主导的"每 op 一次 syscall"开销。**shard-per-core 扩展仍在**(1w→4w ~2x)。
 
+## vs 裸 liburing:抽象的代价,与扩展性怎么赢回来(`-DHYLE_BENCH_LIBURING`)
+
+raw epoll 对照答的是"vs 旧就绪模型";要答"vs **同样的 io_uring**、社区标准封装手写的紧凑循环",echo_bench 增了一个裸 liburing 对照行(gated `-DHYLE_BENCH_LIBURING`,链接 liburing.a)。同样 64conn×64rt×64B socketpair ping-pong,单线程单 ring 状态机(`user_data` 编码 conn<<2|stage,`submit_and_wait`+`for_each_cqe`),无 fiber、无协程、无调度器。与 HYLE 行在**同一次 nanobench run** 并排出相对比(同环境,最公平)。
+
+**Linux io_uring 实测(同次 run,relative 列可信;绝对值受当次机器负载影响)**:
+
+| 配置 | ns/echo | echo/s | 对 HYLE-1w |
+|---|---|---|---|
+| HYLE shard-per-core 1 worker | 1,869 | 535K | 1.0x |
+| HYLE shard-per-core 4 workers | **709** | **1.41M** | 2.6x |
+| **裸 liburing 1 thread(手写)** | **810** | **1.23M** | 2.3x |
+| 裸 epoll 1 thread | 1,283 | 779K | 1.5x |
+
+**诚实解读(这不是"HYLE 全面赢"的故事,是个更真实的故事)**:
+1. **单线程比,裸 liburing 快 HYLE 1-worker ~2.3x**(810 vs 1869ns)。这是**协程/fiber 抽象的固定代价**,符合预期、非 bug:HYLE 每 op 完成要"唤醒 waker → fcontext 切换 → 协程恢复 → co_await 下一 op → 再挂起",每 round-trip 4 op 各摊一次 fiber 往返(~20ns 切换 + 协程胶水);裸 liburing 收割一个 CQE 后**直接在同循环 prep 下一个**,零上下文切换。抽象换的是**可组合性**(co_await 顺序代码 vs 手写状态机),代价是这段固定切换开销。
+2. **HYLE 用 shard-per-core 把单核劣势赢回来**:4 worker(709ns)**反超**单线程裸 liburing(810ns)。裸 liburing 那个循环是单线程的,要多核得自己手写 sharding + 跨核协调;HYLE 的 `spawn_on` + 每核 ring 让连接分片到核是**免费的结构收益**。所以"SOTA"的正确表述:**单核吞吐输给零抽象的手写循环(抽象代价),但可组合性 + 开箱即用的 shard-per-core 扩展让它以多核反超**——这才是一个协程运行时相对裸 API 的真实定位。
+3. 本次 HYLE-1w(535K)低于上文记的 730-800K 区间,是当次机器负载差异(我并发开着多个 WSL 会话跑对标);**同次 run 内的 relative 比不受影响**,故对标结论以 relative 列为准。
+
 ## pipelined / 高扇出(512 流)+ 一个被它揪出的 P0 hang
 
 ping-pong(每流稳态 ≤1 op 在途)填不满 SQ,也测不到"海量 op 同时在途"的收割路径。故加一个 pipelined 负载:**512 条独立 echo 流共享 worker,每流 16 round-trip**——512 » ring 深度 256,一次 reap 唤醒的一批 fiber 各自 submit,几百个 op 同时在途。
@@ -139,7 +157,7 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 
 ## 未做(登记)
 
-- **裸 liburing 对标**:证 HYLE 相对 liburing echo 的 0 封装开销。WSL 缺 `liburing-dev`;HYLE 本用裸 syscall,可后续在 bench 内手写等价 liburing echo 或装库补。
+- ✅ **裸 liburing 对标**(已做,见上"vs 裸 liburing"节):liburing 本地 clone `../liburing`,`-DHYLE_BENCH_LIBURING=ON` 自动 configure+make 链接。结论:单核输 2.3x(抽象代价)、4 核反超。
 - **vs asio / libuv**:证不输成熟异步框架。
 - **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
 - Windows IOCP 的批量对应物(IOCP 无 submit 攒批概念,ReadFile/WriteFile 即时下发)+ n=15 统计版。
