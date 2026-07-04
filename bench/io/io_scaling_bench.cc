@@ -2,25 +2,26 @@
 // worker scaling at a FIXED 64-conn/64B load; this file proves the two COMPLEXITY
 // curves a "SOTA proactor" claim rests on -- what a single-point ratio can't show:
 //
-//  1. CONNECTION-COUNT SCALING (O(1) per connection). FIXED round-trips PER
-//     connection, spread over N = 64/256/1024 concurrent connections on one worker.
-//     Reported as ns-per-round-trip. Because R is per-connection (not a fixed total),
-//     the batch (N*R) grows with N in lockstep with the O(N) setup cost (build N
-//     socketpairs + 2N fibers), so that setup lands as a CONSTANT per-round-trip
-//     offset instead of ballooning as N rises. A FLAT (or gently improving, as
-//     submit-batching amortizes) line across the 16x conn span proves the completion
-//     path has NO per-connection cost (io_uring/IOCP don't rescan an fd set the way
-//     select/poll do). A RISING line would betray a hidden O(N)-per-op cost. This is
-//     the core "proactor beats readiness" argument. NOTE: the absolute ns here is
-//     HIGHER than echo_bench's steady-state number because it includes that constant
-//     build offset -- this bench measures the SHAPE across N, not headline latency.
+//  1. CONNECTION-COUNT SCALING (proactor completion path is O(1) per op). FIXED
+//     round-trips PER connection, spread over N = 64/256/1024 concurrent connections
+//     on one worker. Reported as ns-per-round-trip. Because R is per-connection (not a
+//     fixed total), the batch (N*R) grows with N in lockstep with the O(N) setup cost
+//     (build N socketpairs + 2N fibers), so that setup lands as a CONSTANT ns/round-trip
+//     offset instead of ballooning as N rises. The proactor-side proof is in the STATS
+//     (HYLE_IO_BENCH_STATS): submit batch stays flat (~55 SQE/enter) and sqes grow
+//     EXACTLY linearly with N -- the io_uring/IOCP completion model has no per-connection
+//     cost (no fd-set rescan the way select/poll does). The measured ns/round-trip still
+//     rises modestly with N; that residual is a user-space working-set effect (more live
+//     fibers = more stack + Conn cache footprint -- a smaller-stack A/B collapses the
+//     64->256 step), NOT proactor algorithmic cost. The point of this row is that
+//     separation, documented honestly, not a single "flat == O(1)" claim.
 //
 //  2. PAYLOAD-SIZE SCALING (no hidden copy / per-byte walk). Fixed 64 conns, message
-//     size 64B/1KB/16KB/256KB, reported as BYTES/s: small sizes are syscall-bound,
-//     large sizes approach memory bandwidth. The curve must have NO super-linear knee
-//     -- a knee would mean an extra memcpy or per-byte pass in the co_await path.
-//     HYLE's awaitable hands the kernel the caller's buffer directly (zero-copy into
-//     the user buffer), so bytes/s should climb then plateau cleanly.
+//     size 64B/1KB/16KB/64KB, reported as BYTES/s: small sizes are syscall-bound, large
+//     sizes approach memory bandwidth. The curve must have NO super-linear knee -- a
+//     knee would mean an extra memcpy or per-byte pass in the co_await path. HYLE's
+//     awaitable hands the kernel the caller's buffer directly (zero-copy into the user
+//     buffer), so bytes/s should climb then plateau cleanly.
 //
 // Run under scripts/bench-stat.py -n 15 for the statistical verdict; the SHAPE across
 // rows (flat ns/op, clean bytes/s plateau) is the scaling readout, not any one number.
@@ -229,15 +230,21 @@ int main() {
   }
 #endif
 
-  // ---- 1. connection-count scaling: ns/round-trip vs #conns (flat => O(1)/conn) ----
+  // ---- 1. connection-count scaling: ns/round-trip vs #conns ----
   // FIXED round-trips PER connection (kRt), swept over N concurrent connections on ONE
   // worker (isolate the proactor cost from work-stealing). Because R is per-connection,
   // batch (N*R) tracks the O(N) build cost, so setup is a CONSTANT ns/round-trip offset
-  // -- a flat line across the 16x span => O(1) per connection. 64B payload.
+  // rather than a term that grows with N. What this ISOLATES is the proactor completion
+  // path: under HYLE_IO_BENCH_STATS the submit batch stays flat (avg ~55) and sqes grow
+  // exactly linearly with N -- i.e. the kernel/proactor side is clean O(1) per op, no
+  // fd-set rescan (the "proactor beats select/poll" argument). The MEASURED ns/round-trip
+  // still rises modestly with N (a user-space working-set effect: more live fibers = more
+  // stack + Conn cache footprint, confirmed by a smaller-stack A/B collapsing the 64->256
+  // step), NOT a per-op algorithmic cost. See docs/performance/benchmarks-io.md.
   {
     constexpr int kRt = 64;  // round-trips PER connection, held constant across N
     nb::Bench b;
-    b.title("io conn scaling: ns/round-trip vs #conns (flat => O(1)/conn)")
+    b.title("io conn scaling: ns/round-trip vs #conns (proactor side O(1)/op)")
         .unit("round-trip");
     for (int conns : {64, 256, 1024}) {
       char name[64];
@@ -249,18 +256,20 @@ int main() {
   }
 
   // ---- 2. payload-size scaling: bytes/s vs message size (clean plateau) ----
-  // Fixed 64 conns x 32 round-trips, message size sweeps 64B..256KB. Reported as
+  // Fixed 64 conns x 32 round-trips, message size sweeps 64B..64KB. Reported as
   // bytes/s: should rise (syscall amortized over more bytes) then plateau at memory
   // bandwidth, with NO super-linear knee (a knee = an extra copy / per-byte pass in the
   // co_await path). Fixed conn count => the socketpair build cost is a constant across
-  // the sweep (on Linux it is cheap next to 2048 round-trips of io).
+  // the sweep (on Linux it is cheap next to 2048 round-trips of io). The sweep stops at
+  // 64KB: by 16KB ns/byte is already at the memory-bandwidth floor (see the doc), and a
+  // 256KB row moves 512MB/iteration -- minutes of runtime for no extra shape.
   {
     constexpr int kConns = 64;
     constexpr int kRt = 32;
     nb::Bench b;
     b.title("io payload scaling: bytes/s vs msg size (clean plateau => no extra copy)")
         .unit("byte");
-    for (std::uint32_t sz : {64u, 1024u, 16384u, 262144u}) {
+    for (std::uint32_t sz : {64u, 1024u, 16384u, 65536u}) {
       char name[64];
       std::snprintf(name, sizeof(name), "payload=%uB", sz);
       // batch = total bytes moved (conns * rt * size) so nanobench reports bytes/s.
