@@ -57,6 +57,12 @@ std::uint64_t xorshift(std::uint64_t& s) noexcept {
 constexpr int kSpinPolls = 4096;       // cpu_relax polls (sub-µs, no syscall)
 constexpr int kYieldsBeforePark = 4;   // then cede the core a few times
 
+// Cap on consecutive LIFO-slot polls before the slot's fiber is demoted to the
+// local FIFO ring, so a hot ping-pong / RPC pair can't monopolize the worker and
+// starve its ring (tokio MAX_LIFO_POLLS_PER_TICK = 3; the sched-02 RunQueue uses
+// the same value). See the lifo_slot field + find_task for the mechanism.
+constexpr int kMaxLifoPolls = 3;
+
 
 }  // namespace
 
@@ -83,6 +89,17 @@ struct Scheduler::Impl {
     std::uint64_t rng;
     unsigned idx;             // own worker index: shard hint + pop-cursor seed
     std::size_t pop_cursor;   // round-robin cursor into the global ShardedQueue
+    // LIFO fast-slot (tokio lifo_slot, complexity opportunity ①). A single "run
+    // this next" fiber, filled when a wake fires ON this worker (reinject): the
+    // just-woken fiber resumes immediately on THIS core, stack + buffers cache-hot,
+    // instead of bouncing through the global queue + a notify() futex to some other
+    // core. TOUCHED ONLY BY THIS WORKER THREAD (filled by reinject when it runs on
+    // this worker, drained by find_task), so it is a plain field -- no atomics, and
+    // the work-stealing path never sees it, so a slot fiber is naturally steal-
+    // exempt (a ping-pong partner can't be stolen away mid-flight). lifo_polls caps
+    // consecutive slot hits (kMaxLifoPolls) so the ring can't starve.
+    Fiber* lifo_slot = nullptr;
+    int lifo_polls = 0;
     Worker(mem::Allocator a, std::size_t cap, std::uint64_t seed, unsigned i)
         : local(a, cap),
           wheel(time::monotonic_ns()),
@@ -181,8 +198,29 @@ struct Scheduler::Impl {
     // here and is never stolen. Popped only by this worker; MPMC push from wakers.
     Fiber* pf = nullptr;
     if (w.pinned.try_pop(pf)) return pf;
+    // LIFO fast-slot next (opportunity ①): a fiber just woken ON this worker
+    // resumes immediately, cache-hot, while under its poll budget. The budget cap
+    // (kMaxLifoPolls) stops a hot ping-pong pair from starving the local ring: once
+    // spent, demote the slot fiber to the ring and serve FIFO (which resets the
+    // budget). Mirrors tokio's lifo_slot + MAX_LIFO_POLLS_PER_TICK and the sched-02
+    // RunQueue::next logic. Single-threaded: only this worker touches lifo_slot.
+    if (w.lifo_slot != nullptr) {
+      if (w.lifo_polls < kMaxLifoPolls) {
+        ++w.lifo_polls;
+        Fiber* f = w.lifo_slot;
+        w.lifo_slot = nullptr;
+        return f;
+      }
+      // Budget spent: demote to the local ring so it stays reachable, then fall
+      // through to FIFO. If the ring is full, leave it in the slot (still makes
+      // progress -- it'll be taken once the budget resets after a FIFO draw).
+      if (w.local.push_back(w.lifo_slot)) w.lifo_slot = nullptr;
+    }
     auto r = w.local.pop();
-    if (r.ok) return r.value;
+    if (r.ok) {
+      w.lifo_polls = 0;  // drawing from FIFO resets the LIFO budget
+      return r.value;
+    }
     Fiber* g = nullptr;
     if (global.try_pop(w.pop_cursor, g)) return g;
     for (unsigned a = 0; a < n; ++a) {
@@ -190,6 +228,15 @@ struct Scheduler::Impl {
       if (v == self_idx) continue;
       auto s = workers[v]->local.steal_into(w.local);
       if (s.ok) return s.value;
+    }
+    // Nothing in the ring/global/steal: if a fiber is still stuck in the slot
+    // (budget was spent but the ring was full so we couldn't demote), run it now
+    // rather than falsely reporting "no work" and parking.
+    if (w.lifo_slot != nullptr) {
+      Fiber* f = w.lifo_slot;
+      w.lifo_slot = nullptr;
+      w.lifo_polls = 0;
+      return f;
     }
     return nullptr;
   }
@@ -317,6 +364,29 @@ struct Scheduler::Impl {
       return;
     }
     // Foreign-thread inject (Waker may fire anywhere): round-robin across shards.
+    // BUT if this wake is firing ON a worker thread (the common case: a fiber on
+    // worker X wakes a peer via Waker::wake, e.g. ping-pong / channel send / RPC
+    // reply), drop the woken fiber into THIS worker's LIFO fast-slot instead of the
+    // global queue (opportunity ①). It then resumes on THIS core next loop, stack
+    // + producer's just-written buffers cache-hot, and we skip both the global-shard
+    // CAS and the notify() futex. Any prior slot occupant is evicted to the local
+    // ring (never dropped). If the slot path can't take it (ring full on eviction),
+    // fall through to the global queue. NOT used for pinned fibers (handled above)
+    // nor cooperative yields (those go through reschedule, never here) -- only real
+    // wakes, so tokio's "yields never use the LIFO slot" fairness rule is honored.
+    if (t_current == this && t_worker_idx >= 0) {
+      Worker& w = *workers[static_cast<unsigned>(t_worker_idx)];
+      if (w.lifo_slot == nullptr) {
+        w.lifo_slot = f;
+        return;  // this worker pops it next find_task; no notify (we ARE awake)
+      }
+      // Slot occupied: evict the older occupant to our local ring, install f.
+      if (w.local.push_back(w.lifo_slot)) {
+        w.lifo_slot = f;
+        return;
+      }
+      // Ring full -> can't evict; fall through to the global queue for f.
+    }
     while (!global.try_push(inject_rr_.fetch_add(1, std::memory_order_relaxed), f))
       platform::this_thread::yield();
     notify();
