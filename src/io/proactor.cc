@@ -269,6 +269,16 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   // Post a synthetic completion: key = user_data (the Waker token), bytes =
   // result. Wakes a blocked reap() from any thread AND drives tests without a
   // real fd. OVERLAPPED is nullptr -- reap() uses that to tell it from a real op.
+  //
+  // CONTRACT: `result` must be a NON-NEGATIVE, <=32-bit value on IOCP. It rides
+  // dwNumberOfBytesTransferred (a 32-bit DWORD) and reap() zero-extends it back, so
+  // a negative result (e.g. -errno) would be mangled into a large positive value
+  // and a >2^32 result truncated. This is fine for post()'s uses (a wake token, a
+  // byte count); anything needing a negative/64-bit outcome must NOT go through
+  // post() -- a real op carries its int64 result via GetOverlappedResult/neg_err,
+  // and the io-05 file path uses a 64-bit syn_result IoOp instead. Assert in debug
+  // so a future negative-post caller is caught at once rather than silently mangled.
+  HYLE_FATAL_ASSERT(result >= 0 && result <= 0xFFFFFFFFll);
   return ::PostQueuedCompletionStatus(
              impl_->port,
              static_cast<DWORD>(static_cast<std::uint64_t>(result)),
