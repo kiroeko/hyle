@@ -3,6 +3,44 @@
   "cmakeMinimumRequired": { "major": 3, "minor": 21, "patch": 0 },
   "configurePresets": [
     {
+      "name": "win",
+      "displayName": "Windows MSVC (Ninja, Release, TLS via vcpkg OpenSSL)",
+      "description": "Day-to-day Windows dev build. Run inside a VsDevCmd x64 shell (cl/ml64/INCLUDE injected). OpenSSL is picked up from vcpkg so io-08 TLS builds without passing -DOPENSSL_ROOT_DIR each time: set the OPENSSL_ROOT_DIR env var to override, else the repo-convention path C:/public/vcpkg/installed/x64-windows is used. If OpenSSL isn't installed there, TLS just isn't compiled (opt-in dependency).",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "OPENSSL_ROOT_DIR": "$env{OPENSSL_ROOT_DIR}"
+      },
+      "environment": {
+        "OPENSSL_ROOT_DIR": "C:/public/vcpkg/installed/x64-windows"
+      }
+    },
+    {
+      "name": "wsl",
+      "displayName": "Linux/WSL GCC14 (Ninja, Release)",
+      "description": "Day-to-day Linux dev build. GCC 14 (the CMake toolchain gate rejects the distro-default gcc-13). TLS is found zero-config from the system libssl-dev. NOTE the 9p rule: run heavy IO / stress / bench from a native-ext4 clone (e.g. /root/hyle), never from /mnt/c.",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build-wsl",
+      "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Linux" },
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CMAKE_C_COMPILER": "gcc-14",
+        "CMAKE_CXX_COMPILER": "g++-14"
+      }
+    },
+    {
+      "name": "wsl-tsan",
+      "displayName": "Linux/WSL GCC14 + ThreadSanitizer",
+      "description": "TSan build for lock-free / concurrency work (MANDATORY before landing such changes). Run the test exes under `setarch -R` to disable ASLR for stable TSan. Separate binary dir so it never shares a cache with the plain Release build.",
+      "inherits": "wsl",
+      "binaryDir": "${sourceDir}/build-wsl-tsan",
+      "cacheVariables": {
+        "HYLE_SANITIZER": "tsan"
+      }
+    },
+    {
       "name": "bench",
       "displayName": "benchmarks (no external SOTA rivals)",
       "description": "Release + microbenchmarks. HYLE baselines + std/vendored rivals only (no clones needed).",
@@ -32,6 +70,9 @@
     }
   ],
   "buildPresets": [
+    { "name": "win", "configurePreset": "win" },
+    { "name": "wsl", "configurePreset": "wsl" },
+    { "name": "wsl-tsan", "configurePreset": "wsl-tsan" },
     { "name": "bench", "configurePreset": "bench" },
     { "name": "bench-all-sota", "configurePreset": "bench-all-sota" }
   ]
