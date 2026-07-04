@@ -17,6 +17,11 @@ if(HYLE_HAS_FCONTEXT)
   # fcontext (hence sched) exists. proactor.cc itself never depends on sched.
   list(APPEND _io_sources io_context.cc tcp.cc udp.cc file.cc signal.cc dns.cc)
   list(APPEND _io_deps hyle_sched)
+  # io-10 HTTP/1.1: integration layer (read loop -> feed parser -> Request/Response
+  # -> write) over co_await TcpStream, so it needs sched too. Protocol PARSING is
+  # borrowed from vendored picohttpparser (pure state machine, zero IO/threads) --
+  # HYLE only writes the integration. See docs scope "HTTP 最终结论".
+  list(APPEND _io_sources http.cc "${PROJECT_SOURCE_DIR}/third_party/picohttpparser/picohttpparser.c")
   # io-08 TLS: only when OpenSSL is available (optional capability). TlsStream is a
   # co_await layer over TcpStream, so it also needs sched. Guarded by HYLE_IO_TLS so
   # tls.h is inert without OpenSSL and a TLS-free build carries no OpenSSL dep.
@@ -25,6 +30,22 @@ if(HYLE_HAS_FCONTEXT)
   endif()
 endif()
 hyle_add_module(io SOURCES ${_io_sources} DEPS ${_io_deps})
+
+if(HYLE_HAS_FCONTEXT)
+  # picohttpparser is a vendored single-file C parser. Include its dir as SYSTEM
+  # (suppress its warnings under our /W4|-Wall) and silence the .c TU's own warnings,
+  # exactly like simdutf.cpp in src/container. It has an optional SSE4.2 fast path
+  # gated on __SSE4_2__; the project-global -mssse3 doesn't enable it, so it uses the
+  # portable scalar scan (fine -- header parsing isn't the bottleneck).
+  target_include_directories(hyle_io SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/picohttpparser")
+  if(MSVC)
+    set_source_files_properties("${PROJECT_SOURCE_DIR}/third_party/picohttpparser/picohttpparser.c"
+      PROPERTIES COMPILE_OPTIONS "/w")
+  else()
+    set_source_files_properties("${PROJECT_SOURCE_DIR}/third_party/picohttpparser/picohttpparser.c"
+      PROPERTIES COMPILE_OPTIONS "-w")
+  endif()
+endif()
 
 if(HYLE_HAS_FCONTEXT AND OpenSSL_FOUND)
   # Dynamic-link OpenSSL (security lib tracks system CVE updates). PUBLIC define so

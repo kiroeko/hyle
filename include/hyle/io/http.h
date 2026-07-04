@@ -1,0 +1,293 @@
+#pragma once
+
+#include <cstddef>
+#include <cstdint>
+
+#include "hyle/container/string_ref.h"
+#include "hyle/io/io_context.h"
+#include "hyle/io/tcp.h"
+#include "hyle/mem/allocator.h"
+#include "hyle/sched/coro.h"
+
+#if defined(HYLE_STATIC)
+#  define HYLE_IO_API
+#elif defined(HYLE_IO_BUILD)
+#  define HYLE_IO_API HYLE_EXPORT
+#else
+#  define HYLE_IO_API HYLE_IMPORT
+#endif
+
+// io-10 HTTP/1.1 skeleton over the co_await TcpStream. Per docs scope "HTTP 最终
+// 结论": HYLE owns the io (TCP/proactor/fiber) + writes the INTEGRATION layer (read
+// loop -> feed parser -> Request/Response -> write); protocol PARSING is borrowed
+// from vendored picohttpparser (a pure zero-IO state machine). ROUTING / handlers /
+// business endpoints (/v1/chat) stay in the LAYER ABOVE -- this is a skeleton, not a
+// framework. The value + performance is "HTTP over our own io_uring/shard-per-core,
+// no second runtime, no blocking thread pool": bytes never leave the fiber/proactor.
+//
+// Two API levels (both provided, per design):
+//   * LOW  -- HttpServerConn::next_request() / send_response() primitives: full
+//             control, the caller drives the keep-alive loop.
+//   * HIGH -- http_serve(listener, handler): a thin wrapper that runs the loop and
+//             calls a co_await handler(req) -> response for each request (llama.cpp
+//             style). Routing lives inside the handler.
+//
+// Streaming responses are a FIRST-CLASS citizen from day one (not a bolt-on): LLM
+// serving streams tokens as they generate (chunked transfer / SSE). A response
+// either carries a whole body OR a generator callback that yields chunks until done.
+//
+// THREADING / shard-per-core: an HttpServerConn wraps one TcpStream pinned to its
+// owner worker; all its co_awaits run on that fiber/core (same contract as
+// TcpStream). One connection = one fiber = one core, serialized, lock-free.
+
+struct phr_header;  // picohttpparser (impl detail; never leaks into this header)
+
+namespace hyle::io {
+
+using hyle::container::string_ref;
+
+// Cap on request-line + headers (DoS guard: the incremental parse buffer is capped
+// here; a client that never sends the header terminator can't grow it unbounded).
+inline constexpr std::uint32_t kHttpMaxHeaderBytes = 64 * 1024;
+// Default cap on a buffered request body. A streaming/large upload path can raise
+// it per-connection; unbounded Content-Length is a memory-exhaustion DoS.
+inline constexpr std::uint64_t kHttpMaxBodyBytes = 8ull * 1024 * 1024;
+// Header slots parsed per message (picohttpparser fills a fixed array).
+inline constexpr std::size_t kHttpMaxHeaders = 64;
+
+// Forward declarations: the co_await layers are FREE coroutines (Allocator-first);
+// they need friend access to the message types' private view fields, so declare
+// them here before those types.
+class HttpServerConn;
+class HttpClientConn;
+class HttpRequest;
+class HttpResponse;
+class HttpResponseView;
+sched::Task<HttpRequest*> http_server_next(mem::Allocator, HttpServerConn&) noexcept;
+sched::Task<bool> http_server_send(mem::Allocator, HttpServerConn&,
+                                   const HttpResponse&) noexcept;
+sched::Task<HttpResponseView*> http_client_request(mem::Allocator, HttpClientConn&,
+                                                   string_ref, string_ref,
+                                                   string_ref, string_ref) noexcept;
+
+// ---- HttpRequest -----------------------------------------------------------
+// A parsed request. method/path/header views point INTO the connection's read
+// buffer (zero-copy) and are valid only until the next next_request() on the same
+// connection (which reuses the buffer). body() likewise views buffered bytes. The
+// high-level handler receives it by const& and must copy anything it keeps.
+class HttpRequest {
+ public:
+  string_ref method() const noexcept { return method_; }
+  string_ref target() const noexcept { return target_; }  // raw request-target (path?query), undecoded
+  string_ref path() const noexcept { return path_; }      // target with any ?query stripped
+  string_ref query() const noexcept { return query_; }    // after '?', empty if none
+  int minor_version() const noexcept { return minor_version_; }  // 0 => HTTP/1.0, 1 => HTTP/1.1
+
+  std::size_t header_count() const noexcept { return header_count_; }
+  // header name/value by index (0..header_count()). Names are case-insensitive per
+  // HTTP; use header() for a case-insensitive lookup.
+  string_ref header_name(std::size_t i) const noexcept;
+  string_ref header_value(std::size_t i) const noexcept;
+  // Case-insensitive header lookup; returns an empty string_ref if absent.
+  HYLE_IO_API string_ref header(string_ref name) const noexcept;
+
+  // The (buffered) request body. Empty for GET/DELETE and when there is no body.
+  string_ref body() const noexcept { return body_; }
+  bool keep_alive() const noexcept { return keep_alive_; }
+
+ private:
+  friend sched::Task<HttpRequest*> http_server_next(mem::Allocator,
+                                                    HttpServerConn&) noexcept;
+  string_ref method_, target_, path_, query_, body_;
+  // Header views are stored as offsets into the parser's phr_header array, exposed
+  // via the accessors above. We keep the raw array pointer + count (set by the conn).
+  const phr_header* headers_ = nullptr;
+  std::size_t header_count_ = 0;
+  int minor_version_ = 1;
+  bool keep_alive_ = true;
+};
+
+// ---- HttpResponse ----------------------------------------------------------
+// What a handler produces. Either a whole in-memory body (set_body) OR a streaming
+// generator (set_stream) for chunked transfer -- the LLM-serving path. Headers are
+// caller-provided views that must outlive the send (the handler's frame does).
+//
+// The streaming generator is a fiber-side pull callback: each time the writer needs
+// the next chunk it co_awaits nothing itself -- instead the generator is a
+// `sched::Task<StreamChunk>`-producing functor. To stay allocation-light and avoid
+// std::function in a hot path, the generator is expressed as a type-erased raw
+// fn-ptr + context (same pattern as Fiber::EntryFn / spawn_blocking), producing the
+// next chunk (data + "more?") on each call. See http.cc for the write pump.
+struct StreamChunk {
+  const void* data = nullptr;
+  std::uint32_t len = 0;
+  bool more = true;  // false => this is the final chunk (may also be empty)
+};
+
+class HttpResponse {
+ public:
+  // A streaming body generator: called repeatedly on the connection's fiber; each
+  // call returns the next chunk. When StreamChunk::more is false the stream ends.
+  // `ctx` is caller state (its lifetime must cover the send). Non-owning, no alloc.
+  using NextChunkFn = StreamChunk (*)(void* ctx) noexcept;
+
+  HttpResponse() noexcept = default;
+
+  // Status line. reason may be empty -> a default phrase is chosen for common codes.
+  void set_status(int code, string_ref reason = {}) noexcept {
+    status_ = code;
+    reason_ = reason;
+  }
+  // Append a header. name/value views must outlive the send.
+  HYLE_IO_API void add_header(string_ref name, string_ref value) noexcept;
+  // Whole in-memory body (sets Content-Length). Mutually exclusive with set_stream.
+  void set_body(string_ref body) noexcept {
+    body_ = body;
+    streaming_ = false;
+  }
+  // Streaming body via chunked transfer-encoding (Transfer-Encoding: chunked). The
+  // generator yields chunks until more==false. Use for SSE / token streaming.
+  void set_stream(NextChunkFn next, void* ctx) noexcept {
+    next_ = next;
+    stream_ctx_ = ctx;
+    streaming_ = true;
+  }
+
+  int status() const noexcept { return status_; }
+  bool streaming() const noexcept { return streaming_; }
+
+ private:
+  friend sched::Task<bool> http_server_send(mem::Allocator, HttpServerConn&,
+                                            const HttpResponse&) noexcept;
+  static constexpr std::size_t kMaxRespHeaders = 32;
+  string_ref reason_;
+  string_ref body_;
+  string_ref h_names_[kMaxRespHeaders];
+  string_ref h_vals_[kMaxRespHeaders];
+  std::size_t h_count_ = 0;
+  NextChunkFn next_ = nullptr;
+  void* stream_ctx_ = nullptr;
+  int status_ = 200;
+  bool streaming_ = false;
+};
+
+// ---- HttpServerConn (LOW-level primitive) ----------------------------------
+// Wraps one accepted TcpStream. Drives HTTP/1.1 over it: parse a request (headers +
+// body), let the caller build a response, write it, then loop for keep-alive. Owns
+// an internal growable read buffer (allocated via the given Allocator) that persists
+// across requests on the same connection (pipelined leftover bytes are preserved).
+//
+// Usage (low-level):
+//   HttpServerConn conn{alloc, std::move(stream)};
+//   while (true) {
+//     HttpRequest* req = co_await conn.next_request();   // nullptr => closed/error
+//     if (req == nullptr) break;
+//     HttpResponse resp; ... build ...
+//     if (!(co_await conn.send_response(resp))) break;
+//     if (!req->keep_alive()) break;
+//   }
+class HttpServerConn {
+ public:
+  HYLE_IO_API HttpServerConn(mem::Allocator alloc, TcpStream stream) noexcept;
+  HYLE_IO_API ~HttpServerConn();
+  HttpServerConn(HttpServerConn&&) noexcept;
+  HttpServerConn& operator=(HttpServerConn&&) noexcept;
+  HYLE_DISABLE_COPY(HttpServerConn);
+
+  bool valid() const noexcept { return impl_ != nullptr && stream_.valid(); }
+  TcpStream& stream() noexcept { return stream_; }
+
+  // co_await conn.next_request() reads + parses the next request. Yields
+  // HttpRequest* (points into internal state, valid until the next call) or nullptr
+  // on clean close / parse error / body too large. Implemented by forwarding to a
+  // free coroutine (Allocator-first) -- a MEMBER coroutine can't be used because the
+  // promise operator new would see `this` as its first arg, not the Allocator (the
+  // same trap TLS/dns/file hit; see tls.cc).
+  HYLE_IO_API sched::Task<HttpRequest*> next_request() noexcept;
+
+  // co_await conn.send_response(resp) -> true on success, false on socket error.
+  // Handles Content-Length vs chunked framing and the Connection header.
+  HYLE_IO_API sched::Task<bool> send_response(const HttpResponse& resp) noexcept;
+
+ private:
+  friend sched::Task<HttpRequest*> http_server_next(mem::Allocator, HttpServerConn&) noexcept;
+  friend sched::Task<bool> http_server_send(mem::Allocator, HttpServerConn&,
+                                            const HttpResponse&) noexcept;
+  struct Impl;
+  Impl* impl_ = nullptr;   // read buffer + parser scratch (heap, via Allocator)
+  TcpStream stream_;
+  mem::Allocator alloc_{};
+};
+
+// ---- high-level serve ------------------------------------------------------
+// Run the keep-alive loop on `conn`, calling `handler(req) -> Task<HttpResponse>`
+// for each request and writing the result. Returns when the connection closes. The
+// handler is a type-erased fn producing a Task; routing lives inside it. This is the
+// thin llama.cpp-style wrapper built on the primitives above.
+//
+// handler contract: HttpResponse must be fully described by the time its Task
+// completes (body view / stream ctx must outlive the subsequent send -- typically
+// the handler keeps them on its own coroutine frame or in caller-owned storage).
+// Allocator is FIRST (the coroutine-frame allocation idiom -- a handler that IS a
+// Task coroutine needs the allocator as its first parameter; see coro.h).
+using HttpHandlerFn = sched::Task<HttpResponse> (*)(mem::Allocator alloc, void* ctx,
+                                                    const HttpRequest& req) noexcept;
+
+HYLE_IO_API sched::Task<void> http_serve(mem::Allocator alloc, TcpStream stream,
+                                         HttpHandlerFn handler, void* ctx) noexcept;
+
+// ---- HttpClientConn --------------------------------------------------------
+// Client side over a connected TcpStream. send_request writes a request; then
+// read_response parses the status line + headers + body. Mirrors the server conn's
+// buffer management (phr_parse_response). Body is buffered (Content-Length/chunked).
+class HttpResponseView {
+ public:
+  int status() const noexcept { return status_; }
+  int minor_version() const noexcept { return minor_version_; }
+  string_ref reason() const noexcept { return reason_; }
+  std::size_t header_count() const noexcept { return header_count_; }
+  string_ref header_name(std::size_t i) const noexcept;
+  string_ref header_value(std::size_t i) const noexcept;
+  HYLE_IO_API string_ref header(string_ref name) const noexcept;
+  string_ref body() const noexcept { return body_; }
+
+ private:
+  friend sched::Task<HttpResponseView*> http_client_request(
+      mem::Allocator, HttpClientConn&, string_ref, string_ref, string_ref,
+      string_ref) noexcept;
+  string_ref reason_, body_;
+  const phr_header* headers_ = nullptr;
+  std::size_t header_count_ = 0;
+  int status_ = 0;
+  int minor_version_ = 1;
+};
+
+class HttpClientConn {
+ public:
+  HYLE_IO_API HttpClientConn(mem::Allocator alloc, TcpStream stream) noexcept;
+  HYLE_IO_API ~HttpClientConn();
+  HttpClientConn(HttpClientConn&&) noexcept;
+  HttpClientConn& operator=(HttpClientConn&&) noexcept;
+  HYLE_DISABLE_COPY(HttpClientConn);
+
+  bool valid() const noexcept { return impl_ != nullptr && stream_.valid(); }
+
+  // co_await conn.request(method, path, host, body) -> HttpResponseView* (valid
+  // until the next request) or nullptr on error. Writes "METHOD path HTTP/1.1\r\n
+  // Host: <host>\r\n" (+ Content-Length if body) + body, then parses the response.
+  // Forwards to a free coroutine (Allocator-first), same reason as the server conn.
+  HYLE_IO_API sched::Task<HttpResponseView*> request(string_ref method, string_ref path,
+                                                     string_ref host,
+                                                     string_ref body = {}) noexcept;
+
+ private:
+  friend sched::Task<HttpResponseView*> http_client_request(
+      mem::Allocator, HttpClientConn&, string_ref, string_ref, string_ref,
+      string_ref) noexcept;
+  struct Impl;
+  Impl* impl_ = nullptr;
+  TcpStream stream_;
+  mem::Allocator alloc_{};
+};
+
+}  // namespace hyle::io

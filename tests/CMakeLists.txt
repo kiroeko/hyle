@@ -55,6 +55,8 @@ if(HYLE_HAS_FCONTEXT)
   hyle_add_test(io NAME dns SOURCES io/dns_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME signal SOURCES io/signal_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME timeout SOURCES io/timeout_test.cc DEPS hyle_sched hyle_time)
+  # io-10 HTTP/1.1: server+client integration over loopback TCP (borrowed parser).
+  hyle_add_test(io NAME http SOURCES io/http_test.cc DEPS hyle_sched)
   # io-08 TLS: only when OpenSSL is available (matches the io module's optional TLS).
   # The test itself calls SSL_CTX_set_verify (client skips verify for the self-signed
   # cert), so it links OpenSSL directly too.

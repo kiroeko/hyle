@@ -39,15 +39,15 @@
 | **C3 结构化取消** | sched-07 | 无硬前置(C2 已定形 io cancel;但**无消费者**) | 🟡 **等消费者(HTTP fan-out)** | **重新定位(2026-07-05)**:sched-08 已证明优雅关闭**不需要**取消树(用平信号即可,已落地)。sched-07 的树价值="取消一请求→连带取消其派生的子 task",真实消费者是 HTTP 请求 fan-out(io-10)。现有 cancel_req/JoinHandle::abort(sched-10)+ io-06 submit_cancel 已覆盖单 task/单 io 取消。孤立做树=投机,等 io-10 驱动。最小形态已调研定案 |
 | **C4 优雅关闭** | sched-08 | signal ✅(C10);**不依赖 C3**(调研推翻) | ✅ **完成(2026-07-05)** | 调研发现关闭只需平信号广播不需取消树→与 C3 **解耦**。sched-08 落地:accepting 接纳位两阶段(begin_shutdown 拒新+广播 / drain_for 超时)+ shutdown_requested() 长命 fiber 轮询退出。有栈 fiber 超时不强杀(协作退/detach)。signal_set(C10)作触发器。双平台 sched 85/85 + TSan 净 |
 | **C9 TLS** | io-08 | io-04 ✅(over co_await stream) | ✅ **完成(三平台,2026-07-05)** | OpenSSL memory-BIO 泵 over co_await TcpStream:TlsContext/TlsStream + tls_handshake/read/write/shutdown。红队审净+修 2 隐患。Linux io_uring+epoll+TSan 净 + Windows IOCP 净(vcpkg OpenSSL 3.6.3)。可选依赖(不装 OpenSSL 零依赖) |
-| **C11 HTTP** | io-10(HTTP/1.1)+ io-11(HTTP/2) | 超时 C2 ✅ + TLS C9 ✅ + DNS C10 ✅ | 🟢 **就绪(前置全齐)** | 北极星① 刚需 REST。**三前置(超时/TLS/DNS)现全部就位**。io-10:借 picohttpparser + 自写集成层(co_await stream→parser→Request→Response→write over fiber/proactor)。io-10 会驱动 sched-07(请求 fan-out 取消)。HTTP/2(io-11)借 nghttp2 后置 |
+| **C11 HTTP** | io-10(HTTP/1.1)+ io-11(HTTP/2) | 超时 C2 ✅ + TLS C9 ✅ + DNS C10 ✅ | 🔶 **io-10 ✅ 完成(2026-07-05)** / io-11 后置 | 北极星① REST 门面。io-10 落地:借 vendored picohttpparser(596 行 C)+ 自写集成层(co_await TcpStream→parser→Request/Response→write)。两级 API + client + chunked 流式(SSE)。红队审修 3 真 bug + chunked 跨平台 bug。三后端×常规+TSan 全绿。**驱动 sched-07**(请求 fan-out 取消)待做。HTTP/2(io-11)借 nghttp2 后置 |
 
 **B 类结论——明确的开工顺序**:
 1. ~~io-06 / C2(带超时 io)~~ ✅ **完成**。顺带落地 sched-04d。
 2. ~~sched-08 / C4(优雅关闭)~~ ✅ **完成**。调研解耦了 C3。**sched 支柱收口**(01~11 全 ✅,仅 07 等 HTTP 消费者)。
-3. ~~io-08 / C9(TLS)~~ ✅ **完成(Linux,2026-07-05)**。OpenSSL memory-BIO,红队审净。
-4. **io-10 / C11(HTTP/1.1)** 🟢 — **下一顺位**,三前置(超时 C2 + TLS C9 + DNS C10)现全部就位。借 picohttpparser + 自写集成层。**北极星① 推理引擎的 REST 门面 = 服务器骨架最后一块**。它会驱动 sched-07(请求 fan-out 取消)。
-5. **sched-07 / C3(取消)** — 由 io-10 HTTP fan-out 驱动。
-6. **compute 支柱**(C 类)可与 HTTP 线并行推进(0 行、前置就绪、北极星① 算力本体)。
+3. ~~io-08 / C9(TLS)~~ ✅ **完成(三平台,2026-07-05)**。OpenSSL memory-BIO,红队审净。
+4. ~~io-10 / C11(HTTP/1.1)~~ ✅ **完成(三平台,2026-07-05)**。借 picohttpparser + 自写集成层,两级 API + client + chunked 流式。红队审修 3 真 bug + chunked 跨平台 bug。**北极星① 服务器骨架最后一块落地**。现在**驱动 sched-07** 就绪(有真实 HTTP fan-out 消费者了)。
+5. **sched-07 / C3(取消)** 🟢 — **下一顺位**,io-10 HTTP 落地=真实 fan-out 消费者到位(一请求 handler 派生多子 task 需连带取消)。最小形态已调研定案(shard-per-core 单线程无锁 parent*/child 链)。
+6. **compute 支柱**(C 类)可与 sched-07 并行推进(0 行、前置就绪、北极星① 算力本体)。**io-11 HTTP/2**(借 nghttp2)后置。
 
 ## 四、C 类:依赖序未到的主体支柱(最大剩余块)
 
