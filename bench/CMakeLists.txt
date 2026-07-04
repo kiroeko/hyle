@@ -159,6 +159,15 @@ if(HYLE_HAS_FCONTEXT)
   hyle_apply_warnings(hyle_sched_sync_ext_bench)
 endif()
 
+# sched-11 spawn_blocking bench: the blocking-offload pool round-trip + fan-out. HYLE
+# rows always build (into hyle_sched); the marl blocking_call comparison row is gated
+# -DHYLE_BENCH_MARL (wired in the marl block below). Own exe; needs fcontext.
+if(HYLE_HAS_FCONTEXT)
+  add_executable(hyle_sched_blocking_bench sched/blocking_bench.cc)
+  target_link_libraries(hyle_sched_blocking_bench PRIVATE hyle_sched nanobench)
+  hyle_apply_warnings(hyle_sched_blocking_bench)
+endif()
+
 # sched-10 JoinHandle/spawn_task/when_all/when_any bench: proves the structured-
 # concurrency layer is ~zero-overhead vs the raw fiber+WaitGroup(1)+slot it wraps.
 # Own exe (scheduler_bench owns main). Needs fcontext like the rest of sched.
@@ -378,6 +387,12 @@ if(HYLE_BENCH_MARL)
   add_executable(hyle_sched_marl_bench sched/sync_marl_bench.cc)
   target_link_libraries(hyle_sched_marl_bench PRIVATE hyle_sched nanobench marl)
   hyle_apply_warnings(hyle_sched_marl_bench)
+  # sched-11 blocking_bench's marl comparison row (marl::blocking_call = new-thread-
+  # per-call; the HYLE-pool-vs-marl-new-thread head-to-head). Same gate; links marl.
+  if(TARGET hyle_sched_blocking_bench)
+    target_compile_definitions(hyle_sched_blocking_bench PRIVATE HYLE_BENCH_MARL)
+    target_link_libraries(hyle_sched_blocking_bench PRIVATE marl)
+  endif()
 endif()
 
 # Optional SOTA parity bench: SwissTable vs absl::flat_hash_map. Off by default
