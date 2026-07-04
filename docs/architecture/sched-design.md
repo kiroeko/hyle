@@ -122,6 +122,7 @@ loop:
 - 新任务入队且 `num_searching == 0`（且 `num_unparked < num_workers`）时，**只** `notify_one`（唤醒一个）。
 - 被唤醒的 worker 置为 searcher；它找到活、从 searching 转 running 时，**若它是最后一个 searcher，再唤醒一个**（baton-passing 接力，tokio `transition_worker_from_searching`）。
 - 净效果：醒着的 worker 数恰好匹配可用工作量，既不惊群也不漏唤醒。（Go `wakep` / tokio `idle.rs` / actives/thieves 论文同款。）
+- **sleeper 集 O(1) 维护（复杂度机会②，HYLE 对 tokio 的偏离）**：parked worker id 存一个紧凑栈 `sleepers` + 一个 per-worker `sleeper_pos`(在栈中的下标或"未睡")。`remove_sleeper` 按 `sleeper_pos` 直接 swap-remove(O(1))，不扫描。**为何偏离 tokio**：tokio 的 `unpark_worker_by_id` 容忍 O(worker数)扫描(它只在罕见的"自唤醒且本地有活"路径触发)；HYLE 在**每次 park 退出**都调 `remove_sleeper`，且在 `idle_mu` 锁内——O(1) 化同时缩短了 park/unpark 抖动下的临界区。同锁保护，无新原子，TSan 净。
 
 > **HYLE 超越点（fiber vs task）**：tokio LIFO slot 仅省一次入队；HYLE 偷 fiber = 迁移其栈（跨核后栈+buffer cache 失效，比偷无栈 future 代价更高），所以"唤回 origin_core LIFO slot"（见 3.3）对 HYLE **更关键**——还省一次跨核栈迁移。这是 HYLE 相对 tokio 的强化点，非简单对齐。
 
