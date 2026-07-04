@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <utility>  // std::swap (find_path_matches heap)
 
 #include "hyle/container/string_ref.h"
 #include "hyle/macros.h"
@@ -224,6 +225,262 @@ inline int utf8_icmp(string_ref a, string_ref b, int limit = 0) noexcept {
   if (limit > 0 && i == limit) return 0;
   if (da.is_end() && db.is_end()) return 0;
   return da.is_end() ? -1 : 1;
+}
+
+// ---- fuzzy path matching (container-06c) ------------------------------------
+// Editor quick-open scoring (Sublime/VSCode/fzf Ctrl-P style): score how well a
+// short `pattern` fuzzy-matches a `candidate`. NET-NEW design -- clay declared
+// cscore_path_match/find_path_matches but never implemented them (see file top).
+//
+// ALGORITHM (greedy single-pass O(pattern + candidate), zero-alloc): every pattern
+// char must appear in the candidate IN ORDER (subsequence) else score 0; a matched
+// char earns scoreMatch plus a boundary/camel/consecutive bonus. The bonus SEMANTICS
+// and constants are fzf's (src/algo/algo.go: bonusFor + the bonus* constants), which
+// is why "cfg" ranks a filename hit over a directory hit WITHOUT any ad-hoc filename
+// multiplier: fzf treats '/' as a DELIMITER boundary and keeps a string-start (white)
+// boundary <= a delimiter boundary, so a match after '/' isn't beaten by one at
+// index 0. Chosen over fzf's Smith-Waterman DP because the load is "10k-100k paths,
+// re-scored every keystroke" -- an O(n) no-alloc pass with fzf's bonus values gives
+// near-DP ranking at a fraction of the cost (DP allocates an H/C table per candidate).
+// Case-insensitive over ASCII (bytes >= 0x80 compare verbatim -- ASCII fold is a no-op
+// on UTF-8 continuation bytes, so safe, just not case-folding non-ASCII; phase 2).
+//
+// Scoring is INTEGER (not clay's double): faster, exactly reproducible, and ordering
+// is all a quick-open UI needs. Higher = better. 0 = not a subsequence (no match).
+
+namespace detail {
+
+// fzf bonus/penalty constants (algo.go L112-162), the values tuned over fzf's life.
+// Public-header inline so the scorer stays a hot-path leaf with no cross-TU call.
+inline constexpr int kFuzzyMatch = 16;            // scoreMatch: base per matched char
+inline constexpr int kFuzzyGapStart = -3;         // scoreGapStart: first unmatched char in a gap
+inline constexpr int kFuzzyGapExt = -1;           // scoreGapExtension: each further gap char
+inline constexpr int kFuzzyBoundary = 8;          // bonusBoundary: match at a word boundary (=match/2)
+inline constexpr int kFuzzyBoundaryDelim = 9;     // bonusBoundaryDelimiter: after '/' ':' etc (boundary+1)
+inline constexpr int kFuzzyCamel = 7;             // bonusCamel123: camelCase / alpha->digit hump
+inline constexpr int kFuzzyConsecutive = 4;       // bonusConsecutive: min per consecutive-run char
+inline constexpr int kFuzzyFirstCharMult = 2;     // bonusFirstCharMultiplier: 1st match's bonus x2
+
+// Character classes (fzf charClass): the boundary bonus depends on the PREVIOUS
+// char's class, so a match "after a delimiter / at a camel hump / after whitespace"
+// is scored by classifying both neighbours. ASCII-only (phase 1).
+enum class CharClass : unsigned char { White, Delimiter, Lower, Upper, Digit, NonWord };
+
+HYLE_FORCE_INLINE constexpr CharClass fuzzy_class(char c) noexcept {
+  if (c >= 'a' && c <= 'z') return CharClass::Lower;
+  if (c >= 'A' && c <= 'Z') return CharClass::Upper;
+  if (c >= '0' && c <= '9') return CharClass::Digit;
+  if (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v' || c == '\f')
+    return CharClass::White;
+  // Path/word delimiters get the (slightly higher) delimiter-boundary bonus so a
+  // filename char after '/' outranks a char at string start (fzf path scheme).
+  if (c == '/' || c == '\\' || c == '_' || c == '-' || c == '.' || c == ' ' ||
+      c == ':' || c == ';' || c == ',' || c == '|')
+    return CharClass::Delimiter;
+  return CharClass::NonWord;
+}
+
+// Boundary bonus for a `cur` char whose predecessor was `prev` (fzf bonusFor,
+// algo.go L268-296). A word char right after white/delimiter/non-word starts a new
+// "word" (boundary bonus); a lower->upper or ->digit transition is a camel hump.
+HYLE_FORCE_INLINE constexpr int fuzzy_bonus(CharClass prev, CharClass cur) noexcept {
+  const bool cur_word = (cur == CharClass::Lower || cur == CharClass::Upper ||
+                         cur == CharClass::Digit);
+  if (cur_word) {
+    switch (prev) {
+      case CharClass::White: return kFuzzyBoundary;       // start-of-string / after space
+      case CharClass::Delimiter: return kFuzzyBoundaryDelim;  // after '/' etc (> white)
+      case CharClass::NonWord: return kFuzzyBoundary;
+      default: break;  // prev is a word char -> maybe a camel hump below
+    }
+  }
+  // camelCase hump (lower/digit -> upper) or alpha -> digit.
+  if ((prev == CharClass::Lower && cur == CharClass::Upper) ||
+      (prev != CharClass::Digit && cur == CharClass::Digit)) {
+    return kFuzzyCamel;
+  }
+  return 0;
+}
+
+// Core scorer over [cand] against [pat]. `init_class` is the class of the "character
+// before index 0": White for a plain string (fuzzy_match_score) so string-start is a
+// whitespace boundary; Delimiter for a path (path_match_score) so the whole path's
+// first char is treated like a post-'/' filename char. Returns 0 if `pat` is not an
+// ordered subsequence of `cand`. O(cand), zero-alloc.
+//
+// Two passes (fzf FuzzyMatchV1, algo.go L710-790): a plain left-to-right greedy match
+// locks onto the FIRST occurrence of each pattern char, which misses better-aligned
+// hits ("cfg" would match the 'c' in "src/..." not the one starting "config"). So we
+// (1) FORWARD-scan to find the end of a full subsequence match, then (2) BACKWARD-scan
+// from there to pull the START as far right as possible -- this snaps the match onto
+// the tightest, most-boundary-aligned run (the 'c' of "config"). Scoring then runs
+// over that tightened window. Still O(cand), still zero-alloc.
+inline int fuzzy_score_impl(string_ref cand, string_ref pat,
+                            CharClass init_class) noexcept {
+  if (pat.size == 0) return 0;         // empty pattern: no discriminating score
+  if (pat.size > cand.size) return 0;  // can't be a subsequence
+  // Pass 1 (forward): find sidx (first matched char) and eidx (one past the last).
+  std::uint32_t pidx = 0, sidx = cand.size, eidx = 0;
+  for (std::uint32_t i = 0; i < cand.size; ++i) {
+    if (to_ascii_lower(cand.data[i]) == to_ascii_lower(pat.data[pidx])) {
+      if (sidx == cand.size) sidx = i;
+      if (++pidx == pat.size) {
+        eidx = i + 1;
+        break;
+      }
+    }
+  }
+  if (eidx == 0) return 0;  // pattern is not a subsequence of cand
+  // Pass 2 (backward): tighten sidx rightward -- match pattern in reverse from eidx-1
+  // so the start snaps to the latest feasible position (the boundary-aligned run).
+  pidx = pat.size - 1;
+  for (std::uint32_t i = eidx; i-- > sidx;) {
+    if (to_ascii_lower(cand.data[i]) == to_ascii_lower(pat.data[pidx])) {
+      if (pidx-- == 0) {
+        sidx = i;
+        break;
+      }
+    }
+  }
+  // Pass 3: score over the tightened window [sidx, eidx). Every pattern char lies in
+  // it, in order; walk it charging match+bonus, gaps, and consecutive runs.
+  int score = 0;
+  std::uint32_t ci = sidx;
+  bool first_match = true;
+  for (std::uint32_t pi = 0; pi < pat.size; ++pi) {
+    char pc = to_ascii_lower(pat.data[pi]);
+    std::uint32_t gap = 0;
+    while (ci < eidx && to_ascii_lower(cand.data[ci]) != pc) {
+      ++gap;
+      ++ci;
+    }
+    int b = kFuzzyMatch;
+    CharClass prev = ci == 0 ? init_class : fuzzy_class(cand.data[ci - 1]);
+    CharClass cur = fuzzy_class(cand.data[ci]);
+    int bonus = fuzzy_bonus(prev, cur);
+    if (first_match) {
+      // fzf: the FIRST matched char's boundary bonus is multiplied (a hit at a word
+      // start is worth extra), and there is no gap penalty before it.
+      score += b + bonus * kFuzzyFirstCharMult;
+      first_match = false;
+    } else if (gap == 0) {
+      // Consecutive (adjacent to the previous match): each run char earns at least
+      // bonusConsecutive; a genuine boundary bonus (a new camel hump) wins if higher
+      // (fzf max(consecutive, bonus)).
+      score += b + (bonus > kFuzzyConsecutive ? bonus : kFuzzyConsecutive);
+    } else {
+      // A gap preceded this match: charge the gap, then the plain match + bonus.
+      score += kFuzzyGapStart + kFuzzyGapExt * static_cast<int>(gap - 1);
+      score += b + bonus;
+    }
+    ++ci;  // consume the matched char
+  }
+  // Tie-breaker toward SHORTER candidates (fzf's length tiebreak, folded into the
+  // score): a complete "abc" beats "abcXYZ", and "src/config.h" (12) beats
+  // "config/main.cpp" (15) when their bonuses tie. Weight 1/char so it only
+  // separates otherwise-equal scores, never reorders a real bonus difference.
+  score -= static_cast<int>(cand.size);
+  return score;
+}
+
+}  // namespace detail
+
+// Fuzzy-match `pattern` against `candidate` (plain string -- string-start counts as a
+// whitespace boundary). Returns an integer score (higher = better), or 0 if `pattern`
+// is not an ordered case-insensitive subsequence of `candidate`. O(candidate), no alloc.
+inline int fuzzy_match_score(string_ref candidate, string_ref pattern) noexcept {
+  return detail::fuzzy_score_impl(candidate, pattern, detail::CharClass::White);
+}
+
+// Score `pattern` against a FILE PATH. Same scorer, but the path's first char is
+// treated as if preceded by a delimiter (like a post-'/' filename char), and '/' '\\'
+// are delimiter boundaries -- so a hit in the filename part outranks one buried in a
+// directory, and "cfg" ranks "src/config.h" at/above "config/main.cpp" (clay
+// cscore_path_match's contract) WITHOUT an ad-hoc multiplier (fzf's path scheme:
+// delimiter boundaries + the length tiebreak fold that in). O(path), no alloc.
+inline int path_match_score(string_ref path, string_ref pattern) noexcept {
+  return detail::fuzzy_score_impl(path, pattern, detail::CharClass::Delimiter);
+}
+
+// Find the best matches of `pattern` among `candidates[0..n)`, writing their indices
+// into `out_idx[0..return)` BEST-FIRST and their scores into `out_score[0..return)`.
+// `out_idx` and `out_score` are caller-owned buffers of length `k` (the top-list
+// size, e.g. 20) -- they double as the working min-heap, so there is ZERO heap
+// allocation (charter: no hidden alloc; the caller sizes k). Non-matching candidates
+// (score 0) are skipped. Returns the match count written (<= k).
+//
+// O(n log k): a size-k min-heap keeps the running top-k (push/replace is log k); a
+// final heap-sort orders the survivors best-first. Ties break toward the lower index
+// (stable, reproducible for a UI list). path_aware=true weights the filename part
+// (path_match_score); false is plain fuzzy_match_score.
+inline std::uint32_t find_path_matches(const string_ref* candidates, std::uint32_t n,
+                                       string_ref pattern, std::uint32_t* out_idx,
+                                       int* out_score, std::uint32_t k,
+                                       bool path_aware = true) noexcept {
+  if (k == 0 || n == 0) return 0;
+  // (score, index) live in parallel caller buffers; [0..count) is a MIN-heap keyed on
+  // score (ties: larger index is "smaller", so equal scores evict the higher index and
+  // the lower index wins -- matching the tie-break). "worse" = lower score, or equal
+  // score with higher index.
+  auto worse = [](int sa, std::uint32_t ia, int sb, std::uint32_t ib) noexcept {
+    return sa < sb || (sa == sb && ia > ib);
+  };
+  std::uint32_t count = 0;
+  for (std::uint32_t i = 0; i < n; ++i) {
+    int s = path_aware ? path_match_score(candidates[i], pattern)
+                       : fuzzy_match_score(candidates[i], pattern);
+    if (s <= 0) continue;
+    if (count < k) {
+      // Push: place at the end, sift up (toward the root = the WORST element).
+      std::uint32_t c = count++;
+      out_idx[c] = i;
+      out_score[c] = s;
+      while (c > 0) {
+        std::uint32_t p = (c - 1) / 2;
+        if (worse(out_score[c], out_idx[c], out_score[p], out_idx[p])) {
+          std::swap(out_score[c], out_score[p]);
+          std::swap(out_idx[c], out_idx[p]);
+          c = p;
+        } else {
+          break;
+        }
+      }
+    } else if (worse(out_score[0], out_idx[0], s, i)) {
+      // Window full and the new entry beats the current worst (heap root): replace
+      // the root, sift down.
+      out_idx[0] = i;
+      out_score[0] = s;
+      std::uint32_t c = 0;
+      for (;;) {
+        std::uint32_t l = 2 * c + 1, r = 2 * c + 2, m = c;
+        if (l < count && worse(out_score[l], out_idx[l], out_score[m], out_idx[m])) m = l;
+        if (r < count && worse(out_score[r], out_idx[r], out_score[m], out_idx[m])) m = r;
+        if (m == c) break;
+        std::swap(out_score[c], out_score[m]);
+        std::swap(out_idx[c], out_idx[m]);
+        c = m;
+      }
+    }
+  }
+  // Heap-sort the survivors best-first: repeatedly pop the worst (root) to the
+  // shrinking tail. After each pop the front [0..size) is re-heapified, so the worst
+  // elements pile up at the end and [0..count) ends up best-first.
+  for (std::uint32_t size = count; size > 1;) {
+    --size;
+    std::swap(out_score[0], out_score[size]);  // worst goes to the tail
+    std::swap(out_idx[0], out_idx[size]);
+    std::uint32_t c = 0;
+    for (;;) {
+      std::uint32_t l = 2 * c + 1, r = 2 * c + 2, m = c;
+      if (l < size && worse(out_score[l], out_idx[l], out_score[m], out_idx[m])) m = l;
+      if (r < size && worse(out_score[r], out_idx[r], out_score[m], out_idx[m])) m = r;
+      if (m == c) break;
+      std::swap(out_score[c], out_score[m]);
+      std::swap(out_idx[c], out_idx[m]);
+      c = m;
+    }
+  }
+  return count;
 }
 
 }  // namespace hyle::container

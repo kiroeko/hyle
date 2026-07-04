@@ -165,6 +165,12 @@ if(HYLE_BENCH_BOOST)
   target_compile_definitions(hyle_container_misc_bench PRIVATE HYLE_BENCH_BOOST)
 endif()
 
+# container-06c fuzzy path match bench: proves O(N) scaling (ns/candidate flat across
+# N=1k/10k/100k) + races the std subsequence floor (are the fzf bonuses ~free?). Own exe.
+add_executable(hyle_fuzzy_bench container/fuzzy_bench.cc)
+target_link_libraries(hyle_fuzzy_bench PRIVATE hyle_container nanobench)
+hyle_apply_warnings(hyle_fuzzy_bench)
+
 # task #23: hash cluster. HYLE hash_bytes(XXH3)/mix64 vs raw XXH3 (vendored, always)
 # + std::hash. wyhash is a sibling clone -> opt-in -DHYLE_BENCH_WYHASH=ON (header-only).
 add_executable(hyle_hash_bench container/hash_bench.cc)
