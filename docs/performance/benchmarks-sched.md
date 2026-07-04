@@ -86,6 +86,31 @@ thread-mode(裸线程 waiter,外部提交者/跨进程联邦)。对标 `std::con
 - **纯超时双平台平**:HYLE 与 std 都被 OS ~15ms(Win)定时器粒度地板,gap 0.1%——**证 HYLE 超时路径零额外开销**(不是"赢/输",是"没引入税")。这正是想验证的:双向链表 O(1) 自摘 + `linked` 仲裁不给热路径加负担。
 - **正确性优先于跑分**:此件核心是 notify-vs-timeout 竞态无 lost-wakeup(红队 6 类审计 + TSan×3 含 NotifyVsTimeoutRace 压力),性能是"不劣于 std 且 Win 更优"的附带确认。
 
+## sched-09 并发原语补全：Semaphore / RwLock / oneshot / watch / broadcast（`bench/sched/sync_ext_bench.cc`）
+
+sched-05 的 `sync_bench` 覆盖 Mutex/Channel/WaitGroup/Latch/CV;sched-09 新增的 5 个 tokio 语义原语(~1.5k 行)此前零性能测试,这里补齐。都建在 sched-05 的 fiber-aware CV 地基上,故热路径成本应与那层同量级。双平台 Release(Win MSVC / Lin GCC14 io_uring 宿主)。
+
+| 场景 | HYLE(Win / Lin) | 对照 | 判定 |
+|---|---|---|---|
+| **Semaphore try_acquire+release**(无争用快路径) | 10.1 / 10.6 ns | — | 限流器热路径:单 SpinLock 下的 permit 增减,~10ns |
+| **Semaphore acquire/release**(8 fiber/4 worker 争用,permits=1) | 418 / 470 ns | — | 含阻塞 acquire→release-唤醒-队头 的 fiber 往返 |
+| **RwLock read()**(无争用) | 11.1 / 10.8 ns | std::shared_mutex 9.8 / 11.8 ns | **Lin 微赢 std 10%、Win 88%**:fiber-aware 读锁不输线程级锁(建在 Semaphore permit 上) |
+| **RwLock read() x8**(8 reader fiber/4 worker) | 85 / 80 ns | — | 并发读:permit 共享不互斥 |
+| **oneshot make+send+recv**(请求/响应槽往返) | 166 / 168 ns | — | 全程建 channel+发+收+析构;send 不阻塞、recv 拿已置值不让出 |
+| **watch send+borrow**(最新值路径) | 56 / 55 ns | — | 版本号 bump + borrow 最新值(配置热重载形态) |
+
+**broadcast 扇出(1 send → N receiver 各 recv,扫 N)**:
+
+| receivers | ns/delivery(Win / Lin) | delivery/s |
+|---|---|---|
+| 2 | 853 / 1059 | ~1M |
+| 8 | 221 / 419 | ~2-4M |
+| 32 | 82 / 101 | ~10M |
+
+- **ns/delivery 随 N 下降是健康的**:一次 send 唤醒 N 个游标,send 的固定成本摊到 N 个 delivery——边际投递成本远低于固定成本(2→32 receiver,per-delivery 从 853 降到 82ns),扇出线性无超线性惩罚。
+- **RwLock 读侧不输 std::shared_mutex**:HYLE 的 RwLock 是 fiber-aware(建在 Semaphore=写抢全 permit/读抢 1),但无争用读锁开销与线程级 `std::shared_mutex` 同量级(Lin 甚至微赢),证"写优先公平"不以读侧性能为代价。与 sched-05 "Mutex 用 futex 打平 std/marl" 同源:fiber-aware 只在真需让出时才贵。
+- **正确性已由 sched-09 的 sync_test + WSL TSan 覆盖**(14 测试零 race);本 bench 是性能测量,复用同一套已验证的 acquire/release/send/recv 驱动。
+
 ## JoinHandle / spawn_task / when_all / when_any（sched-10，`bench/sched/join_bench.cc`）
 
 结构化并发糖层的对标——**没有外部对手**(tokio/folly 是别的 runtime),标尺是"糖 vs 它抽象的裸机制":`spawn_task+JoinHandle::join` vs `裸 Fiber + WaitGroup(1) + 手动结果 slot`(sched-10 前测试代码手搓的那套)。目标是证明这层封装不比手写贵多少。
