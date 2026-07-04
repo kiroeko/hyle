@@ -1367,7 +1367,8 @@ bool Proactor::wake() noexcept {
 bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
                                unsigned char opcode, void* buf, unsigned len,
                                void* addr, unsigned addr_cap,
-                               std::uint64_t user_data) noexcept {
+                               std::uint64_t user_data,
+                               std::uint64_t offset) noexcept {
   impl->pending[fd] =
       Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap};
   epoll_event ev{};
@@ -1384,17 +1385,18 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
       // EPERM = fd is a REGULAR FILE (or otherwise not epoll-able). epoll cannot
       // watch regular files -- they are always "ready" but read()/write() may block
       // on disk (io-05: only io_uring/IOCP async a regular file; tokio offloads to
-      // a thread pool for exactly this). So do the byte IO SYNCHRONOUSLY now and
-      // synthesize a completion via the posted queue -- the same synthesis the
-      // metadata file ops use. (Stream read/write only; a datagram socket is never
-      // a regular file, so addr is unused here.)
+      // a thread pool for exactly this). So do the byte IO SYNCHRONOUSLY now, AT the
+      // file offset (pread/pwrite -- the proactor read/write contract is offset-
+      // based, unlike a stream), and synthesize a completion via the posted queue
+      // (the same synthesis the metadata file ops use). Stream/datagram sockets are
+      // never regular files, so this branch is file-only.
       impl->pending.erase(fd);
       std::int64_t res;
       if (opcode == IORING_OP_WRITE) {
-        ssize_t w = ::write(fd, buf, len);
+        ssize_t w = ::pwrite(fd, buf, len, static_cast<off_t>(offset));
         res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
       } else {  // IORING_OP_READ
-        ssize_t r = ::read(fd, buf, len);
+        ssize_t r = ::pread(fd, buf, len, static_cast<off_t>(offset));
         res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
       }
       impl->posted.push_back({user_data, res});
@@ -1409,9 +1411,9 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
 
 bool Proactor::epoll_arm(Impl* impl, int fd, unsigned events,
                          unsigned char opcode, void* buf, unsigned len,
-                         std::uint64_t user_data) noexcept {
+                         std::uint64_t user_data, std::uint64_t offset) noexcept {
   return epoll_arm_dgram(impl, fd, events, opcode, buf, len, nullptr, 0,
-                         user_data);
+                         user_data, offset);
 }
 
 bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
@@ -1420,7 +1422,7 @@ bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
   if (impl_ == nullptr) return false;
   if (impl_->backend == Impl::kEpoll) {
     return epoll_arm(impl_, static_cast<int>(fd), EPOLLIN, IORING_OP_READ, buf,
-                     len, user_data);
+                     len, user_data, offset);
   }
   return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
                     impl_->sq_array, impl_->sqes, IORING_OP_READ,
@@ -1434,7 +1436,7 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf,
   if (impl_ == nullptr) return false;
   if (impl_->backend == Impl::kEpoll) {
     return epoll_arm(impl_, static_cast<int>(fd), EPOLLOUT, IORING_OP_WRITE,
-                     const_cast<void*>(buf), len, user_data);
+                     const_cast<void*>(buf), len, user_data, offset);
   }
   return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
                     impl_->sq_array, impl_->sqes, IORING_OP_WRITE,

@@ -314,13 +314,16 @@ class Proactor {
   static Impl* try_init_uring(unsigned entries) noexcept;
   static Impl* try_init_epoll() noexcept;
   static bool epoll_arm(Impl* impl, int fd, unsigned events, unsigned char opcode,
-                        void* buf, unsigned len, std::uint64_t user_data) noexcept;
+                        void* buf, unsigned len, std::uint64_t user_data,
+                        std::uint64_t offset = 0) noexcept;
   // Datagram variant: also stashes the peer-address buffer so reap()'s inline
-  // recvfrom/sendto can fill/read it (epoll fallback only).
+  // recvfrom/sendto can fill/read it (epoll fallback only). `offset` is the file
+  // offset for the regular-file synchronous-fallback path (EPERM); 0 for sockets.
   static bool epoll_arm_dgram(Impl* impl, int fd, unsigned events,
                               unsigned char opcode, void* buf, unsigned len,
                               void* addr, unsigned addr_cap,
-                              std::uint64_t user_data) noexcept;
+                              std::uint64_t user_data,
+                              std::uint64_t offset = 0) noexcept;
   // IOCP only: arm one AcceptEx on listener `fd` (shared by submit_accept, its
   // multishot variant, and reap's multishot re-arm). Private static since it
   // names the private Impl. `multishot` is stamped on the IoOp so reap re-arms +

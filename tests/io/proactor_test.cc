@@ -137,6 +137,12 @@ TEST(Proactor, BatchReapManyCompletions) {
 // still pending (submit_* returns false there), so this test is Linux-only.
 #if defined(__linux__)
 TEST(Proactor, RealReadWriteRoundTrip) {
+  // io_uring-specific: exercises the SQE fd/addr/len/off path + CQE res mapping.
+  // Under forced-epoll the same submit_read/write go through the reactor's
+  // regular-file synchronous fallback (a different path, covered by the io-05 file
+  // tests), so skip here to keep this test about the io_uring op path.
+  if (::getenv("HYLE_IO_FORCE_EPOLL") != nullptr)
+    GTEST_SKIP() << "io_uring-specific (forced-epoll uses the sync file fallback)";
   Proactor p;
   if (!p.init()) GTEST_SKIP() << "no io_uring backend";
 
@@ -172,6 +178,12 @@ TEST(Proactor, RealReadWriteRoundTrip) {
 // submit failure: read from an invalid fd -> the submit succeeds, the completion
 // carries -EBADF.
 TEST(Proactor, RealReadBadFdReturnsNegativeResult) {
+  // io_uring-specific: a bad fd's error surfaces as a NEGATIVE completion result
+  // (submit succeeds, CQE res = -EBADF). The epoll reactor rejects a bad fd at
+  // submit time instead (a different, backend-specific contract), so skip when
+  // forced-epoll.
+  if (::getenv("HYLE_IO_FORCE_EPOLL") != nullptr)
+    GTEST_SKIP() << "io_uring-specific negative-result contract";
   Proactor p;
   if (!p.init()) GTEST_SKIP() << "no io_uring backend";
   char buf[8] = {};
