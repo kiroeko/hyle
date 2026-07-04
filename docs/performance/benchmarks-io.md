@@ -155,8 +155,23 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 
 **又一个"先疑自己"的活例(bench bug,非 proactor)**:冒烟首跑 64→256 每 accept 慢 **16x**(242 accepts/s、单档 36s),像 accept 路径崩了。诊断:一次性 spawn N 个 client 并发 connect,但默认 **backlog=128** 撑不住 256+ 涌入的 SYN → 丢弃 → **TCP SYN 重传(1s 退避)**。把 backlog 定为 conns 后曲线立刻平坦。教训:**测建连吞吐必须给足 listen backlog**,否则测的是 TCP 重传退避,不是 proactor。
 
+## 热路径分配消除:TLS 泵 + HTTP 流式 chunk 缓冲复用(2026-07-05)
+
+两处此前登记的"协程帧/循环体分配"优化点,改法都是**把缓冲挪出热路径复用**,收益是**确定性的分配次数下降**(结构性,不靠计时——~几十 ns 的 alloc 在 µs 级 syscall 噪声里测不准,故按 alloc 计数论证,同 sched 亚 µs 数字的方法学)。
+
+| 优化 | 改前(每操作分配) | 改后 | 论证 |
+|---|---|---|---|
+| **TLS 泵 scratch**(tls.cc) | `flush_wbio`/`feed_rbio` 各一个 16KB 局部数组;因是 `sched::Task` 自由协程→落在**每次调用的协程帧**(Allocator operator new)。每个 `tls_read`/`tls_write` 至少一次 16KB 帧 alloc+free | 16KB scratch 移进 `TlsStream`,**懒分配一次、全连接复用、dtor 释放**;协程帧缩到几十字节 | N 次读写 = **N 次 16KB 分配 → 1 次**。单 fiber 独占 + flush/feed 串行(每个 `co_await` 完成才下一个)→ 一块共享 scratch 安全 |
+| **HTTP 流式 chunk**(http.cc) | 流式响应每 chunk 一个 `GrowBuf frame(alloc)` = 每 chunk 一次 alloc+free | 复用 head 的 `out`(每轮 `size=0`),容量保留 | M chunk = **M 次分配 → 0 次**(首块后容量够就零 realloc)。`write_all` 每次全排空才返回→重置 size 前无在途写 |
+
+**正确性验证**:TLS `HandshakeAndEncryptedEcho`(覆盖 handshake/read/write/shutdown 四条 scratch 路径)+ HTTP `GetKeepAlive`(含 3-chunk 流式)双平台(Win IOCP / Linux io_uring+epoll)+ **WSL setarch TSan 零 race**。scratch 复用未引入跨线程共享(单 fiber 串行),TSan 净证实。
+
+> **为何不上计时 bench**:单次 TLS 读写的 16KB 帧分配 ~几十 ns,淹没在 loopback TLS 握手/加解密的 µs~ms 里;HTTP chunk 同理。分配**次数**是确定的、可从代码结构证明的,比一个被 syscall 噪声主导的计时数字更诚实。若要计时铁证,需计数分配器 microbench(登记,见下)。
+
 ## 未做(登记)
 
+- **HTTP 多小 chunk 流式解码 bug(2026-07-05 发现,P2,与上面的复用优化无关)**:`GetKeepAlive` 的 3-chunk `/stream` 正常;但一个 50×1-byte chunk 的流,客户端 `decode_chunked`(http.cc)返回**空 body**(status 200 但 body_len=0)。**已隔离证明是既有 bug**:把本次的 `out` 复用改动 revert 后仍复现,故非本优化引入,而是 `phr_decode_chunked` 有状态解码器在"多次 -2(输入耗尽)跨多次 read"路径上的集成 bug(疑 `buf.size=0` 丢弃/重喂语义,同 io-10 当初修的 chunked 跨平台 bug 一族但更深)。修它需独立核对 picohttpparser decoder state 语义 + 写 many-chunk 回归测试。**不阻塞**:LLM token 流每 token 通常 >1 字节且不会 50+ 微 chunk 挤一个 read,但严格 SSE 高频小事件会踩到。
+- **计数分配器 microbench**:给上面两处热路径分配消除补一个 alloc-count 铁证(计数 Allocator 跑 N 次 TLS 读写 / M chunk 流式,断言分配次数不随 N/M 增长)。networked 版曾试但撞上上面的多-chunk decode bug + 双 scheduler 端口复用挂起,待 decode bug 修后随回归测试一起补。
 - ✅ **裸 liburing 对标**(已做,见上"vs 裸 liburing"节):liburing 本地 clone `../liburing`,`-DHYLE_BENCH_LIBURING=ON` 自动 configure+make 链接。结论:单核输 2.3x(抽象代价)、4 核反超。
 - **vs asio / libuv**:证不输成熟异步框架。
 - **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
