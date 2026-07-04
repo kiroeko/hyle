@@ -1,6 +1,6 @@
 # io 实测铁证
 
-> 本页是 [performance 总账](./README.md) 的 io 详节:proactor 三后端机制 + echo 吞吐/扩展性对标。环境:Linux GCC14.2 Release(原生 ext4,32 核)+ Win MSVC19.50 Release,nanobench + `scripts/bench-stat.py` n=15 统计口径。bench 源:`bench/io/echo_bench.cc`。
+> 本页是 [performance 总账](./README.md) 的 io 详节:proactor 三后端机制 + echo 吞吐/扩展性对标。环境:Linux GCC14.2 Release(原生 ext4,32 核 i9-13900K)+ Win MSVC19.50 Release,nanobench + `scripts/bench-stat.py` n=15 统计口径。bench 源:`bench/io/echo_bench.cc`(吞吐+worker 扩展)、`bench/io/io_scaling_bench.cc`(连接数 + payload 两条复杂度曲线)。
 
 ## 为什么 io 的对标要等到有真实并发连接负载
 
@@ -73,6 +73,51 @@ P0 hang 修复时,空闲 io-worker 走"阻塞 GETEVENTS reap,但上限 `kIoPollN
 | eventfd 唤醒(park 合并后)| **3**(init 武装 + 唤醒 + 收尾;真睡眠)|
 
 **~140x 空闲 syscall 削减。** 机制:worker 有 io 在途时以**完整 timeout(timer deadline 或 INFINITE)**阻塞 reap,不再 1ms 轮询;跨线程 spawn/steal 经 `Scheduler::wake_worker` → `Proactor::wake()` 即时打断——io_uring 在专用 eventfd 上常驻一个 `IORING_OP_READ`(`wake()` 从任意线程 `write` 8 字节,**不碰单生产者 SQ**,故无 TSan race——这正是此前 NOP-SQE 版被撤的原因),IOCP 用线程安全的 `PostQueuedCompletionStatus`,epoll 用常驻 level-triggered eventfd。wake 完成带保留 `kWakeToken`:io_uring/epoll 在 reap 内丢弃并重武装、**不计入 in-flight**(否则无真 io 的 worker 永不 park futex),IOCP 经 io_context 过滤。**吞吐无变化**(ping-pong 1w 734K、pipelined 1w 323K,与合并前持平——负载下 worker 从不空闲,优化只作用于空闲态);双平台 + WSL TSan(net/tcp/udp/sched)净。
+
+## 两条复杂度曲线:连接数 scaling + payload scaling(`bench/io/io_scaling_bench.cc`)
+
+echo_bench 在**固定** 64-conn/64B 负载证吞吐 + worker 扩展;但"SOTA proactor"主张还依赖两条**复杂度曲线**——单点 ratio 证不了。故补 io_scaling_bench 专测形状。
+
+### 1. 连接数 scaling:proactor 侧 O(1)/op(用户态有工作集残余)
+
+**设计**:固定**每连接** round-trips(kRt=64,非固定总量),扫 N=64/256/1024 连接、单 worker(隔离出 proactor 成本,不掺 work-stealing)。因 R 按连接固定,batch(N×R)与 O(N) 建连成本同步增长,建连落成 ns/round-trip 的**常数偏置**而非随 N 膨胀项。
+
+**Linux io_uring 实测(单跑中位)**:
+
+| conns | ns/round-trip | round-trip/s | 对 64 档 |
+|---|---|---|---|
+| 64 | 1,875 | 533K | 1.0x |
+| 256 | 1,954 | 512K | +4% |
+| 1024 | 3,843 | 260K | +105% |
+
+曲线**不平坦**——我一开始假设是"SQ 深度 256 被在途 op 打满、批量提交退化",但**被探针推翻**。`HYLE_IO_BENCH_STATS` 按档位聚合:
+
+| conns | avg_batch | sqes | enters |
+|---|---|---|---|
+| 64 | 55.7 | 16,554 | 338 |
+| 256 | 62.1 | 65,730 | 1,066 |
+| 1024 | 52.2 | 262,291 | 5,028 |
+
+**avg_batch 三档恒定(52-62)、sqes 随 N 完美线性**——SQ 深度 256 根本不是瓶颈,批量提交一路健康,**内核/proactor 完成路径是干净 O(1)/op**(io_uring/IOCP 完成模型不像 select/poll 重扫 fd 集)。
+
+那 ns 上升来自哪?**栈大小 A/B 定位**:把 fiber 栈 64KB→8KB(活跃工作集 128MB→16MB)重跑——256 档 2190→1875ns(**64→256 那步被抹平**),但 1024 档 3827→3527ns(仍高 88%)。结论:64→256 的上升是 **fiber 栈 + Conn 的 cache 工作集效应**;1024 档剩余上升是更大规模的用户态/内核态常数因子(2048 fd 单 ring 注册、Conn 足迹),**均非 proactor 的算法复杂度**。这是所有 M:N 运行时的共性(活跃工作集越大 cache 越差),如实登记而非粉饰成"完美平坦"。
+
+### 2. payload scaling:bytes/s 干净 plateau = 零额外拷贝
+
+**设计**:固定 64 conn × 32 round-trip,payload 64B→64KB,报 bytes/s。小 payload 受 syscall 限,大 payload 逼近内存带宽;**无超线性拐点**才证 co_await 路径无额外 memcpy/逐字节遍历(awaitable 直接把调用方缓冲交给内核)。
+
+**Linux io_uring 实测(单跑中位)**:
+
+| payload | ns/byte | bytes/s |
+|---|---|---|
+| 64B | 30.60 | 32.7 MB/s |
+| 1KB | 2.05 | 488 MB/s |
+| 16KB | 0.25 | 4.00 GB/s |
+| 64KB | 0.23 | 4.32 GB/s |
+
+ns/byte 单调降、每档改善递减,16KB→64KB 仅差 0.02 = **已到内存带宽地板、干净 plateau,零拷贝证实**。(sweep 停在 64KB:256KB 单迭代搬 512MB、分钟级拖垮 bench,且 16KB 已见地板,无额外形状。)
+
+**方法学**:此段是"先疑自己的假设"的活例——SQ-满退化是个看似合理的初判,靠探针(avg_batch/sqes)+ 栈 A/B 两步实验推翻并定位到真因,而非凭直觉写进文档。Windows IOCP 侧仅验证能编能跑 + 低档平坦(loopback TCP 模拟 socketpair 在 1024 连接反复建拆触发 TIME_WAIT 端口堆积,非 proactor 问题);真 scaling 数取自 io 主平台 io_uring。
 
 ## 未做(登记)
 
