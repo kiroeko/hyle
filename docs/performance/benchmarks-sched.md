@@ -111,6 +111,20 @@ sched-05 的 `sync_bench` 覆盖 Mutex/Channel/WaitGroup/Latch/CV;sched-09 新�
 - **RwLock 读侧不输 std::shared_mutex**:HYLE 的 RwLock 是 fiber-aware(建在 Semaphore=写抢全 permit/读抢 1),但无争用读锁开销与线程级 `std::shared_mutex` 同量级(Lin 甚至微赢),证"写优先公平"不以读侧性能为代价。与 sched-05 "Mutex 用 futex 打平 std/marl" 同源:fiber-aware 只在真需让出时才贵。
 - **正确性已由 sched-09 的 sync_test + WSL TSan 覆盖**(14 测试零 race);本 bench 是性能测量,复用同一套已验证的 acquire/release/send/recv 驱动。
 
+## sched-11 spawn_blocking：阻塞卸载池 vs marl 每次建线程（`bench/sched/blocking_bench.cc`）
+
+把阻塞 syscall / CPU 密集闭包从 worker 卸载到专用线程池,让 worker 继续跑本核其它 fiber。sched-11 落地时 7 测试无性能数,这里补。SOTA 对标 marl `blocking_call`——**同目标但 marl 每次 spawn 全新 `std::thread` 并 join(无池,marl/blockingcall.h `OnNewThread`)**,HYLE 是 tokio 式懒创建+复用池。故对标恰好量出池的价值。
+
+| 场景 | HYLE(Win / Lin) | 判定 |
+|---|---|---|
+| **spawn_blocking 顺序往返(暖池)** | 1,025 ns / 12,772 ns | 见下"双平台 12x 差"解读 |
+| **fan-out 8/64/256 并发 job** | ns/job 随 N 降(Win 64k→18k、Lin 99k→30k) | 池并发生效:更多 job 摊薄冷启动建线程 |
+| **HYLE 池 vs marl 每次建线程** | HYLE 快 **26x**(Win 1769 vs 46846)/ **2.6x**(Lin 13863 vs 36328) | 池复用 vs 每次 `std::thread` create+join |
+
+- **池 vs 每次建线程 = spawn_blocking 的核心价值(双平台都赢)**:marl 每次 `blocking_call` 建一个新 OS 线程再 join,HYLE 复用池线程。Windows 建线程贵(~47μs)故 HYLE 领先 26x;Linux 建线程相对便宜(~36μs)但 HYLE 仍快 2.6x。**诚实框定**:marl 的设计假设 blocking 调用低频(建线程可接受),HYLE 假设高频(池摊薄)——高频 offload 场景池优势明确,低频两者都够用。
+- **暖池往返双平台 12x 差(Win 1μs / Lin 12.7μs)——机制性,非 bug**:一次 spawn_blocking 往返要**唤醒一个睡眠的池线程**(submit 的 `condition_variable::notify_one`)+ 池线程跑完再经 JoinState fiber-aware CV **唤醒 join 的 worker fiber**。Linux 唤醒睡眠线程走 `futex(FUTEX_WAKE)` + 线程被调度上核,实测 ~12.7μs(稳定复现,err 1%,load 1.07 非负载干扰);Windows 的 CONDITION_VARIABLE 唤醒路径更快(~1μs)。这**不是 HYLE bug,是"唤醒睡眠线程"在两 OS 的固有差**——且它揭示一个真结论:**spawn_blocking 是为真正的阻塞工作(syscall/CPU 密集,本身 ≥ 数十 μs~ms)设计的,用它卸载微秒级琐事时唤醒开销会主导**(本 bench 的 trivial 闭包正是极端情形,放大了唤醒成本)。
+- 正确性由 sched-11 的 blocking_test(7 测试,含 WorkerNotStalledByBlockingCall 证单 worker 不被阻塞拖死)+ WSL TSan 覆盖。
+
 ## JoinHandle / spawn_task / when_all / when_any（sched-10，`bench/sched/join_bench.cc`）
 
 结构化并发糖层的对标——**没有外部对手**(tokio/folly 是别的 runtime),标尺是"糖 vs 它抽象的裸机制":`spawn_task+JoinHandle::join` vs `裸 Fiber + WaitGroup(1) + 手动结果 slot`(sched-10 前测试代码手搓的那套)。目标是证明这层封装不比手写贵多少。
