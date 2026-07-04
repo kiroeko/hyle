@@ -80,6 +80,18 @@ if(HYLE_HAS_FCONTEXT)
   if(WIN32)
     target_link_libraries(hyle_io_scaling_bench PRIVATE ws2_32)
   endif()
+
+  # io accept-scaling bench: isolates CONNECTION ESTABLISHMENT (the accept path the
+  # echo benches never time -- they pre-build sockets). One TcpListener accepts N
+  # conns while N client fibers connect; reports accepts/s swept over N to show the
+  # accept path is O(1)/connection. Real TCP over loopback (accept needs a listener),
+  # so hyle_io (tcp wrappers) + ws2_32 on Windows.
+  add_executable(hyle_accept_bench io/accept_bench.cc)
+  target_link_libraries(hyle_accept_bench PRIVATE hyle_sched hyle_io nanobench)
+  hyle_apply_warnings(hyle_accept_bench)
+  if(WIN32)
+    target_link_libraries(hyle_accept_bench PRIVATE ws2_32)
+  endif()
 endif()
 
 # error-module bench: Status/Result (zero-dependency root, every hot-path return type)
