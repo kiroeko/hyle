@@ -1134,16 +1134,22 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       out[n].buffer_id = 0;
       // Multishot accept emulation: on a successful accept, re-arm the listener
       // watch and stamp kMore (more connections coming, same user_data) -- mirrors
-      // io_uring native multishot. On failure, leave kMore clear = terminal (the
-      // multishot ended), matching io_uring's behaviour on a fatal accept error.
+      // io_uring native multishot. CRITICAL: only stamp kMore if the re-arm
+      // SUCCEEDS. If epoll_ctl fails the watch is gone, so no further completion
+      // will ever come -- stamping kMore would tell the caller "more coming" and it
+      // would wait forever (P1 hang). A failed re-arm is therefore terminal: leave
+      // kMore CLEAR so the caller sees the multishot ended (same as IOCP, which only
+      // sets kMore when iocp_arm_accept succeeds). On failure the accepted fd in
+      // `res` is still delivered; the stream just doesn't continue.
       if (op.multishot && res >= 0) {
-        out[n].flags |= Completion::kMore;
         epoll_event rev{};
         rev.events = EPOLLIN | EPOLLONESHOT;
         rev.data.u64 = static_cast<std::uint64_t>(fd);
         if (::epoll_ctl(impl_->epfd, EPOLL_CTL_ADD, fd, &rev) == 0) {
           impl_->pending[fd] = op;  // keep multishot=true for the next delivery
+          out[n].flags |= Completion::kMore;  // armed -> more coming
         }
+        // else: re-arm failed -> kMore stays clear = terminal (no lost-wakeup hang)
       }
       ++n;
     }

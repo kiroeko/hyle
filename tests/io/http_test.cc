@@ -180,6 +180,61 @@ struct Drive {
 };
 void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 
+// ---- request-smuggling regression harness (red-team fix, 2026-07-05) ----------
+// A raw-bytes client that sends a hand-crafted request the well-formed
+// HttpClientConn could never produce (CL+TE both present, obfuscated TE, duplicate
+// conflicting CL), so we can prove the server REJECTS it (closes without serving).
+struct SmuggleResult {
+  std::atomic<int> reqs_served{0};  // times the handler ran (0 = rejected)
+};
+Task<HttpResponse> smuggle_handler(Allocator, void* ctx,
+                                   const HttpRequest&) noexcept {
+  static_cast<SmuggleResult*>(ctx)->reqs_served.fetch_add(1, std::memory_order_relaxed);
+  HttpResponse resp;
+  resp.set_status(200);
+  resp.set_body("ok");
+  co_return resp;
+}
+Task<int> smuggle_server(Allocator alloc, IoContext* io, TcpListener* ls,
+                         SmuggleResult* r) {
+  TcpStream conn = co_await ls->accept(kOwner);
+  if (conn.valid()) co_await http_serve(alloc, std::move(conn), &smuggle_handler, r);
+  co_return 0;
+}
+Task<int> smuggle_client(Allocator, IoContext* io, const char* raw,
+                         std::uint16_t port) {
+  TcpStream s = tcp_socket(*io, kOwner);
+  alignas(16) unsigned char ss[128];
+  std::uint32_t len = 0;
+  resolve_addr("127.0.0.1", port, &ss, &len);
+  if (co_await s.connect(&ss, len) != 0) co_return 0;
+  co_await s.write(raw, static_cast<std::uint32_t>(std::strlen(raw)));
+  char buf[512];
+  (void)(co_await s.read(buf, sizeof(buf)));  // one read then close (see smuggle_probe rationale)
+  co_return 0;
+}
+// Run one raw request against a fresh server; return how many times the handler
+// ran (0 = the server rejected the request before dispatch).
+int smuggle_served(const char* raw, std::uint16_t port) {
+  Scheduler sched(2, system_allocator(), 256);
+  IoContext io(sched, 2);
+  if (!io.valid()) return -1;
+  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", port);
+  if (!ls.valid()) return -1;
+  SmuggleResult r;
+  auto ds = std::make_unique<Drive>();
+  auto dc = std::make_unique<Drive>();
+  ds->task = smuggle_server(system_allocator(), &io, &ls, &r);
+  dc->task = smuggle_client(system_allocator(), &io, raw, port);
+  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  sched.spawn_on(kOwner, &fs);
+  sched.spawn_on(kOwner, &fc);
+  sched.drain();
+  sched.shutdown();
+  return r.reqs_served.load();
+}
+
 }  // namespace
 
 TEST(IoHttp, GetKeepAlive) {
@@ -220,4 +275,25 @@ TEST(IoHttp, GetKeepAlive) {
   // same connection -- must succeed and decode correctly.
   EXPECT_EQ(r->stream2_status.load(), 200);
   EXPECT_STREQ(r->stream2_body_got, "tok-A tok-B tok-C");
+}
+
+// Request-smuggling defense (RFC 7230 §3.3.3, red-team fix 2026-07-05). The server
+// must REJECT (close without serving) ambiguous framing that would desync a proxy
+// chain; a well-formed request still serves. Ports are distinct per case (avoid
+// TIME_WAIT). Bidirectionally validated: pre-fix these payloads were all served.
+TEST(IoHttp, RejectsSmuggling) {
+  // Baseline: well-formed request IS served.
+  EXPECT_GE(smuggle_served("GET / HTTP/1.1\r\nHost: x\r\n\r\n", 54430), 1);
+  // CL + TE both present (classic CL.TE / TE.CL smuggling) -> rejected.
+  EXPECT_EQ(smuggle_served("POST / HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\n"
+                           "Transfer-Encoding: chunked\r\n\r\n0\r\n\r\n", 54431), 0);
+  // Obfuscated Transfer-Encoding (not bare "chunked") -> rejected.
+  EXPECT_EQ(smuggle_served("POST / HTTP/1.1\r\nHost: x\r\n"
+                           "Transfer-Encoding: gzip, chunked\r\n\r\n0\r\n\r\n", 54432), 0);
+  // Duplicate, conflicting Content-Length -> rejected.
+  EXPECT_EQ(smuggle_served("POST / HTTP/1.1\r\nHost: x\r\nContent-Length: 5\r\n"
+                           "Content-Length: 6\r\n\r\nhello", 54433), 0);
+  // A single valid chunked request is still served (no false positive).
+  EXPECT_GE(smuggle_served("POST / HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked"
+                           "\r\n\r\n5\r\nhello\r\n0\r\n\r\n", 54434), 1);
 }

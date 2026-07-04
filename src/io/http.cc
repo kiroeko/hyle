@@ -67,8 +67,8 @@ struct GrowBuf {
     if (want_total <= cap) return true;
     std::uint32_t ncap = cap == 0 ? 4096 : cap;
     while (ncap < want_total) {
-      if (ncap > 0x80000000u) {
-        ncap = want_total;
+      if (ncap >= 0x80000000u) {
+        ncap = want_total;  // next double would overflow u32 -> clamp to exact need
         break;
       }
       ncap *= 2;
@@ -344,9 +344,36 @@ sched::Task<HttpRequest*> http_server_next(mem::Allocator alloc,
   // im.body (stable) so the body view is also safe against buf moves.
   string_ref te = r.header("transfer-encoding");
   string_ref cl = r.header("content-length");
+  // Request-smuggling defense (RFC 7230 §3.3.3). A message that is ambiguous about
+  // its body length is a desync/smuggling vector when HYLE sits behind or in front
+  // of another HTTP actor that resolves the ambiguity differently. Reject (close
+  // the connection -> nullptr) rather than guess:
+  //  - BOTH Transfer-Encoding and Content-Length present: the classic TE.CL / CL.TE
+  //    smuggling pair. RFC says TE overrides CL, but a CL-honoring hop would frame
+  //    it differently -> refuse.
+  //  - Transfer-Encoding present but not EXACTLY "chunked" (e.g. "gzip, chunked",
+  //    "chunked, chunked", "identity", or an obfuscated "chunked "): we only decode
+  //    a single chunked layer; anything else is unframeable here, and lax matching
+  //    is exactly how smuggling slips through. Only bare "chunked" is accepted.
+  //  - Duplicate Content-Length headers with CONFLICTING values (RFC 7230 §3.3.3
+  //    rule: multiple CL with different values is unrecoverable): scan all headers,
+  //    reject if two "content-length" values differ.
+  if (te.size > 0) {
+    if (cl.size > 0) co_return nullptr;          // TE + CL both present -> reject
+    if (!iequal(te, "chunked")) co_return nullptr;  // non-bare-chunked TE -> reject
+  } else {
+    string_ref seen_cl{};
+    for (std::size_t i = 0; i < r.header_count_; ++i) {
+      if (iequal(r.header_name(i), "content-length")) {
+        string_ref v = r.header_value(i);
+        if (seen_cl.size > 0 && !(seen_cl == v)) co_return nullptr;  // conflicting
+        seen_cl = v;
+      }
+    }
+  }
   buf.consume(head_len);  // head is safely copied; drop it from the read buffer
   im.body.size = 0;
-  if (iequal(te, "chunked")) {
+  if (te.size > 0) {  // == chunked (guarded above)
     std::uint64_t dn = co_await decode_chunked(alloc, buf, im.body, c.stream_);
     if (dn == UINT64_MAX) co_return nullptr;
     r.body_ = string_ref{im.body.data, static_cast<std::uint32_t>(dn)};
@@ -628,6 +655,21 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
   r.reason_ = string_ref{msg, static_cast<std::uint32_t>(msg_len)};
   r.headers_ = im.headers;
   r.header_count_ = num_headers;
+
+  // Body-suppressing responses (RFC 7230 §3.3.3 rule 1): a response to a HEAD
+  // request, and any 1xx / 204 / 304 status, has NO message body EVEN IF it carries
+  // Content-Length or Transfer-Encoding. Framing off those headers here would make
+  // us read a body that never comes -- blocking until the peer closes, or (on a
+  // keep-alive conn) consuming the NEXT response's bytes = desync. So short-circuit
+  // to an empty body and leave any pipelined bytes in buf for the next response.
+  bool no_body = iequal(method, "HEAD") || status == 204 || status == 304 ||
+                 (status >= 100 && status < 200);
+  if (no_body) {
+    buf.consume(head_len);
+    im.body.size = 0;
+    r.body_ = string_ref{};
+    co_return &r;
+  }
 
   // Body framing (same rules as the server request path).
   string_ref te = r.header("transfer-encoding");
