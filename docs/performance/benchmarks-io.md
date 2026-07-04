@@ -1,6 +1,6 @@
 # io 实测铁证
 
-> 本页是 [performance 总账](./README.md) 的 io 详节:proactor 三后端机制 + echo 吞吐/扩展性对标。环境:Linux GCC14.2 Release(原生 ext4,32 核 i9-13900K)+ Win MSVC19.50 Release,nanobench + `scripts/bench-stat.py` n=15 统计口径。bench 源:`bench/io/echo_bench.cc`(吞吐+worker 扩展)、`bench/io/io_scaling_bench.cc`(连接数 + payload 两条复杂度曲线)。
+> 本页是 [performance 总账](./README.md) 的 io 详节:proactor 三后端机制 + echo 吞吐/扩展性对标。环境:Linux GCC14.2 Release(原生 ext4,32 核 i9-13900K)+ Win MSVC19.50 Release,nanobench + `scripts/bench-stat.py` n=15 统计口径。bench 源:`bench/io/echo_bench.cc`(吞吐+worker 扩展)、`bench/io/io_scaling_bench.cc`(连接数 + payload 两条复杂度曲线)、`bench/io/accept_bench.cc`(建连速率 O(1)/accept)。
 
 ## 为什么 io 的对标要等到有真实并发连接负载
 
@@ -118,6 +118,24 @@ echo_bench 在**固定** 64-conn/64B 负载证吞吐 + worker 扩展;但"SOTA pr
 ns/byte 单调降、每档改善递减,16KB→64KB 仅差 0.02 = **已到内存带宽地板、干净 plateau,零拷贝证实**。(sweep 停在 64KB:256KB 单迭代搬 512MB、分钟级拖垮 bench,且 16KB 已见地板,无额外形状。)
 
 **方法学**:此段是"先疑自己的假设"的活例——SQ-满退化是个看似合理的初判,靠探针(avg_batch/sqes)+ 栈 A/B 两步实验推翻并定位到真因,而非凭直觉写进文档。Windows IOCP 侧仅验证能编能跑 + 低档平坦(loopback TCP 模拟 socketpair 在 1024 连接反复建拆触发 TIME_WAIT 端口堆积,非 proactor 问题);真 scaling 数取自 io 主平台 io_uring。
+
+## accept scaling:建连速率 O(1)/accept(`bench/io/accept_bench.cc`)
+
+echo/scaling bench 都在计时区**外**预建 socket,从不测 accept。补第三条腿专测**建连路径**:一个 `TcpListener` 在 worker 0 循环 accept N 个连接,N 个 client fiber round-robin 分布到 4 worker 并发 connect,新连接经 `accept(assign_owner)` round-robin 分派到各核(seastar/HYLE 式"新连接分片到核"),accept 后立即 drop(close)只计建连。报 accepts/s、扫 N。负载模型参考 liburing `test/accept-mshot-stress.c`。
+
+**Linux io_uring 实测(单跑中位)**:
+
+| conns | ns/accept | accepts/s | err% |
+|---|---|---|---|
+| 64 | 268,178 | 3,729 | 0.5% |
+| 256 | 261,944 | 3,818 | 0.3% |
+| 1024 | 259,690 | 3,851 | 0.4% |
+
+accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径 O(1)/accept 证实**,建连速率不随连接规模退化。
+
+**绝对值(~260μs/accept)的诚实解读**:这不是内核 accept 本身的耗时,而是**端到端建连**摊到吞吐——每次含完整 TCP 三次握手(loopback 仍多次内核往返)+ client fiber 与 accept 分处不同核的 fiber 调度 + 跨核 wake 往返。测的是"建连吞吐是否随规模保持"(是),不是"单次 accept 有多快"。
+
+**又一个"先疑自己"的活例(bench bug,非 proactor)**:冒烟首跑 64→256 每 accept 慢 **16x**(242 accepts/s、单档 36s),像 accept 路径崩了。诊断:一次性 spawn N 个 client 并发 connect,但默认 **backlog=128** 撑不住 256+ 涌入的 SYN → 丢弃 → **TCP SYN 重传(1s 退避)**。把 backlog 定为 conns 后曲线立刻平坦。教训:**测建连吞吐必须给足 listen backlog**,否则测的是 TCP 重传退避,不是 proactor。
 
 ## 未做(登记)
 
