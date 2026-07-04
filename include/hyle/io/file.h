@@ -30,6 +30,13 @@
 //
 // Independent of C2 (timeout io): file ops don't take deadlines here (open/stat/
 // fsync rarely need them; a slow disk is not a dead peer). Timeout/cancel is io-06.
+//
+// LIFETIME INVARIANT (shared with net.h's socket ops): an in-flight op parks its
+// IoOperation slot on the awaiting fiber's frozen stack and hands its address to
+// the kernel as the completion token. The fiber MUST NOT be destroyed while an op
+// is in flight -- the completion would write into freed memory. co_await always
+// waits for the completion, so ordinary use is safe; forcibly destroying a
+// suspended fiber mid-op is what cooperative cancellation (io-06/C3) will address.
 
 namespace hyle::io {
 
@@ -207,7 +214,12 @@ class File {
       op_.waker = sched::current_waker();
       submitted_ = self->io_->proactor_for_current().submit_close(
           self->fd_, to_token(&op_));
-      self->fd_ = -1;  // ownership handed to the close op; don't double-close
+      // submit_close TAKES OWNERSHIP of the fd: io_uring closes it via the async
+      // SQE; IOCP/epoll already ran ::CloseHandle/::close inside submit_close. So
+      // clear fd_ unconditionally -- the destructor must not double-close. (The only
+      // false return is an uninitialized proactor, impl==nullptr, i.e. an invalid
+      // IoContext the caller shouldn't be using; a leaked fd there is acceptable.)
+      self->fd_ = -1;
       if (!submitted_) {
         op_.result = -1;
         return false;

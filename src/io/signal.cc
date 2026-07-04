@@ -70,10 +70,17 @@ bool ensure_pipe(SigGlobal& g) noexcept {
   if (g.pipe_made) return true;
   int fds[2];
   if (::pipe2(fds, O_CLOEXEC) != 0) return false;
-  // Write end nonblocking so the handler never blocks (drops the byte on a full
-  // pipe -- harmless, a queued byte already signals "arrived").
-  int fl = ::fcntl(fds[1], F_GETFL, 0);
-  ::fcntl(fds[1], F_SETFL, fl | O_NONBLOCK);
+  // BOTH ends nonblocking. Write end: the handler must never block (drops the byte
+  // on a full pipe -- harmless, a queued byte already signals "arrived"). Read end:
+  // the epoll fallback does a SYNCHRONOUS ::read when the fd fires; if the byte was
+  // already drained (a spurious wake / another reader), a blocking read would stall
+  // the whole worker -- nonblocking makes it return EAGAIN instead (surfaced as a
+  // short/again result, the fiber just re-waits). io_uring's async read is immune
+  // either way.
+  for (int e = 0; e < 2; ++e) {
+    int fl = ::fcntl(fds[e], F_GETFL, 0);
+    ::fcntl(fds[e], F_SETFL, fl | O_NONBLOCK);
+  }
   g.pipe_rd = fds[0];
   g.pipe_wr = fds[1];
   g.pipe_made = true;
@@ -257,8 +264,13 @@ bool SignalSet::WaitAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   WinSigGlobal& g = win_sig_global();
   // Publish the target BEFORE arming so a signal racing in is delivered: set ring +
   // wanted bits, then the token last (release) -- the handler reads token last.
+  // want is OR-ed (accumulate), not stored, so a second SignalSet awaiting a
+  // different signal doesn't erase the first's interest. token/ring are a SINGLE
+  // slot, though: this is a ONE-WAITER model (see signal.h) -- concurrent waits on
+  // separate SignalSets would clobber each other. The graceful-shutdown use case
+  // (one fiber awaits SIGINT/SIGTERM) is single-waiter, which is what this serves.
   g.ring.store(&self->io_->proactor(self->owner_), std::memory_order_release);
-  g.want.store(self->signals_, std::memory_order_release);
+  g.want.fetch_or(self->signals_, std::memory_order_release);
   g.token.store(to_token(&op_), std::memory_order_release);
   submitted_ = true;
   sched::suspend();  // resumed by the console handler's post() -> net::complete
