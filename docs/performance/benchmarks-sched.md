@@ -125,6 +125,28 @@ sched-05 的 `sync_bench` 覆盖 Mutex/Channel/WaitGroup/Latch/CV;sched-09 新�
 - **暖池往返双平台 12x 差(Win 1μs / Lin 12.7μs)——机制性,非 bug**:一次 spawn_blocking 往返要**唤醒一个睡眠的池线程**(submit 的 `condition_variable::notify_one`)+ 池线程跑完再经 JoinState fiber-aware CV **唤醒 join 的 worker fiber**。Linux 唤醒睡眠线程走 `futex(FUTEX_WAKE)` + 线程被调度上核,实测 ~12.7μs(稳定复现,err 1%,load 1.07 非负载干扰);Windows 的 CONDITION_VARIABLE 唤醒路径更快(~1μs)。这**不是 HYLE bug,是"唤醒睡眠线程"在两 OS 的固有差**——且它揭示一个真结论:**spawn_blocking 是为真正的阻塞工作(syscall/CPU 密集,本身 ≥ 数十 μs~ms)设计的,用它卸载微秒级琐事时唤醒开销会主导**(本 bench 的 trivial 闭包正是极端情形,放大了唤醒成本)。
 - 正确性由 sched-11 的 blocking_test(7 测试,含 WorkerNotStalledByBlockingCall 证单 worker 不被阻塞拖死)+ WSL TSan 覆盖。
 
+## sched-07 取消树：is_cancelled() 热路径零税 + cancel() 传播 O(N)（`bench/sched/cancel_bench.cc`）
+
+CancelToken 树是 shard-local、(几乎)无锁结构——唯一原子是 per-node `cancelled` 标志(fiber 跨 worker 迁移后的跨核可见性)。sched-07 落地时 16 测试 + TSan 无性能数,这里补,证三主张。纯用户态(无需 scheduler)。
+
+| 场景 | HYLE(Win / Lin) | 对照 | 判定 |
+|---|---|---|---|
+| **is_cancelled()** | 1.36 / 0.28 ns | 裸 std::atomic<bool> acquire load 1.18 / 0.26 ns | **86.7% / 93.8%**:只比裸 load 多一个 null 检查,热路径实质免费 |
+| **derive() 每子** | 8.6 / 7.5 ns | — | 一次分配 + O(1) 前插,请求 fan-out 到 N 子任务的每子成本 |
+
+**cancel() 传播 O(N)(建 N 节点树 + cancel + 拆,batch=N → ns/node)**:
+
+| 树形 | N=64 | N=256 | N=1024 | 判定 |
+|---|---|---|---|---|
+| **WIDE**(root + N 直接子,Win) | 13.87 | 12.98 | 13.68 ns/node | 平坦 => O(N) |
+| **WIDE**(Lin) | 11.97 | 11.13 | 11.49 ns/node | 平坦 => O(N) |
+| **DEEP**(N 深链,Win) | 18.05 | 18.09 | 18.83 ns/node | 平坦 => O(N) |
+| **DEEP**(Lin) | 15.17 | 15.20 | 15.93 ns/node | 平坦 => O(N) |
+
+- **is_cancelled() 热路径实质免费**:每个 await 点 / `HYLE_CHECK_CANCEL()` 都 poll 它,故必须 ~一条 load。实测只比裸 `atomic<bool>` 多那个 `node_!=nullptr` 检查(Win 86.7%、Lin 93.8%,Lin 更贴近因编译器把 null 检查优化进去)。这坐实"每个让出点查取消"零负担。
+- **传播 wide/deep 双形态都平坦 = iterative DFS O(N)**:`cancel_subtree` 迭代遍历(非递归,防深 fan-out 爆栈)。wide(兄弟扫描)与 deep(parent→child 下降)两条遍历路径都测,ns/node across N 平坦证全链路(建+cancel+拆)线性,无隐藏 re-walk。**deep 比 wide 略贵**(~18 vs ~13ns/node):深链是指针追逐(每节点在不同 cache line),wide 兄弟链更局部。
+- 正确性由 sched-07 的 cancel_test(16 测试:析构过继/born-cancelled/宽深树/回调健壮性)+ net_cancel/http_cancel + WSL TSan 零 race 覆盖。
+
 ## JoinHandle / spawn_task / when_all / when_any（sched-10，`bench/sched/join_bench.cc`）
 
 结构化并发糖层的对标——**没有外部对手**(tokio/folly 是别的 runtime),标尺是"糖 vs 它抽象的裸机制":`spawn_task+JoinHandle::join` vs `裸 Fiber + WaitGroup(1) + 手动结果 slot`(sched-10 前测试代码手搓的那套)。目标是证明这层封装不比手写贵多少。
