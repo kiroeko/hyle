@@ -93,17 +93,19 @@ sched 的 deadline/超时只需要三样，先钉这个最小面，full timer �
 | **per-core 本地队列** | 有界 ring（256 槽，tokio `LOCAL_QUEUE_CAPACITY`），**owner FIFO（push_back tail / pop head）**、thief 从最老端 FIFO steal 偷一半（向上取整）；满时后半 128 个甩 global | 有界=无锁+cache 友好；偷老任务=公平。**注意：LIFO 性不来自 run_queue 本身**（深读 tokio `queue.rs` 校正：run_queue 是 FIFO，owner-LIFO 是 st3/Chase-Lev 语义、非 tokio）|
 | **LIFO slot（单槽）** | 每核一个"下一个就跑"单槽，刚被唤醒的 fiber 放这里、优先于本地队列；**不可被偷**，连续轮询预算上限（tokio `MAX_LIFO_POLLS_PER_TICK=3`）超了关 slot 改走队尾（可被偷）| **completion 脊的接入点**：io/gpu 完成唤醒的 fiber 落唤醒核 LIFO slot，热 cache 立即续跑。**LIFO 热栈复用全靠这个单槽，不靠 run_queue** |
 | **global 注入队列** | **无锁分片 MPMC（`ShardedQueue`,N 子环=每 worker 一环）**,接本地队列溢出 + 跨核 spawn + 外部线程提交 | 兜底不丢任务;分片消单点 CAS 争用(bench-02b:反超 moodycamel 2.6-3x,随生产者数平坦)。放弃全局 FIFO——work-stealing 本就无全局序 |
-| **steal 协议** | 本地空 → 周期查 global（**间隔按 poll 时长 EWMA 自调，目标 200µs/均值、clamp 2-127；tokio `stats.rs`，非固定 every-Nth**）防饿死 → 随机选 victim 偷一半 | Tokio 实证：纯偷会饿死 global，需周期查；长任务下自调间隔避免过频查 global |
+| **steal 协议** | 本地空 → 随机选 victim 偷一半;**且每 61 次 find_task 先查 global 一次**(`kGlobalQueueInterval`,tokio 同款质数)防本地 firehose 饿死全局注入 | Tokio 实证:纯偷会饿死 global,需周期查。**固定 61 非 EWMA 自调**:tokio 的 EWMA 自调(200µs/均值、clamp 2-127)只对超长 poll workload 有意义,固定质数已堵住饥饿洞(=正确性点);饥饿真实存在——探针实证 1-worker yield-hog 转 1700 万次而全局 victim 从未运行,加周期查后 49ms 内跑 |
 
-**调度循环（每个 worker 线程）**：
+**调度循环（每个 worker 线程,实际 find_task 顺序）**：
 ```
 loop:
-  f = lifo_slot.take()           // 1. 刚唤醒的，热 cache 优先
-      ?? local_queue.pop()       // 2. 本地 LIFO
-      ?? (every Nth) global.pop() // 3. 周期查 global 防饿死
-      ?? steal_from_random_victim() // 4. 偷一半
-      ?? park()                  // 5. 都没有→挂起（见 2.3 防惊群）
-  switch_to_fiber(f)             // fcontext 切栈（第一节）
+  f = pinned.pop()                    // 0. 钉在本核的 fiber(shard-per-core io),永不被偷,io 延迟优先
+      ?? (tick%61==0 ? global.pop())  // 1. 每 61 次先查 global 防本地 firehose 饿死全局注入(机会③)
+      ?? lifo_slot.take()             // 2. 刚在本核唤醒的,热 cache 优先(预算 kMaxLifoPolls=3)
+      ?? local_queue.pop()            // 3. 本地 FIFO ring(owner pop head)
+      ?? global.pop()                 // 4. 全局分片注入(常态兜底)
+      ?? steal_from_random_victim()   // 5. 随机 victim 偷一半
+      ?? park()                       // 6. 都没有→挂起(见 2.3 防惊群)
+  switch_to_fiber(f)                  // fcontext 切栈（第一节）
 ```
 
 **防惊群**（park/unpark）：维护 `searching_thieves` + `sleeping_workers` 两个原子计数；有新任务且当前无 thief 在搜时才 `notify_one`，避免一个任务唤醒全部核。（参考 work-stealing scheduler 论文的 actives/thieves 协议。）
