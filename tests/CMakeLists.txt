@@ -54,10 +54,12 @@ if(HYLE_HAS_FCONTEXT)
   hyle_add_test(io NAME file SOURCES io/file_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME dns SOURCES io/dns_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME signal SOURCES io/signal_test.cc DEPS hyle_sched)
+  hyle_add_test(io NAME timeout SOURCES io/timeout_test.cc DEPS hyle_sched hyle_time)
   if(WIN32)
     target_link_libraries(hyle_io_net_test PRIVATE ws2_32)  # test builds the loopback pair
     target_link_libraries(hyle_io_tcp_test PRIVATE ws2_32)  # sockaddr / winsock types
     target_link_libraries(hyle_io_udp_test PRIVATE ws2_32)  # sockaddr / winsock types
     target_link_libraries(hyle_io_dns_test PRIVATE ws2_32)  # getaddrinfo + WSAStartup
+    target_link_libraries(hyle_io_timeout_test PRIVATE ws2_32)  # loopback TCP pair
   endif()
 endif()

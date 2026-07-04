@@ -640,13 +640,26 @@ bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t /*mode*/,
                         user_data);
 }
 
-
-// Provided buffer ring (io-07b) is an io_uring-only mechanism -- IOCP has no
-// equivalent (WSARecv uses caller-posted buffers). net/ detects the false return
-// and falls back to a pre-posted-buffer recv on Windows. Honest not-supported.
-bool Proactor::register_buf_ring(int, unsigned, unsigned) noexcept {
-  return false;
+// io-06 cancel (IOCP): find the in-flight IoOp whose token matches, then CancelIoEx
+// it. The op still completes with ERROR_OPERATION_ABORTED (posted to the port), so
+// the caller's orphan table must keep the slot alive until that lands. cancel_user_
+// data is unused on IOCP (no separate cancel completion -- CancelIoEx is synchronous
+// in its request; only the cancelled op's own ABORTED completion arrives). Returns
+// false if no matching in-flight op (already completed -> nothing to cancel).
+bool Proactor::submit_cancel(std::uint64_t target_user_data,
+                             std::uint64_t /*cancel_user_data*/) noexcept {
+  if (impl_ == nullptr) return false;
+  for (Impl::IoOp* op = impl_->inflight; op != nullptr; op = op->next) {
+    if (op->user_data == target_user_data && op->handle != nullptr) {
+      // CancelIoEx targets THIS specific overlapped op on its handle. Async: the
+      // op reap()s later with GetLastError()==ERROR_OPERATION_ABORTED.
+      return ::CancelIoEx(op->handle, &op->ov) != 0;
+    }
+  }
+  return false;  // not found: already completed, nothing to cancel
 }
+
+
 bool Proactor::submit_recv_multishot(std::intptr_t, int,
                                      std::uint64_t) noexcept {
   return false;
@@ -1845,6 +1858,38 @@ bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t mode,
                     &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
                     impl_->sq_array, impl_->sqes, IORING_OP_FALLOCATE,
                     static_cast<std::int32_t>(fd), len, mode, offset, user_data);
+}
+
+// io-06 cancel (Linux). io_uring: an IORING_OP_ASYNC_CANCEL SQE keyed on the target
+// op's user_data (cancel_flags 0 == match-on-user_data, the documented default).
+// The cancelled op reaps a -ECANCELED CQE (or completes normally if it raced); the
+// cancel op itself reaps its OWN CQE under cancel_user_data (0 ok / -ENOENT not
+// found / -EALREADY in progress) -- the router must drop that token (like a wake),
+// which the orphan layer (net_timeout.h) handles. Slot lifetime is the caller's
+// responsibility (keep alive until the -ECANCELED lands). epoll: readiness model,
+// no in-flight kernel op -- just drop the fd's armed watch + pending entry; no late
+// completion, nothing to orphan.
+bool Proactor::submit_cancel(std::uint64_t target_user_data,
+                             std::uint64_t cancel_user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    // Find the fd whose armed op carries target_user_data, drop its watch + entry.
+    for (auto it = impl_->pending.begin(); it != impl_->pending.end(); ++it) {
+      if (it->second.user_data == target_user_data) {
+        ::epoll_ctl(impl_->epfd, EPOLL_CTL_DEL, it->first, nullptr);
+        impl_->pending.erase(it);
+        return true;
+      }
+    }
+    return false;  // not armed (already fired) -> nothing to cancel
+  }
+  // io_uring ASYNC_CANCEL: addr = target user_data, cancel_flags in the rw_flags
+  // union (0 = default user_data match). The cancel op is itself in-flight and
+  // reaps under cancel_user_data.
+  return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
+                    &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_ASYNC_CANCEL,
+                    -1, target_user_data, 0, 0, cancel_user_data);
 }
 
 

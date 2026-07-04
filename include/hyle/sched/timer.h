@@ -12,6 +12,10 @@
 #  define HYLE_SCHED_API HYLE_IMPORT
 #endif
 
+namespace hyle::time {
+struct TimerEntry;  // fwd: defined in time/timer_source.h (opaque here)
+}
+
 // Fiber sleep (sched-04b): a fiber suspends for a duration WITHOUT burning its
 // worker. This is the first consumer of the time-02 timing wheel through the
 // sched-04a Waker spine -- "timer expired" funnels into the same wake path as an
@@ -45,5 +49,24 @@ HYLE_SCHED_API void sleep_for_ns(std::uint64_t ns) noexcept;
 // Absolute-deadline variant: suspend until monotonic_ns() reaches at least
 // `deadline_ns`. A deadline already in the past resumes on the next tick.
 HYLE_SCHED_API void sleep_until_ns(std::uint64_t deadline_ns) noexcept;
+
+// ---- timed-io building blocks (io-06 / C2) ----------------------------------
+// Lower-level timer arm/cancel that do NOT suspend -- for composing a timeout with
+// a concurrent io op (recv/accept/connect + deadline, first-to-fire wins). Unlike
+// sleep_*, the caller arms a timer AND submits an io op, then suspends ONCE; on
+// resume it arbitrates which fired. Both operate on the CURRENT worker's wheel and
+// MUST be called from a fiber on that worker (shard-per-core: the timed io fiber is
+// pinned, so arm/fire/cancel all happen single-threaded on one worker -- no
+// cross-core cancel queue needed, which is why this can ship without sched-04d).
+//
+// arm_timeout: schedule `entry` to fire at `deadline_ns`, waking THIS fiber (the
+// same reinject path as sleep -- entry.data is set to this fiber). The entry MUST
+// outlive the wait (put it on the coroutine/awaitable frame). Does NOT suspend.
+HYLE_SCHED_API void arm_timeout(time::TimerEntry* entry,
+                                std::uint64_t deadline_ns) noexcept;
+// cancel_timeout: remove `entry` from this worker's wheel if still armed (O(1),
+// no-op if it already fired). Call when the io op won the race, so a stale timer
+// doesn't fire into a reused fiber. Same-worker only.
+HYLE_SCHED_API void cancel_timeout(time::TimerEntry* entry) noexcept;
 
 }  // namespace hyle::sched

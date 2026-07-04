@@ -1,6 +1,7 @@
 #include "hyle/io/io_context.h"
 
 #include "hyle/io/net.h"
+#include "hyle/io/net_timeout.h"  // io-06: complete_timed + timed-token routing
 #include "hyle/macros.h"
 #include "hyle/sched/waker.h"  // current_worker_index()
 
@@ -81,7 +82,14 @@ bool IoContext::poll(unsigned worker_idx,
     // the block). io_uring/epoll drop it inside reap, but IOCP's wake posts it as a
     // completion, so filter here to defend all backends uniformly.
     if (batch[i].user_data == Proactor::kWakeToken) continue;
-    complete(batch[i]);
+    // io-06: a TIMED op's token has bit 0 set (a tagged &TimedSlot); route it to
+    // the timed arbiter (handles the normal, late-cancel, and cancel-op-own CQEs).
+    // An ordinary op's token is a clean &IoOperation -> the plain router.
+    if (is_timed_token(batch[i].user_data)) {
+      complete_timed(batch[i]);
+    } else {
+      complete(batch[i]);
+    }
   }
   return had_io;
 }

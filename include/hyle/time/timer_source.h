@@ -47,6 +47,14 @@ struct TimerEntry {
   std::uint64_t source_state = 0;
   // Opaque payload -- typically the Waker/fiber pointer the caller wants woken.
   void* data = nullptr;
+  // Optional fire callback (io-06 timed io). When null (the default, e.g. plain
+  // sleep) the consumer wakes `data` as a Fiber* directly. When set, the consumer
+  // (fire_due_timers) invokes on_fire(this) INSTEAD of the direct wake, letting a
+  // timed op arbitrate against a racing io completion before deciding to wake --
+  // the timer side of the io-vs-timer race. The wheel itself never calls this (it
+  // stays a pure data structure that hands back expired entries); the callback runs
+  // in the consumer layer, consistent with "sources don't run callbacks".
+  void (*on_fire)(TimerEntry*) noexcept = nullptr;
   // True iff currently held by a source (armed, not yet fired or cancelled).
   // Distinguishes "in the source" from "handed back on the expired list" so the
   // caller may reuse `hook` on its own list after firing.

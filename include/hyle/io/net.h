@@ -40,6 +40,12 @@ struct IoOperation {
   sched::Waker waker;         // whom to wake when this op completes
   std::int64_t result = 0;    // filled by the reaper from Completion::result
   std::uint32_t flags = 0;    // Completion flags (kMore/kBuffer), if the op sets them
+  // io-06: set true by complete() when the completion arrives. A plain op ignores
+  // it (it only ever wakes on its own completion). A TIMED op (net_timeout.h) reads
+  // it after resume to arbitrate io-vs-timer: `completed==true` => io won (use
+  // result); `false` => the timer woke us first (io still in flight -> cancel it,
+  // return -ETIMEDOUT). Single-threaded per worker (shard-per-core), so no atomic.
+  bool completed = false;
 };
 
 // Route one reaped completion back to the fiber waiting on it. The reaper calls
@@ -52,6 +58,7 @@ inline void complete(const Completion& c) noexcept {
   auto* op = reinterpret_cast<IoOperation*>(static_cast<std::uintptr_t>(c.user_data));
   op->result = c.result;
   op->flags = c.flags;
+  op->completed = true;  // io-06: mark done BEFORE the wake (the timed-op arbiter reads it)
   op->waker.wake();  // safe from any thread; re-injects the fiber (sched-04a)
 }
 

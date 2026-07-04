@@ -334,13 +334,19 @@ struct Scheduler::Impl {
     w.wheel.advance(time::monotonic_ns(), due);
     std::size_t n_fired = 0;
     while (time::TimerEntry* e = due.pop_front()) {
-      // data is the Fiber* that armed this sleep. Firing == the sole wake of a
-      // plain sleep: re-inject through the SAME rendezvous as an io completion,
-      // so it composes with a concurrent wake() (none for pure sleep, but the
-      // path stays uniform). The SleepNode (holding `e`) lives on the suspended
-      // fiber's frozen stack and is valid until the fiber resumes.
-      auto* f = static_cast<Fiber*>(e->data);
-      if (f->wake_rendezvous()) reinject(f);
+      // io-06: a timed-io entry carries an on_fire callback that ARBITRATES against
+      // a racing io completion (it may decline to wake if io already won) -- so the
+      // timer side never blindly calls wake_rendezvous when io has already fired,
+      // which would leave wake_state_ dirty and lost-wake the fiber's NEXT suspend.
+      // A plain sleep entry has no callback: its data is the Fiber* and the timer is
+      // its SOLE waker (no race), so wake it directly through the same rendezvous.
+      if (e->on_fire != nullptr) {
+        e->on_fire(e);  // timed-io arbiter (net_timeout.h): sets timer_fired, wakes
+                        // only if io hasn't already won
+      } else {
+        auto* f = static_cast<Fiber*>(e->data);
+        if (f->wake_rendezvous()) reinject(f);
+      }
       ++n_fired;
     }
     return n_fired;
@@ -620,6 +626,27 @@ void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
 
 void sleep_for_ns(std::uint64_t ns) noexcept {
   sleep_until_ns(time::monotonic_ns() + ns);
+}
+
+// ---- timed-io building blocks (io-06) ---------------------------------------
+// arm/cancel a timeout timer on THIS worker's wheel WITHOUT suspending, so a
+// timed io op can arm a deadline + submit an io op and then suspend once. Same
+// single-threaded per-worker discipline as sleep (we ARE the owning worker); the
+// timer wakes this fiber via the SAME reinject path (entry.data = self, fired by
+// fire_due_timers -> wake_rendezvous). No cross-core cancel queue: the timed io
+// fiber is pinned (shard-per-core), so arm/fire/cancel are all on this worker.
+
+void arm_timeout(time::TimerEntry* entry, std::uint64_t deadline_ns) noexcept {
+  Fiber* self = Fiber::current();
+  HYLE_FATAL_ASSERT(self != nullptr);       // timed io outside a fiber is a bug
+  HYLE_FATAL_ASSERT(tls_wheel != nullptr);  // must be on a scheduler worker
+  entry->data = self;  // fire_due_timers reinjects this fiber (same as sleep)
+  tls_wheel->schedule(entry, deadline_ns);
+}
+
+void cancel_timeout(time::TimerEntry* entry) noexcept {
+  HYLE_FATAL_ASSERT(tls_wheel != nullptr);
+  tls_wheel->cancel(entry);  // O(1); no-op if already fired
 }
 
 }  // namespace hyle::sched

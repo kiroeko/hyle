@@ -227,6 +227,29 @@ class Proactor {
                                     std::uint64_t offset, std::uint64_t len,
                                     std::uint64_t user_data) noexcept;
 
+  // ---- cancel an in-flight op (io-06, capability C2) ------------------------
+  // Cancel the in-flight op whose completion token is `target_user_data` (the same
+  // value passed as an op's user_data). Used by timed io when the deadline fires
+  // first: the timer won, so the in-flight recv/accept/connect must be torn down.
+  //
+  // Cancellation is ASYNCHRONOUS and DOES NOT free anything here. The cancelled op
+  // still delivers a FINAL completion (io_uring: a -ECANCELED CQE; IOCP: an
+  // ERROR_OPERATION_ABORTED completion; the cancel may also race the op completing
+  // normally -> a normal result). The caller MUST keep the op's slot alive until
+  // that final completion arrives (see net_timeout.h's orphan table) -- a slot on a
+  // fiber stack that resumed on timeout would be a use-after-free when the late
+  // completion lands. `cancel_user_data` is the token for the CANCEL op's OWN
+  // completion (io_uring emits one; the router must drop it, like kWakeToken).
+  //
+  // Backends: io_uring fills an IORING_OP_ASYNC_CANCEL SQE (addr = target_user_data,
+  // IORING_ASYNC_CANCEL_USERDATA); IOCP finds the in-flight IoOp by token and calls
+  // CancelIoEx(handle, &overlapped); epoll drops the fd's armed watch + pending
+  // entry (readiness model -- no late kernel completion, so nothing to orphan).
+  // Returns false if the op could not be found / the cancel could not be queued
+  // (e.g. it already completed) -- a false is benign (nothing to cancel).
+  HYLE_IO_API bool submit_cancel(std::uint64_t target_user_data,
+                                 std::uint64_t cancel_user_data) noexcept;
+
   // ---- provided buffer ring + multishot recv (io-07b, kBuffer half) ---------
   // Register a kernel-shared buffer ring of `nentries` (rounded up to a power of
   // two) buffers of `buf_size` bytes each, under group id `bgid`. The proactor
