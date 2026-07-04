@@ -69,7 +69,7 @@
 
 | 文档 | 内容 |
 |---|---|
-| [里程碑索引](./docs/milestones/README.md) | **唯一进度信源**：约 58 个里程碑，逐步计划 + 预测 vs 真实 LOC + clay API diff + 状态 |
+| [里程碑索引](./docs/milestones/README.md) | **唯一进度信源**：~79 个里程碑，逐步计划 + 预测 vs 真实 LOC + clay API diff + 状态（进度口径见其顶部三口径表：里程碑计数 ~82% 是高估，真实 ~40% 能力 / ~46% LOC）|
 | [使用指南](./docs/guide/usage-guide.md) | 面向库使用者：构建选项、各模块最小用法、SIMD 编译变体模型、C-ABI 边界 |
 | [调用安全契约](./docs/guide/usage-contract.md) | 为 SOTA 性能保留的特定调用约束（fiber/thread_local、分配器跨线程 free）|
 

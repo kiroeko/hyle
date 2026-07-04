@@ -121,9 +121,11 @@
 | **sched** CV notify_one 快路径 | 1.70 | std::condition_variable | 2.59 | 1.52x | marl(无独立 CV) | n/a | n/a | ✅赢 std |
 | **sched** CV wait+notify handoff | 280 | (无 std fiber 等价) | n/a | n/a | (HYLE 自有) | n/a | n/a | ➖HYLE 自有(阻塞 handoff,TSan 零race) |
 | **sched** fiber 切换 | 21–23 | std::thread 切换 | ~1000+ | ~50x | fcontext 原语 | 21–23 | 1.0x | ➖平 fcontext(=原语零封装) |
-| **sched** suspend/wake 完成脊柱 | 201–224 | (无 std 等价) | n/a | n/a | (HYLE 自有脊柱) | n/a | n/a | ➖HYLE 自有(GPU/NIC/timer 汇流) |
+| **sched** suspend/wake 完成脊柱 | 163(Win)/121(Lin) | (无 std 等价) | n/a | n/a | (HYLE 自有脊柱) | n/a | n/a | ➖HYLE 自有(GPU/NIC/timer 汇流);**LIFO fast-slot 后 Win 240→163(−32%)/Lin 186→121(−35%)**——同 worker 唤醒走 cache-hot 慢槽,跳过 global CAS+notify futex(见 sched 详节) |
 | **sched** Channel 收发(cap16,1p1c) | 63/item | (无 std 等价) | n/a | n/a | marl(无 channel) | n/a | n/a | ➖HYLE 自有 |
 | **sched** RunQueue fifo/lifo push+next | 8.3/2.6 | (内部结构) | n/a | n/a | (无外部对手) | n/a | n/a | ➖HYLE 自有(完成唤醒热路径) |
+| **sched** remove_sleeper(park 退出) | O(1) | (内部结构) | n/a | n/a | tokio idle.rs(容忍 O(n)扫描) | O(n) | 复杂度赢 | ➖复杂度机会②:per-worker position 索引 swap-remove 消 O(worker数)扫描,缩短 idle_mu 临界区(HYLE 每次 park 退出都调,故值得;tokio 只罕见路径扫故容忍) |
+| **sched** global-queue 反饥饿 | 修 bug | (正确性) | n/a | n/a | tokio global_queue_interval=61 | 同款 | 修真 bug | ➖复杂度机会③:探针实证本地 firehose 饿死全局注入真实存在(yield-hog 1700万次而 victim 从不运行),每 61 tick 先查 global 修复(回归测试双向验证 pre-fail/post-49ms) |
 | **sched** fiber sleep(sched-04b) | — | (std 无 M:N fiber sleep) | n/a | n/a | tokio time driver(概念对照) | n/a | n/a | ➖SOTA 成本模型:无 sleeper 时 wheel.empty() 单比较=零税;arm O(1) 无分配;park_timeout 不空转(非逐 ms tick) |
 | **sched** CV wait_for notify-before-deadline round-trip | 580(Win)/~(Lin) | std::condition_variable::wait_for | 1165(Win) | 2.0x | (std 是直接 SOTA) | n/a | n/a | ✅**Win 赢 2.0x**(gap99.8%»spread47%,15遍)/ **Lin 平**(glibc cv 已薄 futex 封装,gap3.4%«spread21%)——又一单平台数陷阱,同 sched-05 Parker |
 | **sched** CV wait_for 纯超时(1ms) | 15.58ms | std::condition_variable::wait_for | 15.58ms | ~1.0x | (OS 定时器地板) | n/a | n/a | ➖双平台平(gap0.1%«spread):HYLE 超时路径零额外开销,两者同被 OS ~15ms 定时器粒度地板 |

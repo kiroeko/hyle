@@ -1,6 +1,6 @@
 # HYLE 里程碑索引
 
-> 实现的真正"步骤"在这里——约 58 个里程碑，每个 1-4k 行、可独立编/测/基准。`roadmap.md` 是依赖层(阶段)的拓扑序与决策；本目录是**可执行的逐步计划**，每步一文档。
+> 实现的真正"步骤"在这里——**~79 个里程碑**(表 81 行 − 2 个 ⛔否决;早期"约 58"已随施工中细拆 03a/b/c、04a/b/c/d 等增长,现以本表为准),每个 1-4k 行、可独立编/测/基准。`roadmap.md` 是依赖层(阶段)的拓扑序与决策；本目录是**可执行的逐步计划**，每步一文档。
 >
 > **排期视图**：想知道"还没做的都因为什么没做、前置齐没、能不能现在开工"，看 [`backlog-map.md`](./backlog-map.md)——按欠账原因(A 广度延期 / B 能力驱动半成品 / C 依赖序未到支柱)分类 + 依赖就绪度 + 开工顺序。**防"能力驱动"沦为"永远等"**。
 >
@@ -20,20 +20,22 @@
 
 ### 整体进度(诚实,2026-07-02 实测)—— 三个分母别混
 
-> **实测代码 15,480 行**(生产,cloc `include`+`src` header+C++,不含 CMake/测试/文档/vendored;…→14,596(io-08 TLS)→**io-10 HTTP/1.1** 自写集成层增 ~550(http.h/cc,借 picohttpparser 596 行 C 不计入自有)→本次 **sched-07 结构化取消** 增 333(cancel.h/cc CancelToken 树 + net_cancel.h 可取消 io)。C3 取消落地=sched 支柱 01~11 全 ✅ 收口。此前含 io-06 带超时 io / sched-08 优雅关闭 / obs-02 / io-05 / io-09 / …)。三个"进度"说法分母不同,**混用会得出误导数字**:
+> **实测代码 15,675 行**(生产,cloc `include`+`src` header+C++,不含 CMake/测试/文档/vendored;9,241 header + 6,434 C++,2026-07-05 复测;…→14,596(io-08 TLS)→**io-10 HTTP/1.1** 自写集成层增 ~550(http.h/cc,借 picohttpparser 596 行 C 不计入自有)→**sched-07 结构化取消** 增 333→本次 **sched 三复杂度优化**(LIFO fast-slot + remove_sleeper O(1) + global-queue 周期检查)增 ~195。C3 取消落地=sched 支柱 01~11 全 ✅ 收口。此前含 io-06 带超时 io / sched-08 优雅关闭 / obs-02 / io-05 / io-09 / …)。测试另计 9,866 行。三个"进度"说法分母不同,**混用会得出误导数字**:
 >
 > | 口径 | 分母 | 当前 | 说明 |
 > |---|---|---|---|
+> | **里程碑计数** | ~79 个真里程碑(81 行 − 2 ⛔否决) | **~82%(65 ✅)** | ⚠️**最误导的口径,勿用作"完成度"**:剩下的 ~14 个恰是**最大最难的头牌**——compute 全 6 个 + graph 2 个 = 0 行未动工,每个 2-4k;计数把"写完一个 44 行 util"和"未写的 3k compute kernel"各记 1 个,严重高估 |
 > | **clay 吸纳权重** | 被重构的旧 clay 库 | ~33%(coverage-map) | 基础层已基本吸纳 + time 双定时器(net-new);**分母是旧库,不是新愿景** |
-> | **自有生产 LOC 比** | 投影完成时 ~28-40k 自有(2026-07-03 审计+HTTP 定案后上修) | **~29-41%** | 11.42k/(28-40k);但 LOC≠完成度(广度缺口不体现在比值里) |
-> | **对完整愿景的功能完成度** | 完整 HYLE 自有(全广度 + io/compute/graph,**不含借入的 ggml**) | **≈33%**(band 28-40%) | 见下方"审计上修"算式;io net(tcp+udp)已落地,HTTP/file/shmem 待 |
+> | **自有生产 LOC 比** | 投影完成时 ~34k 自有(2026-07-03 审计+HTTP 定案后中值,band 28-40k) | **~46%**(band 39-56%) | 15.675k/(28-40k);但 LOC≠完成度(广度缺口不体现在比值里) |
+> | **对完整愿景的功能完成度** | 完整 HYLE 自有(全广度 + io/compute/graph,**不含借入的 ggml**) | **≈40%**(band 33-46%) | LOC 比 46% 上界,能力更保守——compute/graph 两大头牌支柱 0 行,是"异构混合极致性能"卖点本体 |
 >
-> **"≈33%" 怎么算出来的(2026-07-03 现值;历史推导见下方"第二轮下修"+"审计上修")**:
-> - **法一 · LOC 比**:11.42k(已写生产,cloc 实测)÷ ~34k(审计+HTTP 定案后中值,band 28-40k)= **≈33%**。
-> - **分母为何从 26k 涨到 34k**:参考库审计补登了之前漏算的真实广度——sched 并发原语/JoinHandle/阻塞卸载 + io 超时/multishot/TLS/DNS/**HTTP serving+client** + obs 埋点。HTTP 尤其大(推理引擎北极星必需 REST)。**不是退步,是把该算的补进分母**。
-> - **为何不是更低的"个位%"**:那个数把**借入的 ggml ~100k 当成 HYLE 要写的**塞进分母。但 ggml 是 compute 支柱**借核不造**(scope 明列),不计入 HYLE 自有完成度——剔除后回到 ≈33%。
+> **为什么"里程碑 82%"是高估、真实约 40%(2026-07-05 复评)**:用户观察到进度显示 >80%,那是**里程碑计数**口径。它高估的根因是**里程碑颗粒不等重**:util-02(44 行)与未写的 compute-06(Vulkan kernel,~3k)在计数里各占 1。按**代码量**才诚实——已写 15.675k ÷ 完成投影 ~34k = **~46%**;按**差异化能力**更低(~40%,band 33-46%),因为:
+> - **法一 · LOC 比**:15.675k(已写生产,cloc 实测)÷ ~34k(审计+HTTP 定案后中值,band 28-40k)= **~46%**。
+> - **法二 · 能力权重下修**:剩余 54% 的 LOC 里,**compute(6 里程碑)+ graph(2)全 0 行**,且是北极星①(算力)②(CAD/CAE)的本体;io 还缺 shmem/HTTP2。这些不是"广度补齐"而是"头牌支柱主体未动工",故能力完成度压到 ~40%(band 下界 33% 对应"两大支柱按满重计")。
+> - **为何不是更低的"个位%"**:那个数把**借入的 ggml ~100k 当成 HYLE 要写的**塞进分母。但 ggml 是 compute 支柱**借核不造**(scope 明列),不计入 HYLE 自有完成度——剔除后回到 ~40%。
 >
-> **33% 但"最难的一半未动工"(关键定性)**:**compute / graph 两大支柱 = 0 行**;**io 支柱**:proactor 三后端 + read/write/socket 真 op + tcp+udp net 上层(co_await + shard-per-core + benchmark + park 合并)全落地(无 stub,双平台真测),但 **超时/TLS/DNS/HTTP serving/file/shmem 未做**(HTTP 是推理引擎刚需)。它们仍占**剩余自有工作量的大头**,还是"异构混合极致性能 + AI serving"的卖点本体。已写的 ≈33% 是**地基 + sched 全支线 + io(proactor + tcp/udp net + shard-per-core)+ simd f32 核**,质量高、SOTA 对标、双平台+WSL TSan 验证(非 stub);但**广度薄**(simd 仅 f32 9 op,无 i8/i16 量化;AVX512/NEON 未硬件实跑)、**compute/graph 未开工、io 缺 HTTP/超时/TLS/file**。故:**按代码量 ≈33%,但按"差异化能力"更保守——剩余工作含全部头牌支柱主体 + 北极星必需的 HTTP serving。**
+> **一句话**:**里程碑计数 82% ✗(颗粒不等重的假象)→ 代码量 ~46% → 能力 ~40%**。三者递减,越往右越诚实。头牌 compute/graph 未动工是 40% 与 82% 的差距来源。
+> **~40% 但"最难的一半未动工"(关键定性,2026-07-05)**:**compute / graph 两大支柱 = 0 行**——这是 40% 与里程碑计数 82% 差距的全部来源。**io 支柱现已很完整**:proactor 三后端 + read/write/socket 真 op + tcp/udp net(co_await + shard-per-core + park 合并)+ **超时(io-06)+ multishot(io-07)+ TLS 三平台(io-08)+ DNS/signal(io-09)+ HTTP/1.1 三平台(io-10)全 ✅**(无 stub,双平台真测),仅剩 **shmem + HTTP/2** 待。**sched 支柱 01~11 全收口 + 本轮三复杂度优化(LIFO/O(1) sleeper/反饥饿)**。已写的 ~40% 是**地基 + sched 全支柱(优化过)+ io(proactor + net + 超时/TLS/HTTP)+ simd f32 核**,质量高、SOTA 对标、双平台+WSL TSan 验证(非 stub);但**广度薄**(simd 仅 f32,无 i8/i16 量化;AVX512/NEON 未硬件实跑)、**compute/graph 未开工**。故:**按代码量 ~46%,按"差异化能力"~40%——剩余工作的大头是两大头牌支柱主体(GPU 算力 + DAG 增量重算),不是零碎广度。**
 
 > **真实LOC = 该里程碑自写代码的 cloc 实测（生产+测试，不含文档、不含 vendored 第三方）。**每步闭环后回填。
 > **预测/真实差距是"防玩具"信号**：差距大必须在该里程碑文档解释清楚——是"骨架版刻意精瘦、重活在后续里程碑"（合理），还是"偷懒 stub/空实现"（不可接受）。
@@ -71,14 +73,14 @@
 >
 > **按锚外推剩余**(置信度递减):simd 广度(+2-3k,有 f32 核密度锚,中)/ sched 后段协程·取消·关闭(+1-1.5k,中)/ **io file·shmem(+1-2k,中——tcp+udp net 已落地=1.55k 实测锚)** / **compute 借 ggml 薄层(+3-5k,很低——0 行无锚)** / **graph(+2-3k,很低)** / close C-ABI·FFI·serialize(+2-3k,低)。
 >
-> **→ 新投影 ≈22-30k 生产,中值 26k**;完成度 **11.28k ÷ 26k ≈ 43%**(band 22k→51% / 30k→38%)。**⚠️ 此值已被下方"审计上修"取代(现值 33%/34k),本行保留为推导历史。**
+> **→ 新投影 ≈22-30k 生产,中值 26k**;完成度 **11.28k ÷ 26k ≈ 43%**(band 22k→51% / 30k→38%)。**⚠️ 此值已被"审计上修"再被 2026-07-05 复评取代(现值 ~46% LOC / ~40% 能力,15.675k÷34k;分母 34k),本行保留为推导历史。**
 >
 > **三条诚实标注(别把 43% 当"快到一半")**:
 > 1. **投影不确定性几乎全在两大支柱**(compute + graph)——0 行,外推置信度低;foundation+sched+simd+io 才是实测硬锚。若 compute/graph 比预想重(GPU 抽象、Vulkan kernel),分母会回涨。
 > 2. **LOC 43% ≠ 能力 43%**:compute/graph=0 行且是"异构混合极致性能"卖点本体;按差异化能力,主观更保守(头牌未动)。
 > 3. **这是第 3 轮修正**(76-120k → 30-45k → 22-30k),每轮下修都因"实测证明剩余也享 C++23 压缩"。**收敛趋势=早期系统性高估的证据**,但 compute/graph 未落地前不宜再激进下修——**22-30k 是当前最诚实区间,compute/graph 一落地就复核**。
 >
-> **⤴ 审计上修(2026-07-03,参考库对照 + HTTP 定案)**:上面的 22-30k 是审计**之前**的投影。审计补登了一批真缺口机制(sched-09/10/11 并发原语·JoinHandle·阻塞卸载 + io-06/07/08/09 超时·multishot·TLS·DNS + io-10/11 HTTP serving/client + obs-02 埋点),这些是"漏了没抄/北极星必需"的真实新增工作量,**分母回涨到 ~28-40k**(见 roadmap 合计行)。故完成度按新分母 **11.28k ÷ ~34k ≈ 33%**(band ~28-40%)——**不是退步,是把之前漏算的真实广度(尤其推理引擎必需的 HTTP serving)补进了分母**。这印证了标注 1:早期"下修"部分是因为剩余广度还没被完整列出来,补全后回涨符合预期。
+> **⤴ 审计上修(2026-07-03,参考库对照 + HTTP 定案)**:上面的 22-30k 是审计**之前**的投影。审计补登了一批真缺口机制(sched-09/10/11 并发原语·JoinHandle·阻塞卸载 + io-06/07/08/09 超时·multishot·TLS·DNS + io-10/11 HTTP serving/client + obs-02 埋点),这些是"漏了没抄/北极星必需"的真实新增工作量,**分母回涨到 ~28-40k**(见 roadmap 合计行)。故当时完成度按新分母 11.28k ÷ ~34k ≈ 33%。**⤴ 2026-07-05 复评**:分子随 io/sched 落地涨到 **15.675k**(cloc 实测),同分母 34k → **~46% LOC / ~40% 能力**(见顶部三口径表)。**分母未再涨、分子涨了 = 真实进展**,不是退步——早期"下修"是因剩余广度未列全,补全后回涨符合预期;此后分子稳步逼近 34k。
 
 ## 全部里程碑（阶段 × 模块）
 
@@ -136,8 +138,8 @@
 | simd-05 | P3 | simd | dtype fp16/bf16(F16C/AVX512-FP16/BF16) | simd-02 | 2-3k | 187 (+151 测试) | ✅ 完成(float16_t/bfloat16_t + 标量转换核逐行照搬 Highway base.h;fp16 批量走 F16C 硬件变体 TU(_mm256_cvtph_ps,门控 f16c&&avx)+ scalar 兜底;bf16 移位 RNE。**全 65536 fp16 位模式硬件-vs-标量逐位对拍 + RNE tie-to-even oracle**;双平台 47/47。红队揪修 2 个本机测不到的 SIGILL bug(YMM 缺 os 门→f16c&&avx;F16C TU 误编 avx2→降 -mavx,防 Ivy Bridge SIGILL)+ 测试漏洞(RNE 未测/非 F16C tautology→GTEST_SKIP)。AVX512-FP16/BF16+int8/fp8→后续,待 Ivy Bridge/QEMU 补真验) |
 | [simd-06](./simd-06-sleef-math.md) | P3 | simd | 数学核 adapter(exp/log/tanh) | simd-04 | 1-2k | 103 (+53 测试) | ✅ 完成(math.h exp/log/tanh_f32_batch + active_math_variant;**scalar libm 核双平台永远在**(ULP oracle+兜底)+ **向量化核 Highway+xsimd**(借核不手搓,逐 op best-of-breed:exp/tanh→xsimd、log→Highway)。**现状**:Highway/xsimd 已 vendored 在 third_party/、无条件默认编进生产(运行期 avx2 门控落 scalar);最初的 SLEEF 后端已退役(非 header-only 需预编库+被 xsimd/Highway 全盖,见 simd-06 篇)。三 op 全 ≥ 两库 SOTA(exp 0.23 平 xsimd、log 0.26 反超两库、tanh 0.44 平 xsimd),详见 performance.md。math_test 收紧到 4e-7(≈3.4 ULP);log/tanh tail 补测) |
 | sched-01 | P4 | sched | fcontext 6 平台 + 栈池(骨架:单 worker 单队列跑一 fiber) | container-01,mem-01,platform-01 | 2-3k | 226 (+737 vendored asm) | ✅ 完成(仅证切换,队列/worker 留 sched-02) |
-| sched-02 | P4 | sched | per-core 有界 run-queue + LIFO slot | sched-01,container-01 | 2-3k | 205 | ✅ 完成(单worker驱动,steal留sched-03) |
-| sched-03 | P4 | sched | work-stealing + spin-then-park + unpark 接力 | sched-02,container-08 | 2-3k | 340 | ✅ 完成(多worker偷取+park;§2.3②③防惊群当时诚实延迟,**后于 sched-05 以 conditional-notify 落地**) |
+| sched-02 | P4 | sched | per-core 有界 run-queue + LIFO slot | sched-01,container-01 | 2-3k | 205 | ✅ 完成(单worker驱动,steal留sched-03。**注:此 RunQueue 的 LIFO slot 当时未进多线程生产 scheduler——迁 WsFifoQueue 时丢了,2026-07-05 由 sched-03 复杂度优化加回**) |
+| sched-03 | P4 | sched | work-stealing + spin-then-park + unpark 接力 | sched-02,container-08 | 2-3k | 340 (+195 三优化) | ✅ 完成(多worker偷取+park;§2.3②③防惊群当时诚实延迟,**后于 sched-05 以 conditional-notify 落地**)。**三复杂度优化(2026-07-05,借调研 tokio worker.rs/idle.rs)**:① **LIFO fast-slot**——同 worker 唤醒(reinject on worker)投本 worker 单槽 cache-hot 立即恢复,跳过 global CAS+notify futex,ping-pong Win −32%/Lin −35%(kMaxLifoPolls=3 反饥饿);② **remove_sleeper O(1)**——per-worker position 索引 swap-remove 消每次 park 退出的 O(worker数)扫描;③ **global-queue 周期检查**(tick%61)——修真饥饿 bug(探针实证本地 firehose 饿死全局注入,回归测试双向验证)。Win 103/103 + WSL setarch TSan 103/103 零 race。详见 benchmarks-sched LIFO 节 + sched-design §2.2/§2.3 |
 | sched-04 | P4 | sched | Waker completion 脊 + time 接入(deadline) | sched-02,time-02 | 1-2k | 见 04a-04d | ✅ 完成(伞标题,拆为 04a Waker 脊 / 04b fiber sleep / 04c 定时 CV / 04d fiber-mode 定时等待,全 ✅) |
 | sched-04a | P4 | sched | Waker completion 脊(suspend/wake,race-free) | sched-03 | 1k | ~114 (+96 测试) | ✅ 完成(架构拱顶:io/compute/timer 共用的唤醒接缝;wake-before-suspend 对称原子 rendezvous;双平台 4/4 + WSL TSan 8/8 零 race。deadline 半→04b 待 time-02) |
 | sched-04b | P4 | sched | fiber sleep via timer wheel(deadline 到期 wake) | sched-04a,time-02 | 0.5-1k | 113 (+156 测试) | ✅ 完成(per-worker TimerWheel;sleep_for_ns/sleep_until_ns arm 本 worker 轮 O(1) 无分配 + suspend;worker 循环顶 fire_due_timers(wheel.empty() 门=无 timer 零税)+ park 用 next_deadline 喂 park_timeout 不空转;到期走 sched-04a Waker rendezvous reinject。双平台 33/33 + TSan×3 净;红队 7 类竞态审计无 bug。wait_for/wait_until→sched-04c) |
@@ -174,6 +176,6 @@
 | close-02 | P6 | 收口 | serialize(simdjson/flatbuffers) + hash + T3 便利 | container | 4-6k | — | ❓ **占位 + scope 待澄清(审计发现)**。现把"serialize/hash/T3"糊成一个占位、点名 flatbuffers/simdjson 却**无设计、无接口形状**。`hyle-scope` 内部打架:"二进制序列化原语"算 IN、"IDL/schema 编译器·RPC"算 OUT。**待你拍**:① 借 flatbuffers/capnproto 的 builder+reader **当序列化原语**(不含 schema 编译器),还是 ② 把 wire-format 全推 L1。JSON 借 simdjson 已明确(scope 一致)。现状是"看着像计划的占位",需决策 |
 | close-03 | P6 | 收口 | FFI 绑定(TS N-API / Python ctypes) | close-01 | 2-3k | — | 占位 |
 
-约 58 个里程碑。状态：✅ 完成 / 进行中 / ⏸️ 占位(等轴 C 能力驱动) / ❓ 待 scope 澄清。真实LOC 闭环后回填，差距大见对应文档解释。
+~79 个真里程碑(81 行 − 2 ⛔;65 ✅ 完成 ≈ 82% 计数,但**计数高估**见顶部三口径表——真实 ~40% 能力 / ~46% LOC)。状态：✅ 完成 / 🔶 部分 / ⏸️ 占位(等轴 C 能力驱动) / 📋 规划 / ❓ 待 scope 澄清 / ⛔ 否决。真实LOC 闭环后回填，差距大见对应文档解释。
 
 > 依赖列只标**直接前置**；完整依赖图见 `roadmap.md` 第一节。`00-scaffolding` 是所有里程碑的隐含前置（万物在它上面编译）。

@@ -107,8 +107,9 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | io/ net·socket·file（proactor+双后端已 done,net/ 未做） | +~2-3.5k | 参照 platform 1.3k,低(net/ 未开工) |
 | compute/（device/stream + ggml bridge + Vulkan） | +~3-5k | 借 ggml 薄层,很低(0 行无锚) |
 | graph + mem-05/06 + C-ABI shim + T3（serialize/hash） | +~4-6k | 多借 simdjson/flatbuffers,低 |
-| **HYLE 自有 生产合计** | **~22-30k**(中值 26k) | 第二轮下修;三大支柱落地即复核 |
-| **HYLE 自有 含测试**（test/prod≈0.65 实测,16.3k 含测试/9.9k 生产） | **~40-55k** | — |
+| **HYLE 自有 生产合计** | **~28-40k**(中值 ~34k) | 2026-07-03 审计上修取代旧"22-30k";上方分项是审计前的下修历史,io net/超时/TLS/HTTP 现已 done、compute/graph 仍 0 |
+| **HYLE 自有 含测试**（test/prod≈0.63 实测,15.675k 生产 / 9.866k 测试,2026-07-05） | **~46-65k** | — |
+| **当前实测(2026-07-05)** | **生产 15.675k / 测试 9.866k** | 进度 ~46% LOC / ~40% 能力(÷34k);里程碑计数 ~82% 系高估(compute/graph 头牌 0 行) |
 
 **第三方（vendored，计入项目足迹）——大头，由 ggml 主导：**
 

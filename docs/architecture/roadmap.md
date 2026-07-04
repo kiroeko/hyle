@@ -123,7 +123,7 @@ container/       │                            │    vector+      mem;containe
 > 一句话现状（粗粒度，细节看 milestones）：**地基层（error/platform/mem/container/time/util/obs）基本立住；
 > sched 核心 + fiber 同步原语 done（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超）+ 协程胶水（Task + co_await→fiber 让出）+ fiber 亲和（spawn_on 绑核，shard-per-core 基座），后段（取消 sched-07/优雅关闭 sched-08/fiber-mode 定时 04d）**待其轴 C 能力驱动**（见轴 C：04d←C2 带超时 io、07←C3 结构化取消、08←C4 优雅关闭——孤立做=投机）；**simd 支柱基本完成**（dispatch + vec 抽象 +
 > scalar/SSE4.2/AVX2 实跑 + 运行期变体派发 + fp16/bf16 dtype + 数学核(Highway+xsimd vendored),对标 Highway 追平；NEON/AVX512 写+编+objdump 验未跑存疑）；**io 支柱破土并接线到 sched**（proactor 三后端 io_uring/IOCP/epoll 全真 op 无 stub + co_await socket 层 + shard-per-core 集成 + TcpListener/Stream + UdpSocket(recvfrom/sendto 三后端)，真 loopback TCP/UDP echo 三后端+TSan；echo+pipelined benchmark 已补，worker 空闲已阻塞 GETEVENTS reap=修了 pipelined 揪出的 P0 hang；**io-04 net 完成 ✅**（含 park 合并：空闲 worker 真睡眠、eventfd 唤醒，空闲 syscall 421→3）+ **io-07a/b multishot accept/recv + provided buffer ring ✅**（补完 kMore/kBuffer 两半成品 flag）；file/shmem io-05 + 带超时/TLS/DNS/HTTP 待）；**compute/graph 两支柱未开工**（异构混合极致性能的头牌本体）。**
-> 整体 ≈ 33%（LOC 口径,2026-07-03 参考库审计 + HTTP 定案后分母上修到 ~28-40k;见 milestones/README 三分母表 + "审计上修"注；compute/graph + io HTTP 是最大剩余块）。
+> 整体 **~46% LOC / ~40% 能力**（2026-07-05 复评:15.675k 生产 ÷ ~34k 投影;分母 2026-07-03 审计+HTTP 定案后 ~28-40k;见 milestones/README 三口径表；**里程碑计数 ~82% 是高估**,因 compute/graph 两大头牌支柱 0 行、每个里程碑不等重；compute/graph + io shmem/HTTP2 是最大剩余块）。
 
 
 
