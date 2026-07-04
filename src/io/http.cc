@@ -205,6 +205,17 @@ sched::Task<std::uint64_t> decode_chunked(mem::Allocator alloc, GrowBuf& buf,
                                           GrowBuf& out, TcpStream& s) noexcept {
   phr_chunked_decoder dec;
   std::memset(&dec, 0, sizeof(dec));
+  // Consume the trailer-part + the terminating CRLF of the chunked body. WITHOUT
+  // this, phr_decode_chunked Completes right after the last-chunk's "0\r\n" and
+  // returns the final "\r\n" (the CRLF after the empty trailer, RFC 7230 §4.1) as
+  // "undecoded octets" -- which we would then mistake for the NEXT pipelined
+  // message, corrupting the following keep-alive request/response (phr_parse_* then
+  // chokes on the spurious leading "\r\n"). With consume_trailer=1 the decoder eats
+  // the trailer + final CRLF, so rv is 0 for a lone response and the true byte count
+  // only when a real pipelined message actually follows. (Trailers are discarded --
+  // HYLE exposes none; better than breaking keep-alive.) Root cause of the
+  // multi-chunk keep-alive bug found 2026-07-05.
+  dec.consume_trailer = 1;
   for (;;) {
     if (buf.size > 0) {
       std::size_t rsz = buf.size;

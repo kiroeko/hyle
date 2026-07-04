@@ -50,12 +50,14 @@ struct Result {
   std::atomic<int> client_status2{0};   // 2nd request (keep-alive)
   std::atomic<int> post_status{0};       // 3rd: POST
   std::atomic<int> stream_status{0};     // 4th: GET /stream (chunked)
+  std::atomic<int> stream2_status{0};    // 5th: GET /stream again (chunked-after-chunked keep-alive)
   std::atomic<bool> client_done{false};
   std::atomic<bool> server_done{false};
   char body_got[256] = {};
   char body_got2[256] = {};
   char post_body_got[256] = {};          // response body the client saw for POST
   char stream_body_got[256] = {};        // decoded chunked stream body
+  char stream2_body_got[256] = {};       // 5th req's decoded body (proves trailer fix)
   char post_seen[256] = {};              // body the server saw on the POST
 };
 
@@ -157,6 +159,18 @@ Task<int> client_fiber(Allocator alloc, IoContext* io, Result* r) {
     std::memcpy(r->stream_body_got, resp4->body().data, n);
     r->stream_body_got[n] = '\0';
   }
+  // Request 5 (keep-alive): GET /stream AGAIN -- a chunked response FOLLOWING a
+  // chunked response on the same connection. This is the regression guard for the
+  // multi-chunk keep-alive bug (2026-07-05): without consume_trailer=1, the prior
+  // chunked body's terminating CRLF was left in the client buffer and mistaken for
+  // this response's start, so phr_parse_response choked and request() returned null.
+  HttpResponseView* resp5 = co_await conn.request("GET", "/stream", "127.0.0.1");
+  if (resp5 != nullptr) {
+    r->stream2_status.store(resp5->status(), std::memory_order_release);
+    std::uint32_t n = resp5->body().size < 255 ? resp5->body().size : 255;
+    std::memcpy(r->stream2_body_got, resp5->body().data, n);
+    r->stream2_body_got[n] = '\0';
+  }
   r->client_done.store(true, std::memory_order_release);
   co_return 0;
 }
@@ -201,4 +215,9 @@ TEST(IoHttp, GetKeepAlive) {
   // chunked streaming: client decoded the 3 chunks back to a contiguous body.
   EXPECT_EQ(r->stream_status.load(), 200);
   EXPECT_STREQ(r->stream_body_got, "tok-A tok-B tok-C");
+  // chunked-after-chunked keep-alive (regression guard for the trailer-CRLF bug):
+  // the 5th request -- a chunked response following another chunked response on the
+  // same connection -- must succeed and decode correctly.
+  EXPECT_EQ(r->stream2_status.load(), 200);
+  EXPECT_STREQ(r->stream2_body_got, "tok-A tok-B tok-C");
 }
