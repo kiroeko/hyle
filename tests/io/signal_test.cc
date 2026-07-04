@@ -26,6 +26,7 @@ using hyle::io::IoContext;
 using hyle::io::kSigInt;
 using hyle::io::kSigTerm;
 using hyle::io::SignalSet;
+using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
