@@ -168,6 +168,24 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 
 > **为何不上计时 bench**:单次 TLS 读写的 16KB 帧分配 ~几十 ns,淹没在 loopback TLS 握手/加解密的 µs~ms 里;HTTP chunk 同理。分配**次数**是确定的、可从代码结构证明的,比一个被 syscall 噪声主导的计时数字更诚实。若要计时铁证,需计数分配器 microbench(登记,见下)。
 
+## io 系统性红队审查（2026-07-05，对标 sched 那轮）
+
+两个并行红队 agent 审全 io（下层 proactor 三后端 + net/tcp/udp + io_context;上层 tls/http/file/timeout/cancel），逐条人工核实。**审出 11 项,修 4 个真 bug,2 项按用户意见登记待议,其余低影响登记。**
+
+**已修（commit ca317db，双向验证 + 双平台 + TSan）**：
+- **L2 (P1)** epoll multishot accept:re-arm 失败仍标 kMore → 调用方永久挂起。改:只在 epoll_ctl 重挂成功才标 kMore（镜像 IOCP）。
+- **U1 (P2 安全)** HTTP 请求走私(RFC 7230 §3.3.3):拒绝 CL+TE 并存 / TE 非 bare chunked / 重复冲突 CL。探针证 pre-fix 三 payload 全被接受(=真漏洞)。回归测试 `RejectsSmuggling`。
+- **U2 (P2)** HTTP 客户端 HEAD/204/304/1xx 未抑制 body → 按 CL 读不存在的 body 挂起/desync。改:这些响应短路空 body。
+- **U4 (P3 latent)** `GrowBuf::reserve` 增长 `>` 应为 `>=`,2-4GB u32 溢出死循环(当前不可达)。
+
+**红队核实为安全（清账）**:TLS scratch 复用(本 session 改)、net_timeout io-vs-timer 竞态仲裁 + 迟到 CQE refcount、net_cancel 栈 slot 单唤醒、parse_u64 溢出、HTTP head/body 视图跨 realloc 稳定性、IOCP teardown 顺序、buf_ring_return 无竞态、RecvFromOp/SendToOp scratch 生命周期、io_uring multishot inflight 计数。
+
+**登记待议（用户 2026-07-05 决定后议）**:
+- **L3 (P1, epoll fallback)** 单-op-per-fd:`pending` 是 `map<fd,op>`,同 fd 并发 read+write 时第二个覆盖第一个 → 首个 fiber 永久孤儿(全双工)。仅影响 epoll fallback(io_uring 是 Linux 默认,无此问题)。修需 `map<fd,{read_op,write_op}>` 双槽 + 分别 EPOLLIN/EPOLLOUT,动静较大。
+- **U3 (P2)** HTTP 客户端 read-until-close:无 CL 无 chunked 时静默截断 body(骨架已承认)。修需 read-until-EOF 循环。
+
+**低影响登记（暂不修）**:L1 submit 失败哨兵 `-1` 撞 `-EPERM`(调用方对两者都失败退出,行为无差异);L4 epoll 伪就绪透传 `-EAGAIN`;L5 基础 net.h op 无 orphan 保护(仅 teardown 且基础 op 不自取消,latent);L6 IOCP `SO_UPDATE_*_CONTEXT` 返回值未查(P3)。
+
 ## 未做(登记)
 
 - ✅ **HTTP chunked keep-alive bug(2026-07-05 发现并修复,fce90a6)**:症状——同一 keep-alive 连接上,一个 chunked 响应**之后**紧跟的下一个请求/响应解析失败(status 0、body 空)。**系统排查(先隔离再下结论,非臆断)**:①纯 `phr_decode_chunked` 循环探针(无 socket)证 HYLE 解码循环逻辑正确(3/50 chunk 单/逐字节全 OK)→排除解码器;②网络探针 `/big` 作为**唯一**请求时 3/8/16/50 chunk 全 OK→排除流式发送;③双 chunked keep-alive 请求探针复现:req1 OK、req2 失败→定位到"chunked 之后再 keep-alive"。**真根因**(推翻我最初"多次 -2 跨读"的猜测):`phr_decode_chunked` 默认 `consume_trailer=0` 时在 last-chunk `0\r\n` 后立即 Complete,把 chunked body 的**终止 CRLF**(RFC 7230 §4.1)当作"未解码尾字节"(rv=2)返回;HYLE 把这 2 字节当"下个 pipelined 消息"留 buf,污染后续 `phr_parse_*`。**修**:`decode_chunked` 设 `dec.consume_trailer=1`,解码器吃掉 trailer+终止 CRLF。server(chunked POST body)+ client(chunked 响应)共用同一函数两侧同修。回归测试 `GetKeepAlive` 加第 5 请求(chunked-after-chunked)双向验证(pre-fix FAILED / post-fix PASSED);Win + WSL io_uring + forced-epoll + TSan 全绿。
