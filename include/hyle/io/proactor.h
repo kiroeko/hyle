@@ -174,6 +174,59 @@ class Proactor {
   // socket the same way on both platforms.
   HYLE_IO_API bool register_handle(std::intptr_t fd) noexcept;
 
+  // ---- file ops (io-05, capability C5) --------------------------------------
+  // Neutral, backend-filled file metadata (the statx subset a file server needs).
+  // Bytes/times are the cross-platform intersection; `mode` is the POSIX st_mode
+  // (0 on Windows -- use is_dir). One struct both backends fill on a stat op.
+  struct FileStat {
+    std::uint64_t size = 0;        // file size in bytes
+    std::uint64_t mtime_ns = 0;    // last-modification time, ns since epoch
+    std::uint32_t mode = 0;        // POSIX st_mode (0 on Windows)
+    bool is_dir = false;           // directory?
+  };
+
+  // Neutral open flags (mapped to O_* on POSIX, to CreateFileW's disposition/access
+  // on Windows). A file server needs read, write, create, truncate, append. `mode`
+  // (POSIX permission bits for a freshly created file) is ignored on Windows.
+  enum OpenFlags : std::uint32_t {
+    kRead = 1u << 0,      // open for reading
+    kWrite = 1u << 1,     // open for writing
+    kCreate = 1u << 2,    // create if absent
+    kTruncate = 1u << 3,  // truncate to empty on open
+    kAppend = 1u << 4,    // writes append at end
+  };
+
+  // Open `path` with neutral `flags` (OpenFlags bitmask). The completion result is
+  // the opened fd/handle as an intptr_t (>= 0) or a negative errno. `path` MUST
+  // outlive the completion (the kernel reads it when the op runs, not at submit --
+  // io_uring openat contract). On io_uring this is a real async IORING_OP_OPENAT;
+  // on IOCP/epoll it is done synchronously (open has no async form on either) and a
+  // completion is synthesized -- the caller sees one uniform completion either way.
+  HYLE_IO_API bool submit_open(const char* path, std::uint32_t flags,
+                               std::uint32_t mode,
+                               std::uint64_t user_data) noexcept;
+  // Close `fd`. Completion result 0 or negative errno. Real async on io_uring
+  // (IORING_OP_CLOSE); synchronous + synthesized on IOCP/epoll.
+  HYLE_IO_API bool submit_close(std::intptr_t fd,
+                                std::uint64_t user_data) noexcept;
+  // Stat `fd` into `*out` (caller-owned; MUST outlive the completion). Result 0 or
+  // negative errno. io_uring uses IORING_OP_STATX (empty path + AT_EMPTY_PATH);
+  // IOCP GetFileInformationByHandle / epoll fstat, synchronous + synthesized.
+  HYLE_IO_API bool submit_statx(std::intptr_t fd, FileStat* out,
+                                std::uint64_t user_data) noexcept;
+  // Flush `fd`'s data to disk. `datasync` = fdatasync (data only, skip metadata) vs
+  // fsync (data + metadata). Result 0 or negative errno. io_uring IORING_OP_FSYNC
+  // (real async); IOCP FlushFileBuffers / epoll fsync, synchronous + synthesized.
+  HYLE_IO_API bool submit_fsync(std::intptr_t fd, bool datasync,
+                                std::uint64_t user_data) noexcept;
+  // Preallocate/extend `fd`: ensure `len` bytes are allocated starting at `offset`
+  // (`mode` = POSIX fallocate mode, usually 0). Result 0 or negative errno.
+  // io_uring IORING_OP_FALLOCATE (real async); on IOCP the SetFileValidData/
+  // SetEndOfFile equivalent, on epoll posix_fallocate, synchronous + synthesized.
+  HYLE_IO_API bool submit_fallocate(std::intptr_t fd, std::uint32_t mode,
+                                    std::uint64_t offset, std::uint64_t len,
+                                    std::uint64_t user_data) noexcept;
+
   // ---- provided buffer ring + multishot recv (io-07b, kBuffer half) ---------
   // Register a kernel-shared buffer ring of `nentries` (rounded up to a power of
   // two) buffers of `buf_size` bytes each, under group id `bgid`. The proactor
@@ -274,6 +327,12 @@ class Proactor {
   // stamps kMore. Defined only in the Windows branch of proactor.cc.
   static bool iocp_arm_accept(Impl* impl, std::intptr_t fd,
                               std::uint64_t user_data, bool multishot) noexcept;
+  // IOCP only (io-05): synthesize a completion carrying an already-computed 64-bit
+  // result for a file metadata op run synchronously (open/close/statx/fsync/
+  // fallocate have no async form on Windows). Private static since it names the
+  // private Impl. Defined only in the Windows branch of proactor.cc.
+  static bool iocp_post_meta(Impl* impl, std::int64_t result,
+                             std::uint64_t user_data) noexcept;
 
   Impl* impl_ = nullptr;  // backend state (IOCP port / io_uring ring), pimpl
 };

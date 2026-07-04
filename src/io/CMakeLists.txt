@@ -12,7 +12,10 @@
 set(_io_sources proactor.cc)
 set(_io_deps hyle_platform)
 if(HYLE_HAS_FCONTEXT)
-  list(APPEND _io_sources io_context.cc tcp.cc udp.cc)
+  # The co_await layers (net/tcp/udp/file/signal) and the DNS offload need sched
+  # (the scheduler drives the reap; dns uses spawn_blocking). Only buildable where
+  # fcontext (hence sched) exists. proactor.cc itself never depends on sched.
+  list(APPEND _io_sources io_context.cc tcp.cc udp.cc file.cc signal.cc dns.cc)
   list(APPEND _io_deps hyle_sched)
 endif()
 hyle_add_module(io SOURCES ${_io_sources} DEPS ${_io_deps})

@@ -55,7 +55,10 @@ struct Proactor::Impl {
   LPFN_CONNECTEX connectex = nullptr;
 
   enum OpKind : int {
-    kRead, kWrite, kRecv, kSend, kAccept, kConnect, kRecvFrom, kSendTo
+    kRead, kWrite, kRecv, kSend, kAccept, kConnect, kRecvFrom, kSendTo,
+    kFileMeta  // io-05: open/close/statx/fsync/fallocate done SYNCHRONOUSLY here
+               // (no async form on IOCP) then posted with the result already in
+               // syn_result -- reap skips GetOverlappedResult for these.
   };
   struct IoOp {
     OVERLAPPED ov{};                      // MUST be first (lpOverlapped -> IoOp*)
@@ -69,6 +72,13 @@ struct Proactor::Impl {
     // stamps Completion::kMore -- mirroring io_uring's multishot upward. Set only
     // on a multishot accept op.
     bool multishot = false;
+    // io-05 synthetic-completion path: a kFileMeta op runs its syscall at submit
+    // time (open/stat/fsync/fallocate are synchronous on Windows), stores the
+    // outcome here (a fd/handle >= 0, or 0, or a negative errno -- 64-bit so an
+    // opened HANDLE isn't truncated the way post()'s DWORD result would be), then
+    // posts itself to the port. reap sees kFileMeta and hands back syn_result
+    // verbatim instead of calling GetOverlappedResult.
+    std::int64_t syn_result = 0;
     // Datagram (WSARecvFrom/WSASendTo) only: WSARecvFrom writes the source addr
     // into the CALLER's addr buffer, and writes its length into `fromlen` -- both
     // must outlive the async op, so fromlen lives here (the addr buffer is caller-
@@ -210,6 +220,14 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     out[i].user_data = op->user_data;
     out[i].flags = 0;
     out[i].buffer_id = 0;
+    if (op->kind == Impl::kFileMeta) {
+      // io-05: the syscall already ran at submit; hand back its stored 64-bit
+      // result (fd/0/-errno) untouched -- no GetOverlappedResult (there was no
+      // real overlapped IO). This is the open/close/statx/fsync/fallocate path.
+      out[i].result = op->syn_result;
+      delete op;
+      continue;
+    }
     DWORD xfer = 0;
     // GetOverlappedResult (no wait -- the op is already complete) is the
     // documented way to read a per-op error out of a batch-dequeued completion:
@@ -506,6 +524,123 @@ bool Proactor::register_handle(std::intptr_t fd) noexcept {
                                   0) != nullptr;
 }
 
+// ---- file ops (io-05) ------------------------------------------------------
+// On Windows none of open/close/statx/fsync/fallocate has an async form (even a
+// FILE_FLAG_OVERLAPPED handle opens synchronously), so we run the syscall NOW and
+// synthesize a completion: allocate a kFileMeta IoOp, stash the 64-bit result, and
+// post it to the port with its OWN OVERLAPPED so reap routes it like any real op
+// (user_data intact) but reads syn_result instead of GetOverlappedResult. This is
+// the same reactor->completion synthesis epoll uses for accept/connect.
+bool Proactor::iocp_post_meta(Impl* impl, std::int64_t result,
+                              std::uint64_t user_data) noexcept {
+  auto* op = new (std::nothrow) Impl::IoOp{};
+  if (op == nullptr) return false;
+  op->user_data = user_data;
+  op->kind = Impl::kFileMeta;
+  op->syn_result = result;
+  impl->link(op);
+  // Post with the op's own OVERLAPPED (non-null) so reap treats it as a real op
+  // (a null OVERLAPPED is a bare wake/post). Zero bytes / key -- reap uses kind.
+  if (::PostQueuedCompletionStatus(impl->port, 0, 0, &op->ov) != 0) return true;
+  impl->unlink(op);
+  delete op;
+  return false;
+}
+
+bool Proactor::submit_open(const char* path, std::uint32_t flags,
+                           std::uint32_t /*mode*/,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || path == nullptr) return false;
+  // Map neutral OpenFlags onto CreateFileW access + disposition. FILE_FLAG_
+  // OVERLAPPED so subsequent submit_read/write on this handle are truly async.
+  DWORD access = 0;
+  if (flags & kRead) access |= GENERIC_READ;
+  if (flags & kWrite) access |= GENERIC_WRITE;
+  if (flags & kAppend) access |= FILE_APPEND_DATA;
+  DWORD disposition;
+  if (flags & kCreate)
+    disposition = (flags & kTruncate) ? CREATE_ALWAYS : OPEN_ALWAYS;
+  else
+    disposition = (flags & kTruncate) ? TRUNCATE_EXISTING : OPEN_EXISTING;
+  // Widen the UTF-8 path to UTF-16 for CreateFileW (a short stack buffer covers
+  // typical paths; longer ones fail with a negative result rather than truncate).
+  wchar_t wpath[1024];
+  int wn = ::MultiByteToWideChar(CP_UTF8, 0, path, -1, wpath, 1024);
+  if (wn == 0) return iocp_post_meta(impl_, -static_cast<std::int64_t>(::GetLastError()), user_data);
+  HANDLE h = ::CreateFileW(wpath, access,
+                           FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                           disposition, FILE_FLAG_OVERLAPPED, nullptr);
+  if (h == INVALID_HANDLE_VALUE)
+    return iocp_post_meta(impl_, -static_cast<std::int64_t>(::GetLastError()), user_data);
+  // Associate with the port so this handle's later async read/write complete here.
+  if (::CreateIoCompletionPort(h, impl_->port, 0, 0) == nullptr) {
+    DWORD e = ::GetLastError();
+    ::CloseHandle(h);
+    return iocp_post_meta(impl_, -static_cast<std::int64_t>(e), user_data);
+  }
+  return iocp_post_meta(impl_, static_cast<std::int64_t>(reinterpret_cast<std::intptr_t>(h)),
+                        user_data);
+}
+
+bool Proactor::submit_close(std::intptr_t fd,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  BOOL ok = ::CloseHandle(reinterpret_cast<HANDLE>(fd));
+  return iocp_post_meta(impl_, ok ? 0 : -static_cast<std::int64_t>(::GetLastError()),
+                        user_data);
+}
+
+bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || out == nullptr) return false;
+  BY_HANDLE_FILE_INFORMATION info;
+  if (::GetFileInformationByHandle(reinterpret_cast<HANDLE>(fd), &info) == 0)
+    return iocp_post_meta(impl_, -static_cast<std::int64_t>(::GetLastError()), user_data);
+  *out = FileStat{};
+  out->size = (static_cast<std::uint64_t>(info.nFileSizeHigh) << 32) |
+              info.nFileSizeLow;
+  // FILETIME is 100ns ticks since 1601-01-01; convert to ns since Unix epoch.
+  std::uint64_t ft = (static_cast<std::uint64_t>(info.ftLastWriteTime.dwHighDateTime) << 32) |
+                     info.ftLastWriteTime.dwLowDateTime;
+  constexpr std::uint64_t kEpochDiff100ns = 116444736000000000ull;  // 1601->1970
+  out->mtime_ns = (ft > kEpochDiff100ns) ? (ft - kEpochDiff100ns) * 100ull : 0;
+  out->is_dir = (info.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
+  out->mode = 0;  // no POSIX mode on Windows
+  return iocp_post_meta(impl_, 0, user_data);
+}
+
+bool Proactor::submit_fsync(std::intptr_t fd, bool /*datasync*/,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // Windows has no data-only flush; FlushFileBuffers does the full sync either way.
+  BOOL ok = ::FlushFileBuffers(reinterpret_cast<HANDLE>(fd));
+  return iocp_post_meta(impl_, ok ? 0 : -static_cast<std::int64_t>(::GetLastError()),
+                        user_data);
+}
+
+bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t /*mode*/,
+                                std::uint64_t offset, std::uint64_t len,
+                                std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // Windows equivalent: seek to offset+len and SetEndOfFile to extend/allocate.
+  // (No sparse/keep-size mode distinction -- mode is ignored, as documented.)
+  HANDLE h = reinterpret_cast<HANDLE>(fd);
+  LARGE_INTEGER end;
+  end.QuadPart = static_cast<LONGLONG>(offset + len);
+  LARGE_INTEGER cur;
+  cur.QuadPart = 0;
+  // Save current position, set EOF at offset+len, restore position.
+  LARGE_INTEGER zero;
+  zero.QuadPart = 0;
+  ::SetFilePointerEx(h, zero, &cur, FILE_CURRENT);
+  BOOL ok = ::SetFilePointerEx(h, end, nullptr, FILE_BEGIN) &&
+            ::SetEndOfFile(h);
+  ::SetFilePointerEx(h, cur, nullptr, FILE_BEGIN);
+  return iocp_post_meta(impl_, ok ? 0 : -static_cast<std::int64_t>(::GetLastError()),
+                        user_data);
+}
+
+
 // Provided buffer ring (io-07b) is an io_uring-only mechanism -- IOCP has no
 // equivalent (WSARecv uses caller-posted buffers). net/ detects the false return
 // and falls back to a pre-posted-buffer recv on Windows. Honest not-supported.
@@ -538,7 +673,9 @@ bool Proactor::buf_ring_return(int, std::uint32_t) noexcept { return false; }
 #  include <sys/eventfd.h>
 #  include <sys/mman.h>
 #  include <sys/socket.h>
+#  include <sys/stat.h>   // io-05: fstat + struct stat (statx synthesis)
 #  include <sys/syscall.h>
+#  include <fcntl.h>      // io-05: O_* open flags
 #  include <unistd.h>
 
 #  include <atomic>
@@ -989,6 +1126,24 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     return n;
   }
 
+  // io-05: drain any synchronously-synthesized completions first (statx runs its
+  // fstat at submit time -- it's a pure metadata query, not a disk-io path, so it
+  // needn't burn an SQE). These carry their result directly, like epoll's posted
+  // queue. Deliver them before touching the ring so they aren't starved.
+  {
+    std::size_t np = 0;
+    while (np < max && !impl_->posted.empty()) {
+      Impl::Posted pd = impl_->posted.back();
+      impl_->posted.pop_back();
+      out[np].user_data = pd.user_data;
+      out[np].result = pd.result;
+      out[np].flags = 0;
+      out[np].buffer_id = 0;
+      ++np;
+    }
+    if (np > 0) return np;  // deliver promptly; caller loops for ring completions
+  }
+
   // Flush the batched SQEs (io-04 submit batch): the worker queued many via
   // submit_* since its last drain; fold to_submit = sq_pending into this reap's
   // enter so N submits + this reap cost ONE syscall. Reset the count up front.
@@ -1117,7 +1272,10 @@ bool Proactor::in_flight() const noexcept {
     // a synthetic completion is queued. Either means a reap could still yield one.
     return !impl_->pending.empty() || !impl_->posted.empty();
   }
-  return impl_->inflight != 0;  // io_uring: kernel owes this many completions
+  // io_uring: the kernel owes `inflight` completions, PLUS any io-05 synchronously
+  // synthesized completions still queued (statx) -- both must keep the worker
+  // reaping (a queued posted completion a parked worker never drains = a hang).
+  return impl_->inflight != 0 || !impl_->posted.empty();
 }
 
 namespace {
@@ -1549,6 +1707,125 @@ bool Proactor::register_handle(std::intptr_t /*fd*/) noexcept {
   // each SQE; epoll adds the fd at submit time (with EPOLLONESHOT).
   return impl_ != nullptr;
 }
+
+// ---- file ops (io-05) ------------------------------------------------------
+// Map neutral OpenFlags onto POSIX O_* for openat.
+namespace {
+int open_flags_to_posix(std::uint32_t flags) noexcept {
+  int f = 0;
+  const bool rd = (flags & Proactor::kRead) != 0;
+  const bool wr = (flags & Proactor::kWrite) != 0;
+  if (rd && wr) f = O_RDWR;
+  else if (wr) f = O_WRONLY;
+  else f = O_RDONLY;
+  if (flags & Proactor::kCreate) f |= O_CREAT;
+  if (flags & Proactor::kTruncate) f |= O_TRUNC;
+  if (flags & Proactor::kAppend) f |= O_APPEND;
+  return f;
+}
+}  // namespace
+
+bool Proactor::submit_open(const char* path, std::uint32_t flags,
+                           std::uint32_t mode,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || path == nullptr) return false;
+  int oflags = open_flags_to_posix(flags);
+  if (impl_->backend == Impl::kEpoll) {
+    // No async openat on epoll -> open synchronously, synthesize a completion.
+    int fd = ::open(path, oflags, static_cast<mode_t>(mode));
+    impl_->posted.push_back(
+        {user_data, fd < 0 ? -static_cast<std::int64_t>(errno)
+                           : static_cast<std::int64_t>(fd)});
+    return true;
+  }
+  // io_uring IORING_OP_OPENAT: fd = dirfd (AT_FDCWD), addr = path pointer, len =
+  // mode, off = 0, open_flags in the rw_flags union. The caller guarantees `path`
+  // outlives the completion (proactor.h contract). Result = opened fd or -errno.
+  return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
+                    &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_OPENAT, AT_FDCWD,
+                    reinterpret_cast<std::uint64_t>(path), mode, 0, user_data,
+                    static_cast<std::uint32_t>(oflags));
+}
+
+bool Proactor::submit_close(std::intptr_t fd,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    int r = ::close(static_cast<int>(fd));
+    impl_->posted.push_back(
+        {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});
+    return true;
+  }
+  // IORING_OP_CLOSE: only fd matters (addr/len/off = 0). Result 0 or -errno.
+  return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
+                    &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_CLOSE,
+                    static_cast<std::int32_t>(fd), 0, 0, 0, user_data);
+}
+
+bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || out == nullptr) return false;
+  // statx is a pure metadata query (no disk-io wait), so run fstat synchronously
+  // on BOTH backends and synthesize a completion -- it needn't burn an SQE, and
+  // this fills `out` at submit time (no per-op statx buffer to carry to the CQE,
+  // no struct-statx leak into the neutral header). The posted queue delivers it.
+  struct stat st;
+  int r = ::fstat(static_cast<int>(fd), &st);
+  if (r == 0) {
+    *out = FileStat{};
+    out->size = static_cast<std::uint64_t>(st.st_size);
+    out->mtime_ns = static_cast<std::uint64_t>(st.st_mtim.tv_sec) * 1'000'000'000ull +
+                    static_cast<std::uint64_t>(st.st_mtim.tv_nsec);
+    out->mode = static_cast<std::uint32_t>(st.st_mode);
+    out->is_dir = S_ISDIR(st.st_mode);
+  }
+  impl_->posted.push_back(
+      {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});
+  return true;
+}
+
+bool Proactor::submit_fsync(std::intptr_t fd, bool datasync,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    int r = datasync ? ::fdatasync(static_cast<int>(fd))
+                     : ::fsync(static_cast<int>(fd));
+    impl_->posted.push_back(
+        {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});
+    return true;
+  }
+  // IORING_OP_FSYNC: fd + fsync_flags (IORING_FSYNC_DATASYNC bit for fdatasync).
+  // fsync_flags shares the rw_flags union submit_one fills via op_flags.
+  return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
+                    &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_FSYNC,
+                    static_cast<std::int32_t>(fd), 0, 0, 0, user_data,
+                    datasync ? IORING_FSYNC_DATASYNC : 0u);
+}
+
+bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t mode,
+                                std::uint64_t offset, std::uint64_t len,
+                                std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  if (impl_->backend == Impl::kEpoll) {
+    int r = ::posix_fallocate(static_cast<int>(fd),
+                              static_cast<off_t>(offset),
+                              static_cast<off_t>(len));
+    // posix_fallocate returns the errno directly (not via errno).
+    impl_->posted.push_back({user_data, r == 0 ? 0 : -static_cast<std::int64_t>(r)});
+    return true;
+  }
+  // IORING_OP_FALLOCATE has a deliberately non-obvious field mapping (verified
+  // against liburing io_uring_prep_fallocate): addr = LEN (byte count), len = MODE,
+  // off = OFFSET. So pass through submit_one as addr=len, len=mode, off=offset.
+  return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending,
+                    &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
+                    impl_->sq_array, impl_->sqes, IORING_OP_FALLOCATE,
+                    static_cast<std::int32_t>(fd), len, mode, offset, user_data);
+}
+
 
 }  // namespace hyle::io
 

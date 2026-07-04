@@ -49,9 +49,15 @@ if(HYLE_HAS_FCONTEXT)
   hyle_add_test(io NAME net SOURCES io/net_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME tcp SOURCES io/tcp_test.cc DEPS hyle_sched)
   hyle_add_test(io NAME udp SOURCES io/udp_test.cc DEPS hyle_sched)
+  # io-05 file io + io-09 async DNS / signal_set: co_await file ops, getaddrinfo
+  # offload to the blocking pool, and signal waits -- all need io + sched.
+  hyle_add_test(io NAME file SOURCES io/file_test.cc DEPS hyle_sched)
+  hyle_add_test(io NAME dns SOURCES io/dns_test.cc DEPS hyle_sched)
+  hyle_add_test(io NAME signal SOURCES io/signal_test.cc DEPS hyle_sched)
   if(WIN32)
     target_link_libraries(hyle_io_net_test PRIVATE ws2_32)  # test builds the loopback pair
     target_link_libraries(hyle_io_tcp_test PRIVATE ws2_32)  # sockaddr / winsock types
     target_link_libraries(hyle_io_udp_test PRIVATE ws2_32)  # sockaddr / winsock types
+    target_link_libraries(hyle_io_dns_test PRIVATE ws2_32)  # getaddrinfo + WSAStartup
   endif()
 endif()
