@@ -167,7 +167,11 @@ static sched::Task<int> feed_rbio(mem::Allocator, TcpStream& sock,
   std::int64_t n = co_await sock.read(buf, kBufSize);
   if (n == 0) co_return 0;   // peer closed the transport
   if (n < 0) co_return -1;   // socket read error
-  BIO_write(rbio, buf, static_cast<int>(n));  // memory BIO write never blocks
+  // A mem BIO_write only fails on OOM; if it wrote short the ciphertext would be
+  // silently truncated and SSL would later fail decryption with an opaque error.
+  // Treat a short/failed write as an error here so the failure is attributable.
+  int wr = BIO_write(rbio, buf, static_cast<int>(n));
+  if (wr != static_cast<int>(n)) co_return -1;
   co_return 1;
 }
 
@@ -184,11 +188,14 @@ sched::Task<int> tls_handshake(mem::Allocator alloc, TlsStream& s) noexcept {
     if ((co_await flush_wbio(alloc, s.sock_, s.wbio_)) != 0) co_return -1;
     if (w == Want::kDone) co_return 0;         // SSL_is_init_finished
     if (w == Want::kError || w == Want::kEof) co_return -1;
-    if (w == Want::kReadMore) {
+    if (w == Want::kReadMore || w == Want::kWriteMore) {
+      // Both need the transport to advance. kReadMore: feed peer ciphertext.
+      // kWriteMore is near-impossible on an unbounded mem wbio (SSL always writes
+      // there), but if it ever occurs, feed_rbio still yields the worker and pulls
+      // input -- guaranteeing forward progress rather than a non-yielding spin.
       int f = co_await feed_rbio(alloc, s.sock_, s.rbio_);
       if (f <= 0) co_return -1;  // EOF/err mid-handshake
     }
-    // kWriteMore: the flush above already drained wbio_; loop and retry.
   }
 }
 
@@ -206,12 +213,13 @@ sched::Task<long> tls_read(mem::Allocator alloc, TlsStream& s, void* buf,
     if ((co_await flush_wbio(alloc, s.sock_, s.wbio_)) != 0) co_return -1;
     if (w == Want::kEof) co_return 0;           // clean close_notify / transport EOF
     if (w == Want::kError) co_return -1;
-    if (w == Want::kReadMore) {
+    if (w == Want::kReadMore || w == Want::kWriteMore) {
+      // Need more ciphertext (or, rarely, a mem-wbio WANT_WRITE): feed input, which
+      // also yields the worker -- guarantees progress, never a non-yielding spin.
       int f = co_await feed_rbio(alloc, s.sock_, s.rbio_);
       if (f == 0) co_return 0;   // peer closed while we needed more ciphertext
       if (f < 0) co_return -1;
     }
-    // kWriteMore: flushed above; loop and retry SSL_read.
   }
 }
 
@@ -235,11 +243,12 @@ sched::Task<long> tls_write(mem::Allocator alloc, TlsStream& s, const void* buf,
     Want w = classify(s.ssl_, r);  // right after SSL_write
     if ((co_await flush_wbio(alloc, s.sock_, s.wbio_)) != 0) co_return -1;
     if (w == Want::kError || w == Want::kEof) co_return -1;
-    if (w == Want::kReadMore) {  // renegotiation: write needs to read
+    if (w == Want::kReadMore || w == Want::kWriteMore) {
+      // Renegotiation (write needs to read) or a rare mem-wbio WANT_WRITE: feed
+      // input, which also yields -- guarantees progress, never a non-yielding spin.
       int f = co_await feed_rbio(alloc, s.sock_, s.rbio_);
       if (f <= 0) co_return -1;
     }
-    // kWriteMore: flushed above; loop and retry SSL_write.
   }
   co_return static_cast<long>(len);
 }
