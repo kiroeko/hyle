@@ -150,6 +150,15 @@ add_executable(hyle_sched_sync_bench sched/sync_bench.cc)
 target_link_libraries(hyle_sched_sync_bench PRIVATE hyle_sched nanobench)
 hyle_apply_warnings(hyle_sched_sync_bench)
 
+# sched-09 concurrency-primitive bench: Semaphore/RwLock/oneshot/watch/broadcast
+# (the sched-09 additions sync_bench doesn't cover). Own exe. Uses Scheduler+Fiber
+# so it needs fcontext like the rest of the fiber-driven sched benches.
+if(HYLE_HAS_FCONTEXT)
+  add_executable(hyle_sched_sync_ext_bench sched/sync_ext_bench.cc)
+  target_link_libraries(hyle_sched_sync_ext_bench PRIVATE hyle_sched nanobench)
+  hyle_apply_warnings(hyle_sched_sync_ext_bench)
+endif()
+
 # sched-10 JoinHandle/spawn_task/when_all/when_any bench: proves the structured-
 # concurrency layer is ~zero-overhead vs the raw fiber+WaitGroup(1)+slot it wraps.
 # Own exe (scheduler_bench owns main). Needs fcontext like the rest of sched.
