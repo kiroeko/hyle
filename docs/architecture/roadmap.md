@@ -182,7 +182,7 @@ container/       │                            │    vector+      mem;containe
 
 ### 实现期选择（非设计空白，落地时定策略）
 
-LIFO slot 轮询预算上限；steal 的 backoff 曲线；GPU completion 选回调还是轮询线程。这些在 sched-design 已标注，是落地参数、非设计悬念。（**注**：原列此处的"阻塞 syscall 的 blocking 池 + sysmon"已在 2026-07-03 审计中**升级为真能力缺口** `spawn_blocking`——见轴 C 的 C8 / sched-11,不再当"实现期参数"糊过去,因为它是 tokio/seastar/marl 都有的公开 API。）
+LIFO slot 轮询预算上限（**已落地**：`kMaxLifoPolls=3`，见 sched-design §2.2 + benchmarks-sched LIFO 节）；steal 的 backoff 曲线；GPU completion 选回调还是轮询线程。这些在 sched-design 已标注，是落地参数、非设计悬念。（**注**：原列此处的"阻塞 syscall 的 blocking 池 + sysmon"已在 2026-07-03 审计中**升级为真能力缺口** `spawn_blocking`——见轴 C 的 C8 / sched-11,不再当"实现期参数"糊过去,因为它是 tokio/seastar/marl 都有的公开 API。）
 
 ## 五、收口
 
