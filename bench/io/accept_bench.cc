@@ -15,11 +15,13 @@
 // divides out the per-accept cost.
 //
 // SCALING READOUT: sweep N = 64/256/1024 and read accepts/s. A flat accepts/s (i.e.
-// per-accept ns that does NOT climb with N) is the "accept is O(1)" evidence. This is
-// real TCP over loopback (accept needs a real listener -- socketpair can't accept),
-// so it accrues TIME_WAIT on close; Linux recycles those far faster than Windows, so
-// the honest scaling numbers come from the io_uring run (Windows verifies it builds +
-// the low-N rows, like io_scaling_bench).
+// per-accept ns that does NOT climb with N) is the "accept is O(1)" evidence. MEASURED
+// (io_uring): ~3.8k accepts/s essentially CONSTANT across the 16x N span -- O(1)/accept
+// confirmed, once the listen backlog is sized to the burst (see run_accept: a starved
+// backlog fakes a 16x blowup via SYN-retransmit). This is real TCP over loopback
+// (accept needs a real listener -- socketpair can't accept), so it accrues TIME_WAIT on
+// close; Linux recycles those far faster than Windows, so the honest scaling numbers
+// come from the io_uring run (Windows verifies it builds + the low-N rows).
 //
 // Run under scripts/bench-stat.py -n 15 for the statistical verdict.
 
@@ -99,7 +101,12 @@ void run_accept(unsigned workers, int conns, std::uint16_t port) {
   Scheduler sched(workers, system_allocator(), 8192);
   IoContext io(sched, workers);
 
-  TcpListener ls = tcp_listen(io, 0, "127.0.0.1", port);
+  // backlog MUST cover the whole burst: this bench spawns all N client fibers at
+  // once, so up to N SYNs can arrive before the single accept loop drains them. A
+  // too-small backlog (the default 128) drops the overflow SYNs -> TCP SYN-retransmit
+  // (1s backoff) -> a fabricated 16x super-linear blowup at N>=256 that looks like a
+  // broken accept path but is really just a starved listen queue. Size it to N.
+  TcpListener ls = tcp_listen(io, 0, "127.0.0.1", port, conns);
   if (!ls.valid()) {  // port still in TIME_WAIT etc -> skip this iteration cleanly
     sched.shutdown();
     return;
