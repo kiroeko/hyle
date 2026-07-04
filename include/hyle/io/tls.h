@@ -113,10 +113,25 @@ class TlsStream {
   friend HYLE_IO_API sched::Task<int> tls_shutdown(mem::Allocator,
                                                    TlsStream&) noexcept;
 
+  // Lazily allocate the 16KB pump scratch on first use (reused for the stream's
+  // life, freed in the dtor). Returns the block, or nullptr on OOM. Called by the
+  // pump entry points before they touch flush_wbio/feed_rbio.
+  HYLE_IO_API char* ensure_scratch(mem::Allocator alloc) noexcept;
+
   TcpStream sock_{};
   ssl_st* ssl_ = nullptr;   // per-connection SSL (owns rbio_/wbio_ after SSL_set_bio)
   bio_st* rbio_ = nullptr;  // memory BIO: SSL reads peer ciphertext from here
   bio_st* wbio_ = nullptr;  // memory BIO: SSL writes ciphertext to be sent here
+  // Ciphertext pump scratch (one 16KB block), lazily allocated on first pump and
+  // reused for the stream's whole life. Previously each flush_wbio/feed_rbio had a
+  // 16KB LOCAL array, which -- because those are coroutines -- lived in the
+  // per-call coroutine FRAME (Allocator-backed operator new), so every tls_read/
+  // tls_write paid a 16KB frame alloc+free. Moving it here shrinks those frames to
+  // tens of bytes. Safe as ONE shared block: a TlsStream is owned by one fiber and
+  // flush/feed run serially (each co_await completes before the next), never nested.
+  char* scratch_ = nullptr;
+  mem::Allocator scratch_alloc_{};  // set when scratch_ is allocated, for the free
+
 };
 
 // ---- co_await TLS operations (free functions, allocator-first) --------------

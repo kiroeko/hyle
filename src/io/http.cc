@@ -467,18 +467,22 @@ sched::Task<bool> http_server_send(mem::Allocator alloc, HttpServerConn& c,
     co_return co_await write_all(alloc, c.stream_, out.data, out.size);
   }
 
-  // Streaming: send the head, then pump chunks until more==false.
+  // Streaming: send the head, then pump chunks until more==false. Reuse `out`
+  // (its head bytes are already written) as the per-chunk frame buffer: reset
+  // size=0 each iteration so the capacity grown for the head/first chunk is kept
+  // and reused -- no per-chunk allocation (was `GrowBuf frame(alloc)` inside the
+  // loop = one alloc+free every chunk, hot for token-stream/SSE responses).
   if (!(co_await write_all(alloc, c.stream_, out.data, out.size))) co_return false;
   for (;;) {
     StreamChunk ch = resp.next_(resp.stream_ctx_);
     if (ch.len > 0) {
       // chunk = <hex len>\r\n<data>\r\n
-      GrowBuf frame(alloc);
-      if (!put_hex(frame, ch.len) || !put_cstr(frame, "\r\n") ||
-          !put(frame, static_cast<const char*>(ch.data), ch.len) ||
-          !put_cstr(frame, "\r\n"))
+      out.size = 0;  // reuse buffer + capacity; no realloc unless this chunk is bigger
+      if (!put_hex(out, ch.len) || !put_cstr(out, "\r\n") ||
+          !put(out, static_cast<const char*>(ch.data), ch.len) ||
+          !put_cstr(out, "\r\n"))
         co_return false;
-      if (!(co_await write_all(alloc, c.stream_, frame.data, frame.size)))
+      if (!(co_await write_all(alloc, c.stream_, out.data, out.size)))
         co_return false;
     }
     if (!ch.more) break;
