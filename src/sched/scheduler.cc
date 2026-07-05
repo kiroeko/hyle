@@ -408,7 +408,18 @@ struct Scheduler::Impl {
     if (owner_idx >= 0) {
       while (!workers[static_cast<unsigned>(owner_idx)]->pinned.try_push(f))
         platform::this_thread::yield();
-      unpark_specific(static_cast<unsigned>(owner_idx));
+      // Same-core short-circuit: if this wake fires ON the owner worker's own thread
+      // (the shard-per-core common case -- an io completion reaped by worker N wakes a
+      // fiber pinned to N; run_worker's reap poll runs with t_worker_idx == N), the
+      // worker is demonstrably awake (it's running this code), so it'll pop the pinned
+      // queue on its next find_task. Skip the unpark -- else we'd fire a cross-thread
+      // wake syscall (io_uring/epoll eventfd write, IOCP PostQueuedCompletionStatus)
+      // AT OURSELVES every io wake (4/round-trip in echo). Mirrors reschedule's pinned
+      // branch, which already relies on this "owner is THIS worker -> no unpark". A
+      // foreign-thread wake (t_worker_idx != owner) still unparks the sleeping owner.
+      if (!(t_current == this && t_worker_idx == owner_idx)) {
+        unpark_specific(static_cast<unsigned>(owner_idx));
+      }
       return;
     }
     // Foreign-thread inject (Waker may fire anywhere): round-robin across shards.

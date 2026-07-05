@@ -704,8 +704,11 @@ bool Proactor::buf_ring_return(int, std::uint32_t) noexcept { return false; }
 //   reap read       -> load_acquire  on CQ ktail  (pairs with kernel release)
 //   reap advance    -> store_release on CQ khead  (kernel won't overwrite unread)
 // Only io_uring_enter is a syscall on the hot path; submit/reap ring writes are
-// pure userspace. No SQPOLL here (io-01/02 baseline); that is a setup-flag
-// upgrade the interface already accommodates (submit stays syscall-optional).
+// pure userspace. Setup flags (SINGLE_ISSUER/DEFER_TASKRUN/SUBMIT_ALL) are enabled
+// with a kernel-version fallback ladder in try_init_uring below -- they cut
+// completion-delivery overhead for the single-consumer-per-ring design. SQPOLL is
+// still NOT used (a kernel poller thread per core costs idle CPU and is mutually
+// exclusive with DEFER_TASKRUN); the interface accommodates it as a future upgrade.
 #  include <linux/io_uring.h>
 #  include <sys/epoll.h>
 #  include <sys/eventfd.h>
@@ -924,10 +927,51 @@ namespace {
 // or nullptr if io_uring is unavailable (old kernel ENOSYS / disabled EPERM /
 // mmap failure) -- caller then falls back to epoll.
 Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
+  // Setup-flag ladder (liburing echo-server.c / proxy.c "preferred setup"), enabled
+  // with a kernel-version fallback: the kernel rejects unsupported flags with -EINVAL,
+  // so try the richest supported rung and step down. Correctness is identical across
+  // rungs; only completion-delivery overhead differs.
+  //   COOP_TASKRUN (>=5.19): don't force an IPI to run completion task_work -- run it
+  //     on the next natural kernel transition. HYLE's owner thread enters its own ring
+  //     constantly (submit+reap), so completions still surface promptly; this just
+  //     drops the inter-processor-interrupt storm. Near-free for the per-core model.
+  //   SUBMIT_ALL (>=5.18): a bad SQE in a batch doesn't abort the whole submit -- HYLE
+  //     folds many fibers' SQEs into one enter, so one bad fd must not drop its peers.
+  //
+  // DEFER_TASKRUN (+SINGLE_ISSUER, >=6.1) is DELIBERATELY NOT here yet, though HYLE's
+  // per-core model looks tailor-made for it. It defers ALL completion task_work to a
+  // GETEVENTS enter, which broke a basic send/recv round-trip in testing: HYLE's
+  // drain-time reap (scheduler run_worker) calls reap(timeout=0), whose CQ-empty branch
+  // does a SUBMIT-ONLY enter (no GETEVENTS) -- under defer the completion then sits in
+  // task_work and never surfaces there; the worker spins the searcher loop instead of
+  // reaching the park's blocking GETEVENTS reap. Wiring defer safely needs the reap
+  // path to guarantee a GETEVENTS enter whenever ops are in flight (not only at the
+  // park boundary). Registered as a follow-up; COOP_TASKRUN captures most of the win
+  // (task_work batching) without the delivery constraint.
+#ifndef IORING_SETUP_SUBMIT_ALL
+#  define IORING_SETUP_SUBMIT_ALL (1u << 7)
+#endif
+#ifndef IORING_SETUP_COOP_TASKRUN
+#  define IORING_SETUP_COOP_TASKRUN (1u << 8)
+#endif
+  const unsigned kFlagLadder[] = {
+      IORING_SETUP_COOP_TASKRUN | IORING_SETUP_SUBMIT_ALL,  // >=5.19
+      IORING_SETUP_SUBMIT_ALL,                              // >=5.18
+      0u,                                                   // io-01 baseline
+  };
   io_uring_params p;
-  std::memset(&p, 0, sizeof(p));
-  int fd = sys_io_uring_setup(entries, &p);
-  if (fd < 0) return nullptr;  // ENOSYS(old kernel) / EPERM(sysctl/seccomp disabled)
+  int fd = -1;
+  for (unsigned flags : kFlagLadder) {
+    std::memset(&p, 0, sizeof(p));
+    p.flags = flags;
+    fd = sys_io_uring_setup(entries, &p);
+    if (fd >= 0) break;
+    // -EINVAL: this flag combo unsupported on this kernel -> try the next rung.
+    // Any OTHER error (ENOSYS old kernel / EPERM sysctl-disabled) is fatal for all
+    // rungs -> bail to the epoll fallback immediately.
+    if (errno != EINVAL) return nullptr;
+  }
+  if (fd < 0) return nullptr;
 
   auto* impl = new (std::nothrow) Proactor::Impl{};
   if (impl == nullptr) {
