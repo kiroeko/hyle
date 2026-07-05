@@ -58,6 +58,27 @@ raw epoll 对照答的是"vs 旧就绪模型";要答"vs **同样的 io_uring**�
 3. **libuv 是跨模型对照**(它 epoll reactor,HYLE io_uring proactor),故最该对标的是 HYLE 的 epoll 降级路径/裸 epoll 行;单核与 HYLE-io_uring 平已说明 co_await 泵没引入额外成本。
 4. **方法学诚实纠错(2026-07-05)**:两个对照都不是一次写对的——① asio 首版用 `shared_ptr`+`asio::post` 保活 client 状态机,posted lambda 跑一次即释放 → 悬垂;且 server 永久 re-arm 读、客户端读完不关连接 → `ctx.run()` 永不返回。改:值语义 functor(conns 向量提供稳定存储)+ 末轮 close 触发 server EOF。② libuv 更曲折:一开始 `uv_pipe_open` 裸 socketpair fd(单核环境下读一次就停),换 `uv_socketpair`+`uv_tcp_open` 仍每连接只做 1 round-trip。**用独立探针程序**(2conn×3rt、每回调打点)才定位到真根因:**libuv 契约里 `nread==0` 是"暂无数据"(类 EAGAIN)不是 EOF,只有 `nread<0`(UV_EOF)才是**;我的 `if(nread<=0) close` 在良性 n==0 上误关了连接,一次交换后就 EPIPE。改 `nread<0` 后 `rt_left=0` 全通。教训:**对照库的语义必须照抄准**(nread==0 vs <0 是 libuv 的经典坑),别拿 HYLE/POSIX 的"0=EOF"直觉套。
 
+## 两处热路径优化:reinject 同核短路 + io_uring setup flags(2026-07-05,commit 93b1e23)
+
+上面 vs-asio/libuv 的"单核统计平局"促成一轮 io 优化调研(复用 sched 机制 + 参考 asio/libuv/liburing 本地源码)。落地两处、都过 144 测试 + 双平台 TSan:
+
+1. **reinject 同核 unpark 短路**(`src/sched/scheduler.cc`):io 完成被 worker N reap 时唤醒 owner=N 的 pinned fiber——shard-per-core 常态(submit+reap 同核,echo 每往返 4 次唤醒全落此)。原 `reinject` 无条件 `unpark_specific(owner)`,即向**正在跑 reap 的自己**发一次跨线程唤醒 syscall(io_uring/epoll eventfd write / IOCP PostQueuedCompletionStatus)+ parker 原子——纯浪费(worker 显然醒着)。加 `owner_idx == t_worker_idx` 短路跳过(镜像 `reschedule` 早有的同款逻辑);fiber 已在 pinned 队列,reap 返回后 `find_task` 立即取回,无丢唤醒。
+
+2. **io_uring COOP_TASKRUN + SUBMIT_ALL**(`src/io/proactor.cc`):原 setup flags 全 0。接 `COOP_TASKRUN`(≥5.19,完成 task_work 不强制 IPI,靠 owner 线程常态 enter 自然收割)+ `SUBMIT_ALL`(≥5.18,批量提交坏 SQE 不中止整批),带 `-EINVAL` 内核版本回退阶梯(coop+submit_all → submit_all → 无 flag)。
+
+**实测(`bench-stat.py` n=15,同 run 对照隔离归属)**:
+
+| 配置 | 优化前 | 优化后 | 变化 |
+|---|---|---|---|
+| HYLE-1w echo | 1,868 ns | **1,255 ns** | **-33%** |
+| HYLE-4w echo | 789 ns | **581 ns** | **-26%** |
+| asio(同 run 对照) | 1,695 ns | 1,583 ns | ~持平 |
+| raw epoll(同 run 对照) | 1,389 ns | 1,346 ns | ~持平 |
+
+单核 -33% 后 **HYLE-1w 反超 asio(1255 vs 1583)与裸 epoll(1255 vs 1346)**——把之前 vs-asio 的"单核平局"变成"单核赢"。同 run 里 asio/epoll(无本改动)基本未动,隔离出收益确归本两处改动、非机器波动。
+
+**诚实纠错 —— DEFER_TASKRUN 撤下(登记 follow-up)**:调研最看好的其实是 `DEFER_TASKRUN`(+SINGLE_ISSUER,≥6.1),它把完成 task_work 全延到 GETEVENTS enter 才跑,理论上最契合"每核一 ring、单消费者"。但**实测挂死基本 send/recv 往返**:HYLE 的 drain-time reap(`run_worker`)调 `reap(timeout=0)`,其 CQ-空分支走 **submit-only enter(不带 GETEVENTS)**——defer 下完成永远滞留 task_work、在此永不 surface,worker 空转 searcher 自旋到不了 park 的阻塞 GETEVENTS reap。bisect(flags=0 全过 → coop+submit_all 全过 → 加 defer 挂)定位到 defer 单独致因。安全接入需 reap 路径保证"有 op 在途就必带 GETEVENTS enter"(不只 park 边界),已登记。COOP_TASKRUN 拿到大部分收益(task_work 批处理)且无此约束。教训同 P0 hang:**优化契合直觉 ≠ 能跑,必须过它自己的 benchmark/测试**。
+
 ## pipelined / 高扇出(512 流)+ 一个被它揪出的 P0 hang
 
 ping-pong(每流稳态 ≤1 op 在途)填不满 SQ,也测不到"海量 op 同时在途"的收割路径。故加一个 pipelined 负载:**512 条独立 echo 流共享 worker,每流 16 round-trip**——512 » ring 深度 256,一次 reap 唤醒的一批 fiber 各自 submit,几百个 op 同时在途。
@@ -259,5 +280,8 @@ parse/framing 净开销 **~1.18x**(11597 vs 9827),shard 扩展 1w→4w **3.25x**
 - ✅ **HTTP bench**(已做,见上"HTTP req/resp 吞吐"节):64conn×64rt keep-alive `GET /` vs 同传输裸 TCP echo,parse/framing 净开销 WSL 1.44x / Win 1.18x(真 LOSE,符合预期),shard 扩展 1w→4w 2.4x(Lin)/3.25x(Win)。双平台出数;Windows 用自计时(nanobench 自适应 epoch 在 loopback 高方差下无界重试,不适合毫秒级 op)。
 - **file io bench**:open/read/write/stat 吞吐(io_uring 真异步 vs IOCP/epoll 同步合成的代价差)。未做。
 - ✅ **vs asio / libuv**(已做,见上"vs asio / libuv"节):单核与两者统计平局(抽象没输给成熟框架),多核 2.09x 赢 asio(shard-per-core 免费)。
-- **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
+- ✅ **io_uring setup flags**(已做,见上"两处热路径优化"节):COOP_TASKRUN+SUBMIT_ALL 已接(带内核回退),echo-1w -33%。
+- **DEFER_TASKRUN + SINGLE_ISSUER**(登记 follow-up):最契合每核 ring 但实测挂死基本 send/recv(drain-time reap 的 submit-only enter 不带 GETEVENTS,defer 下完成永不 surface);需 reap 路径保证"有 op 在途必带 GETEVENTS enter"才能安全接。
+- **registered files / multishot-recv awaitable**(调研中,agent 出设计):registered files(IOSQE_FIXED_FILE 省每 op fd 查表)+ 把 proactor 已实现的 multishot recv/provided-buf-ring 提升为 net.h awaitable。
+- **SQPOLL**:内核侧 submit,连批量 enter 都免;但每核一 ring→每核多一个 kernel poller 烧 idle CPU,且与 DEFER_TASKRUN 互斥。接口已预留,**不建议现在做**(调研判 LOW)。
 - Windows IOCP 的批量对应物(IOCP 无 submit 攒批概念,ReadFile/WriteFile 即时下发)+ n=15 统计版。
