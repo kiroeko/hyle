@@ -170,10 +170,11 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 
 ## io 系统性红队审查（2026-07-05，对标 sched 那轮）
 
-两个并行红队 agent 审全 io（下层 proactor 三后端 + net/tcp/udp + io_context;上层 tls/http/file/timeout/cancel），逐条人工核实。**审出 11 项,修 4 个真 bug,2 项按用户意见登记待议,其余低影响登记。**
+两个并行红队 agent 审全 io（下层 proactor 三后端 + net/tcp/udp + io_context;上层 tls/http/file/timeout/cancel），逐条人工核实。**审出 11 项,修 5 个真 bug(含 2 个 P1),1 项按用户意见登记待议,其余低影响登记。**
 
 **已修（commit ca317db，双向验证 + 双平台 + TSan）**：
 - **L2 (P1)** epoll multishot accept:re-arm 失败仍标 kMore → 调用方永久挂起。改:只在 epoll_ctl 重挂成功才标 kMore（镜像 IOCP）。
+- **L3 (P1, commit 2dcd6ce)** epoll 全双工同 fd 并发:`pending` 单槽 map<fd,op>,同 fd 并发 recv+send 时第二个覆盖第一个 → 首个 fiber 永久孤儿。改:拆 pending_in(EPOLLIN)/pending_out(EPOLLOUT) 双槽,reap 按方向分别服务 + re-arm 另一侧,事件掩码取并集。仅 epoll fallback 受影响(io_uring/IOCP 无此问题)。回归测试 `FullDuplexSameFdEpoll` 双向验证(pre-fix 12s 超时挂起 / post-fix 1ms PASS);forced-epoll + io_uring 双后端 × 7 套件 TSan 全绿。
 - **U1 (P2 安全)** HTTP 请求走私(RFC 7230 §3.3.3):拒绝 CL+TE 并存 / TE 非 bare chunked / 重复冲突 CL。探针证 pre-fix 三 payload 全被接受(=真漏洞)。回归测试 `RejectsSmuggling`。
 - **U2 (P2)** HTTP 客户端 HEAD/204/304/1xx 未抑制 body → 按 CL 读不存在的 body 挂起/desync。改:这些响应短路空 body。
 - **U4 (P3 latent)** `GrowBuf::reserve` 增长 `>` 应为 `>=`,2-4GB u32 溢出死循环(当前不可达)。
@@ -181,7 +182,6 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 **红队核实为安全（清账）**:TLS scratch 复用(本 session 改)、net_timeout io-vs-timer 竞态仲裁 + 迟到 CQE refcount、net_cancel 栈 slot 单唤醒、parse_u64 溢出、HTTP head/body 视图跨 realloc 稳定性、IOCP teardown 顺序、buf_ring_return 无竞态、RecvFromOp/SendToOp scratch 生命周期、io_uring multishot inflight 计数。
 
 **登记待议（用户 2026-07-05 决定后议）**:
-- **L3 (P1, epoll fallback)** 单-op-per-fd:`pending` 是 `map<fd,op>`,同 fd 并发 read+write 时第二个覆盖第一个 → 首个 fiber 永久孤儿(全双工)。仅影响 epoll fallback(io_uring 是 Linux 默认,无此问题)。修需 `map<fd,{read_op,write_op}>` 双槽 + 分别 EPOLLIN/EPOLLOUT,动静较大。
 - **U3 (P2)** HTTP 客户端 read-until-close:无 CL 无 chunked 时静默截断 body(骨架已承认)。修需 read-until-EOF 循环。
 
 **低影响登记（暂不修）**:L1 submit 失败哨兵 `-1` 撞 `-EPERM`(调用方对两者都失败退出,行为无差异);L4 epoll 伪就绪透传 `-EAGAIN`;L5 基础 net.h op 无 orphan 保护(仅 teardown 且基础 op 不自取消,latent);L6 IOCP `SO_UPDATE_*_CONTEXT` 返回值未查(P3)。
