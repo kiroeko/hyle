@@ -1,6 +1,7 @@
 #include "hyle/platform/thread.h"
 
 #include <cstring>
+#include <type_traits>
 
 #include "hyle/platform.h"
 
@@ -172,12 +173,20 @@ Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
     return std::unexpected(Status::Internal("pthread_create failed"));
   }
   Thread t;
-  t.handle_ = static_cast<std::uintptr_t>(tid);
+  // pthread_t is an integer on glibc but an opaque pointer on macOS/BSD, so no single
+  // cast is well-formed on both (static_cast rejects the pointer form, reinterpret_cast
+  // rejects the integer form, and if constexpr still type-checks the untaken branch).
+  // A byte copy sidesteps the representation difference; both are pointer-sized.
+  static_assert(sizeof(pthread_t) <= sizeof(std::uintptr_t));
+  t.handle_ = 0;
+  std::memcpy(&t.handle_, &tid, sizeof(tid));
   return t;
 }
 
 void Thread::join() {
-  ::pthread_join(static_cast<pthread_t>(handle_), nullptr);
+  pthread_t tid{};
+  std::memcpy(&tid, &handle_, sizeof(tid));
+  ::pthread_join(tid, nullptr);
   handle_ = 0;
 }
 
