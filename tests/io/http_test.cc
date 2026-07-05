@@ -13,6 +13,7 @@
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
+#include "hyle/sched/timer.h"
 
 // io-10 HTTP/1.1 test: a real HTTP server + client over loopback TCP, exercising
 // the integration layer (co_await TcpStream -> picohttpparser -> Request/Response
@@ -235,6 +236,54 @@ int smuggle_served(const char* raw, std::uint16_t port) {
   return r.reqs_served.load();
 }
 
+// ---- close-delimited response body harness (red-team U3 regression) -----------
+// A raw server that sends the HEAD alone (no Content-Length / no chunked), PAUSES
+// (so the client's first read gets only the head), then sends a body and closes.
+// A HYLE HttpClientConn must read-until-EOF and return the FULL body -- pre-fix it
+// returned only the already-buffered head packet (empty body = silent truncation).
+struct CloseBodyResult {
+  std::atomic<int> status{0};
+  std::atomic<int> body_len{-1};
+};
+Task<int> closebody_server(Allocator, IoContext*, TcpListener* ls, int body_size) {
+  TcpStream conn = co_await ls->accept(kOwner);
+  if (!conn.valid()) co_return 0;
+  char rbuf[2048];
+  co_await conn.read(rbuf, sizeof(rbuf));  // read+discard the request
+  std::string head = "HTTP/1.1 200 OK\r\nConnection: close\r\n\r\n";
+  std::uint32_t off = 0, t = static_cast<std::uint32_t>(head.size());
+  while (off < t) {
+    std::int64_t w = co_await conn.write(head.data() + off, t - off);
+    if (w <= 0) co_return 0;
+    off += static_cast<std::uint32_t>(w);
+  }
+  hyle::sched::sleep_for_ns(20'000'000);  // 20ms: client's first read gets only head
+  std::string body(static_cast<std::size_t>(body_size), 'B');
+  off = 0;
+  t = static_cast<std::uint32_t>(body.size());
+  while (off < t) {
+    std::int64_t w = co_await conn.write(body.data() + off, t - off);
+    if (w <= 0) break;
+    off += static_cast<std::uint32_t>(w);
+  }
+  co_return 0;  // fiber returns -> conn closes -> client sees EOF (body terminator)
+}
+Task<int> closebody_client(Allocator alloc, IoContext* io, CloseBodyResult* r,
+                           std::uint16_t port) {
+  TcpStream s = tcp_socket(*io, kOwner);
+  alignas(16) unsigned char ss[128];
+  std::uint32_t len = 0;
+  resolve_addr("127.0.0.1", port, &ss, &len);
+  if (co_await s.connect(&ss, len) != 0) co_return 0;
+  HttpClientConn conn{alloc, std::move(s)};
+  HttpResponseView* resp = co_await conn.request("GET", "/", "127.0.0.1");
+  if (resp != nullptr) {
+    r->status.store(resp->status(), std::memory_order_release);
+    r->body_len.store(static_cast<int>(resp->body().size), std::memory_order_release);
+  }
+  co_return 0;
+}
+
 }  // namespace
 
 TEST(IoHttp, GetKeepAlive) {
@@ -296,4 +345,37 @@ TEST(IoHttp, RejectsSmuggling) {
   // A single valid chunked request is still served (no false positive).
   EXPECT_GE(smuggle_served("POST / HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked"
                            "\r\n\r\n5\r\nhello\r\n0\r\n\r\n", 54434), 1);
+}
+
+// Close-delimited response body (RFC 7230 §3.3.3 rule 7, red-team U3 regression):
+// a response with neither Content-Length nor Transfer-Encoding runs until the peer
+// closes. The client must read-until-EOF and get the FULL body -- pre-fix it kept
+// only the head-packet's buffered tail (silent truncation to empty when the body
+// arrives in a later packet, forced here by the server's 20ms split).
+TEST(IoHttp, ReadsCloseDelimitedBody) {
+  constexpr unsigned kWorkers = 2;
+  constexpr int kBodySize = 10000;
+  constexpr std::uint16_t kCbPort = 54440;
+  Scheduler sched(kWorkers, system_allocator(), 256);
+  IoContext io(sched, kWorkers);
+  ASSERT_TRUE(io.valid());
+  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kCbPort);
+  ASSERT_TRUE(ls.valid()) << "listen failed (port in use?)";
+
+  CloseBodyResult r;
+  auto ds = std::make_unique<Drive>();
+  auto dc = std::make_unique<Drive>();
+  ds->task = closebody_server(system_allocator(), &io, &ls, kBodySize);
+  dc->task = closebody_client(system_allocator(), &io, &r, kCbPort);
+  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  sched.spawn_on(kOwner, &fs);
+  sched.spawn_on(kOwner, &fc);
+  sched.drain();
+  sched.shutdown();
+
+  EXPECT_EQ(r.status.load(), 200);
+  EXPECT_EQ(r.body_len.load(), kBodySize)
+      << "close-delimited body truncated (U3): got " << r.body_len.load()
+      << " of " << kBodySize;
 }

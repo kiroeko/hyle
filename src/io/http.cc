@@ -691,9 +691,20 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
     r.body_ = string_ref{im.body.data, static_cast<std::uint32_t>(body_len)};
     buf.consume(static_cast<std::uint32_t>(body_len));
   } else {
-    // No Content-Length and not chunked: read until close (HTTP/1.0 style). The
-    // skeleton returns whatever is buffered; a full read-until-EOF path can be added
-    // when a consumer needs it. Copy to im.body so the view is stable.
+    // No Content-Length and not chunked: the body runs until the peer CLOSES the
+    // connection (HTTP/1.0, or an HTTP/1.1 "Connection: close" streaming response --
+    // RFC 7230 §3.3.3 rule 7). Read until EOF, accumulating into buf; buf already
+    // holds whatever leading body bytes arrived with the head. read_more appends and
+    // returns 0 on a clean peer close (the body terminator here) or <0 on error. Cap
+    // at kHttpMaxBodyBytes so a peer that never closes can't grow us unboundedly.
+    // (Previously this returned only the already-buffered bytes -> silent truncation
+    // of any close-delimited body larger than the header packet; red-team U3.)
+    for (;;) {
+      if (buf.size > kHttpMaxBodyBytes) co_return nullptr;  // DoS guard
+      std::int64_t n = co_await read_more(alloc, buf, c.stream_);
+      if (n == 0) break;             // clean close = end of body
+      if (n < 0) co_return nullptr;  // read error before close
+    }
     std::uint32_t avail = buf.size;
     if (avail > 0) {
       if (!im.body.reserve(avail)) co_return nullptr;
