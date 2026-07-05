@@ -292,3 +292,71 @@ TEST(IoNet, ManyConnectionsShardedAcrossCores) {
   }
   for (auto& sp : pairs) close_pair(sp);
 }
+
+#if defined(__linux__)
+// ---- full-duplex on ONE fd, forced-epoll (red-team L3 regression) -----------
+// Two fibers concurrently in flight on the SAME fd: one blocked in recv(a), the
+// other doing send(a). On the epoll fallback these arm the same fd for EPOLLIN and
+// EPOLLOUT respectively. Before the fix, the single map<fd,op> `pending` had the
+// second submit OVERWRITE the first -> the recv fiber was orphaned forever (drain
+// hangs = ctest timeout). After the fix (pending_in + pending_out), both complete.
+// Forced onto epoll (io_uring has no such issue) via HYLE_IO_FORCE_EPOLL.
+namespace {
+struct DuplexState {
+  IoContext* io;
+  std::intptr_t fd;      // the shared fd both fibers operate on
+  char recv_buf[64] = {};
+  std::int64_t recv_n = 0;
+  std::int64_t send_n = 0;
+};
+Task<int> duplex_recv(Allocator, DuplexState* s) {
+  // Blocks until data arrives on `fd` (the peer end is written by the test).
+  s->recv_n = co_await RecvOp{&s->io->proactor_for_current(), s->fd, s->recv_buf, 64};
+  co_return 0;
+}
+Task<int> duplex_send(Allocator, DuplexState* s) {
+  static const char kMsg[] = "duplex-write";
+  s->send_n = co_await SendOp{&s->io->proactor_for_current(), s->fd, kMsg, sizeof(kMsg)};
+  co_return 0;
+}
+}  // namespace
+
+TEST(IoNet, FullDuplexSameFdEpoll) {
+  ::setenv("HYLE_IO_FORCE_EPOLL", "1", 1);  // exercise the fallback path
+  constexpr unsigned kWorkers = 2;
+  constexpr unsigned kOwner = 0;
+  {
+    Scheduler sched(kWorkers, system_allocator(), 256);
+    IoContext io(sched, kWorkers);
+    ASSERT_TRUE(io.valid());
+    SocketPair sp = make_pair(io, kOwner);
+    ASSERT_TRUE(sp.ok);
+
+    DuplexState st{};
+    st.io = &io;
+    st.fd = sp.a;  // BOTH fibers use fd a: recv(a) blocks, send(a) writes to a->b
+
+    auto dr = std::make_unique<Drive>();
+    auto dw = std::make_unique<Drive>();
+    dr->task = duplex_recv(system_allocator(), &st);
+    dw->task = duplex_send(system_allocator(), &st);
+    Fiber fr(system_allocator(), kDefaultStackSize, &drive_entry, dr.get());
+    Fiber fw(system_allocator(), kDefaultStackSize, &drive_entry, dw.get());
+    sched.spawn_on(kOwner, &fr);  // recv(a): arms fd a for EPOLLIN, blocks
+    sched.spawn_on(kOwner, &fw);  // send(a): arms fd a for EPOLLOUT, concurrent
+    // Feed recv(a) by writing to the peer end b (plain blocking write is fine here).
+    static const char kFeed[] = "feed-recv";
+    ::write(static_cast<int>(sp.b), kFeed, sizeof(kFeed));
+
+    sched.drain();  // pre-fix: HANGS here (recv fiber orphaned by send's overwrite)
+    sched.shutdown();
+
+    EXPECT_TRUE(dr->finished.load()) << "recv fiber orphaned (L3)";
+    EXPECT_TRUE(dw->finished.load()) << "send fiber orphaned (L3)";
+    EXPECT_GT(st.recv_n, 0) << "recv on the shared fd never completed";
+    EXPECT_GT(st.send_n, 0) << "send on the shared fd never completed";
+    close_pair(sp);
+  }
+  ::unsetenv("HYLE_IO_FORCE_EPOLL");
+}
+#endif  // __linux__

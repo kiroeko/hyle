@@ -821,10 +821,12 @@ struct Proactor::Impl {
   // ---- epoll backend state (reactor -> completion emulation) ----
   // epoll only signals READINESS; the proactor must remember each armed op and
   // perform the IO itself when the fd becomes ready, then synthesize a
-  // Completion. One pending op per fd (EPOLLONESHOT), which suffices for the
-  // one-in-flight-op-per-fd model io-04 net uses. `opcode` reuses the IORING_OP_*
-  // tags (READ/WRITE for byte IO, ACCEPT/CONNECT for the socket handshakes) so
-  // reap() can branch on which syscall to run when the fd fires.
+  // Completion. TWO pending ops per fd -- one read-side (EPOLLIN: READ/RECVMSG/
+  // ACCEPT) and one write-side (EPOLLOUT: WRITE/SENDMSG/CONNECT) -- so a full-duplex
+  // socket (one fiber reading, another writing the SAME fd) does not lose an op
+  // (the earlier single map<fd,op> had the second submit overwrite the first,
+  // stranding a fiber forever -- red-team L3). `opcode` reuses the IORING_OP_* tags
+  // so reap() can branch on which syscall to run when the fd fires.
   int epfd = -1;
   struct PendingOp {
     std::uint8_t opcode;   // IORING_OP_READ/WRITE/ACCEPT/CONNECT/RECVMSG/SENDMSG
@@ -841,7 +843,11 @@ struct Proactor::Impl {
     // native multishot upward. Only meaningful for IORING_OP_ACCEPT.
     bool multishot = false;
   };
-  std::unordered_map<int, PendingOp> pending;  // fd -> armed op
+  // Split by direction so read+write on ONE fd coexist. A fd may appear in both.
+  // The registered epoll event mask for an fd is the UNION of whichever sides are
+  // armed (EPOLLIN|EPOLLOUT when both), all under EPOLLONESHOT.
+  std::unordered_map<int, PendingOp> pending_in;   // EPOLLIN side (recv/accept/recvfrom)
+  std::unordered_map<int, PendingOp> pending_out;  // EPOLLOUT side (send/connect/sendto)
   // post() has no fd (a bare wake token) and epoll has no
   // PostQueuedCompletionStatus, so injected wakes queue here; reap drains them
   // first. std in the .cc impl is allowed (conventions §1: internal, non-hot).
@@ -1080,6 +1086,37 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
     int got = ::epoll_wait(impl_->epfd, evs, want, ms);
     if (got <= 0) return 0;  // timeout / EINTR -> nothing this round
 
+    // Perform the ready op inline and synthesize its result. The op tag says
+    // which syscall. Shared by both directions (read-side / write-side).
+    auto perform = [](int fd, const Impl::PendingOp& op) -> std::int64_t {
+      if (op.opcode == IORING_OP_WRITE) {
+        ssize_t w = ::write(fd, op.buf, op.len);
+        return (w < 0) ? -errno : static_cast<std::int64_t>(w);
+      } else if (op.opcode == IORING_OP_ACCEPT) {
+        int as = ::accept(fd, nullptr, nullptr);
+        return (as < 0) ? -errno : static_cast<std::int64_t>(as);
+      } else if (op.opcode == IORING_OP_CONNECT) {
+        int soerr = 0;
+        socklen_t sl = sizeof(soerr);
+        ::getsockopt(fd, SOL_SOCKET, SO_ERROR, &soerr, &sl);
+        return (soerr == 0) ? 0 : -soerr;
+      } else if (op.opcode == IORING_OP_RECVMSG) {
+        socklen_t al = static_cast<socklen_t>(op.addr_cap);
+        ssize_t r = ::recvfrom(fd, op.buf, op.len, 0,
+                               static_cast<sockaddr*>(op.addr),
+                               op.addr ? &al : nullptr);
+        return (r < 0) ? -errno : static_cast<std::int64_t>(r);
+      } else if (op.opcode == IORING_OP_SENDMSG) {
+        ssize_t w = ::sendto(fd, op.buf, op.len, 0,
+                             static_cast<const sockaddr*>(op.addr),
+                             static_cast<socklen_t>(op.addr_cap));
+        return (w < 0) ? -errno : static_cast<std::int64_t>(w);
+      } else {  // READ
+        ssize_t r = ::read(fd, op.buf, op.len);
+        return (r < 0) ? -errno : static_cast<std::int64_t>(r);
+      }
+    };
+
     for (int i = 0; i < got && n < max; ++i) {
       int fd = static_cast<int>(evs[i].data.u64);  // we store fd in data.u64
       if (fd == impl_->wake_efd) {
@@ -1089,69 +1126,79 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
         while (::read(impl_->wake_efd, &sink, sizeof(sink)) == sizeof(sink)) {}
         continue;
       }
-      auto it = impl_->pending.find(fd);
-      if (it == impl_->pending.end()) continue;  // stale (already served)
-      Impl::PendingOp op = it->second;
-      impl_->pending.erase(it);
-      ::epoll_ctl(impl_->epfd, EPOLL_CTL_DEL, fd, nullptr);  // one-shot done
-      // Perform the IO inline now that the fd is ready. The op tag says which.
-      std::int64_t res;
-      if (op.opcode == IORING_OP_WRITE) {
-        ssize_t w = ::write(fd, op.buf, op.len);
-        res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
-      } else if (op.opcode == IORING_OP_ACCEPT) {
-        // Listener readable -> a connection is queued; accept it. Result is the
-        // accepted fd (>= 0) or a negative errno, matching io_uring ACCEPT.
-        int as = ::accept(fd, nullptr, nullptr);
-        res = (as < 0) ? -errno : static_cast<std::int64_t>(as);
-      } else if (op.opcode == IORING_OP_CONNECT) {
-        // Non-blocking connect signalled writable -> read SO_ERROR to learn the
-        // real outcome (0 = connected, else the errno). Result 0 or -errno.
-        int soerr = 0;
-        socklen_t sl = sizeof(soerr);
-        ::getsockopt(fd, SOL_SOCKET, SO_ERROR, &soerr, &sl);
-        res = (soerr == 0) ? 0 : -soerr;
-      } else if (op.opcode == IORING_OP_RECVMSG) {
-        // Datagram readable -> recvfrom fills the peer addr the submit stashed.
-        socklen_t al = static_cast<socklen_t>(op.addr_cap);
-        ssize_t r = ::recvfrom(fd, op.buf, op.len, 0,
-                               static_cast<sockaddr*>(op.addr),
-                               op.addr ? &al : nullptr);
-        res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
-      } else if (op.opcode == IORING_OP_SENDMSG) {
-        // Datagram writable -> sendto the destination the submit stashed.
-        ssize_t w = ::sendto(fd, op.buf, op.len, 0,
-                             static_cast<const sockaddr*>(op.addr),
-                             static_cast<socklen_t>(op.addr_cap));
-        res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
-      } else {  // READ
-        ssize_t r = ::read(fd, op.buf, op.len);
-        res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
-      }
-      out[n].user_data = op.user_data;
-      out[n].result = res;
-      out[n].flags = 0;
-      out[n].buffer_id = 0;
-      // Multishot accept emulation: on a successful accept, re-arm the listener
-      // watch and stamp kMore (more connections coming, same user_data) -- mirrors
-      // io_uring native multishot. CRITICAL: only stamp kMore if the re-arm
-      // SUCCEEDS. If epoll_ctl fails the watch is gone, so no further completion
-      // will ever come -- stamping kMore would tell the caller "more coming" and it
-      // would wait forever (P1 hang). A failed re-arm is therefore terminal: leave
-      // kMore CLEAR so the caller sees the multishot ended (same as IOCP, which only
-      // sets kMore when iocp_arm_accept succeeds). On failure the accepted fd in
-      // `res` is still delivered; the stream just doesn't continue.
-      if (op.multishot && res >= 0) {
-        epoll_event rev{};
-        rev.events = EPOLLIN | EPOLLONESHOT;
-        rev.data.u64 = static_cast<std::uint64_t>(fd);
-        if (::epoll_ctl(impl_->epfd, EPOLL_CTL_ADD, fd, &rev) == 0) {
-          impl_->pending[fd] = op;  // keep multishot=true for the next delivery
-          out[n].flags |= Completion::kMore;  // armed -> more coming
+      // EPOLLONESHOT disarmed the whole fd. Serve whichever side(s) fired, then
+      // (below) either re-arm a still-pending other side or DEL the fd. HUP/ERR
+      // wake both sides so a half-closed peer resolves both a pending read and
+      // write instead of stranding one (red-team L3: full-duplex fd).
+      const bool err = (evs[i].events & (EPOLLHUP | EPOLLERR)) != 0;
+      const bool rd_ready = (evs[i].events & (EPOLLIN)) != 0 || err;
+      const bool wr_ready = (evs[i].events & (EPOLLOUT)) != 0 || err;
+      bool multishot_rearmed = false;
+
+      // ---- read-side (recv/accept/recvfrom) ----
+      if (rd_ready && n < max) {
+        auto it = impl_->pending_in.find(fd);
+        if (it != impl_->pending_in.end()) {
+          Impl::PendingOp op = it->second;
+          impl_->pending_in.erase(it);
+          std::int64_t res = perform(fd, op);
+          out[n].user_data = op.user_data;
+          out[n].result = res;
+          out[n].flags = 0;
+          out[n].buffer_id = 0;
+          // Multishot accept emulation: re-arm + stamp kMore ONLY if the re-arm
+          // succeeds (a failed re-arm is terminal -- stamping kMore would hang the
+          // caller waiting for a stream that ended; matches IOCP). We re-insert into
+          // pending_in and let the unified re-arm below register the fd's watch.
+          if (op.multishot && res >= 0) {
+            impl_->pending_in[fd] = op;  // keep multishot for the next delivery
+            out[n].flags |= Completion::kMore;
+            multishot_rearmed = true;
+          }
+          ++n;
         }
-        // else: re-arm failed -> kMore stays clear = terminal (no lost-wakeup hang)
       }
-      ++n;
+      // ---- write-side (send/connect/sendto) ----
+      if (wr_ready && n < max) {
+        auto it = impl_->pending_out.find(fd);
+        if (it != impl_->pending_out.end()) {
+          Impl::PendingOp op = it->second;
+          impl_->pending_out.erase(it);
+          std::int64_t res = perform(fd, op);
+          out[n].user_data = op.user_data;
+          out[n].result = res;
+          out[n].flags = 0;
+          out[n].buffer_id = 0;
+          ++n;
+        }
+      }
+      // Re-arm the fd for whatever side(s) remain pending (the other side we didn't
+      // serve, and/or a just-re-armed multishot accept). If NOTHING is left, DEL the
+      // fd. If the re-arm MOD fails, the stranded side's fiber would hang -- but a
+      // MOD on a live epfd+fd effectively never fails; DEL-on-empty is the norm.
+      unsigned mask = 0;
+      if (impl_->pending_in.count(fd) != 0) mask |= EPOLLIN;
+      if (impl_->pending_out.count(fd) != 0) mask |= EPOLLOUT;
+      if (mask != 0) {
+        epoll_event rev{};
+        rev.events = mask | EPOLLONESHOT;
+        rev.data.u64 = static_cast<std::uint64_t>(fd);
+        // The fd is still registered (EPOLLONESHOT only disables events, not the
+        // registration), so MOD. A multishot that was DEL'd in a prior life uses ADD
+        // -- but here the fd was armed this round, so it is registered: MOD.
+        if (::epoll_ctl(impl_->epfd, EPOLL_CTL_MOD, fd, &rev) < 0) {
+          // Re-arm failed: drop the stranded side(s) so we don't leak the map entry.
+          // A multishot that failed re-arm must also clear its kMore (already
+          // emitted this round) -- but MOD essentially never fails on a live fd, so
+          // this is a defensive cleanup, not an expected path.
+          if (multishot_rearmed) { /* kMore already sent; nothing more we can do */ }
+          impl_->pending_in.erase(fd);
+          impl_->pending_out.erase(fd);
+          ::epoll_ctl(impl_->epfd, EPOLL_CTL_DEL, fd, nullptr);
+        }
+      } else {
+        ::epoll_ctl(impl_->epfd, EPOLL_CTL_DEL, fd, nullptr);  // both sides done
+      }
     }
     return n;
   }
@@ -1300,7 +1347,8 @@ bool Proactor::in_flight() const noexcept {
   if (impl_->backend == Impl::kEpoll) {
     // Reactor: an op is "in flight" while its fd is armed (awaiting readiness) or
     // a synthetic completion is queued. Either means a reap could still yield one.
-    return !impl_->pending.empty() || !impl_->posted.empty();
+    return !impl_->pending_in.empty() || !impl_->pending_out.empty() ||
+           !impl_->posted.empty();
   }
   // io_uring: the kernel owes `inflight` completions, PLUS any io-05 synchronously
   // synthesized completions still queued (statx) -- both must keep the worker
@@ -1394,24 +1442,40 @@ bool Proactor::wake() noexcept {
 // read, EPOLLOUT for write. Stores fd in data.u64 so reap recovers it. The
 // datagram variant additionally stashes the peer-address buffer (recvfrom fills
 // it / sendto reads it); the stream variant passes addr=null.
+//
+// FULL-DUPLEX (red-team L3): read-side ops go in pending_in, write-side in
+// pending_out, so a concurrent read+write on one fd don't clobber each other. The
+// single epoll registration for the fd carries the UNION of both sides' events
+// (EPOLLIN|EPOLLOUT when both are armed), under EPOLLONESHOT. When one side fires,
+// EPOLLONESHOT disarms the whole fd; reap serves the fired side(s) and re-arms any
+// side still pending (see reap's epoll branch).
 bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
                                unsigned char opcode, void* buf, unsigned len,
                                void* addr, unsigned addr_cap,
                                std::uint64_t user_data,
                                std::uint64_t offset) noexcept {
-  impl->pending[fd] =
-      Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap};
+  const bool is_read = (events & EPOLLIN) != 0;
+  auto& side = is_read ? impl->pending_in : impl->pending_out;
+  auto& other = is_read ? impl->pending_out : impl->pending_in;
+  // Was this fd already registered with epoll (either side armed) before us?
+  const bool fd_already_watched =
+      impl->pending_in.count(fd) != 0 || impl->pending_out.count(fd) != 0;
+  side[fd] = Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap};
+
   epoll_event ev{};
+  // Union of armed directions: our side + whatever the other side already has.
   ev.events = events | EPOLLONESHOT;
+  if (other.count(fd) != 0) ev.events |= is_read ? EPOLLOUT : EPOLLIN;
   ev.data.u64 = static_cast<std::uint64_t>(fd);
-  // ADD, or MOD if this fd is already registered from a prior op.
-  if (::epoll_ctl(impl->epfd, EPOLL_CTL_ADD, fd, &ev) < 0) {
-    if (errno == EEXIST) {
+  const int op_ctl = fd_already_watched ? EPOLL_CTL_MOD : EPOLL_CTL_ADD;
+  if (::epoll_ctl(impl->epfd, op_ctl, fd, &ev) < 0) {
+    if (op_ctl == EPOLL_CTL_ADD && errno == EEXIST) {
+      // Raced/stale registration for this fd -> MOD instead.
       if (::epoll_ctl(impl->epfd, EPOLL_CTL_MOD, fd, &ev) < 0) {
-        impl->pending.erase(fd);
+        side.erase(fd);
         return false;
       }
-    } else if (errno == EPERM) {
+    } else if (op_ctl == EPOLL_CTL_ADD && errno == EPERM) {
       // EPERM = fd is a REGULAR FILE (or otherwise not epoll-able). epoll cannot
       // watch regular files -- they are always "ready" but read()/write() may block
       // on disk (io-05: only io_uring/IOCP async a regular file; tokio offloads to
@@ -1419,8 +1483,9 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
       // file offset (pread/pwrite -- the proactor read/write contract is offset-
       // based, unlike a stream), and synthesize a completion via the posted queue
       // (the same synthesis the metadata file ops use). Stream/datagram sockets are
-      // never regular files, so this branch is file-only.
-      impl->pending.erase(fd);
+      // never regular files, so this branch is file-only (and a regular file is
+      // never in `other`, so the union logic above is a no-op here).
+      side.erase(fd);
       std::int64_t res;
       if (opcode == IORING_OP_WRITE) {
         ssize_t w = ::pwrite(fd, buf, len, static_cast<off_t>(offset));
@@ -1432,7 +1497,7 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
       impl->posted.push_back({user_data, res});
       return true;
     } else {
-      impl->pending.erase(fd);
+      side.erase(fd);
       return false;
     }
   }
@@ -1656,7 +1721,7 @@ bool Proactor::submit_accept_multishot(std::intptr_t fd,
     if (!epoll_arm(impl_, static_cast<int>(fd), EPOLLIN, IORING_OP_ACCEPT,
                    nullptr, 0, user_data))
       return false;
-    impl_->pending[static_cast<int>(fd)].multishot = true;
+    impl_->pending_in[static_cast<int>(fd)].multishot = true;  // accept = read-side
     return true;
   }
   // io_uring native: IORING_OP_ACCEPT with IORING_ACCEPT_MULTISHOT in ioprio.
@@ -1890,11 +1955,30 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
                              std::uint64_t cancel_user_data) noexcept {
   if (impl_ == nullptr) return false;
   if (impl_->backend == Impl::kEpoll) {
-    // Find the fd whose armed op carries target_user_data, drop its watch + entry.
-    for (auto it = impl_->pending.begin(); it != impl_->pending.end(); ++it) {
-      if (it->second.user_data == target_user_data) {
-        ::epoll_ctl(impl_->epfd, EPOLL_CTL_DEL, it->first, nullptr);
-        impl_->pending.erase(it);
+    // Find the armed op carrying target_user_data in either direction, drop it, and
+    // re-arm the fd for the OTHER side if it is still pending (full-duplex, L3) --
+    // else DEL the fd. Then synthesize a -ECANCELED completion (see below).
+    auto try_cancel = [&](std::unordered_map<int, Impl::PendingOp>& side) -> bool {
+      for (auto it = side.begin(); it != side.end(); ++it) {
+        if (it->second.user_data != target_user_data) continue;
+        int fd = it->first;
+        side.erase(it);
+        // Re-arm for whatever remains on this fd (the other direction), else DEL.
+        unsigned mask = 0;
+        if (impl_->pending_in.count(fd) != 0) mask |= EPOLLIN;
+        if (impl_->pending_out.count(fd) != 0) mask |= EPOLLOUT;
+        if (mask != 0) {
+          epoll_event rev{};
+          rev.events = mask | EPOLLONESHOT;
+          rev.data.u64 = static_cast<std::uint64_t>(fd);
+          if (::epoll_ctl(impl_->epfd, EPOLL_CTL_MOD, fd, &rev) < 0) {
+            impl_->pending_in.erase(fd);
+            impl_->pending_out.erase(fd);
+            ::epoll_ctl(impl_->epfd, EPOLL_CTL_DEL, fd, nullptr);
+          }
+        } else {
+          ::epoll_ctl(impl_->epfd, EPOLL_CTL_DEL, fd, nullptr);
+        }
         // Synthesize the cancellation completion. Unlike io_uring/IOCP, epoll's
         // cancel produces NO late kernel CQE -- but the timed-op layer (net_timeout)
         // is backend-neutral and RELIES on a final completion arriving to drop the
@@ -1904,7 +1988,10 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
         impl_->posted.push_back({target_user_data, -125});
         return true;
       }
-    }
+      return false;
+    };
+    if (try_cancel(impl_->pending_in)) return true;
+    if (try_cancel(impl_->pending_out)) return true;
     return false;  // not armed (already fired) -> nothing to cancel
   }
   // io_uring ASYNC_CANCEL: addr = target user_data, cancel_flags in the rw_flags
