@@ -39,6 +39,25 @@ raw epoll 对照答的是"vs 旧就绪模型";要答"vs **同样的 io_uring**�
 2. **HYLE 用 shard-per-core 把单核劣势赢回来**:4 worker(709ns)**反超**单线程裸 liburing(810ns)。裸 liburing 那个循环是单线程的,要多核得自己手写 sharding + 跨核协调;HYLE 的 `spawn_on` + 每核 ring 让连接分片到核是**免费的结构收益**。所以"SOTA"的正确表述:**单核吞吐输给零抽象的手写循环(抽象代价),但可组合性 + 开箱即用的 shard-per-core 扩展让它以多核反超**——这才是一个协程运行时相对裸 API 的真实定位。
 3. 本次 HYLE-1w(535K)低于上文记的 730-800K 区间,是当次机器负载差异(我并发开着多个 WSL 会话跑对标);**同次 run 内的 relative 比不受影响**,故对标结论以 relative 列为准。
 
+## vs asio / libuv:抽象 vs 抽象——跟成熟异步框架打平(`-DHYLE_BENCH_ASIO` / `-DHYLE_BENCH_LIBUV`)
+
+裸 liburing 答的是"vs 零抽象手写循环"(HYLE 输 2.3x,抽象的固定代价)。但那不是 HYLE 的真实竞品——真实竞品是**同样提供抽象的成熟异步框架**:C++ 的 **asio**(io_context + completion handler,THE 标准异步库)和 C 的 **libuv**(uv_loop + 回调,Node.js 引擎、最实战的异步运行时)。它们**同样付调度/抽象成本**,所以这才是"HYLE 在抽象层里输不输"的公平对照。echo_bench 增两个 gated 对照行(asio 走 io_uring 后端 `ASIO_HAS_IO_URING`+链 liburing;libuv 走 epoll),同 64conn×64rt×64B ping-pong,与 HYLE 行**同一次 nanobench run**,`bench-stat.py` n=15 统计判定。
+
+**Linux 实测(n=15 跨run中位,判定规则:gap>合并spread 才算赢/输,否则统计平局)**:
+
+| 对照 | HYLE-1w vs 它 | gap vs spread | 判定 |
+|---|---|---|---|
+| **vs asio**(io_uring,同后端) | 1868 vs 1695 ns | 8.9% < 23.0% | **统计平局** |
+| **vs libuv**(epoll) | 1868 vs 2070 ns | 10.3% < 26.3% | **统计平局** |
+| vs 裸 epoll(就绪循环) | — | 25.9% > 23.2% | 输(旧模型,已知) |
+| **HYLE-4w vs asio-1w** | 789 vs 1695 ns | 109% > 37.6% | **赢 2.09x** |
+
+**诚实解读**:
+1. **单核 vs asio/libuv:统计平局**——HYLE 的 co_await + fiber + shard-per-core 抽象跟这两个业界最成熟的异步框架**在同后端上打平**(gap 都 < 测量 spread,不构成赢/输)。这是关键结论:**抽象没让我们输给成熟框架**。对比 vs 裸 liburing 的 2.3x 落后——那是"零抽象手写状态机"的代价;asio/libuv 也是抽象框架、同付调度成本,所以我们跟它们平。**抽象的固定代价是这一类运行时的行业共性,不是 HYLE 独有的短板。**
+2. **多核 HYLE 2.09x 赢 asio**:asio 单 io_context 是单线程的,要吃多核得自己起线程池 + 手工把连接分到不同 io_context + 跨核协调;HYLE 的 `spawn_on` + 每核 ring 让 shard-per-core 是**开箱即免费**。这是 HYLE 相对单 loop 框架的结构优势。
+3. **libuv 是跨模型对照**(它 epoll reactor,HYLE io_uring proactor),故最该对标的是 HYLE 的 epoll 降级路径/裸 epoll 行;单核与 HYLE-io_uring 平已说明 co_await 泵没引入额外成本。
+4. **方法学诚实纠错(2026-07-05)**:两个对照都不是一次写对的——① asio 首版用 `shared_ptr`+`asio::post` 保活 client 状态机,posted lambda 跑一次即释放 → 悬垂;且 server 永久 re-arm 读、客户端读完不关连接 → `ctx.run()` 永不返回。改:值语义 functor(conns 向量提供稳定存储)+ 末轮 close 触发 server EOF。② libuv 更曲折:一开始 `uv_pipe_open` 裸 socketpair fd(单核环境下读一次就停),换 `uv_socketpair`+`uv_tcp_open` 仍每连接只做 1 round-trip。**用独立探针程序**(2conn×3rt、每回调打点)才定位到真根因:**libuv 契约里 `nread==0` 是"暂无数据"(类 EAGAIN)不是 EOF,只有 `nread<0`(UV_EOF)才是**;我的 `if(nread<=0) close` 在良性 n==0 上误关了连接,一次交换后就 EPIPE。改 `nread<0` 后 `rt_left=0` 全通。教训:**对照库的语义必须照抄准**(nread==0 vs <0 是 libuv 的经典坑),别拿 HYLE/POSIX 的"0=EOF"直觉套。
+
 ## pipelined / 高扇出(512 流)+ 一个被它揪出的 P0 hang
 
 ping-pong(每流稳态 ≤1 op 在途)填不满 SQ,也测不到"海量 op 同时在途"的收割路径。故加一个 pipelined 负载:**512 条独立 echo 流共享 worker,每流 16 round-trip**——512 » ring 深度 256,一次 reap 唤醒的一批 fiber 各自 submit,几百个 op 同时在途。
@@ -239,6 +258,6 @@ parse/framing 净开销 **~1.18x**(11597 vs 9827),shard 扩展 1w→4w **3.25x**
 - ✅ **TLS vs 裸 OpenSSL**(已做,见上"TLS 握手 + 加密 echo"节):稳态 echo Win 平/Lin 反超 1.76x,handshake ~1.3-2.2x 慢(真开销)。
 - ✅ **HTTP bench**(已做,见上"HTTP req/resp 吞吐"节):64conn×64rt keep-alive `GET /` vs 同传输裸 TCP echo,parse/framing 净开销 WSL 1.44x / Win 1.18x(真 LOSE,符合预期),shard 扩展 1w→4w 2.4x(Lin)/3.25x(Win)。双平台出数;Windows 用自计时(nanobench 自适应 epoch 在 loopback 高方差下无界重试,不适合毫秒级 op)。
 - **file io bench**:open/read/write/stat 吞吐(io_uring 真异步 vs IOCP/epoll 同步合成的代价差)。未做。
-- **vs asio / libuv**:证不输成熟异步框架。
+- ✅ **vs asio / libuv**(已做,见上"vs asio / libuv"节):单核与两者统计平局(抽象没输给成熟框架),多核 2.09x 赢 asio(shard-per-core 免费)。
 - **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
 - Windows IOCP 的批量对应物(IOCP 无 submit 攒批概念,ReadFile/WriteFile 即时下发)+ n=15 统计版。

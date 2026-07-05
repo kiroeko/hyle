@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # setup-bench-libs.sh -- clone the SOTA reference libraries HYLE's *gated*
 # benchmarks compare against (abseil/folly/moodycamel/oneTBB/marl/
-# crossbeam-deque/rigtorp-MPMCQueue/xxHash/wyhash/mimalloc).
+# crossbeam-deque/rigtorp-MPMCQueue/xxHash/wyhash/mimalloc/liburing/asio/libuv).
 #
 # NOTE: Highway, xsimd and simdutf are NOT cloned here -- they are vendored in
 # third_party/ and built unconditionally, so HYLE_BENCH_{HIGHWAY,XSIMD,SIMDUTF}
@@ -57,6 +57,9 @@ LIBS=(
   "xxHash|https://github.com/Cyan4973/xxHash.git"
   "wyhash|https://github.com/wangyi-fudan/wyhash.git"
   "mimalloc|https://github.com/microsoft/mimalloc.git"
+  "liburing|https://github.com/axboe/liburing.git"
+  "asio|https://github.com/chriskohlhoff/asio.git"
+  "libuv|https://github.com/libuv/libuv.git"
 )
 
 echo "HYLE bench deps -> $DEPS_DIR"

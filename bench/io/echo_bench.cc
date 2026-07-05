@@ -20,6 +20,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -38,6 +39,15 @@
 #endif
 #if defined(__linux__) && defined(HYLE_BENCH_LIBURING)
 #  include <liburing.h>
+#endif
+#if defined(__linux__) && defined(HYLE_BENCH_ASIO)
+#  include <asio.hpp>
+#endif
+#if defined(HYLE_BENCH_LIBUV)
+#  include <uv.h>
+#  if defined(__linux__)
+#    include <csignal>  // SIGPIPE ignore for the libuv teardown write race
+#  endif
 #endif
 #if defined(_WIN32)
 #  define WIN32_LEAN_AND_MEAN
@@ -404,12 +414,184 @@ void run_raw_liburing_echo() {
 }
 #endif
 
+#if defined(__linux__) && defined(HYLE_BENCH_ASIO)
+// asio echo baseline: the SAME 64-conn x 64-round-trip x 64B ping-pong as
+// run_hyle_echo(1 worker), driven by asio's async_read/async_write over ONE
+// io_context on ONE thread (io_uring backend -- ASIO_HAS_IO_URING). This is the
+// "vs a mature async framework built on the SAME io_uring" comparison: asio is THE
+// canonical C++ async-io library, so the ratio answers "does HYLE's shard-per-core
+// stack keep up with the framework everyone reaches for?". asio's completion handlers
+// are its abstraction seam (vs HYLE's co_await); both run on io_uring. Single thread
+// = the honest single-core comparison (HYLE-1w row); HYLE's multi-worker rows then
+// show what shard-per-core adds that asio's single io_context does not give for free.
+void run_asio_echo() {
+  static const char kMsg[kMsgLen] = "hyle-io-echo-bench-payload";
+  asio::io_context ctx(1);
+  std::vector<Pair> pairs(kConns);
+  for (int i = 0; i < kConns; ++i) pairs[i] = make_pair();
+
+  // Per-connection state: two asio sockets (client + server end of the socketpair),
+  // the buffers, and a remaining round-trip counter. The chain is:
+  //   client async_write(req) -> server async_read -> server async_write(echo)
+  //   -> client async_read -> (--rt) client async_write ... until rt == 0.
+  struct AConn {
+    asio::posix::stream_descriptor client;
+    asio::posix::stream_descriptor server;
+    char cbuf[kMsgLen];
+    char sbuf[kMsgLen];
+    int rt;
+  };
+  std::vector<std::unique_ptr<AConn>> conns;
+  conns.reserve(kConns);
+  for (int i = 0; i < kConns; ++i) {
+    conns.push_back(std::make_unique<AConn>(AConn{
+        asio::posix::stream_descriptor(ctx, static_cast<int>(pairs[i].a)),
+        asio::posix::stream_descriptor(ctx, static_cast<int>(pairs[i].b)),
+        {}, {}, kRoundTrips}));
+  }
+
+  // Recursive handler chains, value-semantic (each continuation captures the raw
+  // AConn* -- stable for the whole ctx.run(), since `conns` owns them). No heap /
+  // shared_ptr: the ONLY state is in *p. Termination: after its last round-trip the
+  // client CLOSES its descriptor, so the server's outstanding async_read completes
+  // with EOF (n==0) -> no ops left in flight -> ctx.run() returns (same "client close
+  // -> server EOF" teardown as the HYLE + liburing rows).
+  for (auto& c : conns) {
+    AConn* p = c.get();
+    // Server: read a request, echo it back, re-arm (until the client closes -> EOF).
+    struct Srv {
+      AConn* p;
+      void operator()(const std::error_code& ec, std::size_t n) const {
+        if (ec || n == 0) return;  // EOF/err: client closed -> stop (op completes)
+        asio::async_write(p->server, asio::buffer(p->sbuf, n),
+                          [p = p](const std::error_code& e, std::size_t) {
+                            if (e) return;
+                            asio::async_read(p->server, asio::buffer(p->sbuf, kMsgLen), Srv{p});
+                          });
+      }
+    };
+    asio::async_read(p->server, asio::buffer(p->sbuf, kMsgLen), Srv{p});
+    // Client: write a request, read the echo, --rt; at 0 close (EOF-signals server).
+    struct Cli {
+      AConn* p;
+      void operator()() const {
+        asio::async_write(p->client, asio::buffer(kMsg, kMsgLen),
+                          [p = p](const std::error_code& e, std::size_t) {
+                            if (e) return;
+                            asio::async_read(p->client, asio::buffer(p->cbuf, kMsgLen),
+                                             [p = p](const std::error_code& ec, std::size_t) {
+                                               if (ec) return;
+                                               if (--p->rt > 0) Cli{p}();
+                                               else { std::error_code ig; p->client.close(ig); }
+                                             });
+                          });
+      }
+    };
+    Cli{p}();
+  }
+  ctx.run();
+  for (auto& p : pairs) close_pair(p);
+}
+#endif  // linux && HYLE_BENCH_ASIO
+
+#if defined(HYLE_BENCH_LIBUV)
+// libuv echo baseline: the SAME 64-conn x 64-round-trip x 64B ping-pong, driven by
+// libuv's uv_read_start / uv_write over ONE uv_loop on ONE thread (epoll backend --
+// libuv does not use io_uring by default). libuv is THE C async-io runtime (Node.js's
+// engine), so this answers "vs the most battle-tested async C runtime?". Its callback
+// model is the abstraction seam. NOTE: libuv is epoll-based, so the fairest HYLE
+// comparison for this row is the raw-epoll baseline / HYLE forced-epoll, not the
+// io_uring rows -- read it as "HYLE's proactor vs libuv's reactor", cross-model.
+void run_libuv_echo() {
+  static const char kMsg[kMsgLen] = "hyle-io-echo-bench-payload";
+  uv_loop_t loop;
+  uv_loop_init(&loop);
+
+  struct UConn {
+    uv_tcp_t client;    // client end (uv_tcp over a uv_socketpair socket)
+    uv_tcp_t server;    // server end
+    uv_write_t cwreq;
+    uv_write_t swreq;
+    char cbuf[kMsgLen];
+    char sbuf[kMsgLen];
+    int rt;
+  };
+  std::vector<std::unique_ptr<UConn>> conns;
+  conns.reserve(kConns);
+
+  auto alloc_cb = [](uv_handle_t* h, size_t, uv_buf_t* buf) {
+    auto* u = static_cast<UConn*>(h->data);
+    if (reinterpret_cast<uv_tcp_t*>(h) == &u->server)
+      *buf = uv_buf_init(u->sbuf, kMsgLen);
+    else
+      *buf = uv_buf_init(u->cbuf, kMsgLen);
+  };
+
+  // Chain on the WRITE-COMPLETE callback (a uv_write_t can't be reused while in
+  // flight). Reads are continuous (uv_read_start) so on_*_read re-fires per message.
+  // CONTRACT: libuv delivers nread==0 for "no data available right now" (EAGAIN-like),
+  // which is NOT end-of-stream -- only nread<0 (UV_EOF) is. Closing on n==0 (the
+  // `<= 0` trap) wrongly tears the connection down after the first read; guard n<0.
+  struct Cbs {
+    static void on_srv_write(uv_write_t*, int) {}
+    static void on_cli_write(uv_write_t*, int) {}
+    static void on_srv_read(uv_stream_t* s, ssize_t nread, const uv_buf_t*) {
+      auto* u = static_cast<UConn*>(s->data);
+      if (nread == 0) return;  // EAGAIN, not EOF -- keep the read armed
+      if (nread < 0) { uv_close(reinterpret_cast<uv_handle_t*>(&u->server), nullptr); return; }
+      uv_buf_t wb = uv_buf_init(u->sbuf, static_cast<size_t>(nread));
+      uv_write(&u->swreq, reinterpret_cast<uv_stream_t*>(&u->server), &wb, 1, on_srv_write);
+    }
+    static void on_cli_read(uv_stream_t* s, ssize_t nread, const uv_buf_t*) {
+      auto* u = static_cast<UConn*>(s->data);
+      if (nread == 0) return;  // EAGAIN, not EOF
+      if (nread < 0) { uv_close(reinterpret_cast<uv_handle_t*>(&u->client), nullptr); return; }
+      if (--u->rt > 0) {
+        uv_buf_t wb = uv_buf_init(const_cast<char*>(kMsg), kMsgLen);
+        uv_write(&u->cwreq, reinterpret_cast<uv_stream_t*>(&u->client), &wb, 1, on_cli_write);
+      } else {
+        uv_close(reinterpret_cast<uv_handle_t*>(&u->client), nullptr);  // -> server EOF
+      }
+    }
+  };
+
+  for (int i = 0; i < kConns; ++i) {
+    // libuv-owned socketpair (uv_tcp needs libuv's non-blocking setup, not a raw
+    // ::socketpair fd opened as uv_pipe -- that stalled after one read on this kernel).
+    uv_os_sock_t sv[2];
+    if (uv_socketpair(SOCK_STREAM, 0, sv, UV_NONBLOCK_PIPE, UV_NONBLOCK_PIPE) != 0) break;
+    auto u = std::make_unique<UConn>();
+    u->rt = kRoundTrips;
+    uv_tcp_init(&loop, &u->client);
+    uv_tcp_init(&loop, &u->server);
+    uv_tcp_open(&u->client, sv[0]);
+    uv_tcp_open(&u->server, sv[1]);
+    u->client.data = u.get();
+    u->server.data = u.get();
+    uv_read_start(reinterpret_cast<uv_stream_t*>(&u->server), alloc_cb, Cbs::on_srv_read);
+    uv_read_start(reinterpret_cast<uv_stream_t*>(&u->client), alloc_cb, Cbs::on_cli_read);
+    uv_buf_t wb = uv_buf_init(const_cast<char*>(kMsg), kMsgLen);  // prime req#1
+    uv_write(&u->cwreq, reinterpret_cast<uv_stream_t*>(&u->client), &wb, 1, Cbs::on_cli_write);
+    conns.push_back(std::move(u));
+  }
+  uv_run(&loop, UV_RUN_DEFAULT);
+  uv_loop_close(&loop);
+}
+#endif  // HYLE_BENCH_LIBUV
+
 }  // namespace
 
 int main() {
 #if defined(_WIN32)
   WSADATA wsa;
   ::WSAStartup(MAKEWORD(2, 2), &wsa);
+#endif
+#if defined(__linux__) && defined(HYLE_BENCH_LIBUV)
+  // libuv's uv_write to a peer whose read end just closed can raise SIGPIPE (fatal by
+  // default) during the connection teardown race at the end of each epoch. Ignore it
+  // so the baseline's close ordering doesn't kill the bench (the write just fails,
+  // which libuv's completion reports and we ignore). Same guard as tls_bench.
+  std::signal(SIGPIPE, SIG_IGN);
 #endif
   const std::uint64_t batch =
       static_cast<std::uint64_t>(kConns) * kRoundTrips;  // echoes per epoch
@@ -436,6 +618,20 @@ int main() {
     // ratio is the cost of HYLE's co_await + shard-per-core abstraction over a bare
     // liburing loop. Gated -DHYLE_BENCH_LIBURING (links liburing.a).
     b.run("raw liburing (1 thread, hand-rolled)", [&] { run_raw_liburing_echo(); });
+#endif
+#if defined(__linux__) && defined(HYLE_BENCH_ASIO)
+    // asio over io_uring (single io_context, single thread) -- THE canonical C++
+    // async framework on the SAME kernel primitive. Head-to-head with HYLE-1w: does
+    // our shard-per-core co_await stack keep up with the framework everyone uses?
+    // Gated -DHYLE_BENCH_ASIO (header-only asio + links liburing).
+    b.run("asio (1 io_context, io_uring)", [&] { run_asio_echo(); });
+#endif
+#if defined(HYLE_BENCH_LIBUV)
+    // libuv (single loop, single thread, epoll backend) -- the most battle-tested
+    // async C runtime (Node.js's engine). Cross-model (its reactor vs HYLE's
+    // proactor), so read it against the raw-epoll / HYLE forced-epoll rows, not the
+    // io_uring ones. Gated -DHYLE_BENCH_LIBUV (links libuv.a).
+    b.run("libuv (1 loop, epoll)", [&] { run_libuv_echo(); });
 #endif
   }
 

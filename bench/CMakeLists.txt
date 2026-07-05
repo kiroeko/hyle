@@ -97,6 +97,55 @@ if(HYLE_HAS_FCONTEXT)
     target_link_libraries(hyle_io_bench PRIVATE "${HYLE_LIBURING_DIR}/src/liburing.a")
   endif()
 
+  # Optional SOTA parity #2: echo_bench's HYLE rows vs asio + libuv -- the "vs a mature
+  # async FRAMEWORK" comparison (liburing above is "vs the raw API"; these are "vs the
+  # frameworks everyone actually uses"). Same 64-conn/64B ping-pong, same nanobench run
+  # for a trustworthy relative column.
+  #  * asio (header-only, Kohlhoff standalone clone): io_uring backend, so it LINKS
+  #    liburing -- enabling HYLE_BENCH_ASIO force-enables the liburing build above.
+  #  * libuv (CMake project, sibling clone): epoll backend, built as its uv_a static lib.
+  option(HYLE_BENCH_ASIO "build echo bench vs asio (io_uring, async-framework SOTA)" OFF)
+  if(HYLE_BENCH_ASIO AND UNIX AND NOT APPLE)
+    set(HYLE_ASIO_DIR "${PROJECT_SOURCE_DIR}/../asio" CACHE PATH "cloned asio (Kohlhoff)")
+    if(NOT EXISTS "${HYLE_ASIO_DIR}/asio/include/asio.hpp")
+      message(FATAL_ERROR "HYLE_BENCH_ASIO=ON but no asio at ${HYLE_ASIO_DIR}/asio/include")
+    endif()
+    # asio's io_uring backend needs liburing linked. Reuse the liburing block's clone:
+    # configure+make it here if HYLE_BENCH_LIBURING didn't already.
+    set(HYLE_LIBURING_DIR "${PROJECT_SOURCE_DIR}/../liburing" CACHE PATH "cloned liburing")
+    if(NOT EXISTS "${HYLE_LIBURING_DIR}/src/liburing.a")
+      execute_process(COMMAND ./configure WORKING_DIRECTORY "${HYLE_LIBURING_DIR}"
+        RESULT_VARIABLE _lu_cfg OUTPUT_QUIET ERROR_QUIET)
+      execute_process(COMMAND make -j -C src WORKING_DIRECTORY "${HYLE_LIBURING_DIR}"
+        RESULT_VARIABLE _lu_make OUTPUT_QUIET ERROR_QUIET)
+      if(NOT EXISTS "${HYLE_LIBURING_DIR}/src/liburing.a")
+        message(FATAL_ERROR "asio needs liburing; build failed in ${HYLE_LIBURING_DIR}")
+      endif()
+    endif()
+    target_compile_definitions(hyle_io_bench PRIVATE HYLE_BENCH_ASIO
+      ASIO_HAS_IO_URING ASIO_DISABLE_EPOLL ASIO_STANDALONE)
+    target_include_directories(hyle_io_bench SYSTEM PRIVATE
+      "${HYLE_ASIO_DIR}/asio/include" "${HYLE_LIBURING_DIR}/src/include")
+    target_link_libraries(hyle_io_bench PRIVATE "${HYLE_LIBURING_DIR}/src/liburing.a")
+  endif()
+
+  option(HYLE_BENCH_LIBUV "build echo bench vs libuv (epoll, async-runtime SOTA)" OFF)
+  if(HYLE_BENCH_LIBUV AND UNIX AND NOT APPLE)
+    set(HYLE_LIBUV_DIR "${PROJECT_SOURCE_DIR}/../libuv" CACHE PATH "cloned libuv")
+    if(NOT EXISTS "${HYLE_LIBUV_DIR}/include/uv.h")
+      message(FATAL_ERROR "HYLE_BENCH_LIBUV=ON but no libuv at ${HYLE_LIBUV_DIR}")
+    endif()
+    # libuv is a CMake project; add its static target (uv_a) EXCLUDE_FROM_ALL.
+    if(NOT TARGET uv_a)
+      set(LIBUV_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+      set(LIBUV_BUILD_BENCH OFF CACHE BOOL "" FORCE)
+      add_subdirectory("${HYLE_LIBUV_DIR}" "${CMAKE_BINARY_DIR}/libuv" EXCLUDE_FROM_ALL)
+    endif()
+    target_compile_definitions(hyle_io_bench PRIVATE HYLE_BENCH_LIBUV)
+    target_include_directories(hyle_io_bench SYSTEM PRIVATE "${HYLE_LIBUV_DIR}/include")
+    target_link_libraries(hyle_io_bench PRIVATE uv_a)
+  endif()
+
   # io scaling bench: the two COMPLEXITY curves echo_bench's fixed 64-conn/64B load
   # can't show -- connection-count scaling (ns/round-trip flat => O(1)/conn, the
   # "proactor beats readiness" argument) + payload-size scaling (bytes/s clean plateau
