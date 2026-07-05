@@ -283,5 +283,5 @@ parse/framing 净开销 **~1.18x**(11597 vs 9827),shard 扩展 1w→4w **3.25x**
 - ✅ **io_uring setup flags**(已做,见上"两处热路径优化"节):COOP_TASKRUN+SUBMIT_ALL 已接(带内核回退),echo-1w -33%。
 - **DEFER_TASKRUN + SINGLE_ISSUER**(登记 follow-up):最契合每核 ring 但实测挂死基本 send/recv(drain-time reap 的 submit-only enter 不带 GETEVENTS,defer 下完成永不 surface);需 reap 路径保证"有 op 在途必带 GETEVENTS enter"才能安全接。
 - **registered files / multishot-recv awaitable**(调研中,agent 出设计):registered files(IOSQE_FIXED_FILE 省每 op fd 查表)+ 把 proactor 已实现的 multishot recv/provided-buf-ring 提升为 net.h awaitable。
-- **SQPOLL**:内核侧 submit,连批量 enter 都免;但每核一 ring→每核多一个 kernel poller 烧 idle CPU,且与 DEFER_TASKRUN 互斥。接口已预留,**不建议现在做**(调研判 LOW)。
+- **SQPOLL**:内核侧 submit,连批量 enter 都免;但每核一 ring→每核多一个 kernel poller 烧 idle CPU,且与 DEFER_TASKRUN 互斥。**未做,也未预留接口**(不留死代码——真要做时在 `try_init_uring` 的 flag 阶梯加一档即可)。调研判 LOW,不建议现在做。
 - Windows IOCP 的批量对应物(IOCP 无 submit 攒批概念,ReadFile/WriteFile 即时下发)+ n=15 统计版。

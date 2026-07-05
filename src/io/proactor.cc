@@ -704,11 +704,12 @@ bool Proactor::buf_ring_return(int, std::uint32_t) noexcept { return false; }
 //   reap read       -> load_acquire  on CQ ktail  (pairs with kernel release)
 //   reap advance    -> store_release on CQ khead  (kernel won't overwrite unread)
 // Only io_uring_enter is a syscall on the hot path; submit/reap ring writes are
-// pure userspace. Setup flags (SINGLE_ISSUER/DEFER_TASKRUN/SUBMIT_ALL) are enabled
-// with a kernel-version fallback ladder in try_init_uring below -- they cut
-// completion-delivery overhead for the single-consumer-per-ring design. SQPOLL is
-// still NOT used (a kernel poller thread per core costs idle CPU and is mutually
-// exclusive with DEFER_TASKRUN); the interface accommodates it as a future upgrade.
+// pure userspace. Setup flags (COOP_TASKRUN + SUBMIT_ALL) are enabled with a
+// kernel-version fallback ladder in try_init_uring below -- they cut completion
+// task_work overhead for the single-consumer-per-ring design. SQPOLL is NOT used
+// and NOT wired (no reserved param): a kernel poller thread per core costs idle CPU
+// and is mutually exclusive with DEFER_TASKRUN -- if a latency-bound workload ever
+// justifies it, add a rung to the flag ladder then, not a dead interface now.
 #  include <linux/io_uring.h>
 #  include <sys/epoll.h>
 #  include <sys/eventfd.h>
