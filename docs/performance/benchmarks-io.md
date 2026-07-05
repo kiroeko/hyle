@@ -155,6 +155,19 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 
 **又一个"先疑自己"的活例(bench bug,非 proactor)**:冒烟首跑 64→256 每 accept 慢 **16x**(242 accepts/s、单档 36s),像 accept 路径崩了。诊断:一次性 spawn N 个 client 并发 connect,但默认 **backlog=128** 撑不住 256+ 涌入的 SYN → 丢弃 → **TCP SYN 重传(1s 退避)**。把 backlog 定为 conns 后曲线立刻平坦。教训:**测建连吞吐必须给足 listen backlog**,否则测的是 TCP 重传退避,不是 proactor。
 
+## TLS 握手 + 加密 echo:vs 裸 OpenSSL(`bench/io/tls_bench.cc`,`-DHYLE_IO_TLS`/OpenSSL)
+
+TLS 吞吐有**两块成本**:①OpenSSL 加密(握手非对称 + 记录对称,**不可避**,任何 OpenSSL 用户都付)②HYLE 的 memory-BIO 泵 + fiber 调度开销。单一吞吐数分不开,故 SOTA 基线=**裸 OpenSSL over 阻塞 socket**(同 cert/cipher/payload,server 独立线程,无 HYLE)——两者付相同加密地板,**比值即 HYLE co_await 抽象的净开销**。15 遍 `bench-stat.py` 双平台。
+
+| 项 | HYLE(Win/Lin) | 裸 OpenSSL(Win/Lin) | 判定 |
+|---|---|---|---|
+| **加密 echo**(64×256B 记录往返,握手后稳态) | 46.1µs / 396µs | 47.4µs / 696µs | **Win 统计平局**(gap 3%<spread)/ **Lin 反超 1.76x** |
+| **TLS 握手**(connect+handshake+close) | 2.03ms / 2.22ms | 1.56ms / 1.01ms | **~1.3x(Win)/ ~2.2x(Lin)慢**(gap>spread,真差) |
+
+- **稳态 echo:泵零税(Win 平),异步重叠反超(Lin 1.76x)**。握手后每记录 read/write,加密成本主导;HYLE 的 co_await 泵在 Win 上与裸阻塞 OpenSSL **统计平局**(泵不加可测开销)。**Lin 上 HYLE 反超 1.76x**——WSL2 每 syscall 唤醒地板高时,阻塞 OpenSSL 每往返串行等,HYLE 的 proactor 异步能重叠 submit/reap,地板越高重叠收益越大。
+- **握手:HYLE 慢 ~1.3-2.2x(诚实的真开销)**。TLS 握手是固定 ~4-6 flight 的 ping-pong;HYLE 每 flight 付一次 fiber suspend/resume + proactor 往返,裸 OpenSSL 是紧循环阻塞读写。这是抽象在**连接建立**(非稳态)上的真代价——对长连接 serving(握手一次、echo 无数次)影响小,对握手风暴敏感场景需知晓。**未来可优化**:握手期的 flight 批量/减少 yield。
+- **⚠️ WSL2 地板(同 sched-11,必须诚实框定)**:同一 echo Win 46µs、WSL2 396µs=**~9x**——但**裸 OpenSSL 也 47µs→696µs(~15x)**,两者同被 WSL2 虚拟化的跨线程/syscall 唤醒地板放大。**故跨平台绝对值不可比**,只有**同平台内 HYLE vs OpenSSL 的比值**有意义(Win 平 / Lin HYLE 赢)。裸 Linux 上绝对值应回落。
+
 ## 热路径分配消除:TLS 泵 + HTTP 流式 chunk 缓冲复用(2026-07-05)
 
 两处此前登记的"协程帧/循环体分配"优化点,改法都是**把缓冲挪出热路径复用**,收益是**确定性的分配次数下降**(结构性,不靠计时——~几十 ns 的 alloc 在 µs 级 syscall 噪声里测不准,故按 alloc 计数论证,同 sched 亚 µs 数字的方法学)。
@@ -195,6 +208,9 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 - ✅ **HTTP chunked keep-alive bug(2026-07-05 发现并修复,fce90a6)**:症状——同一 keep-alive 连接上,一个 chunked 响应**之后**紧跟的下一个请求/响应解析失败(status 0、body 空)。**系统排查(先隔离再下结论,非臆断)**:①纯 `phr_decode_chunked` 循环探针(无 socket)证 HYLE 解码循环逻辑正确(3/50 chunk 单/逐字节全 OK)→排除解码器;②网络探针 `/big` 作为**唯一**请求时 3/8/16/50 chunk 全 OK→排除流式发送;③双 chunked keep-alive 请求探针复现:req1 OK、req2 失败→定位到"chunked 之后再 keep-alive"。**真根因**(推翻我最初"多次 -2 跨读"的猜测):`phr_decode_chunked` 默认 `consume_trailer=0` 时在 last-chunk `0\r\n` 后立即 Complete,把 chunked body 的**终止 CRLF**(RFC 7230 §4.1)当作"未解码尾字节"(rv=2)返回;HYLE 把这 2 字节当"下个 pipelined 消息"留 buf,污染后续 `phr_parse_*`。**修**:`decode_chunked` 设 `dec.consume_trailer=1`,解码器吃掉 trailer+终止 CRLF。server(chunked POST body)+ client(chunked 响应)共用同一函数两侧同修。回归测试 `GetKeepAlive` 加第 5 请求(chunked-after-chunked)双向验证(pre-fix FAILED / post-fix PASSED);Win + WSL io_uring + forced-epoll + TSan 全绿。
 - **计数分配器 microbench**:给上面两处热路径分配消除补一个 alloc-count 铁证(计数 Allocator 跑 N 次 TLS 读写 / M chunk 流式,断言分配次数不随 N/M 增长)。scratchpad 探针已验证分配计数下降(structural),permanent 版可后补。
 - ✅ **裸 liburing 对标**(已做,见上"vs 裸 liburing"节):liburing 本地 clone `../liburing`,`-DHYLE_BENCH_LIBURING=ON` 自动 configure+make 链接。结论:单核输 2.3x(抽象代价)、4 核反超。
+- ✅ **TLS vs 裸 OpenSSL**(已做,见上"TLS 握手 + 加密 echo"节):稳态 echo Win 平/Lin 反超 1.76x,handshake ~1.3-2.2x 慢(真开销)。
+- **HTTP bench**:HTTP 请求/响应吞吐 vs 裸 TCP echo(证 parse/framing 层开销)或 vs 参考实现。**未做**(TLS bench 已建同款 harness,可仿制)。
+- **file io bench**:open/read/write/stat 吞吐(io_uring 真异步 vs IOCP/epoll 同步合成的代价差)。未做。
 - **vs asio / libuv**:证不输成熟异步框架。
 - **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
 - Windows IOCP 的批量对应物(IOCP 无 submit 攒批概念,ReadFile/WriteFile 即时下发)+ n=15 统计版。
