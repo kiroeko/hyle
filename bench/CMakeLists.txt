@@ -121,6 +121,21 @@ if(HYLE_HAS_FCONTEXT)
     target_link_libraries(hyle_accept_bench PRIVATE ws2_32)
   endif()
 
+  # io HTTP bench (io-10): request/response throughput of the FULL HTTP/1.1 path
+  # (picohttpparser parse + GrowBuf head/body copies + Request/Response build + status
+  # /header formatting) vs a RAW TCP echo over the SAME co_await TcpStream transport
+  # moving the IDENTICAL byte volume with no HTTP work. The ratio isolates the HTTP
+  # parse/framing layer cost from the io transport (already measured by echo_bench),
+  # and the 1/2/4/8-worker sweep shows the HTTP path preserves shard-per-core scaling.
+  # Socketpair transport (like echo_bench) -- no accept, no TIME_WAIT. Needs hyle_io
+  # (http/tcp) + ws2_32 on Windows.
+  add_executable(hyle_http_bench io/http_bench.cc)
+  target_link_libraries(hyle_http_bench PRIVATE hyle_sched hyle_io nanobench)
+  hyle_apply_warnings(hyle_http_bench)
+  if(WIN32)
+    target_link_libraries(hyle_http_bench PRIVATE ws2_32)
+  endif()
+
   # io TLS bench (io-08): TLS handshake/s + encrypted-echo throughput over HYLE's
   # memory-BIO pump vs RAW OpenSSL over a blocking socket (same cert/cipher/payload).
   # The ratio isolates HYLE's co_await pump + fiber overhead from the identical

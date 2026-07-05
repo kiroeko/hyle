@@ -168,6 +168,24 @@ TLS 吞吐有**两块成本**:①OpenSSL 加密(握手非对称 + 记录对称,*
 - **握手:HYLE 慢 ~1.3-2.2x(诚实的真开销)**。TLS 握手是固定 ~4-6 flight 的 ping-pong;HYLE 每 flight 付一次 fiber suspend/resume + proactor 往返,裸 OpenSSL 是紧循环阻塞读写。这是抽象在**连接建立**(非稳态)上的真代价——对长连接 serving(握手一次、echo 无数次)影响小,对握手风暴敏感场景需知晓。**未来可优化**:握手期的 flight 批量/减少 yield。
 - **⚠️ WSL2 地板(同 sched-11,必须诚实框定)**:同一 echo Win 46µs、WSL2 396µs=**~9x**——但**裸 OpenSSL 也 47µs→696µs(~15x)**,两者同被 WSL2 虚拟化的跨线程/syscall 唤醒地板放大。**故跨平台绝对值不可比**,只有**同平台内 HYLE vs OpenSSL 的比值**有意义(Win 平 / Lin HYLE 赢)。裸 Linux 上绝对值应回落。
 
+## HTTP req/resp 吞吐:parse/framing 层开销 vs 裸 TCP 传输(`bench/io/http_bench.cc`)
+
+TLS bench 隔出的是 co_await 泵的开销;HTTP 要隔的是**协议层**(picohttpparser parse + GrowBuf head/body 拷贝 + Request/Response 构建 + 状态行/头部格式化)相对**已被 echo_bench 测过的 io 传输**的净开销。故基线=**同一 co_await TcpStream 传输上的裸 TCP echo**(同 socketpair、同 fiber、同 proactor,搬运**逐字节相同**的请求+响应字节量,零 HTTP 工作)——两者传输成本相同,比值即纯 parse/framing 的 CPU 代价。负载:64 条 keep-alive 连接、每条 64 次 `GET /`→`hello-hyle` 请求/响应往返,shard-per-core 分片。socketpair 传输(同 echo_bench),无 accept、无 TIME_WAIT。
+
+**Linux io_uring 实测(`bench-stat.py` n=15,跨run中位)**:
+
+| 配置 | ns/req | req/s | 相对 1w | 判定 |
+|---|---|---|---|---|
+| HYLE HTTP 1 worker | 2,626 | ~381K | 1.0x | 基线 |
+| HYLE HTTP 2 workers | 1,926 | ~519K | 1.36x | ✅ shard 扩展 |
+| HYLE HTTP 4 workers | 1,093 | ~915K | 2.40x | ✅ |
+| **裸 TCP echo 1 worker(同字节,无 HTTP)** | **1,827** | **~547K** | (传输地板) | — |
+
+**诚实解读**:
+1. **parse/framing 净开销 ~1.44x**(HTTP-1w 2626ns vs 裸 TCP-1w 1827ns;`bench-stat.py` 判 gap 33.3% > 合并 spread 26.5% = **真 LOSE 非噪声**)。这是**符合预期的真代价**:每请求要 phr_parse_request 扫头、head 拷进稳定 buffer 再重解析(修 realloc-dangle 的必要拷贝)、状态行+头部 put 进 out buffer、body framing——裸 echo 全省。~800ns/req 的绝对开销对小响应可见,对大 body/流式(传输主导)摊薄。
+2. **shard-per-core 扩展仍在**:1w→4w 2.40x(2626→1093ns),证 parse/framing 层不破坏 shard 分片——每连接的解析全在 owner 核串行,无跨核共享。
+3. **⚠️ Windows 侧未出数(诚实登记,非 bug)**:http_bench 与 echo_bench **同款** Windows loopback-TCP socketpair 模拟;实测**已提交的 echo_bench 在 Windows 同样挂**(非我的 bench 特有——控制实验:跑未改动的 echo_bench 同样 3min 零输出、内存平),根因是 loopback socketpair 模拟在 64-conn socket-heavy 负载下的既知限制(同 accept_bench/io_scaling_bench 登记的"Windows 仅验证能编能跑+低档,真 scaling 取自 io_uring")。**我的 bench 逻辑正确的双证据**:① WSL(socketpair,client-close→server-EOF POSIX 保证)15 遍统计全干净;② server 依赖的 client-close→EOF 拆除路径已由既有通过的 `http_test GetKeepAlive` 在 Windows 独立验证。**TIME_WAIT 仅 12、端口余 13977 → 排除端口耗尽**。
+
 ## 热路径分配消除:TLS 泵 + HTTP 流式 chunk 缓冲复用(2026-07-05)
 
 两处此前登记的"协程帧/循环体分配"优化点,改法都是**把缓冲挪出热路径复用**,收益是**确定性的分配次数下降**(结构性,不靠计时——~几十 ns 的 alloc 在 µs 级 syscall 噪声里测不准,故按 alloc 计数论证,同 sched 亚 µs 数字的方法学)。
@@ -209,7 +227,7 @@ TLS 吞吐有**两块成本**:①OpenSSL 加密(握手非对称 + 记录对称,*
 - **计数分配器 microbench**:给上面两处热路径分配消除补一个 alloc-count 铁证(计数 Allocator 跑 N 次 TLS 读写 / M chunk 流式,断言分配次数不随 N/M 增长)。scratchpad 探针已验证分配计数下降(structural),permanent 版可后补。
 - ✅ **裸 liburing 对标**(已做,见上"vs 裸 liburing"节):liburing 本地 clone `../liburing`,`-DHYLE_BENCH_LIBURING=ON` 自动 configure+make 链接。结论:单核输 2.3x(抽象代价)、4 核反超。
 - ✅ **TLS vs 裸 OpenSSL**(已做,见上"TLS 握手 + 加密 echo"节):稳态 echo Win 平/Lin 反超 1.76x,handshake ~1.3-2.2x 慢(真开销)。
-- **HTTP bench**:HTTP 请求/响应吞吐 vs 裸 TCP echo(证 parse/framing 层开销)或 vs 参考实现。**未做**(TLS bench 已建同款 harness,可仿制)。
+- ✅ **HTTP bench**(已做,见上"HTTP req/resp 吞吐"节):64conn×64rt keep-alive `GET /` vs 同传输裸 TCP echo,parse/framing 净开销 ~1.44x(真 LOSE,符合预期),shard 扩展 1w→4w 2.40x。Linux io_uring 出数;Windows 同 echo_bench loopback 限制未出(非 bug)。
 - **file io bench**:open/read/write/stat 吞吐(io_uring 真异步 vs IOCP/epoll 同步合成的代价差)。未做。
 - **vs asio / libuv**:证不输成熟异步框架。
 - **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
