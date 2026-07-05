@@ -29,7 +29,7 @@ fiber-blocking（`co_await async_read()` → 提交 → 挂起 fiber → 完成�
 |---|---|---|---|
 | Linux ≥5.1 | **io_uring** | 真 proactor，最高性能 | epoll（老内核 reactor 模拟）|
 | Windows | **IOCP** | 真 proactor，OS 原生 | — |
-| macOS / BSD | **kqueue** | 仅 reactor，须模拟完成 | — |
+| macOS / BSD | **kqueue** | 仅 reactor，须模拟完成 | ✅ 已做(镜像 epoll,真机全绿) |
 
 **诚实代价**：真·零开销 proactor 只在 Linux+Windows；mac/BSD 永远付"就绪→完成"模拟税（readiness 上内联做 IO 或丢线程池）。物理现实，asio 也这么扛。
 
@@ -76,7 +76,7 @@ io/
 > proactor 收割接缝 + socket op + co_await 层 + shard-per-core(per-worker ring)+ 阻塞 GETEVENTS reap + TcpListener/Stream + UdpSocket + park 合并 **均已落地**。下面是**剩余缺口**,分两类:①JIT 延后的次要项;②参考库审计(liburing/asio/libevent 对照)揪出的真缺口,已登记为能力驱动的里程碑。
 
 **① JIT 延后(次要):**
-- reactor 后端(mac kqueue)如何把"就绪"模拟成"完成"(Linux epoll 降级已做,accept→::accept/connect→SO_ERROR/read/write 内联)。
+- **reactor 后端(mac kqueue)✅ 已落地(2026-07-05,Apple Silicon 真机)**:`#elif HYLE_OS_MACOS` 块镜像 epoll reactor 把"就绪"合成"完成"——EVFILT_READ/WRITE+EV_ONESHOT 替 EPOLLIN/OUT+ONESHOT、EVFILT_USER+NOTE_TRIGGER 替 wake eventfd(无需 self-pipe)、dual-slot pending_in/out(L3)、spurious-EAGAIN re-arm(L4)、multishot-accept 模拟、submit_cancel 合成 -ECANCELED、常规文件 S_ISREG 检测走同步 pread/pwrite(kqueue 无 EPERM 信号)。macOS 差异:st_mtimespec/fsync(无 fdatasync)/F_PREALLOCATE(无 posix_fallocate)。io_uring 专属(buf_ring/fixed-files/direct-accept)诚实 stub false。真机 io/net/tcp/udp/file/signal/timeout/http 全绿,Linux 零回归。
 - **park 合并 ✅ 已落地**(2026-07-03):worker 空闲以完整 timeout(timer deadline/INFINITE)阻塞 GETEVENTS reap,不再 1ms 轮询;跨线程唤醒经 `Proactor::wake()`(io_uring 专用 eventfd 上常驻 `IORING_OP_READ`,`write` 打断 reap,不碰单生产者 SQ;IOCP `PostQueuedCompletionStatus`;epoll level-triggered eventfd)。实测空闲 500ms 的 `io_uring_enter` 从 421→3(~140x),吞吐无变化。
 
 **② 参考库审计真缺口(能力驱动,见 roadmap 轴 C / milestones):**
