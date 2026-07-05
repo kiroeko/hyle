@@ -83,6 +83,8 @@ raw epoll 对照答的是"vs 旧就绪模型";要答"vs **同样的 io_uring**�
 
 **性能诚实读**:DEFER echo-1w ~1.35-1.43µs、4w ~0.52-0.71µs,与 COOP(1255/581ns,commit 93b1e23)**同量级、无显著额外提升**——符合预期:DEFER 的收益是省 task_work 的 IPI/中断,在**单 worker loopback、worker 本就每次 drain 都 enter ring** 的场景里几乎无 IPI 可省;它的优势应在高 syscall 压力/多核争用下才显。故 DEFER 此处是"正确接入、不回归、机制就位待更重负载显收益",而非又一个 -33%。教训同 P0 hang:**优化契合直觉 ≠ 有收益,必须实测**——DEFER 能跑对了,但这个负载证不出它比 COOP 快。
 
+**⚠️ DEFER 是 opt-in、默认 COOP(2026-07-05 纠正一个 regression)**:DEFER 曾被设为 IoContext 默认,但 R_DISABLED ring **不能在构造线程 register provided-buffer ring**(enable 在 worker 首 reap),于是默认 DEFER **悄悄把所有 multishot buf-ring 路径打成 skip**——连 `MultishotRecvAwaitable` 回归测试都从 PASS 变 SKIP。修:`IoContext(sched, workers, defer_taskrun=false)` **默认 COOP**(恢复 multishot),DEFER 留给无 buf-ring 的纯 recv/send 上下文显式开。教训:**改一个默认开关要跑另一特性的测试,且看测试是真跑还是变 SKIP**(测试数不变但空转 = "捏造铁证"同形)。
+
 ## multishot recv awaitable vs one-shot RecvOp:同核对称负载下统计平局(`bench/io/multishot_bench.cc`)
 
 把 proactor 的 multishot recv + provided-buffer-ring 提升为 co_await awaitable(io-07b,commit e19312d)后,必须回答"它比 one-shot RecvOp 快么"。理论收益=免 per-recv submit + 零拷贝 ring 缓冲。设计一个**干净可信**的对照:同 worker 内 sender fiber + receiver fiber(无跨线程唤醒地板)、DGRAM socketpair(保消息边界,两行完成数严格相等)、receiver 收满确定 N 个后停(DGRAM 无可靠 EOF terminal)、唯一变量=receiver 收方式。
