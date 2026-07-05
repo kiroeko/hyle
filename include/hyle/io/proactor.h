@@ -79,7 +79,17 @@ class Proactor {
 
   // Create the backend's completion object (IOCP port / io_uring ring). Returns
   // false if the OS refused (out of fds, unsupported kernel). Call once before use.
-  HYLE_IO_API bool init(unsigned entries = 256) noexcept;
+  //
+  // `defer_worker_thread`: set true when this ring is created on one thread but will
+  // be submitted+reaped on a DIFFERENT owner-worker thread (the IoContext shard-per-
+  // core case). It opts into io_uring's DEFER_TASKRUN+SINGLE_ISSUER (the best setup
+  // for one-consumer-per-ring) via the R_DISABLED lifecycle: the ring starts disabled
+  // and the FIRST reap (on the owner worker) enables it, making that worker the single
+  // issuer (else the creating thread would be the issuer and the worker's enter fails
+  // EEXIST). Left false (default) for a bare same-thread Proactor -- create+reap on one
+  // thread needs no deferral and keeps the plain setup. io_uring only; no-op elsewhere.
+  HYLE_IO_API bool init(unsigned entries = 256,
+                        bool defer_worker_thread = false) noexcept;
 
   // ---- submit real IO ops (io-02) -------------------------------------------
   // Queue a read/write of `len` bytes on `fd` at file `offset` (offset ignored
@@ -334,7 +344,7 @@ class Proactor {
   // private statics (defined per-OS in proactor.cc) rather than free functions
   // in the .cc anonymous namespace (which cannot name a private nested type --
   // GCC rightly rejects that; only some compilers let it slide).
-  static Impl* try_init_uring(unsigned entries) noexcept;
+  static Impl* try_init_uring(unsigned entries, bool defer_worker_thread) noexcept;
   static Impl* try_init_epoll() noexcept;
   static bool epoll_arm(Impl* impl, int fd, unsigned events, unsigned char opcode,
                         void* buf, unsigned len, std::uint64_t user_data,

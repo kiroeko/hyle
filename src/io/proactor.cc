@@ -149,7 +149,7 @@ Proactor::~Proactor() {
   impl_ = nullptr;
 }
 
-bool Proactor::init(unsigned /*entries*/) noexcept {
+bool Proactor::init(unsigned /*entries*/, bool /*defer_worker_thread*/) noexcept {
   if (impl_ != nullptr) return true;  // idempotent
   // NumberOfConcurrentThreads=0 -> IOCP allows as many concurrently-running
   // completion threads as there are cores (we drive it per-worker anyway).
@@ -790,6 +790,12 @@ struct Proactor::Impl {
   // (see try_init_uring). The field + its reap branch are the tested foundation kept
   // in place for when that ring-lifecycle change lands.
   bool defer_taskrun = false;
+  // R_DISABLED: the ring starts disabled; the first reap (on the owner worker thread)
+  // must call ENABLE_RINGS -- that makes the worker the SINGLE_ISSUER (not the creating
+  // thread) -- and only then arm the wake-read (its enter must be on the issuer). Set
+  // when the DEFER rung (which includes R_DISABLED) wins; cleared after the first reap
+  // enables the ring. See reap()'s needs_enable block + arm_wake_read().
+  bool needs_enable = false;
   unsigned* sq_tail = nullptr;
   unsigned* sq_ring_mask = nullptr;
   unsigned* sq_array = nullptr;
@@ -935,50 +941,68 @@ namespace {
 // Try to stand up the io_uring backend (the SOTA path). Returns the filled Impl
 // or nullptr if io_uring is unavailable (old kernel ENOSYS / disabled EPERM /
 // mmap failure) -- caller then falls back to epoll.
-Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
+Proactor::Impl* Proactor::try_init_uring(unsigned entries,
+                                         bool defer_worker_thread) noexcept {
   // Setup-flag ladder (liburing echo-server.c / proxy.c "preferred setup"), enabled
   // with a kernel-version fallback: the kernel rejects unsupported flags with -EINVAL,
   // so try the richest supported rung and step down. Correctness is identical across
   // rungs; only completion-delivery overhead differs.
-  //   COOP_TASKRUN (>=5.19): don't force an IPI to run completion task_work -- run it
-  //     on the next natural kernel transition. HYLE's owner thread enters its own ring
-  //     constantly (submit+reap), so completions still surface promptly; this just
-  //     drops the inter-processor-interrupt storm. Near-free for the per-core model.
+  //   DEFER_TASKRUN + SINGLE_ISSUER + R_DISABLED (>=6.1): the best setup for a ring
+  //     with ONE consumer thread (HYLE's per-core model). Completions run task_work
+  //     only on the owner's own GETEVENTS enter (no IPI); SINGLE_ISSUER lets the kernel
+  //     skip issuer locking. SINGLE_ISSUER pins the issuer task -- normally the ring
+  //     CREATOR, but HYLE creates the ring on one thread (IoContext ctor) and reaps on
+  //     another (the owner worker). R_DISABLED breaks that: the ring starts disabled and
+  //     the task that later calls ENABLE_RINGS becomes the issuer -- so the FIRST reap
+  //     (on the owner worker) enables it (see reap()'s needs_enable path), making the
+  //     worker the issuer. Requires the reap path to enter GETEVENTS whenever ops are in
+  //     flight -- the defer_taskrun branch in reap() does the non-blocking peek. Only
+  //     offered when defer_worker_thread is set (the cross-thread IoContext case).
+  //   COOP_TASKRUN (>=5.19): weaker cousin, no issuer/enable dance -- the step-down when
+  //     defer isn't wanted or the kernel is <6.1. Completions still land without an IPI.
   //   SUBMIT_ALL (>=5.18): a bad SQE in a batch doesn't abort the whole submit -- HYLE
   //     folds many fibers' SQEs into one enter, so one bad fd must not drop its peers.
-  //
-  // DEFER_TASKRUN (+SINGLE_ISSUER, >=6.1) is NOT in the ladder despite looking
-  // tailor-made for the per-core ring. TWO things block it, one fixed, one not:
-  //  (1) [FIXED here] completions run task_work only on a GETEVENTS enter -> the
-  //      non-blocking drain reap(0) must still enter with GETEVENTS+min_complete=0.
-  //      The defer_taskrun branch in reap() does exactly that (kept, dormant).
-  //  (2) [NOT fixed] SINGLE_ISSUER pins the ring's issuer task at SETUP time -- but
-  //      HYLE creates every ring in IoContext's ctor on the CONSTRUCTING thread, while
-  //      each ring is submitted+reaped from its OWNER WORKER thread. The worker's first
-  //      io_uring_enter then fails EEXIST (errno 17, verified by probe). Fixing needs
-  //      per-worker ring lifecycle: setup with IORING_SETUP_R_DISABLED, then
-  //      io_uring_register(ENABLE_RINGS) from the owner worker thread on first touch
-  //      (which also gates every pre-worker submit/register/wake-arm) -- a real ring-
-  //      lifecycle change, registered as a follow-up. COOP_TASKRUN captures most of the
-  //      task_work-batching win without the single-issuer thread constraint.
 #ifndef IORING_SETUP_SUBMIT_ALL
 #  define IORING_SETUP_SUBMIT_ALL (1u << 7)
 #endif
 #ifndef IORING_SETUP_COOP_TASKRUN
 #  define IORING_SETUP_COOP_TASKRUN (1u << 8)
 #endif
+#ifndef IORING_SETUP_SINGLE_ISSUER
+#  define IORING_SETUP_SINGLE_ISSUER (1u << 12)
+#endif
 #ifndef IORING_SETUP_DEFER_TASKRUN
 #  define IORING_SETUP_DEFER_TASKRUN (1u << 13)
 #endif
-  const unsigned kFlagLadder[] = {
+#ifndef IORING_SETUP_R_DISABLED
+#  define IORING_SETUP_R_DISABLED (1u << 6)
+#endif
+#ifndef IORING_REGISTER_ENABLE_RINGS
+#  define IORING_REGISTER_ENABLE_RINGS 12u
+#endif
+  // The DEFER rung is FIRST only when the caller opts in (cross-thread reap). Its
+  // R_DISABLED means the ring needs a worker-thread ENABLE_RINGS before first use.
+  const unsigned kDeferFlags = IORING_SETUP_DEFER_TASKRUN |
+                               IORING_SETUP_SINGLE_ISSUER | IORING_SETUP_R_DISABLED |
+                               IORING_SETUP_SUBMIT_ALL;
+  const unsigned kLadderWithDefer[] = {
+      kDeferFlags,                                          // >=6.1 (best, R_DISABLED)
       IORING_SETUP_COOP_TASKRUN | IORING_SETUP_SUBMIT_ALL,  // >=5.19
       IORING_SETUP_SUBMIT_ALL,                              // >=5.18
       0u,                                                   // io-01 baseline
   };
+  const unsigned kLadderNoDefer[] = {
+      IORING_SETUP_COOP_TASKRUN | IORING_SETUP_SUBMIT_ALL,  // >=5.19
+      IORING_SETUP_SUBMIT_ALL,                              // >=5.18
+      0u,                                                   // io-01 baseline
+  };
+  const unsigned* kFlagLadder = defer_worker_thread ? kLadderWithDefer : kLadderNoDefer;
+  const unsigned kLadderLen = defer_worker_thread ? 4u : 3u;
   io_uring_params p;
   int fd = -1;
   unsigned chosen_flags = 0;
-  for (unsigned flags : kFlagLadder) {
+  for (unsigned li = 0; li < kLadderLen; ++li) {
+    unsigned flags = kFlagLadder[li];
     std::memset(&p, 0, sizeof(p));
     p.flags = flags;
     fd = sys_io_uring_setup(entries, &p);
@@ -1002,6 +1026,9 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
   // DEFER_TASKRUN chosen -> reap(0) must enter with GETEVENTS to surface deferred
   // completions (see the defer_taskrun branch in reap()).
   impl->defer_taskrun = (chosen_flags & IORING_SETUP_DEFER_TASKRUN) != 0;
+  // R_DISABLED chosen -> the ring is disabled; the FIRST reap (on the owner worker)
+  // must ENABLE_RINGS to become the single issuer, and only THEN arm the wake-read.
+  impl->needs_enable = (chosen_flags & IORING_SETUP_R_DISABLED) != 0;
 
   std::size_t sqring = p.sq_off.array + p.sq_entries * sizeof(unsigned);
   std::size_t cqring = p.cq_off.cqes + p.cq_entries * sizeof(io_uring_cqe);
@@ -1061,9 +1088,12 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
   // Non-fatal if it fails -- the proactor still serves io; the scheduler then
   // falls back to a bounded (kIoPollNs) reap instead of an infinite one.
   impl->wake_efd = ::eventfd(0, EFD_CLOEXEC);
-  if (impl->wake_efd >= 0) {
-    // Arm the wake-read directly (not submit_one): it must NOT bump inflight --
-    // it's permanent infra, not a user op that in_flight() should count.
+  if (impl->wake_efd >= 0 && !impl->needs_enable) {
+    // Fill + submit the wake-read now. But NOT when R_DISABLED (needs_enable): the
+    // ring is disabled (submit would fail) AND this is the creating thread, which is
+    // NOT the issuer under SINGLE_ISSUER -- entering here would bind the wrong issuer.
+    // In that case the first reap (on the owner worker) enables the ring THEN arms this
+    // (see reap()'s needs_enable block), so the issuer is the worker.
     unsigned tail = *impl->sq_tail;
     unsigned index = tail & *impl->sq_ring_mask;
     io_uring_sqe& s = impl->sqes[index];
@@ -1109,7 +1139,7 @@ Proactor::Impl* Proactor::try_init_epoll() noexcept {
   return impl;
 }
 
-bool Proactor::init(unsigned entries) noexcept {
+bool Proactor::init(unsigned entries, bool defer_worker_thread) noexcept {
   if (impl_ != nullptr) return true;  // idempotent
   // SOTA-first: always try io_uring; production runs on it wherever it exists.
   // Fall back to epoll ONLY when io_uring is truly unavailable (old kernel /
@@ -1117,7 +1147,7 @@ bool Proactor::init(unsigned entries) noexcept {
   // path so the fallback is exercised even where io_uring works (this machine).
   const char* force = ::getenv("HYLE_IO_FORCE_EPOLL");
   if (force == nullptr || force[0] == '0' || force[0] == '\0') {
-    Impl* u = try_init_uring(entries);
+    Impl* u = try_init_uring(entries, defer_worker_thread);
     if (u != nullptr) {
       impl_ = u;
       return true;
@@ -1319,6 +1349,39 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       ++np;
     }
     if (np > 0) return np;  // deliver promptly; caller loops for ring completions
+  }
+
+  // R_DISABLED lifecycle (DEFER_TASKRUN path): the ring was created disabled on the
+  // constructing thread; enable it HERE, on the FIRST reap, which runs on the owner
+  // WORKER thread -- so THIS thread becomes the SINGLE_ISSUER (the ENABLE_RINGS caller
+  // is the issuer, per io_uring_setup.2). Only then arm the wake-read (its submit must
+  // be by the issuer). One-time: cleared after. If ENABLE_RINGS fails, fall back to a
+  // usable state by clearing the flags (the ring can't be used disabled, but we avoid
+  // a hard hang -- the scheduler's reap just returns nothing and the io stalls visibly
+  // rather than corrupting). This block is the whole reason DEFER_TASKRUN is safe on
+  // HYLE's create-on-one-thread / reap-on-another model.
+  if (impl_->needs_enable) {
+    impl_->needs_enable = false;  // once, regardless of outcome
+    if (sys_io_uring_register(impl_->fd, IORING_REGISTER_ENABLE_RINGS, nullptr, 0) < 0) {
+      // Enable failed: we can't use the ring. Nothing to reap; return empty.
+      return 0;
+    }
+    // Now the issuer -- arm the persistent wake-read (deferred from init). Fill the
+    // SQE; it flushes to the kernel via THIS reap's own enter below (sq_pending++).
+    if (impl_->wake_efd >= 0) {
+      unsigned wt = *impl_->sq_tail;
+      unsigned wi = wt & *impl_->sq_ring_mask;
+      io_uring_sqe& ws = impl_->sqes[wi];
+      std::memset(&ws, 0, sizeof(ws));
+      ws.opcode = IORING_OP_READ;
+      ws.fd = impl_->wake_efd;
+      ws.addr = reinterpret_cast<std::uint64_t>(&impl_->wake_buf);
+      ws.len = sizeof(impl_->wake_buf);
+      ws.user_data = Proactor::kWakeToken;
+      impl_->sq_array[wi] = wi;
+      as_atomic(impl_->sq_tail)->store(wt + 1, std::memory_order_release);
+      ++impl_->sq_pending;  // flushed by this reap's enter (wake-read isn't inflight)
+    }
   }
 
   // Flush the batched SQEs (io-04 submit batch): the worker queued many via
@@ -1678,6 +1741,16 @@ bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
 bool Proactor::register_buf_ring(int bgid, unsigned nentries,
                                  unsigned buf_size) noexcept {
   if (impl_ == nullptr || impl_->backend != Impl::kUring) return false;
+  // R_DISABLED-pending (DEFER path): the ring isn't enabled yet -- it enables on the
+  // first reap, on the OWNER WORKER thread. register_buf_ring is called on the CREATING
+  // thread before the scheduler runs, so we can neither register (ring disabled) nor
+  // enable here (that would bind the wrong SINGLE_ISSUER). So a provided-buffer ring is
+  // incompatible with the DEFER path as currently wired -> return false (callers, which
+  // are tests/benches, already self-skip on false). Provided-buf-ring + DEFER on one
+  // proactor is a documented mutual exclusion (a rare combo: DEFER is the throughput
+  // default, buf-ring is the multishot/zero-copy path -- wiring both needs the ring
+  // registered from a worker fiber, deferred).
+  if (impl_->needs_enable) return false;
   if (impl_->buf_bgid >= 0) return false;  // one ring supported for now
   if (nentries == 0 || buf_size == 0) return false;
   // Round entries up to a power of two (the ring mask requires it).

@@ -19,7 +19,11 @@ IoContext::IoContext(sched::Scheduler& sched, unsigned num_workers) noexcept
   valid_ = true;
   for (unsigned i = 0; i < num_workers; ++i) {
     auto p = std::make_unique<Proactor>();
-    if (!p->init()) valid_ = false;  // a ring the OS refused -> context invalid
+    // defer_worker_thread=true: each ring is created HERE (constructing thread) but
+    // submitted+reaped from its owner worker -> opt into DEFER_TASKRUN+SINGLE_ISSUER
+    // via R_DISABLED (the worker's first reap enables the ring, becoming the issuer).
+    // io_uring only; a no-op on IOCP/epoll.
+    if (!p->init(256, /*defer_worker_thread=*/true)) valid_ = false;  // a ring the OS refused -> context invalid
     rings_.push_back(std::move(p));
   }
   sched_.set_io_poll(&IoContext::poll_trampoline, this);

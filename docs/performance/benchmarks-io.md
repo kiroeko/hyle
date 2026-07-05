@@ -77,7 +77,11 @@ raw epoll 对照答的是"vs 旧就绪模型";要答"vs **同样的 io_uring**�
 
 单核 -33% 后 **HYLE-1w 反超 asio(1255 vs 1583)与裸 epoll(1255 vs 1346)**——把之前 vs-asio 的"单核平局"变成"单核赢"。同 run 里 asio/epoll(无本改动)基本未动,隔离出收益确归本两处改动、非机器波动。
 
-**诚实纠错 —— DEFER_TASKRUN 撤下(登记 follow-up)**:调研最看好的其实是 `DEFER_TASKRUN`(+SINGLE_ISSUER,≥6.1),它把完成 task_work 全延到 GETEVENTS enter 才跑,理论上最契合"每核一 ring、单消费者"。但**实测挂死基本 send/recv 往返**——深挖(探针 errno=17 EEXIST)定位真根因是 **SINGLE_ISSUER 线程绑定**:HYLE 在 IoContext 构造函数(主线程)建所有 ring,却在各 owner worker 线程 submit+reap,worker 首次 enter 就 EEXIST(次要因是 reap 路径 submit-only enter 不带 GETEVENTS,已修好、dormant 就位)。真正接入需 ring 生命周期改造(`R_DISABLED` 建 + 各 worker 首触发在自己线程 `ENABLE_RINGS`),登记为 follow-up(#52)。COOP_TASKRUN 拿到大部分收益(task_work 批处理)且无此约束。教训同 P0 hang:**优化契合直觉 ≠ 能跑,必须过它自己的 benchmark/测试**。
+**DEFER_TASKRUN 接回 —— 从撤下到 R_DISABLED 生命周期修复(2026-07-05)**:调研最看好的 `DEFER_TASKRUN`(+SINGLE_ISSUER,≥6.1)把完成 task_work 全延到 GETEVENTS enter 才跑,理论上最契合"每核一 ring、单消费者"。曾撤下,深挖(探针 errno=17 EEXIST + liburing man)定位真根因=**SINGLE_ISSUER 线程绑定**:HYLE 在 IoContext 构造函数(主线程)建所有 ring,却在各 owner worker 线程 submit+reap → worker 首次 enter EEXIST。**修法(已落地)**:`init(defer_worker_thread=true)` 用 `IORING_SETUP_R_DISABLED` 建 ring(禁用态),**worker 首次 reap 时 `IORING_REGISTER_ENABLE_RINGS`**——per man,ENABLE_RINGS 的调用者成为 issuer,故 worker 成 issuer;wake-read 武装也延到 enable 之后(否则主线程 enter 绑错 issuer)。带内核版本回退阶梯(defer→coop→submit_all→无)。**顺带修一个 latent bug**:net_cancel 的 cancel-op 自身 CQE 原用 `kWakeToken`——但 reap 见 kWakeToken 会(a)跳过 inflight 递减(b)重武装 wake-read,导致每 cancel 泄漏 inflight+1 且 spurious 重武装;COOP 下良性,**DEFER 下 livelock**(net_cancel 测挂死揪出)。改用专用 `kCancelToken`(经 complete_timed 丢弃、作普通完成正常递减 inflight)。
+
+**验证(同严谨)**:探针证 `chosen_flags=0x30c0`(DEFER|SINGLE_ISSUER|R_DISABLED|SUBMIT_ALL)真选中、非静默回退;曾 EEXIST 挂死的 send/recv + net_cancel + pipelined 512 流高扇出(P0-hang 易发)全过;9 套件 + WSL TSan(net/cancel/timeout/http/sched)净;双平台编译(Windows 无 DEFER,io_uring-only)。
+
+**性能诚实读**:DEFER echo-1w ~1.35-1.43µs、4w ~0.52-0.71µs,与 COOP(1255/581ns,commit 93b1e23)**同量级、无显著额外提升**——符合预期:DEFER 的收益是省 task_work 的 IPI/中断,在**单 worker loopback、worker 本就每次 drain 都 enter ring** 的场景里几乎无 IPI 可省;它的优势应在高 syscall 压力/多核争用下才显。故 DEFER 此处是"正确接入、不回归、机制就位待更重负载显收益",而非又一个 -33%。教训同 P0 hang:**优化契合直觉 ≠ 有收益,必须实测**——DEFER 能跑对了,但这个负载证不出它比 COOP 快。
 
 ## multishot recv awaitable vs one-shot RecvOp:同核对称负载下统计平局(`bench/io/multishot_bench.cc`)
 

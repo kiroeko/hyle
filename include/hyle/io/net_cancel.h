@@ -3,6 +3,7 @@
 #include <cstdint>
 
 #include "hyle/io/net.h"
+#include "hyle/io/net_timeout.h"  // kCancelToken (the cancel-op's own-CQE drop token)
 #include "hyle/io/proactor.h"
 #include "hyle/sched/cancel.h"
 #include "hyle/sched/coro.h"
@@ -69,10 +70,17 @@ struct CancelOpCtx {
     auto* c = static_cast<CancelOpCtx*>(ctx);
     if (c->done) return;
     c->done = true;
-    // Cancel the in-flight op. The cancel op's own CQE uses kWakeToken (dropped by
-    // the router). A false return (op already completed) is benign -- its normal
+    // Cancel the in-flight op. The cancel op's own CQE uses kCancelToken -- NOT
+    // kWakeToken: the wake token is the park-merge wake-read's reserved value, and a
+    // reap seeing it (a) skips the inflight decrement (treating it as permanent infra)
+    // and (b) RE-ARMS the wake-read. Using it for the cancel op's CQE therefore leaked
+    // inflight by 1 per cancel AND spuriously re-armed the wake-read -- benign under
+    // COOP_TASKRUN but a livelock under DEFER_TASKRUN (the spurious re-arm's completion
+    // loops on the GETEVENTS-only delivery). kCancelToken routes through complete_timed
+    // (dropped there) and reaps as an ORDINARY completion, so inflight decrements
+    // correctly. A false return (op already completed) is benign -- its normal
     // completion is already on the way and will wake the fiber.
-    c->p->submit_cancel(c->token, Proactor::kWakeToken);
+    c->p->submit_cancel(c->token, kCancelToken);
   }
 };
 
