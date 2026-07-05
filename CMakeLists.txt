@@ -155,15 +155,19 @@ add_subdirectory(src/math)   # math: scalar helpers (div_ceil/sgn/approx_eq)
 add_subdirectory(src/container)  # container-01: bounded MPMC ring (Vyukov)
 add_subdirectory(src/simd)   # simd-01: runtime CPUID dispatch + vec<T,N> D-tag + scalar
 
-# sched fiber switching needs platform fcontext asm. We have vendored x86_64 asm
-# for MS/PE (MASM) and SysV/ELF (GAS); wire those two. arm64 + macho asm are
-# vendored but not yet wired (no test machine). Gate the module on having a
-# usable asm flavor for this (platform, arch).
+# sched fiber switching needs platform fcontext asm. Vendored asm covers x86_64 (MS/PE MASM,
+# SysV/ELF GAS, SysV/macho GAS) AND arm64 (AAPCS ELF/macho/PE). Wire each (platform, arch)
+# to its flavor; the sched CMakeLists picks the matching .S/.asm. Gate the module on having a
+# usable asm flavor for this target.
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(MSVC)
     set(HYLE_HAS_FCONTEXT TRUE)
-  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    set(HYLE_HAS_FCONTEXT TRUE)  # GAS .S via the ASM language
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR APPLE)
+    set(HYLE_HAS_FCONTEXT TRUE)  # GAS .S via the ASM language (elf on Linux, macho on Apple)
+  endif()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  if(APPLE OR CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    set(HYLE_HAS_FCONTEXT TRUE)  # AAPCS GAS .S (macho on Apple Silicon, elf on arm64 Linux)
   endif()
 endif()
 if(HYLE_HAS_FCONTEXT)

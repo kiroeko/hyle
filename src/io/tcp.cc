@@ -109,7 +109,8 @@ bool resolve_addr(const char* host, std::uint16_t port, void* out_ss,
   auto* sa = static_cast<sockaddr_in*>(out_ss);
   std::memset(sa, 0, sizeof(sockaddr_in));
   sa->sin_family = AF_INET;
-  sa->sin_port = ::htons(port);
+  sa->sin_port = htons(port);  // htons is a MACRO on macOS/BSD -- no :: qualifier (that's
+                               // ill-formed on a macro); unqualified resolves the fn on Linux too.
   if (::inet_pton(AF_INET, host, &sa->sin_addr) != 1) return false;
   *out_len = sizeof(sockaddr_in);
   return true;

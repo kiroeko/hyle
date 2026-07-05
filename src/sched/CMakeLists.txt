@@ -1,8 +1,7 @@
 # sched-01/02: fiber context switching on vendored fcontext asm + run-queue.
-# Pick the asm flavor for this (platform, arch). x86_64 only for now; arm64 and
-# macho asm are vendored under third_party/fcontext/asm but not yet wired (no
-# test machine). The top-level gate (HYLE_HAS_FCONTEXT) guarantees we only get
-# here on a supported target.
+# Pick the asm flavor for this (platform, arch). Vendored asm covers x86_64 (MS/PE MASM,
+# SysV/ELF GAS, SysV/macho GAS) AND arm64 (AAPCS ELF/macho GAS). The top-level gate
+# (HYLE_HAS_FCONTEXT) guarantees we only get here on a target we have asm for.
 set(_fctx "${PROJECT_SOURCE_DIR}/third_party/fcontext/asm")
 
 if(MSVC)
@@ -11,6 +10,26 @@ if(MSVC)
     "${_fctx}/jump_x86_64_ms_pe_masm.asm"
     "${_fctx}/make_x86_64_ms_pe_masm.asm"
     "${_fctx}/ontop_x86_64_ms_pe_masm.asm")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  # arm64 AAPCS GAS (.S). macho on Apple Silicon, ELF on arm64 Linux. Symbols exported via
+  # .globl in-file -- no define needed (same as the x86 GAS flavors).
+  if(APPLE)
+    set(_fctx_asm
+      "${_fctx}/jump_arm64_aapcs_macho_gas.S"
+      "${_fctx}/make_arm64_aapcs_macho_gas.S"
+      "${_fctx}/ontop_arm64_aapcs_macho_gas.S")
+  else()
+    set(_fctx_asm
+      "${_fctx}/jump_arm64_aapcs_elf_gas.S"
+      "${_fctx}/make_arm64_aapcs_elf_gas.S"
+      "${_fctx}/ontop_arm64_aapcs_elf_gas.S")
+  endif()
+elseif(APPLE)
+  # macOS x64: SysV/macho GAS (Mach-O object format differs from ELF -- different .S).
+  set(_fctx_asm
+    "${_fctx}/jump_x86_64_sysv_macho_gas.S"
+    "${_fctx}/make_x86_64_sysv_macho_gas.S"
+    "${_fctx}/ontop_x86_64_sysv_macho_gas.S")
 else()
   # Linux x64: SysV/ELF GAS (.S via the C/ASM driver). Symbols are exported with
   # .globl directly -- no define needed.

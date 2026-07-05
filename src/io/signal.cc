@@ -69,7 +69,9 @@ extern "C" void hyle_signal_handler(int signo) noexcept {
 bool ensure_pipe(SigGlobal& g) noexcept {
   if (g.pipe_made) return true;
   int fds[2];
-  if (::pipe2(fds, O_CLOEXEC) != 0) return false;
+  // pipe2(O_CLOEXEC) is Linux-only; macOS/BSD lack it. Use plain pipe() + fcntl to set
+  // FD_CLOEXEC per end (portable). O_NONBLOCK is set in the loop below for both ends anyway.
+  if (::pipe(fds) != 0) return false;
   // BOTH ends nonblocking. Write end: the handler must never block (drops the byte
   // on a full pipe -- harmless, a queued byte already signals "arrived"). Read end:
   // the epoll fallback does a SYNCHRONOUS ::read when the fd fires; if the byte was
@@ -80,6 +82,8 @@ bool ensure_pipe(SigGlobal& g) noexcept {
   for (int e = 0; e < 2; ++e) {
     int fl = ::fcntl(fds[e], F_GETFL, 0);
     ::fcntl(fds[e], F_SETFL, fl | O_NONBLOCK);
+    int fdfl = ::fcntl(fds[e], F_GETFD, 0);
+    ::fcntl(fds[e], F_SETFD, fdfl | FD_CLOEXEC);  // pipe2's O_CLOEXEC, done portably
   }
   g.pipe_rd = fds[0];
   g.pipe_wr = fds[1];
@@ -108,7 +112,7 @@ void set_signal(SigGlobal& g, int signo, bool install) noexcept {
       std::memset(&sa, 0, sizeof(sa));
       sa.sa_handler = &hyle_signal_handler;
       sa.sa_flags = SA_RESTART;  // don't abort restartable syscalls elsewhere
-      ::sigemptyset(&sa.sa_mask);
+      sigemptyset(&sa.sa_mask);  // sigemptyset is a MACRO on macOS/BSD -- no :: qualifier.
       ::sigaction(signo, &sa, nullptr);
     }
   } else {
@@ -116,7 +120,7 @@ void set_signal(SigGlobal& g, int signo, bool install) noexcept {
       struct sigaction sa;
       std::memset(&sa, 0, sizeof(sa));
       sa.sa_handler = SIG_DFL;
-      ::sigemptyset(&sa.sa_mask);
+      sigemptyset(&sa.sa_mask);  // sigemptyset is a MACRO on macOS/BSD -- no :: qualifier.
       ::sigaction(signo, &sa, nullptr);
     }
   }
