@@ -10,16 +10,16 @@ io-01/02/03 阶段**故意不出性能数**(见总账 io 行的"缺口登记")�
 
 **负载**:64 个连接,每个连接 64 次 echo round-trip(client send→server recv→server echo→client recv = 1 round-trip),payload 64B。连接按 owner 核轮询分片(shard-per-core),每连接的 client/server fiber 都 `spawn_on` 钉在其 owner 核。报 round-trip/秒。
 
-**Linux io_uring(单跑中位,err% 1-3%,多次复现)**:
+**Linux io_uring(`bench-stat.py` n=15 within-run 配对,reinject+COOP 优化后)**:
 
-| 配置 | echo/s(批量后) | 对裸 epoll 比 | 判定 |
-|---|---|---|---|
-| HYLE shard-per-core 1 worker | **730~800K**(跑间中位波动) | ~1.0x | ➖平/微赢裸 epoll |
-| HYLE shard-per-core 2 workers | 1.1~1.2M | ~1.5x | ✅赢 |
-| HYLE shard-per-core 4 workers | 1.5~1.9M | ~2x | ✅赢 |
-| 裸 epoll 1 线程(就绪循环) | ~730-790K | 1.0x | 基线 |
+| 配置 | ns/round-trip | echo/s | 对裸 epoll | 判定 |
+|---|---|---|---|---|
+| HYLE shard-per-core 1 worker | ~1337 | ~748K | 1.026(gap2.6%«spread20%) | ➖平裸 epoll(**单核赢 asio 1.25x/libuv 1.52x**,见下节) |
+| HYLE shard-per-core 2 workers | ~940 | ~1.06M | 1.48x | ✅赢 |
+| HYLE shard-per-core 4 workers | ~611 | ~1.63M | 2.25x | ✅赢(gap125%»spread27%) |
+| 裸 epoll 1 线程(就绪循环) | ~1346-1404 | ~730-743K | 1.0x | 基线 |
 
-**关键转折(2026-07-03,submit 批量落地后)**:单 worker 从**曾经的 440K(输裸 epoll 0.61x)提到 ~730-800K(追平/微赢)**——约 1.7x 提升。机制铁证:`HYLE_IO_BENCH_STATS` 打出 **`avg_batch=13~61`**(每次 `io_uring_enter` 提交 13-61 个 SQE),对比批量前恒为 1.0。这直接砍掉了曾经主导的"每 op 一次 syscall"开销。**shard-per-core 扩展仍在**(1w→4w ~2x)。
+**关键转折(两段)**:① **submit 批量落地(2026-07-03)**:单 worker 从曾经的 440K(输裸 epoll 0.61x)提到 ~730-800K(追平),`avg_batch=13~61`/enter(批量前恒 1.0)砍掉"每 op 一次 syscall"。② **reinject 同核短路 + COOP_TASKRUN(2026-07-05,-33%)**:单 worker 再提到 ~748K,vs asio/libuv 从统计平局推成**单核真赢**(1.25x/1.52x,见"vs asio/libuv"节),vs 裸 epoll 仍是统计平局(裸 epoll 无 fiber 固定开销)。**shard-per-core 扩展 1w→4w ~2.2x** 一直成立。
 
 ## vs 裸 liburing:抽象的代价,与扩展性怎么赢回来(`-DHYLE_BENCH_LIBURING`)
 
@@ -39,24 +39,27 @@ raw epoll 对照答的是"vs 旧就绪模型";要答"vs **同样的 io_uring**�
 2. **HYLE 用 shard-per-core 把单核劣势赢回来**:4 worker(709ns)**反超**单线程裸 liburing(810ns)。裸 liburing 那个循环是单线程的,要多核得自己手写 sharding + 跨核协调;HYLE 的 `spawn_on` + 每核 ring 让连接分片到核是**免费的结构收益**。所以"SOTA"的正确表述:**单核吞吐输给零抽象的手写循环(抽象代价),但可组合性 + 开箱即用的 shard-per-core 扩展让它以多核反超**——这才是一个协程运行时相对裸 API 的真实定位。
 3. 本次 HYLE-1w(535K)低于上文记的 730-800K 区间,是当次机器负载差异(我并发开着多个 WSL 会话跑对标);**同次 run 内的 relative 比不受影响**,故对标结论以 relative 列为准。
 
-## vs asio / libuv:抽象 vs 抽象——跟成熟异步框架打平(`-DHYLE_BENCH_ASIO` / `-DHYLE_BENCH_LIBUV`)
+## vs asio / libuv:抽象 vs 抽象——单核追平后反超,多核开箱赢(`-DHYLE_BENCH_ASIO` / `-DHYLE_BENCH_LIBUV`)
 
-裸 liburing 答的是"vs 零抽象手写循环"(HYLE 输 2.3x,抽象的固定代价)。但那不是 HYLE 的真实竞品——真实竞品是**同样提供抽象的成熟异步框架**:C++ 的 **asio**(io_context + completion handler,THE 标准异步库)和 C 的 **libuv**(uv_loop + 回调,Node.js 引擎、最实战的异步运行时)。它们**同样付调度/抽象成本**,所以这才是"HYLE 在抽象层里输不输"的公平对照。echo_bench 增两个 gated 对照行(asio 走 io_uring 后端 `ASIO_HAS_IO_URING`+链 liburing;libuv 走 epoll),同 64conn×64rt×64B ping-pong,与 HYLE 行**同一次 nanobench run**,`bench-stat.py` n=15 统计判定。
+裸 liburing 答的是"vs 零抽象手写循环"(HYLE 输 2.3x,抽象的固定代价)。但那不是 HYLE 的真实竞品——真实竞品是**同样提供抽象的成熟异步框架**:C++ 的 **asio**(io_context + completion handler,THE 标准异步库)和 C 的 **libuv**(uv_loop + 回调,Node.js 引擎、最实战的异步运行时)。它们**同样付调度/抽象成本**,所以这才是"HYLE 在抽象层里输不输"的公平对照。echo_bench 增两个 gated 对照行(asio 走 io_uring 后端 `ASIO_HAS_IO_URING`+链 liburing;libuv 走 epoll),同 64conn×64rt×64B ping-pong,与 HYLE 行**同一次 nanobench run**,`bench-stat.py` n=15 within-run 配对判定。
 
-**Linux 实测(n=15 跨run中位,判定规则:gap>合并spread 才算赢/输,否则统计平局)**:
+**Linux 实测(n=15 within-run 配对,判定规则:gap>合并spread 才算赢/输,否则统计平局)**:
 
-| 对照 | HYLE-1w vs 它 | gap vs spread | 判定 |
+> **两阶段(诚实标注优化影响)**:下表是 **reinject 同核短路 + COOP_TASKRUN 优化之后**(HYLE-1w 1868→~1337ns,见下节"两处热路径优化")的口径。优化前 HYLE-1w vs asio/libuv 是**统计平局**(1868 vs 1695/2070,gap«spread);优化 -33% 后单核追成**真赢**。
+
+| 对照 | HYLE-1w vs 它 | ratio(gap vs spread) | 判定 |
 |---|---|---|---|
-| **vs asio**(io_uring,同后端) | 1868 vs 1695 ns | 8.9% < 23.0% | **统计平局** |
-| **vs libuv**(epoll) | 1868 vs 2070 ns | 10.3% < 26.3% | **统计平局** |
-| vs 裸 epoll(就绪循环) | — | 25.9% > 23.2% | 输(旧模型,已知) |
-| **HYLE-4w vs asio-1w** | 789 vs 1695 ns | 109% > 37.6% | **赢 2.09x** |
+| **vs asio**(io_uring,同后端) | 1337 vs 1618 ns | 1.253(25.3% > 24.8%) | **单核赢 1.25x** |
+| **vs libuv**(epoll) | 1337 vs 1981 ns | 1.517(51.7% > 26.1%) | **单核赢 1.52x** |
+| vs 裸 epoll(就绪循环) | 1337 vs 1346 ns | 1.026(2.6% « 20.4%) | **统计平局**(追平,见下) |
+| **HYLE-4w vs asio-1w** | 615 vs 1618 ns | ~2.6x | **多核大赢** |
 
 **诚实解读**:
-1. **单核 vs asio/libuv:统计平局**——HYLE 的 co_await + fiber + shard-per-core 抽象跟这两个业界最成熟的异步框架**在同后端上打平**(gap 都 < 测量 spread,不构成赢/输)。这是关键结论:**抽象没让我们输给成熟框架**。对比 vs 裸 liburing 的 2.3x 落后——那是"零抽象手写状态机"的代价;asio/libuv 也是抽象框架、同付调度成本,所以我们跟它们平。**抽象的固定代价是这一类运行时的行业共性,不是 HYLE 独有的短板。**
-2. **多核 HYLE 2.09x 赢 asio**:asio 单 io_context 是单线程的,要吃多核得自己起线程池 + 手工把连接分到不同 io_context + 跨核协调;HYLE 的 `spawn_on` + 每核 ring 让 shard-per-core 是**开箱即免费**。这是 HYLE 相对单 loop 框架的结构优势。
-3. **libuv 是跨模型对照**(它 epoll reactor,HYLE io_uring proactor),故最该对标的是 HYLE 的 epoll 降级路径/裸 epoll 行;单核与 HYLE-io_uring 平已说明 co_await 泵没引入额外成本。
-4. **方法学诚实纠错(2026-07-05)**:两个对照都不是一次写对的——① asio 首版用 `shared_ptr`+`asio::post` 保活 client 状态机,posted lambda 跑一次即释放 → 悬垂;且 server 永久 re-arm 读、客户端读完不关连接 → `ctx.run()` 永不返回。改:值语义 functor(conns 向量提供稳定存储)+ 末轮 close 触发 server EOF。② libuv 更曲折:一开始 `uv_pipe_open` 裸 socketpair fd(单核环境下读一次就停),换 `uv_socketpair`+`uv_tcp_open` 仍每连接只做 1 round-trip。**用独立探针程序**(2conn×3rt、每回调打点)才定位到真根因:**libuv 契约里 `nread==0` 是"暂无数据"(类 EAGAIN)不是 EOF,只有 `nread<0`(UV_EOF)才是**;我的 `if(nread<=0) close` 在良性 n==0 上误关了连接,一次交换后就 EPIPE。改 `nread<0` 后 `rt_left=0` 全通。教训:**对照库的语义必须照抄准**(nread==0 vs <0 是 libuv 的经典坑),别拿 HYLE/POSIX 的"0=EOF"直觉套。
+1. **单核 vs asio/libuv:优化后真赢(1.25x/1.52x)**——HYLE 的 co_await + fiber + shard-per-core 抽象在同后端上**反超**这两个业界最成熟的异步框架。这不是从来就赢:优化前是统计平局("抽象没输给成熟框架"),reinject+COOP 的 -33% 才把平局推成单核赢。对比 vs 裸 liburing 的 2.3x 落后——那是"零抽象手写状态机"的代价;asio/libuv 也是抽象框架、同付调度成本,HYLE 在这一层做得比它们更省。
+2. **vs 裸 epoll:统计平局(追平)**——裸 epoll 是零抽象就绪循环,无 fiber/协程固定开销;-33% 把老的 0.61x 落后追到齐平(gap 2.6% « spread 20.4%)。**能与零抽象手写循环齐平,是抽象层的好结果**;单跑偶见"反超 epoll"是噪声,统计上是平。
+3. **多核 HYLE 大赢 asio**:asio 单 io_context 是单线程的,要吃多核得自己起线程池 + 手工把连接分到不同 io_context + 跨核协调;HYLE 的 `spawn_on` + 每核 ring 让 shard-per-core 是**开箱即免费**。这是 HYLE 相对单 loop 框架的结构优势。
+4. **libuv 是跨模型对照**(它 epoll reactor,HYLE io_uring proactor),赢它有后端红利成分;最纯的"抽象税"对照是 vs asio(同 io_uring)那行。
+5. **方法学诚实纠错(2026-07-05)**:两个对照都不是一次写对的——① asio 首版用 `shared_ptr`+`asio::post` 保活 client 状态机,posted lambda 跑一次即释放 → 悬垂;且 server 永久 re-arm 读、客户端读完不关连接 → `ctx.run()` 永不返回。改:值语义 functor(conns 向量提供稳定存储)+ 末轮 close 触发 server EOF。② libuv 更曲折:一开始 `uv_pipe_open` 裸 socketpair fd(单核环境下读一次就停),换 `uv_socketpair`+`uv_tcp_open` 仍每连接只做 1 round-trip。**用独立探针程序**(2conn×3rt、每回调打点)才定位到真根因:**libuv 契约里 `nread==0` 是"暂无数据"(类 EAGAIN)不是 EOF,只有 `nread<0`(UV_EOF)才是**;我的 `if(nread<=0) close` 在良性 n==0 上误关了连接,一次交换后就 EPIPE。改 `nread<0` 后 `rt_left=0` 全通。教训:**对照库的语义必须照抄准**(nread==0 vs <0 是 libuv 的经典坑),别拿 HYLE/POSIX 的"0=EOF"直觉套。
 
 ## 两处热路径优化:reinject 同核短路 + io_uring setup flags(2026-07-05,commit 93b1e23)
 
@@ -75,7 +78,12 @@ raw epoll 对照答的是"vs 旧就绪模型";要答"vs **同样的 io_uring**�
 | asio(同 run 对照) | 1,695 ns | 1,583 ns | ~持平 |
 | raw epoll(同 run 对照) | 1,389 ns | 1,346 ns | ~持平 |
 
-单核 -33% 后 **HYLE-1w 反超 asio(1255 vs 1583)与裸 epoll(1255 vs 1346)**——把之前 vs-asio 的"单核平局"变成"单核赢"。同 run 里 asio/epoll(无本改动)基本未动,隔离出收益确归本两处改动、非机器波动。
+单核 -33% 后 **HYLE-1w 从"单核平局"追成对 asio/libuv 的"单核赢"**——上表是同一 run 隔离归属的优化前后对照(asio/epoll 无本改动、基本未动,收益确归本两处改动非机器波动)。**但"vs 谁"要按 n=15 统计口径分开说(先疑自己:优化前后同一 run 的单点对照会把噪声当反超)**:重跑 `bench-stat.py` n=15 within-run 配对——
+- vs **裸 epoll**:ratio 1.026,gap 2.6% « spread 20.4% → **仍是统计平局**。-33% 把老的 0.61x 落后追到与裸 epoll **齐平**(不再是输),但"反超 epoll"是单跑侥幸、统计上够不着。
+- vs **asio**:ratio 1.253,gap 25.3% > spread 24.8% → **真赢 1.25x**(单核)。
+- vs **libuv**:ratio 1.517,gap 51.7% > spread 26.1% → **真赢 1.52x**(单核)。
+
+即:优化把 vs-asio 的"单核平局"变成了**单核真赢**(总表已同步);对裸 epoll 是**追平**(裸 epoll 无 fiber/协程固定开销,能与之齐平已是抽象层的好结果)。
 
 **DEFER_TASKRUN 接回 —— 从撤下到 R_DISABLED 生命周期修复(2026-07-05)**:调研最看好的 `DEFER_TASKRUN`(+SINGLE_ISSUER,≥6.1)把完成 task_work 全延到 GETEVENTS enter 才跑,理论上最契合"每核一 ring、单消费者"。曾撤下,深挖(探针 errno=17 EEXIST + liburing man)定位真根因=**SINGLE_ISSUER 线程绑定**:HYLE 在 IoContext 构造函数(主线程)建所有 ring,却在各 owner worker 线程 submit+reap → worker 首次 enter EEXIST。**修法(已落地)**:`init(defer_worker_thread=true)` 用 `IORING_SETUP_R_DISABLED` 建 ring(禁用态),**worker 首次 reap 时 `IORING_REGISTER_ENABLE_RINGS`**——per man,ENABLE_RINGS 的调用者成为 issuer,故 worker 成 issuer;wake-read 武装也延到 enable 之后(否则主线程 enter 绑错 issuer)。带内核版本回退阶梯(defer→coop→submit_all→无)。**顺带修一个 latent bug**:net_cancel 的 cancel-op 自身 CQE 原用 `kWakeToken`——但 reap 见 kWakeToken 会(a)跳过 inflight 递减(b)重武装 wake-read,导致每 cancel 泄漏 inflight+1 且 spurious 重武装;COOP 下良性,**DEFER 下 livelock**(net_cancel 测挂死揪出)。改用专用 `kCancelToken`(经 complete_timed 丢弃、作普通完成正常递减 inflight)。
 
