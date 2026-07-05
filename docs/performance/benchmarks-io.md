@@ -95,6 +95,8 @@ raw epoll 对照答的是"vs 旧就绪模型";要答"vs **同样的 io_uring**�
 
 **方法学血泪(三次假结果才到诚实平局)**:① 首版给每流各注册 buf ring,但 proactor 每核只支持一个 ring→第 2 条注册失败→multishot 行空转 bail,得"63x 更快"**假象**;② 预塞式 feed 死锁(flood 塞满 socket 缓冲而 drain fiber 还没跑);③ 后台 feeder 线程注入跨线程唤醒延迟(WSL2 ~12µs 地板)主导 one-shot 行(174µs/recv)、且 STREAM 合并致两行完成数不等,又是"178x"**假象**。逐个消除(单 ring 共享 / 同核 fiber 无跨线程 / DGRAM 保边界 / 确定计数)才得到可信的平局。**教训:"太好的比值"必先疑自己**——用完成计数(两行须相等)当铁证核对工况对称,别信裸 ns/op 比。
 
+**当前定位(诚实):multishot awaitable 已就位但"待承重"**。它接通了 proactor 早已实现、却是 co_await 够不着的零拷贝多发路径(net.h 原只暴露 one-shot RecvOp),是**"让已有能力变可达",非造需求**;正确性(双平台编译 + TSan + 回归测试)与不-回归(本节平局)都验了。但**目前没有真实消费者调用它**——是"测过、待命的能力",不是"正在承重的代码",也因此拿不到能显出其优势的突发/高扇出负载。**兑现下一步**:拿它改造一个真实流式读路径(HTTP body 边到边读 / proxy 转发),那才是它设计出来要吃的负载,也才能让对照 bench 显出相对 one-shot 的真实优势。在此之前,本平局数是它的诚实定位。
+
 ## pipelined / 高扇出(512 流)+ 一个被它揪出的 P0 hang
 
 ping-pong(每流稳态 ≤1 op 在途)填不满 SQ,也测不到"海量 op 同时在途"的收割路径。故加一个 pipelined 负载:**512 条独立 echo 流共享 worker,每流 16 round-trip**——512 » ring 深度 256,一次 reap 唤醒的一批 fiber 各自 submit,几百个 op 同时在途。
