@@ -109,7 +109,7 @@ struct CancelRecvOp {
     cctx_.token = to_token(&op_);
     submitted_ = p->submit_recv(fd, buf, len, flags, to_token(&op_));
     if (!submitted_) {
-      op_.result = -1;  // submit failed: no completion coming, resume at once
+      op_.result = kSubmitFailed;  // submit failed: no completion coming, resume at once
       return false;
     }
     // Register the cancel hook (RAII: unregistered when this frame unwinds after
@@ -154,7 +154,7 @@ struct CancelAcceptOp {
     cctx_.token = to_token(&op_);
     submitted_ = p->submit_accept(fd, nullptr, nullptr, to_token(&op_));
     if (!submitted_) {
-      op_.result = -1;
+      op_.result = kSubmitFailed;
       return false;
     }
     sched::CancelCallback cb{*token, &detail::CancelOpCtx::on_cancel, &cctx_};

@@ -198,7 +198,7 @@ inline std::int64_t resume_timed(TimedSlot* s) noexcept {
 // the timer, mark done so await_resume returns the error without suspending.
 inline void on_submit_failed(TimedSlot* s) noexcept {
   sched::cancel_timeout(&s->timer);
-  s->io.result = -1;
+  s->io.result = kSubmitFailed;  // never submitted (distinct from -EPERM); see net.h
   s->io_done = true;
   s->release();  // kernel ref (never materialized)
 }
@@ -230,7 +230,7 @@ struct TimedRecvOp {
     return false;
   }
   std::int64_t await_resume() noexcept {
-    if (slot_ == nullptr) return -1;  // OOM
+    if (slot_ == nullptr) return kSubmitFailed;  // OOM
     return detail::resume_timed(slot_);
   }
 };
@@ -258,7 +258,7 @@ struct TimedAcceptOp {
     return false;
   }
   std::int64_t await_resume() noexcept {
-    if (slot_ == nullptr) return -1;
+    if (slot_ == nullptr) return kSubmitFailed;
     return detail::resume_timed(slot_);
   }
 };
@@ -288,7 +288,7 @@ struct TimedConnectOp {
     return false;
   }
   std::int64_t await_resume() noexcept {
-    if (slot_ == nullptr) return -1;
+    if (slot_ == nullptr) return kSubmitFailed;
     return detail::resume_timed(slot_);
   }
 };

@@ -32,6 +32,16 @@
 
 namespace hyle::io {
 
+// Result sentinel for "the op was never submitted" (ring/backend rejected the
+// submit, or the timed-op heap slot OOM'd) -- distinct from any real negative
+// errno. The base ops previously used -1, which COLLIDES with -EPERM (errno 1):
+// a caller inspecting the result couldn't tell "never submitted" from a genuine
+// EPERM. Real Linux errnos are 1..~133, and -125 (ECANCELED, kCancelled) / -110
+// (ETIMEDOUT) are already taken as out-of-band codes; -1000 is safely outside the
+// errno range and distinct from those. Callers that only test `result < 0` (the
+// common "fail/close" branch) are unaffected; this only makes the value legible.
+inline constexpr std::int64_t kSubmitFailed = -1000;
+
 // The per-await slot: a completion's landing pad. Lives on the suspending fiber's
 // stack; its address is the proactor `user_data`. The reaper (worker loop, io-04
 // integration) fills `result` then fires `waker`. `result` is bytes transferred
@@ -102,7 +112,7 @@ struct RecvOp {
     op_.waker = sched::current_waker();
     submitted_ = p->submit_recv(fd, buf, len, flags, to_token(&op_));
     if (!submitted_) {
-      op_.result = -1;  // submit failed: no completion coming, resume at once
+      op_.result = kSubmitFailed;  // submit failed: no completion coming, resume at once
       return false;
     }
     sched::suspend();  // fiber yields; returns when complete() wakes it
@@ -127,7 +137,7 @@ struct SendOp {
     op_.waker = sched::current_waker();
     submitted_ = p->submit_send(fd, buf, len, flags, to_token(&op_));
     if (!submitted_) {
-      op_.result = -1;
+      op_.result = kSubmitFailed;
       return false;
     }
     sched::suspend();
@@ -149,7 +159,7 @@ struct AcceptOp {
     op_.waker = sched::current_waker();
     submitted_ = p->submit_accept(fd, nullptr, nullptr, to_token(&op_));
     if (!submitted_) {
-      op_.result = -1;
+      op_.result = kSubmitFailed;
       return false;
     }
     sched::suspend();
@@ -173,7 +183,7 @@ struct ConnectOp {
     op_.waker = sched::current_waker();
     submitted_ = p->submit_connect(fd, addr, addrlen, to_token(&op_));
     if (!submitted_) {
-      op_.result = -1;
+      op_.result = kSubmitFailed;
       return false;
     }
     sched::suspend();
@@ -206,7 +216,7 @@ struct RecvFromOp {
     submitted_ = p->submit_recvfrom(fd, buf, len, addr, addr_cap, scratch_,
                                     to_token(&op_));
     if (!submitted_) {
-      op_.result = -1;
+      op_.result = kSubmitFailed;
       return false;
     }
     sched::suspend();
@@ -236,7 +246,7 @@ struct SendToOp {
     submitted_ = p->submit_sendto(fd, buf, len, addr, addrlen, scratch_,
                                   to_token(&op_));
     if (!submitted_) {
-      op_.result = -1;
+      op_.result = kSubmitFailed;
       return false;
     }
     sched::suspend();
