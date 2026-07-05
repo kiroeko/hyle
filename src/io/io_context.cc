@@ -38,9 +38,20 @@ IoContext::~IoContext() {
   // slot's kernel-ref. If the scheduler shut down before that landed, the workers
   // are gone and no one will reap it -> the TimedSlot leaks. So here, with workers
   // stopped (single-threaded, safe to touch each ring), drain every ring until it
-  // owes nothing: each late completion routes through complete_timed, which (seeing
-  // timer_fired) releases the kernel-ref and frees the slot. Bounded so a wedged
-  // ring can't hang teardown. (tokio-uring's Driver::drop does the same drain.)
+  // owes nothing: each late TIMED completion routes through complete_timed, which
+  // (seeing timer_fired) releases the kernel-ref and frees the heap slot. Bounded so
+  // a wedged ring can't hang teardown. (tokio-uring's Driver::drop does the same.)
+  //
+  // BASE (untimed) op late completions are DROPPED here, NOT routed to complete()
+  // (red-team L5): a base op's IoOperation slot lives on its awaiting fiber's STACK,
+  // and by teardown that fiber is gone (scheduler stopped; a caller that reached
+  // ~IoContext after drain_for() TIMED OUT may have abandoned a fiber still blocked
+  // on a base op whose peer never sent). complete() would deref that freed stack
+  // slot + wake a dead fiber -> UAF. There is nothing to free for a base op (no heap
+  // slot, no kernel-ref to balance -- the stack slot died with the fiber), so the
+  // only correct action is to reap-and-discard: pull the CQE off the ring so the
+  // kernel is squared, and drop it. (Normal drain-to-completion never reaches here
+  // with a base op in flight; this is purely the abandoned-op teardown backstop.)
   for (auto& ring : rings_) {
     Completion batch[64];
     for (int guard = 0; guard < 1024 && ring->in_flight(); ++guard) {
@@ -48,7 +59,8 @@ IoContext::~IoContext() {
       for (std::size_t i = 0; i < n; ++i) {
         if (batch[i].user_data == Proactor::kWakeToken) continue;
         if (is_timed_token(batch[i].user_data)) complete_timed(batch[i]);
-        else complete(batch[i]);
+        // else: base op late completion -> DROP (its stack slot/fiber are gone; see
+        // the L5 note above). Reaped off the ring already, so nothing more to do.
       }
       if (n == 0) break;  // nothing came back within the wait -> stop (don't hang)
     }

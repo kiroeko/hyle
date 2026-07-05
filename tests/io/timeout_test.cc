@@ -7,6 +7,7 @@
 #include <memory>
 
 #include "hyle/io/io_context.h"
+#include "hyle/io/net.h"
 #include "hyle/io/net_timeout.h"
 #include "hyle/io/tcp.h"
 #include "hyle/mem/allocator.h"
@@ -32,6 +33,7 @@
 //      before the (generous) deadline, and the timer is cancelled cleanly.
 
 using hyle::io::IoContext;
+using hyle::io::RecvOp;
 using hyle::io::resolve_addr;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
@@ -280,5 +282,71 @@ TEST(IoTimeout, TimeoutPathDoesNotLeakSlot) {
   }
   // After IoContext teardown, the orphan slot must be freed: no net allocation.
   EXPECT_EQ(CountingAlloc::live.load(), 0) << "TimedSlot leaked on timeout path";
+}
+
+// ---- L5: base-op completion routing intact after the teardown-drop split -------
+// The L5 fix changed ~IoContext's orphan drain to DROP base-op (untimed) late
+// completions instead of routing them to complete() (which would wake a possibly-
+// abandoned fiber on a freed stack slot = UAF). This test guards that the change
+// did NOT break the NORMAL base-op path: a base recv over loopback still completes
+// correctly (routed via the runtime poll, waking the live fiber) and its bytes
+// arrive. (The teardown DROP line itself is a defensive backstop for the app-abuse
+// case "abandon a fiber with a base op in flight then tear down" -- not
+// deterministically triggerable because ~Scheduler's unconditional drain() blocks
+// on any still-counted fiber; so we verify the routing split's live path here, and
+// rely on TSan across the whole io suite to catch any teardown regression.)
+namespace {
+struct BaseRecvState {
+  IoContext* io;
+  TcpStream s;
+  char buf[64] = {};
+  std::atomic<std::int64_t> rc{999};
+};
+Task<int> base_recv_server(Allocator, IoContext* io, TcpListener* ls,
+                           TcpStream* held) {
+  TcpStream conn = co_await ls->accept(kOwner);
+  static const char kMsg[] = "base-recv-ok";
+  co_await conn.write(kMsg, sizeof(kMsg));
+  *held = std::move(conn);  // keep open
+  co_return 0;
+}
+Task<int> base_recv_client(Allocator, IoContext* io, BaseRecvState* s,
+                           std::uint16_t port) {
+  alignas(16) unsigned char ss[128]; std::uint32_t len = 0;
+  resolve_addr("127.0.0.1", port, &ss, &len);
+  if (co_await s->s.connect(&ss, len) != 0) co_return 0;
+  s->rc.store(co_await RecvOp{&io->proactor_for_current(), s->s.fd(), s->buf,
+                              sizeof(s->buf)},
+              std::memory_order_release);
+  co_return 0;
+}
+}  // namespace
+
+TEST(IoTimeout, BaseOpCompletionRoutingIntact) {
+  constexpr unsigned kWorkers = 2;
+  constexpr std::uint16_t kPort = 54396;
+  Scheduler sched(kWorkers, system_allocator(), 256);
+  IoContext io(sched, kWorkers);
+  ASSERT_TRUE(io.valid());
+  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", kPort);
+  ASSERT_TRUE(ls.valid());
+
+  auto st = std::make_unique<BaseRecvState>();
+  st->io = &io;
+  st->s = tcp_socket(io, kOwner);
+  TcpStream held;
+  auto ds = std::make_unique<Drive>();
+  auto dc = std::make_unique<Drive>();
+  ds->task = base_recv_server(system_allocator(), &io, &ls, &held);
+  dc->task = base_recv_client(system_allocator(), &io, st.get(), kPort);
+  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  sched.spawn_on(kOwner, &fs);
+  sched.spawn_on(kOwner, &fc);
+  sched.drain();
+  sched.shutdown();
+
+  EXPECT_EQ(st->rc.load(), static_cast<std::int64_t>(sizeof("base-recv-ok")));
+  EXPECT_STREQ(st->buf, "base-recv-ok");
 }
 
