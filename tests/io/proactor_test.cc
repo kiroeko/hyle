@@ -5,7 +5,7 @@
 #include <thread>
 #include <vector>
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 #  include <arpa/inet.h>
 #  include <fcntl.h>
 #  include <netinet/in.h>

@@ -2365,6 +2365,632 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 
 }  // namespace hyle::io
 
+#elif defined(HYLE_OS_MACOS)
+
+// kqueue backend (io-03 mac). kqueue is the SAME readiness-reactor model as Linux's
+// epoll fallback -- this block is a MECHANICAL MIRROR of that epoll backend, with the
+// epoll primitives swapped for their kqueue equivalents (verified 1:1 against the
+// Linux #elif above). There is no io_uring analogue on macOS, so this is the ONLY
+// backend here: every submit_* arms a one-shot readiness watch (or, for a regular
+// file / metadata op, runs the syscall synchronously and synthesizes a completion),
+// and reap() turns "ready" into a performed-inline Completion. The io_uring-only
+// surface (buf-ring, fixed files, direct accept, multishot recv) has no readiness
+// equivalent and stubs to false/-1/nullptr, exactly as the epoll fallback does.
+//
+// Key kqueue-vs-epoll semantic difference exploited below: epoll registers ONE fd
+// with a UNION event mask (EPOLLIN|EPOLLOUT) and EPOLLONESHOT disarms the WHOLE fd,
+// so epoll must re-arm the still-pending other side each reap. kqueue registers the
+// two directions as INDEPENDENT filters (EVFILT_READ / EVFILT_WRITE); EV_ONESHOT
+// auto-deletes ONLY the filter that fired, leaving the other side armed untouched.
+// So the "re-arm the union" dance collapses: we re-arm ONLY on a spurious EAGAIN or
+// a multishot-accept re-delivery, and cancel/DEL touches ONLY the one fired-or-armed
+// filter. The cross-thread wake is EVFILT_USER (NOTE_TRIGGER), which needs no fd --
+// it replaces epoll's eventfd entirely.
+#  include <sys/event.h>
+#  include <sys/types.h>
+#  include <sys/socket.h>
+#  include <sys/stat.h>
+#  include <netinet/in.h>
+#  include <unistd.h>
+#  include <fcntl.h>
+
+#  include <cerrno>
+#  include <cstdint>
+#  include <cstring>
+#  include <ctime>
+#  include <unordered_map>
+#  include <vector>
+
+namespace hyle::io {
+namespace {
+
+// PendingOp.opcode reuses the io_uring op names as PLAIN TAGS telling perform()
+// which syscall to run when the fd fires -- the same role they play in the epoll
+// branch. <linux/io_uring.h> doesn't exist here, so define the small subset we
+// actually branch on as distinct integer constants (values are arbitrary tags).
+enum : std::uint8_t {
+  IORING_OP_READ = 1,
+  IORING_OP_WRITE = 2,
+  IORING_OP_ACCEPT = 3,
+  IORING_OP_CONNECT = 4,
+  IORING_OP_RECVMSG = 5,
+  IORING_OP_SENDMSG = 6,
+};
+
+// EVFILT_USER wake ident (io-04 park merge). A fixed, fd-uncollidable value: the
+// wake is distinguished by filter==EVFILT_USER, but a distinct ident keeps it clear
+// of the fd/EVFILT_READ-WRITE key space regardless. (kqueue keys on (ident,filter).)
+constexpr std::uintptr_t kWakeIdent = static_cast<std::uintptr_t>(0xFFFFFFFFu);
+
+// Map neutral OpenFlags onto POSIX O_* for open (mirror of the Linux helper).
+int open_flags_to_posix(std::uint32_t flags) noexcept {
+  int f = 0;
+  const bool rd = (flags & Proactor::kRead) != 0;
+  const bool wr = (flags & Proactor::kWrite) != 0;
+  if (rd && wr) f = O_RDWR;
+  else if (wr) f = O_WRONLY;
+  else f = O_RDONLY;
+  if (flags & Proactor::kCreate) f |= O_CREAT;
+  if (flags & Proactor::kTruncate) f |= O_TRUNC;
+  if (flags & Proactor::kAppend) f |= O_APPEND;
+  return f;
+}
+
+// Lay a msghdr + one iovec into `scratch` for a datagram op. Identical to the Linux
+// build_msghdr, but kqueue's reactor runs recvfrom/sendto INLINE (it doesn't hand a
+// msghdr to a kernel op), so this is unused on macOS -- the neutral submit_recvfrom/
+// sendto take `scratch` for signature parity and we simply don't touch it.
+
+}  // namespace
+
+struct Proactor::Impl {
+  // kqueue is the sole backend on macOS (no io_uring). The kq descriptor + the two
+  // per-direction pending maps + the software `posted` queue are the whole state --
+  // a direct rename of the epoll fallback's (epfd, pending_in, pending_out, posted),
+  // minus wake_efd (EVFILT_USER needs no fd).
+  int kq = -1;
+  // TWO pending ops per fd -- read-side (EVFILT_READ: READ/RECVMSG/ACCEPT) and
+  // write-side (EVFILT_WRITE: WRITE/SENDMSG/CONNECT) -- so a full-duplex socket (one
+  // fiber reading, another writing the SAME fd) never loses an op (red-team L3).
+  // `opcode` reuses the IORING_OP_* tags so reap() knows which syscall to run.
+  struct PendingOp {
+    std::uint8_t opcode;   // IORING_OP_READ/WRITE/ACCEPT/CONNECT/RECVMSG/SENDMSG
+    void* buf;
+    std::uint32_t len;
+    std::uint64_t user_data;
+    // Datagram (RECVMSG/SENDMSG) only: peer address buffer. recvfrom fills it (up to
+    // addr_cap); sendto reads it as the destination. Null/0 for stream ops.
+    void* addr = nullptr;
+    std::uint32_t addr_cap = 0;
+    // Multishot accept emulation (io-07): if set, reap re-arms this ACCEPT watch
+    // after each delivery and stamps Completion::kMore. Only for IORING_OP_ACCEPT.
+    bool multishot = false;
+  };
+  // Split by direction so read+write on ONE fd coexist as INDEPENDENT kqueue filters
+  // (unlike epoll's single union registration -- see the block header note).
+  std::unordered_map<int, PendingOp> pending_in;   // EVFILT_READ side
+  std::unordered_map<int, PendingOp> pending_out;  // EVFILT_WRITE side
+  // post() has no fd (a bare wake token) and there is no kqueue "inject completion",
+  // so injected wakes + synchronously-synthesized file-op results queue here; reap
+  // drains them first. std in the .cc impl is allowed (conventions §1: non-hot).
+  struct Posted {
+    std::uint64_t user_data;
+    std::int64_t result;
+  };
+  std::vector<Posted> posted;
+};
+
+Proactor::~Proactor() {
+  if (impl_ == nullptr) return;
+  if (impl_->kq >= 0) ::close(impl_->kq);
+  delete impl_;
+  impl_ = nullptr;
+}
+
+// Stand up the kqueue backend (reactor). Named try_init_epoll to reuse the header's
+// private-static declaration (it names the private Impl, which a free function can't).
+// Returns nullptr on failure. Mirror of the Linux try_init_epoll.
+Proactor::Impl* Proactor::try_init_epoll() noexcept {
+  int kq = ::kqueue();
+  if (kq < 0) return nullptr;
+  ::fcntl(kq, F_SETFD, FD_CLOEXEC);  // kqueue() has no CLOEXEC flag; set it explicitly
+  auto* impl = new (std::nothrow) Proactor::Impl{};
+  if (impl == nullptr) {
+    ::close(kq);
+    return nullptr;
+  }
+  impl->kq = kq;
+  // Cross-thread wake channel (park merge), kqueue flavour: a persistent EVFILT_USER
+  // registered once. wake() fires it with NOTE_TRIGGER; the blocking kevent returns;
+  // reap detects filter==EVFILT_USER and emits NO user completion (it only breaks the
+  // block). EV_CLEAR auto-resets the trigger after delivery. No fd needed (this is why
+  // macOS drops the eventfd the epoll fallback carries). Non-fatal on failure.
+  struct kevent kev;
+  EV_SET(&kev, kWakeIdent, EVFILT_USER, EV_ADD | EV_CLEAR, 0, 0, nullptr);
+  ::kevent(kq, &kev, 1, nullptr, 0, nullptr);
+  return impl;
+}
+
+bool Proactor::init(unsigned /*entries*/, bool /*defer_worker_thread*/) noexcept {
+  if (impl_ != nullptr) return true;  // idempotent
+  // No io_uring on macOS: kqueue is the only backend. (entries/defer are io_uring
+  // ring-lifecycle knobs with no kqueue analogue -- ignored, like IOCP ignores them.)
+  Impl* k = try_init_epoll();
+  if (k == nullptr) return false;
+  impl_ = k;
+  return true;
+}
+
+std::size_t Proactor::reap(Completion* out, std::size_t max,
+                           std::uint64_t timeout_ns) noexcept {
+  if (impl_ == nullptr || max == 0) return 0;
+
+  // Reactor -> completion: drain injected post()s + synchronously-synthesized file-op
+  // results first (they need no fd), then kevent() for ready fds and perform each armed
+  // op inline, turning "ready" into a synthesized Completion (bytes, or negative errno).
+  std::size_t n = 0;
+  while (n < max && !impl_->posted.empty()) {
+    Impl::Posted pd = impl_->posted.back();
+    impl_->posted.pop_back();
+    out[n].user_data = pd.user_data;
+    out[n].result = pd.result;
+    out[n].flags = 0;
+    out[n].buffer_id = 0;
+    ++n;
+  }
+  if (n > 0) return n;  // deliver wakes/synth promptly; caller loops for more
+
+  // kevent timeout: nullptr timespec = block forever; {0,0} = poll and return.
+  struct timespec ts;
+  struct timespec* pts;
+  if (timeout_ns == UINT64_MAX) {
+    pts = nullptr;  // block
+  } else {
+    ts.tv_sec = static_cast<time_t>(timeout_ns / 1'000'000'000ull);
+    ts.tv_nsec = static_cast<long>(timeout_ns % 1'000'000'000ull);
+    pts = &ts;  // timeout_ns==0 -> {0,0} -> non-blocking poll
+  }
+  struct kevent evs[64];
+  int want = static_cast<int>(max < 64 ? max : 64);
+  int got = ::kevent(impl_->kq, nullptr, 0, evs, want, pts);
+  if (got <= 0) return 0;  // timeout / EINTR -> nothing this round
+
+  // Perform the ready op inline and synthesize its result. The op tag says which
+  // syscall. Shared by both directions -- IDENTICAL to the epoll branch's perform.
+  auto perform = [](int fd, const Impl::PendingOp& op) -> std::int64_t {
+    if (op.opcode == IORING_OP_WRITE) {
+      ssize_t w = ::write(fd, op.buf, op.len);
+      return (w < 0) ? -errno : static_cast<std::int64_t>(w);
+    } else if (op.opcode == IORING_OP_ACCEPT) {
+      int as = ::accept(fd, nullptr, nullptr);
+      return (as < 0) ? -errno : static_cast<std::int64_t>(as);
+    } else if (op.opcode == IORING_OP_CONNECT) {
+      int soerr = 0;
+      socklen_t sl = sizeof(soerr);
+      ::getsockopt(fd, SOL_SOCKET, SO_ERROR, &soerr, &sl);
+      return (soerr == 0) ? 0 : -soerr;
+    } else if (op.opcode == IORING_OP_RECVMSG) {
+      socklen_t al = static_cast<socklen_t>(op.addr_cap);
+      ssize_t r = ::recvfrom(fd, op.buf, op.len, 0,
+                             static_cast<sockaddr*>(op.addr),
+                             op.addr ? &al : nullptr);
+      return (r < 0) ? -errno : static_cast<std::int64_t>(r);
+    } else if (op.opcode == IORING_OP_SENDMSG) {
+      ssize_t w = ::sendto(fd, op.buf, op.len, 0,
+                           static_cast<const sockaddr*>(op.addr),
+                           static_cast<socklen_t>(op.addr_cap));
+      return (w < 0) ? -errno : static_cast<std::int64_t>(w);
+    } else {  // READ
+      ssize_t r = ::read(fd, op.buf, op.len);
+      return (r < 0) ? -errno : static_cast<std::int64_t>(r);
+    }
+  };
+
+  // Re-arm ONE filter (EV_ONESHOT auto-deleted it when it fired). Used only for a
+  // spurious-EAGAIN re-watch and a multishot-accept re-delivery -- never for the
+  // "other side", which (unlike epoll) stays independently armed.
+  auto rearm = [&](int fd, short filter) -> bool {
+    struct kevent rk;
+    EV_SET(&rk, static_cast<std::uintptr_t>(fd), filter, EV_ADD | EV_ONESHOT, 0, 0,
+           reinterpret_cast<void*>(static_cast<std::intptr_t>(fd)));
+    return ::kevent(impl_->kq, &rk, 1, nullptr, 0, nullptr) >= 0;
+  };
+
+  for (int i = 0; i < got && n < max; ++i) {
+    if (evs[i].filter == EVFILT_USER) {
+      // Cross-thread wake (park merge): emit NO completion -- it only breaks the
+      // block. EV_CLEAR already reset the trigger; nothing to drain (vs epoll's
+      // eventfd read). Mirrors the epoll wake_efd branch's "continue".
+      continue;
+    }
+    int fd = static_cast<int>(evs[i].ident);  // we set ident = fd at arm time
+    // EV_EOF (peer half-close/HUP) and EV_ERROR (errno in evs[i].data) are the kqueue
+    // analogues of EPOLLHUP|EPOLLERR: a genuine terminal condition, so we do NOT treat
+    // a resulting EAGAIN as spurious (avoid a re-arm spin). One kevent carries exactly
+    // one filter, so -- unlike epoll's single-fd HUP that wakes both sides -- each
+    // direction's EV_EOF arrives as its own event and serves its own side.
+    const bool err = (evs[i].flags & (EV_EOF | EV_ERROR)) != 0;
+    const bool is_read_ev = (evs[i].filter == EVFILT_READ);
+
+    // A readiness can be SPURIOUS: kqueue says "readable" but by the time we run the
+    // inline syscall the data/connection is gone -> -EAGAIN/-EWOULDBLOCK. A real
+    // proactor never surfaces EAGAIN; so we re-arm the op and deliver NOTHING, waiting
+    // for a TRUE readiness (L4). Guarded by !err: on a real EOF/ERROR that EAGAIN is
+    // terminal, not spurious.
+    auto is_spurious = [&](std::int64_t res) noexcept {
+      return !err && (res == -EAGAIN || res == -EWOULDBLOCK);
+    };
+
+    if (is_read_ev) {
+      // ---- read-side (recv/accept/recvfrom) ----
+      auto it = impl_->pending_in.find(fd);
+      if (it != impl_->pending_in.end()) {
+        Impl::PendingOp op = it->second;
+        impl_->pending_in.erase(it);
+        std::int64_t res = perform(fd, op);
+        if (is_spurious(res)) {
+          // False alarm: re-watch the read filter, deliver nothing. If the re-arm
+          // fails (essentially never on a live kq+fd) the op is dropped, not leaked.
+          if (rearm(fd, EVFILT_READ)) impl_->pending_in[fd] = op;
+        } else {
+          out[n].user_data = op.user_data;
+          out[n].result = res;
+          out[n].flags = 0;
+          out[n].buffer_id = 0;
+          // Multishot accept emulation: re-arm + stamp kMore ONLY if BOTH the accept
+          // succeeded and the re-arm succeeds (a failed re-arm is terminal -- stamping
+          // kMore would hang the caller waiting for a stream that ended; matches IOCP).
+          if (op.multishot && res >= 0 && rearm(fd, EVFILT_READ)) {
+            impl_->pending_in[fd] = op;  // keep multishot for the next delivery
+            out[n].flags |= Completion::kMore;
+          }
+          ++n;
+        }
+      }
+    } else {
+      // ---- write-side (send/connect/sendto) ---- (EVFILT_WRITE; no multishot)
+      auto it = impl_->pending_out.find(fd);
+      if (it != impl_->pending_out.end()) {
+        Impl::PendingOp op = it->second;
+        impl_->pending_out.erase(it);
+        std::int64_t res = perform(fd, op);
+        if (is_spurious(res)) {
+          if (rearm(fd, EVFILT_WRITE)) impl_->pending_out[fd] = op;
+        } else {
+          out[n].user_data = op.user_data;
+          out[n].result = res;
+          out[n].flags = 0;
+          out[n].buffer_id = 0;
+          ++n;
+        }
+      }
+    }
+    // NOTE: no unified re-arm/DEL here (the epoll branch's tail). EV_ONESHOT already
+    // auto-deleted the fired filter, and the OTHER direction's filter -- if armed --
+    // is a SEPARATE kqueue registration still live and untouched. So there is nothing
+    // to re-arm or DEL for a normal completion; the map erase above is the whole
+    // teardown. This is the structural simplification kqueue's per-filter model buys.
+  }
+  return n;
+}
+
+bool Proactor::in_flight() const noexcept {
+  if (impl_ == nullptr) return false;
+  // Reactor: an op is "in flight" while its fd is armed (awaiting readiness) or a
+  // synthetic completion is queued. Either means a reap could still yield one.
+  return !impl_->pending_in.empty() || !impl_->pending_out.empty() ||
+         !impl_->posted.empty();
+}
+
+bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
+  if (impl_ == nullptr) return false;
+  // kqueue has no "inject completion": queue a software completion that reap() drains
+  // first. (Single-threaded per-worker use; cross-thread post is not the model.)
+  impl_->posted.push_back({user_data, result});
+  return true;
+}
+
+bool Proactor::wake() noexcept {
+  if (impl_ == nullptr) return false;
+  // Fire the persistent EVFILT_USER with NOTE_TRIGGER from ANY thread. kevent() is a
+  // syscall (kernel-serialized), so this never races the owner's arming -- the kqueue
+  // analogue of epoll's atomic eventfd write. The blocking reap's kevent then returns;
+  // reap drops the EVFILT_USER event (emits no completion). Returns false if the wake
+  // filter was never registered (ENOENT) -- benign, matches epoll's failure return.
+  struct kevent kev;
+  EV_SET(&kev, kWakeIdent, EVFILT_USER, 0, NOTE_TRIGGER, 0, nullptr);
+  return ::kevent(impl_->kq, &kev, 1, nullptr, 0, nullptr) >= 0;
+}
+
+// Arm a one-shot readiness watch for `fd` and remember the op; reap() does the actual
+// read/write when the fd fires. `events` carries the kqueue filter (EVFILT_READ for a
+// read-side op, EVFILT_WRITE for a write-side op). The datagram variant additionally
+// stashes the peer-address buffer (recvfrom fills it / sendto reads it); the stream
+// variant passes addr=null. Named epoll_arm_dgram to reuse the header's private-static
+// declaration (it names the private Impl). Mirror of the Linux epoll_arm_dgram.
+//
+// FULL-DUPLEX (red-team L3): read-side ops go in pending_in, write-side in pending_out,
+// so a concurrent read+write on one fd don't clobber each other. Unlike epoll (one fd,
+// union mask) kqueue registers each direction as an INDEPENDENT filter, so there is no
+// union to compute -- each side arms its own EV_ONESHOT filter.
+bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
+                               unsigned char opcode, void* buf, unsigned len,
+                               void* addr, unsigned addr_cap,
+                               std::uint64_t user_data,
+                               std::uint64_t offset) noexcept {
+  const bool is_read = (events == static_cast<unsigned>(EVFILT_READ));
+  // REGULAR-FILE sync fallback. epoll gets EPERM when arming a regular file and takes a
+  // synchronous pread/pwrite+posted path; kqueue would instead register the vnode and
+  // report it always-ready, then read()/write() would BLOCK the worker on disk. So
+  // detect a regular file via fstat S_ISREG AT ARM TIME (only READ/WRITE can hit a
+  // regular file -- sockets never do) and do the byte IO synchronously at the file
+  // offset, synthesizing a completion via posted -- the identical outcome to epoll's
+  // EPERM branch, just triggered by S_ISREG since kqueue never hands us EPERM.
+  if (opcode == IORING_OP_READ || opcode == IORING_OP_WRITE) {
+    struct stat st;
+    if (::fstat(fd, &st) == 0 && S_ISREG(st.st_mode)) {
+      std::int64_t res;
+      if (opcode == IORING_OP_WRITE) {
+        ssize_t w = ::pwrite(fd, buf, len, static_cast<off_t>(offset));
+        res = (w < 0) ? -errno : static_cast<std::int64_t>(w);
+      } else {  // IORING_OP_READ
+        ssize_t r = ::pread(fd, buf, len, static_cast<off_t>(offset));
+        res = (r < 0) ? -errno : static_cast<std::int64_t>(r);
+      }
+      impl->posted.push_back({user_data, res});
+      return true;
+    }
+  }
+  auto& side = is_read ? impl->pending_in : impl->pending_out;
+  side[fd] = Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap};
+  struct kevent kev;
+  const short filter = is_read ? EVFILT_READ : EVFILT_WRITE;
+  EV_SET(&kev, static_cast<std::uintptr_t>(fd), filter, EV_ADD | EV_ONESHOT, 0, 0,
+         reinterpret_cast<void*>(static_cast<std::intptr_t>(fd)));
+  if (::kevent(impl->kq, &kev, 1, nullptr, 0, nullptr) < 0) {
+    side.erase(fd);
+    return false;
+  }
+  return true;
+}
+
+bool Proactor::epoll_arm(Impl* impl, int fd, unsigned events,
+                         unsigned char opcode, void* buf, unsigned len,
+                         std::uint64_t user_data, std::uint64_t offset) noexcept {
+  return epoll_arm_dgram(impl, fd, events, opcode, buf, len, nullptr, 0,
+                         user_data, offset);
+}
+
+bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
+                           std::uint64_t offset,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  return epoll_arm(impl_, static_cast<int>(fd), EVFILT_READ, IORING_OP_READ, buf,
+                   len, user_data, offset);
+}
+
+bool Proactor::submit_write(std::intptr_t fd, const void* buf, std::uint32_t len,
+                            std::uint64_t offset,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  return epoll_arm(impl_, static_cast<int>(fd), EVFILT_WRITE, IORING_OP_WRITE,
+                   const_cast<void*>(buf), len, user_data, offset);
+}
+
+bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
+                           std::uint32_t /*flags*/,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // On a socket, read() == recv(flags=0); the reactor does read() when readable.
+  // Non-zero recv flags aren't modeled on the readiness fallback (as on epoll).
+  return epoll_arm(impl_, static_cast<int>(fd), EVFILT_READ, IORING_OP_READ, buf,
+                   len, user_data);
+}
+
+bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
+                           std::uint32_t /*flags*/,
+                           std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  return epoll_arm(impl_, static_cast<int>(fd), EVFILT_WRITE, IORING_OP_WRITE,
+                   const_cast<void*>(buf), len, user_data);
+}
+
+bool Proactor::submit_accept(std::intptr_t fd, void* /*addr*/, void* /*addrlen*/,
+                             std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // Reactor accept: watch the listener for EVFILT_READ (a queued connection makes it
+  // readable); reap() runs ::accept when it fires. Peer addr is read by net/ via
+  // getpeername on the accepted fd, so addr/addrlen stay unused on this path.
+  return epoll_arm(impl_, static_cast<int>(fd), EVFILT_READ, IORING_OP_ACCEPT,
+                   nullptr, 0, user_data);
+}
+
+bool Proactor::submit_accept_multishot(std::intptr_t fd,
+                                       std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // No native multishot: arm a one-shot accept watch, then flag it multishot so reap()
+  // re-arms after each delivery and stamps kMore -- the caller sees the same continuous
+  // kMore-set stream as io_uring. (Identical to the epoll emulation.)
+  if (!epoll_arm(impl_, static_cast<int>(fd), EVFILT_READ, IORING_OP_ACCEPT, nullptr,
+                 0, user_data))
+    return false;
+  impl_->pending_in[static_cast<int>(fd)].multishot = true;  // accept = read-side
+  return true;
+}
+
+bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
+                              std::uint32_t addrlen,
+                              std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // Reactor connect: kick off the non-blocking connect now. If it completes
+  // synchronously (rare, e.g. UNIX socket) synthesize via post(); otherwise
+  // EINPROGRESS -> watch EVFILT_WRITE; reap() reads SO_ERROR when writable.
+  int r = ::connect(static_cast<int>(fd),
+                    reinterpret_cast<const sockaddr*>(addr),
+                    static_cast<socklen_t>(addrlen));
+  if (r == 0) return post(user_data, 0);                     // connected immediately
+  if (errno != EINPROGRESS) return post(user_data, -errno);  // hard failure
+  return epoll_arm(impl_, static_cast<int>(fd), EVFILT_WRITE, IORING_OP_CONNECT,
+                   nullptr, 0, user_data);
+}
+
+bool Proactor::submit_recvfrom(std::intptr_t fd, void* buf, std::uint32_t len,
+                               void* addr, std::uint32_t addr_cap, void* /*scratch*/,
+                               std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // Reactor: arm EVFILT_READ; reap() runs ::recvfrom when readable, filling addr.
+  return epoll_arm_dgram(impl_, static_cast<int>(fd), EVFILT_READ, IORING_OP_RECVMSG,
+                         buf, len, addr, addr_cap, user_data);
+}
+
+bool Proactor::submit_sendto(std::intptr_t fd, const void* buf, std::uint32_t len,
+                             const void* addr, std::uint32_t addrlen,
+                             void* /*scratch*/, std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // Reactor: arm EVFILT_WRITE; reap() runs ::sendto to `addr` when writable.
+  return epoll_arm_dgram(impl_, static_cast<int>(fd), EVFILT_WRITE, IORING_OP_SENDMSG,
+                         const_cast<void*>(buf), len, const_cast<void*>(addr),
+                         addrlen, user_data);
+}
+
+bool Proactor::register_handle(std::intptr_t /*fd*/) noexcept {
+  // kqueue adds the fd at submit time (EV_ADD), like epoll -- no pre-registration.
+  return impl_ != nullptr;
+}
+
+bool Proactor::submit_open(const char* path, std::uint32_t flags,
+                           std::uint32_t mode, std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || path == nullptr) return false;
+  // No async open on kqueue -> open synchronously, synthesize a completion.
+  int oflags = open_flags_to_posix(flags);
+  int fd = ::open(path, oflags, static_cast<mode_t>(mode));
+  impl_->posted.push_back(
+      {user_data, fd < 0 ? -static_cast<std::int64_t>(errno)
+                         : static_cast<std::int64_t>(fd)});
+  return true;
+}
+
+bool Proactor::submit_close(std::intptr_t fd, std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  int r = ::close(static_cast<int>(fd));
+  impl_->posted.push_back(
+      {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});
+  return true;
+}
+
+bool Proactor::submit_statx(std::intptr_t fd, FileStat* out,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || out == nullptr) return false;
+  // Pure metadata query (no disk-io wait): run fstat synchronously and synthesize a
+  // completion. macOS `struct stat` uses st_mtimespec (BSD), not Linux's st_mtim.
+  struct stat st;
+  int r = ::fstat(static_cast<int>(fd), &st);
+  if (r == 0) {
+    *out = FileStat{};
+    out->size = static_cast<std::uint64_t>(st.st_size);
+    out->mtime_ns = static_cast<std::uint64_t>(st.st_mtimespec.tv_sec) * 1'000'000'000ull +
+                    static_cast<std::uint64_t>(st.st_mtimespec.tv_nsec);
+    out->mode = static_cast<std::uint32_t>(st.st_mode);
+    out->is_dir = S_ISDIR(st.st_mode);
+  }
+  impl_->posted.push_back(
+      {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});
+  return true;
+}
+
+bool Proactor::submit_fsync(std::intptr_t fd, bool /*datasync*/,
+                            std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // macOS has no fdatasync (Linux-only): ::fsync is the correct superset for both the
+  // datasync and full-sync request, so ignore `datasync` and always fsync. Synchronous
+  // + synthesized (no async form). (F_FULLFSYNC would force a device-cache flush; plain
+  // fsync matches the neutral contract "flush data to disk" without that extra cost.)
+  int r = ::fsync(static_cast<int>(fd));
+  impl_->posted.push_back(
+      {user_data, r < 0 ? -static_cast<std::int64_t>(errno) : 0});
+  return true;
+}
+
+bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t /*mode*/,
+                                std::uint64_t offset, std::uint64_t len,
+                                std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr) return false;
+  // macOS has no posix_fallocate (Linux/glibc): the documented equivalent is
+  // fcntl(F_PREALLOCATE) to reserve space (contiguous, falling back to any), then
+  // ftruncate to actually grow the file to offset+len. Synchronous + synthesized,
+  // mirroring epoll's posix_fallocate path. `mode` (Linux fallocate mode) is ignored,
+  // as it is on the epoll path (posix_fallocate takes no mode either).
+  off_t want = static_cast<off_t>(offset + len);
+  fstore_t fst;
+  fst.fst_flags = F_ALLOCATECONTIG;
+  fst.fst_posmode = F_PEOFPOSMODE;
+  fst.fst_offset = 0;
+  fst.fst_length = want;
+  fst.fst_bytesalloc = 0;
+  int r = ::fcntl(static_cast<int>(fd), F_PREALLOCATE, &fst);
+  if (r < 0) {
+    fst.fst_flags = F_ALLOCATEALL;  // retry allowing a non-contiguous allocation
+    r = ::fcntl(static_cast<int>(fd), F_PREALLOCATE, &fst);
+  }
+  std::int64_t res;
+  if (r < 0) {
+    res = -errno;
+  } else {
+    res = (::ftruncate(static_cast<int>(fd), want) < 0) ? -errno : 0;
+  }
+  impl_->posted.push_back({user_data, res});
+  return true;
+}
+
+// io-06 cancel (kqueue): readiness model -- no in-flight kernel op. Find the armed op
+// carrying target_user_data in either direction, drop it, EV_DELETE its still-armed
+// filter (the other direction is an independent filter -- left untouched, unlike
+// epoll's re-arm-the-union), then synthesize a -ECANCELED completion. The timed-op
+// layer (net_timeout) is backend-neutral and RELIES on a final completion arriving to
+// drop the op's kernel-ref, so we post -125 (ECANCELED) for the target, exactly as the
+// real -ECANCELED CQE would on io_uring.
+bool Proactor::submit_cancel(std::uint64_t target_user_data,
+                             std::uint64_t /*cancel_user_data*/) noexcept {
+  if (impl_ == nullptr) return false;
+  auto try_cancel = [&](std::unordered_map<int, Impl::PendingOp>& side,
+                        short filter) -> bool {
+    for (auto it = side.begin(); it != side.end(); ++it) {
+      if (it->second.user_data != target_user_data) continue;
+      int fd = it->first;
+      side.erase(it);
+      // Delete ONLY this direction's still-armed filter (EV_ONESHOT hasn't fired, so
+      // it is registered). The other direction, if pending, stays independently armed.
+      struct kevent dk;
+      EV_SET(&dk, static_cast<std::uintptr_t>(fd), filter, EV_DELETE, 0, 0, nullptr);
+      ::kevent(impl_->kq, &dk, 1, nullptr, 0, nullptr);
+      impl_->posted.push_back({target_user_data, -125});  // -125 = ECANCELED
+      return true;
+    }
+    return false;
+  };
+  if (try_cancel(impl_->pending_in, EVFILT_READ)) return true;
+  if (try_cancel(impl_->pending_out, EVFILT_WRITE)) return true;
+  return false;  // not armed (already fired) -> nothing to cancel
+}
+
+// ---- io_uring-only surface: no readiness equivalent -> stub (as epoll fallback) ----
+bool Proactor::register_buf_ring(int, unsigned, unsigned) noexcept { return false; }
+bool Proactor::register_file_table(unsigned) noexcept { return false; }
+int Proactor::assign_fixed_slot(std::intptr_t) noexcept { return -1; }
+void Proactor::release_fixed_slot(int) noexcept {}
+bool Proactor::submit_recv_fixed(int, void*, std::uint32_t, std::uint32_t,
+                                 std::uint64_t) noexcept { return false; }
+bool Proactor::submit_send_fixed(int, const void*, std::uint32_t, std::uint32_t,
+                                 std::uint64_t) noexcept { return false; }
+bool Proactor::submit_accept_direct(std::intptr_t, std::uint64_t) noexcept { return false; }
+bool Proactor::submit_close_direct(int, std::uint64_t) noexcept { return false; }
+bool Proactor::submit_recv_multishot(std::intptr_t, int,
+                                     std::uint64_t) noexcept { return false; }
+void* Proactor::buf_ring_addr(int, std::uint32_t) noexcept { return nullptr; }
+bool Proactor::buf_ring_return(int, std::uint32_t) noexcept { return false; }
+
+}  // namespace hyle::io
+
 #else
 #  error "HYLE io/proactor: unsupported OS"
 #endif

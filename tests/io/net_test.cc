@@ -14,7 +14,7 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 #  include <sys/socket.h>
 #  include <unistd.h>
 #endif
@@ -56,7 +56,7 @@ struct SocketPair {
   bool ok = false;
 };
 
-#if defined(__linux__)
+#if defined(__linux__) || defined(__APPLE__)
 SocketPair make_pair(IoContext& io, unsigned owner) {
   int sv[2];
   SocketPair sp;
