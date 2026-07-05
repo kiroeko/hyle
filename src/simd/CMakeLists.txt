@@ -8,23 +8,45 @@
 # TU per ISA variant, each compiled at its own -march. LTO stays OFF for the whole module
 # so the baseline dispatcher never inlines a wide instruction from a variant TU
 # (same isolation rule, now covering the variant kernels too).
+#
+# ARCH SPLIT (Apple-Silicon 真机暴露:此前 simd 构建是 x86 写死): the per-ISA kernel TUs are
+# architecture-specific -- x86 ships scalar+sse4+avx2+avx512, aarch64 ships scalar+neon. The
+# scalar TU + all dispatch/dtype/math dispatcher TUs are portable (compiled every arch); only
+# the WIDE variant TUs are gated by CMAKE_SYSTEM_PROCESSOR so we never feed -mavx2 to a
+# non-x86 compiler (clang errors "unsupported option") nor compile x86 intrinsic headers there.
+set(_simd_arch_sources "")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  set(HYLE_SIMD_X64 TRUE)
+  list(APPEND _simd_arch_sources
+    ops/kernels_sse4.cc
+    ops/kernels_avx2.cc
+    ops/kernels_avx512.cc
+    dtype/cvt_f16c.cc
+    dtype/cvt_avx2.cc
+    dtype/cvt_avx512bf16.cc
+    math/transcendental_highway.cc
+    math/transcendental_xsimd.cc
+    math/transcendental_highway_avx512.cc
+    math/transcendental_xsimd_avx512.cc)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  set(HYLE_SIMD_ARM64 TRUE)
+  # ops NEON kernel reuses the neon.h D-tag backend (dot/saxpy) -- the simd-03 real-run
+  # target. dtype fp16/bf16 and math transcendentals are HAND-WRITTEN per-backend intrinsics
+  # (not neon.h reuse): a NEON cvt (vcvt_f32_f16) + NEON transcendental borrow core are their
+  # own follow-up work, so aarch64 dtype/math use the scalar floor for now (correct, just not
+  # yet vectorized on arm). Scope kept to "prove neon.h ops kernel runs".
+  list(APPEND _simd_arch_sources
+    ops/kernels_neon.cc)
+endif()
+
 hyle_add_module(simd SOURCES
   ops/dispatch_ops.cc
   ops/kernels_scalar.cc
-  ops/kernels_sse4.cc
-  ops/kernels_avx2.cc
-  ops/kernels_avx512.cc
   dtype/dtype_dispatch.cc
   dtype/cvt_scalar.cc
-  dtype/cvt_f16c.cc
-  dtype/cvt_avx2.cc
-  dtype/cvt_avx512bf16.cc
   math/math_dispatch.cc
   math/transcendental_scalar.cc
-  math/transcendental_highway.cc
-  math/transcendental_xsimd.cc
-  math/transcendental_highway_avx512.cc
-  math/transcendental_xsimd_avx512.cc
+  ${_simd_arch_sources}
   PUBLIC_DEPS hyle_platform)
 
 # Per-variant ISA flags: each kernel TU gets ONLY its target's -march; the dispatcher and
@@ -33,57 +55,63 @@ hyle_add_module(simd SOURCES
 # kernel TUs need PROJECT_SOURCE_DIR on the include path.
 target_include_directories(hyle_simd PRIVATE "${PROJECT_SOURCE_DIR}")
 # Per-ISA codegen flags via the single-source hyle_set_isa (HyleModule.cmake) -- one tier
-# name per TU, no hand-written /arch-vs-(-m) mapping to drift. scalar TU gets none.
-hyle_set_isa(ops/kernels_sse4.cc SSE42)
-hyle_set_isa(ops/kernels_avx2.cc AVX2)
-hyle_set_isa(ops/kernels_avx512.cc AVX512)
-# f16c TU caps at AVX+F16C (NOT AVX2): F16C shipped with AVX on Ivy Bridge (no AVX2);
-# AVX2 would let the auto-vectorized tail emit an AVX2 int op that SIGILLs there. The
-# AVX_F16C tier encodes exactly that cap (see hyle_isa_flags).
-hyle_set_isa(dtype/cvt_f16c.cc AVX_F16C)
-# bf16 TU needs only AVX2 256-bit INTEGER ops (no FMA/F16C). Only reached when cpu has AVX2.
-hyle_set_isa(dtype/cvt_avx2.cc AVX2_INT)
-# bf16 native convert TU: AVX-512 + VCVTNEPS2BF16. Only reached when cpu_features().avx512bf16
-# (runtime-gated in dtype_dispatch), so the bf16 instruction never runs on a CPU lacking it.
-hyle_set_isa(dtype/cvt_avx512bf16.cc AVX512_BF16)
+# name per TU, no hand-written /arch-vs-(-m) mapping to drift. scalar TU gets none. Gated by
+# arch: the wide x86 TUs only exist in an x86 build (see the SOURCES split above), and the
+# neon TU only in an aarch64 build -- setting flags on a TU not in SOURCES would error.
+if(HYLE_SIMD_X64)
+  hyle_set_isa(ops/kernels_sse4.cc SSE42)
+  hyle_set_isa(ops/kernels_avx2.cc AVX2)
+  hyle_set_isa(ops/kernels_avx512.cc AVX512)
+  # f16c TU caps at AVX+F16C (NOT AVX2): F16C shipped with AVX on Ivy Bridge (no AVX2);
+  # AVX2 would let the auto-vectorized tail emit an AVX2 int op that SIGILLs there. The
+  # AVX_F16C tier encodes exactly that cap (see hyle_isa_flags).
+  hyle_set_isa(dtype/cvt_f16c.cc AVX_F16C)
+  # bf16 TU needs only AVX2 256-bit INTEGER ops (no FMA/F16C). Only reached when cpu has AVX2.
+  hyle_set_isa(dtype/cvt_avx2.cc AVX2_INT)
+  # bf16 native convert TU: AVX-512 + VCVTNEPS2BF16. Only reached when cpu_features().avx512bf16
+  # (runtime-gated in dtype_dispatch), so the bf16 instruction never runs on a CPU lacking it.
+  hyle_set_isa(dtype/cvt_avx512bf16.cc AVX512_BF16)
+elseif(HYLE_SIMD_ARM64)
+  # NEON ops kernel: NEON is the ARMv8 baseline (empty flag list). The neon.h backend was
+  # written+objdump-verified earlier (simd-03) but never RAN until a real Apple-Silicon
+  # build; this TU finally compiles it into the dispatched dot/saxpy path. (dtype/math NEON
+  # are hand-written intrinsics = follow-up, not built here -- see the SOURCES split note.)
+  hyle_set_isa(ops/kernels_neon.cc NEON)
+endif()
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:
 # it keeps the AVX2 kernel TU's codegen from being inlined into the baseline dispatcher.
 set_target_properties(hyle_simd PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 
-# --- Vectorized transcendentals: PER-OP best-of-breed, UNCONDITIONAL on x86 ----------
+# --- Vectorized transcendentals: PER-OP best-of-breed --------------------------------
 # exp/log/tanh BORROW verified header-only vendor cores (借核不手搓). The same-ISA bench
 # found NO single library wins all three ops at the same ~3.5-ULP class: xsimd's exp/tanh
 # polynomials are fastest, Highway's contrib/math log is fastest. So math_dispatch picks
-# PER OP: exp/tanh -> xsimd, log -> Highway (scalar libm is the non-x86 / fallback floor).
+# PER OP: exp/tanh -> xsimd, log -> Highway (scalar libm is the fallback floor).
 #
-# Both are VENDORED in third_party (header-only, like xxhash) and ALWAYS compiled -- a
-# performance library ships its fastest path BY DEFAULT (user directive: no opt-in gate;
-# same stance as the hard mimalloc dep). No HYLE_SIMD_*_MATH define gates them: the headers
-# are in-tree so they can't be "missing", and the choice (which core per op) is fixed at
-# compile time, not machine-dependent -- so a toggle would be a no-op switch. The ONLY real
-# machine-dependent guard is architecture: the AVX2 borrow-core TUs are x86-only (highway/
-# xsimd lower to AVX2 intrinsics here), guarded by HYLE_ARCH_X64 INSIDE the TUs; on non-x86
-# they compile to nothing and math_dispatch uses the scalar floor. Runtime cpu_features().
-# avx2 then gates entry so an old x86 CPU also falls to scalar -- no SIGILL.
+# Both are VENDORED in third_party (header-only, like xxhash). The machine-dependent guard
+# is ARCHITECTURE: the borrow-core TUs lower to AVX2/AVX512 intrinsics, so they are X86-ONLY
+# (see the SOURCES split -- not compiled on aarch64). On arm64 math_dispatch uses the scalar
+# libm floor (a NEON transcendental borrow core is future work, not simd-03's scope). Runtime
+# cpu_features().avx2 then gates entry so an old x86 CPU also falls to scalar -- no SIGILL.
 target_include_directories(hyle_simd SYSTEM PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/highway"
   "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
-# transcendental_highway.cc uses Highway's STATIC dispatch (hn::Exp/Log/Tanh), whose
-# HWY_STATIC_TARGET resolves vector width from the FULL AVX2 baseline macro chain (SSE4=
-# PCLMUL+AES + BMI2+FMA+F16C). The bare AVX2 tier (-mavx2 -mfma -mf16c) is missing
-# bmi2/aes/pclmul, so on GCC/Clang Highway SILENTLY downgrades to 128-bit SSSE3 -- the
-# shipped log core ran at half width (objdump: 0 ymm, 170 xmm; log batch 0.53ns vs the
-# 256-bit 0.27ns). hyle_set_highway_isa adds the missing baseline so the PRODUCT core gets
-# true 256-bit AVX2. (MSVC /arch:AVX2 already implies the full set, so this only bit Linux.)
-# xsimd does NOT need this -- its batch<float> width comes from its own headers, -mavx2 is enough.
-hyle_set_highway_isa(math/transcendental_highway.cc)
-hyle_set_isa(math/transcendental_xsimd.cc AVX2)
-# AVX-512 (16-wide) math borrow cores: same xsimd/Highway cores compiled one tier wider.
-# hyle_set_avx512_math_isa = full AVX-512 group (incl. cd, which xsimd's dq kernels need) +
-# the AVX2 baseline Highway's static dispatch requires. Reached only when best_isa()>=kAvx512.
-hyle_set_avx512_math_isa(math/transcendental_xsimd_avx512.cc)
-hyle_set_avx512_math_isa(math/transcendental_highway_avx512.cc)
+if(HYLE_SIMD_X64)
+  # transcendental_highway.cc uses Highway's STATIC dispatch (hn::Exp/Log/Tanh), whose
+  # HWY_STATIC_TARGET resolves vector width from the FULL AVX2 baseline macro chain (SSE4=
+  # PCLMUL+AES + BMI2+FMA+F16C). The bare AVX2 tier (-mavx2 -mfma -mf16c) is missing
+  # bmi2/aes/pclmul, so on GCC/Clang Highway SILENTLY downgrades to 128-bit SSSE3 -- the
+  # shipped log core ran at half width. hyle_set_highway_isa adds the missing baseline so the
+  # PRODUCT core gets true 256-bit AVX2. (MSVC /arch:AVX2 already implies the full set.)
+  # xsimd does NOT need this -- its batch<float> width comes from its own headers.
+  hyle_set_highway_isa(math/transcendental_highway.cc)
+  hyle_set_isa(math/transcendental_xsimd.cc AVX2)
+  # AVX-512 (16-wide) math borrow cores: same xsimd/Highway cores compiled one tier wider.
+  # Reached only when best_isa()>=kAvx512.
+  hyle_set_avx512_math_isa(math/transcendental_xsimd_avx512.cc)
+  hyle_set_avx512_math_isa(math/transcendental_highway_avx512.cc)
+endif()
 
 # BASELINE ASSUMPTION (the SIGILL-safety contract): for a DISTRIBUTABLE binary, build the
 # whole module at the default baseline -- only the per-variant kernel TUs above get a wide

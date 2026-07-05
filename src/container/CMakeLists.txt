@@ -9,14 +9,27 @@
 # find/rfind, char-set find_*_of) are forwarded to std::string_view inside the .cc
 # (the public header pulls in no std string headers). Each SIMD variant is its own
 # -march TU, entered only when platform::cpu_features() confirms the ISA (runtime CPUID).
-hyle_add_module(container SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc string_ref.cc string_ref_avx2.cc PUBLIC_DEPS hyle_mem hyle_platform)
+#
+# ARCH SPLIT (Apple-Silicon 真机暴露): string_ref_avx2.cc is an x86-only variant TU (-mavx2).
+# string_ref.cc already #if-gates all references to its symbols behind HYLE_ARCH_X64, so on
+# aarch64 the dispatcher forwards to the scalar/std path and the AVX2 TU must NOT be compiled
+# (clang rejects -mavx2 on arm64). SwissTable's NEON group lives in probe.h (a header pulled
+# by swiss_table.cc), so container-04b NEON compiles automatically on arm64 -- no separate TU.
+set(_container_arch_sources "")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  set(HYLE_CONTAINER_X64 TRUE)
+  list(APPEND _container_arch_sources string_ref_avx2.cc)
+endif()
+hyle_add_module(container SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc string_ref.cc ${_container_arch_sources} PUBLIC_DEPS hyle_mem hyle_platform)
 target_include_directories(hyle_container PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/xxhash"
   "${PROJECT_SOURCE_DIR}/third_party/wyhash")
 
 # The AVX2 variant TU gets 256-bit codegen; string_ref.cc (the dispatcher) stays
-# baseline so it never emits an AVX2 instruction on the always-taken path.
-hyle_set_isa(string_ref_avx2.cc AVX2)
+# baseline so it never emits an AVX2 instruction on the always-taken path. (x86 only.)
+if(HYLE_CONTAINER_X64)
+  hyle_set_isa(string_ref_avx2.cc AVX2)
+endif()
 # Keep IPO/LTO off for the module so a future global -flto can't inline the AVX2 TU's
 # wider codegen into the baseline dispatcher (same isolation rule as simd/, conventions §10).
 set_target_properties(hyle_container PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)

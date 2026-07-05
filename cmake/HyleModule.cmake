@@ -51,6 +51,11 @@ function(hyle_isa_flags out_var tier)
       set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512_BF16")
       set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512bf16" PARENT_SCOPE)
+    elseif(tier STREQUAL "NEON")
+      # ARMv8-A mandates NEON (Advanced SIMD) -- it is the aarch64 baseline, so the neon
+      # kernel TU needs NO extra -march (Apple clang / aarch64 gcc emit v-regs by default).
+      # Empty flag list, same as SSE42-on-MSVC.
+      set(${out_var} "" PARENT_SCOPE)
     else()
       message(FATAL_ERROR "hyle_isa_flags: unknown tier '${tier}'")
     endif()

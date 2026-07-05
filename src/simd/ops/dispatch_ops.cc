@@ -27,8 +27,14 @@ Isa selected_tier() noexcept {
   if (v >= static_cast<std::uint32_t>(Isa::kAvx2)) return Isa::kAvx2;
   if (v >= static_cast<std::uint32_t>(Isa::kSse42)) return Isa::kSse42;
   return Isa::kScalar;
+#elif defined(HYLE_ARCH_ARM64)
+  // aarch64 ships scalar + neon; NEON is the ARMv8 baseline so best_isa() returns kNeon on
+  // any real arm64 CPU (cpu.cc). Pick neon when present, else the scalar floor.
+  if (static_cast<std::uint32_t>(best_isa()) >= static_cast<std::uint32_t>(Isa::kNeon))
+    return Isa::kNeon;
+  return Isa::kScalar;
 #else
-  return Isa::kScalar;  // only the scalar variant is compiled on non-x86 (NEON = simd-03)
+  return Isa::kScalar;  // unknown arch: portable floor
 #endif
 }
 
@@ -41,6 +47,8 @@ DotFn resolve_dot() noexcept {
     case Isa::kAvx512: return &detail::dot_f32_avx512;
     case Isa::kAvx2: return &detail::dot_f32_avx2;
     case Isa::kSse42: return &detail::dot_f32_sse4;
+#elif defined(HYLE_ARCH_ARM64)
+    case Isa::kNeon: return &detail::dot_f32_neon;
 #endif
     default: return &detail::dot_f32_scalar;
   }
@@ -51,6 +59,8 @@ SaxpyFn resolve_saxpy() noexcept {
     case Isa::kAvx512: return &detail::saxpy_f32_avx512;
     case Isa::kAvx2: return &detail::saxpy_f32_avx2;
     case Isa::kSse42: return &detail::saxpy_f32_sse4;
+#elif defined(HYLE_ARCH_ARM64)
+    case Isa::kNeon: return &detail::saxpy_f32_neon;
 #endif
     default: return &detail::saxpy_f32_scalar;
   }

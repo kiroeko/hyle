@@ -86,8 +86,15 @@ TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
   EXPECT_EQ(active, expect);
   // On any modern x86-64 dev box this should be a real SIMD tier, not the floor.
   EXPECT_GE(static_cast<std::uint32_t>(active), static_cast<std::uint32_t>(Isa::kSse42));
+#elif defined(HYLE_ARCH_ARM64)
+  // aarch64 ships scalar + neon (simd-03 real-run landing); NEON is the ARMv8 baseline, so
+  // any real arm64 CPU dispatches to kNeon, not the scalar floor.
+  if (static_cast<std::uint32_t>(best_isa()) >= static_cast<std::uint32_t>(Isa::kNeon))
+    EXPECT_EQ(active, Isa::kNeon);
+  else
+    EXPECT_EQ(active, Isa::kScalar);
 #else
-  EXPECT_EQ(active, Isa::kScalar);  // only scalar compiled off-x86 (NEON dispatch = simd-03)
+  EXPECT_EQ(active, Isa::kScalar);  // unknown arch: portable floor only
 #endif
 }
 
