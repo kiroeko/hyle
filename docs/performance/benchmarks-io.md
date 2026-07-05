@@ -170,7 +170,7 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 
 ## io 系统性红队审查（2026-07-05，对标 sched 那轮）
 
-两个并行红队 agent 审全 io（下层 proactor 三后端 + net/tcp/udp + io_context;上层 tls/http/file/timeout/cancel），逐条人工核实。**审出 11 项全部处理:9 修(含 2 个 P1 + 1 个安全) + U5 调研判非 bug + L5 契约化——零遗留,正确性审查彻底收口。**
+两个并行红队 agent 审全 io（下层 proactor 三后端 + net/tcp/udp + io_context;上层 tls/http/file/timeout/cancel），逐条人工核实。**审出 11 项全部处理:10 修(含 2 个 P1 + 1 个安全) + U5 调研判非 bug——零遗留,正确性审查彻底收口。**
 
 **已修（commit ca317db，双向验证 + 双平台 + TSan）**：
 - **L2 (P1)** epoll multishot accept:re-arm 失败仍标 kMore → 调用方永久挂起。改:只在 epoll_ctl 重挂成功才标 kMore（镜像 IOCP）。
@@ -184,11 +184,11 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 - **L6 (P3, commit 1ae247d)** IOCP `SO_UPDATE_ACCEPT_CONTEXT`/`SO_UPDATE_CONNECT_CONTEXT` setsockopt 返回值未查:失败会交出半配置 socket(getpeername/getsockname/shutdown/继承选项不工作,MSDN)。改:检查返回值,accept 失败关 socket + 返回 neg_err,connect 失败返回 neg_err,而非交坏 socket / 假 connected。IOCP-only,Win 全绿。
 
 **红队核实为安全/契约化（清账）**:TLS scratch 复用(本 session 改)、net_timeout io-vs-timer 竞态仲裁 + 迟到 CQE refcount、net_cancel 栈 slot 单唤醒、parse_u64 溢出、HTTP head/body 视图跨 realloc 稳定性、IOCP teardown 顺序、buf_ring_return 无竞态、RecvFromOp/SendToOp scratch 生命周期、io_uring multishot inflight 计数。
-- **L5 (P2→契约化, commit 1ae247d)** base net.h op 栈 slot 无迟到 CQE 保护:分析证正常 **drain-to-completion 下安全**——base op 不取消、只等自己的 completion、阻塞 fiber 计入 outstanding、shutdown drain 等它完成、IoContext dtor 在 scheduler 停后跑(此时无在途 base op)。唯一窄窗=`drain_for` 超时放弃 + base op 永不完成(调用方契约范畴,非内部 bug)。**与 U5 同源但不同**:U5 是"kernel ref 谁 drop"(refcount 保命,够);L5 是"栈帧活到 completion 没"(drain 契约保命)。已在 `IoOperation` 注释写清:不保证完成的 op 必须用 timed(heap+refcount)/cancel op,非 base op。
+- **L5 (P2, 契约化 → 彻底封死 commit 88f989a)** base net.h op 栈 slot 无迟到 CQE 保护:分析证正常 **drain-to-completion 下安全**——base op 不取消、只等自己的 completion、阻塞 fiber 计入 outstanding、shutdown drain 等它完成、IoContext dtor 在 scheduler 停后跑(此时无在途 base op)。唯一窄窗=`drain_for` 超时放弃 + base op 永不完成(且 `~Scheduler` 无条件 drain 本就挡住常规触发)。**与 U5 同源但不同**:U5 是"kernel ref 谁 drop"(refcount 保命,够);L5 是"栈帧活到 completion 没"(drain 契约保命)。**彻底封死(方案 A,零热路径成本)**:`~IoContext` orphan drain 对 base op 迟到 completion **只排空丢弃、不 route 到 complete()**(那会 wake 已销毁 fiber 的栈 slot),timed op 仍走 complete_timed 释放堆 ref。只改冷拆除路径,base op 运行时照样栈上零分配(不像"base 也改堆+refcount"会给每次 recv/send 上税)。回归测试 `BaseOpCompletionRoutingIntact` + 全 io 套件双后端 TSan 兜底。
 
 **U5 (agent 报 P3 leak，调研后判定非 bug，2026-07-05)**:agent 称"timed-op 若 submit_cancel 失败(ring 满)+ 静默 peer → TimedSlot 泄漏"。**两个前提在 HYLE 上都不成立**:①**io_uring `submit_one` 永不因 SQ 满失败**(proactor.cc:1376——满时当场 flush 再入队,总返回 true);②**内核契约保证每个被消费的 SQE 必产生一个 CQE**(liburing `io_uring_prep_cancel.3`:"a CQE is always generated"),cancel 返回 false / -ENOENT 只意味着原 op 已完成、CQE 已在路上,`complete_timed` 仍会 drop kernel ref。**cancel 只是让完成来得更快的优化,不是 free slot 的必要条件**——tokio-uring `Lifecycle::Ignored` 只在 CQE 到达时 free;seastar 干脆不发内核 cancel,纯靠"每 SQE 必有完成"。HYLE 同款,+ `IoContext::~IoContext` orphan-drain 兜底(与 L5 共用同一机制)。唯一真漏点=**原 op submit 就失败**(SQE 从未被内核消费),已由 `on_submit_failed` 同步 drop kernel ref 堵住。结论已写进 net_timeout.h `resume_timed` 注释,防再次误报。**这也是 L5 的同族问题**:两者都靠"submitted SQE 必有完成 + orphan-drain 兜底"这一不变量,故 L5 亦安全。
 
-**小结**:红队审出的 11 项**全部处理完毕**——9 修(chunked keep-alive + L1/L2/L3/L4/L6 + U1/U2/U3/U4)+ U5 调研判非 bug + L5 契约化(栈 slot 生命周期写进注释)。零遗留未决项。io 正确性审查彻底收口。
+**小结**:红队审出的 11 项**全部处理完毕**——10 修(chunked keep-alive + L1/L2/L3/L4/L5/L6 + U1/U2/U3/U4)+ U5 调研判非 bug。零遗留未决项。io 正确性审查彻底收口。
 
 ## 未做(登记)
 
