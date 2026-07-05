@@ -52,7 +52,7 @@ waiter 可能是 **fiber**（yield + re-inject）**或裸 OS 线程**（回退 `
 ## 实测纠错（这轮"回头攻性能"的核心）
 
 - **Mutex 初版做成 fiber-aware（争用让出），benchmark 慢 marl 5.8x**——短临界区让出 fiber（~100ns 上下文切换）远贵于就地 park 几 ns。**改 futex 后打平 marl**。学到 marl 的分工：**mutex 用 futex、只 CV 才 fiber-aware**（按等待时长分，不一刀切）。契约：别跨 fiber 让出/阻塞持 Mutex，那种场景用 CV。
-- **WaitGroup fork-join 起初慢 marl 17x**，诊断推翻"无栈池"猜想——真根因是**调度器急泊车的 futex 唤醒风暴**，落地 conditional-notify（sched-03 §2.3）后反超。这就是"做到 sched 就回头攻性能"的那一轮。
+- **WaitGroup fork-join 起初慢 marl 17x**，诊断推翻"无栈池"猜想——真根因是**调度器急泊车的 futex 唤醒风暴**，落地 conditional-notify（sched-03 §2.3）把 17x 落后修到**与 marl 双平台统计平局**（15 遍 bench-stat 复核;此前一度写"反超 1.49x"是 nanobench 单遍噪声,已纠正）。这就是"做到 sched 就回头攻性能"的那一轮。
 
 ## 交付物
 

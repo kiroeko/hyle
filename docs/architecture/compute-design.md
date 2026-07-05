@@ -109,12 +109,35 @@ compute/
      sched/         GPU stream 完成 → 唤醒 fiber（与 io/ 同机制）
 ```
 
+## compute-01 开工前研究结论（2026-07-05,CUDA 先行）
+
+> 破土前先研究 SOTA 定形接口(同 io proactor 的纪律),把下面几条从"待深挖"提为已决。
+
+### 1. 环境现实:CUDA 后端 = Windows 侧真编真测(非双平台)
+
+实测本机:**Windows** 有完整 toolkit(`nvcc` **CUDA 12.9** + RTX 4070 driver);**WSL** 只有 driver 直通(`/usr/lib/wsl/lib/libcuda.so`)**无 toolkit**(无 `nvcc`/`/usr/local/cuda`/`cuda_runtime.h`/`libcudart`)。故 **CUDA 后端在 Windows/MSVC 侧真编真测**,WSL 侧 `#if` 门控编不进(与 io 的 kqueue-on-mac、simd 的 AVX512-无真机同类:平台/工具链现实,如实记录非缺陷)。跨平台"一份代码"由**上层抽象**保证,不是每后端都双平台跑。CPU fallback 后端(simd)仍双平台。**WSL TSan 覆盖 compute 的 host 侧逻辑(stream/completion 记账),GPU kernel 本身不进 TSan。**
+
+### 2. GPU completion→fiber:走 **event 轮询(reap 模型)**,不走 callback
+
+**决策:`cudaEventRecord` + `cudaEventQuery` 轮询,由 shard worker 收割,而非 `cudaLaunchHostFunc`/`cudaStreamAddCallback` 回调。** 理由(研究铁证):
+
+- **两种 callback 都禁止在回调里调任何 CUDA API**(deadlock:回调可能等自己的完成;NVIDIA 论坛多例 host-func 死锁报告)。虽然我们的 `Waker::wake()` 不碰 CUDA API(只重注入 fiber),回调仍跑在 **CUDA 内部线程**上,把跨线程 wake 的时机交给驱动、不可控。
+- **ggml-cuda 的铁证**:唯一的 `cudaLaunchHostFunc` 被 `#if 0` 注释标 "untested",活路径是 `GGML_ABORT`——即成熟库也不用 callback 接 host completion。
+- **轮询 = io_uring reap 模型的同构**:提交 kernel 后 `cudaEventRecord(ev, stream)`;worker 在**已有的 poll hook**(`Scheduler::set_io_poll` seam,scheduler.cc:527 抽干热路径 + :587 park 边界带 timeout)里 `cudaEventQuery(ev)`,`cudaSuccess` 即 `waker.wake()`。**wake 跑在自己的 worker 上(同 io),不在 CUDA 线程**;GPU 成为 worker 循环收割的**第三种 completion source**(CPU/io/GPU 一套挂起-唤醒),正是 sched-design §3 与 compute-design §4 的论点落地。
+- **避免每次 poll 空转**:沿用 io 的 park 边界策略——有在途 GPU op 才轮询;`cudaEventQuery` 是轻量非阻塞查询。真实节奏调优(轮询间隔 vs 延迟)留实测,不预设。
+
+### 3. completion awaitable 形状 = 照镜 io 的 `IoOperation`
+
+`co_await stream.launch(...)`/`co_await event` 的 awaitable **完全照镜 net.h 的 IoOperation 模式**(net.h:66-90):栈 slot 存 `{Waker, result}` 活在挂起 fiber 栈、`await_suspend` 捕获 `current_waker()` + 记 pending event + fiber-yield、worker poll 到 event done 后填 result + `wake()`、`await_resume` 返回。**同一套 stack-slot 生命周期契约**(fiber 栈冻结到 wake,base op 靠 drain-to-completion)。shard-per-core:stream 绑 owner worker,submit/poll/resume 同核,免锁(同 io plan A)。
+
+### 4. device/buffer 枚举薄包、kernel-launch + completion 自造(§2/§4 已定,不重复)
+
 ## 待深挖（下一步）
 
-1. **device/stream/kernel 接口的具体形状**——提交/同步/事件/错误模型，怎么同时容纳"原生 CUDA kernel"和"SPIR-V compute shader"两种 kernel 表示。
-2. **GPU completion 接 sched 的细节**——CUDA stream callback / Vulkan fence 怎么映射到唤醒哪个 fiber，避免每次 poll。
-3. **buffer 与 mem/ 的边界**——host/device 传输、pinned、unified memory 怎么纳入 HYLE 分配器家族。
-4. **Vulkan compute 自定义 kernel 的工程链**——GLSL/`.comp` → SPIR-V 编译、运行时加载、与 CUDA kernel 的统一启动 API。
+1. **kernel 表示的统一**——device/stream/kernel 接口怎么同时容纳"原生 CUDA kernel"(`cuLaunchKernel` + PTX/cubin)和"SPIR-V compute shader"两种 kernel 表示(compute-04/06;compute-01 只做 stream/completion 脊,先不碰 launch 抽象)。
+2. ~~**GPU completion 接 sched**~~ **✅ 已定(见上"开工前研究结论"§2)**:event 轮询 + worker reap,照镜 io reap 模型。
+3. **buffer 与 mem/ 的边界**——host/device 传输、pinned、unified memory;§2 已定"device 内存归 compute/ 走显式 copy、不进 mem/ allocator",compute-02 落具体 buffer_type 实例形状。
+4. **Vulkan compute 自定义 kernel 的工程链**——GLSL/`.comp` → SPIR-V 编译、运行时加载、与 CUDA kernel 的统一启动 API(compute-06)。
 
 ## 参考
 

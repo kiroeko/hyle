@@ -273,7 +273,7 @@ worker 调度循环（2.2）的第 0 步插入"收割 completion"：
 
 **全部基于 clay catomics 无锁重写，丢弃 clay 单全局锁 thread_pool。** time/ 提供单调钟+时间轮（deadline 不用墙钟），platform/ 提供 park 原语（futex/WaitOnAddress），二者是 sched 的 T2 仆从。
 
-**待实现期定的策略**（非设计悬念，是落地选择）：阻塞 syscall 的 blocking 池 + sysmon 补线程；LIFO slot 轮询预算上限；steal 的 backoff 曲线；GPU completion 选回调还是轮询线程。
+**曾"待实现期定"、现多数已落地**（非设计悬念,是落地选择）：阻塞 syscall 的 blocking 池 ✅ sched-11（懒创建池；sysmon 明确不做，卸载显式）；LIFO slot 轮询预算上限 ✅ 已落地 `kMaxLifoPolls=3`（反饥饿）；GPU completion ✅ 定为**轮询**（`cudaEventQuery` 走 worker reap 模型，同 io，见 compute-design 开工前研究结论）；steal 的 backoff 曲线仍按需微调。
 
 ## 参考
 
