@@ -8,6 +8,7 @@
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"
+#include "hyle/io/net_multishot.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
@@ -32,6 +33,8 @@
 // MULTIPLE workers with connections sharded across them.
 
 using hyle::io::IoContext;
+using hyle::io::MultishotRecvStream;
+using hyle::io::RecvBuf;
 using hyle::io::RecvOp;
 using hyle::io::SendOp;
 using hyle::mem::Allocator;
@@ -358,5 +361,90 @@ TEST(IoNet, FullDuplexSameFdEpoll) {
     close_pair(sp);
   }
   ::unsetenv("HYLE_IO_FORCE_EPOLL");
+}
+
+// io-07b multishot recv awaitable: `co_await stream.next()` over a provided-buffer
+// ring. ONE arm delivers a chunk per datagram (kBuffer + kMore), each RecvBuf
+// returning its ring buffer on destruction; peer close = terminal (more()==false).
+// Proves the awaitable layer (heap slot + refcount) surfaces the zero-copy multishot
+// path the proactor implemented, without a per-recv submit or a caller buffer.
+namespace {
+struct MultishotState {
+  IoContext* io;
+  std::intptr_t recv_fd;
+  int bgid;
+  std::atomic<int> chunks{0};
+  char joined[256] = {};
+  std::uint32_t joined_len = 0;
+  std::atomic<bool> saw_terminal{false};
+};
+Task<int> multishot_recv_coro(Allocator alloc, MultishotState* st) {
+  auto stream = st->io->proactor_for_current().valid()
+                    ? MultishotRecvStream{&st->io->proactor_for_current(),
+                                          st->recv_fd, st->bgid, alloc}
+                    : MultishotRecvStream{};
+  for (;;) {
+    RecvBuf b = co_await stream.next();
+    if (!b.more() && b.size() == 0) {  // terminal chunk
+      st->saw_terminal.store(true, std::memory_order_release);
+      break;
+    }
+    // Append the chunk bytes (data lives in the ring buffer; copy out before b's dtor
+    // returns it). Datagram boundaries => one chunk per message.
+    if (b.size() > 0 && st->joined_len + b.size() < sizeof(st->joined)) {
+      std::memcpy(st->joined + st->joined_len, b.data(), b.size());
+      st->joined_len += b.size();
+    }
+    st->chunks.fetch_add(1, std::memory_order_relaxed);
+    if (!b.more()) {  // a data chunk that is ALSO terminal
+      st->saw_terminal.store(true, std::memory_order_release);
+      break;
+    }
+  }
+  co_return 0;
+}
+}  // namespace
+
+TEST(IoNet, MultishotRecvAwaitable) {
+  constexpr unsigned kWorkers = 2;
+  constexpr unsigned kOwner = 0;
+  constexpr int kBgid = 11;
+  Scheduler sched(kWorkers, system_allocator(), 256);
+  IoContext io(sched, kWorkers);
+  ASSERT_TRUE(io.valid());
+  // Register the provided-buffer ring on the OWNER worker's proactor (io_uring only).
+  if (!io.proactor(kOwner).register_buf_ring(kBgid, /*nentries=*/8, /*buf_size=*/128))
+    GTEST_SKIP() << "provided buffer ring unsupported (non-uring backend/old kernel)";
+
+  // STREAM pair: peer close delivers a terminal (result 0, kMore clear) completion --
+  // the real end-of-stream the awaitable targets (TCP echo/proxy). STREAM may coalesce
+  // the 3 writes into fewer/one chunk(s); we assert on the JOINED bytes + terminal, not
+  // chunk count. Bind the recv end to the owner worker's ring.
+  int sv[2];
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+  ASSERT_TRUE(io.bind_fd(kOwner, sv[0]));
+  // Pre-send 3 segments + close the peer so the stream sees data then a clean EOF
+  // terminal (avoids a blocking reap waiting on data that never comes).
+  const char* msgs[] = {"aa", "bb", "cc"};
+  for (const char* m : msgs) ASSERT_GT(::write(sv[1], m, std::strlen(m)), 0);
+  ::close(sv[1]);  // peer close -> EOF terminal completion after the data
+
+  MultishotState st{};
+  st.io = &io;
+  st.recv_fd = sv[0];
+  st.bgid = kBgid;
+  auto d = std::make_unique<Drive>();
+  d->task = multishot_recv_coro(system_allocator(), &st);
+  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  sched.spawn_on(kOwner, &f);
+  sched.drain();
+  sched.shutdown();
+
+  EXPECT_TRUE(d->finished.load()) << "multishot fiber never finished (stream hung)";
+  EXPECT_GE(st.chunks.load(), 1) << "one arm should deliver the data (>=1 chunk)";
+  EXPECT_TRUE(st.saw_terminal.load()) << "peer close must surface a terminal chunk";
+  st.joined[st.joined_len] = '\0';
+  EXPECT_STREQ(st.joined, "aabbcc") << "all bytes received in order (STREAM coalesces)";
+  ::close(sv[0]);
 }
 #endif  // __linux__

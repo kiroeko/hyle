@@ -5,6 +5,8 @@
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"
+#include "hyle/io/net_multishot.h"
+#include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 
 #if defined(HYLE_STATIC)
@@ -53,6 +55,19 @@ class TcpStream {
   // co_await stream.write(buf, len) -> bytes written or negative errno.
   SendOp write(const void* buf, std::uint32_t len) noexcept {
     return SendOp{&io_->proactor_for_current(), fd_, buf, len, 0};
+  }
+
+  // Zero-copy multishot receive (io_uring only): drive with `co_await
+  // stream.read_multishot(bgid, alloc).next()`. The kernel picks buffers from group
+  // `bgid`'s provided-buffer ring (register it once via the proactor's
+  // register_buf_ring before calling). One arm delivers a stream of RecvBuf until the
+  // peer closes. `alloc` backs the stream's heap slot (use the connection's
+  // allocator). Awaited from the fiber pinned to owner_worker(). NOT on IOCP/epoll
+  // (no provided-buffer ring there) -- register_buf_ring returns false, so the arm
+  // fails and next() yields an error chunk; callers targeting those backends use
+  // read() instead.
+  MultishotRecvStream read_multishot(int bgid, mem::Allocator alloc) noexcept {
+    return MultishotRecvStream{&io_->proactor_for_current(), fd_, bgid, alloc};
   }
 
   // co_await stream.connect(&ss, len) -> 0 on success or negative errno, where

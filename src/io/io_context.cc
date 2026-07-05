@@ -1,6 +1,7 @@
 #include "hyle/io/io_context.h"
 
 #include "hyle/io/net.h"
+#include "hyle/io/net_multishot.h"  // io-07b: complete_multishot + multishot-token routing
 #include "hyle/io/net_timeout.h"  // io-06: complete_timed + timed-token routing
 #include "hyle/macros.h"
 #include "hyle/sched/waker.h"  // current_worker_index()
@@ -118,8 +119,13 @@ bool IoContext::poll(unsigned worker_idx,
     if (batch[i].user_data == Proactor::kWakeToken) continue;
     // io-06: a TIMED op's token has bit 0 set (a tagged &TimedSlot); route it to
     // the timed arbiter (handles the normal, late-cancel, and cancel-op-own CQEs).
+    // io-07b: a MULTISHOT stream's token has bits 0b11 (bit0 set too, so it lands in
+    // this branch); is_multishot_token catches it first and routes to its own arbiter
+    // (one token, many completions, kernel ref spent on the kMore-clear terminal one).
     // An ordinary op's token is a clean &IoOperation -> the plain router.
-    if (is_timed_token(batch[i].user_data)) {
+    if (is_multishot_token(batch[i].user_data)) {
+      complete_multishot(batch[i]);
+    } else if (is_timed_token(batch[i].user_data)) {
       complete_timed(batch[i]);
     } else {
       complete(batch[i]);
