@@ -45,7 +45,24 @@ inline constexpr std::int64_t kSubmitFailed = -1000;
 // The per-await slot: a completion's landing pad. Lives on the suspending fiber's
 // stack; its address is the proactor `user_data`. The reaper (worker loop, io-04
 // integration) fills `result` then fires `waker`. `result` is bytes transferred
-// (>= 0) or a negative errno, the same convention as Completion::result.
+// (>= 0), a negative errno, or kSubmitFailed if the op was never submitted.
+//
+// STACK-SLOT LIFETIME CONTRACT (red-team L5, why the stack slot is safe): the
+// reaper dereferences this IoOperation* when the completion lands, so the slot MUST
+// outlive its completion. For a BASE op it does, because a base op is NEVER
+// cancelled -- it only ever wakes on ITS OWN completion, and the suspended fiber
+// stays counted in the scheduler's `outstanding` while it waits. So drain()/
+// shutdown() block until the completion arrives (the worker blocks in a GETEVENTS
+// reap while ops are in flight), waking the fiber before its frame is reclaimed;
+// IoContext's teardown drain then only ever sees TIMED completions (heap slots),
+// never a base op's dead stack slot. The ONE way to break this is to destroy a
+// fiber with a base op still in flight WITHOUT draining to completion (e.g. giving
+// up on a stuck op via drain_for(timeout) then tearing down) -- then a late
+// completion writes a freed stack slot (UAF). So: an op whose completion is NOT
+// guaranteed (a peer that may never send / a deadline you must bound) MUST use a
+// TIMED op (net_timeout.h -- heap slot + refcount survives a late CQE) or a
+// cancellable op (net_cancel.h), NOT a bare base op. Base ops assume
+// drain-to-completion; that is the contract, not an accident.
 struct IoOperation {
   sched::Waker waker;         // whom to wake when this op completes
   std::int64_t result = 0;    // filled by the reaper from Completion::result

@@ -237,16 +237,30 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       out[i].result = neg_err(::GetLastError());  // negative Win32 error
       if (op->accept_sock != INVALID_SOCKET) ::closesocket(op->accept_sock);
     } else if (op->kind == Impl::kAccept) {
-      // Finalize the accepted socket so it inherits the listener's properties,
-      // then hand its fd back as the result (>= 0). Ownership passes to caller.
+      // Finalize the accepted socket so it inherits the listener's properties, then
+      // hand its fd back as the result (>= 0). Ownership passes to caller. CHECK the
+      // SO_UPDATE_ACCEPT_CONTEXT result (red-team L6): without it succeeding, the
+      // accepted socket is half-configured -- getpeername/getsockname/shutdown and
+      // inherited options don't work (MSDN). Handing such a socket back is worse than
+      // failing, so on error close it and report the failure instead of a bad fd.
       SOCKET ls = reinterpret_cast<SOCKET>(op->handle);
-      ::setsockopt(op->accept_sock, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
-                   reinterpret_cast<char*>(&ls), sizeof(ls));
-      out[i].result = static_cast<std::int64_t>(op->accept_sock);
+      if (::setsockopt(op->accept_sock, SOL_SOCKET, SO_UPDATE_ACCEPT_CONTEXT,
+                       reinterpret_cast<char*>(&ls), sizeof(ls)) != 0) {
+        out[i].result = neg_err(::WSAGetLastError());
+        ::closesocket(op->accept_sock);
+      } else {
+        out[i].result = static_cast<std::int64_t>(op->accept_sock);
+      }
     } else if (op->kind == Impl::kConnect) {
-      ::setsockopt(reinterpret_cast<SOCKET>(op->handle), SOL_SOCKET,
-                   SO_UPDATE_CONNECT_CONTEXT, nullptr, 0);
-      out[i].result = 0;  // connected
+      // Same for connect: SO_UPDATE_CONNECT_CONTEXT must succeed or the connected
+      // socket won't behave for getpeername/shutdown (red-team L6). On error report
+      // the failure rather than a spurious "connected" (0).
+      if (::setsockopt(reinterpret_cast<SOCKET>(op->handle), SOL_SOCKET,
+                       SO_UPDATE_CONNECT_CONTEXT, nullptr, 0) != 0) {
+        out[i].result = neg_err(::WSAGetLastError());
+      } else {
+        out[i].result = 0;  // connected
+      }
     } else {
       out[i].result = static_cast<std::int64_t>(xfer);  // bytes transferred
     }
