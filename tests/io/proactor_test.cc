@@ -556,6 +556,87 @@ TEST(Proactor, RegisteredFixedFiles) {
   ::close(sv[0]);
   ::close(sv[1]);
 }
+
+// io-07c step 2 direct accept: accept a connection STRAIGHT into a registered-file
+// slot (no process fd ever created), then recv on that direct descriptor by slot, and
+// close_direct it. Proves the full direct path: submit_accept_direct -> CQE res = slot
+// -> submit_recv_fixed(slot) -> submit_close_direct(slot).
+TEST(Proactor, DirectAccept) {
+  Proactor p;
+  if (!p.init()) GTEST_SKIP() << "no io_uring backend";
+  if (!p.register_file_table(8))
+    GTEST_SKIP() << "registered files unsupported on this kernel";
+
+  int ls = ::socket(AF_INET, SOCK_STREAM, 0);
+  ASSERT_GE(ls, 0);
+  int one = 1;
+  ::setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
+  sockaddr_in sa{};
+  sa.sin_family = AF_INET;
+  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_port = 0;
+  ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
+  ASSERT_EQ(::listen(ls, 8), 0);
+  socklen_t slen = sizeof(sa);
+  ASSERT_EQ(::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen), 0);
+
+  // Direct accept armed BEFORE the client connects (accept waits for it).
+  ASSERT_TRUE(p.submit_accept_direct(ls, /*user_data=*/0xDA));
+
+  // Client connects + sends on a separate thread (blocking connect to loopback).
+  sockaddr_in ca = sa;
+  std::thread cli([&]{
+    int c = ::socket(AF_INET, SOCK_STREAM, 0);
+    if (::connect(c, reinterpret_cast<sockaddr*>(&ca), sizeof(ca)) == 0) {
+      const char* m = "direct-accept-hi";
+      (void)!::write(c, m, std::strlen(m) + 1);
+      ::usleep(50'000);
+    }
+    ::close(c);
+  });
+
+  // Reap the accept -> res is the ALLOCATED SLOT INDEX (>=0).
+  int slot = -1;
+  for (int spins = 0; spins < 500 && slot < 0; ++spins) {
+    Completion c[8];
+    std::size_t n = p.reap(c, 8, 1'000'000'000ull);
+    for (std::size_t i = 0; i < n; ++i)
+      if (c[i].user_data == 0xDA) {
+        ASSERT_GE(c[i].result, 0) << "direct accept must return a slot index";
+        slot = static_cast<int>(c[i].result);
+      }
+  }
+  cli.join();
+  ASSERT_GE(slot, 0) << "direct accept never produced a slot";
+
+  // recv on the DIRECT descriptor by slot (IOSQE_FIXED_FILE) -- it was never a raw fd.
+  char buf[64] = {};
+  ASSERT_TRUE(p.submit_recv_fixed(slot, buf, sizeof(buf), 0, /*user_data=*/0xDB));
+  bool got = false;
+  for (int spins = 0; spins < 200 && !got; ++spins) {
+    Completion c[4];
+    std::size_t n = p.reap(c, 4, 1'000'000'000ull);
+    for (std::size_t i = 0; i < n; ++i)
+      if (c[i].user_data == 0xDB && c[i].result > 0) {
+        EXPECT_STREQ(buf, "direct-accept-hi");
+        got = true;
+      }
+  }
+  EXPECT_TRUE(got) << "recv on the direct-accepted descriptor never delivered";
+
+  // close_direct the slot (IORING_OP_CLOSE with file_index).
+  ASSERT_TRUE(p.submit_close_direct(slot, /*user_data=*/0xDC));
+  bool closed = false;
+  for (int spins = 0; spins < 100 && !closed; ++spins) {
+    Completion c[4];
+    std::size_t n = p.reap(c, 4, 500'000'000ull);
+    for (std::size_t i = 0; i < n; ++i)
+      if (c[i].user_data == 0xDC) { EXPECT_EQ(c[i].result, 0); closed = true; }
+  }
+  EXPECT_TRUE(closed) << "close_direct never completed";
+  p.release_fixed_slot(slot);
+  ::close(ls);
+}
 #endif  // __linux__
 
 // ---- Windows IOCP real IO ops ----------------------------------------------

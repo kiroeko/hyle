@@ -699,6 +699,8 @@ bool Proactor::submit_recv_fixed(int, void*, std::uint32_t, std::uint32_t,
                                  std::uint64_t) noexcept { return false; }
 bool Proactor::submit_send_fixed(int, const void*, std::uint32_t, std::uint32_t,
                                  std::uint64_t) noexcept { return false; }
+bool Proactor::submit_accept_direct(std::intptr_t, std::uint64_t) noexcept { return false; }
+bool Proactor::submit_close_direct(int, std::uint64_t) noexcept { return false; }
 
 }  // namespace hyle::io
 
@@ -1952,6 +1954,51 @@ bool Proactor::submit_send_fixed(int slot, const void* buf, std::uint32_t len,
   s.addr = reinterpret_cast<std::uint64_t>(buf);
   s.len = len;
   s.rw_flags = static_cast<int>(flags);
+  s.user_data = user_data;
+  impl_->sq_array[index] = index;
+  as_atomic(impl_->sq_tail)->store(tail + 1, std::memory_order_release);
+  ++impl_->sq_pending;
+  ++impl_->inflight;
+  return true;
+}
+
+#ifndef IORING_FILE_INDEX_ALLOC
+#  define IORING_FILE_INDEX_ALLOC (~0u)
+#endif
+
+bool Proactor::submit_accept_direct(std::intptr_t fd,
+                                    std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || impl_->backend != Impl::kUring) return false;
+  if (impl_->file_slots.empty()) return false;  // needs a registered table
+  // ACCEPT with file_index = ALLOC: the kernel accepts + places the new connection in
+  // a FREE table slot as a direct descriptor, and the CQE result is the chosen slot
+  // index. No addr/addrlen (peer address not needed here). submit_one doesn't set
+  // sqe.file_index, so fill the SQE directly.
+  unsigned tail = *impl_->sq_tail;
+  unsigned index = tail & *impl_->sq_ring_mask;
+  io_uring_sqe& s = impl_->sqes[index];
+  std::memset(&s, 0, sizeof(s));
+  s.opcode = IORING_OP_ACCEPT;
+  s.fd = static_cast<std::int32_t>(fd);
+  s.file_index = IORING_FILE_INDEX_ALLOC;  // kernel picks a free slot
+  s.user_data = user_data;
+  impl_->sq_array[index] = index;
+  as_atomic(impl_->sq_tail)->store(tail + 1, std::memory_order_release);
+  ++impl_->sq_pending;
+  ++impl_->inflight;
+  return true;
+}
+
+bool Proactor::submit_close_direct(int slot, std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || impl_->backend != Impl::kUring) return false;
+  // CLOSE with file_index (fd unused): closes the direct descriptor in that slot. The
+  // slot is then free for a future direct accept; release_fixed_slot clears our mirror.
+  unsigned tail = *impl_->sq_tail;
+  unsigned index = tail & *impl_->sq_ring_mask;
+  io_uring_sqe& s = impl_->sqes[index];
+  std::memset(&s, 0, sizeof(s));
+  s.opcode = IORING_OP_CLOSE;
+  s.file_index = static_cast<std::uint32_t>(slot);
   s.user_data = user_data;
   impl_->sq_array[index] = index;
   as_atomic(impl_->sq_tail)->store(tail + 1, std::memory_order_release);

@@ -303,6 +303,21 @@ class Proactor {
                                      std::uint32_t flags,
                                      std::uint64_t user_data) noexcept;
 
+  // Direct accept (io-07c step 2): accept a connection on listening `fd` and place it
+  // DIRECTLY into a free registered-file slot (IORING_FILE_INDEX_ALLOC) -- the accepted
+  // connection is an io_uring "direct descriptor", NEVER a process fd. The completion
+  // result is the ALLOCATED SLOT INDEX (>=0) or a negative errno. Subsequent recv/send
+  // use submit_recv_fixed/send_fixed with that slot; teardown is submit_close_direct
+  // (NOT ::close). Requires a registered file table. io_uring only (returns false on
+  // IOCP/epoll -- callers fall back to submit_accept + a raw-fd TcpStream there).
+  HYLE_IO_API bool submit_accept_direct(std::intptr_t fd,
+                                        std::uint64_t user_data) noexcept;
+
+  // Close a DIRECT descriptor by slot index (IORING_OP_CLOSE with file_index). The
+  // completion result is 0 or negative errno. Frees the kernel table entry; the caller
+  // still calls release_fixed_slot to reclaim the local slot bookkeeping. io_uring only.
+  HYLE_IO_API bool submit_close_direct(int slot, std::uint64_t user_data) noexcept;
+
   // Multishot recv on `fd`, drawing buffers from group `bgid`'s ring: ONE submit
   // yields a completion per datagram/segment received (kMore SET while armed),
   // each carrying the kernel-selected buffer via Completion::kBuffer + buffer_id
