@@ -170,6 +170,18 @@ if(HYLE_HAS_FCONTEXT)
     target_link_libraries(hyle_accept_bench PRIVATE ws2_32)
   endif()
 
+  # io connection-lifecycle bench: the REALISTIC full-connection cost (accept + serve R
+  # round-trips + close) that echo_bench (pre-built socketpairs, never accept/close) and
+  # accept_bench (accept-then-drop, no service) each factor out. Sweeps rounds/conn =
+  # 1/4/16 to walk the ephemeral (setup-dominated) -> persistent (steady-state) spectrum.
+  # Real loopback TCP (real handshake + close), so hyle_io (tcp wrappers) + ws2_32 on Win.
+  add_executable(hyle_conn_lifecycle_bench io/conn_lifecycle_bench.cc)
+  target_link_libraries(hyle_conn_lifecycle_bench PRIVATE hyle_sched hyle_io nanobench)
+  hyle_apply_warnings(hyle_conn_lifecycle_bench)
+  if(WIN32)
+    target_link_libraries(hyle_conn_lifecycle_bench PRIVATE ws2_32)
+  endif()
+
   # io HTTP bench (io-10): request/response throughput of the FULL HTTP/1.1 path
   # (picohttpparser parse + GrowBuf head/body copies + Request/Response build + status
   # /header formatting) vs a RAW TCP echo over the SAME co_await TcpStream transport
