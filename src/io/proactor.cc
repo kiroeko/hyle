@@ -1135,6 +1135,20 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       const bool wr_ready = (evs[i].events & (EPOLLOUT)) != 0 || err;
       bool multishot_rearmed = false;
 
+      // A LEVEL/oneshot readiness can be SPURIOUS: epoll says "readable" but by the
+      // time we run the inline syscall the data/connection is gone, and read/recv/
+      // accept returns -EAGAIN/-EWOULDBLOCK. A real proactor (io_uring/IOCP) NEVER
+      // surfaces EAGAIN -- the op just stays in flight. So on a spurious EAGAIN we
+      // must NOT deliver it as the op's result (the fiber would see a bogus error
+      // and likely drop the connection); instead re-arm the op and keep waiting for a
+      // TRUE readiness. We do that by re-inserting the op into its pending map and
+      // NOT emitting a completion -- the unified re-arm below then re-watches the fd.
+      // Guarded by !err: if the fd genuinely HUP/ERR'd, deliver perform's result
+      // (an EAGAIN there is terminal, not spurious -- avoid a re-arm spin). (L4.)
+      auto is_spurious = [&](std::int64_t res) noexcept {
+        return !err && (res == -EAGAIN || res == -EWOULDBLOCK);
+      };
+
       // ---- read-side (recv/accept/recvfrom) ----
       if (rd_ready && n < max) {
         auto it = impl_->pending_in.find(fd);
@@ -1142,20 +1156,24 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
           Impl::PendingOp op = it->second;
           impl_->pending_in.erase(it);
           std::int64_t res = perform(fd, op);
-          out[n].user_data = op.user_data;
-          out[n].result = res;
-          out[n].flags = 0;
-          out[n].buffer_id = 0;
-          // Multishot accept emulation: re-arm + stamp kMore ONLY if the re-arm
-          // succeeds (a failed re-arm is terminal -- stamping kMore would hang the
-          // caller waiting for a stream that ended; matches IOCP). We re-insert into
-          // pending_in and let the unified re-arm below register the fd's watch.
-          if (op.multishot && res >= 0) {
-            impl_->pending_in[fd] = op;  // keep multishot for the next delivery
-            out[n].flags |= Completion::kMore;
-            multishot_rearmed = true;
+          if (is_spurious(res)) {
+            impl_->pending_in[fd] = op;  // false alarm: re-watch, deliver nothing
+          } else {
+            out[n].user_data = op.user_data;
+            out[n].result = res;
+            out[n].flags = 0;
+            out[n].buffer_id = 0;
+            // Multishot accept emulation: re-arm + stamp kMore ONLY if the re-arm
+            // succeeds (a failed re-arm is terminal -- stamping kMore would hang the
+            // caller waiting for a stream that ended; matches IOCP). We re-insert into
+            // pending_in and let the unified re-arm below register the fd's watch.
+            if (op.multishot && res >= 0) {
+              impl_->pending_in[fd] = op;  // keep multishot for the next delivery
+              out[n].flags |= Completion::kMore;
+              multishot_rearmed = true;
+            }
+            ++n;
           }
-          ++n;
         }
       }
       // ---- write-side (send/connect/sendto) ----
@@ -1165,11 +1183,15 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
           Impl::PendingOp op = it->second;
           impl_->pending_out.erase(it);
           std::int64_t res = perform(fd, op);
-          out[n].user_data = op.user_data;
-          out[n].result = res;
-          out[n].flags = 0;
-          out[n].buffer_id = 0;
-          ++n;
+          if (is_spurious(res)) {
+            impl_->pending_out[fd] = op;  // false alarm: re-watch, deliver nothing
+          } else {
+            out[n].user_data = op.user_data;
+            out[n].result = res;
+            out[n].flags = 0;
+            out[n].buffer_id = 0;
+            ++n;
+          }
         }
       }
       // Re-arm the fd for whatever side(s) remain pending (the other side we didn't
