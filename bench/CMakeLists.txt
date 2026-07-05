@@ -120,6 +120,21 @@ if(HYLE_HAS_FCONTEXT)
   if(WIN32)
     target_link_libraries(hyle_accept_bench PRIVATE ws2_32)
   endif()
+
+  # io TLS bench (io-08): TLS handshake/s + encrypted-echo throughput over HYLE's
+  # memory-BIO pump vs RAW OpenSSL over a blocking socket (same cert/cipher/payload).
+  # The ratio isolates HYLE's co_await pump + fiber overhead from the identical
+  # OpenSSL crypto floor both pay. Only when OpenSSL is present (same OpenSSL_FOUND
+  # gate as the tls.cc build). Links OpenSSL + ws2_32 on Windows.
+  if(OpenSSL_FOUND)
+    add_executable(hyle_io_tls_bench io/tls_bench.cc)
+    target_link_libraries(hyle_io_tls_bench PRIVATE hyle_sched hyle_io nanobench
+                          OpenSSL::SSL OpenSSL::Crypto)
+    hyle_apply_warnings(hyle_io_tls_bench)
+    if(WIN32)
+      target_link_libraries(hyle_io_tls_bench PRIVATE ws2_32)
+    endif()
+  endif()
 endif()
 
 # error-module bench: Status/Result (zero-dependency root, every hot-path return type)
