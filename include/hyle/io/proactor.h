@@ -271,6 +271,38 @@ class Proactor {
   HYLE_IO_API bool register_buf_ring(int bgid, unsigned nentries,
                                      unsigned buf_size) noexcept;
 
+  // ---- registered (fixed) files (io-07c) ------------------------------------
+  // Register a SPARSE fixed-file table of `nr` slots (all initially empty). A socket
+  // placed in a slot can then be referenced by its SLOT INDEX in submit_recv_fixed/
+  // submit_send_fixed with IOSQE_FIXED_FILE, which skips the kernel's per-op fd
+  // refcount+lookup (fget/fput) -- a small per-op saving that matters at high op
+  // rates / many concurrent sockets. io_uring only (IORING_REGISTER_FILES2 sparse);
+  // returns false on IOCP/epoll or old kernels. Call once before assign_fixed_slot.
+  HYLE_IO_API bool register_file_table(unsigned nr) noexcept;
+
+  // Place `fd` into a free slot of the registered table; returns the slot index
+  // (>=0) or -1 if the table is full / not registered / unsupported. The caller
+  // passes that index to submit_recv_fixed/send_fixed. The RAW fd stays owned by the
+  // caller (this does NOT take ownership -- it only maps a table entry to it);
+  // release_fixed_slot frees the entry when the socket closes.
+  HYLE_IO_API int assign_fixed_slot(std::intptr_t fd) noexcept;
+
+  // Free slot `index` (clears the table entry so a future assign can reuse it). The
+  // caller must ensure no in-flight fixed op still references it (same drain-to-
+  // completion contract as a raw fd close). No-op on non-uring backends.
+  HYLE_IO_API void release_fixed_slot(int index) noexcept;
+
+  // recv/send on a REGISTERED file: `slot` is the index from assign_fixed_slot (NOT a
+  // raw fd). Sets IOSQE_FIXED_FILE so the kernel resolves the fd from its table. Same
+  // completion contract as submit_recv/submit_send. io_uring only; the raw-fd
+  // submit_recv/submit_send remain the portable path (net/ chooses per socket).
+  HYLE_IO_API bool submit_recv_fixed(int slot, void* buf, std::uint32_t len,
+                                     std::uint32_t flags,
+                                     std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_send_fixed(int slot, const void* buf, std::uint32_t len,
+                                     std::uint32_t flags,
+                                     std::uint64_t user_data) noexcept;
+
   // Multishot recv on `fd`, drawing buffers from group `bgid`'s ring: ONE submit
   // yields a completion per datagram/segment received (kMore SET while armed),
   // each carrying the kernel-selected buffer via Completion::kBuffer + buffer_id

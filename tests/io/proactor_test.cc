@@ -501,6 +501,61 @@ TEST(Proactor, ProvidedBufRingMultishotRecv) {
   ::close(sv[0]);
   ::close(sv[1]);
 }
+
+// io-07c registered (fixed) files: register a sparse table, place a socket in a slot,
+// and drive a recv+send by SLOT INDEX (IOSQE_FIXED_FILE) instead of the raw fd. Proves
+// the fixed-file path resolves the fd from the kernel table and delivers correctly.
+TEST(Proactor, RegisteredFixedFiles) {
+  Proactor p;
+  if (!p.init()) GTEST_SKIP() << "no io_uring backend";
+  if (!p.register_file_table(8))
+    GTEST_SKIP() << "registered files unsupported on this kernel";
+
+  int sv[2];
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+  // Place the RECEIVE end (sv[0]) into a fixed-file slot; sv[1] is the raw sender.
+  int slot = p.assign_fixed_slot(sv[0]);
+  ASSERT_GE(slot, 0) << "assign_fixed_slot must return a valid slot index";
+
+  // Send from the raw peer, then recv via the FIXED slot (not sv[0]).
+  const char* msg = "fixed-file-recv";
+  ASSERT_GT(::write(sv[1], msg, std::strlen(msg) + 1), 0);
+  char buf[64] = {};
+  ASSERT_TRUE(p.submit_recv_fixed(slot, buf, sizeof(buf), 0, /*user_data=*/0xF1));
+
+  bool got = false;
+  for (int spins = 0; spins < 100 && !got; ++spins) {
+    Completion c[4];
+    std::size_t n = p.reap(c, 4, 50'000'000ull);  // 50ms
+    for (std::size_t i = 0; i < n; ++i) {
+      if (c[i].user_data != 0xF1) continue;
+      ASSERT_GT(c[i].result, 0) << "fixed recv must transfer bytes";
+      EXPECT_STREQ(buf, msg) << "fixed-file recv delivered the peer's bytes";
+      got = true;
+    }
+  }
+  EXPECT_TRUE(got) << "the fixed-file recv never completed";
+
+  // Also exercise submit_send_fixed: send via the slot back to the peer, verify it.
+  const char* reply = "fixed-file-send";
+  ASSERT_TRUE(p.submit_send_fixed(slot, reply, std::strlen(reply) + 1, 0,
+                                  /*user_data=*/0xF2));
+  bool sent = false;
+  for (int spins = 0; spins < 100 && !sent; ++spins) {
+    Completion c[4];
+    std::size_t n = p.reap(c, 4, 50'000'000ull);
+    for (std::size_t i = 0; i < n; ++i)
+      if (c[i].user_data == 0xF2 && c[i].result > 0) sent = true;
+  }
+  EXPECT_TRUE(sent) << "the fixed-file send never completed";
+  char rbuf[64] = {};
+  EXPECT_GT(::read(sv[1], rbuf, sizeof(rbuf)), 0);
+  EXPECT_STREQ(rbuf, reply) << "peer received the fixed-file send bytes";
+
+  p.release_fixed_slot(slot);
+  ::close(sv[0]);
+  ::close(sv[1]);
+}
 #endif  // __linux__
 
 // ---- Windows IOCP real IO ops ----------------------------------------------

@@ -1,6 +1,7 @@
 #include "hyle/io/proactor.h"
 
 #include <new>
+#include <vector>
 
 #include "hyle/macros.h"
 #include "hyle/platform.h"
@@ -691,6 +692,13 @@ bool Proactor::submit_recv_multishot(std::intptr_t, int,
 }
 void* Proactor::buf_ring_addr(int, std::uint32_t) noexcept { return nullptr; }
 bool Proactor::buf_ring_return(int, std::uint32_t) noexcept { return false; }
+bool Proactor::register_file_table(unsigned) noexcept { return false; }
+int Proactor::assign_fixed_slot(std::intptr_t) noexcept { return -1; }
+void Proactor::release_fixed_slot(int) noexcept {}
+bool Proactor::submit_recv_fixed(int, void*, std::uint32_t, std::uint32_t,
+                                 std::uint64_t) noexcept { return false; }
+bool Proactor::submit_send_fixed(int, const void*, std::uint32_t, std::uint32_t,
+                                 std::uint64_t) noexcept { return false; }
 
 }  // namespace hyle::io
 
@@ -817,6 +825,11 @@ struct Proactor::Impl {
   unsigned buf_ring_mask = 0;    // entries - 1
   unsigned buf_size = 0;         // bytes per buffer
   int buf_bgid = -1;             // buffer group id (-1 = no ring registered)
+  // Registered (fixed) file table (io-07c). A sparse table registered with the
+  // kernel; slots hold raw fds so submit_*_fixed can reference a slot INDEX with
+  // IOSQE_FIXED_FILE (kernel skips per-op fget/fput). `file_slots` mirrors the kernel
+  // table for our own free-slot bookkeeping (-1 = free). Owner-thread-only.
+  std::vector<std::intptr_t> file_slots;  // empty = table not registered
   // Submit batch (io-04 opt): SQEs filled by submit_* but not yet flushed to the
   // kernel. The worker loop now reaps only when its run-queue drains, so many
   // fibers submit between two reaps -- these accumulate here and the next reap
@@ -1835,6 +1848,115 @@ bool Proactor::buf_ring_return(int bgid, std::uint32_t buffer_id) noexcept {
   b.bid = static_cast<std::uint16_t>(buffer_id);
   as_atomic16(&impl_->buf_ring->tail)
       ->store(static_cast<std::uint16_t>(tail + 1), std::memory_order_release);
+  return true;
+}
+
+// ---- registered (fixed) files (io-07c) ------------------------------------
+#ifndef IORING_REGISTER_FILES2
+#  define IORING_REGISTER_FILES2 13u
+#endif
+#ifndef IORING_REGISTER_FILES_UPDATE
+#  define IORING_REGISTER_FILES_UPDATE 6u
+#endif
+#ifndef IORING_RSRC_REGISTER_SPARSE
+#  define IORING_RSRC_REGISTER_SPARSE (1u << 0)
+#endif
+
+bool Proactor::register_file_table(unsigned nr) noexcept {
+  if (impl_ == nullptr || impl_->backend != Impl::kUring) return false;
+  if (nr == 0 || !impl_->file_slots.empty()) return false;  // once
+  if (impl_->needs_enable) return false;  // R_DISABLED-pending: can't register yet
+  // Register a SPARSE table (all slots empty). io_uring_rsrc_register: nr slots,
+  // SPARSE flag, no data/tags. The kernel allocates the table; we fill slots later
+  // via FILES_UPDATE (assign_fixed_slot).
+  io_uring_rsrc_register rr;
+  std::memset(&rr, 0, sizeof(rr));
+  rr.nr = nr;
+  rr.flags = IORING_RSRC_REGISTER_SPARSE;
+  if (sys_io_uring_register(impl_->fd, IORING_REGISTER_FILES2, &rr, sizeof(rr)) < 0)
+    return false;
+  impl_->file_slots.assign(nr, -1);  // mirror for free-slot bookkeeping (-1 = free)
+  return true;
+}
+
+int Proactor::assign_fixed_slot(std::intptr_t fd) noexcept {
+  if (impl_ == nullptr || impl_->backend != Impl::kUring) return -1;
+  if (impl_->file_slots.empty()) return -1;  // table not registered
+  // Find a free slot (linear scan -- tables are small; a free-list is overkill).
+  int slot = -1;
+  for (std::size_t i = 0; i < impl_->file_slots.size(); ++i) {
+    if (impl_->file_slots[i] < 0) { slot = static_cast<int>(i); break; }
+  }
+  if (slot < 0) return -1;  // table full
+  // Point the kernel table slot at this fd (FILES_UPDATE at offset=slot, one fd).
+  std::int32_t raw = static_cast<std::int32_t>(fd);
+  io_uring_rsrc_update ru;
+  std::memset(&ru, 0, sizeof(ru));
+  ru.offset = static_cast<std::uint32_t>(slot);
+  ru.data = reinterpret_cast<std::uint64_t>(&raw);
+  if (sys_io_uring_register(impl_->fd, IORING_REGISTER_FILES_UPDATE, &ru, 1) < 0)
+    return -1;
+  impl_->file_slots[static_cast<std::size_t>(slot)] = fd;
+  return slot;
+}
+
+void Proactor::release_fixed_slot(int index) noexcept {
+  if (impl_ == nullptr || impl_->backend != Impl::kUring) return;
+  if (index < 0 || static_cast<std::size_t>(index) >= impl_->file_slots.size()) return;
+  // Clear the kernel table entry (FILES_UPDATE with fd = -1) so a stale slot can't
+  // resolve to a closed fd, then mark it free for reuse.
+  std::int32_t empty = -1;
+  io_uring_rsrc_update ru;
+  std::memset(&ru, 0, sizeof(ru));
+  ru.offset = static_cast<std::uint32_t>(index);
+  ru.data = reinterpret_cast<std::uint64_t>(&empty);
+  sys_io_uring_register(impl_->fd, IORING_REGISTER_FILES_UPDATE, &ru, 1);
+  impl_->file_slots[static_cast<std::size_t>(index)] = -1;
+}
+
+bool Proactor::submit_recv_fixed(int slot, void* buf, std::uint32_t len,
+                                 std::uint32_t flags,
+                                 std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || impl_->backend != Impl::kUring) return false;
+  // Fill the SQE directly (submit_one doesn't set sqe.flags): IOSQE_FIXED_FILE +
+  // sqe.fd = the SLOT INDEX (the kernel resolves the real fd from its table).
+  unsigned tail = *impl_->sq_tail;
+  unsigned index = tail & *impl_->sq_ring_mask;
+  io_uring_sqe& s = impl_->sqes[index];
+  std::memset(&s, 0, sizeof(s));
+  s.opcode = IORING_OP_RECV;
+  s.fd = slot;
+  s.flags = IOSQE_FIXED_FILE;
+  s.addr = reinterpret_cast<std::uint64_t>(buf);
+  s.len = len;
+  s.rw_flags = static_cast<int>(flags);
+  s.user_data = user_data;
+  impl_->sq_array[index] = index;
+  as_atomic(impl_->sq_tail)->store(tail + 1, std::memory_order_release);
+  ++impl_->sq_pending;
+  ++impl_->inflight;
+  return true;
+}
+
+bool Proactor::submit_send_fixed(int slot, const void* buf, std::uint32_t len,
+                                 std::uint32_t flags,
+                                 std::uint64_t user_data) noexcept {
+  if (impl_ == nullptr || impl_->backend != Impl::kUring) return false;
+  unsigned tail = *impl_->sq_tail;
+  unsigned index = tail & *impl_->sq_ring_mask;
+  io_uring_sqe& s = impl_->sqes[index];
+  std::memset(&s, 0, sizeof(s));
+  s.opcode = IORING_OP_SEND;
+  s.fd = slot;
+  s.flags = IOSQE_FIXED_FILE;
+  s.addr = reinterpret_cast<std::uint64_t>(buf);
+  s.len = len;
+  s.rw_flags = static_cast<int>(flags);
+  s.user_data = user_data;
+  impl_->sq_array[index] = index;
+  as_atomic(impl_->sq_tail)->store(tail + 1, std::memory_order_release);
+  ++impl_->sq_pending;
+  ++impl_->inflight;
   return true;
 }
 
