@@ -77,7 +77,23 @@ raw epoll 对照答的是"vs 旧就绪模型";要答"vs **同样的 io_uring**�
 
 单核 -33% 后 **HYLE-1w 反超 asio(1255 vs 1583)与裸 epoll(1255 vs 1346)**——把之前 vs-asio 的"单核平局"变成"单核赢"。同 run 里 asio/epoll(无本改动)基本未动,隔离出收益确归本两处改动、非机器波动。
 
-**诚实纠错 —— DEFER_TASKRUN 撤下(登记 follow-up)**:调研最看好的其实是 `DEFER_TASKRUN`(+SINGLE_ISSUER,≥6.1),它把完成 task_work 全延到 GETEVENTS enter 才跑,理论上最契合"每核一 ring、单消费者"。但**实测挂死基本 send/recv 往返**:HYLE 的 drain-time reap(`run_worker`)调 `reap(timeout=0)`,其 CQ-空分支走 **submit-only enter(不带 GETEVENTS)**——defer 下完成永远滞留 task_work、在此永不 surface,worker 空转 searcher 自旋到不了 park 的阻塞 GETEVENTS reap。bisect(flags=0 全过 → coop+submit_all 全过 → 加 defer 挂)定位到 defer 单独致因。安全接入需 reap 路径保证"有 op 在途就必带 GETEVENTS enter"(不只 park 边界),已登记。COOP_TASKRUN 拿到大部分收益(task_work 批处理)且无此约束。教训同 P0 hang:**优化契合直觉 ≠ 能跑,必须过它自己的 benchmark/测试**。
+**诚实纠错 —— DEFER_TASKRUN 撤下(登记 follow-up)**:调研最看好的其实是 `DEFER_TASKRUN`(+SINGLE_ISSUER,≥6.1),它把完成 task_work 全延到 GETEVENTS enter 才跑,理论上最契合"每核一 ring、单消费者"。但**实测挂死基本 send/recv 往返**——深挖(探针 errno=17 EEXIST)定位真根因是 **SINGLE_ISSUER 线程绑定**:HYLE 在 IoContext 构造函数(主线程)建所有 ring,却在各 owner worker 线程 submit+reap,worker 首次 enter 就 EEXIST(次要因是 reap 路径 submit-only enter 不带 GETEVENTS,已修好、dormant 就位)。真正接入需 ring 生命周期改造(`R_DISABLED` 建 + 各 worker 首触发在自己线程 `ENABLE_RINGS`),登记为 follow-up(#52)。COOP_TASKRUN 拿到大部分收益(task_work 批处理)且无此约束。教训同 P0 hang:**优化契合直觉 ≠ 能跑,必须过它自己的 benchmark/测试**。
+
+## multishot recv awaitable vs one-shot RecvOp:同核对称负载下统计平局(`bench/io/multishot_bench.cc`)
+
+把 proactor 的 multishot recv + provided-buffer-ring 提升为 co_await awaitable(io-07b,commit e19312d)后,必须回答"它比 one-shot RecvOp 快么"。理论收益=免 per-recv submit + 零拷贝 ring 缓冲。设计一个**干净可信**的对照:同 worker 内 sender fiber + receiver fiber(无跨线程唤醒地板)、DGRAM socketpair(保消息边界,两行完成数严格相等)、receiver 收满确定 N 个后停(DGRAM 无可靠 EOF terminal)、唯一变量=receiver 收方式。
+
+**Linux io_uring 实测(`bench-stat.py` n=15)**:
+
+| 配置 | ns/datagram | 判定 |
+|---|---|---|
+| HYLE multishot(1 arm,ring 缓冲,无 per-recv submit) | 165,679 | — |
+| HYLE one-shot RecvOp(每 datagram 一次 submit) | 166,985 | — |
+| **比值** | **0.998,gap 0.2% « spread 13.4%** | **统计平局** |
+
+**诚实解读**:multishot 在此负载**不快于** one-shot——这是**符合预期**的结果,非 bug。这个同核 sender↔receiver **lockstep** 只让 ~1 个 datagram 同时在途(sender 每 send 都 co_await、receiver 每 recv 都 co_await),~166µs/datagram 由**两行都付的 fiber 往返**主导;multishot 永远拿不到"一批完成同时到"的场景来摊薄它省下的 submit——那才是它的价值所在。multishot 的优势需要**突发生产者**(大量 datagram 在 receiver 消费前排队),lockstep sender 造不出来。故此 bench 证的是 **multishot 不是回归(在不利负载上与 one-shot 打平)**;要显出它的优势需要单 worker socketpair 造不出的高扇出/突发负载(登记为未来工作)。
+
+**方法学血泪(三次假结果才到诚实平局)**:① 首版给每流各注册 buf ring,但 proactor 每核只支持一个 ring→第 2 条注册失败→multishot 行空转 bail,得"63x 更快"**假象**;② 预塞式 feed 死锁(flood 塞满 socket 缓冲而 drain fiber 还没跑);③ 后台 feeder 线程注入跨线程唤醒延迟(WSL2 ~12µs 地板)主导 one-shot 行(174µs/recv)、且 STREAM 合并致两行完成数不等,又是"178x"**假象**。逐个消除(单 ring 共享 / 同核 fiber 无跨线程 / DGRAM 保边界 / 确定计数)才得到可信的平局。**教训:"太好的比值"必先疑自己**——用完成计数(两行须相等)当铁证核对工况对称,别信裸 ns/op 比。
 
 ## pipelined / 高扇出(512 流)+ 一个被它揪出的 P0 hang
 

@@ -185,6 +185,19 @@ if(HYLE_HAS_FCONTEXT)
     target_link_libraries(hyle_http_bench PRIVATE ws2_32)
   endif()
 
+  # io multishot-recv bench (io-07b): does the multishot + provided-buffer-ring
+  # awaitable beat one-shot RecvOp on a receive-heavy load? Same-worker sender+receiver
+  # fibers + DGRAM socketpair (no cross-thread wakeup floor, equal completion counts);
+  # the only variable is the receiver's recv method. Isolates the per-recv-submit cost
+  # multishot removes. Linux/io_uring only in effect (register_buf_ring returns false
+  # elsewhere -> multishot row self-skips); compiles everywhere. Same sched dep.
+  add_executable(hyle_multishot_bench io/multishot_bench.cc)
+  target_link_libraries(hyle_multishot_bench PRIVATE hyle_sched hyle_io nanobench)
+  hyle_apply_warnings(hyle_multishot_bench)
+  if(WIN32)
+    target_link_libraries(hyle_multishot_bench PRIVATE ws2_32)
+  endif()
+
   # io TLS bench (io-08): TLS handshake/s + encrypted-echo throughput over HYLE's
   # memory-BIO pump vs RAW OpenSSL over a blocking socket (same cert/cipher/payload).
   # The ratio isolates HYLE's co_await pump + fiber overhead from the identical
