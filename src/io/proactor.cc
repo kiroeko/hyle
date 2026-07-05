@@ -782,6 +782,14 @@ struct Proactor::Impl {
   std::size_t sqes_sz = 0;
   unsigned sq_entries = 0;
   bool single_mmap = false;
+  // DEFER_TASKRUN active: completions run their task_work ONLY on an io_uring_enter
+  // carrying IORING_ENTER_GETEVENTS -- a submit-only enter never surfaces them. So a
+  // non-blocking reap(0) with ops in flight must still enter with GETEVENTS (min_
+  // complete=0, no wait) to run the deferred work + harvest. Currently ALWAYS FALSE:
+  // DEFER needs SINGLE_ISSUER, which needs per-worker ring enablement not yet done
+  // (see try_init_uring). The field + its reap branch are the tested foundation kept
+  // in place for when that ring-lifecycle change lands.
+  bool defer_taskrun = false;
   unsigned* sq_tail = nullptr;
   unsigned* sq_ring_mask = nullptr;
   unsigned* sq_array = nullptr;
@@ -939,21 +947,28 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
   //   SUBMIT_ALL (>=5.18): a bad SQE in a batch doesn't abort the whole submit -- HYLE
   //     folds many fibers' SQEs into one enter, so one bad fd must not drop its peers.
   //
-  // DEFER_TASKRUN (+SINGLE_ISSUER, >=6.1) is DELIBERATELY NOT here yet, though HYLE's
-  // per-core model looks tailor-made for it. It defers ALL completion task_work to a
-  // GETEVENTS enter, which broke a basic send/recv round-trip in testing: HYLE's
-  // drain-time reap (scheduler run_worker) calls reap(timeout=0), whose CQ-empty branch
-  // does a SUBMIT-ONLY enter (no GETEVENTS) -- under defer the completion then sits in
-  // task_work and never surfaces there; the worker spins the searcher loop instead of
-  // reaching the park's blocking GETEVENTS reap. Wiring defer safely needs the reap
-  // path to guarantee a GETEVENTS enter whenever ops are in flight (not only at the
-  // park boundary). Registered as a follow-up; COOP_TASKRUN captures most of the win
-  // (task_work batching) without the delivery constraint.
+  // DEFER_TASKRUN (+SINGLE_ISSUER, >=6.1) is NOT in the ladder despite looking
+  // tailor-made for the per-core ring. TWO things block it, one fixed, one not:
+  //  (1) [FIXED here] completions run task_work only on a GETEVENTS enter -> the
+  //      non-blocking drain reap(0) must still enter with GETEVENTS+min_complete=0.
+  //      The defer_taskrun branch in reap() does exactly that (kept, dormant).
+  //  (2) [NOT fixed] SINGLE_ISSUER pins the ring's issuer task at SETUP time -- but
+  //      HYLE creates every ring in IoContext's ctor on the CONSTRUCTING thread, while
+  //      each ring is submitted+reaped from its OWNER WORKER thread. The worker's first
+  //      io_uring_enter then fails EEXIST (errno 17, verified by probe). Fixing needs
+  //      per-worker ring lifecycle: setup with IORING_SETUP_R_DISABLED, then
+  //      io_uring_register(ENABLE_RINGS) from the owner worker thread on first touch
+  //      (which also gates every pre-worker submit/register/wake-arm) -- a real ring-
+  //      lifecycle change, registered as a follow-up. COOP_TASKRUN captures most of the
+  //      task_work-batching win without the single-issuer thread constraint.
 #ifndef IORING_SETUP_SUBMIT_ALL
 #  define IORING_SETUP_SUBMIT_ALL (1u << 7)
 #endif
 #ifndef IORING_SETUP_COOP_TASKRUN
 #  define IORING_SETUP_COOP_TASKRUN (1u << 8)
+#endif
+#ifndef IORING_SETUP_DEFER_TASKRUN
+#  define IORING_SETUP_DEFER_TASKRUN (1u << 13)
 #endif
   const unsigned kFlagLadder[] = {
       IORING_SETUP_COOP_TASKRUN | IORING_SETUP_SUBMIT_ALL,  // >=5.19
@@ -962,11 +977,12 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
   };
   io_uring_params p;
   int fd = -1;
+  unsigned chosen_flags = 0;
   for (unsigned flags : kFlagLadder) {
     std::memset(&p, 0, sizeof(p));
     p.flags = flags;
     fd = sys_io_uring_setup(entries, &p);
-    if (fd >= 0) break;
+    if (fd >= 0) { chosen_flags = flags; break; }
     // -EINVAL: this flag combo unsupported on this kernel -> try the next rung.
     // Any OTHER error (ENOSYS old kernel / EPERM sysctl-disabled) is fatal for all
     // rungs -> bail to the epoll fallback immediately.
@@ -983,6 +999,9 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries) noexcept {
   impl->fd = fd;
   impl->sq_entries = p.sq_entries;
   impl->single_mmap = (p.features & IORING_FEAT_SINGLE_MMAP) != 0;
+  // DEFER_TASKRUN chosen -> reap(0) must enter with GETEVENTS to surface deferred
+  // completions (see the defer_taskrun branch in reap()).
+  impl->defer_taskrun = (chosen_flags & IORING_SETUP_DEFER_TASKRUN) != 0;
 
   std::size_t sqring = p.sq_off.array + p.sq_entries * sizeof(unsigned);
   std::size_t cqring = p.cq_off.cqes + p.cq_entries * sizeof(io_uring_cqe);
@@ -1315,34 +1334,51 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
   unsigned head = *impl_->cq_head;
   if (head == tail) {
     if (timeout_ns == 0) {
-      // Non-blocking poll, CQ empty: flush the batch (no wait) so it reaches the
-      // kernel, then return -- the completions will show up on a later reap.
-      if (submit != 0) {
-        sys_io_uring_enter(impl_->fd, submit, 0, 0, nullptr, 0);
+      // Non-blocking poll, CQ empty. Normally: flush the batch (no wait) so it
+      // reaches the kernel, then return -- completions show up on a later reap.
+      // BUT under DEFER_TASKRUN a completion's task_work runs only on a GETEVENTS
+      // enter, so a submit-only enter would leave it stuck in task_work forever
+      // (the drain-time reap(0) never surfaces it -> fibers hang). So when defer is
+      // on, enter with GETEVENTS + min_complete=0: run the deferred work and harvest
+      // whatever is ready WITHOUT blocking (the io_uring_peek_cqe idiom under defer).
+      if (impl_->defer_taskrun) {
+        int r = sys_io_uring_enter(impl_->fd, submit, 0, IORING_ENTER_GETEVENTS,
+                                   nullptr, 0);
         impl_->stat_enters += 1;
         impl_->stat_sqes += submit;
+        if (r < 0 && errno != EINTR) return 0;
+        tail = as_atomic(impl_->cq_tail)->load(std::memory_order_acquire);
+        head = *impl_->cq_head;
+        // fall through to the userspace harvest loop below with the fresh tail
+      } else {
+        if (submit != 0) {
+          sys_io_uring_enter(impl_->fd, submit, 0, 0, nullptr, 0);
+          impl_->stat_enters += 1;
+          impl_->stat_sqes += submit;
+        }
+        return 0;
       }
-      return 0;
+    } else {
+      struct __kernel_timespec ts;
+      struct io_uring_getevents_arg arg;
+      std::memset(&arg, 0, sizeof(arg));
+      unsigned flags = IORING_ENTER_GETEVENTS;
+      if (timeout_ns != UINT64_MAX) {
+        ts.tv_sec = static_cast<long long>(timeout_ns / 1'000'000'000ull);
+        ts.tv_nsec = static_cast<long long>(timeout_ns % 1'000'000'000ull);
+        arg.ts = reinterpret_cast<std::uint64_t>(&ts);
+        flags |= IORING_ENTER_EXT_ARG;
+      }
+      // One enter both submits the batched SQEs AND waits for >=1 completion.
+      int r = sys_io_uring_enter(impl_->fd, submit, 1, flags,
+                                 (flags & IORING_ENTER_EXT_ARG) ? &arg : nullptr,
+                                 (flags & IORING_ENTER_EXT_ARG) ? sizeof(arg) : 0);
+      impl_->stat_enters += 1;
+      impl_->stat_sqes += submit;
+      if (r < 0 && errno != ETIME && errno != EINTR) return 0;
+      tail = as_atomic(impl_->cq_tail)->load(std::memory_order_acquire);
+      head = *impl_->cq_head;
     }
-    struct __kernel_timespec ts;
-    struct io_uring_getevents_arg arg;
-    std::memset(&arg, 0, sizeof(arg));
-    unsigned flags = IORING_ENTER_GETEVENTS;
-    if (timeout_ns != UINT64_MAX) {
-      ts.tv_sec = static_cast<long long>(timeout_ns / 1'000'000'000ull);
-      ts.tv_nsec = static_cast<long long>(timeout_ns % 1'000'000'000ull);
-      arg.ts = reinterpret_cast<std::uint64_t>(&ts);
-      flags |= IORING_ENTER_EXT_ARG;
-    }
-    // One enter both submits the batched SQEs AND waits for >=1 completion.
-    int r = sys_io_uring_enter(impl_->fd, submit, 1, flags,
-                               (flags & IORING_ENTER_EXT_ARG) ? &arg : nullptr,
-                               (flags & IORING_ENTER_EXT_ARG) ? sizeof(arg) : 0);
-    impl_->stat_enters += 1;
-    impl_->stat_sqes += submit;
-    if (r < 0 && errno != ETIME && errno != EINTR) return 0;
-    tail = as_atomic(impl_->cq_tail)->load(std::memory_order_acquire);
-    head = *impl_->cq_head;
   } else if (submit != 0) {
     // CQ non-empty but SQEs pending: submit-only enter (no wait) to flush them,
     // then reap the ready completions below.
