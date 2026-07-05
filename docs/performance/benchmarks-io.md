@@ -184,7 +184,17 @@ TLS bench 隔出的是 co_await 泵的开销;HTTP 要隔的是**协议层**(pico
 **诚实解读**:
 1. **parse/framing 净开销 ~1.44x**(HTTP-1w 2626ns vs 裸 TCP-1w 1827ns;`bench-stat.py` 判 gap 33.3% > 合并 spread 26.5% = **真 LOSE 非噪声**)。这是**符合预期的真代价**:每请求要 phr_parse_request 扫头、head 拷进稳定 buffer 再重解析(修 realloc-dangle 的必要拷贝)、状态行+头部 put 进 out buffer、body framing——裸 echo 全省。~800ns/req 的绝对开销对小响应可见,对大 body/流式(传输主导)摊薄。
 2. **shard-per-core 扩展仍在**:1w→4w 2.40x(2626→1093ns),证 parse/framing 层不破坏 shard 分片——每连接的解析全在 owner 核串行,无跨核共享。
-3. **⚠️ Windows 侧未出数(诚实登记,非 bug)**:http_bench 与 echo_bench **同款** Windows loopback-TCP socketpair 模拟;实测**已提交的 echo_bench 在 Windows 同样挂**(非我的 bench 特有——控制实验:跑未改动的 echo_bench 同样 3min 零输出、内存平),根因是 loopback socketpair 模拟在 64-conn socket-heavy 负载下的既知限制(同 accept_bench/io_scaling_bench 登记的"Windows 仅验证能编能跑+低档,真 scaling 取自 io_uring")。**我的 bench 逻辑正确的双证据**:① WSL(socketpair,client-close→server-EOF POSIX 保证)15 遍统计全干净;② server 依赖的 client-close→EOF 拆除路径已由既有通过的 `http_test GetKeepAlive` 在 Windows 独立验证。**TIME_WAIT 仅 12、端口余 13977 → 排除端口耗尽**。
+3. **Windows(loopback TCP,self-timed,非 nanobench)**:
+
+| 配置 | ns/req | req/s | 相对 1w |
+|---|---|---|---|
+| HYLE HTTP 1 worker | 11,597 | ~86K | 1.0x |
+| HYLE HTTP 2 workers | 6,439 | ~155K | 1.80x |
+| HYLE HTTP 4 workers | 3,571 | ~280K | 3.25x |
+| 裸 TCP echo 1 worker | 9,827 | ~102K | (传输地板) |
+
+parse/framing 净开销 **~1.18x**(11597 vs 9827),shard 扩展 1w→4w **3.25x** 更陡(Windows 单核基线更慢,并行摊得更开)。**跨平台绝对值不可比**(Windows loopback TCP + IOCP 唤醒地板 vs WSL socketpair,同 TLS bench 记的地板差),只同平台内 HYLE-vs-裸 的比值有意义:两平台都是 parse/framing 加一层可测但温和的开销(WSL 1.44x / Win 1.18x)。
+4. **诚实纠错(方法学,2026-07-05)**:此 bench 首版我误判"Windows 挂死、loopback 限制未出数"。**真根因**:nanobench 的**自适应 epoch**在 Windows loopback 的高单次方差下**无界重试**逼近目标精度——进程**没挂**(内存平、TIME_WAIT 仅 5、端口充足),只是**每行跑分钟级**,我 3min kill 太早、又因 nanobench 只在末尾一次性打表而误读成"零输出=挂死"。**先疑自己**:探针分阶段(单 run→各 worker 档→重复 40 次→自计时)逐步排除,证单次 `run()` 40-48ms 正常、40 次重复正常完成,定位到 nanobench epoch 机制而非传输/我的 bench。自计时(固定 run 数)绕开该机制即出数。教训:**nanobench 不适合单次 op 达毫秒级、方差大的负载**(它为亚 µs 稳定核设计),这类负载用固定次数自计时。
 
 ## 热路径分配消除:TLS 泵 + HTTP 流式 chunk 缓冲复用(2026-07-05)
 
@@ -227,7 +237,7 @@ TLS bench 隔出的是 co_await 泵的开销;HTTP 要隔的是**协议层**(pico
 - **计数分配器 microbench**:给上面两处热路径分配消除补一个 alloc-count 铁证(计数 Allocator 跑 N 次 TLS 读写 / M chunk 流式,断言分配次数不随 N/M 增长)。scratchpad 探针已验证分配计数下降(structural),permanent 版可后补。
 - ✅ **裸 liburing 对标**(已做,见上"vs 裸 liburing"节):liburing 本地 clone `../liburing`,`-DHYLE_BENCH_LIBURING=ON` 自动 configure+make 链接。结论:单核输 2.3x(抽象代价)、4 核反超。
 - ✅ **TLS vs 裸 OpenSSL**(已做,见上"TLS 握手 + 加密 echo"节):稳态 echo Win 平/Lin 反超 1.76x,handshake ~1.3-2.2x 慢(真开销)。
-- ✅ **HTTP bench**(已做,见上"HTTP req/resp 吞吐"节):64conn×64rt keep-alive `GET /` vs 同传输裸 TCP echo,parse/framing 净开销 ~1.44x(真 LOSE,符合预期),shard 扩展 1w→4w 2.40x。Linux io_uring 出数;Windows 同 echo_bench loopback 限制未出(非 bug)。
+- ✅ **HTTP bench**(已做,见上"HTTP req/resp 吞吐"节):64conn×64rt keep-alive `GET /` vs 同传输裸 TCP echo,parse/framing 净开销 WSL 1.44x / Win 1.18x(真 LOSE,符合预期),shard 扩展 1w→4w 2.4x(Lin)/3.25x(Win)。双平台出数;Windows 用自计时(nanobench 自适应 epoch 在 loopback 高方差下无界重试,不适合毫秒级 op)。
 - **file io bench**:open/read/write/stat 吞吐(io_uring 真异步 vs IOCP/epoll 同步合成的代价差)。未做。
 - **vs asio / libuv**:证不输成熟异步框架。
 - **SQPOLL**:内核侧 submit,连批量 enter 都免;对延迟受限负载也有效。接口已预留(setup flag),未接。
