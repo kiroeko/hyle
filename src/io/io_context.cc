@@ -12,18 +12,21 @@
 
 namespace hyle::io {
 
-IoContext::IoContext(sched::Scheduler& sched, unsigned num_workers) noexcept
+IoContext::IoContext(sched::Scheduler& sched, unsigned num_workers,
+                     bool defer_taskrun) noexcept
     : sched_(sched) {
   HYLE_FATAL_ASSERT(num_workers >= 1);
   rings_.reserve(num_workers);
   valid_ = true;
   for (unsigned i = 0; i < num_workers; ++i) {
     auto p = std::make_unique<Proactor>();
-    // defer_worker_thread=true: each ring is created HERE (constructing thread) but
-    // submitted+reaped from its owner worker -> opt into DEFER_TASKRUN+SINGLE_ISSUER
-    // via R_DISABLED (the worker's first reap enables the ring, becoming the issuer).
-    // io_uring only; a no-op on IOCP/epoll.
-    if (!p->init(256, /*defer_worker_thread=*/true)) valid_ = false;  // a ring the OS refused -> context invalid
+    // defer_taskrun (opt-in, default false): each ring is created HERE (constructing
+    // thread) but submitted+reaped from its owner worker. When true, opt into
+    // DEFER_TASKRUN+SINGLE_ISSUER via R_DISABLED (worker's first reap enables the ring,
+    // becoming the issuer). DEFAULT FALSE = COOP_TASKRUN, because an R_DISABLED ring
+    // can't register a provided-buffer ring from this thread -> multishot/zero-copy
+    // contexts need COOP. io_uring only; a no-op on IOCP/epoll.
+    if (!p->init(256, /*defer_worker_thread=*/defer_taskrun)) valid_ = false;
     rings_.push_back(std::move(p));
   }
   sched_.set_io_poll(&IoContext::poll_trampoline, this);

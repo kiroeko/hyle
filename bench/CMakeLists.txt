@@ -198,6 +198,17 @@ if(HYLE_HAS_FCONTEXT)
     target_link_libraries(hyle_multishot_bench PRIVATE ws2_32)
   endif()
 
+  # io multishot ZERO-COPY ECHO bench (io-07c承重): the workload multishot is FOR --
+  # echo each received chunk straight back FROM the ring buffer (no copy) vs a one-shot
+  # recv-into-buffer + send. Where the recv-drain bench tied, this should show
+  # multishot's zero-copy + no-per-recv-submit win. Same sched dep; Linux/io_uring only.
+  add_executable(hyle_multishot_echo_bench io/multishot_echo_bench.cc)
+  target_link_libraries(hyle_multishot_echo_bench PRIVATE hyle_sched hyle_io nanobench)
+  hyle_apply_warnings(hyle_multishot_echo_bench)
+  if(WIN32)
+    target_link_libraries(hyle_multishot_echo_bench PRIVATE ws2_32)
+  endif()
+
   # io TLS bench (io-08): TLS handshake/s + encrypted-echo throughput over HYLE's
   # memory-BIO pump vs RAW OpenSSL over a blocking socket (same cert/cipher/payload).
   # The ratio isolates HYLE's co_await pump + fiber overhead from the identical

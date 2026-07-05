@@ -43,7 +43,16 @@ class IoContext {
   // Stands up one proactor per worker and registers the poll hook on `sched`.
   // `num_workers` MUST match the scheduler's worker count. `sched` must outlive
   // this IoContext. valid() reports whether every ring came up.
-  HYLE_IO_API IoContext(sched::Scheduler& sched, unsigned num_workers) noexcept;
+  //
+  // `defer_taskrun`: opt into io_uring DEFER_TASKRUN+SINGLE_ISSUER (via the R_DISABLED
+  // worker-enable lifecycle). DEFAULT FALSE (COOP_TASKRUN) because DEFER's R_DISABLED
+  // ring cannot register a provided-buffer ring from the constructing thread -- so a
+  // context that uses multishot recv / zero-copy buffer rings MUST keep this false.
+  // Set true only for a pure recv/send workload (no buf-ring) that wants DEFER's lower
+  // task_work overhead. io_uring only; ignored on IOCP/epoll. (COOP already captures
+  // most of the task_work-batching win -- see benchmarks-io.md.)
+  HYLE_IO_API IoContext(sched::Scheduler& sched, unsigned num_workers,
+                        bool defer_taskrun = false) noexcept;
   HYLE_IO_API ~IoContext();
   HYLE_DISABLE_COPY_AND_MOVE(IoContext);
 
