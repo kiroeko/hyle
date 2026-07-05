@@ -182,6 +182,8 @@ accepts/s 三档恒定(甚至微升,batch 摊薄)、err% <0.5% = **accept 路径
 
 **红队核实为安全（清账）**:TLS scratch 复用(本 session 改)、net_timeout io-vs-timer 竞态仲裁 + 迟到 CQE refcount、net_cancel 栈 slot 单唤醒、parse_u64 溢出、HTTP head/body 视图跨 realloc 稳定性、IOCP teardown 顺序、buf_ring_return 无竞态、RecvFromOp/SendToOp scratch 生命周期、io_uring multishot inflight 计数。
 
+**U5 (agent 报 P3 leak，调研后判定非 bug，2026-07-05)**:agent 称"timed-op 若 submit_cancel 失败(ring 满)+ 静默 peer → TimedSlot 泄漏"。**两个前提在 HYLE 上都不成立**:①**io_uring `submit_one` 永不因 SQ 满失败**(proactor.cc:1376——满时当场 flush 再入队,总返回 true);②**内核契约保证每个被消费的 SQE 必产生一个 CQE**(liburing `io_uring_prep_cancel.3`:"a CQE is always generated"),cancel 返回 false / -ENOENT 只意味着原 op 已完成、CQE 已在路上,`complete_timed` 仍会 drop kernel ref。**cancel 只是让完成来得更快的优化,不是 free slot 的必要条件**——tokio-uring `Lifecycle::Ignored` 只在 CQE 到达时 free;seastar 干脆不发内核 cancel,纯靠"每 SQE 必有完成"。HYLE 同款,+ `IoContext::~IoContext` orphan-drain 兜底(与 L5 共用同一机制)。唯一真漏点=**原 op submit 就失败**(SQE 从未被内核消费),已由 `on_submit_failed` 同步 drop kernel ref 堵住。结论已写进 net_timeout.h `resume_timed` 注释,防再次误报。**这也是 L5 的同族问题**:两者都靠"submitted SQE 必有完成 + orphan-drain 兜底"这一不变量,故 L5 亦安全。
+
 **低影响登记（暂不修）**:L1 submit 失败哨兵 `-1` 撞 `-EPERM`(调用方对两者都失败退出,行为无差异);L4 epoll 伪就绪透传 `-EAGAIN`;L5 基础 net.h op 无 orphan 保护(仅 teardown 且基础 op 不自取消,latent);L6 IOCP `SO_UPDATE_*_CONTEXT` 返回值未查(P3)。
 
 ## 未做(登记)

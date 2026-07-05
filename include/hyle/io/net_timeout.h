@@ -167,6 +167,26 @@ inline std::int64_t resume_timed(TimedSlot* s) noexcept {
   }
   // Timer won: io still in flight. Ask the proactor to cancel it; the late CQE will
   // drop the kernel ref via complete_timed. Drop the fiber ref now, return timeout.
+  //
+  // submit_cancel's return value is DELIBERATELY IGNORED, and that is correct (red-
+  // team U5 investigation, 2026-07-05, cross-checked vs tokio-uring + liburing +
+  // seastar): the kernel ref is dropped by the ORIGINAL op's completion, NOT by the
+  // cancel. io_uring guarantees a CQE for every kernel-consumed SQE (liburing
+  // io_uring_prep_cancel.3: "a CQE is always generated"); a cancel that returns
+  // -ENOENT / whose submit_cancel returns false means the target op ALREADY
+  // completed and its CQE is already reaped-or-queued -> complete_timed still runs
+  // and still drops the kernel ref. The async-cancel is only an OPTIMIZATION to make
+  // that completion arrive SOONER (a silent/dead peer would otherwise hold the op
+  // until close); it is never the thing that frees the slot. tokio-uring's
+  // Lifecycle::Ignored frees only on the CQE; seastar issues NO kernel cancel at all
+  // and relies purely on "every SQE yields a completion". HYLE does the same, with
+  // IoContext::~IoContext's orphan-drain as the teardown backstop (drains each ring
+  // to in_flight()==0 so a late CQE after scheduler stop still frees the slot).
+  //
+  // The ONE path that WOULD leak the kernel ref -- the ORIGINAL op's submit failing
+  // so its SQE was never kernel-consumed (no CQE ever comes) -- is handled elsewhere:
+  // on_submit_failed() drops the kernel ref synchronously when submit_recv/accept/
+  // connect returns false. So a cancel-submit failure here is genuinely harmless.
   s->p->submit_cancel(to_timed_token(s), kCancelToken);
   result = -110;  // -ETIMEDOUT (Linux errno 110; a stable negative sentinel)
   s->release();   // fiber ref; kernel ref stays until the late completion lands
