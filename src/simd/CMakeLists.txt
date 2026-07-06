@@ -31,12 +31,13 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_SIMD_ARM64 TRUE)
   # ops NEON kernel reuses the neon.h D-tag backend (dot/saxpy) -- the simd-03 real-run
-  # target. dtype fp16/bf16 and math transcendentals are HAND-WRITTEN per-backend intrinsics
-  # (not neon.h reuse): a NEON cvt (vcvt_f32_f16) + NEON transcendental borrow core are their
-  # own follow-up work, so aarch64 dtype/math use the scalar floor for now (correct, just not
-  # yet vectorized on arm). Scope kept to "prove neon.h ops kernel runs".
+  # target. dtype NEON (cvt_neon.cc) is hand-written per-backend intrinsics: fp16 via native
+  # ARMv8.2 vcvt, bf16 via NEON integer bit-math (bit-identical to scalar). math
+  # transcendentals stay on the scalar libm floor for now (a NEON Highway/xsimd borrow core
+  # is separate follow-up). Scope: ops + dtype vectorized on arm; math scalar.
   list(APPEND _simd_arch_sources
-    ops/kernels_neon.cc)
+    ops/kernels_neon.cc
+    dtype/cvt_neon.cc)
 endif()
 
 hyle_add_module(simd SOURCES
@@ -72,11 +73,12 @@ if(HYLE_SIMD_X64)
   # (runtime-gated in dtype_dispatch), so the bf16 instruction never runs on a CPU lacking it.
   hyle_set_isa(dtype/cvt_avx512bf16.cc AVX512_BF16)
 elseif(HYLE_SIMD_ARM64)
-  # NEON ops kernel: NEON is the ARMv8 baseline (empty flag list). The neon.h backend was
-  # written+objdump-verified earlier (simd-03) but never RAN until a real Apple-Silicon
-  # build; this TU finally compiles it into the dispatched dot/saxpy path. (dtype/math NEON
-  # are hand-written intrinsics = follow-up, not built here -- see the SOURCES split note.)
+  # NEON ops kernel + dtype cvt: NEON is the ARMv8 baseline (empty flag list). The neon.h
+  # backend was written+objdump-verified earlier (simd-03) but never RAN until a real
+  # Apple-Silicon build; this TU finally compiles it into the dispatched dot/saxpy path.
+  # cvt_neon.cc adds fp16(native vcvt)/bf16(integer) batch conversions.
   hyle_set_isa(ops/kernels_neon.cc NEON)
+  hyle_set_isa(dtype/cvt_neon.cc NEON)
 endif()
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:

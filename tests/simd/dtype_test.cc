@@ -128,8 +128,10 @@ TEST(DtypeBatch, F16ToF32HardwareMatchesScalar) {
 #if defined(HYLE_ARCH_X64)
   if (!hyle::simd::cpu_features().f16c)
     GTEST_SKIP() << "no F16C on this host -- batch would fall back to scalar (tautology)";
+#elif defined(HYLE_ARCH_ARM64)
+  // aarch64: batch runs the NEON native-vcvt kernel (ARMv8.2 FP16) -- validate it here.
 #else
-  GTEST_SKIP() << "non-x86 -- no F16C path";
+  GTEST_SKIP() << "unknown arch -- no hardware fp16 path";
 #endif
   std::vector<float16_t> src(0x10000);
   for (std::uint32_t b = 0; b <= 0xFFFF; ++b) src[b] = float16_t::from_bits(static_cast<std::uint16_t>(b));
@@ -150,8 +152,10 @@ TEST(DtypeBatch, F32ToF16HardwareMatchesScalar) {
 #if defined(HYLE_ARCH_X64)
   if (!hyle::simd::cpu_features().f16c)
     GTEST_SKIP() << "no F16C on this host -- batch would fall back to scalar (tautology)";
+#elif defined(HYLE_ARCH_ARM64)
+  // aarch64: batch runs the NEON native-vcvt narrow -- validate it (finite sweep, RNE).
 #else
-  GTEST_SKIP() << "non-x86 -- no F16C path";
+  GTEST_SKIP() << "unknown arch -- no hardware fp16 path";
 #endif
   std::vector<float> src;
   for (int e = -20; e <= 20; ++e)
@@ -197,8 +201,10 @@ TEST(DtypeBatch, Bf16ToF32Avx2MatchesScalarExact) {
 #if defined(HYLE_ARCH_X64)
   if (!hyle::simd::cpu_features().avx2)
     GTEST_SKIP() << "no AVX2 on this host -- batch falls back to scalar (tautology)";
+#elif defined(HYLE_ARCH_ARM64)
+  // aarch64: batch runs the NEON integer bf16 kernel -- bit-identical to scalar, validate.
 #else
-  GTEST_SKIP() << "non-x86 -- no AVX2 bf16 path";
+  GTEST_SKIP() << "unknown arch -- no vectorized bf16 path";
 #endif
   std::vector<bfloat16_t> src(0x10000);
   for (std::uint32_t b = 0; b <= 0xFFFF; ++b)
@@ -217,8 +223,10 @@ TEST(DtypeBatch, F32ToBf16Avx2MatchesScalarExact) {
 #if defined(HYLE_ARCH_X64)
   if (!hyle::simd::cpu_features().avx2)
     GTEST_SKIP() << "no AVX2 on this host -- batch falls back to scalar (tautology)";
+#elif defined(HYLE_ARCH_ARM64)
+  // aarch64: batch runs the NEON integer RNE bf16 kernel -- bit-identical to scalar.
 #else
-  GTEST_SKIP() << "non-x86 -- no AVX2 bf16 path";
+  GTEST_SKIP() << "unknown arch -- no vectorized bf16 path";
 #endif
   std::vector<float> src;
   for (int e = -30; e <= 30; ++e)
@@ -285,6 +293,10 @@ TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
     EXPECT_EQ(active_dtype_variant(), Isa::kAvx2);
   else
     EXPECT_EQ(active_dtype_variant(), Isa::kScalar);
+#elif defined(HYLE_ARCH_ARM64)
+  // aarch64: fp16 via native vcvt + bf16 via NEON integer are ALWAYS compiled (NEON is the
+  // ARMv8 baseline), so the dtype dispatcher engages the NEON tier, never the scalar floor.
+  EXPECT_EQ(active_dtype_variant(), Isa::kNeon);
 #else
   EXPECT_EQ(active_dtype_variant(), Isa::kScalar);
 #endif

@@ -16,6 +16,11 @@ void f16_to_f32_scalar(const float16_t* src, float* dst, std::size_t n) noexcept
 void f32_to_f16_scalar(const float* src, float16_t* dst, std::size_t n) noexcept;
 void f16_to_f32_f16c(const float16_t* src, float* dst, std::size_t n) noexcept;
 void f32_to_f16_f16c(const float* src, float16_t* dst, std::size_t n) noexcept;
+// NEON variants (aarch64): fp16 via native vcvt (ARMv8.2 FP16), bf16 via integer bit-math.
+void f16_to_f32_neon(const float16_t* src, float* dst, std::size_t n) noexcept;
+void f32_to_f16_neon(const float* src, float16_t* dst, std::size_t n) noexcept;
+void bf16_to_f32_neon(const bfloat16_t* src, float* dst, std::size_t n) noexcept;
+void f32_to_bf16_neon(const float* src, bfloat16_t* dst, std::size_t n) noexcept;
 
 // bf16 batch (scalar reference + AVX2 8-wide integer)
 void bf16_to_f32_scalar(const bfloat16_t* src, float* dst, std::size_t n) noexcept;
