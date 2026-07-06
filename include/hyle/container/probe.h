@@ -7,13 +7,20 @@
 #include "hyle/macros.h"
 #include "hyle/platform.h"
 
-// SwissTable control-byte group probing, self-contained (no dependency on the
-// full simd/ module -- keeps container at Tier 0).
+// SwissTable control-byte group probing. Self-contained: hand-written baseline-ISA SIMD, NOT
+// routed through the simd/vec.h abstraction -- ON PURPOSE, and the reason is INLINEABILITY, not
+// a dependency rule. (container is topologically after simd in the DAG and CAN depend on it --
+// sibling str_search.cc does, for count/rfind.) But `match()` is inlined into the innermost
+// find/insert/erase probe loop, so it must use the COMPILE-TIME baseline ISA (SSE2 everywhere
+// on x86-64, NEON baseline on aarch64) and inline with zero dispatch. vec.h reaches wide ISAs
+// (AVX2/AVX-512) via per-TU -march compilation + a runtime best_isa() indirect call -- fine to
+// pay ONCE per whole-buffer scan (str_search), fatal to pay PER PROBE. A fixed 16-wide (SSE2) /
+// 8-wide (NEON/SWAR) group is exactly abseil's choice, and the right one here.
 //
-// GroupPortable (SWAR, 8-wide) is ALWAYS compiled, so it is testable on every
-// platform (including x64). GroupSse2 (16-wide) is additionally compiled on
-// x86-64. `Group`/`kGroupWidth` alias the best available pick. NEON (ARM, 8-wide)
-// is deferred (no ARM machine to verify).
+// GroupPortable (SWAR, 8-wide) is ALWAYS compiled, so it is testable on every platform
+// (including x64). GroupSse2 (16-wide) is compiled + aliased as `Group` on x86-64; GroupNeon
+// (8-wide) on aarch64 (real-hardware validated on Apple Silicon -- swiss_table_test green).
+// `Group`/`kGroupWidth` alias the best available pick.
 //
 // Control byte values are the abseil-chosen ones (do NOT change -- picked for
 // SIMD): empty=0x80, deleted=0xFE, sentinel=0xFF, full=0hhhhhhh (top bit 0,
