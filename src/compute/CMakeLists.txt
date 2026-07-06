@@ -27,7 +27,10 @@ if(HYLE_COMPUTE_CUDA)
   # Link the CUDA runtime (cudaMalloc/Stream/Event/EventQuery live here). CUDA::cudart
   # is the shared runtime target find_package(CUDAToolkit) provides; PRIVATE because
   # the CUDA types never appear in compute's public headers (backend.h is internal).
-  target_link_libraries(hyle_compute PRIVATE CUDA::cudart)
+  # CUDA::cuda_driver: the VMM device pool (compute-02c) uses the driver API
+  # (cuMemAddressReserve/cuMemCreate/cuMemMap) -- link libcuda (WSL /usr/lib/wsl/lib,
+  # Win cuda.lib). Runtime API alone (cudart) doesn't provide the cu* VMM calls.
+  target_link_libraries(hyle_compute PRIVATE CUDA::cudart CUDA::cuda_driver)
   # The .cu TU needs to see HYLE_COMPUTE_CUDA + HYLE_COMPUTE_BUILD (the export macro
   # is set PRIVATE by hyle_add_module for the shared build; a .cu is part of the same
   # target so it inherits it, but the CUDA-language define set needs HYLE_COMPUTE_CUDA

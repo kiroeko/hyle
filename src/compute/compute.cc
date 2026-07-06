@@ -5,6 +5,7 @@
 
 #include "backend.h"
 #include "hyle/compute/buffer.h"
+#include "hyle/compute/device_pool.h"
 #include "hyle/compute/pinned_pool.h"
 #include "hyle/compute/stream.h"
 #include "hyle/error/result.h"
@@ -429,6 +430,63 @@ Status PinnedStaging::commit_to(Buffer& dst, std::size_t dst_offset) noexcept {
   HYLE_FATAL_ASSERT(base_ != nullptr);
   // One H2D copy of the whole contiguous prepared run = the batched submit.
   return dst.set(dst_offset, base_, used_);
+}
+
+// ---- DevicePool (compute-02c): VRAM sub-allocator dispatch -------------------
+// Forwards to the backend's stateful pool (VMM or leg, ported from ggml). The pool
+// handle is opaque; DevicePool holds {vt, handle, ordinal} inline.
+
+DevicePool::DevicePool(DevicePool&& o) noexcept
+    : vt_(o.vt_), handle_(o.handle_), ordinal_(o.ordinal_) {
+  o.vt_ = nullptr;
+  o.handle_ = nullptr;
+}
+
+DevicePool& DevicePool::operator=(DevicePool&& o) noexcept {
+  if (this != &o) {
+    if (vt_ != nullptr) vt_->pool_destroy(handle_);
+    vt_ = o.vt_;
+    handle_ = o.handle_;
+    ordinal_ = o.ordinal_;
+    o.vt_ = nullptr;
+    o.handle_ = nullptr;
+  }
+  return *this;
+}
+
+DevicePool::~DevicePool() {
+  if (vt_ != nullptr) vt_->pool_destroy(handle_);
+}
+
+Result<DevicePool> DevicePool::create(const Device& device) noexcept {
+  DeviceEntry e = resolve(device);
+  void* handle = nullptr;
+  Status st = e.vt->pool_create(e.local, &handle);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  DevicePool p;
+  p.vt_ = e.vt;
+  p.handle_ = handle;
+  p.ordinal_ = e.local;
+  return p;
+}
+
+bool DevicePool::is_vmm() const noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr);
+  return vt_->pool_is_vmm(handle_);
+}
+
+Result<void*> DevicePool::alloc(std::size_t bytes) noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr);
+  void* ptr = nullptr;
+  std::size_t actual = 0;
+  Status st = vt_->pool_alloc(handle_, bytes, &ptr, &actual);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  return ptr;
+}
+
+void DevicePool::free(void* ptr, std::size_t bytes) noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr);
+  vt_->pool_free(handle_, ptr, bytes);
 }
 
 }  // namespace hyle::compute

@@ -107,6 +107,21 @@ struct ComputeBackend {
   // zero-init uses this.
   Status (*buffer_clear)(void* base, std::size_t offset, std::uint8_t value,
                          std::size_t size) noexcept;
+
+  // ---- device (VRAM) sub-allocator pool (compute-02c) -----------------------
+  // A stateful per-device pool (VMM reserved range or leg block cache -- ported from
+  // ggml). pool_create returns an opaque handle in *out_handle; the other fns take it.
+  // pool_alloc returns the device pointer in *out_ptr and the ACTUAL (possibly larger)
+  // block size in *out_actual. pool_free takes the size ALLOC returned/was asked for
+  // (ggml contract: free's size == alloc's requested size). pool_is_vmm reports which
+  // backend was chosen (VMM => LIFO free required). These are backend-native (CUDA
+  // driver+runtime API); the host fallback provides a trivial malloc-cache pool.
+  Status (*pool_create)(int ordinal, void** out_handle) noexcept;
+  void (*pool_destroy)(void* handle) noexcept;
+  bool (*pool_is_vmm)(void* handle) noexcept;
+  Status (*pool_alloc)(void* handle, std::size_t size, void** out_ptr,
+                       std::size_t* out_actual) noexcept;
+  void (*pool_free)(void* handle, void* ptr, std::size_t size) noexcept;
 };
 
 // Each backend exposes its singleton vtable through one of these. host is ALWAYS

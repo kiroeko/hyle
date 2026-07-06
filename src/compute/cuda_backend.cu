@@ -1,8 +1,12 @@
 #include <cuda_runtime.h>
+#include <cuda.h>  // driver API (cuMemAddressReserve/cuMemCreate/cuMemMap) for the VMM pool
+
+#include <new>
 
 #include "backend.h"
 #include "hyle/compute/types.h"
 #include "hyle/error/status.h"
+#include "hyle/macros.h"  // HYLE_FATAL_ASSERT (VMM pool LIFO-free invariant)
 
 // The CUDA backend (coding-conventions §10: an independent composition unit -- one
 // TU, filling the manual vtable -- NOT a switch in a god object). Compiled by nvcc
@@ -302,6 +306,272 @@ Status cuda_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
   return from_cuda(cudaStreamSynchronize(cudaStreamPerThread), "sync(clear)");
 }
 
+// ---- device (VRAM) sub-allocator pool (compute-02c) -------------------------
+// Ported wholesale from ggml (user: "ggml 很 SOTA 抄全一点"). Two backends: VMM
+// (driver-API virtual memory: reserve big address space + map physical on demand,
+// LIFO bump) and leg (cached-block best-fit, no-VMM fallback). Adapted to HYLE's
+// error model: ggml's CUDA_CHECK/GGML_ASSERT abort; HYLE returns Status where a
+// call can fail operationally, and marks a construction failure by leaving the pool
+// in an invalid state (create returns the Status). A cu-driver error is translated
+// like a runtime error.
+
+// Translate a CUresult (driver API) into a HYLE Status. cuGetErrorString gives text.
+Status from_cu(CUresult r, const char* what) noexcept {
+  if (r == CUDA_SUCCESS) return Status();
+  const char* msg = nullptr;
+  cuGetErrorString(r, &msg);
+  const char* m = msg != nullptr ? msg : what;
+  if (r == CUDA_ERROR_OUT_OF_MEMORY) return Status::ResourceExhausted(m);
+  if (r == CUDA_ERROR_NOT_SUPPORTED) return Status::Unavailable(m);
+  return Status::Internal(m);
+}
+
+// A pool is one of these two, tagged so pool_is_vmm / dispatch can tell them apart.
+// Base holds the tag; the concrete structs follow ggml's layout.
+enum class PoolKind : std::uint8_t { kLeg = 0, kVmm = 1 };
+
+struct CudaPoolBase {
+  PoolKind kind;
+  int device;
+  explicit CudaPoolBase(PoolKind k, int d) noexcept : kind(k), device(d) {}
+};
+
+// leg pool -- ggml_cuda_pool_leg (ggml-cuda.cu:361). Best-fit over a 256-slot cache
+// of freed cudaMalloc blocks; look-ahead over-allocation; OOM -> sync+flush+retry.
+struct CudaPoolLeg : CudaPoolBase {
+  static constexpr int kMaxBuffers = 256;
+  struct Block { void* ptr = nullptr; std::size_t size = 0; };
+  Block buffer_pool[kMaxBuffers] = {};
+  std::size_t pool_size = 0;
+
+  explicit CudaPoolLeg(int d) noexcept : CudaPoolBase(PoolKind::kLeg, d) {}
+
+  void clear_pool() noexcept {
+    cudaSetDevice(device);
+    for (auto& b : buffer_pool) {
+      if (b.ptr != nullptr) {
+        cudaFree(b.ptr);
+        pool_size -= b.size;
+        b.ptr = nullptr;
+        b.size = 0;
+      }
+    }
+  }
+  ~CudaPoolLeg() { clear_pool(); }
+
+  Status alloc(std::size_t size, void** out_ptr, std::size_t* actual) noexcept {
+    // best-fit over cached freed blocks; exact match short-circuits.
+    std::size_t best_diff = 1ull << 36;
+    int ibest = -1;
+    for (int i = 0; i < kMaxBuffers; ++i) {
+      Block& b = buffer_pool[i];
+      if (b.ptr != nullptr && b.size >= size) {
+        std::size_t diff = b.size - size;
+        if (diff < best_diff) {
+          best_diff = diff;
+          ibest = i;
+          if (diff == 0) break;
+        }
+      }
+    }
+    if (ibest >= 0) {
+      Block& b = buffer_pool[ibest];
+      *out_ptr = b.ptr;
+      *actual = b.size;
+      b.ptr = nullptr;
+      b.size = 0;
+      return Status();
+    }
+    // miss: real cudaMalloc with look-ahead over-allocation (1.05x, round up 256B).
+    std::size_t look_ahead = static_cast<std::size_t>(1.05 * static_cast<double>(size));
+    look_ahead = 256 * ((look_ahead + 255) / 256);
+    if (look_ahead == 0) look_ahead = 256;
+    cudaSetDevice(device);
+    void* ptr = nullptr;
+    cudaError_t err = cudaMalloc(&ptr, look_ahead);
+    if (err == cudaErrorMemoryAllocation) {
+      // flush the cache and retry once (ggml strategy).
+      (void)cudaGetLastError();
+      cudaDeviceSynchronize();
+      clear_pool();
+      err = cudaMalloc(&ptr, look_ahead);
+    }
+    if (err != cudaSuccess) return from_cuda(err, "pool cudaMalloc");
+    *out_ptr = ptr;
+    *actual = look_ahead;
+    pool_size += look_ahead;
+    return Status();
+  }
+
+  void free(void* ptr, std::size_t size) noexcept {
+    for (auto& b : buffer_pool) {
+      if (b.ptr == nullptr) {
+        b.ptr = ptr;
+        b.size = size;
+        return;
+      }
+    }
+    // cache full -> really free (rare; ggml logs + frees).
+    cudaSetDevice(device);
+    cudaFree(ptr);
+    pool_size -= size;
+  }
+};
+
+// VMM pool -- ggml_cuda_pool_vmm (ggml-cuda.cu:478). Reserve 32GB virtual address
+// once, map physical pages on demand, O(1) bump alloc, LIFO free.
+struct CudaPoolVmm : CudaPoolBase {
+  static constexpr std::size_t kMaxSize = 1ull << 35;  // 32 GB
+
+  CUdeviceptr pool_addr = 0;
+  std::size_t pool_used = 0;
+  std::size_t pool_size = 0;
+  std::size_t granularity;
+
+  CudaPoolVmm(int d, std::size_t gran) noexcept
+      : CudaPoolBase(PoolKind::kVmm, d), granularity(gran) {}
+
+  ~CudaPoolVmm() {
+    if (pool_addr != 0) {
+      cuMemUnmap(pool_addr, pool_size);
+      cuMemAddressFree(pool_addr, kMaxSize);
+    }
+  }
+
+  Status alloc(std::size_t size, void** out_ptr, std::size_t* actual) noexcept {
+    // round up to 128B so every allocation is aligned for all data types.
+    const std::size_t alignment = 128;
+    size = alignment * ((size + alignment - 1) / alignment);
+    if (size == 0) size = alignment;
+
+    std::size_t avail = pool_size - pool_used;
+    if (size > avail) {
+      std::size_t reserve = size - avail;
+      reserve = granularity * ((reserve + granularity - 1) / granularity);
+      if (pool_size + reserve > kMaxSize)
+        return Status::ResourceExhausted("VMM pool exceeds 32GB reservation");
+
+      // create physical memory
+      CUmemAllocationProp prop = {};
+      prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
+      prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+      prop.location.id = device;
+      CUmemGenericAllocationHandle handle;
+      if (CUresult r = cuMemCreate(&handle, reserve, &prop, 0); r != CUDA_SUCCESS)
+        return from_cu(r, "cuMemCreate");
+
+      // reserve virtual address space once
+      if (pool_addr == 0) {
+        if (CUresult r = cuMemAddressReserve(&pool_addr, kMaxSize, 0, 0, 0);
+            r != CUDA_SUCCESS) {
+          cuMemRelease(handle);
+          return from_cu(r, "cuMemAddressReserve");
+        }
+      }
+      // map at the end of the pool
+      CUdeviceptr start = reinterpret_cast<CUdeviceptr>(
+          reinterpret_cast<char*>(pool_addr) + pool_size);
+      if (CUresult r = cuMemMap(start, reserve, 0, handle, 0); r != CUDA_SUCCESS) {
+        cuMemRelease(handle);
+        return from_cu(r, "cuMemMap");
+      }
+      cuMemRelease(handle);  // handle no longer needed after mapping
+
+      // grant read/write access
+      CUmemAccessDesc access = {};
+      access.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+      access.location.id = device;
+      access.flags = CU_MEM_ACCESS_FLAGS_PROT_READWRITE;
+      if (CUresult r = cuMemSetAccess(start, reserve, &access, 1); r != CUDA_SUCCESS)
+        return from_cu(r, "cuMemSetAccess");
+
+      pool_size += reserve;
+    }
+
+    // O(1) bump.
+    *out_ptr = reinterpret_cast<void*>(
+        reinterpret_cast<char*>(pool_addr) + pool_used);
+    *actual = size;
+    pool_used += size;
+    return Status();
+  }
+
+  void free(void* ptr, std::size_t size) noexcept {
+    // round the size the same way alloc did, then LIFO-pop.
+    const std::size_t alignment = 128;
+    size = alignment * ((size + alignment - 1) / alignment);
+    if (size == 0) size = alignment;
+    pool_used -= size;
+    // contract: LIFO -- ptr must be the most recent live allocation. (ggml asserts;
+    // HYLE fatal-asserts the same invariant since a violation is a caller bug.)
+    HYLE_FATAL_ASSERT(ptr == reinterpret_cast<void*>(
+                                 reinterpret_cast<char*>(pool_addr) + pool_used));
+  }
+};
+
+// Does `device` support CUDA virtual memory management? (ggml-cuda.cu:233)
+bool device_supports_vmm(int device, std::size_t* out_gran) noexcept {
+  CUdevice dev;
+  if (cuDeviceGet(&dev, device) != CUDA_SUCCESS) return false;
+  int vmm = 0;
+  if (cuDeviceGetAttribute(&vmm, CU_DEVICE_ATTRIBUTE_VIRTUAL_MEMORY_MANAGEMENT_SUPPORTED,
+                           dev) != CUDA_SUCCESS)
+    return false;
+  if (!vmm) return false;
+  CUmemAllocationProp prop = {};
+  prop.type = CU_MEM_ALLOCATION_TYPE_PINNED;
+  prop.location.type = CU_MEM_LOCATION_TYPE_DEVICE;
+  prop.location.id = device;
+  std::size_t gran = 0;
+  if (cuMemGetAllocationGranularity(&gran, &prop,
+                                    CU_MEM_ALLOC_GRANULARITY_RECOMMENDED) != CUDA_SUCCESS)
+    return false;
+  *out_gran = gran;
+  return true;
+}
+
+Status cuda_pool_create(int ordinal, void** out_handle) noexcept {
+  if (cudaError_t e = set_device(ordinal); e != cudaSuccess)
+    return from_cuda(e, "cudaSetDevice");
+  // The driver must be initialized before cu* calls; a prior runtime call (set_device)
+  // implicitly does cuInit for the primary context, so the driver API is usable here.
+  std::size_t gran = 0;
+  CudaPoolBase* pool = nullptr;
+  if (device_supports_vmm(ordinal, &gran)) {
+    pool = new (std::nothrow) CudaPoolVmm(ordinal, gran);
+  } else {
+    pool = new (std::nothrow) CudaPoolLeg(ordinal);
+  }
+  if (pool == nullptr) return Status::ResourceExhausted("pool_create");
+  *out_handle = pool;
+  return Status();
+}
+
+void cuda_pool_destroy(void* handle) noexcept {
+  auto* base = static_cast<CudaPoolBase*>(handle);
+  if (base == nullptr) return;
+  if (base->kind == PoolKind::kVmm) delete static_cast<CudaPoolVmm*>(base);
+  else delete static_cast<CudaPoolLeg*>(base);
+}
+
+bool cuda_pool_is_vmm(void* handle) noexcept {
+  return static_cast<CudaPoolBase*>(handle)->kind == PoolKind::kVmm;
+}
+
+Status cuda_pool_alloc(void* handle, std::size_t size, void** out_ptr,
+                       std::size_t* out_actual) noexcept {
+  auto* base = static_cast<CudaPoolBase*>(handle);
+  return base->kind == PoolKind::kVmm
+             ? static_cast<CudaPoolVmm*>(base)->alloc(size, out_ptr, out_actual)
+             : static_cast<CudaPoolLeg*>(base)->alloc(size, out_ptr, out_actual);
+}
+
+void cuda_pool_free(void* handle, void* ptr, std::size_t size) noexcept {
+  auto* base = static_cast<CudaPoolBase*>(handle);
+  if (base->kind == PoolKind::kVmm) static_cast<CudaPoolVmm*>(base)->free(ptr, size);
+  else static_cast<CudaPoolLeg*>(base)->free(ptr, size);
+}
+
 constexpr ComputeBackend kCudaBackend = {
     /*name=*/"cuda",
     /*device_count=*/cuda_device_count,
@@ -329,6 +599,11 @@ constexpr ComputeBackend kCudaBackend = {
     /*buffer_get=*/cuda_buffer_get,
     /*buffer_copy=*/cuda_buffer_copy,
     /*buffer_clear=*/cuda_buffer_clear,
+    /*pool_create=*/cuda_pool_create,
+    /*pool_destroy=*/cuda_pool_destroy,
+    /*pool_is_vmm=*/cuda_pool_is_vmm,
+    /*pool_alloc=*/cuda_pool_alloc,
+    /*pool_free=*/cuda_pool_free,
 };
 
 }  // namespace

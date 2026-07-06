@@ -2,6 +2,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <new>
 
 #include "backend.h"
 #include "hyle/compute/types.h"
@@ -144,6 +145,85 @@ Status host_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
   return Status();
 }
 
+// ---- device pool (compute-02c): host fallback = leg-style malloc cache -------
+// The host backend has no VRAM; its "device pool" is a small best-fit cache of
+// malloc'd blocks (the leg strategy, minus CUDA), so the reuse semantics
+// (alloc-after-free returns a cached block, avoiding a fresh malloc) are testable on
+// any platform. Arbitrary free order (not VMM/LIFO). Single-owner (not thread-safe),
+// same contract as the CUDA pools.
+struct HostPool {
+  static constexpr int kMaxBuffers = 256;
+  struct Block { void* ptr = nullptr; std::size_t size = 0; };
+  Block cache[kMaxBuffers] = {};
+
+  void* alloc(std::size_t size, std::size_t* actual) noexcept {
+    // best-fit over cached freed blocks (smallest >= size); exact match short-circuits.
+    std::size_t best_diff = SIZE_MAX;
+    int ibest = -1;
+    for (int i = 0; i < kMaxBuffers; ++i) {
+      Block& b = cache[i];
+      if (b.ptr != nullptr && b.size >= size) {
+        std::size_t diff = b.size - size;
+        if (diff < best_diff) {
+          best_diff = diff;
+          ibest = i;
+          if (diff == 0) break;
+        }
+      }
+    }
+    if (ibest >= 0) {
+      Block& b = cache[ibest];
+      void* p = b.ptr;
+      *actual = b.size;
+      b.ptr = nullptr;
+      b.size = 0;
+      return p;
+    }
+    std::size_t n = size == 0 ? 1 : size;
+    void* p = std::malloc(n);
+    *actual = n;
+    return p;  // nullptr on OOM -> pool_alloc surfaces ResourceExhausted
+  }
+
+  void free(void* ptr, std::size_t size) noexcept {
+    for (int i = 0; i < kMaxBuffers; ++i) {
+      if (cache[i].ptr == nullptr) {
+        cache[i].ptr = ptr;
+        cache[i].size = size;
+        return;
+      }
+    }
+    std::free(ptr);  // cache full -> really free
+  }
+
+  ~HostPool() {
+    for (auto& b : cache) if (b.ptr != nullptr) std::free(b.ptr);
+  }
+};
+
+Status host_pool_create(int, void** out_handle) noexcept {
+  auto* p = new (std::nothrow) HostPool();
+  if (p == nullptr) return Status::ResourceExhausted("host: pool_create");
+  *out_handle = p;
+  return Status();
+}
+
+void host_pool_destroy(void* handle) noexcept { delete static_cast<HostPool*>(handle); }
+
+bool host_pool_is_vmm(void*) noexcept { return false; }  // host = leg-style, not VMM
+
+Status host_pool_alloc(void* handle, std::size_t size, void** out_ptr,
+                       std::size_t* out_actual) noexcept {
+  void* p = static_cast<HostPool*>(handle)->alloc(size, out_actual);
+  if (p == nullptr) return Status::ResourceExhausted("host: pool_alloc");
+  *out_ptr = p;
+  return Status();
+}
+
+void host_pool_free(void* handle, void* ptr, std::size_t size) noexcept {
+  if (ptr != nullptr) static_cast<HostPool*>(handle)->free(ptr, size);
+}
+
 constexpr ComputeBackend kHostBackend = {
     /*name=*/"host",
     /*device_count=*/host_device_count,
@@ -171,6 +251,11 @@ constexpr ComputeBackend kHostBackend = {
     /*buffer_get=*/host_buffer_get,
     /*buffer_copy=*/host_buffer_copy,
     /*buffer_clear=*/host_buffer_clear,
+    /*pool_create=*/host_pool_create,
+    /*pool_destroy=*/host_pool_destroy,
+    /*pool_is_vmm=*/host_pool_is_vmm,
+    /*pool_alloc=*/host_pool_alloc,
+    /*pool_free=*/host_pool_free,
 };
 
 }  // namespace
