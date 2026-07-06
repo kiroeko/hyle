@@ -1,3 +1,5 @@
+#include <cstddef>
+#include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
@@ -89,6 +91,59 @@ Status host_memcpy_async(void*, void* dst, const void* src,
   return Status();
 }
 
+// ---- buffer (compute-02) ----------------------------------------------------
+// On the host backend both BufferKinds are just plain RAM (there is no separate
+// device, and no page-locking benefit without a GPU DMA engine). is_host()=true for
+// both -- the memory is directly host-dereferenceable. set/get/copy/clear are plain
+// memcpy/memset (the "device" pointer IS a host pointer here).
+
+std::size_t host_buffer_alignment(BufferKind) noexcept {
+  return alignof(std::max_align_t);
+}
+
+std::size_t host_buffer_max_size(int, BufferKind) noexcept {
+  return SIZE_MAX;  // bounded only by the system allocator
+}
+
+bool host_buffer_is_host(BufferKind) noexcept {
+  return true;  // plain RAM either way -- directly dereferenceable
+}
+
+Status host_buffer_alloc(int, BufferKind, std::size_t bytes,
+                         void** out_ptr) noexcept {
+  void* p = std::malloc(bytes == 0 ? 1 : bytes);
+  if (p == nullptr) return Status::ResourceExhausted("host: buffer_alloc");
+  *out_ptr = p;
+  return Status();
+}
+
+void host_buffer_free(int, BufferKind, void* ptr) noexcept { std::free(ptr); }
+
+Status host_buffer_set(void* dst_base, std::size_t offset, const void* src,
+                       std::size_t size) noexcept {
+  std::memcpy(static_cast<char*>(dst_base) + offset, src, size);
+  return Status();
+}
+
+Status host_buffer_get(const void* src_base, std::size_t offset, void* dst,
+                       std::size_t size) noexcept {
+  std::memcpy(dst, static_cast<const char*>(src_base) + offset, size);
+  return Status();
+}
+
+Status host_buffer_copy(void* dst_base, std::size_t dst_off, const void* src_base,
+                        std::size_t src_off, std::size_t size) noexcept {
+  std::memcpy(static_cast<char*>(dst_base) + dst_off,
+              static_cast<const char*>(src_base) + src_off, size);
+  return Status();
+}
+
+Status host_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
+                         std::size_t size) noexcept {
+  std::memset(static_cast<char*>(base) + offset, value, size);
+  return Status();
+}
+
 constexpr ComputeBackend kHostBackend = {
     /*name=*/"host",
     /*device_count=*/host_device_count,
@@ -107,6 +162,15 @@ constexpr ComputeBackend kHostBackend = {
     /*device_alloc=*/host_device_alloc,
     /*device_free=*/host_device_free,
     /*memcpy_async=*/host_memcpy_async,
+    /*buffer_alignment=*/host_buffer_alignment,
+    /*buffer_max_size=*/host_buffer_max_size,
+    /*buffer_is_host=*/host_buffer_is_host,
+    /*buffer_alloc=*/host_buffer_alloc,
+    /*buffer_free=*/host_buffer_free,
+    /*buffer_set=*/host_buffer_set,
+    /*buffer_get=*/host_buffer_get,
+    /*buffer_copy=*/host_buffer_copy,
+    /*buffer_clear=*/host_buffer_clear,
 };
 
 }  // namespace

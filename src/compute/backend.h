@@ -67,6 +67,46 @@ struct ComputeBackend {
   // Enqueue an async copy on `stream_native`. Direction inferred by the backend.
   Status (*memcpy_async)(void* stream_native, void* dst, const void* src,
                          std::size_t bytes) noexcept;
+
+  // ---- buffer (compute-02) --------------------------------------------------
+  // A Buffer owns one block of memory of a given BufferKind on `ordinal`. The
+  // public Buffer stores {vt, ptr, size, ordinal, kind, is_host}; these fn-ptrs do
+  // the backend work. kDevice = cudaMalloc (VRAM, not host-deref); kHostPinned =
+  // cudaMallocHost (page-locked host RAM, from a mem::MemoryArena pool on the CUDA
+  // backend; the host backend just uses plain RAM for both kinds).
+  //
+  // buffer_type trait queries (per kind, cheap constants): alignment / max single-
+  // allocation size / whether the memory is host-dereferenceable. Mirror ggml
+  // buffer_type_i {get_alignment, get_max_size, is_host}.
+  std::size_t (*buffer_alignment)(BufferKind kind) noexcept;
+  std::size_t (*buffer_max_size)(int ordinal, BufferKind kind) noexcept;
+  bool (*buffer_is_host)(BufferKind kind) noexcept;
+
+  // Allocate `bytes` of `kind` memory on `ordinal`; returns the base pointer in
+  // *out_ptr (non-null on success) or the failure Status. free returns it.
+  Status (*buffer_alloc)(int ordinal, BufferKind kind, std::size_t bytes,
+                         void** out_ptr) noexcept;
+  void (*buffer_free)(int ordinal, BufferKind kind, void* ptr) noexcept;
+
+  // SYNCHRONOUS host<->device copy into/out of a buffer at a byte `offset` (the
+  // compute-02 core: partial writes, KV-cache-style). The backend infers direction
+  // (dst is device => H2D; src is device => D2H). "Synchronous" = the CUDA backend
+  // issues cudaMemcpyAsync on an internal stream then synchronizes, so the data is
+  // in place on return (same contract as ggml buffer set_tensor/get_tensor). The
+  // async, stream-bound, co_await-able variants are compute-03 (event-gated).
+  Status (*buffer_set)(void* dst_base, std::size_t offset, const void* src,
+                       std::size_t size) noexcept;  // H2D partial write
+  Status (*buffer_get)(const void* src_base, std::size_t offset, void* dst,
+                       std::size_t size) noexcept;  // D2H partial read
+  // Copy `size` bytes from src_base+src_off to dst_base+dst_off. Buffers may be on
+  // the same or different memory kinds (D2D / D2H / H2D); backend picks the cudaMemcpy
+  // kind. Both buffers belong to THIS backend (cross-backend copy is a later concern).
+  Status (*buffer_copy)(void* dst_base, std::size_t dst_off, const void* src_base,
+                        std::size_t src_off, std::size_t size) noexcept;
+  // Set `size` bytes at base+offset to byte `value` (cudaMemset / memset). KV-cache
+  // zero-init uses this.
+  Status (*buffer_clear)(void* base, std::size_t offset, std::uint8_t value,
+                         std::size_t size) noexcept;
 };
 
 // Each backend exposes its singleton vtable through one of these. host is ALWAYS

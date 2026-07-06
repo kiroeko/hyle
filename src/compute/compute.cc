@@ -3,6 +3,7 @@
 #include <cstdlib>
 
 #include "backend.h"
+#include "hyle/compute/buffer.h"
 #include "hyle/compute/stream.h"
 #include "hyle/error/result.h"
 #include "hyle/macros.h"
@@ -220,6 +221,113 @@ EventStatus Event::query() const noexcept {
 void Event::sync() const noexcept {
   HYLE_FATAL_ASSERT(vt_ != nullptr);
   vt_->event_sync(native_);
+}
+
+// ---- BufferType -------------------------------------------------------------
+
+BufferType device_buffer_type(const Device& device) noexcept {
+  DeviceEntry e = resolve(device);
+  return BufferType(e.vt, e.local, BufferKind::kDevice);
+}
+
+BufferType host_buffer_type(const Device& device) noexcept {
+  DeviceEntry e = resolve(device);
+  return BufferType(e.vt, e.local, BufferKind::kHostPinned);
+}
+
+std::size_t BufferType::alignment() const noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr);
+  return vt_->buffer_alignment(kind_);
+}
+
+std::size_t BufferType::max_size() const noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr);
+  return vt_->buffer_max_size(ordinal_, kind_);
+}
+
+bool BufferType::is_host() const noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr);
+  return vt_->buffer_is_host(kind_);
+}
+
+// ---- Buffer -----------------------------------------------------------------
+// Inline state {vt_, ptr_, size_, ordinal_, kind_, is_host_} -- no pimpl/heap.
+
+Buffer::Buffer(Buffer&& o) noexcept
+    : vt_(o.vt_),
+      ptr_(o.ptr_),
+      size_(o.size_),
+      ordinal_(o.ordinal_),
+      kind_(o.kind_),
+      is_host_(o.is_host_) {
+  o.vt_ = nullptr;
+  o.ptr_ = nullptr;
+}
+
+Buffer& Buffer::operator=(Buffer&& o) noexcept {
+  if (this != &o) {
+    if (vt_ != nullptr) vt_->buffer_free(ordinal_, kind_, ptr_);
+    vt_ = o.vt_;
+    ptr_ = o.ptr_;
+    size_ = o.size_;
+    ordinal_ = o.ordinal_;
+    kind_ = o.kind_;
+    is_host_ = o.is_host_;
+    o.vt_ = nullptr;
+    o.ptr_ = nullptr;
+  }
+  return *this;
+}
+
+Buffer::~Buffer() {
+  if (vt_ != nullptr) vt_->buffer_free(ordinal_, kind_, ptr_);
+}
+
+Result<Buffer> Buffer::create(const BufferType& type, std::size_t bytes) noexcept {
+  HYLE_FATAL_ASSERT(type.valid());
+  // Caller contract: a single Buffer must fit the backend's max single-allocation
+  // size; a larger logical buffer is the caller's split into multiple Buffers.
+  HYLE_FATAL_ASSERT(bytes <= type.vt_->buffer_max_size(type.ordinal_, type.kind_));
+  void* ptr = nullptr;
+  Status st = type.vt_->buffer_alloc(type.ordinal_, type.kind_, bytes, &ptr);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  Buffer b;
+  b.vt_ = type.vt_;
+  b.ptr_ = ptr;
+  b.size_ = bytes;
+  b.ordinal_ = type.ordinal_;
+  b.kind_ = type.kind_;
+  b.is_host_ = type.vt_->buffer_is_host(type.kind_);
+  return b;
+}
+
+Status Buffer::set(std::size_t offset, const void* src, std::size_t size) noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr);
+  HYLE_FATAL_ASSERT(offset + size <= size_);  // partial-write bounds (KV-cache)
+  return vt_->buffer_set(ptr_, offset, src, size);
+}
+
+Status Buffer::get(std::size_t offset, void* dst, std::size_t size) const noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr);
+  HYLE_FATAL_ASSERT(offset + size <= size_);
+  return vt_->buffer_get(ptr_, offset, dst, size);
+}
+
+Status Buffer::copy_from(const Buffer& src, std::size_t dst_offset,
+                         std::size_t src_offset, std::size_t size) noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr && src.vt_ != nullptr);
+  // Same-backend copy (cross-backend is a later concern). A cross-backend copy is a
+  // caller bug here, not a runtime fallback.
+  HYLE_FATAL_ASSERT(vt_ == src.vt_);
+  HYLE_FATAL_ASSERT(dst_offset + size <= size_ && src_offset + size <= src.size_);
+  return vt_->buffer_copy(ptr_, dst_offset, src.ptr_, src_offset, size);
+}
+
+Status Buffer::clear(std::size_t offset, std::uint8_t value,
+                     std::size_t size) noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr);
+  HYLE_FATAL_ASSERT(offset + size <= size_);
+  return vt_->buffer_clear(ptr_, offset, value, size);
 }
 
 }  // namespace hyle::compute

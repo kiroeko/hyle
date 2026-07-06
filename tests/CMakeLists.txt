@@ -26,7 +26,9 @@ hyle_add_test(math SOURCES math/scalar_test.cc)
 # compute-01: device/stream/event + completion. Always buildable (host fallback);
 # the GPU-specific test self-skips at runtime when no CUDA device is present. The
 # test TU is pure C++ (all CUDA is inside hyle_compute), so it needs no nvcc.
-hyle_add_test(compute SOURCES compute/device_test.cc)
+# compute-02: device buffer (alloc/set/get(offset)/copy/clear + pinned staging),
+# headline test = KV-cache pattern (large buffer repeated offset writes).
+hyle_add_test(compute SOURCES compute/device_test.cc compute/buffer_test.cc)
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
 # hash_test.cc includes the opt-in hyle/container/hash_inline.h, which pulls the
 # vendored xxhash + wyhash single-headers into that TU -- add their include dirs.

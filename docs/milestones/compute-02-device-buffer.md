@@ -5,7 +5,7 @@
 | **阶段** | P5 |
 | **模块** | compute/ |
 | **前置** | compute-01（Device/Stream/Event）|
-| **状态** | 📋 规划（接口开工前定形，2026-07-06 深调研 ggml/llama.cpp/kompute 后）|
+| **状态** | ✅ 完成（2026-07-06，三平台真机：Win/WSL GPU 各 19/19 + mac host 18/19 + WSL TSan 零 race）|
 
 > **范围**：compute-design「模块形状」的 `buffer.h`——**一块 device 内存的所有权 + host↔device 拷贝 + 带 offset 的部分读写**。镜像 ggml 的 `buffer_type`/`buffer` 模型（枚举/能力查询薄包，内存所有权 + stream 绑定自造）。取代 compute-01 里 `Stream::device_alloc`/`memcpy_async` 那两个「脊验证最小辅助」。
 >
@@ -50,10 +50,11 @@ class Buffer {                            // 一块具体 device 内存（move-o
 
 **手动虚表分派**（同 compute-01）：`BufferType`/`Buffer` 内联 `{const ComputeBackend* vt, void* native, ...}`，vtable 加 buffer 相关 fn-ptr（`buffer_alloc/free/set/get/copy/clear`）。每后端一个组合单元，非上帝类 switch。
 
-## pinned host staging = 一个 BufferType 实例（结合 mem 加速，超越 ggml）
+## pinned host staging = 一个 BufferType 实例
 
 - **显存 device buffer**：`cudaMalloc`，**compute 自有、不走 mem**（host 不能解引用显存，mem 的 CPU allocator 语义不适用——用户明确边界）。
-- **pinned host staging**：`cudaMallocHost`（page-locked，DMA 直传 + 异步拷贝重叠）分配的是 **host RAM**，走 `mem::Allocator`。**ggml 每次 alloc/free 不池化（弱点）**；HYLE 用 `mem::MemoryArena(host_pinned_alloc, block_size, block_count, alignment)`（`memory_arena.h:35`，固定大小块池 + 地址路由分片归还）做 **pinned 块池**——同大小 staging buffer churn 复用，超越 ggml。失败/无 CUDA fallback 到普通 host buffer（同 ggml `GGML_CUDA_NO_PINNED`）。
+- **pinned host staging**：`cudaMallocHost`（page-locked，DMA 直传 + 异步拷贝重叠）分配的是 **host RAM**，是独立 BufferType（`kHostPinned`，`is_host()=true`）。
+- **实现时纠正（对抗自审发现，文档=当前真相）**：规划时写"用 `mem::MemoryArena` 池化超越 ggml"，实现时想清楚**这是错的层**——`MemoryArena` 是**固定块大小**池，而 `buffer_alloc` 是**通用任意 size 分配**，两者不匹配。**池化 pinned staging 是 L1 staging ring 的策略**（固定 64MB 块反复用，如 llama.cpp 的 4×64MB ring，在 model-loader 里），不是 compute-02 buffer 层的事。故 compute-02 的 pinned `buffer_alloc` 给**通用 `cudaMallocHost` 原语**（不池化），上层要 staging ring 时自己用固定大小 Buffer + `mem::MemoryArena` 组织——**compute-02 备原语，池化策略归 L1**（与本文件 L0/L1 边界一致）。pinned 分配失败**返 Status 不 silent fallback**（free 路径由 kind 固定，malloc fallback 会与 `cudaFreeHost` 失配）。
 
 ## 与 compute-03 的耦合（为何接口预留 async、实现分两步）
 
@@ -64,9 +65,9 @@ class Buffer {                            // 一块具体 device 内存（move-o
 ## L0/L1 边界（关键：流式灌大显存 / 合批是 L1，不是 compute-02）
 
 用户场景「显存>内存时分块流式写入 + 合批提交」拆成两层，**compute-02 只做底层原语**：
-- **L0（compute-02）= 原语**：`set(offset,size)` 部分写入 + async 拷贝 + pinned staging 池 + `max_size`/multi-buffer + buffer 复用。**铁证：ggml/llama.cpp 的"分块流式"完全靠调用方循环调 set_tensor + pinned ring 拼**，库本身不做单 tensor 的 chunk memcpy。
-- **L1（上层，不在 compute-02）= 策略**：tile 循环、双缓冲 pinned ring、按显存容量决定切几块、合批换吞吐。这是推理引擎/渲染器的调度策略（llama.cpp 的 4×64MB ring 就在它的 model-loader 里，不在 ggml buffer 层）。按 scope 铁律「底座永远是底座」，**这层在 L1**。
-- compute-02 的义务：**把原语备齐**（offset 写 + pinned 池 + async + max_size），让 L1 能拼出流式灌显存——不把 tile 调度写进 compute-02。
+- **L0（compute-02）= 原语**：`set(offset,size)` 部分写入 + async 拷贝 + pinned staging **alloc 原语** + `max_size`/multi-buffer + buffer 复用。**铁证：ggml/llama.cpp 的"分块流式"完全靠调用方循环调 set_tensor + pinned ring 拼**，库本身不做单 tensor 的 chunk memcpy。
+- **L1（上层，不在 compute-02）= 策略**：tile 循环、双缓冲 pinned ring、**pinned 块池化**、按显存容量决定切几块、合批换吞吐。这是推理引擎/渲染器的调度策略（llama.cpp 的 4×64MB ring 就在它的 model-loader 里，不在 ggml buffer 层）。按 scope 铁律「底座永远是底座」，**这层在 L1**。
+- compute-02 的义务：**把原语备齐**（offset 写 + pinned alloc + async 签名 + max_size），让 L1 能拼出流式灌显存 + pinned staging ring——不把 tile 调度/池化写进 compute-02。
 
 ## 明确不做（防蔓延）
 
@@ -78,19 +79,32 @@ class Buffer {                            // 一块具体 device 内存（move-o
 | unified memory（DGX/Mac 统一内存）| 按需 | 统一内存无 host↔device 互传，is_host 语义覆盖；具体后端实例后续 |
 | 2D/strided 拷贝 | 按需补 | 合批/transposed-V 用；先留待真实消费者（KV transposed V）驱动 |
 
-## 交付物（预期）
-- `include/hyle/compute/buffer.h`（`BufferType` + `Buffer`，async 签名预留）
-- `src/compute/backend.h` 扩展 vtable（buffer_alloc/free/set/get/copy/clear + host_buffer_type）
-- `src/compute/cuda_backend.cu`（cudaMalloc/Memcpy/MallocHost + pinned MemoryArena 池）
-- `src/compute/host_backend.cc`（malloc + memcpy，is_host=true）
-- `tests/compute/buffer_test.cc`（**验收用例 = KV-cache 式大 buffer 反复 offset 写** + 往返校验 + pinned 池复用；三平台，GPU 真机 + host fallback）
+## 交付物（实际落地）
+- `include/hyle/compute/types.h`（+`BufferKind{kDevice,kHostPinned}`）
+- `include/hyle/compute/buffer.h`（`BufferType` + `Buffer`，内联 `{vt,ptr,size,ordinal,kind,is_host}` 无 pimpl；async 签名注释预留）+ 自由函数 `device_buffer_type`/`host_buffer_type`
+- `src/compute/backend.h`（vtable +9 fn-ptr：buffer_alignment/max_size/is_host/alloc/free/set/get/copy/clear）
+- `src/compute/compute.cc`（BufferType/Buffer 分派 + offset 越界/跨后端 fatal-assert）
+- `src/compute/cuda_backend.cu`（cudaMalloc/cudaMallocHost + cudaMemcpyAsync+sync 的 set/get/copy + cudaMemsetAsync clear；pinned **不池化**=通用原语，见上纠正）
+- `src/compute/host_backend.cc`（malloc + memcpy/memset，两 kind 均 is_host=true）
+- `tests/compute/buffer_test.cc`（9 测试，验收用例 = KV-cache 式大 buffer 反复 offset 写；GPU 真机 + host fallback）
 
-## 验收门槛
-- 三平台真机（Win MSVC+nvcc / WSL GCC14+nvcc / mac host）：device buffer 分配 + set/get(offset) 往返数据校验 + copy_from + clear。
-- **KV-cache 验收**：一块大 buffer，模拟每 token 按动态行 offset 反复写 + 读回校验（命中 `set(offset,size)` 反复写语义）。
-- pinned staging BufferType：`cudaMallocHost` 分配 + MemoryArena 池复用 + 无 CUDA fallback 到普通 host。
-- 显存 `cudaMalloc` 不走 mem、pinned host 走 mem —— 边界断言。
-- WSL TSan（host-only）零 race；cloc 验真回填；对抗自审对照 ggml buffer_type 覆盖。
+**cloc 实测**：净增 **~473 生产**（types 15 + backend.h 40 + compute.cc 108 + cuda 101 + host 64 + buffer.h 145）+ 测试 142。473«2-3k 预测=buffer 是薄抽象转发层（alloc/copy 转发 cudaMalloc/Memcpy），重量在 compute-04 kernel/05 bridge；非 stub（三平台真跑 + KV-cache + TSan 为证）。
+
+## 实测结果（2026-07-06，三平台真机）
+- **WSL（GCC14+nvcc）**：全量 compute 19/19（compute-01 的 10 + buffer 9）；buffer 9/9 在 RTX 4070 真跑——**KvCachePattern**（512 token 逐行 offset 写 + 全量读回校验）+ **PinnedStagingToDevice**（pinned host→VRAM→回读）+ AllocSetGetRoundTrip/Clear/CopyFrom(D2D)/MoveSemantics。
+- **WSL TSan（host-only）**：buffer 9/9 零 data race。
+- **Windows（MSVC19.50+nvcc）**：全量 19/19，GPU 真跑。
+- **macOS（Apple clang arm64，无 CUDA）**：18/19 + 1 skip（GPU event 测试）——host fallback 两 kind 均普通 RAM，KV-cache/staging 模式在第三平台跑通。
+
+## 交付物（原预期，保留对照）
+- ~~`src/compute/cuda_backend.cu`（... + pinned MemoryArena 池）~~ → **纠正**：pinned 不池化，通用 `cudaMallocHost` 原语（池化归 L1，见 pinned 节纠正）。
+
+## 验收门槛（✅ 达成）
+- 三平台真机（Win MSVC+nvcc / WSL GCC14+nvcc / mac host）：device buffer 分配 + set/get(offset) 往返数据校验 + copy_from + clear。✅
+- **KV-cache 验收**：一块大 buffer，模拟每 token 按动态行 offset 反复写 + 读回校验（命中 `set(offset,size)` 反复写语义）。✅ 双 GPU 真机
+- pinned staging BufferType：`cudaMallocHost` 分配 + 无 CUDA fallback（mac host 两 kind 普通 RAM）。✅（池化归 L1，非本里程碑）
+- 显存 `cudaMalloc` 不走 mem、pinned host `cudaMallocHost` 也不走 mem（无池化）—— 边界成立。✅
+- WSL TSan（host-only）零 race ✅；cloc 验真回填 ✅；对抗自审对照 ggml buffer_type 覆盖（含 pinned 池化纠正）✅。
 
 ## 参考
 - compute-design「模块形状」buffer.h + §「device 内存归 compute」+「compute-06 kompute 映射」（Vulkan buffer 用 memory-type 选择 + staging 双缓冲）。

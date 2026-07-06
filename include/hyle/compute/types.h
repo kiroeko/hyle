@@ -43,4 +43,19 @@ enum class EventStatus : std::uint8_t {
   kNotReady = 1,  // still running -- poll again later
 };
 
+// Which kind of memory a BufferType allocates (compute-02). Mirrors ggml's model
+// where host/device/pinned are DISTINCT buffer_type instances (not a switch): one
+// memory model = one BufferType. A Device exposes one of each it supports.
+//   kDevice     : device-local memory (VRAM on a GPU; cudaMalloc). NOT host-
+//                 dereferenceable. is_host()=false. On the host backend this is
+//                 plain RAM (there is no separate "device").
+//   kHostPinned : page-locked host RAM (cudaMallocHost) for fast DMA / async-copy
+//                 overlap -- the staging tier for H2D/D2H. is_host()=true. On a
+//                 GPU-less backend (or CUDA disabled) it falls back to plain host
+//                 RAM (same as ggml's GGML_CUDA_NO_PINNED fallback).
+enum class BufferKind : std::uint8_t {
+  kDevice = 0,
+  kHostPinned = 1,
+};
+
 }  // namespace hyle::compute

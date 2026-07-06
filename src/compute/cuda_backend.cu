@@ -210,6 +210,98 @@ Status cuda_memcpy_async(void* stream_native, void* dst, const void* src,
   return from_cuda(e, "cudaMemcpyAsync");
 }
 
+// ---- buffer (compute-02) ----------------------------------------------------
+// kDevice = cudaMalloc (VRAM, not host-dereferenceable, alignment 128 matching
+// ggml's cuda buffer_type). kHostPinned = cudaMallocHost (page-locked host RAM for
+// fast DMA + async-copy overlap). set/get/copy/clear are SYNCHRONOUS: issue an async
+// memcpy on the per-thread default stream then synchronize, so data is in place on
+// return (same "sync semantics" as ggml buffer set_tensor, ggml-cuda.cu:684-690).
+// The stream-bound async variants are compute-03.
+//
+// pinned is NOT pooled here: buffer_alloc is a general arbitrary-size allocation,
+// while a fixed-block pool (mem::MemoryArena) fits a FIXED-size staging ring -- which
+// is an L1 strategy (llama.cpp's 4x64MB ring lives in its model loader, not in the
+// ggml buffer layer). compute-02 gives the raw pinned alloc primitive; a pooled
+// staging ring is the caller's to build on top.
+
+std::size_t cuda_buffer_alignment(BufferKind kind) noexcept {
+  // Device: 128 (matches ggml cuda buffer_type, coalesced access + tensor-core
+  // alignment). Pinned host: max_align is enough (CPU-side RAM).
+  return kind == BufferKind::kDevice ? 128 : alignof(std::max_align_t);
+}
+
+std::size_t cuda_buffer_max_size(int, BufferKind) noexcept {
+  return SIZE_MAX;  // bounded only by free VRAM; ggml cuda buft is likewise SIZE_MAX
+}
+
+bool cuda_buffer_is_host(BufferKind kind) noexcept {
+  return kind == BufferKind::kHostPinned;  // pinned = host RAM; device = VRAM
+}
+
+Status cuda_buffer_alloc(int ordinal, BufferKind kind, std::size_t bytes,
+                         void** out_ptr) noexcept {
+  cudaError_t e = set_device(ordinal);
+  if (e != cudaSuccess) return from_cuda(e, "cudaSetDevice");
+  std::size_t n = bytes == 0 ? 1 : bytes;
+  void* p = nullptr;
+  if (kind == BufferKind::kDevice) {
+    e = cudaMalloc(&p, n);
+    if (e != cudaSuccess) return from_cuda(e, "cudaMalloc");
+  } else {
+    // Page-locked host memory. No silent fallback to malloc: the free path is fixed
+    // by kind, so a malloc fallback would mismatch cudaFreeHost.
+    e = cudaMallocHost(&p, n);
+    if (e != cudaSuccess) return from_cuda(e, "cudaMallocHost");
+  }
+  *out_ptr = p;
+  return Status();
+}
+
+void cuda_buffer_free(int, BufferKind kind, void* ptr) noexcept {
+  if (ptr == nullptr) return;
+  if (kind == BufferKind::kDevice) {
+    cudaFree(ptr);
+  } else {
+    cudaFreeHost(ptr);
+  }
+}
+
+Status cuda_buffer_set(void* dst_base, std::size_t offset, const void* src,
+                       std::size_t size) noexcept {
+  void* dst = static_cast<char*>(dst_base) + offset;  // H2D partial write at offset
+  cudaError_t e = cudaMemcpyAsync(dst, src, size, cudaMemcpyDefault,
+                                  cudaStreamPerThread);
+  if (e != cudaSuccess) return from_cuda(e, "cudaMemcpyAsync(set)");
+  return from_cuda(cudaStreamSynchronize(cudaStreamPerThread), "sync(set)");
+}
+
+Status cuda_buffer_get(const void* src_base, std::size_t offset, void* dst,
+                       std::size_t size) noexcept {
+  const void* src = static_cast<const char*>(src_base) + offset;
+  cudaError_t e = cudaMemcpyAsync(dst, src, size, cudaMemcpyDefault,
+                                  cudaStreamPerThread);
+  if (e != cudaSuccess) return from_cuda(e, "cudaMemcpyAsync(get)");
+  return from_cuda(cudaStreamSynchronize(cudaStreamPerThread), "sync(get)");
+}
+
+Status cuda_buffer_copy(void* dst_base, std::size_t dst_off, const void* src_base,
+                        std::size_t src_off, std::size_t size) noexcept {
+  void* dst = static_cast<char*>(dst_base) + dst_off;
+  const void* src = static_cast<const char*>(src_base) + src_off;
+  cudaError_t e = cudaMemcpyAsync(dst, src, size, cudaMemcpyDefault,
+                                  cudaStreamPerThread);
+  if (e != cudaSuccess) return from_cuda(e, "cudaMemcpyAsync(copy)");
+  return from_cuda(cudaStreamSynchronize(cudaStreamPerThread), "sync(copy)");
+}
+
+Status cuda_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
+                         std::size_t size) noexcept {
+  void* dst = static_cast<char*>(base) + offset;
+  cudaError_t e = cudaMemsetAsync(dst, value, size, cudaStreamPerThread);
+  if (e != cudaSuccess) return from_cuda(e, "cudaMemsetAsync");
+  return from_cuda(cudaStreamSynchronize(cudaStreamPerThread), "sync(clear)");
+}
+
 constexpr ComputeBackend kCudaBackend = {
     /*name=*/"cuda",
     /*device_count=*/cuda_device_count,
@@ -228,6 +320,15 @@ constexpr ComputeBackend kCudaBackend = {
     /*device_alloc=*/cuda_device_alloc,
     /*device_free=*/cuda_device_free,
     /*memcpy_async=*/cuda_memcpy_async,
+    /*buffer_alignment=*/cuda_buffer_alignment,
+    /*buffer_max_size=*/cuda_buffer_max_size,
+    /*buffer_is_host=*/cuda_buffer_is_host,
+    /*buffer_alloc=*/cuda_buffer_alloc,
+    /*buffer_free=*/cuda_buffer_free,
+    /*buffer_set=*/cuda_buffer_set,
+    /*buffer_get=*/cuda_buffer_get,
+    /*buffer_copy=*/cuda_buffer_copy,
+    /*buffer_clear=*/cuda_buffer_clear,
 };
 
 }  // namespace
