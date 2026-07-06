@@ -892,6 +892,33 @@ HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(Simd<T, N, 0>, Mask256<T, N> m) n
   const unsigned b = detail::mask_bits(m);
   return b ? static_cast<std::ptrdiff_t>(std::countr_zero(b)) : -1;
 }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(Simd<T, N, 0>, Mask256<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);
+  // highest set lane index = (bit-width-1) - clz; mask_bits packs 1 bit/lane (LSB=lane0).
+  return b ? static_cast<std::ptrdiff_t>(31 - std::countl_zero(b)) : -1;
+}
+// VecFromMask(d, m): the mask's per-lane all-ones/all-zero bit pattern AS a vector. On AVX2
+// the Mask256 raw IS that pattern already (compares yield full-lane 0xFF..), so it's a
+// reinterpret for int lanes / a cast for float. Feeds SumsOf8 for a masked byte count.
+template <class D>
+HYLE_FORCE_INLINE detail::V256<D> VecFromMask(D, Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
+  using T = TFromD<D>;
+  detail::V256<D> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_castsi256_ps(m.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_castsi256_pd(m.raw);
+  else r.raw = m.raw;  // integer lanes: mask raw already the 0xFF../0 vector
+  return r;
+}
+// SumsOf8(v): sum each group of 8 u8 lanes into a u64 lane -- native psadbw against zero
+// (v vs 0 = sum of absolute bytes = sum of bytes for u8). 32 u8 lanes -> 4 u64 lanes.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::uint64_t, N / 8> SumsOf8(Vec256<std::uint8_t, N> v) noexcept {
+  static_assert(N == 32, "avx2 SumsOf8: full 32xu8 -> 4xu64");
+  Vec256<std::uint64_t, N / 8> r;
+  r.raw = _mm256_sad_epu8(v.raw, _mm256_setzero_si256());
+  return r;
+}
 
 // ---- reductions ---------------------------------------------------------------------
 // THE lane-crossing step: AVX2 ops are per-128-lane, so a horizontal reduce must first

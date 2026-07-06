@@ -853,6 +853,29 @@ HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(Simd<T, N, 0>, Mask128<T, N> m) n
   const unsigned b = detail::mask_bits(m);
   return b ? static_cast<std::ptrdiff_t>(std::countr_zero(b)) : -1;
 }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(Simd<T, N, 0>, Mask128<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);
+  return b ? static_cast<std::ptrdiff_t>(31 - std::countl_zero(b)) : -1;
+}
+// VecFromMask: the mask's per-lane 0xFF../0 pattern as a vector (compares yield full-lane).
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> VecFromMask(D, Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
+  using T = TFromD<D>;
+  detail::V128<D> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_castsi128_ps(m.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm_castsi128_pd(m.raw);
+  else r.raw = m.raw;
+  return r;
+}
+// SumsOf8(v): 16 u8 lanes -> 2 u64 (native _mm_sad_epu8 vs zero). The count core.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::uint64_t, N / 8> SumsOf8(Vec128<std::uint8_t, N> v) noexcept {
+  static_assert(N == 16, "sse4 SumsOf8: full 16xu8 -> 2xu64");
+  Vec128<std::uint64_t, N / 8> r;
+  r.raw = _mm_sad_epu8(v.raw, _mm_setzero_si128());
+  return r;
+}
 
 // ---- reductions (shuffle-and-combine cascade, Highway generic_ops pattern) ----------
 template <typename T, std::size_t N>

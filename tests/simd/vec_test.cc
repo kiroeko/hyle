@@ -428,6 +428,41 @@ TEST(Vec, CompareBlendUint16) { CheckCompareBlend<std::uint16_t>(); }
 TEST(Vec, CompareBlendInt64) { CheckCompareBlend<std::int64_t>(); }
 TEST(Vec, CompareBlendUint64) { CheckCompareBlend<std::uint64_t>(); }
 
+// FindLastTrue (highest set lane) + VecFromMask (mask->0xFF vector) + SumsOf8 (u8->u64 SAD).
+// These three are the string count/rfind primitives. Byte-lane focused (that's the consumer).
+TEST(Vec, FindLastTrueByte) {
+  const hs::ScalableTag<std::uint8_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::uint8_t> a;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = 'a';
+  a.data[1] = 'z'; a.data[n - 2] = 'z';  // matches at 1 and n-2
+  auto m = hs::Eq(hs::Load(d, a.data), hs::Set(d, static_cast<std::uint8_t>('z')));
+  EXPECT_EQ(hs::FindLastTrue(d, m), static_cast<std::ptrdiff_t>(n - 2));
+  EXPECT_EQ(hs::FindFirstTrue(d, m), 1);
+  auto m0 = hs::Eq(hs::Load(d, a.data), hs::Set(d, static_cast<std::uint8_t>('Q')));
+  EXPECT_EQ(hs::FindLastTrue(d, m0), -1);  // none set
+}
+TEST(Vec, VecFromMaskAndSumsOf8Count) {
+  // The count core: SumsOf8(VecFromMask(Eq(v,needle))) sums 255*matches per 8-lane group.
+  const hs::ScalableTag<std::uint8_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_EQ(n % 8, 0u);
+  Buf<std::uint8_t> a;
+  std::size_t want = 0;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = (i % 4 == 0) ? 'x' : 'o'; if (a.data[i] == 'x') ++want; }
+  auto m = hs::Eq(hs::Load(d, a.data), hs::Set(d, static_cast<std::uint8_t>('x')));
+  auto mv = hs::VecFromMask(d, m);
+  // VecFromMask lane is all-ones (0xFF) where matched, 0 else.
+  Buf<std::uint8_t> mvb;
+  hs::Store(mv, d, mvb.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(mvb.data[i], a.data[i] == 'x' ? 0xFFu : 0x00u) << "VecFromMask " << i;
+  const hs::ScalableTag<std::uint64_t> d64;
+  std::uint64_t total = hs::ReduceSum(d64, hs::SumsOf8(mv));
+  EXPECT_EQ(total / 255u, want);           // SAD-style count matches
+  EXPECT_EQ(hs::CountTrue(d, m), want);    // cross-check the popcount path
+}
+
 // NaN / signed-zero edge cases: must be identical across every backend. These caught a
 // real divergence (red team 2026-06): AVX2/AVX512 Ne used the ordered predicate
 // _CMP_NEQ_OQ (false on NaN) while scalar/SSE4/NEON return true; and AVX512 Neg used 0-a

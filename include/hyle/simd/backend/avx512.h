@@ -836,6 +836,32 @@ HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(Simd<T, N, 0>, Mask512<T, N> m) n
   const std::uint64_t b = detail::kbits(m);
   return b ? static_cast<std::ptrdiff_t>(std::countr_zero(b)) : -1;
 }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(Simd<T, N, 0>, Mask512<T, N> m) noexcept {
+  const std::uint64_t b = detail::kbits(m);
+  return b ? static_cast<std::ptrdiff_t>(63 - std::countl_zero(b)) : -1;  // highest set lane
+}
+// VecFromMask: expand the k-register mask to a per-lane 0xFF../0 vector (vpmovm2b/w/d/q).
+template <class D>
+HYLE_FORCE_INLINE detail::V512<D> VecFromMask(D, Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
+  using T = TFromD<D>;
+  detail::V512<D> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_castsi512_ps(_mm512_movm_epi32(m.raw));
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_castsi512_pd(_mm512_movm_epi64(m.raw));
+  else if constexpr (detail::kI8<T>) r.raw = _mm512_movm_epi8(m.raw);    // BW
+  else if constexpr (detail::kI16<T>) r.raw = _mm512_movm_epi16(m.raw);  // BW
+  else if constexpr (detail::kI64<T>) r.raw = _mm512_movm_epi64(m.raw);  // DQ
+  else r.raw = _mm512_movm_epi32(m.raw);  // i32/u32
+  return r;
+}
+// SumsOf8(v): 64 u8 lanes -> 8 u64 (native _mm512_sad_epu8 vs zero). The count core.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::uint64_t, N / 8> SumsOf8(Vec512<std::uint8_t, N> v) noexcept {
+  static_assert(N == 64, "avx512 SumsOf8: full 64xu8 -> 8xu64");
+  Vec512<std::uint64_t, N / 8> r;
+  r.raw = _mm512_sad_epu8(v.raw, _mm512_setzero_si512());
+  return r;
+}
 
 // ---- reductions (AVX-512 has _mm512_reduce_* for 32/64-bit) --------------------------
 template <typename T, std::size_t N>

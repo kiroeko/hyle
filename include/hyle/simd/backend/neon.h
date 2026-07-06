@@ -945,6 +945,39 @@ HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(Simd<T, N, 0>, MaskNeon<T, N> m) 
   const unsigned b = detail::mask_bits(m);
   return b ? static_cast<std::ptrdiff_t>(std::countr_zero(b)) : -1;
 }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);  // packs N bits (N<=16), LSB = lane 0
+  return b ? static_cast<std::ptrdiff_t>(31 - std::countl_zero(b)) : -1;  // highest set lane
+}
+// VecFromMask: the mask's per-lane 0xFF../0 pattern as a vector. MaskNeon.raw is the unsigned
+// same-width all-ones/all-zero vector (vceqq_* result), so reinterpret it to T's raw type.
+template <class D>
+HYLE_FORCE_INLINE detail::VN<D> VecFromMask(D, MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
+  using T = TFromD<D>;
+  detail::VN<D> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vreinterpretq_f32_u32(m.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = vreinterpretq_f64_u64(m.raw);
+  else if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vreinterpretq_s8_u8(m.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = m.raw;
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vreinterpretq_s16_u16(m.raw);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = m.raw;
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vreinterpretq_s32_u32(m.raw);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = m.raw;
+  else if constexpr (std::is_same_v<T, std::int64_t>) r.raw = vreinterpretq_s64_u64(m.raw);
+  else r.raw = m.raw;  // u64
+  return r;
+}
+// SumsOf8(v): 16 u8 lanes -> 2 u64. NEON has no SAD; fold via the pairwise-widening-add
+// chain vpaddlq_u8 -> u16 -> u32 -> u64 (each halves the lane count, doubling width). 16 u8
+// -> 8 u16 -> 4 u32 -> 2 u64, each u64 = sum of its 8 source bytes. The count core.
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::uint64_t, N / 8> SumsOf8(VecNeon<std::uint8_t, N> v) noexcept {
+  static_assert(N == 16, "neon SumsOf8: full 16xu8 -> 2xu64");
+  VecNeon<std::uint64_t, N / 8> r;
+  r.raw = vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(v.raw)));
+  return r;
+}
 
 // ---- reductions (aarch64 horizontal vaddvq/vminvq/vmaxvq) ----------------------------
 template <typename T, std::size_t N>

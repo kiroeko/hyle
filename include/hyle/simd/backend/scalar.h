@@ -464,6 +464,44 @@ HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(DFromV<Vec<T, N>>,
     if (m.raw[i]) return static_cast<std::ptrdiff_t>(i);
   return -1;
 }
+// Lane index of the LAST set lane, or -1 if none (Highway FindLastTrue). The reverse-scan
+// primitive rfind needs: highest matching lane in a block.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(DFromV<Vec<T, N>>, Mask<T, N> m) noexcept {
+  for (std::size_t i = N; i-- > 0;)
+    if (m.raw[i]) return static_cast<std::ptrdiff_t>(i);
+  return -1;
+}
+// VecFromMask(d, m): all-ones bit pattern where m is true, else zero (Highway). The inverse
+// of a compare's mask->vector; feeds SumsOf8 for a masked byte-count.
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> VecFromMask(D, Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
+  using T = TFromD<D>;
+  VFromD<D> r;
+  for (std::size_t i = 0; i < HYLE_SIMD_MAX_LANES_D(D); ++i) {
+    if (m.raw[i]) {
+      using U = std::make_unsigned_t<std::conditional_t<std::is_integral_v<T>, T, std::uint64_t>>;
+      if constexpr (std::is_integral_v<T>) r.raw[i] = static_cast<T>(~U{0});
+      else { U u = ~U{0}; std::memcpy(&r.raw[i], &u, sizeof(T)); }
+    } else {
+      r.raw[i] = T{0};
+    }
+  }
+  return r;
+}
+// SumsOf8(v): sum each consecutive group of 8 u8 lanes into a u64 lane (Highway; x86 psadbw,
+// NEON vpaddl chain). The count core: SumsOf8(VecFromMask(Eq(...))) sums 255*matches per group.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec<std::uint64_t, N / 8> SumsOf8(Vec<std::uint8_t, N> v) noexcept {
+  static_assert(N % 8 == 0, "SumsOf8 needs a lane count that is a multiple of 8");
+  Vec<std::uint64_t, N / 8> r;
+  for (std::size_t g = 0; g < N / 8; ++g) {
+    std::uint64_t s = 0;
+    for (std::size_t j = 0; j < 8; ++j) s += v.raw[g * 8 + j];
+    r.raw[g] = s;
+  }
+  return r;
+}
 
 // ---- reductions (return the scalar, Highway's GetLane(SumOfLanes(...)) shorthand) ---
 template <typename T, std::size_t N>
