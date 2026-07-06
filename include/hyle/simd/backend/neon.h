@@ -749,4 +749,75 @@ HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, VecNeon<T, N> v) noexcept {
   else return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);  // i64/u64: no vmaxvq_64
 }
 
+// ---- masked / partial load-store (tail handling) ------------------------------------
+// FirstN(d,n) -> mask (per-width all-1s/all-0s unsigned lanes, matching MaskRawNeon<T>);
+// built via a stack array + vld1q of the matching width. MaskedLoad(Or) reuse IfThenElse
+// (like Highway's NEON path -- no native maskload). LoadN/StoreN touch only the first k
+// lanes (fault-safe); BlendedStore writes only on-lanes via mask_bits (fault-safe).
+template <class D>
+HYLE_FORCE_INLINE MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  MaskNeon<T, kN> m;
+  if constexpr (sizeof(T) == 1) {
+    std::uint8_t tmp[16];
+    for (std::size_t i = 0; i < kN; ++i) tmp[i] = (i < n) ? 0xFFu : 0u;
+    m.raw = vld1q_u8(tmp);
+  } else if constexpr (sizeof(T) == 2) {
+    std::uint16_t tmp[8];
+    for (std::size_t i = 0; i < kN; ++i) tmp[i] = (i < n) ? 0xFFFFu : 0u;
+    m.raw = vld1q_u16(tmp);
+  } else if constexpr (sizeof(T) == 4) {
+    std::uint32_t tmp[4];
+    for (std::size_t i = 0; i < kN; ++i) tmp[i] = (i < n) ? 0xFFFFFFFFu : 0u;
+    m.raw = vld1q_u32(tmp);
+  } else {
+    std::uint64_t tmp[2];
+    for (std::size_t i = 0; i < kN; ++i) tmp[i] = (i < n) ? ~0ull : 0ull;
+    m.raw = vld1q_u64(tmp);
+  }
+  return m;
+}
+template <class D>
+HYLE_FORCE_INLINE detail::VN<D> MaskedLoad(MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                           D d, const TFromD<D>* p) noexcept {
+  return IfThenElseZero(m, LoadU(d, p));
+}
+template <class D>
+HYLE_FORCE_INLINE detail::VN<D> MaskedLoadOr(detail::VN<D> no,
+                                             MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                             D d, const TFromD<D>* p) noexcept {
+  return IfThenElse(m, LoadU(d, p), no);
+}
+template <class D>
+HYLE_FORCE_INLINE void BlendedStore(detail::VN<D> v,
+                                    MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D d,
+                                    TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) T tmp[kN];
+  Store(v, d, tmp);
+  const unsigned bits = detail::mask_bits(m);
+  for (std::size_t i = 0; i < kN; ++i)
+    if ((bits >> i) & 1u) p[i] = tmp[i];
+}
+template <class D>
+HYLE_FORCE_INLINE detail::VN<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  const std::size_t k = n < kN ? n : kN;
+  alignas(16) T tmp[kN] = {};
+  for (std::size_t i = 0; i < k; ++i) tmp[i] = p[i];
+  return Load(d, tmp);
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreN(detail::VN<D> v, D d, TFromD<D>* p, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  const std::size_t k = n < kN ? n : kN;
+  alignas(16) T tmp[kN];
+  Store(v, d, tmp);
+  for (std::size_t i = 0; i < k; ++i) p[i] = tmp[i];
+}
+
 }  // namespace hyle::simd

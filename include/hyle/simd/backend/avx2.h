@@ -695,4 +695,66 @@ HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
   else return reduce_scalar<T, N, detail::RedOp::kMax>(v);
 }
 
+// ---- masked / partial load-store (tail handling) ------------------------------------
+// FirstN(d,n) -> mask with the first min(n,N) lanes true. An all-ones lane bit pattern is
+// a valid AVX2 blend/movemask selector for EVERY lane type (blendv keys off each lane's
+// MSB, all-ones has it set), so we build it via a stack array + Load, uniform over T.
+// LoadN/StoreN touch ONLY the first k lanes (fault-safe tail I/O); MaskedLoad mirrors
+// Highway's AVX2 narrow path (IfThenElseZero + full LoadU -- caller ensures the vector is
+// loadable), BlendedStore writes only on-lanes (fault-safe, mask-driven).
+template <class D>
+HYLE_FORCE_INLINE Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D d, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  T ones;
+  auto* ob = reinterpret_cast<unsigned char*>(&ones);
+  for (std::size_t k = 0; k < sizeof(T); ++k) ob[k] = 0xFFu;  // all-ones lane pattern
+  alignas(32) T tmp[kN];
+  for (std::size_t i = 0; i < kN; ++i) tmp[i] = (i < n) ? ones : T{0};
+  Mask256<T, kN> m;
+  m.raw = Load(d, tmp).raw;
+  return m;
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V256<D> MaskedLoad(Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                             D d, const TFromD<D>* p) noexcept {
+  return IfThenElseZero(m, LoadU(d, p));
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V256<D> MaskedLoadOr(detail::V256<D> no,
+                                               Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                               D d, const TFromD<D>* p) noexcept {
+  return IfThenElse(m, LoadU(d, p), no);
+}
+template <class D>
+HYLE_FORCE_INLINE void BlendedStore(detail::V256<D> v,
+                                    Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D d,
+                                    TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) T tmp[kN];
+  Store(v, d, tmp);
+  const unsigned bits = detail::mask_bits(m);
+  for (std::size_t i = 0; i < kN; ++i)
+    if ((bits >> i) & 1u) p[i] = tmp[i];  // write only on-lanes (fault-safe)
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V256<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  const std::size_t k = n < kN ? n : kN;
+  alignas(32) T tmp[kN] = {};
+  for (std::size_t i = 0; i < k; ++i) tmp[i] = p[i];  // read only k lanes (fault-safe)
+  return Load(d, tmp);
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreN(detail::V256<D> v, D d, TFromD<D>* p, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  const std::size_t k = n < kN ? n : kN;
+  alignas(32) T tmp[kN];
+  Store(v, d, tmp);
+  for (std::size_t i = 0; i < k; ++i) p[i] = tmp[i];  // write only k lanes (fault-safe)
+}
+
 }  // namespace hyle::simd

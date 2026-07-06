@@ -694,4 +694,64 @@ HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec128<T, N> v) noexcept {
   else return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);
 }
 
+// ---- masked / partial load-store (tail handling) ------------------------------------
+// 128-bit mirror of the avx2 tail toolkit (same rationale): FirstN builds an all-ones
+// lane pattern via stack array + Load (a valid blendv/movemask selector for every lane
+// type); LoadN/StoreN touch only the first k lanes (fault-safe); MaskedLoad = IfThenElse
+// Zero + full LoadU (Highway's non-AVX3 narrow path); BlendedStore writes only on-lanes.
+template <class D>
+HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D d, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  T ones;
+  auto* ob = reinterpret_cast<unsigned char*>(&ones);
+  for (std::size_t k = 0; k < sizeof(T); ++k) ob[k] = 0xFFu;
+  alignas(16) T tmp[kN];
+  for (std::size_t i = 0; i < kN; ++i) tmp[i] = (i < n) ? ones : T{0};
+  Mask128<T, kN> m;
+  m.raw = Load(d, tmp).raw;
+  return m;
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> MaskedLoad(Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                             D d, const TFromD<D>* p) noexcept {
+  return IfThenElseZero(m, LoadU(d, p));
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> MaskedLoadOr(detail::V128<D> no,
+                                               Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                               D d, const TFromD<D>* p) noexcept {
+  return IfThenElse(m, LoadU(d, p), no);
+}
+template <class D>
+HYLE_FORCE_INLINE void BlendedStore(detail::V128<D> v,
+                                    Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D d,
+                                    TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) T tmp[kN];
+  Store(v, d, tmp);
+  const unsigned bits = detail::mask_bits(m);
+  for (std::size_t i = 0; i < kN; ++i)
+    if ((bits >> i) & 1u) p[i] = tmp[i];
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  const std::size_t k = n < kN ? n : kN;
+  alignas(16) T tmp[kN] = {};
+  for (std::size_t i = 0; i < k; ++i) tmp[i] = p[i];
+  return Load(d, tmp);
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreN(detail::V128<D> v, D d, TFromD<D>* p, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  const std::size_t k = n < kN ? n : kN;
+  alignas(16) T tmp[kN];
+  Store(v, d, tmp);
+  for (std::size_t i = 0; i < k; ++i) p[i] = tmp[i];
+}
+
 }  // namespace hyle::simd

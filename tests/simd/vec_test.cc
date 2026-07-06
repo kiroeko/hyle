@@ -271,6 +271,54 @@ void CheckRounding() {
 TEST(Vec, RoundingFloat) { CheckRounding<float>(); }
 TEST(Vec, RoundingDouble) { CheckRounding<double>(); }
 
+// Masked / partial load-store (tail handling): FirstN builds a first-n-lanes mask;
+// MaskedLoad zeroes off lanes; MaskedLoadOr keeps 'no' off lanes; BlendedStore writes
+// only on-lanes; LoadN/StoreN take a runtime count. Sweep k=0..n so partial + full +
+// empty tails are all exercised, width-agnostic (naive per-lane reference).
+template <typename T>
+void CheckMaskedTail() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> in, out;
+  for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<T>(i + 1);
+
+  for (std::size_t k = 0; k <= n; ++k) {
+    auto m = hs::FirstN(d, k);
+    EXPECT_EQ(hs::CountTrue(d, m), k) << "FirstN count k=" << k;
+
+    hs::Store(hs::MaskedLoad(m, d, in.data), d, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], i < k ? in.data[i] : T{0}) << "MaskedLoad k=" << k << " i=" << i;
+
+    Buf<T> no;
+    for (std::size_t i = 0; i < n; ++i) no.data[i] = static_cast<T>(90 + i);
+    hs::Store(hs::MaskedLoadOr(hs::Load(d, no.data), m, d, in.data), d, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], i < k ? in.data[i] : no.data[i]) << "MaskedLoadOr k=" << k;
+
+    for (std::size_t i = 0; i < n; ++i) out.data[i] = static_cast<T>(7);
+    hs::BlendedStore(hs::Load(d, in.data), m, d, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], i < k ? in.data[i] : T{7}) << "BlendedStore k=" << k;
+
+    hs::Store(hs::LoadN(d, in.data, k), d, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], i < k ? in.data[i] : T{0}) << "LoadN k=" << k;
+
+    for (std::size_t i = 0; i < n; ++i) out.data[i] = static_cast<T>(5);
+    hs::StoreN(hs::Load(d, in.data), d, out.data, k);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], i < k ? in.data[i] : T{5}) << "StoreN k=" << k;
+  }
+}
+TEST(Vec, MaskedTailFloat) { CheckMaskedTail<float>(); }
+TEST(Vec, MaskedTailDouble) { CheckMaskedTail<double>(); }
+TEST(Vec, MaskedTailInt32) { CheckMaskedTail<std::int32_t>(); }
+TEST(Vec, MaskedTailInt8) { CheckMaskedTail<std::int8_t>(); }
+TEST(Vec, MaskedTailInt16) { CheckMaskedTail<std::int16_t>(); }
+TEST(Vec, MaskedTailInt64) { CheckMaskedTail<std::int64_t>(); }
+TEST(Vec, MaskedTailUint8) { CheckMaskedTail<std::uint8_t>(); }
+
 TEST(Vec, NegAbsInt32) {
   const hs::ScalableTag<std::int32_t> d;
   const std::size_t n = hs::Lanes(d);

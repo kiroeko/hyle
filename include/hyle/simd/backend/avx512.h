@@ -648,4 +648,69 @@ HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
   else return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);  // i8/u8/i16/u16
 }
 
+// ---- masked / partial load-store (tail handling) ------------------------------------
+// AVX-512's k-register mask model makes these NATIVE and clean (unlike the SSE/AVX2/NEON
+// memory-staging): FirstN(d,n) is literally the k register with the low min(n,N) bits set;
+// MaskedLoad = maskz_loadu (off lanes zeroed by hardware), MaskedLoadOr = mask_loadu (off
+// lanes keep 'no'), BlendedStore = mask_storeu (writes only on-lanes, no fault on off).
+// LoadN/StoreN compose via FirstN (Highway does the same). Load/Store are per-width epi8/
+// 16/32/64 (BW for 8/16) + ps/pd; all touch memory only for on-lanes (hardware-fault-safe).
+template <class D>
+HYLE_FORCE_INLINE Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  const std::uint64_t full = (kN >= 64) ? ~0ull : ((1ull << kN) - 1ull);
+  const std::uint64_t bits = (n >= kN) ? full : ((1ull << n) - 1ull);
+  Mask512<T, kN> m;
+  m.raw = static_cast<typename detail::KMaskT<T>>(bits);
+  return m;
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V512<D> MaskedLoad(Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                             D, const TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  detail::V512<D> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_maskz_loadu_ps(m.raw, p);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_maskz_loadu_pd(m.raw, p);
+  else if constexpr (detail::kI8<T>) r.raw = _mm512_maskz_loadu_epi8(m.raw, p);
+  else if constexpr (detail::kI16<T>) r.raw = _mm512_maskz_loadu_epi16(m.raw, p);
+  else if constexpr (detail::kI64<T>) r.raw = _mm512_maskz_loadu_epi64(m.raw, p);
+  else r.raw = _mm512_maskz_loadu_epi32(m.raw, p);  // i32/u32
+  return r;
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V512<D> MaskedLoadOr(detail::V512<D> no,
+                                               Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                               D, const TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  detail::V512<D> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_mask_loadu_ps(no.raw, m.raw, p);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_mask_loadu_pd(no.raw, m.raw, p);
+  else if constexpr (detail::kI8<T>) r.raw = _mm512_mask_loadu_epi8(no.raw, m.raw, p);
+  else if constexpr (detail::kI16<T>) r.raw = _mm512_mask_loadu_epi16(no.raw, m.raw, p);
+  else if constexpr (detail::kI64<T>) r.raw = _mm512_mask_loadu_epi64(no.raw, m.raw, p);
+  else r.raw = _mm512_mask_loadu_epi32(no.raw, m.raw, p);
+  return r;
+}
+template <class D>
+HYLE_FORCE_INLINE void BlendedStore(detail::V512<D> v,
+                                    Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D,
+                                    TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  if constexpr (std::is_same_v<T, float>) _mm512_mask_storeu_ps(p, m.raw, v.raw);
+  else if constexpr (std::is_same_v<T, double>) _mm512_mask_storeu_pd(p, m.raw, v.raw);
+  else if constexpr (detail::kI8<T>) _mm512_mask_storeu_epi8(p, m.raw, v.raw);
+  else if constexpr (detail::kI16<T>) _mm512_mask_storeu_epi16(p, m.raw, v.raw);
+  else if constexpr (detail::kI64<T>) _mm512_mask_storeu_epi64(p, m.raw, v.raw);
+  else _mm512_mask_storeu_epi32(p, m.raw, v.raw);
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V512<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
+  return MaskedLoad(FirstN(d, n), d, p);
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreN(detail::V512<D> v, D d, TFromD<D>* p, std::size_t n) noexcept {
+  BlendedStore(v, FirstN(d, n), d, p);
+}
+
 }  // namespace hyle::simd

@@ -380,4 +380,51 @@ HYLE_FORCE_INLINE T GetLane(Vec<T, N> v) noexcept {
   return v.raw[0];
 }
 
+// ---- masked / partial load-store (tail handling) ------------------------------------
+// The vectorized-loop remainder toolkit (Highway names). FirstN(d,n) builds a mask with
+// the first min(n,N) lanes true; MaskedLoad zeroes the off lanes; BlendedStore writes
+// only the on lanes; LoadN/StoreN take a runtime count directly. The scalar floor is the
+// per-lane reference the wide backends' vmaskmov / k-mask load-store must match.
+template <class D>
+HYLE_FORCE_INLINE Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D, std::size_t n) noexcept {
+  Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m;
+  for (std::size_t i = 0; i < HYLE_SIMD_MAX_LANES_D(D); ++i) m.raw[i] = (i < n);
+  return m;
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> MaskedLoad(Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D,
+                                       const TFromD<D>* p) noexcept {
+  VFromD<D> v;
+  for (std::size_t i = 0; i < HYLE_SIMD_MAX_LANES_D(D); ++i)
+    v.raw[i] = m.raw[i] ? p[i] : TFromD<D>{0};
+  return v;
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> MaskedLoadOr(VFromD<D> no,
+                                         Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D,
+                                         const TFromD<D>* p) noexcept {
+  VFromD<D> v;
+  for (std::size_t i = 0; i < HYLE_SIMD_MAX_LANES_D(D); ++i)
+    v.raw[i] = m.raw[i] ? p[i] : no.raw[i];
+  return v;
+}
+template <class D>
+HYLE_FORCE_INLINE void BlendedStore(VFromD<D> v, Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                    D, TFromD<D>* p) noexcept {
+  for (std::size_t i = 0; i < HYLE_SIMD_MAX_LANES_D(D); ++i)
+    if (m.raw[i]) p[i] = v.raw[i];
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
+  const std::size_t k = n < HYLE_SIMD_MAX_LANES_D(D) ? n : HYLE_SIMD_MAX_LANES_D(D);
+  VFromD<D> v = Zero(d);
+  for (std::size_t i = 0; i < k; ++i) v.raw[i] = p[i];
+  return v;
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreN(VFromD<D> v, D, TFromD<D>* p, std::size_t n) noexcept {
+  const std::size_t k = n < HYLE_SIMD_MAX_LANES_D(D) ? n : HYLE_SIMD_MAX_LANES_D(D);
+  for (std::size_t i = 0; i < k; ++i) p[i] = v.raw[i];
+}
+
 }  // namespace hyle::simd
