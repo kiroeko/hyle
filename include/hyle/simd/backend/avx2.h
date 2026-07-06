@@ -435,7 +435,7 @@ HYLE_FORCE_INLINE Vec256<T, N> AverageRound(Vec256<T, N> a, Vec256<T, N> b) noex
 // ConvertTo: float<->int truncating (cvtt = toward zero). RoundToInt: f32->i32 round to
 // nearest-even (cvtps respects the default MXCSR rounding = RNE). 8 lanes both sides =
 // one __m256 <-> one __m256i, so it fits the native-width model (no partial vectors).
-// Width-changing PromoteTo/DemoteTo are deferred (need partial vectors) -- see scalar.h.
+// Width-changing PromoteLowerTo/PromoteUpperTo/DemoteTo (half-at-a-time forms) are below.
 template <typename DstT, std::size_t N, typename SrcT>
 HYLE_FORCE_INLINE Vec256<DstT, N> ConvertTo(Simd<DstT, N, 0>, Vec256<SrcT, N> v) noexcept {
   Vec256<DstT, N> r;
@@ -452,6 +452,84 @@ HYLE_FORCE_INLINE Vec256<DstT, N> RoundToInt(Simd<DstT, N, 0>, Vec256<SrcT, N> v
                 "avx2 RoundToInt: f32->i32");
   Vec256<DstT, N> r;
   r.raw = _mm256_cvtps_epi32(v.raw);           // round to nearest even (default MXCSR)
+  return r;
+}
+
+// ---- width-changing promote / demote (half-at-a-time, fixed-width friendly) ---------
+// PromoteLowerTo/PromoteUpperTo: FULL narrow src (2N lanes in a 256b reg) -> FULL wide dst
+// (N lanes). The lower/upper 128-bit half (N narrow lanes) feeds a cvtep* that widens it to
+// a full 256b wide vector -- the AVX2 cvtep* intrinsics take a 128b input by design, so no
+// partial vectors are needed. Signed src sign-extends (cvtepi), unsigned zero-extends
+// (cvtepu). f32->f64 uses cvtps_pd on the 128b half.
+namespace detail {
+template <typename DstT, typename SrcT>
+HYLE_FORCE_INLINE Raw256T<DstT> promote128(__m128i half) noexcept {
+  if constexpr (std::is_same_v<SrcT, std::int8_t>) return _mm256_cvtepi8_epi16(half);
+  else if constexpr (std::is_same_v<SrcT, std::uint8_t>) return _mm256_cvtepu8_epi16(half);
+  else if constexpr (std::is_same_v<SrcT, std::int16_t>) return _mm256_cvtepi16_epi32(half);
+  else if constexpr (std::is_same_v<SrcT, std::uint16_t>) return _mm256_cvtepu16_epi32(half);
+  else if constexpr (std::is_same_v<SrcT, std::int32_t>) return _mm256_cvtepi32_epi64(half);
+  else return _mm256_cvtepu32_epi64(half);  // u32 -> u64
+}
+}  // namespace detail
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec256<DstT, NDst> PromoteLowerTo(Simd<DstT, NDst, 0>, Vec256<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteLowerTo widens, src 2x lanes");
+  Vec256<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, float>) r.raw = _mm256_cvtps_pd(_mm256_castps256_ps128(v.raw));
+  else r.raw = detail::promote128<DstT, SrcT>(_mm256_castsi256_si128(v.raw));  // lower 128
+  return r;
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec256<DstT, NDst> PromoteUpperTo(Simd<DstT, NDst, 0>, Vec256<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteUpperTo widens, src 2x lanes");
+  Vec256<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, float>)
+    r.raw = _mm256_cvtps_pd(_mm256_extractf128_ps(v.raw, 1));
+  else r.raw = detail::promote128<DstT, SrcT>(_mm256_extracti128_si256(v.raw, 1));  // upper 128
+  return r;
+}
+// DemoteTo(dn, a, b): two FULL wide vectors -> one FULL narrow, SATURATING (integer) with
+// lanes ORDERED [a..., b...]. AVX2 packs/packus operate per-128-block, yielding
+// [a.lo,b.lo,a.hi,b.hi]; a permute4x64(...,3,1,2,0) restores [a.lo,a.hi,b.lo,b.hi]. f64->f32
+// uses cvtpd_ps on each and inserts the second into the high 128.
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec256<DstT, NDst> DemoteTo(Simd<DstT, NDst, 0>, Vec256<SrcT, NSrc> a,
+                                              Vec256<SrcT, NSrc> b) noexcept {
+  static_assert(NDst == 2 * NSrc, "DemoteTo: narrow dst has 2x each wide src's lanes");
+  Vec256<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, double>) {  // f64 -> f32
+    const __m128 alo = _mm256_cvtpd_ps(a.raw), blo = _mm256_cvtpd_ps(b.raw);
+    r.raw = _mm256_insertf128_ps(_mm256_castps128_ps256(alo), blo, 1);
+  } else {
+    __m256i packed;
+    if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::int8_t>)
+      packed = _mm256_packs_epi16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::uint8_t>)
+      packed = _mm256_packus_epi16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::int16_t>)
+      packed = _mm256_packs_epi32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::uint16_t>)
+      packed = _mm256_packus_epi32(a.raw, b.raw);
+    else static_assert(sizeof(DstT) == 0, "avx2 DemoteTo: unsupported width pair");
+    r.raw = _mm256_permute4x64_epi64(packed, _MM_SHUFFLE(3, 1, 2, 0));  // fix 128-block order
+  }
+  return r;
+}
+// ReorderDemote2To: the cheaper block-interleaved order [a.lo,b.lo,a.hi,b.hi] (skips the
+// permute) -- for callers that immediately reduce/re-permute and don't care about order.
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec256<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0>, Vec256<SrcT, NSrc> a,
+                                                      Vec256<SrcT, NSrc> b) noexcept {
+  static_assert(NDst == 2 * NSrc && std::is_integral_v<SrcT>, "ReorderDemote2To: integer 2->1");
+  Vec256<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::int8_t>)
+    r.raw = _mm256_packs_epi16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::uint8_t>)
+    r.raw = _mm256_packus_epi16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::int16_t>)
+    r.raw = _mm256_packs_epi32(a.raw, b.raw);
+  else r.raw = _mm256_packus_epi32(a.raw, b.raw);  // i32 -> u16
   return r;
 }
 

@@ -287,13 +287,62 @@ HYLE_FORCE_INLINE Vec<DstT, N> RoundToInt(Simd<DstT, N, 0>, Vec<SrcT, N> v) noex
   return r;
 }
 
-// NOTE: PromoteTo/DemoteTo (i8<->i16<->i32 width-changing) are DEFERRED: on a fixed-
-// native-width backend they need PARTIAL / multi-register vectors (promote 16 i8 lanes in
-// a 128-bit half to 16 i16 lanes in a full 256-bit reg), which the v1 backends don't model
-// (vec.h drops Highway's fractional-N until a scalable backend lands). Same-width
-// float<->int (ConvertTo/RoundToInt above) needs no such support and is the quantization
-// (de)quant core. Width-changing promote/demote is a separate effort (needs vec.h
-// partial-vector support first). Registered in project_simd_int_lanes memory.
+// ---- width-changing promote / demote (Highway's fixed-width-friendly forms) ---------
+// The fixed-native-width model can't do Highway's SAME-lane-count PromoteTo (16 i8 lanes
+// -> 16 i16 needs a 2x-wide reg). But the HALF-at-a-time forms fit perfectly and ARE the
+// quantization path: PromoteLowerTo/PromoteUpperTo take a FULL narrow vector (2N lanes)
+// and widen its lower/upper N lanes to a FULL wide vector (N lanes); DemoteTo(dn,a,b) packs
+// two FULL wide vectors (N lanes each) into one FULL narrow (2N lanes). The dst tag names
+// the target lane type + its full lane count. Scalar floor is per-lane static_cast; wide
+// backends use cvtepi/packs (x86) / vmovl/vqmovn (NEON).
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<DstT, NDst> PromoteLowerTo(Simd<DstT, NDst, 0>, Vec<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst, "PromoteLowerTo: narrow src has 2x the wide dst's lanes");
+  static_assert(sizeof(DstT) > sizeof(SrcT), "PromoteLowerTo widens the lane type");
+  Vec<DstT, NDst> r;
+  for (std::size_t i = 0; i < NDst; ++i) r.raw[i] = static_cast<DstT>(v.raw[i]);  // lower half
+  return r;
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<DstT, NDst> PromoteUpperTo(Simd<DstT, NDst, 0>, Vec<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst, "PromoteUpperTo: narrow src has 2x the wide dst's lanes");
+  static_assert(sizeof(DstT) > sizeof(SrcT), "PromoteUpperTo widens the lane type");
+  Vec<DstT, NDst> r;
+  for (std::size_t i = 0; i < NDst; ++i) r.raw[i] = static_cast<DstT>(v.raw[NDst + i]);  // upper half
+  return r;
+}
+// DemoteTo(dn, a, b): two wide vectors -> one narrow (a's lanes then b's lanes). Integer
+// demotion SATURATES to the narrow type's range (Highway's packs/packus contract); f64->f32
+// is the ordinary narrowing cast. Ordered result [a.lanes..., b.lanes...].
+namespace detail {
+template <typename DstT>
+HYLE_FORCE_INLINE DstT demote_sat(long long x) noexcept {
+  constexpr long long lo = static_cast<long long>(std::numeric_limits<DstT>::min());
+  constexpr long long hi = static_cast<long long>(std::numeric_limits<DstT>::max());
+  return static_cast<DstT>(x < lo ? lo : (x > hi ? hi : x));
+}
+}  // namespace detail
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<DstT, NDst> DemoteTo(Simd<DstT, NDst, 0>, Vec<SrcT, NSrc> a,
+                                           Vec<SrcT, NSrc> b) noexcept {
+  static_assert(NDst == 2 * NSrc, "DemoteTo: narrow dst has 2x each wide src's lanes");
+  Vec<DstT, NDst> r;
+  if constexpr (std::is_integral_v<SrcT>) {
+    for (std::size_t i = 0; i < NSrc; ++i) r.raw[i] = detail::demote_sat<DstT>(static_cast<long long>(a.raw[i]));
+    for (std::size_t i = 0; i < NSrc; ++i) r.raw[NSrc + i] = detail::demote_sat<DstT>(static_cast<long long>(b.raw[i]));
+  } else {  // f64 -> f32: ordinary narrowing
+    for (std::size_t i = 0; i < NSrc; ++i) r.raw[i] = static_cast<DstT>(a.raw[i]);
+    for (std::size_t i = 0; i < NSrc; ++i) r.raw[NSrc + i] = static_cast<DstT>(b.raw[i]);
+  }
+  return r;
+}
+// ReorderDemote2To == DemoteTo on the scalar floor (no block-interleave artifact to model;
+// the wide x86 backends define the cheaper block-order variant + the ordered one).
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, Vec<SrcT, NSrc> a,
+                                                   Vec<SrcT, NSrc> b) noexcept {
+  return DemoteTo(dn, a, b);
+}
 
 // ---- comparison -> mask -------------------------------------------------------------
 #define HYLE_SIMD_SCALAR_CMP(NAME, REL)                                  \

@@ -542,6 +542,79 @@ TEST(Vec, BroadcastInt32) { CheckBroadcast<std::int32_t>(); }
 TEST(Vec, BroadcastInt8) { CheckBroadcast<std::int8_t>(); }
 TEST(Vec, BroadcastInt64) { CheckBroadcast<std::int64_t>(); }
 
+// Width-changing promote/demote (half-at-a-time forms). On a fixed-width backend the narrow
+// ScalableTag has 2x the lanes of the wide one, so PromoteLower/UpperTo map narrow(2n)->wide(n)
+// and DemoteTo maps two wide(n)->narrow(2n). Checked against per-lane static_cast (promote)
+// and a saturating reference (demote), width-agnostic via Lanes().
+template <typename Narrow, typename Wide>
+void CheckPromote() {
+  const hs::ScalableTag<Narrow> dn;
+  const hs::ScalableTag<Wide> dw;
+  const std::size_t nn = hs::Lanes(dn), nw = hs::Lanes(dw);
+  ASSERT_EQ(nn, 2 * nw);
+  Buf<Narrow> in;
+  for (std::size_t i = 0; i < nn; ++i)
+    in.data[i] = static_cast<Narrow>((i % 2 ? -1 : 1) * static_cast<long long>(i % 50 + 1));
+  auto v = hs::Load(dn, in.data);
+  Buf<Wide> out;
+  hs::Store(hs::PromoteLowerTo(dw, v), dw, out.data);
+  for (std::size_t i = 0; i < nw; ++i) EXPECT_EQ(out.data[i], static_cast<Wide>(in.data[i])) << "lower i=" << i;
+  hs::Store(hs::PromoteUpperTo(dw, v), dw, out.data);
+  for (std::size_t i = 0; i < nw; ++i) EXPECT_EQ(out.data[i], static_cast<Wide>(in.data[nw + i])) << "upper i=" << i;
+}
+TEST(Vec, PromoteI8I16) { CheckPromote<std::int8_t, std::int16_t>(); }
+TEST(Vec, PromoteU8U16) { CheckPromote<std::uint8_t, std::uint16_t>(); }
+TEST(Vec, PromoteI16I32) { CheckPromote<std::int16_t, std::int32_t>(); }
+TEST(Vec, PromoteU16U32) { CheckPromote<std::uint16_t, std::uint32_t>(); }
+TEST(Vec, PromoteI32I64) { CheckPromote<std::int32_t, std::int64_t>(); }
+TEST(Vec, PromoteU32U64) { CheckPromote<std::uint32_t, std::uint64_t>(); }
+
+template <typename Wide, typename Narrow>
+void CheckDemote() {
+  const hs::ScalableTag<Wide> dw;
+  const hs::ScalableTag<Narrow> dn;
+  const std::size_t nw = hs::Lanes(dw);
+  ASSERT_EQ(hs::Lanes(dn), 2 * nw);
+  Buf<Wide> a, b;
+  for (std::size_t i = 0; i < nw; ++i) {
+    a.data[i] = static_cast<Wide>((i % 2 ? -1 : 1) * static_cast<long long>(i * 37 + 3));  // some exceed narrow range
+    b.data[i] = static_cast<Wide>((i % 3 ? 1 : -1) * static_cast<long long>(i * 53 + 7));
+  }
+  constexpr long long lo = static_cast<long long>(std::numeric_limits<Narrow>::min());
+  constexpr long long hi = static_cast<long long>(std::numeric_limits<Narrow>::max());
+  auto clampn = [&](Wide x) { long long v = static_cast<long long>(x); return static_cast<Narrow>(v < lo ? lo : (v > hi ? hi : v)); };
+  Buf<Narrow> out;
+  hs::Store(hs::DemoteTo(dn, hs::Load(dw, a.data), hs::Load(dw, b.data)), dn, out.data);
+  for (std::size_t i = 0; i < nw; ++i) EXPECT_EQ(out.data[i], clampn(a.data[i])) << "demote a i=" << i;
+  for (std::size_t i = 0; i < nw; ++i) EXPECT_EQ(out.data[nw + i], clampn(b.data[i])) << "demote b i=" << i;
+}
+TEST(Vec, DemoteI16I8) { CheckDemote<std::int16_t, std::int8_t>(); }
+TEST(Vec, DemoteI16U8) { CheckDemote<std::int16_t, std::uint8_t>(); }
+TEST(Vec, DemoteI32I16) { CheckDemote<std::int32_t, std::int16_t>(); }
+TEST(Vec, DemoteI32U16) { CheckDemote<std::int32_t, std::uint16_t>(); }
+
+// f32<->f64 promote/demote (ordinary narrowing/widening cast, no saturation).
+TEST(Vec, PromoteDemoteF32F64) {
+  const hs::ScalableTag<float> df;
+  const hs::ScalableTag<double> dd;
+  const std::size_t nf = hs::Lanes(df), nd = hs::Lanes(dd);
+  ASSERT_EQ(nf, 2 * nd);
+  Buf<float> f;
+  for (std::size_t i = 0; i < nf; ++i) f.data[i] = static_cast<float>(i) * 0.5f - 1.0f;
+  auto vf = hs::Load(df, f.data);
+  Buf<double> od;
+  hs::Store(hs::PromoteLowerTo(dd, vf), dd, od.data);
+  for (std::size_t i = 0; i < nd; ++i) EXPECT_DOUBLE_EQ(od.data[i], static_cast<double>(f.data[i]));
+  hs::Store(hs::PromoteUpperTo(dd, vf), dd, od.data);
+  for (std::size_t i = 0; i < nd; ++i) EXPECT_DOUBLE_EQ(od.data[i], static_cast<double>(f.data[nd + i]));
+  Buf<double> a, b;
+  for (std::size_t i = 0; i < nd; ++i) { a.data[i] = static_cast<double>(i) * 1.5 - 3.0; b.data[i] = static_cast<double>(i) * -2.25 + 1.0; }
+  Buf<float> of;
+  hs::Store(hs::DemoteTo(df, hs::Load(dd, a.data), hs::Load(dd, b.data)), df, of.data);
+  for (std::size_t i = 0; i < nd; ++i) EXPECT_FLOAT_EQ(of.data[i], static_cast<float>(a.data[i]));
+  for (std::size_t i = 0; i < nd; ++i) EXPECT_FLOAT_EQ(of.data[nd + i], static_cast<float>(b.data[i]));
+}
+
 // The idiomatic ScalableTag dot-product: correct regardless of the backend's lane count.
 TEST(Vec, ScalableDotProduct) {
   const hs::ScalableTag<float> d;

@@ -441,6 +441,92 @@ HYLE_FORCE_INLINE Vec512<DstT, N> RoundToInt(Simd<DstT, N, 0>, Vec512<SrcT, N> v
   return r;
 }
 
+// ---- width-changing promote / demote (half-at-a-time, fixed-width friendly) ---------
+// PromoteLowerTo/PromoteUpperTo: FULL narrow src (2N lanes in a 512b reg) -> FULL wide dst
+// (N lanes). The AVX-512 cvtep* intrinsics take a HALF-WIDTH 256b input and widen it to a
+// full 512b wide vector, so we feed the lower/upper 256b half (N narrow lanes). Signed src
+// sign-extends (cvtepi), unsigned zero-extends (cvtepu). f32->f64 uses cvtps_pd on a 256b
+// half. Lower half = cast512->256; upper half = extracti64x4 (int) / extractf32x8 (float,DQ).
+namespace detail {
+template <typename DstT, typename SrcT>
+HYLE_FORCE_INLINE Raw512T<DstT> promote256(__m256i half) noexcept {
+  if constexpr (std::is_same_v<SrcT, std::int8_t>) return _mm512_cvtepi8_epi16(half);    // BW
+  else if constexpr (std::is_same_v<SrcT, std::uint8_t>) return _mm512_cvtepu8_epi16(half);  // BW
+  else if constexpr (std::is_same_v<SrcT, std::int16_t>) return _mm512_cvtepi16_epi32(half);  // F
+  else if constexpr (std::is_same_v<SrcT, std::uint16_t>) return _mm512_cvtepu16_epi32(half);  // F
+  else if constexpr (std::is_same_v<SrcT, std::int32_t>) return _mm512_cvtepi32_epi64(half);  // F
+  else return _mm512_cvtepu32_epi64(half);  // u32 -> u64  (F)
+}
+}  // namespace detail
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<DstT, NDst> PromoteLowerTo(Simd<DstT, NDst, 0>, Vec512<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteLowerTo widens, src 2x lanes");
+  Vec512<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, float>) r.raw = _mm512_cvtps_pd(_mm512_castps512_ps256(v.raw));
+  else r.raw = detail::promote256<DstT, SrcT>(_mm512_castsi512_si256(v.raw));  // lower 256
+  return r;
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<DstT, NDst> PromoteUpperTo(Simd<DstT, NDst, 0>, Vec512<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteUpperTo widens, src 2x lanes");
+  Vec512<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, float>)
+    r.raw = _mm512_cvtps_pd(_mm512_extractf32x8_ps(v.raw, 1));  // upper 256 (DQ)
+  else r.raw = detail::promote256<DstT, SrcT>(_mm512_extracti64x4_epi64(v.raw, 1));  // upper 256 (F)
+  return r;
+}
+// DemoteTo(dn, a, b): two FULL wide vectors -> one FULL narrow, SATURATING (integer) with
+// lanes ORDERED [a..., b...]. THE 512-bit CATCH: AVX-512 packs/packus operate WITHIN EACH of
+// the FOUR independent 128-bit lanes, NOT across the whole register. In 128-lane L the pack
+// puts a_L's results in the low 64 bits and b_L's in the high 64 bits, so the eight 64-bit
+// groups of `packed` come out interleaved a0,b0,a1,b1,a2,b2,a3,b3. To recover the flat
+// [a0,a1,a2,a3, b0,b1,b2,b3] order we permute the 64-bit groups by idx=(0,2,4,6,1,3,5,7) via
+// permutexvar_epi64 (F). Same idx for every integer width -- the interleave pattern is
+// identical whether the pack was epi16 or epi32. f64->f32 needs NO permute: cvtpd_ps yields
+// a naturally-contiguous 256b half per src, and insertf32x8 (DQ) stacks b above a.
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<DstT, NDst> DemoteTo(Simd<DstT, NDst, 0>, Vec512<SrcT, NSrc> a,
+                                              Vec512<SrcT, NSrc> b) noexcept {
+  static_assert(NDst == 2 * NSrc, "DemoteTo: narrow dst has 2x each wide src's lanes");
+  Vec512<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, double>) {  // f64 -> f32 (contiguous per src, no permute)
+    r.raw = _mm512_insertf32x8(_mm512_castps256_ps512(_mm512_cvtpd_ps(a.raw)),
+                               _mm512_cvtpd_ps(b.raw), 1);  // DQ
+  } else {
+    __m512i packed;
+    if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::int8_t>)
+      packed = _mm512_packs_epi16(a.raw, b.raw);   // BW
+    else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::uint8_t>)
+      packed = _mm512_packus_epi16(a.raw, b.raw);  // BW
+    else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::int16_t>)
+      packed = _mm512_packs_epi32(a.raw, b.raw);   // F
+    else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::uint16_t>)
+      packed = _mm512_packus_epi32(a.raw, b.raw);  // F
+    else static_assert(sizeof(DstT) == 0, "avx512 DemoteTo: unsupported width pair");
+    // undo the 4-way-128-lane interleave: 64-bit groups a0,b0,a1,b1,a2,b2,a3,b3 -> a0..a3,b0..b3
+    const __m512i idx = _mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7);
+    r.raw = _mm512_permutexvar_epi64(idx, packed);  // F
+  }
+  return r;
+}
+// ReorderDemote2To: the cheaper block-interleaved order [a0,b0,a1,b1,a2,b2,a3,b3] straight out
+// of the packs (skips the permutexvar) -- for callers that immediately reduce/re-permute and
+// don't care about order. Integer only.
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0>, Vec512<SrcT, NSrc> a,
+                                                      Vec512<SrcT, NSrc> b) noexcept {
+  static_assert(NDst == 2 * NSrc && std::is_integral_v<SrcT>, "ReorderDemote2To: integer 2->1");
+  Vec512<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::int8_t>)
+    r.raw = _mm512_packs_epi16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::uint8_t>)
+    r.raw = _mm512_packus_epi16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::int16_t>)
+    r.raw = _mm512_packs_epi32(a.raw, b.raw);
+  else r.raw = _mm512_packus_epi32(a.raw, b.raw);  // i32 -> u16
+  return r;
+}
+
 // ---- comparison -> k-register mask --------------------------------------------------
 // AVX-512 compares WRITE A K REGISTER directly (vcmpps/vpcmpd ... -> __mmask). No xor-MSB
 // for unsigned: there are native epu8/16/32/64 mask compares. Per-width detail helpers pick

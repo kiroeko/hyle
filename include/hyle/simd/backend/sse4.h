@@ -483,6 +483,75 @@ HYLE_FORCE_INLINE Vec128<DstT, N> RoundToInt(Simd<DstT, N, 0>, Vec128<SrcT, N> v
   return r;
 }
 
+// ---- width-changing promote / demote (half-at-a-time, fixed-width friendly) ---------
+// PromoteLowerTo/PromoteUpperTo: FULL narrow src (2N lanes in a 128b reg) -> FULL wide dst
+// (N lanes in a 128b reg). The SSE4.1 cvtep* intrinsics widen the LOW N narrow lanes of a
+// __m128i to a full 128b wide vector. So the LOWER half feeds cvtep* directly; the UPPER
+// half is first brought down to the low bytes via _mm_srli_si128(v, 8) (shift right 8 BYTES
+// = high 64 bits -> low 64 bits) -- for i8->i16 (upper 8 lanes at bytes 8..15), i16->i32
+// (upper 4 at bytes 8..15) and i32->i64 (upper 2 at bytes 8..15) that single shift is
+// correct for all integer widths. Signed src sign-extends (cvtepi), unsigned zero-extends
+// (cvtepu). f32->f64 uses cvtps_pd (low 2 f32); the upper form moves the high 2 f32 down
+// with movehl first.
+namespace detail {
+template <typename DstT, typename SrcT>
+HYLE_FORCE_INLINE Raw128T<DstT> promote128_sse(__m128i half) noexcept {
+  if constexpr (std::is_same_v<SrcT, std::int8_t>) return _mm_cvtepi8_epi16(half);
+  else if constexpr (std::is_same_v<SrcT, std::uint8_t>) return _mm_cvtepu8_epi16(half);
+  else if constexpr (std::is_same_v<SrcT, std::int16_t>) return _mm_cvtepi16_epi32(half);
+  else if constexpr (std::is_same_v<SrcT, std::uint16_t>) return _mm_cvtepu16_epi32(half);
+  else if constexpr (std::is_same_v<SrcT, std::int32_t>) return _mm_cvtepi32_epi64(half);
+  else return _mm_cvtepu32_epi64(half);  // u32 -> u64
+}
+}  // namespace detail
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<DstT, NDst> PromoteLowerTo(Simd<DstT, NDst, 0>, Vec128<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteLowerTo widens, src 2x lanes");
+  Vec128<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, float>) r.raw = _mm_cvtps_pd(v.raw);  // low 2 f32 -> 2 f64
+  else r.raw = detail::promote128_sse<DstT, SrcT>(v.raw);  // cvtep* reads low half-lanes
+  return r;
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<DstT, NDst> PromoteUpperTo(Simd<DstT, NDst, 0>, Vec128<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteUpperTo widens, src 2x lanes");
+  Vec128<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, float>)
+    r.raw = _mm_cvtps_pd(_mm_movehl_ps(v.raw, v.raw));  // high 2 f32 -> low, then -> 2 f64
+  else r.raw = detail::promote128_sse<DstT, SrcT>(_mm_srli_si128(v.raw, 8));  // high 64b -> low
+  return r;
+}
+// DemoteTo(dn, a, b): two FULL wide vectors -> one FULL narrow, SATURATING (integer) with
+// lanes ORDERED [a..., b...]. Unlike AVX2, a 128b register IS a single block, so packs/packus
+// already emit [a-lanes, b-lanes] in order -- NO block-reorder permute is needed. f64->f32
+// uses cvtpd_ps on each (2 f32 in the low half) and movelh to concatenate [a.lo2, b.lo2].
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<DstT, NDst> DemoteTo(Simd<DstT, NDst, 0>, Vec128<SrcT, NSrc> a,
+                                              Vec128<SrcT, NSrc> b) noexcept {
+  static_assert(NDst == 2 * NSrc, "DemoteTo: narrow dst has 2x each wide src's lanes");
+  Vec128<DstT, NDst> r;
+  if constexpr (std::is_same_v<SrcT, double>) {  // f64 -> f32
+    r.raw = _mm_movelh_ps(_mm_cvtpd_ps(a.raw), _mm_cvtpd_ps(b.raw));  // [a.lo2, b.lo2]
+  } else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::int8_t>)
+    r.raw = _mm_packs_epi16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::uint8_t>)
+    r.raw = _mm_packus_epi16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::int16_t>)
+    r.raw = _mm_packs_epi32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::uint16_t>)
+    r.raw = _mm_packus_epi32(a.raw, b.raw);  // SSE4.1
+  else static_assert(sizeof(DstT) == 0, "sse4 DemoteTo: unsupported width pair");
+  return r;
+}
+// ReorderDemote2To: on SSE4 a 128b reg is a single block, so there is no reorder permute to
+// skip -- the "reordered" form is byte-identical to DemoteTo. Just forward.
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, Vec128<SrcT, NSrc> a,
+                                                      Vec128<SrcT, NSrc> b) noexcept {
+  static_assert(NDst == 2 * NSrc && std::is_integral_v<SrcT>, "ReorderDemote2To: integer 2->1");
+  return DemoteTo(dn, a, b);
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 namespace detail {
 // Signed cmpgt per width (SSE4.2 has epi8/16/32/64 native; epi64 is the SSE4.2 add).
