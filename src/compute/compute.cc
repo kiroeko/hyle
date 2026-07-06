@@ -1,12 +1,15 @@
 #include "hyle/compute/device.h"
 
+#include <cstdint>
 #include <cstdlib>
 
 #include "backend.h"
 #include "hyle/compute/buffer.h"
+#include "hyle/compute/pinned_pool.h"
 #include "hyle/compute/stream.h"
 #include "hyle/error/result.h"
 #include "hyle/macros.h"
+#include "hyle/mem/allocator.h"
 
 // compute-01 dispatch layer: the public Device/Stream/Event API forwarding through
 // the manual backend vtable (backend.h). Pure C++, no CUDA -- the CUDA calls live
@@ -328,6 +331,104 @@ Status Buffer::clear(std::size_t offset, std::uint8_t value,
   HYLE_FATAL_ASSERT(vt_ != nullptr);
   HYLE_FATAL_ASSERT(offset + size <= size_);
   return vt_->buffer_clear(ptr_, offset, value, size);
+}
+
+// ---- pinned staging (compute-02b): REUSE mem/, don't reinvent ----------------
+// pinned_allocator wraps the backend's pinned (cudaMallocHost) alloc/free as a
+// mem::Allocator, so a pooled pinned block pool is just mem::MemoryArena over it and
+// a contiguous staging region is just mem::Arena -- all mem/ reused. state = the
+// backend vtable (pinned host RAM is NOT device-bound -- cudaMallocHost is process-
+// wide host memory usable by any GPU -- so no ordinal is needed; ordinal 0 is passed
+// to the kind-tagged buffer_alloc). alignment is ignored: cudaMallocHost returns
+// page-aligned memory (>=512B), far exceeding any scalar alignment; the host
+// fallback's malloc is max_align. The Device/backend must outlive the allocator.
+
+namespace {
+void* pinned_alloc_fn(void* state, std::size_t size, std::size_t /*alignment*/) noexcept {
+  auto* vt = static_cast<const ComputeBackend*>(state);
+  void* p = nullptr;
+  Status st = vt->buffer_alloc(0, BufferKind::kHostPinned, size == 0 ? 1 : size, &p);
+  return st.ok() ? p : nullptr;  // mem::Allocator contract: nullptr on failure
+}
+void pinned_free_fn(void* state, void* ptr, std::size_t /*size*/,
+                    std::size_t /*alignment*/) noexcept {
+  if (ptr == nullptr) return;
+  auto* vt = static_cast<const ComputeBackend*>(state);
+  vt->buffer_free(0, BufferKind::kHostPinned, ptr);
+}
+void* pinned_realloc_fn(void* /*state*/, void* /*ptr*/, std::size_t /*old*/,
+                        std::size_t /*new_size*/, std::size_t /*align*/) noexcept {
+  // Pinned staging is bump/pool use (mem::Arena/MemoryArena never realloc a backing
+  // slab); a realloc on pinned memory is not a supported path -- return nullptr.
+  return nullptr;
+}
+}  // namespace
+
+mem::Allocator pinned_allocator(const Device& device) noexcept {
+  DeviceEntry e = resolve(device);
+  // state is the const vtable pointer; cast away const for the void* state slot
+  // (the fns cast it back to const -- they never mutate the vtable).
+  return mem::Allocator(&pinned_alloc_fn, &pinned_free_fn, &pinned_realloc_fn,
+                        const_cast<ComputeBackend*>(e.vt));
+}
+
+// ---- PinnedStaging -----------------------------------------------------------
+
+PinnedStaging::PinnedStaging(PinnedStaging&& o) noexcept
+    : vt_(o.vt_), ordinal_(o.ordinal_), base_(o.base_), cap_(o.cap_), used_(o.used_) {
+  o.vt_ = nullptr;
+  o.base_ = nullptr;
+}
+
+PinnedStaging& PinnedStaging::operator=(PinnedStaging&& o) noexcept {
+  if (this != &o) {
+    if (base_ != nullptr) vt_->buffer_free(ordinal_, BufferKind::kHostPinned, base_);
+    vt_ = o.vt_;
+    ordinal_ = o.ordinal_;
+    base_ = o.base_;
+    cap_ = o.cap_;
+    used_ = o.used_;
+    o.vt_ = nullptr;
+    o.base_ = nullptr;
+  }
+  return *this;
+}
+
+PinnedStaging::~PinnedStaging() {
+  if (base_ != nullptr) vt_->buffer_free(ordinal_, BufferKind::kHostPinned, base_);
+}
+
+Result<PinnedStaging> PinnedStaging::create(const Device& device,
+                                            std::size_t bytes) noexcept {
+  DeviceEntry e = resolve(device);
+  void* p = nullptr;
+  Status st = e.vt->buffer_alloc(e.local, BufferKind::kHostPinned,
+                                 bytes == 0 ? 1 : bytes, &p);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  PinnedStaging s;
+  s.vt_ = e.vt;
+  s.ordinal_ = e.local;
+  s.base_ = p;
+  s.cap_ = bytes == 0 ? 1 : bytes;
+  s.used_ = 0;
+  return s;
+}
+
+void* PinnedStaging::allocate(std::size_t bytes, std::size_t alignment) noexcept {
+  HYLE_FATAL_ASSERT(base_ != nullptr);
+  // Bump, aligned, from the pinned block (contiguous -> lets commit_to batch).
+  std::uintptr_t cur = reinterpret_cast<std::uintptr_t>(base_) + used_;
+  std::uintptr_t aligned = (cur + alignment - 1) & ~(alignment - 1);
+  std::size_t new_used = (aligned - reinterpret_cast<std::uintptr_t>(base_)) + bytes;
+  if (new_used > cap_) return nullptr;  // full
+  used_ = new_used;
+  return reinterpret_cast<void*>(aligned);
+}
+
+Status PinnedStaging::commit_to(Buffer& dst, std::size_t dst_offset) noexcept {
+  HYLE_FATAL_ASSERT(base_ != nullptr);
+  // One H2D copy of the whole contiguous prepared run = the batched submit.
+  return dst.set(dst_offset, base_, used_);
 }
 
 }  // namespace hyle::compute

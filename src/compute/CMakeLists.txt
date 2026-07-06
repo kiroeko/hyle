@@ -12,7 +12,7 @@
 # does NOT wire GPU completion into the sched worker loop (that is compute-03, which
 # will add the sched dependency, exactly as io-01 preceded io-04's sched wiring).
 set(_compute_sources compute.cc host_backend.cc)
-set(_compute_public_deps hyle_error)
+set(_compute_public_deps hyle_error hyle_mem)
 
 if(HYLE_COMPUTE_CUDA)
   # cuda_backend.cu is a CUDA-language TU (compiled by nvcc, host side by the same

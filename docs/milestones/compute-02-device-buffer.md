@@ -50,13 +50,33 @@ class Buffer {                            // 一块具体 device 内存（move-o
 
 **手动虚表分派**（同 compute-01）：`BufferType`/`Buffer` 内联 `{const ComputeBackend* vt, void* native, ...}`，vtable 加 buffer 相关 fn-ptr（`buffer_alloc/free/set/get/copy/clear`）。每后端一个组合单元，非上帝类 switch。
 
-## pinned host staging = 一个 BufferType 实例
+## pinned host staging = 一个 BufferType 实例（+ 可选 pinned 块池）
 
 - **显存 device buffer**：`cudaMalloc`，**compute 自有、不走 mem**（host 不能解引用显存，mem 的 CPU allocator 语义不适用——用户明确边界）。
-- **pinned host staging**：`cudaMallocHost`（page-locked，DMA 直传 + 异步拷贝重叠）分配的是 **host RAM**，是独立 BufferType（`kHostPinned`，`is_host()=true`）。
-- **实现时纠正（对抗自审发现，文档=当前真相）**：规划时写"用 `mem::MemoryArena` 池化超越 ggml"，实现时想清楚**这是错的层**——`MemoryArena` 是**固定块大小**池，而 `buffer_alloc` 是**通用任意 size 分配**，两者不匹配。**池化 pinned staging 是 L1 staging ring 的策略**（固定 64MB 块反复用，如 llama.cpp 的 4×64MB ring，在 model-loader 里），不是 compute-02 buffer 层的事。故 compute-02 的 pinned `buffer_alloc` 给**通用 `cudaMallocHost` 原语**（不池化），上层要 staging ring 时自己用固定大小 Buffer + `mem::MemoryArena` 组织——**compute-02 备原语，池化策略归 L1**（与本文件 L0/L1 边界一致）。pinned 分配失败**返 Status 不 silent fallback**（free 路径由 kind 固定，malloc fallback 会与 `cudaFreeHost` 失配）。
+- **pinned host staging**：`cudaMallocHost`（page-locked，DMA 直传 + 异步拷贝重叠）分配的是 **host RAM**，是独立 BufferType（`kHostPinned`，`is_host()=true`）。compute-02 的 `buffer_alloc` 给**通用任意 size 的 `cudaMallocHost` 原语**（每次 alloc/free，同 ggml）。pinned 分配失败**返 Status 不 silent fallback**（free 路径由 kind 固定，malloc fallback 会与 `cudaFreeHost` 失配）。
+- **pinned 块池化 = compute 分配器（mem 正确用法，非 L1）——纠正先前判断**：先前写"池化归 L1"是**过度保守**。区分两层：
+  - **pinned 块池（定长块复用）= 分配器，是 compute 基础设施**。「预分配一大块、内部复用」正是 arena/pool 换性能的本质，也是 `mem::MemoryArena` 的正确用法（`memory_arena.h`：定长块、无锁分片、地址路由归还）。做法：把 `cudaMallocHost`/`cudaFreeHost` 包成 `mem::Allocator` 的 3 个 fn-ptr → 喂 `mem::MemoryArena(pinned_alloc, block_size, block_count, align)` → 得一个 pinned 定长块池（如 4×64MB 轮转，llama.cpp `llama-model-loader.cpp:1580` 证明是刚需）。这**摊薄每次 `cudaMallocHost` 的开销**（cudaMallocHost 是重操作，注册 page-lock）+ 块复用。**mem 只管 host RAM，pinned 恰是 host RAM，完全适配**——这是 mem 结合 compute 加速的正确落点（不同于显存不走 mem）。
+  - **staging ring 调度（tile 循环 + event 流水线）= L1 策略**。用 N 个 pinned 块 + `cudaEvent` 轮转做大数据分块上传的**编排**依赖 completion（compute-03 的 event），是推理引擎/渲染器的调度策略。**池是分配器（这层归 compute），ring 是用池 + event 的调度（这层归 L1/compute-03 之后）。**
+- **范围**：pinned 块池作为 compute 基础设施本轮补上（小、示范 mem 正确用法）；ring 的 event 流水线编排待 compute-03。
 
-## 与 compute-03 的耦合（为何接口预留 async、实现分两步）
+## 抄全 ggml 分配器 SOTA（用户指示"ggml 很 SOTA 抄全一点"，2026-07-06 深挖）
+
+> ggml 的内存管理是"预分配大块 + 内部复用换性能"的教科书。之前只抄了 buffer_type 接口，现把它的分配器层抄全（确切机制见调研）。分两类：**通用显存/host 手法（抄）** vs **张量图特化（不抄，HYLE 不做 tensor）**。
+
+**① VRAM sub-allocator（显存"大块换性能"的核心，登记 compute-02b/后续，kernel 中间张量驱动）**：
+- **VMM 版 `ggml_cuda_pool_vmm`（ggml-cuda.cu:478-585）= 用户"预留大块地址、按需提交物理"的教科书**：`cuMemAddressReserve` 一次预留 **32GB 连续虚拟地址**（指针稳定）+ 按需 `cuMemCreate`/`cuMemMap` 映射物理页到 pool 末尾（物理内存按需增长、永不缩=缓存复用）+ 分配是 `pool_addr+pool_used` **O(1) bump**。约束：**LIFO 逆序释放**（栈式，配 RAII 作用域），非通用堆。
+- **leg fallback `ggml_cuda_pool_leg`（361-474）**：无 VMM 时用定长数组缓存已 cudaFree 的块 + **best-fit 复用** + **look-ahead 超额分配 `1.05*size` 向上取整 256B**（这正是"分配大于所需换性能"）+ OOM 时刷缓存重试。
+- **RAII `ggml_cuda_pool_alloc<T>`（common.cuh:1150）**：中间缓冲 alloc/free 作用域化，直接抄。
+- **解决的问题**：每个 kernel 中间张量都 cudaMalloc 太慢（同步、重）→ pool 复用。**这是 compute-04 kernel 落地时的刚需**——现在无 kernel 消费者，故**登记为 compute 显存 sub-allocator（compute-02b 或随 compute-04）**，不投机预造，但机制已挖清、届时抄全。**显存池不走 mem**（mem 只管 host RAM）。
+
+**② host 数据准备区 + 合批提交（用户新洞见：mem::Arena over pinned，连续则一次提交）——本轮做**：
+- **想法**：用 `mem::Arena`（`memory_arena.h:257`，bump 分配器）在一个 pinned 块上**连续 bump 出多份待上传数据**；因为它们内存连续，**整段用一次 `set(offset, arena_base, total)` 提交显存**，而非 N 次小拷贝——**arena 的连续性天然实现合批**（用户说的"合批换性能"）。
+- **落地**：`mem::MemoryArena(pinned_alloc, block_size, block_count)` 做 pinned 定长块池（摊薄 cudaMallocHost 重开销 + 块复用）；每个块上开 `mem::Arena` bump 准备数据；准备好的连续段一次 H2D。**这是 mem 结合 compute 的正确落点**——pinned 是 host RAM，完全适配 mem（区别于显存不走 mem）。ggml **没做 pinned 池化**（每次 cudaMallocHost 直分，ggml-cuda.cu:1503）——**这是 HYLE 可超越 ggml 的点**。
+- **pinned 块池（分配器）是 compute 基础设施**；**用池 + event 做 ring 流水线编排**是 L1/compute-03（见 pinned 节的两层区分）。本轮补池 + Arena 准备区 + 合批 set；event ring 待 compute-03。
+
+**③ 通用小件（抄）**：`aligned_offset`/`GGML_PAD` 对齐（compute-02 buffer_alignment 已含）、multi-buffer 按 max_size 切块（max_size 已暴露，切分逻辑上层用）。
+
+**④ 张量图特化（不抄）**：`ggml_dyn_tallocr`/graph allocator 的生命周期复用、inplace、张量图遍历（ggml-alloc.c）——绑定静态计算图的张量生命周期，HYLE 不做 tensor 则不适用。但其 **free-list + 相邻块合并（coalesce）算法（ggml-alloc.c:311-348）** 是通用碎片管理精华，若显存 sub-allocator 要支持**乱序释放**（VMM 版只 LIFO）可移植该数据结构——登记备查。
 
 调研证明 **async 拷贝（compute-02 的核心价值之一）离不开 completion（compute-03）**：ggml 的 `set_tensor_async`（`ggml-cuda.cu:3151`）是 `cudaMemcpyAsync` 进 stream **不 sync**，靠 event 观察完成。所以：
 - **compute-02 落**：Buffer 全套 **同步语义**（`set/get` = 发射 + 立即 `cudaStreamSynchronize`，对调用者呈现同步，同 ggml buffer 层 `ggml-cuda.cu:684-690`）。**接口里预留 `set_async/get_async(Stream&)` 签名但先同步实现**。
@@ -65,9 +85,9 @@ class Buffer {                            // 一块具体 device 内存（move-o
 ## L0/L1 边界（关键：流式灌大显存 / 合批是 L1，不是 compute-02）
 
 用户场景「显存>内存时分块流式写入 + 合批提交」拆成两层，**compute-02 只做底层原语**：
-- **L0（compute-02）= 原语**：`set(offset,size)` 部分写入 + async 拷贝 + pinned staging **alloc 原语** + `max_size`/multi-buffer + buffer 复用。**铁证：ggml/llama.cpp 的"分块流式"完全靠调用方循环调 set_tensor + pinned ring 拼**，库本身不做单 tensor 的 chunk memcpy。
-- **L1（上层，不在 compute-02）= 策略**：tile 循环、双缓冲 pinned ring、**pinned 块池化**、按显存容量决定切几块、合批换吞吐。这是推理引擎/渲染器的调度策略（llama.cpp 的 4×64MB ring 就在它的 model-loader 里，不在 ggml buffer 层）。按 scope 铁律「底座永远是底座」，**这层在 L1**。
-- compute-02 的义务：**把原语备齐**（offset 写 + pinned alloc + async 签名 + max_size），让 L1 能拼出流式灌显存 + pinned staging ring——不把 tile 调度/池化写进 compute-02。
+- **L0（compute-02）= 原语 + 分配器**：`set(offset,size)` 部分写入 + async 拷贝 + pinned staging alloc 原语 + **pinned 块池（compute 分配器，mem::MemoryArena over cudaMallocHost）** + `max_size`/multi-buffer + buffer 复用。**铁证：ggml/llama.cpp 的"分块流式"靠调用方循环调 set_tensor + pinned ring 拼**，库本身不做单 tensor 的 chunk memcpy——但**池化（分配器）是 compute 基础设施，不是 L1**。
+- **L1（上层，不在 compute-02）= 调度策略**：tile 循环、**pinned ring 的 event 流水线编排**、按显存容量决定切几块、合批换吞吐。这是推理引擎/渲染器的调度（llama.cpp 的 4×64MB ring 轮转 + event 在 model-loader 里）——**用池 + event 做编排**是 L1，**池本身**是 compute 分配器。按 scope 铁律「底座永远是底座」，编排在 L1，分配器在 compute。
+- compute-02 的义务：**把原语 + 分配器备齐**（offset 写 + pinned alloc + pinned 块池 + async 签名 + max_size），让 L1 用它们拼出流式灌显存 ring——不把 tile/event 调度写进 compute-02。
 
 ## 明确不做（防蔓延）
 
