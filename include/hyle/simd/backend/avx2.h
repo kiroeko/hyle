@@ -426,7 +426,7 @@ HYLE_FORCE_INLINE Vec256<T, N> Shl(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Vec256<T, N> r;
   if constexpr (detail::kI32<T>) r.raw = _mm256_sllv_epi32(a.raw, b.raw);
   else if constexpr (detail::kI64<T>) r.raw = _mm256_sllv_epi64(a.raw, b.raw);
-  else return detail::shift_var_scalar<T, N>(a, b, true);  // i8/u8/i16/u16: no native sllv
+  else r = detail::shift_var_scalar<T, N>(a, b, true);  // i8/u8/i16/u16: no native sllv
   return r;
 }
 template <typename T, std::size_t N>
@@ -436,7 +436,7 @@ HYLE_FORCE_INLINE Vec256<T, N> Shr(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = _mm256_srlv_epi32(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = _mm256_srav_epi32(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::uint64_t>) r.raw = _mm256_srlv_epi64(a.raw, b.raw);
-  else return detail::shift_var_scalar<T, N>(a, b, false);  // i64 (no srav_epi64) / 8 / 16
+  else r = detail::shift_var_scalar<T, N>(a, b, false);  // i64 (no srav_epi64) / 8 / 16
   return r;
 }
 
