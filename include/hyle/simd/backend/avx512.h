@@ -386,6 +386,67 @@ HYLE_FORCE_INLINE Vec512<T, N> ShiftRight(Vec512<T, N> a) noexcept {
   return r;
 }
 
+// ---- per-lane variable shifts (Shl/Shr) ---------------------------------------------
+// AVX-512 has FULL native variable shifts for 16/32/64 -- two wins over AVX2: (1) native
+// 16-bit sllv/srlv/srav_epi16 (AVX512BW), which AVX2 lacked entirely (forced a scalar-store
+// fallback); (2) native _mm512_srav_epi64 (AVX512F), which AVX2 also lacked (forced logical
+// + sign fixup). So no scalar fallback here -- just static_assert-guard out 8-bit (no native
+// sllv/srlv_epi8 on AVX-512 either, and no HYLE consumer). Signed Shr = arithmetic (srav),
+// unsigned = logical (srlv), matching scalar.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> Shl(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) >= 2,
+                "avx512 Shl: variable shift is 16/32/64-bit only (no native sllv_epi8)");
+  Vec512<T, N> r;
+  if constexpr (detail::kI16<T>) r.raw = _mm512_sllv_epi16(a.raw, b.raw);        // BW (AVX2 lacked!)
+  else if constexpr (detail::kI32<T>) r.raw = _mm512_sllv_epi32(a.raw, b.raw);   // F
+  else r.raw = _mm512_sllv_epi64(a.raw, b.raw);                                  // F (i64)
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> Shr(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) >= 2,
+                "avx512 Shr: variable shift is 16/32/64-bit only (no native srlv/srav_epi8)");
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = _mm512_srlv_epi16(a.raw, b.raw);      // BW
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = _mm512_srav_epi16(a.raw, b.raw);  // BW (AVX2 lacked!)
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = _mm512_srlv_epi32(a.raw, b.raw); // F
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = _mm512_srav_epi32(a.raw, b.raw);  // F
+  else if constexpr (std::is_same_v<T, std::uint64_t>) r.raw = _mm512_srlv_epi64(a.raw, b.raw); // F
+  else r.raw = _mm512_srav_epi64(a.raw, b.raw);  // i64: native on AVX512F, unlike AVX2!
+  return r;
+}
+
+// MulHigh: high 16 bits of the i16/u16 product (native mulhi, BW).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> MulHigh(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh is 16-bit int only");
+  Vec512<T, N> r;
+  if constexpr (std::is_signed_v<T>) r.raw = _mm512_mulhi_epi16(a.raw, b.raw);
+  else r.raw = _mm512_mulhi_epu16(a.raw, b.raw);
+  return r;
+}
+
+// WidenMulPairwiseAdd(d32, a_i16, b_i16): _mm512_madd_epi16 (BW) multiplies i16 pairs and sums
+// adjacent pairs into i32 -- the fixed-point dot core. a/b are FULL i16 (2N lanes), result N i32.
+template <std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int32_t, NDst, 0>,
+                                                                Vec512<SrcT, NSrc> a,
+                                                                Vec512<SrcT, NSrc> b) noexcept {
+  static_assert(std::is_same_v<SrcT, std::int16_t> && NSrc == 2 * NDst,
+                "WidenMulPairwiseAdd: i16 -> i32 pairwise");
+  Vec512<std::int32_t, NDst> r;
+  r.raw = _mm512_madd_epi16(a.raw, b.raw);
+  return r;
+}
+
+// AbsDiff: |a-b| per lane. Integers via Sub(Max,Min) (Highway's generic); float via Abs(Sub).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> AbsDiff(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  if constexpr (std::is_floating_point_v<T>) return Abs(Sub(a, b));
+  else return Sub(Max(a, b), Min(a, b));
+}
+
 // ---- saturated arithmetic + rounding average (8/16-bit integer lanes) ---------------
 // Native AVX-512-BW: adds/subs_epi8/epu8/epi16/epu16 (saturating), avg_epu8/epu16 (rounded).
 template <typename T, std::size_t N>

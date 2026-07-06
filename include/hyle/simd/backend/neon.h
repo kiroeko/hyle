@@ -444,6 +444,105 @@ HYLE_FORCE_INLINE VecNeon<T, N> ShiftRight(VecNeon<T, N> a) noexcept {
   return r;
 }
 
+// ---- per-lane variable shifts (Shl/Shr) ---------------------------------------------
+// NEON's vshlq_{s,u}* takes a SIGNED per-lane count: positive = left, NEGATIVE = right. So
+// Shl is vshlq with the count as-is; Shr is vshlq with the NEGATED count (canonical NEON
+// trick). Right shift picks the SIGNED intrinsic for signed T (arithmetic) and UNSIGNED for
+// unsigned T (logical) -- but the COUNT vector for vshl is always signed of the same width.
+namespace detail {
+// signed-count vector type matching T's width (vshl needs a signed count).
+template <typename T> struct SCount;
+template <> struct SCount<std::int8_t> { using type = int8x16_t; };
+template <> struct SCount<std::uint8_t> { using type = int8x16_t; };
+template <> struct SCount<std::int16_t> { using type = int16x8_t; };
+template <> struct SCount<std::uint16_t> { using type = int16x8_t; };
+template <> struct SCount<std::int32_t> { using type = int32x4_t; };
+template <> struct SCount<std::uint32_t> { using type = int32x4_t; };
+template <> struct SCount<std::int64_t> { using type = int64x2_t; };
+template <> struct SCount<std::uint64_t> { using type = int64x2_t; };
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Shl(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T>, "Shl is integer-lane only");
+  VecNeon<T, N> r;
+  // reinterpret the count as signed-of-same-width (bit pattern is the small shift amount).
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vshlq_s8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vshlq_u8(a.raw, vreinterpretq_s8_u8(b.raw));
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vshlq_s16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = vshlq_u16(a.raw, vreinterpretq_s16_u16(b.raw));
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vshlq_s32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = vshlq_u32(a.raw, vreinterpretq_s32_u32(b.raw));
+  else if constexpr (std::is_same_v<T, std::int64_t>) r.raw = vshlq_s64(a.raw, b.raw);
+  else r.raw = vshlq_u64(a.raw, vreinterpretq_s64_u64(b.raw));  // u64
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Shr(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T>, "Shr is integer-lane only");
+  VecNeon<T, N> r;
+  // right shift = vshl with NEGATED count; signed intrinsic = arithmetic, unsigned = logical.
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vshlq_s8(a.raw, vnegq_s8(b.raw));
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vshlq_u8(a.raw, vnegq_s8(vreinterpretq_s8_u8(b.raw)));
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vshlq_s16(a.raw, vnegq_s16(b.raw));
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = vshlq_u16(a.raw, vnegq_s16(vreinterpretq_s16_u16(b.raw)));
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vshlq_s32(a.raw, vnegq_s32(b.raw));
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = vshlq_u32(a.raw, vnegq_s32(vreinterpretq_s32_u32(b.raw)));
+  else if constexpr (std::is_same_v<T, std::int64_t>) r.raw = vshlq_s64(a.raw, vnegq_s64(b.raw));
+  else r.raw = vshlq_u64(a.raw, vnegq_s64(vreinterpretq_s64_u64(b.raw)));  // u64
+  return r;
+}
+
+// MulHigh: high 16 bits of the i16/u16 product. NEON has no direct mulhi -> widen both halves
+// (vmull low + vmull_high), then take the high 16 bits of each 32-bit product via vshrn/uzp.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> MulHigh(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh is 16-bit int only");
+  VecNeon<T, N> r;
+  if constexpr (std::is_signed_v<T>) {
+    const int32x4_t lo = vmull_s16(vget_low_s16(a.raw), vget_low_s16(b.raw));
+    const int32x4_t hi = vmull_high_s16(a.raw, b.raw);
+    r.raw = vuzp2q_s16(vreinterpretq_s16_s32(lo), vreinterpretq_s16_s32(hi));  // take high 16 of each
+  } else {
+    const uint32x4_t lo = vmull_u16(vget_low_u16(a.raw), vget_low_u16(b.raw));
+    const uint32x4_t hi = vmull_high_u16(a.raw, b.raw);
+    r.raw = vuzp2q_u16(vreinterpretq_u16_u32(lo), vreinterpretq_u16_u32(hi));
+  }
+  return r;
+}
+
+// WidenMulPairwiseAdd(d32, a_i16, b_i16): multiply i16 pairs and sum adjacent pairs into i32.
+// NEON: vmull low/high gives 8 i32 products; pairwise-add adjacent (vpaddq) folds to 4 i32.
+template <std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int32_t, NDst, 0>,
+                                                                 VecNeon<SrcT, NSrc> a,
+                                                                 VecNeon<SrcT, NSrc> b) noexcept {
+  static_assert(std::is_same_v<SrcT, std::int16_t> && NSrc == 2 * NDst,
+                "WidenMulPairwiseAdd: i16 -> i32 pairwise");
+  const int32x4_t lo = vmull_s16(vget_low_s16(a.raw), vget_low_s16(b.raw));   // products 0..3
+  const int32x4_t hi = vmull_high_s16(a.raw, b.raw);                          // products 4..7
+  VecNeon<std::int32_t, NDst> r;
+  r.raw = vpaddq_s32(lo, hi);  // pairwise add: (p0+p1, p2+p3, p4+p5, p6+p7)
+  return r;
+}
+
+// AbsDiff: |a-b|. NEON has vabdq_* native for int + float.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> AbsDiff(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vabdq_f32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = vabdq_f64(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vabdq_s8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vabdq_u8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vabdq_s16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = vabdq_u16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vabdq_s32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = vabdq_u32(a.raw, b.raw);
+  else {  // i64/u64: no vabdq -> Sub(Max,Min)
+    return Sub(Max(a, b), Min(a, b));
+  }
+  return r;
+}
+
 // ---- saturated arithmetic + rounding average (8/16-bit integer lanes) ---------------
 // Native NEON: vqaddq/vqsubq (saturating), vrhaddq (rounding halving add = (a+b+1)>>1).
 template <typename T, std::size_t N>

@@ -400,6 +400,77 @@ HYLE_FORCE_INLINE Vec256<T, N> ShiftRight(Vec256<T, N> a) noexcept {
   return r;
 }
 
+// ---- per-lane variable shifts (Shl/Shr) ---------------------------------------------
+// AVX2 has sllv/srlv_epi32/64 and srav_epi32 native. Gaps: no 16-bit variable shift (do it
+// per-lane via 32-bit widen halves is heavy -- instead promote-free trick: 16-bit uses the
+// scalar-store fallback, rare); no srav_epi64 (logical + sign fixup, as in ShiftRight<k>).
+// 8-bit variable shift is not provided (no native, and no HYLE consumer -- 16/32/64 cover
+// the quantization/hash needs). Signed Shr = arithmetic, unsigned = logical (matches scalar).
+namespace detail {
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> shift_var_scalar(Vec256<T, N> a, Vec256<T, N> b, bool left) noexcept {
+  alignas(32) T va[N], vb[N];
+  _mm256_store_si256(reinterpret_cast<__m256i*>(va), a.raw);
+  _mm256_store_si256(reinterpret_cast<__m256i*>(vb), b.raw);
+  for (std::size_t i = 0; i < N; ++i)
+    va[i] = left ? static_cast<T>(static_cast<std::make_unsigned_t<T>>(va[i]) << vb[i])
+                 : static_cast<T>(va[i] >> vb[i]);
+  Vec256<T, N> r;
+  r.raw = _mm256_load_si256(reinterpret_cast<const __m256i*>(va));
+  return r;
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> Shl(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T>, "Shl is integer-lane only");
+  Vec256<T, N> r;
+  if constexpr (detail::kI32<T>) r.raw = _mm256_sllv_epi32(a.raw, b.raw);
+  else if constexpr (detail::kI64<T>) r.raw = _mm256_sllv_epi64(a.raw, b.raw);
+  else return detail::shift_var_scalar<T, N>(a, b, true);  // i8/u8/i16/u16: no native sllv
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> Shr(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T>, "Shr is integer-lane only");
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = _mm256_srlv_epi32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = _mm256_srav_epi32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint64_t>) r.raw = _mm256_srlv_epi64(a.raw, b.raw);
+  else return detail::shift_var_scalar<T, N>(a, b, false);  // i64 (no srav_epi64) / 8 / 16
+  return r;
+}
+
+// MulHigh: high 16 bits of the i16/u16 product (native mulhi).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> MulHigh(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh is 16-bit int only");
+  Vec256<T, N> r;
+  if constexpr (std::is_signed_v<T>) r.raw = _mm256_mulhi_epi16(a.raw, b.raw);
+  else r.raw = _mm256_mulhi_epu16(a.raw, b.raw);
+  return r;
+}
+
+// WidenMulPairwiseAdd(d32, a_i16, b_i16): _mm256_madd_epi16 multiplies i16 pairs and sums
+// adjacent pairs into i32 -- the fixed-point dot core. a/b are FULL i16 (2N lanes), result
+// is N i32 lanes.
+template <std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec256<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int32_t, NDst, 0>,
+                                                                Vec256<SrcT, NSrc> a,
+                                                                Vec256<SrcT, NSrc> b) noexcept {
+  static_assert(std::is_same_v<SrcT, std::int16_t> && NSrc == 2 * NDst,
+                "WidenMulPairwiseAdd: i16 -> i32 pairwise");
+  Vec256<std::int32_t, NDst> r;
+  r.raw = _mm256_madd_epi16(a.raw, b.raw);
+  return r;
+}
+
+// AbsDiff: |a-b| per lane. Integers via Sub(Max,Min) (Highway's generic); float via Abs(Sub).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> AbsDiff(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  if constexpr (std::is_floating_point_v<T>) return Abs(Sub(a, b));
+  else return Sub(Max(a, b), Min(a, b));
+}
+
 // ---- saturated arithmetic + rounding average (8/16-bit integer lanes) ---------------
 // Native AVX2: adds/subs_epi8/epu8/epi16/epu16 (saturating), avg_epu8/epu16 (rounded).
 template <typename T, std::size_t N>

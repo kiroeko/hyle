@@ -227,6 +227,67 @@ HYLE_FORCE_INLINE Vec<T, N> ShiftRight(Vec<T, N> a) noexcept {
   return r;
 }
 
+// Shl/Shr: per-lane VARIABLE shift count from a second vector (Highway names). Same
+// signed=arithmetic / unsigned=logical semantics as ShiftLeft<k>/ShiftRight<k>, but each
+// lane shifts by its own count. Wide backends use sllv/srlv/srav (x86) / vshlq-with-negated-
+// count (NEON); the scalar floor is the C++ operator per lane.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Shl(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T>, "Shl is integer-lane only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<T>(static_cast<std::make_unsigned_t<T>>(a.raw[i]) << b.raw[i]);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Shr(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T>, "Shr is integer-lane only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = static_cast<T>(a.raw[i] >> b.raw[i]);  // arith if signed
+  return r;
+}
+
+// MulHigh: high half of the full-width product (i16/u16 -> the top 16 bits of the 32-bit
+// product). Native _mm*_mulhi_ep{i,u}16 on x86; NEON widens+takes the high halves.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> MulHigh(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh is 16-bit int only");
+  using W = std::conditional_t<std::is_signed_v<T>, std::int32_t, std::uint32_t>;
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<T>((static_cast<W>(a.raw[i]) * static_cast<W>(b.raw[i])) >> 16);
+  return r;
+}
+
+// WidenMulPairwiseAdd(d32, a_i16, b_i16): multiply i16 lanes, sum ADJACENT PAIRS into i32
+// lanes -- the fixed-point dot-product core (x86 _mm*_madd_epi16, NEON vmull+pairwise). The
+// dst tag names i32 with HALF the lane count of the i16 inputs (2 i16 -> 1 i32). a/b are the
+// FULL-width i16 vectors (2N lanes); result is the N-lane i32 vector of pairwise products.
+template <std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int32_t, NDst, 0>,
+                                                             Vec<SrcT, NSrc> a,
+                                                             Vec<SrcT, NSrc> b) noexcept {
+  static_assert(std::is_same_v<SrcT, std::int16_t> && NSrc == 2 * NDst,
+                "WidenMulPairwiseAdd: i16 -> i32 pairwise (dst has half the lanes)");
+  Vec<std::int32_t, NDst> r;
+  for (std::size_t i = 0; i < NDst; ++i)
+    r.raw[i] = static_cast<std::int32_t>(a.raw[2 * i]) * b.raw[2 * i] +
+               static_cast<std::int32_t>(a.raw[2 * i + 1]) * b.raw[2 * i + 1];
+  return r;
+}
+
+// AbsDiff: |a - b| per lane (no overflow for the intended small-int/f32 use). Highway builds
+// this generically as Sub(Max,Min) for ints; the scalar floor is the direct definition.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> AbsDiff(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    const T x = a.raw[i], y = b.raw[i];
+    r.raw[i] = x > y ? static_cast<T>(x - y) : static_cast<T>(y - x);
+  }
+  return r;
+}
+
 // ---- saturated arithmetic + rounding average (8/16-bit integer lanes) ---------------
 // SaturatedAdd/Sub clamp to [min,max] of T instead of wrapping -- the quantization
 // primitive (add i8 activations without overflow). AverageRound = (a+b+1)>>1 unsigned

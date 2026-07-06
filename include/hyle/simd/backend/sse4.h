@@ -428,6 +428,67 @@ HYLE_FORCE_INLINE Vec128<T, N> ShiftRight(Vec128<T, N> a) noexcept {
   return r;
 }
 
+// ---- per-lane variable shifts (Shl/Shr) ---------------------------------------------
+// SSE4.2 has NO variable-shift intrinsic for ANY width (sllv/srlv/srav are AVX2, not SSE4),
+// so EVERY width falls back to the scalar-store path: store to a 16-byte-aligned stack array,
+// per-lane C++ shift, reload. (AVX2 gets the native sllv/srlv/srav for 32/64-bit.) Signed
+// Shr = arithmetic, unsigned = logical (matches scalar semantics).
+namespace detail {
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> shift_var_scalar(Vec128<T, N> a, Vec128<T, N> b, bool left) noexcept {
+  alignas(16) T va[N], vb[N];
+  _mm_store_si128(reinterpret_cast<__m128i*>(va), a.raw);
+  _mm_store_si128(reinterpret_cast<__m128i*>(vb), b.raw);
+  for (std::size_t i = 0; i < N; ++i)
+    va[i] = left ? static_cast<T>(static_cast<std::make_unsigned_t<T>>(va[i]) << vb[i])
+                 : static_cast<T>(va[i] >> vb[i]);
+  Vec128<T, N> r;
+  r.raw = _mm_load_si128(reinterpret_cast<const __m128i*>(va));
+  return r;
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Shl(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T>, "Shl is integer-lane only");
+  return detail::shift_var_scalar<T, N>(a, b, true);  // no native variable shift on SSE4
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Shr(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T>, "Shr is integer-lane only");
+  return detail::shift_var_scalar<T, N>(a, b, false);  // no native variable shift on SSE4
+}
+
+// MulHigh: high 16 bits of the i16/u16 product (native mulhi).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> MulHigh(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh is 16-bit int only");
+  Vec128<T, N> r;
+  if constexpr (std::is_signed_v<T>) r.raw = _mm_mulhi_epi16(a.raw, b.raw);
+  else r.raw = _mm_mulhi_epu16(a.raw, b.raw);
+  return r;
+}
+
+// WidenMulPairwiseAdd(d32, a_i16, b_i16): _mm_madd_epi16 multiplies i16 pairs and sums
+// adjacent pairs into i32 -- the fixed-point dot core. a/b are FULL i16 (2N lanes), result
+// is N i32 lanes.
+template <std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int32_t, NDst, 0>,
+                                                                Vec128<SrcT, NSrc> a,
+                                                                Vec128<SrcT, NSrc> b) noexcept {
+  static_assert(std::is_same_v<SrcT, std::int16_t> && NSrc == 2 * NDst,
+                "WidenMulPairwiseAdd: i16 -> i32 pairwise");
+  Vec128<std::int32_t, NDst> r;
+  r.raw = _mm_madd_epi16(a.raw, b.raw);
+  return r;
+}
+
+// AbsDiff: |a-b| per lane. Integers via Sub(Max,Min) (Highway's generic); float via Abs(Sub).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> AbsDiff(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  if constexpr (std::is_floating_point_v<T>) return Abs(Sub(a, b));
+  else return Sub(Max(a, b), Min(a, b));
+}
+
 // ---- saturated arithmetic + rounding average (8/16-bit integer lanes) ---------------
 // Native SSE2: adds/subs_epi8/epu8/epi16/epu16 (saturating), avg_epu8/epu16 (rounded).
 template <typename T, std::size_t N>

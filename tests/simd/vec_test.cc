@@ -615,6 +615,91 @@ TEST(Vec, PromoteDemoteF32F64) {
   for (std::size_t i = 0; i < nd; ++i) EXPECT_FLOAT_EQ(of.data[nd + i], static_cast<float>(b.data[i]));
 }
 
+// Per-lane variable shifts Shl/Shr: each lane shifts by its own count (from a 2nd vector).
+// Signed Shr is arithmetic, unsigned logical (== scalar >>). 8-bit is not provided (no
+// native x86 variable byte shift), so test 16/32/64 widths where every backend supports it.
+template <typename T>
+void CheckVarShift() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  const int bits = sizeof(T) * 8;
+  Buf<T> a, cnt, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<T>((i % 2 ? -1 : 1) * static_cast<long long>(i * 7 + 1));
+    cnt.data[i] = static_cast<T>(i % (bits - 1));  // 0..bits-2 (valid count)
+  }
+  auto va = hs::Load(d, a.data), vc = hs::Load(d, cnt.data);
+  hs::Store(hs::Shl(va, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], static_cast<T>(static_cast<std::make_unsigned_t<T>>(a.data[i]) << cnt.data[i])) << "shl i=" << i;
+  hs::Store(hs::Shr(va, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], static_cast<T>(a.data[i] >> cnt.data[i])) << "shr i=" << i;
+}
+TEST(Vec, VarShiftInt16) { CheckVarShift<std::int16_t>(); }
+TEST(Vec, VarShiftUint16) { CheckVarShift<std::uint16_t>(); }
+TEST(Vec, VarShiftInt32) { CheckVarShift<std::int32_t>(); }
+TEST(Vec, VarShiftUint32) { CheckVarShift<std::uint32_t>(); }
+TEST(Vec, VarShiftInt64) { CheckVarShift<std::int64_t>(); }
+TEST(Vec, VarShiftUint64) { CheckVarShift<std::uint64_t>(); }
+
+// MulHigh: top 16 bits of the i16/u16 product.
+template <typename T>
+void CheckMulHigh() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  using W = std::conditional_t<std::is_signed_v<T>, std::int32_t, std::uint32_t>;
+  Buf<T> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<T>(i * 137 + 3); b.data[i] = static_cast<T>(i * 251 + 7); }
+  hs::Store(hs::MulHigh(hs::Load(d, a.data), hs::Load(d, b.data)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], static_cast<T>((static_cast<W>(a.data[i]) * static_cast<W>(b.data[i])) >> 16)) << "i=" << i;
+}
+TEST(Vec, MulHighInt16) { CheckMulHigh<std::int16_t>(); }
+TEST(Vec, MulHighUint16) { CheckMulHigh<std::uint16_t>(); }
+
+// WidenMulPairwiseAdd: multiply i16 pairs, sum adjacent into i32 (fixed-point dot core).
+TEST(Vec, WidenMulPairwiseAdd) {
+  const hs::ScalableTag<std::int16_t> d16;
+  const hs::ScalableTag<std::int32_t> d32;
+  const std::size_t n16 = hs::Lanes(d16), n32 = hs::Lanes(d32);
+  ASSERT_EQ(n16, 2 * n32);
+  Buf<std::int16_t> a, b;
+  for (std::size_t i = 0; i < n16; ++i) {
+    a.data[i] = static_cast<std::int16_t>((i % 2 ? -1 : 1) * static_cast<int>(i * 11 + 1));
+    b.data[i] = static_cast<std::int16_t>(i * 13 + 2);
+  }
+  Buf<std::int32_t> out;
+  hs::Store(hs::WidenMulPairwiseAdd(d32, hs::Load(d16, a.data), hs::Load(d16, b.data)), d32, out.data);
+  for (std::size_t i = 0; i < n32; ++i)
+    EXPECT_EQ(out.data[i], static_cast<std::int32_t>(a.data[2 * i]) * b.data[2 * i] +
+                               static_cast<std::int32_t>(a.data[2 * i + 1]) * b.data[2 * i + 1]) << "i=" << i;
+}
+
+// AbsDiff: |a-b| per lane.
+template <typename T>
+void CheckAbsDiff() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<T>(i * 3 % 50); b.data[i] = static_cast<T>(i * 5 % 50); }
+  hs::Store(hs::AbsDiff(hs::Load(d, a.data), hs::Load(d, b.data)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], a.data[i] > b.data[i] ? static_cast<T>(a.data[i] - b.data[i]) : static_cast<T>(b.data[i] - a.data[i])) << "i=" << i;
+}
+TEST(Vec, AbsDiffInt32) { CheckAbsDiff<std::int32_t>(); }
+TEST(Vec, AbsDiffUint8) { CheckAbsDiff<std::uint8_t>(); }
+TEST(Vec, AbsDiffInt16) { CheckAbsDiff<std::int16_t>(); }
+TEST(Vec, AbsDiffInt64) { CheckAbsDiff<std::int64_t>(); }
+TEST(Vec, AbsDiffFloat) {
+  const hs::ScalableTag<float> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<float> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<float>(i) - 3.0f; b.data[i] = 2.0f * static_cast<float>(i) - 1.0f; }
+  hs::Store(hs::AbsDiff(hs::Load(d, a.data), hs::Load(d, b.data)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], std::abs(a.data[i] - b.data[i]));
+}
+
 // The idiomatic ScalableTag dot-product: correct regardless of the backend's lane count.
 TEST(Vec, ScalableDotProduct) {
   const hs::ScalableTag<float> d;
