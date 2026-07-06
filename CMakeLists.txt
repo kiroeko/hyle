@@ -107,6 +107,28 @@ else()
   message(STATUS "HYLE: OpenSSL not found -- io-08 TLS disabled (set OPENSSL_ROOT_DIR to enable)")
 endif()
 
+# ---- optional CUDA (compute-01 CUDA backend) --------------------------------
+# The compute pillar's CUDA backend is an OPTIONAL capability, same "opt-in
+# capability = opt-in dependency" rule as OpenSSL/tracy: if the CUDA Toolkit is
+# found we enable the CUDA language and compile cuda_backend.cu (nvcc), so a real
+# GPU can be driven; if not, compute still builds with ONLY the host fallback
+# backend and carries zero CUDA dependency. HYLE_COMPUTE_CUDA gates the .cu source +
+# the cuda_vtable() reference (backend.h) so a CUDA-free build is fully inert.
+#
+# CMake's first-class CUDA support: find_package finds the toolkit; enable_language
+# turns .cu files into nvcc TUs (host side via -ccbin = our C++ compiler). We do NOT
+# make CUDA a hard project language (LANGUAGES line stays C CXX ASM) so a machine
+# with no CUDA (mac, CI without a toolkit) configures fine.
+find_package(CUDAToolkit QUIET)
+if(CUDAToolkit_FOUND)
+  enable_language(CUDA)
+  set(HYLE_COMPUTE_CUDA ON)
+  message(STATUS "HYLE: CUDA Toolkit ${CUDAToolkit_VERSION} found -- compute CUDA backend enabled")
+else()
+  set(HYLE_COMPUTE_CUDA OFF)
+  message(STATUS "HYLE: CUDA Toolkit not found -- compute uses host fallback only")
+endif()
+
 # ---- global correctness flags (apply to ALL targets incl. fetched deps) ------
 # These change language semantics, not just diagnostics, so they must be uniform
 # across the whole build (gtest included) to avoid ODR/ABI skew. Scoped to C/CXX
@@ -174,6 +196,11 @@ if(HYLE_HAS_FCONTEXT)
   add_subdirectory(src/sched)  # sched-01/02: fcontext fiber + run-queue/worker
 endif()
 add_subdirectory(src/io)     # io-01: proactor completion seam (IOCP; io_uring next)
+
+# compute-01: device/stream/event abstraction + event-poll completion primitive.
+# Host fallback backend always; CUDA backend when HYLE_COMPUTE_CUDA (toolkit found).
+# Depends only on error for now (compute-03 will add sched for GPU->fiber wakeup).
+add_subdirectory(src/compute)
 
 if(HYLE_BUILD_TESTS)
   enable_testing()

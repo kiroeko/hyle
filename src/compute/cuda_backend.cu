@@ -1,0 +1,237 @@
+#include <cuda_runtime.h>
+
+#include "backend.h"
+#include "hyle/compute/types.h"
+#include "hyle/error/status.h"
+
+// The CUDA backend (coding-conventions §10: an independent composition unit -- one
+// TU, filling the manual vtable -- NOT a switch in a god object). Compiled by nvcc
+// (CUDA language TU) ONLY when HYLE_COMPUTE_CUDA is set (CUDAToolkit found); the
+// dispatch layer references cuda_vtable() under the same #if.
+//
+// This is the compute pillar's real payload: mapping HYLE's device/stream/event
+// onto cudaStream_t/cudaEvent_t, and -- the whole point of compute-01 -- the event
+// POLL primitive cudaEventQuery (compute-design §2 reap model, mirrors CCCL
+// event_ref::is_done). No callbacks: a worker will (compute-03) poll query() at its
+// reap boundary, exactly like io_uring completions.
+//
+// Native handles: the cudaStream_t / cudaEvent_t are pointer-sized opaque handles,
+// stored directly as the backend's void* native -- no wrapper allocation. On an
+// error creating one, we translate the cudaError_t into a HYLE Status (external
+// boundary) and never leak cudaError_t across the public API.
+
+namespace hyle::compute {
+namespace {
+
+// Translate a cudaError_t (external boundary failure) into a HYLE Status. Uses the
+// canonical taxonomy: no-device/driver -> Unavailable, OOM -> ResourceExhausted,
+// bad arg -> InvalidArgument, else Internal. cudaGetErrorString gives the message.
+Status from_cuda(cudaError_t e, const char* what) noexcept {
+  if (e == cudaSuccess) return Status();
+  // The message is backend-owned static storage; safe to pass to Status (it copies).
+  const char* msg = cudaGetErrorString(e);
+  switch (e) {
+    case cudaErrorNoDevice:
+    case cudaErrorInsufficientDriver:
+    case cudaErrorNotSupported:
+      return Status::Unavailable(msg);
+    case cudaErrorMemoryAllocation:
+      return Status::ResourceExhausted(msg);
+    case cudaErrorInvalidValue:
+    case cudaErrorInvalidDevice:
+      return Status::InvalidArgument(msg);
+    default:
+      // `what` disambiguates which call failed when the message is generic.
+      (void)what;
+      return Status::Internal(msg);
+  }
+}
+
+// Cached device count (cudaGetDeviceCount is cheap but this is queried at table
+// build only; a bad driver returns 0 -> compute falls back to host, no crash).
+std::size_t cuda_device_count() noexcept {
+  int n = 0;
+  cudaError_t e = cudaGetDeviceCount(&n);
+  if (e != cudaSuccess || n < 0) return 0;
+  return static_cast<std::size_t>(n);
+}
+
+DeviceType cuda_device_type(int) noexcept {
+  // A CUDA device is a discrete GPU (dedicated VRAM). Integrated/unified detection
+  // (cudaDeviceProp::integrated -> kIGpu, drives compute-02's copy elision) is
+  // wired when compute-02 needs the distinction; compute-01 reports kGpu.
+  return DeviceType::kGpu;
+}
+
+// Per-device name cache. cudaGetDeviceProperties returns a 256-char name; we keep a
+// small process-stable copy per device so device_name() can hand back a stable
+// pointer (the public contract). Filled lazily on first query.
+constexpr int kMaxCachedDevices = 16;
+char g_name_cache[kMaxCachedDevices][256];
+bool g_name_filled[kMaxCachedDevices] = {};
+
+const char* cuda_device_name(int ordinal) noexcept {
+  if (ordinal < 0 || ordinal >= kMaxCachedDevices) return "cuda";
+  if (!g_name_filled[ordinal]) {
+    cudaDeviceProp prop{};
+    if (cudaGetDeviceProperties(&prop, ordinal) == cudaSuccess) {
+      // prop.name is NUL-terminated <= 256; copy verbatim.
+      std::size_t i = 0;
+      for (; i < sizeof(g_name_cache[ordinal]) - 1 && prop.name[i] != '\0'; ++i)
+        g_name_cache[ordinal][i] = prop.name[i];
+      g_name_cache[ordinal][i] = '\0';
+    } else {
+      g_name_cache[ordinal][0] = '\0';
+    }
+    g_name_filled[ordinal] = true;
+  }
+  return g_name_cache[ordinal][0] != '\0' ? g_name_cache[ordinal] : "cuda";
+}
+
+DeviceCaps cuda_device_caps(int) noexcept {
+  // A real GPU: async streams, pinned host buffers (cudaMallocHost), events.
+  return DeviceCaps{/*async=*/true, /*host_buffer=*/true, /*events=*/true};
+}
+
+// Set the calling thread's current device to `ordinal`, but ONLY if it isn't
+// already -- cudaSetDevice is not free, and (verified against ggml_cuda_set_device,
+// ggml-cuda.cu:109) the redundant-set guard is a real win, especially on Windows
+// where the driver skips this check itself. Returns the cudaError_t of the set (or
+// cudaSuccess if already current).
+//
+// WHEN a set is needed (verified against ggml + CCCL source): the CURRENT device
+// governs CREATION (cudaMalloc / cudaStreamCreate / cudaEventCreate) and KERNEL
+// LAUNCH only. Stream/event OPERATIONS (record / query / synchronize / free) do NOT
+// depend on the current device -- a CUDA stream/event handle carries its context
+// intrinsically. ggml's event record/wait/sync set no device (ggml-cuda.cu:4527/
+// 4533/5510); CCCL uses the driver API for stream ops precisely so they never touch
+// the current device (stream_ref.h:189 "cudaStreamWaitEvent would push dev 0"). So
+// this is called at CREATION sites ONLY; the reap/poll path stays set-free. THIS IS
+// WHY fiber migration across workers is safe without pinning a stream to a core --
+// an op reaped on a different worker than it was submitted on is still correct.
+cudaError_t set_device(int ordinal) noexcept {
+  int current = -1;
+  cudaError_t e = cudaGetDevice(&current);
+  if (e != cudaSuccess) return e;
+  if (current == ordinal) return cudaSuccess;
+  return cudaSetDevice(ordinal);
+}
+
+void cuda_device_memory(int ordinal, std::uint64_t* free,
+                        std::uint64_t* total) noexcept {
+  std::size_t f = 0, t = 0;
+  // cudaMemGetInfo reports for the CURRENT device, so set it first. Best-effort:
+  // leave zeros on error (informational query, never fails the caller).
+  if (set_device(ordinal) == cudaSuccess) {
+    cudaMemGetInfo(&f, &t);
+  }
+  if (free != nullptr) *free = f;
+  if (total != nullptr) *total = t;
+}
+
+Status cuda_stream_create(int ordinal, void** out_native) noexcept {
+  cudaError_t e = set_device(ordinal);
+  if (e != cudaSuccess) return from_cuda(e, "cudaSetDevice");
+  cudaStream_t s = nullptr;
+  e = cudaStreamCreate(&s);
+  if (e != cudaSuccess) return from_cuda(e, "cudaStreamCreate");
+  *out_native = static_cast<void*>(s);
+  return Status();
+}
+
+void cuda_stream_destroy(void* native) noexcept {
+  if (native != nullptr) cudaStreamDestroy(static_cast<cudaStream_t>(native));
+}
+
+Status cuda_stream_sync(void* native) noexcept {
+  cudaError_t e = cudaStreamSynchronize(static_cast<cudaStream_t>(native));
+  return from_cuda(e, "cudaStreamSynchronize");
+}
+
+Status cuda_event_create(int ordinal, void** out_native) noexcept {
+  cudaError_t e = set_device(ordinal);
+  if (e != cudaSuccess) return from_cuda(e, "cudaSetDevice");
+  cudaEvent_t ev = nullptr;
+  // Default flags: timing enabled. compute-01 only needs completion; a later
+  // milestone may pass cudaEventDisableTiming for a faster event if timing is unused.
+  e = cudaEventCreate(&ev);
+  if (e != cudaSuccess) return from_cuda(e, "cudaEventCreate");
+  *out_native = static_cast<void*>(ev);
+  return Status();
+}
+
+void cuda_event_destroy(void* native) noexcept {
+  if (native != nullptr) cudaEventDestroy(static_cast<cudaEvent_t>(native));
+}
+
+void cuda_event_record(void* stream_native, void* event_native) noexcept {
+  // Record the event on the stream. Errors here are effectively unreachable for
+  // valid handles on the same device (checked in the public layer); a failure would
+  // surface at the subsequent query()/sync(). cudaEventRecord's own return is
+  // dropped intentionally (the vtable slot is void, matching CUDA's fire-and-check
+  // model where completion is observed via the event, not the record call).
+  cudaEventRecord(static_cast<cudaEvent_t>(event_native),
+                  static_cast<cudaStream_t>(stream_native));
+}
+
+EventStatus cuda_event_query(void* event_native) noexcept {
+  // THE poll primitive (compute-design §2): cudaSuccess => all prior stream work
+  // done; cudaErrorNotReady => still running. Any other error (a genuine device
+  // fault) is reported as Ready here so the caller unblocks and observes the fault
+  // via stream sync / the op result -- query() must stay a cheap non-blocking bool.
+  cudaError_t e = cudaEventQuery(static_cast<cudaEvent_t>(event_native));
+  return (e == cudaErrorNotReady) ? EventStatus::kNotReady : EventStatus::kReady;
+}
+
+void cuda_event_sync(void* event_native) noexcept {
+  cudaEventSynchronize(static_cast<cudaEvent_t>(event_native));
+}
+
+Status cuda_device_alloc(int ordinal, std::size_t bytes, void** out_ptr) noexcept {
+  cudaError_t e = set_device(ordinal);
+  if (e != cudaSuccess) return from_cuda(e, "cudaSetDevice");
+  void* p = nullptr;
+  e = cudaMalloc(&p, bytes == 0 ? 1 : bytes);
+  if (e != cudaSuccess) return from_cuda(e, "cudaMalloc");
+  *out_ptr = p;
+  return Status();
+}
+
+void cuda_device_free(int, void* ptr) noexcept {
+  if (ptr != nullptr) cudaFree(ptr);
+}
+
+Status cuda_memcpy_async(void* stream_native, void* dst, const void* src,
+                         std::size_t bytes) noexcept {
+  // cudaMemcpyDefault lets the driver infer direction from the pointers' address
+  // spaces (requires unified virtual addressing -- true on all supported GPUs).
+  cudaError_t e = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDefault,
+                                  static_cast<cudaStream_t>(stream_native));
+  return from_cuda(e, "cudaMemcpyAsync");
+}
+
+constexpr ComputeBackend kCudaBackend = {
+    /*name=*/"cuda",
+    /*device_count=*/cuda_device_count,
+    /*device_type=*/cuda_device_type,
+    /*device_name=*/cuda_device_name,
+    /*device_caps=*/cuda_device_caps,
+    /*device_memory=*/cuda_device_memory,
+    /*stream_create=*/cuda_stream_create,
+    /*stream_destroy=*/cuda_stream_destroy,
+    /*stream_sync=*/cuda_stream_sync,
+    /*event_create=*/cuda_event_create,
+    /*event_destroy=*/cuda_event_destroy,
+    /*event_record=*/cuda_event_record,
+    /*event_query=*/cuda_event_query,
+    /*event_sync=*/cuda_event_sync,
+    /*device_alloc=*/cuda_device_alloc,
+    /*device_free=*/cuda_device_free,
+    /*memcpy_async=*/cuda_memcpy_async,
+};
+
+}  // namespace
+
+const ComputeBackend* cuda_vtable() noexcept { return &kCudaBackend; }
+
+}  // namespace hyle::compute
