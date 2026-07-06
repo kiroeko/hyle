@@ -16,9 +16,11 @@
 // unchanged. Lane types f32/f64 + all integer widths i8/u8/i16/u16/i32/u32/i64/u64;
 // NATIVE FULL WIDTH (128-bit = 16 i8 / 8 i16 / 4 i32|f32 / 2 i64|f64).
 //
-// STATUS: written + cross-compiled (aarch64-linux-gnu-g++-14) + objdump-verified to emit
-// real NEON instructions, but NOT executed (no ARM hardware / no qemu here). Same honesty
-// bar as container-04b's GroupNeon: "written + compiled + instruction-verified, only unrun".
+// STATUS: written + REAL-HARDWARE VALIDATED on Apple Silicon (macOS aarch64, AppleClang).
+// The full vec_test suite compiles as the `neon` ISA variant (tests/CMakeLists arch-gated:
+// x86 builds sse4/avx2, arm64 builds neon) and runs green on the mac; every op is paired
+// against the scalar reference. (Cross-compile + objdump was the earlier bar before the mac
+// was wired -- now superseded by real execution.)
 //
 // Intrinsics follow Highway arm_neon-inl.h. f64 NEON ops (vaddq_f64 etc.) are aarch64-only
 // (not ARMv7); this backend targets aarch64. Masks are an unsigned vector of all-1s/all-0s

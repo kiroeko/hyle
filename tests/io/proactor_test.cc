@@ -292,7 +292,7 @@ static void RunTcpAcceptConnectRoundTrip(Proactor& p) {
   ::setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   sockaddr_in sa{};
   sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   sa.sin_port = 0;
   ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
   ASSERT_EQ(::listen(ls, 8), 0);
@@ -387,7 +387,7 @@ static void RunMultishotAccept(Proactor& p) {
   ::setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   sockaddr_in sa{};
   sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   sa.sin_port = 0;
   ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
   ASSERT_EQ(::listen(ls, 16), 0);
@@ -573,7 +573,7 @@ TEST(Proactor, DirectAccept) {
   ::setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, &one, sizeof(one));
   sockaddr_in sa{};
   sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   sa.sin_port = 0;
   ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
   ASSERT_EQ(::listen(ls, 8), 0);
@@ -703,7 +703,7 @@ TEST(Proactor, TcpAcceptConnectRoundTripIocp) {
   ASSERT_NE(ls, INVALID_SOCKET);
   sockaddr_in sa{};
   sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   sa.sin_port = 0;
   ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
   ASSERT_EQ(::listen(ls, 8), 0);
@@ -779,7 +779,7 @@ TEST(Proactor, MultishotAcceptIocp) {
   ASSERT_NE(ls, INVALID_SOCKET);
   sockaddr_in sa{};
   sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   sa.sin_port = 0;
   ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
   ASSERT_EQ(::listen(ls, 16), 0);
@@ -835,7 +835,7 @@ TEST(Proactor, DestructWithInflightAcceptCancelsCleanly) {
     ASSERT_NE(ls, INVALID_SOCKET);
     sockaddr_in sa{};
     sa.sin_family = AF_INET;
-    sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+    sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
     sa.sin_port = 0;
     ASSERT_EQ(::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)), 0);
     ASSERT_EQ(::listen(ls, 8), 0);

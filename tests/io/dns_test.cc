@@ -63,8 +63,8 @@ TEST(IoDns, ResolvesIpv4Literal) {
     const ResolvedAddr& a = r->addrs[i];
     if (a.family != AF_INET) continue;
     const auto* sin = reinterpret_cast<const sockaddr_in*>(a.storage);
-    if (::ntohs(sin->sin_port) != 8080) continue;
-    if (::ntohl(sin->sin_addr.s_addr) == INADDR_LOOPBACK) found_v4_loopback = true;
+    if (ntohs(sin->sin_port) != 8080) continue;
+    if (ntohl(sin->sin_addr.s_addr) == INADDR_LOOPBACK) found_v4_loopback = true;
   }
   EXPECT_TRUE(found_v4_loopback);
 }

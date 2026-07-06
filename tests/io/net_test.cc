@@ -80,7 +80,7 @@ SocketPair make_pair(IoContext& io, unsigned owner) {
   if (ls == INVALID_SOCKET) return sp;
   sockaddr_in sa{};
   sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
+  sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
   sa.sin_port = 0;
   ::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa));
   ::listen(ls, 1);

@@ -131,18 +131,23 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
   - **MSVC Highway-AVX3 排除(probe 实锤,非接线 bug)**:Highway 在 `detect_targets.h:192` 把整个 AVX3 标 `HWY_BROKEN_MSVC`(MSVC AVX-512 codegen 已知 bug),故 `/arch:AVX512` 下 `hn::` 仍发 ymm(dumpbin 250 ymm/0 zmm)。MSVC 上**没有 512-bit log win**(avx2 highway log 已是 Highway 能给的最宽)。故 `transcendental_highway_avx512.cc` 与 dispatch 的 log-512 分支用 `#if !defined(_MSC_VER)` 守卫,MSVC log 留 avx2 highway,**不路由到 fake-512**。xsimd(exp/tanh)不受影响——其 512 batch 是纯 AVX-512F,MSVC 真发 zmm。
 - **执行存疑边界(同 ops)**:三项 512-bit 正确性=指令级验证(双平台 objdump)+ 同构推断(borrow 同核,仅宽度宏不同)+ 共享/对 oracle 测试。真机/SDE 跑既有 `dtype_test`/`math_test`/`ops_test`(全宽度无关或对 oracle/libm)即自证,**无需改测试**。本机双平台 56 过 + 1 正确 SKIP。
 
-### op 覆盖补齐（2026-07，compute 前把 vec 后端 op 集补到量化+通用循环够用）
+### op 覆盖补齐（2026-07,compute 前把 vec 后端 op 集补全）
 
-起点是 ~35 个 op(Set/Load/Store/算术/Min/Max/Neg/Abs/Sqrt/MulAdd/位运算/比较/IfThenElse/AllTrue-CountTrue/Reduce{Sum,Min,Max}/GetLane)。相对 Highway ~200 op 的差距按**优先级分批**补,四后端(sse4/avx2/avx512/neon)+scalar 参考,**抄 Highway 的 per-op intrinsic 序列(契约,非 vendor 库)**,每批独立真机验证(WSL x86 跑 scalar/sse4/avx2、编 avx512;mac SSH 跑 NEON):
+起点是 ~35 个 op(Set/Load/Store/算术/Min/Max/Neg/Abs/Sqrt/MulAdd/位运算/比较/IfThenElse/AllTrue-CountTrue/Reduce{Sum,Min,Max}/GetLane)。相对 Highway ~200 op 的差距按**优先级分批**补全,四后端(sse4/avx2/avx512/neon)+scalar 参考,**抄 Highway 的 per-op intrinsic 序列(契约,非 vendor 库)**,每批独立真机验证(WSL x86 跑 scalar/sse4/avx2、编 avx512;mac SSH 跑 NEON;三平台 gtest 各 136+ 全绿):
 
-- **批1 移位** `ShiftLeft<k>/ShiftRight<k>`(编译期立即数):x86 无 epi8 移位(epi16+mask 模拟)、avx2/sse4 无 `srai_epi64`(srli+符号填充)、avx512 原生 `srai_epi64`、NEON 全宽原生;**i8 算术右移**要 logical-byte-shift+cmpgt 符号填充(naive slli-to-high-byte 错,epi16 把字节对当字处理会串位——已修+测)。
-- **批2 饱和/平均** `SaturatedAdd/Sub`(8/16-bit)+`AverageRound`(u8/u16):x86 `adds/subs/avg` 原生(avx512 需 BW)、NEON `vqaddq/vqsubq/vrhaddq`、scalar 宽类型算后 clamp。
-- **批3 类型转换** `ConvertTo/RoundToInt`(同宽 f32↔i32,量化(de)quant 核):x86 `cvttps/cvtps/cvtepi32`、NEON `vcvtq/vcvtnq`。**变宽 `PromoteTo/DemoteTo`(i8↔i16↔i32)后置**——定宽后端需 partial/多寄存器向量(vec.h 未建模 Highway 的分数 N),是独立工作。
-- **批4 浮点舍入** `Round/Floor/Ceil/Trunc`(结果仍 float):x86 `round_ps/pd(_MM_FROUND_*)`、avx512 `roundscale`、NEON `vrndnq/vrndmq/vrndpq/vrndq`(原生 FRINT*)、scalar `nearbyint/floor/ceil/trunc`。
-- **批5 掩码/尾部** `FirstN/MaskedLoad(Or)/BlendedStore/LoadN/StoreN`(向量化循环余数,std::simd 表达不了的 90% 之一):avx512 原生 k 掩码 `maskz/mask_loadu`+`mask_storeu`(硬件对 off-lane 不触存);avx2/sse4/neon 内存暂存 fault-safe(只碰 on-lane / 前 k 个 lane,不越界);scalar 逐 lane 参考。
-- **批6 reduce 扩展 + swizzle 起步** `ReduceMul/ReduceAnd/ReduceOr`(补齐 reduce 家族,avx512 32/64-bit 原生 `_mm512_reduce_*`、余宽 store+fold)+`Broadcast<i>`(lane splat,extract-and-Set 统一)。
+- **批1 移位** `ShiftLeft<k>/ShiftRight<k>`(编译期立即数):x86 无 epi8 移位(epi16+mask 模拟)、avx2/sse4 无 `srai_epi64`(srli+符号填充)、avx512 原生、NEON 全宽原生;**i8 算术右移**要 logical-byte-shift+cmpgt 符号填充(naive slli-to-high-byte 错——已修+测)。
+- **批2 饱和/平均** `SaturatedAdd/Sub`(8/16-bit)+`AverageRound`(u8/u16):x86 `adds/subs/avg` 原生、NEON `vqaddq/vqsubq/vrhaddq`、scalar 宽类型算后 clamp。
+- **批3 同宽转换** `ConvertTo/RoundToInt`(f32↔i32 量化(de)quant 核):x86 `cvttps/cvtps/cvtepi32`、NEON `vcvtq/vcvtnq`。
+- **批4 浮点舍入** `Round/Floor/Ceil/Trunc`:x86 `round_ps/pd`、avx512 `roundscale`、NEON `vrndnq/mq/pq/q`、scalar `nearbyint/floor/ceil/trunc`。
+- **批5 掩码/尾部** `FirstN/MaskedLoad(Or)/BlendedStore/LoadN/StoreN`(向量化循环余数,std::simd 表达不了的 90% 之一):avx512 原生 k 掩码 fault-safe;avx2/sse4/neon 内存暂存 fault-safe(只碰 on-lane / 前 k 个 lane)。
+- **批6 reduce 扩展 + Broadcast** `ReduceMul/ReduceAnd/ReduceOr`(avx512 32/64-bit 原生 `_mm512_reduce_*`、余宽 store+fold)+`Broadcast<i>`(lane splat)。
+- **批7 变宽转换** `PromoteLowerTo/PromoteUpperTo`(满 narrow→满 wide-半)+`DemoteTo`(2→1 饱和 pack)+`ReorderDemote2To`:量化核。x86 `cvtep*`/`packs`(avx2 4-way permute 修块序、avx512 `permutexvar_epi64` 修 4 块交织,与 Highway kIdx 同)、NEON `vmovl_/vmovl_high_`/`vqmovn`+`vcombine`(天然有序)。**纠正了先前"需 partial 向量所以后置"的误判**——half-at-a-time 形式完美契合定宽模型。
+- **批8 变量移位 + 加宽乘** `Shl/Shr`(每 lane 计数;avx2 `sllv/srlv/srav`+sse4 无原生全 fallback+avx512 全宽原生含 srav_epi64+NEON vshlq 负计数)+`MulHigh`(i16/u16)+`WidenMulPairwiseAdd`(i16→i32 madd,int8/16 GEMM 核)+`AbsDiff`。
+- **批9 swizzle 全套** `OddEven/Reverse/Reverse2/InterleaveLower/Upper/Concat{Lower,Upper}²/ConcatOdd/Even/DupOdd/Even/TableLookupLanes+IndicesFromVec`。**关键:InterleaveLower/Upper 是每 128-bit 块**(Highway 契约,256b avx2=2 块);avx2 块内原生(unpack/blend/permute2x128)+跨块难的 store+reload,sse4/neon 单块 store+reload,avx512 4 块块内。
+- **批10 gather/scatter + compress/expand** `GatherIndex/ScatterIndex`(embedding lookup 核)+`Compress/CompressStore/Expand`(稀疏过滤核):统一 store+reload(SSE4/NEON 本无硬件,这正是 Highway 的两后端实现;native vpgatherdd/vpcompress 是 profiling 门控优化)。
+- **批11 位计数 + 符号 + 杂项** `PopulationCount/LeadingZeroCount/TrailingZeroCount`(store+reload+std::)+`Not/Clamp/RotateLeft/RotateRight/CopySign/BroadcastSignBit/IfNegativeThenElse/ZeroIfNegative`(全由现有 op 组合,四后端同构)。
 
-**仍后置(诚实登记,非本轮)**:① **变宽 promote/demote**——需 vec.h 先支持 partial/分数 N 向量;② **索引向量依赖的 swizzle**(`TableLookup`/`Gather`/`Scatter`/`Compress`/`Expand`/`Interleave`/`Zip`)——需一个可移植的**索引向量类型** + 每 ISA 的 permute/gather 单元(avx2 `vpgatherdd`、avx512 `vpermt2`/`vpcompress`、NEON `vqtbl`),是一整块**内聚工作**而非零散 op,留到有实际消费者(compute kernel/稀疏路径)驱动时按需做,别为假想需求先铺。当前唯一内部 swizzle 用例(`cvt_avx2.cc` 的 `ConcatOdd` 折叠)已在该 TU 就地手写,不构成通用需求。这与"精瘦、贴硬件、有消费者才抽象"的库纪律一致。
+**op 覆盖现状**:量化(promote/demote/convert/满足 int8 GEMM 的 madd/mulhigh)、通用向量循环(移位/舍入/饱和/掩码尾部/reduce 全家族)、swizzle(interleave/concat/reverse/permute)、gather/scatter/compress/expand、位计数/符号——**全部四后端 + scalar 覆盖,三平台真机对拍 scalar oracle**。设计原则(用户 2026-07-06 纠偏):**高性能 infra 库的消费面最广,能力要提供到位,不能因"暂无消费者"后置**;暂缺的只是**性能优化档**(native vpgather/vpcompress/vpopcnt/PSHUFB-LUT vs 现在的 store+reload),那些是 profiling 驱动的加速、非能力缺口,留待 compute 消费时按热路径证据加。各后端仍在 ~2k 行设计上限内(最大 neon ~1.2k)。
 
 ## 已定决策（1/2/4 已落地，3 为未来项）
 
