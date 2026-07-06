@@ -84,8 +84,8 @@
 | **starts_with(16B)** | 1.79 | memcmp 1.77 | ~1.0x | ➖平(自研 memcmp) |
 | **split 全文按空格** | 0.44/B | find+remove_prefix 0.54 | 1.22x | ✅赢(自研,无分配子视图) |
 | **trim 两端** | 13.6 | 16.85 | 1.24x | ✅赢(自研,组合 find_first/last_not_of) |
-| **rfind(char) 后向扫** | 0.012/B | 0.012 | ~1.0x | ➖平(自研 AVX2 后向扫;SSE2-only 时 1.7x;原 scalar 输 ~20x) |
-| **count(char) 全扫** | 0.008/B | std::count 0.008 | ~1.0x | ➖平(自研 AVX2 4累加器 psadbw;SSE2-only 时 3x;原 scalar 输 ~27x) |
+| **rfind(char) 后向扫** | 0.012/B | 0.012 | ~1.0x | ➖平 std(自研 vec.h 后向扫 FindLastTrue;**arm NEON 8x 赢原 scalar**;原 scalar 输 ~20x) |
+| **count(char) 全扫** | 0.008/B | std::count 0.008 | ~1.0x | ➖平 std(自研 vec.h 4累加器 SumsOf8;**arm NEON 3.7x 赢原 scalar**;原 scalar 输 ~27x) |
 | **find(needle) 6B 子串** | 0.08/B | 0.08 | ~1.0x | ➖平(转发 std;自研 memchr 候选曾输 2.5x) |
 | **rfind(needle) 6B** | 0.12/B | 0.12 | ~1.0x | ➖平(转发 std;自研 region_eq 曾输 4x) |
 | **find_first_of(4 字符集)** | 0.05/B | 0.05 | ~1.0x | ➖平(转发 std;自研 memchr-min 曾 0.62x、PCMPESTRI 0.76x) |
@@ -95,7 +95,7 @@
 | **StringBuf add/retain/remove churn** | 17.9 | thread-safe map+mutex 22.3 / 无锁 floor 7.5 | 1.24x / 0.41x | ✅赢同契约 thread-safe peer 1.24x(min 1.17 保底,25 遍);对无锁裸 map 是 apples-to-oranges(见结论) |
 
 **诚实结论(全线追平的路径)**:
-- **自研追平的项(HYLE 自己的 SIMD)**:`find(char)`/`starts_with` 早已切 memchr/memcmp;`rfind(char)`/`count` 上运行期 ISA dispatch(SSE2 baseline + AVX2 变体)。**CPUID 探测下沉 platform**(`platform/cpu.{h,cc}`)后 container 首次能安全上 AVX2:`string_ref_avx2.cc` 是独立 `-mavx2` TU,只在 `cpu_features().avx2 && size>=32` 时进入(老 CPU 走 SSE2/scalar 无 SIGILL),count 用 4 独立累加器打破 psadbw 依赖链。`split`/`trim` 靠零分配子视图**反超** std。
+- **自研追平的项(HYLE 自己的 SIMD)**:`find(char)`/`starts_with` 早已切 memchr/memcmp;`rfind(char)`/`count` 走运行期 ISA dispatch。**2026-07 统一到 `simd/vec.h`**:count/rfind 的核从手写裸 intrinsic(`string_ref_avx2.cc` 256b + inline SSE2,**x86-only**)改写为 `str_search_{scalar,sse4,avx2,avx512,neon}.cc`(共享体 `str_search_impl.h`,写在 D-tag 抽象上),`string_ref.cc` 按 `best_isa()` 经缓存 fn 指针选最宽核——与 `simd/ops` 同变体-TU 派发模型。收益:**一份源码覆盖全 ISA,arm64 NEON + AVX-512 白得**(此前 arm 落 scalar)。为保住手写版的 psadbw 4 累加器计数技巧,给 vec.h 补了三原语 `SumsOf8`(SAD)/`VecFromMask`/`FindLastTrue`。**回归实测(WSL,apples-to-apples 两边都过 .so)**:新 vec.h 核 vs 旧手写 AVX2 核 **打平**(count 96-101%、rfind 99-100%,gap«spread;早先看到的 3-11% 是"手写核可内联进 bench TU、.so 调用不可内联"的测量不对称,非真回退——`__attribute__((noinline))` 对同一份核复现出同样 gap 坐实)。**arm 真机(Apple Silicon,vs 重构前 arm 落的 scalar 字节循环)**:count **3.7x**、rfind **8.0x**(4KB/64KB/1MB 全稳)。`split`/`trim` 靠零分配子视图**反超** std。
 - **转发 std 的项(借 SOTA,不硬造)**:`find(needle)`/`rfind(needle)`/`find_first_of`/`find_first_not_of`/`find_last_of`/`find_last_not_of`——MSVC STL 的 two-way 向量化子串搜索 + PCMPESTRI 字符集扫描是实测 SOTA,**自研 PCMPESTRI 尝试只到 0.76-0.78x 追不动**(PCMPESTRI 延迟高),遂转发 `std::string_view`。转发局限在 `string_ref.cc`(公开头不引 `<string_view>`),不破 C-ABI。**代价**:string_ref 在这些项上不是"纯自研替代",而是"借 std 的最优实现"——这是刻意取舍(不为纯粹性造打不过微软手写汇编的轮子),非缺陷。**结果:5 项从输 2.5–4.5x 全部统计平局(ratio 0.98–1.02,gap«spread)。**
 - **前身 clay 的做法参照**:clay 的 `string_ref` 搜索族**全部**转发 `std::string_view`(且其头 `#include <iostream>`/`<string>`/`<functional>`)。HYLE 只转发 std 真正更强的几项、且只从 .cc 转发、公开头零 std string 头——比 clay 更克制。
 - **StringBuf churn 换上同契约对手后 ✅赢 1.24x(红队待办已结)**:此前只有**无锁裸 map**(7.5ns)作对手,而 StringBuf 是 thread-safe(每 op 一把锁 + handle 是稳定 hash 非 iterator)——apples-to-oranges。2026-07 补上**同契约 thread-safe peer**(unordered_map + mutex,且每 op 按 key re-find,匹配 StringBuf 的 hash-handle 契约,不让对手靠复用 iterator + 免锁占便宜):HYLE 17.9ns vs peer 22.3ns = **赢 1.24x**(25 遍统计,ratio min 1.17 保底,从不 <1;判定卡在 TIE 仅因 unordered_map 的 add/erase churn rehash 抖动使 peer spread 65%,而 HYLE SwissTable 平坦槽+mimalloc free 稳定在 8%——又快又可预测)。对无锁 floor 的 0.41x 是选错对手,非真输。
