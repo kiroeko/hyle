@@ -323,34 +323,34 @@ int bench_string_ref() {
     const std::string_view bsv{big};
     const string_ref bsr{big.data(), static_cast<std::uint32_t>(big.size())};
 
+    // Anti-hoist: nanobench runs the lambda in a tight loop; with a loop-invariant buffer the
+    // compiler hoists the whole scan out (computes once -> ~0ns, physically impossible for MB
+    // scans). Mutate one byte each iteration through a volatile index so every call scans a
+    // genuinely-different buffer and the result can't be precomputed. `mut` walks the buffer.
+    std::size_t mut = 0;
+    auto* mutp = big.data();
     nb::Bench b;
     b.title("string_ref count('z') vs std (" + std::to_string(kb) + "KB)")
         .relative(true).batch(big.size());
-    // Defeat hoisting: the buffer+needle are loop-invariant, so a pure count call would be
-    // computed ONCE and cached (nanobench then measures ~0). Make the needle opaque per-iter
-    // (doNotOptimizeAway forces it into a register the optimizer can't predict), so each call
-    // must actually scan. Applied SYMMETRICALLY to std and HYLE.
     b.run("std::count", [&] {
-      char needle = 'z'; nb::doNotOptimizeAway(needle);
-      nb::doNotOptimizeAway(std::count(bsv.begin(), bsv.end(), needle));
+      mutp[mut] = 'a' + (mut & 7); mut = (mut + 4099) % big.size();  // perturb, wrap
+      nb::doNotOptimizeAway(std::count(bsv.begin(), bsv.end(), 'z'));
     });
     b.run("HYLE count", [&] {
-      char needle = 'z'; nb::doNotOptimizeAway(needle);
-      nb::doNotOptimizeAway(bsr.count(needle));
+      mutp[mut] = 'a' + (mut & 7); mut = (mut + 4099) % big.size();
+      nb::doNotOptimizeAway(bsr.count('z'));
     });
 
     nb::Bench br;
     br.title("string_ref rfind('Q' miss) vs std (" + std::to_string(kb) + "KB)")
         .relative(true).batch(big.size());
     br.run("std::string_view::rfind", [&] {
-      char needle = 'Q'; nb::doNotOptimizeAway(needle);  // absent -> full backward scan
-      std::size_t pos = std::string_view::npos; nb::doNotOptimizeAway(pos);
-      nb::doNotOptimizeAway(bsv.rfind(needle, pos));
+      mutp[mut] = 'a' + (mut & 7); mut = (mut + 4099) % big.size();
+      nb::doNotOptimizeAway(bsv.rfind('Q'));  // 'Q' absent -> full backward scan
     });
     br.run("HYLE rfind", [&] {
-      char needle = 'Q'; nb::doNotOptimizeAway(needle);
-      std::uint32_t pos = string_ref::npos; nb::doNotOptimizeAway(pos);
-      nb::doNotOptimizeAway(bsr.rfind(needle, pos));
+      mutp[mut] = 'a' + (mut & 7); mut = (mut + 4099) % big.size();
+      nb::doNotOptimizeAway(bsr.rfind('Q'));
     });
   }
 
