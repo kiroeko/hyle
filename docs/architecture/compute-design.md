@@ -117,7 +117,7 @@ compute/
 
 实测本机(**2026-07-06 复核,取代旧的"Win 12.9 / WSL 无 toolkit"结论**):老的 CUDA 12.x 已清,装了 **CUDA 13.2**,**Windows 与 WSL 两侧都有完整 toolkit**:
 - **驱动**:610.62(WDDM),`nvidia-smi` CUDA UMD 上限 **13.3**(≥ toolkit 13.2,匹配);GPU **RTX 4070 / sm_89 / 12.9GB / 46 SM**。
-- **Windows**:`nvcc 13.2.78` 在 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2\bin`(⚠️ **未入 PATH、`CUDA_PATH` 空**——用绝对路径调,或 CMake 指 `CUDAToolkit_ROOT`)。
+- **Windows**:`nvcc 13.2.78` 在 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2\bin`,**已入 PATH + `CUDA_PATH` 已设**(安装器设的机器级环境,`where nvcc`/cmd `echo %CUDA_PATH%` 证实;CMake 在 VsDevCmd 里自动找到 CUDAToolkit)。⚠️ 若某 shell 里看不到 nvcc/CUDA_PATH,是该 shell 在安装器跑之前就启动的 **stale-env 假象**(本会话 git-bash 即如此),新开 shell / 用 `cmd.exe //c` 即正常。
 - **WSL**:`nvcc 13.2.78` 在 `/usr/local/cuda-13.2`(软链 `/usr/local/cuda`,**在 PATH**),driver 直通 `/usr/lib/wsl/lib/libcuda.so`,`nvidia-smi` 通。这是**升级**:旧结论"WSL 无 toolkit → CUDA 只 Windows 侧"已作废,**CUDA 现在 WSL 也能真编真跑**(WSL 原生 ext4 构建更干净,优先在此做 compute host 侧开发)。
 - **端到端已验证(2026-07-06)**:`nvcc -arch=sm_89` 编 saxpy kernel + **event-poll completion**(`cudaEventRecord`+`cudaEventQuery` 轮询,正是下面 §2 的 reap 模型)在 WSL RTX 4070 真跑通(`saxpy 3*1+2→5.0 OK`)。**整条工具链 + 计划的完成机制均已真机去险。**
 - **缺 cuDNN + TensorRT**(用户明示,本机未装)——compute-01~03 的 device/stream/completion 脊 + raw kernel launch **不需要**它们(cuDNN=卷积/RNN 算子库、TensorRT=推理优化器,是更上层的算子/图优化,借 ggml 算子即可);若后续要接 cuDNN 加速档再装。
