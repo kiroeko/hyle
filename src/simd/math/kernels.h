@@ -40,4 +40,15 @@ void log_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcep
 #endif
 #endif
 
+#if defined(HYLE_ARCH_ARM64)
+// aarch64 NEON borrow cores: Highway's contrib/math (Log/Exp/Tanh) lowers to NEON here
+// (probed: target=NEON, 4-wide, matches libm). Unlike x86's per-op xsimd/Highway split (a
+// speed pick from benchmarking), arm64 uses Highway for ALL THREE -- one verified core,
+// consistent. math_dispatch enters these unconditionally on arm64 (NEON is the ARMv8
+// baseline; no runtime gate needed). xsimd-NEON as a future per-op speed tune if measured.
+void exp_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
+void log_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
+void tanh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
+#endif
+
 }  // namespace hyle::simd::detail

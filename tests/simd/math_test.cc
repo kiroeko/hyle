@@ -85,5 +85,13 @@ TEST(Math, TailSizes) {
 // Exp/Log/Tanh-vs-libm tests above regardless of which tier ran.
 TEST(Math, ActiveVariantReported) {
   const Isa v = active_math_variant();
-  EXPECT_TRUE(v == Isa::kScalar || v == Isa::kAvx2);
+#if defined(HYLE_ARCH_X64)
+  // x86: scalar floor, or AVX2 / AVX-512 borrow cores when the CPU has them.
+  EXPECT_TRUE(v == Isa::kScalar || v == Isa::kAvx2 || v == Isa::kAvx512);
+#elif defined(HYLE_ARCH_ARM64)
+  // aarch64: Highway NEON cores are always compiled (ARMv8 baseline) -> kNeon.
+  EXPECT_EQ(v, Isa::kNeon);
+#else
+  EXPECT_EQ(v, Isa::kScalar);
+#endif
 }

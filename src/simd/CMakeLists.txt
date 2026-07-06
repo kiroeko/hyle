@@ -32,12 +32,14 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_SIMD_ARM64 TRUE)
   # ops NEON kernel reuses the neon.h D-tag backend (dot/saxpy) -- the simd-03 real-run
   # target. dtype NEON (cvt_neon.cc) is hand-written per-backend intrinsics: fp16 via native
-  # ARMv8.2 vcvt, bf16 via NEON integer bit-math (bit-identical to scalar). math
-  # transcendentals stay on the scalar libm floor for now (a NEON Highway/xsimd borrow core
-  # is separate follow-up). Scope: ops + dtype vectorized on arm; math scalar.
+  # ARMv8.2 vcvt, bf16 via NEON integer bit-math (bit-identical to scalar). math NEON
+  # (transcendental_highway_neon.cc) BORROWS Highway's contrib/math cores (Exp/Log/Tanh),
+  # which lower to NEON here (probed: target=NEON, matches libm) -- Highway for all three
+  # (x86's per-op xsimd/Highway split was a speed pick; arm64 starts with one verified core).
   list(APPEND _simd_arch_sources
     ops/kernels_neon.cc
-    dtype/cvt_neon.cc)
+    dtype/cvt_neon.cc
+    math/transcendental_highway_neon.cc)
 endif()
 
 hyle_add_module(simd SOURCES
@@ -92,10 +94,11 @@ set_target_properties(hyle_simd PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 # PER OP: exp/tanh -> xsimd, log -> Highway (scalar libm is the fallback floor).
 #
 # Both are VENDORED in third_party (header-only, like xxhash). The machine-dependent guard
-# is ARCHITECTURE: the borrow-core TUs lower to AVX2/AVX512 intrinsics, so they are X86-ONLY
-# (see the SOURCES split -- not compiled on aarch64). On arm64 math_dispatch uses the scalar
-# libm floor (a NEON transcendental borrow core is future work, not simd-03's scope). Runtime
-# cpu_features().avx2 then gates entry so an old x86 CPU also falls to scalar -- no SIGILL.
+# is ARCHITECTURE: the x86 borrow-core TUs lower to AVX2/AVX512 intrinsics (X86-ONLY, in the
+# SOURCES split). On aarch64 the SAME Highway contrib/math cores lower to NEON
+# (transcendental_highway_neon.cc, in the arm64 SOURCES) -- Highway for all three ops there.
+# Runtime cpu_features().avx2 gates the x86 entry so an old x86 CPU also falls to scalar (no
+# SIGILL); arm64 needs no gate (NEON is the ARMv8 baseline).
 target_include_directories(hyle_simd SYSTEM PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/highway"
   "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")

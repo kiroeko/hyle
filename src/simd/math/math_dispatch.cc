@@ -52,6 +52,8 @@ void exp_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   if (hw) {
     detail::exp_f32_xsimd_avx2(src, dst, n); return;       // exp: xsimd fastest
   }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::exp_f32_highway_neon(src, dst, n); return;       // NEON Highway (always present)
 #endif
   detail::exp_f32_scalar(src, dst, n);
 }
@@ -68,6 +70,8 @@ void log_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   if (hw) {
     detail::log_f32_highway_avx2(src, dst, n); return;     // log: Highway fastest
   }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::log_f32_highway_neon(src, dst, n); return;       // NEON Highway
 #endif
   detail::log_f32_scalar(src, dst, n);
 }
@@ -79,13 +83,21 @@ void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   if (hw) {
     detail::tanh_f32_xsimd_avx2(src, dst, n); return;      // tanh: xsimd fastest
   }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::tanh_f32_highway_neon(src, dst, n); return;      // NEON Highway
 #endif
   detail::tanh_f32_scalar(src, dst, n);
 }
 
 Isa active_math_variant() noexcept {
+#if defined(HYLE_ARCH_X64)
   static const Isa tier = have_avx512() ? Isa::kAvx512 : (have_avx2() ? Isa::kAvx2 : Isa::kScalar);
   return tier;
+#elif defined(HYLE_ARCH_ARM64)
+  return Isa::kNeon;  // Highway NEON cores always compiled (ARMv8 baseline)
+#else
+  return Isa::kScalar;
+#endif
 }
 
 }  // namespace hyle::simd
