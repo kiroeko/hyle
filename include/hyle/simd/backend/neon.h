@@ -311,6 +311,25 @@ HYLE_FORCE_INLINE VecNeon<T, N> Sqrt(VecNeon<T, N> a) noexcept {
   else r.raw = vsqrtq_f64(a.raw);
   return r;
 }
+
+// Float rounding to an integral value (result stays float): Round=nearest-even (vrndnq),
+// Floor=toward -inf (vrndmq), Ceil=toward +inf (vrndpq), Trunc=toward zero (vrndq). All
+// native ARMv8 (FRINTN/M/P/Z). Float/double only.
+#define HYLE_SIMD_NEON_ROUND(NAME, FF, FD)                                   \
+  template <typename T, std::size_t N>                                       \
+  HYLE_FORCE_INLINE VecNeon<T, N> NAME(VecNeon<T, N> a) noexcept {           \
+    static_assert(std::is_floating_point_v<T>, #NAME " is float/double only"); \
+    VecNeon<T, N> r;                                                         \
+    if constexpr (std::is_same_v<T, float>) r.raw = FF(a.raw);              \
+    else r.raw = FD(a.raw);                                                  \
+    return r;                                                                \
+  }
+HYLE_SIMD_NEON_ROUND(Round, vrndnq_f32, vrndnq_f64)
+HYLE_SIMD_NEON_ROUND(Floor, vrndmq_f32, vrndmq_f64)
+HYLE_SIMD_NEON_ROUND(Ceil, vrndpq_f32, vrndpq_f64)
+HYLE_SIMD_NEON_ROUND(Trunc, vrndq_f32, vrndq_f64)
+#undef HYLE_SIMD_NEON_ROUND
+
 // FMA: NEON vfmaq computes c + a*b (single rounding). NegMulAdd = c - a*b via vfmsq.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> MulAdd(VecNeon<T, N> a, VecNeon<T, N> b, VecNeon<T, N> c) noexcept {

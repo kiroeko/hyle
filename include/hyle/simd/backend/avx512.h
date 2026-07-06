@@ -276,6 +276,27 @@ HYLE_FORCE_INLINE Vec512<T, N> Sqrt(Vec512<T, N> a) noexcept {
   else r.raw = _mm512_sqrt_pd(a.raw);
   return r;
 }
+
+// ---- float rounding to integral value (result stays float) --------------------------
+// Round=nearest-even, Floor=toward -inf, Ceil=toward +inf, Trunc=toward zero. AVX-512
+// _mm512_roundscale_ps/pd with scale M=0: its imm[3:0] (mode + suppress-precision) matches
+// the _MM_FROUND flags, so the same MODE | _MM_FROUND_NO_EXC constant works (like Highway).
+#define HYLE_SIMD_AVX512_ROUND(NAME, MODE)                                   \
+  template <typename T, std::size_t N>                                       \
+  HYLE_FORCE_INLINE Vec512<T, N> NAME(Vec512<T, N> a) noexcept {             \
+    static_assert(std::is_floating_point_v<T>, #NAME " is float/double only"); \
+    Vec512<T, N> r;                                                          \
+    if constexpr (std::is_same_v<T, float>)                                  \
+      r.raw = _mm512_roundscale_ps(a.raw, (MODE) | _MM_FROUND_NO_EXC);       \
+    else r.raw = _mm512_roundscale_pd(a.raw, (MODE) | _MM_FROUND_NO_EXC);    \
+    return r;                                                                \
+  }
+HYLE_SIMD_AVX512_ROUND(Round, _MM_FROUND_TO_NEAREST_INT)
+HYLE_SIMD_AVX512_ROUND(Floor, _MM_FROUND_TO_NEG_INF)
+HYLE_SIMD_AVX512_ROUND(Ceil, _MM_FROUND_TO_POS_INF)
+HYLE_SIMD_AVX512_ROUND(Trunc, _MM_FROUND_TO_ZERO)
+#undef HYLE_SIMD_AVX512_ROUND
+
 // AVX-512 has native FMA (it implies it). Integer falls back to mul+add.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> MulAdd(Vec512<T, N> a, Vec512<T, N> b, Vec512<T, N> c) noexcept {

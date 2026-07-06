@@ -241,6 +241,36 @@ TEST(Vec, ConvertF32I32) {
   for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(of.data[i], static_cast<float>(ii.data[i]));
 }
 
+// Float rounding to an integral value (result stays float): Round(nearest-even), Floor
+// (toward -inf), Ceil (toward +inf), Trunc (toward zero). Feed .5 ties and both signs so
+// nearest-even vs directed rounding actually diverge, vs the libm reference (== scalar).
+template <typename T>
+void CheckRounding() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a, out;
+  // values spanning negatives/positives with .25/.5/.75 fractions incl exact ties
+  const T src[] = {static_cast<T>(-2.5), static_cast<T>(-1.5), static_cast<T>(-0.5),
+                   static_cast<T>(0.5),  static_cast<T>(1.5),  static_cast<T>(2.5),
+                   static_cast<T>(2.25), static_cast<T>(-2.75)};
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = src[i % 8];
+  auto v = hs::Load(d, a.data);
+  hs::Store(hs::Round(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], static_cast<T>(std::nearbyint(a.data[i]))) << "round i=" << i;
+  hs::Store(hs::Floor(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], static_cast<T>(std::floor(a.data[i]))) << "floor i=" << i;
+  hs::Store(hs::Ceil(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], static_cast<T>(std::ceil(a.data[i]))) << "ceil i=" << i;
+  hs::Store(hs::Trunc(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], static_cast<T>(std::trunc(a.data[i]))) << "trunc i=" << i;
+}
+TEST(Vec, RoundingFloat) { CheckRounding<float>(); }
+TEST(Vec, RoundingDouble) { CheckRounding<double>(); }
+
 TEST(Vec, NegAbsInt32) {
   const hs::ScalableTag<std::int32_t> d;
   const std::size_t n = hs::Lanes(d);

@@ -283,6 +283,26 @@ HYLE_FORCE_INLINE Vec256<T, N> Sqrt(Vec256<T, N> a) noexcept {
   return r;
 }
 
+// ---- float rounding to integral value (result stays float) --------------------------
+// Round=nearest-even, Floor=toward -inf, Ceil=toward +inf, Trunc=toward zero. One
+// _mm256_round_ps/pd with the matching _MM_FROUND flag; _MM_FROUND_NO_EXC suppresses the
+// inexact exception (Highway does the same). Float/double only.
+#define HYLE_SIMD_AVX2_ROUND(NAME, MODE)                                     \
+  template <typename T, std::size_t N>                                       \
+  HYLE_FORCE_INLINE Vec256<T, N> NAME(Vec256<T, N> a) noexcept {             \
+    static_assert(std::is_floating_point_v<T>, #NAME " is float/double only"); \
+    Vec256<T, N> r;                                                          \
+    if constexpr (std::is_same_v<T, float>)                                  \
+      r.raw = _mm256_round_ps(a.raw, (MODE) | _MM_FROUND_NO_EXC);            \
+    else r.raw = _mm256_round_pd(a.raw, (MODE) | _MM_FROUND_NO_EXC);         \
+    return r;                                                                \
+  }
+HYLE_SIMD_AVX2_ROUND(Round, _MM_FROUND_TO_NEAREST_INT)
+HYLE_SIMD_AVX2_ROUND(Floor, _MM_FROUND_TO_NEG_INF)
+HYLE_SIMD_AVX2_ROUND(Ceil, _MM_FROUND_TO_POS_INF)
+HYLE_SIMD_AVX2_ROUND(Trunc, _MM_FROUND_TO_ZERO)
+#undef HYLE_SIMD_AVX2_ROUND
+
 // TRUE FMA3 (single rounding) -- the reason an AVX2 backend beats scalar on accuracy
 // as well as speed. Integer falls back to mul+add (no integer FMA on x86).
 template <typename T, std::size_t N>

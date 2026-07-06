@@ -137,6 +137,24 @@ HYLE_FORCE_INLINE Vec<T, N> Sqrt(Vec<T, N> a) noexcept {
   return r;
 }
 
+// Float rounding to an integral value, result stays float: Round=nearest-even,
+// Floor=toward -inf, Ceil=toward +inf, Trunc=toward zero. The scalar floor is the libm
+// call the wide backends' _mm256_round_ps / vrndnq etc. must match lane-for-lane.
+#define HYLE_SIMD_SCALAR_ROUND(NAME, FN)                                  \
+  template <typename T, std::size_t N>                                    \
+  HYLE_FORCE_INLINE Vec<T, N> NAME(Vec<T, N> a) noexcept {                \
+    static_assert(std::is_floating_point_v<T>, #NAME " is float/double only"); \
+    Vec<T, N> r;                                                          \
+    for (std::size_t i = 0; i < N; ++i) r.raw[i] = FN(a.raw[i]);          \
+    return r;                                                             \
+  }
+HYLE_SIMD_SCALAR_ROUND(Round, std::nearbyint)  // round-to-nearest-even (default mode)
+HYLE_SIMD_SCALAR_ROUND(Floor, std::floor)
+HYLE_SIMD_SCALAR_ROUND(Ceil, std::ceil)
+HYLE_SIMD_SCALAR_ROUND(Trunc, std::trunc)
+#undef HYLE_SIMD_SCALAR_ROUND
+
+
 // Fused multiply-add family (a*b (+/-) c). Scalar uses the plain expression; a real
 // backend uses an FMA instruction (single rounding). Tests tolerate the 1-ulp gap for
 // float by comparing with a small epsilon, not bit-equality.
