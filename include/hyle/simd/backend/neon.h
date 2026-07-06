@@ -1182,4 +1182,99 @@ HYLE_FORCE_INLINE VecNeon<T, N> Expand(VecNeon<T, N> v, MaskNeon<T, N> m) noexce
   return LoadU(Simd<T, N, 0>(), dst);
 }
 
+// ---- bit counts / sign helpers / misc -----------------------------------------------
+// PopulationCount/LeadingZeroCount/TrailingZeroCount via store+reload + std:: (NEON has
+// vcntq_u8 + vclzq for some widths, but the uniform store+reload is correct and these aren't
+// a proven hot path). Not/Clamp/Rotate/CopySign/... compose from existing ops. Scalar oracle.
+namespace detail {
+template <typename T, std::size_t N, int kind>
+HYLE_FORCE_INLINE VecNeon<T, N> bitcount_via_mem(VecNeon<T, N> v) noexcept {
+  using U = std::make_unsigned_t<T>;
+  alignas(16) T s[N], d[N];
+  StoreU(v, Simd<T, N, 0>(), s);
+  for (std::size_t i = 0; i < N; ++i) {
+    const U u = static_cast<U>(s[i]);
+    if constexpr (kind == 0) d[i] = static_cast<T>(std::popcount(u));
+    else if constexpr (kind == 1) d[i] = static_cast<T>(std::countl_zero(u));
+    else d[i] = static_cast<T>(std::countr_zero(u));
+  }
+  return LoadU(Simd<T, N, 0>(), d);
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> PopulationCount(VecNeon<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "PopulationCount is integer-lane only");
+  return detail::bitcount_via_mem<T, N, 0>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> LeadingZeroCount(VecNeon<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "LeadingZeroCount is integer-lane only");
+  return detail::bitcount_via_mem<T, N, 1>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> TrailingZeroCount(VecNeon<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "TrailingZeroCount is integer-lane only");
+  return detail::bitcount_via_mem<T, N, 2>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Not(VecNeon<T, N> v) noexcept {
+  VecNeon<T, N> ones;  // all-ones bit pattern via a 16-byte 0xFF dup reinterpreted to T's raw
+  const uint8x16_t all = vdupq_n_u8(0xFF);
+  if constexpr (std::is_same_v<T, float>) ones.raw = vreinterpretq_f32_u8(all);
+  else if constexpr (std::is_same_v<T, double>) ones.raw = vreinterpretq_f64_u8(all);
+  else if constexpr (std::is_same_v<T, std::int8_t>) ones.raw = vreinterpretq_s8_u8(all);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) ones.raw = all;
+  else if constexpr (std::is_same_v<T, std::int16_t>) ones.raw = vreinterpretq_s16_u8(all);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) ones.raw = vreinterpretq_u16_u8(all);
+  else if constexpr (std::is_same_v<T, std::int32_t>) ones.raw = vreinterpretq_s32_u8(all);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) ones.raw = vreinterpretq_u32_u8(all);
+  else if constexpr (std::is_same_v<T, std::int64_t>) ones.raw = vreinterpretq_s64_u8(all);
+  else ones.raw = vreinterpretq_u64_u8(all);  // u64
+  return Xor(v, ones);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Clamp(VecNeon<T, N> v, VecNeon<T, N> lo, VecNeon<T, N> hi) noexcept {
+  return Min(Max(v, lo), hi);
+}
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> RotateRight(VecNeon<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "RotateRight is integer-lane only");
+  constexpr int kSizeBits = static_cast<int>(sizeof(T) * 8);
+  static_assert(kBits >= 0 && kBits < kSizeBits, "rotate count in [0,bits)");
+  if constexpr (kBits == 0) return v;
+  else if constexpr (std::is_unsigned_v<T>)
+    return Or(ShiftRight<kBits>(v), ShiftLeft<kSizeBits - kBits>(v));
+  else {  // signed ShiftRight is arithmetic -> rotate on the unsigned pattern (store+reload)
+    using U = std::make_unsigned_t<T>;
+    alignas(16) T s[N], d[N];
+    StoreU(v, Simd<T, N, 0>(), s);
+    for (std::size_t i = 0; i < N; ++i) { const U u = static_cast<U>(s[i]); d[i] = static_cast<T>((u >> kBits) | (u << (kSizeBits - kBits))); }
+    return LoadU(Simd<T, N, 0>(), d);
+  }
+}
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> RotateLeft(VecNeon<T, N> v) noexcept {
+  constexpr int kSizeBits = static_cast<int>(sizeof(T) * 8);
+  return RotateRight<(kSizeBits - kBits) % kSizeBits>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> CopySign(VecNeon<T, N> mag, VecNeon<T, N> sign) noexcept {
+  static_assert(std::is_floating_point_v<T>, "CopySign is float-lane only");
+  const auto sign_bit = Set(Simd<T, N, 0>(), static_cast<T>(-0.0));
+  return Or(AndNot(sign_bit, mag), And(sign_bit, sign));  // AndNot(a,b)=~a&b
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> BroadcastSignBit(VecNeon<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "BroadcastSignBit is signed-int only");
+  return ShiftRight<static_cast<int>(sizeof(T) * 8) - 1>(v);  // arithmetic shift replicates sign
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> IfNegativeThenElse(VecNeon<T, N> v, VecNeon<T, N> yes, VecNeon<T, N> no) noexcept {
+  return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), yes, no);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ZeroIfNegative(VecNeon<T, N> v) noexcept {
+  return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), Zero(Simd<T, N, 0>()), v);
+}
+
 }  // namespace hyle::simd

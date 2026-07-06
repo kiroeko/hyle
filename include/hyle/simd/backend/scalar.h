@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <bit>
 #include <cmath>
 #include <limits>
 #include <type_traits>
@@ -727,6 +728,101 @@ HYLE_FORCE_INLINE Vec<T, N> Expand(Vec<T, N> v, Mask<T, N> m) noexcept {
   Vec<T, N> r;
   std::size_t k = 0;
   for (std::size_t i = 0; i < N; ++i) r.raw[i] = m.raw[i] ? v.raw[k++] : T{0};
+  return r;
+}
+
+// ---- bit counts / sign helpers / misc (mostly built on primitives) ------------------
+// PopulationCount / LeadingZeroCount / TrailingZeroCount: per-lane bit counts on integer
+// lanes (std::popcount / countl_zero / countr_zero on the unsigned lane). Native vpopcnt/
+// vplzcnt on AVX-512, PSHUFB nibble-LUT / float-exponent tricks on the others; scalar is std.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> PopulationCount(Vec<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "PopulationCount is integer-lane only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<T>(std::popcount(static_cast<std::make_unsigned_t<T>>(v.raw[i])));
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> LeadingZeroCount(Vec<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "LeadingZeroCount is integer-lane only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<T>(std::countl_zero(static_cast<std::make_unsigned_t<T>>(v.raw[i])));
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> TrailingZeroCount(Vec<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "TrailingZeroCount is integer-lane only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<T>(std::countr_zero(static_cast<std::make_unsigned_t<T>>(v.raw[i])));
+  return r;
+}
+
+// Not: bitwise complement. Clamp(v,lo,hi) = Min(Max(v,lo),hi). RotateLeft/Right<k>: bit
+// rotate within each integer lane. These compose from existing ops on every backend, so the
+// definitions are identical -- the scalar floor is the reference.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Not(Vec<T, N> v) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    using U = std::make_unsigned_t<std::conditional_t<std::is_integral_v<T>, T, std::uint64_t>>;
+    if constexpr (std::is_integral_v<T>) r.raw[i] = static_cast<T>(~static_cast<U>(v.raw[i]));
+    else { U u; std::memcpy(&u, &v.raw[i], sizeof(T)); u = ~u; std::memcpy(&r.raw[i], &u, sizeof(T)); }
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Clamp(Vec<T, N> v, Vec<T, N> lo, Vec<T, N> hi) noexcept {
+  return Min(Max(v, lo), hi);
+}
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> RotateRight(Vec<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "RotateRight is integer-lane only");
+  constexpr int kSizeBits = static_cast<int>(sizeof(T) * 8);
+  static_assert(kBits >= 0 && kBits < kSizeBits, "rotate count in [0,bits)");
+  Vec<T, N> r;
+  using U = std::make_unsigned_t<T>;
+  for (std::size_t i = 0; i < N; ++i) {
+    const U u = static_cast<U>(v.raw[i]);
+    r.raw[i] = static_cast<T>(kBits == 0 ? u : ((u >> kBits) | (u << (kSizeBits - kBits))));
+  }
+  return r;
+}
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> RotateLeft(Vec<T, N> v) noexcept {
+  constexpr int kSizeBits = static_cast<int>(sizeof(T) * 8);
+  return RotateRight<(kSizeBits - kBits) % kSizeBits>(v);
+}
+
+// Sign helpers (float lanes). CopySign(mag,sign): magnitude of mag, sign of sign. Broadcast
+// SignBit: each lane -> all-ones if negative else 0 (as the same lane type's bit pattern).
+// IfNegativeThenElse(v,yes,no): per lane, v<0 ? yes : no. ZeroIfNegative(v): v<0 ? 0 : v.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> CopySign(Vec<T, N> mag, Vec<T, N> sign) noexcept {
+  static_assert(std::is_floating_point_v<T>, "CopySign is float-lane only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = std::copysign(mag.raw[i], sign.raw[i]);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> BroadcastSignBit(Vec<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "BroadcastSignBit is signed-int only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = static_cast<T>(v.raw[i] < 0 ? ~T{0} : T{0});
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> IfNegativeThenElse(Vec<T, N> v, Vec<T, N> yes, Vec<T, N> no) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = (v.raw[i] < T{0}) ? yes.raw[i] : no.raw[i];
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ZeroIfNegative(Vec<T, N> v) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = (v.raw[i] < T{0}) ? T{0} : v.raw[i];
   return r;
 }
 

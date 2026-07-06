@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cmath>
+#include <bit>
 #include <limits>
 #include <type_traits>
 
@@ -809,6 +810,86 @@ TEST(Vec, CompressFloat) { CheckCompress<float>(); }
 TEST(Vec, CompressI64) { CheckCompress<std::int64_t>(); }
 TEST(Vec, CompressI16) { CheckCompress<std::int16_t>(); }
 TEST(Vec, CompressI8) { CheckCompress<std::int8_t>(); }
+
+// Bit counts (popcount/lzcnt/tzcnt), Not, Clamp, Rotate, and sign helpers.
+template <typename T>
+void CheckBitCount() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  using U = std::make_unsigned_t<T>;
+  Buf<T> a, out;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = static_cast<T>(i * 0x9E37 + 1);
+  auto v = hs::Load(d, a.data);
+  hs::Store(hs::PopulationCount(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<T>(std::popcount(static_cast<U>(a.data[i])))) << "popcnt " << i;
+  hs::Store(hs::LeadingZeroCount(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<T>(std::countl_zero(static_cast<U>(a.data[i])))) << "lzcnt " << i;
+  hs::Store(hs::TrailingZeroCount(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<T>(std::countr_zero(static_cast<U>(a.data[i])))) << "tzcnt " << i;
+}
+TEST(Vec, BitCountUint32) { CheckBitCount<std::uint32_t>(); }
+TEST(Vec, BitCountInt32) { CheckBitCount<std::int32_t>(); }
+TEST(Vec, BitCountUint64) { CheckBitCount<std::uint64_t>(); }
+TEST(Vec, BitCountUint16) { CheckBitCount<std::uint16_t>(); }
+TEST(Vec, BitCountUint8) { CheckBitCount<std::uint8_t>(); }
+
+// Not / Clamp / RotateLeft / RotateRight over integer lanes.
+template <typename T>
+void CheckIntMisc() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  using U = std::make_unsigned_t<T>;
+  const int kb = sizeof(T) * 8;
+  Buf<T> a, out;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = static_cast<T>((i % 2 ? -1 : 1) * static_cast<long long>(i * 13 + 1));
+  auto v = hs::Load(d, a.data);
+  hs::Store(hs::Not(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<T>(~static_cast<U>(a.data[i]))) << "Not " << i;
+  const T clo = std::is_signed_v<T> ? static_cast<T>(-5) : static_cast<T>(3), chi = static_cast<T>(20);
+  hs::Store(hs::Clamp(v, hs::Set(d, clo), hs::Set(d, chi)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i] < clo ? clo : (a.data[i] > chi ? chi : a.data[i])) << "Clamp " << i;
+  hs::Store(hs::template RotateRight<3>(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) { U u = static_cast<U>(a.data[i]); EXPECT_EQ(out.data[i], static_cast<T>((u >> 3) | (u << (kb - 3)))) << "RotR " << i; }
+  hs::Store(hs::template RotateLeft<3>(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) { U u = static_cast<U>(a.data[i]); EXPECT_EQ(out.data[i], static_cast<T>((u << 3) | (u >> (kb - 3)))) << "RotL " << i; }
+}
+TEST(Vec, IntMiscInt32) { CheckIntMisc<std::int32_t>(); }
+TEST(Vec, IntMiscUint32) { CheckIntMisc<std::uint32_t>(); }
+TEST(Vec, IntMiscInt64) { CheckIntMisc<std::int64_t>(); }
+TEST(Vec, IntMiscInt16) { CheckIntMisc<std::int16_t>(); }
+TEST(Vec, IntMiscInt8) { CheckIntMisc<std::int8_t>(); }
+
+// Sign helpers over signed integer lanes: BroadcastSignBit / IfNegativeThenElse / ZeroIfNegative.
+template <typename T>
+void CheckSignHelpers() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a, out;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = static_cast<T>((i % 2 ? -1 : 1) * static_cast<long long>(i + 1));
+  auto v = hs::Load(d, a.data);
+  hs::Store(hs::BroadcastSignBit(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i] < 0 ? static_cast<T>(~T{0}) : T{0}) << "BSB " << i;
+  hs::Store(hs::IfNegativeThenElse(v, hs::Set(d, static_cast<T>(77)), hs::Set(d, static_cast<T>(9))), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i] < 0 ? static_cast<T>(77) : static_cast<T>(9)) << "INTE " << i;
+  hs::Store(hs::ZeroIfNegative(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i] < 0 ? T{0} : a.data[i]) << "ZIN " << i;
+}
+TEST(Vec, SignHelpersInt32) { CheckSignHelpers<std::int32_t>(); }
+TEST(Vec, SignHelpersInt16) { CheckSignHelpers<std::int16_t>(); }
+TEST(Vec, SignHelpersInt8) { CheckSignHelpers<std::int8_t>(); }
+
+// CopySign over float lanes.
+template <typename T>
+void CheckCopySign() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> m, s, out;
+  for (std::size_t i = 0; i < n; ++i) { m.data[i] = static_cast<T>(i + 1); s.data[i] = (i % 2 ? -1 : 1) * static_cast<T>(i); }
+  hs::Store(hs::CopySign(hs::Load(d, m.data), hs::Load(d, s.data)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], std::copysign(m.data[i], s.data[i])) << "CopySign " << i;
+}
+TEST(Vec, CopySignFloat) { CheckCopySign<float>(); }
+TEST(Vec, CopySignDouble) { CheckCopySign<double>(); }
 
 
 TEST(Vec, ScalableDotProduct) {

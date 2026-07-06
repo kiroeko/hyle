@@ -1081,4 +1081,91 @@ HYLE_FORCE_INLINE Vec128<T, N> Expand(Vec128<T, N> v, Mask128<T, N> m) noexcept 
   return Load(Simd<T, N, 0>(), dst);
 }
 
+// ---- bit counts / sign helpers / misc -----------------------------------------------
+// PopulationCount/LeadingZeroCount/TrailingZeroCount via store+reload + std:: (native
+// vpopcnt is AVX-512; PSHUFB nibble-LUT is a profiling-gated perf opt). Not/Clamp/Rotate/
+// CopySign/... compose from existing ops -- same on every backend. Scalar is the reference.
+namespace detail {
+template <typename T, std::size_t N, int kind>
+HYLE_FORCE_INLINE Vec128<T, N> bitcount_via_mem(Vec128<T, N> v) noexcept {
+  using U = std::make_unsigned_t<T>;
+  alignas(16) T s[N], d[N];
+  Store(v, Simd<T, N, 0>(), s);
+  for (std::size_t i = 0; i < N; ++i) {
+    const U u = static_cast<U>(s[i]);
+    if constexpr (kind == 0) d[i] = static_cast<T>(std::popcount(u));
+    else if constexpr (kind == 1) d[i] = static_cast<T>(std::countl_zero(u));
+    else d[i] = static_cast<T>(std::countr_zero(u));
+  }
+  return Load(Simd<T, N, 0>(), d);
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> PopulationCount(Vec128<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "PopulationCount is integer-lane only");
+  return detail::bitcount_via_mem<T, N, 0>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> LeadingZeroCount(Vec128<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "LeadingZeroCount is integer-lane only");
+  return detail::bitcount_via_mem<T, N, 1>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> TrailingZeroCount(Vec128<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "TrailingZeroCount is integer-lane only");
+  return detail::bitcount_via_mem<T, N, 2>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Not(Vec128<T, N> v) noexcept {
+  Vec128<T, N> ones;
+  if constexpr (std::is_same_v<T, float>) ones.raw = _mm_castsi128_ps(_mm_set1_epi32(-1));
+  else if constexpr (std::is_same_v<T, double>) ones.raw = _mm_castsi128_pd(_mm_set1_epi32(-1));
+  else ones.raw = _mm_set1_epi32(-1);
+  return Xor(v, ones);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Clamp(Vec128<T, N> v, Vec128<T, N> lo, Vec128<T, N> hi) noexcept {
+  return Min(Max(v, lo), hi);
+}
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> RotateRight(Vec128<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "RotateRight is integer-lane only");
+  constexpr int kSizeBits = static_cast<int>(sizeof(T) * 8);
+  static_assert(kBits >= 0 && kBits < kSizeBits, "rotate count in [0,bits)");
+  if constexpr (kBits == 0) return v;
+  else if constexpr (std::is_unsigned_v<T>)
+    return Or(ShiftRight<kBits>(v), ShiftLeft<kSizeBits - kBits>(v));
+  else {  // signed ShiftRight is arithmetic -> rotate on the unsigned pattern (store+reload)
+    using U = std::make_unsigned_t<T>;
+    alignas(16) T s[N], d[N];
+    Store(v, Simd<T, N, 0>(), s);
+    for (std::size_t i = 0; i < N; ++i) { const U u = static_cast<U>(s[i]); d[i] = static_cast<T>((u >> kBits) | (u << (kSizeBits - kBits))); }
+    return Load(Simd<T, N, 0>(), d);
+  }
+}
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> RotateLeft(Vec128<T, N> v) noexcept {
+  constexpr int kSizeBits = static_cast<int>(sizeof(T) * 8);
+  return RotateRight<(kSizeBits - kBits) % kSizeBits>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> CopySign(Vec128<T, N> mag, Vec128<T, N> sign) noexcept {
+  static_assert(std::is_floating_point_v<T>, "CopySign is float-lane only");
+  const auto sign_bit = Set(Simd<T, N, 0>(), static_cast<T>(-0.0));
+  return Or(AndNot(sign_bit, mag), And(sign_bit, sign));  // AndNot(a,b)=~a&b
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> BroadcastSignBit(Vec128<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "BroadcastSignBit is signed-int only");
+  return ShiftRight<static_cast<int>(sizeof(T) * 8) - 1>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> IfNegativeThenElse(Vec128<T, N> v, Vec128<T, N> yes, Vec128<T, N> no) noexcept {
+  return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), yes, no);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ZeroIfNegative(Vec128<T, N> v) noexcept {
+  return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), Zero(Simd<T, N, 0>()), v);
+}
+
 }  // namespace hyle::simd
