@@ -4,13 +4,11 @@
 # the CUDAToolkit was found (HYLE_COMPUTE_CUDA set by the root CMakeLists) -- then
 # cuda_backend.cu is compiled by nvcc as a CUDA-language TU and CUDA::cudart is linked.
 #
-# compute depends on error (Status/Result) only, and PUBLICLY: Stream::create /
-# Event::create / device_alloc return Result<T> in the PUBLIC headers, so a consumer
-# (and our own test) linking hyle_compute needs the error DSO's Status symbols. Same
-# pattern as platform's PUBLIC_DEPS hyle_error. It does NOT depend on sched yet:
-# compute-01 builds the device/stream/event spine + the event-poll primitive but
-# does NOT wire GPU completion into the sched worker loop (that is compute-03, which
-# will add the sched dependency, exactly as io-01 preceded io-04's sched wiring).
+# compute depends on error (Status/Result) + mem (pinned Allocator) PUBLICLY. As of
+# compute-03 it also depends on sched (gpu_await.h's co_await uses sched Waker/suspend)
+# -- but ONLY where fcontext (hence sched) exists, exactly as io_context.cc did. The
+# host/device/buffer/pool layer (compute-01/02/02b/02c) needs no sched and builds
+# anywhere; gpu_poller.cc (compute-03) is added only under HYLE_HAS_FCONTEXT.
 set(_compute_sources compute.cc host_backend.cc)
 set(_compute_public_deps hyle_error hyle_mem)
 
@@ -19,6 +17,15 @@ if(HYLE_COMPUTE_CUDA)
   # MSVC/GCC as everything else via -ccbin). CMake's first-class CUDA support
   # (enable_language(CUDA) in the root) drives this from the .cu extension.
   list(APPEND _compute_sources cuda_backend.cu)
+endif()
+
+if(HYLE_HAS_FCONTEXT)
+  # compute-03 GPU completion -> fiber: gpu_poller.cc uses sched Waker/suspend to wake
+  # a fiber awaiting a GPU event. Only buildable where sched exists (same gate as io's
+  # io_context.cc). Adds sched to compute's PUBLIC deps (gpu_await.h includes
+  # sched/waker.h, so a consumer of that header needs sched).
+  list(APPEND _compute_sources gpu_poller.cc)
+  list(APPEND _compute_public_deps hyle_sched)
 endif()
 
 hyle_add_module(compute SOURCES ${_compute_sources} PUBLIC_DEPS ${_compute_public_deps})
