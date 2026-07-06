@@ -168,6 +168,52 @@ TEST(Vec, ShiftUint32) { CheckShift<std::uint32_t, 10>(); }
 TEST(Vec, ShiftInt64) { CheckShift<std::int64_t, 20>(); }
 TEST(Vec, ShiftUint64) { CheckShift<std::uint64_t, 20>(); }
 
+// Saturated add/sub (8/16-bit): clamp to [min,max] instead of wrapping. Feed values near
+// the type limits so saturation actually triggers, vs a wide-int clamped reference.
+template <typename T>
+void CheckSaturated() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  constexpr long long lo = static_cast<long long>(std::numeric_limits<T>::min());
+  constexpr long long hi = static_cast<long long>(std::numeric_limits<T>::max());
+  Buf<T> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<T>(hi - static_cast<long long>(i % 5));       // near max
+    b.data[i] = static_cast<T>((i % 3) + 2);                             // small positive
+  }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+  auto clamp = [](long long x) { return static_cast<T>(x < lo ? lo : (x > hi ? hi : x)); };
+  hs::Store(hs::SaturatedAdd(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], clamp(static_cast<long long>(a.data[i]) + b.data[i])) << "satadd i=" << i;
+  hs::Store(hs::SaturatedSub(vb, va), d, out.data);  // small - big -> saturates low
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], clamp(static_cast<long long>(b.data[i]) - a.data[i])) << "satsub i=" << i;
+}
+TEST(Vec, SaturatedInt8) { CheckSaturated<std::int8_t>(); }
+TEST(Vec, SaturatedUint8) { CheckSaturated<std::uint8_t>(); }
+TEST(Vec, SaturatedInt16) { CheckSaturated<std::int16_t>(); }
+TEST(Vec, SaturatedUint16) { CheckSaturated<std::uint16_t>(); }
+
+// Rounding average (u8/u16): (a+b+1)>>1.
+template <typename T>
+void CheckAverage() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<T>(i * 3 + 1);
+    b.data[i] = static_cast<T>(i * 2 + 4);
+  }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+  hs::Store(hs::AverageRound(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], static_cast<T>((static_cast<unsigned>(a.data[i]) + b.data[i] + 1u) >> 1))
+        << "avg i=" << i;
+}
+TEST(Vec, AverageUint8) { CheckAverage<std::uint8_t>(); }
+TEST(Vec, AverageUint16) { CheckAverage<std::uint16_t>(); }
+
 TEST(Vec, NegAbsInt32) {
   const hs::ScalableTag<std::int32_t> d;
   const std::size_t n = hs::Lanes(d);

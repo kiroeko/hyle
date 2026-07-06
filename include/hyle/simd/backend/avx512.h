@@ -365,6 +365,37 @@ HYLE_FORCE_INLINE Vec512<T, N> ShiftRight(Vec512<T, N> a) noexcept {
   return r;
 }
 
+// ---- saturated arithmetic + rounding average (8/16-bit integer lanes) ---------------
+// Native AVX-512-BW: adds/subs_epi8/epu8/epi16/epu16 (saturating), avg_epu8/epu16 (rounded).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> SaturatedAdd(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) <= 2, "SaturatedAdd is 8/16-bit int only");
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = _mm512_adds_epi8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = _mm512_adds_epu8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = _mm512_adds_epi16(a.raw, b.raw);
+  else r.raw = _mm512_adds_epu16(a.raw, b.raw);  // u16
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> SaturatedSub(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) <= 2, "SaturatedSub is 8/16-bit int only");
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = _mm512_subs_epi8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = _mm512_subs_epu8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = _mm512_subs_epi16(a.raw, b.raw);
+  else r.raw = _mm512_subs_epu16(a.raw, b.raw);  // u16
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> AverageRound(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(std::is_unsigned_v<T> && sizeof(T) <= 2, "AverageRound is u8/u16 only");
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = _mm512_avg_epu8(a.raw, b.raw);
+  else r.raw = _mm512_avg_epu16(a.raw, b.raw);  // u16
+  return r;
+}
+
 // ---- comparison -> k-register mask --------------------------------------------------
 // AVX-512 compares WRITE A K REGISTER directly (vcmpps/vpcmpd ... -> __mmask). No xor-MSB
 // for unsigned: there are native epu8/16/32/64 mask compares. Per-width detail helpers pick

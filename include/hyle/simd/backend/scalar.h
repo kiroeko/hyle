@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 #include <cmath>
+#include <limits>
 #include <type_traits>
 
 #include "hyle/macros.h"
@@ -205,6 +206,44 @@ HYLE_FORCE_INLINE Vec<T, N> ShiftRight(Vec<T, N> a) noexcept {
   static_assert(std::is_integral_v<T>, "shifts are integer-lane only");
   Vec<T, N> r;
   for (std::size_t i = 0; i < N; ++i) r.raw[i] = static_cast<T>(a.raw[i] >> kBits);  // arith if signed
+  return r;
+}
+
+// ---- saturated arithmetic + rounding average (8/16-bit integer lanes) ---------------
+// SaturatedAdd/Sub clamp to [min,max] of T instead of wrapping -- the quantization
+// primitive (add i8 activations without overflow). AverageRound = (a+b+1)>>1 unsigned
+// rounded average (pooling / blend). Native on x86 (adds/subs/avg_epu*) and NEON
+// (vqadd/vqsub/vrhadd); the scalar floor computes in a wider type then clamps/rounds.
+namespace detail {
+template <typename T>
+HYLE_FORCE_INLINE T sat_clamp(long long x) noexcept {
+  constexpr long long lo = static_cast<long long>(std::numeric_limits<T>::min());
+  constexpr long long hi = static_cast<long long>(std::numeric_limits<T>::max());
+  return static_cast<T>(x < lo ? lo : (x > hi ? hi : x));
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> SaturatedAdd(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) <= 2, "SaturatedAdd is 8/16-bit int only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = detail::sat_clamp<T>(static_cast<long long>(a.raw[i]) + b.raw[i]);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> SaturatedSub(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) <= 2, "SaturatedSub is 8/16-bit int only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = detail::sat_clamp<T>(static_cast<long long>(a.raw[i]) - b.raw[i]);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> AverageRound(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_unsigned_v<T> && sizeof(T) <= 2, "AverageRound is u8/u16 only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<T>((static_cast<unsigned>(a.raw[i]) + b.raw[i] + 1u) >> 1);
   return r;
 }
 

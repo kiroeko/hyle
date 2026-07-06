@@ -425,6 +425,37 @@ HYLE_FORCE_INLINE VecNeon<T, N> ShiftRight(VecNeon<T, N> a) noexcept {
   return r;
 }
 
+// ---- saturated arithmetic + rounding average (8/16-bit integer lanes) ---------------
+// Native NEON: vqaddq/vqsubq (saturating), vrhaddq (rounding halving add = (a+b+1)>>1).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> SaturatedAdd(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) <= 2, "SaturatedAdd is 8/16-bit int only");
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vqaddq_s8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vqaddq_u8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vqaddq_s16(a.raw, b.raw);
+  else r.raw = vqaddq_u16(a.raw, b.raw);  // u16
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> SaturatedSub(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) <= 2, "SaturatedSub is 8/16-bit int only");
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vqsubq_s8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vqsubq_u8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vqsubq_s16(a.raw, b.raw);
+  else r.raw = vqsubq_u16(a.raw, b.raw);  // u16
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> AverageRound(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(std::is_unsigned_v<T> && sizeof(T) <= 2, "AverageRound is u8/u16 only");
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vrhaddq_u8(a.raw, b.raw);
+  else r.raw = vrhaddq_u16(a.raw, b.raw);  // u16
+  return r;
+}
+
 // ---- comparison -> mask (vceqq/vcgtq/... return all-1s/all-0s unsigned lanes) --------
 // NEON has NATIVE per-width compares for every lane type, signed AND unsigned AND 64-bit
 // (aarch64) -- no x86-style sign-flip trick needed. Each intrinsic already returns the

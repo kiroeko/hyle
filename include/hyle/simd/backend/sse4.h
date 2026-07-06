@@ -407,6 +407,37 @@ HYLE_FORCE_INLINE Vec128<T, N> ShiftRight(Vec128<T, N> a) noexcept {
   return r;
 }
 
+// ---- saturated arithmetic + rounding average (8/16-bit integer lanes) ---------------
+// Native SSE2: adds/subs_epi8/epu8/epi16/epu16 (saturating), avg_epu8/epu16 (rounded).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> SaturatedAdd(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) <= 2, "SaturatedAdd is 8/16-bit int only");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = _mm_adds_epi8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = _mm_adds_epu8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = _mm_adds_epi16(a.raw, b.raw);
+  else r.raw = _mm_adds_epu16(a.raw, b.raw);  // u16
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> SaturatedSub(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) <= 2, "SaturatedSub is 8/16-bit int only");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = _mm_subs_epi8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = _mm_subs_epu8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = _mm_subs_epi16(a.raw, b.raw);
+  else r.raw = _mm_subs_epu16(a.raw, b.raw);  // u16
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> AverageRound(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(std::is_unsigned_v<T> && sizeof(T) <= 2, "AverageRound is u8/u16 only");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = _mm_avg_epu8(a.raw, b.raw);
+  else r.raw = _mm_avg_epu16(a.raw, b.raw);  // u16
+  return r;
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 namespace detail {
 // Signed cmpgt per width (SSE4.2 has epi8/16/32/64 native; epi64 is the SSE4.2 add).
