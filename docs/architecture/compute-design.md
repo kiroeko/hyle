@@ -170,6 +170,125 @@ compute/
 3. **buffer 与 mem/ 的边界**——host/device 传输、pinned、unified memory;§2 已定"device 内存归 compute/ 走显式 copy、不进 mem/ allocator",compute-02 落具体 buffer_type 实例形状。**注**：compute-01 的 `Stream::device_alloc`/`memcpy_async` 是脊验证的**最小**辅助（host 用 `std::malloc`、CUDA 用 `cudaMalloc`），compute-02 的 buffer 抽象取代它——届时 pinned **host staging**（`cudaMallocHost` 分配的是 host RAM）可包成 `mem::Allocator` 复用（`mem::MemoryArena` over `cudaMallocHost` 的 slab = pinned 块池，agent 调研已确认机制就位）；显存 `cudaMalloc` 仍 compute 自有、**不**走 mem。
 4. **Vulkan compute 自定义 kernel 的工程链**——GLSL/`.comp` → SPIR-V 编译、运行时加载、与 CUDA kernel 的统一启动 API(compute-06)。**参考库 = kompute**(`C:\public\project-hyle\kompute`,见下"compute-06 kompute 映射"节已定该抄什么)。
 
+## compute-05 借 ggml 算力：调研发现汇总（2026-07-06 深调研 ggml/llama.cpp/iron/CCCL 定案）
+
+> compute-05 = 借 ggml 算子。动手前把所有关键发现集中在此（文档线性，不散）。分两块：**内存零拷贝（好消息，能拿最高性能）** + **completion 阻塞（ggml 结构性限制，接受它，非缺陷）**。
+
+### 发现 1：iron 是"整库拼装"的反面教材，不是"借算子"的范本
+iron（clay 宿主）**不直接用 ggml**，而是 `add_subdirectory(stable-diffusion.cpp)` 把整个 sd.cpp 应用 + 它冻结的 ggml 快照吞进来（`iron/thirdparty/CMakeLists.txt:1`），业务层 `flux_api.cc` 调 sd.cpp 高层门面 `new_sd_ctx`/`txt2img`（20 参数），几乎不碰 ggml。这是 **L2 层"借整个推理应用" + clay/oatpp/sd.cpp 三套 runtime 各自为政**——正是 HYLE 动机（motivation §24）要消除的"东拼西凑"。**HYLE compute-05 要借的是"算子 kernel"粒度（借 ggml 不借 sd.cpp）、pin 上游版（不绑应用冻结快照）、接进统一 completion 脊（iron 里 clay 和 ggml 完全不通）。** iron 反证：不 fork、不借整库、不绑冻结快照。
+
+### 发现 2：内存零拷贝可行（no_alloc + tensor->data 注入），不 fork
+**HYLE 自己 cudaMalloc 的 device_ptr，能让 ggml 算子零拷贝地在上面算，ggml 不拒绝**（铁证）：
+- ggml CUDA kernel 直接强转 `(char*)src0->data` 当 device 指针（`ggml-cuda.cu:1931/1951/1973`），**普通 mul_mat 路径从不经 `->buffer` 取基址、不校验 buffer 归属**（buffer 只在 split-buffer/mul_mat_id assert，普通算子不查）。
+- 做法：`ggml_init({.no_alloc=true})` 建 tensor（`ggml.c:1780` data=nullptr、nb[] 自动填 contiguous）→ 手动 `tensor->data = hyle_device_ptr` → `ggml_mul_mat` → compute。**tensor->buffer 留 NULL 即可**（普通 CUDA 算子不读它；但 tensor_get/set、sched 调度、split-buffer、部分 padding 检查会读 buffer，走那些路径才需设）。
+- 官方更"正式"的 API 是 `ggml_backend_tensor_alloc(buffer,tensor,addr)`（`ggml-backend.cpp:1992`）——但它要求 addr 落在 ggml buffer 内，且 **ggml CUDA buffer 析构会 `cudaFree(dev_ptr)`（`ggml-cuda.cu:636-638`）**，让 ggml 持有 HYLE 指针=所有权冲突。故 **HYLE 用 no_alloc + 裸设 data 更干净**（ggml 不 free 你的内存）。
+- 约束：F32 最省心；**quantized 类型 `get_alloc_size` 加 padding（`:666`），真实分配须比 `ggml_nbytes` 多留 padding 否则 quant kernel 越界**；指针须在正确 device。
+- 风险：依赖"kernel 只读 data、不反查 buffer"这个**当前为真但非 ggml 公开承诺**的行为 → **pin ggml 版本 + adapter 单点封装 + 对拍测试兜底**（ggml 升级跑测试即知是否破）。拷贝版（`ggml_backend_tensor_set`）作 fallback。
+
+### 发现 3：ggml stream 私有，completion 只能阻塞 synchronize（接受它）
+- **ggml CUDA stream 是 backend 私有的**（`common.cuh:1391` `streams[][]`，`stream()` 懒创建），**没有任何公开 API 让外部注入 HYLE 的 stream**。想让 ggml 跑在 HYLE stream 上不可行（除非改 ggml 源码）。
+- ggml 提交异步（`graph_compute` 只 launch 不同步，`ggml-cuda.cu:4581`），但**对外完成语义只有阻塞 `cudaStreamSynchronize`**（`ggml_backend_cuda_synchronize`，`:3276`）。ggml 的 `event_record`/`event_wait` **仅用于多 backend/多 stream 内部依赖排序，不用于唤醒 host 异步循环**（`:4640`）。
+- 结论：**HYLE 的 GpuPoller（compute-03，cudaEventQuery 轮询）poll 不到 ggml 私有 stream 上的活**——借 ggml 算子这条路，completion **接不进 GpuPoller**。
+
+### 发现 4：llama.cpp 实证的"一般做法"= 单线程阻塞 synchronize + 连续批处理（合批）
+- llama.cpp server 是**单线程主循环**（`server-queue.cpp:125` while(true) update_slots），并发靠**连续批处理**：把所有活跃 slot 的 token 合并进一个 `llama_batch` 一次 decode（`server-context.cpp:2816`）。
+- decode 内最终 `synchronize()` **阻塞等这一个 batch 算完**（`llama-context.cpp:684`）。**GPU 一次只算一个 batch，host 主线程就阻塞在 cudaStreamSynchronize**——不是"去处理别的请求"，请求早已合批进当前 decode。**真并发 = 合批，不是多 stream。**
+- ggml 官方 examples 无一例外用阻塞 `ggml_backend_graph_compute`。业界"自管调度接 CUDA 异步"（CCCL STF 的 `cudaLaunchHostFunc` 回调，`host_launch_scope.cuh:339`）**需要控制 stream，ggml 不给，故对 ggml 只剩阻塞一条路**。
+
+### 发现 5：三层 × 两条 kernel 来路矩阵（澄清"ggml 也有 vulkan 岂不重复"）
+```
+                AI 算子(matmul/attn)        任意自定义 kernel(几何核/网格 stencil/BVH/SpMV)
+                ── 借 ggml ──                ── HYLE 自造 ──
+CUDA(N卡)    ggml-cuda (compute-05 桥)     compute-04 NVRTC ✅
+Vulkan(全厂商) ggml-vulkan (compute-05 桥)   compute-06 SPIR-V (待,消费者=CAD/CAE)
+```
+HYLE device/stream/event/buffer/kernel 抽象在最上层，下挂两类后端：**借 ggml 的（AI 算子，全平台，含 ggml-vulkan）** + **HYLE 自造的（任意 kernel：CUDA=04 NVRTC / Vulkan=06 SPIR-V）**。**不重复**：ggml-vulkan 给"AI 算子的跨厂商实现"（借），compute-06 给"HYLE 自定义 SPIR-V kernel 的跨厂商实现"（造，ggml 没有的几何/网格/求解 kernel）。同 CUDA 侧 05 借 ggml-cuda、04 自造 NVRTC。
+
+### 发现 6：三个"graph"同名不同物（澄清"graph 消费者是 vulkan 吗"）
+- **HYLE graph-01** = 任务依赖 DAG 增量重算（clay taskgraph；改参数→重算下游节点，节点=任务、边=依赖）。消费者 = **北极星② CAD/CAE 参数化建模**，跑 sched 上，**与 GPU/Vulkan 无关**。
+- **ggml cgraph** = 算子计算图（matmul→softmax…，节点=算子、边=张量数据流）。ggml 内部，compute-05 借。
+- **ggml-vulkan** = ggml 的一个后端（用 Vulkan 实现算子）。
+三者不同层，别混。"graph 的消费者"是 CAD/CAE，不是 vulkan。
+
+### 发现 7：自造 kernel（04/06）的正当性来自北极星②，不是①
+- **推理（北极星①）**：算子几乎全在 ggml（含 ggml-vulkan）。HYLE 对推理的价值是**统一底座**（io/sched/mem/completion），算子**借 ggml 就够**——compute-04 的 NVRTC 自造 kernel 对纯推理用处不大（推理不写自定义 kernel）。
+- **CAD/CAE（北极星②）**：几何核/网格 stencil/BVH/**CAE 稀疏求解器 SpMV** ggml **完全没有**——这才是自造 kernel（04 NVRTC / 06 SPIR-V）的真实消费者（motivation §26：CAE 把 compute/simd 压到"稀疏线代/迭代求解器"深度）。
+- 故：**compute-05（借 ggml）服务①推理 + ②CAE 能借的部分；compute-04/06（自造 kernel）服务② CAD/CAE 自定义数值/几何 kernel。** compute-06 消费者（CAD/CAE 上层）尚未开工 → 按 §0.2 可等消费者驱动，不急。
+
+### 发现 8：⚠️ 核心张力——§4"co_await gpu_kernel 同构"愿景 vs ggml 阻塞（诚实厘清）
+§4 的"fiber `co_await gpu_kernel()` → 挂起 → event 唤醒、与 co_await async_read 同构"**成立于 HYLE 自造 kernel 路径**（compute-03/04：HYLE 自己的 stream + event + GpuPoller，已三平台真跑）。但**借 ggml 算子路径（compute-05）不适用**——ggml stream 私有（发现 3），completion 只能阻塞 synchronize（发现 4）。**两条路的 completion 模型不同**：
+- **HYLE 自造 kernel（04/06）**：`co_await stream` 真挂起、GpuPoller 唤醒（§4 愿景，已兑现）。
+- **借 ggml 算子（05）**：`ggml graph_compute` 阻塞 → **走 `spawn_blocking` 卸到线程，fiber 挂起等该线程**（llama.cpp 模式 A）。fiber 仍不阻塞 worker（spawn_blocking 卸载），但**不是 GpuPoller 那种"event 轮询唤醒"，而是"阻塞线程完成唤醒"**。
+- **这不违背"fiber 统一"**：fiber 挂起等 completion 的**语义**一致（都经 sched Waker 唤醒）；只是 ggml 路径的 completion source 是"阻塞卸载线程"而非"GpuPoller 轮询的 event"。sched-11 的 spawn_blocking 本就是为"借入的阻塞第三方"设计的。**§4 需补注**：GPU completion 有两种 source——自造 kernel 走 GpuPoller（零阻塞轮询），借 ggml 走 spawn_blocking（阻塞卸载），都归一到 fiber Waker 唤醒。
+
+### 发现 9：⚠️ ggml GPU 后端只有固定 AI 算子，无通用自定义 kernel 路径（坐实 04/06 是②的独占刚需）
+- **ggml 是"张量计算库"，不是"通用 GPU 计算框架"**：它的算子集是**编译期固定的 ~90 个 AI 算子枚举**（`GGML_OP_MUL_MAT`/`SOFTMAX`/`ROPE`/`CONV`… 见 `ggml.h` 的 `ggml_op`），每个后端把这些枚举 switch-case 映射到自己的 kernel（`ggml-cuda.cu:2140` 的 `ggml_cuda_compute_forward` 巨型 switch）。
+- **自定义 op 是 CPU-only**：ggml 有 `ggml_map_custom1/2/3`（用户塞函数指针），但**其 CUDA 后端零实现**——`GGML_OP_CUSTOM`/`MAP_CUSTOM` 在 `ggml-cuda.cu` 的 switch 里**零匹配**（grep 实证），落到 default 分支 return false = "不支持"，sched 会把该节点回退到 CPU 后端跑（`ith/nth` 线程分片，`ggml.c` custom op 执行体）。**即：想在 GPU 上跑一个 ggml 没有的算子，ggml 结构上做不到。**
+- **推论**：借 ggml（compute-05）只能拿到它**已有的那 ~90 个 AI 算子**在 GPU 上的实现。**北极星② 的几何核/网格 stencil/BVH 遍历/CAE 稀疏求解器 SpMV——ggml 一个都没有，且无法通过 custom-op 在 GPU 上补**（custom-op 只有 CPU 路径）。
+- **故 compute-04（CUDA NVRTC）/ compute-06（Vulkan SPIR-V）不是可有可无的"造轮子"，而是 ggml 结构性提供不了的能力**：把**任意** kernel 源码跑上 GPU。这是 ② CAD/CAE 通用 GPU 加速的**唯一**路径（① 推理不需要，它的算子 ggml 全有）。发现 7 的"04/06 正当性来自②"由此从"消费者视角"坐实到"ggml 能力边界"视角：**不是①用不上、而是 ggml 根本给不了**。
+
+### 发现 10：⚠️ ggml CPU 并行是"线程池+算子"焊死的一体，借不了核内并行；线程调度权必须归 HYLE（引出执行模型专章）
+> **这条推翻了 project 记忆里"`ggml_backend_cpu_set_threadpool` 喂 HYLE 调度器给 ggml"的假设**——深读 ggml 0.15.3 源码后证伪。但**结论不是"n_threads=1 是普世答案"**（那是我一度的过度简化）——真正的答案是"线程数按合批性二分"，见下方**「compute-05 CPU 执行模型专章」**。这里只记死路的三条源码铁证。
+- **铁证 A：`ggml_threadpool` 不可插拔**（`ggml-cpu.c:471`）：字段全是 ggml 私有的 `mutex/cond/n_barrier/workers[]/stop/pause`；`ggml_threadpool_params`（`ggml.h:2844`）**无任何 fn-ptr/callback**，只有 `cpumask/n_threads/prio/poll/strict_cpu/paused`。**没有让调用方注入"work 派发函数"的接缝** → `ggml_backend_cpu_set_threadpool` 只能喂一个 *ggml 自建的* threadpool（`ggml_threadpool_new` 造的、自起 pthread `:3286` 或 OpenMP `:3338`）。在 HYLE 底下 = **第二个调度器**。
+- **铁证 B：连"借算子分块、换掉线程"这条中间路也走不通——barrier 是焊点**：算子函数只收 `{ith, nth}`（`ggml-cpu-impl.h:18` 的 `ggml_compute_params`）自分块，看似可借；**但算子内部有自旋 barrier**（`ggml_barrier`，`ggml-cpu.c:576` = `while(...) ggml_thread_cpu_relax()` 忙等），mul_mat 里 5 处（`:1355` 等）。**自旋 barrier 要求 nth 个执行流真并行推进**——若把 nth 个分片当 nth 个 fiber 铺到 worker，只要一个 fiber 没被调度到、卡在 barrier 自旋，其余 fiber 空转等它、而它在同 worker 队列里排队等 CPU → **协作式 fiber 与自旋 barrier 根本对立，死锁/活锁**。故"借 ggml 核内并行但用 HYLE 线程"**物理上不可能**——它的核内并行和线程池是一体，barrier 是焊点。要核内并行就得吞它的线程池（第二调度器），没有中间道路。
+- **铁证 C：但算子分两类（决定后续能优化的边界）**：**elementwise 类**（mul/add/激活/norm…）`binary-ops.cpp`/`unary-ops.cpp` **零 barrier**——每输出元素独立，**HYLE 可自己按行切块、喂多 fiber、无需 barrier**；**mul_mat/attention 类**有 barrier（chunk 协调 + 归约）——核内并行**借不了**，只能整块单核或整块卸载。
+- **结论（引出专章）**：ggml CPU 后端对 HYLE 只有两种正当用法——**(a) `n_threads=1` 当纯计算叶子**（`n_threads==1` 时 ggml 零 spawn、直接在调用线程 `ggml_graph_compute_thread(workers[0])`，`ggml-cpu.c:3356-3358` 铁证），并行由 HYLE 铺；**(b) 合批成单个大 graph 后放它全核**（此时无并发、不打架，见专章）。**选 a 还是 b 取决于"能不能合批"**——这不是 07 才评的细节，是 compute-05 的执行模型骨架，下方专章定死。
+
+### compute-05 定案（基于上述）
+- **内存零拷贝**：no_alloc + `tensor->data = hyle_device_ptr`（发现 2），拷贝版 fallback。拿最高性能内存路径，不 fork。
+- **completion 走 spawn_blocking**（发现 3/4/8）：`ggml graph_compute` 卸到 sched-11 blocking pool，fiber 挂起、完成经 JoinHandle/Waker 唤醒。**不接 GpuPoller**（ggml stream 私有）。
+- **CPU 线程模型 = 合批性二分，`n_threads` 可配（非硬编码 1）**（发现 10 + 执行模型专章，照 llama.cpp `:2425-2429` 铁证）：能合批的大 graph 放 ggml 全核（无并发不打架）；合不了批的高并发独立小推理走 `n_threads=1` + HYLE 铺 N 个。**详见下方「compute-05 CPU 执行模型专章」。**
+- **性能杠杆是合批**（发现 4，llama.cpp 真并发手段）：HYLE 侧合并多算力请求成一个 ggml graph 一次提交 > 多 fiber 各自卸载。**且合批不只是性能杠杆——它还是决定线程数的开关**（见专章）。
+- **adapter 单点隔离 + pin 上游版**：ggml 类型全封 `ggml_bridge.cc`，对外只 HYLE 抽象；ggml 升级只动一文件 + 跑对拍测试。
+- **ggml vendored**：`add_subdirectory(third_party/ggml) EXCLUDE_FROM_ALL` + 关 tests/examples/**OpenMP（关键：关 OpenMP 才能让 `n_threads=1` 真正跑在调用线程，否则 OpenMP 路径仍可能起线程组）** + 只开 CPU+CUDA 静态链（调研验证可行；上游 0.15.3 clone 在 `C:\public\project-hyle\ggml`，git head eced84c8 v0.15.3）。
+
+## compute-05 CPU 执行模型专章：线程调度权归属（合批性二分，照 llama.cpp 铁证）
+
+> **为什么单开一章**：发现 4（合批）与发现 10（n_threads=1）初看互斥、实则是同一条轴的两端。搞错这条轴 = compute-05 的执行模型骨架错，返工伤筋动骨。此章把它一次定死，不留到 07。**核心押注**：没人比 llama.cpp 更懂怎么调 ggml，直接照抄它的线程模型 + 补 HYLE 独有的第三格。
+
+### llama.cpp 的铁证：它显式按 `batched` 二分线程模型，连线程池都备两个
+
+```cpp
+// llama-context.cpp:2425-2429
+ggml_status llama_context::graph_compute(ggml_cgraph* gf, bool batched) {
+    int n_threads        = batched ? cparams.n_threads_batch : cparams.n_threads;
+    ggml_threadpool_t tp = batched ? threadpool_batch        : threadpool;
+    ...
+    set_threadpool_fn(backend_cpu, tp);   // :2435 注入它自建的 threadpool
+```
+
+- **`batched=true`（prompt 预填充 / 多序列合批）**：用 `n_threads_batch`，默认**全核**（`common.cpp:275` `common_cpu_get_num_math()` = 物理核数）。大 matmul 计算密集，吃满核。
+- **`batched=false`（单 token 解码）**：用 `n_threads`，`common.cpp:133` 故意 `n<=4 ? n : n/2`——**不吃满核**。单 token decode 是**访存瓶颈**（逐 token 流式读权重），线程再多只是抢内存带宽 + 增加 barrier 同步开销，反而更慢。
+
+即：**"用几个核"由算子的计算/访存特征决定，llama.cpp 把它固化成 batched 二分 + 双 threadpool。**
+
+### 关键澄清：发现 10 与 llama.cpp 做法不矛盾——差在"谁当核仲裁者"
+
+`:2431-2436` 里 llama.cpp **正是用发现 10 判定"HYLE 不能用"的那个 `ggml_backend_cpu_set_threadpool` 注入自建 threadpool**。这不矛盾，差在架构位置：
+- **llama.cpp 是纯推理进程，它自己就是顶层、唯一的核仲裁者**——没有别的用户态调度器和 ggml 抢核，让 ggml threadpool 吃满核天经地义。
+- **HYLE 底下有 fiber work-stealing 调度器**，它才是核仲裁者。再让 ggml 起一个 threadpool 才叫"第二调度器打架"（超订、cache 局部性被毁、两套 barrier/park 决策互相拖）。
+
+**故同一个 API，llama.cpp 用得对、HYLE 用则错——不是 API 错，是"谁说了算用核"不同。** HYLE 让 fiber 调度器当唯一仲裁者，ggml 永远是被它调度的叶子。
+
+### 执行模型决策轴（compute-05 骨架，现在定死）
+
+| 场景 | 同时几个 graph | 打不打架 | 线程模型 | 出处 |
+|---|---|---|---|---|
+| **合批大 graph**（prefill/多序列）| 1 个大 graph | **不打架**（此时 HYLE worker 无活、本该 park，让出核）| **ggml 全核** | llama.cpp `:2428` batched 全核 |
+| **单请求 decode** | 1 个 | 不打架 | 中等/半核（访存瓶颈，多核无益）| llama.cpp `:133` n/2 |
+| **高并发独立小推理**（HYLE 独有：embedding 服务/多租户小模型/CAE 代理模型）| N 个小 graph（**合不了批**：权重不同/延迟敏感/散发）| **打架**（N×核 抢 M 核）| **`n_threads=1` + HYLE 调度 N 个**（每小推理独占一核，小 matmul 本不吃核内多线程）| 发现 10 (a) |
+| **有 GPU（任意）** | CPU 侧 1 根 sync 线程 | 不打架 | n_threads 无所谓（CPU 只 spawn_blocking 等 `cudaStreamSynchronize`）| 发现 3/8 |
+
+**合批性是那个开关**：能合批 → 单 graph → ggml 全核（照 llama.cpp）；合不了批的高并发独立请求 → `n_threads=1` + HYLE 铺并发（llama.cpp 没有这一格，因为它只服务一个模型，而 HYLE 的 embedding/多租户/代理模型场景才有）。
+
+### 落到 `GgmlBackend` 的设计决定（焊进 compute-05）
+
+1. **`n_threads` 可配，非硬编码 1**：`GgmlBackend` 暴露线程数（或"合批/独立"模式），由调用方按合批性选——照抄 llama.cpp 的 batched 二分，不写死。
+2. **合批是一等能力**：bridge 提供"把多请求合进一个 cgraph"的入口（发现 4）。合批既降 launch 开销，又切到"全核不打架"格。
+3. **HYLE 始终是核仲裁者**：无论哪格，ggml 都不自作主张吃核——全核那格是 HYLE"授权"它吃（因为此刻 worker 本该 park）。这与 GPU 路径（spawn_blocking 卸载）语义一致：**ggml 永远是被 HYLE 调度的叶子。**
+4. **elementwise 自切块留作 07 优化**（发现 10 铁证 C）：零 barrier 的算子 HYLE 可按行切喂多 fiber——但这是边角优化，不影响 compute-05 骨架（骨架 = 上面的合批性二分）。
+5. **诚实边界**：`n_threads=1` 那格放弃了 ggml 单 graph 内的跨核 barrier 并行（一个 graph 一个核）——但那一格本就是"高并发独立小推理"，小 matmul 不吃核内并行，是净赚不是净亏。真正的大 matmul 走合批格、吃全核，不经过这一格。
+
 ## compute-06 kompute 映射：Vulkan 后端该抄什么/丢什么（2026-07-06 深读 kompute 源码）
 
 > compute-06 的 Vulkan compute 后端以 **kompute** 为骨架参考。kompute 是理想参考——**纯 Vulkan、零隐藏运行时**（全 `src/` grep 无 `std::thread`/事件循环/condition_variable，唯一同步是可选的 submit mutex + 每 Sequence 一个 `vk::Fence`），不违反 HYLE"不引入第二个调度器"铁律。整体照抄其 Vulkan 样板，**唯一实质改动是把 fence 的阻塞 await 换成非阻塞轮询接 fiber**。
