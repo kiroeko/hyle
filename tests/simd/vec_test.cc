@@ -214,6 +214,33 @@ void CheckAverage() {
 TEST(Vec, AverageUint8) { CheckAverage<std::uint8_t>(); }
 TEST(Vec, AverageUint16) { CheckAverage<std::uint16_t>(); }
 
+// Type conversion f32<->i32 (same lane count). ConvertTo truncates toward zero;
+// RoundToInt rounds to nearest-even. The quantization (de)quant core.
+TEST(Vec, ConvertF32I32) {
+  const hs::ScalableTag<float> df;
+  const hs::ScalableTag<std::int32_t> di;
+  const std::size_t n = hs::Lanes(df);
+  ASSERT_EQ(n, hs::Lanes(di));  // f32 and i32 have the same lane count on every backend
+  Buf<float> f;
+  for (std::size_t i = 0; i < n; ++i)
+    f.data[i] = (i % 2 ? -1.0f : 1.0f) * (static_cast<float>(i) + 0.4f);  // .4 -> trunc/round differ near .5 avoided
+  auto vf = hs::Load(df, f.data);
+  Buf<std::int32_t> oi;
+  hs::Store(hs::ConvertTo(di, vf), di, oi.data);  // truncate toward zero
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(oi.data[i], static_cast<std::int32_t>(f.data[i])) << "cvtt i=" << i;
+  hs::Store(hs::RoundToInt(di, vf), di, oi.data);  // round to nearest
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(oi.data[i], static_cast<std::int32_t>(std::nearbyint(f.data[i]))) << "round i=" << i;
+  // i32 -> f32 round trip of exact integers
+  Buf<std::int32_t> ii;
+  for (std::size_t i = 0; i < n; ++i) ii.data[i] = static_cast<std::int32_t>(i) * 3 - 5;
+  auto vi = hs::Load(di, ii.data);
+  Buf<float> of;
+  hs::Store(hs::ConvertTo(df, vi), df, of.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(of.data[i], static_cast<float>(ii.data[i]));
+}
+
 TEST(Vec, NegAbsInt32) {
   const hs::ScalableTag<std::int32_t> d;
   const std::size_t n = hs::Lanes(d);

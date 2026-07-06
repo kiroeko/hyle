@@ -438,6 +438,30 @@ HYLE_FORCE_INLINE Vec128<T, N> AverageRound(Vec128<T, N> a, Vec128<T, N> b) noex
   return r;
 }
 
+// ---- type conversion (same lane count: f32<->i32) -----------------------------------
+// ConvertTo: float<->int truncating (cvtt = toward zero). RoundToInt: f32->i32 round to
+// nearest-even (cvtps respects the default MXCSR rounding = RNE). 4 lanes both sides =
+// one __m128 <-> one __m128i, so it fits the native-width model (no partial vectors).
+// Width-changing PromoteTo/DemoteTo are deferred (need partial vectors) -- see scalar.h.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec128<DstT, N> ConvertTo(Simd<DstT, N, 0>, Vec128<SrcT, N> v) noexcept {
+  Vec128<DstT, N> r;
+  if constexpr (std::is_same_v<SrcT, float> && std::is_same_v<DstT, std::int32_t>)
+    r.raw = _mm_cvttps_epi32(v.raw);           // truncate toward zero
+  else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, float>)
+    r.raw = _mm_cvtepi32_ps(v.raw);
+  else static_assert(sizeof(DstT) == 0, "sse4 ConvertTo: only f32<->i32 (same width) supported");
+  return r;
+}
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec128<DstT, N> RoundToInt(Simd<DstT, N, 0>, Vec128<SrcT, N> v) noexcept {
+  static_assert(std::is_same_v<SrcT, float> && std::is_same_v<DstT, std::int32_t>,
+                "sse4 RoundToInt: f32->i32");
+  Vec128<DstT, N> r;
+  r.raw = _mm_cvtps_epi32(v.raw);              // round to nearest even (default MXCSR)
+  return r;
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 namespace detail {
 // Signed cmpgt per width (SSE4.2 has epi8/16/32/64 native; epi64 is the SSE4.2 add).

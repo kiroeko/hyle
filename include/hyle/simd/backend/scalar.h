@@ -247,6 +247,36 @@ HYLE_FORCE_INLINE Vec<T, N> AverageRound(Vec<T, N> a, Vec<T, N> b) noexcept {
   return r;
 }
 
+// ---- type conversion (same lane count, different lane type) -------------------------
+// ConvertTo(dst_tag, v): float<->int, TRUNCATING toward zero (C++ cast semantics), same N.
+// RoundToInt(dst_tag, v): f32/f64 -> int, round to NEAREST (ties to even). PromoteTo/
+// DemoteTo change lane WIDTH (i8->i16 etc); a real backend uses cvtepi/packs -- the scalar
+// floor is a per-lane static_cast into the destination lane type. The dst tag Simd<U,N>
+// names the target type + (same) lane count. Quantization core: f32<->i32 (de)quantize.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec<DstT, N> ConvertTo(Simd<DstT, N, 0>, Vec<SrcT, N> v) noexcept {
+  Vec<DstT, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = static_cast<DstT>(v.raw[i]);  // trunc if f->i
+  return r;
+}
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec<DstT, N> RoundToInt(Simd<DstT, N, 0>, Vec<SrcT, N> v) noexcept {
+  static_assert(std::is_floating_point_v<SrcT> && std::is_integral_v<DstT>,
+                "RoundToInt is float->int");
+  Vec<DstT, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<DstT>(std::nearbyint(v.raw[i]));  // round-to-nearest-even
+  return r;
+}
+
+// NOTE: PromoteTo/DemoteTo (i8<->i16<->i32 width-changing) are DEFERRED: on a fixed-
+// native-width backend they need PARTIAL / multi-register vectors (promote 16 i8 lanes in
+// a 128-bit half to 16 i16 lanes in a full 256-bit reg), which the v1 backends don't model
+// (vec.h drops Highway's fractional-N until a scalable backend lands). Same-width
+// float<->int (ConvertTo/RoundToInt above) needs no such support and is the quantization
+// (de)quant core. Width-changing promote/demote is a separate effort (needs vec.h
+// partial-vector support first). Registered in project_simd_int_lanes memory.
+
 // ---- comparison -> mask -------------------------------------------------------------
 #define HYLE_SIMD_SCALAR_CMP(NAME, REL)                                  \
   template <typename T, std::size_t N>                                   \

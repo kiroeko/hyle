@@ -411,6 +411,30 @@ HYLE_FORCE_INLINE Vec256<T, N> AverageRound(Vec256<T, N> a, Vec256<T, N> b) noex
   return r;
 }
 
+// ---- type conversion (same lane count: f32<->i32) -----------------------------------
+// ConvertTo: float<->int truncating (cvtt = toward zero). RoundToInt: f32->i32 round to
+// nearest-even (cvtps respects the default MXCSR rounding = RNE). 8 lanes both sides =
+// one __m256 <-> one __m256i, so it fits the native-width model (no partial vectors).
+// Width-changing PromoteTo/DemoteTo are deferred (need partial vectors) -- see scalar.h.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec256<DstT, N> ConvertTo(Simd<DstT, N, 0>, Vec256<SrcT, N> v) noexcept {
+  Vec256<DstT, N> r;
+  if constexpr (std::is_same_v<SrcT, float> && std::is_same_v<DstT, std::int32_t>)
+    r.raw = _mm256_cvttps_epi32(v.raw);        // truncate toward zero
+  else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, float>)
+    r.raw = _mm256_cvtepi32_ps(v.raw);
+  else static_assert(sizeof(DstT) == 0, "avx2 ConvertTo: only f32<->i32 (same width) supported");
+  return r;
+}
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec256<DstT, N> RoundToInt(Simd<DstT, N, 0>, Vec256<SrcT, N> v) noexcept {
+  static_assert(std::is_same_v<SrcT, float> && std::is_same_v<DstT, std::int32_t>,
+                "avx2 RoundToInt: f32->i32");
+  Vec256<DstT, N> r;
+  r.raw = _mm256_cvtps_epi32(v.raw);           // round to nearest even (default MXCSR)
+  return r;
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 
 namespace detail {

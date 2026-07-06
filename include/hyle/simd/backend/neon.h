@@ -456,6 +456,29 @@ HYLE_FORCE_INLINE VecNeon<T, N> AverageRound(VecNeon<T, N> a, VecNeon<T, N> b) n
   return r;
 }
 
+// ---- type conversion (same lane count: f32<->i32) -----------------------------------
+// ConvertTo: f32->i32 truncate toward zero (vcvtq_s32_f32), i32->f32 (vcvtq_f32_s32).
+// RoundToInt: f32->i32 round to nearest-even (vcvtnq_s32_f32). 4 lanes both sides = one
+// float32x4_t <-> int32x4_t. Width-changing PromoteTo/DemoteTo deferred (see scalar.h).
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE VecNeon<DstT, N> ConvertTo(Simd<DstT, N, 0>, VecNeon<SrcT, N> v) noexcept {
+  VecNeon<DstT, N> r;
+  if constexpr (std::is_same_v<SrcT, float> && std::is_same_v<DstT, std::int32_t>)
+    r.raw = vcvtq_s32_f32(v.raw);        // truncate toward zero
+  else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, float>)
+    r.raw = vcvtq_f32_s32(v.raw);
+  else static_assert(sizeof(DstT) == 0, "neon ConvertTo: only f32<->i32 (same width) supported");
+  return r;
+}
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE VecNeon<DstT, N> RoundToInt(Simd<DstT, N, 0>, VecNeon<SrcT, N> v) noexcept {
+  static_assert(std::is_same_v<SrcT, float> && std::is_same_v<DstT, std::int32_t>,
+                "neon RoundToInt: f32->i32");
+  VecNeon<DstT, N> r;
+  r.raw = vcvtnq_s32_f32(v.raw);         // round to nearest even
+  return r;
+}
+
 // ---- comparison -> mask (vceqq/vcgtq/... return all-1s/all-0s unsigned lanes) --------
 // NEON has NATIVE per-width compares for every lane type, signed AND unsigned AND 64-bit
 // (aarch64) -- no x86-style sign-flip trick needed. Each intrinsic already returns the
