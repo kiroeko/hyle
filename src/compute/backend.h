@@ -122,6 +122,30 @@ struct ComputeBackend {
   Status (*pool_alloc)(void* handle, std::size_t size, void** out_ptr,
                        std::size_t* out_actual) noexcept;
   void (*pool_free)(void* handle, void* ptr, std::size_t size) noexcept;
+
+  // ---- kernel launch (compute-04) -------------------------------------------
+  // A kernel is {module, func} handles the backend fills. compile: NVRTC source ->
+  // PTX -> load (CUDA); load_ptx: given PTX -> load; load_host: register a host fn
+  // (host backend). All return the two handles in *out_module / *out_func (a CUmodule
+  // + CUfunction on CUDA; nullptr module + the HostFn in func on host). destroy frees
+  // the module. launch submits to the stream (cuLaunchKernel / host fn call).
+  //
+  // `entry` is the kernel name (extern "C") or a C++ name expression NVRTC lowers.
+  // Compile failure returns a Status with the NVRTC log. host_fn is only used by
+  // load_host (the HostFn pointer, stashed as func). launch's `config`/`args` are the
+  // public LaunchConfig + the cuLaunchKernel void** args array.
+  Status (*kernel_compile)(int ordinal, const char* source, const char* entry,
+                           void** out_module, void** out_func) noexcept;
+  Status (*kernel_load_ptx)(int ordinal, const char* ptx, const char* entry,
+                            void** out_module, void** out_func) noexcept;
+  Status (*kernel_load_host)(int ordinal, void* host_fn, void** out_module,
+                             void** out_func) noexcept;
+  void (*kernel_destroy)(void* module, void* func) noexcept;
+  // Launch: `config` is a const LaunchConfig* (void* to keep backend.h free of the
+  // public header include order; the .cc casts it), `stream_native` the backend
+  // stream, `args` the void** kernel args. Returns a Status (launch/config error).
+  Status (*kernel_launch)(void* stream_native, void* module, void* func,
+                          const void* config, void** args) noexcept;
 };
 
 // Each backend exposes its singleton vtable through one of these. host is ALWAYS

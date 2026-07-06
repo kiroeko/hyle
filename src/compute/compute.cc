@@ -6,6 +6,7 @@
 #include "backend.h"
 #include "hyle/compute/buffer.h"
 #include "hyle/compute/device_pool.h"
+#include "hyle/compute/kernel.h"
 #include "hyle/compute/pinned_pool.h"
 #include "hyle/compute/stream.h"
 #include "hyle/error/result.h"
@@ -487,6 +488,87 @@ Result<void*> DevicePool::alloc(std::size_t bytes) noexcept {
 void DevicePool::free(void* ptr, std::size_t bytes) noexcept {
   HYLE_FATAL_ASSERT(vt_ != nullptr);
   vt_->pool_free(handle_, ptr, bytes);
+}
+
+// ---- Kernel (compute-04): launch dispatch -----------------------------------
+
+Kernel::Kernel(Kernel&& o) noexcept
+    : vt_(o.vt_), module_(o.module_), func_(o.func_), ordinal_(o.ordinal_) {
+  o.vt_ = nullptr;
+  o.module_ = nullptr;
+  o.func_ = nullptr;
+}
+
+Kernel& Kernel::operator=(Kernel&& o) noexcept {
+  if (this != &o) {
+    if (vt_ != nullptr) vt_->kernel_destroy(module_, func_);
+    vt_ = o.vt_;
+    module_ = o.module_;
+    func_ = o.func_;
+    ordinal_ = o.ordinal_;
+    o.vt_ = nullptr;
+    o.module_ = nullptr;
+    o.func_ = nullptr;
+  }
+  return *this;
+}
+
+Kernel::~Kernel() {
+  if (vt_ != nullptr) vt_->kernel_destroy(module_, func_);
+}
+
+Result<Kernel> Kernel::compile(const Device& device, const char* source,
+                               const char* entry) noexcept {
+  DeviceEntry e = resolve(device);
+  void* module = nullptr;
+  void* func = nullptr;
+  Status st = e.vt->kernel_compile(e.local, source, entry, &module, &func);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  Kernel k;
+  k.vt_ = e.vt;
+  k.module_ = module;
+  k.func_ = func;
+  k.ordinal_ = e.local;
+  return k;
+}
+
+Result<Kernel> Kernel::load_ptx(const Device& device, const char* ptx,
+                                const char* entry) noexcept {
+  DeviceEntry e = resolve(device);
+  void* module = nullptr;
+  void* func = nullptr;
+  Status st = e.vt->kernel_load_ptx(e.local, ptx, entry, &module, &func);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  Kernel k;
+  k.vt_ = e.vt;
+  k.module_ = module;
+  k.func_ = func;
+  k.ordinal_ = e.local;
+  return k;
+}
+
+Result<Kernel> Kernel::load_host(const Device& device, HostFn fn) noexcept {
+  DeviceEntry e = resolve(device);
+  void* module = nullptr;
+  void* func = nullptr;
+  Status st = e.vt->kernel_load_host(e.local, reinterpret_cast<void*>(fn), &module,
+                                     &func);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  Kernel k;
+  k.vt_ = e.vt;
+  k.module_ = module;
+  k.func_ = func;
+  k.ordinal_ = e.local;
+  return k;
+}
+
+Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
+              void** args) noexcept {
+  HYLE_FATAL_ASSERT(stream.vt_ != nullptr && kernel.vt_ != nullptr);
+  // Stream and kernel must be on the same backend (same device family).
+  HYLE_FATAL_ASSERT(stream.vt_ == kernel.vt_);
+  return stream.vt_->kernel_launch(stream.native_, kernel.module_, kernel.func_,
+                                   &config, args);
 }
 
 }  // namespace hyle::compute

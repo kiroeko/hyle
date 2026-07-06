@@ -1,7 +1,12 @@
 #include <cuda_runtime.h>
 #include <cuda.h>  // driver API (cuMemAddressReserve/cuMemCreate/cuMemMap) for the VMM pool
+#include <nvrtc.h>  // compute-04: runtime CUDA C -> PTX compilation
 
+#include <mutex>
 #include <new>
+#include <string>
+#include <unordered_map>
+#include <vector>
 
 #include "backend.h"
 #include "hyle/compute/types.h"
@@ -572,6 +577,180 @@ void cuda_pool_free(void* handle, void* ptr, std::size_t size) noexcept {
   else static_cast<CudaPoolLeg*>(base)->free(ptr, size);
 }
 
+// ---- kernel launch (compute-04): NVRTC runtime compile + driver launch ------
+// The full B-tier chain: CUDA C source -> NVRTC -> PTX -> cuModuleLoadData ->
+// cuModuleGetFunction -> cuLaunchKernel. NVRTC sequence ported from CCCL
+// (nvrtcc_build.h:80-115 + command_list.h name-expression handling); ggml has zero
+// nvrtc so nothing to copy there. Launch engineering (grid/block, cudaGetLastError
+// fail-fast) from ggml. A kernel's {module,func} = {CUmodule, CUfunction}.
+
+// Translate an nvrtcResult into a HYLE Status (compile-time failures).
+Status from_nvrtc(nvrtcResult r, const char* what) noexcept {
+  if (r == NVRTC_SUCCESS) return Status();
+  const char* msg = nvrtcGetErrorString(r);
+  return Status::Internal(msg != nullptr ? msg : what);
+}
+
+// In-process PTX compile cache: hash(source) ^ arch -> PTX. Avoids recompiling the
+// same kernel source (NVRTC is slow). Cold path (only on compile), so a plain mutex +
+// std::unordered_map is fine -- this is internal compilation bookkeeping, NOT a hot-
+// path production container (the std-container discipline targets hot/ABI surfaces).
+// FNV-1a hash (not XXH3) to avoid pulling SIMD headers into the nvcc TU.
+std::uint64_t fnv1a(const char* s) noexcept {
+  std::uint64_t h = 1469598103934665603ull;
+  for (; *s; ++s) { h ^= static_cast<unsigned char>(*s); h *= 1099511628211ull; }
+  return h;
+}
+std::mutex g_ptx_cache_mu;
+std::unordered_map<std::uint64_t, std::string> g_ptx_cache;
+
+// Probe device compute capability -> "-arch=sm_XX". Uses the driver API (the pool
+// already inits it). Falls back to sm_50 (the CUDA 12/13 floor) if the query fails.
+void arch_flag(int ordinal, char* out, std::size_t cap) noexcept {
+  int major = 5, minor = 0;
+  CUdevice dev;
+  if (cuDeviceGet(&dev, ordinal) == CUDA_SUCCESS) {
+    cuDeviceGetAttribute(&major, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MAJOR, dev);
+    cuDeviceGetAttribute(&minor, CU_DEVICE_ATTRIBUTE_COMPUTE_CAPABILITY_MINOR, dev);
+  }
+  std::snprintf(out, cap, "--gpu-architecture=sm_%d%d", major, minor);
+}
+
+// NVRTC-compile `source` for `ordinal`, resolving `entry` (extern "C" name used
+// verbatim, or a C++ name expression -> lowered name). Fills *out_ptx and, for a C++
+// entry, *out_lowered (the mangled launch name). Caches by hash(source)^arch.
+Status nvrtc_to_ptx(int ordinal, const char* source, const char* entry,
+                    std::string* out_ptx, std::string* out_lowered) noexcept {
+  char arch[64];
+  arch_flag(ordinal, arch, sizeof(arch));
+
+  // Cache probe (source + arch). Lowered name is NOT cached (cheap to re-derive only
+  // matters for C++ entries; we skip cache when a lowered name is needed so the
+  // expression re-resolves -- simpler + correct). extern "C" entry has no lowering.
+  std::uint64_t key = fnv1a(source) ^ fnv1a(arch);
+  {
+    std::lock_guard<std::mutex> lk(g_ptx_cache_mu);
+    auto it = g_ptx_cache.find(key);
+    if (it != g_ptx_cache.end()) {
+      *out_ptx = it->second;
+      *out_lowered = entry;  // cached path assumes extern "C" (verbatim name)
+      return Status();
+    }
+  }
+
+  nvrtcProgram prog;
+  if (nvrtcResult r = nvrtcCreateProgram(&prog, source, "hyle_kernel.cu", 0, nullptr,
+                                         nullptr);
+      r != NVRTC_SUCCESS)
+    return from_nvrtc(r, "nvrtcCreateProgram");
+
+  // Register `entry` as a name expression so a C++ (mangled) kernel can be launched
+  // by its lowered name. Harmless for an extern "C" name too. (CCCL command_list.h:234)
+  nvrtcAddNameExpression(prog, entry);
+
+  const char* opts[] = {arch, "--std=c++17"};
+  nvrtcResult compile = nvrtcCompileProgram(prog, 2, opts);
+
+  // Always fetch the log (compile errors carry the diagnostic here). CCCL:259-267.
+  std::size_t log_size = 0;
+  nvrtcGetProgramLogSize(prog, &log_size);
+  std::string log;
+  if (log_size > 1) {
+    log.resize(log_size);
+    nvrtcGetProgramLog(prog, log.data());
+  }
+  if (compile != NVRTC_SUCCESS) {
+    nvrtcDestroyProgram(&prog);
+    // Surface the NVRTC log as the Status message (truncated by Status if long).
+    return Status::Internal(log.empty() ? "NVRTC compile failed" : log.c_str());
+  }
+
+  // Lowered (mangled) launch name for the C++ entry expression.
+  const char* lowered = nullptr;
+  if (nvrtcGetLoweredName(prog, entry, &lowered) == NVRTC_SUCCESS && lowered != nullptr)
+    *out_lowered = lowered;
+  else
+    *out_lowered = entry;  // extern "C" / fallback: name is verbatim
+
+  // Get PTX.
+  std::size_t ptx_size = 0;
+  if (nvrtcResult r = nvrtcGetPTXSize(prog, &ptx_size); r != NVRTC_SUCCESS) {
+    nvrtcDestroyProgram(&prog);
+    return from_nvrtc(r, "nvrtcGetPTXSize");
+  }
+  out_ptx->resize(ptx_size);
+  nvrtcGetPTX(prog, out_ptx->data());
+  nvrtcDestroyProgram(&prog);
+
+  // Cache the PTX (keyed on source+arch). We only reach here on a cache miss.
+  {
+    std::lock_guard<std::mutex> lk(g_ptx_cache_mu);
+    g_ptx_cache.emplace(key, *out_ptx);
+  }
+  return Status();
+}
+
+// Load PTX text into a CUmodule + resolve `entry` to a CUfunction.
+Status load_module(int ordinal, const char* ptx, const char* entry,
+                   void** out_module, void** out_func) noexcept {
+  if (cudaError_t e = set_device(ordinal); e != cudaSuccess)
+    return from_cuda(e, "cudaSetDevice");
+  // The driver API (cuModuleLoadData) needs a CURRENT context on this thread. The
+  // runtime creates the primary context LAZILY -- cudaSetDevice alone may not have
+  // realized it, so a driver call gets CUDA_ERROR_INVALID_CONTEXT. Force the runtime
+  // to instantiate + bind its primary context to this thread with a trivial runtime
+  // op (cudaFree(0) is the canonical "init current context" idiom); the driver API
+  // then uses that current primary context. (ggml/CCCL run under an already-current
+  // context; HYLE's kernel load is the first driver-API entry needing this nudge.)
+  cudaFree(nullptr);
+  CUmodule module = nullptr;
+  if (CUresult r = cuModuleLoadData(&module, ptx); r != CUDA_SUCCESS)
+    return from_cu(r, "cuModuleLoadData");
+  CUfunction func = nullptr;
+  if (CUresult r = cuModuleGetFunction(&func, module, entry); r != CUDA_SUCCESS) {
+    cuModuleUnload(module);
+    return from_cu(r, "cuModuleGetFunction");
+  }
+  *out_module = static_cast<void*>(module);
+  *out_func = static_cast<void*>(func);
+  return Status();
+}
+
+Status cuda_kernel_compile(int ordinal, const char* source, const char* entry,
+                           void** out_module, void** out_func) noexcept {
+  std::string ptx, lowered;
+  if (Status st = nvrtc_to_ptx(ordinal, source, entry, &ptx, &lowered); !st.ok())
+    return st;
+  return load_module(ordinal, ptx.c_str(), lowered.c_str(), out_module, out_func);
+}
+
+Status cuda_kernel_load_ptx(int ordinal, const char* ptx, const char* entry,
+                            void** out_module, void** out_func) noexcept {
+  return load_module(ordinal, ptx, entry, out_module, out_func);
+}
+
+Status cuda_kernel_load_host(int, void*, void**, void**) noexcept {
+  // A CUDA device can't run a host fn as a kernel; that's the host backend's path.
+  return Status::Unimplemented("cuda backend: load_host is host-only");
+}
+
+void cuda_kernel_destroy(void* module, void* /*func*/) noexcept {
+  if (module != nullptr) cuModuleUnload(static_cast<CUmodule>(module));
+}
+
+Status cuda_kernel_launch(void* stream_native, void* /*module*/, void* func,
+                          const void* config, void** args) noexcept {
+  const auto* cfg = static_cast<const LaunchConfig*>(config);
+  CUresult r = cuLaunchKernel(
+      static_cast<CUfunction>(func), cfg->grid.x, cfg->grid.y, cfg->grid.z,
+      cfg->block.x, cfg->block.y, cfg->block.z, cfg->shared_mem,
+      static_cast<CUstream>(stream_native), args, nullptr);
+  if (r != CUDA_SUCCESS) return from_cu(r, "cuLaunchKernel");
+  // ggml fail-fast contract: check the launch config error immediately (async exec
+  // errors surface later via stream sync / the recorded event).
+  return from_cuda(cudaGetLastError(), "kernel launch");
+}
+
 constexpr ComputeBackend kCudaBackend = {
     /*name=*/"cuda",
     /*device_count=*/cuda_device_count,
@@ -604,6 +783,11 @@ constexpr ComputeBackend kCudaBackend = {
     /*pool_is_vmm=*/cuda_pool_is_vmm,
     /*pool_alloc=*/cuda_pool_alloc,
     /*pool_free=*/cuda_pool_free,
+    /*kernel_compile=*/cuda_kernel_compile,
+    /*kernel_load_ptx=*/cuda_kernel_load_ptx,
+    /*kernel_load_host=*/cuda_kernel_load_host,
+    /*kernel_destroy=*/cuda_kernel_destroy,
+    /*kernel_launch=*/cuda_kernel_launch,
 };
 
 }  // namespace

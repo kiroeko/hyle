@@ -58,4 +58,19 @@ enum class BufferKind : std::uint8_t {
   kHostPinned = 1,
 };
 
+// compute-04 kernel launch geometry (POD, kept here -- not in kernel.h -- so the CUDA
+// backend TU can cast the vtable's config arg without including kernel.h, which pulls
+// std::expected〔result.h〕that nvcc's C++ front-end can't compile, same reason as
+// EventStatus). 3D grid/block extents + dynamic shared memory.
+struct Dim3 {
+  unsigned x = 1;
+  unsigned y = 1;
+  unsigned z = 1;
+};
+struct LaunchConfig {
+  Dim3 grid;
+  Dim3 block;
+  unsigned shared_mem = 0;  // dynamic shared memory bytes
+};
+
 }  // namespace hyle::compute
