@@ -113,9 +113,16 @@ compute/
 
 > 破土前先研究 SOTA 定形接口(同 io proactor 的纪律),把下面几条从"待深挖"提为已决。
 
-### 1. 环境现实:CUDA 后端 = Windows 侧真编真测(非双平台)
+### 1. 环境现实:CUDA 13.2 双通道就绪(Windows MSVC + WSL,均真编真跑 GPU)
 
-实测本机:**Windows** 有完整 toolkit(`nvcc` **CUDA 12.9** + RTX 4070 driver);**WSL** 只有 driver 直通(`/usr/lib/wsl/lib/libcuda.so`)**无 toolkit**(无 `nvcc`/`/usr/local/cuda`/`cuda_runtime.h`/`libcudart`)。故 **CUDA 后端在 Windows/MSVC 侧真编真测**,WSL 侧 `#if` 门控编不进(与 io 的 kqueue-on-mac、simd 的 AVX512-无真机同类:平台/工具链现实,如实记录非缺陷)。跨平台"一份代码"由**上层抽象**保证,不是每后端都双平台跑。CPU fallback 后端(simd)仍双平台。**WSL TSan 覆盖 compute 的 host 侧逻辑(stream/completion 记账),GPU kernel 本身不进 TSan。**
+实测本机(**2026-07-06 复核,取代旧的"Win 12.9 / WSL 无 toolkit"结论**):老的 CUDA 12.x 已清,装了 **CUDA 13.2**,**Windows 与 WSL 两侧都有完整 toolkit**:
+- **驱动**:610.62(WDDM),`nvidia-smi` CUDA UMD 上限 **13.3**(≥ toolkit 13.2,匹配);GPU **RTX 4070 / sm_89 / 12.9GB / 46 SM**。
+- **Windows**:`nvcc 13.2.78` 在 `C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v13.2\bin`(⚠️ **未入 PATH、`CUDA_PATH` 空**——用绝对路径调,或 CMake 指 `CUDAToolkit_ROOT`)。
+- **WSL**:`nvcc 13.2.78` 在 `/usr/local/cuda-13.2`(软链 `/usr/local/cuda`,**在 PATH**),driver 直通 `/usr/lib/wsl/lib/libcuda.so`,`nvidia-smi` 通。这是**升级**:旧结论"WSL 无 toolkit → CUDA 只 Windows 侧"已作废,**CUDA 现在 WSL 也能真编真跑**(WSL 原生 ext4 构建更干净,优先在此做 compute host 侧开发)。
+- **端到端已验证(2026-07-06)**:`nvcc -arch=sm_89` 编 saxpy kernel + **event-poll completion**(`cudaEventRecord`+`cudaEventQuery` 轮询,正是下面 §2 的 reap 模型)在 WSL RTX 4070 真跑通(`saxpy 3*1+2→5.0 OK`)。**整条工具链 + 计划的完成机制均已真机去险。**
+- **缺 cuDNN + TensorRT**(用户明示,本机未装)——compute-01~03 的 device/stream/completion 脊 + raw kernel launch **不需要**它们(cuDNN=卷积/RNN 算子库、TensorRT=推理优化器,是更上层的算子/图优化,借 ggml 算子即可);若后续要接 cuDNN 加速档再装。
+
+**结论**:CUDA 后端可 Windows/MSVC + WSL/nvcc **双通道真编真测**(不再是 Windows-only)。跨平台"一份代码"仍由上层抽象保证;CPU fallback(simd)双平台;mac 无 NVIDIA GPU → CUDA 后端在 mac `#if` 门控编不进(Metal/Vulkan 后端才是 mac 路,后续)。**WSL TSan 覆盖 compute host 侧逻辑(stream/completion 记账),GPU kernel 本身不进 TSan。**
 
 ### 2. GPU completion→fiber:走 **event 轮询(reap 模型)**,不走 callback
 
