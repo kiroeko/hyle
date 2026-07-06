@@ -326,19 +326,31 @@ int bench_string_ref() {
     nb::Bench b;
     b.title("string_ref count('z') vs std (" + std::to_string(kb) + "KB)")
         .relative(true).batch(big.size());
-    b.run("std::count", [&] { nb::doNotOptimizeAway(std::count(bsv.begin(), bsv.end(), 'z')); });
-    b.run("HYLE count", [&] { nb::doNotOptimizeAway(bsr.count('z')); });
+    // Defeat hoisting: the buffer+needle are loop-invariant, so a pure count call would be
+    // computed ONCE and cached (nanobench then measures ~0). Make the needle opaque per-iter
+    // (doNotOptimizeAway forces it into a register the optimizer can't predict), so each call
+    // must actually scan. Applied SYMMETRICALLY to std and HYLE.
+    b.run("std::count", [&] {
+      char needle = 'z'; nb::doNotOptimizeAway(needle);
+      nb::doNotOptimizeAway(std::count(bsv.begin(), bsv.end(), needle));
+    });
+    b.run("HYLE count", [&] {
+      char needle = 'z'; nb::doNotOptimizeAway(needle);
+      nb::doNotOptimizeAway(bsr.count(needle));
+    });
 
     nb::Bench br;
     br.title("string_ref rfind('Q' miss) vs std (" + std::to_string(kb) + "KB)")
         .relative(true).batch(big.size());
     br.run("std::string_view::rfind", [&] {
+      char needle = 'Q'; nb::doNotOptimizeAway(needle);  // absent -> full backward scan
       std::size_t pos = std::string_view::npos; nb::doNotOptimizeAway(pos);
-      nb::doNotOptimizeAway(bsv.rfind('Q', pos));  // 'Q' absent -> full backward scan
+      nb::doNotOptimizeAway(bsv.rfind(needle, pos));
     });
     br.run("HYLE rfind", [&] {
+      char needle = 'Q'; nb::doNotOptimizeAway(needle);
       std::uint32_t pos = string_ref::npos; nb::doNotOptimizeAway(pos);
-      nb::doNotOptimizeAway(bsr.rfind('Q', pos));
+      nb::doNotOptimizeAway(bsr.rfind(needle, pos));
     });
   }
 
