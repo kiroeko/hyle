@@ -5,7 +5,9 @@
 #include <cstring>
 #include <mutex>
 
-#if defined(_WIN32)
+#include "hyle/platform.h"  // HYLE_OS_* (project convention over raw _WIN32; see wait.cc)
+
+#if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #endif
@@ -47,7 +49,7 @@ void default_write(void*, LogLevel level, const char* msg) noexcept {
   }
   std::fprintf(stderr, "%s%s\x1b[0m\n", color, msg);
   std::fflush(stderr);
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
   // One debugger round-trip, not two: format msg+newline into a stack buffer
   // first (OutputDebugStringA is a relatively costly kernel/debugger crossing).
   char dbg[1024];

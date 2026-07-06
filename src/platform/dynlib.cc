@@ -2,7 +2,9 @@
 
 #include <cstring>
 
-#if defined(_WIN32)
+#include "hyle/platform.h"  // HYLE_OS_* (project convention over raw _WIN32/__APPLE__)
+
+#if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #else
@@ -28,7 +30,7 @@ void set_error(const char* msg) noexcept {
   g_error[n] = '\0';
 }
 
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
 // Format the last Win32 error into the thread-local buffer.
 void set_error_win() noexcept {
   DWORD code = GetLastError();
@@ -46,9 +48,9 @@ void set_error_win() noexcept {
 }  // namespace
 
 const char* dynlib_extension() noexcept {
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
   return "dll";
-#elif defined(__APPLE__)
+#elif defined(HYLE_OS_MACOS)
   return "dylib";
 #else
   return "so";
@@ -59,7 +61,7 @@ const char* dynlib_last_error() noexcept { return g_error; }
 
 DynLib DynLib::open(const char* path) noexcept {
   DynLib lib;
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
   HMODULE h = LoadLibraryA(path);
   if (h == nullptr) {
     set_error_win();
@@ -83,7 +85,7 @@ DynLib DynLib::open(const char* path) noexcept {
 
 DynLib DynLib::current() noexcept {
   DynLib lib;
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
   lib.handle_ = reinterpret_cast<void*>(GetModuleHandleA(nullptr));
 #else
   lib.handle_ = dlopen(nullptr, RTLD_NOW | RTLD_LOCAL);
@@ -97,7 +99,7 @@ void* DynLib::symbol(const char* name) const noexcept {
     set_error("symbol() on an invalid library");
     return nullptr;
   }
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
   FARPROC p = GetProcAddress(reinterpret_cast<HMODULE>(handle_), name);
   if (p == nullptr) set_error_win();
   return reinterpret_cast<void*>(p);
@@ -114,7 +116,7 @@ void* DynLib::symbol(const char* name) const noexcept {
 
 void DynLib::close() noexcept {
   if (handle_ != nullptr && owns_) {
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
     FreeLibrary(reinterpret_cast<HMODULE>(handle_));
 #else
     dlclose(handle_);

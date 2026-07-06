@@ -1,6 +1,8 @@
 #include "hyle/time/clock.h"
 
-#if defined(_WIN32)
+#include "hyle/platform.h"  // HYLE_OS_* (project convention over raw _WIN32)
+
+#if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #else
@@ -26,7 +28,7 @@
 
 namespace hyle::time {
 
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
 
 namespace {
 // QPC frequency is fixed after boot; query once. Counts/sec -> ns scaling.

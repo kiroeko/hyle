@@ -18,7 +18,11 @@
 #include <cstdlib>
 #include <cstring>
 
-#if defined(_WIN32)
+#include "hyle/platform.h"  // HYLE_OS_* for the branches below (the _GNU_SOURCE/_CRT
+                            // feature macros above MUST stay raw -- they precede ALL
+                            // includes, before platform.h is parsed).
+
+#if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #  include <cwchar>  // std::wcslen for the directory_iterate pattern
@@ -61,7 +65,7 @@ bool join_path(char* dst, std::size_t cap, const char* a,
 
 }  // namespace
 
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
 
 // ---- Windows ----------------------------------------------------------------
 //
@@ -393,7 +397,7 @@ bool copy_file(const char* from, const char* to) noexcept {
   }
 
   bool ok = true;
-#if defined(__linux__)
+#if defined(HYLE_OS_LINUX)
   // Fast path: copy_file_range keeps bytes in the kernel (and can reflink on
   // btrfs/xfs) -- no user-space bounce. Only fall back to read/write if it fails
   // on the FIRST call (EXDEV cross-fs / ENOSYS old kernel / EINVAL), i.e. before
@@ -530,7 +534,7 @@ bool is_directory(const char* path) noexcept { return stat(path).is_directory; }
 std::uint64_t file_size(const char* path) noexcept { return stat(path).size; }
 
 bool touch(const char* path) noexcept {
-#if defined(_WIN32)
+#if defined(HYLE_OS_WINDOWS)
   // CreateFileW with OPEN_ALWAYS creates the file if absent, opens it if present
   // -- no std::fopen (which is ANSI on Windows and would mis-decode a UTF-8
   // path). Then stamp mtime to now.
