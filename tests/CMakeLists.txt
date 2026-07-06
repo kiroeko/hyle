@@ -38,10 +38,19 @@ target_include_directories(hyle_container_test SYSTEM PRIVATE
 hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/ops_test.cc simd/dtype_test.cc simd/math_test.cc)
 # vec_test compiled per ISA variant: same source, different HYLE_SIMD_TARGET_* + the
 # matching codegen flags from the single-source hyle_isa_flags (no MSVC/else drift here).
-hyle_isa_flags(_sse4_flags SSE42)
-hyle_isa_flags(_avx2_flags AVX2)
-hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_flags})
-hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
+# Arch-gated (mirrors src/simd's CMAKE_SYSTEM_PROCESSOR split): x86 builds the sse4/avx2
+# variants, aarch64 builds the neon variant -- feeding -mavx2 to an ARM build (or the ARM
+# neon.h to an x86 build) would fail. Each variant runs on the build host, so it must be
+# the host's real ISA (the variant-DLL test model).
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  hyle_isa_flags(_sse4_flags SSE42)
+  hyle_isa_flags(_avx2_flags AVX2)
+  hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_flags})
+  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  hyle_isa_flags(_neon_flags NEON)
+  hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_NEON OPTIONS ${_neon_flags})
+endif()
 if(HYLE_HAS_FCONTEXT)
   hyle_add_test(sched SOURCES sched/fiber_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc sched/sync_test.cc sched/timer_test.cc sched/coro_test.cc sched/affinity_test.cc sched/join_test.cc sched/blocking_test.cc sched/shutdown_test.cc sched/cancel_test.cc DEPS hyle_time)
   # io-04 net: the co_await socket layer needs BOTH io (proactor + IoContext) and
