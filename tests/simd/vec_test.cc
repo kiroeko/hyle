@@ -487,6 +487,61 @@ TEST(Vec, ReductionsUint16) { CheckReductions<std::uint16_t>(); }
 TEST(Vec, ReductionsInt64) { CheckReductions<std::int64_t>(); }
 TEST(Vec, ReductionsUint64) { CheckReductions<std::uint64_t>(); }
 
+// ReduceMul / ReduceAnd / ReduceOr (family completion) over integer lanes. Small factors
+// keep the product in range for every width; And/Or checked against a naive fold.
+template <typename T>
+void CheckReduceMulBitwise() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = static_cast<T>((i % 3) + 1);  // 1..3, product fits
+  auto v = hs::Load(d, a.data);
+  T mul = a.data[0], andv = a.data[0], orv = a.data[0];
+  for (std::size_t i = 1; i < n; ++i) {
+    mul = static_cast<T>(mul * a.data[i]);
+    andv = static_cast<T>(andv & a.data[i]);
+    orv = static_cast<T>(orv | a.data[i]);
+  }
+  EXPECT_EQ(hs::ReduceMul(d, v), mul);
+  EXPECT_EQ(hs::ReduceAnd(d, v), andv);
+  EXPECT_EQ(hs::ReduceOr(d, v), orv);
+}
+TEST(Vec, ReduceMulBitwiseInt32) { CheckReduceMulBitwise<std::int32_t>(); }
+TEST(Vec, ReduceMulBitwiseUint32) { CheckReduceMulBitwise<std::uint32_t>(); }
+TEST(Vec, ReduceMulBitwiseInt8) { CheckReduceMulBitwise<std::int8_t>(); }
+TEST(Vec, ReduceMulBitwiseInt16) { CheckReduceMulBitwise<std::int16_t>(); }
+TEST(Vec, ReduceMulBitwiseInt64) { CheckReduceMulBitwise<std::int64_t>(); }
+
+// ReduceMul over float (exact for small integer-valued factors).
+TEST(Vec, ReduceMulFloat) {
+  const hs::ScalableTag<float> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<float> a;
+  float mul = 1.0f;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<float>((i % 4) + 1); mul *= a.data[i]; }
+  EXPECT_FLOAT_EQ(hs::ReduceMul(d, hs::Load(d, a.data)), mul);
+}
+
+// Broadcast<i>: every lane becomes lane i. Checked for a couple of fixed low indices
+// (valid on every v1 width -- the narrowest full vector still has >= 2 lanes).
+template <typename T>
+void CheckBroadcast() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a, out;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = static_cast<T>(i * 2 + 1);
+  auto v = hs::Load(d, a.data);
+  hs::Store(hs::Broadcast<0>(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[0]);
+  hs::Store(hs::Broadcast<1>(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[1]);
+}
+TEST(Vec, BroadcastFloat) { CheckBroadcast<float>(); }
+TEST(Vec, BroadcastDouble) { CheckBroadcast<double>(); }
+TEST(Vec, BroadcastInt32) { CheckBroadcast<std::int32_t>(); }
+TEST(Vec, BroadcastInt8) { CheckBroadcast<std::int8_t>(); }
+TEST(Vec, BroadcastInt64) { CheckBroadcast<std::int64_t>(); }
+
 // The idiomatic ScalableTag dot-product: correct regardless of the backend's lane count.
 TEST(Vec, ScalableDotProduct) {
   const hs::ScalableTag<float> d;

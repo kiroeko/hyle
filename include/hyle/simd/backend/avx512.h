@@ -648,6 +648,60 @@ HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
   else return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);  // i8/u8/i16/u16
 }
 
+// Reduction family completion: ReduceMul / ReduceAnd / ReduceOr. AVX-512 has native
+// _mm512_reduce_mul/and/or for 32/64-bit lanes (F); i8/u8/i16/u16 have no such intrinsic,
+// so fold via a stack array (mirrors reduce_scalar; horizontal reduce isn't the hot path).
+namespace detail {
+enum class RedOp2 { kMul, kAnd, kOr };
+template <typename T, std::size_t N, RedOp2 op>
+HYLE_FORCE_INLINE T reduce_scalar2(Vec512<T, N> v) noexcept {
+  alignas(64) T tmp[N];
+  _mm512_store_si512(tmp, v.raw);
+  T acc = tmp[0];
+  for (std::size_t i = 1; i < N; ++i) {
+    if constexpr (op == RedOp2::kMul) acc = static_cast<T>(acc * tmp[i]);
+    else if constexpr (op == RedOp2::kAnd) acc = static_cast<T>(acc & tmp[i]);
+    else acc = static_cast<T>(acc | tmp[i]);
+  }
+  return acc;
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceMul(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
+  if constexpr (std::is_same_v<T, float>) return _mm512_reduce_mul_ps(v.raw);
+  else if constexpr (std::is_same_v<T, double>) return _mm512_reduce_mul_pd(v.raw);
+  else if constexpr (detail::kI32<T>) return static_cast<T>(_mm512_reduce_mul_epi32(v.raw));
+  else if constexpr (detail::kI64<T>) return static_cast<T>(_mm512_reduce_mul_epi64(v.raw));
+  else return detail::reduce_scalar2<T, N, detail::RedOp2::kMul>(v);  // i8/u8/i16/u16
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceAnd(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReduceAnd is integer-lane only");
+  if constexpr (detail::kI32<T>) return static_cast<T>(_mm512_reduce_and_epi32(v.raw));
+  else if constexpr (detail::kI64<T>) return static_cast<T>(_mm512_reduce_and_epi64(v.raw));
+  else return detail::reduce_scalar2<T, N, detail::RedOp2::kAnd>(v);  // i8/u8/i16/u16
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceOr(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReduceOr is integer-lane only");
+  if constexpr (detail::kI32<T>) return static_cast<T>(_mm512_reduce_or_epi32(v.raw));
+  else if constexpr (detail::kI64<T>) return static_cast<T>(_mm512_reduce_or_epi64(v.raw));
+  else return detail::reduce_scalar2<T, N, detail::RedOp2::kOr>(v);  // i8/u8/i16/u16
+}
+
+// Broadcast<i>: splat lane i across all lanes (extract-and-Set, uniform over lane width).
+// Index-vector swizzles (TableLookup/Gather/Scatter/Compress/Interleave) DEFERRED -- see
+// scalar.h note.
+template <int kLane, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> Broadcast(Vec512<T, N> v) noexcept {
+  static_assert(kLane >= 0 && static_cast<std::size_t>(kLane) < N, "Broadcast lane out of range");
+  alignas(64) T tmp[N];
+  if constexpr (std::is_same_v<T, float>) _mm512_store_ps(tmp, v.raw);
+  else if constexpr (std::is_same_v<T, double>) _mm512_store_pd(tmp, v.raw);
+  else _mm512_store_si512(tmp, v.raw);
+  return Set(Simd<T, N, 0>(), tmp[kLane]);
+}
+
 // ---- masked / partial load-store (tail handling) ------------------------------------
 // AVX-512's k-register mask model makes these NATIVE and clean (unlike the SSE/AVX2/NEON
 // memory-staging): FirstN(d,n) is literally the k register with the low min(n,N) bits set;

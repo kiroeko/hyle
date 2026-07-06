@@ -373,6 +373,42 @@ HYLE_FORCE_INLINE T ReduceMax(DFromV<Vec<T, N>>, Vec<T, N> v) noexcept {
   for (std::size_t i = 1; i < N; ++i) m = v.raw[i] > m ? v.raw[i] : m;
   return m;
 }
+// ReduceMul (product), ReduceAnd/Or (bitwise, integer lanes) -- complete the reduction
+// family (Sum/Min/Max above). Highway names GetLane(SumOfLanes/... ). Horizontal reduce
+// is not a hot path, so even the wide backends fold via a stack array (see their notes).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceMul(DFromV<Vec<T, N>>, Vec<T, N> v) noexcept {
+  T p = v.raw[0];
+  for (std::size_t i = 1; i < N; ++i) p = static_cast<T>(p * v.raw[i]);
+  return p;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceAnd(DFromV<Vec<T, N>>, Vec<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReduceAnd is integer-lane only");
+  T a = v.raw[0];
+  for (std::size_t i = 1; i < N; ++i) a = static_cast<T>(a & v.raw[i]);
+  return a;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceOr(DFromV<Vec<T, N>>, Vec<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReduceOr is integer-lane only");
+  T o = v.raw[0];
+  for (std::size_t i = 1; i < N; ++i) o = static_cast<T>(o | v.raw[i]);
+  return o;
+}
+
+// ---- swizzle: Broadcast<i> (splat lane i across all lanes; Highway name) ------------
+// The one swizzle v1 needs (matrix-row / bias splat). Index-vector-dependent swizzles
+// (TableLookup, Gather/Scatter, Compress, Interleave/Zip) are DEFERRED -- see the note at
+// the top of the reductions region and project_simd_int_lanes memory: they need a portable
+// index-vector type + per-ISA permute/gather units, a separate effort.
+template <int kLane, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Broadcast(Vec<T, N> v) noexcept {
+  static_assert(kLane >= 0 && static_cast<std::size_t>(kLane) < N, "Broadcast lane out of range");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = v.raw[kLane];
+  return r;
+}
 
 // Lane 0 (Highway GetLane).
 template <typename T, std::size_t N>

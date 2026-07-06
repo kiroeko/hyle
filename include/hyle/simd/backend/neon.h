@@ -749,6 +749,51 @@ HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, VecNeon<T, N> v) noexcept {
   else return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);  // i64/u64: no vmaxvq_64
 }
 
+// Reduction family completion: ReduceMul / ReduceAnd / ReduceOr. NEON has no horizontal
+// product/and/or across lanes, and horizontal reduce is not the hot path, so fold via a
+// stack array (mirrors reduce_scalar above).
+namespace detail {
+enum class RedOp2 { kMul, kAnd, kOr };
+template <typename T, std::size_t N, RedOp2 op>
+HYLE_FORCE_INLINE T reduce_scalar2(VecNeon<T, N> v) noexcept {
+  alignas(16) T tmp[N];
+  StoreU(v, Simd<T, N, 0>(), tmp);
+  T acc = tmp[0];
+  for (std::size_t i = 1; i < N; ++i) {
+    if constexpr (op == RedOp2::kMul) acc = static_cast<T>(acc * tmp[i]);
+    else if constexpr (op == RedOp2::kAnd) acc = static_cast<T>(acc & tmp[i]);
+    else acc = static_cast<T>(acc | tmp[i]);
+  }
+  return acc;
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceMul(Simd<T, N, 0>, VecNeon<T, N> v) noexcept {
+  return detail::reduce_scalar2<T, N, detail::RedOp2::kMul>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceAnd(Simd<T, N, 0>, VecNeon<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReduceAnd is integer-lane only");
+  return detail::reduce_scalar2<T, N, detail::RedOp2::kAnd>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceOr(Simd<T, N, 0>, VecNeon<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReduceOr is integer-lane only");
+  return detail::reduce_scalar2<T, N, detail::RedOp2::kOr>(v);
+}
+
+// Broadcast<i>: splat lane i across all lanes. NEON has vdupq_laneq_* (native lane-splat)
+// but the lane index must be an immediate per type; extract-and-Set is uniform + correct
+// and this is not a v1 hot path. Index-vector swizzles (TableLookup/Gather/Scatter/Compress/
+// Interleave) DEFERRED -- see scalar.h note.
+template <int kLane, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Broadcast(VecNeon<T, N> v) noexcept {
+  static_assert(kLane >= 0 && static_cast<std::size_t>(kLane) < N, "Broadcast lane out of range");
+  alignas(16) T tmp[N];
+  StoreU(v, Simd<T, N, 0>(), tmp);
+  return Set(Simd<T, N, 0>(), tmp[kLane]);
+}
+
 // ---- masked / partial load-store (tail handling) ------------------------------------
 // FirstN(d,n) -> mask (per-width all-1s/all-0s unsigned lanes, matching MaskRawNeon<T>);
 // built via a stack array + vld1q of the matching width. MaskedLoad(Or) reuse IfThenElse

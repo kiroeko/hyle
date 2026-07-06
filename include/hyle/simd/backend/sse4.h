@@ -694,6 +694,49 @@ HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec128<T, N> v) noexcept {
   else return detail::reduce_scalar<T, N, detail::RedOp::kMax>(v);
 }
 
+// Reduction family completion: ReduceMul (product), ReduceAnd/Or (bitwise, integer lanes).
+// Fold via a stack array (no native horizontal product/and/or; horizontal reduce is cold).
+namespace detail {
+enum class RedOp2 { kMul, kAnd, kOr };
+template <typename T, std::size_t N, RedOp2 op>
+HYLE_FORCE_INLINE T reduce_scalar2(Vec128<T, N> v) noexcept {
+  alignas(16) T tmp[N];
+  Store(v, Simd<T, N, 0>(), tmp);
+  T acc = tmp[0];
+  for (std::size_t i = 1; i < N; ++i) {
+    if constexpr (op == RedOp2::kMul) acc = static_cast<T>(acc * tmp[i]);
+    else if constexpr (op == RedOp2::kAnd) acc = static_cast<T>(acc & tmp[i]);
+    else acc = static_cast<T>(acc | tmp[i]);
+  }
+  return acc;
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceMul(Simd<T, N, 0>, Vec128<T, N> v) noexcept {
+  return detail::reduce_scalar2<T, N, detail::RedOp2::kMul>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceAnd(Simd<T, N, 0>, Vec128<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReduceAnd is integer-lane only");
+  return detail::reduce_scalar2<T, N, detail::RedOp2::kAnd>(v);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE T ReduceOr(Simd<T, N, 0>, Vec128<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReduceOr is integer-lane only");
+  return detail::reduce_scalar2<T, N, detail::RedOp2::kOr>(v);
+}
+
+// Broadcast<i>: splat lane i across all lanes (extract-and-Set, uniform over lane width).
+// Index-vector swizzles (TableLookup/Gather/Scatter/Compress/Interleave) DEFERRED -- see
+// scalar.h note.
+template <int kLane, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Broadcast(Vec128<T, N> v) noexcept {
+  static_assert(kLane >= 0 && static_cast<std::size_t>(kLane) < N, "Broadcast lane out of range");
+  alignas(16) T tmp[N];
+  Store(v, Simd<T, N, 0>(), tmp);
+  return Set(Simd<T, N, 0>(), tmp[kLane]);
+}
+
 // ---- masked / partial load-store (tail handling) ------------------------------------
 // 128-bit mirror of the avx2 tail toolkit (same rationale): FirstN builds an all-ones
 // lane pattern via stack array + Load (a valid blendv/movemask selector for every lane
