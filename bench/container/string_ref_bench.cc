@@ -304,5 +304,43 @@ int bench_string_ref() {
     });
   }
 
+  // ---- count/rfind at SCALE: 4KB / 64KB / 1MB (the SIMD-width regression gate) --------
+  // count/rfind were unified from hand-rolled SSE2/AVX2 onto the simd/vec.h abstraction
+  // (2026-07). This section is the regression watch: at larger sizes the vector core
+  // dominates (call overhead amortized), so any per-iter penalty vs the old hand core shows
+  // here. Rival is std (std::count / std::string_view::rfind, both libc/STL SIMD). A random
+  // byte buffer with a rare needle (present ~1/256) exercises the full scan + a real hit.
+  for (std::size_t kb : {std::size_t{4}, std::size_t{64}, std::size_t{1024}}) {
+    std::string big;
+    big.resize(kb * 1024);
+    std::uint64_t x = 0xD1B54A32D192ED03ull;
+    for (char& ch : big) {
+      x ^= x << 13; x ^= x >> 7; x ^= x << 17;
+      ch = static_cast<char>('a' + (x % 25));  // 'a'..'y' -> 'z' is the rare needle (absent!)
+    }
+    // sprinkle 'z' at ~1/512 so rfind finds a real hit and count is nonzero-but-sparse
+    for (std::size_t i = 251; i < big.size(); i += 512) big[i] = 'z';
+    const std::string_view bsv{big};
+    const string_ref bsr{big.data(), static_cast<std::uint32_t>(big.size())};
+
+    nb::Bench b;
+    b.title("string_ref count('z') vs std (" + std::to_string(kb) + "KB)")
+        .relative(true).batch(big.size());
+    b.run("std::count", [&] { nb::doNotOptimizeAway(std::count(bsv.begin(), bsv.end(), 'z')); });
+    b.run("HYLE count", [&] { nb::doNotOptimizeAway(bsr.count('z')); });
+
+    nb::Bench br;
+    br.title("string_ref rfind('Q' miss) vs std (" + std::to_string(kb) + "KB)")
+        .relative(true).batch(big.size());
+    br.run("std::string_view::rfind", [&] {
+      std::size_t pos = std::string_view::npos; nb::doNotOptimizeAway(pos);
+      nb::doNotOptimizeAway(bsv.rfind('Q', pos));  // 'Q' absent -> full backward scan
+    });
+    br.run("HYLE rfind", [&] {
+      std::uint32_t pos = string_ref::npos; nb::doNotOptimizeAway(pos);
+      nb::doNotOptimizeAway(bsr.rfind('Q', pos));
+    });
+  }
+
   return 0;
 }
