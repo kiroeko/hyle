@@ -45,7 +45,23 @@ using Raw256T = typename Raw256<T>::type;
 template <typename T>
 inline constexpr bool kSupported =
     std::is_same_v<T, float> || std::is_same_v<T, double> ||
-    std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t>;
+    std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t> ||
+    std::is_same_v<T, std::int16_t> || std::is_same_v<T, std::uint16_t> ||
+    std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t> ||
+    std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::uint64_t>;
+
+// Integer-width helpers so the per-op constexpr chains stay readable. AVX2 integer ops
+// pick the intrinsic by lane WIDTH (epi8/16/32/64), so we branch on sizeof(T) + signedness.
+template <typename T>
+inline constexpr bool kI8 = std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t>;
+template <typename T>
+inline constexpr bool kI16 = std::is_same_v<T, std::int16_t> || std::is_same_v<T, std::uint16_t>;
+template <typename T>
+inline constexpr bool kI32 = std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t>;
+template <typename T>
+inline constexpr bool kI64 = std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::uint64_t>;
+template <typename T>
+inline constexpr bool kSigned = std::is_signed_v<T>;
 }  // namespace detail
 
 template <typename T, std::size_t N>
@@ -82,7 +98,10 @@ HYLE_FORCE_INLINE detail::V256<D> Set(D, T2 t) noexcept {
   detail::V256<D> v;
   if constexpr (std::is_same_v<T, float>) v.raw = _mm256_set1_ps(static_cast<float>(t));
   else if constexpr (std::is_same_v<T, double>) v.raw = _mm256_set1_pd(static_cast<double>(t));
-  else v.raw = _mm256_set1_epi32(static_cast<int>(t));
+  else if constexpr (detail::kI8<T>) v.raw = _mm256_set1_epi8(static_cast<char>(t));
+  else if constexpr (detail::kI16<T>) v.raw = _mm256_set1_epi16(static_cast<short>(t));
+  else if constexpr (detail::kI64<T>) v.raw = _mm256_set1_epi64x(static_cast<long long>(t));
+  else v.raw = _mm256_set1_epi32(static_cast<int>(t));  // i32/u32
   return v;
 }
 template <class D>
@@ -136,6 +155,9 @@ HYLE_FORCE_INLINE Vec256<T, N> Add(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Vec256<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm256_add_ps(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_add_pd(a.raw, b.raw);
+  else if constexpr (detail::kI8<T>) r.raw = _mm256_add_epi8(a.raw, b.raw);
+  else if constexpr (detail::kI16<T>) r.raw = _mm256_add_epi16(a.raw, b.raw);
+  else if constexpr (detail::kI64<T>) r.raw = _mm256_add_epi64(a.raw, b.raw);
   else r.raw = _mm256_add_epi32(a.raw, b.raw);
   return r;
 }
@@ -144,6 +166,9 @@ HYLE_FORCE_INLINE Vec256<T, N> Sub(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Vec256<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm256_sub_ps(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_sub_pd(a.raw, b.raw);
+  else if constexpr (detail::kI8<T>) r.raw = _mm256_sub_epi8(a.raw, b.raw);
+  else if constexpr (detail::kI16<T>) r.raw = _mm256_sub_epi16(a.raw, b.raw);
+  else if constexpr (detail::kI64<T>) r.raw = _mm256_sub_epi64(a.raw, b.raw);
   else r.raw = _mm256_sub_epi32(a.raw, b.raw);
   return r;
 }
@@ -152,7 +177,32 @@ HYLE_FORCE_INLINE Vec256<T, N> Mul(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Vec256<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm256_mul_ps(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_mul_pd(a.raw, b.raw);
-  else r.raw = _mm256_mullo_epi32(a.raw, b.raw);
+  else if constexpr (detail::kI16<T>) r.raw = _mm256_mullo_epi16(a.raw, b.raw);
+  else if constexpr (detail::kI32<T>) r.raw = _mm256_mullo_epi32(a.raw, b.raw);
+  else if constexpr (detail::kI8<T>) {
+    // No _mm256_mullo_epi8. Highway's Mul(i8): widen to epi16 in two halves, mullo_epi16,
+    // then narrow back keeping the low byte of each 16-bit product (wraparound = the
+    // 2's-complement low 8 bits, matching scalar T(x*y)).
+    const __m256i lo_mask = _mm256_set1_epi16(0x00FF);
+    const __m256i a_lo = _mm256_and_si256(a.raw, lo_mask);              // even bytes
+    const __m256i b_lo = _mm256_and_si256(b.raw, lo_mask);
+    const __m256i a_hi = _mm256_srli_epi16(a.raw, 8);                   // odd bytes
+    const __m256i b_hi = _mm256_srli_epi16(b.raw, 8);
+    const __m256i p_lo = _mm256_and_si256(_mm256_mullo_epi16(a_lo, b_lo), lo_mask);
+    const __m256i p_hi = _mm256_slli_epi16(_mm256_mullo_epi16(a_hi, b_hi), 8);
+    r.raw = _mm256_or_si256(p_lo, p_hi);
+  } else {
+    // i64/u64: no _mm256_mullo_epi64 on AVX2 (it's AVX-512-DQ). Highway emulates via
+    // 32x32->64 partial products: lo*lo + ((hi_a*lo_b + lo_a*hi_b) << 32). Low 64 bits
+    // are exact for both signed and unsigned (2's complement wraparound = scalar).
+    const __m256i lo_a = a.raw, lo_b = b.raw;
+    const __m256i hi_a = _mm256_srli_epi64(a.raw, 32);
+    const __m256i hi_b = _mm256_srli_epi64(b.raw, 32);
+    const __m256i ll = _mm256_mul_epu32(lo_a, lo_b);                    // lo_a*lo_b (64b)
+    const __m256i cross = _mm256_add_epi64(_mm256_mul_epu32(hi_a, lo_b),
+                                           _mm256_mul_epu32(lo_a, hi_b));
+    r.raw = _mm256_add_epi64(ll, _mm256_slli_epi64(cross, 32));
+  }
   return r;
 }
 template <typename T, std::size_t N>
@@ -168,8 +218,15 @@ HYLE_FORCE_INLINE Vec256<T, N> Min(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Vec256<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm256_min_ps(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_min_pd(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int8_t>) r.raw = _mm256_min_epi8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = _mm256_min_epu8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = _mm256_min_epi16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = _mm256_min_epu16(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = _mm256_min_epi32(a.raw, b.raw);
-  else r.raw = _mm256_min_epu32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = _mm256_min_epu32(a.raw, b.raw);
+  else {  // i64/u64: no AVX2 native min -> select via Gt (Highway emulation)
+    r = IfThenElse(Gt(a, b), b, a);  // min = a>b ? b : a
+  }
   return r;
 }
 template <typename T, std::size_t N>
@@ -177,8 +234,15 @@ HYLE_FORCE_INLINE Vec256<T, N> Max(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Vec256<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm256_max_ps(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_max_pd(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int8_t>) r.raw = _mm256_max_epi8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = _mm256_max_epu8(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = _mm256_max_epi16(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = _mm256_max_epu16(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = _mm256_max_epi32(a.raw, b.raw);
-  else r.raw = _mm256_max_epu32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = _mm256_max_epu32(a.raw, b.raw);
+  else {  // i64/u64: no AVX2 native max -> select via Gt (Highway emulation)
+    r = IfThenElse(Gt(a, b), a, b);  // max = a>b ? a : b
+  }
   return r;
 }
 template <typename T, std::size_t N>
@@ -186,6 +250,9 @@ HYLE_FORCE_INLINE Vec256<T, N> Neg(Vec256<T, N> a) noexcept {
   Vec256<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm256_xor_ps(a.raw, _mm256_set1_ps(-0.0f));
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_xor_pd(a.raw, _mm256_set1_pd(-0.0));
+  else if constexpr (detail::kI8<T>) r.raw = _mm256_sub_epi8(_mm256_setzero_si256(), a.raw);
+  else if constexpr (detail::kI16<T>) r.raw = _mm256_sub_epi16(_mm256_setzero_si256(), a.raw);
+  else if constexpr (detail::kI64<T>) r.raw = _mm256_sub_epi64(_mm256_setzero_si256(), a.raw);
   else r.raw = _mm256_sub_epi32(_mm256_setzero_si256(), a.raw);
   return r;
 }
@@ -196,10 +263,15 @@ HYLE_FORCE_INLINE Vec256<T, N> Abs(Vec256<T, N> a) noexcept {
     r.raw = _mm256_and_ps(a.raw, _mm256_castsi256_ps(_mm256_set1_epi32(0x7FFFFFFF)));
   else if constexpr (std::is_same_v<T, double>)
     r.raw = _mm256_and_pd(a.raw, _mm256_castsi256_pd(_mm256_set1_epi64x(0x7FFFFFFFFFFFFFFFLL)));
-  else if constexpr (std::is_same_v<T, std::int32_t>)
-    r.raw = _mm256_abs_epi32(a.raw);
-  else
-    r.raw = a.raw;  // u32
+  else if constexpr (std::is_same_v<T, std::int8_t>) r.raw = _mm256_abs_epi8(a.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = _mm256_abs_epi16(a.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = _mm256_abs_epi32(a.raw);
+  else if constexpr (std::is_same_v<T, std::int64_t>) {
+    // No _mm256_abs_epi64 on AVX2 (AVX-512-VL). Highway: mask = a>>63 (arithmetic via
+    // cmpgt 0), abs = (a ^ mask) - mask. Emulate arithmetic >>63 with cmpgt(0, a).
+    const __m256i neg = _mm256_cmpgt_epi64(_mm256_setzero_si256(), a.raw);  // all-ones where a<0
+    r.raw = _mm256_sub_epi64(_mm256_xor_si256(a.raw, neg), neg);
+  } else r.raw = a.raw;  // unsigned: abs is identity
   return r;
 }
 template <typename T, std::size_t N>
@@ -251,9 +323,32 @@ HYLE_AVX2_BITOP(AndNot, _mm256_andnot_ps, _mm256_andnot_pd, _mm256_andnot_si256)
 
 // ---- comparison -> mask -------------------------------------------------------------
 namespace detail {
-HYLE_FORCE_INLINE __m256i u32_cmpgt(__m256i a, __m256i b) noexcept {
-  const __m256i msb = _mm256_set1_epi32(static_cast<int>(0x80000000u));
-  return _mm256_cmpgt_epi32(_mm256_xor_si256(a, msb), _mm256_xor_si256(b, msb));
+// Signed cmpgt per width (AVX2 has epi8/16/32/64 native).
+template <typename T>
+HYLE_FORCE_INLINE __m256i icmpgt_signed(__m256i a, __m256i b) noexcept {
+  if constexpr (kI8<T>) return _mm256_cmpgt_epi8(a, b);
+  else if constexpr (kI16<T>) return _mm256_cmpgt_epi16(a, b);
+  else if constexpr (kI64<T>) return _mm256_cmpgt_epi64(a, b);
+  else return _mm256_cmpgt_epi32(a, b);
+}
+// Unsigned cmpgt: flip the sign bit of each lane, then signed cmpgt (Highway's trick,
+// generalized from the existing u32 path to all widths).
+template <typename T>
+HYLE_FORCE_INLINE __m256i icmpgt_unsigned(__m256i a, __m256i b) noexcept {
+  __m256i msb;
+  if constexpr (kI8<T>) msb = _mm256_set1_epi8(static_cast<char>(0x80));
+  else if constexpr (kI16<T>) msb = _mm256_set1_epi16(static_cast<short>(0x8000));
+  else if constexpr (kI64<T>) msb = _mm256_set1_epi64x(static_cast<long long>(0x8000000000000000ULL));
+  else msb = _mm256_set1_epi32(static_cast<int>(0x80000000u));
+  return icmpgt_signed<std::make_signed_t<T>>(_mm256_xor_si256(a, msb), _mm256_xor_si256(b, msb));
+}
+// cmpeq per width.
+template <typename T>
+HYLE_FORCE_INLINE __m256i icmpeq(__m256i a, __m256i b) noexcept {
+  if constexpr (kI8<T>) return _mm256_cmpeq_epi8(a, b);
+  else if constexpr (kI16<T>) return _mm256_cmpeq_epi16(a, b);
+  else if constexpr (kI64<T>) return _mm256_cmpeq_epi64(a, b);
+  else return _mm256_cmpeq_epi32(a, b);
 }
 }  // namespace detail
 
@@ -262,7 +357,7 @@ HYLE_FORCE_INLINE Mask256<T, N> Eq(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Mask256<T, N> m;
   if constexpr (std::is_same_v<T, float>) m.raw = _mm256_cmp_ps(a.raw, b.raw, _CMP_EQ_OQ);
   else if constexpr (std::is_same_v<T, double>) m.raw = _mm256_cmp_pd(a.raw, b.raw, _CMP_EQ_OQ);
-  else m.raw = _mm256_cmpeq_epi32(a.raw, b.raw);
+  else m.raw = detail::icmpeq<T>(a.raw, b.raw);
   return m;
 }
 template <typename T, std::size_t N>
@@ -272,7 +367,7 @@ HYLE_FORCE_INLINE Mask256<T, N> Ne(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   // SSE4 (_mm_cmpneq_ps) and NEON (~Eq). _CMP_NEQ_OQ (ordered) wrongly returns false on NaN.
   if constexpr (std::is_same_v<T, float>) m.raw = _mm256_cmp_ps(a.raw, b.raw, _CMP_NEQ_UQ);
   else if constexpr (std::is_same_v<T, double>) m.raw = _mm256_cmp_pd(a.raw, b.raw, _CMP_NEQ_UQ);
-  else m.raw = _mm256_xor_si256(_mm256_cmpeq_epi32(a.raw, b.raw), _mm256_set1_epi32(-1));
+  else m.raw = _mm256_xor_si256(detail::icmpeq<T>(a.raw, b.raw), _mm256_set1_epi32(-1));
   return m;
 }
 template <typename T, std::size_t N>
@@ -280,8 +375,8 @@ HYLE_FORCE_INLINE Mask256<T, N> Gt(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Mask256<T, N> m;
   if constexpr (std::is_same_v<T, float>) m.raw = _mm256_cmp_ps(a.raw, b.raw, _CMP_GT_OQ);
   else if constexpr (std::is_same_v<T, double>) m.raw = _mm256_cmp_pd(a.raw, b.raw, _CMP_GT_OQ);
-  else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = _mm256_cmpgt_epi32(a.raw, b.raw);
-  else m.raw = detail::u32_cmpgt(a.raw, b.raw);
+  else if constexpr (detail::kSigned<T>) m.raw = detail::icmpgt_signed<T>(a.raw, b.raw);
+  else m.raw = detail::icmpgt_unsigned<T>(a.raw, b.raw);
   return m;
 }
 template <typename T, std::size_t N>
@@ -293,7 +388,7 @@ HYLE_FORCE_INLINE Mask256<T, N> Ge(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Mask256<T, N> m;
   if constexpr (std::is_same_v<T, float>) m.raw = _mm256_cmp_ps(a.raw, b.raw, _CMP_GE_OQ);
   else if constexpr (std::is_same_v<T, double>) m.raw = _mm256_cmp_pd(a.raw, b.raw, _CMP_GE_OQ);
-  else m.raw = _mm256_xor_si256(Lt(a, b).raw, _mm256_set1_epi32(-1));
+  else m.raw = _mm256_xor_si256(Lt(a, b).raw, _mm256_set1_epi32(-1));  // Ge = ~Lt (int)
   return m;
 }
 template <typename T, std::size_t N>
@@ -317,20 +412,36 @@ HYLE_FORCE_INLINE Vec256<T, N> IfThenElseZero(Mask256<T, N> m, Vec256<T, N> yes)
 }
 
 namespace detail {
+// One bit per LANE, LSB = lane 0. Float/double use the native movemask (1 bit/lane).
+// Integers use movemask_epi8 (1 bit/BYTE = 32 bits) then compress to 1 bit/lane by taking
+// every sizeof(T)-th byte's bit -- a lane's bytes are all-ones or all-zero (our compares
+// produce full-lane masks), so the lane's low byte bit represents the whole lane.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE unsigned mask_bits(Mask256<T, N> m) noexcept {
   if constexpr (std::is_same_v<T, double>)
     return static_cast<unsigned>(_mm256_movemask_pd(m.raw));
   else if constexpr (std::is_same_v<T, float>)
     return static_cast<unsigned>(_mm256_movemask_ps(m.raw));
-  else
-    return static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
+  else {
+    const unsigned bytes = static_cast<unsigned>(_mm256_movemask_epi8(m.raw));  // 32 bits
+    if constexpr (sizeof(T) == 1) {
+      return bytes;  // 32 lanes, 1 bit/byte already
+    } else {
+      // Keep every sizeof(T)-th bit (the low byte of each lane), compacting to N bits.
+      unsigned out = 0;
+      for (std::size_t i = 0; i < N; ++i)
+        out |= ((bytes >> (i * sizeof(T))) & 1u) << i;
+      return out;
+    }
+  }
 }
 }  // namespace detail
 
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE bool AllTrue(Simd<T, N, 0>, Mask256<T, N> m) noexcept {
-  return detail::mask_bits(m) == (1u << N) - 1u;
+  // N may be 32 (i8) -> (1u<<32) is UB; compute the full-N mask safely.
+  const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
+  return detail::mask_bits(m) == full;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE bool AllFalse(Simd<T, N, 0>, Mask256<T, N> m) noexcept {
@@ -353,7 +464,11 @@ template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T GetLane(Vec256<T, N> v) noexcept {
   if constexpr (std::is_same_v<T, float>) return _mm_cvtss_f32(_mm256_castps256_ps128(v.raw));
   else if constexpr (std::is_same_v<T, double>) return _mm_cvtsd_f64(_mm256_castpd256_pd128(v.raw));
-  else return static_cast<T>(_mm_cvtsi128_si32(_mm256_castsi256_si128(v.raw)));
+  else {
+    const __m128i lo = _mm256_castsi256_si128(v.raw);
+    if constexpr (sizeof(T) == 8) return static_cast<T>(_mm_cvtsi128_si64(lo));
+    else return static_cast<T>(_mm_cvtsi128_si32(lo));  // low 32 bits; T-cast truncates for i8/i16
+  }
 }
 
 namespace detail {
@@ -409,17 +524,40 @@ HYLE_FORCE_INLINE T reduce256(Vec256<T, N> v) noexcept {
 }
 }  // namespace detail
 
+// Reductions that lack a clean 256-bit lane-crossing path for narrow/64-bit int lanes
+// (i8/u8/i16/u16/i64/u64): store to a stack array and scalar-reduce. Correct + simple;
+// the cascade shuffles above are only defined for f32/f64/i32/u32. (Highway likewise
+// falls back for the awkward widths -- a horizontal reduce isn't the hot path.)
+template <typename T, std::size_t N, detail::RedOp op>
+HYLE_FORCE_INLINE T reduce_scalar(Vec256<T, N> v) noexcept {
+  alignas(32) T tmp[N];
+  _mm256_store_si256(reinterpret_cast<__m256i*>(tmp), v.raw);
+  T acc = tmp[0];
+  for (std::size_t i = 1; i < N; ++i) {
+    if constexpr (op == detail::RedOp::kAdd) acc = static_cast<T>(acc + tmp[i]);
+    else if constexpr (op == detail::RedOp::kMin) acc = tmp[i] < acc ? tmp[i] : acc;
+    else acc = tmp[i] > acc ? tmp[i] : acc;
+  }
+  return acc;
+}
+
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceSum(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
-  return detail::reduce256<T, N, detail::RedOp::kAdd>(v);
+  if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
+    return detail::reduce256<T, N, detail::RedOp::kAdd>(v);
+  else return reduce_scalar<T, N, detail::RedOp::kAdd>(v);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMin(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
-  return detail::reduce256<T, N, detail::RedOp::kMin>(v);
+  if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
+    return detail::reduce256<T, N, detail::RedOp::kMin>(v);
+  else return reduce_scalar<T, N, detail::RedOp::kMin>(v);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
-  return detail::reduce256<T, N, detail::RedOp::kMax>(v);
+  if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
+    return detail::reduce256<T, N, detail::RedOp::kMax>(v);
+  else return reduce_scalar<T, N, detail::RedOp::kMax>(v);
 }
 
 }  // namespace hyle::simd

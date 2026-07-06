@@ -51,7 +51,7 @@ TEST(Vec, LanesIsConstexprForFixedWidth) {
 // Buffers are 64B-aligned so the aligned Load/Store path is exercised on every backend
 // (scalar memcpy / SSE 16B / AVX2 32B all satisfied). Sized for the widest v1 backend.
 namespace {
-constexpr std::size_t kMaxLanes = 16;  // >= any v1 native width (avx2 f32 = 8)
+constexpr std::size_t kMaxLanes = 32;  // >= widest v1 lane count (avx2 i8 = 32)
 
 template <typename T>
 struct alignas(64) Buf {
@@ -113,6 +113,31 @@ TEST(Vec, ArithmeticInt32) { CheckArith<std::int32_t>(); }
 TEST(Vec, ArithmeticUint32) { CheckArith<std::uint32_t>(); }
 TEST(Vec, ArithmeticFloat) { CheckArith<float>(); }
 TEST(Vec, ArithmeticDouble) { CheckArith<double>(); }
+TEST(Vec, ArithmeticInt8) { CheckArith<std::int8_t>(); }
+TEST(Vec, ArithmeticUint8) { CheckArith<std::uint8_t>(); }
+TEST(Vec, ArithmeticInt16) { CheckArith<std::int16_t>(); }
+TEST(Vec, ArithmeticUint16) { CheckArith<std::uint16_t>(); }
+TEST(Vec, ArithmeticInt64) { CheckArith<std::int64_t>(); }
+TEST(Vec, ArithmeticUint64) { CheckArith<std::uint64_t>(); }
+
+// Neg/Abs over each signed integer width (exercises the per-width intrinsics + i64 emul).
+template <typename T>
+void CheckNegAbs() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a, out;
+  for (std::size_t i = 0; i < n; ++i)
+    a.data[i] = static_cast<T>((i % 2 ? -1 : 1) * static_cast<int>(i % 40 + 1));
+  auto v = hs::Load(d, a.data);
+  hs::Store(hs::Neg(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<T>(-a.data[i]));
+  hs::Store(hs::Abs(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], a.data[i] < 0 ? static_cast<T>(-a.data[i]) : a.data[i]);
+}
+TEST(Vec, NegAbsInt8) { CheckNegAbs<std::int8_t>(); }
+TEST(Vec, NegAbsInt16) { CheckNegAbs<std::int16_t>(); }
+TEST(Vec, NegAbsInt64) { CheckNegAbs<std::int64_t>(); }
 
 TEST(Vec, NegAbsInt32) {
   const hs::ScalableTag<std::int32_t> d;
@@ -215,6 +240,12 @@ TEST(Vec, CompareBlendInt32) { CheckCompareBlend<std::int32_t>(); }
 TEST(Vec, CompareBlendUint32) { CheckCompareBlend<std::uint32_t>(); }
 TEST(Vec, CompareBlendFloat) { CheckCompareBlend<float>(); }
 TEST(Vec, CompareBlendDouble) { CheckCompareBlend<double>(); }
+TEST(Vec, CompareBlendInt8) { CheckCompareBlend<std::int8_t>(); }
+TEST(Vec, CompareBlendUint8) { CheckCompareBlend<std::uint8_t>(); }
+TEST(Vec, CompareBlendInt16) { CheckCompareBlend<std::int16_t>(); }
+TEST(Vec, CompareBlendUint16) { CheckCompareBlend<std::uint16_t>(); }
+TEST(Vec, CompareBlendInt64) { CheckCompareBlend<std::int64_t>(); }
+TEST(Vec, CompareBlendUint64) { CheckCompareBlend<std::uint64_t>(); }
 
 // NaN / signed-zero edge cases: must be identical across every backend. These caught a
 // real divergence (red team 2026-06): AVX2/AVX512 Ne used the ordered predicate
@@ -271,6 +302,10 @@ TEST(Vec, ReductionsInt32) { CheckReductions<std::int32_t>(); }
 TEST(Vec, ReductionsUint32) { CheckReductions<std::uint32_t>(); }
 TEST(Vec, ReductionsFloat) { CheckReductions<float>(); }
 TEST(Vec, ReductionsDouble) { CheckReductions<double>(); }
+TEST(Vec, ReductionsInt16) { CheckReductions<std::int16_t>(); }
+TEST(Vec, ReductionsUint16) { CheckReductions<std::uint16_t>(); }
+TEST(Vec, ReductionsInt64) { CheckReductions<std::int64_t>(); }
+TEST(Vec, ReductionsUint64) { CheckReductions<std::uint64_t>(); }
 
 // The idiomatic ScalableTag dot-product: correct regardless of the backend's lane count.
 TEST(Vec, ScalableDotProduct) {
