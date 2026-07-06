@@ -604,6 +604,158 @@ HYLE_FORCE_INLINE Vec256<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0>, Vec25
   return r;
 }
 
+// ---- swizzle (lane rearrangement) ---------------------------------------------------
+// AVX2's shuffle/unpack/blend operate PER 128-BIT BLOCK; only vpermd/vpermq/vperm2i128 cross
+// the 128 boundary. Ops that stay within-block (unpack, blend) map to one intrinsic; ops that
+// must cross blocks in a width the permute units don't directly serve use a store+indexed-
+// reload fallback (correct + simple; these swizzles aren't a proven hot path -- Highway
+// likewise falls back for awkward widths). The scalar backend is the lane-for-lane oracle.
+namespace detail {
+// store v, apply a per-lane gather from an index function, reload (works for any lane type
+// via the backend's own Store/Load, which handle float vs int raw types).
+template <typename T, std::size_t N, typename IdxFn>
+HYLE_FORCE_INLINE Vec256<T, N> swizzle_via_mem(Vec256<T, N> v, IdxFn idx) noexcept {
+  alignas(32) T src[N], dst[N];
+  Store(v, Simd<T, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = src[idx(i)];
+  return Load(Simd<T, N, 0>(), dst);
+}
+}  // namespace detail
+
+// OddEven(a,b): even lanes <- b, odd <- a. Native blends (per-128-block but the pattern is
+// block-symmetric so it's correct full-width).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> OddEven(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_blend_ps(b.raw, a.raw, 0xAA);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_blend_pd(b.raw, a.raw, 0xA);
+  else if constexpr (sizeof(T) == 4) r.raw = _mm256_blend_epi32(b.raw, a.raw, 0xAA);
+  else if constexpr (sizeof(T) == 2) r.raw = _mm256_blend_epi16(b.raw, a.raw, 0xAA);
+  else if constexpr (sizeof(T) == 8) r.raw = _mm256_blend_epi32(b.raw, a.raw, 0xCC);  // 64-bit: pairs of 32
+  else {  // 8-bit: no blend_epi8 by imm -> byte mask blendv
+    const __m256i m = _mm256_set1_epi16(static_cast<short>(0xFF00u));  // odd bytes = a
+    r.raw = _mm256_blendv_epi8(b.raw, a.raw, m);
+  }
+  return r;
+}
+
+// InterleaveLower/Upper: unpack -- AVX2 unpack is PER-128-BLOCK, which is exactly Highway's
+// InterleaveLower/Upper semantics (they interleave within each 128-bit block).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> InterleaveLower(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_unpacklo_ps(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_unpacklo_pd(a.raw, b.raw);
+  else if constexpr (sizeof(T) == 1) r.raw = _mm256_unpacklo_epi8(a.raw, b.raw);
+  else if constexpr (sizeof(T) == 2) r.raw = _mm256_unpacklo_epi16(a.raw, b.raw);
+  else if constexpr (sizeof(T) == 4) r.raw = _mm256_unpacklo_epi32(a.raw, b.raw);
+  else r.raw = _mm256_unpacklo_epi64(a.raw, b.raw);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> InterleaveUpper(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_unpackhi_ps(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_unpackhi_pd(a.raw, b.raw);
+  else if constexpr (sizeof(T) == 1) r.raw = _mm256_unpackhi_epi8(a.raw, b.raw);
+  else if constexpr (sizeof(T) == 2) r.raw = _mm256_unpackhi_epi16(a.raw, b.raw);
+  else if constexpr (sizeof(T) == 4) r.raw = _mm256_unpackhi_epi32(a.raw, b.raw);
+  else r.raw = _mm256_unpackhi_epi64(a.raw, b.raw);
+  return r;
+}
+
+// Concat{Lower,Upper}{Lower,Upper}(hi,lo): permute2x128 selects 128-bit halves across the two
+// inputs. permute2x128 imm: bits[1:0]=src for result-low-128, bits[5:4]=src for result-high;
+// operands are (lo,hi) so index 0=lo.low,1=lo.high,2=hi.low,3=hi.high.
+namespace detail {
+template <int kImm, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> perm2x128(Vec256<T, N> lo, Vec256<T, N> hi) noexcept {
+  Vec256<T, N> r;
+  if constexpr (std::is_floating_point_v<T> && sizeof(T) == 4) r.raw = _mm256_permute2f128_ps(lo.raw, hi.raw, kImm);
+  else if constexpr (std::is_floating_point_v<T>) r.raw = _mm256_permute2f128_pd(lo.raw, hi.raw, kImm);
+  else r.raw = _mm256_permute2x128_si256(lo.raw, hi.raw, kImm);
+  return r;
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> ConcatLowerLower(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
+  return detail::perm2x128<0x20>(lo, hi);  // [lo.low, hi.low]
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> ConcatUpperUpper(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
+  return detail::perm2x128<0x31>(lo, hi);  // [lo.high, hi.high]
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> ConcatLowerUpper(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
+  return detail::perm2x128<0x21>(lo, hi);  // [lo.high, hi.low]
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> ConcatUpperLower(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
+  // [lo.low, hi.high]: blend the two 128 halves (blend_epi32 mask keeps lo's low, hi's high).
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_blend_ps(hi.raw, lo.raw, 0x0F);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_blend_pd(hi.raw, lo.raw, 0x3);
+  else r.raw = _mm256_blend_epi32(hi.raw, lo.raw, 0x0F);
+  return r;
+}
+
+// The remaining swizzles (Reverse, Reverse2, ConcatOdd/Even, DupOdd/Even, TableLookupLanes)
+// need lane-index arithmetic that crosses 128-blocks for some widths; use the store+reload
+// gather (correct, oracle-matched). vpermd/vpermq specializations for 32/64-bit could be
+// added later if profiling shows a hot path -- not proven yet.
+template <class D>
+HYLE_FORCE_INLINE detail::V256<D> Reverse(D, detail::V256<D> v) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return N - 1 - i; });
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V256<D> Reverse2(D, detail::V256<D> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return i ^ 1; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> ConcatEven(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
+  alignas(32) T sl[N], sh[N], dst[N];
+  Store(lo, Simd<T, N, 0>(), sl); Store(hi, Simd<T, N, 0>(), sh);
+  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
+  return Load(Simd<T, N, 0>(), dst);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> ConcatOdd(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
+  alignas(32) T sl[N], sh[N], dst[N];
+  Store(lo, Simd<T, N, 0>(), sl); Store(hi, Simd<T, N, 0>(), sh);
+  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
+  return Load(Simd<T, N, 0>(), dst);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> DupEven(Vec256<T, N> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> DupOdd(Vec256<T, N> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
+}
+// TableLookupLanes: runtime per-lane permute. index lanes hold integer VALUES (scalar-oracle
+// contract: result[i] = v[idx[i]]). i32/u32 use native vpermd (index bits == value); other
+// widths + float use store+reload gather reading the numeric index value.
+template <typename T, std::size_t N>
+struct Indices256 { Vec256<T, N> idx; };
+template <class D>
+HYLE_FORCE_INLINE Indices256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> IndicesFromVec(
+    D, detail::V256<D> iv) noexcept {
+  return Indices256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>{iv};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> TableLookupLanes(Vec256<T, N> v, Indices256<T, N> ind) noexcept {
+  if constexpr (sizeof(T) == 4 && std::is_integral_v<T>)
+    return Vec256<T, N>{_mm256_permutevar8x32_epi32(v.raw, ind.idx.raw)};  // index bits == value
+  else {  // float / 8 / 16 / 64-bit: store+reload gather reading the numeric index
+    alignas(32) T src[N], idx[N], dst[N];
+    Store(v, Simd<T, N, 0>(), src); Store(ind.idx, Simd<T, N, 0>(), idx);
+    for (std::size_t i = 0; i < N; ++i) dst[i] = src[static_cast<std::size_t>(idx[i]) & (N - 1)];
+    return Load(Simd<T, N, 0>(), dst);
+  }
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 
 namespace detail {

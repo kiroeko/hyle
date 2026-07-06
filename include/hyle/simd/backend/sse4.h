@@ -613,6 +613,109 @@ HYLE_FORCE_INLINE Vec128<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, Ve
   return DemoteTo(dn, a, b);
 }
 
+// ---- swizzle (lane rearrangement) ---------------------------------------------------
+// SSE4 packs the whole vector in a single 128-bit register (like NEON, unlike AVX2's two
+// 128-bit halves). So there is no lane-crossing hazard: InterleaveLower/Upper operate on the
+// whole vector, and Concat*/Reverse span all lanes. These are non-hot-path ops, so a simple
+// store+reload through an alignas(16) scratch buffer is correct and clear -- the scalar
+// backend is the oracle and this per-lane logic matches it (as validated on NEON).
+namespace detail {
+template <typename T, std::size_t N, typename IdxFn>
+HYLE_FORCE_INLINE Vec128<T, N> swizzle_via_mem(Vec128<T, N> v, IdxFn idx) noexcept {
+  alignas(16) T src[N], dst[N];
+  Store(v, Simd<T, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = src[idx(i)];
+  return Load(Simd<T, N, 0>(), dst);
+}
+}  // namespace detail
+
+// OddEven(a,b): even lanes <- b, odd <- a.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> OddEven(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  alignas(16) T sa[N], sb[N], dst[N];
+  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = (i & 1) ? sa[i] : sb[i];
+  return Load(Simd<T, N, 0>(), dst);
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> Reverse(D, detail::V128<D> v) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return N - 1 - i; });
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> Reverse2(D, detail::V128<D> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return i ^ 1; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> InterleaveLower(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  alignas(16) T sa[N], sb[N], dst[N];
+  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+  for (std::size_t i = 0; i < N / 2; ++i) { dst[2 * i] = sa[i]; dst[2 * i + 1] = sb[i]; }
+  return Load(Simd<T, N, 0>(), dst);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> InterleaveUpper(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  alignas(16) T sa[N], sb[N], dst[N];
+  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+  for (std::size_t i = 0; i < N / 2; ++i) { dst[2 * i] = sa[N / 2 + i]; dst[2 * i + 1] = sb[N / 2 + i]; }
+  return Load(Simd<T, N, 0>(), dst);
+}
+namespace detail {
+template <int loHalf, int hiHalf, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> concat_halves(Vec128<T, N> hi, Vec128<T, N> lo) noexcept {
+  alignas(16) T sh[N], sl[N], dst[N];
+  Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
+  for (std::size_t i = 0; i < N / 2; ++i) {
+    dst[i] = sl[loHalf * (N / 2) + i];
+    dst[N / 2 + i] = sh[hiHalf * (N / 2) + i];
+  }
+  return Load(Simd<T, N, 0>(), dst);
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ConcatLowerLower(Vec128<T, N> hi, Vec128<T, N> lo) noexcept { return detail::concat_halves<0, 0>(hi, lo); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ConcatUpperUpper(Vec128<T, N> hi, Vec128<T, N> lo) noexcept { return detail::concat_halves<1, 1>(hi, lo); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ConcatLowerUpper(Vec128<T, N> hi, Vec128<T, N> lo) noexcept { return detail::concat_halves<1, 0>(hi, lo); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ConcatUpperLower(Vec128<T, N> hi, Vec128<T, N> lo) noexcept { return detail::concat_halves<0, 1>(hi, lo); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ConcatEven(Vec128<T, N> hi, Vec128<T, N> lo) noexcept {
+  alignas(16) T sh[N], sl[N], dst[N];
+  Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
+  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
+  return Load(Simd<T, N, 0>(), dst);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ConcatOdd(Vec128<T, N> hi, Vec128<T, N> lo) noexcept {
+  alignas(16) T sh[N], sl[N], dst[N];
+  Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
+  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
+  return Load(Simd<T, N, 0>(), dst);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> DupEven(Vec128<T, N> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> DupOdd(Vec128<T, N> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
+}
+template <typename T, std::size_t N>
+struct Indices128 { Vec128<T, N> idx; };
+template <class D>
+HYLE_FORCE_INLINE Indices128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> IndicesFromVec(D, detail::V128<D> iv) noexcept {
+  return Indices128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>{iv};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> TableLookupLanes(Vec128<T, N> v, Indices128<T, N> ind) noexcept {
+  alignas(16) T src[N], idx[N], dst[N];
+  Store(v, Simd<T, N, 0>(), src); Store(ind.idx, Simd<T, N, 0>(), idx);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = src[static_cast<std::size_t>(idx[i]) & (N - 1)];
+  return Load(Simd<T, N, 0>(), dst);
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 namespace detail {
 // Signed cmpgt per width (SSE4.2 has epi8/16/32/64 native; epi64 is the SSE4.2 add).

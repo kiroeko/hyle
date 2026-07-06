@@ -573,4 +573,113 @@ HYLE_FORCE_INLINE void StoreN(VFromD<D> v, D, TFromD<D>* p, std::size_t n) noexc
   for (std::size_t i = 0; i < k; ++i) p[i] = v.raw[i];
 }
 
+// ---- swizzle (lane rearrangement) ---------------------------------------------------
+// The portable-reference definitions the wide backends' shuffle/permute/unpack must match
+// lane-for-lane. Highway names/semantics throughout.
+
+// OddEven(a,b): even lanes from b, odd lanes from a (Highway's convention).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> OddEven(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = (i & 1) ? a.raw[i] : b.raw[i];
+  return r;
+}
+// Reverse: lane i <- lane N-1-i. Reverse2: swap within each adjacent pair.
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> Reverse(D, VFromD<D> v) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  VFromD<D> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = v.raw[N - 1 - i];
+  return r;
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> Reverse2(D, VFromD<D> v) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  VFromD<D> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = v.raw[i ^ 1];
+  return r;
+}
+// InterleaveLower/Upper: zip lanes from the lower / upper half of a and b.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> InterleaveLower(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N / 2; ++i) { r.raw[2 * i] = a.raw[i]; r.raw[2 * i + 1] = b.raw[i]; }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> InterleaveUpper(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N / 2; ++i) { r.raw[2 * i] = a.raw[N / 2 + i]; r.raw[2 * i + 1] = b.raw[N / 2 + i]; }
+  return r;
+}
+// Concat{Lower,Upper}{Lower,Upper}(hi,lo): take one half from each of hi/lo. The arg order
+// is Highway's (hi first): ConcatLowerLower = [lo.lower, hi.lower], etc.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ConcatLowerLower(Vec<T, N> hi, Vec<T, N> lo) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N / 2; ++i) { r.raw[i] = lo.raw[i]; r.raw[N / 2 + i] = hi.raw[i]; }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ConcatUpperUpper(Vec<T, N> hi, Vec<T, N> lo) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N / 2; ++i) { r.raw[i] = lo.raw[N / 2 + i]; r.raw[N / 2 + i] = hi.raw[N / 2 + i]; }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ConcatLowerUpper(Vec<T, N> hi, Vec<T, N> lo) noexcept {
+  Vec<T, N> r;  // [lo.upper, hi.lower]
+  for (std::size_t i = 0; i < N / 2; ++i) { r.raw[i] = lo.raw[N / 2 + i]; r.raw[N / 2 + i] = hi.raw[i]; }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ConcatUpperLower(Vec<T, N> hi, Vec<T, N> lo) noexcept {
+  Vec<T, N> r;  // [lo.lower, hi.upper]
+  for (std::size_t i = 0; i < N / 2; ++i) { r.raw[i] = lo.raw[i]; r.raw[N / 2 + i] = hi.raw[N / 2 + i]; }
+  return r;
+}
+// ConcatOdd/Even: gather the odd / even lanes of lo then hi into one vector.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ConcatEven(Vec<T, N> hi, Vec<T, N> lo) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N / 2; ++i) { r.raw[i] = lo.raw[2 * i]; r.raw[N / 2 + i] = hi.raw[2 * i]; }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ConcatOdd(Vec<T, N> hi, Vec<T, N> lo) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N / 2; ++i) { r.raw[i] = lo.raw[2 * i + 1]; r.raw[N / 2 + i] = hi.raw[2 * i + 1]; }
+  return r;
+}
+// DupEven/DupOdd: duplicate the even / odd lane of each adjacent pair over both.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> DupEven(Vec<T, N> v) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = v.raw[i & ~std::size_t{1}];
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> DupOdd(Vec<T, N> v) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = v.raw[(i & ~std::size_t{1}) | 1];
+  return r;
+}
+// TableLookupLanes: permute v by a per-lane index vector (IndicesFromVec wraps the index
+// vector; the scalar floor stores indices in a plain Vec of the same lane type). Highway's
+// permute -- index i selects source lane idx.raw[i].
+template <typename T, std::size_t N>
+struct Indices { Vec<T, N> idx; };
+template <class D>
+HYLE_FORCE_INLINE Indices<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> IndicesFromVec(
+    D, Vec<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> iv) noexcept {
+  return Indices<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>{iv};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> TableLookupLanes(Vec<T, N> v, Indices<T, N> ind) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = v.raw[static_cast<std::size_t>(ind.idx.raw[i]) & (N - 1)];  // mask like Highway
+  return r;
+}
+
 }  // namespace hyle::simd

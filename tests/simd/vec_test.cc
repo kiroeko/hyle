@@ -700,7 +700,63 @@ TEST(Vec, AbsDiffFloat) {
   for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], std::abs(a.data[i] - b.data[i]));
 }
 
-// The idiomatic ScalableTag dot-product: correct regardless of the backend's lane count.
+// Swizzle (lane rearrangement). Semantics are Highway's: most ops are whole-vector, but
+// InterleaveLower/Upper are PER-128-BIT-BLOCK (matters on 256b avx2 = 2 blocks; on 128b
+// sse4/neon there's one block so it reduces to whole-vector). blk = lanes per 128b block.
+template <typename T>
+void CheckSwizzle() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  const std::size_t blk = 16 / sizeof(T);
+  Buf<T> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<T>(i + 1); b.data[i] = static_cast<T>(100 + i); }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+
+  hs::Store(hs::OddEven(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], (i & 1) ? a.data[i] : b.data[i]) << "OddEven " << i;
+  hs::Store(hs::Reverse(d, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[n - 1 - i]) << "Reverse " << i;
+  hs::Store(hs::Reverse2(d, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i ^ 1]) << "Reverse2 " << i;
+  hs::Store(hs::InterleaveLower(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) { std::size_t base = (i / blk) * blk, o = i % blk;
+    EXPECT_EQ(out.data[i], (o & 1) ? b.data[base + o / 2] : a.data[base + o / 2]) << "IntLo " << i; }
+  hs::Store(hs::InterleaveUpper(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) { std::size_t base = (i / blk) * blk, o = i % blk;
+    EXPECT_EQ(out.data[i], (o & 1) ? b.data[base + blk / 2 + o / 2] : a.data[base + blk / 2 + o / 2]) << "IntUp " << i; }
+  hs::Store(hs::ConcatLowerLower(va, vb), d, out.data);  // (hi=va, lo=vb) -> [vb.lo, va.lo]
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], i < n / 2 ? b.data[i] : a.data[i - n / 2]) << "CLL " << i;
+  hs::Store(hs::ConcatUpperUpper(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], i < n / 2 ? b.data[n / 2 + i] : a.data[i]) << "CUU " << i;
+  hs::Store(hs::ConcatLowerUpper(va, vb), d, out.data);  // [vb.upper, va.lower]
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], i < n / 2 ? b.data[n / 2 + i] : a.data[i - n / 2]) << "CLU " << i;
+  hs::Store(hs::ConcatUpperLower(va, vb), d, out.data);  // [vb.lower, va.upper]
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], i < n / 2 ? b.data[i] : a.data[i]) << "CUL " << i;
+  hs::Store(hs::ConcatEven(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], i < n / 2 ? b.data[2 * i] : a.data[2 * (i - n / 2)]) << "CEven " << i;
+  hs::Store(hs::ConcatOdd(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], i < n / 2 ? b.data[2 * i + 1] : a.data[2 * (i - n / 2) + 1]) << "COdd " << i;
+  hs::Store(hs::DupEven(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i & ~std::size_t{1}]) << "DupEven " << i;
+  hs::Store(hs::DupOdd(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[(i & ~std::size_t{1}) | 1]) << "DupOdd " << i;
+
+  // TableLookupLanes: reverse permute via an index vector.
+  Buf<T> idx;
+  for (std::size_t i = 0; i < n; ++i) idx.data[i] = static_cast<T>(n - 1 - i);
+  auto ind = hs::IndicesFromVec(d, hs::Load(d, idx.data));
+  hs::Store(hs::TableLookupLanes(va, ind), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[n - 1 - i]) << "TLL " << i;
+}
+TEST(Vec, SwizzleInt32) { CheckSwizzle<std::int32_t>(); }
+TEST(Vec, SwizzleFloat) { CheckSwizzle<float>(); }
+TEST(Vec, SwizzleInt64) { CheckSwizzle<std::int64_t>(); }
+TEST(Vec, SwizzleDouble) { CheckSwizzle<double>(); }
+TEST(Vec, SwizzleInt16) { CheckSwizzle<std::int16_t>(); }
+TEST(Vec, SwizzleInt8) { CheckSwizzle<std::int8_t>(); }
+TEST(Vec, SwizzleUint8) { CheckSwizzle<std::uint8_t>(); }
+
+
 TEST(Vec, ScalableDotProduct) {
   const hs::ScalableTag<float> d;
   const std::size_t n = hs::Lanes(d);

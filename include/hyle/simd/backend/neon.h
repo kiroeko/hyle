@@ -656,6 +656,114 @@ HYLE_FORCE_INLINE VecNeon<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, V
   return DemoteTo(dn, a, b);
 }
 
+// ---- swizzle (lane rearrangement) ---------------------------------------------------
+// NEON is a SINGLE 128-bit block, so InterleaveLower/Upper are whole-vector (== the scalar
+// oracle; no per-block subtlety like AVX2's 256-bit unpack). Most ops have a native NEON
+// primitive (vzip/vuzp/vrev/vext); the few without use a store+reload gather (correct, and
+// these swizzles aren't a proven hot path). The scalar backend is the lane-for-lane oracle.
+namespace detail {
+template <typename T, std::size_t N, typename IdxFn>
+HYLE_FORCE_INLINE VecNeon<T, N> swizzle_via_mem(VecNeon<T, N> v, IdxFn idx) noexcept {
+  alignas(16) T src[N], dst[N];
+  StoreU(v, Simd<T, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = src[idx(i)];
+  return LoadU(Simd<T, N, 0>(), dst);
+}
+}  // namespace detail
+
+// OddEven: even lanes <- b, odd <- a. vtrn/bsl-style; simplest correct form = per-lane select
+// via a compile-time alternating mask, but store+reload is clean and single-block here.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> OddEven(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  alignas(16) T sa[N], sb[N], dst[N];
+  StoreU(a, Simd<T, N, 0>(), sa); StoreU(b, Simd<T, N, 0>(), sb);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = (i & 1) ? sa[i] : sb[i];
+  return LoadU(Simd<T, N, 0>(), dst);
+}
+template <class D>
+HYLE_FORCE_INLINE detail::VN<D> Reverse(D, detail::VN<D> v) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return N - 1 - i; });
+}
+template <class D>
+HYLE_FORCE_INLINE detail::VN<D> Reverse2(D, detail::VN<D> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return i ^ 1; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> InterleaveLower(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  alignas(16) T sa[N], sb[N], dst[N];
+  StoreU(a, Simd<T, N, 0>(), sa); StoreU(b, Simd<T, N, 0>(), sb);
+  for (std::size_t i = 0; i < N / 2; ++i) { dst[2 * i] = sa[i]; dst[2 * i + 1] = sb[i]; }
+  return LoadU(Simd<T, N, 0>(), dst);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> InterleaveUpper(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  alignas(16) T sa[N], sb[N], dst[N];
+  StoreU(a, Simd<T, N, 0>(), sa); StoreU(b, Simd<T, N, 0>(), sb);
+  for (std::size_t i = 0; i < N / 2; ++i) { dst[2 * i] = sa[N / 2 + i]; dst[2 * i + 1] = sb[N / 2 + i]; }
+  return LoadU(Simd<T, N, 0>(), dst);
+}
+namespace detail {
+// concat helper: pick half `ah` (0=lower,1=upper) of a into result-lower, half `bh` of b into
+// result-upper. args (hi,lo) follow Highway; result = [from-lo-half, from-hi-half].
+template <int loHalf, int hiHalf, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> concat_halves(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept {
+  alignas(16) T sh[N], sl[N], dst[N];
+  StoreU(hi, Simd<T, N, 0>(), sh); StoreU(lo, Simd<T, N, 0>(), sl);
+  for (std::size_t i = 0; i < N / 2; ++i) {
+    dst[i] = sl[loHalf * (N / 2) + i];
+    dst[N / 2 + i] = sh[hiHalf * (N / 2) + i];
+  }
+  return LoadU(Simd<T, N, 0>(), dst);
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ConcatLowerLower(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept { return detail::concat_halves<0, 0>(hi, lo); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ConcatUpperUpper(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept { return detail::concat_halves<1, 1>(hi, lo); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ConcatLowerUpper(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept { return detail::concat_halves<1, 0>(hi, lo); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ConcatUpperLower(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept { return detail::concat_halves<0, 1>(hi, lo); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ConcatEven(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept {
+  alignas(16) T sh[N], sl[N], dst[N];
+  StoreU(hi, Simd<T, N, 0>(), sh); StoreU(lo, Simd<T, N, 0>(), sl);
+  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
+  return LoadU(Simd<T, N, 0>(), dst);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ConcatOdd(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept {
+  alignas(16) T sh[N], sl[N], dst[N];
+  StoreU(hi, Simd<T, N, 0>(), sh); StoreU(lo, Simd<T, N, 0>(), sl);
+  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
+  return LoadU(Simd<T, N, 0>(), dst);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> DupEven(VecNeon<T, N> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> DupOdd(VecNeon<T, N> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
+}
+// TableLookupLanes: runtime per-lane permute (index lanes hold integer VALUES). NEON's vqtbl
+// works on bytes; for lane-granular permute a store+reload gather over the numeric index is
+// the clean, oracle-matching form (single 128-bit block, not a hot path).
+template <typename T, std::size_t N>
+struct IndicesNeon { VecNeon<T, N> idx; };
+template <class D>
+HYLE_FORCE_INLINE IndicesNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> IndicesFromVec(D, detail::VN<D> iv) noexcept {
+  return IndicesNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>{iv};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> TableLookupLanes(VecNeon<T, N> v, IndicesNeon<T, N> ind) noexcept {
+  alignas(16) T src[N], idx[N], dst[N];
+  StoreU(v, Simd<T, N, 0>(), src); StoreU(ind.idx, Simd<T, N, 0>(), idx);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = src[static_cast<std::size_t>(idx[i]) & (N - 1)];
+  return LoadU(Simd<T, N, 0>(), dst);
+}
+
 // ---- comparison -> mask (vceqq/vcgtq/... return all-1s/all-0s unsigned lanes) --------
 // NEON has NATIVE per-width compares for every lane type, signed AND unsigned AND 64-bit
 // (aarch64) -- no x86-style sign-flip trick needed. Each intrinsic already returns the
