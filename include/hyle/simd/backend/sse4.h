@@ -347,6 +347,66 @@ HYLE_SSE4_BITOP(Xor, _mm_xor_ps, _mm_xor_pd, _mm_xor_si128)
 HYLE_SSE4_BITOP(AndNot, _mm_andnot_ps, _mm_andnot_pd, _mm_andnot_si128)
 #undef HYLE_SSE4_BITOP
 
+// ---- shifts (integer lanes, compile-time immediate count) ---------------------------
+// SSE has slli/srli_epi16/32/64 (logical) and srai_epi16/32 (arithmetic). GAPS emulated
+// (mirroring Highway x86_128): epi8 has NO shift (do it as epi16 + mask off the bits that
+// cross the byte boundary); srai_epi64 does not exist on SSE (arithmetic via srli + sign
+// fixup; cmpgt_epi64 is SSE4.2). ShiftRight is arithmetic for signed T, logical for
+// unsigned (matches scalar >>).
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ShiftLeft(Vec128<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T>, "shifts are integer-lane only");
+  Vec128<T, N> r;
+  if constexpr (detail::kI16<T>) r.raw = _mm_slli_epi16(a.raw, kBits);
+  else if constexpr (detail::kI32<T>) r.raw = _mm_slli_epi32(a.raw, kBits);
+  else if constexpr (detail::kI64<T>) r.raw = _mm_slli_epi64(a.raw, kBits);
+  else {  // i8/u8: shift as epi16 then clear the low kBits of each high byte that leaked in
+    const __m128i shifted = _mm_slli_epi16(a.raw, kBits);
+    r.raw = _mm_and_si128(shifted, _mm_set1_epi8(static_cast<char>(0xFFu << kBits)));
+  }
+  return r;
+}
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ShiftRight(Vec128<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T>, "shifts are integer-lane only");
+  Vec128<T, N> r;
+  if constexpr (detail::kI16<T>) {
+    if constexpr (detail::kSigned<T>) r.raw = _mm_srai_epi16(a.raw, kBits);
+    else r.raw = _mm_srli_epi16(a.raw, kBits);
+  } else if constexpr (detail::kI32<T>) {
+    if constexpr (detail::kSigned<T>) r.raw = _mm_srai_epi32(a.raw, kBits);
+    else r.raw = _mm_srli_epi32(a.raw, kBits);
+  } else if constexpr (detail::kI64<T>) {
+    if constexpr (detail::kSigned<T>) {
+      // No _mm_srai_epi64 on SSE. Logical shift, then OR in the sign bits:
+      // sign = (a >> 63 arithmetic) replicated; arith_sr = (a>>>k) | (sign << (64-k)).
+      const __m128i logical = _mm_srli_epi64(a.raw, kBits);
+      const __m128i sign = _mm_cmpgt_epi64(_mm_setzero_si128(), a.raw);  // all-ones if neg (SSE4.2)
+      const __m128i sfill = _mm_slli_epi64(sign, 64 - kBits);
+      r.raw = (kBits == 0) ? a.raw : _mm_or_si128(logical, sfill);
+    } else r.raw = _mm_srli_epi64(a.raw, kBits);
+  } else {  // i8/u8
+    if constexpr (detail::kSigned<T>) {
+      // i8 arithmetic right shift by k (no native epi8 shift on SSE). Highway idiom:
+      //   logical = (a >> k) as bytes, cleared of the k high bits that leaked across bytes
+      //   sign    = bytes that are negative (high bit set) get the top k bits filled with 1
+      // Do the byte logical shift via epi16 shift + mask, then OR in sign-fill where a<0.
+      const __m128i logical =
+          _mm_and_si128(_mm_srli_epi16(a.raw, kBits),
+                        _mm_set1_epi8(static_cast<char>(0xFFu >> kBits)));
+      // neg byte mask: a's sign bit broadcast to a full 0xFF byte where the byte is negative.
+      const __m128i is_neg = _mm_cmpgt_epi8(_mm_setzero_si128(), a.raw);  // 0xFF if a<0
+      const __m128i signfill = _mm_and_si128(
+          is_neg, _mm_set1_epi8(static_cast<char>(static_cast<unsigned char>(0xFFu << (8 - kBits)))));
+      r.raw = _mm_or_si128(logical, signfill);
+    } else {  // u8 logical
+      const __m128i shifted = _mm_srli_epi16(a.raw, kBits);
+      r.raw = _mm_and_si128(shifted, _mm_set1_epi8(static_cast<char>(0xFFu >> kBits)));
+    }
+  }
+  return r;
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 namespace detail {
 // Signed cmpgt per width (SSE4.2 has epi8/16/32/64 native; epi64 is the SSE4.2 add).

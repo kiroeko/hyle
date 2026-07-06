@@ -387,6 +387,44 @@ HYLE_FORCE_INLINE VecNeon<T, N> AndNot(VecNeon<T, N> a, VecNeon<T, N> b) noexcep
   return r;
 }
 
+// ---- shifts (integer lanes, compile-time immediate count) ---------------------------
+// NEON is easier than x86 here: vshlq_n_* / vshrq_n_* exist for EVERY integer width
+// (8/16/32/64) as compile-time-immediate intrinsics, so NO emulation (unlike avx2's i8/i64
+// masking + sign fixup). ShiftLeft is logical for all widths (vshlq_n_*). ShiftRight picks
+// the SIGNED intrinsic (vshrq_n_s* = arithmetic, sign-extending) for signed T and the
+// UNSIGNED intrinsic (vshrq_n_u* = logical, zero-fill) for unsigned T -- matching scalar >>.
+// kBits is the template param, passed directly as the immediate; the caller guarantees a
+// valid count (same contract as avx2/scalar). Dispatch per exact lane type (Add idiom).
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ShiftLeft(VecNeon<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T>, "shifts are integer-lane only");
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vshlq_n_s8(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vshlq_n_u8(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vshlq_n_s16(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = vshlq_n_u16(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vshlq_n_s32(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = vshlq_n_u32(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::int64_t>) r.raw = vshlq_n_s64(a.raw, kBits);
+  else r.raw = vshlq_n_u64(a.raw, kBits);  // u64
+  return r;
+}
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ShiftRight(VecNeon<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T>, "shifts are integer-lane only");
+  VecNeon<T, N> r;
+  // Signed -> vshrq_n_s* (arithmetic); unsigned -> vshrq_n_u* (logical). Both native per width.
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vshrq_n_s8(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vshrq_n_u8(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vshrq_n_s16(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = vshrq_n_u16(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vshrq_n_s32(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = vshrq_n_u32(a.raw, kBits);
+  else if constexpr (std::is_same_v<T, std::int64_t>) r.raw = vshrq_n_s64(a.raw, kBits);
+  else r.raw = vshrq_n_u64(a.raw, kBits);  // u64
+  return r;
+}
+
 // ---- comparison -> mask (vceqq/vcgtq/... return all-1s/all-0s unsigned lanes) --------
 // NEON has NATIVE per-width compares for every lane type, signed AND unsigned AND 64-bit
 // (aarch64) -- no x86-style sign-flip trick needed. Each intrinsic already returns the

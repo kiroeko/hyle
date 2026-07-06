@@ -139,6 +139,35 @@ TEST(Vec, NegAbsInt8) { CheckNegAbs<std::int8_t>(); }
 TEST(Vec, NegAbsInt16) { CheckNegAbs<std::int16_t>(); }
 TEST(Vec, NegAbsInt64) { CheckNegAbs<std::int64_t>(); }
 
+// Shifts: compile-time immediate count, per integer width. ShiftRight is arithmetic for
+// signed (sign-extending) and logical for unsigned -- checked against the C++ operator on
+// the lane type (the scalar backend IS that operator, so this validates the wide paths).
+template <typename T, int kBits>
+void CheckShift() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> a, out;
+  for (std::size_t i = 0; i < n; ++i)
+    a.data[i] = static_cast<T>((i % 2 ? -1 : 1) * static_cast<long long>(i * 7 + 1));
+  auto v = hs::Load(d, a.data);
+  hs::Store(hs::template ShiftLeft<kBits>(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i],
+              static_cast<T>(static_cast<std::make_unsigned_t<T>>(a.data[i]) << kBits))
+        << "shl i=" << i;
+  hs::Store(hs::template ShiftRight<kBits>(v), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], static_cast<T>(a.data[i] >> kBits)) << "shr i=" << i;
+}
+TEST(Vec, ShiftInt8) { CheckShift<std::int8_t, 3>(); }
+TEST(Vec, ShiftUint8) { CheckShift<std::uint8_t, 3>(); }
+TEST(Vec, ShiftInt16) { CheckShift<std::int16_t, 5>(); }
+TEST(Vec, ShiftUint16) { CheckShift<std::uint16_t, 5>(); }
+TEST(Vec, ShiftInt32) { CheckShift<std::int32_t, 10>(); }
+TEST(Vec, ShiftUint32) { CheckShift<std::uint32_t, 10>(); }
+TEST(Vec, ShiftInt64) { CheckShift<std::int64_t, 20>(); }
+TEST(Vec, ShiftUint64) { CheckShift<std::uint64_t, 20>(); }
+
 TEST(Vec, NegAbsInt32) {
   const hs::ScalableTag<std::int32_t> d;
   const std::size_t n = hs::Lanes(d);

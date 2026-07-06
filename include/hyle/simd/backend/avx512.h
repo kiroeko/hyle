@@ -310,6 +310,61 @@ HYLE_AVX512_BITOP(Xor, _mm512_xor_ps, _mm512_xor_pd, _mm512_xor_si512)
 HYLE_AVX512_BITOP(AndNot, _mm512_andnot_ps, _mm512_andnot_pd, _mm512_andnot_si512)  // ~a&b
 #undef HYLE_AVX512_BITOP
 
+// ---- shifts (integer lanes, compile-time immediate count) ---------------------------
+// AVX-512 has slli/srli_epi16/32/64 (logical) AND srai_epi16/32/64 (arithmetic) — note
+// _mm512_srai_epi64 EXISTS on AVX512F (unlike AVX2), so i64 arithmetic right is NATIVE,
+// no sign-fixup emulation. GAP: epi8 still has NO shift (mirror avx2: epi16 shift + mask
+// off bits that cross the byte boundary; i8 arithmetic = logical-byte-shift + sign-fill).
+// AVX-512 compares yield k-masks, so recover a 0xFF/0x00 byte vector via _mm512_movm_epi8
+// (BW) for the sign-fill AND. ShiftRight is arithmetic for signed T, logical for unsigned.
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> ShiftLeft(Vec512<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T>, "shifts are integer-lane only");
+  Vec512<T, N> r;
+  if constexpr (detail::kI16<T>) r.raw = _mm512_slli_epi16(a.raw, kBits);        // BW
+  else if constexpr (detail::kI32<T>) r.raw = _mm512_slli_epi32(a.raw, kBits);   // F
+  else if constexpr (detail::kI64<T>) r.raw = _mm512_slli_epi64(a.raw, kBits);   // F
+  else {  // i8/u8: shift as epi16 then clear the low kBits of each high byte that leaked in
+    const __m512i shifted = _mm512_slli_epi16(a.raw, kBits);
+    r.raw = _mm512_and_si512(shifted, _mm512_set1_epi8(static_cast<char>(0xFFu << kBits)));
+  }
+  return r;
+}
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> ShiftRight(Vec512<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T>, "shifts are integer-lane only");
+  Vec512<T, N> r;
+  if constexpr (detail::kI16<T>) {
+    if constexpr (detail::kSigned<T>) r.raw = _mm512_srai_epi16(a.raw, kBits);   // BW
+    else r.raw = _mm512_srli_epi16(a.raw, kBits);
+  } else if constexpr (detail::kI32<T>) {
+    if constexpr (detail::kSigned<T>) r.raw = _mm512_srai_epi32(a.raw, kBits);   // F
+    else r.raw = _mm512_srli_epi32(a.raw, kBits);
+  } else if constexpr (detail::kI64<T>) {
+    // Unlike AVX2, _mm512_srai_epi64 IS native on AVX512F — no sign-fixup emulation needed.
+    if constexpr (detail::kSigned<T>) r.raw = _mm512_srai_epi64(a.raw, kBits);   // F (native!)
+    else r.raw = _mm512_srli_epi64(a.raw, kBits);
+  } else {  // i8/u8 (no native epi8 shift on AVX-512 either)
+    if constexpr (detail::kSigned<T>) {
+      // i8 arithmetic right shift by k. Highway idiom: logical byte shift (epi16 shift +
+      // mask off the k high bits that leaked across bytes), then OR in sign-fill where a<0.
+      const __m512i logical =
+          _mm512_and_si512(_mm512_srli_epi16(a.raw, kBits),
+                           _mm512_set1_epi8(static_cast<char>(0xFFu >> kBits)));
+      // AVX-512 cmp yields a k-mask; recover a 0xFF/0x00 byte vector via movm_epi8 (BW).
+      const __mmask64 neg = _mm512_cmplt_epi8_mask(a.raw, _mm512_setzero_si512());  // a<0
+      const __m512i is_neg = _mm512_movm_epi8(neg);                                 // 0xFF if a<0
+      const __m512i signfill = _mm512_and_si512(
+          is_neg, _mm512_set1_epi8(static_cast<char>(static_cast<unsigned char>(0xFFu << (8 - kBits)))));
+      r.raw = _mm512_or_si512(logical, signfill);
+    } else {  // u8 logical
+      const __m512i shifted = _mm512_srli_epi16(a.raw, kBits);
+      r.raw = _mm512_and_si512(shifted, _mm512_set1_epi8(static_cast<char>(0xFFu >> kBits)));
+    }
+  }
+  return r;
+}
+
 // ---- comparison -> k-register mask --------------------------------------------------
 // AVX-512 compares WRITE A K REGISTER directly (vcmpps/vpcmpd ... -> __mmask). No xor-MSB
 // for unsigned: there are native epu8/16/32/64 mask compares. Per-width detail helpers pick

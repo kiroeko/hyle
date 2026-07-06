@@ -186,6 +186,28 @@ HYLE_SIMD_SCALAR_BITOP(Xor, 2)
 HYLE_SIMD_SCALAR_BITOP(AndNot, 3)  // AndNot(a,b) = ~a & b (Highway order)
 #undef HYLE_SIMD_SCALAR_BITOP
 
+// ---- shifts (integer lanes only) ----------------------------------------------------
+// ShiftLeft<k>/ShiftRight<k>: compile-time immediate count (Highway names). ShiftRight on
+// a SIGNED lane is ARITHMETIC (sign-extending, matches C++ >> on signed); on UNSIGNED it
+// is LOGICAL (zero-fill). k must be in [0, bits-of-T). The scalar floor is just the C++
+// operator on the (already-signed-or-unsigned) lane; a real backend uses _mm_slli/srli/
+// srai / vshlq. Shl/Shr (per-lane VARIABLE count from a vector) mirror the same semantics.
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ShiftLeft(Vec<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T>, "shifts are integer-lane only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<T>(static_cast<std::make_unsigned_t<T>>(a.raw[i]) << kBits);
+  return r;
+}
+template <int kBits, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ShiftRight(Vec<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T>, "shifts are integer-lane only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = static_cast<T>(a.raw[i] >> kBits);  // arith if signed
+  return r;
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 #define HYLE_SIMD_SCALAR_CMP(NAME, REL)                                  \
   template <typename T, std::size_t N>                                   \
