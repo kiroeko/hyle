@@ -1104,4 +1104,57 @@ HYLE_FORCE_INLINE void StoreN(detail::V256<D> v, D d, TFromD<D>* p, std::size_t 
   for (std::size_t i = 0; i < k; ++i) p[i] = tmp[i];  // write only k lanes (fault-safe)
 }
 
+// ---- gather / scatter + compress / expand -------------------------------------------
+// Provided via store+reload (the capability is what matters for an infra lib; native
+// vpgatherdd / vpcompressd are perf optimizations gated behind profiling -- AVX2 gather is
+// famously slow on many uarchs, and Compress needs a LUT). Store the index/data, do the
+// indexed loop, reload -- correct, oracle-matched. The scalar backend is the reference.
+template <class D, typename IdxT>
+HYLE_FORCE_INLINE detail::V256<D> GatherIndex(D d, const TFromD<D>* base,
+                                              Vec256<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) IdxT ix[kN]; alignas(32) TFromD<D> dst[kN];
+  Store(idx, Simd<IdxT, kN, 0>(), ix);
+  for (std::size_t i = 0; i < kN; ++i) dst[i] = base[static_cast<std::ptrdiff_t>(ix[i])];
+  return Load(d, dst);
+}
+template <class D, typename IdxT>
+HYLE_FORCE_INLINE void ScatterIndex(detail::V256<D> v, D d, TFromD<D>* base,
+                                    Vec256<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) IdxT ix[kN]; alignas(32) TFromD<D> src[kN];
+  Store(idx, Simd<IdxT, kN, 0>(), ix); Store(v, d, src);
+  for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcept {
+  alignas(32) T src[N], dst[N] = {};
+  Store(v, Simd<T, N, 0>(), src);
+  const unsigned bits = detail::mask_bits(m);
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1u) dst[k++] = src[i];
+  return Load(Simd<T, N, 0>(), dst);
+}
+template <class D>
+HYLE_FORCE_INLINE std::size_t CompressStore(detail::V256<D> v,
+                                            Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                            D d, TFromD<D>* p) noexcept {
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) TFromD<D> src[kN];
+  Store(v, d, src);
+  const unsigned bits = detail::mask_bits(m);
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < kN; ++i) if ((bits >> i) & 1u) p[k++] = src[i];
+  return k;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> Expand(Vec256<T, N> v, Mask256<T, N> m) noexcept {
+  alignas(32) T src[N], dst[N];
+  Store(v, Simd<T, N, 0>(), src);
+  const unsigned bits = detail::mask_bits(m);
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < N; ++i) dst[i] = ((bits >> i) & 1u) ? src[k++] : T{0};
+  return Load(Simd<T, N, 0>(), dst);
+}
+
 }  // namespace hyle::simd

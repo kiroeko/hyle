@@ -1131,4 +1131,55 @@ HYLE_FORCE_INLINE void StoreN(detail::VN<D> v, D d, TFromD<D>* p, std::size_t n)
   for (std::size_t i = 0; i < k; ++i) p[i] = tmp[i];
 }
 
+// ---- gather / scatter + compress / expand -------------------------------------------
+// Store+reload (capability-complete; NEON has no gather/scatter/compress hardware, so this IS
+// Highway's NEON approach). The scalar backend is the reference.
+template <class D, typename IdxT>
+HYLE_FORCE_INLINE detail::VN<D> GatherIndex(D d, const TFromD<D>* base,
+                                            VecNeon<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) IdxT ix[kN]; alignas(16) TFromD<D> dst[kN];
+  StoreU(idx, Simd<IdxT, kN, 0>(), ix);
+  for (std::size_t i = 0; i < kN; ++i) dst[i] = base[static_cast<std::ptrdiff_t>(ix[i])];
+  return LoadU(d, dst);
+}
+template <class D, typename IdxT>
+HYLE_FORCE_INLINE void ScatterIndex(detail::VN<D> v, D d, TFromD<D>* base,
+                                    VecNeon<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) IdxT ix[kN]; alignas(16) TFromD<D> src[kN];
+  StoreU(idx, Simd<IdxT, kN, 0>(), ix); StoreU(v, d, src);
+  for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Compress(VecNeon<T, N> v, MaskNeon<T, N> m) noexcept {
+  alignas(16) T src[N], dst[N] = {};
+  StoreU(v, Simd<T, N, 0>(), src);
+  const unsigned bits = detail::mask_bits(m);
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1u) dst[k++] = src[i];
+  return LoadU(Simd<T, N, 0>(), dst);
+}
+template <class D>
+HYLE_FORCE_INLINE std::size_t CompressStore(detail::VN<D> v,
+                                            MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                            D d, TFromD<D>* p) noexcept {
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) TFromD<D> src[kN];
+  StoreU(v, d, src);
+  const unsigned bits = detail::mask_bits(m);
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < kN; ++i) if ((bits >> i) & 1u) p[k++] = src[i];
+  return k;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Expand(VecNeon<T, N> v, MaskNeon<T, N> m) noexcept {
+  alignas(16) T src[N], dst[N];
+  StoreU(v, Simd<T, N, 0>(), src);
+  const unsigned bits = detail::mask_bits(m);
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < N; ++i) dst[i] = ((bits >> i) & 1u) ? src[k++] : T{0};
+  return LoadU(Simd<T, N, 0>(), dst);
+}
+
 }  // namespace hyle::simd

@@ -1016,4 +1016,57 @@ HYLE_FORCE_INLINE void StoreN(detail::V512<D> v, D d, TFromD<D>* p, std::size_t 
   BlendedStore(v, FirstN(d, n), d, p);
 }
 
+// ---- gather / scatter + compress / expand -------------------------------------------
+// Store+reload (capability-complete). AVX-512 HAS native vpgatherdd/vpscatterdd + vpcompress/
+// vpexpand which would be faster, but they're perf optimizations gated behind profiling +
+// real-hardware validation (none here) -- the store+reload form is correct and oracle-matched
+// now. kbits() yields the uint64_t lane bitmask. The scalar backend is the reference.
+template <class D, typename IdxT>
+HYLE_FORCE_INLINE detail::V512<D> GatherIndex(D d, const TFromD<D>* base,
+                                              Vec512<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(64) IdxT ix[kN]; alignas(64) TFromD<D> dst[kN];
+  Store(idx, Simd<IdxT, kN, 0>(), ix);
+  for (std::size_t i = 0; i < kN; ++i) dst[i] = base[static_cast<std::ptrdiff_t>(ix[i])];
+  return Load(d, dst);
+}
+template <class D, typename IdxT>
+HYLE_FORCE_INLINE void ScatterIndex(detail::V512<D> v, D d, TFromD<D>* base,
+                                    Vec512<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(64) IdxT ix[kN]; alignas(64) TFromD<D> src[kN];
+  Store(idx, Simd<IdxT, kN, 0>(), ix); Store(v, d, src);
+  for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> Compress(Vec512<T, N> v, Mask512<T, N> m) noexcept {
+  alignas(64) T src[N], dst[N] = {};
+  Store(v, Simd<T, N, 0>(), src);
+  const std::uint64_t bits = detail::kbits(m);
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1ull) dst[k++] = src[i];
+  return Load(Simd<T, N, 0>(), dst);
+}
+template <class D>
+HYLE_FORCE_INLINE std::size_t CompressStore(detail::V512<D> v,
+                                            Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                            D d, TFromD<D>* p) noexcept {
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(64) TFromD<D> src[kN];
+  Store(v, d, src);
+  const std::uint64_t bits = detail::kbits(m);
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < kN; ++i) if ((bits >> i) & 1ull) p[k++] = src[i];
+  return k;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> Expand(Vec512<T, N> v, Mask512<T, N> m) noexcept {
+  alignas(64) T src[N], dst[N];
+  Store(v, Simd<T, N, 0>(), src);
+  const std::uint64_t bits = detail::kbits(m);
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < N; ++i) dst[i] = ((bits >> i) & 1ull) ? src[k++] : T{0};
+  return Load(Simd<T, N, 0>(), dst);
+}
+
 }  // namespace hyle::simd

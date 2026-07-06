@@ -756,6 +756,60 @@ TEST(Vec, SwizzleInt16) { CheckSwizzle<std::int16_t>(); }
 TEST(Vec, SwizzleInt8) { CheckSwizzle<std::int8_t>(); }
 TEST(Vec, SwizzleUint8) { CheckSwizzle<std::uint8_t>(); }
 
+// Gather/Scatter (indexed memory) + Compress/CompressStore/Expand (mask pack/unpack).
+// Gather index vector is a same-lane-count vector of the matching-width integer type.
+template <typename T, typename IdxT>
+void CheckGatherScatter() {
+  const hs::ScalableTag<T> d;
+  const hs::ScalableTag<IdxT> di;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_EQ(hs::Lanes(di), n);
+  alignas(64) T table[64];
+  for (std::size_t i = 0; i < 2 * n && i < 64; ++i) table[i] = static_cast<T>(i * 2 + 1);
+  Buf<IdxT> idx;
+  for (std::size_t i = 0; i < n; ++i) idx.data[i] = static_cast<IdxT>((n - 1 - i));
+  Buf<T> out;
+  hs::Store(hs::GatherIndex(d, table, hs::Load(di, idx.data)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], table[idx.data[i]]) << "Gather " << i;
+
+  alignas(64) T dst[64] = {};
+  Buf<T> v; Buf<IdxT> sidx;
+  for (std::size_t i = 0; i < n; ++i) { v.data[i] = static_cast<T>(i * 7 + 3); sidx.data[i] = static_cast<IdxT>(i); }
+  hs::ScatterIndex(hs::Load(d, v.data), d, dst, hs::Load(di, sidx.data));
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(dst[i], v.data[i]) << "Scatter " << i;
+}
+TEST(Vec, GatherScatterI32) { CheckGatherScatter<std::int32_t, std::int32_t>(); }
+TEST(Vec, GatherScatterFloat) { CheckGatherScatter<float, std::int32_t>(); }
+TEST(Vec, GatherScatterI64) { CheckGatherScatter<std::int64_t, std::int64_t>(); }
+TEST(Vec, GatherScatterDouble) { CheckGatherScatter<double, std::int64_t>(); }
+
+template <typename T>
+void CheckCompress() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> v, lo, hi, out;
+  for (std::size_t i = 0; i < n; ++i) { v.data[i] = static_cast<T>(i + 1); lo.data[i] = static_cast<T>(i % 2); hi.data[i] = 0; }
+  auto m = hs::Gt(hs::Load(d, lo.data), hs::Load(d, hi.data));  // odd lanes true
+  T ref[32]; std::size_t k = 0;
+  for (std::size_t i = 0; i < n; ++i) if (i % 2 == 1) ref[k++] = v.data[i];
+  for (std::size_t j = k; j < n; ++j) ref[j] = T{0};
+  hs::Store(hs::Compress(hs::Load(d, v.data), m), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], ref[i]) << "Compress " << i;
+  Buf<T> sp;
+  for (std::size_t i = 0; i < n; ++i) sp.data[i] = static_cast<T>(0);
+  std::size_t cnt = hs::CompressStore(hs::Load(d, v.data), m, d, sp.data);
+  EXPECT_EQ(cnt, k);
+  for (std::size_t i = 0; i < k; ++i) EXPECT_EQ(sp.data[i], ref[i]) << "CompressStore " << i;
+  // Expand(compress-packed, m) restores the true lanes.
+  hs::Store(hs::Expand(hs::Load(d, ref), m), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], (i % 2 == 1) ? v.data[i] : T{0}) << "Expand " << i;
+}
+TEST(Vec, CompressI32) { CheckCompress<std::int32_t>(); }
+TEST(Vec, CompressFloat) { CheckCompress<float>(); }
+TEST(Vec, CompressI64) { CheckCompress<std::int64_t>(); }
+TEST(Vec, CompressI16) { CheckCompress<std::int16_t>(); }
+TEST(Vec, CompressI8) { CheckCompress<std::int8_t>(); }
+
 
 TEST(Vec, ScalableDotProduct) {
   const hs::ScalableTag<float> d;

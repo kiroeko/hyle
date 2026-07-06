@@ -682,4 +682,52 @@ HYLE_FORCE_INLINE Vec<T, N> TableLookupLanes(Vec<T, N> v, Indices<T, N> ind) noe
   return r;
 }
 
+// ---- gather / scatter (indexed memory access) ---------------------------------------
+// GatherIndex(d, base, idx): r[i] = base[idx[i]]; ScatterIndex is the inverse. The index
+// vector is a same-lane-count vector of the matching-width integer type. Native on AVX2
+// (gather) / AVX-512 (both); scalar + SSE4 + NEON loop (Highway's own fallback for those).
+// The scalar floor is the reference loop.
+template <class D, typename IdxT>
+HYLE_FORCE_INLINE VFromD<D> GatherIndex(D, const TFromD<D>* base, Vec<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  VFromD<D> r;
+  for (std::size_t i = 0; i < HYLE_SIMD_MAX_LANES_D(D); ++i)
+    r.raw[i] = base[static_cast<std::ptrdiff_t>(idx.raw[i])];
+  return r;
+}
+template <class D, typename IdxT>
+HYLE_FORCE_INLINE void ScatterIndex(VFromD<D> v, D, TFromD<D>* base, Vec<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  for (std::size_t i = 0; i < HYLE_SIMD_MAX_LANES_D(D); ++i)
+    base[static_cast<std::ptrdiff_t>(idx.raw[i])] = v.raw[i];
+}
+
+// ---- compress / expand (mask-driven pack / unpack) ----------------------------------
+// Compress(v, m): left-pack the lanes where m is true (order preserved), remaining lanes
+// undefined-but-typically-zeroed. CompressStore writes only the true lanes to p and returns
+// the count. Expand is the inverse (scatter true-mask lanes back out). Native vpcompress/
+// vpexpand on AVX-512; the scalar floor + SSE4/AVX2/NEON use a store+left-pack loop.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Compress(Vec<T, N> v, Mask<T, N> m) noexcept {
+  Vec<T, N> r;
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < N; ++i)
+    if (m.raw[i]) r.raw[k++] = v.raw[i];
+  for (; k < N; ++k) r.raw[k] = T{0};
+  return r;
+}
+template <class D>
+HYLE_FORCE_INLINE std::size_t CompressStore(VFromD<D> v, Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                            D, TFromD<D>* p) noexcept {
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < HYLE_SIMD_MAX_LANES_D(D); ++i)
+    if (m.raw[i]) p[k++] = v.raw[i];
+  return k;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Expand(Vec<T, N> v, Mask<T, N> m) noexcept {
+  Vec<T, N> r;
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = m.raw[i] ? v.raw[k++] : T{0};
+  return r;
+}
+
 }  // namespace hyle::simd
