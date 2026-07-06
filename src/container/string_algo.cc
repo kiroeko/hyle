@@ -8,7 +8,7 @@
 // Utf8Decoder loop in string_algo.h stays the constexpr/compile-time path and the
 // always-available fallback; at RUNTIME utf8_length routes here, which BORROWS
 // simdutf's verified SIMD cores when wired (-DHYLE_SIMD_SIMDUTF), exactly as
-// simd/math borrows SLEEF/Highway/xsimd ("借核不手搓"). Without simdutf this is
+// simd/math borrows Highway/xsimd ("借核不手搓"). Without simdutf this is
 // the same scalar scan (no behavior change, just not vectorized).
 //
 // CONTRACT MATCH: utf8_length returns the code-point count, or -1 on malformed

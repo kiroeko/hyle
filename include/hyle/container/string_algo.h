@@ -200,8 +200,8 @@ class Utf8Decoder {
 // Number of UTF-8 code points in `s`, or -1 if `s` is not valid UTF-8 (VALIDATE +
 // COUNT). Dispatched: the scalar Utf8Decoder scan is the default + fallback, but
 // when the container module is built with -DHYLE_SIMD_SIMDUTF it BORROWS simdutf's
-// verified SIMD validate+count cores (借核不手搓, same as simd/math borrows SLEEF/
-// Highway). The runtime entry lives in string_algo.cc; this is a thin delegate.
+// verified SIMD validate+count cores (借核不手搓, same as simd/math borrows
+// Highway/xsimd). The runtime entry lives in string_algo.cc; this is a thin delegate.
 namespace detail {
 HYLE_CONTAINER_API std::int32_t utf8_length_runtime(string_ref s) noexcept;
 }
