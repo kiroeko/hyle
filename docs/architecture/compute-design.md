@@ -168,7 +168,30 @@ compute/
 1. **kernel 表示的统一**——device/stream/kernel 接口怎么同时容纳"原生 CUDA kernel"(`cuLaunchKernel` + PTX/cubin)和"SPIR-V compute shader"两种 kernel 表示(compute-04/06;compute-01 只做 stream/completion 脊,先不碰 launch 抽象)。
 2. ~~**GPU completion 接 sched**~~ **✅ 决策已定**（见上"compute-03 GPU completion 接 sched"节：方案 A 零改 sched 复用 Waker/IoOperation/net_timeout；方案 B seastar veto 协议为后续）+ compute-01 已把 event-poll 原语落地。
 3. **buffer 与 mem/ 的边界**——host/device 传输、pinned、unified memory;§2 已定"device 内存归 compute/ 走显式 copy、不进 mem/ allocator",compute-02 落具体 buffer_type 实例形状。**注**：compute-01 的 `Stream::device_alloc`/`memcpy_async` 是脊验证的**最小**辅助（host 用 `std::malloc`、CUDA 用 `cudaMalloc`），compute-02 的 buffer 抽象取代它——届时 pinned **host staging**（`cudaMallocHost` 分配的是 host RAM）可包成 `mem::Allocator` 复用（`mem::MemoryArena` over `cudaMallocHost` 的 slab = pinned 块池，agent 调研已确认机制就位）；显存 `cudaMalloc` 仍 compute 自有、**不**走 mem。
-4. **Vulkan compute 自定义 kernel 的工程链**——GLSL/`.comp` → SPIR-V 编译、运行时加载、与 CUDA kernel 的统一启动 API(compute-06)。
+4. **Vulkan compute 自定义 kernel 的工程链**——GLSL/`.comp` → SPIR-V 编译、运行时加载、与 CUDA kernel 的统一启动 API(compute-06)。**参考库 = kompute**(`C:\public\project-hyle\kompute`,见下"compute-06 kompute 映射"节已定该抄什么)。
+
+## compute-06 kompute 映射：Vulkan 后端该抄什么/丢什么（2026-07-06 深读 kompute 源码）
+
+> compute-06 的 Vulkan compute 后端以 **kompute** 为骨架参考。kompute 是理想参考——**纯 Vulkan、零隐藏运行时**（全 `src/` grep 无 `std::thread`/事件循环/condition_variable，唯一同步是可选的 submit mutex + 每 Sequence 一个 `vk::Fence`），不违反 HYLE"不引入第二个调度器"铁律。整体照抄其 Vulkan 样板，**唯一实质改动是把 fence 的阻塞 await 换成非阻塞轮询接 fiber**。
+
+**该抄的三块不可省样板**（映射到 HYLE compute 抽象）：
+1. **Vulkan 初始化链 → HYLE `Device`（Vulkan 后端的 vtable 创建路径）**：instance → 物理设备枚举 → 找 compute queue family（遍历 `eCompute`）→ logical device + queue → 能力/扩展查询。`Manager.cpp:174-496`。**保留 Apple/MoltenVK portability 分支**（`Manager.cpp:197-204`——跨厂商一等公民的前提，一份 SPIR-V 全平台跑）。
+2. **SPIR-V → pipeline 全套 → HYLE `Kernel`（compute-04 的 Vulkan 实现）**：shader module 加载 SPIR-V → descriptor pool/layout/set 三件套 + `updateDescriptorSets` → pipeline layout（含 push constant range）+ compute pipeline + pipeline cache → 录制期 `bindPipeline`/`bindDescriptorSets`/`pushConstants`/`dispatch(x,y,z)`。`Algorithm.cpp:128-380`。
+3. **device buffer + memory-type 选择 + staging 双缓冲 + barrier 编排 → HYLE `Buffer`（compute-02 的 Vulkan 实现）**：device-local primary buffer + host-visible staging buffer 双缓冲；手动扫 `memoryTypeBits` 找 memory type（`Tensor.cpp:396-438`，必抄样板）；传输不是独立 API 而是**录进 command buffer 的 op**（copy staging↔device 前后夹 `pipelineBarrier` buffer memory barrier，`Tensor.cpp:139-251`）；host 访问 `mapMemory` + coherent 内存免 flush。
+
+**completion 机制——抄构造、换等待（接 fiber 的关键）**：
+- kompute submit：`evalAsync`（`Sequence.cpp:112-141`）`resetFences` → `queue.submit(submitInfo, mFence)` 立即返回 = HYLE `Stream` submit 产生 completion。**照抄。**
+- kompute await：`evalAwait`（`Sequence.cpp:163-187`）`waitForFences(...UINT64_MAX)` **阻塞** = **必须换掉**。换成 `device.getFenceStatus(fence)`（非阻塞，返 `eSuccess`/`eNotReady`）——**这正是 HYLE `Event::query()` 的语义,`vk::Fence` 就是 Vulkan 后端 `Event` 的底层 native handle**。轮询挂进 fiber 调度器（compute-03 的方案 A poller 线程 / 方案 B worker veto 轮询）。
+- **关键印证**：`cudaEventQuery`（CUDA）和 `vkGetFenceStatus`（Vulkan）是**同一个 Ready/NotReady 轮询原语**——compute-01 的 `Event::query()` 抽象对两个后端都成立，后端多态在这一层是对的（compute-01 的设计经此验证）。
+
+**该丢的（kompute 作为独立库的包袱，HYLE 不要）**：
+- 阻塞 `waitForFences` → 换非阻塞 `getFenceStatus`（上述）。
+- `shared_ptr`/`mManaged*` weak_ptr 所有权全家桶（`Manager.cpp:110-141`）→ HYLE 用手动虚表 + 自己的 Buffer/生命周期。
+- spdlog/fmt logger、Python 绑定、debug report callback、timestamp query pool（除非要 profiling）。
+- `OpBase` 虚基类 op 对象化（`OpBase.hpp` + `operations/*`）→ HYLE 已有 `Kernel`/`Stream` 抽象，不需要这层 op 对象；kompute 的三段式 record/preEval/postEval 语义可参考（barrier→dispatch→回读），但不抄它的 op 类层次。
+- begin/end 录制状态机（`Sequence.cpp:40-94`）可简化为按需一次录制。
+
+**SPIR-V 工程链（compute-06 需自己解决，kompute 未覆盖的）**：`.comp` GLSL → SPIR-V 的编译（`glslangValidator`/`shaderc` 离线编译进二进制,还是运行时编译）+ SPIR-V 加载。这是 compute-06 相对 kompute 要补的一环（kompute 假定调用方给编好的 SPIR-V）。
 5. ~~**`cudaSetDevice` 的 per-thread 上下文 vs fiber 跨 worker 迁移**~~ **✅ 已解决（2026-07-06 深调研 ggml/CCCL 源码，推翻原顾虑）**：CUDA stream/event 的**操作**（record/query/synchronize/wait/free）**不依赖调用线程的 current device**——handle 内在绑定创建时的 context。铁证：ggml 的 event record/wait/sync 前**都不** set device（ggml-cuda.cu:4527/4533/5510），CCCL 刻意用 driver API 做 stream 操作正是为绕开 runtime API "context 栈空时误 push dev0"（stream_ref.h:189 注释）。current device 只影响**创建**（`cudaMalloc`/`StreamCreate`/`EventCreate`）与 **kernel launch**。**故 fiber 跨 worker 迁移后操作同一 stream 安全，不需要 shard-per-core 绑核。** compute-01 后端据此修正：`set_device()` helper（照 ggml-cuda.cu:109 的 get-if-differ 规避冗余 set）**只在创建站点调用**，reap/poll/操作路径 set-free。绑核降为**可选性能优化**（NUMA/context 局部性），非正确性必需。
 
 ## 参考

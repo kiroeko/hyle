@@ -56,10 +56,10 @@
 
 | 支柱 | 里程碑 | 前置 | 就绪度 | 说明 |
 |---|---|---|---|---|
-| **compute** | compute-01~06 | sched-04 ✅ | 🟢 **就绪**(0 行) | device/stream 薄包 ggml-backend → device buffer → GPU completion→fiber → kernel 启动 → ggml_bridge → Vulkan。借 ggml 不自造算子。**异构混合极致性能的头牌本体**,北极星① 推理引擎的算力侧 |
+| **compute** | compute-01 ✅ / 02~08 | sched-04 ✅ | 🟢 **就绪**(01 已破土) | 主干 01~06:device/stream/event(✅)→ device buffer → GPU completion→fiber → kernel 启动 → ggml_bridge → Vulkan。**缺口补登(2026-07-06)**:07 CPU 算子后端(接 simd,对拍 oracle + 无 GPU 基线)、08 HIP/Metal(优先借 ggml 覆盖、原生后置、硬件阻塞)。借 ggml 不自造算子。**异构混合极致性能的头牌本体**,北极星① 推理引擎的算力侧 |
 | **graph** | graph-01 + graph-02? | sched-03 ✅ + compute(kernel) | 🟡 **部分**(graph-01 可先,substrate Chase-Lev 已备) | 北极星② CAD/BIM/CAE 驱动:脏标记增量重算 + 拓扑并行。graph-02(数据并行 parallel_for)归属待拍(见收口待决) |
 
-**C 类结论**:compute **前置就绪、0 行、是最大缺口**。它不属"等驱动"——它是北极星① 的算力支柱本体,**排期上应视为一个大阶段**(6 个里程碑,借 ggml 但仍 ~5-8k)。graph 依赖 compute 的 kernel,排在 compute 之后。
+**C 类结论**:compute **已破土(compute-01 ✅)**——它是北极星① 的算力支柱本体,**排期上是一个大阶段**(主干 01~06 借 ggml ~5-8k + 缺口 07 CPU 后端 / 08 HIP·Metal)。**缺口补登(2026-07-06)**:07 CPU 算子后端(scope §CPU fallback + roadmap 验收"CPU+GPU 对拍"要求的真后端,非 compute-01 的 host inline 兜底)、08 AMD·Apple 后端(scope 后端矩阵列了但主干未覆盖,借 ggml-hip/metal 优先)。graph 依赖 compute 的 kernel,排在 compute 之后。
 
 ## 五、收口层待决(需你拍板,非纯排期)
 

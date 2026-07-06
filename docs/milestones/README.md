@@ -1,6 +1,6 @@
 # HYLE 里程碑索引
 
-> 实现的真正"步骤"在这里——**~80 个里程碑**(表 82 行 − 2 个 ⛔否决;早期"约 58"已随施工中细拆 03a/b/c、04a/b/c/d、07a/b/c 等增长,现以本表为准),每个 1-4k 行、可独立编/测/基准。`roadmap.md` 是依赖层(阶段)的拓扑序与决策；本目录是**可执行的逐步计划**，每步一文档。
+> 实现的真正"步骤"在这里——**~82 个里程碑**(表 84 行 − 2 个 ⛔否决;早期"约 58"已随施工中细拆 03a/b/c、04a/b/c/d、07a/b/c、compute-07/08 缺口补登等增长,现以本表为准),每个 1-4k 行、可独立编/测/基准。`roadmap.md` 是依赖层(阶段)的拓扑序与决策；本目录是**可执行的逐步计划**，每步一文档。
 >
 > **排期视图**：想知道"还没做的都因为什么没做、前置齐没、能不能现在开工"，看 [`backlog-map.md`](./backlog-map.md)——按欠账原因(A 广度延期 / B 能力驱动半成品 / C 依赖序未到支柱)分类 + 依赖就绪度 + 开工顺序。**防"能力驱动"沦为"永远等"**。
 >
@@ -24,7 +24,7 @@
 >
 > | 口径 | 分母 | 当前 | 说明 |
 > |---|---|---|---|
-> | **里程碑计数** | ~80 个真里程碑(82 行 − 2 ⛔否决) | **~82%(66 ✅)** | ⚠️**最误导的口径,勿用作"完成度"**:剩下的 ~14 个恰是**最大最难的头牌**——compute 全 6 个 + graph 2 个 = 0 行未动工,每个 2-4k;计数把"写完一个 44 行 util"和"未写的 3k compute kernel"各记 1 个,严重高估 |
+> | **里程碑计数** | ~82 个真里程碑(84 行 − 2 ⛔否决) | **~82%(67 ✅)** | ⚠️**最误导的口径,勿用作"完成度"**:剩下的 ~15 个含**最大最难的头牌**——compute 剩 7 个(02~08,compute-01 已 ✅)+ graph 2 个,每个 1-4k;计数把"写完一个 44 行 util"和"未写的 3k compute kernel"各记 1 个,严重高估 |
 > | **clay 吸纳权重** | 被重构的旧 clay 库 | ~33%(coverage-map) | 基础层已基本吸纳 + time 双定时器(net-new);**分母是旧库,不是新愿景** |
 > | **自有生产 LOC 比** | 投影完成时 ~34k 自有(2026-07-03 审计+HTTP 定案后中值,band 28-40k) | **~48%**(band 41-58%) | 16.25k/(28-40k);但 LOC≠完成度(广度缺口不体现在比值里) |
 > | **对完整愿景的功能完成度** | 完整 HYLE 自有(全广度 + io/compute/graph,**不含借入的 ggml**) | **≈40%**(band 33-46%) | LOC 比 48% 上界,能力更保守——compute/graph 两大头牌支柱 0 行,是"异构混合极致性能"卖点本体 |
@@ -172,12 +172,16 @@
 | compute-04 | P5 | compute | kernel 启动抽象 | compute-01 | 2-3k | — | 占位 |
 | compute-05 | P5 | compute | ggml_bridge + 注入 HYLE 线程池 | compute-01 | 2-3k | — | 占位 |
 | compute-06 | P5 | compute | Vulkan compute 自定义 kernel | compute-04 | 2-3k | — | 占位 |
+| compute-07 | P5 | compute | CPU 算子后端(接 simd/ 数值核 + host completion 恒 ready) | compute-04,simd-04 | 1-2k | — | 📋 **缺口补登(2026-07-06)**。compute-01 的 `host_backend` 只是 device/stream/event 的 inline 兜底(测试用),**不是真算子执行后端**。scope §"CPU fallback(simd)" + roadmap 验收"CPU+GPU 后端对拍"要求一个**真 CPU 后端**:kernel 走 simd/ 的 `dot_f32`/`saxpy_f32`/`exp_f32_batch` 等数值核(compute-04 kernel 抽象的 CPU 实现),completion 恒 ready(无异步)。双用途:①无 GPU 机器的功能基线 ②GPU 后端的对拍 oracle(同输入 CPU vs GPU 逐元素比对)。**不引第二运行时**——数据并行铺多核靠 HYLE sched 的 fork-join(见 graph-02),非 CPU 后端自起线程 |
+| compute-08 | P5 | compute | HIP(AMD)/ Metal(Apple) 后端 | compute-05 | 1-2k(借 ggml)/ 2-3k(原生) | — | ⏸️ **缺口登记,优先借 ggml 覆盖(2026-07-06)**。scope 后端矩阵列了 AMD HIP / Apple Metal,但 compute-01~06 只做 CUDA+Vulkan+CPU。**两条路**:①**借 ggml-hip/ggml-metal**(经 compute-05 ggml_bridge,大部分算子路径即覆盖,低成本,优先)②**原生 stream/event 后端**(HIP 近似 CUDA runtime API、Metal command-buffer completion handler,当需要 raw kernel launch 或更细 completion 控制时,后置)。**硬件阻塞**:HIP 无 AMD 卡、Metal 已有 mac(kiro@172.22.10.198,但 Metal 后端未写)。**按需**,不阻塞北极星(CUDA 覆盖 NVIDIA 主路、Vulkan 覆盖跨厂商) |
 | graph-01 | P6 | graph | taskgraph 剥特化 + 绑 sched:脏标记增量重算 + 拓扑并行 + 结果缓存(== TBB flow_graph 类 DAG 编排)| sched-03 | 3-4k | — | 📋 **北极星② CAD/BIM/CAE 驱动**(轴 C 的 C12=参数化/仿真依赖 DAG 增量重算),非纯 P6 收口。substrate(Chase-Lev deque container-07/08)已备 |
 | graph-02? | P6 | graph/compute | **数据并行层**:parallel_for/reduce/scan/sort over range(+ blocked_range/partitioner)| sched, simd | 1-2k | — | ❓ **待定归属(审计发现)**。不同于 graph-01 的 DAG 编排——这是 oneTBB/oneDPL 的**数据并行算法层**,sched(workers)+ simd(每块 kernel)的天然消费者(大 buffer 上 compute kernel;**CAE 网格单元并行/场量归约的核心**)。**不被 scope 排除**,归 graph 还是 compute 未定;已在轴 C 的 C12 一并登记(有 CAD/BIM/CAE 消费者故非投机),可缓。待与序列化一起在 scope 复核时拍板 |
 | [close-01](./close-01-c-abi-shim.md) | P6 | 收口 | C-ABI shim(对外纯 C 头) | 各模块稳定 | 2-3k | — | 📋 **承诺已锁定,实现待排期**。产品铁律:发布给用户绑定的唯一稳定 ABI 面=纯 extern "C" C shim;C++ 公开头不承诺跨编译器/跨语言。未做此前 HYLE 不具"可发布给 FFI"资格。详见里程碑文档 |
 | close-02 | P6 | 收口 | serialize(simdjson/flatbuffers) + hash + T3 便利 | container | 4-6k | — | ❓ **占位 + scope 待澄清(审计发现)**。现把"serialize/hash/T3"糊成一个占位、点名 flatbuffers/simdjson 却**无设计、无接口形状**。`hyle-scope` 内部打架:"二进制序列化原语"算 IN、"IDL/schema 编译器·RPC"算 OUT。**待你拍**:① 借 flatbuffers/capnproto 的 builder+reader **当序列化原语**(不含 schema 编译器),还是 ② 把 wire-format 全推 L1。JSON 借 simdjson 已明确(scope 一致)。现状是"看着像计划的占位",需决策 |
 | close-03 | P6 | 收口 | FFI 绑定(TS N-API / Python ctypes) | close-01 | 2-3k | — | 占位 |
 
-~80 个真里程碑(82 行 − 2 ⛔;66 ✅ 完成 ≈ 82% 计数,但**计数高估**见顶部三口径表——真实 ~40% 能力 / ~48% LOC)。状态：✅ 完成 / 🔶 部分 / ⏸️ 占位(等轴 C 能力驱动) / 📋 规划 / ❓ 待 scope 澄清 / ⛔ 否决。真实LOC 闭环后回填，差距大见对应文档解释。
+~82 个真里程碑(84 行 − 2 ⛔;67 ✅ 完成 ≈ 82% 计数,但**计数高估**见顶部三口径表——真实 ~40% 能力 / ~48% LOC)。状态：✅ 完成 / 🔶 部分 / ⏸️ 占位(等轴 C 能力驱动) / 📋 规划 / ❓ 待 scope 澄清 / ⛔ 否决。真实LOC 闭环后回填，差距大见对应文档解释。
+
+> **compute 支柱里程碑清单(2026-07-06 补齐缺口)**：01 device/stream/event ✅ → 02 device buffer → 03 GPU completion→fiber → 04 kernel launch → 05 ggml_bridge → 06 Vulkan compute → **07 CPU 算子后端(接 simd,缺口补登)** → **08 HIP/Metal(缺口登记,优先借 ggml)**。主干是 01~06(CUDA+Vulkan 各跑通一条 + 借 ggml 算子)；07 补"真 CPU 后端(对拍 oracle + 无 GPU 基线)"；08 登记 AMD/Apple 后端(借 ggml 覆盖优先、原生后置、硬件阻塞)。数据并行 parallel_for 见 graph-02(归属待拍)。
 
 > 依赖列只标**直接前置**；完整依赖图见 `roadmap.md` 第一节。`00-scaffolding` 是所有里程碑的隐含前置（万物在它上面编译）。

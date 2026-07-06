@@ -19,6 +19,7 @@
 | 库 | 角色 | 说明 |
 |---|---|---|
 | **ggml** | 借（主力）| 算子 + 多后端（cuda/hip/metal/vulkan/sycl/webgpu/opencl…），`ggml_bridge` adapter 对接上游 pin 版；同时参考 ggml-backend 接口、dev_caps、CPU 多变体 dispatch |
+| **kompute** | 参考（compute-06 Vulkan 后端骨架）| Vulkan compute 封装，**纯 Vulkan 零隐藏运行时**（无 std::thread/事件循环，唯一同步=可选 submit mutex + 每 Sequence 一个 vk::Fence），合"不引入第二调度器"铁律。抄其 Manager 初始化链 / Algorithm 的 SPIR-V→pipeline→descriptor / Tensor 的 memory-type 选择+staging 双缓冲+barrier 编排；**丢**阻塞 `waitForFences`（换非阻塞 `getFenceStatus` 轮询接 fiber，= Event::query 语义，fence=Vulkan Event 的 native handle）、shared_ptr 所有权、logger、OpBase 虚基类。详见 compute-design「compute-06 kompute 映射」节 |
 | **llama.cpp** | 参考 | 多变体 DLL+score dispatch、CMake ISA 处理、探测器隔离（-fno-LTO）、推理引擎工程范式 |
 | **oneDNN** | **借（算子库）** | **Intel DL 原语 + AMX/VNNI 加速正主**；运行时 cpuid dispatch + Xbyak JIT。定位是**算子库（ggml 同级 CPU 算子供应商，接 bridge）**，非 device/stream 后端——它自带 JIT 不暴露 raw kernel launch |
 | **oneMath** | **仅参考（不借）** | Intel 数学（前 oneMKL）：BLAS/FFT。**SYCL 重依赖**（引它=引整条 SYCL/DPC++ 工具链），HYLE 已有 ggml BLAS；仅参考其 domain×device×library 三级分发表 |
