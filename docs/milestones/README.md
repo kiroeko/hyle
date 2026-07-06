@@ -35,7 +35,7 @@
 > - **为何不是更低的"个位%"**:那个数把**借入的 ggml ~100k 当成 HYLE 要写的**塞进分母。但 ggml 是 compute 支柱**借核不造**(scope 明列),不计入 HYLE 自有完成度——剔除后回到 ~40%。
 >
 > **一句话**:**里程碑计数 82% ✗(颗粒不等重的假象)→ 代码量 ~48% → 能力 ~40%**。三者递减,越往右越诚实。头牌 compute/graph 未动工是 40% 与 82% 的差距来源。
-> **~40% 但"最难的一半未动工"(关键定性,2026-07-05)**:**compute / graph 两大支柱 = 0 行**——这是 40% 与里程碑计数 82% 差距的全部来源。**io 支柱现已很完整**:proactor 三后端 + read/write/socket 真 op + tcp/udp net(co_await + shard-per-core + park 合并)+ **超时(io-06)+ multishot(io-07)+ TLS 三平台(io-08)+ DNS/signal(io-09)+ HTTP/1.1 三平台(io-10)全 ✅**(无 stub,双平台真测),仅剩 **shmem + HTTP/2** 待。**sched 支柱 01~11 全收口 + 本轮三复杂度优化(LIFO/O(1) sleeper/反饥饿)**。已写的 ~40% 是**地基 + sched 全支柱(优化过)+ io(proactor + net + 超时/TLS/HTTP)+ simd f32 核**,质量高、SOTA 对标、双平台+WSL TSan 验证(非 stub);但**广度薄**(simd 仅 f32,无 i8/i16 量化;AVX512/NEON 未硬件实跑)、**compute/graph 未开工**。故:**按代码量 ~48%,按"差异化能力"~40%——剩余工作的大头是两大头牌支柱主体(GPU 算力 + DAG 增量重算),不是零碎广度。**
+> **~40% 但"最难的一半未动工"(关键定性,2026-07-05)**:**compute / graph 两大支柱 = 0 行**——这是 40% 与里程碑计数 82% 差距的全部来源。**io 支柱现已很完整**:proactor 三后端 + read/write/socket 真 op + tcp/udp net(co_await + shard-per-core + park 合并)+ **超时(io-06)+ multishot(io-07)+ TLS 三平台(io-08)+ DNS/signal(io-09)+ HTTP/1.1 三平台(io-10)全 ✅**(无 stub,双平台真测),仅剩 **shmem + HTTP/2** 待。**sched 支柱 01~11 全收口 + 本轮三复杂度优化(LIFO/O(1) sleeper/反饥饿)**。已写的 ~40% 是**地基 + sched 全支柱(优化过)+ io(proactor 三后端含 mac kqueue + net + 超时/TLS/HTTP)+ simd f32 核**,质量高、SOTA 对标、**三平台(Win/Linux/macOS)真机验证 + WSL TSan**(非 stub);但**广度薄**(simd 仅 f32,无 i8/i16 量化;NEON 已 Apple-Silicon 真机实跑,AVX512 仍无机/SDE 未跑)、**compute/graph 未开工**。故:**按代码量 ~48%,按"差异化能力"~40%——剩余工作的大头是两大头牌支柱主体(GPU 算力 + DAG 增量重算),不是零碎广度。**
 
 > **真实LOC = 该里程碑自写代码的 cloc 实测（生产+测试，不含文档、不含 vendored 第三方）。**每步闭环后回填。
 > **预测/真实差距是"防玩具"信号**：差距大必须在该里程碑文档解释清楚——是"骨架版刻意精瘦、重活在后续里程碑"（合理），还是"偷懒 stub/空实现"（不可接受）。

@@ -7,7 +7,7 @@
 | **Tier** | 1 |
 | **LOC 估** | 2-3k |
 | **骨架?** | 否 |
-| **状态** | 🔶→✅(部分)**NEON ops 路径 Apple-Silicon 真机验证**（2026-07-05，M4 Air/macOS）：vec 对拍 + dot/saxpy NEON kernel 真跑全绿(simd_test 49/49，`active_variant()==kNeon` 坐实非 scalar 蒙混)+ SwissTable GroupNeon 真跑(container_test 158/158)。**dtype/math 的 NEON 仍走 scalar floor**(fp16 cvt/transcendental 是手写 intrinsic,非 neon.h 复用，列后续)。**AVX512 仍写+编+objdump 未跑存疑**（无 AVX512 机/SDE） |
+| **状态** | 🔶→✅ **NEON 全路径 Apple-Silicon 真机验证**（2026-07-05，M4 Air/macOS）：**ops**(dot/saxpy)+ **dtype**(fp16 原生 vcvt / bf16 整数)+ **math**(exp/log/tanh 借 Highway NEON 核)三件套全部 NEON 真跑全绿——simd_test 53/53(`active_variant()==kNeon` 坐实、dtype 全 65536 fp16 位模式 + bf16 位精确 vs scalar、math vs libm ~3.5ULP)+ SwissTable GroupNeon(container_test 158/158)。双平台无回归(WSL x86 56/56)。**AVX512 仍写+编+objdump 未跑存疑**（无 AVX512 机/SDE） |
 
 ## 前置依赖
 
@@ -30,7 +30,7 @@
 - **指令验证（objdump）**：✅ `aarch64-linux-gnu-objdump -d` 确认真发 NEON：dot kernel → `fmla v31.4s`(FMA)+`faddp v31.4s`(横向和)；relu(Gt+IfThenElse) → `fcmgt v30.4s,#0.0`；int sum → `addv s31,v30.4s`(横向整数和)，全在 `v` 寄存器。
 - **✅ 真机已跑（2026-07-05，Apple-Silicon M4 Air / macOS / Apple clang 21）**：NEON 结构与 SSE/AVX2 同构、vec_test 宽度无关的推断被真机证实——`hyle_simd_test` **49/49 全绿**(vec 对拍 + dot/saxpy NEON kernel),关键铁证：`ActiveVariantMatchesBestCompiledTier` 断言 `active_variant()==kNeon` 通过=dispatch 真选了 NEON kernel(非 scalar 蒙混);`hyle_container_test` **158/158**(SwissTable GroupNeon 真跑)。**双平台无回归**:同批 CMake 改动下 WSL x86 simd 56/56 + container 160/160。
 - **真机暴露的真缺口(交叉编译从没碰到)**：NEON 此前只**单编 neon.h 一个头**,从没走完整 CMake 构建——真机一编发现 **simd/container 的 CMake 是 x86 写死**(无条件编 x86 TU + 无条件 `-mavx2`,arm64 clang 报 "unsupported option")。补:①`hyle_isa_flags` 加 NEON tier(ARMv8 baseline 空 flag);②simd/container CMakeLists 按 `CMAKE_SYSTEM_PROCESSOR` 分支(x86 编 x86 TU、arm64 编 neon TU/走 baseline);③`kernels_neon.cc` 薄 TU(复用 neon.h)+ `kernels.h`/`dispatch_ops.cc` 加 `HYLE_ARCH_ARM64`→kNeon 分支。另修一个 macOS 真 bug:`pthread_t` 是 opaque 指针(glibc 是整数),`thread.cc` 的 static_cast 非法→改 memcpy。**教训:"交叉编译过"≠"该架构能构建"——只编了一个后端头,不是编了模块。**
-- **仍待(诚实边界)**：dtype fp16/bf16 cvt + math transcendental 的 NEON 版是**手写 per-backend intrinsic**(非 neon.h D-tag 复用),arm64 暂走 scalar floor,列后续;AVX512 无机/SDE 仍未跑。
+- **✅ dtype + math NEON 已补全(2026-07-05,真机)**:dtype fp16↔f32 用 Apple Silicon 原生 ARMv8.2 `vcvt`(finite 位精确、NaN by-class,同 x86 F16C 契约)、bf16↔f32 用 NEON 整数位运算(位精确匹配 scalar,NaN payload 含);math exp/log/tanh 借 Highway contrib/math 核(探针证 lower 到 NEON、match libm,arm64 用一个核跑全三 op)。dtype_test 5 个 cross-check + math 3 个 libm 对拍从"non-x86 skip"改真验证。**xsimd-NEON per-op 速度调优 + AVX512 无机/SDE 仍未跑**,是仅剩的 simd 存疑项。
 
 ## AVX-512 后端（已实现，写+编+objdump 验，未跑存疑）
 
