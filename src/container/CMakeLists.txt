@@ -3,34 +3,45 @@
 # xxhash + wyhash single-headers (best-of-breed byte hasher: XXH3 short-mid, wyhash
 # long); those include dirs are PRIVATE so neither leaks to consumers. string_algo.cc
 # is the dispatched utf8_length entry, which BORROWS simdutf's verified SIMD core.
-# string_ref.cc holds the out-of-line SIMD search cores + std forwards. It is the
-# BASELINE (SSE2) dispatcher for the self-implemented ops (count/rfind char via AVX2
-# variant string_ref_avx2.cc); the ops where MSVC STL's vectorized asm wins (substring
-# find/rfind, char-set find_*_of) are forwarded to std::string_view inside the .cc
-# (the public header pulls in no std string headers). Each SIMD variant is its own
-# -march TU, entered only when platform::cpu_features() confirms the ISA (runtime CPUID).
+# string_ref.cc holds the std forwards (substring find/rfind + char-set find_*_of, where
+# MSVC STL's vectorized asm wins) + the count/rfind DISPATCHER. count/rfind are unified onto
+# simd/vec.h (2026-07): kernels live in str_search_{scalar,sse4,avx2,avx512,neon}.cc (shared
+# body str_search_impl.h, written against the D-tag abstraction), and string_ref.cc picks the
+# widest by best_isa() through a cached fn ptr -- same variant-TU + runtime-dispatch model as
+# simd/ops. REPLACED the old hand-rolled string_ref_avx2.cc (256b, x86-only) + inline SSE2;
+# now every ISA incl. aarch64 NEON + AVX-512 is covered from one source (arm64 previously fell
+# to scalar). Each variant TU is its own -march, entered only when best_isa() confirms the ISA.
 #
-# ARCH SPLIT (Apple-Silicon 真机暴露): string_ref_avx2.cc is an x86-only variant TU (-mavx2).
-# string_ref.cc already #if-gates all references to its symbols behind HYLE_ARCH_X64, so on
-# aarch64 the dispatcher forwards to the scalar/std path and the AVX2 TU must NOT be compiled
-# (clang rejects -mavx2 on arm64). SwissTable's NEON group lives in probe.h (a header pulled
-# by swiss_table.cc), so container-04b NEON compiles automatically on arm64 -- no separate TU.
+# ARCH SPLIT (Apple-Silicon 真机纪律): wide variant TUs gated by CMAKE_SYSTEM_PROCESSOR --
+# x86 ships scalar+sse4+avx2+avx512, aarch64 ships scalar+neon. Feeding -mavx2 to arm64 (or the
+# x86 intrinsic headers) errors, so non-host-arch TUs are never compiled. SwissTable's NEON
+# group lives in probe.h (pulled by swiss_table.cc), so container-04b NEON compiles auto on arm64.
 set(_container_arch_sources "")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(HYLE_CONTAINER_X64 TRUE)
-  list(APPEND _container_arch_sources string_ref_avx2.cc)
+  list(APPEND _container_arch_sources
+    str_search_sse4.cc str_search_avx2.cc str_search_avx512.cc)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  set(HYLE_CONTAINER_ARM64 TRUE)
+  list(APPEND _container_arch_sources str_search_neon.cc)
 endif()
-hyle_add_module(container SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc string_ref.cc ${_container_arch_sources} PUBLIC_DEPS hyle_mem hyle_platform)
+hyle_add_module(container SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc string_ref.cc str_search_scalar.cc ${_container_arch_sources} PUBLIC_DEPS hyle_mem hyle_platform)
 target_include_directories(hyle_container PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/xxhash"
-  "${PROJECT_SOURCE_DIR}/third_party/wyhash")
+  "${PROJECT_SOURCE_DIR}/third_party/wyhash"
+  "${PROJECT_SOURCE_DIR}")  # str_search_*.cc #include "src/container/str_search_impl.h"
 
-# The AVX2 variant TU gets 256-bit codegen; string_ref.cc (the dispatcher) stays
-# baseline so it never emits an AVX2 instruction on the always-taken path. (x86 only.)
+# Per-variant ISA flags: each str_search kernel TU gets ONLY its target's -march; the
+# dispatcher (string_ref.cc) stays baseline so it never emits a wide instruction on the
+# always-taken path. Gated by arch (the wide TUs only exist in the matching build).
 if(HYLE_CONTAINER_X64)
-  hyle_set_isa(string_ref_avx2.cc AVX2)
+  hyle_set_isa(str_search_sse4.cc SSE42)
+  hyle_set_isa(str_search_avx2.cc AVX2)
+  hyle_set_isa(str_search_avx512.cc AVX512)
+elseif(HYLE_CONTAINER_ARM64)
+  hyle_set_isa(str_search_neon.cc NEON)
 endif()
-# Keep IPO/LTO off for the module so a future global -flto can't inline the AVX2 TU's
+# Keep IPO/LTO off for the module so a future global -flto can't inline a variant TU's
 # wider codegen into the baseline dispatcher (same isolation rule as simd/, conventions §10).
 set_target_properties(hyle_container PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 
