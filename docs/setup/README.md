@@ -25,7 +25,7 @@
 HYLE 的依赖分三类，决定了「新机器 `cmake` 会不会失败」：
 
 1. **硬门槛（必需，缺了 CMake 直接 FATAL_ERROR）**：C++ 编译器（GCC14+ / Clang18+ / MSVC19.43+）、CMake 3.25+、Ninja、汇编器（MASM/GAS）。这些**不自动装**，人得先装好——见各平台文件第一节。
-2. **自动拉取（联网自动，无需人工）**：`ggml`、`googletest` 走 **FetchContent**——新机器首次 `cmake` 会**自动联网 clone** 到 `.deps/`（[`dependencies.md` §FetchContent](./dependencies.md)）。**有网就开箱即用**；有备份的机器可预填缓存免下载（见该节）。
+2. **自动拉取（联网自动，无需人工）**：`ggml`、`googletest` 走 **FetchContent**——新机器首次 `cmake` 会**自动联网 clone** 到 `.deps/`（[`dependencies.md` §FetchContent](./dependencies.md)）。**有网就开箱即用**，之后缓存复用（删 build 不重下）。
 3. **可选能力（找到才启用，找不到静默跳过）**：OpenSSL（TLS）、CUDA（GPU 后端）。**缺了不报错**，只是对应功能不编——`cmake` 照样成功、其余全绿。cuDNN/TensorRT 更靠后（当前里程碑不依赖）。
 
 > **一句话**：硬门槛靠人装（第 1 类），ggml/gtest 自动下（第 2 类），GPU/TLS 可有可无（第 3 类）。所以「新机器直接 `cmake` 失败」几乎总是第 1 类没装齐，或第 2 类**没网**。

@@ -28,7 +28,7 @@ cd ~/hyle
 /opt/homebrew/bin/cmake --build build -j8
 ```
 
-- ggml/googletest 首次配置**自动联网拉**到 `.deps`（mac 有网即可）。有 pin 版备份则 `-DFETCHCONTENT_SOURCE_DIR_GGML=<路径>` 免下载（见 [`dependencies.md`](./dependencies.md)）。
+- ggml/googletest 首次配置**自动联网拉**到 `.deps`（mac 有网即可），之后缓存复用。
 - 配置会打印 `CUDA Toolkit not found -- compute uses host fallback only`（mac 无 CUDA，正常）；ggml 编 CPU-only（Apple 上还会带 Metal backend，但 HYLE bridge 只用 CPU 路径）。
 
 ## 三、测试

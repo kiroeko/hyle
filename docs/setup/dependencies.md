@@ -30,23 +30,7 @@
 - `rm -rf build` 重新配置 → **不重新下载**（源码还在 `.deps/<dep>-src`）
 - 同一机器开第二个 build 目录 → 复用同一 `.deps`
 
-> 这套「pin + 持久 `.deps`」借鉴 cil2cpp 的 `FETCHCONTENT_BASE_DIR` 用法。`.deps` 是**每台机器各自的**（Windows `C:\public\project-hyle\hyle\.deps`、WSL `/root/hyle/.deps`、mac `~/hyle/.deps`），不跨机共享。
-
-### 有备份的机器：预填缓存免下载（可选加速）
-
-若机器上已有一份**该 pin 版本**的 ggml 源码（本仓库开发机上 `C:\public\project-hyle\ggml` 就是 ggml pin commit 的一份备份），可以让 CMake 直接用它、**跳过联网下载**——用 CMake 官方的 `FETCHCONTENT_SOURCE_DIR_<NAME>` 命令行参数：
-
-```bash
-cmake -S . -B build -G Ninja \
-  -DFETCHCONTENT_SOURCE_DIR_GGML=C:/public/project-hyle/ggml
-```
-
-- **只是命令行参数，不写进 CMakeLists**——CMakeLists 保持纯 GIT 形式（开箱即用），是否用本地源码是**每台机器构建时**的选择。
-- `<NAME>` 是 `FetchContent_Declare` 里的名字大写：`GGML`、`GOOGLETEST`。
-- 那份源码**必须是对应的 pin 版本**（ggml 备份已 checkout 到 `eced84c8`）。版本不符会编译出错或行为不一致。
-- 这不改变构建产物——只是源码来源从「网络」变成「本地目录」，pin 版本一致故等价。
-
-> **为什么不把本地源码写死进 CMakeLists（用 SOURCE_DIR）**：那样每台机器都得先手动把源码铺到某个固定路径才能构建，违背「clone 完直接 cmake 就行」的开箱即用意图。默认联网下载、有备份的机器用命令行 override 免下载——两全。
+> 这套「pin + 持久 `.deps`」借鉴 cil2cpp 的 `FETCHCONTENT_BASE_DIR` 用法。`.deps` 是**每台机器各自的**（Windows `C:\public\project-hyle\hyle\.deps`、WSL `/root/hyle/.deps`、mac `~/hyle/.deps`），不跨机共享。ggml 和 googletest **一视同仁**——都由 CMake 联网下载、都进 `.deps/<dep>-src`，无特殊对待。
 
 **ggml 的构建开关（HYLE 强制设定，见根 CMakeLists）**：`GGML_OPENMP=OFF`（compute-05 发现 10：n_threads=1 叶子，不让 ggml 起 OpenMP 线程）、`GGML_BUILD_TESTS/EXAMPLES=OFF`、`GGML_CUDA_FA=OFF`（跳 ~120 个 FlashAttention kernel，桥只用 GEMM，省首编时间）、`GGML_CUDA` 跟随是否找到 CUDA。
 

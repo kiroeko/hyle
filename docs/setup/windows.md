@@ -39,12 +39,8 @@ call "C:\Program Files\Microsoft Visual Studio\18\Enterprise\VC\Auxiliary\Build\
 ## 四、构建
 
 ```bat
-:: 配置（首次会 FetchContent 自动联网拉 ggml + googletest 到 .deps）
+:: 配置（首次会 FetchContent 自动联网拉 ggml + googletest 到 .deps，之后缓存复用）
 cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
-
-:: 有 ggml 备份的机器免下载（本机 C:\public\project-hyle\ggml 是 pin 版备份）
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release ^
-  -DFETCHCONTENT_SOURCE_DIR_GGML=C:/public/project-hyle/ggml
 
 :: 构建单个目标 / 全部
 cmake --build build --target hyle_io_test

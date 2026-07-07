@@ -40,7 +40,7 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
 cmake --build build
 ```
 
-- ggml/googletest 首次配置自动联网拉到 `.deps`。有 pin 版备份的机器免下载：`-DFETCHCONTENT_SOURCE_DIR_GGML=<路径>`（见 [`dependencies.md`](./dependencies.md)）。
+- ggml/googletest 首次配置自动联网拉到 `.deps`，之后缓存复用（删 build 不重下）。
 - `wsl.exe` 从 Windows 侧驱动的坑：`wsl.exe -e bash -lc '...'` 外层 git-bash 会吃掉 `$VAR`；把逻辑写成 `.sh`（在 WSL 原生 bash 里跑变量才正常）。传 `/mnt/c/x.sh` 路径给 wsl.exe 会被 git-bash 改写 → 用 `wsl.exe -e bash -lc 'bash /root/x.sh'`，脚本直接在 `/root` 用 heredoc 生成、别 cp。
 
 ## 四、测试
