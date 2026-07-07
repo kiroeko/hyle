@@ -174,6 +174,8 @@ class Stream {
   friend HYLE_COMPUTE_API Status launch(Stream&, const class Kernel&,
                                         const struct LaunchConfig&,
                                         const struct KernelArgs&) noexcept;
+  friend HYLE_COMPUTE_API Status launch_batch(Stream&, const struct BatchItem*,
+                                              unsigned) noexcept;
   Device device_{};
   const ComputeBackend* vt_ = nullptr;  // backend that owns native_ (null = invalid)
   void* native_ = nullptr;              // cudaStream_t / host queue (opaque)

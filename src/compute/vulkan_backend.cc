@@ -32,6 +32,7 @@
 #include <cstring>
 #include <mutex>
 #include <new>
+#include <utility>
 #include <vector>
 
 #include "backend.h"
@@ -74,6 +75,9 @@ struct VkContext {
   uint32_t compute_qfi = 0;              // compute queue family index
   VkQueue queue = VK_NULL_HANDLE;        // the one compute queue (measured: 1 is enough)
   std::mutex submit_mtx;                 // serialize queue submits (a VkQueue is external-sync)
+  std::mutex build_mtx;                  // serialize pipeline build: VkPipelineCache host access
+                                         // is externally-synchronized (spec) + guards lazy
+                                         // per-Kernel pipeline creation against concurrent first-launch.
   VkPipelineCache pipe_cache = VK_NULL_HANDLE;  // shared cache (checklist #1: not per-kernel)
   char dev_name[256] = "vulkan";
 
@@ -172,14 +176,47 @@ void vk_device_memory(int, std::uint64_t* free, std::uint64_t* total) noexcept {
   if (free != nullptr) *free = dl;  // Vulkan core has no live "free" query; report total
 }
 
-// ---- Stream = VkQueue + a per-stream VkCommandPool ---------------------------
-// A HYLE Stream is a submission channel. Vulkan submits go through the shared compute
-// VkQueue, but each Stream owns its OWN VkCommandPool so command-buffer recording is
-// independent (checklist #14: eResetCommandBuffer pool). The native handle is a heap
-// VkStream (pointer-stable; freed on stream_destroy).
+// ---- Stream = VkQueue + a per-stream VkCommandPool + in-flight tracking -------
+// A HYLE Stream is a submission channel. Submits go through the shared compute VkQueue
+// (VkQueue is externally synchronized -> ctx().submit_mtx guards it), but each Stream
+// owns its OWN VkCommandPool (independent recording, checklist #14) AND tracks IN-FLIGHT
+// submissions so launch() can return WITHOUT blocking (async, #21): each submit's
+// command buffer + descriptor pool must outlive GPU execution, so we hold them keyed by
+// the submit's fence and RETIRE (free) them once that fence signals. This is what makes
+// `co_await stream` real -- launch submits + returns; the GpuPoller polls the fence; the
+// resources are reclaimed lazily (next launch/sync) after completion. NO vkQueueWaitIdle
+// on the launch hot path (that was the skeleton's blocking shortcut).
+struct InFlight {
+  VkFence fence = VK_NULL_HANDLE;   // the submit's completion fence (may be stream-owned or borrowed)
+  VkCommandBuffer cb = VK_NULL_HANDLE;
+  std::vector<VkDescriptorPool> dpools;  // descriptor pools to free on completion (0..N)
+  bool owns_fence = true;           // false when `fence` is an Event's fence (borrowed; don't destroy)
+};
 struct VkStream {
   VkCommandPool pool = VK_NULL_HANDLE;
+  std::vector<InFlight> inflight;   // submissions not yet known-complete
 };
+
+// Free every in-flight submission whose fence has signalled (GPU finished it). Called at
+// launch entry + stream_sync; keeps the in-flight list from growing unbounded. `force`
+// waits for all (stream_sync/destroy). Caller need not hold submit_mtx (per-stream state).
+void retire(VkStream* s, bool force) noexcept {
+  VkDevice dev = ctx().device;
+  std::size_t keep = 0;
+  for (auto& f : s->inflight) {
+    bool done = vkGetFenceStatus(dev, f.fence) == VK_SUCCESS;
+    if (!done && force) { vkWaitForFences(dev, 1, &f.fence, VK_TRUE, UINT64_MAX); done = true; }
+    if (done) {
+      if (f.cb != VK_NULL_HANDLE) vkFreeCommandBuffers(dev, s->pool, 1, &f.cb);
+      for (VkDescriptorPool p : f.dpools) vkDestroyDescriptorPool(dev, p, nullptr);
+      if (f.owns_fence) vkDestroyFence(dev, f.fence, nullptr);  // borrowed Event fences: skip
+    } else {
+      if (keep != &f - s->inflight.data()) s->inflight[keep] = std::move(f);
+      ++keep;  // still running -> keep (move to compact, avoid copying the vector)
+    }
+  }
+  s->inflight.resize(keep);
+}
 
 Status vk_stream_create(int, void** out_native) noexcept {
   auto* s = new (std::nothrow) VkStream{};
@@ -195,19 +232,22 @@ Status vk_stream_create(int, void** out_native) noexcept {
 void vk_stream_destroy(void* native) noexcept {
   auto* s = static_cast<VkStream*>(native);
   if (s == nullptr) return;
+  retire(s, /*force=*/true);  // wait out + free all stream-owned in-flight submissions
+  // Also drain any untracked marker submits (event_record cbs) still executing, so
+  // vkDestroyCommandPool doesn't free a command buffer that's still in use by the GPU.
+  { std::lock_guard<std::mutex> lk(ctx().submit_mtx); vkQueueWaitIdle(ctx().queue); }
   if (s->pool != VK_NULL_HANDLE) vkDestroyCommandPool(ctx().device, s->pool, nullptr);
   delete s;
 }
-Status vk_stream_sync(void* /*native*/) noexcept {
-  // Sync the whole queue (all submits on it). Used by the blocking test path; the fiber
-  // path uses event_query (GpuPoller) instead of blocking here.
-  std::lock_guard<std::mutex> lk(ctx().submit_mtx);
-  return from_vk(vkQueueWaitIdle(ctx().queue), "vkQueueWaitIdle");
+Status vk_stream_sync(void* native) noexcept {
+  // Block until ALL this stream's submitted work has completed, then reclaim resources.
+  auto* s = static_cast<VkStream*>(native);
+  retire(s, /*force=*/true);
+  return Status();
 }
 
 // ---- Event = VkFence (native handle) -----------------------------------------
 // event_query = vkGetFenceStatus (measured non-blocking, == cudaEventQuery -> GpuPoller).
-// A fence is created UNSIGNALLED; launch() resets+submits with it; query polls it.
 Status vk_event_create(int, void** out_native) noexcept {
   VkFenceCreateInfo ci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
   VkFence f = VK_NULL_HANDLE;
@@ -219,10 +259,39 @@ Status vk_event_create(int, void** out_native) noexcept {
 void vk_event_destroy(void* native) noexcept {
   if (native != VK_NULL_HANDLE) vkDestroyFence(ctx().device, static_cast<VkFence>(native), nullptr);
 }
-void vk_event_record(void* /*stream_native*/, void* /*event_native*/) noexcept {
-  // No-op: unlike cudaEventRecord (marks a point in a stream), a Vulkan fence is signalled
-  // by the submit itself. launch() passes the Stream's associated fence to vkQueueSubmit,
-  // so "recording" is implicit in submission. (The gpu_await path records via launch.)
+// Record `event` on `stream`: the Vulkan analog of cudaEventRecord ("mark THIS point in
+// the stream"). Submits an EMPTY command buffer signalling the event's fence. Because all
+// submits on one VkQueue execute in submission order, this fence signals only after every
+// prior launch on the stream has finished -- exactly cudaEventRecord's semantics, so
+// `co_await StreamComplete` (create event -> record -> poll query) works unchanged.
+//
+// LIFETIME (why the marker cb is NOT parked in `inflight`): the event's fence is owned by
+// the Event object, which the awaiting coroutine destroys right after the wait completes.
+// Parking the marker cb in `inflight` keyed on that fence would make a later retire()/
+// stream_destroy vkGetFenceStatus a DESTROYED fence = use-after-free (faults on Windows,
+// silently "works" on Linux -- caught by testing BOTH). Instead the marker cb is left
+// owned by the stream's COMMAND POOL, reclaimed wholesale at vkDestroyCommandPool
+// (stream_destroy force-retires + waits stream-owned fences first). Markers accumulate over
+// the stream's life (bounded by #co_awaits); per-marker reclaim is deferred, not needed
+// for correctness.
+void vk_event_record(void* stream_native, void* event_native) noexcept {
+  auto* s = static_cast<VkStream*>(stream_native);
+  VkFence ev = static_cast<VkFence>(event_native);
+  VkDevice dev = ctx().device;
+  vkResetFences(dev, 1, &ev);
+  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  cbai.commandPool = s->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
+  VkCommandBuffer cb = VK_NULL_HANDLE;
+  if (vkAllocateCommandBuffers(dev, &cbai, &cb) != VK_SUCCESS) return;
+  VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  vkBeginCommandBuffer(cb, &bg);
+  vkEndCommandBuffer(cb);  // empty: just a fence marker after prior stream work
+  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  si.commandBufferCount = 1; si.pCommandBuffers = &cb;
+  std::lock_guard<std::mutex> lk(ctx().submit_mtx);
+  vkQueueSubmit(ctx().queue, 1, &si, ev);
+  // cb NOT tracked in inflight (see LIFETIME note) -- the command pool reclaims it.
 }
 EventStatus vk_event_query(void* event_native) noexcept {
   VkResult r = vkGetFenceStatus(ctx().device, static_cast<VkFence>(event_native));
@@ -423,6 +492,12 @@ struct VkKernel {
 // length-prefixed contract documented in the header). For the first consumer the test
 // passes SPIR-V through a dedicated path (see vulkan-specific load below).
 Status build_pipeline(VkKernel* k, uint32_t buffer_count, uint32_t push_size) noexcept {
+  // Serialize: VkPipelineCache host access is externally-synchronized (Vulkan spec), and
+  // this guards the lazy per-Kernel build against concurrent first-launch from multiple
+  // fibers. Double-check under the lock -- if another fiber already built this kernel while
+  // we waited, use its result (no rebuild -> no leak / no torn k->pipeline write).
+  std::lock_guard<std::mutex> lk(ctx().build_mtx);
+  if (k->pipeline != VK_NULL_HANDLE) return Status();  // already built by a racing caller
   // Descriptor set layout: `buffer_count` storage buffers at bindings 0..N-1 (checklist:
   // buffer args -> descriptor slots, positional).
   std::vector<VkDescriptorSetLayoutBinding> binds(buffer_count);
@@ -554,22 +629,153 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
   if (args->scalar_bytes)
     vkCmdPushConstants(cb, k->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, args->scalar_bytes, args->scalars);
   vkCmdDispatch(cb, cfg->grid.x, cfg->grid.y, cfg->grid.z);
+  // Barrier (#11): make the compute writes to the storage buffers VISIBLE to a subsequent
+  // host read (buffer_get maps the memory) or a following dispatch. ONE global memory
+  // barrier (shaderWrite -> shaderRead|hostRead) covers all buffers -- precise per-buffer
+  // barriers are an optimization for multi-kernel graphs (not this single dispatch). This
+  // replaces the skeleton's "rely on vkQueueWaitIdle + coherent memory" shortcut.
+  VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+  mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+  mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+  vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT |
+                       VK_PIPELINE_STAGE_TRANSFER_BIT,
+                       0, 1, &mb, 0, nullptr, 0, nullptr);
   vkEndCommandBuffer(cb);
 
-  // Submit with the Stream's fence == the Event the caller will query (GpuPoller). For the
-  // first consumer the caller syncs via stream_sync / event; the fence lives on the caller's
-  // Event. Here we submit and wait-idle so the one-shot pool/cb can be freed safely (the
-  // async fiber path uses the Event fence + gpu_await instead; this keeps the raw path safe).
+  // Submit ASYNC (#21): own fence per submit, NO wait -- launch returns immediately; the
+  // caller observes completion via `co_await StreamComplete` (create Event -> event_record
+  // marker on this stream -> GpuPoller polls the fence) or stream_sync. The cb + descriptor
+  // pool + fence are tracked in-flight and freed by retire() once the fence signals (they
+  // MUST outlive GPU execution -- freeing them here would be use-after-free). retire() at
+  // entry reclaims prior completed submissions so the list stays bounded.
+  retire(stream, /*force=*/false);
+  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  VkFence fence = VK_NULL_HANDLE;
+  r = vkCreateFence(dev, &fci, nullptr, &fence);
+  if (r != VK_SUCCESS) { vkFreeCommandBuffers(dev, stream->pool, 1, &cb);
+                         if (dpool) vkDestroyDescriptorPool(dev, dpool, nullptr);
+                         return from_vk(r, "vkCreateFence"); }
   VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
   si.commandBufferCount = 1; si.pCommandBuffers = &cb;
   {
     std::lock_guard<std::mutex> lk(ctx().submit_mtx);  // VkQueue is externally synchronized
-    r = vkQueueSubmit(ctx().queue, 1, &si, VK_NULL_HANDLE);
-    if (r == VK_SUCCESS) r = vkQueueWaitIdle(ctx().queue);
+    r = vkQueueSubmit(ctx().queue, 1, &si, fence);
   }
-  vkFreeCommandBuffers(dev, stream->pool, 1, &cb);
-  if (dpool) vkDestroyDescriptorPool(dev, dpool, nullptr);
-  return from_vk(r, "vkQueueSubmit");
+  if (r != VK_SUCCESS) { vkDestroyFence(dev, fence, nullptr);
+                         vkFreeCommandBuffers(dev, stream->pool, 1, &cb);
+                         if (dpool) vkDestroyDescriptorPool(dev, dpool, nullptr);
+                         return from_vk(r, "vkQueueSubmit"); }
+  stream->inflight.push_back(InFlight{fence, cb, dpool ? std::vector<VkDescriptorPool>{dpool}
+                                                       : std::vector<VkDescriptorPool>{},
+                                      /*owns_fence=*/true});
+  return Status();  // async: submitted, not waited
+}
+
+// BATCHED launch (#15, the measured perf lever): record ALL `count` dispatches into ONE
+// command buffer + ONE submit (vs N launches = N submits+fences). Each item gets its own
+// descriptor pool (freed together on retire); a barrier between dispatches makes each
+// kernel's writes visible to the next (safe for dependent chains; independent kernels pay
+// a cheap barrier). One fence for the whole batch -> one in-flight entry, but the per-item
+// descriptor pools must all be freed, so we retire them via a small owning wrapper: park
+// each pool as its own InFlight sharing the batch fence (owns_fence only on the last).
+Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
+                              const void* const* funcs, const LaunchConfig* configs,
+                              const KernelArgs* args_arr, unsigned count) noexcept {
+  if (count == 0) return Status();
+  auto* stream = static_cast<VkStream*>(stream_native);
+  VkDevice dev = ctx().device;
+  retire(stream, /*force=*/false);
+
+  // Build pipelines (lazy) for every item up front.
+  for (unsigned i = 0; i < count; ++i) {
+    auto* k = static_cast<VkKernel*>(const_cast<void*>(modules[i]));
+    if (k->pipeline == VK_NULL_HANDLE) {
+      Status s = build_pipeline(k, args_arr[i].buffer_count, args_arr[i].scalar_bytes);
+      if (!s.ok()) return s;
+    }
+  }
+  // One command buffer for the whole batch.
+  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  cbai.commandPool = stream->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
+  VkCommandBuffer cb = VK_NULL_HANDLE;
+  VkResult r = vkAllocateCommandBuffers(dev, &cbai, &cb);
+  if (r != VK_SUCCESS) return from_vk(r, "vkAllocateCommandBuffers(batch)");
+  VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  vkBeginCommandBuffer(cb, &bg);
+
+  std::vector<VkDescriptorPool> pools;  // one per item with buffers; freed on retire
+  pools.reserve(count);
+  for (unsigned i = 0; i < count; ++i) {
+    auto* k = static_cast<VkKernel*>(const_cast<void*>(modules[i]));
+    const KernelArgs& a = args_arr[i];
+    VkDescriptorSet dset = VK_NULL_HANDLE;
+    if (a.buffer_count) {
+      VkDescriptorPoolSize ps{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, a.buffer_count};
+      VkDescriptorPoolCreateInfo dpci{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+      dpci.maxSets = 1; dpci.poolSizeCount = 1; dpci.pPoolSizes = &ps;
+      VkDescriptorPool dpool = VK_NULL_HANDLE;
+      if (vkCreateDescriptorPool(dev, &dpci, nullptr, &dpool) != VK_SUCCESS) {
+        // Fail-fast, NOT silent-skip: a dropped dispatch would return OK while under-
+        // computing (project rule: contract/resource failure surfaces, no silent兜底).
+        vkEndCommandBuffer(cb);
+        vkFreeCommandBuffers(dev, stream->pool, 1, &cb);
+        for (auto p : pools) vkDestroyDescriptorPool(dev, p, nullptr);
+        return Status::ResourceExhausted("vk batch: descriptor pool alloc failed");
+      }
+      pools.push_back(dpool);
+      VkDescriptorSetAllocateInfo dsai{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+      dsai.descriptorPool = dpool; dsai.descriptorSetCount = 1; dsai.pSetLayouts = &k->dsl;
+      vkAllocateDescriptorSets(dev, &dsai, &dset);
+      std::vector<VkDescriptorBufferInfo> dbi(a.buffer_count);
+      std::vector<VkWriteDescriptorSet> w(a.buffer_count);
+      for (uint32_t b = 0; b < a.buffer_count; ++b) {
+        auto* m = static_cast<VkMem*>(a.buffers[b]);
+        dbi[b] = {m->buf, 0, VK_WHOLE_SIZE};
+        w[b] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+        w[b].dstSet = dset; w[b].dstBinding = b; w[b].descriptorCount = 1;
+        w[b].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; w[b].pBufferInfo = &dbi[b];
+      }
+      vkUpdateDescriptorSets(dev, a.buffer_count, w.data(), 0, nullptr);
+    }
+    vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->pipeline);
+    if (a.buffer_count)
+      vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->layout, 0, 1, &dset, 0, nullptr);
+    if (a.scalar_bytes)
+      vkCmdPushConstants(cb, k->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, a.scalar_bytes, a.scalars);
+    vkCmdDispatch(cb, configs[i].grid.x, configs[i].grid.y, configs[i].grid.z);
+    // Barrier between dispatches: item i+1 may read item i's writes (dependent chain);
+    // independent items pay a cheap shader-shader barrier. Last item's writes -> host.
+    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+    mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+    vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT |
+                         VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mb, 0, nullptr, 0, nullptr);
+  }
+  vkEndCommandBuffer(cb);
+
+  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  VkFence fence = VK_NULL_HANDLE;
+  r = vkCreateFence(dev, &fci, nullptr, &fence);
+  if (r != VK_SUCCESS) { vkFreeCommandBuffers(dev, stream->pool, 1, &cb);
+                         for (auto p : pools) vkDestroyDescriptorPool(dev, p, nullptr);
+                         return from_vk(r, "vkCreateFence(batch)"); }
+  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  si.commandBufferCount = 1; si.pCommandBuffers = &cb;
+  {
+    std::lock_guard<std::mutex> lk(ctx().submit_mtx);
+    r = vkQueueSubmit(ctx().queue, 1, &si, fence);
+  }
+  if (r != VK_SUCCESS) { vkDestroyFence(dev, fence, nullptr); vkFreeCommandBuffers(dev, stream->pool, 1, &cb);
+                         for (auto p : pools) vkDestroyDescriptorPool(dev, p, nullptr);
+                         return from_vk(r, "vkQueueSubmit(batch)"); }
+  // ONE in-flight entry owns the batch's fence + cb + ALL its descriptor pools; retire()
+  // frees them together when the single shared fence signals (no shared-fence double-free).
+  InFlight bf; bf.fence = fence; bf.cb = cb; bf.dpools = std::move(pools); bf.owns_fence = true;
+  stream->inflight.push_back(std::move(bf));
+  return Status();
 }
 
 constexpr ComputeBackend kVulkanBackend = {
@@ -609,6 +815,7 @@ constexpr ComputeBackend kVulkanBackend = {
     /*kernel_load_host=*/vk_kernel_load_host,
     /*kernel_destroy=*/vk_kernel_destroy,
     /*kernel_launch=*/vk_kernel_launch,
+    /*kernel_launch_batch=*/vk_kernel_launch_batch,
 };
 
 }  // namespace

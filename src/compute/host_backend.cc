@@ -260,6 +260,18 @@ Status host_kernel_launch(void* /*stream_native*/, void* /*module*/, void* func,
   return Status();
 }
 
+Status host_kernel_launch_batch(void* stream_native, const void* const* modules,
+                                const void* const* funcs, const LaunchConfig* configs,
+                                const KernelArgs* args_arr, unsigned count) noexcept {
+  (void)modules;
+  for (unsigned i = 0; i < count; ++i) {
+    Status s = host_kernel_launch(stream_native, nullptr, const_cast<void*>(funcs[i]),
+                                  &configs[i], &args_arr[i]);
+    if (!s.ok()) return s;
+  }
+  return Status();
+}
+
 constexpr ComputeBackend kHostBackend = {
     /*name=*/"host",
     /*device_count=*/host_device_count,
@@ -297,6 +309,7 @@ constexpr ComputeBackend kHostBackend = {
     /*kernel_load_host=*/host_kernel_load_host,
     /*kernel_destroy=*/host_kernel_destroy,
     /*kernel_launch=*/host_kernel_launch,
+    /*kernel_launch_batch=*/host_kernel_launch_batch,
 };
 
 }  // namespace

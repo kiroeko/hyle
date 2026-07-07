@@ -98,6 +98,8 @@ class Kernel {
  private:
   friend HYLE_COMPUTE_API Status launch(Stream&, const Kernel&, const LaunchConfig&,
                                         const KernelArgs&) noexcept;
+  friend HYLE_COMPUTE_API Status launch_batch(Stream&, const struct BatchItem*,
+                                              unsigned) noexcept;
   const ComputeBackend* vt_ = nullptr;  // backend that owns the handles (null=invalid)
   void* module_ = nullptr;              // CUmodule (CUDA) / unused (host)
   void* func_ = nullptr;                // CUfunction (CUDA) / HostFn (host)
@@ -112,8 +114,12 @@ class Kernel {
 // scalar blob becomes push constants (compute-06). `config.grid` is the grid / workgroup
 // count (same ceil(n/block) math both sides); `config.block` is the CUDA block dim
 // (Vulkan's local_size lives in the shader). The KernelArgs' arrays are caller-owned
-// (zero heap; must outlive the call, which is synchronous submit). ASYNC: returns after
-// submit; observe completion with `co_await StreamComplete{&stream}` (compute-03). A
+// (zero heap). ⚠️ LIFETIME: the kernel runs ASYNCHRONOUSLY -- the KernelArgs arrays AND the
+// backing device Buffers must stay alive until the launch COMPLETES (co_await
+// StreamComplete / stream.sync()), NOT merely until launch() returns. On Vulkan the GPU
+// reads the Buffers after launch() has returned; destroying a Buffer right after launch is
+// a use-after-free. ASYNC: launch returns after submit; observe completion with
+// `co_await StreamComplete{&stream}` (compute-03). A
 // launch/config error surfaces as Status (CUDA: cudaGetLastError; Vulkan: submit result).
 // On the host backend, calls the registered HostFn synchronously.
 //
@@ -121,6 +127,22 @@ class Kernel {
 // builds KernelArgs at compile time; this raw form is for a caller that already has one.
 HYLE_COMPUTE_API Status launch(Stream& stream, const Kernel& kernel,
                                const LaunchConfig& config, const KernelArgs& args) noexcept;
+
+// ---- BATCHED launch (compute-06 finding: batching = the measured perf lever) ----------
+// Submit N (kernel, config, args) items in ONE backend submit instead of N -- on Vulkan
+// this is ONE command buffer + ONE fence for all N dispatches (省 N-1 submits+fences, the
+// 1.07x+ lever that grows with more/smaller ops, compute-05 finding 4). On CUDA/host it
+// loops (their stream already orders sequential submits at no per-submit cost). Each item
+// carries a Kernel + its LaunchConfig + pre-built KernelArgs; the args' arrays are caller-
+// owned and must outlive the call. ASYNC on Vulkan (co_await stream to await); errors
+// return the first item's failure.
+struct BatchItem {
+  const Kernel* kernel;
+  LaunchConfig config;
+  KernelArgs args;
+};
+HYLE_COMPUTE_API Status launch_batch(Stream& stream, const BatchItem* items,
+                                     unsigned count) noexcept;
 
 // ---- TYPED SHELL (header-only, compile-time, zero heap) ----------------------
 // The ergonomic launch: pass kernel arguments DIRECTLY, mixed, like calling the kernel --

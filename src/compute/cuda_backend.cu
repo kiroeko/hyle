@@ -770,6 +770,20 @@ Status cuda_kernel_launch(void* stream_native, void* /*module*/, void* func,
   return from_cuda(cudaGetLastError(), "kernel launch");
 }
 
+// Batched launch: a CUDA stream already ORDERS sequential submits with no extra per-submit
+// cost (unlike Vulkan's per-submit fence), so CUDA's "batch" is just launching each kernel
+// on the same stream in order -- no separate cmdbuf/fence to amortize. Loop kernel_launch.
+Status cuda_kernel_launch_batch(void* stream_native, const void* const* modules,
+                                const void* const* funcs, const LaunchConfig* configs,
+                                const KernelArgs* args_arr, unsigned count) noexcept {
+  for (unsigned i = 0; i < count; ++i) {
+    Status s = cuda_kernel_launch(stream_native, const_cast<void*>(modules[i]),
+                                  const_cast<void*>(funcs[i]), &configs[i], &args_arr[i]);
+    if (!s.ok()) return s;
+  }
+  return Status();
+}
+
 constexpr ComputeBackend kCudaBackend = {
     /*name=*/"cuda",
     /*device_count=*/cuda_device_count,
@@ -807,6 +821,7 @@ constexpr ComputeBackend kCudaBackend = {
     /*kernel_load_host=*/cuda_kernel_load_host,
     /*kernel_destroy=*/cuda_kernel_destroy,
     /*kernel_launch=*/cuda_kernel_launch,
+    /*kernel_launch_batch=*/cuda_kernel_launch_batch,
 };
 
 }  // namespace

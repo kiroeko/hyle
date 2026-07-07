@@ -148,6 +148,16 @@ struct ComputeBackend {
   // Status (launch/config error).
   Status (*kernel_launch)(void* stream_native, void* module, void* func,
                           const void* config, const KernelArgs* args) noexcept;
+  // BATCHED launch (compute-06 finding: batching = the measured perf lever -- N ops in
+  // ONE submit beats N separate submits,省 N-1 次 submit+fence, compute-05 finding 4).
+  // `modules`/`funcs`/`configs`/`args_arr` are `count` parallel arrays (item i = the
+  // i-th kernel + its config + its args). Vulkan records all N dispatches (with barriers
+  // between) into ONE command buffer + ONE submit; CUDA/host just loop kernel_launch (a
+  // CUDA stream already orders sequential submits with no extra per-submit cost, so their
+  // "batch" is the loop). Returns first error or OK.
+  Status (*kernel_launch_batch)(void* stream_native, const void* const* modules,
+                                const void* const* funcs, const LaunchConfig* configs,
+                                const KernelArgs* args_arr, unsigned count) noexcept;
 };
 
 // Each backend exposes its singleton vtable through one of these. host is ALWAYS

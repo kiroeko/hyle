@@ -582,4 +582,24 @@ Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
                                    &config, &args);
 }
 
+Status launch_batch(Stream& stream, const BatchItem* items, unsigned count) noexcept {
+  HYLE_FATAL_ASSERT(stream.vt_ != nullptr);
+  if (count == 0) return Status();
+  HYLE_FATAL_ASSERT(items != nullptr && count <= 64);
+  // Unpack the items into the parallel arrays the vtable slot takes (stack, bounded 64).
+  const void* modules[64];
+  const void* funcs[64];
+  LaunchConfig configs[64];
+  KernelArgs args[64];
+  for (unsigned i = 0; i < count; ++i) {
+    const Kernel* k = items[i].kernel;
+    HYLE_FATAL_ASSERT(k != nullptr && k->vt_ == stream.vt_);  // all on stream's backend
+    modules[i] = k->module_;
+    funcs[i] = k->func_;
+    configs[i] = items[i].config;
+    args[i] = items[i].args;
+  }
+  return stream.vt_->kernel_launch_batch(stream.native_, modules, funcs, configs, args, count);
+}
+
 }  // namespace hyle::compute
