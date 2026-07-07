@@ -25,18 +25,12 @@ compile_commands.json
 /_deps/
 /vendor/*/
 
-# compute-05: ggml is a FetchContent dependency PINNED BY COMMIT (CMakeLists.txt).
-# third_party/ggml is a LOCAL SOURCE MIRROR (git archive of the pin) kept out-of-repo --
-# unlike fcontext/picohttpparser (tiny copied vendors that ARE tracked). Delete it ->
-# CMake fetches the pinned commit from upstream. .deps/ is the persistent FetchContent
-# cache (FETCHCONTENT_BASE_DIR): populated ONCE per machine, reused across `rm -rf build`
-# and regenerations. Both are per-machine (Win C:\..., WSL /root/hyle, mac ~/hyle -- never
-# shared across OSes), so no cross-tree path conflict.
-/third_party/ggml/
+# compute-05 / tests: ggml + googletest are FetchContent deps (CMakeLists.txt / tests/
+# CMakeLists.txt), pinned by commit/tag. FETCHCONTENT_BASE_DIR points here so a first
+# `cmake` auto-fetches them into .deps/<dep>-src ONCE, reused across `rm -rf build` and
+# regenerations. .deps is per-machine (Win C:\..., WSL /root/hyle, mac ~/hyle). Nothing
+# pre-placed in third_party for these -- pure open-box auto-download (cil2cpp form).
 /.deps/
-# googletest local mirror (git-archive of the pinned tag), same rule as ggml: per-machine,
-# .gitignored, SOURCE_DIR zero-download. Absent -> FetchContent fetches the tag once.
-/third_party/googletest/
 
 # local build helper (machine-specific hardcoded paths)
 _build.bat

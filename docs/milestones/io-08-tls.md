@@ -40,7 +40,7 @@ TLS 泵是首个 `co_await` 子 Task 的消费者。有栈 fiber 下极简：`aw
 - `include/hyle/io/tls.h`（TlsContext + TlsStream + 4 个自由函数 tls_handshake/read/write/shutdown）
 - `src/io/tls.cc`（memory-BIO 泵 + SSL 引擎驱动 + ensure_scratch）
 - `include/hyle/sched/coro.h`（Task awaiter：co_await 子 Task）
-- `tests/io/tls_test.cc`；CMake `HYLE_IO_TLS` 门控。开发环境见 [`docs/dev-setup.md`](../dev-setup.md)
+- `tests/io/tls_test.cc`；CMake `HYLE_IO_TLS` 门控。开发环境见 [`docs/setup/`](../setup/README.md)（OpenSSL 装法见各平台文件 + `dependencies.md`）
 
 ## 参考
 - io-design「② 参考库审计真缺口」io-08 节。OpenSSL memory-BIO；seastar tls_openssl.cc / libevent bufferevent_ssl / asio ssl::stream。相关里程碑：io-04（TcpStream 底座）、sched-06（coro.h Task）。install/DLL 分发归 close-01。详见 [performance/benchmarks-io.md](../performance/benchmarks-io.md) 热路径分配消除节。

@@ -1,22 +1,14 @@
 include(FetchContent)
 
-# GoogleTest (charter: unit test framework). Pinned tag, SAME "local mirror first" rule
-# as ggml (CMakeLists.txt): if third_party/googletest exists (a git-archive of the tag,
-# .gitignored, per-machine), use it via SOURCE_DIR -> zero network; else GIT-fetch the
-# tag once. Combined with FETCHCONTENT_BASE_DIR=.deps (set in root), a build wipe never
-# re-downloads gtest either.
-set(_gtest_local "${CMAKE_SOURCE_DIR}/third_party/googletest")
-if(EXISTS "${_gtest_local}/CMakeLists.txt")
-  message(STATUS "HYLE: googletest from LOCAL mirror ${_gtest_local} (no fetch)")
-  FetchContent_Declare(googletest SOURCE_DIR "${_gtest_local}")
-else()
-  message(STATUS "HYLE: googletest LOCAL mirror absent -- FetchContent will fetch v1.15.2")
-  FetchContent_Declare(
-    googletest
-    GIT_REPOSITORY https://github.com/google/googletest.git
-    GIT_TAG        v1.15.2
-    GIT_SHALLOW    TRUE)
-endif()
+# GoogleTest (charter: unit test framework). Pinned tag, FetchContent GIT form (same
+# open-box-auto-download contract as ggml): first `cmake` fetches it into .deps/
+# googletest-src ONCE (FETCHCONTENT_BASE_DIR=.deps, set in root), reused across build
+# wipes. No pre-placed mirror.
+FetchContent_Declare(
+  googletest
+  GIT_REPOSITORY https://github.com/google/googletest.git
+  GIT_TAG        v1.15.2
+  GIT_SHALLOW    TRUE)
 # Use shared CRT on MSVC to match our build.
 set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)

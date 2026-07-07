@@ -30,7 +30,7 @@
 | 文档 | 内容 |
 |---|---|
 | ⭐ [实现速查表](./docs/architecture/implementation-cheatsheet.md) | **写代码前只读这一张**：聚合每次实现都要用的硬规则——std 红线 / 失败模型 / 分层判据 / C-ABI / 里程碑 CHECKLIST / 构建环境 |
-| 🛠 [开发环境准备](./docs/dev-setup.md) | **贡献者从零建环境**：工具链门槛 / Windows MSVC+VsDevCmd / WSL GCC14+TSan / vcpkg+OpenSSL / 9p 铁律 |
+| 🛠 [开发环境准备](./docs/setup/README.md) | **贡献者从零建环境**：按平台（Windows MSVC / WSL GCC14+TSan / macOS）分文件，构建·测试·性能测试三件事 + 依赖（OpenSSL/CUDA/ggml）|
 | [架构总入口](./docs/architecture/README.md) | 定位、模块划分、贯穿性设计原则、项目背景与命名 |
 | [动机](./docs/architecture/motivation.md) | 为什么是现在/为谁做：AI-native 四压负载 + 类 llama.cpp 推理引擎北极星 + 比 Seastar 多异构维度 |
 | [工程章程](./docs/architecture/engineering-charter.md) | 动手前最终依据：C++23 标准 / 错误模型 / 测试 / 边界 / 对外 FFI |
@@ -86,7 +86,7 @@ hyle/
 ├─ scripts/               工具（bench-stat.py 统计法等）
 ├─ third_party/           vendored（mimalloc/Highway/xsimd/simdutf/nanobench…）
 └─ docs/
-   ├─ dev-setup.md        开发环境准备（贡献者从零建环境：工具链/vcpkg+OpenSSL/WSL+TSan）
+   ├─ setup/              开发环境准备（按平台：windows/linux-wsl/macos + dependencies；构建/测试/性能测试 × 三平台）
    ├─ architecture/       架构设计文档（设计/背景/决策；代码才是唯一信源）
    ├─ milestones/         里程碑逐步计划（唯一进度信源）
    ├─ guide/              使用指南 + 调用安全契约（面向库使用者）
