@@ -35,6 +35,12 @@ hyle_add_test(math SOURCES math/scalar_test.cc)
 # compute-02b: pinned staging via mem/ (pinned_allocator + mem::MemoryArena/Arena)
 # + PinnedStaging batched submit -- needs hyle_mem for the pool/arena in the test.
 hyle_add_test(compute SOURCES compute/device_test.cc compute/buffer_test.cc compute/pinned_pool_test.cc compute/device_pool_test.cc compute/kernel_test.cc DEPS hyle_mem)
+# compute-06: self-authored SPIR-V compute kernel through the Vulkan backend (saxpy
+# end-to-end). Synchronous launch (like kernel_test) -- no fcontext needed. Gated on the
+# Vulkan backend being built; GPU-skips at runtime if no Vulkan loader/device.
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+  hyle_add_test(compute NAME vulkan SOURCES compute/vulkan_test.cc DEPS hyle_mem)
+endif()
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
 # hash_test.cc includes the opt-in hyle/container/hash_inline.h, which pulls the
 # vendored xxhash + wyhash single-headers into that TU -- add their include dirs.

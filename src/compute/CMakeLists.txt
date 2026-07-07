@@ -19,6 +19,13 @@ if(HYLE_COMPUTE_CUDA)
   list(APPEND _compute_sources cuda_backend.cu)
 endif()
 
+# compute-06 Vulkan backend: vulkan_backend.cc is a PLAIN C++ TU (volk is a C meta-loader;
+# all vk types are confined to this .cc, never a public header). Gated on the root
+# HYLE_COMPUTE_VULKAN_ENABLED (volk + Vulkan-Headers + glslang fetched, loader at runtime).
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+  list(APPEND _compute_sources vulkan_backend.cc)
+endif()
+
 if(HYLE_HAS_FCONTEXT)
   # compute-03 GPU completion -> fiber: gpu_poller.cc uses sched Waker/suspend to wake
   # a fiber awaiting a GPU event. Only buildable where sched exists (same gate as io's
@@ -38,6 +45,16 @@ if(HYLE_COMPUTE_GGML AND HYLE_HAS_FCONTEXT)
 endif()
 
 hyle_add_module(compute SOURCES ${_compute_sources} PUBLIC_DEPS ${_compute_public_deps})
+
+if(HYLE_COMPUTE_VULKAN_ENABLED)
+  # Link volk (the Vulkan meta-loader; dlopen's the runtime loader, no vulkan-1.lib
+  # needed) + glslang libs (for the pre-compile tool / future runtime compile). All
+  # PRIVATE: vk/volk/glslang types never appear in compute's public headers (they are
+  # confined to vulkan_backend.cc, like the .cu is for CUDA). HYLE_COMPUTE_VULKAN gates
+  # the #if in compute.cc/backend.h wiring. volk::volk pulls Vulkan-Headers transitively.
+  target_link_libraries(hyle_compute PRIVATE volk::volk)
+  target_compile_definitions(hyle_compute PRIVATE HYLE_COMPUTE_VULKAN)
+endif()
 
 if(HYLE_COMPUTE_GGML AND HYLE_HAS_FCONTEXT)
   # Link ggml PRIVATE: ggml types never appear in ggml_bridge.h (only in the .cc). The

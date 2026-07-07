@@ -169,8 +169,11 @@ class Stream {
   // inlining keeps record()/memcpy_async() to a single vtable indirect.
   // kernel.h's launch() needs native_ to submit to this stream (defined in the same
   // .cc dispatch layer); friend it rather than exposing the backend handle publicly.
+  // This is the C-ABI core launch taking a KernelArgs (the variadic typed shell in
+  // kernel.h builds the KernelArgs then calls this, so only this one needs friending).
   friend HYLE_COMPUTE_API Status launch(Stream&, const class Kernel&,
-                                        const struct LaunchConfig&, void**) noexcept;
+                                        const struct LaunchConfig&,
+                                        const struct KernelArgs&) noexcept;
   Device device_{};
   const ComputeBackend* vt_ = nullptr;  // backend that owns native_ (null = invalid)
   void* native_ = nullptr;              // cudaStream_t / host queue (opaque)

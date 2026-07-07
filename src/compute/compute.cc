@@ -40,6 +40,12 @@ struct DeviceTable {
 #if defined(HYLE_COMPUTE_CUDA)
     add_backend(cuda_vtable());
 #endif
+    // Vulkan compute backend (compute-06) next: cross-vendor GPU. On NVIDIA it ranks
+    // below CUDA (CUDA preferred for N-cards); on AMD/Intel/Apple it's the GPU path.
+    // vulkan_vtable() may be null (no loader/device at runtime) -- add_backend tolerates.
+#if defined(HYLE_COMPUTE_VULKAN)
+    add_backend(vulkan_vtable());
+#endif
     // Host CPU fallback always last -- guarantees >= 1 device.
     add_backend(host_vtable());
   }
@@ -100,6 +106,11 @@ Device default_device() noexcept {
 const char* Device::name() const noexcept {
   DeviceEntry e = resolve(*this);
   return e.vt->device_name(e.local);
+}
+
+const char* Device::backend() const noexcept {
+  DeviceEntry e = resolve(*this);
+  return e.vt->name;
 }
 
 DeviceCaps Device::caps() const noexcept {
@@ -563,12 +574,12 @@ Result<Kernel> Kernel::load_host(const Device& device, HostFn fn) noexcept {
 }
 
 Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
-              void** args) noexcept {
+              const KernelArgs& args) noexcept {
   HYLE_FATAL_ASSERT(stream.vt_ != nullptr && kernel.vt_ != nullptr);
   // Stream and kernel must be on the same backend (same device family).
   HYLE_FATAL_ASSERT(stream.vt_ == kernel.vt_);
   return stream.vt_->kernel_launch(stream.native_, kernel.module_, kernel.func_,
-                                   &config, args);
+                                   &config, &args);
 }
 
 }  // namespace hyle::compute

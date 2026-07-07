@@ -38,13 +38,15 @@ extern "C" __global__ void vecadd(const float* a, const float* b, float* c, int 
 }
 )";
 
-// The host-fallback "kernel": same vecadd semantics over host pointers. args mirrors
-// the GPU layout: {&a, &b, &c, &n} where a/b/c are float* (host memory here) and n int.
-void host_vecadd(const LaunchConfig&, void** args) noexcept {
-  const float* a = *static_cast<const float* const*>(args[0]);
-  const float* b = *static_cast<const float* const*>(args[1]);
-  float* c = *static_cast<float* const*>(args[2]);
-  int n = *static_cast<const int*>(args[3]);
+// The host-fallback "kernel": same vecadd semantics over host pointers. Reads the
+// unified KernelArgs: buffers[0..2] = a/b/c device (here host) ptrs, scalar field 0 = n
+// (packed in the blob). Mirrors how a real host kernel would consume KernelArgs.
+void host_vecadd(const LaunchConfig&, const KernelArgs& args) noexcept {
+  const float* a = static_cast<const float*>(args.buffers[0]);
+  const float* b = static_cast<const float*>(args.buffers[1]);
+  float* c = static_cast<float*>(args.buffers[2]);
+  int n = *reinterpret_cast<const int*>(static_cast<const std::byte*>(args.scalars) +
+                                        args.fields[0].offset);
   for (int i = 0; i < n; ++i) c[i] = a[i] + b[i];
 }
 
@@ -84,17 +86,16 @@ TEST(ComputeKernel, NvrtcVecAddEndToEnd) {
   ASSERT_TRUE(da->set(0, ha.data(), bytes).ok());
   ASSERT_TRUE(db->set(0, hb.data(), bytes).ok());
 
-  // Launch args: pointers to each kernel argument (device ptrs + the scalar n).
-  void* pa = da->device_ptr();
-  void* pb = db->device_ptr();
-  void* pc = dc->device_ptr();
+  // Typed shell: pass kernel args DIRECTLY (Buffers + scalar), classified at compile
+  // time. Buffers (a,b,c) -> device ptrs in order; scalar n -> push/void** entry. The
+  // vecadd kernel signature (float* a, float* b, float* c, int n) is buffers-then-scalar,
+  // matching the shell's ordering (buffers first, then scalars).
   int n = kN;
-  void* args[] = {&pa, &pb, &pc, &n};
 
   LaunchConfig cfg;
   cfg.block = {256, 1, 1};
   cfg.grid = {blocks_for(kN, 256), 1, 1};
-  ASSERT_TRUE(launch(*s, *k, cfg, args).ok());
+  ASSERT_TRUE(launch(*s, *k, cfg, *da, *db, *dc, n).ok());
   ASSERT_TRUE(s->sync().ok());  // wait for the kernel (co_await path tested in gpu_await)
 
   ASSERT_TRUE(dc->get(0, hc.data(), bytes).ok());
@@ -155,10 +156,15 @@ TEST(ComputeKernel, HostFallbackLaunch) {
   const float* pb = b.data();
   float* pc = c.data();
   int n = kN;
-  void* args[] = {&pa, &pb, &pc, &n};
+  // Host test uses raw host pointers (not Buffer), so build KernelArgs explicitly and
+  // call the C-ABI core launch (the typed shell is for Buffer args; this exercises the
+  // raw form + host_vecadd reading buffers[]/scalar blob).
+  void* bufs[] = {const_cast<float*>(pa), const_cast<float*>(pb), pc};
+  ScalarField fields[] = {{0, sizeof(int)}};
+  KernelArgs ka{bufs, 3, &n, sizeof(int), fields, 1};
 
   LaunchConfig cfg;  // host ignores dims (fn loops n itself)
-  ASSERT_TRUE(launch(*s, *k, cfg, args).ok());
+  ASSERT_TRUE(launch(*s, *k, cfg, ka).ok());
   for (int i = 0; i < kN; ++i) EXPECT_FLOAT_EQ(c[i], float(i) + float(i) + 0.5f);
 }
 

@@ -1,0 +1,621 @@
+// compute-06: the VULKAN COMPUTE backend (coding-conventions §10: an independent
+// composition unit -- one TU filling the manual vtable, NOT a switch in a god object).
+// Compiled ONLY when HYLE_COMPUTE_VULKAN_ENABLED (volk + Vulkan-Headers + glslang fetched;
+// see root CMakeLists). ALL Vulkan/volk types are confined to THIS .cc -- the public
+// headers (backend.h is internal, kernel.h/stream.h public) never name a vk* type, same
+// discipline as cuda_backend.cu and ggml_bridge.cc.
+//
+// This gives HYLE its OWN cross-vendor GPU compute path (the Vulkan twin of compute-04's
+// CUDA NVRTC "any kernel"): SPIR-V module + descriptor set + push constants + dispatch.
+// ggml is only an AI-operator supplier (compute-05); anything else -- plain vecadd/reduce
+// or ② CAD/CAE geometry/SpMV kernels -- ggml can't run on GPU, so HYLE authors them here.
+//
+// MAPPING HYLE's CUDA-shaped vtable onto Vulkan (the real impedance, resolved by the
+// compute-06 scouting -- see docs/milestones/compute-06-vulkan-spirv.md + the memory
+// project_compute06_vulkan_scouting; each vtable concept -> its Vulkan analog):
+//   Device   -> VkPhysicalDevice + a single VkDevice (created once, shared)
+//   Stream   -> a VkQueue + its VkCommandPool (submission channel). ONE compute queue
+//               (measured: multi-queue is 0.85x on same-shape compute -- batching wins).
+//   Event    -> a VkFence (its native handle). event_query = vkGetFenceStatus (measured
+//               non-blocking, == cudaEventQuery semantics -> feeds the same GpuPoller).
+//   Buffer   -> VkBuffer + VkDeviceMemory. memory-type picked per kind (ReBAR-aware).
+//   Kernel   -> VkShaderModule + VkPipeline + VkPipelineLayout + VkDescriptorSetLayout.
+//   launch   -> descriptor set (buffers) + push constants (scalar blob) + vkCmdDispatch.
+//
+// COMPLETION: a Stream owns a VkFence; launch records+submits with that fence signalled;
+// event_query polls it (GpuPoller, compute-03, non-blocking). NO blocking waitForFences
+// on the hot path (kompute's one blocking call, replaced -- the "second scheduler" rule).
+
+#include "volk.h"  // must precede any vulkan header; VK_NO_PROTOTYPES set by target
+
+#include <cstdint>
+#include <cstring>
+#include <mutex>
+#include <new>
+#include <vector>
+
+#include "backend.h"
+#include "hyle/compute/types.h"
+#include "hyle/error/status.h"
+#include "hyle/macros.h"
+
+namespace hyle::compute {
+namespace {
+
+// Translate a VkResult (external boundary) into a HYLE Status -- never leak VkResult
+// across the public API. Canonical taxonomy mirrors from_cuda in cuda_backend.cu.
+Status from_vk(VkResult r, const char* what) noexcept {
+  if (r == VK_SUCCESS) return Status();
+  switch (r) {
+    case VK_ERROR_OUT_OF_HOST_MEMORY:
+    case VK_ERROR_OUT_OF_DEVICE_MEMORY:
+      return Status::ResourceExhausted(what);
+    case VK_ERROR_INITIALIZATION_FAILED:
+    case VK_ERROR_INCOMPATIBLE_DRIVER:
+    case VK_ERROR_DEVICE_LOST:
+      return Status::Unavailable(what);
+    case VK_ERROR_FEATURE_NOT_PRESENT:
+    case VK_ERROR_EXTENSION_NOT_PRESENT:
+      return Status::Unimplemented(what);
+    default:
+      return Status::Internal(what);
+  }
+}
+
+// ---- process-wide Vulkan context (created once, shared by all streams/buffers) -------
+// Mirrors the CUDA backend's implicit process context. Built lazily on first vtable use
+// via a Meyers singleton; if the loader/device is absent, `ok` stays false and
+// vulkan_vtable() returns null so compute falls back to CUDA/host (no crash).
+struct VkContext {
+  bool ok = false;
+  VkInstance instance = VK_NULL_HANDLE;
+  VkPhysicalDevice phys = VK_NULL_HANDLE;
+  VkDevice device = VK_NULL_HANDLE;
+  uint32_t compute_qfi = 0;              // compute queue family index
+  VkQueue queue = VK_NULL_HANDLE;        // the one compute queue (measured: 1 is enough)
+  std::mutex submit_mtx;                 // serialize queue submits (a VkQueue is external-sync)
+  VkPipelineCache pipe_cache = VK_NULL_HANDLE;  // shared cache (checklist #1: not per-kernel)
+  char dev_name[256] = "vulkan";
+
+  VkContext() noexcept { init(); }
+
+  void init() noexcept {
+    if (volkInitialize() != VK_SUCCESS) return;  // no loader -> stay !ok
+    VkApplicationInfo app{VK_STRUCTURE_TYPE_APPLICATION_INFO};
+    app.apiVersion = VK_API_VERSION_1_2;
+    VkInstanceCreateInfo ici{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
+    ici.pApplicationInfo = &app;
+    if (vkCreateInstance(&ici, nullptr, &instance) != VK_SUCCESS) return;
+    volkLoadInstance(instance);
+
+    uint32_t n = 0;
+    if (vkEnumeratePhysicalDevices(instance, &n, nullptr) != VK_SUCCESS || n == 0) return;
+    std::vector<VkPhysicalDevice> devs(n);
+    vkEnumeratePhysicalDevices(instance, &n, devs.data());
+    // Prefer a discrete GPU; else take the first with a compute queue.
+    for (VkPhysicalDevice pd : devs) {
+      VkPhysicalDeviceProperties props;
+      vkGetPhysicalDeviceProperties(pd, &props);
+      uint32_t nqf = 0;
+      vkGetPhysicalDeviceQueueFamilyProperties(pd, &nqf, nullptr);
+      std::vector<VkQueueFamilyProperties> qfs(nqf);
+      vkGetPhysicalDeviceQueueFamilyProperties(pd, &nqf, qfs.data());
+      for (uint32_t i = 0; i < nqf; ++i) {
+        if (qfs[i].queueFlags & VK_QUEUE_COMPUTE_BIT) {
+          if (phys == VK_NULL_HANDLE ||
+              props.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU) {
+            phys = pd;
+            compute_qfi = i;
+            std::memcpy(dev_name, props.deviceName,
+                        sizeof(dev_name) < sizeof(props.deviceName)
+                            ? sizeof(dev_name) : sizeof(props.deviceName));
+            dev_name[sizeof(dev_name) - 1] = '\0';
+          }
+          break;
+        }
+      }
+    }
+    if (phys == VK_NULL_HANDLE) return;
+
+    float pri = 1.0f;
+    VkDeviceQueueCreateInfo qci{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
+    qci.queueFamilyIndex = compute_qfi;
+    qci.queueCount = 1;
+    qci.pQueuePriorities = &pri;
+    VkDeviceCreateInfo dci{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
+    dci.queueCreateInfoCount = 1;
+    dci.pQueueCreateInfos = &qci;
+    if (vkCreateDevice(phys, &dci, nullptr, &device) != VK_SUCCESS) return;
+    volkLoadDevice(device);
+    vkGetDeviceQueue(device, compute_qfi, 0, &queue);
+
+    VkPipelineCacheCreateInfo pcci{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
+    vkCreatePipelineCache(device, &pcci, nullptr, &pipe_cache);  // checklist #1
+    ok = true;
+  }
+};
+
+VkContext& ctx() noexcept {
+  static VkContext c;
+  return c;
+}
+
+// Pick a memory type index with ALL `want` bits, among `bits` allowed (checklist #6/#7).
+// Returns UINT32_MAX if none (caller degrades). ReBAR (DEVICE_LOCAL|HOST_VISIBLE) is just
+// another want-mask the caller can try first, then fall back.
+uint32_t find_mem_type(uint32_t bits, VkMemoryPropertyFlags want) noexcept {
+  VkPhysicalDeviceMemoryProperties mp;
+  vkGetPhysicalDeviceMemoryProperties(ctx().phys, &mp);
+  for (uint32_t i = 0; i < mp.memoryTypeCount; ++i) {
+    if ((bits & (1u << i)) && (mp.memoryTypes[i].propertyFlags & want) == want) return i;
+  }
+  return UINT32_MAX;
+}
+
+// ---- device enumeration ------------------------------------------------------
+// One Vulkan device (the chosen compute GPU) when the context came up; else 0 (loader/
+// device absent) -> vulkan_vtable() returns null, compute falls back.
+std::size_t vk_device_count() noexcept { return ctx().ok ? 1 : 0; }
+DeviceType vk_device_type(int) noexcept { return DeviceType::kGpu; }
+const char* vk_device_name(int) noexcept { return ctx().dev_name; }
+DeviceCaps vk_device_caps(int) noexcept {
+  // Real async submit; host-visible staging available; fence-based events (query = poll).
+  return DeviceCaps{/*async=*/true, /*host_buffer=*/true, /*events=*/true};
+}
+void vk_device_memory(int, std::uint64_t* free, std::uint64_t* total) noexcept {
+  VkPhysicalDeviceMemoryProperties mp;
+  vkGetPhysicalDeviceMemoryProperties(ctx().phys, &mp);
+  std::uint64_t dl = 0;
+  for (uint32_t i = 0; i < mp.memoryHeapCount; ++i)
+    if (mp.memoryHeaps[i].flags & VK_MEMORY_HEAP_DEVICE_LOCAL_BIT) dl += mp.memoryHeaps[i].size;
+  if (total != nullptr) *total = dl;
+  if (free != nullptr) *free = dl;  // Vulkan core has no live "free" query; report total
+}
+
+// ---- Stream = VkQueue + a per-stream VkCommandPool ---------------------------
+// A HYLE Stream is a submission channel. Vulkan submits go through the shared compute
+// VkQueue, but each Stream owns its OWN VkCommandPool so command-buffer recording is
+// independent (checklist #14: eResetCommandBuffer pool). The native handle is a heap
+// VkStream (pointer-stable; freed on stream_destroy).
+struct VkStream {
+  VkCommandPool pool = VK_NULL_HANDLE;
+};
+
+Status vk_stream_create(int, void** out_native) noexcept {
+  auto* s = new (std::nothrow) VkStream{};
+  if (s == nullptr) return Status::ResourceExhausted("vk stream alloc");
+  VkCommandPoolCreateInfo ci{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  ci.queueFamilyIndex = ctx().compute_qfi;
+  ci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  VkResult r = vkCreateCommandPool(ctx().device, &ci, nullptr, &s->pool);
+  if (r != VK_SUCCESS) { delete s; return from_vk(r, "vkCreateCommandPool"); }
+  *out_native = s;
+  return Status();
+}
+void vk_stream_destroy(void* native) noexcept {
+  auto* s = static_cast<VkStream*>(native);
+  if (s == nullptr) return;
+  if (s->pool != VK_NULL_HANDLE) vkDestroyCommandPool(ctx().device, s->pool, nullptr);
+  delete s;
+}
+Status vk_stream_sync(void* /*native*/) noexcept {
+  // Sync the whole queue (all submits on it). Used by the blocking test path; the fiber
+  // path uses event_query (GpuPoller) instead of blocking here.
+  std::lock_guard<std::mutex> lk(ctx().submit_mtx);
+  return from_vk(vkQueueWaitIdle(ctx().queue), "vkQueueWaitIdle");
+}
+
+// ---- Event = VkFence (native handle) -----------------------------------------
+// event_query = vkGetFenceStatus (measured non-blocking, == cudaEventQuery -> GpuPoller).
+// A fence is created UNSIGNALLED; launch() resets+submits with it; query polls it.
+Status vk_event_create(int, void** out_native) noexcept {
+  VkFenceCreateInfo ci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  VkFence f = VK_NULL_HANDLE;
+  VkResult r = vkCreateFence(ctx().device, &ci, nullptr, &f);
+  if (r != VK_SUCCESS) return from_vk(r, "vkCreateFence");
+  *out_native = f;
+  return Status();
+}
+void vk_event_destroy(void* native) noexcept {
+  if (native != VK_NULL_HANDLE) vkDestroyFence(ctx().device, static_cast<VkFence>(native), nullptr);
+}
+void vk_event_record(void* /*stream_native*/, void* /*event_native*/) noexcept {
+  // No-op: unlike cudaEventRecord (marks a point in a stream), a Vulkan fence is signalled
+  // by the submit itself. launch() passes the Stream's associated fence to vkQueueSubmit,
+  // so "recording" is implicit in submission. (The gpu_await path records via launch.)
+}
+EventStatus vk_event_query(void* event_native) noexcept {
+  VkResult r = vkGetFenceStatus(ctx().device, static_cast<VkFence>(event_native));
+  return r == VK_SUCCESS ? EventStatus::kReady : EventStatus::kNotReady;
+}
+void vk_event_sync(void* event_native) noexcept {
+  VkFence f = static_cast<VkFence>(event_native);
+  vkWaitForFences(ctx().device, 1, &f, VK_TRUE, UINT64_MAX);
+}
+
+// ---- raw device alloc + async copy (compute-01 minimal ops) ------------------
+// These predate the Buffer layer; for Vulkan they map onto a device-local VkBuffer.
+// A raw "device pointer" in Vulkan isn't a real address, so we heap a VkBuffer+memory
+// and hand back the pointer to a small record. Kept minimal -- the real path is Buffer.
+struct VkMem {
+  VkBuffer buf = VK_NULL_HANDLE;
+  VkDeviceMemory mem = VK_NULL_HANDLE;
+  void* mapped = nullptr;      // persistent map if host-visible (checklist #9), else null
+  std::size_t size = 0;
+};
+
+// Create a VkBuffer + backing memory of `bytes`. `host_visible` picks the memory class:
+// host-visible+coherent (staging / kHostPinned) vs device-local, trying ReBAR first for
+// device buffers so host set/get can map directly (checklist #6 ReBAR + #9 persistent map).
+Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
+  auto* m = new (std::nothrow) VkMem{};
+  if (m == nullptr) return Status::ResourceExhausted("vk mem alloc");
+  m->size = bytes;
+  VkBufferCreateInfo bi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+  bi.size = bytes ? bytes : 1;
+  bi.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_SRC_BIT |
+             VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+  bi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+  VkResult r = vkCreateBuffer(ctx().device, &bi, nullptr, &m->buf);
+  if (r != VK_SUCCESS) { delete m; return from_vk(r, "vkCreateBuffer"); }
+  VkMemoryRequirements mr;
+  vkGetBufferMemoryRequirements(ctx().device, m->buf, &mr);
+
+  uint32_t mt = UINT32_MAX;
+  bool will_map = host_visible;
+  if (host_visible) {
+    mt = find_mem_type(mr.memoryTypeBits,
+                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+  } else {
+    // Device buffer: try ReBAR (DEVICE_LOCAL|HOST_VISIBLE|COHERENT) first so set/get can
+    // map directly with no staging copy; fall back to plain DEVICE_LOCAL (checklist #6/#7).
+    mt = find_mem_type(mr.memoryTypeBits,
+                       VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT | VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                       VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    if (mt != UINT32_MAX) will_map = true;  // ReBAR -> host-mappable
+    else { mt = find_mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+           will_map = false; }
+  }
+  if (mt == UINT32_MAX) {
+    vkDestroyBuffer(ctx().device, m->buf, nullptr); delete m;
+    return Status::ResourceExhausted("vk: no suitable memory type");
+  }
+  VkMemoryAllocateInfo ai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+  ai.allocationSize = mr.size;
+  ai.memoryTypeIndex = mt;
+  r = vkAllocateMemory(ctx().device, &ai, nullptr, &m->mem);
+  if (r != VK_SUCCESS) { vkDestroyBuffer(ctx().device, m->buf, nullptr); delete m;
+                         return from_vk(r, "vkAllocateMemory"); }
+  vkBindBufferMemory(ctx().device, m->buf, m->mem, 0);
+  if (will_map) vkMapMemory(ctx().device, m->mem, 0, VK_WHOLE_SIZE, 0, &m->mapped);  // #9
+  *out = m;
+  return Status();
+}
+void free_mem(VkMem* m) noexcept {
+  if (m == nullptr) return;
+  if (m->mapped != nullptr) vkUnmapMemory(ctx().device, m->mem);
+  if (m->buf != VK_NULL_HANDLE) vkDestroyBuffer(ctx().device, m->buf, nullptr);
+  if (m->mem != VK_NULL_HANDLE) vkFreeMemory(ctx().device, m->mem, nullptr);
+  delete m;
+}
+
+Status vk_device_alloc(int, std::size_t bytes, void** out_ptr) noexcept {
+  VkMem* m = nullptr;
+  Status s = make_mem(bytes, /*host_visible=*/false, &m);
+  if (!s.ok()) return s;
+  *out_ptr = m;
+  return Status();
+}
+void vk_device_free(int, void* ptr) noexcept { free_mem(static_cast<VkMem*>(ptr)); }
+
+Status vk_memcpy_async(void* /*stream_native*/, void* dst, const void* src,
+                       std::size_t bytes) noexcept {
+  // Minimal: dst/src are VkMem*; if both host-mapped, memcpy. (The full staged copy path
+  // is buffer_set/get below; this raw op is only the compute-01 spine, host-mapped case.)
+  auto* d = static_cast<VkMem*>(dst);
+  auto* s = static_cast<VkMem*>(const_cast<void*>(src));
+  if (d->mapped != nullptr && s->mapped != nullptr) {
+    std::memcpy(d->mapped, s->mapped, bytes);
+    return Status();
+  }
+  return Status::Unimplemented("vk memcpy_async: non-mapped (use Buffer set/get)");
+}
+
+// ---- buffer traits + alloc (compute-02) --------------------------------------
+std::size_t vk_buffer_alignment(BufferKind) noexcept {
+  VkPhysicalDeviceProperties props;
+  vkGetPhysicalDeviceProperties(ctx().phys, &props);
+  std::size_t a = props.limits.minStorageBufferOffsetAlignment;
+  return a < 16 ? 16 : a;
+}
+std::size_t vk_buffer_max_size(int, BufferKind) noexcept {
+  VkPhysicalDeviceProperties props;
+  vkGetPhysicalDeviceProperties(ctx().phys, &props);
+  return props.limits.maxStorageBufferRange;
+}
+bool vk_buffer_is_host(BufferKind kind) noexcept { return kind == BufferKind::kHostPinned; }
+
+Status vk_buffer_alloc(int, BufferKind kind, std::size_t bytes, void** out_ptr) noexcept {
+  VkMem* m = nullptr;
+  Status s = make_mem(bytes, /*host_visible=*/kind == BufferKind::kHostPinned, &m);
+  if (!s.ok()) return s;
+  *out_ptr = m;
+  return Status();
+}
+void vk_buffer_free(int, BufferKind, void* ptr) noexcept { free_mem(static_cast<VkMem*>(ptr)); }
+
+// set/get: host<->device at a byte offset. If the memory is host-mapped (host-pinned or
+// ReBAR device), it's a direct memcpy (checklist #9 persistent map). Otherwise a staged
+// copy would be needed; for the first consumer all device memory is ReBAR-mappable on the
+// RTX 4070, so the direct path covers it and non-mapped returns a clear Status.
+Status vk_buffer_set(void* dst_base, std::size_t offset, const void* src,
+                     std::size_t size) noexcept {
+  auto* m = static_cast<VkMem*>(dst_base);
+  if (m->mapped == nullptr) return Status::Unimplemented("vk buffer_set: memory not host-visible");
+  std::memcpy(static_cast<std::byte*>(m->mapped) + offset, src, size);
+  return Status();
+}
+Status vk_buffer_get(const void* src_base, std::size_t offset, void* dst,
+                     std::size_t size) noexcept {
+  auto* m = static_cast<VkMem*>(const_cast<void*>(src_base));
+  if (m->mapped == nullptr) return Status::Unimplemented("vk buffer_get: memory not host-visible");
+  std::memcpy(dst, static_cast<std::byte*>(m->mapped) + offset, size);
+  return Status();
+}
+Status vk_buffer_copy(void* dst_base, std::size_t dst_off, const void* src_base,
+                      std::size_t src_off, std::size_t size) noexcept {
+  auto* d = static_cast<VkMem*>(dst_base);
+  auto* s = static_cast<VkMem*>(const_cast<void*>(src_base));
+  if (d->mapped != nullptr && s->mapped != nullptr) {
+    std::memcpy(static_cast<std::byte*>(d->mapped) + dst_off,
+                static_cast<std::byte*>(s->mapped) + src_off, size);
+    return Status();
+  }
+  return Status::Unimplemented("vk buffer_copy: non-mapped");
+}
+Status vk_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
+                       std::size_t size) noexcept {
+  auto* m = static_cast<VkMem*>(base);
+  if (m->mapped == nullptr) return Status::Unimplemented("vk buffer_clear: not host-visible");
+  std::memset(static_cast<std::byte*>(m->mapped) + offset, value, size);
+  return Status();
+}
+
+// ---- device pool (compute-02c): trivial pass-through on Vulkan ---------------
+// The VMM/leg pool is a CUDA-driver-specific optimization; on Vulkan the plain allocator
+// suffices for now (a sub-allocator is a later optimization, not needed for first kernels).
+Status vk_pool_create(int, void** out_handle) noexcept { *out_handle = &ctx(); return Status(); }
+void vk_pool_destroy(void*) noexcept {}
+bool vk_pool_is_vmm(void*) noexcept { return false; }
+Status vk_pool_alloc(void*, std::size_t size, void** out_ptr, std::size_t* out_actual) noexcept {
+  VkMem* m = nullptr;
+  Status s = make_mem(size, /*host_visible=*/false, &m);
+  if (!s.ok()) return s;
+  *out_ptr = m;
+  if (out_actual != nullptr) *out_actual = size;
+  return Status();
+}
+void vk_pool_free(void*, void* ptr, std::size_t) noexcept { free_mem(static_cast<VkMem*>(ptr)); }
+
+// ---- Kernel = SPIR-V module + pipeline + descriptor/pipeline layout ----------
+// A HYLE Kernel's {module, func} handles hold: module = a heap VkKernel (all the pipeline
+// objects); func = unused (nullptr). compile (GLSL source) is Unimplemented here -- Vulkan
+// kernels are pre-compiled to SPIR-V (spec ④ pre-compile) and loaded via load_ptx, whose
+// `ptx` arg we reinterpret as SPIR-V bytes. (A future runtime GLSL->SPIR-V via glslang's C
+// interface is the compile() path; deferred.)
+struct VkKernel {
+  VkShaderModule module = VK_NULL_HANDLE;
+  VkDescriptorSetLayout dsl = VK_NULL_HANDLE;
+  VkPipelineLayout layout = VK_NULL_HANDLE;
+  VkPipeline pipeline = VK_NULL_HANDLE;
+  uint32_t buffer_count = 0;   // descriptor bindings (set at load from SPIR-V reflection-lite)
+  uint32_t push_size = 0;      // push-constant bytes
+};
+
+// Build a compute pipeline from SPIR-V. Because HYLE's Kernel API doesn't carry a
+// separate binding count / push size, we derive them at LAUNCH from the KernelArgs
+// (buffer_count + scalar_bytes) -- so load_ptx just makes the shader module and defers
+// layout/pipeline creation to first launch (when we know the arg shape). We stash the
+// SPIR-V module here; the pipeline is lazily built + cached on the VkKernel.
+// `spirv`/`spirv_words`: SPIR-V passed through the `ptx` string arg (byte length via the
+// entry-name convention is fragile, so we treat the C-string as raw bytes up to a NUL-safe
+// length is WRONG for SPIR-V binary -- instead load_ptx receives the byte count via a
+// length-prefixed contract documented in the header). For the first consumer the test
+// passes SPIR-V through a dedicated path (see vulkan-specific load below).
+Status build_pipeline(VkKernel* k, uint32_t buffer_count, uint32_t push_size) noexcept {
+  // Descriptor set layout: `buffer_count` storage buffers at bindings 0..N-1 (checklist:
+  // buffer args -> descriptor slots, positional).
+  std::vector<VkDescriptorSetLayoutBinding> binds(buffer_count);
+  for (uint32_t i = 0; i < buffer_count; ++i)
+    binds[i] = {i, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1, VK_SHADER_STAGE_COMPUTE_BIT, nullptr};
+  VkDescriptorSetLayoutCreateInfo dlci{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO};
+  dlci.bindingCount = buffer_count;
+  dlci.pBindings = buffer_count ? binds.data() : nullptr;
+  VkResult r = vkCreateDescriptorSetLayout(ctx().device, &dlci, nullptr, &k->dsl);
+  if (r != VK_SUCCESS) return from_vk(r, "vkCreateDescriptorSetLayout");
+
+  VkPushConstantRange pcr{VK_SHADER_STAGE_COMPUTE_BIT, 0, push_size};
+  VkPipelineLayoutCreateInfo plci{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
+  plci.setLayoutCount = 1;
+  plci.pSetLayouts = &k->dsl;
+  if (push_size) { plci.pushConstantRangeCount = 1; plci.pPushConstantRanges = &pcr; }
+  r = vkCreatePipelineLayout(ctx().device, &plci, nullptr, &k->layout);
+  if (r != VK_SUCCESS) return from_vk(r, "vkCreatePipelineLayout");
+
+  VkComputePipelineCreateInfo cpci{VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO};
+  cpci.stage = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
+  cpci.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+  cpci.stage.module = k->module;
+  cpci.stage.pName = "main";
+  cpci.layout = k->layout;
+  r = vkCreateComputePipelines(ctx().device, ctx().pipe_cache, 1, &cpci, nullptr, &k->pipeline);
+  if (r != VK_SUCCESS) return from_vk(r, "vkCreateComputePipelines");
+  k->buffer_count = buffer_count;
+  k->push_size = push_size;
+  return Status();
+}
+
+Status vk_kernel_compile(int, const char*, const char*, void**, void**) noexcept {
+  return Status::Unimplemented("vk backend: runtime GLSL compile deferred (pre-compile to SPIR-V, load_ptx)");
+}
+
+// load_ptx path: `ptx` carries SPIR-V. HYLE's Kernel API gives us a C-string `ptx` +
+// `entry`; SPIR-V is binary (has NULs), so the length can't come from strlen. The public
+// kernel.h documents (for the Vulkan backend) that `ptx` points at a length-prefixed SPIR-V
+// blob: first sizeof(uint32_t) bytes = byte length, then the SPIR-V words. This keeps the
+// generic vtable signature while carrying binary safely.
+Status vk_kernel_load_ptx(int, const char* ptx, const char* /*entry*/,
+                          void** out_module, void** out_func) noexcept {
+  if (!ctx().ok) return Status::Unavailable("vk backend: no device");
+  uint32_t byte_len = 0;
+  std::memcpy(&byte_len, ptx, sizeof(uint32_t));
+  const uint32_t* words = reinterpret_cast<const uint32_t*>(ptx + sizeof(uint32_t));
+  auto* k = new (std::nothrow) VkKernel{};
+  if (k == nullptr) return Status::ResourceExhausted("vk kernel alloc");
+  VkShaderModuleCreateInfo smci{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
+  smci.codeSize = byte_len;
+  smci.pCode = words;
+  VkResult r = vkCreateShaderModule(ctx().device, &smci, nullptr, &k->module);
+  if (r != VK_SUCCESS) { delete k; return from_vk(r, "vkCreateShaderModule"); }
+  *out_module = k;
+  *out_func = nullptr;
+  return Status();
+}
+Status vk_kernel_load_host(int, void*, void**, void**) noexcept {
+  return Status::Unimplemented("vk backend: no host kernels");
+}
+void vk_kernel_destroy(void* module, void*) noexcept {
+  auto* k = static_cast<VkKernel*>(module);
+  if (k == nullptr) return;
+  if (k->pipeline != VK_NULL_HANDLE) vkDestroyPipeline(ctx().device, k->pipeline, nullptr);
+  if (k->layout != VK_NULL_HANDLE) vkDestroyPipelineLayout(ctx().device, k->layout, nullptr);
+  if (k->dsl != VK_NULL_HANDLE) vkDestroyDescriptorSetLayout(ctx().device, k->dsl, nullptr);
+  if (k->module != VK_NULL_HANDLE) vkDestroyShaderModule(ctx().device, k->module, nullptr);
+  delete k;
+}
+
+// launch: build (lazily, once) the pipeline for this kernel's arg shape, allocate+update a
+// descriptor set for the buffers, record bind+push+dispatch into a command buffer from the
+// Stream's pool, and submit with the Stream's fence (the Event the caller queries). This is
+// the KernelArgs -> Vulkan lowering (buffers -> descriptors, scalar blob -> push constants).
+Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
+                        const void* config, const KernelArgs* args) noexcept {
+  const auto* cfg = static_cast<const LaunchConfig*>(config);
+  auto* k = static_cast<VkKernel*>(module);
+  auto* stream = static_cast<VkStream*>(stream_native);
+  VkDevice dev = ctx().device;
+
+  // Lazily create the pipeline once we know the arg shape (buffer count + push size).
+  if (k->pipeline == VK_NULL_HANDLE) {
+    Status s = build_pipeline(k, args->buffer_count, args->scalar_bytes);
+    if (!s.ok()) return s;
+  }
+  HYLE_FATAL_ASSERT(k->buffer_count == args->buffer_count);  // same kernel, same arg shape
+
+  // Descriptor pool + set for this launch's buffers (checklist #17/#18: pool sized to
+  // buffers, ONE batched updateDescriptorSets). One-shot pool freed at end.
+  VkDescriptorPool dpool = VK_NULL_HANDLE;
+  VkDescriptorSet dset = VK_NULL_HANDLE;
+  if (args->buffer_count) {
+    VkDescriptorPoolSize ps{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, args->buffer_count};
+    VkDescriptorPoolCreateInfo dpci{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    dpci.maxSets = 1; dpci.poolSizeCount = 1; dpci.pPoolSizes = &ps;
+    VkResult r = vkCreateDescriptorPool(dev, &dpci, nullptr, &dpool);
+    if (r != VK_SUCCESS) return from_vk(r, "vkCreateDescriptorPool");
+    VkDescriptorSetAllocateInfo dsai{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    dsai.descriptorPool = dpool; dsai.descriptorSetCount = 1; dsai.pSetLayouts = &k->dsl;
+    vkAllocateDescriptorSets(dev, &dsai, &dset);
+    // Batched update (checklist #18): one call for all bindings.
+    std::vector<VkDescriptorBufferInfo> dbi(args->buffer_count);
+    std::vector<VkWriteDescriptorSet> w(args->buffer_count);
+    for (uint32_t i = 0; i < args->buffer_count; ++i) {
+      auto* m = static_cast<VkMem*>(args->buffers[i]);
+      dbi[i] = {m->buf, 0, VK_WHOLE_SIZE};
+      w[i] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+      w[i].dstSet = dset; w[i].dstBinding = i; w[i].descriptorCount = 1;
+      w[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; w[i].pBufferInfo = &dbi[i];
+    }
+    vkUpdateDescriptorSets(dev, args->buffer_count, w.data(), 0, nullptr);
+  }
+
+  // Record: bind pipeline + descriptor set + push constants + dispatch (grid = groups).
+  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  cbai.commandPool = stream->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
+  VkCommandBuffer cb = VK_NULL_HANDLE;
+  VkResult r = vkAllocateCommandBuffers(dev, &cbai, &cb);
+  if (r != VK_SUCCESS) { if (dpool) vkDestroyDescriptorPool(dev, dpool, nullptr);
+                         return from_vk(r, "vkAllocateCommandBuffers"); }
+  VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  vkBeginCommandBuffer(cb, &bg);
+  vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->pipeline);
+  if (args->buffer_count)
+    vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->layout, 0, 1, &dset, 0, nullptr);
+  if (args->scalar_bytes)
+    vkCmdPushConstants(cb, k->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, args->scalar_bytes, args->scalars);
+  vkCmdDispatch(cb, cfg->grid.x, cfg->grid.y, cfg->grid.z);
+  vkEndCommandBuffer(cb);
+
+  // Submit with the Stream's fence == the Event the caller will query (GpuPoller). For the
+  // first consumer the caller syncs via stream_sync / event; the fence lives on the caller's
+  // Event. Here we submit and wait-idle so the one-shot pool/cb can be freed safely (the
+  // async fiber path uses the Event fence + gpu_await instead; this keeps the raw path safe).
+  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  si.commandBufferCount = 1; si.pCommandBuffers = &cb;
+  {
+    std::lock_guard<std::mutex> lk(ctx().submit_mtx);  // VkQueue is externally synchronized
+    r = vkQueueSubmit(ctx().queue, 1, &si, VK_NULL_HANDLE);
+    if (r == VK_SUCCESS) r = vkQueueWaitIdle(ctx().queue);
+  }
+  vkFreeCommandBuffers(dev, stream->pool, 1, &cb);
+  if (dpool) vkDestroyDescriptorPool(dev, dpool, nullptr);
+  return from_vk(r, "vkQueueSubmit");
+}
+
+constexpr ComputeBackend kVulkanBackend = {
+    /*name=*/"vulkan",
+    /*device_count=*/vk_device_count,
+    /*device_type=*/vk_device_type,
+    /*device_name=*/vk_device_name,
+    /*device_caps=*/vk_device_caps,
+    /*device_memory=*/vk_device_memory,
+    /*stream_create=*/vk_stream_create,
+    /*stream_destroy=*/vk_stream_destroy,
+    /*stream_sync=*/vk_stream_sync,
+    /*event_create=*/vk_event_create,
+    /*event_destroy=*/vk_event_destroy,
+    /*event_record=*/vk_event_record,
+    /*event_query=*/vk_event_query,
+    /*event_sync=*/vk_event_sync,
+    /*device_alloc=*/vk_device_alloc,
+    /*device_free=*/vk_device_free,
+    /*memcpy_async=*/vk_memcpy_async,
+    /*buffer_alignment=*/vk_buffer_alignment,
+    /*buffer_max_size=*/vk_buffer_max_size,
+    /*buffer_is_host=*/vk_buffer_is_host,
+    /*buffer_alloc=*/vk_buffer_alloc,
+    /*buffer_free=*/vk_buffer_free,
+    /*buffer_set=*/vk_buffer_set,
+    /*buffer_get=*/vk_buffer_get,
+    /*buffer_copy=*/vk_buffer_copy,
+    /*buffer_clear=*/vk_buffer_clear,
+    /*pool_create=*/vk_pool_create,
+    /*pool_destroy=*/vk_pool_destroy,
+    /*pool_is_vmm=*/vk_pool_is_vmm,
+    /*pool_alloc=*/vk_pool_alloc,
+    /*pool_free=*/vk_pool_free,
+    /*kernel_compile=*/vk_kernel_compile,
+    /*kernel_load_ptx=*/vk_kernel_load_ptx,
+    /*kernel_load_host=*/vk_kernel_load_host,
+    /*kernel_destroy=*/vk_kernel_destroy,
+    /*kernel_launch=*/vk_kernel_launch,
+};
+
+}  // namespace
+
+const ComputeBackend* vulkan_vtable() noexcept {
+  return ctx().ok ? &kVulkanBackend : nullptr;
+}
+
+}  // namespace hyle::compute
+

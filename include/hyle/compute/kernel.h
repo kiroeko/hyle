@@ -2,12 +2,17 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>       // memcpy (typed shell packs scalars into a stack blob)
+#include <type_traits>   // is_same_v / is_trivially_copyable_v (compile-time arg classify)
+#include <utility>       // forward
 
+#include "hyle/compute/buffer.h"  // Buffer -- the typed shell classifies args as Buffer vs scalar
 #include "hyle/compute/device.h"
 #include "hyle/compute/stream.h"
 #include "hyle/compute/types.h"
 #include "hyle/error/result.h"
 #include "hyle/macros.h"
+#include "hyle/mem/alignment.h"   // align_up (scalar blob field alignment)
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -81,10 +86,10 @@ class Kernel {
                                                   const char* entry) noexcept;
 
   // ③ Host fallback: register a host function as a "kernel". `fn` is called by launch
-  // with the args array (fn interprets void** itself). Only meaningful on the host
-  // backend; on a GPU device returns Unimplemented (use compile/load_ptx there). This
-  // is what lets kernel launch be exercised with no GPU.
-  using HostFn = void (*)(const LaunchConfig&, void** args) noexcept;
+  // with the config + KernelArgs (fn reads args.buffers / args.scalars itself). Only
+  // meaningful on the host backend; on a GPU device returns Unimplemented (use compile/
+  // load_ptx there). This is what lets kernel launch be exercised with no GPU.
+  using HostFn = void (*)(const LaunchConfig&, const KernelArgs&) noexcept;
   HYLE_COMPUTE_API static Result<Kernel> load_host(const Device& device,
                                                    HostFn fn) noexcept;
 
@@ -92,22 +97,93 @@ class Kernel {
 
  private:
   friend HYLE_COMPUTE_API Status launch(Stream&, const Kernel&, const LaunchConfig&,
-                                        void**) noexcept;
+                                        const KernelArgs&) noexcept;
   const ComputeBackend* vt_ = nullptr;  // backend that owns the handles (null=invalid)
   void* module_ = nullptr;              // CUmodule (CUDA) / unused (host)
   void* func_ = nullptr;                // CUfunction (CUDA) / HostFn (host)
   int ordinal_ = 0;
 };
 
-// Submit `kernel` to `stream` with `config` and `args` -- driver cuLaunchKernel
-// (CUfunction, grid, block, shmem, stream, args, extra=0). `args` is an array of
-// pointers to the kernel's arguments (each buffer's device_ptr() address / each
-// scalar's address), the cuLaunchKernel void** ABI; its length/types must match the
-// kernel signature (caller contract). ASYNC: returns after submit; observe completion
-// with `co_await StreamComplete{&stream}` (compute-03). A launch-config error surfaces
-// as Status (checked via cudaGetLastError after submit, ggml fail-fast contract). On
-// the host backend, calls the registered HostFn synchronously.
+// ---- C-ABI CORE (exported, one compiled copy) -------------------------------
+// Submit `kernel` to `stream` with `config` and pre-built `args` (KernelArgs, types.h)
+// -- the UNIFIED launch ABI that lowers to BOTH backends: on CUDA the buffers + scalar
+// fields become the cuLaunchKernel `void**` array (each void** entry = a buffer ptr or
+// blob_base+field.offset); on Vulkan the buffers bind to descriptor slots 0..N and the
+// scalar blob becomes push constants (compute-06). `config.grid` is the grid / workgroup
+// count (same ceil(n/block) math both sides); `config.block` is the CUDA block dim
+// (Vulkan's local_size lives in the shader). The KernelArgs' arrays are caller-owned
+// (zero heap; must outlive the call, which is synchronous submit). ASYNC: returns after
+// submit; observe completion with `co_await StreamComplete{&stream}` (compute-03). A
+// launch/config error surfaces as Status (CUDA: cudaGetLastError; Vulkan: submit result).
+// On the host backend, calls the registered HostFn synchronously.
+//
+// Most callers use the typed `launch(stream, kernel, config, args...)` shell below, which
+// builds KernelArgs at compile time; this raw form is for a caller that already has one.
 HYLE_COMPUTE_API Status launch(Stream& stream, const Kernel& kernel,
-                               const LaunchConfig& config, void** args) noexcept;
+                               const LaunchConfig& config, const KernelArgs& args) noexcept;
+
+// ---- TYPED SHELL (header-only, compile-time, zero heap) ----------------------
+// The ergonomic launch: pass kernel arguments DIRECTLY, mixed, like calling the kernel --
+// `launch(s, k, cfg, a, b, c, n, alpha)` where a/b/c are Buffers and n/alpha are scalars.
+// A variadic fold classifies each arg at COMPILE TIME (conventions §7 typed shell over a
+// type-erased C-ABI core, same as CArray): a `Buffer` -> its device_ptr() appended to an
+// ordered buffer list (position = binding index); anything trivially-copyable -> memcpy'd
+// into a std430-packed scalar blob (with a {offset,size} descriptor so CUDA can rebuild
+// per-scalar void** entries while Vulkan pushes the whole blob). All storage is STACK
+// (bounded by sizeof...(Args)); nothing hits the heap. Then it calls the C-ABI core above.
+//
+// This resolves the CUDA(void**)-vs-Vulkan(descriptor+push) split ENTIRELY at compile time
+// -- the consumer writes ONE launch call that works on every backend (compute-04 CUDA /
+// compute-06 Vulkan / compute-08 HIP), which is compute-04's "unified public interface".
+namespace detail {
+// A scalar arg is anything trivially-copyable that is NOT a Buffer.
+template <class T>
+inline constexpr bool is_kernel_scalar_v =
+    std::is_trivially_copyable_v<std::remove_cvref_t<T>> &&
+    !std::is_same_v<std::remove_cvref_t<T>, Buffer>;
+// Max scalar push-constant blob: 256 B = the RTX 4070's maxPushConstantsSize (measured);
+// Vulkan's guaranteed floor is 128 B, but HYLE targets the real device. A kernel needing
+// more scalars than this should pass them via a uniform Buffer, not push constants.
+inline constexpr std::size_t kMaxScalarBlob = 256;
+}  // namespace detail
+
+// Constrained so a SINGLE KernelArgs arg never matches here (it must bind the C-ABI core
+// above) -- without this, `launch(s,k,cfg, ka)` would re-match the template as
+// Args=KernelArgs& and recurse forever. Any other arg list (buffers/scalars) uses the shell.
+template <class... Args>
+  requires (!(sizeof...(Args) == 1 &&
+              (std::is_same_v<std::remove_cvref_t<Args>, KernelArgs> && ...)))
+Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
+              Args&&... args) noexcept {
+  constexpr std::size_t kN = sizeof...(Args);
+  void* buffers[kN == 0 ? 1 : kN];             // ordered buffer device_ptrs (stack)
+  alignas(16) std::byte blob[detail::kMaxScalarBlob];  // packed scalar bytes (stack)
+  ScalarField fields[kN == 0 ? 1 : kN];        // per-scalar {offset,size} (stack)
+  unsigned nb = 0, nf = 0, blob_off = 0;
+
+  // Fold over the arg pack: classify + pack each, in order (conventions §7 + the
+  // renderer-Mesh-validated variadic-fold + byte-pack + descriptor-array pattern).
+  auto pack_one = [&](auto&& a) noexcept {
+    using A = std::remove_cvref_t<decltype(a)>;
+    if constexpr (std::is_same_v<A, Buffer>) {
+      buffers[nb++] = a.device_ptr();          // Buffer -> ordered buffer list
+    } else {
+      static_assert(detail::is_kernel_scalar_v<A>,
+                    "launch arg must be a Buffer or a trivially-copyable scalar");
+      // std430-ish: align each scalar to its own size (<=16), pack into the blob.
+      const std::size_t sz = sizeof(A);
+      const std::size_t al = sz < 16 ? sz : 16;
+      blob_off = static_cast<unsigned>(mem::align_up(blob_off, al));
+      HYLE_FATAL_ASSERT(blob_off + sz <= detail::kMaxScalarBlob);  // scalars overflow -> use a Buffer
+      std::memcpy(blob + blob_off, &a, sz);
+      fields[nf++] = ScalarField{blob_off, static_cast<unsigned>(sz)};
+      blob_off += static_cast<unsigned>(sz);
+    }
+  };
+  (pack_one(std::forward<Args>(args)), ...);
+
+  KernelArgs ka{buffers, nb, nf ? blob : nullptr, blob_off, nf ? fields : nullptr, nf};
+  return launch(stream, kernel, config, ka);   // -> C-ABI core (one indirect + backend)
+}
 
 }  // namespace hyle::compute

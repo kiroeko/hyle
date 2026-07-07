@@ -143,17 +143,25 @@ struct ComputeBackend {
   void (*kernel_destroy)(void* module, void* func) noexcept;
   // Launch: `config` is a const LaunchConfig* (void* to keep backend.h free of the
   // public header include order; the .cc casts it), `stream_native` the backend
-  // stream, `args` the void** kernel args. Returns a Status (launch/config error).
+  // stream, `args` a const KernelArgs* (unified ABI: ordered buffers + scalar blob --
+  // CUDA lowers to void** args, Vulkan to descriptor set + push constants). Returns a
+  // Status (launch/config error).
   Status (*kernel_launch)(void* stream_native, void* module, void* func,
-                          const void* config, void** args) noexcept;
+                          const void* config, const KernelArgs* args) noexcept;
 };
 
 // Each backend exposes its singleton vtable through one of these. host is ALWAYS
 // present; cuda only when HYLE_COMPUTE_CUDA is compiled in (else the symbol isn't
-// defined and compute.cc's #if omits the reference).
+// defined and compute.cc's #if omits the reference); vulkan only when
+// HYLE_COMPUTE_VULKAN (compute-06: volk + glslang fetched, loader present at runtime).
 const ComputeBackend* host_vtable() noexcept;
 #if defined(HYLE_COMPUTE_CUDA)
 const ComputeBackend* cuda_vtable() noexcept;
+#endif
+#if defined(HYLE_COMPUTE_VULKAN)
+// May return nullptr if no Vulkan loader/device is present at runtime (volkInitialize
+// fails) -- compute.cc's add_backend() tolerates null (that backend contributes 0 devices).
+const ComputeBackend* vulkan_vtable() noexcept;
 #endif
 
 }  // namespace hyle::compute

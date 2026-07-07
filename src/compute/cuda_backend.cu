@@ -739,12 +739,31 @@ void cuda_kernel_destroy(void* module, void* /*func*/) noexcept {
 }
 
 Status cuda_kernel_launch(void* stream_native, void* /*module*/, void* func,
-                          const void* config, void** args) noexcept {
+                          const void* config, const KernelArgs* args) noexcept {
   const auto* cfg = static_cast<const LaunchConfig*>(config);
+  // Rebuild cuLaunchKernel's void** kernelParams from the unified KernelArgs: one entry
+  // per arg, in order -- a buffer entry points at the device-ptr slot, a scalar entry at
+  // its field within the packed blob. (Kernel signature order = buffers first as authored,
+  // then scalars; the HYLE consumer authors the kernel to match its launch() arg order.)
+  // Bounded stack array: total args = buffers + scalar fields (cap mirrors the shell).
+  void* params[64];
+  unsigned np = 0;
+  const unsigned total = args->buffer_count + args->scalar_count;
+  if (total > 64) return Status::InvalidArgument("cuda launch: >64 kernel args");
+  // buffers: each void** entry is the ADDRESS of the device pointer (cuLaunchKernel derefs).
+  for (unsigned i = 0; i < args->buffer_count; ++i) {
+    params[np++] = const_cast<void*>(static_cast<const void*>(&args->buffers[i]));
+  }
+  // scalars: each entry points into the blob at the field's offset.
+  const auto* blob = static_cast<const std::byte*>(args->scalars);
+  for (unsigned j = 0; j < args->scalar_count; ++j) {
+    params[np++] = const_cast<void*>(
+        static_cast<const void*>(blob + args->fields[j].offset));
+  }
   CUresult r = cuLaunchKernel(
       static_cast<CUfunction>(func), cfg->grid.x, cfg->grid.y, cfg->grid.z,
       cfg->block.x, cfg->block.y, cfg->block.z, cfg->shared_mem,
-      static_cast<CUstream>(stream_native), args, nullptr);
+      static_cast<CUstream>(stream_native), np ? params : nullptr, nullptr);
   if (r != CUDA_SUCCESS) return from_cu(r, "cuLaunchKernel");
   // ggml fail-fast contract: check the launch config error immediately (async exec
   // errors surface later via stream sync / the recorded event).

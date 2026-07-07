@@ -228,11 +228,12 @@ void host_pool_free(void* handle, void* ptr, std::size_t size) noexcept {
 // The host backend can't compile CUDA source or load PTX; a "kernel" here is a host
 // function the caller registered via load_host. compile/load_ptx return Unimplemented
 // (a GPU-less test uses load_host to exercise the launch abstraction). launch calls
-// the fn synchronously with the config + args (the fn interprets void** args itself).
+// the fn synchronously with the config + KernelArgs (the fn reads args.buffers /
+// args.scalars itself).
 
 // The host kernel signature (matches Kernel::HostFn in kernel.h without including it:
-// LaunchConfig lives in types.h). Stored as `func`; module is unused (nullptr).
-using HostKernelFn = void (*)(const LaunchConfig&, void** args) noexcept;
+// LaunchConfig + KernelArgs live in types.h). Stored as `func`; module is unused (nullptr).
+using HostKernelFn = void (*)(const LaunchConfig&, const KernelArgs&) noexcept;
 
 Status host_kernel_compile(int, const char*, const char*, void**, void**) noexcept {
   return Status::Unimplemented("host backend: no NVRTC (use load_host)");
@@ -252,10 +253,10 @@ Status host_kernel_load_host(int, void* host_fn, void** out_module,
 void host_kernel_destroy(void*, void*) noexcept {}  // nothing owned (fn-ptr)
 
 Status host_kernel_launch(void* /*stream_native*/, void* /*module*/, void* func,
-                          const void* config, void** args) noexcept {
+                          const void* config, const KernelArgs* args) noexcept {
   if (func == nullptr) return Status::InvalidArgument("host launch: null kernel");
   auto fn = reinterpret_cast<HostKernelFn>(func);
-  fn(*static_cast<const LaunchConfig*>(config), args);  // synchronous inline call
+  fn(*static_cast<const LaunchConfig*>(config), *args);  // synchronous inline call
   return Status();
 }
 

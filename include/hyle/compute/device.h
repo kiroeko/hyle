@@ -57,6 +57,10 @@ class Device {
   // Human-readable device name ("NVIDIA GeForce RTX 4070" / "cpu"). Points at
   // backend-owned storage stable for the process; never null.
   HYLE_COMPUTE_API const char* name() const noexcept;
+  // Backend that owns this device: "cuda" / "vulkan" / "host". Lets a consumer pick a
+  // SPECIFIC backend when several expose the same physical GPU (e.g. CUDA and Vulkan both
+  // enumerate an NVIDIA card). Process-stable pointer; never null.
+  HYLE_COMPUTE_API const char* backend() const noexcept;
   // Capability flags for this device (queried from the backend).
   HYLE_COMPUTE_API DeviceCaps caps() const noexcept;
   // Free / total device memory in bytes (cudaMemGetInfo on GPU; host RAM on CPU).
