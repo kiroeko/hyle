@@ -8,17 +8,18 @@
 #include <memory>
 #include <vector>
 
-#include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/blocking.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 
-// compute-05 test: borrow a ggml matmul operator to run on HYLE-managed VRAM (zero-
-// copy device_ptr injection), offloaded via spawn_blocking so a fiber suspends while
-// the ggml graph computes on a pool thread, woken through the JoinHandle. Proves the
-// three load-bearing decisions (ggml_bridge.h ①②③) compose end-to-end.
+// compute-05 test: borrow a ggml matmul operator under HYLE scheduling. The memory model
+// is host 归 HYLE / device 归 ggml (docs/architecture/borrowing-ggml-memory-model.md):
+// the API takes HOST inputs/outputs (HYLE mem), ggml owns the device buffers (gallocr)
+// and the bridge copies H2D (tensor_set) / D2H (tensor_get). Offloaded via spawn_blocking
+// so a fiber suspends while the ggml graph computes on a pool thread, woken through the
+// JoinHandle. Proves the three load-bearing decisions (ggml_bridge.h ①②③) compose.
 //
 // GGML MATMUL SHAPE (verified ggml.h:1415-1417): the bridge computes C = A · Bᵀ with
 // both inputs [*, k] row-major. gA=[k,m] (m rows of k), gB=[k,n] (n rows of k), result
@@ -49,11 +50,10 @@ void ref_matmul_abt(const std::vector<float>& a, const std::vector<float>& b,
   }
 }
 
-// Run one ggml matmul on `device` through the bridge: alloc 3 HYLE buffers, upload
-// A/B, call ggml_matmul_f32 (spawn_blocking + JoinHandle), download C, compare to the
-// golden reference. Returns 0 on success, negative step code on failure. Runs inside a
-// fiber (join() is fiber-aware). `zero_copy` toggles nothing in the API here (the API
-// is always zero-copy); the copy-vs-zero-copy golden compare is the same reference.
+// Run one ggml matmul on `device` through the bridge: prepare host A/B, call
+// ggml_matmul_f32 (spawn_blocking + JoinHandle), read host C, compare to the golden
+// reference. Returns 0 on success, negative step code on failure. Runs inside a fiber
+// (join() is fiber-aware).
 int run_matmul(const Device& device, BlockingPool& pool, int m, int k, int n,
                int n_threads) {
   auto be = GgmlBackend::create(device, n_threads);
@@ -63,21 +63,12 @@ int run_matmul(const Device& device, BlockingPool& pool, int m, int k, int n,
   for (int i = 0; i < m * k; ++i) ha[i] = static_cast<float>((i % 7) - 3) * 0.5f;
   for (int i = 0; i < n * k; ++i) hb[i] = static_cast<float>((i % 5) - 2) * 0.25f;
 
-  BufferType bt = device_buffer_type(device);
-  auto ba = Buffer::create(bt, ha.size() * sizeof(float));
-  auto bb = Buffer::create(bt, hb.size() * sizeof(float));
-  auto bc = Buffer::create(bt, static_cast<size_t>(m) * n * sizeof(float));
-  if (!ba.has_value() || !bb.has_value() || !bc.has_value()) return -2;
-  if (!ba->set(0, ha.data(), ha.size() * sizeof(float)).ok()) return -3;
-  if (!bb->set(0, hb.data(), hb.size() * sizeof(float)).ok()) return -4;
-
-  auto h = ggml_matmul_f32(*be, pool, system_allocator(), *ba, *bb, *bc, m, k, n);
+  std::vector<float> hc(static_cast<size_t>(m) * n, -12345.0f);
+  auto h = ggml_matmul_f32(*be, pool, system_allocator(), ha.data(), hb.data(),
+                           hc.data(), m, k, n);
   auto r = h.join();  // fiber-aware suspend until the pool thread's ggml compute done
   if (!r.has_value()) return -5;
   if (!r->ok()) return -6;
-
-  std::vector<float> hc(static_cast<size_t>(m) * n, -12345.0f);
-  if (!bc->get(0, hc.data(), hc.size() * sizeof(float)).ok()) return -7;
 
   std::vector<float> ref;
   ref_matmul_abt(ha, hb, ref, m, k, n);
@@ -119,9 +110,9 @@ int drive_one(const Device& device, BlockingPool& pool, int m, int k, int n,
 
 }  // namespace
 
-// ① + ② + golden compare on the DEFAULT device (GPU if present -> zero-copy CUDA path;
-// else host -> ggml CPU). The decisive "HYLE VRAM + HYLE fiber sched + ggml operator"
-// end-to-end proof.
+// ① + ② + golden compare on the DEFAULT device (GPU if present -> ggml CUDA path with
+// gallocr device buffers + tensor_set/get; else host -> ggml CPU). The decisive "HYLE
+// host mem + HYLE fiber sched + ggml operator (on ggml VRAM)" end-to-end proof.
 TEST(GgmlBridge, MatmulDefaultDevice) {
   BlockingPool pool(system_allocator());
   int rc = drive_one(default_device(), pool, /*m=*/8, /*k=*/16, /*n=*/4,
@@ -179,6 +170,10 @@ TEST(GgmlBridge, ConcurrentIndependentBackends) {
 namespace {
 // Run a BATCH of matmuls (finding 4): N matmuls with varied shapes built into ONE ggml
 // graph, ONE submit. Each result golden-compared. Returns 0 / negative step code.
+// VARIED SHAPES ARE THE POINT: the earlier size-0 dummy-buffer injection crashed exactly
+// here (ggml-cuda.cu:1924, varied shapes take the generic mul_mat path reading a nulled
+// buffer context; docs/debug/ggml-zerocopy-null-buffer-hunt.md). The gallocr + tensor_set
+// model has valid buffer contexts, so varied-shape batches are correct on CUDA.
 int run_batch(const Device& device, BlockingPool& pool, int n_threads) {
   auto be = GgmlBackend::create(device, n_threads);
   if (!be.has_value()) return -1;
@@ -188,28 +183,18 @@ int run_batch(const Device& device, BlockingPool& pool, int n_threads) {
   const Spec specs[3] = {{8, 16, 4}, {4, 8, 6}, {12, 4, 3}};
   constexpr int kJobs = 3;
 
-  std::vector<float> ha[kJobs], hb[kJobs], ref[kJobs];
-  std::vector<Buffer> ba, bb, bc;  // keep Buffers alive across the join
-  ba.reserve(kJobs); bb.reserve(kJobs); bc.reserve(kJobs);
+  std::vector<float> ha[kJobs], hb[kJobs], hc[kJobs], ref[kJobs];
   MatmulF32Job jobs[kJobs];
-  BufferType bt = device_buffer_type(device);
 
   for (int i = 0; i < kJobs; ++i) {
     int m = specs[i].m, k = specs[i].k, n = specs[i].n;
     ha[i].resize(static_cast<size_t>(m) * k);
     hb[i].resize(static_cast<size_t>(n) * k);
+    hc[i].assign(static_cast<size_t>(m) * n, -12345.0f);
     for (int j = 0; j < m * k; ++j) ha[i][j] = static_cast<float>((j + i) % 7 - 3) * 0.5f;
     for (int j = 0; j < n * k; ++j) hb[i][j] = static_cast<float>((j + i) % 5 - 2) * 0.25f;
     ref_matmul_abt(ha[i], hb[i], ref[i], m, k, n);
-
-    auto a = Buffer::create(bt, ha[i].size() * sizeof(float));
-    auto b = Buffer::create(bt, hb[i].size() * sizeof(float));
-    auto c = Buffer::create(bt, static_cast<size_t>(m) * n * sizeof(float));
-    if (!a.has_value() || !b.has_value() || !c.has_value()) return -2;
-    if (!a->set(0, ha[i].data(), ha[i].size() * sizeof(float)).ok()) return -3;
-    if (!b->set(0, hb[i].data(), hb[i].size() * sizeof(float)).ok()) return -4;
-    jobs[i] = MatmulF32Job{a->device_ptr(), b->device_ptr(), c->device_ptr(), m, k, n};
-    ba.push_back(std::move(*a)); bb.push_back(std::move(*b)); bc.push_back(std::move(*c));
+    jobs[i] = MatmulF32Job{ha[i].data(), hb[i].data(), hc[i].data(), m, k, n};
   }
 
   auto h = ggml_matmul_f32_batched(*be, pool, system_allocator(), jobs, kJobs);
@@ -218,10 +203,8 @@ int run_batch(const Device& device, BlockingPool& pool, int n_threads) {
   if (!r->ok()) return -6;
 
   for (int i = 0; i < kJobs; ++i) {
-    std::vector<float> hc(ref[i].size(), -12345.0f);
-    if (!bc[i].get(0, hc.data(), hc.size() * sizeof(float)).ok()) return -7;
     for (size_t j = 0; j < ref[i].size(); ++j)
-      if (std::fabs(hc[j] - ref[i][j]) > 1e-3f * (1.0f + std::fabs(ref[i][j]))) return -(100 + i);
+      if (std::fabs(hc[i][j] - ref[i][j]) > 1e-3f * (1.0f + std::fabs(ref[i][j]))) return -(100 + i);
   }
   return 0;
 }
@@ -241,7 +224,9 @@ void batch_fiber(void* p) {
 }  // namespace
 
 // 合批 (finding 4): N matmuls of DIFFERENT shapes in ONE graph / ONE submit, each result
-// golden-correct. Proves the batching path (one graph_compute for many ops) works.
+// golden-correct. Proves the batching path (one graph_compute for many ops) works AND
+// that varied shapes are safe under the gallocr model (the dummy-buffer regression's
+// crash case, now correct).
 TEST(GgmlBridge, BatchedMatmul) {
   BlockingPool pool(system_allocator());
   BatchArg arg{default_device(), &pool};
@@ -256,75 +241,97 @@ TEST(GgmlBridge, BatchedMatmul) {
 }
 
 namespace {
-// Copy-path (finding 2 fallback): run the SAME matmul through both the zero-copy path
-// (device Buffers) and the copy path (host in/out, ggml owns memory), and confirm both
-// match each other AND the golden ref. Proves the fallback is correct + zero-copy has no
-// off-by-one vs the copy oracle. Returns 0 / negative step code.
-int run_copy_vs_zerocopy(const Device& device, BlockingPool& pool) {
-  auto be = GgmlBackend::create(device, /*n_threads=*/1);
-  if (!be.has_value()) return -1;
-  const int m = 8, k = 16, n = 4;
+// One F32 matmul helper on an EXISTING backend (host data prepared + golden-checked).
+// Unlike run_matmul it does NOT create a backend -- it reuses the caller's, which is the
+// whole point of this test. Returns 0 / negative step code.
+int one_on(GgmlBackend& be, BlockingPool& pool, int m, int k, int n, int salt) {
   std::vector<float> ha(static_cast<size_t>(m) * k), hb(static_cast<size_t>(n) * k);
-  for (int i = 0; i < m * k; ++i) ha[i] = static_cast<float>(i % 7 - 3) * 0.5f;
-  for (int i = 0; i < n * k; ++i) hb[i] = static_cast<float>(i % 5 - 2) * 0.25f;
-  std::vector<float> ref;
+  for (int i = 0; i < m * k; ++i) ha[i] = static_cast<float>((i + salt) % 7 - 3) * 0.5f;
+  for (int i = 0; i < n * k; ++i) hb[i] = static_cast<float>((i + salt) % 5 - 2) * 0.25f;
+  std::vector<float> hc(static_cast<size_t>(m) * n, -12345.0f), ref;
+  auto h = ggml_matmul_f32(be, pool, system_allocator(), ha.data(), hb.data(),
+                           hc.data(), m, k, n);
+  auto r = h.join();
+  if (!r.has_value() || !r->ok()) return -1;
   ref_matmul_abt(ha, hb, ref, m, k, n);
-
-  // Copy path: host in/out, ggml owns memory.
-  std::vector<float> hc_copy(static_cast<size_t>(m) * n, -12345.0f);
-  {
-    auto h = ggml_matmul_f32_copy(*be, pool, system_allocator(),
-                                  ha.data(), hb.data(), hc_copy.data(), m, k, n);
-    auto r = h.join();
-    if (!r.has_value() || !r->ok()) return -2;
-  }
-  // Zero-copy path: device Buffers.
-  std::vector<float> hc_zc(static_cast<size_t>(m) * n, -12345.0f);
-  {
-    BufferType bt = device_buffer_type(device);
-    auto ba = Buffer::create(bt, ha.size() * sizeof(float));
-    auto bb = Buffer::create(bt, hb.size() * sizeof(float));
-    auto bc = Buffer::create(bt, hc_zc.size() * sizeof(float));
-    if (!ba.has_value() || !bb.has_value() || !bc.has_value()) return -3;
-    if (!ba->set(0, ha.data(), ha.size() * sizeof(float)).ok()) return -4;
-    if (!bb->set(0, hb.data(), hb.size() * sizeof(float)).ok()) return -5;
-    auto h = ggml_matmul_f32(*be, pool, system_allocator(), *ba, *bb, *bc, m, k, n);
-    auto r = h.join();
-    if (!r.has_value() || !r->ok()) return -6;
-    if (!bc->get(0, hc_zc.data(), hc_zc.size() * sizeof(float)).ok()) return -7;
-  }
-  // Both must match golden AND each other.
-  for (size_t i = 0; i < ref.size(); ++i) {
-    float tol = 1e-3f * (1.0f + std::fabs(ref[i]));
-    if (std::fabs(hc_copy[i] - ref[i]) > tol) return -8;   // copy vs golden
-    if (std::fabs(hc_zc[i] - ref[i]) > tol) return -9;     // zero-copy vs golden
-    if (std::fabs(hc_copy[i] - hc_zc[i]) > tol) return -10;  // copy vs zero-copy
-  }
+  for (size_t i = 0; i < ref.size(); ++i)
+    if (std::fabs(hc[i] - ref[i]) > 1e-3f * (1.0f + std::fabs(ref[i]))) return -2;
   return 0;
 }
-struct CopyArg {
-  Device device; BlockingPool* pool; int result = -100; std::atomic<bool> done{false};
-  CopyArg(const Device& d, BlockingPool* p) : device(d), pool(p) {}
+
+// Reuse ONE persistent GgmlBackend (create-once/reuse-many, llama.cpp model) across many
+// ops of DIFFERENT shapes, including a batched call in the middle. This exercises the
+// persistent gallocr's reserve/realloc as the graph shape/node-count changes between
+// calls -- the exact path the old dummy-buffer injection crashed on (varied shapes on a
+// shared galloc). Also moves the backend first, covering move semantics. Returns 0 / code.
+int run_reuse(const Device& device, BlockingPool& pool) {
+  auto created = GgmlBackend::create(device, /*n_threads=*/1);
+  if (!created.has_value()) return -1;
+  GgmlBackend be = std::move(*created);  // move-construct: dummy_/galloc_ transfer intact
+  if (!be.valid()) return -2;
+
+  // Single ops of changing shapes on the SAME backend (galloc realloc between shapes).
+  if (one_on(be, pool, 8, 16, 4, 0) != 0) return -10;
+  if (one_on(be, pool, 4, 8, 6, 1) != 0) return -11;   // shape change -> galloc reserve
+  if (one_on(be, pool, 32, 32, 8, 2) != 0) return -12;  // bigger -> realloc grow
+
+  // A batched (multi-node, varied-shape) call on the same galloc, then back to single.
+  struct Spec { int m, k, n; };
+  const Spec specs[2] = {{8, 16, 4}, {12, 4, 3}};
+  std::vector<float> ha[2], hb[2], hc[2], ref[2];
+  MatmulF32Job jobs[2];
+  for (int i = 0; i < 2; ++i) {
+    int m = specs[i].m, k = specs[i].k, n = specs[i].n;
+    ha[i].resize(static_cast<size_t>(m) * k);
+    hb[i].resize(static_cast<size_t>(n) * k);
+    hc[i].assign(static_cast<size_t>(m) * n, -12345.0f);
+    for (int j = 0; j < m * k; ++j) ha[i][j] = static_cast<float>((j + i) % 7 - 3) * 0.5f;
+    for (int j = 0; j < n * k; ++j) hb[i][j] = static_cast<float>((j + i) % 5 - 2) * 0.25f;
+    ref_matmul_abt(ha[i], hb[i], ref[i], m, k, n);
+    jobs[i] = MatmulF32Job{ha[i].data(), hb[i].data(), hc[i].data(), m, k, n};
+  }
+  {
+    auto h = ggml_matmul_f32_batched(be, pool, system_allocator(), jobs, 2);
+    auto r = h.join();
+    if (!r.has_value() || !r->ok()) return -20;
+    for (int i = 0; i < 2; ++i)
+      for (size_t j = 0; j < ref[i].size(); ++j)
+        if (std::fabs(hc[i][j] - ref[i][j]) > 1e-3f * (1.0f + std::fabs(ref[i][j]))) return -(30 + i);
+  }
+
+  // Back to a single op (graph shrinks 2 nodes -> 1: galloc must handle node-count drop).
+  if (one_on(be, pool, 8, 16, 4, 0) != 0) return -40;
+  return 0;
+}
+
+struct ReuseArg {
+  Device device;
+  BlockingPool* pool;
+  int result = -100;
+  std::atomic<bool> done{false};
+  ReuseArg(const Device& d, BlockingPool* p) : device(d), pool(p) {}
 };
-void copy_fiber(void* p) {
-  auto* a = static_cast<CopyArg*>(p);
-  a->result = run_copy_vs_zerocopy(a->device, *a->pool);
+void reuse_fiber(void* p) {
+  auto* a = static_cast<ReuseArg*>(p);
+  a->result = run_reuse(a->device, *a->pool);
   a->done.store(true, std::memory_order_release);
 }
 }  // namespace
 
-// 零拷贝 vs 拷贝版对拍 (finding 2 fallback): same inputs through both paths, both match
-// golden + each other. Proves the copy fallback is a correct escape hatch and zero-copy
-// has no off-by-one vs it.
-TEST(GgmlBridge, CopyPathMatchesZeroCopy) {
+// Persistent-backend reuse (the create-once/reuse-many design + move semantics): ONE
+// GgmlBackend (moved after create) drives single ops of changing shapes, a batched
+// varied-shape call, then a single op again -- all sharing the one persistent gallocr.
+// This is the regression guard for gallocr reserve/realloc across shape + node-count
+// changes (the exact scenario the old dummy-buffer model crashed on).
+TEST(GgmlBridge, BackendReuseAcrossShapes) {
   BlockingPool pool(system_allocator());
-  CopyArg arg{default_device(), &pool};
+  ReuseArg arg{default_device(), &pool};
   auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                   &copy_fiber, &arg);
+                                   &reuse_fiber, &arg);
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(f.get());
   sched.drain();
   sched.shutdown();
   EXPECT_TRUE(arg.done.load());
-  EXPECT_EQ(arg.result, 0) << "copy-vs-zerocopy failed at step " << arg.result;
+  EXPECT_EQ(arg.result, 0) << "backend reuse failed at step " << arg.result;
 }

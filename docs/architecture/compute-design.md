@@ -177,16 +177,15 @@ compute/
 ### 发现 1：iron 是"整库拼装"的反面教材，不是"借算子"的范本
 iron（clay 宿主）**不直接用 ggml**，而是 `add_subdirectory(stable-diffusion.cpp)` 把整个 sd.cpp 应用 + 它冻结的 ggml 快照吞进来（`iron/thirdparty/CMakeLists.txt:1`），业务层 `flux_api.cc` 调 sd.cpp 高层门面 `new_sd_ctx`/`txt2img`（20 参数），几乎不碰 ggml。这是 **L2 层"借整个推理应用" + clay/oatpp/sd.cpp 三套 runtime 各自为政**——正是 HYLE 动机（motivation §24）要消除的"东拼西凑"。**HYLE compute-05 要借的是"算子 kernel"粒度（借 ggml 不借 sd.cpp）、pin 上游版（不绑应用冻结快照）、接进统一 completion 脊（iron 里 clay 和 ggml 完全不通）。** iron 反证：不 fork、不借整库、不绑冻结快照。
 
-### 发现 2：内存零拷贝可行（alloc_ctx_tensors 拿合法 buffer + 覆写 tensor->data 注入），不 fork
-> **⚠️ 2026-07-07 真跑修正**：本发现初版断言"`->buffer` 留 NULL 即可"——**被 RTX 4070 真跑证伪**（`0xC0000005` 段错误）。CUDA matmul 路径**无条件解引用 `tensor->buffer`**（见下）。修正后零拷贝仍成立，但要点从"留 NULL"改为"让 ggml 分配拿合法 buffer 元数据 + 覆写 data"。全过程见 [`docs/debug/ggml-zerocopy-null-buffer-hunt.md`](../debug/ggml-zerocopy-null-buffer-hunt.md)。
+### 发现 2：显存归属边界——host 归 HYLE / device 归 ggml（外部显存注入在 CUDA 上结构性死路，非零拷贝）
+> **⚠️ 2026-07-07 两阶段真跑 + gdb 彻底修正**：本发现初版愿景是"HYLE 自己 cudaMalloc 的显存零拷贝喂给 ggml 算子算"。**被 RTX 4070 真跑 + WSL gdb 逐行证伪**——先是 `->buffer=NULL` 单算子段错误，再是 dummy-buffer 合批 varied 形状崩（`ggml-cuda.cu:1924`，共享 size-0 dummy 的 context 被 gallocr 弄丢）。根因不是"没找对 API"：**CUDA 后端 `buffer_from_host_ptr=false`（`ggml-cuda.cu:5032`），结构性不接受外部显存指针**。全过程 gdb 坐实见 [`../debug/ggml-zerocopy-null-buffer-hunt.md`](../debug/ggml-zerocopy-null-buffer-hunt.md)，正式边界见 [`borrowing-ggml-memory-model.md`](./borrowing-ggml-memory-model.md)。
 
-**HYLE 自己 cudaMalloc 的 device_ptr，能让 ggml 算子零拷贝地在上面算**（真跑验证）：
-- **数据基址取 `->data`（真，我控制）**：ggml CUDA kernel 非 split 路径直读 `(char*)src0/1/dst->data`（`ggml-cuda.cu:1931/1951/1973`）——这正是注入点。
-- **但 `->buffer` 被无条件解引用当元数据源（初版看漏）**：`src1/dst->buffer->context->device` 取 GPU id（`:1832-1833/1924-1925`）、`src0->buffer->buft` 做 split 判断（`:1853`）。**`->buffer=NULL` → 空解引用崩溃**。初版"普通 mul_mat 不经 buffer"错在只 grep 了 ownership assert、漏看 device-id/split 的解引用。
-- **正确做法（修正）**：`ggml_init({.no_alloc=true})` 建 tensor → `ggml_mul_mat` → **`ggml_backend_alloc_ctx_tensors(ctx, be)` 给 ctx 所有 tensor 分配合法 `->buffer`** → **覆写 `tensor->data = hyle_device_ptr`**（ggml 那份分配的字节弃用，只借 buffer 元数据结构：buft + device）→ compute → `ggml_backend_buffer_free(buf)`。kernel 数据仍从 HYLE 显存取，**真实 matmul 零拷贝不变**；代价=ggml 多分配一份立即弃用的显存（元数据副产品，可接受）。
-- 官方 `ggml_backend_tensor_alloc(buffer,tensor,addr)`（`ggml-backend.cpp`）要求 addr 落在 ggml buffer 内、且 ggml CUDA buffer 析构 `cudaFree(dev_ptr)`（`ggml-cuda.cu:636-638`）=所有权冲突，故不用；`alloc_ctx_tensors` + 覆写 data + 自己 `buffer_free` 更干净（ggml 只 free 它自己那份，不碰 HYLE 内存）。
-- 约束：F32 最省心；**quantized 类型 `get_alloc_size` 加 padding，真实分配须比 `ggml_nbytes` 多留 padding 否则 quant kernel 越界**；指针须在正确 device。
-- 风险：依赖"非 split kernel 数据取 `->data`"的行为（**当前真、真跑证实、但非 ggml 公开承诺**）→ **pin ggml 版本 + adapter 单点封装 + golden 对拍兜底**（ggml 升级跑测试即知是否破）。CPU 后端不解引用 `->buffer`（故 host 推演阶段没暴露 NULL 崩溃）——**跨后端契约差异必须每后端真跑**。
+**正确边界：借 ggml 算子 = host 内存归 HYLE（mem 喂入/取出），device 显存归 ggml（gallocr 自管），就像 llama.cpp。**
+- **device 侧归 ggml（CUDA 上必须）**：ggml 算子计算用的 tensor buffer（输入/中间/结果）由 `ggml_gallocr` 分配管理。CUDA 无公开 API 注册外部显存（`buffer_from_host_ptr=false`）；且 CUDA matmul 内核依赖 buffer 的 `context->device`/`buft` 元数据、图内复用、padding 一整套，是算子正确性的一部分。**不注入外部 `->data`、不造假 dummy buffer**（那在多算子 varied 形状必崩）。
+- **host 侧全程归 HYLE**：数据进出 ggml 显存的入口 `ggml_backend_tensor_set/get` 对 host 源指针**零约束**——`tensor_set` 就是裸 `cudaMemcpyHostToDevice`（`ggml-cuda.cu:688`），host 源任意指针都行，**完全可以是 HYLE mem（`mem::Allocator`/`PinnedStaging`）分配的内存**。性能接口点：host 源用 pinned（compute-02b `PinnedStaging`）则 H2D 走 DMA 更快、可 async 重叠。
+- **落地形态**：`ggml_init({.no_alloc=true})` 建 tensor → `ggml_set_input`(输入)/`ggml_set_output`(结果) → `ggml_mul_mat` → `ggml_gallocr_alloc_graph`（device buffer 全归 ggml）→ `ggml_backend_tensor_set`(HYLE host 输入拷入) → `graph_compute` → `ggml_backend_tensor_get`(结果拷回 HYLE host)。合批同理（一图多算子、gallocr 一次分配）。
+- **权重常驻**：反复用同一批权重（推理）时，权重拷进 ggml 显存**一次**、常驻复用（llama.cpp 模式），非每次推理都拷。初始化成本，非热路径。
+- **HYLE 显存自管没名存实亡——只是划清了范围**：它在 **compute-04/06 自造 kernel**（真零拷贝跑在 HYLE Buffer 上，已三平台验证——服务一切非 AI 的通用 GPU 计算：普通 CUDA 数值 kernel + ② CAD/CAE 专用核）和其 **数据**（普通 compute buffer + KV-cache/网格/BVH/刚度矩阵）上完整成立；只在"借 ggml 算 AI"这条路上，device 侧让位给 ggml。这是**借 vs 造**的本质分工（呼应发现 5/7/9）。
 
 ### 发现 3：ggml stream 私有，completion 只能阻塞 synchronize（接受它）
 - **ggml CUDA stream 是 backend 私有的**（`common.cuh:1391` `streams[][]`，`stream()` 懒创建），**没有任何公开 API 让外部注入 HYLE 的 stream**。想让 ggml 跑在 HYLE stream 上不可行（除非改 ggml 源码）。
@@ -200,12 +199,12 @@ iron（clay 宿主）**不直接用 ggml**，而是 `add_subdirectory(stable-dif
 
 ### 发现 5：三层 × 两条 kernel 来路矩阵（澄清"ggml 也有 vulkan 岂不重复"）
 ```
-                AI 算子(matmul/attn)        任意自定义 kernel(几何核/网格 stencil/BVH/SpMV)
+                AI 算子(matmul/attn)        任意 GPU 计算(普通 CUDA: vecadd/reduce/scan; ② 专用: 几何核/stencil/BVH/SpMV)
                 ── 借 ggml ──                ── HYLE 自造 ──
 CUDA(N卡)    ggml-cuda (compute-05 桥)     compute-04 NVRTC ✅
 Vulkan(全厂商) ggml-vulkan (compute-05 桥)   compute-06 SPIR-V (待,消费者=CAD/CAE)
 ```
-HYLE device/stream/event/buffer/kernel 抽象在最上层，下挂两类后端：**借 ggml 的（AI 算子，全平台，含 ggml-vulkan）** + **HYLE 自造的（任意 kernel：CUDA=04 NVRTC / Vulkan=06 SPIR-V）**。**不重复**：ggml-vulkan 给"AI 算子的跨厂商实现"（借），compute-06 给"HYLE 自定义 SPIR-V kernel 的跨厂商实现"（造，ggml 没有的几何/网格/求解 kernel）。同 CUDA 侧 05 借 ggml-cuda、04 自造 NVRTC。
+HYLE device/stream/event/buffer/kernel 抽象在最上层，下挂两类后端：**借 ggml 的（AI 算子，全平台，含 ggml-vulkan）** + **HYLE 自造的（任意 GPU 计算：CUDA=04 NVRTC / Vulkan=06 SPIR-V）**。**不重复**：ggml-vulkan 给"AI 算子的跨厂商实现"（借），compute-06 给"HYLE 自定义 SPIR-V kernel 的跨厂商实现"（造，ggml 没有的普通计算 + 几何/网格/求解 kernel）。同 CUDA 侧 05 借 ggml-cuda、04 自造 NVRTC。**右列不只是"② CAD/CAE 专用核"——它是"一切 ggml 那 ~90 个 AI 算子之外的 GPU 计算"，含最普通的 vecadd/reduce（ggml 也不给）。**
 
 ### 发现 6：三个"graph"同名不同物（澄清"graph 消费者是 vulkan 吗"）
 - **HYLE graph-01** = 任务依赖 DAG 增量重算（clay taskgraph；改参数→重算下游节点，节点=任务、边=依赖）。消费者 = **北极星② CAD/CAE 参数化建模**，跑 sched 上，**与 GPU/Vulkan 无关**。
@@ -213,10 +212,11 @@ HYLE device/stream/event/buffer/kernel 抽象在最上层，下挂两类后端�
 - **ggml-vulkan** = ggml 的一个后端（用 Vulkan 实现算子）。
 三者不同层，别混。"graph 的消费者"是 CAD/CAE，不是 vulkan。
 
-### 发现 7：自造 kernel（04/06）的正当性来自北极星②，不是①
-- **推理（北极星①）**：算子几乎全在 ggml（含 ggml-vulkan）。HYLE 对推理的价值是**统一底座**（io/sched/mem/completion），算子**借 ggml 就够**——compute-04 的 NVRTC 自造 kernel 对纯推理用处不大（推理不写自定义 kernel）。
-- **CAD/CAE（北极星②）**：几何核/网格 stencil/BVH/**CAE 稀疏求解器 SpMV** ggml **完全没有**——这才是自造 kernel（04 NVRTC / 06 SPIR-V）的真实消费者（motivation §26：CAE 把 compute/simd 压到"稀疏线代/迭代求解器"深度）。
-- 故：**compute-05（借 ggml）服务①推理 + ②CAE 能借的部分；compute-04/06（自造 kernel）服务② CAD/CAE 自定义数值/几何 kernel。** compute-06 消费者（CAD/CAE 上层）尚未开工 → 按 §0.2 可等消费者驱动，不急。
+### 发现 7：自造 kernel（04/06）的正当性来自"通用 GPU 计算"这个大类，不只② CAD/CAE
+- **推理（北极星①）**：AI 算子几乎全在 ggml（含 ggml-vulkan）。HYLE 对推理的价值是**统一底座**（io/sched/mem/completion），AI 算子**借 ggml 就够**——compute-04 的自造 kernel 对纯推理用处不大（推理不写自定义 kernel）。
+- **但"自造 kernel"服务的是"通用 GPU 计算"整个大类，不止② 的专用核**：ggml 只是"AI 推理算子多"，它**不是通用 GPU 计算框架**。**普通 CUDA 并行计算**——vecadd/reduce/scan/前缀和/逐元素变换/任意自定义数值 kernel——ggml 一概不提供（发现 9）。这些**通用计算 HYLE 必须自己做**（compute-04 已验证：端到端跑的正是 `vecadd` 这种最普通的 CUDA 计算，非几何核）。
+- **② CAD/CAE 是通用计算里最深的消费者**：几何核/网格 stencil/BVH/**CAE 稀疏求解器 SpMV** ggml **完全没有**——这是自造 kernel（04 NVRTC / 06 SPIR-V）的**最重量级**真实消费者（motivation §26：CAE 把 compute/simd 压到"稀疏线代/迭代求解器"深度），但不是唯一：任何"不是 ggml 那 ~90 个 AI 算子"的 GPU 计算都归自造路径。
+- 故：**compute-05（借 ggml）服务① 推理的 AI 算子 + ②CAE 能借的部分；compute-04/06（自造 kernel）服务一切非 AI 的通用 GPU 计算——普通 CUDA 数值 kernel + ② CAD/CAE 专用几何/数值核。** compute-06（Vulkan 自造）消费者（CAD/CAE 上层）尚未开工 → 按 §0.2 可等消费者驱动，不急。
 
 ### 发现 8：⚠️ 核心张力——§4"co_await gpu_kernel 同构"愿景 vs ggml 阻塞（诚实厘清）
 §4 的"fiber `co_await gpu_kernel()` → 挂起 → event 唤醒、与 co_await async_read 同构"**成立于 HYLE 自造 kernel 路径**（compute-03/04：HYLE 自己的 stream + event + GpuPoller，已三平台真跑）。但**借 ggml 算子路径（compute-05）不适用**——ggml stream 私有（发现 3），completion 只能阻塞 synchronize（发现 4）。**两条路的 completion 模型不同**：
@@ -224,11 +224,11 @@ HYLE device/stream/event/buffer/kernel 抽象在最上层，下挂两类后端�
 - **借 ggml 算子（05）**：`ggml graph_compute` 阻塞 → **走 `spawn_blocking` 卸到线程，fiber 挂起等该线程**（llama.cpp 模式 A）。fiber 仍不阻塞 worker（spawn_blocking 卸载），但**不是 GpuPoller 那种"event 轮询唤醒"，而是"阻塞线程完成唤醒"**。
 - **这不违背"fiber 统一"**：fiber 挂起等 completion 的**语义**一致（都经 sched Waker 唤醒）；只是 ggml 路径的 completion source 是"阻塞卸载线程"而非"GpuPoller 轮询的 event"。sched-11 的 spawn_blocking 本就是为"借入的阻塞第三方"设计的。**§4 需补注**：GPU completion 有两种 source——自造 kernel 走 GpuPoller（零阻塞轮询），借 ggml 走 spawn_blocking（阻塞卸载），都归一到 fiber Waker 唤醒。
 
-### 发现 9：⚠️ ggml GPU 后端只有固定 AI 算子，无通用自定义 kernel 路径（坐实 04/06 是②的独占刚需）
-- **ggml 是"张量计算库"，不是"通用 GPU 计算框架"**：它的算子集是**编译期固定的 ~90 个 AI 算子枚举**（`GGML_OP_MUL_MAT`/`SOFTMAX`/`ROPE`/`CONV`… 见 `ggml.h` 的 `ggml_op`），每个后端把这些枚举 switch-case 映射到自己的 kernel（`ggml-cuda.cu:2140` 的 `ggml_cuda_compute_forward` 巨型 switch）。
+### 发现 9：⚠️ ggml GPU 后端只有固定 AI 算子，连普通 CUDA 计算都不给（坐实 04/06 是"通用 GPU 计算"的独占刚需）
+- **ggml 是"AI 张量计算库"，不是"通用 GPU 计算框架"**：它的算子集是**编译期固定的 ~90 个 AI 算子枚举**（`GGML_OP_MUL_MAT`/`SOFTMAX`/`ROPE`/`CONV`… 见 `ggml.h` 的 `ggml_op`），每个后端把这些枚举 switch-case 映射到自己的 kernel（`ggml-cuda.cu:2140` 的 `ggml_cuda_compute_forward` 巨型 switch）。**ggml 只是"AI 推理算子多"——不是"能跑任意 GPU 计算"。**
 - **自定义 op 是 CPU-only**：ggml 有 `ggml_map_custom1/2/3`（用户塞函数指针），但**其 CUDA 后端零实现**——`GGML_OP_CUSTOM`/`MAP_CUSTOM` 在 `ggml-cuda.cu` 的 switch 里**零匹配**（grep 实证），落到 default 分支 return false = "不支持"，sched 会把该节点回退到 CPU 后端跑（`ith/nth` 线程分片，`ggml.c` custom op 执行体）。**即：想在 GPU 上跑一个 ggml 没有的算子，ggml 结构上做不到。**
-- **推论**：借 ggml（compute-05）只能拿到它**已有的那 ~90 个 AI 算子**在 GPU 上的实现。**北极星② 的几何核/网格 stencil/BVH 遍历/CAE 稀疏求解器 SpMV——ggml 一个都没有，且无法通过 custom-op 在 GPU 上补**（custom-op 只有 CPU 路径）。
-- **故 compute-04（CUDA NVRTC）/ compute-06（Vulkan SPIR-V）不是可有可无的"造轮子"，而是 ggml 结构性提供不了的能力**：把**任意** kernel 源码跑上 GPU。这是 ② CAD/CAE 通用 GPU 加速的**唯一**路径（① 推理不需要，它的算子 ggml 全有）。发现 7 的"04/06 正当性来自②"由此从"消费者视角"坐实到"ggml 能力边界"视角：**不是①用不上、而是 ggml 根本给不了**。
+- **推论（范围比"缺 CAD/CAE 核"更广）**：借 ggml（compute-05）只能拿到它**已有的那 ~90 个 AI 算子**在 GPU 上的实现。**连最普通的通用 CUDA 计算——vecadd/reduce/scan/前缀和/逐元素变换/任意自定义数值循环——ggml 都不提供**（它们不在那 ~90 个 AI 枚举里，且 GPU 无 custom-op 路径）。② 的几何核/网格 stencil/BVH/CAE SpMV 更是一个都没有。**ggml 给不了的不止"② 的专用核"，是"一切非 AI 的 GPU 计算"。**
+- **故 compute-04（CUDA NVRTC）/ compute-06（Vulkan SPIR-V）不是可有可无的"造轮子"，而是 ggml 结构性提供不了的能力**：把**任意** kernel 源码跑上 GPU。这是 HYLE **通用 GPU 计算**（普通 CUDA 数值 kernel + ② CAD/CAE 专用核）的**唯一**路径（① 推理的 AI 算子 ggml 全有、不需自造）。发现 7 的"04/06 正当性"由此从"消费者视角"坐实到"ggml 能力边界"视角：**不是① 用不上，而是 ggml 根本不是通用 GPU 计算框架、非 AI 算子一概给不了**。compute-04 端到端验收跑的 `vecadd` 就是这条"普通 CUDA 计算 ggml 不给、HYLE 自造"的最小证明。
 
 ### 发现 10：⚠️ ggml CPU 并行是"线程池+算子"焊死的一体，借不了核内并行；线程调度权必须归 HYLE（引出执行模型专章）
 > **这条推翻了 project 记忆里"`ggml_backend_cpu_set_threadpool` 喂 HYLE 调度器给 ggml"的假设**——深读 ggml 0.15.3 源码后证伪。但**结论不是"n_threads=1 是普世答案"**（那是我一度的过度简化）——真正的答案是"线程数按合批性二分"，见下方**「compute-05 CPU 执行模型专章」**。这里只记死路的三条源码铁证。
@@ -238,7 +238,7 @@ HYLE device/stream/event/buffer/kernel 抽象在最上层，下挂两类后端�
 - **结论（引出专章）**：ggml CPU 后端对 HYLE 只有两种正当用法——**(a) `n_threads=1` 当纯计算叶子**（`n_threads==1` 时 ggml 零 spawn、直接在调用线程 `ggml_graph_compute_thread(workers[0])`，`ggml-cpu.c:3356-3358` 铁证），并行由 HYLE 铺；**(b) 合批成单个大 graph 后放它全核**（此时无并发、不打架，见专章）。**选 a 还是 b 取决于"能不能合批"**——这不是 07 才评的细节，是 compute-05 的执行模型骨架，下方专章定死。
 
 ### compute-05 定案（基于上述）
-- **内存零拷贝**：no_alloc + `tensor->data = hyle_device_ptr`（发现 2），拷贝版 fallback。拿最高性能内存路径，不 fork。
+- **显存归属边界（发现 2，2026-07-07 gdb 定论）**：**host 归 HYLE / device 归 ggml，就像 llama.cpp**。ggml 算子用 `gallocr` 分配它的 device buffer（CUDA 上 `buffer_from_host_ptr=false`，外部显存注入结构性死路）；HYLE 的 host 数据经 `tensor_set`(拷入,源可 pinned)/`tensor_get`(拷出) 进出（host 源零约束）。HYLE 显存自管归 compute-04/06 自造 kernel + ② CAD/CAE 数据。**不注入外部显存、不造假 dummy buffer。** 专文 [`borrowing-ggml-memory-model.md`](./borrowing-ggml-memory-model.md)。
 - **completion 走 spawn_blocking**（发现 3/4/8）：`ggml graph_compute` 卸到 sched-11 blocking pool，fiber 挂起、完成经 JoinHandle/Waker 唤醒。**不接 GpuPoller**（ggml stream 私有）。
 - **CPU 线程模型 = 合批性二分，`n_threads` 可配（非硬编码 1）**（发现 10 + 执行模型专章，照 llama.cpp `:2425-2429` 铁证）：能合批的大 graph 放 ggml 全核（无并发不打架）；合不了批的高并发独立小推理走 `n_threads=1` + HYLE 铺 N 个。**详见下方「compute-05 CPU 执行模型专章」。**
 - **性能杠杆是合批**（发现 4，llama.cpp 真并发手段）：HYLE 侧合并多算力请求成一个 ggml graph 一次提交 > 多 fiber 各自卸载。**且合批不只是性能杠杆——它还是决定线程数的开关**（见专章）。

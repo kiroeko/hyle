@@ -4,8 +4,8 @@
 |---|---|
 | **阶段** | P5 |
 | **模块** | compute/ |
-| **前置** | compute-01（Device/Stream/Event）、compute-02（Buffer.device_ptr）、compute-02c（DevicePool）、compute-03（co_await 完成 / spawn_blocking）、sched-11（spawn_blocking / BlockingPool / JoinHandle）、mem（Allocator） |
-| **状态** | ✅ **完成（2026-07-07，三平台真机 + 5 测试全绿）**。零拷贝 CUDA matmul 在 RTX 4070 真跑（Win MSVC+nvcc、WSL gcc14+nvcc）、mac CPU-only（Apple clang），三平台各 **5/5 PASSED**：MatmulDefaultDevice（零拷贝端到端对拍）+ CpuThreadModelSplit（n_threads 二分）+ ConcurrentIndependentBackends（6 fiber 各自 backend）+ **BatchedMatmul（合批：3 不同形状 matmul 一图一提交，finding 4）** + **CopyPathMatchesZeroCopy（零拷贝 vs 拷贝版 vs golden 三方对拍，finding 2 兜底）**。**⚠️ 实现期两处真跑纠错**：①**发现 2「NULL buffer 零拷贝」被证伪**——CUDA matmul deref `tensor->buffer->buft/context`（ggml-cuda.cu:1832/1853），NULL 段错误；修=`alloc_ctx_tensors` 拿合法 buffer 元数据 + 覆写 `->data` 注入 HYLE 指针（数据仍零拷贝），详见 `docs/debug/ggml-zerocopy-null-buffer-hunt.md`。②**WSL TSan 报 10 race 全系 mimalloc 跨线程块回收假阳**（`[anon:mimalloc]` 地址，非 HYLE 逻辑；Release 并发 5/5 稳）→ 记为 KI-3。ggml/googletest 走纯 FetchContent（cil2cpp 形式，三机各自 `.deps` 下载，无 override）。 |
+| **前置** | compute-01（Device/Stream/Event）、compute-02（Buffer；本里程碑首消费者用 host 数据，Buffer 用于 ② CAD/CAE）、compute-02b（PinnedStaging，host 数据入口）、compute-03（spawn_blocking）、sched-11（spawn_blocking / BlockingPool / JoinHandle）、mem（Allocator） |
+| **状态** | ✅ **完成（2026-07-07，三平台真机 + 5 测试全绿）**。matmul 走 llama.cpp 忠实形态（gallocr 分配 device buffer + `tensor_set`/`tensor_get` 进出 host 数据）在 RTX 4070 真跑（Win MSVC+nvcc、WSL gcc14+nvcc）、mac CPU-only（Apple clang），三平台各 **5/5 PASSED**：MatmulDefaultDevice（host→ggml→host 端到端对拍）+ CpuThreadModelSplit（n_threads 二分）+ ConcurrentIndependentBackends（6 fiber 各自 backend）+ **BatchedMatmul（合批：3 不同形状 matmul 一图一提交，finding 4）** + **BackendReuseAcrossShapes（持久 gallocr create-once/reuse-many + move 语义 + 跨调用 reserve/realloc，红队补）**。**⚠️ 实现期重大设计修正**：**"HYLE 显存零拷贝注入 ggml 算子"愿景（发现 2 初版）被两阶段真跑 + WSL gdb 彻底证伪**——CUDA 后端 `buffer_from_host_ptr=false`（`ggml-cuda.cu:5032`）结构性否决外部显存指针；dummy-buffer 注入在合批 varied 形状崩于 `ggml-cuda.cu:1924`（共享 size-0 dummy 的 context 被 gallocr 弄丢，gdb 坐实）。**定案边界：host 归 HYLE（mem 喂入/取出）、device 归 ggml（gallocr），就像 llama.cpp**——专文 [`../architecture/borrowing-ggml-memory-model.md`](../architecture/borrowing-ggml-memory-model.md)，血泪 [`../debug/ggml-zerocopy-null-buffer-hunt.md`](../debug/ggml-zerocopy-null-buffer-hunt.md)。ggml/googletest 走纯 FetchContent（cil2cpp 形式，三机各自 `.deps` 下载，无 override）。 |
 
 > **范围**：把 ggml 当**算子库供应商**接进 HYLE——在**唯一一个 adapter 文件** `ggml_bridge.cc` 里，让 ggml 的 AI 算子（matmul/softmax/rope/conv…约 90 个）在 **HYLE 自管的显存/completion/调度** 之上运行。**借的是"算子 kernel"粒度，不是整库应用（不借 sd.cpp/llama.cpp），不 fork，不注入 ggml 运行时。**
 >
@@ -19,24 +19,30 @@
 
 ## 核心抉择（全部来自 compute-design 发现 1~10，此处只列结论 + 落地形态）
 
-### ① 内存零拷贝：no_alloc + `tensor->data = HYLE device_ptr`（发现 2，不 fork）
+### ① 显存归属边界：host 归 HYLE / device 归 ggml（发现 2，gdb 定论；不 fork）
 
-HYLE 自己 `cudaMalloc`（compute-02 Buffer）的 `device_ptr()`，直接喂给 ggml 算子零拷贝地算，**ggml 不拒绝**（铁证：ggml CUDA 普通算子路径从不校验 buffer 归属，只强转 `(char*)src->data`）：
+> **⚠️ 设计修正（2026-07-07，两阶段真跑 + WSL gdb）**：初版愿景"HYLE 显存零拷贝注入 ggml 算子"**被彻底证伪**。CUDA 后端 `buffer_from_host_ptr=false`（`ggml-cuda.cu:5032`）结构性否决外部显存指针；dummy-buffer 注入在合批 varied 形状崩于 `ggml-cuda.cu:1924`。**这不是"没找对 API"，是 ggml CUDA 的能力边界。** 详见 [`../architecture/borrowing-ggml-memory-model.md`](../architecture/borrowing-ggml-memory-model.md) + [`../debug/ggml-zerocopy-null-buffer-hunt.md`](../debug/ggml-zerocopy-null-buffer-hunt.md)。
+
+**借 ggml 算子 = host 内存归 HYLE，device 显存归 ggml，就像 llama.cpp**：ggml 用 `gallocr` 分配它算子用的所有 device buffer（输入/中间/结果）；HYLE 的 host 数据经 `ggml_backend_tensor_set`(拷入，源可 pinned)/`tensor_get`(拷出) 进出（`tensor_set` 就是裸 `cudaMemcpyHostToDevice`，`ggml-cuda.cu:688`，对 host 源零约束）：
 
 ```
 ggml_context* ctx = ggml_init({.mem_size=…, .mem_buffer=nullptr, .no_alloc=true});
-ggml_tensor* a = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, k, m);
-a->data = hyle_buffer_a.device_ptr();   // ← HYLE 显存直接注入，tensor->buffer 留 NULL
-ggml_tensor* b = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, k, n);
-b->data = hyle_buffer_b.device_ptr();
-ggml_tensor* c = ggml_mul_mat(ctx, a, b);
-c->data = hyle_buffer_c.device_ptr();
+ggml_tensor* a = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, k, m);  ggml_set_input(a);
+ggml_tensor* b = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, k, n);  ggml_set_input(b);
+ggml_tensor* c = ggml_mul_mat(ctx, a, b);                       ggml_set_output(c);
+ggml_build_forward_expand(gf, c);
+ggml_gallocr_alloc_graph(galloc, gf);          // ← device buffer 全归 ggml（CUDA 上必须）
+ggml_backend_tensor_set(a, hyle_host_a, 0, ggml_nbytes(a));  // ← HYLE host 数据拷入(H2D)
+ggml_backend_tensor_set(b, hyle_host_b, 0, ggml_nbytes(b));
 // build cgraph → backend graph_compute（在 HYLE 调度下）
+ggml_backend_tensor_get(c, hyle_host_c, 0, ggml_nbytes(c));   // ← 结果拷回 HYLE host(D2H)
 ```
 
-- **约束**（照 compute-design 发现 2）：F32 最省心；**quantized 类型 `get_alloc_size` 加 padding，HYLE 分配须比 `ggml_nbytes` 多留 padding 否则 quant kernel 越界**；指针须在正确 device；`tensor->buffer` 留 NULL 仅普通 CUDA 算子安全（tensor_get/set、split-buffer、sched 会读 buffer，那些路径不走）。
-- **拷贝版 fallback**：`ggml_backend_tensor_set/get`（发现 2）作对拍与兜底路径。**不用** `ggml_backend_tensor_alloc`——它要求 addr 落在 ggml buffer 内、且 ggml CUDA buffer 析构会 `cudaFree` 你的指针 = 所有权冲突（发现 2）。
-- **风险管理**：依赖"kernel 只读 data、不反查 buffer"这个**当前为真但非 ggml 公开承诺**的行为 → **pin 上游版 + adapter 单点封装 + 零拷贝 vs 拷贝版对拍测试兜底**（ggml 升级跑对拍即知是否破，破了退拷贝版）。
+- **device 归 ggml**：不注入外部 `->data`、不造假 dummy buffer（那在多算子 varied 形状必崩）。ggml 算子内核依赖 buffer 的 `context->device`/`buft` 元数据 + 图内复用 + padding，是算子正确性的一部分。
+- **host 归 HYLE**：`tensor_set/get` 的 host 源/目标可以是 HYLE mem（`mem::Allocator`/`MemoryArena`）分配的内存。**性能接口点**：源用 pinned（compute-02b `PinnedStaging`）则 H2D 走 DMA 更快、可 async 重叠——借 ggml 的正确数据入口 = HYLE PinnedStaging → tensor_set → ggml 显存。
+- **权重常驻**：反复用同一批权重（推理）时拷进 ggml 显存**一次**、常驻复用（llama.cpp 模式），非每次都拷。
+- **HYLE 显存自管的适用范围**：compute-04/06 自造 kernel（真零拷贝跑在 HYLE Buffer 上，已验证）+ ② CAD/CAE 数据（KV-cache/网格/BVH）。借 ggml 算 AI 这条路，device 侧让位给 ggml。
+- **quant padding**：F32 首版不涉；登记 quantized 类型须查 `ggml_backend_buft_get_alloc_size` 留 padding。
 
 ### ② completion 走 spawn_blocking，不接 GpuPoller（发现 3/4/8）
 
@@ -85,7 +91,7 @@ c->data = hyle_buffer_c.device_ptr();
 
 ## bridge 抽象（定形，待实现时以代码为准）
 
-> **设计张力**：HYLE 不想暴露 ggml 类型，但 ggml 算子有 ~90 个、签名各异。**compute-05 不做"全算子门面"**（那是 L1 推理引擎的活）——只立**最小可验证的算子入口 + 内存/completion 桥接机制**，证明"HYLE 显存 + HYLE 调度 + ggml 算子"三者合体跑通。算子门面按消费者驱动逐步加（§0.2 消费者驱动原则）。
+> **设计张力**：HYLE 不想暴露 ggml 类型，但 ggml 算子有 ~90 个、签名各异。**compute-05 不做"全算子门面"**（那是 L1 推理引擎的活）——只立**最小可验证的算子入口 + 内存/completion 桥接机制**，证明"HYLE host 内存（喂入/取出）+ HYLE 调度 + ggml 算子（跑在 ggml 显存）"三者合体跑通。算子门面按消费者驱动逐步加（§0.2 消费者驱动原则）。
 
 ```
 // ggml_bridge.h —— 唯一对外头。不含任何 ggml 类型（全在 .cc 里）。
@@ -106,25 +112,34 @@ class GgmlBackend {
 };
 
 // 首个消费者 = 稠密 matmul（发现 5 的"借 ggml AI 算子"最小验证；llama.cpp 热点算子）。
-// C = A(m×k) · B(k×n)，全 F32，三块都是 HYLE 显存 Buffer（device_ptr 零拷贝注入 tensor->data）。
-// ASYNC：内部 spawn_blocking 把「建 ggml_context + 建 cgraph + graph_compute + synchronize」
-//   整段卸到 `pool` 的线程；返回 JoinHandle<Status>（照 io/dns.h 模式，非 Task——spawn_blocking
-//   的天然产物，从 fiber `.join()` 即 fiber-aware 挂起）。`alloc` backs JoinState + job（同
-//   dns::resolve：用你 join 的那个 allocator）。GgmlBackend 必须活过 join（backend 持久）。
+// C = A · Bᵀ，全 F32，三块都是 HYLE 管的 HOST 数据（① host 归 HYLE：ggml 用 gallocr 分配
+// device buffer，数据经 tensor_set 拷入 / tensor_get 拷出；host 源可以是 HYLE mem/pinned）。
+// A=[m×k], B=[n×k] 行主序，C=[m×n]。ASYNC：内部 spawn_blocking 把「建 ggml_context + 建
+//   cgraph + gallocr alloc + tensor_set(H2D) + graph_compute + synchronize + tensor_get(D2H)」
+//   整段卸到 `pool` 的线程；返回 JoinHandle<Status>（照 io/dns.h 模式）。`alloc` backs
+//   JoinState + job。GgmlBackend + host 缓冲 a/b/c 必须活过 join（pool 线程读 a/b 写 c）。
 // 这不是"matmul 专用 API"，是"证明桥接机制"的首个真实消费者；后续算子同法在 bridge 内加。
 sched::JoinHandle<Status> ggml_matmul_f32(GgmlBackend&, sched::BlockingPool& pool,
-                                          mem::Allocator alloc, const Buffer& a,
-                                          const Buffer& b, Buffer& c,
+                                          mem::Allocator alloc, const float* a,
+                                          const float* b, float* c,
                                           int m, int k, int n);
+
+// 合批（finding 4，性能杠杆）：N 个 matmul（可各自不同形状）合进一个 cgraph 一次提交。
+// 每个 job 携带 host 指针 + 维度（POD，按值捕获进闭包）；host 缓冲须活过 join。
+struct MatmulF32Job { const float* a; const float* b; float* c; int m, k, n; };
+sched::JoinHandle<Status> ggml_matmul_f32_batched(GgmlBackend&, sched::BlockingPool&,
+                                                  mem::Allocator, const MatmulF32Job*,
+                                                  int count);
 
 }  // namespace hyle::compute
 ```
 
 **实现要点**（`ggml_bridge.cc`，全部 ggml 耦合封在此）：
-- `ggml_init({.no_alloc=true})` 建 no-alloc context → `ggml_new_tensor_2d` → `tensor->data = buffer.device_ptr()`（②的零拷贝）→ `ggml_mul_mat` → `ggml_new_graph` + `ggml_build_forward_expand` → `ggml_backend_graph_compute`。
-- **completion**：`graph_compute` + `ggml_backend_synchronize` 整体丢 `spawn_blocking`（③）。
-- **CPU 后端**：`ggml_backend_cpu_init()` + `ggml_backend_cpu_set_n_threads(be, n_threads)`（③ 合批性二分：合批传全核、独立小推理传 1）。
-- **CUDA 后端**：`ggml_backend_cuda_init(device_ordinal)`；HYLE 显存指针直接当 tensor->data（②）。
+- `ggml_init({.no_alloc=true})` 建 context → `ggml_new_tensor_2d` + `ggml_set_input`(输入)/`ggml_set_output`(结果) → `ggml_mul_mat` → `ggml_build_forward_expand` → `ggml_gallocr_alloc_graph`（① device buffer 全归 ggml）→ `ggml_backend_tensor_set`(HYLE host 输入拷入) → `ggml_backend_graph_compute` → `ggml_backend_tensor_get`(结果拷回 HYLE host)。合批 = 一个 context 里 N 组三元张量、一次 alloc、一次 compute。
+- **completion**：`graph_compute` + `synchronize` 整体丢 `spawn_blocking`（②）。
+- **CPU 后端**：`ggml_backend_cpu_init()` + `ggml_backend_cpu_set_n_threads(be, n_threads)`（③ 合批性二分）。
+- **CUDA 后端**：`ggml_backend_cuda_init(device_ordinal)`；device buffer 由 gallocr 分配（① 不注入外部显存）。
+- **持久 gallocr**：`create()` 时 `ggml_gallocr_new(buft)`，随 backend 一次建、每次算子复用（llama.cpp 模式）。
 - **quant padding**：F32 首版不涉；登记 quantized 类型须查 `ggml_backend_buft_get_alloc_size` 留 padding。
 
 ## backend / context 生命周期与所有权（照 ggml 源码惯例定死）
@@ -136,9 +151,9 @@ ggml 有两个生命周期截然不同的对象，混淆会导致 free 错线程
 | `ggml_backend_t`（cuda/cpu_init）| **建一次、持久复用、析构 free** | `GgmlBackend` 成员，`create()` 建 / 析构 `ggml_backend_free` | gpt-2 example: `ggml_backend_cuda_init` 一次 → 全程复用 → `ggml_backend_free`（`main-backend.cpp:206/943`）|
 | `ggml_context`（no_alloc）+ cgraph | **每次算子调用建、算完即弃** | `ggml_matmul_f32` 内部局部，`spawn_blocking` 闭包里 `ggml_init`…`ggml_free` | simple-backend example: `ggml_init` → build → `ggml_free`（`simple-backend.cpp:79/93`）|
 
-- **关键：context 的建/弃都在 blocking pool 线程内**（spawn_blocking 闭包体），不跨线程传 `ggml_context*`——闭包只捕获 backend 指针 + 三个 `device_ptr()` + 维度（都是 POD/指针，照 dns.h 的 POD Job 模式），在 pool 线程建 context、注入 data、compute、synchronize、free context，返回 `Status`。**没有任何 ggml 对象逃逸到 fiber 线程。**
-- **GgmlBackend 必须活过 JoinHandle.join()**：backend 指针被闭包捕获、在 pool 线程用。调用方保证（同任何 spawn_blocking 捕获引用的契约）。
-- **no_alloc context 的 `mem_size`**：只存 tensor 元数据（`ggml_tensor` 结构体，非数据本身，data 是 HYLE 显存）——按算子涉及的 tensor 数 × `ggml_tensor_overhead()` + graph overhead 估，小额定值即可。
+- **关键：context 的建/弃都在 blocking pool 线程内**（spawn_blocking 闭包体），不跨线程传 `ggml_context*`——闭包只捕获 backend 指针 + gallocr 指针 + 三个 host 指针 + 维度（都是 POD/指针，照 dns.h 的 POD Job 模式），在 pool 线程建 context、gallocr alloc、tensor_set 拷入、compute、synchronize、tensor_get 拷出、free context，返回 `Status`。**没有任何 ggml 对象逃逸到 fiber 线程。**
+- **GgmlBackend + host 缓冲必须活过 JoinHandle.join()**：backend/gallocr 指针 + host 数据指针被闭包捕获、在 pool 线程用（读输入 a/b、写结果 c）。调用方保证（同任何 spawn_blocking 捕获引用的契约）。
+- **no_alloc context 的 `mem_size`**：只存 tensor 元数据（`ggml_tensor` 结构体，非数据本身，device buffer 由 gallocr 分配）——按算子涉及的 tensor 数 × `ggml_tensor_overhead()` + graph overhead 估，小额定值即可。
 
 ## 线程安全契约（ggml 无 backend 级承诺，保守串行）
 
@@ -147,16 +162,18 @@ ggml 有两个生命周期截然不同的对象，混淆会导致 free 错线程
   - **合批格**：本就单个大 graph 串行提交，天然满足。
   - **高并发独立小推理格（N fiber）**：**每 fiber 持一个自己的 `GgmlBackend`**（各自 `ggml_backend_cpu_init`，n_threads=1）——backend 建栈开销小（gpt-2 惯例是一次性建，但小模型/embedding 场景 per-fiber 建可接受，实测定夺），彼此无共享状态、无锁、真并行。**不共享单 backend 加锁**（那会把"独立小推理"重新串行化，违背该格初衷）。
 - **CUDA 后端同理**：单 CUDA backend 的私有 stream 串行；多 fiber 各自 backend（或调用方串行化提交到一个 backend）。首版验收走"单 backend 串行 + 多 backend 并行"两条都测。
+- **⚠️ 设备侧 OOM = 进程终止，非 Status，且无优雅降级出路**（红队审计发现，ggml 设计所限，诚实登记为**约束非缺口**）：bridge 只能捕获 `ggml_gallocr_alloc_graph` 返回 false + `ggml_backend_graph_compute` 的 `ggml_status`。但 device 显存 OOM 发生在 ggml 内部的 `GGML_ASSERT`/CUDA `CUDA_CHECK` 时会直接 `abort()` 整个进程——**这是 ggml 无异常/无错误返回的失败模型，借 ggml 就继承它，bridge 和消费者都无解**（除非 fork ggml 改错误处理，已否决）。`ggml_backend_buft_get_alloc_size` 只报"单 tensor 需多少字节"，**不查空闲显存、不保证 alloc 成功**（碎片/并发/其他分配都可能让预估通过但实际仍 abort），故**不构成"预估即可优雅降级"的可靠出路**。**这不是 compute-05 欠的功能，是借 ggml 的固有代价**——真要 OOM 可恢复得靠 compute-04/06 自造 kernel（HYLE 自己管显存分配、失败返 Status）。首版 F32 小矩阵不触发。
+- **⚠️ 并发多 CUDA context 的 TSan 假阳（KI-4）**：`ConcurrentIndependentBackends`（N fiber × N 独立 CUDA context）在 WSL TSan 下报 1 条 libcuda 内部 memcpy race——**已查清为 CUDA 驱动内部跨 context 结构 TSan 不可见，非 HYLE 竞争**（决定性反证：同机制走 CPU 后端零 race）。Release 并发稳定。详见 known-issues KI-4。
 
 ## 验收（B 档最小可信闭环，三平台真机）
 
-- **零拷贝 matmul 端到端**（CUDA）：HYLE Buffer 装 A/B（compute-02 `set` H2D）→ `ggml_matmul_f32` 零拷贝注入 → spawn_blocking 卸载 ggml graph_compute → fiber 挂起 → 完成唤醒 → HYLE Buffer `get` C 回来 → **对拍 HYLE 侧 CPU 参考（simd `dot_f32` 或朴素三重循环）逐元素校验**。这是"HYLE 显存 + HYLE fiber 调度 + ggml CUDA 算子"三者合体的决定性验证。
-- **CPU 线程模型二分验证**（任何平台，无 GPU 可跑，③）：①`n_threads=1` 走 matmul，**验证不 spawn 额外线程**（TSan / 线程计数探针）——坐实"独立小推理"格零 spawn（`ggml-cpu.c:3356-3358`）；②`n_threads=全核` 走 matmul，验证 ggml 起线程组吃满核（"合批"格）+ 两者结果对拍一致。**证明 n_threads 可配 + 两格都对。**
-- **零拷贝 vs 拷贝版对拍**：同输入两条路（no_alloc+data 注入 vs `ggml_backend_tensor_set`）结果一致——兜底版正确性 + 零拷贝版无越界。
-- **spawn_blocking 不阻塞 worker**：matmul 在途时，另一 fiber 在同 worker 上继续跑（证明 fiber 挂起不占 worker，发现 8 的"比 llama.cpp 单线程阻塞好"）。
-- **多 backend 真并发（线程安全契约验证）**：N 个 fiber 各持一个 `GgmlBackend`(n_threads=1) 并发跑独立 matmul（"高并发独立小推理"格）→ 全部结果正确 + **WSL TSan 零 race**（坐实"每 fiber 一 backend、无共享状态"契约，反证"共享单 backend 会 race"）。
-- **合批**：多个 matmul 合进一个 cgraph 一次提交 vs 分次提交，验证正确性（性能对比登记 bench）。
-- **三平台**：Win MSVC+nvcc / WSL GCC14+nvcc（CUDA 真跑）+ mac host（CPU 后端二分：n_threads=1 与全核都测，无 CUDA）+ WSL TSan（spawn_blocking 跨线程 wake + CPU 后端零 race）。
+- **matmul 端到端**（CUDA）：HYLE host 数据装 A/B → `ggml_matmul_f32`（内部 gallocr 分配 device buffer + `tensor_set` 拷入）→ spawn_blocking 卸载 ggml graph_compute → fiber 挂起 → 完成唤醒 → `tensor_get` 拷回 host C → **对拍 HYLE 侧 CPU 参考（朴素三重循环）逐元素校验**。这是"HYLE host mem + HYLE fiber 调度 + ggml CUDA 算子（跑在 ggml 显存）"三者合体的决定性验证。
+- **CPU 线程模型二分验证**（任何平台，无 GPU 可跑，③）：①`n_threads=1` 走 matmul（"独立小推理"格，`ggml-cpu.c:3356-3358` 零 spawn）；②`n_threads=全核` 走 matmul（"合批"格）+ 两者结果一致。**证明 n_threads 可配 + 两格都对。**
+- **spawn_blocking 不阻塞 worker**：matmul 在途时，另一 fiber 在同 worker 上继续跑（发现 8）。
+- **多 backend 真并发（线程安全契约验证）**：N 个 fiber 各持一个 `GgmlBackend`(n_threads=1) 并发跑独立 matmul（"高并发独立小推理"格）→ 全部结果正确 + **WSL TSan 零 race**。
+- **合批 varied 形状**：3 个不同形状 matmul 合进一个 cgraph 一次提交，每个 golden 对拍——**这正是 dummy-buffer 注入版崩溃的 case（`ggml-cuda.cu:1924`），gallocr 模型下 buffer context 合法、跑通**（回归护栏）。
+- **持久 backend 复用（create-once/reuse-many + move 语义）**：一个 `GgmlBackend`（create 后 move 一次）连跑 single(变形状×3) → batched(varied) → single，全部共享同一持久 gallocr——验证 gallocr 跨调用的 reserve/realloc（形状变 + 节点数变 1↔N）正确，且 move 后 galloc_ 指针完好。这是"持久 gallocr"设计卖点的直接测试（红队指出原 4 测试每 backend 只跑 1 次 op、未覆盖复用）。
+- **三平台**：Win MSVC+nvcc / WSL GCC14+nvcc（CUDA 真跑）+ mac host（CPU 后端二分）+ WSL TSan（spawn_blocking 跨线程 wake + CPU 后端零 race；CUDA 多 context 的 libcuda 假阳记 KI-4）。
 - **cloc 验真** + **对照 clay coverage-map**（ggml 无对应 clay 组件，登记为净新桥接）。
 
 ## 明确不做（防蔓延，登记后续）
@@ -175,10 +192,10 @@ ggml 有两个生命周期截然不同的对象，混淆会导致 free 错线程
 ## 交付物（预期）
 
 - `include/hyle/compute/ggml_bridge.h`（`GgmlBackend` + `ggml_matmul_f32` 首消费者；**零 ggml 类型泄漏**）
-- `src/compute/ggml_bridge.cc`（全部 ggml 耦合：no_alloc context + tensor->data 注入 + cgraph 构建 + graph_compute spawn_blocking 卸载 + CPU `set_n_threads(n)` 合批性二分 + CUDA init；对拍拷贝版路径）
+- `src/compute/ggml_bridge.cc`（全部 ggml 耦合：no_alloc context + `ggml_set_input/output` + gallocr 分配 device buffer + `tensor_set`(host in)/`tensor_get`(host out) + cgraph 构建 + graph_compute spawn_blocking 卸载 + CPU `set_n_threads(n)` 合批性二分 + CUDA init；单发 + 合批同模型）
 - `third_party/ggml`（vendored 上游 0.15.3，或 submodule）
 - CMake：`HYLE_COMPUTE_GGML` 门控 + FetchContent pin commit（本地镜像 SOURCE_DIR 优先零下载 / GIT fallback + `FETCHCONTENT_BASE_DIR=.deps` 持久缓存，每机独立树）+ 关 tests/examples/OpenMP/CUDA_FA + 只开 CPU+CUDA；bridge TU 链 ggml + hyle_sched（spawn_blocking）+ hyle_compute
-- `tests/compute/ggml_bridge_test.cc`（零拷贝 matmul 端到端 + CPU 线程二分〔n_threads=1 不 spawn / 全核起线程组〕对拍 + 零拷贝/拷贝版对拍 + spawn_blocking 不阻塞 worker + 合批）
+- `tests/compute/ggml_bridge_test.cc`（matmul host→ggml→host 端到端对拍 + CPU 线程二分〔n_threads=1 / 全核〕+ 多 backend 并发 + 合批 varied 形状〔dummy-buffer 崩溃 case 的回归护栏〕+ 持久 backend 复用〔create-once/reuse-many + move + 跨调用 gallocr reserve/realloc〕）
 
 ## 参考
 
