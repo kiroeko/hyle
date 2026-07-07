@@ -89,6 +89,24 @@ struct VkContext {
     app.apiVersion = VK_API_VERSION_1_2;
     VkInstanceCreateInfo ici{VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO};
     ici.pApplicationInfo = &app;
+    // MoltenVK (mac) is a PORTABILITY driver: vkCreateInstance fails with
+    // VK_ERROR_INCOMPATIBLE_DRIVER (-9, measured on Apple M4) unless we opt in via
+    // VK_KHR_portability_enumeration + the ENUMERATE_PORTABILITY flag. Probe the ext at
+    // runtime and enable only when present, so ONE code path serves mac + the discrete-GPU
+    // platforms (Win/WSL) where the ext is absent and must NOT be requested.
+    const char* kPortEnum = "VK_KHR_portability_enumeration";
+    uint32_t nie = 0;
+    vkEnumerateInstanceExtensionProperties(nullptr, &nie, nullptr);
+    std::vector<VkExtensionProperties> ie(nie);
+    if (nie) vkEnumerateInstanceExtensionProperties(nullptr, &nie, ie.data());
+    bool have_port = false;
+    for (const auto& e : ie)
+      if (std::strcmp(e.extensionName, kPortEnum) == 0) { have_port = true; break; }
+    if (have_port) {
+      ici.flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
+      ici.enabledExtensionCount = 1;
+      ici.ppEnabledExtensionNames = &kPortEnum;
+    }
     if (vkCreateInstance(&ici, nullptr, &instance) != VK_SUCCESS) return;
     volkLoadInstance(instance);
 
@@ -121,6 +139,18 @@ struct VkContext {
     }
     if (phys == VK_NULL_HANDLE) return;
 
+    // A portability device (MoltenVK) advertises VK_KHR_portability_subset and the spec
+    // REQUIRES enabling it at device creation if present. Probe + enable only then, so the
+    // discrete-GPU platforms (which don't advertise it) request nothing extra.
+    const char* kPortSubset = "VK_KHR_portability_subset";
+    uint32_t nde = 0;
+    vkEnumerateDeviceExtensionProperties(phys, nullptr, &nde, nullptr);
+    std::vector<VkExtensionProperties> de(nde);
+    if (nde) vkEnumerateDeviceExtensionProperties(phys, nullptr, &nde, de.data());
+    bool need_subset = false;
+    for (const auto& e : de)
+      if (std::strcmp(e.extensionName, kPortSubset) == 0) { need_subset = true; break; }
+
     float pri = 1.0f;
     VkDeviceQueueCreateInfo qci{VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO};
     qci.queueFamilyIndex = compute_qfi;
@@ -129,6 +159,10 @@ struct VkContext {
     VkDeviceCreateInfo dci{VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO};
     dci.queueCreateInfoCount = 1;
     dci.pQueueCreateInfos = &qci;
+    if (need_subset) {
+      dci.enabledExtensionCount = 1;
+      dci.ppEnabledExtensionNames = &kPortSubset;
+    }
     if (vkCreateDevice(phys, &dci, nullptr, &device) != VK_SUCCESS) return;
     volkLoadDevice(device);
     vkGetDeviceQueue(device, compute_qfi, 0, &queue);
