@@ -77,9 +77,8 @@ c->data = hyle_buffer_c.device_ptr();
 
 ### ⑥ ggml vendored（构建集成，2026-07-07 实测定形）
 
-- **FetchContent pin commit**（非 `find_package(ggml)`，非直接 `add_subdirectory`）：`FetchContent_Declare(ggml ...)` + `MakeAvailable`。ggml 有自己完整 CMake，FetchContent 是它的标准接入法。
-- **零重复下载 = 本地镜像 SOURCE_DIR**：`third_party/ggml`（`git archive` pin commit 的纯净源码，.gitignored）存在则 `FetchContent_Declare(ggml SOURCE_DIR ...)` → 永不联网；不存在则 `GIT_REPOSITORY + GIT_TAG` 拉 pin commit 一次。镜像是"重配置/删 build/第二 build 树都不下载"的关键。
-- **⚠️ 不覆写 `FETCHCONTENT_BASE_DIR` 到 in-source `.deps`**（cil2cpp 的持久缓存技法，**实测在本项目跨 OS 破**）：`build/`（Windows）与 `build-wsl/`（WSL）**共享同一份 `/mnt/c` 源码树**，若 FetchContent subbuild 落在共享 `.deps/ggml-subbuild`，其 `CMakeCache.txt` 会 bake 绝对路径（`C:/...` vs `/mnt/c/...`），另一 OS 配置即报 `cache directory is different` 失败。**默认 per-build-dir `${build}/_deps` 才对**（各 OS 各自 subbuild，互不干扰），而本地镜像已提供零下载，持久 base dir 除了跨 OS 冲突没带来别的好处。
+- **零重复下载，两层**：①**本地镜像 SOURCE_DIR**——`third_party/ggml`（`git archive` pin commit 的纯净源码，.gitignored）存在则 `FetchContent_Declare(ggml SOURCE_DIR ...)` → 永不联网；不存在则 `GIT_REPOSITORY + GIT_TAG` 拉 pin commit 一次。②**持久缓存 `FETCHCONTENT_BASE_DIR=.deps`**（cil2cpp runtime/CMakeLists.txt 技法）——populate/subbuild 落 in-source `.deps`（.gitignored），`rm -rf build`/重配置/同机第二 build 树都复用、不重 populate。
+- **前提：每平台是独立机器、独立树**（这才让 in-source `.deps` 安全）：**Windows 在 `C:\public\project-hyle\hyle`（Windows 专用构建/开发目录）；WSL 在自己的 `/root/hyle`（原生 ext4 clone——绝不用 `/mnt/c`，那是 WSL 的 9p 网络挂载、慢且应视为不可访问）；mac 在 `~/hyle`**。无任何树跨 OS 共享，故 `.deps/ggml-subbuild` 的 CMakeCache 绝对路径在各自机器内永远自洽。（曾出现的"cache dir differs"跨 OS 报错是**误在 /mnt/c 上建 WSL 自找的**，非技法缺陷——已纠正为 WSL 用 /root/hyle。）
 - **关**：`GGML_OPENMP`（关键，见 ③ n_threads=1 leaf）/`GGML_BUILD_TESTS`/`GGML_BUILD_EXAMPLES`/`GGML_CUDA_FA`（跳 ~120 FlashAttention kernel 实例——bridge 借 GEMM 不碰 attention，FA 占首编大头）。
 - **只开**：CPU + CUDA 后端。**链接类型随 HYLE `BUILD_SHARED_LIBS`（默认 shared）**——原想强制 static，但 HYLE 顶层 `set(BUILD_SHARED_LIBS ON)`（normal var）遮蔽了 FORCE cache var，且孤立 static ggml 混在 shared HYLE 库里易 ODR/符号错，故 ggml 随大流 shared（runtime 需 libggml.so 在路径，归 close-01 install/rpath）。
 - 门控：`HYLE_COMPUTE_GGML`（仿 `HYLE_COMPUTE_CUDA`/`HYLE_IO_TLS` 可选能力模式；不 vendor ggml 则不编 bridge、compute 其余照跑）。
@@ -178,7 +177,7 @@ ggml 有两个生命周期截然不同的对象，混淆会导致 free 错线程
 - `include/hyle/compute/ggml_bridge.h`（`GgmlBackend` + `ggml_matmul_f32` 首消费者；**零 ggml 类型泄漏**）
 - `src/compute/ggml_bridge.cc`（全部 ggml 耦合：no_alloc context + tensor->data 注入 + cgraph 构建 + graph_compute spawn_blocking 卸载 + CPU `set_n_threads(n)` 合批性二分 + CUDA init；对拍拷贝版路径）
 - `third_party/ggml`（vendored 上游 0.15.3，或 submodule）
-- CMake：`HYLE_COMPUTE_GGML` 门控 + FetchContent pin commit（本地镜像 SOURCE_DIR 优先零下载 / GIT fallback）+ 关 tests/examples/OpenMP/CUDA_FA + 只开 CPU+CUDA；bridge TU 链 ggml + hyle_sched（spawn_blocking）+ hyle_compute。⚠️ 不覆写 FETCHCONTENT_BASE_DIR（跨 OS 破，见 ⑥）
+- CMake：`HYLE_COMPUTE_GGML` 门控 + FetchContent pin commit（本地镜像 SOURCE_DIR 优先零下载 / GIT fallback + `FETCHCONTENT_BASE_DIR=.deps` 持久缓存，每机独立树）+ 关 tests/examples/OpenMP/CUDA_FA + 只开 CPU+CUDA；bridge TU 链 ggml + hyle_sched（spawn_blocking）+ hyle_compute
 - `tests/compute/ggml_bridge_test.cc`（零拷贝 matmul 端到端 + CPU 线程二分〔n_threads=1 不 spawn / 全核起线程组〕对拍 + 零拷贝/拷贝版对拍 + spawn_blocking 不阻塞 worker + 合批）
 
 ## 参考

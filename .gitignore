@@ -26,12 +26,12 @@ compile_commands.json
 /vendor/*/
 
 # compute-05: ggml is a FetchContent dependency PINNED BY COMMIT (CMakeLists.txt).
-# third_party/ggml is a LOCAL SOURCE MIRROR (git archive of the pin) kept out-of-repo so
-# build/ and build-wsl/ share ONE copy without re-downloading -- unlike fcontext/
-# picohttpparser (tiny copied vendors that ARE tracked). Delete it -> CMake fetches the
-# pinned commit from upstream. (FetchContent's subbuild lives in the default per-build-dir
-# ${build}/_deps -- NOT a shared in-source .deps, which broke Win/WSL cross-OS; see the
-# compute-05 milestone doc. The stray /.deps/ guard below catches an accidental one.)
+# third_party/ggml is a LOCAL SOURCE MIRROR (git archive of the pin) kept out-of-repo --
+# unlike fcontext/picohttpparser (tiny copied vendors that ARE tracked). Delete it ->
+# CMake fetches the pinned commit from upstream. .deps/ is the persistent FetchContent
+# cache (FETCHCONTENT_BASE_DIR): populated ONCE per machine, reused across `rm -rf build`
+# and regenerations. Both are per-machine (Win C:\..., WSL /root/hyle, mac ~/hyle -- never
+# shared across OSes), so no cross-tree path conflict.
 /third_party/ggml/
 /.deps/
 

@@ -141,21 +141,26 @@ endif()
 # leaf contract (发现 10) REQUIRES OpenMP OFF, and zero-copy REQUIRES a pinned version.
 # So we own the build: OpenMP OFF, CPU+CUDA only, static, pinned to GGML_PIN_COMMIT.
 #
-# ZERO REPEATED DOWNLOADS = LOCAL MIRROR (SOURCE_DIR): if third_party/ggml exists (a
-# git-archive of the pin, .gitignored, shared by build/ + build-wsl/), FetchContent uses
-# it via SOURCE_DIR -> zero network, ever. Delete it -> GIT fetch the pinned commit once.
-# Either way the SAME commit is built. The mirror is what makes re-config / build wipes /
-# a second build tree all skip downloading.
+# ZERO REPEATED DOWNLOADS, two layers:
+#  (1) LOCAL MIRROR (SOURCE_DIR): if third_party/ggml exists (a git-archive of the pin,
+#      .gitignored), FetchContent uses it via SOURCE_DIR -> zero network, ever. Absent ->
+#      GIT fetch the pinned commit once. Either way the SAME commit is built.
+#  (2) PERSISTENT FETCH CACHE (technique from cil2cpp runtime/CMakeLists.txt): pin
+#      FETCHCONTENT_BASE_DIR to an in-source .deps (.gitignored) so the populate/subbuild
+#      is reused across `rm -rf build`, regenerations, AND a second build dir on the SAME
+#      MACHINE -- a full build wipe never re-populates.
 #
-# NOTE: we do NOT override FETCHCONTENT_BASE_DIR to an in-source dir (cil2cpp's trick).
-# Tried it; it BREAKS here because build/ (Windows) and build-wsl/ (WSL) share ONE source
-# tree, and a shared .deps/ggml-subbuild bakes an absolute path (C:/... vs /mnt/c/...) into
-# its CMakeCache -> the other OS fails with "cache directory is different". The default
-# per-build-dir ${build}/_deps avoids that, and the local mirror already gives zero-
-# download, so the persistent base dir bought nothing but a cross-OS conflict. (See the
-# compute-05 milestone doc "构建集成" note.)
+# EACH PLATFORM IS A SEPARATE MACHINE WITH ITS OWN TREE (this is the invariant that makes
+# the in-source .deps safe): Windows builds in C:\public\project-hyle\hyle (Windows-only
+# dev/build dir); WSL builds in its OWN /root/hyle (native ext4 clone -- NEVER /mnt/c,
+# which is a slow 9p network mount WSL should treat as inaccessible); mac in ~/hyle. No
+# tree is shared across OSes, so a .deps/ggml-subbuild CMakeCache's absolute path is
+# always consistent within its own machine. (An earlier cross-OS "cache dir differs"
+# error was self-inflicted by wrongly building WSL against /mnt/c -- not a flaw in this.)
 option(HYLE_COMPUTE_GGML "compute-05: borrow ggml operators via ggml_bridge" ON)
 if(HYLE_COMPUTE_GGML)
+  set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.deps"
+      CACHE PATH "Persistent FetchContent cache (survives build/ wipes; per-machine tree)")
   include(FetchContent)
   set(GGML_PIN_COMMIT "eced84c86f8b012c752c016f7fe789adea168e1e")  # v0.15.3
   set(_ggml_local "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ggml")
