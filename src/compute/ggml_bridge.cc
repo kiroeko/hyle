@@ -59,50 +59,77 @@ inline ggml_backend_t as_be(void* p) noexcept {
 // then OVERWRITE ->data with the HYLE device_ptr. ggml's throwaway allocation supplies
 // only the buffer struct; the compute reads/writes HYLE memory. Still zero-copy on the
 // actual matmul data. (Works for CPU backend too: ->data is host RAM = HYLE host Buffer.)
-Status matmul_blocking(ggml_backend_t be, const void* a_dev, const void* b_dev,
-                       void* c_dev, int m, int k, int n) noexcept {
-  // no_alloc context: holds tensor metadata structs; ggml_backend_alloc_ctx_tensors
-  // gives them buffers below. Size = per-tensor overhead * a few + graph overhead
-  // (example simple-backend.cpp:69). 8 tensors is ample for a 3-tensor matmul.
-  const size_t mem_size = ggml_tensor_overhead() * 8 + ggml_graph_overhead();
+// One matmul's raw inputs (device pointers + dims) -- the internal POD, mirrors the
+// public MatmulF32Job but stays TU-local so the header's struct isn't dragged in here.
+struct MmJob {
+  const void* a;
+  const void* b;
+  void* c;
+  int m, k, n;
+};
+
+// The blocking half: runs ENTIRELY on the sched-11 pool thread (spec ②). Builds ONE
+// no_alloc ggml_context holding ALL `count` matmuls, injects HYLE device_ptrs as tensor
+// ->data (① zero-copy), builds ONE cgraph over all results, ONE graph_compute + ONE
+// synchronize (finding 4: batching = one submit for many ops). count==1 is the single-
+// matmul case. Nothing ggml escapes this function.
+//
+// GGML MATMUL SEMANTICS (verified ggml.h:1415-1417): ggml_mul_mat(A,B) with A=[k,m],
+// B=[k,n] -> C=[m,n], C = A·Bᵀ (both contract on ne0). See the single-op history in git
+// for the full derivation; per job: gA=[k,m] data=a, gB=[k,n] data=b, gC=[m,n] data=c.
+//
+// ZERO-COPY via alloc_ctx_tensors + overwrite ->data (finding 2, CORRECTED -- see
+// docs/debug/ggml-zerocopy-null-buffer-hunt.md): the CUDA matmul derefs tensor->buffer
+// (->buft for split check ggml-cuda.cu:1853, ->context->device 1832-33), so a NULL
+// ->buffer segfaults; but the kernel's DATA base is ->data (1931/1951/1973) which we
+// control. So we let ggml ALLOCATE tensors (valid buffer metadata) then OVERWRITE ->data
+// with HYLE pointers. ggml's throwaway allocation bytes are unused; compute reads/writes
+// HYLE memory. Batching just means N triples of tensors in one context.
+Status matmul_batch_blocking(ggml_backend_t be, const MmJob* jobs, int count) noexcept {
+  // no_alloc context: metadata structs only (data is HYLE memory). Each matmul needs 3
+  // tensors; ggml_new_graph + build_forward_expand add graph overhead. Budget generously:
+  // 3 tensors/job * count + slack, plus per-graph overhead.
+  const size_t mem_size =
+      ggml_tensor_overhead() * (static_cast<size_t>(count) * 3 + 4) + ggml_graph_overhead();
   ggml_init_params params = {
       /*.mem_size   =*/ mem_size,
-      /*.mem_buffer =*/ nullptr,  // ggml allocates the metadata arena internally
-      /*.no_alloc   =*/ true,     // no data yet; alloc_ctx_tensors provides buffers
+      /*.mem_buffer =*/ nullptr,
+      /*.no_alloc   =*/ true,
   };
   ggml_context* ctx = ggml_init(params);
   if (ctx == nullptr) return Status::ResourceExhausted("ggml_init failed");
 
-  ggml_tensor* gA = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, k, m);
-  ggml_tensor* gB = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, k, n);
-  ggml_tensor* gC = ggml_mul_mat(ctx, gA, gB);  // result = [ne0=m, ne1=n]
+  // Build all matmul nodes first (tensors created in ctx), remember each result to shadow
+  // its ->data after allocation. Fixed cap keeps this stack-only (contract: count <= 64).
+  ggml_tensor* results[64];
+  ggml_tensor* inA[64];
+  ggml_tensor* inB[64];
+  for (int i = 0; i < count; ++i) {
+    inA[i] = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, jobs[i].k, jobs[i].m);
+    inB[i] = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, jobs[i].k, jobs[i].n);
+    results[i] = ggml_mul_mat(ctx, inA[i], inB[i]);  // [ne0=m, ne1=n]
+  }
 
-  // Give every tensor (gA, gB, gC) a valid ggml buffer so ->buffer->buft/context are
-  // non-null (the CUDA matmul derefs them). This makes a throwaway ggml allocation we
-  // immediately shadow with the HYLE pointers below.
+  // Give EVERY tensor a valid ggml buffer (non-null ->buffer for the CUDA derefs), then
+  // overwrite ->data with HYLE pointers (zero-copy on the real data).
   ggml_backend_buffer_t buf = ggml_backend_alloc_ctx_tensors(ctx, be);
   if (buf == nullptr) {
     ggml_free(ctx);
     return Status::ResourceExhausted("ggml_backend_alloc_ctx_tensors failed");
   }
+  for (int i = 0; i < count; ++i) {
+    inA[i]->data = const_cast<void*>(jobs[i].a);
+    inB[i]->data = const_cast<void*>(jobs[i].b);
+    results[i]->data = jobs[i].c;
+  }
 
-  // Zero-copy injection: point the kernel's data base at HYLE memory (the ggml buffer
-  // metadata stays valid for the split/device checks; the ggml allocation's own bytes
-  // are simply unused). See the file-level ZERO-COPY comment for the source evidence.
-  gA->data = const_cast<void*>(a_dev);
-  gB->data = const_cast<void*>(b_dev);
-  gC->data = c_dev;
-
+  // ONE graph over all results, ONE compute+sync (the batching win, finding 4).
   ggml_cgraph* gf = ggml_new_graph(ctx);
-  ggml_build_forward_expand(gf, gC);
-
-  // Submit + block. graph_compute launches async then synchronize blocks THIS (pool)
-  // thread until done (spec ②; ggml's CUDA stream is private, blocking is the only
-  // completion). The fiber that spawn_blocking'd this is meanwhile free.
+  for (int i = 0; i < count; ++i) ggml_build_forward_expand(gf, results[i]);
   ggml_status ec = ggml_backend_graph_compute(be, gf);
 
-  ggml_backend_buffer_free(buf);  // free ggml's throwaway allocation (not HYLE memory)
-  ggml_free(ctx);                 // free metadata arena
+  ggml_backend_buffer_free(buf);
+  ggml_free(ctx);
 
   if (ec != GGML_STATUS_SUCCESS) {
     return Status::Internal("ggml_backend_graph_compute failed");
@@ -163,11 +190,40 @@ sched::JoinHandle<Status> ggml_matmul_f32(GgmlBackend& be, sched::BlockingPool& 
   // escapes; device_ptr() is a plain pointer into HYLE-owned memory that outlives the
   // op (caller guarantees, same as backend). spawn_blocking moves this onto the pool.
   void* be_raw = be.raw_();
-  const void* a_dev = a.device_ptr();
-  const void* b_dev = b.device_ptr();
-  void* c_dev = c.device_ptr();
-  return sched::spawn_blocking(pool, alloc, [be_raw, a_dev, b_dev, c_dev, m, k, n]() noexcept {
-    return matmul_blocking(as_be(be_raw), a_dev, b_dev, c_dev, m, k, n);
+  MmJob job{a.device_ptr(), b.device_ptr(), c.device_ptr(), m, k, n};
+  return sched::spawn_blocking(pool, alloc, [be_raw, job]() noexcept {
+    return matmul_batch_blocking(as_be(be_raw), &job, 1);  // count==1: single matmul
+  });
+}
+
+sched::JoinHandle<Status> ggml_matmul_f32_batched(GgmlBackend& be,
+                                                  sched::BlockingPool& pool,
+                                                  mem::Allocator alloc,
+                                                  const MatmulF32Job* jobs,
+                                                  int count) noexcept {
+  // Caller-contract checks (bug -> fatal assert). Cap 64 keeps matmul_batch_blocking's
+  // fixed-size tensor arrays stack-only (no per-batch heap in the pool closure).
+  HYLE_FATAL_ASSERT(be.valid());
+  HYLE_FATAL_ASSERT(count > 0 && count <= 64);
+  HYLE_FATAL_ASSERT(jobs != nullptr);
+  const size_t f32 = sizeof(float);
+  // Copy jobs into a fixed POD array captured by value (the caller's array need not
+  // outlive the await; nothing but device pointers + dims crosses to the pool thread).
+  struct Batch {
+    MmJob jobs[64];
+    int count;
+  } batch;
+  batch.count = count;
+  for (int i = 0; i < count; ++i) {
+    const MatmulF32Job& j = jobs[i];
+    HYLE_FATAL_ASSERT(j.a != nullptr && j.b != nullptr && j.c != nullptr);
+    HYLE_FATAL_ASSERT(j.m > 0 && j.k > 0 && j.n > 0);
+    (void)f32;  // sizes are the caller's Buffers' responsibility (raw ptrs here)
+    batch.jobs[i] = MmJob{j.a, j.b, j.c, j.m, j.k, j.n};
+  }
+  void* be_raw = be.raw_();
+  return sched::spawn_blocking(pool, alloc, [be_raw, batch]() noexcept {
+    return matmul_batch_blocking(as_be(be_raw), batch.jobs, batch.count);
   });
 }
 

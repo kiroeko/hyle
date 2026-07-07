@@ -175,3 +175,82 @@ TEST(GgmlBridge, ConcurrentIndependentBackends) {
     EXPECT_EQ(args[i]->result, 0) << "fiber " << i << " failed at step " << args[i]->result;
   }
 }
+
+namespace {
+// Run a BATCH of matmuls (finding 4): N matmuls with varied shapes built into ONE ggml
+// graph, ONE submit. Each result golden-compared. Returns 0 / negative step code.
+int run_batch(const Device& device, BlockingPool& pool, int n_threads) {
+  auto be = GgmlBackend::create(device, n_threads);
+  if (!be.has_value()) return -1;
+
+  // 3 jobs, deliberately different shapes (proves per-job dims in one graph).
+  struct Spec { int m, k, n; };
+  const Spec specs[3] = {{8, 16, 4}, {4, 8, 6}, {12, 4, 3}};
+  constexpr int kJobs = 3;
+
+  std::vector<float> ha[kJobs], hb[kJobs], ref[kJobs];
+  std::vector<Buffer> ba, bb, bc;  // keep Buffers alive across the join
+  ba.reserve(kJobs); bb.reserve(kJobs); bc.reserve(kJobs);
+  MatmulF32Job jobs[kJobs];
+  BufferType bt = device_buffer_type(device);
+
+  for (int i = 0; i < kJobs; ++i) {
+    int m = specs[i].m, k = specs[i].k, n = specs[i].n;
+    ha[i].resize(static_cast<size_t>(m) * k);
+    hb[i].resize(static_cast<size_t>(n) * k);
+    for (int j = 0; j < m * k; ++j) ha[i][j] = static_cast<float>((j + i) % 7 - 3) * 0.5f;
+    for (int j = 0; j < n * k; ++j) hb[i][j] = static_cast<float>((j + i) % 5 - 2) * 0.25f;
+    ref_matmul_abt(ha[i], hb[i], ref[i], m, k, n);
+
+    auto a = Buffer::create(bt, ha[i].size() * sizeof(float));
+    auto b = Buffer::create(bt, hb[i].size() * sizeof(float));
+    auto c = Buffer::create(bt, static_cast<size_t>(m) * n * sizeof(float));
+    if (!a.has_value() || !b.has_value() || !c.has_value()) return -2;
+    if (!a->set(0, ha[i].data(), ha[i].size() * sizeof(float)).ok()) return -3;
+    if (!b->set(0, hb[i].data(), hb[i].size() * sizeof(float)).ok()) return -4;
+    jobs[i] = MatmulF32Job{a->device_ptr(), b->device_ptr(), c->device_ptr(), m, k, n};
+    ba.push_back(std::move(*a)); bb.push_back(std::move(*b)); bc.push_back(std::move(*c));
+  }
+
+  auto h = ggml_matmul_f32_batched(*be, pool, system_allocator(), jobs, kJobs);
+  auto r = h.join();
+  if (!r.has_value()) return -5;
+  if (!r->ok()) return -6;
+
+  for (int i = 0; i < kJobs; ++i) {
+    std::vector<float> hc(ref[i].size(), -12345.0f);
+    if (!bc[i].get(0, hc.data(), hc.size() * sizeof(float)).ok()) return -7;
+    for (size_t j = 0; j < ref[i].size(); ++j)
+      if (std::fabs(hc[j] - ref[i][j]) > 1e-3f * (1.0f + std::fabs(ref[i][j]))) return -(100 + i);
+  }
+  return 0;
+}
+
+struct BatchArg {
+  Device device;
+  BlockingPool* pool;
+  int result = -100;
+  std::atomic<bool> done{false};
+  BatchArg(const Device& d, BlockingPool* p) : device(d), pool(p) {}
+};
+void batch_fiber(void* p) {
+  auto* a = static_cast<BatchArg*>(p);
+  a->result = run_batch(a->device, *a->pool, /*n_threads=*/1);
+  a->done.store(true, std::memory_order_release);
+}
+}  // namespace
+
+// 合批 (finding 4): N matmuls of DIFFERENT shapes in ONE graph / ONE submit, each result
+// golden-correct. Proves the batching path (one graph_compute for many ops) works.
+TEST(GgmlBridge, BatchedMatmul) {
+  BlockingPool pool(system_allocator());
+  BatchArg arg{default_device(), &pool};
+  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                   &batch_fiber, &arg);
+  Scheduler sched(2, system_allocator(), 256);
+  sched.spawn(f.get());
+  sched.drain();
+  sched.shutdown();
+  EXPECT_TRUE(arg.done.load());
+  EXPECT_EQ(arg.result, 0) << "batched matmul failed at step " << arg.result;
+}

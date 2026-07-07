@@ -80,6 +80,9 @@ class HYLE_COMPUTE_API GgmlBackend {
   friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32(
       GgmlBackend&, sched::BlockingPool&, mem::Allocator, const Buffer&,
       const Buffer&, Buffer&, int, int, int) noexcept;
+  friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_batched(
+      GgmlBackend&, sched::BlockingPool&, mem::Allocator,
+      const struct MatmulF32Job*, int) noexcept;
   explicit GgmlBackend(void* be) noexcept : be_(be) {}
   void* raw_() const noexcept { return be_; }  // for the bridge free functions
   void* be_ = nullptr;  // ggml_backend_t (opaque; real type only in the .cc)
@@ -105,5 +108,27 @@ class HYLE_COMPUTE_API GgmlBackend {
 HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32(
     GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
     const Buffer& a, const Buffer& b, Buffer& c, int m, int k, int n) noexcept;
+
+// BATCHING (finding 4, the performance lever): llama.cpp's real concurrency is NOT
+// multi-stream -- it merges many requests into ONE graph and submits once. Same here:
+// N independent matmuls built into ONE ggml cgraph, ONE graph_compute + ONE synchronize
+// (one spawn_blocking offload), instead of N separate submits (N thread hops + N kernel
+// launches). Each job is C_i = A_i · B_i^T with its own shape (jobs may differ in m/k/n).
+//
+// A job carries raw device pointers (pulled from the caller's Buffers via device_ptr())
+// + dims -- POD, captured by value into the spawn_blocking closure. The caller owns the
+// underlying Buffers and must keep them alive across the join. `jobs` array is COPIED
+// into the closure (so the caller's array need not outlive the await).
+struct MatmulF32Job {
+  const void* a;  // device_ptr of A, laid out [m rows × k] row-major
+  const void* b;  // device_ptr of B, laid out [n rows × k] row-major (C = A·Bᵀ)
+  void* c;        // device_ptr of C result, [m rows × n] row-major
+  int m, k, n;
+};
+// CONTRACT: be.valid(); count in [1, 64]; every job's a/b/c non-null, dims > 0, and the
+// backing Buffers sized for m·k / n·k / m·n F32 elements on `be`'s device.
+HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_batched(
+    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    const MatmulF32Job* jobs, int count) noexcept;
 
 }  // namespace hyle::compute
