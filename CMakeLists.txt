@@ -129,6 +129,75 @@ else()
   message(STATUS "HYLE: CUDA Toolkit not found -- compute uses host fallback only")
 endif()
 
+# ---- optional ggml operator library (compute-05 ggml_bridge) -----------------
+# ggml is BORROWED as an operator-kernel supplier (compute-05: matmul/softmax/... on
+# HYLE-managed VRAM + completion + scheduling). Same "opt-in capability = opt-in
+# dependency" rule as CUDA/OpenSSL: HYLE_COMPUTE_GGML gates ggml_bridge.{h,cc}; without
+# it compute still builds (01-04) with zero ggml dependency.
+#
+# INTEGRATION = FetchContent PINNED BY COMMIT (compute-design "compute-05 CPU 执行模型
+# 专章" + spec): NOT find_package(ggml) -- a system-installed ggml has UNCONTROLLED
+# build options (OpenMP on/off, which backends, which version), but the n_threads=1
+# leaf contract (发现 10) REQUIRES OpenMP OFF, and zero-copy REQUIRES a pinned version.
+# So we own the build: OpenMP OFF, CPU+CUDA only, static, pinned to GGML_PIN_COMMIT.
+#
+# LOCAL MIRROR FIRST (no repeated downloads): if third_party/ggml exists (a git-archive
+# of the pin, .gitignored, shared by build/ and build-wsl/), FetchContent uses it via
+# SOURCE_DIR = zero network. Delete it -> fall back to GIT fetch of the pinned commit.
+# Either way the SAME commit is built.
+#
+# PERSISTENT FETCH CACHE (technique from cil2cpp runtime/CMakeLists.txt): FetchContent's
+# default base dir is ${build}/_deps, so `rm -rf build` (or a second build-wsl/ tree)
+# re-populates every time. Pinning FETCHCONTENT_BASE_DIR to an IN-SOURCE persistent dir
+# (.deps, .gitignored) makes populate happen ONCE and be reused across build dirs AND
+# across regenerations -- even a full build wipe keeps the fetched/copied ggml.
+option(HYLE_COMPUTE_GGML "compute-05: borrow ggml operators via ggml_bridge" ON)
+if(HYLE_COMPUTE_GGML)
+  set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.deps"
+      CACHE PATH "Persistent FetchContent cache (survives build/ wipes; shared by build dirs)")
+  include(FetchContent)
+  set(GGML_PIN_COMMIT "eced84c86f8b012c752c016f7fe789adea168e1e")  # v0.15.3
+  set(_ggml_local "${CMAKE_CURRENT_SOURCE_DIR}/third_party/ggml")
+
+  # Own ggml's build knobs BEFORE it configures (cache vars it reads at option()).
+  set(GGML_OPENMP        OFF CACHE BOOL "" FORCE)  # 发现 10: n_threads=1 leaf; no OMP threads
+  set(GGML_BUILD_TESTS   OFF CACHE BOOL "" FORCE)
+  set(GGML_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+  set(GGML_CPU           ON  CACHE BOOL "" FORCE)  # CPU backend (n_threads=1 leaf path)
+  # ggml follows HYLE's BUILD_SHARED_LIBS (HYLE builds shared by default, line ~76): a
+  # FORCE OFF here is shadowed by that normal var anyway, and a lone-static ggml among
+  # shared HYLE libs invites ODR/symbol skew. So ggml is shared like the rest (spec's
+  # "static" intent revised -- shared is the consistent choice; runtime needs libggml.so
+  # on the path, handled by install/rpath in close-01). Verified: libggml.so links fine.
+  # GGML_CUDA_FA OFF: skip ~120 FlashAttention kernel instances (attention, not matmul).
+  # The bridge borrows GEMM/elementwise; FA is unused and dominates first-build time.
+  set(GGML_CUDA_FA       OFF CACHE BOOL "" FORCE)
+  if(HYLE_COMPUTE_CUDA)
+    set(GGML_CUDA ON  CACHE BOOL "" FORCE)  # CUDA backend (zero-copy device_ptr path)
+  else()
+    set(GGML_CUDA OFF CACHE BOOL "" FORCE)
+  endif()
+
+  if(EXISTS "${_ggml_local}/CMakeLists.txt")
+    message(STATUS "HYLE: ggml from LOCAL mirror ${_ggml_local} (pin ${GGML_PIN_COMMIT}, no fetch)")
+    FetchContent_Declare(ggml SOURCE_DIR "${_ggml_local}")
+  else()
+    message(STATUS "HYLE: ggml LOCAL mirror absent -- FetchContent will clone pin ${GGML_PIN_COMMIT} into .deps")
+    FetchContent_Declare(ggml
+      GIT_REPOSITORY https://github.com/ggml-org/ggml.git
+      GIT_TAG        ${GGML_PIN_COMMIT}
+      GIT_SHALLOW    TRUE)
+  endif()
+  # EXCLUDE_FROM_ALL: only the parts hyle_compute links get built (no ggml install/tests).
+  FetchContent_MakeAvailable(ggml)
+  if(HYLE_COMPUTE_CUDA)
+    message(STATUS "HYLE: compute ggml_bridge enabled (OpenMP OFF, CPU+CUDA)")
+  else()
+    message(STATUS "HYLE: compute ggml_bridge enabled (OpenMP OFF, CPU only)")
+  endif()
+endif()
+
+
 # ---- global correctness flags (apply to ALL targets incl. fetched deps) ------
 # These change language semantics, not just diagnostics, so they must be uniform
 # across the whole build (gtest included) to avoid ODR/ABI skew. Scoped to C/CXX

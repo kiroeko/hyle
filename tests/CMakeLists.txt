@@ -64,6 +64,12 @@ if(HYLE_HAS_FCONTEXT)
   # compute-03: co_await GPU stream completion -> fiber wake. Needs sched (the poller
   # wakes a fiber via Waker) -- only where fcontext exists, like the io co_await tests.
   hyle_add_test(compute NAME gpu_await SOURCES compute/gpu_await_test.cc DEPS hyle_sched hyle_mem)
+  # compute-05: ggml_bridge -- borrow ggml operators on HYLE VRAM + spawn_blocking
+  # completion + fiber scheduling. Needs sched (spawn_blocking/JoinHandle) AND ggml
+  # fetched (HYLE_COMPUTE_GGML). Same gate as src/compute's ggml_bridge.cc.
+  if(HYLE_COMPUTE_GGML)
+    hyle_add_test(compute NAME ggml_bridge SOURCES compute/ggml_bridge_test.cc DEPS hyle_sched hyle_mem)
+  endif()
   # io-04 net: the co_await socket layer needs BOTH io (proactor + IoContext) and
   # sched (scheduler drives the reap). Only buildable where sched exists.
   hyle_add_test(io NAME net SOURCES io/net_test.cc DEPS hyle_sched)

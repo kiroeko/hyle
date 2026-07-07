@@ -28,7 +28,25 @@ if(HYLE_HAS_FCONTEXT)
   list(APPEND _compute_public_deps hyle_sched)
 endif()
 
+# compute-05 ggml_bridge: borrow ggml operators on HYLE-managed VRAM/completion/sched.
+# ggml_bridge.cc is a PLAIN C++ TU (NOT a .cu) -- ggml compiles its own CUDA internally;
+# the bridge only calls ggml's C API + spawn_blocking (sched). Gated on BOTH ggml being
+# fetched (HYLE_COMPUTE_GGML) AND fcontext existing (spawn_blocking needs sched): the
+# completion path offloads ggml_backend_graph_compute to the blocking pool (spec ②).
+if(HYLE_COMPUTE_GGML AND HYLE_HAS_FCONTEXT)
+  list(APPEND _compute_sources ggml_bridge.cc)
+endif()
+
 hyle_add_module(compute SOURCES ${_compute_sources} PUBLIC_DEPS ${_compute_public_deps})
+
+if(HYLE_COMPUTE_GGML AND HYLE_HAS_FCONTEXT)
+  # Link ggml PRIVATE: ggml types never appear in ggml_bridge.h (only in the .cc). The
+  # `ggml` target is ggml-base + ggml-cpu (+ ggml-cuda when GGML_CUDA); FetchContent
+  # exposes it. HYLE_COMPUTE_GGML compile def gates the #if in compute.cc/backend wiring.
+  target_link_libraries(hyle_compute PRIVATE ggml)
+  target_compile_definitions(hyle_compute PRIVATE HYLE_COMPUTE_GGML)
+endif()
+
 
 if(HYLE_COMPUTE_CUDA)
   # Link the CUDA runtime (cudaMalloc/Stream/Event/EventQuery live here). CUDA::cudart

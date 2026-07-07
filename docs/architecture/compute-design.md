@@ -177,13 +177,16 @@ compute/
 ### 发现 1：iron 是"整库拼装"的反面教材，不是"借算子"的范本
 iron（clay 宿主）**不直接用 ggml**，而是 `add_subdirectory(stable-diffusion.cpp)` 把整个 sd.cpp 应用 + 它冻结的 ggml 快照吞进来（`iron/thirdparty/CMakeLists.txt:1`），业务层 `flux_api.cc` 调 sd.cpp 高层门面 `new_sd_ctx`/`txt2img`（20 参数），几乎不碰 ggml。这是 **L2 层"借整个推理应用" + clay/oatpp/sd.cpp 三套 runtime 各自为政**——正是 HYLE 动机（motivation §24）要消除的"东拼西凑"。**HYLE compute-05 要借的是"算子 kernel"粒度（借 ggml 不借 sd.cpp）、pin 上游版（不绑应用冻结快照）、接进统一 completion 脊（iron 里 clay 和 ggml 完全不通）。** iron 反证：不 fork、不借整库、不绑冻结快照。
 
-### 发现 2：内存零拷贝可行（no_alloc + tensor->data 注入），不 fork
-**HYLE 自己 cudaMalloc 的 device_ptr，能让 ggml 算子零拷贝地在上面算，ggml 不拒绝**（铁证）：
-- ggml CUDA kernel 直接强转 `(char*)src0->data` 当 device 指针（`ggml-cuda.cu:1931/1951/1973`），**普通 mul_mat 路径从不经 `->buffer` 取基址、不校验 buffer 归属**（buffer 只在 split-buffer/mul_mat_id assert，普通算子不查）。
-- 做法：`ggml_init({.no_alloc=true})` 建 tensor（`ggml.c:1780` data=nullptr、nb[] 自动填 contiguous）→ 手动 `tensor->data = hyle_device_ptr` → `ggml_mul_mat` → compute。**tensor->buffer 留 NULL 即可**（普通 CUDA 算子不读它；但 tensor_get/set、sched 调度、split-buffer、部分 padding 检查会读 buffer，走那些路径才需设）。
-- 官方更"正式"的 API 是 `ggml_backend_tensor_alloc(buffer,tensor,addr)`（`ggml-backend.cpp:1992`）——但它要求 addr 落在 ggml buffer 内，且 **ggml CUDA buffer 析构会 `cudaFree(dev_ptr)`（`ggml-cuda.cu:636-638`）**，让 ggml 持有 HYLE 指针=所有权冲突。故 **HYLE 用 no_alloc + 裸设 data 更干净**（ggml 不 free 你的内存）。
-- 约束：F32 最省心；**quantized 类型 `get_alloc_size` 加 padding（`:666`），真实分配须比 `ggml_nbytes` 多留 padding 否则 quant kernel 越界**；指针须在正确 device。
-- 风险：依赖"kernel 只读 data、不反查 buffer"这个**当前为真但非 ggml 公开承诺**的行为 → **pin ggml 版本 + adapter 单点封装 + 对拍测试兜底**（ggml 升级跑测试即知是否破）。拷贝版（`ggml_backend_tensor_set`）作 fallback。
+### 发现 2：内存零拷贝可行（alloc_ctx_tensors 拿合法 buffer + 覆写 tensor->data 注入），不 fork
+> **⚠️ 2026-07-07 真跑修正**：本发现初版断言"`->buffer` 留 NULL 即可"——**被 RTX 4070 真跑证伪**（`0xC0000005` 段错误）。CUDA matmul 路径**无条件解引用 `tensor->buffer`**（见下）。修正后零拷贝仍成立，但要点从"留 NULL"改为"让 ggml 分配拿合法 buffer 元数据 + 覆写 data"。全过程见 [`docs/debug/ggml-zerocopy-null-buffer-hunt.md`](../debug/ggml-zerocopy-null-buffer-hunt.md)。
+
+**HYLE 自己 cudaMalloc 的 device_ptr，能让 ggml 算子零拷贝地在上面算**（真跑验证）：
+- **数据基址取 `->data`（真，我控制）**：ggml CUDA kernel 非 split 路径直读 `(char*)src0/1/dst->data`（`ggml-cuda.cu:1931/1951/1973`）——这正是注入点。
+- **但 `->buffer` 被无条件解引用当元数据源（初版看漏）**：`src1/dst->buffer->context->device` 取 GPU id（`:1832-1833/1924-1925`）、`src0->buffer->buft` 做 split 判断（`:1853`）。**`->buffer=NULL` → 空解引用崩溃**。初版"普通 mul_mat 不经 buffer"错在只 grep 了 ownership assert、漏看 device-id/split 的解引用。
+- **正确做法（修正）**：`ggml_init({.no_alloc=true})` 建 tensor → `ggml_mul_mat` → **`ggml_backend_alloc_ctx_tensors(ctx, be)` 给 ctx 所有 tensor 分配合法 `->buffer`** → **覆写 `tensor->data = hyle_device_ptr`**（ggml 那份分配的字节弃用，只借 buffer 元数据结构：buft + device）→ compute → `ggml_backend_buffer_free(buf)`。kernel 数据仍从 HYLE 显存取，**真实 matmul 零拷贝不变**；代价=ggml 多分配一份立即弃用的显存（元数据副产品，可接受）。
+- 官方 `ggml_backend_tensor_alloc(buffer,tensor,addr)`（`ggml-backend.cpp`）要求 addr 落在 ggml buffer 内、且 ggml CUDA buffer 析构 `cudaFree(dev_ptr)`（`ggml-cuda.cu:636-638`）=所有权冲突，故不用；`alloc_ctx_tensors` + 覆写 data + 自己 `buffer_free` 更干净（ggml 只 free 它自己那份，不碰 HYLE 内存）。
+- 约束：F32 最省心；**quantized 类型 `get_alloc_size` 加 padding，真实分配须比 `ggml_nbytes` 多留 padding 否则 quant kernel 越界**；指针须在正确 device。
+- 风险：依赖"非 split kernel 数据取 `->data`"的行为（**当前真、真跑证实、但非 ggml 公开承诺**）→ **pin ggml 版本 + adapter 单点封装 + golden 对拍兜底**（ggml 升级跑测试即知是否破）。CPU 后端不解引用 `->buffer`（故 host 推演阶段没暴露 NULL 崩溃）——**跨后端契约差异必须每后端真跑**。
 
 ### 发现 3：ggml stream 私有，completion 只能阻塞 synchronize（接受它）
 - **ggml CUDA stream 是 backend 私有的**（`common.cuh:1391` `streams[][]`，`stream()` 懒创建），**没有任何公开 API 让外部注入 HYLE 的 stream**。想让 ggml 跑在 HYLE stream 上不可行（除非改 ggml 源码）。

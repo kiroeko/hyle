@@ -2,6 +2,15 @@
 
 > 诚实账本：已发现但**尚未解决**的真实缺陷。不藏、不淡化。每条带：现象、已验证的事实、已排除项、复现条件、下一步。解决后移除并在对应里程碑/提交记录。
 
+## KI-3 [环境/工具限制]：spawn_blocking 跨线程 JoinState 在 TSan 下报 mimalloc 块回收假 race（compute-05 发现）
+
+> **现象**：`build-tsan` 里 compute-05 `ggml_bridge_test`（也适用任何 `spawn_blocking` 密集 + 短生命周期 JoinState 的测试）跑出 ~10 条 `data race`，SUMMARY 指向 HYLE 源码行（`join.h:78 JoinState()`、`blocking.h:61 BlockingJob()`、`status.h:73 Status()`、`allocator.h:54 Allocator()` 等构造函数 + `operator delete`）。**但测试全部 `[ OK ]` + PASSED**（TSan 只报告不 fail 逻辑）。
+> **已验证根因 = mimalloc 跨线程块回收对 TSan 不可见（非 HYLE 逻辑 race）**：每条 race 的 `Location is global '<null>' ([anon:mimalloc]+0x…)`——冲突地址在 mimalloc 堆页。典型序列：blocking-pool 线程 T8 `JoinState::release()`（refcount→0、free 回 mimalloc，`join.h:152`）→ fiber 线程 T9 为**新** matmul 分配 JoinState，mimalloc **把同一地址交还** T9、在其上构造。TSan 报"T9 构造写 vs T8 release 读，同址无 happens-before"——**旧 JoinState 已 refcount=0 彻底 done 才被回收，同步真实存在（mimalloc 自己的 free-list 原子），只是 TSan 穿不透 mimalloc 看不到那条边**。
+> **已排除 HYLE 逻辑 race**：① 冲突"previous access"永远是 `release()`（对象已死），不是活对象的并发读写；② 按帧名抑制 mimalloc 无效——TSan 报告的是 HYLE 端构造帧（无辜方，写的是 mimalloc 刚交还的回收内存），不是 mimalloc 帧；③ **Release 构建并发测试 5/5 稳定**（真 correctness 门）；④ JoinState refcount 交接逻辑（真正的并发点）经审查正确。
+> **与 KI-2 关系**：同根（mimalloc×TSan 跨工具），但**症状不同**——KI-2 是启动期 `mi_out_default` 断言（MI_DEBUG），KI-3 是运行期 free/realloc 块回收报 race。二者都 **仅 TSan 构建**、Release 零影响。
+> **影响**：**仅 TSan 构建**——compute-05 三平台 Release 全绿（Win RTX4070 3/3、WSL RTX4070 3/3、mac 待跑），生产零影响。"spawn_blocking 密集件过不了 WSL TSan 纯净闸门"这条验证路径与 KI-2 同样暂堵；`spawn_blocking` 机制本身的 race-freedom 由 **sched-11 自身 TSan（那时 JoinState 生命周期不密集回收）+ 逻辑审查 + Release 稳定性**旁证。
+> **下一步（未做）**：与 KI-2 合并处理——TSan 构建给 mimalloc 关 `MI_DEBUG` 或提供"TSan 专用 system-allocator 后端"（当前 mimalloc 是硬依赖无 off-switch，故未做）。低优先（非缺陷、非阻塞发布）。
+
 ## KI-2 [环境/工具限制]：mimalloc-linked 测试在 TSan 构建下 mi_out_default 断言
 
 > **现象**：`build-tsan` 里凡链 mimalloc 的测试 exe(`hyle_container_test`/`hyle_mem_test`)一跑就 `mimalloc: assertion failed ... options.c:410 mi_add_stderr_output "mi_out_default == NULL"`,连最简单的单测(`StringBuf.AddAndLookup`)也中招——**与被测逻辑无关,是 exe 起来 mimalloc 初始化那一下**。

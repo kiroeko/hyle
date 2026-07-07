@@ -13,6 +13,7 @@
 *.dll
 *.exe
 *.pdb
+build-*.log
 
 # CMake
 CMakeCache.txt
@@ -23,6 +24,16 @@ compile_commands.json
 # fetched deps / vendored
 /_deps/
 /vendor/*/
+
+# compute-05: ggml is a FetchContent dependency PINNED BY COMMIT (src/compute/
+# CMakeLists.txt). third_party/ggml is a LOCAL SOURCE MIRROR (git archive of the pin)
+# kept out-of-repo so build/ and build-wsl/ share ONE copy without re-downloading --
+# unlike fcontext/picohttpparser (tiny copied vendors that ARE tracked). Delete it and
+# CMake falls back to fetching the pinned commit from upstream.
+/third_party/ggml/
+# Persistent FetchContent cache (FETCHCONTENT_BASE_DIR): populated ONCE, reused across
+# build/ + build-wsl/ and across regenerations so `rm -rf build` never re-fetches.
+/.deps/
 
 # local build helper (machine-specific hardcoded paths)
 _build.bat
