@@ -34,6 +34,9 @@ compile_commands.json
 # shared across OSes), so no cross-tree path conflict.
 /third_party/ggml/
 /.deps/
+# googletest local mirror (git-archive of the pinned tag), same rule as ggml: per-machine,
+# .gitignored, SOURCE_DIR zero-download. Absent -> FetchContent fetches the tag once.
+/third_party/googletest/
 
 # local build helper (machine-specific hardcoded paths)
 _build.bat
