@@ -183,6 +183,80 @@ if(HYLE_COMPUTE_GGML)
 endif()
 
 
+# ---- optional Vulkan compute (compute-06 self-authored SPIR-V kernels) --------
+# compute-06 gives HYLE its OWN cross-vendor GPU compute path (SPIR-V), the Vulkan
+# twin of compute-04's CUDA NVRTC "any kernel". Same "opt-in capability = opt-in
+# dependency" rule as CUDA/ggml: HYLE_COMPUTE_VULKAN gates the Vulkan backend +
+# vulkan_bridge; without it compute still builds (01-05) with zero Vulkan dependency.
+#
+# WHY volk (NOT find_package(Vulkan)): the Vulkan LOADER is the one piece we can't just
+# FetchContent -- but linking it the classic way needs vulkan-1.lib, which only ships
+# with an installed SDK (this machine has the runtime vulkan-1.dll from the driver but
+# NO .lib -- find_package(Vulkan) fails). volk (zeux/volk, the industry-standard Vulkan
+# meta-loader -- NOT a glad-style code generator, a fixed 2-file lib) sidesteps this: it
+# dlopen's the runtime loader at startup (volkInitialize -> vkGetInstanceProcAddr) and
+# resolves all vk* pointers itself, so NO import lib / NO SDK install is needed -- only
+# the driver's runtime loader (always present). Bonus: device-level function resolution
+# skips the loader trampoline (one less indirection per call = faster, matches HYLE's
+# perf goal). kompute uses the same dynamic-dispatch idea (VULKAN_HPP_DEFAULT_DISPATCHER).
+#
+# THREE FetchContent DEPS, ALL PINNED TO vulkan-sdk-1.4.341.0 (matches the local runtime
+# loader 1.4.341 -- zero version skew), all Khronos/zeux source repos (NOT the LunarG SDK
+# packaging layer), landing in .deps (inherits FETCHCONTENT_BASE_DIR -> survives build
+# wipes, per-machine, open-box auto-download -- same as ggml/googletest):
+#   1. Vulkan-Headers (Khronos)  -- pure headers, version OWNED by HYLE not the machine.
+#   2. volk (zeux)               -- meta-loader; runtime dlopen, no .lib/SDK needed.
+#   3. glslang (Khronos)         -- GLSL->SPIR-V: ENABLE_OPT=OFF (no SPIRV-Tools dep),
+#      tests/install/HLSL off, ENABLE_GLSLANG_BINARIES=ON to also build the `glslang`
+#      validator tool (the "pre-compile tool folder" for HYLE devs + clients).
+# The slate-bundled Vulkan (headers v270, stale) is NOT used.
+option(HYLE_COMPUTE_VULKAN "compute-06: self-authored Vulkan compute SPIR-V kernels" ON)
+if(HYLE_COMPUTE_VULKAN)
+  set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.deps"
+      CACHE PATH "Persistent FetchContent cache (survives build/ wipes; per-machine tree)")
+  include(FetchContent)
+  # All pinned to vulkan-sdk-1.4.341.0 (== local loader 1.4.341, no skew).
+  set(VULKAN_HEADERS_PIN "b5c8f996196ba4aa6d8f97e52b5d3b6e70f7e4e2")  # Vulkan-Headers 1.4.341.0
+  set(VOLK_PIN           "d979819fd03de3a7606d6e23d6ff4968942599da")  # volk 1.4.341.0
+  set(GLSLANG_PIN        "f0bd0257c308b9a26562c1a30c4748a0219cc951")  # glslang 1.4.341.0
+
+  # 1. Vulkan-Headers first -- creates the Vulkan::Headers target volk/glslang can see.
+  FetchContent_Declare(vulkan_headers
+    GIT_REPOSITORY https://github.com/KhronosGroup/Vulkan-Headers.git
+    GIT_TAG        ${VULKAN_HEADERS_PIN}
+    GIT_SHALLOW    TRUE)
+  FetchContent_MakeAvailable(vulkan_headers)
+
+  # 2. volk -- point it at the fetched headers (VOLK_PULL_IN_VULKAN tries this var first).
+  set(VULKAN_HEADERS_INSTALL_DIR "${vulkan_headers_SOURCE_DIR}" CACHE PATH "" FORCE)
+  set(VOLK_PULL_IN_VULKAN ON  CACHE BOOL "" FORCE)
+  set(VOLK_INSTALL        OFF CACHE BOOL "" FORCE)
+  FetchContent_Declare(volk
+    GIT_REPOSITORY https://github.com/zeux/volk.git
+    GIT_TAG        ${VOLK_PIN}
+    GIT_SHALLOW    TRUE)
+  FetchContent_MakeAvailable(volk)
+
+  # 3. glslang build knobs OWNED before configure (cache vars it reads at option()).
+  set(ENABLE_OPT              OFF CACHE BOOL "" FORCE)  # no spirv-opt -> no SPIRV-Tools dep
+  set(ENABLE_HLSL             OFF CACHE BOOL "" FORCE)  # HYLE writes GLSL .comp, not HLSL
+  set(GLSLANG_TESTS           OFF CACHE BOOL "" FORCE)
+  set(GLSLANG_ENABLE_INSTALL  OFF CACHE BOOL "" FORCE)
+  set(BUILD_EXTERNAL          OFF CACHE BOOL "" FORCE)  # no /External (we pin deps ourselves)
+  set(ENABLE_SPIRV            ON  CACHE BOOL "" FORCE)  # GLSL -> SPIR-V (the whole point)
+  set(ENABLE_GLSLANG_BINARIES ON  CACHE BOOL "" FORCE)  # build the `glslang` validator tool
+  FetchContent_Declare(glslang
+    GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git
+    GIT_TAG        ${GLSLANG_PIN}
+    GIT_SHALLOW    TRUE)
+  FetchContent_MakeAvailable(glslang)
+
+  set(HYLE_COMPUTE_VULKAN_ENABLED ON)
+  message(STATUS "HYLE: Vulkan compute enabled -- volk + Vulkan-Headers + glslang via "
+                 "FetchContent pin 1.4.341 (cache: .deps; loader dlopen'd at runtime, no SDK)")
+endif()
+
+
 # ---- global correctness flags (apply to ALL targets incl. fetched deps) ------
 # These change language semantics, not just diagnostics, so they must be uniform
 # across the whole build (gtest included) to avoid ODR/ABI skew. Scoped to C/CXX
