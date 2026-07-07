@@ -83,6 +83,9 @@ class HYLE_COMPUTE_API GgmlBackend {
   friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_batched(
       GgmlBackend&, sched::BlockingPool&, mem::Allocator,
       const struct MatmulF32Job*, int) noexcept;
+  friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_copy(
+      GgmlBackend&, sched::BlockingPool&, mem::Allocator,
+      const float*, const float*, float*, int, int, int) noexcept;
   explicit GgmlBackend(void* be) noexcept : be_(be) {}
   void* raw_() const noexcept { return be_; }  // for the bridge free functions
   void* be_ = nullptr;  // ggml_backend_t (opaque; real type only in the .cc)
@@ -130,5 +133,20 @@ struct MatmulF32Job {
 HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_batched(
     GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
     const MatmulF32Job* jobs, int count) noexcept;
+
+// COPY-PATH FALLBACK (finding 2's safety net): the zero-copy path injects HYLE device
+// pointers into ggml tensors -- which relies on ggml's kernel reading ->data (true now,
+// but NOT a public API promise; it already broke once, see the hunt doc). This variant
+// is the robust fallback + the test oracle: ggml OWNS the tensor memory, host data is
+// COPIED in via ggml_backend_tensor_set and the result COPIED out via tensor_get. It
+// takes HOST pointers (not device Buffers) -- ha/hb are host inputs, hc host output. It
+// pays 3 copies but does NOT depend on the ->data-injection behavior, so it works even
+// if a ggml upgrade changes that. Same C = A·Bᵀ semantics; async via spawn_blocking.
+//
+// CONTRACT: be.valid(); m/k/n > 0; ha/hb/hc point at host buffers of m·k / n·k / m·n
+// floats. `ha`/`hb`/`hc` MUST outlive the join (the pool thread copies through them).
+HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_copy(
+    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    const float* ha, const float* hb, float* hc, int m, int k, int n) noexcept;
 
 }  // namespace hyle::compute

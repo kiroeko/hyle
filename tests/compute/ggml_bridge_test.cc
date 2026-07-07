@@ -254,3 +254,77 @@ TEST(GgmlBridge, BatchedMatmul) {
   EXPECT_TRUE(arg.done.load());
   EXPECT_EQ(arg.result, 0) << "batched matmul failed at step " << arg.result;
 }
+
+namespace {
+// Copy-path (finding 2 fallback): run the SAME matmul through both the zero-copy path
+// (device Buffers) and the copy path (host in/out, ggml owns memory), and confirm both
+// match each other AND the golden ref. Proves the fallback is correct + zero-copy has no
+// off-by-one vs the copy oracle. Returns 0 / negative step code.
+int run_copy_vs_zerocopy(const Device& device, BlockingPool& pool) {
+  auto be = GgmlBackend::create(device, /*n_threads=*/1);
+  if (!be.has_value()) return -1;
+  const int m = 8, k = 16, n = 4;
+  std::vector<float> ha(static_cast<size_t>(m) * k), hb(static_cast<size_t>(n) * k);
+  for (int i = 0; i < m * k; ++i) ha[i] = static_cast<float>(i % 7 - 3) * 0.5f;
+  for (int i = 0; i < n * k; ++i) hb[i] = static_cast<float>(i % 5 - 2) * 0.25f;
+  std::vector<float> ref;
+  ref_matmul_abt(ha, hb, ref, m, k, n);
+
+  // Copy path: host in/out, ggml owns memory.
+  std::vector<float> hc_copy(static_cast<size_t>(m) * n, -12345.0f);
+  {
+    auto h = ggml_matmul_f32_copy(*be, pool, system_allocator(),
+                                  ha.data(), hb.data(), hc_copy.data(), m, k, n);
+    auto r = h.join();
+    if (!r.has_value() || !r->ok()) return -2;
+  }
+  // Zero-copy path: device Buffers.
+  std::vector<float> hc_zc(static_cast<size_t>(m) * n, -12345.0f);
+  {
+    BufferType bt = device_buffer_type(device);
+    auto ba = Buffer::create(bt, ha.size() * sizeof(float));
+    auto bb = Buffer::create(bt, hb.size() * sizeof(float));
+    auto bc = Buffer::create(bt, hc_zc.size() * sizeof(float));
+    if (!ba.has_value() || !bb.has_value() || !bc.has_value()) return -3;
+    if (!ba->set(0, ha.data(), ha.size() * sizeof(float)).ok()) return -4;
+    if (!bb->set(0, hb.data(), hb.size() * sizeof(float)).ok()) return -5;
+    auto h = ggml_matmul_f32(*be, pool, system_allocator(), *ba, *bb, *bc, m, k, n);
+    auto r = h.join();
+    if (!r.has_value() || !r->ok()) return -6;
+    if (!bc->get(0, hc_zc.data(), hc_zc.size() * sizeof(float)).ok()) return -7;
+  }
+  // Both must match golden AND each other.
+  for (size_t i = 0; i < ref.size(); ++i) {
+    float tol = 1e-3f * (1.0f + std::fabs(ref[i]));
+    if (std::fabs(hc_copy[i] - ref[i]) > tol) return -8;   // copy vs golden
+    if (std::fabs(hc_zc[i] - ref[i]) > tol) return -9;     // zero-copy vs golden
+    if (std::fabs(hc_copy[i] - hc_zc[i]) > tol) return -10;  // copy vs zero-copy
+  }
+  return 0;
+}
+struct CopyArg {
+  Device device; BlockingPool* pool; int result = -100; std::atomic<bool> done{false};
+  CopyArg(const Device& d, BlockingPool* p) : device(d), pool(p) {}
+};
+void copy_fiber(void* p) {
+  auto* a = static_cast<CopyArg*>(p);
+  a->result = run_copy_vs_zerocopy(a->device, *a->pool);
+  a->done.store(true, std::memory_order_release);
+}
+}  // namespace
+
+// 零拷贝 vs 拷贝版对拍 (finding 2 fallback): same inputs through both paths, both match
+// golden + each other. Proves the copy fallback is a correct escape hatch and zero-copy
+// has no off-by-one vs it.
+TEST(GgmlBridge, CopyPathMatchesZeroCopy) {
+  BlockingPool pool(system_allocator());
+  CopyArg arg{default_device(), &pool};
+  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+                                   &copy_fiber, &arg);
+  Scheduler sched(2, system_allocator(), 256);
+  sched.spawn(f.get());
+  sched.drain();
+  sched.shutdown();
+  EXPECT_TRUE(arg.done.load());
+  EXPECT_EQ(arg.result, 0) << "copy-vs-zerocopy failed at step " << arg.result;
+}

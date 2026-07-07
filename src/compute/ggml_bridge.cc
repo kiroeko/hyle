@@ -137,6 +137,47 @@ Status matmul_batch_blocking(ggml_backend_t be, const MmJob* jobs, int count) no
   return Status();  // OK
 }
 
+// COPY-PATH fallback (finding 2 safety net): ggml OWNS the tensor memory (no ->data
+// overwrite), host data copied in via ggml_backend_tensor_set, result out via
+// tensor_get. Does NOT depend on the fragile ->data-injection behavior -- works even if
+// a ggml upgrade changes it. Same C = A·Bᵀ. Pays 3 copies (H2D a/b, D2H c).
+Status matmul_copy_blocking(ggml_backend_t be, const float* ha, const float* hb,
+                            float* hc, int m, int k, int n) noexcept {
+  const size_t mem_size = ggml_tensor_overhead() * 8 + ggml_graph_overhead();
+  ggml_init_params params = {mem_size, nullptr, /*no_alloc=*/true};
+  ggml_context* ctx = ggml_init(params);
+  if (ctx == nullptr) return Status::ResourceExhausted("ggml_init failed");
+
+  ggml_tensor* gA = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, k, m);
+  ggml_tensor* gB = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, k, n);
+  ggml_tensor* gC = ggml_mul_mat(ctx, gA, gB);
+
+  // ggml owns the memory (we do NOT overwrite ->data here -- that's the whole point).
+  ggml_backend_buffer_t buf = ggml_backend_alloc_ctx_tensors(ctx, be);
+  if (buf == nullptr) {
+    ggml_free(ctx);
+    return Status::ResourceExhausted("ggml_backend_alloc_ctx_tensors failed");
+  }
+  // Copy host inputs into ggml's tensors (H2D on a GPU backend).
+  ggml_backend_tensor_set(gA, ha, 0, ggml_nbytes(gA));
+  ggml_backend_tensor_set(gB, hb, 0, ggml_nbytes(gB));
+
+  ggml_cgraph* gf = ggml_new_graph(ctx);
+  ggml_build_forward_expand(gf, gC);
+  ggml_status ec = ggml_backend_graph_compute(be, gf);
+
+  if (ec == GGML_STATUS_SUCCESS) {
+    ggml_backend_tensor_get(gC, hc, 0, ggml_nbytes(gC));  // D2H result out
+  }
+  ggml_backend_buffer_free(buf);
+  ggml_free(ctx);
+
+  if (ec != GGML_STATUS_SUCCESS) {
+    return Status::Internal("ggml_backend_graph_compute failed");
+  }
+  return Status();  // OK
+}
+
 }  // namespace
 
 GgmlBackend& GgmlBackend::operator=(GgmlBackend&& o) noexcept {
@@ -224,6 +265,22 @@ sched::JoinHandle<Status> ggml_matmul_f32_batched(GgmlBackend& be,
   void* be_raw = be.raw_();
   return sched::spawn_blocking(pool, alloc, [be_raw, batch]() noexcept {
     return matmul_batch_blocking(as_be(be_raw), batch.jobs, batch.count);
+  });
+}
+
+sched::JoinHandle<Status> ggml_matmul_f32_copy(GgmlBackend& be,
+                                               sched::BlockingPool& pool,
+                                               mem::Allocator alloc, const float* ha,
+                                               const float* hb, float* hc, int m, int k,
+                                               int n) noexcept {
+  HYLE_FATAL_ASSERT(be.valid());
+  HYLE_FATAL_ASSERT(ha != nullptr && hb != nullptr && hc != nullptr);
+  HYLE_FATAL_ASSERT(m > 0 && k > 0 && n > 0);
+  // Host pointers are captured by value (the POINTERS, not the data): the pool thread
+  // copies through them, so the caller's host buffers MUST outlive the join (contract).
+  void* be_raw = be.raw_();
+  return sched::spawn_blocking(pool, alloc, [be_raw, ha, hb, hc, m, k, n]() noexcept {
+    return matmul_copy_blocking(as_be(be_raw), ha, hb, hc, m, k, n);
   });
 }
 
