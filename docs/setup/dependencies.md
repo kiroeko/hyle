@@ -9,6 +9,8 @@
 | C++ 编译器 / CMake / Ninja / 汇编器 | **硬门槛** | CMake FATAL_ERROR，配置失败 | CMake 自带检查 |
 | **ggml** | **自动拉取**（FetchContent） | 有网自动下；无网且无缓存则配置失败 | `FetchContent`（pin commit） |
 | **googletest** | **自动拉取**（FetchContent） | 同上（仅影响测试，`-DHYLE_BUILD_TESTS=OFF` 可跳） | `FetchContent`（pin tag v1.15.2） |
+| **volk + Vulkan-Headers + glslang** | **自动拉取**（FetchContent，compute-06） | 全 pin `vulkan-sdk-1.4.341.0`，落 `.deps`；缺网首配失败 | `FetchContent`（三个 pin commit） |
+| **Vulkan loader + ICD/driver** | 可选能力（compute-06 运行时） | 无则 Vulkan 后端运行时禁用（`vulkan_vtable()` 返 null），其余全绿 | volk 运行时 dlopen `vulkan-1.dll`/`libvulkan.so`/`libvulkan.dylib` |
 | **OpenSSL** | 可选能力 | TLS（io-08）不编，其余全绿 | `find_package(OpenSSL QUIET)` |
 | **CUDA Toolkit** | 可选能力 | GPU 后端不编，host fallback 顶上，其余全绿 | `find_package(CUDAToolkit QUIET)` |
 | **cuDNN / TensorRT** | 可选能力（更后） | 当前里程碑不依赖，完全可不装 | 手动 `-I/-L`（未来算子/推理路径） |

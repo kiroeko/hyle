@@ -65,4 +65,45 @@ cd ~/hyle
 ## 六、可选依赖
 
 - **OpenSSL**：`brew install openssl@3`，配置时 `-DOPENSSL_ROOT_DIR=/opt/homebrew/opt/openssl@3` 启用 TLS。
-- **CUDA**：mac 无 NVIDIA GPU，不适用。GPU 加速未来走 Metal（compute-06 Vulkan/kompute 或 Metal 后端，尚未开工）。
+- **CUDA**：mac 无 NVIDIA GPU，不适用。
+
+## 七、Vulkan compute（compute-06，Apple 走 MoltenVK）
+
+Apple 无原生 Vulkan——**MoltenVK 是 Vulkan-over-Metal 的 ICD**（把 Vulkan 调用翻译成 Metal）。HYLE 的 Vulkan 后端经 volk 运行时 dlopen `libvulkan.dylib`（loader），loader 再路由到 MoltenVK ICD，所以 mac 上一份 SPIR-V 也能在 Apple GPU 上跑（compute-06 SaxpyEndToEnd）。
+
+> **状态（2026-07-08）**：MoltenVK 层已在本仓库 mac 开发机验证——`vulkaninfo` 枚举出 `Apple M4` / `driverName = MoltenVK`。HYLE `hyle_compute_vulkan_test` 的 mac 真跑待该机首次 FetchContent 拉齐 volk/glslang 后确认（github 访问慢，编 glslang 耗时）；Win/WSL RTX4070 已 PASS，代码路径同。
+
+**装（brew，一次）**：
+
+```bash
+/opt/homebrew/bin/brew install molten-vk vulkan-loader vulkan-tools
+```
+
+- `molten-vk` → `/opt/homebrew/lib/libMoltenVK.dylib` + ICD manifest `…/molten-vk/*/etc/vulkan/icd.d/MoltenVK_icd.json`。
+- `vulkan-loader` → `/opt/homebrew/lib/libvulkan.dylib`（volk dlopen 的就是它）。
+- `vulkan-tools` → `vulkaninfo`（验证用）。
+- HYLE 侧 **headers + volk + glslang 仍走 FetchContent**（`.deps`，与 Win/WSL 同）——brew 只提供 **loader + MoltenVK ICD**（driver 层，HYLE 不 vendor），不提供编译期头。
+
+**验证 MoltenVK 通**（应枚举出 Apple GPU、driverID = MoltenVK）：
+
+```bash
+/opt/homebrew/bin/vulkaninfo --summary | grep -E "deviceName|driverName"
+#   deviceName = Apple M4
+#   driverName = MoltenVK
+```
+
+**跑 HYLE Vulkan 测试**：
+
+```bash
+export PATH=/opt/homebrew/bin:$PATH
+cd ~/hyle
+/opt/homebrew/bin/cmake --build build --target hyle_compute_vulkan_test -j8
+./build/bin/hyle_compute_vulkan_test        # VulkanCompute.SaxpyEndToEnd
+```
+
+- ⚠️ **loader 找不到 ICD**（vulkaninfo 报 0 device / 测试 SKIP）时，显式指 ICD：
+  `export VK_ICD_FILENAMES=$(ls /opt/homebrew/Cellar/molten-vk/*/etc/vulkan/icd.d/MoltenVK_icd.json | head -1)`。
+  brew 装完通常已把 manifest 放进 loader 默认搜索路径（`/opt/homebrew/etc/vulkan/icd.d` / `/opt/homebrew/share/vulkan/icd.d`），无需手设。
+- ⚠️ **MoltenVK 不支持全部 Vulkan 特性**（它是 Metal 子集映射）——compute-06 的 storage buffer + push constant + compute dispatch 都在支持范围内；将来用到 MoltenVK 缺的扩展需查其 [支持矩阵](https://github.com/KhronosGroup/MoltenVK)。
+- 未装 MoltenVK 时：`volkInitialize()` 找不到 loader → Vulkan 后端 `vulkan_vtable()` 返回 null → `hyle_compute_vulkan_test` 运行时 `GTEST_SKIP`（不崩，优雅降级）。
+
