@@ -34,6 +34,16 @@ using hyle::sched::Scheduler;
 using namespace hyle;
 using namespace hyle::compute;
 
+// Threadsafe death style on Linux only (re-exec vs fork-after-CUDA-init). Windows death
+// tests are always spawn-based (no fork) so the flag is unneeded -- and its symbol
+// (testing::FLAGS_gtest_death_test_style) doesn't link against the gtest DLL. See
+// contract_test.cc for the full rationale.
+#if defined(_WIN32)
+#  define HYLE_THREADSAFE_DEATH() ((void)0)
+#else
+#  define HYLE_THREADSAFE_DEATH() GTEST_FLAG_SET(death_test_style, "threadsafe")
+#endif
+
 namespace {
 
 // Golden CPU reference for ggml's C = A·Bᵀ. A is m rows × k, B is n rows × k (both
@@ -334,4 +344,103 @@ TEST(GgmlBridge, BackendReuseAcrossShapes) {
   sched.shutdown();
   EXPECT_TRUE(arg.done.load());
   EXPECT_EQ(arg.result, 0) << "backend reuse failed at step " << arg.result;
+}
+
+// ---- CONTRACT death tests (ggml_bridge.cc:170-172 / 193-206) ------------------
+// The bridge's caller-contract asserts fire SYNCHRONOUSLY on the CALLING thread (before
+// spawn_blocking offloads), so a death test triggers them WITHOUT a scheduler/fiber -- a
+// BlockingPool is constructed (the signature needs it) but never drained. The CPU ggml
+// backend (ggml_backend_cpu_init) is unconditionally available, so we mint a real, valid
+// GgmlBackend on the CPU device and then feed it a contract-violating argument.
+//
+// Matcher "HYLE fatal" proves death came from HYLE_FATAL_ASSERT (contract-over-defense),
+// not an incidental crash. Threadsafe style: a GPU machine has CUDA initialized by other
+// tests; re-exec avoids fork-after-CUDA-init. Each scenario is a named function (the
+// death statement's commas would confuse the EXPECT_DEATH macro).
+
+namespace {
+
+Device cpu_device() {
+  Device devs[8];
+  std::size_t n = enumerate(devs, 8);
+  return devs[n - 1];  // host CPU is always last
+}
+
+void matmul_null_output() {
+  auto be = GgmlBackend::create(cpu_device(), /*n_threads=*/1);
+  BlockingPool pool(system_allocator());
+  float ab[16] = {};
+  // c == nullptr violates ggml_bridge.cc:171 (a/b/c non-null).
+  (void)ggml_matmul_f32(*be, pool, system_allocator(), ab, ab, nullptr, 2, 2, 2);
+}
+
+void matmul_bad_dims() {
+  auto be = GgmlBackend::create(cpu_device(), /*n_threads=*/1);
+  BlockingPool pool(system_allocator());
+  float ab[16] = {};
+  // k == 0 violates ggml_bridge.cc:172 (m/k/n > 0).
+  (void)ggml_matmul_f32(*be, pool, system_allocator(), ab, ab, ab, 2, 0, 2);
+}
+
+void batched_count_zero() {
+  auto be = GgmlBackend::create(cpu_device(), /*n_threads=*/1);
+  BlockingPool pool(system_allocator());
+  MatmulF32Job jobs[1] = {};
+  // count == 0 violates ggml_bridge.cc:194 (count in [1,64]).
+  (void)ggml_matmul_f32_batched(*be, pool, system_allocator(), jobs, 0);
+}
+
+void batched_count_over_cap() {
+  auto be = GgmlBackend::create(cpu_device(), /*n_threads=*/1);
+  BlockingPool pool(system_allocator());
+  MatmulF32Job jobs[1] = {};
+  // count == 65 > 64 violates ggml_bridge.cc:194.
+  (void)ggml_matmul_f32_batched(*be, pool, system_allocator(), jobs, 65);
+}
+
+void batched_null_jobs() {
+  auto be = GgmlBackend::create(cpu_device(), /*n_threads=*/1);
+  BlockingPool pool(system_allocator());
+  // jobs == nullptr violates ggml_bridge.cc:195.
+  (void)ggml_matmul_f32_batched(*be, pool, system_allocator(), nullptr, 1);
+}
+
+void batched_job_bad_dims() {
+  auto be = GgmlBackend::create(cpu_device(), /*n_threads=*/1);
+  BlockingPool pool(system_allocator());
+  float ab[16] = {};
+  MatmulF32Job jobs[1] = {MatmulF32Job{ab, ab, ab, 2, 0, 2}};  // k==0 -> :206
+  (void)ggml_matmul_f32_batched(*be, pool, system_allocator(), jobs, 1);
+}
+
+}  // namespace
+
+TEST(GgmlBridgeDeathTest, MatmulNullOutput) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(matmul_null_output(), "HYLE fatal");
+}
+
+TEST(GgmlBridgeDeathTest, MatmulBadDims) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(matmul_bad_dims(), "HYLE fatal");
+}
+
+TEST(GgmlBridgeDeathTest, BatchedCountZero) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(batched_count_zero(), "HYLE fatal");
+}
+
+TEST(GgmlBridgeDeathTest, BatchedCountOverCap) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(batched_count_over_cap(), "HYLE fatal");
+}
+
+TEST(GgmlBridgeDeathTest, BatchedNullJobs) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(batched_null_jobs(), "HYLE fatal");
+}
+
+TEST(GgmlBridgeDeathTest, BatchedJobBadDims) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(batched_job_bad_dims(), "HYLE fatal");
 }

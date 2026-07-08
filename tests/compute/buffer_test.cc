@@ -95,7 +95,21 @@ TEST(ComputeBuffer, PinnedHostRoundTrip) {
 }
 
 // ---- clear ------------------------------------------------------------------
-
+// size=0 allocation: Buffer::create with bytes==0 exercises the bytes==0?1:bytes special
+// case (host_backend.cc:115 -- malloc(0) is impl-defined, so the backend gives 1). The
+// Buffer is valid with a non-null pointer and reports size()==0. This is a real edge (an
+// empty tensor / a zero-row KV slice); it must not abort or return an invalid buffer.
+TEST(ComputeBuffer, ZeroSizeAlloc) {
+  Device d = default_device();
+  auto buf = Buffer::create(device_buffer_type(d), 0);
+  ASSERT_TRUE(buf.has_value()) << buf.error().message();
+  EXPECT_TRUE(buf->valid());
+  EXPECT_NE(buf->device_ptr(), nullptr);  // backend rounded 0 -> 1 byte
+  EXPECT_EQ(buf->size(), 0u);             // logical size is still 0
+  // A zero-length set/get is in-bounds (offset 0 + size 0 <= size 0) and a no-op.
+  EXPECT_TRUE(buf->set(0, nullptr, 0).ok());
+  EXPECT_TRUE(buf->get(0, nullptr, 0).ok());
+}
 TEST(ComputeBuffer, Clear) {
   Device d = default_device();
   BufferType bt = device_buffer_type(d);
@@ -107,6 +121,30 @@ TEST(ComputeBuffer, Clear) {
   std::vector<std::uint8_t> out(kBytes, 0xFF);
   ASSERT_TRUE(buf->get(0, out.data(), kBytes).ok());
   for (std::size_t i = 0; i < kBytes; ++i) EXPECT_EQ(out[i], 0u) << "at " << i;
+}
+
+// clear with a NON-ZERO value at a NON-ZERO offset: the existing Clear test only zeroes
+// the whole buffer, so the value!=0 and offset!=0 paths (compute.cc:342 -> memset) were
+// unexercised. Fill the buffer, clear a middle span to 0xA5, verify ONLY that span
+// changed and the surrounding bytes are untouched (offset/size honored).
+TEST(ComputeBuffer, ClearNonZeroValueAtOffset) {
+  Device d = default_device();
+  BufferType bt = device_buffer_type(d);
+  constexpr std::size_t kBytes = 1024;
+  auto buf = Buffer::create(bt, kBytes);
+  ASSERT_TRUE(buf.has_value());
+
+  std::vector<std::uint8_t> init(kBytes, 0x11);
+  ASSERT_TRUE(buf->set(0, init.data(), kBytes).ok());
+  constexpr std::size_t kOff = 256, kLen = 512;
+  ASSERT_TRUE(buf->clear(kOff, 0xA5, kLen).ok());  // middle span -> 0xA5
+
+  std::vector<std::uint8_t> out(kBytes, 0);
+  ASSERT_TRUE(buf->get(0, out.data(), kBytes).ok());
+  for (std::size_t i = 0; i < kBytes; ++i) {
+    std::uint8_t want = (i >= kOff && i < kOff + kLen) ? 0xA5 : 0x11;
+    EXPECT_EQ(out[i], want) << "at " << i;
+  }
 }
 
 // ---- copy_from (D2D / same backend) -----------------------------------------
@@ -138,6 +176,43 @@ TEST(ComputeBuffer, MoveSemantics) {
   EXPECT_TRUE(moved.valid());
   EXPECT_EQ(moved.device_ptr(), ptr);
   EXPECT_FALSE(b1->valid());  // moved-from invalid (won't double-free)
+}
+
+// Move ASSIGNMENT (compute.cc:283): dst already owns a block, so operator= must free it
+// before adopting src's pointer -- no leak, no double-free. Move CONSTRUCTION (above) is
+// a different path; both must be covered for an owning move-only type.
+TEST(ComputeBuffer, MoveAssignment) {
+  Device d = default_device();
+  BufferType bt = device_buffer_type(d);
+  auto b1 = Buffer::create(bt, 256);
+  auto b2 = Buffer::create(bt, 128);
+  ASSERT_TRUE(b1.has_value() && b2.has_value());
+  void* src_ptr = b1->device_ptr();
+  *b2 = std::move(*b1);        // b2's original 128B block freed, b1's 256B moved in
+  EXPECT_TRUE(b2->valid());
+  EXPECT_EQ(b2->device_ptr(), src_ptr);
+  EXPECT_EQ(b2->size(), 256u);  // size transferred too
+  EXPECT_FALSE(b1->valid());
+  // The moved-in buffer is fully usable (set/get round-trip).
+  std::vector<std::uint8_t> in(256, 0x5A), out(256, 0);
+  ASSERT_TRUE(b2->set(0, in.data(), 256).ok());
+  ASSERT_TRUE(b2->get(0, out.data(), 256).ok());
+  EXPECT_EQ(in, out);
+}
+
+TEST(ComputeBuffer, SelfMoveAssignment) {
+  Device d = default_device();
+  auto b = Buffer::create(device_buffer_type(d), 256);
+  ASSERT_TRUE(b.has_value());
+  void* ptr = b->device_ptr();
+  Buffer& ref = *b;
+  *b = std::move(ref);         // guarded no-op (compute.cc:284) -- block NOT freed
+  EXPECT_TRUE(b->valid());
+  EXPECT_EQ(b->device_ptr(), ptr);
+  std::vector<std::uint8_t> in(256, 0x5A), out(256, 0);
+  ASSERT_TRUE(b->set(0, in.data(), 256).ok());  // still usable
+  ASSERT_TRUE(b->get(0, out.data(), 256).ok());
+  EXPECT_EQ(in, out);
 }
 
 // ---- THE HEADLINE: KV-cache pattern (large buffer, repeated offset writes) ---

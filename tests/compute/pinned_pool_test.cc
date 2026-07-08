@@ -105,6 +105,18 @@ TEST(PinnedPool, StagingBatchedSubmit) {
 
 // ---- PinnedStaging reset reuses the region for the next batch ----------------
 
+// size=0 staging: compute.cc:419/425 rounds a 0-byte request to cap_=1, so create()
+// still yields a valid region with a non-null base (a degenerate but legal batch of
+// nothing). used() starts at 0.
+TEST(PinnedPool, StagingZeroSizeCreate) {
+  Device d = default_device();
+  auto staging = PinnedStaging::create(d, 0);
+  ASSERT_TRUE(staging.has_value()) << staging.error().message();
+  EXPECT_TRUE(staging->valid());
+  EXPECT_NE(staging->base(), nullptr);  // rounded 0 -> 1
+  EXPECT_EQ(staging->used(), 0u);
+}
+
 TEST(PinnedPool, StagingResetReuse) {
   Device d = default_device();
   auto staging = PinnedStaging::create(d, 4096);
@@ -120,7 +132,6 @@ TEST(PinnedPool, StagingResetReuse) {
 }
 
 // ---- move semantics (no double-free of the pinned block) ---------------------
-
 TEST(PinnedPool, StagingMove) {
   Device d = default_device();
   auto s1 = PinnedStaging::create(d, 2048);
@@ -130,4 +141,34 @@ TEST(PinnedPool, StagingMove) {
   EXPECT_TRUE(moved.valid());
   EXPECT_EQ(moved.base(), base);
   EXPECT_FALSE(s1->valid());
+}
+
+// Move ASSIGNMENT (compute.cc:396): dst already owns a pinned block, so operator= must
+// free it before adopting src's -- no leak, no double-free. StagingMove (above) only
+// covers move construction.
+TEST(PinnedPool, StagingMoveAssignment) {
+  Device d = default_device();
+  auto s1 = PinnedStaging::create(d, 2048);
+  auto s2 = PinnedStaging::create(d, 1024);
+  ASSERT_TRUE(s1.has_value() && s2.has_value());
+  void* src_base = s1->base();
+  *s2 = std::move(*s1);        // s2's original block freed, s1's moved in
+  EXPECT_TRUE(s2->valid());
+  EXPECT_EQ(s2->base(), src_base);
+  EXPECT_FALSE(s1->valid());
+  void* p = s2->allocate(512, 16);  // moved-in region is usable
+  EXPECT_NE(p, nullptr);
+}
+
+TEST(PinnedPool, StagingSelfMoveAssignment) {
+  Device d = default_device();
+  auto s = PinnedStaging::create(d, 2048);
+  ASSERT_TRUE(s.has_value());
+  void* base = s->base();
+  PinnedStaging& ref = *s;
+  *s = std::move(ref);         // guarded no-op (compute.cc:397) -- block NOT freed
+  EXPECT_TRUE(s->valid());
+  EXPECT_EQ(s->base(), base);
+  void* p = s->allocate(512, 16);  // still usable
+  EXPECT_NE(p, nullptr);
 }

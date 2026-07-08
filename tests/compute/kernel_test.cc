@@ -179,3 +179,134 @@ TEST(ComputeKernel, BackendMismatchUnimplemented) {
     EXPECT_FALSE(k.has_value());  // host has no NVRTC
   }
 }
+
+// ---- Kernel move semantics (was entirely uncovered) -------------------------
+// A Kernel owns backend module/func handles (CUmodule/CUfunction on CUDA, a VkKernel on
+// Vulkan). A wrong move = a leak or a double-unload. We exercise move on a HOST-backend
+// kernel (load_host: module=nullptr, func=the HostFn) so it runs on ANY platform without
+// a GPU -- the ownership-transfer logic (compute.cc:506/513) is backend-agnostic. The
+// host device is enumerate()'s last entry (always the CPU fallback).
+
+namespace {
+Device host_device_for_kernel() {
+  Device devs[8];
+  std::size_t n = enumerate(devs, 8);
+  return devs[n - 1];  // CPU fallback is always last
+}
+
+// Launch a host kernel and confirm it actually ran (vecadd over 4 elements), proving the
+// moved kernel's func handle is intact and callable.
+void expect_kernel_runs(Kernel& k, Stream& s) {
+  constexpr int kN = 4;
+  float a[kN] = {1, 2, 3, 4}, b[kN] = {10, 20, 30, 40}, c[kN] = {-1, -1, -1, -1};
+  void* bufs[] = {a, b, c};
+  int n = kN;
+  ScalarField fields[] = {{0, sizeof(int)}};
+  KernelArgs ka{bufs, 3, &n, sizeof(int), fields, 1};
+  LaunchConfig cfg;
+  ASSERT_TRUE(launch(s, k, cfg, ka).ok());
+  for (int i = 0; i < kN; ++i) EXPECT_FLOAT_EQ(c[i], a[i] + b[i]);
+}
+}  // namespace
+
+TEST(ComputeKernel, MoveConstruction) {
+  Device d = host_device_for_kernel();
+  auto k = Kernel::load_host(d, &host_vecadd);
+  ASSERT_TRUE(k.has_value()) << k.error().message();
+  Kernel moved = std::move(*k);
+  EXPECT_TRUE(moved.valid());
+  EXPECT_FALSE(k->valid());  // moved-from invalid (won't double-destroy the module)
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value());
+  expect_kernel_runs(moved, *s);  // moved kernel still launches correctly
+}
+
+TEST(ComputeKernel, MoveAssignment) {
+  Device d = host_device_for_kernel();
+  auto k1 = Kernel::load_host(d, &host_vecadd);
+  auto k2 = Kernel::load_host(d, &host_vecadd);
+  ASSERT_TRUE(k1.has_value() && k2.has_value());
+  *k2 = std::move(*k1);      // k2's original module destroyed, k1's moved in
+  EXPECT_TRUE(k2->valid());
+  EXPECT_FALSE(k1->valid());
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value());
+  expect_kernel_runs(*k2, *s);
+}
+
+TEST(ComputeKernel, SelfMoveAssignment) {
+  Device d = host_device_for_kernel();
+  auto k = Kernel::load_host(d, &host_vecadd);
+  ASSERT_TRUE(k.has_value());
+  Kernel& ref = *k;
+  *k = std::move(ref);       // guarded no-op (compute.cc:514) -- module NOT unloaded
+  EXPECT_TRUE(k->valid());
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value());
+  expect_kernel_runs(*k, *s);  // still callable
+}
+
+// ---- launch_batch on the HOST backend (was Vulkan-only) ---------------------
+// launch_batch on CUDA/host loops kernel_launch (only Vulkan fuses into one command
+// buffer). This covers the dispatch-layer unpack (compute.cc:585-603) + the host loop
+// (host_backend.cc:263) with MULTIPLE host kernels, each golden-checked -- the CUDA/
+// Vulkan batched paths were tested but the host loop never was.
+
+TEST(ComputeKernel, HostLaunchBatch) {
+  Device d = host_device_for_kernel();
+  auto k = Kernel::load_host(d, &host_vecadd);
+  ASSERT_TRUE(k.has_value()) << k.error().message();
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value());
+
+  constexpr int kJobs = 3;
+  constexpr int kN = 8;
+  // Per-job storage MUST outlive launch_batch (its arrays are caller-owned): distinct
+  // input/output arrays + arg descriptors per job.
+  float a[kJobs][kN], b[kJobs][kN], c[kJobs][kN];
+  void* bufs[kJobs][3];
+  int ns[kJobs];
+  ScalarField fields[kJobs];
+  BatchItem items[kJobs];
+  for (int j = 0; j < kJobs; ++j) {
+    for (int i = 0; i < kN; ++i) { a[j][i] = float(i + j); b[j][i] = float(2 * i - j); c[j][i] = -1.0f; }
+    bufs[j][0] = a[j]; bufs[j][1] = b[j]; bufs[j][2] = c[j];
+    ns[j] = kN;
+    fields[j] = ScalarField{0, sizeof(int)};
+    items[j].kernel = &*k;
+    items[j].config = LaunchConfig{};
+    items[j].args = KernelArgs{bufs[j], 3, &ns[j], sizeof(int), &fields[j], 1};
+  }
+  ASSERT_TRUE(launch_batch(*s, items, kJobs).ok());
+  for (int j = 0; j < kJobs; ++j)
+    for (int i = 0; i < kN; ++i)
+      EXPECT_FLOAT_EQ(c[j][i], a[j][i] + b[j][i]) << "job " << j << " at " << i;
+}
+
+// count==0 is a legal no-op (compute.cc:587 returns OK before the items/cap asserts) --
+// NOT a contract violation. A null items pointer is fine when count is 0.
+TEST(ComputeKernel, LaunchBatchCountZeroIsNoop) {
+  Device d = host_device_for_kernel();
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value());
+  EXPECT_TRUE(launch_batch(*s, nullptr, 0).ok());
+}
+
+// blocks_for(n, 0): the block_size==0 guard (kernel.h:54) returns 0 rather than dividing
+// by zero. Complements BlocksForHelper's positive cases.
+TEST(ComputeKernel, BlocksForZeroBlockSize) {
+  EXPECT_EQ(blocks_for(100, 0), 0u);
+  EXPECT_EQ(blocks_for(0, 0), 0u);
+}
+
+// The host backend has no NVRTC and no PTX loader: compile() and load_ptx() both return
+// Unimplemented (host_backend.cc:238/242), pointing the caller at load_host. Tested on
+// the host device explicitly (enumerate's last entry) so it runs on ANY platform, GPU or
+// not -- BackendMismatchUnimplemented only covers compile, and only when NO gpu exists.
+TEST(ComputeKernel, HostCompileAndLoadPtxUnimplemented) {
+  Device host = host_device_for_kernel();
+  auto kc = Kernel::compile(host, kVecAddSrc, "vecadd");
+  EXPECT_FALSE(kc.has_value());  // no NVRTC on host
+  auto kp = Kernel::load_ptx(host, "// ptx", "vecadd");
+  EXPECT_FALSE(kp.has_value());  // no PTX loader on host
+}

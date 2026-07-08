@@ -37,7 +37,9 @@ TEST(DevicePool, CreateAndKind) {
   // is_vmm just reports which backend was chosen; host is always leg (false).
   bool is_gpu = false;
   gpu_or_host(&is_gpu);
-  if (!is_gpu) EXPECT_FALSE(pool->is_vmm());  // host = leg-style
+  if (!is_gpu) {
+    EXPECT_FALSE(pool->is_vmm());  // host = leg-style
+  }
 }
 
 TEST(DevicePool, AllocFreeRoundTrip) {
@@ -49,6 +51,18 @@ TEST(DevicePool, AllocFreeRoundTrip) {
   ASSERT_TRUE(p.has_value()) << p.error().message();
   EXPECT_NE(*p, nullptr);
   pool->free(*p, 4096);
+}
+
+// size=0 pool alloc: host_backend.cc:182 rounds 0 -> 1; the returned pointer is valid and
+// freeable. A kernel asking for a zero-length scratch buffer must not abort the pool.
+TEST(DevicePool, ZeroSizeAlloc) {
+  Device d = default_device();
+  auto pool = DevicePool::create(d);
+  ASSERT_TRUE(pool.has_value());
+  auto p = pool->alloc(0);
+  ASSERT_TRUE(p.has_value()) << p.error().message();
+  EXPECT_NE(*p, nullptr);
+  pool->free(*p, 0);
 }
 
 // The core value: a freed block is REUSED by a same-size alloc (no fresh driver call).
@@ -144,4 +158,62 @@ TEST(DevicePool, MoveSemantics) {
   auto a = moved.alloc(256);
   ASSERT_TRUE(a.has_value());
   moved.free(*a, 256);
+}
+
+// host leg-pool BEST-FIT (host_backend.cc:161): with two freed blocks of different sizes
+// cached, an alloc of an in-between size must reuse the SMALLEST block that fits (not the
+// bigger one, not a fresh malloc). VMM (bump) has different semantics, so gate to the leg
+// backend (host, or a non-VMM GPU pool).
+TEST(DevicePool, HostLegBestFit) {
+  Device d = default_device();
+  auto pool = DevicePool::create(d);
+  ASSERT_TRUE(pool.has_value());
+  if (pool->is_vmm()) GTEST_SKIP() << "VMM pool bumps, not best-fit -- leg-only test";
+
+  auto big = pool->alloc(4096);
+  auto small = pool->alloc(1024);
+  ASSERT_TRUE(big.has_value() && small.has_value());
+  void* big_ptr = *big;
+  void* small_ptr = *small;
+  pool->free(*big, 4096);   // both go to the cache
+  pool->free(*small, 1024);
+
+  // Request 1000: 1024 (smallest >= 1000) is the best fit, not 4096.
+  auto got = pool->alloc(1000);
+  ASSERT_TRUE(got.has_value());
+  EXPECT_EQ(*got, small_ptr) << "best-fit should reuse the 1024 block, not 4096";
+  EXPECT_NE(*got, big_ptr);
+  pool->free(*got, 1000);
+  // Drain the 4096 block too (clean teardown).
+  auto g2 = pool->alloc(4096);
+  ASSERT_TRUE(g2.has_value());
+  pool->free(*g2, 4096);
+}
+
+// Move ASSIGNMENT (compute.cc:457): dst already owns a backend pool handle, so operator=
+// must destroy it before adopting src's -- no leak, no double-destroy. Move CONSTRUCTION
+// (above) is the other half.
+TEST(DevicePool, MoveAssignment) {
+  Device d = default_device();
+  auto p1 = DevicePool::create(d);
+  auto p2 = DevicePool::create(d);
+  ASSERT_TRUE(p1.has_value() && p2.has_value());
+  *p2 = std::move(*p1);       // p2's original pool destroyed, p1's moved in
+  EXPECT_TRUE(p2->valid());
+  EXPECT_FALSE(p1->valid());
+  auto a = p2->alloc(256);    // moved-in pool is usable
+  ASSERT_TRUE(a.has_value());
+  p2->free(*a, 256);
+}
+
+TEST(DevicePool, SelfMoveAssignment) {
+  Device d = default_device();
+  auto p = DevicePool::create(d);
+  ASSERT_TRUE(p.has_value());
+  DevicePool& ref = *p;
+  *p = std::move(ref);        // guarded no-op (compute.cc:458) -- pool NOT destroyed
+  EXPECT_TRUE(p->valid());
+  auto a = p->alloc(256);     // still usable
+  ASSERT_TRUE(a.has_value());
+  p->free(*a, 256);
 }

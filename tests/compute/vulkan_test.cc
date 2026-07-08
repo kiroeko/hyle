@@ -33,6 +33,16 @@
 using namespace hyle;
 using namespace hyle::compute;
 
+// Threadsafe death style on Linux only (re-exec vs fork-after-driver-init). Windows death
+// tests are always spawn-based (no fork) so the flag is unneeded -- and its symbol
+// (testing::FLAGS_gtest_death_test_style) doesn't link against the gtest DLL. See
+// contract_test.cc for the full rationale.
+#if defined(_WIN32)
+#  define HYLE_THREADSAFE_DEATH() ((void)0)
+#else
+#  define HYLE_THREADSAFE_DEATH() GTEST_FLAG_SET(death_test_style, "threadsafe")
+#endif
+
 namespace {
 
 // Find the Vulkan-backed device among enumerated devices, or return false (no Vulkan
@@ -166,6 +176,104 @@ TEST(VulkanCompute, BatchedSaxpy) {
       ASSERT_NEAR(ho[i], expect, 1e-1f) << "job " << j << " at " << i;
     }
   }
+}
+
+// ---- Vulkan CONTRACT death tests (vulkan_backend.cc:561/665/666/714) ----------
+// The Vulkan backend's launch contracts are HYLE_FATAL_ASSERTs (caller bugs, not
+// recoverable Status). These prove they fire. All GPU-skip if no Vulkan device.
+//
+// Threadsafe death style: on this machine CUDA + Vulkan are both initialized by other
+// tests; re-exec avoids fork-after-driver-init. Each scenario is a named function (the
+// death statement's braces/commas would confuse EXPECT_DEATH). The function rebuilds all
+// state (the threadsafe child re-execs from scratch) then triggers exactly one assert.
+// Matcher "HYLE fatal" proves death came from the contract assert, not a driver crash.
+
+namespace {
+
+// Pipeline shape is FROZEN on first launch (buffer_count + push_size). A second launch of
+// the SAME kernel with a different buffer_count must abort (vulkan_backend.cc:665). We
+// launch saxpy correctly once (3 buffers, sizeof(SaxpyParams) push), then relaunch with a
+// raw KernelArgs carrying only 2 buffers.
+void vk_shape_freeze_buffer_count() {
+  Device vk;
+  if (!find_vulkan(vk)) std::abort();  // "skip" -> abort is fine; the test gates before calling
+  auto s = Stream::create(vk);
+  auto k = load_saxpy(vk);
+  constexpr int kN = 256;
+  const std::size_t bytes = kN * sizeof(float);
+  BufferType bt = device_buffer_type(vk);
+  auto bx = Buffer::create(bt, bytes); auto by = Buffer::create(bt, bytes);
+  auto bo = Buffer::create(bt, bytes);
+  SaxpyParams p{kN, 1.0f, 1.0f, 0.0f};
+  LaunchConfig cfg; cfg.grid = {blocks_for(kN, 256), 1, 1};
+  (void)launch(*s, *k, cfg, *bx, *by, *bo, p);  // first launch freezes {3 buffers, 16B push}
+  (void)s->sync();
+  // Relaunch with only 2 buffers (same push) -> buffer_count mismatch -> fatal (:665).
+  void* two[2] = {bx->device_ptr(), by->device_ptr()};
+  ScalarField f{0, sizeof(SaxpyParams)};
+  KernelArgs bad{two, 2, &p, sizeof(SaxpyParams), &f, 1};
+  (void)launch(*s, *k, cfg, bad);
+}
+
+// push_size > maxPushConstantsSize aborts in build_pipeline (vulkan_backend.cc:561) on the
+// FIRST launch. The typed shell caps scalars at 256B, so we bypass it with a raw KernelArgs
+// declaring scalar_bytes = 512 (> any real device's max_push, RTX 4070 = 256).
+void vk_push_size_over_limit() {
+  Device vk;
+  if (!find_vulkan(vk)) std::abort();
+  auto s = Stream::create(vk);
+  auto k = load_saxpy(vk);
+  constexpr int kN = 256;
+  const std::size_t bytes = kN * sizeof(float);
+  BufferType bt = device_buffer_type(vk);
+  auto bx = Buffer::create(bt, bytes); auto by = Buffer::create(bt, bytes);
+  auto bo = Buffer::create(bt, bytes);
+  alignas(16) unsigned char big_scalars[512] = {};
+  void* three[3] = {bx->device_ptr(), by->device_ptr(), bo->device_ptr()};
+  ScalarField f{0, 512};
+  KernelArgs bad{three, 3, big_scalars, 512, &f, 1};  // 512 > max_push -> fatal (:561)
+  LaunchConfig cfg; cfg.grid = {blocks_for(kN, 256), 1, 1};
+  (void)launch(*s, *k, cfg, bad);
+}
+
+// grid.x > maxComputeWorkGroupCount aborts at dispatch record (vulkan_backend.cc:714).
+void vk_grid_over_limit() {
+  Device vk;
+  if (!find_vulkan(vk)) std::abort();
+  auto s = Stream::create(vk);
+  auto k = load_saxpy(vk);
+  constexpr int kN = 256;
+  const std::size_t bytes = kN * sizeof(float);
+  BufferType bt = device_buffer_type(vk);
+  auto bx = Buffer::create(bt, bytes); auto by = Buffer::create(bt, bytes);
+  auto bo = Buffer::create(bt, bytes);
+  SaxpyParams p{kN, 1.0f, 1.0f, 0.0f};
+  LaunchConfig cfg;
+  cfg.grid = {0xFFFFFFFFu, 1, 1};  // way past maxComputeWorkGroupCount[0] -> fatal (:714)
+  (void)launch(*s, *k, cfg, *bx, *by, *bo, p);
+}
+
+}  // namespace
+
+TEST(VulkanContractDeathTest, ShapeFreezeBufferCountMismatch) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan device";
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(vk_shape_freeze_buffer_count(), "HYLE fatal");
+}
+
+TEST(VulkanContractDeathTest, PushConstantSizeOverLimit) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan device";
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(vk_push_size_over_limit(), "HYLE fatal");
+}
+
+TEST(VulkanContractDeathTest, GridExceedsWorkgroupLimit) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan device";
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(vk_grid_over_limit(), "HYLE fatal");
 }
 
 #if defined(HYLE_HAS_FCONTEXT)

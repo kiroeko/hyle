@@ -22,6 +22,17 @@
 // immediately ready, so co_await completes without suspending (still exercises the
 // path). The poller's Waker::wake() from its own thread re-injects the fiber via the
 // scheduler's global queue + notify (the cross-thread wake TSan must clear).
+//
+// COVERAGE NOTE (A2, why host does NOT exercise suspend->poller-sweep->wake): the host
+// backend's Event is ALWAYS kReady (inline execution, host_backend.cc:74), so
+// StreamComplete::await_ready() returns true and never suspends -- BY DESIGN, not a gap.
+// Driving the suspend/sweep/cross-thread-wake chain needs an Event that reports NotReady
+// first; but Event's vt_/native_ are private (friend Stream only) with no test seam, so a
+// "controllable event" would require changing the production header. We deliberately do
+// NOT add a test-only seam: the full suspend->sweep->wake path is already proven on REAL
+// hardware here (CoAwaitStreamCompletion / ConcurrentAwaits on a CUDA GPU, cross-thread
+// wake cleared by WSL TSan) and on the Vulkan side (vulkan_test CoAwaitCompletion). The
+// host path's job is only to prove the awaitable COMPILES + completes with no device.
 
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
