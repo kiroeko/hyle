@@ -501,6 +501,81 @@ TEST(Vec, MathExtSaturatedInt) {
   for (std::size_t i = 0; i < n; ++i) { int e = (static_cast<int>(a.data[i]) * b.data[i] + 0x4000) >> 15; EXPECT_EQ(out2.data[i], static_cast<std::int16_t>(e)) << "q15 i=" << i; }
 }
 
+// ---- B-4 ternary bit fusion + sign/reduce helpers -----------------------------------
+TEST(Vec, TernaryBitAndSign) {
+  const hs::ScalableTag<std::uint32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::uint32_t> a, b, c, out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = 0xF0F0F0F0u + i; b.data[i] = 0x0FF00FF0u; c.data[i] = 0x33333333u; }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data), vc = hs::Load(d, c.data);
+  hs::Store(hs::Xor3(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]^b.data[i]^c.data[i]) << "xor3 i=" << i;
+  hs::Store(hs::Or3(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]|b.data[i]|c.data[i]) << "or3 i=" << i;
+  hs::Store(hs::OrAnd(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]|(b.data[i]&c.data[i])) << "orand i=" << i;
+  hs::Store(hs::BitwiseIfThenElse(vb, va, vc), d, out.data);  // (b&a)|(~b&c)
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], (b.data[i]&a.data[i])|(~b.data[i]&c.data[i])) << "bitsel i=" << i;
+  // AllBits0 / AllBits1.
+  EXPECT_TRUE(hs::AllBits0(hs::Zero(d)));
+  EXPECT_FALSE(hs::AllBits0(va));
+  EXPECT_TRUE(hs::AllBits1(hs::Set(d, 0xFFFFFFFFu)));
+}
+TEST(Vec, SignAndVectorReduce) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> a, out;
+  int total = 0, mn = 1<<30, mx = -(1<<30);
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<std::int32_t>(i) * (i%2?-3:2) - 1; total += a.data[i]; mn = std::min(mn, a.data[i]); mx = std::max(mx, a.data[i]); }
+  auto va = hs::Load(d, a.data);
+  // IsNegative -> mask.
+  hs::Store(hs::VecFromMask(d, hs::IsNegative(va)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i] != 0, a.data[i] < 0) << "isneg i=" << i;
+  // IfNegativeThenElseZero: a where a<0 else 0.
+  hs::Store(hs::IfNegativeThenElseZero(va, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i] < 0 ? a.data[i] : 0) << "ifneg i=" << i;
+  // Vector-returning reductions: all lanes = the reduction.
+  hs::Store(hs::SumOfLanes(d, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], total) << "sumlanes i=" << i;
+  hs::Store(hs::MinOfLanes(d, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], mn) << "minlanes i=" << i;
+  hs::Store(hs::MaxOfLanes(d, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], mx) << "maxlanes i=" << i;
+}
+
+// ---- B-4 SumsOf2/4 + RoundingShiftRight + Rol/Ror/TestBit ----------------------------
+TEST(Vec, SumsOfNAndRoundShift) {
+  const hs::ScalableTag<std::uint8_t> d8;
+  const std::size_t n8 = hs::Lanes(d8);
+  Buf<std::uint8_t> a;
+  for (std::size_t i = 0; i < n8; ++i) a.data[i] = static_cast<std::uint8_t>(i * 3 + 1);
+  auto va = hs::Load(d8, a.data);
+  // SumsOf2 -> u16 (N/2 lanes).
+  if (n8 % 2 == 0) {
+    const hs::FixedTag<std::uint16_t, hs::ScalableTag<std::uint8_t>::kMaxLanes / 2> d16;
+    Buf<std::uint16_t> o16; hs::Store(hs::SumsOf2(va), d16, o16.data);
+    for (std::size_t g = 0; g < n8/2; ++g) EXPECT_EQ(o16.data[g], static_cast<std::uint16_t>(a.data[2*g]+a.data[2*g+1])) << "sums2 g=" << g;
+  }
+  // SumsOf4 -> u32 (N/4 lanes).
+  if (n8 % 4 == 0) {
+    const hs::FixedTag<std::uint32_t, hs::ScalableTag<std::uint8_t>::kMaxLanes / 4> d32;
+    Buf<std::uint32_t> o32; hs::Store(hs::SumsOf4(va), d32, o32.data);
+    for (std::size_t g = 0; g < n8/4; ++g) EXPECT_EQ(o32.data[g], static_cast<std::uint32_t>(a.data[4*g]+a.data[4*g+1]+a.data[4*g+2]+a.data[4*g+3])) << "sums4 g=" << g;
+  }
+  // RoundingShiftRight<3> on u32: (v + 4) >> 3.
+  const hs::ScalableTag<std::uint32_t> du;
+  Buf<std::uint32_t> u, ou;
+  for (std::size_t i = 0; i < hs::Lanes(du); ++i) u.data[i] = static_cast<std::uint32_t>(i * 100 + 3);
+  hs::Store(hs::RoundingShiftRight<3>(hs::Load(du, u.data)), du, ou.data);
+  for (std::size_t i = 0; i < hs::Lanes(du); ++i) EXPECT_EQ(ou.data[i], (u.data[i] + 4u) >> 3) << "rsr i=" << i;
+  // Rol/Ror<4> on u32 (= RotateLeft/Right).
+  hs::Store(hs::Rol<4>(hs::Load(du, u.data)), du, ou.data);
+  for (std::size_t i = 0; i < hs::Lanes(du); ++i) { std::uint32_t x = u.data[i]; EXPECT_EQ(ou.data[i], (x<<4)|(x>>28)) << "rol i=" << i; }
+  // TestBit: bit 2 set?
+  hs::Store(hs::VecFromMask(du, hs::TestBit(hs::Load(du, u.data), hs::Set(du, 4u))), du, ou.data);
+  for (std::size_t i = 0; i < hs::Lanes(du); ++i) EXPECT_EQ(ou.data[i] != 0, (u.data[i] & 4u) != 0) << "testbit i=" << i;
+}
+
 // ---- B-3 lane access + init (generic layer) -----------------------------------------
 TEST(Vec, LaneAccessAndInit) {
   const hs::ScalableTag<std::int32_t> d;

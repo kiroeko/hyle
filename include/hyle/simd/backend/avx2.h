@@ -1406,6 +1406,29 @@ HYLE_FORCE_INLINE Vec256<std::uint64_t, N / 8> SumsOf8(Vec256<std::uint8_t, N> v
   return r;
 }
 
+// SumsOf2/SumsOf4: sum consecutive pairs/quads of u8 lanes, widening to u16/u32.
+// correctness-first store+reload; native (pmaddubsw with 1s / vpaddl chains) is a profiling upgrade.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::uint16_t, N / 2> SumsOf2(Vec256<std::uint8_t, N> v) noexcept {
+  static_assert(N % 2 == 0, "avx2 SumsOf2 needs an even lane count");
+  alignas(32) std::uint8_t src[N];
+  alignas(32) std::uint16_t dst[N / 2];
+  _mm256_store_si256(reinterpret_cast<__m256i*>(src), v.raw);
+  for (std::size_t g = 0; g < N / 2; ++g)
+    dst[g] = static_cast<std::uint16_t>(src[2 * g] + src[2 * g + 1]);
+  return Load(Simd<std::uint16_t, N / 2, 0>(), dst);
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::uint32_t, N / 4> SumsOf4(Vec256<std::uint8_t, N> v) noexcept {
+  static_assert(N % 4 == 0, "avx2 SumsOf4 needs a lane count that is a multiple of 4");
+  alignas(32) std::uint8_t src[N];
+  alignas(32) std::uint32_t dst[N / 4];
+  _mm256_store_si256(reinterpret_cast<__m256i*>(src), v.raw);
+  for (std::size_t g = 0; g < N / 4; ++g)
+    dst[g] = static_cast<std::uint32_t>(src[4 * g] + src[4 * g + 1] + src[4 * g + 2] + src[4 * g + 3]);
+  return Load(Simd<std::uint32_t, N / 4, 0>(), dst);
+}
+
 // ---- reductions ---------------------------------------------------------------------
 // THE lane-crossing step: AVX2 ops are per-128-lane, so a horizontal reduce must first
 // combine the two 128-bit halves (extract hi, op with lo), THEN cascade within 128.

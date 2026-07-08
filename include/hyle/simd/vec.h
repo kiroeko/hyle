@@ -330,4 +330,68 @@ HYLE_FORCE_INLINE VFromD<D> MaskedSetOr(VFromD<D> no, D d, M m, TFromD<D> t) noe
   return IfThenElse(m, Set(d, t), no);
 }
 
+// ---- ternary bit fusion + sign/reduce helpers (simd-08 B-4, generic layer) ----------
+// Ternary bitwise ops (Highway Xor3/Or3/OrAnd/...): fuse three inputs. On AVX-512 these map
+// to a single vpternlog; the generic form composes the existing binary And/Or/Xor/AndNot (a
+// profiling upgrade would specialize the AVX-512 path). Common in crypto / hash mixing.
+template <class V> HYLE_FORCE_INLINE V Xor3(V a, V b, V c) noexcept { return Xor(a, Xor(b, c)); }
+template <class V> HYLE_FORCE_INLINE V Or3(V a, V b, V c) noexcept { return Or(a, Or(b, c)); }
+template <class V> HYLE_FORCE_INLINE V OrAnd(V o, V a1, V a2) noexcept { return Or(o, And(a1, a2)); }
+template <class V> HYLE_FORCE_INLINE V XorAndNot(V a, V b, V c) noexcept { return Xor(a, AndNot(b, c)); }  // a ^ (~b & c)
+template <class V> HYLE_FORCE_INLINE V AndXor(V a, V b, V c) noexcept { return And(a, Xor(b, c)); }
+// BitwiseIfThenElse(mask, yes, no): per-BIT select (mask&yes) | (~mask&no) -- the vector-mask
+// bit blend (distinct from the lane IfThenElse). = Or(And(mask,yes), AndNot(mask,no)).
+template <class V> HYLE_FORCE_INLINE V BitwiseIfThenElse(V mask, V yes, V no) noexcept {
+  return Or(And(mask, yes), AndNot(mask, no));
+}
+// IsNegative(v): mask true where the lane's sign bit is set (Highway; = Lt(v, 0) for signed).
+template <class V> HYLE_FORCE_INLINE auto IsNegative(V v) noexcept {
+  return Lt(v, Zero(DFromV<V>()));
+}
+// IfNegativeThenElseZero(v, yes): yes where v<0, else 0. IfNegativeThenZeroElse: 0 where v<0.
+template <class V> HYLE_FORCE_INLINE V IfNegativeThenElseZero(V v, V yes) noexcept {
+  return IfThenElseZero(IsNegative(v), yes);
+}
+template <class V> HYLE_FORCE_INLINE V IfNegativeThenZeroElse(V v, V no) noexcept {
+  return IfThenZeroElse(IsNegative(v), no);
+}
+// CopySignToAbs(abs, sign): apply sign's sign bit to abs (assumed non-negative). = OR the
+// sign bit of `sign` into `abs`. Reuses CopySign (abs treated as magnitude).
+template <class V> HYLE_FORCE_INLINE V CopySignToAbs(V abs, V sign) noexcept {
+  return CopySign(abs, sign);
+}
+// AllBits0/AllBits1(d, v): whole-vector all-zero / all-one test. Via AllTrue/AllFalse on a
+// self-compare mask (Eq(v, Zero) all-true == all bits zero).
+template <class V> HYLE_FORCE_INLINE bool AllBits0(V v) noexcept {
+  const DFromV<V> d; return AllTrue(d, Eq(v, Zero(d)));
+}
+template <class V> HYLE_FORCE_INLINE bool AllBits1(V v) noexcept {
+  const DFromV<V> d; return AllTrue(d, Eq(v, Set(d, TFromD<DFromV<V>>(~MakeUnsigned<TFromD<DFromV<V>>>{0}))));
+}
+// Vector-returning reductions (Highway SumOfLanes/MinOfLanes/MaxOfLanes): the horizontal
+// reduce broadcast to all lanes (vs the scalar ReduceSum/Min/Max). = Set(d, ReduceX(d, v)).
+template <class D> HYLE_FORCE_INLINE VFromD<D> SumOfLanes(D d, VFromD<D> v) noexcept {
+  return Set(d, ReduceSum(d, v));
+}
+template <class D> HYLE_FORCE_INLINE VFromD<D> MinOfLanes(D d, VFromD<D> v) noexcept {
+  return Set(d, ReduceMin(d, v));
+}
+template <class D> HYLE_FORCE_INLINE VFromD<D> MaxOfLanes(D d, VFromD<D> v) noexcept {
+  return Set(d, ReduceMax(d, v));
+}
+// Rol/Ror: Highway's short names for RotateLeft/RotateRight<kBits> (bit rotate per lane).
+template <int kBits, class V> HYLE_FORCE_INLINE V Rol(V v) noexcept { return RotateLeft<kBits>(v); }
+template <int kBits, class V> HYLE_FORCE_INLINE V Ror(V v) noexcept { return RotateRight<kBits>(v); }
+// TestBit(v, bit): mask true where lane has bit `bit` set. = Ne(And(v, bit), 0).
+template <class V> HYLE_FORCE_INLINE auto TestBit(V v, V bit) noexcept {
+  return Ne(And(v, bit), Zero(DFromV<V>()));
+}
+// RoundingShiftRight<kBits>(v): >> kBits with round-half-up -- add the bias 2^(kBits-1) then
+// ShiftRight<kBits> (both existing ops). Fixed-point rounding shift. kBits >= 1.
+template <int kBits, class V> HYLE_FORCE_INLINE V RoundingShiftRight(V v) noexcept {
+  static_assert(kBits >= 1, "RoundingShiftRight: kBits>=1");
+  const DFromV<V> d;
+  return ShiftRight<kBits>(Add(v, Set(d, TFromD<DFromV<V>>(TFromD<DFromV<V>>{1} << (kBits - 1)))));
+}
+
 }  // namespace hyle::simd

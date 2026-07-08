@@ -889,6 +889,23 @@ HYLE_FORCE_INLINE Vec<std::uint64_t, N / 8> SumsOf8(Vec<std::uint8_t, N> v) noex
   }
   return r;
 }
+// SumsOf2/SumsOf4: like SumsOf8 but sum consecutive groups of 2 / 4 u8 lanes, widening to
+// u16 / u32 (Highway). The finer-grained horizontal byte sums (histogram / partial reduce).
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec<std::uint16_t, N / 2> SumsOf2(Vec<std::uint8_t, N> v) noexcept {
+  static_assert(N % 2 == 0, "SumsOf2 needs an even lane count");
+  Vec<std::uint16_t, N / 2> r;
+  for (std::size_t g = 0; g < N / 2; ++g) r.raw[g] = static_cast<std::uint16_t>(v.raw[2*g] + v.raw[2*g+1]);
+  return r;
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec<std::uint32_t, N / 4> SumsOf4(Vec<std::uint8_t, N> v) noexcept {
+  static_assert(N % 4 == 0, "SumsOf4 needs a lane count that is a multiple of 4");
+  Vec<std::uint32_t, N / 4> r;
+  for (std::size_t g = 0; g < N / 4; ++g)
+    r.raw[g] = static_cast<std::uint32_t>(v.raw[4*g] + v.raw[4*g+1] + v.raw[4*g+2] + v.raw[4*g+3]);
+  return r;
+}
 
 // ---- reductions (return the scalar, Highway's GetLane(SumOfLanes(...)) shorthand) ---
 template <typename T, std::size_t N>
