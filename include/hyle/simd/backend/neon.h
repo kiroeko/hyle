@@ -1241,8 +1241,13 @@ HYLE_FORCE_INLINE MaskNeon<T, N> IsFinite(VecNeon<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> IsEitherNaN(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   static_assert(std::is_floating_point_v<T>, "IsEitherNaN is float-only");
+  // OR the two NaN masks inline (the detail::mask_or helper is defined later in the file, and
+  // this call site precedes it -- inline vorrq on the float-width mask raw avoids the ordering
+  // dependency). float mask raw = uint32x4_t, double = uint64x2_t.
   MaskNeon<T, N> m;
-  m.raw = detail::mask_or<T>(IsNaN(a).raw, IsNaN(b).raw);  // unordered: NaN in either
+  const auto na = IsNaN(a).raw, nb = IsNaN(b).raw;
+  if constexpr (std::is_same_v<T, float>) m.raw = vorrq_u32(na, nb);
+  else m.raw = vorrq_u64(na, nb);  // double
   return m;
 }
 
