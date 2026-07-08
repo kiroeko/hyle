@@ -873,11 +873,16 @@ HYLE_FORCE_INLINE Vec128<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, Ve
 }
 // TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
 // correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.
+// Store()/Load() move a FULL 128-bit register (_mm_store_si128 / _mm_load_si128), so the
+// scratch buffers MUST be a whole register wide (16 B) regardless of the logical lane count:
+// a narrow partial result (e.g. Vec128<u8,4>) still reloads via _mm_load_si128 reading 16 B,
+// so a `DstT dst[4]` (4 B) would be an out-of-bounds stack read. Size every buffer to 16 B.
+// (Found via GCC segfault on Vec.TruncateAndStridedPromote; MSVC happened not to fault.)
 template <typename DstT, std::size_t N, typename SrcT>
 HYLE_FORCE_INLINE Vec128<DstT, N> TruncateTo(Simd<DstT, N, 0>, Vec128<SrcT, N> v) noexcept {
   static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
-  alignas(16) SrcT src[N];
-  alignas(16) DstT dst[N];
+  alignas(16) SrcT src[16 / sizeof(SrcT)];
+  alignas(16) DstT dst[16 / sizeof(DstT)] = {};
   Store(v, Simd<SrcT, N, 0>(), src);
   for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
   return Load(Simd<DstT, N, 0>(), dst);
@@ -885,8 +890,8 @@ HYLE_FORCE_INLINE Vec128<DstT, N> TruncateTo(Simd<DstT, N, 0>, Vec128<SrcT, N> v
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec128<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, Vec128<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
-  alignas(16) SrcT src[NSrc];
-  alignas(16) DstT dst[NDst];
+  alignas(16) SrcT src[16 / sizeof(SrcT)];
+  alignas(16) DstT dst[16 / sizeof(DstT)] = {};
   Store(v, Simd<SrcT, NSrc, 0>(), src);
   for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
   return Load(Simd<DstT, NDst, 0>(), dst);
@@ -894,16 +899,16 @@ HYLE_FORCE_INLINE Vec128<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, Vec128<S
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec128<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, Vec128<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteOddTo: odd lanes narrow->wide");
-  alignas(16) SrcT src[NSrc];
-  alignas(16) DstT dst[NDst];
+  alignas(16) SrcT src[16 / sizeof(SrcT)];
+  alignas(16) DstT dst[16 / sizeof(DstT)] = {};
   Store(v, Simd<SrcT, NSrc, 0>(), src);
   for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
   return Load(Simd<DstT, NDst, 0>(), dst);
 }
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec128<std::uint8_t, N> U8FromU32(Vec128<std::uint32_t, N> v) noexcept {
-  alignas(16) std::uint32_t src[N];
-  alignas(16) std::uint8_t dst[N];
+  alignas(16) std::uint32_t src[16 / sizeof(std::uint32_t)];
+  alignas(16) std::uint8_t dst[16] = {};
   Store(v, Simd<std::uint32_t, N, 0>(), src);
   for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
   return Load(Simd<std::uint8_t, N, 0>(), dst);
