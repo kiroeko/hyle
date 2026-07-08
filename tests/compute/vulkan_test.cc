@@ -221,6 +221,65 @@ TEST(VulkanCompute, TimingMeasuresElapsed) {
   EXPECT_GT(*ns, 0u);  // a real Vulkan dispatch took nonzero GPU time
 }
 
+// #11/#12 precise barriers: a DEPENDENT chain in one batch. Job j reads job (j-1)'s OUTPUT
+// buffer (o[j-1] == x[j]), so the inter-dispatch hazard barrier MUST fire to order the chain;
+// a wrong "no barrier" would race and read stale/partial data. Complements BatchedSaxpy
+// (disjoint buffers -> the barrier is SKIPPED, letting the GPU overlap). Golden-checks the
+// composed result so a missing barrier surfaces as a value mismatch, not just a hang.
+TEST(VulkanCompute, BatchedDependentChain) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan device";
+  auto s = Stream::create(vk);
+  ASSERT_TRUE(s.has_value());
+  auto k = load_saxpy(vk);
+  ASSERT_TRUE(k.has_value()) << k.error().message();
+
+  constexpr int kJobs = 4;
+  constexpr int kN = 2048;
+  const std::size_t bytes = kN * sizeof(float);
+  BufferType bt = device_buffer_type(vk);
+
+  // kJobs+1 buffers b0..bkJobs chained: job j computes b[j+1] = 1*b[j] + 0*b[j] + bias_j
+  // (alpha=1,beta=0 so it's b[j+1]=b[j]+bias_j -- a pure dependent accumulate). Each job's
+  // x AND y bind the SAME input b[j] (2 reads of one buffer), output b[j+1].
+  std::vector<Buffer> bufs;
+  bufs.reserve(kJobs + 1);
+  for (int j = 0; j <= kJobs; ++j) {
+    auto b = Buffer::create(bt, bytes);
+    ASSERT_TRUE(b.has_value());
+    bufs.push_back(std::move(*b));
+  }
+  std::vector<float> seed(kN, 10.0f);
+  ASSERT_TRUE(bufs[0].set(0, seed.data(), bytes).ok());  // b0 = 10
+
+  SaxpyParams params[kJobs];
+  void* bufptrs[kJobs][3];
+  ScalarField fields[kJobs];
+  BatchItem items[kJobs];
+  for (int j = 0; j < kJobs; ++j) {
+    params[j] = SaxpyParams{kN, 1.0f, 0.0f, float(j + 1)};  // b[j+1] = b[j] + (j+1)
+    bufptrs[j][0] = bufs[j].device_ptr();       // x = b[j]  (shared read)
+    bufptrs[j][1] = bufs[j].device_ptr();       // y = b[j]  (beta=0 so value irrelevant)
+    bufptrs[j][2] = bufs[j + 1].device_ptr();   // o = b[j+1] (this job's write, next job's read)
+    fields[j] = ScalarField{0, sizeof(SaxpyParams)};
+    items[j].kernel = &*k;
+    items[j].config = LaunchConfig{};
+    items[j].config.grid = {blocks_for(kN, 256), 1, 1};
+    items[j].args = KernelArgs{bufptrs[j], 3, &params[j], sizeof(SaxpyParams), &fields[j], 1};
+  }
+
+  ASSERT_TRUE(launch_batch(*s, items, kJobs).ok());
+  ASSERT_TRUE(s->sync().ok());
+
+  // b[kJobs] = 10 + sum(1..kJobs) = 10 + 10 = 20 for kJobs=4. Every stage must have been
+  // ordered; a dropped barrier would leave a downstream buffer reading a pre-write value.
+  float expect = 10.0f;
+  for (int j = 0; j < kJobs; ++j) expect += float(j + 1);
+  std::vector<float> ho(kN, -1.0f);
+  ASSERT_TRUE(bufs[kJobs].get(0, ho.data(), bytes).ok());
+  for (int i = 0; i < kN; ++i) ASSERT_NEAR(ho[i], expect, 1e-2f) << "at " << i;
+}
+
 // ---- Vulkan CONTRACT death tests (vulkan_backend.cc:561/665/666/714) ----------
 // The Vulkan backend's launch contracts are HYLE_FATAL_ASSERTs (caller bugs, not
 // recoverable Status). These prove they fire. All GPU-skip if no Vulkan device.

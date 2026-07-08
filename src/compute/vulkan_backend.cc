@@ -952,13 +952,15 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
                     cfg->grid.z <= ctx().max_wg_count[2]);
   vkCmdDispatch(cb, cfg->grid.x, cfg->grid.y, cfg->grid.z);
   // Barrier (#11): make the compute writes to the storage buffers VISIBLE to a subsequent
-  // host read (buffer_get maps the memory) or a following dispatch. ONE global memory
-  // barrier (shaderWrite -> shaderRead|hostRead) covers all buffers -- precise per-buffer
-  // barriers are an optimization for multi-kernel graphs (not this single dispatch). This
+  // host read (buffer_get maps the memory), a transfer (staging D2H), or a following
+  // dispatch (read OR write -- SHADER_WRITE in dst orders a following submit's WAW on the
+  // same buffer, 红队 D). ONE global memory barrier covers all buffers -- precise per-buffer
+  // barriers matter for the multi-kernel batch path (above), not this single dispatch. This
   // replaces the skeleton's "rely on vkQueueWaitIdle + coherent memory" shortcut.
   VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
   mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
-  mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+  mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT |
+                     VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
   vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
                        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT |
                        VK_PIPELINE_STAGE_TRANSFER_BIT,
@@ -1034,6 +1036,20 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
 
   std::vector<VkDescriptorPool> pools;  // one per item with buffers; freed on retire
   pools.reserve(count);
+  // #11/#12 precise barriers: kompute inserts an unconditional barrier after EVERY dispatch
+  // (over-serialization -- independent kernels can't overlap). HYLE inserts an inter-dispatch
+  // barrier ONLY when an item touches a buffer a prior un-barriered item touched (a real
+  // RAW/WAW/WAR hazard). Disjoint dispatches run with NO barrier so the GPU can overlap them.
+  // `pending` = buffers touched since the last barrier (cleared when one is inserted, since a
+  // barrier resolves all prior hazards). The ABI can't tell read from write, so any shared
+  // buffer is treated as a hazard.
+  std::vector<void*> pending;
+  auto touches_pending = [&](const KernelArgs& a) noexcept {
+    for (uint32_t b = 0; b < a.buffer_count; ++b)
+      for (void* p : pending)
+        if (a.buffers[b] == p) return true;
+    return false;
+  };
   for (unsigned i = 0; i < count; ++i) {
     auto* k = static_cast<VkKernel*>(const_cast<void*>(modules[i]));
     const KernelArgs& a = args_arr[i];
@@ -1072,6 +1088,18 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
       }
       vkUpdateDescriptorSets(dev, a.buffer_count, w.data(), 0, nullptr);
     }
+    // #11/#12: barrier BEFORE this dispatch, ONLY if it shares a buffer with an un-barriered
+    // prior dispatch (real hazard). Disjoint items skip it -> the GPU can overlap them. dst
+    // includes SHADER_WRITE so a WAW/WAR hazard (this kernel writes a buffer a prior one
+    // read/wrote) is ordered too (红队 D: the old barrier's dst omitted SHADER_WRITE).
+    if (touches_pending(a)) {
+      VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+      mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+      mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+      vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                           VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 1, &mb, 0, nullptr, 0, nullptr);
+      pending.clear();  // a barrier resolves all prior hazards
+    }
     vkCmdBindPipeline(cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->pipeline);
     if (a.buffer_count)
       vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->layout, 0, 1, &dset, 0, nullptr);
@@ -1081,8 +1109,12 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
                       configs[i].grid.y <= ctx().max_wg_count[1] &&
                       configs[i].grid.z <= ctx().max_wg_count[2]);  // #20 device limit
     vkCmdDispatch(cb, configs[i].grid.x, configs[i].grid.y, configs[i].grid.z);
-    // Barrier between dispatches: item i+1 may read item i's writes (dependent chain);
-    // independent items pay a cheap shader-shader barrier. Last item's writes -> host.
+    for (uint32_t b = 0; b < a.buffer_count; ++b) pending.push_back(a.buffers[b]);  // hazard set
+  }
+  // Terminal barrier (once): make ALL dispatch writes visible to a host readback (buffer_get
+  // maps memory), a transfer (staging D2H), or a following submit's kernel. Only the FINAL
+  // visibility needs host/transfer scope, so it's hoisted out of the per-dispatch loop.
+  {
     VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
     mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
     mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
