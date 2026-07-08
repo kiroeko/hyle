@@ -117,6 +117,15 @@ class Event {
 // compute-design §4. Move-only (owns a cudaStream_t / host queue). compute-01
 // gives it lifecycle + record + a memcpy op sufficient to make an Event observably
 // transition NotReady->Ready; kernel launch is compute-04.
+//
+// CONCURRENCY CONTRACT (like a CUDA stream): a Stream belongs to ONE execution flow
+// (one fiber / one thread) at a time. record()/launch()/launch_batch()/memcpy on the
+// SAME Stream must NOT be called concurrently from multiple fibers or threads -- the
+// per-stream submission state (command pool + in-flight tracking on the Vulkan backend)
+// is NOT internally locked; concurrent use is a data race + a Vulkan external-sync
+// violation (VkCommandPool). For parallel submission, use ONE Stream PER fiber. Multiple
+// distinct Streams may be used concurrently (their submits are serialized internally at
+// the shared queue). This matches io's "one connection per fiber" model.
 class Stream {
  public:
   Stream() noexcept = default;

@@ -79,6 +79,8 @@ struct VkContext {
                                          // is externally-synchronized (spec) + guards lazy
                                          // per-Kernel pipeline creation against concurrent first-launch.
   VkPipelineCache pipe_cache = VK_NULL_HANDLE;  // shared cache (checklist #1: not per-kernel)
+  uint32_t max_push = 0;                  // maxPushConstantsSize (checklist #4 device limit)
+  uint32_t max_wg_count[3] = {0, 0, 0};   // maxComputeWorkGroupCount x/y/z (#20 clamp guard)
   char dev_name[256] = "vulkan";
 
   VkContext() noexcept { init(); }
@@ -169,6 +171,15 @@ struct VkContext {
 
     VkPipelineCacheCreateInfo pcci{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
     vkCreatePipelineCache(device, &pcci, nullptr, &pipe_cache);  // checklist #1
+
+    // Cache the device limits the launch path validates against (checklist #4 push size,
+    // #20 workgroup count) -- read once here, not per-launch.
+    VkPhysicalDeviceProperties props;
+    vkGetPhysicalDeviceProperties(phys, &props);
+    max_push = props.limits.maxPushConstantsSize;
+    max_wg_count[0] = props.limits.maxComputeWorkGroupCount[0];
+    max_wg_count[1] = props.limits.maxComputeWorkGroupCount[1];
+    max_wg_count[2] = props.limits.maxComputeWorkGroupCount[2];
     ok = true;
   }
 };
@@ -313,17 +324,29 @@ void vk_event_record(void* stream_native, void* event_native) noexcept {
   VkFence ev = static_cast<VkFence>(event_native);
   VkDevice dev = ctx().device;
   vkResetFences(dev, 1, &ev);
+  // Build the marker command buffer. If ANY step fails we must STILL signal `ev` (we
+  // already reset it above) -- otherwise the GpuPoller polls it forever and the awaiting
+  // fiber hangs (gpu_await.h contract: a recorded event ALWAYS completes). So on failure
+  // we fall through to a 0-command-buffer submit that just signals the fence: the fiber
+  // resumes and observes completion via its own path, no silent hang.
   VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
   cbai.commandPool = s->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
   VkCommandBuffer cb = VK_NULL_HANDLE;
-  if (vkAllocateCommandBuffers(dev, &cbai, &cb) != VK_SUCCESS) return;
-  VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-  bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-  vkBeginCommandBuffer(cb, &bg);
-  vkEndCommandBuffer(cb);  // empty: just a fence marker after prior stream work
+  bool have_cb = vkAllocateCommandBuffers(dev, &cbai, &cb) == VK_SUCCESS;
+  if (have_cb) {
+    VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cb, &bg);
+    vkEndCommandBuffer(cb);  // empty: just a fence marker after prior stream work
+  }
   VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-  si.commandBufferCount = 1; si.pCommandBuffers = &cb;
+  si.commandBufferCount = have_cb ? 1u : 0u;
+  si.pCommandBuffers = have_cb ? &cb : nullptr;
   std::lock_guard<std::mutex> lk(ctx().submit_mtx);
+  // Even the empty (have_cb==false) submit correctly signals `ev` AFTER all prior stream
+  // launches: those were separate submits already queued, and this marker executes after
+  // them in VkQueue order -- so readback still sees completed data. A submit failure here
+  // is device-lost class (fence can't signal); nothing short of that leaves ev unsignalled.
   vkQueueSubmit(ctx().queue, 1, &si, ev);
   // cb NOT tracked in inflight (see LIFETIME note) -- the command pool reclaims it.
 }
@@ -532,6 +555,10 @@ Status build_pipeline(VkKernel* k, uint32_t buffer_count, uint32_t push_size) no
   // we waited, use its result (no rebuild -> no leak / no torn k->pipeline write).
   std::lock_guard<std::mutex> lk(ctx().build_mtx);
   if (k->pipeline != VK_NULL_HANDLE) return Status();  // already built by a racing caller
+  // Push-constant blob must fit the device limit (checklist #4). Exceeding it is a caller
+  // contract violation (a kernel with too many scalars should use a uniform buffer) ->
+  // fail-fast, not a silent vkCreatePipelineLayout failure.
+  HYLE_FATAL_ASSERT(push_size <= ctx().max_push);
   // Descriptor set layout: `buffer_count` storage buffers at bindings 0..N-1 (checklist:
   // buffer args -> descriptor slots, positional).
   std::vector<VkDescriptorSetLayoutBinding> binds(buffer_count);
@@ -541,7 +568,7 @@ Status build_pipeline(VkKernel* k, uint32_t buffer_count, uint32_t push_size) no
   dlci.bindingCount = buffer_count;
   dlci.pBindings = buffer_count ? binds.data() : nullptr;
   VkResult r = vkCreateDescriptorSetLayout(ctx().device, &dlci, nullptr, &k->dsl);
-  if (r != VK_SUCCESS) return from_vk(r, "vkCreateDescriptorSetLayout");
+  if (r != VK_SUCCESS) { k->dsl = VK_NULL_HANDLE; return from_vk(r, "vkCreateDescriptorSetLayout"); }
 
   VkPushConstantRange pcr{VK_SHADER_STAGE_COMPUTE_BIT, 0, push_size};
   VkPipelineLayoutCreateInfo plci{VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO};
@@ -549,7 +576,13 @@ Status build_pipeline(VkKernel* k, uint32_t buffer_count, uint32_t push_size) no
   plci.pSetLayouts = &k->dsl;
   if (push_size) { plci.pushConstantRangeCount = 1; plci.pPushConstantRanges = &pcr; }
   r = vkCreatePipelineLayout(ctx().device, &plci, nullptr, &k->layout);
-  if (r != VK_SUCCESS) return from_vk(r, "vkCreatePipelineLayout");
+  if (r != VK_SUCCESS) {
+    // Roll back the dsl we just built: leaving it set means the NEXT launch re-enters
+    // build_pipeline and OVERWRITES k->dsl (leaking this handle, repeatedly on retry).
+    vkDestroyDescriptorSetLayout(ctx().device, k->dsl, nullptr);
+    k->dsl = VK_NULL_HANDLE; k->layout = VK_NULL_HANDLE;
+    return from_vk(r, "vkCreatePipelineLayout");
+  }
 
   VkComputePipelineCreateInfo cpci{VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO};
   cpci.stage = {VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO};
@@ -558,7 +591,13 @@ Status build_pipeline(VkKernel* k, uint32_t buffer_count, uint32_t push_size) no
   cpci.stage.pName = "main";
   cpci.layout = k->layout;
   r = vkCreateComputePipelines(ctx().device, ctx().pipe_cache, 1, &cpci, nullptr, &k->pipeline);
-  if (r != VK_SUCCESS) return from_vk(r, "vkCreateComputePipelines");
+  if (r != VK_SUCCESS) {
+    // Roll back dsl + layout (same reason: a retry would overwrite + leak them).
+    vkDestroyPipelineLayout(ctx().device, k->layout, nullptr);
+    vkDestroyDescriptorSetLayout(ctx().device, k->dsl, nullptr);
+    k->dsl = VK_NULL_HANDLE; k->layout = VK_NULL_HANDLE; k->pipeline = VK_NULL_HANDLE;
+    return from_vk(r, "vkCreateComputePipelines");
+  }
   k->buffer_count = buffer_count;
   k->push_size = push_size;
   return Status();
@@ -619,7 +658,12 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
     Status s = build_pipeline(k, args->buffer_count, args->scalar_bytes);
     if (!s.ok()) return s;
   }
-  HYLE_FATAL_ASSERT(k->buffer_count == args->buffer_count);  // same kernel, same arg shape
+  // Same kernel => same arg SHAPE. The pipeline layout was built (once, lazily) from the
+  // FIRST launch's buffer_count + push_size and is frozen; relaunching with a different
+  // shape would push past the layout's push-constant range (UB) or mis-bind descriptors.
+  // Contract violation -> fail-fast (caller bug, not a recoverable external failure).
+  HYLE_FATAL_ASSERT(k->buffer_count == args->buffer_count);
+  HYLE_FATAL_ASSERT(k->push_size == args->scalar_bytes);
 
   // Descriptor pool + set for this launch's buffers (checklist #17/#18: pool sized to
   // buffers, ONE batched updateDescriptorSets). One-shot pool freed at end.
@@ -633,7 +677,9 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
     if (r != VK_SUCCESS) return from_vk(r, "vkCreateDescriptorPool");
     VkDescriptorSetAllocateInfo dsai{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
     dsai.descriptorPool = dpool; dsai.descriptorSetCount = 1; dsai.pSetLayouts = &k->dsl;
-    vkAllocateDescriptorSets(dev, &dsai, &dset);
+    r = vkAllocateDescriptorSets(dev, &dsai, &dset);
+    if (r != VK_SUCCESS) { vkDestroyDescriptorPool(dev, dpool, nullptr);
+                           return from_vk(r, "vkAllocateDescriptorSets"); }
     // Batched update (checklist #18): one call for all bindings.
     std::vector<VkDescriptorBufferInfo> dbi(args->buffer_count);
     std::vector<VkWriteDescriptorSet> w(args->buffer_count);
@@ -662,6 +708,11 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
     vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->layout, 0, 1, &dset, 0, nullptr);
   if (args->scalar_bytes)
     vkCmdPushConstants(cb, k->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, args->scalar_bytes, args->scalars);
+  // Grid = workgroup COUNT (checklist #20: local_size is in the shader, group=ceil(N/ls)).
+  // Guard the device limit -- exceeding maxComputeWorkGroupCount is a caller bug (kompute's
+  // no-clamp trap); fail-fast rather than a silent driver error.
+  HYLE_FATAL_ASSERT(cfg->grid.x <= ctx().max_wg_count[0] && cfg->grid.y <= ctx().max_wg_count[1] &&
+                    cfg->grid.z <= ctx().max_wg_count[2]);
   vkCmdDispatch(cb, cfg->grid.x, cfg->grid.y, cfg->grid.z);
   // Barrier (#11): make the compute writes to the storage buffers VISIBLE to a subsequent
   // host read (buffer_get maps the memory) or a following dispatch. ONE global memory
@@ -710,9 +761,9 @@ Status vk_kernel_launch(void* stream_native, void* module, void* /*func*/,
 // command buffer + ONE submit (vs N launches = N submits+fences). Each item gets its own
 // descriptor pool (freed together on retire); a barrier between dispatches makes each
 // kernel's writes visible to the next (safe for dependent chains; independent kernels pay
-// a cheap barrier). One fence for the whole batch -> one in-flight entry, but the per-item
-// descriptor pools must all be freed, so we retire them via a small owning wrapper: park
-// each pool as its own InFlight sharing the batch fence (owns_fence only on the last).
+// a cheap barrier). ONE fence for the whole batch owned by a SINGLE InFlight entry that
+// also holds the cb + ALL the per-item descriptor pools (dpools vector); retire() frees
+// them together when that one fence signals -- no shared-fence double-free.
 Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
                               const void* const* funcs, const LaunchConfig* configs,
                               const KernelArgs* args_arr, unsigned count) noexcept {
@@ -721,13 +772,18 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
   VkDevice dev = ctx().device;
   retire(stream, /*force=*/false);
 
-  // Build pipelines (lazy) for every item up front.
+  // Build pipelines (lazy) for every item up front. Same kernel => same arg shape: whether
+  // freshly built or reused (pipeline already set), assert buffer_count + push_size match the
+  // frozen layout -- a shape mismatch would mis-bind descriptors / overflow the push range
+  // (caller bug -> fail-fast, same contract as the single-launch path).
   for (unsigned i = 0; i < count; ++i) {
     auto* k = static_cast<VkKernel*>(const_cast<void*>(modules[i]));
     if (k->pipeline == VK_NULL_HANDLE) {
       Status s = build_pipeline(k, args_arr[i].buffer_count, args_arr[i].scalar_bytes);
       if (!s.ok()) return s;
     }
+    HYLE_FATAL_ASSERT(k->buffer_count == args_arr[i].buffer_count);
+    HYLE_FATAL_ASSERT(k->push_size == args_arr[i].scalar_bytes);
   }
   // One command buffer for the whole batch.
   VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
@@ -761,7 +817,13 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
       pools.push_back(dpool);
       VkDescriptorSetAllocateInfo dsai{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
       dsai.descriptorPool = dpool; dsai.descriptorSetCount = 1; dsai.pSetLayouts = &k->dsl;
-      vkAllocateDescriptorSets(dev, &dsai, &dset);
+      if (vkAllocateDescriptorSets(dev, &dsai, &dset) != VK_SUCCESS) {
+        // Same fail-fast as the pool-alloc failure above (dpool is already in `pools`).
+        vkEndCommandBuffer(cb);
+        vkFreeCommandBuffers(dev, stream->pool, 1, &cb);
+        for (auto p : pools) vkDestroyDescriptorPool(dev, p, nullptr);
+        return Status::ResourceExhausted("vk batch: descriptor set alloc failed");
+      }
       std::vector<VkDescriptorBufferInfo> dbi(a.buffer_count);
       std::vector<VkWriteDescriptorSet> w(a.buffer_count);
       for (uint32_t b = 0; b < a.buffer_count; ++b) {
@@ -778,6 +840,9 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
       vkCmdBindDescriptorSets(cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->layout, 0, 1, &dset, 0, nullptr);
     if (a.scalar_bytes)
       vkCmdPushConstants(cb, k->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, a.scalar_bytes, a.scalars);
+    HYLE_FATAL_ASSERT(configs[i].grid.x <= ctx().max_wg_count[0] &&
+                      configs[i].grid.y <= ctx().max_wg_count[1] &&
+                      configs[i].grid.z <= ctx().max_wg_count[2]);  // #20 device limit
     vkCmdDispatch(cb, configs[i].grid.x, configs[i].grid.y, configs[i].grid.z);
     // Barrier between dispatches: item i+1 may read item i's writes (dependent chain);
     // independent items pay a cheap shader-shader barrier. Last item's writes -> host.

@@ -123,6 +123,18 @@ class Kernel {
 // launch/config error surfaces as Status (CUDA: cudaGetLastError; Vulkan: submit result).
 // On the host backend, calls the registered HostFn synchronously.
 //
+// ⚠️ CONTRACT (caller bugs -> HYLE_FATAL_ASSERT, not recoverable errors):
+//   - config.grid (workgroup count) must be <= the device's max workgroup count per dim
+//     (Vulkan maxComputeWorkGroupCount / CUDA maxGridSize). grid = ceil(n / block_size);
+//     compute it with blocks_for() and keep block_size within the device's limits.
+//   - the packed scalar blob must be <= the device push-constant limit (Vulkan
+//     maxPushConstantsSize; the typed shell caps at 256 B). A kernel needing more scalars
+//     should pass them via a uniform/storage Buffer, not push constants.
+//   - relaunching the SAME Kernel must keep the SAME arg SHAPE (buffer count + scalar bytes):
+//     the pipeline layout is built once from the first launch and frozen (Vulkan).
+//   - a Stream is single-execution-flow: do not launch on the SAME Stream concurrently from
+//     multiple fibers/threads (see stream.h). Use one Stream per fiber for parallelism.
+//
 // Most callers use the typed `launch(stream, kernel, config, args...)` shell below, which
 // builds KernelArgs at compile time; this raw form is for a caller that already has one.
 HYLE_COMPUTE_API Status launch(Stream& stream, const Kernel& kernel,

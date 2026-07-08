@@ -176,7 +176,8 @@ Manager  ─ vk::Instance / PhysicalDevice / Device / Queue
 ## 线程安全 / 生命周期契约
 
 - **backend/device 建一次持久复用**（同 compute-01/ggml_bridge），析构 free。
-- **每提交独立 command buffer + fence**（fiber 并发下多个在途提交不复用同一 cmdbuf/fence，否则 race——kompute 单 Sequence 单 fence 是串行假设,HYLE 并发要放开）。GpuPoller 管在途 fence（首版合批 = 在途 fence 少,复杂度低）。
+- **⚠️ Stream 单执行流契约（同 CUDA stream / io "一连接一 fiber"）**：一个 Stream 归**一个** fiber/线程,不可多 fiber 并发在**同一** Stream 上 launch/record——per-stream 的 command pool + 在途追踪**无内部锁**,并发用是数据竞争 + VkCommandPool external-sync 违规。并行提交请**每 fiber 一个 Stream**(不同 Stream 的 submit 在共享 VkQueue 处经 submit_mtx 串行化)。契约写进 `stream.h` 的 Stream 类 usage 注释。
+- **每提交独立 command buffer + fence**（同一 Stream 内**顺序**发起的多个在途提交各自独立 cmdbuf/fence,不复用——kompute 单 Sequence 单 fence 是串行假设,HYLE 放开为多个在途）。GpuPoller 管在途 fence（首版合批 = 在途 fence 少,复杂度低）。
 - Vulkan 对象创建/销毁顺序：pipeline→layout→descriptor pool→shader module→command pool→fence→buffer→device→instance（逆序毁）。
 
 ## 验收（B 档最小可信闭环，三平台）
