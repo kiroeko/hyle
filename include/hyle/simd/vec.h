@@ -501,4 +501,34 @@ HYLE_FORCE_INLINE void SafeCopyN(std::size_t num, D d, const TFromD<D>* from, TF
   for (std::size_t i = 0; i < k; ++i) to[i] = from[i];
 }
 
+// ---- complex arithmetic (simd-08 C, generic layer) ----------------------------------
+// Interleaved complex: even lane = real, odd lane = imaginary. Float lanes only. Composes
+// existing DupEven/DupOdd/Reverse2/AddSub/Neg/OddEven -- the standard vectorized complex
+// multiply (FFT butterfly / CAE frequency-domain kernels).
+// ComplexConj(v): negate the imaginary (odd) lanes = OddEven(Neg(v), v).
+template <class V> HYLE_FORCE_INLINE V ComplexConj(V v) noexcept {
+  return OddEven(Neg(v), v);
+}
+// MulComplex(a, b) = (a.re + i a.im)(b.re + i b.im):
+//   re = a.re*b.re - a.im*b.im ; im = a.re*b.im + a.im*b.re
+// Implemented with the classic SIMD form: t1 = DupEven(a)*b (a.re broadcast * b),
+// t2 = DupOdd(a)*Reverse2(b) (a.im broadcast * swapped b), result = AddSub(t1, t2) which does
+// t1-t2 on even (real) lanes, t1+t2 on odd (imag) lanes.
+template <class V> HYLE_FORCE_INLINE V MulComplex(V a, V b) noexcept {
+  const V t1 = Mul(DupEven(a), b);
+  const V t2 = Mul(DupOdd(a), Reverse2(DFromV<V>(), b));
+  return AddSub(t1, t2);
+}
+// MulComplexConj(a, b) = a * conj(b).
+template <class V> HYLE_FORCE_INLINE V MulComplexConj(V a, V b) noexcept {
+  return MulComplex(a, ComplexConj(b));
+}
+// MulComplexAdd(a, b, c) = a*b + c ; MulComplexConjAdd(a, b, c) = a*conj(b) + c.
+template <class V> HYLE_FORCE_INLINE V MulComplexAdd(V a, V b, V c) noexcept {
+  return Add(MulComplex(a, b), c);
+}
+template <class V> HYLE_FORCE_INLINE V MulComplexConjAdd(V a, V b, V c) noexcept {
+  return Add(MulComplexConj(a, b), c);
+}
+
 }  // namespace hyle::simd

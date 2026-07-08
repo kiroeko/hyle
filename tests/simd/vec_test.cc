@@ -501,6 +501,43 @@ TEST(Vec, MathExtSaturatedInt) {
   for (std::size_t i = 0; i < n; ++i) { int e = (static_cast<int>(a.data[i]) * b.data[i] + 0x4000) >> 15; EXPECT_EQ(out2.data[i], static_cast<std::int16_t>(e)) << "q15 i=" << i; }
 }
 
+// ---- C complex arithmetic -----------------------------------------------------------
+TEST(Vec, ComplexArith) {
+  const hs::ScalableTag<float> d;
+  const std::size_t n = hs::Lanes(d);
+  if (n < 2) return;  // need pairs
+  Buf<float> a, b, c, out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<float>(i) - 3.0f; b.data[i] = static_cast<float>(i % 5) + 1.0f; c.data[i] = static_cast<float>(i) * 0.5f; }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data), vc = hs::Load(d, c.data);
+  // ComplexConj: negate odd (imag) lanes.
+  hs::Store(hs::ComplexConj(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], (i%2) ? -a.data[i] : a.data[i]) << "conj i=" << i;
+  // MulComplex: per complex pair (re,im).
+  hs::Store(hs::MulComplex(va, vb), d, out.data);
+  for (std::size_t j = 0; j + 1 < n; j += 2) {
+    float re = a.data[j]*b.data[j] - a.data[j+1]*b.data[j+1];
+    float im = a.data[j]*b.data[j+1] + a.data[j+1]*b.data[j];
+    EXPECT_NEAR(out.data[j], re, 1e-4f) << "mulc re j=" << j;
+    EXPECT_NEAR(out.data[j+1], im, 1e-4f) << "mulc im j=" << j;
+  }
+  // MulComplexAdd = a*b + c.
+  hs::Store(hs::MulComplexAdd(va, vb, vc), d, out.data);
+  for (std::size_t j = 0; j + 1 < n; j += 2) {
+    float re = a.data[j]*b.data[j] - a.data[j+1]*b.data[j+1] + c.data[j];
+    float im = a.data[j]*b.data[j+1] + a.data[j+1]*b.data[j] + c.data[j+1];
+    EXPECT_NEAR(out.data[j], re, 1e-4f) << "mulcadd re j=" << j;
+    EXPECT_NEAR(out.data[j+1], im, 1e-4f) << "mulcadd im j=" << j;
+  }
+  // MulComplexConj: a * conj(b).
+  hs::Store(hs::MulComplexConj(va, vb), d, out.data);
+  for (std::size_t j = 0; j + 1 < n; j += 2) {
+    float re = a.data[j]*b.data[j] + a.data[j+1]*b.data[j+1];
+    float im = a.data[j+1]*b.data[j] - a.data[j]*b.data[j+1];
+    EXPECT_NEAR(out.data[j], re, 1e-4f) << "mulcconj re j=" << j;
+    EXPECT_NEAR(out.data[j+1], im, 1e-4f) << "mulcconj im j=" << j;
+  }
+}
+
 // ---- B-5 compress / gather / masked-memory completion -------------------------------
 TEST(Vec, CompressAndMaskedMemory) {
   const hs::ScalableTag<std::int32_t> d;
