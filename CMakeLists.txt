@@ -89,7 +89,8 @@ list(APPEND CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/cmake")
 include(HyleWarnings)
 include(HyleSanitizers)
 include(HyleModule)
-include(HyleTrace)  # obs-02: HYLE_TRACE gate + optional tracy backend (default OFF)
+include(HyleTrace)    # obs-02: HYLE_TRACE gate + optional tracy backend (default OFF)
+include(HyleTesting)  # HYLE_TESTING gate: test-only interfaces (derived from HYLE_BUILD_TESTS)
 
 # ---- optional OpenSSL (io-08 TLS) -------------------------------------------
 # TLS is an OPTIONAL capability: if OpenSSL is found the io module builds tls.cc

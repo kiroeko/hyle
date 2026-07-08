@@ -144,6 +144,11 @@ function(hyle_add_module name)
     # RAII zone object) agree on whether the hooks are real or empty -- an ODR
     # requirement. OFF (default) => hyle_trace carries nothing, zero cost.
     target_link_libraries(${target} PUBLIC hyle_trace)
+    # HYLE_TESTING gate (same PUBLIC/ODR rationale as hyle_trace): carries the
+    # HYLE_TESTING define when HYLE_BUILD_TESTS is ON so a module's own sources, its
+    # test exe, and consumers all agree on whether test-only members exist. Empty (zero
+    # cost) in a shipped build.
+    target_link_libraries(${target} PUBLIC hyle_testing)
     hyle_apply_warnings(${target})
     hyle_apply_sanitizer(${target})
     # tri-state export macro: HYLE_<NAME>_API
@@ -156,7 +161,7 @@ function(hyle_add_module name)
   else()
     target_include_directories(${target} INTERFACE "${PROJECT_SOURCE_DIR}/include")
     target_compile_features(${target} INTERFACE cxx_std_23)  # header-only modules too
-    target_link_libraries(${target} INTERFACE ${ARG_PUBLIC_DEPS} hyle_trace)
+    target_link_libraries(${target} INTERFACE ${ARG_PUBLIC_DEPS} hyle_trace hyle_testing)
   endif()
 
   add_library(hyle::${name} ALIAS ${target})

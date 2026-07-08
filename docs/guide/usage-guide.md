@@ -51,10 +51,19 @@ HYLE 的构建开关分**两个范畴**，别混（速查：**A 类产品参数 
 |---|---|---|---|
 | `CMAKE_BUILD_TYPE` | `Release` | `Debug`/`Release`/`RelWithDebInfo` | 性能库默认 Release(-O3)；要符号调试用 RelWithDebInfo |
 | `HYLE_STATIC` | `OFF`(SHARED) | `ON`/`OFF` | 要静态链进你的二进制（无 DLL 分发）设 ON |
-| `HYLE_BUILD_TESTS` | `ON` | `ON`/`OFF` | 当依赖集成时设 `OFF`（不编 GoogleTest，省时间） |
+| `HYLE_BUILD_TESTS` | `ON` | `ON`/`OFF` | 当依赖集成时设 `OFF`（不编 GoogleTest，省时间）。**同时派生编译宏 `HYLE_TESTING`**：ON 时注入所有模块库(经 `hyle_testing` INTERFACE target)，解锁 `#if defined(HYLE_TESTING)` 门控的**测试专用接口**；OFF(集成/出厂)时这些接口不编译、出厂库零残留(见下"测试专用接口")|
 | `HYLE_BUILD_BENCH` | `OFF` | `ON`/`OFF` | 只有想跑微基准才开（拉 nanobench）。开了才解锁 B 类门 |
 | `HYLE_WERROR` | `OFF` | `ON`/`OFF` | CI 用 ON；本地开发 OFF |
 | `HYLE_SANITIZER` | `off` | `off`/`asan`/`tsan`/`ubsan` | 查内存/数据竞争/UB 时开（配 Debug/RelWithDebInfo）。**严格校验**：非法值直接 `FATAL_ERROR`（不静默降级为 off）；认编译器原生别名 `address`→asan、`thread`→tsan、`undefined`→ubsan、`none`→off。**MSVC 只支持 asan**（tsan/ubsan 在 MSVC 会 `FATAL_ERROR`，需 GCC/Clang，如 WSL） |
+
+#### 测试专用接口（`HYLE_TESTING` 门控——集成方零残留）
+
+有的接口**只为测试存在**：让测试够到一条生产调用方永不需要的内部路径（例：一个"可控 Event"——先报 N 次 NotReady 再 Ready，让 host 后端无需真 GPU 就能驱动 GpuPoller 的 suspend→wake 全链路）。这类接口**绝不进出厂库**，用 `HYLE_TESTING` 宏门控。
+
+- **宏来源**：`HYLE_TESTING` 由 `HYLE_BUILD_TESTS` 派生（`cmake/HyleTesting.cmake` 的 `hyle_testing` INTERFACE target，每个模块 PUBLIC 链接，同 `hyle_trace` 的 gate 模式）。`HYLE_BUILD_TESTS=ON` → 定义（生产库源码 + 测试 exe + 消费者对头文件的编译一致，无 ODR 隐患）；集成方 `-DHYLE_BUILD_TESTS=OFF` → 不定义，门控块整个消失，**出厂库零 test hook**。
+- **写法契约**（写 test-only 接口必守）：
+  1. 声明**与**定义都包在 `#if defined(HYLE_TESTING)` 里；
+  2. 函数/成员注释**必须以 `TEST-ONLY:` 开头**，说明它为何不是生产 API。一个没有此标注、却只被测试调用的 raw/辅助接口 = bug（要么补此门控 + 注释，要么它其实是该删的遗留、或该补注释的公开 API）。
 
 #### 1.2.1 B 类——开发/基准对照门（集成方忽略）
 
