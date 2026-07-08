@@ -458,9 +458,13 @@ TEST(Vec, MathExtFloat) {
   Buf<float> a, b, out;
   for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<float>(i) + 1.5f; b.data[i] = static_cast<float>(i % 3) + 0.5f; }
   auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
-  // ApproximateReciprocal: within ~2^-11 relative (wide backends use 12-bit approx + no NR).
+  // ApproximateReciprocal: HARDWARE approximation. x86 rcp_ps is ~12-bit (2^-12); ARM vrecpeq
+  // is coarser -- Highway documents "error on Arm is closer to 1%". So the tolerance must admit
+  // the WORST backend (ARM ~1%), not just x86 -- a 1e-3 bound passed on x86 but a real ARM run
+  // (mac M4) measured ~0.06% error exceeding it on some lanes. Use 1% (the op's contract is
+  // "approximate"; exact reciprocal is Div). Same for rsqrt.
   hs::Store(hs::ApproximateReciprocal(va), d, out.data);
-  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], 1.0f / a.data[i], std::abs(1.0f/a.data[i]) * 1e-3f) << "rcp i=" << i;
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], 1.0f / a.data[i], std::abs(1.0f/a.data[i]) * 1e-2f) << "rcp i=" << i;
   hs::Store(hs::ApproximateReciprocalSqrt(va), d, out.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], 1.0f / std::sqrt(a.data[i]), (1.0f/std::sqrt(a.data[i])) * 1e-2f) << "rsqrt i=" << i;
   // GetExponent = floor(log2).
