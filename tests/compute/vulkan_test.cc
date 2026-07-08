@@ -320,6 +320,57 @@ TEST(VulkanCompute, SpecializationConstants) {
   }
 }
 
+// #16 record/replay: record saxpy ONCE, then replay it multiple times, changing the INPUT
+// buffer contents between replays. The recorded command buffer is reused verbatim (same
+// bindings/push/dispatch); each replay must reflect the CURRENT buffer data -- proving the
+// record-once/replay-many semantics AND that data changes flow through without re-recording.
+TEST(VulkanCompute, RecordReplayReflectsBufferChanges) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan device";
+  auto s = Stream::create(vk);
+  ASSERT_TRUE(s.has_value());
+  auto k = load_saxpy(vk);
+  ASSERT_TRUE(k.has_value()) << k.error().message();
+
+  constexpr int kN = 2048;
+  const std::size_t bytes = kN * sizeof(float);
+  BufferType bt = device_buffer_type(vk);
+  auto bx = Buffer::create(bt, bytes);
+  auto by = Buffer::create(bt, bytes);
+  auto bo = Buffer::create(bt, bytes);
+  ASSERT_TRUE(bx.has_value() && by.has_value() && bo.has_value());
+
+  SaxpyParams p{kN, 2.0f, 3.0f, 1.0f};
+  LaunchConfig cfg;
+  cfg.grid = {blocks_for(kN, 256), 1, 1};
+
+  // Record once (bindings to bx/by/bo + push p + dispatch frozen). Buffers must outlive `rl`.
+  void* bufs[3] = {bx->device_ptr(), by->device_ptr(), bo->device_ptr()};
+  ScalarField field{0, sizeof(p)};
+  KernelArgs ka{bufs, 3, &p, sizeof(p), &field, 1};
+  auto rl = RecordedLaunch::record(*s, *k, cfg, ka);
+  ASSERT_TRUE(rl.has_value()) << rl.error().message();
+
+  // Replay 3 times; each iteration writes NEW input data into the SAME buffers and expects the
+  // output to track it (the recording didn't change, only the buffer contents did).
+  for (int iter = 1; iter <= 3; ++iter) {
+    std::vector<float> hx(kN), hy(kN);
+    for (int i = 0; i < kN; ++i) { hx[i] = float(i * iter); hy[i] = float(i + iter); }
+    ASSERT_TRUE(bx->set(0, hx.data(), bytes).ok());
+    ASSERT_TRUE(by->set(0, hy.data(), bytes).ok());
+
+    ASSERT_TRUE(rl->replay(*s).ok()) << "iter " << iter;
+    ASSERT_TRUE(s->sync().ok());
+
+    std::vector<float> ho(kN, -1.0f);
+    ASSERT_TRUE(bo->get(0, ho.data(), bytes).ok());
+    for (int i = 0; i < kN; ++i) {
+      float expect = 2.0f * hx[i] + 3.0f * hy[i] + 1.0f;  // p.alpha/beta/bias from the recording
+      ASSERT_NEAR(ho[i], expect, 1e-1f) << "iter " << iter << " at " << i;
+    }
+  }
+}
+
 // #11/#12 precise barriers: a DEPENDENT chain in one batch. Job j reads job (j-1)'s OUTPUT
 // buffer (o[j-1] == x[j]), so the inter-dispatch hazard barrier MUST fire to order the chain;
 // a wrong "no barrier" would race and read stale/partial data. Complements BatchedSaxpy

@@ -1334,6 +1334,123 @@ Status vk_kernel_launch_batch(void* stream_native, const void* const* modules,
   return Status();
 }
 
+// ---- record / replay (checklist #16) -----------------------------------------
+// A recorded launch owns a command buffer recorded ONCE (bind + push + dispatch + barrier),
+// NOT one-time-submit, so it can be re-submitted many times with no re-recording -- the CPU
+// win for iterative workloads. It also owns the descriptor pool/set the cb references (they
+// must outlive every replay). replay() submits the cb with a fresh fence tracked in the
+// stream's in-flight list, but with cb=NULL + no dpools in that entry so retire() reclaims
+// only the fence (the cb + pool belong to VkRecorded, freed at destroy after a full drain).
+struct VkRecorded {
+  VkCommandBuffer cb = VK_NULL_HANDLE;   // recorded once, replayed many; owned here
+  VkDescriptorPool dpool = VK_NULL_HANDLE;  // owns the descriptor set the cb binds (or NULL)
+};
+
+Status vk_recorded_create(void* stream_native, void* module, void* /*func*/,
+                          const void* config, const KernelArgs* args,
+                          void** out_recorded) noexcept {
+  const auto* cfg = static_cast<const LaunchConfig*>(config);
+  auto* k = static_cast<VkKernel*>(module);
+  auto* stream = static_cast<VkStream*>(stream_native);
+  VkDevice dev = ctx().device;
+  if (k->pipeline == VK_NULL_HANDLE) {
+    Status s = build_pipeline(k, args->buffer_count, args->scalar_bytes);
+    if (!s.ok()) return s;
+  }
+  HYLE_FATAL_ASSERT(k->buffer_count == args->buffer_count);
+  HYLE_FATAL_ASSERT(k->push_size == args->scalar_bytes);
+
+  auto* rec = new (std::nothrow) VkRecorded{};
+  if (rec == nullptr) return Status::ResourceExhausted("vk recorded alloc");
+  VkDescriptorSet dset = VK_NULL_HANDLE;
+  if (args->buffer_count) {
+    VkDescriptorPoolSize ps{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, args->buffer_count};
+    VkDescriptorPoolCreateInfo dpci{VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO};
+    dpci.maxSets = 1; dpci.poolSizeCount = 1; dpci.pPoolSizes = &ps;
+    VkResult r = vkCreateDescriptorPool(dev, &dpci, nullptr, &rec->dpool);
+    if (r != VK_SUCCESS) { delete rec; return from_vk(r, "vkCreateDescriptorPool(recorded)"); }
+    VkDescriptorSetAllocateInfo dsai{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    dsai.descriptorPool = rec->dpool; dsai.descriptorSetCount = 1; dsai.pSetLayouts = &k->dsl;
+    r = vkAllocateDescriptorSets(dev, &dsai, &dset);
+    if (r != VK_SUCCESS) { vkDestroyDescriptorPool(dev, rec->dpool, nullptr); delete rec;
+                           return from_vk(r, "vkAllocateDescriptorSets(recorded)"); }
+    std::vector<VkDescriptorBufferInfo> dbi(args->buffer_count);
+    std::vector<VkWriteDescriptorSet> w(args->buffer_count);
+    for (uint32_t i = 0; i < args->buffer_count; ++i) {
+      auto* m = static_cast<VkMem*>(args->buffers[i]);
+      dbi[i] = {m->buf, 0, VK_WHOLE_SIZE};
+      w[i] = {VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET};
+      w[i].dstSet = dset; w[i].dstBinding = i; w[i].descriptorCount = 1;
+      w[i].descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER; w[i].pBufferInfo = &dbi[i];
+    }
+    vkUpdateDescriptorSets(dev, args->buffer_count, w.data(), 0, nullptr);
+  }
+  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  cbai.commandPool = stream->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
+  VkResult r = vkAllocateCommandBuffers(dev, &cbai, &rec->cb);
+  if (r != VK_SUCCESS) { if (rec->dpool) vkDestroyDescriptorPool(dev, rec->dpool, nullptr);
+                         delete rec; return from_vk(r, "vkAllocateCommandBuffers(recorded)"); }
+  // NO ONE_TIME_SUBMIT: the cb is replayed repeatedly (checklist #14/#16 -- the pool has
+  // RESET_COMMAND_BUFFER_BIT but we never reset; the recording is immutable + reused as-is).
+  VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  vkBeginCommandBuffer(rec->cb, &bg);
+  vkCmdBindPipeline(rec->cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->pipeline);
+  if (args->buffer_count)
+    vkCmdBindDescriptorSets(rec->cb, VK_PIPELINE_BIND_POINT_COMPUTE, k->layout, 0, 1, &dset, 0, nullptr);
+  if (args->scalar_bytes)
+    vkCmdPushConstants(rec->cb, k->layout, VK_SHADER_STAGE_COMPUTE_BIT, 0, args->scalar_bytes, args->scalars);
+  HYLE_FATAL_ASSERT(cfg->grid.x <= ctx().max_wg_count[0] && cfg->grid.y <= ctx().max_wg_count[1] &&
+                    cfg->grid.z <= ctx().max_wg_count[2]);
+  vkCmdDispatch(rec->cb, cfg->grid.x, cfg->grid.y, cfg->grid.z);
+  // Same terminal barrier as the single launch: writes visible to host read / next dispatch.
+  VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+  mb.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+  mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT |
+                     VK_ACCESS_HOST_READ_BIT | VK_ACCESS_TRANSFER_READ_BIT;
+  vkCmdPipelineBarrier(rec->cb, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                       VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT |
+                       VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 1, &mb, 0, nullptr, 0, nullptr);
+  vkEndCommandBuffer(rec->cb);
+  *out_recorded = rec;
+  return Status();
+}
+
+Status vk_recorded_replay(void* stream_native, void* recorded) noexcept {
+  auto* stream = static_cast<VkStream*>(stream_native);
+  auto* rec = static_cast<VkRecorded*>(recorded);
+  VkDevice dev = ctx().device;
+  retire(stream, /*force=*/false);  // reclaim prior replays' fences
+  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  VkFence fence = VK_NULL_HANDLE;
+  VkResult r = vkCreateFence(dev, &fci, nullptr, &fence);
+  if (r != VK_SUCCESS) return from_vk(r, "vkCreateFence(replay)");
+  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  si.commandBufferCount = 1; si.pCommandBuffers = &rec->cb;
+  {
+    std::lock_guard<std::mutex> lk(ctx().submit_mtx);
+    r = vkQueueSubmit(ctx().queue, 1, &si, fence);
+  }
+  if (r != VK_SUCCESS) { vkDestroyFence(dev, fence, nullptr); return from_vk(r, "vkQueueSubmit(replay)"); }
+  // Track ONLY the fence: cb=NULL + no dpools so retire() frees the fence but NOT the cb /
+  // pool (those belong to VkRecorded, reused across replays, freed at recorded_destroy).
+  InFlight rf; rf.fence = fence; rf.cb = VK_NULL_HANDLE; rf.owns_fence = true;
+  stream->inflight.push_back(std::move(rf));
+  return Status();
+}
+
+void vk_recorded_destroy(void* stream_native, void* recorded) noexcept {
+  auto* stream = static_cast<VkStream*>(stream_native);
+  auto* rec = static_cast<VkRecorded*>(recorded);
+  if (rec == nullptr) return;
+  VkDevice dev = ctx().device;
+  // Drain every outstanding replay (their fences are in the stream's in-flight list) so the GPU
+  // is done with the cb before we free it -- else vkFreeCommandBuffers would race the GPU.
+  retire(stream, /*force=*/true);
+  if (rec->cb != VK_NULL_HANDLE) vkFreeCommandBuffers(dev, stream->pool, 1, &rec->cb);
+  if (rec->dpool != VK_NULL_HANDLE) vkDestroyDescriptorPool(dev, rec->dpool, nullptr);
+  delete rec;
+}
+
 constexpr ComputeBackend kVulkanBackend = {
     /*name=*/"vulkan",
     /*device_count=*/vk_device_count,
@@ -1375,6 +1492,9 @@ constexpr ComputeBackend kVulkanBackend = {
     /*event_query_timing=*/vk_event_query_timing,
     /*event_sync_timing=*/vk_event_sync_timing,
     /*event_elapsed_ns=*/vk_event_elapsed_ns,
+    /*recorded_create=*/vk_recorded_create,
+    /*recorded_replay=*/vk_recorded_replay,
+    /*recorded_destroy=*/vk_recorded_destroy,
 };
 
 }  // namespace

@@ -193,6 +193,29 @@ struct ComputeBackend {
   // GPU nanoseconds between two completed timing events. Returns the elapsed ns in *out_ns.
   Status (*event_elapsed_ns)(void* start_native, void* stop_native,
                              std::uint64_t* out_ns) noexcept;
+
+  // ---- record / replay (compute-06 checklist #16) ---------------------------
+  // Record a FIXED (kernel, config, args) into a reusable command buffer ONCE, then submit
+  // it many times without re-recording -- the win for iterative workloads (a solver running
+  // the same stencil/SpMV thousands of times, per-frame passes) where the recorded commands
+  // are identical every iteration and only the BUFFER CONTENTS change. This is kompute's
+  // Sequence(record-once / eval-many) model. The recording freezes buffer bindings + push
+  // constants + dispatch dims; replay reuses them verbatim, so changing a push value or
+  // swapping a buffer requires a NEW recording (checklist #5). Data changes by writing new
+  // contents into the SAME buffers between replays (the GPU reads their current contents).
+  //
+  // recorded_create: record the cb, returning an opaque handle in *out_recorded. On Vulkan
+  // the handle owns a non-ONE_TIME_SUBMIT cb + its descriptor pool/set (they must outlive
+  // every replay). recorded_replay: submit the recorded cb once (async, like launch -- the
+  // caller awaits via the stream). recorded_destroy: drain outstanding replays + free the cb.
+  // NULL slots (host: recording gives no benefit -- inline execution) -> the public layer
+  // falls back to a plain launch per replay (same semantics, no CPU saving). Must be recorded
+  // and replayed on the SAME stream (the cb belongs to that stream's command pool).
+  Status (*recorded_create)(void* stream_native, void* module, void* func,
+                            const void* config, const KernelArgs* args,
+                            void** out_recorded) noexcept;
+  Status (*recorded_replay)(void* stream_native, void* recorded) noexcept;
+  void (*recorded_destroy)(void* stream_native, void* recorded) noexcept;
 };
 
 // Each backend exposes its singleton vtable through one of these. host is ALWAYS

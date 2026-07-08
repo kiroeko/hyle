@@ -126,6 +126,7 @@ class Kernel {
                                         const KernelArgs&) noexcept;
   friend HYLE_COMPUTE_API Status launch_batch(Stream&, const struct BatchItem*,
                                               unsigned) noexcept;
+  friend class RecordedLaunch;  // record() reads module_/func_/vt_ (same as launch)
   const ComputeBackend* vt_ = nullptr;  // backend that owns the handles (null=invalid)
   void* module_ = nullptr;              // CUmodule (CUDA) / unused (host)
   void* func_ = nullptr;                // CUfunction (CUDA) / HostFn (host)
@@ -181,6 +182,51 @@ struct BatchItem {
 };
 HYLE_COMPUTE_API Status launch_batch(Stream& stream, const BatchItem* items,
                                      unsigned count) noexcept;
+
+// ---- RECORD / REPLAY (compute-06 checklist #16) ------------------------------
+// For an ITERATIVE workload that runs the SAME (kernel, config, args) many times -- an
+// iterative solver applying one stencil/SpMV thousands of times, a per-frame compute pass --
+// the recorded GPU commands are identical every iteration; only the BUFFER CONTENTS change.
+// RecordedLaunch records those commands ONCE (bindings + push constants + dispatch dims frozen)
+// and replays them with no re-recording, saving that per-iteration CPU (kompute's record-once /
+// eval-many). On Vulkan this reuses one command buffer across submits; on CUDA/host it falls
+// back to a plain launch per replay (same result, no CPU saving -- their submit has no record
+// cost). Move-only; owns the recorded command buffer + descriptor pool until destroyed.
+//
+// CONTRACT:
+//   - Record AND replay on the SAME Stream (the command buffer belongs to its pool).
+//   - The Kernel and the Buffers referenced by `args` must outlive the RecordedLaunch (their
+//     handles are frozen into the recording). To feed new data, write into those SAME Buffers
+//     between replays; to change a push-constant value or SWAP a buffer, make a NEW recording.
+//   - Each replay is ASYNC (like launch): await completion via `co_await StreamComplete` or
+//     stream.sync() before reading results / before the next replay if it depends on them.
+class RecordedLaunch {
+ public:
+  RecordedLaunch() noexcept = default;
+  HYLE_DISABLE_COPY(RecordedLaunch);
+  HYLE_COMPUTE_API RecordedLaunch(RecordedLaunch&& o) noexcept;
+  HYLE_COMPUTE_API RecordedLaunch& operator=(RecordedLaunch&& o) noexcept;
+  HYLE_COMPUTE_API ~RecordedLaunch();
+
+  // Record `kernel` with `config` + `args` on `stream` into a reusable command buffer. The
+  // pipeline is built (once, lazily) if needed. Returns Unimplemented on a backend without a
+  // recording path (host) so the caller can fall back to launch(); the typed replay handles
+  // that transparently. `args` arrays are read during recording only (the backend copies what
+  // it needs); the referenced Buffers must stay alive for the RecordedLaunch's lifetime.
+  HYLE_COMPUTE_API static Result<RecordedLaunch> record(Stream& stream, const Kernel& kernel,
+                                                        const LaunchConfig& config,
+                                                        const KernelArgs& args) noexcept;
+
+  // Submit the recorded commands once (async). Call repeatedly for each iteration.
+  HYLE_COMPUTE_API Status replay(Stream& stream) noexcept;
+
+  bool valid() const noexcept { return vt_ != nullptr; }
+
+ private:
+  const ComputeBackend* vt_ = nullptr;  // backend that owns `recorded_` (null = invalid)
+  void* recorded_ = nullptr;            // backend recording handle (VkRecorded* / opaque)
+  void* stream_ = nullptr;              // the stream it was recorded on (destroy/replay target)
+};
 
 // ---- TYPED SHELL (header-only, compile-time, zero heap) ----------------------
 // The ergonomic launch: pass kernel arguments DIRECTLY, mixed, like calling the kernel --

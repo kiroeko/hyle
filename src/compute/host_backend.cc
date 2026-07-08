@@ -312,6 +312,11 @@ constexpr ComputeBackend kHostBackend = {
     /*event_query_timing=*/host_event_query,       // inline: always Ready
     /*event_sync_timing=*/host_event_sync,         // inline: no-op
     /*event_elapsed_ns=*/host_event_elapsed_ns,
+    // record/replay (#16): NULL -> Unimplemented. The host backend runs kernels inline at
+    // launch; there is no command buffer to record or resubmit, so recording gives nothing.
+    /*recorded_create=*/nullptr,
+    /*recorded_replay=*/nullptr,
+    /*recorded_destroy=*/nullptr,
 };
 
 }  // namespace

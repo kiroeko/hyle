@@ -663,4 +663,57 @@ Status launch_batch(Stream& stream, const BatchItem* items, unsigned count) noex
   return stream.vt_->kernel_launch_batch(stream.native_, modules, funcs, configs, args, count);
 }
 
+// ---- RecordedLaunch (compute-06 #16) ----------------------------------------
+
+RecordedLaunch::RecordedLaunch(RecordedLaunch&& o) noexcept
+    : vt_(o.vt_), recorded_(o.recorded_), stream_(o.stream_) {
+  o.vt_ = nullptr;
+  o.recorded_ = nullptr;
+  o.stream_ = nullptr;
+}
+
+RecordedLaunch& RecordedLaunch::operator=(RecordedLaunch&& o) noexcept {
+  if (this != &o) {
+    if (vt_ != nullptr) vt_->recorded_destroy(stream_, recorded_);
+    vt_ = o.vt_;
+    recorded_ = o.recorded_;
+    stream_ = o.stream_;
+    o.vt_ = nullptr;
+    o.recorded_ = nullptr;
+    o.stream_ = nullptr;
+  }
+  return *this;
+}
+
+RecordedLaunch::~RecordedLaunch() {
+  if (vt_ != nullptr) vt_->recorded_destroy(stream_, recorded_);
+}
+
+Result<RecordedLaunch> RecordedLaunch::record(Stream& stream, const Kernel& kernel,
+                                              const LaunchConfig& config,
+                                              const KernelArgs& args) noexcept {
+  HYLE_FATAL_ASSERT(stream.vt_ != nullptr && kernel.vt_ != nullptr);
+  HYLE_FATAL_ASSERT(stream.vt_ == kernel.vt_);  // same backend as launch
+  // A backend without a recording path (host: inline execution, recording gives nothing) has
+  // a null slot -> Unimplemented, so the caller can fall back to launch().
+  if (stream.vt_->recorded_create == nullptr)
+    return std::unexpected(Status::Unimplemented("compute: backend has no record/replay"));
+  void* rec = nullptr;
+  Status st = stream.vt_->recorded_create(stream.native_, kernel.module_, kernel.func_,
+                                          &config, &args, &rec);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  RecordedLaunch r;
+  r.vt_ = stream.vt_;
+  r.recorded_ = rec;
+  r.stream_ = stream.native_;
+  return r;
+}
+
+Status RecordedLaunch::replay(Stream& stream) noexcept {
+  HYLE_FATAL_ASSERT(vt_ != nullptr);
+  // Must replay on the SAME stream it was recorded on (the cb belongs to that pool).
+  HYLE_FATAL_ASSERT(stream.vt_ == vt_ && stream.native_ == stream_);
+  return vt_->recorded_replay(stream.native_, recorded_);
+}
+
 }  // namespace hyle::compute

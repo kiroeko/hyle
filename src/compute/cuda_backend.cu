@@ -844,6 +844,12 @@ constexpr ComputeBackend kCudaBackend = {
     /*event_query_timing=*/cuda_event_query,       // same cudaEventQuery
     /*event_sync_timing=*/cuda_event_sync,         // same cudaEventSynchronize
     /*event_elapsed_ns=*/cuda_event_elapsed_ns,
+    // record/replay (#16): NULL -> Unimplemented. A CUDA launch has no separate "record" cost
+    // to amortize (it just enqueues to the stream), so there's nothing to save; the caller uses
+    // launch() in its loop, already optimal here. Recording is a Vulkan-specific optimization.
+    /*recorded_create=*/nullptr,
+    /*recorded_replay=*/nullptr,
+    /*recorded_destroy=*/nullptr,
 };
 
 }  // namespace

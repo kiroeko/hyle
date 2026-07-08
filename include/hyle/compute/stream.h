@@ -180,6 +180,7 @@ class Stream {
                                         const struct KernelArgs&) noexcept;
   friend HYLE_COMPUTE_API Status launch_batch(Stream&, const struct BatchItem*,
                                               unsigned) noexcept;
+  friend class RecordedLaunch;  // record/replay read vt_ + native_ (same as launch)
   Device device_{};
   const ComputeBackend* vt_ = nullptr;  // backend that owns native_ (null = invalid)
   void* native_ = nullptr;              // cudaStream_t / host queue (opaque)

@@ -221,17 +221,26 @@ function(hyle_embed_shader comp out_header name)
   if(ns)
     set(ns_arg --namespace ${ns})
   endif()
-  # One step: compile GLSL -> SPIR-V (via the fetched glslang) THEN embed -> header. Passing
-  # --glslang $<TARGET_FILE:...> points the tool at our build's compiler (users pass their own
-  # or rely on PATH). The tool is pure Python for embed; compile just shells out to glslang.
-  add_custom_command(
-    OUTPUT "${hdr}"
-    COMMAND ${Python3_EXECUTABLE} "${tool}" compile "${src}" -o "${spv}"
-            --glslang $<TARGET_FILE:glslang-standalone>
-            --embed "${hdr}" --name ${name} ${ns_arg}
-    DEPENDS "${src}" "${tool}" glslang-standalone
-    COMMENT "Embedding SPIR-V ${comp} -> ${out_header} (${name})"
-    VERBATIM)
+  # Declare the generating custom_command ONCE per output header. The gen dir is shared across
+  # subdirectories (tests + bench both embed saxpy.spv.h into the same path); a second
+  # add_custom_command for the same OUTPUT is a ninja "multiple rules generate" error. Track
+  # emitted headers in a GLOBAL property and skip the duplicate rule (the file + its vars are
+  # the same either way; consumers just add the include dir + list the header as a source).
+  get_property(_emitted GLOBAL PROPERTY HYLE_EMBEDDED_SHADERS)
+  if(NOT "${hdr}" IN_LIST _emitted)
+    # One step: compile GLSL -> SPIR-V (via the fetched glslang) THEN embed -> header. Passing
+    # --glslang $<TARGET_FILE:...> points the tool at our build's compiler (users pass their own
+    # or rely on PATH). The tool is pure Python for embed; compile just shells out to glslang.
+    add_custom_command(
+      OUTPUT "${hdr}"
+      COMMAND ${Python3_EXECUTABLE} "${tool}" compile "${src}" -o "${spv}"
+              --glslang $<TARGET_FILE:glslang-standalone>
+              --embed "${hdr}" --name ${name} ${ns_arg}
+      DEPENDS "${src}" "${tool}" glslang-standalone
+      COMMENT "Embedding SPIR-V ${comp} -> ${out_header} (${name})"
+      VERBATIM)
+    set_property(GLOBAL APPEND PROPERTY HYLE_EMBEDDED_SHADERS "${hdr}")
+  endif()
   set(HYLE_SHADER_${name} "${hdr}" PARENT_SCOPE)
   set(HYLE_SHADER_DIR "${gen_dir}" PARENT_SCOPE)
 endfunction()
