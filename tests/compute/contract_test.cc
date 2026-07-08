@@ -113,6 +113,17 @@ void buffer_clear_oob() {
   (void)buf->clear(224, 0, 64);  // compute.cc:345
 }
 
+// Integer-wraparound OOB: offset + size overflows size_t back to a SMALL value. The old
+// `offset + size <= size_` check passed (SIZE_MAX-3 + 10 wraps to 6 <= 256), letting an
+// out-of-range write through to the backend memcpy. The wrap-safe check (offset <= size_
+// && size <= size_ - offset) must catch it and fatal-abort.
+void buffer_set_wraparound() {
+  Device d = default_device();
+  auto buf = Buffer::create(device_buffer_type(d), 256);
+  std::uint8_t src[8] = {};
+  (void)buf->set(static_cast<std::size_t>(-3), src, 10);  // -3 + 10 wraps to 7
+}
+
 void launch_batch_over_cap() {
   Device d = default_device();
   auto s = Stream::create(d);
@@ -188,6 +199,11 @@ TEST(ComputeContractDeathTest, BufferCopyFromSrcOutOfBounds) {
 TEST(ComputeContractDeathTest, BufferClearOutOfBounds) {
   HYLE_THREADSAFE_DEATH();
   EXPECT_DEATH(buffer_clear_oob(), "HYLE fatal");
+}
+
+TEST(ComputeContractDeathTest, BufferSetWraparound) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(buffer_set_wraparound(), "HYLE fatal");
 }
 
 // ---- launch_batch cap (host-runnable): count <= 64, items non-null -----------

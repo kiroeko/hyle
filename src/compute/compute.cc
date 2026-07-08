@@ -301,13 +301,17 @@ Result<Buffer> Buffer::create(const BufferType& type, std::size_t bytes) noexcep
 
 Status Buffer::set(std::size_t offset, const void* src, std::size_t size) noexcept {
   HYLE_FATAL_ASSERT(vt_ != nullptr);
-  HYLE_FATAL_ASSERT(offset + size <= size_);  // partial-write bounds (KV-cache)
+  // Bounds (partial-write, KV-cache). Subtract-then-compare, NOT `offset + size <= size_`:
+  // the sum can wrap size_t (e.g. offset=SIZE_MAX-2, size=10 -> 7) and let an out-of-range
+  // write pass the check, then overrun in the backend memcpy. size_ - offset can't wrap
+  // once offset <= size_ holds.
+  HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);
   return vt_->buffer_set(ptr_, offset, src, size);
 }
 
 Status Buffer::get(std::size_t offset, void* dst, std::size_t size) const noexcept {
   HYLE_FATAL_ASSERT(vt_ != nullptr);
-  HYLE_FATAL_ASSERT(offset + size <= size_);
+  HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);  // wrap-safe (see set())
   return vt_->buffer_get(ptr_, offset, dst, size);
 }
 
@@ -317,14 +321,15 @@ Status Buffer::copy_from(const Buffer& src, std::size_t dst_offset,
   // Same-backend copy (cross-backend is a later concern). A cross-backend copy is a
   // caller bug here, not a runtime fallback.
   HYLE_FATAL_ASSERT(vt_ == src.vt_);
-  HYLE_FATAL_ASSERT(dst_offset + size <= size_ && src_offset + size <= src.size_);
+  HYLE_FATAL_ASSERT(dst_offset <= size_ && size <= size_ - dst_offset &&      // wrap-safe
+                    src_offset <= src.size_ && size <= src.size_ - src_offset);
   return vt_->buffer_copy(ptr_, dst_offset, src.ptr_, src_offset, size);
 }
 
 Status Buffer::clear(std::size_t offset, std::uint8_t value,
                      std::size_t size) noexcept {
   HYLE_FATAL_ASSERT(vt_ != nullptr);
-  HYLE_FATAL_ASSERT(offset + size <= size_);
+  HYLE_FATAL_ASSERT(offset <= size_ && size <= size_ - offset);  // wrap-safe (see set())
   return vt_->buffer_clear(ptr_, offset, value, size);
 }
 
