@@ -11,6 +11,7 @@
 #include <immintrin.h>
 
 #include "hyle/macros.h"
+#include "hyle/simd/backend/crypto_x86.h"  // shared 128-bit AES-NI/PCLMUL workers (Crypto op face)
 
 // backend/avx512.h -- 512-bit AVX-512 backend (simd-design landing list #2, AVX512 half).
 //
@@ -1653,6 +1654,68 @@ HYLE_FORCE_INLINE Vec512<T, N> IfNegativeThenElse(Vec512<T, N> v, Vec512<T, N> y
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> ZeroIfNegative(Vec512<T, N> v) noexcept {
   return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), Zero(Simd<T, N, 0>()), v);
+}
+
+// ---- crypto: AES round primitives + carryless multiply (simd-08 档C) -----------------
+// One __m512i == FOUR independent 128-bit AES blocks. Same model as avx2: split into four
+// 128-bit lanes (extracti32x4 / inserti32x4), run the shared per-block AES-NI/PCLMUL worker
+// on each, recombine. Highway's x86_512 builds AES from AES-NI per-128 exactly this way
+// unless VAES (_mm512_aesenc_epi128, needs -mvaes) is available -- promoting to VAES is a
+// profiling upgrade only. Contract: 512-bit vector = 64 bytes = four 128-bit AES states.
+namespace detail {
+template <typename BlockOp>
+HYLE_FORCE_INLINE __m512i aes512_map1(__m512i s, BlockOp op) noexcept {
+  __m512i r = s;
+  r = _mm512_inserti32x4(r, op(_mm512_extracti32x4_epi32(s, 0)), 0);
+  r = _mm512_inserti32x4(r, op(_mm512_extracti32x4_epi32(s, 1)), 1);
+  r = _mm512_inserti32x4(r, op(_mm512_extracti32x4_epi32(s, 2)), 2);
+  r = _mm512_inserti32x4(r, op(_mm512_extracti32x4_epi32(s, 3)), 3);
+  return r;
+}
+template <typename BlockOp>
+HYLE_FORCE_INLINE __m512i aes512_map2(__m512i s, __m512i k, BlockOp op) noexcept {
+  __m512i r = s;
+  r = _mm512_inserti32x4(r, op(_mm512_extracti32x4_epi32(s, 0), _mm512_extracti32x4_epi32(k, 0)), 0);
+  r = _mm512_inserti32x4(r, op(_mm512_extracti32x4_epi32(s, 1), _mm512_extracti32x4_epi32(k, 1)), 1);
+  r = _mm512_inserti32x4(r, op(_mm512_extracti32x4_epi32(s, 2), _mm512_extracti32x4_epi32(k, 2)), 2);
+  r = _mm512_inserti32x4(r, op(_mm512_extracti32x4_epi32(s, 3), _mm512_extracti32x4_epi32(k, 3)), 3);
+  return r;
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> AESRound(Vec512<T, N> state, Vec512<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 64, "AES op needs a 512-bit vector (four 128-bit blocks)");
+  return Vec512<T, N>{detail::aes512_map2(state.raw, key.raw, detail::aes_round_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> AESLastRound(Vec512<T, N> state, Vec512<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 64, "AES op needs a 512-bit vector (four 128-bit blocks)");
+  return Vec512<T, N>{detail::aes512_map2(state.raw, key.raw, detail::aes_last_round_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> AESRoundInv(Vec512<T, N> state, Vec512<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 64, "AES op needs a 512-bit vector (four 128-bit blocks)");
+  return Vec512<T, N>{detail::aes512_map2(state.raw, key.raw, detail::aes_round_inv_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> AESLastRoundInv(Vec512<T, N> state, Vec512<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 64, "AES op needs a 512-bit vector (four 128-bit blocks)");
+  return Vec512<T, N>{detail::aes512_map2(state.raw, key.raw, detail::aes_last_round_inv_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> AESInvMixColumns(Vec512<T, N> state) noexcept {
+  static_assert(sizeof(T) * N == 64, "AES op needs a 512-bit vector (four 128-bit blocks)");
+  return Vec512<T, N>{detail::aes512_map1(state.raw, detail::aes_inv_mix_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> CLMulLower(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(sizeof(T) * N == 64, "CLMul needs a 512-bit vector (four 128-bit blocks)");
+  return Vec512<T, N>{detail::aes512_map2(a.raw, b.raw, detail::clmul_lower_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> CLMulUpper(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(sizeof(T) * N == 64, "CLMul needs a 512-bit vector (four 128-bit blocks)");
+  return Vec512<T, N>{detail::aes512_map2(a.raw, b.raw, detail::clmul_upper_block)};
 }
 
 }  // namespace hyle::simd

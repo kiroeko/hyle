@@ -11,6 +11,7 @@
 #include <immintrin.h>  // AVX/AVX2/FMA (and transitively SSE*)
 
 #include "hyle/macros.h"
+#include "hyle/simd/backend/crypto_x86.h"  // shared 128-bit AES-NI/PCLMUL workers (Crypto op face)
 
 // backend/avx2.h -- 256-bit AVX2 backend (simd-design landing list #2).
 //
@@ -1878,6 +1879,63 @@ HYLE_FORCE_INLINE Vec256<T, N> IfNegativeThenElse(Vec256<T, N> v, Vec256<T, N> y
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ZeroIfNegative(Vec256<T, N> v) noexcept {
   return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), Zero(Simd<T, N, 0>()), v);
+}
+
+// ---- crypto: AES round primitives + carryless multiply (simd-08 档C) -----------------
+// One __m256i == TWO independent 128-bit AES blocks. AES-NI operates on a 128-bit register,
+// so we split lo/hi (cast / extracti128) and call the shared per-block worker on each, then
+// recombine (set_m128i). This is EXACTLY Highway's x86_256 AES: it builds the 256-bit op from
+// AES-NI per-128 rather than requiring VAES (_mm256_aesenc_epi128, Ice Lake+, needs -mvaes).
+// Promoting to VAES is a pure profiling upgrade. Contract: a 256-bit vector = 32 bytes = two
+// 128-bit AES states (sizeof(T)*N == 32). Software fallback lives inside the block worker.
+namespace detail {
+template <typename BlockOp>
+HYLE_FORCE_INLINE __m256i aes256_map1(__m256i s, BlockOp op) noexcept {
+  const __m128i lo = op(_mm256_castsi256_si128(s));
+  const __m128i hi = op(_mm256_extracti128_si256(s, 1));
+  return _mm256_set_m128i(hi, lo);
+}
+template <typename BlockOp>
+HYLE_FORCE_INLINE __m256i aes256_map2(__m256i s, __m256i k, BlockOp op) noexcept {
+  const __m128i lo = op(_mm256_castsi256_si128(s), _mm256_castsi256_si128(k));
+  const __m128i hi = op(_mm256_extracti128_si256(s, 1), _mm256_extracti128_si256(k, 1));
+  return _mm256_set_m128i(hi, lo);
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> AESRound(Vec256<T, N> state, Vec256<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
+  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw, detail::aes_round_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> AESLastRound(Vec256<T, N> state, Vec256<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
+  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw, detail::aes_last_round_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> AESRoundInv(Vec256<T, N> state, Vec256<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
+  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw, detail::aes_round_inv_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> AESLastRoundInv(Vec256<T, N> state, Vec256<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
+  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw, detail::aes_last_round_inv_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> AESInvMixColumns(Vec256<T, N> state) noexcept {
+  static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
+  return Vec256<T, N>{detail::aes256_map1(state.raw, detail::aes_inv_mix_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> CLMulLower(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  static_assert(sizeof(T) * N == 32, "CLMul needs a 256-bit vector (two 128-bit blocks)");
+  return Vec256<T, N>{detail::aes256_map2(a.raw, b.raw, detail::clmul_lower_block)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> CLMulUpper(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  static_assert(sizeof(T) * N == 32, "CLMul needs a 256-bit vector (two 128-bit blocks)");
+  return Vec256<T, N>{detail::aes256_map2(a.raw, b.raw, detail::clmul_upper_block)};
 }
 
 }  // namespace hyle::simd

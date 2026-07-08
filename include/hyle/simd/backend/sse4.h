@@ -11,6 +11,7 @@
 #include <nmmintrin.h>  // SSE4.2 (transitively pulls SSE4.1/SSSE3/SSE3/SSE2)
 
 #include "hyle/macros.h"
+#include "hyle/simd/backend/crypto_x86.h"  // shared 128-bit AES-NI/PCLMUL workers (Crypto op face)
 
 // backend/sse4.h -- 128-bit SSE4.2-baseline backend (simd-design landing list #2).
 //
@@ -1797,6 +1798,49 @@ HYLE_FORCE_INLINE Vec128<T, N> IfNegativeThenElse(Vec128<T, N> v, Vec128<T, N> y
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> ZeroIfNegative(Vec128<T, N> v) noexcept {
   return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), Zero(Simd<T, N, 0>()), v);
+}
+
+// ---- crypto: AES round primitives + carryless multiply (simd-08 档C) -----------------
+// One __m128i == one 128-bit AES block, so each op is a single AES-NI / PCLMULQDQ call
+// (or the shared software fallback when -maes/-mpclmul are absent). The lane type is only
+// a view: the contract is a 128-bit vector (sizeof(T)*N == 16). Integer lanes store raw as
+// __m128i directly; FP lanes would need a cast, but AES on f32/f64 is nonsensical and the
+// static_assert below rejects the non-128-bit case (matches Highway's uint8_t/uint64_t-only
+// crypto surface, generalized to any 128-bit integer view).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> AESRound(Vec128<T, N> state, Vec128<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+  return Vec128<T, N>{detail::aes_round_block(state.raw, key.raw)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> AESLastRound(Vec128<T, N> state, Vec128<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+  return Vec128<T, N>{detail::aes_last_round_block(state.raw, key.raw)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> AESRoundInv(Vec128<T, N> state, Vec128<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+  return Vec128<T, N>{detail::aes_round_inv_block(state.raw, key.raw)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> AESLastRoundInv(Vec128<T, N> state, Vec128<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+  return Vec128<T, N>{detail::aes_last_round_inv_block(state.raw, key.raw)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> AESInvMixColumns(Vec128<T, N> state) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+  return Vec128<T, N>{detail::aes_inv_mix_block(state.raw)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> CLMulLower(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(sizeof(T) * N == 16, "CLMul needs a 128-bit vector");
+  return Vec128<T, N>{detail::clmul_lower_block(a.raw, b.raw)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> CLMulUpper(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(sizeof(T) * N == 16, "CLMul needs a 128-bit vector");
+  return Vec128<T, N>{detail::clmul_upper_block(a.raw, b.raw)};
 }
 
 }  // namespace hyle::simd

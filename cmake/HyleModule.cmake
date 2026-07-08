@@ -27,6 +27,10 @@ function(hyle_isa_flags out_var tier)
   if(MSVC)
     if(tier STREQUAL "SSE42")
       set(${out_var} "" PARENT_SCOPE)
+    elseif(tier STREQUAL "SSE42_AES")
+      # MSVC x64 exposes AES-NI / PCLMULQDQ intrinsics unconditionally (no flag), same as
+      # the rest of SSE4.2. The crypto op face's hardware path is always live here.
+      set(${out_var} "" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX_F16C")
       set(${out_var} "/arch:AVX" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX2" OR tier STREQUAL "AVX2_INT")
@@ -41,6 +45,12 @@ function(hyle_isa_flags out_var tier)
   else()  # GCC / Clang
     if(tier STREQUAL "SSE42")
       set(${out_var} "-msse4.2" PARENT_SCOPE)
+    elseif(tier STREQUAL "SSE42_AES")
+      # AES-NI + PCLMULQDQ are OPTIONAL x86 extensions ORTHOGONAL to the SSE4.2 tier: GCC/Clang
+      # gate _mm_aesenc_si128 / _mm_clmulepi64_si128 (and __AES__ / __PCLMUL__) behind these
+      # flags. This tier compiles the crypto op face's HARDWARE path (the base SSE42 variant
+      # lacks the flags, so it exercises the software fallback -- both are tested).
+      set(${out_var} "-msse4.2;-maes;-mpclmul" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX_F16C")
       set(${out_var} "-mavx;-mf16c" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX2")

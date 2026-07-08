@@ -105,6 +105,14 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_isa_flags(_avx2_flags AVX2)
   hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_flags})
   hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
+  # simd-08 档C crypto: the base sse4/avx2 variants above compile WITHOUT -maes/-mpclmul, so on
+  # GCC/Clang the AES/CLMul op face takes the SOFTWARE fallback. This extra variant adds those
+  # flags (SSE42_AES tier) so the AES-NI / PCLMULQDQ HARDWARE path is actually compiled + run
+  # and its result checked against the same in-test FIPS-197 oracle -- proving hardware ==
+  # software. (On MSVC both variants are identical since AES-NI is unconditional there, but the
+  # variant is harmless and keeps one build matrix across compilers.)
+  hyle_isa_flags(_sse4_aes_flags SSE42_AES)
+  hyle_add_test(simd NAME sse4_aes SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_aes_flags})
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
   hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_NEON OPTIONS ${_neon_flags})

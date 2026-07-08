@@ -9,6 +9,7 @@
 #include <type_traits>
 
 #include "hyle/macros.h"
+#include "hyle/simd/backend/crypto_soft.h"  // shared AES/CLMul software reference (Crypto op face)
 
 // backend/scalar.h -- the portable scalar FLOOR backend (simd-design landing list #1).
 //
@@ -1399,6 +1400,75 @@ HYLE_FORCE_INLINE Vec<T, N> ZeroIfNegative(Vec<T, N> v) noexcept {
   Vec<T, N> r;
   for (std::size_t i = 0; i < N; ++i) r.raw[i] = (v.raw[i] < T{0}) ? T{0} : v.raw[i];
   return r;
+}
+
+// ---- AES + carryless multiply (simd-08 C, software reference) ------------------------
+// The scalar floor is the SOFTWARE reference the hardware AES-NI / PCLMULQDQ / ARM-crypto
+// backends must match. AES operates on a 128-bit block = 16 bytes (lane type irrelevant, viewed
+// as bytes). Semantics match x86 AES-NI exactly (Highway contract): AESRound =
+// MixColumns(SubBytes(ShiftRows(state))) ^ round_key.
+// Software-only floor: wrap the shared byte-level cores (detail::aes_*_soft / clmul64 from
+// backend/crypto_soft.h) around the Vec<->16-byte state pun. The hardware backends override
+// these with AES-NI / PMULL when the ISA extension is present; the byte order is identical so
+// results are bit-for-bit equal. All AES ops need a 128-bit vector (sizeof(T)*N == 16).
+namespace detail {
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE void aes_bytes(const Vec<T, N>& v, std::uint8_t s[16]) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+  std::memcpy(s, v.raw, 16);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> aes_from(const std::uint8_t s[16]) noexcept {
+  Vec<T, N> r; std::memcpy(r.raw, s, 16); return r;
+}
+}  // namespace detail
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> AESRound(Vec<T, N> state, Vec<T, N> key) noexcept {
+  std::uint8_t s[16], k[16]; detail::aes_bytes(state, s); detail::aes_bytes(key, k);
+  detail::aes_round_soft(s, k);
+  return detail::aes_from<T, N>(s);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> AESLastRound(Vec<T, N> state, Vec<T, N> key) noexcept {
+  std::uint8_t s[16], k[16]; detail::aes_bytes(state, s); detail::aes_bytes(key, k);
+  detail::aes_last_round_soft(s, k);
+  return detail::aes_from<T, N>(s);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> AESRoundInv(Vec<T, N> state, Vec<T, N> key) noexcept {
+  std::uint8_t s[16], k[16]; detail::aes_bytes(state, s); detail::aes_bytes(key, k);
+  detail::aes_round_inv_soft(s, k);
+  return detail::aes_from<T, N>(s);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> AESLastRoundInv(Vec<T, N> state, Vec<T, N> key) noexcept {
+  std::uint8_t s[16], k[16]; detail::aes_bytes(state, s); detail::aes_bytes(key, k);
+  detail::aes_last_round_inv_soft(s, k);
+  return detail::aes_from<T, N>(s);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> AESInvMixColumns(Vec<T, N> state) noexcept {
+  std::uint8_t s[16]; detail::aes_bytes(state, s); detail::aes_inv_mix_columns(s);
+  return detail::aes_from<T, N>(s);
+}
+// CLMulLower/Upper(a, b): carryless multiply of the low / high 64 bits of the 128-bit block
+// into a 128-bit product (x86 PCLMULQDQ, ARM PMULL). Result lanes viewed as the input type.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> CLMulLower(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(sizeof(T) * N == 16, "CLMul needs a 128-bit vector");
+  std::uint64_t av[2], bv[2], o[2];
+  std::memcpy(av, a.raw, 16); std::memcpy(bv, b.raw, 16);
+  detail::clmul64(av[0], bv[0], o);
+  Vec<T, N> r; std::memcpy(r.raw, o, 16); return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> CLMulUpper(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(sizeof(T) * N == 16, "CLMul needs a 128-bit vector");
+  std::uint64_t av[2], bv[2], o[2];
+  std::memcpy(av, a.raw, 16); std::memcpy(bv, b.raw, 16);
+  detail::clmul64(av[1], bv[1], o);
+  Vec<T, N> r; std::memcpy(r.raw, o, 16); return r;
 }
 
 }  // namespace hyle::simd

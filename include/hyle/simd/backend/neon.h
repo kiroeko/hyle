@@ -11,6 +11,7 @@
 #include <arm_neon.h>
 
 #include "hyle/macros.h"
+#include "hyle/simd/backend/crypto_soft.h"  // shared AES/CLMul software fallback (Crypto op face)
 
 // backend/neon.h -- 128-bit aarch64 NEON backend (simd-design landing list #2, ARM half).
 //
@@ -2030,6 +2031,139 @@ HYLE_FORCE_INLINE VecNeon<T, N> IfNegativeThenElse(VecNeon<T, N> v, VecNeon<T, N
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> ZeroIfNegative(VecNeon<T, N> v) noexcept {
   return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), Zero(Simd<T, N, 0>()), v);
+}
+
+// ---- crypto: AES round primitives + carryless multiply (simd-08 档C) -----------------
+// ARM AES (vaeseq/vaesdq) FOLDS AddRoundKey into the instruction with a DIFFERENT ordering
+// than the AES-NI semantics this library adopted: AESE does AddRoundKey THEN SubBytes/ShiftRows
+// (no MixColumns), so to match _mm_aesenc's "round_key XORed at the END" we feed a ZERO key to
+// the instruction and XOR the real key afterwards -- vaesmcq(vaeseq(s,0)) ^ key. Highway's
+// arm_neon-inl.h does the identical trick (comment there: "AESE includes AddRoundKey ...").
+// Gated on __ARM_FEATURE_AES (the ARMv8 Crypto extension, which also supplies PMULL for CLMul);
+// without it (base variant, no +crypto) every op falls back to the shared software reference
+// with AES-NI byte order, so results are bit-for-bit identical to the x86 paths.
+//
+// The Vec raw type varies per lane (uint8x16_t / uint32x4_t / ...), all 16 bytes, so we pun
+// through std::memcpy to uint8x16_t rather than chaining vreinterpretq for every lane type.
+namespace detail {
+HYLE_FORCE_INLINE uint8x16_t neon_to_u8(const void* raw) noexcept {
+  uint8x16_t v; std::memcpy(&v, raw, 16); return v;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> neon_from_u8(uint8x16_t v) noexcept {
+  VecNeon<T, N> r; std::memcpy(&r.raw, &v, 16); return r;
+}
+#if defined(__ARM_FEATURE_AES)
+HYLE_FORCE_INLINE uint8x16_t aes_round_u8(uint8x16_t s, uint8x16_t k) noexcept {
+  return veorq_u8(vaesmcq_u8(vaeseq_u8(s, vdupq_n_u8(0))), k);
+}
+HYLE_FORCE_INLINE uint8x16_t aes_last_round_u8(uint8x16_t s, uint8x16_t k) noexcept {
+  return veorq_u8(vaeseq_u8(s, vdupq_n_u8(0)), k);
+}
+HYLE_FORCE_INLINE uint8x16_t aes_round_inv_u8(uint8x16_t s, uint8x16_t k) noexcept {
+  return veorq_u8(vaesimcq_u8(vaesdq_u8(s, vdupq_n_u8(0))), k);
+}
+HYLE_FORCE_INLINE uint8x16_t aes_last_round_inv_u8(uint8x16_t s, uint8x16_t k) noexcept {
+  return veorq_u8(vaesdq_u8(s, vdupq_n_u8(0)), k);
+}
+HYLE_FORCE_INLINE uint8x16_t aes_inv_mix_u8(uint8x16_t s) noexcept {
+  return vaesimcq_u8(s);
+}
+#endif  // __ARM_FEATURE_AES
+}  // namespace detail
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> AESRound(VecNeon<T, N> state, VecNeon<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+#if defined(__ARM_FEATURE_AES)
+  return detail::neon_from_u8<T, N>(
+      detail::aes_round_u8(detail::neon_to_u8(&state.raw), detail::neon_to_u8(&key.raw)));
+#else
+  std::uint8_t s[16], k[16];
+  std::memcpy(s, &state.raw, 16); std::memcpy(k, &key.raw, 16);
+  detail::aes_round_soft(s, k);
+  VecNeon<T, N> r; std::memcpy(&r.raw, s, 16); return r;
+#endif
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> AESLastRound(VecNeon<T, N> state, VecNeon<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+#if defined(__ARM_FEATURE_AES)
+  return detail::neon_from_u8<T, N>(
+      detail::aes_last_round_u8(detail::neon_to_u8(&state.raw), detail::neon_to_u8(&key.raw)));
+#else
+  std::uint8_t s[16], k[16];
+  std::memcpy(s, &state.raw, 16); std::memcpy(k, &key.raw, 16);
+  detail::aes_last_round_soft(s, k);
+  VecNeon<T, N> r; std::memcpy(&r.raw, s, 16); return r;
+#endif
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> AESRoundInv(VecNeon<T, N> state, VecNeon<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+#if defined(__ARM_FEATURE_AES)
+  return detail::neon_from_u8<T, N>(
+      detail::aes_round_inv_u8(detail::neon_to_u8(&state.raw), detail::neon_to_u8(&key.raw)));
+#else
+  std::uint8_t s[16], k[16];
+  std::memcpy(s, &state.raw, 16); std::memcpy(k, &key.raw, 16);
+  detail::aes_round_inv_soft(s, k);
+  VecNeon<T, N> r; std::memcpy(&r.raw, s, 16); return r;
+#endif
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> AESLastRoundInv(VecNeon<T, N> state, VecNeon<T, N> key) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+#if defined(__ARM_FEATURE_AES)
+  return detail::neon_from_u8<T, N>(
+      detail::aes_last_round_inv_u8(detail::neon_to_u8(&state.raw), detail::neon_to_u8(&key.raw)));
+#else
+  std::uint8_t s[16], k[16];
+  std::memcpy(s, &state.raw, 16); std::memcpy(k, &key.raw, 16);
+  detail::aes_last_round_inv_soft(s, k);
+  VecNeon<T, N> r; std::memcpy(&r.raw, s, 16); return r;
+#endif
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> AESInvMixColumns(VecNeon<T, N> state) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+#if defined(__ARM_FEATURE_AES)
+  return detail::neon_from_u8<T, N>(detail::aes_inv_mix_u8(detail::neon_to_u8(&state.raw)));
+#else
+  std::uint8_t s[16];
+  std::memcpy(s, &state.raw, 16);
+  detail::aes_inv_mix_columns(s);
+  VecNeon<T, N> r; std::memcpy(&r.raw, s, 16); return r;
+#endif
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> CLMulLower(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(sizeof(T) * N == 16, "CLMul needs a 128-bit vector");
+#if defined(__ARM_FEATURE_AES)
+  poly64x2_t pa, pb; std::memcpy(&pa, &a.raw, 16); std::memcpy(&pb, &b.raw, 16);
+  const uint8x16_t prod = vreinterpretq_u8_p128(vmull_p64((poly64_t)vgetq_lane_p64(pa, 0),
+                                                          (poly64_t)vgetq_lane_p64(pb, 0)));
+  return detail::neon_from_u8<T, N>(prod);
+#else
+  std::uint64_t av[2], bv[2], o[2];
+  std::memcpy(av, &a.raw, 16); std::memcpy(bv, &b.raw, 16);
+  detail::clmul64(av[0], bv[0], o);
+  VecNeon<T, N> r; std::memcpy(&r.raw, o, 16); return r;
+#endif
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> CLMulUpper(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(sizeof(T) * N == 16, "CLMul needs a 128-bit vector");
+#if defined(__ARM_FEATURE_AES)
+  poly64x2_t pa, pb; std::memcpy(&pa, &a.raw, 16); std::memcpy(&pb, &b.raw, 16);
+  const uint8x16_t prod = vreinterpretq_u8_p128(vmull_high_p64(pa, pb));
+  return detail::neon_from_u8<T, N>(prod);
+#else
+  std::uint64_t av[2], bv[2], o[2];
+  std::memcpy(av, &a.raw, 16); std::memcpy(bv, &b.raw, 16);
+  detail::clmul64(av[1], bv[1], o);
+  VecNeon<T, N> r; std::memcpy(&r.raw, o, 16); return r;
+#endif
 }
 
 }  // namespace hyle::simd
