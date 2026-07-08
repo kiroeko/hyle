@@ -121,4 +121,16 @@ struct SpecConstant {
   unsigned size;    // byte size of the value (4 for a uint/float/int spec constant)
 };
 
+// A self-describing SPIR-V module (compute-06): a word stream + its byte size, so the loader
+// needs no separate length arg. Two ways to obtain one, both feeding Kernel::load_spirv():
+//   • COMPILE-TIME: tools/hyle_shader.py emits a header with an `inline constexpr SpirvBlob`
+//     (data folded to one copy across TUs) you #include -- no runtime file IO.
+//   • RUNTIME: read a .spv file yourself and point a SpirvBlob at the bytes.
+// `words` must stay 4-byte aligned (SPIR-V is a uint32 stream); `byte_size` is a byte count
+// (== the array's sizeof), NOT a word count.
+struct SpirvBlob {
+  const unsigned* words;   // SPIR-V word stream (4-byte aligned)
+  unsigned        byte_size;  // size in BYTES (multiple of 4)
+};
+
 }  // namespace hyle::compute

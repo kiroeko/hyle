@@ -1016,19 +1016,20 @@ Status vk_kernel_compile(int, const char*, const char*, void**, void**) noexcept
 // kernel.h documents (for the Vulkan backend) that `ptx` points at a length-prefixed SPIR-V
 // blob: first sizeof(uint32_t) bytes = byte length, then the SPIR-V words. This keeps the
 // generic vtable signature while carrying binary safely.
-Status vk_kernel_load_ptx(int, const char* ptx, const char* /*entry*/,
+Status vk_kernel_load_ptx(int, const char* code, unsigned code_size, const char* /*entry*/,
                           const SpecConstant* specs, unsigned spec_count,
                           const void* spec_data, unsigned spec_data_size,
                           void** out_module, void** out_func) noexcept {
   if (!ctx().ok) return Status::Unavailable("vk backend: no device");
-  uint32_t byte_len = 0;
-  std::memcpy(&byte_len, ptx, sizeof(uint32_t));
-  const uint32_t* words = reinterpret_cast<const uint32_t*>(ptx + sizeof(uint32_t));
+  // `code` is the raw SPIR-V byte stream of exactly code_size bytes (SpirvBlob) -- no
+  // length-prefix hack; the size is explicit. SPIR-V must be 4-byte aligned + a whole number
+  // of words (a caller contract; a malformed module is a caller bug -> fail-fast).
+  HYLE_FATAL_ASSERT(code_size >= 4 && code_size % 4 == 0);
   auto* k = new (std::nothrow) VkKernel{};
   if (k == nullptr) return Status::ResourceExhausted("vk kernel alloc");
   VkShaderModuleCreateInfo smci{VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO};
-  smci.codeSize = byte_len;
-  smci.pCode = words;
+  smci.codeSize = code_size;
+  smci.pCode = reinterpret_cast<const uint32_t*>(code);
   VkResult r = vkCreateShaderModule(ctx().device, &smci, nullptr, &k->module);
   if (r != VK_SUCCESS) { delete k; return from_vk(r, "vkCreateShaderModule"); }
   // Copy spec constants (#2/#3): caller storage is transient, but build_pipeline runs at the

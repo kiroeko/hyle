@@ -200,30 +200,38 @@ function(hyle_add_bench module)
   hyle_apply_warnings(${target})
 endfunction()
 
-# hyle_embed_shader(<comp> <out-header> <array-name>)
+# hyle_embed_shader(<comp> <out-header> <name> [<namespace>])
 # Compile a GLSL compute shader (tools/shaders/<comp>) to SPIR-V with the fetched glslang
-# binary, then embed it as a C header (`static const unsigned <array>[]`) via a cmake -P step.
-# Makes the SPIR-V headers REPRODUCIBLE from their .comp source instead of hand-pasted words
-# (compute-06 tools/ requirement). The output header lands in ${CMAKE_BINARY_DIR}/generated/
-# shaders; add that dir to a consumer target's include path. Requires HYLE_COMPUTE_VULKAN_ENABLED
-# (the glslang-standalone target exists only then). Sets ${out-header}'s absolute path in the
-# parent-scope var HYLE_SHADER_<array> for the caller to reference.
-function(hyle_embed_shader comp out_header array)
+# binary, then embed it as a C header (`inline constexpr SpirvBlob <name>`) via
+# tools/hyle_shader.py -- the SAME tool a HYLE user runs. Makes the SPIR-V headers
+# REPRODUCIBLE from their .comp source instead of hand-pasted words. The output header lands in
+# ${CMAKE_BINARY_DIR}/generated/shaders; add that dir to a consumer target's include path.
+# Requires HYLE_COMPUTE_VULKAN_ENABLED (the glslang-standalone target exists only then) +
+# Python3. Sets the header's path in the parent-scope var HYLE_SHADER_<name>; the blob symbol
+# is <namespace>::<name> (namespace optional, keeps multiple shaders from clashing).
+function(hyle_embed_shader comp out_header name)
+  set(ns "${ARGV3}")  # optional 4th arg
   set(src "${CMAKE_SOURCE_DIR}/tools/shaders/${comp}")
+  set(tool "${CMAKE_SOURCE_DIR}/tools/hyle_shader.py")
   set(gen_dir "${CMAKE_BINARY_DIR}/generated/shaders")
-  set(spv "${gen_dir}/${array}.spv")
+  set(spv "${gen_dir}/${name}.spv")
   set(hdr "${gen_dir}/${out_header}")
   file(MAKE_DIRECTORY "${gen_dir}")
+  set(ns_arg "")
+  if(ns)
+    set(ns_arg --namespace ${ns})
+  endif()
+  # One step: compile GLSL -> SPIR-V (via the fetched glslang) THEN embed -> header. Passing
+  # --glslang $<TARGET_FILE:...> points the tool at our build's compiler (users pass their own
+  # or rely on PATH). The tool is pure Python for embed; compile just shells out to glslang.
   add_custom_command(
     OUTPUT "${hdr}"
-    # 1. GLSL -> SPIR-V (Vulkan) via the fetched glslang tool.
-    COMMAND $<TARGET_FILE:glslang-standalone> -V "${src}" -o "${spv}"
-    # 2. SPIR-V binary -> C header (no Python; pure cmake -P).
-    COMMAND ${CMAKE_COMMAND} -DSPV=${spv} -DOUT=${hdr} -DARRAY=${array} -DSRC=${src}
-            -P "${CMAKE_SOURCE_DIR}/tools/embed_spirv.cmake"
-    DEPENDS "${src}" "${CMAKE_SOURCE_DIR}/tools/embed_spirv.cmake" glslang-standalone
-    COMMENT "Embedding SPIR-V ${comp} -> ${out_header} (${array})"
+    COMMAND ${Python3_EXECUTABLE} "${tool}" compile "${src}" -o "${spv}"
+            --glslang $<TARGET_FILE:glslang-standalone>
+            --embed "${hdr}" --name ${name} ${ns_arg}
+    DEPENDS "${src}" "${tool}" glslang-standalone
+    COMMENT "Embedding SPIR-V ${comp} -> ${out_header} (${name})"
     VERBATIM)
-  set(HYLE_SHADER_${array} "${hdr}" PARENT_SCOPE)
+  set(HYLE_SHADER_${name} "${hdr}" PARENT_SCOPE)
   set(HYLE_SHADER_DIR "${gen_dir}" PARENT_SCOPE)
 endfunction()

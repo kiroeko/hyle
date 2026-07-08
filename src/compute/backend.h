@@ -129,13 +129,16 @@ struct ComputeBackend {
   // public LaunchConfig + the cuLaunchKernel void** args array.
   Status (*kernel_compile)(int ordinal, const char* source, const char* entry,
                            void** out_module, void** out_func) noexcept;
-  // `specs`/`spec_count`/`spec_data`/`spec_data_size` are SPECIALIZATION CONSTANTS
-  // (compute-06 #2/#3), consumed at pipeline build (Vulkan SpecializationInfo). spec_count=0
-  // is the plain load. A backend without spec support returns Unimplemented when spec_count>0
-  // (CUDA: its build-time analog is NVRTC macros at compile()); the value blob + entries are
-  // caller-owned for the duration of the call only (the backend copies what it needs).
-  Status (*kernel_load_ptx)(int ordinal, const char* ptx, const char* entry,
-                            const SpecConstant* specs, unsigned spec_count,
+  // Load pre-compiled kernel code. `code`/`code_size`: for CUDA a PTX text string (code_size
+  // is its strlen, or 0 -- text is NUL-terminated); for Vulkan a SPIR-V byte stream of exactly
+  // `code_size` bytes (binary, no NUL -- so the size is REQUIRED, no length-prefix hack).
+  // `specs`/`spec_count`/`spec_data`/`spec_data_size` are SPECIALIZATION CONSTANTS (compute-06
+  // #2/#3), consumed at pipeline build (Vulkan SpecializationInfo). spec_count=0 is the plain
+  // load. A backend without spec support returns Unimplemented when spec_count>0 (CUDA: its
+  // build-time analog is NVRTC macros at compile()); the value blob + entries are caller-owned
+  // for the duration of the call only (the backend copies what it needs).
+  Status (*kernel_load_ptx)(int ordinal, const char* code, unsigned code_size,
+                            const char* entry, const SpecConstant* specs, unsigned spec_count,
                             const void* spec_data, unsigned spec_data_size,
                             void** out_module, void** out_func) noexcept;
   Status (*kernel_load_host)(int ordinal, void* host_fn, void** out_module,

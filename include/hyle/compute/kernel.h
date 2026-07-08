@@ -79,27 +79,37 @@ class Kernel {
                                                  const char* source,
                                                  const char* entry) noexcept;
 
-  // ② Load an already-compiled PTX string (skips NVRTC), for a consumer that has PTX.
-  // `entry` is the kernel name in the PTX (extern "C" / already-lowered).
+  // ② Load an already-compiled PTX string (skips NVRTC), for a consumer that has PTX (CUDA).
+  // `entry` is the kernel name in the PTX (extern "C" / already-lowered). PTX is text, so no
+  // length is needed. For a Vulkan SPIR-V module use load_spirv() instead.
   HYLE_COMPUTE_API static Result<Kernel> load_ptx(const Device& device,
                                                   const char* ptx,
                                                   const char* entry) noexcept;
 
-  // ②' Load with SPECIALIZATION CONSTANTS (checklist #2/#3, Vulkan) -- shader constants
-  // resolved at pipeline-BUILD time (baked into the compiled ISA: dead-code elimination,
-  // loop unrolling, a workgroup size the driver knows), NOT per-launch push constants.
-  // `specs` maps each GLSL `constant_id` to a slice of the `spec_data` blob (id + byte
-  // offset/size), `spec_count` of them. The values are FROZEN into this Kernel's pipeline;
-  // changing them requires a NEW Kernel (spec constants are immutable post-build -- that is
-  // the point). Only the Vulkan backend consumes these; a backend without spec-constant
-  // support (CUDA -- its compile-time analog is compile()'s NVRTC macros) returns
-  // Unimplemented when `spec_count > 0`. `ptx` is the same length-prefixed SPIR-V blob as (2).
-  HYLE_COMPUTE_API static Result<Kernel> load_ptx(const Device& device, const char* ptx,
-                                                  const char* entry,
-                                                  const SpecConstant* specs,
-                                                  unsigned spec_count,
-                                                  const void* spec_data,
-                                                  unsigned spec_data_size) noexcept;
+  // ②' Load a pre-compiled SPIR-V module (Vulkan). `blob` is self-describing (words + byte
+  // size), obtained EITHER at compile time from a tools/hyle_shader.py-generated header
+  // (`inline constexpr SpirvBlob`, #include'd) OR at runtime by reading a .spv file and
+  // pointing a SpirvBlob at the bytes -- the SAME call serves both, so the loading strategy
+  // is the consumer's choice, not fixed by us. `entry` is the entry-point name ("main" for
+  // glslc/glslang output). On a non-Vulkan backend this returns Unimplemented (CUDA takes
+  // PTX via load_ptx). SPIR-V is not "PTX": the split keeps each backend's format explicit.
+  HYLE_COMPUTE_API static Result<Kernel> load_spirv(const Device& device,
+                                                    const SpirvBlob& blob,
+                                                    const char* entry = "main") noexcept;
+
+  // ②'' load_spirv WITH SPECIALIZATION CONSTANTS (checklist #2/#3): shader constants resolved
+  // at pipeline-BUILD time (baked into the compiled ISA: dead-code elimination, loop
+  // unrolling, a workgroup size the driver knows), NOT per-launch push constants. `specs`
+  // maps each GLSL `constant_id` to a slice of `spec_data` (id + byte offset/size),
+  // `spec_count` of them. The values are FROZEN into this Kernel's pipeline; changing them
+  // needs a NEW Kernel (that immutability is the point). Vulkan-only (CUDA's build-time analog
+  // is compile()'s NVRTC macros -> Unimplemented when spec_count > 0).
+  HYLE_COMPUTE_API static Result<Kernel> load_spirv(const Device& device,
+                                                    const SpirvBlob& blob, const char* entry,
+                                                    const SpecConstant* specs,
+                                                    unsigned spec_count,
+                                                    const void* spec_data,
+                                                    unsigned spec_data_size) noexcept;
 
   // ③ Host fallback: register a host function as a "kernel". `fn` is called by launch
   // with the config + KernelArgs (fn reads args.buffers / args.scalars itself). Only

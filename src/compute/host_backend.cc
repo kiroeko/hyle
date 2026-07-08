@@ -237,8 +237,8 @@ Status host_kernel_compile(int, const char*, const char*, void**, void**) noexce
   return Status::Unimplemented("host backend: no NVRTC (use load_host)");
 }
 
-Status host_kernel_load_ptx(int, const char*, const char*, const SpecConstant*, unsigned,
-                            const void*, unsigned, void**, void**) noexcept {
+Status host_kernel_load_ptx(int, const char*, unsigned, const char*, const SpecConstant*,
+                            unsigned, const void*, unsigned, void**, void**) noexcept {
   return Status::Unimplemented("host backend: no PTX loader (use load_host)");
 }
 

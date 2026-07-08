@@ -252,6 +252,10 @@ if(HYLE_COMPUTE_VULKAN)
     GIT_SHALLOW    TRUE)
   FetchContent_MakeAvailable(glslang)
 
+  # Python3 drives tools/hyle_shader.py (GLSL->SPIR-V->embedded header) via hyle_embed_shader.
+  # Interpreter-only (no dev headers); used at build time to regenerate the test shader headers.
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+
   set(HYLE_COMPUTE_VULKAN_ENABLED ON)
   message(STATUS "HYLE: Vulkan compute enabled -- volk + Vulkan-Headers + glslang via "
                  "FetchContent pin 1.4.341 (cache: .deps; loader dlopen'd at runtime, no SDK)")

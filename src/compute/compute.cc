@@ -577,16 +577,38 @@ Result<Kernel> Kernel::compile(const Device& device, const char* source,
 
 Result<Kernel> Kernel::load_ptx(const Device& device, const char* ptx,
                                 const char* entry) noexcept {
-  return load_ptx(device, ptx, entry, nullptr, 0, nullptr, 0);
-}
-
-Result<Kernel> Kernel::load_ptx(const Device& device, const char* ptx, const char* entry,
-                                const SpecConstant* specs, unsigned spec_count,
-                                const void* spec_data, unsigned spec_data_size) noexcept {
   DeviceEntry e = resolve(device);
   void* module = nullptr;
   void* func = nullptr;
-  Status st = e.vt->kernel_load_ptx(e.local, ptx, entry, specs, spec_count,
+  // PTX is NUL-terminated text: pass code_size=0 (the CUDA backend reads it as a C string);
+  // no spec constants on the CUDA path.
+  Status st = e.vt->kernel_load_ptx(e.local, ptx, /*code_size=*/0, entry,
+                                    nullptr, 0, nullptr, 0, &module, &func);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  Kernel k;
+  k.vt_ = e.vt;
+  k.module_ = module;
+  k.func_ = func;
+  k.ordinal_ = e.local;
+  return k;
+}
+
+Result<Kernel> Kernel::load_spirv(const Device& device, const SpirvBlob& blob,
+                                  const char* entry) noexcept {
+  return load_spirv(device, blob, entry, nullptr, 0, nullptr, 0);
+}
+
+Result<Kernel> Kernel::load_spirv(const Device& device, const SpirvBlob& blob,
+                                  const char* entry, const SpecConstant* specs,
+                                  unsigned spec_count, const void* spec_data,
+                                  unsigned spec_data_size) noexcept {
+  DeviceEntry e = resolve(device);
+  void* module = nullptr;
+  void* func = nullptr;
+  // SPIR-V is binary: pass the exact byte size (no length-prefix hack). Same vtable slot as
+  // PTX; the Vulkan backend uses code_size, the CUDA backend rejects SPIR-V shape via entry.
+  Status st = e.vt->kernel_load_ptx(e.local, reinterpret_cast<const char*>(blob.words),
+                                    blob.byte_size, entry, specs, spec_count,
                                     spec_data, spec_data_size, &module, &func);
   if (!st.ok()) return std::unexpected(std::move(st));
   Kernel k;

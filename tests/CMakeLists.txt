@@ -40,12 +40,13 @@ hyle_add_test(compute SOURCES compute/device_test.cc compute/buffer_test.cc comp
 # completion case (#21) is #if HYLE_HAS_FCONTEXT-gated inside the TU, so link hyle_sched
 # when fcontext exists (else the base sync tests still build with just hyle_mem).
 if(HYLE_COMPUTE_VULKAN_ENABLED)
-  # Compile the test shaders from source (tools/shaders/*.comp) to embedded SPIR-V headers --
-  # reproducible via glslang instead of hand-pasted words (compute-06 tools/). saxpy_spirv.h
-  # feeds the end-to-end/batch/timing tests; saxpy_spec_spirv.h drives the #2/#3 spec-constant
-  # test (its local_size + SCALE are specialization constants).
-  hyle_embed_shader(saxpy.comp saxpy_spirv.h kSaxpySpirv)
-  hyle_embed_shader(saxpy_spec.comp saxpy_spec_spirv.h kSaxpySpecSpirv)
+  # Compile the test shaders from source (tools/shaders/*.comp) to embedded SpirvBlob headers
+  # via tools/hyle_shader.py -- reproducible from source, and the SAME tool a user runs. The
+  # symbols live in namespace hyle_test_shaders (the tool's --namespace) so they can't clash.
+  # saxpy.spv.h feeds the end-to-end/batch/timing tests; saxpy_spec.spv.h drives the #2/#3
+  # spec-constant test (its local_size + SCALE are specialization constants).
+  hyle_embed_shader(saxpy.comp saxpy.spv.h kSaxpySpirv hyle_test_shaders)
+  hyle_embed_shader(saxpy_spec.comp saxpy_spec.spv.h kSaxpySpecSpirv hyle_test_shaders)
   if(HYLE_HAS_FCONTEXT)
     hyle_add_test(compute NAME vulkan SOURCES compute/vulkan_test.cc
                   "${HYLE_SHADER_kSaxpySpirv}" "${HYLE_SHADER_kSaxpySpecSpirv}"
