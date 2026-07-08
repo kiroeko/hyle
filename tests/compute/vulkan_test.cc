@@ -3,6 +3,8 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
+#include <cstdio>    // fopen/fseek/ftell -- verify #1 cache file was written non-empty
+#include <cstdlib>   // getenv -- read HYLE_VK_PIPELINE_CACHE path the CTest variant sets
 #include <cstring>
 #include <utility>
 #include <vector>
@@ -63,6 +65,14 @@ bool find_vulkan(Device& out) {
 struct SaxpyParams { std::uint32_t n; float alpha; float beta; float bias; };
 
 }  // namespace
+
+// #1 pipeline cache 落盘: test-only flush hook (vulkan_backend.cc, HYLE_TESTING). Returns the
+// bytes written to HYLE_VK_PIPELINE_CACHE (0 if unset/no device/empty). Declared here so the
+// test can drive persistence on demand rather than waiting for process-exit (~VkContext).
+// HYLE_IMPORT: the symbol lives in the hyle_compute DLL (exported under HYLE_TESTING).
+namespace hyle::compute {
+HYLE_IMPORT std::size_t vk_pipeline_cache_flush_for_test() noexcept;
+}
 
 // End-to-end: SPIR-V kernel + buffers + scalars through the unified launch shell.
 TEST(VulkanCompute, SaxpyEndToEnd) {
@@ -219,6 +229,50 @@ TEST(VulkanCompute, TimingMeasuresElapsed) {
   auto ns = elapsed_ns(*start, *stop);
   ASSERT_TRUE(ns.has_value()) << ns.error().message();
   EXPECT_GT(*ns, 0u);  // a real Vulkan dispatch took nonzero GPU time
+}
+
+// #1 pipeline cache 落盘: build a pipeline, flush the shared cache to HYLE_VK_PIPELINE_CACHE,
+// and verify a NON-EMPTY blob was written. Persistence is opt-in via that env var, so this
+// runs only in the dedicated CTest variant (hyle_compute_vulkan_cache_test) that sets it; the
+// plain variant leaves it unset -> SKIP. Proves the save path (getPipelineCacheData -> framed
+// file); the load+UUID path is exercised by the SAME variant's SECOND run seeding from this
+// file (saxpy stays green => the seeded cache was accepted, not rejected).
+TEST(VulkanCompute, PipelineCachePersist) {
+  const char* path = std::getenv("HYLE_VK_PIPELINE_CACHE");
+  if (path == nullptr || path[0] == '\0')
+    GTEST_SKIP() << "HYLE_VK_PIPELINE_CACHE unset (persistence is opt-in; cache variant sets it)";
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan device";
+
+  // Build at least one pipeline so the driver has something to cache: a full saxpy launch.
+  auto s = Stream::create(vk);
+  ASSERT_TRUE(s.has_value());
+  auto k = load_saxpy(vk);
+  ASSERT_TRUE(k.has_value()) << k.error().message();
+  constexpr int kN = 256;
+  const std::size_t bytes = kN * sizeof(float);
+  BufferType bt = device_buffer_type(vk);
+  auto bx = Buffer::create(bt, bytes);
+  auto by = Buffer::create(bt, bytes);
+  auto bo = Buffer::create(bt, bytes);
+  ASSERT_TRUE(bx.has_value() && by.has_value() && bo.has_value());
+  SaxpyParams p{kN, 1.0f, 1.0f, 0.0f};
+  LaunchConfig cfg;
+  cfg.grid = {blocks_for(kN, 256), 1, 1};
+  ASSERT_TRUE(launch(*s, *k, cfg, *bx, *by, *bo, p).ok());
+  ASSERT_TRUE(s->sync().ok());
+
+  // Flush on demand (the process-exit dtor path can't be observed in-process).
+  std::size_t written = hyle::compute::vk_pipeline_cache_flush_for_test();
+  EXPECT_GT(written, 0u) << "cache flush wrote an empty payload";
+
+  // The framed file must exist and exceed the header (magic + UUID = 24 bytes).
+  std::FILE* f = std::fopen(path, "rb");
+  ASSERT_NE(f, nullptr) << "cache file not created at " << path;
+  std::fseek(f, 0, SEEK_END);
+  long sz = std::ftell(f);
+  std::fclose(f);
+  EXPECT_GT(sz, 24) << "cache file has no payload beyond the header";
 }
 
 // #11/#12 precise barriers: a DEPENDENT chain in one batch. Job j reads job (j-1)'s OUTPUT

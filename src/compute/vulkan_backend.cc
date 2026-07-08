@@ -29,11 +29,10 @@
 #include "volk.h"  // must precede any vulkan header; VK_NO_PROTOTYPES set by target
 
 #include <cstdint>
+#include <cstdio>    // fopen/fread/fwrite -- pipeline cache 落盘 (checklist #1, env-gated)
+#include <cstdlib>   // getenv -- pipeline-cache path (#1) + TEST-ONLY staging forcing (make_mem)
 #include <cstring>
 #include <mutex>
-#if defined(HYLE_TESTING)
-#  include <cstdlib>  // getenv -- TEST-ONLY staging-path forcing (see make_mem)
-#endif
 #include <new>
 #include <utility>
 #include <vector>
@@ -42,6 +41,9 @@
 #include "hyle/compute/types.h"
 #include "hyle/error/status.h"
 #include "hyle/macros.h"
+#if defined(HYLE_TESTING)
+#  include "hyle/visibility.h"  // HYLE_EXPORT -- export the #1 cache-flush test hook across the DLL
+#endif
 
 namespace hyle::compute {
 namespace {
@@ -66,6 +68,69 @@ Status from_vk(VkResult r, const char* what) noexcept {
   }
 }
 
+// ---- pipeline cache 落盘 (checklist #1) --------------------------------------------
+// kompute builds an EMPTY per-algorithm cache = no reuse. HYLE keeps a device-shared cache
+// (built once in init) AND optionally PERSISTS it across process runs: cold-start no longer
+// re-compiles SPIR-V -> ISA (tens of ms/kernel). Persistence is OPT-IN via the env var
+// HYLE_VK_PIPELINE_CACHE (a file path) -- a base library must NOT silently write to a user's
+// disk, so unset = pure in-memory shared cache (the prior behavior). The file is our own
+// framed format: a small header {magic, pipelineCacheUUID} + the raw vkGetPipelineCacheData
+// blob. On load we reject a stale/foreign blob by UUID (换卡/换驱动 -> Vulkan changes the
+// UUID) so the driver never ingests an incompatible cache (it would ignore it anyway, but we
+// avoid even handing it over). Corruption/short reads fall back to an empty cache (never fatal
+// -- the cache is a pure optimization).
+struct PipeCacheHeader {
+  char magic[8];                  // "HYLEPC01" -- format + version tag
+  uint8_t uuid[VK_UUID_SIZE];     // pipelineCacheUUID this blob was produced under
+};
+constexpr char kPipeCacheMagic[8] = {'H', 'Y', 'L', 'E', 'P', 'C', '0', '1'};
+
+const char* pipe_cache_path() noexcept {
+  const char* p = std::getenv("HYLE_VK_PIPELINE_CACHE");
+  return (p != nullptr && p[0] != '\0') ? p : nullptr;
+}
+
+// Read a persisted cache blob whose header UUID matches `uuid` into `out`. Returns true and
+// fills `out` with the driver payload (header stripped) only on a full, matching read; any
+// mismatch/short/absent file returns false (caller creates an empty cache).
+bool load_pipe_cache(const char* path, const uint8_t uuid[VK_UUID_SIZE],
+                     std::vector<uint8_t>* out) noexcept {
+  std::FILE* f = std::fopen(path, "rb");
+  if (f == nullptr) return false;  // first run / no file
+  bool ok = false;
+  if (std::fseek(f, 0, SEEK_END) == 0) {
+    long sz = std::ftell(f);
+    if (sz > static_cast<long>(sizeof(PipeCacheHeader))) {
+      std::rewind(f);
+      PipeCacheHeader h{};
+      if (std::fread(&h, sizeof(h), 1, f) == 1 &&
+          std::memcmp(h.magic, kPipeCacheMagic, sizeof(kPipeCacheMagic)) == 0 &&
+          std::memcmp(h.uuid, uuid, VK_UUID_SIZE) == 0) {
+        std::size_t payload = static_cast<std::size_t>(sz) - sizeof(PipeCacheHeader);
+        out->resize(payload);
+        ok = std::fread(out->data(), 1, payload, f) == payload;
+        if (!ok) out->clear();
+      }
+    }
+  }
+  std::fclose(f);
+  return ok;
+}
+
+// Serialize `blob` (from vkGetPipelineCacheData) under a header stamped with `uuid`. Best-
+// effort: a write failure is swallowed (the cache is an optimization, not correctness).
+void save_pipe_cache(const char* path, const uint8_t uuid[VK_UUID_SIZE],
+                     const std::vector<uint8_t>& blob) noexcept {
+  std::FILE* f = std::fopen(path, "wb");
+  if (f == nullptr) return;
+  PipeCacheHeader h{};
+  std::memcpy(h.magic, kPipeCacheMagic, sizeof(kPipeCacheMagic));
+  std::memcpy(h.uuid, uuid, VK_UUID_SIZE);
+  std::fwrite(&h, sizeof(h), 1, f);
+  if (!blob.empty()) std::fwrite(blob.data(), 1, blob.size(), f);
+  std::fclose(f);
+}
+
 // ---- process-wide Vulkan context (created once, shared by all streams/buffers) -------
 // Mirrors the CUDA backend's implicit process context. Built lazily on first vtable use
 // via a Meyers singleton; if the loader/device is absent, `ok` stays false and
@@ -82,6 +147,7 @@ struct VkContext {
                                          // is externally-synchronized (spec) + guards lazy
                                          // per-Kernel pipeline creation against concurrent first-launch.
   VkPipelineCache pipe_cache = VK_NULL_HANDLE;  // shared cache (checklist #1: not per-kernel)
+  uint8_t cache_uuid[VK_UUID_SIZE] = {};  // pipelineCacheUUID: cache validity key (换卡/换驱动作废)
   uint32_t max_push = 0;                  // maxPushConstantsSize (checklist #4 device limit)
   uint32_t max_wg_count[3] = {0, 0, 0};   // maxComputeWorkGroupCount x/y/z (#20 clamp guard)
   std::size_t buf_alignment = 16;         // minStorageBufferOffsetAlignment (>=16); device const
@@ -175,13 +241,23 @@ struct VkContext {
     volkLoadDevice(device);
     vkGetDeviceQueue(device, compute_qfi, 0, &queue);
 
-    VkPipelineCacheCreateInfo pcci{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
-    vkCreatePipelineCache(device, &pcci, nullptr, &pipe_cache);  // checklist #1
-
     // Cache the device limits the launch path validates against (checklist #4 push size,
     // #20 workgroup count) -- read once here, not per-launch.
     VkPhysicalDeviceProperties props;
     vkGetPhysicalDeviceProperties(phys, &props);
+    std::memcpy(cache_uuid, props.pipelineCacheUUID, VK_UUID_SIZE);  // #1 cache validity key
+
+    // Shared pipeline cache (#1). If HYLE_VK_PIPELINE_CACHE names a file with a UUID-matching
+    // blob, seed the cache from it (cold-start avoids re-compiling SPIR-V->ISA); else empty.
+    VkPipelineCacheCreateInfo pcci{VK_STRUCTURE_TYPE_PIPELINE_CACHE_CREATE_INFO};
+    std::vector<uint8_t> seed;
+    if (const char* cp = pipe_cache_path())
+      if (load_pipe_cache(cp, cache_uuid, &seed) && !seed.empty()) {
+        pcci.initialDataSize = seed.size();
+        pcci.pInitialData = seed.data();
+      }
+    vkCreatePipelineCache(device, &pcci, nullptr, &pipe_cache);
+
     max_push = props.limits.maxPushConstantsSize;
     max_wg_count[0] = props.limits.maxComputeWorkGroupCount[0];
     max_wg_count[1] = props.limits.maxComputeWorkGroupCount[1];
@@ -196,6 +272,23 @@ struct VkContext {
     if (props.limits.timestampComputeAndGraphics)
       timestamp_period = props.limits.timestampPeriod;
     ok = true;
+  }
+
+  // Persist the pipeline cache on process exit (#1), if opt-in via HYLE_VK_PIPELINE_CACHE.
+  // The Meyers-singleton dtor runs at exit while volk's device fns + our VkDevice are still
+  // valid (same static lifetime). We only serialize the cache (not a full teardown of the
+  // device/instance -- those are reclaimed by the OS at process exit); querying with a null
+  // out-ptr gets the size, then we read the blob and frame it with the UUID header.
+  ~VkContext() {
+    if (!ok || pipe_cache == VK_NULL_HANDLE) return;
+    const char* cp = pipe_cache_path();
+    if (cp == nullptr) return;
+    std::size_t n = 0;
+    if (vkGetPipelineCacheData(device, pipe_cache, &n, nullptr) != VK_SUCCESS || n == 0) return;
+    std::vector<uint8_t> blob(n);
+    if (vkGetPipelineCacheData(device, pipe_cache, &n, blob.data()) != VK_SUCCESS) return;
+    blob.resize(n);  // n may shrink to the actual written size
+    save_pipe_cache(cp, cache_uuid, blob);
   }
 };
 
@@ -475,6 +568,12 @@ struct VkMem {
   VkBuffer staging_buf = VK_NULL_HANDLE;
   VkDeviceMemory staging_mem = VK_NULL_HANDLE;
   void* staging_mapped = nullptr;  // persistent map of the staging buffer (host-visible+coherent)
+  // #6 HOST_CACHED: the mapped PRIMARY (kHostPinned) may be HOST_CACHED for fast CPU readback.
+  // HOST_CACHED memory is not guaranteed HOST_COHERENT, so a non-coherent map needs an explicit
+  // flush after a host write (#10) and invalidate before a host read. false only for that case;
+  // ReBAR device maps + staging are always coherent (true). The staging buffer is always chosen
+  // COHERENT, so this flag governs only the `mapped` primary.
+  bool coherent = true;
 };
 
 void free_mem(VkMem* m) noexcept;  // fwd: make_mem calls it to clean up partial allocations
@@ -499,8 +598,38 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
   uint32_t mt = UINT32_MAX;
   bool will_map = host_visible;
   if (host_visible) {
-    mt = find_mem_type(mr.memoryTypeBits,
-                       VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    // #6 HOST_CACHED: kHostPinned is the readback/staging tier, so prefer HOST_CACHED (fast CPU
+    // reads of D2H results) when present. Try CACHED|COHERENT (best: cached + no manual flush),
+    // then CACHED alone (cached but non-coherent -> set/get flush/invalidate, #10), then plain
+    // COHERENT (the original path). m->coherent tracks whether the chosen type is coherent.
+    mt = find_mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                       VK_MEMORY_PROPERTY_HOST_CACHED_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+#if defined(HYLE_TESTING)
+    // TEST-ONLY: force the non-coherent HOST_CACHED path (CACHED without COHERENT) so the
+    // flush/invalidate code (#10) is covered on a box whose HOST_CACHED type also happens to be
+    // COHERENT (RTX 4070). Absent from the shipped lib (HYLE_TESTING only).
+    if (std::getenv("HYLE_VK_FORCE_NONCOHERENT")) {
+      uint32_t nc = find_mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                                  VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+      // Only override if that type is genuinely non-coherent (else the force is a no-op).
+      if (nc != UINT32_MAX) {
+        VkPhysicalDeviceMemoryProperties mp;
+        vkGetPhysicalDeviceMemoryProperties(ctx().phys, &mp);
+        if (!(mp.memoryTypes[nc].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT)) mt = nc;
+      }
+    }
+#endif
+    if (mt == UINT32_MAX)  // no cached type: try cached-non-coherent, then plain coherent
+      mt = find_mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                         VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+    if (mt == UINT32_MAX)
+      mt = find_mem_type(mr.memoryTypeBits,
+                         VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    if (mt != UINT32_MAX) {  // record coherence of the chosen type (governs flush/invalidate)
+      VkPhysicalDeviceMemoryProperties mp;
+      vkGetPhysicalDeviceMemoryProperties(ctx().phys, &mp);
+      m->coherent = (mp.memoryTypes[mt].propertyFlags & VK_MEMORY_PROPERTY_HOST_COHERENT_BIT) != 0;
+    }
   } else {
     // Device buffer: try ReBAR (DEVICE_LOCAL|HOST_VISIBLE|COHERENT) first so set/get can
     // map directly with no staging copy; fall back to plain DEVICE_LOCAL (checklist #6/#7).
@@ -641,6 +770,24 @@ void record_copy(VkCommandBuffer cb, VkBuffer from, VkBuffer to, std::size_t byt
             VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 }
 
+// #6/#10 non-coherent HOST_CACHED: flush after a host WRITE (make it visible to the GPU) /
+// invalidate before a host READ (pull the GPU's writes into the CPU cache). No-ops when the
+// memory is coherent (the common case: ReBAR, staging, and CACHED|COHERENT types). Flushing
+// the WHOLE range (offset 0, VK_WHOLE_SIZE) lets the driver handle nonCoherentAtomSize
+// alignment -- simpler + correct vs hand-aligning a sub-range.
+void flush_if_needed(const VkMem* m) noexcept {
+  if (m->coherent) return;
+  VkMappedMemoryRange r{VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE};
+  r.memory = m->mem; r.offset = 0; r.size = VK_WHOLE_SIZE;
+  vkFlushMappedMemoryRanges(ctx().device, 1, &r);
+}
+void invalidate_if_needed(const VkMem* m) noexcept {
+  if (m->coherent) return;
+  VkMappedMemoryRange r{VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE};
+  r.memory = m->mem; r.offset = 0; r.size = VK_WHOLE_SIZE;
+  vkInvalidateMappedMemoryRanges(ctx().device, 1, &r);
+}
+
 // ---- buffer traits + alloc (compute-02) --------------------------------------
 std::size_t vk_buffer_alignment(BufferKind) noexcept { return ctx().buf_alignment; }
 std::size_t vk_buffer_max_size(int, BufferKind) noexcept { return ctx().buf_max_size; }
@@ -668,6 +815,7 @@ Status vk_buffer_set(void* dst_base, std::size_t offset, const void* src,
   auto* m = static_cast<VkMem*>(dst_base);
   if (m->mapped != nullptr) {  // ReBAR / host-visible: direct write
     std::memcpy(static_cast<std::byte*>(m->mapped) + offset, src, size);
+    flush_if_needed(m);  // #6/#10: non-coherent HOST_CACHED -> make the write GPU-visible
     return Status();
   }
   // Staging H2D: host -> staging map, then GPU copy staging -> primary (at `offset`).
@@ -686,6 +834,7 @@ Status vk_buffer_get(const void* src_base, std::size_t offset, void* dst,
                      std::size_t size) noexcept {
   auto* m = static_cast<VkMem*>(const_cast<void*>(src_base));
   if (m->mapped != nullptr) {  // ReBAR / host-visible: direct read
+    invalidate_if_needed(m);  // #6/#10: non-coherent HOST_CACHED -> pull GPU writes into cache
     std::memcpy(dst, static_cast<std::byte*>(m->mapped) + offset, size);
     return Status();
   }
@@ -703,8 +852,10 @@ Status vk_buffer_copy(void* dst_base, std::size_t dst_off, const void* src_base,
   auto* d = static_cast<VkMem*>(dst_base);
   auto* s = static_cast<VkMem*>(const_cast<void*>(src_base));
   if (d->mapped != nullptr && s->mapped != nullptr) {  // both host-mapped: CPU memcpy
+    invalidate_if_needed(s);  // #6/#10: pull src's GPU writes into cache before reading
     std::memcpy(static_cast<std::byte*>(d->mapped) + dst_off,
                 static_cast<std::byte*>(s->mapped) + src_off, size);
+    flush_if_needed(d);       // and publish dst's write if it's non-coherent
     return Status();
   }
   // At least one is device-local: GPU copyBuffer src.primary -> dst.primary (D2D stays on
@@ -725,6 +876,7 @@ Status vk_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
   auto* m = static_cast<VkMem*>(base);
   if (m->mapped != nullptr) {  // host-mapped: direct memset
     std::memset(static_cast<std::byte*>(m->mapped) + offset, value, size);
+    flush_if_needed(m);  // #6/#10: non-coherent HOST_CACHED -> make the memset GPU-visible
     return Status();
   }
   // Device-local: vkCmdFillBuffer writes a 32-bit pattern. buffer_clear fills whole bytes
@@ -1194,6 +1346,28 @@ constexpr ComputeBackend kVulkanBackend = {
 const ComputeBackend* vulkan_vtable() noexcept {
   return ctx().ok ? &kVulkanBackend : nullptr;
 }
+
+#if defined(HYLE_TESTING)
+// TEST-ONLY (#1 pipeline cache 落盘): the persist path normally runs only in ~VkContext at
+// process exit, which a single-process test can't observe. This hook flushes the current
+// cache to HYLE_VK_PIPELINE_CACHE on demand and returns the payload byte count (0 if no env
+// path, no device, or the cache is empty) so a test can prove a non-empty cache was written
+// after building a pipeline. Compiled ONLY under HYLE_TESTING (absent from the shipped lib);
+// HYLE_EXPORT'd because the test TU links it across the hyle_compute DLL boundary.
+HYLE_EXPORT std::size_t vk_pipeline_cache_flush_for_test() noexcept {
+  VkContext& c = ctx();
+  if (!c.ok || c.pipe_cache == VK_NULL_HANDLE) return 0;
+  const char* cp = pipe_cache_path();
+  if (cp == nullptr) return 0;
+  std::size_t n = 0;
+  if (vkGetPipelineCacheData(c.device, c.pipe_cache, &n, nullptr) != VK_SUCCESS || n == 0) return 0;
+  std::vector<uint8_t> blob(n);
+  if (vkGetPipelineCacheData(c.device, c.pipe_cache, &n, blob.data()) != VK_SUCCESS) return 0;
+  blob.resize(n);
+  save_pipe_cache(cp, c.cache_uuid, blob);
+  return blob.size();
+}
+#endif
 
 }  // namespace hyle::compute
 

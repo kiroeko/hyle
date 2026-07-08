@@ -55,6 +55,21 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
            COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
   set_tests_properties(hyle_compute_vulkan_staging_test PROPERTIES
                        ENVIRONMENT "HYLE_VK_FORCE_STAGING=1")
+  # #1 pipeline cache 落盘: a variant with HYLE_VK_PIPELINE_CACHE pointing at a build-dir file
+  # (opt-in persistence, TEST-ONLY under HYLE_TESTING). Run TWICE in sequence via a fixture:
+  # the first run seeds the file from an empty cache (proving the SAVE path -- PipelineCachePersist
+  # asserts a non-empty blob); the second run loads that file at VkContext init (the LOAD+UUID
+  # path) and must still pass saxpy (a rejected/foreign cache would just be ignored, not fail).
+  add_test(NAME hyle_compute_vulkan_cache_seed_test
+           COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
+  set_tests_properties(hyle_compute_vulkan_cache_seed_test PROPERTIES
+                       ENVIRONMENT "HYLE_VK_PIPELINE_CACHE=${CMAKE_CURRENT_BINARY_DIR}/hyle_vk_pipe_cache.bin"
+                       FIXTURES_SETUP VK_PIPE_CACHE)
+  add_test(NAME hyle_compute_vulkan_cache_load_test
+           COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
+  set_tests_properties(hyle_compute_vulkan_cache_load_test PROPERTIES
+                       ENVIRONMENT "HYLE_VK_PIPELINE_CACHE=${CMAKE_CURRENT_BINARY_DIR}/hyle_vk_pipe_cache.bin"
+                       FIXTURES_REQUIRED VK_PIPE_CACHE)
 endif()
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
 # hash_test.cc includes the opt-in hyle/container/hash_inline.h, which pulls the
