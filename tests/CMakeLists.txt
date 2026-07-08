@@ -46,6 +46,15 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
   else()
     hyle_add_test(compute NAME vulkan SOURCES compute/vulkan_test.cc DEPS hyle_mem)
   endif()
+  # Second ctest of the SAME exe with HYLE_VK_FORCE_STAGING=1 (a TEST-ONLY env hook, only
+  # honored under HYLE_TESTING): forces the non-ReBAR STAGING path so it's covered on ReBAR
+  # dev machines (RTX 4070) where the default direct-map path would otherwise hide it. Same
+  # VulkanCompute cases, exercising vk_buffer_set/get/copy through the staging double-buffer
+  # + copyBuffer barrier chain instead of the direct map.
+  add_test(NAME hyle_compute_vulkan_staging_test
+           COMMAND hyle_compute_vulkan_test --gtest_filter=VulkanCompute.*)
+  set_tests_properties(hyle_compute_vulkan_staging_test PROPERTIES
+                       ENVIRONMENT "HYLE_VK_FORCE_STAGING=1")
 endif()
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
 # hash_test.cc includes the opt-in hyle/container/hash_inline.h, which pulls the

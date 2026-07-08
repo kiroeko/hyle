@@ -31,6 +31,9 @@
 #include <cstdint>
 #include <cstring>
 #include <mutex>
+#if defined(HYLE_TESTING)
+#  include <cstdlib>  // getenv -- TEST-ONLY staging-path forcing (see make_mem)
+#endif
 #include <new>
 #include <utility>
 #include <vector>
@@ -373,9 +376,18 @@ void vk_event_sync(void* event_native) noexcept {
 struct VkMem {
   VkBuffer buf = VK_NULL_HANDLE;
   VkDeviceMemory mem = VK_NULL_HANDLE;
-  void* mapped = nullptr;      // persistent map if host-visible (checklist #9), else null
+  void* mapped = nullptr;      // persistent map if PRIMARY is host-visible (ReBAR, #9), else null
   std::size_t size = 0;
+  // Staging double-buffer (kompute #8/#13): built ONLY for a device-local buffer that is
+  // NOT host-mappable (no ReBAR). host<->device then goes host-memcpy<->staging + a GPU
+  // copyBuffer staging<->primary. `mapped != nullptr` (ReBAR) means NO staging is needed
+  // (direct map). On the host-visible path both are null and `mapped` is the primary map.
+  VkBuffer staging_buf = VK_NULL_HANDLE;
+  VkDeviceMemory staging_mem = VK_NULL_HANDLE;
+  void* staging_mapped = nullptr;  // persistent map of the staging buffer (host-visible+coherent)
 };
+
+void free_mem(VkMem* m) noexcept;  // fwd: make_mem calls it to clean up partial allocations
 
 // Create a VkBuffer + backing memory of `bytes`. `host_visible` picks the memory class:
 // host-visible+coherent (staging / kHostPinned) vs device-local, trying ReBAR first for
@@ -408,6 +420,17 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
     if (mt != UINT32_MAX) will_map = true;  // ReBAR -> host-mappable
     else { mt = find_mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
            will_map = false; }
+#if defined(HYLE_TESTING)
+    // TEST-ONLY: on a ReBAR box (dev machines: RTX 4070) the device path always maps
+    // directly, so the staging fallback (kompute #8/#13, for ordinary non-ReBAR GPUs)
+    // is never exercised. HYLE_VK_FORCE_STAGING=1 forces the non-mapped path + plain
+    // DEVICE_LOCAL so tests cover staging on hardware that wouldn't otherwise hit it.
+    // Compiled ONLY under HYLE_TESTING (HYLE_BUILD_TESTS); absent from the shipped lib.
+    if (will_map && std::getenv("HYLE_VK_FORCE_STAGING")) {
+      uint32_t dl = find_mem_type(mr.memoryTypeBits, VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+      if (dl != UINT32_MAX) { mt = dl; will_map = false; }  // pretend "no ReBAR"
+    }
+#endif
   }
   if (mt == UINT32_MAX) {
     vkDestroyBuffer(ctx().device, m->buf, nullptr); delete m;
@@ -421,15 +444,111 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
                          return from_vk(r, "vkAllocateMemory"); }
   vkBindBufferMemory(ctx().device, m->buf, m->mem, 0);
   if (will_map) vkMapMemory(ctx().device, m->mem, 0, VK_WHOLE_SIZE, 0, &m->mapped);  // #9
+
+  // Staging double-buffer (kompute #8): a DEVICE-LOCAL buffer with NO ReBAR (primary not
+  // host-mappable) needs a host-visible+coherent staging buffer so host<->device can go
+  // memcpy<->staging + a GPU copyBuffer. Only for the non-mapped device case: host_visible
+  // buffers and ReBAR device buffers map directly (mapped != null) and skip this.
+  if (!will_map) {
+    VkBufferCreateInfo sbi{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+    sbi.size = bi.size;
+    sbi.usage = VK_BUFFER_USAGE_TRANSFER_SRC_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+    sbi.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    r = vkCreateBuffer(ctx().device, &sbi, nullptr, &m->staging_buf);
+    if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkCreateBuffer(staging)"); }
+    VkMemoryRequirements smr;
+    vkGetBufferMemoryRequirements(ctx().device, m->staging_buf, &smr);
+    uint32_t smt = find_mem_type(smr.memoryTypeBits,
+                                 VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+    if (smt == UINT32_MAX) { free_mem(m); return Status::ResourceExhausted("vk: no host-visible staging memory type"); }
+    VkMemoryAllocateInfo sai{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+    sai.allocationSize = smr.size;
+    sai.memoryTypeIndex = smt;
+    r = vkAllocateMemory(ctx().device, &sai, nullptr, &m->staging_mem);
+    if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkAllocateMemory(staging)"); }
+    vkBindBufferMemory(ctx().device, m->staging_buf, m->staging_mem, 0);
+    vkMapMemory(ctx().device, m->staging_mem, 0, VK_WHOLE_SIZE, 0, &m->staging_mapped);  // persistent (#9)
+  }
   *out = m;
   return Status();
 }
 void free_mem(VkMem* m) noexcept {
   if (m == nullptr) return;
+  // Staging first (built last); each field guarded so a partial make_mem failure is safe.
+  if (m->staging_mapped != nullptr) vkUnmapMemory(ctx().device, m->staging_mem);
+  if (m->staging_buf != VK_NULL_HANDLE) vkDestroyBuffer(ctx().device, m->staging_buf, nullptr);
+  if (m->staging_mem != VK_NULL_HANDLE) vkFreeMemory(ctx().device, m->staging_mem, nullptr);
   if (m->mapped != nullptr) vkUnmapMemory(ctx().device, m->mem);
   if (m->buf != VK_NULL_HANDLE) vkDestroyBuffer(ctx().device, m->buf, nullptr);
   if (m->mem != VK_NULL_HANDLE) vkFreeMemory(ctx().device, m->mem, nullptr);
   delete m;
+}
+
+// One-shot SYNCHRONOUS transfer: allocate a transient command buffer, let `rec` record
+// transfer commands into it, submit on the compute queue, and WAIT for completion (own
+// fence). This backs the SYNCHRONOUS buffer_set/get/copy on the staging path -- those
+// have no Stream arg and are contractually synchronous (data in place on return, same as
+// the CUDA backend's cudaMemcpyAsync+synchronize). NOT a hot path (the async kernel path
+// is vk_kernel_launch); a transient pool per call keeps it self-contained. Returns a
+// Status; frees everything before returning (success or failure).
+template <class Rec>
+Status staged_submit(Rec&& rec) noexcept {
+  VkDevice dev = ctx().device;
+  VkCommandPoolCreateInfo pci{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  pci.queueFamilyIndex = ctx().compute_qfi;
+  pci.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
+  VkCommandPool pool = VK_NULL_HANDLE;
+  VkResult r = vkCreateCommandPool(dev, &pci, nullptr, &pool);
+  if (r != VK_SUCCESS) return from_vk(r, "vkCreateCommandPool(staged)");
+  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  cbai.commandPool = pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
+  VkCommandBuffer cb = VK_NULL_HANDLE;
+  r = vkAllocateCommandBuffers(dev, &cbai, &cb);
+  if (r != VK_SUCCESS) { vkDestroyCommandPool(dev, pool, nullptr); return from_vk(r, "vkAllocateCommandBuffers(staged)"); }
+  VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+  bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+  vkBeginCommandBuffer(cb, &bg);
+  rec(cb);
+  vkEndCommandBuffer(cb);
+  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  VkFence fence = VK_NULL_HANDLE;
+  r = vkCreateFence(dev, &fci, nullptr, &fence);
+  if (r != VK_SUCCESS) { vkDestroyCommandPool(dev, pool, nullptr); return from_vk(r, "vkCreateFence(staged)"); }
+  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  si.commandBufferCount = 1; si.pCommandBuffers = &cb;
+  {
+    std::lock_guard<std::mutex> lk(ctx().submit_mtx);  // VkQueue is externally synchronized
+    r = vkQueueSubmit(ctx().queue, 1, &si, fence);
+  }
+  if (r == VK_SUCCESS) vkWaitForFences(dev, 1, &fence, VK_TRUE, UINT64_MAX);
+  vkDestroyFence(dev, fence, nullptr);
+  vkDestroyCommandPool(dev, pool, nullptr);  // frees cb
+  return from_vk(r, "vkQueueSubmit(staged)");
+}
+
+// Record a buffer copy with the barriers the staging D2H path needs (kompute OpSyncLocal):
+// shaderWrite->transferRead before, transferWrite->hostRead after. For H2D the pre-barrier
+// isn't needed (host write visibility comes from queue submit) but a transferWrite->
+// shaderRead after makes the primary readable by a later kernel.
+void record_copy(VkCommandBuffer cb, VkBuffer from, VkBuffer to, std::size_t bytes,
+                 bool d2h) noexcept {
+  auto barrier = [&](VkAccessFlags src, VkAccessFlags dst, VkPipelineStageFlags ss,
+                     VkPipelineStageFlags ds) {
+    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    mb.srcAccessMask = src; mb.dstAccessMask = dst;
+    vkCmdPipelineBarrier(cb, ss, ds, 0, 1, &mb, 0, nullptr, 0, nullptr);
+  };
+  if (d2h)  // primary written by a prior compute shader -> make it transfer-readable
+    barrier(VK_ACCESS_SHADER_WRITE_BIT, VK_ACCESS_TRANSFER_READ_BIT,
+            VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT);
+  VkBufferCopy region{0, 0, bytes};
+  vkCmdCopyBuffer(cb, from, to, 1, &region);
+  if (d2h)  // staging written by the copy -> make it host-readable
+    barrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_HOST_READ_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_HOST_BIT);
+  else      // primary written by the copy -> make it shader-readable by a later kernel
+    barrier(VK_ACCESS_TRANSFER_WRITE_BIT, VK_ACCESS_SHADER_READ_BIT,
+            VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
 }
 
 // ---- buffer traits + alloc (compute-02) --------------------------------------
@@ -446,41 +565,93 @@ Status vk_buffer_alloc(int, BufferKind kind, std::size_t bytes, void** out_ptr) 
 }
 void vk_buffer_free(int, BufferKind, void* ptr) noexcept { free_mem(static_cast<VkMem*>(ptr)); }
 
-// set/get: host<->device at a byte offset. If the memory is host-mapped (host-pinned or
-// ReBAR device), it's a direct memcpy (checklist #9 persistent map). Otherwise a staged
-// copy would be needed; for the first consumer all device memory is ReBAR-mappable on the
-// RTX 4070, so the direct path covers it and non-mapped returns a clear Status.
+// set/get/copy/clear: SYNCHRONOUS host<->device at a byte offset (compute-02 contract:
+// data in place on return). TWO paths per the memory class:
+//   - MAPPED primary (host-pinned, or ReBAR device): direct memcpy into the persistent
+//     map (checklist #9). Zero GPU work -- the fast path on ReBAR hardware (RTX 4070).
+//   - NON-MAPPED device (plain DEVICE_LOCAL, no ReBAR): go through the staging buffer
+//     (kompute #8/#13): memcpy host<->staging map, then a GPU copyBuffer staging<->primary
+//     via staged_submit (one-shot cb + wait). This is what makes the Vulkan backend work
+//     on ordinary discrete GPUs / iGPUs, not just ReBAR cards.
 Status vk_buffer_set(void* dst_base, std::size_t offset, const void* src,
                      std::size_t size) noexcept {
   auto* m = static_cast<VkMem*>(dst_base);
-  if (m->mapped == nullptr) return Status::Unimplemented("vk buffer_set: memory not host-visible");
-  std::memcpy(static_cast<std::byte*>(m->mapped) + offset, src, size);
-  return Status();
+  if (m->mapped != nullptr) {  // ReBAR / host-visible: direct write
+    std::memcpy(static_cast<std::byte*>(m->mapped) + offset, src, size);
+    return Status();
+  }
+  // Staging H2D: host -> staging map, then GPU copy staging -> primary (at `offset`).
+  std::memcpy(static_cast<std::byte*>(m->staging_mapped) + offset, src, size);
+  return staged_submit([&](VkCommandBuffer cb) {
+    VkBufferCopy region{offset, offset, size};  // staging[offset] -> primary[offset]
+    vkCmdCopyBuffer(cb, m->staging_buf, m->buf, 1, &region);
+    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    mb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;   // primary now readable by a kernel
+    mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT;
+    vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+                         0, 1, &mb, 0, nullptr, 0, nullptr);
+  });
 }
 Status vk_buffer_get(const void* src_base, std::size_t offset, void* dst,
                      std::size_t size) noexcept {
   auto* m = static_cast<VkMem*>(const_cast<void*>(src_base));
-  if (m->mapped == nullptr) return Status::Unimplemented("vk buffer_get: memory not host-visible");
-  std::memcpy(dst, static_cast<std::byte*>(m->mapped) + offset, size);
+  if (m->mapped != nullptr) {  // ReBAR / host-visible: direct read
+    std::memcpy(dst, static_cast<std::byte*>(m->mapped) + offset, size);
+    return Status();
+  }
+  // Staging D2H (kompute OpSyncLocal barrier chain): GPU copy primary -> staging with
+  // shaderWrite->transferRead before + transferWrite->hostRead after, then host reads map.
+  Status s = staged_submit([&](VkCommandBuffer cb) {
+    record_copy(cb, m->buf, m->staging_buf, m->size, /*d2h=*/true);
+  });
+  if (!s.ok()) return s;
+  std::memcpy(dst, static_cast<std::byte*>(m->staging_mapped) + offset, size);
   return Status();
 }
 Status vk_buffer_copy(void* dst_base, std::size_t dst_off, const void* src_base,
                       std::size_t src_off, std::size_t size) noexcept {
   auto* d = static_cast<VkMem*>(dst_base);
   auto* s = static_cast<VkMem*>(const_cast<void*>(src_base));
-  if (d->mapped != nullptr && s->mapped != nullptr) {
+  if (d->mapped != nullptr && s->mapped != nullptr) {  // both host-mapped: CPU memcpy
     std::memcpy(static_cast<std::byte*>(d->mapped) + dst_off,
                 static_cast<std::byte*>(s->mapped) + src_off, size);
     return Status();
   }
-  return Status::Unimplemented("vk buffer_copy: non-mapped");
+  // At least one is device-local: GPU copyBuffer src.primary -> dst.primary (D2D stays on
+  // device -- no host round-trip). Barrier after so a later kernel / readback sees it.
+  return staged_submit([&](VkCommandBuffer cb) {
+    VkBufferCopy region{src_off, dst_off, size};
+    vkCmdCopyBuffer(cb, s->buf, d->buf, 1, &region);
+    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    mb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_HOST_READ_BIT;
+    vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT,
+                         0, 1, &mb, 0, nullptr, 0, nullptr);
+  });
 }
 Status vk_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
                        std::size_t size) noexcept {
   auto* m = static_cast<VkMem*>(base);
-  if (m->mapped == nullptr) return Status::Unimplemented("vk buffer_clear: not host-visible");
-  std::memset(static_cast<std::byte*>(m->mapped) + offset, value, size);
-  return Status();
+  if (m->mapped != nullptr) {  // host-mapped: direct memset
+    std::memset(static_cast<std::byte*>(m->mapped) + offset, value, size);
+    return Status();
+  }
+  // Device-local: vkCmdFillBuffer writes a 32-bit pattern. buffer_clear fills whole bytes
+  // with `value`, so replicate the byte across the 4-byte word. offset/size are byte-exact
+  // here (the caller's contract keeps them 4-aligned for device buffers; VkFillBuffer
+  // requires 4-aligned offset + size, so assert to fail-fast on a misaligned caller bug).
+  HYLE_FATAL_ASSERT((offset % 4 == 0) && (size % 4 == 0));
+  uint32_t word = value; word |= word << 8; word |= word << 16;
+  return staged_submit([&](VkCommandBuffer cb) {
+    vkCmdFillBuffer(cb, m->buf, offset, size, word);
+    VkMemoryBarrier mb{VK_STRUCTURE_TYPE_MEMORY_BARRIER};
+    mb.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+    mb.dstAccessMask = VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_HOST_READ_BIT;
+    vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_TRANSFER_BIT,
+                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT | VK_PIPELINE_STAGE_HOST_BIT,
+                         0, 1, &mb, 0, nullptr, 0, nullptr);
+  });
 }
 
 // ---- device pool (compute-02c): trivial pass-through on Vulkan ---------------
