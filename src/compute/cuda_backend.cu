@@ -161,10 +161,13 @@ Status cuda_event_create(int ordinal, void** out_native) noexcept {
   cudaError_t e = set_device(ordinal);
   if (e != cudaSuccess) return from_cuda(e, "cudaSetDevice");
   cudaEvent_t ev = nullptr;
-  // Default flags: timing enabled. compute-01 only needs completion; a later
-  // milestone may pass cudaEventDisableTiming for a faster event if timing is unused.
-  e = cudaEventCreate(&ev);
-  if (e != cudaSuccess) return from_cuda(e, "cudaEventCreate");
+  // cudaEventDisableTiming: HYLE's completion model only ever query()s/sync()s an event
+  // for done-ness (GpuPoller polls it every sweep, compute-03) -- it NEVER reads elapsed
+  // time (zero cudaEventElapsedTime in the codebase). Disabling timing skips the per-record
+  // timestamp write and uses a lighter sync path, so record/query are cheaper on the hot
+  // poll loop. (A timing event would only be needed for profiling, which HYLE doesn't do here.)
+  e = cudaEventCreateWithFlags(&ev, cudaEventDisableTiming);
+  if (e != cudaSuccess) return from_cuda(e, "cudaEventCreateWithFlags");
   *out_native = static_cast<void*>(ev);
   return Status();
 }

@@ -81,6 +81,8 @@ struct VkContext {
   VkPipelineCache pipe_cache = VK_NULL_HANDLE;  // shared cache (checklist #1: not per-kernel)
   uint32_t max_push = 0;                  // maxPushConstantsSize (checklist #4 device limit)
   uint32_t max_wg_count[3] = {0, 0, 0};   // maxComputeWorkGroupCount x/y/z (#20 clamp guard)
+  std::size_t buf_alignment = 16;         // minStorageBufferOffsetAlignment (>=16); device const
+  std::size_t buf_max_size = 0;           // maxStorageBufferRange; device const
   char dev_name[256] = "vulkan";
 
   VkContext() noexcept { init(); }
@@ -180,6 +182,11 @@ struct VkContext {
     max_wg_count[0] = props.limits.maxComputeWorkGroupCount[0];
     max_wg_count[1] = props.limits.maxComputeWorkGroupCount[1];
     max_wg_count[2] = props.limits.maxComputeWorkGroupCount[2];
+    // Buffer limits are device constants: cache here (like max_push above) so buffer_type
+    // trait queries don't re-run vkGetPhysicalDeviceProperties on every Buffer::create.
+    std::size_t a = props.limits.minStorageBufferOffsetAlignment;
+    buf_alignment = a < 16 ? 16 : a;
+    buf_max_size = props.limits.maxStorageBufferRange;
     ok = true;
   }
 };
@@ -426,17 +433,8 @@ void free_mem(VkMem* m) noexcept {
 }
 
 // ---- buffer traits + alloc (compute-02) --------------------------------------
-std::size_t vk_buffer_alignment(BufferKind) noexcept {
-  VkPhysicalDeviceProperties props;
-  vkGetPhysicalDeviceProperties(ctx().phys, &props);
-  std::size_t a = props.limits.minStorageBufferOffsetAlignment;
-  return a < 16 ? 16 : a;
-}
-std::size_t vk_buffer_max_size(int, BufferKind) noexcept {
-  VkPhysicalDeviceProperties props;
-  vkGetPhysicalDeviceProperties(ctx().phys, &props);
-  return props.limits.maxStorageBufferRange;
-}
+std::size_t vk_buffer_alignment(BufferKind) noexcept { return ctx().buf_alignment; }
+std::size_t vk_buffer_max_size(int, BufferKind) noexcept { return ctx().buf_max_size; }
 bool vk_buffer_is_host(BufferKind kind) noexcept { return kind == BufferKind::kHostPinned; }
 
 Status vk_buffer_alloc(int, BufferKind kind, std::size_t bytes, void** out_ptr) noexcept {
