@@ -88,16 +88,6 @@ class Task {
     Task get_return_object() noexcept {
       return Task{std::coroutine_handle<promise_type>::from_promise(*this)};
     }
-    // Frame-allocation OOM handler. PromiseAllocBase::operator new is noexcept and
-    // returns nullptr on OOM; the standard [dcl.fct.def.coroutine] then REQUIRES this
-    // static member -- without it the compiler can't handle the nullptr frame (it
-    // would run the coroutine on a null handle = UB) and warns. Return an EMPTY Task
-    // (null handle): done()==true, resume() is a no-op, so a caller that spawned a
-    // Task it never checks degrades safely. This matches the project's OOM-returns-
-    // empty convention (mem::Allocator/CArray/net_timeout all yield null on OOM, the
-    // caller tests it) rather than aborting -- a coroutine-frame OOM is operational,
-    // not a bug (charter: OOM paths are reachable via fault injection, not deleted).
-    static Task get_return_object_on_allocation_failure() noexcept { return Task{}; }
     // Lazy start: the coroutine is suspended at its open brace; the driver calls
     // start() to run it (so the caller controls when it begins on a fiber).
     std::suspend_always initial_suspend() noexcept { return {}; }
@@ -167,9 +157,6 @@ class Task<void> {
     Task get_return_object() noexcept {
       return Task{std::coroutine_handle<promise_type>::from_promise(*this)};
     }
-    // See Task<T>::promise_type: required because operator new is noexcept; returns an
-    // empty Task (null handle) on frame-allocation OOM instead of running a null frame.
-    static Task get_return_object_on_allocation_failure() noexcept { return Task{}; }
     std::suspend_always initial_suspend() noexcept { return {}; }
     std::suspend_always final_suspend() noexcept { return {}; }
     void return_void() noexcept {}
