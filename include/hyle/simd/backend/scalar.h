@@ -989,6 +989,95 @@ HYLE_FORCE_INLINE VFromD<D> Reverse2(D, VFromD<D> v) noexcept {
   for (std::size_t i = 0; i < N; ++i) r.raw[i] = v.raw[i ^ 1];
   return r;
 }
+// Reverse4/Reverse8: reverse within each group of 4 / 8 lanes (out[i]=a[i^3] / a[i^7]).
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> Reverse4(D, VFromD<D> v) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  VFromD<D> r; for (std::size_t i = 0; i < N; ++i) r.raw[i] = v.raw[(i & ~std::size_t{3}) | ((i & 3) ^ 3)];
+  return r;
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> Reverse8(D, VFromD<D> v) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  VFromD<D> r; for (std::size_t i = 0; i < N; ++i) r.raw[i] = v.raw[(i & ~std::size_t{7}) | ((i & 7) ^ 7)];
+  return r;
+}
+// ReverseBits: reverse the bits of each lane. ReverseLaneBytes: reverse the bytes of each lane
+// (endian swap per lane). Integer lanes.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ReverseBits(Vec<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReverseBits is integer-only");
+  using U = std::make_unsigned_t<T>;
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    U x = static_cast<U>(v.raw[i]), y = 0;
+    for (std::size_t b = 0; b < sizeof(T) * 8; ++b) { y = static_cast<U>((y << 1) | (x & 1)); x >>= 1; }
+    r.raw[i] = static_cast<T>(y);
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ReverseLaneBytes(Vec<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReverseLaneBytes is integer-only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    auto* d = reinterpret_cast<std::uint8_t*>(&r.raw[i]);
+    const auto* s = reinterpret_cast<const std::uint8_t*>(&v.raw[i]);
+    for (std::size_t b = 0; b < sizeof(T); ++b) d[b] = s[sizeof(T) - 1 - b];
+  }
+  return r;
+}
+// InterleaveEven/Odd: alternate the EVEN (or ODD) lanes of a and b: out = a[0],b[0],a[2],b[2]..
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> InterleaveEven(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r; for (std::size_t i = 0; i < N / 2; ++i) { r.raw[2*i] = a.raw[2*i]; r.raw[2*i+1] = b.raw[2*i]; }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> InterleaveOdd(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r; for (std::size_t i = 0; i < N / 2; ++i) { r.raw[2*i] = a.raw[2*i+1]; r.raw[2*i+1] = b.raw[2*i+1]; }
+  return r;
+}
+// Slide1Up/Down: shift the whole vector up/down by one lane, zero-filling the vacated end.
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> Slide1Up(D, VFromD<D> v) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  VFromD<D> r; r.raw[0] = TFromD<D>{0};
+  for (std::size_t i = 1; i < N; ++i) r.raw[i] = v.raw[i - 1];
+  return r;
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> Slide1Down(D, VFromD<D> v) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  VFromD<D> r; if (N) r.raw[N - 1] = TFromD<D>{0};
+  for (std::size_t i = 0; i + 1 < N; ++i) r.raw[i] = v.raw[i + 1];
+  return r;
+}
+// SlideUpLanes/DownLanes: shift by a RUNTIME count `amt`, zero-filling vacated lanes.
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> SlideUpLanes(D, VFromD<D> v, std::size_t amt) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  VFromD<D> r{};
+  for (std::size_t i = amt; i < N; ++i) r.raw[i] = v.raw[i - amt];
+  return r;
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> SlideDownLanes(D, VFromD<D> v, std::size_t amt) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  VFromD<D> r{};
+  for (std::size_t i = 0; i + amt < N; ++i) r.raw[i] = v.raw[i + amt];
+  return r;
+}
+// BroadcastLane<kLane>: splat lane kLane across all lanes (Broadcast is the same but I keep
+// the Highway name too). ZipLower/Upper: same bits as InterleaveLower/Upper (double-width
+// repartition is a type-only reinterpret the callers do; the scalar floor keeps the lane type).
+template <int kLane, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> BroadcastLane(Vec<T, N> v) noexcept {
+  static_assert(kLane >= 0 && static_cast<std::size_t>(kLane) < N, "BroadcastLane out of range");
+  Vec<T, N> r; for (std::size_t i = 0; i < N; ++i) r.raw[i] = v.raw[kLane];
+  return r;
+}
+
 // InterleaveLower/Upper: zip lanes from the lower / upper half of a and b.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec<T, N> InterleaveLower(Vec<T, N> a, Vec<T, N> b) noexcept {
@@ -1002,6 +1091,12 @@ HYLE_FORCE_INLINE Vec<T, N> InterleaveUpper(Vec<T, N> a, Vec<T, N> b) noexcept {
   for (std::size_t i = 0; i < N / 2; ++i) { r.raw[2 * i] = a.raw[N / 2 + i]; r.raw[2 * i + 1] = b.raw[N / 2 + i]; }
   return r;
 }
+// ZipLower/Upper: same bit pattern as InterleaveLower/Upper (Highway repartitions into
+// double-width lanes; the scalar floor keeps the lane type -- the widen is a caller reinterpret).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ZipLower(Vec<T, N> a, Vec<T, N> b) noexcept { return InterleaveLower(a, b); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ZipUpper(Vec<T, N> a, Vec<T, N> b) noexcept { return InterleaveUpper(a, b); }
 // Concat{Lower,Upper}{Lower,Upper}(hi,lo): take one half from each of hi/lo. The arg order
 // is Highway's (hi first): ConcatLowerLower = [lo.lower, hi.lower], etc.
 template <typename T, std::size_t N>

@@ -501,6 +501,62 @@ TEST(Vec, MathExtSaturatedInt) {
   for (std::size_t i = 0; i < n; ++i) { int e = (static_cast<int>(a.data[i]) * b.data[i] + 0x4000) >> 15; EXPECT_EQ(out2.data[i], static_cast<std::int16_t>(e)) << "q15 i=" << i; }
 }
 
+// ---- B-2 swizzle completion ---------------------------------------------------------
+TEST(Vec, SwizzleCompletion) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<std::int32_t>(i); b.data[i] = static_cast<std::int32_t>(100 + i); }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+  // Reverse4: within each group of 4, out[i]=in[i^3]. (n>=4 on sse4+; scalar n=1 skips.)
+  if (n >= 4) {
+    hs::Store(hs::Reverse4(d, va), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[(i & ~std::size_t{3}) | ((i & 3) ^ 3)]) << "rev4 i=" << i;
+  }
+  // InterleaveEven/Odd.
+  if (n >= 2) {
+    hs::Store(hs::InterleaveEven(va, vb), d, out.data);
+    for (std::size_t i = 0; i < n/2; ++i) { EXPECT_EQ(out.data[2*i], a.data[2*i]); EXPECT_EQ(out.data[2*i+1], b.data[2*i]); }
+    hs::Store(hs::InterleaveOdd(va, vb), d, out.data);
+    for (std::size_t i = 0; i < n/2; ++i) { EXPECT_EQ(out.data[2*i], a.data[2*i+1]); EXPECT_EQ(out.data[2*i+1], b.data[2*i+1]); }
+  }
+  // Slide1Up/Down (zero-fill).
+  hs::Store(hs::Slide1Up(d, va), d, out.data);
+  EXPECT_EQ(out.data[0], 0); for (std::size_t i = 1; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i-1]) << "s1up i=" << i;
+  hs::Store(hs::Slide1Down(d, va), d, out.data);
+  if (n) EXPECT_EQ(out.data[n-1], 0); for (std::size_t i = 0; i+1 < n; ++i) EXPECT_EQ(out.data[i], a.data[i+1]) << "s1dn i=" << i;
+  // SlideUpLanes(amt=2).
+  if (n >= 2) {
+    hs::Store(hs::SlideUpLanes(d, va, 2), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], (i >= 2) ? a.data[i-2] : 0) << "slup i=" << i;
+  }
+  // BroadcastLane<1> (n>=2).
+  if (n >= 2) {
+    hs::Store(hs::BroadcastLane<1>(va), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[1]) << "bcast i=" << i;
+  }
+  // ZipLower == InterleaveLower.
+  hs::Store(hs::ZipLower(va, vb), d, out.data);
+  Buf<std::int32_t> il; hs::Store(hs::InterleaveLower(va, vb), d, il.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], il.data[i]) << "zip i=" << i;
+  // ReverseBits / ReverseLaneBytes on u32.
+  const hs::ScalableTag<std::uint32_t> du;
+  Buf<std::uint32_t> uu, uo;
+  for (std::size_t i = 0; i < hs::Lanes(du); ++i) uu.data[i] = 0x12345678u + static_cast<std::uint32_t>(i);
+  auto vu = hs::Load(du, uu.data);
+  hs::Store(hs::ReverseLaneBytes(vu), du, uo.data);
+  for (std::size_t i = 0; i < hs::Lanes(du); ++i) {
+    std::uint32_t x = uu.data[i];
+    std::uint32_t bswap = ((x & 0xFFu) << 24) | ((x & 0xFF00u) << 8) | ((x >> 8) & 0xFF00u) | (x >> 24);
+    EXPECT_EQ(uo.data[i], bswap) << "revbytes i=" << i;
+  }
+  hs::Store(hs::ReverseBits(vu), du, uo.data);
+  for (std::size_t i = 0; i < hs::Lanes(du); ++i) {
+    std::uint32_t x = uu.data[i], y = 0; for (int b2 = 0; b2 < 32; ++b2) { y = (y<<1)|(x&1); x >>= 1; }
+    EXPECT_EQ(uo.data[i], y) << "revbits i=" << i;
+  }
+}
+
 // ---- B-1 Masked* family -------------------------------------------------------------
 // Masked<Op> zeroes off-lanes; Masked<Op>Or fills them from `no`. Check against a per-lane
 // reference driven by the same mask (lane i active iff i is even).

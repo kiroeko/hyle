@@ -1446,6 +1446,101 @@ HYLE_FORCE_INLINE Vec128<T, N> Broadcast(Vec128<T, N> v) noexcept {
   return Set(Simd<T, N, 0>(), tmp[kLane]);
 }
 
+// ---- swizzle: B-2 completions (Reverse4/8, ReverseBits/LaneBytes, InterleaveEven/Odd,
+// Slide1Up/Down, SlideUp/DownLanes, BroadcastLane, Zip). ------------------------------
+// correctness-first store+reload; native shuffles are a profiling upgrade.
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> Reverse4(D, detail::V128<D> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{3}) | ((i & 3) ^ 3); });
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> Reverse8(D, detail::V128<D> v) noexcept {
+  return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{7}) | ((i & 7) ^ 7); });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ReverseBits(Vec128<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReverseBits is integer-only");
+  using U = std::make_unsigned_t<T>;
+  alignas(16) T s[N], d[N];
+  Store(v, Simd<T, N, 0>(), s);
+  for (std::size_t i = 0; i < N; ++i) {
+    U x = static_cast<U>(s[i]), y = 0;
+    for (std::size_t b = 0; b < sizeof(T) * 8; ++b) { y = static_cast<U>((y << 1) | (x & 1)); x >>= 1; }
+    d[i] = static_cast<T>(y);
+  }
+  return Load(Simd<T, N, 0>(), d);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ReverseLaneBytes(Vec128<T, N> v) noexcept {
+  static_assert(std::is_integral_v<T>, "ReverseLaneBytes is integer-only");
+  alignas(16) T s[N], d[N];
+  Store(v, Simd<T, N, 0>(), s);
+  for (std::size_t i = 0; i < N; ++i) {
+    auto* db = reinterpret_cast<std::uint8_t*>(&d[i]);
+    const auto* sb = reinterpret_cast<const std::uint8_t*>(&s[i]);
+    for (std::size_t b = 0; b < sizeof(T); ++b) db[b] = sb[sizeof(T) - 1 - b];
+  }
+  return Load(Simd<T, N, 0>(), d);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> InterleaveEven(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  alignas(16) T sa[N], sb[N], d[N];
+  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+  for (std::size_t i = 0; i < N / 2; ++i) { d[2 * i] = sa[2 * i]; d[2 * i + 1] = sb[2 * i]; }
+  return Load(Simd<T, N, 0>(), d);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> InterleaveOdd(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  alignas(16) T sa[N], sb[N], d[N];
+  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+  for (std::size_t i = 0; i < N / 2; ++i) { d[2 * i] = sa[2 * i + 1]; d[2 * i + 1] = sb[2 * i + 1]; }
+  return Load(Simd<T, N, 0>(), d);
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> Slide1Up(D d, detail::V128<D> v) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) T s[N]; alignas(16) T dst[N];
+  Store(v, d, s);
+  dst[0] = T{0};
+  for (std::size_t i = 1; i < N; ++i) dst[i] = s[i - 1];
+  return Load(d, dst);
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> Slide1Down(D d, detail::V128<D> v) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) T s[N]; alignas(16) T dst[N];
+  Store(v, d, s);
+  dst[N - 1] = T{0};
+  for (std::size_t i = 0; i + 1 < N; ++i) dst[i] = s[i + 1];
+  return Load(d, dst);
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> SlideUpLanes(D d, detail::V128<D> v, std::size_t amt) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) T s[N]; alignas(16) T dst[N] = {};
+  Store(v, d, s);
+  for (std::size_t i = amt; i < N; ++i) dst[i] = s[i - amt];
+  return Load(d, dst);
+}
+template <class D>
+HYLE_FORCE_INLINE detail::V128<D> SlideDownLanes(D d, detail::V128<D> v, std::size_t amt) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) T s[N]; alignas(16) T dst[N] = {};
+  Store(v, d, s);
+  for (std::size_t i = 0; i + amt < N; ++i) dst[i] = s[i + amt];
+  return Load(d, dst);
+}
+template <int kLane, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> BroadcastLane(Vec128<T, N> v) noexcept { return Broadcast<kLane>(v); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ZipLower(Vec128<T, N> a, Vec128<T, N> b) noexcept { return InterleaveLower(a, b); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ZipUpper(Vec128<T, N> a, Vec128<T, N> b) noexcept { return InterleaveUpper(a, b); }
+
 // ---- masked / partial load-store (tail handling) ------------------------------------
 // 128-bit mirror of the avx2 tail toolkit (same rationale): FirstN builds an all-ones
 // lane pattern via stack array + Load (a valid blendv/movemask selector for every lane
