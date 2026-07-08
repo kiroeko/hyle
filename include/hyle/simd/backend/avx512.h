@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>  // std::memcpy (LoadMaskBits lane pun)
 #include <bit>
+#include <cmath>  // std::ldexp (MulByPow2 store+reload)
 #include <limits>  // std::numeric_limits<T>::infinity (IsInf/IsFinite splat)
 #include <type_traits>
 
@@ -333,6 +334,108 @@ HYLE_FORCE_INLINE Vec512<T, N> Sqrt(Vec512<T, N> a) noexcept {
   if constexpr (std::is_same_v<T, float>) r.raw = _mm512_sqrt_ps(a.raw);
   else r.raw = _mm512_sqrt_pd(a.raw);
   return r;
+}
+
+// ---- math / arith extensions (Highway) ----------------------------------------------
+// ApproximateReciprocal/Sqrt: AVX-512 has NATIVE 14-bit estimates for BOTH ps AND pd
+// (rcp14/rsqrt14) -- SSE/AVX2 only had the f32 rcp/rsqrt. ~2^-14 relative error (tests tolerate).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> ApproximateReciprocal(Vec512<T, N> a) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_rcp14_ps(a.raw);
+  else r.raw = _mm512_rcp14_pd(a.raw);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> ApproximateReciprocalSqrt(Vec512<T, N> a) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_rsqrt14_ps(a.raw);
+  else r.raw = _mm512_rsqrt14_pd(a.raw);
+  return r;
+}
+// GetExponent(v) = floor(log2(|v|)) as float. AVX-512 has a NATIVE vgetexpps/pd that extracts
+// exactly the unbiased exponent -- one instruction, no store+reload (unlike NEON's logb path).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> GetExponent(Vec512<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_getexp_ps(v.raw);
+  else r.raw = _mm512_getexp_pd(v.raw);
+  return r;
+}
+// MulByPow2(a, b) = a * 2^b (b an integer-lane vector). store+reload std::ldexp: vscalef does
+// a*2^floor(b) with b taken as FLOAT (needs an int->float convert + exactness argument), so the
+// ldexp path is correctness-first and exact for the integer exponent contract.
+template <typename T, std::size_t N, typename IT>
+HYLE_FORCE_INLINE Vec512<T, N> MulByPow2(Vec512<T, N> a, Vec512<IT, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  alignas(64) T ta[N], tr[N];
+  alignas(64) IT tb[N];
+  Store(a, Simd<T, N, 0>(), ta);
+  Store(b, Simd<IT, N, 0>(), tb);
+  for (std::size_t i = 0; i < N; ++i) tr[i] = std::ldexp(ta[i], static_cast<int>(tb[i]));
+  return Load(Simd<T, N, 0>(), tr);
+}
+// NaN-aware min/max (Highway MinNumber/MaxNumber): if one operand is NaN, return the other.
+// Portable IsNaN/IfThenElse blend -- unambiguously oracle-correct for every lane type (AVX-512's
+// native _mm512_min_ps is IEEE minNum-like, but the explicit form leaves no doubt). Int = Min/Max.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> MinNumber(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  if constexpr (std::is_floating_point_v<T>)
+    return IfThenElse(IsNaN(a), b, IfThenElse(IsNaN(b), a, Min(a, b)));
+  else return Min(a, b);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> MaxNumber(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  if constexpr (std::is_floating_point_v<T>)
+    return IfThenElse(IsNaN(a), b, IfThenElse(IsNaN(b), a, Max(a, b)));
+  else return Max(a, b);
+}
+// AddSub(a,b): a-b in EVEN lanes, a+b in ODD lanes (complex-arith / FFT butterfly). No single
+// AVX-512 addsub across all widths; store+reload by lane parity (correctness-first, all types).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> AddSub(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  alignas(64) T ta[N], tb[N], tr[N];
+  Store(a, Simd<T, N, 0>(), ta);
+  Store(b, Simd<T, N, 0>(), tb);
+  for (std::size_t i = 0; i < N; ++i)
+    tr[i] = (i & 1) ? static_cast<T>(ta[i] + tb[i]) : static_cast<T>(ta[i] - tb[i]);
+  return Load(Simd<T, N, 0>(), tr);
+}
+// MulRound(a,b) = round(a*b) to nearest-even, result stays float (reuse Round + Mul).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> MulRound(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "MulRound is float only");
+  return Round(Mul(a, b));
+}
+// MulFixedPoint15(a,b): Q1.15 fixed-point multiply with rounding (i16). AVX-512-BW native
+// _mm512_mulhrs_epi16 = (2*a*b + 0x8000) >> 16 -- exactly the oracle's rounded high half.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::int16_t, N> MulFixedPoint15(Vec512<std::int16_t, N> a,
+                                                          Vec512<std::int16_t, N> b) noexcept {
+  Vec512<std::int16_t, N> r;
+  r.raw = _mm512_mulhrs_epi16(a.raw, b.raw);  // BW
+  return r;
+}
+// SaturatedNeg(a) = (a==MIN)?MAX:-a; SaturatedAbs(a) = (a==MIN)?MAX:|a| (signed int). i8/i16
+// reuse the native saturating SaturatedSub(0,a); i32/i64 have no saturating sub here, so guard
+// the sole overflowing input (MIN) with IfThenElse. SaturatedAbs selects |a| = SaturatedNeg on a<0.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> SaturatedNeg(Vec512<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedNeg is signed-int");
+  if constexpr (sizeof(T) <= 2) return SaturatedSub(Zero(Simd<T, N, 0>()), a);  // BW
+  else {
+    const auto lo = Set(Simd<T, N, 0>(), std::numeric_limits<T>::min());
+    const auto hi = Set(Simd<T, N, 0>(), std::numeric_limits<T>::max());
+    return IfThenElse(Eq(a, lo), hi, Neg(a));
+  }
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> SaturatedAbs(Vec512<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedAbs is signed-int");
+  return IfThenElse(Lt(a, Zero(Simd<T, N, 0>())), SaturatedNeg(a), a);
 }
 
 // ---- float rounding to integral value (result stays float) --------------------------

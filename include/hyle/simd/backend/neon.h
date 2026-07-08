@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>  // std::memcpy (LoadMaskBits lane pun)
 #include <bit>
+#include <cmath>  // std::ldexp/std::logb (MulByPow2 / GetExponent store+reload)
 #include <limits>  // std::numeric_limits<T>::infinity (IsInf/IsFinite splat)
 #include <type_traits>
 
@@ -408,6 +409,117 @@ HYLE_FORCE_INLINE VecNeon<T, N> Sqrt(VecNeon<T, N> a) noexcept {
   VecNeon<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = vsqrtq_f32(a.raw);
   else r.raw = vsqrtq_f64(a.raw);
+  return r;
+}
+
+// ---- math / arith extensions (Highway) ----------------------------------------------
+// ApproximateReciprocal/Sqrt: NEON native single-Newton-seed estimates (vrecpe/vrsqrte).
+// aarch64 has both f32 AND f64 forms. Coarser than AVX-512's 14-bit rcp14 (~8-bit seed);
+// the shared tests tolerate the wide approximation error.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ApproximateReciprocal(VecNeon<T, N> a) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vrecpeq_f32(a.raw);
+  else r.raw = vrecpeq_f64(a.raw);  // aarch64
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ApproximateReciprocalSqrt(VecNeon<T, N> a) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vrsqrteq_f32(a.raw);
+  else r.raw = vrsqrteq_f64(a.raw);  // aarch64
+  return r;
+}
+// GetExponent(v) = floor(log2(|v|)) as float. store+reload std::logb; no NEON getexp
+// (unlike AVX-512's native vgetexp). One libm call per lane, correctness-first.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> GetExponent(VecNeon<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  alignas(16) T tv[N], tr[N];
+  Store(v, Simd<T, N, 0>(), tv);
+  for (std::size_t i = 0; i < N; ++i) tr[i] = static_cast<T>(std::logb(tv[i]));
+  return Load(Simd<T, N, 0>(), tr);
+}
+// MulByPow2(a, b) = a * 2^b (b an integer-lane vector). store+reload std::ldexp for the
+// exact integer-exponent contract (correctness-first; no NEON scale instruction).
+template <typename T, std::size_t N, typename IT>
+HYLE_FORCE_INLINE VecNeon<T, N> MulByPow2(VecNeon<T, N> a, VecNeon<IT, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  alignas(16) T ta[N], tr[N];
+  alignas(16) IT tb[N];
+  Store(a, Simd<T, N, 0>(), ta);
+  Store(b, Simd<IT, N, 0>(), tb);
+  for (std::size_t i = 0; i < N; ++i) tr[i] = std::ldexp(ta[i], static_cast<int>(tb[i]));
+  return Load(Simd<T, N, 0>(), tr);
+}
+// NaN-aware min/max (Highway MinNumber/MaxNumber): if one operand is NaN, return the other.
+// NEON has NATIVE IEEE NaN-aware vminnmq/vmaxnmq for f32 AND f64 (FMINNM/FMAXNM) -- exactly
+// this semantics in one instruction. Integer lanes have no NaN, so plain Min/Max.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> MinNumber(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vminnmq_f32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = vminnmq_f64(a.raw, b.raw);
+  else return Min(a, b);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> MaxNumber(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vmaxnmq_f32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = vmaxnmq_f64(a.raw, b.raw);
+  else return Max(a, b);
+  return r;
+}
+// AddSub(a,b): a-b in EVEN lanes, a+b in ODD lanes (complex-arith / FFT butterfly). NEON has
+// no addsub for all types; store+reload by lane parity (correctness-first, all lane types).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> AddSub(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  alignas(16) T ta[N], tb[N], tr[N];
+  Store(a, Simd<T, N, 0>(), ta);
+  Store(b, Simd<T, N, 0>(), tb);
+  for (std::size_t i = 0; i < N; ++i)
+    tr[i] = (i & 1) ? static_cast<T>(ta[i] + tb[i]) : static_cast<T>(ta[i] - tb[i]);
+  return Load(Simd<T, N, 0>(), tr);
+}
+// MulRound(a,b) = round(a*b) to nearest-even, result stays float (reuse Round + Mul).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> MulRound(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "MulRound is float only");
+  return Round(Mul(a, b));
+}
+// MulFixedPoint15(a,b): Q1.15 fixed-point multiply with rounding (i16). NEON native
+// vqrdmulhq_s16 = rounding doubling multiply high = (2*a*b + 0x8000) >> 16 = the Q1.15 mul.
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::int16_t, N> MulFixedPoint15(VecNeon<std::int16_t, N> a,
+                                                           VecNeon<std::int16_t, N> b) noexcept {
+  VecNeon<std::int16_t, N> r;
+  r.raw = vqrdmulhq_s16(a.raw, b.raw);  // rounding doubling mul high = Q1.15
+  return r;
+}
+// SaturatedNeg(a) = (a==MIN)?MAX:-a; SaturatedAbs(a) = (a==MIN)?MAX:|a| (signed int). NEON has
+// NATIVE saturating neg (vqnegq) AND abs (vqabsq) for ALL signed widths i8/i16/i32/i64 (aarch64
+// has the 64-bit forms too) -- one instruction, exactly the MIN-clamps-to-MAX contract.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> SaturatedNeg(VecNeon<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedNeg is signed-int");
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vqnegq_s8(a.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vqnegq_s16(a.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vqnegq_s32(a.raw);
+  else r.raw = vqnegq_s64(a.raw);  // i64, aarch64 native
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> SaturatedAbs(VecNeon<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedAbs is signed-int");
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vqabsq_s8(a.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vqabsq_s16(a.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vqabsq_s32(a.raw);
+  else r.raw = vqabsq_s64(a.raw);  // i64, aarch64 native
   return r;
 }
 

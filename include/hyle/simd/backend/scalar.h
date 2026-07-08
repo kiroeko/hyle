@@ -179,6 +179,96 @@ HYLE_FORCE_INLINE Vec<T, N> Sqrt(Vec<T, N> a) noexcept {
   return r;
 }
 
+// ---- math / arith extensions (Highway) ----------------------------------------------
+// ApproximateReciprocal(a) ~= 1/a, ApproximateReciprocalSqrt(a) ~= 1/sqrt(a): the scalar
+// floor is EXACT (a real backend uses rcpps/rsqrtps 12-bit approximations + a Newton step;
+// the tests must therefore tolerate ~2^-12 error on the wide backends). Newton-iteration seed.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ApproximateReciprocal(Vec<T, N> a) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  Vec<T, N> r; for (std::size_t i = 0; i < N; ++i) r.raw[i] = T(1) / a.raw[i]; return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ApproximateReciprocalSqrt(Vec<T, N> a) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  Vec<T, N> r; for (std::size_t i = 0; i < N; ++i) r.raw[i] = T(1) / std::sqrt(a.raw[i]); return r;
+}
+// GetExponent(v) = floor(log2(|v|)) as a float (std::logb). Feeds range reduction.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> GetExponent(Vec<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  Vec<T, N> r; for (std::size_t i = 0; i < N; ++i) r.raw[i] = std::logb(v.raw[i]); return r;
+}
+// MulByPow2(a, b): a * 2^b (std::ldexp), b an integer-lane vector of matching width.
+template <typename T, std::size_t N, typename IT>
+HYLE_FORCE_INLINE Vec<T, N> MulByPow2(Vec<T, N> a, Vec<IT, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  Vec<T, N> r; for (std::size_t i = 0; i < N; ++i) r.raw[i] = std::ldexp(a.raw[i], static_cast<int>(b.raw[i])); return r;
+}
+// NaN-aware min/max (Highway MinNumber/MaxNumber): if one operand is NaN, return the other.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> MinNumber(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    if constexpr (std::is_floating_point_v<T>) {
+      r.raw[i] = std::isnan(a.raw[i]) ? b.raw[i] : (std::isnan(b.raw[i]) ? a.raw[i] : (a.raw[i] < b.raw[i] ? a.raw[i] : b.raw[i]));
+    } else r.raw[i] = a.raw[i] < b.raw[i] ? a.raw[i] : b.raw[i];
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> MaxNumber(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    if constexpr (std::is_floating_point_v<T>) {
+      r.raw[i] = std::isnan(a.raw[i]) ? b.raw[i] : (std::isnan(b.raw[i]) ? a.raw[i] : (a.raw[i] > b.raw[i] ? a.raw[i] : b.raw[i]));
+    } else r.raw[i] = a.raw[i] > b.raw[i] ? a.raw[i] : b.raw[i];
+  }
+  return r;
+}
+// AddSub(a,b): a-b in EVEN lanes, a+b in ODD lanes (complex-arith / FFT butterfly helper).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> AddSub(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = (i & 1) ? static_cast<T>(a.raw[i] + b.raw[i]) : static_cast<T>(a.raw[i] - b.raw[i]);
+  return r;
+}
+// MulRound(a,b): round(a*b) to nearest-even, result stays float (f only).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> MulRound(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "MulRound is float only");
+  Vec<T, N> r; for (std::size_t i = 0; i < N; ++i) r.raw[i] = std::nearbyint(a.raw[i] * b.raw[i]); return r;
+}
+// MulFixedPoint15(a,b): Q1.15 * Q1.15 -> Q1.15 = (2*a*b) >> 16 with rounding (i16, x86
+// _mm*_mulhrs_epi16). The int16 fixed-point multiply for DSP / quantized activations.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec<std::int16_t, N> MulFixedPoint15(Vec<std::int16_t, N> a, Vec<std::int16_t, N> b) noexcept {
+  Vec<std::int16_t, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    const int prod = static_cast<int>(a.raw[i]) * b.raw[i];
+    r.raw[i] = static_cast<std::int16_t>((prod + 0x4000) >> 15);  // round + take upper (mulhrs)
+  }
+  return r;
+}
+// SaturatedNeg(a) = (a==MIN) ? MAX : -a. SaturatedAbs(a) = (a==MIN) ? MAX : |a|. Signed int.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> SaturatedNeg(Vec<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedNeg is signed-int");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = (a.raw[i] == std::numeric_limits<T>::min()) ? std::numeric_limits<T>::max() : static_cast<T>(-a.raw[i]);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> SaturatedAbs(Vec<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedAbs is signed-int");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = (a.raw[i] == std::numeric_limits<T>::min()) ? std::numeric_limits<T>::max()
+                                                           : static_cast<T>(a.raw[i] < 0 ? -a.raw[i] : a.raw[i]);
+  return r;
+}
+
 // Float rounding to an integral value, result stays float: Round=nearest-even,
 // Floor=toward -inf, Ceil=toward +inf, Trunc=toward zero. The scalar floor is the libm
 // call the wide backends' _mm256_round_ps / vrndnq etc. must match lane-for-lane.

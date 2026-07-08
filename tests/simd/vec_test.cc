@@ -451,6 +451,52 @@ TEST(Vec, InterleavedLoadStore) {
   }
 }
 
+// ---- A-7 math / arith extensions ----------------------------------------------------
+TEST(Vec, MathExtFloat) {
+  const hs::ScalableTag<float> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<float> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<float>(i) + 1.5f; b.data[i] = static_cast<float>(i % 3) + 0.5f; }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+  // ApproximateReciprocal: within ~2^-11 relative (wide backends use 12-bit approx + no NR).
+  hs::Store(hs::ApproximateReciprocal(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], 1.0f / a.data[i], std::abs(1.0f/a.data[i]) * 1e-3f) << "rcp i=" << i;
+  hs::Store(hs::ApproximateReciprocalSqrt(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], 1.0f / std::sqrt(a.data[i]), (1.0f/std::sqrt(a.data[i])) * 1e-2f) << "rsqrt i=" << i;
+  // GetExponent = floor(log2).
+  hs::Store(hs::GetExponent(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], std::logb(a.data[i])) << "getexp i=" << i;
+  // MulRound = round(a*b).
+  hs::Store(hs::MulRound(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], std::nearbyint(a.data[i] * b.data[i])) << "mulround i=" << i;
+  // AddSub: a-b even, a+b odd.
+  hs::Store(hs::AddSub(va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], (i&1) ? a.data[i]+b.data[i] : a.data[i]-b.data[i]) << "addsub i=" << i;
+  // MinNumber/MaxNumber with a NaN operand: return the non-NaN.
+  Buf<float> na; for (std::size_t i = 0; i < n; ++i) na.data[i] = (i%2) ? std::numeric_limits<float>::quiet_NaN() : a.data[i];
+  auto vna = hs::Load(d, na.data);
+  hs::Store(hs::MinNumber(vna, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) { float e = std::isnan(na.data[i]) ? b.data[i] : std::min(na.data[i], b.data[i]); EXPECT_FLOAT_EQ(out.data[i], e) << "minnum i=" << i; }
+}
+TEST(Vec, MathExtSaturatedInt) {
+  const hs::ScalableTag<std::int16_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int16_t> a, out;
+  const std::int16_t mn = std::numeric_limits<std::int16_t>::min();
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = (i % 4 == 0) ? mn : static_cast<std::int16_t>(static_cast<int>(i) * 7 - 300);
+  auto va = hs::Load(d, a.data);
+  hs::Store(hs::SaturatedNeg(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) { int e = (a.data[i]==mn) ? 32767 : -a.data[i]; EXPECT_EQ(out.data[i], static_cast<std::int16_t>(e)) << "satneg i=" << i; }
+  hs::Store(hs::SaturatedAbs(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) { int e = (a.data[i]==mn) ? 32767 : (a.data[i]<0?-a.data[i]:a.data[i]); EXPECT_EQ(out.data[i], static_cast<std::int16_t>(e)) << "satabs i=" << i; }
+  // MulFixedPoint15: Q1.15 mul = (2ab rounded) >> 16.
+  Buf<std::int16_t> b, out2;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<std::int16_t>(i * 1000 - 15000); b.data[i] = static_cast<std::int16_t>(20000 - i * 800); }
+  auto va2 = hs::Load(d, a.data), vb2 = hs::Load(d, b.data);
+  hs::Store(hs::MulFixedPoint15(va2, vb2), d, out2.data);
+  for (std::size_t i = 0; i < n; ++i) { int e = (static_cast<int>(a.data[i]) * b.data[i] + 0x4000) >> 15; EXPECT_EQ(out2.data[i], static_cast<std::int16_t>(e)) << "q15 i=" << i; }
+}
+
 // ---- A-2 mask-domain logic ----------------------------------------------------------
 // Build two masks from comparisons, then check the mask And/Or/Xor/AndNot/Not/ExclusiveNeither
 // against per-lane bool references, plus IfThenZeroElse and MaskFromVec. Uses i32 lanes.

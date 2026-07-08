@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>  // std::memcpy (LoadMaskBits lane pun)
 #include <bit>
+#include <cmath>   // std::logb / std::ldexp (GetExponent / MulByPow2 store+reload)
 #include <limits>  // std::numeric_limits<T>::infinity() (FP classification splat)
 #include <type_traits>
 
@@ -373,6 +374,112 @@ HYLE_FORCE_INLINE Vec128<T, N> Sqrt(Vec128<T, N> a) noexcept {
   if constexpr (std::is_same_v<T, float>) r.raw = _mm_sqrt_ps(a.raw);
   else r.raw = _mm_sqrt_pd(a.raw);
   return r;
+}
+
+// ---- math / arith extensions (Highway) ----------------------------------------------
+// ApproximateReciprocal(a) ~= 1/a: f32 native _mm_rcp_ps (12-bit); f64 has NO native rcp,
+// fall back to the exact 1/a = Div(Set(1),a) (reusing Div/Set).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ApproximateReciprocal(Vec128<T, N> a) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_rcp_ps(a.raw);
+  else r = Div(Set(Simd<T, N, 0>(), 1.0), a);  // no f64 rcp intrinsic: exact 1/a
+  return r;
+}
+// ApproximateReciprocalSqrt(a) ~= 1/sqrt(a): f32 native _mm_rsqrt_ps (12-bit); f64 has no
+// native rsqrt, fall back to Div(Set(1), Sqrt(a)) (reusing Sqrt/Div/Set).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ApproximateReciprocalSqrt(Vec128<T, N> a) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_rsqrt_ps(a.raw);
+  else r = Div(Set(Simd<T, N, 0>(), 1.0), Sqrt(a));  // no f64 rsqrt intrinsic
+  return r;
+}
+// GetExponent(v) = floor(log2(|v|)) as float (std::logb). store+reload std::logb; native
+// getexp is AVX512 (vgetexpps) -- SSE4/AVX2 lack it, so correctness-first per-lane libm.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> GetExponent(Vec128<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  alignas(16) T s[N];
+  Store(v, Simd<T, N, 0>(), s);
+  for (std::size_t i = 0; i < N; ++i) s[i] = std::logb(s[i]);
+  return Load(Simd<T, N, 0>(), s);
+}
+// MulByPow2(a, b) = a * 2^b (std::ldexp), b an integer-lane vector of matching width.
+// store+reload std::ldexp; no clean SSE4 native (AVX512 vscalefps is the hardware form).
+template <typename T, std::size_t N, typename IT>
+HYLE_FORCE_INLINE Vec128<T, N> MulByPow2(Vec128<T, N> a, Vec128<IT, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "float only");
+  alignas(16) T sa[N];
+  alignas(16) IT sb[N];
+  Store(a, Simd<T, N, 0>(), sa);
+  Store(b, Simd<IT, N, 0>(), sb);
+  for (std::size_t i = 0; i < N; ++i) sa[i] = std::ldexp(sa[i], static_cast<int>(sb[i]));
+  return Load(Simd<T, N, 0>(), sa);
+}
+// NaN-aware min/max (Highway MinNumber/MaxNumber): if one operand is NaN, return the OTHER.
+// x86 _mm_min_ps/_mm_max_ps return the second operand on any-NaN, so we can't map directly;
+// reuse IsNaN + IfThenElse + Min/Max. Integer lanes have no NaN, so they are just Min/Max.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> MinNumber(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  if constexpr (std::is_floating_point_v<T>)
+    return IfThenElse(IsNaN(a), b, IfThenElse(IsNaN(b), a, Min(a, b)));
+  else return Min(a, b);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> MaxNumber(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  if constexpr (std::is_floating_point_v<T>)
+    return IfThenElse(IsNaN(a), b, IfThenElse(IsNaN(b), a, Max(a, b)));
+  else return Max(a, b);
+}
+// AddSub(a,b): a-b in EVEN lanes, a+b in ODD lanes. Native SSE3 _mm_addsub_ps/pd (float).
+// Integer has no addsub -> blend Sub(even)/Add(odd) via OddEven (even<-b_arg, odd<-a_arg).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> AddSub(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_addsub_ps(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm_addsub_pd(a.raw, b.raw);
+  else r = OddEven(Add(a, b), Sub(a, b));  // native addsub is float-only
+  return r;
+}
+// MulRound(a,b) = round(a*b) to nearest-even, result stays float. Reuse Round + Mul.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> MulRound(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "MulRound is float only");
+  return Round(Mul(a, b));
+}
+// MulFixedPoint15(a,b): Q1.15 * Q1.15 -> Q1.15 = (2*a*b + 0x8000) >> 16. Native mulhrs (i16).
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::int16_t, N> MulFixedPoint15(Vec128<std::int16_t, N> a,
+                                                          Vec128<std::int16_t, N> b) noexcept {
+  Vec128<std::int16_t, N> r;
+  r.raw = _mm_mulhrs_epi16(a.raw, b.raw);  // native Q1.15 rounding multiply-high
+  return r;
+}
+// SaturatedNeg(a) = (a==MIN) ? MAX : -a. i8/i16 reuse native SaturatedSub(0, a) (0-MIN
+// saturates to MAX); i32/i64 have no native satsub -> store+reload the scalar formula.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> SaturatedNeg(Vec128<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedNeg is signed-int");
+  if constexpr (sizeof(T) <= 2) {
+    return SaturatedSub(Zero(Simd<T, N, 0>()), a);  // 0 - a saturating
+  } else {  // i32/i64: no native satsub
+    alignas(16) T s[N];
+    Store(a, Simd<T, N, 0>(), s);
+    for (std::size_t i = 0; i < N; ++i)
+      s[i] = (s[i] == std::numeric_limits<T>::min()) ? std::numeric_limits<T>::max()
+                                                     : static_cast<T>(-s[i]);
+    return Load(Simd<T, N, 0>(), s);
+  }
+}
+// SaturatedAbs(a) = (a==MIN) ? MAX : |a|. |a| for a<0 is exactly SaturatedNeg(a), so reuse
+// Lt/IfThenElse + SaturatedNeg (correct for every signed width, MIN maps to MAX).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> SaturatedAbs(Vec128<T, N> a) noexcept {
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedAbs is signed-int");
+  return IfThenElse(Lt(a, Zero(Simd<T, N, 0>())), SaturatedNeg(a), a);
 }
 
 // ---- float rounding to integral value (result stays float) --------------------------
