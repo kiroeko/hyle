@@ -6,6 +6,8 @@
 #include <bit>
 #include <limits>
 #include <type_traits>
+#include <vector>
+#include <algorithm>
 
 #include "hyle/simd/vec.h"
 
@@ -481,6 +483,11 @@ TEST(Vec, MathExtFloat) {
   auto vna = hs::Load(d, na.data);
   hs::Store(hs::MinNumber(vna, vb), d, out.data);
   for (std::size_t i = 0; i < n; ++i) { float e = std::isnan(na.data[i]) ? b.data[i] : std::min(na.data[i], b.data[i]); EXPECT_FLOAT_EQ(out.data[i], e) << "minnum i=" << i; }
+  // MulByPow2(a, e) = a * 2^e ; e is an i32-lane vector of matching width (ldexp).
+  const hs::ScalableTag<std::int32_t> di;
+  Buf<std::int32_t> ei; for (std::size_t i = 0; i < n; ++i) ei.data[i] = static_cast<std::int32_t>(i % 5) - 2;  // -2..2
+  hs::Store(hs::MulByPow2(va, hs::Load(di, ei.data)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], std::ldexp(a.data[i], static_cast<int>(ei.data[i]))) << "mulbypow2 i=" << i;
 }
 TEST(Vec, MathExtSaturatedInt) {
   const hs::ScalableTag<std::int16_t> d;
@@ -727,6 +734,18 @@ TEST(Vec, CompressAndMaskedMemory) {
   Buf<std::int32_t> cp; for (std::size_t i = 0; i < n; ++i) cp.data[i] = 0;
   hs::SafeCopyN(2, d, a.data, cp.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(cp.data[i], (i < 2) ? a.data[i] : 0) << "copyN i=" << i;
+  // ScatterOffset: inverse of GatherOffset (byte offsets). Scatter a[i] to dst[i] via i*4 bytes.
+  Buf<std::int32_t> sdst; for (std::size_t i = 0; i < n; ++i) sdst.data[i] = 0;
+  hs::ScatterOffset(va, d, sdst.data, hs::Load(d, boff.data));
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(sdst.data[i], a.data[i]) << "soff i=" << i;
+  // CompressBits: compress by a mask packed in a bitfield (even lanes -> bit i set for even i).
+  std::uint8_t packed[8] = {};
+  for (std::size_t i = 0; i < n; ++i) if (i % 2 == 0) packed[i / 8] |= static_cast<std::uint8_t>(1u << (i % 8));
+  hs::Store(hs::CompressBits(va, packed), d, out.data);
+  { std::size_t k = 0; for (std::size_t i = 0; i < n; ++i) if (i % 2 == 0) EXPECT_EQ(out.data[k++], a.data[i]) << "cbits i=" << i; }
+  // LoadExpand: scatter first CountTrue(m) contiguous elems of p out to the true (even) lanes.
+  hs::Store(hs::LoadExpand(m, d, a.data), d, out.data);
+  { std::size_t k = 0; for (std::size_t i = 0; i < n; ++i) if (i % 2 == 0) EXPECT_EQ(out.data[i], a.data[k++]) << "lexp i=" << i; }
 }
 
 // ---- B-4 ternary bit fusion + sign/reduce helpers -----------------------------------
@@ -1025,8 +1044,31 @@ TEST(Vec, MaskBitsAndPrefixScan) {
   // SetAtOrAfterFirst: lanes >= first.
   hs::Store(hs::VecFromMask(d, hs::SetAtOrAfterFirst(m)), d, o1.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o1.data[i] != 0, static_cast<std::ptrdiff_t>(i) >= first) << "atorafter i=" << i;
+  // SetAtOrBeforeFirst: lanes <= first.
+  hs::Store(hs::VecFromMask(d, hs::SetAtOrBeforeFirst(m)), d, o1.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o1.data[i] != 0, static_cast<std::ptrdiff_t>(i) <= first) << "atorbefore i=" << i;
   // FindKnownFirstTrue matches.
   EXPECT_EQ(static_cast<std::ptrdiff_t>(hs::FindKnownFirstTrue(d, m)), first);
+}
+
+// Prefix-scan on i8 lanes with the ONLY true lane at the LAST position (lane N-1). On avx2
+// N=32, so SetAtOrBeforeFirst computed `1u << (countr_zero+1)` = `1u << 32` = shift UB before
+// the fix (x86 masked it to 1u<<0 -> upto=0 -> wrong all-clear instead of all-set). This test
+// pins that corner across every backend/width.
+TEST(Vec, PrefixScanLastLaneI8) {
+  const hs::ScalableTag<std::int8_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int8_t> a{};
+  a.data[n - 1] = 1;  // sole true lane at the very end
+  auto m = hs::Eq(hs::Load(d, a.data), hs::Set(d, std::int8_t{1}));
+  Buf<std::int8_t> o;
+  // SetAtOrBeforeFirst: every lane (<= the last-and-only true lane) must be set.
+  hs::Store(hs::VecFromMask(d, hs::SetAtOrBeforeFirst(m)), d, o.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NE(o.data[i], 0) << "atorbefore-last i=" << i;
+  // SetBeforeFirst: all lanes strictly before the last are set; the last itself is clear.
+  hs::Store(hs::VecFromMask(d, hs::SetBeforeFirst(m)), d, o.data);
+  for (std::size_t i = 0; i + 1 < n; ++i) EXPECT_NE(o.data[i], 0) << "before-last i=" << i;
+  EXPECT_EQ(o.data[n - 1], 0) << "before-last tail";
 }
 
 // Float rounding to an integral value (result stays float): Round(nearest-even), Floor
@@ -1415,6 +1457,32 @@ TEST(Vec, DemoteI16I8) { CheckDemote<std::int16_t, std::int8_t>(); }
 TEST(Vec, DemoteI16U8) { CheckDemote<std::int16_t, std::uint8_t>(); }
 TEST(Vec, DemoteI32I16) { CheckDemote<std::int32_t, std::int16_t>(); }
 TEST(Vec, DemoteI32U16) { CheckDemote<std::int32_t, std::uint16_t>(); }
+
+// ReorderDemote2To: same saturating narrowing as DemoteTo but lane ORDER IS UNSPECIFIED --
+// scalar/NEON return the ordered [a...,b...] while the wide x86 backends return the cheaper
+// block-interleaved permutation. So the CONTRACT is a multiset match, NOT positional. This
+// test pins exactly that (order-independent) so callers can't accidentally rely on positions.
+TEST(Vec, ReorderDemote2ToIsMultiset) {
+  const hs::ScalableTag<std::int32_t> dw;
+  const hs::ScalableTag<std::int16_t> dn;
+  const std::size_t nw = hs::Lanes(dw);
+  ASSERT_EQ(hs::Lanes(dn), 2 * nw);
+  Buf<std::int32_t> a, b;
+  for (std::size_t i = 0; i < nw; ++i) {
+    a.data[i] = static_cast<std::int32_t>((i % 2 ? -1 : 1) * static_cast<long long>(i * 37 + 3));
+    b.data[i] = static_cast<std::int32_t>((i % 3 ? 1 : -1) * static_cast<long long>(i * 53 + 7));
+  }
+  constexpr long long lo = std::numeric_limits<std::int16_t>::min();
+  constexpr long long hi = std::numeric_limits<std::int16_t>::max();
+  auto clampn = [&](std::int32_t x) { long long v = x; return static_cast<std::int16_t>(v < lo ? lo : (v > hi ? hi : v)); };
+  Buf<std::int16_t> out;
+  hs::Store(hs::ReorderDemote2To(dn, hs::Load(dw, a.data), hs::Load(dw, b.data)), dn, out.data);
+  std::vector<std::int16_t> got(out.data, out.data + 2 * nw), want;
+  for (std::size_t i = 0; i < nw; ++i) want.push_back(clampn(a.data[i]));
+  for (std::size_t i = 0; i < nw; ++i) want.push_back(clampn(b.data[i]));
+  std::sort(got.begin(), got.end()); std::sort(want.begin(), want.end());
+  EXPECT_EQ(got, want) << "ReorderDemote2To multiset mismatch";
+}
 
 // f32<->f64 promote/demote (ordinary narrowing/widening cast, no saturation).
 TEST(Vec, PromoteDemoteF32F64) {

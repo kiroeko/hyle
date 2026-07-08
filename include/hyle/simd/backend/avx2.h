@@ -1378,7 +1378,11 @@ HYLE_FORCE_INLINE Mask256<T, N> SetBeforeFirst(Mask256<T, N> m) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> SetAtOrBeforeFirst(Mask256<T, N> m) noexcept {
   const unsigned b = detail::mask_bits(m);
-  const unsigned upto = b ? ((1u << (std::countr_zero(b) + 1)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+  // countr_zero(b)+1 can reach 32 when the first true is lane 31 (N=32, i8/u8): 1u<<32 is shift
+  // UB (x86 masks it to 1u<<0 -> wrong result). Saturate to the all-ones mask in that case.
+  const unsigned tz1 = b ? (std::countr_zero(b) + 1) : 0;
+  const unsigned upto = b ? (tz1 >= 32 ? 0xFFFFFFFFu : (1u << tz1) - 1u)
+                          : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
   return LoadMaskBits(Simd<T, N, 0>(), upto);
 }
 template <typename T, std::size_t N>
@@ -1414,11 +1418,13 @@ HYLE_FORCE_INLINE Vec256<std::uint64_t, N / 8> SumsOf8(Vec256<std::uint8_t, N> v
 
 // SumsOf2/SumsOf4: sum consecutive pairs/quads of u8 lanes, widening to u16/u32.
 // correctness-first store+reload; native (pmaddubsw with 1s / vpaddl chains) is a profiling upgrade.
+// scratch sized to the FULL 32 B register (not the logical lane count): _mm256_store/load_si256
+// move 32 B, so a partial-width src would be a stack OOB with src[N] -- same class as TruncateTo.
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec256<std::uint16_t, N / 2> SumsOf2(Vec256<std::uint8_t, N> v) noexcept {
   static_assert(N % 2 == 0, "avx2 SumsOf2 needs an even lane count");
-  alignas(32) std::uint8_t src[N];
-  alignas(32) std::uint16_t dst[N / 2];
+  alignas(32) std::uint8_t src[32];
+  alignas(32) std::uint16_t dst[32 / sizeof(std::uint16_t)] = {};
   _mm256_store_si256(reinterpret_cast<__m256i*>(src), v.raw);
   for (std::size_t g = 0; g < N / 2; ++g)
     dst[g] = static_cast<std::uint16_t>(src[2 * g] + src[2 * g + 1]);
@@ -1427,8 +1433,8 @@ HYLE_FORCE_INLINE Vec256<std::uint16_t, N / 2> SumsOf2(Vec256<std::uint8_t, N> v
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec256<std::uint32_t, N / 4> SumsOf4(Vec256<std::uint8_t, N> v) noexcept {
   static_assert(N % 4 == 0, "avx2 SumsOf4 needs a lane count that is a multiple of 4");
-  alignas(32) std::uint8_t src[N];
-  alignas(32) std::uint32_t dst[N / 4];
+  alignas(32) std::uint8_t src[32];
+  alignas(32) std::uint32_t dst[32 / sizeof(std::uint32_t)] = {};
   _mm256_store_si256(reinterpret_cast<__m256i*>(src), v.raw);
   for (std::size_t g = 0; g < N / 4; ++g)
     dst[g] = static_cast<std::uint32_t>(src[4 * g] + src[4 * g + 1] + src[4 * g + 2] + src[4 * g + 3]);

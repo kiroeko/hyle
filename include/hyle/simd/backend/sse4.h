@@ -1375,11 +1375,14 @@ HYLE_FORCE_INLINE Vec128<std::uint64_t, N / 8> SumsOf8(Vec128<std::uint8_t, N> v
 
 // SumsOf2/SumsOf4: sum consecutive pairs/quads of u8 lanes, widening to u16/u32.
 // correctness-first store+reload; native (pmaddubsw with 1s / vpaddl chains) is a profiling upgrade.
+// scratch sized to the FULL 16 B register (not the logical lane count): _mm_store/load_si128
+// move 16 B, so a partial-width src (e.g. Vec128<u8,8>) would be a stack OOB with src[N] --
+// same class as the TruncateTo fix above.
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec128<std::uint16_t, N / 2> SumsOf2(Vec128<std::uint8_t, N> v) noexcept {
   static_assert(N % 2 == 0, "sse4 SumsOf2 needs an even lane count");
-  alignas(16) std::uint8_t src[N];
-  alignas(16) std::uint16_t dst[N / 2];
+  alignas(16) std::uint8_t src[16];
+  alignas(16) std::uint16_t dst[16 / sizeof(std::uint16_t)] = {};
   _mm_store_si128(reinterpret_cast<__m128i*>(src), v.raw);
   for (std::size_t g = 0; g < N / 2; ++g)
     dst[g] = static_cast<std::uint16_t>(src[2 * g] + src[2 * g + 1]);
@@ -1388,8 +1391,8 @@ HYLE_FORCE_INLINE Vec128<std::uint16_t, N / 2> SumsOf2(Vec128<std::uint8_t, N> v
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec128<std::uint32_t, N / 4> SumsOf4(Vec128<std::uint8_t, N> v) noexcept {
   static_assert(N % 4 == 0, "sse4 SumsOf4 needs a lane count that is a multiple of 4");
-  alignas(16) std::uint8_t src[N];
-  alignas(16) std::uint32_t dst[N / 4];
+  alignas(16) std::uint8_t src[16];
+  alignas(16) std::uint32_t dst[16 / sizeof(std::uint32_t)] = {};
   _mm_store_si128(reinterpret_cast<__m128i*>(src), v.raw);
   for (std::size_t g = 0; g < N / 4; ++g)
     dst[g] = static_cast<std::uint32_t>(src[4 * g] + src[4 * g + 1] + src[4 * g + 2] + src[4 * g + 3]);

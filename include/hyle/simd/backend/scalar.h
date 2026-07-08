@@ -602,8 +602,11 @@ HYLE_FORCE_INLINE Vec<DstT, NDst> DemoteTo(Simd<DstT, NDst, 0>, Vec<SrcT, NSrc> 
   }
   return r;
 }
-// ReorderDemote2To == DemoteTo on the scalar floor (no block-interleave artifact to model;
-// the wide x86 backends define the cheaper block-order variant + the ordered one).
+// ReorderDemote2To: LANE ORDER IS UNSPECIFIED BY CONTRACT (Highway's ReorderDemote2To). The
+// scalar floor happens to emit the ordered [a...,b...] (== DemoteTo, nothing to reorder), and
+// NEON too (vcombine is ordered); but the wide x86 backends emit the cheaper block-interleaved
+// permutation [a.lo,b.lo,a.hi,b.hi]. Callers MUST treat the result as a multiset, NOT rely on
+// positions -- use DemoteTo when order matters. (Same values, different arrangement per backend.)
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, Vec<SrcT, NSrc> a,
                                                    Vec<SrcT, NSrc> b) noexcept {
