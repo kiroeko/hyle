@@ -753,6 +753,34 @@ HYLE_FORCE_INLINE Vec128<T, N> TableLookupLanes(Vec128<T, N> v, Indices128<T, N>
   return Load(Simd<T, N, 0>(), dst);
 }
 
+// ---- byte table lookup (PSHUFB-style, per-128-bit-block) ----------------------------
+// Maps directly to PSHUFB (_mm_shuffle_epi8): within the 128-bit register, result byte i =
+// bytes[idx_i & 15], and idx_i's high bit (0x80) zeroes the output -- exactly the scalar
+// oracle's block-local contract. Lane types may be float; view both raws as __m128i via the
+// free bitcast, shuffle, then cast the result raw back to the index type Raw128T<TI>.
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec128<TI, NI> TableLookupBytes(Vec128<T, N> bytes, Vec128<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytes: same total byte width");
+  const __m128i br = detail::bitcast_raw_sse<__m128i>(bytes.raw);
+  const __m128i ir = detail::bitcast_raw_sse<__m128i>(idx.raw);
+  // Mask to low 4 bits: clears bit7 (no lane zeroed) and forces block-local index in-range.
+  const __m128i sh = _mm_shuffle_epi8(br, _mm_and_si128(ir, _mm_set1_epi8(0x0F)));
+  Vec128<TI, NI> r;
+  r.raw = detail::bitcast_raw_sse<detail::Raw128T<TI>>(sh);
+  return r;
+}
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec128<TI, NI> TableLookupBytesOr0(Vec128<T, N> bytes, Vec128<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesOr0: same total byte width");
+  const __m128i br = detail::bitcast_raw_sse<__m128i>(bytes.raw);
+  const __m128i ir = detail::bitcast_raw_sse<__m128i>(idx.raw);
+  // Raw PSHUFB: zeroes the output byte natively where the index byte's high bit is set.
+  const __m128i sh = _mm_shuffle_epi8(br, ir);
+  Vec128<TI, NI> r;
+  r.raw = detail::bitcast_raw_sse<detail::Raw128T<TI>>(sh);
+  return r;
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 namespace detail {
 // Signed cmpgt per width (SSE4.2 has epi8/16/32/64 native; epi64 is the SSE4.2 add).

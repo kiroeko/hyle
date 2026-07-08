@@ -788,6 +788,34 @@ HYLE_FORCE_INLINE Vec256<T, N> TableLookupLanes(Vec256<T, N> v, Indices256<T, N>
   }
 }
 
+// ---- byte table lookup (PSHUFB-style, per-128-bit-block) ----------------------------
+// _mm256_shuffle_epi8 runs PSHUFB independently PER 128-bit lane, which exactly matches the
+// scalar oracle's per-16-byte-block semantics (block = (i/16)*16). Same contract as sse4 but
+// 256-bit: idx_i & 15 selects within its own block, high bit (0x80) zeroes the output. Lane
+// types may be float; view both raws as __m256i via the free bitcast, shuffle, cast back.
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec256<TI, NI> TableLookupBytes(Vec256<T, N> bytes, Vec256<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytes: same total byte width");
+  const __m256i br = detail::bitcast_raw_avx2<__m256i>(bytes.raw);
+  const __m256i ir = detail::bitcast_raw_avx2<__m256i>(idx.raw);
+  // Mask to low 4 bits: clears bit7 (no lane zeroed) and forces block-local index in-range.
+  const __m256i sh = _mm256_shuffle_epi8(br, _mm256_and_si256(ir, _mm256_set1_epi8(0x0F)));
+  Vec256<TI, NI> r;
+  r.raw = detail::bitcast_raw_avx2<detail::Raw256T<TI>>(sh);
+  return r;
+}
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec256<TI, NI> TableLookupBytesOr0(Vec256<T, N> bytes, Vec256<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesOr0: same total byte width");
+  const __m256i br = detail::bitcast_raw_avx2<__m256i>(bytes.raw);
+  const __m256i ir = detail::bitcast_raw_avx2<__m256i>(idx.raw);
+  // Raw PSHUFB: zeroes the output byte natively where the index byte's high bit is set.
+  const __m256i sh = _mm256_shuffle_epi8(br, ir);
+  Vec256<TI, NI> r;
+  r.raw = detail::bitcast_raw_avx2<detail::Raw256T<TI>>(sh);
+  return r;
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 
 namespace detail {

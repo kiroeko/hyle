@@ -320,6 +320,36 @@ void CheckFpClassify() {
 TEST(Vec, FpClassifyFloat) { CheckFpClassify<float>(); }
 TEST(Vec, FpClassifyDouble) { CheckFpClassify<double>(); }
 
+// ---- A-4 TableLookupBytes (PSHUFB byte shuffle, per-128-bit block) -------------------
+// u8 lanes: table[i]=some pattern, idx[i]=lookup indices; result[i]=table[block*16+(idx&15)].
+// Or0 zeroes where idx bit7 set. Reference mirrors the scalar block-local semantics.
+TEST(Vec, TableLookupBytes) {
+  const hs::ScalableTag<std::uint8_t> d;
+  const std::size_t n = hs::Lanes(d);  // 16 (sse4/scalar) or 32 (avx2)
+  Buf<std::uint8_t> tbl, idx, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    tbl.data[i] = static_cast<std::uint8_t>(0xA0 + (i & 15));   // distinguishable per block-slot
+    idx.data[i] = static_cast<std::uint8_t>((i * 7) & 15);      // in-range 0..15
+  }
+  auto vt = hs::Load(d, tbl.data), vi = hs::Load(d, idx.data);
+  hs::Store(hs::TableLookupBytes(vt, vi), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::size_t block = (i / 16) * 16;
+    EXPECT_EQ(out.data[i], tbl.data[block + (idx.data[i] & 15)]) << "TLB i=" << i;
+  }
+  // Or0: set bit7 on odd lanes -> those zero, others look up (idx & 15).
+  Buf<std::uint8_t> idx0;
+  for (std::size_t i = 0; i < n; ++i)
+    idx0.data[i] = static_cast<std::uint8_t>((i % 2) ? (0x80 | (i & 15)) : (i & 15));
+  auto vi0 = hs::Load(d, idx0.data);
+  hs::Store(hs::TableLookupBytesOr0(vt, vi0), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::size_t block = (i / 16) * 16;
+    std::uint8_t expect = (idx0.data[i] & 0x80) ? 0 : tbl.data[block + (idx0.data[i] & 15)];
+    EXPECT_EQ(out.data[i], expect) << "TLBOr0 i=" << i;
+  }
+}
+
 // ---- A-2 mask-domain logic ----------------------------------------------------------
 // Build two masks from comparisons, then check the mask And/Or/Xor/AndNot/Not/ExclusiveNeither
 // against per-lane bool references, plus IfThenZeroElse and MaskFromVec. Uses i32 lanes.

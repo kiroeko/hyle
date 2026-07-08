@@ -885,6 +885,44 @@ HYLE_FORCE_INLINE Vec<T, N> TableLookupLanes(Vec<T, N> v, Indices<T, N> ind) noe
   return r;
 }
 
+// ---- byte table lookup (PSHUFB-style, per-128-bit-block) ----------------------------
+// TableLookupBytes(bytes, idx): result byte i = bytes[idx_byte_i], operating on BYTE lanes
+// regardless of the vectors' declared lane type. CRITICAL (Highway contract): the lookup is
+// WITHIN each 128-bit block -- x86 PSHUFB and NEON's per-16 tbl index only the low 16 bytes
+// of their block, so byte i in block b selects byte (b*16 + (idx_i & 15)) of `bytes`. The
+// scalar floor models exactly this block-local semantics so every backend agrees. Used for
+// int4/int8 dequant LUTs, base64, and byte-shuffle string kernels. TableLookupBytesOr0
+// additionally zeroes the output byte where the index's high bit (0x80) is set (PSHUFB does
+// this natively). Index lane type may differ from the data's; we view both as byte arrays.
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec<TI, NI> TableLookupBytes(Vec<T, N> bytes, Vec<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytes: same total byte width");
+  Vec<TI, NI> r;
+  auto* rb = reinterpret_cast<std::uint8_t*>(r.raw);
+  const auto* bb = reinterpret_cast<const std::uint8_t*>(bytes.raw);
+  const auto* ib = reinterpret_cast<const std::uint8_t*>(idx.raw);
+  constexpr std::size_t kBytes = sizeof(TI) * NI;
+  for (std::size_t i = 0; i < kBytes; ++i) {
+    const std::size_t block = (i / 16) * 16;          // start of this 128-bit block
+    rb[i] = bb[block + (ib[i] & 15)];                 // block-local index (low 4 bits)
+  }
+  return r;
+}
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec<TI, NI> TableLookupBytesOr0(Vec<T, N> bytes, Vec<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesOr0: same total byte width");
+  Vec<TI, NI> r;
+  auto* rb = reinterpret_cast<std::uint8_t*>(r.raw);
+  const auto* bb = reinterpret_cast<const std::uint8_t*>(bytes.raw);
+  const auto* ib = reinterpret_cast<const std::uint8_t*>(idx.raw);
+  constexpr std::size_t kBytes = sizeof(TI) * NI;
+  for (std::size_t i = 0; i < kBytes; ++i) {
+    const std::size_t block = (i / 16) * 16;
+    rb[i] = (ib[i] & 0x80) ? std::uint8_t{0} : bb[block + (ib[i] & 15)];  // high bit -> 0
+  }
+  return r;
+}
+
 // ---- gather / scatter (indexed memory access) ---------------------------------------
 // GatherIndex(d, base, idx): r[i] = base[idx[i]]; ScatterIndex is the inverse. The index
 // vector is a same-lane-count vector of the matching-width integer type. Native on AVX2

@@ -809,6 +809,31 @@ HYLE_FORCE_INLINE VecNeon<T, N> TableLookupLanes(VecNeon<T, N> v, IndicesNeon<T,
   return LoadU(Simd<T, N, 0>(), dst);
 }
 
+// ---- byte table lookup (PSHUFB-style, single 128-bit block) -------------------------
+// vqtbl1q_u8(table, indices): for each index byte, table[index] if index < 16 else 0. The whole
+// 128-bit register is one block, matching the scalar contract (NEON <=16 bytes = single block).
+// TableLookupBytesOr0: an index with bit7 set is >= 0x80 >= 16 so vqtbl1q returns 0 -- exactly the
+// Or0 zeroing (in-range-else zeroing is impl-defined, which the contract permits). TableLookupBytes
+// (no zeroing) masks the index to its low 4 bits first, so every index is 0..15: no zeroing, all
+// block-local. Data and index lane types may differ; to_u8/from_u8 pun both to uint8x16_t.
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE VecNeon<TI, NI> TableLookupBytes(VecNeon<T, N> bytes, VecNeon<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytes: same total byte width");
+  static_assert(sizeof(TI) * NI == 16, "neon TableLookupBytes: single 128-bit block (16 bytes)");
+  const uint8x16_t lo = vandq_u8(detail::to_u8<TI>(idx.raw), vdupq_n_u8(0x0F));  // 0..15, block-local
+  VecNeon<TI, NI> r;
+  r.raw = detail::from_u8<TI>(vqtbl1q_u8(detail::to_u8<T>(bytes.raw), lo));
+  return r;
+}
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE VecNeon<TI, NI> TableLookupBytesOr0(VecNeon<T, N> bytes, VecNeon<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesOr0: same total byte width");
+  static_assert(sizeof(TI) * NI == 16, "neon TableLookupBytesOr0: single 128-bit block (16 bytes)");
+  VecNeon<TI, NI> r;  // bit7-set index -> >= 128 -> vqtbl1q returns 0
+  r.raw = detail::from_u8<TI>(vqtbl1q_u8(detail::to_u8<T>(bytes.raw), detail::to_u8<TI>(idx.raw)));
+  return r;
+}
+
 // ---- comparison -> mask (vceqq/vcgtq/... return all-1s/all-0s unsigned lanes) --------
 // NEON has NATIVE per-width compares for every lane type, signed AND unsigned AND 64-bit
 // (aarch64) -- no x86-style sign-flip trick needed. Each intrinsic already returns the

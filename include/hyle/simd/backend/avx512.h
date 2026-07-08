@@ -722,6 +722,33 @@ HYLE_FORCE_INLINE Vec512<T, N> TableLookupLanes(Vec512<T, N> v, Indices512<T, N>
   return Load(Simd<T, N, 0>(), dst);
 }
 
+// ---- byte table lookup (PSHUFB-style, per-128-bit block) ----------------------------
+// _mm512_shuffle_epi8 is PSHUFB replicated across all four 128-bit lanes, so output byte i
+// selects bytes[(i/16)*16 + (idx_i & 15)] WITHIN its own lane -- exactly the scalar block-local
+// contract. PSHUFB natively zeroes the output byte when the index's bit7 (0x80) is set, which
+// IS the Or0 variant. TableLookupBytes (no zeroing) first masks the index to its low 4 bits,
+// clearing bit7 and forcing a block-local index. Index and data lane types may differ; both are
+// viewed as __m512i byte arrays and the result is cast back to the index's lane type. (AVX512BW.)
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec512<TI, NI> TableLookupBytes(Vec512<T, N> bytes, Vec512<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytes: same total byte width");
+  const __m512i b = detail::bitcast_raw_avx512<__m512i>(bytes.raw);
+  const __m512i lo = _mm512_and_si512(detail::bitcast_raw_avx512<__m512i>(idx.raw),
+                                      _mm512_set1_epi8(0x0F));  // clear bit7 + force block-local
+  Vec512<TI, NI> r;
+  r.raw = detail::bitcast_raw_avx512<detail::Raw512T<TI>>(_mm512_shuffle_epi8(b, lo));
+  return r;
+}
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec512<TI, NI> TableLookupBytesOr0(Vec512<T, N> bytes, Vec512<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesOr0: same total byte width");
+  const __m512i b = detail::bitcast_raw_avx512<__m512i>(bytes.raw);
+  const __m512i i = detail::bitcast_raw_avx512<__m512i>(idx.raw);
+  Vec512<TI, NI> r;
+  r.raw = detail::bitcast_raw_avx512<detail::Raw512T<TI>>(_mm512_shuffle_epi8(b, i));  // bit7 -> 0
+  return r;
+}
+
 // ---- comparison -> k-register mask --------------------------------------------------
 // AVX-512 compares WRITE A K REGISTER directly (vcmpps/vpcmpd ... -> __mmask). No xor-MSB
 // for unsigned: there are native epu8/16/32/64 mask compares. Per-width detail helpers pick
