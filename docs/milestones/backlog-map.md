@@ -25,10 +25,13 @@
 | mem-06 | NUMA + 大页 + stats 下溢修复 | 🟢 就绪 | 优先级低(单机未压 NUMA);北极星未要求,**可缓** |
 | simd-03 尾 | NEON / AVX512 真机跑 | 🔴 **缺硬件**(无 ARM 机 / 无 AVX512 机) | 已写+编+objdump 验;**硬阻塞**,待真机/QEMU/SDE。非优先级问题 |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
+| **compute-06 收尾①·原语正确性** | Vulkan buffer **staging 拷贝路径**(非 host-mapped 内存 set/get/copy 现直接返 Unimplemented,vulkan_backend.cc:456/463/476)+ **非 coherent 回读 barrier 链**(kompute #8/#13,回读脏数据风险) | 🟢 就绪 | **A 类必做,不等消费者**。现状"通用 Vulkan 后端"实际只在 ReBAR 卡(RTX4070 类)可跑——普通独显/集显/老卡不可用。基础库交付的通用 GPU 原语必须完整正确,与有没有那种卡的消费者无关。kompute 早有 staging 双缓冲,是"抄需抄全"漏抄项 |
+| **compute-06 收尾②·性能收尾** | kompute 核对表标"抄/改"但验收未要的性能项:#25 timestamp query(GPU 侧计时,**没它无法证 Vulkan SOTA**)、#2 spec constants、#1 pipeline cache 落盘、#14/#16 rerecord/replay、#11/#12 barrier 精确化(现一刀切 global)、#6 HOST_CACHED 档 | 🟢 就绪 | **A 类低优先**:原语完整可用后的加速。#25 最先(证 SOTA 前置);barrier 精确化次之(核对表点名 SOTA 关键)。逐项见 compute-06 里程碑核对表 |
 
 > container-06c(模糊路径匹配)**2026-07-05 ✅ 完成**,已从本表移除(抄 fzf V1 两趟算法,benchmark 证 O(N),container 160/160)。
+> **compute-06 内部欠账(2026-07-08 登记)**:compute-06 按验收(三平台 vecadd+合批+co_await 全绿)已 ✅,但 kompute 25 点核对表"应做(抄/改)"21 项里做了 12、欠 9。**里程碑"明确不做"表(compute-06-vulkan-spirv.md:191)已接住多队列/运行时GLSL/Image/spirv-opt(B类消费者驱动,合理等);上面两行接住剩下无归属的**——① 是正确性硬伤(基础库义务,必做)、② 是性能收尾。避免这些散落在核对表/memory 里无排期。
 
-**A 类结论**:除 simd-03(硬件硬阻塞)外全部"就绪但低优先级"。**platform-02b 的真实用途是 host 端 fiber 栈 guard page + 保留/提交型分配(与显存无关)**,唯一现实消费者是 sched 的栈溢出保护,不阻塞 compute。其余不阻塞北极星,按需。
+**A 类结论**:**除 compute-06 收尾①(Vulkan staging/非coherent barrier=原语正确性硬伤,该做就做)外**,其余"就绪但低优先级"。simd-03 硬件硬阻塞。**platform-02b 的真实用途是 host 端 fiber 栈 guard page + 保留/提交型分配(与显存无关)**,唯一现实消费者是 sched 的栈溢出保护,不阻塞 compute。**compute-06 收尾① 是本表唯一"就绪且该优先做"的 A 类项**——它决定 HYLE 的"通用 Vulkan compute 后端"是否名副其实(当前只支持 ReBAR 卡);收尾②(性能)与其余广度项按需。
 
 ## 三、B 类:能力驱动的半成品机制(前置就绪度是排期关键)
 
