@@ -577,10 +577,17 @@ Result<Kernel> Kernel::compile(const Device& device, const char* source,
 
 Result<Kernel> Kernel::load_ptx(const Device& device, const char* ptx,
                                 const char* entry) noexcept {
+  return load_ptx(device, ptx, entry, nullptr, 0, nullptr, 0);
+}
+
+Result<Kernel> Kernel::load_ptx(const Device& device, const char* ptx, const char* entry,
+                                const SpecConstant* specs, unsigned spec_count,
+                                const void* spec_data, unsigned spec_data_size) noexcept {
   DeviceEntry e = resolve(device);
   void* module = nullptr;
   void* func = nullptr;
-  Status st = e.vt->kernel_load_ptx(e.local, ptx, entry, &module, &func);
+  Status st = e.vt->kernel_load_ptx(e.local, ptx, entry, specs, spec_count,
+                                    spec_data, spec_data_size, &module, &func);
   if (!st.ok()) return std::unexpected(std::move(st));
   Kernel k;
   k.vt_ = e.vt;

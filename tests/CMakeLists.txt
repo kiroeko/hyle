@@ -40,12 +40,21 @@ hyle_add_test(compute SOURCES compute/device_test.cc compute/buffer_test.cc comp
 # completion case (#21) is #if HYLE_HAS_FCONTEXT-gated inside the TU, so link hyle_sched
 # when fcontext exists (else the base sync tests still build with just hyle_mem).
 if(HYLE_COMPUTE_VULKAN_ENABLED)
+  # Compile the test shaders from source (tools/shaders/*.comp) to embedded SPIR-V headers --
+  # reproducible via glslang instead of hand-pasted words (compute-06 tools/). saxpy_spirv.h
+  # feeds the end-to-end/batch/timing tests; saxpy_spec_spirv.h drives the #2/#3 spec-constant
+  # test (its local_size + SCALE are specialization constants).
+  hyle_embed_shader(saxpy.comp saxpy_spirv.h kSaxpySpirv)
+  hyle_embed_shader(saxpy_spec.comp saxpy_spec_spirv.h kSaxpySpecSpirv)
   if(HYLE_HAS_FCONTEXT)
     hyle_add_test(compute NAME vulkan SOURCES compute/vulkan_test.cc
+                  "${HYLE_SHADER_kSaxpySpirv}" "${HYLE_SHADER_kSaxpySpecSpirv}"
                   DEFINES HYLE_HAS_FCONTEXT DEPS hyle_mem hyle_sched)
   else()
-    hyle_add_test(compute NAME vulkan SOURCES compute/vulkan_test.cc DEPS hyle_mem)
+    hyle_add_test(compute NAME vulkan SOURCES compute/vulkan_test.cc
+                  "${HYLE_SHADER_kSaxpySpirv}" "${HYLE_SHADER_kSaxpySpecSpirv}" DEPS hyle_mem)
   endif()
+  target_include_directories(hyle_compute_vulkan_test PRIVATE "${HYLE_SHADER_DIR}")
   # Second ctest of the SAME exe with HYLE_VK_FORCE_STAGING=1 (a TEST-ONLY env hook, only
   # honored under HYLE_TESTING): forces the non-ReBAR STAGING path so it's covered on ReBAR
   # dev machines (RTX 4070) where the default direct-map path would otherwise hide it. Same

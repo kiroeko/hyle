@@ -109,4 +109,16 @@ struct KernelArgs {
   unsigned scalar_count;        // number of scalar fields (for CUDA void** rebuild)
 };
 
+// A SPECIALIZATION CONSTANT binding (compute-06 #2/#3): maps one GLSL `constant_id` to a
+// slice of a caller-provided data blob, consumed at pipeline-BUILD time (Vulkan
+// SpecializationInfo). POD (here, not kernel.h, so the .cu TU can see it without result.h).
+// `id` is the shader's constant_id; `offset`/`size` locate the value in the spec_data blob
+// Kernel::load_ptx receives. Distinct from ScalarField (push constants) -- spec constants are
+// frozen into the compiled pipeline, not pushed per launch.
+struct SpecConstant {
+  unsigned id;      // GLSL constant_id
+  unsigned offset;  // byte offset of this constant's value within the spec_data blob
+  unsigned size;    // byte size of the value (4 for a uint/float/int spec constant)
+};
+
 }  // namespace hyle::compute

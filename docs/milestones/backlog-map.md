@@ -25,7 +25,8 @@
 | mem-06 | NUMA + 大页 + stats 下溢修复 | 🟢 就绪 | 优先级低(单机未压 NUMA);北极星未要求,**可缓** |
 | simd-03 尾 | NEON / AVX512 真机跑 | 🔴 **缺硬件**(无 ARM 机 / 无 AVX512 机) | 已写+编+objdump 验;**硬阻塞**,待真机/QEMU/SDE。非优先级问题 |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
-| **compute-06 收尾②·性能收尾** | kompute 核对表标"抄/改"但验收未要的性能项:#2 spec constants、#1 pipeline cache 落盘、#14/#16 rerecord/replay、#6 HOST_CACHED 档。(**#25 timestamp query、#11/#12 barrier 精确化[含红队 D WAW 修复] 均已 2026-07-08 完成=compute-06b**,记录见 compute-06 里程碑状态行,已从本行移除) | 🟢 就绪 | **A 类低优先**:原语完整可用后的加速。剩项无明确 SOTA 前置,按需(spec constant 可配合 #1 cache 一起做)。逐项见 compute-06 里程碑核对表 |
+| **compute-06 收尾②·性能收尾** | 剩 #2/#3 spec constants、#14/#16 rerecord/replay(均触及公开 API,设计中)。(**#25 timestamp、#11/#12 barrier[含红队 D]、#1 pipeline cache 落盘、#6 HOST_CACHED 均已 2026-07-08 完成=compute-06b**,记录见 compute-06 里程碑状态行) | 🟢 就绪 | **A 类低优先**。#2 spec constant + #16 replay 触及公开 Kernel API,需先定接口形状。逐项见 compute-06 里程碑核对表 |
+| **compute-06 边角项(按需备选,非欠账)** | #19 push_descriptor(实测 update 便宜,收益有限)、#22 timeline semaphore(多序列依赖才需)、#24 批量 createComputePipelines(kompute 自留 TODO)、#23 多队列 ownership transfer(上 async compute 才需)、Image 路径(做 image kernel 才核)、红队 E(event marker cb 长命 stream 累积)、红队 G(build 部分失败无回滚)。#10 coherent flush 存疑已随 #6 解决 | 🟢 就绪 | **明确消费者驱动**:各有触发条件,无当前消费者→登记不做,别散落核对表/memory |
 
 > container-06c(模糊路径匹配)**2026-07-05 ✅ 完成**,已从本表移除(抄 fzf V1 两趟算法,benchmark 证 O(N),container 160/160)。
 > **compute-06 内部欠账(2026-07-08 登记)**:compute-06 按验收(三平台 vecadd+合批+co_await 全绿)已 ✅,但 kompute 25 点核对表"应做(抄/改)"21 项里做了 12、欠 9。**里程碑"明确不做"表(compute-06-vulkan-spirv.md:191)已接住多队列/运行时GLSL/Image/spirv-opt(B类消费者驱动,合理等);上面两行接住剩下无归属的**——① 是正确性硬伤(基础库义务,必做)、② 是性能收尾。避免这些散落在核对表/memory 里无排期。

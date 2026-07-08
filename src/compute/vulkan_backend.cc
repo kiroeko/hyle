@@ -925,6 +925,11 @@ struct VkKernel {
   VkPipeline pipeline = VK_NULL_HANDLE;
   uint32_t buffer_count = 0;   // descriptor bindings (set at load from SPIR-V reflection-lite)
   uint32_t push_size = 0;      // push-constant bytes
+  // Specialization constants (#2/#3): copied from the load_ptx args (caller storage is
+  // transient), consumed once in build_pipeline. entries[i] = {constant_id, offset, size}
+  // into `spec_data`; empty (spec_map.empty()) = no spec constants.
+  std::vector<VkSpecializationMapEntry> spec_map;
+  std::vector<uint8_t> spec_data;
 };
 
 // Build a compute pipeline from SPIR-V. Because HYLE's Kernel API doesn't carry a
@@ -978,6 +983,16 @@ Status build_pipeline(VkKernel* k, uint32_t buffer_count, uint32_t push_size) no
   cpci.stage.stage = VK_SHADER_STAGE_COMPUTE_BIT;
   cpci.stage.module = k->module;
   cpci.stage.pName = "main";
+  // Specialization constants (#2/#3): if the kernel carries any, bind them to the stage so the
+  // driver folds them into the compiled ISA (dead-code elim / loop unroll / baked local_size).
+  VkSpecializationInfo si{};
+  if (!k->spec_map.empty()) {
+    si.mapEntryCount = static_cast<uint32_t>(k->spec_map.size());
+    si.pMapEntries = k->spec_map.data();
+    si.dataSize = k->spec_data.size();
+    si.pData = k->spec_data.data();
+    cpci.stage.pSpecializationInfo = &si;
+  }
   cpci.layout = k->layout;
   r = vkCreateComputePipelines(ctx().device, ctx().pipe_cache, 1, &cpci, nullptr, &k->pipeline);
   if (r != VK_SUCCESS) {
@@ -1002,6 +1017,8 @@ Status vk_kernel_compile(int, const char*, const char*, void**, void**) noexcept
 // blob: first sizeof(uint32_t) bytes = byte length, then the SPIR-V words. This keeps the
 // generic vtable signature while carrying binary safely.
 Status vk_kernel_load_ptx(int, const char* ptx, const char* /*entry*/,
+                          const SpecConstant* specs, unsigned spec_count,
+                          const void* spec_data, unsigned spec_data_size,
                           void** out_module, void** out_func) noexcept {
   if (!ctx().ok) return Status::Unavailable("vk backend: no device");
   uint32_t byte_len = 0;
@@ -1014,6 +1031,15 @@ Status vk_kernel_load_ptx(int, const char* ptx, const char* /*entry*/,
   smci.pCode = words;
   VkResult r = vkCreateShaderModule(ctx().device, &smci, nullptr, &k->module);
   if (r != VK_SUCCESS) { delete k; return from_vk(r, "vkCreateShaderModule"); }
+  // Copy spec constants (#2/#3): caller storage is transient, but build_pipeline runs at the
+  // FIRST launch (later), so the VkKernel must own the map entries + value blob until then.
+  if (spec_count > 0 && specs != nullptr && spec_data != nullptr) {
+    k->spec_map.reserve(spec_count);
+    for (unsigned i = 0; i < spec_count; ++i)
+      k->spec_map.push_back({specs[i].id, specs[i].offset, specs[i].size});
+    k->spec_data.assign(static_cast<const uint8_t*>(spec_data),
+                        static_cast<const uint8_t*>(spec_data) + spec_data_size);
+  }
   *out_module = k;
   *out_func = nullptr;
   return Status();

@@ -732,7 +732,13 @@ Status cuda_kernel_compile(int ordinal, const char* source, const char* entry,
 }
 
 Status cuda_kernel_load_ptx(int ordinal, const char* ptx, const char* entry,
+                            const SpecConstant* /*specs*/, unsigned spec_count,
+                            const void* /*spec_data*/, unsigned /*spec_data_size*/,
                             void** out_module, void** out_func) noexcept {
+  // Specialization constants are a Vulkan/SPIR-V concept; CUDA's build-time analog is NVRTC
+  // preprocessor macros at compile(). A caller asking for spec constants on CUDA is a mismatch.
+  if (spec_count > 0)
+    return Status::Unimplemented("cuda backend: no spec constants (use compile() macros)");
   return load_module(ordinal, ptx, entry, out_module, out_func);
 }
 
