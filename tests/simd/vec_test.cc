@@ -284,6 +284,73 @@ TEST(Vec, BitCastWidthChanging) {
     EXPECT_EQ(o8.data[b], ref[b]) << "byte " << b;
 }
 
+// ---- A-2 mask-domain logic ----------------------------------------------------------
+// Build two masks from comparisons, then check the mask And/Or/Xor/AndNot/Not/ExclusiveNeither
+// against per-lane bool references, plus IfThenZeroElse and MaskFromVec. Uses i32 lanes.
+TEST(Vec, MaskDomainLogic) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<std::int32_t>(i); b.data[i] = 3; }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+  auto ma = hs::Lt(va, vb);   // lane i true iff i < 3
+  auto mb = hs::Gt(va, hs::Set(d, 1));  // lane i true iff i > 1
+  auto ref_a = [&](std::size_t i) { return a.data[i] < 3; };
+  auto ref_b = [&](std::size_t i) { return a.data[i] > 1; };
+  // Materialize a mask to a vector (0xFFFFFFFF / 0) and read lanes to check truth.
+  auto check = [&](auto mask, auto ref, const char* tag) {
+    hs::Store(hs::VecFromMask(d, mask), d, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i] != 0, ref(i)) << tag << " i=" << i;
+  };
+  check(hs::And(ma, mb), [&](std::size_t i){ return ref_a(i) && ref_b(i); }, "And");
+  check(hs::Or(ma, mb), [&](std::size_t i){ return ref_a(i) || ref_b(i); }, "Or");
+  check(hs::Xor(ma, mb), [&](std::size_t i){ return ref_a(i) != ref_b(i); }, "Xor");
+  check(hs::AndNot(ma, mb), [&](std::size_t i){ return !ref_a(i) && ref_b(i); }, "AndNot");
+  check(hs::Not(ma), [&](std::size_t i){ return !ref_a(i); }, "Not");
+  check(hs::ExclusiveNeither(ma, mb), [&](std::size_t i){ return !ref_a(i) && !ref_b(i); }, "Nor");
+  // IfThenZeroElse: zero where ma true, else vb.
+  hs::Store(hs::IfThenZeroElse(ma, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], ref_a(i) ? 0 : 3) << "ifzeroelse i=" << i;
+  // MaskFromVec: build a vector whose lanes have the sign bit set on odd lanes.
+  Buf<std::int32_t> s;
+  for (std::size_t i = 0; i < n; ++i) s.data[i] = (i % 2) ? -1 : 0;  // MSB set on odd
+  auto mfv = hs::MaskFromVec(hs::Load(d, s.data));
+  hs::Store(hs::VecFromMask(d, mfv), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i] != 0, (i % 2) != 0) << "maskfromvec i=" << i;
+}
+
+// BitsFromMask/LoadMaskBits round-trip + prefix-scan (SetBeforeFirst/OnlyFirst/etc).
+TEST(Vec, MaskBitsAndPrefixScan) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> a;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = (i == 2 || i == 5 % n) ? 1 : 0;  // some true lanes
+  auto m = hs::Eq(hs::Load(d, a.data), hs::Set(d, 1));
+  // BitsFromMask -> LoadMaskBits round-trips the mask.
+  std::uint64_t bits = hs::BitsFromMask(d, m);
+  auto m2 = hs::LoadMaskBits(d, bits);
+  Buf<std::int32_t> o1, o2;
+  hs::Store(hs::VecFromMask(d, m), d, o1.data);
+  hs::Store(hs::VecFromMask(d, m2), d, o2.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o1.data[i], o2.data[i]) << "roundtrip i=" << i;
+  // First true lane index (find via bits).
+  std::ptrdiff_t first = -1;
+  for (std::size_t i = 0; i < n; ++i) if (a.data[i]) { first = static_cast<std::ptrdiff_t>(i); break; }
+  ASSERT_GE(first, 0);
+  // SetBeforeFirst: lanes strictly before `first`.
+  hs::Store(hs::VecFromMask(d, hs::SetBeforeFirst(m)), d, o1.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o1.data[i] != 0, static_cast<std::ptrdiff_t>(i) < first) << "before i=" << i;
+  // SetOnlyFirst: only `first`.
+  hs::Store(hs::VecFromMask(d, hs::SetOnlyFirst(m)), d, o1.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o1.data[i] != 0, static_cast<std::ptrdiff_t>(i) == first) << "only i=" << i;
+  // SetAtOrAfterFirst: lanes >= first.
+  hs::Store(hs::VecFromMask(d, hs::SetAtOrAfterFirst(m)), d, o1.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o1.data[i] != 0, static_cast<std::ptrdiff_t>(i) >= first) << "atorafter i=" << i;
+  // FindKnownFirstTrue matches.
+  EXPECT_EQ(static_cast<std::ptrdiff_t>(hs::FindKnownFirstTrue(d, m)), first);
+}
+
 // Float rounding to an integral value (result stays float): Round(nearest-even), Floor
 // (toward -inf), Ceil (toward +inf), Trunc (toward zero). Feed .5 ties and both signs so
 // nearest-even vs directed rounding actually diverge, vs the libm reference (== scalar).

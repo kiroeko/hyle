@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>  // std::memcpy (LoadMaskBits lane pun)
 #include <bit>
 #include <type_traits>
 
@@ -841,6 +842,53 @@ template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> IfThenElseZero(Mask128<T, N> m, Vec128<T, N> yes) noexcept {
   return IfThenElse(m, yes, Zero(Simd<T, N, 0>()));
 }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> IfThenZeroElse(Mask128<T, N> m, Vec128<T, N> no) noexcept {
+  return IfThenElse(m, Zero(Simd<T, N, 0>()), no);
+}
+
+// ---- mask-domain logic (bitwise on the all-ones/all-zero lane mask) -----------------
+// sse4 masks are lane vectors (compare results: 0xFF..pattern), so mask And/Or/Xor/AndNot/
+// Not are the integer bitwise ops on the mask raw. Float/double mask raw is __m128/__m128d;
+// route through si128 so one path serves all lane types. all-ones = Eq(x,x) for Not.
+namespace detail {
+template <typename T> HYLE_FORCE_INLINE __m128i mask_to_i(typename Raw128<T>::type m) noexcept {
+  if constexpr (std::is_same_v<T, float>) return _mm_castps_si128(m);
+  else if constexpr (std::is_same_v<T, double>) return _mm_castpd_si128(m);
+  else return m;
+}
+template <typename T> HYLE_FORCE_INLINE typename Raw128<T>::type mask_from_i(__m128i m) noexcept {
+  if constexpr (std::is_same_v<T, float>) return _mm_castsi128_ps(m);
+  else if constexpr (std::is_same_v<T, double>) return _mm_castsi128_pd(m);
+  else return m;
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> And(Mask128<T, N> a, Mask128<T, N> b) noexcept {
+  Mask128<T, N> m; m.raw = detail::mask_from_i<T>(_mm_and_si128(detail::mask_to_i<T>(a.raw), detail::mask_to_i<T>(b.raw))); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> Or(Mask128<T, N> a, Mask128<T, N> b) noexcept {
+  Mask128<T, N> m; m.raw = detail::mask_from_i<T>(_mm_or_si128(detail::mask_to_i<T>(a.raw), detail::mask_to_i<T>(b.raw))); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> Xor(Mask128<T, N> a, Mask128<T, N> b) noexcept {
+  Mask128<T, N> m; m.raw = detail::mask_from_i<T>(_mm_xor_si128(detail::mask_to_i<T>(a.raw), detail::mask_to_i<T>(b.raw))); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> AndNot(Mask128<T, N> a, Mask128<T, N> b) noexcept {
+  // ~a & b (Highway order): _mm_andnot(a,b) computes (~a)&b.
+  Mask128<T, N> m; m.raw = detail::mask_from_i<T>(_mm_andnot_si128(detail::mask_to_i<T>(a.raw), detail::mask_to_i<T>(b.raw))); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> Not(Mask128<T, N> a) noexcept {
+  const __m128i ones = _mm_set1_epi32(-1);
+  Mask128<T, N> m; m.raw = detail::mask_from_i<T>(_mm_xor_si128(detail::mask_to_i<T>(a.raw), ones)); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> ExclusiveNeither(Mask128<T, N> a, Mask128<T, N> b) noexcept {
+  return Not(Or(a, b));  // ~(a|b)
+}
 
 namespace detail {
 // One bit per LANE, LSB = lane 0. Float/double use the native movemask (1 bit/lane).
@@ -903,6 +951,91 @@ HYLE_FORCE_INLINE detail::V128<D> VecFromMask(D, Mask128<TFromD<D>, HYLE_SIMD_MA
   else r.raw = m.raw;
   return r;
 }
+// MaskFromVec: lane true iff its MSB set (Highway). Route via the per-lane movemask so the
+// resulting Mask128 raw is a proper all-ones/all-zero lane vector (what the other mask ops
+// expect). Build it by comparing the sign: arithmetic compare (v < 0) reproduces full lanes.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> MaskFromVec(Vec128<T, N> v) noexcept {
+  Mask128<T, N> m;
+  // A lane's MSB -> all-ones lane: for int use signed compare vs zero; for float use the sign.
+  if constexpr (std::is_same_v<T, float>)
+    m.raw = _mm_castsi128_ps(_mm_srai_epi32(_mm_castps_si128(v.raw), 31));
+  else if constexpr (std::is_same_v<T, double>) {
+    __m128i hi = _mm_srai_epi32(_mm_castpd_si128(v.raw), 31);          // sign to all 32 hi bits
+    m.raw = _mm_castsi128_pd(_mm_shuffle_epi32(hi, _MM_SHUFFLE(3, 3, 1, 1)));  // broadcast to 64b
+  } else if constexpr (sizeof(T) == 8) {
+    __m128i hi = _mm_srai_epi32(v.raw, 31);
+    m.raw = _mm_shuffle_epi32(hi, _MM_SHUFFLE(3, 3, 1, 1));
+  } else if constexpr (sizeof(T) == 4) m.raw = _mm_srai_epi32(v.raw, 31);
+  else if constexpr (sizeof(T) == 2) m.raw = _mm_srai_epi16(v.raw, 15);
+  else m.raw = _mm_cmpgt_epi8(_mm_setzero_si128(), v.raw);  // i8: 0 > v  <=> v's sign set
+  return m;
+}
+
+// mask <-> bits (reuse the mask_bits movemask helper).
+template <class D>
+HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D, Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
+  return detail::mask_bits(m);
+}
+template <class D>
+HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D d, std::uint64_t bits) noexcept {
+  // Rebuild: lane i true iff bit i set. FirstN-style via an index compare against the bitset.
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) T tmp[kN];
+  for (std::size_t i = 0; i < kN; ++i) {
+    using U = std::make_unsigned_t<std::conditional_t<std::is_integral_v<T>, T, std::uint64_t>>;
+    U u = ((bits >> i) & 1) ? ~U{0} : U{0};
+    std::memcpy(&tmp[i], &u, sizeof(T));
+  }
+  Mask128<T, kN> out;
+  out.raw = detail::mask_from_i<T>(_mm_load_si128(reinterpret_cast<const __m128i*>(tmp)));
+  return out;
+}
+template <class D>
+HYLE_FORCE_INLINE std::size_t StoreMaskBits(D d, Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                            std::uint8_t* p) noexcept {
+  const std::uint64_t bits = detail::mask_bits(m);
+  const std::size_t nbytes = (HYLE_SIMD_MAX_LANES_D(D) + 7) / 8;
+  for (std::size_t b = 0; b < nbytes; ++b) p[b] = static_cast<std::uint8_t>(bits >> (b * 8));
+  return nbytes;
+}
+
+// prefix-scan masks (leading run relative to first true) -- computed on the bitfield then
+// rebuilt via LoadMaskBits. N<=16 so a 32-bit bitfield holds it.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> SetBeforeFirst(Mask128<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);
+  const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+  return LoadMaskBits(Simd<T, N, 0>(), before);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> SetAtOrBeforeFirst(Mask128<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);
+  const unsigned upto = b ? ((1u << (std::countr_zero(b) + 1)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+  return LoadMaskBits(Simd<T, N, 0>(), upto);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> SetOnlyFirst(Mask128<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);
+  return LoadMaskBits(Simd<T, N, 0>(), b ? (1u << std::countr_zero(b)) : 0u);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> SetAtOrAfterFirst(Mask128<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);
+  const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
+  const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : full;
+  return LoadMaskBits(Simd<T, N, 0>(), full & ~before);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(Simd<T, N, 0>, Mask128<T, N> m) noexcept {
+  return static_cast<std::size_t>(std::countr_zero(detail::mask_bits(m)));
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(Simd<T, N, 0>, Mask128<T, N> m) noexcept {
+  return static_cast<std::size_t>(31 - std::countl_zero(detail::mask_bits(m)));
+}
+
 // SumsOf8(v): 16 u8 lanes -> 2 u64 (native _mm_sad_epu8 vs zero). The count core.
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec128<std::uint64_t, N / 8> SumsOf8(Vec128<std::uint8_t, N> v) noexcept {

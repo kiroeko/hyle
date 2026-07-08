@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>  // std::memcpy (LoadMaskBits lane pun)
 #include <bit>
 #include <type_traits>
 
@@ -929,6 +930,11 @@ template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> IfThenElseZero(MaskNeon<T, N> m, VecNeon<T, N> yes) noexcept {
   return IfThenElse(m, yes, Zero(Simd<T, N, 0>()));
 }
+// IfThenZeroElse(m, no): zero where m true, else `no` (the complement of IfThenElseZero).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> IfThenZeroElse(MaskNeon<T, N> m, VecNeon<T, N> no) noexcept {
+  return IfThenElse(m, Zero(Simd<T, N, 0>()), no);
+}
 
 namespace detail {
 // Fold a per-lane all-1s/all-0s mask to one bit per lane (LSB = lane 0). NEON has no
@@ -1009,6 +1015,182 @@ HYLE_FORCE_INLINE detail::VN<D> VecFromMask(D, MaskNeon<TFromD<D>, HYLE_SIMD_MAX
   else r.raw = m.raw;  // u64
   return r;
 }
+// MaskFromVec(v): a lane is true iff its MSB is set (Highway; inverse of VecFromMask). NEON
+// idiom: reinterpret to the SIGNED same-width lane, arithmetic-shift-right by (width-1) so the
+// sign bit smears across the whole lane (all-ones / all-zero), then reinterpret to the unsigned
+// MaskRawNeonT<T>. vshrq_n_s* is arithmetic for every width (8/16/32/64 on aarch64). float/double
+// have no signed shift, so pun to s32/s64 first (same bit-width, no data movement).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> MaskFromVec(VecNeon<T, N> v) noexcept {
+  MaskNeon<T, N> m;
+  if constexpr (std::is_same_v<T, float>)
+    m.raw = vreinterpretq_u32_s32(vshrq_n_s32(vreinterpretq_s32_f32(v.raw), 31));
+  else if constexpr (std::is_same_v<T, double>)
+    m.raw = vreinterpretq_u64_s64(vshrq_n_s64(vreinterpretq_s64_f64(v.raw), 63));
+  else if constexpr (std::is_same_v<T, std::int8_t>)
+    m.raw = vreinterpretq_u8_s8(vshrq_n_s8(v.raw, 7));
+  else if constexpr (std::is_same_v<T, std::uint8_t>)
+    m.raw = vreinterpretq_u8_s8(vshrq_n_s8(vreinterpretq_s8_u8(v.raw), 7));
+  else if constexpr (std::is_same_v<T, std::int16_t>)
+    m.raw = vreinterpretq_u16_s16(vshrq_n_s16(v.raw, 15));
+  else if constexpr (std::is_same_v<T, std::uint16_t>)
+    m.raw = vreinterpretq_u16_s16(vshrq_n_s16(vreinterpretq_s16_u16(v.raw), 15));
+  else if constexpr (std::is_same_v<T, std::int32_t>)
+    m.raw = vreinterpretq_u32_s32(vshrq_n_s32(v.raw, 31));
+  else if constexpr (std::is_same_v<T, std::uint32_t>)
+    m.raw = vreinterpretq_u32_s32(vshrq_n_s32(vreinterpretq_s32_u32(v.raw), 31));
+  else if constexpr (std::is_same_v<T, std::int64_t>)
+    m.raw = vreinterpretq_u64_s64(vshrq_n_s64(v.raw, 63));
+  else  // u64
+    m.raw = vreinterpretq_u64_s64(vshrq_n_s64(vreinterpretq_s64_u64(v.raw), 63));
+  return m;
+}
+
+// ---- mask-domain logic (combine predicates for vectorized-loop control flow) --------
+// Boolean ops directly on masks (Highway And/Or/Xor/AndNot/Not/ExclusiveNeither). NEON's mask
+// raw is uintNx_t (all-ones/all-zero lanes), so these are the width-matched unsigned bitwise
+// intrinsics -- dispatch by sizeof(T). AndNot needs care: Highway AndNot(a,b) = ~a & b, but
+// NEON vbicq(x,y) = x & ~y, so the args are SWAPPED (vbicq(b,a)). Not reuses detail::mask_not
+// (vmvnq, with the 64-bit-via-u32 fallback). ExclusiveNeither = Not(Or(a,b)) (NOR).
+namespace detail {
+template <typename T>
+HYLE_FORCE_INLINE MaskRawNeonT<T> mask_and(MaskRawNeonT<T> a, MaskRawNeonT<T> b) noexcept {
+  if constexpr (sizeof(T) == 1) return vandq_u8(a, b);
+  else if constexpr (sizeof(T) == 2) return vandq_u16(a, b);
+  else if constexpr (sizeof(T) == 8) return vandq_u64(a, b);
+  else return vandq_u32(a, b);
+}
+template <typename T>
+HYLE_FORCE_INLINE MaskRawNeonT<T> mask_or(MaskRawNeonT<T> a, MaskRawNeonT<T> b) noexcept {
+  if constexpr (sizeof(T) == 1) return vorrq_u8(a, b);
+  else if constexpr (sizeof(T) == 2) return vorrq_u16(a, b);
+  else if constexpr (sizeof(T) == 8) return vorrq_u64(a, b);
+  else return vorrq_u32(a, b);
+}
+template <typename T>
+HYLE_FORCE_INLINE MaskRawNeonT<T> mask_xor(MaskRawNeonT<T> a, MaskRawNeonT<T> b) noexcept {
+  if constexpr (sizeof(T) == 1) return veorq_u8(a, b);
+  else if constexpr (sizeof(T) == 2) return veorq_u16(a, b);
+  else if constexpr (sizeof(T) == 8) return veorq_u64(a, b);
+  else return veorq_u32(a, b);
+}
+// bic(a,b) = a & ~b (native NEON order).
+template <typename T>
+HYLE_FORCE_INLINE MaskRawNeonT<T> mask_bic(MaskRawNeonT<T> a, MaskRawNeonT<T> b) noexcept {
+  if constexpr (sizeof(T) == 1) return vbicq_u8(a, b);
+  else if constexpr (sizeof(T) == 2) return vbicq_u16(a, b);
+  else if constexpr (sizeof(T) == 8) return vbicq_u64(a, b);
+  else return vbicq_u32(a, b);
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> And(MaskNeon<T, N> a, MaskNeon<T, N> b) noexcept {
+  MaskNeon<T, N> m; m.raw = detail::mask_and<T>(a.raw, b.raw); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> Or(MaskNeon<T, N> a, MaskNeon<T, N> b) noexcept {
+  MaskNeon<T, N> m; m.raw = detail::mask_or<T>(a.raw, b.raw); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> Xor(MaskNeon<T, N> a, MaskNeon<T, N> b) noexcept {
+  MaskNeon<T, N> m; m.raw = detail::mask_xor<T>(a.raw, b.raw); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> AndNot(MaskNeon<T, N> a, MaskNeon<T, N> b) noexcept {
+  // ~a & b (Highway order). vbicq(x,y) = x & ~y, so swap: vbicq(b,a).
+  MaskNeon<T, N> m; m.raw = detail::mask_bic<T>(b.raw, a.raw); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> Not(MaskNeon<T, N> a) noexcept {
+  MaskNeon<T, N> m; m.raw = detail::mask_not<T>(a.raw); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> ExclusiveNeither(MaskNeon<T, N> a, MaskNeon<T, N> b) noexcept {
+  return Not(Or(a, b));  // ~(a|b)
+}
+
+// ---- mask <-> bits (serialize a mask to a bitfield, and back) -----------------------
+// BitsFromMask(d, m): pack lane predicates into an integer bitfield (lane i -> bit i). NEON has
+// no movemask, so reuse detail::mask_bits (the AND-with-lane-weights + horizontal-add trick,
+// see CountTrue/FindFirstTrue above). LoadMaskBits rebuilds a mask by materializing all-ones/
+// all-zero lanes on a stack array + vld1q (the portable store/reload path, same width dispatch
+// as FirstN). StoreMaskBits writes ceil(N/8) bytes.
+template <class D>
+HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D, MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
+  return detail::mask_bits(m);
+}
+template <class D>
+HYLE_FORCE_INLINE MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D, std::uint64_t bits) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  MaskNeon<T, kN> m;
+  if constexpr (sizeof(T) == 1) {
+    std::uint8_t tmp[16];
+    for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? 0xFFu : 0u;
+    m.raw = vld1q_u8(tmp);
+  } else if constexpr (sizeof(T) == 2) {
+    std::uint16_t tmp[8];
+    for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? 0xFFFFu : 0u;
+    m.raw = vld1q_u16(tmp);
+  } else if constexpr (sizeof(T) == 4) {
+    std::uint32_t tmp[4];
+    for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? 0xFFFFFFFFu : 0u;
+    m.raw = vld1q_u32(tmp);
+  } else {
+    std::uint64_t tmp[2];
+    for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? ~0ull : 0ull;
+    m.raw = vld1q_u64(tmp);
+  }
+  return m;
+}
+template <class D>
+HYLE_FORCE_INLINE std::size_t StoreMaskBits(D, MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                            std::uint8_t* p) noexcept {
+  const std::uint64_t bits = detail::mask_bits(m);
+  const std::size_t nbytes = (HYLE_SIMD_MAX_LANES_D(D) + 7) / 8;
+  for (std::size_t b = 0; b < nbytes; ++b) p[b] = static_cast<std::uint8_t>(bits >> (b * 8));
+  return nbytes;
+}
+
+// ---- prefix-scan masks (leading-run helpers for parsing/tokenizing) -----------------
+// Highway SetBeforeFirst/SetAtOrBeforeFirst/SetOnlyFirst/SetAtOrAfterFirst: derive a run
+// relative to the FIRST true lane. Computed on the bitfield (mask_bits) then rebuilt via
+// LoadMaskBits -- identical to the scalar/sse4 oracle. N<=16 (i8) so a 32-bit field holds it.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> SetBeforeFirst(MaskNeon<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);
+  const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+  return LoadMaskBits(Simd<T, N, 0>(), before);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> SetAtOrBeforeFirst(MaskNeon<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);
+  const unsigned upto = b ? ((1u << (std::countr_zero(b) + 1)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+  return LoadMaskBits(Simd<T, N, 0>(), upto);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> SetOnlyFirst(MaskNeon<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);
+  return LoadMaskBits(Simd<T, N, 0>(), b ? (1u << std::countr_zero(b)) : 0u);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> SetAtOrAfterFirst(MaskNeon<T, N> m) noexcept {
+  const unsigned b = detail::mask_bits(m);
+  const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
+  const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : full;
+  return LoadMaskBits(Simd<T, N, 0>(), full & ~before);
+}
+// FindKnownFirstTrue/LastTrue: like FindFirstTrue but the caller guarantees >=1 true lane, so
+// the result is a plain size_t (no -1 sentinel). Highway's known-nonempty fast path.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
+  return static_cast<std::size_t>(std::countr_zero(detail::mask_bits(m)));
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
+  return static_cast<std::size_t>(31 - std::countl_zero(detail::mask_bits(m)));
+}
+
 // SumsOf8(v): 16 u8 lanes -> 2 u64. NEON has no SAD; fold via the pairwise-widening-add
 // chain vpaddlq_u8 -> u16 -> u32 -> u64 (each halves the lane count, doubling width). 16 u8
 // -> 8 u16 -> 4 u32 -> 2 u64, each u64 = sum of its 8 source bytes. The count core.

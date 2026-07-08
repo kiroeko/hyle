@@ -505,6 +505,128 @@ HYLE_FORCE_INLINE VFromD<D> VecFromMask(D, Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D
   }
   return r;
 }
+// MaskFromVec(v): a lane is true iff its most-significant bit is set (Highway). The inverse
+// of VecFromMask; used to bridge a hand-built vector predicate back into the mask domain.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> MaskFromVec(Vec<T, N> v) noexcept {
+  Mask<T, N> m;
+  for (std::size_t i = 0; i < N; ++i) {
+    using U = std::make_unsigned_t<std::conditional_t<std::is_integral_v<T>, T, std::uint64_t>>;
+    U u;
+    if constexpr (std::is_integral_v<T>) u = static_cast<U>(v.raw[i]);
+    else std::memcpy(&u, &v.raw[i], sizeof(T));
+    m.raw[i] = (u >> (sizeof(U) * 8 - 1)) & 1;  // MSB
+  }
+  return m;
+}
+
+// ---- mask-domain logic (combine predicates for vectorized-loop control flow) --------
+// Boolean ops directly on masks (Highway And/Or/Xor/AndNot/Not/ExclusiveNeither for masks).
+// These let a loop compose conditions (e.g. `in_range = Ge(x,lo) & Lt(x,hi)`) without
+// round-tripping through VecFromMask. The scalar floor is a per-lane bool op.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> And(Mask<T, N> a, Mask<T, N> b) noexcept {
+  Mask<T, N> m; for (std::size_t i = 0; i < N; ++i) m.raw[i] = a.raw[i] && b.raw[i]; return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> Or(Mask<T, N> a, Mask<T, N> b) noexcept {
+  Mask<T, N> m; for (std::size_t i = 0; i < N; ++i) m.raw[i] = a.raw[i] || b.raw[i]; return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> Xor(Mask<T, N> a, Mask<T, N> b) noexcept {
+  Mask<T, N> m; for (std::size_t i = 0; i < N; ++i) m.raw[i] = a.raw[i] != b.raw[i]; return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> AndNot(Mask<T, N> a, Mask<T, N> b) noexcept {
+  Mask<T, N> m; for (std::size_t i = 0; i < N; ++i) m.raw[i] = !a.raw[i] && b.raw[i]; return m;  // ~a & b
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> Not(Mask<T, N> a) noexcept {
+  Mask<T, N> m; for (std::size_t i = 0; i < N; ++i) m.raw[i] = !a.raw[i]; return m;
+}
+// Neither a nor b (Highway ExclusiveNeither = ~(a|b), i.e. NOR).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> ExclusiveNeither(Mask<T, N> a, Mask<T, N> b) noexcept {
+  Mask<T, N> m; for (std::size_t i = 0; i < N; ++i) m.raw[i] = !a.raw[i] && !b.raw[i]; return m;
+}
+
+// IfThenZeroElse(m, no): zero where m true, else `no` (the complement of IfThenElseZero).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> IfThenZeroElse(Mask<T, N> m, Vec<T, N> no) noexcept {
+  Vec<T, N> r; for (std::size_t i = 0; i < N; ++i) r.raw[i] = m.raw[i] ? T{0} : no.raw[i]; return r;
+}
+
+// ---- mask <-> bits (serialize a mask to a bitfield, and back) -----------------------
+// BitsFromMask(d, m): pack lane predicates into an integer bitfield (lane i -> bit i),
+// Highway. StoreMaskBits writes those bytes; LoadMaskBits rebuilds a mask from them. Used
+// to save/branch on a whole mask cheaply (e.g. `if (BitsFromMask(d,m) == 0) skip`).
+template <class D>
+HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D, Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
+  std::uint64_t bits = 0;
+  for (std::size_t i = 0; i < HYLE_SIMD_MAX_LANES_D(D); ++i)
+    if (m.raw[i]) bits |= (std::uint64_t{1} << i);
+  return bits;
+}
+template <class D>
+HYLE_FORCE_INLINE Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D, std::uint64_t bits) noexcept {
+  Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m;
+  for (std::size_t i = 0; i < HYLE_SIMD_MAX_LANES_D(D); ++i) m.raw[i] = (bits >> i) & 1;
+  return m;
+}
+// StoreMaskBits(d, m, p): write ceil(N/8) bytes of the packed bitfield to p; returns bytes.
+template <class D>
+HYLE_FORCE_INLINE std::size_t StoreMaskBits(D d, Mask<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                            std::uint8_t* p) noexcept {
+  const std::uint64_t bits = BitsFromMask(d, m);
+  const std::size_t nbytes = (HYLE_SIMD_MAX_LANES_D(D) + 7) / 8;
+  for (std::size_t b = 0; b < nbytes; ++b) p[b] = static_cast<std::uint8_t>(bits >> (b * 8));
+  return nbytes;
+}
+
+// ---- prefix-scan masks (leading-run helpers for parsing/tokenizing) -----------------
+// Highway SetBeforeFirst/SetAtOrBeforeFirst/SetOnlyFirst/SetAtOrAfterFirst: from a mask,
+// derive a run relative to the FIRST true lane. E.g. SetBeforeFirst = lanes strictly before
+// the first true (a "prefix until match" selector, used in string scans / run-length).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> SetBeforeFirst(Mask<T, N> m) noexcept {
+  Mask<T, N> r; std::size_t f = N;
+  for (std::size_t i = 0; i < N; ++i) if (m.raw[i]) { f = i; break; }
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = (i < f);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> SetAtOrBeforeFirst(Mask<T, N> m) noexcept {
+  Mask<T, N> r; std::size_t f = N;
+  for (std::size_t i = 0; i < N; ++i) if (m.raw[i]) { f = i; break; }
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = (i <= f && f < N);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> SetOnlyFirst(Mask<T, N> m) noexcept {
+  Mask<T, N> r{}; for (std::size_t i = 0; i < N; ++i) if (m.raw[i]) { r.raw[i] = true; break; }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> SetAtOrAfterFirst(Mask<T, N> m) noexcept {
+  // Complement of SetBeforeFirst: lanes at or after the first true.
+  Mask<T, N> r; std::size_t f = N;
+  for (std::size_t i = 0; i < N; ++i) if (m.raw[i]) { f = i; break; }
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = (i >= f);
+  return r;
+}
+// FindKnownFirstTrue/LastTrue: like FindFirstTrue but the caller guarantees >=1 true lane,
+// so the result is a plain size_t (no -1 sentinel). Highway's known-nonempty fast path.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(DFromV<Vec<T, N>>, Mask<T, N> m) noexcept {
+  for (std::size_t i = 0; i < N; ++i) if (m.raw[i]) return i;
+  return 0;  // contract: caller guarantees a true lane exists
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(DFromV<Vec<T, N>>, Mask<T, N> m) noexcept {
+  for (std::size_t i = N; i-- > 0;) if (m.raw[i]) return i;
+  return 0;
+}
+
 // SumsOf8(v): sum each consecutive group of 8 u8 lanes into a u64 lane (Highway; x86 psadbw,
 // NEON vpaddl chain). The count core: SumsOf8(VecFromMask(Eq(...))) sums 255*matches per group.
 template <std::size_t N>

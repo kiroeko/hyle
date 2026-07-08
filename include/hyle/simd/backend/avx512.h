@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>  // std::memcpy (LoadMaskBits lane pun)
 #include <bit>
 #include <type_traits>
 
