@@ -731,13 +731,18 @@ Status cuda_kernel_compile(int ordinal, const char* source, const char* entry,
   return load_module(ordinal, ptx.c_str(), lowered.c_str(), out_module, out_func);
 }
 
-Status cuda_kernel_load_ptx(int ordinal, const char* ptx, unsigned /*code_size*/,
+Status cuda_kernel_load_ptx(int ordinal, const char* ptx, unsigned code_size,
                             const char* entry, const SpecConstant* /*specs*/,
                             unsigned spec_count, const void* /*spec_data*/,
                             unsigned /*spec_data_size*/, void** out_module,
                             void** out_func) noexcept {
-  // PTX is NUL-terminated text (code_size unused). Specialization constants are a Vulkan/
-  // SPIR-V concept; CUDA's build-time analog is NVRTC macros at compile() -> reject here.
+  // A non-zero code_size means BINARY input = a SPIR-V module from load_spirv (PTX is text,
+  // passed with code_size 0). CUDA can't consume SPIR-V; say so plainly instead of feeding it
+  // to the PTX parser (which would fail with a misleading parse error). load_spirv is Vulkan.
+  if (code_size > 0)
+    return Status::Unimplemented("cuda backend: load_spirv is Vulkan-only (use load_ptx/compile)");
+  // Specialization constants are a Vulkan/SPIR-V concept; CUDA's build-time analog is NVRTC
+  // macros at compile() -> reject here too.
   if (spec_count > 0)
     return Status::Unimplemented("cuda backend: no spec constants (use compile() macros)");
   return load_module(ordinal, ptx, entry, out_module, out_func);

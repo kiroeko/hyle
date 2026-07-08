@@ -283,6 +283,9 @@ struct VkContext {
     if (!ok || pipe_cache == VK_NULL_HANDLE) return;
     const char* cp = pipe_cache_path();
     if (cp == nullptr) return;
+    // No build_mtx here (unlike the flush hook): the Meyers-singleton dtor runs at process
+    // exit AFTER worker threads/fibers have stopped, so no build races this read. Taking the
+    // member mutex during its own object's destruction would be the riskier choice.
     std::size_t n = 0;
     if (vkGetPipelineCacheData(device, pipe_cache, &n, nullptr) != VK_SUCCESS || n == 0) return;
     std::vector<uint8_t> blob(n);
@@ -1036,8 +1039,14 @@ Status vk_kernel_load_ptx(int, const char* code, unsigned code_size, const char*
   // FIRST launch (later), so the VkKernel must own the map entries + value blob until then.
   if (spec_count > 0 && specs != nullptr && spec_data != nullptr) {
     k->spec_map.reserve(spec_count);
-    for (unsigned i = 0; i < spec_count; ++i)
+    for (unsigned i = 0; i < spec_count; ++i) {
+      // Contract: each entry's [offset, offset+size) must lie within spec_data. A violation
+      // would make VkSpecializationInfo read out of bounds at pipeline build -> fail-fast on
+      // the caller bug (offset+size computed to avoid unsigned wrap), not a silent OOB read.
+      HYLE_FATAL_ASSERT(specs[i].offset <= spec_data_size &&
+                        specs[i].size <= spec_data_size - specs[i].offset);
       k->spec_map.push_back({specs[i].id, specs[i].offset, specs[i].size});
+    }
     k->spec_data.assign(static_cast<const uint8_t*>(spec_data),
                         static_cast<const uint8_t*>(spec_data) + spec_data_size);
   }
@@ -1386,6 +1395,10 @@ HYLE_EXPORT std::size_t vk_pipeline_cache_flush_for_test() noexcept {
   if (!c.ok || c.pipe_cache == VK_NULL_HANDLE) return 0;
   const char* cp = pipe_cache_path();
   if (cp == nullptr) return 0;
+  // vkGetPipelineCacheData is host access to the cache -> externally-synchronized (spec), and
+  // build_pipeline writes it under build_mtx. Hold the SAME lock so a concurrent first-launch
+  // build can't race this read (红队: same external-sync rule as the pipeline build).
+  std::lock_guard<std::mutex> lk(c.build_mtx);
   std::size_t n = 0;
   if (vkGetPipelineCacheData(c.device, c.pipe_cache, &n, nullptr) != VK_SUCCESS || n == 0) return 0;
   std::vector<uint8_t> blob(n);
