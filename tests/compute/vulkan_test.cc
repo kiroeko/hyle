@@ -178,6 +178,49 @@ TEST(VulkanCompute, BatchedSaxpy) {
   }
 }
 
+// #25 GPU timing (compute-06b): bracket a saxpy launch with two Vulkan timing events and
+// read a NONZERO elapsed time. Exercises the Vulkan-specific timestamp path
+// (VkQueryPool writeTimestamp + getQueryPoolResults * timestampPeriod) end-to-end -- the
+// device_test GPU timing test picks the CUDA backend, so this is the only runtime check of
+// the VkTimingEvent{VkFence,VkQueryPool} layout + elapsed_ns math. GPU-skips if no Vulkan.
+TEST(VulkanCompute, TimingMeasuresElapsed) {
+  Device vk;
+  if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan device";
+  auto s = Stream::create(vk);
+  ASSERT_TRUE(s.has_value());
+  auto k = load_saxpy(vk);
+  ASSERT_TRUE(k.has_value()) << k.error().message();
+
+  auto start = Event::create_timing(vk);
+  auto stop = Event::create_timing(vk);
+  ASSERT_TRUE(start.has_value()) << start.error().message();
+  ASSERT_TRUE(stop.has_value()) << stop.error().message();
+
+  constexpr int kN = 4096;
+  const std::size_t bytes = kN * sizeof(float);
+  BufferType bt = device_buffer_type(vk);
+  auto bx = Buffer::create(bt, bytes);
+  auto by = Buffer::create(bt, bytes);
+  auto bo = Buffer::create(bt, bytes);
+  ASSERT_TRUE(bx.has_value() && by.has_value() && bo.has_value());
+  std::vector<float> hx(kN, 1.0f), hy(kN, 2.0f);
+  ASSERT_TRUE(bx->set(0, hx.data(), bytes).ok());
+  ASSERT_TRUE(by->set(0, hy.data(), bytes).ok());
+
+  SaxpyParams p{kN, 2.0f, 3.0f, 0.5f};
+  LaunchConfig cfg;
+  cfg.grid = {blocks_for(kN, 256), 1, 1};
+
+  s->record(*start);
+  ASSERT_TRUE(launch(*s, *k, cfg, *bx, *by, *bo, p).ok());
+  s->record(*stop);
+  ASSERT_TRUE(s->sync().ok());
+
+  auto ns = elapsed_ns(*start, *stop);
+  ASSERT_TRUE(ns.has_value()) << ns.error().message();
+  EXPECT_GT(*ns, 0u);  // a real Vulkan dispatch took nonzero GPU time
+}
+
 // ---- Vulkan CONTRACT death tests (vulkan_backend.cc:561/665/666/714) ----------
 // The Vulkan backend's launch contracts are HYLE_FATAL_ASSERTs (caller bugs, not
 // recoverable Status). These prove they fire. All GPU-skip if no Vulkan device.
