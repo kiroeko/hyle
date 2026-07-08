@@ -167,7 +167,10 @@ void Stream::record(Event& event) noexcept {
   // Contract: stream and event on the SAME backend (same device). A cross-device
   // record is a caller bug, not a runtime error.
   HYLE_FATAL_ASSERT(vt_ == event.vt_ && local_ == event.local_);
-  vt_->event_record(native_, event.native_);
+  // A timing event (create_timing) writes a device timestamp -> its own vtable slot; the
+  // plain completion event stays on the cheap no-timing path. One bool, cold vs GPU time.
+  if (event.timing_) vt_->event_record_timing(native_, event.native_);
+  else vt_->event_record(native_, event.native_);
 }
 
 Status Stream::sync() noexcept {
@@ -177,18 +180,29 @@ Status Stream::sync() noexcept {
 
 // ---- Event ------------------------------------------------------------------
 
+namespace {
+// Destroy an event's native handle via the right slot: a timing event may have a distinct
+// native layout (Vulkan) so it MUST use event_destroy_timing, not event_destroy.
+void destroy_event(const ComputeBackend* vt, void* native, bool timing) noexcept {
+  if (vt == nullptr) return;
+  if (timing) vt->event_destroy_timing(native);
+  else vt->event_destroy(native);
+}
+}  // namespace
+
 Event::Event(Event&& o) noexcept
-    : vt_(o.vt_), native_(o.native_), local_(o.local_) {
+    : vt_(o.vt_), native_(o.native_), local_(o.local_), timing_(o.timing_) {
   o.vt_ = nullptr;
   o.native_ = nullptr;
 }
 
 Event& Event::operator=(Event&& o) noexcept {
   if (this != &o) {
-    if (vt_ != nullptr) vt_->event_destroy(native_);
+    destroy_event(vt_, native_, timing_);
     vt_ = o.vt_;
     native_ = o.native_;
     local_ = o.local_;
+    timing_ = o.timing_;
     o.vt_ = nullptr;
     o.native_ = nullptr;
   }
@@ -196,7 +210,7 @@ Event& Event::operator=(Event&& o) noexcept {
 }
 
 Event::~Event() {
-  if (vt_ != nullptr) vt_->event_destroy(native_);
+  destroy_event(vt_, native_, timing_);
 }
 
 Result<Event> Event::create(const Device& device) noexcept {
@@ -211,14 +225,45 @@ Result<Event> Event::create(const Device& device) noexcept {
   return ev;
 }
 
+Result<Event> Event::create_timing(const Device& device) noexcept {
+  DeviceEntry e = resolve(device);
+  // A backend without a timing slot (none currently, but future backends may skip it)
+  // reports Unimplemented rather than crashing on a null fn-ptr.
+  if (e.vt->event_create_timing == nullptr)
+    return std::unexpected(Status::Unimplemented("compute: backend has no GPU timing"));
+  void* native = nullptr;
+  Status st = e.vt->event_create_timing(e.local, &native);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  Event ev;
+  ev.vt_ = e.vt;
+  ev.native_ = native;
+  ev.local_ = e.local;
+  ev.timing_ = true;  // Stream::record routes this to event_record_timing
+  return ev;
+}
+
 EventStatus Event::query() const noexcept {
   HYLE_FATAL_ASSERT(vt_ != nullptr);
-  return vt_->event_query(native_);
+  return timing_ ? vt_->event_query_timing(native_) : vt_->event_query(native_);
 }
 
 void Event::sync() const noexcept {
   HYLE_FATAL_ASSERT(vt_ != nullptr);
-  vt_->event_sync(native_);
+  if (timing_) vt_->event_sync_timing(native_);
+  else vt_->event_sync(native_);
+}
+
+Result<std::uint64_t> elapsed_ns(const Event& start, const Event& stop) noexcept {
+  HYLE_FATAL_ASSERT(start.vt_ != nullptr && stop.vt_ != nullptr);
+  // Both events must be from the same backend (cross-backend elapsed is meaningless).
+  if (start.vt_ != stop.vt_)
+    return std::unexpected(Status::InvalidArgument("elapsed_ns: events on different backends"));
+  if (start.vt_->event_elapsed_ns == nullptr)
+    return std::unexpected(Status::Unimplemented("compute: backend has no GPU timing"));
+  std::uint64_t ns = 0;
+  Status st = start.vt_->event_elapsed_ns(start.native_, stop.native_, &ns);
+  if (!st.ok()) return std::unexpected(std::move(st));
+  return ns;
 }
 
 // ---- BufferType -------------------------------------------------------------

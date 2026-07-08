@@ -151,6 +151,38 @@ struct ComputeBackend {
   Status (*kernel_launch_batch)(void* stream_native, const void* const* modules,
                                 const void* const* funcs, const LaunchConfig* configs,
                                 const KernelArgs* args_arr, unsigned count) noexcept;
+
+  // ---- GPU timing (compute-06b, checklist #25) ------------------------------
+  // An OPTIONAL timing-enabled event, the device-time analog of the completion event
+  // above. It measures GPU-side elapsed time between two records -- the CUDA
+  // cudaEventElapsedTime model, mirrored on Vulkan via timestamp queries. This is a
+  // first-class profiling capability (not debug-only): adaptive kernel selection,
+  // perf-regression monitoring, and compute benchmarks (the "prove SOTA" prerequisite)
+  // all consume it. Kept SEPARATE from the plain event so the completion hot path stays
+  // on the cheap no-timing event (cudaEventDisableTiming).
+  //
+  // event_create_timing: like event_create but the event records a device timestamp when
+  // record()'d (CUDA: a timing cudaEvent; Vulkan: a VkQueryPool timestamp slot + a fence).
+  // event_elapsed_ns: GPU nanoseconds between two timing events that have BOTH completed
+  // (start recorded before stop on the same stream). Returns the elapsed ns in *out_ns.
+  // On the host backend timing events are inline (elapsed = 0). NULL slot (backend without
+  // timing support) -> the public layer reports Unimplemented.
+  // A timing event has its OWN full lifecycle (create/destroy/record/query/sync) SEPARATE
+  // from the plain completion event. Why separate rather than reusing the plain slots: a
+  // backend's timing event may have a DIFFERENT native layout than its plain event (Vulkan:
+  // plain = bare VkFence, timing = a {VkFence, VkQueryPool} struct), so the plain
+  // destroy/query/sync would mis-cast a timing native. The public Event routes ALL of these
+  // by its `timing_` flag, so a timing event always stays on the timing slots. On CUDA the
+  // timing event is just a cudaEvent_t (timing-enabled), so its timing slots forward to the
+  // same cuda impls as the plain ones -- the split costs nothing there.
+  Status (*event_create_timing)(int ordinal, void** out_native) noexcept;
+  void (*event_destroy_timing)(void* native) noexcept;
+  void (*event_record_timing)(void* stream_native, void* event_native) noexcept;
+  EventStatus (*event_query_timing)(void* native) noexcept;
+  void (*event_sync_timing)(void* native) noexcept;
+  // GPU nanoseconds between two completed timing events. Returns the elapsed ns in *out_ns.
+  Status (*event_elapsed_ns)(void* start_native, void* stop_native,
+                             std::uint64_t* out_ns) noexcept;
 };
 
 // Each backend exposes its singleton vtable through one of these. host is ALWAYS

@@ -86,6 +86,7 @@ struct VkContext {
   uint32_t max_wg_count[3] = {0, 0, 0};   // maxComputeWorkGroupCount x/y/z (#20 clamp guard)
   std::size_t buf_alignment = 16;         // minStorageBufferOffsetAlignment (>=16); device const
   std::size_t buf_max_size = 0;           // maxStorageBufferRange; device const
+  float timestamp_period = 0.0f;          // ns per timestamp tick (0 = timestamps unsupported)
   char dev_name[256] = "vulkan";
 
   VkContext() noexcept { init(); }
@@ -190,6 +191,10 @@ struct VkContext {
     std::size_t a = props.limits.minStorageBufferOffsetAlignment;
     buf_alignment = a < 16 ? 16 : a;
     buf_max_size = props.limits.maxStorageBufferRange;
+    // GPU timing (compute-06b #25): ns per timestamp tick. 0 (or timestampComputeAndGraphics
+    // false) => timestamps unsupported -> event_create_timing returns Unimplemented.
+    if (props.limits.timestampComputeAndGraphics)
+      timestamp_period = props.limits.timestampPeriod;
     ok = true;
   }
 };
@@ -367,6 +372,91 @@ EventStatus vk_event_query(void* event_native) noexcept {
 void vk_event_sync(void* event_native) noexcept {
   VkFence f = static_cast<VkFence>(event_native);
   vkWaitForFences(ctx().device, 1, &f, VK_TRUE, UINT64_MAX);
+}
+
+// ---- GPU timing (compute-06b #25): timestamp query + fence ---------------------
+// A timing event = a VkFence (completion, like a plain event) + a 1-slot timestamp query
+// pool. record_timing submits a marker cb that resets the pool + writes a timestamp at the
+// top of pipe (after all prior stream work, by VkQueue submission order = cudaEventRecord
+// semantics), signalling the fence. elapsed_ns reads two completed timing events' ticks and
+// scales the difference by the device timestampPeriod. The native_ handle is a heap
+// VkTimingEvent* (NOT a bare VkFence like the plain event -- these never mix: the public
+// layer routes them by Event::timing_).
+struct VkTimingEvent {
+  VkFence fence = VK_NULL_HANDLE;
+  VkQueryPool pool = VK_NULL_HANDLE;
+};
+Status vk_event_create_timing(int, void** out_native) noexcept {
+  if (ctx().timestamp_period == 0.0f)
+    return Status::Unimplemented("vk backend: device has no timestamp support");
+  auto* t = new (std::nothrow) VkTimingEvent{};
+  if (t == nullptr) return Status::ResourceExhausted("vk timing event alloc");
+  VkFenceCreateInfo fci{VK_STRUCTURE_TYPE_FENCE_CREATE_INFO};
+  VkResult r = vkCreateFence(ctx().device, &fci, nullptr, &t->fence);
+  if (r != VK_SUCCESS) { delete t; return from_vk(r, "vkCreateFence(timing)"); }
+  VkQueryPoolCreateInfo qci{VK_STRUCTURE_TYPE_QUERY_POOL_CREATE_INFO};
+  qci.queryType = VK_QUERY_TYPE_TIMESTAMP;
+  qci.queryCount = 1;
+  r = vkCreateQueryPool(ctx().device, &qci, nullptr, &t->pool);
+  if (r != VK_SUCCESS) { vkDestroyFence(ctx().device, t->fence, nullptr); delete t;
+                         return from_vk(r, "vkCreateQueryPool"); }
+  *out_native = t;
+  return Status();
+}
+void vk_event_destroy_timing(void* native) noexcept {
+  auto* t = static_cast<VkTimingEvent*>(native);
+  if (t == nullptr) return;
+  if (t->pool != VK_NULL_HANDLE) vkDestroyQueryPool(ctx().device, t->pool, nullptr);
+  if (t->fence != VK_NULL_HANDLE) vkDestroyFence(ctx().device, t->fence, nullptr);
+  delete t;
+}
+void vk_event_record_timing(void* stream_native, void* event_native) noexcept {
+  auto* s = static_cast<VkStream*>(stream_native);
+  auto* t = static_cast<VkTimingEvent*>(event_native);
+  VkDevice dev = ctx().device;
+  vkResetFences(dev, 1, &t->fence);
+  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+  cbai.commandPool = s->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
+  VkCommandBuffer cb = VK_NULL_HANDLE;
+  bool have_cb = vkAllocateCommandBuffers(dev, &cbai, &cb) == VK_SUCCESS;
+  if (have_cb) {
+    VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
+    bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+    vkBeginCommandBuffer(cb, &bg);
+    vkCmdResetQueryPool(cb, t->pool, 0, 1);  // must reset before write
+    vkCmdWriteTimestamp(cb, VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, t->pool, 0);
+    vkEndCommandBuffer(cb);
+  }
+  VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
+  si.commandBufferCount = have_cb ? 1u : 0u;
+  si.pCommandBuffers = have_cb ? &cb : nullptr;
+  std::lock_guard<std::mutex> lk(ctx().submit_mtx);
+  vkQueueSubmit(ctx().queue, 1, &si, t->fence);  // marker cb reclaimed by command pool (see plain event LIFETIME)
+}
+EventStatus vk_event_query_timing(void* event_native) noexcept {
+  auto* t = static_cast<VkTimingEvent*>(event_native);
+  VkResult r = vkGetFenceStatus(ctx().device, t->fence);
+  return r == VK_SUCCESS ? EventStatus::kReady : EventStatus::kNotReady;
+}
+void vk_event_sync_timing(void* event_native) noexcept {
+  auto* t = static_cast<VkTimingEvent*>(event_native);
+  vkWaitForFences(ctx().device, 1, &t->fence, VK_TRUE, UINT64_MAX);
+}
+Status vk_event_elapsed_ns(void* start_native, void* stop_native,
+                           std::uint64_t* out_ns) noexcept {
+  auto* a = static_cast<VkTimingEvent*>(start_native);
+  auto* b = static_cast<VkTimingEvent*>(stop_native);
+  VkDevice dev = ctx().device;
+  std::uint64_t t0 = 0, t1 = 0;
+  VkResult r = vkGetQueryPoolResults(dev, a->pool, 0, 1, sizeof(t0), &t0, sizeof(t0),
+                                     VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+  if (r != VK_SUCCESS) return from_vk(r, "vkGetQueryPoolResults(start)");
+  r = vkGetQueryPoolResults(dev, b->pool, 0, 1, sizeof(t1), &t1, sizeof(t1),
+                            VK_QUERY_RESULT_64_BIT | VK_QUERY_RESULT_WAIT_BIT);
+  if (r != VK_SUCCESS) return from_vk(r, "vkGetQueryPoolResults(stop)");
+  std::uint64_t ticks = t1 >= t0 ? t1 - t0 : 0;  // clamp (guards against wrap / reversed)
+  *out_ns = static_cast<std::uint64_t>(static_cast<double>(ticks) * ctx().timestamp_period);
+  return Status();
 }
 
 // ---- raw device alloc + async copy (compute-01 minimal ops) ------------------
@@ -1059,6 +1149,12 @@ constexpr ComputeBackend kVulkanBackend = {
     /*kernel_destroy=*/vk_kernel_destroy,
     /*kernel_launch=*/vk_kernel_launch,
     /*kernel_launch_batch=*/vk_kernel_launch_batch,
+    /*event_create_timing=*/vk_event_create_timing,
+    /*event_destroy_timing=*/vk_event_destroy_timing,
+    /*event_record_timing=*/vk_event_record_timing,
+    /*event_query_timing=*/vk_event_query_timing,
+    /*event_sync_timing=*/vk_event_sync_timing,
+    /*event_elapsed_ns=*/vk_event_elapsed_ns,
 };
 
 }  // namespace

@@ -273,3 +273,87 @@ extern "C" __global__ void spin(unsigned* out, int n, int iters) {
   ASSERT_TRUE(out->get(0, host_out.data(), kN * sizeof(unsigned)).ok());
   for (int i = 0; i < kN; ++i) EXPECT_EQ(host_out[i], static_cast<unsigned>(i)) << "at " << i;
 }
+
+// ---- GPU timing (compute-06b #25): timestamp query --------------------------
+// A timing event records a device timestamp on record(); elapsed_ns(start, stop) reports
+// the GPU nanoseconds between two of them. On the host backend work runs inline so timing
+// is a no-op that reads back 0 -- that path is exercised here on the host device so the
+// contract (create_timing/record/sync/elapsed_ns all wired) is covered on ANY platform.
+
+TEST(ComputeEvent, HostTimingInlineIsZero) {
+  // Reach the host device specifically (it's always present, last in enumeration).
+  Device devs[8];
+  std::size_t n = enumerate(devs, 8);
+  const Device* host = nullptr;
+  for (std::size_t i = 0; i < n && i < 8; ++i) {
+    if (devs[i].type() == DeviceType::kCpu) host = &devs[i];
+  }
+  ASSERT_NE(host, nullptr);
+
+  auto s = Stream::create(*host);
+  ASSERT_TRUE(s.has_value()) << s.error().message();
+  auto start = Event::create_timing(*host);
+  auto stop = Event::create_timing(*host);
+  ASSERT_TRUE(start.has_value()) << start.error().message();
+  ASSERT_TRUE(stop.has_value()) << stop.error().message();
+
+  s->record(*start);
+  s->record(*stop);
+  ASSERT_TRUE(s->sync().ok());
+  // Timing events honor the same query/sync contract as plain events.
+  EXPECT_EQ(start->query(), EventStatus::kReady);
+  stop->sync();
+
+  auto ns = elapsed_ns(*start, *stop);
+  ASSERT_TRUE(ns.has_value()) << ns.error().message();
+  EXPECT_EQ(*ns, 0u);  // host runs inline -> no device time
+}
+
+// GPU-only: bracket a heavy spin kernel with two timing events and read a NONZERO
+// elapsed time. Proves the timestamp-query path (CUDA cudaEventElapsedTime / Vulkan
+// VkQueryPool * timestampPeriod) actually measures device time. SKIPPED without a GPU.
+TEST(ComputeEvent, GpuTimingMeasuresElapsed) {
+  bool is_gpu = false;
+  Device d = find_gpu_or_host(&is_gpu);
+  if (!is_gpu) {
+    GTEST_SKIP() << "no GPU present -- host timing is inline (0), covered above";
+  }
+
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value()) << s.error().message();
+  auto start = Event::create_timing(d);
+  auto stop = Event::create_timing(d);
+  ASSERT_TRUE(start.has_value()) << start.error().message();
+  ASSERT_TRUE(stop.has_value()) << stop.error().message();
+
+  constexpr const char* kSpin = R"(
+extern "C" __global__ void spin(unsigned* out, int n, int iters) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < n) {
+    unsigned acc = 0;
+    for (int k = 0; k < iters; ++k) acc = acc * 1664525u + 1013904223u;
+    out[i] = (unsigned)i + (acc & 0u);
+  }
+}
+)";
+  auto k = Kernel::compile(d, kSpin, "spin");
+  ASSERT_TRUE(k.has_value()) << k.error().message();
+
+  constexpr int kN = 4096;
+  auto out = Buffer::create(device_buffer_type(d), kN * sizeof(unsigned));
+  ASSERT_TRUE(out.has_value()) << out.error().message();
+
+  int n = kN, iters = 200000;
+  LaunchConfig cfg;
+  cfg.block = {256, 1, 1};
+  cfg.grid = {blocks_for(kN, 256), 1, 1};
+
+  s->record(*start);
+  ASSERT_TRUE(launch(*s, *k, cfg, *out, n, iters).ok());
+  s->record(*stop);
+  ASSERT_TRUE(s->sync().ok());
+
+  auto ns = elapsed_ns(*start, *stop);
+  ASSERT_TRUE(ns.has_value()) << ns.error().message();
+  EXPECT_GT(*ns, 0u);  // a real kernel took nonzero GPU time
+}

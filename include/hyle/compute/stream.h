@@ -88,6 +88,15 @@ class Event {
   // failure, so it returns Result, not a fatal assert.
   HYLE_COMPUTE_API static Result<Event> create(const Device& device) noexcept;
 
+  // Create a TIMING event (compute-06b): records a device timestamp when record()'d, so
+  // GPU-elapsed time between two of them is readable via elapsed_ns(). This is the
+  // cudaEventElapsedTime model -- a first-class profiling capability (adaptive kernel
+  // selection, perf monitoring, compute benchmarks). SEPARATE from create() so the
+  // completion path keeps the cheaper no-timing event. Returns Unimplemented on a backend
+  // without timing support. Record it on a stream with Stream::record() (auto-dispatched),
+  // exactly like a plain event; read elapsed_ns(start, stop) after both complete.
+  HYLE_COMPUTE_API static Result<Event> create_timing(const Device& device) noexcept;
+
   bool valid() const noexcept { return vt_ != nullptr; }
 
   // Poll: has the work recorded before this event finished? kReady means a sync()
@@ -105,10 +114,16 @@ class Event {
   HYLE_COMPUTE_API void sync() const noexcept;
 
  private:
-  friend class Stream;  // Stream::record reads event.native_
+  friend class Stream;  // Stream::record reads event.native_ / timing_
+  // GPU-elapsed nanoseconds between two completed timing events (both created via
+  // create_timing, start recorded before stop on the same stream). Free function (not a
+  // member) so it reads two events symmetrically. Unimplemented on a backend without timing.
+  friend HYLE_COMPUTE_API Result<std::uint64_t> elapsed_ns(const Event& start,
+                                                           const Event& stop) noexcept;
   const ComputeBackend* vt_ = nullptr;  // backend that owns native_ (null = invalid)
   void* native_ = nullptr;              // cudaEvent_t / host tag (opaque)
   int local_ = 0;                       // backend-local device ordinal
+  bool timing_ = false;                 // created via create_timing -> Stream::record writes a timestamp
 };
 
 // An ordered asynchronous execution queue on a Device (compute-design "模块形状"
@@ -170,5 +185,15 @@ class Stream {
   void* native_ = nullptr;              // cudaStream_t / host queue (opaque)
   int local_ = 0;                       // backend-local device ordinal
 };
+
+// GPU-elapsed time in NANOSECONDS between two timing events (compute-06b). Both must be
+// created via Event::create_timing, recorded on the SAME stream (start before stop), and
+// COMPLETE (co_await StreamComplete / stream.sync()) before calling this. Mirrors CUDA's
+// cudaEventElapsedTime (there in ms; HYLE reports ns for a common integer unit across the
+// CUDA/Vulkan/host backends). Returns Unimplemented on a backend without timing support,
+// InvalidArgument if the two events are on different backends. On the host backend timing
+// is inline so the result is 0.
+HYLE_COMPUTE_API Result<std::uint64_t> elapsed_ns(const Event& start,
+                                                  const Event& stop) noexcept;
 
 }  // namespace hyle::compute

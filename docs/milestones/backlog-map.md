@@ -25,13 +25,12 @@
 | mem-06 | NUMA + 大页 + stats 下溢修复 | 🟢 就绪 | 优先级低(单机未压 NUMA);北极星未要求,**可缓** |
 | simd-03 尾 | NEON / AVX512 真机跑 | 🔴 **缺硬件**(无 ARM 机 / 无 AVX512 机) | 已写+编+objdump 验;**硬阻塞**,待真机/QEMU/SDE。非优先级问题 |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
-| ~~compute-06 收尾①·原语正确性~~ | ~~Vulkan staging 路径 + 非 coherent barrier~~ | ✅ **完成(2026-07-08)** | Vulkan buffer set/get/copy/clear 现有 staging 双缓冲(非 ReBAR device 内存自建 host-visible staging + copyBuffer + kompute OpSyncLocal barrier 链)+ clear 走 vkCmdFillBuffer。**普通独显/集显/老卡现可用**,不再只 ReBAR。双平台(Win/WSL)常规6+强制staging3全绿 + WSL TSan 净;HYLE_VK_FORCE_STAGING(HYLE_TESTING 门控的 TEST-ONLY env)强制 staging 路径,CTest 变体 hyle_compute_vulkan_staging_test 自动 CI 覆盖 |
-| **compute-06 收尾②·性能收尾** | kompute 核对表标"抄/改"但验收未要的性能项:#25 timestamp query(GPU 侧计时,**没它无法证 Vulkan SOTA**)、#2 spec constants、#1 pipeline cache 落盘、#14/#16 rerecord/replay、#11/#12 barrier 精确化(现一刀切 global)、#6 HOST_CACHED 档 | 🟢 就绪 | **A 类低优先**:原语完整可用后的加速。#25 最先(证 SOTA 前置);barrier 精确化次之(核对表点名 SOTA 关键)。逐项见 compute-06 里程碑核对表 |
+| **compute-06 收尾②·性能收尾** | kompute 核对表标"抄/改"但验收未要的性能项:#2 spec constants、#1 pipeline cache 落盘、#14/#16 rerecord/replay、#11/#12 barrier 精确化(现一刀切 global)、#6 HOST_CACHED 档。(**#25 timestamp query 已 2026-07-08 完成=compute-06b**,记录见 compute-06 里程碑状态行,已从本行移除) | 🟢 就绪 | **A 类低优先**:原语完整可用后的加速。barrier 精确化最该先(核对表点名 SOTA 关键)。逐项见 compute-06 里程碑核对表 |
 
 > container-06c(模糊路径匹配)**2026-07-05 ✅ 完成**,已从本表移除(抄 fzf V1 两趟算法,benchmark 证 O(N),container 160/160)。
 > **compute-06 内部欠账(2026-07-08 登记)**:compute-06 按验收(三平台 vecadd+合批+co_await 全绿)已 ✅,但 kompute 25 点核对表"应做(抄/改)"21 项里做了 12、欠 9。**里程碑"明确不做"表(compute-06-vulkan-spirv.md:191)已接住多队列/运行时GLSL/Image/spirv-opt(B类消费者驱动,合理等);上面两行接住剩下无归属的**——① 是正确性硬伤(基础库义务,必做)、② 是性能收尾。避免这些散落在核对表/memory 里无排期。
 
-**A 类结论**:全部"就绪但低优先级"。**compute-06 收尾①(Vulkan staging=原语正确性)2026-07-08 ✅ 完成**——"通用 Vulkan compute 后端"现名副其实(非 ReBAR 卡可用)。simd-03 硬件硬阻塞。**platform-02b 的真实用途是 host 端 fiber 栈 guard page + 保留/提交型分配(与显存无关)**,唯一现实消费者是 sched 的栈溢出保护,不阻塞 compute。剩余 A 类(compute-06 收尾②性能/mem-06/bench-02)不阻塞北极星,按需——性能收尾里 **#25 timestamp query 最该先做**(是"证 Vulkan SOTA"的前置)。
+**A 类结论**:全部"就绪但低优先级",不阻塞北极星。simd-03 硬件硬阻塞。**platform-02b 的真实用途是 host 端 fiber 栈 guard page + 保留/提交型分配(与显存无关)**,唯一现实消费者是 sched 的栈溢出保护,不阻塞 compute。剩余 A 类(compute-06 收尾②性能/mem-06/bench-02)按需——性能收尾里 **barrier 精确化(#11/#12)最该先做**(核对表点名 SOTA 关键)。(compute-06 收尾① Vulkan staging、收尾②-a #25 timestamp query[=compute-06b] 均已 2026-07-08 完成,记录见 compute-06 里程碑文档状态行,已从本表移除。)
 
 ## 三、B 类:能力驱动的半成品机制(前置就绪度是排期关键)
 

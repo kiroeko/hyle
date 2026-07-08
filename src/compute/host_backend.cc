@@ -76,6 +76,20 @@ EventStatus host_event_query(void*) noexcept {
 
 void host_event_sync(void*) noexcept {}  // already complete
 
+// Timing events on the host backend: work runs INLINE (no GPU, no async), so a "timing"
+// event carries no device time -- create returns the same sentinel, record is a no-op,
+// and elapsed is always 0. Exists so the timing API compiles + runs on any platform (same
+// role as the host completion event).
+Status host_event_create_timing(int, void** out_native) noexcept {
+  *out_native = kHostEvent;
+  return Status();
+}
+void host_event_record_timing(void*, void*) noexcept {}  // inline: nothing to timestamp
+Status host_event_elapsed_ns(void*, void*, std::uint64_t* out_ns) noexcept {
+  *out_ns = 0;  // inline execution -> zero GPU time
+  return Status();
+}
+
 // ---- buffer (compute-02) ----------------------------------------------------
 // On the host backend both BufferKinds are just plain RAM (there is no separate
 // device, and no page-locking benefit without a GPU DMA engine). is_host()=true for
@@ -291,6 +305,12 @@ constexpr ComputeBackend kHostBackend = {
     /*kernel_destroy=*/host_kernel_destroy,
     /*kernel_launch=*/host_kernel_launch,
     /*kernel_launch_batch=*/host_kernel_launch_batch,
+    /*event_create_timing=*/host_event_create_timing,
+    /*event_destroy_timing=*/host_event_destroy,   // sentinel: same no-op as plain
+    /*event_record_timing=*/host_event_record_timing,
+    /*event_query_timing=*/host_event_query,       // inline: always Ready
+    /*event_sync_timing=*/host_event_sync,         // inline: no-op
+    /*event_elapsed_ns=*/host_event_elapsed_ns,
 };
 
 }  // namespace

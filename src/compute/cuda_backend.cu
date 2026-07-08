@@ -199,6 +199,33 @@ void cuda_event_sync(void* event_native) noexcept {
   cudaEventSynchronize(static_cast<cudaEvent_t>(event_native));
 }
 
+// ---- GPU timing (compute-06b): timing-enabled event + cudaEventElapsedTime -------
+// A timing event is a plain cudaEvent WITHOUT cudaEventDisableTiming, so it records a
+// device timestamp. record is identical to the completion path (cudaEventRecord); elapsed
+// reads cudaEventElapsedTime (milliseconds) and converts to ns for the common unit.
+Status cuda_event_create_timing(int ordinal, void** out_native) noexcept {
+  cudaError_t e = set_device(ordinal);
+  if (e != cudaSuccess) return from_cuda(e, "cudaSetDevice");
+  cudaEvent_t ev = nullptr;
+  e = cudaEventCreate(&ev);  // default flags = timing ENABLED (vs event_create's DisableTiming)
+  if (e != cudaSuccess) return from_cuda(e, "cudaEventCreate(timing)");
+  *out_native = static_cast<void*>(ev);
+  return Status();
+}
+void cuda_event_record_timing(void* stream_native, void* event_native) noexcept {
+  cudaEventRecord(static_cast<cudaEvent_t>(event_native),
+                  static_cast<cudaStream_t>(stream_native));  // same as non-timing record
+}
+Status cuda_event_elapsed_ns(void* start_native, void* stop_native,
+                             std::uint64_t* out_ns) noexcept {
+  float ms = 0.0f;
+  cudaError_t e = cudaEventElapsedTime(&ms, static_cast<cudaEvent_t>(start_native),
+                                       static_cast<cudaEvent_t>(stop_native));
+  if (e != cudaSuccess) return from_cuda(e, "cudaEventElapsedTime");
+  *out_ns = static_cast<std::uint64_t>(static_cast<double>(ms) * 1e6);  // ms -> ns
+  return Status();
+}
+
 // ---- buffer (compute-02) ----------------------------------------------------
 // kDevice = cudaMalloc (VRAM, not host-dereferenceable, alignment 128 matching
 // ggml's cuda buffer_type). kHostPinned = cudaMallocHost (page-locked host RAM for
@@ -799,6 +826,12 @@ constexpr ComputeBackend kCudaBackend = {
     /*kernel_destroy=*/cuda_kernel_destroy,
     /*kernel_launch=*/cuda_kernel_launch,
     /*kernel_launch_batch=*/cuda_kernel_launch_batch,
+    /*event_create_timing=*/cuda_event_create_timing,
+    /*event_destroy_timing=*/cuda_event_destroy,   // cudaEvent_t: same destroy as plain
+    /*event_record_timing=*/cuda_event_record_timing,
+    /*event_query_timing=*/cuda_event_query,       // same cudaEventQuery
+    /*event_sync_timing=*/cuda_event_sync,         // same cudaEventSynchronize
+    /*event_elapsed_ns=*/cuda_event_elapsed_ns,
 };
 
 }  // namespace
