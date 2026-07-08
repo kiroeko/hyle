@@ -277,6 +277,62 @@ HYLE_FORCE_INLINE Vec<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int32_t,
   return r;
 }
 
+// SatWidenMulPairwiseAdd(di16, a_u8, b_i8): widen u8 a * i8 b, sum ADJACENT PAIRS into i16,
+// SATURATED (x86 _mm*_maddubs_epi16). The int8 GEMM inner core (llama.cpp Q8 dot). dst i16
+// has half the lane count of the u8/i8 inputs. a is UNSIGNED bytes, b is SIGNED bytes.
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<std::int16_t, NDst> SatWidenMulPairwiseAdd(
+    Simd<std::int16_t, NDst, 0>, Vec<std::uint8_t, NSrc> a, Vec<std::int8_t, NSrc> b) noexcept {
+  static_assert(NSrc == 2 * NDst, "SatWidenMulPairwiseAdd: u8/i8 -> i16 pairwise");
+  Vec<std::int16_t, NDst> r;
+  for (std::size_t i = 0; i < NDst; ++i) {
+    const int p = static_cast<int>(a.raw[2 * i]) * b.raw[2 * i] +
+                  static_cast<int>(a.raw[2 * i + 1]) * b.raw[2 * i + 1];
+    r.raw[i] = static_cast<std::int16_t>(p < -32768 ? -32768 : (p > 32767 ? 32767 : p));
+  }
+  return r;
+}
+
+// ReorderWidenMulAccumulate(dw, a, b, sum0, sum1): widen i16 a*b and add each product to
+// EITHER sum0 (returned) or sum1 (out-param), under an implementation-defined permutation P;
+// the ONLY guarantee is SumOfLanes(sum0+sum1) increases by sum(a[i]*b[i]). The scalar floor
+// picks P = pairwise-into-sum0 (identity for the pair sum), leaving sum1 untouched -- callers
+// MUST init sum1 to zero and finalize with RearrangeToOddPlusEven. This is the widen-dot
+// ACCUMULATE loop primitive (call repeatedly, one Rearrange at the end).
+template <std::size_t NW, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<std::int32_t, NW> ReorderWidenMulAccumulate(
+    Simd<std::int32_t, NW, 0>, Vec<std::int16_t, NSrc> a, Vec<std::int16_t, NSrc> b,
+    Vec<std::int32_t, NW> sum0, Vec<std::int32_t, NW>& /*sum1*/) noexcept {
+  static_assert(NSrc == 2 * NW, "ReorderWidenMulAccumulate: i16 -> i32 (dst half lanes)");
+  for (std::size_t i = 0; i < NW; ++i)
+    sum0.raw[i] += static_cast<std::int32_t>(a.raw[2 * i]) * b.raw[2 * i] +
+                   static_cast<std::int32_t>(a.raw[2 * i + 1]) * b.raw[2 * i + 1];
+  return sum0;  // scalar P keeps all products in sum0; sum1 stays as the caller zeroed it
+}
+// RearrangeToOddPlusEven(sum0, sum1): finalize the accumulate so each i32 lane = the summed
+// widened products for that lane. Scalar P already put everything in sum0, so this is sum0+sum1.
+template <std::size_t NW>
+HYLE_FORCE_INLINE Vec<std::int32_t, NW> RearrangeToOddPlusEven(Vec<std::int32_t, NW> sum0,
+                                                              Vec<std::int32_t, NW> sum1) noexcept {
+  Vec<std::int32_t, NW> r;
+  for (std::size_t i = 0; i < NW; ++i) r.raw[i] = sum0.raw[i] + sum1.raw[i];
+  return r;
+}
+
+// SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += a[4i+0..3]*b[4i+0..3] (4-way widen
+// dot into i32, x86 VNNI vpdpbusd / ARM sdot). dst i32 has a QUARTER the lane count of the i8
+// inputs. The int8 dot-product accelerator primitive.
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<std::int32_t, NDst> SumOfMulQuadAccumulate(
+    Simd<std::int32_t, NDst, 0>, Vec<std::int8_t, NSrc> a, Vec<std::int8_t, NSrc> b,
+    Vec<std::int32_t, NDst> sum) noexcept {
+  static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
+  for (std::size_t i = 0; i < NDst; ++i)
+    for (std::size_t k = 0; k < 4; ++k)
+      sum.raw[i] += static_cast<std::int32_t>(a.raw[4 * i + k]) * b.raw[4 * i + k];
+  return sum;
+}
+
 // AbsDiff: |a - b| per lane (no overflow for the intended small-int/f32 use). Highway builds
 // this generically as Sub(Max,Min) for ints; the scalar floor is the direct definition.
 template <typename T, std::size_t N>

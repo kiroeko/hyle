@@ -484,6 +484,64 @@ HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int32
   return r;
 }
 
+// SatWidenMulPairwiseAdd(di16, a_u8, b_i8): pairwise u8*i8 summed into SATURATED i16 -- the
+// int8 GEMM inner core (llama.cpp Q8 dot). Native _mm_maddubs_epi16: unsigned a * signed b,
+// saturating adjacent pairs. a is UNSIGNED bytes, b is SIGNED bytes; dst has half the lanes.
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<std::int16_t, NDst> SatWidenMulPairwiseAdd(
+    Simd<std::int16_t, NDst, 0>, Vec128<std::uint8_t, NSrc> a,
+    Vec128<std::int8_t, NSrc> b) noexcept {
+  static_assert(NSrc == 2 * NDst, "SatWidenMulPairwiseAdd: u8/i8 -> i16 pairwise");
+  Vec128<std::int16_t, NDst> r;
+  r.raw = _mm_maddubs_epi16(a.raw, b.raw);
+  return r;
+}
+
+// ReorderWidenMulAccumulate(dw, a, b, sum0, sum1): pairwise i16 a*b added into sum0 (returned),
+// sum1 left untouched -- matches the scalar P (all products into sum0). Callers zero sum1 and
+// finalize with RearrangeToOddPlusEven. _mm_madd_epi16 (pairwise i16*i16 -> i32) + _mm_add_epi32.
+template <std::size_t NW, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<std::int32_t, NW> ReorderWidenMulAccumulate(
+    Simd<std::int32_t, NW, 0>, Vec128<std::int16_t, NSrc> a, Vec128<std::int16_t, NSrc> b,
+    Vec128<std::int32_t, NW> sum0, Vec128<std::int32_t, NW>& /*sum1*/) noexcept {
+  static_assert(NSrc == 2 * NW, "ReorderWidenMulAccumulate: i16 -> i32 (dst half lanes)");
+  Vec128<std::int32_t, NW> r;
+  r.raw = _mm_add_epi32(sum0.raw, _mm_madd_epi16(a.raw, b.raw));
+  return r;  // all products land in sum0; sum1 stays as the caller zeroed it
+}
+
+// RearrangeToOddPlusEven(sum0, sum1): finalize the accumulate -- Add(sum0, sum1). Our Reorder
+// kept everything in sum0 (sum1==0), so each i32 lane = the pairwise widened dot, matching scalar.
+template <std::size_t NW>
+HYLE_FORCE_INLINE Vec128<std::int32_t, NW> RearrangeToOddPlusEven(
+    Vec128<std::int32_t, NW> sum0, Vec128<std::int32_t, NW> sum1) noexcept {
+  Vec128<std::int32_t, NW> r;
+  r.raw = _mm_add_epi32(sum0.raw, sum1.raw);
+  return r;
+}
+
+// SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8 dot a[4i+0..3]*b[4i+0..3].
+// emulation: no SSE4/AVX2 VNNI; native vpdpbusd is an AVX512-VNNI profiling upgrade. Store the
+// operands to the stack, run the scalar 4-way loop, reload -- correctness over speed here.
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> SumOfMulQuadAccumulate(
+    Simd<std::int32_t, NDst, 0>, Vec128<std::int8_t, NSrc> a, Vec128<std::int8_t, NSrc> b,
+    Vec128<std::int32_t, NDst> sum) noexcept {
+  static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
+  alignas(16) std::int8_t ab[16];
+  alignas(16) std::int8_t bb[16];
+  alignas(16) std::int32_t sb[4];
+  _mm_store_si128(reinterpret_cast<__m128i*>(ab), a.raw);
+  _mm_store_si128(reinterpret_cast<__m128i*>(bb), b.raw);
+  _mm_store_si128(reinterpret_cast<__m128i*>(sb), sum.raw);
+  for (std::size_t i = 0; i < NDst; ++i)
+    for (std::size_t k = 0; k < 4; ++k)
+      sb[i] += static_cast<std::int32_t>(ab[4 * i + k]) * bb[4 * i + k];
+  Vec128<std::int32_t, NDst> r;
+  r.raw = _mm_load_si128(reinterpret_cast<const __m128i*>(sb));
+  return r;
+}
+
 // AbsDiff: |a-b| per lane. Integers via Sub(Max,Min) (Highway's generic); float via Abs(Sub).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> AbsDiff(Vec128<T, N> a, Vec128<T, N> b) noexcept {

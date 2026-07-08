@@ -529,6 +529,70 @@ HYLE_FORCE_INLINE VecNeon<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int3
   return r;
 }
 
+// SatWidenMulPairwiseAdd(di16, a_u8, b_i8): widen u8 a * i8 b, sum ADJACENT PAIRS into SATURATED
+// i16 (x86 maddubs). emulation: NEON has no maddubs; correctness-first store+reload scalar loop.
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<std::int16_t, NDst> SatWidenMulPairwiseAdd(
+    Simd<std::int16_t, NDst, 0>, VecNeon<std::uint8_t, NSrc> a,
+    VecNeon<std::int8_t, NSrc> b) noexcept {
+  static_assert(NSrc == 2 * NDst, "SatWidenMulPairwiseAdd: u8/i8 -> i16 pairwise");
+  alignas(16) std::uint8_t ta[NSrc];
+  alignas(16) std::int8_t tb[NSrc];
+  alignas(16) std::int16_t tr[NDst];
+  vst1q_u8(ta, a.raw);
+  vst1q_s8(tb, b.raw);
+  for (std::size_t i = 0; i < NDst; ++i) {
+    const int p = static_cast<int>(ta[2 * i]) * tb[2 * i] +
+                  static_cast<int>(ta[2 * i + 1]) * tb[2 * i + 1];
+    tr[i] = static_cast<std::int16_t>(p < -32768 ? -32768 : (p > 32767 ? 32767 : p));
+  }
+  VecNeon<std::int16_t, NDst> r;
+  r.raw = vld1q_s16(tr);
+  return r;
+}
+
+// ReorderWidenMulAccumulate(dw, a, b, sum0, sum1): widen i16 a*b pairwise and add all products
+// into sum0 (returned); sum1 untouched (matches scalar P). Reuse WidenMulPairwiseAdd (vmull +
+// vpaddq i16 pairwise) then vaddq_s32 into sum0. Callers zero sum1 + finalize via Rearrange.
+template <std::size_t NW, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<std::int32_t, NW> ReorderWidenMulAccumulate(
+    Simd<std::int32_t, NW, 0>, VecNeon<std::int16_t, NSrc> a, VecNeon<std::int16_t, NSrc> b,
+    VecNeon<std::int32_t, NW> sum0, VecNeon<std::int32_t, NW>& /*sum1*/) noexcept {
+  static_assert(NSrc == 2 * NW, "ReorderWidenMulAccumulate: i16 -> i32 (dst half lanes)");
+  const VecNeon<std::int32_t, NW> prod = WidenMulPairwiseAdd(Simd<std::int32_t, NW, 0>{}, a, b);
+  sum0.raw = vaddq_s32(sum0.raw, prod.raw);
+  return sum0;  // all products in sum0; sum1 stays as the caller zeroed it
+}
+
+// RearrangeToOddPlusEven(sum0, sum1): finalize the accumulate. Our P put everything in sum0,
+// so this is sum0 + sum1.
+template <std::size_t NW>
+HYLE_FORCE_INLINE VecNeon<std::int32_t, NW> RearrangeToOddPlusEven(
+    VecNeon<std::int32_t, NW> sum0, VecNeon<std::int32_t, NW> sum1) noexcept {
+  VecNeon<std::int32_t, NW> r;
+  r.raw = vaddq_s32(sum0.raw, sum1.raw);
+  return r;
+}
+
+// SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8*i8 dot. vdotq_s32 needs the
+// +dotprod extension (not baseline); correctness-first store+reload scalar loop for safety.
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<std::int32_t, NDst> SumOfMulQuadAccumulate(
+    Simd<std::int32_t, NDst, 0>, VecNeon<std::int8_t, NSrc> a, VecNeon<std::int8_t, NSrc> b,
+    VecNeon<std::int32_t, NDst> sum) noexcept {
+  static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
+  alignas(16) std::int8_t ta[NSrc], tb[NSrc];
+  alignas(16) std::int32_t ts[NDst];
+  vst1q_s8(ta, a.raw);
+  vst1q_s8(tb, b.raw);
+  vst1q_s32(ts, sum.raw);
+  for (std::size_t i = 0; i < NDst; ++i)
+    for (std::size_t k = 0; k < 4; ++k)
+      ts[i] += static_cast<std::int32_t>(ta[4 * i + k]) * tb[4 * i + k];
+  sum.raw = vld1q_s32(ts);
+  return sum;
+}
+
 // AbsDiff: |a-b|. NEON has vabdq_* native for int + float.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> AbsDiff(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {

@@ -350,6 +350,67 @@ TEST(Vec, TableLookupBytes) {
   }
 }
 
+// ---- A-5 widen-dot (int8/16 GEMM quantization core) ---------------------------------
+// SatWidenMulPairwiseAdd (u8*i8 -> saturated i16 pairwise), the ReorderWidenMulAccumulate +
+// RearrangeToOddPlusEven pair (i16 dot accumulate), and SumOfMulQuadAccumulate (i8 4-way).
+// All checked against the exact scalar reference computed in wide integer arithmetic.
+TEST(Vec, SatWidenMulPairwiseAdd) {
+  const hs::ScalableTag<std::uint8_t> du;   // u8 input lanes
+  const hs::ScalableTag<std::int16_t> di;   // i16 output lanes (half the count)
+  const std::size_t nu = hs::Lanes(du);
+  const std::size_t ni = hs::Lanes(di);
+  ASSERT_EQ(nu, 2 * ni);
+  Buf<std::uint8_t> a; Buf<std::int8_t> b; Buf<std::int16_t> out;
+  for (std::size_t i = 0; i < nu; ++i) {
+    a.data[i] = static_cast<std::uint8_t>(200 + (i % 40));            // large unsigned
+    b.data[i] = static_cast<std::int8_t>((i % 2) ? 120 : -110);      // large signed
+  }
+  auto va = hs::Load(du, a.data);
+  // load i8 b through a same-width signed tag
+  const hs::ScalableTag<std::int8_t> ds;
+  auto vb = hs::Load(ds, b.data);
+  hs::Store(hs::SatWidenMulPairwiseAdd(di, va, vb), di, out.data);
+  for (std::size_t i = 0; i < ni; ++i) {
+    int p = static_cast<int>(a.data[2*i]) * b.data[2*i] + static_cast<int>(a.data[2*i+1]) * b.data[2*i+1];
+    int sat = p < -32768 ? -32768 : (p > 32767 ? 32767 : p);
+    EXPECT_EQ(out.data[i], static_cast<std::int16_t>(sat)) << "sat i=" << i;
+  }
+}
+TEST(Vec, ReorderWidenMulAccumulate) {
+  const hs::ScalableTag<std::int16_t> d16;
+  const hs::ScalableTag<std::int32_t> d32;
+  const std::size_t n16 = hs::Lanes(d16), n32 = hs::Lanes(d32);
+  ASSERT_EQ(n16, 2 * n32);
+  Buf<std::int16_t> a, b;
+  for (std::size_t i = 0; i < n16; ++i) { a.data[i] = static_cast<std::int16_t>(i * 3 - 100); b.data[i] = static_cast<std::int16_t>(i - 50); }
+  auto va = hs::Load(d16, a.data), vb = hs::Load(d16, b.data);
+  auto sum0 = hs::Set(d32, 0), sum1 = hs::Set(d32, 0);
+  sum0 = hs::ReorderWidenMulAccumulate(d32, va, vb, sum0, sum1);
+  sum0 = hs::ReorderWidenMulAccumulate(d32, va, vb, sum0, sum1);  // accumulate twice
+  Buf<std::int32_t> out;
+  hs::Store(hs::RearrangeToOddPlusEven(sum0, sum1), d32, out.data);
+  for (std::size_t i = 0; i < n32; ++i) {
+    long long pair = static_cast<long long>(a.data[2*i]) * b.data[2*i] + static_cast<long long>(a.data[2*i+1]) * b.data[2*i+1];
+    EXPECT_EQ(out.data[i], static_cast<std::int32_t>(2 * pair)) << "reorder i=" << i;  // 2x from two accumulates
+  }
+}
+TEST(Vec, SumOfMulQuadAccumulate) {
+  const hs::ScalableTag<std::int8_t> d8;
+  const hs::ScalableTag<std::int32_t> d32;
+  const std::size_t n8 = hs::Lanes(d8), n32 = hs::Lanes(d32);
+  ASSERT_EQ(n8, 4 * n32);
+  Buf<std::int8_t> a, b; Buf<std::int32_t> out;
+  for (std::size_t i = 0; i < n8; ++i) { a.data[i] = static_cast<std::int8_t>(i - 60); b.data[i] = static_cast<std::int8_t>(40 - i); }
+  auto va = hs::Load(d8, a.data), vb = hs::Load(d8, b.data);
+  auto sum = hs::Set(d32, 7);  // nonzero initial accumulator
+  hs::Store(hs::SumOfMulQuadAccumulate(d32, va, vb, sum), d32, out.data);
+  for (std::size_t i = 0; i < n32; ++i) {
+    int acc = 7;
+    for (int k = 0; k < 4; ++k) acc += static_cast<int>(a.data[4*i+k]) * b.data[4*i+k];
+    EXPECT_EQ(out.data[i], acc) << "quad i=" << i;
+  }
+}
+
 // ---- A-2 mask-domain logic ----------------------------------------------------------
 // Build two masks from comparisons, then check the mask And/Or/Xor/AndNot/Not/ExclusiveNeither
 // against per-lane bool references, plus IfThenZeroElse and MaskFromVec. Uses i32 lanes.

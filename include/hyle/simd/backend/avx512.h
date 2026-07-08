@@ -442,6 +442,60 @@ HYLE_FORCE_INLINE Vec512<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int32
   return r;
 }
 
+// SatWidenMulPairwiseAdd(di16, a_u8, b_i8): _mm512_maddubs_epi16 (BW) -- widen u8 a * i8 b,
+// sum ADJACENT PAIRS into SATURATED i16. The int8 GEMM inner core (llama.cpp Q8 dot). a is
+// UNSIGNED bytes, b is SIGNED bytes; dst i16 has half the lane count of the u8/i8 inputs.
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<std::int16_t, NDst> SatWidenMulPairwiseAdd(
+    Simd<std::int16_t, NDst, 0>, Vec512<std::uint8_t, NSrc> a,
+    Vec512<std::int8_t, NSrc> b) noexcept {
+  static_assert(NSrc == 2 * NDst, "SatWidenMulPairwiseAdd: u8/i8 -> i16 pairwise");
+  Vec512<std::int16_t, NDst> r;
+  r.raw = _mm512_maddubs_epi16(a.raw, b.raw);  // native u8*i8 -> saturated i16 pairwise
+  return r;
+}
+
+// ReorderWidenMulAccumulate(dw, a, b, sum0, sum1): widen i16 a*b pairwise and add all products
+// into sum0 (returned); sum1 is left untouched (matches scalar P). madd_epi16 already folds the
+// adjacent pair, so the pairwise sum lands in sum0. Callers zero sum1 + finalize with Rearrange.
+template <std::size_t NW, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<std::int32_t, NW> ReorderWidenMulAccumulate(
+    Simd<std::int32_t, NW, 0>, Vec512<std::int16_t, NSrc> a, Vec512<std::int16_t, NSrc> b,
+    Vec512<std::int32_t, NW> sum0, Vec512<std::int32_t, NW>& /*sum1*/) noexcept {
+  static_assert(NSrc == 2 * NW, "ReorderWidenMulAccumulate: i16 -> i32 (dst half lanes)");
+  sum0.raw = _mm512_add_epi32(sum0.raw, _mm512_madd_epi16(a.raw, b.raw));
+  return sum0;  // all products in sum0; sum1 stays as the caller zeroed it
+}
+
+// RearrangeToOddPlusEven(sum0, sum1): finalize the accumulate. Our P put everything in sum0,
+// so this is sum0 + sum1.
+template <std::size_t NW>
+HYLE_FORCE_INLINE Vec512<std::int32_t, NW> RearrangeToOddPlusEven(
+    Vec512<std::int32_t, NW> sum0, Vec512<std::int32_t, NW> sum1) noexcept {
+  Vec512<std::int32_t, NW> r;
+  r.raw = _mm512_add_epi32(sum0.raw, sum1.raw);
+  return r;
+}
+
+// SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8*i8 dot. Native vpdpbusd needs
+// VNNI + is u8*i8 (wrong signedness for i8*i8); correctness-first store+reload scalar loop.
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<std::int32_t, NDst> SumOfMulQuadAccumulate(
+    Simd<std::int32_t, NDst, 0>, Vec512<std::int8_t, NSrc> a, Vec512<std::int8_t, NSrc> b,
+    Vec512<std::int32_t, NDst> sum) noexcept {
+  static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
+  alignas(64) std::int8_t ta[NSrc], tb[NSrc];
+  alignas(64) std::int32_t ts[NDst];
+  _mm512_store_si512(ta, a.raw);
+  _mm512_store_si512(tb, b.raw);
+  _mm512_store_si512(ts, sum.raw);
+  for (std::size_t i = 0; i < NDst; ++i)
+    for (std::size_t k = 0; k < 4; ++k)
+      ts[i] += static_cast<std::int32_t>(ta[4 * i + k]) * tb[4 * i + k];
+  sum.raw = _mm512_load_si512(ts);
+  return sum;
+}
+
 // AbsDiff: |a-b| per lane. Integers via Sub(Max,Min) (Highway's generic); float via Abs(Sub).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> AbsDiff(Vec512<T, N> a, Vec512<T, N> b) noexcept {
