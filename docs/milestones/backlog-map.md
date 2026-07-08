@@ -25,13 +25,12 @@
 | mem-06 | NUMA + 大页 + stats 下溢修复 | 🟢 就绪 | 优先级低(单机未压 NUMA);北极星未要求,**可缓** |
 | simd-03 尾 | NEON / AVX512 真机跑 | 🔴 **缺硬件**(无 ARM 机 / 无 AVX512 机) | 已写+编+objdump 验;**硬阻塞**,待真机/QEMU/SDE。非优先级问题 |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
-| **compute-06 收尾②·性能收尾** | 仅剩 #14/#16 rerecord/replay(录一次 cb 多次 submit,省重录 CPU;触及公开 API 需 RecordedLaunch 句柄形状,当前无迭代型消费者故按需)。(**#25 timestamp、#11/#12 barrier[含红队 D]、#1 cache 落盘、#6 HOST_CACHED、#2/#3 spec constants、tools/+load_spirv 接口重塑 均已 2026-07-08 完成=compute-06b/c**,记录见 compute-06 里程碑状态行) | 🟢 就绪 | **A 类低优先**。#16 无迭代消费者(反复跑同 kernel 的求解器/逐帧),等真消费者到位再按正确形状做,不前瞻造重型 API |
 | **compute-06 边角项(按需备选,非欠账)** | #19 push_descriptor(实测 update 便宜,收益有限)、#22 timeline semaphore(多序列依赖才需)、#24 批量 createComputePipelines(kompute 自留 TODO)、#23 多队列 ownership transfer(上 async compute 才需)、Image 路径(做 image kernel 才核)、红队 E(event marker cb 长命 stream 累积)、红队 G(build 部分失败无回滚)。#10 coherent flush 存疑已随 #6 解决 | 🟢 就绪 | **明确消费者驱动**:各有触发条件,无当前消费者→登记不做,别散落核对表/memory |
 
 > container-06c(模糊路径匹配)**2026-07-05 ✅ 完成**,已从本表移除(抄 fzf V1 两趟算法,benchmark 证 O(N),container 160/160)。
 > **compute-06 内部欠账(2026-07-08 登记)**:compute-06 按验收(三平台 vecadd+合批+co_await 全绿)已 ✅,但 kompute 25 点核对表"应做(抄/改)"21 项里做了 12、欠 9。**里程碑"明确不做"表(compute-06-vulkan-spirv.md:191)已接住多队列/运行时GLSL/Image/spirv-opt(B类消费者驱动,合理等);上面两行接住剩下无归属的**——① 是正确性硬伤(基础库义务,必做)、② 是性能收尾。避免这些散落在核对表/memory 里无排期。
 
-**A 类结论**:全部"就绪但低优先级",不阻塞北极星。simd-03 硬件硬阻塞。**platform-02b 的真实用途是 host 端 fiber 栈 guard page + 保留/提交型分配(与显存无关)**,唯一现实消费者是 sched 的栈溢出保护,不阻塞 compute。剩余 A 类(compute-06 收尾②性能/mem-06/bench-02)按需——SOTA 前置项(#25 计时、#11/#12 barrier)已做完,剩项(spec constant/cache 落盘/rerecord/HOST_CACHED)无明确前置,按需。(compute-06 收尾① Vulkan staging、收尾②-a #25 timestamp、收尾②-b #11/#12 barrier 精确化[=compute-06b] 均已 2026-07-08 完成,记录见 compute-06 里程碑文档状态行,已从本表移除。)
+**A 类结论**:全部"就绪但低优先级",不阻塞北极星。simd-03 硬件硬阻塞。**platform-02b 的真实用途是 host 端 fiber 栈 guard page + 保留/提交型分配(与显存无关)**,唯一现实消费者是 sched 的栈溢出保护,不阻塞 compute。剩余 A 类(mem-06/bench-02)按需。**compute-06 收尾②性能收尾 2026-07-08 全清**——核对表 25 项该做的(#25 计时/#11-12 barrier/#1 cache 落盘/#6 HOST_CACHED/#2-3 spec constants/tools+load_spirv/#14-16 record-replay)全完成=compute-06b/c/d,记录见 compute-06 里程碑状态行;仅剩消费者驱动的边角项(上表,无当前消费者按需)。(收尾① staging 亦已完成,均从本表移除。)
 
 ## 三、B 类:能力驱动的半成品机制(前置就绪度是排期关键)
 
