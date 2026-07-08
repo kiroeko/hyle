@@ -71,7 +71,7 @@ cd ~/hyle
 
 Apple 无原生 Vulkan——**MoltenVK 是 Vulkan-over-Metal 的 ICD**（把 Vulkan 调用翻译成 Metal）。HYLE 的 Vulkan 后端经 volk 运行时 dlopen `libvulkan.dylib`（loader），loader 再路由到 MoltenVK ICD，所以 mac 上一份 SPIR-V 也能在 Apple GPU 上跑（compute-06 SaxpyEndToEnd）。
 
-> **状态（2026-07-08）**：MoltenVK 层已在本仓库 mac 开发机验证——`vulkaninfo` 枚举出 `Apple M4` / `driverName = MoltenVK`。HYLE `hyle_compute_vulkan_test` 的 mac 真跑待该机首次 FetchContent 拉齐 volk/glslang 后确认（github 访问慢，编 glslang 耗时）；Win/WSL RTX4070 已 PASS，代码路径同。
+> **状态（2026-07-08）**：mac 真机全绿——`hyle_compute_vulkan_test` 在 **Apple M4 via MoltenVK 3/3 PASS**（SaxpyEndToEnd + BatchedSaxpy + CoAwaitCompletion），与 Win/WSL RTX4070 3/3 同路径，compute-06 三平台闭环。`vulkaninfo` 枚举 `Apple M4` / `driverName = MoltenVK`（apiVersion 1.4.334）。⚠️ mac 真跑抓出一个 portability 真 bug 并已修（见下「portability 扩展」）。
 
 **装（brew，一次）**：
 
@@ -104,6 +104,7 @@ cd ~/hyle
 - ⚠️ **loader 找不到 ICD**（vulkaninfo 报 0 device / 测试 SKIP）时，显式指 ICD：
   `export VK_ICD_FILENAMES=$(ls /opt/homebrew/Cellar/molten-vk/*/etc/vulkan/icd.d/MoltenVK_icd.json | head -1)`。
   brew 装完通常已把 manifest 放进 loader 默认搜索路径（`/opt/homebrew/etc/vulkan/icd.d` / `/opt/homebrew/share/vulkan/icd.d`），无需手设。
+- ⚠️ **portability 扩展（HYLE 代码侧，已在 `vulkan_backend.cc` 处理，无需手动配）**：MoltenVK 是 *portability* 驱动，`vkCreateInstance` 若不开 `VK_KHR_portability_enumeration`（instance 扩展 + `ENUMERATE_PORTABILITY` flag）会直接返 `VK_ERROR_INCOMPATIBLE_DRIVER(-9)`，创建 VkDevice 又须启用 `VK_KHR_portability_subset`（spec 强制）。HYLE 后端**运行时探测这两个扩展、advertise 才启用**（一份代码通吃 mac + Win/WSL discrete GPU）。记录于此以防将来重构 instance/device 创建时误删——ICD 设对了但测试仍 SKIP，先查这里。
 - ⚠️ **MoltenVK 不支持全部 Vulkan 特性**（它是 Metal 子集映射）——compute-06 的 storage buffer + push constant + compute dispatch 都在支持范围内；将来用到 MoltenVK 缺的扩展需查其 [支持矩阵](https://github.com/KhronosGroup/MoltenVK)。
 - 未装 MoltenVK 时：`volkInitialize()` 找不到 loader → Vulkan 后端 `vulkan_vtable()` 返回 null → `hyle_compute_vulkan_test` 运行时 `GTEST_SKIP`（不崩，优雅降级）。
 
