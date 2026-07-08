@@ -242,6 +242,48 @@ TEST(Vec, ConvertF32I32) {
   for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(of.data[i], static_cast<float>(ii.data[i]));
 }
 
+// BitCast: reinterpret bits, no value conversion. Same-width case (f32<->u32, same lane
+// count on every backend): each lane's bits must equal std::bit_cast. Distinct from
+// ConvertTo (which changes the numeric value). Then a width-CHANGING case (i32->i8, lane
+// count 4x) checks the total byte stream is preserved (the low-level use gather/mask rely on).
+TEST(Vec, BitCastSameWidth) {
+  const hs::ScalableTag<float> df;
+  const hs::ScalableTag<std::uint32_t> du;
+  const std::size_t n = hs::Lanes(df);
+  ASSERT_EQ(n, hs::Lanes(du));
+  Buf<float> f;
+  for (std::size_t i = 0; i < n; ++i) f.data[i] = (i % 2 ? -1.0f : 1.0f) * (static_cast<float>(i) * 1.5f + 0.25f);
+  auto vf = hs::Load(df, f.data);
+  Buf<std::uint32_t> ou;
+  hs::Store(hs::BitCast(du, vf), du, ou.data);  // bits, not value
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(ou.data[i], std::bit_cast<std::uint32_t>(f.data[i])) << "bitcast f32->u32 i=" << i;
+  // round trip back to float reproduces the exact bit pattern
+  auto vu = hs::Load(du, ou.data);
+  Buf<float> of;
+  hs::Store(hs::BitCast(df, vu), df, of.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(std::bit_cast<std::uint32_t>(of.data[i]), std::bit_cast<std::uint32_t>(f.data[i])) << i;
+}
+
+TEST(Vec, BitCastWidthChanging) {
+  // i32 vector -> i8 vector: same total bytes, 4x the lane count. The byte stream must be
+  // identical (little-endian lane layout), which is what index/mask bit-tricks depend on.
+  const hs::ScalableTag<std::int32_t> di;
+  const std::size_t n32 = hs::Lanes(di);
+  Buf<std::int32_t> in;
+  for (std::size_t i = 0; i < n32; ++i) in.data[i] = static_cast<std::int32_t>(0x01020300u + i);
+  auto vi = hs::Load(di, in.data);
+  // dst tag: i8 with 4x lanes (same total bytes). FixedTag pins the exact width.
+  const hs::FixedTag<std::int8_t, hs::kNativeVectorBytes> d8;  // kNativeVectorBytes lanes of i8 = full reg
+  Buf<std::int8_t> o8;
+  hs::Store(hs::BitCast(d8, vi), d8, o8.data);
+  // Reference: reinterpret the i32 buffer's bytes.
+  const auto* ref = reinterpret_cast<const std::int8_t*>(in.data);
+  for (std::size_t b = 0; b < n32 * sizeof(std::int32_t); ++b)
+    EXPECT_EQ(o8.data[b], ref[b]) << "byte " << b;
+}
+
 // Float rounding to an integral value (result stays float): Round(nearest-even), Floor
 // (toward -inf), Ceil (toward +inf), Trunc (toward zero). Feed .5 ties and both signs so
 // nearest-even vs directed rounding actually diverge, vs the libm reference (== scalar).

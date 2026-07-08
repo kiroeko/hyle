@@ -502,6 +502,36 @@ HYLE_FORCE_INLINE Vec256<T, N> AverageRound(Vec256<T, N> a, Vec256<T, N> b) noex
   return r;
 }
 
+// ---- bit-cast (reinterpret 256 bits as another lane type; zero-cost register cast) --
+// Same as sse4's BitCast but 256-bit: free _mm256_cast* between __m256/__m256i/__m256d,
+// plain move within integer widths. Total bytes preserved (32) so lane count tracks width.
+namespace detail {
+template <typename DstRaw, typename SrcRaw>
+HYLE_FORCE_INLINE DstRaw bitcast_raw_avx2(SrcRaw s) noexcept {
+  if constexpr (std::is_same_v<DstRaw, SrcRaw>) return s;
+  else if constexpr (std::is_same_v<SrcRaw, __m256> && std::is_same_v<DstRaw, __m256i>)
+    return _mm256_castps_si256(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m256d> && std::is_same_v<DstRaw, __m256i>)
+    return _mm256_castpd_si256(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m256i> && std::is_same_v<DstRaw, __m256>)
+    return _mm256_castsi256_ps(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m256i> && std::is_same_v<DstRaw, __m256d>)
+    return _mm256_castsi256_pd(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m256> && std::is_same_v<DstRaw, __m256d>)
+    return _mm256_castps_pd(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m256d> && std::is_same_v<DstRaw, __m256>)
+    return _mm256_castpd_ps(s);
+  else static_assert(sizeof(DstRaw) == 0, "avx2 bitcast_raw: unhandled raw pair");
+}
+}  // namespace detail
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec256<DstT, NDst> BitCast(Simd<DstT, NDst, 0>, Vec256<SrcT, NSrc> v) noexcept {
+  static_assert(sizeof(DstT) * NDst == sizeof(SrcT) * NSrc, "BitCast preserves total bytes");
+  Vec256<DstT, NDst> r;
+  r.raw = detail::bitcast_raw_avx2<detail::Raw256T<DstT>>(v.raw);
+  return r;
+}
+
 // ---- type conversion (same lane count: f32<->i32) -----------------------------------
 // ConvertTo: float<->int truncating (cvtt = toward zero). RoundToInt: f32->i32 round to
 // nearest-even (cvtps respects the default MXCSR rounding = RNE). 8 lanes both sides =

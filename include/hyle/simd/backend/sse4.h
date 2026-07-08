@@ -520,6 +520,41 @@ HYLE_FORCE_INLINE Vec128<T, N> AverageRound(Vec128<T, N> a, Vec128<T, N> b) noex
   return r;
 }
 
+// ---- bit-cast (reinterpret bytes as another lane type; zero-cost register cast) -----
+// BitCast(dst_tag, v): reinterpret the 128 bits as Vec128<DstT>. Same total bytes (always
+// 16 here), so lane count changes with lane width. Between the three raw register classes
+// (__m128 / __m128i / __m128d) x86 has free cast intrinsics (_mm_cast*); same-class (any
+// integer width -> any integer width, all __m128i) is a plain move. Underpins gather index
+// math, mask<->vector bridging, FP bit tricks.
+namespace detail {
+// raw -> raw reinterpret between __m128 / __m128i / __m128d (free; no instruction emitted).
+template <typename DstRaw, typename SrcRaw>
+HYLE_FORCE_INLINE DstRaw bitcast_raw_sse(SrcRaw s) noexcept {
+  if constexpr (std::is_same_v<DstRaw, SrcRaw>) return s;
+  // Route through __m128i as the common integer form.
+  else if constexpr (std::is_same_v<SrcRaw, __m128> && std::is_same_v<DstRaw, __m128i>)
+    return _mm_castps_si128(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m128d> && std::is_same_v<DstRaw, __m128i>)
+    return _mm_castpd_si128(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m128i> && std::is_same_v<DstRaw, __m128>)
+    return _mm_castsi128_ps(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m128i> && std::is_same_v<DstRaw, __m128d>)
+    return _mm_castsi128_pd(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m128> && std::is_same_v<DstRaw, __m128d>)
+    return _mm_castps_pd(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m128d> && std::is_same_v<DstRaw, __m128>)
+    return _mm_castpd_ps(s);
+  else static_assert(sizeof(DstRaw) == 0, "sse4 bitcast_raw: unhandled raw pair");
+}
+}  // namespace detail
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<DstT, NDst> BitCast(Simd<DstT, NDst, 0>, Vec128<SrcT, NSrc> v) noexcept {
+  static_assert(sizeof(DstT) * NDst == sizeof(SrcT) * NSrc, "BitCast preserves total bytes");
+  Vec128<DstT, NDst> r;
+  r.raw = detail::bitcast_raw_sse<detail::Raw128T<DstT>>(v.raw);
+  return r;
+}
+
 // ---- type conversion (same lane count: f32<->i32) -----------------------------------
 // ConvertTo: float<->int truncating (cvtt = toward zero). RoundToInt: f32->i32 round to
 // nearest-even (cvtps respects the default MXCSR rounding = RNE). 4 lanes both sides =

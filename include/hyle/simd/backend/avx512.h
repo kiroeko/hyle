@@ -478,6 +478,36 @@ HYLE_FORCE_INLINE Vec512<T, N> AverageRound(Vec512<T, N> a, Vec512<T, N> b) noex
   return r;
 }
 
+// ---- bit-cast (reinterpret 512 bits as another lane type; zero-cost register cast) --
+// Free _mm512_cast* between __m512/__m512i/__m512d, plain move within integer widths.
+// Total bytes preserved (64) so lane count tracks width.
+namespace detail {
+template <typename DstRaw, typename SrcRaw>
+HYLE_FORCE_INLINE DstRaw bitcast_raw_avx512(SrcRaw s) noexcept {
+  if constexpr (std::is_same_v<DstRaw, SrcRaw>) return s;
+  else if constexpr (std::is_same_v<SrcRaw, __m512> && std::is_same_v<DstRaw, __m512i>)
+    return _mm512_castps_si512(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m512d> && std::is_same_v<DstRaw, __m512i>)
+    return _mm512_castpd_si512(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m512i> && std::is_same_v<DstRaw, __m512>)
+    return _mm512_castsi512_ps(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m512i> && std::is_same_v<DstRaw, __m512d>)
+    return _mm512_castsi512_pd(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m512> && std::is_same_v<DstRaw, __m512d>)
+    return _mm512_castps_pd(s);
+  else if constexpr (std::is_same_v<SrcRaw, __m512d> && std::is_same_v<DstRaw, __m512>)
+    return _mm512_castpd_ps(s);
+  else static_assert(sizeof(DstRaw) == 0, "avx512 bitcast_raw: unhandled raw pair");
+}
+}  // namespace detail
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<DstT, NDst> BitCast(Simd<DstT, NDst, 0>, Vec512<SrcT, NSrc> v) noexcept {
+  static_assert(sizeof(DstT) * NDst == sizeof(SrcT) * NSrc, "BitCast preserves total bytes");
+  Vec512<DstT, NDst> r;
+  r.raw = detail::bitcast_raw_avx512<detail::Raw512T<DstT>>(v.raw);
+  return r;
+}
+
 // ---- type conversion (same lane count: f32<->i32) -----------------------------------
 // ConvertTo: float<->int truncating (cvtt = toward zero). RoundToInt: f32->i32 round to
 // nearest-even (cvtps respects the default MXCSR rounding = RNE). 16 lanes both sides =

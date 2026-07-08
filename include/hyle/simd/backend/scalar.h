@@ -327,6 +327,22 @@ HYLE_FORCE_INLINE Vec<T, N> AverageRound(Vec<T, N> a, Vec<T, N> b) noexcept {
   return r;
 }
 
+// ---- bit-cast (reinterpret the bit pattern as another lane type; same TOTAL bytes) --
+// BitCast(dst_tag, v): reinterpret v's bytes as vector of DstT. The byte width is
+// preserved (sizeof(SrcT)*NSrc == sizeof(DstT)*NDst), so the lane COUNT changes when the
+// lane widths differ (e.g. Vec<i8,16> <-> Vec<i32,4>). Pure reinterpret -- no value
+// conversion (unlike ConvertTo). The floor copies bytes; a real backend is a zero-cost
+// register cast (_mm_castps_si128 / vreinterpretq). This underpins gather index math,
+// mask<->vector bridging, and FP bit tricks (exponent extraction, sign masks).
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<DstT, NDst> BitCast(Simd<DstT, NDst, 0>, Vec<SrcT, NSrc> v) noexcept {
+  static_assert(sizeof(DstT) * NDst == sizeof(SrcT) * NSrc,
+                "BitCast preserves total byte width");
+  Vec<DstT, NDst> r;
+  std::memcpy(r.raw, v.raw, sizeof(SrcT) * NSrc);
+  return r;
+}
+
 // ---- type conversion (same lane count, different lane type) -------------------------
 // ConvertTo(dst_tag, v): float<->int, TRUNCATING toward zero (C++ cast semantics), same N.
 // RoundToInt(dst_tag, v): f32/f64 -> int, round to NEAREST (ties to even). PromoteTo/

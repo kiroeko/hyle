@@ -576,6 +576,47 @@ HYLE_FORCE_INLINE VecNeon<T, N> AverageRound(VecNeon<T, N> a, VecNeon<T, N> b) n
   return r;
 }
 
+// ---- bit-cast (reinterpret bytes as another lane type; pure type pun, no instruction) -
+// Unlike bitwise's to_u32 (same-width 32-bit hub), BitCast changes lane WIDTH, so it puns
+// through uint8x16_t (the byte hub, width-independent). vreinterpretq emits no code; the
+// two-step src->u8->dst is still zero-cost. Total bytes preserved (16) so lane count tracks
+// width (e.g. VecNeon<i8,16> <-> VecNeon<i32,4>).
+namespace detail {
+template <typename T>
+HYLE_FORCE_INLINE uint8x16_t to_u8(RawNeonT<T> v) noexcept {
+  if constexpr (std::is_same_v<T, float>) return vreinterpretq_u8_f32(v);
+  else if constexpr (std::is_same_v<T, double>) return vreinterpretq_u8_f64(v);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vreinterpretq_u8_s8(v);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return v;
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vreinterpretq_u8_s16(v);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vreinterpretq_u8_u16(v);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vreinterpretq_u8_s32(v);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return vreinterpretq_u8_u32(v);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vreinterpretq_u8_s64(v);
+  else return vreinterpretq_u8_u64(v);  // uint64_t
+}
+template <typename T>
+HYLE_FORCE_INLINE RawNeonT<T> from_u8(uint8x16_t v) noexcept {
+  if constexpr (std::is_same_v<T, float>) return vreinterpretq_f32_u8(v);
+  else if constexpr (std::is_same_v<T, double>) return vreinterpretq_f64_u8(v);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vreinterpretq_s8_u8(v);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return v;
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vreinterpretq_s16_u8(v);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vreinterpretq_u16_u8(v);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vreinterpretq_s32_u8(v);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return vreinterpretq_u32_u8(v);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vreinterpretq_s64_u8(v);
+  else return vreinterpretq_u64_u8(v);  // uint64_t
+}
+}  // namespace detail
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<DstT, NDst> BitCast(Simd<DstT, NDst, 0>, VecNeon<SrcT, NSrc> v) noexcept {
+  static_assert(sizeof(DstT) * NDst == sizeof(SrcT) * NSrc, "BitCast preserves total bytes");
+  VecNeon<DstT, NDst> r;
+  r.raw = detail::from_u8<DstT>(detail::to_u8<SrcT>(v.raw));
+  return r;
+}
+
 // ---- type conversion (same lane count: f32<->i32) -----------------------------------
 // ConvertTo: f32->i32 truncate toward zero (vcvtq_s32_f32), i32->f32 (vcvtq_f32_s32).
 // RoundToInt: f32->i32 round to nearest-even (vcvtnq_s32_f32). 4 lanes both sides = one
