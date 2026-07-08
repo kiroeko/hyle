@@ -2141,6 +2141,17 @@ HYLE_FORCE_INLINE VecNeon<T, N> AESInvMixColumns(VecNeon<T, N> state) noexcept {
   VecNeon<T, N> r; std::memcpy(&r.raw, s, 16); return r;
 #endif
 }
+// AESKeyGenAssist<kRcon>: ARM has no dedicated instruction (its key schedule differs); the
+// software byte core matches _mm_aeskeygenassist_si128 semantics exactly. Key-schedule setup
+// is not a hot path, so the software floor is the right call on NEON.
+template <std::uint8_t kRcon, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> AESKeyGenAssist(VecNeon<T, N> v) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+  std::uint8_t s[16];
+  std::memcpy(s, &v.raw, 16);
+  detail::aes_keygen_assist_soft(s, kRcon);
+  VecNeon<T, N> r; std::memcpy(&r.raw, s, 16); return r;
+}
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> CLMulLower(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 16, "CLMul needs a 128-bit vector");

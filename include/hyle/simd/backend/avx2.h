@@ -1932,6 +1932,15 @@ HYLE_FORCE_INLINE Vec256<T, N> AESInvMixColumns(Vec256<T, N> state) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
   return Vec256<T, N>{detail::aes256_map1(state.raw, detail::aes_inv_mix_block)};
 }
+template <std::uint8_t kRcon, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> AESKeyGenAssist(Vec256<T, N> v) noexcept {
+  static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
+  // kRcon is a compile-time immediate, so the per-block worker is templated (can't route
+  // through aes256_map1's plain fn-ptr) -- split lo/hi explicitly.
+  const __m128i lo = detail::aes_keygen_block<kRcon>(_mm256_castsi256_si128(v.raw));
+  const __m128i hi = detail::aes_keygen_block<kRcon>(_mm256_extracti128_si256(v.raw, 1));
+  return Vec256<T, N>{_mm256_set_m128i(hi, lo)};
+}
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> CLMulLower(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 32, "CLMul needs a 256-bit vector (two 128-bit blocks)");

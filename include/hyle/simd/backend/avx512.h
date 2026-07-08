@@ -1712,6 +1712,17 @@ HYLE_FORCE_INLINE Vec512<T, N> AESInvMixColumns(Vec512<T, N> state) noexcept {
   static_assert(sizeof(T) * N == 64, "AES op needs a 512-bit vector (four 128-bit blocks)");
   return Vec512<T, N>{detail::aes512_map1(state.raw, detail::aes_inv_mix_block)};
 }
+template <std::uint8_t kRcon, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> AESKeyGenAssist(Vec512<T, N> v) noexcept {
+  static_assert(sizeof(T) * N == 64, "AES op needs a 512-bit vector (four 128-bit blocks)");
+  // kRcon compile-time immediate -> templated per-block worker, split explicitly across 4 lanes.
+  __m512i r = v.raw;
+  r = _mm512_inserti32x4(r, detail::aes_keygen_block<kRcon>(_mm512_extracti32x4_epi32(v.raw, 0)), 0);
+  r = _mm512_inserti32x4(r, detail::aes_keygen_block<kRcon>(_mm512_extracti32x4_epi32(v.raw, 1)), 1);
+  r = _mm512_inserti32x4(r, detail::aes_keygen_block<kRcon>(_mm512_extracti32x4_epi32(v.raw, 2)), 2);
+  r = _mm512_inserti32x4(r, detail::aes_keygen_block<kRcon>(_mm512_extracti32x4_epi32(v.raw, 3)), 3);
+  return Vec512<T, N>{r};
+}
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> CLMulLower(Vec512<T, N> a, Vec512<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 64, "CLMul needs a 512-bit vector (four 128-bit blocks)");

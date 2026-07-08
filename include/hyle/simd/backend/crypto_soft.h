@@ -134,6 +134,24 @@ HYLE_FORCE_INLINE void aes_last_round_inv_soft(std::uint8_t s[16], const std::ui
   for (int i = 0; i < 16; ++i) s[i] ^= k[i];
 }
 
+// AESKeyGenAssist byte-level core, matching _mm_aeskeygenassist_si128(v, rcon) exactly:
+//   dst[31:0]    = SubWord(v[63:32])
+//   dst[63:32]   = RotWord(SubWord(v[63:32])) ^ rcon
+//   dst[95:64]   = SubWord(v[127:96])
+//   dst[127:96]  = RotWord(SubWord(v[127:96])) ^ rcon
+// SubWord = S-box each byte; RotWord([b0,b1,b2,b3]) = [b1,b2,b3,b0]. Used to derive round keys.
+HYLE_FORCE_INLINE void aes_keygen_assist_soft(std::uint8_t s[16], std::uint8_t rcon) noexcept {
+  std::uint8_t x[16];
+  for (int i = 0; i < 16; ++i) x[i] = kAesSBox[s[i]];  // SubBytes over the whole 128 bits
+  // words at byte offsets 4..7 (X1) and 12..15 (X3); RotWord = left-rotate the 4 bytes.
+  const std::uint8_t w1[4] = {x[4], x[5], x[6], x[7]};
+  const std::uint8_t w3[4] = {x[12], x[13], x[14], x[15]};
+  s[0]  = w1[0]; s[1]  = w1[1]; s[2]  = w1[2]; s[3]  = w1[3];                 // X1 = SubWord
+  s[4]  = static_cast<std::uint8_t>(w1[1] ^ rcon); s[5] = w1[2]; s[6] = w1[3]; s[7] = w1[0];  // RotWord(X1)^rcon
+  s[8]  = w3[0]; s[9]  = w3[1]; s[10] = w3[2]; s[11] = w3[3];                 // X3 = SubWord
+  s[12] = static_cast<std::uint8_t>(w3[1] ^ rcon); s[13] = w3[2]; s[14] = w3[3]; s[15] = w3[0]; // RotWord(X3)^rcon
+}
+
 // Carryless 64x64 -> 128 multiply (x86 PCLMULQDQ, ARM PMULL). out[0]=low, out[1]=high.
 HYLE_FORCE_INLINE void clmul64(std::uint64_t a, std::uint64_t b, std::uint64_t out[2]) noexcept {
   std::uint64_t lo = 0, hi = 0;

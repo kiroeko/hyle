@@ -585,6 +585,16 @@ inline void clmul(std::uint64_t a, std::uint64_t b, std::uint64_t out[2]) {
   for (int i = 0; i < 64; ++i) if ((b >> i) & 1) { lo ^= a << i; if (i) hi ^= a >> (64 - i); }
   out[0] = lo; out[1] = hi;
 }
+// AESKeyGenAssist(v, rcon), matching _mm_aeskeygenassist_si128 exactly.
+inline void keygen(std::uint8_t s[16], std::uint8_t rcon) {
+  std::uint8_t x[16];
+  for (int i = 0; i < 16; ++i) x[i] = kS[s[i]];
+  std::uint8_t w1[4] = {x[4], x[5], x[6], x[7]}, w3[4] = {x[12], x[13], x[14], x[15]};
+  s[0]=w1[0]; s[1]=w1[1]; s[2]=w1[2]; s[3]=w1[3];
+  s[4]=static_cast<std::uint8_t>(w1[1]^rcon); s[5]=w1[2]; s[6]=w1[3]; s[7]=w1[0];
+  s[8]=w3[0]; s[9]=w3[1]; s[10]=w3[2]; s[11]=w3[3];
+  s[12]=static_cast<std::uint8_t>(w3[1]^rcon); s[13]=w3[2]; s[14]=w3[3]; s[15]=w3[0];
+}
 }  // namespace crypto_oracle
 
 TEST(Vec, CryptoAES) {
@@ -626,6 +636,15 @@ TEST(Vec, CryptoAES) {
   Buf<std::uint8_t> ref;
   hs::Store(hs::AESLastRound(vs, hs::Zero(d)), d, ref.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], ref.data[i]) << "invmix i=" << i;
+
+  // AESKeyGenAssist<0x01> vs oracle (key-schedule helper, rcon is a compile-time immediate).
+  hs::Store(hs::AESKeyGenAssist<0x01>(vs), d, out.data);
+  for (std::size_t blk = 0; blk < n; blk += 16) {
+    std::uint8_t s[16];
+    for (int i = 0; i < 16; ++i) s[i] = st.data[blk+i];
+    crypto_oracle::keygen(s, 0x01);
+    for (int i = 0; i < 16; ++i) EXPECT_EQ(out.data[blk+i], s[i]) << "keygen blk=" << blk << " i=" << i;
+  }
 }
 
 TEST(Vec, CryptoCLMul) {

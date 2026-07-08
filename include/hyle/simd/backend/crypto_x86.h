@@ -83,6 +83,19 @@ HYLE_FORCE_INLINE __m128i aes_inv_mix_block(__m128i s) noexcept {
 #endif
 }
 
+// AESKeyGenAssist needs a compile-time rcon immediate, so the worker is templated on kRcon.
+template <std::uint8_t kRcon>
+HYLE_FORCE_INLINE __m128i aes_keygen_block(__m128i v) noexcept {
+#if defined(_MSC_VER) || defined(__AES__)
+  return _mm_aeskeygenassist_si128(v, kRcon);
+#else
+  std::uint8_t s[16];
+  std::memcpy(s, &v, 16);
+  aes_keygen_assist_soft(s, kRcon);
+  __m128i r; std::memcpy(&r, s, 16); return r;
+#endif
+}
+
 // ---- carryless multiply on a single 128-bit block ----------------------------------------
 HYLE_FORCE_INLINE __m128i clmul_lower_block(__m128i a, __m128i b) noexcept {
 #if defined(_MSC_VER) || defined(__PCLMUL__)

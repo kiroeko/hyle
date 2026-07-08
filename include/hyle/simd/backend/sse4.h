@@ -1837,6 +1837,11 @@ HYLE_FORCE_INLINE Vec128<T, N> AESInvMixColumns(Vec128<T, N> state) noexcept {
   static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
   return Vec128<T, N>{detail::aes_inv_mix_block(state.raw)};
 }
+template <std::uint8_t kRcon, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> AESKeyGenAssist(Vec128<T, N> v) noexcept {
+  static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+  return Vec128<T, N>{detail::aes_keygen_block<kRcon>(v.raw)};
+}
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> CLMulLower(Vec128<T, N> a, Vec128<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 16, "CLMul needs a 128-bit vector");

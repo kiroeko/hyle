@@ -1452,6 +1452,12 @@ HYLE_FORCE_INLINE Vec<T, N> AESInvMixColumns(Vec<T, N> state) noexcept {
   std::uint8_t s[16]; detail::aes_bytes(state, s); detail::aes_inv_mix_columns(s);
   return detail::aes_from<T, N>(s);
 }
+// AESKeyGenAssist<kRcon>(v): key-schedule helper, matches _mm_aeskeygenassist_si128(v, kRcon).
+template <std::uint8_t kRcon, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> AESKeyGenAssist(Vec<T, N> v) noexcept {
+  std::uint8_t s[16]; detail::aes_bytes(v, s); detail::aes_keygen_assist_soft(s, kRcon);
+  return detail::aes_from<T, N>(s);
+}
 // CLMulLower/Upper(a, b): carryless multiply of the low / high 64 bits of the 128-bit block
 // into a 128-bit product (x86 PCLMULQDQ, ARM PMULL). Result lanes viewed as the input type.
 template <typename T, std::size_t N>
