@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <type_traits>  // conditional_t (MakeSigned/MakeUnsigned lane-type rebind)
 
 #include "hyle/macros.h"
 #include "hyle/platform.h"
@@ -62,6 +63,24 @@ struct Simd {
 // Lane type of a tag.
 template <class D>
 using TFromD = typename D::T;
+
+// Map a lane type to the same-width signed / unsigned integer type (Highway MakeSigned/
+// MakeUnsigned). Used by SignBit / *Int conversions to name the integer tag of matching width.
+template <typename T>
+using MakeUnsigned =
+    std::conditional_t<sizeof(T) == 1, std::uint8_t,
+        std::conditional_t<sizeof(T) == 2, std::uint16_t,
+            std::conditional_t<sizeof(T) == 4, std::uint32_t, std::uint64_t>>>;
+template <typename T>
+using MakeSigned =
+    std::conditional_t<sizeof(T) == 1, std::int8_t,
+        std::conditional_t<sizeof(T) == 2, std::int16_t,
+            std::conditional_t<sizeof(T) == 4, std::int32_t, std::int64_t>>>;
+// Rebind a tag D to the same lane COUNT but a same-width signed/unsigned integer lane type.
+template <class D>
+using RebindToUnsigned = Simd<MakeUnsigned<TFromD<D>>, D::kMaxLanes, 0>;
+template <class D>
+using RebindToSigned = Simd<MakeSigned<TFromD<D>>, D::kMaxLanes, 0>;
 
 // constexpr upper bound on lanes. Macro form mirrors Highway (MSVC can't always deduce
 // it through a function in SFINAE contexts).
@@ -246,6 +265,69 @@ template <class M, class V> HYLE_FORCE_INLINE V MaskedMulAddOr(M m, V no, V a, V
 }
 template <class M, class V> HYLE_FORCE_INLINE V MaskedNegMulAdd(M m, V a, V b, V c) noexcept {
   return IfThenElseZero(m, NegMulAdd(a, b, c));
+}
+
+// ---- lane access + init helpers (compute-06 simd-08 B-3, generic layer) -------------
+// ExtractLane(v, i) / InsertLane(v, i, t): read/write one lane. Highway warns these are
+// "potentially slow" -- the honest impl IS store+reload (store the vector, touch element i,
+// reload). Generic over any backend via its Store/Load. Iota(d, first) builds a ramp
+// first, first+1, ... (tests + index generation). SignBit(d) = a vector with only each lane's
+// MSB set. Undefined(d) = Zero(d) (we don't expose truly-uninitialized lanes). NearestInt/
+// CeilInt/FloorInt = ConvertTo<int>(Round/Ceil/Floor(a)) fused (Highway's efficient form).
+template <class V>
+HYLE_FORCE_INLINE TFromD<DFromV<V>> ExtractLane(V v, std::size_t i) noexcept {
+  using D = DFromV<V>;
+  alignas(64) TFromD<D> tmp[D::kMaxLanes];
+  Store(v, D(), tmp);
+  return tmp[i];
+}
+template <class V>
+HYLE_FORCE_INLINE V InsertLane(V v, std::size_t i, TFromD<DFromV<V>> t) noexcept {
+  using D = DFromV<V>;
+  alignas(64) TFromD<D> tmp[D::kMaxLanes];
+  Store(v, D(), tmp);
+  tmp[i] = t;
+  return Load(D(), tmp);
+}
+template <class D, typename T2>
+HYLE_FORCE_INLINE VFromD<D> Iota(D d, T2 first) noexcept {
+  using T = TFromD<D>;
+  alignas(64) T tmp[D::kMaxLanes];
+  for (std::size_t i = 0; i < Lanes(d); ++i) tmp[i] = static_cast<T>(static_cast<T>(first) + static_cast<T>(i));
+  return Load(d, tmp);
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> Undefined(D d) noexcept { return Zero(d); }
+// SignBit: only the MSB of each lane set. Build the integer pattern then BitCast to T.
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> SignBit(D d) noexcept {
+  using T = TFromD<D>;
+  using U = MakeUnsigned<T>;
+  const RebindToUnsigned<D> du;
+  return BitCast(d, Set(du, static_cast<U>(U{1} << (sizeof(T) * 8 - 1))));
+}
+// NearestInt / CeilInt / FloorInt: float -> signed int, rounding as named. RebindToSigned<D>
+// names the same-width signed integer tag.
+template <class V>
+HYLE_FORCE_INLINE VFromD<RebindToSigned<DFromV<V>>> NearestInt(V a) noexcept {
+  return RoundToInt(RebindToSigned<DFromV<V>>(), a);
+}
+template <class V>
+HYLE_FORCE_INLINE VFromD<RebindToSigned<DFromV<V>>> CeilInt(V a) noexcept {
+  return ConvertTo(RebindToSigned<DFromV<V>>(), Ceil(a));
+}
+template <class V>
+HYLE_FORCE_INLINE VFromD<RebindToSigned<DFromV<V>>> FloorInt(V a) noexcept {
+  return ConvertTo(RebindToSigned<DFromV<V>>(), Floor(a));
+}
+// MaskedSet(d, m, t): t where m, 0 elsewhere. MaskedSetOr(d, no, m, t): t where m, else no.
+template <class D, class M>
+HYLE_FORCE_INLINE VFromD<D> MaskedSet(D d, M m, TFromD<D> t) noexcept {
+  return IfThenElseZero(m, Set(d, t));
+}
+template <class D, class M>
+HYLE_FORCE_INLINE VFromD<D> MaskedSetOr(VFromD<D> no, D d, M m, TFromD<D> t) noexcept {
+  return IfThenElse(m, Set(d, t), no);
 }
 
 }  // namespace hyle::simd

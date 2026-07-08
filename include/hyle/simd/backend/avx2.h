@@ -856,6 +856,43 @@ HYLE_FORCE_INLINE Vec256<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0>, Vec25
   else r.raw = _mm256_packus_epi32(a.raw, b.raw);  // i32 -> u16
   return r;
 }
+// TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
+// correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec256<DstT, N> TruncateTo(Simd<DstT, N, 0>, Vec256<SrcT, N> v) noexcept {
+  static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
+  alignas(32) SrcT src[N];
+  alignas(32) DstT dst[N];
+  Store(v, Simd<SrcT, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
+  return Load(Simd<DstT, N, 0>(), dst);
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec256<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, Vec256<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
+  alignas(32) SrcT src[NSrc];
+  alignas(32) DstT dst[NDst];
+  Store(v, Simd<SrcT, NSrc, 0>(), src);
+  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
+  return Load(Simd<DstT, NDst, 0>(), dst);
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec256<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, Vec256<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteOddTo: odd lanes narrow->wide");
+  alignas(32) SrcT src[NSrc];
+  alignas(32) DstT dst[NDst];
+  Store(v, Simd<SrcT, NSrc, 0>(), src);
+  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
+  return Load(Simd<DstT, NDst, 0>(), dst);
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::uint8_t, N> U8FromU32(Vec256<std::uint32_t, N> v) noexcept {
+  alignas(32) std::uint32_t src[N];
+  alignas(32) std::uint8_t dst[N];
+  Store(v, Simd<std::uint32_t, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
+  return Load(Simd<std::uint8_t, N, 0>(), dst);
+}
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------
 // AVX2's shuffle/unpack/blend operate PER 128-BIT BLOCK; only vpermd/vpermq/vperm2i128 cross

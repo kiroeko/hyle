@@ -832,6 +832,43 @@ HYLE_FORCE_INLINE Vec512<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0>, Vec51
   else r.raw = _mm512_packus_epi32(a.raw, b.raw);  // i32 -> u16
   return r;
 }
+// TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
+// correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec512<DstT, N> TruncateTo(Simd<DstT, N, 0>, Vec512<SrcT, N> v) noexcept {
+  static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
+  alignas(64) SrcT src[N];
+  alignas(64) DstT dst[N];
+  Store(v, Simd<SrcT, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
+  return Load(Simd<DstT, N, 0>(), dst);
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, Vec512<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
+  alignas(64) SrcT src[NSrc];
+  alignas(64) DstT dst[NDst];
+  Store(v, Simd<SrcT, NSrc, 0>(), src);
+  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
+  return Load(Simd<DstT, NDst, 0>(), dst);
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, Vec512<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteOddTo: odd lanes narrow->wide");
+  alignas(64) SrcT src[NSrc];
+  alignas(64) DstT dst[NDst];
+  Store(v, Simd<SrcT, NSrc, 0>(), src);
+  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
+  return Load(Simd<DstT, NDst, 0>(), dst);
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::uint8_t, N> U8FromU32(Vec512<std::uint32_t, N> v) noexcept {
+  alignas(64) std::uint32_t src[N];
+  alignas(64) std::uint8_t dst[N];
+  Store(v, Simd<std::uint32_t, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
+  return Load(Simd<std::uint8_t, N, 0>(), dst);
+}
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------
 // AVX-512 store+reload swizzles (correct + simple; not a proven hot path, and native 512b

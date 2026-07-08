@@ -501,6 +501,78 @@ TEST(Vec, MathExtSaturatedInt) {
   for (std::size_t i = 0; i < n; ++i) { int e = (static_cast<int>(a.data[i]) * b.data[i] + 0x4000) >> 15; EXPECT_EQ(out2.data[i], static_cast<std::int16_t>(e)) << "q15 i=" << i; }
 }
 
+// ---- B-3 lane access + init (generic layer) -----------------------------------------
+TEST(Vec, LaneAccessAndInit) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  // Iota: ramp from a base.
+  auto vi = hs::Iota(d, 10);
+  Buf<std::int32_t> out; hs::Store(vi, d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<std::int32_t>(10 + i)) << "iota i=" << i;
+  // ExtractLane / InsertLane.
+  EXPECT_EQ(hs::ExtractLane(vi, 0), 10);
+  if (n >= 2) EXPECT_EQ(hs::ExtractLane(vi, 1), 11);
+  auto vj = hs::InsertLane(vi, 0, 999);
+  hs::Store(vj, d, out.data);
+  EXPECT_EQ(out.data[0], 999); for (std::size_t i = 1; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<std::int32_t>(10+i));
+  // Undefined = Zero (we alias it).
+  hs::Store(hs::Undefined(d), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], 0);
+  // MaskedSet: value on even lanes, 0 else.
+  Buf<std::int32_t> par; for (std::size_t i = 0; i < n; ++i) par.data[i] = static_cast<std::int32_t>(i % 2);
+  auto m = hs::Eq(hs::Load(d, par.data), hs::Set(d, 0));
+  hs::Store(hs::MaskedSet(d, m, 42), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], (i%2==0) ? 42 : 0) << "maskset i=" << i;
+}
+TEST(Vec, FloatToIntRounding) {
+  const hs::ScalableTag<float> d;
+  const hs::ScalableTag<std::int32_t> di;
+  const std::size_t n = hs::Lanes(d);
+  Buf<float> f; Buf<std::int32_t> out;
+  for (std::size_t i = 0; i < n; ++i) f.data[i] = (i % 2 ? -1.0f : 1.0f) * (static_cast<float>(i) + 0.6f);
+  auto vf = hs::Load(d, f.data);
+  hs::Store(hs::NearestInt(vf), di, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<std::int32_t>(std::nearbyint(f.data[i]))) << "nearest i=" << i;
+  hs::Store(hs::CeilInt(vf), di, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<std::int32_t>(std::ceil(f.data[i]))) << "ceil i=" << i;
+  hs::Store(hs::FloorInt(vf), di, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<std::int32_t>(std::floor(f.data[i]))) << "floor i=" << i;
+  // SignBit: MSB-only pattern; reinterpret to int and check it's negative-zero bit.
+  Buf<float> sb; hs::Store(hs::SignBit(d), d, sb.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(std::bit_cast<std::uint32_t>(sb.data[i]), 0x80000000u) << "signbit i=" << i;
+}
+
+// ---- B-3 narrowing / strided widen --------------------------------------------------
+TEST(Vec, TruncateAndStridedPromote) {
+  // TruncateTo u32 -> u8 (low byte, modular).
+  const hs::ScalableTag<std::uint32_t> d32;
+  const std::size_t n32 = hs::Lanes(d32);
+  const hs::FixedTag<std::uint8_t, hs::ScalableTag<std::uint32_t>::kMaxLanes> d8;
+  Buf<std::uint32_t> a; Buf<std::uint8_t> o8;
+  for (std::size_t i = 0; i < n32; ++i) a.data[i] = 0x11223300u + static_cast<std::uint32_t>(i * 17);
+  auto va = hs::Load(d32, a.data);
+  hs::Store(hs::TruncateTo(d8, va), d8, o8.data);
+  for (std::size_t i = 0; i < n32; ++i) EXPECT_EQ(o8.data[i], static_cast<std::uint8_t>(a.data[i])) << "trunc i=" << i;
+  // U8FromU32 (clamped values).
+  Buf<std::uint32_t> c; for (std::size_t i = 0; i < n32; ++i) c.data[i] = static_cast<std::uint32_t>(i % 256);
+  auto vc = hs::Load(d32, c.data);
+  hs::Store(hs::U8FromU32(vc), d8, o8.data);
+  for (std::size_t i = 0; i < n32; ++i) EXPECT_EQ(o8.data[i], static_cast<std::uint8_t>(c.data[i])) << "u8fromu32 i=" << i;
+  // PromoteEvenTo / PromoteOddTo: i16 (2N lanes) -> i32 (N lanes), even/odd.
+  const hs::ScalableTag<std::int16_t> d16;
+  const hs::ScalableTag<std::int32_t> di32;
+  const std::size_t n16 = hs::Lanes(d16), ni32 = hs::Lanes(di32);
+  if (n16 == 2 * ni32) {
+    Buf<std::int16_t> s; for (std::size_t i = 0; i < n16; ++i) s.data[i] = static_cast<std::int16_t>(i * 5 - 200);
+    auto vs = hs::Load(d16, s.data);
+    Buf<std::int32_t> oe;
+    hs::Store(hs::PromoteEvenTo(di32, vs), di32, oe.data);
+    for (std::size_t i = 0; i < ni32; ++i) EXPECT_EQ(oe.data[i], static_cast<std::int32_t>(s.data[2*i])) << "promEven i=" << i;
+    hs::Store(hs::PromoteOddTo(di32, vs), di32, oe.data);
+    for (std::size_t i = 0; i < ni32; ++i) EXPECT_EQ(oe.data[i], static_cast<std::int32_t>(s.data[2*i+1])) << "promOdd i=" << i;
+  }
+}
+
 // ---- B-2 swizzle completion ---------------------------------------------------------
 TEST(Vec, SwizzleCompletion) {
   const hs::ScalableTag<std::int32_t> d;

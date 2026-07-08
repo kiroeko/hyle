@@ -870,6 +870,43 @@ HYLE_FORCE_INLINE Vec128<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, Ve
   static_assert(NDst == 2 * NSrc && std::is_integral_v<SrcT>, "ReorderDemote2To: integer 2->1");
   return DemoteTo(dn, a, b);
 }
+// TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
+// correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec128<DstT, N> TruncateTo(Simd<DstT, N, 0>, Vec128<SrcT, N> v) noexcept {
+  static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
+  alignas(16) SrcT src[N];
+  alignas(16) DstT dst[N];
+  Store(v, Simd<SrcT, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
+  return Load(Simd<DstT, N, 0>(), dst);
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, Vec128<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
+  alignas(16) SrcT src[NSrc];
+  alignas(16) DstT dst[NDst];
+  Store(v, Simd<SrcT, NSrc, 0>(), src);
+  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
+  return Load(Simd<DstT, NDst, 0>(), dst);
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, Vec128<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteOddTo: odd lanes narrow->wide");
+  alignas(16) SrcT src[NSrc];
+  alignas(16) DstT dst[NDst];
+  Store(v, Simd<SrcT, NSrc, 0>(), src);
+  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
+  return Load(Simd<DstT, NDst, 0>(), dst);
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::uint8_t, N> U8FromU32(Vec128<std::uint32_t, N> v) noexcept {
+  alignas(16) std::uint32_t src[N];
+  alignas(16) std::uint8_t dst[N];
+  Store(v, Simd<std::uint32_t, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
+  return Load(Simd<std::uint8_t, N, 0>(), dst);
+}
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------
 // SSE4 packs the whole vector in a single 128-bit register (like NEON, unlike AVX2's two

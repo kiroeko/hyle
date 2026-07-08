@@ -971,6 +971,43 @@ HYLE_FORCE_INLINE VecNeon<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, V
                                                        VecNeon<SrcT, NSrc> b) noexcept {
   return DemoteTo(dn, a, b);
 }
+// TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
+// correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE VecNeon<DstT, N> TruncateTo(Simd<DstT, N, 0>, VecNeon<SrcT, N> v) noexcept {
+  static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
+  alignas(16) SrcT src[N];
+  alignas(16) DstT dst[N];
+  StoreU(v, Simd<SrcT, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
+  return LoadU(Simd<DstT, N, 0>(), dst);
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, VecNeon<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
+  alignas(16) SrcT src[NSrc];
+  alignas(16) DstT dst[NDst];
+  StoreU(v, Simd<SrcT, NSrc, 0>(), src);
+  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
+  return LoadU(Simd<DstT, NDst, 0>(), dst);
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, VecNeon<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteOddTo: odd lanes narrow->wide");
+  alignas(16) SrcT src[NSrc];
+  alignas(16) DstT dst[NDst];
+  StoreU(v, Simd<SrcT, NSrc, 0>(), src);
+  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
+  return LoadU(Simd<DstT, NDst, 0>(), dst);
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::uint8_t, N> U8FromU32(VecNeon<std::uint32_t, N> v) noexcept {
+  alignas(16) std::uint32_t src[N];
+  alignas(16) std::uint8_t dst[N];
+  StoreU(v, Simd<std::uint32_t, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
+  return LoadU(Simd<std::uint8_t, N, 0>(), dst);
+}
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------
 // NEON is a SINGLE 128-bit block, so InterleaveLower/Upper are whole-vector (== the scalar

@@ -609,6 +609,42 @@ HYLE_FORCE_INLINE Vec<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, Vec<S
   return DemoteTo(dn, a, b);
 }
 
+// TruncateTo(d, v): narrow each lane by keeping the LOW bits (modular truncation, NOT
+// saturation -- distinct from DemoteTo). Same lane count, narrower type. E.g. u32 0x1FF -> u8
+// 0xFF. Highway's wrap-around narrowing for hashing / bit-packing.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec<DstT, N> TruncateTo(Simd<DstT, N, 0>, Vec<SrcT, N> v) noexcept {
+  static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
+  Vec<DstT, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = static_cast<DstT>(v.raw[i]);  // C++ narrowing = low bits
+  return r;
+}
+// PromoteEvenTo/PromoteOddTo(d, v): widen the EVEN (or ODD) lanes of a 2N-lane narrow vector
+// to a full N-lane wide vector. Complements PromoteLowerTo/UpperTo (which take contiguous
+// halves) -- these take strided lanes, the (de)interleave-free widen for planar data.
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, Vec<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
+  Vec<DstT, NDst> r;
+  for (std::size_t i = 0; i < NDst; ++i) r.raw[i] = static_cast<DstT>(v.raw[2 * i]);
+  return r;
+}
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, Vec<SrcT, NSrc> v) noexcept {
+  static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteOddTo: odd lanes narrow->wide");
+  Vec<DstT, NDst> r;
+  for (std::size_t i = 0; i < NDst; ++i) r.raw[i] = static_cast<DstT>(v.raw[2 * i + 1]);
+  return r;
+}
+// U8FromU32(v): special-case u32 -> u8 when all lanes are already in [0,256) (Highway). Same
+// lane count; the scalar floor is a plain narrowing cast (caller guarantees the range).
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec<std::uint8_t, N> U8FromU32(Vec<std::uint32_t, N> v) noexcept {
+  Vec<std::uint8_t, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = static_cast<std::uint8_t>(v.raw[i]);
+  return r;
+}
+
 // ---- comparison -> mask -------------------------------------------------------------
 #define HYLE_SIMD_SCALAR_CMP(NAME, REL)                                  \
   template <typename T, std::size_t N>                                   \
