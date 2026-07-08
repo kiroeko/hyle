@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>  // std::memcpy (LoadMaskBits lane pun)
 #include <bit>
+#include <limits>  // std::numeric_limits<T>::infinity (IsInf/IsFinite splat)
 #include <type_traits>
 
 #include <immintrin.h>
@@ -820,6 +821,52 @@ HYLE_FORCE_INLINE Mask512<T, N> Le(Vec512<T, N> a, Vec512<T, N> b) noexcept {
   if constexpr (std::is_same_v<T, float>) m.raw = _mm512_cmp_ps_mask(a.raw, b.raw, _CMP_LE_OQ);
   else if constexpr (std::is_same_v<T, double>) m.raw = _mm512_cmp_pd_mask(a.raw, b.raw, _CMP_LE_OQ);
   else m.raw = detail::icmpge<T>(b.raw, a.raw);  // Le(a,b) = Ge(b,a)
+  return m;
+}
+
+// ---- floating-point classification -> mask (k-register) -----------------------------
+// Portable cmp_mask form (not _mm512_fpclass_*): the ordered/unordered compare predicates
+// are unambiguously correct and avoid fpclass category-bit pitfalls. IsNaN via _CMP_UNORD_Q
+// (v vs v: true iff NaN). IsInf: |v| == +inf (_CMP_EQ_OQ, ordered so NaN->false). IsFinite:
+// |v| < +inf (_CMP_LT_OQ: NaN->false, inf->false, finite->true). IsEitherNaN: a vs b
+// _CMP_UNORD_Q (true iff a or b is NaN) -- the native unordered predicate. Result __mmask
+// wrapped in Mask512 exactly as Eq/Lt do. f32 -> __mmask16, f64 -> __mmask8 (KMaskT).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> IsNaN(Vec512<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsNaN is float-only");
+  Mask512<T, N> m;
+  if constexpr (std::is_same_v<T, float>) m.raw = _mm512_cmp_ps_mask(v.raw, v.raw, _CMP_UNORD_Q);
+  else m.raw = _mm512_cmp_pd_mask(v.raw, v.raw, _CMP_UNORD_Q);
+  return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> IsInf(Vec512<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsInf is float-only");
+  Mask512<T, N> m;
+  const T inf = std::numeric_limits<T>::infinity();
+  if constexpr (std::is_same_v<T, float>)
+    m.raw = _mm512_cmp_ps_mask(_mm512_abs_ps(v.raw), _mm512_set1_ps(inf), _CMP_EQ_OQ);
+  else
+    m.raw = _mm512_cmp_pd_mask(_mm512_abs_pd(v.raw), _mm512_set1_pd(inf), _CMP_EQ_OQ);
+  return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> IsFinite(Vec512<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsFinite is float-only");
+  Mask512<T, N> m;
+  const T inf = std::numeric_limits<T>::infinity();
+  if constexpr (std::is_same_v<T, float>)
+    m.raw = _mm512_cmp_ps_mask(_mm512_abs_ps(v.raw), _mm512_set1_ps(inf), _CMP_LT_OQ);
+  else
+    m.raw = _mm512_cmp_pd_mask(_mm512_abs_pd(v.raw), _mm512_set1_pd(inf), _CMP_LT_OQ);
+  return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> IsEitherNaN(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsEitherNaN is float-only");
+  Mask512<T, N> m;
+  if constexpr (std::is_same_v<T, float>) m.raw = _mm512_cmp_ps_mask(a.raw, b.raw, _CMP_UNORD_Q);
+  else m.raw = _mm512_cmp_pd_mask(a.raw, b.raw, _CMP_UNORD_Q);
   return m;
 }
 

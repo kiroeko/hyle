@@ -438,6 +438,32 @@ HYLE_SIMD_SCALAR_CMP(Gt, >)
 HYLE_SIMD_SCALAR_CMP(Ge, >=)
 #undef HYLE_SIMD_SCALAR_CMP
 
+// ---- floating-point classification -> mask (Highway) --------------------------------
+// IsNaN(v): lane true iff NaN (the only value != itself). IsInf: true iff +/-infinity.
+// IsFinite: true iff neither NaN nor Inf (a real number). IsEitherNaN(a,b): true iff a or b
+// is NaN (the "unordered" predicate a compare needs). Float lanes only. Numerical solvers use
+// these to detect divergence (NaN/Inf) per lane and mask off the bad elements.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> IsNaN(Vec<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsNaN is float-only");
+  Mask<T, N> m; for (std::size_t i = 0; i < N; ++i) m.raw[i] = std::isnan(v.raw[i]); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> IsInf(Vec<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsInf is float-only");
+  Mask<T, N> m; for (std::size_t i = 0; i < N; ++i) m.raw[i] = std::isinf(v.raw[i]); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> IsFinite(Vec<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsFinite is float-only");
+  Mask<T, N> m; for (std::size_t i = 0; i < N; ++i) m.raw[i] = std::isfinite(v.raw[i]); return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> IsEitherNaN(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsEitherNaN is float-only");
+  Mask<T, N> m; for (std::size_t i = 0; i < N; ++i) m.raw[i] = std::isnan(a.raw[i]) || std::isnan(b.raw[i]); return m;
+}
+
 // ---- mask ops -----------------------------------------------------------------------
 // Blend: per lane, mask ? yes : no.
 template <typename T, std::size_t N>

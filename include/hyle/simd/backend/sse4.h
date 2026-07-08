@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>  // std::memcpy (LoadMaskBits lane pun)
 #include <bit>
+#include <limits>  // std::numeric_limits<T>::infinity() (FP classification splat)
 #include <type_traits>
 
 #include <nmmintrin.h>  // SSE4.2 (transitively pulls SSE4.1/SSSE3/SSE3/SSE2)
@@ -828,6 +829,41 @@ HYLE_FORCE_INLINE Mask128<T, N> Le(Vec128<T, N> a, Vec128<T, N> b) noexcept {
   return Ge(b, a);  // a<=b == b>=a
 }
 
+// ---- floating-point classification -> mask -----------------------------------------
+// IsNaN(v): lane true iff NaN. IsInf: true iff +/-infinity. IsFinite: true iff neither.
+// IsEitherNaN(a,b): true iff a or b is NaN (the "unordered" predicate). Float lanes only.
+// IsNaN/IsEitherNaN use an unordered self/pair-compare (all-ones exactly where NaN). IsInf
+// and IsFinite reuse Abs + Eq/Lt against a +inf splat: |v|==inf isolates inf, |v|<inf keeps
+// only finite (NaN fails ordered <, inf fails <), matching scalar isinf/isfinite bit-for-bit.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> IsNaN(Vec128<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsNaN is float-only");
+  Mask128<T, N> m;
+  if constexpr (std::is_same_v<T, float>) m.raw = _mm_cmpunord_ps(v.raw, v.raw);
+  else m.raw = _mm_cmpunord_pd(v.raw, v.raw);
+  return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> IsEitherNaN(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsEitherNaN is float-only");
+  Mask128<T, N> m;
+  if constexpr (std::is_same_v<T, float>) m.raw = _mm_cmpunord_ps(a.raw, b.raw);
+  else m.raw = _mm_cmpunord_pd(a.raw, b.raw);
+  return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> IsInf(Vec128<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsInf is float-only");
+  const auto inf = Set(Simd<T, N, 0>(), std::numeric_limits<T>::infinity());
+  return Eq(Abs(v), inf);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> IsFinite(Vec128<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsFinite is float-only");
+  const auto inf = Set(Simd<T, N, 0>(), std::numeric_limits<T>::infinity());
+  return Lt(Abs(v), inf);  // ordered <: NaN and inf both fail, only finite lanes true
+}
+
 // ---- mask ops -----------------------------------------------------------------------
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> IfThenElse(Mask128<T, N> m, Vec128<T, N> yes,
@@ -942,13 +978,13 @@ HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(Simd<T, N, 0>, Mask128<T, N> m) no
   return b ? static_cast<std::ptrdiff_t>(31 - std::countl_zero(b)) : -1;
 }
 // VecFromMask: the mask's per-lane 0xFF../0 pattern as a vector (compares yield full-lane).
+// Mask128<T>::raw is Raw128T<T> -- for float/double it is ALREADY __m128/__m128d (compares
+// like _mm_cmpunord_ps and MaskFromVec produce FP-domain masks), so no cast is needed; the
+// integer path is the identity too. (A cast here would double-convert and mistype.)
 template <class D>
 HYLE_FORCE_INLINE detail::V128<D> VecFromMask(D, Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
-  using T = TFromD<D>;
   detail::V128<D> r;
-  if constexpr (std::is_same_v<T, float>) r.raw = _mm_castsi128_ps(m.raw);
-  else if constexpr (std::is_same_v<T, double>) r.raw = _mm_castsi128_pd(m.raw);
-  else r.raw = m.raw;
+  r.raw = m.raw;
   return r;
 }
 // MaskFromVec: lane true iff its MSB set (Highway). Route via the per-lane movemask so the

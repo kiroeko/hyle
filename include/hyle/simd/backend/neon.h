@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>  // std::memcpy (LoadMaskBits lane pun)
 #include <bit>
+#include <limits>  // std::numeric_limits<T>::infinity (IsInf/IsFinite splat)
 #include <type_traits>
 
 #include <arm_neon.h>
@@ -906,6 +907,46 @@ HYLE_FORCE_INLINE MaskNeon<T, N> Le(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   else if constexpr (std::is_same_v<T, std::uint32_t>) m.raw = vcleq_u32(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int64_t>) m.raw = vcleq_s64(a.raw, b.raw);  // aarch64
   else m.raw = vcleq_u64(a.raw, b.raw);  // u64 (aarch64)
+  return m;
+}
+
+// ---- floating-point classification -> mask ------------------------------------------
+// IsNaN: NEON has no unordered compare, but a NaN is the only value != itself, so
+// vceqq(v,v) is all-ones where NOT-NaN -> Not() flips it. IsEitherNaN(a,b): unordered
+// predicate = IsNaN(a) | IsNaN(b), reusing mask-domain Or. IsInf/IsFinite compare |v|
+// against +inf splat: |NaN|=NaN so both == and < are false (matches scalar isinf/isfinite).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> IsNaN(VecNeon<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsNaN is float-only");
+  MaskNeon<T, N> m;
+  if constexpr (std::is_same_v<T, float>) m.raw = vceqq_f32(v.raw, v.raw);
+  else m.raw = vceqq_f64(v.raw, v.raw);  // aarch64
+  m.raw = detail::mask_not<T>(m.raw);    // ~(v==v) -> true iff NaN
+  return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> IsInf(VecNeon<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsInf is float-only");
+  MaskNeon<T, N> m;
+  const T inf = std::numeric_limits<T>::infinity();
+  if constexpr (std::is_same_v<T, float>) m.raw = vceqq_f32(vabsq_f32(v.raw), vdupq_n_f32(inf));
+  else m.raw = vceqq_f64(vabsq_f64(v.raw), vdupq_n_f64(inf));  // aarch64
+  return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> IsFinite(VecNeon<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsFinite is float-only");
+  MaskNeon<T, N> m;
+  const T inf = std::numeric_limits<T>::infinity();
+  if constexpr (std::is_same_v<T, float>) m.raw = vcltq_f32(vabsq_f32(v.raw), vdupq_n_f32(inf));
+  else m.raw = vcltq_f64(vabsq_f64(v.raw), vdupq_n_f64(inf));  // aarch64: |v| < inf
+  return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> IsEitherNaN(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsEitherNaN is float-only");
+  MaskNeon<T, N> m;
+  m.raw = detail::mask_or<T>(IsNaN(a).raw, IsNaN(b).raw);  // unordered: NaN in either
   return m;
 }
 

@@ -284,6 +284,42 @@ TEST(Vec, BitCastWidthChanging) {
     EXPECT_EQ(o8.data[b], ref[b]) << "byte " << b;
 }
 
+// ---- A-3 FP classification ----------------------------------------------------------
+// Feed a mix of NaN / +Inf / -Inf / finite lanes and check IsNaN/IsInf/IsFinite/IsEitherNaN
+// against the std references. Float lanes only.
+template <typename T>
+void CheckFpClassify() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  const T qnan = std::numeric_limits<T>::quiet_NaN();
+  const T inf = std::numeric_limits<T>::infinity();
+  Buf<T> v, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    switch (i % 4) {
+      case 0: v.data[i] = qnan; break;
+      case 1: v.data[i] = inf; break;
+      case 2: v.data[i] = -inf; break;
+      default: v.data[i] = static_cast<T>(i) * T(1.5) - T(2); break;  // finite
+    }
+  }
+  auto vv = hs::Load(d, v.data);
+  hs::Store(hs::VecFromMask(d, hs::IsNaN(vv)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i] != T{0}, std::isnan(v.data[i]) != 0) << "IsNaN i=" << i;
+  hs::Store(hs::VecFromMask(d, hs::IsInf(vv)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i] != T{0}, std::isinf(v.data[i]) != 0) << "IsInf i=" << i;
+  hs::Store(hs::VecFromMask(d, hs::IsFinite(vv)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i] != T{0}, std::isfinite(v.data[i]) != 0) << "IsFinite i=" << i;
+  // IsEitherNaN(v, shifted): true where either operand is NaN.
+  Buf<T> w;
+  for (std::size_t i = 0; i < n; ++i) w.data[i] = (i % 5 == 0) ? qnan : T(1);
+  auto vw = hs::Load(d, w.data);
+  hs::Store(hs::VecFromMask(d, hs::IsEitherNaN(vv, vw)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i] != T{0}, (std::isnan(v.data[i]) || std::isnan(w.data[i]))) << "IsEitherNaN i=" << i;
+}
+TEST(Vec, FpClassifyFloat) { CheckFpClassify<float>(); }
+TEST(Vec, FpClassifyDouble) { CheckFpClassify<double>(); }
+
 // ---- A-2 mask-domain logic ----------------------------------------------------------
 // Build two masks from comparisons, then check the mask And/Or/Xor/AndNot/Not/ExclusiveNeither
 // against per-lane bool references, plus IfThenZeroElse and MaskFromVec. Uses i32 lanes.

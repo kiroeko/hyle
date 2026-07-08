@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>  // std::memcpy (LoadMaskBits lane pun)
 #include <bit>
+#include <limits>  // std::numeric_limits<T>::infinity() (FP classification splat)
 #include <type_traits>
 
 #include <immintrin.h>  // AVX/AVX2/FMA (and transitively SSE*)
@@ -863,6 +864,42 @@ HYLE_FORCE_INLINE Mask256<T, N> Le(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   return Ge(b, a);
 }
 
+// ---- floating-point classification -> mask -----------------------------------------
+// IsNaN(v): lane true iff NaN. IsInf: true iff +/-infinity. IsFinite: true iff neither.
+// IsEitherNaN(a,b): true iff a or b is NaN (the "unordered" predicate). Float lanes only.
+// IsNaN/IsEitherNaN use an unordered self/pair-compare (_CMP_UNORD_Q -> all-ones exactly
+// where NaN). IsInf and IsFinite reuse Abs + Eq/Lt against a +inf splat: |v|==inf isolates
+// inf, |v|<inf (ordered) keeps only finite (NaN and inf both fail), matching scalar isinf/
+// isfinite bit-for-bit.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask256<T, N> IsNaN(Vec256<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsNaN is float-only");
+  Mask256<T, N> m;
+  if constexpr (std::is_same_v<T, float>) m.raw = _mm256_cmp_ps(v.raw, v.raw, _CMP_UNORD_Q);
+  else m.raw = _mm256_cmp_pd(v.raw, v.raw, _CMP_UNORD_Q);
+  return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask256<T, N> IsEitherNaN(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsEitherNaN is float-only");
+  Mask256<T, N> m;
+  if constexpr (std::is_same_v<T, float>) m.raw = _mm256_cmp_ps(a.raw, b.raw, _CMP_UNORD_Q);
+  else m.raw = _mm256_cmp_pd(a.raw, b.raw, _CMP_UNORD_Q);
+  return m;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask256<T, N> IsInf(Vec256<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsInf is float-only");
+  const auto inf = Set(Simd<T, N, 0>(), std::numeric_limits<T>::infinity());
+  return Eq(Abs(v), inf);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask256<T, N> IsFinite(Vec256<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "IsFinite is float-only");
+  const auto inf = Set(Simd<T, N, 0>(), std::numeric_limits<T>::infinity());
+  return Lt(Abs(v), inf);  // ordered <: NaN and inf both fail, only finite lanes true
+}
+
 // ---- mask ops -----------------------------------------------------------------------
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> IfThenElse(Mask256<T, N> m, Vec256<T, N> yes,
@@ -981,11 +1018,11 @@ HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(Simd<T, N, 0>, Mask256<T, N> m) no
 // reinterpret for int lanes / a cast for float. Feeds SumsOf8 for a masked byte count.
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> VecFromMask(D, Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
-  using T = TFromD<D>;
   detail::V256<D> r;
-  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_castsi256_ps(m.raw);
-  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_castsi256_pd(m.raw);
-  else r.raw = m.raw;  // integer lanes: mask raw already the 0xFF../0 vector
+  // Mask256<T>::raw is Raw256T<T>: float/double masks are ALREADY __m256/__m256d (FP-domain
+  // compares + MaskFromVec produce them), int masks are the __m256i 0xFF../0 vector -- either
+  // way it's the identity, no cast (a cast would mistype the FP path).
+  r.raw = m.raw;
   return r;
 }
 // MaskFromVec: lane true iff its MSB set (Highway). The inverse of VecFromMask. Build a
