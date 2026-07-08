@@ -664,8 +664,15 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
   r = vkAllocateMemory(ctx().device, &ai, nullptr, &m->mem);
   if (r != VK_SUCCESS) { vkDestroyBuffer(ctx().device, m->buf, nullptr); delete m;
                          return from_vk(r, "vkAllocateMemory"); }
-  vkBindBufferMemory(ctx().device, m->buf, m->mem, 0);
-  if (will_map) vkMapMemory(ctx().device, m->mem, 0, VK_WHOLE_SIZE, 0, &m->mapped);  // #9
+  r = vkBindBufferMemory(ctx().device, m->buf, m->mem, 0);
+  if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkBindBufferMemory"); }
+  if (will_map) {
+    // Persistent map (#9). A map FAILURE (host address space / driver limits) must not be
+    // ignored: leaving m->mapped null while will_map=true would skip the staging fallback,
+    // then vk_buffer_set/get would deref a null staging_mapped -> crash. Fail at the boundary.
+    r = vkMapMemory(ctx().device, m->mem, 0, VK_WHOLE_SIZE, 0, &m->mapped);
+    if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkMapMemory"); }
+  }
 
   // Staging double-buffer (kompute #8): a DEVICE-LOCAL buffer with NO ReBAR (primary not
   // host-mappable) needs a host-visible+coherent staging buffer so host<->device can go
@@ -688,8 +695,10 @@ Status make_mem(std::size_t bytes, bool host_visible, VkMem** out) noexcept {
     sai.memoryTypeIndex = smt;
     r = vkAllocateMemory(ctx().device, &sai, nullptr, &m->staging_mem);
     if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkAllocateMemory(staging)"); }
-    vkBindBufferMemory(ctx().device, m->staging_buf, m->staging_mem, 0);
-    vkMapMemory(ctx().device, m->staging_mem, 0, VK_WHOLE_SIZE, 0, &m->staging_mapped);  // persistent (#9)
+    r = vkBindBufferMemory(ctx().device, m->staging_buf, m->staging_mem, 0);
+    if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkBindBufferMemory(staging)"); }
+    r = vkMapMemory(ctx().device, m->staging_mem, 0, VK_WHOLE_SIZE, 0, &m->staging_mapped);  // persistent (#9)
+    if (r != VK_SUCCESS) { free_mem(m); return from_vk(r, "vkMapMemory(staging)"); }
   }
   *out = m;
   return Status();
@@ -1014,11 +1023,10 @@ Status vk_kernel_compile(int, const char*, const char*, void**, void**) noexcept
   return Status::Unimplemented("vk backend: runtime GLSL compile deferred (pre-compile to SPIR-V, load_ptx)");
 }
 
-// load_ptx path: `ptx` carries SPIR-V. HYLE's Kernel API gives us a C-string `ptx` +
-// `entry`; SPIR-V is binary (has NULs), so the length can't come from strlen. The public
-// kernel.h documents (for the Vulkan backend) that `ptx` points at a length-prefixed SPIR-V
-// blob: first sizeof(uint32_t) bytes = byte length, then the SPIR-V words. This keeps the
-// generic vtable signature while carrying binary safely.
+// load path: `code` is a SPIR-V byte stream of exactly `code_size` bytes (a SpirvBlob from the
+// public load_spirv). SPIR-V is binary (has NULs) so the size is passed explicitly -- no
+// length-prefix or strlen. Optional specialization constants (specs/spec_count/spec_data) are
+// copied for consumption at pipeline build. This is the Vulkan side of Kernel::load_spirv.
 Status vk_kernel_load_ptx(int, const char* code, unsigned code_size, const char* /*entry*/,
                           const SpecConstant* specs, unsigned spec_count,
                           const void* spec_data, unsigned spec_data_size,

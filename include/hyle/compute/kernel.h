@@ -150,17 +150,23 @@ class Kernel {
 // launch/config error surfaces as Status (CUDA: cudaGetLastError; Vulkan: submit result).
 // On the host backend, calls the registered HostFn synchronously.
 //
-// ⚠️ CONTRACT (caller bugs -> HYLE_FATAL_ASSERT, not recoverable errors):
-//   - config.grid (workgroup count) must be <= the device's max workgroup count per dim
-//     (Vulkan maxComputeWorkGroupCount / CUDA maxGridSize). grid = ceil(n / block_size);
-//     compute it with blocks_for() and keep block_size within the device's limits.
+// ⚠️ CONTRACT (caller bugs). How a violation surfaces differs by backend, because their
+// underlying guarantees differ -- this is documented honestly, not a uniform promise:
+//   - config.grid (workgroup count) must be <= the device's max per dim (Vulkan
+//     maxComputeWorkGroupCount / CUDA maxGridSize). grid = ceil(n / block_size); use
+//     blocks_for(). VULKAN: exceeding it is undefined behavior with no driver guard, so the
+//     backend HYLE_FATAL_ASSERTs (fail-fast). CUDA: the driver validates the launch config and
+//     an over-limit grid comes back as an error Status (cudaGetLastError), not an assert.
 //   - the packed scalar blob must be <= the device push-constant limit (Vulkan
-//     maxPushConstantsSize; the typed shell caps at 256 B). A kernel needing more scalars
-//     should pass them via a uniform/storage Buffer, not push constants.
+//     maxPushConstantsSize; the typed shell caps at 256 B). Vulkan HYLE_FATAL_ASSERTs at
+//     pipeline build. CUDA passes scalars as kernel params (no push-constant limit).
 //   - relaunching the SAME Kernel must keep the SAME arg SHAPE (buffer count + scalar bytes):
-//     the pipeline layout is built once from the first launch and frozen (Vulkan).
+//     the pipeline layout is built once from the first launch and frozen -- Vulkan
+//     HYLE_FATAL_ASSERTs a shape mismatch. (CUDA has no frozen layout; args rebuild per call.)
 //   - a Stream is single-execution-flow: do not launch on the SAME Stream concurrently from
-//     multiple fibers/threads (see stream.h). Use one Stream per fiber for parallelism.
+//     multiple fibers/threads (see stream.h). Use one Stream per fiber for parallelism. This
+//     one CANNOT be asserted (a data race is not locally observable) -- it is a hard caller
+//     contract on every backend.
 //
 // Most callers use the typed `launch(stream, kernel, config, args...)` shell below, which
 // builds KernelArgs at compile time; this raw form is for a caller that already has one.
@@ -195,6 +201,11 @@ HYLE_COMPUTE_API Status launch_batch(Stream& stream, const BatchItem* items,
 //
 // CONTRACT:
 //   - Record AND replay on the SAME Stream (the command buffer belongs to its pool).
+//   - The RecordedLaunch MUST be destroyed BEFORE the Stream it was recorded on. Its recorded
+//     command buffer + descriptor pool live in that Stream's command pool; ~RecordedLaunch
+//     frees them back to that pool, so outliving the Stream is a use-after-free (the pool is
+//     already gone). Same ownership rule as an iterator vs its container -- keep the
+//     RecordedLaunch in a scope nested inside the Stream's.
 //   - The Kernel and the Buffers referenced by `args` must outlive the RecordedLaunch (their
 //     handles are frozen into the recording). To feed new data, write into those SAME Buffers
 //     between replays; to change a push-constant value or SWAP a buffer, make a NEW recording.
@@ -209,10 +220,11 @@ class RecordedLaunch {
   HYLE_COMPUTE_API ~RecordedLaunch();
 
   // Record `kernel` with `config` + `args` on `stream` into a reusable command buffer. The
-  // pipeline is built (once, lazily) if needed. Returns Unimplemented on a backend without a
-  // recording path (host) so the caller can fall back to launch(); the typed replay handles
-  // that transparently. `args` arrays are read during recording only (the backend copies what
-  // it needs); the referenced Buffers must stay alive for the RecordedLaunch's lifetime.
+  // pipeline is built (once, lazily) if needed. Returns Unimplemented on a backend with no
+  // recording benefit (CUDA/host: their submit has no record cost to amortize) -- the caller
+  // should just use launch() in its loop there (there is NO automatic fallback; check the
+  // Result). `args` arrays are read during recording only (the backend copies what it needs);
+  // the referenced Buffers must stay alive for the RecordedLaunch's lifetime.
   HYLE_COMPUTE_API static Result<RecordedLaunch> record(Stream& stream, const Kernel& kernel,
                                                         const LaunchConfig& config,
                                                         const KernelArgs& args) noexcept;

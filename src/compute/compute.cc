@@ -606,7 +606,8 @@ Result<Kernel> Kernel::load_spirv(const Device& device, const SpirvBlob& blob,
   void* module = nullptr;
   void* func = nullptr;
   // SPIR-V is binary: pass the exact byte size (no length-prefix hack). Same vtable slot as
-  // PTX; the Vulkan backend uses code_size, the CUDA backend rejects SPIR-V shape via entry.
+  // PTX; the Vulkan backend consumes code_size, while the CUDA backend rejects any non-zero
+  // code_size (binary = SPIR-V) as Unimplemented (SPIR-V is Vulkan-only).
   Status st = e.vt->kernel_load_ptx(e.local, reinterpret_cast<const char*>(blob.words),
                                     blob.byte_size, entry, specs, spec_count,
                                     spec_data, spec_data_size, &module, &func);
