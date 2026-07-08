@@ -394,4 +394,111 @@ template <int kBits, class V> HYLE_FORCE_INLINE V RoundingShiftRight(V v) noexce
   return ShiftRight<kBits>(Add(v, Set(d, TFromD<DFromV<V>>(TFromD<DFromV<V>>{1} << (kBits - 1)))));
 }
 
+// ---- compress / gather / masked-memory completion (simd-08 B-5, generic layer) ------
+// All compose existing ops (Compress/Expand/GatherIndex/LoadN/StoreN/CompressStore/CountTrue/
+// LoadMaskBits/IfThenElse). Highway specializes some on AVX-512 (vpcompress/vpgather) -- those
+// are profiling upgrades; the generic forms are correct on every backend.
+// CompressNot(v, m) = Compress(v, Not(m)).
+template <class V, class M> HYLE_FORCE_INLINE V CompressNot(V v, M m) noexcept {
+  return Compress(v, Not(m));
+}
+// CompressBlendedStore(v, m, d, p): write only the true-mask lanes to p (same as
+// CompressStore -- our CompressStore already writes exactly CountTrue lanes). Returns count.
+template <class V, class M, class D>
+HYLE_FORCE_INLINE std::size_t CompressBlendedStore(V v, M m, D d, TFromD<D>* p) noexcept {
+  return CompressStore(v, m, d, p);
+}
+// CompressBits(v, bits): Compress by a mask loaded from a packed bitfield.
+template <class V>
+HYLE_FORCE_INLINE V CompressBits(V v, const std::uint8_t* bits) noexcept {
+  const DFromV<V> d;
+  std::uint64_t packed = 0;
+  const std::size_t nbytes = (Lanes(d) + 7) / 8;
+  for (std::size_t b = 0; b < nbytes; ++b) packed |= static_cast<std::uint64_t>(bits[b]) << (b * 8);
+  return Compress(v, LoadMaskBits(d, packed));
+}
+template <class V, class D>
+HYLE_FORCE_INLINE std::size_t CompressBitsStore(V v, const std::uint8_t* bits, D d, TFromD<D>* p) noexcept {
+  std::uint64_t packed = 0;
+  const std::size_t nbytes = (Lanes(d) + 7) / 8;
+  for (std::size_t b = 0; b < nbytes; ++b) packed |= static_cast<std::uint64_t>(bits[b]) << (b * 8);
+  return CompressStore(v, LoadMaskBits(d, packed), d, p);
+}
+// LoadExpand(m, d, p): scatter the first CountTrue(m) contiguous elements of p out to the
+// true-mask lanes (inverse of Compress-store). = Expand(LoadU(contiguous), m) semantics: load
+// then Expand. Our Expand(v,m) already scatters v's low lanes to the true lanes.
+template <class M, class D>
+HYLE_FORCE_INLINE VFromD<D> LoadExpand(M m, D d, const TFromD<D>* p) noexcept {
+  return Expand(LoadU(d, p), m);
+}
+// GatherOffset/ScatterOffset: like GatherIndex/ScatterIndex but offsets are in BYTES (base is
+// reinterpreted as a byte pointer). Generic loop over the offset vector.
+template <class D, class VI>
+HYLE_FORCE_INLINE VFromD<D> GatherOffset(D d, const TFromD<D>* base, VI offsets) noexcept {
+  using T = TFromD<D>;
+  alignas(64) std::int64_t off[D::kMaxLanes];
+  { alignas(64) typename VI::PrivateT tmp[D::kMaxLanes]; Store(offsets, DFromV<VI>(), tmp);
+    for (std::size_t i = 0; i < Lanes(d); ++i) off[i] = static_cast<std::int64_t>(tmp[i]); }
+  alignas(64) T out[D::kMaxLanes];
+  const auto* bytes = reinterpret_cast<const std::uint8_t*>(base);
+  for (std::size_t i = 0; i < Lanes(d); ++i) { T val; const auto* src = bytes + off[i];
+    for (std::size_t b = 0; b < sizeof(T); ++b) reinterpret_cast<std::uint8_t*>(&val)[b] = src[b]; out[i] = val; }
+  return Load(d, out);
+}
+template <class D, class VI>
+HYLE_FORCE_INLINE void ScatterOffset(VFromD<D> v, D d, TFromD<D>* base, VI offsets) noexcept {
+  using T = TFromD<D>;
+  alignas(64) T vals[D::kMaxLanes]; Store(v, d, vals);
+  alignas(64) typename VI::PrivateT off[D::kMaxLanes]; Store(offsets, DFromV<VI>(), off);
+  auto* bytes = reinterpret_cast<std::uint8_t*>(base);
+  for (std::size_t i = 0; i < Lanes(d); ++i) { auto* dst = bytes + static_cast<std::int64_t>(off[i]);
+    for (std::size_t b = 0; b < sizeof(T); ++b) dst[b] = reinterpret_cast<const std::uint8_t*>(&vals[i])[b]; }
+}
+// MaskedGatherIndexOr(no, m, d, base, idx): base[idx[i]] where m, else no[i] (no fault on
+// off-lanes). MaskedGatherIndex uses zero default. = IfThenElse(m, GatherIndex(...), no) -- but
+// to avoid faulting on inactive lanes we gather per-lane only where active.
+template <class V, class M, class D, class VI>
+HYLE_FORCE_INLINE VFromD<D> MaskedGatherIndexOr(V no, M m, D d, const TFromD<D>* base, VI idx) noexcept {
+  using T = TFromD<D>;
+  alignas(64) T nov[D::kMaxLanes]; Store(no, d, nov);
+  alignas(64) typename VI::PrivateT iv[D::kMaxLanes]; Store(idx, DFromV<VI>(), iv);
+  alignas(64) std::int32_t act[D::kMaxLanes]; Store(VecFromMask(d, m), d, reinterpret_cast<T*>(act));
+  alignas(64) T out[D::kMaxLanes];
+  for (std::size_t i = 0; i < Lanes(d); ++i)
+    out[i] = reinterpret_cast<const T*>(act)[i] ? base[static_cast<std::ptrdiff_t>(iv[i])] : nov[i];
+  return Load(d, out);
+}
+template <class M, class D, class VI>
+HYLE_FORCE_INLINE VFromD<D> MaskedGatherIndex(M m, D d, const TFromD<D>* base, VI idx) noexcept {
+  return MaskedGatherIndexOr(Zero(d), m, d, base, idx);
+}
+template <class V, class M, class D, class VI>
+HYLE_FORCE_INLINE void MaskedScatterIndex(V v, M m, D d, TFromD<D>* base, VI idx) noexcept {
+  using T = TFromD<D>;
+  alignas(64) T vv[D::kMaxLanes]; Store(v, d, vv);
+  alignas(64) typename VI::PrivateT iv[D::kMaxLanes]; Store(idx, DFromV<VI>(), iv);
+  alignas(64) T act[D::kMaxLanes]; Store(VecFromMask(d, m), d, act);
+  for (std::size_t i = 0; i < Lanes(d); ++i) if (act[i]) base[static_cast<std::ptrdiff_t>(iv[i])] = vv[i];
+}
+// LoadNOr(no, d, p, max): load min(Lanes, max) lanes from p into the low lanes, `no` elsewhere.
+template <class V, class D>
+HYLE_FORCE_INLINE VFromD<D> LoadNOr(V no, D d, const TFromD<D>* p, std::size_t max_lanes) noexcept {
+  using T = TFromD<D>;
+  const std::size_t k = max_lanes < Lanes(d) ? max_lanes : Lanes(d);
+  alignas(64) T tmp[D::kMaxLanes]; Store(no, d, tmp);
+  for (std::size_t i = 0; i < k; ++i) tmp[i] = p[i];
+  return Load(d, tmp);
+}
+// SafeFillN(num, value, d, to): set to[0,num) = value (num clamped to Lanes). SafeCopyN copies.
+template <class D>
+HYLE_FORCE_INLINE void SafeFillN(std::size_t num, TFromD<D> value, D d, TFromD<D>* to) noexcept {
+  const std::size_t k = num < Lanes(d) ? num : Lanes(d);
+  for (std::size_t i = 0; i < k; ++i) to[i] = value;
+}
+template <class D>
+HYLE_FORCE_INLINE void SafeCopyN(std::size_t num, D d, const TFromD<D>* from, TFromD<D>* to) noexcept {
+  const std::size_t k = num < Lanes(d) ? num : Lanes(d);
+  for (std::size_t i = 0; i < k; ++i) to[i] = from[i];
+}
+
 }  // namespace hyle::simd
