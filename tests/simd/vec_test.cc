@@ -501,6 +501,36 @@ TEST(Vec, MathExtSaturatedInt) {
   for (std::size_t i = 0; i < n; ++i) { int e = (static_cast<int>(a.data[i]) * b.data[i] + 0x4000) >> 15; EXPECT_EQ(out2.data[i], static_cast<std::int16_t>(e)) << "q15 i=" << i; }
 }
 
+// ---- B-1 Masked* family -------------------------------------------------------------
+// Masked<Op> zeroes off-lanes; Masked<Op>Or fills them from `no`. Check against a per-lane
+// reference driven by the same mask (lane i active iff i is even).
+TEST(Vec, MaskedFamily) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> a, b, no, out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<std::int32_t>(i + 5); b.data[i] = static_cast<std::int32_t>(i + 2); no.data[i] = -7; }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data), vno = hs::Load(d, no.data);
+  // mask: even lanes active (lane i & 1 == 0). Build via Eq(iota&1, 0)-style: use a vector.
+  Buf<std::int32_t> par; for (std::size_t i = 0; i < n; ++i) par.data[i] = static_cast<std::int32_t>(i % 2);
+  auto m = hs::Eq(hs::Load(d, par.data), hs::Set(d, 0));  // true on even lanes
+  auto active = [&](std::size_t i){ return (i % 2) == 0; };
+  hs::Store(hs::MaskedAdd(m, va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i]+b.data[i] : 0) << "MaskedAdd i=" << i;
+  hs::Store(hs::MaskedAddOr(m, vno, va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i]+b.data[i] : -7) << "MaskedAddOr i=" << i;
+  hs::Store(hs::MaskedMin(m, va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? std::min(a.data[i],b.data[i]) : 0) << "MaskedMin i=" << i;
+  hs::Store(hs::MaskedAbs(m, hs::Sub(vb, va)), d, out.data);  // |b-a| on active lanes
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? std::abs(b.data[i]-a.data[i]) : 0) << "MaskedAbs i=" << i;
+  // MaskedEq returns a mask ANDed with m: true only on active AND equal lanes.
+  auto meq = hs::MaskedEq(m, va, va);  // va==va always true, so = m
+  hs::Store(hs::VecFromMask(d, meq), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i] != 0, active(i)) << "MaskedEq i=" << i;
+  // MaskedMulAdd(m,a,b,c)=a*b+c on active, 0 else.
+  hs::Store(hs::MaskedMulAdd(m, va, vb, vno), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i]*b.data[i]+no.data[i] : 0) << "MaskedMulAdd i=" << i;
+}
+
 // ---- A-2 mask-domain logic ----------------------------------------------------------
 // Build two masks from comparisons, then check the mask And/Or/Xor/AndNot/Not/ExclusiveNeither
 // against per-lane bool references, plus IfThenZeroElse and MaskFromVec. Uses i32 lanes.

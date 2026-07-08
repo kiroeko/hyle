@@ -183,4 +183,69 @@ using Half = typename D::Half;
 template <class D>
 using Twice = typename D::Twice;
 
+// ---- Masked* family (compute-06 simd-08 B-1) ----------------------------------------
+// GENERIC layer: every Masked op is `IfThenElseZero(m, op(...))` (zero the off lanes) and its
+// *Or twin is `IfThenElse(m, op(...), or_v)` (fill off lanes from `or_v`). Backend-agnostic --
+// resolved against whichever backend header vec.h included above, so ONE definition covers
+// scalar/sse4/avx2/avx512/neon (Highway builds these generically the same way). These let a
+// vectorized loop apply an op only where a predicate holds (tail handling, conditional update,
+// divergence masking) without a separate blend at the call site. `M` = the backend mask type
+// (from a compare / FirstN), `V` = the vector type.
+//
+// Binary op families: Masked<Op>(m, a, b) and Masked<Op>Or(m, no, a, b).
+#define HYLE_SIMD_MASKED_BINARY(NAME, OP)                                             \
+  template <class M, class V> HYLE_FORCE_INLINE V Masked##NAME(M m, V a, V b) noexcept { \
+    return IfThenElseZero(m, OP(a, b)); }                                             \
+  template <class M, class V> HYLE_FORCE_INLINE V Masked##NAME##Or(M m, V no, V a, V b) noexcept { \
+    return IfThenElse(m, OP(a, b), no); }
+HYLE_SIMD_MASKED_BINARY(Add, Add)
+HYLE_SIMD_MASKED_BINARY(Sub, Sub)
+HYLE_SIMD_MASKED_BINARY(Mul, Mul)
+HYLE_SIMD_MASKED_BINARY(Div, Div)
+HYLE_SIMD_MASKED_BINARY(Min, Min)
+HYLE_SIMD_MASKED_BINARY(Max, Max)
+HYLE_SIMD_MASKED_BINARY(SaturatedAdd, SaturatedAdd)
+HYLE_SIMD_MASKED_BINARY(SaturatedSub, SaturatedSub)
+HYLE_SIMD_MASKED_BINARY(And, And)
+HYLE_SIMD_MASKED_BINARY(Or, Or)
+HYLE_SIMD_MASKED_BINARY(Xor, Xor)
+#undef HYLE_SIMD_MASKED_BINARY
+
+// Comparison families return a MASK, and the Masked form ANDs the predicate with the op's
+// result mask (Highway: MaskedEq(m,a,b) = And(m, Eq(a,b))) -- true only where m AND the compare.
+#define HYLE_SIMD_MASKED_CMP(NAME, OP)                                                \
+  template <class M, class V> HYLE_FORCE_INLINE M Masked##NAME(M m, V a, V b) noexcept { \
+    return And(m, OP(a, b)); }
+HYLE_SIMD_MASKED_CMP(Eq, Eq)
+HYLE_SIMD_MASKED_CMP(Ne, Ne)
+HYLE_SIMD_MASKED_CMP(Lt, Lt)
+HYLE_SIMD_MASKED_CMP(Le, Le)
+HYLE_SIMD_MASKED_CMP(Gt, Gt)
+HYLE_SIMD_MASKED_CMP(Ge, Ge)
+#undef HYLE_SIMD_MASKED_CMP
+
+// Unary op families: Masked<Op>(m, v) and Masked<Op>Or(m, no, v).
+#define HYLE_SIMD_MASKED_UNARY(NAME, OP)                                              \
+  template <class M, class V> HYLE_FORCE_INLINE V Masked##NAME(M m, V v) noexcept {   \
+    return IfThenElseZero(m, OP(v)); }                                                \
+  template <class M, class V> HYLE_FORCE_INLINE V Masked##NAME##Or(M m, V no, V v) noexcept { \
+    return IfThenElse(m, OP(v), no); }
+HYLE_SIMD_MASKED_UNARY(Abs, Abs)
+HYLE_SIMD_MASKED_UNARY(Sqrt, Sqrt)
+#undef HYLE_SIMD_MASKED_UNARY
+// MaskedIsNaN(m, v) = And(m, IsNaN(v)): NaN lanes that are also in the active set.
+template <class M, class V> HYLE_FORCE_INLINE M MaskedIsNaN(M m, V v) noexcept {
+  return And(m, IsNaN(v));
+}
+// FMA: MaskedMulAdd(m, a, b, c) = IfThenElseZero(m, MulAdd(a,b,c)); +Or twin.
+template <class M, class V> HYLE_FORCE_INLINE V MaskedMulAdd(M m, V a, V b, V c) noexcept {
+  return IfThenElseZero(m, MulAdd(a, b, c));
+}
+template <class M, class V> HYLE_FORCE_INLINE V MaskedMulAddOr(M m, V no, V a, V b, V c) noexcept {
+  return IfThenElse(m, MulAdd(a, b, c), no);
+}
+template <class M, class V> HYLE_FORCE_INLINE V MaskedNegMulAdd(M m, V a, V b, V c) noexcept {
+  return IfThenElseZero(m, NegMulAdd(a, b, c));
+}
+
 }  // namespace hyle::simd
