@@ -176,6 +176,101 @@ HYLE_FORCE_INLINE void StoreU(VecNeon<T, N> v, Simd<T, N, 0>, T* p) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE void Store(VecNeon<T, N> v, Simd<T, N, 0> d, T* p) noexcept { StoreU(v, d, p); }
 
+// ---- interleaved load / store (AoS <-> SoA) -----------------------------------------
+// Native NEON deinterleave/interleave: vld2q/vld3q/vld4q + vst2q/vst3q/vst4q. aarch64 has
+// these for every 128-bit lane type (s8..s64/u8..u64/f32/f64), so no strided fallback is
+// needed here (the x86 backends do the store+reload copy). Dispatch on lane type via if
+// constexpr; the vldNq_* return the val[] struct types, vstNq_* take them.
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved2(D, const TFromD<D>* p, detail::VN<D>& v0,
+                                        detail::VN<D>& v1) noexcept {
+  using T = TFromD<D>;
+  if constexpr (std::is_same_v<T, float>) { auto x = vld2q_f32(p); v0.raw = x.val[0]; v1.raw = x.val[1]; }
+  else if constexpr (std::is_same_v<T, double>) { auto x = vld2q_f64(p); v0.raw = x.val[0]; v1.raw = x.val[1]; }
+  else if constexpr (std::is_same_v<T, std::int8_t>) { auto x = vld2q_s8(p); v0.raw = x.val[0]; v1.raw = x.val[1]; }
+  else if constexpr (std::is_same_v<T, std::uint8_t>) { auto x = vld2q_u8(p); v0.raw = x.val[0]; v1.raw = x.val[1]; }
+  else if constexpr (std::is_same_v<T, std::int16_t>) { auto x = vld2q_s16(p); v0.raw = x.val[0]; v1.raw = x.val[1]; }
+  else if constexpr (std::is_same_v<T, std::uint16_t>) { auto x = vld2q_u16(p); v0.raw = x.val[0]; v1.raw = x.val[1]; }
+  else if constexpr (std::is_same_v<T, std::int32_t>) { auto x = vld2q_s32(p); v0.raw = x.val[0]; v1.raw = x.val[1]; }
+  else if constexpr (std::is_same_v<T, std::uint32_t>) { auto x = vld2q_u32(p); v0.raw = x.val[0]; v1.raw = x.val[1]; }
+  else if constexpr (std::is_same_v<T, std::int64_t>) { auto x = vld2q_s64(p); v0.raw = x.val[0]; v1.raw = x.val[1]; }
+  else { auto x = vld2q_u64(p); v0.raw = x.val[0]; v1.raw = x.val[1]; }
+}
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved3(D, const TFromD<D>* p, detail::VN<D>& v0, detail::VN<D>& v1,
+                                        detail::VN<D>& v2) noexcept {
+  using T = TFromD<D>;
+  if constexpr (std::is_same_v<T, float>) { auto x = vld3q_f32(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; }
+  else if constexpr (std::is_same_v<T, double>) { auto x = vld3q_f64(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; }
+  else if constexpr (std::is_same_v<T, std::int8_t>) { auto x = vld3q_s8(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; }
+  else if constexpr (std::is_same_v<T, std::uint8_t>) { auto x = vld3q_u8(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; }
+  else if constexpr (std::is_same_v<T, std::int16_t>) { auto x = vld3q_s16(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; }
+  else if constexpr (std::is_same_v<T, std::uint16_t>) { auto x = vld3q_u16(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; }
+  else if constexpr (std::is_same_v<T, std::int32_t>) { auto x = vld3q_s32(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; }
+  else if constexpr (std::is_same_v<T, std::uint32_t>) { auto x = vld3q_u32(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; }
+  else if constexpr (std::is_same_v<T, std::int64_t>) { auto x = vld3q_s64(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; }
+  else { auto x = vld3q_u64(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; }
+}
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved4(D, const TFromD<D>* p, detail::VN<D>& v0, detail::VN<D>& v1,
+                                        detail::VN<D>& v2, detail::VN<D>& v3) noexcept {
+  using T = TFromD<D>;
+  if constexpr (std::is_same_v<T, float>) { auto x = vld4q_f32(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; v3.raw = x.val[3]; }
+  else if constexpr (std::is_same_v<T, double>) { auto x = vld4q_f64(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; v3.raw = x.val[3]; }
+  else if constexpr (std::is_same_v<T, std::int8_t>) { auto x = vld4q_s8(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; v3.raw = x.val[3]; }
+  else if constexpr (std::is_same_v<T, std::uint8_t>) { auto x = vld4q_u8(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; v3.raw = x.val[3]; }
+  else if constexpr (std::is_same_v<T, std::int16_t>) { auto x = vld4q_s16(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; v3.raw = x.val[3]; }
+  else if constexpr (std::is_same_v<T, std::uint16_t>) { auto x = vld4q_u16(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; v3.raw = x.val[3]; }
+  else if constexpr (std::is_same_v<T, std::int32_t>) { auto x = vld4q_s32(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; v3.raw = x.val[3]; }
+  else if constexpr (std::is_same_v<T, std::uint32_t>) { auto x = vld4q_u32(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; v3.raw = x.val[3]; }
+  else if constexpr (std::is_same_v<T, std::int64_t>) { auto x = vld4q_s64(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; v3.raw = x.val[3]; }
+  else { auto x = vld4q_u64(p); v0.raw = x.val[0]; v1.raw = x.val[1]; v2.raw = x.val[2]; v3.raw = x.val[3]; }
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved2(detail::VN<D> v0, detail::VN<D> v1, D, TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  if constexpr (std::is_same_v<T, float>) { float32x4x2_t x{{v0.raw, v1.raw}}; vst2q_f32(p, x); }
+  else if constexpr (std::is_same_v<T, double>) { float64x2x2_t x{{v0.raw, v1.raw}}; vst2q_f64(p, x); }
+  else if constexpr (std::is_same_v<T, std::int8_t>) { int8x16x2_t x{{v0.raw, v1.raw}}; vst2q_s8(p, x); }
+  else if constexpr (std::is_same_v<T, std::uint8_t>) { uint8x16x2_t x{{v0.raw, v1.raw}}; vst2q_u8(p, x); }
+  else if constexpr (std::is_same_v<T, std::int16_t>) { int16x8x2_t x{{v0.raw, v1.raw}}; vst2q_s16(p, x); }
+  else if constexpr (std::is_same_v<T, std::uint16_t>) { uint16x8x2_t x{{v0.raw, v1.raw}}; vst2q_u16(p, x); }
+  else if constexpr (std::is_same_v<T, std::int32_t>) { int32x4x2_t x{{v0.raw, v1.raw}}; vst2q_s32(p, x); }
+  else if constexpr (std::is_same_v<T, std::uint32_t>) { uint32x4x2_t x{{v0.raw, v1.raw}}; vst2q_u32(p, x); }
+  else if constexpr (std::is_same_v<T, std::int64_t>) { int64x2x2_t x{{v0.raw, v1.raw}}; vst2q_s64(p, x); }
+  else { uint64x2x2_t x{{v0.raw, v1.raw}}; vst2q_u64(p, x); }
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved3(detail::VN<D> v0, detail::VN<D> v1, detail::VN<D> v2, D,
+                                         TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  if constexpr (std::is_same_v<T, float>) { float32x4x3_t x{{v0.raw, v1.raw, v2.raw}}; vst3q_f32(p, x); }
+  else if constexpr (std::is_same_v<T, double>) { float64x2x3_t x{{v0.raw, v1.raw, v2.raw}}; vst3q_f64(p, x); }
+  else if constexpr (std::is_same_v<T, std::int8_t>) { int8x16x3_t x{{v0.raw, v1.raw, v2.raw}}; vst3q_s8(p, x); }
+  else if constexpr (std::is_same_v<T, std::uint8_t>) { uint8x16x3_t x{{v0.raw, v1.raw, v2.raw}}; vst3q_u8(p, x); }
+  else if constexpr (std::is_same_v<T, std::int16_t>) { int16x8x3_t x{{v0.raw, v1.raw, v2.raw}}; vst3q_s16(p, x); }
+  else if constexpr (std::is_same_v<T, std::uint16_t>) { uint16x8x3_t x{{v0.raw, v1.raw, v2.raw}}; vst3q_u16(p, x); }
+  else if constexpr (std::is_same_v<T, std::int32_t>) { int32x4x3_t x{{v0.raw, v1.raw, v2.raw}}; vst3q_s32(p, x); }
+  else if constexpr (std::is_same_v<T, std::uint32_t>) { uint32x4x3_t x{{v0.raw, v1.raw, v2.raw}}; vst3q_u32(p, x); }
+  else if constexpr (std::is_same_v<T, std::int64_t>) { int64x2x3_t x{{v0.raw, v1.raw, v2.raw}}; vst3q_s64(p, x); }
+  else { uint64x2x3_t x{{v0.raw, v1.raw, v2.raw}}; vst3q_u64(p, x); }
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved4(detail::VN<D> v0, detail::VN<D> v1, detail::VN<D> v2,
+                                         detail::VN<D> v3, D, TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  if constexpr (std::is_same_v<T, float>) { float32x4x4_t x{{v0.raw, v1.raw, v2.raw, v3.raw}}; vst4q_f32(p, x); }
+  else if constexpr (std::is_same_v<T, double>) { float64x2x4_t x{{v0.raw, v1.raw, v2.raw, v3.raw}}; vst4q_f64(p, x); }
+  else if constexpr (std::is_same_v<T, std::int8_t>) { int8x16x4_t x{{v0.raw, v1.raw, v2.raw, v3.raw}}; vst4q_s8(p, x); }
+  else if constexpr (std::is_same_v<T, std::uint8_t>) { uint8x16x4_t x{{v0.raw, v1.raw, v2.raw, v3.raw}}; vst4q_u8(p, x); }
+  else if constexpr (std::is_same_v<T, std::int16_t>) { int16x8x4_t x{{v0.raw, v1.raw, v2.raw, v3.raw}}; vst4q_s16(p, x); }
+  else if constexpr (std::is_same_v<T, std::uint16_t>) { uint16x8x4_t x{{v0.raw, v1.raw, v2.raw, v3.raw}}; vst4q_u16(p, x); }
+  else if constexpr (std::is_same_v<T, std::int32_t>) { int32x4x4_t x{{v0.raw, v1.raw, v2.raw, v3.raw}}; vst4q_s32(p, x); }
+  else if constexpr (std::is_same_v<T, std::uint32_t>) { uint32x4x4_t x{{v0.raw, v1.raw, v2.raw, v3.raw}}; vst4q_u32(p, x); }
+  else if constexpr (std::is_same_v<T, std::int64_t>) { int64x2x4_t x{{v0.raw, v1.raw, v2.raw, v3.raw}}; vst4q_s64(p, x); }
+  else { uint64x2x4_t x{{v0.raw, v1.raw, v2.raw, v3.raw}}; vst4q_u64(p, x); }
+}
+
 // ---- arithmetic ---------------------------------------------------------------------
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Add(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {

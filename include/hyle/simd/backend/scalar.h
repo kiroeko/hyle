@@ -94,6 +94,47 @@ HYLE_FORCE_INLINE void Store(VFromD<D> v, D d, TFromD<D>* p) noexcept {
   StoreU(v, d, p);
 }
 
+// ---- interleaved load / store (AoS <-> SoA) -----------------------------------------
+// LoadInterleaved2/3/4(d, p, v0..): DEINTERLEAVE K consecutive-in-memory streams into K
+// vectors: v0[i]=p[K*i+0], v1[i]=p[K*i+1], ... (Highway: v0[0]==p[0], v1[0]==p[1]). The
+// classic RGB(A) / complex / vertex-attribute AoS->SoA split. StoreInterleaved does the
+// inverse SoA->AoS. Native on NEON (vld2/3/4q + vst2/3/4q); the scalar floor + x86 do the
+// strided copy (NEON's own fallback is also memory-based for wide types). N = Lanes.
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved2(D, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  for (std::size_t i = 0; i < N; ++i) { v0.raw[i] = p[2 * i]; v1.raw[i] = p[2 * i + 1]; }
+}
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved3(D, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
+                                        VFromD<D>& v2) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  for (std::size_t i = 0; i < N; ++i) { v0.raw[i] = p[3*i]; v1.raw[i] = p[3*i+1]; v2.raw[i] = p[3*i+2]; }
+}
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved4(D, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
+                                        VFromD<D>& v2, VFromD<D>& v3) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  for (std::size_t i = 0; i < N; ++i) { v0.raw[i]=p[4*i]; v1.raw[i]=p[4*i+1]; v2.raw[i]=p[4*i+2]; v3.raw[i]=p[4*i+3]; }
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D, TFromD<D>* p) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  for (std::size_t i = 0; i < N; ++i) { p[2*i] = v0.raw[i]; p[2*i+1] = v1.raw[i]; }
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D,
+                                         TFromD<D>* p) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  for (std::size_t i = 0; i < N; ++i) { p[3*i]=v0.raw[i]; p[3*i+1]=v1.raw[i]; p[3*i+2]=v2.raw[i]; }
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, VFromD<D> v3, D,
+                                         TFromD<D>* p) noexcept {
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  for (std::size_t i = 0; i < N; ++i) { p[4*i]=v0.raw[i]; p[4*i+1]=v1.raw[i]; p[4*i+2]=v2.raw[i]; p[4*i+3]=v3.raw[i]; }
+}
+
 // ---- arithmetic ---------------------------------------------------------------------
 #define HYLE_SIMD_SCALAR_BINOP(NAME, EXPR)                                  \
   template <typename T, std::size_t N>                                      \

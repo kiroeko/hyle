@@ -411,6 +411,46 @@ TEST(Vec, SumOfMulQuadAccumulate) {
   }
 }
 
+// ---- A-6 interleaved load/store (AoS <-> SoA) ---------------------------------------
+// StoreInterleavedK writes K vectors as interleaved AoS; LoadInterleavedK reads it back.
+// Check both the interleaved memory layout AND the deinterleave round-trip.
+TEST(Vec, InterleavedLoadStore) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> s0, s1, s2, s3;
+  for (std::size_t i = 0; i < n; ++i) {
+    s0.data[i] = static_cast<std::int32_t>(i);          s1.data[i] = static_cast<std::int32_t>(100 + i);
+    s2.data[i] = static_cast<std::int32_t>(200 + i);    s3.data[i] = static_cast<std::int32_t>(300 + i);
+  }
+  auto v0 = hs::Load(d, s0.data), v1 = hs::Load(d, s1.data), v2 = hs::Load(d, s2.data), v3 = hs::Load(d, s3.data);
+  // --- 2-way ---
+  std::int32_t buf2[kMaxLanes * 2];
+  hs::StoreInterleaved2(v0, v1, d, buf2);
+  for (std::size_t i = 0; i < n; ++i) { EXPECT_EQ(buf2[2*i], s0.data[i]); EXPECT_EQ(buf2[2*i+1], s1.data[i]); }
+  Buf<std::int32_t> r0, r1, r2, r3;
+  hs::VFromD<decltype(d)> lv0, lv1, lv2, lv3;
+  hs::LoadInterleaved2(d, buf2, lv0, lv1);
+  hs::Store(lv0, d, r0.data); hs::Store(lv1, d, r1.data);
+  for (std::size_t i = 0; i < n; ++i) { EXPECT_EQ(r0.data[i], s0.data[i]); EXPECT_EQ(r1.data[i], s1.data[i]); }
+  // --- 3-way ---
+  std::int32_t buf3[kMaxLanes * 3];
+  hs::StoreInterleaved3(v0, v1, v2, d, buf3);
+  for (std::size_t i = 0; i < n; ++i) { EXPECT_EQ(buf3[3*i], s0.data[i]); EXPECT_EQ(buf3[3*i+1], s1.data[i]); EXPECT_EQ(buf3[3*i+2], s2.data[i]); }
+  hs::LoadInterleaved3(d, buf3, lv0, lv1, lv2);
+  hs::Store(lv0,d,r0.data); hs::Store(lv1,d,r1.data); hs::Store(lv2,d,r2.data);
+  for (std::size_t i = 0; i < n; ++i) { EXPECT_EQ(r0.data[i], s0.data[i]); EXPECT_EQ(r1.data[i], s1.data[i]); EXPECT_EQ(r2.data[i], s2.data[i]); }
+  // --- 4-way ---
+  std::int32_t buf4[kMaxLanes * 4];
+  hs::StoreInterleaved4(v0, v1, v2, v3, d, buf4);
+  for (std::size_t i = 0; i < n; ++i) { EXPECT_EQ(buf4[4*i], s0.data[i]); EXPECT_EQ(buf4[4*i+3], s3.data[i]); }
+  hs::LoadInterleaved4(d, buf4, lv0, lv1, lv2, lv3);
+  hs::Store(lv0,d,r0.data); hs::Store(lv1,d,r1.data); hs::Store(lv2,d,r2.data); hs::Store(lv3,d,r3.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(r0.data[i], s0.data[i]); EXPECT_EQ(r1.data[i], s1.data[i]);
+    EXPECT_EQ(r2.data[i], s2.data[i]); EXPECT_EQ(r3.data[i], s3.data[i]);
+  }
+}
+
 // ---- A-2 mask-domain logic ----------------------------------------------------------
 // Build two masks from comparisons, then check the mask And/Or/Xor/AndNot/Not/ExclusiveNeither
 // against per-lane bool references, plus IfThenZeroElse and MaskFromVec. Uses i32 lanes.

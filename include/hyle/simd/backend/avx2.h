@@ -151,6 +151,62 @@ HYLE_FORCE_INLINE void Store(Vec256<T, N> v, Simd<T, N, 0>, T* p) noexcept {
   else _mm256_store_si256(reinterpret_cast<__m256i*>(p), v.raw);
 }
 
+// ---- interleaved load / store (AoS <-> SoA) -----------------------------------------
+// correctness-first strided copy; native deinterleave shuffles are a profiling upgrade.
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
+                                        VFromD<D>& v1) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) T t0[N], t1[N];
+  for (std::size_t i = 0; i < N; ++i) { t0[i] = p[2 * i]; t1[i] = p[2 * i + 1]; }
+  v0 = Load(d, t0); v1 = Load(d, t1);
+}
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
+                                        VFromD<D>& v2) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) T t0[N], t1[N], t2[N];
+  for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
+  v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
+}
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
+                                        VFromD<D>& v2, VFromD<D>& v3) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) T t0[N], t1[N], t2[N], t3[N];
+  for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
+  v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) T t0[N], t1[N];
+  Store(v0, d, t0); Store(v1, d, t1);
+  for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D d,
+                                         TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) T t0[N], t1[N], t2[N];
+  Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
+  for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, VFromD<D> v3, D d,
+                                         TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) T t0[N], t1[N], t2[N], t3[N];
+  Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2); Store(v3, d, t3);
+  for (std::size_t i = 0; i < N; ++i) { p[4*i]=t0[i]; p[4*i+1]=t1[i]; p[4*i+2]=t2[i]; p[4*i+3]=t3[i]; }
+}
+
 // ---- arithmetic ---------------------------------------------------------------------
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Add(Vec256<T, N> a, Vec256<T, N> b) noexcept {
