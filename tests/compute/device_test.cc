@@ -5,6 +5,8 @@
 #include <cstdint>
 #include <vector>
 
+#include "hyle/compute/buffer.h"
+#include "hyle/compute/kernel.h"
 #include "hyle/compute/stream.h"
 
 // compute-01 tests. Two layers:
@@ -211,54 +213,14 @@ TEST(ComputeEvent, SelfMoveAssignment) {
   EXPECT_TRUE(ev->valid());   // handle not freed
 }
 
-// ---- the completion proof: an async copy moves bytes, event observes done ----
-
-TEST(ComputeStream, AsyncCopyRoundTrip) {
-  bool is_gpu = false;
-  Device d = find_gpu_or_host(&is_gpu);
-  auto s = Stream::create(d);
-  ASSERT_TRUE(s.has_value()) << s.error().message();
-  auto ev = Event::create(d);
-  ASSERT_TRUE(ev.has_value()) << ev.error().message();
-
-  constexpr std::size_t kN = 1024;
-  std::vector<std::uint32_t> host_in(kN), host_out(kN, 0);
-  for (std::size_t i = 0; i < kN; ++i) host_in[i] = static_cast<std::uint32_t>(i * 3 + 1);
-  const std::size_t bytes = kN * sizeof(std::uint32_t);
-
-  // Allocate device memory, copy H2D, then D2H back into host_out, record an event.
-  auto dptr = s->device_alloc(bytes);
-  ASSERT_TRUE(dptr.has_value()) << dptr.error().message();
-
-  ASSERT_TRUE(s->memcpy_async(*dptr, host_in.data(), bytes).ok());
-  ASSERT_TRUE(s->memcpy_async(host_out.data(), *dptr, bytes).ok());
-  s->record(*ev);
-
-  // Wait for completion (blocking here; compute-03 replaces this with co_await).
-  ASSERT_TRUE(s->sync().ok());
-  EXPECT_EQ(ev->query(), EventStatus::kReady);
-
-  // The bytes must have round-tripped through device memory.
-  for (std::size_t i = 0; i < kN; ++i) {
-    EXPECT_EQ(host_out[i], host_in[i]) << "mismatch at " << i;
-  }
-  s->device_free(*dptr);
-}
-
-// size=0 device_alloc: exercises the bytes==0?1:bytes guard (host_backend.cc:81). A
-// zero-byte alloc still returns a valid, freeable pointer (a degenerate but legal
-// request the completion-spine minimum must not choke on).
-TEST(ComputeStream, ZeroSizeDeviceAlloc) {
-  Device d = default_device();
-  auto s = Stream::create(d);
-  ASSERT_TRUE(s.has_value());
-  auto dptr = s->device_alloc(0);
-  ASSERT_TRUE(dptr.has_value()) << dptr.error().message();
-  EXPECT_NE(*dptr, nullptr);  // backend rounded 0 -> 1 byte
-  s->device_free(*dptr);      // must be freeable without abort
-}
-
 // ---- GPU-only: event visibly polls NotReady -> Ready (the reap model) --------
+// The async, stream-bound work that leaves an Event observably NotReady is a KERNEL
+// LAUNCH (compute-04) -- compute-01's raw device_alloc/memcpy_async was removed (Buffer,
+// compute-02, superseded it, but Buffer set/get is SYNCHRONOUS so it can't leave work in
+// flight). We NVRTC-compile a deliberately-heavy spin kernel so it is still running when
+// we first poll, exercising cudaEventQuery's NotReady->Ready transition. We do NOT assert
+// we SEE NotReady (a fast GPU could finish first -- flaky); we assert the poll loop
+// TERMINATES at kReady and sync() agrees.
 TEST(ComputeEvent, GpuEventPollsToReady) {
   bool is_gpu = false;
   Device d = find_gpu_or_host(&is_gpu);
@@ -271,19 +233,30 @@ TEST(ComputeEvent, GpuEventPollsToReady) {
   auto ev = Event::create(d);
   ASSERT_TRUE(ev.has_value()) << ev.error().message();
 
-  // Enqueue enough async work that the event is plausibly NOT ready immediately,
-  // then poll it to completion -- exercising cudaEventQuery's NotReady->Ready
-  // transition (the compute-03 worker-reap primitive). We do NOT assert we SEE
-  // NotReady (a fast GPU may finish before the first poll -- that would be flaky);
-  // we assert the poll loop TERMINATES at kReady and sync() agrees.
-  constexpr std::size_t kBig = 16 * 1024 * 1024;  // 16 MiB, a few copies
-  auto dptr = s->device_alloc(kBig);
-  ASSERT_TRUE(dptr.has_value()) << dptr.error().message();
-  std::vector<std::uint8_t> host(kBig, 0xAB);
-  for (int i = 0; i < 8; ++i) {
-    ASSERT_TRUE(s->memcpy_async(*dptr, host.data(), kBig).ok());
-    ASSERT_TRUE(s->memcpy_async(host.data(), *dptr, kBig).ok());
+  // A heavy spin kernel writing out[i]=i (the acc loop is masked to 0), still in flight
+  // at the first poll below.
+  constexpr const char* kSpin = R"(
+extern "C" __global__ void spin(unsigned* out, int n, int iters) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < n) {
+    unsigned acc = 0;
+    for (int k = 0; k < iters; ++k) acc = acc * 1664525u + 1013904223u;
+    out[i] = (unsigned)i + (acc & 0u);
   }
+}
+)";
+  auto k = Kernel::compile(d, kSpin, "spin");
+  ASSERT_TRUE(k.has_value()) << k.error().message();
+
+  constexpr int kN = 4096;
+  auto out = Buffer::create(device_buffer_type(d), kN * sizeof(unsigned));
+  ASSERT_TRUE(out.has_value()) << out.error().message();
+
+  int n = kN, iters = 200000;
+  LaunchConfig cfg;
+  cfg.block = {256, 1, 1};
+  cfg.grid = {blocks_for(kN, 256), 1, 1};
+  ASSERT_TRUE(launch(*s, *k, cfg, *out, n, iters).ok());
   s->record(*ev);
 
   // Poll like a worker would: spin on query() until Ready. Bounded so a bug can't
@@ -294,5 +267,9 @@ TEST(ComputeEvent, GpuEventPollsToReady) {
   }
   EXPECT_EQ(st, EventStatus::kReady);
   EXPECT_TRUE(s->sync().ok());
-  s->device_free(*dptr);
+
+  // The kernel actually ran: out[i] == i.
+  std::vector<unsigned> host_out(kN, 0xFFFFFFFFu);
+  ASSERT_TRUE(out->get(0, host_out.data(), kN * sizeof(unsigned)).ok());
+  for (int i = 0; i < kN; ++i) EXPECT_EQ(host_out[i], static_cast<unsigned>(i)) << "at " << i;
 }

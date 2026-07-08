@@ -115,11 +115,12 @@ class Event {
 // stream.h): work enqueued on it runs in order, asynchronously to the host on a
 // real GPU. It is the "schedulable resource that produces completions" of
 // compute-design §4. Move-only (owns a cudaStream_t / host queue). compute-01
-// gives it lifecycle + record + a memcpy op sufficient to make an Event observably
-// transition NotReady->Ready; kernel launch is compute-04.
+// gives it lifecycle + record + sync; the async work that makes an Event observably
+// transition NotReady->Ready is a kernel launch (compute-04) or a Buffer copy
+// (compute-02).
 //
 // CONCURRENCY CONTRACT (like a CUDA stream): a Stream belongs to ONE execution flow
-// (one fiber / one thread) at a time. record()/launch()/launch_batch()/memcpy on the
+// (one fiber / one thread) at a time. record()/launch()/launch_batch() on the
 // SAME Stream must NOT be called concurrently from multiple fibers or threads -- the
 // per-stream submission state (command pool + in-flight tracking on the Vulkan backend)
 // is NOT internally locked; concurrent use is a data race + a Vulkan external-sync
@@ -151,31 +152,10 @@ class Stream {
   // (a device error surfaces as a returned Status); the common success path is void.
   HYLE_COMPUTE_API Status sync() noexcept;
 
-  // ---- device memory + async copy (minimal, for compute-01 completion proof) ----
-  // compute-01 needs *some* real async device work to make an Event visibly go
-  // NotReady->Ready on a GPU. A device malloc + an async H2D/D2H copy is the
-  // smallest such work that needs NO kernel (kernel launch is compute-04). This is
-  // NOT the compute-02 buffer abstraction (owned, typed, buffer_type instances) --
-  // it is the raw minimum to exercise the stream/event spine. compute-02 supersedes it.
-
-  // Allocate `bytes` of DEVICE memory on this stream's device (cudaMalloc; host:
-  // plain malloc). Returns the device pointer or an external-boundary failure.
-  HYLE_COMPUTE_API Result<void*> device_alloc(std::size_t bytes) noexcept;
-  // Free a pointer from device_alloc (cudaFree / free). Null is a no-op.
-  HYLE_COMPUTE_API void device_free(void* ptr) noexcept;
-
-  // Enqueue an ASYNC copy of `bytes` from `src` to `dst` on this stream
-  // (cudaMemcpyAsync; host: memcpy inline). Direction is inferred by the backend
-  // from the pointers it minted. `src`/`dst` must outlive the copy's completion
-  // (caller contract -- same as io buffers). Returns a submit-time failure; a
-  // completed-with-error surfaces via the recorded Event / sync().
-  HYLE_COMPUTE_API Status memcpy_async(void* dst, const void* src,
-                                       std::size_t bytes) noexcept;
-
  private:
   // Inline state (no pimpl / no heap, same perf rationale as Event). A Stream is
   // long-lived (one per connection/fiber) so this isn't a hot-path alloc, but
-  // inlining keeps record()/memcpy_async() to a single vtable indirect.
+  // inlining keeps record() to a single vtable indirect.
   // kernel.h's launch() needs native_ to submit to this stream (defined in the same
   // .cc dispatch layer); friend it rather than exposing the backend handle publicly.
   // This is the C-ABI core launch taking a KernelArgs (the variadic typed shell in

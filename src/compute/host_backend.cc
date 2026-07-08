@@ -17,10 +17,9 @@
 // Semantics: a host "stream" runs work INLINE at enqueue time (there is no async
 // engine), so an Event recorded on it is ALWAYS immediately kReady. This honors the
 // same record/query/sync API the CUDA backend does -- the caller's code path is
-// identical -- it just never observes NotReady. device_alloc is plain malloc;
-// memcpy_async is a synchronous memcpy. No per-object heap allocation: the stream/
-// event native handles are non-null SENTINELS (there is no per-instance state to
-// keep -- inline execution means an event carries no pending work).
+// identical -- it just never observes NotReady. No per-object heap allocation: the
+// stream/event native handles are non-null SENTINELS (there is no per-instance state
+// to keep -- inline execution means an event carries no pending work).
 
 namespace hyle::compute {
 namespace {
@@ -76,21 +75,6 @@ EventStatus host_event_query(void*) noexcept {
 }
 
 void host_event_sync(void*) noexcept {}  // already complete
-
-Status host_device_alloc(int, std::size_t bytes, void** out_ptr) noexcept {
-  void* p = std::malloc(bytes == 0 ? 1 : bytes);  // malloc(0) is impl-defined; give 1
-  if (p == nullptr) return Status::ResourceExhausted("host: device_alloc");
-  *out_ptr = p;
-  return Status();
-}
-
-void host_device_free(int, void* ptr) noexcept { std::free(ptr); }
-
-Status host_memcpy_async(void*, void* dst, const void* src,
-                         std::size_t bytes) noexcept {
-  std::memcpy(dst, src, bytes);  // synchronous on host
-  return Status();
-}
 
 // ---- buffer (compute-02) ----------------------------------------------------
 // On the host backend both BufferKinds are just plain RAM (there is no separate
@@ -287,9 +271,6 @@ constexpr ComputeBackend kHostBackend = {
     /*event_record=*/host_event_record,
     /*event_query=*/host_event_query,
     /*event_sync=*/host_event_sync,
-    /*device_alloc=*/host_device_alloc,
-    /*device_free=*/host_device_free,
-    /*memcpy_async=*/host_memcpy_async,
     /*buffer_alignment=*/host_buffer_alignment,
     /*buffer_max_size=*/host_buffer_max_size,
     /*buffer_is_host=*/host_buffer_is_host,

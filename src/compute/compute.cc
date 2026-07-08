@@ -175,24 +175,6 @@ Status Stream::sync() noexcept {
   return vt_->stream_sync(native_);
 }
 
-Result<void*> Stream::device_alloc(std::size_t bytes) noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr);
-  void* ptr = nullptr;
-  Status st = vt_->device_alloc(local_, bytes, &ptr);
-  if (!st.ok()) return std::unexpected(std::move(st));
-  return ptr;
-}
-
-void Stream::device_free(void* ptr) noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr);
-  vt_->device_free(local_, ptr);
-}
-
-Status Stream::memcpy_async(void* dst, const void* src, std::size_t bytes) noexcept {
-  HYLE_FATAL_ASSERT(vt_ != nullptr);
-  return vt_->memcpy_async(native_, dst, src, bytes);
-}
-
 // ---- Event ------------------------------------------------------------------
 
 Event::Event(Event&& o) noexcept

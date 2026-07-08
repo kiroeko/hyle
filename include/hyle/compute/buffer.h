@@ -19,8 +19,9 @@
 
 // compute-02: device Buffer -- ownership of ONE block of device (or pinned-host)
 // memory + host<->device copy with byte offsets (compute-design "模块形状" buffer.h).
-// Mirrors ggml's buffer_type/buffer model (trait薄包 + ownership自造). Supersedes
-// compute-01's Stream::device_alloc/memcpy_async (those were the spine-proof minimum).
+// Mirrors ggml's buffer_type/buffer model (trait薄包 + ownership自造). This is the
+// ONLY device-memory + host<->device copy API; compute-01's spine-proof Stream::
+// device_alloc/memcpy_async minimum has been removed in favor of it.
 //
 // WHAT A Buffer IS (and is NOT): a Buffer is "a base pointer + size" you can copy
 // into/out of at an offset. It is NOT a tensor -- no shape, no dtype, no sub-views.

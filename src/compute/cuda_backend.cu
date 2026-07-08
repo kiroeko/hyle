@@ -196,29 +196,6 @@ void cuda_event_sync(void* event_native) noexcept {
   cudaEventSynchronize(static_cast<cudaEvent_t>(event_native));
 }
 
-Status cuda_device_alloc(int ordinal, std::size_t bytes, void** out_ptr) noexcept {
-  cudaError_t e = set_device(ordinal);
-  if (e != cudaSuccess) return from_cuda(e, "cudaSetDevice");
-  void* p = nullptr;
-  e = cudaMalloc(&p, bytes == 0 ? 1 : bytes);
-  if (e != cudaSuccess) return from_cuda(e, "cudaMalloc");
-  *out_ptr = p;
-  return Status();
-}
-
-void cuda_device_free(int, void* ptr) noexcept {
-  if (ptr != nullptr) cudaFree(ptr);
-}
-
-Status cuda_memcpy_async(void* stream_native, void* dst, const void* src,
-                         std::size_t bytes) noexcept {
-  // cudaMemcpyDefault lets the driver infer direction from the pointers' address
-  // spaces (requires unified virtual addressing -- true on all supported GPUs).
-  cudaError_t e = cudaMemcpyAsync(dst, src, bytes, cudaMemcpyDefault,
-                                  static_cast<cudaStream_t>(stream_native));
-  return from_cuda(e, "cudaMemcpyAsync");
-}
-
 // ---- buffer (compute-02) ----------------------------------------------------
 // kDevice = cudaMalloc (VRAM, not host-dereferenceable, alignment 128 matching
 // ggml's cuda buffer_type). kHostPinned = cudaMallocHost (page-locked host RAM for
@@ -799,9 +776,6 @@ constexpr ComputeBackend kCudaBackend = {
     /*event_record=*/cuda_event_record,
     /*event_query=*/cuda_event_query,
     /*event_sync=*/cuda_event_sync,
-    /*device_alloc=*/cuda_device_alloc,
-    /*device_free=*/cuda_device_free,
-    /*memcpy_async=*/cuda_memcpy_async,
     /*buffer_alignment=*/cuda_buffer_alignment,
     /*buffer_max_size=*/cuda_buffer_max_size,
     /*buffer_is_host=*/cuda_buffer_is_host,

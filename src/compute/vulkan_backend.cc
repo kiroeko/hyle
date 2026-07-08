@@ -425,28 +425,6 @@ void free_mem(VkMem* m) noexcept {
   delete m;
 }
 
-Status vk_device_alloc(int, std::size_t bytes, void** out_ptr) noexcept {
-  VkMem* m = nullptr;
-  Status s = make_mem(bytes, /*host_visible=*/false, &m);
-  if (!s.ok()) return s;
-  *out_ptr = m;
-  return Status();
-}
-void vk_device_free(int, void* ptr) noexcept { free_mem(static_cast<VkMem*>(ptr)); }
-
-Status vk_memcpy_async(void* /*stream_native*/, void* dst, const void* src,
-                       std::size_t bytes) noexcept {
-  // Minimal: dst/src are VkMem*; if both host-mapped, memcpy. (The full staged copy path
-  // is buffer_set/get below; this raw op is only the compute-01 spine, host-mapped case.)
-  auto* d = static_cast<VkMem*>(dst);
-  auto* s = static_cast<VkMem*>(const_cast<void*>(src));
-  if (d->mapped != nullptr && s->mapped != nullptr) {
-    std::memcpy(d->mapped, s->mapped, bytes);
-    return Status();
-  }
-  return Status::Unimplemented("vk memcpy_async: non-mapped (use Buffer set/get)");
-}
-
 // ---- buffer traits + alloc (compute-02) --------------------------------------
 std::size_t vk_buffer_alignment(BufferKind) noexcept {
   VkPhysicalDeviceProperties props;
@@ -892,9 +870,6 @@ constexpr ComputeBackend kVulkanBackend = {
     /*event_record=*/vk_event_record,
     /*event_query=*/vk_event_query,
     /*event_sync=*/vk_event_sync,
-    /*device_alloc=*/vk_device_alloc,
-    /*device_free=*/vk_device_free,
-    /*memcpy_async=*/vk_memcpy_async,
     /*buffer_alignment=*/vk_buffer_alignment,
     /*buffer_max_size=*/vk_buffer_max_size,
     /*buffer_is_host=*/vk_buffer_is_host,

@@ -9,6 +9,7 @@
 
 #include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
+#include "hyle/compute/kernel.h"
 #include "hyle/compute/stream.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
@@ -54,35 +55,89 @@ void drive_entry(void* p) {
   d->finished.store(true, std::memory_order_release);
 }
 
-// A coroutine that: allocs a device buffer, enqueues async copies on a stream,
-// co_awaits the stream's completion, then verifies the data round-tripped. Returns 0
-// on success, a negative code on the first failing step (checked by the test).
+bool has_gpu() {
+  Device devs[8];
+  std::size_t n = enumerate(devs, 8);
+  for (std::size_t i = 0; i < n && i < 8; ++i)
+    if (devs[i].is_gpu()) return true;
+  return false;
+}
+
+// A deliberately HEAVY GPU kernel: each thread spins a long accumulation loop before
+// writing, so the launch is still IN FLIGHT when the fiber reaches co_await -- that is
+// what makes await_ready() return false and drives the real suspend -> GpuPoller sweep
+// -> cross-thread wake path (a trivial kernel could finish before the first poll). It
+// writes out[i] = i + <loop-invariant> so the result is verifiable.
+constexpr const char* kSpinKernel = R"(
+extern "C" __global__ void spin(unsigned* out, int n, int iters) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < n) {
+    unsigned acc = 0;
+    for (int k = 0; k < iters; ++k) acc = acc * 1664525u + 1013904223u;
+    out[i] = (unsigned)i + (acc & 0u);  // acc masked to 0: result is exactly i
+  }
+}
+)";
+
+// The host-fallback "kernel": same out[i]=i semantics, runs inline (synchronous), so on
+// the host backend co_await completes WITHOUT suspending (event already ready) -- the
+// same path host took before, now via a kernel instead of the removed raw memcpy.
+void host_spin(const LaunchConfig&, const KernelArgs& args) noexcept {
+  auto* out = static_cast<unsigned*>(args.buffers[0]);
+  int n = *reinterpret_cast<const int*>(static_cast<const std::byte*>(args.scalars) +
+                                        args.fields[0].offset);
+  for (int i = 0; i < n; ++i) out[i] = static_cast<unsigned>(i);
+}
+
+// A coroutine that launches a kernel producing out[i]=i on a stream, co_awaits the
+// stream's completion (SUSPENDS on a real GPU: the heavy kernel is still running), then
+// reads the buffer back and verifies. Returns 0 on success, negative step code on the
+// first failure. Kernel launch (compute-04) is the async, stream-bound work the removed
+// raw memcpy_async used to provide -- Buffer set/get is synchronous so can't leave work
+// in flight to observe.
 Task<int> gpu_await_coro(mem::Allocator, int* out_result) {
   Device d = default_device();
+  const bool gpu = has_gpu();
   auto s = Stream::create(d);
   if (!s.has_value()) { *out_result = -1; co_return -1; }
 
-  constexpr std::size_t kN = 4096;
-  const std::size_t bytes = kN * sizeof(std::uint32_t);
-  std::vector<std::uint32_t> host_in(kN), host_out(kN, 0);
-  for (std::size_t i = 0; i < kN; ++i) host_in[i] = static_cast<std::uint32_t>(i * 5 + 2);
+  constexpr int kN = 4096;
+  const std::size_t bytes = kN * sizeof(unsigned);
+  auto out = Buffer::create(device_buffer_type(d), bytes);
+  if (!out.has_value()) { *out_result = -2; co_return -2; }
 
-  auto dptr = s->device_alloc(bytes);
-  if (!dptr.has_value()) { *out_result = -2; co_return -2; }
+  auto k = gpu ? Kernel::compile(d, kSpinKernel, "spin")
+               : Kernel::load_host(d, &host_spin);
+  // A GPU backend without NVRTC source-compile (e.g. Vulkan wants SPIR-V via load_ptx,
+  // covered by vulkan_test's CoAwaitCompletion) can't run this CUDA-C kernel -> SKIP
+  // (code 1), not fail. This test's job is the CUDA + host completion->fiber path.
+  if (gpu && !k.has_value()) { *out_result = 1; co_return 1; }
+  if (!k.has_value()) { *out_result = -3; co_return -3; }
 
-  // Enqueue async H2D then D2H copies on the stream (real GPU work -> event not
-  // immediately ready), then co_await the stream draining.
-  if (!s->memcpy_async(*dptr, host_in.data(), bytes).ok()) { *out_result = -3; co_return -3; }
-  if (!s->memcpy_async(host_out.data(), *dptr, bytes).ok()) { *out_result = -4; co_return -4; }
+  int n = kN;
+  int iters = gpu ? 200000 : 0;  // heavy on GPU so it's still in flight at co_await
+  LaunchConfig cfg;
+  cfg.block = {256, 1, 1};
+  cfg.grid = {blocks_for(kN, 256), 1, 1};
+  if (gpu) {
+    if (!launch(*s, *k, cfg, *out, n, iters).ok()) { *out_result = -4; co_return -4; }
+  } else {
+    // Host kernel reads buffers[0] + scalar n via a raw KernelArgs (matches host_spin).
+    void* bufs[] = {out->device_ptr()};
+    ScalarField fields[] = {{0, sizeof(int)}};
+    KernelArgs ka{bufs, 1, &n, sizeof(int), fields, 1};
+    if (!launch(*s, *k, cfg, ka).ok()) { *out_result = -4; co_return -4; }
+  }
 
   Status st = co_await StreamComplete{&*s};  // SUSPEND until GPU done (poller wakes us)
   if (!st.ok()) { *out_result = -5; co_return -5; }
 
-  // Data must have round-tripped through device memory by the time we resume.
-  for (std::size_t i = 0; i < kN; ++i) {
-    if (host_out[i] != host_in[i]) { *out_result = -6; co_return -6; }
+  // The kernel wrote out[i] = i by the time we resume.
+  std::vector<unsigned> host_out(kN, 0xFFFFFFFFu);
+  if (!out->get(0, host_out.data(), bytes).ok()) { *out_result = -6; co_return -6; }
+  for (int i = 0; i < kN; ++i) {
+    if (host_out[i] != static_cast<unsigned>(i)) { *out_result = -7; co_return -7; }
   }
-  s->device_free(*dptr);
   *out_result = 0;
   co_return 0;
 }
@@ -103,6 +158,7 @@ TEST(GpuAwait, CoAwaitStreamCompletion) {
   compute::detail::gpu_poll_shutdown();  // clean poller teardown
 
   EXPECT_TRUE(d->finished.load());
+  if (result == 1) GTEST_SKIP() << "GPU backend has no NVRTC (Vulkan uses SPIR-V; see vulkan_test)";
   EXPECT_EQ(result, 0) << "gpu_await_coro failed at step " << result;
 }
 
@@ -130,6 +186,7 @@ TEST(GpuAwait, ConcurrentAwaits) {
   sched.shutdown();
   compute::detail::gpu_poll_shutdown();
 
+  if (results[0] == 1) GTEST_SKIP() << "GPU backend has no NVRTC (Vulkan uses SPIR-V; see vulkan_test)";
   for (int i = 0; i < kFibers; ++i) {
     EXPECT_TRUE(drives[i]->finished.load()) << "fiber " << i;
     EXPECT_EQ(results[i], 0) << "fiber " << i << " failed at step " << results[i];

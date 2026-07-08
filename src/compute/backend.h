@@ -61,13 +61,6 @@ struct ComputeBackend {
   EventStatus (*event_query)(void* event_native) noexcept;  // cudaEventQuery
   void (*event_sync)(void* event_native) noexcept;          // cudaEventSynchronize
 
-  // ---- device memory + async copy (minimal completion-proof ops) ----
-  Status (*device_alloc)(int ordinal, std::size_t bytes, void** out_ptr) noexcept;
-  void (*device_free)(int ordinal, void* ptr) noexcept;
-  // Enqueue an async copy on `stream_native`. Direction inferred by the backend.
-  Status (*memcpy_async)(void* stream_native, void* dst, const void* src,
-                         std::size_t bytes) noexcept;
-
   // ---- buffer (compute-02) --------------------------------------------------
   // A Buffer owns one block of memory of a given BufferKind on `ordinal`. The
   // public Buffer stores {vt, ptr, size, ordinal, kind, is_host}; these fn-ptrs do
