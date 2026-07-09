@@ -316,6 +316,33 @@ ggml_status llama_context::graph_compute(ggml_cgraph* gf, bool batched) {
 **SPIR-V 工程链（compute-06 需自己解决，kompute 未覆盖的）**：`.comp` GLSL → SPIR-V 的编译（`glslangValidator`/`shaderc` 离线编译进二进制,还是运行时编译）+ SPIR-V 加载。这是 compute-06 相对 kompute 要补的一环（kompute 假定调用方给编好的 SPIR-V）。
 5. ~~**`cudaSetDevice` 的 per-thread 上下文 vs fiber 跨 worker 迁移**~~ **✅ 已解决（2026-07-06 深调研 ggml/CCCL 源码，推翻原顾虑）**：CUDA stream/event 的**操作**（record/query/synchronize/wait/free）**不依赖调用线程的 current device**——handle 内在绑定创建时的 context。铁证：ggml 的 event record/wait/sync 前**都不** set device（ggml-cuda.cu:4527/4533/5510），CCCL 刻意用 driver API 做 stream 操作正是为绕开 runtime API "context 栈空时误 push dev0"（stream_ref.h:189 注释）。current device 只影响**创建**（`cudaMalloc`/`StreamCreate`/`EventCreate`）与 **kernel launch**。**故 fiber 跨 worker 迁移后操作同一 stream 安全，不需要 shard-per-core 绑核。** compute-01 后端据此修正：`set_device()` helper（照 ggml-cuda.cu:109 的 get-if-differ 规避冗余 set）**只在创建站点调用**，reap/poll/操作路径 set-free。绑核降为**可选性能优化**（NUMA/context 局部性），非正确性必需。
 
+## compute-07 CPU 算子后端：接 hyle simd，不是借 ggml（2026-07-09 定案 + 纠错）
+
+> **⚠️ 一次方向纠错**：设计过程中一度误判"compute-07 也借 ggml CPU 后端"。**错**——那和 compute-05 重复（05 已实现 `GgmlBackend::create(CPU, n_threads)` 借 ggml CPU 算子）。翻 README:175 + backlog + scope 后端矩阵定论：**compute-07 是另一条正交线——compute-04 `Kernel`/`Stream` 自造抽象的 CPU 后端,kernel 走 hyle `simd/` 数值核,completion 恒 ready。** 两条 CPU 路并存不重复。
+
+**两条 CPU 计算路的分工（正交,不是二选一）**：
+
+| | compute-05（借 ggml） | compute-07（接 hyle simd） |
+|---|---|---|
+| 借谁 | **ggml** AI 算子（matmul/softmax/rope…）| **hyle simd** 数值核（dot/saxpy/exp_batch…）|
+| 属哪套抽象 | `ggml_bridge`（算子库供应商,独立入口）| **compute-04 `Kernel::launch` 抽象的 CPU 后端**（CUDA NVRTC / Vulkan SPIR-V 的 CPU 孪生）|
+| completion | spawn_blocking 卸载（ggml stream 私有,阻塞 synchronize）| **恒 ready**（CPU 同步内联,`host_event_query` 已恒 kReady）|
+| 定位 | AI 推理算子（北极星①）| ①无 GPU 功能基线 ②**GPU 后端对拍 oracle**（CUDA/Vulkan 结果 vs CPU 逐元素比对）|
+| 消费者 | 推理引擎 | compute-04 kernel 抽象本身 + 通用/CAE 数值计算 |
+
+**为什么 CPU-AI 借 ggml、而 compute-07 接 simd 不矛盾**：
+- **AI 推理的 CPU 路（matmul 主导,占算力 >90%）借 ggml**——ggml CPU 后端自带各架构 SIMD + 量化 GEMM,hyle simd **没有 matmul**(只有 BLAS-1 dot/saxpy + 逐元素超越),拿 dot 拼 GEMM 会慢数十倍。这条路是 compute-05。
+- **compute-07 不是 AI-GEMM 路**——它是 compute-04 那套"提交任意 kernel"抽象的 CPU 落地:一个 host kernel(saxpy/vecadd/逐元素 map)用 hyle simd 实现,主要价值是**无 GPU 时抽象仍可跑 + GPU 结果的 CPU 对拍 oracle**,不是跟 ggml 抢 AI 推理。
+- **hyle simd 的消费入口就是 07**：simd 支柱(含刚铺全的 f64)一直缺 compute 侧消费者,07 正是它——host kernel 包 simd 核。CAE/科学计算的 CPU 数值路也从这里长出(simd 有 f64 全套超越,ggml 没有)。
+
+**实现形态（compute-04 hook 已就位,07 是"用起来"非"重建"）**：
+- compute-04 已建好 host 路径:`Kernel::HostFn = void(*)(const LaunchConfig&, const KernelArgs&)`、`load_host(device, fn)`、`host_kernel_launch` 同步调用、`host_event_query` 恒 kReady。**07 = 把 simd 核包成 HostFn 注册进这套已有抽象,零新运行时、零 sched 改动。**
+- host kernel 从 `KernelArgs` 解包 buffers[]/scalar blob（照 `host_vecadd` 模式,kernel_test.cc:44）→ 转调 `simd::saxpy_f32`/`dot_f32`/`exp_f32_batch`。
+- **数据并行铺多核不在后端自起线程**（scope 铁律"不引第二运行时"）——靠 HYLE sched 的 fork-join（graph-02 parallel_for）,host_kernel_launch 保持单线程内联。
+- **对拍 oracle**：同输入喂 CPU 后端(simd)与 GPU 后端(CUDA vecadd / Vulkan saxpy),逐元素比对——这是 07 双用途②,也是 compute 的正确性回归护栏。
+
+**明确不做（防蔓延）**：不重造 GEMM(那借 ggml,compute-05);不给 07 堆 90 个 host 算子门面(消费者驱动);不让 CPU 后端自起线程池(数据并行归 graph-02)。
+
 ## 参考
 
 - CUDA vs ROCm vs Vulkan vs Metal: GPU Compute in 2026 — orchestrator.dev

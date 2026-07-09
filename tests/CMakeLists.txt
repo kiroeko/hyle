@@ -34,7 +34,7 @@ hyle_add_test(math SOURCES math/scalar_test.cc)
 # headline test = KV-cache pattern (large buffer repeated offset writes).
 # compute-02b: pinned staging via mem/ (pinned_allocator + mem::MemoryArena/Arena)
 # + PinnedStaging batched submit -- needs hyle_mem for the pool/arena in the test.
-hyle_add_test(compute SOURCES compute/device_test.cc compute/buffer_test.cc compute/pinned_pool_test.cc compute/device_pool_test.cc compute/kernel_test.cc compute/contract_test.cc DEPS hyle_mem)
+hyle_add_test(compute SOURCES compute/device_test.cc compute/buffer_test.cc compute/pinned_pool_test.cc compute/device_pool_test.cc compute/kernel_test.cc compute/contract_test.cc compute/host_ops_test.cc DEPS hyle_mem)
 # compute-06: self-authored SPIR-V compute kernel through the Vulkan backend (saxpy
 # end-to-end + batched). GPU-skips at runtime if no Vulkan loader/device. The co_await
 # completion case (#21) is #if HYLE_HAS_FCONTEXT-gated inside the TU, so link hyle_sched

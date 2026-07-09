@@ -9,7 +9,10 @@
 # -- but ONLY where fcontext (hence sched) exists, exactly as io_context.cc did. The
 # host/device/buffer/pool layer (compute-01/02/02b/02c) needs no sched and builds
 # anywhere; gpu_poller.cc (compute-03) is added only under HYLE_HAS_FCONTEXT.
-set(_compute_sources compute.cc host_backend.cc)
+# compute-07: host_ops.cc = the CPU operator backend (simd-backed Kernel::HostFn library).
+# Always built (any platform, no GPU); links hyle_simd PRIVATE (simd cores are called inside
+# the .cc, never named in a public compute header).
+set(_compute_sources compute.cc host_backend.cc host_ops.cc)
 set(_compute_public_deps hyle_error hyle_mem)
 
 if(HYLE_COMPUTE_CUDA)
@@ -45,6 +48,11 @@ if(HYLE_COMPUTE_GGML AND HYLE_HAS_FCONTEXT)
 endif()
 
 hyle_add_module(compute SOURCES ${_compute_sources} PUBLIC_DEPS ${_compute_public_deps})
+
+# compute-07: the CPU operator backend (host_ops.cc) calls hyle simd numeric cores. PRIVATE:
+# simd is used only inside host_ops.cc, never named in a public compute header (host_ops.h
+# only declares HostFn signatures). This is simd's first compute consumer.
+target_link_libraries(hyle_compute PRIVATE hyle_simd)
 
 if(HYLE_COMPUTE_VULKAN_ENABLED)
   # Link volk (the Vulkan meta-loader; dlopen's the runtime loader, no vulkan-1.lib
