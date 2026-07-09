@@ -120,10 +120,8 @@ template <class D>
 HYLE_FORCE_INLINE VFromD<D> Zero(D d) noexcept {
   return Set(d, static_cast<TFromD<D>>(0));
 }
-template <class D>
-HYLE_FORCE_INLINE VFromD<D> Undefined(D d) noexcept {
-  return Zero(d);
-}
+// NOTE: Undefined / Iota / SignBit etc. are defined GENERICALLY in vec.h's shared layer (built on
+// Zero/Set/iota primitives) -- the backend must NOT redefine them or it's an ambiguous redefinition.
 
 // ---- load / store -------------------------------------------------------------------
 // svld1/svst1 under an all-true predicate move the full current-VL vector. SVE has no separate
@@ -143,6 +141,137 @@ HYLE_FORCE_INLINE void StoreU(VFromD<D> v, D, TFromD<D>* p) noexcept {
 template <class D>
 HYLE_FORCE_INLINE void Store(VFromD<D> v, D d, TFromD<D>* p) noexcept {
   StoreU(v, d, p);
+}
+
+// ---- arithmetic ---------------------------------------------------------------------
+// SVE arithmetic uses merge forms; under an all-true predicate the _x (don't-care) form is the
+// cheapest and semantically an unconditional op on every lane. TFromV<V> recovers the lane type
+// so ptrue picks the right element width.
+template <class V> HYLE_FORCE_INLINE V Add(V a, V b) noexcept {
+  return svadd_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V Sub(V a, V b) noexcept {
+  return svsub_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V Mul(V a, V b) noexcept {
+  return svmul_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V Neg(V a) noexcept {
+  return svneg_x(detail::ptrue<TFromV<V>>(), a);
+}
+template <class V> HYLE_FORCE_INLINE V Abs(V a) noexcept {
+  return svabs_x(detail::ptrue<TFromV<V>>(), a);
+}
+template <class V> HYLE_FORCE_INLINE V Min(V a, V b) noexcept {
+  return svmin_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V Max(V a, V b) noexcept {
+  return svmax_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+// Floating-point only: Div / Sqrt / FMA.
+template <class V> HYLE_FORCE_INLINE V Div(V a, V b) noexcept {
+  return svdiv_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V Sqrt(V a) noexcept {
+  return svsqrt_x(detail::ptrue<TFromV<V>>(), a);
+}
+// MulAdd(a,b,c) = a*b + c; NegMulAdd(a,b,c) = c - a*b. SVE svmad_x(p, a, b, c) = a*b + c.
+template <class V> HYLE_FORCE_INLINE V MulAdd(V a, V b, V c) noexcept {
+  return svmad_x(detail::ptrue<TFromV<V>>(), a, b, c);
+}
+template <class V> HYLE_FORCE_INLINE V NegMulAdd(V a, V b, V c) noexcept {
+  return svmsb_x(detail::ptrue<TFromV<V>>(), a, b, c);  // c - a*b
+}
+
+// ---- bitwise (integer lanes) --------------------------------------------------------
+template <class V> HYLE_FORCE_INLINE V And(V a, V b) noexcept {
+  return svand_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V Or(V a, V b) noexcept {
+  return svorr_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V Xor(V a, V b) noexcept {
+  return sveor_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V AndNot(V a, V b) noexcept {  // ~a & b (Highway order)
+  return svbic_x(detail::ptrue<TFromV<V>>(), b, a);                 // svbic(p, x, y) = x & ~y
+}
+template <class V> HYLE_FORCE_INLINE V Not(V a) noexcept {
+  return svnot_x(detail::ptrue<TFromV<V>>(), a);
+}
+
+// ---- comparisons -> svbool_t predicate mask -----------------------------------------
+// Mask is svbool_t for every lane type (sizeless). The compare intrinsics take the governing
+// predicate + two vectors and yield a predicate with the active lanes set where the relation holds.
+template <class V> HYLE_FORCE_INLINE svbool_t Eq(V a, V b) noexcept {
+  return svcmpeq(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE svbool_t Ne(V a, V b) noexcept {
+  return svcmpne(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE svbool_t Lt(V a, V b) noexcept {
+  return svcmplt(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE svbool_t Le(V a, V b) noexcept {
+  return svcmple(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE svbool_t Gt(V a, V b) noexcept {
+  return svcmpgt(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE svbool_t Ge(V a, V b) noexcept {
+  return svcmpge(detail::ptrue<TFromV<V>>(), a, b);
+}
+
+// ---- select / mask <-> vec ----------------------------------------------------------
+// IfThenElse(m, yes, no): svsel picks yes where m active, else no.
+template <class V> HYLE_FORCE_INLINE V IfThenElse(svbool_t m, V yes, V no) noexcept {
+  return svsel(m, yes, no);
+}
+template <class V> HYLE_FORCE_INLINE V IfThenElseZero(svbool_t m, V yes) noexcept {
+  using T = TFromV<V>;
+  return svsel(m, yes, Set(DFromV<V>(), static_cast<T>(0)));
+}
+template <class V> HYLE_FORCE_INLINE V IfThenZeroElse(svbool_t m, V no) noexcept {
+  using T = TFromV<V>;
+  return svsel(m, Set(DFromV<V>(), static_cast<T>(0)), no);
+}
+// MaskFromVec (Highway contract: lane active where the MSB / sign bit is set). Test < 0 on the
+// signed view. For SVE we compare the vector < 0; for unsigned lanes the "MSB set" is >= half,
+// but Highway's MaskFromVec is defined on the bit pattern's MSB, which for unsigned == top bit.
+// Reinterpret to signed same-width and test < 0.
+template <class V> HYLE_FORCE_INLINE svbool_t MaskFromVec(V v) noexcept {
+  using T = TFromV<V>;
+  return svcmplt(detail::ptrue<T>(), v, Set(DFromV<V>(), static_cast<T>(0)));
+}
+// VecFromMask(d, m): all-ones (T(-1)) where active, else 0.
+template <class D> HYLE_FORCE_INLINE VFromD<D> VecFromMask(D d, svbool_t m) noexcept {
+  using T = TFromD<D>;
+  return svsel(m, Set(d, static_cast<T>(-1)), Zero(d));
+}
+
+// ---- mask reductions ----------------------------------------------------------------
+// AllTrue/AllFalse: test the mask against the lane-width all-true predicate. CountTrue: svcntp
+// under the lane-width predicate counts ACTIVE ELEMENTS (matching the lane count, not bytes).
+template <class D> HYLE_FORCE_INLINE bool AllTrue(D, svbool_t m) noexcept {
+  const svbool_t pg = detail::ptrue<TFromD<D>>();
+  return !svptest_any(pg, svnot_z(pg, m));  // no lane is false
+}
+template <class D> HYLE_FORCE_INLINE bool AllFalse(D, svbool_t m) noexcept {
+  return !svptest_any(detail::ptrue<TFromD<D>>(), m);
+}
+template <class D> HYLE_FORCE_INLINE std::size_t CountTrue(D, svbool_t m) noexcept {
+  // svcntp needs an explicit element-width suffix (not overloaded). Count active elements under
+  // the lane-width all-true predicate so the result is in LANES, not bytes.
+  using T = TFromD<D>;
+  if constexpr (sizeof(T) == 1) return static_cast<std::size_t>(svcntp_b8(svptrue_b8(), m));
+  else if constexpr (sizeof(T) == 2) return static_cast<std::size_t>(svcntp_b16(svptrue_b16(), m));
+  else if constexpr (sizeof(T) == 4) return static_cast<std::size_t>(svcntp_b32(svptrue_b32(), m));
+  else return static_cast<std::size_t>(svcntp_b64(svptrue_b64(), m));
+}
+
+// ---- GetLane: lane 0 ----------------------------------------------------------------
+template <class V> HYLE_FORCE_INLINE TFromV<V> GetLane(V v) noexcept {
+  return svlasta(svpfalse_b(), v);  // lasta with empty pred = element 0
 }
 
 }  // namespace hyle::simd
