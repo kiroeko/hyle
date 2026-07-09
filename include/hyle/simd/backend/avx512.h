@@ -1215,6 +1215,130 @@ HYLE_FORCE_INLINE detail::V512<D> VecFromMask(D, Mask512<TFromD<D>, HYLE_SIMD_MA
   else r.raw = _mm512_movm_epi32(m.raw);  // i32/u32
   return r;
 }
+
+// ---- mask-domain family (simd-08 档A-2) -- AVX-512 k-register form -----------------------
+// On AVX-512 a Mask512 IS a k-register bitmask (1 bit/lane), so these are just bitwise ops on
+// the packed bits -- cleaner than the vector-mask backends (which pun through movemask). N may
+// be up to 64 (i8), so full-mask math uses (N>=64 ? ~0ull : (1<<N)-1) to dodge the 1<<64 UB.
+// These were missing from avx512.h (it froze at ~simd-07; the mask family landed in simd-08 A-2
+// but avx512 had no gtest variant to expose the gap -- caught 2026-07-09 wiring the SDE run).
+namespace detail {
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> mask_from_kbits(std::uint64_t bits) noexcept {
+  Mask512<T, N> m;
+  m.raw = static_cast<typename KMaskT<T>>(bits);
+  return m;
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE std::uint64_t full_kmask() noexcept {
+  return (N >= 64) ? ~0ull : ((std::uint64_t{1} << N) - 1ull);
+}
+}  // namespace detail
+
+// Mask-domain boolean logic: bitwise on the k-register (mask AND out-of-range bits stay 0 since
+// compares only ever set in-range lanes; Not/AndNot re-clamp to the N-lane window).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> And(Mask512<T, N> a, Mask512<T, N> b) noexcept {
+  return detail::mask_from_kbits<T, N>(detail::kbits(a) & detail::kbits(b));
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> Or(Mask512<T, N> a, Mask512<T, N> b) noexcept {
+  return detail::mask_from_kbits<T, N>(detail::kbits(a) | detail::kbits(b));
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> Xor(Mask512<T, N> a, Mask512<T, N> b) noexcept {
+  return detail::mask_from_kbits<T, N>(detail::kbits(a) ^ detail::kbits(b));
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> AndNot(Mask512<T, N> a, Mask512<T, N> b) noexcept {
+  return detail::mask_from_kbits<T, N>(~detail::kbits(a) & detail::kbits(b));  // Highway: ~a & b
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> Not(Mask512<T, N> a) noexcept {
+  return detail::mask_from_kbits<T, N>(~detail::kbits(a) & detail::full_kmask<N>());
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> ExclusiveNeither(Mask512<T, N> a, Mask512<T, N> b) noexcept {
+  return detail::mask_from_kbits<T, N>(~(detail::kbits(a) | detail::kbits(b)) & detail::full_kmask<N>());
+}
+// MaskFromVec: lane true iff its MSB set. Route via signed<0 compare on the reinterpreted vector.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> MaskFromVec(Vec512<T, N> v) noexcept {
+  Mask512<T, N> m;
+  if constexpr (std::is_same_v<T, float>)
+    m.raw = _mm512_movepi32_mask(_mm512_castps_si512(v.raw));
+  else if constexpr (std::is_same_v<T, double>)
+    m.raw = _mm512_movepi64_mask(_mm512_castpd_si512(v.raw));
+  else if constexpr (detail::kI8<T>) m.raw = _mm512_movepi8_mask(v.raw);
+  else if constexpr (detail::kI16<T>) m.raw = _mm512_movepi16_mask(v.raw);
+  else if constexpr (detail::kI64<T>) m.raw = _mm512_movepi64_mask(v.raw);
+  else m.raw = _mm512_movepi32_mask(v.raw);
+  return m;
+}
+// LoadMaskBits / BitsFromMask / StoreMaskBits: the k-register IS the packed bitfield already.
+template <class D>
+HYLE_FORCE_INLINE Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D, std::uint64_t bits) noexcept {
+  return detail::mask_from_kbits<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>(
+      bits & detail::full_kmask<HYLE_SIMD_MAX_LANES_D(D)>());
+}
+template <class D>
+HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D, Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
+  return detail::kbits(m);
+}
+template <class D>
+HYLE_FORCE_INLINE std::size_t StoreMaskBits(D, Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
+                                            std::uint8_t* p) noexcept {
+  const std::uint64_t bits = detail::kbits(m);
+  const std::size_t nbytes = (HYLE_SIMD_MAX_LANES_D(D) + 7) / 8;
+  for (std::size_t b = 0; b < nbytes; ++b) p[b] = static_cast<std::uint8_t>(bits >> (b * 8));
+  return nbytes;
+}
+// IfThenZeroElse(m, no): zero where m true, else `no` (complement of IfThenElseZero). Masked-mov.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> IfThenZeroElse(Mask512<T, N> m, Vec512<T, N> no) noexcept {
+  return IfThenElseZero(Not(m), no);
+}
+// prefix-scan masks (leading run relative to the first true lane). Bitfield math on kbits.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> SetBeforeFirst(Mask512<T, N> m) noexcept {
+  const std::uint64_t b = detail::kbits(m);
+  const std::uint64_t before = b ? ((std::uint64_t{1} << std::countr_zero(b)) - 1ull) : detail::full_kmask<N>();
+  return detail::mask_from_kbits<T, N>(before);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> SetAtOrBeforeFirst(Mask512<T, N> m) noexcept {
+  const std::uint64_t b = detail::kbits(m);
+  // tz+1 can reach 64 (first true at lane 63) -> 1<<64 UB; saturate to the full N-lane mask.
+  std::uint64_t upto;
+  if (b) {
+    const int tz1 = std::countr_zero(b) + 1;
+    upto = (tz1 >= 64) ? ~0ull : ((std::uint64_t{1} << tz1) - 1ull);
+  } else {
+    upto = detail::full_kmask<N>();
+  }
+  return detail::mask_from_kbits<T, N>(upto & detail::full_kmask<N>());
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> SetOnlyFirst(Mask512<T, N> m) noexcept {
+  const std::uint64_t b = detail::kbits(m);
+  return detail::mask_from_kbits<T, N>(b ? (std::uint64_t{1} << std::countr_zero(b)) : 0ull);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> SetAtOrAfterFirst(Mask512<T, N> m) noexcept {
+  const std::uint64_t b = detail::kbits(m);
+  const std::uint64_t full = detail::full_kmask<N>();
+  const std::uint64_t before = b ? ((std::uint64_t{1} << std::countr_zero(b)) - 1ull) : full;
+  return detail::mask_from_kbits<T, N>(full & ~before);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(Simd<T, N, 0>, Mask512<T, N> m) noexcept {
+  return static_cast<std::size_t>(std::countr_zero(detail::kbits(m)));  // precondition: m != 0
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(Simd<T, N, 0>, Mask512<T, N> m) noexcept {
+  return static_cast<std::size_t>(63 - std::countl_zero(detail::kbits(m)));
+}
+
 // SumsOf8(v): 64 u8 lanes -> 8 u64 (native _mm512_sad_epu8 vs zero). The count core.
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec512<std::uint64_t, N / 8> SumsOf8(Vec512<std::uint8_t, N> v) noexcept {
