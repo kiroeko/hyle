@@ -27,7 +27,9 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     math/transcendental_highway.cc
     math/transcendental_xsimd.cc
     math/transcendental_highway_avx512.cc
-    math/transcendental_xsimd_avx512.cc)
+    math/transcendental_xsimd_avx512.cc
+    sort/vqsort_highway_avx2.cc
+    sort/vqsort_highway_avx512.cc)
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_SIMD_ARM64 TRUE)
   # ops NEON kernel reuses the neon.h D-tag backend (dot/saxpy) -- the simd-03 real-run
@@ -39,7 +41,8 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   list(APPEND _simd_arch_sources
     ops/kernels_neon.cc
     dtype/cvt_neon.cc
-    math/transcendental_highway_neon.cc)
+    math/transcendental_highway_neon.cc
+    sort/vqsort_highway_neon.cc)
 endif()
 
 hyle_add_module(simd SOURCES
@@ -49,6 +52,8 @@ hyle_add_module(simd SOURCES
   dtype/cvt_scalar.cc
   math/math_dispatch.cc
   math/transcendental_scalar.cc
+  sort/sort_dispatch.cc
+  sort/vqsort_scalar.cc
   ${_simd_arch_sources}
   PUBLIC_DEPS hyle_platform)
 
@@ -116,6 +121,13 @@ if(HYLE_SIMD_X64)
   # Reached only when best_isa()>=kAvx512.
   hyle_set_avx512_math_isa(math/transcendental_xsimd_avx512.cc)
   hyle_set_avx512_math_isa(math/transcendental_highway_avx512.cc)
+  # vqsort borrow cores (simd-09 sort). SAME Highway-static-dispatch ISA requirement as the math
+  # borrow: HWY_STATIC_TARGET reads the FULL baseline macro chain, so the avx2 core needs the full
+  # AVX2 baseline (hyle_set_highway_isa) or it silently downgrades to SSSE3; the avx512 core needs
+  # the AVX-512 group on top (hyle_set_avx512_sort_isa) to resolve AVX3. Unlike math, vqsort's
+  # AVX3 target is NOT MSVC-broken, so the 512 TU compiles on MSVC too (no exclusion).
+  hyle_set_highway_isa(sort/vqsort_highway_avx2.cc)
+  hyle_set_avx512_sort_isa(sort/vqsort_highway_avx512.cc)
 endif()
 
 # BASELINE ASSUMPTION (the SIGILL-safety contract): for a DISTRIBUTABLE binary, build the
