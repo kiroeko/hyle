@@ -102,11 +102,11 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 ## 落地清单
 
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
-2. 🔶 SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02(实跑)、运行期 dispatch=simd-04、NEON+AVX512=simd-03(写+编+objdump 验,未跑存疑)。** 各后端覆盖,只剩 NEON/AVX512 待目标硬件实跑。
-3. ✅ dtype 转换（先 fp16/bf16 硬件路径）。**simd-05。** f32→bf16 另加 **AVX-512-BF16 native `vcvtneps2bf16`** 档(双平台编译+objdump 验,执行待真机;见下 AVX512 节)。
-4. 🔶 数学函数（借 Highway/xsimd 核：exp/log/tanh 已实现并对标同 ISA SOTA;gelu/softmax 组合待补）。**simd-06。** 另加 **512b 变体**(exp/tanh→xsimd-512、log→highway-512,GCC 真 zmm/MSVC Highway-AVX3 broken 退 ymm 已排除),执行待真机。
-5. 🔶 `ops/`：dot_f32/saxpy_f32 已跨 scalar/SSE4/AVX2/AVX512 dispatch(AVX512 派发档存疑——本箱 AVX2-only 未实跑,objdump 双平台验真发 zmm;+reduce_max/scale 已 bench);reduce/对齐 memcpy/SwissTable 探测片段待补。
-6. 🔶 单测：每后端对拍 scalar 参考值、跨 ISA CI、数学函数精度 ULP 测试、benchmark 对标 Highway/手写 intrinsics。**scalar/SSE4.2/AVX2 对拍 + Highway bench 已做；NEON objdump 验；ULP 测试随 simd-06。**
+2. ✅ SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02(实跑)、运行期 dispatch=simd-04、NEON=simd-03(mac 真机)、AVX512=simd-03 写 + simd-09 用 Intel SDE 真跑(vec_test 169/169 全 op 对拍 scalar oracle,dispatch 真选 kAvx512)**。四 ISA 全真跑,不再"未跑存疑"。
+3. ✅ dtype 转换（fp16/bf16 硬件路径）。**simd-05。** f32→bf16 的 **AVX-512-BF16 native `vcvtneps2bf16`** 档随 AVX512 变体 SDE 可真跑(此前仅 objdump 验)。
+4. 🔶 数学函数（借 Highway/xsimd 核）。**simd-06 exp/log/tanh + simd-09 补 11 个(sin/cos/exp2/log2/erf/atan/cbrt/expm1/log1p/asinh/acosh),per-op best-of GCC+MSVC 双平台 bench 定 winner,三平台 + AVX512-SDE 真跑。** **gelu/softmax 组合核=消费驱动缓**(compute-07 用 ggml 算子,不调 simd 的;非缺口)。
+5. ✅ `ops/`：dot_f32/saxpy_f32 跨 scalar/SSE4/AVX2/AVX512 dispatch;**AVX512 派发档 simd-09 Intel SDE 真跑坐实(tier 探针确认 kAvx512,非仅 objdump)**。reduce/对齐 memcpy/SwissTable 探测片段按需(container 已自有 SwissTable 探测)。
+6. ✅ 单测：每后端对拍 scalar 参考值、数学函数 ULP 测试、benchmark 对标 Highway/xsimd。**四 ISA(SSE4/AVX2/AVX512-SDE/NEON)+ scalar 全真跑对拍 + WSL ASan + AVX512 SDE;math ULP vs libm ~3.5;three-way best-of bench。**
 
 ### AVX512 后端：已实现（写+原生编+objdump 验，未跑存疑）——纠"延期"误判
 

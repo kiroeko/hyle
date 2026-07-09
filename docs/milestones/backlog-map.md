@@ -23,9 +23,10 @@
 |---|---|---|---|
 | platform-02b | virtual_memory(host 端 mmap/VirtualAlloc 封装:保留/提交分离 + guard page) | 🟢 就绪 | **host 内存管理,与显存无关**。真实消费者=**fiber 栈 guard page 溢出保护**(mem-design fiber_stack.h)。**纠正旧记:compute device buffer 走 ggml buffer_type、显式 DMA,不用它**——离散 GPU 在 VRAM 里算,host 不可解引用。无紧迫消费者,按需 |
 | mem-06 | NUMA + 大页 + stats 下溢修复 | 🟢 就绪 | 优先级低(单机未压 NUMA);北极星未要求,**可缓** |
-| simd-03 尾 | NEON / AVX512 真机跑 | 🔴 **缺硬件**(无 ARM 机 / 无 AVX512 机) | 已写+编+objdump 验;**硬阻塞**,待真机/QEMU/SDE。非优先级问题 |
+| ~~simd-03 尾 NEON/AVX512 真机跑~~ | ~~缺硬件~~ | ✅ **已解(2026-07-09)** | NEON=mac 真机(simd-07 起);AVX512=simd-09 用 **Intel SDE 9.48.0**(WSL /root,`sde64 -future`)真跑——vec_test avx512 变体 169/169 全 op 对拍 + math/sort/bitpack tier 探针确认 dispatch 真选 kAvx512。四 ISA 全真跑,不再硬阻塞。**教训:"无硬件→理由化不验"是陷阱,SDE 是 AVX-512 无机时的真验闸门** |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
-| simd-08 尾 → simd-09 | best-of 全面审计结论 + 数学函数/算法级能力补齐 | 🟢 就绪,已开 simd-09 | **2026-07-09 三方审计(HYLE/Highway/xsimd)结论**,见下方"best-of 判据"。①数学函数 best-of 批(sin/cos/exp2/log2/atan/erf/pow… 三方 bench 选最快)②算法级能力补齐(vqsort/RNG/intdiv 等,Highway 招牌 HYLE 整块缺)→ 归入 **simd-09**。simd-08 结构 op 的 native intrinsic 优化(vpgather/vpcompress vs store+reload)是**自造 profiling 档**非 best-of(见判据),留 compute 消费驱动 |
+| ~~simd-08 尾 → simd-09~~ | best-of 审计 + 数学函数/算法级能力 | ✅ **simd-09 全完成(2026-07-09)** | 线① 11 数学函数 best-of(Highway 9/xsimd 2)+ 线② 6 件(intdiv/cmp128/RNG 自实现 + vqsort/bit_pack/KV-top-k vendor 薄封装)。四 ISA + SDE + mac 全真跑。详见 simd-09 里程碑 |
+| simd native-intrinsic 性能档 | gather/compress/swizzle 现 store+reload → native vpgather/vpcompress/vpshufb | 🟢 就绪,消费驱动 | 非能力缺口(功能已全,四 ISA 真跑对拍)。按 best-of 判据这是**自造 profiling 优化**(参考库在窄 ISA 也 store+reload,借不到),留 compute-07/graph 消费时按热路径证据加。performance.md 仿真路径 vs 原生量化对比同缓 |
 | ~~build-asan hwy::Abort 链接~~ | ~~undefined reference to hwy::Abort~~ | ✅ **已修(2026-07-09,0a64455)** | 根因:Highway 借核经 HWY_DASSERT 调 hwy::Abort,Release -O2 DCE 掉、ASan -O2-g 没 DCE→残留未定义(HYLE 从不编 Highway abort.cc)。修:把 `third_party/highway/hwy/abort.cc`(baseline C++)编进 hyle_simd 源列表→所有构建配置都链干净。build-asan 整库 ASan 实测 sse4/avx2 169/169 零错误(不再需 standalone 绕过) |
 
 > ### best-of 判据(2026-07-09 三方审计定,固化防再犯)
