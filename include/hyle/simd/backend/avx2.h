@@ -1634,18 +1634,35 @@ template <class D>
 HYLE_FORCE_INLINE detail::V256<D> Reverse8(D, detail::V256<D> v) noexcept {
   return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{7}) | ((i & 7) ^ 7); });
 }
+// ReverseBits: reverse the bit order within each lane. NATIVE (Highway method): (1) reverse bits
+// WITHIN each byte via two vpshufb nibble-LUTs (low nibble reversed into high, high into low),
+// (2) reverse the BYTE order within each lane via a per-width vpshufb index. Replaces the O(bits)
+// scalar loop (op_parity: 9x slower). 8/16/32/64-bit lanes.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ReverseBits(Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReverseBits is integer-only");
-  using U = std::make_unsigned_t<T>;
-  alignas(32) T s[N], d[N];
-  Store(v, Simd<T, N, 0>(), s);
-  for (std::size_t i = 0; i < N; ++i) {
-    U x = static_cast<U>(s[i]), y = 0;
-    for (std::size_t b = 0; b < sizeof(T) * 8; ++b) { y = static_cast<U>((y << 1) | (x & 1)); x >>= 1; }
-    d[i] = static_cast<T>(y);
-  }
-  return Load(Simd<T, N, 0>(), d);
+  // per-nibble bit-reversal LUT: reverse(0000)=0000, reverse(0001)=1000=8, ... (4-bit mirror)
+  const __m256i lut = _mm256_setr_epi8(
+      0x0,0x8,0x4,0xC,0x2,0xA,0x6,0xE,0x1,0x9,0x5,0xD,0x3,0xB,0x7,0xF,
+      0x0,0x8,0x4,0xC,0x2,0xA,0x6,0xE,0x1,0x9,0x5,0xD,0x3,0xB,0x7,0xF);
+  const __m256i lo_mask = _mm256_set1_epi8(0x0F);
+  const __m256i lo = _mm256_and_si256(v.raw, lo_mask);
+  const __m256i hi = _mm256_and_si256(_mm256_srli_epi16(v.raw, 4), lo_mask);
+  // byte with bits reversed: reversed-low-nibble goes to high half, reversed-high to low half
+  __m256i rb = _mm256_or_si256(_mm256_slli_epi16(_mm256_shuffle_epi8(lut, lo), 4),
+                               _mm256_shuffle_epi8(lut, hi));
+  Vec256<T, N> r;
+  if constexpr (sizeof(T) == 1) { r.raw = rb; return r; }
+  // reverse byte order within each lane via a per-128-block vpshufb index (mirrors ReverseLaneBytes)
+  __m256i idx;
+  if constexpr (sizeof(T) == 2)
+    idx = _mm256_setr_epi8(1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14, 1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14);
+  else if constexpr (sizeof(T) == 4)
+    idx = _mm256_setr_epi8(3,2,1,0,7,6,5,4,11,10,9,8,15,14,13,12, 3,2,1,0,7,6,5,4,11,10,9,8,15,14,13,12);
+  else
+    idx = _mm256_setr_epi8(7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8, 7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8);
+  r.raw = _mm256_shuffle_epi8(rb, idx);
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ReverseLaneBytes(Vec256<T, N> v) noexcept {
@@ -1919,15 +1936,46 @@ HYLE_FORCE_INLINE Vec256<T, N> PopulationCount(Vec256<T, N> v) noexcept {
   }
   return r;
 }
+// LeadingZeroCount / TrailingZeroCount: NATIVE via the fast PopulationCount above (op_parity: the
+// old std::count[lr]_zero store+reload was 5-8x slower). Identities (per unsigned lane):
+//   TZCnt(x) = PopCount((x & -x) - 1)                 [x==0 -> all-ones -> PopCount = bits]
+//   LZCnt(x) = bits - PopCount(smear_right(x))        [smear MSB down so set bits = MSB..0]
+// Needs per-width shifts; 8-bit lanes have no _mm256_srli_epi8, so they keep the mem fallback.
+namespace detail {
+template <typename T> HYLE_FORCE_INLINE __m256i srli_w(__m256i x, int s) noexcept {
+  if constexpr (sizeof(T) == 2) return _mm256_srli_epi16(x, s);
+  else if constexpr (sizeof(T) == 4) return _mm256_srli_epi32(x, s);
+  else return _mm256_srli_epi64(x, s);
+}
+}  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> LeadingZeroCount(Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "LeadingZeroCount is integer-lane only");
-  return detail::bitcount_via_mem<T, N, 1>(v);
+  if constexpr (sizeof(T) == 1) return detail::bitcount_via_mem<T, N, 1>(v);
+  else {
+    __m256i x = v.raw;  // smear the top set bit down to bit 0
+    x = _mm256_or_si256(x, detail::srli_w<T>(x, 1));
+    x = _mm256_or_si256(x, detail::srli_w<T>(x, 2));
+    x = _mm256_or_si256(x, detail::srli_w<T>(x, 4));
+    x = _mm256_or_si256(x, detail::srli_w<T>(x, 8));
+    if constexpr (sizeof(T) >= 4) x = _mm256_or_si256(x, detail::srli_w<T>(x, 16));
+    if constexpr (sizeof(T) == 8) x = _mm256_or_si256(x, detail::srli_w<T>(x, 32));
+    Vec256<T, N> sm; sm.raw = x;
+    const Vec256<T, N> pc = PopulationCount(sm);
+    return Sub(Set(Simd<T, N, 0>(), static_cast<T>(sizeof(T) * 8)), pc);
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> TrailingZeroCount(Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "TrailingZeroCount is integer-lane only");
-  return detail::bitcount_via_mem<T, N, 2>(v);
+  if constexpr (sizeof(T) == 1) return detail::bitcount_via_mem<T, N, 2>(v);
+  else {
+    // isolate lowest set bit (x & -x), minus 1 fills the trailing zeros, popcount them.
+    const Vec256<T, N> neg = Neg(v);
+    Vec256<T, N> lowest; lowest.raw = _mm256_and_si256(v.raw, neg.raw);
+    const Vec256<T, N> mask = Sub(lowest, Set(Simd<T, N, 0>(), static_cast<T>(1)));
+    return PopulationCount(mask);  // x==0: lowest=0, mask=all-ones -> PopCount = bits (correct)
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Not(Vec256<T, N> v) noexcept {
