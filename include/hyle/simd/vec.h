@@ -77,11 +77,51 @@ using MakeSigned =
     std::conditional_t<sizeof(T) == 1, std::int8_t,
         std::conditional_t<sizeof(T) == 2, std::int16_t,
             std::conditional_t<sizeof(T) == 4, std::int32_t, std::int64_t>>>;
+// MakeWide/MakeNarrow: the next-wider / next-narrower lane type of the SAME signedness class
+// (Highway's MakeWide/MakeNarrow). float widens to double; integers keep their sign. Used by the
+// Repartition/PromoteTo/DemoteTo widen-narrow family. Widening a 64-bit or narrowing an 8-bit lane
+// is ill-formed (no such type) -- callers must not instantiate those.
+template <typename T>
+using MakeWide = std::conditional_t<
+    std::is_same_v<T, float>, double,
+    std::conditional_t<std::is_signed_v<T>,
+        std::conditional_t<sizeof(T) == 1, std::int16_t,
+            std::conditional_t<sizeof(T) == 2, std::int32_t, std::int64_t>>,
+        std::conditional_t<sizeof(T) == 1, std::uint16_t,
+            std::conditional_t<sizeof(T) == 2, std::uint32_t, std::uint64_t>>>>;
+template <typename T>
+using MakeNarrow = std::conditional_t<
+    std::is_same_v<T, double>, float,
+    std::conditional_t<std::is_signed_v<T>,
+        std::conditional_t<sizeof(T) == 8, std::int32_t,
+            std::conditional_t<sizeof(T) == 4, std::int16_t, std::int8_t>>,
+        std::conditional_t<sizeof(T) == 8, std::uint32_t,
+            std::conditional_t<sizeof(T) == 4, std::uint16_t, std::uint8_t>>>>;
 // Rebind a tag D to the same lane COUNT but a same-width signed/unsigned integer lane type.
 template <class D>
 using RebindToUnsigned = Simd<MakeUnsigned<TFromD<D>>, D::kMaxLanes, 0>;
 template <class D>
 using RebindToSigned = Simd<MakeSigned<TFromD<D>>, D::kMaxLanes, 0>;
+
+// ---- tag re-typing (Highway Rebind / Repartition family) ---------------------------
+// Rebind<T2, D>: SAME lane COUNT as D, but lane type T2 (any width). The kPow2 is preserved so
+// the count still tracks D's scale. Used when an op yields the same number of lanes at a different
+// element type (e.g. a compare producing an integer mask-vector, PromoteTo's DESTINATION tag).
+template <typename T2, class D>
+using Rebind = Simd<T2, D::kMaxLanes, D::kPow2>;
+
+// Repartition<T2, D>: SAME total BYTES as D, re-divided into T2 lanes (so the COUNT changes by the
+// width ratio). Used for widen/narrow bit reinterpret views (e.g. viewing an u32 vector as u8).
+// count' = kMaxLanes * sizeof(T) / sizeof(T2). Requires the byte size to divide evenly.
+template <typename T2, class D>
+using Repartition = Simd<T2, D::kMaxLanes * sizeof(TFromD<D>) / sizeof(T2), D::kPow2>;
+
+// RepartitionToWide<D>: lanes twice as wide, HALF the count (Highway's name). The building block
+// for PromoteTo's 2x-wide destination and InterleaveWhole. RepartitionToNarrow is the inverse.
+template <class D>
+using RepartitionToWide = Repartition<MakeWide<TFromD<D>>, D>;
+template <class D>
+using RepartitionToNarrow = Repartition<MakeNarrow<TFromD<D>>, D>;
 
 // constexpr upper bound on lanes. Macro form mirrors Highway (MSVC can't always deduce
 // it through a function in SFINAE contexts).
@@ -220,6 +260,13 @@ template <class D>
 using Half = typename D::Half;
 template <class D>
 using Twice = typename D::Twice;
+
+// MFromD<D>: the MASK type a tag D's ops produce (Highway's name). Defined as the type MaskFromVec
+// yields on D's zero vector -- backend-agnostic (resolves against whichever backend header was
+// included above; scalar's Mask<T,N>, x86's Mask128/256/512, NEON's MaskNeon, SVE's svbool_t).
+// Lets generic code (cmp128, Masked* callers) NAME a mask without spelling the per-backend type.
+template <class D>
+using MFromD = decltype(MaskFromVec(Zero(D())));
 
 // ---- Masked* family (compute-06 simd-08 B-1) ----------------------------------------
 // GENERIC layer: every Masked op is `IfThenElseZero(m, op(...))` (zero the off lanes) and its
