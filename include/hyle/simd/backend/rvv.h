@@ -273,6 +273,21 @@ template <class D, class M> HYLE_FORCE_INLINE bool AllFalse(D d, M m) noexcept {
 template <class D, class M> HYLE_FORCE_INLINE std::size_t CountTrue(D d, M m) noexcept {
   return static_cast<std::size_t>(__riscv_vcpop(m, Lanes(d)));
 }
+// FindFirstTrue: index of first active lane or -1 (RVV vfirst does exactly this). FindLastTrue: no
+// direct primitive -> select each active lane's index into an iota, inactive lanes get -1, ReduceMax.
+template <class D, class M> HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(D d, M m) noexcept {
+  return static_cast<std::ptrdiff_t>(__riscv_vfirst(m, Lanes(d)));
+}
+template <class D, class M> HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(D d, M m) noexcept {
+  using T = TFromD<D>;
+  const std::size_t vl = Lanes(d);
+  if (__riscv_vfirst(m, vl) < 0) return -1;  // no active lane
+  // signed same-width iota; inactive lanes -> -1 via masked merge; ReduceMax picks the last index.
+  if constexpr (sizeof(T) == 1) { auto id = __riscv_vreinterpret_i8m1(__riscv_vid_v_u8m1(vl)); auto sel = __riscv_vmerge(__riscv_vmv_v_x_i8m1(-1, vl), id, m, vl); return (std::ptrdiff_t)__riscv_vmv_x(__riscv_vredmax(sel, sel, vl)); }
+  else if constexpr (sizeof(T) == 2) { auto id = __riscv_vreinterpret_i16m1(__riscv_vid_v_u16m1(vl)); auto sel = __riscv_vmerge(__riscv_vmv_v_x_i16m1(-1, vl), id, m, vl); return (std::ptrdiff_t)__riscv_vmv_x(__riscv_vredmax(sel, sel, vl)); }
+  else if constexpr (sizeof(T) == 4) { auto id = __riscv_vreinterpret_i32m1(__riscv_vid_v_u32m1(vl)); auto sel = __riscv_vmerge(__riscv_vmv_v_x_i32m1(-1, vl), id, m, vl); return (std::ptrdiff_t)__riscv_vmv_x(__riscv_vredmax(sel, sel, vl)); }
+  else { auto id = __riscv_vreinterpret_i64m1(__riscv_vid_v_u64m1(vl)); auto sel = __riscv_vmerge(__riscv_vmv_v_x_i64m1(-1, vl), id, m, vl); return (std::ptrdiff_t)__riscv_vmv_x(__riscv_vredmax(sel, sel, vl)); }
+}
 
 // ---- GetLane: lane 0 ----------------------------------------------------------------
 template <class V> HYLE_FORCE_INLINE TFromV<V> GetLane(V v) noexcept {
@@ -414,6 +429,31 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> RoundToInt(Simd<DstT, N, 0> dd, V v) 
   if constexpr (std::is_same_v<SrcT, float>) return __riscv_vfcvt_x_f_v_i32m1(v, vl);
   else return __riscv_vfcvt_x_f_v_i64m1(v, vl);
 }
+// Round/Floor/Ceil/Trunc: float->float rounding to an integral value (result stays float). RVV base
+// V has no vrint; use round-mode fcvt (vfcvt_x_f_..._rm) to int then vfcvt_f back. Values with
+// |v| >= 2^(mantissa-bits) are ALREADY integral and would overflow the int convert, so keep the
+// original there (select on |v| < 2^23 f32 / 2^52 f64). NaN/inf are >= the threshold -> passthrough.
+namespace detail {
+template <int kFrm, class V> HYLE_FORCE_INLINE V rvv_round(V v) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = detail::vlmax<T>();
+  if constexpr (std::is_same_v<T, float>) {
+    const vint32m1_t i = __riscv_vfcvt_x_f_v_i32m1_rm(v, kFrm, vl);
+    const vfloat32m1_t r = __riscv_vfcvt_f_x_v_f32m1(i, vl);
+    const auto small = __riscv_vmflt(__riscv_vfabs(v, vl), 8388608.0f, vl);  // |v| < 2^23
+    return __riscv_vmerge(v, r, small, vl);
+  } else {
+    const vint64m1_t i = __riscv_vfcvt_x_f_v_i64m1_rm(v, kFrm, vl);
+    const vfloat64m1_t r = __riscv_vfcvt_f_x_v_f64m1(i, vl);
+    const auto small = __riscv_vmflt(__riscv_vfabs(v, vl), 4503599627370496.0, vl);  // |v| < 2^52
+    return __riscv_vmerge(v, r, small, vl);
+  }
+}
+}  // namespace detail
+template <class V> HYLE_FORCE_INLINE V Round(V v) noexcept { return detail::rvv_round<__RISCV_FRM_RNE>(v); }
+template <class V> HYLE_FORCE_INLINE V Floor(V v) noexcept { return detail::rvv_round<__RISCV_FRM_RDN>(v); }
+template <class V> HYLE_FORCE_INLINE V Ceil(V v) noexcept { return detail::rvv_round<__RISCV_FRM_RUP>(v); }
+template <class V> HYLE_FORCE_INLINE V Trunc(V v) noexcept { return detail::rvv_round<__RISCV_FRM_RTZ>(v); }
 
 // ---- FP classification --------------------------------------------------------------
 template <class V> HYLE_FORCE_INLINE auto IsNaN(V v) noexcept {

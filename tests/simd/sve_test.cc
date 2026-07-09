@@ -208,6 +208,37 @@ TEST(Sve, ConvertGather) {
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(of[i], table[idx[i]]);
 }
 
+// Round/Floor/Ceil/Trunc (float->float, svrintX) vs libm; FindFirstTrue/FindLastTrue vs scalar scan.
+TEST(Sve, RoundingAndFindTrue) {
+  const hs::ScalableTag<float> d;
+  const std::size_t n = hs::Lanes(d);
+  alignas(64) float a[kBuf], o[kBuf];
+  for (std::size_t i = 0; i < n; ++i) a[i] = (static_cast<float>(i) - static_cast<float>(n) / 2) * 1.375f;
+  auto va = hs::Load(d, a);
+  hs::Store(hs::Round(va), d, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(o[i], std::nearbyint(a[i]), 1e-5f) << "Round " << i;
+  hs::Store(hs::Floor(va), d, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(o[i], std::floor(a[i]), 1e-5f) << "Floor " << i;
+  hs::Store(hs::Ceil(va), d, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(o[i], std::ceil(a[i]), 1e-5f) << "Ceil " << i;
+  hs::Store(hs::Trunc(va), d, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(o[i], std::trunc(a[i]), 1e-5f) << "Trunc " << i;
+
+  const hs::ScalableTag<std::int32_t> di;
+  const std::size_t ni = hs::Lanes(di);
+  alignas(64) std::int32_t iv[kBuf]; for (std::size_t i = 0; i < ni; ++i) iv[i] = static_cast<std::int32_t>(i);
+  auto vi = hs::Load(di, iv);
+  const std::int32_t hi = static_cast<std::int32_t>(ni - 2 > 2 ? ni - 2 : ni);
+  auto m = hs::And(hs::Ge(vi, hs::Set(di, 2)), hs::Lt(vi, hs::Set(di, hi)));
+  std::ptrdiff_t ff = -1, fl = -1;
+  for (std::size_t i = 0; i < ni; ++i) { bool act = (std::int32_t)i >= 2 && (std::int32_t)i < hi; if (act) { if (ff < 0) ff = (std::ptrdiff_t)i; fl = (std::ptrdiff_t)i; } }
+  EXPECT_EQ(hs::FindFirstTrue(di, m), ff);
+  EXPECT_EQ(hs::FindLastTrue(di, m), fl);
+  auto mf = hs::Lt(vi, hs::Set(di, -1));
+  EXPECT_EQ(hs::FindFirstTrue(di, mf), std::ptrdiff_t{-1});
+  EXPECT_EQ(hs::FindLastTrue(di, mf), std::ptrdiff_t{-1});
+}
+
 // ---- clean-native batch: bitcast / saturating / classify / scatter / compressstore --
 TEST(Sve, CleanNativeBatch) {
   const hs::ScalableTag<std::int32_t> di;

@@ -287,6 +287,33 @@ template <class D> HYLE_FORCE_INLINE std::size_t CountTrue(D, svbool_t m) noexce
   else if constexpr (sizeof(T) == 4) return static_cast<std::size_t>(svcntp_b32(svptrue_b32(), m));
   else return static_cast<std::size_t>(svcntp_b64(svptrue_b64(), m));
 }
+// FindFirstTrue: index of the first active lane, or -1 if none. svbrkb_z sets the lanes BEFORE the
+// first true (exclusive); counting them gives the first-true index. FindLastTrue: reverse the mask
+// (svrev_b*), find first, map back to (Lanes-1 - idx).
+namespace detail {
+template <typename T> HYLE_FORCE_INLINE svbool_t brkb_before_first(svbool_t m) noexcept {
+  return svbrkb_z(ptrue<T>(), m);
+}
+template <typename T> HYLE_FORCE_INLINE svbool_t rev_mask(svbool_t m) noexcept {
+  if constexpr (sizeof(T) == 1) return svrev_b8(m);
+  else if constexpr (sizeof(T) == 2) return svrev_b16(m);
+  else if constexpr (sizeof(T) == 4) return svrev_b32(m);
+  else return svrev_b64(m);
+}
+}  // namespace detail
+template <class D> HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(D d, svbool_t m) noexcept {
+  using T = TFromD<D>;
+  if (!svptest_any(detail::ptrue<T>(), m)) return -1;
+  return static_cast<std::ptrdiff_t>(CountTrue(d, detail::brkb_before_first<T>(m)));
+}
+template <class D> HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(D d, svbool_t m) noexcept {
+  using T = TFromD<D>;
+  if (!svptest_any(detail::ptrue<T>(), m)) return -1;
+  const std::ptrdiff_t rev_first =
+      static_cast<std::ptrdiff_t>(CountTrue(d, detail::brkb_before_first<T>(detail::rev_mask<T>(m))));
+  return static_cast<std::ptrdiff_t>(Lanes(d)) - 1 - rev_first;
+}
+
 
 // ---- GetLane: lane 0 ----------------------------------------------------------------
 template <class V> HYLE_FORCE_INLINE TFromV<V> GetLane(V v) noexcept {
@@ -404,6 +431,13 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> RoundToInt(Simd<DstT, N, 0>, V v) noe
   else
     return svcvt_s64_x(pg, svrintn_x(pg, v));
 }
+// Round/Floor/Ceil/Trunc: float->float rounding to an integral value (result stays the float type).
+// SVE native: svrintn (nearest-even) / svrintm (toward -inf) / svrintp (toward +inf) / svrintz
+// (toward zero). Float/double only.
+template <class V> HYLE_FORCE_INLINE V Round(V v) noexcept { return svrintn_x(detail::ptrue<TFromV<V>>(), v); }
+template <class V> HYLE_FORCE_INLINE V Floor(V v) noexcept { return svrintm_x(detail::ptrue<TFromV<V>>(), v); }
+template <class V> HYLE_FORCE_INLINE V Ceil(V v) noexcept { return svrintp_x(detail::ptrue<TFromV<V>>(), v); }
+template <class V> HYLE_FORCE_INLINE V Trunc(V v) noexcept { return svrintz_x(detail::ptrue<TFromV<V>>(), v); }
 
 // ---- gather (SVE NATIVE svld1_gather, not store+reload) -----------------------------
 // GatherIndex(d, base, idx): dst[i] = base[idx[i]]. SVE's gather takes the index vector as the
