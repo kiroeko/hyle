@@ -139,6 +139,17 @@
 
 3 打平/反超,4 大幅改善(LZCnt/Compress/TZCnt Highway 的 float-trick/packed-table 更精巧仍略快,但已拿下绝大部分收益)。铁律仍立:store+reload+std 标量 op 优先全换。
 
+**✅ 剩余 2.x 输家也拉到全平(2026-07-09,用户"返回全平,而不是比 highway 慢 2.x")**——上表 LZCnt/TZCnt/Compress 的"2.4x"残留全部消除,抄 Highway 的更精巧算法:
+| op | 上一轮 | 本轮 | 手法(抄 Highway generic_ops / x86_128/256) | 统计判定(bench-stat -n15) |
+|---|---|---|---|---|
+| **LeadingZeroCount** | 2.4x | **打平** | float-exp trick:`cvtepi32_ps` 取偏置指数,LZCnt=min(158-be,32)。带 round-down 归一化 `v&~(v>>24)` 防跨 2 幂舍入 | avx2 ratio 1.13、sse4 1.09(gap«spread) |
+| **TrailingZeroCount** | 1.4x | **打平** | 同上,TZCnt=min(be(x&-x)-127,32),unsigned-min 吸收 v=0 | (随 LZCnt 同核) |
+| **Compress** | 2.4x(avx2)/5x(sse4) | **打平** | ①去零尾税(契约改 unspecified 尾部,对齐 Highway,见下)②avx2:1KB packed 表 + srlv 展开、**movemask_ps 直取 mask**(原 mask_bits 标量压位循环是主瓶颈)③sse4:256 B pshufb 字节索引表 | avx2 ratio 0.99、sse4 1.00 |
+
+**Compress 契约变更(关键决策)**:HYLE 旧 Compress 保证不活跃尾部清零(强于 Highway"unspecified")。实测该保证在 AVX2/SSE4(无清零-compress 指令)是纯软件税(avx2 零尾 mask + 标量压位共 ~2x)。经核实①唯一消费者 vqsort 自带 Highway 不依赖②标准用法(`CompressStore` 只写 CountTrue / 只读前 CountTrue 个)不碰尾部③"整向量直接算"在正确代码里语义讲不通。故**契约改为尾部 unspecified**(对齐 Highway/xsimd),vec_test 契约测试只断言前 CountTrue 个 lane。各 target 尾部行为可不同(avx512 maskz 硬件清零、sse4/neon/scalar 的 store+reload 恰好清零、avx2 vpermd 不清零)——同 Highway 各 target 差异。**NEON 无需改**:LZCnt 用原生 vclzq、Compress store+reload 也已够(未测出输)。
+
+**四固定宽后端最终态**:9 个原 store+reload 慢 op + 2 个残留 2.x 输家,**全部 ≥ 统计打平**(bench-stat -n15,gap«spread)。avx2/sse4 各 vec_test 169/169(WSL+MSVC)、avx512 SDE 169/169、neon qemu 169/169。**"自造件性能不如抄 Highway"的担忧彻底清账:HYLE 手写核 = Highway 同速,且保留 dtype/scalable/契约统一 + 不依赖 Highway。**
+
 **✅ 全四固定宽后端已铺完(2026-07-09,925c689/db0352b)**——同 pattern 铺到 avx512/sse4/neon,各 vec_test 169/169:
 | 后端 | 验证闸门 | 手法要点 | 残留输家(同 avx2) |
 |---|---|---|---|
