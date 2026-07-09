@@ -141,4 +141,178 @@ HYLE_FORCE_INLINE void StoreU(VFromD<D> v, D d, TFromD<D>* p) noexcept {
 template <class D>
 HYLE_FORCE_INLINE void Store(VFromD<D> v, D d, TFromD<D>* p) noexcept { StoreU(v, d, p); }
 
+// ---- arithmetic ---------------------------------------------------------------------
+// RVV intrinsics are heavily type-suffixed AND take an explicit vl. To avoid a 10-way if-constexpr
+// per op, a macro generates the per-lane-type dispatch; each op computes vl once from Lanes(d).
+// (T-generic overloads exist for the arithmetic verbs, so the suffix-free __riscv_vadd etc. work
+// across int lane types; float uses vfadd. We branch only int-vs-float where the mnemonic differs.)
+#define HYLE_RVV_BIN_INT(NAME, IOP)                                                  \
+  template <class V> HYLE_FORCE_INLINE V NAME(V a, V b) noexcept {                   \
+    const std::size_t vl = detail::vlmax<TFromV<V>>();                               \
+    return IOP(a, b, vl);                                                            \
+  }
+// Add/Sub/Mul/Min/Max: int + float share a generic verb via the type-generic intrinsics.
+template <class V> HYLE_FORCE_INLINE V Add(V a, V b) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  if constexpr (std::is_floating_point_v<TFromV<V>>) return __riscv_vfadd(a, b, vl);
+  else return __riscv_vadd(a, b, vl);
+}
+template <class V> HYLE_FORCE_INLINE V Sub(V a, V b) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  if constexpr (std::is_floating_point_v<TFromV<V>>) return __riscv_vfsub(a, b, vl);
+  else return __riscv_vsub(a, b, vl);
+}
+template <class V> HYLE_FORCE_INLINE V Mul(V a, V b) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  if constexpr (std::is_floating_point_v<TFromV<V>>) return __riscv_vfmul(a, b, vl);
+  else return __riscv_vmul(a, b, vl);
+}
+template <class V> HYLE_FORCE_INLINE V Min(V a, V b) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = detail::vlmax<T>();
+  if constexpr (std::is_floating_point_v<T>) return __riscv_vfmin(a, b, vl);
+  else if constexpr (std::is_signed_v<T>) return __riscv_vmin(a, b, vl);
+  else return __riscv_vminu(a, b, vl);  // unsigned uses the 'u' mnemonic
+}
+template <class V> HYLE_FORCE_INLINE V Max(V a, V b) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = detail::vlmax<T>();
+  if constexpr (std::is_floating_point_v<T>) return __riscv_vfmax(a, b, vl);
+  else if constexpr (std::is_signed_v<T>) return __riscv_vmax(a, b, vl);
+  else return __riscv_vmaxu(a, b, vl);
+}
+template <class V> HYLE_FORCE_INLINE V Div(V a, V b) noexcept {  // float only
+  return __riscv_vfdiv(a, b, detail::vlmax<TFromV<V>>());
+}
+template <class V> HYLE_FORCE_INLINE V Sqrt(V a) noexcept {
+  return __riscv_vfsqrt(a, detail::vlmax<TFromV<V>>());
+}
+template <class V> HYLE_FORCE_INLINE V Neg(V a) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  if constexpr (std::is_floating_point_v<TFromV<V>>) return __riscv_vfneg(a, vl);
+  else return __riscv_vneg(a, vl);
+}
+// MulAdd(a,b,c)=a*b+c ; NegMulAdd(a,b,c)=c-a*b. vfmacc(acc,a,b)=acc+a*b (float); ints via mul+add.
+template <class V> HYLE_FORCE_INLINE V MulAdd(V a, V b, V c) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  if constexpr (std::is_floating_point_v<TFromV<V>>) return __riscv_vfmadd(a, b, c, vl);  // a*b+c
+  else return __riscv_vmadd(a, b, c, vl);
+}
+template <class V> HYLE_FORCE_INLINE V NegMulAdd(V a, V b, V c) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  if constexpr (std::is_floating_point_v<TFromV<V>>) return __riscv_vfnmsac(c, a, b, vl);  // c-a*b
+  else return __riscv_vnmsac(c, a, b, vl);
+}
+
+// ---- bitwise (integer) --------------------------------------------------------------
+template <class V> HYLE_FORCE_INLINE V And(V a, V b) noexcept { return __riscv_vand(a, b, detail::vlmax<TFromV<V>>()); }
+template <class V> HYLE_FORCE_INLINE V Or(V a, V b) noexcept { return __riscv_vor(a, b, detail::vlmax<TFromV<V>>()); }
+template <class V> HYLE_FORCE_INLINE V Xor(V a, V b) noexcept { return __riscv_vxor(a, b, detail::vlmax<TFromV<V>>()); }
+template <class V> HYLE_FORCE_INLINE V Not(V a) noexcept { return __riscv_vnot(a, detail::vlmax<TFromV<V>>()); }
+template <class V> HYLE_FORCE_INLINE V AndNot(V a, V b) noexcept {  // ~a & b (Highway order)
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  return __riscv_vand(__riscv_vnot(a, vl), b, vl);
+}
+
+// ---- comparisons -> vbool mask ------------------------------------------------------
+// RVV masks are vbool<ratio>_t. The type-generic vmseq/vmslt/... deduce the mask type from the
+// operand vector type, so we can stay verb-generic.
+template <class V> HYLE_FORCE_INLINE auto Eq(V a, V b) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  if constexpr (std::is_floating_point_v<TFromV<V>>) return __riscv_vmfeq(a, b, vl);
+  else return __riscv_vmseq(a, b, vl);
+}
+template <class V> HYLE_FORCE_INLINE auto Ne(V a, V b) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  if constexpr (std::is_floating_point_v<TFromV<V>>) return __riscv_vmfne(a, b, vl);
+  else return __riscv_vmsne(a, b, vl);
+}
+template <class V> HYLE_FORCE_INLINE auto Lt(V a, V b) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = detail::vlmax<T>();
+  if constexpr (std::is_floating_point_v<T>) return __riscv_vmflt(a, b, vl);
+  else if constexpr (std::is_signed_v<T>) return __riscv_vmslt(a, b, vl);
+  else return __riscv_vmsltu(a, b, vl);
+}
+template <class V> HYLE_FORCE_INLINE auto Gt(V a, V b) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = detail::vlmax<T>();
+  if constexpr (std::is_floating_point_v<T>) return __riscv_vmfgt(a, b, vl);
+  else if constexpr (std::is_signed_v<T>) return __riscv_vmsgt(a, b, vl);
+  else return __riscv_vmsgtu(a, b, vl);
+}
+template <class V> HYLE_FORCE_INLINE auto Le(V a, V b) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = detail::vlmax<T>();
+  if constexpr (std::is_floating_point_v<T>) return __riscv_vmfle(a, b, vl);
+  else if constexpr (std::is_signed_v<T>) return __riscv_vmsle(a, b, vl);
+  else return __riscv_vmsleu(a, b, vl);
+}
+template <class V> HYLE_FORCE_INLINE auto Ge(V a, V b) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = detail::vlmax<T>();
+  if constexpr (std::is_floating_point_v<T>) return __riscv_vmfge(a, b, vl);
+  else if constexpr (std::is_signed_v<T>) return __riscv_vmsge(a, b, vl);
+  else return __riscv_vmsgeu(a, b, vl);
+}
+
+// ---- select -------------------------------------------------------------------------
+// IfThenElse(m, yes, no): vmerge picks yes where m, else no.
+template <class M, class V> HYLE_FORCE_INLINE V IfThenElse(M m, V yes, V no) noexcept {
+  return __riscv_vmerge(no, yes, m, detail::vlmax<TFromV<V>>());
+}
+
+// ---- mask reductions ----------------------------------------------------------------
+template <class D, class M> HYLE_FORCE_INLINE bool AllTrue(D d, M m) noexcept {
+  const std::size_t vl = Lanes(d);
+  return __riscv_vcpop(m, vl) == static_cast<long>(vl);
+}
+template <class D, class M> HYLE_FORCE_INLINE bool AllFalse(D d, M m) noexcept {
+  return __riscv_vcpop(m, Lanes(d)) == 0;
+}
+template <class D, class M> HYLE_FORCE_INLINE std::size_t CountTrue(D d, M m) noexcept {
+  return static_cast<std::size_t>(__riscv_vcpop(m, Lanes(d)));
+}
+
+// ---- GetLane: lane 0 ----------------------------------------------------------------
+template <class V> HYLE_FORCE_INLINE TFromV<V> GetLane(V v) noexcept {
+  if constexpr (std::is_floating_point_v<TFromV<V>>) return __riscv_vfmv_f(v);
+  else return __riscv_vmv_x(v);
+}
+
+// ---- value reductions ---------------------------------------------------------------
+// RVV reductions take a scalar-init vector and return a vector whose lane 0 is the result.
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceSum(D d, VFromD<D> v) noexcept {
+  const std::size_t vl = Lanes(d);
+  auto z = Zero(d);
+  if constexpr (std::is_floating_point_v<TFromD<D>>) return __riscv_vfmv_f(__riscv_vfredusum(v, z, vl));
+  else return __riscv_vmv_x(__riscv_vredsum(v, z, vl));
+}
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMin(D d, VFromD<D> v) noexcept {
+  const std::size_t vl = Lanes(d);
+  if constexpr (std::is_floating_point_v<TFromD<D>>) return __riscv_vfmv_f(__riscv_vfredmin(v, v, vl));
+  else return __riscv_vmv_x(__riscv_vredmin(v, v, vl));
+}
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMax(D d, VFromD<D> v) noexcept {
+  const std::size_t vl = Lanes(d);
+  if constexpr (std::is_floating_point_v<TFromD<D>>) return __riscv_vfmv_f(__riscv_vfredmax(v, v, vl));
+  else return __riscv_vmv_x(__riscv_vredmax(v, v, vl));
+}
+
+// ---- shifts -------------------------------------------------------------------------
+// Immediate: splat the count. Variable: shift by b's lanes (as unsigned same-width). Signed
+// right shift = arithmetic (vsra), unsigned = logical (vsrl).
+template <int kBits, class V> HYLE_FORCE_INLINE V ShiftLeft(V a) noexcept {
+  return __riscv_vsll(a, static_cast<std::size_t>(kBits), detail::vlmax<TFromV<V>>());
+}
+template <int kBits, class V> HYLE_FORCE_INLINE V ShiftRight(V a) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  if constexpr (std::is_signed_v<TFromV<V>>) return __riscv_vsra(a, static_cast<std::size_t>(kBits), vl);
+  else return __riscv_vsrl(a, static_cast<std::size_t>(kBits), vl);
+}
+
+// NOTE: element-wise PopulationCount / LeadingZeroCount are the Zvbb extension (__riscv_vcpop_v /
+// __riscv_vclz_v), NOT in the rv64gcv base V. Deferred until a Zvbb tier is added (documented
+// boundary, same as SVE's deferred block-swizzle/width-changers).
+
 }  // namespace hyle::simd
