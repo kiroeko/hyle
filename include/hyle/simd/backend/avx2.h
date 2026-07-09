@@ -1886,10 +1886,38 @@ HYLE_FORCE_INLINE Vec256<T, N> bitcount_via_mem(Vec256<T, N> v) noexcept {
   return Load(Simd<T, N, 0>(), d);
 }
 }  // namespace detail
+namespace detail {
+// Native byte-wise popcount via the vpshufb nibble-LUT (Highway/Muła's method): a 16-entry table
+// maps each nibble to its bit count; shuffle it twice (low + high nibble) and add. Returns the
+// per-BYTE popcount (0..8) in each byte lane. The per-lane-width reducers below sum these bytes.
+HYLE_FORCE_INLINE __m256i popcnt_bytes_avx2(__m256i v) noexcept {
+  const __m256i lut = _mm256_setr_epi8(
+      0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4, 0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4);
+  const __m256i lo_mask = _mm256_set1_epi8(0x0F);
+  const __m256i lo = _mm256_and_si256(v, lo_mask);
+  const __m256i hi = _mm256_and_si256(_mm256_srli_epi16(v, 4), lo_mask);
+  return _mm256_add_epi8(_mm256_shuffle_epi8(lut, lo), _mm256_shuffle_epi8(lut, hi));
+}
+}  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> PopulationCount(Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "PopulationCount is integer-lane only");
-  return detail::bitcount_via_mem<T, N, 0>(v);
+  Vec256<T, N> r;
+  const __m256i bytes = detail::popcnt_bytes_avx2(v.raw);  // per-byte counts
+  if constexpr (sizeof(T) == 1) {
+    r.raw = bytes;
+  } else if constexpr (sizeof(T) == 8) {
+    // sum 8 bytes per 64-bit lane: vpsadbw against zero gives the byte-sum in each 64-bit lane.
+    r.raw = _mm256_sad_epu8(bytes, _mm256_setzero_si256());
+  } else if constexpr (sizeof(T) == 4) {
+    // sum 4 bytes per 32-bit lane: sad gives per-64 sums of 8 bytes; instead fold within 32b.
+    const __m256i s16 = _mm256_maddubs_epi16(bytes, _mm256_set1_epi8(1));   // pairs of bytes -> u16
+    const __m256i s32 = _mm256_madd_epi16(s16, _mm256_set1_epi16(1));       // pairs of u16 -> u32
+    r.raw = s32;
+  } else {  // 16-bit: fold byte pairs into each 16-bit lane
+    r.raw = _mm256_maddubs_epi16(bytes, _mm256_set1_epi8(1));
+  }
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> LeadingZeroCount(Vec256<T, N> v) noexcept {
