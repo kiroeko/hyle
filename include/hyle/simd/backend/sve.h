@@ -414,6 +414,37 @@ HYLE_FORCE_INLINE VFromD<D> GatherIndex(D, const TFromD<D>* base, VI idx) noexce
   return svld1_gather_index(detail::ptrue<TFromD<D>>(), base, idx);
 }
 
+// ---- swizzle (WHOLE-VECTOR scalable-native; SEE CONTRACT NOTE) ----------------------
+// SCALABLE CONTRACT: on a scalable backend these are WHOLE-VECTOR, not per-128-bit-block like the
+// fixed-width x86 backends. SVE's svzip1/svuzp1/svtrn1 operate across the entire VL. This matches
+// the mathematical (scalar-oracle) definition and NEON's single-128-bit-block behavior; it differs
+// from AVX2's 256-bit "two blocks" only for the block-relative ops, which are NOT provided here
+// (ConcatLowerLower etc. have no scalable meaning). InterleaveLower(a,b) = [a0,b0,a1,b1,...].
+template <class V> HYLE_FORCE_INLINE V InterleaveLower(V a, V b) noexcept { return svzip1(a, b); }
+template <class V> HYLE_FORCE_INLINE V InterleaveUpper(V a, V b) noexcept { return svzip2(a, b); }
+template <class D, class V> HYLE_FORCE_INLINE V InterleaveLower(D, V a, V b) noexcept { return svzip1(a, b); }
+template <class D, class V> HYLE_FORCE_INLINE V InterleaveUpper(D, V a, V b) noexcept { return svzip2(a, b); }
+template <class V> HYLE_FORCE_INLINE V ZipLower(V a, V b) noexcept { return svzip1(a, b); }
+template <class V> HYLE_FORCE_INLINE V ZipUpper(V a, V b) noexcept { return svzip2(a, b); }
+// ConcatEven/Odd: gather the even/odd lanes of the concatenation [b:a] (Highway's ConcatEven(d,hi,
+// lo) = even lanes of lo then even lanes of hi). svuzp1/2 deinterleave across the whole vector.
+template <class D, class V> HYLE_FORCE_INLINE V ConcatEven(D, V hi, V lo) noexcept { return svuzp1(lo, hi); }
+template <class D, class V> HYLE_FORCE_INLINE V ConcatOdd(D, V hi, V lo) noexcept { return svuzp2(lo, hi); }
+// OddEven(odd, even): even-position lanes from `even`, odd-position lanes from `odd`. Select on an
+// alternating "(lane index & 1)==0" predicate built from the width-matched iota.
+namespace detail {
+template <typename T> HYLE_FORCE_INLINE svbool_t even_lane_mask() noexcept {
+  const svbool_t pg = ptrue<T>();
+  if constexpr (sizeof(T) == 1) return svcmpeq(pg, svand_x(pg, svindex_u8(0, 1), svdup_n_u8(1)), svdup_n_u8(0));
+  else if constexpr (sizeof(T) == 2) return svcmpeq(pg, svand_x(pg, svindex_u16(0, 1), svdup_n_u16(1)), svdup_n_u16(0));
+  else if constexpr (sizeof(T) == 4) return svcmpeq(pg, svand_x(pg, svindex_u32(0, 1), svdup_n_u32(1)), svdup_n_u32(0));
+  else return svcmpeq(pg, svand_x(pg, svindex_u64(0, 1), svdup_n_u64(1)), svdup_n_u64(0));
+}
+}  // namespace detail
+template <class V> HYLE_FORCE_INLINE V OddEven(V odd, V even) noexcept {
+  return svsel(detail::even_lane_mask<TFromV<V>>(), even, odd);
+}
+
 // ---- bit counting: population / leading-zero count ----------------------------------
 // svcnt_x/svclz_x return the UNSIGNED same-width vector; Highway keeps the input lane type, so
 // reinterpret the unsigned result back to V's type via a shared helper.
