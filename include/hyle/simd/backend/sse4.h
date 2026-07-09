@@ -398,15 +398,27 @@ HYLE_FORCE_INLINE Vec128<T, N> ApproximateReciprocalSqrt(Vec128<T, N> a) noexcep
   else r = Div(Set(Simd<T, N, 0>(), 1.0), Sqrt(a));  // no f64 rsqrt intrinsic
   return r;
 }
-// GetExponent(v) = floor(log2(|v|)) as float (std::logb). store+reload std::logb; native
-// getexp is AVX512 (vgetexpps) -- SSE4/AVX2 lack it, so correctness-first per-lane libm.
+// GetExponent(v) = floor(log2(|v|)) as float. Extract the IEEE-754 exponent field via integer
+// vector ops -- no store+reload/libm (op_parity: the old std::logb path was 30x slower on avx2).
+// Single-instruction vgetexpps is AVX-512 only; this bit-math is the portable SSE4 equivalent.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> GetExponent(Vec128<T, N> v) noexcept {
   static_assert(std::is_floating_point_v<T>, "float only");
-  alignas(16) T s[N];
-  Store(v, Simd<T, N, 0>(), s);
-  for (std::size_t i = 0; i < N; ++i) s[i] = std::logb(s[i]);
-  return Load(Simd<T, N, 0>(), s);
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) {
+    const __m128i bits = _mm_castps_si128(v.raw);
+    const __m128i biased = _mm_and_si128(_mm_srli_epi32(bits, 23), _mm_set1_epi32(0xFF));
+    r.raw = _mm_cvtepi32_ps(_mm_sub_epi32(biased, _mm_set1_epi32(127)));
+  } else {  // double: 11-bit exponent, bias 1023
+    const __m128i bits = _mm_castpd_si128(v.raw);
+    const __m128i biased = _mm_and_si128(_mm_srli_epi64(bits, 52), _mm_set1_epi64x(0x7FF));
+    const __m128i unbiased = _mm_sub_epi64(biased, _mm_set1_epi64x(1023));
+    // i64 -> f64: extract the two lanes (no SSE cvtepi64_pd); exact for |exp| < 2^52.
+    alignas(16) std::int64_t e[2];
+    _mm_store_si128(reinterpret_cast<__m128i*>(e), unbiased);
+    r.raw = _mm_set_pd(static_cast<double>(e[1]), static_cast<double>(e[0]));
+  }
+  return r;
 }
 // MulByPow2(a, b) = a * 2^b (std::ldexp), b an integer-lane vector of matching width.
 // store+reload std::ldexp; no clean SSE4 native (AVX512 vscalefps is the hardware form).
@@ -983,6 +995,18 @@ template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> ConcatUpperLower(Vec128<T, N> hi, Vec128<T, N> lo) noexcept { return detail::concat_halves<0, 1>(hi, lo); }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> ConcatEven(Vec128<T, N> hi, Vec128<T, N> lo) noexcept {
+  // [lo even lanes, hi even lanes]. NATIVE for 32-bit (4 lanes): one shuffle_ps picks lanes
+  // {0,2} of lo into the low half and {0,2} of hi into the high half (op_parity: avx2 store+reload
+  // was 1.7x slower). Narrower widths keep the mem gather.
+  if constexpr (sizeof(T) == 4) {
+    Vec128<T, N> r;
+    if constexpr (std::is_same_v<T, float>)
+      r.raw = _mm_shuffle_ps(lo.raw, hi.raw, _MM_SHUFFLE(2, 0, 2, 0));
+    else
+      r.raw = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(lo.raw), _mm_castsi128_ps(hi.raw),
+                                              _MM_SHUFFLE(2, 0, 2, 0)));
+    return r;
+  }
   alignas(16) T sh[N], sl[N], dst[N];
   Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
   for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
@@ -990,18 +1014,44 @@ HYLE_FORCE_INLINE Vec128<T, N> ConcatEven(Vec128<T, N> hi, Vec128<T, N> lo) noex
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> ConcatOdd(Vec128<T, N> hi, Vec128<T, N> lo) noexcept {
+  // [lo odd lanes, hi odd lanes]. NATIVE for 32-bit: shuffle_ps picks lanes {1,3}.
+  if constexpr (sizeof(T) == 4) {
+    Vec128<T, N> r;
+    if constexpr (std::is_same_v<T, float>)
+      r.raw = _mm_shuffle_ps(lo.raw, hi.raw, _MM_SHUFFLE(3, 1, 3, 1));
+    else
+      r.raw = _mm_castps_si128(_mm_shuffle_ps(_mm_castsi128_ps(lo.raw), _mm_castsi128_ps(hi.raw),
+                                              _MM_SHUFFLE(3, 1, 3, 1)));
+    return r;
+  }
   alignas(16) T sh[N], sl[N], dst[N];
   Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
   for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
   return Load(Simd<T, N, 0>(), dst);
 }
+// DupEven/DupOdd: broadcast the even/odd element of each adjacent pair. NATIVE for 32/64-bit lanes
+// (op_parity: avx2 store+reload was 10x slower); narrow 8/16-bit keep the mem swizzle.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> DupEven(Vec128<T, N> v) noexcept {
-  return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_moveldup_ps(v.raw);            // [0,0,2,2]
+  else if constexpr (detail::kI32<T>) r.raw = _mm_shuffle_epi32(v.raw, _MM_SHUFFLE(2, 2, 0, 0));
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm_shuffle_pd(v.raw, v.raw, 0);  // [0,0]
+  else if constexpr (detail::kI64<T>)
+    r.raw = _mm_castpd_si128(_mm_shuffle_pd(_mm_castsi128_pd(v.raw), _mm_castsi128_pd(v.raw), 0));
+  else return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> DupOdd(Vec128<T, N> v) noexcept {
-  return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_movehdup_ps(v.raw);            // [1,1,3,3]
+  else if constexpr (detail::kI32<T>) r.raw = _mm_shuffle_epi32(v.raw, _MM_SHUFFLE(3, 3, 1, 1));
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm_shuffle_pd(v.raw, v.raw, 3);  // [1,1]
+  else if constexpr (detail::kI64<T>)
+    r.raw = _mm_castpd_si128(_mm_shuffle_pd(_mm_castsi128_pd(v.raw), _mm_castsi128_pd(v.raw), 3));
+  else return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
+  return r;
 }
 template <typename T, std::size_t N>
 struct Indices128 { Vec128<T, N> idx; };
@@ -1529,15 +1579,25 @@ HYLE_FORCE_INLINE detail::V128<D> Reverse8(D, detail::V128<D> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> ReverseBits(Vec128<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReverseBits is integer-only");
-  using U = std::make_unsigned_t<T>;
-  alignas(16) T s[N], d[N];
-  Store(v, Simd<T, N, 0>(), s);
-  for (std::size_t i = 0; i < N; ++i) {
-    U x = static_cast<U>(s[i]), y = 0;
-    for (std::size_t b = 0; b < sizeof(T) * 8; ++b) { y = static_cast<U>((y << 1) | (x & 1)); x >>= 1; }
-    d[i] = static_cast<T>(y);
-  }
-  return Load(Simd<T, N, 0>(), d);
+  // NATIVE (op_parity: the avx2 O(bits) scalar loop was 9x slower): (1) reverse bits within each
+  // byte via two pshufb nibble-LUTs, (2) reverse the byte order within each lane via a per-width
+  // pshufb index. per-nibble bit-reversal LUT: reverse(0001)=1000=8, ... (4-bit mirror).
+  const __m128i lut = _mm_setr_epi8(0x0,0x8,0x4,0xC,0x2,0xA,0x6,0xE,0x1,0x9,0x5,0xD,0x3,0xB,0x7,0xF);
+  const __m128i lo_mask = _mm_set1_epi8(0x0F);
+  const __m128i lo = _mm_and_si128(v.raw, lo_mask);
+  const __m128i hi = _mm_and_si128(_mm_srli_epi16(v.raw, 4), lo_mask);
+  __m128i rb = _mm_or_si128(_mm_slli_epi16(_mm_shuffle_epi8(lut, lo), 4), _mm_shuffle_epi8(lut, hi));
+  Vec128<T, N> r;
+  if constexpr (sizeof(T) == 1) { r.raw = rb; return r; }
+  __m128i idx;
+  if constexpr (sizeof(T) == 2)
+    idx = _mm_setr_epi8(1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14);
+  else if constexpr (sizeof(T) == 4)
+    idx = _mm_setr_epi8(3,2,1,0,7,6,5,4,11,10,9,8,15,14,13,12);
+  else
+    idx = _mm_setr_epi8(7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8);
+  r.raw = _mm_shuffle_epi8(rb, idx);
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> ReverseLaneBytes(Vec128<T, N> v) noexcept {
@@ -1722,9 +1782,9 @@ HYLE_FORCE_INLINE Vec128<T, N> Expand(Vec128<T, N> v, Mask128<T, N> m) noexcept 
 }
 
 // ---- bit counts / sign helpers / misc -----------------------------------------------
-// PopulationCount/LeadingZeroCount/TrailingZeroCount via store+reload + std:: (native
-// vpopcnt is AVX-512; PSHUFB nibble-LUT is a profiling-gated perf opt). Not/Clamp/Rotate/
-// CopySign/... compose from existing ops -- same on every backend. Scalar is the reference.
+// PopulationCount/LeadingZeroCount/TrailingZeroCount: NATIVE via the pshufb nibble-LUT (op_parity:
+// the old std::count[lr]_zero store+reload was 5-8x slower on avx2). Not/Clamp/Rotate/CopySign/...
+// compose from existing ops -- same on every backend. Scalar is the reference oracle.
 namespace detail {
 template <typename T, std::size_t N, int kind>
 HYLE_FORCE_INLINE Vec128<T, N> bitcount_via_mem(Vec128<T, N> v) noexcept {
@@ -1739,21 +1799,57 @@ HYLE_FORCE_INLINE Vec128<T, N> bitcount_via_mem(Vec128<T, N> v) noexcept {
   }
   return Load(Simd<T, N, 0>(), d);
 }
+// 128-bit byte-wise popcount via pshufb nibble-LUT (Muła's method): shuffle a 16-entry nibble->count
+// table twice (low + high nibble) and add; returns per-BYTE popcount (0..8).
+HYLE_FORCE_INLINE __m128i popcnt_bytes_sse4(__m128i v) noexcept {
+  const __m128i lut = _mm_setr_epi8(0,1,1,2,1,2,2,3,1,2,2,3,2,3,3,4);
+  const __m128i lo_mask = _mm_set1_epi8(0x0F);
+  const __m128i lo = _mm_and_si128(v, lo_mask);
+  const __m128i hi = _mm_and_si128(_mm_srli_epi16(v, 4), lo_mask);
+  return _mm_add_epi8(_mm_shuffle_epi8(lut, lo), _mm_shuffle_epi8(lut, hi));
+}
+template <typename T> HYLE_FORCE_INLINE __m128i srli_w128(__m128i x, int s) noexcept {
+  if constexpr (sizeof(T) == 2) return _mm_srli_epi16(x, s);
+  else if constexpr (sizeof(T) == 4) return _mm_srli_epi32(x, s);
+  else return _mm_srli_epi64(x, s);
+}
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> PopulationCount(Vec128<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "PopulationCount is integer-lane only");
-  return detail::bitcount_via_mem<T, N, 0>(v);
+  Vec128<T, N> r;
+  const __m128i bytes = detail::popcnt_bytes_sse4(v.raw);
+  if constexpr (sizeof(T) == 1) r.raw = bytes;
+  else if constexpr (sizeof(T) == 8) r.raw = _mm_sad_epu8(bytes, _mm_setzero_si128());
+  else if constexpr (sizeof(T) == 4)
+    r.raw = _mm_madd_epi16(_mm_maddubs_epi16(bytes, _mm_set1_epi8(1)), _mm_set1_epi16(1));
+  else r.raw = _mm_maddubs_epi16(bytes, _mm_set1_epi8(1));  // 16-bit
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> LeadingZeroCount(Vec128<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "LeadingZeroCount is integer-lane only");
-  return detail::bitcount_via_mem<T, N, 1>(v);
+  if constexpr (sizeof(T) == 1) return detail::bitcount_via_mem<T, N, 1>(v);  // no _mm_srli_epi8
+  else {
+    __m128i x = v.raw;  // smear the top set bit down to bit 0, then bits - popcount
+    x = _mm_or_si128(x, detail::srli_w128<T>(x, 1));
+    x = _mm_or_si128(x, detail::srli_w128<T>(x, 2));
+    x = _mm_or_si128(x, detail::srli_w128<T>(x, 4));
+    x = _mm_or_si128(x, detail::srli_w128<T>(x, 8));
+    if constexpr (sizeof(T) >= 4) x = _mm_or_si128(x, detail::srli_w128<T>(x, 16));
+    if constexpr (sizeof(T) == 8) x = _mm_or_si128(x, detail::srli_w128<T>(x, 32));
+    Vec128<T, N> sm; sm.raw = x;
+    return Sub(Set(Simd<T, N, 0>(), static_cast<T>(sizeof(T) * 8)), PopulationCount(sm));
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> TrailingZeroCount(Vec128<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "TrailingZeroCount is integer-lane only");
-  return detail::bitcount_via_mem<T, N, 2>(v);
+  if constexpr (sizeof(T) == 1) return detail::bitcount_via_mem<T, N, 2>(v);
+  else {  // PopCount((x & -x) - 1)
+    Vec128<T, N> lowest; lowest.raw = _mm_and_si128(v.raw, Neg(v).raw);
+    return PopulationCount(Sub(lowest, Set(Simd<T, N, 0>(), static_cast<T>(1))));
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> Not(Vec128<T, N> v) noexcept {

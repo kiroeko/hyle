@@ -433,15 +433,23 @@ HYLE_FORCE_INLINE VecNeon<T, N> ApproximateReciprocalSqrt(VecNeon<T, N> a) noexc
   else r.raw = vrsqrteq_f64(a.raw);  // aarch64
   return r;
 }
-// GetExponent(v) = floor(log2(|v|)) as float. store+reload std::logb; no NEON getexp
-// (unlike AVX-512's native vgetexp). One libm call per lane, correctness-first.
+// GetExponent(v) = floor(log2(|v|)) as float. Extract the IEEE-754 exponent field via integer
+// vector ops -- no store+reload/libm (op_parity: the old std::logb path was 30x slower on avx2).
+// No NEON getexp (unlike AVX-512's native vgetexp); this bit-math is the portable equivalent.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> GetExponent(VecNeon<T, N> v) noexcept {
   static_assert(std::is_floating_point_v<T>, "float only");
-  alignas(16) T tv[N], tr[N];
-  Store(v, Simd<T, N, 0>(), tv);
-  for (std::size_t i = 0; i < N; ++i) tr[i] = static_cast<T>(std::logb(tv[i]));
-  return Load(Simd<T, N, 0>(), tr);
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) {
+    const uint32x4_t bits = vreinterpretq_u32_f32(v.raw);
+    const int32x4_t biased = vreinterpretq_s32_u32(vandq_u32(vshrq_n_u32(bits, 23), vdupq_n_u32(0xFF)));
+    r.raw = vcvtq_f32_s32(vsubq_s32(biased, vdupq_n_s32(127)));
+  } else {  // double: 11-bit exponent, bias 1023
+    const uint64x2_t bits = vreinterpretq_u64_f64(v.raw);
+    const int64x2_t biased = vreinterpretq_s64_u64(vandq_u64(vshrq_n_u64(bits, 52), vdupq_n_u64(0x7FF)));
+    r.raw = vcvtq_f64_s64(vsubq_s64(biased, vdupq_n_s64(1023)));  // aarch64 vcvtq_f64_s64
+  }
+  return r;
 }
 // MulByPow2(a, b) = a * 2^b (b an integer-lane vector). store+reload std::ldexp for the
 // exact integer-exponent contract (correctness-first; no NEON scale instruction).
@@ -1084,27 +1092,79 @@ template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> ConcatLowerUpper(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept { return detail::concat_halves<1, 0>(hi, lo); }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> ConcatUpperLower(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept { return detail::concat_halves<0, 1>(hi, lo); }
+// ConcatEven/Odd: gather even/odd lanes of [lo:hi]. NATIVE via vuzp1q/vuzp2q (deinterleave: uzp1
+// = all even lanes of {a,b}, uzp2 = all odd), one instruction (op_parity: avx2 store+reload was
+// 1.7x slower). NEON uzp1(lo,hi) = [lo0,lo2,...,hi0,hi2,...] = exactly ConcatEven's contract.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> ConcatEven(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept {
-  alignas(16) T sh[N], sl[N], dst[N];
-  StoreU(hi, Simd<T, N, 0>(), sh); StoreU(lo, Simd<T, N, 0>(), sl);
-  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
-  return LoadU(Simd<T, N, 0>(), dst);
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vuzp1q_f32(lo.raw, hi.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = vuzp1q_f64(lo.raw, hi.raw);
+  else if constexpr (detail::kI8<T>) {
+    const uint8x16_t u = vuzp1q_u8(detail::to_u8<T>(lo.raw), detail::to_u8<T>(hi.raw));
+    r.raw = detail::from_u8<T>(u);
+  } else if constexpr (detail::kI16<T>) {
+    const uint8x16_t u = vreinterpretq_u8_u16(vuzp1q_u16(vreinterpretq_u16_u8(detail::to_u8<T>(lo.raw)),
+                                                         vreinterpretq_u16_u8(detail::to_u8<T>(hi.raw))));
+    r.raw = detail::from_u8<T>(u);
+  } else if constexpr (detail::kI32<T>) {
+    const uint8x16_t u = vreinterpretq_u8_u32(vuzp1q_u32(vreinterpretq_u32_u8(detail::to_u8<T>(lo.raw)),
+                                                         vreinterpretq_u32_u8(detail::to_u8<T>(hi.raw))));
+    r.raw = detail::from_u8<T>(u);
+  } else {  // i64/u64: uzp1 over u64
+    const uint8x16_t u = vreinterpretq_u8_u64(vuzp1q_u64(vreinterpretq_u64_u8(detail::to_u8<T>(lo.raw)),
+                                                         vreinterpretq_u64_u8(detail::to_u8<T>(hi.raw))));
+    r.raw = detail::from_u8<T>(u);
+  }
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> ConcatOdd(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept {
-  alignas(16) T sh[N], sl[N], dst[N];
-  StoreU(hi, Simd<T, N, 0>(), sh); StoreU(lo, Simd<T, N, 0>(), sl);
-  for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
-  return LoadU(Simd<T, N, 0>(), dst);
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vuzp2q_f32(lo.raw, hi.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = vuzp2q_f64(lo.raw, hi.raw);
+  else if constexpr (detail::kI8<T>) {
+    const uint8x16_t u = vuzp2q_u8(detail::to_u8<T>(lo.raw), detail::to_u8<T>(hi.raw));
+    r.raw = detail::from_u8<T>(u);
+  } else if constexpr (detail::kI16<T>) {
+    const uint8x16_t u = vreinterpretq_u8_u16(vuzp2q_u16(vreinterpretq_u16_u8(detail::to_u8<T>(lo.raw)),
+                                                         vreinterpretq_u16_u8(detail::to_u8<T>(hi.raw))));
+    r.raw = detail::from_u8<T>(u);
+  } else if constexpr (detail::kI32<T>) {
+    const uint8x16_t u = vreinterpretq_u8_u32(vuzp2q_u32(vreinterpretq_u32_u8(detail::to_u8<T>(lo.raw)),
+                                                         vreinterpretq_u32_u8(detail::to_u8<T>(hi.raw))));
+    r.raw = detail::from_u8<T>(u);
+  } else {
+    const uint8x16_t u = vreinterpretq_u8_u64(vuzp2q_u64(vreinterpretq_u64_u8(detail::to_u8<T>(lo.raw)),
+                                                         vreinterpretq_u64_u8(detail::to_u8<T>(hi.raw))));
+    r.raw = detail::from_u8<T>(u);
+  }
+  return r;
 }
+// DupEven/DupOdd: broadcast even/odd of each adjacent pair. NATIVE via vtrn1q/vtrn2q (transpose:
+// trn1(v,v) = [v0,v0,v2,v2,...], trn2(v,v) = [v1,v1,v3,v3,...]) -- one instruction (op_parity:
+// avx2 store+reload was 10x slower). 64-bit lanes: DupEven=[v0,v0], DupOdd=[v1,v1].
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> DupEven(VecNeon<T, N> v) noexcept {
-  return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vtrn1q_f32(v.raw, v.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = vzip1q_f64(v.raw, v.raw);  // [v0,v0]
+  else if constexpr (detail::kI8<T>) r.raw = detail::from_u8<T>(vtrn1q_u8(detail::to_u8<T>(v.raw), detail::to_u8<T>(v.raw)));
+  else if constexpr (detail::kI16<T>) r.raw = detail::from_u8<T>(vreinterpretq_u8_u16(vtrn1q_u16(vreinterpretq_u16_u8(detail::to_u8<T>(v.raw)), vreinterpretq_u16_u8(detail::to_u8<T>(v.raw)))));
+  else if constexpr (detail::kI32<T>) r.raw = detail::from_u8<T>(vreinterpretq_u8_u32(vtrn1q_u32(vreinterpretq_u32_u8(detail::to_u8<T>(v.raw)), vreinterpretq_u32_u8(detail::to_u8<T>(v.raw)))));
+  else r.raw = detail::from_u8<T>(vreinterpretq_u8_u64(vzip1q_u64(vreinterpretq_u64_u8(detail::to_u8<T>(v.raw)), vreinterpretq_u64_u8(detail::to_u8<T>(v.raw)))));
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> DupOdd(VecNeon<T, N> v) noexcept {
-  return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vtrn2q_f32(v.raw, v.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = vzip2q_f64(v.raw, v.raw);  // [v1,v1]
+  else if constexpr (detail::kI8<T>) r.raw = detail::from_u8<T>(vtrn2q_u8(detail::to_u8<T>(v.raw), detail::to_u8<T>(v.raw)));
+  else if constexpr (detail::kI16<T>) r.raw = detail::from_u8<T>(vreinterpretq_u8_u16(vtrn2q_u16(vreinterpretq_u16_u8(detail::to_u8<T>(v.raw)), vreinterpretq_u16_u8(detail::to_u8<T>(v.raw)))));
+  else if constexpr (detail::kI32<T>) r.raw = detail::from_u8<T>(vreinterpretq_u8_u32(vtrn2q_u32(vreinterpretq_u32_u8(detail::to_u8<T>(v.raw)), vreinterpretq_u32_u8(detail::to_u8<T>(v.raw)))));
+  else r.raw = detail::from_u8<T>(vreinterpretq_u8_u64(vzip2q_u64(vreinterpretq_u64_u8(detail::to_u8<T>(v.raw)), vreinterpretq_u64_u8(detail::to_u8<T>(v.raw)))));
+  return r;
 }
 // TableLookupLanes: runtime per-lane permute (index lanes hold integer VALUES). NEON's vqtbl
 // works on bytes; for lane-granular permute a store+reload gather over the numeric index is
@@ -1742,15 +1802,15 @@ HYLE_FORCE_INLINE detail::VN<D> Reverse8(D, detail::VN<D> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> ReverseBits(VecNeon<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReverseBits is integer-only");
-  using U = std::make_unsigned_t<T>;
-  alignas(16) T s[N], d[N];
-  StoreU(v, Simd<T, N, 0>(), s);
-  for (std::size_t i = 0; i < N; ++i) {
-    U x = static_cast<U>(s[i]), y = 0;
-    for (std::size_t b = 0; b < sizeof(T) * 8; ++b) { y = static_cast<U>((y << 1) | (x & 1)); x >>= 1; }
-    d[i] = static_cast<T>(y);
-  }
-  return LoadU(Simd<T, N, 0>(), d);
+  // NATIVE (op_parity: the O(bits) scalar loop was 9x slower): vrbitq_u8 reverses the bits within
+  // each byte in ONE instruction; then reverse the byte order within each lane via vrevNq_u8.
+  const uint8x16_t rb = vrbitq_u8(detail::to_u8<T>(v.raw));
+  VecNeon<T, N> r;
+  if constexpr (sizeof(T) == 1) r.raw = detail::from_u8<T>(rb);
+  else if constexpr (sizeof(T) == 2) r.raw = detail::from_u8<T>(vrev16q_u8(rb));
+  else if constexpr (sizeof(T) == 4) r.raw = detail::from_u8<T>(vrev32q_u8(rb));
+  else r.raw = detail::from_u8<T>(vrev64q_u8(rb));
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> ReverseLaneBytes(VecNeon<T, N> v) noexcept {
@@ -1946,9 +2006,10 @@ HYLE_FORCE_INLINE VecNeon<T, N> Expand(VecNeon<T, N> v, MaskNeon<T, N> m) noexce
 }
 
 // ---- bit counts / sign helpers / misc -----------------------------------------------
-// PopulationCount/LeadingZeroCount/TrailingZeroCount via store+reload + std:: (NEON has
-// vcntq_u8 + vclzq for some widths, but the uniform store+reload is correct and these aren't
-// a proven hot path). Not/Clamp/Rotate/CopySign/... compose from existing ops. Scalar oracle.
+// PopulationCount/LeadingZeroCount/TrailingZeroCount: NATIVE (op_parity: the old std::count[lr]_zero
+// store+reload was 5-8x slower on avx2). NEON has vcntq_u8 (per-byte popcount) + vclzq (8/16/32-bit
+// leading zeros) in hardware; wider popcount folds bytes with vpaddlq; 64-bit LZ / all TZ use bit
+// identities. Not/Clamp/Rotate/CopySign/... compose from existing ops. Scalar is the oracle.
 namespace detail {
 template <typename T, std::size_t N, int kind>
 HYLE_FORCE_INLINE VecNeon<T, N> bitcount_via_mem(VecNeon<T, N> v) noexcept {
@@ -1967,17 +2028,45 @@ HYLE_FORCE_INLINE VecNeon<T, N> bitcount_via_mem(VecNeon<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> PopulationCount(VecNeon<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "PopulationCount is integer-lane only");
-  return detail::bitcount_via_mem<T, N, 0>(v);
+  const uint8x16_t bytes = vcntq_u8(detail::to_u8<T>(v.raw));  // per-byte counts
+  VecNeon<T, N> r;
+  if constexpr (sizeof(T) == 1) r.raw = detail::from_u8<T>(bytes);
+  else if constexpr (sizeof(T) == 2) r.raw = detail::from_u8<T>(vreinterpretq_u8_u16(vpaddlq_u8(bytes)));
+  else if constexpr (sizeof(T) == 4) r.raw = detail::from_u8<T>(vreinterpretq_u8_u32(vpaddlq_u16(vpaddlq_u8(bytes))));
+  else r.raw = detail::from_u8<T>(vreinterpretq_u8_u64(vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(bytes)))));
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> LeadingZeroCount(VecNeon<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "LeadingZeroCount is integer-lane only");
-  return detail::bitcount_via_mem<T, N, 1>(v);
+  VecNeon<T, N> r;
+  // native vclzq for 8/16/32-bit lanes (counts on the bit pattern = matches countl_zero of the
+  // unsigned reinterpretation). NEON has no 64-bit CLZ -> smear MSB down + (bits - popcount).
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vclzq_s8(v.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vclzq_u8(v.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vclzq_s16(v.raw);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = vclzq_u16(v.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vclzq_s32(v.raw);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = vclzq_u32(v.raw);
+  else {  // 64-bit: smear the top set bit down, then bits - popcount(smeared)
+    uint64x2_t x = vreinterpretq_u64_u8(detail::to_u8<T>(v.raw));
+    x = vorrq_u64(x, vshrq_n_u64(x, 1));
+    x = vorrq_u64(x, vshrq_n_u64(x, 2));
+    x = vorrq_u64(x, vshrq_n_u64(x, 4));
+    x = vorrq_u64(x, vshrq_n_u64(x, 8));
+    x = vorrq_u64(x, vshrq_n_u64(x, 16));
+    x = vorrq_u64(x, vshrq_n_u64(x, 32));
+    VecNeon<T, N> sm; sm.raw = detail::from_u8<T>(vreinterpretq_u8_u64(x));
+    return Sub(Set(Simd<T, N, 0>(), static_cast<T>(64)), PopulationCount(sm));
+  }
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> TrailingZeroCount(VecNeon<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "TrailingZeroCount is integer-lane only");
-  return detail::bitcount_via_mem<T, N, 2>(v);
+  // PopCount((x & -x) - 1): x&-x isolates the lowest set bit, -1 fills the trailing zeros.
+  const VecNeon<T, N> lowest = And(v, Neg(v));
+  return PopulationCount(Sub(lowest, Set(Simd<T, N, 0>(), static_cast<T>(1))));
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Not(VecNeon<T, N> v) noexcept {
