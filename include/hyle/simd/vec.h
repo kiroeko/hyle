@@ -99,18 +99,25 @@ constexpr std::size_t MaxLanes(D) noexcept {
 // whether Lanes is constexpr. For v1's fixed-width backends it IS constexpr (the
 // compiler precomputes loop bounds); a future scalable backend flips the macro and
 // supplies its own runtime Lanes() in its backend header -- callers are untouched.
-#define HYLE_SIMD_HAVE_SCALABLE 0  // v1: fixed-width x86/NEON only
-
-#if HYLE_SIMD_HAVE_SCALABLE
-#  define HYLE_SIMD_LANES_CONSTEXPR
+// Scalable backends (SVE / RVV) have a RUNTIME vector length: the true lane count comes from
+// svcntw() / vsetvl at run time, not the compile-time tag. kMaxLanes (MaxLanes) stays the
+// constexpr UPPER BOUND (for stack-buffer sizing); Lanes() becomes runtime, supplied by the
+// backend header. Fixed-width backends keep Lanes() constexpr (compiler folds loop bounds).
+#if defined(HYLE_SIMD_TARGET_SVE) || defined(HYLE_SIMD_TARGET_RVV)
+#  define HYLE_SIMD_HAVE_SCALABLE 1
 #else
-#  define HYLE_SIMD_LANES_CONSTEXPR constexpr
+#  define HYLE_SIMD_HAVE_SCALABLE 0
 #endif
 
+#if !HYLE_SIMD_HAVE_SCALABLE
+// Fixed-width: Lanes() == the compile-time upper bound, and IS constexpr. (A scalable backend
+// does NOT define this here -- it supplies its own runtime Lanes() in its backend header, so
+// this generic template must not also exist there or it would be an ambiguous redefinition.)
 template <class D>
-HYLE_SIMD_LANES_CONSTEXPR std::size_t Lanes(D) noexcept {
+constexpr std::size_t Lanes(D) noexcept {
   return HYLE_SIMD_MAX_LANES_D(D);
 }
+#endif
 
 // ---- native vector width for the compiled-in backend -------------------------------
 // The byte width of a 'full' vector for THIS translation unit's baseline ISA. Drives
@@ -134,6 +141,13 @@ static constexpr std::size_t kNativeVectorBytes = 64;
 static constexpr std::size_t kNativeVectorBytes = 32;
 #elif defined(HYLE_SIMD_TARGET_SSE4) || defined(HYLE_SIMD_TARGET_NEON)
 static constexpr std::size_t kNativeVectorBytes = 16;
+#elif defined(HYLE_SIMD_TARGET_SVE) || defined(HYLE_SIMD_TARGET_RVV)
+// Scalable: kNativeVectorBytes is the UPPER BOUND on vector width, NOT the true runtime width
+// (that's Lanes(d) = svcntw()/vsetvl). It only sizes ScalableTag's kMaxLanes (stack buffers).
+// SVE architecture caps at 2048-bit; RVV's spec max is larger but 2048-bit is a safe common
+// ceiling. So kMaxLanes for f32 = 256/4 = 64 -- the store+reload scratch is sized for the
+// widest possible VL and the runtime Lanes(d) caps the actual loop.
+static constexpr std::size_t kNativeVectorBytes = 256;
 #else
 // Scalar floor: emulate a 128-bit vector (matches Highway's EMU128), so lane counts
 // are sane and code written against ScalableTag still vectorizes once a real backend
@@ -159,6 +173,8 @@ static constexpr std::size_t kNativeVectorBytes = 16;
 #  include "hyle/simd/backend/sse4.h"
 #elif defined(HYLE_SIMD_TARGET_NEON)
 #  include "hyle/simd/backend/neon.h"
+#elif defined(HYLE_SIMD_TARGET_SVE)
+#  include "hyle/simd/backend/sve.h"
 #else
 #  include "hyle/simd/backend/scalar.h"
 #endif
