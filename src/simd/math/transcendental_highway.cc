@@ -64,6 +64,37 @@ void tanh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexce
     hn::StoreU(hn::Tanh(d, hn::LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::tanh(src[i]);
 }
+// f64 unary batch: Highway wins 10 of 11 remaining transcendentals at f64 (bench: sin/cos/exp2/
+// log2/atan/cbrt/expm1/log1p/asinh/acosh -- xsimd only wins erf). Same borrow macro as f32.
+#define HYLE_HWY_MATH_F64_AVX2(name, hwyfn, libmfn)                              \
+  void name##_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept { \
+    const hn::ScalableTag<double> d;                                            \
+    const std::size_t w = hn::Lanes(d);                                         \
+    std::size_t i = 0;                                                          \
+    for (; i + w <= n; i += w)                                                  \
+      hn::StoreU(hn::hwyfn(d, hn::LoadU(d, src + i)), d, dst + i);               \
+    for (; i < n; ++i) dst[i] = libmfn(src[i]);                                 \
+  }
+HYLE_HWY_MATH_F64_AVX2(sin, Sin, std::sin)
+HYLE_HWY_MATH_F64_AVX2(cos, Cos, std::cos)
+HYLE_HWY_MATH_F64_AVX2(exp2, Exp2, std::exp2)
+HYLE_HWY_MATH_F64_AVX2(log2, Log2, std::log2)
+HYLE_HWY_MATH_F64_AVX2(atan, Atan, std::atan)
+HYLE_HWY_MATH_F64_AVX2(cbrt, Cbrt, std::cbrt)
+HYLE_HWY_MATH_F64_AVX2(expm1, Expm1, std::expm1)
+HYLE_HWY_MATH_F64_AVX2(log1p, Log1p, std::log1p)
+HYLE_HWY_MATH_F64_AVX2(asinh, Asinh, std::asinh)
+HYLE_HWY_MATH_F64_AVX2(acosh, Acosh, std::acosh)
+#undef HYLE_HWY_MATH_F64_AVX2
+// hypot f64 (binary, overflow-safe -> Highway; xsimd's naive sqrt overflows).
+void hypot_f64_highway_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w)
+    hn::StoreU(hn::Hypot(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
+}
 
 // simd-09: Highway wins sin/cos/log2/atan/cbrt/expm1/log1p/asinh/acosh at the same ISA
 // (bench-decided, GCC+MSVC cross-checked; xsimd serves exp2/erf). Same borrow pattern as log.

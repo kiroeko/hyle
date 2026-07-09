@@ -65,6 +65,21 @@ void tanh_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept
     xsimd::tanh(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
   for (; i < n; ++i) dst[i] = std::tanh(src[i]);
 }
+// erf f64: the ONE remaining op xsimd wins at f64 (bench: xsimd 1.3x Highway -- Highway wins the
+// other 10). tgamma f64: xsimd-only (Highway has no gamma). lgamma stays scalar (the f32 vectorized
+// lgamma lane-mixing bug is an algorithm bug -- assume it affects f64 too; not worth the risk).
+void erf_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::erf(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::erf(src[i]);
+}
+void tgamma_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::tgamma(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
+}
 
 // simd-09: xsimd wins exp2/erf at the same ISA (bench-decided; Highway serves the rest).
 void exp2_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {

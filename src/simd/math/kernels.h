@@ -21,6 +21,20 @@ void tanh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void exp_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
 void log_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
 void tanh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void sin_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void cos_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void exp2_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void log2_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void erf_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void atan_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void cbrt_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void expm1_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void log1p_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void asinh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void acosh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void tgamma_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void lgamma_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void hypot_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 // simd-09 scalar references (always available oracle + fallback)
 void sin_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void cos_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
@@ -63,6 +77,21 @@ void tanh_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept
 void exp_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
 void log_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
 void tanh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+// f64 rest (avx2): Highway wins 10 (sin/cos/exp2/log2/atan/cbrt/expm1/log1p/asinh/acosh) + hypot;
+// xsimd wins erf; tgamma xsimd-only. lgamma stays scalar (vendor lane-mixing bug).
+void sin_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void cos_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void exp2_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void log2_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void atan_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void cbrt_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void expm1_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void log1p_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void asinh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void acosh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void hypot_f64_highway_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+void erf_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void tgamma_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
 // simd-09 AVX2 borrow cores, per-op winner (bench-decided): xsimd for exp2/erf, Highway for
 // the rest. Only the winning lib's TU defines each (the loser would be dead code).
 void exp2_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
@@ -106,6 +135,9 @@ void exp2_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept
 void erf_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
 // xsimd-only borrow, 16-wide sibling (tgamma only; lgamma stays scalar -- vendor lane-mixing bug).
 void tgamma_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
+// f64 8-wide xsimd siblings: erf (xsimd wins f64 erf) + tgamma (xsimd-only).
+void erf_f64_xsimd_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void tgamma_f64_xsimd_avx512(const double* src, double* dst, std::size_t n) noexcept;
 // log: Highway's AVX3 target is HWY_BROKEN on MSVC (it would emit ymm, not zmm), so this
 // 512 symbol exists ONLY on GCC/Clang. On MSVC, math_dispatch keeps the avx2 highway log
 // (the widest Highway gives there) -- see transcendental_highway_avx512.cc MSVC EXCLUSION.
@@ -124,6 +156,21 @@ void expm1_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexc
 void log1p_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
 void asinh_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
 void acosh_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
+// f64 8-wide Highway siblings (GCC/Clang only, MSVC-AVX3-broken). Highway wins 13 f64 ops.
+void exp_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void log_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void tanh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void sin_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void cos_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void exp2_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void log2_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void atan_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void cbrt_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void expm1_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void log1p_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void asinh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void acosh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void hypot_f64_highway_avx512(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 #endif
 #endif
 
@@ -157,6 +204,23 @@ void tgamma_f32_xsimd_neon(const float* src, float* dst, std::size_t n) noexcept
 // hypot binary: Highway (overflow-safe; xsimd's is faster but returns inf past FLT_MAX). Highway
 // contrib/math lowers to NEON here, same as the other arm64 Highway ops.
 void hypot_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+// f64 2-wide NEON Highway siblings -- arm64 uses Highway for ALL f64 ops (incl erf; tgamma/lgamma
+// f64 stay scalar on arm64, mirroring the f32 policy of not pulling xsimd-NEON for gamma-family).
+void exp_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void log_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void tanh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void sin_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void cos_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void exp2_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void log2_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void erf_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void atan_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void cbrt_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void expm1_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void log1p_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void asinh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void acosh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 #endif
 
 }  // namespace hyle::simd::detail

@@ -30,11 +30,26 @@ HYLE_SIMD_API void tanh_f32_batch(const float* src, float* dst, std::size_t n) n
 
 // f64 (double) transcendentals -- the CAE / solver / geometry-kernel path where double precision
 // is the working type. Same vendored cores as f32, but the best-of winner is bench-picked PER
-// PRECISION: at f64 Highway wins exp/log/tanh (the reverse of f32, where xsimd wins exp/tanh) --
-// see math_dispatch.cc. avx2 (4-wide) + scalar floor; avx512/neon f64 siblings are follow-on.
+// PRECISION: at f64 Highway wins nearly all (exp/log/tanh/sin/cos/exp2/log2/atan/cbrt/expm1/log1p/
+// asinh/acosh + hypot), xsimd wins only erf -- the near-reverse of f32 (xsimd wins exp/tanh/exp2
+// there). See math_dispatch.cc. Full tiering: x86 avx512(GCC/Clang)/avx2 + arm64 NEON + scalar.
 HYLE_SIMD_API void exp_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void log_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void tanh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void sin_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void cos_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void exp2_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void log2_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void erf_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void atan_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void cbrt_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void expm1_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void log1p_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void asinh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void acosh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void tgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void lgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void hypot_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 
 // simd-09: best-of-breed expansion. Per-op winner from the same-ISA bench (math_bench,
 // GCC+MSVC cross-checked): Highway wins sin/cos/log2/atan/cbrt/expm1/log1p/asinh/acosh;

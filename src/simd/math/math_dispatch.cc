@@ -233,28 +233,91 @@ HYLE_MATH_DISPATCH_HIGHWAY(acosh)
 #undef HYLE_MATH_DISPATCH_HIGHWAY
 #undef HYLE_MATH_HIGHWAY_BODY
 
-// f64 transcendentals (CAE/solver/geometry). best-of bench (math_bench f64 rows) found HIGHWAY
-// wins ALL THREE at f64 (exp 1.8x / log 1.9x / tanh 2.2x vs xsimd) -- the OPPOSITE of f32 where
-// xsimd wins exp/tanh. This is exactly why winners must be benched per precision, not extrapolated
-// from f32. f64 cores are avx2 (4-wide) + scalar floor; avx512/neon f64 siblings are a documented
-// follow-on (avx2 already covers every x86 host, scalar covers the rest).
+// f64 transcendentals (CAE/solver/geometry). best-of bench (f64 rows, WSL GCC AVX2) found HIGHWAY
+// wins 13 of 14 f64 ops it serves (exp/log/tanh + sin/cos/exp2/log2/atan/cbrt/expm1/log1p/asinh/
+// acosh + hypot) -- the near-OPPOSITE of f32 (xsimd wins exp/tanh/exp2 there). xsimd wins only f64
+// erf. This is exactly why winners must be benched per precision, not extrapolated from f32.
+// Full tiering now: x86 avx512(GCC/Clang)->avx2->scalar; arm64 NEON; else scalar.
 #if defined(HYLE_ARCH_X64)
-#define HYLE_MATH_F64_HIGHWAY(name)                                                \
-  void name##_f64_batch(const double* src, double* dst, std::size_t n) noexcept {  \
-    static const bool hw = have_avx2();                                            \
-    if (hw) { detail::name##_f64_highway_avx2(src, dst, n); return; }              \
-    detail::name##_f64_scalar(src, dst, n);                                        \
-  }
-#else
-#define HYLE_MATH_F64_HIGHWAY(name)                                                \
-  void name##_f64_batch(const double* src, double* dst, std::size_t n) noexcept {  \
-    detail::name##_f64_scalar(src, dst, n);                                        \
-  }
+#if !defined(_MSC_VER)
+#define HYLE_MATH_F64_HIGHWAY_BODY(name)                                           \
+  static const bool hw512 = have_avx512();                                         \
+  if (hw512) { detail::name##_f64_highway_avx512(src, dst, n); return; }           \
+  static const bool hw = have_avx2();                                              \
+  if (hw) { detail::name##_f64_highway_avx2(src, dst, n); return; }                \
+  detail::name##_f64_scalar(src, dst, n);
+#else  // MSVC: Highway AVX3 broken -> stay on avx2 highway
+#define HYLE_MATH_F64_HIGHWAY_BODY(name)                                           \
+  static const bool hw = have_avx2();                                              \
+  if (hw) { detail::name##_f64_highway_avx2(src, dst, n); return; }                \
+  detail::name##_f64_scalar(src, dst, n);
 #endif
+#elif defined(HYLE_ARCH_ARM64)
+#define HYLE_MATH_F64_HIGHWAY_BODY(name) detail::name##_f64_highway_neon(src, dst, n);
+#else
+#define HYLE_MATH_F64_HIGHWAY_BODY(name) detail::name##_f64_scalar(src, dst, n);
+#endif
+#define HYLE_MATH_F64_HIGHWAY(name)                                                \
+  void name##_f64_batch(const double* src, double* dst, std::size_t n) noexcept {  \
+    HYLE_MATH_F64_HIGHWAY_BODY(name)                                               \
+  }
 HYLE_MATH_F64_HIGHWAY(exp)
 HYLE_MATH_F64_HIGHWAY(log)
 HYLE_MATH_F64_HIGHWAY(tanh)
+HYLE_MATH_F64_HIGHWAY(sin)
+HYLE_MATH_F64_HIGHWAY(cos)
+HYLE_MATH_F64_HIGHWAY(exp2)
+HYLE_MATH_F64_HIGHWAY(log2)
+HYLE_MATH_F64_HIGHWAY(atan)
+HYLE_MATH_F64_HIGHWAY(cbrt)
+HYLE_MATH_F64_HIGHWAY(expm1)
+HYLE_MATH_F64_HIGHWAY(log1p)
+HYLE_MATH_F64_HIGHWAY(asinh)
+HYLE_MATH_F64_HIGHWAY(acosh)
 #undef HYLE_MATH_F64_HIGHWAY
+#undef HYLE_MATH_F64_HIGHWAY_BODY
+
+// hypot f64 (binary, overflow-safe -> Highway all platforms). Same tiering.
+void hypot_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+#if !defined(_MSC_VER)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::hypot_f64_highway_avx512(a, b, dst, n); return; }
+#endif
+  static const bool hw = have_avx2();
+  if (hw) { detail::hypot_f64_highway_avx2(a, b, dst, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::hypot_f64_highway_neon(a, b, dst, n); return;
+#endif
+  detail::hypot_f64_scalar(a, b, dst, n);
+}
+// erf f64 (xsimd wins at f64, the one exception to Highway's f64 sweep). arm64: Highway-NEON erf.
+void erf_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::erf_f64_xsimd_avx512(src, dst, n); return; }
+  static const bool hw = have_avx2();
+  if (hw) { detail::erf_f64_xsimd_avx2(src, dst, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::erf_f64_highway_neon(src, dst, n); return;
+#endif
+  detail::erf_f64_scalar(src, dst, n);
+}
+// tgamma f64 (xsimd-only; Highway has no gamma). arm64 tgamma f64 stays scalar (no xsimd-NEON f64
+// gamma core -- same policy as not borrowing xsimd-NEON for gamma-family). lgamma f64 always scalar
+// (vendor vectorized-lgamma lane-mixing bug, assume it affects f64 too).
+void tgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::tgamma_f64_xsimd_avx512(src, dst, n); return; }
+  static const bool hw = have_avx2();
+  if (hw) { detail::tgamma_f64_xsimd_avx2(src, dst, n); return; }
+#endif
+  detail::tgamma_f64_scalar(src, dst, n);
+}
+void lgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
+  detail::lgamma_f64_scalar(src, dst, n);  // scalar only (vendor vectorized-lgamma bug)
+}
 
 Isa active_math_variant() noexcept {
 #if defined(HYLE_ARCH_X64)

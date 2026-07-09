@@ -35,6 +35,8 @@ namespace hyle::simd::detail {
 namespace {
 using batch = xsimd::batch<float>;
 constexpr std::size_t kW = batch::size;  // 16 at AVX-512
+using dbatch = xsimd::batch<double>;
+constexpr std::size_t kDW = dbatch::size;  // 8 at AVX-512
 }  // namespace
 
 void exp_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept {
@@ -69,6 +71,19 @@ void tgamma_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexce
   std::size_t i = 0;
   for (; i + kW <= n; i += kW)
     xsimd::tgamma(batch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
+}
+// f64 8-wide siblings: xsimd wins erf at f64 (Highway wins the other 10). tgamma xsimd-only.
+void erf_f64_xsimd_avx512(const double* src, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::erf(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::erf(src[i]);
+}
+void tgamma_f64_xsimd_avx512(const double* src, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::tgamma(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
   for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
 }
 }  // namespace hyle::simd::detail

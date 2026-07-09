@@ -85,6 +85,58 @@ void hypot_f32_highway_avx512(const float* a, const float* b, float* dst, std::s
   for (; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
 }
 
+// f64 (8-wide AVX-512) Highway siblings. Highway wins 13 of the 14 f64 unary/binary ops it serves
+// (exp/log/tanh + sin/cos/exp2/log2/atan/cbrt/expm1/log1p/asinh/acosh + hypot; xsimd only wins erf).
+// Same MSVC-AVX3-broken exclusion. hn::ScalableTag<double> = 8 lanes at AVX-512.
+void exp_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) hn::StoreU(hn::Exp(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::exp(src[i]);
+}
+void log_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) hn::StoreU(hn::Log(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::log(src[i]);
+}
+void tanh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) hn::StoreU(hn::Tanh(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::tanh(src[i]);
+}
+#define HYLE_HWY_MATH_F64_512(name, hwyfn, libmfn)                              \
+  void name##_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept { \
+    const hn::ScalableTag<double> d;                                           \
+    const std::size_t w = hn::Lanes(d);                                        \
+    std::size_t i = 0;                                                         \
+    for (; i + w <= n; i += w) hn::StoreU(hn::hwyfn(d, hn::LoadU(d, src + i)), d, dst + i); \
+    for (; i < n; ++i) dst[i] = libmfn(src[i]);                                \
+  }
+HYLE_HWY_MATH_F64_512(sin, Sin, std::sin)
+HYLE_HWY_MATH_F64_512(cos, Cos, std::cos)
+HYLE_HWY_MATH_F64_512(exp2, Exp2, std::exp2)
+HYLE_HWY_MATH_F64_512(log2, Log2, std::log2)
+HYLE_HWY_MATH_F64_512(atan, Atan, std::atan)
+HYLE_HWY_MATH_F64_512(cbrt, Cbrt, std::cbrt)
+HYLE_HWY_MATH_F64_512(expm1, Expm1, std::expm1)
+HYLE_HWY_MATH_F64_512(log1p, Log1p, std::log1p)
+HYLE_HWY_MATH_F64_512(asinh, Asinh, std::asinh)
+HYLE_HWY_MATH_F64_512(acosh, Acosh, std::acosh)
+#undef HYLE_HWY_MATH_F64_512
+void hypot_f64_highway_avx512(const double* a, const double* b, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w)
+    hn::StoreU(hn::Hypot(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
+}
+
 }  // namespace hyle::simd::detail
 
 #endif  // HYLE_ARCH_X64

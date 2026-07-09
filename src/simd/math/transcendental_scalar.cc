@@ -28,6 +28,28 @@ void log_f64_scalar(const double* src, double* dst, std::size_t n) noexcept {
 void tanh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::tanh(src[i]);
 }
+// f64 scalar references for the rest of the double transcendentals (oracle + fallback floor).
+#define HYLE_F64_SCALAR(name, libmfn)                                            \
+  void name##_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { \
+    for (std::size_t i = 0; i < n; ++i) dst[i] = libmfn(src[i]);                  \
+  }
+HYLE_F64_SCALAR(sin, std::sin)
+HYLE_F64_SCALAR(cos, std::cos)
+HYLE_F64_SCALAR(exp2, std::exp2)
+HYLE_F64_SCALAR(log2, std::log2)
+HYLE_F64_SCALAR(erf, std::erf)
+HYLE_F64_SCALAR(atan, std::atan)
+HYLE_F64_SCALAR(cbrt, std::cbrt)
+HYLE_F64_SCALAR(expm1, std::expm1)
+HYLE_F64_SCALAR(log1p, std::log1p)
+HYLE_F64_SCALAR(asinh, std::asinh)
+HYLE_F64_SCALAR(acosh, std::acosh)
+HYLE_F64_SCALAR(tgamma, std::tgamma)
+HYLE_F64_SCALAR(lgamma, std::lgamma)
+#undef HYLE_F64_SCALAR
+void hypot_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
+}
 
 // simd-09 scalar references (libm oracle + fallback for every new best-of function).
 void sin_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
