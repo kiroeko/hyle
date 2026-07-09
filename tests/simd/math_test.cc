@@ -61,6 +61,33 @@ TEST(Math, TanhMatchesLibm) {
   check(tanh_f32_batch, std::tanh, in, "tanh");
 }
 
+// f64 transcendentals vs a long-double libm reference. The vendored cores are ~3.5-ULP class in
+// double too, so the bound is ~1e-14 relative (~45 ULP of double -- still ~billions x tighter than
+// the f32 8e-7, and catches any broken f64 polynomial / wrong-precision dispatch).
+namespace {
+constexpr double kRelTolF64 = 1e-14;
+constexpr double kAbsTolF64 = 1e-15;
+void check_f64(void (*fn)(const double*, double*, std::size_t), long double (*ref)(long double),
+               const std::vector<double>& in, const char* name) {
+  std::vector<double> out(in.size());
+  fn(in.data(), out.data(), in.size());
+  for (std::size_t i = 0; i < in.size(); ++i) {
+    const long double want = ref(static_cast<long double>(in[i]));
+    const double tol = static_cast<double>(std::abs(want)) * kRelTolF64 + kAbsTolF64;
+    EXPECT_NEAR(out[i], static_cast<double>(want), tol) << name << " in=" << in[i] << " i=" << i;
+  }
+}
+}  // namespace
+TEST(Math, F64MatchesLibm) {
+  std::vector<double> ein, lin, tin;
+  for (int k = -300; k <= 300; ++k) ein.push_back(static_cast<double>(k) * 0.1);   // exp [-30,30]
+  for (int k = 1; k <= 1000; ++k) lin.push_back(static_cast<double>(k) * 0.05);    // log (0,50]
+  for (int k = -200; k <= 200; ++k) tin.push_back(static_cast<double>(k) * 0.05);  // tanh [-10,10]
+  check_f64(hyle::simd::exp_f64_batch, std::expl, ein, "exp_f64");
+  check_f64(hyle::simd::log_f64_batch, std::logl, lin, "log_f64");
+  check_f64(hyle::simd::tanh_f64_batch, std::tanhl, tin, "tanh_f64");
+}
+
 // simd-09 best-of functions vs libm. Same tolerance (both vendor cores are ~3.5-ULP class).
 // Range chosen per function's domain. The batch op routes to the bench-decided winner
 // (Highway for most, xsimd for exp2/erf) or the scalar floor -- either must match libm.

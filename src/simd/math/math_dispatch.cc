@@ -233,6 +233,29 @@ HYLE_MATH_DISPATCH_HIGHWAY(acosh)
 #undef HYLE_MATH_DISPATCH_HIGHWAY
 #undef HYLE_MATH_HIGHWAY_BODY
 
+// f64 transcendentals (CAE/solver/geometry). best-of bench (math_bench f64 rows) found HIGHWAY
+// wins ALL THREE at f64 (exp 1.8x / log 1.9x / tanh 2.2x vs xsimd) -- the OPPOSITE of f32 where
+// xsimd wins exp/tanh. This is exactly why winners must be benched per precision, not extrapolated
+// from f32. f64 cores are avx2 (4-wide) + scalar floor; avx512/neon f64 siblings are a documented
+// follow-on (avx2 already covers every x86 host, scalar covers the rest).
+#if defined(HYLE_ARCH_X64)
+#define HYLE_MATH_F64_HIGHWAY(name)                                                \
+  void name##_f64_batch(const double* src, double* dst, std::size_t n) noexcept {  \
+    static const bool hw = have_avx2();                                            \
+    if (hw) { detail::name##_f64_highway_avx2(src, dst, n); return; }              \
+    detail::name##_f64_scalar(src, dst, n);                                        \
+  }
+#else
+#define HYLE_MATH_F64_HIGHWAY(name)                                                \
+  void name##_f64_batch(const double* src, double* dst, std::size_t n) noexcept {  \
+    detail::name##_f64_scalar(src, dst, n);                                        \
+  }
+#endif
+HYLE_MATH_F64_HIGHWAY(exp)
+HYLE_MATH_F64_HIGHWAY(log)
+HYLE_MATH_F64_HIGHWAY(tanh)
+#undef HYLE_MATH_F64_HIGHWAY
+
 Isa active_math_variant() noexcept {
 #if defined(HYLE_ARCH_X64)
   static const Isa tier = have_avx512() ? Isa::kAvx512 : (have_avx2() ? Isa::kAvx2 : Isa::kScalar);

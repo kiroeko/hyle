@@ -28,6 +28,14 @@ HYLE_SIMD_API void exp_f32_batch(const float* src, float* dst, std::size_t n) no
 HYLE_SIMD_API void log_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 
+// f64 (double) transcendentals -- the CAE / solver / geometry-kernel path where double precision
+// is the working type. Same vendored cores as f32, but the best-of winner is bench-picked PER
+// PRECISION: at f64 Highway wins exp/log/tanh (the reverse of f32, where xsimd wins exp/tanh) --
+// see math_dispatch.cc. avx2 (4-wide) + scalar floor; avx512/neon f64 siblings are follow-on.
+HYLE_SIMD_API void exp_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void log_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void tanh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+
 // simd-09: best-of-breed expansion. Per-op winner from the same-ISA bench (math_bench,
 // GCC+MSVC cross-checked): Highway wins sin/cos/log2/atan/cbrt/expm1/log1p/asinh/acosh;
 // xsimd wins exp2/erf. (Contrast simd-06's exp/tanh->xsimd, log->Highway -- the winner does
