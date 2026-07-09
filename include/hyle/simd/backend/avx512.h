@@ -1652,9 +1652,32 @@ HYLE_FORCE_INLINE void StoreN(detail::V512<D> v, D d, TFromD<D>* p, std::size_t 
 // vpexpand which would be faster, but they're perf optimizations gated behind profiling +
 // real-hardware validation (none here) -- the store+reload form is correct and oracle-matched
 // now. kbits() yields the uint64_t lane bitmask. The scalar backend is the reference.
+// NATIVE vpgatherdd/dps for 32-bit lane+index (16 lanes, scale 4); store+reload otherwise.
+// AVX-512 gather is more usable than AVX2's (no famous slow path), but gather_bench still
+// measures. GatherIndexEmulated keeps the store+reload reference for the A/B + narrow fallback.
 template <class D, typename IdxT>
 HYLE_FORCE_INLINE detail::V512<D> GatherIndex(D d, const TFromD<D>* base,
                                               Vec512<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  if constexpr (sizeof(T) == 4 && sizeof(IdxT) == 4) {
+    if constexpr (std::is_same_v<T, float>)
+      return detail::V512<D>{_mm512_i32gather_ps(idx.raw, base, 4)};
+    else {
+      detail::V512<D> r;
+      r.raw = _mm512_i32gather_epi32(idx.raw, reinterpret_cast<const int*>(base), 4);
+      return r;
+    }
+  } else {
+    alignas(64) IdxT ix[kN]; alignas(64) T dst[kN];
+    Store(idx, Simd<IdxT, kN, 0>(), ix);
+    for (std::size_t i = 0; i < kN; ++i) dst[i] = base[static_cast<std::ptrdiff_t>(ix[i])];
+    return Load(d, dst);
+  }
+}
+template <class D, typename IdxT>
+HYLE_FORCE_INLINE detail::V512<D> GatherIndexEmulated(D d, const TFromD<D>* base,
+                                                     Vec512<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   alignas(64) IdxT ix[kN]; alignas(64) TFromD<D> dst[kN];
   Store(idx, Simd<IdxT, kN, 0>(), ix);

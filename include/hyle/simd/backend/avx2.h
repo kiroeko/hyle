@@ -1804,6 +1804,13 @@ HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcep
   for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1u) dst[k++] = src[i];
   return Load(Simd<T, N, 0>(), dst);
 }
+// AVX2 has no native compress (VBMI2's vpcompress is AVX-512 only), so Compress IS the store+
+// reload form -- CompressEmulated aliases it so gather_bench compiles the same A/B on both x86
+// tiers (on avx2 the two rows are identical; the meaningful compress A/B is the avx512 exe).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> CompressEmulated(Vec256<T, N> v, Mask256<T, N> m) noexcept {
+  return Compress(v, m);
+}
 template <class D>
 HYLE_FORCE_INLINE std::size_t CompressStore(detail::V256<D> v,
                                             Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
