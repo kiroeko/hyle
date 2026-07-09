@@ -113,6 +113,16 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # variant is harmless and keeps one build matrix across compilers.)
   hyle_isa_flags(_sse4_aes_flags SSE42_AES)
   hyle_add_test(simd NAME sse4_aes SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_aes_flags})
+  # AVX-512 vec_test variant: exercises the avx512.h backend's FULL op face (incl. simd-08
+  # crypto + simd-09 cmp128/intdiv/RNG that route through the 512-bit backend). Historically
+  # avx512.h was "written + objdump-verified zmm but NEVER RUN" (no AVX-512 dev machine). This
+  # variant + Intel SDE closes that: build it always (GCC/Clang emit AVX-512 codegen without
+  # needing the host to support it), then RUN under `sde64 -future` on an AVX2-only box. CTest
+  # can't auto-run it (would SIGILL on a non-AVX512 host), so it is NOT registered as an
+  # auto-run ctest -- it is built for compile validation + manual SDE execution. The optional
+  # HYLE_SIMD_AVX512_RUNNABLE gate marks the host as真 AVX-512 (or SDE-wrapped) to auto-run.
+  hyle_isa_flags(_avx512_flags AVX512)
+  hyle_add_test(simd NAME avx512 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags})
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
   hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_NEON OPTIONS ${_neon_flags})
