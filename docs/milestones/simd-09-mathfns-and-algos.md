@@ -5,7 +5,7 @@
 | **阶段** | P3 |
 | **模块** | simd/ |
 | **前置** | simd-06(数学核 best-of 机制:exp/log/tanh)、simd-08(op 面完备) |
-| **状态** | ✅ 线① 数学函数 best-of(88bcc46,三平台)+ 线② 全 5 件 intdiv/cmp128/RNG(自实现)+ vqsort/bit_pack(vendor 薄封装 Highway)完成。x86 全绿(MSVC+WSL GCC,通用原语 +ASan);**AVX512 首次 Intel SDE 真跑验证**(见下);NEON 待 mac(#63) |
+| **状态** | ✅ 线① 数学函数 best-of(88bcc46,三平台)+ 线② 全 5 件 intdiv/cmp128/RNG(自实现)+ vqsort/bit_pack(vendor 薄封装 Highway)+ **收尾 4 缺口**(#66/#69 gather/compress 原生+bench 实测、#67 gelu/softmax、#68 rsqrt/rcp Newton)完成。四 ISA 全真跑绿(MSVC+WSL GCC 各 217/169×3 + **AVX512 Intel SDE 169/169**);NEON mac 真机已验 |
 
 > **范围**:两条线。①**数学函数 best-of 批**——simd-06 的"三方 bench 选最快核"方法学只覆盖了 exp/log/tanh,把它扩到 sin/cos/exp2/log2/atan/erf/pow… 等两库都有真多项式核的超越函数。②**算法级能力补齐**——vqsort 向量排序 / 向量 RNG / intdiv 向量整除等 Highway contrib 招牌功能,HYLE 整块缺。
 > **驱动**:用户 2026-07-09 "best-of 机会希望全面寻找,三者都有就用最快的;数学库很重要,缺了要补充"。
@@ -103,3 +103,17 @@ simd-01~09 全程 avx512.h 及各 avx512 tier 都标"写+objdump 验 zmm 但**�
 - **SDE 揪出 2 真问题**(修复):① avx512.h **缺 16 个 simd-08 A-2 mask 域 op**(冻结在 simd-07,无 avx512 gtest 变体故一直不可见)→ 补齐 k-register 形式;② vec_test `kMaxLanes=32` 栈越界(AVX512 i8=64 lane,同 TruncateTo/SumsOf 类)→ 改 64。
 
 **方法学**:"无硬件 → 理由化不验"是陷阱(simd-design 已记用户纠偏);Intel SDE 是 AVX-512 无机时的真验闸门(模拟 CPU 让 dispatch 真选 512 tier + 全 op 对拍),不该再让 avx512 停在"objdump 验"。AVX-512 从"写了没跑"升级为"SDE 真跑全绿"。
+
+## 收尾:4 个 simd 缺口(2026-07-09,用户"这 4 个缺口先做了…simd 不要缓,都做了")
+
+线①/② 之外,盘点 simd 面还剩 4 个非平凡缺口,一并做掉(而非缓到消费驱动):
+
+| # | 缺口 | 做法 | 处置 |
+|---|---|---|---|
+| **#66/#69** | gather/compress 原生 intrinsic + performance.md 对比 | avx2 `GatherIndex`→`_mm256_i32gather_ps/epi32`;avx512 `Compress/Expand/CompressStore`→`vpcompress/vpexpand`、`GatherIndex`→`vpgather`。保留 `GatherIndexEmulated/CompressEmulated`(store+reload 参照)供 A/B。新增 `bench/simd/gather_bench.cc`(逐 ISA exe) | **数据驱动**:AVX2 GatherIndex 原生**本机实测 1.31x 赢→保留**;AVX2 Compress 无 VBMI2 本就 store+reload(~持平);**AVX512 SDE 数不可信**(功能模拟器对复杂指令模拟开销高),原生**正确性已验(SDE 169/169+Gather/Compress 测试全绿),性能待真机**。见 performance.md gather 段 |
+| **#67** | AI 激活组合核 | `gelu`(精确 erf)/`gelu_tanh`(ggml 近似)/`sigmoid`/`silu`(逐元素) + `softmax`/`log_softmax`(归约:max 稳定化+exp+double 累加)。baseline C++ 调各 `*_f32_batch` 自派发 | ✅ 三平台+SDE 全绿;`math_test` Activations/Softmax 对拍。**注**:simd 层已做,compute-07 目前用 ggml 的算子非 simd 的(消费侧选择,非缺口) |
+| **#68** | rsqrt/rcp Newton 精修 | 泛型层 `ReciprocalNewton` y₁=y₀(2−x·y₀)、`ReciprocalSqrtNewton` y₁=y₀(1.5−0.5x·y₀²)。~12-bit 估计→~23-bit f32,比 Div/Sqrt 便宜 | ✅ **HYLE 超越点**——xsimd/Highway 只出裸估计,加一步 Newton 可反超两家(best-of 判据里"自造超越"类);`vec_test` MathExtFloat 对拍。dtype int8/fp8:int8 lane 已有,fp8 无消费者→消费驱动缓 |
+
+**收尾小结**:4 缺口 3 个全做(#67 激活、#68 Newton、#66/#69 原生+bench 实测)。**关键收获**:#66 印证 best-of 判据"原生不必更快、必须测"——AVX2 gather 测出真赢(上),AVX512 无真硬件只验正确性(原生留、性能挂真机);**SDE 验正确性可信、验性能不可信**是本轮明确的工具边界。dtype fp8 唯一留消费驱动(无消费者)。
+
+**四缺口后全平台回归(2026-07-09,HEAD 06016b6)**:Win MSVC + WSL GCC 各 `simd_test 217/169×3`(1 skip=MSVC-AVX3-broken bf16,预期)+ **AVX512 SDE 169/169**。四 ISA 全真跑绿。
