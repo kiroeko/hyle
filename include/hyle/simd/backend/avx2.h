@@ -1748,13 +1748,39 @@ HYLE_FORCE_INLINE void StoreN(detail::V256<D> v, D d, TFromD<D>* p, std::size_t 
 }
 
 // ---- gather / scatter + compress / expand -------------------------------------------
-// Provided via store+reload (the capability is what matters for an infra lib; native
-// vpgatherdd / vpcompressd are perf optimizations gated behind profiling -- AVX2 gather is
-// famously slow on many uarchs, and Compress needs a LUT). Store the index/data, do the
-// indexed loop, reload -- correct, oracle-matched. The scalar backend is the reference.
+// NATIVE where AVX2 has it (vpgatherd for 32-bit lane+index -- the common i32/u32/f32 case),
+// store+reload otherwise (8/16/64-bit, mismatched index width -- correct + oracle-matched).
+// NOTE (measured, not assumed): AVX2 vpgather is famously slow on pre-Skylake uarchs -- the
+// native path is NOT unconditionally faster. gather_bench measures store+reload vs native at
+// the same ISA; the native path ships because it wins or ties on this dev box (Zen/Skylake+),
+// but the store+reload fallback stays the correctness reference. AVX-512 gather/compress have
+// real hardware (vpcompressd) and win more clearly.
 template <class D, typename IdxT>
 HYLE_FORCE_INLINE detail::V256<D> GatherIndex(D d, const TFromD<D>* base,
                                               Vec256<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  if constexpr (sizeof(T) == 4 && sizeof(IdxT) == 4) {
+    // vpgatherdd/dps: 8 lanes, scale 4 (index is element count -> *4 bytes). Signed i32 index.
+    if constexpr (std::is_same_v<T, float>)
+      return detail::V256<D>{_mm256_i32gather_ps(base, idx.raw, 4)};
+    else {
+      detail::V256<D> r;
+      r.raw = _mm256_i32gather_epi32(reinterpret_cast<const int*>(base), idx.raw, 4);
+      return r;
+    }
+  } else {
+    alignas(32) IdxT ix[kN]; alignas(32) T dst[kN];
+    Store(idx, Simd<IdxT, kN, 0>(), ix);
+    for (std::size_t i = 0; i < kN; ++i) dst[i] = base[static_cast<std::ptrdiff_t>(ix[i])];
+    return Load(d, dst);
+  }
+}
+// Store+reload reference kept accessible for the bench (native-vs-emulation A/B) + as the
+// fallback body above. Same result, different codegen -- gather_bench races the two.
+template <class D, typename IdxT>
+HYLE_FORCE_INLINE detail::V256<D> GatherIndexEmulated(D d, const TFromD<D>* base,
+                                                     Vec256<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   alignas(32) IdxT ix[kN]; alignas(32) TFromD<D> dst[kN];
   Store(idx, Simd<IdxT, kN, 0>(), ix);

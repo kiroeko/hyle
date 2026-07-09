@@ -1669,34 +1669,85 @@ HYLE_FORCE_INLINE void ScatterIndex(detail::V512<D> v, D d, TFromD<D>* base,
   Store(idx, Simd<IdxT, kN, 0>(), ix); Store(v, d, src);
   for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
 }
+// NATIVE vpcompress/vpexpand for 32-/64-bit lanes (AVX-512F has them: maskz_compress_epi32/64
+// + _ps/_pd). 8-/16-bit need VBMI2 (vpcompressb/w) which is NOT in the F+BW+VL+DQ+CD baseline,
+// so those stay store+reload. Native is a clear win here (real hardware compaction, unlike AVX2
+// gather); gather_bench measures it. GatherIndexEmulated/CompressEmulated keep the store+reload
+// reference for the A/B bench + the narrow-lane fallback.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> Compress(Vec512<T, N> v, Mask512<T, N> m) noexcept {
-  alignas(64) T src[N], dst[N] = {};
-  Store(v, Simd<T, N, 0>(), src);
-  const std::uint64_t bits = detail::kbits(m);
-  std::size_t k = 0;
-  for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1ull) dst[k++] = src[i];
-  return Load(Simd<T, N, 0>(), dst);
+  if constexpr (sizeof(T) == 4) {
+    Vec512<T, N> r;
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm512_maskz_compress_ps(m.raw, v.raw);
+    else r.raw = _mm512_maskz_compress_epi32(m.raw, v.raw);
+    return r;
+  } else if constexpr (sizeof(T) == 8) {
+    Vec512<T, N> r;
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm512_maskz_compress_pd(m.raw, v.raw);
+    else r.raw = _mm512_maskz_compress_epi64(m.raw, v.raw);
+    return r;
+  } else {  // 8/16-bit: no VBMI2 baseline -> store+reload
+    alignas(64) T src[N], dst[N] = {};
+    Store(v, Simd<T, N, 0>(), src);
+    const std::uint64_t bits = detail::kbits(m);
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1ull) dst[k++] = src[i];
+    return Load(Simd<T, N, 0>(), dst);
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE std::size_t CompressStore(detail::V512<D> v,
                                             Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
                                             D d, TFromD<D>* p) noexcept {
-  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) TFromD<D> src[kN];
-  Store(v, d, src);
-  const std::uint64_t bits = detail::kbits(m);
-  std::size_t k = 0;
-  for (std::size_t i = 0; i < kN; ++i) if ((bits >> i) & 1ull) p[k++] = src[i];
-  return k;
+  using T = TFromD<D>;
+  const std::size_t cnt = static_cast<std::size_t>(std::popcount(detail::kbits(m)));
+  if constexpr (sizeof(T) == 4) {
+    if constexpr (std::is_same_v<T, float>) _mm512_mask_compressstoreu_ps(p, m.raw, v.raw);
+    else _mm512_mask_compressstoreu_epi32(p, m.raw, v.raw);
+    return cnt;
+  } else if constexpr (sizeof(T) == 8) {
+    if constexpr (std::is_same_v<T, double>) _mm512_mask_compressstoreu_pd(p, m.raw, v.raw);
+    else _mm512_mask_compressstoreu_epi64(p, m.raw, v.raw);
+    return cnt;
+  } else {
+    constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+    alignas(64) T src[kN];
+    Store(v, d, src);
+    const std::uint64_t bits = detail::kbits(m);
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < kN; ++i) if ((bits >> i) & 1ull) p[k++] = src[i];
+    return k;
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> Expand(Vec512<T, N> v, Mask512<T, N> m) noexcept {
-  alignas(64) T src[N], dst[N];
+  if constexpr (sizeof(T) == 4) {
+    Vec512<T, N> r;
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm512_maskz_expand_ps(m.raw, v.raw);
+    else r.raw = _mm512_maskz_expand_epi32(m.raw, v.raw);
+    return r;
+  } else if constexpr (sizeof(T) == 8) {
+    Vec512<T, N> r;
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm512_maskz_expand_pd(m.raw, v.raw);
+    else r.raw = _mm512_maskz_expand_epi64(m.raw, v.raw);
+    return r;
+  } else {
+    alignas(64) T src[N], dst[N];
+    Store(v, Simd<T, N, 0>(), src);
+    const std::uint64_t bits = detail::kbits(m);
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < N; ++i) dst[i] = ((bits >> i) & 1ull) ? src[k++] : T{0};
+    return Load(Simd<T, N, 0>(), dst);
+  }
+}
+// Store+reload Compress reference (bench A/B; same result, different codegen).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> CompressEmulated(Vec512<T, N> v, Mask512<T, N> m) noexcept {
+  alignas(64) T src[N], dst[N] = {};
   Store(v, Simd<T, N, 0>(), src);
   const std::uint64_t bits = detail::kbits(m);
   std::size_t k = 0;
-  for (std::size_t i = 0; i < N; ++i) dst[i] = ((bits >> i) & 1ull) ? src[k++] : T{0};
+  for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1ull) dst[k++] = src[i];
   return Load(Simd<T, N, 0>(), dst);
 }
 
