@@ -26,7 +26,7 @@
 | simd-03 尾 | NEON / AVX512 真机跑 | 🔴 **缺硬件**(无 ARM 机 / 无 AVX512 机) | 已写+编+objdump 验;**硬阻塞**,待真机/QEMU/SDE。非优先级问题 |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
 | simd-08 尾 → simd-09 | best-of 全面审计结论 + 数学函数/算法级能力补齐 | 🟢 就绪,已开 simd-09 | **2026-07-09 三方审计(HYLE/Highway/xsimd)结论**,见下方"best-of 判据"。①数学函数 best-of 批(sin/cos/exp2/log2/atan/erf/pow… 三方 bench 选最快)②算法级能力补齐(vqsort/RNG/intdiv 等,Highway 招牌 HYLE 整块缺)→ 归入 **simd-09**。simd-08 结构 op 的 native intrinsic 优化(vpgather/vpcompress vs store+reload)是**自造 profiling 档**非 best-of(见判据),留 compute 消费驱动 |
-| build-asan hwy::Abort 链接 | build-asan(RelWithDebInfo+ASan)链 libhyle_simd 报 `undefined reference to hwy::Abort`,Release(build-wsl)链接干净无此符号 | 🟡 待查,不阻塞出厂 | simd-09 线①(Highway sin/cos 等 contrib/math 核)引入。Release -O2 把 HWY_DASSERT→Abort 的调用 DCE 掉,ASan 的 -O2-g 某内联档没 DCE→残留未定义符号(HYLE 从不编 Highway 的 abort.cc)。**只影响 build-asan 链 libhyle_simd 的 exe;出厂 Release 不受影响**。header-only 测试(vec.h intdiv 等)standalone ASan 编译绕过 lib 可正常验。修法候选:编入 hwy/abort.cc、或给 ASan 加 -DHWY_ABORT 定义、或 ASan 也 -DNDEBUG 收紧。待做 RNG/bitpack 若需 lib 级 ASan 再修 |
+| ~~build-asan hwy::Abort 链接~~ | ~~undefined reference to hwy::Abort~~ | ✅ **已修(2026-07-09,0a64455)** | 根因:Highway 借核经 HWY_DASSERT 调 hwy::Abort,Release -O2 DCE 掉、ASan -O2-g 没 DCE→残留未定义(HYLE 从不编 Highway abort.cc)。修:把 `third_party/highway/hwy/abort.cc`(baseline C++)编进 hyle_simd 源列表→所有构建配置都链干净。build-asan 整库 ASan 实测 sse4/avx2 169/169 零错误(不再需 standalone 绕过) |
 
 > ### best-of 判据(2026-07-09 三方审计定,固化防再犯)
 > "三者都有就选最快"只在**三条件同时成立**时有意义:① op 有**真实算法内容**(多项式逼近 / 多指令组合 / 软件 emulation),② 三家实现**有差异**,③ **不贴单一硬件指令**(否则三家编译成同一条,比了也一样)。按此分类 simd op:
