@@ -23,4 +23,16 @@ void saxpy_f32_avx2(float a, const float* x, float* y, std::size_t n) noexcept;
 void saxpy_f32_avx512(float a, const float* x, float* y, std::size_t n) noexcept;
 void saxpy_f32_neon(float a, const float* x, float* y, std::size_t n) noexcept;
 
+double dot_f64_scalar(const double* x, const double* y, std::size_t n) noexcept;
+double dot_f64_sse4(const double* x, const double* y, std::size_t n) noexcept;
+double dot_f64_avx2(const double* x, const double* y, std::size_t n) noexcept;
+double dot_f64_avx512(const double* x, const double* y, std::size_t n) noexcept;
+double dot_f64_neon(const double* x, const double* y, std::size_t n) noexcept;
+
+void saxpy_f64_scalar(double a, const double* x, double* y, std::size_t n) noexcept;
+void saxpy_f64_sse4(double a, const double* x, double* y, std::size_t n) noexcept;
+void saxpy_f64_avx2(double a, const double* x, double* y, std::size_t n) noexcept;
+void saxpy_f64_avx512(double a, const double* x, double* y, std::size_t n) noexcept;
+void saxpy_f64_neon(double a, const double* x, double* y, std::size_t n) noexcept;
+
 }  // namespace hyle::simd::detail

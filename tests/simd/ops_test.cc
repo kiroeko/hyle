@@ -18,8 +18,10 @@
 using hyle::simd::active_variant;
 using hyle::simd::best_isa;
 using hyle::simd::dot_f32;
+using hyle::simd::dot_f64;
 using hyle::simd::Isa;
 using hyle::simd::saxpy_f32;
+using hyle::simd::saxpy_f64;
 
 namespace {
 std::vector<float> gen(std::size_t n, float base) {
@@ -31,6 +33,17 @@ std::vector<float> gen(std::size_t n, float base) {
 double ref_dot(const std::vector<float>& x, const std::vector<float>& y) {
   double s = 0.0;
   for (std::size_t i = 0; i < x.size(); ++i) s += double(x[i]) * y[i];
+  return s;
+}
+std::vector<double> gend(std::size_t n, double base) {
+  std::vector<double> v(n);
+  for (std::size_t i = 0; i < n; ++i)
+    v[i] = base + static_cast<double>((i * 7 + 1) % 17) * 0.25;
+  return v;
+}
+long double ref_dot_d(const std::vector<double>& x, const std::vector<double>& y) {
+  long double s = 0.0L;
+  for (std::size_t i = 0; i < x.size(); ++i) s += static_cast<long double>(x[i]) * y[i];
   return s;
 }
 }  // namespace
@@ -57,6 +70,23 @@ TEST(Ops, DotEmptyIsZero) {
   EXPECT_EQ(dot_f32(nullptr, nullptr, 0), 0.0f);
 }
 
+// f64 dot vs a long-double reference. f64 tolerance is far tighter than f32 (the whole point of
+// the double path): ~1e-12 relative covers the tree-reduce reorder while still catching logic bugs.
+TEST(Ops, DotF64MatchesReference) {
+  for (std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{8}, std::size_t{31},
+                        std::size_t{64}, std::size_t{1000}}) {
+    auto x = gend(n, 0.5), y = gend(n, -0.3);
+    const long double ref = ref_dot_d(x, y);
+    double got = dot_f64(x.data(), y.data(), n);
+    const double tol = static_cast<double>(std::abs(ref)) * 1e-12 + 1e-12;
+    EXPECT_NEAR(got, static_cast<double>(ref), tol) << "n=" << n;
+  }
+}
+
+TEST(Ops, DotF64EmptyIsZero) {
+  EXPECT_EQ(dot_f64(nullptr, nullptr, 0), 0.0);
+}
+
 // saxpy result matches naive reference; tail handled.
 TEST(Ops, SaxpyMatchesReference) {
   for (std::size_t n : {std::size_t{1}, std::size_t{8}, std::size_t{31}, std::size_t{257}}) {
@@ -67,6 +97,19 @@ TEST(Ops, SaxpyMatchesReference) {
     for (std::size_t i = 0; i < n; ++i) expect[i] = a * x[i] + y[i];
     saxpy_f32(a, x.data(), y.data(), n);
     for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(y[i], expect[i]) << "n=" << n << " i=" << i;
+  }
+}
+
+// f64 saxpy: y[i] = a*x[i] + y[i] over doubles; tail handled.
+TEST(Ops, SaxpyF64MatchesReference) {
+  for (std::size_t n : {std::size_t{1}, std::size_t{8}, std::size_t{31}, std::size_t{257}}) {
+    auto x = gend(n, 1.0);
+    auto y = gend(n, 2.0);
+    std::vector<double> expect(n);
+    const double a = 1.5;
+    for (std::size_t i = 0; i < n; ++i) expect[i] = a * x[i] + y[i];
+    saxpy_f64(a, x.data(), y.data(), n);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_DOUBLE_EQ(y[i], expect[i]) << "n=" << n << " i=" << i;
   }
 }
 

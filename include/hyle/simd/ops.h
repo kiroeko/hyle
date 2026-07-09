@@ -31,6 +31,12 @@ HYLE_SIMD_API float dot_f32(const float* x, const float* y, std::size_t n) noexc
 // saxpy: y[i] = a*x[i] + y[i] over n floats (BLAS level-1). Dispatched.
 HYLE_SIMD_API void saxpy_f32(float a, const float* x, float* y, std::size_t n) noexcept;
 
+// f64 (double) BLAS-1 siblings -- the CAE/solver/geometry path where the wider accumulator
+// matters (dot's 4-way partial sum also drifts less than a naive f64 loop). Same D-tag kernel,
+// half the lane width (AVX2: 4 doubles vs 8 floats). Dispatched to the best ISA.
+HYLE_SIMD_API double dot_f64(const double* x, const double* y, std::size_t n) noexcept;
+HYLE_SIMD_API void saxpy_f64(double a, const double* x, double* y, std::size_t n) noexcept;
+
 // The ISA tier the dispatcher actually selected (resolved once from best_isa()). For
 // tests/diagnostics: proves dispatch picked the host's best variant, not just the floor.
 HYLE_SIMD_API Isa active_variant() noexcept;

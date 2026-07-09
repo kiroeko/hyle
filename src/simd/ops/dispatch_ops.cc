@@ -40,6 +40,8 @@ Isa selected_tier() noexcept {
 
 using DotFn = float (*)(const float*, const float*, std::size_t) noexcept;
 using SaxpyFn = void (*)(float, const float*, float*, std::size_t) noexcept;
+using DotF64Fn = double (*)(const double*, const double*, std::size_t) noexcept;
+using SaxpyF64Fn = void (*)(double, const double*, double*, std::size_t) noexcept;
 
 DotFn resolve_dot() noexcept {
   switch (selected_tier()) {
@@ -65,6 +67,30 @@ SaxpyFn resolve_saxpy() noexcept {
     default: return &detail::saxpy_f32_scalar;
   }
 }
+DotF64Fn resolve_dot_f64() noexcept {
+  switch (selected_tier()) {
+#if defined(HYLE_ARCH_X64)
+    case Isa::kAvx512: return &detail::dot_f64_avx512;
+    case Isa::kAvx2: return &detail::dot_f64_avx2;
+    case Isa::kSse42: return &detail::dot_f64_sse4;
+#elif defined(HYLE_ARCH_ARM64)
+    case Isa::kNeon: return &detail::dot_f64_neon;
+#endif
+    default: return &detail::dot_f64_scalar;
+  }
+}
+SaxpyF64Fn resolve_saxpy_f64() noexcept {
+  switch (selected_tier()) {
+#if defined(HYLE_ARCH_X64)
+    case Isa::kAvx512: return &detail::saxpy_f64_avx512;
+    case Isa::kAvx2: return &detail::saxpy_f64_avx2;
+    case Isa::kSse42: return &detail::saxpy_f64_sse4;
+#elif defined(HYLE_ARCH_ARM64)
+    case Isa::kNeon: return &detail::saxpy_f64_neon;
+#endif
+    default: return &detail::saxpy_f64_scalar;
+  }
+}
 
 }  // namespace
 
@@ -77,6 +103,14 @@ float dot_f32(const float* x, const float* y, std::size_t n) noexcept {
 }
 void saxpy_f32(float a, const float* x, float* y, std::size_t n) noexcept {
   static const SaxpyFn fn = resolve_saxpy();
+  fn(a, x, y, n);
+}
+double dot_f64(const double* x, const double* y, std::size_t n) noexcept {
+  static const DotF64Fn fn = resolve_dot_f64();
+  return fn(x, y, n);
+}
+void saxpy_f64(double a, const double* x, double* y, std::size_t n) noexcept {
+  static const SaxpyF64Fn fn = resolve_saxpy_f64();
   fn(a, x, y, n);
 }
 Isa active_variant() noexcept {
