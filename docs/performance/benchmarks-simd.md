@@ -77,3 +77,38 @@
 - **AVX2 Compress 无原生**(VBMI2 vpcompressb/w 非 AVX2,是 AVX-512),两行相同是预期(CompressEmulated 别名 Compress)。
 - **AVX512 数不可信,只信正确性**:Intel SDE 是**功能模拟器**,对 vpgather/vpcompress 这类复杂指令的模拟开销远高于简单 load/store,故 SDE 上"原生慢 2-3x"是**模拟器伪影,不是真硬件时序**。真 AVX-512 硬件有专用 compress 单元,vpcompressd/vpexpandd 是公认快的。**avx512 原生路径正确性已验(SDE + 现有 Gather/Compress 测试全绿),性能待真 AVX-512 机复测**——不拿 SDE 性能数当结论,也不因 SDE 慢就撤掉真硬件会赢的原生路径。
 - **方法学**:这条印证 best-of 判据里"原生不必更快、必须测"——AVX2 gather 测出真赢(上),AVX512 因无真硬件只能验正确性(原生留、性能挂真机)。SDE 验正确性可信、验性能不可信,是本轮明确的一条工具边界。
+
+## op-parity: HYLE 自造 op vs Highway vs xsimd 同 op 同 ISA(`op_parity_bench.cc`)
+
+> 回答"HYLE 手写了 ~180 op/后端(抄 Highway 的 per-op intrinsic 序列,不 vendor Highway ops/),
+> 这些自造件是否真不亏"。**同 TU 同 -march 两边都 header-only 可内联**(避内联不对称假差,
+> feedback_benchmark_inlining_asymmetry);`.raw` 就是裸 `__m256`,HYLE/Highway/xsimd 三方桥接零成本。
+> 判据:**看中位 ns/op 的稳定倍数**(亚纳秒 kernel 的 ratio-spread 易被调度离群值污染成假 TIE,
+> 中位 ns/op 更可信)。WSL GCC14 AVX2 裸机,4096 f32/i32,`bench-stat.py -n15/31`。
+
+### 结论表(med ns/op,越小越快)
+| op | HYLE | Highway | xsimd | 判定 | 处置 |
+|---|---|---|---|---|---|
+| Add f32 | 0.082 | 0.081 | — | 打平 | 保留自造 |
+| MulAdd f32 | 0.149 | 0.148 | — | 打平 | 保留 |
+| Min i32 | 0.076 | 0.076 | — | 打平 | 保留 |
+| ReduceSum f32 | 0.082 | 0.084 | 0.108 | HYLE/Highway 平,均胜 xsimd | 保留 |
+| Reverse i32 | 0.050 | 0.050 | — | 打平 | 保留 |
+| GatherIndex i32 | 0.182 | 0.183 | — | 打平(HYLE 已 native vpgatherd) | 保留 |
+| SaturatedAdd i16 | 0.039 | 0.039 | — | 打平(都 native vpaddsw) | 保留 |
+| TableLookupBytes u8 | 0.020 | 0.020 | — | 打平(都 native vpshufb) | 保留 |
+| InterleaveLower i32 | 0.094 | 0.093 | 0.090 | 三方打平 | 保留 |
+| ReverseLaneBytes u32 | 0.042 | 0.043 | — | 打平 | 保留 |
+| PromoteLowerTo i16→i32 | 0.022 | 0.022 | — | 打平 | 保留 |
+| **Expand i32** | **0.68** | 1.29 | — | **HYLE 赢 1.9x** | 保留(自造反超) |
+| **Compress i32** | 0.66 | **0.11** | 0.74 | **HYLE 输 6x**(xsimd 也慢) | **抄 Highway** |
+| **PopulationCount u32** | 0.52 | **0.10** | — | **HYLE 输 5x** | **抄 Highway** |
+| **LeadingZeroCount u32** | 0.37 | **0.066** | — | **HYLE 输 5.5x** | **抄 Highway** |
+| **ConcatEven i32** | 0.14 | **0.076** | — | **HYLE 输 1.8x** | **抄 Highway** |
+
+### 定论
+- **passthrough 单指令(~11 测,全打平)**:自造零损失——抄的就是同一条 intrinsic,包裹模板编译期全内联。保留(换来 HYLE dtype/D-tag/scalable 契约统一,桥接零成本)。
+- **4 个 emulation 类真输(Compress/PopulationCount/LeadingZeroCount/ConcatEven)**:HYLE 用 store+reload/标量,Highway 用 vpshufb 半字节 LUT / 预算表+vpermd / 跨块 permute,**稳定慢 1.8-6x**。**该抄 Highway 算法**(三目标②:更快就抄)。Compress 上 xsimd 也慢,坐实抄要抄对家(Highway 非 xsimd)。
+- **1 个自造反超(Expand 1.9x)**:HYLE store+reload 比 Highway 的 Expand 快,保留。
+- **xsimd 结构 op 面窄**:仅 compress/reduce_add/zip_lo 可比;数学核才是 xsimd 主场(见上文 best-of 表)。
+- **方法学**:亚纳秒 kernel 单次 % 是噪声(feedback_benchmark_inlining_asymmetry);必须 `-n15` 看中位倍数。曾单次误读"HYLE 102%"当微胜,15 次后真相是统计打平(min<1<max 互有胜负)。
