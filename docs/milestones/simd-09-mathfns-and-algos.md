@@ -144,6 +144,16 @@ simd-01~09 全程 avx512.h 及各 avx512 tier 都标"写+objdump 验 zmm 但**�
 
 **四缺口后全平台回归(2026-07-09,HEAD 06016b6)**:Win MSVC + WSL GCC 各 `simd_test 217/169×3`(1 skip=MSVC-AVX3-broken bf16,预期)+ **AVX512 SDE 169/169**。四 ISA 全真跑绿。
 
+## 线⑤ op-parity 性能收口(✅ 2026-07-09,用户"自己做的性能不如抄 highway 就很愚蠢"→"返回全平")
+
+能力面补全后,回答"自造 ~217 op/后端是否真不亏"。`bench/simd/op_parity_bench.cc`(+`_full`/`_widen`/`_sse4` 变体):HYLE vs Highway vs xsimd **同 TU/同 ISA/两边 header-only 都内联**(避内联不对称假差),`bench-stat.py -n15` 看中位倍数(gap>两变体 spread 和才判赢/输,防亚-ns 噪声假 TIE)。
+
+**揪出 9 个 store+reload/std 标量慢 op**(GetExponent 30x/DupEven-Odd 10x/ReverseBits 9x/TZCnt 8x/Compress 6x/PopCount 5x/LZCnt 5.5x/ConcatEven-Odd 1.7x;都是 simd-05 批11"位计数留 std::"的欠账)→ **四固定宽后端全换原生**(avx2 494a4b0→avx512 925c689→sse4+neon db0352b)。**残留 2 个 2.x 输家(LZCnt/Compress)再追平**(c9390a1→b26279c):
+- **LZCnt/TZCnt float-exp trick**:`cvtepi32_ps` 取偏置指数即 bit-length,LZCnt=min(158-be,32)、TZCnt=min(be(x&-x)-127,32),带 round-down 归一化 `v&~(v>>24)`。avx2/avx512/sse4 32-bit(avx512 tier 无 CD/vplzcnt、sse4 用 _mm_min_epu32);NEON 用原生 vclzq 无需改。
+- **Compress**:①**契约改零尾为 unspecified**(对齐 Highway/xsimd——旧强契约在 AVX2/SSE4 无清零指令要 ~2x 软件税,核实 vqsort 不依赖 + 标准用法不碰尾部)②avx2 用 **movemask_ps 直取 mask**(原 mask_bits 标量压位循环才是真瓶颈)+1KB packed 表 ③sse4 用 **256B pshufb 字节索引表**(抄 Highway IndicesFromBits128)。
+- **结果**:四固定宽后端 9+2 慢 op **全部 ≥ 统计打平**(bench-stat -n15);avx2/sse4 各 WSL+MSVC 169、avx512 SDE 169、neon qemu 169。**"自造件 = Highway 同速"清账,且保留 dtype/scalable/契约统一 + 不依赖 Highway。** 详见 benchmarks-simd.md op-parity 全表。
+- **教训**:①"慢 2.x"先别归因表大小/算法天花板——真瓶颈常在具体细节(Compress 是 mask 提取的标量循环);②强契约(零尾)若无硬件支撑+无消费者依赖,是常年性能税,对齐参照库弱契约更值(但要核实消费者 + 改测试,不静默改语义)。
+
 ## 线④ SVE + RVV scalable 后端(✅ 2026-07-09,用户"SVE/RVV 还是要做的")
 
 补两个 **scalable-width** 后端(此前全定宽 SSE4/AVX2/AVX512/NEON/scalar)。用户三轮追问"不假设长度为啥冲击架构 / 模板元编程无法解决么 / 验证一下"——**实证纠正了我一度过度渲染的"冲击全库地基"结论**。

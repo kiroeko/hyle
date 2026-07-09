@@ -147,10 +147,19 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 - **批7 变宽转换** `PromoteLowerTo/PromoteUpperTo`(满 narrow→满 wide-半)+`DemoteTo`(2→1 饱和 pack)+`ReorderDemote2To`:量化核。x86 `cvtep*`/`packs`(avx2 4-way permute 修块序、avx512 `permutexvar_epi64` 修 4 块交织,与 Highway kIdx 同)、NEON `vmovl_/vmovl_high_`/`vqmovn`+`vcombine`(天然有序)。**纠正了先前"需 partial 向量所以后置"的误判**——half-at-a-time 形式完美契合定宽模型。
 - **批8 变量移位 + 加宽乘** `Shl/Shr`(每 lane 计数;avx2 `sllv/srlv/srav`+sse4 无原生全 fallback+avx512 全宽原生含 srav_epi64+NEON vshlq 负计数)+`MulHigh`(i16/u16)+`WidenMulPairwiseAdd`(i16→i32 madd,int8/16 GEMM 核)+`AbsDiff`。
 - **批9 swizzle 全套** `OddEven/Reverse/Reverse2/InterleaveLower/Upper/Concat{Lower,Upper}²/ConcatOdd/Even/DupOdd/Even/TableLookupLanes+IndicesFromVec`。**关键:InterleaveLower/Upper 是每 128-bit 块**(Highway 契约,256b avx2=2 块);avx2 块内原生(unpack/blend/permute2x128)+跨块难的 store+reload,sse4/neon 单块 store+reload,avx512 4 块块内。
-- **批10 gather/scatter + compress/expand** `GatherIndex/ScatterIndex`(embedding lookup 核)+`Compress/CompressStore/Expand`(稀疏过滤核):统一 store+reload(SSE4/NEON 本无硬件,这正是 Highway 的两后端实现;native vpgatherdd/vpcompress 是 profiling 门控优化)。
-- **批11 位计数 + 符号 + 杂项** `PopulationCount/LeadingZeroCount/TrailingZeroCount`(store+reload+std::)+`Not/Clamp/RotateLeft/RotateRight/CopySign/BroadcastSignBit/IfNegativeThenElse/ZeroIfNegative`(全由现有 op 组合,四后端同构)。
+- **批10 gather/scatter + compress/expand** `GatherIndex/ScatterIndex`(embedding lookup 核)+`Compress/CompressStore/Expand`(稀疏过滤核)。**性能档已收口(见下 op-parity 节)**:avx2 GatherIndex→原生 vpgatherd、Compress→packed 索引表+vpermd、avx512→vpcompress/vpexpand/vpgather、sse4 Compress→pshufb 字节索引表;仅无硬件的宽度/后端保留 store+reload(同 Highway)。
+- **批11 位计数 + 符号 + 杂项** `PopulationCount/LeadingZeroCount/TrailingZeroCount`(**已全换原生**:vpshufb 半字节-LUT popcount、float-exp trick LZCnt/TZCnt、NEON vcntq/vclzq)+`Not/Clamp/RotateLeft/RotateRight/CopySign/BroadcastSignBit/IfNegativeThenElse/ZeroIfNegative`(全由现有 op 组合,四后端同构)。
 
-**op 覆盖现状**:量化(promote/demote/convert/满足 int8 GEMM 的 madd/mulhigh)、通用向量循环(移位/舍入/饱和/掩码尾部/reduce 全家族)、swizzle(interleave/concat/reverse/permute)、gather/scatter/compress/expand、位计数/符号——**全部四后端 + scalar 覆盖,三平台真机对拍 scalar oracle**。设计原则(用户 2026-07-06 纠偏):**高性能 infra 库的消费面最广,能力要提供到位,不能因"暂无消费者"后置**;暂缺的只是**性能优化档**(native vpgather/vpcompress/vpopcnt/PSHUFB-LUT vs 现在的 store+reload),那些是 profiling 驱动的加速、非能力缺口,留待 compute 消费时按热路径证据加。各后端仍在 ~2k 行设计上限内(最大 neon ~1.2k)。
+**op 覆盖现状**:量化(promote/demote/convert/满足 int8 GEMM 的 madd/mulhigh)、通用向量循环(移位/舍入/饱和/掩码尾部/reduce 全家族)、swizzle(interleave/concat/reverse/permute)、gather/scatter/compress/expand、位计数/符号——**全部四后端 + scalar 覆盖,三平台真机对拍 scalar oracle**。设计原则(用户 2026-07-06 纠偏):**高性能 infra 库的消费面最广,能力要提供到位,不能因"暂无消费者"后置**。**性能档也已收口(2026-07-09 op-parity,见下节)**:曾经 store+reload/std 标量的慢 op 全换原生 intrinsic 并对拍 Highway 拉到统计打平——能力面 + 性能面双达标。各后端仍在 ~2k 行设计上限内(最大 neon ~1.2k)。
+
+### op-parity 性能收口(simd-09 尾,2026-07-09)——自造件 vs Highway 同 ISA 同 op
+
+用户核心担忧:"自己手写了 ~217 op/后端,性能不如抄 Highway 就很愚蠢"。建 `bench/simd/op_parity_bench.cc`(HYLE vs Highway vs xsimd,**同 TU/同 ISA/两边 header-only 都内联**=真 codegen 差,非内联不对称;`bench-stat.py -n15` 看中位倍数,gap>两变体 spread 和才判赢/输)。
+
+**结论:9 个 store+reload/std 标量慢 op(GetExponent/DupEven-Odd/ReverseBits/PopCount/LZCnt/TZCnt/Compress/ConcatEven-Odd)全换原生 + 2 个残留 2.x 输家(LZCnt/Compress)也追平 → 四固定宽后端全部 ≥ 统计打平**:
+- 手法:vpshufb 半字节-LUT(popcount/reversebits)、位提取指数域(GetExponent)、**float-exp trick**(LZCnt=min(158-biased_exp,32)、TZCnt=min(be(x&-x)-127,32),`cvtepi32_ps` 取指数)、packed 索引表+vpermd / pshufb 字节表(Compress)、vpermd/shuffle_ps/vuzp/vtrn(Concat/Dup)。NEON 硬件原生最省(vcntq/vclzq/vrbitq/vuzp/vtrn)。
+- **Compress 契约变更**:HYLE 旧契约保证不活跃尾部清零(强于 Highway"unspecified"),该保证在 AVX2/SSE4(无清零-compress 指令)是 ~2x 软件税。核实唯一消费者 vqsort 自带 Highway 不依赖 + 标准用法(`CompressStore`/前 `CountTrue`)不碰尾部后,**契约改为尾部 unspecified**(对齐 Highway/xsimd),各 target 尾部行为可不同(avx512 maskz 硬件清零、store+reload 路径恰好清零、avx2/sse4 vpermd/pshufb 不清零)。
+- SVE/RVV 无需改(SVE 早用原生 svcnt/svclz/svuzp;RVV popcount/clz 属 Zvbb 扩展,rv64gcv 无,登记边界同 Highway)。详见 `docs/performance/benchmarks-simd.md` op-parity 全表。
 
 ### SVE scalable 后端(simd-09,首个非定宽后端)——sizeless 类型如何融入 D-tag 契约
 
