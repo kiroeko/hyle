@@ -88,6 +88,46 @@ TEST(Math, F64MatchesLibm) {
   check_f64(hyle::simd::tanh_f64_batch, std::tanhl, tin, "tanh_f64");
 }
 
+// The rest of the f64 transcendentals (Highway wins all but erf; tgamma xsimd; lgamma scalar).
+// Each on its natural domain, vs long-double libm at the ~1e-14 f64 bound.
+namespace {
+std::vector<double> rampd(double lo, double hi, int steps) {
+  std::vector<double> v;
+  for (int k = 0; k <= steps; ++k) v.push_back(lo + (hi - lo) * static_cast<double>(k) / steps);
+  return v;
+}
+}  // namespace
+TEST(Math, F64RestMatchesLibm) {
+  check_f64(hyle::simd::sin_f64_batch, std::sinl, rampd(-3.14, 3.14, 600), "sin_f64");
+  check_f64(hyle::simd::cos_f64_batch, std::cosl, rampd(-3.14, 3.14, 600), "cos_f64");
+  check_f64(hyle::simd::exp2_f64_batch, std::exp2l, rampd(-20.0, 20.0, 600), "exp2_f64");
+  check_f64(hyle::simd::log2_f64_batch, std::log2l, rampd(0.01, 100.0, 600), "log2_f64");
+  check_f64(hyle::simd::erf_f64_batch, std::erfl, rampd(-4.0, 4.0, 600), "erf_f64");
+  check_f64(hyle::simd::atan_f64_batch, std::atanl, rampd(-20.0, 20.0, 600), "atan_f64");
+  check_f64(hyle::simd::cbrt_f64_batch, std::cbrtl, rampd(-100.0, 100.0, 600), "cbrt_f64");
+  check_f64(hyle::simd::expm1_f64_batch, std::expm1l, rampd(-2.0, 2.0, 600), "expm1_f64");
+  check_f64(hyle::simd::log1p_f64_batch, std::log1pl, rampd(-0.9, 20.0, 600), "log1p_f64");
+  check_f64(hyle::simd::asinh_f64_batch, std::asinhl, rampd(-20.0, 20.0, 600), "asinh_f64");
+  check_f64(hyle::simd::acosh_f64_batch, std::acoshl, rampd(1.0, 50.0, 600), "acosh_f64");
+  check_f64(hyle::simd::tgamma_f64_batch, std::tgammal, rampd(0.5, 15.0, 400), "tgamma_f64");
+  check_f64(hyle::simd::lgamma_f64_batch, std::lgammal, rampd(0.5, 40.0, 400), "lgamma_f64");
+}
+// hypot f64 (binary), incl overflow inputs (>1e150 where a^2 overflows double -- Highway's exponent
+// scaling must match std::hypot, not return inf).
+TEST(Math, HypotF64MatchesLibm) {
+  std::vector<double> a, b;
+  for (int k = -50; k <= 50; ++k) { a.push_back(static_cast<double>(k) * 3.0); b.push_back(static_cast<double>(k) * 2.0 + 1.0); }
+  a.push_back(3e300); b.push_back(4e300);   // a^2/b^2 overflow double -> tests exponent scaling
+  a.push_back(1e308); b.push_back(1.0);
+  std::vector<double> out(a.size());
+  hyle::simd::hypot_f64_batch(a.data(), b.data(), out.data(), a.size());
+  for (std::size_t i = 0; i < a.size(); ++i) {
+    const long double want = std::hypotl(static_cast<long double>(a[i]), static_cast<long double>(b[i]));
+    const double tol = static_cast<double>(std::abs(want)) * 1e-14 + 1e-15;
+    EXPECT_NEAR(out[i], static_cast<double>(want), tol) << "hypot_f64 i=" << i;
+  }
+}
+
 // simd-09 best-of functions vs libm. Same tolerance (both vendor cores are ~3.5-ULP class).
 // Range chosen per function's domain. The batch op routes to the bench-decided winner
 // (Highway for most, xsimd for exp2/erf) or the scalar floor -- either must match libm.
