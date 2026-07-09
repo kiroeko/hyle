@@ -141,3 +141,18 @@ simd-01~09 全程 avx512.h 及各 avx512 tier 都标"写+objdump 验 zmm 但**�
 **收尾小结**:4 缺口 3 个全做(#67 激活、#68 Newton、#66/#69 原生+bench 实测)。**关键收获**:#66 印证 best-of 判据"原生不必更快、必须测"——AVX2 gather 测出真赢(上),AVX512 无真硬件只验正确性(原生留、性能挂真机);**SDE 验正确性可信、验性能不可信**是本轮明确的工具边界。dtype fp8 唯一留消费驱动(无消费者)。
 
 **四缺口后全平台回归(2026-07-09,HEAD 06016b6)**:Win MSVC + WSL GCC 各 `simd_test 217/169×3`(1 skip=MSVC-AVX3-broken bf16,预期)+ **AVX512 SDE 169/169**。四 ISA 全真跑绿。
+
+## 线④ SVE + RVV scalable 后端(✅ 2026-07-09,用户"SVE/RVV 还是要做的")
+
+补两个 **scalable-width** 后端(此前全定宽 SSE4/AVX2/AVX512/NEON/scalar)。用户三轮追问"不假设长度为啥冲击架构 / 模板元编程无法解决么 / 验证一下"——**实证纠正了我一度过度渲染的"冲击全库地基"结论**。
+
+**核心结论(qemu 真跑坐实)**:sizeless 向量类型(`svfloat32_t`/`vfloat32m1_t`)的**唯一硬禁区 = sizeof + 做结构体/数组成员**;op 传值参数/返回值完全合法(HYLE op 全是 `V Add(V,V)`,天然不碰)。`DFromV`/`Vec` **每后端各自定义**(非全库共享契约),故 sizeless 是**后端头内部的模板元编程问题**(traits 映射 `SveVecT<T>` + 反向特化表 `DFromV_sve` 替代 `V::PrivateT` 成员),**不改 vec.h 共享层**(唯一碰共享层处=设计者早预留的 `HYLE_SIMD_HAVE_SCALABLE` 宏翻 1,让 Lanes 从 constexpr 变运行期)。
+
+| 后端 | op 数 | 验证 | 要点 |
+|---|---|---|---|
+| **SVE**(`backend/sve.h`) | ~76 | qemu-aarch64 多 VL **128/256/512** 全绿(8 gtest × 3 VL) | 载荷核心 + gather(svld1_gather)/compress(svcompact)/scatter/tail(svwhilelt-predicated)**全 SVE 原生非 store+reload**;Lanes=svcntw |
+| **RVV**(`backend/rvv.h`) | ~41 | qemu-riscv64 rv64gcv 全绿(3 gtest) | **复用 SVE 全部 scalable 机制,vec.h 零改动**;每 intrinsic 显式 `vl`(从 Lanes 算一次穿进);unsigned lane 用独立助记符(vminu/vmsltu 非泛型)→signed/unsigned 分派;Lanes=vsetvlmax;LMUL=1 首版 |
+
+**固化**:`tests/simd/{sve,rvv}_test.cc`(VL-agnostic 对拍 scalar,不用 vec_test 因其 pin 定宽 Lanes)+ CMake `-DHYLE_SIMD_{SVE,RVV}=ON` gate(真机 ctest 直跑)+ `scripts/{sve,rvv}-qemu-test.sh`(cross-build + qemu,从 clean git sync 验证端到端可复现,类比 AVX-512 的 Intel SDE)。x86 MSVC 回归 225 未破(vec.h 加 scalable ladder 分支无副作用)。
+
+**诚实边界(留 backlog)**:两后端的固定 128-bit-block 语义(ConcatOdd/InterleaveLower/ZipLower/DupEven/TableLookupBytes——scalable 下"块"概念模糊,Highway 自己也特殊处理)、变宽转换(PromoteLowerTo/DemoteTo/ReorderDemote2To——改 lane 数与运行期 VL 交互微妙)、SVE2 crypto(需 +sve2-aes)、RVV Zvbb popcount/clz(rv64gcv 无)、RVV 的 gather/compress/scatter/ConvertTo(SVE 已做,RVV 待镜像)。**核心载荷面已覆盖,scalable 抽象可行性对两个 ISA 都坐实。**
