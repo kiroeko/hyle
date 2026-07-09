@@ -26,6 +26,14 @@ using hyle::simd::f32_to_f16;
 using hyle::simd::f32_to_f16_batch;
 using hyle::simd::float16_t;
 using hyle::simd::Isa;
+using hyle::simd::f8e4m3_to_f32;
+using hyle::simd::f32_to_f8e4m3;
+using hyle::simd::float8_e4m3_t;
+using hyle::simd::f8e5m2_to_f32;
+using hyle::simd::f32_to_f8e5m2;
+using hyle::simd::float8_e5m2_t;
+using hyle::simd::f8e4m3_to_f32_batch;
+using hyle::simd::f32_to_f8e4m3_batch;
 
 namespace {
 bool is_nan_f32(float f) { return f != f; }
@@ -300,4 +308,99 @@ TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
 #else
   EXPECT_EQ(active_dtype_variant(), Isa::kScalar);
 #endif
+}
+
+// ---- fp8 (OCP E4M3FN / E5M2) --------------------------------------------------------
+// Encoding transcribed from CUDA cuda_fp8.hpp. Known values pin the format-specific rules
+// (E4M3 max normal 448, no inf, sole NaN 0x7F; E5M2 max normal 57344, IEEE inf/NaN).
+
+TEST(Fp8E4M3, KnownValues) {
+  // decode
+  EXPECT_EQ(f8e4m3_to_f32(float8_e4m3_t::from_bits(0x00)), 0.0f);   // +0
+  EXPECT_EQ(f8e4m3_to_f32(float8_e4m3_t::from_bits(0x80)), 0.0f);   // -0 (compares equal to 0)
+  EXPECT_EQ(f8e4m3_to_f32(float8_e4m3_t::from_bits(0x38)), 1.0f);   // 1.0 (exp=7,man=0)
+  EXPECT_EQ(f8e4m3_to_f32(float8_e4m3_t::from_bits(0xB8)), -1.0f);  // -1.0
+  EXPECT_EQ(f8e4m3_to_f32(float8_e4m3_t::from_bits(0x7E)), 448.0f);      // max normal
+  EXPECT_EQ(f8e4m3_to_f32(float8_e4m3_t::from_bits(0xFE)), -448.0f);
+  EXPECT_TRUE(is_nan_f32(f8e4m3_to_f32(float8_e4m3_t::from_bits(0x7F))));  // sole NaN
+  EXPECT_TRUE(is_nan_f32(f8e4m3_to_f32(float8_e4m3_t::from_bits(0xFF))));
+  // smallest subnormal = 2^-9 (exp field 0, mant 1: 2^(1-7) * 1/8 = 2^-9)
+  EXPECT_FLOAT_EQ(f8e4m3_to_f32(float8_e4m3_t::from_bits(0x01)), std::ldexp(1.0f, -9));
+  // encode
+  EXPECT_EQ(f32_to_f8e4m3(1.0f).bits, 0x38);
+  EXPECT_EQ(f32_to_f8e4m3(-1.0f).bits, 0xB8);
+  EXPECT_EQ(f32_to_f8e4m3(448.0f).bits, 0x7E);
+  EXPECT_EQ(f32_to_f8e4m3(0.0f).bits, 0x00);
+  // overflow saturates to max normal (OCP SATFINITE), NOT inf (E4M3 has none)
+  EXPECT_EQ(f32_to_f8e4m3(1e30f).bits, 0x7E);
+  EXPECT_EQ(f32_to_f8e4m3(-1e30f).bits, 0xFE);
+  // NaN -> canonical 0x7F
+  EXPECT_EQ(f32_to_f8e4m3(std::nanf("")).bits & 0x7F, 0x7F);
+}
+
+TEST(Fp8E5M2, KnownValues) {
+  EXPECT_EQ(f8e5m2_to_f32(float8_e5m2_t::from_bits(0x00)), 0.0f);
+  EXPECT_EQ(f8e5m2_to_f32(float8_e5m2_t::from_bits(0x3C)), 1.0f);   // exp=15,man=0
+  EXPECT_EQ(f8e5m2_to_f32(float8_e5m2_t::from_bits(0xBC)), -1.0f);
+  EXPECT_EQ(f8e5m2_to_f32(float8_e5m2_t::from_bits(0x7B)), 57344.0f);  // max normal
+  EXPECT_TRUE(std::isinf(f8e5m2_to_f32(float8_e5m2_t::from_bits(0x7C))));  // +inf (exp all-1, man 0)
+  EXPECT_TRUE(std::isinf(f8e5m2_to_f32(float8_e5m2_t::from_bits(0xFC))));  // -inf
+  EXPECT_TRUE(is_nan_f32(f8e5m2_to_f32(float8_e5m2_t::from_bits(0x7E))));  // NaN (man != 0)
+  // smallest subnormal = 2^-16 (exp 0, mant 1: 2^(1-15) * 1/4 = 2^-16)
+  EXPECT_FLOAT_EQ(f8e5m2_to_f32(float8_e5m2_t::from_bits(0x01)), std::ldexp(1.0f, -16));
+  EXPECT_EQ(f32_to_f8e5m2(1.0f).bits, 0x3C);
+  EXPECT_EQ(f32_to_f8e5m2(57344.0f).bits, 0x7B);
+  EXPECT_EQ(f32_to_f8e5m2(0.0f).bits, 0x00);
+  EXPECT_EQ(f32_to_f8e5m2(1e30f).bits, 0x7B);  // saturate to max normal
+  EXPECT_EQ(f32_to_f8e5m2(std::nanf("")).bits & 0x7F, 0x7E);  // canonical NaN
+}
+
+// Exhaustive: fp8 has only 256 patterns, so round-trip fp8 -> f32 -> fp8 over ALL of them is
+// COMPLETE (unlike fp16's 65536 sample). Every finite/inf value must round-trip bit-exact
+// (it's a widening then a re-narrowing of an exactly-representable value); NaN stays NaN.
+TEST(Fp8E4M3, ExhaustiveRoundTrip) {
+  for (int b = 0; b <= 0xFF; ++b) {
+    const auto v = float8_e4m3_t::from_bits(static_cast<std::uint8_t>(b));
+    const float f = f8e4m3_to_f32(v);
+    const auto r = f32_to_f8e4m3(f);
+    if (is_nan_f32(f)) {
+      EXPECT_EQ(r.bits & 0x7F, 0x7F) << "b=" << b;  // still the sole NaN
+    } else {
+      EXPECT_EQ(r.bits, static_cast<std::uint8_t>(b)) << "b=" << b << " f=" << f;
+    }
+  }
+}
+TEST(Fp8E5M2, ExhaustiveRoundTrip) {
+  for (int b = 0; b <= 0xFF; ++b) {
+    const auto v = float8_e5m2_t::from_bits(static_cast<std::uint8_t>(b));
+    const float f = f8e5m2_to_f32(v);
+    const auto r = f32_to_f8e5m2(f);
+    if (is_nan_f32(f)) {
+      EXPECT_EQ(r.bits & 0x7F, 0x7E) << "b=" << b;  // canonical NaN class (exp all-1, man!=0)
+      EXPECT_NE(r.bits & 0x03, 0) << "b=" << b;
+    } else {
+      EXPECT_EQ(r.bits, static_cast<std::uint8_t>(b)) << "b=" << b << " f=" << f;
+    }
+  }
+}
+
+// batch conversion agrees with the element core for every pattern (fp8 has no hardware tier;
+// this validates the batch loop wiring == the scalar oracle).
+TEST(DtypeBatch, Fp8E4M3BatchMatchesElement) {
+  std::vector<float8_e4m3_t> src(256);
+  for (int b = 0; b <= 0xFF; ++b) src[b] = float8_e4m3_t::from_bits(static_cast<std::uint8_t>(b));
+  std::vector<float> got(256);
+  f8e4m3_to_f32_batch(src.data(), got.data(), src.size());
+  for (int b = 0; b <= 0xFF; ++b) {
+    const float ref = f8e4m3_to_f32(src[b]);
+    if (is_nan_f32(ref)) EXPECT_TRUE(is_nan_f32(got[b])) << "b=" << b;
+    else EXPECT_EQ(std::memcmp(&got[b], &ref, 4), 0) << "b=" << b;
+  }
+  // and the reverse batch direction round-trips
+  std::vector<float8_e4m3_t> back(256);
+  f32_to_f8e4m3_batch(got.data(), back.data(), got.size());
+  for (int b = 0; b <= 0xFF; ++b) {
+    if (is_nan_f32(got[b])) EXPECT_EQ(back[b].bits & 0x7F, 0x7F) << "b=" << b;
+    else EXPECT_EQ(back[b].bits, src[b].bits) << "b=" << b;
+  }
 }

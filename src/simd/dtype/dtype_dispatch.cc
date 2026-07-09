@@ -100,6 +100,23 @@ void f32_to_bf16_batch(const float* src, bfloat16_t* dst, std::size_t n) noexcep
   detail::f32_to_bf16_scalar(src, dst, n);
 }
 
+// fp8: SCALAR only. No CPU has a hardware fp8-convert instruction (AVX10.2 / GPU tensor cores
+// only, and Intel SDE doesn't emulate the AVX10.2 fp8 converts), so there is nothing to gate on --
+// the scalar bit-math core is the complete implementation on every current CPU. When AVX10.2
+// hardware arrives, a vcvt* kernel would slot in exactly like cvt_avx512bf16.cc did for bf16.
+void f8e4m3_to_f32_batch(const float8_e4m3_t* src, float* dst, std::size_t n) noexcept {
+  detail::f8e4m3_to_f32_scalar(src, dst, n);
+}
+void f32_to_f8e4m3_batch(const float* src, float8_e4m3_t* dst, std::size_t n) noexcept {
+  detail::f32_to_f8e4m3_scalar(src, dst, n);
+}
+void f8e5m2_to_f32_batch(const float8_e5m2_t* src, float* dst, std::size_t n) noexcept {
+  detail::f8e5m2_to_f32_scalar(src, dst, n);
+}
+void f32_to_f8e5m2_batch(const float* src, float8_e5m2_t* dst, std::size_t n) noexcept {
+  detail::f32_to_f8e5m2_scalar(src, dst, n);
+}
+
 Isa active_dtype_variant() noexcept {
 #if defined(HYLE_ARCH_X64)
   static const Isa tier = use_f16c() ? Isa::kAvx2 : Isa::kScalar;

@@ -34,4 +34,11 @@ void f32_to_bf16_avx2(const float* src, bfloat16_t* dst, std::size_t n) noexcept
 // optimally, so no avx512 variant for that direction.)
 void f32_to_bf16_avx512bf16(const float* src, bfloat16_t* dst, std::size_t n) noexcept;
 
+// fp8 batch (scalar only -- no CPU hardware fp8-convert exists; see dtype_ops.h). Both OCP
+// formats, both directions. Auto-vectorized by the compiler at baseline.
+void f8e4m3_to_f32_scalar(const float8_e4m3_t* src, float* dst, std::size_t n) noexcept;
+void f32_to_f8e4m3_scalar(const float* src, float8_e4m3_t* dst, std::size_t n) noexcept;
+void f8e5m2_to_f32_scalar(const float8_e5m2_t* src, float* dst, std::size_t n) noexcept;
+void f32_to_f8e5m2_scalar(const float* src, float8_e5m2_t* dst, std::size_t n) noexcept;
+
 }  // namespace hyle::simd::detail

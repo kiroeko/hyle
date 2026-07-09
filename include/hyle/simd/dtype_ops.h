@@ -27,6 +27,16 @@ HYLE_SIMD_API void f32_to_f16_batch(const float* src, float16_t* dst, std::size_
 HYLE_SIMD_API void bf16_to_f32_batch(const bfloat16_t* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void f32_to_bf16_batch(const float* src, bfloat16_t* dst, std::size_t n) noexcept;
 
+// fp8 <-> fp32, n elements, both OCP formats. SCALAR bit-math (auto-vectorized by the compiler);
+// there is no CPU hardware fp8-convert path to dispatch to -- hardware fp8 conversion is AVX10.2 /
+// GPU-tensor-core only, absent on every AVX2/AVX-512 CPU and not emulated by Intel SDE. So unlike
+// fp16 (F16C) / bf16 (AVX-512-BF16), fp8 has no wide-ISA kernel to gate; the scalar core IS the
+// complete implementation until AVX10.2 hardware exists. E4M3 = weights/activations, E5M2 = grads.
+HYLE_SIMD_API void f8e4m3_to_f32_batch(const float8_e4m3_t* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void f32_to_f8e4m3_batch(const float* src, float8_e4m3_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void f8e5m2_to_f32_batch(const float8_e5m2_t* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void f32_to_f8e5m2_batch(const float* src, float8_e5m2_t* dst, std::size_t n) noexcept;
+
 // The ISA tier the fp16 batch conversions selected (kAvx2 if F16C present, else kScalar).
 // For tests/diagnostics -- proves the hardware path engages when the CPU supports it.
 HYLE_SIMD_API Isa active_dtype_variant() noexcept;
