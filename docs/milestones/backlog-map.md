@@ -73,7 +73,7 @@
 
 | 支柱 | 里程碑 | 前置 | 就绪度 | 说明 |
 |---|---|---|---|---|
-| **compute** | compute-01 ✅ / 02~08 | sched-04 ✅ | 🟢 **就绪**(01 已破土) | 主干 01~06:device/stream/event(✅)→ device buffer → GPU completion→fiber → kernel 启动 → ggml_bridge → Vulkan。**缺口补登(2026-07-06)**:07 CPU 算子后端(接 simd,对拍 oracle + 无 GPU 基线)、08 HIP/Metal(优先借 ggml 覆盖、原生后置、硬件阻塞)。借 ggml 不自造算子。**异构混合极致性能的头牌本体**,北极星① 推理引擎的算力侧 |
+| **compute** | compute-01~07 ✅ / 08 | sched-04 ✅ | 🟢 **主干+CPU 后端就绪** | 主干 01~06:device/stream/event(✅)→ device buffer → GPU completion→fiber → kernel 启动 → ggml_bridge → Vulkan。**07 CPU 算子后端 ✅ 完成(2026-07-09)**:compute-04 Kernel 抽象的 CPU 后端,host_ops 接 hyle simd 数值核(saxpy/dot/exp,f32+f64),双用途=无 GPU 基线 + GPU 对拍 oracle;**接 hyle simd 非 ggml,与 05 借 ggml 正交**(曾误判 07 借 ggml,已纠错)。**剩 08 HIP/Metal**(优先借 ggml,硬件阻塞)。借 ggml 不自造算子(AI-GEMM);hyle simd 是 07 的首个 compute 消费者。**异构混合极致性能的头牌本体**,北极星① 推理引擎的算力侧 |
 | **graph** | graph-01 + graph-02? | sched-03 ✅ + compute(kernel) | 🟡 **部分**(graph-01 可先,substrate Chase-Lev 已备) | 北极星② CAD/BIM/CAE 驱动:脏标记增量重算 + 拓扑并行。graph-02(数据并行 parallel_for)归属待拍(见收口待决) |
 
 **C 类结论**:compute **已破土(compute-01 ✅)**——它是北极星① 的算力支柱本体,**排期上是一个大阶段**(主干 01~06 借 ggml ~5-8k + 缺口 07 CPU 后端 / 08 HIP·Metal)。**缺口补登(2026-07-06)**:07 CPU 算子后端(scope §CPU fallback + roadmap 验收"CPU+GPU 对拍"要求的真后端,非 compute-01 的 host inline 兜底)、08 AMD·Apple 后端(scope 后端矩阵列了但主干未覆盖,借 ggml-hip/metal 优先)。graph 依赖 compute 的 kernel,排在 compute 之后。
