@@ -25,9 +25,13 @@
 // target via the compile flags (same -march this TU gets), so hn:: == HWY_NAMESPACE resolves to
 // the matching target and inlines.
 #include "hwy/highway.h"
+#include "xsimd/xsimd.hpp"  // xsimd's op face is narrower (math-focused): only a few structural
+                            // ops overlap (compress / reduce_add / zip_lo). Those get a 3rd row.
 namespace hn = hwy::HWY_NAMESPACE;
 namespace hs = hyle::simd;
 namespace nb = ankerl::nanobench;
+using xb_i32 = xsimd::batch<std::int32_t>;
+using xb_f32 = xsimd::batch<float>;
 
 namespace {
 constexpr std::size_t kN = 4096;  // L1-resident; isolates compute throughput
@@ -106,6 +110,13 @@ int main() {
       float acc = 0;
       for (std::size_t i = 0; i + gw <= kN; i += gw)
         acc += hn::ReduceSum(gd, hn::LoadU(gd, a.data() + i));
+      nb::doNotOptimizeAway(acc);
+    });
+    constexpr std::size_t xw = xb_f32::size;
+    bench.run("xsimd reduce_add", [&] {
+      float acc = 0;
+      for (std::size_t i = 0; i + xw <= kN; i += xw)
+        acc += xsimd::reduce_add(xb_f32::load_unaligned(a.data() + i));
       nb::doNotOptimizeAway(acc);
     });
   }
@@ -187,6 +198,15 @@ int main() {
       }
       nb::doNotOptimizeAway(iout.data());
     });
+    constexpr std::size_t xw = xb_i32::size;
+    bench.run("xsimd compress", [&] {
+      for (std::size_t i = 0; i + xw <= kN; i += xw) {
+        auto v = xb_i32::load_unaligned(ia.data() + i);
+        auto m = xb_i32::load_unaligned(imask.data() + i) > xb_i32(0);  // mask>0
+        xsimd::compress(v, m).store_unaligned(iout.data() + i);
+      }
+      nb::doNotOptimizeAway(iout.data());
+    });
   }
 
   // ---- 8. GatherIndex i32 (HYLE native _mm256_i32gather vs Highway GatherIndex) ----
@@ -243,6 +263,124 @@ int main() {
       for (std::size_t i = 0; i + gw8 <= kN; i += gw8)
         hn::StoreU(hn::TableLookupBytes(hn::LoadU(gd8, tb.data() + i), hn::LoadU(gd8, ib8.data() + i)), gd8, ob.data() + i);
       nb::doNotOptimizeAway(ob.data());
+    });
+  }
+
+  // ---- 11. LeadingZeroCount u32 (HYLE store+reload+std vs Highway) ----
+  {
+    const hs::ScalableTag<std::uint32_t> hdu; const hn::ScalableTag<std::uint32_t> gdu;
+    const std::size_t hwu = hs::Lanes(hdu), gwu = hn::Lanes(gdu);
+    std::vector<std::uint32_t> ua(kN), uo(kN);
+    { std::mt19937_64 rng(21); std::uniform_int_distribution<std::uint32_t> d(1, 0xFFFFFFFFu); for (auto& e : ua) e = d(rng); }
+    nb::Bench bench; bench.title("LeadingZeroCount u32 (4096)").relative(true).batch(kN).minEpochIterations(5000);
+    bench.run("HYLE LeadingZeroCount", [&] {
+      for (std::size_t i = 0; i + hwu <= kN; i += hwu)
+        hs::StoreU(hs::LeadingZeroCount(hs::LoadU(hdu, ua.data() + i)), hdu, uo.data() + i);
+      nb::doNotOptimizeAway(uo.data());
+    });
+    bench.run("Highway LeadingZeroCount", [&] {
+      for (std::size_t i = 0; i + gwu <= kN; i += gwu)
+        hn::StoreU(hn::LeadingZeroCount(hn::LoadU(gdu, ua.data() + i)), gdu, uo.data() + i);
+      nb::doNotOptimizeAway(uo.data());
+    });
+  }
+
+  // ---- 12. Expand i32 (HYLE store+reload vs Highway; inverse of Compress) ----
+  {
+    const auto imask = geni(kN, 22);
+    nb::Bench bench; bench.title("Expand i32 (4096, 50%)").relative(true).batch(kN).minEpochIterations(5000);
+    bench.run("HYLE Expand", [&] {
+      for (std::size_t i = 0; i + hw <= kN; i += hw) {
+        auto v = hs::LoadU(hdi, ia.data() + i);
+        auto m = hs::Gt(hs::LoadU(hdi, imask.data() + i), hs::Set(hdi, 0));
+        hs::StoreU(hs::Expand(v, m), hdi, iout.data() + i);
+      }
+      nb::doNotOptimizeAway(iout.data());
+    });
+    bench.run("Highway Expand", [&] {
+      for (std::size_t i = 0; i + gw <= kN; i += gw) {
+        auto v = hn::LoadU(gdi, ia.data() + i);
+        auto m = hn::Gt(hn::LoadU(gdi, imask.data() + i), hn::Set(gdi, 0));
+        hn::StoreU(hn::Expand(v, m), gdi, iout.data() + i);
+      }
+      nb::doNotOptimizeAway(iout.data());
+    });
+  }
+
+  // ---- 13. ConcatEven i32 (HYLE store+reload vs Highway ConcatEven) ----
+  {
+    const auto ib = geni(kN, 23);
+    nb::Bench bench; bench.title("ConcatEven i32 (4096)").relative(true).batch(kN).minEpochIterations(10000);
+    bench.run("HYLE ConcatEven", [&] {
+      for (std::size_t i = 0; i + hw <= kN; i += hw)
+        hs::StoreU(hs::ConcatEven(hs::LoadU(hdi, ia.data() + i), hs::LoadU(hdi, ib.data() + i)), hdi, iout.data() + i);
+      nb::doNotOptimizeAway(iout.data());
+    });
+    bench.run("Highway ConcatEven", [&] {
+      for (std::size_t i = 0; i + gw <= kN; i += gw)
+        hn::StoreU(hn::ConcatEven(gdi, hn::LoadU(gdi, ia.data() + i), hn::LoadU(gdi, ib.data() + i)), gdi, iout.data() + i);
+      nb::doNotOptimizeAway(iout.data());
+    });
+  }
+
+  // ---- 14. InterleaveLower i32 (HYLE native unpack+blend vs Highway) ----
+  {
+    const auto ib = geni(kN, 24);
+    nb::Bench bench; bench.title("InterleaveLower i32 (4096)").relative(true).batch(kN).minEpochIterations(10000);
+    bench.run("HYLE InterleaveLower", [&] {
+      for (std::size_t i = 0; i + hw <= kN; i += hw)
+        hs::StoreU(hs::InterleaveLower(hs::LoadU(hdi, ia.data() + i), hs::LoadU(hdi, ib.data() + i)), hdi, iout.data() + i);
+      nb::doNotOptimizeAway(iout.data());
+    });
+    bench.run("Highway InterleaveLower", [&] {
+      for (std::size_t i = 0; i + gw <= kN; i += gw)
+        hn::StoreU(hn::InterleaveLower(hn::LoadU(gdi, ia.data() + i), hn::LoadU(gdi, ib.data() + i)), gdi, iout.data() + i);
+      nb::doNotOptimizeAway(iout.data());
+    });
+    constexpr std::size_t xw = xb_i32::size;
+    bench.run("xsimd zip_lo", [&] {
+      for (std::size_t i = 0; i + xw <= kN; i += xw)
+        xsimd::zip_lo(xb_i32::load_unaligned(ia.data() + i), xb_i32::load_unaligned(ib.data() + i)).store_unaligned(iout.data() + i);
+      nb::doNotOptimizeAway(iout.data());
+    });
+  }
+
+  // ---- 15. ReverseLaneBytes u32 (HYLE store+reload vs Highway vpshufb) ----
+  {
+    const hs::ScalableTag<std::uint32_t> hdu; const hn::ScalableTag<std::uint32_t> gdu;
+    const std::size_t hwu = hs::Lanes(hdu), gwu = hn::Lanes(gdu);
+    std::vector<std::uint32_t> ua(kN), uo(kN);
+    { std::mt19937_64 rng(25); std::uniform_int_distribution<std::uint32_t> d(0, 0xFFFFFFFFu); for (auto& e : ua) e = d(rng); }
+    nb::Bench bench; bench.title("ReverseLaneBytes u32 (4096)").relative(true).batch(kN).minEpochIterations(10000);
+    bench.run("HYLE ReverseLaneBytes", [&] {
+      for (std::size_t i = 0; i + hwu <= kN; i += hwu)
+        hs::StoreU(hs::ReverseLaneBytes(hs::LoadU(hdu, ua.data() + i)), hdu, uo.data() + i);
+      nb::doNotOptimizeAway(uo.data());
+    });
+    bench.run("Highway ReverseLaneBytes", [&] {
+      for (std::size_t i = 0; i + gwu <= kN; i += gwu)
+        hn::StoreU(hn::ReverseLaneBytes(hn::LoadU(gdu, ua.data() + i)), gdu, uo.data() + i);
+      nb::doNotOptimizeAway(uo.data());
+    });
+  }
+
+  // ---- 16. PromoteLowerTo i16->i32 (HYLE vs Highway) ----
+  {
+    const hs::ScalableTag<std::int16_t> hd16; const hn::ScalableTag<std::int16_t> gd16;
+    const hs::ScalableTag<std::int32_t> hd32; const hn::ScalableTag<std::int32_t> gd32;
+    const std::size_t hw16 = hs::Lanes(hd16), gw16 = hn::Lanes(gd16);
+    std::vector<std::int16_t> s16(kN); std::vector<std::int32_t> o32(kN);
+    { std::mt19937_64 rng(26); std::uniform_int_distribution<int> d(-30000,30000); for (auto& e : s16) e = (std::int16_t)d(rng); }
+    nb::Bench bench; bench.title("PromoteLowerTo i16->i32 (4096)").relative(true).batch(kN).minEpochIterations(10000);
+    bench.run("HYLE PromoteLowerTo", [&] {
+      for (std::size_t i = 0; i + hw16 <= kN; i += hw16)
+        hs::StoreU(hs::PromoteLowerTo(hd32, hs::LoadU(hd16, s16.data() + i)), hd32, o32.data() + i);
+      nb::doNotOptimizeAway(o32.data());
+    });
+    bench.run("Highway PromoteLowerTo", [&] {
+      for (std::size_t i = 0; i + gw16 <= kN; i += gw16)
+        hn::StoreU(hn::PromoteLowerTo(gd32, hn::LoadU(gd16, s16.data() + i)), gd32, o32.data() + i);
+      nb::doNotOptimizeAway(o32.data());
     });
   }
 
