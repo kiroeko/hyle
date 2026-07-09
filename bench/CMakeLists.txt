@@ -512,6 +512,22 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_isa_flags(_op_avx512 AVX512)
   target_compile_options(hyle_op_parity_bench_avx512 PRIVATE ${_op_avx512})
   hyle_apply_warnings(hyle_op_parity_bench_avx512)
+
+  # sse4 variant (128-bit): proves the sse4 backend's native-op rewrites (PopCount/LZCnt/TZCnt/
+  # ReverseBits/DupEven/Odd/ConcatEven/Odd/GetExponent) match/beat Highway's SSE4 same ops. Same
+  # apples-to-apples (both inline, same TU/ISA). Highway needs the AES/PCLMUL baseline so its SSE4
+  # static target isn't downgraded.
+  add_executable(hyle_op_parity_bench_sse4 simd/op_parity_bench.cc)
+  target_link_libraries(hyle_op_parity_bench_sse4 PRIVATE nanobench)
+  target_include_directories(hyle_op_parity_bench_sse4 PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(hyle_op_parity_bench_sse4 SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_compile_definitions(hyle_op_parity_bench_sse4 PRIVATE HYLE_SIMD_TARGET_SSE4)
+  if(MSVC)
+    # MSVC has no /arch:SSE4; SSE4.2 intrinsics are unconditional on x64.
+  else()
+    target_compile_options(hyle_op_parity_bench_sse4 PRIVATE -msse4.2 -maes -mpclmul)
+  endif()
+  hyle_apply_warnings(hyle_op_parity_bench_sse4)
 endif()
 
 # dtype cvt bench: fp16/bf16<->f32 batch. HYLE F16C dispatch vs scalar reference (+ Highway
