@@ -71,13 +71,16 @@ clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只
 
 ## dtype 层（AI 数值刚需，scope 完整性评估补的缺口）
 
-| 类型 | 硬件路径 | fallback |
-|---|---|---|
-| fp16 | F16C（`_mm_cvtph_ps`）/ AVX512-FP16 | 软件查表（继承 clay half）|
-| bf16 | AVX512-BF16 / 截断转换 | 移位截断（bf16 就是 fp32 高 16 位）|
-| int8/fp8 | AVX512-VNNI（int8 点积）| 标量 |
+| 类型 | 硬件路径 | fallback | 状态 |
+|---|---|---|---|
+| fp16 | F16C（`_mm_cvtph_ps`）/ AVX512-FP16 | 软件查表（继承 clay half）| ✅ simd-05 |
+| bf16 | AVX512-BF16 / 截断转换 | 移位截断（bf16 就是 fp32 高 16 位）| ✅ simd-05 |
+| fp8 E4M3/E5M2 | AVX10.2 / GPU tensor core（本代 CPU 均无）| **标量位运算（即完整实现）** | ✅ simd-09 |
+| int8 | AVX512-VNNI（int8 点积）| 标量 | int8 lane 已有，VNNI 点积按消费 |
 
 bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
+
+**fp8（simd-09 补，推理常见精度）**：OCP 两格式 **E4M3FN**（bias 7/3 尾数/无 inf/唯一 NaN=0x7F/max 448，权重激活）与 **E5M2**（bias 15/2 尾数/IEEE inf-NaN/max 57344，梯度）。编码 transcribe 自权威 **CUDA `cuda_fp8.hpp`**（ggml/Highway 均无 host fp8→**自实现**，同 fp16/bf16 抄 Highway 的做法）。saturate-to-max-normal（OCP SATFINITE）；E5M2 真 inf 输入保留 inf，仅 finite 溢出 saturate。**关键：无 CPU 硬件 fp8-convert**——硬件 fp8 转换是 AVX10.2 / GPU tensor core 专属，本代 AVX2/AVX-512 CPU 全无，Intel SDE 也不模拟 AVX10.2 fp8 convert。故 **scalar 位运算就是当前完整实现**（非缓做/非半成品）；有 AVX10.2 硬件时按 `cvt_avx512bf16.cc` 先例接原生核。验证：known values 锚 OCP 谱 + **全 256 值 exhaustive round-trip**（fp8 仅 256 值→完备，强于 fp16 的抽样）+ 三平台（MSVC/WSL GCC/arm64 qemu 512-check bad=0）。
 
 ## 与 mem/container 的耦合 + 一个 tier 倒置的澄清
 

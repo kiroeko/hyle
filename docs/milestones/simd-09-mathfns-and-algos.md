@@ -99,6 +99,14 @@ hypot 是 **binary best-of**(两库都有,非独有)。`math_bench` 加 binary �
 
 **xsimd 独有仍未接**(按需):复数超越函数(`batch<complex>` exp/log/pow/sqrt——需复数类型面,Highway 无对手)。
 
+### 线③ fp8 dtype(E4M3/E5M2,✅ 2026-07-09,用户"fp8 推理常见精度还是要做的")
+
+补 dtype 层 fp8。OCP 两格式:**E4M3FN**(bias 7/3 尾数/无 inf/唯一 NaN=0x7F/max 448,权重激活)、**E5M2**(bias 15/2 尾数/IEEE inf-NaN/max 57344,梯度)。**编码 transcribe 自权威 CUDA `cuda_fp8.hpp`**(ggml/Highway 均无 host fp8,不 vendor→自实现,同 fp16/bf16 抄 Highway 的做法);共享模板参数化两格式(字段宽度+特殊值规则),saturate-to-max-normal(OCP SATFINITE),E5M2 真 inf 输入保留 inf、finite 溢出才 saturate。
+
+**关键 ISA 边界(非缓做)**:**无 CPU 硬件 fp8-convert**——硬件 fp8 转换是 AVX10.2 / GPU tensor core 专属,本代 AVX2/AVX-512 CPU 全无,Intel SDE 也不模拟。故 **scalar 位运算即当前完整实现**(不是"缓到有硬件",是根本无硬件可用);有 AVX10.2 时按 cvt_avx512bf16 先例接原生核。dtype.h 类型+转换 / dtype_ops 批处理 / cvt_scalar / dispatch(scalar 直调)。
+
+**验证**:known values 锚 OCP 谱(1.0/448/57344/NaN/subnormal)+ **全 256 值 exhaustive round-trip**(fp8 仅 256 值→完备,强于 fp16 抽样)+ batch==element + 独立 hand-computed anchor 交叉验(揪出我一个手算错值,代码对)。三平台:MSVC 225 / WSL GCC 225 / **arm64 qemu 512-check bad=0**(scalar 无需 SDE)。
+
 ### 线② 算法级能力 — ✅ 完成(2026-07-09,全 5 件,四 ISA + SDE + mac 真机)
 
 | 子 | 状态 | 说明 |
