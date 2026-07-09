@@ -84,6 +84,29 @@ TEST(Math, Simd09MatchesLibm) {
   check(hyle::simd::acosh_f32_batch, std::acosh, ramp(1.0f, 50.0f, 600), "acosh");
 }
 
+// xsimd-ONLY borrows (lgamma/tgamma) vs libm. Highway has no gamma, so these are a single-source
+// borrow (no best-of). Ranges avoid the poles (0, negative integers) and f32 overflow: tgamma
+// overflows past ~35, so cap at 10 (tgamma(10)=362880). lgamma grows slowly, safe to ~50.
+// Uses a dedicated tolerance: gamma is NOT the 3.5-ULP transcendental class -- xsimd's gamma
+// polynomial is looser, and tgamma's large dynamic range magnifies the trailing-arg f32 error.
+TEST(Math, XsimdGammaMatchesLibm) {
+  auto check_gamma = [](void (*fn)(const float*, float*, std::size_t), double (*ref)(double),
+                        const std::vector<float>& in, const char* name, double reltol) {
+    std::vector<float> out(in.size());
+    fn(in.data(), out.data(), in.size());
+    for (std::size_t i = 0; i < in.size(); ++i) {
+      const double want = ref(static_cast<double>(in[i]));
+      const double got = static_cast<double>(out[i]);
+      const double tol = std::abs(want) * reltol + 1e-5;
+      EXPECT_NEAR(got, want, tol) << name << " in=" << in[i] << " i=" << i;
+    }
+  };
+  // lgamma over (0, 50] (skip the pole at 0): log-gamma, modest magnitude.
+  check_gamma(hyle::simd::lgamma_f32_batch, std::lgamma, ramp(0.05f, 50.0f, 600), "lgamma", 4e-6);
+  // tgamma over (0, 10]: Gamma itself, capped below f32 overflow (~35).
+  check_gamma(hyle::simd::tgamma_f32_batch, std::tgamma, ramp(0.05f, 10.0f, 600), "tgamma", 4e-6);
+}
+
 // tail handling: n not a multiple of 8 (the SLEEF kernel's vector width). All three ops
 // exercised (red team: log/tanh tails were previously untested -- only exp).
 TEST(Math, TailSizes) {

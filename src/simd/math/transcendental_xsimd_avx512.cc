@@ -64,6 +64,14 @@ void erf_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept 
   for (; i < n; ++i) dst[i] = std::erf(src[i]);
 }
 
+// xsimd-only borrow, 16-wide sibling (tgamma only; lgamma stays scalar -- vendor lane-mixing bug).
+void tgamma_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::tgamma(batch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
+}
+
 }  // namespace hyle::simd::detail
 
 #endif  // HYLE_ARCH_X64

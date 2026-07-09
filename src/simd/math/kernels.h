@@ -29,6 +29,9 @@ void expm1_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void log1p_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void asinh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void acosh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
+// xsimd-only borrows (Highway has no gamma): scalar libm oracle + fallback.
+void lgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
+void tgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 
 #if defined(HYLE_ARCH_X64)
 // Per-op best-of-breed borrow cores (x86 AVX2, ~3.5 ULP). The same-ISA bench picked the
@@ -42,6 +45,12 @@ void log_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
 // the rest. Only the winning lib's TU defines each (the loser would be dead code).
 void exp2_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void erf_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
+// xsimd-only borrow (no Highway equivalent -> single source). Only TGAMMA is vectorized:
+// xsimd's vectorized LGAMMA has a lane-mixing bug (wrong result when a lane in [1.25,1.5) shares
+// a vector with a lane in [0.75,1.25) -- reproduced GCC-x86/MSVC-x86/GCC-NEON, see
+// docs/debug/xsimd-lgamma-lane-mixing-hunt.md). lgamma therefore stays on the scalar libm
+// reference (no _xsimd_ variant); tgamma is unaffected.
+void tgamma_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void sin_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void cos_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void log2_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
@@ -60,6 +69,8 @@ void tanh_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept
 // simd-09 AVX-512 (16-wide) siblings -- xsimd wins exp2/erf.
 void exp2_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
 void erf_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
+// xsimd-only borrow, 16-wide sibling (tgamma only; lgamma stays scalar -- vendor lane-mixing bug).
+void tgamma_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexcept;
 // log: Highway's AVX3 target is HWY_BROKEN on MSVC (it would emit ymm, not zmm), so this
 // 512 symbol exists ONLY on GCC/Clang. On MSVC, math_dispatch keeps the avx2 highway log
 // (the widest Highway gives there) -- see transcendental_highway_avx512.cc MSVC EXCLUSION.
@@ -99,6 +110,12 @@ void expm1_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcep
 void log1p_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
 void asinh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
 void acosh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept;
+// xsimd-only borrows: lgamma/tgamma have NO Highway equivalent, so on arm64 they can't use the
+// Highway-NEON path the other ops do. These borrow xsimd's NEON core instead (the first xsimd
+// core on arm64) -- verified to lower to NEON + match libm under qemu-aarch64. Defined in
+// transcendental_xsimd_neon.cc (arm64 xsimd TU, distinct from the Highway-NEON TU). tgamma only:
+// xsimd's vectorized lgamma lane-mixing bug reproduces on NEON too, so lgamma stays scalar.
+void tgamma_f32_xsimd_neon(const float* src, float* dst, std::size_t n) noexcept;
 #endif
 
 }  // namespace hyle::simd::detail

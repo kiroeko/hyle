@@ -44,6 +44,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     ops/kernels_neon.cc
     dtype/cvt_neon.cc
     math/transcendental_highway_neon.cc
+    math/transcendental_xsimd_neon.cc
     sort/vqsort_highway_neon.cc
     bitpack/bitpack_highway_neon.cc)
 endif()

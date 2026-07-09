@@ -51,5 +51,12 @@ void asinh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
 void acosh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::acosh(src[i]);
 }
+// xsimd-only borrows: scalar libm oracle + fallback (std::lgamma/tgamma per element).
+void lgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::lgamma(src[i]);
+}
+void tgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::tgamma(src[i]);
+}
 
 }  // namespace hyle::simd::detail

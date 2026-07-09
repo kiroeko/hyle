@@ -53,6 +53,18 @@ void erf_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
   for (; i < n; ++i) dst[i] = std::erf(src[i]);
 }
 
+// xsimd-ONLY borrow: Highway's contrib/math has no gamma, so there is no best-of race -- xsimd
+// is the single source. Only TGAMMA is borrowed: xsimd's vectorized LGAMMA has a lane-mixing bug
+// (a lane in [1.25,1.5) gets the wrong argument-reduction kernel when it shares a vector with a
+// lane in [0.75,1.25); reproduced GCC-x86 + MSVC-x86 + GCC-NEON => algorithm, not codegen). So
+// lgamma stays on the scalar libm reference. See docs/debug/xsimd-lgamma-lane-mixing-hunt.md.
+void tgamma_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::tgamma(batch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
+}
+
 }  // namespace hyle::simd::detail
 
 #endif  // HYLE_ARCH_X64

@@ -45,6 +45,15 @@ HYLE_SIMD_API void log1p_f32_batch(const float* src, float* dst, std::size_t n) 
 HYLE_SIMD_API void asinh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void acosh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 
+// xsimd-ONLY borrows (Highway's contrib/math has no equivalent, so these are a single-source
+// borrow, NOT a best-of pick -- there is no second library to race). lgamma/tgamma are the
+// log-gamma and gamma functions (Bayesian / statistical / combinatorial hot paths). Borrowed
+// from xsimd on EVERY arch that has a vector backend -- x86 (avx2/avx512) AND arm64 (xsimd-NEON,
+// the first xsimd core on arm64: the NEON math TU is otherwise Highway-only, but Highway can't
+// serve gamma). scalar libm is the always-present oracle + fallback.
+HYLE_SIMD_API void lgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+
 // AI activation COMBINED cores (simd-design "AI 数学函数"). Unlike the per-op transcendentals
 // above (each borrows one vendor polynomial), these COMPOSE the vectorized cores into the shapes
 // the AI hot path needs -- HYLE-specific, not a single vendor op. They call the batch ops above

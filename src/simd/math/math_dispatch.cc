@@ -118,6 +118,28 @@ void erf_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   detail::erf_f32_scalar(src, dst, n);
 }
 
+// xsimd-only borrows (gamma family): tgamma is vectorized (xsimd shape 512->avx2->scalar on x86,
+// xsimd-NEON on arm64 -- Highway has no gamma so it can't use the Highway-NEON path the other
+// ops do). LGAMMA is NOT vectorized: xsimd's vectorized lgamma has a lane-mixing bug (wrong
+// argument-reduction kernel for a lane in [1.25,1.5) sharing a vector with a lane in [0.75,1.25);
+// reproduced GCC-x86 + MSVC-x86 + GCC-NEON => algorithm, not codegen; see
+// docs/debug/xsimd-lgamma-lane-mixing-hunt.md). So lgamma is the scalar libm reference on every
+// arch until xsimd fixes it -- the API ships correct, just not vectorized.
+void lgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
+  detail::lgamma_f32_scalar(src, dst, n);
+}
+void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::tgamma_f32_xsimd_avx512(src, dst, n); return; }
+  static const bool hw = have_avx2();
+  if (hw) { detail::tgamma_f32_xsimd_avx2(src, dst, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::tgamma_f32_xsimd_neon(src, dst, n); return;
+#endif
+  detail::tgamma_f32_scalar(src, dst, n);
+}
+
 // Highway-winning: sin cos log2 atan cbrt expm1 log1p asinh acosh. On MSVC the 512 Highway is
 // broken (would emit ymm), so the avx512 branch is GCC/Clang-only; MSVC falls to avx2 highway.
 #define HYLE_MATH_DISPATCH_HIGHWAY(name)                                         \
