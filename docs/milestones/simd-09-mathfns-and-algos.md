@@ -155,4 +155,11 @@ simd-01~09 全程 avx512.h 及各 avx512 tier 都标"写+objdump 验 zmm 但**�
 
 **固化**:`tests/simd/{sve,rvv}_test.cc`(VL-agnostic 对拍 scalar,不用 vec_test 因其 pin 定宽 Lanes)+ CMake `-DHYLE_SIMD_{SVE,RVV}=ON` gate(真机 ctest 直跑)+ `scripts/{sve,rvv}-qemu-test.sh`(cross-build + qemu,从 clean git sync 验证端到端可复现,类比 AVX-512 的 Intel SDE)。x86 MSVC 回归 225 未破(vec.h 加 scalable ladder 分支无副作用)。
 
-**诚实边界(留 backlog)**:两后端的固定 128-bit-block 语义(ConcatOdd/InterleaveLower/ZipLower/DupEven/TableLookupBytes——scalable 下"块"概念模糊,Highway 自己也特殊处理)、变宽转换(PromoteLowerTo/DemoteTo/ReorderDemote2To——改 lane 数与运行期 VL 交互微妙)、SVE2 crypto(需 +sve2-aes)、RVV Zvbb popcount/clz(rv64gcv 无)、RVV 的 gather/compress/scatter/ConvertTo(SVE 已做,RVV 待镜像)。**核心载荷面已覆盖,scalable 抽象可行性对两个 ISA 都坐实。**
+**后续补齐(2026-07-09)**:RVV 尾部 op 已补齐到 SVE 水平(gather/scatter=vluxei/vsuxei 按 element→byte 缩放、compress=vcompress、ConvertTo/RoundToInt=vfcvt、BitCast、Reverse=vrgather、tail=vsetvl(n)、MaskedLoad/BlendedStore、饱和/分类/CopySign)。SVE 补 swizzle(InterleaveLower/Upper·ConcatEven/Odd·OddEven,**whole-vector scalable-native**)。
+
+**诚实边界(留 backlog,附具体技术原因)**:
+- **RVV swizzle**:RVV **无 zip1/zip2 原语**(SVE 有 svzip),InterleaveLower 要构造 vrgather 交织索引——待补(工作量非不可做)。
+- **变宽转换 Promote/Demote/ReorderDemote2To**:tag 签名用**编译期 lane 数**(NSrc==2*NDst),scalable 下 kMaxLanes 只是上界、真实"下半"是运行期 Lanes/2;SVE svunpklo/hi 语义对但与上界-tag 交互有栈越界风险,DemoteTo 饱和 pack 需 SVE2 svqxtn。不硬塞脆弱映射。
+- **SVE2 crypto**(+sve2-aes)、**RVV Zvbb popcount/clz**(rv64gcv 无)。
+
+**核心载荷面已覆盖**(两后端:算术/位/比较/选择/reduce/移位/gather/compress/scatter/tail/convert/bitcast/分类;SVE 另有 swizzle),scalable 抽象可行性对两个 ISA 都坐实。剩余是**语义微妙或缺原语**的尾巴,按具体原因登记。
