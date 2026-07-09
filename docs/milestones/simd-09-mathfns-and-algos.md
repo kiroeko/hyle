@@ -5,7 +5,7 @@
 | **阶段** | P3 |
 | **模块** | simd/ |
 | **前置** | simd-06(数学核 best-of 机制:exp/log/tanh)、simd-08(op 面完备) |
-| **状态** | 🔨 进行中(2026-07-09 起)。三方审计(HYLE/Highway/xsimd)驱动 |
+| **状态** | 🔶 线① 数学函数 best-of ✅ 完成(2026-07-09,commit 88bcc46,三平台真机)/ 线② 算法级能力(vqsort/RNG/intdiv)📋 待做 |
 
 > **范围**:两条线。①**数学函数 best-of 批**——simd-06 的"三方 bench 选最快核"方法学只覆盖了 exp/log/tanh,把它扩到 sin/cos/exp2/log2/atan/erf/pow… 等两库都有真多项式核的超越函数。②**算法级能力补齐**——vqsort 向量排序 / 向量 RNG / intdiv 向量整除等 Highway contrib 招牌功能,HYLE 整块缺。
 > **驱动**:用户 2026-07-09 "best-of 机会希望全面寻找,三者都有就用最快的;数学库很重要,缺了要补充"。
@@ -58,4 +58,30 @@
 沿用 simd-06/08:x86 三档 WSL g++-14 真跑 + ASan;NEON mac 真机;AVX512 无机编译验。数学函数额外跑 ULP 精度对拍 libm。best-of 决策必须 `math_bench` 同 ISA 实测数据支撑(不凭记忆)。
 
 ## 状态记录
-(随各批完成回填。)
+
+### 线① 数学函数 best-of — ✅ 完成(2026-07-09,commit 88bcc46)
+11 个函数接入,per-op winner 由 `math_bench` **GCC+MSVC 双平台交叉验证**定(防单平台陷阱):
+
+| winner | 函数 | GCC 优势 | MSVC 优势 |
+|---|---|---|---|
+| **Highway**(9) | sin | 1.85x | 2.28x |
+| | cos | 1.75x | 2.12x |
+| | log2 | 1.23x | 1.44x |
+| | atan | 1.30x | 1.52x |
+| | cbrt | 1.07x | 3.26x(MSVC xsimd cbrt 极慢) |
+| | expm1 | ~1.07x | 1.26x |
+| | log1p | 1.12x | 1.43x |
+| | asinh | ~平 | 1.10x |
+| | acosh | 1.07x | 1.12x |
+| **xsimd**(2) | exp2 | 1.29x | ~平(取 GCC 明显优势) |
+| | erf | 1.14x | 1.07x |
+
+**关键结论**:与 simd-06(exp/tanh→xsimd)**相反**,新批几乎全归 Highway(尤其 sin/cos ~1.8-2.3x)——**证明逐 op bench 必要,winner 不可外推**。唯二冲突(exp2 GCC-xsimd/MSVC-平、asinh GCC-平/MSVC-Highway)按"取有明显优势方、另一平台无损"解决,无需 per-platform 分叉。
+
+**接入**:五 TU 按 simd-06 模式(scalar oracle 全 11 + x86 借核只写 winner 半避免死码 + NEON 全 Highway 一份验证核 + avx512 siblings GCC-only、MSVC-AVX3-broken 排除)。math_dispatch 宏生成 Highway 型 9 个 + longhand xsimd 型 2 个。复用现有 TU 无需改 CMake。
+**三平台验证**:Win MSVC AVX2 / WSL GCC AVX2(+highway_avx512 编译验)/ mac NEON 真机,`Math.Simd09MatchesLibm` 全 11 对拍 libm ~3.5ULP 通过;simd_test 195→196。AVX512 执行存疑(无硬件,objdump 模式已验 zmm)。
+
+**xsimd 独有未接(单借,非 best-of,按需)**:hypot/lgamma/tgamma、复数超越函数。
+
+### 线② 算法级能力 — 📋 待做
+vqsort/RNG/intdiv/bit_pack/Lt128 见上表。各自独立子里程碑。
