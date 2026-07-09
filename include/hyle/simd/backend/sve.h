@@ -27,6 +27,8 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
+#include <type_traits>
 
 #include "hyle/macros.h"
 
@@ -412,20 +414,134 @@ HYLE_FORCE_INLINE VFromD<D> GatherIndex(D, const TFromD<D>* base, VI idx) noexce
   return svld1_gather_index(detail::ptrue<TFromD<D>>(), base, idx);
 }
 
-// ---- population count ---------------------------------------------------------------
-// svcnt_x returns the UNSIGNED same-width vector (popcount is unsigned); Highway's contract keeps
-// the input lane type, so reinterpret the unsigned result back to V's type.
-template <class V> HYLE_FORCE_INLINE V PopulationCount(V v) noexcept {
+// ---- bit counting: population / leading-zero count ----------------------------------
+// svcnt_x/svclz_x return the UNSIGNED same-width vector; Highway keeps the input lane type, so
+// reinterpret the unsigned result back to V's type via a shared helper.
+namespace detail {
+template <class V, class U> HYLE_FORCE_INLINE V as_lane(U u) noexcept {
   using T = TFromV<V>;
-  const auto pc = svcnt_x(detail::ptrue<T>(), v);  // svuint{8,16,32,64}_t
-  if constexpr (std::is_signed_v<T>) {
-    if constexpr (sizeof(T) == 1) return svreinterpret_s8(pc);
-    else if constexpr (sizeof(T) == 2) return svreinterpret_s16(pc);
-    else if constexpr (sizeof(T) == 4) return svreinterpret_s32(pc);
-    else return svreinterpret_s64(pc);
+  if constexpr (!std::is_signed_v<T>) return u;
+  else if constexpr (sizeof(T) == 1) return svreinterpret_s8(u);
+  else if constexpr (sizeof(T) == 2) return svreinterpret_s16(u);
+  else if constexpr (sizeof(T) == 4) return svreinterpret_s32(u);
+  else return svreinterpret_s64(u);
+}
+}  // namespace detail
+template <class V> HYLE_FORCE_INLINE V PopulationCount(V v) noexcept {
+  return detail::as_lane<V>(svcnt_x(detail::ptrue<TFromV<V>>(), v));
+}
+template <class V> HYLE_FORCE_INLINE V LeadingZeroCount(V v) noexcept {
+  return detail::as_lane<V>(svclz_x(detail::ptrue<TFromV<V>>(), v));
+}
+
+// ---- BitCast: reinterpret the bits to another lane type (same total width) ----------
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> BitCast(D, V v) noexcept {
+  using T = TFromD<D>;
+  if constexpr (std::is_same_v<T, float>) return svreinterpret_f32(v);
+  else if constexpr (std::is_same_v<T, double>) return svreinterpret_f64(v);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return svreinterpret_s8(v);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return svreinterpret_u8(v);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return svreinterpret_s16(v);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return svreinterpret_u16(v);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return svreinterpret_s32(v);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return svreinterpret_u32(v);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return svreinterpret_s64(v);
+  else return svreinterpret_u64(v);
+}
+
+// ---- saturating arithmetic (integer) ------------------------------------------------
+template <class V> HYLE_FORCE_INLINE V SaturatedAdd(V a, V b) noexcept { return svqadd(a, b); }
+template <class V> HYLE_FORCE_INLINE V SaturatedSub(V a, V b) noexcept { return svqsub(a, b); }
+
+// ---- misc lane math -----------------------------------------------------------------
+template <class V> HYLE_FORCE_INLINE V AbsDiff(V a, V b) noexcept {
+  return svabd_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V MulHigh(V a, V b) noexcept {  // high half of the widening mul
+  return svmulh_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+// Broadcast<i>(v): splat lane i across all lanes. svdup_lane broadcasts a single lane.
+template <int kLane, class V> HYLE_FORCE_INLINE V Broadcast(V v) noexcept {
+  return svdup_lane(v, static_cast<std::uint64_t>(kLane));
+}
+template <class V> HYLE_FORCE_INLINE V Clamp(V v, V lo, V hi) noexcept {
+  return Min(Max(v, lo), hi);
+}
+// CopySign(mag, sign): |mag| with sign's sign bit. Float only.
+template <class V> HYLE_FORCE_INLINE V CopySign(V mag, V sign) noexcept {
+  using T = TFromV<V>;
+  const auto d = DFromV<V>();
+  // clear mag's sign, OR in sign's sign bit (via integer view)
+  if constexpr (std::is_same_v<T, float>) {
+    const svuint32_t sbit = svdup_n_u32(0x80000000u);
+    const svuint32_t mi = svbic_x(detail::ptrue<T>(), svreinterpret_u32(mag), sbit);
+    const svuint32_t si = svand_x(detail::ptrue<T>(), svreinterpret_u32(sign), sbit);
+    return svreinterpret_f32(svorr_x(detail::ptrue<T>(), mi, si));
   } else {
-    return pc;
+    const svuint64_t sbit = svdup_n_u64(0x8000000000000000ull);
+    const svuint64_t mi = svbic_x(detail::ptrue<T>(), svreinterpret_u64(mag), sbit);
+    const svuint64_t si = svand_x(detail::ptrue<T>(), svreinterpret_u64(sign), sbit);
+    return svreinterpret_f64(svorr_x(detail::ptrue<T>(), mi, si));
   }
+  (void)d;
+}
+
+// ---- FP classification (svcmpuo = unordered => NaN) ---------------------------------
+template <class V> HYLE_FORCE_INLINE svbool_t IsNaN(V v) noexcept {
+  return svcmpuo(detail::ptrue<TFromV<V>>(), v, v);
+}
+template <class V> HYLE_FORCE_INLINE svbool_t IsInf(V v) noexcept {
+  using T = TFromV<V>;
+  const V av = Abs(v);
+  return Eq(av, Set(DFromV<V>(), std::numeric_limits<T>::infinity()));
+}
+template <class V> HYLE_FORCE_INLINE svbool_t IsFinite(V v) noexcept {
+  using T = TFromV<V>;
+  const V av = Abs(v);
+  return Lt(av, Set(DFromV<V>(), std::numeric_limits<T>::infinity()));  // NaN also fails (unordered)
+}
+
+// ---- sign-predicated select ---------------------------------------------------------
+template <class V> HYLE_FORCE_INLINE V IfNegativeThenElse(V v, V yes, V no) noexcept {
+  return svsel(MaskFromVec(v), yes, no);
+}
+template <class V> HYLE_FORCE_INLINE V ZeroIfNegative(V v) noexcept {
+  return svsel(MaskFromVec(v), Zero(DFromV<V>()), v);
+}
+
+// ---- IEEE Max/MinNumber (NaN-quieting: return the non-NaN operand) ------------------
+template <class V> HYLE_FORCE_INLINE V MaxNumber(V a, V b) noexcept {
+  return svmaxnm_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V MinNumber(V a, V b) noexcept {
+  return svminnm_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+
+// ---- masked load / blended store (SVE native predicated, fault-safe) ----------------
+template <class D> HYLE_FORCE_INLINE VFromD<D> MaskedLoad(svbool_t m, D, const TFromD<D>* p) noexcept {
+  return svld1(m, p);  // inactive lanes = 0, only active lanes touch memory (fault-safe)
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> MaskedLoadOr(VFromD<D> no, svbool_t m, D, const TFromD<D>* p) noexcept {
+  return svsel(m, svld1(m, p), no);
+}
+template <class D> HYLE_FORCE_INLINE void BlendedStore(VFromD<D> v, svbool_t m, D, TFromD<D>* p) noexcept {
+  svst1(m, p, v);  // only active lanes written (fault-safe)
+}
+
+// ---- scatter (SVE native svst1_scatter) + CompressStore -----------------------------
+template <class D, class VI>
+HYLE_FORCE_INLINE void ScatterIndex(VFromD<D> v, D, TFromD<D>* base, VI idx) noexcept {
+  svst1_scatter_index(detail::ptrue<TFromD<D>>(), base, idx, v);
+}
+// CompressStore(v, m, d, p): pack active lanes to the front, store CountTrue(m) of them, return
+// that count. svcompact packs; then a whilelt-predicated store writes exactly the active count.
+template <class D>
+HYLE_FORCE_INLINE std::size_t CompressStore(VFromD<D> v, svbool_t m, D d, TFromD<D>* p) noexcept {
+  const std::size_t cnt = CountTrue(d, m);
+  svst1(FirstN(d, cnt), p, svcompact(m, v));
+  return cnt;
 }
 
 }  // namespace hyle::simd
