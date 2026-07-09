@@ -37,6 +37,34 @@ void log_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept 
   for (; i < n; ++i) dst[i] = std::log(src[i]);  // tail = libm (scalar oracle)
 }
 
+// f64 (4-wide AVX2) Highway borrow cores. hn::ScalableTag<double> lowers to the 4-lane ymm. Same
+// verified contrib/math polynomials as f32, double precision. Winner (Highway vs xsimd) bench-
+// decided per op in math_dispatch -- these exist so best-of can pick them.
+void exp_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w)
+    hn::StoreU(hn::Exp(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::exp(src[i]);
+}
+void log_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w)
+    hn::StoreU(hn::Log(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::log(src[i]);
+}
+void tanh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w)
+    hn::StoreU(hn::Tanh(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::tanh(src[i]);
+}
+
 // simd-09: Highway wins sin/cos/log2/atan/cbrt/expm1/log1p/asinh/acosh at the same ISA
 // (bench-decided, GCC+MSVC cross-checked; xsimd serves exp2/erf). Same borrow pattern as log.
 #define HYLE_HWY_MATH_AVX2(name, hwyfn, libmfn)                                  \

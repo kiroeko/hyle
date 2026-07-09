@@ -18,6 +18,17 @@ void tanh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::tanh(src[i]);
 }
 
+// f64 scalar references (libm oracle + fallback for the double transcendental path -- CAE/solver).
+void exp_f64_scalar(const double* src, double* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::exp(src[i]);
+}
+void log_f64_scalar(const double* src, double* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::log(src[i]);
+}
+void tanh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::tanh(src[i]);
+}
+
 // simd-09 scalar references (libm oracle + fallback for every new best-of function).
 void sin_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::sin(src[i]);

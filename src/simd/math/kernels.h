@@ -17,6 +17,10 @@ namespace hyle::simd::detail {
 void exp_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void log_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void tanh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
+// f64 scalar references (always available oracle + fallback for the double transcendental path)
+void exp_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void log_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void tanh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
 // simd-09 scalar references (always available oracle + fallback)
 void sin_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void cos_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
@@ -51,6 +55,14 @@ void cpow_f32_scalar(const float* zr, const float* zi, const float* wr, const fl
 void exp_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void tanh_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void log_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
+// f64 (4-wide AVX2) borrow cores from BOTH libs -- best-of picks per op (bench-decided in
+// math_dispatch, not assumed from the f32 winners: f64 relative speeds can differ).
+void exp_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void log_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void tanh_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void exp_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void log_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void tanh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
 // simd-09 AVX2 borrow cores, per-op winner (bench-decided): xsimd for exp2/erf, Highway for
 // the rest. Only the winning lib's TU defines each (the loser would be dead code).
 void exp2_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;

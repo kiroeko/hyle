@@ -27,6 +27,8 @@ using batch = xsimd::batch<float>;
 using cbatch = xsimd::batch<std::complex<float>>;
 constexpr std::size_t kCW = cbatch::size;  // complex lanes per batch (== float batch size)
 constexpr std::size_t kW = batch::size;  // 8 at AVX2
+using dbatch = xsimd::batch<double>;
+constexpr std::size_t kDW = dbatch::size;  // 4 at AVX2
 }  // namespace
 
 void exp_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
@@ -39,6 +41,28 @@ void tanh_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
   std::size_t i = 0;
   for (; i + kW <= n; i += kW)
     xsimd::tanh(batch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::tanh(src[i]);
+}
+
+// f64 (4-wide AVX2) borrow cores. xsimd::batch<double> lowers to the 4-lane ymm. Same verified
+// polynomials as the f32 path, just double precision. Winner (xsimd vs Highway) is bench-decided
+// per op in math_dispatch -- these exist so best-of can pick them.
+void exp_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::exp(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::exp(src[i]);
+}
+void log_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::log(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::log(src[i]);
+}
+void tanh_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::tanh(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
   for (; i < n; ++i) dst[i] = std::tanh(src[i]);
 }
 
