@@ -81,7 +81,17 @@
 **接入**:五 TU 按 simd-06 模式(scalar oracle 全 11 + x86 借核只写 winner 半避免死码 + NEON 全 Highway 一份验证核 + avx512 siblings GCC-only、MSVC-AVX3-broken 排除)。math_dispatch 宏生成 Highway 型 9 个 + longhand xsimd 型 2 个。复用现有 TU 无需改 CMake。
 **三平台验证**:Win MSVC AVX2 / WSL GCC AVX2(+highway_avx512 编译验)/ mac NEON 真机,`Math.Simd09MatchesLibm` 全 11 对拍 libm ~3.5ULP 通过;simd_test 195→196。AVX512 执行存疑(无硬件,objdump 模式已验 zmm)。
 
-**xsimd 独有未接(单借,非 best-of,按需)**:hypot/lgamma/tgamma、复数超越函数。
+### 线①-b xsimd 独有借入:tgamma/lgamma(✅ 2026-07-09,揪出 xsimd vendor bug)
+
+用户"xsimd 独有的我们也可以直接借过来"→ 借入 Highway contrib/math **没有**的 gamma 函数(单借,非 best-of,无第二实现竞速)。**做全所有 arch**(能力完整性,非"够本机"):x86 avx2/avx512 + **arm64 首个 xsimd-NEON TU**(`transcendental_xsimd_neon.cc`——此前 NEON math 全借 Highway,但 Highway 无 gamma)+ scalar libm oracle。
+
+**纠错**:原以为 hypot 也是 xsimd 独有——实为 **Highway contrib/math 也有**(`math-inl.h:396`)且是 **binary**(两输入),属 best-of 候选非单借,留待补。真正 xsimd 独有的是 **lgamma/tgamma**。
+
+**借核对拍揪出 xsimd 向量化 lgamma vendor bug**(第二次"借不等于信",继 Highway Pack16 后):新增 `Math.XsimdGammaMatchesLibm` 对拍 libm,lgamma 在 in=1.29875 偏差 **0.83**(错值非精度)。**三 target 独立坐实**(GCC-x86 + MSVC-x86 + GCC-NEON qemu 同一错值 0.833834)= 算法 bug 非 codegen。根因:xsimd `lgamma_impl<float>::other()` 参数归约多分支 select 覆盖不全——lane∈[1.25,1.5) 与 lane∈[0.75,1.25) 同向量时归约核 blend 错(distinct-per-lane 才触发,同值填充漏网,一度骗过我)。**tgamma 不受影响**。处置:**lgamma 整体退回 scalar libm**(API 正确、未向量化),tgamma 保持向量化,不改 vendored 源。详见 `docs/debug/xsimd-lgamma-lane-mixing-hunt.md`。
+
+**四平台验证**:MSVC 219(+1 gamma 对拍)、WSL GCC AVX2 219、AVX512 SDE(tgamma-512 TU 链入)、**arm64 NEON qemu-aarch64 真跑**(lgamma worst 1.2e-5=libm 精确、tgamma 相对误差 ~7e-8、variant=kNeon)。
+
+**xsimd 独有仍未接**(按需):hypot(实为 best-of binary,非独有)、复数超越函数(`batch<complex>` exp/log/pow/sqrt——需复数类型面,Highway 无对手)。
 
 ### 线② 算法级能力 — ✅ 完成(2026-07-09,全 5 件,四 ISA + SDE + mac 真机)
 
