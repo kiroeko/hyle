@@ -97,7 +97,9 @@ hypot 是 **binary best-of**(两库都有,非独有)。`math_bench` 加 binary �
 
 接入:全 arch(x86 avx2/avx512 + arm64 NEON + scalar),binary 签名(两输入数组)。MSVC AVX3-broken 故 512 排除同 log。四平台验证:MSVC 220 / WSL GCC 220 / AVX512 SDE 169 / arm64 NEON qemu(hypot bad=0/8 含溢出、variant=kNeon)。
 
-**xsimd 独有仍未接**(按需):复数超越函数(`batch<complex>` exp/log/pow/sqrt——需复数类型面,Highway 无对手)。
+### 线①-d 复数超越函数(✅ 2026-07-09,用户"xsimd 独有的复数超越函数抄过来")
+
+借入 xsimd `batch<std::complex<float>>` 独有核(Highway **无复数路径**→单借,复数版的 gamma 借法):`cexp/clog/csqrt/csin/ccos/ctanh/cpow`。**存储=SoA planar**(实部虚部分离数组 re[i]/im[i])——匹配 xsimd `load_unaligned(re, im)` 构造零交织开销,且是 FFT/信号的自然布局;dst 可 alias src。x86 AVX2 借核(cbatch::size 复数 lane)+ scalar std::complex oracle/fallback;**arm64 落 scalar**(Highway 无复数、xsimd-NEON 复数未验→诚实 scalar,非静默错路径)。math_test 对拍 std::complex(避开 (0,0) 分支点奇点:clog/csqrt 在原点 std::log=(-inf,0))。MSVC+WSL GCC simd 227 全绿。
 
 ### 线③ fp8 dtype(E4M3/E5M2,✅ 2026-07-09,用户"fp8 推理常见精度还是要做的")
 
