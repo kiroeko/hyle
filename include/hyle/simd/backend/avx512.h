@@ -1864,6 +1864,14 @@ template <typename T> HYLE_FORCE_INLINE __m512i srli_w512(__m512i x, int s) noex
   else if constexpr (sizeof(T) == 4) return _mm512_srli_epi32(x, s);
   else return _mm512_srli_epi64(x, s);
 }
+// float-exponent trick for 32-bit lanes (Highway generic_ops), same as avx2: the biased exponent
+// of the f32 nearest to a u32 gives its bit-length. Native vplzcnt is AVX512CD (NOT in our
+// f/bw/vl/dq tier), so this bit-math is the portable fast path. Returns the biased exponent [0,158].
+HYLE_FORCE_INLINE __m512i u32_to_f32_biased_exp512(__m512i v) noexcept {
+  const __m512i norm = _mm512_andnot_si512(_mm512_srli_epi32(v, 24), v);  // round-down guard
+  const __m512 f = _mm512_cvtepi32_ps(norm);
+  return _mm512_srli_epi32(_mm512_castps_si512(f), 23);
+}
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> PopulationCount(Vec512<T, N> v) noexcept {
@@ -1880,15 +1888,21 @@ HYLE_FORCE_INLINE Vec512<T, N> PopulationCount(Vec512<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> LeadingZeroCount(Vec512<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "LeadingZeroCount is integer-lane only");
-  if constexpr (sizeof(T) == 1) return detail::bitcount_via_mem<T, N, 1>(v);
-  else {
-    __m512i x = v.raw;  // smear MSB down, then bits - popcount
+  if constexpr (sizeof(T) == 4) {
+    // LZCnt(x) = min( 158 - biased_exp(x), 32 ). biased_exp(0)=0 -> 158, clamped to 32.
+    const __m512i be = detail::u32_to_f32_biased_exp512(v.raw);
+    const __m512i lz = _mm512_sub_epi32(_mm512_set1_epi32(32 + 126), be);
+    Vec512<T, N> r; r.raw = _mm512_min_epu32(lz, _mm512_set1_epi32(32));
+    return r;
+  } else if constexpr (sizeof(T) == 1) {
+    return detail::bitcount_via_mem<T, N, 1>(v);
+  } else {  // 16/64-bit: smear MSB down, then bits - popcount
+    __m512i x = v.raw;
     x = _mm512_or_si512(x, detail::srli_w512<T>(x, 1));
     x = _mm512_or_si512(x, detail::srli_w512<T>(x, 2));
     x = _mm512_or_si512(x, detail::srli_w512<T>(x, 4));
     x = _mm512_or_si512(x, detail::srli_w512<T>(x, 8));
-    if constexpr (sizeof(T) >= 4) x = _mm512_or_si512(x, detail::srli_w512<T>(x, 16));
-    if constexpr (sizeof(T) == 8) x = _mm512_or_si512(x, detail::srli_w512<T>(x, 32));
+    if constexpr (sizeof(T) == 8) { x = _mm512_or_si512(x, detail::srli_w512<T>(x, 16)); x = _mm512_or_si512(x, detail::srli_w512<T>(x, 32)); }
     Vec512<T, N> sm; sm.raw = x;
     return Sub(Set(Simd<T, N, 0>(), static_cast<T>(sizeof(T) * 8)), PopulationCount(sm));
   }
@@ -1896,8 +1910,17 @@ HYLE_FORCE_INLINE Vec512<T, N> LeadingZeroCount(Vec512<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> TrailingZeroCount(Vec512<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "TrailingZeroCount is integer-lane only");
-  if constexpr (sizeof(T) == 1) return detail::bitcount_via_mem<T, N, 2>(v);
-  else {
+  if constexpr (sizeof(T) == 4) {
+    // TZCnt(x) = min( biased_exp(x & -x) - 127, 32 ). unsigned-min saturates x==0 to 32.
+    const __m512i neg = _mm512_sub_epi32(_mm512_setzero_si512(), v.raw);
+    const __m512i lowest = _mm512_and_si512(v.raw, neg);
+    const __m512i be = detail::u32_to_f32_biased_exp512(lowest);
+    const __m512i tz = _mm512_sub_epi32(be, _mm512_set1_epi32(127));
+    Vec512<T, N> r; r.raw = _mm512_min_epu32(tz, _mm512_set1_epi32(32));
+    return r;
+  } else if constexpr (sizeof(T) == 1) {
+    return detail::bitcount_via_mem<T, N, 2>(v);
+  } else {  // 16/64-bit: PopCount((x & -x) - 1)
     Vec512<T, N> lowest; lowest.raw = _mm512_and_si512(v.raw, Neg(v).raw);  // x & -x
     return PopulationCount(Sub(lowest, Set(Simd<T, N, 0>(), static_cast<T>(1))));
   }
