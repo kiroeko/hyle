@@ -50,7 +50,26 @@ const char* variant_name(hyle::simd::Isa i) {
                                      : "scalar libm (no vectorized math wired)";
 }
 
-enum class Op { kExp, kLog, kTanh };
+// simd-09: candidate functions for the best-of-breed expansion. exp/log/tanh already wired in
+// HYLE (simd-06); the rest are UNWIRED candidates -- this bench decides who (xsimd vs Highway)
+// wins each at the same ISA, so math_dispatch can borrow the fastest core per op.
+enum class Op {
+  kExp, kLog, kTanh,
+  kSin, kCos, kExp2, kLog2, kErf, kAtan, kCbrt, kExpm1, kLog1p, kAsinh, kAcosh
+};
+
+float scalar_of(Op op, float x) {
+  switch (op) {
+    case Op::kExp: return std::exp(x);   case Op::kLog: return std::log(x);
+    case Op::kTanh: return std::tanh(x); case Op::kSin: return std::sin(x);
+    case Op::kCos: return std::cos(x);   case Op::kExp2: return std::exp2(x);
+    case Op::kLog2: return std::log2(x); case Op::kErf: return std::erf(x);
+    case Op::kAtan: return std::atan(x); case Op::kCbrt: return std::cbrt(x);
+    case Op::kExpm1: return std::expm1(x); case Op::kLog1p: return std::log1p(x);
+    case Op::kAsinh: return std::asinh(x); case Op::kAcosh: return std::acosh(x);
+  }
+  return x;
+}
 
 #if defined(HYLE_BENCH_XSIMD)
 void xsimd_run(Op op, const float* src, float* dst, std::size_t n) {
@@ -59,11 +78,19 @@ void xsimd_run(Op op, const float* src, float* dst, std::size_t n) {
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
     batch v = batch::load_unaligned(src + i);
-    batch r = op == Op::kExp ? xsimd::exp(v) : op == Op::kLog ? xsimd::log(v) : xsimd::tanh(v);
+    batch r;
+    switch (op) {
+      case Op::kExp: r = xsimd::exp(v); break;   case Op::kLog: r = xsimd::log(v); break;
+      case Op::kTanh: r = xsimd::tanh(v); break; case Op::kSin: r = xsimd::sin(v); break;
+      case Op::kCos: r = xsimd::cos(v); break;   case Op::kExp2: r = xsimd::exp2(v); break;
+      case Op::kLog2: r = xsimd::log2(v); break; case Op::kErf: r = xsimd::erf(v); break;
+      case Op::kAtan: r = xsimd::atan(v); break; case Op::kCbrt: r = xsimd::cbrt(v); break;
+      case Op::kExpm1: r = xsimd::expm1(v); break; case Op::kLog1p: r = xsimd::log1p(v); break;
+      case Op::kAsinh: r = xsimd::asinh(v); break; case Op::kAcosh: r = xsimd::acosh(v); break;
+    }
     r.store_unaligned(dst + i);
   }
-  for (; i < n; ++i) dst[i] = op == Op::kExp ? std::exp(src[i])
-                              : op == Op::kLog ? std::log(src[i]) : std::tanh(src[i]);
+  for (; i < n; ++i) dst[i] = scalar_of(op, src[i]);
 }
 #endif
 #if defined(HYLE_BENCH_HIGHWAY)
@@ -73,11 +100,19 @@ void highway_run(Op op, const float* src, float* dst, std::size_t n) {
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
     auto v = hn::LoadU(d, src + i);
-    auto r = op == Op::kExp ? hn::Exp(d, v) : op == Op::kLog ? hn::Log(d, v) : hn::Tanh(d, v);
+    decltype(v) r;
+    switch (op) {
+      case Op::kExp: r = hn::Exp(d, v); break;   case Op::kLog: r = hn::Log(d, v); break;
+      case Op::kTanh: r = hn::Tanh(d, v); break; case Op::kSin: r = hn::Sin(d, v); break;
+      case Op::kCos: r = hn::Cos(d, v); break;   case Op::kExp2: r = hn::Exp2(d, v); break;
+      case Op::kLog2: r = hn::Log2(d, v); break; case Op::kErf: r = hn::Erf(d, v); break;
+      case Op::kAtan: r = hn::Atan(d, v); break; case Op::kCbrt: r = hn::Cbrt(d, v); break;
+      case Op::kExpm1: r = hn::Expm1(d, v); break; case Op::kLog1p: r = hn::Log1p(d, v); break;
+      case Op::kAsinh: r = hn::Asinh(d, v); break; case Op::kAcosh: r = hn::Acosh(d, v); break;
+    }
     hn::StoreU(r, d, dst + i);
   }
-  for (; i < n; ++i) dst[i] = op == Op::kExp ? std::exp(src[i])
-                              : op == Op::kLog ? std::log(src[i]) : std::tanh(src[i]);
+  for (; i < n; ++i) dst[i] = scalar_of(op, src[i]);
 }
 #endif
 }  // namespace
@@ -91,16 +126,27 @@ int main() {
     const char* title;
     Op op;
     std::vector<float> src;
-    void (*hyle_batch)(const float*, float*, std::size_t) noexcept;
-    float (*scalar_fn)(float);
+    void (*hyle_batch)(const float*, float*, std::size_t) noexcept;  // nullptr = unwired candidate
   };
   Case cases[] = {
-      {"exp f32 (4096)", Op::kExp, gen(kN, -10.0f, 10.0f, 1), &hyle::simd::exp_f32_batch,
-       [](float x) { return std::exp(x); }},
-      {"log f32 (4096)", Op::kLog, gen(kN, 0.01f, 100.0f, 2), &hyle::simd::log_f32_batch,
-       [](float x) { return std::log(x); }},
-      {"tanh f32 (4096)", Op::kTanh, gen(kN, -5.0f, 5.0f, 3), &hyle::simd::tanh_f32_batch,
-       [](float x) { return std::tanh(x); }},
+      // Already WIRED in HYLE (simd-06): hyle_batch present -> HYLE row runs.
+      {"exp f32 (4096)", Op::kExp, gen(kN, -10.0f, 10.0f, 1), &hyle::simd::exp_f32_batch},
+      {"log f32 (4096)", Op::kLog, gen(kN, 0.01f, 100.0f, 2), &hyle::simd::log_f32_batch},
+      {"tanh f32 (4096)", Op::kTanh, gen(kN, -5.0f, 5.0f, 3), &hyle::simd::tanh_f32_batch},
+      // simd-09 CANDIDATES (unwired: hyle_batch=nullptr -> only scalar/xsimd/Highway rows). This
+      // bench decides the per-op winner so math_dispatch borrows the fastest core. Input ranges
+      // chosen safe/representative per function.
+      {"sin f32 (4096)", Op::kSin, gen(kN, -3.14f, 3.14f, 4), nullptr},
+      {"cos f32 (4096)", Op::kCos, gen(kN, -3.14f, 3.14f, 5), nullptr},
+      {"exp2 f32 (4096)", Op::kExp2, gen(kN, -10.0f, 10.0f, 6), nullptr},
+      {"log2 f32 (4096)", Op::kLog2, gen(kN, 0.01f, 100.0f, 7), nullptr},
+      {"erf f32 (4096)", Op::kErf, gen(kN, -3.0f, 3.0f, 8), nullptr},
+      {"atan f32 (4096)", Op::kAtan, gen(kN, -10.0f, 10.0f, 9), nullptr},
+      {"cbrt f32 (4096)", Op::kCbrt, gen(kN, -100.0f, 100.0f, 10), nullptr},
+      {"expm1 f32 (4096)", Op::kExpm1, gen(kN, -1.0f, 1.0f, 11), nullptr},
+      {"log1p f32 (4096)", Op::kLog1p, gen(kN, 0.0f, 10.0f, 12), nullptr},
+      {"asinh f32 (4096)", Op::kAsinh, gen(kN, -10.0f, 10.0f, 13), nullptr},
+      {"acosh f32 (4096)", Op::kAcosh, gen(kN, 1.0f, 50.0f, 14), nullptr},
   };
 
   for (auto& c : cases) {
@@ -108,15 +154,16 @@ int main() {
     b.title(c.title).relative(true).batch(kN).minEpochIterations(500);
     // Baseline: scalar libm element loop (what the default HYLE build also does).
     b.run("scalar libm loop", [&] {
-      for (std::size_t i = 0; i < kN; ++i) dst[i] = c.scalar_fn(c.src[i]);
+      for (std::size_t i = 0; i < kN; ++i) dst[i] = scalar_of(c.op, c.src[i]);
       nb::doNotOptimizeAway(dst.data());
     });
-    // HYLE batch op: the wired vectorized tier (per-op best-of-breed borrow core --
-    // xsimd for exp/tanh, Highway for log -- on AVX2 x86; scalar libm otherwise).
-    b.run("HYLE *_f32_batch (vectorized)", [&] {
-      c.hyle_batch(c.src.data(), dst.data(), kN);
-      nb::doNotOptimizeAway(dst.data());
-    });
+    // HYLE batch op (only for already-wired ops): the live vectorized tier.
+    if (c.hyle_batch) {
+      b.run("HYLE *_f32_batch (vectorized)", [&] {
+        c.hyle_batch(c.src.data(), dst.data(), kN);
+        nb::doNotOptimizeAway(dst.data());
+      });
+    }
 #if defined(HYLE_BENCH_XSIMD)
     b.run("xsimd (same ISA SOTA)", [&] {
       xsimd_run(c.op, c.src.data(), dst.data(), kN);
