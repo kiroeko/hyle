@@ -1226,7 +1226,7 @@ namespace detail {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask512<T, N> mask_from_kbits(std::uint64_t bits) noexcept {
   Mask512<T, N> m;
-  m.raw = static_cast<typename KMaskT<T>>(bits);
+  m.raw = static_cast<KMaskT<T>>(bits);
   return m;
 }
 template <std::size_t N>
