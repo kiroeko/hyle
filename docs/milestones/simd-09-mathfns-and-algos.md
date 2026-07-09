@@ -5,7 +5,7 @@
 | **阶段** | P3 |
 | **模块** | simd/ |
 | **前置** | simd-06(数学核 best-of 机制:exp/log/tanh)、simd-08(op 面完备) |
-| **状态** | ✅ 线① 数学函数 best-of(88bcc46,三平台)+ 线② 全 5 件 intdiv/cmp128/RNG(自实现)+ vqsort/bit_pack(vendor 薄封装 Highway)完成。x86 全绿(MSVC+WSL GCC,通用原语 +ASan);NEON 待 mac(#63) |
+| **状态** | ✅ 线① 数学函数 best-of(88bcc46,三平台)+ 线② 全 5 件 intdiv/cmp128/RNG(自实现)+ vqsort/bit_pack(vendor 薄封装 Highway)完成。x86 全绿(MSVC+WSL GCC,通用原语 +ASan);**AVX512 首次 Intel SDE 真跑验证**(见下);NEON 待 mac(#63) |
 
 > **范围**:两条线。①**数学函数 best-of 批**——simd-06 的"三方 bench 选最快核"方法学只覆盖了 exp/log/tanh,把它扩到 sin/cos/exp2/log2/atan/erf/pow… 等两库都有真多项式核的超越函数。②**算法级能力补齐**——vqsort 向量排序 / 向量 RNG / intdiv 向量整除等 Highway contrib 招牌功能,HYLE 整块缺。
 > **驱动**:用户 2026-07-09 "best-of 机会希望全面寻找,三者都有就用最快的;数学库很重要,缺了要补充"。
@@ -94,3 +94,12 @@
 | **bit_pack** 位打包 | ✅ 完成(35bab19) | **vendor 薄封装** Highway bit_pack。pack/unpack(u8 1..8/u16 1..16/u32 1..32)吃裸指针+运行期 bits(index_sequence 折编译期 kBits);block 走 Highway、tail 走自写 bitstream codec。**揪出并绕过 vendor bug**:Highway Pack16<11>/<13> 满位宽 round-trip 失败(独立探针 MSVC+GCC+EMU128 三处坐实=算法非 codegen;根因上游 `& kBits` 笔误漏测),这两宽度回退 HYLE bitstream codec。MSVC+WSL GCC 全绿(213)。详见 docs/debug/highway-pack16-roundtrip-hunt.md |
 
 **线②小结**:全 5 件落地。通用原语(intdiv/cmp128/RNG)**自实现泛型层**;重型件(vqsort/bit_pack)**vendor 薄封装 Highway**(与数学核借法同构——公开层吃裸指针不 include highway,借核 TU 内部用 Highway D-tag,dispatch 运行期门控 SIGILL 安全)。**关键收获**:借核同样过 HYLE 对拍闸门,bit_pack 的 round-trip 恒等式揪出 Highway 一个满位宽 bug(Pack16<11>/<13>)——"借不等于信"。K32V32 top-k 留消费驱动。
+
+## AVX-512 首次真机(Intel SDE)验证 — 补齐历史空白(2026-07-09)
+
+simd-01~09 全程 avx512.h 及各 avx512 tier 都标"写+objdump 验 zmm 但**从没跑过**"(无 AVX-512 机)。本次为 compute-07(会路由到 512 后端)收尾,用 **Intel SDE 9.48.0**(`sde64 -future`,WSL /root)首次真跑,补齐这个最大空白:
+- **vec_test avx512 变体**(新增,`HYLE_SIMD_TARGET_AVX512`):avx512.h 全 op 面对拍 scalar oracle,**SDE 169/169 全绿**——含本会话新增的 crypto/cmp128/intdiv/RNG。
+- **math/sort/bitpack 的 avx512 tier**:tier 探针确认 `sde64 -future` 下 `active_{math,sort,bitpack}_variant()==kAvx512`(裸机 kAvx2),即 dispatch **真的路由到 512 tier**,19/19 全绿。裸机正确留 kAvx2(SIGILL 安全双向坐实)。
+- **SDE 揪出 2 真问题**(修复):① avx512.h **缺 16 个 simd-08 A-2 mask 域 op**(冻结在 simd-07,无 avx512 gtest 变体故一直不可见)→ 补齐 k-register 形式;② vec_test `kMaxLanes=32` 栈越界(AVX512 i8=64 lane,同 TruncateTo/SumsOf 类)→ 改 64。
+
+**方法学**:"无硬件 → 理由化不验"是陷阱(simd-design 已记用户纠偏);Intel SDE 是 AVX-512 无机时的真验闸门(模拟 CPU 让 dispatch 真选 512 tier + 全 op 对拍),不该再让 avx512 停在"objdump 验"。AVX-512 从"写了没跑"升级为"SDE 真跑全绿"。
