@@ -35,17 +35,29 @@
 3. **逐 op best-of-breed dispatch**:同 ISA 对标证实没有单一库三 op 全胜(xsimd 的 exp/tanh 快、Highway 的 log 快),dispatcher 按 op 选最快核(`math_dispatch.cc`,编译期选,零运行时开销)。
 4. **借核现状**:Highway + xsimd 均 vendored、无条件编进生产、默认全速,运行期 `cpu_features().avx2` 门控老 CPU 落 scalar 不 SIGILL。math_test 5/5、full simd 56/56。(注:SLEEF 已从项目移除,dispatcher 三 op 都没选它过——bench 顶部若仍有 SLEEF 注释属陈旧。)
 
-## simd f64 数学核（exp/log/tanh,double 精度——CAE/求解器/几何路径）
+## simd f64 数学核（全 14 超越 + hypot,double 精度——CAE/求解器/几何路径）
 
-> f32 math 补全后补 f64 批 API(`exp/log/tanh_f64_batch`)。CAE 求解器/几何核大量用 double。vec.h 后端层本就全 f64,缺口只在公开批 API + 借核层。**winner 逐精度 bench(WSL GCC AVX2,4-wide f64,nanobench 20k epoch),不从 f32 外推**。
+> f32 math 补全后**铺全 f64 批 API**(exp/log/tanh + sin/cos/exp2/log2/erf/atan/cbrt/expm1/log1p/asinh/acosh + tgamma/lgamma + hypot + dot/saxpy)。CAE 求解器/几何核大量用 double。vec.h 后端层本就全 f64,缺口只在公开批 API + 借核层。**winner 逐精度 bench(WSL GCC AVX2,4-wide f64,nanobench 20k epoch),不从 f32 外推**。
 
 | kernel | xsimd f64 | Highway f64 | winner | 对比 f32 winner |
 |---|---|---|---|---|
 | **exp f64** | 1.83 ns | **1.01 ns** | **Highway 1.8x** | f32 是 xsimd(**翻转**) |
-| **log f64** | 1.72 ns | **0.89 ns** | **Highway 1.9x** | f32 也是 Highway(一致) |
+| **log f64** | 1.72 ns | **0.89 ns** | **Highway 1.9x** | f32 也是 Highway |
 | **tanh f64** | 3.17 ns | **1.44 ns** | **Highway 2.2x** | f32 是 xsimd(**翻转**) |
+| **sin f64** | 1.27 | **0.86** | **Highway 1.5x** | f32 Highway |
+| **cos f64** | 1.29 | **0.89** | **Highway 1.5x** | f32 Highway |
+| **exp2 f64** | 1.81 | **0.87** | **Highway 2.1x** | f32 是 xsimd(**翻转**) |
+| **log2 f64** | 1.86 | **0.93** | **Highway 2.0x** | f32 Highway |
+| **erf f64** | **2.71** | 3.52 | **xsimd 1.3x** | f32 也是 xsimd(唯一 f64 xsimd 赢) |
+| **atan f64** | 1.26 | **1.17** | **Highway 1.07x** | f32 Highway |
+| **cbrt f64** | 5.88 | **2.33** | **Highway 2.5x** | f32 Highway |
+| **expm1 f64** | 2.38 | **1.10** | **Highway 2.2x** | f32 Highway |
+| **log1p f64** | 1.84 | **1.11** | **Highway 1.7x** | f32 Highway |
+| **asinh f64** | 3.88 | **2.69** | **Highway 1.4x** | f32 Highway |
+| **acosh f64** | 3.03 | **2.40** | **Highway 1.3x** | f32 Highway |
 
-**核心方法学结论**:**f64 下 Highway 三个全胜,而 f32 下 xsimd 赢 exp/tanh——winner 在 exp/tanh 上翻转**。这坐实"best-of winner 必须逐精度 bench,不可从 f32 dispatch 表外推"——若沿用 f32 表给 f64 exp/tanh 选 xsimd,会慢 ~1.8-2.2x。故 f64 dispatch 三 op 全走 Highway(`math_dispatch.cc` 独立 f64 分支)。正确性:`Math.F64MatchesLibm` 对拍 long double libm ~1e-14 相对(exp/log/tanh 三 op,四平台 MSVC+WSL GCC 绿)。**范围**:avx2(4-wide)+ scalar floor 已覆盖全 x86 host + 其他平台;avx512(8-wide f64)/neon f64 borrow siblings 是登记的 follow-on(dot_f64/saxpy_f64 已全五后端含 avx512/neon,数学借核先 avx2)。
+**核心方法学结论**:**f64 下 Highway 赢 13/14,xsimd 只赢 erf——而 f32 下 xsimd 赢 exp/tanh/exp2,winner 在 exp/tanh/exp2 上翻转**。坐实"best-of winner 必须逐精度 bench,不可从 f32 dispatch 表外推":若沿用 f32 表给 f64 exp/tanh/exp2 选 xsimd,会慢 ~1.8-2.2x。故 f64 dispatch 除 erf(xsimd)全走 Highway;tgamma xsimd 独有;lgamma scalar(vendor 向量化 lgamma lane-mixing bug,f64 假设同样受影响);hypot Highway(overflow-safe)。
+**全后端铺完(非 follow-on)**:avx2(4-wide)+ **avx512(8-wide,GCC/Clang,SDE 真跑 7/7;MSVC-AVX3-broken 走 avx2)** + **neon(2-wide,qemu-aarch64 真跑 14 op vs libm ~1e-13)** + scalar floor。正确性:`Math.F64/F64Rest/HypotF64MatchesLibm` 对拍 long double libm ~1e-14 相对——四平台全绿(MSVC 232 + WSL GCC 232 + AVX512 SDE + NEON qemu)。dot_f64/saxpy_f64 亦全五后端。
 
 
 
