@@ -126,6 +126,17 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
   hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_NEON OPTIONS ${_neon_flags})
+  # SVE variant: the FIRST scalable-width backend (backend/sve.h). Its op face is VL-agnostic, so
+  # it uses a DEDICATED sve_test.cc (not vec_test.cc, which pins Lanes to a compile-time constant).
+  # Gated by HYLE_SIMD_SVE=ON because SVE needs `-march=...+sve` and a CPU/emulator that supports
+  # it: on a real SVE host (Graviton3, etc.) ctest runs it directly; on a non-SVE dev box it is
+  # cross-compiled (aarch64-linux-gnu-g++ -march=armv8-a+sve) and run under qemu-aarch64-static at
+  # multiple VLs (128/256/512) -- the "one binary, every width" scalable proof. See the recipe in
+  # docs/architecture/simd-design.md (SVE section) / scripts. NOT auto-built on a plain aarch64
+  # build (would need +sve which some arm64 hosts lack), so it is opt-in.
+  if(HYLE_SIMD_SVE)
+    hyle_add_test(simd NAME sve SOURCES simd/sve_test.cc DEFINES HYLE_SIMD_TARGET_SVE OPTIONS -march=armv8-a+sve)
+  endif()
 endif()
 if(HYLE_HAS_FCONTEXT)
   hyle_add_test(sched SOURCES sched/fiber_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc sched/sync_test.cc sched/timer_test.cc sched/coro_test.cc sched/affinity_test.cc sched/join_test.cc sched/blocking_test.cc sched/shutdown_test.cc sched/cancel_test.cc DEPS hyle_time)
