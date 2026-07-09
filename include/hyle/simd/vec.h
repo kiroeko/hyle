@@ -175,6 +175,8 @@ static constexpr std::size_t kNativeVectorBytes = 16;
 #  include "hyle/simd/backend/neon.h"
 #elif defined(HYLE_SIMD_TARGET_SVE)
 #  include "hyle/simd/backend/sve.h"
+#elif defined(HYLE_SIMD_TARGET_RVV)
+#  include "hyle/simd/backend/rvv.h"
 #else
 #  include "hyle/simd/backend/scalar.h"
 #endif
