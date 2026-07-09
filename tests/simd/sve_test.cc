@@ -226,15 +226,18 @@ TEST(Sve, RoundingAndFindTrue) {
 
   const hs::ScalableTag<std::int32_t> di;
   const std::size_t ni = hs::Lanes(di);
-  alignas(64) std::int32_t iv[kBuf]; for (std::size_t i = 0; i < ni; ++i) iv[i] = static_cast<std::int32_t>(i);
-  auto vi = hs::Load(di, iv);
   const std::int32_t hi = static_cast<std::int32_t>(ni - 2 > 2 ? ni - 2 : ni);
-  auto m = hs::And(hs::Ge(vi, hs::Set(di, 2)), hs::Lt(vi, hs::Set(di, hi)));
+  // build the "in [2,hi)" mask from a per-lane flag array (avoids combining two masks with a
+  // vector And -- masks are svbool_t, not vectors).
+  alignas(64) std::int32_t flag[kBuf];
+  for (std::size_t i = 0; i < ni; ++i) flag[i] = ((std::int32_t)i >= 2 && (std::int32_t)i < hi) ? 1 : 0;
+  auto m = hs::Gt(hs::Load(di, flag), hs::Set(di, 0));
   std::ptrdiff_t ff = -1, fl = -1;
-  for (std::size_t i = 0; i < ni; ++i) { bool act = (std::int32_t)i >= 2 && (std::int32_t)i < hi; if (act) { if (ff < 0) ff = (std::ptrdiff_t)i; fl = (std::ptrdiff_t)i; } }
+  for (std::size_t i = 0; i < ni; ++i) { if (flag[i]) { if (ff < 0) ff = (std::ptrdiff_t)i; fl = (std::ptrdiff_t)i; } }
   EXPECT_EQ(hs::FindFirstTrue(di, m), ff);
   EXPECT_EQ(hs::FindLastTrue(di, m), fl);
-  auto mf = hs::Lt(vi, hs::Set(di, -1));
+  alignas(64) std::int32_t zero[kBuf] = {};
+  auto mf = hs::Gt(hs::Load(di, zero), hs::Set(di, 0));  // all false
   EXPECT_EQ(hs::FindFirstTrue(di, mf), std::ptrdiff_t{-1});
   EXPECT_EQ(hs::FindLastTrue(di, mf), std::ptrdiff_t{-1});
 }
