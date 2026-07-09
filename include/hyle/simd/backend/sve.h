@@ -71,6 +71,23 @@ template <typename T> HYLE_FORCE_INLINE svbool_t ptrue() noexcept {
   else return svptrue_b64();
 }
 
+// Splat an unsigned shift count into the same-width unsigned vector SVE shifts require.
+template <typename T> HYLE_FORCE_INLINE auto dup_ucount(unsigned k) noexcept {
+  if constexpr (sizeof(T) == 1) return svdup_n_u8(static_cast<std::uint8_t>(k));
+  else if constexpr (sizeof(T) == 2) return svdup_n_u16(static_cast<std::uint16_t>(k));
+  else if constexpr (sizeof(T) == 4) return svdup_n_u32(static_cast<std::uint32_t>(k));
+  else return svdup_n_u64(static_cast<std::uint64_t>(k));
+}
+// Reinterpret a signed/unsigned vector to the same-width UNSIGNED vector (SVE shift amount type).
+HYLE_FORCE_INLINE svuint8_t to_ucount(svint8_t v) noexcept { return svreinterpret_u8(v); }
+HYLE_FORCE_INLINE svuint8_t to_ucount(svuint8_t v) noexcept { return v; }
+HYLE_FORCE_INLINE svuint16_t to_ucount(svint16_t v) noexcept { return svreinterpret_u16(v); }
+HYLE_FORCE_INLINE svuint16_t to_ucount(svuint16_t v) noexcept { return v; }
+HYLE_FORCE_INLINE svuint32_t to_ucount(svint32_t v) noexcept { return svreinterpret_u32(v); }
+HYLE_FORCE_INLINE svuint32_t to_ucount(svuint32_t v) noexcept { return v; }
+HYLE_FORCE_INLINE svuint64_t to_ucount(svint64_t v) noexcept { return svreinterpret_u64(v); }
+HYLE_FORCE_INLINE svuint64_t to_ucount(svuint64_t v) noexcept { return v; }
+
 }  // namespace detail
 
 // ---- VFromD / DFromV / TFromV -------------------------------------------------------
@@ -272,6 +289,100 @@ template <class D> HYLE_FORCE_INLINE std::size_t CountTrue(D, svbool_t m) noexce
 // ---- GetLane: lane 0 ----------------------------------------------------------------
 template <class V> HYLE_FORCE_INLINE TFromV<V> GetLane(V v) noexcept {
   return svlasta(svpfalse_b(), v);  // lasta with empty pred = element 0
+}
+
+// ---- value reductions (whole-vector -> scalar) --------------------------------------
+// svaddv/sv{min,max}v/sv{and,orr,eor}v reduce across all active lanes to a scalar. Under the
+// lane-width all-true predicate this is the full-vector reduction. Signature matches Highway:
+// Reduce*(D, V) -> T.
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceSum(D, VFromD<D> v) noexcept {
+  return svaddv(detail::ptrue<TFromD<D>>(), v);
+}
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMin(D, VFromD<D> v) noexcept {
+  return svminv(detail::ptrue<TFromD<D>>(), v);
+}
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMax(D, VFromD<D> v) noexcept {
+  return svmaxv(detail::ptrue<TFromD<D>>(), v);
+}
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceAnd(D, VFromD<D> v) noexcept {
+  return svandv(detail::ptrue<TFromD<D>>(), v);
+}
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceOr(D, VFromD<D> v) noexcept {
+  return svorv(detail::ptrue<TFromD<D>>(), v);
+}
+
+// ---- shifts -------------------------------------------------------------------------
+// ShiftLeft<k>/ShiftRight<k>: compile-time immediate. SVE svlsl/svlsr/svasr take a vector or
+// scalar shift amount; for the immediate form we pass a splatted count. Signed ShiftRight is
+// arithmetic (svasr), unsigned is logical (svlsr).
+// SVE shift-by-immediate takes an unsigned splat of the count. svlsl (logical left), svlsr
+// (logical right, unsigned), svasr (arithmetic right, signed).
+template <int kBits, class V> HYLE_FORCE_INLINE V ShiftLeft(V a) noexcept {
+  using T = TFromV<V>;
+  return svlsl_x(detail::ptrue<T>(), a, detail::dup_ucount<T>(kBits));
+}
+template <int kBits, class V> HYLE_FORCE_INLINE V ShiftRight(V a) noexcept {
+  using T = TFromV<V>;
+  if constexpr (std::is_signed_v<T>) return svasr_x(detail::ptrue<T>(), a, detail::dup_ucount<T>(kBits));
+  else return svlsr_x(detail::ptrue<T>(), a, detail::dup_ucount<T>(kBits));
+}
+// Shl/Shr: per-lane variable shift by b's lanes (as unsigned same-width). Highway: Shr signed = asr.
+template <class V> HYLE_FORCE_INLINE V Shl(V a, V b) noexcept {
+  using T = TFromV<V>;
+  return svlsl_x(detail::ptrue<T>(), a, detail::to_ucount(b));
+}
+template <class V> HYLE_FORCE_INLINE V Shr(V a, V b) noexcept {
+  using T = TFromV<V>;
+  if constexpr (std::is_signed_v<T>) return svasr_x(detail::ptrue<T>(), a, detail::to_ucount(b));
+  else return svlsr_x(detail::ptrue<T>(), a, detail::to_ucount(b));
+}
+
+// ---- Reverse (whole-vector element reversal) ----------------------------------------
+template <class D> HYLE_FORCE_INLINE VFromD<D> Reverse(D, VFromD<D> v) noexcept {
+  return svrev(v);
+}
+
+// ---- tail handling: FirstN / LoadN / StoreN (SVE NATIVE, not store+reload) ----------
+// FirstN(d, n): predicate with the first n lanes active. svwhilelt_b*(0, n) is exactly this and
+// is SVE's core tail primitive (no emulation). Returns svbool_t (our Mask type).
+template <class D> HYLE_FORCE_INLINE svbool_t FirstN(D, std::size_t n) noexcept {
+  using T = TFromD<D>;
+  const std::uint64_t nn = static_cast<std::uint64_t>(n);
+  if constexpr (sizeof(T) == 1) return svwhilelt_b8(std::uint64_t{0}, nn);
+  else if constexpr (sizeof(T) == 2) return svwhilelt_b16(std::uint64_t{0}, nn);
+  else if constexpr (sizeof(T) == 4) return svwhilelt_b32(std::uint64_t{0}, nn);
+  else return svwhilelt_b64(std::uint64_t{0}, nn);
+}
+// LoadN: load exactly n lanes (rest zero) -- predicated svld1, fault-safe (only touches n lanes).
+template <class D> HYLE_FORCE_INLINE VFromD<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
+  return svld1(FirstN(d, n), p);
+}
+// StoreN: store exactly n lanes -- predicated svst1 (only writes n lanes).
+template <class D> HYLE_FORCE_INLINE void StoreN(VFromD<D> v, D d, TFromD<D>* p, std::size_t n) noexcept {
+  svst1(FirstN(d, n), p, v);
+}
+
+// ---- compress (SVE NATIVE svcompact, not store+reload) ------------------------------
+// Compress(v, m): pack the active lanes to the low end. SVE svcompact is exactly this for 32/64-bit
+// lanes (the widths that have it). Highway contract: inactive lanes' contents are unspecified.
+template <class V> HYLE_FORCE_INLINE V Compress(V v, svbool_t m) noexcept {
+  return svcompact(m, v);
+}
+
+// ---- population count ---------------------------------------------------------------
+// svcnt_x returns the UNSIGNED same-width vector (popcount is unsigned); Highway's contract keeps
+// the input lane type, so reinterpret the unsigned result back to V's type.
+template <class V> HYLE_FORCE_INLINE V PopulationCount(V v) noexcept {
+  using T = TFromV<V>;
+  const auto pc = svcnt_x(detail::ptrue<T>(), v);  // svuint{8,16,32,64}_t
+  if constexpr (std::is_signed_v<T>) {
+    if constexpr (sizeof(T) == 1) return svreinterpret_s8(pc);
+    else if constexpr (sizeof(T) == 2) return svreinterpret_s16(pc);
+    else if constexpr (sizeof(T) == 4) return svreinterpret_s32(pc);
+    else return svreinterpret_s64(pc);
+  } else {
+    return pc;
+  }
 }
 
 }  // namespace hyle::simd
