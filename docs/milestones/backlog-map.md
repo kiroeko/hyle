@@ -30,7 +30,8 @@
 | ~~build-asan hwy::Abort 链接~~ | ~~undefined reference to hwy::Abort~~ | ✅ **已修(2026-07-09,0a64455)** | 根因:Highway 借核经 HWY_DASSERT 调 hwy::Abort,Release -O2 DCE 掉、ASan -O2-g 没 DCE→残留未定义(HYLE 从不编 Highway abort.cc)。修:把 `third_party/highway/hwy/abort.cc`(baseline C++)编进 hyle_simd 源列表→所有构建配置都链干净。build-asan 整库 ASan 实测 sse4/avx2 169/169 零错误(不再需 standalone 绕过) |
 
 > ### best-of 判据(2026-07-09 三方审计定,固化防再犯)
-> "三者都有就选最快"只在**三条件同时成立**时有意义:① op 有**真实算法内容**(多项式逼近 / 多指令组合 / 软件 emulation),② 三家实现**有差异**,③ **不贴单一硬件指令**(否则三家编译成同一条,比了也一样)。按此分类 simd op:
+> "三者都有就选最快"只在**三条件同时成立**时有意义:① op 有**真实算法内容**(多项式逼近 / 多指令组合 / 软件 emulation),② 三家实现**有差异**,③ **不贴单一硬件指令**(否则三家编译成同一条,比了也一样)。
+> **⚠️ best-of 是"最快的正确实现",不是"最快"——correctness 是前置闸,速度在其后**:三方对拍必先过 libm/oracle 闸门,不 overflow-safe / 精度不达标 / 语义偏离的"更快"实现**没资格入选**。实例:hypot **xsimd 比 Highway 快 2.2x(0.14 vs 0.30ns,MSVC+GCC 一致)但非 overflow-safe**(b²>FLT_MAX 返 inf,裸 `sqrt(a*a+b*b)`),Highway 做指数缩放匹配 std::hypot 全域 → **借 Highway,不借更快的 xsimd**(overflow-safe 正是 hypot 存在的意义;一个大输入返错值的实现不是有效替代)。同理揪出 xsimd 向量 lgamma lane-mixing bug(退 scalar)、Highway Pack16<11/13> 满位宽 bug(退 bitstream)——**"借不等于信",三方最快的那个可能是错的**。按此分类 simd op:
 > - **无 best-of 空间(最多)**:纯 intrinsic 直通——add/sub/min/max/sqrt/BitCast/Mask 域/swizzle 硬件 shuffle/饱和/移位/位计数。三家同一条指令。
 > - **有算法但借库借不到便宜**:gather/scatter/compress/expand 的 store+reload emulation——**Highway/xsimd 在 SSE4/NEON 上也是 store+reload**(它们也无硬件指令),借=借同款 emulation。真正加速是**自己上 AVX2/AVX512 native**(vpcompress/vpgather),那是**自造 profiling 优化,不是 best-of**。
 > - **数学函数=best-of 借库主场**:多项式逼近算法最重、最易错、三家投入最大、不贴单一指令——"借难且已解决的"最典型。simd-06 只做了 exp/log/tanh(borrow 主场却只覆盖三个),sin/cos/erf/pow/exp2/log2/atan… 是同类金矿 → simd-09 ①。

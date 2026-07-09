@@ -91,7 +91,13 @@
 
 **四平台验证**:MSVC 219(+1 gamma 对拍)、WSL GCC AVX2 219、AVX512 SDE(tgamma-512 TU 链入)、**arm64 NEON qemu-aarch64 真跑**(lgamma worst 1.2e-5=libm 精确、tgamma 相对误差 ~7e-8、variant=kNeon)。
 
-**xsimd 独有仍未接**(按需):hypot(实为 best-of binary,非独有)、复数超越函数(`batch<complex>` exp/log/pow/sqrt——需复数类型面,Highway 无对手)。
+### 线①-c hypot binary best-of:correctness 压过速度选 Highway(✅ 2026-07-09)
+
+hypot 是 **binary best-of**(两库都有,非独有)。`math_bench` 加 binary 对拍段,MSVC+GCC 一致:**xsimd 0.14ns vs Highway 0.30ns(xsimd ~2.2x 快)**。但 `HypotMatchesLibm` 对拍(含 3e19/1e20 溢出用例)揪出 **xsimd hypot 非 overflow-safe**——b²>FLT_MAX 直接返 inf(裸 `sqrt(a*a+b*b)`),而 Highway 的 `Hypot` 做指数缩放匹配 std::hypot 全域。**overflow-safe 正是 hypot 存在的意义(vs 裸 sqrt),故 correctness 压过 2.2x → 借 Highway**。这固化了 best-of 判据的关键前置:**"最快的正确实现"非"最快"**(见 backlog-map best-of 判据 ⚠️ 块)。
+
+接入:全 arch(x86 avx2/avx512 + arm64 NEON + scalar),binary 签名(两输入数组)。MSVC AVX3-broken 故 512 排除同 log。四平台验证:MSVC 220 / WSL GCC 220 / AVX512 SDE 169 / arm64 NEON qemu(hypot bad=0/8 含溢出、variant=kNeon)。
+
+**xsimd 独有仍未接**(按需):复数超越函数(`batch<complex>` exp/log/pow/sqrt——需复数类型面,Highway 无对手)。
 
 ### 线② 算法级能力 — ✅ 完成(2026-07-09,全 5 件,四 ISA + SDE + mac 真机)
 
