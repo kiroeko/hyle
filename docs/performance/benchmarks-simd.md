@@ -123,7 +123,21 @@
 | Abs/Neg/Sub/Mul/Max/AbsDiff/OddEven/InterleaveUpper/Shl/ShiftLeft/ShiftRight/BroadcastSignBit/Eq/Lt/Gt/Sqrt/ApproxRecip×2 (~18) | ≈ | ≈ | 打平,保留 |
 
 ### 完整"该抄"清单(9 个自造 op 稳定慢 1.7-30x,全 store+reload/标量 vs Highway 向量指令)
-**GetExponent**(30x!std::logb 标量)、**DupEven / DupOdd**(10x)、**ReverseBits**(9x)、**TrailingZeroCount**(8x)、**Compress / PopulationCount**(5-6x)、**LeadingZeroCount**(5.5x)、**ConcatEven / ConcatOdd**(1.7-1.8x)。(**MulByPow2** 同族 std::ldexp,几乎必输,归入。)共同根因:HYLE 栈 store+reload+标量循环/std:: 数学,Highway 用位操作/vpshufb-LUT/vpshufd/vpermd 纯向量。**处置(三目标②):抄 Highway 向量算法进 HYLE,5 后端各查**(task #86)。铁律:**凡 store+reload+std:: 标量的 op 基本都惨输,应优先全换。**
+**GetExponent**(30x!std::logb 标量)、**DupEven / DupOdd**(10x)、**ReverseBits**(9x)、**TrailingZeroCount**(8x)、**Compress / PopulationCount**(5-6x)、**LeadingZeroCount**(5.5x)、**ConcatEven / ConcatOdd**(1.7-1.8x)。(**MulByPow2** 同族 std::ldexp,几乎必输,归入。)共同根因:HYLE 栈 store+reload+标量循环/std:: 数学,Highway 用位操作/vpshufb-LUT/vpshufd/vpermd 纯向量。
+
+**✅ avx2 后端已全修(2026-07-09,494a4b0)**——换原生 intrinsic,vec_test 169/169 + 隔离 bench 复测:
+| op | 修前 | 修后 | vs Highway | 手法 |
+|---|---|---|---|---|
+| GetExponent | 30x | 0.052 | 打平 | 位提取指数域+cvtepi32_ps |
+| DupEven/DupOdd | 10x | 0.059 | 打平 | moveldup/movehdup/vpshufd/permute_pd |
+| ReverseBits | 9x | 0.103 | **反超** | 双 vpshufb nibble-LUT + 字节序反转 |
+| PopulationCount | 5x | 0.090 | **反超** | vpshufb 半字节 LUT + fold |
+| TrailingZeroCount | 8x | 0.112 | 1.4x(近) | PopCount((x&-x)-1) |
+| LeadingZeroCount | 5.5x | 0.204 | 2.4x | bits-PopCount(smear-right) |
+| Compress | 6x | 0.283 | 2.4x | vpermd 索引表+零尾 |
+| ConcatEven/Odd | 1.7x | (原生) | ~平 | vpermd 偶奇收集+blend |
+
+3 打平/反超,4 大幅改善(LZCnt/Compress/TZCnt Highway 的 float-trick/packed-table 更精巧仍略快,但已拿下绝大部分收益)。**待做:sse4/avx512/neon 同 op 换原生**(同 pattern,SVE/RVV 若同样也修)。铁律仍立:store+reload+std 标量 op 优先全换。
 
 ### 变宽 op 对照(`op_parity_widen_bench.cc`)——疑似输家实测澄清=全打平
 之前把变宽/SumsOf 标"疑似 store+reload 输家",实测(med ns/op)**全打平**——主路径走原生指令,`alignas` 只在 fallback 分支:
