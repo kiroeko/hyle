@@ -1911,10 +1911,14 @@ HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcep
   // Other widths keep store+reload (no 8/16/64-bit vpermd on AVX2); that path happens to zero its
   // tail (a store+reload byproduct, still within the "unspecified" contract).
   if constexpr (sizeof(T) == 4) {
-    const unsigned bits = detail::mask_bits(m) & 0xFFu;
+    // 8-bit mask straight from movemask_ps (one instruction) -- NOT detail::mask_bits, whose i32
+    // path scalar-compacts movemask_epi8's 32 bits (an ~8-iteration loop that dominated the op).
+    unsigned mbits;
+    if constexpr (std::is_same_v<T, float>) mbits = static_cast<unsigned>(_mm256_movemask_ps(m.raw));
+    else mbits = static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
     // broadcast the packed u32, then shift each of the 8 copies right by {0,4,...,28} so lane i
     // holds its 3-bit index in the low bits (vpermd ignores bits 3..31).
-    const __m256i packed = _mm256_set1_epi32(static_cast<int>(detail::kCompressIdx32Packed[bits]));
+    const __m256i packed = _mm256_set1_epi32(static_cast<int>(detail::kCompressIdx32Packed[mbits]));
     const __m256i shifts = _mm256_setr_epi32(0, 4, 8, 12, 16, 20, 24, 28);
     const __m256i idx = _mm256_srlv_epi32(packed, shifts);
     Vec256<T, N> r;
