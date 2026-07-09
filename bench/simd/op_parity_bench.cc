@@ -67,7 +67,8 @@ int main() {
 
   std::printf("op parity: HYLE vs Highway, same ISA (HYLE lanes=%zu, hwy lanes=%zu)\n", hw, gw);
 
-  // ---- 1. Add (pure passthrough: MUST tie -- same vaddps) ----
+  // ---- 1. Add (pure passthrough: MUST tie -- same vaddps). 3-way: also the public add_f32
+  //         batch's primitive (simd-add补齐, compute-07 vecadd 的底层核). xsimd 第三方对照. ----
   {
     nb::Bench bench; bench.title("Add f32 (4096)").relative(true).batch(kN).minEpochIterations(20000);
     bench.run("HYLE Add", [&] {
@@ -78,6 +79,12 @@ int main() {
     bench.run("Highway Add", [&] {
       for (std::size_t i = 0; i + gw <= kN; i += gw)
         hn::StoreU(hn::Add(hn::LoadU(gd, a.data() + i), hn::LoadU(gd, b.data() + i)), gd, out.data() + i);
+      nb::doNotOptimizeAway(out.data());
+    });
+    bench.run("xsimd add", [&] {
+      constexpr std::size_t xw = xb_f32::size;
+      for (std::size_t i = 0; i + xw <= kN; i += xw)
+        (xb_f32::load_unaligned(a.data() + i) + xb_f32::load_unaligned(b.data() + i)).store_unaligned(out.data() + i);
       nb::doNotOptimizeAway(out.data());
     });
   }

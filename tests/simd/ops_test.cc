@@ -16,6 +16,8 @@
 // select a kernel), not the dead detector the simd-01 audit flagged.
 
 using hyle::simd::active_variant;
+using hyle::simd::add_f32;
+using hyle::simd::add_f64;
 using hyle::simd::best_isa;
 using hyle::simd::dot_f32;
 using hyle::simd::dot_f64;
@@ -110,6 +112,24 @@ TEST(Ops, SaxpyF64MatchesReference) {
     for (std::size_t i = 0; i < n; ++i) expect[i] = a * x[i] + y[i];
     saxpy_f64(a, x.data(), y.data(), n);
     for (std::size_t i = 0; i < n; ++i) EXPECT_DOUBLE_EQ(y[i], expect[i]) << "n=" << n << " i=" << i;
+  }
+}
+
+// elementwise add: z = x + y (f32/f64). Tail handled at non-SIMD-width sizes.
+TEST(Ops, AddF32MatchesReference) {
+  for (std::size_t n : {std::size_t{1}, std::size_t{8}, std::size_t{31}, std::size_t{257}, std::size_t{1000}}) {
+    auto x = gen(n, 0.5f), y = gen(n, -0.3f);
+    std::vector<float> z(n, -1.0f);
+    add_f32(x.data(), y.data(), z.data(), n);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(z[i], x[i] + y[i]) << "n=" << n << " i=" << i;
+  }
+}
+TEST(Ops, AddF64MatchesReference) {
+  for (std::size_t n : {std::size_t{1}, std::size_t{8}, std::size_t{31}, std::size_t{257}, std::size_t{1000}}) {
+    auto x = gend(n, 0.5), y = gend(n, -0.3);
+    std::vector<double> z(n, -1.0);
+    add_f64(x.data(), y.data(), z.data(), n);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_DOUBLE_EQ(z[i], x[i] + y[i]) << "n=" << n << " i=" << i;
   }
 }
 
