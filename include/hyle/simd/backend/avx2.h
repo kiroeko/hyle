@@ -1845,14 +1845,52 @@ HYLE_FORCE_INLINE void ScatterIndex(detail::V256<D> v, D d, TFromD<D>* base,
   Store(idx, Simd<IdxT, kN, 0>(), ix); Store(v, d, src);
   for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
 }
+// Compress index table for 8x i32: for each 8-bit mask, the 8 vpermd indices that gather the
+// active lanes to the front (inactive lanes' slots get filler = 0; contents there are unspecified
+// per Highway's Compress contract). constexpr-built (no hand-typed 2048 ints).
+namespace detail {
+struct CompressIdx32Table {
+  std::uint32_t idx[256 * 8] = {};
+  constexpr CompressIdx32Table() {
+    for (unsigned bits = 0; bits < 256; ++bits) {
+      unsigned k = 0;
+      for (unsigned i = 0; i < 8; ++i) if ((bits >> i) & 1u) idx[bits * 8 + (k++)] = i;
+      for (; k < 8; ++k) idx[bits * 8 + k] = 0;  // fill inactive tail (unspecified lanes)
+    }
+  }
+};
+inline constexpr CompressIdx32Table kCompressIdx32Tbl{};
+inline constexpr const std::uint32_t* kCompressIdx32 = kCompressIdx32Tbl.idx;
+}  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcept {
-  alignas(32) T src[N], dst[N] = {};
-  Store(v, Simd<T, N, 0>(), src);
-  const unsigned bits = detail::mask_bits(m);
-  std::size_t k = 0;
-  for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1u) dst[k++] = src[i];
-  return Load(Simd<T, N, 0>(), dst);
+  // NATIVE for 32-bit lanes (8 lanes): a per-mask permute-index table + vpermd packs the active
+  // lanes to the front in one shuffle (Highway's method; op_parity: store+reload was 6x slower).
+  // 256 masks x 8 u32 indices = 8 KiB table (Highway packs to 1 KiB; this is the simple correct
+  // form). Other widths keep store+reload (no 8/16/64-bit vpermd on AVX2).
+  if constexpr (sizeof(T) == 4) {
+    const unsigned bits = detail::mask_bits(m) & 0xFFu;
+    const __m256i idx = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(detail::kCompressIdx32 + bits * 8));
+    __m256i perm;
+    if constexpr (std::is_same_v<T, float>) perm = _mm256_castps_si256(_mm256_permutevar8x32_ps(v.raw, idx));
+    else perm = _mm256_permutevar8x32_epi32(v.raw, idx);
+    // HYLE Compress ZEROS the inactive tail (stricter than Highway's "unspecified"): keep only the
+    // first popcount(bits) lanes. Build a lane< count mask via iota compare and AND it in.
+    const int cnt = _mm_popcnt_u32(bits);
+    const __m256i iota = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+    const __m256i keep = _mm256_cmpgt_epi32(_mm256_set1_epi32(cnt), iota);  // i < cnt
+    Vec256<T, N> r;
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_and_ps(_mm256_castsi256_ps(perm), _mm256_castsi256_ps(keep));
+    else r.raw = _mm256_and_si256(perm, keep);
+    return r;
+  } else {
+    alignas(32) T src[N], dst[N] = {};
+    Store(v, Simd<T, N, 0>(), src);
+    const unsigned bits = detail::mask_bits(m);
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1u) dst[k++] = src[i];
+    return Load(Simd<T, N, 0>(), dst);
+  }
 }
 // AVX2 has no native compress (VBMI2's vpcompress is AVX-512 only), so Compress IS the store+
 // reload form -- CompressEmulated aliases it so gather_bench compiles the same A/B on both x86
