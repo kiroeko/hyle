@@ -48,6 +48,13 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     bitpack/bitpack_highway_neon.cc)
 endif()
 
+# Highway runtime support: the borrowed Highway cores (math sin/cos..., vqsort, bit_pack) call
+# hwy::Abort via HWY_DASSERT. Release (-O2) DCEs that call so the symbol never appears; but a
+# RelWithDebInfo+ASan build keeps it -> `undefined reference to hwy::Abort` when linking an exe
+# against libhyle_simd. hwy/abort.cc DEFINES it (plain baseline C++, no -march). Compile it in
+# so EVERY build config links cleanly, not just the ones where the optimizer happens to DCE it.
+set(_hwy_support "${PROJECT_SOURCE_DIR}/third_party/highway/hwy/abort.cc")
+
 hyle_add_module(simd SOURCES
   ops/dispatch_ops.cc
   ops/kernels_scalar.cc
@@ -59,6 +66,7 @@ hyle_add_module(simd SOURCES
   sort/vqsort_scalar.cc
   bitpack/bitpack_dispatch.cc
   bitpack/bitpack_scalar.cc
+  ${_hwy_support}
   ${_simd_arch_sources}
   PUBLIC_DEPS hyle_platform)
 
