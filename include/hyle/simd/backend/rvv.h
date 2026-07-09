@@ -455,6 +455,52 @@ template <class V> HYLE_FORCE_INLINE V Floor(V v) noexcept { return detail::rvv_
 template <class V> HYLE_FORCE_INLINE V Ceil(V v) noexcept { return detail::rvv_round<__RISCV_FRM_RUP>(v); }
 template <class V> HYLE_FORCE_INLINE V Trunc(V v) noexcept { return detail::rvv_round<__RISCV_FRM_RTZ>(v); }
 
+// ---- width-changing convert (Promote/Demote), 2x integer, LMUL=1 -----------------------------
+// RVV widening produces LMUL*2, but our type system is LMUL=1. PromoteLowerTo: view the low mf2
+// portion (vlmul_trunc) then vsext/vzext_vf2 to a full m1 of double width. PromoteUpperTo: slide
+// the upper half down first. DemoteTo: pack the two m1 sources into an m2 (vlmul_ext + vset), then
+// vnclip (saturating narrow). Integer only (float f32<->f64 promote/demote deferred, not the
+// quantization hot path). 2x steps only (i8<->i16, i16<->i32, i32<->i64).
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> PromoteLowerTo(Simd<DstT, NDst, 0> dd, V v) noexcept {
+  using SrcT = TFromV<V>;
+  static_assert(sizeof(DstT) == 2 * sizeof(SrcT) && std::is_integral_v<DstT>, "PromoteLowerTo: 2x integer widen");
+  const std::size_t vl = Lanes(dd);
+  if constexpr (std::is_signed_v<DstT>) {
+    if constexpr (sizeof(SrcT) == 1) return __riscv_vsext_vf2_i16m1(__riscv_vlmul_trunc_v_i8m1_i8mf2(v), vl);
+    else if constexpr (sizeof(SrcT) == 2) return __riscv_vsext_vf2_i32m1(__riscv_vlmul_trunc_v_i16m1_i16mf2(v), vl);
+    else return __riscv_vsext_vf2_i64m1(__riscv_vlmul_trunc_v_i32m1_i32mf2(v), vl);
+  } else {
+    if constexpr (sizeof(SrcT) == 1) return __riscv_vzext_vf2_u16m1(__riscv_vlmul_trunc_v_u8m1_u8mf2(v), vl);
+    else if constexpr (sizeof(SrcT) == 2) return __riscv_vzext_vf2_u32m1(__riscv_vlmul_trunc_v_u16m1_u16mf2(v), vl);
+    else return __riscv_vzext_vf2_u64m1(__riscv_vlmul_trunc_v_u32m1_u32mf2(v), vl);
+  }
+}
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> PromoteUpperTo(Simd<DstT, NDst, 0> dd, V v) noexcept {
+  using SrcT = TFromV<V>;
+  static_assert(sizeof(DstT) == 2 * sizeof(SrcT) && std::is_integral_v<DstT>, "PromoteUpperTo: 2x integer widen");
+  const std::size_t vlsrc = detail::vlmax<SrcT>();
+  const V up = __riscv_vslidedown(v, vlsrc / 2, vlsrc);  // bring the upper half to the front
+  return PromoteLowerTo(dd, up);
+}
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> DemoteTo(Simd<DstT, NDst, 0> dd, V a, V b) noexcept {
+  using SrcT = TFromV<V>;
+  static_assert(sizeof(DstT) * 2 == sizeof(SrcT) && std::is_integral_v<DstT>, "DemoteTo: 2x integer narrow");
+  const std::size_t vlsrc = detail::vlmax<SrcT>();
+  const std::size_t vldst = Lanes(dd);
+  if constexpr (std::is_signed_v<DstT>) {
+    if constexpr (sizeof(SrcT) == 2) { auto m2 = __riscv_vset_v_i16m1_i16m2(__riscv_vlmul_ext_v_i16m1_i16m2(a), 1, b); return __riscv_vnclip_wx_i8m1(m2, 0, __RISCV_VXRM_RNU, vldst); (void)vlsrc; }
+    else if constexpr (sizeof(SrcT) == 4) { auto m2 = __riscv_vset_v_i32m1_i32m2(__riscv_vlmul_ext_v_i32m1_i32m2(a), 1, b); return __riscv_vnclip_wx_i16m1(m2, 0, __RISCV_VXRM_RNU, vldst); }
+    else { auto m2 = __riscv_vset_v_i64m1_i64m2(__riscv_vlmul_ext_v_i64m1_i64m2(a), 1, b); return __riscv_vnclip_wx_i32m1(m2, 0, __RISCV_VXRM_RNU, vldst); }
+  } else {
+    if constexpr (sizeof(SrcT) == 2) { auto m2 = __riscv_vset_v_u16m1_u16m2(__riscv_vlmul_ext_v_u16m1_u16m2(a), 1, b); return __riscv_vnclipu_wx_u8m1(m2, 0, __RISCV_VXRM_RNU, vldst); }
+    else if constexpr (sizeof(SrcT) == 4) { auto m2 = __riscv_vset_v_u32m1_u32m2(__riscv_vlmul_ext_v_u32m1_u32m2(a), 1, b); return __riscv_vnclipu_wx_u16m1(m2, 0, __RISCV_VXRM_RNU, vldst); }
+    else { auto m2 = __riscv_vset_v_u64m1_u64m2(__riscv_vlmul_ext_v_u64m1_u64m2(a), 1, b); return __riscv_vnclipu_wx_u32m1(m2, 0, __RISCV_VXRM_RNU, vldst); }
+  }
+}
+
 // ---- FP classification --------------------------------------------------------------
 template <class V> HYLE_FORCE_INLINE auto IsNaN(V v) noexcept {
   return __riscv_vmfne(v, v, detail::vlmax<TFromV<V>>());  // NaN != NaN

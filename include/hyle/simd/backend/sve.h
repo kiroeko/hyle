@@ -439,6 +439,68 @@ template <class V> HYLE_FORCE_INLINE V Floor(V v) noexcept { return svrintm_x(de
 template <class V> HYLE_FORCE_INLINE V Ceil(V v) noexcept { return svrintp_x(detail::ptrue<TFromV<V>>(), v); }
 template <class V> HYLE_FORCE_INLINE V Trunc(V v) noexcept { return svrintz_x(detail::ptrue<TFromV<V>>(), v); }
 
+// ---- width-changing convert (Promote/Demote) — VL-agnostic via svunpk / clamp+uzp1 -----------
+// SVE's svunpklo/hi widen the LOWER/UPPER half of the source's active lanes to double width, which
+// is exactly the half-at-a-time HYLE contract (dst has half the lanes) AND is naturally VL-correct
+// (operates on the runtime active-lane set, no compile-time lane count baked in -> no OOB risk that
+// motivated the earlier deferral). Integer only for unpk; f32->f64 uses svcvt on the unpacked idx.
+// PromoteLowerTo(dtag, v): widen v's lower half. NSrc(compile-time upper bound) = 2*NDst. Integer
+// only (int8->16->32->64); float f32->f64 promote is deferred (svcvt_f64_f32 needs lane-position
+// juggling, not the quantization hot path — documented boundary).
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> PromoteLowerTo(Simd<DstT, NDst, 0>, V v) noexcept {
+  using SrcT = TFromV<V>;
+  static_assert(sizeof(DstT) > sizeof(SrcT) && std::is_integral_v<DstT>, "PromoteLowerTo widens (integer)");
+  if constexpr (std::is_signed_v<DstT>) {
+    if constexpr (sizeof(DstT) == 2) return svunpklo_s16(v);
+    else if constexpr (sizeof(DstT) == 4) return svunpklo_s32(v);
+    else return svunpklo_s64(v);
+  } else {
+    if constexpr (sizeof(DstT) == 2) return svunpklo_u16(v);
+    else if constexpr (sizeof(DstT) == 4) return svunpklo_u32(v);
+    else return svunpklo_u64(v);
+  }
+}
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> PromoteUpperTo(Simd<DstT, NDst, 0>, V v) noexcept {
+  using SrcT = TFromV<V>;
+  static_assert(sizeof(DstT) > sizeof(SrcT) && std::is_integral_v<DstT>, "PromoteUpperTo widens (integer)");
+  if constexpr (std::is_signed_v<DstT>) {
+    if constexpr (sizeof(DstT) == 2) return svunpkhi_s16(v);
+    else if constexpr (sizeof(DstT) == 4) return svunpkhi_s32(v);
+    else return svunpkhi_s64(v);
+  } else {
+    if constexpr (sizeof(DstT) == 2) return svunpkhi_u16(v);
+    else if constexpr (sizeof(DstT) == 4) return svunpkhi_u32(v);
+    else return svunpkhi_u64(v);
+  }
+}
+// DemoteTo(dtag, a, b): saturate two wide vectors down to one narrow (dst has 2x lanes). Base SVE
+// has no svqxtn (SVE2); clamp each wide lane to the narrow range, then svuzp1 the low halves (the
+// clamped value fits in the low half of each wide lane -> even narrow lanes carry it in order).
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> DemoteTo(Simd<DstT, NDst, 0>, V a, V b) noexcept {
+  using SrcT = TFromV<V>;
+  static_assert(sizeof(DstT) < sizeof(SrcT), "DemoteTo narrows");
+  const svbool_t pg = detail::ptrue<SrcT>();
+  const SrcT lo = static_cast<SrcT>(std::numeric_limits<DstT>::min());
+  const SrcT hi = static_cast<SrcT>(std::numeric_limits<DstT>::max());
+  const V vlo = Set(Simd<SrcT, kNativeVectorBytes / sizeof(SrcT), 0>{}, lo);
+  const V vhi = Set(Simd<SrcT, kNativeVectorBytes / sizeof(SrcT), 0>{}, hi);
+  const V ca = svmax_x(pg, svmin_x(pg, a, vhi), vlo);
+  const V cb = svmax_x(pg, svmin_x(pg, b, vhi), vlo);
+  // reinterpret to the narrow lane type and take even narrow lanes (each holds a clamped low half).
+  if constexpr (std::is_signed_v<DstT>) {
+    if constexpr (sizeof(DstT) == 1) return svuzp1_s8(svreinterpret_s8(ca), svreinterpret_s8(cb));
+    else if constexpr (sizeof(DstT) == 2) return svuzp1_s16(svreinterpret_s16(ca), svreinterpret_s16(cb));
+    else return svuzp1_s32(svreinterpret_s32(ca), svreinterpret_s32(cb));
+  } else {
+    if constexpr (sizeof(DstT) == 1) return svuzp1_u8(svreinterpret_u8(ca), svreinterpret_u8(cb));
+    else if constexpr (sizeof(DstT) == 2) return svuzp1_u16(svreinterpret_u16(ca), svreinterpret_u16(cb));
+    else return svuzp1_u32(svreinterpret_u32(ca), svreinterpret_u32(cb));
+  }
+}
+
 // ---- gather (SVE NATIVE svld1_gather, not store+reload) -----------------------------
 // GatherIndex(d, base, idx): dst[i] = base[idx[i]]. SVE's gather takes the index vector as the
 // same-width unsigned/signed lanes; svld1_gather_index scales by element size (a true index, not

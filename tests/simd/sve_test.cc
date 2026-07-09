@@ -242,6 +242,35 @@ TEST(Sve, RoundingAndFindTrue) {
   EXPECT_EQ(hs::FindLastTrue(di, mf), std::ptrdiff_t{-1});
 }
 
+// Width-changing Promote/Demote (2x integer): svunpklo/hi + clamp+uzp1. VL-agnostic.
+TEST(Sve, WidenPromoteDemote) {
+  const hs::ScalableTag<std::int16_t> d16;
+  const hs::ScalableTag<std::int32_t> d32;
+  const std::size_t n16 = hs::Lanes(d16);
+  const std::size_t n32 = hs::Lanes(d32);  // = n16/2
+  alignas(64) std::int16_t s16[kBuf]; alignas(64) std::int32_t o32[kBuf];
+  for (std::size_t i = 0; i < n16; ++i) s16[i] = static_cast<std::int16_t>((i * 37) - 300);
+  auto v16 = hs::Load(d16, s16);
+  hs::Store(hs::PromoteLowerTo(d32, v16), d32, o32);
+  for (std::size_t i = 0; i < n32; ++i) EXPECT_EQ(o32[i], static_cast<std::int32_t>(s16[i])) << "PromLo " << i;
+  hs::Store(hs::PromoteUpperTo(d32, v16), d32, o32);
+  for (std::size_t i = 0; i < n32; ++i) EXPECT_EQ(o32[i], static_cast<std::int32_t>(s16[n16 / 2 + i])) << "PromHi " << i;
+
+  alignas(64) std::int32_t a32[kBuf], b32[kBuf]; alignas(64) std::int16_t od16[kBuf];
+  for (std::size_t i = 0; i < n32; ++i) { a32[i] = static_cast<std::int32_t>(i * 1000 - 40000); b32[i] = static_cast<std::int32_t>(50000 - i * 900); }
+  auto va = hs::Load(d32, a32), vb = hs::Load(d32, b32);
+  hs::Store(hs::DemoteTo(d16, va, vb), d16, od16);
+  auto sat16 = [](std::int32_t x) -> std::int16_t { return static_cast<std::int16_t>(x < -32768 ? -32768 : (x > 32767 ? 32767 : x)); };
+  for (std::size_t i = 0; i < n32; ++i) { EXPECT_EQ(od16[i], sat16(a32[i])) << "DemLo " << i; EXPECT_EQ(od16[n32 + i], sat16(b32[i])) << "DemHi " << i; }
+
+  const hs::ScalableTag<std::uint8_t> du8; const hs::ScalableTag<std::uint16_t> du16;
+  const std::size_t nu8 = hs::Lanes(du8); const std::size_t nu16 = hs::Lanes(du16);
+  alignas(64) std::uint8_t su8[kBuf]; alignas(64) std::uint16_t ou16[kBuf];
+  for (std::size_t i = 0; i < nu8; ++i) su8[i] = static_cast<std::uint8_t>(i * 5 + 1);
+  hs::Store(hs::PromoteLowerTo(du16, hs::Load(du8, su8)), du16, ou16);
+  for (std::size_t i = 0; i < nu16; ++i) EXPECT_EQ(ou16[i], static_cast<std::uint16_t>(su8[i])) << "PromLoU " << i;
+}
+
 // ---- clean-native batch: bitcast / saturating / classify / scatter / compressstore --
 TEST(Sve, CleanNativeBatch) {
   const hs::ScalableTag<std::int32_t> di;
