@@ -34,6 +34,14 @@ void lgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void tgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 // hypot: BINARY (two inputs). best-of pick -> xsimd (bench: ~2.2x Highway). scalar oracle here.
 void hypot_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+// complex transcendentals (xsimd-only; SoA planar re/im). scalar std::complex oracle + fallback.
+void cexp_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void clog_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void csqrt_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void csin_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void ccos_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void ctanh_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void cpow_f32_scalar(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
 
 #if defined(HYLE_ARCH_X64)
 // Per-op best-of-breed borrow cores (x86 AVX2, ~3.5 ULP). The same-ISA bench picked the
@@ -53,6 +61,14 @@ void erf_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
 // docs/debug/xsimd-lgamma-lane-mixing-hunt.md). lgamma therefore stays on the scalar libm
 // reference (no _xsimd_ variant); tgamma is unaffected.
 void tgamma_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
+// complex transcendentals: xsimd AVX2 borrow cores (no Highway equivalent -> single source).
+void cexp_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void clog_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void csqrt_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void csin_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void ccos_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void ctanh_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void cpow_f32_xsimd_avx2(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
 // hypot: BINARY. Both libs have it; xsimd is ~2.2x faster BUT NOT overflow-safe (returns inf when
 // a^2 or b^2 exceeds FLT_MAX -- it computes sqrt(a*a+b*b) naively). Highway's Hypot does exponent
 // scaling so it matches std::hypot across the full range. hypot's entire reason to exist over naive

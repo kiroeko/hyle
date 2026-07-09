@@ -159,6 +159,41 @@ void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) 
   detail::hypot_f32_scalar(a, b, dst, n);
 }
 
+// complex transcendentals (xsimd-only). x86 AVX2 core when available, else scalar std::complex.
+// arm64 falls to scalar (Highway has no complex; xsimd-NEON complex not yet verified -> honest
+// scalar fallback, not a silent wrong path). All SoA planar (re/im separate arrays).
+#define HYLE_CX_UNARY_DISPATCH(name)                                                        \
+  void name##_f32_batch(const float* sr, const float* si, float* dr, float* di,             \
+                        std::size_t n) noexcept {                                           \
+    /* x86: xsimd avx2 when present, else scalar; other arches: scalar oracle */            \
+    HYLE_CX_UNARY_BODY(name)                                                                \
+  }
+#if defined(HYLE_ARCH_X64)
+#define HYLE_CX_UNARY_BODY(name)                                                            \
+  static const bool hw = have_avx2();                                                       \
+  if (hw) { detail::name##_f32_xsimd_avx2(sr, si, dr, di, n); return; }                      \
+  detail::name##_f32_scalar(sr, si, dr, di, n);
+#else
+#define HYLE_CX_UNARY_BODY(name) detail::name##_f32_scalar(sr, si, dr, di, n);
+#endif
+HYLE_CX_UNARY_DISPATCH(cexp)
+HYLE_CX_UNARY_DISPATCH(clog)
+HYLE_CX_UNARY_DISPATCH(csqrt)
+HYLE_CX_UNARY_DISPATCH(csin)
+HYLE_CX_UNARY_DISPATCH(ccos)
+HYLE_CX_UNARY_DISPATCH(ctanh)
+#undef HYLE_CX_UNARY_DISPATCH
+#undef HYLE_CX_UNARY_BODY
+
+void cpow_f32_batch(const float* zr, const float* zi, const float* wr, const float* wi,
+                    float* dr, float* di, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw = have_avx2();
+  if (hw) { detail::cpow_f32_xsimd_avx2(zr, zi, wr, wi, dr, di, n); return; }
+#endif
+  detail::cpow_f32_scalar(zr, zi, wr, wi, dr, di, n);
+}
+
 // Highway-winning: sin cos log2 atan cbrt expm1 log1p asinh acosh. On MSVC the 512 Highway is
 // broken (would emit ymm), so the avx512 branch is GCC/Clang-only; MSVC falls to avx2 highway.
 #define HYLE_MATH_DISPATCH_HIGHWAY(name)                                         \

@@ -86,6 +86,27 @@ HYLE_SIMD_API void softmax_f32(float* data, std::size_t n) noexcept;
 // log_softmax(x)[i] = (x[i] - max) - log(sum_j exp(x[j] - max))  -- in place, numerically stable.
 HYLE_SIMD_API void log_softmax_f32(float* data, std::size_t n) noexcept;
 
+// ---- COMPLEX transcendentals (xsimd-ONLY: Highway's contrib/math has no complex support) -------
+// Borrowed from xsimd's batch<std::complex<float>> cores -- HYLE does not hand-roll complex
+// polynomial approximations (charter: 借验证核不手搓). Highway offers NO complex path, so these are
+// a single-source borrow (no best-of race), the complex analogue of the lgamma/tgamma gamma borrow.
+//
+// STORAGE = SoA (planar): real and imaginary parts in SEPARATE arrays (re[i], im[i]). This matches
+// xsimd's batch<complex>::load_unaligned(re, im) constructor exactly (zero interleave overhead) and
+// is the natural AI/DSP layout (FFT, signal). dst_re/dst_im may alias src_re/src_im. n arbitrary.
+// scalar std::complex<float> is the always-present oracle + fallback (x86 AVX2 core, else scalar).
+//   cexp/clog/csqrt : the workhorses (FFT twiddle, transfer functions, roots)
+//   csin/ccos/ctan + csinh/ccosh/ctanh : trig / hyperbolic
+//   cpow : z^w (both complex)
+HYLE_SIMD_API void cexp_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void clog_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void csqrt_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void csin_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void ccos_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void ctanh_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+// cpow(z, w): both operands complex. Four input planes, two output planes.
+HYLE_SIMD_API void cpow_f32_batch(const float* z_re, const float* z_im, const float* w_re, const float* w_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+
 // The tier the math batch ops selected: kAvx2 if a vectorized AVX2 core is live, else
 // kScalar (libm). For tests/diagnostics.
 HYLE_SIMD_API Isa active_math_variant() noexcept;

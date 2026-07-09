@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <cmath>
+#include <complex>
 #include <cstddef>
 #include <vector>
 
@@ -213,5 +214,58 @@ TEST(Math, Softmax) {
     hyle::simd::log_softmax_f32(ls.data(), n);
     for (std::size_t i = 0; i < n; ++i)
       EXPECT_NEAR(ls[i], std::log(ref[i]), 1e-4) << "log_softmax n=" << n << " i=" << i;
+  }
+}
+
+// ---- COMPLEX transcendentals (xsimd-only borrow) vs std::complex oracle -------------
+// SoA planar (re/im separate arrays). Ranges kept moderate (complex exp/pow overflow fast).
+// Tolerance is the ~3.5-ULP transcendental class scaled by magnitude.
+namespace {
+void check_cunary(void (*fn)(const float*, const float*, float*, float*, std::size_t),
+                  std::complex<double> (*ref)(std::complex<double>), const char* name) {
+  constexpr int N = 200;
+  std::vector<float> sr(N), si(N), dr(N), di(N);
+  // Offset both ramps so no sample lands on (0,0): clog/csqrt have a branch-point singularity
+  // there (std::log(0)=(-inf,0)); that's a domain edge, not a core-accuracy question.
+  for (int i = 0; i < N; ++i) { sr[i] = -3.0f + 6.0f * i / N + 0.017f; si[i] = -2.5f + 5.0f * i / N + 0.013f; }
+  fn(sr.data(), si.data(), dr.data(), di.data(), N);
+  for (int i = 0; i < N; ++i) {
+    std::complex<double> want = ref(std::complex<double>(sr[i], si[i]));
+    const double tol = std::abs(want) * 4e-6 + 1e-5;
+    EXPECT_NEAR(dr[i], want.real(), tol) << name << " re i=" << i;
+    EXPECT_NEAR(di[i], want.imag(), tol) << name << " im i=" << i;
+  }
+}
+std::complex<double> r_exp(std::complex<double> z) { return std::exp(z); }
+std::complex<double> r_log(std::complex<double> z) { return std::log(z); }
+std::complex<double> r_sqrt(std::complex<double> z) { return std::sqrt(z); }
+std::complex<double> r_sin(std::complex<double> z) { return std::sin(z); }
+std::complex<double> r_cos(std::complex<double> z) { return std::cos(z); }
+std::complex<double> r_tanh(std::complex<double> z) { return std::tanh(z); }
+}  // namespace
+
+TEST(Math, ComplexTranscendentals) {
+  check_cunary(hyle::simd::cexp_f32_batch, r_exp, "cexp");
+  check_cunary(hyle::simd::clog_f32_batch, r_log, "clog");
+  check_cunary(hyle::simd::csqrt_f32_batch, r_sqrt, "csqrt");
+  check_cunary(hyle::simd::csin_f32_batch, r_sin, "csin");
+  check_cunary(hyle::simd::ccos_f32_batch, r_cos, "ccos");
+  check_cunary(hyle::simd::ctanh_f32_batch, r_tanh, "ctanh");
+}
+
+TEST(Math, ComplexPow) {
+  constexpr int N = 128;
+  std::vector<float> zr(N), zi(N), wr(N), wi(N), dr(N), di(N);
+  for (int i = 0; i < N; ++i) {
+    zr[i] = 0.3f + 2.0f * i / N; zi[i] = -1.0f + 2.0f * i / N;  // base away from 0 (log branch)
+    wr[i] = 0.5f + 1.0f * i / N; wi[i] = 0.2f;
+  }
+  hyle::simd::cpow_f32_batch(zr.data(), zi.data(), wr.data(), wi.data(), dr.data(), di.data(), N);
+  for (int i = 0; i < N; ++i) {
+    std::complex<double> want = std::pow(std::complex<double>(zr[i], zi[i]),
+                                         std::complex<double>(wr[i], wi[i]));
+    const double tol = std::abs(want) * 1e-5 + 1e-5;
+    EXPECT_NEAR(dr[i], want.real(), tol) << "cpow re i=" << i;
+    EXPECT_NEAR(di[i], want.imag(), tol) << "cpow im i=" << i;
   }
 }
