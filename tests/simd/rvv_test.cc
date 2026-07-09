@@ -124,3 +124,73 @@ TEST(Rvv, FloatArith) {
   float fs = 0; for (std::size_t i = 0; i < n; ++i) fs += a[i];
   EXPECT_NEAR(hs::ReduceSum(d, va), fs, 1e-2f);
 }
+
+// ---- tail ops mirrored from SVE: bitcast/convert/reverse/gather/scatter/compress/tail ----
+TEST(Rvv, TailOps) {
+  const hs::ScalableTag<std::int32_t> di;
+  const hs::ScalableTag<float> df;
+  const hs::ScalableTag<std::uint32_t> du;
+  const std::size_t n = hs::Lanes(di);
+  alignas(64) std::int32_t a[kBuf], o[kBuf];
+  for (std::size_t i = 0; i < n; ++i) a[i] = static_cast<std::int32_t>(i * 7 + 3);
+  auto va = hs::Load(di, a);
+
+  hs::Store(hs::Abs(hs::Sub(hs::Zero(di), va)), di, o);  // Abs(-a) == a
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], a[i]);
+  hs::Store(hs::Clamp(va, hs::Set(di, 5), hs::Set(di, 50)), di, o);
+  for (std::size_t i = 0; i < n; ++i) { std::int32_t e = a[i] < 5 ? 5 : (a[i] > 50 ? 50 : a[i]); EXPECT_EQ(o[i], e); }
+  hs::Store(hs::BitCast(di, hs::BitCast(df, va)), di, o);  // i32->f32->i32 round-trip
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], a[i]);
+
+  alignas(64) float f[kBuf]; for (std::size_t i = 0; i < n; ++i) f[i] = static_cast<float>(i) * 1.4f + 0.6f;
+  auto vf = hs::Load(df, f);
+  hs::Store(hs::ConvertTo(di, vf), di, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], static_cast<std::int32_t>(f[i]));  // truncate
+  hs::Store(hs::RoundToInt(di, vf), di, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], static_cast<std::int32_t>(std::nearbyint(f[i])));
+
+  hs::Store(hs::Reverse(di, va), di, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], a[n - 1 - i]);
+
+  const std::size_t k = n > 3 ? 3 : n;
+  alignas(64) std::int32_t o2[kBuf] = {};
+  hs::StoreN(hs::LoadN(di, a, k), di, o2, k);
+  for (std::size_t i = 0; i < k; ++i) EXPECT_EQ(o2[i], a[i]);
+
+  // classification
+  alignas(64) float ff[kBuf]; for (std::size_t i = 0; i < hs::Lanes(df); ++i) ff[i] = static_cast<float>(i);
+  ff[0] = std::numeric_limits<float>::quiet_NaN();
+  ff[1] = std::numeric_limits<float>::infinity();
+  auto vff = hs::Load(df, ff);
+  EXPECT_EQ(hs::CountTrue(df, hs::IsNaN(vff)), std::size_t{1});
+  EXPECT_EQ(hs::CountTrue(df, hs::IsInf(vff)), std::size_t{1});
+
+  // gather / scatter (byte-offset scaling under the hood)
+  alignas(64) float tab[1024]; for (int i = 0; i < 1024; ++i) tab[i] = static_cast<float>(i * 10);
+  alignas(64) std::uint32_t ix[kBuf]; for (std::size_t i = 0; i < hs::Lanes(df); ++i) ix[i] = static_cast<std::uint32_t>((i * 7) % 1024);
+  alignas(64) float of[kBuf];
+  hs::Store(hs::GatherIndex(df, tab, hs::Load(du, ix)), df, of);
+  for (std::size_t i = 0; i < hs::Lanes(df); ++i) EXPECT_EQ(of[i], tab[ix[i]]);
+  alignas(64) std::int32_t stab[1024] = {};
+  alignas(64) std::uint32_t ix2[kBuf]; for (std::size_t i = 0; i < n; ++i) ix2[i] = static_cast<std::uint32_t>(i * 3);
+  hs::ScatterIndex(va, di, stab, hs::Load(du, ix2));
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(stab[i * 3], a[i]);
+
+  // compress + compressstore (even lanes)
+  alignas(64) std::int32_t mb[kBuf]; for (std::size_t i = 0; i < n; ++i) mb[i] = (i % 2 == 0) ? 1 : 0;
+  auto mm = hs::Eq(hs::Load(di, mb), hs::Set(di, 1));
+  hs::Store(hs::Compress(va, mm), di, o);
+  std::size_t j = 0;
+  for (std::size_t i = 0; i < n; ++i) if (i % 2 == 0) EXPECT_EQ(o[j++], a[i]);
+  alignas(64) std::int32_t cs[kBuf];
+  const std::size_t wrote = hs::CompressStore(va, mm, di, cs);
+  EXPECT_EQ(wrote, hs::CountTrue(di, mm));
+
+  // saturating u8
+  const hs::ScalableTag<std::uint8_t> du8;
+  const std::size_t n8 = hs::Lanes(du8);
+  alignas(64) std::uint8_t p[kBuf], q[kBuf], o8[kBuf];
+  for (std::size_t i = 0; i < n8; ++i) { p[i] = static_cast<std::uint8_t>(200 + i % 60); q[i] = static_cast<std::uint8_t>(100 + i % 50); }
+  hs::Store(hs::SaturatedAdd(hs::Load(du8, p), hs::Load(du8, q)), du8, o8);
+  for (std::size_t i = 0; i < n8; ++i) { int s = p[i] + q[i]; if (s > 255) s = 255; EXPECT_EQ(o8[i], static_cast<std::uint8_t>(s)); }
+}
