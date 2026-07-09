@@ -1892,7 +1892,7 @@ struct CompressIdx32Packed {
       std::uint32_t word = 0;
       for (unsigned i = 0; i < 8; ++i)
         if ((bits >> i) & 1u) { word |= static_cast<std::uint32_t>(i) << (4 * k); ++k; }
-      // inactive tail nibbles stay 0 (lane 0); the caller zeros the tail via the keep-mask anyway.
+      // inactive tail nibbles stay 0 -> lane 0 (harmless: the tail is unspecified per contract).
       packed[bits] = word;
     }
   }
@@ -1903,9 +1903,13 @@ inline constexpr const std::uint32_t* kCompressIdx32Packed = kCompressIdx32Tbl.p
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcept {
   // NATIVE for 32-bit lanes (8 lanes): a per-mask permute-index table + vpermd packs the active
-  // lanes to the front in one shuffle (Highway's method; op_parity: store+reload was 6x slower,
-  // the 8 KiB unpacked table was still ~2.4x from L1 pressure). 1 KiB packed table + shift-expand.
-  // Other widths keep store+reload (no 8/16/64-bit vpermd on AVX2).
+  // lanes to the front in ONE shuffle (Highway's method; op_parity: store+reload was 6x slower).
+  // 1 KiB packed table (each u32 holds the 8 indices as nibbles) + srlv-expand. CONTRACT: only the
+  // first CountTrue(m) lanes are defined; the tail is UNSPECIFIED (matches Highway/xsimd -- so no
+  // zero-tail mask, which cost ~2x on AVX2 where there is no zeroing-compress instruction). Safe
+  // use = CompressStore (writes exactly CountTrue) or read only the first CountTrue lanes.
+  // Other widths keep store+reload (no 8/16/64-bit vpermd on AVX2); that path happens to zero its
+  // tail (a store+reload byproduct, still within the "unspecified" contract).
   if constexpr (sizeof(T) == 4) {
     const unsigned bits = detail::mask_bits(m) & 0xFFu;
     // broadcast the packed u32, then shift each of the 8 copies right by {0,4,...,28} so lane i
@@ -1913,17 +1917,9 @@ HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcep
     const __m256i packed = _mm256_set1_epi32(static_cast<int>(detail::kCompressIdx32Packed[bits]));
     const __m256i shifts = _mm256_setr_epi32(0, 4, 8, 12, 16, 20, 24, 28);
     const __m256i idx = _mm256_srlv_epi32(packed, shifts);
-    __m256i perm;
-    if constexpr (std::is_same_v<T, float>) perm = _mm256_castps_si256(_mm256_permutevar8x32_ps(v.raw, idx));
-    else perm = _mm256_permutevar8x32_epi32(v.raw, idx);
-    // HYLE Compress ZEROS the inactive tail (stricter than Highway's "unspecified"): keep only the
-    // first popcount(bits) lanes. Build a lane< count mask via iota compare and AND it in.
-    const int cnt = _mm_popcnt_u32(bits);
-    const __m256i iota = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
-    const __m256i keep = _mm256_cmpgt_epi32(_mm256_set1_epi32(cnt), iota);  // i < cnt
     Vec256<T, N> r;
-    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_and_ps(_mm256_castsi256_ps(perm), _mm256_castsi256_ps(keep));
-    else r.raw = _mm256_and_si256(perm, keep);
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_permutevar8x32_ps(v.raw, idx);
+    else r.raw = _mm256_permutevar8x32_epi32(v.raw, idx);
     return r;
   } else {
     alignas(32) T src[N], dst[N] = {};
