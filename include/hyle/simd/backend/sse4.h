@@ -1750,14 +1750,50 @@ HYLE_FORCE_INLINE void ScatterIndex(detail::V128<D> v, D d, TFromD<D>* base,
   Store(idx, Simd<IdxT, kN, 0>(), ix); Store(v, d, src);
   for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
 }
+// Compress byte-index table for 4x i32 (Highway's method): only 16 mask combos, each a 16-byte
+// pshufb index that gathers active 32-bit lanes to the front. 16*16 = 256 B. constexpr-built.
+namespace detail {
+struct CompressIdx32x4 {
+  std::uint8_t idx[16 * 16] = {};
+  constexpr CompressIdx32x4() {
+    for (unsigned bits = 0; bits < 16; ++bits) {
+      unsigned k = 0;
+      unsigned pos = 0;
+      for (unsigned lane = 0; lane < 4; ++lane)
+        if ((bits >> lane) & 1u) { for (unsigned b = 0; b < 4; ++b) idx[bits * 16 + (pos++)] = static_cast<std::uint8_t>(lane * 4 + b); ++k; }
+      // fill the inactive tail with identity bytes so pshufb yields defined (unspecified-tail) data.
+      for (unsigned lane = 0; lane < 4; ++lane)
+        if (!((bits >> lane) & 1u)) for (unsigned b = 0; b < 4; ++b) idx[bits * 16 + (pos++)] = static_cast<std::uint8_t>(lane * 4 + b);
+      (void)k;
+    }
+  }
+};
+inline constexpr CompressIdx32x4 kCompressIdx32x4Tbl{};
+}  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> Compress(Vec128<T, N> v, Mask128<T, N> m) noexcept {
-  alignas(16) T src[N], dst[N] = {};
-  Store(v, Simd<T, N, 0>(), src);
-  const unsigned bits = detail::mask_bits(m);
-  std::size_t k = 0;
-  for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1u) dst[k++] = src[i];
-  return Load(Simd<T, N, 0>(), dst);
+  // NATIVE for 32-bit lanes (4 lanes, 16 mask combos): a 16-byte pshufb index (loaded from a 256 B
+  // table) packs the active lanes to the front in ONE shuffle (Highway's method; op_parity: the
+  // store+reload was ~5x slower). CONTRACT: only the first CountTrue(m) lanes are defined; the tail
+  // is UNSPECIFIED (matches Highway/xsimd). Other widths keep store+reload.
+  if constexpr (sizeof(T) == 4) {
+    unsigned bits;
+    if constexpr (std::is_same_v<T, float>) bits = static_cast<unsigned>(_mm_movemask_ps(m.raw));
+    else bits = static_cast<unsigned>(_mm_movemask_ps(_mm_castsi128_ps(m.raw)));
+    const __m128i byte_idx = _mm_load_si128(reinterpret_cast<const __m128i*>(detail::kCompressIdx32x4Tbl.idx + bits * 16));
+    Vec128<T, N> r;
+    if constexpr (std::is_same_v<T, float>)
+      r.raw = _mm_castsi128_ps(_mm_shuffle_epi8(_mm_castps_si128(v.raw), byte_idx));
+    else r.raw = _mm_shuffle_epi8(v.raw, byte_idx);
+    return r;
+  } else {
+    alignas(16) T src[N], dst[N] = {};
+    Store(v, Simd<T, N, 0>(), src);
+    const unsigned bits = detail::mask_bits(m);
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1u) dst[k++] = src[i];
+    return Load(Simd<T, N, 0>(), dst);
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE std::size_t CompressStore(detail::V128<D> v,
