@@ -678,4 +678,51 @@ HYLE_FORCE_INLINE V Div(V dividend, const Divisor<TFromD<DFromV<V>>>& dv) noexce
   }
 }
 
+// ---- 128-bit integer compare (simd-09-cmp128) --------------------------------------------
+// Treat each ADJACENT PAIR of u64 lanes as one 128-bit unsigned integer: the EVEN lane is the
+// low 64 bits, the ODD lane the high 64 bits (Highway's convention). These are the ordering
+// primitives vqsort builds 128-bit keys on. Generic layer (composed from Eq/Lt/VecFromMask/
+// IfThenElse/Reverse2/DupOdd/DupEven -- all per-adjacent-pair, so block-safe on avx2/avx512
+// with no cross-128 hazard). The result mask has BOTH lanes of each pair set to the pair's
+// verdict (so it drives a per-pair IfThenElse select directly).
+//
+// Lt128 truth table (Highway x86_128 Lt128Vec): with =H/=L = Eq of hi/lo, cH/cL = Lt of hi/lo,
+// out = cH | (=H & cL). Reverse2 brings the lo verdict up to the hi lane; DupOdd broadcasts.
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE auto Lt128(D d, V a, V b) noexcept {
+  static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Lt128 needs u64 lanes (128-bit pairs)");
+  const auto eqHL = Eq(a, b);
+  const V ltHL = VecFromMask(d, Lt(a, b));
+  const V ltLatH = Reverse2(d, ltHL);            // lo's Lt verdict moved to the hi (odd) lane
+  const V vecHx = IfThenElse(eqHL, ltLatH, ltHL);  // hi lane = (=H ? cL : cH)
+  return MaskFromVec(DupOdd(vecHx));             // broadcast hi verdict to both lanes of the pair
+}
+// Lt128Upper: compare ONLY the high 64 bits of each 128-bit pair (used for partial keys).
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE auto Lt128Upper(D d, V a, V b) noexcept {
+  static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Lt128Upper needs u64 lanes");
+  return MaskFromVec(DupOdd(VecFromMask(d, Lt(a, b))));
+}
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE auto Eq128(D d, V a, V b) noexcept {
+  static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Eq128 needs u64 lanes");
+  const V eqHL = VecFromMask(d, Eq(a, b));
+  return MaskFromVec(And(eqHL, Reverse2(d, eqHL)));  // both halves equal -> whole pair equal
+}
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE auto Ne128(D d, V a, V b) noexcept {
+  static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Ne128 needs u64 lanes");
+  const V neHL = VecFromMask(d, Ne(a, b));
+  return MaskFromVec(Or(neHL, Reverse2(d, neHL)));   // either half differs -> pair differs
+}
+// Min128/Max128: select the smaller / larger 128-bit value of each pair (returns a vector).
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE V Min128(D d, V a, V b) noexcept {
+  return IfThenElse(Lt128(d, a, b), a, b);
+}
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE V Max128(D d, V a, V b) noexcept {
+  return IfThenElse(Lt128(d, b, a), a, b);
+}
+
 }  // namespace hyle::simd

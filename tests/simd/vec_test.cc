@@ -1862,3 +1862,65 @@ TEST(Vec, IntDivI32) {
                                    -65536, 999983, -999983, 2147483647 /*INT_MAX prime*/};
   for (std::int32_t dvz : divisors) CheckDivI32<std::int32_t>(dvz);
 }
+
+// 128-bit integer compare: each ADJACENT PAIR of u64 lanes = one 128-bit value (even=low,
+// odd=high). Reference computes the same __uint128-style comparison per pair and checks the
+// mask broadcasts the verdict to BOTH lanes. ScalableTag<u64> gives >=2 lanes on every backend
+// (scalar/sse4/neon=2, avx2=4, avx512=8), so there is always at least one pair.
+TEST(Vec, Compare128) {
+  const hs::ScalableTag<std::uint64_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_EQ(n % 2u, 0u);
+  Buf<std::uint64_t> ab, bb, out;
+  // Craft pairs exercising: hi decides; hi equal + lo decides; fully equal.
+  std::uint64_t seed = 0x9E3779B97F4A7C15ull;
+  auto nextv = [&]() { seed ^= seed << 13; seed ^= seed >> 7; seed ^= seed << 17; return seed; };
+  for (std::size_t p = 0; p < n; p += 2) {
+    switch ((p / 2) % 4) {
+      case 0: ab.data[p]=5; ab.data[p+1]=10; bb.data[p]=999; bb.data[p+1]=11; break;  // a.hi<b.hi -> a<b
+      case 1: ab.data[p]=7; ab.data[p+1]=20; bb.data[p]=3;   bb.data[p+1]=20; break;  // hi eq, a.lo>b.lo -> a>b
+      case 2: ab.data[p]=42; ab.data[p+1]=99; bb.data[p]=42; bb.data[p+1]=99; break;  // equal
+      default: ab.data[p]=nextv(); ab.data[p+1]=nextv(); bb.data[p]=nextv(); bb.data[p+1]=nextv(); break;
+    }
+  }
+  auto va = hs::Load(d, ab.data), vb = hs::Load(d, bb.data);
+  auto ref_lt = [&](std::size_t p) {
+    return (ab.data[p+1] < bb.data[p+1]) || (ab.data[p+1] == bb.data[p+1] && ab.data[p] < bb.data[p]);
+  };
+  // Lt128
+  hs::Store(hs::VecFromMask(d, hs::Lt128(d, va, vb)), d, out.data);
+  for (std::size_t p = 0; p < n; p += 2) {
+    const bool lt = ref_lt(p);
+    EXPECT_EQ(out.data[p] != 0, lt) << "lt128 lo p=" << p;
+    EXPECT_EQ(out.data[p+1] != 0, lt) << "lt128 hi p=" << p;  // verdict broadcast to both lanes
+  }
+  // Eq128
+  hs::Store(hs::VecFromMask(d, hs::Eq128(d, va, vb)), d, out.data);
+  for (std::size_t p = 0; p < n; p += 2) {
+    const bool eq = ab.data[p]==bb.data[p] && ab.data[p+1]==bb.data[p+1];
+    EXPECT_EQ(out.data[p] != 0, eq) << "eq128 p=" << p;
+  }
+  // Ne128 = !Eq128
+  hs::Store(hs::VecFromMask(d, hs::Ne128(d, va, vb)), d, out.data);
+  for (std::size_t p = 0; p < n; p += 2) {
+    const bool ne = ab.data[p]!=bb.data[p] || ab.data[p+1]!=bb.data[p+1];
+    EXPECT_EQ(out.data[p] != 0, ne) << "ne128 p=" << p;
+  }
+  // Lt128Upper: only high 64 decides
+  hs::Store(hs::VecFromMask(d, hs::Lt128Upper(d, va, vb)), d, out.data);
+  for (std::size_t p = 0; p < n; p += 2)
+    EXPECT_EQ(out.data[p+1] != 0, ab.data[p+1] < bb.data[p+1]) << "lt128u p=" << p;
+  // Min128 / Max128: whole 128-bit pair selected
+  hs::Store(hs::Min128(d, va, vb), d, out.data);
+  for (std::size_t p = 0; p < n; p += 2) {
+    const bool a_lt = ref_lt(p);
+    EXPECT_EQ(out.data[p],   a_lt ? ab.data[p]   : bb.data[p])   << "min128 lo p=" << p;
+    EXPECT_EQ(out.data[p+1], a_lt ? ab.data[p+1] : bb.data[p+1]) << "min128 hi p=" << p;
+  }
+  hs::Store(hs::Max128(d, va, vb), d, out.data);
+  for (std::size_t p = 0; p < n; p += 2) {
+    const bool b_lt = (bb.data[p+1] < ab.data[p+1]) || (bb.data[p+1]==ab.data[p+1] && bb.data[p] < ab.data[p]);
+    EXPECT_EQ(out.data[p],   b_lt ? ab.data[p]   : bb.data[p])   << "max128 lo p=" << p;
+    EXPECT_EQ(out.data[p+1], b_lt ? ab.data[p+1] : bb.data[p+1]) << "max128 hi p=" << p;
+  }
+}
