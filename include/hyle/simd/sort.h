@@ -82,6 +82,35 @@ HYLE_SIMD_API void select(float* keys, std::size_t n, std::size_t k,
 HYLE_SIMD_API void select(double* keys, std::size_t n, std::size_t k,
                           SortOrder order = SortOrder::kAscending) noexcept;
 
+// --- key-value pairs (top-k): sort by KEY, VALUE rides along ------------------------------
+// The top-k / arg-sort primitive: pair each score with its index (or any payload), sort by the
+// key, read the values out in key order. vqsort terminates recursion earlier for KV than for a
+// full 128-bit key (only the key half is compared), so this is the fast path for "sort scores,
+// keep track of which lane each came from" -- attention/logits top-k sampling, MoE routing,
+// sparse index building. Layout is {value, key} (little-endian, value first) to match Highway's
+// K32V32/K64V64 byte-for-byte, so the borrow is a zero-copy reinterpret_cast; construct with the
+// designated fields, don't assume field order. Sorts by `key` only; equal keys' value order is
+// unspecified (vqsort is not stable), same as the scalar-T ops.
+struct alignas(8) KeyValue32 {
+  std::uint32_t value;  // payload (e.g. original index)
+  std::uint32_t key;    // sort key (e.g. score)
+};
+struct alignas(16) KeyValue64 {
+  std::uint64_t value;
+  std::uint64_t key;
+};
+
+HYLE_SIMD_API void sort(KeyValue32* kv, std::size_t n, SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void sort(KeyValue64* kv, std::size_t n, SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void partial_sort(KeyValue32* kv, std::size_t n, std::size_t k,
+                                SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void partial_sort(KeyValue64* kv, std::size_t n, std::size_t k,
+                                SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void select(KeyValue32* kv, std::size_t n, std::size_t k,
+                          SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void select(KeyValue64* kv, std::size_t n, std::size_t k,
+                          SortOrder order = SortOrder::kAscending) noexcept;
+
 // The tier the sort ops selected: kAvx512 if the 512-bit borrow core is live, kAvx2 if the
 // 256-bit one is, kNeon on arm64, else kScalar (std::sort floor). For tests/diagnostics.
 HYLE_SIMD_API Isa active_sort_variant() noexcept;

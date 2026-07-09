@@ -103,6 +103,69 @@ bool have_avx512() noexcept {
 HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
 #undef HYLE_SORT_DISPATCH
 
+// KV (top-k) dispatch. Same tier ladder as the scalar-T ops, but over the KV symbol suffix
+// (kv32/kv64). The public KeyValue32/64 are byte-identical to the internal KV32Bits/KV64Bits
+// ({value,key}), so we reinterpret_cast the public pointer to the detail struct the kernels take.
+#if defined(HYLE_ARCH_X64)
+#define HYLE_SORT_KV_LADDER_SORT(kvtag, h) \
+  do { \
+    static const bool hw512 = have_avx512(); \
+    if (hw512) { detail::sort_##kvtag##_avx512(h, n, asc); return; } \
+    static const bool hw2 = have_avx2(); \
+    if (hw2) { detail::sort_##kvtag##_avx2(h, n, asc); return; } \
+    detail::sort_##kvtag##_scalar(h, n, asc); \
+  } while (0)
+#define HYLE_SORT_KV_LADDER_PSORT(kvtag, h) \
+  do { \
+    static const bool hw512 = have_avx512(); \
+    if (hw512) { detail::psort_##kvtag##_avx512(h, n, k, asc); return; } \
+    static const bool hw2 = have_avx2(); \
+    if (hw2) { detail::psort_##kvtag##_avx2(h, n, k, asc); return; } \
+    detail::psort_##kvtag##_scalar(h, n, k, asc); \
+  } while (0)
+#define HYLE_SORT_KV_LADDER_SELECT(kvtag, h) \
+  do { \
+    static const bool hw512 = have_avx512(); \
+    if (hw512) { detail::select_##kvtag##_avx512(h, n, k, asc); return; } \
+    static const bool hw2 = have_avx2(); \
+    if (hw2) { detail::select_##kvtag##_avx2(h, n, k, asc); return; } \
+    detail::select_##kvtag##_scalar(h, n, k, asc); \
+  } while (0)
+#elif defined(HYLE_ARCH_ARM64)
+#define HYLE_SORT_KV_LADDER_SORT(kvtag, h)   detail::sort_##kvtag##_neon(h, n, asc)
+#define HYLE_SORT_KV_LADDER_PSORT(kvtag, h)  detail::psort_##kvtag##_neon(h, n, k, asc)
+#define HYLE_SORT_KV_LADDER_SELECT(kvtag, h) detail::select_##kvtag##_neon(h, n, k, asc)
+#else
+#define HYLE_SORT_KV_LADDER_SORT(kvtag, h)   detail::sort_##kvtag##_scalar(h, n, asc)
+#define HYLE_SORT_KV_LADDER_PSORT(kvtag, h)  detail::psort_##kvtag##_scalar(h, n, k, asc)
+#define HYLE_SORT_KV_LADDER_SELECT(kvtag, h) detail::select_##kvtag##_scalar(h, n, k, asc)
+#endif
+
+#define HYLE_SORT_KV_DISPATCH(PubT, DetT, kvtag)                                           \
+  void sort(PubT* kv, std::size_t n, SortOrder order) noexcept {                           \
+    if (n == 0) return;                                                                    \
+    const bool asc = (order == SortOrder::kAscending);                                     \
+    auto* h = reinterpret_cast<detail::DetT*>(kv);                                         \
+    HYLE_SORT_KV_LADDER_SORT(kvtag, h);                                                    \
+  }                                                                                        \
+  void partial_sort(PubT* kv, std::size_t n, std::size_t k, SortOrder order) noexcept {    \
+    HYLE_FATAL_ASSERT(k <= n);                                                             \
+    if (n == 0 || k == 0) return;                                                          \
+    const bool asc = (order == SortOrder::kAscending);                                     \
+    auto* h = reinterpret_cast<detail::DetT*>(kv);                                         \
+    HYLE_SORT_KV_LADDER_PSORT(kvtag, h);                                                   \
+  }                                                                                        \
+  void select(PubT* kv, std::size_t n, std::size_t k, SortOrder order) noexcept {          \
+    HYLE_FATAL_ASSERT(k < n);                                                              \
+    const bool asc = (order == SortOrder::kAscending);                                     \
+    auto* h = reinterpret_cast<detail::DetT*>(kv);                                         \
+    HYLE_SORT_KV_LADDER_SELECT(kvtag, h);                                                  \
+  }
+
+HYLE_SORT_KV_DISPATCH(KeyValue32, KV32Bits, kv32)
+HYLE_SORT_KV_DISPATCH(KeyValue64, KV64Bits, kv64)
+#undef HYLE_SORT_KV_DISPATCH
+
 Isa active_sort_variant() noexcept {
 #if defined(HYLE_ARCH_X64)
   static const Isa tier =

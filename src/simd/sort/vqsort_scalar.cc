@@ -45,4 +45,26 @@ namespace hyle::simd::detail {
 HYLE_SORT_KEY_TYPES(HYLE_SORT_SCALAR_DEFINE)
 #undef HYLE_SORT_SCALAR_DEFINE
 
+// KV scalar floor: sort by .key (value rides along). Comparators compare only the key field.
+#define HYLE_SORT_KV_SCALAR_DEFINE(KVT, kvtag, tier)                                          \
+  void sort_##kvtag##_##tier(KVT* kv, std::size_t n, bool ascending) noexcept {               \
+    auto lt = [](const KVT& a, const KVT& b) { return a.key < b.key; };                       \
+    auto gt = [](const KVT& a, const KVT& b) { return a.key > b.key; };                       \
+    if (ascending) std::sort(kv, kv + n, lt); else std::sort(kv, kv + n, gt);                 \
+  }                                                                                           \
+  void psort_##kvtag##_##tier(KVT* kv, std::size_t n, std::size_t k, bool ascending) noexcept { \
+    auto lt = [](const KVT& a, const KVT& b) { return a.key < b.key; };                       \
+    auto gt = [](const KVT& a, const KVT& b) { return a.key > b.key; };                       \
+    if (ascending) std::partial_sort(kv, kv + k, kv + n, lt);                                 \
+    else std::partial_sort(kv, kv + k, kv + n, gt);                                           \
+  }                                                                                           \
+  void select_##kvtag##_##tier(KVT* kv, std::size_t n, std::size_t k, bool ascending) noexcept { \
+    auto lt = [](const KVT& a, const KVT& b) { return a.key < b.key; };                       \
+    auto gt = [](const KVT& a, const KVT& b) { return a.key > b.key; };                       \
+    if (ascending) std::nth_element(kv, kv + k, kv + n, lt);                                  \
+    else std::nth_element(kv, kv + k, kv + n, gt);                                            \
+  }
+HYLE_SORT_KV_TYPES(HYLE_SORT_KV_SCALAR_DEFINE, scalar)
+#undef HYLE_SORT_KV_SCALAR_DEFINE
+
 }  // namespace hyle::simd::detail

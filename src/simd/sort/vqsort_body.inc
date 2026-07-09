@@ -54,6 +54,32 @@ namespace hyle::simd::detail {
 HYLE_SORT_KEY_TYPES(HYLE_SORT_DEFINE)
 
 #undef HYLE_SORT_DEFINE
+
+// KV (top-k): HYLE's KV32Bits/KV64Bits are byte-identical to Highway's K32V32/K64V64 ({value,
+// key}, same alignas), so reinterpret_cast is a zero-copy view. VQSortStatic<K32V32> sorts by
+// the key field (Highway compares only .key -- Lt128Upper, hence "faster than 128-bit key").
+#define HYLE_SORT_KV_DEFINE(KVT, HwyT, kvtag)                                                 \
+  void HYLE_SORT_SYM(sort, kvtag)(KVT* kv, std::size_t n, bool ascending) noexcept {          \
+    auto* h = reinterpret_cast<hwy::HwyT*>(kv);                                               \
+    if (ascending) hn::VQSortStatic(h, n, hwy::SortAscending{});                              \
+    else hn::VQSortStatic(h, n, hwy::SortDescending{});                                       \
+  }                                                                                           \
+  void HYLE_SORT_SYM(psort, kvtag)(KVT* kv, std::size_t n, std::size_t k, bool ascending)     \
+      noexcept {                                                                              \
+    auto* h = reinterpret_cast<hwy::HwyT*>(kv);                                               \
+    if (ascending) hn::VQPartialSortStatic(h, n, k, hwy::SortAscending{});                    \
+    else hn::VQPartialSortStatic(h, n, k, hwy::SortDescending{});                             \
+  }                                                                                           \
+  void HYLE_SORT_SYM(select, kvtag)(KVT* kv, std::size_t n, std::size_t k, bool ascending)    \
+      noexcept {                                                                              \
+    auto* h = reinterpret_cast<hwy::HwyT*>(kv);                                               \
+    if (ascending) hn::VQSelectStatic(h, n, k, hwy::SortAscending{});                         \
+    else hn::VQSelectStatic(h, n, k, hwy::SortDescending{});                                  \
+  }
+HYLE_SORT_KV_DEFINE(KV32Bits, K32V32, kv32)
+HYLE_SORT_KV_DEFINE(KV64Bits, K64V64, kv64)
+#undef HYLE_SORT_KV_DEFINE
+
 #undef HYLE_SORT_SYM
 #undef HYLE_SORT_PASTE
 #undef HYLE_SORT_PASTE2

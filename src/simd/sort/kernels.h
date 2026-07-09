@@ -63,4 +63,31 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_NEON)
 
 #undef HYLE_SORT_DECL_TRIO
 
+// --- key-value (top-k) symbols -----------------------------------------------------------
+// KV sorts by key (value rides along); borrow maps to Highway K32V32/K64V64 (zero-copy cast).
+// The HYLE public KeyValue32/64 are byte-identical to Highway's, so the bridge reinterpret_casts.
+// Symbols are declared with the OPAQUE public struct pointers (kernels.h can't see Highway's
+// types and shouldn't); the bridge TU does the cast internally.
+// Byte-identical to public KeyValue32/64 AND Highway K32V32/K64V64 (same alignas + field order),
+// so both reinterpret_casts (public->KVBits in dispatch, KVBits->Highway in the bridge) are valid.
+struct alignas(8) KV32Bits { std::uint32_t value; std::uint32_t key; };
+struct alignas(16) KV64Bits { std::uint64_t value; std::uint64_t key; };
+#define HYLE_SORT_DECL_KV_TRIO(KVT, kvtag, tier)                                              \
+  void sort_##kvtag##_##tier(KVT* kv, std::size_t n, bool ascending) noexcept;                \
+  void psort_##kvtag##_##tier(KVT* kv, std::size_t n, std::size_t k, bool ascending) noexcept;\
+  void select_##kvtag##_##tier(KVT* kv, std::size_t n, std::size_t k, bool ascending) noexcept;
+#define HYLE_SORT_KV_TYPES(X, tier) \
+  X(KV32Bits, kv32, tier)          \
+  X(KV64Bits, kv64, tier)
+
+HYLE_SORT_KV_TYPES(HYLE_SORT_DECL_KV_TRIO, scalar)
+#if defined(HYLE_ARCH_X64)
+HYLE_SORT_KV_TYPES(HYLE_SORT_DECL_KV_TRIO, avx2)
+HYLE_SORT_KV_TYPES(HYLE_SORT_DECL_KV_TRIO, avx512)
+#endif
+#if defined(HYLE_ARCH_ARM64)
+HYLE_SORT_KV_TYPES(HYLE_SORT_DECL_KV_TRIO, neon)
+#endif
+#undef HYLE_SORT_DECL_KV_TRIO
+
 }  // namespace hyle::simd::detail

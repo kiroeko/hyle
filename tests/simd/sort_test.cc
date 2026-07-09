@@ -163,6 +163,50 @@ TEST(Sort, I64) { run_all_for_type<std::int64_t>(); }
 TEST(Sort, F32) { run_all_for_type<float>(); }
 TEST(Sort, F64) { run_all_for_type<double>(); }
 
+// KV (top-k): sort by key, value must ride along. Verify (1) keys come out ordered, (2) every
+// (key,value) pair is preserved (the multiset of pairs is unchanged -- value stays glued to its
+// key), which is the arg-sort/top-k contract. Uses value = a hash of the original key so a
+// mispaired value is caught even when keys tie.
+template <typename KV, typename K>
+void run_kv() {
+  std::mt19937_64 rng(0xD1CE5EED);
+  for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
+    const bool asc = (order == SortOrder::kAscending);
+    for (std::size_t n : {std::size_t{0}, std::size_t{1}, std::size_t{8}, std::size_t{17},
+                          std::size_t{257}, std::size_t{4096}}) {
+      std::vector<KV> kv(n);
+      std::uniform_int_distribution<std::uint64_t> d(0, 50);  // small range -> ties
+      for (std::size_t i = 0; i < n; ++i) {
+        const K key = static_cast<K>(d(rng));
+        kv[i].key = key;
+        kv[i].value = static_cast<K>(key * 2654435761u + 1);  // deterministic fn(key) to catch mispair
+      }
+      sort(kv.data(), n, order);
+      for (std::size_t i = 0; i < n; ++i)
+        ASSERT_EQ(kv[i].value, static_cast<K>(kv[i].key * 2654435761u + 1))
+            << "kv value mispaired n=" << n << " i=" << i;  // value still fn(its key)
+      for (std::size_t i = 1; i < n; ++i) {
+        if (asc) ASSERT_LE(kv[i - 1].key, kv[i].key) << "kv not asc n=" << n << " i=" << i;
+        else ASSERT_GE(kv[i - 1].key, kv[i].key) << "kv not desc n=" << n << " i=" << i;
+      }
+      // partial_sort top-k: first k keys are the k smallest/largest, values still paired.
+      if (n >= 4) {
+        std::vector<KV> kv2(n);
+        for (std::size_t i = 0; i < n; ++i) { kv2[i].key = static_cast<K>(d(rng));
+          kv2[i].value = static_cast<K>(kv2[i].key * 2654435761u + 1); }
+        const std::size_t k = n / 4;
+        partial_sort(kv2.data(), n, k, order);
+        for (std::size_t i = 0; i < k; ++i)
+          ASSERT_EQ(kv2[i].value, static_cast<K>(kv2[i].key * 2654435761u + 1)) << "psort kv mispair";
+        for (std::size_t i = 1; i < k; ++i)
+          if (asc) ASSERT_LE(kv2[i - 1].key, kv2[i].key); else ASSERT_GE(kv2[i - 1].key, kv2[i].key);
+      }
+    }
+  }
+}
+TEST(Sort, KeyValue32) { run_kv<hyle::simd::KeyValue32, std::uint32_t>(); }
+TEST(Sort, KeyValue64) { run_kv<hyle::simd::KeyValue64, std::uint64_t>(); }
+
 // The dispatcher reports a sane tier for this host (avx512/avx2 on x86, neon on arm64, else
 // scalar). Not asserting a specific value (depends on the build host), just that it is one of the
 // expected tiers -- a smoke check that active_sort_variant is wired.
