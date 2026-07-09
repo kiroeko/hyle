@@ -1,5 +1,6 @@
 #pragma once
 
+#include <bit>          // countl_zero / countr_zero (Divisor magic-number precompute)
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>  // conditional_t (MakeSigned/MakeUnsigned lane-type rebind)
@@ -529,6 +530,152 @@ template <class V> HYLE_FORCE_INLINE V MulComplexAdd(V a, V b, V c) noexcept {
 }
 template <class V> HYLE_FORCE_INLINE V MulComplexConjAdd(V a, V b, V c) noexcept {
   return Add(MulComplexConj(a, b), c);
+}
+
+// ---- vector integer division by a run-time scalar divisor (simd-09 线②#1) -----------
+// Most SIMD ISAs have no integer vector divide. We replace `dividend / d` (d a run-time
+// invariant scalar) with a precomputed reciprocal-multiply + shifts -- the Granlund-
+// Montgomery scheme ("Division by invariant integers using multiplication", Fig 4.1
+// unsigned / Fig 5.1 signed), the same algorithm libdivide and Highway use. HYLE owns the
+// algorithm at the GENERIC layer (composed from Set/Mul/Add/Sub/Shift/BitCast/ConcatEven)
+// rather than vendoring Highway's D-tag/Repartition idiom -- "borrow the algorithm
+// contract, not the library abstraction" (simd-design). Scope: 32-bit lanes (u32/i32);
+// 8/16/64-bit are a later extension (u64 needs 128-bit multiply HYLE lacks; 8/16 need a
+// different widen path). Precomputing params is relatively costly, so build a Divisor once
+// and reuse it across many Div() calls (the whole point vs a scalar `/`).
+//
+// KEY IMPLEMENTATION NOTE (the ReorderDemote2To trap): 32-bit lanes have no native MulHigh
+// (HYLE's MulHigh is 16-bit only), so we widen u32->u64 (PromoteLowerTo/UpperTo), Mul, then
+// ShiftRight<32> to land the high half of each product in the LOW 32 bits of its u64 lane.
+// Recombining two u64 vectors back to one u32 vector via ReorderDemote2To is UNSAFE here:
+// its lane order is unspecified by contract (block-interleaved on wide x86). Instead we
+// BitCast each u64 vector to u32 -- on little-endian x86/NEON the wanted low-32 sits in the
+// EVEN u32 lane -- and use ConcatEven, whose order ([lo.even..., hi.even...]) IS contract-
+// guaranteed identical on every backend. So the recombine is provably backend-agnostic.
+
+namespace detail {
+template <typename T>
+HYLE_FORCE_INLINE constexpr bool DivIsPow2(T x) noexcept {  // x>0 && single bit set
+  return x > 0 && (x & (x - 1)) == 0;
+}
+// MulHigh(dividend, multiplier) for 32-bit lanes via the u32->u64 widen path. Unsigned
+// zero-extends (PromoteLowerTo on unsigned), signed sign-extends (on signed); ShiftRight<32>
+// is logical for u64 / arithmetic for i64, matching MULUH / MULSH. See the KEY NOTE above
+// for why the recombine is BitCast+ConcatEven rather than ReorderDemote2To.
+template <class V, typename WideT, typename MulT>
+HYLE_FORCE_INLINE V MulHighViaWiden(V dividend, MulT multiplier) noexcept {
+  using D = DFromV<V>;
+  using WideD = Simd<WideT, D::kMaxLanes / 2, 0>;
+  const D d;
+  const WideD dw;
+  const auto lo = PromoteLowerTo(dw, dividend);  // low  N/2 lanes -> full wide
+  const auto hi = PromoteUpperTo(dw, dividend);  // high N/2 lanes -> full wide
+  const auto m = Set(dw, static_cast<WideT>(multiplier));
+  const auto plo = ShiftRight<32>(Mul(lo, m));   // high 32 bits into low half of each lane
+  const auto phi = ShiftRight<32>(Mul(hi, m));
+  const auto plo32 = BitCast(d, plo);            // even u32 lane = low 32 bits (little-endian)
+  const auto phi32 = BitCast(d, phi);
+  return ConcatEven(phi32, plo32);               // [plo.even..., phi.even...] == per-lane MulHigh
+}
+}  // namespace detail
+
+// Precomputed reciprocal parameters for one run-time divisor. Build once, reuse across Div().
+// T is uint32_t (unsigned, Fig 4.1) or int32_t (signed truncated-toward-zero, Fig 5.1).
+template <typename T>
+struct Divisor {
+  // NOTE: the lane-type restriction lives in the CONSTRUCTOR, not the class body. The vector
+  // Div() overload below takes `const Divisor<TFromD<...>>&`, so overload resolution against
+  // the elementwise float Div(V,V) must COMPLETE Divisor<float> to test convertibility -- a
+  // class-body static_assert would then fire spuriously. In the ctor it fires only on an
+  // actual Divisor<float>(x) construction (and `explicit` blocks the implicit conversion).
+  explicit Divisor(T d) noexcept {
+    static_assert(std::is_same_v<T, std::uint32_t> || std::is_same_v<T, std::int32_t>,
+                  "Divisor: simd-09 线②#1 supports u32 / i32 only");
+    HYLE_FATAL_ASSERT(d != 0);  // caller contract: division by zero fails fast (not silent)
+    divisor_ = d;
+    if constexpr (std::is_unsigned_v<T>) {
+      dsign_ = 0;
+      if (detail::DivIsPow2(d)) {  // also catches d == 1 (pow2_shift == 0)
+        is_pow2_ = true;
+        pow2_shift_ = std::countr_zero(static_cast<std::uint32_t>(d));
+        multiplier_ = 1;
+        shift_ = 0;
+        return;
+      }
+      is_pow2_ = false;
+      pow2_shift_ = 0;
+      const unsigned l =
+          32u - static_cast<unsigned>(std::countl_zero(static_cast<std::uint32_t>(d - 1u)));
+      const std::uint64_t two_l = std::uint64_t{1} << l;
+      const std::uint64_t m = (((two_l - d) << 32) / d) + 1u;
+      multiplier_ = static_cast<T>(m);
+      shift_ = static_cast<int>(l) - 1;  // sh2 = l-1 (sh1 == 1 for non-pow2)
+    } else {
+      using UT = std::uint32_t;
+      dsign_ = (d < 0) ? static_cast<T>(-1) : static_cast<T>(0);
+      const UT abs_d =
+          (d < 0) ? static_cast<UT>(UT{0} - static_cast<UT>(d)) : static_cast<UT>(d);
+      if (detail::DivIsPow2(abs_d)) {  // also |d| == 1, and INT_MIN (abs = 2^31)
+        is_pow2_ = true;
+        pow2_shift_ = std::countr_zero(abs_d);
+        multiplier_ = 1;
+        shift_ = 0;
+        return;
+      }
+      is_pow2_ = false;
+      pow2_shift_ = 0;
+      const unsigned sh = 31u - static_cast<unsigned>(std::countl_zero(abs_d - 1u));  // l-1
+      const std::uint64_t m = (std::uint64_t{0x100000000} << sh) / abs_d + 1u;
+      multiplier_ = static_cast<T>(static_cast<std::uint32_t>(m));  // low 32 bits, as signed
+      shift_ = static_cast<int>(sh);
+    }
+  }
+
+  T GetDivisor() const noexcept { return divisor_; }
+
+  T divisor_;
+  T multiplier_;    // Fig 4.1 m (u32) / Fig 5.1 m = m0 - 2^32 reinterpreted signed (i32)
+  T dsign_;         // signed: -1 if divisor<0 else 0; unsigned: 0
+  int shift_;       // unsigned sh2 / signed sh
+  int pow2_shift_;  // log2(|divisor|) when is_pow2_
+  bool is_pow2_;
+};
+
+// Div(dividend, divisor): per-lane dividend / divisor (truncated toward zero for signed),
+// bit-identical to the scalar `/` on every backend.
+template <class V>
+HYLE_FORCE_INLINE V Div(V dividend, const Divisor<TFromD<DFromV<V>>>& dv) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  const D d;
+  if constexpr (std::is_unsigned_v<T>) {
+    if (dv.is_pow2_) {
+      if (dv.pow2_shift_ == 0) return dividend;  // divisor == 1
+      return Shr(dividend, Set(d, static_cast<T>(dv.pow2_shift_)));  // logical shift
+    }
+    // Fig 4.1: t1 = MULUH(m,a); q = (t1 + ((a - t1) >> 1)) >> sh2.
+    const V t1 = detail::MulHighViaWiden<V, std::uint64_t>(dividend, dv.multiplier_);
+    const V sum = Add(t1, ShiftRight<1>(Sub(dividend, t1)));
+    return Shr(sum, Set(d, static_cast<T>(dv.shift_)));
+  } else {
+    const V dsign_vec = Set(d, dv.dsign_);
+    constexpr int kSignBit = static_cast<int>(sizeof(T) * 8) - 1;
+    if (dv.is_pow2_) {
+      if (dv.pow2_shift_ == 0) return Sub(Xor(dividend, dsign_vec), dsign_vec);  // |d| == 1
+      // Round toward zero: bias negatives by (2^k - 1) before the arithmetic shift.
+      const T mask_val =
+          static_cast<T>((std::uint32_t{1} << static_cast<unsigned>(dv.pow2_shift_)) - 1u);
+      const V bias = And(ShiftRight<kSignBit>(dividend), Set(d, mask_val));
+      const V q = Shr(Add(dividend, bias), Set(d, static_cast<T>(dv.pow2_shift_)));  // arithmetic
+      return Sub(Xor(q, dsign_vec), dsign_vec);
+    }
+    // Fig 5.1: q0 = a + MULSH(m,a); q0 = (q0 >> sh) - XSIGN(a); q = (q0 ^ dsign) - dsign.
+    const V mulh = detail::MulHighViaWiden<V, std::int64_t>(dividend, dv.multiplier_);
+    V q0 = Add(dividend, mulh);
+    q0 = Shr(q0, Set(d, static_cast<T>(dv.shift_)));  // arithmetic shift (signed lane)
+    q0 = Sub(q0, ShiftRight<kSignBit>(dividend));     // - XSIGN(a)
+    return Sub(Xor(q0, dsign_vec), dsign_vec);
+  }
 }
 
 }  // namespace hyle::simd

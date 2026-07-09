@@ -1799,3 +1799,66 @@ TEST(Vec, ScalableDotProduct) {
     acc = hs::MulAdd(hs::Load(d, xs + i), hs::Load(d, ys + i), acc);
   EXPECT_NEAR(hs::ReduceSum(d, acc), static_cast<float>(ref), 1.0f);
 }
+
+// ---- vector integer division by a run-time scalar (simd-09 线②#1) --------------------
+// Oracle: the naive scalar `a / b`. Div() must be bit-identical on every backend. We sweep
+// each divisor across a battery of dividends (edge values + a ramp) and compare per lane.
+namespace {
+template <typename T>
+void CheckDivU32(std::uint32_t divisor) {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  const hs::Divisor<T> dv(static_cast<T>(divisor));
+  Buf<T> in, out;
+  // A spread of dividends: 0, 1, divisor-1, divisor, 2^32-1, and a scattered ramp.
+  const T seeds[] = {0u, 1u, static_cast<T>(divisor - 1), divisor,
+                     static_cast<T>(divisor + 1), 0xFFFFFFFFu, 0x80000000u, 123456789u};
+  for (std::size_t base = 0; base < sizeof(seeds) / sizeof(seeds[0]); ++base) {
+    for (std::size_t i = 0; i < n; ++i)
+      in.data[i] = static_cast<T>(seeds[base] + static_cast<T>(i) * 0x01234567u);
+    hs::Store(hs::Div(hs::Load(d, in.data), dv), d, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], static_cast<T>(in.data[i] / static_cast<T>(divisor)))
+          << "u32 div=" << divisor << " a=" << in.data[i];
+  }
+}
+template <typename T>
+void CheckDivI32(std::int32_t divisor) {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  const hs::Divisor<T> dv(static_cast<T>(divisor));
+  Buf<T> in, out;
+  const T seeds[] = {0, 1, -1, divisor, static_cast<T>(-divisor),
+                     std::numeric_limits<T>::max(), std::numeric_limits<T>::min(),
+                     -123456789, 987654321};
+  const T kMin = std::numeric_limits<T>::min();
+  for (std::size_t base = 0; base < sizeof(seeds) / sizeof(seeds[0]); ++base) {
+    for (std::size_t i = 0; i < n; ++i)  // build the ramp in unsigned to avoid signed-overflow UB
+      in.data[i] = static_cast<T>(static_cast<std::uint32_t>(seeds[base]) +
+                                  static_cast<std::uint32_t>(i) * (i % 2 ? 0xFF373737u : 0x74CBB1u));
+    hs::Store(hs::Div(hs::Load(d, in.data), dv), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) {
+      // INT_MIN / -1 is UB in C++ (traps on x86 idiv); the vector path yields -a wrapping to
+      // INT_MIN. Define that as the contract and skip the trapping scalar oracle for that lane.
+      const T expected = (divisor == -1 && in.data[i] == kMin)
+                             ? kMin
+                             : static_cast<T>(in.data[i] / static_cast<T>(divisor));
+      EXPECT_EQ(out.data[i], expected) << "i32 div=" << divisor << " a=" << in.data[i];
+    }
+  }
+}
+}  // namespace
+
+TEST(Vec, IntDivU32) {
+  const std::uint32_t divisors[] = {1u,  2u,   3u,     4u,       7u,     8u,
+                                    100u, 128u, 1000u,  65535u,   65536u, 999983u,
+                                    2147483647u /*prime near 2^31*/, 4294967291u /*prime near 2^32*/};
+  for (std::uint32_t dvz : divisors) CheckDivU32<std::uint32_t>(dvz);
+}
+
+TEST(Vec, IntDivI32) {
+  const std::int32_t divisors[] = {1,     -1,   2,      -2,     3,     -3,   7,      -7,
+                                   100,   -100, 128,    -128,   1000,  1024, -1024,  65535,
+                                   -65536, 999983, -999983, 2147483647 /*INT_MAX prime*/};
+  for (std::int32_t dvz : divisors) CheckDivI32<std::int32_t>(dvz);
+}
