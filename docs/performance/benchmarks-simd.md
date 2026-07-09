@@ -35,7 +35,19 @@
 3. **逐 op best-of-breed dispatch**:同 ISA 对标证实没有单一库三 op 全胜(xsimd 的 exp/tanh 快、Highway 的 log 快),dispatcher 按 op 选最快核(`math_dispatch.cc`,编译期选,零运行时开销)。
 4. **借核现状**:Highway + xsimd 均 vendored、无条件编进生产、默认全速,运行期 `cpu_features().avx2` 门控老 CPU 落 scalar 不 SIGILL。math_test 5/5、full simd 56/56。(注:SLEEF 已从项目移除,dispatcher 三 op 都没选它过——bench 顶部若仍有 SLEEF 注释属陈旧。)
 
-## simd dtype 转换（fp16/bf16 <-> f32，`dtype_bench.cc`）
+## simd f64 数学核（exp/log/tanh,double 精度——CAE/求解器/几何路径）
+
+> f32 math 补全后补 f64 批 API(`exp/log/tanh_f64_batch`)。CAE 求解器/几何核大量用 double。vec.h 后端层本就全 f64,缺口只在公开批 API + 借核层。**winner 逐精度 bench(WSL GCC AVX2,4-wide f64,nanobench 20k epoch),不从 f32 外推**。
+
+| kernel | xsimd f64 | Highway f64 | winner | 对比 f32 winner |
+|---|---|---|---|---|
+| **exp f64** | 1.83 ns | **1.01 ns** | **Highway 1.8x** | f32 是 xsimd(**翻转**) |
+| **log f64** | 1.72 ns | **0.89 ns** | **Highway 1.9x** | f32 也是 Highway(一致) |
+| **tanh f64** | 3.17 ns | **1.44 ns** | **Highway 2.2x** | f32 是 xsimd(**翻转**) |
+
+**核心方法学结论**:**f64 下 Highway 三个全胜,而 f32 下 xsimd 赢 exp/tanh——winner 在 exp/tanh 上翻转**。这坐实"best-of winner 必须逐精度 bench,不可从 f32 dispatch 表外推"——若沿用 f32 表给 f64 exp/tanh 选 xsimd,会慢 ~1.8-2.2x。故 f64 dispatch 三 op 全走 Highway(`math_dispatch.cc` 独立 f64 分支)。正确性:`Math.F64MatchesLibm` 对拍 long double libm ~1e-14 相对(exp/log/tanh 三 op,四平台 MSVC+WSL GCC 绿)。**范围**:avx2(4-wide)+ scalar floor 已覆盖全 x86 host + 其他平台;avx512(8-wide f64)/neon f64 borrow siblings 是登记的 follow-on(dot_f64/saxpy_f64 已全五后端含 avx512/neon,数学借核先 avx2)。
+
+
 
 > 环境:**双平台**——Win MSVC19.50 + **Linux GCC14.2 原生 ext4,各 15 遍中位数+spread**(`scripts/bench-stat.py`),nanobench,4096。三组:HYLE F16C/AVX2 硬件 dispatch / HYLE scalar 参考 / Highway(gated SOTA,baseline 齐已验 488 ymem、真 256 位未被降级编译)。`active_dtype_variant()` 报 `AVX2/F16C`。std 无 fp16/bf16 批量等价物。**dtype 是平台高度依赖项**:判定按双平台分列。
 
