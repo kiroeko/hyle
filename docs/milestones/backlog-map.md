@@ -25,7 +25,15 @@
 | mem-06 | NUMA + 大页 + stats 下溢修复 | 🟢 就绪 | 优先级低(单机未压 NUMA);北极星未要求,**可缓** |
 | simd-03 尾 | NEON / AVX512 真机跑 | 🔴 **缺硬件**(无 ARM 机 / 无 AVX512 机) | 已写+编+objdump 验;**硬阻塞**,待真机/QEMU/SDE。非优先级问题 |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
-| simd-08 尾 | 仿真路径 vs 原生 intrinsic 性能对比 + xsimd/Highway best-of 评估 | 🟢 就绪 | simd-08 的 B/C 档仿真路径(gather/compress/swizzle 走 store+reload,crypto 已接硬件)**正确性优先落地**;用户定"先把 ABC 做完再看性能测试"。待做:①量化 store+reload vs vpgather/vpcompress/vpshufb 原生的开销 ②与 xsimd/Highway 逐 op 对比定"哪个快用哪个"。非能力缺口,performance.md 增补 |
+| simd-08 尾 → simd-09 | best-of 全面审计结论 + 数学函数/算法级能力补齐 | 🟢 就绪,已开 simd-09 | **2026-07-09 三方审计(HYLE/Highway/xsimd)结论**,见下方"best-of 判据"。①数学函数 best-of 批(sin/cos/exp2/log2/atan/erf/pow… 三方 bench 选最快)②算法级能力补齐(vqsort/RNG/intdiv 等,Highway 招牌 HYLE 整块缺)→ 归入 **simd-09**。simd-08 结构 op 的 native intrinsic 优化(vpgather/vpcompress vs store+reload)是**自造 profiling 档**非 best-of(见判据),留 compute 消费驱动 |
+
+> ### best-of 判据(2026-07-09 三方审计定,固化防再犯)
+> "三者都有就选最快"只在**三条件同时成立**时有意义:① op 有**真实算法内容**(多项式逼近 / 多指令组合 / 软件 emulation),② 三家实现**有差异**,③ **不贴单一硬件指令**(否则三家编译成同一条,比了也一样)。按此分类 simd op:
+> - **无 best-of 空间(最多)**:纯 intrinsic 直通——add/sub/min/max/sqrt/BitCast/Mask 域/swizzle 硬件 shuffle/饱和/移位/位计数。三家同一条指令。
+> - **有算法但借库借不到便宜**:gather/scatter/compress/expand 的 store+reload emulation——**Highway/xsimd 在 SSE4/NEON 上也是 store+reload**(它们也无硬件指令),借=借同款 emulation。真正加速是**自己上 AVX2/AVX512 native**(vpcompress/vpgather),那是**自造 profiling 优化,不是 best-of**。
+> - **数学函数=best-of 借库主场**:多项式逼近算法最重、最易错、三家投入最大、不贴单一指令——"借难且已解决的"最典型。simd-06 只做了 exp/log/tanh(borrow 主场却只覆盖三个),sin/cos/erf/pow/exp2/log2/atan… 是同类金矿 → simd-09 ①。
+> - **少数结构 op 有真 best-of/超越空间**:Complex(HYLE 自组合 vs xsimd `batch<complex>`+`fmas`)、reduce(shuffle-cascade vs 蝶形 transpose);rsqrt/rcp 三家都无 Newton 精修 → **HYLE 加精修可反超两家**(自造超越,非借)。
+> - **算法级能力=借库补缺**(非 best-of,只 Highway 有):vqsort 向量排序 / 向量 RNG / intdiv 向量整除 / bit_pack / Lt128-Min128 → simd-09 ②。
 | **compute-06 边角项(按需备选,非欠账)** | #19 push_descriptor(实测 update 便宜,收益有限)、#22 timeline semaphore(多序列依赖才需)、#24 批量 createComputePipelines(kompute 自留 TODO)、#23 多队列 ownership transfer(上 async compute 才需)、Image 路径(做 image kernel 才核)、红队 E(event marker cb 长命 stream 累积)、红队 G(build 部分失败无回滚)。#10 coherent flush 存疑已随 #6 解决 | 🟢 就绪 | **明确消费者驱动**:各有触发条件,无当前消费者→登记不做,别散落核对表/memory |
 
 > container-06c(模糊路径匹配)**2026-07-05 ✅ 完成**,已从本表移除(抄 fzf V1 两趟算法,benchmark 证 O(N),container 160/160)。
