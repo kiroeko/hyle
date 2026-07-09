@@ -105,7 +105,7 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 ## 落地清单
 
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
-2. ✅ SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02(实跑)、运行期 dispatch=simd-04、NEON=simd-03(mac 真机)、AVX512=simd-03 写 + simd-09 用 Intel SDE 真跑(vec_test 169/169 全 op 对拍 scalar oracle,dispatch 真选 kAvx512)**。四 ISA 全真跑,不再"未跑存疑"。
+2. ✅ SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02(实跑)、运行期 dispatch=simd-04、NEON=simd-03(mac 真机)、AVX512=simd-03 写 + simd-09 用 Intel SDE 真跑(vec_test 169/169 全 op 对拍 scalar oracle,dispatch 真选 kAvx512)**。四定宽 ISA 全真跑,不再"未跑存疑"。**+ SVE(simd-09,首个 scalable 后端)**:`backend/sve.h`,sizeless 类型用 traits 映射(见下 SVE 节)+ 运行期 Lanes(svcntw)。~76 op(载荷核心 + gather/compress/scatter/predicated-tail 全 SVE 原生非 store+reload),qemu-aarch64 多 VL 128/256/512 对拍 scalar 全绿(`scripts/sve-qemu-test.sh`)。RVV 同理排队(第 3 决策已从"未来项"升级为"进行中")。
 3. ✅ dtype 转换（fp16/bf16 硬件路径）。**simd-05。** f32→bf16 的 **AVX-512-BF16 native `vcvtneps2bf16`** 档随 AVX512 变体 SDE 可真跑(此前仅 objdump 验)。
 4. 🔶 数学函数（借 Highway/xsimd 核）。**simd-06 exp/log/tanh + simd-09 补 11 个(sin/cos/exp2/log2/erf/atan/cbrt/expm1/log1p/asinh/acosh),per-op best-of GCC+MSVC 双平台 bench 定 winner,三平台 + AVX512-SDE 真跑。** **gelu/softmax 组合核=消费驱动缓**(compute-07 用 ggml 算子,不调 simd 的;非缺口)。
 5. ✅ `ops/`：dot_f32/saxpy_f32 跨 scalar/SSE4/AVX2/AVX512 dispatch;**AVX512 派发档 simd-09 Intel SDE 真跑坐实(tier 探针确认 kAvx512,非仅 objdump)**。reduce/对齐 memcpy/SwissTable 探测片段按需(container 已自有 SwissTable 探测)。
@@ -152,12 +152,31 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 **op 覆盖现状**:量化(promote/demote/convert/满足 int8 GEMM 的 madd/mulhigh)、通用向量循环(移位/舍入/饱和/掩码尾部/reduce 全家族)、swizzle(interleave/concat/reverse/permute)、gather/scatter/compress/expand、位计数/符号——**全部四后端 + scalar 覆盖,三平台真机对拍 scalar oracle**。设计原则(用户 2026-07-06 纠偏):**高性能 infra 库的消费面最广,能力要提供到位,不能因"暂无消费者"后置**;暂缺的只是**性能优化档**(native vpgather/vpcompress/vpopcnt/PSHUFB-LUT vs 现在的 store+reload),那些是 profiling 驱动的加速、非能力缺口,留待 compute 消费时按热路径证据加。各后端仍在 ~2k 行设计上限内(最大 neon ~1.2k)。
 
-## 已定决策（1/2/4 已落地，3 为未来项）
+### SVE scalable 后端(simd-09,首个非定宽后端)——sizeless 类型如何融入 D-tag 契约
+
+用户"SVE/RVV 不假设向量长度,为啥冲击架构 / 模板元编程无法解决么"——**实证核查后纠正了一度过度渲染的"冲击全库地基"结论**:SVE/RVV **不冲击架构**,是 `backend/sve.h` 内部**模板元编程可解**的问题(qemu 多 VL 真跑坐实)。
+
+**为什么不是纯"独立 branch"、又为什么不冲击架构(两个都对一半)**:
+- 后端选择**确实是独立分支**(vec.h ladder 加一个 `#elif HYLE_SIMD_TARGET_SVE`,CMake 加 tier)——这部分隔离。
+- 真正的挑战是 **sizeless 类型**:SVE 的 `svfloat32_t`/RVV 的 `vfloat32m1_t` 按 ACLE **不能做 sizeof / 结构体成员 / 数组元素 / 全局变量**。而定宽后端的 `Vec` 是 `struct { float32x4_t raw; using PrivateT; kPrivateN; }`——把寄存器当结构体成员。
+- **但 `DFromV`/`Vec` 每后端各自定义(非全库共享契约)**:一个 TU 只 include 一个后端头,后端从不共存 → sve.h 可自定义一套,不动其他后端或 vec.h 共享层。
+
+**模板元编程解法(全在 sve.h 内)**:
+1. `VFromD<D>` 用 traits 映射 `detail::SveVecT<T>::type`(替代 struct 成员包 raw)——sizeless 类型能做函数**参数/返回值/局部变量**(ABI 合法),HYLE 的 op 全是 `V Add(V,V)` 传值/返回,天然不碰禁区。
+2. `DFromV<V>` 用**反向 traits 特化表** `detail::DFromV_sve<V>`(替代 `V::PrivateT` 成员访问,sizeless 无成员)。
+3. store+reload 的 `T buf[kMaxLanes]` 是**标量数组**(T=float/int,合法);`kMaxLanes` 从"精确"变"上界"(kNativeVectorBytes=256=2048-bit 上界),循环边界用运行期 `Lanes(d)`。**但 SVE 的 gather/compress/scatter/predicated-tail 全走原生**(`svld1_gather`/`svcompact`/`svst1_scatter`/`svwhilelt`),不 store+reload——正是 scalable 的性能强项。
+4. `Lanes(d)` 运行期化:vec.h `HYLE_SIMD_HAVE_SCALABLE`(SVE/RVV target 翻 1)关掉泛型 constexpr Lanes,sve.h 供运行期 `svcntw/svcntb`。**这是唯一碰共享层处,且设计者早预留了宏。**
+
+**验证(qemu-aarch64,同一二进制强制 VL 128/256/512)**:~76 op(Set/Load/Store/算术/位/比较→svbool_t/选择/mask-reduce/值reduce/移位/Reverse/tail/compress/scatter/gather/ConvertTo/BitCast/饱和/分类/CopySign/位计数)对拍 scalar oracle **8 个 gtest 全绿 × 3 VL**。lane 数随 VL 正确缩放(f32:4/8/16,i8:16/32/64)。`scripts/sve-qemu-test.sh` 可复现(cross-build + qemu 多 VL,类比 AVX-512 的 Intel SDE)。CMake `-DHYLE_SIMD_SVE=ON` gate(真 SVE 机 ctest 直跑)。
+
+**未做的诚实边界**(~83 op,留 backlog):固定 128-bit-block 语义(ConcatOdd/InterleaveLower/ZipLower/DupEven/TableLookupBytes——Highway 在 SVE 上都特殊处理,scalable 下"块"概念模糊)、变宽转换(PromoteLowerTo/DemoteTo/ReorderDemote2To——改 lane 数,与运行期 VL 交互微妙)、SVE2 crypto(需 `+sve2-aes`)。核心载荷面已覆盖。
+
+## 已定决策（1/2/4 已落地，3 SVE 进行中/RVV 排队）
 
 1. **vector 抽象用定宽 `vec<T,N>` 还是 scalable（length-agnostic）**？**scalable-friendly 接口 + 先实现定宽后端**——接口按 length-agnostic 设计（参考 Highway，将来加 SVE/RVV 不改 API），但首版只实现定宽后端（x86 SSE4.2/AVX2/AVX512 + ARM NEON，它们本就定宽）。对冲：不堵未来又不先背复杂度。
    > **深读 highway 落地约束**：照搬 highway 的 **D-tag 接口契约**——传零大小标签 `D=Simd<T,N,kPow2>`，op 形如 `VFromD<D> Set(D,T)`，`Lanes(d)` 取宽度。**关键：`Lanes(d)` 必须设计成可运行期求值**（定宽后端是 constexpr、SVE 后端是 `svcntw()` 运行期），否则将来加 SVE 要改 API。highway 已证同源码 x86/SVE 共存可行。**只照搬接口契约，不 vendor 整个 highway**（其 ops/ 全平台万行级、重宏元编程，违背"贴硬件/不过度抽象"）。给 `vec.h` 设硬上限（核心 op < ~2k 行/后端），超了就是丧失了不 vendor 的理由。
 2. **数学核 vendor 现成库还是自抄多项式**？**vendor Highway + xsimd（均在 `third_party/`、无条件默认编进生产）**，逐 op best-of-breed 选最快核（exp/tanh→xsimd、log→Highway）；adapter 几乎零成本（吃裸 intrinsic 向量，HYLE `vec.raw` 直接喂）。两库精度同档（~3.5ULP，AI 热路径足够），互为校验。
-3. **要不要 SVE/RVV 进首版**？**未来项，尚未实现**：v1 只做 x86(SSE4.2/AVX2/AVX512) + ARM NEON，SVE/RVV 留接口（D-tag 的 `Lanes(d)` 运行期求值口子已预留）、缓实现。
+3. **要不要 SVE/RVV**？**SVE 进行中(simd-09 落地 ~76 op,qemu 多 VL 真跑)、RVV 排队**:原判"未来项缓实现",用户 2026-07-09 要求做全(通用 infra 库=能力完整性)→ 验证 sizeless 非架构冲击后落地 SVE(见上 SVE 节)。D-tag 的 `Lanes(d)` 运行期口子 + `HYLE_SIMD_HAVE_SCALABLE` 宏是当初预留、现在兑现的接口。RVV(`backend/rvv.h`)趟通 SVE 的 scalable 路后镜像(riscv64-gcc + qemu-riscv64,rv64gcv)。
 4. **dtype 层借谁**？**自造，但参照 highway 的 `PromoteTo/DemoteTo` intrinsic 用法**（F16C `_mm_cvtph_ps`、AVX512-BF16 `cvtne2ps`、NEON-BF16）——照抄 intrinsic 不照抄抽象。Highway/xsimd 数学核无 fp16/bf16，唯 highway 当原生 lane 类型且硬件路径全；但 dtype 逻辑不复杂（bf16=fp32 高 16 位移位），自造避开 vendor 整个 highway。
 
 ## 参考
