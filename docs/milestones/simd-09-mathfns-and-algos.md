@@ -83,15 +83,15 @@
 
 **xsimd 独有未接(单借,非 best-of,按需)**:hypot/lgamma/tgamma、复数超越函数。
 
-### 线② 算法级能力 — 🔶 进行中(2026-07-09)
+### 线② 算法级能力 — ✅ 完成(2026-07-09,全 5 件,四 ISA + SDE + mac 真机)
 
 | 子 | 状态 | 说明 |
 |---|---|---|
-| **intdiv** u32/i32 | ✅ 完成(8114f40) | Granlund-Montgomery magic-number **自实现泛型层**(不 vendor Highway D-tag)。Divisor<T> 预算 + Div(V,Divisor) 应用;32-bit 无原生 MulHigh→u32→u64 widen+ShiftRight<32>,recombine 用 BitCast+ConcatEven(避 ReorderDemote2To 顺序陷阱)。MSVC+WSL GCC+ASan 净(NEON 待 mac)。u8/u16/u64 后续(u64 需 128-bit 乘) |
-| **cmp128** Lt128/Min128… | ✅ 完成(72bfb1f) | 每相邻 u64 对=128-bit 值。泛型层组合(Eq/Lt/Reverse2/DupOdd,block-safe),抄 Highway Lt128Vec 真值表。MSVC+WSL GCC+ASan 净(NEON 待 mac)。vqsort 键比较基石 |
-| **RNG** xoshiro256** | ✅ 完成(111a83b) | `include/hyle/simd/random.h` VectorXoshiro N 并行流,逐 lane 独立状态更新,**自实现泛型层**。SplitMix64 播种+逐 lane Jump 去相关;Uniform 用位模式技巧避 u64→f64 非原生转换。lane0 对拍标量 oracle。MSVC+WSL GCC+ASan 净(NEON 待 mac) |
-| **vqsort** 排序 | ✅ 完成(5c1c884) | **vendor 薄封装** Highway vqsort(~10x std::sort),同数学核借法。sort/partial_sort/select(u32/i32/u64/i64/f32/f64 升降序)吃裸指针;`VQSortStatic` header-only + `-DVQSORT_ONLY_STATIC=1` 免链 vqsort.cc;dispatch avx512>avx2>scalar 门控。sort_test 对拍 std::sort/partial_sort/nth_element。MSVC+WSL GCC 全绿(207,无 vqsort.cc 链接)。K32V32/K64V64 top-k 键值对留消费驱动 |
-| **bit_pack** 位打包 | ✅ 完成(35bab19) | **vendor 薄封装** Highway bit_pack。pack/unpack(u8 1..8/u16 1..16/u32 1..32)吃裸指针+运行期 bits(index_sequence 折编译期 kBits);block 走 Highway、tail 走自写 bitstream codec。**揪出并绕过 vendor bug**:Highway Pack16<11>/<13> 满位宽 round-trip 失败(独立探针 MSVC+GCC+EMU128 三处坐实=算法非 codegen;根因上游 `& kBits` 笔误漏测),这两宽度回退 HYLE bitstream codec。MSVC+WSL GCC 全绿(213)。详见 docs/debug/highway-pack16-roundtrip-hunt.md |
+| **intdiv** u32/i32 | ✅ 完成(8114f40) | Granlund-Montgomery magic-number **自实现泛型层**(不 vendor Highway D-tag)。Divisor<T> 预算 + Div(V,Divisor) 应用;32-bit 无原生 MulHigh→u32→u64 widen+ShiftRight<32>,recombine 用 BitCast+ConcatEven(避 ReorderDemote2To 顺序陷阱)。MSVC+WSL GCC+ASan 净+mac NEON 真机。u8/u16/u64 后续(u64 需 128-bit 乘) |
+| **cmp128** Lt128/Min128… | ✅ 完成(72bfb1f) | 每相邻 u64 对=128-bit 值。泛型层组合(Eq/Lt/Reverse2/DupOdd,block-safe),抄 Highway Lt128Vec 真值表。MSVC+WSL GCC+ASan 净+mac NEON 真机。vqsort 键比较基石 |
+| **RNG** xoshiro256** | ✅ 完成(111a83b) | `include/hyle/simd/random.h` VectorXoshiro N 并行流,逐 lane 独立状态更新,**自实现泛型层**。SplitMix64 播种+逐 lane Jump 去相关;Uniform 用位模式技巧避 u64→f64 非原生转换。lane0 对拍标量 oracle。MSVC+WSL GCC+ASan 净+mac NEON 真机 |
+| **vqsort** 排序 | ✅ 完成(5c1c884) | **vendor 薄封装** Highway vqsort(~10x std::sort),同数学核借法。sort/partial_sort/select(u32/i32/u64/i64/f32/f64 升降序)吃裸指针;`VQSortStatic` header-only + `-DVQSORT_ONLY_STATIC=1` 免链 vqsort.cc;dispatch avx512>avx2>scalar 门控。sort_test 对拍 std::sort/partial_sort/nth_element。MSVC+WSL GCC 全绿 + AVX512 SDE tier 真跑 + mac NEON。K32V32/K64V64 top-k 键值对留消费驱动 |
+| **bit_pack** 位打包 | ✅ 完成(35bab19) | **vendor 薄封装** Highway bit_pack。pack/unpack(u8 1..8/u16 1..16/u32 1..32)吃裸指针+运行期 bits(index_sequence 折编译期 kBits);block 走 Highway、tail 走自写 bitstream codec。**揪出并绕过 vendor bug**:Highway Pack16<11>/<13> 满位宽 round-trip 失败(独立探针 MSVC+GCC+EMU128 三处坐实=算法非 codegen;根因上游 `& kBits` 笔误漏测),这两宽度回退 HYLE bitstream codec。MSVC+WSL GCC 全绿(213)+ AVX512 SDE tier 真跑 + mac NEON。详见 docs/debug/highway-pack16-roundtrip-hunt.md |
 
 **线②小结**:全 5 件落地。通用原语(intdiv/cmp128/RNG)**自实现泛型层**;重型件(vqsort/bit_pack)**vendor 薄封装 Highway**(与数学核借法同构——公开层吃裸指针不 include highway,借核 TU 内部用 Highway D-tag,dispatch 运行期门控 SIGILL 安全)。**关键收获**:借核同样过 HYLE 对拍闸门,bit_pack 的 round-trip 恒等式揪出 Highway 一个满位宽 bug(Pack16<11>/<13>)——"借不等于信"。K32V32 top-k 留消费驱动。
 
