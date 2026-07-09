@@ -137,7 +137,17 @@
 | Compress | 6x | 0.283 | 2.4x | vpermd 索引表+零尾 |
 | ConcatEven/Odd | 1.7x | (原生) | ~平 | vpermd 偶奇收集+blend |
 
-3 打平/反超,4 大幅改善(LZCnt/Compress/TZCnt Highway 的 float-trick/packed-table 更精巧仍略快,但已拿下绝大部分收益)。**待做:sse4/avx512/neon 同 op 换原生**(同 pattern,SVE/RVV 若同样也修)。铁律仍立:store+reload+std 标量 op 优先全换。
+3 打平/反超,4 大幅改善(LZCnt/Compress/TZCnt Highway 的 float-trick/packed-table 更精巧仍略快,但已拿下绝大部分收益)。铁律仍立:store+reload+std 标量 op 优先全换。
+
+**✅ 全四固定宽后端已铺完(2026-07-09,925c689/db0352b)**——同 pattern 铺到 avx512/sse4/neon,各 vec_test 169/169:
+| 后端 | 验证闸门 | 手法要点 | 残留输家(同 avx2) |
+|---|---|---|---|
+| **avx2**(256b) | WSL+MSVC 169/169 + 隔离 bench | 见上表 | LZCnt 2.4x/Compress 2.4x/TZCnt 1.4x |
+| **avx512**(512b) | Intel SDE 169/169 | 同 avx2 512-bit 化;MulByPow2 额外走原生 vscalef(512 有硬件)、GetExponent 用 vgetexp、Compress 用 maskz_compress | 同 avx2(vpshufb-LUT popcount,tier 无 VPOPCNTDQ) |
+| **sse4**(128b) | WSL+MSVC 169/169 + op_parity sse4 bench | ConcatEven/Odd 用 shuffle_ps 双源选 lane;余同 avx2 单块 | **实测**:PopCount 打平/微胜(0.16 vs 0.21,gap<spread)、ConcatEven 打平(1.00)、LZCnt 输 2.6x(同 avx2,Highway float-exp trick) |
+| **neon** | qemu-aarch64 169/169 | **硬件原生最省**:PopCount=vcntq_u8+vpaddlq、LZCnt=原生 vclzq(8/16/32)、ReverseBits=vrbitq_u8+vrevNq、Concat=vuzp1/2q、Dup=vtrn1/2q | 仅 64-bit LZCnt 走 smear+popcount(NEON 无 64-bit clz) |
+
+**MulByPow2 分档**:仅 avx512 有原生 vscalef,故 avx512 换原生;avx2/sse4/neon 无 scale 指令,保留 std::ldexp store+reload(与 Highway 同,非输家)。**SVE/RVV 无需改**:SVE 早用原生 svcnt/svclz/svuzp1/svuzp2;RVV 的 popcount/clz 属 Zvbb 扩展(rv64gcv 基础集无,已登记边界,同 Highway gate)。**定论:9 个 store+reload/std 标量慢 op 在全部固定宽后端(4)换原生,scalable(2)本就原生或按扩展 gate;LZCnt/Compress 残留是 Highway 算法更精巧(float-exp trick / 1KB packed table)非退化,已拿下绝大部分收益。**
 
 ### 变宽 op 对照(`op_parity_widen_bench.cc`)——疑似输家实测澄清=全打平
 之前把变宽/SumsOf 标"疑似 store+reload 输家",实测(med ns/op)**全打平**——主路径走原生指令,`alignas` 只在 fallback 分支:
