@@ -47,6 +47,21 @@
 - **正确性对拍**：saxpy/dot/exp 对拍标量参考(f32 ~1e-4/1e-5 相对、f64 dot ~1e-12、saxpy DOUBLE_EQ)；vecadd 用 CUDA 测试核同公式。simd tail 覆盖(n=1000/777/513 非 SIMD 宽度倍数)。
 - **双平台真跑**：WSL GCC14 6/6 + MSVC 6/6，full compute 78/78 无回归。**MSVC 抓一个可移植性 bug**：`__builtin_memcpy`(GCC/Clang builtin)MSVC 无 → 改 `std::memcpy`。双平台真编真测才暴露。
 
+## 对抗式审查（2026-07-09 红队,发现 6 项全修）
+
+首版只做了测试、跳过对抗式自审(CHECKLIST 第 4 步)。补审(独立红队 subagent + 自审)揪出 6 项、全修:
+
+| # | 类别 | 问题 | 修法 |
+|---|---|---|---|
+| 1 | 契约 | host kernel 对 buffer_count/scalar_count/null 零校验,违背库 fail-fast 纪律(vulkan_backend:1098 有先例)| `require()`+`scalar_at` 加 `HYLE_FATAL_ASSERT`(args 是调用方契约非外部输入)|
+| 2 | **严重 bug** | `int n<0` → `static_cast<size_t>` 变 ~2^63 → simd 核越界扫内存 | `HYLE_FATAL_ASSERT(n>=0)` |
+| 3 | 性能 | `host_vecadd` 标量拷贝+saxpy 两趟内存(三趟 c 流量)| **simd 层补 `add_f32/f64` 逐元素加原语**(本就该有),vecadd 单趟直调 |
+| 4 | 规范 | `scalar_at` 假设 `fields[i].size==sizeof(T)` 无校验,类型错配静默错读 | 加 `HYLE_FATAL_ASSERT(fields[i].size==sizeof(T))` |
+| 5 | 测试缺口 | 无契约/负面测试;未经真实 typed-shell 驱动(测试自复刻打包逻辑)| 加 3 death test(null/负n/buffer不足)+ `TypedShellSaxpyF32`(真 `launch(s,k,cfg,Buffer...,scalar...)`)|
+| 6 | 规范 | f64 缺 exp(f32 有);对称破缺 | 补 `host_exp_f64`(simd `exp_f64_batch` 已有)|
+
+**方法学教训**:"跑了 6 个测试通过" ≠ "做了对抗式审查"。测试证功能,红队挑正确性/性能/契约/规范偏离——两者不可互替(#2 负 n 越界 + #3 性能偏离靠测试绿发现不了)。**#3 根因是 simd 能力面缺 elementwise add——红队反向暴露了 simd 一个真缺口,顺带补全 `add_f32/f64`(dispatch 五后端 + ops_test 对拍 + op_parity 三方 bench 与 Highway/xsimd 统计打平,带宽受限 op 预期但实测坐实非假设)。** 修后 WSL 83/83 + simd 234 + avx512 SDE add 验 + MSVC。
+
 ## 明确不做（防蔓延）
 
 | 不做 | 去向 | 为什么 |
