@@ -1879,31 +1879,40 @@ HYLE_FORCE_INLINE void ScatterIndex(detail::V256<D> v, D d, TFromD<D>* base,
   for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
 }
 // Compress index table for 8x i32: for each 8-bit mask, the 8 vpermd indices that gather the
-// active lanes to the front (inactive lanes' slots get filler = 0; contents there are unspecified
-// per Highway's Compress contract). constexpr-built (no hand-typed 2048 ints).
+// active lanes to the front. PACKED to 1 KiB (Highway's method): each entry is a u32 holding the
+// eight 3-bit(-ish) indices in nibbles [0:4,4:8,...,28:32]; broadcast + per-lane shift by
+// {0,4,...,28} + vpermd (which ignores bits>2). 256*4 B = 1 KiB (vs the naive 256*8 u32 = 8 KiB,
+// which cost ~2.4x from L1 pressure). constexpr-built (no hand-typed table).
 namespace detail {
-struct CompressIdx32Table {
-  std::uint32_t idx[256 * 8] = {};
-  constexpr CompressIdx32Table() {
+struct CompressIdx32Packed {
+  std::uint32_t packed[256] = {};
+  constexpr CompressIdx32Packed() {
     for (unsigned bits = 0; bits < 256; ++bits) {
       unsigned k = 0;
-      for (unsigned i = 0; i < 8; ++i) if ((bits >> i) & 1u) idx[bits * 8 + (k++)] = i;
-      for (; k < 8; ++k) idx[bits * 8 + k] = 0;  // fill inactive tail (unspecified lanes)
+      std::uint32_t word = 0;
+      for (unsigned i = 0; i < 8; ++i)
+        if ((bits >> i) & 1u) { word |= static_cast<std::uint32_t>(i) << (4 * k); ++k; }
+      // inactive tail nibbles stay 0 (lane 0); the caller zeros the tail via the keep-mask anyway.
+      packed[bits] = word;
     }
   }
 };
-inline constexpr CompressIdx32Table kCompressIdx32Tbl{};
-inline constexpr const std::uint32_t* kCompressIdx32 = kCompressIdx32Tbl.idx;
+inline constexpr CompressIdx32Packed kCompressIdx32Tbl{};
+inline constexpr const std::uint32_t* kCompressIdx32Packed = kCompressIdx32Tbl.packed;
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcept {
   // NATIVE for 32-bit lanes (8 lanes): a per-mask permute-index table + vpermd packs the active
-  // lanes to the front in one shuffle (Highway's method; op_parity: store+reload was 6x slower).
-  // 256 masks x 8 u32 indices = 8 KiB table (Highway packs to 1 KiB; this is the simple correct
-  // form). Other widths keep store+reload (no 8/16/64-bit vpermd on AVX2).
+  // lanes to the front in one shuffle (Highway's method; op_parity: store+reload was 6x slower,
+  // the 8 KiB unpacked table was still ~2.4x from L1 pressure). 1 KiB packed table + shift-expand.
+  // Other widths keep store+reload (no 8/16/64-bit vpermd on AVX2).
   if constexpr (sizeof(T) == 4) {
     const unsigned bits = detail::mask_bits(m) & 0xFFu;
-    const __m256i idx = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(detail::kCompressIdx32 + bits * 8));
+    // broadcast the packed u32, then shift each of the 8 copies right by {0,4,...,28} so lane i
+    // holds its 3-bit index in the low bits (vpermd ignores bits 3..31).
+    const __m256i packed = _mm256_set1_epi32(static_cast<int>(detail::kCompressIdx32Packed[bits]));
+    const __m256i shifts = _mm256_setr_epi32(0, 4, 8, 12, 16, 20, 24, 28);
+    const __m256i idx = _mm256_srlv_epi32(packed, shifts);
     __m256i perm;
     if constexpr (std::is_same_v<T, float>) perm = _mm256_castps_si256(_mm256_permutevar8x32_ps(v.raw, idx));
     else perm = _mm256_permutevar8x32_epi32(v.raw, idx);
@@ -2018,19 +2027,38 @@ template <typename T> HYLE_FORCE_INLINE __m256i srli_w(__m256i x, int s) noexcep
   else if constexpr (sizeof(T) == 4) return _mm256_srli_epi32(x, s);
   else return _mm256_srli_epi64(x, s);
 }
+// float-exponent trick (Highway generic_ops UIntToF32BiasedExp): the biased exponent of the f32
+// nearest to a u32 gives its bit-length, so LZCnt/TZCnt fall out of a single int->float convert +
+// exponent extract -- far cheaper than the smear+popcount chain. For 32-bit lanes: convert via
+// SIGNED cvtepi32_ps (1 instr; the top-bit-set case is folded by the internal min-with-158 that
+// the LZCnt formula's overall Min(.,32) subsumes), bitcast, >>23. Returns the biased exponent.
+HYLE_FORCE_INLINE __m256i u32_to_f32_biased_exp(__m256i v) noexcept {
+  // zero out bit (HighestSetBit-24) for v>=2^24 so the inexact convert rounds DOWN (never bumps
+  // the exponent up a notch): v & ~(v>>24). Exact for v<2^24 (no-op there).
+  const __m256i norm = _mm256_andnot_si256(_mm256_srli_epi32(v, 24), v);
+  const __m256 f = _mm256_cvtepi32_ps(norm);  // signed convert; norm<2^31 always (top 8 bits clear)
+  const __m256i bits = _mm256_castps_si256(f);
+  return _mm256_srli_epi32(bits, 23);  // biased exponent in [0,158]
+}
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> LeadingZeroCount(Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "LeadingZeroCount is integer-lane only");
-  if constexpr (sizeof(T) == 1) return detail::bitcount_via_mem<T, N, 1>(v);
-  else {
-    __m256i x = v.raw;  // smear the top set bit down to bit 0
+  if constexpr (sizeof(T) == 4) {
+    // LZCnt(x) = min( (32+126) - biased_exp(x), 32 ). biased_exp(0)=0 -> 158-0=158, clamped to 32.
+    const __m256i be = detail::u32_to_f32_biased_exp(v.raw);
+    const __m256i lz = _mm256_sub_epi32(_mm256_set1_epi32(32 + 126), be);
+    Vec256<T, N> r; r.raw = _mm256_min_epu32(lz, _mm256_set1_epi32(32));
+    return r;
+  } else if constexpr (sizeof(T) == 1) {
+    return detail::bitcount_via_mem<T, N, 1>(v);
+  } else {  // 16/64-bit: smear the top set bit down, then bits - popcount(smeared)
+    __m256i x = v.raw;
     x = _mm256_or_si256(x, detail::srli_w<T>(x, 1));
     x = _mm256_or_si256(x, detail::srli_w<T>(x, 2));
     x = _mm256_or_si256(x, detail::srli_w<T>(x, 4));
     x = _mm256_or_si256(x, detail::srli_w<T>(x, 8));
-    if constexpr (sizeof(T) >= 4) x = _mm256_or_si256(x, detail::srli_w<T>(x, 16));
-    if constexpr (sizeof(T) == 8) x = _mm256_or_si256(x, detail::srli_w<T>(x, 32));
+    if constexpr (sizeof(T) == 8) { x = _mm256_or_si256(x, detail::srli_w<T>(x, 16)); x = _mm256_or_si256(x, detail::srli_w<T>(x, 32)); }
     Vec256<T, N> sm; sm.raw = x;
     const Vec256<T, N> pc = PopulationCount(sm);
     return Sub(Set(Simd<T, N, 0>(), static_cast<T>(sizeof(T) * 8)), pc);
@@ -2039,9 +2067,19 @@ HYLE_FORCE_INLINE Vec256<T, N> LeadingZeroCount(Vec256<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> TrailingZeroCount(Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "TrailingZeroCount is integer-lane only");
-  if constexpr (sizeof(T) == 1) return detail::bitcount_via_mem<T, N, 2>(v);
-  else {
-    // isolate lowest set bit (x & -x), minus 1 fills the trailing zeros, popcount them.
+  if constexpr (sizeof(T) == 4) {
+    // TZCnt(x) = min( biased_exp(x & -x) - 127, 32 ). x&-x isolates the lowest set bit; its f32
+    // exponent is exactly its bit index. x==0 -> lowest=0 -> exp=0 -> 0-127 underflows huge ->
+    // unsigned-min with 32 gives 32 (= bit width). Correct for all inputs.
+    const __m256i neg = _mm256_sub_epi32(_mm256_setzero_si256(), v.raw);
+    const __m256i lowest = _mm256_and_si256(v.raw, neg);
+    const __m256i be = detail::u32_to_f32_biased_exp(lowest);
+    const __m256i tz = _mm256_sub_epi32(be, _mm256_set1_epi32(127));
+    Vec256<T, N> r; r.raw = _mm256_min_epu32(tz, _mm256_set1_epi32(32));
+    return r;
+  } else if constexpr (sizeof(T) == 1) {
+    return detail::bitcount_via_mem<T, N, 2>(v);
+  } else {  // 16/64-bit: PopCount((x & -x) - 1)
     const Vec256<T, N> neg = Neg(v);
     Vec256<T, N> lowest; lowest.raw = _mm256_and_si256(v.raw, neg.raw);
     const Vec256<T, N> mask = Sub(lowest, Set(Simd<T, N, 0>(), static_cast<T>(1)));
