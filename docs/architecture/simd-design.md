@@ -105,7 +105,7 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 ## 落地清单
 
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
-2. ✅ SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02(实跑)、运行期 dispatch=simd-04、NEON=simd-03(mac 真机)、AVX512=simd-03 写 + simd-09 用 Intel SDE 真跑(vec_test 169/169 全 op 对拍 scalar oracle,dispatch 真选 kAvx512)**。四定宽 ISA 全真跑,不再"未跑存疑"。**+ SVE(simd-09,首个 scalable 后端)**:`backend/sve.h`,sizeless 类型用 traits 映射(见下 SVE 节)+ 运行期 Lanes(svcntw)。~76 op(载荷核心 + gather/compress/scatter/predicated-tail 全 SVE 原生非 store+reload),qemu-aarch64 多 VL 128/256/512 对拍 scalar 全绿(`scripts/sve-qemu-test.sh`)。RVV 同理排队(第 3 决策已从"未来项"升级为"进行中")。
+2. ✅ SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02(实跑)、运行期 dispatch=simd-04、NEON=simd-03(mac 真机)、AVX512=simd-03 写 + simd-09 用 Intel SDE 真跑(vec_test 169/169 全 op 对拍 scalar oracle,dispatch 真选 kAvx512)**。四定宽 ISA 全真跑,不再"未跑存疑"。**+ SVE + RVV(simd-09,两个 scalable 后端)**:`backend/sve.h`(~76 op,qemu-aarch64 多 VL 128/256/512)+ `backend/rvv.h`(核心 op,qemu-riscv64 rv64gcv)。sizeless 类型用 traits 映射(见下 SVE/RVV 节)+ 运行期 Lanes(svcntw / vsetvlmax)。SVE 的 gather/compress/scatter/predicated-tail 全原生非 store+reload。两者 gtest + CMake gate(`-DHYLE_SIMD_SVE/RVV=ON`)+ qemu 脚本固化(`scripts/{sve,rvv}-qemu-test.sh`)。**RVV 复用 SVE 全部 scalable 机制、vec.h 共享层零改动**——坐实"sizeless=后端内模板元编程"对两个 ISA 都成立。
 3. ✅ dtype 转换（fp16/bf16 硬件路径）。**simd-05。** f32→bf16 的 **AVX-512-BF16 native `vcvtneps2bf16`** 档随 AVX512 变体 SDE 可真跑(此前仅 objdump 验)。
 4. 🔶 数学函数（借 Highway/xsimd 核）。**simd-06 exp/log/tanh + simd-09 补 11 个(sin/cos/exp2/log2/erf/atan/cbrt/expm1/log1p/asinh/acosh),per-op best-of GCC+MSVC 双平台 bench 定 winner,三平台 + AVX512-SDE 真跑。** **gelu/softmax 组合核=消费驱动缓**(compute-07 用 ggml 算子,不调 simd 的;非缺口)。
 5. ✅ `ops/`：dot_f32/saxpy_f32 跨 scalar/SSE4/AVX2/AVX512 dispatch;**AVX512 派发档 simd-09 Intel SDE 真跑坐实(tier 探针确认 kAvx512,非仅 objdump)**。reduce/对齐 memcpy/SwissTable 探测片段按需(container 已自有 SwissTable 探测)。
@@ -171,12 +171,20 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 **未做的诚实边界**(~83 op,留 backlog):固定 128-bit-block 语义(ConcatOdd/InterleaveLower/ZipLower/DupEven/TableLookupBytes——Highway 在 SVE 上都特殊处理,scalable 下"块"概念模糊)、变宽转换(PromoteLowerTo/DemoteTo/ReorderDemote2To——改 lane 数,与运行期 VL 交互微妙)、SVE2 crypto(需 `+sve2-aes`)。核心载荷面已覆盖。
 
+### RVV scalable 后端(simd-09,第二个 scalable 后端,镜像 SVE)
+
+`backend/rvv.h` 复用 SVE 建立的**全部 scalable 机制**(`HYLE_SIMD_HAVE_SCALABLE`=1 → 运行期 Lanes、kNativeVectorBytes 上界、sizeless traits 映射 `RvvVecT<T>` + 反向表 `DFromV_rvv`)。首版 **LMUL=1**(kPow2=0),`Lanes(d)`=`vsetvlmax`。覆盖 Set/Load/Store/算术/位/比较→vbool/选择(vmerge)/mask-reduce(vcpop)/GetLane/值reduce(vred*)/移位。
+
+**RVV 独特处(vs SVE)**:① **每 intrinsic 显式 `vl`**(SVE 用隐式谓词)——从 `Lanes(d)` 算一次穿进每个 op;② **unsigned lane 用独立助记符**(`vminu/vmaxu/vmsltu/vmsgtu` 非 `vmin` 泛型),signed/unsigned `if constexpr` 分派(这是 RVV 铺量的主要 gotcha);③ mask 是 `vbool<ratio>_t`(ratio=SEW/LMUL)。
+
+**验证**:`tests/simd/rvv_test.cc`(3 gtest,VL-agnostic 对拍 scalar,含 unsigned-mnemonic 覆盖)qemu-riscv64 全绿。`scripts/rvv-qemu-test.sh` 可复现(cross-build rv64gcv + qemu)。CMake `-DHYLE_SIMD_RVV=ON` gate。**边界**:native gather/compress/scatter、变宽 convert、Zvbb popcount/clz(rv64gcv 无 Zvbb)留 backlog。**结论坐实**:SVE 趟通的 scalable 抽象**真的可复用**——RVV 后端只是换 intrinsic 方言(+vl 穿线 +unsigned 分派),vec.h 共享层零改动,证明"sizeless=后端内模板元编程"的判断对两个 ISA 都成立。
+
 ## 已定决策（1/2/4 已落地，3 SVE 进行中/RVV 排队）
 
 1. **vector 抽象用定宽 `vec<T,N>` 还是 scalable（length-agnostic）**？**scalable-friendly 接口 + 先实现定宽后端**——接口按 length-agnostic 设计（参考 Highway，将来加 SVE/RVV 不改 API），但首版只实现定宽后端（x86 SSE4.2/AVX2/AVX512 + ARM NEON，它们本就定宽）。对冲：不堵未来又不先背复杂度。
    > **深读 highway 落地约束**：照搬 highway 的 **D-tag 接口契约**——传零大小标签 `D=Simd<T,N,kPow2>`，op 形如 `VFromD<D> Set(D,T)`，`Lanes(d)` 取宽度。**关键：`Lanes(d)` 必须设计成可运行期求值**（定宽后端是 constexpr、SVE 后端是 `svcntw()` 运行期），否则将来加 SVE 要改 API。highway 已证同源码 x86/SVE 共存可行。**只照搬接口契约，不 vendor 整个 highway**（其 ops/ 全平台万行级、重宏元编程，违背"贴硬件/不过度抽象"）。给 `vec.h` 设硬上限（核心 op < ~2k 行/后端），超了就是丧失了不 vendor 的理由。
 2. **数学核 vendor 现成库还是自抄多项式**？**vendor Highway + xsimd（均在 `third_party/`、无条件默认编进生产）**，逐 op best-of-breed 选最快核（exp/tanh→xsimd、log→Highway）；adapter 几乎零成本（吃裸 intrinsic 向量，HYLE `vec.raw` 直接喂）。两库精度同档（~3.5ULP，AI 热路径足够），互为校验。
-3. **要不要 SVE/RVV**？**SVE 进行中(simd-09 落地 ~76 op,qemu 多 VL 真跑)、RVV 排队**:原判"未来项缓实现",用户 2026-07-09 要求做全(通用 infra 库=能力完整性)→ 验证 sizeless 非架构冲击后落地 SVE(见上 SVE 节)。D-tag 的 `Lanes(d)` 运行期口子 + `HYLE_SIMD_HAVE_SCALABLE` 宏是当初预留、现在兑现的接口。RVV(`backend/rvv.h`)趟通 SVE 的 scalable 路后镜像(riscv64-gcc + qemu-riscv64,rv64gcv)。
+3. **要不要 SVE/RVV**？**两者均已落地(simd-09,gtest+CMake gate+qemu 脚本固化)**:SVE ~76 op(qemu-aarch64 多 VL 128/256/512)、RVV 核心 op(qemu-riscv64 rv64gcv)。原判"未来项缓实现",用户 2026-07-09 要求做全(通用 infra 库=能力完整性)→ 验证 sizeless 非架构冲击后落地(见上 SVE/RVV 节)。D-tag 的 `Lanes(d)` 运行期口子 + `HYLE_SIMD_HAVE_SCALABLE` 宏是当初预留、现在兑现的接口。RVV(`backend/rvv.h`)**已镜像落地**(见下 RVV 节,riscv64-gcc + qemu-riscv64,rv64gcv,gtest 固化)。
 4. **dtype 层借谁**？**自造，但参照 highway 的 `PromoteTo/DemoteTo` intrinsic 用法**（F16C `_mm_cvtph_ps`、AVX512-BF16 `cvtne2ps`、NEON-BF16）——照抄 intrinsic 不照抄抽象。Highway/xsimd 数学核无 fp16/bf16，唯 highway 当原生 lane 类型且硬件路径全；但 dtype 逻辑不复杂（bf16=fp32 高 16 位移位），自造避开 vendor 整个 highway。
 
 ## 参考
