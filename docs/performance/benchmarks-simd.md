@@ -108,7 +108,23 @@
 
 ### 定论
 - **passthrough 单指令(~11 测,全打平)**:自造零损失——抄的就是同一条 intrinsic,包裹模板编译期全内联。保留(换来 HYLE dtype/D-tag/scalable 契约统一,桥接零成本)。
-- **4 个 emulation 类真输(Compress/PopulationCount/LeadingZeroCount/ConcatEven)**:HYLE 用 store+reload/标量,Highway 用 vpshufb 半字节 LUT / 预算表+vpermd / 跨块 permute,**稳定慢 1.8-6x**。**该抄 Highway 算法**(三目标②:更快就抄)。Compress 上 xsimd 也慢,坐实抄要抄对家(Highway 非 xsimd)。
 - **1 个自造反超(Expand 1.9x)**:HYLE store+reload 比 Highway 的 Expand 快,保留。
 - **xsimd 结构 op 面窄**:仅 compress/reduce_add/zip_lo 可比;数学核才是 xsimd 主场(见上文 best-of 表)。
 - **方法学**:亚纳秒 kernel 单次 % 是噪声(feedback_benchmark_inlining_asymmetry);必须 `-n15` 看中位倍数。曾单次误读"HYLE 102%"当微胜,15 次后真相是统计打平(min<1<max 互有胜负)。
+
+### 全量扫补充(`op_parity_full_bench.cc`,22 clean-shape op)——又揪出 4 个大输家
+抽样漏掉的,全量扫补上(宏生成 unary/binary/compare 批量,med ns/op):
+| op | HYLE | Highway | 判定 |
+|---|---|---|---|
+| **DupEven / DupOdd i32** | 0.55 | **0.054** | **输 10x**(store+reload vs vpshufd) |
+| **ReverseBits i32** | 1.23 | **0.139** | **输 9x**(标量 vs vpshufb-LUT) |
+| **TrailingZeroCount i32** | 0.56 | **0.071** | **输 8x** |
+| **ConcatOdd i32** | 0.136 | **0.080** | **输 1.7x**(同 ConcatEven 族) |
+| Abs/Neg/Sub/Mul/Max/AbsDiff/OddEven/InterleaveUpper/Shl/ShiftLeft/ShiftRight/BroadcastSignBit/Eq/Lt/Gt/Sqrt/ApproxRecip×2 (~18) | ≈ | ≈ | 打平,保留 |
+
+### 完整"该抄"清单(8 个自造 op 稳定慢 1.7-10x,全 store+reload/标量 vs Highway 向量指令)
+**DupEven / DupOdd**(10x)、**ReverseBits**(9x)、**TrailingZeroCount**(8x)、**Compress / PopulationCount**(5-6x)、**LeadingZeroCount**(5.5x)、**ConcatEven / ConcatOdd**(1.7-1.8x)。共同根因:HYLE 栈 store+reload+标量循环,Highway 用 vpshufb 半字节 LUT / vpshufd / vpermd / 位操作。**处置(三目标②):抄 Highway 向量算法进 HYLE,5 后端各查**(task #86)。
+
+### 尚未逐个测的(~85,风险已定性)
+- **纯 passthrough(~34)**:AES/CLMul(单指令)、And/Or/Xor/Not(mask 域)、Le/IfThenElse* 等——同一 intrinsic,抽样已验打平。
+- **需 bespoke harness(~50)**:ConvertTo/DemoteTo/TruncateTo/PromoteUpperTo(变宽)、LoadInterleaved2/3/4(引用参数)、Gather/Scatter/CompressStore/MaskedLoad(内存+mask)、WidenMulPairwiseAdd/SumsOf2/4/8/ReorderDemote2To(变 lane 数)。**其中变宽/SumsOf/ReorderDemote2To 也用 store+reload,是下一批疑似输家,待专门 harness 测。**
