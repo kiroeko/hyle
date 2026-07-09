@@ -53,6 +53,28 @@ void log_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcep
   for (; i < n; ++i) dst[i] = std::log(src[i]);  // tail = libm (scalar oracle)
 }
 
+// simd-09 16-wide Highway siblings (GCC/Clang only; MSVC excluded above). Same MSVC-AVX3-broken
+// caveat as log. objdump-verified zmm PENDING execution on real AVX-512 (math_test validates).
+#define HYLE_HWY_MATH_512(name, hwyfn, libmfn)                                  \
+  void name##_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept { \
+    const hn::ScalableTag<float> d;                                            \
+    const std::size_t w = hn::Lanes(d);                                        \
+    std::size_t i = 0;                                                         \
+    for (; i + w <= n; i += w)                                                 \
+      hn::StoreU(hn::hwyfn(d, hn::LoadU(d, src + i)), d, dst + i);              \
+    for (; i < n; ++i) dst[i] = libmfn(src[i]);                                \
+  }
+HYLE_HWY_MATH_512(sin, Sin, std::sin)
+HYLE_HWY_MATH_512(cos, Cos, std::cos)
+HYLE_HWY_MATH_512(log2, Log2, std::log2)
+HYLE_HWY_MATH_512(atan, Atan, std::atan)
+HYLE_HWY_MATH_512(cbrt, Cbrt, std::cbrt)
+HYLE_HWY_MATH_512(expm1, Expm1, std::expm1)
+HYLE_HWY_MATH_512(log1p, Log1p, std::log1p)
+HYLE_HWY_MATH_512(asinh, Asinh, std::asinh)
+HYLE_HWY_MATH_512(acosh, Acosh, std::acosh)
+#undef HYLE_HWY_MATH_512
+
 }  // namespace hyle::simd::detail
 
 #endif  // HYLE_ARCH_X64

@@ -37,6 +37,28 @@ void log_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept 
   for (; i < n; ++i) dst[i] = std::log(src[i]);  // tail = libm (scalar oracle)
 }
 
+// simd-09: Highway wins sin/cos/log2/atan/cbrt/expm1/log1p/asinh/acosh at the same ISA
+// (bench-decided, GCC+MSVC cross-checked; xsimd serves exp2/erf). Same borrow pattern as log.
+#define HYLE_HWY_MATH_AVX2(name, hwyfn, libmfn)                                  \
+  void name##_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept { \
+    const hn::ScalableTag<float> d;                                             \
+    const std::size_t w = hn::Lanes(d);                                         \
+    std::size_t i = 0;                                                          \
+    for (; i + w <= n; i += w)                                                  \
+      hn::StoreU(hn::hwyfn(d, hn::LoadU(d, src + i)), d, dst + i);               \
+    for (; i < n; ++i) dst[i] = libmfn(src[i]);                                 \
+  }
+HYLE_HWY_MATH_AVX2(sin, Sin, std::sin)
+HYLE_HWY_MATH_AVX2(cos, Cos, std::cos)
+HYLE_HWY_MATH_AVX2(log2, Log2, std::log2)
+HYLE_HWY_MATH_AVX2(atan, Atan, std::atan)
+HYLE_HWY_MATH_AVX2(cbrt, Cbrt, std::cbrt)
+HYLE_HWY_MATH_AVX2(expm1, Expm1, std::expm1)
+HYLE_HWY_MATH_AVX2(log1p, Log1p, std::log1p)
+HYLE_HWY_MATH_AVX2(asinh, Asinh, std::asinh)
+HYLE_HWY_MATH_AVX2(acosh, Acosh, std::acosh)
+#undef HYLE_HWY_MATH_AVX2
+
 }  // namespace hyle::simd::detail
 
 #endif  // HYLE_ARCH_X64

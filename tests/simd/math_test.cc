@@ -60,6 +60,30 @@ TEST(Math, TanhMatchesLibm) {
   check(tanh_f32_batch, std::tanh, in, "tanh");
 }
 
+// simd-09 best-of functions vs libm. Same tolerance (both vendor cores are ~3.5-ULP class).
+// Range chosen per function's domain. The batch op routes to the bench-decided winner
+// (Highway for most, xsimd for exp2/erf) or the scalar floor -- either must match libm.
+namespace {
+std::vector<float> ramp(float lo, float hi, int steps) {
+  std::vector<float> v;
+  for (int k = 0; k <= steps; ++k) v.push_back(lo + (hi - lo) * static_cast<float>(k) / static_cast<float>(steps));
+  return v;
+}
+}  // namespace
+TEST(Math, Simd09MatchesLibm) {
+  check(hyle::simd::sin_f32_batch, std::sin, ramp(-3.14f, 3.14f, 600), "sin");
+  check(hyle::simd::cos_f32_batch, std::cos, ramp(-3.14f, 3.14f, 600), "cos");
+  check(hyle::simd::exp2_f32_batch, std::exp2, ramp(-20.0f, 20.0f, 600), "exp2");
+  check(hyle::simd::log2_f32_batch, std::log2, ramp(0.01f, 100.0f, 600), "log2");
+  check(hyle::simd::erf_f32_batch, std::erf, ramp(-4.0f, 4.0f, 600), "erf");
+  check(hyle::simd::atan_f32_batch, std::atan, ramp(-20.0f, 20.0f, 600), "atan");
+  check(hyle::simd::cbrt_f32_batch, std::cbrt, ramp(-100.0f, 100.0f, 600), "cbrt");
+  check(hyle::simd::expm1_f32_batch, std::expm1, ramp(-2.0f, 2.0f, 600), "expm1");
+  check(hyle::simd::log1p_f32_batch, std::log1p, ramp(-0.9f, 20.0f, 600), "log1p");
+  check(hyle::simd::asinh_f32_batch, std::asinh, ramp(-20.0f, 20.0f, 600), "asinh");
+  check(hyle::simd::acosh_f32_batch, std::acosh, ramp(1.0f, 50.0f, 600), "acosh");
+}
+
 // tail handling: n not a multiple of 8 (the SLEEF kernel's vector width). All three ops
 // exercised (red team: log/tanh tails were previously untested -- only exp).
 TEST(Math, TailSizes) {

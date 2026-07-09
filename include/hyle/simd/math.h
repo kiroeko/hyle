@@ -28,6 +28,23 @@ HYLE_SIMD_API void exp_f32_batch(const float* src, float* dst, std::size_t n) no
 HYLE_SIMD_API void log_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 
+// simd-09: best-of-breed expansion. Per-op winner from the same-ISA bench (math_bench,
+// GCC+MSVC cross-checked): Highway wins sin/cos/log2/atan/cbrt/expm1/log1p/asinh/acosh;
+// xsimd wins exp2/erf. (Contrast simd-06's exp/tanh->xsimd, log->Highway -- the winner does
+// NOT extrapolate across ops, which is why every op is benched.) All borrow a verified vendor
+// core (charter: 借核不手搓); scalar libm is the always-present ULP oracle + fallback.
+HYLE_SIMD_API void sin_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void cos_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void exp2_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void log2_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void erf_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void atan_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void cbrt_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void expm1_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void log1p_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void asinh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void acosh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+
 // The tier the math batch ops selected: kAvx2 if a vectorized AVX2 core is live, else
 // kScalar (libm). For tests/diagnostics.
 HYLE_SIMD_API Isa active_math_variant() noexcept;

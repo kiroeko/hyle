@@ -17,4 +17,39 @@ void tanh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::tanh(src[i]);
 }
 
+// simd-09 scalar references (libm oracle + fallback for every new best-of function).
+void sin_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::sin(src[i]);
+}
+void cos_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::cos(src[i]);
+}
+void exp2_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::exp2(src[i]);
+}
+void log2_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::log2(src[i]);
+}
+void erf_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::erf(src[i]);
+}
+void atan_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::atan(src[i]);
+}
+void cbrt_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::cbrt(src[i]);
+}
+void expm1_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::expm1(src[i]);
+}
+void log1p_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::log1p(src[i]);
+}
+void asinh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::asinh(src[i]);
+}
+void acosh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::acosh(src[i]);
+}
+
 }  // namespace hyle::simd::detail

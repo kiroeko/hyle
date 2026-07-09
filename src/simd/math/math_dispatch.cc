@@ -89,6 +89,74 @@ void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   detail::tanh_f32_scalar(src, dst, n);
 }
 
+// simd-09 dispatchers. Two shapes: xsimd-winning ops (exp2/erf) mirror exp (xsimd 512->avx2->
+// scalar); Highway-winning ops (the other 9) mirror log (Highway 512 GCC-only ->avx2->scalar,
+// MSVC keeps avx2 highway since its AVX3 is broken). arm64 always routes to the NEON Highway
+// core. Per-op winner was bench-decided (GCC+MSVC cross-checked) -- see math.h.
+
+// xsimd-winning: exp2, erf (written longhand -- only two, mirror exp's 512->avx2->scalar).
+void exp2_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::exp2_f32_xsimd_avx512(src, dst, n); return; }
+  static const bool hw = have_avx2();
+  if (hw) { detail::exp2_f32_xsimd_avx2(src, dst, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::exp2_f32_highway_neon(src, dst, n); return;
+#endif
+  detail::exp2_f32_scalar(src, dst, n);
+}
+void erf_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::erf_f32_xsimd_avx512(src, dst, n); return; }
+  static const bool hw = have_avx2();
+  if (hw) { detail::erf_f32_xsimd_avx2(src, dst, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::erf_f32_highway_neon(src, dst, n); return;
+#endif
+  detail::erf_f32_scalar(src, dst, n);
+}
+
+// Highway-winning: sin cos log2 atan cbrt expm1 log1p asinh acosh. On MSVC the 512 Highway is
+// broken (would emit ymm), so the avx512 branch is GCC/Clang-only; MSVC falls to avx2 highway.
+#define HYLE_MATH_DISPATCH_HIGHWAY(name)                                         \
+  void name##_f32_batch(const float* src, float* dst, std::size_t n) noexcept {  \
+    /* x86: 512 (GCC/Clang) -> avx2 -> scalar; arm64: NEON; else scalar */       \
+    HYLE_MATH_HIGHWAY_BODY(name)                                                 \
+  }
+#if defined(HYLE_ARCH_X64)
+#if !defined(_MSC_VER)
+#define HYLE_MATH_HIGHWAY_BODY(name)                                             \
+  static const bool hw512 = have_avx512();                                       \
+  if (hw512) { detail::name##_f32_highway_avx512(src, dst, n); return; }         \
+  static const bool hw = have_avx2();                                            \
+  if (hw) { detail::name##_f32_highway_avx2(src, dst, n); return; }              \
+  detail::name##_f32_scalar(src, dst, n);
+#else  // MSVC: no 512 Highway (HWY_BROKEN AVX3), stay on avx2 highway
+#define HYLE_MATH_HIGHWAY_BODY(name)                                             \
+  static const bool hw = have_avx2();                                            \
+  if (hw) { detail::name##_f32_highway_avx2(src, dst, n); return; }              \
+  detail::name##_f32_scalar(src, dst, n);
+#endif
+#elif defined(HYLE_ARCH_ARM64)
+#define HYLE_MATH_HIGHWAY_BODY(name) detail::name##_f32_highway_neon(src, dst, n);
+#else
+#define HYLE_MATH_HIGHWAY_BODY(name) detail::name##_f32_scalar(src, dst, n);
+#endif
+
+HYLE_MATH_DISPATCH_HIGHWAY(sin)
+HYLE_MATH_DISPATCH_HIGHWAY(cos)
+HYLE_MATH_DISPATCH_HIGHWAY(log2)
+HYLE_MATH_DISPATCH_HIGHWAY(atan)
+HYLE_MATH_DISPATCH_HIGHWAY(cbrt)
+HYLE_MATH_DISPATCH_HIGHWAY(expm1)
+HYLE_MATH_DISPATCH_HIGHWAY(log1p)
+HYLE_MATH_DISPATCH_HIGHWAY(asinh)
+HYLE_MATH_DISPATCH_HIGHWAY(acosh)
+#undef HYLE_MATH_DISPATCH_HIGHWAY
+#undef HYLE_MATH_HIGHWAY_BODY
+
 Isa active_math_variant() noexcept {
 #if defined(HYLE_ARCH_X64)
   static const Isa tier = have_avx512() ? Isa::kAvx512 : (have_avx2() ? Isa::kAvx2 : Isa::kScalar);

@@ -53,6 +53,31 @@ void tanh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept
   for (; i < n; ++i) dst[i] = std::tanh(src[i]);  // tail = libm (scalar oracle)
 }
 
+// simd-09: NEON uses Highway for ALL new ops (one verified core, consistent -- the x86 per-op
+// xsimd/Highway split is an x86 SPEED pick; a NEON bench could later tune per op if it shows a
+// win). exp2/erf also go through Highway here (whereas x86 borrows xsimd for those two).
+#define HYLE_HWY_MATH_NEON(name, hwyfn, libmfn)                                 \
+  void name##_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept { \
+    const hn::ScalableTag<float> d;                                            \
+    const std::size_t w = hn::Lanes(d);                                        \
+    std::size_t i = 0;                                                         \
+    for (; i + w <= n; i += w)                                                 \
+      hn::StoreU(hn::hwyfn(d, hn::LoadU(d, src + i)), d, dst + i);              \
+    for (; i < n; ++i) dst[i] = libmfn(src[i]);                                \
+  }
+HYLE_HWY_MATH_NEON(sin, Sin, std::sin)
+HYLE_HWY_MATH_NEON(cos, Cos, std::cos)
+HYLE_HWY_MATH_NEON(exp2, Exp2, std::exp2)
+HYLE_HWY_MATH_NEON(log2, Log2, std::log2)
+HYLE_HWY_MATH_NEON(erf, Erf, std::erf)
+HYLE_HWY_MATH_NEON(atan, Atan, std::atan)
+HYLE_HWY_MATH_NEON(cbrt, Cbrt, std::cbrt)
+HYLE_HWY_MATH_NEON(expm1, Expm1, std::expm1)
+HYLE_HWY_MATH_NEON(log1p, Log1p, std::log1p)
+HYLE_HWY_MATH_NEON(asinh, Asinh, std::asinh)
+HYLE_HWY_MATH_NEON(acosh, Acosh, std::acosh)
+#undef HYLE_HWY_MATH_NEON
+
 }  // namespace hyle::simd::detail
 
 #endif  // HYLE_ARCH_ARM64

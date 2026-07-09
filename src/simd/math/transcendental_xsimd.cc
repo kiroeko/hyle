@@ -39,6 +39,20 @@ void tanh_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
   for (; i < n; ++i) dst[i] = std::tanh(src[i]);
 }
 
+// simd-09: xsimd wins exp2/erf at the same ISA (bench-decided; Highway serves the rest).
+void exp2_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::exp2(batch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::exp2(src[i]);
+}
+void erf_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::erf(batch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::erf(src[i]);
+}
+
 }  // namespace hyle::simd::detail
 
 #endif  // HYLE_ARCH_X64
