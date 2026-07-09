@@ -62,3 +62,18 @@
 | **scale** y=a*x(纯乘) | 0.044 ns | 0.043 | **0.025(1.8x)** | 0.025 | **平 Highway**(ratio 1.01,带宽受限) |
 
 **结论(干净,无欺骗)**:**4 个 pattern(dot/saxpy/reduce_max/scale)HYLE avx2 全与 Highway 统计平局**——vec.h 抽象在 sum-归约之外的 max-归约、纯 element-wise map 上同样零成本,无隐藏退化。reduce_max 9.5x 赢 scalar;scale 是 1 读 1 乘 1 写的内存受限 op,scalar auto-vec(SSE2)已近饱和带宽,故 avx2 仅 ~1.8x(正常,非缺陷)。sse4 在 scale/saxpy 这类带宽受限 op ~1x(128b 与 scalar SSE2 同宽,无更宽 load 优势)。**注**:此前 reduce_max/scale 曾对 128 位瘸腿 Highway 显出 ~2x 假性领先(同上节根因);修正对照后归于平局——结论方向不变,但数字过程已诚实化。
+
+## gather/compress 原生 intrinsic vs store+reload（`gather_bench.cc`，simd-09 #66/#69）
+
+> "measure don't assume" 的落地:simd-08 的 gather/scatter/compress/expand 是 store+reload 仿真(能力优先)。simd-09 给常见宽度加原生路径(avx2 vpgatherd / avx512 vpcompress-expand),但**原生不是无条件更快**——vpgather 在老 uarch 臭名昭著地慢。这个 bench 在同 ISA 下把原生 vs `GatherIndexEmulated`/`CompressEmulated`(store+reload 参照)对拍,数据决定原生该不该上。native-relative-to-emulated:>100% 原生赢,<100% 原生输。
+
+| op | AVX2 裸机(本机 Zen,i32 8-lane) | AVX512 SDE(i32 16-lane,**仅正确性,性能不可信**) | 处置 |
+|---|---|---|---|
+| **GatherIndex** | 原生 **1.31x 赢**(0.13 vs 0.17 ns) | 原生 0.30x(SDE 伪影) | **保留原生**(AVX2 有真实数据支撑) |
+| **Compress** | ~持平(0.99x;AVX2 无 VBMI2,本就 store+reload) | 原生 0.50x(SDE 伪影) | AVX512 保留原生,**性能待真机** |
+
+**诚实结论**:
+- **AVX2 GatherIndex 原生 vpgatherd 本机实测赢 1.31x**——真实数据,该上,已上。
+- **AVX2 Compress 无原生**(VBMI2 vpcompressb/w 非 AVX2,是 AVX-512),两行相同是预期(CompressEmulated 别名 Compress)。
+- **AVX512 数不可信,只信正确性**:Intel SDE 是**功能模拟器**,对 vpgather/vpcompress 这类复杂指令的模拟开销远高于简单 load/store,故 SDE 上"原生慢 2-3x"是**模拟器伪影,不是真硬件时序**。真 AVX-512 硬件有专用 compress 单元,vpcompressd/vpexpandd 是公认快的。**avx512 原生路径正确性已验(SDE + 现有 Gather/Compress 测试全绿),性能待真 AVX-512 机复测**——不拿 SDE 性能数当结论,也不因 SDE 慢就撤掉真硬件会赢的原生路径。
+- **方法学**:这条印证 best-of 判据里"原生不必更快、必须测"——AVX2 gather 测出真赢(上),AVX512 因无真硬件只能验正确性(原生留、性能挂真机)。SDE 验正确性可信、验性能不可信,是本轮明确的一条工具边界。
