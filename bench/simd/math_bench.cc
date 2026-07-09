@@ -177,5 +177,44 @@ int main() {
     });
 #endif
   }
+
+  // hypot: a BINARY best-of candidate (BOTH xsimd and Highway have it -- unlike lgamma/tgamma
+  // which are xsimd-only). Benched separately because it takes two inputs (a,b -> sqrt(a*a+b*b)
+  // overflow-safe), which the unary Op switch above can't express. This decides the per-op winner
+  // so hypot_f32_batch (if wired) borrows the fastest core -- same measure-don't-assume rule.
+  {
+    auto a = gen(kN, -1e3f, 1e3f, 20);
+    auto bb = gen(kN, -1e3f, 1e3f, 21);
+    nb::Bench b;
+    b.title("hypot f32 (4096, binary)").relative(true).batch(kN).minEpochIterations(500);
+    b.run("scalar libm loop", [&] {
+      for (std::size_t i = 0; i < kN; ++i) dst[i] = std::hypot(a[i], bb[i]);
+      nb::doNotOptimizeAway(dst.data());
+    });
+#if defined(HYLE_BENCH_XSIMD)
+    b.run("xsimd (same ISA SOTA)", [&] {
+      using batch = xsimd::batch<float>;
+      constexpr std::size_t w = batch::size;
+      std::size_t i = 0;
+      for (; i + w <= kN; i += w)
+        xsimd::hypot(batch::load_unaligned(a.data() + i), batch::load_unaligned(bb.data() + i))
+            .store_unaligned(dst.data() + i);
+      for (; i < kN; ++i) dst[i] = std::hypot(a[i], bb[i]);
+      nb::doNotOptimizeAway(dst.data());
+    });
+#endif
+#if defined(HYLE_BENCH_HIGHWAY)
+    b.run("Highway (same ISA SOTA)", [&] {
+      const hn::ScalableTag<float> d;
+      const std::size_t w = hn::Lanes(d);
+      std::size_t i = 0;
+      for (; i + w <= kN; i += w)
+        hn::StoreU(hn::Hypot(d, hn::LoadU(d, a.data() + i), hn::LoadU(d, bb.data() + i)), d,
+                   dst.data() + i);
+      for (; i < kN; ++i) dst[i] = std::hypot(a[i], bb[i]);
+      nb::doNotOptimizeAway(dst.data());
+    });
+#endif
+  }
   return 0;
 }
