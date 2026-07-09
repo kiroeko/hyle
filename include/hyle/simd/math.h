@@ -54,6 +54,16 @@ HYLE_SIMD_API void acosh_f32_batch(const float* src, float* dst, std::size_t n) 
 HYLE_SIMD_API void lgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 
+// hypot(a,b) = sqrt(a*a + b*b), overflow-safe -- a BINARY op (two input arrays -> one output),
+// unlike every unary transcendental above. BOTH xsimd and Highway provide it. math_bench
+// (MSVC+GCC) found xsimd ~2.2x FASTER (0.14 vs 0.30 ns/op) -- BUT xsimd's hypot is NOT
+// overflow-safe: it computes sqrt(a*a+b*b) naively and returns inf once a^2/b^2 exceed FLT_MAX,
+// whereas Highway's Hypot does exponent scaling to match std::hypot across the full range.
+// Overflow-safety is the whole reason hypot exists over a naive sqrt, so CORRECTNESS beats the
+// 2.2x: HYLE borrows HIGHWAY here (the best-of winner isn't always the fastest -- a bounded,
+// wrong-for-large-inputs result is not a valid substitute). scalar std::hypot is oracle + fallback.
+HYLE_SIMD_API void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+
 // AI activation COMBINED cores (simd-design "AI 数学函数"). Unlike the per-op transcendentals
 // above (each borrows one vendor polynomial), these COMPOSE the vectorized cores into the shapes
 // the AI hot path needs -- HYLE-specific, not a single vendor op. They call the batch ops above

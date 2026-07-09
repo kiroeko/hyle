@@ -32,6 +32,8 @@ void acosh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 // xsimd-only borrows (Highway has no gamma): scalar libm oracle + fallback.
 void lgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void tgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
+// hypot: BINARY (two inputs). best-of pick -> xsimd (bench: ~2.2x Highway). scalar oracle here.
+void hypot_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 
 #if defined(HYLE_ARCH_X64)
 // Per-op best-of-breed borrow cores (x86 AVX2, ~3.5 ULP). The same-ISA bench picked the
@@ -51,6 +53,11 @@ void erf_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
 // docs/debug/xsimd-lgamma-lane-mixing-hunt.md). lgamma therefore stays on the scalar libm
 // reference (no _xsimd_ variant); tgamma is unaffected.
 void tgamma_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
+// hypot: BINARY. Both libs have it; xsimd is ~2.2x faster BUT NOT overflow-safe (returns inf when
+// a^2 or b^2 exceeds FLT_MAX -- it computes sqrt(a*a+b*b) naively). Highway's Hypot does exponent
+// scaling so it matches std::hypot across the full range. hypot's entire reason to exist over naive
+// sqrt is overflow safety, so CORRECTNESS wins over the 2.2x: borrow Highway. See math.h.
+void hypot_f32_highway_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 void sin_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void cos_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void log2_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
@@ -76,6 +83,9 @@ void tgamma_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexce
 // (the widest Highway gives there) -- see transcendental_highway_avx512.cc MSVC EXCLUSION.
 #if !defined(_MSC_VER)
 void log_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
+// hypot 16-wide Highway sibling (GCC/Clang only, same MSVC-AVX3-broken exclusion). MSVC hypot
+// stays on the avx2 Highway core.
+void hypot_f32_highway_avx512(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 // simd-09 Highway AVX-512 siblings (GCC/Clang only, same MSVC-AVX3-broken exclusion as log).
 void sin_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
 void cos_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept;
@@ -116,6 +126,9 @@ void acosh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcep
 // transcendental_xsimd_neon.cc (arm64 xsimd TU, distinct from the Highway-NEON TU). tgamma only:
 // xsimd's vectorized lgamma lane-mixing bug reproduces on NEON too, so lgamma stays scalar.
 void tgamma_f32_xsimd_neon(const float* src, float* dst, std::size_t n) noexcept;
+// hypot binary: Highway (overflow-safe; xsimd's is faster but returns inf past FLT_MAX). Highway
+// contrib/math lowers to NEON here, same as the other arm64 Highway ops.
+void hypot_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 #endif
 
 }  // namespace hyle::simd::detail

@@ -140,6 +140,25 @@ void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   detail::tgamma_f32_scalar(src, dst, n);
 }
 
+// hypot(a,b): BINARY best-of. math_bench found xsimd ~2.2x faster, BUT xsimd's hypot is NOT
+// overflow-safe (returns inf when a^2/b^2 exceed FLT_MAX). Highway's Hypot does exponent scaling
+// to match std::hypot's full range -- and overflow-safety is hypot's entire reason to exist over
+// naive sqrt(a*a+b*b). So CORRECTNESS wins over the 2.2x: borrow Highway (same MSVC-AVX3-broken
+// 512-exclusion as log -- MSVC stays on the avx2 Highway core). scalar std::hypot is the floor.
+void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+#if !defined(_MSC_VER)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::hypot_f32_highway_avx512(a, b, dst, n); return; }
+#endif
+  static const bool hw = have_avx2();
+  if (hw) { detail::hypot_f32_highway_avx2(a, b, dst, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::hypot_f32_highway_neon(a, b, dst, n); return;
+#endif
+  detail::hypot_f32_scalar(a, b, dst, n);
+}
+
 // Highway-winning: sin cos log2 atan cbrt expm1 log1p asinh acosh. On MSVC the 512 Highway is
 // broken (would emit ymm), so the avx512 branch is GCC/Clang-only; MSVC falls to avx2 highway.
 #define HYLE_MATH_DISPATCH_HIGHWAY(name)                                         \

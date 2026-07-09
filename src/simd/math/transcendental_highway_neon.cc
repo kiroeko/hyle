@@ -78,6 +78,16 @@ HYLE_HWY_MATH_NEON(asinh, Asinh, std::asinh)
 HYLE_HWY_MATH_NEON(acosh, Acosh, std::acosh)
 #undef HYLE_HWY_MATH_NEON
 
+// hypot: BINARY, Highway (overflow-safe -- xsimd's is faster on x86 but returns inf past FLT_MAX).
+void hypot_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<float> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w)
+    hn::StoreU(hn::Hypot(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
+}
+
 }  // namespace hyle::simd::detail
 
 #endif  // HYLE_ARCH_ARM64

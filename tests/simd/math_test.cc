@@ -107,6 +107,24 @@ TEST(Math, XsimdGammaMatchesLibm) {
   check_gamma(hyle::simd::tgamma_f32_batch, std::tgamma, ramp(0.05f, 10.0f, 600), "tgamma", 4e-6);
 }
 
+// hypot(a,b): BINARY best-of op (xsimd won the bench). vs std::hypot over a mix of magnitudes
+// including the overflow-prone case (large a,b whose squares overflow f32 but the hypotenuse
+// doesn't -- std::hypot and xsimd::hypot are both overflow-safe). ~3.5-ULP class.
+TEST(Math, HypotMatchesLibm) {
+  std::vector<float> a, b;
+  // grid of (a,b) pairs across small, large, and overflow-prone magnitudes + signs.
+  for (float av : {-1e3f, -3.5f, 0.0f, 2.0f, 100.0f, 1e18f, 3e19f})
+    for (float bv : {-1e3f, -0.5f, 0.0f, 4.0f, 100.0f, 1e18f, 3e19f}) { a.push_back(av); b.push_back(bv); }
+  std::vector<float> out(a.size());
+  hyle::simd::hypot_f32_batch(a.data(), b.data(), out.data(), a.size());
+  for (std::size_t i = 0; i < a.size(); ++i) {
+    const double want = std::hypot(static_cast<double>(a[i]), static_cast<double>(b[i]));
+    const double got = static_cast<double>(out[i]);
+    const double tol = std::abs(want) * 8e-7 + 1e-6;
+    EXPECT_NEAR(got, want, tol) << "hypot a=" << a[i] << " b=" << b[i] << " i=" << i;
+  }
+}
+
 // tail handling: n not a multiple of 8 (the SLEEF kernel's vector width). All three ops
 // exercised (red team: log/tanh tails were previously untested -- only exp).
 TEST(Math, TailSizes) {

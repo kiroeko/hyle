@@ -58,5 +58,9 @@ void lgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
 void tgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::tgamma(src[i]);
 }
+// hypot: BINARY (two inputs). scalar libm oracle + fallback. std::hypot is overflow-safe.
+void hypot_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
+}
 
 }  // namespace hyle::simd::detail

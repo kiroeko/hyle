@@ -35,7 +35,6 @@ void tgamma_f32_xsimd_neon(const float* src, float* dst, std::size_t n) noexcept
     xsimd::tgamma(batch::load_unaligned(src + i)).store_unaligned(dst + i);
   for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
 }
-
 }  // namespace hyle::simd::detail
 
 #endif  // HYLE_ARCH_ARM64
