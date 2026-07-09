@@ -298,6 +298,15 @@ template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMax(D d, VFromD<D> v) noexc
   if constexpr (std::is_floating_point_v<TFromD<D>>) return __riscv_vfmv_f(__riscv_vfredmax(v, v, vl));
   else return __riscv_vmv_x(__riscv_vredmax(v, v, vl));
 }
+// ReduceAnd/ReduceOr (integer lanes): vredand/vredor with an identity-seeded scalar vector.
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceAnd(D d, VFromD<D> v) noexcept {
+  const std::size_t vl = Lanes(d);
+  return __riscv_vmv_x(__riscv_vredand(v, Set(d, static_cast<TFromD<D>>(~TFromD<D>{0})), vl));  // seed all-ones
+}
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceOr(D d, VFromD<D> v) noexcept {
+  const std::size_t vl = Lanes(d);
+  return __riscv_vmv_x(__riscv_vredor(v, Zero(d), vl));  // seed 0
+}
 
 // ---- shifts -------------------------------------------------------------------------
 // Immediate: splat the count. Variable: shift by b's lanes (as unsigned same-width). Signed
@@ -309,6 +318,28 @@ template <int kBits, class V> HYLE_FORCE_INLINE V ShiftRight(V a) noexcept {
   const std::size_t vl = detail::vlmax<TFromV<V>>();
   if constexpr (std::is_signed_v<TFromV<V>>) return __riscv_vsra(a, static_cast<std::size_t>(kBits), vl);
   else return __riscv_vsrl(a, static_cast<std::size_t>(kBits), vl);
+}
+// Variable per-lane shift: Shl(a,b)=a<<b, Shr(a,b)=a>>b (arithmetic if signed). RVV's vsll/vsra/vsrl
+// take the shift-amount as an UNSIGNED same-width vector; reinterpret b's bits to unsigned.
+namespace detail {
+template <class V> HYLE_FORCE_INLINE auto to_ucount_rvv(V b, std::size_t vl) noexcept {
+  using T = TFromV<V>;
+  if constexpr (std::is_signed_v<T>) {
+    if constexpr (sizeof(T) == 1) return __riscv_vreinterpret_u8m1(b);
+    else if constexpr (sizeof(T) == 2) return __riscv_vreinterpret_u16m1(b);
+    else if constexpr (sizeof(T) == 4) return __riscv_vreinterpret_u32m1(b);
+    else return __riscv_vreinterpret_u64m1(b);
+  } else { (void)vl; return b; }
+}
+}  // namespace detail
+template <class V> HYLE_FORCE_INLINE V Shl(V a, V b) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  return __riscv_vsll(a, detail::to_ucount_rvv(b, vl), vl);
+}
+template <class V> HYLE_FORCE_INLINE V Shr(V a, V b) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  if constexpr (std::is_signed_v<TFromV<V>>) return __riscv_vsra(a, detail::to_ucount_rvv(b, vl), vl);
+  else return __riscv_vsrl(a, detail::to_ucount_rvv(b, vl), vl);
 }
 
 // ---- Neg / Abs ----------------------------------------------------------------------
@@ -555,5 +586,89 @@ HYLE_FORCE_INLINE std::size_t CompressStore(VFromD<D> v, M m, D d, TFromD<D>* p)
 // NOTE: element-wise PopulationCount / LeadingZeroCount are the Zvbb extension (__riscv_vcpop_v /
 // __riscv_vclz_v), NOT in the rv64gcv base V. Deferred until a Zvbb tier is added (documented
 // boundary, same as SVE's deferred block-swizzle/width-changers).
+
+// ---- swizzle (whole-vector; RVV has no zip1/zip2 primitive -> build via vrgather + masks) --------
+// RVV lacks SVE's svzip/svuzp. We synthesize the whole-vector interleave/deinterleave with vrgather
+// index vectors (built from vid) and even-lane masks. All at the runtime vl.
+namespace detail {
+// even-lane mask: lane i active iff i is even. (iota & 1) == 0.
+template <class D> HYLE_FORCE_INLINE auto even_mask_rvv(D d) noexcept {
+  using T = TFromD<D>;
+  const std::size_t vl = Lanes(d);
+  if constexpr (sizeof(T) == 1) return __riscv_vmseq(__riscv_vand(__riscv_vid_v_u8m1(vl), (std::uint8_t)1, vl), (std::uint8_t)0, vl);
+  else if constexpr (sizeof(T) == 2) return __riscv_vmseq(__riscv_vand(__riscv_vid_v_u16m1(vl), (std::uint16_t)1, vl), (std::uint16_t)0, vl);
+  else if constexpr (sizeof(T) == 4) return __riscv_vmseq(__riscv_vand(__riscv_vid_v_u32m1(vl), (std::uint32_t)1, vl), (std::uint32_t)0, vl);
+  else return __riscv_vmseq(__riscv_vand(__riscv_vid_v_u64m1(vl), (std::uint64_t)1, vl), (std::uint64_t)0, vl);
+}
+// index vector iota (unsigned same-width) for vrgather.
+template <class T> HYLE_FORCE_INLINE auto iota_u_rvv(std::size_t vl) noexcept {
+  if constexpr (sizeof(T) == 1) return __riscv_vid_v_u8m1(vl);
+  else if constexpr (sizeof(T) == 2) return __riscv_vid_v_u16m1(vl);
+  else if constexpr (sizeof(T) == 4) return __riscv_vid_v_u32m1(vl);
+  else return __riscv_vid_v_u64m1(vl);
+}
+}  // namespace detail
+// InterleaveLower(a,b) = [a0,b0,a1,b1,...] (lower half of each, interleaved). result[i] = (i even)?
+// a[i/2] : b[i/2]. gather a and b by index i/2, then select even<-a, odd<-b.
+template <class V> HYLE_FORCE_INLINE V InterleaveLower(V a, V b) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = detail::vlmax<T>();
+  const auto id = detail::iota_u_rvv<T>(vl);
+  const auto half = __riscv_vsrl(id, (typename std::make_unsigned_t<T>)1, vl);  // i/2 (unsigned idx)
+  const V ga = __riscv_vrgather(a, half, vl);
+  const V gb = __riscv_vrgather(b, half, vl);
+  return __riscv_vmerge(gb, ga, detail::even_mask_rvv(DFromV<V>()), vl);  // even<-a, odd<-b
+}
+// InterleaveUpper = [a_{h},b_{h},...] with h starting at vl/2. result[i] = base+i/2 where base=vl/2.
+template <class V> HYLE_FORCE_INLINE V InterleaveUpper(V a, V b) noexcept {
+  using T = TFromV<V>;
+  using U = std::make_unsigned_t<T>;
+  const std::size_t vl = detail::vlmax<T>();
+  const auto id = detail::iota_u_rvv<T>(vl);
+  const auto idx = __riscv_vadd(__riscv_vsrl(id, (U)1, vl), static_cast<U>(vl / 2), vl);  // vl/2 + i/2
+  const V ga = __riscv_vrgather(a, idx, vl);
+  const V gb = __riscv_vrgather(b, idx, vl);
+  return __riscv_vmerge(gb, ga, detail::even_mask_rvv(DFromV<V>()), vl);
+}
+template <class V> HYLE_FORCE_INLINE V ZipLower(V a, V b) noexcept { return InterleaveLower(a, b); }
+template <class V> HYLE_FORCE_INLINE V ZipUpper(V a, V b) noexcept { return InterleaveUpper(a, b); }
+template <class D, class V> HYLE_FORCE_INLINE V InterleaveLower(D, V a, V b) noexcept { return InterleaveLower(a, b); }
+template <class D, class V> HYLE_FORCE_INLINE V InterleaveUpper(D, V a, V b) noexcept { return InterleaveUpper(a, b); }
+// ConcatEven(hi,lo) = [lo even lanes, hi even lanes]; ConcatOdd = odd lanes. Build by compressing
+// each source with the even/odd mask (packs active lanes to front), then splice hi's packed half in
+// after lo's (vl/2 each). Use a slideup to place hi's compressed result at offset vl/2.
+template <class D, class V> HYLE_FORCE_INLINE V ConcatEven(D d, V hi, V lo) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = Lanes(d);
+  const auto em = detail::even_mask_rvv(d);
+  const V lo_packed = __riscv_vcompress(lo, em, vl);  // lo's even lanes at [0, vl/2)
+  const V hi_packed = __riscv_vcompress(hi, em, vl);
+  return __riscv_vslideup(lo_packed, hi_packed, vl / 2, vl);  // hi's evens at [vl/2, vl)
+}
+template <class D, class V> HYLE_FORCE_INLINE V ConcatOdd(D d, V hi, V lo) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = Lanes(d);
+  const auto em = detail::even_mask_rvv(d);
+  const auto om = __riscv_vmnot(em, vl);  // odd-lane mask
+  const V lo_packed = __riscv_vcompress(lo, om, vl);
+  const V hi_packed = __riscv_vcompress(hi, om, vl);
+  return __riscv_vslideup(lo_packed, hi_packed, vl / 2, vl);
+}
+// OddEven(odd, even): even-position lanes from `even`, odd-position lanes from `odd`.
+template <class V> HYLE_FORCE_INLINE V OddEven(V odd, V even) noexcept {
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  return __riscv_vmerge(odd, even, detail::even_mask_rvv(DFromV<V>()), vl);  // even mask picks `even`
+}
+// Broadcast<kLane>(v): splat lane kLane across all lanes (vrgather by a constant index).
+template <int kLane, class V> HYLE_FORCE_INLINE V Broadcast(V v) noexcept {
+  using T = TFromV<V>;
+  using U = std::make_unsigned_t<T>;
+  const std::size_t vl = detail::vlmax<T>();
+  return __riscv_vrgather(v, Set(Simd<U, kNativeVectorBytes / sizeof(U), 0>(), static_cast<U>(kLane)), vl);
+}
+// MaskedLoadOr(no, m, d, p): load active lanes from p, inactive lanes take `no`.
+template <class M, class D> HYLE_FORCE_INLINE VFromD<D> MaskedLoadOr(VFromD<D> no, M m, D d, const TFromD<D>* p) noexcept {
+  return IfThenElse(m, MaskedLoad(m, d, p), no);
+}
 
 }  // namespace hyle::simd

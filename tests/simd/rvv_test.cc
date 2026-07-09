@@ -194,3 +194,70 @@ TEST(Rvv, TailOps) {
   hs::Store(hs::SaturatedAdd(hs::Load(du8, p), hs::Load(du8, q)), du8, o8);
   for (std::size_t i = 0; i < n8; ++i) { int s = p[i] + q[i]; if (s > 255) s = 255; EXPECT_EQ(o8[i], static_cast<std::uint8_t>(s)); }
 }
+
+// ---- ops added to reach SVE parity: variable shift / reduce-and-or / swizzle / broadcast ----
+template <typename T>
+void CheckParityOps() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  alignas(64) T a[kBuf], b[kBuf], o[kBuf];
+  for (std::size_t i = 0; i < n; ++i) { a[i] = static_cast<T>(i + 1); b[i] = static_cast<T>(i % 3); }
+  auto va = hs::Load(d, a), vb = hs::Load(d, b);
+
+  // variable per-lane shift
+  hs::Store(hs::Shl(va, vb), d, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], static_cast<T>(a[i] << b[i])) << "Shl " << i;
+  hs::Store(hs::Shr(va, vb), d, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], static_cast<T>(a[i] >> b[i])) << "Shr " << i;
+
+  // ReduceAnd / ReduceOr
+  T ra = static_cast<T>(~T{0}), ro = 0;
+  for (std::size_t i = 0; i < n; ++i) { ra &= a[i]; ro |= a[i]; }
+  EXPECT_EQ(hs::ReduceAnd(d, va), ra) << "ReduceAnd";
+  EXPECT_EQ(hs::ReduceOr(d, va), ro) << "ReduceOr";
+
+  // InterleaveLower/Upper (whole-vector): lower = [a0,b0,a1,b1,...] for first n/2 of each
+  hs::Store(hs::InterleaveLower(va, vb), d, o);
+  for (std::size_t k = 0; k < n / 2; ++k) { EXPECT_EQ(o[2 * k], a[k]) << "IntLo a " << k; EXPECT_EQ(o[2 * k + 1], b[k]) << "IntLo b " << k; }
+  hs::Store(hs::InterleaveUpper(va, vb), d, o);
+  for (std::size_t k = 0; k < n / 2; ++k) { EXPECT_EQ(o[2 * k], a[n / 2 + k]) << "IntHi a " << k; EXPECT_EQ(o[2 * k + 1], b[n / 2 + k]) << "IntHi b " << k; }
+
+  // ConcatEven/Odd(hi=b, lo=a): [a even lanes, b even lanes] / [a odd, b odd]
+  hs::Store(hs::ConcatEven(d, vb, va), d, o);
+  for (std::size_t k = 0; k < n / 2; ++k) { EXPECT_EQ(o[k], a[2 * k]) << "CatEven lo " << k; EXPECT_EQ(o[n / 2 + k], b[2 * k]) << "CatEven hi " << k; }
+  hs::Store(hs::ConcatOdd(d, vb, va), d, o);
+  for (std::size_t k = 0; k < n / 2; ++k) { EXPECT_EQ(o[k], a[2 * k + 1]) << "CatOdd lo " << k; EXPECT_EQ(o[n / 2 + k], b[2 * k + 1]) << "CatOdd hi " << k; }
+
+  // OddEven(odd=b, even=a): even positions from a, odd positions from b
+  hs::Store(hs::OddEven(vb, va), d, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], (i % 2 == 0) ? a[i] : b[i]) << "OddEven " << i;
+
+  // Broadcast<2>: splat lane 2
+  if (n > 2) {
+    hs::Store(hs::Broadcast<2>(va), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], a[2]) << "Broadcast " << i;
+  }
+}
+
+TEST(Rvv, ParityOpsAllTypes) {
+  CheckParityOps<std::int8_t>();
+  CheckParityOps<std::uint8_t>();
+  CheckParityOps<std::int16_t>();
+  CheckParityOps<std::uint16_t>();
+  CheckParityOps<std::int32_t>();
+  CheckParityOps<std::uint32_t>();
+  CheckParityOps<std::int64_t>();
+  CheckParityOps<std::uint64_t>();
+}
+
+// MaskedLoadOr: active lanes from p, inactive take `no`.
+TEST(Rvv, MaskedLoadOr) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  alignas(64) std::int32_t src[kBuf], mb[kBuf], o[kBuf];
+  for (std::size_t i = 0; i < n; ++i) { src[i] = static_cast<std::int32_t>(i * 2 + 1); mb[i] = (i % 2 == 0) ? 1 : 0; }
+  auto m = hs::Eq(hs::Load(d, mb), hs::Set(d, 1));  // even lanes active
+  auto no = hs::Set(d, -99);
+  hs::Store(hs::MaskedLoadOr(no, m, d, src), d, o);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], (i % 2 == 0) ? src[i] : -99) << "MaskedLoadOr " << i;
+}
