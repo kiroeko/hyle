@@ -465,6 +465,25 @@ if(HYLE_BENCH_XSIMD)
 endif()
 hyle_apply_warnings(hyle_math_bench)
 
+# gather/compress native-vs-emulated bench (simd-09 #66/#69, "measure don't assume"). Header-only
+# (includes vec.h at a fixed ISA target), so per-ISA exes like the vec_test variants: avx2 runs on
+# an AVX2 host, avx512 under Intel SDE. Only x86 (native gather/compress are x86 intrinsics).
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  hyle_isa_flags(_gb_avx2 AVX2)
+  add_executable(hyle_gather_bench_avx2 simd/gather_bench.cc)
+  target_link_libraries(hyle_gather_bench_avx2 PRIVATE nanobench)
+  target_compile_definitions(hyle_gather_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
+  target_compile_options(hyle_gather_bench_avx2 PRIVATE ${_gb_avx2})
+  hyle_apply_warnings(hyle_gather_bench_avx2)
+
+  hyle_isa_flags(_gb_avx512 AVX512)
+  add_executable(hyle_gather_bench_avx512 simd/gather_bench.cc)
+  target_link_libraries(hyle_gather_bench_avx512 PRIVATE nanobench)
+  target_compile_definitions(hyle_gather_bench_avx512 PRIVATE HYLE_SIMD_TARGET_AVX512)
+  target_compile_options(hyle_gather_bench_avx512 PRIVATE ${_gb_avx512})
+  hyle_apply_warnings(hyle_gather_bench_avx512)
+endif()
+
 # dtype cvt bench: fp16/bf16<->f32 batch. HYLE F16C dispatch vs scalar reference (+ Highway
 # gated). The *_batch ops live in hyle_simd; the bench TU only needs special ISA flags when
 # the Highway path is compiled in (PromoteTo/DemoteTo intrinsics) -- added in the Highway
