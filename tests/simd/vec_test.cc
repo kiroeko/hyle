@@ -470,6 +470,13 @@ TEST(Vec, MathExtFloat) {
   for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], 1.0f / a.data[i], std::abs(1.0f/a.data[i]) * 1e-2f) << "rcp i=" << i;
   hs::Store(hs::ApproximateReciprocalSqrt(va), d, out.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], 1.0f / std::sqrt(a.data[i]), (1.0f/std::sqrt(a.data[i])) * 1e-2f) << "rsqrt i=" << i;
+  // Newton-refined: one step lifts the ~12-bit estimate to near-full f32 (~1e-4 rel, >> the raw
+  // 1e-2). HYLE superiority (xsimd/Highway ship only the raw estimate). Tolerance 5e-4 admits
+  // the worst backend after one step while still ~20x tighter than the raw estimate's 1e-2.
+  hs::Store(hs::ReciprocalNewton(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], 1.0f / a.data[i], std::abs(1.0f/a.data[i]) * 5e-4f) << "rcpN i=" << i;
+  hs::Store(hs::ReciprocalSqrtNewton(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], 1.0f / std::sqrt(a.data[i]), (1.0f/std::sqrt(a.data[i])) * 5e-4f) << "rsqrtN i=" << i;
   // GetExponent = floor(log2).
   hs::Store(hs::GetExponent(va), d, out.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], std::logb(a.data[i])) << "getexp i=" << i;

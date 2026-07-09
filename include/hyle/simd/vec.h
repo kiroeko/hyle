@@ -361,6 +361,27 @@ template <class V> HYLE_FORCE_INLINE V IfNegativeThenZeroElse(V v, V no) noexcep
 template <class V> HYLE_FORCE_INLINE V CopySignToAbs(V abs, V sign) noexcept {
   return CopySign(abs, sign);
 }
+// ReciprocalNewton / ReciprocalSqrtNewton: ONE Newton-Raphson refinement step on top of the
+// hardware estimate (ApproximateReciprocal/Sqrt), lifting f32 from the ~12-bit (x86 rcp/rsqrt)
+// / ~14-bit (avx512) / ~1% (ARM vrecpe) estimate to near-full f32 precision (~23 bit / <1 ULP
+// typ). GENERIC layer (composed from the per-backend estimate + Mul/Sub/Set), so ONE definition
+// covers all five backends -- and it is a HYLE SUPERIORITY: neither xsimd nor Highway ships a
+// refined reciprocal (both stop at the raw estimate), so this beats both when precision matters
+// (L2 normalize, RMSNorm) while staying far cheaper than a true Div/Sqrt. Float lanes only.
+//   1/x   : y1 = y0 (2 - x y0)         (Newton for f(y)=1/y - x)
+//   1/sqrt: y1 = y0 (1.5 - 0.5 x y0^2) (Newton for f(y)=1/y^2 - x)
+template <class V> HYLE_FORCE_INLINE V ReciprocalNewton(V x) noexcept {
+  const DFromV<V> d;
+  const V y0 = ApproximateReciprocal(x);
+  return Mul(y0, Sub(Set(d, TFromD<DFromV<V>>{2}), Mul(x, y0)));
+}
+template <class V> HYLE_FORCE_INLINE V ReciprocalSqrtNewton(V x) noexcept {
+  using T = TFromD<DFromV<V>>;
+  const DFromV<V> d;
+  const V y0 = ApproximateReciprocalSqrt(x);
+  const V half_x = Mul(Set(d, T{0.5}), x);
+  return Mul(y0, Sub(Set(d, T{1.5}), Mul(half_x, Mul(y0, y0))));
+}
 // AllBits0/AllBits1(d, v): whole-vector all-zero / all-one test. Via AllTrue/AllFalse on a
 // self-compare mask (Eq(v, Zero) all-true == all bits zero).
 template <class V> HYLE_FORCE_INLINE bool AllBits0(V v) noexcept {
