@@ -137,6 +137,14 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   if(HYLE_SIMD_SVE)
     hyle_add_test(simd NAME sve SOURCES simd/sve_test.cc DEFINES HYLE_SIMD_TARGET_SVE OPTIONS -march=armv8-a+sve)
   endif()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")
+  # RVV variant (backend/rvv.h), the SECOND scalable backend. Same gating rationale as SVE:
+  # RVV needs -march=rv64gcv + a CPU/emulator with the V extension. On a real RVV host ctest runs
+  # it; on a non-RVV box it is cross-compiled (riscv64-linux-gnu-g++ -march=rv64gcv) and run under
+  # qemu-riscv64-static (scripts/rvv-qemu-test.sh). Gated by HYLE_SIMD_RVV.
+  if(HYLE_SIMD_RVV)
+    hyle_add_test(simd NAME rvv SOURCES simd/rvv_test.cc DEFINES HYLE_SIMD_TARGET_RVV OPTIONS -march=rv64gcv)
+  endif()
 endif()
 if(HYLE_HAS_FCONTEXT)
   hyle_add_test(sched SOURCES sched/fiber_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc sched/sync_test.cc sched/timer_test.cc sched/coro_test.cc sched/affinity_test.cc sched/join_test.cc sched/blocking_test.cc sched/shutdown_test.cc sched/cancel_test.cc DEPS hyle_time)
