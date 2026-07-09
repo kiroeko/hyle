@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>  // std::memcpy (unpack scalar field from the packed blob)
 
 #include "hyle/simd/math.h"  // exp_f32_batch
 #include "hyle/simd/ops.h"   // dot_f32/f64, saxpy_f32/f64
@@ -21,7 +22,7 @@ T scalar_at(const KernelArgs& args, unsigned i) noexcept {
   const auto* base = static_cast<const std::byte*>(args.scalars);
   T v{};
   const auto off = args.fields[i].offset;
-  __builtin_memcpy(&v, base + off, sizeof(T));  // fields[i].size == sizeof(T) by contract
+  std::memcpy(&v, base + off, sizeof(T));  // fields[i].size == sizeof(T) by contract
   return v;
 }
 
