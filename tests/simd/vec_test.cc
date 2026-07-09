@@ -55,7 +55,7 @@ TEST(Vec, LanesIsConstexprForFixedWidth) {
 // Buffers are 64B-aligned so the aligned Load/Store path is exercised on every backend
 // (scalar memcpy / SSE 16B / AVX2 32B all satisfied). Sized for the widest v1 backend.
 namespace {
-constexpr std::size_t kMaxLanes = 32;  // >= widest v1 lane count (avx2 i8 = 32)
+constexpr std::size_t kMaxLanes = 64;  // >= widest lane count (AVX-512 i8 = 64; avx2 i8 = 32)
 
 template <typename T>
 struct alignas(64) Buf {
@@ -1682,7 +1682,7 @@ void CheckCompress() {
   Buf<T> v, lo, hi, out;
   for (std::size_t i = 0; i < n; ++i) { v.data[i] = static_cast<T>(i + 1); lo.data[i] = static_cast<T>(i % 2); hi.data[i] = 0; }
   auto m = hs::Gt(hs::Load(d, lo.data), hs::Load(d, hi.data));  // odd lanes true
-  T ref[32]; std::size_t k = 0;
+  T ref[64]; std::size_t k = 0;  // AVX-512 i8 = 64 lanes
   for (std::size_t i = 0; i < n; ++i) if (i % 2 == 1) ref[k++] = v.data[i];
   for (std::size_t j = k; j < n; ++j) ref[j] = T{0};
   hs::Store(hs::Compress(hs::Load(d, v.data), m), d, out.data);
