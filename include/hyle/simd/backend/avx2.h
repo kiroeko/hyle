@@ -364,15 +364,30 @@ HYLE_FORCE_INLINE Vec256<T, N> ApproximateReciprocalSqrt(Vec256<T, N> a) noexcep
   else r = Div(Set(Simd<T, N, 0>(), 1.0), Sqrt(a));  // no f64 rsqrt intrinsic
   return r;
 }
-// GetExponent(v) = floor(log2(|v|)) as float (std::logb). store+reload std::logb; native
-// getexp is AVX512 (vgetexpps) -- SSE4/AVX2 lack it, so correctness-first per-lane libm.
+// GetExponent(v) = floor(log2(|v|)) as float (== std::logb for normal inputs). NATIVE bit-extract
+// (Highway's approach): pull the biased exponent field out of the float bits and unbias, all in
+// vector integer ops -- no store+reload/libm (op_parity: the old std::logb path was 30x slower).
+// Single-instruction vgetexpps is AVX-512 only; this AVX2 bit-math is the portable equivalent.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> GetExponent(Vec256<T, N> v) noexcept {
   static_assert(std::is_floating_point_v<T>, "float only");
-  alignas(32) T s[N];
-  Store(v, Simd<T, N, 0>(), s);
-  for (std::size_t i = 0; i < N; ++i) s[i] = std::logb(s[i]);
-  return Load(Simd<T, N, 0>(), s);
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) {
+    const __m256i bits = _mm256_castps_si256(v.raw);
+    const __m256i biased = _mm256_and_si256(_mm256_srli_epi32(bits, 23), _mm256_set1_epi32(0xFF));
+    const __m256i unbiased = _mm256_sub_epi32(biased, _mm256_set1_epi32(127));
+    r.raw = _mm256_cvtepi32_ps(unbiased);
+  } else {  // double: 11-bit exponent, bias 1023
+    const __m256i bits = _mm256_castpd_si256(v.raw);
+    const __m256i biased = _mm256_and_si256(_mm256_srli_epi64(bits, 52), _mm256_set1_epi64x(0x7FF));
+    const __m256i unbiased = _mm256_sub_epi64(biased, _mm256_set1_epi64x(1023));
+    // i64 -> f64: extract the two lanes (no direct AVX2 cvtepi64_pd); small, exact for |exp|<2^52.
+    alignas(32) std::int64_t e[4];
+    _mm256_store_si256(reinterpret_cast<__m256i*>(e), unbiased);
+    r.raw = _mm256_set_pd(static_cast<double>(e[3]), static_cast<double>(e[2]),
+                          static_cast<double>(e[1]), static_cast<double>(e[0]));
+  }
+  return r;
 }
 // MulByPow2(a, b) = a * 2^b (std::ldexp), b an integer-lane vector of matching width.
 // store+reload std::ldexp; no clean AVX2 native (AVX512 vscalefps is the hardware form).
@@ -1022,13 +1037,31 @@ HYLE_FORCE_INLINE Vec256<T, N> ConcatOdd(Vec256<T, N> hi, Vec256<T, N> lo) noexc
   for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
   return Load(Simd<T, N, 0>(), dst);
 }
+// DupEven/DupOdd: within each 128-bit block, broadcast the even/odd element of each adjacent pair
+// (Highway contract). NATIVE for 32/64-bit lanes (the hot widths -- op_parity showed the old
+// store+reload was 10x slower than Highway); narrow 8/16-bit keep the mem swizzle (no clean single
+// native, and not a proven hot path). f32 has dedicated moveldup/movehdup.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> DupEven(Vec256<T, N> v) noexcept {
-  return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_moveldup_ps(v.raw);          // [0,0,2,2,...]
+  else if constexpr (detail::kI32<T>) r.raw = _mm256_shuffle_epi32(v.raw, _MM_SHUFFLE(2, 2, 0, 0));
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_permute_pd(v.raw, 0);   // [0,0] per 128b
+  else if constexpr (detail::kI64<T>)
+    r.raw = _mm256_castpd_si256(_mm256_permute_pd(_mm256_castsi256_pd(v.raw), 0));
+  else return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> DupOdd(Vec256<T, N> v) noexcept {
-  return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_movehdup_ps(v.raw);           // [1,1,3,3,...]
+  else if constexpr (detail::kI32<T>) r.raw = _mm256_shuffle_epi32(v.raw, _MM_SHUFFLE(3, 3, 1, 1));
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_permute_pd(v.raw, 0xF); // [1,1] per 128b
+  else if constexpr (detail::kI64<T>)
+    r.raw = _mm256_castpd_si256(_mm256_permute_pd(_mm256_castsi256_pd(v.raw), 0xF));
+  else return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
+  return r;
 }
 // TableLookupLanes: runtime per-lane permute. index lanes hold integer VALUES (scalar-oracle
 // contract: result[i] = v[idx[i]]). i32/u32 use native vpermd (index bits == value); other
