@@ -169,9 +169,17 @@ simd-01~09 全程 avx512.h 及各 avx512 tier 都标"写+objdump 验 zmm 但**�
 
 **后续补齐(2026-07-09)**:RVV 尾部 op 已补齐到 SVE 水平(gather/scatter=vluxei/vsuxei 按 element→byte 缩放、compress=vcompress、ConvertTo/RoundToInt=vfcvt、BitCast、Reverse=vrgather、tail=vsetvl(n)、MaskedLoad/BlendedStore、饱和/分类/CopySign)。SVE 补 swizzle(InterleaveLower/Upper·ConcatEven/Odd·OddEven,**whole-vector scalable-native**)。
 
-**诚实边界(留 backlog,附具体技术原因)**:
-- **RVV swizzle**:RVV **无 zip1/zip2 原语**(SVE 有 svzip),InterleaveLower 要构造 vrgather 交织索引——待补(工作量非不可做)。
-- **变宽转换 Promote/Demote/ReorderDemote2To**:tag 签名用**编译期 lane 数**(NSrc==2*NDst),scalable 下 kMaxLanes 只是上界、真实"下半"是运行期 Lanes/2;SVE svunpklo/hi 语义对但与上界-tag 交互有栈越界风险,DemoteTo 饱和 pack 需 SVE2 svqxtn。不硬塞脆弱映射。
-- **SVE2 crypto**(+sve2-aes)、**RVV Zvbb popcount/clz**(rv64gcv 无)。
+## 线⑥ scalable 尾巴收口(✅ 2026-07-09,用户"simd 补全 / 返回全平")
 
-**核心载荷面已覆盖**(两后端:算术/位/比较/选择/reduce/移位/gather/compress/scatter/tail/convert/bitcast/分类;SVE 另有 swizzle),scalable 抽象可行性对两个 ISA 都坐实。剩余是**语义微妙或缺原语**的尾巴,按具体原因登记。
+op-面 gap 扫描(子代理逐 op diff)后,把两 scalable 后端从 ~半个定宽 op 面补齐。**原"诚实边界"里的可做项全部做掉**:
+- **RVV 补齐到 SVE 水平**(commit c62554a):变量移位 Shl/Shr(vsll/vsra/vsrl)、ReduceAnd/Or(vredand 播全1种子/vredor 播0)、swizzle(**RVV 无 zip1/2 原语** → vrgather i/2 索引 + even-lane vmerge 合成两源交织;ConcatEven/Odd = vcompress 偶奇掩码 + vslideup 拼半)、OddEven、Broadcast<i>(vrgather 常量索引)、MaskedLoadOr。
+- **舍入 + Find*True 两后端都补**(dc50263):Round/Floor/Ceil/Trunc(SVE 原生 svrintn/m/p/z;RVV round-mode fcvt + |v|<2^23/2^52 门控)、FindFirstTrue/FindLastTrue(SVE svbrkb before-first + svrev 反转;RVV vfirst + iota-ReduceMax)。
+- **变宽 Promote/Demote/widen-dot 两后端都补**(b8e497e/59d1437):**解除原 deferral**——PromoteLowerTo/UpperTo(SVE svunpklo/hi VL-agnostic 无 OOB;RVV vlmul_trunc+vsext/vzext_vf2 + slidedown)、DemoteTo 饱和(SVE clamp+svuzp1 免 SVE2;RVV vlmul_ext+vset 拼 m2 + vnclip)、WidenMulPairwiseAdd i16→i32 定点点积核(两后端同位切片:相邻 i16 对视作 i32,even=低16符号扩展/odd=高16算术右移,i32 相乘相加,matches x86 madd_epi16)。
+- 验证:RVV qemu-riscv64 8 gtest、SVE qemu-aarch64 10 gtest × 3 VL(128/256/512)全绿。**"变宽与运行期 VL 交互微妙有 OOB 风险"的原顾虑证伪**——svunpk/位切片都是 VL-agnostic op 传值,无 store+reload 故无栈 OOB。
+
+**剩余诚实边界(硬件 gate,登记不补,同 Highway)**:
+- **SVE2 crypto**(+sve2-aes 硬件)、**RVV Zvbb popcount/clz**(rv64gcv 基础集无)——缺硬件扩展,Highway 同样 gate。
+- **f32↔f64 变宽 promote/demote**:非量化热路径(量化是 int8/16→i32),svcvt_f64_f32 需 lane-position juggling,登记。
+- **mask-bits 位域族**(LoadMaskBits/StoreMaskBits/BitsFromMask/Set*First):scalable 下 VL 可达 2048-bit(i8=256 lane)超 uint64 位域容量,语义受限,按需再定。
+
+**核心载荷面 + 常用 op 面对两 scalable ISA 已覆盖**,剩余是硬件扩展 gate 或语义受限项。

@@ -178,7 +178,7 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 **验证(qemu-aarch64,同一二进制强制 VL 128/256/512)**:~76 op(Set/Load/Store/算术/位/比较→svbool_t/选择/mask-reduce/值reduce/移位/Reverse/tail/compress/scatter/gather/ConvertTo/BitCast/饱和/分类/CopySign/位计数)对拍 scalar oracle **8 个 gtest 全绿 × 3 VL**。lane 数随 VL 正确缩放(f32:4/8/16,i8:16/32/64)。`scripts/sve-qemu-test.sh` 可复现(cross-build + qemu 多 VL,类比 AVX-512 的 Intel SDE)。CMake `-DHYLE_SIMD_SVE=ON` gate(真 SVE 机 ctest 直跑)。
 
-**未做的诚实边界**(~83 op,留 backlog):固定 128-bit-block 语义(ConcatOdd/InterleaveLower/ZipLower/DupEven/TableLookupBytes——Highway 在 SVE 上都特殊处理,scalable 下"块"概念模糊)、变宽转换(PromoteLowerTo/DemoteTo/ReorderDemote2To——改 lane 数,与运行期 VL 交互微妙)、SVE2 crypto(需 `+sve2-aes`)。核心载荷面已覆盖。
+**scalable 尾巴已补齐(2026-07-09,用户"simd 补全")**:原登记的可做边界全部做掉——SVE/RVV 都补了变量移位/reduce-and-or/swizzle(RVV 无 zip1/2 用 vrgather 合成)/舍入 Round-Floor-Ceil-Trunc/FindFirst-LastTrue/变宽 Promote-Demote-WidenMulPairwiseAdd(svunpk / vsext+vnclip / 位切片点积核,全 VL-agnostic 无 OOB)。**剩余仅硬件 gate**(SVE2 crypto +sve2-aes、RVV Zvbb popcount/clz rv64gcv 无)+ 语义受限项(f32↔f64 变宽非量化热路径、mask-bits 位域族 VL 超 uint64)。核心载荷面 + 常用 op 面两 scalable ISA 已覆盖。
 
 ### RVV scalable 后端(simd-09,第二个 scalable 后端,镜像 SVE)
 
@@ -186,7 +186,7 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 **RVV 独特处(vs SVE)**:① **每 intrinsic 显式 `vl`**(SVE 用隐式谓词)——从 `Lanes(d)` 算一次穿进每个 op;② **unsigned lane 用独立助记符**(`vminu/vmaxu/vmsltu/vmsgtu` 非 `vmin` 泛型),signed/unsigned `if constexpr` 分派(这是 RVV 铺量的主要 gotcha);③ mask 是 `vbool<ratio>_t`(ratio=SEW/LMUL)。
 
-**验证**:`tests/simd/rvv_test.cc`(3 gtest,VL-agnostic 对拍 scalar,含 unsigned-mnemonic 覆盖)qemu-riscv64 全绿。`scripts/rvv-qemu-test.sh` 可复现(cross-build rv64gcv + qemu)。CMake `-DHYLE_SIMD_RVV=ON` gate。**边界**:native gather/compress/scatter、变宽 convert、Zvbb popcount/clz(rv64gcv 无 Zvbb)留 backlog。**结论坐实**:SVE 趟通的 scalable 抽象**真的可复用**——RVV 后端只是换 intrinsic 方言(+vl 穿线 +unsigned 分派),vec.h 共享层零改动,证明"sizeless=后端内模板元编程"的判断对两个 ISA 都成立。
+**验证**:`tests/simd/rvv_test.cc`(8 gtest,VL-agnostic 对拍 scalar,含 unsigned-mnemonic/swizzle/舍入/Find*True/变宽覆盖)qemu-riscv64 全绿。`scripts/rvv-qemu-test.sh` 可复现(cross-build rv64gcv + qemu)。CMake `-DHYLE_SIMD_RVV=ON` gate。**边界**:Zvbb popcount/clz(rv64gcv 无 Zvbb)、f32↔f64 变宽留 backlog。**结论坐实**:SVE 趟通的 scalable 抽象**真的可复用**——RVV 后端只是换 intrinsic 方言(+vl 穿线 +unsigned 分派 + 无 zip1/2 用 vrgather 合成 swizzle),vec.h 共享层零改动,证明"sizeless=后端内模板元编程"的判断对两个 ISA 都成立。
 
 ## 已定决策（1/2/4 已落地，3 SVE 进行中/RVV 排队）
 
