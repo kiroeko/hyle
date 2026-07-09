@@ -122,9 +122,19 @@
 | **ConcatOdd i32** | 0.136 | **0.080** | **输 1.7x**(同 ConcatEven 族) |
 | Abs/Neg/Sub/Mul/Max/AbsDiff/OddEven/InterleaveUpper/Shl/ShiftLeft/ShiftRight/BroadcastSignBit/Eq/Lt/Gt/Sqrt/ApproxRecip×2 (~18) | ≈ | ≈ | 打平,保留 |
 
-### 完整"该抄"清单(8 个自造 op 稳定慢 1.7-10x,全 store+reload/标量 vs Highway 向量指令)
-**DupEven / DupOdd**(10x)、**ReverseBits**(9x)、**TrailingZeroCount**(8x)、**Compress / PopulationCount**(5-6x)、**LeadingZeroCount**(5.5x)、**ConcatEven / ConcatOdd**(1.7-1.8x)。共同根因:HYLE 栈 store+reload+标量循环,Highway 用 vpshufb 半字节 LUT / vpshufd / vpermd / 位操作。**处置(三目标②):抄 Highway 向量算法进 HYLE,5 后端各查**(task #86)。
+### 完整"该抄"清单(9 个自造 op 稳定慢 1.7-30x,全 store+reload/标量 vs Highway 向量指令)
+**GetExponent**(30x!std::logb 标量)、**DupEven / DupOdd**(10x)、**ReverseBits**(9x)、**TrailingZeroCount**(8x)、**Compress / PopulationCount**(5-6x)、**LeadingZeroCount**(5.5x)、**ConcatEven / ConcatOdd**(1.7-1.8x)。(**MulByPow2** 同族 std::ldexp,几乎必输,归入。)共同根因:HYLE 栈 store+reload+标量循环/std:: 数学,Highway 用位操作/vpshufb-LUT/vpshufd/vpermd 纯向量。**处置(三目标②):抄 Highway 向量算法进 HYLE,5 后端各查**(task #86)。铁律:**凡 store+reload+std:: 标量的 op 基本都惨输,应优先全换。**
 
-### 尚未逐个测的(~85,风险已定性)
+### 变宽 op 对照(`op_parity_widen_bench.cc`)——疑似输家实测澄清=全打平
+之前把变宽/SumsOf 标"疑似 store+reload 输家",实测(med ns/op)**全打平**——主路径走原生指令,`alignas` 只在 fallback 分支:
+| op | HYLE | Highway | 判定 |
+|---|---|---|---|
+| PromoteUpperTo i16→i32 | 0.024 | 0.024 | 打平(cvtep) |
+| DemoteTo i32→i16 | 0.041 | 0.048 | HYLE 略快(packs) |
+| ReorderDemote2To i32→i16 | 0.041 | 0.041 | 打平 |
+| WidenMulPairwiseAdd i16→i32 | 0.036 | 0.036 | 打平(vpmaddwd) |
+| SumsOf8 u8→u64 | 0.014 | 0.014 | 打平(vpsadbw) |
+
+### 尚未逐个测的(~80,风险已定性)
 - **纯 passthrough(~34)**:AES/CLMul(单指令)、And/Or/Xor/Not(mask 域)、Le/IfThenElse* 等——同一 intrinsic,抽样已验打平。
-- **需 bespoke harness(~50)**:ConvertTo/DemoteTo/TruncateTo/PromoteUpperTo(变宽)、LoadInterleaved2/3/4(引用参数)、Gather/Scatter/CompressStore/MaskedLoad(内存+mask)、WidenMulPairwiseAdd/SumsOf2/4/8/ReorderDemote2To(变 lane 数)。**其中变宽/SumsOf/ReorderDemote2To 也用 store+reload,是下一批疑似输家,待专门 harness 测。**
+- **需内存/mask harness(~45)**:LoadInterleaved2/3/4+Store(引用参数)、Gather/Scatter/CompressStore/MaskedLoad(内存+mask)、SetAtOr*/FindKnown*(mask 域)、ConvertTo/TruncateTo/U8FromU32(变宽,与已测 Promote/Demote 同族=原生 cvt,预期打平)、GetExponent/MulByPow2(store+reload+std,**疑似输**,待测)。**结论已基本收敛:该抄清单 = 上面 8 个 store+reload/标量 op;变宽族已澄清打平。**

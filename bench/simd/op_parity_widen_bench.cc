@@ -67,5 +67,15 @@ int main(){
     b.run("HYLE", [&]{ for(std::size_t i=0;i+w8h<=kN;i+=w8h) hs::StoreU(hs::SumsOf8(hs::LoadU(hd8,u8a.data()+i)), hd64, o64.data()+i/8); nb::doNotOptimizeAway(o64.data()); });
     b.run("Highway", [&]{ for(std::size_t i=0;i+w8g<=kN;i+=w8g) hn::StoreU(hn::SumsOf8(hn::LoadU(gd8,u8a.data()+i)), gd64, o64.data()+i/8); nb::doNotOptimizeAway(o64.data()); });
   }
+  // GetExponent f32 (HYLE store+reload+std::logb -- prime suspect)
+  {
+    auto fa = [](){ std::mt19937_64 r(9); std::uniform_real_distribution<float> d(0.5f,1e6f); std::vector<float> v(kN); for(auto&e:v)e=d(r); return v; }();
+    std::vector<float> fo(kN);
+    const hs::ScalableTag<float> hdf; const hn::ScalableTag<float> gdf;
+    const std::size_t wfh=hs::Lanes(hdf), wfg=hn::Lanes(gdf);
+    nb::Bench b; b.title("GetExponent f32").relative(true).batch(kN).minEpochIterations(5000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+wfh<=kN;i+=wfh) hs::StoreU(hs::GetExponent(hs::LoadU(hdf,fa.data()+i)), hdf, fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+wfg<=kN;i+=wfg) hn::StoreU(hn::GetExponent(hn::LoadU(gdf,fa.data()+i)), gdf, fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
+  }
   return 0;
 }
