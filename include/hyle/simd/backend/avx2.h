@@ -1025,6 +1025,23 @@ HYLE_FORCE_INLINE detail::V256<D> Reverse2(D, detail::V256<D> v) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ConcatEven(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
+  // [lo even lanes, hi even lanes]. NATIVE for 32-bit (8 lanes): vpermd gathers even lanes of each
+  // (lo->low half, hi->high half) then blend. op_parity: store+reload was 1.7x slower.
+  if constexpr (sizeof(T) == 4) {
+    const __m256i el = _mm256_setr_epi32(0, 2, 4, 6, 0, 0, 0, 0);  // lo's evens -> lanes 0..3
+    const __m256i eh = _mm256_setr_epi32(0, 0, 0, 0, 0, 2, 4, 6);  // hi's evens -> lanes 4..7
+    Vec256<T, N> r;
+    if constexpr (std::is_same_v<T, float>) {
+      const __m256 pl = _mm256_permutevar8x32_ps(lo.raw, el);
+      const __m256 ph = _mm256_permutevar8x32_ps(hi.raw, eh);
+      r.raw = _mm256_blend_ps(pl, ph, 0xF0);
+    } else {
+      const __m256i pl = _mm256_permutevar8x32_epi32(lo.raw, el);
+      const __m256i ph = _mm256_permutevar8x32_epi32(hi.raw, eh);
+      r.raw = _mm256_blend_epi32(pl, ph, 0xF0);
+    }
+    return r;
+  }
   alignas(32) T sl[N], sh[N], dst[N];
   Store(lo, Simd<T, N, 0>(), sl); Store(hi, Simd<T, N, 0>(), sh);
   for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
@@ -1032,6 +1049,22 @@ HYLE_FORCE_INLINE Vec256<T, N> ConcatEven(Vec256<T, N> hi, Vec256<T, N> lo) noex
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ConcatOdd(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
+  // [lo odd lanes, hi odd lanes]. NATIVE for 32-bit (vpermd odd-index gather + blend).
+  if constexpr (sizeof(T) == 4) {
+    const __m256i ol = _mm256_setr_epi32(1, 3, 5, 7, 0, 0, 0, 0);
+    const __m256i oh = _mm256_setr_epi32(0, 0, 0, 0, 1, 3, 5, 7);
+    Vec256<T, N> r;
+    if constexpr (std::is_same_v<T, float>) {
+      const __m256 pl = _mm256_permutevar8x32_ps(lo.raw, ol);
+      const __m256 ph = _mm256_permutevar8x32_ps(hi.raw, oh);
+      r.raw = _mm256_blend_ps(pl, ph, 0xF0);
+    } else {
+      const __m256i pl = _mm256_permutevar8x32_epi32(lo.raw, ol);
+      const __m256i ph = _mm256_permutevar8x32_epi32(hi.raw, oh);
+      r.raw = _mm256_blend_epi32(pl, ph, 0xF0);
+    }
+    return r;
+  }
   alignas(32) T sl[N], sh[N], dst[N];
   Store(lo, Simd<T, N, 0>(), sl); Store(hi, Simd<T, N, 0>(), sh);
   for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
