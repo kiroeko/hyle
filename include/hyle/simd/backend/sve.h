@@ -500,6 +500,22 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> DemoteTo(Simd<DstT, NDst, 0>, V a,
     else return svuzp1_u32(svreinterpret_u32(ca), svreinterpret_u32(cb));
   }
 }
+// WidenMulPairwiseAdd(d32, a_i16, b_i16): r[k] = a[2k]*b[2k] + a[2k+1]*b[2k+1] (the fixed-point dot
+// core, matches x86 madd_epi16). Base SVE has no madd; view each adjacent i16 pair as one i32 lane,
+// extract even (low 16, sign-extend via <<16 >>16) and odd (high 16, arith >>16), multiply as i32,
+// add. VL-agnostic. i16 -> i32 only (the quantization pairwise-dot shape).
+template <std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<std::int32_t, NDst, 0>> WidenMulPairwiseAdd(Simd<std::int32_t, NDst, 0>, V a, V b) noexcept {
+  static_assert(std::is_same_v<TFromV<V>, std::int16_t>, "WidenMulPairwiseAdd: i16 -> i32 pairwise");
+  const svbool_t p32 = detail::ptrue<std::int32_t>();
+  const svint32_t a32 = svreinterpret_s32_s16(a);
+  const svint32_t b32 = svreinterpret_s32_s16(b);
+  const svint32_t ae = svasr_x(p32, svlsl_x(p32, a32, 16), 16);  // even lane (low 16, sign-ext)
+  const svint32_t ao = svasr_x(p32, a32, 16);                    // odd lane (high 16, arith)
+  const svint32_t be = svasr_x(p32, svlsl_x(p32, b32, 16), 16);
+  const svint32_t bo = svasr_x(p32, b32, 16);
+  return svadd_x(p32, svmul_x(p32, ae, be), svmul_x(p32, ao, bo));
+}
 
 // ---- gather (SVE NATIVE svld1_gather, not store+reload) -----------------------------
 // GatherIndex(d, base, idx): dst[i] = base[idx[i]]. SVE's gather takes the index vector as the

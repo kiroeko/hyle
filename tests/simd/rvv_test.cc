@@ -327,4 +327,13 @@ TEST(Rvv, WidenPromoteDemote) {
   for (std::size_t i = 0; i < nu8; ++i) su8[i] = static_cast<std::uint8_t>(i * 5 + 1);
   hs::Store(hs::PromoteLowerTo(du16, hs::Load(du8, su8)), du16, ou16);
   for (std::size_t i = 0; i < nu16; ++i) EXPECT_EQ(ou16[i], static_cast<std::uint16_t>(su8[i])) << "PromLoU " << i;
+
+  // WidenMulPairwiseAdd i16->i32: r[k] = a[2k]*b[2k] + a[2k+1]*b[2k+1]
+  alignas(64) std::int16_t wa[kBuf], wb[kBuf]; alignas(64) std::int32_t wr[kBuf];
+  for (std::size_t i = 0; i < n16; ++i) { wa[i] = static_cast<std::int16_t>((i * 13) % 500 - 250); wb[i] = static_cast<std::int16_t>((i * 7) % 400 - 200); }
+  hs::Store(hs::WidenMulPairwiseAdd(d32, hs::Load(d16, wa), hs::Load(d16, wb)), d32, wr);
+  for (std::size_t k = 0; k < n32; ++k) {
+    std::int32_t e = static_cast<std::int32_t>(wa[2 * k]) * wb[2 * k] + static_cast<std::int32_t>(wa[2 * k + 1]) * wb[2 * k + 1];
+    EXPECT_EQ(wr[k], e) << "WidenMulPairwiseAdd " << k;
+  }
 }

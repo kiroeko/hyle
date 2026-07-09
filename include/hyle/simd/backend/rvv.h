@@ -500,6 +500,21 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> DemoteTo(Simd<DstT, NDst, 0> dd, V
     else { auto m2 = __riscv_vset_v_u64m1_u64m2(__riscv_vlmul_ext_v_u64m1_u64m2(a), 1, b); return __riscv_vnclipu_wx_u32m1(m2, 0, __RISCV_VXRM_RNU, vldst); }
   }
 }
+// WidenMulPairwiseAdd(d32, a_i16, b_i16): r[k] = a[2k]*b[2k] + a[2k+1]*b[2k+1] (fixed-point dot
+// core). Same bit-slice trick as SVE: view each adjacent i16 pair as one i32 lane, extract even
+// (low 16, sign-ext via sll<<16 then sra>>16) and odd (sra>>16), multiply as i32, add. i16->i32.
+template <std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<std::int32_t, NDst, 0>> WidenMulPairwiseAdd(Simd<std::int32_t, NDst, 0> dd, V a, V b) noexcept {
+  static_assert(std::is_same_v<TFromV<V>, std::int16_t>, "WidenMulPairwiseAdd: i16 -> i32 pairwise");
+  const std::size_t vl = Lanes(dd);
+  const vint32m1_t a32 = __riscv_vreinterpret_i32m1(a);
+  const vint32m1_t b32 = __riscv_vreinterpret_i32m1(b);
+  const vint32m1_t ae = __riscv_vsra(__riscv_vsll(a32, 16u, vl), 16u, vl);  // even (low 16, sign-ext)
+  const vint32m1_t ao = __riscv_vsra(a32, 16u, vl);                         // odd  (high 16, arith)
+  const vint32m1_t be = __riscv_vsra(__riscv_vsll(b32, 16u, vl), 16u, vl);
+  const vint32m1_t bo = __riscv_vsra(b32, 16u, vl);
+  return __riscv_vadd(__riscv_vmul(ae, be, vl), __riscv_vmul(ao, bo, vl), vl);
+}
 
 // ---- FP classification --------------------------------------------------------------
 template <class V> HYLE_FORCE_INLINE auto IsNaN(V v) noexcept {
