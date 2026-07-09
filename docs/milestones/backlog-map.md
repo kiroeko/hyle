@@ -26,6 +26,7 @@
 | simd-03 尾 | NEON / AVX512 真机跑 | 🔴 **缺硬件**(无 ARM 机 / 无 AVX512 机) | 已写+编+objdump 验;**硬阻塞**,待真机/QEMU/SDE。非优先级问题 |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
 | simd-08 尾 → simd-09 | best-of 全面审计结论 + 数学函数/算法级能力补齐 | 🟢 就绪,已开 simd-09 | **2026-07-09 三方审计(HYLE/Highway/xsimd)结论**,见下方"best-of 判据"。①数学函数 best-of 批(sin/cos/exp2/log2/atan/erf/pow… 三方 bench 选最快)②算法级能力补齐(vqsort/RNG/intdiv 等,Highway 招牌 HYLE 整块缺)→ 归入 **simd-09**。simd-08 结构 op 的 native intrinsic 优化(vpgather/vpcompress vs store+reload)是**自造 profiling 档**非 best-of(见判据),留 compute 消费驱动 |
+| build-asan hwy::Abort 链接 | build-asan(RelWithDebInfo+ASan)链 libhyle_simd 报 `undefined reference to hwy::Abort`,Release(build-wsl)链接干净无此符号 | 🟡 待查,不阻塞出厂 | simd-09 线①(Highway sin/cos 等 contrib/math 核)引入。Release -O2 把 HWY_DASSERT→Abort 的调用 DCE 掉,ASan 的 -O2-g 某内联档没 DCE→残留未定义符号(HYLE 从不编 Highway 的 abort.cc)。**只影响 build-asan 链 libhyle_simd 的 exe;出厂 Release 不受影响**。header-only 测试(vec.h intdiv 等)standalone ASan 编译绕过 lib 可正常验。修法候选:编入 hwy/abort.cc、或给 ASan 加 -DHWY_ABORT 定义、或 ASan 也 -DNDEBUG 收紧。待做 RNG/bitpack 若需 lib 级 ASan 再修 |
 
 > ### best-of 判据(2026-07-09 三方审计定,固化防再犯)
 > "三者都有就选最快"只在**三条件同时成立**时有意义:① op 有**真实算法内容**(多项式逼近 / 多指令组合 / 软件 emulation),② 三家实现**有差异**,③ **不贴单一硬件指令**(否则三家编译成同一条,比了也一样)。按此分类 simd op:
@@ -38,6 +39,7 @@
 
 > container-06c(模糊路径匹配)**2026-07-05 ✅ 完成**,已从本表移除(抄 fzf V1 两趟算法,benchmark 证 O(N),container 160/160)。
 > **compute-06 内部欠账(2026-07-08 登记)**:compute-06 按验收(三平台 vecadd+合批+co_await 全绿)已 ✅,但 kompute 25 点核对表"应做(抄/改)"21 项里做了 12、欠 9。**里程碑"明确不做"表(compute-06-vulkan-spirv.md:191)已接住多队列/运行时GLSL/Image/spirv-opt(B类消费者驱动,合理等);上面两行接住剩下无归属的**——① 是正确性硬伤(基础库义务,必做)、② 是性能收尾。避免这些散落在核对表/memory 里无排期。
+> **simd-09 线② 重型件调研后缓到消费驱动(2026-07-09)**:通用原语 intdiv/cmp128/RNG 已自实现落地(泛型层,2 平台+ASan)。**bit_pack**——调研定不做:零消费者(量化已被借来的 ggml 覆盖)、非 best-of、无 flat 入口无法薄借(深绑 Highway D-tag);真需要走精简自造 Pack32/64 泛型 unroller(~200-300 行 + RepartitionToWide),跳过逐位宽手写。**vqsort**——调研定方案:Highway `VQSortStatic`(header-only 吃裸指针,与数学核静态借法同构)**vendor 薄封装可行**(~半天,1 bridge TU + hyle_set_highway_isa,~10x std::sort),但零消费者→缓到推理引擎 top-k 采样触发,届时优先 VQPartialSort/VQSelect。二者详见 simd-09 里程碑线②表。
 
 **A 类结论**:全部"就绪但低优先级",不阻塞北极星。simd-03 硬件硬阻塞。**platform-02b 的真实用途是 host 端 fiber 栈 guard page + 保留/提交型分配(与显存无关)**,唯一现实消费者是 sched 的栈溢出保护,不阻塞 compute。剩余 A 类(mem-06/bench-02)按需。**compute-06 收尾②性能收尾 2026-07-08 全清**——核对表 25 项该做的(#25 计时/#11-12 barrier/#1 cache 落盘/#6 HOST_CACHED/#2-3 spec constants/tools+load_spirv/#14-16 record-replay)全完成=compute-06b/c/d,记录见 compute-06 里程碑状态行;仅剩消费者驱动的边角项(上表,无当前消费者按需)。(收尾① staging 亦已完成,均从本表移除。)
 
