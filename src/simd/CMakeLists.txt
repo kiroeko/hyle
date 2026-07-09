@@ -62,6 +62,7 @@ hyle_add_module(simd SOURCES
   dtype/cvt_scalar.cc
   math/math_dispatch.cc
   math/transcendental_scalar.cc
+  math/activations.cc
   sort/sort_dispatch.cc
   sort/vqsort_scalar.cc
   bitpack/bitpack_dispatch.cc

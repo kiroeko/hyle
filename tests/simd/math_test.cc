@@ -119,3 +119,58 @@ TEST(Math, ActiveVariantReported) {
   EXPECT_EQ(v, Isa::kScalar);
 #endif
 }
+
+// AI activation combined cores vs scalar reference. Tolerance is the ~3.5-ULP transcendental
+// class the underlying exp/tanh/erf inherit, with margin (the combine arithmetic adds a little).
+TEST(Math, Activations) {
+  std::vector<float> in;
+  for (int k = -100; k <= 100; ++k) in.push_back(static_cast<float>(k) * 0.1f);  // [-10,10]
+  const std::size_t n = in.size();
+  const float sq2inv = 0.70710678118654752440f, sq2pi = 0.79788456080286535588f, ca = 0.044715f;
+  std::vector<float> out(n);
+
+  hyle::simd::gelu_f32_batch(in.data(), out.data(), n);
+  for (std::size_t i = 0; i < n; ++i) {
+    const double ref = 0.5 * in[i] * (1.0 + std::erf(in[i] * (double)sq2inv));
+    EXPECT_NEAR(out[i], ref, std::abs(ref) * 1e-4 + 1e-5) << "gelu " << in[i];
+  }
+  hyle::simd::gelu_tanh_f32_batch(in.data(), out.data(), n);
+  for (std::size_t i = 0; i < n; ++i) {
+    const double x = in[i];
+    const double ref = 0.5 * x * (1.0 + std::tanh(sq2pi * x * (1.0 + ca * x * x)));
+    EXPECT_NEAR(out[i], ref, std::abs(ref) * 1e-4 + 1e-5) << "gelu_tanh " << in[i];
+  }
+  hyle::simd::sigmoid_f32_batch(in.data(), out.data(), n);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_NEAR(out[i], 1.0 / (1.0 + std::exp(-(double)in[i])), 1e-5) << "sigmoid " << in[i];
+  hyle::simd::silu_f32_batch(in.data(), out.data(), n);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_NEAR(out[i], in[i] / (1.0 + std::exp(-(double)in[i])), std::abs(in[i]) * 1e-5 + 1e-5) << "silu " << in[i];
+}
+
+// softmax / log_softmax: match a double-precision naive reference; softmax sums to 1.
+TEST(Math, Softmax) {
+  for (std::size_t n : {std::size_t{1}, std::size_t{7}, std::size_t{64}, std::size_t{1000}}) {
+    std::vector<float> x(n), sm(n);
+    for (std::size_t i = 0; i < n; ++i) x[i] = std::sin(static_cast<float>(i) * 0.7f) * 5.0f;  // spread
+    // reference (stable, double)
+    double mx = x[0];
+    for (std::size_t i = 1; i < n; ++i) mx = x[i] > mx ? x[i] : mx;
+    double sum = 0.0;
+    std::vector<double> ref(n);
+    for (std::size_t i = 0; i < n; ++i) { ref[i] = std::exp((double)x[i] - mx); sum += ref[i]; }
+    for (std::size_t i = 0; i < n; ++i) ref[i] /= sum;
+
+    sm = x;
+    hyle::simd::softmax_f32(sm.data(), n);
+    double got_sum = 0.0;
+    for (std::size_t i = 0; i < n; ++i) { EXPECT_NEAR(sm[i], ref[i], 1e-5) << "softmax n=" << n << " i=" << i; got_sum += sm[i]; }
+    EXPECT_NEAR(got_sum, 1.0, 1e-4) << "softmax sum n=" << n;
+
+    // log_softmax = log(softmax)
+    std::vector<float> ls = x;
+    hyle::simd::log_softmax_f32(ls.data(), n);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_NEAR(ls[i], std::log(ref[i]), 1e-4) << "log_softmax n=" << n << " i=" << i;
+  }
+}

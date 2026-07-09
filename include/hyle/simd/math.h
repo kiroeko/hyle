@@ -45,6 +45,28 @@ HYLE_SIMD_API void log1p_f32_batch(const float* src, float* dst, std::size_t n) 
 HYLE_SIMD_API void asinh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void acosh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 
+// AI activation COMBINED cores (simd-design "AI 数学函数"). Unlike the per-op transcendentals
+// above (each borrows one vendor polynomial), these COMPOSE the vectorized cores into the shapes
+// the AI hot path needs -- HYLE-specific, not a single vendor op. They call the batch ops above
+// (which self-dispatch to the best tier), so no new per-tier wiring.
+//   gelu(x)      = 0.5 x (1 + erf(x/sqrt2))            -- exact Gaussian Error Linear Unit
+//   gelu_tanh(x) = 0.5 x (1 + tanh(sqrt(2/pi) x (1 + 0.044715 x^2)))  -- the tanh approximation
+//                  (matches ggml_gelu_f32; slightly cheaper, ~1e-3 off exact -- the common LLM form)
+//   sigmoid(x)   = 1/(1 + exp(-x))                     -- logistic
+//   silu(x)      = x * sigmoid(x)                      -- SiLU/swish (Llama FFN gate)
+// All element-wise: dst[i] = f(src[i]). n arbitrary.
+HYLE_SIMD_API void gelu_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void gelu_tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void sigmoid_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void silu_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+
+// softmax(x)[i] = exp(x[i] - max) / sum_j exp(x[j] - max)  -- IN PLACE over the whole array
+// (a REDUCTION, not element-wise: needs the array max for numerical stability + the exp sum).
+// dst may alias src. n == 0 is a no-op. Returns nothing; writes the normalized distribution.
+HYLE_SIMD_API void softmax_f32(float* data, std::size_t n) noexcept;
+// log_softmax(x)[i] = (x[i] - max) - log(sum_j exp(x[j] - max))  -- in place, numerically stable.
+HYLE_SIMD_API void log_softmax_f32(float* data, std::size_t n) noexcept;
+
 // The tier the math batch ops selected: kAvx2 if a vectorized AVX2 core is live, else
 // kScalar (libm). For tests/diagnostics.
 HYLE_SIMD_API Isa active_math_variant() noexcept;
