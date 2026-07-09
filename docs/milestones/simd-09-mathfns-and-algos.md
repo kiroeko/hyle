@@ -5,7 +5,7 @@
 | **阶段** | P3 |
 | **模块** | simd/ |
 | **前置** | simd-06(数学核 best-of 机制:exp/log/tanh)、simd-08(op 面完备) |
-| **状态** | 🔶 线① 数学函数 best-of ✅(88bcc46,三平台)/ 线② 通用原语 intdiv+cmp128+RNG ✅(2 平台+ASan,NEON 待 mac);bit_pack/vqsort 调研后缓到消费驱动 |
+| **状态** | ✅ 线① 数学函数 best-of(88bcc46,三平台)+ 线② 全 5 件 intdiv/cmp128/RNG(自实现)+ vqsort/bit_pack(vendor 薄封装 Highway)完成。x86 全绿(MSVC+WSL GCC,通用原语 +ASan);NEON 待 mac(#63) |
 
 > **范围**:两条线。①**数学函数 best-of 批**——simd-06 的"三方 bench 选最快核"方法学只覆盖了 exp/log/tanh,把它扩到 sin/cos/exp2/log2/atan/erf/pow… 等两库都有真多项式核的超越函数。②**算法级能力补齐**——vqsort 向量排序 / 向量 RNG / intdiv 向量整除等 Highway contrib 招牌功能,HYLE 整块缺。
 > **驱动**:用户 2026-07-09 "best-of 机会希望全面寻找,三者都有就用最快的;数学库很重要,缺了要补充"。
@@ -90,7 +90,7 @@
 | **intdiv** u32/i32 | ✅ 完成(8114f40) | Granlund-Montgomery magic-number **自实现泛型层**(不 vendor Highway D-tag)。Divisor<T> 预算 + Div(V,Divisor) 应用;32-bit 无原生 MulHigh→u32→u64 widen+ShiftRight<32>,recombine 用 BitCast+ConcatEven(避 ReorderDemote2To 顺序陷阱)。MSVC+WSL GCC+ASan 净(NEON 待 mac)。u8/u16/u64 后续(u64 需 128-bit 乘) |
 | **cmp128** Lt128/Min128… | ✅ 完成(72bfb1f) | 每相邻 u64 对=128-bit 值。泛型层组合(Eq/Lt/Reverse2/DupOdd,block-safe),抄 Highway Lt128Vec 真值表。MSVC+WSL GCC+ASan 净(NEON 待 mac)。vqsort 键比较基石 |
 | **RNG** xoshiro256** | ✅ 完成(111a83b) | `include/hyle/simd/random.h` VectorXoshiro N 并行流,逐 lane 独立状态更新,**自实现泛型层**。SplitMix64 播种+逐 lane Jump 去相关;Uniform 用位模式技巧避 u64→f64 非原生转换。lane0 对拍标量 oracle。MSVC+WSL GCC+ASan 净(NEON 待 mac) |
-| **bit_pack** | ⏸️ **缓到消费驱动**(调研定,不做) | 调研结论:①**零消费者**(量化已被借来的 ggml 覆盖,graph-02 未开工);②非 best-of(只 Highway 有);③**无 flat 入口无法薄借**(深绑 Highway D-tag+RepartitionToWide,不像数学核吃裸指针);④Highway 2851 行含逐位宽手写(Pack8/16)+泛型 unroller(Pack32/64)。**真需要时**:走精简自造(仿 Pack32/64 的泛型 `BitPackUnroller`~200-300 行 + 补 RepartitionToWide),跳过逐位宽手写档。登记 backlog |
-| **vqsort** | ⏸️ **缓到消费驱动**(调研定,方案已明) | 调研结论:①Highway 招牌(排序网络+快排,~10x std::sort),3166+ 行深绑 D-tag/traits **无法薄 adapter 借**;②但 `VQSortStatic`(header-only 吃裸指针+count,无动态 dispatch)与 HYLE 数学核静态借法**同构**→**整块 vendor 薄封装可行**(1 个 bridge TU + hyle_set_highway_isa,~半天);③**当前零消费者**(推理 top-k 采样是最可能触发点→届时优先接 VQPartialSort/VQSelect 而非全排)。**推荐路径=方案 b(vendor 薄封装)**,执行缓到推理引擎 top-k 开工触发 |
+| **vqsort** 排序 | ✅ 完成(5c1c884) | **vendor 薄封装** Highway vqsort(~10x std::sort),同数学核借法。sort/partial_sort/select(u32/i32/u64/i64/f32/f64 升降序)吃裸指针;`VQSortStatic` header-only + `-DVQSORT_ONLY_STATIC=1` 免链 vqsort.cc;dispatch avx512>avx2>scalar 门控。sort_test 对拍 std::sort/partial_sort/nth_element。MSVC+WSL GCC 全绿(207,无 vqsort.cc 链接)。K32V32/K64V64 top-k 键值对留消费驱动 |
+| **bit_pack** 位打包 | ✅ 完成(35bab19) | **vendor 薄封装** Highway bit_pack。pack/unpack(u8 1..8/u16 1..16/u32 1..32)吃裸指针+运行期 bits(index_sequence 折编译期 kBits);block 走 Highway、tail 走自写 bitstream codec。**揪出并绕过 vendor bug**:Highway Pack16<11>/<13> 满位宽 round-trip 失败(独立探针 MSVC+GCC+EMU128 三处坐实=算法非 codegen;根因上游 `& kBits` 笔误漏测),这两宽度回退 HYLE bitstream codec。MSVC+WSL GCC 全绿(213)。详见 docs/debug/highway-pack16-roundtrip-hunt.md |
 
-**线②小结**:通用原语(intdiv/cmp128/RNG)**自实现泛型层**已落地,契合"能力面到位"。重型件(bit_pack 2851 行/vqsort 3166 行)调研后判定**缓到消费驱动**——bit_pack 无薄借入口+零消费者+ggml 已覆盖量化;vqsort 有清晰的 vendor 薄封装方案(VQSortStatic)但零消费者,等推理 top-k 触发。二者均非能力缺口遗漏,是有依据的排期决策。
+**线②小结**:全 5 件落地。通用原语(intdiv/cmp128/RNG)**自实现泛型层**;重型件(vqsort/bit_pack)**vendor 薄封装 Highway**(与数学核借法同构——公开层吃裸指针不 include highway,借核 TU 内部用 Highway D-tag,dispatch 运行期门控 SIGILL 安全)。**关键收获**:借核同样过 HYLE 对拍闸门,bit_pack 的 round-trip 恒等式揪出 Highway 一个满位宽 bug(Pack16<11>/<13>)——"借不等于信"。K32V32 top-k 留消费驱动。
