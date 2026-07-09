@@ -91,6 +91,32 @@ SaxpyF64Fn resolve_saxpy_f64() noexcept {
     default: return &detail::saxpy_f64_scalar;
   }
 }
+using AddF32Fn = void (*)(const float*, const float*, float*, std::size_t) noexcept;
+using AddF64Fn = void (*)(const double*, const double*, double*, std::size_t) noexcept;
+AddF32Fn resolve_add_f32() noexcept {
+  switch (selected_tier()) {
+#if defined(HYLE_ARCH_X64)
+    case Isa::kAvx512: return &detail::add_f32_avx512;
+    case Isa::kAvx2: return &detail::add_f32_avx2;
+    case Isa::kSse42: return &detail::add_f32_sse4;
+#elif defined(HYLE_ARCH_ARM64)
+    case Isa::kNeon: return &detail::add_f32_neon;
+#endif
+    default: return &detail::add_f32_scalar;
+  }
+}
+AddF64Fn resolve_add_f64() noexcept {
+  switch (selected_tier()) {
+#if defined(HYLE_ARCH_X64)
+    case Isa::kAvx512: return &detail::add_f64_avx512;
+    case Isa::kAvx2: return &detail::add_f64_avx2;
+    case Isa::kSse42: return &detail::add_f64_sse4;
+#elif defined(HYLE_ARCH_ARM64)
+    case Isa::kNeon: return &detail::add_f64_neon;
+#endif
+    default: return &detail::add_f64_scalar;
+  }
+}
 
 }  // namespace
 
@@ -112,6 +138,14 @@ double dot_f64(const double* x, const double* y, std::size_t n) noexcept {
 void saxpy_f64(double a, const double* x, double* y, std::size_t n) noexcept {
   static const SaxpyF64Fn fn = resolve_saxpy_f64();
   fn(a, x, y, n);
+}
+void add_f32(const float* x, const float* y, float* z, std::size_t n) noexcept {
+  static const AddF32Fn fn = resolve_add_f32();
+  fn(x, y, z, n);
+}
+void add_f64(const double* x, const double* y, double* z, std::size_t n) noexcept {
+  static const AddF64Fn fn = resolve_add_f64();
+  fn(x, y, z, n);
 }
 Isa active_variant() noexcept {
   static const Isa tier = selected_tier();

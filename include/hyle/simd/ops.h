@@ -37,6 +37,11 @@ HYLE_SIMD_API void saxpy_f32(float a, const float* x, float* y, std::size_t n) n
 HYLE_SIMD_API double dot_f64(const double* x, const double* y, std::size_t n) noexcept;
 HYLE_SIMD_API void saxpy_f64(double a, const double* x, double* y, std::size_t n) noexcept;
 
+// Elementwise add: z[i] = x[i] + y[i] (3-buffer, bandwidth-bound like saxpy). The elementwise
+// vector-add primitive simd lacked -- a compute-07 host vecadd was hand-rolling it. Dispatched.
+HYLE_SIMD_API void add_f32(const float* x, const float* y, float* z, std::size_t n) noexcept;
+HYLE_SIMD_API void add_f64(const double* x, const double* y, double* z, std::size_t n) noexcept;
+
 // The ISA tier the dispatcher actually selected (resolved once from best_isa()). For
 // tests/diagnostics: proves dispatch picked the host's best variant, not just the floor.
 HYLE_SIMD_API Isa active_variant() noexcept;

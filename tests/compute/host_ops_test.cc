@@ -8,6 +8,7 @@
 #include <cstring>
 #include <vector>
 
+#include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
 #include "hyle/compute/kernel.h"
 #include "hyle/compute/stream.h"
@@ -173,4 +174,101 @@ TEST(ComputeHostOps, DotF64) {
   LaunchConfig cfg;
   ASSERT_TRUE(launch(*s, *k, cfg, ka).ok());
   EXPECT_NEAR(out[0], double(ref), std::abs(double(ref)) * 1e-12 + 1e-12);
+}
+
+TEST(ComputeHostOps, ExpF64) {
+  Device d = host_device();
+  auto k = Kernel::load_host(d, &host_exp_f64);
+  ASSERT_TRUE(k.has_value());
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value());
+
+  constexpr int kN = 513;
+  std::vector<double> src(kN), dst(kN, -1.0);
+  for (int i = 0; i < kN; ++i) src[i] = double(i - 256) * 0.05;
+  void* bufs[] = {src.data(), dst.data()};
+  Blob blob; blob.push<int>(kN);
+  KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
+  LaunchConfig cfg;
+  ASSERT_TRUE(launch(*s, *k, cfg, ka).ok());
+  for (int i = 0; i < kN; ++i)
+    EXPECT_NEAR(dst[i], std::exp(src[i]), std::abs(std::exp(src[i])) * 1e-13 + 1e-14) << "i=" << i;
+}
+
+// ---- typed-shell drive (the REAL launch ABI): pack via launch(s,k,cfg, Buffer..., scalar...) ----
+// The other tests hand-build KernelArgs; this one goes through kernel.h's typed shell exactly
+// like a GPU consumer, proving the shell's Buffer/scalar packing order matches host_saxpy_f32's
+// unpacking. Host Buffers are RAM (Buffer::create on the host device = malloc), so the same call
+// that targets a GPU works here.
+TEST(ComputeHostOps, TypedShellSaxpyF32) {
+  Device d = host_device();
+  auto k = Kernel::load_host(d, &host_saxpy_f32);
+  ASSERT_TRUE(k.has_value());
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value());
+
+  constexpr int kN = 256;
+  const std::size_t bytes = kN * sizeof(float);
+  auto bx = Buffer::create(device_buffer_type(d), bytes);
+  auto by = Buffer::create(device_buffer_type(d), bytes);
+  ASSERT_TRUE(bx.has_value() && by.has_value());
+  std::vector<float> hx(kN), hy(kN), ref(kN);
+  const float a = 3.0f;
+  for (int i = 0; i < kN; ++i) { hx[i] = float(i); hy[i] = float(i) * 0.5f; ref[i] = a * hx[i] + hy[i]; }
+  ASSERT_TRUE(bx->set(0, hx.data(), bytes).ok());
+  ASSERT_TRUE(by->set(0, hy.data(), bytes).ok());
+
+  int n = kN;
+  LaunchConfig cfg;
+  // Typed shell: Buffers first (x,y), then scalars (n, a) -- the SAME order host_saxpy_f32 unpacks.
+  ASSERT_TRUE(launch(*s, *k, cfg, *bx, *by, n, a).ok());
+  ASSERT_TRUE(s->sync().ok());
+  std::vector<float> got(kN);
+  ASSERT_TRUE(by->get(0, got.data(), bytes).ok());
+  for (int i = 0; i < kN; ++i) EXPECT_FLOAT_EQ(got[i], ref[i]) << "i=" << i;
+}
+
+// ---- contract death tests (caller-bug fail-fast, matching the GPU launch path) ----
+TEST(ComputeHostOpsDeath, NullBufferAsserts) {
+  Device d = host_device();
+  auto k = Kernel::load_host(d, &host_saxpy_f32);
+  ASSERT_TRUE(k.has_value());
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value());
+  void* bufs[] = {nullptr, nullptr};  // null buffers -> contract violation
+  int n = 8; float a = 1.0f;
+  Blob blob; blob.push<int>(n); blob.push<float>(a);
+  KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
+  LaunchConfig cfg;
+  EXPECT_DEATH(launch(*s, *k, cfg, ka), "");
+}
+
+TEST(ComputeHostOpsDeath, NegativeNAsserts) {
+  Device d = host_device();
+  auto k = Kernel::load_host(d, &host_saxpy_f32);
+  ASSERT_TRUE(k.has_value());
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value());
+  std::vector<float> x(8), y(8);
+  void* bufs[] = {x.data(), y.data()};
+  int n = -1; float a = 1.0f;  // negative n -> would scan ~2^63 elements without the assert
+  Blob blob; blob.push<int>(n); blob.push<float>(a);
+  KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
+  LaunchConfig cfg;
+  EXPECT_DEATH(launch(*s, *k, cfg, ka), "");
+}
+
+TEST(ComputeHostOpsDeath, InsufficientBufferCountAsserts) {
+  Device d = host_device();
+  auto k = Kernel::load_host(d, &host_dot_f32);  // needs 3 buffers
+  ASSERT_TRUE(k.has_value());
+  auto s = Stream::create(d);
+  ASSERT_TRUE(s.has_value());
+  std::vector<float> x(8), y(8);
+  void* bufs[] = {x.data(), y.data()};  // only 2, dot needs 3 (x,y,out)
+  int n = 8;
+  Blob blob; blob.push<int>(n);
+  KernelArgs ka{bufs, 2, blob.data, blob.off, blob.fields, blob.nfields};
+  LaunchConfig cfg;
+  EXPECT_DEATH(launch(*s, *k, cfg, ka), "");
 }

@@ -51,5 +51,6 @@ HYLE_COMPUTE_API void host_exp_f32(const LaunchConfig&, const KernelArgs&) noexc
 // f64 host kernels (the CAE/scientific double path; exercises simd's f64 cores).
 HYLE_COMPUTE_API void host_saxpy_f64(const LaunchConfig&, const KernelArgs&) noexcept;
 HYLE_COMPUTE_API void host_dot_f64(const LaunchConfig&, const KernelArgs&) noexcept;
+HYLE_COMPUTE_API void host_exp_f64(const LaunchConfig&, const KernelArgs&) noexcept;
 
 }  // namespace hyle::compute

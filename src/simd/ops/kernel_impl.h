@@ -24,6 +24,8 @@
 #define SAXPY_F32_FN HYLE_SIMD_CAT(saxpy_f32_, HYLE_KERNEL_SUFFIX)
 #define DOT_F64_FN HYLE_SIMD_CAT(dot_f64_, HYLE_KERNEL_SUFFIX)
 #define SAXPY_F64_FN HYLE_SIMD_CAT(saxpy_f64_, HYLE_KERNEL_SUFFIX)
+#define ADD_F32_FN HYLE_SIMD_CAT(add_f32_, HYLE_KERNEL_SUFFIX)
+#define ADD_F64_FN HYLE_SIMD_CAT(add_f64_, HYLE_KERNEL_SUFFIX)
 
 namespace hyle::simd::detail {
 
@@ -70,9 +72,20 @@ HYLE_FORCE_INLINE void saxpy_kernel(T a, const T* x, T* y, std::size_t n) noexce
   for (; i < n; ++i) y[i] = a * x[i] + y[i];  // tail
 }
 
+template <typename T>
+HYLE_FORCE_INLINE void add_kernel(const T* x, const T* y, T* z, std::size_t n) noexcept {
+  const ScalableTag<T> d;
+  const std::size_t w = Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) StoreU(Add(LoadU(d, x + i), LoadU(d, y + i)), d, z + i);
+  for (; i < n; ++i) z[i] = x[i] + y[i];  // tail
+}
+
 float DOT_F32_FN(const float* x, const float* y, std::size_t n) noexcept { return dot_kernel<float>(x, y, n); }
 void SAXPY_F32_FN(float a, const float* x, float* y, std::size_t n) noexcept { saxpy_kernel<float>(a, x, y, n); }
+void ADD_F32_FN(const float* x, const float* y, float* z, std::size_t n) noexcept { add_kernel<float>(x, y, z, n); }
 double DOT_F64_FN(const double* x, const double* y, std::size_t n) noexcept { return dot_kernel<double>(x, y, n); }
 void SAXPY_F64_FN(double a, const double* x, double* y, std::size_t n) noexcept { saxpy_kernel<double>(a, x, y, n); }
+void ADD_F64_FN(const double* x, const double* y, double* z, std::size_t n) noexcept { add_kernel<double>(x, y, z, n); }
 
 }  // namespace hyle::simd::detail
