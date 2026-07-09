@@ -369,6 +369,49 @@ template <class V> HYLE_FORCE_INLINE V Compress(V v, svbool_t m) noexcept {
   return svcompact(m, v);
 }
 
+// ---- same-width conversions (f32<->i32, the (de)quantize core) ----------------------
+// ConvertTo: static_cast-per-lane into the dst lane type (truncating for f->i). Same lane COUNT
+// (dst tag has the same N). SVE svcvt does exactly this at matching width.
+template <typename DstT, std::size_t N, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> ConvertTo(Simd<DstT, N, 0>, V v) noexcept {
+  using SrcT = TFromV<V>;
+  const svbool_t pg = detail::ptrue<SrcT>();
+  if constexpr (std::is_same_v<SrcT, float> && std::is_same_v<DstT, std::int32_t>)
+    return svcvt_s32_x(pg, v);  // truncate toward zero
+  else if constexpr (std::is_same_v<SrcT, float> && std::is_same_v<DstT, std::uint32_t>)
+    return svcvt_u32_x(pg, v);
+  else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, float>)
+    return svcvt_f32_x(pg, v);
+  else if constexpr (std::is_same_v<SrcT, std::uint32_t> && std::is_same_v<DstT, float>)
+    return svcvt_f32_x(pg, v);
+  else if constexpr (std::is_same_v<SrcT, double> && std::is_same_v<DstT, std::int64_t>)
+    return svcvt_s64_x(pg, v);
+  else if constexpr (std::is_same_v<SrcT, std::int64_t> && std::is_same_v<DstT, double>)
+    return svcvt_f64_x(pg, v);
+  else
+    return svcvt_f64_x(pg, v);  // remaining f64<->u64 etc. (kept minimal for the quantize core)
+}
+// RoundToInt: round-to-nearest-even THEN convert (svrintn rounds, svcvt truncates the now-integral
+// value). float->int only.
+template <typename DstT, std::size_t N, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> RoundToInt(Simd<DstT, N, 0>, V v) noexcept {
+  using SrcT = TFromV<V>;
+  const svbool_t pg = detail::ptrue<SrcT>();
+  if constexpr (std::is_same_v<SrcT, float>)
+    return svcvt_s32_x(pg, svrintn_x(pg, v));
+  else
+    return svcvt_s64_x(pg, svrintn_x(pg, v));
+}
+
+// ---- gather (SVE NATIVE svld1_gather, not store+reload) -----------------------------
+// GatherIndex(d, base, idx): dst[i] = base[idx[i]]. SVE's gather takes the index vector as the
+// same-width unsigned/signed lanes; svld1_gather_index scales by element size (a true index, not
+// byte offset). 32/64-bit lanes only (SVE gather is defined there).
+template <class D, class VI>
+HYLE_FORCE_INLINE VFromD<D> GatherIndex(D, const TFromD<D>* base, VI idx) noexcept {
+  return svld1_gather_index(detail::ptrue<TFromD<D>>(), base, idx);
+}
+
 // ---- population count ---------------------------------------------------------------
 // svcnt_x returns the UNSIGNED same-width vector (popcount is unsigned); Highway's contract keeps
 // the input lane type, so reinterpret the unsigned result back to V's type.
