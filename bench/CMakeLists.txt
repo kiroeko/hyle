@@ -484,6 +484,34 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   target_compile_definitions(hyle_gather_bench_avx512 PRIVATE HYLE_SIMD_TARGET_AVX512)
   target_compile_options(hyle_gather_bench_avx512 PRIVATE ${_gb_avx512})
   hyle_apply_warnings(hyle_gather_bench_avx512)
+
+  # op-parity bench (HYLE self-made ops vs Highway same op, same ISA, same TU -> apples-to-apples,
+  # both inline). Answers "did self-making an op cost us vs just calling Highway?". Per-ISA exe:
+  # avx2 on host, avx512 under SDE. Needs the Highway include dir AND the FULL AVX2/AVX512 baseline
+  # (hyle_set_highway_isa / hyle_set_avx512_*_isa) so Highway's static dispatch doesn't silently
+  # downgrade to SSSE3 (which would make it a HYLE-256 vs Highway-128 non-race).
+  add_executable(hyle_op_parity_bench_avx2 simd/op_parity_bench.cc)
+  target_link_libraries(hyle_op_parity_bench_avx2 PRIVATE nanobench)
+  target_include_directories(hyle_op_parity_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(hyle_op_parity_bench_avx2 SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_compile_definitions(hyle_op_parity_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
+  # PER-TARGET flags (not set_source_files_properties, which would leak onto the avx512 target that
+  # shares this source): full AVX2 baseline so Highway static dispatch picks true 256-bit.
+  if(MSVC)
+    target_compile_options(hyle_op_parity_bench_avx2 PRIVATE /arch:AVX2)
+  else()
+    target_compile_options(hyle_op_parity_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
+  endif()
+  hyle_apply_warnings(hyle_op_parity_bench_avx2)
+
+  add_executable(hyle_op_parity_bench_avx512 simd/op_parity_bench.cc)
+  target_link_libraries(hyle_op_parity_bench_avx512 PRIVATE nanobench)
+  target_include_directories(hyle_op_parity_bench_avx512 PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(hyle_op_parity_bench_avx512 SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_compile_definitions(hyle_op_parity_bench_avx512 PRIVATE HYLE_SIMD_TARGET_AVX512)
+  hyle_isa_flags(_op_avx512 AVX512)
+  target_compile_options(hyle_op_parity_bench_avx512 PRIVATE ${_op_avx512})
+  hyle_apply_warnings(hyle_op_parity_bench_avx512)
 endif()
 
 # dtype cvt bench: fp16/bf16<->f32 batch. HYLE F16C dispatch vs scalar reference (+ Highway
