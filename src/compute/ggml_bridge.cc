@@ -116,6 +116,76 @@ Status matmul_batch_blocking(ggml_backend_t be, ggml_gallocr_t galloc,
   return Status();  // OK
 }
 
+// ---- generic elementwise/norm executor (compute-09 step-1) --------------------------
+// The SHARED graph executor: everything matmul_batch_blocking does EXCEPT the operator line
+// is boilerplate, written once here. A weightless activation-shaped op (n floats -> n floats)
+// takes 1 or 2 host inputs of length n and produces 1 host output of length n. The op is
+// selected by an enum; the ONLY op-specific code is the `build` switch below (one ggml call
+// each). This is what makes adding the next operator cheap -- no 50-line copy per op.
+enum class EwOp { kRmsNorm, kSilu, kAdd, kMul };
+
+// One elementwise job's raw HOST buffers + dims (TU-local POD, like MmJob).
+struct EwJob {
+  const float* a;   // input 0 (host)
+  const float* b;   // input 1 (host) or nullptr for unary
+  float* out;       // output (host)
+  int n;            // element count (single row)
+  float eps;        // rms_norm epsilon (ignored by others)
+  EwOp op;
+};
+
+Status elementwise_blocking(ggml_backend_t be, ggml_gallocr_t galloc, const EwJob& j) noexcept {
+  const bool binary = (j.op == EwOp::kAdd || j.op == EwOp::kMul);
+  // tensor overhead: 2 inputs (a[,b]) + 1 result, + graph. Small fixed budget.
+  const size_t mem_size = ggml_tensor_overhead() * 4 + ggml_graph_overhead();
+  ggml_init_params params = {mem_size, nullptr, /*no_alloc=*/true};
+  ggml_context* ctx = ggml_init(params);
+  if (ctx == nullptr) return Status::ResourceExhausted("ggml_init failed");
+
+  ggml_cgraph* gf = ggml_new_graph(ctx);
+  ggml_tensor* gA = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, j.n);
+  ggml_set_input(gA);  // gallocr gives it a real device buffer (valid CUDA context)
+  ggml_tensor* gB = nullptr;
+  if (binary) { gB = ggml_new_tensor_1d(ctx, GGML_TYPE_F32, j.n); ggml_set_input(gB); }
+
+  // THE ONLY OP-SPECIFIC LINE(S): one ggml call per operator.
+  ggml_tensor* gOut = nullptr;
+  switch (j.op) {
+    case EwOp::kRmsNorm: gOut = ggml_rms_norm(ctx, gA, j.eps); break;
+    case EwOp::kSilu:    gOut = ggml_silu(ctx, gA); break;
+    case EwOp::kAdd:     gOut = ggml_add(ctx, gA, gB); break;
+    case EwOp::kMul:     gOut = ggml_mul(ctx, gA, gB); break;
+  }
+  ggml_set_output(gOut);  // gallocr won't alias the result away before tensor_get
+  ggml_build_forward_expand(gf, gOut);
+
+  if (!ggml_gallocr_alloc_graph(galloc, gf)) {
+    ggml_free(ctx);
+    return Status::ResourceExhausted("ggml_gallocr_alloc_graph failed");
+  }
+  ggml_backend_tensor_set(gA, j.a, 0, ggml_nbytes(gA));       // H2D input 0
+  if (binary) ggml_backend_tensor_set(gB, j.b, 0, ggml_nbytes(gB));  // H2D input 1
+
+  ggml_status ec = ggml_backend_graph_compute(be, gf);
+  if (ec == GGML_STATUS_SUCCESS)
+    ggml_backend_tensor_get(gOut, j.out, 0, ggml_nbytes(gOut));  // D2H result
+  ggml_free(ctx);
+  if (ec != GGML_STATUS_SUCCESS) return Status::Internal("ggml_backend_graph_compute failed");
+  return Status();  // OK
+}
+
+// Shared dispatch for the 4 public elementwise ops: POD-capture + spawn_blocking. Takes the
+// already-extracted raw backend/gallocr handles (the public wrapper does the friend access +
+// contract checks) so this stays a plain TU-local helper, not a friend of GgmlBackend.
+sched::JoinHandle<Status> ew_spawn(void* be_raw, void* galloc, sched::BlockingPool& pool,
+                                   mem::Allocator alloc, const float* a, const float* b,
+                                   float* out, int n, float eps, EwOp op) noexcept {
+  EwJob job{a, b, out, n, eps, op};
+  return sched::spawn_blocking(pool, alloc, [be_raw, galloc, job]() noexcept {
+    return elementwise_blocking(as_be(be_raw), static_cast<ggml_gallocr_t>(galloc), job);
+  });
+}
+
 }  // namespace
 
 GgmlBackend& GgmlBackend::operator=(GgmlBackend&& o) noexcept {
@@ -213,6 +283,33 @@ sched::JoinHandle<Status> ggml_matmul_f32_batched(GgmlBackend& be,
                                  static_cast<ggml_gallocr_t>(galloc),
                                  batch.jobs, batch.count);
   });
+}
+
+// ---- elementwise / norm ops (compute-09 step-1): thin public wrappers over ew_spawn ----
+// Each does the contract checks + friend access (raw_/galloc_ptr_) then delegates.
+sched::JoinHandle<Status> ggml_rms_norm_f32(GgmlBackend& be, sched::BlockingPool& pool,
+                                            mem::Allocator alloc, const float* src,
+                                            float* dst, int n, float eps) noexcept {
+  HYLE_FATAL_ASSERT(be.valid() && src != nullptr && dst != nullptr && n > 0);
+  return ew_spawn(be.raw_(), be.galloc_ptr_(), pool, alloc, src, nullptr, dst, n, eps, EwOp::kRmsNorm);
+}
+sched::JoinHandle<Status> ggml_silu_f32(GgmlBackend& be, sched::BlockingPool& pool,
+                                        mem::Allocator alloc, const float* src,
+                                        float* dst, int n) noexcept {
+  HYLE_FATAL_ASSERT(be.valid() && src != nullptr && dst != nullptr && n > 0);
+  return ew_spawn(be.raw_(), be.galloc_ptr_(), pool, alloc, src, nullptr, dst, n, 0.0f, EwOp::kSilu);
+}
+sched::JoinHandle<Status> ggml_add_f32(GgmlBackend& be, sched::BlockingPool& pool,
+                                       mem::Allocator alloc, const float* a, const float* b,
+                                       float* dst, int n) noexcept {
+  HYLE_FATAL_ASSERT(be.valid() && a != nullptr && b != nullptr && dst != nullptr && n > 0);
+  return ew_spawn(be.raw_(), be.galloc_ptr_(), pool, alloc, a, b, dst, n, 0.0f, EwOp::kAdd);
+}
+sched::JoinHandle<Status> ggml_mul_f32(GgmlBackend& be, sched::BlockingPool& pool,
+                                       mem::Allocator alloc, const float* a, const float* b,
+                                       float* dst, int n) noexcept {
+  HYLE_FATAL_ASSERT(be.valid() && a != nullptr && b != nullptr && dst != nullptr && n > 0);
+  return ew_spawn(be.raw_(), be.galloc_ptr_(), pool, alloc, a, b, dst, n, 0.0f, EwOp::kMul);
 }
 
 }  // namespace hyle::compute

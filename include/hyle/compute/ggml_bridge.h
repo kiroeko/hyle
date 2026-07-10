@@ -95,6 +95,14 @@ class HYLE_COMPUTE_API GgmlBackend {
   friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_batched(
       GgmlBackend&, sched::BlockingPool&, mem::Allocator,
       const struct MatmulF32Job*, int) noexcept;
+  friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_rms_norm_f32(
+      GgmlBackend&, sched::BlockingPool&, mem::Allocator, const float*, float*, int, float) noexcept;
+  friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_silu_f32(
+      GgmlBackend&, sched::BlockingPool&, mem::Allocator, const float*, float*, int) noexcept;
+  friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_add_f32(
+      GgmlBackend&, sched::BlockingPool&, mem::Allocator, const float*, const float*, float*, int) noexcept;
+  friend HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_mul_f32(
+      GgmlBackend&, sched::BlockingPool&, mem::Allocator, const float*, const float*, float*, int) noexcept;
   explicit GgmlBackend(void* be, void* galloc) noexcept : be_(be), galloc_(galloc) {}
   void* raw_() const noexcept { return be_; }
   void* galloc_ptr_() const noexcept { return galloc_; }
@@ -150,5 +158,38 @@ struct MatmulF32Job {
 HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_matmul_f32_batched(
     GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
     const MatmulF32Job* jobs, int count) noexcept;
+
+// ---- ELEMENTWISE / NORM operators (compute-09 step-1: prove the op face is not a toy) ----
+// compute-05 exposed ONLY matmul as the "bridge mechanism proof". These add the next
+// transformer-block operators (rms_norm / silu / add / mul) via a SHARED internal graph
+// executor -- the whole build-context + gallocr-alloc + H2D + compute + D2H + free boilerplate
+// is now written ONCE; each operator contributes only its build-graph line. That is what makes
+// "borrow more ggml operators" cheap and non-toy (NOT "one hand-copied function per op"). These
+// four are WEIGHTLESS activation-shaped ops (n floats in -> n floats out), so they follow
+// matmul's "copy input each call" model with no weight-residency machinery (that lands with the
+// decoder block, step-2). Same async contract as matmul: internally spawn_blocking, returns
+// JoinHandle<Status>; host buffers must outlive the join. n > 0; buffers non-null (fatal assert).
+//
+// dst[i] = rms_norm(src)[i] * ... : RMS-normalize `src` over its last dim of `n` elements
+// (a single row). eps is the ggml_rms_norm epsilon. src/dst are host float[n]. (No weight
+// multiply here -- that is a separate ggml_mul with the norm weight, composed at the block level.)
+HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_rms_norm_f32(
+    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    const float* src, float* dst, int n, float eps) noexcept;
+
+// dst[i] = silu(src[i]) = src[i] / (1 + exp(-src[i])). FFN activation. Host float[n].
+HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_silu_f32(
+    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    const float* src, float* dst, int n) noexcept;
+
+// dst[i] = a[i] + b[i] (residual). Host float[n] each.
+HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_add_f32(
+    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    const float* a, const float* b, float* dst, int n) noexcept;
+
+// dst[i] = a[i] * b[i] (elementwise; norm-weight apply / FFN gate). Host float[n] each.
+HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_mul_f32(
+    GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
+    const float* a, const float* b, float* dst, int n) noexcept;
 
 }  // namespace hyle::compute

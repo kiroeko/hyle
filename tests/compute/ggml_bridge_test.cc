@@ -147,6 +147,97 @@ TEST(GgmlBridge, CpuThreadModelSplit) {
   EXPECT_EQ(drive_one(cpu, pool, 8, 16, 4, /*n_threads=*/4), 0) << "n_threads=4 batched";
 }
 
+// ---- compute-09 step-1: elementwise / norm operators through the SHARED graph executor ----
+// Proves the bridge op face extends past matmul cheaply: rms_norm / silu / add / mul each run
+// end-to-end (host in -> ggml op on ggml VRAM -> host out) via the same spawn_blocking + gallocr
+// path, and match an independent host scalar reference. This is the "not a toy" step: adding an
+// operator is now one build-graph line, not a copied 50-line function.
+namespace {
+// Host scalar references (independent of ggml).
+void ref_rms_norm(const std::vector<float>& x, std::vector<float>& out, float eps) {
+  double ss = 0.0;
+  for (float v : x) ss += double(v) * v;
+  const float inv = static_cast<float>(1.0 / std::sqrt(ss / x.size() + eps));
+  out.resize(x.size());
+  for (size_t i = 0; i < x.size(); ++i) out[i] = x[i] * inv;
+}
+
+// Run the 4 elementwise ops on `device`, each compared to its host reference. Returns 0 or a
+// negative step code. Runs in a fiber (join() is fiber-aware).
+int run_elementwise(const Device& device, BlockingPool& pool) {
+  auto be = GgmlBackend::create(device, /*n_threads=*/1);
+  if (!be.has_value()) return -1;
+  constexpr int kN = 320;  // not a multiple of any SIMD/ggml width
+  std::vector<float> a(kN), b(kN), out(kN, -12345.0f);
+  for (int i = 0; i < kN; ++i) { a[i] = float((i % 13) - 6) * 0.3f; b[i] = float((i % 7) - 3) * 0.5f; }
+
+  // rms_norm
+  {
+    auto h = ggml_rms_norm_f32(*be, pool, system_allocator(), a.data(), out.data(), kN, 1e-6f);
+    auto r = h.join();
+    if (!r.has_value() || !r->ok()) return -10;
+    std::vector<float> ref; ref_rms_norm(a, ref, 1e-6f);
+    for (int i = 0; i < kN; ++i) if (std::fabs(out[i] - ref[i]) > 1e-4f * (1.0f + std::fabs(ref[i]))) return -11;
+  }
+  // silu: x / (1 + exp(-x))
+  {
+    auto h = ggml_silu_f32(*be, pool, system_allocator(), a.data(), out.data(), kN);
+    auto r = h.join();
+    if (!r.has_value() || !r->ok()) return -20;
+    for (int i = 0; i < kN; ++i) {
+      float ref = a[i] / (1.0f + std::exp(-a[i]));
+      if (std::fabs(out[i] - ref) > 1e-4f * (1.0f + std::fabs(ref))) return -21;
+    }
+  }
+  // add
+  {
+    auto h = ggml_add_f32(*be, pool, system_allocator(), a.data(), b.data(), out.data(), kN);
+    auto r = h.join();
+    if (!r.has_value() || !r->ok()) return -30;
+    for (int i = 0; i < kN; ++i) if (std::fabs(out[i] - (a[i] + b[i])) > 1e-5f) return -31;
+  }
+  // mul
+  {
+    auto h = ggml_mul_f32(*be, pool, system_allocator(), a.data(), b.data(), out.data(), kN);
+    auto r = h.join();
+    if (!r.has_value() || !r->ok()) return -40;
+    for (int i = 0; i < kN; ++i) if (std::fabs(out[i] - (a[i] * b[i])) > 1e-5f) return -41;
+  }
+  return 0;
+}
+struct EwArg { Device device; BlockingPool* pool; int result = -100; std::atomic<bool> done{false}; };
+void elementwise_fiber(void* p) {
+  auto* a = static_cast<EwArg*>(p);
+  a->result = run_elementwise(a->device, *a->pool);
+  a->done.store(true, std::memory_order_release);
+}
+int drive_elementwise(const Device& device, BlockingPool& pool) {
+  EwArg arg{device, &pool};
+  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, &elementwise_fiber, &arg);
+  Scheduler sched(2, system_allocator(), 256);
+  sched.spawn(f.get());
+  sched.drain();
+  sched.shutdown();
+  EXPECT_TRUE(arg.done.load());
+  return arg.result;
+}
+}  // namespace
+
+TEST(GgmlBridge, ElementwiseOpsDefaultDevice) {
+  BlockingPool pool(system_allocator());
+  int rc = drive_elementwise(default_device(), pool);
+  EXPECT_EQ(rc, 0) << "elementwise op failed at step " << rc;
+}
+TEST(GgmlBridge, ElementwiseOpsCpu) {
+  Device devs[8];
+  std::size_t n = enumerate(devs, 8);
+  ASSERT_GT(n, 0u);
+  Device cpu = devs[n - 1];
+  ASSERT_FALSE(cpu.is_gpu());
+  BlockingPool pool(system_allocator());
+  EXPECT_EQ(drive_elementwise(cpu, pool), 0);
+}
+
 // Thread-safety contract (spec 线程安全契约): N fibers each hold their OWN GgmlBackend
 // and run independent matmuls concurrently ("high-concurrency independent small
 // inference" grid). All must be correct -- no shared backend, no race (WSL TSan clears
