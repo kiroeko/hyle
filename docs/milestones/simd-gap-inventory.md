@@ -11,6 +11,35 @@
 - **真问题 = 变宽(SVE/RVV)显著落后定宽 ~72 op**,且大多不是硬件借口。
 - **⚠️ 最要命的发现(headline)**:vec.h 的"泛型层一份 covers 五后端"对 scalable **是假的**——已发货的 complex / 128-cmp / Newton 泛型 op **依赖 SVE/RVV 没定义的底层原语**,今天只因 scalable TU 从没实例化它们才没崩;一旦 ARM/RISC-V 消费者(FFT/复数、vqsort-128)碰到就编译失败。**这不是覆盖问题,是潜在正确性/可构建性问题**,应作为下轮第一优先。
 
+## 0.5 每项 op 的执行决策流程(施工规程,逐 op 机械跑)
+
+清单里每个 🔴 REAL-GAP op,**照这棵决策树走**(固化 simd-08/09 沉淀 + backlog-map best-of 判据,不用每次重推):
+
+```
+对一个待补 op:
+├─ 两个参考库(Highway/xsimd)都没有?
+│    └─ 是 → 【自己实现】(泛型层组合已有 op,或后端原生 intrinsic)。scalar 是 oracle。
+├─ 只有一个库有?
+│    └─ 是 → 【默认它最优,借/抄它】(单一来源无从比,直接采用其手法/契约)。
+└─ 两个库都有?
+     └─ benchmark 取优(op_parity_bench,统计法 -n15,gap>两变体 spread 和才判赢),
+        选出"最优的那个",再对它判断:
+        ├─ 你觉得能超过它? → 【自己写 + benchmark 确认真超过】(超过才留,没超过就退回抄最优;
+        │                      如 simd-09 rsqrt/rcp Newton 精修反超两库=自造超越)
+        ├─ 感觉能自己写但不必超越? → 【抄】(抄最优的契约/指令序列,自己写进后端,如 simd-05~08
+        │                            per-op intrinsic 序列;不 vendor)
+        └─ 太复杂写不了(数千行/多项式逼近/整套算法)? → 【借】(vendor 薄封装:公开层吃裸指针
+                                                        不 include 库、借核 TU 内部用库 D-tag,
+                                                        如 vqsort/bit_pack/数学核 exp_f32_batch)
+```
+
+**三条铁前置(踩过坑,别省)**:
+1. **correctness 是闸,速度在其后**:任何"更快"实现必先过 libm/scalar-oracle / round-trip 自洽对拍;不 overflow-safe / 精度不达标 / 语义偏离的"最快"**没资格入选**(hypot 借 Highway 不借快 2.2x 但非 overflow-safe 的 xsimd;揪出 Highway Pack16 / xsimd lgamma 两个 vendor bug——**借不等于信,借核同样过对拍闸**)。
+2. **best-of 只在"有真实算法内容 + 三家有差异 + 不贴单一硬件指令"时才有意义**:纯直通指令(add/min/shuffle/位计数)三家编成同一条,不必 bench;数学函数(多项式逼近)是 best-of 主场;结构 op(gather/compress store+reload)库也无硬件指令,真加速是自造 native 非借库。
+3. **winner 不可外推,必须逐精度/逐 ISA bench**:f64 winner 与 f32 大面积相反(exp/tanh/exp2 翻转);SDE 验正确性可信、验性能不可信;bench 两边必须同等内联能力(同 TU / 都 header-only,否则跨 .so 不可内联=假 gap)。
+
+**每 op 收口**:四 ISA 真跑(SSE4/AVX2/AVX512-SDE/NEON-qemu-or-mac + scalable qemu 多 VL)对拍 scalar oracle;进 op_parity_bench 背书(自造件尤其,不是"抄了契约"就默认不亏);过 ASan(store+reload 的 scratch 栈宽是 TruncateTo 类单平台陷阱重灾区)。
+
 ## 1. 信源①②:变宽 vs 定宽对称性缺口(最大块)
 
 精确差集(宏感知提取,已去 crypto + Emulated):avx2 有而 **SVE 缺 72 / RVV 缺 74**(RVV 另缺 `PopulationCount`/`LeadingZeroCount`)。每项已对 `sve.h`/`rvv.h` 源码核实确缺。
