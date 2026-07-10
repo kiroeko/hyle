@@ -335,6 +335,12 @@ add_subdirectory(src/io)     # io-01: proactor completion seam (IOCP; io_uring n
 # Depends only on error for now (compute-03 will add sched for GPU->fiber wakeup).
 add_subdirectory(src/compute)
 
+# graph-01 (step-1): task-dependency DAG with dirty-flag incremental recompute (north-star
+# ② CAD/BIM/CAE parametric/simulation recompute). Pure CPU + serial evaluate for step-1
+# (depends on error/mem/container only, builds anywhere); parallel node execution over the
+# sched work-stealing pool is step-2 (will add hyle_sched under HYLE_HAS_FCONTEXT then).
+add_subdirectory(src/graph)
+
 if(HYLE_BUILD_TESTS)
   enable_testing()
   add_subdirectory(tests)

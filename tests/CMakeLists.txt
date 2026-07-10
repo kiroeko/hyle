@@ -82,6 +82,9 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
                        FIXTURES_REQUIRED VK_PIPE_CACHE)
 endif()
 hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
+# graph-01 (step-1): task-dependency DAG incremental recompute. Pure CPU, serial evaluate
+# -- no sched dep yet (parallel node execution is step-2).
+hyle_add_test(graph SOURCES graph/taskgraph_test.cc DEPS hyle_graph)
 # hash_test.cc includes the opt-in hyle/container/hash_inline.h, which pulls the
 # vendored xxhash + wyhash single-headers into that TU -- add their include dirs.
 target_include_directories(hyle_container_test SYSTEM PRIVATE
