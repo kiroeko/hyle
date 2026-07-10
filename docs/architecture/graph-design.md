@@ -76,15 +76,19 @@ graph/（北极星② 编排：依赖 DAG 重算 + 数据并行）
 
 ## 三、里程碑拆分与行数估算
 
-行数依据：clay 可继承骨架 ~800–1,500 code；增量引擎 + fiber 绑定 + 数据并行层从零；测试按项目实测 test/prod ≈ 0.65。
+行数依据：测试按项目实测 test/prod ≈ 0.65。
 
-| 里程碑 | 内容 | 继承 vs 从零 | code 估算 | 依据 |
+| 里程碑 | 内容 | 原估 | **实测(cloc)** | 说明 |
 |---|---|---|---|---|
-| **graph-01** | taskgraph 增量重算：DAG 建模 + 脏标记传播 + 结果缓存 + 拓扑并行 + 绑 sched fiber | 继承 ~800–1,500 骨架（剥离 + 换调度）+ **从零造脏/缓存/增量** | **3–4k** | 骨架继承但增量引擎（clay 0 命中）+ fiber 绑定全新；对标 TBB flow_graph |
-| **graph-02** | 数据并行层：parallel_for/reduce/scan/sort + blocked_range/partitioner | **全从零**（clay 无此层）| **1–2k** | 对标 oneTBB/oneDPL 数据并行算法层；消费 sched+simd |
-| **合计** | | | **~4–6k code**（+测试 ≈ 7–10k）| 与 milestones/README graph 行现估一致 |
+| **graph-01** | taskgraph 增量重算：DAG 建模 + 脏标记传播 + 结果缓存 + 拓扑并行 + 绑 sched fiber | 3–4k | ✅ **216 prod / ~490 test（2026-07-10 完成 step-1+2）** | **远低于原估——是精瘦不是 stub（见下）** |
+| **graph-02** | 数据并行层：parallel_for/reduce/scan/sort + blocked_range/partitioner | 1–2k | 未做 | 全从零（clay 无此层）；对标 oneTBB/oneDPL；消费 sched+simd。**参考 graph-01 的收敛，实际大概率也显著低于 1–2k** |
 
-> 与 README 现估交叉验证：milestones/README 记 graph-01 3–4k / graph-02 1–2k，roadmap P6 记 graph 段 ~6–11k（含收口其他件）。本文档 ~4–6k code 落在区间内，一致。
+> **⚠️ 原估 3–4k 严重偏高，实测 graph-01 只有 216 生产行——已完成、功能完整（增量语义 + 并行，20 测试跨 WSL/ASan/TSan/MSVC 四配置全绿 + 两轮红队），非半成品。三个原因把估算压下来了：**
+> 1. **两个设计决策消灭了整类代码**：「边只能指向更小 id → 插入序天然是拓扑序」这条约束，让**拓扑排序 + 环检测算法（通常数百行）完全不用写**；脏传播退化成一趟 for 循环。
+> 2. **图不拥有数据流值系统**：原估把 clay 那套 data_type/socket/AsyncValue（~750 行）+ schema 反射（~534）+ JSON（~142）算进了"继承骨架"，但设计阶段就决定**全剥掉**（节点 = fn-ptr+ctx 闭包，值走用户内存）。原估的"继承 ~800–1,500 骨架"是错的——真正流进来的核心只有一两百行。
+> 3. **step-2 复用 sched 现成 spawn_task/join**，不自造并行原语，逐层 fork-join 编排只 ~76 行 impl。
+>
+> **教训**：估算时把"clay 有多少行"当成"HYLE 要写多少行"的锚是错的——clay 的行数大头是被主动剥离的应用层耦合，不是增量引擎本身。**graph 支柱实际远小于当初的 ~4–6k 估算。**
 
 ## 四、开工顺序与前置
 
