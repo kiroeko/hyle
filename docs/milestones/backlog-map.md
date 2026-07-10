@@ -78,6 +78,8 @@
 
 **C 类结论**:compute **已破土(compute-01 ✅)**——它是北极星① 的算力支柱本体,**排期上是一个大阶段**(主干 01~06 借 ggml ~5-8k + 缺口 07 CPU 后端 / 08 HIP·Metal)。**缺口补登(2026-07-06)**:07 CPU 算子后端(scope §CPU fallback + roadmap 验收"CPU+GPU 对拍"要求的真后端,非 compute-01 的 host inline 兜底)、08 AMD·Apple 后端(scope 后端矩阵列了但主干未覆盖,借 ggml-hip/metal 优先)。graph 依赖 compute 的 kernel,排在 compute 之后。
 
+> **graph 后续能力(2026-07-10 taskflow 校准登记,等消费者驱动,非投机)**:① **动态/条件任务**(taskflow subflow/condition task):CAE 定点迭代求解/自适应网格靠它表达,HYLE 静态 DAG(插入序=拓扑序、无环)现表达不了——CAE 迭代求解器消费者到位时做,可能要放松 DAG 约束。② **pipeline/data_pipeline**(有序阶段流水并行):taskflow 有、HYLE 零覆盖;对应北极星① 推理 token 流水 + CAE 流式求解,是独立并行范式(候选 graph-03)。③ wavefront **continuation cache**(完成 task 直接跑下一就绪后继零入队):sched 未暴露"当前 fiber 转跑另一 fiber",评估后按需。校准全账见 memory `project_graph_taskflow_calibration`。
+
 ## 五、收口层待决(需你拍板,非纯排期)
 
 | 里程碑 | 状态 | 待决 |

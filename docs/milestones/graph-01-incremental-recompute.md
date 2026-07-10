@@ -130,6 +130,21 @@
 
 红队确认 remaining 计数模型/CSR 转置/channel 容量/drain 不变式/happens-before/单线程 remaining/self-schedule 无死锁全对,但揪出 **1 CRITICAL UAF**：栈 `Channel` 在 drain-to-zero 后即销毁,而 `Channel::send` 在 unlock 之后才 notify_one 触碰 this → 多独立终端并发完成时 notify 打到已释放内存。修=保留 JoinHandle、drain 后 join 全部再返回（join 等 set_value,在 send 完全返回之后）+ 补触发形状测试。**又一次坐实"测试全绿 ≠ 无 bug",对抗式审查是必经闸。**
 
+## SOTA 校准（vs taskflow，2026-07-10）+ wavefront 去中心化重构
+
+graph-01/02 完成后用新 clone 的 **taskflow**（经检验的现代 C++ DAG+数据并行框架,`C:\public\project-hyle\taskflow`）做双向校准（透镜:借设计不借运行时——HYLE 跑自己 sched,taskflow 有自己 Executor）。**多数决策确认对,几处超越 taskflow**（增量重算:taskflow 每 run() 全图重跑无增量;reduce 双档:taskflow 只非确定性且 std::mutex 串行 combine;Body 收 subrange:taskflow for_each 逐元素回调杀向量化）。
+
+**揪出一个真 scalability 问题——wavefront 中心化**（这不是功能 bug,功能测试全绿,是吞吐瓶颈）：
+- **taskflow 完全去中心化**：完成任务的**那个 worker 自己**原子递减后继的 join_counter,归零后继推进**自己的 WSQ**,还用 continuation 技巧接着跑下一个。无协调者。
+- **HYLE 旧 wavefront 中心化**：每个完成经栈 `Channel` 送**单个驱动 fiber**,由它串行递减所有计数 + spawn 所有新就绪。宽 DAG（几千同层独立单元,HYLE 自己的目标）上驱动 fiber 是串行点,worker 空等被重 spawn。那个 send-after-free UAF 本身就是中心化 channel 的症状。
+
+**重构 = 去中心化释放**（彻底修,非打补丁）：`remaining` 计数改**原子**,**完成的 task 自己**在 body 里递减后继计数、归零就 `spawn_task` 自推（`sched` 的 `spawn` 从 worker 内调用**已自动落该 worker 本地队列**,scheduler.cc:641——无需动 sched）。去掉 driver fiber + Channel + join-all-before-return（UAF 随中心化 channel 一并消失）。这也回应"三总目标第③:回看纠正历史选错"。
+
+**明确不做/后置**（登记 backlog,非 graph-01 收尾）：
+- **动态/条件任务**（taskflow subflow/condition）：CAE 定点迭代求解/自适应网格靠它表达,HYLE 静态 DAG 现表达不了。graph 后续能力,等消费者。
+- **pipeline/data_pipeline**（有序阶段流水并行）：对应北极星① 推理 token 流水,HYLE 零覆盖。候选 graph-03。
+- continuation cache（完成 task 直接跑下一就绪后继而非入队）:sched 未暴露"当前 fiber 转跑另一 fiber",基础去中心化不需要,评估后再定。
+
 ## 交付物
 
 - `include/hyle/graph/taskgraph.h`（`TaskGraph` + `NodeId`/`ComputeFn`;SoA+CSR;导出宏放方法;内联 accessor seam + `dep_pool_size_` for wavefront 反向邻接）
