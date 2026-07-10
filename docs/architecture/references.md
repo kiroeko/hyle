@@ -87,7 +87,7 @@
 |---|---|---|
 | **oneTBB** | **参考（设计,不借运行时）** | graph-02 数据并行的 SOTA 设计源:`blocked_range`(grainsize + 递归 split)、`parallel_reduce`(reduction_tree_node + **deterministic** 双档)、`parallel_scan`(两趟)。**不借其 task arena/调度器**(双调度器红线);跑 HYLE sched。见 graph-02-design |
 | **taskflow** | 参考 | 现代 C++ 的 DAG + 数据并行一体框架(`tf::Taskflow` 依赖图 + for_each/reduce/scan + subflow 动态图)——**graph-01(DAG 编排)+ graph-02(数据并行)合起来的最贴 SOTA 对照**,纯 header 比 oneTBB 更贴 HYLE 编排语义。对拍其 API 形态;调度仍归 HYLE sched |
-| **eigen** | **参考（CAE 求解器,按需）** | 北极星② CAE 的稠密/稀疏线代 SOTA(matmul/分解/迭代求解器 CG/BiCGSTAB);motivation 里"CAE 把 compute/simd 压到稀疏线代深度"的头号参考。**等 graph-02 之后真做 CAE 求解器消费者时读**,现在超前 |
+| **eigen** | **参考（CAE 求解器,按需）** | 北极星② CAE 的稠密/稀疏线代 SOTA(matmul/分解/迭代求解器 CG/BiCGSTAB);motivation 里"CAE 把 compute/simd 压到稀疏线代深度"的头号参考。**并行可注入外部池**:`Parallelizer.h` 除 OpenMP 外有 `EIGEN_GEMM_THREADPOOL`(`pool->NumThreads()`,src:38/81)——同 ggml `set_threadpool` 模式,能喂 HYLE 调度器而非用其 OpenMP(避双运行时)。**等 graph-02 之后真做 CAE 求解器消费者时读**,现在超前 |
 | **openvdb** | **参考（CAD/CAE 网格/体数据,按需）** | 工业级稀疏体素/网格数据结构 + 其上的并行遍历(自带 TBB 并行,只读其数据结构 + 分块遍历设计,并行归 HYLE graph-02)。北极星② 几何核/网格 stencil 的参考。**等真做几何/体数据消费者再读**,现在超前 |
 
 ## 开工优先级（按 roadmap 阶段）
