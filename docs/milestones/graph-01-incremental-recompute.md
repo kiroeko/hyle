@@ -138,7 +138,14 @@ graph-01/02 完成后用新 clone 的 **taskflow**（经检验的现代 C++ DAG+
 - **taskflow 完全去中心化**：完成任务的**那个 worker 自己**原子递减后继的 join_counter,归零后继推进**自己的 WSQ**,还用 continuation 技巧接着跑下一个。无协调者。
 - **HYLE 旧 wavefront 中心化**：每个完成经栈 `Channel` 送**单个驱动 fiber**,由它串行递减所有计数 + spawn 所有新就绪。宽 DAG（几千同层独立单元,HYLE 自己的目标）上驱动 fiber 是串行点,worker 空等被重 spawn。那个 send-after-free UAF 本身就是中心化 channel 的症状。
 
-**重构 = 去中心化释放**（彻底修,非打补丁）：`remaining` 计数改**原子**,**完成的 task 自己**在 body 里递减后继计数、归零就 `spawn_task` 自推（`sched` 的 `spawn` 从 worker 内调用**已自动落该 worker 本地队列**,scheduler.cc:641——无需动 sched）。去掉 driver fiber + Channel + join-all-before-return（UAF 随中心化 channel 一并消失）。这也回应"三总目标第③:回看纠正历史选错"。
+**重构 = 去中心化释放**（彻底修,非打补丁,2026-07-10 完成）：`remaining` 计数改**原子**(heap `WfState`,引用计数),**完成的 task 自己**在 body 里递减后继计数、归零就 `spawn_task` 自推（`sched` 的 `spawn` 从 worker 内调用**已自动落该 worker 本地队列**,scheduler.cc:641——无需动 sched）。去掉 driver fiber + Channel + join-all-before-return（UAF 随中心化 channel 一并消失）。顶层 fiber 播种后 `suspend()`,最后一个 task 经 `Waker` 唤醒它。这也回应"三总目标第③:回看纠正历史选错"。
+
+**去中心化引入并发,验证过程揪出 3 个真 bug(TSan/ASan/统计法逐个坐实,全修)**——这正是"改成 SOTA 模式≠免费,并发正确性要重新挣"：
+1. **并发写图 `dirty_[]` 竞争**(TSan)：多 worker 完成时并发 `clear_dirty_` 写非原子 bool 数组。修=**延后清脏**:worker 只写 `WfState` 原子 `ran_ok[i]`,单线程 waiter 在 resume 后统一 `clear_dirty_`。
+2. **seed/completion 双 spawn 竞争**(ASan,~1/8)：`wf_try_spawn` racy 重读 `remaining==0`,seed 循环与早完成的 task 都见 0 → 同节点 spawn 两次。修=**唯一 owner 规则**:seed 只 spawn 建图时算好的初始 0-dep 节点(单线程捕获成列表,不重读),completion 只由 `fetch_sub==1` 那个唯一 task spawn。
+3. **transient-zero pending 早唤醒**(统计法,~1/30,TSan 静默因非竞争是计数逻辑错)：seed 逐个 spawn,seed#1 若在 waiter spawn seed#2 前完成,`pending` 瞬时归 0 → 早 `wake()` → waiter resume 后跑延后清脏而后续节点还没跑 → 漏清脏 → 下次 eval 误重算。修=**播种 guard**:`pending` 初始化为 1(waiter 持),播种完 `fetch_sub(acq_rel)` 释放,仅当还有真 task 才 suspend(标准 fork-join guard 惯例,同 tokio/marl)。
+
+**验收**:WSL 20/20 + ASan 20/20 + **TSan 40/40** + MSVC 14/14(80 连过跨三 sanitizer)。`WavefrontShortLegNotBlockedBySlowSibling` 证关键路径缩短、`WavefrontManyIndependentTerminalsNoUAF` 证无栈对象 UAF。
 
 **明确不做/后置**（登记 backlog,非 graph-01 收尾）：
 - **动态/条件任务**（taskflow subflow/condition）：CAE 定点迭代求解/自适应网格靠它表达,HYLE 静态 DAG 现表达不了。graph 后续能力,等消费者。
