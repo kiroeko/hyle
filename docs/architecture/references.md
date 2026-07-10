@@ -80,12 +80,21 @@
 | **liburing** | **参考(不链)** | io_uring 机制权威:barrier/SQE 布局/多 op(multishot accept/recv、provided buf_ring、ASYNC_CANCEL)。**HYLE 用裸 syscall 自写,不链 liburing**——精确复刻其 v2.15 fast-path barrier + buf_ring 协议(io-01/02/07 已落地) |
 | **tokio-uring** | 参考 | 见 sched/ 段:submit/flush 节奏 + msghdr 生命周期(io-04 udp) |
 | **libevent** | 参考 | reactor 级:common_timeout 有序链算法(time CommonTimeoutQueue 同款基线)、evdns 异步 DNS(io-09 待)、bufferevent 水位(应用层不做);对 HYLE proactor 价值小于以上 |
+| **nghttp2** | **借核(io-11 HTTP/2)** | HTTP/2 帧/HPACK/流状态机的权威纯协议实现;io-11 定案借其 parser 核(同 io-10 借 picohttpparser 的模式),自写 over co_await 集成层,不取其 event loop。等 io-11 开工 |
+
+### graph/（Tier 6，北极星② 编排 + 数据并行）
+| 库 | 角色 | 说明 |
+|---|---|---|
+| **oneTBB** | **参考（设计,不借运行时）** | graph-02 数据并行的 SOTA 设计源:`blocked_range`(grainsize + 递归 split)、`parallel_reduce`(reduction_tree_node + **deterministic** 双档)、`parallel_scan`(两趟)。**不借其 task arena/调度器**(双调度器红线);跑 HYLE sched。见 graph-02-design |
+| **taskflow** | 参考 | 现代 C++ 的 DAG + 数据并行一体框架(`tf::Taskflow` 依赖图 + for_each/reduce/scan + subflow 动态图)——**graph-01(DAG 编排)+ graph-02(数据并行)合起来的最贴 SOTA 对照**,纯 header 比 oneTBB 更贴 HYLE 编排语义。对拍其 API 形态;调度仍归 HYLE sched |
+| **eigen** | **参考（CAE 求解器,按需）** | 北极星② CAE 的稠密/稀疏线代 SOTA(matmul/分解/迭代求解器 CG/BiCGSTAB);motivation 里"CAE 把 compute/simd 压到稀疏线代深度"的头号参考。**等 graph-02 之后真做 CAE 求解器消费者时读**,现在超前 |
+| **openvdb** | **参考（CAD/CAE 网格/体数据,按需）** | 工业级稀疏体素/网格数据结构 + 其上的并行遍历(自带 TBB 并行,只读其数据结构 + 分块遍历设计,并行归 HYLE graph-02)。北极星② 几何核/网格 stencil 的参考。**等真做几何/体数据消费者再读**,现在超前 |
 
 ## 开工优先级（按 roadmap 阶段）
 
 - **P3-P4 即用**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、highway/xsimd/simdutf（simd，vendored 数学核 + utf8）。
 - **P5 即用**：ggml + llama.cpp（compute 主力借/参考）、oneDNN/oneMath（Intel 加速，CPU/数学后端）、seastar（io reactor_backend）。
-- **P6 / 按需**：simdjson/flatbuffers/capnproto（serialize）、xxHash（hash，设默认 hasher）、tracy（obs，借设计）。oneDPL/oneTBB/oneDAL **边界外**（见下）。
+- **P6 / 按需**：simdjson/flatbuffers/capnproto（serialize）、xxHash（hash，设默认 hasher）、tracy（obs，借设计）、**oneTBB/taskflow（graph-02 数据并行设计对照）、nghttp2（io-11 HTTP/2 借核）、eigen/openvdb（北极星② CAE/几何,更后置按需）**。oneDPL/oneDAL **边界外**（见下）。
 
 ## 借 vs 造的总原则（呼应 charter）
 
