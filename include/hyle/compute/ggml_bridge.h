@@ -216,9 +216,9 @@ class HYLE_COMPUTE_API FfnBlock {
  public:
   FfnBlock() noexcept = default;
   HYLE_DISABLE_COPY(FfnBlock);
-  HYLE_COMPUTE_API FfnBlock(FfnBlock&& o) noexcept;
-  HYLE_COMPUTE_API FfnBlock& operator=(FfnBlock&& o) noexcept;
-  HYLE_COMPUTE_API ~FfnBlock();
+  FfnBlock(FfnBlock&& o) noexcept;
+  FfnBlock& operator=(FfnBlock&& o) noexcept;
+  ~FfnBlock();
 
   // Build the block on `device` and COPY the four weight matrices into resident device memory
   // (ONCE -- initialization cost, not per-forward). d = hidden dim, ffn = intermediate dim, eps =
@@ -235,8 +235,8 @@ class HYLE_COMPUTE_API FfnBlock {
   // runs on `pool`; returns JoinHandle<Status>. x and out are HOST float buffers (rows·d each) and
   // must outlive the join. `alloc` backs the JoinState.
   //   CONTRACT: valid(); x/out non-null; rows>0.
-  HYLE_COMPUTE_API sched::JoinHandle<Status> forward(sched::BlockingPool& pool, mem::Allocator alloc,
-                                                     const float* x, float* out, int rows) noexcept;
+  sched::JoinHandle<Status> forward(sched::BlockingPool& pool, mem::Allocator alloc,
+                                    const float* x, float* out, int rows) noexcept;
 
   bool valid() const noexcept { return be_ != nullptr; }
 

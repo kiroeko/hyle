@@ -332,10 +332,12 @@ struct FfnWeights {
 // compute, D2H the output. Runs entirely on the pool thread (spec ②). Weights already live in
 // wbuf (not touched by gallocr). x = [rows*d] host, out = [rows*d] host.
 Status ffn_forward_blocking(ggml_backend_t be, ggml_gallocr_t galloc, const FfnWeights* w,
-                            int d, int ffn, float eps, const float* x, float* out,
+                            int d, float eps, const float* x, float* out,
                             int rows) noexcept {
   // node budget: input + rms + norm_mul + gate_mm + gate_silu + up_mm + gate_up_mul + down_mm +
   // residual = ~9 tensors; give headroom. Weights are NOT in this ctx (they live in wctx).
+  // (ffn is not needed here -- every ffn-shaped intermediate is derived from the resident weight
+  // tensors' own ne, e.g. w_gate is [d,ffn]; only d + rows shape the fed activation.)
   const size_t mem_size = ggml_tensor_overhead() * 16 + ggml_graph_overhead();
   ggml_init_params params = {mem_size, nullptr, /*no_alloc=*/true};
   ggml_context* ctx = ggml_init(params);
@@ -466,9 +468,9 @@ sched::JoinHandle<Status> FfnBlock::forward(sched::BlockingPool& pool, mem::Allo
   void* be_raw = be_;
   void* galloc = galloc_;
   const FfnWeights* w = static_cast<const FfnWeights*>(weights_);
-  int d = d_, ffn = ffn_; float eps = eps_;
-  return sched::spawn_blocking(pool, alloc, [be_raw, galloc, w, d, ffn, eps, x, out, rows]() noexcept {
-    return ffn_forward_blocking(as_be(be_raw), static_cast<ggml_gallocr_t>(galloc), w, d, ffn,
+  int d = d_; float eps = eps_;
+  return sched::spawn_blocking(pool, alloc, [be_raw, galloc, w, d, eps, x, out, rows]() noexcept {
+    return ffn_forward_blocking(as_be(be_raw), static_cast<ggml_gallocr_t>(galloc), w, d,
                                 eps, x, out, rows);
   });
 }
