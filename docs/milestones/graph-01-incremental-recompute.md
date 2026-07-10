@@ -5,7 +5,7 @@
 | **阶段** | P6（北极星② 驱动，非纯收口）|
 | **模块** | graph/（**支柱破土**——此前 0 行）|
 | **前置** | error ✅ / mem ✅ / container(SmallVector) ✅ |
-| **状态** | ✅ **step-1 完成（2026-07-10，WSL + MSVC 双平台 13/13 含 2 death test + 红队闭环）**。`TaskGraph`：任务依赖 DAG，**脏标记增量重算**——改一个输入只重算下游脏节点，干净节点复用缓存。串行 evaluate（纯 CPU，无 sched 依赖）。**step-2（并行执行绑 sched work-stealing）未做**。|
+| **状态** | ✅ **step-1 + step-2 完成**。**step-1（2026-07-10，WSL+MSVC 13/13 含 2 death + 红队）**：`TaskGraph` 脏标记增量重算核心，串行 evaluate（纯 CPU 无 sched）。**step-2（2026-07-10，WSL+ASan+TSan+MSVC 各 7/7 + 红队）**：`evaluate_parallel` —— 同拓扑层独立脏节点**并行跑在 sched work-stealing 上**，逐层 fork-join。**step-3 refinement（dataflow-wavefront / demand 追踪）backlog**。|
 
 > **一句话**：graph 支柱破土。北极星② CAD/BIM/CAE 的核心热路径是"拖一个滑块只重算受影响的几何 / 改一个边界条件只重算相关网格块"——即**依赖 DAG 的增量重算**。clay taskgraph 是 one-shot 全图重跑、**零增量资产**（grep 实测），所以这一块从零造。step-1 先证增量语义在串行下正确，并行留 step-2。
 
@@ -54,13 +54,49 @@
 
 **MSVC 额外揪出**（编译期,双平台价值）：C2487（类已 `HYLE_GRAPH_API` 成员再标）+ C4251（非 POD SmallVector 成员被类级 dllexport 波及）→ 按 conventions §4"类有非 POD 成员时宏放方法不放类"改。
 
+## 做了什么（step-2：并行执行绑 sched work-stealing）
+
+`evaluate_parallel(g, sched, alloc)`（`include/hyle/graph/parallel.h` + `src/graph/parallel_eval.cc`）：把 step-1 串行 evaluate 里"逐个跑脏节点"改成**同拓扑层的独立脏节点并行跑在 sched workers 上**。这是 DAG 执行器的本义（graph-design §3：graph 是纯编排层,不拥有线程,把节点派发到 sched）。CAD 参数化重算 / CAE 网格求解每层有成千独立单元,串行是浪费机器。
+
+**执行模型 = 逐层 fork-join**（最简正确的并行化,dataflow-wavefront 更细留 refinement）：
+- 节点 **level = 1 + max(dep level)**,source=0。deps 恒更小 id（决策 ②）→ 单趟前向 id 扫描算全部 level。**同层两节点之间必无边**（有边就强制不同 level）→ 独立、可并发。
+- 逐层：spawn_task 该层每个脏节点（在 workers 上扇出）→ join 全部（fiber-aware 屏障）→ 进下一层。节点的 deps 都在更低层、已完成、输入已新鲜。干净节点跳过（复用缓存），与串行一致。
+- 层屏障比纯 dataflow wavefront 粗（节点本可在自己 deps 一完成就起,不必等整个上一层）,但简单、正确、契合 CAD/CAE"宽而浅"的层型。
+
+**sched 隔离**（镜像 compute gpu_await 的拆分）：核心 `taskgraph.h` 只依赖 error/mem/container、**处处可编**；`parallel.h`/`parallel_eval.cc` 用 sched（spawn_task/join/fiber）→ 只在 `HYLE_HAS_FCONTEXT` 下编。核心 `TaskGraph` 加一组平凡内联 `*_（）` 私有 accessor 作最小 seam（非公开 API,非 friend,不耦合 sched 类型）。
+
+**关键 UAF（ASan 揪出,开发中即修）**：node task 起初写成 `Task<Status>` 直接返回 Status。但 sched `JoinState<T>` 把返回值存在裸 `storage` 槽、take() 与 release() 各跑一次 `~T()`——对平凡 T 没事,但 **Status 是引用计数的（retain/release）,该值路径双重处理引用计数 → 堆消息 rep 的 use-after-free**（ASan 定位到 `status_retain`）。修=node 结果走**调用方自持的 per-node 槽**（`outcome[]` 数组,GpuOp 同款模式,gpu_await.h:73）、task 返回平凡 bool。`outcome[]` 活过 join+free。
+
+## 验收（step-2）
+
+- **对拍串行**：`DiamondMatchesSerial`（并行结果 == 串行 oracle 的 20）。
+- **真并发证明**（非"跑了就算"）：`WideLevelRunsConcurrently`——8 个同层节点各在进入时 bump live-counter、观测 peak>1（4 workers 真重叠）。
+- **并行下增量**：`IncrementalReRunsOnlyDirty`（改一个输入,只它+下游重算,兄弟复用缓存）。
+- **失败传播**：`FailingNodeSurfacesAndStaysDirty` + `MidLevelFailureStopsLaterLevels`（中间层失败,后续层不跑=验证 break）。
+- **混合/多层/空图**：`MixedDirtyCleanAndMultiLevel`（同层脏+干净混合,3 层链）+ `EmptyAndAllCleanAreNoOps`（n==0 早返 + 全干净 no-op）。
+- **四配置**：WSL GCC14 + ASan + **TSan（并发代码必过,cheatsheet §3）** + MSVC 各 7/7。
+
+## 对抗式审查（step-2，2026-07-10 红队 subagent + 自审）
+
+红队逐条 trace 并**确认无懈**：level 单趟计算正确（deps 已先 level、同层必无边）、同层独立性、手动数组 handles/ran_ids/outcome 生命周期（n 是单层宽度上界、每个构造的 handle 恰析构一次、break 在 join 循环之后故无正在写的 task 撞 free）、outcome 槽的 join happens-before、bool-return 确实绕开 Status-in-JoinState 的 UAF。actionable：
+
+| # | 类别 | 问题 | 修 |
+|---|---|---|---|
+| 1 | 文档（真契约缺口）| 同层节点并发,但**输出别名契约**未写明（两条无边同层节点若写重叠用户内存会 data-race 无诊断）| parallel.h 契约补"同层节点须写不相交内存" |
+| 2 | 文档 | 失败路径调度与串行**略不同**（并行会跑完失败层已扇出的兄弟,串行在首个失败 id 即停）| parallel.h 补 caveat |
+| 3 | 测试 | 中间层失败停后续层未验证 | 补 `MidLevelFailureStopsLaterLevels` |
+| 4 | 测试 | 无多层链/同层脏干净混合/空图·全干净 | 补 `MixedDirtyCleanAndMultiLevel` + `EmptyAndAllCleanAreNoOps` |
+
 ## 交付物
 
-- `include/hyle/graph/taskgraph.h`（`TaskGraph` + `NodeId`/`ComputeFn`;SoA+CSR 私有布局;导出宏放方法）
+- `include/hyle/graph/taskgraph.h`（`TaskGraph` + `NodeId`/`ComputeFn`;SoA+CSR 私有布局;导出宏放方法;step-2 加平凡内联 accessor seam）
+- `include/hyle/graph/parallel.h`（step-2:`evaluate_parallel` + 输出别名/失败路径契约;sched-gated）
+- `src/graph/parallel_eval.cc`（step-2:逐层 fork-join + level 计算 + outcome 槽绕 UAF）
 - `src/graph/taskgraph.cc`（add_node/mark_dirty/evaluate/move + CSR 构建）
-- `tests/graph/taskgraph_test.cc`（11 功能 + 2 death test）
-- `src/graph/CMakeLists.txt` + 顶层 CMake 挂载 + tests 注册
-- **LOC（cloc 实测）**：43 header + 78 impl + ~290 test = **~410 code**（step-1 是 graph-01 3-4k 估算的增量核心第一片；建图/脏/缓存/CSR 全落地,并行留 step-2）
+- `src/graph/parallel_eval.cc`（step-2:逐层 fork-join 并行 evaluate）
+- `tests/graph/taskgraph_test.cc`（step-1:11 功能 + 2 death）+ `tests/graph/parallel_test.cc`（step-2:7 并发用例）
+- `src/graph/CMakeLists.txt`（step-1 核心处处编 / step-2 parallel_eval.cc gated on HYLE_HAS_FCONTEXT + hyle_sched）+ 顶层 CMake 挂载 + tests 注册
+- **LOC（cloc 实测）**：step-1 ~410（43 header + 78 impl + ~290 test）+ step-2 ~281（19 header + 100 impl + ~160 test）= **~690 code**（graph-01 3-4k 估算的增量核心 + 并行两片；dataflow-wavefront/demand 追踪等 refinement 未做）
 
 ## 参考
 

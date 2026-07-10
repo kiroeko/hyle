@@ -136,6 +136,28 @@ class TaskGraph {
   HYLE_GRAPH_API std::size_t num_nodes() const noexcept;
   HYLE_GRAPH_API bool is_dirty(NodeId n) const noexcept;  // n valid (fatal assert)
 
+  // ---- internal seam for the parallel evaluator (graph-01 step-2) -----------
+  // parallel.h's evaluate_parallel lives in the SAME module (hyle_graph) but a
+  // separate, sched-gated TU (parallel_eval.cc) so this core header stays sched-free
+  // and builds anywhere (mirrors compute's gpu_await split). It needs read access to
+  // the topology + dirty state and to clear a node's dirty flag. These accessors are
+  // the minimal seam -- NOT a public API (a consumer uses evaluate()/evaluate_parallel,
+  // never these). Kept as methods (not friend) to avoid coupling this header to a
+  // sched type. Trivial + inline; zero ABI weight.
+  std::uint32_t node_count_() const noexcept {
+    return static_cast<std::uint32_t>(fn_.size());
+  }
+  bool dirty_at_(std::uint32_t i) const noexcept { return dirty_[i]; }
+  void clear_dirty_(std::uint32_t i) noexcept { dirty_[i] = false; }
+  void set_dirty_(std::uint32_t i) noexcept { dirty_[i] = true; }
+  Status run_node_(std::uint32_t i) const noexcept { return fn_[i](ctx_[i]); }
+  // node i's dependency slice = dep_pool_[dep_begin_(i) .. dep_end_(i)).
+  std::uint32_t dep_begin_(std::uint32_t i) const noexcept { return dep_off_[i]; }
+  std::uint32_t dep_end_(std::uint32_t i) const noexcept { return dep_off_[i + 1]; }
+  std::uint32_t dep_pool_at_(std::uint32_t k) const noexcept {
+    return static_cast<std::uint32_t>(dep_pool_[k]);
+  }
+
  private:
   // Storage is STRUCT-OF-ARRAYS with a CSR (compressed-sparse-row) dependency list --
   // not an array of Node structs. Reason: container::SmallVector requires a trivially-
