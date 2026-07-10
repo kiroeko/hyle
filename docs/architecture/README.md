@@ -53,6 +53,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`simd-design.md`](./simd-design.md) | SIMD 选型：精简可移植 vector + 运行时 dispatch（clay 最大缺口）+ dtype(fp16/bf16) + 借 Highway/xsimd 数学核(vendored) + container 探测 tier 澄清 || [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 自造专用分配器（arena/pool/stack/fiber栈/pinned）+ 修 5 bug + NUMA/大页/64B 对齐契约 |
 | [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
 | [`graph-design.md`](./graph-design.md) | **graph 支柱选型**：北极星② CAD/BIM/CAE 编排——依赖 DAG 增量重算(graph-01,clay taskgraph 零增量资产、从零造脏标记/缓存)+ 数据并行层(graph-02 parallel_for/reduce,归属拍板归 graph)；clay 继承面 ~800-1.5k 骨架 vs 从零 3-4k 增量引擎；纯编排层零自有执行资源(跑 sched+compute 之上)|
+| [`graph-02-design.md`](./graph-02-design.md) | **graph-02 数据并行层设计**：parallel_for/reduce/scan/sort over range，跑 HYLE sched(不借 oneTBB 运行时,只借其设计)。五决策：分块=递归 split+grainsize(work-stealing 友好非静态均分)/reduce=fast+deterministic 双档(浮点结合性)/kernel=Body 收 subrange(接 simd 紧循环)/scan v1 就做/复用 graph-01 sched 基建。分块靠 graph-02、块内靠 simd 的零阻抗接缝 |
 | [`roadmap.md`](./roadmap.md) | 实现路线图：模块依赖图（无环）+ 依赖层 P0-P6 拓扑序 + 关键路径 + 每阶段验收门槛 + 完整决策清单（已决+待决）|
 | [`../performance/`](../performance/README.md) | 性能预期 vs std / vs SOTA + 实测对标(已独立成 `docs/performance/` 目录:总账 ledger + 按模块分档的 benchmarks) |
 | [`references.md`](./references.md) | 参考库映射：clone 的 20+ 库 → HYLE 模块，借/参考标注、开工优先级（含 Intel oneMath/oneDNN）|

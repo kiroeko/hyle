@@ -81,7 +81,7 @@ graph/（北极星② 编排：依赖 DAG 重算 + 数据并行）
 | 里程碑 | 内容 | 原估 | **实测(cloc)** | 说明 |
 |---|---|---|---|---|
 | **graph-01** | taskgraph 增量重算：DAG 建模 + 脏标记传播 + 结果缓存 + 拓扑并行 + 绑 sched fiber | 3–4k | ✅ **216 prod / ~490 test（2026-07-10 完成 step-1+2）** | **远低于原估——是精瘦不是 stub（见下）** |
-| **graph-02** | 数据并行层：parallel_for/reduce/scan/sort + blocked_range/partitioner | 1–2k | 未做 | 全从零（clay 无此层）；对标 oneTBB/oneDPL；消费 sched+simd。**参考 graph-01 的收敛，实际大概率也显著低于 1–2k** |
+| **graph-02** | 数据并行层：parallel_for/reduce/scan/sort + blocked_range/partitioner | 1–2k | 未做（**设计已起草 [`graph-02-design.md`](./graph-02-design.md)**）| 全从零（clay 无此层）；对标 oneTBB/oneDPL 设计（不借运行时）；消费 sched+simd。五决策已拍（递归 split / reduce 双档 / Body 收 subrange / scan v1 / 复用 graph-01 基建）。**参考 graph-01 的收敛，实际大概率也显著低于 1–2k** |
 
 > **⚠️ 原估 3–4k 严重偏高，实测 graph-01 只有 216 生产行——已完成、功能完整（增量语义 + 并行，20 测试跨 WSL/ASan/TSan/MSVC 四配置全绿 + 两轮红队），非半成品。三个原因把估算压下来了：**
 > 1. **两个设计决策消灭了整类代码**：「边只能指向更小 id → 插入序天然是拓扑序」这条约束，让**拓扑排序 + 环检测算法（通常数百行）完全不用写**；脏传播退化成一趟 for 循环。
