@@ -167,9 +167,9 @@ void ref_rms_norm(const std::vector<float>& x, std::vector<float>& out, float ep
 int run_elementwise(const Device& device, BlockingPool& pool) {
   auto be = GgmlBackend::create(device, /*n_threads=*/1);
   if (!be.has_value()) return -1;
-  constexpr int kN = 320;  // not a multiple of any SIMD/ggml width
+  constexpr int kN = 323;  // prime-ish (17*19), NOT a multiple of 8/16/64 -> exercises SIMD tail
   std::vector<float> a(kN), b(kN), out(kN, -12345.0f);
-  for (int i = 0; i < kN; ++i) { a[i] = float((i % 13) - 6) * 0.3f; b[i] = float((i % 7) - 3) * 0.5f; }
+  for (int i = 0; i < kN; ++i) { a[i] = float((i % 23) - 11) * 0.7f; b[i] = float((i % 7) - 3) * 0.5f; }
 
   // rms_norm
   {
@@ -504,6 +504,32 @@ void batched_job_bad_dims() {
   (void)ggml_matmul_f32_batched(*be, pool, system_allocator(), jobs, 1);
 }
 
+// compute-09 elementwise contract violations (mirror the matmul death tests).
+void silu_null_dst() {
+  auto be = GgmlBackend::create(cpu_device(), 1);
+  BlockingPool pool(system_allocator());
+  float s[8] = {};
+  (void)ggml_silu_f32(*be, pool, system_allocator(), s, nullptr, 8);  // dst null -> assert
+}
+void add_bad_n() {
+  auto be = GgmlBackend::create(cpu_device(), 1);
+  BlockingPool pool(system_allocator());
+  float ab[8] = {};
+  (void)ggml_add_f32(*be, pool, system_allocator(), ab, ab, ab, 0);  // n==0 -> assert
+}
+void add_null_b() {
+  auto be = GgmlBackend::create(cpu_device(), 1);
+  BlockingPool pool(system_allocator());
+  float ab[8] = {};
+  (void)ggml_add_f32(*be, pool, system_allocator(), ab, nullptr, ab, 8);  // binary b null -> assert
+}
+void rms_norm_negative_eps() {
+  auto be = GgmlBackend::create(cpu_device(), 1);
+  BlockingPool pool(system_allocator());
+  float s[8] = {}, d[8] = {};
+  (void)ggml_rms_norm_f32(*be, pool, system_allocator(), s, d, 8, -1.0f);  // eps<0 -> assert
+}
+
 }  // namespace
 
 TEST(GgmlBridgeDeathTest, MatmulNullOutput) {
@@ -534,4 +560,22 @@ TEST(GgmlBridgeDeathTest, BatchedNullJobs) {
 TEST(GgmlBridgeDeathTest, BatchedJobBadDims) {
   HYLE_THREADSAFE_DEATH();
   EXPECT_DEATH(batched_job_bad_dims(), "HYLE fatal");
+}
+
+// compute-09 elementwise contract death tests (caller-bug fail-fast, like matmul above).
+TEST(GgmlBridgeDeathTest, SiluNullDst) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(silu_null_dst(), "HYLE fatal");
+}
+TEST(GgmlBridgeDeathTest, AddBadN) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(add_bad_n(), "HYLE fatal");
+}
+TEST(GgmlBridgeDeathTest, AddNullB) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(add_null_b(), "HYLE fatal");
+}
+TEST(GgmlBridgeDeathTest, RmsNormNegativeEps) {
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(rms_norm_negative_eps(), "HYLE fatal");
 }

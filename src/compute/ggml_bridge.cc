@@ -291,6 +291,8 @@ sched::JoinHandle<Status> ggml_rms_norm_f32(GgmlBackend& be, sched::BlockingPool
                                             mem::Allocator alloc, const float* src,
                                             float* dst, int n, float eps) noexcept {
   HYLE_FATAL_ASSERT(be.valid() && src != nullptr && dst != nullptr && n > 0);
+  HYLE_FATAL_ASSERT(eps >= 0.0f);  // ggml asserts this internally (ops.cpp:3805) -- fail-fast in
+                                   // the CALLER thread, not deep in the pool thread's ggml abort.
   return ew_spawn(be.raw_(), be.galloc_ptr_(), pool, alloc, src, nullptr, dst, n, eps, EwOp::kRmsNorm);
 }
 sched::JoinHandle<Status> ggml_silu_f32(GgmlBackend& be, sched::BlockingPool& pool,
