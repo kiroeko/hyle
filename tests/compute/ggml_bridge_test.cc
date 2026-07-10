@@ -238,6 +238,106 @@ TEST(GgmlBridge, ElementwiseOpsCpu) {
   EXPECT_EQ(drive_elementwise(cpu, pool), 0);
 }
 
+// ---- compute-09 step-2: FFN block with RESIDENT weights, end-to-end vs host scalar reference ----
+namespace {
+// Host scalar reference for the whole LLaMA FFN block. Layouts match FfnBlock::create:
+//   x=[rows*d], w_norm=[d], w_gate=[ffn*d] (ffn rows of d), w_up=[ffn*d], w_down=[d*ffn] (d rows of ffn).
+void ref_ffn(const std::vector<float>& x, const std::vector<float>& wn,
+             const std::vector<float>& wg, const std::vector<float>& wu,
+             const std::vector<float>& wd, std::vector<float>& out, int rows, int d, int ffn,
+             float eps) {
+  out.assign(static_cast<size_t>(rows) * d, 0.0f);
+  std::vector<float> h(d), gate(ffn), up(ffn), gu(ffn);
+  for (int r = 0; r < rows; ++r) {
+    const float* xr = &x[static_cast<size_t>(r) * d];
+    double ss = 0.0;
+    for (int j = 0; j < d; ++j) ss += double(xr[j]) * xr[j];
+    const float inv = static_cast<float>(1.0 / std::sqrt(ss / d + eps));
+    for (int j = 0; j < d; ++j) h[j] = xr[j] * inv * wn[j];  // rms_norm ⊙ w_norm
+    for (int f = 0; f < ffn; ++f) {
+      float acc = 0.0f;
+      for (int j = 0; j < d; ++j) acc += h[j] * wg[static_cast<size_t>(f) * d + j];
+      gate[f] = acc / (1.0f + std::exp(-acc));  // silu
+      float accu = 0.0f;
+      for (int j = 0; j < d; ++j) accu += h[j] * wu[static_cast<size_t>(f) * d + j];
+      up[f] = accu;
+      gu[f] = gate[f] * up[f];
+    }
+    for (int j = 0; j < d; ++j) {
+      float acc = 0.0f;
+      for (int f = 0; f < ffn; ++f) acc += gu[f] * wd[static_cast<size_t>(j) * ffn + f];
+      out[static_cast<size_t>(r) * d + j] = xr[j] + acc;  // residual
+    }
+  }
+}
+
+int run_ffn(const Device& device, BlockingPool& pool) {
+  constexpr int kD = 32, kFfn = 88, kRows = 5;  // ffn/rows non-round to exercise shapes
+  std::vector<float> wn(kD), wg(static_cast<size_t>(kFfn) * kD), wu(static_cast<size_t>(kFfn) * kD),
+      wd(static_cast<size_t>(kD) * kFfn), x(static_cast<size_t>(kRows) * kD);
+  auto fill = [](std::vector<float>& v, int salt) {
+    for (size_t i = 0; i < v.size(); ++i) v[i] = float((int(i) * 13 + salt * 7) % 17 - 8) * 0.05f;
+  };
+  fill(wn, 1); fill(wg, 2); fill(wu, 3); fill(wd, 4); fill(x, 5);
+  for (auto& v : wn) v += 0.9f;  // norm weight near 1 (realistic)
+
+  auto blk = FfnBlock::create(device, kD, kFfn, 1e-5f, wn.data(), wg.data(), wu.data(),
+                              wd.data(), /*n_threads=*/1);
+  if (!blk.has_value()) return -1;
+  std::vector<float> out(static_cast<size_t>(kRows) * kD, -12345.0f);
+  auto h = blk->forward(pool, system_allocator(), x.data(), out.data(), kRows);
+  auto r = h.join();
+  if (!r.has_value() || !r->ok()) return -5;
+  std::vector<float> ref;
+  ref_ffn(x, wn, wg, wu, wd, ref, kRows, kD, kFfn, 1e-5f);
+  for (size_t i = 0; i < ref.size(); ++i)
+    if (std::fabs(out[i] - ref[i]) > 1e-3f * (1.0f + std::fabs(ref[i]))) return -8;
+
+  // RESIDENCY proof: a SECOND forward with a DIFFERENT activation reuses the same resident
+  // weights (no re-create) and must still match the reference for the new input.
+  std::vector<float> x2(static_cast<size_t>(kRows) * kD), out2(static_cast<size_t>(kRows) * kD, 0.0f);
+  fill(x2, 99);
+  auto h2 = blk->forward(pool, system_allocator(), x2.data(), out2.data(), kRows);
+  auto r2 = h2.join();
+  if (!r2.has_value() || !r2->ok()) return -10;
+  std::vector<float> ref2;
+  ref_ffn(x2, wn, wg, wu, wd, ref2, kRows, kD, kFfn, 1e-5f);
+  for (size_t i = 0; i < ref2.size(); ++i)
+    if (std::fabs(out2[i] - ref2[i]) > 1e-3f * (1.0f + std::fabs(ref2[i]))) return -11;
+  return 0;
+}
+struct FfnArg { Device device; BlockingPool* pool; int result = -100; std::atomic<bool> done{false}; };
+void ffn_fiber(void* p) {
+  auto* a = static_cast<FfnArg*>(p);
+  a->result = run_ffn(a->device, *a->pool);
+  a->done.store(true, std::memory_order_release);
+}
+int drive_ffn(const Device& device, BlockingPool& pool) {
+  FfnArg arg{device, &pool};
+  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, &ffn_fiber, &arg);
+  Scheduler sched(2, system_allocator(), 256);
+  sched.spawn(f.get());
+  sched.drain();
+  sched.shutdown();
+  EXPECT_TRUE(arg.done.load());
+  return arg.result;
+}
+}  // namespace
+
+TEST(GgmlBridge, FfnBlockDefaultDevice) {
+  BlockingPool pool(system_allocator());
+  EXPECT_EQ(drive_ffn(default_device(), pool), 0) << "FFN block failed";
+}
+TEST(GgmlBridge, FfnBlockCpu) {
+  Device devs[8];
+  std::size_t n = enumerate(devs, 8);
+  ASSERT_GT(n, 0u);
+  Device cpu = devs[n - 1];
+  ASSERT_FALSE(cpu.is_gpu());
+  BlockingPool pool(system_allocator());
+  EXPECT_EQ(drive_ffn(cpu, pool), 0);
+}
+
 // Thread-safety contract (spec 线程安全契约): N fibers each hold their OWN GgmlBackend
 // and run independent matmuls concurrently ("high-concurrency independent small
 // inference" grid). All must be correct -- no shared backend, no race (WSL TSan clears

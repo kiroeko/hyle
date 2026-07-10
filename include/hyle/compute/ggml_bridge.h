@@ -192,4 +192,64 @@ HYLE_COMPUTE_API sched::JoinHandle<Status> ggml_mul_f32(
     GgmlBackend& be, sched::BlockingPool& pool, mem::Allocator alloc,
     const float* a, const float* b, float* dst, int n) noexcept;
 
+// ---- FFN block (compute-09 step-2): a REAL transformer FFN sub-block with RESIDENT weights ----
+// This is the step-2 payload: HYLE runs a complete LLaMA-style feed-forward block, and the block's
+// WEIGHTS live resident in device memory (copied in ONCE at construction), while each forward only
+// feeds the activation. That weight-residency is the real inference machinery compute-05's matmul
+// lacked (it re-copied both operands every call). The block computes, for input x = [rows × d]:
+//     h    = rms_norm(x) ⊙ w_norm                       (RMSNorm, eps; then per-feature weight)
+//     gate = silu(h · w_gateᵀ)                          (h[rows×d] · w_gate[ffn×d]ᵀ -> [rows×ffn])
+//     up   =      h · w_upᵀ                             (-> [rows × ffn])
+//     out  = x + (gate ⊙ up) · w_downᵀ                  (down: [rows×ffn]·w_down[d×ffn]ᵀ -> [rows×d])
+// All in ONE ggml graph, ONE submit (finding 4). Weights are DEVICE-resident (ggml owns them via a
+// persistent weight buffer, `ggml_backend_alloc_ctx_tensors_from_buft`); activations + intermediate
+// tensors go through gallocr each call (spec ①: device 归 ggml). HYLE owns only host I/O.
+//
+// WEIGHT LAYOUT (row-major host, ne0 = input/contract dim -- llama.cpp convention):
+//   w_norm : [d]        (per-feature RMSNorm scale)
+//   w_gate : [ffn × d]  (ffn rows of d)   -- gate projection
+//   w_up   : [ffn × d]  (ffn rows of d)   -- up projection
+//   w_down : [d × ffn]  (d rows of ffn)   -- down projection
+// Move-only; owns the ggml weight context + weight buffer + a compute backend. Serial use (one
+// in-flight forward at a time; see GgmlBackend thread-safety contract -- one FfnBlock per fiber).
+class HYLE_COMPUTE_API FfnBlock {
+ public:
+  FfnBlock() noexcept = default;
+  HYLE_DISABLE_COPY(FfnBlock);
+  HYLE_COMPUTE_API FfnBlock(FfnBlock&& o) noexcept;
+  HYLE_COMPUTE_API FfnBlock& operator=(FfnBlock&& o) noexcept;
+  HYLE_COMPUTE_API ~FfnBlock();
+
+  // Build the block on `device` and COPY the four weight matrices into resident device memory
+  // (ONCE -- initialization cost, not per-forward). d = hidden dim, ffn = intermediate dim, eps =
+  // RMSNorm epsilon, n_threads = CPU-backend threads (ignored on GPU). Weight host pointers are
+  // read only during create() (copied in); the caller need not keep them after. External-boundary
+  // failure (backend/buffer alloc) -> Result error.
+  //   CONTRACT: d>0, ffn>0, eps>=0, all four weight pointers non-null.
+  static Result<FfnBlock> create(const Device& device, int d, int ffn, float eps,
+                                 const float* w_norm, const float* w_gate, const float* w_up,
+                                 const float* w_down, int n_threads = 1) noexcept;
+
+  // Forward: out[rows × d] = ffn_block(x[rows × d]). Only the activation is fed in each call; the
+  // weights are already resident. ASYNC (spec ②): the whole graph build + compute + synchronize
+  // runs on `pool`; returns JoinHandle<Status>. x and out are HOST float buffers (rows·d each) and
+  // must outlive the join. `alloc` backs the JoinState.
+  //   CONTRACT: valid(); x/out non-null; rows>0.
+  HYLE_COMPUTE_API sched::JoinHandle<Status> forward(sched::BlockingPool& pool, mem::Allocator alloc,
+                                                     const float* x, float* out, int rows) noexcept;
+
+  bool valid() const noexcept { return be_ != nullptr; }
+
+ private:
+  explicit FfnBlock(void* be, void* galloc, void* wctx, void* wbuf, void* weights, int d,
+                    int ffn, float eps) noexcept;
+  void* be_ = nullptr;       // ggml_backend_t (compute backend)
+  void* galloc_ = nullptr;   // ggml_gallocr_t (activation/intermediate device buffers, per-forward)
+  void* wctx_ = nullptr;     // ggml_context* holding the resident weight tensors' metadata
+  void* wbuf_ = nullptr;     // ggml_backend_buffer_t: the resident weight DEVICE buffer
+  void* weights_ = nullptr;  // TU-local struct of the 4 weight ggml_tensor* (opaque here)
+  int d_ = 0, ffn_ = 0;
+  float eps_ = 0.0f;
+};
+
 }  // namespace hyle::compute
