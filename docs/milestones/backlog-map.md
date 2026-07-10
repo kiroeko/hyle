@@ -74,7 +74,7 @@
 | 支柱 | 里程碑 | 前置 | 就绪度 | 说明 |
 |---|---|---|---|---|
 | **compute** | compute-01~07 ✅ / 09 ✅(step-1+2)/ 08 | sched-04 ✅ | 🟢 **主干+CPU 后端+算子面扩展(含 FFN 权重常驻)就绪** | 主干 01~06:device/stream/event(✅)→ device buffer → GPU completion→fiber → kernel 启动 → ggml_bridge → Vulkan。**07 CPU 算子后端 ✅**:compute-04 Kernel 抽象的 CPU 后端,host_ops 接 hyle simd(接 simd 非 ggml,与 05 正交)。**09 算子面扩展**:step-1 ✅(2026-07-09)通用图执行器 + rms_norm/silu/add/mul(纠正"消费者驱动才加算子"误用——推理链本身是消费者);**step-2 ✅(2026-07-10)**=FFN block + 权重常驻(GgmlBackend 无状态→FfnBlock 持独立 weight buffer `ggml_backend_alloc_ctx_tensors_from_buft`,构造拷入一次,forward 只喂激活;WSL GPU+CPU 21/21 + MSVC 9/9,红队 3 项);**step-3 backlog(#102)**=attention 半 block(rope/softmax/permute,形状杂耍风险高,权重常驻机制可复用)。**剩 08 HIP/Metal**(优先借 ggml,硬件阻塞)。借 ggml 不自造算子;hyle simd 是 07 消费者。**异构混合极致性能的头牌本体**,北极星① 推理引擎的算力侧 |
-| **graph** | graph-01 + graph-02? | sched-03 ✅ + compute(kernel) | 🟡 **部分**(graph-01 可先,substrate Chase-Lev 已备) | 北极星② CAD/BIM/CAE 驱动:脏标记增量重算 + 拓扑并行。graph-02(数据并行 parallel_for)归属待拍(见收口待决) |
+| **graph** | graph-01 + graph-02 | sched-03 ✅ + compute(kernel) ✅ + simd ✅ | 🟢 **前置全就绪,可开工**(设计已定案 [`graph-design.md`](../architecture/graph-design.md)) | 北极星② CAD/BIM/CAE 驱动:脏标记增量重算(graph-01)+ 数据并行层(graph-02)。**设计定案(2026-07-10)**:clay taskgraph 零增量重算资产(实测 grep 0 命中),graph-01 = 继承 ~1k 骨架 + **从零造增量引擎**(脏/缓存/绑 fiber sched);graph-02 归属拍板**归 graph**(消费 sched+compute,非算力本体)。~4-6k code。**建议 graph-01 先**(北极星② 从 0 到 1) |
 
 **C 类结论**:compute **已破土(compute-01 ✅)**——它是北极星① 的算力支柱本体,**排期上是一个大阶段**(主干 01~06 借 ggml ~5-8k + 缺口 07 CPU 后端 / 08 HIP·Metal)。**缺口补登(2026-07-06)**:07 CPU 算子后端(scope §CPU fallback + roadmap 验收"CPU+GPU 对拍"要求的真后端,非 compute-01 的 host inline 兜底)、08 AMD·Apple 后端(scope 后端矩阵列了但主干未覆盖,借 ggml-hip/metal 优先)。graph 依赖 compute 的 kernel,排在 compute 之后。
 
@@ -85,7 +85,7 @@
 | close-01 C-ABI shim | 📋 承诺锁定待排期 | 各模块稳定后做;发布给 FFI 的唯一稳定面 |
 | close-02 serialize | ❓ scope 待澄清 | 借 flatbuffers/capnproto builder+reader 当原语 vs 全推 L1?JSON 借 simdjson 已定 |
 | close-03 FFI 绑定 | 占位 | 依赖 close-01 |
-| graph-02 数据并行层 | ❓ 归属待定 | 归 graph 还是 compute?与序列化一起在 scope 复核时拍 |
+| graph-02 数据并行层 | ✅ **归属已定(2026-07-10)** | **归 graph**(graph-design.md §2):compute 铁律把铺多核推给 graph-02 fork-join,归 compute 会破其"不起线程池"边界;消费者与 graph-01 同源。序列化(close-02)仍待 scope 复核 |
 
 ## 六、一句话排期建议
 

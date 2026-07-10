@@ -203,7 +203,7 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 **待你拍板(DISCUSS)**:
 - **DISCUSS-1 HTTP —— ✅ 已定案**(见下"HTTP/网络能力:最终结论"):三层分工=IO 自有 / 解析借纯 parser(picohttpparser 起步)/ 集成自写 / 路由业务留上层。结合完整库(asio/beast/httplib)三条死路已论证排除(C++ 无中立异步契约)。
 - **DISCUSS-2 序列化运行时原语**:借 flatbuffers/capnproto 的 builder+reader 当原语(不含 schema 编译器),还是全推 L1?agent 间消息/持久化状态要序列化。
-- **DISCUSS-3 数据并行层**(parallel_for/reduce/scan):原语无疑,归 graph 还是 compute 未定;有消费者(大 buffer kernel)故非投机,可缓。
+- **DISCUSS-3 数据并行层**(parallel_for/reduce/scan):原语无疑,有消费者(大 buffer kernel)故非投机。**✅ 归属已定案(2026-07-10,见 [`graph-design.md`](./graph-design.md) §2)=归 graph(graph-02)**:compute-design 立铁律"数据并行铺多核靠 graph-02 fork-join、host kernel 单线程内联",graph-02 归 compute 会破 compute"不起线程池"边界;且消费者(CAE 网格单元并行/场量归约)与 graph-01 仿真依赖重算同源。graph-02 消费 sched(workers)+ compute/simd(每块 kernel),是编排者非算力本体。
 
 > **重审结论**:早期"四类不做"的**大框对**(领域/框架/工具链确实在外),但犯了两类错——① **漏登记该借的原语**(TLS、trace 埋点),已补;② **把原语和它上面的策略捆在一起判出界**(序列化 vs IDL、trace 产出 vs 聚合、HTTP 协议骨架 vs 路由业务)。修正方式=**拆细粒度**:原语侧拉进来,策略/框架侧留在外。
 

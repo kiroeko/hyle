@@ -24,7 +24,7 @@ HYLE infra（通用、不特化、贴硬件）
 ├─ sched/     统一调度【核心】   ← 线程/进程/纤程/协程一张表：fiber 上下文 + per-core 无锁 run-queue + work-stealing
 ├─ io/        网络 IO          ← proactor（io_uring/IOCP/kqueue/epoll），与 sched 一体（fiber 遇 IO 让出）
 ├─ compute/   异构计算          ← device/stream/buffer/kernel 抽象，借上游 ggml 作算子供应商
-└─ graph/     并行任务编排       ← 继承 clay taskgraph，剥离特化，跑在 sched 之上
+└─ graph/     并行任务编排       ← 北极星② 编排：继承 clay taskgraph ~1k 骨架(剥离特化)+ 从零造增量重算引擎(脏标记/缓存,clay 零资产)+ 数据并行层;跑在 sched+compute 之上
 ```
 
 ## 贯穿性设计原则
@@ -50,9 +50,9 @@ HYLE infra（通用、不特化、贴硬件）
 | [`lifecycle-design.md`](./lifecycle-design.md) | **失败边界**：fail-fast 绝不 try-catch + 四类失败分类 + 取消(结构化并发/await点) + 背压 + 优雅关闭 + 故障隔离=进程边界 + 跨 C-ABI 错误约定 |
 | [`compute-design.md`](./compute-design.md) | 异构计算选型：device/stream/kernel 两层抽象 + 借上游 ggml（adapter 隔离）+ shader 一等公民 + GPU completion 接 sched |
 | [`borrowing-ggml-memory-model.md`](./borrowing-ggml-memory-model.md) | **借 ggml 的显存归属边界**：host 归 HYLE（mem 喂入/取出）、device 归 ggml（gallocr 自管），就像 llama.cpp——CUDA 结构性否决外部显存注入（gdb 坐实），HYLE 显存自管是 compute-04/06 自造 kernel 的领域 |
-| [`simd-design.md`](./simd-design.md) | SIMD 选型：精简可移植 vector + 运行时 dispatch（clay 最大缺口）+ dtype(fp16/bf16) + 借 Highway/xsimd 数学核(vendored) + container 探测 tier 澄清 |
-| [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 自造专用分配器（arena/pool/stack/fiber栈/pinned）+ 修 5 bug + NUMA/大页/64B 对齐契约 |
+| [`simd-design.md`](./simd-design.md) | SIMD 选型：精简可移植 vector + 运行时 dispatch（clay 最大缺口）+ dtype(fp16/bf16) + 借 Highway/xsimd 数学核(vendored) + container 探测 tier 澄清 || [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 自造专用分配器（arena/pool/stack/fiber栈/pinned）+ 修 5 bug + NUMA/大页/64B 对齐契约 |
 | [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
+| [`graph-design.md`](./graph-design.md) | **graph 支柱选型**：北极星② CAD/BIM/CAE 编排——依赖 DAG 增量重算(graph-01,clay taskgraph 零增量资产、从零造脏标记/缓存)+ 数据并行层(graph-02 parallel_for/reduce,归属拍板归 graph)；clay 继承面 ~800-1.5k 骨架 vs 从零 3-4k 增量引擎；纯编排层零自有执行资源(跑 sched+compute 之上)|
 | [`roadmap.md`](./roadmap.md) | 实现路线图：模块依赖图（无环）+ 依赖层 P0-P6 拓扑序 + 关键路径 + 每阶段验收门槛 + 完整决策清单（已决+待决）|
 | [`../performance/`](../performance/README.md) | 性能预期 vs std / vs SOTA + 实测对标(已独立成 `docs/performance/` 目录:总账 ledger + 按模块分档的 benchmarks) |
 | [`references.md`](./references.md) | 参考库映射：clone 的 20+ 库 → HYLE 模块，借/参考标注、开工优先级（含 Intel oneMath/oneDNN）|
