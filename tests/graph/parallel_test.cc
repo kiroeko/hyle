@@ -320,5 +320,272 @@ TEST(GraphParallel, EmptyAndAllCleanAreNoOps) {
   EXPECT_EQ(d->task.done() ? d->task.result() : -999, 1);  // ran exactly once
 }
 
+// ==== step-3 wavefront: evaluate_parallel_wavefront ==========================
+
+// Correctness oracle: wavefront gives the SAME result as the level-barrier path on a
+// diamond (a -> b,c -> e). Each node runs exactly once.
+Task<int> wf_diamond_coro(mem::Allocator alloc, Scheduler* sched, Source* a, Add* b, Add* c,
+                          Add* e, int* out_val) {
+  TaskGraph g(alloc);
+  NodeId ia = g.add_source(source_fn, a);
+  b->a = &a->cell; b->b = &a->cell;
+  c->a = &a->cell; c->b = &a->cell;
+  NodeId da[] = {ia};
+  NodeId ib = g.add_node(add_fn, b, da, 1);
+  NodeId ic = g.add_node(add_fn, c, da, 1);
+  e->a = &b->cell; e->b = &c->cell;
+  NodeId dbc[] = {ib, ic};
+  (void)g.add_node(add_fn, e, dbc, 2);
+  if (!evaluate_parallel_wavefront(g, *sched, alloc).ok()) co_return -1;
+  *out_val = e->cell.value;
+  co_return 0;
+}
+
+TEST(GraphParallel, WavefrontDiamondMatchesSerial) {
+  Source a{{}, 5};
+  Add b, c, e;
+  int val = -1;
+  Scheduler sched(4, system_allocator(), 256);
+  auto d = std::make_unique<Drive>();
+  d->task = wf_diamond_coro(system_allocator(), &sched, &a, &b, &c, &e, &val);
+  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  sched.spawn(&f);
+  sched.drain();
+  sched.shutdown();
+  EXPECT_EQ(d->task.done() ? d->task.result() : -999, 0);
+  EXPECT_EQ(val, 20);  // (2*5)+(2*5) -- same as fork-join DiamondMatchesSerial
+  EXPECT_EQ(b.cell.runs.load(), 1);
+  EXPECT_EQ(c.cell.runs.load(), 1);
+  EXPECT_EQ(e.cell.runs.load(), 1);
+}
+
+// Incremental under wavefront: after a full eval, dirty one input -> only its cone re-runs.
+Task<int> wf_incr_coro(mem::Allocator alloc, Scheduler* sched, Source* a, Source* b, Add* c,
+                       int* out_val) {
+  TaskGraph g(alloc);
+  NodeId ia = g.add_source(source_fn, a);
+  NodeId ib = g.add_source(source_fn, b);
+  c->a = &a->cell; c->b = &b->cell;
+  NodeId deps[] = {ia, ib};
+  (void)g.add_node(add_fn, c, deps, 2);
+  if (!evaluate_parallel_wavefront(g, *sched, alloc).ok()) co_return -1;
+  a->seed = 100;
+  g.mark_dirty(ia);
+  if (!evaluate_parallel_wavefront(g, *sched, alloc).ok()) co_return -2;
+  *out_val = c->cell.value;
+  co_return 0;
+}
+
+TEST(GraphParallel, WavefrontIncrementalReRunsOnlyDirty) {
+  Source a{{}, 3}, b{{}, 4};
+  Add c;
+  int val = -1;
+  Scheduler sched(4, system_allocator(), 256);
+  auto d = std::make_unique<Drive>();
+  d->task = wf_incr_coro(system_allocator(), &sched, &a, &b, &c, &val);
+  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  sched.spawn(&f);
+  sched.drain();
+  sched.shutdown();
+  EXPECT_EQ(d->task.done() ? d->task.result() : -999, 0);
+  EXPECT_EQ(val, 104);
+  EXPECT_EQ(a.cell.runs.load(), 2);
+  EXPECT_EQ(b.cell.runs.load(), 1);  // clean -> skipped
+  EXPECT_EQ(c.cell.runs.load(), 2);
+}
+
+// THE point of wavefront: the short leg's downstream finishes WITHOUT waiting for a slow
+// same-"level" sibling. Graph: slow(level 0, sleeps) beside a chain fast0->fast1->fast2
+// (levels 0,1,2). Under a LEVEL barrier, fast1 (level 1) could not start until slow
+// (level 0) finished. Under wavefront, fast1/fast2 run while slow is still sleeping. We
+// prove it by recording whether the fast chain's tail completed BEFORE slow did.
+struct Timed {
+  std::atomic<long>* clock;   // shared logical clock (fetch_add on each completion)
+  long finish_tick = -1;
+  int ms = 0;                 // busy-spin duration knob
+  int value = 0;
+};
+Status timed_fn(void* p) noexcept {
+  auto* t = static_cast<Timed*>(p);
+  volatile long sink = 0;
+  const long spins = static_cast<long>(t->ms) * 300000L;
+  for (long i = 0; i < spins; ++i) sink = sink + 1;
+  (void)sink;
+  t->finish_tick = t->clock->fetch_add(1, std::memory_order_acq_rel);
+  t->value = 1;
+  return Status();
+}
+Task<int> wf_legs_coro(mem::Allocator alloc, Scheduler* sched, Timed* slow, Timed* f0,
+                       Timed* f1, Timed* f2) {
+  TaskGraph g(alloc);
+  (void)g.add_source(timed_fn, slow);          // level 0, SLOW
+  NodeId if0 = g.add_source(timed_fn, f0);     // level 0, fast
+  NodeId if1 = g.add_node(timed_fn, f1, &if0, 1);  // level 1
+  (void)g.add_node(timed_fn, f2, &if1, 1);     // level 2
+  if (!evaluate_parallel_wavefront(g, *sched, alloc).ok()) co_return -1;
+  co_return 0;
+}
+
+TEST(GraphParallel, WavefrontShortLegNotBlockedBySlowSibling) {
+  std::atomic<long> clock{0};
+  Timed slow{&clock, -1, 60, 0};   // ~slow
+  Timed f0{&clock, -1, 0, 0}, f1{&clock, -1, 0, 0}, f2{&clock, -1, 0, 0};  // fast chain
+  Scheduler sched(4, system_allocator(), 256);
+  auto d = std::make_unique<Drive>();
+  d->task = wf_legs_coro(system_allocator(), &sched, &slow, &f0, &f1, &f2);
+  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  sched.spawn(&f);
+  sched.drain();
+  sched.shutdown();
+  EXPECT_EQ(d->task.done() ? d->task.result() : -999, 0);
+  // The fast chain's TAIL (f2, a level-2 node) must finish BEFORE the slow level-0 node.
+  // A level barrier would force f1/f2 to wait for slow (same/earlier level) -> impossible.
+  // Wavefront lets the fast chain race ahead. finish_tick is the completion order.
+  EXPECT_GE(slow.finish_tick, 0);
+  EXPECT_GE(f2.finish_tick, 0);
+  EXPECT_LT(f2.finish_tick, slow.finish_tick)
+      << "fast chain tail did not overtake the slow sibling -> not wavefront";
+}
+
+// Failure under wavefront: a failing node surfaces its Status, stays dirty, and its
+// successors are never released (never run).
+Task<int> wf_fail_coro(mem::Allocator alloc, Scheduler* sched, FailCell* f, Add* down,
+                       Cell* dummy, bool* was_err, bool* f_dirty, int* down_runs) {
+  TaskGraph g(alloc);
+  NodeId nf = g.add_source(fail_fn, f);
+  // down depends on the failing node; it must NEVER run, so its input cells are unused
+  // placeholders (fail_fn writes no Cell). It stays gated because nf fails.
+  down->a = dummy; down->b = dummy;
+  NodeId df[] = {nf};
+  (void)g.add_node(add_fn, down, df, 1);
+  Status s = evaluate_parallel_wavefront(g, *sched, alloc);
+  *was_err = !s.ok();
+  *f_dirty = g.is_dirty(nf);
+  *down_runs = down->cell.runs.load();
+  co_return 0;
+}
+
+TEST(GraphParallel, WavefrontFailureStopsSuccessors) {
+  FailCell f;
+  Add down;
+  Cell dummy;
+  bool was_err = false, f_dirty = false;
+  int down_runs = -1;
+  Scheduler sched(4, system_allocator(), 256);
+  auto d = std::make_unique<Drive>();
+  d->task = wf_fail_coro(system_allocator(), &sched, &f, &down, &dummy, &was_err, &f_dirty, &down_runs);
+  Fiber ff(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  sched.spawn(&ff);
+  sched.drain();
+  sched.shutdown();
+  EXPECT_TRUE(was_err);
+  EXPECT_TRUE(f_dirty);
+  EXPECT_EQ(down_runs, 0);  // successor never released after the failure
+}
+
+// REGRESSION for the red-team-found stack-Channel UAF: MANY independent TERMINAL dirty
+// nodes (no successors) finishing near-simultaneously. This is the exact shape that races
+// the driver's drain-to-zero against a sender's post-unlock notify_one() -- if the driver
+// returned (destroying the stack Channel) before every task's send() fully returned, the
+// trailing notify_one() would hit freed memory. The fix (join ALL handles before return)
+// must hold. Run under TSan/ASan to actually catch a regression; here we at least exercise
+// the shape heavily and assert correctness. Uses `Cell` + a trivial source per node.
+struct Leaf { Cell cell; std::atomic<int>* live; std::atomic<int>* peak; };
+Status leaf_fn(void* p) noexcept {
+  auto* l = static_cast<Leaf*>(p);
+  int now = l->live->fetch_add(1, std::memory_order_acq_rel) + 1;
+  int cp = l->peak->load(std::memory_order_relaxed);
+  while (now > cp && !l->peak->compare_exchange_weak(cp, now, std::memory_order_relaxed)) {}
+  volatile int s = 0; for (int i = 0; i < 50000; ++i) s = s + 1; (void)s;
+  l->live->fetch_sub(1, std::memory_order_acq_rel);
+  l->cell.value = 1;
+  return Status();
+}
+Task<int> wf_many_terminals_coro(mem::Allocator alloc, Scheduler* sched, Leaf* leaves,
+                                 int nleaves, std::atomic<int>* peak) {
+  TaskGraph g(alloc);
+  for (int i = 0; i < nleaves; ++i) (void)g.add_source(leaf_fn, &leaves[i]);  // all terminal
+  if (!evaluate_parallel_wavefront(g, *sched, alloc).ok()) co_return -1;
+  co_return peak->load(std::memory_order_relaxed);
+}
+
+TEST(GraphParallel, WavefrontManyIndependentTerminalsNoUAF) {
+  constexpr int kLeaves = 16;
+  std::atomic<int> live{0}, peak{0};
+  Leaf leaves[kLeaves];
+  for (auto& l : leaves) { l.live = &live; l.peak = &peak; }
+  Scheduler sched(4, system_allocator(), 256);
+  auto d = std::make_unique<Drive>();
+  d->task = wf_many_terminals_coro(system_allocator(), &sched, leaves, kLeaves, &peak);
+  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  sched.spawn(&f);
+  sched.drain();
+  sched.shutdown();
+  int observed = d->task.done() ? d->task.result() : -999;
+  EXPECT_GE(observed, 1);                     // completed cleanly (UAF would crash under ASan)
+  for (auto& l : leaves) EXPECT_EQ(l.cell.value, 1);
+}
+
+// A node with MIXED dirty + clean deps: only the dirty dep gates it (the clean dep is
+// already fresh). Full eval, then dirty ONE of two inputs; the sink recomputes with the
+// stale-but-clean input reused + the freshly recomputed one.
+Task<int> wf_mixed_deps_coro(mem::Allocator alloc, Scheduler* sched, Source* a, Source* b,
+                             Add* sink, int* out) {
+  TaskGraph g(alloc);
+  NodeId ia = g.add_source(source_fn, a);
+  NodeId ib = g.add_source(source_fn, b);
+  sink->a = &a->cell; sink->b = &b->cell;
+  NodeId deps[] = {ia, ib};
+  (void)g.add_node(add_fn, sink, deps, 2);
+  if (!evaluate_parallel_wavefront(g, *sched, alloc).ok()) co_return -1;
+  // Dirty only a. On the next wavefront, sink has ONE dirty dep (a) + ONE clean (b).
+  a->seed = 30;
+  g.mark_dirty(ia);
+  if (!evaluate_parallel_wavefront(g, *sched, alloc).ok()) co_return -2;
+  *out = sink->cell.value;
+  co_return 0;
+}
+
+TEST(GraphParallel, WavefrontMixedDirtyCleanDeps) {
+  Source a{{}, 1}, b{{}, 2};
+  Add sink;
+  int out = -1;
+  Scheduler sched(4, system_allocator(), 256);
+  auto d = std::make_unique<Drive>();
+  d->task = wf_mixed_deps_coro(system_allocator(), &sched, &a, &b, &sink, &out);
+  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  sched.spawn(&f);
+  sched.drain();
+  sched.shutdown();
+  EXPECT_EQ(d->task.done() ? d->task.result() : -999, 0);
+  EXPECT_EQ(out, 32);                 // 30 (re-run a) + 2 (clean b reused)
+  EXPECT_EQ(a.cell.runs.load(), 2);   // dirty dep re-ran
+  EXPECT_EQ(b.cell.runs.load(), 1);   // clean dep did NOT gate/run
+  EXPECT_EQ(sink.cell.runs.load(), 2);
+}
+
+// Empty + all-clean wavefront are no-ops (dirty_total==0 early return).
+Task<int> wf_empty_clean_coro(mem::Allocator alloc, Scheduler* sched, Source* a) {
+  TaskGraph empty(alloc);
+  if (!evaluate_parallel_wavefront(empty, *sched, alloc).ok()) co_return -1;  // n==0
+  TaskGraph g(alloc);
+  (void)g.add_source(source_fn, a);
+  if (!evaluate_parallel_wavefront(g, *sched, alloc).ok()) co_return -2;
+  if (!evaluate_parallel_wavefront(g, *sched, alloc).ok()) co_return -3;  // all clean -> no-op
+  co_return a->cell.runs.load();
+}
+
+TEST(GraphParallel, WavefrontEmptyAndAllCleanNoOp) {
+  Source a{{}, 7};
+  Scheduler sched(4, system_allocator(), 256);
+  auto d = std::make_unique<Drive>();
+  d->task = wf_empty_clean_coro(system_allocator(), &sched, &a);
+  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  sched.spawn(&f);
+  sched.drain();
+  sched.shutdown();
+  EXPECT_EQ(d->task.done() ? d->task.result() : -999, 1);  // ran exactly once
+}
+
 }  // namespace
 }  // namespace hyle::graph

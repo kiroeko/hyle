@@ -5,7 +5,7 @@
 | **阶段** | P6（北极星② 驱动，非纯收口）|
 | **模块** | graph/（**支柱破土**——此前 0 行）|
 | **前置** | error ✅ / mem ✅ / container(SmallVector) ✅ |
-| **状态** | ✅ **step-1 + step-2 + step-3(demand 半)完成**。**step-1**（WSL+MSVC 13/13）：`TaskGraph` 脏标记增量重算核心，串行 evaluate（纯 CPU 无 sched）。**step-2**（WSL+ASan+TSan+MSVC 各 7/7）：`evaluate_parallel` 同拓扑层独立脏节点**并行跑 sched work-stealing**，逐层 fork-join。**step-3 demand 追踪**（2026-07-10，WSL+MSVC 19/19 + ASan + 红队）：`evaluate_node(target)` 只重算 target 依赖锥内的脏节点，锥外脏节点延后。**step-3 另一半 dataflow-wavefront 明确缓**（见下,边际性能且当前层屏障已正确,无消费者压力）。|
+| **状态** | ✅ **step-1 + step-2 + step-3(demand + wavefront)全完成**。**step-1**（WSL+MSVC 13/13）：`TaskGraph` 脏标记增量重算核心，串行 evaluate（纯 CPU 无 sched）。**step-2**（WSL+ASan+TSan+MSVC 各 7/7）：`evaluate_parallel` 同拓扑层独立脏节点**并行跑 sched work-stealing**，逐层 fork-join。**step-3 demand**（WSL+MSVC 19/19 + ASan）：`evaluate_node(target)` 只重算 target 依赖锥。**step-3 wavefront**（2026-07-10，WSL+ASan+TSan+MSVC 各 14/14）：`evaluate_parallel_wavefront` 节点在自己脏 deps 一完成即起（不等整层），长短腿图缩短关键路径。graph-01 三步全落地。|
 
 > **一句话**：graph 支柱破土。北极星② CAD/BIM/CAE 的核心热路径是"拖一个滑块只重算受影响的几何 / 改一个边界条件只重算相关网格块"——即**依赖 DAG 的增量重算**。clay taskgraph 是 one-shot 全图重跑、**零增量资产**（grep 实测），所以这一块从零造。step-1 先证增量语义在串行下正确，并行留 step-2。
 
@@ -93,7 +93,15 @@
 
 **算法（两趟,复用决策 ②"dep 恒更小 id"）**：① **锥标记 = 单趟后向扫描**：`needed[target]=true`,从 target 递减到 0,若 `needed[i]` 则标记 i 的全部 deps needed（deps 的 id < i,在递减扫描里仍在前方,必被标到）。一趟闭合全传递闭包,无递归无重访。② **前向运行 = 0..=target**：跑 `needed[i] && dirty_[i]` 的节点。needed 节点的 deps 全被标 needed（①无条件标全部 dep）→ needed 节点不可能有"脏但未标"的 dep → 输入必新鲜。`needed` 是本次调用 scratch（`SmallVector<bool>` from `alloc_`,尺寸 target+1,锥根是 target 故祖先 id 全 < target）。
 
-**step-3 另一半 dataflow-wavefront 明确缓（带理由,非遗漏）**：wavefront（节点在自己 deps 一完成即起,不等整层 join）是**边际性能**优化——本里程碑设计已判定对 CAD/CAE"宽而浅"层型收益小（层内并行度已满,层间等待浪费小）,且复杂度高（原子入度计数 + 续 spawn,TSan 敏感）。当前 step-2 层屏障**已正确**。按 backlog 纪律:无"层屏障太粗"的真实消费者压力前不投机做。demand 半是**能力**（新的求值语义,CAD/CAE 真需要）,故先做;wavefront 是纯优化,缓。
+## 做了什么（step-3 wavefront 半：`evaluate_parallel_wavefront`）
+
+> **原判"缓"被纠正（用户 2026-07-10：HYLE 是通用基础库,CAD 只是预设消费者之一）**。之前用"CAD/CAE 宽浅层型收益小"给不做找理由——但 wavefront 是 DAG 执行器的**标准能力**(oneTBB flow_graph、clay 自己的执行器都是 wavefront),长短腿/窄深图是真实通用图型(构建系统/CI/任何非均匀 DAG)。拿"我预设的消费者够用"当免死金牌正是被纠正过的 infra-完整性反模式。做全。
+
+`evaluate_parallel_wavefront`：节点在**自己的脏 deps 一完成即起**,不等整个拓扑层 join。step-2 层屏障让 level L 的每个节点等 level L-1 **最慢**的那个;wavefront 去掉这个——快节点的下游不被慢的同层兄弟拖住。长短腿 DAG(一条长关键路径旁挂短分支)缩短关键路径;宽浅 DAG 两者等价。
+
+**机制**:每个脏节点一个 remaining-脏-dep 计数（只在驱动 fiber 单线程改,recv 之间,无需原子）;计数 0 即 spawn 到 sched;完成时经 Channel 把 id 投给驱动 fiber,驱动递减其脏后继的计数、归零即 spawn。反向后继邻接用 CSR 转置(2 趟:计数入 succ_off[dep+1]、前缀和、游标填充)。干净节点不 gate（已新鲜）也不跑。
+
+**⚠️ 红队揪出 CRITICAL UAF（测试全绿却有真 bug,再次印证测试≠对抗式审查）**:node task 起初 `.detach()`,靠 Channel drain-to-zero 当"全完成"信号。但 **`Channel::send` 在 `mu_.unlock()` 之后才 `notify_one()` 触碰 `this`**——两个独立终端节点近乎同时完成时,驱动可能在 task B 的 unlock 与 notify_one 之间就 drain 到 0、返回、销毁栈上 `done` → task B 恢复后 notify_one 打到已释放内存。修=**保留全部 JoinHandle,drain loop 后 join 全部再返回**(join 等到 set_value,set_value 在 co_return 后、co_return 在 send 完全返回后 → join 全完成即保证无 task 还在碰 channel;JoinState 堆+引用计数独立于栈 channel)。红队同时揪出触发形状无测试(#2)→补 `WavefrontManyIndependentTerminalsNoUAF`(16 独立终端,ASan/TSan ×5 无错)。
 
 ## 验收（step-3 demand）
 
@@ -108,16 +116,29 @@
 
 红队逐条 trace 并**确认无懈**：锥标记后向扫描的传递闭包完整性（反证锥内节点不可漏——任一锥内 j 是某 needed i 的 dep 故 j<i,递减扫描里 i 先于 j 处理,j 必被标）、`needed[]` 越界安全（dep < i ≤ t < t+1）、前向运行输入新鲜（needed 节点的 dep 全 needed,无"脏但未标"dep）、延后正确性、失败路径、t=0 退化、scratch 分配无泄漏——**核心 1-7 类全清**。揪 2 测试缺口：钻石锥经 evaluate_node（原只 evaluate() 测过）、延后节点被 full evaluate 接住——均补（`EvaluateNodeDiamondSharedAncestorRunsOnce` + `DeferredNodePickedUpByFullEvaluate`）。
 
+## 验收（step-3 wavefront）
+
+- **对拍层屏障/串行 oracle**：`WavefrontDiamondMatchesSerial`（钻石结果 == fork-join 的 20,各节点跑一次）。
+- **并行下增量**：`WavefrontIncrementalReRunsOnlyDirty`。
+- **关键路径真缩短**（wavefront 的存在意义,非"跑了就算"）：`WavefrontShortLegNotBlockedBySlowSibling`——慢的 level-0 节点旁挂 fast0→fast1→fast2 快链,断言**快链尾（level-2）在慢的 level-0 兄弟之前完成**(逻辑时钟 finish_tick)。层屏障下 level-2 绝不可能早于某 level-0 → 只有 wavefront 能过。
+- **混合脏干净 dep**：`WavefrontMixedDirtyCleanDeps`（只脏 dep gate,干净 dep 不 gate 不跑）。
+- **失败停后继 + 空图/全干净**：`WavefrontFailureStopsSuccessors` + `WavefrontEmptyAndAllCleanNoOp`。
+- **UAF 回归**：`WavefrontManyIndependentTerminalsNoUAF`（16 独立终端并发完成,ASan+TSan ×5 无错）。
+- **四配置**：WSL GCC14 + ASan + TSan + MSVC 各 14/14。
+
+## 对抗式审查（step-3 wavefront，2026-07-10 红队 subagent + 自审）
+
+红队确认 remaining 计数模型/CSR 转置/channel 容量/drain 不变式/happens-before/单线程 remaining/self-schedule 无死锁全对,但揪出 **1 CRITICAL UAF**：栈 `Channel` 在 drain-to-zero 后即销毁,而 `Channel::send` 在 unlock 之后才 notify_one 触碰 this → 多独立终端并发完成时 notify 打到已释放内存。修=保留 JoinHandle、drain 后 join 全部再返回（join 等 set_value,在 send 完全返回之后）+ 补触发形状测试。**又一次坐实"测试全绿 ≠ 无 bug",对抗式审查是必经闸。**
+
 ## 交付物
 
-- `include/hyle/graph/taskgraph.h`（`TaskGraph` + `NodeId`/`ComputeFn`;SoA+CSR 私有布局;导出宏放方法;step-2 加平凡内联 accessor seam）
-- `include/hyle/graph/parallel.h`（step-2:`evaluate_parallel` + 输出别名/失败路径契约;sched-gated）
-- `src/graph/parallel_eval.cc`（step-2:逐层 fork-join + level 计算 + outcome 槽绕 UAF）
-- `src/graph/taskgraph.cc`（add_node/mark_dirty/evaluate/**evaluate_node(step-3)**/move + CSR 构建）
-- `src/graph/parallel_eval.cc`（step-2:逐层 fork-join 并行 evaluate）
-- `tests/graph/taskgraph_test.cc`（step-1:11 功能 + 2 death;**step-3:+6 demand 用例**）+ `tests/graph/parallel_test.cc`（step-2:7 并发用例）
-- `src/graph/CMakeLists.txt`（step-1 核心处处编 / step-2 parallel_eval.cc gated on HYLE_HAS_FCONTEXT + hyle_sched）+ 顶层 CMake 挂载 + tests 注册
-- **LOC（cloc 实测）**：step-1 ~410 + step-2 ~281 + step-3 demand ~75（evaluate_node ~35 impl + ~40 doc/decl + ~130 test）= **~765 code**（graph-01 原估 3-4k 严重偏高,实测远低=精瘦非 stub,原因见 graph-design 行数修正；dataflow-wavefront 明确缓）
+- `include/hyle/graph/taskgraph.h`（`TaskGraph` + `NodeId`/`ComputeFn`;SoA+CSR;导出宏放方法;内联 accessor seam + `dep_pool_size_` for wavefront 反向邻接）
+- `include/hyle/graph/parallel.h`（`evaluate_parallel`[step-2] + `evaluate_parallel_wavefront`[step-3];输出别名/失败路径契约;sched-gated）
+- `src/graph/taskgraph.cc`（add_node/mark_dirty/evaluate/**evaluate_node**[step-3 demand]/move + CSR 构建）
+- `src/graph/parallel_eval.cc`（step-2 逐层 fork-join + step-3 wavefront:remaining 计数 + CSR 转置后继 + channel 驱动 + join-all 闭 UAF）
+- `tests/graph/taskgraph_test.cc`（step-1:11 + 2 death;step-3 demand:+6）+ `tests/graph/parallel_test.cc`（step-2:7 + step-3 wavefront:+7）
+- `src/graph/CMakeLists.txt`（核心处处编 / parallel_eval.cc gated on HYLE_HAS_FCONTEXT + hyle_sched）+ 顶层 CMake + tests 注册
+- **LOC（cloc 实测）**：step-1 ~410 + step-2 ~281 + step-3 demand ~75 + step-3 wavefront ~292（impl ~103 + decl ~26 + test ~163）= **~1058 code**（graph-01 原估 3-4k 偏高,实测远低=精瘦非 stub,原因见 graph-design 行数修正）
 
 ## 参考
 

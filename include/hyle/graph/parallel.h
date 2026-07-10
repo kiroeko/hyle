@@ -79,4 +79,25 @@ namespace hyle::graph {
 HYLE_GRAPH_API Status evaluate_parallel(TaskGraph& g, sched::Scheduler& sched,
                                         mem::Allocator alloc) noexcept;
 
+// DATAFLOW-WAVEFRONT parallel evaluate (graph-01 step-3, the other half). Same result as
+// evaluate_parallel (all dirty nodes run once, clean skipped), but a FINER schedule: a
+// node starts the instant ITS OWN dirty deps finish, NOT when a whole topological level
+// joins. evaluate_parallel's level barrier makes every node at level L wait for the
+// SLOWEST node at level L-1; wavefront removes that -- a fast node's downstream isn't
+// held hostage by a slow same-level sibling. On a "long-and-short-legs" DAG (one long
+// critical path beside short branches -- build graphs, CI, any non-uniform DAG) this
+// shortens the critical path; on a wide-shallow DAG (many equal-cost same-level nodes,
+// e.g. a CAE mesh sweep) the two schedules are ~equivalent. This is the standard DAG-
+// executor schedule (oneTBB flow_graph, clay's own executor); provided because a general
+// infra library must cover both schedules, not assume a wide-shallow consumer.
+//
+// MECHANISM: each dirty node has an atomic-free remaining-dirty-dep counter (mutated only
+// on the driver fiber, single-threaded); a node with counter 0 is spawned onto `sched`;
+// on completion it posts its id to a Channel the driver fiber recv()s, which decrements
+// its dirty successors' counters and spawns any that reach 0. Clean nodes never gate
+// (already fresh) and never run. Same failure/aliasing contract as evaluate_parallel.
+//   CONTRACT: called from a worker fiber of `sched`; concurrent nodes write disjoint memory.
+HYLE_GRAPH_API Status evaluate_parallel_wavefront(TaskGraph& g, sched::Scheduler& sched,
+                                                  mem::Allocator alloc) noexcept;
+
 }  // namespace hyle::graph

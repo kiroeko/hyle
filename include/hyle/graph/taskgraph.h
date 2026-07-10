@@ -172,6 +172,11 @@ class TaskGraph {
   std::uint32_t dep_pool_at_(std::uint32_t k) const noexcept {
     return static_cast<std::uint32_t>(dep_pool_[k]);
   }
+  // Total edge count (== sum of all nodes' dep counts); sizes the wavefront reverse-
+  // adjacency (graph-01 step-3 wavefront).
+  std::uint32_t dep_pool_size_() const noexcept {
+    return static_cast<std::uint32_t>(dep_pool_.size());
+  }
 
  private:
   // Storage is STRUCT-OF-ARRAYS with a CSR (compressed-sparse-row) dependency list --
