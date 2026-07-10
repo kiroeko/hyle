@@ -16,6 +16,9 @@ if(HYLE_HAS_FCONTEXT)
   # suspend. parallel.h includes it publicly (references sched::Scheduler), so a consumer
   # of that header needs sched -> hyle_sched is PUBLIC on this path.
   list(APPEND _graph_sources parallel_eval.cc)
+  # graph-02: data_parallel.cc = parallel_for / parallel_reduce (recursive-split fork-join
+  # over sched). Same sched gate; data_parallel.h references sched::Scheduler.
+  list(APPEND _graph_sources data_parallel.cc)
   list(APPEND _graph_public_deps hyle_sched)
 endif()
 
