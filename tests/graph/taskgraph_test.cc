@@ -332,6 +332,162 @@ TEST(TaskGraph, InteriorDirtyAndLateAdd) {
   EXPECT_EQ(c.cell.runs, 2);
 }
 
+// ---- step-3: demand-driven evaluate_node ------------------------------------
+// Two independent chains: (a->pa) and (b->pb). Dirty both inputs, then evaluate ONLY pa.
+// pa's cone (a, pa) recomputes; pb's cone (b, pb) is UNRELATED and stays dirty (deferred).
+TEST(TaskGraph, EvaluateNodeRunsOnlyTargetCone) {
+  TaskGraph g(system_allocator());
+  Source a{{}, 1}, b{{}, 2};
+  Add pa, pb;
+  NodeId ia = g.add_source(source_fn, &a);
+  NodeId ib = g.add_source(source_fn, &b);
+  pa.a = &a.cell; pa.b = &a.cell;         // pa = 2a
+  NodeId dpa[] = {ia};
+  NodeId ipa = g.add_node(add_fn, &pa, dpa, 1);
+  pb.a = &b.cell; pb.b = &b.cell;         // pb = 2b
+  NodeId dpb[] = {ib};
+  NodeId ipb = g.add_node(add_fn, &pb, dpb, 1);
+
+  // Demand only pa: its cone (a, pa) runs; b + pb stay dirty (not in pa's cone).
+  ASSERT_TRUE(g.evaluate_node(ipa).ok());
+  EXPECT_EQ(pa.cell.value, 2);
+  EXPECT_EQ(a.cell.runs, 1);
+  EXPECT_EQ(pa.cell.runs, 1);
+  EXPECT_EQ(b.cell.runs, 0);      // b NOT run -- outside pa's cone
+  EXPECT_EQ(pb.cell.runs, 0);
+  EXPECT_FALSE(g.is_dirty(ia));   // pa's cone is clean
+  EXPECT_FALSE(g.is_dirty(ipa));
+  EXPECT_TRUE(g.is_dirty(ib));    // pb's cone stays DIRTY (deferred)
+  EXPECT_TRUE(g.is_dirty(ipb));
+
+  // Now demand pb: the deferred cone finally runs.
+  ASSERT_TRUE(g.evaluate_node(ipb).ok());
+  EXPECT_EQ(pb.cell.value, 4);    // 2*2
+  EXPECT_EQ(b.cell.runs, 1);
+  EXPECT_EQ(pb.cell.runs, 1);
+  EXPECT_EQ(a.cell.runs, 1);      // pa's cone NOT re-run (already clean)
+}
+
+// evaluate_node recomputes a target's DIRTY transitive ancestors (deep cone), skipping
+// clean ones; a sibling branch feeding the same sink but not dirtied is reused.
+TEST(TaskGraph, EvaluateNodeDeepConeAndReuse) {
+  TaskGraph g(system_allocator());
+  Source a{{}, 1}, b{{}, 10};
+  Add mid, sink;
+  NodeId ia = g.add_source(source_fn, &a);
+  NodeId ib = g.add_source(source_fn, &b);
+  mid.a = &a.cell; mid.b = &a.cell;       // mid = 2a
+  NodeId dmid[] = {ia};
+  NodeId imid = g.add_node(add_fn, &mid, dmid, 1);
+  sink.a = &mid.cell; sink.b = &b.cell;   // sink = mid + b
+  NodeId dsink[] = {imid, ib};
+  NodeId isink = g.add_node(add_fn, &sink, dsink, 2);
+
+  ASSERT_TRUE(g.evaluate_node(isink).ok());   // first demand: whole cone runs
+  EXPECT_EQ(sink.cell.value, 12);             // 2*1 + 10
+  EXPECT_EQ(a.cell.runs, 1);
+  EXPECT_EQ(b.cell.runs, 1);
+
+  // Edit only a; demand sink again. a + mid re-run (dirty ancestors); b reused (clean).
+  a.seed = 5;
+  g.mark_dirty(ia);
+  ASSERT_TRUE(g.evaluate_node(isink).ok());
+  EXPECT_EQ(sink.cell.value, 20);             // 2*5 + 10
+  EXPECT_EQ(a.cell.runs, 2);                  // dirty ancestor re-ran
+  EXPECT_EQ(mid.cell.runs, 2);
+  EXPECT_EQ(b.cell.runs, 1);                  // clean sibling REUSED (not re-run)
+  EXPECT_EQ(sink.cell.runs, 2);
+}
+
+// Demanding a node whose cone is already clean is a no-op.
+TEST(TaskGraph, EvaluateNodeAllCleanNoOp) {
+  TaskGraph g(system_allocator());
+  Source a{{}, 3};
+  Add p;
+  NodeId ia = g.add_source(source_fn, &a);
+  p.a = &a.cell; p.b = &a.cell;
+  NodeId dp[] = {ia};
+  NodeId ip = g.add_node(add_fn, &p, dp, 1);
+  ASSERT_TRUE(g.evaluate_node(ip).ok());
+  ASSERT_TRUE(g.evaluate_node(ip).ok());  // clean -> nothing runs
+  EXPECT_EQ(a.cell.runs, 1);
+  EXPECT_EQ(p.cell.runs, 1);
+}
+
+// Diamond cone under evaluate_node: target `sink` depends on b and c, both of which
+// depend on a shared ancestor `a`. Demanding sink must mark+run `a` exactly ONCE (not
+// once per path) -- the cone marking is idempotent and the forward sweep visits each id once.
+TEST(TaskGraph, EvaluateNodeDiamondSharedAncestorRunsOnce) {
+  TaskGraph g(system_allocator());
+  Source a{{}, 1};
+  Add b, c, sink;
+  NodeId ia = g.add_source(source_fn, &a);
+  b.a = &a.cell; b.b = &a.cell;           // b = 2a
+  c.a = &a.cell; c.b = &a.cell;           // c = 2a
+  NodeId da[] = {ia};
+  NodeId ib = g.add_node(add_fn, &b, da, 1);
+  NodeId ic = g.add_node(add_fn, &c, da, 1);
+  sink.a = &b.cell; sink.b = &c.cell;     // sink = b + c
+  NodeId dbc[] = {ib, ic};
+  NodeId isink = g.add_node(add_fn, &sink, dbc, 2);
+
+  ASSERT_TRUE(g.evaluate_node(isink).ok());
+  EXPECT_EQ(sink.cell.value, 4);   // (2*1)+(2*1)
+  EXPECT_EQ(a.cell.runs, 1);       // shared ancestor ran exactly ONCE despite two paths
+  EXPECT_EQ(b.cell.runs, 1);
+  EXPECT_EQ(c.cell.runs, 1);
+  EXPECT_EQ(sink.cell.runs, 1);
+}
+
+// A node deferred by evaluate_node (dirty, outside the demanded cone) is later picked up
+// by a full evaluate() -- the deferral doesn't lose the work.
+TEST(TaskGraph, DeferredNodePickedUpByFullEvaluate) {
+  TaskGraph g(system_allocator());
+  Source a{{}, 1}, b{{}, 2};
+  Add pa, pb;
+  NodeId ia = g.add_source(source_fn, &a);
+  NodeId ib = g.add_source(source_fn, &b);
+  pa.a = &a.cell; pa.b = &a.cell;
+  NodeId dpa[] = {ia};
+  NodeId ipa = g.add_node(add_fn, &pa, dpa, 1);
+  pb.a = &b.cell; pb.b = &b.cell;
+  NodeId dpb[] = {ib};
+  (void)g.add_node(add_fn, &pb, dpb, 1);
+
+  ASSERT_TRUE(g.evaluate_node(ipa).ok());  // only pa's cone; b+pb deferred (dirty)
+  EXPECT_EQ(b.cell.runs, 0);
+  EXPECT_TRUE(g.is_dirty(ib));
+
+  ASSERT_TRUE(g.evaluate().ok());  // full sweep picks up the deferred cone
+  EXPECT_EQ(b.cell.value, 2);
+  EXPECT_EQ(pb.cell.value, 4);
+  EXPECT_EQ(b.cell.runs, 1);       // ran now
+  EXPECT_EQ(a.cell.runs, 1);       // pa's cone already clean -> not re-run
+  EXPECT_FALSE(g.is_dirty(ib));
+}
+
+// A failure inside the demanded cone aborts and leaves the failed node dirty.
+TEST(TaskGraph, EvaluateNodeFailureStaysDirty) {
+  TaskGraph g(system_allocator());
+  Failing f;
+  Add downstream;
+  NodeId nf = g.add_source(failing_fn, &f);
+  downstream.a = &f.cell; downstream.b = &f.cell;
+  NodeId df[] = {nf};
+  NodeId nd = g.add_node(add_fn, &downstream, df, 1);
+
+  Status s = g.evaluate_node(nd);
+  EXPECT_FALSE(s.ok());
+  EXPECT_TRUE(g.is_dirty(nf));         // failed ancestor stays dirty
+  EXPECT_EQ(downstream.cell.runs, 0);  // downstream never reached
+  EXPECT_TRUE(g.is_dirty(nd));
+
+  f.should_fail = false;
+  ASSERT_TRUE(g.evaluate_node(nd).ok());  // retry succeeds
+  EXPECT_EQ(f.cell.value, 42);
+  EXPECT_EQ(downstream.cell.value, 84);   // 42 + 42
+}
+
 // ---- contract death tests (caller bug -> fatal assert) ----------------------
 void add_null_fn() {
   TaskGraph g(system_allocator());

@@ -5,7 +5,7 @@
 | **阶段** | P6（北极星② 驱动，非纯收口）|
 | **模块** | graph/（**支柱破土**——此前 0 行）|
 | **前置** | error ✅ / mem ✅ / container(SmallVector) ✅ |
-| **状态** | ✅ **step-1 + step-2 完成**。**step-1（2026-07-10，WSL+MSVC 13/13 含 2 death + 红队）**：`TaskGraph` 脏标记增量重算核心，串行 evaluate（纯 CPU 无 sched）。**step-2（2026-07-10，WSL+ASan+TSan+MSVC 各 7/7 + 红队）**：`evaluate_parallel` —— 同拓扑层独立脏节点**并行跑在 sched work-stealing 上**，逐层 fork-join。**step-3 refinement（dataflow-wavefront / demand 追踪）backlog**。|
+| **状态** | ✅ **step-1 + step-2 + step-3(demand 半)完成**。**step-1**（WSL+MSVC 13/13）：`TaskGraph` 脏标记增量重算核心，串行 evaluate（纯 CPU 无 sched）。**step-2**（WSL+ASan+TSan+MSVC 各 7/7）：`evaluate_parallel` 同拓扑层独立脏节点**并行跑 sched work-stealing**，逐层 fork-join。**step-3 demand 追踪**（2026-07-10，WSL+MSVC 19/19 + ASan + 红队）：`evaluate_node(target)` 只重算 target 依赖锥内的脏节点，锥外脏节点延后。**step-3 另一半 dataflow-wavefront 明确缓**（见下,边际性能且当前层屏障已正确,无消费者压力）。|
 
 > **一句话**：graph 支柱破土。北极星② CAD/BIM/CAE 的核心热路径是"拖一个滑块只重算受影响的几何 / 改一个边界条件只重算相关网格块"——即**依赖 DAG 的增量重算**。clay taskgraph 是 one-shot 全图重跑、**零增量资产**（grep 实测），所以这一块从零造。step-1 先证增量语义在串行下正确，并行留 step-2。
 
@@ -87,16 +87,37 @@
 | 3 | 测试 | 中间层失败停后续层未验证 | 补 `MidLevelFailureStopsLaterLevels` |
 | 4 | 测试 | 无多层链/同层脏干净混合/空图·全干净 | 补 `MixedDirtyCleanAndMultiLevel` + `EmptyAndAllCleanAreNoOps` |
 
+## 做了什么（step-3 demand 半：`evaluate_node`）
+
+`TaskGraph::evaluate_node(NodeId target)`（`taskgraph.cc`，串行，纯 CPU）：把 `evaluate()`"重算所有脏节点"收窄成"只重算 **target 的依赖锥**（target + 其**脏的**传递祖先），锥外脏节点**延后**"。这是完整的 demand-driven 增量模型（Salsa/Adapton）——调用方只关心一个输出时（CAD 视口只显示一个零件、CAE 探针只读一个场量），无关的脏子图可以等。返回 OK 后 target 干净、其值新鲜；锥外脏节点仍脏，等下次 `evaluate()` 或 demand 到它的 `evaluate_node` 再跑。
+
+**算法（两趟,复用决策 ②"dep 恒更小 id"）**：① **锥标记 = 单趟后向扫描**：`needed[target]=true`,从 target 递减到 0,若 `needed[i]` 则标记 i 的全部 deps needed（deps 的 id < i,在递减扫描里仍在前方,必被标到）。一趟闭合全传递闭包,无递归无重访。② **前向运行 = 0..=target**：跑 `needed[i] && dirty_[i]` 的节点。needed 节点的 deps 全被标 needed（①无条件标全部 dep）→ needed 节点不可能有"脏但未标"的 dep → 输入必新鲜。`needed` 是本次调用 scratch（`SmallVector<bool>` from `alloc_`,尺寸 target+1,锥根是 target 故祖先 id 全 < target）。
+
+**step-3 另一半 dataflow-wavefront 明确缓（带理由,非遗漏）**：wavefront（节点在自己 deps 一完成即起,不等整层 join）是**边际性能**优化——本里程碑设计已判定对 CAD/CAE"宽而浅"层型收益小（层内并行度已满,层间等待浪费小）,且复杂度高（原子入度计数 + 续 spawn,TSan 敏感）。当前 step-2 层屏障**已正确**。按 backlog 纪律:无"层屏障太粗"的真实消费者压力前不投机做。demand 半是**能力**（新的求值语义,CAD/CAE 真需要）,故先做;wavefront 是纯优化,缓。
+
+## 验收（step-3 demand）
+
+- **只跑锥内**：`EvaluateNodeRunsOnlyTargetCone`（两条独立链,demand 一条,另一条脏节点不跑、留脏）。
+- **锥内深链 + 复用**：`EvaluateNodeDeepConeAndReuse`（脏祖先重算、干净兄弟复用）。
+- **钻石锥**：`EvaluateNodeDiamondSharedAncestorRunsOnce`（共享祖先恰跑一次,非每路一次）。
+- **延后不丢**：`DeferredNodePickedUpByFullEvaluate`（demand 延后的脏节点被后续 `evaluate()` 接住）。
+- **全干净 no-op** + **锥内失败留脏重试**：`EvaluateNodeAllCleanNoOp` + `EvaluateNodeFailureStaysDirty`。
+- **双平台 + ASan**：WSL GCC14 + MSVC 各 19/19；ASan 无泄漏（scratch `needed` 正确释放）。
+
+## 对抗式审查（step-3，2026-07-10 红队 subagent + 自审）
+
+红队逐条 trace 并**确认无懈**：锥标记后向扫描的传递闭包完整性（反证锥内节点不可漏——任一锥内 j 是某 needed i 的 dep 故 j<i,递减扫描里 i 先于 j 处理,j 必被标）、`needed[]` 越界安全（dep < i ≤ t < t+1）、前向运行输入新鲜（needed 节点的 dep 全 needed,无"脏但未标"dep）、延后正确性、失败路径、t=0 退化、scratch 分配无泄漏——**核心 1-7 类全清**。揪 2 测试缺口：钻石锥经 evaluate_node（原只 evaluate() 测过）、延后节点被 full evaluate 接住——均补（`EvaluateNodeDiamondSharedAncestorRunsOnce` + `DeferredNodePickedUpByFullEvaluate`）。
+
 ## 交付物
 
 - `include/hyle/graph/taskgraph.h`（`TaskGraph` + `NodeId`/`ComputeFn`;SoA+CSR 私有布局;导出宏放方法;step-2 加平凡内联 accessor seam）
 - `include/hyle/graph/parallel.h`（step-2:`evaluate_parallel` + 输出别名/失败路径契约;sched-gated）
 - `src/graph/parallel_eval.cc`（step-2:逐层 fork-join + level 计算 + outcome 槽绕 UAF）
-- `src/graph/taskgraph.cc`（add_node/mark_dirty/evaluate/move + CSR 构建）
+- `src/graph/taskgraph.cc`（add_node/mark_dirty/evaluate/**evaluate_node(step-3)**/move + CSR 构建）
 - `src/graph/parallel_eval.cc`（step-2:逐层 fork-join 并行 evaluate）
-- `tests/graph/taskgraph_test.cc`（step-1:11 功能 + 2 death）+ `tests/graph/parallel_test.cc`（step-2:7 并发用例）
+- `tests/graph/taskgraph_test.cc`（step-1:11 功能 + 2 death;**step-3:+6 demand 用例**）+ `tests/graph/parallel_test.cc`（step-2:7 并发用例）
 - `src/graph/CMakeLists.txt`（step-1 核心处处编 / step-2 parallel_eval.cc gated on HYLE_HAS_FCONTEXT + hyle_sched）+ 顶层 CMake 挂载 + tests 注册
-- **LOC（cloc 实测）**：step-1 ~410（43 header + 78 impl + ~290 test）+ step-2 ~281（19 header + 100 impl + ~160 test）= **~690 code**（graph-01 3-4k 估算的增量核心 + 并行两片；dataflow-wavefront/demand 追踪等 refinement 未做）
+- **LOC（cloc 实测）**：step-1 ~410 + step-2 ~281 + step-3 demand ~75（evaluate_node ~35 impl + ~40 doc/decl + ~130 test）= **~765 code**（graph-01 原估 3-4k 严重偏高,实测远低=精瘦非 stub,原因见 graph-design 行数修正；dataflow-wavefront 明确缓）
 
 ## 参考
 

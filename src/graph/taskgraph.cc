@@ -93,6 +93,41 @@ Status TaskGraph::evaluate() noexcept {
   return Status();
 }
 
+Status TaskGraph::evaluate_node(NodeId target) noexcept {
+  const std::uint32_t t = idx(target);
+  HYLE_FATAL_ASSERT(t < fn_.size());
+
+  // 1. Mark target's DEPENDENCY CONE (target + all transitive deps). Because a dep always
+  //    has a SMALLER id (decision ②), one BACKWARD sweep from t down to 0 suffices: seed
+  //    `needed[t]=true`, then for each i from t down, if i is needed, mark all of i's deps
+  //    (ids < i, visited later in this descending sweep) needed too. No recursion, no
+  //    revisits. `needed` is scratch (this call only), sized to t+1 (ids > t can't be in a
+  //    cone whose root is t -- they'd have larger ids than target, i.e. downstream).
+  container::SmallVector<bool, 64, mem::Allocator> needed(alloc_);
+  needed.reserve(t + 1);
+  for (std::uint32_t i = 0; i <= t; ++i) needed.push_back(false);
+  needed[t] = true;
+  for (std::uint32_t ri = 0; ri <= t; ++ri) {
+    const std::uint32_t i = t - ri;  // descend t, t-1, ..., 0
+    if (!needed[i]) continue;
+    for (std::uint32_t k = dep_off_[i]; k < dep_off_[i + 1]; ++k) {
+      needed[idx(dep_pool_[k])] = true;  // dep id < i, still ahead in the descending sweep
+    }
+  }
+
+  // 2. Forward sweep 0..=t: run nodes that are BOTH dirty AND needed, in topo order. A run
+  //    node's deps (smaller ids, already visited) that were dirty+needed already ran, so
+  //    its inputs are fresh. Dirty nodes OUTSIDE the cone (needed[i]==false) are skipped
+  //    and STAY dirty -- deferred until something that needs them is evaluated.
+  for (std::uint32_t i = 0; i <= t; ++i) {
+    if (!needed[i] || !dirty_[i]) continue;
+    Status s = fn_[i](ctx_[i]);
+    if (!s.ok()) return s;  // abort; node i stays dirty (retried next evaluate)
+    dirty_[i] = false;
+  }
+  return Status();
+}
+
 std::size_t TaskGraph::num_nodes() const noexcept { return fn_.size(); }
 
 bool TaskGraph::is_dirty(NodeId n) const noexcept {

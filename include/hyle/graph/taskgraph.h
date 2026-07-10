@@ -132,6 +132,21 @@ class TaskGraph {
   // Status; the failed node stays dirty (retried next evaluate). All-clean = no-op.
   HYLE_GRAPH_API Status evaluate() noexcept;
 
+  // DEMAND-DRIVEN evaluate (graph-01 step-3): recompute ONLY what `target` needs -- i.e.
+  // `target` itself plus its DIRTY transitive ancestors (deps, deps-of-deps, ...), in
+  // topological order. Dirty nodes that `target` does NOT depend on are LEFT DIRTY
+  // (deferred) -- they'll run when something that needs them is evaluated. This is the
+  // full demand-driven incremental model (Salsa/Adapton): evaluate() recomputes ALL
+  // dirty, evaluate_node(t) recomputes only t's dependency cone. Use it when the caller
+  // cares about one output (a CAD viewport shows one part; a CAE probe reads one field)
+  // and the rest of the graph's dirty work can wait.
+  //
+  // After it returns OK, `target` is clean and its value in user memory is fresh; any
+  // dirty node OUTSIDE target's cone stays dirty. Same failure contract as evaluate()
+  // (first non-OK aborts, failed node stays dirty). All-of-target's-cone-clean = no-op.
+  //   CONTRACT: target is a valid id of this graph.
+  HYLE_GRAPH_API Status evaluate_node(NodeId target) noexcept;
+
   // Diagnostics.
   HYLE_GRAPH_API std::size_t num_nodes() const noexcept;
   HYLE_GRAPH_API bool is_dirty(NodeId n) const noexcept;  // n valid (fatal assert)
