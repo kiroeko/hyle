@@ -201,15 +201,15 @@ if (hyle::simd::supports(hyle::simd::Isa::kAvx2)) { /* 调 AVX2 变体 */ }
 hyle::simd::hypot_f32_batch(a, b, dst, n);
 
 // 直接计算 sqrt(a*a + b*b)：不做逐 lane 检查或缩放，由调用方保证输入域。
-hyle::simd::hypot_fast_f32_batch(a, b, dst, n);
+hyle::simd::hypot_in_range_f32_batch(a, b, dst, n);
 ```
 
 | API | 选择条件 | 契约与代价 |
 |---|---|---|
 | `hypot_f32_batch` | 输入可能跨极端数量级，或需要完整 `std::hypot` 语义 | exponent scaling，避免中间平方溢出及不必要的下溢 |
-| `hypot_fast_f32_batch` | 调用方已知数据处于普通范围，吞吐优先 | direct square/add/sqrt，允许实现融合FMA；`a`、`b` 必须有限，且中间和必须可表示；不保护极小输入的平方下溢，末位舍入可随ISA不同 |
+| `hypot_in_range_f32_batch` | 调用方已知数据处于普通范围，吞吐优先 | direct square/add/sqrt，允许实现融合FMA；`a`、`b` 必须有限，且中间和必须可表示；不保护极小输入的平方下溢，末位舍入可随ISA不同 |
 
-`hypot_fast_f32_batch` 不在热路径逐元素检查契约。一个简单的**防溢出充分条件**是每个输入都满足 `|x| <= sqrt(FLT_MAX/2) ≈ 1.30438e19`；若输入可能接近上限、包含无穷/NaN，或必须保留极小非正规数，请用完整版本。`dst` 可与 `a` 或 `b` **完全同址**原位写回，但其他部分重叠不支持。真机 `bench-stat -n15`：AVX2为0.140 vs 0.281 ns/op（约 **2.03×**），Apple NEON为0.220 vs 0.454 ns/op（约 **2.07×**）。f64 direct-formula 试验仅统计打平，因此没有发布名不副实的 `hypot_fast_f64_batch`。
+`hypot_in_range_f32_batch` 不在热路径逐元素检查契约。一个简单的**防溢出充分条件**是每个输入都满足 `|x| <= sqrt(FLT_MAX/2) ≈ 1.30438e19`；若输入可能接近上限、包含无穷/NaN，或必须保留极小非正规数，请用完整版本。`dst` 可与 `a` 或 `b` **完全同址**原位写回，但其他部分重叠不支持。真机 `bench-stat -n15`：AVX2为0.140 vs 0.281 ns/op（约 **2.03×**），Apple NEON为0.220 vs 0.454 ns/op（约 **2.07×**）。f64 direct-formula 试验仅统计打平，因此没有发布名不副实的 `hypot_in_range_f64_batch`。
 
 ## 3. 各就绪模块最小用法
 

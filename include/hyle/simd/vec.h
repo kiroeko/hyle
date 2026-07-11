@@ -1227,7 +1227,24 @@ HYLE_FORCE_INLINE MFromD<DTo> PromoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom
 template <class DTo, class DFrom>
 HYLE_FORCE_INLINE MFromD<DTo> DemoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom> m) noexcept {
   static_assert(sizeof(TFromD<DTo>) < sizeof(TFromD<DFrom>), "DemoteMaskTo narrows the lane type");
-  return LoadMaskBits(d_to, BitsFromMask(d_from, m));
+#if defined(HYLE_SIMD_TARGET_AVX512)
+  return LoadMaskBits(d_to, BitsFromMask(d_from, m));  // k-register IS the bitfield -- optimal
+#else
+  // Vector-mask backends (sse4/avx2/neon/scalar): the bitfield round-trip's scalar re-pack loop in
+  // LoadMaskBits was ~6x slower than staying in the vector unit (op_parity §18). Stay in the vector
+  // domain: a mask lane is all-ones(-1)/zero, so demoting the mask == per-lane modular TruncateTo of
+  // its vector (all-ones stays all-ones, same lane count N; folds to a native pack, e.g. avx2
+  // vpackusdw at -O3). TruncateTo needs a FULL narrow tag (kPow2=0) -- spell the signed narrow /
+  // N-lane dst directly; the produced Mask<TN,N> IS MFromD<DTo> (mask type keys on (T,N) only,
+  // independent of the Rebind partial tag's kPow2), so no partial-tag BitCast is needed. This cut the
+  // gap to ~2x (vpackusdw + a reg move vs Highway's fused pack) -- the residual is a cold-op register
+  // shuffle, not the algorithm; good enough for a rare mask-width bridge.
+  using TN = MakeSigned<TFromD<DTo>>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(DFrom);
+  const Simd<MakeSigned<TFromD<DFrom>>, kN, 0> di_from;
+  const Simd<TN, kN, 0> dn;
+  return MaskFromVec(TruncateTo(dn, VecFromMask(di_from, RebindMask(di_from, m))));
+#endif
 }
 // OrderedDemote2MasksTo(d_to, d_from, a, b): narrow two masks (each N lanes, width W) into one mask of
 // 2N lanes width W/2, ORDERED [a-lanes..., b-lanes...]. Concatenate their bitfields: a's N bits in the
@@ -1457,8 +1474,9 @@ HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestInt(DI32 di32, VF v) noexcept {
 // [INT32_MIN, INT32_MAX] (no overflow, no NaN/Inf). Then the sign-saturate blends of the safe form are
 // pure overhead, so this is just round-to-nearest-even + narrowing demote -- ~15% faster (op_parity
 // bench §17). This mirrors HYLE's ConvertInRangeTo/DemoteInRangeTo fast-path convention and the
-// hypot/hypot_fast split: correctness of the FULL form is never sacrificed, the caller opts into the
-// narrower contract explicitly. Out-of-range input here is UB (the cvtt sees an out-of-range value).
+// InRange fast-path convention (Convert/Demote/PromoteInRangeTo, hypot_in_range): correctness of the
+// FULL form is never sacrificed, the caller opts into the narrower contract explicitly. Out-of-range
+// input here is UB (the cvtt sees an out-of-range value).
 template <class DI32, class VF>
 HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestIntInRange(DI32 di32, VF v) noexcept {
   static_assert(std::is_same_v<TFromD<DI32>, std::int32_t>, "DemoteToNearestIntInRange: dst is i32");

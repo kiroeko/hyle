@@ -196,7 +196,7 @@ int main() {
       nb::doNotOptimizeAway(dst.data());
     });
     b.run("HYLE fast", [&] {
-      hyle::simd::hypot_fast_f32_batch(a.data(), bb.data(), dst.data(), kN);
+      hyle::simd::hypot_in_range_f32_batch(a.data(), bb.data(), dst.data(), kN);
       nb::doNotOptimizeAway(dst.data());
     });
 #if defined(HYLE_BENCH_XSIMD)

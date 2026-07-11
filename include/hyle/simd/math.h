@@ -112,11 +112,13 @@ HYLE_SIMD_API void tgamma_f32_batch(const float* src, float* dst, std::size_t n)
 
 // Two explicit hypot contracts; neither silently substitutes for the other:
 // - hypot_f32_batch: full-range std::hypot semantics via exponent scaling.
-// - hypot_fast_f32_batch: direct square/add/sqrt (FMA may be fused), ~2x faster, but callers must
+// - hypot_in_range_f32_batch: direct square/add/sqrt (FMA may be fused), ~2x faster, but callers must
 //   keep the intermediate sum representable and accept loss of underflow protection. No per-lane
 //   checks. dst may exactly alias a or b; other overlap is outside the contract. See usage-guide.md.
+//   ("InRange" == the caller-guarantees-narrower-domain fast-path convention, same as Highway's
+//   DemoteToNearestIntInRange / HYLE's Convert/Demote/PromoteInRangeTo.)
 HYLE_SIMD_API void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-HYLE_SIMD_API void hypot_fast_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void hypot_in_range_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 
 // AI activation COMBINED cores (simd-design "AI 数学函数"). Unlike the per-op transcendentals
 // above (each borrows one vendor polynomial), these COMPOSE the vectorized cores into the shapes

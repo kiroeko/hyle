@@ -35,7 +35,7 @@
 
 > ### best-of 判据(2026-07-09 三方审计定,固化防再犯)
 > "三者都有就选最快"只在**三条件同时成立**时有意义:① op 有**真实算法内容**(多项式逼近 / 多指令组合 / 软件 emulation),② 三家实现**有差异**,③ **不贴单一硬件指令**(否则三家编译成同一条,比了也一样)。
-> **⚠️ best-of 的 correctness 闸按公开契约判断**：同一契约内先过 libm/oracle，再比速度；精度不达标或契约内错误的实现没资格入选。若完整语义和显著加速不可兼得，则提供显式双入口而非替用户静默取舍：`hypot_f32_batch` 借 Highway exponent scaling 保持 `std::hypot` 全域，`hypot_fast_f32_batch` 借 xsimd direct formula，在文档限定输入域内约快2倍且不加逐 lane 检查。同理，xsimd lgamma lane-mixing 与 Highway Pack16<11/13> 是各自契约内错误，只能退回正确实现——**借不等于信**。按此分类 simd op:
+> **⚠️ best-of 的 correctness 闸按公开契约判断**：同一契约内先过 libm/oracle，再比速度；精度不达标或契约内错误的实现没资格入选。若完整语义和显著加速不可兼得，则提供显式双入口而非替用户静默取舍：`hypot_f32_batch` 借 Highway exponent scaling 保持 `std::hypot` 全域，`hypot_in_range_f32_batch` 借 xsimd direct formula，在文档限定输入域内约快2倍且不加逐 lane 检查。同理，xsimd lgamma lane-mixing 与 Highway Pack16<11/13> 是各自契约内错误，只能退回正确实现——**借不等于信**。按此分类 simd op:
 > - **无 best-of 空间(最多)**:纯 intrinsic 直通——add/sub/min/max/sqrt/BitCast/Mask 域/swizzle 硬件 shuffle/饱和/移位/位计数。三家同一条指令。
 > - **有算法但借库借不到便宜**:gather/scatter/compress/expand 的 store+reload emulation——**Highway/xsimd 在 SSE4/NEON 上也是 store+reload**(它们也无硬件指令),借=借同款 emulation。真正加速是**自己上 AVX2/AVX512 native**(vpcompress/vpgather),那是**自造 profiling 优化,不是 best-of**。
 > - **数学函数=best-of 借库主场**:多项式逼近算法最重、最易错、三家投入最大、不贴单一指令——"借难且已解决的"最典型。simd-06 只做了 exp/log/tanh(borrow 主场却只覆盖三个),sin/cos/erf/pow/exp2/log2/atan… 是同类金矿 → simd-09 ①。

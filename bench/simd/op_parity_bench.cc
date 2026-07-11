@@ -397,7 +397,7 @@ int main() {
   //    loss -- Highway native does only Min(v,MAX)+cvtpd2dq (NaN -> INT32_MIN, diverging from its own
   //    emu128 ref). The extra work buys spec-faithful NaN handling.
   //  * HYLE (in-range fast): DemoteToNearestIntInRange = plain RNE + cvtt (2 instrs: vroundpd+
-  //    vcvttpd2dq). Caller guarantees finite & in-[MIN,MAX]. This is the hypot/hypot_fast-style opt-in
+  //    vcvttpd2dq). Caller guarantees finite & in-[MIN,MAX]. This is the InRange-family opt-in
   //    fast path -- should MATCH or beat Highway since it drops even Highway's Min clamp.
   //  * Highway native. ----
   {
@@ -425,13 +425,12 @@ int main() {
     });
   }
 
-  // ---- 18. DemoteMaskTo i32->i16 (simd-18 @opus: HYLE bitfield round-trip BitsFromMask->LoadMaskBits
-  // vs Highway vector-domain VecFromMask->single-vector-DemoteTo->MaskFromVec).
-  // KNOWN GAP (measured ~6x on avx2): bitfield's scalar re-pack loop in LoadMaskBits loses to Highway's
-  // in-register pack. bitfield is kept anyway because (a) it is OPTIMAL on AVX-512 where masks ARE the
-  // k-register bitfield (no data movement), (b) HYLE has no single-vector DemoteTo so the vector-domain
-  // path needs partial/full-tag gymnastics that are fragile, and (c) mask width-bridging is a COLD op
-  // (absolute 0.5ns, not an inner-loop primitive). Row kept as honest documentation of the tradeoff. ----
+  // ---- 18. DemoteMaskTo i32->i16 (simd-18 @opus). HYLE now stays in the vector domain on vector-mask
+  // backends (TruncateTo the mask vector -> native pack) instead of the old bitfield round-trip: that
+  // cut the gap from ~6x to ~2x. Residual ~2x is a cold-op register shuffle (vpackusdw + a mov vs
+  // Highway's fused pack+movemask), NOT the algorithm. On AVX-512 HYLE keeps the bitfield form which is
+  // OPTIMAL (masks ARE the k-register bitfield, zero data movement). Mask width-bridging is a COLD op
+  // (sub-ns, not inner-loop), so the residual is accepted; row documents it. ----
   {
     const hs::ScalableTag<std::int32_t> hd32; const hn::ScalableTag<std::int32_t> gd32;
     using HD16 = hs::Rebind<std::int16_t, hs::ScalableTag<std::int32_t>>;

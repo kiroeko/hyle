@@ -244,7 +244,7 @@ Highway `hn::Xxx(d, ...)` 全有 f32+f64。unary 用 X-macro，binary 手写。
 | sincos | `hn::SinCos(d,x,s&,c&)` | **1→2出** | **手写**：`sincos_f32_batch(src, sin_dst, cos_dst, n)`，无现成模板 |
 
 ### G2. xsimd 借（6 fn，Highway 无，单一来源）
-xsimd `xsimd::xxx(batch)` f32+f64。unary 抄 exp2_xsimd 链，binary 抄 hypot_fast_xsimd 链。
+xsimd `xsimd::xxx(batch)` f32+f64。unary 抄 exp2_xsimd 链，binary 抄 hypot_in_range_xsimd 链。
 | fn | 调用 | arity |
 |---|---|---|
 | erfc | `xsimd::erfc(x)` | unary |
@@ -264,7 +264,7 @@ xsimd `xsimd::xxx(batch)` f32+f64。unary 抄 exp2_xsimd 链，binary 抄 hypot_
 - `math_dispatch.cc`：`HYLE_MATH_DISPATCH_HIGHWAY(acos)` 加进列表。
 - `math.h`：`HYLE_SIMD_API void acos_f32_batch(const float*,float*,size_t) noexcept;`
 **binary Highway（抄 hypot）**：4 TU 手写核（`hn::Atan2(d,LoadU(a),LoadU(b))`）+ `math_dispatch.cc` longhand（512 GCC→avx2→scalar / neon / scalar）+ math.h。签名 `(const float* a,const float* b,float* dst,size_t)`。
-**xsimd（抄 exp2/hypot_fast）**：定义在 `transcendental_xsimd{,_avx512,_neon}.cc`，dispatch longhand（无 xsimd X-macro）。
+**xsimd（抄 exp2/hypot_in_range）**：定义在 `transcendental_xsimd{,_avx512,_neon}.cc`，dispatch longhand（无 xsimd X-macro）。
 **f64**：Highway 10 个全有 f64；照 f32 加 `_f64_batch`（math_dispatch 有 f64 Highway macro）。xsimd 6 个也 f32+f64。**grok 先做 f32 全 16 个 + f64 Highway 10 个；xsimd f64 6 个若时间够一并做，否则标 @opus**。
 **测试**：`math_test` 对拍 `std::acos` 等 libm，容差同现有超越函数（相对误差）。binary 覆盖两输入。sincos 查 sin+cos 双输出。
 

@@ -191,7 +191,7 @@ TEST(Math, HypotMatchesLibm) {
   }
 }
 
-TEST(Math, HypotFastWithinContract) {
+TEST(Math, HypotInRangeWithinContract) {
   std::vector<float> a, b;
   for (float av : {-1e3f, -3.5f, 0.0f, 1e-10f, 2.0f, 100.0f, 1.2e19f})
     for (float bv : {-1e3f, -0.5f, 0.0f, 1e-10f, 4.0f, 100.0f, 1.2e19f}) {
@@ -205,13 +205,13 @@ TEST(Math, HypotFastWithinContract) {
     }
   };
   std::vector<float> out(a.size());
-  hyle::simd::hypot_fast_f32_batch(a.data(), b.data(), out.data(), a.size());
+  hyle::simd::hypot_in_range_f32_batch(a.data(), b.data(), out.data(), a.size());
   check(out);
   auto in_place_a = a;
-  hyle::simd::hypot_fast_f32_batch(in_place_a.data(), b.data(), in_place_a.data(), a.size());
+  hyle::simd::hypot_in_range_f32_batch(in_place_a.data(), b.data(), in_place_a.data(), a.size());
   check(in_place_a);
   auto in_place_b = b;
-  hyle::simd::hypot_fast_f32_batch(a.data(), in_place_b.data(), in_place_b.data(), a.size());
+  hyle::simd::hypot_in_range_f32_batch(a.data(), in_place_b.data(), in_place_b.data(), a.size());
   check(in_place_b);
 }
 

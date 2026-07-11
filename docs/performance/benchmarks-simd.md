@@ -37,7 +37,7 @@
 
 ### `hypot_f32` 双契约：safe 与 fast 由用户显式选择
 
-xsimd 的 direct-formula `sqrt(a*a+b*b)` 吞吐约为 Highway exponent-scaling `Hypot` 的2倍，但不保护中间平方溢出/下溢。HYLE不再替用户二选一：`hypot_f32_batch` 保留完整 `std::hypot` 语义；`hypot_fast_f32_batch` 显式采用受限输入域契约，借 xsimd AVX2/AVX512/NEON 核，scalar tail 同样计算 direct formula，热路径无逐 lane 检查。
+xsimd 的 direct-formula `sqrt(a*a+b*b)` 吞吐约为 Highway exponent-scaling `Hypot` 的2倍，但不保护中间平方溢出/下溢。HYLE不再替用户二选一：`hypot_f32_batch` 保留完整 `std::hypot` 语义；`hypot_in_range_f32_batch` 显式采用受限输入域契约，借 xsimd AVX2/AVX512/NEON 核，scalar tail 同样计算 direct formula，热路径无逐 lane 检查。
 
 | 真机 | safe | fast | `fast/safe` 判定 |
 |---|---:|---:|---|

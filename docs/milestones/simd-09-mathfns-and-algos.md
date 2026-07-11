@@ -93,7 +93,7 @@
 
 ### 线①-c hypot binary 双契约:safe 与 fast 显式二选一(✅)
 
-hypot 是 **binary best-of**(两库都有,非独有)。xsimd direct-formula 核约快2倍，但当 `a*a+b*b` 溢出或下溢时不具备 `std::hypot` 的缩放语义；Highway `Hypot` 做指数缩放覆盖完整范围。因此公开层提供两个不混淆的入口：`hypot_f32_batch` 借 Highway，保持完整语义；`hypot_fast_f32_batch` 借 xsimd，由调用方保证普通输入域，热路径不做逐 lane 检查。前者的测试含3e19溢出用例，后者只对契约内输入对拍。
+hypot 是 **binary best-of**(两库都有,非独有)。xsimd direct-formula 核约快2倍，但当 `a*a+b*b` 溢出或下溢时不具备 `std::hypot` 的缩放语义；Highway `Hypot` 做指数缩放覆盖完整范围。因此公开层提供两个不混淆的入口：`hypot_f32_batch` 借 Highway，保持完整语义；`hypot_in_range_f32_batch` 借 xsimd，由调用方保证普通输入域，热路径不做逐 lane 检查。前者的测试含3e19溢出用例，后者只对契约内输入对拍。
 
 接入覆盖 scalar direct formula、x86 AVX2/AVX512 xsimd 与 arm64 xsimd-NEON。真机 `bench-stat -n15`：WSL AVX2 fast 0.140 vs safe 0.281 ns/op(**2.03×**)，Apple NEON 0.220 vs 0.454(**2.07×**)；Win/WSL/Mac 正确性门全绿。f64 direct-formula 仅统计打平，故不提供受限 fast 入口。具体输入限制见 usage guide §2.2。本次双契约增量经 cloc 核实为 **+43 production / +23 tests / +8 benchmark = +74 code LOC**。
 

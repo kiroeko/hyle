@@ -141,7 +141,7 @@ void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
 }
 
 // Full-range hypot contract: Highway exponent scaling, scalar std::hypot fallback. The separate
-// hypot_fast_f32_batch below exposes xsimd's faster direct formula under a narrower input contract.
+// hypot_in_range_f32_batch below exposes xsimd's faster direct formula under a narrower input contract.
 void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
 #if !defined(_MSC_VER)
@@ -157,16 +157,16 @@ void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) 
 }
 
 // Direct-formula contract: faster xsimd core, no per-lane overflow/underflow checks.
-void hypot_fast_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+void hypot_in_range_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::hypot_fast_f32_xsimd_avx512(a, b, dst, n); return; }
+  if (hw512) { detail::hypot_in_range_f32_xsimd_avx512(a, b, dst, n); return; }
   static const bool hw = have_avx2();
-  if (hw) { detail::hypot_fast_f32_xsimd_avx2(a, b, dst, n); return; }
+  if (hw) { detail::hypot_in_range_f32_xsimd_avx2(a, b, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
-  detail::hypot_fast_f32_xsimd_neon(a, b, dst, n); return;
+  detail::hypot_in_range_f32_xsimd_neon(a, b, dst, n); return;
 #endif
-  detail::hypot_fast_f32_scalar(a, b, dst, n);
+  detail::hypot_in_range_f32_scalar(a, b, dst, n);
 }
 
 // SoA complex transcendentals. cexp/clog/csqrt: xsimd AVX2 on x86, HYLE/xsimd NEON on ARM64,

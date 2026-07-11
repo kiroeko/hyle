@@ -36,7 +36,7 @@
 ```
 
 **三条铁前置(踩过坑,别省)**:
-1. **契约内 correctness 是闸**:任何"更快"实现必先在其公开输入域内过 libm/scalar-oracle / round-trip 自洽对拍；若完整语义与显著加速冲突，提供显式 safe/fast 双入口而非静默换语义（`hypot_f32_batch` overflow-safe，`hypot_fast_f32_batch` 约快2倍但要求 direct-formula 输入域）。精度不达标或契约内错误的实现没资格入选；Highway Pack16 / xsimd lgamma vendor bug说明**借不等于信，借核同样过对拍闸**。
+1. **契约内 correctness 是闸**:任何"更快"实现必先在其公开输入域内过 libm/scalar-oracle / round-trip 自洽对拍；若完整语义与显著加速冲突，提供显式 safe/fast 双入口而非静默换语义（`hypot_f32_batch` overflow-safe，`hypot_in_range_f32_batch` 约快2倍但要求 direct-formula 输入域）。精度不达标或契约内错误的实现没资格入选；Highway Pack16 / xsimd lgamma vendor bug说明**借不等于信，借核同样过对拍闸**。
 2. **best-of 只在"有真实算法内容 + 三家有差异 + 不贴单一硬件指令"时才有意义**:纯直通指令(add/min/shuffle/位计数)三家编成同一条,不必 bench;数学函数(多项式逼近)是 best-of 主场;结构 op(gather/compress store+reload)库也无硬件指令,真加速是自造 native 非借库。
 3. **winner 不可外推,必须逐精度/逐 ISA bench**:f64 winner 与 f32 大面积相反(exp/tanh/exp2 翻转);SDE 验正确性可信、验性能不可信;bench 两边必须同等内联能力(同 TU / 都 header-only,否则跨 .so 不可内联=假 gap)。
 

@@ -107,7 +107,7 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
 2. ✅ SSE4.2 / AVX2 / AVX512 / NEON / SVE / RVV 后端 + 运行时 dispatch。四定宽 ISA 均真跑；AVX512 由 Intel SDE 跑 `vec_test` 173/173 并验证 dispatch 选中 kAvx512。SVE/RVV 用 sizeless traits + 运行期 `Lanes`，P0-P2 已补齐；SVE 15 tests×VL 128/256/384/512，RVV 12 tests×VLEN 128/256/512/1024。partial tag 的 `Rebind+kPow2+cap` 在 vec.h 共享层表达，后端用 predicate/`vl` 执行。
 3. ✅ dtype 转换（fp16/bf16 硬件路径）。**simd-05。** f32→bf16 的 **AVX-512-BF16 native `vcvtneps2bf16`** 档随 AVX512 变体 SDE 可真跑(此前仅 objdump 验)。
-4. ✅ 数学函数（借 Highway/xsimd 核）。simd-06 的 exp/log/tanh、simd-09 的 11 个 best-of 函数，以及 GELU/GELU-tanh/softmax/log-softmax 组合核均已落地并对拍 libm/标量参考。`hypot_f32_batch` 保留 Highway exponent-scaling 的完整语义；另显式提供 `hypot_fast_f32_batch` 借 xsimd direct-formula 核，由调用方承担输入域契约，AVX2/NEON 真机均约快 2.0×。f64 direct-formula 未测出可判定收益，故不暴露 fast 变体。
+4. ✅ 数学函数（借 Highway/xsimd 核）。simd-06 的 exp/log/tanh、simd-09 的 11 个 best-of 函数，以及 GELU/GELU-tanh/softmax/log-softmax 组合核均已落地并对拍 libm/标量参考。`hypot_f32_batch` 保留 Highway exponent-scaling 的完整语义；另显式提供 `hypot_in_range_f32_batch` 借 xsimd direct-formula 核，由调用方承担输入域契约，AVX2/NEON 真机均约快 2.0×。f64 direct-formula 未测出可判定收益，故不暴露 fast 变体。
 5. ✅ `ops/`：dot_f32/saxpy_f32 跨 scalar/SSE4/AVX2/AVX512 dispatch;**AVX512 派发档 simd-09 Intel SDE 真跑坐实(tier 探针确认 kAvx512,非仅 objdump)**。reduce/对齐 memcpy/SwissTable 探测片段按需(container 已自有 SwissTable 探测)。
 6. ✅ 单测：每后端对拍 scalar 参考值、数学函数 ULP 测试、benchmark 对标 Highway/xsimd。SSE4/AVX2/NEON 有真机性能数据；AVX512-SDE 与 SVE/RVV QEMU 只作正确性门，不作性能证据。math ULP vs libm 约 3.5，best-of 由真机 bench 决策。
 

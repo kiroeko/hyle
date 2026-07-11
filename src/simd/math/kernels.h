@@ -86,7 +86,7 @@ void lgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void tgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 // hypot: full-range scalar oracle plus direct-formula fast contract.
 void hypot_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void hypot_fast_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+void hypot_in_range_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 // SoA complex transcendentals: scalar std::complex oracle; xsimd supplies cexp/clog/csqrt AVX2,
 // while HYLE-owned csin/ccos/ctanh/cpow siblings exist for AVX2 and NEON.
 void cexp_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
@@ -175,7 +175,7 @@ void cpow_f32_xsimd_avx2(const float* zr, const float* zi, const float* wr, cons
 // hypot dual contract: Highway provides full-range scaling; xsimd provides the explicit fast
 // direct-formula variant. See math.h and usage-guide.md.
 void hypot_f32_highway_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-void hypot_fast_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+void hypot_in_range_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 void sin_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void cos_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
 void log2_f32_highway_avx2(const float* src, float* dst, std::size_t n) noexcept;
@@ -209,7 +209,7 @@ void tgamma_f32_xsimd_avx512(const float* src, float* dst, std::size_t n) noexce
 // f64 8-wide xsimd siblings: erf (xsimd wins f64 erf) + tgamma (xsimd-only).
 void erf_f64_xsimd_avx512(const double* src, double* dst, std::size_t n) noexcept;
 void tgamma_f64_xsimd_avx512(const double* src, double* dst, std::size_t n) noexcept;
-void hypot_fast_f32_xsimd_avx512(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+void hypot_in_range_f32_xsimd_avx512(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 // log: Highway's AVX3 target is HWY_BROKEN on MSVC (it would emit ymm, not zmm), so this
 // 512 symbol exists ONLY on GCC/Clang. On MSVC, math_dispatch keeps the avx2 highway log
 // (the widest Highway gives there) -- see transcendental_highway_avx512.cc MSVC EXCLUSION.
@@ -303,7 +303,7 @@ void sincos_f32_highway_neon(const float* src, float* s, float* c, std::size_t n
 // transcendental_xsimd_neon.cc (arm64 xsimd TU, distinct from the Highway-NEON TU). tgamma only:
 // xsimd's vectorized lgamma lane-mixing bug reproduces on NEON too, so lgamma stays scalar.
 void tgamma_f32_xsimd_neon(const float* src, float* dst, std::size_t n) noexcept;
-void hypot_fast_f32_xsimd_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+void hypot_in_range_f32_xsimd_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 void csin_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void ccos_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void ctanh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
