@@ -1316,4 +1316,38 @@ HYLE_FORCE_INLINE void ScatterIndexN(VFromD<D> v, D d, TFromD<D>* base,
 // build-a-128-bit-block-from-immediates broadcast, and two-source cross-vector permute
 // _mm256_permutex2var / vqtbl2 / svtbl2 -- belong with the block/table native work).
 
+// ---- simd-18 批C: demote / truncate helpers (generic composables) -------------------
+
+// Blocks(d): number of 128-bit blocks in a full vector of D. 1 for <=128-bit backends, 2 for
+// 256-bit (avx2), 4 for 512-bit (avx512). constexpr -- callers size block loops with it.
+template <class D>
+HYLE_FORCE_INLINE constexpr std::size_t Blocks(D) noexcept {
+  constexpr std::size_t kBytes = HYLE_SIMD_MAX_LANES_D(D) * sizeof(TFromD<D>);
+  return kBytes <= 16 ? 1 : kBytes / 16;
+}
+
+// OrderedTruncate2To(dn, a, b): modular-truncate two wide UNSIGNED vectors to a narrow vector in
+// ORDERED layout [a-lanes..., b-lanes...] (Highway). = ConcatEven of the bit-reinterpreted halves:
+// each wide lane's low half sits in the even narrow lane. Unsigned, half lane width, 2x count.
+template <class DN, class V>
+HYLE_FORCE_INLINE VFromD<DN> OrderedTruncate2To(DN dn, V a, V b) noexcept {
+  using TN = TFromD<DN>;
+  using TW = TFromD<DFromV<V>>;
+  static_assert(std::is_unsigned_v<TN> && std::is_unsigned_v<TW>, "OrderedTruncate2To is unsigned");
+  static_assert(sizeof(TW) == sizeof(TN) * 2, "OrderedTruncate2To halves the lane width");
+  return ConcatEven(BitCast(dn, b), BitCast(dn, a));  // ConcatEven(hi, lo) = [lo even, hi even]
+}
+
+// TruncateStore(v, dn, p): modular-truncate v to the narrow tag dn, then store to p. Convenience
+// over TruncateTo + StoreU (Highway). dn's lane count must match v's (narrower lane, same count).
+template <class V, class DN>
+HYLE_FORCE_INLINE void TruncateStore(V v, DN dn, TFromD<DN>* p) noexcept {
+  StoreU(TruncateTo(dn, v), dn, p);
+}
+
+// OrderedDemote2To, InRange convert/promote/demote, shift-and-demote family, PromoteMaskTo/
+// DemoteMaskTo/OrderedDemote2MasksTo, DemoteToNearestInt: deferred to a batch-C continuation --
+// they need per-backend permute fixup (x86 ReorderDemote2To is block-interleaved) / native raw
+// cvt (InRange perf) / a RoundingShiftRight<k> template that HYLE lacks. Tracked in simd-18 doc.
+
 }  // namespace hyle::simd

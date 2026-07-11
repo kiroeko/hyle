@@ -3010,3 +3010,35 @@ TEST(Vec, VectorMiscAndGatherN) {
   for (std::size_t i = 0; i < n && i < kTab; ++i)
     EXPECT_EQ(dst[i], (i < take) ? int(500 + i) : -1) << "ScatterIndexN i=" << i;
 }
+
+// ---- simd-18 批C(部分): Blocks / OrderedTruncate2To / TruncateStore --------------------------
+TEST(Vec, DemoteTruncateHelpers) {
+  // Blocks: constexpr block count = bytes/16 (>=1).
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t nbytes = hs::Lanes(d) * sizeof(std::int32_t);
+  EXPECT_EQ(hs::Blocks(d), nbytes <= 16 ? std::size_t(1) : nbytes / 16);
+
+  // OrderedTruncate2To: two u32 vectors -> u16, ordered [a..., b...] keeping low 16 bits.
+  const hs::ScalableTag<std::uint32_t> du32;
+  const std::size_t nw = hs::Lanes(du32);
+  using DN = hs::Repartition<std::uint16_t, hs::ScalableTag<std::uint32_t>>;  // 2x lanes u16
+  const DN dn{};
+  Buf<std::uint32_t> a, b;
+  for (std::size_t i = 0; i < nw; ++i) { a.data[i] = 0x11110000u + i; b.data[i] = 0x22220000u + i; }
+  Buf<std::uint16_t> out;
+  hs::Store(hs::OrderedTruncate2To(dn, hs::Load(du32, a.data), hs::Load(du32, b.data)), dn, out.data);
+  for (std::size_t i = 0; i < nw; ++i) {
+    EXPECT_EQ(out.data[i], std::uint16_t(a.data[i] & 0xFFFF)) << "OrdTrunc a i=" << i;
+    EXPECT_EQ(out.data[nw + i], std::uint16_t(b.data[i] & 0xFFFF)) << "OrdTrunc b i=" << i;
+  }
+
+  // TruncateStore: u32 vector -> u8 buffer, low byte each (same lane count). Narrow tag must be
+  // kPow2=0 (TruncateTo takes Simd<DstT,N,0>); build it directly from the u32 lane count.
+  const hs::FixedTag<std::uint8_t, hs::kNativeVectorBytes / sizeof(std::uint32_t)> dn8{};
+  Buf<std::uint32_t> src;
+  for (std::size_t i = 0; i < nw; ++i) src.data[i] = 0xABCD0000u + i * 7;
+  Buf<std::uint8_t> tout;
+  hs::TruncateStore(hs::Load(du32, src.data), dn8, tout.data);
+  for (std::size_t i = 0; i < hs::Lanes(dn8); ++i)
+    EXPECT_EQ(tout.data[i], std::uint8_t(src.data[i] & 0xFF)) << "TruncStore i=" << i;
+}
