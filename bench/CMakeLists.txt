@@ -487,6 +487,18 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
 endif()
 hyle_apply_warnings(hyle_bitpack_bench)
 
+# AI activation + softmax + RNG throughput (directive3 P1 blind-spot fill). The activation
+# *_f32_batch come from hyle_simd (runtime-dispatched); the inline VectorXoshiro takes THIS TU's
+# vec.h backend, so pin HYLE_SIMD_TARGET_AVX2 on x86 to measure the real 256-bit RNG (else the
+# default 128-bit backend makes VectorXoshiro look slower than std::mt19937).
+add_executable(hyle_activation_bench simd/activation_bench.cc)
+target_link_libraries(hyle_activation_bench PRIVATE hyle_simd nanobench)
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  target_compile_definitions(hyle_activation_bench PRIVATE HYLE_SIMD_TARGET_AVX2)
+  hyle_set_isa(simd/activation_bench.cc AVX2)
+endif()
+hyle_apply_warnings(hyle_activation_bench)
+
 add_executable(hyle_sort_bench simd/sort_bench.cc)
 target_link_libraries(hyle_sort_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_sort_bench PRIVATE "${PROJECT_SOURCE_DIR}")
