@@ -9,8 +9,8 @@
 | E | ✅ E1–E9/E11；**四查补 wide-type 覆盖**(4ab2ee2)。Dup128VecFromValues=@opus 未做(签名可变参,登记) | 同上 |
 | F | ✅ F1 mpsadbw + F2 dbsad/portable；**四查修 F2 便携 oracle 错**(936cfe6) | 同上 |
 | G | ✅ Highway 10 unary+atan2/pow/sincos f32/f64 + xsimd6；**四查换真 xsimd 核**(07d8aab,nextafter/remainder 留 scalar) | Math.Simd18BreadthG |
-| @opus 裁决 | ✅ PromoteMaskTo/DemoteMaskTo/OrderedDemote2MasksTo(bitfield round-trip)+DemoteToNearestInt(c45c6af) | +3 测/后端;顺带修 LoadMaskBits 栈 OOB |
-| H | ⏳ 批H(性能盲区/op_parity) | — |
+| @opus 裁决 | ✅ PromoteMaskTo/DemoteMaskTo/OrderedDemote2MasksTo(bitfield round-trip)+DemoteToNearestInt(c45c6af)+Dup128VecFromValues(d418ebf) | +4 测/后端;顺带修 LoadMaskBits 栈 OOB |
+| H | ✅ op_parity 加新 op 对比(989c5bf);揪出 DemoteMaskTo 向量后端 6x + DemoteToNearestInt 15%(正确性差异),诚实记录权衡 | avx2 op_parity §17/§18 |
 
 commits: grok `11a4984` C+D · `a30748f` E+D3 · `ccf45a6` F · `d359573` G · `c37cf9a` docs
 四查(opus): `936cfe6` F2 · `4ab2ee2` E · `3f23266` D2 UB · `07d8aab` G xsimd · `c45c6af` @opus 裁决
