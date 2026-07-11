@@ -1735,6 +1735,63 @@ template <std::size_t N>
 HYLE_FORCE_INLINE VecNeon<std::uint64_t, N / 8> SumsOf8AbsDiff(VecNeon<std::uint8_t, N> v) noexcept {
   return SumsOf8(v);
 }
+
+// ---- simd-18 批F: SAD video quad ---------------------------------------------------
+template <int kAOffset, int kBOffset, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::uint16_t, N / 2> SumsOfAdjQuadAbsDiff(VecNeon<std::uint8_t, N> a,
+                                                                  VecNeon<std::uint8_t, N> b) noexcept {
+  static_assert(kAOffset == 0 || kAOffset == 1, "kAOffset in {0,1}");
+  static_assert(kBOffset >= 0 && kBOffset <= 3, "kBOffset in {0..3}");
+  static_assert(N % 16 == 0, "SumsOfAdjQuadAbsDiff needs multiple of 16 u8 lanes");
+  alignas(16) std::uint8_t sa[N], sb[N];
+  alignas(16) std::uint16_t out[N / 2] = {};
+  Store(a, Simd<std::uint8_t, N, 0>(), sa);
+  Store(b, Simd<std::uint8_t, N, 0>(), sb);
+  for (std::size_t blk = 0; blk < N; blk += 16) {
+    for (int i = 0; i < 8; ++i) {
+      unsigned sum = 0;
+      for (int j = 0; j < 4; ++j) {
+        const auto da = static_cast<int>(sa[blk + static_cast<std::size_t>(kAOffset * 4 + i + j)]);
+        const auto db = static_cast<int>(sb[blk + static_cast<std::size_t>(kBOffset * 4 + j)]);
+        sum += static_cast<unsigned>(da >= db ? da - db : db - da);
+      }
+      out[blk / 2 + static_cast<std::size_t>(i)] = static_cast<std::uint16_t>(sum);
+    }
+  }
+  return Load(Simd<std::uint16_t, N / 2, 0>(), out);
+}
+template <int i3, int i2, int i1, int i0, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::uint16_t, N / 2> SumsOfShuffledQuadAbsDiff(VecNeon<std::uint8_t, N> a,
+                                                                       VecNeon<std::uint8_t, N> b) noexcept {
+  static_assert(N % 16 == 0, "SumsOfShuffledQuadAbsDiff needs multiple of 16 u8");
+  // Portable dbsad oracle: shuffle a's 4 dwords per 16B block by (i0,i1,i2,i3), then for each
+  // of 4 base positions p=0..3 compute two SADs of 4 bytes (at p and p+1) vs b[0..3] within block
+  // — yielding 8 u16 results (even=pos p, odd=pos p+1) matching Intel DBSAD ordering.
+  alignas(16) std::uint8_t sa[N], sb[N];
+  alignas(16) std::uint16_t out[N / 2] = {};
+  Store(a, Simd<std::uint8_t, N, 0>(), sa);
+  Store(b, Simd<std::uint8_t, N, 0>(), sb);
+  constexpr int sel[4] = {i0, i1, i2, i3};
+  for (std::size_t blk = 0; blk < N; blk += 16) {
+    std::uint8_t sh[16];
+    for (int q = 0; q < 4; ++q)
+      for (int bi = 0; bi < 4; ++bi)
+        sh[q * 4 + bi] = sa[blk + static_cast<std::size_t>(sel[q] * 4 + bi)];
+    for (int p = 0; p < 4; ++p) {
+      for (int odd = 0; odd < 2; ++odd) {
+        unsigned sum = 0;
+        for (int j = 0; j < 4; ++j) {
+          const int da = static_cast<int>(sh[p + odd + j]);
+          const int db = static_cast<int>(sb[blk + static_cast<std::size_t>(j)]);
+          sum += static_cast<unsigned>(da >= db ? da - db : db - da);
+        }
+        out[blk / 2 + static_cast<std::size_t>(p * 2 + odd)] = static_cast<std::uint16_t>(sum);
+      }
+    }
+  }
+  return Load(Simd<std::uint16_t, N / 2, 0>(), out);
+}
+
 // simd-17 batch5: BitShuffle / MultiRotateRight -- portable store+reload (matches scalar oracle
 // + Highway's generic contract). Native VPSHUFBITQMB / VPMULTISHIFTQB live on the AVX3_DL avx512
 // path only; the neon backend uses the correctness-first gather (a profiling upgrade could add

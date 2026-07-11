@@ -1509,6 +1509,45 @@ template <std::size_t N>
 HYLE_FORCE_INLINE Vec128<std::uint64_t, N / 8> SumsOf8AbsDiff(Vec128<std::uint8_t, N> v) noexcept {
   return SumsOf8(v);
 }
+// ---- simd-18 批F: SAD video quad (sse4 native mpsadbw for F1) -----------------------
+template <int kAOffset, int kBOffset, std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::uint16_t, N / 2> SumsOfAdjQuadAbsDiff(Vec128<std::uint8_t, N> a,
+                                                                     Vec128<std::uint8_t, N> b) noexcept {
+  static_assert(N == 16, "sse4 SumsOfAdjQuadAbsDiff: full 16xu8");
+  static_assert(kAOffset == 0 || kAOffset == 1, "kAOffset in {0,1}");
+  static_assert(kBOffset >= 0 && kBOffset <= 3, "kBOffset in {0..3}");
+  constexpr int imm = (kAOffset << 2) | kBOffset;
+  Vec128<std::uint16_t, N / 2> r;
+  r.raw = _mm_mpsadbw_epu8(a.raw, b.raw, imm);
+  return r;
+}
+template <int i3, int i2, int i1, int i0, std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::uint16_t, N / 2> SumsOfShuffledQuadAbsDiff(Vec128<std::uint8_t, N> a,
+                                                                          Vec128<std::uint8_t, N> b) noexcept {
+  // No dbsad on sse4: portable oracle (same as scalar).
+  static_assert(N == 16, "sse4 SumsOfShuffledQuadAbsDiff: full 16xu8");
+  alignas(16) std::uint8_t sa[16], sb[16];
+  alignas(16) std::uint16_t out[8] = {};
+  Store(a, Simd<std::uint8_t, N, 0>(), sa);
+  Store(b, Simd<std::uint8_t, N, 0>(), sb);
+  constexpr int sel[4] = {i0, i1, i2, i3};
+  std::uint8_t sh[16];
+  for (int q = 0; q < 4; ++q)
+    for (int bi = 0; bi < 4; ++bi) sh[q * 4 + bi] = sa[sel[q] * 4 + bi];
+  for (int p = 0; p < 4; ++p) {
+    for (int odd = 0; odd < 2; ++odd) {
+      unsigned sum = 0;
+      for (int j = 0; j < 4; ++j) {
+        const int da = static_cast<int>(sh[p + odd + j]);
+        const int db = static_cast<int>(sb[j]);
+        sum += static_cast<unsigned>(da >= db ? da - db : db - da);
+      }
+      out[p * 2 + odd] = static_cast<std::uint16_t>(sum);
+    }
+  }
+  return Load(Simd<std::uint16_t, N / 2, 0>(), out);
+}
+
 // simd-17 batch5: BitShuffle / MultiRotateRight -- portable store+reload (matches scalar oracle
 // + Highway's generic contract). Native VPSHUFBITQMB / VPMULTISHIFTQB live on the AVX3_DL avx512
 // path only; the sse4 backend uses the correctness-first gather (a profiling upgrade could add

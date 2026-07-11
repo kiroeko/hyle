@@ -1479,6 +1479,41 @@ template <std::size_t N>
 HYLE_FORCE_INLINE Vec512<std::uint64_t, N / 8> SumsOf8AbsDiff(Vec512<std::uint8_t, N> v) noexcept {
   return SumsOf8(v);
 }
+// ---- simd-18 批F: SAD video quad (avx512 native dbsad for F2; F1 portable/composition) --
+template <int i3, int i2, int i1, int i0, std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::uint16_t, N / 2> SumsOfShuffledQuadAbsDiff(Vec512<std::uint8_t, N> a,
+                                                                          Vec512<std::uint8_t, N> b) noexcept {
+  static_assert(N == 64, "avx512 SumsOfShuffledQuadAbsDiff: full 64xu8");
+  constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
+  Vec512<std::uint16_t, N / 2> r;
+  // NOTE operand order is (b, a, imm) for dbsad.
+  r.raw = _mm512_dbsad_epu8(b.raw, a.raw, imm);
+  return r;
+}
+template <int kAOffset, int kBOffset, std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::uint16_t, N / 2> SumsOfAdjQuadAbsDiff(Vec512<std::uint8_t, N> a,
+                                                                     Vec512<std::uint8_t, N> b) noexcept {
+  static_assert(N == 64, "avx512 SumsOfAdjQuadAbsDiff: full 64xu8");
+  // Card: build on dbsad via Broadcast of b's selected dword + shuffled indices.
+  // Portable oracle (correctness-first; dbsad composition can replace later).
+  alignas(64) std::uint8_t sa[64], sb[64];
+  alignas(64) std::uint16_t out[32] = {};
+  Store(a, Simd<std::uint8_t, N, 0>(), sa);
+  Store(b, Simd<std::uint8_t, N, 0>(), sb);
+  for (std::size_t blk = 0; blk < 64; blk += 16) {
+    for (int i = 0; i < 8; ++i) {
+      unsigned sum = 0;
+      for (int j = 0; j < 4; ++j) {
+        const auto da = static_cast<int>(sa[blk + static_cast<std::size_t>(kAOffset * 4 + i + j)]);
+        const auto db = static_cast<int>(sb[blk + static_cast<std::size_t>(kBOffset * 4 + j)]);
+        sum += static_cast<unsigned>(da >= db ? da - db : db - da);
+      }
+      out[blk / 2 + static_cast<std::size_t>(i)] = static_cast<std::uint16_t>(sum);
+    }
+  }
+  return Load(Simd<std::uint16_t, N / 2, 0>(), out);
+}
+
 
 // simd-17 batch5: BitShuffle / MultiRotateRight. Data lanes u64, index lanes u8 (8 per lane).
 // NATIVE on AVX3_DL (Ice Lake+): VPSHUFBITQMB (BITALG) / VPMULTISHIFTQB (VBMI). The HYLE avx512

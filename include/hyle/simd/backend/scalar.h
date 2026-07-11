@@ -937,6 +937,53 @@ HYLE_FORCE_INLINE Vec<std::uint64_t, N / 8> SumsOf8AbsDiff(Vec<std::uint8_t, N> 
   return SumsOf8(v);  // vs zero
 }
 
+// ---- simd-18 批F: SAD video quad (scalar oracle) ------------------------------------
+template <int kAOffset, int kBOffset, std::size_t N>
+HYLE_FORCE_INLINE Vec<std::uint16_t, N / 2> SumsOfAdjQuadAbsDiff(Vec<std::uint8_t, N> a,
+                                                                  Vec<std::uint8_t, N> b) noexcept {
+  static_assert(kAOffset == 0 || kAOffset == 1, "kAOffset in {0,1}");
+  static_assert(kBOffset >= 0 && kBOffset <= 3, "kBOffset in {0..3}");
+  static_assert(N % 16 == 0, "SumsOfAdjQuadAbsDiff needs multiple of 16 u8 lanes");
+  Vec<std::uint16_t, N / 2> r{};
+  for (std::size_t blk = 0; blk < N; blk += 16) {
+    for (int i = 0; i < 8; ++i) {
+      unsigned sum = 0;
+      for (int j = 0; j < 4; ++j) {
+        const int da = static_cast<int>(a.raw[blk + static_cast<std::size_t>(kAOffset * 4 + i + j)]);
+        const int db = static_cast<int>(b.raw[blk + static_cast<std::size_t>(kBOffset * 4 + j)]);
+        sum += static_cast<unsigned>(da >= db ? da - db : db - da);
+      }
+      r.raw[blk / 2 + static_cast<std::size_t>(i)] = static_cast<std::uint16_t>(sum);
+    }
+  }
+  return r;
+}
+template <int i3, int i2, int i1, int i0, std::size_t N>
+HYLE_FORCE_INLINE Vec<std::uint16_t, N / 2> SumsOfShuffledQuadAbsDiff(Vec<std::uint8_t, N> a,
+                                                                       Vec<std::uint8_t, N> b) noexcept {
+  static_assert(N % 16 == 0, "SumsOfShuffledQuadAbsDiff needs multiple of 16 u8");
+  Vec<std::uint16_t, N / 2> r{};
+  constexpr int sel[4] = {i0, i1, i2, i3};
+  for (std::size_t blk = 0; blk < N; blk += 16) {
+    std::uint8_t sh[16];
+    for (int q = 0; q < 4; ++q)
+      for (int bi = 0; bi < 4; ++bi)
+        sh[q * 4 + bi] = a.raw[blk + static_cast<std::size_t>(sel[q] * 4 + bi)];
+    for (int p = 0; p < 4; ++p) {
+      for (int odd = 0; odd < 2; ++odd) {
+        unsigned sum = 0;
+        for (int j = 0; j < 4; ++j) {
+          const int da = static_cast<int>(sh[p + odd + j]);
+          const int db = static_cast<int>(b.raw[blk + static_cast<std::size_t>(j)]);
+          sum += static_cast<unsigned>(da >= db ? da - db : db - da);
+        }
+        r.raw[blk / 2 + static_cast<std::size_t>(p * 2 + odd)] = static_cast<std::uint16_t>(sum);
+      }
+    }
+  }
+  return r;
+}
+
 // simd-17 batch5: BitShuffle / MultiRotateRight -- per-u64-lane bit gather / byte rotate. Data
 // lanes are u64, index lanes are u8 (8 per data lane), so both take same-total-bytes vectors and
 // return the u64-data vector (Highway's generic contract, portable across ALL targets -- the

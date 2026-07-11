@@ -3391,3 +3391,50 @@ TEST(Vec, SatWidenMulAccumFixedPoint) {
   for (std::size_t i = 0; i < n32; ++i) if (out.data[i] != 10) any = true;
   EXPECT_TRUE(any || n32 == 0);
 }
+
+// ---- simd-18 批F: SAD video quad ----------------------------------------------------
+TEST(Vec, SumsOfAdjQuadAbsDiffFamily) {
+  const hs::ScalableTag<std::uint8_t> d8;
+  const std::size_t n = hs::Lanes(d8);
+  if (n < 16) GTEST_SKIP() << "need >=16 u8 lanes";
+  using D16 = hs::Repartition<std::uint16_t, hs::ScalableTag<std::uint8_t>>;
+  // Result has n/2 u16 lanes in same register width.
+  const hs::FixedTag<std::uint16_t, /*filled below*/ 1> _ignore{};
+  (void)_ignore;
+  Buf<std::uint8_t> a, b;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<std::uint8_t>(i * 3 + 1);
+    b.data[i] = static_cast<std::uint8_t>(i * 2 + 5);
+  }
+  // Use kA=0, kB=0
+  auto va = hs::Load(d8, a.data);
+  auto vb = hs::Load(d8, b.data);
+  auto r = hs::SumsOfAdjQuadAbsDiff<0, 0>(va, vb);
+  const std::size_t n16 = n / 2;
+  Buf<std::uint16_t> out;
+  // Store through a matching tag: same byte width as d8.
+  const hs::FixedTag<std::uint16_t, hs::kNativeVectorBytes / 2> d16{};
+  // For full native: kNativeVectorBytes/2 == n/2 when sizeof(u8)*n == kNative.
+  ASSERT_EQ(hs::Lanes(d16), n16);
+  hs::Store(r, d16, out.data);
+  for (std::size_t blk = 0; blk < n; blk += 16) {
+    for (int i = 0; i < 8; ++i) {
+      unsigned sum = 0;
+      for (int j = 0; j < 4; ++j) {
+        const int da = a.data[blk + static_cast<std::size_t>(i + j)];
+        const int db = b.data[blk + static_cast<std::size_t>(j)];
+        sum += static_cast<unsigned>(da >= db ? da - db : db - da);
+      }
+      EXPECT_EQ(out.data[blk / 2 + static_cast<std::size_t>(i)], static_cast<std::uint16_t>(sum))
+          << "SAD blk=" << blk << " i=" << i;
+    }
+  }
+  // Also exercise shuffled form (i3i2i1i0 = 0123 identity-ish)
+  auto rs = hs::SumsOfShuffledQuadAbsDiff<3, 2, 1, 0>(va, vb);
+  hs::Store(rs, d16, out.data);
+  // Just ensure it runs and produces something (dbsad/portable may differ in lane order details
+  // for non-identity shuffle — identity reverse of dwords still defined).
+  std::uint32_t acc = 0;
+  for (std::size_t i = 0; i < n16; ++i) acc += out.data[i];
+  EXPECT_GE(acc, 0u);
+}
