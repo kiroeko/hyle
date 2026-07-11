@@ -1,5 +1,19 @@
 # simd-18 施工卡（grok 实现 / opus 审核）
 
+## 实现进度（grok 2026-07-11）
+
+| 批 | 状态 | 实测 |
+|---|---|---|
+| C剩余 | ✅ OrderedDemote2To/InRange/shift-demote2；@opus 跳过 DemoteToNearestInt/mask promote | scalar/sse4 204→ +C/D 后合入 |
+| D | ✅ D1/D2/D3（D3 随 E InterleaveWhole） | 同上 |
+| E | ✅ E1–E9/E11；@opus 跳过 Dup128VecFromValues | sse4 207 / avx2+SDE 208 |
+| F | ✅ F1 mpsadbw + F2 dbsad/portable | sse4 208 / avx2+SDE 209 |
+| G | ✅ Highway 10 unary+atan2/pow/sincos f32/f64 + xsimd6 API(scalar path) | Math.Simd18BreadthG + simd_test 291 PASS |
+| H | ⏳ opus 批H / 四查 | — |
+
+commits: `11a4984` C+D · `a30748f` E+D3 · `ccf45a6` F · `d359573` G
+
+
 > **分工**：opus 已用 3 个 agent 对 Highway 源逐 op 核实 native 手法（intrinsic + 契约 + fallback），本卡把语义/指令/落点全锁死。grok 只做"翻译到 intrinsic + 写测试 + 五平台真跑"，**不重新决策**。拿不准的标记 `@opus` 留审。
 >
 > **五平台真跑闸门**（每 op 收口，别省）：WSL `scalar/sse4/avx2`（`/root/hyle` build-wsl，`CXX=g++-14 CC=gcc-14`）+ AVX512 SDE（`sde64 -future -- exe`）+（碰 scalable 才需）qemu 多 VL。native 路径加 objdump 抽验真发射。ASan 查 store+reload scratch 栈宽（用 build-wsl-asan）。
