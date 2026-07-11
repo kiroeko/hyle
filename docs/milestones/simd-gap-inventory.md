@@ -6,7 +6,7 @@
 
 ## 0. 一句话结论
 
-- **定宽四后端(sse4/avx2/avx512/neon)op 面严格一致**(各 ~166-168,仅 avx2 多 2 个 A/B bench 变体)——**这块没问题**。
+- **定宽四后端(sse4/avx2/avx512/neon)op 面严格一致**(各 ~223-228 distinct op 名,avx2/avx512 并列最高——P3/P4/simd-17/18 补 op 后从初版 ~166-168 增长)——**这块没问题**。
 - **scalar 完整**(是 oracle;"缺 Add/Mul" 是宏定义的 grep 假阳)——**没问题**。
 - **定稿时的真问题 = 变宽(SVE/RVV)落后定宽 ~72 op**；当前 P0-P5 已全闭环：scalable 量化/点积/结构 op 已对称，定宽 Masked* 与 Mul/Mod/Magnitude 已补齐，P5 平凡合成 + mask 前缀 + MulByPow2/Expand/TZCnt 已落地。
 - vec.h 泛型 complex / 128-cmp / Newton 曾因 scalable TU 未实例化而掩盖底层原语缺口；P0 已用 SVE/RVV 直接实例化测试消除该潜在编译断裂。`Expand` 已在 P5 落地（SVE store+reload / RVV viota+vrgather）。
@@ -121,10 +121,10 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 字节移位族(`ShiftLeftBytes/RightBytes`、`CombineShiftRightBytes/Lanes`)、`Combine/LowerHalf/UpperHalf/ZeroExtendVector/InsertIntoUpper`(半向量合并族)、`PairwiseAdd/Sub(128)`、`Shuffle2301/1032/...`(定 permute)、`Stream`、`LoadDup128`、`ResizeBitCast` **全已实现**(avx2.h/vec.h;vec_test 有 `ShiftBytesAndLanes`/`CombineShiftRightBytes`/`PairwiseAddSub`/`ShuffleFixedPatterns32`/`Shuffle01_64`/`StreamAndLoadDup128`/`HalfVectorFamily` 对拍)。
 
 ### 🟰 NAMING-DIFF(已有,别当缺口)
-- `Round/Ceil/Floor/Trunc`:avx2.h:472 宏定义,**已有**(grep 假阴)。
-- `PromoteTo`/`DemoteTo`(单向量一次性):HYLE 刻意用 half-at-a-time `PromoteLowerTo/UpperTo`(simd-design:147 设计决策),Highway 单向量版是便利包装。**登记为有意差异,非缺口**。
-- 128-cmp 全家族 `Lt128/Lt128Upper/Eq128/Ne128/Min128/Max128`:vec.h:777 **全有**。
-- Complex 算术 `ComplexConj/MulComplex/MulComplexConj/MulComplexAdd/MulComplexConjAdd`:vec.h:596 **定宽已有**(文档 Source④ 说"未做"是**过期信息**)。
+- `Round/Ceil/Floor/Trunc`:`avx2.h` 宏 `HYLE_SIMD_AVX2_ROUND` 实例化,**已有**(grep 假阴)。
+- `PromoteTo`/`DemoteTo`(单向量一次性):HYLE 刻意用 half-at-a-time `PromoteLowerTo/UpperTo`(`simd-design.md` 批7 设计决策),Highway 单向量版是便利包装。**登记为有意差异,非缺口**。
+- 128-cmp 全家族 `Lt128/Lt128Upper/Eq128/Ne128/Min128/Max128`:`vec.h` **全有**(op 名搜索;行号勿硬引会漂移)。
+- Complex 算术 `ComplexConj/MulComplex/MulComplexConj/MulComplexAdd/MulComplexConjAdd`:`vec.h` **定宽已有**。
 
 ### ⚪ OBSCURE(跳过) — simd-17 批5 复核修正
 初版把 `BitShuffle`/`MultiRotateRight` 混进本类是**错分类**(误判为 AVX512-only 门控)。复核 Highway 源:二者是 `generic_ops-inl.h` 的**公开 `HWY_API` 通用 op**(每 target 有可移植 fallback),**已在 simd-17 批5 实现**(五后端 fallback + AVX3_DL native VPSHUFBITQMB/VPMULTISHIFTQB,SDE 双路对拍 oracle + objdump 坐实)。`SumsOf8AbsDiff`/`BroadcastBlock`/`ExtractBlock` 同批已做。
@@ -133,7 +133,7 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 - `GaloisAffine`/`GaloisAffineTranspose`:Highway `namespace detail` **内部 GFNI 原语**(非公开 op),其消费者 ReverseBits/RotateRight 已在 HYLE 实现。**注:不做的理由是"非公开面缺口",非"无法验证"——SDE 探针实测 GFNI `-future` 正确执行**。
 - ~~`*InRange*`/`Ordered*Demote2*`/`SumsOf*QuadAbsDiff`~~ **已在 simd-18 实现**(批C InRange+OrderedDemote2To、批F dbsad;`OrderedDemote2MasksTo` 随 @opus 裁决 c45c6af)。
 - `Dup128VecFromValues`:**已实现**(simd-18 d418ebf,泛型层四 lane 宽重载调 LoadDup128 广播,五平台真跑)。
-- `Per4LaneBlockShuffle`(8/16-bit):唯一剩项。32/64-bit 的等价能力由 HYLE 现有 `ShuffleFixedPatterns`/`Shuffle01` 覆盖,8/16-bit 是 Highway 内部 generic_ops 建表分解(非公开热路径)。真低优先,批H 后按需(非能力墙,是优先级)。
+- `Per4LaneBlockShuffle`:**32/64-bit 已实现**(五后端,`vec_test` Shuffle 用例对拍;avx2 `_mm256_shuffle_epi32`/`permute4x64`、neon/scalar 组合)。**仅 8/16-bit lane 特化未做**(后端 `static_assert` 挡住,Highway 走 generic 建表分解)——真低优先(非能力墙,是优先级)。
 
 ## 3. 信源④:文档登记缺口(交叉核对,含纠错)
 
