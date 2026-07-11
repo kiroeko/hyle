@@ -132,7 +132,8 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 - `SwapAdjacentBlocks`/`InterleaveWholeLower/Upper`/`LoadTransposedBlocks*` 等 `*Blocks`:Highway 512-bit block-lane 内部编排机制,越 HYLE"贴硬件不过度抽象"scope,无消费者。
 - `GaloisAffine`/`GaloisAffineTranspose`:Highway `namespace detail` **内部 GFNI 原语**(非公开 op),其消费者 ReverseBits/RotateRight 已在 HYLE 实现。**注:不做的理由是"非公开面缺口",非"无法验证"——SDE 探针实测 GFNI `-future` 正确执行**。
 - ~~`*InRange*`/`Ordered*Demote2*`/`SumsOf*QuadAbsDiff`~~ **已在 simd-18 实现**(批C InRange+OrderedDemote2To、批F dbsad;`OrderedDemote2MasksTo` 随 @opus 裁决 c45c6af)。
-- `Per4LaneBlockShuffle`(8/16-bit)/`Dup128VecFromValues`:可移植可做无 ISA 墙,但主要是 Highway **内部** generic_ops 建表原语(非 HYLE 消费者热路径公开面);32/64-bit Per4Lane 的等价能力由 HYLE 现有 `ShuffleFixedPatterns`/`Shuffle01` 覆盖。登记为低优先,批H 后按需补(非能力墙,是优先级)。
+- `Dup128VecFromValues`:**已实现**(simd-18 d418ebf,泛型层四 lane 宽重载调 LoadDup128 广播,五平台真跑)。
+- `Per4LaneBlockShuffle`(8/16-bit):唯一剩项。32/64-bit 的等价能力由 HYLE 现有 `ShuffleFixedPatterns`/`Shuffle01` 覆盖,8/16-bit 是 Highway 内部 generic_ops 建表分解(非公开热路径)。真低优先,批H 后按需(非能力墙,是优先级)。
 
 ## 3. 信源④:文档登记缺口(交叉核对,含纠错)
 
