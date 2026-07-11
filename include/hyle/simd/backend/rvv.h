@@ -1571,4 +1571,44 @@ template <class V> HYLE_FORCE_INLINE V CLMulUpper(V a, V b) noexcept {
 }
 #endif  // __riscv_zvbc
 
+// ---- mask <-> packed bits (BYTE-BUFFER form). RVV VLEN can reach 65536-bit (RV spec max) so a
+// mask never fits a fixed word in general; the portable API is a byte buffer, 1 bit/lane (like
+// Highway). VL-agnostic via VecFromMask store + scalar bit-pack over runtime Lanes(d). ----
+template <class D, class M>
+HYLE_FORCE_INLINE std::size_t StoreMaskBits(D d, M m, std::uint8_t* bits) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kMax = D::kMaxLanes;
+  alignas(64) T lanes[kMax];
+  Store(VecFromMask(d, m), d, lanes);  // all-ones where active, else 0
+  const std::size_t n = Lanes(d);
+  const std::size_t nbytes = (n + 7) / 8;
+  for (std::size_t b = 0; b < nbytes; ++b) bits[b] = 0;
+  for (std::size_t i = 0; i < n; ++i)
+    if (lanes[i] != T{0}) bits[i >> 3] |= static_cast<std::uint8_t>(1u << (i & 7));
+  return nbytes;
+}
+template <class D>
+HYLE_FORCE_INLINE auto LoadMaskBits(D d, const std::uint8_t* bits) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kMax = D::kMaxLanes;
+  alignas(64) T lanes[kMax];
+  const std::size_t n = Lanes(d);
+  for (std::size_t i = 0; i < n; ++i)
+    lanes[i] = (bits[i >> 3] >> (i & 7)) & 1u ? static_cast<T>(~T{0}) : T{0};
+  return MaskFromVec(Load(d, lanes));
+}
+template <class D, class M>
+HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D d, M m) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kMax = D::kMaxLanes;
+  alignas(64) T lanes[kMax];
+  Store(VecFromMask(d, m), d, lanes);
+  const std::size_t n = Lanes(d);
+  HYLE_FATAL_ASSERT(n <= 64);  // wider VL must use the StoreMaskBits byte buffer
+  std::uint64_t bits = 0;
+  for (std::size_t i = 0; i < n; ++i)
+    if (lanes[i] != T{0}) bits |= (std::uint64_t{1} << i);
+  return bits;
+}
+
 }  // namespace hyle::simd

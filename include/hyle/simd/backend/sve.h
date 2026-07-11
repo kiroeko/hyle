@@ -1354,4 +1354,49 @@ template <class V> HYLE_FORCE_INLINE V CLMulUpper(V a, V b) noexcept {
 #endif
 }
 
+// ---- mask <-> packed bits (BYTE-BUFFER form; the fixed-width backends return uint64 but a scalable
+// VL can reach 2048-bit = 256 i8 lanes > 64, so the portable API is a byte buffer, 1 bit/lane, like
+// Highway's SVE StoreMaskBits/LoadMaskBits). Implemented VL-agnostically via VecFromMask store +
+// scalar bit-pack over the runtime Lanes(d) -- no dependence on a fixed VL. ----
+// StoreMaskBits(d, m, bits): write ceil(Lanes/8) bytes, lane i -> bit i of byte i/8. Returns #bytes.
+template <class D>
+HYLE_FORCE_INLINE std::size_t StoreMaskBits(D d, svbool_t m, std::uint8_t* bits) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kMax = D::kMaxLanes;
+  alignas(64) T lanes[kMax];
+  Store(VecFromMask(d, m), d, lanes);  // all-ones (T(-1)) where active, else 0
+  const std::size_t n = Lanes(d);
+  const std::size_t nbytes = (n + 7) / 8;
+  for (std::size_t b = 0; b < nbytes; ++b) bits[b] = 0;
+  for (std::size_t i = 0; i < n; ++i)
+    if (lanes[i] != T{0}) bits[i >> 3] |= static_cast<std::uint8_t>(1u << (i & 7));
+  return nbytes;
+}
+// LoadMaskBits(d, bits): inverse -- lane i active iff bit i of the byte buffer is set.
+template <class D>
+HYLE_FORCE_INLINE svbool_t LoadMaskBits(D d, const std::uint8_t* bits) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kMax = D::kMaxLanes;
+  alignas(64) T lanes[kMax];
+  const std::size_t n = Lanes(d);
+  for (std::size_t i = 0; i < n; ++i)
+    lanes[i] = (bits[i >> 3] >> (i & 7)) & 1u ? static_cast<T>(~T{0}) : T{0};
+  return MaskFromVec(Load(d, lanes));  // MSB-set lane -> active (all-ones qualifies)
+}
+// BitsFromMask(d, m): uint64 convenience for the common case Lanes(d) <= 64 (fits a word). Wider
+// masks (i8 at VL>=512-bit) MUST use the byte-buffer StoreMaskBits -- guarded by assert.
+template <class D>
+HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D d, svbool_t m) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kMax = D::kMaxLanes;
+  alignas(64) T lanes[kMax];
+  Store(VecFromMask(d, m), d, lanes);
+  const std::size_t n = Lanes(d);
+  HYLE_FATAL_ASSERT(n <= 64);  // Lanes>64 (wide i8 at large VL) must use the StoreMaskBits byte buffer
+  std::uint64_t bits = 0;
+  for (std::size_t i = 0; i < n; ++i)
+    if (lanes[i] != T{0}) bits |= (std::uint64_t{1} << i);
+  return bits;
+}
+
 }  // namespace hyle::simd

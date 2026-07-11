@@ -1106,3 +1106,34 @@ TEST(Sve, Simd16Sve2Crypto) {
   for (std::size_t i = 0; i < n64; i += 2) EXPECT_EQ(o64[i], 0x5u) << "clmul lo blk i=" << i;
 }
 #endif  // __ARM_FEATURE_SVE2_AES
+
+// mask <-> packed bits byte-buffer round-trip (VL>64 wall fix): the uint64 BitsFromMask can't hold
+// a 256-lane i8 mask at VL=2048, so StoreMaskBits/LoadMaskBits use a byte buffer. Verify round-trip
+// reproduces the mask (per-lane) for i8 (widest lane count) at every VL, incl. VL where lanes>64.
+template <typename T>
+void CheckMaskBits() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  alignas(64) T a[kBuf];
+  for (std::size_t i = 0; i < n; ++i) a[i] = static_cast<T>((i % 3 == 0) ? 5 : -1);  // 2/3 lanes true
+  const auto m = hs::Gt(hs::Load(d, a), hs::Zero(d));  // lane true where a>0 (i%3==0)
+  std::uint8_t bits[kBuf / 8 + 1] = {};
+  const std::size_t nbytes = hs::StoreMaskBits(d, m, bits);
+  EXPECT_EQ(nbytes, (n + 7) / 8) << "StoreMaskBits nbytes";
+  // each bit matches the lane predicate
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(((bits[i >> 3] >> (i & 7)) & 1u) != 0, (i % 3 == 0)) << "bit i=" << i;
+  // round-trip: LoadMaskBits rebuilds the same mask (compare via CountTrue + VecFromMask).
+  const auto m2 = hs::LoadMaskBits(d, bits);
+  EXPECT_EQ(hs::CountTrue(d, m2), hs::CountTrue(d, m)) << "roundtrip CountTrue";
+  alignas(64) T v1[kBuf], v2[kBuf];
+  hs::Store(hs::VecFromMask(d, m), d, v1);
+  hs::Store(hs::VecFromMask(d, m2), d, v2);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(v1[i] != 0, v2[i] != 0) << "roundtrip lane i=" << i;
+}
+TEST(Sve, MaskBitsByteBuffer) {
+  CheckMaskBits<std::int8_t>();   // widest lane count -> exercises >64 lanes at VL>=512-bit
+  CheckMaskBits<std::int16_t>();
+  CheckMaskBits<std::int32_t>();
+  CheckMaskBits<std::int64_t>();
+}

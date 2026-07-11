@@ -1154,3 +1154,31 @@ TEST(Rvv, ConcatHalves) {
     EXPECT_EQ(out[h + i], hi[h + i]) << "UL hi i=" << i;
   }
 }
+
+// mask <-> packed bits byte-buffer round-trip (VL>64 fix): RVV VLEN can exceed a uint64 lane count,
+// so StoreMaskBits/LoadMaskBits use a byte buffer (1 bit/lane). Round-trip must reproduce the mask.
+template <typename T>
+void CheckMaskBits() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  alignas(64) T a[kBuf];
+  for (std::size_t i = 0; i < n; ++i) a[i] = static_cast<T>((i % 3 == 0) ? 5 : -1);
+  const auto m = hs::Gt(hs::Load(d, a), hs::Zero(d));  // lane true where a>0 (i%3==0)
+  std::uint8_t bits[kBuf / 8 + 1] = {};
+  const std::size_t nbytes = hs::StoreMaskBits(d, m, bits);
+  EXPECT_EQ(nbytes, (n + 7) / 8) << "StoreMaskBits nbytes";
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(((bits[i >> 3] >> (i & 7)) & 1u) != 0, (i % 3 == 0)) << "bit i=" << i;
+  const auto m2 = hs::LoadMaskBits(d, bits);
+  EXPECT_EQ(hs::CountTrue(d, m2), hs::CountTrue(d, m)) << "roundtrip CountTrue";
+  alignas(64) T v1[kBuf], v2[kBuf];
+  hs::Store(hs::VecFromMask(d, m), d, v1);
+  hs::Store(hs::VecFromMask(d, m2), d, v2);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(v1[i] != 0, v2[i] != 0) << "roundtrip lane i=" << i;
+}
+TEST(Rvv, MaskBitsByteBuffer) {
+  CheckMaskBits<std::int8_t>();   // widest lane count -> exercises >64 lanes at large VLEN
+  CheckMaskBits<std::int16_t>();
+  CheckMaskBits<std::int32_t>();
+  CheckMaskBits<std::int64_t>();
+}
