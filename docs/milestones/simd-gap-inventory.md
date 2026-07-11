@@ -8,9 +8,10 @@
 
 - **定宽四后端(sse4/avx2/avx512/neon)op 面严格一致**(各 ~166-168,仅 avx2 多 2 个 A/B bench 变体)——**这块没问题**。
 - **scalar 完整**(是 oracle;"缺 Add/Mul" 是宏定义的 grep 假阳)——**没问题**。
-- **定稿时的真问题 = 变宽(SVE/RVV)落后定宽 ~72 op**；当前 P0-P4 已闭环：scalable 量化/点积/结构 op 已对称，定宽 Masked* 与 Mul/Mod/Magnitude 已补齐，剩余软件项只有 P5。
-- vec.h 泛型 complex / 128-cmp / Newton 曾因 scalable TU 未实例化而掩盖底层原语缺口；P0 已用 SVE/RVV 直接实例化测试消除该潜在编译断裂。`CompressBits/LoadExpand` 仍受 scalable mask-bits 容量/`Expand` 边界约束，按下文硬边界与 P5 管理。
-- **主施工闭集 P0-P5 共92个去重公开op：已完成77，剩15，未完成率16.3%**。若把16个具名低优项和ARM剩余3个complex超越函数也计入，总计111项，剩34项，未完成率30.6%；硬件门控/明确不做项不进入分母。
+- **定稿时的真问题 = 变宽(SVE/RVV)落后定宽 ~72 op**；当前 P0-P5 已全闭环：scalable 量化/点积/结构 op 已对称，定宽 Masked* 与 Mul/Mod/Magnitude 已补齐，P5 平凡合成 + mask 前缀 + MulByPow2/Expand/TZCnt 已落地。
+- vec.h 泛型 complex / 128-cmp / Newton 曾因 scalable TU 未实例化而掩盖底层原语缺口；P0 已用 SVE/RVV 直接实例化测试消除该潜在编译断裂。`Expand` 已在 P5 落地（SVE store+reload / RVV viota+vrgather）。
+- **主施工闭集 P0-P5 共92个去重公开op：已完成91，剩 1（RVV `TrailingZeroCount` 归 Zvbb 硬件门控，不进软件分母）→ 软件面 100%**。若把16个具名低优项和ARM剩余3个complex超越函数也计入，总计111项，剩19项；硬件门控/明确不做项不进入分母。
+- **[`simd-16`](./simd-16-hw-gated-reclaim.md) 已翻案 RVV Zvbb/Zvbc**：`LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/native `Rotate` + `CLMulLower`/`CLMulUpper`（qemu 三档 × 4 VLEN 全绿；objdump 证硬件指令真发射）。RVV `PopulationCount` 仍工具链缺口；SVE2 AES/CLMul 仍只能编译验。
 
 ## 0.5 每项 op 的执行决策流程(施工规程,逐 op 机械跑)
 
@@ -72,16 +73,20 @@
 
 **验收**：本轮 cloc 净增 **+911 生产 / +688 测试 / +5 benchmark = +1,604 code LOC**。SVE 15 tests × VL 128/256/384/512、RVV 12 tests × VLEN 128/256/512/1024 全绿；SVE VL2048 的 P2/partial、Win/WSL fixed SIMD、WSL fixed-backend ASan、Apple-Silicon NEON 169/169、AVX512 SDE 169/169 复验通过；NEON 主/full/widen/Q15/compact 真机 bench 修复并追平 u8/i16/i32/i64 `Compress/Expand`。运行期 VL 断言确认每个 SVE gate 的真实宽度；对抗复审另修 partial masked/gather/scatter、partial PromoteUpper/Demote 与 NEON Q15 极值分歧。
 
-### 🔴 P5 — 变宽平凡合成 + mask 操作(易,15 op)
-`BroadcastSignBit`、`ExclusiveNeither`、`IsEitherNaN`、`FindKnownFirst/LastTrue`、`MulRound`、`BroadcastLane`(svdup_lane / vrgather)、`MulByPow2`、`GetExponent`(指数域位运算)、`SetBeforeFirst/OnlyFirst/AtOrBefore/AtOrAfterFirst`(SVE svbrk 系原生;RVV vfirst+iota 合成)、`Expand`、`TrailingZeroCount`(SVE svrbit+svclz)。
+### ✅ P5 — 变宽平凡合成 + mask 操作(易,15 op；[`simd-15`](./simd-15-scalable-p5.md) 已完成)
+`BroadcastSignBit`、`ExclusiveNeither`、`IsEitherNaN`、`FindKnownFirst/LastTrue`、`MulRound`、`BroadcastLane`(svdup_lane / vrgather)、`MulByPow2`(SVE 原生 svscale；RVV store+reload ldexp)、`GetExponent`(指数域位运算)、`SetBeforeFirst/OnlyFirst/AtOrBefore/AtOrAfterFirst`(SVE svbrk 系原生;RVV vfirst+iota 合成)、`Expand`(SVE store+reload；RVV viota+vrgather)、`TrailingZeroCount`(SVE svrbit+svclz；**RVV 归 Zvbb 门控不做**)。SVE 18 tests / RVV 15 tests × 4 VL 全绿。
 
-### 🔒 变宽硬件门控 / 语义受限(登记不做)
-- Crypto `AES*`/`CLMul`:SVE2 `+sve2-aes` / RVV Zvbc(backlog 已登记)。
-- RVV `PopulationCount`/`LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/`Rotate`:base rv64gcv 无,需 Zvbb(`vcpop/vclz/vctz/vbrev/vror`)。
-- `LoadMaskBits`/`StoreMaskBits`/`BitsFromMask`:scalable VL 可达 2048-bit(i8=256 lane)超 uint64 位域容量,语义受限。
+### ✅ 变宽硬件门控翻案 —— [`simd-16`](./simd-16-hw-gated-reclaim.md)（2026-07-11）
+> 纪律纠错(`feedback_infra_capability_completeness`)：qemu-user 实测**支持 Zvbb/Zvbc**,"无硬件不做"对这些站不住；已翻案补做+真验。
+- **RVV `LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/`Rotate`**:✅ **已落地**——`#if defined(__riscv_zvbb)` + `-march=rv64gcv_zvbb` + `qemu -cpu rv64,v=true,zvbb=true`；objdump 见 `vclz.v`/`vctz.v`/`vbrev.v`/`vror.vi`/`vrol.vx`。
+- **RVV `CLMulLower`/`CLMulUpper`**:✅ **已落地**——`#if defined(__riscv_zvbc)`；`DupEven/DupOdd`+`vclmul`/`vclmulh`+`OddEven` 对齐 128-bit block 语义；objdump 见 `vclmul.vv`/`vclmulh.vv`。
+- **RVV `PopulationCount`**:🔒 仍不做——GCC-14 头无 per-lane vcpop（mask-popcount 占用短名，穷举坐实工具链缺口）。
+- **SVE2 `AES*`/`CLMul`**:🟡 只能编译验——`+sve2-aes` 编得过,但本机 qemu 版本 `-cpu max,sve2-aes=on` 报 "Property not found"。
+- `LoadMaskBits`/`StoreMaskBits`/`BitsFromMask`:scalable VL 可达 2048-bit(i8=256 lane)超 uint64 位域容量,语义受限(窄 lane 数 ≤64 部分可后补)。
+- scalable 后端**无 ASan 通道**:qemu-user + `-fsanitize=address` shadow-memory 段错误(实测),store+reload op 靠逻辑正确而非 ASan 根治,真边界。
 ### ⚪ 变宽不该做(定宽专属语义)
-- `ConcatLowerLower/LowerUpper/UpperLower/UpperUpper`:128-bit-block 相对操作,scalable 无意义(sve.h:530 明确不提供);**scalable 提供的是整向量 `ConcatEven/ConcatOdd`**。
-- `CompressEmulated`/`GatherIndexEmulated`:avx2-only A/B bench 变体。
+- `ConcatLowerLower/LowerUpper/UpperLower/UpperUpper`:⚠️ **文档定性待复核**——原判"128-bit-block 相对,scalable 无意义"可能有误:Highway 对 SVE(arm_sve Splice+MaskLowerHalf)和 RVV(Get/Set)**均实现了整向量半-concat**(与 128-bit block 无关)。待逐语义核对后决定翻案(见下方"待拍板"),暂留此处。
+- `CompressEmulated`/`GatherIndexEmulated`:avx2-only A/B bench 变体(真不做)。
 
 ## 2. 信源③:Highway/xsimd 有、HYLE 无(去噪后,非偏门)
 
@@ -143,12 +148,14 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 | **P3 ✅** | 定宽 Masked* 补全(Shl/Shr/Reduce/ApproxRecip/Complex/... +Or 形)| 24 | 已完成，性能无输家 |
 | **simd-12 ✅** | 自研热点核竞争 + math/sort/bit-pack小数组调用税收口 | — | 已完成；不改变op完成数。11/13 bit-pack、csin/ccos、small-K std路由均已裁决并上架 |
 | **P4 ✅** | 定宽 Mul/Mod/Magnitude(MulSub/AddSub/EvenOdd、Mod、Min/MaxMagnitude)| 12 | 已完成；同 ISA 性能无输家 |
-| **P5** | scalable 平凡合成 + mask 操作 | 15 | 中低(易)|
+| **P5 ✅** | scalable 平凡合成 + mask 操作(BroadcastSignBit/ExclusiveNeither/IsEitherNaN/MulRound/GetExponent/BroadcastLane/Set*First/FindKnown*/MulByPow2/Expand/TZCnt)| 15 | 已完成([`simd-15`](./simd-15-scalable-p5.md))；RVV TZCnt 归 Zvbb 不做 |
+| **simd-16 ✅** | 翻案 RVV Zvbb/Zvbc：LZCnt/TZCnt/ReverseBits/Rotate + CLMul | ~6-7 | 已完成([`simd-16`](./simd-16-hw-gated-reclaim.md))；qemu 三档×4 VLEN + objdump 真指令 |
 | 按需 | 字节移位/半向量合并/Pairwise/Shuffle/Stream/ARM剩余3个复数超越函数 | — | 低 |
-| 🔒登记不做 | SVE2 crypto/RVV Zvbb/mask-bits VL>64/fp8-HW-convert | — | 硬件门控 |
+| 🔒登记不做 | SVE2 crypto/RVV PopulationCount(工具链)/mask-bits VL>64/fp8-HW-convert | — | 硬件门控/工具链缺口 |
 | ⚪不做 | 所有 *Blocks / *InRange / GaloisAffine / 视频专用 | — | 偏门/越 scope |
 
-P0-P4、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)与[`simd-14`](./simd-14-fixed-width-p4.md)已完成；下一步仅剩 P5 的 scalable 平凡合成与 mask 操作。两轮 vendor displacement 不新增公开 op；P4 新增 12 个公开 op，使完成度由65/92提升至77/92。硬件门控和语义受限项不混入软件完成度。
+P0-P5、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)、[`simd-14`](./simd-14-fixed-width-p4.md)、[`simd-15`](./simd-15-scalable-p5.md)与[`simd-16`](./simd-16-hw-gated-reclaim.md)已全部完成。**主施工闭集软件面 100%**；simd-16 另翻案 RVV Zvbb/Zvbc（TZCnt/LZCnt/ReverseBits/Rotate/CLMul），PopulationCount 仍工具链缺口。两轮 vendor displacement 不新增公开 op；P4 新增 12 个、P5 新增 15 个公开 op。硬件门控和语义受限项不混入软件完成度。
+
 
 ## 5. 复现方法
 

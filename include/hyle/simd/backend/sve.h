@@ -1057,4 +1057,120 @@ template <class V> HYLE_FORCE_INLINE V SaturatedAbs(V v) noexcept {
   return Max(v, SaturatedNeg(v));
 }
 
+// ---- P5 trivial synthesis + mask prefix ops -----------------------------------------
+// Fixed-width backends already have these; keep scalable backends at parity. Mask ops that need
+// a lane-width governing predicate take D (svbool_t itself is untyped).
+template <class V> HYLE_FORCE_INLINE V BroadcastSignBit(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "BroadcastSignBit is signed-int only");
+  return ShiftRight<static_cast<int>(sizeof(T) * 8) - 1>(v);
+}
+template <class D>
+HYLE_FORCE_INLINE svbool_t ExclusiveNeither(D d, svbool_t a, svbool_t b) noexcept {
+  return svnor_z(detail::active(d), a, b);  // ~(a|b) under D's active lanes
+}
+template <class V> HYLE_FORCE_INLINE svbool_t IsEitherNaN(V a, V b) noexcept {
+  static_assert(std::is_floating_point_v<TFromV<V>>, "IsEitherNaN is float only");
+  return svcmpuo(detail::ptrue<TFromV<V>>(), a, b);  // unordered compare
+}
+template <class V> HYLE_FORCE_INLINE V MulRound(V a, V b) noexcept {
+  static_assert(std::is_floating_point_v<TFromV<V>>, "MulRound is float only");
+  return Round(Mul(a, b));
+}
+template <class V> HYLE_FORCE_INLINE V GetExponent(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_floating_point_v<T>, "GetExponent is float only");
+  const DFromV<V> d;
+  const RebindToUnsigned<DFromV<V>> du;
+  const RebindToSigned<DFromV<V>> di;
+  if constexpr (std::is_same_v<T, float>) {
+    const auto bits = BitCast(du, v);
+    const auto biased = And(ShiftRight<23>(bits), Set(du, std::uint32_t{0xFFu}));
+    const auto unbiased = Sub(biased, Set(du, std::uint32_t{127}));
+    return ConvertTo(d, BitCast(di, unbiased));
+  } else {
+    const auto bits = BitCast(du, v);
+    const auto biased = And(ShiftRight<52>(bits), Set(du, std::uint64_t{0x7FFull}));
+    const auto unbiased = Sub(biased, Set(du, std::uint64_t{1023}));
+    return ConvertTo(d, BitCast(di, unbiased));
+  }
+}
+template <int kLane, class V> HYLE_FORCE_INLINE V BroadcastLane(V v) noexcept {
+  return Broadcast<kLane>(v);
+}
+
+// Set*First family: SVE break instructions (svbrkb = before, svbrka = at-or-before).
+// no-true: Before/AtOrBefore -> all true; Only/AtOrAfter -> all false (native break behavior).
+template <class D> HYLE_FORCE_INLINE svbool_t SetBeforeFirst(D, svbool_t m) noexcept {
+  using T = TFromD<D>;
+  return svbrkb_z(detail::ptrue<T>(), m);
+}
+template <class D> HYLE_FORCE_INLINE svbool_t SetAtOrBeforeFirst(D, svbool_t m) noexcept {
+  using T = TFromD<D>;
+  return svbrka_z(detail::ptrue<T>(), m);
+}
+template <class D> HYLE_FORCE_INLINE svbool_t SetOnlyFirst(D, svbool_t m) noexcept {
+  using T = TFromD<D>;
+  const svbool_t pg = detail::ptrue<T>();
+  return svbic_z(pg, svbrka_z(pg, m), svbrkb_z(pg, m));  // AtOrBefore AND NOT Before
+}
+template <class D> HYLE_FORCE_INLINE svbool_t SetAtOrAfterFirst(D, svbool_t m) noexcept {
+  using T = TFromD<D>;
+  const svbool_t pg = detail::ptrue<T>();
+  return svnot_z(pg, svbrkb_z(pg, m));  // ~Before
+}
+
+// FindKnown*: same as FindFirst/LastTrue but caller guarantees a true lane (no -1 path).
+template <class D>
+HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(D d, svbool_t m) noexcept {
+  using T = TFromD<D>;
+  return CountTrue(d, detail::brkb_before_first<T>(m));
+}
+template <class D>
+HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(D d, svbool_t m) noexcept {
+  using T = TFromD<D>;
+  const svbool_t pg = detail::active(d);
+  if constexpr (sizeof(T) == 1)
+    return static_cast<std::size_t>(svmaxv(pg, svsel(m, svindex_u8(0, 1), svdup_n_u8(0))));
+  else if constexpr (sizeof(T) == 2)
+    return static_cast<std::size_t>(svmaxv(pg, svsel(m, svindex_u16(0, 1), svdup_n_u16(0))));
+  else if constexpr (sizeof(T) == 4)
+    return static_cast<std::size_t>(svmaxv(pg, svsel(m, svindex_u32(0, 1), svdup_n_u32(0))));
+  else
+    return static_cast<std::size_t>(svmaxv(pg, svsel(m, svindex_u64(0, 1), svdup_n_u64(0))));
+}
+
+// ---- P5 batch C: MulByPow2 / Expand / TrailingZeroCount ------------------------------
+// MulByPow2(a, b) = a * 2^b (std::ldexp). SVE has native FSCALE (svscale), matching IEEE ldexp for
+// all inputs (overflow -> inf, underflow -> subnormal/0). b is the matching-width signed int vector.
+template <class V, class VI> HYLE_FORCE_INLINE V MulByPow2(V a, VI b) noexcept {
+  static_assert(std::is_floating_point_v<TFromV<V>>, "MulByPow2 is float only");
+  return svscale_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+// Expand(v, m): scatter v's low CountTrue(m) lanes out to the m-true positions, 0 elsewhere (the
+// inverse of Compress). SVE base has no native expand instruction (Highway builds an 8-lane block
+// table); store+reload the scalar expand is the correct VL-agnostic form -- same as the fixed-width
+// AVX2/SSE4/NEON backends (no hardware there either). Scratch is sized to kMaxLanes (widest VL).
+template <class V> HYLE_FORCE_INLINE V Expand(V v, svbool_t m) noexcept {
+  using T = TFromV<V>;
+  const DFromV<V> d;
+  const RebindToUnsigned<DFromV<V>> du;
+  constexpr std::size_t kMax = DFromV<V>::kMaxLanes;
+  alignas(64) T src[kMax];
+  alignas(64) T dst[kMax];
+  alignas(64) MakeUnsigned<T> mv[kMax];
+  const std::size_t n = Lanes(d);
+  Store(v, d, src);
+  Store(VecFromMask(du, m), du, mv);  // all-ones (nonzero) where active, else 0
+  std::size_t k = 0;
+  for (std::size_t i = 0; i < n; ++i) dst[i] = mv[i] ? src[k++] : T{0};
+  return Load(d, dst);
+}
+// TrailingZeroCount(v) = LeadingZeroCount(ReverseBits(v)) (Highway's arm_sve identity). svrbit is
+// the native per-lane bit reversal; svclz (LeadingZeroCount) then counts from the (now high) end.
+template <class V> HYLE_FORCE_INLINE V TrailingZeroCount(V v) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "TrailingZeroCount is integer-lane only");
+  return LeadingZeroCount(svrbit_x(detail::ptrue<TFromV<V>>(), v));
+}
+
 }  // namespace hyle::simd

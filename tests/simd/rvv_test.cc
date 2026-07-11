@@ -4,13 +4,14 @@
 // hardware/emulator provides. Cross-compiled (riscv64-linux-gnu-g++ -march=rv64gcv) and run under
 // qemu-riscv64-static. See scripts/rvv-qemu-test.sh and docs/architecture/simd-design.md.
 //
-// Op surface mirrors backend/rvv.h with LMUL=1 native values. Zvbb popcount/clz and block-relative
-// swizzles remain hardware/semantic gates; scalable P0-P2 are covered here.
+// Op surface mirrors backend/rvv.h with LMUL=1 native values. Zvbb/Zvbc reclaim ops are gated
+// under #if defined(__riscv_zvbb)/__riscv_zvbc (see simd-16). scalable P0-P5 covered here.
 #include <gtest/gtest.h>
 
 #define HYLE_SIMD_TARGET_RVV 1
 #include "hyle/simd/vec.h"
 
+#include <bit>
 #include <cmath>
 #include <cstdint>
 
@@ -761,3 +762,354 @@ TEST(Rvv, PartialTagSemantics) {
   EXPECT_EQ(hs::FindLastTrue(d8, last), static_cast<std::ptrdiff_t>(n8 - 1));
   EXPECT_EQ(hs::CountTrue(d8, hs::FirstN(d8, n8)), n8);
 }
+TEST(Rvv, P5TrivialAndMask) {
+  // A1 BroadcastSignBit
+  {
+    const hs::ScalableTag<std::int32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) std::int32_t a[kBuf], o[kBuf];
+    for (std::size_t i = 0; i < n; ++i) a[i] = (i % 3 == 0) ? -5 : (i % 3 == 1) ? 0 : 7;
+    hs::Store(hs::BroadcastSignBit(hs::Load(d, a)), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], a[i] < 0 ? -1 : 0) << "i32 " << i;
+  }
+  {
+    const hs::ScalableTag<std::int8_t> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) std::int8_t a[kBuf], o[kBuf];
+    for (std::size_t i = 0; i < n; ++i) a[i] = static_cast<std::int8_t>((i & 1) ? -1 : 42);
+    hs::Store(hs::BroadcastSignBit(hs::Load(d, a)), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], a[i] < 0 ? -1 : 0) << "i8 " << i;
+  }
+  {
+    const hs::ScalableTag<std::int64_t> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) std::int64_t a[kBuf], o[kBuf];
+    for (std::size_t i = 0; i < n; ++i) a[i] = (i == 0) ? std::numeric_limits<std::int64_t>::min()
+                                                          : static_cast<std::int64_t>(i);
+    hs::Store(hs::BroadcastSignBit(hs::Load(d, a)), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], a[i] < 0 ? -1 : 0) << "i64 " << i;
+  }
+
+  // A2 ExclusiveNeither truth table via two flag arrays
+  {
+    const hs::ScalableTag<std::int32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) std::int32_t fa[kBuf], fb[kBuf], out[kBuf];
+    for (std::size_t i = 0; i < n; ++i) {
+      fa[i] = (i % 4 == 0 || i % 4 == 1) ? 1 : 0;  // T T F F
+      fb[i] = (i % 4 == 0 || i % 4 == 2) ? 1 : 0;  // T F T F
+    }
+    auto ma = hs::Gt(hs::Load(d, fa), hs::Zero(d));
+    auto mb = hs::Gt(hs::Load(d, fb), hs::Zero(d));
+    hs::Store(hs::VecFromMask(d, hs::ExclusiveNeither(d, ma, mb)), d, out);
+    for (std::size_t i = 0; i < n; ++i) {
+      const bool expected = !fa[i] && !fb[i];  // only FF -> T
+      EXPECT_EQ(out[i] != 0, expected) << "ExclusiveNeither " << i;
+    }
+  }
+
+  // A3 IsEitherNaN
+  {
+    const hs::ScalableTag<float> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) float a[kBuf], b[kBuf];
+    alignas(64) std::int32_t out[kBuf];
+    const hs::ScalableTag<std::int32_t> di;
+    for (std::size_t i = 0; i < n; ++i) {
+      a[i] = static_cast<float>(i);
+      b[i] = static_cast<float>(i + 1);
+    }
+    if (n > 0) a[0] = std::numeric_limits<float>::quiet_NaN();
+    if (n > 1) b[1] = std::numeric_limits<float>::quiet_NaN();
+    if (n > 2) a[2] = std::numeric_limits<float>::infinity();
+    hs::Store(hs::VecFromMask(di, hs::IsEitherNaN(hs::Load(d, a), hs::Load(d, b))), di, out);
+    for (std::size_t i = 0; i < n; ++i) {
+      const bool expected = std::isnan(a[i]) || std::isnan(b[i]);
+      EXPECT_EQ(out[i] != 0, expected) << "IsEitherNaN " << i;
+    }
+  }
+
+  // A4 MulRound
+  {
+    const hs::ScalableTag<float> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) float a[kBuf], b[kBuf], o[kBuf];
+    for (std::size_t i = 0; i < n; ++i) {
+      a[i] = (i % 3 == 0) ? 2.4f : (i % 3 == 1) ? 2.5f : 3.5f;
+      b[i] = 1.0f;
+    }
+    hs::Store(hs::MulRound(hs::Load(d, a), hs::Load(d, b)), d, o);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_NEAR(o[i], std::nearbyint(a[i] * b[i]), 1e-5f) << "MulRound " << i;
+  }
+
+  // A5 GetExponent
+  {
+    const hs::ScalableTag<float> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) float a[kBuf], o[kBuf];
+    for (std::size_t i = 0; i < n; ++i) {
+      if (i % 3 == 0) a[i] = 1.0f;
+      else if (i % 3 == 1) a[i] = 8.0f;
+      else a[i] = 0.5f;
+    }
+    hs::Store(hs::GetExponent(hs::Load(d, a)), d, o);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_NEAR(o[i], std::logb(a[i]), 1e-5f) << "GetExponent f32 " << i;
+  }
+  {
+    const hs::ScalableTag<double> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) double a[kBuf], o[kBuf];
+    for (std::size_t i = 0; i < n; ++i) a[i] = (i & 1) ? 16.0 : 0.25;
+    hs::Store(hs::GetExponent(hs::Load(d, a)), d, o);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_NEAR(o[i], std::logb(a[i]), 1e-12) << "GetExponent f64 " << i;
+  }
+
+  // A6 BroadcastLane
+  {
+    const hs::ScalableTag<std::int32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    ASSERT_GE(n, std::size_t{2});
+    alignas(64) std::int32_t a[kBuf], o[kBuf];
+    for (std::size_t i = 0; i < n; ++i) a[i] = static_cast<std::int32_t>(i * 10 + 3);
+    hs::Store(hs::BroadcastLane<0>(hs::Load(d, a)), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], a[0]);
+    hs::Store(hs::BroadcastLane<1>(hs::Load(d, a)), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], a[1]);
+  }
+
+  // B1-B4 Set*First family: first true at lane 0 / mid / last / none / all
+  {
+    const hs::ScalableTag<std::int32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) std::int32_t flag[kBuf], out[kBuf];
+
+    auto check_set = [&](std::size_t first_true, bool has_true) {
+      for (std::size_t i = 0; i < n; ++i) flag[i] = 0;
+      if (has_true) {
+        flag[first_true] = 1;
+        if (first_true + 2 < n) flag[first_true + 2] = 1;  // extra true after first
+      }
+      auto m = hs::Gt(hs::Load(d, flag), hs::Zero(d));
+
+      hs::Store(hs::VecFromMask(d, hs::SetBeforeFirst(d, m)), d, out);
+      for (std::size_t i = 0; i < n; ++i) {
+        const bool expected = has_true ? (i < first_true) : true;
+        EXPECT_EQ(out[i] != 0, expected) << "Before f=" << first_true << " i=" << i;
+      }
+      hs::Store(hs::VecFromMask(d, hs::SetAtOrBeforeFirst(d, m)), d, out);
+      for (std::size_t i = 0; i < n; ++i) {
+        const bool expected = has_true ? (i <= first_true) : true;
+        EXPECT_EQ(out[i] != 0, expected) << "AtOrBefore f=" << first_true << " i=" << i;
+      }
+      hs::Store(hs::VecFromMask(d, hs::SetOnlyFirst(d, m)), d, out);
+      for (std::size_t i = 0; i < n; ++i) {
+        const bool expected = has_true && (i == first_true);
+        EXPECT_EQ(out[i] != 0, expected) << "Only f=" << first_true << " i=" << i;
+      }
+      hs::Store(hs::VecFromMask(d, hs::SetAtOrAfterFirst(d, m)), d, out);
+      for (std::size_t i = 0; i < n; ++i) {
+        const bool expected = has_true ? (i >= first_true) : false;
+        EXPECT_EQ(out[i] != 0, expected) << "AtOrAfter f=" << first_true << " i=" << i;
+      }
+    };
+    check_set(0, true);
+    if (n > 2) check_set(n / 2, true);
+    check_set(n - 1, true);
+    check_set(0, false);  // no true
+    // all true
+    for (std::size_t i = 0; i < n; ++i) flag[i] = 1;
+    auto mall = hs::Gt(hs::Load(d, flag), hs::Zero(d));
+    hs::Store(hs::VecFromMask(d, hs::SetOnlyFirst(d, mall)), d, out);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i] != 0, i == 0) << "Only all-true " << i;
+  }
+
+  // B5-B6 FindKnownFirst/LastTrue
+  {
+    const hs::ScalableTag<std::int32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) std::int32_t flag[kBuf];
+    for (std::size_t i = 0; i < n; ++i) flag[i] = 0;
+    flag[0] = 1;
+    if (n > 1) flag[n - 1] = 1;
+    if (n > 3) flag[2] = 1;
+    auto m = hs::Gt(hs::Load(d, flag), hs::Zero(d));
+    EXPECT_EQ(hs::FindKnownFirstTrue(d, m), std::size_t{0});
+    EXPECT_EQ(hs::FindKnownLastTrue(d, m), n - 1);
+    for (std::size_t i = 0; i < n; ++i) flag[i] = 0;
+    flag[n / 2] = 1;
+    m = hs::Gt(hs::Load(d, flag), hs::Zero(d));
+    EXPECT_EQ(hs::FindKnownFirstTrue(d, m), n / 2);
+    EXPECT_EQ(hs::FindKnownLastTrue(d, m), n / 2);
+  }
+}
+
+// P5 batch C: MulByPow2 (store+reload ldexp) / Expand (viota + vrgather).
+// TrailingZeroCount is Zvbb-gated (like Pop/LeadingZeroCount) -> not in base rv64gcv.
+TEST(Rvv, P5BatchC) {
+  {
+    const hs::ScalableTag<float> d;
+    const hs::ScalableTag<std::int32_t> di;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) float a[kBuf], o[kBuf]; alignas(64) std::int32_t b[kBuf];
+    for (std::size_t i = 0; i < n; ++i) { a[i] = 1.5f + static_cast<float>(i) * 0.25f; b[i] = static_cast<std::int32_t>((i % 7)) - 3; }
+    hs::Store(hs::MulByPow2(hs::Load(d, a), hs::Load(di, b)), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(o[i], std::ldexp(a[i], b[i]), 1e-5f) << "MulByPow2 f32 " << i;
+  }
+  {
+    const hs::ScalableTag<double> d;
+    const hs::ScalableTag<std::int64_t> di;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) double a[kBuf], o[kBuf]; alignas(64) std::int64_t b[kBuf];
+    for (std::size_t i = 0; i < n; ++i) { a[i] = 0.75 + static_cast<double>(i); b[i] = static_cast<std::int64_t>((i % 5)) - 2; }
+    hs::Store(hs::MulByPow2(hs::Load(d, a), hs::Load(di, b)), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(o[i], std::ldexp(a[i], static_cast<int>(b[i])), 1e-12) << "MulByPow2 f64 " << i;
+  }
+
+  // Expand: dst[i] = m[i] ? src[k++] : 0
+  {
+    const hs::ScalableTag<std::int32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) std::int32_t src[kBuf], flag[kBuf], o[kBuf];
+    for (std::size_t i = 0; i < n; ++i) { src[i] = static_cast<std::int32_t>(i * 10 + 1); flag[i] = (i % 3 == 0) ? 1 : 0; }
+    auto m = hs::Gt(hs::Load(d, flag), hs::Zero(d));
+    hs::Store(hs::Expand(hs::Load(d, src), m), d, o);
+    std::size_t k = 0;
+    for (std::size_t i = 0; i < n; ++i) { const std::int32_t e = flag[i] ? src[k++] : 0; EXPECT_EQ(o[i], e) << "Expand " << i; }
+  }
+  {
+    const hs::ScalableTag<std::int32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    alignas(64) std::int32_t src[kBuf], flag[kBuf], o[kBuf];
+    for (std::size_t i = 0; i < n; ++i) { src[i] = static_cast<std::int32_t>(i + 100); flag[i] = 0; }
+    auto m0 = hs::Gt(hs::Load(d, flag), hs::Zero(d));
+    hs::Store(hs::Expand(hs::Load(d, src), m0), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], 0) << "Expand all-false " << i;
+    for (std::size_t i = 0; i < n; ++i) flag[i] = 1;
+    auto m1 = hs::Gt(hs::Load(d, flag), hs::Zero(d));
+    hs::Store(hs::Expand(hs::Load(d, src), m1), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], src[i]) << "Expand all-true " << i;
+  }
+}
+
+// ---- simd-16: Zvbb bit counts / reverse / rotate (gated; base tier skips) -------------
+#if defined(__riscv_zvbb)
+namespace {
+template <typename T>
+T revbits_scalar(T v) {
+  using U = std::make_unsigned_t<T>;
+  U x = static_cast<U>(v), y = 0;
+  for (std::size_t b = 0; b < sizeof(T) * 8; ++b) {
+    y = static_cast<U>((y << 1) | (x & 1));
+    x >>= 1;
+  }
+  return static_cast<T>(y);
+}
+
+template <typename T>
+void CheckZvbbBitOps() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  alignas(64) T a[kBuf], o[kBuf];
+  using U = std::make_unsigned_t<T>;
+  constexpr int kBits = static_cast<int>(sizeof(T) * 8);
+  for (std::size_t i = 0; i < n; ++i) {
+    // cover 0, 1, high-bit, mixed, all-ones
+    if (i == 0) a[i] = T{0};
+    else if (i == 1) a[i] = T{1};
+    else if (i == 2) a[i] = static_cast<T>(U{1} << (kBits - 1));
+    else if (i == 3) a[i] = static_cast<T>(~U{0});
+    else a[i] = static_cast<T>((U{0xA5} << ((i % (sizeof(T)))) * 8) | static_cast<U>(i * 17 + 3));
+  }
+  const auto va = hs::Load(d, a);
+
+  hs::Store(hs::LeadingZeroCount(va), d, o);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(o[i], static_cast<T>(std::countl_zero(static_cast<U>(a[i])))) << "clz " << i;
+
+  hs::Store(hs::TrailingZeroCount(va), d, o);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(o[i], static_cast<T>(std::countr_zero(static_cast<U>(a[i])))) << "ctz " << i;
+
+  hs::Store(hs::ReverseBits(va), d, o);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(o[i], revbits_scalar(a[i])) << "brev " << i;
+
+  // RotateRight/Left native Zvbb path (same oracle as shift-or)
+  constexpr int kR = kBits > 8 ? 5 : 3;
+  hs::Store(hs::RotateRight<kR>(va), d, o);
+  for (std::size_t i = 0; i < n; ++i) {
+    const U u = static_cast<U>(a[i]);
+    const U e = static_cast<U>((u >> kR) | (u << (kBits - kR)));
+    EXPECT_EQ(o[i], static_cast<T>(e)) << "ror " << i;
+  }
+  hs::Store(hs::RotateLeft<kR>(va), d, o);
+  for (std::size_t i = 0; i < n; ++i) {
+    const U u = static_cast<U>(a[i]);
+    const U e = static_cast<U>((u << kR) | (u >> (kBits - kR)));
+    EXPECT_EQ(o[i], static_cast<T>(e)) << "rol " << i;
+  }
+}
+}  // namespace
+
+TEST(Rvv, Simd16Zvbb) {
+  CheckZvbbBitOps<std::uint8_t>();
+  CheckZvbbBitOps<std::uint16_t>();
+  CheckZvbbBitOps<std::uint32_t>();
+  CheckZvbbBitOps<std::uint64_t>();
+  CheckZvbbBitOps<std::int8_t>();
+  CheckZvbbBitOps<std::int16_t>();
+  CheckZvbbBitOps<std::int32_t>();
+  CheckZvbbBitOps<std::int64_t>();
+}
+#endif  // __riscv_zvbb
+
+// ---- simd-16: Zvbc CLMul (128-bit-block semantics) -----------------------------------
+#if defined(__riscv_zvbc)
+namespace {
+// Software clmul64: 128-bit product of two 64-bit operands without carries (scalar oracle).
+void clmul64_soft(std::uint64_t a, std::uint64_t b, std::uint64_t o[2]) {
+  o[0] = 0; o[1] = 0;
+  for (int i = 0; i < 64; ++i) {
+    if ((b >> i) & 1ull) {
+      o[0] ^= a << i;
+      if (i) o[1] ^= a >> (64 - i);
+    }
+  }
+}
+}  // namespace
+
+TEST(Rvv, Simd16ZvbcClmul) {
+  const hs::ScalableTag<std::uint64_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_GE(n, std::size_t{2});
+  ASSERT_EQ(n % 2, std::size_t{0});
+  alignas(64) std::uint64_t a[kBuf], b[kBuf], o[kBuf];
+  for (std::size_t i = 0; i < n; ++i) {
+    a[i] = 0x0123456789ABCDEFull * (i + 1) + 0x1111ull * i;
+    b[i] = 0xFEDCBA9876543210ull ^ (0x55ull << (i % 56));
+  }
+  // Force known simple cases into block 0.
+  a[0] = 1; b[0] = 1;          // lower: 1*1 = 1
+  a[1] = 0x2; b[1] = 0x3;      // upper of block 0
+  if (n >= 4) { a[2] = 0; b[2] = ~0ull; a[3] = ~0ull; b[3] = 1; }
+
+  hs::Store(hs::CLMulLower(hs::Load(d, a), hs::Load(d, b)), d, o);
+  for (std::size_t blk = 0; blk < n; blk += 2) {
+    std::uint64_t exp[2];
+    clmul64_soft(a[blk], b[blk], exp);
+    EXPECT_EQ(o[blk], exp[0]) << "CLMulLower lo blk=" << blk;
+    EXPECT_EQ(o[blk + 1], exp[1]) << "CLMulLower hi blk=" << blk;
+  }
+
+  hs::Store(hs::CLMulUpper(hs::Load(d, a), hs::Load(d, b)), d, o);
+  for (std::size_t blk = 0; blk < n; blk += 2) {
+    std::uint64_t exp[2];
+    clmul64_soft(a[blk + 1], b[blk + 1], exp);
+    EXPECT_EQ(o[blk], exp[0]) << "CLMulUpper lo blk=" << blk;
+    EXPECT_EQ(o[blk + 1], exp[1]) << "CLMulUpper hi blk=" << blk;
+  }
+}
+#endif  // __riscv_zvbc

@@ -19,6 +19,7 @@
 
 #include <riscv_vector.h>
 
+#include <cmath>    // std::ldexp (MulByPow2 store+reload; RVV base V has no fscale)
 #include <cstddef>
 #include <cstdint>
 #include <limits>
@@ -520,14 +521,42 @@ template <int kBits, class V> HYLE_FORCE_INLINE V RotateRight(V v) noexcept {
   if constexpr (kBits == 0) {
     return v;
   } else {
+#if defined(__riscv_zvbb)
+    // Zvbb native vror: one instruction instead of shift-or.
+    const std::size_t vl = detail::vlmax<T>();
+    const RebindToUnsigned<DFromV<V>> du;
+    const auto uv = BitCast(du, v);
+    if constexpr (sizeof(T) == 1) return BitCast(DFromV<V>(), __riscv_vror_vx_u8m1(uv, static_cast<std::size_t>(kBits), vl));
+    else if constexpr (sizeof(T) == 2) return BitCast(DFromV<V>(), __riscv_vror_vx_u16m1(uv, static_cast<std::size_t>(kBits), vl));
+    else if constexpr (sizeof(T) == 4) return BitCast(DFromV<V>(), __riscv_vror_vx_u32m1(uv, static_cast<std::size_t>(kBits), vl));
+    else return BitCast(DFromV<V>(), __riscv_vror_vx_u64m1(uv, static_cast<std::size_t>(kBits), vl));
+#else
     const RebindToUnsigned<DFromV<V>> du;
     const auto uv = BitCast(du, v);
     return BitCast(DFromV<V>(), Or(ShiftRight<kBits>(uv), ShiftLeft<kSizeBits - kBits>(uv)));
+#endif
   }
 }
 template <int kBits, class V> HYLE_FORCE_INLINE V RotateLeft(V v) noexcept {
-  constexpr int kSizeBits = static_cast<int>(sizeof(TFromV<V>) * 8);
-  return RotateRight<(kSizeBits - kBits) % kSizeBits>(v);
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "RotateLeft is integer-lane only");
+  constexpr int kSizeBits = static_cast<int>(sizeof(T) * 8);
+  static_assert(kBits >= 0 && kBits < kSizeBits, "rotate count in [0,bits)");
+  if constexpr (kBits == 0) {
+    return v;
+  } else {
+#if defined(__riscv_zvbb)
+    const std::size_t vl = detail::vlmax<T>();
+    const RebindToUnsigned<DFromV<V>> du;
+    const auto uv = BitCast(du, v);
+    if constexpr (sizeof(T) == 1) return BitCast(DFromV<V>(), __riscv_vrol_vx_u8m1(uv, static_cast<std::size_t>(kBits), vl));
+    else if constexpr (sizeof(T) == 2) return BitCast(DFromV<V>(), __riscv_vrol_vx_u16m1(uv, static_cast<std::size_t>(kBits), vl));
+    else if constexpr (sizeof(T) == 4) return BitCast(DFromV<V>(), __riscv_vrol_vx_u32m1(uv, static_cast<std::size_t>(kBits), vl));
+    else return BitCast(DFromV<V>(), __riscv_vrol_vx_u64m1(uv, static_cast<std::size_t>(kBits), vl));
+#else
+    return RotateRight<(kSizeBits - kBits) % kSizeBits>(v);
+#endif
+  }
 }
 
 // ---- whole-vector slides -------------------------------------------------------------
@@ -928,9 +957,45 @@ HYLE_FORCE_INLINE std::size_t CompressStore(VFromD<D> v, M m, D d, TFromD<D>* p)
   return cnt;
 }
 
-// NOTE: element-wise PopulationCount / LeadingZeroCount are the Zvbb extension (__riscv_vcpop_v /
-// __riscv_vclz_v), NOT in the rv64gcv base V. Deferred until a Zvbb tier is added (documented
-// boundary, same as SVE's deferred block-swizzle/width-changers).
+// ---- Zvbb bit counts / reverse (simd-16 reclaim) ------------------------------------
+// Base rv64gcv has no per-lane clz/ctz/brev. PopulationCount stays deferred: GCC-14's
+// riscv_vector.h has no per-lane vcpop intrinsic (vcpop is mask-popcount only).
+#if defined(__riscv_zvbb)
+template <class V> HYLE_FORCE_INLINE V LeadingZeroCount(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "LeadingZeroCount is integer-lane only");
+  const std::size_t vl = detail::vlmax<T>();
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto uv = BitCast(du, v);
+  if constexpr (sizeof(T) == 1) return BitCast(DFromV<V>(), __riscv_vclz_v_u8m1(uv, vl));
+  else if constexpr (sizeof(T) == 2) return BitCast(DFromV<V>(), __riscv_vclz_v_u16m1(uv, vl));
+  else if constexpr (sizeof(T) == 4) return BitCast(DFromV<V>(), __riscv_vclz_v_u32m1(uv, vl));
+  else return BitCast(DFromV<V>(), __riscv_vclz_v_u64m1(uv, vl));
+}
+template <class V> HYLE_FORCE_INLINE V TrailingZeroCount(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "TrailingZeroCount is integer-lane only");
+  const std::size_t vl = detail::vlmax<T>();
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto uv = BitCast(du, v);
+  if constexpr (sizeof(T) == 1) return BitCast(DFromV<V>(), __riscv_vctz_v_u8m1(uv, vl));
+  else if constexpr (sizeof(T) == 2) return BitCast(DFromV<V>(), __riscv_vctz_v_u16m1(uv, vl));
+  else if constexpr (sizeof(T) == 4) return BitCast(DFromV<V>(), __riscv_vctz_v_u32m1(uv, vl));
+  else return BitCast(DFromV<V>(), __riscv_vctz_v_u64m1(uv, vl));
+}
+template <class V> HYLE_FORCE_INLINE V ReverseBits(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "ReverseBits is integer-only");
+  const std::size_t vl = detail::vlmax<T>();
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto uv = BitCast(du, v);
+  if constexpr (sizeof(T) == 1) return BitCast(DFromV<V>(), __riscv_vbrev_v_u8m1(uv, vl));
+  else if constexpr (sizeof(T) == 2) return BitCast(DFromV<V>(), __riscv_vbrev_v_u16m1(uv, vl));
+  else if constexpr (sizeof(T) == 4) return BitCast(DFromV<V>(), __riscv_vbrev_v_u32m1(uv, vl));
+  else return BitCast(DFromV<V>(), __riscv_vbrev_v_u64m1(uv, vl));
+}
+#endif  // __riscv_zvbb
+// PopulationCount: still deferred -- GCC-14 header has no per-lane vcpop (mask-only).
 
 // ---- swizzle (whole-vector; RVV has no zip1/zip2 primitive -> build via vrgather + masks) --------
 // RVV lacks SVE's svzip/svuzp. We synthesize the whole-vector interleave/deinterleave with vrgather
@@ -1229,5 +1294,220 @@ template <class V> HYLE_FORCE_INLINE V SaturatedAbs(V v) noexcept {
                 "SaturatedAbs is signed-int");
   return Max(v, SaturatedNeg(v));
 }
+
+// ---- P5 trivial synthesis + mask prefix ops -----------------------------------------
+template <class V> HYLE_FORCE_INLINE V BroadcastSignBit(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "BroadcastSignBit is signed-int only");
+  return ShiftRight<static_cast<int>(sizeof(T) * 8) - 1>(v);
+}
+template <class D, class M>
+HYLE_FORCE_INLINE auto ExclusiveNeither(D d, M a, M b) noexcept {
+  return __riscv_vmnor(a, b, Lanes(d));  // ~(a|b)
+}
+template <class V> HYLE_FORCE_INLINE auto IsEitherNaN(V a, V b) noexcept {
+  static_assert(std::is_floating_point_v<TFromV<V>>, "IsEitherNaN is float only");
+  const std::size_t vl = detail::vlmax<TFromV<V>>();
+  return __riscv_vmor(__riscv_vmfne(a, a, vl), __riscv_vmfne(b, b, vl), vl);  // NaN | NaN
+}
+template <class V> HYLE_FORCE_INLINE V MulRound(V a, V b) noexcept {
+  static_assert(std::is_floating_point_v<TFromV<V>>, "MulRound is float only");
+  return Round(Mul(a, b));
+}
+template <class V> HYLE_FORCE_INLINE V GetExponent(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_floating_point_v<T>, "GetExponent is float only");
+  const DFromV<V> d;
+  const RebindToUnsigned<DFromV<V>> du;
+  const RebindToSigned<DFromV<V>> di;
+  if constexpr (std::is_same_v<T, float>) {
+    const auto bits = BitCast(du, v);
+    const auto biased = And(ShiftRight<23>(bits), Set(du, std::uint32_t{0xFFu}));
+    const auto unbiased = Sub(biased, Set(du, std::uint32_t{127}));
+    return ConvertTo(d, BitCast(di, unbiased));
+  } else {
+    const auto bits = BitCast(du, v);
+    const auto biased = And(ShiftRight<52>(bits), Set(du, std::uint64_t{0x7FFull}));
+    const auto unbiased = Sub(biased, Set(du, std::uint64_t{1023}));
+    return ConvertTo(d, BitCast(di, unbiased));
+  }
+}
+template <int kLane, class V> HYLE_FORCE_INLINE V BroadcastLane(V v) noexcept {
+  return Broadcast<kLane>(v);
+}
+
+// Set*First family via vfirst + iota compare (RVV has no break instructions).
+// no-true (vfirst < 0): Before/AtOrBefore -> all true; Only/AtOrAfter -> all false.
+namespace detail {
+template <class D, class M>
+HYLE_FORCE_INLINE auto set_prefix_mask(D d, M m, int mode) noexcept {
+  // mode: 0=Before, 1=AtOrBefore, 2=Only, 3=AtOrAfter
+  using T = TFromD<D>;
+  const std::size_t vl = Lanes(d);
+  const std::ptrdiff_t f = __riscv_vfirst(m, vl);
+  if constexpr (sizeof(T) == 1) {
+    const auto id = __riscv_vid_v_u8m1(vl);
+    if (f < 0) {
+      if (mode == 0 || mode == 1) return __riscv_vmseq(id, id, vl);  // all true
+      return __riscv_vmsne(id, id, vl);  // all false
+    }
+    const auto fu = static_cast<std::uint8_t>(f);
+    if (mode == 0) return __riscv_vmsltu(id, fu, vl);
+    if (mode == 1) return __riscv_vmsleu(id, fu, vl);
+    if (mode == 2) return __riscv_vmseq(id, fu, vl);
+    return __riscv_vmsgeu(id, fu, vl);
+  } else if constexpr (sizeof(T) == 2) {
+    const auto id = __riscv_vid_v_u16m1(vl);
+    if (f < 0) {
+      if (mode == 0 || mode == 1) return __riscv_vmseq(id, id, vl);
+      return __riscv_vmsne(id, id, vl);
+    }
+    const auto fu = static_cast<std::uint16_t>(f);
+    if (mode == 0) return __riscv_vmsltu(id, fu, vl);
+    if (mode == 1) return __riscv_vmsleu(id, fu, vl);
+    if (mode == 2) return __riscv_vmseq(id, fu, vl);
+    return __riscv_vmsgeu(id, fu, vl);
+  } else if constexpr (sizeof(T) == 4) {
+    const auto id = __riscv_vid_v_u32m1(vl);
+    if (f < 0) {
+      if (mode == 0 || mode == 1) return __riscv_vmseq(id, id, vl);
+      return __riscv_vmsne(id, id, vl);
+    }
+    const auto fu = static_cast<std::uint32_t>(f);
+    if (mode == 0) return __riscv_vmsltu(id, fu, vl);
+    if (mode == 1) return __riscv_vmsleu(id, fu, vl);
+    if (mode == 2) return __riscv_vmseq(id, fu, vl);
+    return __riscv_vmsgeu(id, fu, vl);
+  } else {
+    const auto id = __riscv_vid_v_u64m1(vl);
+    if (f < 0) {
+      if (mode == 0 || mode == 1) return __riscv_vmseq(id, id, vl);
+      return __riscv_vmsne(id, id, vl);
+    }
+    const auto fu = static_cast<std::uint64_t>(f);
+    if (mode == 0) return __riscv_vmsltu(id, fu, vl);
+    if (mode == 1) return __riscv_vmsleu(id, fu, vl);
+    if (mode == 2) return __riscv_vmseq(id, fu, vl);
+    return __riscv_vmsgeu(id, fu, vl);
+  }
+}
+}  // namespace detail
+template <class D, class M> HYLE_FORCE_INLINE auto SetBeforeFirst(D d, M m) noexcept {
+  return detail::set_prefix_mask(d, m, 0);
+}
+template <class D, class M> HYLE_FORCE_INLINE auto SetAtOrBeforeFirst(D d, M m) noexcept {
+  return detail::set_prefix_mask(d, m, 1);
+}
+template <class D, class M> HYLE_FORCE_INLINE auto SetOnlyFirst(D d, M m) noexcept {
+  return detail::set_prefix_mask(d, m, 2);
+}
+template <class D, class M> HYLE_FORCE_INLINE auto SetAtOrAfterFirst(D d, M m) noexcept {
+  return detail::set_prefix_mask(d, m, 3);
+}
+
+template <class D, class M>
+HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(D d, M m) noexcept {
+  return static_cast<std::size_t>(__riscv_vfirst(m, Lanes(d)));
+}
+template <class D, class M>
+HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(D d, M m) noexcept {
+  using T = TFromD<D>;
+  const std::size_t vl = Lanes(d);
+  // No -1 check: caller guarantees a true lane exists.
+  if constexpr (sizeof(T) == 1) {
+    auto id = __riscv_vid_v_u8m1(vl);
+    auto sel = __riscv_vmerge(__riscv_vmv_v_x_u8m1(0, vl), id, m, vl);
+    return static_cast<std::size_t>(__riscv_vmv_x(__riscv_vredmaxu(sel, sel, vl)));
+  } else if constexpr (sizeof(T) == 2) {
+    auto id = __riscv_vid_v_u16m1(vl);
+    auto sel = __riscv_vmerge(__riscv_vmv_v_x_u16m1(0, vl), id, m, vl);
+    return static_cast<std::size_t>(__riscv_vmv_x(__riscv_vredmaxu(sel, sel, vl)));
+  } else if constexpr (sizeof(T) == 4) {
+    auto id = __riscv_vid_v_u32m1(vl);
+    auto sel = __riscv_vmerge(__riscv_vmv_v_x_u32m1(0, vl), id, m, vl);
+    return static_cast<std::size_t>(__riscv_vmv_x(__riscv_vredmaxu(sel, sel, vl)));
+  } else {
+    auto id = __riscv_vid_v_u64m1(vl);
+    auto sel = __riscv_vmerge(__riscv_vmv_v_x_u64m1(0, vl), id, m, vl);
+    return static_cast<std::size_t>(__riscv_vmv_x(__riscv_vredmaxu(sel, sel, vl)));
+  }
+}
+
+// ---- P5 batch C: MulByPow2 / Expand -------------------------------------------------
+// MulByPow2(a, b) = a * 2^b (std::ldexp). RVV base V has no vfscale, so store+reload the scalar
+// ldexp -- identical to the fixed-width AVX2/SSE4/NEON backends (no fscale there either). b is the
+// matching-width signed int vector. Scratch sized to kMaxLanes (widest VLEN).
+template <class V, class VI> HYLE_FORCE_INLINE V MulByPow2(V a, VI b) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_floating_point_v<T>, "MulByPow2 is float only");
+  using IT = TFromV<VI>;
+  const DFromV<V> d;
+  const DFromV<VI> di;
+  constexpr std::size_t kMax = DFromV<V>::kMaxLanes;
+  alignas(64) T sa[kMax];
+  alignas(64) IT sb[kMax];
+  const std::size_t n = Lanes(d);
+  Store(a, d, sa);
+  Store(b, di, sb);
+  for (std::size_t i = 0; i < n; ++i) sa[i] = std::ldexp(sa[i], static_cast<int>(sb[i]));
+  return Load(d, sa);
+}
+// Expand(v, m): scatter v's low CountTrue(m) lanes to the m-true positions, 0 elsewhere (inverse of
+// Compress). RVV is clean: viota(m) gives each lane the EXCLUSIVE prefix-count of active lanes below
+// it (the source index for a true lane); vrgather pulls v[iota[i]], then merge 0 into inactive lanes.
+template <class V, class M> HYLE_FORCE_INLINE V Expand(V v, M m) noexcept {
+  using T = TFromV<V>;
+  const std::size_t vl = detail::vlmax<T>();
+  // viota(m)[i] = number of active lanes strictly below i = the source index a true lane pulls from.
+  // (No overloaded short name in GCC-14's header -> per-SEW full name.) vrgather then 0-merges.
+  const V z = Zero(DFromV<V>());
+  if constexpr (sizeof(T) == 1) {
+    const auto idx = __riscv_viota_m_u8m1(m, vl);
+    return __riscv_vmerge(z, __riscv_vrgather(v, idx, vl), m, vl);
+  } else if constexpr (sizeof(T) == 2) {
+    const auto idx = __riscv_viota_m_u16m1(m, vl);
+    return __riscv_vmerge(z, __riscv_vrgather(v, idx, vl), m, vl);
+  } else if constexpr (sizeof(T) == 4) {
+    const auto idx = __riscv_viota_m_u32m1(m, vl);
+    return __riscv_vmerge(z, __riscv_vrgather(v, idx, vl), m, vl);
+  } else {
+    const auto idx = __riscv_viota_m_u64m1(m, vl);
+    return __riscv_vmerge(z, __riscv_vrgather(v, idx, vl), m, vl);
+  }
+}
+
+// ---- Zvbc carryless multiply (simd-16 reclaim) --------------------------------------
+// HYLE/x86 CLMul operates on 128-bit blocks: Lower multiplies even u64 lanes, Upper the odd
+// ones; the 128-bit product is written back into that block as [lo, hi]. RVV vclmul/vclmulh are
+// per-u64-lane, so DupEven/DupOdd broadcast the selected operand, then OddEven interleaves
+// lo/hi into the block layout.
+#if defined(__riscv_zvbc)
+template <class V> HYLE_FORCE_INLINE V CLMulLower(V a, V b) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T> && sizeof(T) == 8, "CLMul is 64-bit-lane only");
+  const std::size_t vl = detail::vlmax<T>();
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto au = BitCast(du, a);
+  const auto bu = BitCast(du, b);
+  const auto ae = DupEven(au);
+  const auto be = DupEven(bu);
+  const auto lo = __riscv_vclmul_vv_u64m1(ae, be, vl);
+  const auto hi = __riscv_vclmulh_vv_u64m1(ae, be, vl);
+  return BitCast(DFromV<V>(), OddEven(hi, lo));  // even<-lo, odd<-hi
+}
+template <class V> HYLE_FORCE_INLINE V CLMulUpper(V a, V b) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T> && sizeof(T) == 8, "CLMul is 64-bit-lane only");
+  const std::size_t vl = detail::vlmax<T>();
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto au = BitCast(du, a);
+  const auto bu = BitCast(du, b);
+  const auto ao = DupOdd(au);
+  const auto bo = DupOdd(bu);
+  const auto lo = __riscv_vclmul_vv_u64m1(ao, bo, vl);
+  const auto hi = __riscv_vclmulh_vv_u64m1(ao, bo, vl);
+  return BitCast(DFromV<V>(), OddEven(hi, lo));
+}
+#endif  // __riscv_zvbc
 
 }  // namespace hyle::simd
