@@ -612,6 +612,25 @@ HYLE_FORCE_INLINE Vec<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, Vec<S
                                                    Vec<SrcT, NSrc> b) noexcept {
   return DemoteTo(dn, a, b);
 }
+// simd-18 C1: OrderedDemote2To == DemoteTo on scalar (already ordered [a...,b...]).
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<DstT, NDst> OrderedDemote2To(Simd<DstT, NDst, 0> dn, Vec<SrcT, NSrc> a,
+                                                   Vec<SrcT, NSrc> b) noexcept {
+  return DemoteTo(dn, a, b);
+}
+// simd-18 C3: ConvertInRangeTo -- alias ConvertTo (no overflow fixup on scalar either).
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec<DstT, N> ConvertInRangeTo(Simd<DstT, N, 0> d, Vec<SrcT, N> v) noexcept {
+  return ConvertTo(d, v);
+}
+// simd-18 C3: DemoteInRangeTo f64->i32 -- per-lane truncate (caller guarantees in-range).
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec<std::int32_t, N> DemoteInRangeTo(Simd<std::int32_t, N, 0>,
+                                                       Vec<double, N> v) noexcept {
+  Vec<std::int32_t, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = static_cast<std::int32_t>(v.raw[i]);
+  return r;
+}
 
 // TruncateTo(d, v): narrow each lane by keeping the LOW bits (modular truncation, NOT
 // saturation -- distinct from DemoteTo). Same lane count, narrower type. E.g. u32 0x1FF -> u8

@@ -1345,9 +1345,85 @@ HYLE_FORCE_INLINE void TruncateStore(V v, DN dn, TFromD<DN>* p) noexcept {
   StoreU(TruncateTo(dn, v), dn, p);
 }
 
-// OrderedDemote2To, InRange convert/promote/demote, shift-and-demote family, PromoteMaskTo/
-// DemoteMaskTo/OrderedDemote2MasksTo, DemoteToNearestInt: deferred to a batch-C continuation --
-// they need per-backend permute fixup (x86 ReorderDemote2To is block-interleaved) / native raw
-// cvt (InRange perf) / a RoundingShiftRight<k> template that HYLE lacks. Tracked in simd-18 doc.
+// OrderedDemote2To / ConvertInRangeTo / DemoteInRangeTo: per-backend (simd-18 C1/C3).
+// PromoteMaskTo / DemoteMaskTo / OrderedDemote2MasksTo / DemoteToNearestInt / single-vector
+// ShiftRightAndDemoteTo: @opus deferred (HYLE half-at-a-time promote; f64->i32 tag convention).
+
+// ---- simd-18 C3: PromoteInRange* thin aliases (widen never overflows; InRange == ordinary) ----
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> PromoteInRangeLowerTo(D d, V v) noexcept {
+  return PromoteLowerTo(d, v);
+}
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> PromoteInRangeUpperTo(D d, V v) noexcept {
+  return PromoteUpperTo(d, v);
+}
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> PromoteInRangeEvenTo(D d, V v) noexcept {
+  return PromoteEvenTo(d, v);
+}
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> PromoteInRangeOddTo(D d, V v) noexcept {
+  return PromoteOddTo(d, v);
+}
+
+// ---- simd-18 C4: shift-and-demote2 family (2-arg only; single-vector DemoteTo @opus) ----
+// RoundingShiftRight<k> already exists above. Compose with Reorder/Ordered demote2.
+template <int k, class DN, class V>
+HYLE_FORCE_INLINE VFromD<DN> ReorderShiftRightAndDemote2To(DN dn, V a, V b) noexcept {
+  return ReorderDemote2To(dn, ShiftRight<k>(a), ShiftRight<k>(b));
+}
+template <int k, class DN, class V>
+HYLE_FORCE_INLINE VFromD<DN> ReorderRoundingShiftRightAndDemote2To(DN dn, V a, V b) noexcept {
+  return ReorderDemote2To(dn, RoundingShiftRight<k>(a), RoundingShiftRight<k>(b));
+}
+template <int k, class DN, class V>
+HYLE_FORCE_INLINE VFromD<DN> OrderedShiftRightAndDemote2To(DN dn, V a, V b) noexcept {
+  return OrderedDemote2To(dn, ShiftRight<k>(a), ShiftRight<k>(b));
+}
+template <int k, class DN, class V>
+HYLE_FORCE_INLINE VFromD<DN> OrderedRoundingShiftRightAndDemote2To(DN dn, V a, V b) noexcept {
+  return OrderedDemote2To(dn, RoundingShiftRight<k>(a), RoundingShiftRight<k>(b));
+}
+
+// ---- simd-18 批D: WidenMul accumulate family (generic composition) --------------------
+// D1: WidenMulAccumulate -- narrow mul,x widen half-at-a-time then FMA into dual wide acc.
+// Returns updated low; writes updated high via reference.
+template <class D, class VN>
+HYLE_FORCE_INLINE VFromD<D> WidenMulAccumulate(D d, VN mul, VN x, VFromD<D> low,
+                                               VFromD<D>& high) noexcept {
+  high = MulAdd(PromoteUpperTo(d, mul), PromoteUpperTo(d, x), high);
+  return MulAdd(PromoteLowerTo(d, mul), PromoteLowerTo(d, x), low);
+}
+
+// D2: SatWidenMulPairwiseAccumulate -- i16 pairwise widen-mul, saturate-accumulate into i32.
+// HYLE SaturatedAdd is 8/16-bit only, so i32 sat-add is inlined (sign-same + result-sign-flip).
+namespace detail {
+template <class V>
+HYLE_FORCE_INLINE V SaturatedAddI32(V a, V b) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  static_assert(std::is_same_v<T, std::int32_t>, "SaturatedAddI32: i32 only");
+  const D d;
+  const V sum = Add(a, b);  // wrapping
+  // overflow iff a and b same sign AND sum flipped relative to a
+  const V sa = BroadcastSignBit(a);
+  const auto ov = And(Eq(sa, BroadcastSignBit(b)), Ne(sa, BroadcastSignBit(sum)));
+  // limit = a>=0 ? INT_MAX : INT_MIN  ==  Xor(sign_mask, 0x7FFFFFFF)
+  const V limit = Xor(sa, Set(d, T{0x7FFFFFFF}));
+  return IfThenElse(ov, limit, sum);
+}
+}  // namespace detail
+
+template <class DI32, class V16>
+HYLE_FORCE_INLINE VFromD<DI32> SatWidenMulPairwiseAccumulate(DI32 di32, V16 a, V16 b,
+                                                             VFromD<DI32> sum) noexcept {
+  const auto product = WidenMulPairwiseAdd(di32, a, b);
+  const auto overflow = VecFromMask(di32, Eq(product, Set(di32, std::numeric_limits<std::int32_t>::min())));
+  return detail::SaturatedAddI32(Sub(sum, And(BroadcastSignBit(sum), overflow)),
+                                 Add(product, overflow));
+}
+
+// D3: SatWidenMulAccumFixedPoint -- needs InterleaveWholeLower (批E); @opus until E lands.
 
 }  // namespace hyle::simd

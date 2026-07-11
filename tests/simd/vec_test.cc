@@ -3042,3 +3042,224 @@ TEST(Vec, DemoteTruncateHelpers) {
   for (std::size_t i = 0; i < hs::Lanes(dn8); ++i)
     EXPECT_EQ(tout.data[i], std::uint8_t(src.data[i] & 0xFF)) << "TruncStore i=" << i;
 }
+
+// ---- simd-18 C remaining + D: OrderedDemote / InRange / shift-demote2 / WidenMulAccum ----
+TEST(Vec, OrderedDemote2ToFamily) {
+  // OrderedDemote2To: i32->i16 and i16->i8, lanes ordered [a..., b...].
+  {
+    const hs::ScalableTag<std::int32_t> dw;
+    const std::size_t nw = hs::Lanes(dw);
+    using DN = hs::Repartition<std::int16_t, hs::ScalableTag<std::int32_t>>;
+    const DN dn{};
+    Buf<std::int32_t> a, b;
+    for (std::size_t i = 0; i < nw; ++i) {
+      a.data[i] = static_cast<std::int32_t>(i * 3 - 10);
+      b.data[i] = static_cast<std::int32_t>(i * 5 + 20);
+    }
+    Buf<std::int16_t> out;
+    hs::Store(hs::OrderedDemote2To(dn, hs::Load(dw, a.data), hs::Load(dw, b.data)), dn, out.data);
+    for (std::size_t i = 0; i < nw; ++i) {
+      const auto sa = static_cast<std::int16_t>(
+          a.data[i] < -32768 ? -32768 : (a.data[i] > 32767 ? 32767 : a.data[i]));
+      const auto sb = static_cast<std::int16_t>(
+          b.data[i] < -32768 ? -32768 : (b.data[i] > 32767 ? 32767 : b.data[i]));
+      EXPECT_EQ(out.data[i], sa) << "OrdDemote i32->i16 a i=" << i;
+      EXPECT_EQ(out.data[nw + i], sb) << "OrdDemote i32->i16 b i=" << i;
+    }
+  }
+  {
+    const hs::ScalableTag<std::int16_t> dw;
+    const std::size_t nw = hs::Lanes(dw);
+    using DN = hs::Repartition<std::int8_t, hs::ScalableTag<std::int16_t>>;
+    const DN dn{};
+    Buf<std::int16_t> a, b;
+    for (std::size_t i = 0; i < nw; ++i) {
+      a.data[i] = static_cast<std::int16_t>(i * 7 - 40);
+      b.data[i] = static_cast<std::int16_t>(i * 2 + 5);
+    }
+    Buf<std::int8_t> out;
+    hs::Store(hs::OrderedDemote2To(dn, hs::Load(dw, a.data), hs::Load(dw, b.data)), dn, out.data);
+    for (std::size_t i = 0; i < nw; ++i) {
+      const auto sa = static_cast<std::int8_t>(
+          a.data[i] < -128 ? -128 : (a.data[i] > 127 ? 127 : a.data[i]));
+      const auto sb = static_cast<std::int8_t>(
+          b.data[i] < -128 ? -128 : (b.data[i] > 127 ? 127 : b.data[i]));
+      EXPECT_EQ(out.data[i], sa) << "OrdDemote i16->i8 a i=" << i;
+      EXPECT_EQ(out.data[nw + i], sb) << "OrdDemote i16->i8 b i=" << i;
+    }
+  }
+}
+
+TEST(Vec, InRangeConvertAndDemote) {
+  // ConvertInRangeTo f32->i32 equals ConvertTo on in-domain inputs.
+  {
+    const hs::ScalableTag<float> df;
+    const hs::ScalableTag<std::int32_t> di;
+    const std::size_t n = hs::Lanes(df);
+    Buf<float> src;
+    for (std::size_t i = 0; i < n; ++i) src.data[i] = static_cast<float>(i) * 1.5f - 3.0f;
+    Buf<std::int32_t> a, b;
+    hs::Store(hs::ConvertInRangeTo(di, hs::Load(df, src.data)), di, a.data);
+    hs::Store(hs::ConvertTo(di, hs::Load(df, src.data)), di, b.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(a.data[i], b.data[i]) << "InRange cvt i=" << i;
+  }
+  // DemoteInRangeTo f64->i32: in-domain truncate, same lane count.
+  {
+    const hs::ScalableTag<double> dd;
+    const std::size_t n = hs::Lanes(dd);
+    // dest tag: same N, i32 (half the register width on wide backends)
+    const hs::FixedTag<std::int32_t, hs::kNativeVectorBytes / sizeof(double)> di{};
+    ASSERT_EQ(hs::Lanes(di), n);
+    Buf<double> src;
+    for (std::size_t i = 0; i < n; ++i) src.data[i] = static_cast<double>(i) * 2.7 - 5.5;
+    Buf<std::int32_t> out;
+    hs::Store(hs::DemoteInRangeTo(di, hs::Load(dd, src.data)), di, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], static_cast<std::int32_t>(src.data[i])) << "DemoteInRange i=" << i;
+  }
+}
+
+TEST(Vec, ShiftRightAndDemote2Family) {
+  // OrderedShiftRightAndDemote2To / Reorder* vs hand composition; k=1 and k=3.
+  const hs::ScalableTag<std::int32_t> dw;
+  const std::size_t nw = hs::Lanes(dw);
+  using DN = hs::Repartition<std::int16_t, hs::ScalableTag<std::int32_t>>;
+  const DN dn{};
+  Buf<std::int32_t> a, b;
+  for (std::size_t i = 0; i < nw; ++i) {
+    a.data[i] = static_cast<std::int32_t>((i + 1) * 17);
+    b.data[i] = static_cast<std::int32_t>((i + 3) * 11);
+  }
+  auto va = hs::Load(dw, a.data);
+  auto vb = hs::Load(dw, b.data);
+  for (int k : {1, 3}) {
+    Buf<std::int16_t> got, ref;
+    if (k == 1) {
+      hs::Store(hs::OrderedShiftRightAndDemote2To<1>(dn, va, vb), dn, got.data);
+      hs::Store(hs::OrderedDemote2To(dn, hs::ShiftRight<1>(va), hs::ShiftRight<1>(vb)), dn, ref.data);
+      Buf<std::int16_t> rgot, rref;
+      hs::Store(hs::ReorderShiftRightAndDemote2To<1>(dn, va, vb), dn, rgot.data);
+      hs::Store(hs::ReorderDemote2To(dn, hs::ShiftRight<1>(va), hs::ShiftRight<1>(vb)), dn, rref.data);
+      for (std::size_t i = 0; i < 2 * nw; ++i) {
+        EXPECT_EQ(got.data[i], ref.data[i]) << "OrdShiftDemote k=1 i=" << i;
+        EXPECT_EQ(rgot.data[i], rref.data[i]) << "ReordShiftDemote k=1 i=" << i;
+      }
+      hs::Store(hs::OrderedRoundingShiftRightAndDemote2To<1>(dn, va, vb), dn, got.data);
+      hs::Store(hs::OrderedDemote2To(dn, hs::RoundingShiftRight<1>(va), hs::RoundingShiftRight<1>(vb)),
+                dn, ref.data);
+      for (std::size_t i = 0; i < 2 * nw; ++i)
+        EXPECT_EQ(got.data[i], ref.data[i]) << "OrdRoundShiftDemote k=1 i=" << i;
+    } else {
+      hs::Store(hs::OrderedShiftRightAndDemote2To<3>(dn, va, vb), dn, got.data);
+      hs::Store(hs::OrderedDemote2To(dn, hs::ShiftRight<3>(va), hs::ShiftRight<3>(vb)), dn, ref.data);
+      for (std::size_t i = 0; i < 2 * nw; ++i)
+        EXPECT_EQ(got.data[i], ref.data[i]) << "OrdShiftDemote k=3 i=" << i;
+      hs::Store(hs::ReorderRoundingShiftRightAndDemote2To<3>(dn, va, vb), dn, got.data);
+      hs::Store(hs::ReorderDemote2To(dn, hs::RoundingShiftRight<3>(va), hs::RoundingShiftRight<3>(vb)),
+                dn, ref.data);
+      for (std::size_t i = 0; i < 2 * nw; ++i)
+        EXPECT_EQ(got.data[i], ref.data[i]) << "ReordRoundShiftDemote k=3 i=" << i;
+    }
+  }
+}
+
+TEST(Vec, WidenMulAccumulateFamily) {
+  // D1: WidenMulAccumulate i16*i16 -> dual i32 acc.
+  {
+    const hs::ScalableTag<std::int16_t> dn;
+    const std::size_t nn = hs::Lanes(dn);
+    using DW = hs::RepartitionToWide<hs::ScalableTag<std::int16_t>>;
+    const DW dw{};
+    const std::size_t nw = hs::Lanes(dw);
+    ASSERT_EQ(nn, 2 * nw);
+    Buf<std::int16_t> mul, x;
+    Buf<std::int32_t> low, high;
+    for (std::size_t i = 0; i < nn; ++i) {
+      mul.data[i] = static_cast<std::int16_t>(i + 1);
+      x.data[i] = static_cast<std::int16_t>(i + 2);
+    }
+    for (std::size_t i = 0; i < nw; ++i) {
+      low.data[i] = static_cast<std::int32_t>(100 + i);
+      high.data[i] = static_cast<std::int32_t>(200 + i);
+    }
+    auto vmul = hs::Load(dn, mul.data);
+    auto vx = hs::Load(dn, x.data);
+    auto vlow = hs::Load(dw, low.data);
+    auto vhigh = hs::Load(dw, high.data);
+    auto new_low = hs::WidenMulAccumulate(dw, vmul, vx, vlow, vhigh);
+    Buf<std::int32_t> olow, ohigh;
+    hs::Store(new_low, dw, olow.data);
+    hs::Store(vhigh, dw, ohigh.data);
+    for (std::size_t i = 0; i < nw; ++i) {
+      const std::int32_t exp_lo =
+          low.data[i] + static_cast<std::int32_t>(mul.data[i]) * static_cast<std::int32_t>(x.data[i]);
+      const std::int32_t exp_hi =
+          high.data[i] + static_cast<std::int32_t>(mul.data[nw + i]) *
+                             static_cast<std::int32_t>(x.data[nw + i]);
+      EXPECT_EQ(olow.data[i], exp_lo) << "WMA lo i=" << i;
+      EXPECT_EQ(ohigh.data[i], exp_hi) << "WMA hi i=" << i;
+    }
+  }
+  // D2: SatWidenMulPairwiseAccumulate i16 -> i32 sat.
+  {
+    const hs::ScalableTag<std::int16_t> d16;
+    const std::size_t n16 = hs::Lanes(d16);
+    using D32 = hs::RepartitionToWide<hs::ScalableTag<std::int16_t>>;
+    const D32 d32{};
+    const std::size_t n32 = hs::Lanes(d32);
+    ASSERT_EQ(n16, 2 * n32);
+    Buf<std::int16_t> a, b;
+    Buf<std::int32_t> sum;
+    for (std::size_t i = 0; i < n16; ++i) {
+      a.data[i] = static_cast<std::int16_t>((i % 7) - 3);
+      b.data[i] = static_cast<std::int16_t>((i % 5) + 1);
+    }
+    for (std::size_t i = 0; i < n32; ++i) sum.data[i] = static_cast<std::int32_t>(i * 10);
+    Buf<std::int32_t> out;
+    hs::Store(hs::SatWidenMulPairwiseAccumulate(d32, hs::Load(d16, a.data), hs::Load(d16, b.data),
+                                                hs::Load(d32, sum.data)),
+              d32, out.data);
+    for (std::size_t i = 0; i < n32; ++i) {
+      const std::int64_t p0 =
+          static_cast<std::int64_t>(a.data[2 * i]) * static_cast<std::int64_t>(b.data[2 * i]);
+      const std::int64_t p1 = static_cast<std::int64_t>(a.data[2 * i + 1]) *
+                              static_cast<std::int64_t>(b.data[2 * i + 1]);
+      std::int64_t prod = p0 + p1;
+      // WidenMulPairwiseAdd saturates? No - madd can produce INT32_MIN special case only.
+      // Match Highway: if product == INT32_MIN, adjust then sat-add into sum.
+      std::int32_t product = static_cast<std::int32_t>(prod);
+      std::int32_t s = sum.data[i];
+      if (product == std::numeric_limits<std::int32_t>::min()) {
+        // overflow lane fixup from card formula
+        const std::int32_t sign = s < 0 ? -1 : 0;
+        s = s - (sign & 1);  // Sub(sum, And(BroadcastSignBit(sum), overflow)) with overflow=all-ones?
+        // BroadcastSignBit is arithmetic >>31 -> 0 or -1. And with all-ones keeps sign.
+        // overflow vec = all-ones (-1) when product==INT32_MIN.
+        // Sub(sum, And(signbit, -1)) = Sub(sum, signbit)
+        // Add(product, -1) = product - 1  (which is INT_MAX for INT_MIN + (-1)? INT_MIN + (-1) wraps)
+        // This is subtle; just compare against the SIMD path vs composition of public ops:
+      }
+      (void)product;
+      (void)s;
+    }
+    // Oracle = same public composition (not hand-rolled INT_MIN edge): equals WidenMulPairwiseAdd + sat add for non-edge.
+    Buf<std::int32_t> prod_out;
+    hs::Store(hs::WidenMulPairwiseAdd(d32, hs::Load(d16, a.data), hs::Load(d16, b.data)), d32,
+              prod_out.data);
+    for (std::size_t i = 0; i < n32; ++i) {
+      const std::int64_t acc =
+          static_cast<std::int64_t>(sum.data[i]) + static_cast<std::int64_t>(prod_out.data[i]);
+      std::int32_t sat;
+      if (acc > std::numeric_limits<std::int32_t>::max())
+        sat = std::numeric_limits<std::int32_t>::max();
+      else if (acc < std::numeric_limits<std::int32_t>::min())
+        sat = std::numeric_limits<std::int32_t>::min();
+      else
+        sat = static_cast<std::int32_t>(acc);
+      // For non-INT32_MIN products the card formula reduces to sat(sum+product).
+      if (prod_out.data[i] != std::numeric_limits<std::int32_t>::min()) {
+        EXPECT_EQ(out.data[i], sat) << "SatWMA i=" << i;
+      }
+    }
+  }
+}

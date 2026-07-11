@@ -880,6 +880,32 @@ HYLE_FORCE_INLINE Vec256<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0>, Vec25
   else r.raw = _mm256_packus_epi32(a.raw, b.raw);  // i32 -> u16
   return r;
 }
+// simd-18 C1: OrderedDemote2To -- ordered [a-lanes..., b-lanes...]. Reorder is block-interleaved
+// on avx2; permute4x64 imm=0xD8 reorders 64-bit qwords [0,1,2,3]->[0,2,1,3]. Integer only.
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec256<DstT, NDst> OrderedDemote2To(Simd<DstT, NDst, 0> dn, Vec256<SrcT, NSrc> a,
+                                                      Vec256<SrcT, NSrc> b) noexcept {
+  static_assert(NDst == 2 * NSrc && std::is_integral_v<SrcT>, "OrderedDemote2To: integer 2->1");
+  Vec256<DstT, NDst> r;
+  r.raw = _mm256_permute4x64_epi64(ReorderDemote2To(dn, a, b).raw, _MM_SHUFFLE(3, 1, 2, 0));
+  return r;
+}
+// simd-18 C3: ConvertInRangeTo -- caller guarantees f32 in i32 domain; raw cvtt (no overflow blend).
+// HYLE ConvertTo already uses raw cvttps; InRange is the explicit fast-path name.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec256<DstT, N> ConvertInRangeTo(Simd<DstT, N, 0> d, Vec256<SrcT, N> v) noexcept {
+  return ConvertTo(d, v);
+}
+// simd-18 C3: DemoteInRangeTo f64->i32 -- raw cvttpd (caller guarantees in-range; no ClampF64).
+// 4xf64 -> 4xi32 in a real Vec128 entity (half register, same lane count).
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> DemoteInRangeTo(Simd<std::int32_t, NDst, 0>,
+                                                              Vec256<double, NSrc> v) noexcept {
+  static_assert(NDst == NSrc, "DemoteInRangeTo: same lane count f64->i32");
+  Vec128<std::int32_t, NDst> r;
+  r.raw = _mm256_cvttpd_epi32(v.raw);
+  return r;
+}
 // TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
 // correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.
 // Store()/Load() move a FULL 256-bit register (_mm256_store_si256 / _mm256_load_si256), so

@@ -836,6 +836,31 @@ HYLE_FORCE_INLINE Vec512<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0>, Vec51
   else r.raw = _mm512_packus_epi32(a.raw, b.raw);  // i32 -> u16
   return r;
 }
+// simd-18 C1: OrderedDemote2To — ordered [a...,b...]. permutexvar u64 idx {0,2,4,6,1,3,5,7}
+// undoes the 4-way 128-lane interleave of packs. Integer only.
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec512<DstT, NDst> OrderedDemote2To(Simd<DstT, NDst, 0> dn, Vec512<SrcT, NSrc> a,
+                                                      Vec512<SrcT, NSrc> b) noexcept {
+  static_assert(NDst == 2 * NSrc && std::is_integral_v<SrcT>, "OrderedDemote2To: integer 2->1");
+  const __m512i idx = _mm512_setr_epi64(0, 2, 4, 6, 1, 3, 5, 7);
+  Vec512<DstT, NDst> r;
+  r.raw = _mm512_permutexvar_epi64(idx, ReorderDemote2To(dn, a, b).raw);
+  return r;
+}
+// simd-18 C3: ConvertInRangeTo — raw cvtt; ConvertTo already is raw on this backend.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec512<DstT, N> ConvertInRangeTo(Simd<DstT, N, 0> d, Vec512<SrcT, N> v) noexcept {
+  return ConvertTo(d, v);
+}
+// simd-18 C3: DemoteInRangeTo f64->i32 — raw cvttpd (8xf64 -> 8xi32 in Vec256).
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec256<std::int32_t, NDst> DemoteInRangeTo(Simd<std::int32_t, NDst, 0>,
+                                                              Vec512<double, NSrc> v) noexcept {
+  static_assert(NDst == NSrc, "DemoteInRangeTo: same lane count f64->i32");
+  Vec256<std::int32_t, NDst> r;
+  r.raw = _mm512_cvttpd_epi32(v.raw);
+  return r;
+}
 // TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
 // correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.
 // Store()/Load() move a FULL 512-bit register (_mm512_store_si512 / _mm512_load_si512), so

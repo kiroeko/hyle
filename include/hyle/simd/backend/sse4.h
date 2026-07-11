@@ -888,6 +888,26 @@ HYLE_FORCE_INLINE Vec128<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, Ve
   static_assert(NDst == 2 * NSrc && std::is_integral_v<SrcT>, "ReorderDemote2To: integer 2->1");
   return DemoteTo(dn, a, b);
 }
+// simd-18 C1: OrderedDemote2To == Reorder (single 128-bit block is already ordered).
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<DstT, NDst> OrderedDemote2To(Simd<DstT, NDst, 0> dn, Vec128<SrcT, NSrc> a,
+                                                      Vec128<SrcT, NSrc> b) noexcept {
+  return ReorderDemote2To(dn, a, b);
+}
+// simd-18 C3: ConvertInRangeTo -- raw cvtt alias.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE Vec128<DstT, N> ConvertInRangeTo(Simd<DstT, N, 0> d, Vec128<SrcT, N> v) noexcept {
+  return ConvertTo(d, v);
+}
+// simd-18 C3: DemoteInRangeTo f64->i32 -- raw cvttpd (2xf64 -> 2xi32 in low half of __m128i).
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> DemoteInRangeTo(Simd<std::int32_t, NDst, 0>,
+                                                              Vec128<double, NSrc> v) noexcept {
+  static_assert(NDst == NSrc, "DemoteInRangeTo: same lane count f64->i32");
+  Vec128<std::int32_t, NDst> r;
+  r.raw = _mm_cvttpd_epi32(v.raw);
+  return r;
+}
 // TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
 // correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.
 // Store()/Load() move a FULL 128-bit register (_mm_store_si128 / _mm_load_si128), so the

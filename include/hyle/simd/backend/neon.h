@@ -985,6 +985,28 @@ HYLE_FORCE_INLINE VecNeon<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0> dn, V
                                                        VecNeon<SrcT, NSrc> b) noexcept {
   return DemoteTo(dn, a, b);
 }
+// simd-18 C1: OrderedDemote2To == Reorder/Demote (already ordered on NEON).
+template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<DstT, NDst> OrderedDemote2To(Simd<DstT, NDst, 0> dn, VecNeon<SrcT, NSrc> a,
+                                                       VecNeon<SrcT, NSrc> b) noexcept {
+  return ReorderDemote2To(dn, a, b);
+}
+// simd-18 C3: ConvertInRangeTo -- alias ConvertTo.
+template <typename DstT, std::size_t N, typename SrcT>
+HYLE_FORCE_INLINE VecNeon<DstT, N> ConvertInRangeTo(Simd<DstT, N, 0> d, VecNeon<SrcT, N> v) noexcept {
+  return ConvertTo(d, v);
+}
+// simd-18 C3: DemoteInRangeTo f64->i32 -- portable truncate (Nxf64 -> Nxi32).
+// NEON has no single-instruction f64x2->i32x2 demote; store+reload with cast is the oracle.
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::int32_t, N> DemoteInRangeTo(Simd<std::int32_t, N, 0> dn,
+                                                            VecNeon<double, N> v) noexcept {
+  alignas(16) double src[2] = {};
+  alignas(16) std::int32_t dst[4] = {};
+  Store(v, Simd<double, N, 0>(), src);
+  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::int32_t>(src[i]);
+  return Load(dn, dst);
+}
 // TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
 // correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.
 // StoreU/LoadU move a FULL q-register (vst1q/vld1q = 16 B), so the scratch buffers MUST be a
