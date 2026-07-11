@@ -117,8 +117,8 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 
 **性能闭环**：Windows AVX2 三组独立`N=15`中，`Mod`、`MaskedModOr`、`MulEven`、`MulOdd`每组均为统计 TIE。Apple NEON 初版 `MulHigh32` 有额外解交织/窄化，`Mod`慢21.9%、`MaskedModOr`慢18.1%；改为 Highway 同形 `vmull[_high] + vuzp2` 后，三组独立`N=15`均复现前两项为 HYLE 1.073x、1.058x WIN，两个 widen multiply 均为 TIE。
 
-### 🔴 消费驱动 / 低优(按需)
-字节移位族(`ShiftLeftBytes/RightBytes`、`CombineShiftRightBytes/Lanes`,palignr,字符串/解析)、`Combine/LowerHalf/UpperHalf/ZeroExtendVector/InsertIntoUpper`(半向量合并族,窄化管线才需)、`PairwiseAdd/Sub(128)`(hadd,DSP)、`Shuffle2301/1032/...`(定 permute 模式,32-bit lane 有用)、`Stream`(非临时存)、`LoadDup128`、`ResizeBitCast`。
+### ✅ 消费驱动 / 低优 —— **已在 simd-17 批5 / simd-18 批E 补齐**
+字节移位族(`ShiftLeftBytes/RightBytes`、`CombineShiftRightBytes/Lanes`)、`Combine/LowerHalf/UpperHalf/ZeroExtendVector/InsertIntoUpper`(半向量合并族)、`PairwiseAdd/Sub(128)`、`Shuffle2301/1032/...`(定 permute)、`Stream`、`LoadDup128`、`ResizeBitCast` **全已实现**(avx2.h/vec.h;vec_test 有 `ShiftBytesAndLanes`/`CombineShiftRightBytes`/`PairwiseAddSub`/`ShuffleFixedPatterns32`/`Shuffle01_64`/`StreamAndLoadDup128`/`HalfVectorFamily` 对拍)。
 
 ### 🟰 NAMING-DIFF(已有,别当缺口)
 - `Round/Ceil/Floor/Trunc`:avx2.h:472 宏定义,**已有**(grep 假阴)。
@@ -131,7 +131,8 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 仍跳过(坐实):
 - `SwapAdjacentBlocks`/`InterleaveWholeLower/Upper`/`LoadTransposedBlocks*` 等 `*Blocks`:Highway 512-bit block-lane 内部编排机制,越 HYLE"贴硬件不过度抽象"scope,无消费者。
 - `GaloisAffine`/`GaloisAffineTranspose`:Highway `namespace detail` **内部 GFNI 原语**(非公开 op),其消费者 ReverseBits/RotateRight 已在 HYLE 实现。**注:不做的理由是"非公开面缺口",非"无法验证"——SDE 探针实测 GFNI `-future` 正确执行**。
-- `*InRange*`(UB 规避变体)/`Per4LaneBlockShuffle`/`Ordered*Demote2*`/`SumsOf*QuadAbsDiff`(dbsad 视频专用极窄,无消费者,SDE-gated 待需)。
+- ~~`*InRange*`/`Ordered*Demote2*`/`SumsOf*QuadAbsDiff`~~ **已在 simd-18 实现**(批C InRange+OrderedDemote2To、批F dbsad;`OrderedDemote2MasksTo` 随 @opus 裁决 c45c6af)。
+- `Per4LaneBlockShuffle`(8/16-bit)/`Dup128VecFromValues`:可移植可做无 ISA 墙,但主要是 Highway **内部** generic_ops 建表原语(非 HYLE 消费者热路径公开面);32/64-bit Per4Lane 的等价能力由 HYLE 现有 `ShuffleFixedPatterns`/`Shuffle01` 覆盖。登记为低优先,批H 后按需补(非能力墙,是优先级)。
 
 ## 3. 信源④:文档登记缺口(交叉核对,含纠错)
 
