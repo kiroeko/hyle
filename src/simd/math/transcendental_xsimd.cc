@@ -117,6 +117,81 @@ void hypot_fast_f32_xsimd_avx2(const float* a, const float* b, float* dst,
   for (; i < n; ++i) dst[i] = std::sqrt(a[i] * a[i] + b[i] * b[i]);
 }
 
+// ---- simd-18 批G: xsimd-only extras (Highway has none of these). f32 (8-wide) + f64 (4-wide).
+// unary erfc/exp10; binary fmod/remainder/nextafter/fdim. Tails use libm (the scalar oracle).
+void erfc_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::erfc(batch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::erfc(src[i]);
+}
+void exp10_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::exp10(batch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::pow(10.0f, src[i]);
+}
+void fmod_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::fmod(batch::load_unaligned(a + i), batch::load_unaligned(b + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::fmod(a[i], b[i]);
+}
+void remainder_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::remainder(batch::load_unaligned(a + i), batch::load_unaligned(b + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::remainder(a[i], b[i]);
+}
+void nextafter_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::nextafter(batch::load_unaligned(a + i), batch::load_unaligned(b + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::nextafter(a[i], b[i]);
+}
+void fdim_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::fdim(batch::load_unaligned(a + i), batch::load_unaligned(b + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::fdim(a[i], b[i]);
+}
+void erfc_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::erfc(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::erfc(src[i]);
+}
+void exp10_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::exp10(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::pow(10.0, src[i]);
+}
+void fmod_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::fmod(dbatch::load_unaligned(a + i), dbatch::load_unaligned(b + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::fmod(a[i], b[i]);
+}
+void remainder_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::remainder(dbatch::load_unaligned(a + i), dbatch::load_unaligned(b + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::remainder(a[i], b[i]);
+}
+void nextafter_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::nextafter(dbatch::load_unaligned(a + i), dbatch::load_unaligned(b + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::nextafter(a[i], b[i]);
+}
+void fdim_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kDW <= n; i += kDW)
+    xsimd::fdim(dbatch::load_unaligned(a + i), dbatch::load_unaligned(b + i)).store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::fdim(a[i], b[i]);
+}
+
 // ---- complex transcendentals (SoA planar re/im) ------------------------------------
 // xsimd owns the cexp/clog/csqrt borrow cores. Its ctanh/cpow paths remain same-TU benchmark
 // controls for HYLE's SoA candidates. Tail = scalar std::complex; Highway has no complex path.

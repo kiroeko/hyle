@@ -75,6 +75,12 @@ void log10_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
 void atan2_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 void pow_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 void sincos_f64_scalar(const double* src, double* s, double* c, std::size_t n) noexcept;
+void erfc_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void exp10_f64_scalar(const double* src, double* dst, std::size_t n) noexcept;
+void fmod_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+void remainder_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+void nextafter_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+void fdim_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 // xsimd-only borrows (Highway has no gamma): scalar libm oracle + fallback.
 void lgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 void tgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
@@ -135,6 +141,19 @@ void tgamma_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexce
 // simd-09 AVX2 borrow cores, per-op winner (bench-decided): xsimd for exp2/erf, Highway for
 // the rest. Only the winning lib's TU defines each (the loser would be dead code).
 void exp2_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
+// simd-18 批G xsimd avx2 (f32 + f64)
+void erfc_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
+void exp10_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
+void fmod_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+void remainder_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+void nextafter_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+void fdim_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+void erfc_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void exp10_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void fmod_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+void remainder_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+void nextafter_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+void fdim_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 void erf_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept;
 // xsimd-only borrow (no Highway equivalent -> single source). Only TGAMMA is vectorized:
 // xsimd's vectorized LGAMMA has a lane-mixing bug (wrong result when a lane in [1.25,1.5) shares

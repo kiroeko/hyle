@@ -566,12 +566,19 @@ TEST(Math, Simd18BreadthG) {
     EXPECT_NEAR(s[i], std::sin(x[i]), 1e-4f);
     EXPECT_NEAR(c[i], std::cos(x[i]), 1e-4f);
   }
+  // xsimd-only extras: assert against libm (relative/abs tolerance).
   hyle::simd::erfc_f32_batch(x, z, n);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(z[i], std::erfc(x[i]), 1e-4f) << "erfc i=" << i;
   hyle::simd::exp10_f32_batch(x, z, n);
-  hyle::simd::fmod_f32_batch(y, y, z, n);
-  hyle::simd::remainder_f32_batch(y, y, z, n);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(z[i], std::pow(10.f, x[i]), 1e-3f) << "exp10 i=" << i;
+  hyle::simd::fmod_f32_batch(y, x, z, n);
+  for (std::size_t i = 0; i < n; ++i) if (x[i] != 0.f) EXPECT_NEAR(z[i], std::fmod(y[i], x[i]), 1e-4f) << "fmod i=" << i;
+  hyle::simd::remainder_f32_batch(y, x, z, n);
+  for (std::size_t i = 0; i < n; ++i) if (x[i] != 0.f) EXPECT_NEAR(z[i], std::remainder(y[i], x[i]), 1e-4f) << "rem i=" << i;
   hyle::simd::nextafter_f32_batch(x, y, z, n);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(z[i], std::nextafter(x[i], y[i])) << "nextafter i=" << i;
   hyle::simd::fdim_f32_batch(y, x, z, n);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(z[i], std::fdim(y[i], x[i]), 1e-4f) << "fdim i=" << i;
   // f64 smoke
   alignas(64) double dx[n], dy[n], dz[n], ds[n], dc[n];
   for (std::size_t i = 0; i < n; ++i) {
@@ -582,5 +589,17 @@ TEST(Math, Simd18BreadthG) {
   hyle::simd::atan2_f64_batch(dx, dy, dz, n);
   hyle::simd::pow_f64_batch(dy, dx, dz, n);
   hyle::simd::sincos_f64_batch(dx, ds, dc, n);
+  hyle::simd::erfc_f64_batch(dx, dz, n);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(dz[i], std::erfc(dx[i]), 1e-9) << "erfc64 i=" << i;
+  hyle::simd::exp10_f64_batch(dx, dz, n);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(dz[i], std::pow(10.0, dx[i]), 1e-6) << "exp10_64 i=" << i;
+  hyle::simd::fmod_f64_batch(dy, dx, dz, n);
+  for (std::size_t i = 0; i < n; ++i) if (dx[i] != 0.0) EXPECT_NEAR(dz[i], std::fmod(dy[i], dx[i]), 1e-9) << "fmod64 i=" << i;
+  hyle::simd::remainder_f64_batch(dy, dx, dz, n);
+  for (std::size_t i = 0; i < n; ++i) if (dx[i] != 0.0) EXPECT_NEAR(dz[i], std::remainder(dy[i], dx[i]), 1e-9) << "rem64 i=" << i;
+  hyle::simd::nextafter_f64_batch(dx, dy, dz, n);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(dz[i], std::nextafter(dx[i], dy[i])) << "nextafter64 i=" << i;
+  hyle::simd::fdim_f64_batch(dy, dx, dz, n);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(dz[i], std::fdim(dy[i], dx[i]), 1e-9) << "fdim64 i=" << i;
   SUCCEED();
 }

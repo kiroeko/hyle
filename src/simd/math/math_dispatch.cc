@@ -479,11 +479,60 @@ void sincos_f64_batch(const double* src, double* s, double* c, std::size_t n) no
   detail::sincos_f64_scalar(src, s, c, n);
 #endif
 }
-// xsimd G2: scalar path first (API complete; native xsimd fill is non-blocking)
-void erfc_f32_batch(const float* src, float* dst, std::size_t n) noexcept { detail::erfc_f32_scalar(src, dst, n); }
-void exp10_f32_batch(const float* src, float* dst, std::size_t n) noexcept { detail::exp10_f32_scalar(src, dst, n); }
-void fmod_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept { detail::fmod_f32_scalar(a, b, dst, n); }
-void remainder_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept { detail::remainder_f32_scalar(a, b, dst, n); }
-void nextafter_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept { detail::nextafter_f32_scalar(a, b, dst, n); }
-void fdim_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept { detail::fdim_f32_scalar(a, b, dst, n); }
+// simd-18 批G xsimd-only (erfc/exp10/fmod/remainder/nextafter/fdim): real xsimd AVX2 core on
+// x86 (Highway has none of these), scalar libm elsewhere/tail. f32 + f64.
+#if defined(HYLE_ARCH_X64)
+#define HYLE_XSIMD_UNARY(name)                                                              \
+  void name##_f32_batch(const float* s, float* d, std::size_t n) noexcept {                 \
+    static const bool hw = have_avx2();                                                     \
+    if (hw) { detail::name##_f32_xsimd_avx2(s, d, n); return; }                             \
+    detail::name##_f32_scalar(s, d, n);                                                     \
+  }                                                                                         \
+  void name##_f64_batch(const double* s, double* d, std::size_t n) noexcept {               \
+    static const bool hw = have_avx2();                                                     \
+    if (hw) { detail::name##_f64_xsimd_avx2(s, d, n); return; }                             \
+    detail::name##_f64_scalar(s, d, n);                                                     \
+  }
+#define HYLE_XSIMD_BINARY(name)                                                             \
+  void name##_f32_batch(const float* a, const float* b, float* d, std::size_t n) noexcept { \
+    static const bool hw = have_avx2();                                                     \
+    if (hw) { detail::name##_f32_xsimd_avx2(a, b, d, n); return; }                          \
+    detail::name##_f32_scalar(a, b, d, n);                                                  \
+  }                                                                                         \
+  void name##_f64_batch(const double* a, const double* b, double* d, std::size_t n) noexcept { \
+    static const bool hw = have_avx2();                                                     \
+    if (hw) { detail::name##_f64_xsimd_avx2(a, b, d, n); return; }                          \
+    detail::name##_f64_scalar(a, b, d, n);                                                  \
+  }
+#else
+#define HYLE_XSIMD_UNARY(name)                                                              \
+  void name##_f32_batch(const float* s, float* d, std::size_t n) noexcept { detail::name##_f32_scalar(s, d, n); } \
+  void name##_f64_batch(const double* s, double* d, std::size_t n) noexcept { detail::name##_f64_scalar(s, d, n); }
+#define HYLE_XSIMD_BINARY(name)                                                             \
+  void name##_f32_batch(const float* a, const float* b, float* d, std::size_t n) noexcept { detail::name##_f32_scalar(a, b, d, n); } \
+  void name##_f64_batch(const double* a, const double* b, double* d, std::size_t n) noexcept { detail::name##_f64_scalar(a, b, d, n); }
+#endif
+HYLE_XSIMD_UNARY(erfc)
+HYLE_XSIMD_UNARY(exp10)
+HYLE_XSIMD_BINARY(fmod)
+// remainder: IEEE round-to-even remainder; xsimd's tie-breaking diverges from libm at half-way
+// quotients (e.g. remainder(1.5,0.2): libm +0.1 vs xsimd -0.1). Bit-exact op -> scalar libm.
+void remainder_f32_batch(const float* a, const float* b, float* d, std::size_t n) noexcept {
+  detail::remainder_f32_scalar(a, b, d, n);
+}
+void remainder_f64_batch(const double* a, const double* b, double* d, std::size_t n) noexcept {
+  detail::remainder_f64_scalar(a, b, d, n);
+}
+// nextafter: xsimd's vectorized nextafter diverges from libm (2-ULP step vs libm's exact 1-ULP,
+// verified vs std::nextafter) -- this is a bit-exact op, so correctness beats vectorization here.
+// Route to the scalar libm reference on all targets. (The other 5 xsimd extras match libm.)
+void nextafter_f32_batch(const float* a, const float* b, float* d, std::size_t n) noexcept {
+  detail::nextafter_f32_scalar(a, b, d, n);
+}
+void nextafter_f64_batch(const double* a, const double* b, double* d, std::size_t n) noexcept {
+  detail::nextafter_f64_scalar(a, b, d, n);
+}
+HYLE_XSIMD_BINARY(fdim)
+#undef HYLE_XSIMD_UNARY
+#undef HYLE_XSIMD_BINARY
 }  // namespace hyle::simd

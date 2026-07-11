@@ -153,5 +153,12 @@ void log10_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { 
 void atan2_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::atan2(a[i], b[i]); }
 void pow_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::pow(a[i], b[i]); }
 void sincos_f64_scalar(const double* src, double* s, double* c, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) { s[i]=std::sin(src[i]); c[i]=std::cos(src[i]); } }
+void erfc_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::erfc(src[i]); }
+void exp10_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::pow(10.0, src[i]); }
+void fmod_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::fmod(a[i], b[i]); }
+void remainder_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::remainder(a[i], b[i]); }
+void nextafter_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::nextafter(a[i], b[i]); }
+void fdim_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::fdim(a[i], b[i]); }
+
 
 }  // namespace hyle::simd::detail

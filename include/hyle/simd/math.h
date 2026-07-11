@@ -94,6 +94,12 @@ HYLE_SIMD_API void fmod_f32_batch(const float* a, const float* b, float* dst, st
 HYLE_SIMD_API void remainder_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void nextafter_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void fdim_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void erfc_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void exp10_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void fmod_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void remainder_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void nextafter_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void fdim_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 
 // xsimd-ONLY borrows (Highway's contrib/math has no equivalent, so these are a single-source
 // borrow, NOT a best-of pick -- there is no second library to race). lgamma/tgamma are the
