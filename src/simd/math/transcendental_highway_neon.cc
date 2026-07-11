@@ -155,10 +155,9 @@ void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::
   for (; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
 }
 
-}  // namespace hyle::simd::detail
-
-
-// simd-18 批G binary + sincos (Highway NEON)
+// simd-18 批G binary + sincos (Highway NEON) -- MUST stay inside hyle::simd::detail (math_dispatch
+// calls detail::pow_f32_highway_neon etc.); a stray namespace close here put them in the global ns
+// and broke the NEON link (caught only when Mac finally re-linked batch-G).
 void atan2_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept {
   const hn::ScalableTag<float> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
   for (; i + w <= n; i += w) hn::StoreU(hn::Atan2(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
@@ -195,4 +194,6 @@ void sincos_f64_highway_neon(const double* src, double* s, double* c, std::size_
   }
   for (; i < n; ++i) { s[i] = std::sin(src[i]); c[i] = std::cos(src[i]); }
 }
+
+}  // namespace hyle::simd::detail
 #endif  // HYLE_ARCH_ARM64
