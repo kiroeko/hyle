@@ -12,6 +12,11 @@
 
 #include "hyle/macros.h"
 #include "hyle/simd/backend/crypto_x86.h"  // shared 128-bit AES-NI/PCLMUL workers (Crypto op face)
+#include "hyle/simd/backend/x86_detail.h"  // shared lane-type predicates (kSupported/kI*/kSigned)
+// Layered include (simd-17 batch0): pull in the 256-bit backend (which transitively pulls the
+// 128-bit one) so Vec128/Vec256/Vec512 all coexist in this TU. Legal because AVX-512 hardware
+// executes AVX2/SSE instructions. Enables the half-vector family + partial-tag width changers.
+#include "hyle/simd/backend/avx2.h"
 
 // backend/avx512.h -- 512-bit AVX-512 backend (simd-design landing list #2, AVX512 half).
 //
@@ -56,26 +61,8 @@ template <> struct KMask<std::int8_t> { using type = __mmask64; };
 template <> struct KMask<std::uint8_t> { using type = __mmask64; };
 template <typename T> using KMaskT = typename KMask<T>::type;
 
-template <typename T>
-inline constexpr bool kSupported =
-    std::is_same_v<T, float> || std::is_same_v<T, double> ||
-    std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t> ||
-    std::is_same_v<T, std::int16_t> || std::is_same_v<T, std::uint16_t> ||
-    std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t> ||
-    std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::uint64_t>;
-
-// Integer-width helpers so the per-op constexpr chains stay readable (mirror avx2.h). AVX-512
-// integer ops pick the intrinsic by lane WIDTH (epi8/16/32/64), so we branch on sizeof(T).
-template <typename T>
-inline constexpr bool kI8 = std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t>;
-template <typename T>
-inline constexpr bool kI16 = std::is_same_v<T, std::int16_t> || std::is_same_v<T, std::uint16_t>;
-template <typename T>
-inline constexpr bool kI32 = std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t>;
-template <typename T>
-inline constexpr bool kI64 = std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::uint64_t>;
-template <typename T>
-inline constexpr bool kSigned = std::is_signed_v<T>;
+// kSupported / kI8 / kI16 / kI32 / kI64 / kSigned are lane-type-only predicates shared by all
+// x86 backends -- defined once in backend/x86_detail.h (included above).
 }  // namespace detail
 
 template <typename T, std::size_t N>
@@ -101,15 +88,12 @@ using TFromV = typename V::PrivateT;
 namespace detail {
 template <class D>
 using V512 = Vec512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
-template <class D>
-inline constexpr bool kNativeWidth = HYLE_SIMD_MAX_LANES_D(D) * sizeof(TFromD<D>) == 64;
 }  // namespace detail
 
 // ---- initialization -----------------------------------------------------------------
-template <class D, typename T2>
+template <class D, typename T2, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE detail::V512<D> Set(D, T2 t) noexcept {
   using T = TFromD<D>;
-  static_assert(detail::kNativeWidth<D>, "avx512 backend is native-width-only (512-bit)");
   detail::V512<D> v;
   if constexpr (std::is_same_v<T, float>) v.raw = _mm512_set1_ps(static_cast<float>(t));
   else if constexpr (std::is_same_v<T, double>) v.raw = _mm512_set1_pd(static_cast<double>(t));
@@ -119,10 +103,9 @@ HYLE_FORCE_INLINE detail::V512<D> Set(D, T2 t) noexcept {
   else v.raw = _mm512_set1_epi32(static_cast<int>(t));  // i32/u32
   return v;
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE detail::V512<D> Zero(D) noexcept {
   using T = TFromD<D>;
-  static_assert(detail::kNativeWidth<D>, "avx512 backend is native-width-only (512-bit)");
   detail::V512<D> v;
   if constexpr (std::is_same_v<T, float>) v.raw = _mm512_setzero_ps();
   else if constexpr (std::is_same_v<T, double>) v.raw = _mm512_setzero_pd();
@@ -133,7 +116,7 @@ template <class D>
 using VFromD = decltype(Zero(D()));
 
 // ---- load / store -------------------------------------------------------------------
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE detail::V512<D> LoadU(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::V512<D> v;
@@ -142,7 +125,7 @@ HYLE_FORCE_INLINE detail::V512<D> LoadU(D, const TFromD<D>* p) noexcept {
   else v.raw = _mm512_loadu_si512(p);
   return v;
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE detail::V512<D> Load(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::V512<D> v;
@@ -166,7 +149,7 @@ HYLE_FORCE_INLINE void Store(Vec512<T, N> v, Simd<T, N, 0>, T* p) noexcept {
 
 // ---- interleaved load / store (AoS <-> SoA) -----------------------------------------
 // correctness-first strided copy; native deinterleave shuffles are a profiling upgrade.
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
                                         VFromD<D>& v1) noexcept {
   using T = TFromD<D>;
@@ -175,7 +158,7 @@ HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
   for (std::size_t i = 0; i < N; ++i) { t0[i] = p[2 * i]; t1[i] = p[2 * i + 1]; }
   v0 = Load(d, t0); v1 = Load(d, t1);
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2) noexcept {
   using T = TFromD<D>;
@@ -184,7 +167,7 @@ HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, 
   for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
   v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2, VFromD<D>& v3) noexcept {
   using T = TFromD<D>;
@@ -193,7 +176,7 @@ HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, 
   for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
   v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
@@ -201,7 +184,7 @@ HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD
   Store(v0, d, t0); Store(v1, d, t1);
   for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
@@ -210,7 +193,7 @@ HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v
   Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
   for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, VFromD<D> v3, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
@@ -852,8 +835,10 @@ HYLE_FORCE_INLINE Vec512<DstT, NDst> ReorderDemote2To(Simd<DstT, NDst, 0>, Vec51
 // a narrow partial result still reloads 64 B via _mm512_load_si512, so a lane-count-sized
 // `DstT dst[N]` would be an out-of-bounds stack read. Size every buffer to 64 B. (Same class
 // of bug the x86-128/256 backends segfaulted on -- Vec.TruncateAndStridedPromote under GCC.)
+// Narrowing result is N DstT lanes; when < 64 bytes it reloads through the width-banded Load,
+// so the natural return type is VFromD<Simd<DstT,N,0>> (Vec128/Vec256 for sub-512 results).
 template <typename DstT, std::size_t N, typename SrcT>
-HYLE_FORCE_INLINE Vec512<DstT, N> TruncateTo(Simd<DstT, N, 0>, Vec512<SrcT, N> v) noexcept {
+HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> TruncateTo(Simd<DstT, N, 0>, Vec512<SrcT, N> v) noexcept {
   static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
   alignas(64) SrcT src[64 / sizeof(SrcT)];
   alignas(64) DstT dst[64 / sizeof(DstT)] = {};
@@ -880,7 +865,7 @@ HYLE_FORCE_INLINE Vec512<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, Vec512<Sr
   return Load(Simd<DstT, NDst, 0>(), dst);
 }
 template <std::size_t N>
-HYLE_FORCE_INLINE Vec512<std::uint8_t, N> U8FromU32(Vec512<std::uint32_t, N> v) noexcept {
+HYLE_FORCE_INLINE VFromD<Simd<std::uint8_t, N, 0>> U8FromU32(Vec512<std::uint32_t, N> v) noexcept {
   alignas(64) std::uint32_t src[64 / sizeof(std::uint32_t)];
   alignas(64) std::uint8_t dst[64] = {};
   Store(v, Simd<std::uint32_t, N, 0>(), src);
@@ -1490,7 +1475,7 @@ HYLE_FORCE_INLINE T GetLane(Vec512<T, N> v) noexcept {
 // 8/16-bit widths (mirrors avx2's reduce_scalar; horizontal reduce isn't the hot path). The
 // 32/64-bit widths use the native _mm512_reduce_* intrinsics below.
 namespace detail {
-enum class RedOp { kAdd, kMin, kMax };
+// RedOp defined in x86_detail.h (shared across layered x86 backends).
 template <typename T, std::size_t N, RedOp op>
 HYLE_FORCE_INLINE T reduce_scalar(Vec512<T, N> v) noexcept {
   alignas(64) T tmp[N];
@@ -1538,7 +1523,7 @@ HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec512<T, N> v) noexcept {
 // _mm512_reduce_mul/and/or for 32/64-bit lanes (F); i8/u8/i16/u16 have no such intrinsic,
 // so fold via a stack array (mirrors reduce_scalar; horizontal reduce isn't the hot path).
 namespace detail {
-enum class RedOp2 { kMul, kAnd, kOr };
+// RedOp2 defined in x86_detail.h (shared across layered x86 backends).
 template <typename T, std::size_t N, RedOp2 op>
 HYLE_FORCE_INLINE T reduce_scalar2(Vec512<T, N> v) noexcept {
   alignas(64) T tmp[N];
@@ -1757,7 +1742,7 @@ HYLE_FORCE_INLINE void BlendedStore(detail::V512<D> v,
   else if constexpr (detail::kI64<T>) _mm512_mask_storeu_epi64(p, m.raw, v.raw);
   else _mm512_mask_storeu_epi32(p, m.raw, v.raw);
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
 HYLE_FORCE_INLINE detail::V512<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
   return MaskedLoad(FirstN(d, n), d, p);
 }

@@ -12,6 +12,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/simd/backend/crypto_x86.h"  // shared 128-bit AES-NI/PCLMUL workers (Crypto op face)
+#include "hyle/simd/backend/x86_detail.h"  // shared lane-type predicates (kSupported/kI*/kSigned)
 
 // backend/sse4.h -- 128-bit SSE4.2-baseline backend (simd-design landing list #2).
 //
@@ -54,26 +55,8 @@ struct Raw128<double> {
 template <typename T>
 using Raw128T = typename Raw128<T>::type;
 
-template <typename T>
-inline constexpr bool kSupported =
-    std::is_same_v<T, float> || std::is_same_v<T, double> ||
-    std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t> ||
-    std::is_same_v<T, std::int16_t> || std::is_same_v<T, std::uint16_t> ||
-    std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t> ||
-    std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::uint64_t>;
-
-// Integer-width helpers so the per-op constexpr chains stay readable. SSE integer ops
-// pick the intrinsic by lane WIDTH (epi8/16/32/64), so we branch on sizeof(T) + signedness.
-template <typename T>
-inline constexpr bool kI8 = std::is_same_v<T, std::int8_t> || std::is_same_v<T, std::uint8_t>;
-template <typename T>
-inline constexpr bool kI16 = std::is_same_v<T, std::int16_t> || std::is_same_v<T, std::uint16_t>;
-template <typename T>
-inline constexpr bool kI32 = std::is_same_v<T, std::int32_t> || std::is_same_v<T, std::uint32_t>;
-template <typename T>
-inline constexpr bool kI64 = std::is_same_v<T, std::int64_t> || std::is_same_v<T, std::uint64_t>;
-template <typename T>
-inline constexpr bool kSigned = std::is_signed_v<T>;
+// kSupported / kI8 / kI16 / kI32 / kI64 / kSigned are lane-type-only predicates shared by all
+// x86 backends -- defined once in backend/x86_detail.h (included above).
 }  // namespace detail
 
 // ---- vector + mask storage (mask = vector of all-1s/all-0s lanes) -------------------
@@ -104,15 +87,12 @@ template <class D>
 using V128 = Vec128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
 template <class D>
 using M128 = Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
-template <class D>
-inline constexpr bool kNativeWidth = HYLE_SIMD_MAX_LANES_D(D) * sizeof(TFromD<D>) == 16;
 }  // namespace detail
 
 // ---- initialization -----------------------------------------------------------------
-template <class D, typename T2>
+template <class D, typename T2, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE detail::V128<D> Set(D, T2 t) noexcept {
   using T = TFromD<D>;
-  static_assert(detail::kNativeWidth<D>, "sse4 backend is native-width-only (128-bit)");
   detail::V128<D> v;
   if constexpr (std::is_same_v<T, float>)
     v.raw = _mm_set1_ps(static_cast<float>(t));
@@ -125,10 +105,9 @@ HYLE_FORCE_INLINE detail::V128<D> Set(D, T2 t) noexcept {
   return v;
 }
 
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE detail::V128<D> Zero(D) noexcept {
   using T = TFromD<D>;
-  static_assert(detail::kNativeWidth<D>, "sse4 backend is native-width-only (128-bit)");
   detail::V128<D> v;
   if constexpr (std::is_same_v<T, float>)
     v.raw = _mm_setzero_ps();
@@ -143,7 +122,7 @@ template <class D>
 using VFromD = decltype(Zero(D()));
 
 // ---- load / store -------------------------------------------------------------------
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE detail::V128<D> LoadU(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::V128<D> v;
@@ -155,7 +134,7 @@ HYLE_FORCE_INLINE detail::V128<D> LoadU(D, const TFromD<D>* p) noexcept {
     v.raw = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
   return v;
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE detail::V128<D> Load(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::V128<D> v;
@@ -188,7 +167,7 @@ HYLE_FORCE_INLINE void Store(Vec128<T, N> v, Simd<T, N, 0>, T* p) noexcept {
 
 // ---- interleaved load / store (AoS <-> SoA) -----------------------------------------
 // correctness-first strided copy; native deinterleave shuffles are a profiling upgrade.
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
                                         VFromD<D>& v1) noexcept {
   using T = TFromD<D>;
@@ -197,7 +176,7 @@ HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
   for (std::size_t i = 0; i < N; ++i) { t0[i] = p[2 * i]; t1[i] = p[2 * i + 1]; }
   v0 = Load(d, t0); v1 = Load(d, t1);
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2) noexcept {
   using T = TFromD<D>;
@@ -206,7 +185,7 @@ HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, 
   for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
   v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2, VFromD<D>& v3) noexcept {
   using T = TFromD<D>;
@@ -215,7 +194,7 @@ HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, 
   for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
   v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
@@ -223,7 +202,7 @@ HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD
   Store(v0, d, t0); Store(v1, d, t1);
   for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
@@ -232,7 +211,7 @@ HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v
   Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
   for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, VFromD<D> v3, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
@@ -1418,7 +1397,7 @@ template <class D>
 HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D, Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
   return detail::mask_bits(m);
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D d, std::uint64_t bits) noexcept {
   // Rebuild: lane i true iff bit i set. FirstN-style via an index compare against the bitset.
   using T = TFromD<D>;
@@ -1551,7 +1530,7 @@ HYLE_FORCE_INLINE T reduce128(Vec128<T, N> v, F f) noexcept {
 // u64): store to a stack array and scalar-reduce. Correct + simple; the cascade shuffles
 // above are only defined for f32/f64/i32/u32. (Highway likewise falls back for the
 // awkward widths -- a horizontal reduce isn't the hot path.)
-enum class RedOp { kAdd, kMin, kMax };
+// RedOp defined in x86_detail.h (shared across layered x86 backends).
 template <typename T, std::size_t N, RedOp op>
 HYLE_FORCE_INLINE T reduce_scalar(Vec128<T, N> v) noexcept {
   alignas(16) T tmp[N];
@@ -1588,7 +1567,7 @@ HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec128<T, N> v) noexcept {
 // Reduction family completion: ReduceMul (product), ReduceAnd/Or (bitwise, integer lanes).
 // Fold via a stack array (no native horizontal product/and/or; horizontal reduce is cold).
 namespace detail {
-enum class RedOp2 { kMul, kAnd, kOr };
+// RedOp2 defined in x86_detail.h (shared across layered x86 backends).
 template <typename T, std::size_t N, RedOp2 op>
 HYLE_FORCE_INLINE T reduce_scalar2(Vec128<T, N> v) noexcept {
   alignas(16) T tmp[N];
@@ -1738,7 +1717,7 @@ HYLE_FORCE_INLINE Vec128<T, N> ZipUpper(Vec128<T, N> a, Vec128<T, N> b) noexcept
 // lane pattern via stack array + Load (a valid blendv/movemask selector for every lane
 // type); LoadN/StoreN touch only the first k lanes (fault-safe); MaskedLoad = IfThenElse
 // Zero + full LoadU (Highway's non-AVX3 narrow path); BlendedStore writes only on-lanes.
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D d, std::size_t n) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
@@ -1774,7 +1753,7 @@ HYLE_FORCE_INLINE void BlendedStore(detail::V128<D> v,
   for (std::size_t i = 0; i < kN; ++i)
     if ((bits >> i) & 1u) p[i] = tmp[i];
 }
-template <class D>
+template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
 HYLE_FORCE_INLINE detail::V128<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
