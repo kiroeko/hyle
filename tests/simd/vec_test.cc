@@ -2938,3 +2938,75 @@ TEST(Vec, MaskHalfAndCombine) {
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(rt.data[i], ref.data[i]) << "CombineMasks round-trip i=" << i;
   (void)dh;
 }
+
+// ---- simd-18 批B: Inf/NaN/IfVecThenElse/IfNegativeThenNegOrUndefIfZero/HighestSetBitIndex +
+// GatherIndexN/Or + ScatterIndexN ------------------------------------------------------------
+TEST(Vec, VectorMiscAndGatherN) {
+  const hs::ScalableTag<float> df;
+  const std::size_t nf = hs::Lanes(df);
+  Buf<float> f_out;
+  // Inf / NaN splats.
+  hs::Store(hs::Inf(df), df, f_out.data);
+  for (std::size_t i = 0; i < nf; ++i) EXPECT_TRUE(std::isinf(f_out.data[i]) && f_out.data[i] > 0) << "Inf i=" << i;
+  hs::Store(hs::NaN(df), df, f_out.data);
+  for (std::size_t i = 0; i < nf; ++i) EXPECT_TRUE(std::isnan(f_out.data[i])) << "NaN i=" << i;
+
+  // IfNegativeThenNegOrUndefIfZero (float): mask<0 -> -v ; mask>0 -> v.
+  Buf<float> mask, v, r;
+  for (std::size_t i = 0; i < nf; ++i) { mask.data[i] = (i % 2) ? -1.0f : 2.0f; v.data[i] = float(i) + 1.0f; }
+  hs::Store(hs::IfNegativeThenNegOrUndefIfZero(hs::Load(df, mask.data), hs::Load(df, v.data)), df, r.data);
+  for (std::size_t i = 0; i < nf; ++i) {
+    const float want = (mask.data[i] < 0) ? -v.data[i] : v.data[i];
+    EXPECT_FLOAT_EQ(r.data[i], want) << "IfNegNeg float i=" << i;
+  }
+
+  // Integer variant + IfVecThenElse + HighestSetBitIndex.
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> im, iv, ir;
+  for (std::size_t i = 0; i < n; ++i) { im.data[i] = (i % 2) ? -5 : 7; iv.data[i] = int(i) - 2; }
+  hs::Store(hs::IfNegativeThenNegOrUndefIfZero(hs::Load(d, im.data), hs::Load(d, iv.data)), d, ir.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const int want = (im.data[i] < 0) ? -iv.data[i] : iv.data[i];
+    EXPECT_EQ(ir.data[i], want) << "IfNegNeg int i=" << i;
+  }
+  // IfVecThenElse: selector vector MSB set -> yes.
+  Buf<std::int32_t> sel, yes, no, out;
+  for (std::size_t i = 0; i < n; ++i) { sel.data[i] = (i % 2) ? -1 : 0; yes.data[i] = 100 + int(i); no.data[i] = 200 + int(i); }
+  hs::Store(hs::IfVecThenElse(hs::Load(d, sel.data), hs::Load(d, yes.data), hs::Load(d, no.data)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], (sel.data[i] < 0) ? yes.data[i] : no.data[i]) << "IfVec i=" << i;
+  // HighestSetBitIndex (unsigned lanes for clean floor-log2).
+  const hs::ScalableTag<std::uint32_t> du;
+  const std::size_t nu = hs::Lanes(du);
+  Buf<std::uint32_t> uv, uo;
+  for (std::size_t i = 0; i < nu; ++i) uv.data[i] = std::uint32_t(1) << (i % 20);  // 2^k
+  hs::Store(hs::HighestSetBitIndex(hs::Load(du, uv.data)), du, uo.data);
+  for (std::size_t i = 0; i < nu; ++i) EXPECT_EQ(uo.data[i], std::uint32_t(i % 20)) << "HighestSetBit i=" << i;
+
+  // GatherIndexN / Or / ScatterIndexN.
+  constexpr std::size_t kTab = 64;
+  std::vector<std::int32_t> table(kTab);
+  for (std::size_t i = 0; i < kTab; ++i) table[i] = int(1000 + i);
+  Buf<std::int32_t> gidx, g_out;
+  for (std::size_t i = 0; i < n; ++i) gidx.data[i] = int((i * 3) % kTab);
+  const std::size_t take = n / 2;
+  hs::Store(hs::GatherIndexN(d, table.data(), hs::Load(d, gidx.data), take), d, g_out.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const int want = (i < take) ? table[(i * 3) % kTab] : 0;
+    EXPECT_EQ(g_out.data[i], want) << "GatherIndexN i=" << i;
+  }
+  Buf<std::int32_t> no_v;
+  for (std::size_t i = 0; i < n; ++i) no_v.data[i] = -9;
+  hs::Store(hs::GatherIndexNOr(hs::Load(d, no_v.data), d, table.data(), hs::Load(d, gidx.data), take), d, g_out.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const int want = (i < take) ? table[(i * 3) % kTab] : -9;
+    EXPECT_EQ(g_out.data[i], want) << "GatherIndexNOr i=" << i;
+  }
+  // ScatterIndexN: only first `take` written.
+  std::vector<std::int32_t> dst(kTab, -1);
+  Buf<std::int32_t> sidx, sval;
+  for (std::size_t i = 0; i < n; ++i) { sidx.data[i] = int(i); sval.data[i] = int(500 + i); }
+  hs::ScatterIndexN(hs::Load(d, sval.data), d, dst.data(), hs::Load(d, sidx.data), take);
+  for (std::size_t i = 0; i < n && i < kTab; ++i)
+    EXPECT_EQ(dst[i], (i < take) ? int(500 + i) : -1) << "ScatterIndexN i=" << i;
+}

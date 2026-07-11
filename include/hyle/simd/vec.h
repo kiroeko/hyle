@@ -1228,4 +1228,92 @@ HYLE_FORCE_INLINE MFromD<D> SlideMaskDownLanes(D d, MFromD<D> m, std::size_t amt
   return MaskFromVec(SlideDownLanes(d, VecFromMask(d, m), amt));
 }
 
+// ---- simd-18 批B: vector misc + runtime-N gather/scatter (generic layer) ------------
+
+// Inf(d) / NaN(d): float constant splats. Highway builds them from exponent bits; the direct
+// std::numeric_limits value is bit-identical and clearer. Float lanes only.
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> Inf(D d) noexcept {
+  static_assert(std::is_floating_point_v<TFromD<D>>, "Inf is float-only");
+  return Set(d, std::numeric_limits<TFromD<D>>::infinity());
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> NaN(D d) noexcept {
+  static_assert(std::is_floating_point_v<TFromD<D>>, "NaN is float-only");
+  return Set(d, std::numeric_limits<TFromD<D>>::quiet_NaN());
+}
+
+// IfVecThenElse(mask, yes, no): bitwise select using a VECTOR (per-lane MSB / all-bits) as the
+// selector, not a mask type. Generic = bridge the vector to the mask domain then IfThenElse.
+template <class V>
+HYLE_FORCE_INLINE V IfVecThenElse(V mask, V yes, V no) noexcept {
+  return IfThenElse(MaskFromVec(mask), yes, no);
+}
+
+// IfNegativeThenNegOrUndefIfZero(mask, v): where mask<0, negate v; where mask>0, keep v; where
+// mask==0 the result is unspecified (Highway's contract -- allows the fast float sign-trick).
+// Float: CopySign(v, Xor(mask, v)) flips v's sign iff mask's sign bit is set. Int: IfNeg select.
+template <class V>
+HYLE_FORCE_INLINE V IfNegativeThenNegOrUndefIfZero(V mask, V v) noexcept {
+  using T = TFromD<DFromV<V>>;
+  if constexpr (std::is_floating_point_v<T>) {
+    return CopySign(v, Xor(mask, v));
+  } else {
+    return IfNegativeThenElse(mask, Neg(v), v);
+  }
+}
+
+// HighestSetBitIndex(v): floor(log2(v)) = (bitwidth-1) - LeadingZeroCount, per integer lane.
+// Undefined for v==0 (matches Highway; LZCnt(0)=bitwidth gives -1). Integer lanes only.
+template <class V>
+HYLE_FORCE_INLINE V HighestSetBitIndex(V v) noexcept {
+  using T = TFromD<DFromV<V>>;
+  static_assert(std::is_integral_v<T>, "HighestSetBitIndex is integer-only");
+  const DFromV<V> d;
+  return Sub(Set(d, static_cast<T>(sizeof(T) * 8 - 1)), LeadingZeroCount(v));
+}
+
+// GatherIndexN / GatherIndexNOr / ScatterIndexN: gather/scatter only the FIRST max_lanes elements
+// (runtime count), leaving the rest = 0 (GatherIndexN) / `no` (GatherIndexNOr) / untouched
+// (ScatterIndexN). Highway's fallback = Masked{Gather,Scatter}(FirstN). The generic bounded
+// store+reload loop is backend-agnostic and matches Highway's scalar reference exactly.
+// VI = the index vector type (deduced): the generic layer can't spell the per-backend Vec<IdxT,N>,
+// so we template on it and recover the index lane type from DFromV<VI>.
+template <class D, class VI>
+HYLE_FORCE_INLINE VFromD<D> GatherIndexNOr(VFromD<D> no, D d, const TFromD<D>* base,
+                                           VI index, std::size_t max_lanes) noexcept {
+  using T = TFromD<D>;
+  using IdxT = TFromD<DFromV<VI>>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(64) T out[N];
+  alignas(64) IdxT idx[N];
+  Store(no, d, out);
+  Store(index, DFromV<VI>(), idx);
+  const std::size_t lo = max_lanes < N ? max_lanes : N;
+  for (std::size_t i = 0; i < lo; ++i) out[i] = base[static_cast<std::ptrdiff_t>(idx[i])];
+  return Load(d, out);
+}
+template <class D, class VI>
+HYLE_FORCE_INLINE VFromD<D> GatherIndexN(D d, const TFromD<D>* base,
+                                         VI index, std::size_t max_lanes) noexcept {
+  return GatherIndexNOr(Zero(d), d, base, index, max_lanes);
+}
+template <class D, class VI>
+HYLE_FORCE_INLINE void ScatterIndexN(VFromD<D> v, D d, TFromD<D>* base,
+                                     VI index, std::size_t max_lanes) noexcept {
+  using T = TFromD<D>;
+  using IdxT = TFromD<DFromV<VI>>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(64) T lanes[N];
+  alignas(64) IdxT idx[N];
+  Store(v, d, lanes);
+  Store(index, DFromV<VI>(), idx);
+  const std::size_t lo = max_lanes < N ? max_lanes : N;
+  for (std::size_t i = 0; i < lo; ++i) base[static_cast<std::ptrdiff_t>(idx[i])] = lanes[i];
+}
+
+// Dup128VecFromValues + TwoTablesLookupLanes: deferred to simd-18 批E (need per-backend native --
+// build-a-128-bit-block-from-immediates broadcast, and two-source cross-vector permute
+// _mm256_permutex2var / vqtbl2 / svtbl2 -- belong with the block/table native work).
+
 }  // namespace hyle::simd
