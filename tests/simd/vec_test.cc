@@ -3538,6 +3538,53 @@ TEST(Vec, TwoTablesLookupLanesFamily) {
   }
 }
 
+// @opus: Dup128VecFromValues -- k immediates fill one 128-bit block, broadcast to all blocks.
+// Oracle: out lane i == the (i % k)-th supplied value, for every block. Covers 32/16/8/64-bit widths.
+TEST(Vec, Dup128VecFromValues) {
+  {  // 32-bit: 4 values per block
+    const hs::ScalableTag<std::int32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    Buf<std::int32_t> out;
+    hs::Store(hs::Dup128VecFromValues(d, 10, 20, 30, 40), d, out.data);
+    const std::int32_t vals[4] = {10, 20, 30, 40};
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], vals[i % 4]) << "dup32 i=" << i;
+  }
+  {  // 16-bit: 8 values per block
+    const hs::ScalableTag<std::int16_t> d;
+    const std::size_t n = hs::Lanes(d);
+    Buf<std::int16_t> out;
+    hs::Store(hs::Dup128VecFromValues(d, std::int16_t(1), std::int16_t(2), std::int16_t(3),
+                                      std::int16_t(4), std::int16_t(5), std::int16_t(6),
+                                      std::int16_t(7), std::int16_t(8)),
+              d, out.data);
+    const std::int16_t vals[8] = {1, 2, 3, 4, 5, 6, 7, 8};
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], vals[i % 8]) << "dup16 i=" << i;
+  }
+  {  // 8-bit: 16 values per block
+    const hs::ScalableTag<std::uint8_t> d;
+    const std::size_t n = hs::Lanes(d);
+    Buf<std::uint8_t> out;
+    hs::Store(hs::Dup128VecFromValues(d, std::uint8_t(0), std::uint8_t(11), std::uint8_t(22),
+                                      std::uint8_t(33), std::uint8_t(44), std::uint8_t(55),
+                                      std::uint8_t(66), std::uint8_t(77), std::uint8_t(88),
+                                      std::uint8_t(99), std::uint8_t(110), std::uint8_t(121),
+                                      std::uint8_t(132), std::uint8_t(143), std::uint8_t(154),
+                                      std::uint8_t(165)),
+              d, out.data);
+    const std::uint8_t vals[16] = {0,  11, 22, 33,  44,  55,  66,  77,
+                                   88, 99, 110, 121, 132, 143, 154, 165};
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], vals[i % 16]) << "dup8 i=" << i;
+  }
+  {  // 64-bit: 2 values per block
+    const hs::ScalableTag<std::int64_t> d;
+    const std::size_t n = hs::Lanes(d);
+    Buf<std::int64_t> out;
+    hs::Store(hs::Dup128VecFromValues(d, std::int64_t(-5), std::int64_t(123456789012LL)), d, out.data);
+    const std::int64_t vals[2] = {-5, 123456789012LL};
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], vals[i % 2]) << "dup64 i=" << i;
+  }
+}
+
 TEST(Vec, SatWidenMulAccumFixedPoint) {
   // D3 smoke: just ensure it compiles and runs; Q15-ish values.
   const hs::ScalableTag<std::int16_t> d16;

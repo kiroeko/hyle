@@ -1340,9 +1340,41 @@ HYLE_FORCE_INLINE void ScatterIndexN(VFromD<D> v, D d, TFromD<D>* base,
   for (std::size_t i = 0; i < lo; ++i) base[static_cast<std::ptrdiff_t>(idx[i])] = lanes[i];
 }
 
-// Dup128VecFromValues + TwoTablesLookupLanes: deferred to simd-18 批E (need per-backend native --
-// build-a-128-bit-block-from-immediates broadcast, and two-source cross-vector permute
-// _mm256_permutex2var / vqtbl2 / svtbl2 -- belong with the block/table native work).
+// Dup128VecFromValues(d, t0..t{k-1}): build ONE 128-bit block from k immediates (k = lanes per
+// 128-bit block = 16/sizeof(T)) and BROADCAST it to every block of the full vector (Highway). One
+// overload per lane width (16 args for 1-byte, 8 for 2-byte, 4 for 4-byte, 2 for 8-byte); the arg
+// count is fixed by the block, independent of vector width. Implemented generically by filling a
+// 16-byte stack block and calling the per-backend LoadDup128 (broadcast-128), which every backend
+// already provides -- no new native code, and correct on 128/256/512-bit and scalar alike.
+template <class D> requires (sizeof(TFromD<D>) == 1)
+HYLE_FORCE_INLINE VFromD<D> Dup128VecFromValues(
+    D d, TFromD<D> t0, TFromD<D> t1, TFromD<D> t2, TFromD<D> t3, TFromD<D> t4, TFromD<D> t5,
+    TFromD<D> t6, TFromD<D> t7, TFromD<D> t8, TFromD<D> t9, TFromD<D> t10, TFromD<D> t11,
+    TFromD<D> t12, TFromD<D> t13, TFromD<D> t14, TFromD<D> t15) noexcept {
+  alignas(16) TFromD<D> blk[16] = {t0, t1, t2,  t3,  t4,  t5,  t6,  t7,
+                                   t8, t9, t10, t11, t12, t13, t14, t15};
+  return LoadDup128(d, blk);
+}
+template <class D> requires (sizeof(TFromD<D>) == 2)
+HYLE_FORCE_INLINE VFromD<D> Dup128VecFromValues(D d, TFromD<D> t0, TFromD<D> t1, TFromD<D> t2,
+                                                TFromD<D> t3, TFromD<D> t4, TFromD<D> t5,
+                                                TFromD<D> t6, TFromD<D> t7) noexcept {
+  alignas(16) TFromD<D> blk[8] = {t0, t1, t2, t3, t4, t5, t6, t7};
+  return LoadDup128(d, blk);
+}
+template <class D> requires (sizeof(TFromD<D>) == 4)
+HYLE_FORCE_INLINE VFromD<D> Dup128VecFromValues(D d, TFromD<D> t0, TFromD<D> t1, TFromD<D> t2,
+                                                TFromD<D> t3) noexcept {
+  alignas(16) TFromD<D> blk[4] = {t0, t1, t2, t3};
+  return LoadDup128(d, blk);
+}
+template <class D> requires (sizeof(TFromD<D>) == 8)
+HYLE_FORCE_INLINE VFromD<D> Dup128VecFromValues(D d, TFromD<D> t0, TFromD<D> t1) noexcept {
+  alignas(16) TFromD<D> blk[2] = {t0, t1};
+  return LoadDup128(d, blk);
+}
+
+// TwoTablesLookupLanes: per-backend native (simd-18 批E) -- two-source cross-vector permute.
 
 // ---- simd-18 批C: demote / truncate helpers (generic composables) -------------------
 
