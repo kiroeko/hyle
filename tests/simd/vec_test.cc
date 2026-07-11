@@ -3465,6 +3465,36 @@ TEST(Vec, BlockOpsFamily) {
   }
 }
 
+// directive2: Per4LaneBlockShuffle 8/16-bit lane 补(此前 static_assert 只允 32/64-bit)。
+// 语义:每 128-bit block 内,每 4 lane 一组按 <i0,i1,i2,i3> 重排;逐组重复。i16(8 lane/block=
+// 2 组)+ i8(16 lane/block=4 组)。oracle 逐 block 逐组算。
+template <typename T>
+static void CheckPer4Lane8_16() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  constexpr std::size_t kLanesPer128 = 16 / sizeof(T);
+  if (n < kLanesPer128) return;  // need a full 128-bit block
+  Buf<T> a, out;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = static_cast<T>(i * 3 + 1);
+  auto va = hs::Load(d, a.data);
+  // shuffle indices <i3,i2,i1,i0> = <2,3,0,1>: within each group of 4, out[0]=src1,out[1]=src0,
+  // out[2]=src3,out[3]=src2.
+  hs::Store(hs::Per4LaneBlockShuffle<2, 3, 0, 1>(va), d, out.data);
+  const int idx[4] = {1, 0, 3, 2};  // {i0,i1,i2,i3}
+  for (std::size_t blk = 0; blk + kLanesPer128 <= n; blk += kLanesPer128) {
+    for (std::size_t lane = 0; lane < kLanesPer128; ++lane) {
+      const std::size_t group = lane / 4;
+      const std::size_t src = blk + group * 4 + static_cast<std::size_t>(idx[lane % 4]);
+      EXPECT_EQ(out.data[blk + lane], a.data[src])
+          << "Per4Lane" << (sizeof(T) * 8) << " blk=" << blk << " lane=" << lane;
+    }
+  }
+}
+TEST(Vec, Per4LaneBlockShuffle8And16) {
+  CheckPer4Lane8_16<std::int16_t>();
+  CheckPer4Lane8_16<std::uint8_t>();
+}
+
 // simd-18 批E 补: wide 类型(f32/f64/i64)+ Upper/Blocks/Insert 覆盖(grok 只测了 i32)。
 // backend-aware: 单 block 后端(Blocks==1)下 block ops 退化为 identity/alias。
 template <typename T>

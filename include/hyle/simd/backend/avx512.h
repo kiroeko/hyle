@@ -2681,18 +2681,38 @@ HYLE_FORCE_INLINE Vec512<T, N> InterleaveWholeUpper(D d, Vec512<T, N> a, Vec512<
   return r;
 }
 // E9 Per4LaneBlockShuffle 32/64-bit
+namespace detail {
+template <int i0, int i1, int i2, int i3, typename T>
+HYLE_FORCE_INLINE __m512i per4_byte_index_512() noexcept {
+  constexpr int idx[4] = {i0, i1, i2, i3};
+  constexpr int kLaneBytes = static_cast<int>(sizeof(T));
+  constexpr int kLanesPer128 = 16 / kLaneBytes;
+  alignas(64) std::uint8_t b[64] = {};
+  for (int blk = 0; blk < 4; ++blk) {              // four 128-bit blocks; same block-relative pattern
+    for (int lane = 0; lane < kLanesPer128; ++lane) {
+      const int src_lane = (lane / 4) * 4 + idx[lane % 4];
+      for (int bb = 0; bb < kLaneBytes; ++bb)
+        b[blk * 16 + lane * kLaneBytes + bb] =
+            static_cast<std::uint8_t>(src_lane * kLaneBytes + bb);  // block-relative (vpshufb per 128)
+    }
+  }
+  return _mm512_loadu_si512(reinterpret_cast<const void*>(b));
+}
+}  // namespace detail
 template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> Per4LaneBlockShuffle(Vec512<T, N> v) noexcept {
-  constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
   Vec512<T, N> r;
   if constexpr (sizeof(T) == 4) {
+    constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
     if constexpr (std::is_same_v<T, float>) r.raw = _mm512_shuffle_ps(v.raw, v.raw, imm);
     else r.raw = _mm512_shuffle_epi32(v.raw, static_cast<_MM_PERM_ENUM>(imm));
   } else if constexpr (sizeof(T) == 8) {
+    constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
     if constexpr (std::is_same_v<T, double>) r.raw = _mm512_permutex_pd(v.raw, imm);
     else r.raw = _mm512_permutex_epi64(v.raw, imm);
-  } else {
-    static_assert(sizeof(T) == 4 || sizeof(T) == 8, "Per4LaneBlockShuffle: 32/64 only");
+  } else {  // 8/16-bit: per-128-block byte shuffle (vpshufb operates within each 128-bit lane)
+    static_assert(sizeof(T) == 1 || sizeof(T) == 2, "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
+    r.raw = _mm512_shuffle_epi8(v.raw, detail::per4_byte_index_512<i0, i1, i2, i3, T>());
   }
   return r;
 }

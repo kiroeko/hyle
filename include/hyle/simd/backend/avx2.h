@@ -2726,19 +2726,43 @@ HYLE_FORCE_INLINE Vec256<T, N> InterleaveWholeUpper(D d, Vec256<T, N> a, Vec256<
   (void)d;
   return ConcatUpperUpper(InterleaveUpper(a, b), InterleaveLower(a, b));
 }
-// E9 Per4LaneBlockShuffle: per-128-block 4-lane permute (32-bit mainline + 64-bit).
+// E9 Per4LaneBlockShuffle: per-128-block 4-lane permute. 32/64-bit use native shuffle/permute;
+// 8/16-bit have no 4-lane immediate shuffle -> a per-128-block byte-index TableLookupBytes (same
+// approach as Highway's TblLookupPer4LaneBlkShuf). Within each block of 4 lanes, out lane j takes
+// source lane idx[j] (idx = {i0,i1,i2,i3}); repeated for every group of 4 lanes in the 128-bit block.
+namespace detail {
+template <int i0, int i1, int i2, int i3, typename T>
+HYLE_FORCE_INLINE __m256i per4_byte_index() noexcept {
+  constexpr int idx[4] = {i0, i1, i2, i3};
+  alignas(32) std::uint8_t b[32] = {};
+  constexpr int kLaneBytes = static_cast<int>(sizeof(T));
+  constexpr int kLanesPer128 = 16 / kLaneBytes;
+  for (int half = 0; half < 2; ++half) {          // two 128-bit blocks in a 256-bit reg
+    for (int lane = 0; lane < kLanesPer128; ++lane) {
+      const int group = lane / 4;                  // which group-of-4 within the block
+      const int src_lane = group * 4 + idx[lane % 4];
+      for (int bb = 0; bb < kLaneBytes; ++bb)
+        b[half * 16 + lane * kLaneBytes + bb] =
+            static_cast<std::uint8_t>((src_lane * kLaneBytes + bb));  // block-relative byte
+    }
+  }
+  return _mm256_loadu_si256(reinterpret_cast<const __m256i*>(b));
+}
+}  // namespace detail
 template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Per4LaneBlockShuffle(Vec256<T, N> v) noexcept {
-  constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
   Vec256<T, N> r;
   if constexpr (sizeof(T) == 4) {
+    constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
     if constexpr (std::is_same_v<T, float>) r.raw = _mm256_shuffle_ps(v.raw, v.raw, imm);
     else r.raw = _mm256_shuffle_epi32(v.raw, imm);
   } else if constexpr (sizeof(T) == 8) {
+    constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
     if constexpr (std::is_same_v<T, double>) r.raw = _mm256_permute4x64_pd(v.raw, imm);
     else r.raw = _mm256_permute4x64_epi64(v.raw, imm);
-  } else {
-    static_assert(sizeof(T) == 4 || sizeof(T) == 8, "Per4LaneBlockShuffle: 32/64-bit only (@opus 8/16)");
+  } else {  // 8/16-bit: per-128-block byte shuffle (vpshufb operates within each 128-bit lane)
+    static_assert(sizeof(T) == 1 || sizeof(T) == 2, "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
+    r.raw = _mm256_shuffle_epi8(v.raw, detail::per4_byte_index<i0, i1, i2, i3, T>());
   }
   return r;
 }

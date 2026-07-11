@@ -2011,10 +2011,19 @@ HYLE_FORCE_INLINE Vec<T, N> InterleaveWholeUpper(D, Vec<T, N> a, Vec<T, N> b) no
 // E9 Per4LaneBlockShuffle: 32-bit via store+reload oracle (single 128-block = whole vector for N=4).
 template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec<T, N> Per4LaneBlockShuffle(Vec<T, N> v) noexcept {
-  static_assert(sizeof(T) == 4 || sizeof(T) == 8, "Per4LaneBlockShuffle: 32/64-bit only");
+  static_assert(sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8,
+                "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
   alignas(16) T s[N], o[N];
   Store(v, Simd<T, N, 0>(), s);
-  if constexpr (sizeof(T) == 4) {
+  if constexpr (sizeof(T) <= 2) {
+    // 8/16-bit: kLanesPer128 lanes per 128-block, in groups of 4; out[base+group*4+j]=src idx[j].
+    constexpr int sel[4] = {i0, i1, i2, i3};
+    constexpr std::size_t kLanesPer128 = 16 / sizeof(T);
+    for (std::size_t base = 0; base < N; base += kLanesPer128)
+      for (std::size_t g = 0; g < kLanesPer128 && base + g < N; g += 4)
+        for (std::size_t j = 0; j < 4 && base + g + j < N; ++j)
+          o[base + g + j] = s[base + g + static_cast<std::size_t>(sel[j])];
+  } else if constexpr (sizeof(T) == 4) {
     constexpr int sel[4] = {i0, i1, i2, i3};
     constexpr std::size_t blk = 4;  // 4 lanes per 128-bit block for 32-bit
     for (std::size_t base = 0; base < N; base += blk) {
