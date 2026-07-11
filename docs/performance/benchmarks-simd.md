@@ -243,3 +243,13 @@ Windows/WSL/Apple 的 public/direct 都落在 candidate direct 附近，未见 d
 ### 尚未逐个测的边界（风险已定性）
 - **纯 passthrough(~34)**:AES/CLMul(单指令)、And/Or/Xor/Not(mask 域)、Le/IfThenElse* 等——同一 intrinsic,抽样已验打平。
 - **需内存/mask harness的剩余项**:LoadInterleaved2/3/4+Store(引用参数)、Gather/Scatter/CompressStore/MaskedLoad(内存+mask)、SetAtOr*/FindKnown*(mask域)、TruncateTo/U8FromU32(变宽,与已测Promote/Demote同族=原生cvt)。P3的24个Masked*已逐项补进full sweep；GetExponent已换原生指数域实现，MulByPow2按ISA分档且与Highway同类，不再列为疑似输家。
+
+### bench 覆盖补齐（directive3,2026-07-12）
+覆盖审计揪出的零-bench 能力面已补，全部进 CI bench 目标:
+- **f64 全 14 超越进 `math_bench`**:最高风险(f64 winner 与 f32 大面积翻转但无留档 bench)。HYLE 借核 ≥ xsimd/Highway 每 op → dispatch 选核正确,现有回归 bench。
+- **f32 11 个 simd-09 op 接上 HYLE 行**(曾是 nullptr 未接线候选):sin/cos/exp2/log2/erf/atan/cbrt/expm1/log1p/asinh/acosh,回归 dispatch winner。
+- **`activation_bench`(新)**:gelu 11.9x / gelu_tanh 18.5x / sigmoid·silu 6.2x / softmax 1.6x vs scalar;RNG VectorXoshiro 2.7x vs mt19937。**⚠️坑**:inline VectorXoshiro 吃 bench TU 的 vec.h 后端,不定义 `HYLE_SIMD_TARGET_AVX2` 会退 128-bit 后端反比 mt19937 慢(同 inlining-asymmetry 类,CMake 已 pin)。
+- **`simd_bench` 补 dot_f64/saxpy_f64**:3.9x/2.4x vs scalar(CAE/求解器 double 热路径)。
+- **`sort_bench` 补 select/nth_element**:HYLE 借 VQSelectStatic 6.4x 快过 std::nth_element。
+- **`dtype_bench` 补 fp8 e4m3/e5m2↔f32**:**诚实发现 fp8 batch ≈ scalar loop(~100% 打平)**——分支型 per-element 位逻辑不自动向量化,当前无 SIMD 收益(印证"无硬件 fp8 convert";未来可 SIMD 化是优化机会)。
+- **登记不补**:bitpack u8/u32(u16 已验 codec round-trip + Highway parity;u8/u32 需 Pack8/Pack32 模板 + 新 inl 头 = 与价值不成比例的宽度扩展)。
