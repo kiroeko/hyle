@@ -80,9 +80,11 @@
 > 纪律纠错(`feedback_infra_capability_completeness`)：qemu-user 实测**支持 Zvbb/Zvbc**,"无硬件不做"对这些站不住；已翻案补做+真验。
 - **RVV `LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/`Rotate`**:✅ **已落地**——`#if defined(__riscv_zvbb)` + `-march=rv64gcv_zvbb` + `qemu -cpu rv64,v=true,zvbb=true`；objdump 见 `vclz.v`/`vctz.v`/`vbrev.v`/`vror.vi`/`vrol.vx`。
 - **RVV `CLMulLower`/`CLMulUpper`**:✅ **已落地**——`#if defined(__riscv_zvbc)`；`DupEven/DupOdd`+`vclmul`/`vclmulh`+`OddEven` 对齐 128-bit block 语义；objdump 见 `vclmul.vv`/`vclmulh.vv`。
-- **RVV `PopulationCount`**:🔒 仍不做——GCC-14 头无 per-lane vcpop（mask-popcount 占用短名，穷举坐实工具链缺口）。
-- **SVE2 `AES*`/`CLMul`**:🟡 只能编译验——`+sve2-aes` 编得过,但本机 qemu 版本 `-cpu max,sve2-aes=on` 报 "Property not found"。
-- `LoadMaskBits`/`StoreMaskBits`/`BitsFromMask`:scalable VL 可达 2048-bit(i8=256 lane)超 uint64 位域容量,语义受限(窄 lane 数 ≤64 部分可后补)。
+- **RVV `PopulationCount`**:🔒 仍不做——**2026-07-12 复核坐实真墙**:GCC-14 头无 per-lane `__riscv_vcpop_v_*`(inline-asm 可发射 `vcpop.v`=0x4a172157,汇编器认),但**本机 qemu-riscv64 8.2.2 未实现 Zvbb `vcpop.v`**——实测 popcount(0xF0F0F0F0) 返回原值非 16(静默 no-op,不 SIGILL),故无法真验。与 simd-16 已翻案的 LZCnt/TZCnt(qemu 8.2.2 **有**实现)不同,vcpop.v 是 qemu 8.2.2 的实现缺口。解锁需 qemu ≥9.x(源码编译,非 apt)。**(注:一次 agent 复核误报"qemu 真跑正确",逐条核实时 exit-0 检查没验算值=假阳,坐实"红队报告要核实")**。
+- **SVE2 `AES*`/`CLMul`**:🟡 只能编译验——`+sve2-aes` 编得过,但本机 qemu-aarch64 8.2.2 `-cpu max,sve2-aes=on` 报 "Property not found"(sve2-aes property 需 qemu ≥9.1);Apple Silicon 无 FEAT_SVE2 也测不了。真墙,解锁需 qemu 9.1+ 源码编译。
+- `LoadMaskBits`/`StoreMaskBits`/`BitsFromMask`:scalable VL 可达 2048-bit(i8=256 lane)超 uint64 位域容量,语义受限(窄 lane 数 ≤64 部分可后补)。**真墙=API 形状(uint64 装不下 256 bit),非工具链**。
+- **fp8 硬件 convert(AVX10.2)**:🟡 SDE 9.48 `-dmr`(Diamond Rapids)的 xed **含** fp8 convert 指令(VCVTNE2PH2BF8 等,能模拟执行),但本机 binutils 2.42/GCC-13.3 native 汇编器不识别助记符——解锁需 binutils ≥2.43 或 clang-20 才能编,能编后 `sde64 -dmr` 可跑验。中等工作量(装工具链),登记待做。
+- **Per4LaneBlockShuffle 8/16-bit**:✅ **已做**(2026-07-12,1ec8d87)——纯软件无硬件墙,directive2 复核后补:avx2/avx512 vpshufb 字节索引、sse4/neon/scalar store+reload 组循环泛化。五平台真跑。
 - scalable 后端**无 ASan 通道**:qemu-user + `-fsanitize=address` shadow-memory 段错误(实测),store+reload op 靠逻辑正确而非 ASan 根治,真边界。
 ### ⚪ 变宽不该做(定宽专属语义)
 - `ConcatLowerLower/LowerUpper/UpperLower/UpperUpper`:⚠️ **文档定性待复核**——原判"128-bit-block 相对,scalable 无意义"可能有误:Highway 对 SVE(arm_sve Splice+MaskLowerHalf)和 RVV(Get/Set)**均实现了整向量半-concat**(与 128-bit block 无关)。待逐语义核对后决定翻案(见下方"待拍板"),暂留此处。
@@ -133,7 +135,7 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 - `GaloisAffine`/`GaloisAffineTranspose`:Highway `namespace detail` **内部 GFNI 原语**(非公开 op),其消费者 ReverseBits/RotateRight 已在 HYLE 实现。**注:不做的理由是"非公开面缺口",非"无法验证"——SDE 探针实测 GFNI `-future` 正确执行**。
 - ~~`*InRange*`/`Ordered*Demote2*`/`SumsOf*QuadAbsDiff`~~ **已在 simd-18 实现**(批C InRange+OrderedDemote2To、批F dbsad;`OrderedDemote2MasksTo` 随 @opus 裁决 c45c6af)。
 - `Dup128VecFromValues`:**已实现**(simd-18 d418ebf,泛型层四 lane 宽重载调 LoadDup128 广播,五平台真跑)。
-- `Per4LaneBlockShuffle`:**32/64-bit 已实现**(五后端,`vec_test` Shuffle 用例对拍;avx2 `_mm256_shuffle_epi32`/`permute4x64`、neon/scalar 组合)。**仅 8/16-bit lane 特化未做**(后端 `static_assert` 挡住,Highway 走 generic 建表分解)——真低优先(非能力墙,是优先级)。
+- `Per4LaneBlockShuffle`:✅ **全宽已实现**(1/2/4/8-byte,五后端)——32/64-bit 用 native shuffle/permute,8/16-bit(2026-07-12,1ec8d87)用 vpshufb 字节索引(avx2/avx512)/store+reload 组循环(sse4/neon/scalar)。`vec_test` Per4LaneBlockShuffle8And16 逐 block 逐组对拍。
 
 ## 3. 信源④:文档登记缺口(交叉核对,含纠错)
 
@@ -157,8 +159,8 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 | **P5 ✅** | scalable 平凡合成 + mask 操作(BroadcastSignBit/ExclusiveNeither/IsEitherNaN/MulRound/GetExponent/BroadcastLane/Set*First/FindKnown*/MulByPow2/Expand/TZCnt)| 15 | 已完成([`simd-15`](./simd-15-scalable-p5.md))；RVV TZCnt 归 Zvbb 不做 |
 | **simd-16 ✅** | 翻案 RVV Zvbb/Zvbc：LZCnt/TZCnt/ReverseBits/Rotate + CLMul | ~6-7 | 已完成([`simd-16`](./simd-16-hw-gated-reclaim.md))；qemu 三档×4 VLEN + objdump 真指令 |
 | **simd-17 ✅** | 广度补全:批1 Shuffle/字节移位、批2 *Same/Pairwise/Stream、批3 scalable Concat、批4 半向量合并族、批5 复数ARM+SAD+BitShuffle/MultiRotateRight+Block提取 | — | 已完成([批5 doc](./simd-17-breadth-batch5.md));批4/5 待 Win MSVC + mac 平台复验 |
-| 🔒登记不做 | SVE2 crypto/RVV PopulationCount(工具链)/mask-bits VL>64/fp8-HW-convert/SumsOf*QuadAbsDiff(dbsad) | — | 硬件门控/工具链缺口 |
-| ⚪不做 | 其余 *Blocks(SwapAdjacent等) / *InRange / GaloisAffine(Highway内部detail非公开面) | — | 偏门/越 scope/非公开面 |
+| 🔒真墙(2026-07-12复核) | SVE2 crypto(qemu≥9.1)/RVV PopulationCount(qemu≥9.1 缺 vcpop.v)/mask-bits VL>64(uint64 API 形状)/fp8-HW-convert(binutils≥2.43+SDE -dmr) | — | 真墙:qemu/汇编器/API 版本;各注明解锁工具版本 |
+| ⚪不做 | 其余 *Blocks(SwapAdjacent等) / GaloisAffine(Highway内部detail非公开面) | — | 偏门/越 scope/非公开面 |
 
 P0-P5、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)、[`simd-14`](./simd-14-fixed-width-p4.md)、[`simd-15`](./simd-15-scalable-p5.md)与[`simd-16`](./simd-16-hw-gated-reclaim.md)已全部完成。**主施工闭集软件面 100%**；simd-16 另翻案 RVV Zvbb/Zvbc（TZCnt/LZCnt/ReverseBits/Rotate/CLMul），PopulationCount 仍工具链缺口。两轮 vendor displacement 不新增公开 op；P4 新增 12 个、P5 新增 15 个公开 op。硬件门控和语义受限项不混入软件完成度。
 
