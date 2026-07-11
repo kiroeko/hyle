@@ -37,6 +37,14 @@ HYLE_SIMD_API void f32_to_f8e4m3_batch(const float* src, float8_e4m3_t* dst, std
 HYLE_SIMD_API void f8e5m2_to_f32_batch(const float8_e5m2_t* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void f32_to_f8e5m2_batch(const float* src, float8_e5m2_t* dst, std::size_t n) noexcept;
 
+// f16 -> fp8 (the AI-native shape: fp8 tensors are typically produced FROM f16 activations, and it
+// is what AVX10.2's fp8 converts consume). Bit-identical across scalar and the AVX10.2 hardware
+// kernel (f16->f32 exact => single rounding), so unlike a hypothetical f32->fp8 hardware path this
+// is a TRANSPARENT dispatch target -- the batch result never changes with the CPU. Auto-dispatches
+// to the AVX10.2 kernel when the build has it (clang-20) and the CPU advertises avx10_2, else scalar.
+HYLE_SIMD_API void f16_to_f8e4m3_batch(const float16_t* src, float8_e4m3_t* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void f16_to_f8e5m2_batch(const float16_t* src, float8_e5m2_t* dst, std::size_t n) noexcept;
+
 // The ISA tier the fp16 batch conversions selected (kAvx2 if F16C present, else kScalar).
 // For tests/diagnostics -- proves the hardware path engages when the CPU supports it.
 HYLE_SIMD_API Isa active_dtype_variant() noexcept;

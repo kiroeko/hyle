@@ -32,6 +32,15 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     sort/vqsort_highway_avx512.cc
     bitpack/bitpack_highway_avx2.cc
     bitpack/bitpack_highway_avx512.cc)
+  # AVX10.2 f16->fp8 convert TU: only the compilers that accept -mavx10.2-512 (clang-20+; GCC-14
+  # stops at avx10.1, MSVC has none) can build it. Probe the flag; if present, compile the TU and
+  # define HYLE_HAVE_AVX10_2 so the header decls + dispatch gate light up. Otherwise the f16->fp8
+  # batch stays on the (bit-identical) scalar core -- no build dependency on clang-20.
+  include(CheckCXXCompilerFlag)
+  check_cxx_compiler_flag("-mavx10.2-512" HYLE_CXX_HAS_AVX10_2)
+  if(HYLE_CXX_HAS_AVX10_2)
+    list(APPEND _simd_arch_sources dtype/cvt_avx10_2.cc)
+  endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_SIMD_ARM64 TRUE)
   # ops NEON kernel reuses the neon.h D-tag backend (dot/saxpy) -- the simd-03 real-run
@@ -94,6 +103,13 @@ if(HYLE_SIMD_X64)
   # bf16 native convert TU: AVX-512 + VCVTNEPS2BF16. Only reached when cpu_features().avx512bf16
   # (runtime-gated in dtype_dispatch), so the bf16 instruction never runs on a CPU lacking it.
   hyle_set_isa(dtype/cvt_avx512bf16.cc AVX512_BF16)
+  # AVX10.2 fp8 TU: only present when the compiler flag probed OK. -mavx10.2-512 implies the full
+  # AVX-512 + AVX10.2 vector face; runtime-gated on cpu_features().avx10_2 so it never runs on a
+  # CPU lacking it. HYLE_HAVE_AVX10_2 lights up the header decls + dispatch branch everywhere.
+  if(HYLE_CXX_HAS_AVX10_2)
+    set_source_files_properties(dtype/cvt_avx10_2.cc PROPERTIES COMPILE_OPTIONS "-mavx10.2-512")
+    target_compile_definitions(hyle_simd PRIVATE HYLE_HAVE_AVX10_2)
+  endif()
 elseif(HYLE_SIMD_ARM64)
   # NEON ops kernel + dtype cvt: NEON is the ARMv8 baseline (empty flag list). The neon.h
   # backend was written+objdump-verified earlier (simd-03) but never RAN until a real

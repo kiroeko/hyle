@@ -34,6 +34,8 @@ using hyle::simd::f32_to_f8e5m2;
 using hyle::simd::float8_e5m2_t;
 using hyle::simd::f8e4m3_to_f32_batch;
 using hyle::simd::f32_to_f8e4m3_batch;
+using hyle::simd::f16_to_f8e4m3_batch;
+using hyle::simd::f16_to_f8e5m2_batch;
 
 namespace {
 bool is_nan_f32(float f) { return f != f; }
@@ -402,5 +404,24 @@ TEST(DtypeBatch, Fp8E4M3BatchMatchesElement) {
   for (int b = 0; b <= 0xFF; ++b) {
     if (is_nan_f32(got[b])) EXPECT_EQ(back[b].bits & 0x7F, 0x7F) << "b=" << b;
     else EXPECT_EQ(back[b].bits, src[b].bits) << "b=" << b;
+  }
+}
+
+// f16 -> fp8 batch, EXHAUSTIVE over all 65536 f16. The batch must equal the scalar element oracle
+// f32_to_f8(f16_to_f32(h)) for EVERY f16 -- on the scalar backend trivially, and on the AVX10.2
+// hardware kernel this is the bit-identity gate (f16->f32 exact => single rounding; the E5M2 kernel
+// restores OCP inf/NaN that Intel's vcvtph2bf8 saturates). Same test passes on both paths, so a
+// build/run with the AVX10.2 kernel (clang-20 + SDE -dmr) proves hw == scalar bit-for-bit.
+TEST(Fp8FromF16, ExhaustiveMatchesScalar) {
+  std::vector<float16_t> src(65536);
+  for (int b = 0; b < 65536; ++b) src[b] = float16_t::from_bits(static_cast<std::uint16_t>(b));
+  std::vector<float8_e4m3_t> e4(65536);
+  std::vector<float8_e5m2_t> e5(65536);
+  f16_to_f8e4m3_batch(src.data(), e4.data(), src.size());
+  f16_to_f8e5m2_batch(src.data(), e5.data(), src.size());
+  for (int b = 0; b < 65536; ++b) {
+    const float f = f16_to_f32(src[b]);
+    EXPECT_EQ(e4[b].bits, f32_to_f8e4m3(f).bits) << "e4m3 f16=0x" << std::hex << b;
+    EXPECT_EQ(e5[b].bits, f32_to_f8e5m2(f).bits) << "e5m2 f16=0x" << std::hex << b;
   }
 }

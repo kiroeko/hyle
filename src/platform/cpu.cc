@@ -94,6 +94,7 @@ CpuFeatures detect_x86() noexcept {
   bool cpu_avx2 = false;
   bool cpu_avx512f = false, cpu_avx512bw = false, cpu_avx512vl = false;
   bool cpu_avx512dq = false, cpu_avx512cd = false;
+  bool cpu_avx10_2 = false;
   if (max_leaf >= 7) {
     cpuid(7, 0, abcd);
     const std::uint32_t ebx7 = abcd[1];
@@ -112,6 +113,13 @@ CpuFeatures detect_x86() noexcept {
 
     cpuid(7, 1, abcd);
     f.avx512bf16 = bit(abcd[0], 5);
+    // AVX10: leaf 7,1 EDX bit 19 advertises AVX10 support; the converged version is in leaf 0x24
+    // subleaf 0, EBX[7:0]. AVX10.2 (the fp8 vcvtph2hf8/bf8 converts) = version >= 2.
+    const bool avx10_supported = bit(abcd[3], 19);
+    if (avx10_supported && max_leaf >= 0x24) {
+      cpuid(0x24u, 0, abcd);
+      cpu_avx10_2 = (abcd[1] & 0xFFu) >= 2;  // EBX[7:0] = AVX10 converged version
+    }
   }
 
   // Gate everything that uses YMM/ZMM on the OS actually saving those registers.
@@ -134,6 +142,8 @@ CpuFeatures detect_x86() noexcept {
   // VNNI/BF16/FP16 are AVX-512 extensions: only usable if the AVX-512 base is usable.
   f.avx512vnni = f.avx512vnni && avx512_ok;
   f.avx512bf16 = f.avx512bf16 && avx512_ok;
+  // AVX10.2 fp8 converts operate on ZMM (512-bit), so require OS ZMM save just like AVX-512.
+  f.avx10_2 = cpu_avx10_2 && avx512_ok;
   f.avx512fp16 = f.avx512fp16 && avx512_ok;
 
   return f;

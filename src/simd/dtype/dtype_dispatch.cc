@@ -117,6 +117,26 @@ void f32_to_f8e5m2_batch(const float* src, float8_e5m2_t* dst, std::size_t n) no
   detail::f32_to_f8e5m2_scalar(src, dst, n);
 }
 
+// f16 -> fp8: AVX10.2 hardware kernel (bit-identical to scalar) iff the build has it (clang-20
+// -mavx10.2-512) AND the CPU advertises avx10_2; else the scalar f32_to_f8(f16_to_f32) core.
+#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+bool use_avx10_2() noexcept { return cpu_features().avx10_2; }
+#endif
+void f16_to_f8e4m3_batch(const float16_t* src, float8_e4m3_t* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+  static const bool hw = use_avx10_2();
+  if (hw) { detail::f16_to_f8e4m3_avx10_2(src, dst, n); return; }
+#endif
+  detail::f16_to_f8e4m3_scalar(src, dst, n);
+}
+void f16_to_f8e5m2_batch(const float16_t* src, float8_e5m2_t* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+  static const bool hw = use_avx10_2();
+  if (hw) { detail::f16_to_f8e5m2_avx10_2(src, dst, n); return; }
+#endif
+  detail::f16_to_f8e5m2_scalar(src, dst, n);
+}
+
 Isa active_dtype_variant() noexcept {
 #if defined(HYLE_ARCH_X64)
   static const Isa tier = use_f16c() ? Isa::kAvx2 : Isa::kScalar;
