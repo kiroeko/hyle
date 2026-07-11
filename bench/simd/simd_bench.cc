@@ -131,5 +131,39 @@ int main() {
     });
 #endif
   }
+
+  // f64 dot/saxpy (directive3): CAE/geometry solvers run in double; simd_bench only covered f32.
+  // Bench the PUBLIC dispatched dot_f64/saxpy_f64 (shipped symbols) vs a scalar reference. f64 is
+  // half the lane count of f32 (4 vs 8 on AVX2), so the vectorization win is ~half but still real,
+  // and the wider accumulator is exactly why solvers want f64.
+  {
+    std::vector<double> xd(kN), yd(kN);
+    for (std::size_t i = 0; i < kN; ++i) { xd[i] = static_cast<double>(x[i]); yd[i] = static_cast<double>(y[i]); }
+    {
+      ankerl::nanobench::Bench b;
+      b.title("dot product (4096 f64)").relative(true).batch(kN).minEpochIterations(2000);
+      b.run("scalar (auto-vec)", [&] {
+        double s = 0.0;
+        for (std::size_t i = 0; i < kN; ++i) s += xd[i] * yd[i];
+        ankerl::nanobench::doNotOptimizeAway(s);
+      });
+      b.run("HYLE dot_f64 (public dispatch)", [&] {
+        ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot_f64(xd.data(), yd.data(), kN));
+      });
+    }
+    {
+      std::vector<double> yds = yd;
+      ankerl::nanobench::Bench b;
+      b.title("saxpy y=a*x+y (4096 f64)").relative(true).batch(kN).minEpochIterations(2000);
+      b.run("scalar (auto-vec)", [&] {
+        for (std::size_t i = 0; i < kN; ++i) yds[i] = 1.001 * xd[i] + yds[i];
+        ankerl::nanobench::doNotOptimizeAway(yds[0]);
+      });
+      b.run("HYLE saxpy_f64 (public dispatch)", [&] {
+        hyle::simd::saxpy_f64(1.001, xd.data(), yds.data(), kN);
+        ankerl::nanobench::doNotOptimizeAway(yds[0]);
+      });
+    }
+  }
   return 0;
 }
