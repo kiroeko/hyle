@@ -126,14 +126,18 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 - 128-cmp 全家族 `Lt128/Lt128Upper/Eq128/Ne128/Min128/Max128`:vec.h:777 **全有**。
 - Complex 算术 `ComplexConj/MulComplex/MulComplexConj/MulComplexAdd/MulComplexConjAdd`:vec.h:596 **定宽已有**(文档 Source④ 说"未做"是**过期信息**)。
 
-### ⚪ OBSCURE(跳过)
-所有 `*Blocks` 族(BroadcastBlock/ExtractBlock/InterleaveWholeLower/SwapAdjacentBlocks/LoadTransposedBlocks* 等,Highway 512-bit block-lane 机制,越 HYLE"贴硬件不过度抽象"scope)、`*InRange*`(UB 规避变体)、`GaloisAffine`/`BitShuffle`/`MultiRotateRight`/`Per4LaneBlockShuffle`/`Ordered*Demote2*`/`SumsOf*QuadAbsDiff`(GFNI/视频专用,HW-gated 或极窄)。
+### ⚪ OBSCURE(跳过) — simd-17 批5 复核修正
+初版把 `BitShuffle`/`MultiRotateRight` 混进本类是**错分类**(误判为 AVX512-only 门控)。复核 Highway 源:二者是 `generic_ops-inl.h` 的**公开 `HWY_API` 通用 op**(每 target 有可移植 fallback),**已在 simd-17 批5 实现**(五后端 fallback + AVX3_DL native VPSHUFBITQMB/VPMULTISHIFTQB,SDE 双路对拍 oracle + objdump 坐实)。`SumsOf8AbsDiff`/`BroadcastBlock`/`ExtractBlock` 同批已做。
+仍跳过(坐实):
+- `SwapAdjacentBlocks`/`InterleaveWholeLower/Upper`/`LoadTransposedBlocks*` 等 `*Blocks`:Highway 512-bit block-lane 内部编排机制,越 HYLE"贴硬件不过度抽象"scope,无消费者。
+- `GaloisAffine`/`GaloisAffineTranspose`:Highway `namespace detail` **内部 GFNI 原语**(非公开 op),其消费者 ReverseBits/RotateRight 已在 HYLE 实现。**注:不做的理由是"非公开面缺口",非"无法验证"——SDE 探针实测 GFNI `-future` 正确执行**。
+- `*InRange*`(UB 规避变体)/`Per4LaneBlockShuffle`/`Ordered*Demote2*`/`SumsOf*QuadAbsDiff`(dbsad 视频专用极窄,无消费者,SDE-gated 待需)。
 
 ## 3. 信源④:文档登记缺口(交叉核对,含纠错)
 
 - **gelu/softmax**：已完成（simd-09 #67，`math_test` Activations/Softmax）。
 - **fp8 硬件 convert**:AVX10.2/GPU 专属;**scalar 位实现已完整**,非缓做。
-- **复数超越**：`csin/ccos/ctanh/cpow` 已在 AVX2/NEON 上架 HYLE SoA 编排；`ctanh/cpow` 分别消除复三角/双曲重复计算和 complex-pow 的重复 `log/exp`，异常 lane 逐 lane 使用 `std::complex`。`cexp/clog/csqrt` 仍借 xsimd AVX2、非 x86 落 scalar；ARM剩余真缺口因此是 `exp/log/sqrt` 三个（Highway无复数路径）。
+- **复数超越**：`csin/ccos/ctanh/cpow` 已在 AVX2/NEON 上架 HYLE SoA 编排；`ctanh/cpow` 分别消除复三角/双曲重复计算和 complex-pow 的重复 `log/exp`，异常 lane 逐 lane 使用 `std::complex`。`cexp/clog/csqrt`：x86 借 xsimd AVX2，**ARM 已在 simd-17 批5 补 `cexp/clog/csqrt_f32_hyle_neon`（xsimd batch<complex> NEON 核）**，dispatch ARM64 从 scalar 改指 hyle_neon。**ARM 复数缺口已闭**（待 mac 真机复验）。
 - **lgamma**:退 scalar libm(xsimd 向量 lane-mixing vendor bug);tgamma 已向量化。无 action。
 - **ReciprocalNewton**:HYLE 超越两库的点(它们只出裸估计)——保持。
 - complex/128-cmp/Newton 已由 scalable P0 直接实例化，不再是定宽 only。
@@ -150,9 +154,9 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 | **P4 ✅** | 定宽 Mul/Mod/Magnitude(MulSub/AddSub/EvenOdd、Mod、Min/MaxMagnitude)| 12 | 已完成；同 ISA 性能无输家 |
 | **P5 ✅** | scalable 平凡合成 + mask 操作(BroadcastSignBit/ExclusiveNeither/IsEitherNaN/MulRound/GetExponent/BroadcastLane/Set*First/FindKnown*/MulByPow2/Expand/TZCnt)| 15 | 已完成([`simd-15`](./simd-15-scalable-p5.md))；RVV TZCnt 归 Zvbb 不做 |
 | **simd-16 ✅** | 翻案 RVV Zvbb/Zvbc：LZCnt/TZCnt/ReverseBits/Rotate + CLMul | ~6-7 | 已完成([`simd-16`](./simd-16-hw-gated-reclaim.md))；qemu 三档×4 VLEN + objdump 真指令 |
-| 按需 | 字节移位/半向量合并/Pairwise/Shuffle/Stream/ARM剩余3个复数超越函数 | — | 低 |
-| 🔒登记不做 | SVE2 crypto/RVV PopulationCount(工具链)/mask-bits VL>64/fp8-HW-convert | — | 硬件门控/工具链缺口 |
-| ⚪不做 | 所有 *Blocks / *InRange / GaloisAffine / 视频专用 | — | 偏门/越 scope |
+| **simd-17 ✅** | 广度补全:批1 Shuffle/字节移位、批2 *Same/Pairwise/Stream、批3 scalable Concat、批4 半向量合并族、批5 复数ARM+SAD+BitShuffle/MultiRotateRight+Block提取 | — | 已完成([批5 doc](./simd-17-breadth-batch5.md));批4/5 待 Win MSVC + mac 平台复验 |
+| 🔒登记不做 | SVE2 crypto/RVV PopulationCount(工具链)/mask-bits VL>64/fp8-HW-convert/SumsOf*QuadAbsDiff(dbsad) | — | 硬件门控/工具链缺口 |
+| ⚪不做 | 其余 *Blocks(SwapAdjacent等) / *InRange / GaloisAffine(Highway内部detail非公开面) | — | 偏门/越 scope/非公开面 |
 
 P0-P5、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)、[`simd-14`](./simd-14-fixed-width-p4.md)、[`simd-15`](./simd-15-scalable-p5.md)与[`simd-16`](./simd-16-hw-gated-reclaim.md)已全部完成。**主施工闭集软件面 100%**；simd-16 另翻案 RVV Zvbb/Zvbc（TZCnt/LZCnt/ReverseBits/Rotate/CLMul），PopulationCount 仍工具链缺口。两轮 vendor displacement 不新增公开 op；P4 新增 12 个、P5 新增 15 个公开 op。硬件门控和语义受限项不混入软件完成度。
 

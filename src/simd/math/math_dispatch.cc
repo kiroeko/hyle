@@ -169,12 +169,11 @@ void hypot_fast_f32_batch(const float* a, const float* b, float* dst, std::size_
   detail::hypot_fast_f32_scalar(a, b, dst, n);
 }
 
-// SoA complex transcendentals. cexp/clog/csqrt use xsimd AVX2 on x86 and the std::complex
-// scalar floor elsewhere. csin/ccos/ctanh/cpow use HYLE-owned AVX2/NEON orchestration below.
+// SoA complex transcendentals. cexp/clog/csqrt: xsimd AVX2 on x86, HYLE/xsimd NEON on ARM64,
+// scalar std::complex elsewhere. csin/ccos/ctanh/cpow use HYLE-owned AVX2/NEON orchestration.
 #define HYLE_CX_UNARY_DISPATCH(name)                                                        \
   void name##_f32_batch(const float* sr, const float* si, float* dr, float* di,             \
                         std::size_t n) noexcept {                                           \
-    /* x86: xsimd AVX2 when present; other arches: scalar oracle */                         \
     HYLE_CX_UNARY_BODY(name)                                                                \
   }
 #if defined(HYLE_ARCH_X64)
@@ -182,6 +181,9 @@ void hypot_fast_f32_batch(const float* a, const float* b, float* dst, std::size_
   static const bool hw = have_avx2();                                                       \
   if (hw) { detail::name##_f32_xsimd_avx2(sr, si, dr, di, n); return; }                      \
   detail::name##_f32_scalar(sr, si, dr, di, n);
+#elif defined(HYLE_ARCH_ARM64)
+#define HYLE_CX_UNARY_BODY(name)                                                            \
+  detail::name##_f32_hyle_neon(sr, si, dr, di, n);
 #else
 #define HYLE_CX_UNARY_BODY(name) detail::name##_f32_scalar(sr, si, dr, di, n);
 #endif

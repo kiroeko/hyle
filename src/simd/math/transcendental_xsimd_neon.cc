@@ -18,6 +18,7 @@
 #include "src/simd/math/kernels.h"
 
 #include <cmath>
+#include <complex>
 #include <cstddef>
 
 #include "xsimd/xsimd.hpp"
@@ -59,6 +60,45 @@ void ctanh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
 void cpow_f32_hyle_neon(const float* zr, const float* zi, const float* wr, const float* wi,
                          float* dr, float* di, std::size_t n) noexcept {
   complex_cpow_hyle(zr, zi, wr, wi, dr, di, n);
+}
+
+// simd-17 batch5: cexp/clog/csqrt on ARM via xsimd batch<complex> (same borrow core as
+// AVX2 cexp/clog/csqrt). Branch-cut / exceptional lanes go through xsimd + scalar tail.
+// Previously ARM fell to scalar-only for these three.
+namespace {
+using cbatch = xsimd::batch<std::complex<float>>;
+using ccf = std::complex<float>;
+constexpr std::size_t kCW = cbatch::size;  // == float batch size (4 on NEON)
+template <cbatch (*Fn)(const cbatch&), ccf (*Sc)(const ccf&)>
+void cunary_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kCW <= n; i += kCW)
+    Fn(cbatch::load_unaligned(sr + i, si + i)).store_unaligned(dr + i, di + i);
+  for (; i < n; ++i) {
+    const ccf r = Sc(ccf(sr[i], si[i]));
+    dr[i] = r.real();
+    di[i] = r.imag();
+  }
+}
+cbatch xb_exp(const cbatch& z) { return xsimd::exp(z); }
+ccf sc_exp(const ccf& z) { return std::exp(z); }
+cbatch xb_log(const cbatch& z) { return xsimd::log(z); }
+ccf sc_log(const ccf& z) { return std::log(z); }
+cbatch xb_sqrt(const cbatch& z) { return xsimd::sqrt(z); }
+ccf sc_sqrt(const ccf& z) { return std::sqrt(z); }
+}  // namespace
+
+void cexp_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
+                         std::size_t n) noexcept {
+  cunary_neon<xb_exp, sc_exp>(sr, si, dr, di, n);
+}
+void clog_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
+                         std::size_t n) noexcept {
+  cunary_neon<xb_log, sc_log>(sr, si, dr, di, n);
+}
+void csqrt_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
+                          std::size_t n) noexcept {
+  cunary_neon<xb_sqrt, sc_sqrt>(sr, si, dr, di, n);
 }
 }  // namespace hyle::simd::detail
 

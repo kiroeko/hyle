@@ -126,6 +126,18 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # HYLE_SIMD_AVX512_RUNNABLE gate marks the host as真 AVX-512 (or SDE-wrapped) to auto-run.
   hyle_isa_flags(_avx512_flags AVX512)
   hyle_add_test(simd NAME avx512 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags})
+  # AVX512_DL variant: same avx512.h backend, compiled with GFNI/VBMI/BITALG so the NATIVE
+  # BitShuffle (VPSHUFBITQMB) / MultiRotateRight (VPMULTISHIFTQB) paths are taken instead of the
+  # store+reload fallback. Built for compile validation + SDE execution (Ice Lake ISA); NOT
+  # auto-run (SIGILLs on a Skylake-X / AVX2 host). Running BOTH avx512 and avx512_dl under SDE
+  # verifies the fallback AND the native path agree with the scalar oracle. GCC/Clang only: MSVC's
+  # /arch:AVX512 does not expose VBMI/BITALG macros (probe-verified), so the native path never
+  # compiles on MSVC -- the base avx512 variant already covers the MSVC fallback, making a dl
+  # variant there a pointless duplicate.
+  if(NOT MSVC)
+    hyle_isa_flags(_avx512dl_flags AVX512_DL)
+    hyle_add_test(simd NAME avx512_dl SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512dl_flags})
+  endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
   hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_NEON OPTIONS ${_neon_flags})

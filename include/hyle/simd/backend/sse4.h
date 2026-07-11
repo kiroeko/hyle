@@ -1476,6 +1476,64 @@ HYLE_FORCE_INLINE Vec128<std::uint64_t, N / 8> SumsOf8(Vec128<std::uint8_t, N> v
   r.raw = _mm_sad_epu8(v.raw, _mm_setzero_si128());
   return r;
 }
+// simd-17 batch5: SumsOf8AbsDiff(a,b) = native _mm_sad_epu8 (SAD per 8-byte group -> u64).
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::uint64_t, N / 8> SumsOf8AbsDiff(Vec128<std::uint8_t, N> a,
+                                                              Vec128<std::uint8_t, N> b) noexcept {
+  static_assert(N == 16, "sse4 SumsOf8AbsDiff: full 16xu8 -> 2xu64");
+  Vec128<std::uint64_t, N / 8> r;
+  r.raw = _mm_sad_epu8(a.raw, b.raw);
+  return r;
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::uint64_t, N / 8> SumsOf8AbsDiff(Vec128<std::uint8_t, N> v) noexcept {
+  return SumsOf8(v);
+}
+// simd-17 batch5: BitShuffle / MultiRotateRight -- portable store+reload (matches scalar oracle
+// + Highway's generic contract). Native VPSHUFBITQMB / VPMULTISHIFTQB live on the AVX3_DL avx512
+// path only; the sse4 backend uses the correctness-first gather (a profiling upgrade could add
+// GFNI/BITALG native here, but those need ISA flags this variant does not carry).
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec128<T, N> BitShuffle(Vec128<T, N> v, Vec128<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) == 8, "BitShuffle data lanes are 64-bit");
+  static_assert(sizeof(TI) == 1 && NI == N * 8, "BitShuffle index is u8, 8 per data lane");
+  alignas(16) std::uint64_t sv[N];
+  alignas(16) std::uint8_t si[NI];
+  Store(v, Simd<T, N, 0>(), reinterpret_cast<T*>(sv));
+  Store(idx, Simd<TI, NI, 0>(), reinterpret_cast<TI*>(si));
+  alignas(16) std::uint64_t out[N];
+  for (std::size_t q = 0; q < N; ++q) {
+    std::uint64_t o = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned bit = static_cast<unsigned>(si[q * 8 + j]) & 63u;
+      o |= ((sv[q] >> bit) & 1u) << j;
+    }
+    out[q] = o;
+  }
+  return Load(Simd<T, N, 0>(), reinterpret_cast<const T*>(out));
+}
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec128<T, N> MultiRotateRight(Vec128<T, N> v, Vec128<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) == 8, "MultiRotateRight data lanes are 64-bit");
+  static_assert(sizeof(TI) == 1 && NI == N * 8, "MultiRotateRight index is u8, 8 per data lane");
+  alignas(16) std::uint64_t sv[N];
+  alignas(16) std::uint8_t si[NI];
+  Store(v, Simd<T, N, 0>(), reinterpret_cast<T*>(sv));
+  Store(idx, Simd<TI, NI, 0>(), reinterpret_cast<TI*>(si));
+  alignas(16) std::uint64_t out[N];
+  for (std::size_t q = 0; q < N; ++q) {
+    std::uint64_t o = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned rot = static_cast<unsigned>(si[q * 8 + j]) & 63u;
+      const std::uint64_t rr = rot == 0 ? sv[q] : ((sv[q] >> rot) | (sv[q] << (64 - rot)));
+      o |= (rr & 0xFFu) << (j * 8);
+    }
+    out[q] = o;
+  }
+  return Load(Simd<T, N, 0>(), reinterpret_cast<const T*>(out));
+}
+
+
 
 // SumsOf2/SumsOf4: sum consecutive pairs/quads of u8 lanes, widening to u16/u32.
 // correctness-first store+reload; native (pmaddubsw with 1s / vpaddl chains) is a profiling upgrade.
@@ -2167,6 +2225,102 @@ HYLE_FORCE_INLINE Vec128<T, N> MulByFloorPow2(Vec128<T, N> v, Vec128<T, N> exp) 
     }
   }
   return Load(Simd<T, N, 0>(), ro);
+}
+
+// ---- simd-17 batch4: half-vector family (128 -> 64 logical half) --------------------
+// Half of Vec128 is Vec128<T,N/2> (same __m128 raw; low 64 bits hold the N/2 lanes).
+// UpperHalf shifts the high 64 into the low; Combine/ZeroExtend/Insert use unpack/move.
+// Parameter order: Combine(d, hi, lo) = [lo low-half, hi low-half].
+template <typename T, std::size_t NH, int kPow2, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, NH> LowerHalf(Simd<T, NH, kPow2>, Vec128<T, N> v) noexcept {
+  static_assert(NH == N / 2 || (N == 1 && NH == 1), "LowerHalf: NH must be N/2");
+  return Vec128<T, NH>{v.raw};  // low N/2 lanes already in place
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, (N > 1 ? N / 2 : 1)> LowerHalf(Vec128<T, N> v) noexcept {
+  return LowerHalf(Simd<T, (N > 1 ? N / 2 : 1), 0>{}, v);
+}
+template <typename T, std::size_t NH, int kPow2, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, NH> UpperHalf(Simd<T, NH, kPow2>, Vec128<T, N> v) noexcept {
+  static_assert(NH == N / 2, "UpperHalf: NH must be N/2");
+  Vec128<T, NH> r;
+  // Move high 64 bits into low 64 (high becomes undefined/zeroed by srli).
+  if constexpr (std::is_same_v<T, float>)
+    r.raw = _mm_castsi128_ps(_mm_srli_si128(_mm_castps_si128(v.raw), 8));
+  else if constexpr (std::is_same_v<T, double>)
+    r.raw = _mm_castsi128_pd(_mm_srli_si128(_mm_castpd_si128(v.raw), 8));
+  else
+    r.raw = _mm_srli_si128(v.raw, 8);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N / 2> UpperHalf(Vec128<T, N> v) noexcept {
+  static_assert(N >= 2, "UpperHalf needs N>=2");
+  return UpperHalf(Simd<T, N / 2, 0>{}, v);
+}
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
+HYLE_FORCE_INLINE detail::V128<D> Combine(D /*d*/,
+    Vec128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> hi,
+    Vec128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> lo) noexcept {
+  using T = TFromD<D>;
+  static_assert(HYLE_SIMD_MAX_LANES_D(D) >= 2, "Combine needs N>=2");
+  detail::V128<D> r;
+  // unpacklo_epi64: [lo[63:0], hi[63:0]]
+  if constexpr (std::is_same_v<T, float>)
+    r.raw = _mm_castsi128_ps(_mm_unpacklo_epi64(_mm_castps_si128(lo.raw), _mm_castps_si128(hi.raw)));
+  else if constexpr (std::is_same_v<T, double>)
+    r.raw = _mm_castsi128_pd(_mm_unpacklo_epi64(_mm_castpd_si128(lo.raw), _mm_castpd_si128(hi.raw)));
+  else
+    r.raw = _mm_unpacklo_epi64(lo.raw, hi.raw);
+  return r;
+}
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
+HYLE_FORCE_INLINE detail::V128<D> ZeroExtendVector(
+    D /*d*/, Vec128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> lo) noexcept {
+  using T = TFromD<D>;
+  static_assert(HYLE_SIMD_MAX_LANES_D(D) >= 2, "ZeroExtendVector needs N>=2");
+  detail::V128<D> r;
+  // _mm_move_epi64: low 64 kept, high 64 zeroed.
+  if constexpr (std::is_same_v<T, float>)
+    r.raw = _mm_castsi128_ps(_mm_move_epi64(_mm_castps_si128(lo.raw)));
+  else if constexpr (std::is_same_v<T, double>)
+    r.raw = _mm_castsi128_pd(_mm_move_epi64(_mm_castpd_si128(lo.raw)));
+  else
+    r.raw = _mm_move_epi64(lo.raw);
+  return r;
+}
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
+HYLE_FORCE_INLINE detail::V128<D> InsertIntoUpper(
+    D /*d*/, Vec128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> hi, detail::V128<D> v) noexcept {
+  using T = TFromD<D>;
+  static_assert(HYLE_SIMD_MAX_LANES_D(D) >= 2, "InsertIntoUpper needs N>=2");
+  detail::V128<D> r;
+  // Keep v's low 64, replace high 64 with hi's low 64.
+  if constexpr (std::is_same_v<T, float>)
+    r.raw = _mm_castsi128_ps(_mm_unpacklo_epi64(_mm_castps_si128(v.raw), _mm_castps_si128(hi.raw)));
+  else if constexpr (std::is_same_v<T, double>)
+    r.raw = _mm_castsi128_pd(_mm_unpacklo_epi64(_mm_castpd_si128(v.raw), _mm_castpd_si128(hi.raw)));
+  else
+    r.raw = _mm_unpacklo_epi64(v.raw, hi.raw);
+  return r;
+}
+// ResizeBitCast within the sse4 band: min-bytes copy, excess zeroed.
+template <class D, typename SrcT, std::size_t NSrc> requires HYLE_SIMD_W(D, 0, 16)
+HYLE_FORCE_INLINE detail::V128<D> ResizeBitCast(D d, Vec128<SrcT, NSrc> v) noexcept {
+  using DstT = TFromD<D>;
+  constexpr std::size_t NDst = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(16) std::uint8_t buf[16] = {};
+  alignas(16) std::uint8_t src[16] = {};
+  if constexpr (std::is_same_v<SrcT, float>)
+    _mm_store_si128(reinterpret_cast<__m128i*>(src), _mm_castps_si128(v.raw));
+  else if constexpr (std::is_same_v<SrcT, double>)
+    _mm_store_si128(reinterpret_cast<__m128i*>(src), _mm_castpd_si128(v.raw));
+  else
+    _mm_store_si128(reinterpret_cast<__m128i*>(src), v.raw);
+  const std::size_t n = (sizeof(SrcT) * NSrc < sizeof(DstT) * NDst) ? sizeof(SrcT) * NSrc
+                                                                    : sizeof(DstT) * NDst;
+  std::memcpy(buf, src, n);
+  return Load(d, reinterpret_cast<const DstT*>(buf));
 }
 
 // ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts (single 128-bit block) ----

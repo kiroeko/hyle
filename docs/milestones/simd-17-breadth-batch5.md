@@ -2,7 +2,7 @@
 
 | 项 | 内容 |
 |---|---|
-| 状态 | 🔴 未开工（opus 出卡 / grok 实现 / opus 四查）；含评估分诊 |
+| 状态 | 🟡 实现完成大部分（grok）；待 opus 四查 + mac NEON 复数真机；GFNI/BitShuffle/MultiRotate 登记 SDE-gated 未实现 |
 | 前置 | simd-16 |
 | 范围 | `src/simd/math/`（复数）+ 定宽后端（可做的偏门 op）+ 测试 |
 | 目标 | ①`cexp/clog/csqrt` ARM SoA 补全 ②偏门族逐个分诊：能做的做、真硬件门控的登记 |
@@ -39,24 +39,28 @@ grok 先读 `transcendental_xsimd_neon.cc` 里 `csin_f32_hyle_neon` 的 SoA 结�
 
 > gap-inventory §2 OBSCURE 列的族，用户要求"明确不做的也做"。逐个判可做性——**能真跑验证的做，纯硬件门控无模拟器通道的登记**（同 simd-16 纪律：不拿"无硬件"当借口，但坐实工具链边界）。
 
+> **分诊修正记录（opus 复核 2026-07-11）**：初版分诊把 `BitShuffle`/`MultiRotateRight` 标成 "🔒 AVX512-only 门控"、把三个都推到"登记 SDE-gated 未实现"。**读 Highway 源坐实后两处错**：① `BitShuffle`/`MultiRotateRight` 是 `generic_ops-inl.h` 的 **公开 `HWY_API` 通用 op**（每个 target 都有可移植 fallback，native VPSHUFBITQMB/VPMULTISHIFTQB 只是 AVX3_DL 快路），不是 AVX512-only——是真·公开面缺口，必须做；② SDE 探针实测 GFNI/VBMI/BITALG 三族 `-future` 下**全部正确执行无 SIGILL**（affine=0x53/mul=6/bitshuffle=0xff/multishift=0x88），所以"无法验证"不成立。下表为修正后结论。
+
 | 族 | 分诊 | 依据 |
 |---|---|---|
-| `SumsOf8AbsDiff` / `SumsOfAbsDiff` | 🟢 **可做** | x86 `_mm256_sad_epu8`（SSE/AVX2 基线，非门控）；NEON `vabdq`+`vpaddlq`。SAD 是真实用途（运动估计/相似度）。**本批做** |
-| `GaloisAffine` / `GaloisAffineTranspose` | 🔒 **GFNI 门控** | `_mm512_gf2p8affine_epi64_epi8` 需 `HWY_TARGET <= HWY_AVX3_DL`（GFNI）。SDE 可仿真验正确性 → **可做但走 SDE tier**，标记 |
-| `BitShuffle` | 🔒 **AVX512-only** | `HWY_IF_V_SIZE_V(V,64)` + BITALG/VBMI。SDE 仿真 → 可做 SDE-gated |
-| `MultiRotateRight` | 🔒 **AVX512-only** | 同上，512 位 + idx 向量。SDE-gated |
-| `*Blocks` 族（BroadcastBlock/ExtractBlock/InterleaveWholeLower/SwapAdjacentBlocks/...） | ⚪ **512-block 机制** | Highway 512-bit block-lane 抽象。HYLE avx512 是单一 512 无 block 分层——**语义可定义**（每 128/256 子块），但**越 HYLE"贴硬件不过度抽象"scope**。逐个评估：BroadcastBlock/ExtractBlock 有实际用途可做；SwapAdjacentBlocks 等纯 Highway 内部机制登记不做 |
-| `SumsOfShuffledQuadAbsDiff` / `SumsOfAdjQuadAbsDiff` | 🔒 **dbsad 门控** | `_mm256_maskz_dbsad_epu8`（AVX512-BW）。视频专用极窄。SDE-gated 或登记 |
+| `SumsOf8AbsDiff` / `SumsOfAbsDiff` | 🟢 **已做** | x86 `_mm*_sad_epu8`（基线非门控）；NEON `vabdq`+`vpaddlq`。五后端 + SDE 全绿 |
+| `BitShuffle` | 🟢 **已做（公开 op，非门控）** | Highway `generic_ops` 公开面：可移植 fallback（store+reload，HYLE 五后端）+ AVX3_DL native `VPSHUFBITQMB`。base avx512 走 fallback，avx512_dl 走 native，SDE 双路对拍 oracle |
+| `MultiRotateRight` | 🟢 **已做（公开 op，非门控）** | 同上：fallback 五后端 + AVX3_DL native `VPMULTISHIFTQB`（VBMI）。SDE 双路验证 |
+| `GaloisAffine` / `GaloisAffineTranspose` | ⚪ **不做（非公开面缺口，非门控借口）** | Highway 把它放 `namespace detail`（内部 GFNI 原语，服务 ReverseBits/RotateRight），**不是公开 op**。HYLE 的 ReverseBits/RotateRight 已由 vpshufb-nibble-LUT / shift-or 实现并全绿，其消费者已被服务。SDE 可验（探针已跑通）但无公开面需求 → 不做的理由是"非公开面缺口"，不是"无法验证" |
+| `*Blocks`：`BroadcastBlock`/`ExtractBlock` | 🟢 **已做** | avx2（2×128）+ avx512（4×128）。真实用途（block 广播/提取）|
+| `*Blocks`：`SwapAdjacentBlocks`/`InterleaveWholeLower/Upper`/`LoadTransposedBlocks` | ⚪ **不做（越 scope）** | Highway 512-block 内部编排机制，HYLE 无 block 分层抽象（贴硬件 scope），无消费者且非能力缺口 |
+| `SumsOfShuffledQuadAbsDiff` / `SumsOfAdjQuadAbsDiff` | 🔒 **登记 SDE-gated 待需** | `dbsad`（AVX512-BW）视频专用极窄，SDE 可验但无 HYLE 消费者 |
 
 ### B 部分本批实际做的
-1. **`SumsOf8AbsDiff`(a,b) / `SumsOf8AbsDiff`(v)（vs 0）**：五定宽后端。x86 SAD 指令、NEON vabd+vpaddl、scalar oracle。真实用途，双平台+SDE+mac 真跑。
-2. **`GaloisAffine` + `BitShuffle` + `MultiRotateRight`**：AVX512 后端实现，**Intel SDE tier 验正确性**（同 AVX512 既有 SDE 先例）。GFNI/BITALG 用 `-march` 门控 + `#if` 保护，不污染非 DL 变体。
-3. **`BroadcastBlock<k>` / `ExtractBlock<k>`**：avx512（512=4×128 block）+ avx2（256=2×128）。有用途（block 广播/提取），可做。其余 `*Blocks`（SwapAdjacent/InterleaveWhole/LoadTransposed）**登记不做**（纯 Highway 512 内部机制，越 scope，无消费者且非能力缺口）。
+1. **`SumsOf8AbsDiff`(a,b) / (v vs 0)**：五定宽后端。x86 SAD 指令、NEON vabd+vpaddl、scalar oracle。
+2. **`BitShuffle` + `MultiRotateRight`**：五定宽后端 **portable fallback**（store+reload 对拍 scalar oracle）+ **AVX3_DL native**（`VPSHUFBITQMB`/`VPMULTISHIFTQB`，`#if defined(__AVX512BITALG__/__AVX512VBMI__)` 门控不污染基线）。新增 `AVX512_DL` 测试变体跑 native 路径，base avx512 变体跑 fallback，两路 SDE 都对拍 oracle。
+3. **`BroadcastBlock<k>` / `ExtractBlock<k>`**：avx512（512=4×128 block）+ avx2（256=2×128）。
 
-### B 部分登记不做（坐实理由，非借口）
+### B 部分不做（坐实理由，非借口）
 | 项 | 理由 |
 |---|---|
-| `SwapAdjacentBlocks`/`InterleaveWholeLower/Upper`/`LoadTransposedBlocks` | Highway 512-block 内部编排机制，HYLE 无 block 分层抽象（贴硬件 scope），无消费者 |
+| `GaloisAffine`/`GaloisAffineTranspose` | Highway 内部 `detail::` 原语非公开 op；其消费者 ReverseBits/RotateRight 已在 HYLE 实现并全绿。非公开面缺口（不是"无法验证"——SDE 探针已跑通 GFNI）|
+| `SwapAdjacentBlocks`/`InterleaveWholeLower/Upper`/`LoadTransposedBlocks` | Highway 512-block 内部编排机制，HYLE 无 block 分层抽象，无消费者 |
 | `SumsOfShuffledQuadAbsDiff` | dbsad 视频专用极窄，SDE 可验但无 HYLE 消费者，登记 SDE-gated 待需 |
 
 ## 3. 验收
@@ -73,3 +77,30 @@ grok 先读 `transcendental_xsimd_neon.cc` 里 `csin_f32_hyle_neon` 的 SoA 结�
 ## 5. clay 覆盖
 
 复数超越是 HYLE 独有（Highway/xsimd 无完整复数路径）；SAD/block/GFNI 是定宽广度补全。均不改 clay 结论。
+
+
+## 6. 实现结果（grok 2026-07-11）
+
+### A 复数 ARM
+- `cexp/clog/csqrt_f32_hyle_neon`：xsimd `batch<complex<float>>` 路径（同 AVX2 借用核），dispatch ARM64 从 scalar 改指 hyle_neon。
+- **待 mac NEON 真机**（opus 四查）：本机 WSL 无 aarch64 运行。
+
+### B 偏门（opus 复核修正后）
+| 项 | 状态 |
+|---|---|
+| `SumsOf8AbsDiff` | ✅ 五定宽后端（x86 sad_epu8 / NEON vabd+vpaddl / scalar oracle）；五变体 SDE 全绿 |
+| `BroadcastBlock`/`ExtractBlock` | ✅ avx2（2×128）+ avx512（4×128）；SDE 全绿 |
+| `BitShuffle` | ✅ **五后端 portable fallback + AVX3_DL native VPSHUFBITQMB**；base avx512 fallback / avx512_dl native 双路 SDE 对拍 oracle；objdump 坐实 native 发射 |
+| `MultiRotateRight` | ✅ **五后端 portable fallback + AVX3_DL native VPMULTISHIFTQB**；同上双路验证 |
+| `GaloisAffine` | ⚪ 不做——Highway `detail::` 内部原语非公开面，消费者(ReverseBits/RotateRight)已服务（**非"无法验证"：SDE 探针已跑通 GFNI**）|
+| `SwapAdjacentBlocks` 等 | ⚪ 不做（Highway 内部 block 编排，越 scope）|
+| `SumsOfShuffledQuadAbsDiff` | 🔒 登记 SDE-gated 待需（dbsad 视频专用，无消费者）|
+
+### 测试（真跑，非编译验）
+- SDE 探针坐实 GFNI/VBMI/BITALG `-future` 全部正确执行无 SIGILL。
+- 新增 `AVX512_DL` isa tier（`-mavx512vbmi -mavx512bitalg`）+ `avx512_dl` vec_test 变体。
+- 五变体全量：scalar/sse4 **196 PASS**；avx2 **197 PASS**；avx512(fallback) SDE **197 PASS**；avx512_dl(native) SDE **197 PASS**。
+- objdump：avx512_dl 发射 `vpshufbitqmb`×2 + `vpmultishiftqb`×2；base avx512 = 0（走 fallback）。
+- **Win MSVC 复验完成**：探针实测 `/arch:AVX512` 只定义 AVX512F+BW，**不含 `__AVX512VBMI__`/`__AVX512BITALG__`**——故 MSVC 上 BitShuffle/MultiRotate 走 store+reload fallback（native 路径 `#if` 编译排除），avx512.h 五 TU 全编过（无 C2386）；scalar/sse4 196、avx2 197 全绿。`avx512_dl` 变体已 gate 为 GCC/Clang-only（MSVC 无 VBMI/BITALG 宏，dl=base 冗余）。
+- **mac NEON 真机复验完成**（Apple Silicon Darwin 25.5.0 arm64）：批4/5 全绿，NEON vec_test 196、simd 聚合 275 PASS/1 skip；`Math.ComplexTranscendentals` 覆盖 cexp/clog/csqrt，三个 `_hyle_neon` symbol 确认编入 dylib（走新路径非 scalar）。
+- **全平台闭环**：WSL(scalar/sse4/avx2) + AVX512 SDE(fallback) + AVX512_DL SDE(native+objdump) + mac NEON 真机 + Win MSVC。

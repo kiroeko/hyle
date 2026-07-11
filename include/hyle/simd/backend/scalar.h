@@ -893,6 +893,72 @@ HYLE_FORCE_INLINE Vec<std::uint64_t, N / 8> SumsOf8(Vec<std::uint8_t, N> v) noex
   }
   return r;
 }
+// simd-17 batch5: SumsOf8AbsDiff(a,b) = sum |a-b| per group of 8 u8 lanes into u64 (SAD).
+// Unary form vs zero equals SumsOf8 (bytes are non-negative).
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec<std::uint64_t, N / 8> SumsOf8AbsDiff(Vec<std::uint8_t, N> a,
+                                                           Vec<std::uint8_t, N> b) noexcept {
+  static_assert(N % 8 == 0, "SumsOf8AbsDiff needs a lane count that is a multiple of 8");
+  Vec<std::uint64_t, N / 8> r;
+  for (std::size_t g = 0; g < N / 8; ++g) {
+    std::uint64_t s = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const int d = static_cast<int>(a.raw[g * 8 + j]) - static_cast<int>(b.raw[g * 8 + j]);
+      s += static_cast<std::uint64_t>(d < 0 ? -d : d);
+    }
+    r.raw[g] = s;
+  }
+  return r;
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec<std::uint64_t, N / 8> SumsOf8AbsDiff(Vec<std::uint8_t, N> v) noexcept {
+  return SumsOf8(v);  // vs zero
+}
+
+// simd-17 batch5: BitShuffle / MultiRotateRight -- per-u64-lane bit gather / byte rotate. Data
+// lanes are u64, index lanes are u8 (8 per data lane), so both take same-total-bytes vectors and
+// return the u64-data vector (Highway's generic contract, portable across ALL targets -- the
+// native AVX3_DL _mm512_bitshuffle / _mm512_multishift is only a fast path). Scalar is the oracle.
+//
+// BitShuffle(v, idx): for each u64 lane q, output bit j (j in [0,8)) = bit (idx[q*8+j] & 63) of
+// v[q]; the 8 selected bits pack into the low byte of the output lane (bit0 = LSB), high 56 bits 0.
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec<T, N> BitShuffle(Vec<T, N> v, Vec<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) == 8, "BitShuffle data lanes are 64-bit");
+  static_assert(sizeof(TI) == 1 && NI == N * 8, "BitShuffle index is u8, 8 per data lane");
+  Vec<T, N> r;
+  for (std::size_t q = 0; q < N; ++q) {
+    const std::uint64_t src = static_cast<std::uint64_t>(v.raw[q]);
+    std::uint64_t out = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned bit = static_cast<unsigned>(idx.raw[q * 8 + j]) & 63u;
+      out |= ((src >> bit) & 1u) << j;
+    }
+    r.raw[q] = static_cast<T>(out);
+  }
+  return r;
+}
+// MultiRotateRight(v, idx): for each output byte i (i in [0, 8N)), take data lane q = i/8, rotate
+// v[q] right by (idx[i] & 63) bits, keep the low 8 bits. Eight independently-rotated byte views of
+// each u64 lane (x86 VPMULTISHIFTQB semantics).
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec<T, N> MultiRotateRight(Vec<T, N> v, Vec<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) == 8, "MultiRotateRight data lanes are 64-bit");
+  static_assert(sizeof(TI) == 1 && NI == N * 8, "MultiRotateRight index is u8, 8 per data lane");
+  Vec<T, N> r;
+  for (std::size_t q = 0; q < N; ++q) {
+    const std::uint64_t src = static_cast<std::uint64_t>(v.raw[q]);
+    std::uint64_t out = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned rot = static_cast<unsigned>(idx.raw[q * 8 + j]) & 63u;
+      const std::uint64_t rotated = rot == 0 ? src : ((src >> rot) | (src << (64 - rot)));
+      out |= (rotated & 0xFFu) << (j * 8);
+    }
+    r.raw[q] = static_cast<T>(out);
+  }
+  return r;
+}
+
 // SumsOf2/SumsOf4: like SumsOf8 but sum consecutive groups of 2 / 4 u8 lanes, widening to
 // u16 / u32 (Highway). The finer-grained horizontal byte sums (histogram / partial reduce).
 template <std::size_t N>
@@ -1485,6 +1551,69 @@ HYLE_FORCE_INLINE Vec<T, N> MulByFloorPow2(Vec<T, N> v, Vec<T, N> exp) noexcept 
       r.raw[i] = std::ldexp(v.raw[i], detail::floor_exp_to_int(exp.raw[i]));
     }
   }
+  return r;
+}
+
+// ---- simd-17 batch4: half-vector family (real half-width entities) ------------------
+// LowerHalf/UpperHalf return N/2-lane vectors; Combine/ZeroExtendVector/InsertIntoUpper
+// reassemble a full-width vector. ResizeBitCast reinterprets across widths (min bytes
+// copied; destination excess zeroed). Parameter order matches Highway: Combine(d, hi, lo)
+// yields [lo in lower half, hi in upper half].
+template <typename T, std::size_t NH, int kPow2, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, NH> LowerHalf(Simd<T, NH, kPow2>, Vec<T, N> v) noexcept {
+  static_assert(NH == N / 2 || (N == 1 && NH == 1), "LowerHalf: NH must be N/2");
+  Vec<T, NH> r;
+  for (std::size_t i = 0; i < NH; ++i) r.raw[i] = v.raw[i];
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, (N > 1 ? N / 2 : 1)> LowerHalf(Vec<T, N> v) noexcept {
+  return LowerHalf(Simd<T, (N > 1 ? N / 2 : 1), 0>{}, v);
+}
+template <typename T, std::size_t NH, int kPow2, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, NH> UpperHalf(Simd<T, NH, kPow2>, Vec<T, N> v) noexcept {
+  static_assert(NH == N / 2, "UpperHalf: NH must be N/2 (N>=2)");
+  Vec<T, NH> r;
+  for (std::size_t i = 0; i < NH; ++i) r.raw[i] = v.raw[NH + i];
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N / 2> UpperHalf(Vec<T, N> v) noexcept {
+  static_assert(N >= 2, "UpperHalf needs at least 2 lanes");
+  return UpperHalf(Simd<T, N / 2, 0>{}, v);
+}
+template <typename T, std::size_t N, int kPow2>
+HYLE_FORCE_INLINE Vec<T, N> Combine(Simd<T, N, kPow2>, Vec<T, N / 2> hi, Vec<T, N / 2> lo) noexcept {
+  static_assert(N >= 2, "Combine needs N>=2");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N / 2; ++i) {
+    r.raw[i] = lo.raw[i];
+    r.raw[N / 2 + i] = hi.raw[i];
+  }
+  return r;
+}
+template <typename T, std::size_t N, int kPow2>
+HYLE_FORCE_INLINE Vec<T, N> ZeroExtendVector(Simd<T, N, kPow2>, Vec<T, N / 2> lo) noexcept {
+  static_assert(N >= 2, "ZeroExtendVector needs N>=2");
+  Vec<T, N> r{};
+  for (std::size_t i = 0; i < N / 2; ++i) r.raw[i] = lo.raw[i];
+  return r;
+}
+template <typename T, std::size_t N, int kPow2>
+HYLE_FORCE_INLINE Vec<T, N> InsertIntoUpper(Simd<T, N, kPow2>, Vec<T, N / 2> hi, Vec<T, N> v) noexcept {
+  static_assert(N >= 2, "InsertIntoUpper needs N>=2");
+  Vec<T, N> r = v;
+  for (std::size_t i = 0; i < N / 2; ++i) r.raw[N / 2 + i] = hi.raw[i];
+  return r;
+}
+// ResizeBitCast(d, v): bit-reinterpret v into D's width. Copies min(src,dst) bytes; excess
+// destination bytes are zeroed. Same-width is pure BitCast; widen/narrow change lane count.
+template <typename DstT, std::size_t NDst, int kPow2, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec<DstT, NDst> ResizeBitCast(Simd<DstT, NDst, kPow2>, Vec<SrcT, NSrc> v) noexcept {
+  Vec<DstT, NDst> r{};
+  const std::size_t n = (sizeof(SrcT) * NSrc < sizeof(DstT) * NDst) ? sizeof(SrcT) * NSrc
+                                                                    : sizeof(DstT) * NDst;
+  std::memcpy(r.raw, v.raw, n);
   return r;
 }
 

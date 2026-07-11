@@ -115,14 +115,16 @@ using VN = VecNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
 template <class D>
 using MN = MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
 template <class D>
-inline constexpr bool kNativeWidth = HYLE_SIMD_MAX_LANES_D(D) * sizeof(TFromD<D>) == 16;
+inline constexpr bool kNativeWidth = HYLE_SIMD_MAX_LANES_D(D) * sizeof(TFromD<D>) <= 16;
 }  // namespace detail
 
 // ---- initialization -----------------------------------------------------------------
 template <class D, typename T2>
 HYLE_FORCE_INLINE detail::VN<D> Set(D, T2 t) noexcept {
   using T = TFromD<D>;
-  static_assert(detail::kNativeWidth<D>, "neon backend is native-width-only (128-bit)");
+  // Full 128-bit native and half-width (64-bit logical, still in a 128-bit register with
+  // high half unused/zero) are both legal after simd-17 batch4 half-vector family.
+  static_assert(detail::kNativeWidth<D>, "neon backend max width is 128-bit");
   detail::VN<D> v;
   if constexpr (std::is_same_v<T, float>) v.raw = vdupq_n_f32(static_cast<float>(t));
   else if constexpr (std::is_same_v<T, double>) v.raw = vdupq_n_f64(static_cast<double>(t));
@@ -1698,6 +1700,64 @@ HYLE_FORCE_INLINE VecNeon<std::uint64_t, N / 8> SumsOf8(VecNeon<std::uint8_t, N>
   r.raw = vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(v.raw)));
   return r;
 }
+// simd-17 batch5: SumsOf8AbsDiff(a,b) = vabdq_u8 then pairwise-widening sum (SAD via NEON).
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::uint64_t, N / 8> SumsOf8AbsDiff(VecNeon<std::uint8_t, N> a,
+                                                               VecNeon<std::uint8_t, N> b) noexcept {
+  static_assert(N == 16, "neon SumsOf8AbsDiff: full 16xu8 -> 2xu64");
+  VecNeon<std::uint64_t, N / 8> r;
+  r.raw = vpaddlq_u32(vpaddlq_u16(vpaddlq_u8(vabdq_u8(a.raw, b.raw))));
+  return r;
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::uint64_t, N / 8> SumsOf8AbsDiff(VecNeon<std::uint8_t, N> v) noexcept {
+  return SumsOf8(v);
+}
+// simd-17 batch5: BitShuffle / MultiRotateRight -- portable store+reload (matches scalar oracle
+// + Highway's generic contract). Native VPSHUFBITQMB / VPMULTISHIFTQB live on the AVX3_DL avx512
+// path only; the neon backend uses the correctness-first gather (a profiling upgrade could add
+// GFNI/BITALG native here, but those need ISA flags this variant does not carry).
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE VecNeon<T, N> BitShuffle(VecNeon<T, N> v, VecNeon<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) == 8, "BitShuffle data lanes are 64-bit");
+  static_assert(sizeof(TI) == 1 && NI == N * 8, "BitShuffle index is u8, 8 per data lane");
+  alignas(16) std::uint64_t sv[N];
+  alignas(16) std::uint8_t si[NI];
+  StoreU(v, Simd<T, N, 0>(), reinterpret_cast<T*>(sv));
+  StoreU(idx, Simd<TI, NI, 0>(), reinterpret_cast<TI*>(si));
+  alignas(16) std::uint64_t out[N];
+  for (std::size_t q = 0; q < N; ++q) {
+    std::uint64_t o = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned bit = static_cast<unsigned>(si[q * 8 + j]) & 63u;
+      o |= ((sv[q] >> bit) & 1u) << j;
+    }
+    out[q] = o;
+  }
+  return LoadU(Simd<T, N, 0>(), reinterpret_cast<const T*>(out));
+}
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE VecNeon<T, N> MultiRotateRight(VecNeon<T, N> v, VecNeon<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) == 8, "MultiRotateRight data lanes are 64-bit");
+  static_assert(sizeof(TI) == 1 && NI == N * 8, "MultiRotateRight index is u8, 8 per data lane");
+  alignas(16) std::uint64_t sv[N];
+  alignas(16) std::uint8_t si[NI];
+  StoreU(v, Simd<T, N, 0>(), reinterpret_cast<T*>(sv));
+  StoreU(idx, Simd<TI, NI, 0>(), reinterpret_cast<TI*>(si));
+  alignas(16) std::uint64_t out[N];
+  for (std::size_t q = 0; q < N; ++q) {
+    std::uint64_t o = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned rot = static_cast<unsigned>(si[q * 8 + j]) & 63u;
+      const std::uint64_t rr = rot == 0 ? sv[q] : ((sv[q] >> rot) | (sv[q] << (64 - rot)));
+      o |= (rr & 0xFFu) << (j * 8);
+    }
+    out[q] = o;
+  }
+  return LoadU(Simd<T, N, 0>(), reinterpret_cast<const T*>(out));
+}
+
+
 
 // SumsOf2/SumsOf4: sum consecutive pairs/quads of u8 lanes, widening to u16/u32.
 // correctness-first store+reload; native (pmaddubsw with 1s / vpaddl chains) is a profiling upgrade.
@@ -2406,6 +2466,135 @@ HYLE_FORCE_INLINE VecNeon<T, N> MulByFloorPow2(VecNeon<T, N> v, VecNeon<T, N> ex
     }
   }
   return LoadU(Simd<T, N, 0>(), ro);
+}
+
+// ---- simd-17 batch4: half-vector family (128 -> 64 logical half) --------------------
+// Half is VecNeon<T,N/2> stored in a full 128-bit register with valid lanes in the low 64
+// bits (high 64 zeroed). Uses vget_low/high + vcombine for native extract/combine.
+// Parameter order: Combine(d, hi, lo) = [lo low-half, hi low-half].
+namespace detail {
+template <typename T>
+HYLE_FORCE_INLINE RawNeonT<T> neon_combine_halves(RawNeonT<T> lo, RawNeonT<T> hi) noexcept {
+  // Combine low-64 of lo with low-64 of hi into a full 128-bit vector.
+  if constexpr (std::is_same_v<T, float>)
+    return vcombine_f32(vget_low_f32(lo), vget_low_f32(hi));
+  else if constexpr (std::is_same_v<T, double>)
+    return vcombine_f64(vget_low_f64(lo), vget_low_f64(hi));
+  else if constexpr (std::is_same_v<T, std::int8_t>)
+    return vcombine_s8(vget_low_s8(lo), vget_low_s8(hi));
+  else if constexpr (std::is_same_v<T, std::uint8_t>)
+    return vcombine_u8(vget_low_u8(lo), vget_low_u8(hi));
+  else if constexpr (std::is_same_v<T, std::int16_t>)
+    return vcombine_s16(vget_low_s16(lo), vget_low_s16(hi));
+  else if constexpr (std::is_same_v<T, std::uint16_t>)
+    return vcombine_u16(vget_low_u16(lo), vget_low_u16(hi));
+  else if constexpr (std::is_same_v<T, std::int32_t>)
+    return vcombine_s32(vget_low_s32(lo), vget_low_s32(hi));
+  else if constexpr (std::is_same_v<T, std::uint32_t>)
+    return vcombine_u32(vget_low_u32(lo), vget_low_u32(hi));
+  else if constexpr (std::is_same_v<T, std::int64_t>)
+    return vcombine_s64(vget_low_s64(lo), vget_low_s64(hi));
+  else
+    return vcombine_u64(vget_low_u64(lo), vget_low_u64(hi));
+}
+template <typename T>
+HYLE_FORCE_INLINE RawNeonT<T> neon_lower_half_zext(RawNeonT<T> v) noexcept {
+  // Extract low 64, zero-extend high 64.
+  if constexpr (std::is_same_v<T, float>)
+    return vcombine_f32(vget_low_f32(v), vdup_n_f32(0));
+  else if constexpr (std::is_same_v<T, double>)
+    return vcombine_f64(vget_low_f64(v), vdup_n_f64(0));
+  else if constexpr (std::is_same_v<T, std::int8_t>)
+    return vcombine_s8(vget_low_s8(v), vdup_n_s8(0));
+  else if constexpr (std::is_same_v<T, std::uint8_t>)
+    return vcombine_u8(vget_low_u8(v), vdup_n_u8(0));
+  else if constexpr (std::is_same_v<T, std::int16_t>)
+    return vcombine_s16(vget_low_s16(v), vdup_n_s16(0));
+  else if constexpr (std::is_same_v<T, std::uint16_t>)
+    return vcombine_u16(vget_low_u16(v), vdup_n_u16(0));
+  else if constexpr (std::is_same_v<T, std::int32_t>)
+    return vcombine_s32(vget_low_s32(v), vdup_n_s32(0));
+  else if constexpr (std::is_same_v<T, std::uint32_t>)
+    return vcombine_u32(vget_low_u32(v), vdup_n_u32(0));
+  else if constexpr (std::is_same_v<T, std::int64_t>)
+    return vcombine_s64(vget_low_s64(v), vdup_n_s64(0));
+  else
+    return vcombine_u64(vget_low_u64(v), vdup_n_u64(0));
+}
+template <typename T>
+HYLE_FORCE_INLINE RawNeonT<T> neon_upper_half_zext(RawNeonT<T> v) noexcept {
+  // Extract high 64 into low, zero high.
+  if constexpr (std::is_same_v<T, float>)
+    return vcombine_f32(vget_high_f32(v), vdup_n_f32(0));
+  else if constexpr (std::is_same_v<T, double>)
+    return vcombine_f64(vget_high_f64(v), vdup_n_f64(0));
+  else if constexpr (std::is_same_v<T, std::int8_t>)
+    return vcombine_s8(vget_high_s8(v), vdup_n_s8(0));
+  else if constexpr (std::is_same_v<T, std::uint8_t>)
+    return vcombine_u8(vget_high_u8(v), vdup_n_u8(0));
+  else if constexpr (std::is_same_v<T, std::int16_t>)
+    return vcombine_s16(vget_high_s16(v), vdup_n_s16(0));
+  else if constexpr (std::is_same_v<T, std::uint16_t>)
+    return vcombine_u16(vget_high_u16(v), vdup_n_u16(0));
+  else if constexpr (std::is_same_v<T, std::int32_t>)
+    return vcombine_s32(vget_high_s32(v), vdup_n_s32(0));
+  else if constexpr (std::is_same_v<T, std::uint32_t>)
+    return vcombine_u32(vget_high_u32(v), vdup_n_u32(0));
+  else if constexpr (std::is_same_v<T, std::int64_t>)
+    return vcombine_s64(vget_high_s64(v), vdup_n_s64(0));
+  else
+    return vcombine_u64(vget_high_u64(v), vdup_n_u64(0));
+}
+}  // namespace detail
+
+template <typename T, std::size_t NH, int kPow2, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, NH> LowerHalf(Simd<T, NH, kPow2>, VecNeon<T, N> v) noexcept {
+  static_assert(NH == N / 2 || (N == 1 && NH == 1), "LowerHalf: NH must be N/2");
+  return VecNeon<T, NH>{detail::neon_lower_half_zext<T>(v.raw)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, (N > 1 ? N / 2 : 1)> LowerHalf(VecNeon<T, N> v) noexcept {
+  return LowerHalf(Simd<T, (N > 1 ? N / 2 : 1), 0>{}, v);
+}
+template <typename T, std::size_t NH, int kPow2, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, NH> UpperHalf(Simd<T, NH, kPow2>, VecNeon<T, N> v) noexcept {
+  static_assert(NH == N / 2, "UpperHalf: NH must be N/2");
+  return VecNeon<T, NH>{detail::neon_upper_half_zext<T>(v.raw)};
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N / 2> UpperHalf(VecNeon<T, N> v) noexcept {
+  static_assert(N >= 2, "UpperHalf needs N>=2");
+  return UpperHalf(Simd<T, N / 2, 0>{}, v);
+}
+template <typename T, std::size_t N, int kPow2>
+HYLE_FORCE_INLINE VecNeon<T, N> Combine(Simd<T, N, kPow2>,
+                                        VecNeon<T, N / 2> hi, VecNeon<T, N / 2> lo) noexcept {
+  static_assert(N >= 2, "Combine needs N>=2");
+  return VecNeon<T, N>{detail::neon_combine_halves<T>(lo.raw, hi.raw)};
+}
+template <typename T, std::size_t N, int kPow2>
+HYLE_FORCE_INLINE VecNeon<T, N> ZeroExtendVector(Simd<T, N, kPow2>, VecNeon<T, N / 2> lo) noexcept {
+  static_assert(N >= 2, "ZeroExtendVector needs N>=2");
+  return VecNeon<T, N>{detail::neon_lower_half_zext<T>(lo.raw)};
+}
+template <typename T, std::size_t N, int kPow2>
+HYLE_FORCE_INLINE VecNeon<T, N> InsertIntoUpper(Simd<T, N, kPow2>,
+                                                VecNeon<T, N / 2> hi, VecNeon<T, N> v) noexcept {
+  static_assert(N >= 2, "InsertIntoUpper needs N>=2");
+  return VecNeon<T, N>{detail::neon_combine_halves<T>(v.raw, hi.raw)};
+}
+template <typename DstT, std::size_t NDst, int kPow2, typename SrcT, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<DstT, NDst> ResizeBitCast(Simd<DstT, NDst, kPow2>,
+                                                    VecNeon<SrcT, NSrc> v) noexcept {
+  alignas(16) std::uint8_t buf[16] = {};
+  alignas(16) std::uint8_t src[16] = {};
+  std::memcpy(src, &v.raw, 16);
+  const std::size_t n = (sizeof(SrcT) * NSrc < sizeof(DstT) * NDst) ? sizeof(SrcT) * NSrc
+                                                                    : sizeof(DstT) * NDst;
+  std::memcpy(buf, src, n);
+  VecNeon<DstT, NDst> r;
+  std::memcpy(&r.raw, buf, 16);
+  return r;
 }
 
 // ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts (single 128-bit block) ----

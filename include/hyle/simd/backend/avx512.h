@@ -1441,6 +1441,87 @@ HYLE_FORCE_INLINE Vec512<std::uint64_t, N / 8> SumsOf8(Vec512<std::uint8_t, N> v
   r.raw = _mm512_sad_epu8(v.raw, _mm512_setzero_si512());
   return r;
 }
+// simd-17 batch5: SumsOf8AbsDiff(a,b) = native _mm512_sad_epu8.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::uint64_t, N / 8> SumsOf8AbsDiff(Vec512<std::uint8_t, N> a,
+                                                              Vec512<std::uint8_t, N> b) noexcept {
+  static_assert(N == 64, "avx512 SumsOf8AbsDiff: full 64xu8 -> 8xu64");
+  Vec512<std::uint64_t, N / 8> r;
+  r.raw = _mm512_sad_epu8(a.raw, b.raw);
+  return r;
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::uint64_t, N / 8> SumsOf8AbsDiff(Vec512<std::uint8_t, N> v) noexcept {
+  return SumsOf8(v);
+}
+
+// simd-17 batch5: BitShuffle / MultiRotateRight. Data lanes u64, index lanes u8 (8 per lane).
+// NATIVE on AVX3_DL (Ice Lake+): VPSHUFBITQMB (BITALG) / VPMULTISHIFTQB (VBMI). The HYLE avx512
+// baseline is F+BW+VL+DQ+CD (Skylake-X) which LACKS these, so the native path is #if-gated on the
+// feature macro and the store+reload oracle serves the baseline variant. The avx512_dl test
+// variant (-mavx512bitalg -mavx512vbmi) exercises the native path under Intel SDE; the base
+// avx512 variant exercises the fallback. Both must match the scalar oracle.
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec512<T, N> BitShuffle(Vec512<T, N> v, Vec512<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) == 8, "BitShuffle data lanes are 64-bit");
+  static_assert(sizeof(TI) == 1 && NI == N * 8, "BitShuffle index is u8, 8 per data lane");
+#if defined(__AVX512BITALG__)
+  // VPSHUFBITQMB: per u64 lane, gather the 8 idx-selected bits into a mask. The mask's byte q
+  // (bits q*8..q*8+7) holds lane q's 8 output bits -> cvtsi64 packs the 64-bit mask into 8 bytes,
+  // then cvtepu8_epi64 zero-extends each byte to a u64 lane (matching the oracle's low-byte pack).
+  static_assert(N == 8, "avx512 BitShuffle: full 8xu64");
+  const __mmask64 m = _mm512_bitshuffle_epi64_mask(v.raw, idx.raw);
+  const __m128i bytes = _mm_cvtsi64_si128(static_cast<long long>(m));
+  Vec512<T, N> r;
+  r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_cvtepu8_epi64(bytes));
+  return r;
+#else
+  alignas(64) std::uint64_t sv[N];
+  alignas(64) std::uint8_t si[NI];
+  Store(v, Simd<T, N, 0>(), reinterpret_cast<T*>(sv));
+  Store(idx, Simd<TI, NI, 0>(), reinterpret_cast<TI*>(si));
+  alignas(64) std::uint64_t out[N];
+  for (std::size_t q = 0; q < N; ++q) {
+    std::uint64_t o = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned bit = static_cast<unsigned>(si[q * 8 + j]) & 63u;
+      o |= ((sv[q] >> bit) & 1u) << j;
+    }
+    out[q] = o;
+  }
+  return Load(Simd<T, N, 0>(), reinterpret_cast<const T*>(out));
+#endif
+}
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec512<T, N> MultiRotateRight(Vec512<T, N> v, Vec512<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) == 8, "MultiRotateRight data lanes are 64-bit");
+  static_assert(sizeof(TI) == 1 && NI == N * 8, "MultiRotateRight index is u8, 8 per data lane");
+#if defined(__AVX512VBMI__)
+  // VPMULTISHIFTQB(control, data): each output byte = the 8-bit window of its u64 lane starting at
+  // (control_byte & 63), wrapping within the qword -- i.e. rotate-right by that count, low 8 bits.
+  static_assert(N == 8, "avx512 MultiRotateRight: full 8xu64");
+  Vec512<T, N> r;
+  r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_multishift_epi64_epi8(idx.raw, v.raw));
+  return r;
+#else
+  alignas(64) std::uint64_t sv[N];
+  alignas(64) std::uint8_t si[NI];
+  Store(v, Simd<T, N, 0>(), reinterpret_cast<T*>(sv));
+  Store(idx, Simd<TI, NI, 0>(), reinterpret_cast<TI*>(si));
+  alignas(64) std::uint64_t out[N];
+  for (std::size_t q = 0; q < N; ++q) {
+    std::uint64_t o = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned rot = static_cast<unsigned>(si[q * 8 + j]) & 63u;
+      const std::uint64_t rr = rot == 0 ? sv[q] : ((sv[q] >> rot) | (sv[q] << (64 - rot)));
+      o |= (rr & 0xFFu) << (j * 8);
+    }
+    out[q] = o;
+  }
+  return Load(Simd<T, N, 0>(), reinterpret_cast<const T*>(out));
+#endif
+}
+
 
 // SumsOf2/SumsOf4: sum consecutive pairs/quads of u8 lanes, widening to u16/u32.
 // correctness-first store+reload; native (pmaddubsw with 1s / vpaddl chains) is a profiling upgrade.
@@ -2195,6 +2276,142 @@ HYLE_FORCE_INLINE Vec512<T, N> MulByFloorPow2(Vec512<T, N> v, Vec512<T, N> exp) 
     }
   }
   return Load(Simd<T, N, 0>(), ro);
+}
+
+// ---- simd-17 batch4: half-vector family (512 -> 256 real Vec256 entity) -------------
+// Batch0 layered includes make Vec256 coexist; LowerHalf returns true Vec256 via cast.
+// UpperHalf uses extracti64x4 / extractf32x8. ZeroExtendVector uses zext*. Combine =
+// ZeroExtend(lo) then insert hi at index 1. Parameter order: Combine(d, hi, lo) = [lo, hi].
+template <typename T, std::size_t NH, int kPow2, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, NH> LowerHalf(Simd<T, NH, kPow2>, Vec512<T, N> v) noexcept {
+  static_assert(NH == N / 2 || (N == 1 && NH == 1), "LowerHalf: NH must be N/2");
+  Vec256<T, NH> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_castps512_ps256(v.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_castpd512_pd256(v.raw);
+  else r.raw = _mm512_castsi512_si256(v.raw);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, (N > 1 ? N / 2 : 1)> LowerHalf(Vec512<T, N> v) noexcept {
+  return LowerHalf(Simd<T, (N > 1 ? N / 2 : 1), 0>{}, v);
+}
+template <typename T, std::size_t NH, int kPow2, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, NH> UpperHalf(Simd<T, NH, kPow2>, Vec512<T, N> v) noexcept {
+  static_assert(NH == N / 2, "UpperHalf: NH must be N/2");
+  Vec256<T, NH> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_extractf32x8_ps(v.raw, 1);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_extractf64x4_pd(v.raw, 1);
+  else r.raw = _mm512_extracti64x4_epi64(v.raw, 1);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N / 2> UpperHalf(Vec512<T, N> v) noexcept {
+  static_assert(N >= 2, "UpperHalf needs N>=2");
+  return UpperHalf(Simd<T, N / 2, 0>{}, v);
+}
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
+HYLE_FORCE_INLINE detail::V512<D> ZeroExtendVector(
+    D /*d*/, Vec256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> lo) noexcept {
+  using T = TFromD<D>;
+  static_assert(HYLE_SIMD_MAX_LANES_D(D) >= 2, "ZeroExtendVector needs N>=2");
+  detail::V512<D> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_zextps256_ps512(lo.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_zextpd256_pd512(lo.raw);
+  else r.raw = _mm512_zextsi256_si512(lo.raw);
+  return r;
+}
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
+HYLE_FORCE_INLINE detail::V512<D> Combine(D d,
+    Vec256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> hi,
+    Vec256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> lo) noexcept {
+  using T = TFromD<D>;
+  static_assert(HYLE_SIMD_MAX_LANES_D(D) >= 2, "Combine needs N>=2");
+  auto r = ZeroExtendVector(d, lo);
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_insertf32x8(r.raw, hi.raw, 1);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_insertf64x4(r.raw, hi.raw, 1);
+  else r.raw = _mm512_inserti64x4(r.raw, hi.raw, 1);
+  return r;
+}
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
+HYLE_FORCE_INLINE detail::V512<D> InsertIntoUpper(
+    D /*d*/, Vec256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> hi, detail::V512<D> v) noexcept {
+  using T = TFromD<D>;
+  static_assert(HYLE_SIMD_MAX_LANES_D(D) >= 2, "InsertIntoUpper needs N>=2");
+  detail::V512<D> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_insertf32x8(v.raw, hi.raw, 1);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_insertf64x4(v.raw, hi.raw, 1);
+  else r.raw = _mm512_inserti64x4(v.raw, hi.raw, 1);
+  return r;
+}
+// ResizeBitCast across 512/256/128 bands (min-bytes copy, excess zeroed).
+template <class D, typename SrcT, std::size_t NSrc> requires HYLE_SIMD_W(D, 32, 64)
+HYLE_FORCE_INLINE detail::V512<D> ResizeBitCast(D d, Vec512<SrcT, NSrc> v) noexcept {
+  using DstT = TFromD<D>;
+  constexpr std::size_t NDst = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(64) std::uint8_t buf[64] = {};
+  alignas(64) SrcT src[NSrc];
+  Store(v, Simd<SrcT, NSrc, 0>(), src);
+  const std::size_t n = (sizeof(SrcT) * NSrc < sizeof(DstT) * NDst) ? sizeof(SrcT) * NSrc
+                                                                    : sizeof(DstT) * NDst;
+  std::memcpy(buf, src, n);
+  return Load(d, reinterpret_cast<const DstT*>(buf));
+}
+template <class D, typename SrcT, std::size_t NSrc> requires HYLE_SIMD_W(D, 32, 64)
+HYLE_FORCE_INLINE detail::V512<D> ResizeBitCast(D d, Vec256<SrcT, NSrc> v) noexcept {
+  using DstT = TFromD<D>;
+  constexpr std::size_t NDst = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(64) std::uint8_t buf[64] = {};
+  alignas(32) SrcT src[NSrc];
+  Store(v, Simd<SrcT, NSrc, 0>(), src);
+  const std::size_t n = (sizeof(SrcT) * NSrc < sizeof(DstT) * NDst) ? sizeof(SrcT) * NSrc
+                                                                    : sizeof(DstT) * NDst;
+  std::memcpy(buf, src, n);
+  return Load(d, reinterpret_cast<const DstT*>(buf));
+}
+template <class D, typename SrcT, std::size_t NSrc> requires HYLE_SIMD_W(D, 16, 32)
+HYLE_FORCE_INLINE detail::V256<D> ResizeBitCast(D d, Vec512<SrcT, NSrc> v) noexcept {
+  using DstT = TFromD<D>;
+  constexpr std::size_t NDst = HYLE_SIMD_MAX_LANES_D(D);
+  alignas(32) std::uint8_t buf[32] = {};
+  alignas(64) SrcT src[NSrc];
+  Store(v, Simd<SrcT, NSrc, 0>(), src);
+  const std::size_t n = (sizeof(SrcT) * NSrc < sizeof(DstT) * NDst) ? sizeof(SrcT) * NSrc
+                                                                    : sizeof(DstT) * NDst;
+  std::memcpy(buf, src, n);
+  return Load(d, reinterpret_cast<const DstT*>(buf));
+}
+
+// ---- simd-17 batch5: 128-bit block extract/broadcast (avx512 = 4 blocks) -------------
+// ExtractBlock<k>(v): k-th 128-bit block as Vec128 (k in 0..3).
+// BroadcastBlock<k>(v): splat that 128-bit block across all four quarters.
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, (N / 4)> ExtractBlock(Vec512<T, N> v) noexcept {
+  static_assert(k >= 0 && k < 4, "avx512 ExtractBlock: k in {0,1,2,3}");
+  static_assert(sizeof(T) * N == 64, "ExtractBlock needs full 512-bit vector");
+  Vec128<T, N / 4> r;
+  if constexpr (std::is_same_v<T, float>)
+    r.raw = _mm512_extractf32x4_ps(v.raw, k);
+  else if constexpr (std::is_same_v<T, double>)
+    r.raw = _mm512_extractf64x2_pd(v.raw, k);
+  else
+    r.raw = _mm512_extracti32x4_epi32(v.raw, k);
+  return r;
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> BroadcastBlock(Vec512<T, N> v) noexcept {
+  static_assert(k >= 0 && k < 4, "avx512 BroadcastBlock: k in {0,1,2,3}");
+  static_assert(sizeof(T) * N == 64, "BroadcastBlock needs full 512-bit vector");
+  // Extract the 128-bit block then broadcast via insert into all four quarters of a zeroed reg.
+  const auto blk = ExtractBlock<k>(v);
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, float>) {
+    r.raw = _mm512_broadcast_f32x4(blk.raw);
+  } else if constexpr (std::is_same_v<T, double>) {
+    r.raw = _mm512_broadcast_f64x2(blk.raw);
+  } else {
+    r.raw = _mm512_broadcast_i32x4(blk.raw);
+  }
+  return r;
 }
 
 // ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts (per-128-bit-block) ----

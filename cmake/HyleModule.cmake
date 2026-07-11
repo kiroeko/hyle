@@ -39,6 +39,13 @@ function(hyle_isa_flags out_var tier)
       set(${out_var} "/arch:AVX512" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512_BF16")
       set(${out_var} "/arch:AVX512" PARENT_SCOPE)  # MSVC /arch:AVX512 already covers bf16 intrinsics
+    elseif(tier STREQUAL "AVX512_DL")
+      # MSVC's /arch:AVX512 does NOT define __AVX512VBMI__/__AVX512BITALG__ (probe-verified: only
+      # AVX512F+BW), so the native VPSHUFBITQMB/VPMULTISHIFTQB path is #if-compiled OUT and the
+      # store+reload fallback is taken -- identical to the base AVX512 variant. The dl test variant
+      # is therefore a GCC/Clang+SDE construct (see tests/CMakeLists.txt gate); this case exists so
+      # a stray AVX512_DL request on MSVC still resolves rather than FATAL_ERROR.
+      set(${out_var} "/arch:AVX512" PARENT_SCOPE)
     else()
       message(FATAL_ERROR "hyle_isa_flags: unknown tier '${tier}'")
     endif()
@@ -61,6 +68,12 @@ function(hyle_isa_flags out_var tier)
       set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512_BF16")
       set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512bf16" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX512_DL")
+      # AVX3_DL (Ice Lake+): adds GFNI / VBMI / BITALG on top of the AVX512 four. Gates the
+      # native VPSHUFBITQMB (BitShuffle) / VPMULTISHIFTQB (MultiRotateRight) paths. The base
+      # AVX512 variant (Skylake-X) lacks these and exercises the store+reload fallback -- both
+      # variants run under Intel SDE and must match the scalar oracle.
+      set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512vbmi;-mavx512bitalg" PARENT_SCOPE)
     elseif(tier STREQUAL "NEON")
       # ARMv8-A mandates NEON (Advanced SIMD) -- it is the aarch64 baseline, so the neon
       # kernel TU needs NO extra -march (Apple clang / aarch64 gcc emit v-regs by default).

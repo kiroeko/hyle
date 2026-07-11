@@ -2,7 +2,7 @@
 
 | 项 | 内容 |
 |---|---|
-| 状态 | 🟢 施工卡就绪（批0 已铺地基；opus 出卡 / grok 实现 / opus 四查）|
+| 状态 | ✅ 完成 + opus 四查全绿（WSL scalar/sse4/avx2 + AVX512 SDE + mac NEON 真机 + Win MSVC，五平台）|
 | 前置 | **批0（分层多宽度类型）已完成**（commit 6c12369+73e58e3）——本批的使能器 |
 | 范围 | `backend/{sse4,avx2,avx512}.h`（x86 层叠后）+ `backend/neon.h`（Vec64 半宽）+ `vec_test.cc`。不动 vec.h、不动 scalable |
 | 目标 | `LowerHalf` `UpperHalf` `Combine` `ZeroExtendVector` `InsertIntoUpper` `ResizeBitCast`（~6 op）返回**真半宽实体** |

@@ -2617,3 +2617,240 @@ TEST(Vec, GetBiasedExponentAndMulByFloorPow2) {
     else EXPECT_FLOAT_EQ(so.data[i], 12.0f) << "special normal i=" << i;
   }
 }
+
+// ---- simd-17 batch4: half-vector family ---------------------------------------------
+// Round-trip iron test: Combine(UpperHalf, LowerHalf) == original.
+// Also covers ZeroExtendVector (high half zero), InsertIntoUpper (only high changes),
+// ResizeBitCast (widen half->full zeros high; narrow full->half keeps low).
+// Note: Store/Load signatures take Simd<T,N,0> (kPow2==0); Half tags have kPow2=-1, so
+// store half results via DFromV (which rebinds to kPow2=0).
+TEST(Vec, HalfVectorFamily) {
+  const hs::ScalableTag<std::int32_t> d;
+  using DH = typename hs::ScalableTag<std::int32_t>::Half;
+  const DH dh{};
+  const std::size_t n = hs::Lanes(d);
+  const std::size_t nh = n / 2;
+  ASSERT_GE(n, 2u);
+
+  Buf<std::int32_t> in, out, lo_out, hi_out, zext_out, ins_out;
+  for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<std::int32_t>(100 + i);
+  const auto v = hs::Load(d, in.data);
+
+  const auto lo = hs::LowerHalf(dh, v);
+  const auto hi = hs::UpperHalf(dh, v);
+  using DH0 = hs::DFromV<decltype(lo)>;
+  const DH0 dh0{};
+
+  // LowerHalf / UpperHalf lane contents.
+  hs::Store(lo, dh0, lo_out.data);
+  hs::Store(hi, dh0, hi_out.data);
+  for (std::size_t i = 0; i < nh; ++i) {
+    EXPECT_EQ(lo_out.data[i], in.data[i]) << "LowerHalf i=" << i;
+    EXPECT_EQ(hi_out.data[i], in.data[nh + i]) << "UpperHalf i=" << i;
+  }
+
+  // Convenience overloads (no tag) match tagged forms.
+  hs::Store(hs::LowerHalf(v), dh0, lo_out.data);
+  hs::Store(hs::UpperHalf(v), dh0, hi_out.data);
+  for (std::size_t i = 0; i < nh; ++i) {
+    EXPECT_EQ(lo_out.data[i], in.data[i]);
+    EXPECT_EQ(hi_out.data[i], in.data[nh + i]);
+  }
+
+  // Round-trip: Combine(d, UpperHalf, LowerHalf) == v  (Highway order: hi, lo).
+  hs::Store(hs::Combine(d, hi, lo), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], in.data[i]) << "Combine round-trip i=" << i;
+
+  // ZeroExtendVector: low = lo, high = 0.
+  hs::Store(hs::ZeroExtendVector(d, lo), d, zext_out.data);
+  for (std::size_t i = 0; i < nh; ++i)
+    EXPECT_EQ(zext_out.data[i], in.data[i]) << "ZeroExtend low i=" << i;
+  for (std::size_t i = nh; i < n; ++i)
+    EXPECT_EQ(zext_out.data[i], 0) << "ZeroExtend high i=" << i;
+
+  // InsertIntoUpper: low stays, high replaced by hi.
+  Buf<std::int32_t> base;
+  for (std::size_t i = 0; i < n; ++i) base.data[i] = static_cast<std::int32_t>(i);  // 0..n-1
+  const auto bv = hs::Load(d, base.data);
+  // hi = LowerHalf of original (100, 101, ...)
+  hs::Store(hs::InsertIntoUpper(d, lo, bv), d, ins_out.data);
+  for (std::size_t i = 0; i < nh; ++i)
+    EXPECT_EQ(ins_out.data[i], base.data[i]) << "InsertIntoUpper low i=" << i;
+  for (std::size_t i = 0; i < nh; ++i)
+    EXPECT_EQ(ins_out.data[nh + i], in.data[i]) << "InsertIntoUpper high i=" << i;
+
+  // ResizeBitCast: half -> full (widen, high zeroed); full -> half (narrow, keep low).
+  hs::Store(hs::ResizeBitCast(d, lo), d, out.data);
+  for (std::size_t i = 0; i < nh; ++i)
+    EXPECT_EQ(out.data[i], in.data[i]) << "ResizeBitCast widen low i=" << i;
+  for (std::size_t i = nh; i < n; ++i)
+    EXPECT_EQ(out.data[i], 0) << "ResizeBitCast widen high i=" << i;
+
+  // Narrow full -> half: use dh0 (kPow2=0) as destination tag so Load/Store match.
+  hs::Store(hs::ResizeBitCast(dh0, v), dh0, lo_out.data);
+  for (std::size_t i = 0; i < nh; ++i)
+    EXPECT_EQ(lo_out.data[i], in.data[i]) << "ResizeBitCast narrow i=" << i;
+}
+
+// Float lane variant of half-vector family (catches f32 cast/extract paths on x86).
+TEST(Vec, HalfVectorFamilyF32) {
+  const hs::ScalableTag<float> d;
+  using DH = typename hs::ScalableTag<float>::Half;
+  const DH dh{};
+  const std::size_t n = hs::Lanes(d);
+  const std::size_t nh = n / 2;
+  ASSERT_GE(n, 2u);
+
+  Buf<float> in, out;
+  for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<float>(i) + 0.5f;
+  const auto v = hs::Load(d, in.data);
+  hs::Store(hs::Combine(d, hs::UpperHalf(dh, v), hs::LowerHalf(dh, v)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_FLOAT_EQ(out.data[i], in.data[i]) << "f32 Combine round-trip i=" << i;
+
+  // Edge: all-zero vector round-trip + ZeroExtend of zero stays zero.
+  const auto z = hs::Zero(d);
+  hs::Store(hs::Combine(d, hs::UpperHalf(dh, z), hs::LowerHalf(dh, z)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], 0.0f);
+  hs::Store(hs::ZeroExtendVector(d, hs::LowerHalf(dh, z)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], 0.0f);
+  (void)nh;
+}
+
+// ---- simd-17 batch5: SumsOf8AbsDiff (SAD) + 128-bit block ops (avx2/512) ------------
+TEST(Vec, SumsOf8AbsDiff) {
+  const hs::ScalableTag<std::uint8_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_GE(n, 8u);
+  ASSERT_EQ(n % 8, 0u);
+  Buf<std::uint8_t> a, b;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<std::uint8_t>(i * 3 + 1);
+    b.data[i] = static_cast<std::uint8_t>(i * 2);
+  }
+  const auto sa = hs::SumsOf8AbsDiff(hs::Load(d, a.data), hs::Load(d, b.data));
+  using D64 = hs::DFromV<decltype(sa)>;
+  const D64 d64{};
+  const std::size_t ng = hs::Lanes(d64);
+  Buf<std::uint64_t> out;
+  hs::Store(sa, d64, out.data);
+  for (std::size_t g = 0; g < ng; ++g) {
+    std::uint64_t expect = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const int aa = a.data[g * 8 + j];
+      const int bb = b.data[g * 8 + j];
+      expect += static_cast<std::uint64_t>(aa > bb ? aa - bb : bb - aa);
+    }
+    EXPECT_EQ(out.data[g], expect) << "SAD group " << g;
+  }
+  // Unary vs zero equals SumsOf8.
+  hs::Store(hs::SumsOf8AbsDiff(hs::Load(d, a.data)), d64, out.data);
+  Buf<std::uint64_t> out2;
+  hs::Store(hs::SumsOf8(hs::Load(d, a.data)), d64, out2.data);
+  for (std::size_t g = 0; g < ng; ++g) EXPECT_EQ(out.data[g], out2.data[g]);
+}
+
+#if defined(HYLE_SIMD_TARGET_AVX2) || defined(HYLE_SIMD_TARGET_AVX512)
+TEST(Vec, BroadcastExtractBlock) {
+  // 128-bit blocks inside 256 (2 blocks) or 512 (4 blocks).
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_GE(n, 8u);  // at least 2 x 128-bit blocks of i32
+  Buf<std::int32_t> in, out, blk;
+  for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<std::int32_t>(1000 + i);
+  const auto v = hs::Load(d, in.data);
+
+  // ExtractBlock<0> = low 128 bits = first 4 i32 lanes.
+  {
+    const auto b0 = hs::ExtractBlock<0>(v);
+    using DB = hs::DFromV<decltype(b0)>;
+    hs::Store(b0, DB{}, blk.data);
+    for (std::size_t i = 0; i < 4; ++i) EXPECT_EQ(blk.data[i], in.data[i]) << "Extract0 i=" << i;
+  }
+  // ExtractBlock<1> = second 128 bits.
+  {
+    const auto b1 = hs::ExtractBlock<1>(v);
+    using DB = hs::DFromV<decltype(b1)>;
+    hs::Store(b1, DB{}, blk.data);
+    for (std::size_t i = 0; i < 4; ++i) EXPECT_EQ(blk.data[i], in.data[4 + i]) << "Extract1 i=" << i;
+  }
+
+  // BroadcastBlock<0>: every 128-bit block equals the low 128 of input.
+  hs::Store(hs::BroadcastBlock<0>(v), d, out.data);
+  for (std::size_t base = 0; base < n; base += 4) {
+    for (std::size_t i = 0; i < 4; ++i)
+      EXPECT_EQ(out.data[base + i], in.data[i]) << "Bcast0 base=" << base << " i=" << i;
+  }
+  // BroadcastBlock<1>: every block equals the second 128 of input.
+  hs::Store(hs::BroadcastBlock<1>(v), d, out.data);
+  for (std::size_t base = 0; base < n; base += 4) {
+    for (std::size_t i = 0; i < 4; ++i)
+      EXPECT_EQ(out.data[base + i], in.data[4 + i]) << "Bcast1 base=" << base << " i=" << i;
+  }
+}
+#endif  // AVX2 || AVX512
+
+
+// ---- simd-17 batch5: BitShuffle + MultiRotateRight (u64 data, u8 index, 8 per lane) --------
+// Portable on all five fixed backends; AVX3_DL takes the native VPSHUFBITQMB / VPMULTISHIFTQB
+// path (SDE), the AVX512 baseline the store+reload fallback -- both must match this oracle.
+TEST(Vec, BitShuffleAndMultiRotate) {
+  const hs::ScalableTag<std::uint64_t> d;
+  const std::size_t nq = hs::Lanes(d);          // u64 data lanes
+  using DI = hs::ScalableTag<std::uint8_t>;
+  const DI di;
+  const std::size_t ni = hs::Lanes(di);         // u8 index lanes
+  ASSERT_EQ(ni, nq * 8);                          // exactly 8 index bytes per data lane
+
+  Buf<std::uint64_t> vin, out;
+  Buf<std::uint8_t> iin;
+  for (std::size_t q = 0; q < nq; ++q)
+    vin.data[q] = 0x0123456789ABCDEFull ^ (0x1111111111111111ull * q);
+
+  // --- BitShuffle: idx[q*8+j] selects which bit of v[q] lands in output bit j. ---
+  for (std::size_t q = 0; q < nq; ++q)
+    for (std::size_t j = 0; j < 8; ++j)
+      iin.data[q * 8 + j] = static_cast<std::uint8_t>((j * 7 + q * 3) & 63);  // spread bit picks
+  hs::Store(hs::BitShuffle(hs::Load(d, vin.data), hs::Load(di, iin.data)), d, out.data);
+  for (std::size_t q = 0; q < nq; ++q) {
+    std::uint64_t expect = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned bit = iin.data[q * 8 + j] & 63u;
+      expect |= ((vin.data[q] >> bit) & 1ull) << j;
+    }
+    EXPECT_EQ(out.data[q], expect) << "BitShuffle lane " << q;
+  }
+  // Edge: idx all >=64 wrap to bit (idx&63); idx==0 for all -> output byte = 8 copies of bit0.
+  for (std::size_t i = 0; i < ni; ++i) iin.data[i] = 0;
+  hs::Store(hs::BitShuffle(hs::Load(d, vin.data), hs::Load(di, iin.data)), d, out.data);
+  for (std::size_t q = 0; q < nq; ++q) {
+    const std::uint64_t b0 = vin.data[q] & 1ull;
+    EXPECT_EQ(out.data[q], b0 ? 0xFFull : 0x00ull) << "BitShuffle bit0 lane " << q;
+  }
+
+  // --- MultiRotateRight: output byte j = low 8 bits of rotr64(v[q], idx[q*8+j]&63). ---
+  for (std::size_t q = 0; q < nq; ++q)
+    for (std::size_t j = 0; j < 8; ++j)
+      iin.data[q * 8 + j] = static_cast<std::uint8_t>((j * 8) & 63);  // 0,8,16,...,56 -> each byte
+  hs::Store(hs::MultiRotateRight(hs::Load(d, vin.data), hs::Load(di, iin.data)), d, out.data);
+  for (std::size_t q = 0; q < nq; ++q) {
+    std::uint64_t expect = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned rot = (iin.data[q * 8 + j]) & 63u;
+      const std::uint64_t rr = rot == 0 ? vin.data[q] : ((vin.data[q] >> rot) | (vin.data[q] << (64 - rot)));
+      expect |= (rr & 0xFFull) << (j * 8);
+    }
+    EXPECT_EQ(out.data[q], expect) << "MultiRotate lane " << q;
+  }
+  // With rot j*8, output byte j = byte j of v[q] -> identity (nice cross-check).
+  for (std::size_t q = 0; q < nq; ++q)
+    EXPECT_EQ(out.data[q], vin.data[q]) << "MultiRotate identity lane " << q;
+  // Edge: all rot 0 -> every output byte = low byte of v[q] (splat).
+  for (std::size_t i = 0; i < ni; ++i) iin.data[i] = 0;
+  hs::Store(hs::MultiRotateRight(hs::Load(d, vin.data), hs::Load(di, iin.data)), d, out.data);
+  for (std::size_t q = 0; q < nq; ++q) {
+    const std::uint64_t lo = vin.data[q] & 0xFFull;
+    EXPECT_EQ(out.data[q], lo * 0x0101010101010101ull) << "MultiRotate splat lane " << q;
+  }
+}

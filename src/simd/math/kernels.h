@@ -211,6 +211,10 @@ void csin_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, 
 void ccos_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void ctanh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void cpow_f32_hyle_neon(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
+// simd-17 batch5: ARM complex cexp/clog/csqrt (xsimd batch complex on NEON; was scalar floor).
+void cexp_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void clog_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void csqrt_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 // hypot binary: Highway (overflow-safe; xsimd's is faster but returns inf past FLT_MAX). Highway
 // contrib/math lowers to NEON here, same as the other arm64 Highway ops.
 void hypot_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
