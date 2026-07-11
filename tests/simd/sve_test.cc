@@ -1063,3 +1063,46 @@ TEST(Sve, ConcatHalves) {
     EXPECT_EQ(out[h + i], hi[h + i]) << "UL hi i=" << i;
   }
 }
+
+#if defined(__ARM_FEATURE_SVE2_AES)
+// SVE2 crypto (simd-16 reclaim). Whole-vector = per-128-block AES/CLMul. Uses FIPS-197 anchors +
+// enc/dec round-trip identities (self-contained, no external oracle). Requires qemu -cpu max.
+TEST(Sve, Simd16Sve2Crypto) {
+  const hs::ScalableTag<std::uint8_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_EQ(n % 16u, 0u);  // VL is a whole number of 128-bit blocks
+  alignas(64) std::uint8_t st[kBuf], key[kBuf], out[kBuf], ref[kBuf];
+  for (std::size_t i = 0; i < n; ++i) {
+    st[i] = static_cast<std::uint8_t>(i * 7 + 1);
+    key[i] = static_cast<std::uint8_t>(i * 3 + 5);
+  }
+  const auto vs = hs::Load(d, st), vk = hs::Load(d, key), z = hs::Zero(d);
+
+  // FIPS-197 anchor: AESLastRound(0,0) = SubBytes(ShiftRows(0)) = SBox[0] = 0x63 in every lane.
+  hs::Store(hs::AESLastRound(z, z), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], 0x63) << "anchor i=" << i;
+
+  // enc/dec last-round round-trip (key=0): AESLastRoundInv(AESLastRound(s,0),0) == s.
+  hs::Store(hs::AESLastRoundInv(hs::AESLastRound(vs, z), z), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], st[i]) << "roundtrip i=" << i;
+
+  // AESInvMixColumns undoes AESRound's MixColumns: InvMix(AESRound(s,0)) == AESLastRound(s,0).
+  hs::Store(hs::AESInvMixColumns(hs::AESRound(vs, z)), d, out);
+  hs::Store(hs::AESLastRound(vs, z), d, ref);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], ref[i]) << "invmix i=" << i;
+
+  // AESRound key XOR: AESRound(s,k) == AESRound(s,0) ^ k (round key is the final XOR).
+  hs::Store(hs::AESRound(vs, vk), d, out);
+  hs::Store(hs::AESRound(vs, z), d, ref);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], ref[i] ^ key[i]) << "roundkey i=" << i;
+
+  // CLMul known-answer: (x+1)*(x+1) = x^2+1 in GF(2)[x] -> 0x3 clmul 0x3 = 0x5, per 128-block low.
+  alignas(64) std::uint64_t a64[kBuf / 8], b64[kBuf / 8], o64[kBuf / 8];
+  const hs::ScalableTag<std::uint64_t> d64;
+  const std::size_t n64 = hs::Lanes(d64);
+  for (std::size_t i = 0; i < n64; ++i) { a64[i] = 3; b64[i] = 3; }
+  hs::Store(hs::CLMulLower(hs::Load(d64, a64), hs::Load(d64, b64)), d64, o64);
+  // low 64 of each 128-block holds the product; block low element is even index.
+  for (std::size_t i = 0; i < n64; i += 2) EXPECT_EQ(o64[i], 0x5u) << "clmul lo blk i=" << i;
+}
+#endif  // __ARM_FEATURE_SVE2_AES

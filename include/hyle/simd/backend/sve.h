@@ -31,6 +31,7 @@
 #include <type_traits>
 
 #include "hyle/macros.h"
+#include "hyle/simd/backend/crypto_soft.h"  // shared AES/CLMul software fallback (Crypto op face)
 
 namespace hyle::simd {
 
@@ -1201,6 +1202,156 @@ template <class V> HYLE_FORCE_INLINE V Expand(V v, svbool_t m) noexcept {
 template <class V> HYLE_FORCE_INLINE V TrailingZeroCount(V v) noexcept {
   static_assert(std::is_integral_v<TFromV<V>>, "TrailingZeroCount is integer-lane only");
   return LeadingZeroCount(svrbit_x(detail::ptrue<TFromV<V>>(), v));
+}
+
+// ---- Crypto: AES + CLMul (simd-16 reclaim; native SVE2-AES, else software per-128-block) --------
+// SCALABLE CONTRACT: like the swizzle ops, these are WHOLE-VECTOR — SVE2 AES/PMULL operate on EACH
+// 128-bit segment of the VL-wide vector (Arm defines them per-quadword), so a VL=512 vector processes
+// 4 independent AES blocks / 4 CLMul lane-pairs at once. The software fallback (base variant, no
+// +sve2-aes) loops the shared AES-NI-byte-order reference per 128-bit block → bit-identical to x86/
+// NEON. `svaese` self-includes AddRoundKey, so a full round = svaesmc(svaese(s,0)) ^ key (same trick
+// as NEON vaeseq). Gated on __ARM_FEATURE_SVE2_AES.
+namespace detail {
+// store the whole vector to a byte buffer, run a per-128-block software op, reload.
+template <class V, class Fn>
+HYLE_FORCE_INLINE V sve_crypto_soft_blocks(V state, V key, Fn per_block) noexcept {
+  using T = TFromV<V>;
+  const DFromV<V> d;
+  constexpr std::size_t kMaxBytes = DFromV<V>::kMaxLanes * sizeof(T);
+  alignas(64) std::uint8_t s[kMaxBytes], k[kMaxBytes];
+  Store(state, d, reinterpret_cast<T*>(s));
+  Store(key, d, reinterpret_cast<T*>(k));
+  const std::size_t bytes = Lanes(d) * sizeof(T);
+  for (std::size_t b = 0; b + 16 <= bytes; b += 16) per_block(s + b, k + b);
+  return Load(d, reinterpret_cast<T*>(s));
+}
+}  // namespace detail
+
+#if defined(__ARM_FEATURE_SVE2_AES)
+namespace detail {
+// V <-> svuint8_t. SVE Vec IS the native sizeless type (no .raw wrapper); svreinterpret_u8 is the
+// single-arg C++ overload, and svreinterpret back to V's element type via BitCast(DFromV<V>, r).
+template <class V> HYLE_FORCE_INLINE svuint8_t sve_as_u8(V v) noexcept { return svreinterpret_u8(v); }
+template <class V> HYLE_FORCE_INLINE V sve_from_u8(svuint8_t r) noexcept {
+  return BitCast(DFromV<V>(), r);
+}
+}  // namespace detail
+#endif
+
+template <class V> HYLE_FORCE_INLINE V AESRound(V state, V key) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+#if defined(__ARM_FEATURE_SVE2_AES)
+  const svuint8_t z = svdup_n_u8(0);
+  const svuint8_t mc = svaesmc_u8(svaese_u8(detail::sve_as_u8(state), z));  // AddRK(0)+SubB+ShiftR+MixC
+  return detail::sve_from_u8<V>(sveor_u8_x(svptrue_b8(), mc, detail::sve_as_u8(key)));  // ^ roundkey
+#else
+  return detail::sve_crypto_soft_blocks(state, key, detail::aes_round_soft);
+#endif
+}
+template <class V> HYLE_FORCE_INLINE V AESLastRound(V state, V key) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+#if defined(__ARM_FEATURE_SVE2_AES)
+  const svuint8_t z = svdup_n_u8(0);
+  return detail::sve_from_u8<V>(
+      sveor_u8_x(svptrue_b8(), svaese_u8(detail::sve_as_u8(state), z), detail::sve_as_u8(key)));
+#else
+  return detail::sve_crypto_soft_blocks(state, key, detail::aes_last_round_soft);
+#endif
+}
+template <class V> HYLE_FORCE_INLINE V AESRoundInv(V state, V key) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+#if defined(__ARM_FEATURE_SVE2_AES)
+  const svuint8_t z = svdup_n_u8(0);
+  const svuint8_t mc = svaesimc_u8(svaesd_u8(detail::sve_as_u8(state), z));
+  return detail::sve_from_u8<V>(sveor_u8_x(svptrue_b8(), mc, detail::sve_as_u8(key)));
+#else
+  return detail::sve_crypto_soft_blocks(state, key, detail::aes_round_inv_soft);
+#endif
+}
+template <class V> HYLE_FORCE_INLINE V AESLastRoundInv(V state, V key) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+#if defined(__ARM_FEATURE_SVE2_AES)
+  const svuint8_t z = svdup_n_u8(0);
+  return detail::sve_from_u8<V>(
+      sveor_u8_x(svptrue_b8(), svaesd_u8(detail::sve_as_u8(state), z), detail::sve_as_u8(key)));
+#else
+  return detail::sve_crypto_soft_blocks(state, key, detail::aes_last_round_inv_soft);
+#endif
+}
+template <class V> HYLE_FORCE_INLINE V AESInvMixColumns(V state) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+#if defined(__ARM_FEATURE_SVE2_AES)
+  return detail::sve_from_u8<V>(svaesimc_u8(detail::sve_as_u8(state)));
+#else
+  const DFromV<V> d;
+  using T = TFromV<V>;
+  constexpr std::size_t kMaxBytes = DFromV<V>::kMaxLanes * sizeof(T);
+  alignas(64) std::uint8_t s[kMaxBytes];
+  Store(state, d, reinterpret_cast<T*>(s));
+  const std::size_t bytes = Lanes(d) * sizeof(T);
+  for (std::size_t b = 0; b + 16 <= bytes; b += 16) detail::aes_inv_mix_columns(s + b);
+  return Load(d, reinterpret_cast<T*>(s));
+#endif
+}
+// AESKeyGenAssist<kRcon>: no SVE2 instruction (like NEON -- ARM key schedule differs from x86's);
+// software per-128-block core matches _mm_aeskeygenassist_si128 exactly. Not a hot path.
+template <std::uint8_t kRcon, class V> HYLE_FORCE_INLINE V AESKeyGenAssist(V v) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+  const DFromV<V> d;
+  using T = TFromV<V>;
+  constexpr std::size_t kMaxBytes = DFromV<V>::kMaxLanes * sizeof(T);
+  alignas(64) std::uint8_t s[kMaxBytes];
+  Store(v, d, reinterpret_cast<T*>(s));
+  const std::size_t bytes = Lanes(d) * sizeof(T);
+  for (std::size_t b = 0; b + 16 <= bytes; b += 16) detail::aes_keygen_assist_soft(s + b, kRcon);
+  return Load(d, reinterpret_cast<T*>(s));
+}
+// CLMulLower/Upper: carryless multiply of the low/high 64-bit half of each 128-bit block.
+// SVE2 svpmullb_pair (even elems, "bottom") / svpmullt_pair (odd elems, "top") over u64 give the
+// per-128-block low/high CLMul. Software fallback loops clmul64 per block.
+template <class V> HYLE_FORCE_INLINE V CLMulLower(V a, V b) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "CLMul is integer-lane only");
+#if defined(__ARM_FEATURE_SVE2_AES)
+  const svuint64_t r = svpmullb_pair(svreinterpret_u64(a), svreinterpret_u64(b));
+  return detail::sve_from_u8<V>(svreinterpret_u8(r));
+#else
+  const DFromV<V> d;
+  using T = TFromV<V>;
+  constexpr std::size_t kMaxBytes = DFromV<V>::kMaxLanes * sizeof(T);
+  alignas(64) std::uint8_t sa[kMaxBytes], sb[kMaxBytes];
+  Store(a, d, reinterpret_cast<T*>(sa));
+  Store(b, d, reinterpret_cast<T*>(sb));
+  const std::size_t bytes = Lanes(d) * sizeof(T);
+  for (std::size_t bo = 0; bo + 16 <= bytes; bo += 16) {
+    std::uint64_t av[2], bv[2], o[2];
+    std::memcpy(av, sa + bo, 16); std::memcpy(bv, sb + bo, 16);
+    detail::clmul64(av[0], bv[0], o);
+    std::memcpy(sa + bo, o, 16);
+  }
+  return Load(d, reinterpret_cast<T*>(sa));
+#endif
+}
+template <class V> HYLE_FORCE_INLINE V CLMulUpper(V a, V b) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "CLMul is integer-lane only");
+#if defined(__ARM_FEATURE_SVE2_AES)
+  const svuint64_t r = svpmullt_pair(svreinterpret_u64(a), svreinterpret_u64(b));
+  return detail::sve_from_u8<V>(svreinterpret_u8(r));
+#else
+  const DFromV<V> d;
+  using T = TFromV<V>;
+  constexpr std::size_t kMaxBytes = DFromV<V>::kMaxLanes * sizeof(T);
+  alignas(64) std::uint8_t sa[kMaxBytes], sb[kMaxBytes];
+  Store(a, d, reinterpret_cast<T*>(sa));
+  Store(b, d, reinterpret_cast<T*>(sb));
+  const std::size_t bytes = Lanes(d) * sizeof(T);
+  for (std::size_t bo = 0; bo + 16 <= bytes; bo += 16) {
+    std::uint64_t av[2], bv[2], o[2];
+    std::memcpy(av, sa + bo, 16); std::memcpy(bv, sb + bo, 16);
+    detail::clmul64(av[1], bv[1], o);
+    std::memcpy(sa + bo, o, 16);
+  }
+  return Load(d, reinterpret_cast<T*>(sa));
+#endif
 }
 
 }  // namespace hyle::simd

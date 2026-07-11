@@ -25,10 +25,16 @@ QEMU=${QEMU_AARCH64:-qemu-aarch64-static}
 OUT=${OUT_DIR:-/tmp/hyle-sve}
 mkdir -p "$OUT"
 
-FLAGS="-std=c++23 -O2 -march=armv8-a+sve -DHYLE_SIMD_TARGET_SVE -pthread \
+# tier: base (armv8-a+sve, default) or crypto (armv8-a+sve2-aes, unlocks the SVE2 AES/CLMul test
+# guarded by __ARM_FEATURE_SVE2_AES). qemu -cpu max enables sve2-aes at every VL.
+TIER=${1:-base}
+ARCH="armv8-a+sve"
+if [ "$TIER" = "crypto" ]; then ARCH="armv8-a+sve2-aes"; fi
+
+FLAGS="-std=c++23 -O2 -march=$ARCH -DHYLE_SIMD_TARGET_SVE -pthread \
   -I$REPO/include -I$REPO -I$GT/include -I$GT"
 
-echo "[1/3] cross-compiling gtest runtime + sve_test.cc for aarch64+sve ..."
+echo "[1/3] cross-compiling gtest runtime + sve_test.cc for aarch64 ($ARCH) ..."
 $CXX $FLAGS -c "$GT/src/gtest-all.cc"  -o "$OUT/gtest-all.o"
 $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main.o"
 $CXX $FLAGS -c "$REPO/tests/simd/sve_test.cc" -o "$OUT/sve_test.o"
