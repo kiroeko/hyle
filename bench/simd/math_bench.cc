@@ -70,6 +70,27 @@ float scalar_of(Op op, float x) {
   }
   return x;
 }
+// f64 doubles of the same ops -- the f64 best-of winners diverge from f32 (memory: exp/tanh/exp2
+// flip xsimd->Highway), so the f64 dispatch table must be re-benched, not extrapolated from f32.
+double scalar_of64(Op op, double x) {
+  switch (op) {
+    case Op::kExp: return std::exp(x);   case Op::kLog: return std::log(x);
+    case Op::kTanh: return std::tanh(x); case Op::kSin: return std::sin(x);
+    case Op::kCos: return std::cos(x);   case Op::kExp2: return std::exp2(x);
+    case Op::kLog2: return std::log2(x); case Op::kErf: return std::erf(x);
+    case Op::kAtan: return std::atan(x); case Op::kCbrt: return std::cbrt(x);
+    case Op::kExpm1: return std::expm1(x); case Op::kLog1p: return std::log1p(x);
+    case Op::kAsinh: return std::asinh(x); case Op::kAcosh: return std::acosh(x);
+  }
+  return x;
+}
+std::vector<double> gen64(std::size_t n, double lo, double hi, std::uint64_t seed) {
+  std::mt19937_64 rng(seed);
+  std::uniform_real_distribution<double> dist(lo, hi);
+  std::vector<double> v(n);
+  for (auto& e : v) e = dist(rng);
+  return v;
+}
 
 #if defined(HYLE_BENCH_XSIMD)
 void xsimd_run(Op op, const float* src, float* dst, std::size_t n) {
@@ -113,6 +134,50 @@ void highway_run(Op op, const float* src, float* dst, std::size_t n) {
     hn::StoreU(r, d, dst + i);
   }
   for (; i < n; ++i) dst[i] = scalar_of(op, src[i]);
+}
+#endif
+#if defined(HYLE_BENCH_XSIMD)
+void xsimd_run64(Op op, const double* src, double* dst, std::size_t n) {
+  using batch = xsimd::batch<double>;
+  constexpr std::size_t w = batch::size;
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) {
+    batch v = batch::load_unaligned(src + i);
+    batch r;
+    switch (op) {
+      case Op::kExp: r = xsimd::exp(v); break;   case Op::kLog: r = xsimd::log(v); break;
+      case Op::kTanh: r = xsimd::tanh(v); break; case Op::kSin: r = xsimd::sin(v); break;
+      case Op::kCos: r = xsimd::cos(v); break;   case Op::kExp2: r = xsimd::exp2(v); break;
+      case Op::kLog2: r = xsimd::log2(v); break; case Op::kErf: r = xsimd::erf(v); break;
+      case Op::kAtan: r = xsimd::atan(v); break; case Op::kCbrt: r = xsimd::cbrt(v); break;
+      case Op::kExpm1: r = xsimd::expm1(v); break; case Op::kLog1p: r = xsimd::log1p(v); break;
+      case Op::kAsinh: r = xsimd::asinh(v); break; case Op::kAcosh: r = xsimd::acosh(v); break;
+    }
+    r.store_unaligned(dst + i);
+  }
+  for (; i < n; ++i) dst[i] = scalar_of64(op, src[i]);
+}
+#endif
+#if defined(HYLE_BENCH_HIGHWAY)
+void highway_run64(Op op, const double* src, double* dst, std::size_t n) {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) {
+    auto v = hn::LoadU(d, src + i);
+    decltype(v) r;
+    switch (op) {
+      case Op::kExp: r = hn::Exp(d, v); break;   case Op::kLog: r = hn::Log(d, v); break;
+      case Op::kTanh: r = hn::Tanh(d, v); break; case Op::kSin: r = hn::Sin(d, v); break;
+      case Op::kCos: r = hn::Cos(d, v); break;   case Op::kExp2: r = hn::Exp2(d, v); break;
+      case Op::kLog2: r = hn::Log2(d, v); break; case Op::kErf: r = hn::Erf(d, v); break;
+      case Op::kAtan: r = hn::Atan(d, v); break; case Op::kCbrt: r = hn::Cbrt(d, v); break;
+      case Op::kExpm1: r = hn::Expm1(d, v); break; case Op::kLog1p: r = hn::Log1p(d, v); break;
+      case Op::kAsinh: r = hn::Asinh(d, v); break; case Op::kAcosh: r = hn::Acosh(d, v); break;
+    }
+    hn::StoreU(r, d, dst + i);
+  }
+  for (; i < n; ++i) dst[i] = scalar_of64(op, src[i]);
 }
 #endif
 }  // namespace
@@ -174,6 +239,58 @@ int main() {
     b.run("Highway (same ISA SOTA)", [&] {
       highway_run(c.op, c.src.data(), dst.data(), kN);
       nb::doNotOptimizeAway(dst.data());
+    });
+#endif
+  }
+
+  // ---- f64 best-of regression: all 14 unary transcendentals are WIRED in HYLE (f64 dispatch chose
+  // a winner per op; memory notes exp/tanh/exp2 winners FLIP vs f32). This section re-benches so the
+  // f64 dispatch choice is proven, not extrapolated. HYLE row = the live f64 batch; xsimd/Highway =
+  // same-ISA rivals. If HYLE loses to the OTHER lib here, the f64 dispatch picked the wrong core. ----
+  std::vector<double> dst64(kN);
+  struct Case64 {
+    const char* title;
+    Op op;
+    std::vector<double> src;
+    void (*hyle_batch)(const double*, double*, std::size_t) noexcept;
+  };
+  Case64 cases64[] = {
+      {"exp f64 (4096)", Op::kExp, gen64(kN, -10.0, 10.0, 31), &hyle::simd::exp_f64_batch},
+      {"log f64 (4096)", Op::kLog, gen64(kN, 0.01, 100.0, 32), &hyle::simd::log_f64_batch},
+      {"tanh f64 (4096)", Op::kTanh, gen64(kN, -5.0, 5.0, 33), &hyle::simd::tanh_f64_batch},
+      {"sin f64 (4096)", Op::kSin, gen64(kN, -3.14, 3.14, 34), &hyle::simd::sin_f64_batch},
+      {"cos f64 (4096)", Op::kCos, gen64(kN, -3.14, 3.14, 35), &hyle::simd::cos_f64_batch},
+      {"exp2 f64 (4096)", Op::kExp2, gen64(kN, -10.0, 10.0, 36), &hyle::simd::exp2_f64_batch},
+      {"log2 f64 (4096)", Op::kLog2, gen64(kN, 0.01, 100.0, 37), &hyle::simd::log2_f64_batch},
+      {"erf f64 (4096)", Op::kErf, gen64(kN, -3.0, 3.0, 38), &hyle::simd::erf_f64_batch},
+      {"atan f64 (4096)", Op::kAtan, gen64(kN, -10.0, 10.0, 39), &hyle::simd::atan_f64_batch},
+      {"cbrt f64 (4096)", Op::kCbrt, gen64(kN, -100.0, 100.0, 40), &hyle::simd::cbrt_f64_batch},
+      {"expm1 f64 (4096)", Op::kExpm1, gen64(kN, -1.0, 1.0, 41), &hyle::simd::expm1_f64_batch},
+      {"log1p f64 (4096)", Op::kLog1p, gen64(kN, 0.0, 10.0, 42), &hyle::simd::log1p_f64_batch},
+      {"asinh f64 (4096)", Op::kAsinh, gen64(kN, -10.0, 10.0, 43), &hyle::simd::asinh_f64_batch},
+      {"acosh f64 (4096)", Op::kAcosh, gen64(kN, 1.0, 50.0, 44), &hyle::simd::acosh_f64_batch},
+  };
+  for (auto& c : cases64) {
+    nb::Bench b;
+    b.title(c.title).relative(true).batch(kN).minEpochIterations(500);
+    b.run("scalar libm loop", [&] {
+      for (std::size_t i = 0; i < kN; ++i) dst64[i] = scalar_of64(c.op, c.src[i]);
+      nb::doNotOptimizeAway(dst64.data());
+    });
+    b.run("HYLE *_f64_batch (vectorized)", [&] {
+      c.hyle_batch(c.src.data(), dst64.data(), kN);
+      nb::doNotOptimizeAway(dst64.data());
+    });
+#if defined(HYLE_BENCH_XSIMD)
+    b.run("xsimd (same ISA SOTA)", [&] {
+      xsimd_run64(c.op, c.src.data(), dst64.data(), kN);
+      nb::doNotOptimizeAway(dst64.data());
+    });
+#endif
+#if defined(HYLE_BENCH_HIGHWAY)
+    b.run("Highway (same ISA SOTA)", [&] {
+      highway_run64(c.op, c.src.data(), dst64.data(), kN);
+      nb::doNotOptimizeAway(dst64.data());
     });
 #endif
   }
