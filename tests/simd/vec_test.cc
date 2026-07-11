@@ -3429,12 +3429,50 @@ TEST(Vec, SumsOfAdjQuadAbsDiffFamily) {
           << "SAD blk=" << blk << " i=" << i;
     }
   }
-  // Also exercise shuffled form (i3i2i1i0 = 0123 identity-ish)
-  auto rs = hs::SumsOfShuffledQuadAbsDiff<3, 2, 1, 0>(va, vb);
-  hs::Store(rs, d16, out.data);
-  // Just ensure it runs and produces something (dbsad/portable may differ in lane order details
-  // for non-identity shuffle — identity reverse of dwords still defined).
-  std::uint32_t acc = 0;
-  for (std::size_t i = 0; i < n16; ++i) acc += out.data[i];
-  EXPECT_GE(acc, 0u);
+  // F1 non-trivial offsets: kAOffset=1, kBOffset=2.
+  {
+    auto r12 = hs::SumsOfAdjQuadAbsDiff<1, 2>(va, vb);
+    hs::Store(r12, d16, out.data);
+    for (std::size_t blk = 0; blk < n; blk += 16)
+      for (int i = 0; i < 8; ++i) {
+        unsigned sum = 0;
+        for (int j = 0; j < 4; ++j) {
+          const int da = a.data[blk + static_cast<std::size_t>(1 * 4 + i + j)];
+          const int db = b.data[blk + static_cast<std::size_t>(2 * 4 + j)];
+          sum += static_cast<unsigned>(da >= db ? da - db : db - da);
+        }
+        EXPECT_EQ(out.data[blk / 2 + static_cast<std::size_t>(i)], static_cast<std::uint16_t>(sum))
+            << "SAD<1,2> blk=" << blk << " i=" << i;
+      }
+  }
+  // F2 SumsOfShuffledQuadAbsDiff: EXACT Highway lane layout (per 128-bit block).
+  //   S = per-block u32 shuffle of a by template (i0,i1,i2,i3); Sbase={0,2,8,10} per pair.
+  //   out[pair*2+odd] = sum_j | b[pair*4+j] - S[Sbase[pair]+odd+j] |
+  // Must match on EVERY backend including avx512 native dbsad (multi-platform gate).
+  auto check_shuffled = [&](auto rs, int s0, int s1, int s2, int s3, const char* tag) {
+    hs::Store(rs, d16, out.data);
+    const int sel[4] = {s0, s1, s2, s3};
+    constexpr int kSBase[4] = {0, 2, 8, 10};
+    for (std::size_t blk = 0; blk < n; blk += 16) {
+      std::uint8_t sh[16];
+      for (int q = 0; q < 4; ++q)
+        for (int bi = 0; bi < 4; ++bi)
+          sh[q * 4 + bi] = a.data[blk + static_cast<std::size_t>(sel[q] * 4 + bi)];
+      for (int pair = 0; pair < 4; ++pair)
+        for (int odd = 0; odd < 2; ++odd) {
+          unsigned sum = 0;
+          for (int j = 0; j < 4; ++j) {
+            const int da = sh[kSBase[pair] + odd + j];
+            const int db = b.data[blk + static_cast<std::size_t>(pair * 4 + j)];
+            sum += static_cast<unsigned>(da >= db ? da - db : db - da);
+          }
+          EXPECT_EQ(out.data[blk / 2 + static_cast<std::size_t>(pair * 2 + odd)],
+                    static_cast<std::uint16_t>(sum))
+              << "Shuffled" << tag << " blk=" << blk << " pair=" << pair << " odd=" << odd;
+        }
+    }
+  };
+  check_shuffled(hs::SumsOfShuffledQuadAbsDiff<3, 2, 1, 0>(va, vb), 0, 1, 2, 3, "<3210>");
+  check_shuffled(hs::SumsOfShuffledQuadAbsDiff<0, 1, 2, 3>(va, vb), 3, 2, 1, 0, "<0123>");
+  check_shuffled(hs::SumsOfShuffledQuadAbsDiff<2, 0, 3, 1>(va, vb), 1, 3, 0, 2, "<2031>");
 }

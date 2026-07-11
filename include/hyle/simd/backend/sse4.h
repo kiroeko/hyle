@@ -1534,15 +1534,16 @@ HYLE_FORCE_INLINE Vec128<std::uint16_t, N / 2> SumsOfShuffledQuadAbsDiff(Vec128<
   std::uint8_t sh[16];
   for (int q = 0; q < 4; ++q)
     for (int bi = 0; bi < 4; ++bi) sh[q * 4 + bi] = sa[sel[q] * 4 + bi];
-  for (int p = 0; p < 4; ++p) {
+  constexpr int kSBase[4] = {0, 2, 8, 10};  // per-pair start byte in shuffled a (Highway)
+  for (int pair = 0; pair < 4; ++pair) {
     for (int odd = 0; odd < 2; ++odd) {
       unsigned sum = 0;
       for (int j = 0; j < 4; ++j) {
-        const int da = static_cast<int>(sh[p + odd + j]);
-        const int db = static_cast<int>(sb[j]);
+        const int da = static_cast<int>(sh[kSBase[pair] + odd + j]);
+        const int db = static_cast<int>(sb[pair * 4 + j]);
         sum += static_cast<unsigned>(da >= db ? da - db : db - da);
       }
-      out[p * 2 + odd] = static_cast<std::uint16_t>(sum);
+      out[pair * 2 + odd] = static_cast<std::uint16_t>(sum);
     }
   }
   return Load(Simd<std::uint16_t, N / 2, 0>(), out);
