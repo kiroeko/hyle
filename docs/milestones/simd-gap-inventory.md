@@ -10,7 +10,7 @@
 - **scalar 完整**(是 oracle;"缺 Add/Mul" 是宏定义的 grep 假阳)——**没问题**。
 - **定稿时的真问题 = 变宽(SVE/RVV)落后定宽 ~72 op**；当前 P0-P5 已全闭环：scalable 量化/点积/结构 op 已对称，定宽 Masked* 与 Mul/Mod/Magnitude 已补齐，P5 平凡合成 + mask 前缀 + MulByPow2/Expand/TZCnt 已落地。
 - vec.h 泛型 complex / 128-cmp / Newton 曾因 scalable TU 未实例化而掩盖底层原语缺口；P0 已用 SVE/RVV 直接实例化测试消除该潜在编译断裂。`Expand` 已在 P5 落地（SVE store+reload / RVV viota+vrgather）。
-- **主施工闭集 P0-P5 软件面 100%**。2026-07-12 directive2 复核后,先前登记的"硬件/工具门控"项**大多翻案做掉**(见下条);唯一真墙 = mask-bits VL>64(uint64 API 形状,非工具)。
+- **主施工闭集 P0-P5 软件面 100%**。2026-07-12 directive2 复核后,先前登记的"硬件/工具门控"项**全部翻案做掉**(见下条);连最后的 mask-bits VL>64 也用 byte-buffer API 解掉(dbf88c0)——**已无真墙**(fp8-HW 是有意的正确性取舍,非墙)。
 - **[`simd-16`](./simd-16-hw-gated-reclaim.md) + directive2 已翻案 RVV Zvbb/Zvbc + SVE2 全套**：RVV `LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/native `Rotate`/`CLMulLower`/`CLMulUpper` **+ `PopulationCount`(2026-07-12 b0ad404,inline-asm vcpop.v)**；**SVE2 `AES*`/`CLMul` 8 op 全套(2026-07-12 8c466f8,native svaese/svaesmc/svpmull)**——全 qemu 4 VLEN/VL + objdump 真指令。**先前"PopulationCount 工具链缺口 / SVE2 只能编译验"结论已推翻**(是当时测试 harness bug,非真墙;qemu 8.2.2 本就能跑)。
 
 ## 0.5 每项 op 的执行决策流程(施工规程,逐 op 机械跑)
@@ -80,7 +80,7 @@
 > 纪律纠错(`feedback_infra_capability_completeness`)：qemu-user 实测**支持 Zvbb/Zvbc**,"无硬件不做"对这些站不住；已翻案补做+真验。
 - **RVV `LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/`Rotate`**:✅ **已落地**——`#if defined(__riscv_zvbb)` + `-march=rv64gcv_zvbb` + `qemu -cpu rv64,v=true,zvbb=true`；objdump 见 `vclz.v`/`vctz.v`/`vbrev.v`/`vror.vi`/`vrol.vx`。
 - **RVV `CLMulLower`/`CLMulUpper`**:✅ **已落地**——`#if defined(__riscv_zvbc)`；`DupEven/DupOdd`+`vclmul`/`vclmulh`+`OddEven` 对齐 128-bit block 语义；objdump 见 `vclmul.vv`/`vclmulh.vv`。
-- `LoadMaskBits`/`StoreMaskBits`/`BitsFromMask`:scalable VL 可达 2048-bit(i8=256 lane)超 uint64 位域容量,语义受限(窄 lane 数 ≤64 部分可后补)。**真墙=API 形状(uint64 装不下 256 bit),非工具链**。
+- `LoadMaskBits`/`StoreMaskBits`/`BitsFromMask`:✅ **已做**(2026-07-12 dbf88c0)——SVE/RVV 用 **byte-buffer** API(`Store/LoadMaskBits(d, uint8_t*)`,1 bit/lane,同 Highway)绕开 uint64 装不下 256 lane;`BitsFromMask` 保留 uint64 便利版(Lanes≤64,否则 FATAL_ASSERT 引导用 byte 版)。SVE VL=2048(i8 256 lane)+ RVV VLEN=1024(i8 128 lane)真跑 round-trip。
 - **RVV `PopulationCount`**:✅ **已做**(2026-07-12,b0ad404)——翻案:Zvbb `vcpop.v` qemu 8.2.2 就正确执行(之前"no-op"是我 vmv.x.s+exit-code harness 读错);GCC-14 缺 C wrapper → inline-asm。rvv_test 4 VLEN 对拍 std::popcount + objdump 原生 vcpop.v。
 - **SVE2 `AES`/`CLMul`**:✅ **已做**(2026-07-12,8c466f8)——翻案:qemu 8.2.2 `-cpu max` 就执行(之前"Property not found"是用错 `sve2-aes=on` + 探针栈溢出误判)。8 op 全套 native svaese/svaesmc/svpmull;sve_test crypto tier 4 VL + objdump 原生指令。
 - **fp8 硬件 convert(AVX10.2)**:🟡 **验证可达但未上架**——clang-20 `-mavx10.2-512` 编 + SDE `-dmr` 真跑通(装了 clang-20)。**两个不上架的真原因**:①**非 bit-identical**:AVX10.2 fp8 convert 只有 f16 源,HW 必走 f32→f16→fp8 双舍入 vs HYLE 直接 f32→fp8;实测 260k 采样 ~0.17% 处差**恰好±1 code**(双方各自正确舍入,fp8 量化粒度),故不能当透明 dispatch 目标(结果会随 CPU 变)。②**编译器**:仅 clang-20 支持 -mavx10.2-512(GCC-14 只到 avx10.1、MSVC 无),项目默认 MSVC/GCC-14 编不了。若要上架:显式 `_via_f16` 变体(同 InRange 双入口先例)+ CMake 门控 clang-20 TU,否则 scalar 回退。**scalar 直接 f32→fp8 已完整且 bit-exact,是当前唯一正确默认**。
@@ -161,10 +161,10 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 | **simd-17 ✅** | 广度补全:批1 Shuffle/字节移位、批2 *Same/Pairwise/Stream、批3 scalable Concat、批4 半向量合并族、批5 复数ARM+SAD+BitShuffle/MultiRotateRight+Block提取 | — | 已完成([批5 doc](./simd-17-breadth-batch5.md));批4/5 待 Win MSVC + mac 平台复验 |
 | ✅ 2026-07-12 翻案做掉 | RVV PopulationCount(b0ad404)、SVE2 AES/CLMul(8c466f8)、Per4Lane 8/16(1ec8d87) | — | 均"工具墙"复核推翻(我的 harness 错),qemu 8.2.2 本就够 |
 | 🟡 验证可达未上架 | fp8-HW-convert(clang-20+SDE -dmr 跑通) | — | 非 bit-identical(f16 双舍入±1code)+ 仅 clang-20 编;scalar 默认已 bit-exact |
-| 🔒 真墙 | mask-bits VL>64(uint64 API 形状装不下 256 lane) | — | 唯一真墙:改 API 契约才能解 |
+| ✅ 2026-07-12 做掉 | mask-bits VL>64(SVE/RVV byte-buffer StoreMaskBits/LoadMaskBits,dbf88c0) | — | 曾以为真墙,byte-buffer API 解掉;已无真墙 |
 | ⚪不做 | 其余 *Blocks(SwapAdjacent等) / GaloisAffine(Highway内部detail非公开面) | — | 偏门/越 scope/非公开面 |
 
-P0-P5、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)、[`simd-14`](./simd-14-fixed-width-p4.md)、[`simd-15`](./simd-15-scalable-p5.md)与[`simd-16`](./simd-16-hw-gated-reclaim.md)已全部完成。**主施工闭集软件面 100%**；simd-16 翻案 RVV Zvbb/Zvbc（TZCnt/LZCnt/ReverseBits/Rotate/CLMul），directive2(2026-07-12)再翻案 **RVV PopulationCount + SVE2 AES/CLMul 全套 + Per4Lane 8/16**(先前"工具墙"是 harness bug)。两轮 vendor displacement 不新增公开 op；P4 新增 12 个、P5 新增 15 个公开 op。**唯一真墙 = mask-bits VL>64（uint64 API 形状）**；fp8-HW-convert 验证可达但非-bit-identical 不上架。
+P0-P5、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)、[`simd-14`](./simd-14-fixed-width-p4.md)、[`simd-15`](./simd-15-scalable-p5.md)与[`simd-16`](./simd-16-hw-gated-reclaim.md)已全部完成。**主施工闭集软件面 100%**；simd-16 翻案 RVV Zvbb/Zvbc（TZCnt/LZCnt/ReverseBits/Rotate/CLMul），directive2(2026-07-12)再翻案 **RVV PopulationCount + SVE2 AES/CLMul 全套 + Per4Lane 8/16**(先前"工具墙"是 harness bug)。directive2 又用 byte-buffer 解掉 mask-bits VL>64(dbf88c0)。两轮 vendor displacement 不新增公开 op；P4 新增 12 个、P5 新增 15 个公开 op。**已无真墙**;fp8-HW-convert 验证可达但非-bit-identical(f16 双舍入)+ 仅 clang-20 编,是有意取舍不上架,非墙。
 
 
 ## 5. 复现方法
