@@ -1206,9 +1206,37 @@ HYLE_FORCE_INLINE MFromD<D> UpperHalfOfMask(D d, MFromD<Twice<D>> m) noexcept {
   return MaskFromVec(UpperHalf(d, VecFromMask(dt, m)));
 }
 
-// PromoteMaskTo / DemoteMaskTo / OrderedDemote2MasksTo: deferred to simd-18 批C -- they bridge
-// through PromoteTo/DemoteTo/OrderedDemote2To, and HYLE uses half-at-a-time PromoteLowerTo/UpperTo
-// (no single-vector PromoteTo) + lacks OrderedDemote2To until 批C. Implemented there.
+// PromoteMaskTo / DemoteMaskTo / OrderedDemote2MasksTo: convert a mask between lane widths.
+// Highway bridges these through the *vector* domain (VecFromMask -> Promote/DemoteTo -> MaskFromVec),
+// but HYLE has no single-vector PromoteTo (only half-at-a-time PromoteLowerTo/UpperTo), and on
+// AVX-512 masks are k-registers -- the vector path would need vpmovm2* + widen + vpmov2m round-trips.
+// Instead we bridge through the *bit* domain: promote/demote PRESERVE lane count N, and every backend's
+// BitsFromMask/LoadMaskBits uses the identical "lane i <-> bit i" packing, so the 1-bit-per-lane
+// bitfield is lane-width-INDEPENDENT. A DFrom->DTo mask conversion is therefore just re-tagging the
+// same bits. This is uniform across all 5 backends and optimal on AVX-512 (the k-register already IS
+// the bitfield -- no expand/recompress). DFrom must have the same lane COUNT as DTo (Rebind), which the
+// static_asserts on lane size enforce transitively (same N, different width).
+template <class DTo, class DFrom>
+HYLE_FORCE_INLINE MFromD<DTo> PromoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom> m) noexcept {
+  static_assert(sizeof(TFromD<DTo>) > sizeof(TFromD<DFrom>), "PromoteMaskTo widens the lane type");
+  return LoadMaskBits(d_to, BitsFromMask(d_from, m));
+}
+template <class DTo, class DFrom>
+HYLE_FORCE_INLINE MFromD<DTo> DemoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom> m) noexcept {
+  static_assert(sizeof(TFromD<DTo>) < sizeof(TFromD<DFrom>), "DemoteMaskTo narrows the lane type");
+  return LoadMaskBits(d_to, BitsFromMask(d_from, m));
+}
+// OrderedDemote2MasksTo(d_to, d_from, a, b): narrow two masks (each N lanes, width W) into one mask of
+// 2N lanes width W/2, ORDERED [a-lanes..., b-lanes...]. Concatenate their bitfields: a's N bits in the
+// low half, b's N bits shifted up by N. (Half<DTo> == DFrom by lane count, so N = Lanes(d_from).)
+template <class DTo, class DFrom>
+HYLE_FORCE_INLINE MFromD<DTo> OrderedDemote2MasksTo(DTo d_to, DFrom d_from, MFromD<DFrom> a,
+                                                    MFromD<DFrom> b) noexcept {
+  static_assert(sizeof(TFromD<DTo>) * 2 == sizeof(TFromD<DFrom>), "OrderedDemote2MasksTo halves width");
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(DFrom);
+  const std::uint64_t bits = BitsFromMask(d_from, a) | (BitsFromMask(d_from, b) << kN);
+  return LoadMaskBits(d_to, bits);
+}
 
 // SlideMask1Up/Down + SlideMaskUp/DownLanes: mask analogues of the vector slides (batch2 family).
 template <class D>
@@ -1346,8 +1374,10 @@ HYLE_FORCE_INLINE void TruncateStore(V v, DN dn, TFromD<DN>* p) noexcept {
 }
 
 // OrderedDemote2To / ConvertInRangeTo / DemoteInRangeTo: per-backend (simd-18 C1/C3).
-// PromoteMaskTo / DemoteMaskTo / OrderedDemote2MasksTo / DemoteToNearestInt / single-vector
-// ShiftRightAndDemoteTo: @opus deferred (HYLE half-at-a-time promote; f64->i32 tag convention).
+// PromoteMaskTo / DemoteMaskTo / OrderedDemote2MasksTo: implemented above via bitfield round-trip.
+// DemoteToNearestInt (f64->i32 round-nearest+saturate): below. single-vector ShiftRightAndDemoteTo:
+// not offered -- the 2-arg demote2 forms cover the real narrowing use; a 1-arg variant would need a
+// half-width DemoteTo entity HYLE doesn't model.
 
 // ---- simd-18 C3: PromoteInRange* thin aliases (widen never overflows; InRange == ordinary) ----
 template <class D, class V>
@@ -1365,6 +1395,28 @@ HYLE_FORCE_INLINE VFromD<D> PromoteInRangeEvenTo(D d, V v) noexcept {
 template <class D, class V>
 HYLE_FORCE_INLINE VFromD<D> PromoteInRangeOddTo(D d, V v) noexcept {
   return PromoteOddTo(d, v);
+}
+
+// DemoteToNearestInt(di32, v): f64 -> i32 rounding to NEAREST-EVEN (not truncating like
+// DemoteInRangeTo), with out-of-range and NaN SATURATING by sign to INT32_MIN/MAX (Highway's emu128
+// contract: |v| > (double)INT32_MAX, or NaN, -> signbit ? INT32_MIN : INT32_MAX). Both INT32_MIN and
+// INT32_MAX are EXACTLY representable as double, so the whole decision happens in the f64 domain and
+// the single final narrowing cvtt only ever sees an in-[MIN,MAX] value (no cvttpd UB):
+//   in_range = Abs(v) <= (double)INT32_MAX   (FALSE for NaN: the compare is unordered)
+//   sat      = signbit(v) ? MIN : MAX        (MaskFromVec keys on the real sign bit == ScalarSignBit)
+//   chosen   = in_range ? RoundToEven(v) : sat
+// then DemoteInRangeTo(chosen). RoundToEven matches the oracle's bias+round-to-even exactly.
+template <class DI32, class VF>
+HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestInt(DI32 di32, VF v) noexcept {
+  static_assert(std::is_same_v<TFromD<DI32>, std::int32_t>, "DemoteToNearestInt: dst is i32");
+  static_assert(std::is_same_v<TFromD<DFromV<VF>>, double>, "DemoteToNearestInt: src is f64");
+  const DFromV<VF> df;
+  const auto kMax = Set(df, 2147483647.0);        // (double)INT32_MAX (exact)
+  const auto kMin = Set(df, -2147483648.0);       // (double)INT32_MIN (exact)
+  const auto in_range = Le(Abs(v), kMax);         // NaN -> false (unordered) -> saturate path
+  const auto sat = IfThenElse(MaskFromVec(v), kMin, kMax);  // sign bit set (incl -NaN) -> MIN
+  const auto chosen = IfThenElse(in_range, Round(v), sat);  // now guaranteed within [MIN,MAX]
+  return DemoteInRangeTo(di32, chosen);
 }
 
 // ---- simd-18 C4: shift-and-demote2 family (2-arg only; single-vector DemoteTo @opus) ----

@@ -1498,9 +1498,12 @@ HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D, Mask256<TFromD<D>, HYLE_SIMD_MAX
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D d, std::uint64_t bits) noexcept {
   // Rebuild: lane i true iff bit i set, via a stack array of all-ones/all-zero lanes.
+  // _mm256_load_si256 reads a FULL 32 B regardless of logical lane count, so the scratch MUST be a
+  // whole register wide (32 B): a partial tag (e.g. Simd<i16,8,-1> from Rebind, kN*sizeof=16 B) would
+  // otherwise be a stack OOB read -- same trap as TruncateTo. Extra lanes past kN stay zero (unread).
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T tmp[kN];
+  alignas(32) T tmp[32 / sizeof(T)] = {};
   for (std::size_t i = 0; i < kN; ++i) {
     using U = std::make_unsigned_t<std::conditional_t<std::is_integral_v<T>, T, std::uint64_t>>;
     U u = ((bits >> i) & 1) ? ~U{0} : U{0};

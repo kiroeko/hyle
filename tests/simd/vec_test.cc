@@ -3119,6 +3119,104 @@ TEST(Vec, InRangeConvertAndDemote) {
   }
 }
 
+// @opus: PromoteMaskTo / DemoteMaskTo / OrderedDemote2MasksTo -- lane-width mask conversions via
+// bitfield round-trip. Ground truth = the per-lane bool predicate is width-independent, so promote
+// and demote must reproduce the SAME lane predicates in the target width. Uses i16<->i32 (Rebind =
+// same lane count, different width). VecFromMask stores all-ones/zero per lane; compare bit i true.
+TEST(Vec, MaskPromoteDemote) {
+  // Anchor on the WIDE type (full native lane count). The narrow tag is Rebind = SAME lane count,
+  // half register occupancy (a partial tag) -- matching Highway's contract that d_from/d_to for a
+  // width change share lane COUNT. (Rebinding the narrow full tag to wider would 2x the register.)
+  const hs::ScalableTag<std::int32_t> d32;          // wide anchor, N lanes, full register
+  const std::size_t n = hs::Lanes(d32);
+  using D16 = hs::Rebind<std::int16_t, hs::ScalableTag<std::int32_t>>;  // same N, half occupancy
+  const D16 d16{};
+  ASSERT_EQ(hs::Lanes(d16), n);
+  // Verify via BitsFromMask (independent op: reports which lanes the RESULT mask actually has set,
+  // regardless of how it was built) against the bool oracle. Storing the partial narrow-tag vector
+  // isn't offered on fixed-width backends, so BitsFromMask is the clean per-lane readout.
+  // Build a mask on the narrow tag: lane i true iff i is odd.
+  Buf<std::int16_t> s16;
+  for (std::size_t i = 0; i < n; ++i) s16.data[i] = static_cast<std::int16_t>((i & 1) ? -1 : 3);
+  const auto m16 = hs::Lt(hs::Load(d16, s16.data), hs::Zero(d16));  // odd lanes true
+  // PromoteMaskTo: i16 mask -> i32 mask, same predicates.
+  const std::uint64_t up = hs::BitsFromMask(d32, hs::PromoteMaskTo(d32, d16, m16));
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(((up >> i) & 1) != 0, (i & 1) != 0) << "PromoteMaskTo i=" << i;
+  // DemoteMaskTo: build a mask on the wide tag, narrow it back; predicates preserved.
+  Buf<std::int32_t> s32;
+  for (std::size_t i = 0; i < n; ++i) s32.data[i] = static_cast<std::int32_t>((i % 3 == 0) ? -7 : 2);
+  const auto m32 = hs::Lt(hs::Load(d32, s32.data), hs::Zero(d32));  // every 3rd lane true
+  const std::uint64_t dn = hs::BitsFromMask(d16, hs::DemoteMaskTo(d16, d32, m32));
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(((dn >> i) & 1) != 0, (i % 3 == 0)) << "DemoteMaskTo i=" << i;
+  // Round-trip: PromoteMaskTo then DemoteMaskTo == identity.
+  const std::uint64_t rt =
+      hs::BitsFromMask(d16, hs::DemoteMaskTo(d16, d32, hs::PromoteMaskTo(d32, d16, m16)));
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(((rt >> i) & 1) != 0, (i & 1) != 0) << "Promote/Demote mask round-trip i=" << i;
+}
+
+// @opus: OrderedDemote2MasksTo -- two N-lane wide masks -> one 2N-lane narrow mask, ordered
+// [a-lanes..., b-lanes...]. Bitfields concatenated: a low, b high. i32(x2) -> i16.
+TEST(Vec, OrderedDemote2MasksToFamily) {
+  const hs::ScalableTag<std::int32_t> dw;           // wide source, Nw lanes
+  const std::size_t nw = hs::Lanes(dw);
+  using DN = hs::Repartition<std::int16_t, hs::ScalableTag<std::int32_t>>;  // 2Nw narrow lanes
+  const DN dn{};
+  ASSERT_EQ(hs::Lanes(dn), 2 * nw);
+  Buf<std::int32_t> sa, sb;
+  for (std::size_t i = 0; i < nw; ++i) {
+    sa.data[i] = static_cast<std::int32_t>((i & 1) ? -1 : 5);       // a: odd lanes true
+    sb.data[i] = static_cast<std::int32_t>((i % 2 == 0) ? -9 : 4);  // b: even lanes true
+  }
+  const auto ma = hs::Lt(hs::Load(dw, sa.data), hs::Zero(dw));
+  const auto mb = hs::Lt(hs::Load(dw, sb.data), hs::Zero(dw));
+  Buf<std::int16_t> out;
+  hs::Store(hs::VecFromMask(dn, hs::OrderedDemote2MasksTo(dn, dw, ma, mb)), dn, out.data);
+  for (std::size_t i = 0; i < nw; ++i) {
+    EXPECT_EQ(out.data[i] != 0, (i & 1) != 0) << "OrderedDemote2MasksTo a-half i=" << i;
+    EXPECT_EQ(out.data[nw + i] != 0, (i % 2 == 0)) << "OrderedDemote2MasksTo b-half i=" << i;
+  }
+}
+
+// @opus: DemoteToNearestInt f64->i32 round-to-nearest-EVEN + sign-saturate on overflow/NaN.
+// Oracle = Highway emu128 semantics reimplemented per-lane (bias+round-even; |v|>INT32_MAX or NaN
+// -> signbit ? INT32_MIN : INT32_MAX). Covers halfway ties (round-even), negatives, and saturation.
+TEST(Vec, DemoteToNearestIntFamily) {
+  const hs::ScalableTag<double> dd;
+  const std::size_t n = hs::Lanes(dd);
+  const hs::FixedTag<std::int32_t, hs::kNativeVectorBytes / sizeof(double)> di{};
+  ASSERT_EQ(hs::Lanes(di), n);
+  auto oracle = [](double x) -> std::int32_t {
+    const double kMaxD = 2147483647.0;
+    if (!(std::fabs(x) <= kMaxD))  // NaN or too large
+      return std::signbit(x) ? INT32_MIN : INT32_MAX;
+    const double bias = (x < 0.0) ? -0.5 : 0.5;
+    std::int32_t rounded = static_cast<std::int32_t>(x + bias);
+    if (rounded == 0) return 0;
+    const double rf = static_cast<double>(rounded);
+    if ((rounded & 1) && std::fabs(rf - x) == 0.5)  // round half to even
+      rounded -= std::signbit(x) ? -1 : 1;
+    return rounded;
+  };
+  // A spread of exact halves (tie->even), ordinary values, negatives, and out-of-range/NaN.
+  const double kInf = std::numeric_limits<double>::infinity();
+  const double kNaN = std::numeric_limits<double>::quiet_NaN();
+  const double kPool[] = {0.5, 1.5, 2.5, 3.5, -0.5, -1.5, -2.5, 2.3, -2.3, 7.0,
+                          123456.5, -123456.5, 3e9, -3e9, kInf, -kInf, kNaN, 0.0};
+  const std::size_t kPoolN = sizeof(kPool) / sizeof(kPool[0]);
+  Buf<double> src;
+  for (std::size_t base = 0; base < kPoolN; base += n) {
+    for (std::size_t i = 0; i < n; ++i) src.data[i] = kPool[(base + i) % kPoolN];
+    Buf<std::int32_t> out;
+    hs::Store(hs::DemoteToNearestInt(di, hs::Load(dd, src.data)), di, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], oracle(src.data[i]))
+          << "DemoteToNearestInt v=" << src.data[i] << " i=" << i;
+  }
+}
+
 TEST(Vec, ShiftRightAndDemote2Family) {
   // OrderedShiftRightAndDemote2To / Reorder* vs hand composition; k=1 and k=3.
   const hs::ScalableTag<std::int32_t> dw;

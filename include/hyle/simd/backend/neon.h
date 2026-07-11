@@ -1645,20 +1645,23 @@ HYLE_FORCE_INLINE MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D, 
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   MaskNeon<T, kN> m;
+  // vld1q_* reads a FULL 16 B vector; a partial tag (kN < full) leaves lanes [kN, full) unread by the
+  // loop, so zero-init the scratch to avoid an uninitialized-lane read (partial tags arrive via the
+  // simd-18 PromoteMaskTo/DemoteMaskTo Rebind path).
   if constexpr (sizeof(T) == 1) {
-    std::uint8_t tmp[16];
+    std::uint8_t tmp[16] = {};
     for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? 0xFFu : 0u;
     m.raw = vld1q_u8(tmp);
   } else if constexpr (sizeof(T) == 2) {
-    std::uint16_t tmp[8];
+    std::uint16_t tmp[8] = {};
     for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? 0xFFFFu : 0u;
     m.raw = vld1q_u16(tmp);
   } else if constexpr (sizeof(T) == 4) {
-    std::uint32_t tmp[4];
+    std::uint32_t tmp[4] = {};
     for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? 0xFFFFFFFFu : 0u;
     m.raw = vld1q_u32(tmp);
   } else {
-    std::uint64_t tmp[2];
+    std::uint64_t tmp[2] = {};
     for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? ~0ull : 0ull;
     m.raw = vld1q_u64(tmp);
   }
