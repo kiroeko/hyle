@@ -958,8 +958,8 @@ HYLE_FORCE_INLINE std::size_t CompressStore(VFromD<D> v, M m, D d, TFromD<D>* p)
 }
 
 // ---- Zvbb bit counts / reverse (simd-16 reclaim) ------------------------------------
-// Base rv64gcv has no per-lane clz/ctz/brev. PopulationCount stays deferred: GCC-14's
-// riscv_vector.h has no per-lane vcpop intrinsic (vcpop is mask-popcount only).
+// Base rv64gcv has no per-lane clz/ctz/brev/popcount -- all four are Zvbb. clz/ctz/brev have GCC-14
+// C wrappers (vclz/vctz/vbrev); PopulationCount uses inline-asm vcpop.v (GCC-14 lacks that wrapper).
 #if defined(__riscv_zvbb)
 template <class V> HYLE_FORCE_INLINE V LeadingZeroCount(V v) noexcept {
   using T = TFromV<V>;
@@ -994,8 +994,45 @@ template <class V> HYLE_FORCE_INLINE V ReverseBits(V v) noexcept {
   else if constexpr (sizeof(T) == 4) return BitCast(DFromV<V>(), __riscv_vbrev_v_u32m1(uv, vl));
   else return BitCast(DFromV<V>(), __riscv_vbrev_v_u64m1(uv, vl));
 }
+// PopulationCount: Zvbb HAS the per-lane vcpop.v instruction, but GCC-14's riscv_vector.h ships no
+// C wrapper (`__riscv_vcpop_v_*` absent; the short `vcpop` name is taken by mask-popcount). Emit the
+// instruction directly via inline-asm -- verified under qemu (vse32.v readback = correct popcounts).
+// vsetvli sets e<width>/m1 for the vcpop.v; the vl is vlmax for the lane type. `+zvbb` arch on the
+// asm block so the assembler accepts vcpop.v regardless of the TU's -march order.
+namespace detail {
+template <class VU>
+HYLE_FORCE_INLINE VU rvv_vcpop_u(VU uv, std::size_t vl, int sew) noexcept {
+  VU r = uv;
+  switch (sew) {
+    case 8:
+      asm volatile("vsetvli zero,%1,e8,m1,ta,ma\n.option arch,+zvbb\nvcpop.v %0,%2"
+                   : "=vr"(r) : "r"(vl), "vr"(uv));
+      break;
+    case 16:
+      asm volatile("vsetvli zero,%1,e16,m1,ta,ma\n.option arch,+zvbb\nvcpop.v %0,%2"
+                   : "=vr"(r) : "r"(vl), "vr"(uv));
+      break;
+    case 32:
+      asm volatile("vsetvli zero,%1,e32,m1,ta,ma\n.option arch,+zvbb\nvcpop.v %0,%2"
+                   : "=vr"(r) : "r"(vl), "vr"(uv));
+      break;
+    default:
+      asm volatile("vsetvli zero,%1,e64,m1,ta,ma\n.option arch,+zvbb\nvcpop.v %0,%2"
+                   : "=vr"(r) : "r"(vl), "vr"(uv));
+      break;
+  }
+  return r;
+}
+}  // namespace detail
+template <class V> HYLE_FORCE_INLINE V PopulationCount(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "PopulationCount is integer-lane only");
+  const std::size_t vl = detail::vlmax<T>();
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto uv = BitCast(du, v);
+  return BitCast(DFromV<V>(), detail::rvv_vcpop_u(uv, vl, static_cast<int>(sizeof(T) * 8)));
+}
 #endif  // __riscv_zvbb
-// PopulationCount: still deferred -- GCC-14 header has no per-lane vcpop (mask-only).
 
 // ---- swizzle (whole-vector; RVV has no zip1/zip2 primitive -> build via vrgather + masks) --------
 // RVV lacks SVE's svzip/svuzp. We synthesize the whole-vector interleave/deinterleave with vrgather

@@ -1037,6 +1037,10 @@ void CheckZvbbBitOps() {
   for (std::size_t i = 0; i < n; ++i)
     EXPECT_EQ(o[i], revbits_scalar(a[i])) << "brev " << i;
 
+  hs::Store(hs::PopulationCount(va), d, o);  // Zvbb vcpop.v (inline-asm; GCC-14 lacks C wrapper)
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(o[i], static_cast<T>(std::popcount(static_cast<U>(a[i])))) << "vcpop " << i;
+
   // RotateRight/Left native Zvbb path (same oracle as shift-or)
   constexpr int kR = kBits > 8 ? 5 : 3;
   hs::Store(hs::RotateRight<kR>(va), d, o);
