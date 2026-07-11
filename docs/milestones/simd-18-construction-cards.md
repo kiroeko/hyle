@@ -4,17 +4,20 @@
 
 | 批 | 状态 | 实测 |
 |---|---|---|
-| C剩余 | ✅ OrderedDemote2To/InRange/shift-demote2；@opus 跳过 DemoteToNearestInt/mask promote | scalar/sse4 204→ +C/D 后合入 |
-| D | ✅ D1/D2/D3（D3 随 E InterleaveWhole） | 同上 |
-| E | ✅ E1–E9/E11；@opus 跳过 Dup128VecFromValues | sse4 207 / avx2+SDE 208 |
-| F | ✅ F1 mpsadbw + F2 dbsad/portable | sse4 208 / avx2+SDE 209 |
-| G | ✅ Highway 10 unary+atan2/pow/sincos f32/f64 + xsimd6 API(scalar path) | Math.Simd18BreadthG + simd_test 291 PASS |
-| H | ⏳ opus 批H / 四查 | — |
+| C剩余 | ✅ OrderedDemote2To/InRange/shift-demote2；**DemoteToNearestInt/mask promote 已由 opus 裁决落地**(c45c6af) | scalar 297 / sse4 214 / avx2 215 |
+| D | ✅ D1/D2/D3（D3 随 E InterleaveWhole）；**四查修 D2 双有符号溢出 UB**(3f23266) | 同上 |
+| E | ✅ E1–E9/E11；**四查补 wide-type 覆盖**(4ab2ee2)。Dup128VecFromValues=@opus 未做(签名可变参,登记) | 同上 |
+| F | ✅ F1 mpsadbw + F2 dbsad/portable；**四查修 F2 便携 oracle 错**(936cfe6) | 同上 |
+| G | ✅ Highway 10 unary+atan2/pow/sincos f32/f64 + xsimd6；**四查换真 xsimd 核**(07d8aab,nextafter/remainder 留 scalar) | Math.Simd18BreadthG |
+| @opus 裁决 | ✅ PromoteMaskTo/DemoteMaskTo/OrderedDemote2MasksTo(bitfield round-trip)+DemoteToNearestInt(c45c6af) | +3 测/后端;顺带修 LoadMaskBits 栈 OOB |
+| H | ⏳ 批H(性能盲区/op_parity) | — |
 
-commits: `11a4984` C+D · `a30748f` E+D3 · `ccf45a6` F · `d359573` G
-
+commits: grok `11a4984` C+D · `a30748f` E+D3 · `ccf45a6` F · `d359573` G · `c37cf9a` docs
+四查(opus): `936cfe6` F2 · `4ab2ee2` E · `3f23266` D2 UB · `07d8aab` G xsimd · `c45c6af` @opus 裁决
 
 > **分工**：opus 已用 3 个 agent 对 Highway 源逐 op 核实 native 手法（intrinsic + 契约 + fallback），本卡把语义/指令/落点全锁死。grok 只做"翻译到 intrinsic + 写测试 + 五平台真跑"，**不重新决策**。拿不准的标记 `@opus` 留审。
+>
+> **四查结论(opus 2026-07-11)**：不信任 grok 输出，逐批对拍/objdump/多平台/ASan，揪出 4 个弱测掩盖的真缺陷(F2 错 oracle、E 欠覆盖、D2 -O3 UB、G xsimd 假绿占位)全修。**@opus defer 项全部实证可做并落地**：mask 宽度转换走 bitfield round-trip(比 Highway 向量桥接更优,AVX-512 k-reg 本身即位域)、DemoteToNearestInt 全 f64 域决策避 cvttpd UB。触发既存 LoadMaskBits partial-tag 栈 OOB(TruncateTo 亲兄弟)一并修。
 >
 > **五平台真跑闸门**（每 op 收口，别省）：WSL `scalar/sse4/avx2`（`/root/hyle` build-wsl，`CXX=g++-14 CC=gcc-14`）+ AVX512 SDE（`sde64 -future -- exe`）+（碰 scalable 才需）qemu 多 VL。native 路径加 objdump 抽验真发射。ASan 查 store+reload scratch 栈宽（用 build-wsl-asan）。
 >

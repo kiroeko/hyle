@@ -31,14 +31,16 @@
 ## 1. 施工批次(TIER A 真缺口,~55 op)
 
 ### 批A:泛型 mask 族(14 op,全 vec.h 一处定义,七后端自动覆盖)
-`RebindMask`(前置,跨同宽 lane 重解释 mask)、`CombineMasks`、`LowerHalfOfMask`、`UpperHalfOfMask`、`PromoteMaskTo`、`DemoteMaskTo`、`OrderedDemote2MasksTo`、`SlideMask1Up`、`SlideMask1Down`、`SlideMaskUpLanes`、`SlideMaskDownLanes`、`MaskFalse`、`SetMask`、`Dup128MaskFromMaskBits`。
-手法:全是 `MaskFromVec(<vec-op>(VecFromMask(m)))` 薄封装(Highway generic_ops:242-469 同款),HYLE 已有全部底层 vec-op。
+`RebindMask`(前置,跨同宽 lane 重解释 mask)、`CombineMasks`、`LowerHalfOfMask`、`UpperHalfOfMask`、`SlideMask1Up`、`SlideMask1Down`、`SlideMaskUpLanes`、`SlideMaskDownLanes`、`MaskFalse`、`SetMask`、`Dup128MaskFromMaskBits`。
+手法:同宽 mask 族全是 `MaskFromVec(<vec-op>(VecFromMask(m)))` 薄封装(Highway generic_ops:242-469 同款),HYLE 已有全部底层 vec-op。
+**宽度转换 mask 3 op**(`PromoteMaskTo`/`DemoteMaskTo`/`OrderedDemote2MasksTo`)不走向量域(HYLE 无单向量 PromoteTo + AVX-512 mask=k-reg 桥接昂贵),改 **bitfield round-trip**(`BitsFromMask`→`LoadMaskBits`):promote/demote 保持 lane 数,五后端 1-bit/lane 位域与 lane 宽无关,重打标签即得(c45c6af,@opus 裁决)。
 
 ### 批B:泛型 vector 杂项 + gather/scatter-N(10 op)
 `IfVecThenElse`(vec 选择子,非 mask)、`IfNegativeThenNegOrUndefIfZero`(float=CopySign(v,Xor(m,v));int=IfNeg(m,Neg,v))、`HighestSetBitIndex`((bits-1)-LZCnt)、`Inf`/`NaN`(常量生成器)、`Dup128VecFromValues`(立即数建 128-block 广播,需 native)、`TwoTablesLookupLanes`(双源 permute,native fast-path)、`GatherIndexN`/`GatherIndexNOr`/`ScatterIndexN`(runtime-N,= Masked{Gather,Scatter}(FirstN))。
 
 ### 批C:demote/truncate/shift-demote/InRange(17 op)
-- 平凡组合:`Blocks`(constexpr)、`TruncateStore`、`OrderedTruncate2To`(ConcatEven)、`DemoteToNearestInt`(DemoteTo∘Round)、`ShiftRightAndDemoteTo`、`RoundingShiftRightAndDemoteTo`、`OrderedDemote2To`(avx2/512 需 permute 修序,sse4/neon/scalar=Reorder 别名)、`Reorder{,Rounding}ShiftRightAndDemote2To`、`Ordered{,Rounding}ShiftRightAndDemote2To`。
+- 平凡组合:`Blocks`(constexpr)、`TruncateStore`、`OrderedTruncate2To`(ConcatEven)、`OrderedDemote2To`(avx2/512 需 permute 修序,sse4/neon/scalar=Reorder 别名)、`Reorder{,Rounding}ShiftRightAndDemote2To`、`Ordered{,Rounding}ShiftRightAndDemote2To`(均 2-arg demote2 形;单向量 `ShiftRightAndDemoteTo` 不做——HYLE 无单向量 DemoteTo 实体)。
+- `DemoteToNearestInt`(f64→i32 round-nearest-even + 溢出/NaN 按符号饱和,c45c6af @opus):**非** DemoteTo∘Round 平凡组合——全 f64 域决策(两 INT32 端点精确 double),`in_range?Round(v):sign_sat` 后单次 `DemoteInRangeTo` 避 cvttpd 越界 UB;NaN 用 `MaskFromVec` 符号位(=emu128 ScalarSignBit)。objdump avx2=vroundpd+vcmp+2×vblendv+vcvttpd2dq 全原生。
 - InRange 快路(caller 保证域内,跳饱和 fixup,x86 raw cvt 真更快=性能目标):`ConvertInRangeTo`、`DemoteInRangeTo`、`PromoteInRangeTo` + 派生 `PromoteInRange{Lower,Upper,Even,Odd}To`。
 
 ### 批D:WidenMul accumulate(3 op,泛型组合)
