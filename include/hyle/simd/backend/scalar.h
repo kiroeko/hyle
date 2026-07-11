@@ -764,7 +764,10 @@ template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask<T, N> MaskFromVec(Vec<T, N> v) noexcept {
   Mask<T, N> m;
   for (std::size_t i = 0; i < N; ++i) {
-    using U = std::make_unsigned_t<std::conditional_t<std::is_integral_v<T>, T, std::uint64_t>>;
+    // MSB of the lane's SAME-WIDTH bit pattern. Float must use a same-width unsigned (u32 for
+    // f32, u64 for f64) -- an over-wide U (e.g. u64 for f32) would read bit 63 of a
+    // partially-initialized word and misclassify every float lane (simd-18 batch A bug).
+    using U = MakeUnsigned<T>;
     U u;
     if constexpr (std::is_integral_v<T>) u = static_cast<U>(v.raw[i]);
     else std::memcpy(&u, &v.raw[i], sizeof(T));

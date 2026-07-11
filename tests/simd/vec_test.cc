@@ -2854,3 +2854,87 @@ TEST(Vec, BitShuffleAndMultiRotate) {
     EXPECT_EQ(out.data[q], lo * 0x0101010101010101ull) << "MultiRotate splat lane " << q;
   }
 }
+
+// ---- simd-18 批A: generic mask family (RebindMask/MaskFalse/SetMask/Combine/Half/Promote/
+// Demote/SlideMask*) -- masks round-trip through vector domain. Oracle: build masks via compare,
+// apply the vector analogue, compare mask->vector patterns lane by lane. ------------------------
+TEST(Vec, GenericMaskFamily) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_GE(n, 2u);
+  Buf<std::int32_t> a, b, mv_out, ref_out;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = int(i); b.data[i] = int(i) % 2; }  // mask = even lanes? b: lane%2
+  const auto va = hs::Load(d, a.data);
+  // mask m = (a > threshold) -> mix of true/false
+  const auto m = hs::Gt(va, hs::Set(d, int(n / 2)));
+
+  // MaskFalse: all lanes false -> VecFromMask all zero.
+  hs::Store(hs::VecFromMask(d, hs::MaskFalse(d)), d, mv_out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(mv_out.data[i], 0) << "MaskFalse i=" << i;
+
+  // SetMask(true/false): all-ones / all-zero.
+  hs::Store(hs::VecFromMask(d, hs::SetMask(d, true)), d, mv_out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(mv_out.data[i], -1) << "SetMask true i=" << i;
+  hs::Store(hs::VecFromMask(d, hs::SetMask(d, false)), d, mv_out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(mv_out.data[i], 0) << "SetMask false i=" << i;
+
+  // RebindMask i32<->f32 (same width): pattern preserved.
+  const hs::ScalableTag<float> df;
+  const auto mf = hs::RebindMask(df, m);
+  Buf<float> mf_out;
+  hs::Store(hs::VecFromMask(df, mf), df, mf_out.data);
+  hs::Store(hs::VecFromMask(d, m), d, ref_out.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    std::int32_t bits; std::memcpy(&bits, &mf_out.data[i], 4);
+    EXPECT_EQ(bits, ref_out.data[i]) << "RebindMask i=" << i;
+  }
+
+  // SlideMask1Up/Down: mask analogue of vector slide.
+  hs::Store(hs::VecFromMask(d, hs::SlideMask1Up(d, m)), d, mv_out.data);
+  hs::Store(hs::Slide1Up(d, hs::VecFromMask(d, m)), d, ref_out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(mv_out.data[i], ref_out.data[i]) << "SlideMask1Up i=" << i;
+  hs::Store(hs::VecFromMask(d, hs::SlideMask1Down(d, m)), d, mv_out.data);
+  hs::Store(hs::Slide1Down(d, hs::VecFromMask(d, m)), d, ref_out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(mv_out.data[i], ref_out.data[i]) << "SlideMask1Down i=" << i;
+
+  // SlideMaskUp/DownLanes by 1.
+  hs::Store(hs::VecFromMask(d, hs::SlideMaskUpLanes(d, m, 1)), d, mv_out.data);
+  hs::Store(hs::SlideUpLanes(d, hs::VecFromMask(d, m), 1), d, ref_out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(mv_out.data[i], ref_out.data[i]) << "SlideMaskUpLanes i=" << i;
+  hs::Store(hs::VecFromMask(d, hs::SlideMaskDownLanes(d, m, 1)), d, mv_out.data);
+  hs::Store(hs::SlideDownLanes(d, hs::VecFromMask(d, m), 1), d, ref_out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(mv_out.data[i], ref_out.data[i]) << "SlideMaskDownLanes i=" << i;
+}
+
+// Half-of-mask + Combine (needs >=2 lanes; skip on scalar 1-lane wide types via ASSERT).
+TEST(Vec, MaskHalfAndCombine) {
+  const hs::ScalableTag<std::int32_t> d;
+  using DH = typename hs::ScalableTag<std::int32_t>::Half;
+  const DH dh{};
+  const std::size_t n = hs::Lanes(d);
+  const std::size_t nh = n / 2;
+  ASSERT_GE(n, 2u);
+  Buf<std::int32_t> a;
+  for (std::size_t i = 0; i < n; ++i) a.data[i] = int(i);
+  const auto va = hs::Load(d, a.data);
+  const auto m = hs::Gt(va, hs::Set(d, int(nh)));  // some true in both halves potentially
+
+  using DH0 = hs::DFromV<decltype(hs::LowerHalf(hs::VecFromMask(d, m)))>;
+  const DH0 dh0{};
+  Buf<std::int32_t> lo_out, hi_out, ref;
+  // LowerHalfOfMask / UpperHalfOfMask
+  hs::Store(hs::VecFromMask(dh0, hs::LowerHalfOfMask(dh0, m)), dh0, lo_out.data);
+  hs::Store(hs::VecFromMask(dh0, hs::UpperHalfOfMask(dh0, m)), dh0, hi_out.data);
+  hs::Store(hs::VecFromMask(d, m), d, ref.data);
+  for (std::size_t i = 0; i < nh; ++i) {
+    EXPECT_EQ(lo_out.data[i], ref.data[i]) << "LowerHalfOfMask i=" << i;
+    EXPECT_EQ(hi_out.data[i], ref.data[nh + i]) << "UpperHalfOfMask i=" << i;
+  }
+  // CombineMasks(UpperHalfOfMask, LowerHalfOfMask) round-trips to m.
+  const auto lo = hs::LowerHalfOfMask(dh0, m);
+  const auto hi = hs::UpperHalfOfMask(dh0, m);
+  Buf<std::int32_t> rt;
+  hs::Store(hs::VecFromMask(d, hs::CombineMasks(d, hi, lo)), d, rt.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(rt.data[i], ref.data[i]) << "CombineMasks round-trip i=" << i;
+  (void)dh;
+}

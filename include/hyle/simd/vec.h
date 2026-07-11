@@ -1156,4 +1156,76 @@ HYLE_FORCE_INLINE V Max128(D d, V a, V b) noexcept {
   return IfThenElse(Lt128(d, b, a), a, b);
 }
 
+// ---- simd-18 批A: generic mask family (one definition, every backend) ---------------
+// Highway's generic_ops mask ops are thin MaskFromVec(<vector-op>(VecFromMask(m))) wrappers:
+// masks round-trip through the vector domain, so any vector op HYLE already ships (Slide, Half,
+// Promote/Demote, Combine) induces its mask analogue for free -- backend-agnostic, so they live
+// here in the generic layer rather than per-backend. Semantics + arg order match Highway exactly.
+
+// RebindMask(d_to, m): reinterpret a mask across a SAME-WIDTH-lane tag (e.g. i32 mask -> f32 mask).
+// The bit pattern is identical (both are all-ones/all-zeros per lane of the same byte width); this
+// only re-types it. Building block for the widen/narrow-mask ops below and cross-type predication.
+template <class DTo, class MFrom>
+HYLE_FORCE_INLINE MFromD<DTo> RebindMask(DTo d_to, MFrom m) noexcept {
+  using DFrom = Simd<MakeSigned<TFromD<DTo>>, DTo::kMaxLanes, DTo{}.Pow2()>;
+  const DFrom d_from;
+  return MaskFromVec(BitCast(d_to, VecFromMask(d_from, m)));
+}
+
+// MaskFalse(d): all-false mask. MaskFromVec(Zero) -- no lane's MSB set.
+template <class D>
+HYLE_FORCE_INLINE MFromD<D> MaskFalse(D d) noexcept {
+  return MaskFromVec(Zero(d));
+}
+
+// SetMask(d, val): runtime bool -> all-true / all-false mask. -int(val) is 0 or all-ones bits,
+// resize-cast to D's width then back to the mask domain (matches Highway).
+template <class D>
+HYLE_FORCE_INLINE MFromD<D> SetMask(D d, bool val) noexcept {
+  const Repartition<std::int32_t, D> di32;
+  return MaskFromVec(ResizeBitCast(d, Set(di32, -static_cast<std::int32_t>(val))));
+}
+
+// CombineMasks(d, hi, lo): two half-width masks -> one full-width mask [lo, hi]. Mask analogue of
+// the batch4 vector Combine. (No scalar-backend form: a 1-lane full has no 2 halves.)
+template <class D>
+HYLE_FORCE_INLINE MFromD<D> CombineMasks(D d, MFromD<Half<D>> hi, MFromD<Half<D>> lo) noexcept {
+  const Half<D> dh;
+  return MaskFromVec(Combine(d, VecFromMask(dh, hi), VecFromMask(dh, lo)));
+}
+
+// LowerHalfOfMask / UpperHalfOfMask(d, m): take the low / high N/2 lanes of a full mask.
+template <class D>
+HYLE_FORCE_INLINE MFromD<D> LowerHalfOfMask(D d, MFromD<Twice<D>> m) noexcept {
+  const Twice<D> dt;
+  return MaskFromVec(LowerHalf(d, VecFromMask(dt, m)));
+}
+template <class D>
+HYLE_FORCE_INLINE MFromD<D> UpperHalfOfMask(D d, MFromD<Twice<D>> m) noexcept {
+  const Twice<D> dt;
+  return MaskFromVec(UpperHalf(d, VecFromMask(dt, m)));
+}
+
+// PromoteMaskTo / DemoteMaskTo / OrderedDemote2MasksTo: deferred to simd-18 批C -- they bridge
+// through PromoteTo/DemoteTo/OrderedDemote2To, and HYLE uses half-at-a-time PromoteLowerTo/UpperTo
+// (no single-vector PromoteTo) + lacks OrderedDemote2To until 批C. Implemented there.
+
+// SlideMask1Up/Down + SlideMaskUp/DownLanes: mask analogues of the vector slides (batch2 family).
+template <class D>
+HYLE_FORCE_INLINE MFromD<D> SlideMask1Up(D d, MFromD<D> m) noexcept {
+  return MaskFromVec(Slide1Up(d, VecFromMask(d, m)));
+}
+template <class D>
+HYLE_FORCE_INLINE MFromD<D> SlideMask1Down(D d, MFromD<D> m) noexcept {
+  return MaskFromVec(Slide1Down(d, VecFromMask(d, m)));
+}
+template <class D>
+HYLE_FORCE_INLINE MFromD<D> SlideMaskUpLanes(D d, MFromD<D> m, std::size_t amt) noexcept {
+  return MaskFromVec(SlideUpLanes(d, VecFromMask(d, m), amt));
+}
+template <class D>
+HYLE_FORCE_INLINE MFromD<D> SlideMaskDownLanes(D d, MFromD<D> m, std::size_t amt) noexcept {
+  return MaskFromVec(SlideDownLanes(d, VecFromMask(d, m), amt));
+}
+
 }  // namespace hyle::simd
