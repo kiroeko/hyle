@@ -201,17 +201,19 @@ int main() {
       // simd-09 CANDIDATES (unwired: hyle_batch=nullptr -> only scalar/xsimd/Highway rows). This
       // bench decides the per-op winner so math_dispatch borrows the fastest core. Input ranges
       // chosen safe/representative per function.
-      {"sin f32 (4096)", Op::kSin, gen(kN, -3.14f, 3.14f, 4), nullptr},
-      {"cos f32 (4096)", Op::kCos, gen(kN, -3.14f, 3.14f, 5), nullptr},
-      {"exp2 f32 (4096)", Op::kExp2, gen(kN, -10.0f, 10.0f, 6), nullptr},
-      {"log2 f32 (4096)", Op::kLog2, gen(kN, 0.01f, 100.0f, 7), nullptr},
-      {"erf f32 (4096)", Op::kErf, gen(kN, -3.0f, 3.0f, 8), nullptr},
-      {"atan f32 (4096)", Op::kAtan, gen(kN, -10.0f, 10.0f, 9), nullptr},
-      {"cbrt f32 (4096)", Op::kCbrt, gen(kN, -100.0f, 100.0f, 10), nullptr},
-      {"expm1 f32 (4096)", Op::kExpm1, gen(kN, -1.0f, 1.0f, 11), nullptr},
-      {"log1p f32 (4096)", Op::kLog1p, gen(kN, 0.0f, 10.0f, 12), nullptr},
-      {"asinh f32 (4096)", Op::kAsinh, gen(kN, -10.0f, 10.0f, 13), nullptr},
-      {"acosh f32 (4096)", Op::kAcosh, gen(kN, 1.0f, 50.0f, 14), nullptr},
+      // simd-09 candidates are now WIRED (dispatch chose a winner) -> HYLE row runs, regressing the
+      // choice against the same-ISA rivals (was nullptr "unwired candidate" before simd-09 landed).
+      {"sin f32 (4096)", Op::kSin, gen(kN, -3.14f, 3.14f, 4), &hyle::simd::sin_f32_batch},
+      {"cos f32 (4096)", Op::kCos, gen(kN, -3.14f, 3.14f, 5), &hyle::simd::cos_f32_batch},
+      {"exp2 f32 (4096)", Op::kExp2, gen(kN, -10.0f, 10.0f, 6), &hyle::simd::exp2_f32_batch},
+      {"log2 f32 (4096)", Op::kLog2, gen(kN, 0.01f, 100.0f, 7), &hyle::simd::log2_f32_batch},
+      {"erf f32 (4096)", Op::kErf, gen(kN, -3.0f, 3.0f, 8), &hyle::simd::erf_f32_batch},
+      {"atan f32 (4096)", Op::kAtan, gen(kN, -10.0f, 10.0f, 9), &hyle::simd::atan_f32_batch},
+      {"cbrt f32 (4096)", Op::kCbrt, gen(kN, -100.0f, 100.0f, 10), &hyle::simd::cbrt_f32_batch},
+      {"expm1 f32 (4096)", Op::kExpm1, gen(kN, -1.0f, 1.0f, 11), &hyle::simd::expm1_f32_batch},
+      {"log1p f32 (4096)", Op::kLog1p, gen(kN, 0.0f, 10.0f, 12), &hyle::simd::log1p_f32_batch},
+      {"asinh f32 (4096)", Op::kAsinh, gen(kN, -10.0f, 10.0f, 13), &hyle::simd::asinh_f32_batch},
+      {"acosh f32 (4096)", Op::kAcosh, gen(kN, 1.0f, 50.0f, 14), &hyle::simd::acosh_f32_batch},
   };
 
   for (auto& c : cases) {
