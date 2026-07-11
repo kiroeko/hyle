@@ -9,13 +9,13 @@
 // ONE definition included once per TU.
 //
 // WIDTH-dependent helpers (Raw128/256/512, V128/V256/V512, kNativeWidth) stay in each backend
-// -- they differ per width and are disambiguated by width-SFINAE, not shared.
+// -- they differ per width and are disambiguated by the width-band requires-clause (HYLE_SIMD_W), not shared.
 
 #include <cstddef>
 #include <cstdint>
 #include <type_traits>
 
-// Width-SFINAE guard for D-dispatched functions. Once the x86 backends are layered (avx2.h
+// Width-band constraint for D-dispatched functions. Once the x86 backends are layered (avx2.h
 // includes sse4.h, avx512.h includes avx2.h) so Vec128/Vec256/Vec512 coexist in one TU, a
 // pure-tag function like Set(D)/Zero(D)/Load(D,p) (no vector parameter to disambiguate on)
 // would be defined for ALL three widths and become an ambiguous overload for any tag.
@@ -27,11 +27,16 @@
 // 4-byte tag that still means "a 128-bit sse4 register" (buf is full 16 bytes). Equality
 // (==16) would wrongly reject that; the band (<=16) accepts every sub-128 tag as sse4's.
 //
-// Functions that take a Vec/Mask parameter need NO guard -- the parameter type already
+// C++23 concepts: expressed as a `requires` clause (HYLE house style, util-01: concepts over
+// SFINAE) rather than std::enable_if. Placed after the template-parameter list, e.g.
+//   template <class D> requires HYLE_SIMD_W(D, 0, 16)
+//   HYLE_FORCE_INLINE V128<D> Zero(D) noexcept { ... }
+//
+// Functions that take a Vec/Mask parameter need NO constraint -- the parameter type already
 // disambiguates them (Add(Vec128) vs Add(Vec256) are natural overloads).
 #define HYLE_SIMD_BYTES_D(D) (D::kMaxLanes * sizeof(typename D::T))
-#define HYLE_SIMD_IF_W(D, LO, HI) \
-  std::enable_if_t<(HYLE_SIMD_BYTES_D(D) > (LO) && HYLE_SIMD_BYTES_D(D) <= (HI)), int> = 0
+#define HYLE_SIMD_W(D, LO, HI) \
+  (HYLE_SIMD_BYTES_D(D) > (LO) && HYLE_SIMD_BYTES_D(D) <= (HI))
 
 namespace hyle::simd::detail {
 

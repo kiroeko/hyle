@@ -91,7 +91,7 @@ using V512 = Vec512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
 }  // namespace detail
 
 // ---- initialization -----------------------------------------------------------------
-template <class D, typename T2, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D, typename T2> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE detail::V512<D> Set(D, T2 t) noexcept {
   using T = TFromD<D>;
   detail::V512<D> v;
@@ -103,7 +103,7 @@ HYLE_FORCE_INLINE detail::V512<D> Set(D, T2 t) noexcept {
   else v.raw = _mm512_set1_epi32(static_cast<int>(t));  // i32/u32
   return v;
 }
-template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE detail::V512<D> Zero(D) noexcept {
   using T = TFromD<D>;
   detail::V512<D> v;
@@ -116,7 +116,7 @@ template <class D>
 using VFromD = decltype(Zero(D()));
 
 // ---- load / store -------------------------------------------------------------------
-template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE detail::V512<D> LoadU(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::V512<D> v;
@@ -125,7 +125,7 @@ HYLE_FORCE_INLINE detail::V512<D> LoadU(D, const TFromD<D>* p) noexcept {
   else v.raw = _mm512_loadu_si512(p);
   return v;
 }
-template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE detail::V512<D> Load(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::V512<D> v;
@@ -149,7 +149,7 @@ HYLE_FORCE_INLINE void Store(Vec512<T, N> v, Simd<T, N, 0>, T* p) noexcept {
 
 // ---- interleaved load / store (AoS <-> SoA) -----------------------------------------
 // correctness-first strided copy; native deinterleave shuffles are a profiling upgrade.
-template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
                                         VFromD<D>& v1) noexcept {
   using T = TFromD<D>;
@@ -158,7 +158,7 @@ HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
   for (std::size_t i = 0; i < N; ++i) { t0[i] = p[2 * i]; t1[i] = p[2 * i + 1]; }
   v0 = Load(d, t0); v1 = Load(d, t1);
 }
-template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2) noexcept {
   using T = TFromD<D>;
@@ -167,7 +167,7 @@ HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, 
   for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
   v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
 }
-template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2, VFromD<D>& v3) noexcept {
   using T = TFromD<D>;
@@ -176,7 +176,7 @@ HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, 
   for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
   v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
 }
-template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
@@ -184,7 +184,7 @@ HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD
   Store(v0, d, t0); Store(v1, d, t1);
   for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
 }
-template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
@@ -193,7 +193,7 @@ HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v
   Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
   for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
 }
-template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, VFromD<D> v3, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
@@ -1742,7 +1742,7 @@ HYLE_FORCE_INLINE void BlendedStore(detail::V512<D> v,
   else if constexpr (detail::kI64<T>) _mm512_mask_storeu_epi64(p, m.raw, v.raw);
   else _mm512_mask_storeu_epi32(p, m.raw, v.raw);
 }
-template <class D, HYLE_SIMD_IF_W(D, 32, 64)>
+template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE detail::V512<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
   return MaskedLoad(FirstN(d, n), d, p);
 }

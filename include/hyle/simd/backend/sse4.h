@@ -90,7 +90,7 @@ using M128 = Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
 }  // namespace detail
 
 // ---- initialization -----------------------------------------------------------------
-template <class D, typename T2, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D, typename T2> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE detail::V128<D> Set(D, T2 t) noexcept {
   using T = TFromD<D>;
   detail::V128<D> v;
@@ -105,7 +105,7 @@ HYLE_FORCE_INLINE detail::V128<D> Set(D, T2 t) noexcept {
   return v;
 }
 
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE detail::V128<D> Zero(D) noexcept {
   using T = TFromD<D>;
   detail::V128<D> v;
@@ -122,7 +122,7 @@ template <class D>
 using VFromD = decltype(Zero(D()));
 
 // ---- load / store -------------------------------------------------------------------
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE detail::V128<D> LoadU(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::V128<D> v;
@@ -134,7 +134,7 @@ HYLE_FORCE_INLINE detail::V128<D> LoadU(D, const TFromD<D>* p) noexcept {
     v.raw = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
   return v;
 }
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE detail::V128<D> Load(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::V128<D> v;
@@ -167,7 +167,7 @@ HYLE_FORCE_INLINE void Store(Vec128<T, N> v, Simd<T, N, 0>, T* p) noexcept {
 
 // ---- interleaved load / store (AoS <-> SoA) -----------------------------------------
 // correctness-first strided copy; native deinterleave shuffles are a profiling upgrade.
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
                                         VFromD<D>& v1) noexcept {
   using T = TFromD<D>;
@@ -176,7 +176,7 @@ HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
   for (std::size_t i = 0; i < N; ++i) { t0[i] = p[2 * i]; t1[i] = p[2 * i + 1]; }
   v0 = Load(d, t0); v1 = Load(d, t1);
 }
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2) noexcept {
   using T = TFromD<D>;
@@ -185,7 +185,7 @@ HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, 
   for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
   v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
 }
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2, VFromD<D>& v3) noexcept {
   using T = TFromD<D>;
@@ -194,7 +194,7 @@ HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, 
   for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
   v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
 }
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
@@ -202,7 +202,7 @@ HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD
   Store(v0, d, t0); Store(v1, d, t1);
   for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
 }
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
@@ -211,7 +211,7 @@ HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v
   Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
   for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
 }
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, VFromD<D> v3, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
@@ -1397,7 +1397,7 @@ template <class D>
 HYLE_FORCE_INLINE std::uint64_t BitsFromMask(D, Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
   return detail::mask_bits(m);
 }
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D d, std::uint64_t bits) noexcept {
   // Rebuild: lane i true iff bit i set. FirstN-style via an index compare against the bitset.
   using T = TFromD<D>;
@@ -1717,7 +1717,7 @@ HYLE_FORCE_INLINE Vec128<T, N> ZipUpper(Vec128<T, N> a, Vec128<T, N> b) noexcept
 // lane pattern via stack array + Load (a valid blendv/movemask selector for every lane
 // type); LoadN/StoreN touch only the first k lanes (fault-safe); MaskedLoad = IfThenElse
 // Zero + full LoadU (Highway's non-AVX3 narrow path); BlendedStore writes only on-lanes.
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D d, std::size_t n) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
@@ -1753,7 +1753,7 @@ HYLE_FORCE_INLINE void BlendedStore(detail::V128<D> v,
   for (std::size_t i = 0; i < kN; ++i)
     if ((bits >> i) & 1u) p[i] = tmp[i];
 }
-template <class D, HYLE_SIMD_IF_W(D, 0, 16)>
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE detail::V128<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);

@@ -118,12 +118,13 @@ vec.h:225-239 现在是 `#elif` 择一 include。层叠后 avx512 会传递拉�
 ## 7. 实施结果（opus 亲自执行，2026-07-11）
 
 **实际改动**（比蓝图更精准，实测冲突面驱动）：
-1. **新建 `backend/x86_detail.h`**：共享 `kSupported/kI8/kI16/kI32/kI64/kSigned`（lane-type-only，三后端逐字相同）+ `RedOp/RedOp2` 枚举（reduce fallback 用，三后端相同）+ **宽度-SFINAE 宏**：
+1. **新建 `backend/x86_detail.h`**：共享 `kSupported/kI8/kI16/kI32/kI64/kSigned`（lane-type-only，三后端逐字相同）+ `RedOp/RedOp2` 枚举（reduce fallback 用，三后端相同）+ **C++23 宽度-band concept 宏**：
    ```cpp
    #define HYLE_SIMD_BYTES_D(D) (D::kMaxLanes * sizeof(typename D::T))
-   #define HYLE_SIMD_IF_W(D, LO, HI) \
-     std::enable_if_t<(HYLE_SIMD_BYTES_D(D) > (LO) && HYLE_SIMD_BYTES_D(D) <= (HI)), int> = 0
+   #define HYLE_SIMD_W(D, LO, HI) \
+     (HYLE_SIMD_BYTES_D(D) > (LO) && HYLE_SIMD_BYTES_D(D) <= (HI))
    ```
+   用 **`requires` 子句**（C++23 house style，util-01「concepts 替 SFINAE」）而非 `std::enable_if`：`template <class D> requires HYLE_SIMD_W(D, 0, 16)`。
    **关键：用字节 BAND 不是等值**——sse4 owns `(0,16]`、avx2 `(16,32]`、avx512 `(32,64]`。因为后端内部用 partial tag（TruncateTo 的 `Load(Simd<u8,4,0>(),buf16)` 是 4 字节 tag 但意为"128 位寄存器"），等值 `==16` 会误拒，band `(0,16]` 正确收纳所有 sub-128 tag 归 sse4。
 2. **删每后端 `kNativeWidth` + `static_assert(native-width-only)`**（被 SFINAE 取代；NEON 保留自己的，不层叠）。
 3. **宽度-SFINAE 加在纯 tag 函数**（无 Vec/Mask 参数的）：`Set/Zero/Load/LoadU/LoadN/FirstN/LoadInterleaved2/3/4/LoadMaskBits/StoreInterleaved2/3/4`。带 Vec/Mask 参数的（`Store/Add/Reverse/Gather/MaskedLoad`...）**不加**——参数类型天然重载。sse4 9 处 / avx2 13 处 / avx512 11 处。
