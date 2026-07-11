@@ -3350,6 +3350,74 @@ TEST(Vec, BlockOpsFamily) {
   }
 }
 
+// simd-18 批E 补: wide 类型(f32/f64/i64)+ Upper/Blocks/Insert 覆盖(grok 只测了 i32)。
+// backend-aware: 单 block 后端(Blocks==1)下 block ops 退化为 identity/alias。
+template <typename T>
+static void CheckBlockOpsWide() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  const std::size_t nb = hs::Blocks(d);
+  const std::size_t blk = 16 / sizeof(T);  // lanes per 128-bit block
+  Buf<T> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<T>(i + 1);
+    b.data[i] = static_cast<T>(100 + i);
+  }
+  auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+
+  // SwapAdjacentBlocks: block-reverse of adjacent pairs [1,0,3,2].
+  hs::Store(hs::SwapAdjacentBlocks(va), d, out.data);
+  for (std::size_t bi = 0; bi < nb; ++bi) {
+    const std::size_t src = (bi ^ 1) < nb ? (bi ^ 1) : bi;  // swap within pair
+    for (std::size_t j = 0; j < blk; ++j)
+      EXPECT_EQ(out.data[bi * blk + j], a.data[src * blk + j]) << "swap bi=" << bi << " j=" << j;
+  }
+  // ReverseBlocks: [nb-1..0].
+  hs::Store(hs::ReverseBlocks(d, va), d, out.data);
+  for (std::size_t bi = 0; bi < nb; ++bi)
+    for (std::size_t j = 0; j < blk; ++j)
+      EXPECT_EQ(out.data[bi * blk + j], a.data[(nb - 1 - bi) * blk + j]) << "rev bi=" << bi;
+  // OddEvenBlocks(odd=vb, even=va): even blocks from va, odd from vb.
+  hs::Store(hs::OddEvenBlocks(vb, va), d, out.data);
+  for (std::size_t bi = 0; bi < nb; ++bi) {
+    const T* src = (bi % 2 == 0) ? a.data : b.data;
+    for (std::size_t j = 0; j < blk; ++j)
+      EXPECT_EQ(out.data[bi * blk + j], src[bi * blk + j]) << "oddeven bi=" << bi;
+  }
+  // InterleaveWholeUpper: continuous a[N/2+i],b[N/2+i] pairs.
+  hs::Store(hs::InterleaveWholeUpper(d, va, vb), d, out.data);
+  for (std::size_t i = 0; i < n / 2; ++i) {
+    EXPECT_EQ(out.data[2 * i], a.data[n / 2 + i]) << "iwu a i=" << i;
+    EXPECT_EQ(out.data[2 * i + 1], b.data[n / 2 + i]) << "iwu b i=" << i;
+  }
+  // Interleave{Lower,Upper}Blocks: Lower=[a.b0,b.b0,a.b1,b.b1], Upper=[a.b2,b.b2,a.b3,b.b3].
+  if (nb >= 2) {
+    hs::Store(hs::InterleaveLowerBlocks(d, va, vb), d, out.data);
+    // blocks: 0<-a.b0, 1<-b.b0, 2<-a.b1, 3<-b.b1
+    for (std::size_t ob = 0; ob < nb; ++ob) {
+      const bool from_a = (ob % 2 == 0);
+      const std::size_t srcb = ob / 2;  // a.b0,b.b0,a.b1,b.b1
+      const T* src = from_a ? a.data : b.data;
+      for (std::size_t j = 0; j < blk; ++j)
+        EXPECT_EQ(out.data[ob * blk + j], src[srcb * blk + j]) << "ilb ob=" << ob << " j=" << j;
+    }
+    hs::Store(hs::InterleaveUpperBlocks(d, va, vb), d, out.data);
+    for (std::size_t ob = 0; ob < nb; ++ob) {
+      const bool from_a = (ob % 2 == 0);
+      const std::size_t srcb = nb / 2 + ob / 2;  // a.b2,b.b2,a.b3,b.b3
+      const T* src = from_a ? a.data : b.data;
+      for (std::size_t j = 0; j < blk; ++j)
+        EXPECT_EQ(out.data[ob * blk + j], src[srcb * blk + j]) << "iub ob=" << ob;
+    }
+  }
+  // Per4LaneBlockShuffle for 32/64-bit: reverse the 4 (or per-block) dwords <0,1,2,3>=identity.
+  hs::Store(hs::Per4LaneBlockShuffle<3, 2, 1, 0>(va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]) << "p4identity i=" << i;
+}
+TEST(Vec, BlockOpsFamilyWideF32) { CheckBlockOpsWide<float>(); }
+TEST(Vec, BlockOpsFamilyWideF64) { CheckBlockOpsWide<double>(); }
+TEST(Vec, BlockOpsFamilyWideI64) { CheckBlockOpsWide<std::int64_t>(); }
+
 TEST(Vec, TwoTablesLookupLanesFamily) {
   const hs::ScalableTag<std::int32_t> d;
   const std::size_t n = hs::Lanes(d);
