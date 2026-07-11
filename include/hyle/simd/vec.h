@@ -1405,7 +1405,13 @@ HYLE_FORCE_INLINE V SaturatedAddI32(V a, V b) noexcept {
   using T = TFromD<D>;
   static_assert(std::is_same_v<T, std::int32_t>, "SaturatedAddI32: i32 only");
   const D d;
-  const V sum = Add(a, b);  // wrapping
+  // Wrapping add MUST go through the unsigned domain: a signed int32 overflow is C++ UB, and at
+  // -O3 GCC uses that UB to prove "sum keeps a's sign" and folds the overflow test to false --
+  // silently breaking saturation in optimized/LTO builds (caught by the D2 INT32_MIN corner:
+  // scalar passed at -O2 probe but failed in the -O3 -DNDEBUG gtest TU). Unsigned wrap is
+  // well-defined, so the sign-bit overflow check survives optimization. All backends agree.
+  const RebindToUnsigned<D> du;
+  const V sum = BitCast(d, Add(BitCast(du, a), BitCast(du, b)));  // defined wrapping add
   // overflow iff a and b same sign AND sum flipped relative to a
   const V sa = BroadcastSignBit(a);
   const auto ov = And(Eq(sa, BroadcastSignBit(b)), Ne(sa, BroadcastSignBit(sum)));

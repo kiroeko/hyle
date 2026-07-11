@@ -403,9 +403,17 @@ HYLE_FORCE_INLINE Vec<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int32_t,
   static_assert(std::is_same_v<SrcT, std::int16_t> && NSrc == 2 * NDst,
                 "WidenMulPairwiseAdd: i16 -> i32 pairwise (dst has half the lanes)");
   Vec<std::int32_t, NDst> r;
-  for (std::size_t i = 0; i < NDst; ++i)
-    r.raw[i] = static_cast<std::int32_t>(a.raw[2 * i]) * b.raw[2 * i] +
-               static_cast<std::int32_t>(a.raw[2 * i + 1]) * b.raw[2 * i + 1];
+  for (std::size_t i = 0; i < NDst; ++i) {
+    // int64 intermediate + saturate: matches the x86 pmaddwd hardware contract and avoids the
+    // signed-int32 overflow UB the naive int32 sum hit at the 4x(-32768) corner (which GCC
+    // folded to a wrap the other backends' hardware saturates instead -- caught by the SDE
+    // vs scalar D2 divergence, simd-18 four-check).
+    const std::int64_t s = static_cast<std::int64_t>(a.raw[2 * i]) * b.raw[2 * i] +
+                           static_cast<std::int64_t>(a.raw[2 * i + 1]) * b.raw[2 * i + 1];
+    const std::int64_t clamped =
+        s > 2147483647LL ? 2147483647LL : (s < -2147483648LL ? -2147483648LL : s);
+    r.raw[i] = static_cast<std::int32_t>(clamped);
+  }
   return r;
 }
 
