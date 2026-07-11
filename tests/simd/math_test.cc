@@ -175,9 +175,7 @@ TEST(Math, XsimdGammaMatchesLibm) {
   check_gamma(hyle::simd::tgamma_f32_batch, std::tgamma, ramp(0.05f, 10.0f, 600), "tgamma", 4e-6);
 }
 
-// hypot(a,b): BINARY best-of op (xsimd won the bench). vs std::hypot over a mix of magnitudes
-// including the overflow-prone case (large a,b whose squares overflow f32 but the hypotenuse
-// doesn't -- std::hypot and xsimd::hypot are both overflow-safe). ~3.5-ULP class.
+// Full-range hypot uses Highway exponent scaling and must match std::hypot even when a*a overflows.
 TEST(Math, HypotMatchesLibm) {
   std::vector<float> a, b;
   // grid of (a,b) pairs across small, large, and overflow-prone magnitudes + signs.
@@ -191,6 +189,30 @@ TEST(Math, HypotMatchesLibm) {
     const double tol = std::abs(want) * 8e-7 + 1e-6;
     EXPECT_NEAR(got, want, tol) << "hypot a=" << a[i] << " b=" << b[i] << " i=" << i;
   }
+}
+
+TEST(Math, HypotFastWithinContract) {
+  std::vector<float> a, b;
+  for (float av : {-1e3f, -3.5f, 0.0f, 1e-10f, 2.0f, 100.0f, 1.2e19f})
+    for (float bv : {-1e3f, -0.5f, 0.0f, 1e-10f, 4.0f, 100.0f, 1.2e19f}) {
+      a.push_back(av);
+      b.push_back(bv);
+    }
+  const auto check = [&](const std::vector<float>& out) {
+    for (std::size_t i = 0; i < a.size(); ++i) {
+      const float want = std::sqrt(std::fma(a[i], a[i], b[i] * b[i]));
+      EXPECT_NEAR(out[i], want, std::abs(want) * 8e-7f + 1e-6f) << "i=" << i;
+    }
+  };
+  std::vector<float> out(a.size());
+  hyle::simd::hypot_fast_f32_batch(a.data(), b.data(), out.data(), a.size());
+  check(out);
+  auto in_place_a = a;
+  hyle::simd::hypot_fast_f32_batch(in_place_a.data(), b.data(), in_place_a.data(), a.size());
+  check(in_place_a);
+  auto in_place_b = b;
+  hyle::simd::hypot_fast_f32_batch(a.data(), in_place_b.data(), in_place_b.data(), a.size());
+  check(in_place_b);
 }
 
 // tail handling: n not a multiple of 8 (the SLEEF kernel's vector width). All three ops
@@ -320,6 +342,131 @@ TEST(Math, ComplexTranscendentals) {
   check_cunary(hyle::simd::ctanh_f32_batch, r_tanh, "ctanh");
 }
 
+void expect_complex_component(float got, float want, const char* part, std::size_t i) {
+  if (std::isnan(want)) {
+    EXPECT_TRUE(std::isnan(got)) << part << " i=" << i;
+  } else if (std::isinf(want)) {
+    EXPECT_TRUE(std::isinf(got)) << part << " i=" << i;
+    EXPECT_EQ(std::signbit(got), std::signbit(want)) << part << " i=" << i;
+  } else {
+    EXPECT_NEAR(got, want, std::abs(want) * 5e-6f + 1e-6f) << part << " i=" << i;
+    if (want == 0.0f) {
+      EXPECT_EQ(std::signbit(got), std::signbit(want)) << part << " i=" << i;
+    }
+  }
+}
+
+TEST(Math, ComplexSinCosSpecialTailAndAlias) {
+  const float inf = std::numeric_limits<float>::infinity();
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  const std::vector<std::complex<float>> input = {
+      {0.0f, 0.0f}, {-0.0f, 0.0f}, {0.0f, -0.0f}, {1.0f, -2.0f},
+      {0.0f, inf}, {0.0f, -inf}, {inf, 0.0f}, {-inf, 0.0f},
+      {nan, 1.0f}, {1.0f, nan}, {1e-38f, -1e-38f}, {3.0f, 100.0f},
+      {-2.0f, -100.0f}, {0.25f, 0.5f}, {-0.75f, 1.25f}, {2.0f, -3.0f}, {0.1f, 0.2f}};
+  std::vector<float> re(input.size()), im(input.size());
+  for (std::size_t i = 0; i < input.size(); ++i) { re[i] = input[i].real(); im[i] = input[i].imag(); }
+
+  for (bool cosine : {false, true}) {
+    std::vector<float> got_re = re;
+    std::vector<float> got_im = im;
+    if (cosine)
+      hyle::simd::ccos_f32_batch(got_re.data(), got_im.data(), got_re.data(), got_im.data(), input.size());
+    else
+      hyle::simd::csin_f32_batch(got_re.data(), got_im.data(), got_re.data(), got_im.data(), input.size());
+    for (std::size_t i = 0; i < input.size(); ++i) {
+      const std::complex<float> want = cosine ? std::cos(input[i]) : std::sin(input[i]);
+      expect_complex_component(got_re[i], want.real(), cosine ? "ccos re" : "csin re", i);
+      expect_complex_component(got_im[i], want.imag(), cosine ? "ccos im" : "csin im", i);
+    }
+  }
+}
+
+TEST(Math, ComplexTanhSpecialTailAndAlias) {
+  const float inf = std::numeric_limits<float>::infinity();
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  const float denorm = std::numeric_limits<float>::denorm_min();
+  const std::vector<std::complex<float>> input = {
+      {0.0f, 0.0f}, {-0.0f, 0.0f}, {0.0f, -0.0f}, {0.7f, 0.0f},
+      {0.7f, -0.0f}, {1e-38f, 0.7f}, {-1e-38f, -0.7f}, {0.7f, denorm},
+      {0.7f, -denorm}, {0.01f, 1.5707963f - 0.001f}, {-0.01f, -1.5707963f + 0.001f},
+      {3.0f, -2.0f}, {-3.0f, 2.0f}, {39.0f, 0.3f}, {-39.0f, -0.3f},
+      {45.0f, 0.2f}, {-45.0f, -0.2f}, {inf, 0.0f}, {-inf, 0.0f},
+      {nan, 1.0f}, {1.0f, nan}};
+  std::vector<float> re(input.size()), im(input.size());
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    re[i] = input[i].real();
+    im[i] = input[i].imag();
+  }
+  hyle::simd::ctanh_f32_batch(re.data(), im.data(), re.data(), im.data(), input.size());
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    const std::complex<float> want = std::tanh(input[i]);
+    expect_complex_component(re[i], want.real(), "ctanh re", i);
+    expect_complex_component(im[i], want.imag(), "ctanh im", i);
+  }
+
+  std::vector<float> sr(input.size() + 2, -123.0f), si(input.size() + 2, -123.0f);
+  std::vector<float> dr(input.size() + 2, -321.0f), di(input.size() + 2, -321.0f);
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    sr[i + 1] = input[i].real();
+    si[i + 1] = input[i].imag();
+  }
+  hyle::simd::ctanh_f32_batch(sr.data() + 1, si.data() + 1, dr.data() + 1, di.data() + 1,
+                               input.size());
+  EXPECT_EQ(sr.front(), -123.0f);
+  EXPECT_EQ(sr.back(), -123.0f);
+  EXPECT_EQ(si.front(), -123.0f);
+  EXPECT_EQ(si.back(), -123.0f);
+  EXPECT_EQ(dr.front(), -321.0f);
+  EXPECT_EQ(dr.back(), -321.0f);
+  EXPECT_EQ(di.front(), -321.0f);
+  EXPECT_EQ(di.back(), -321.0f);
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    const std::complex<float> want = std::tanh(input[i]);
+    expect_complex_component(dr[i + 1], want.real(), "ctanh unaligned re", i);
+    expect_complex_component(di[i + 1], want.imag(), "ctanh unaligned im", i);
+  }
+}
+
+TEST(Math, ComplexTanhExtremeImaginaryFallsBack) {
+  const float max = std::numeric_limits<float>::max();
+  const std::vector<std::complex<float>> input = {
+      {25.0f, max}, {-25.0f, -max}, {25.0f, 0.75f * max}, {-25.0f, -0.75f * max},
+      {25.0f, 0.25f}, {-25.0f, -0.25f}, {30.0f, 0.5f}, {-30.0f, -0.5f}};
+  std::vector<float> re(input.size()), im(input.size());
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    re[i] = input[i].real();
+    im[i] = input[i].imag();
+  }
+  hyle::simd::ctanh_f32_batch(re.data(), im.data(), re.data(), im.data(), input.size());
+  for (std::size_t i = 0; i < input.size(); ++i) {
+    const std::complex<float> want = std::tanh(input[i]);
+    expect_complex_component(re[i], want.real(), "ctanh extreme re", i);
+    expect_complex_component(im[i], want.imag(), "ctanh extreme im", i);
+  }
+}
+
+TEST(Math, ComplexSinCosTinyImaginary) {
+  constexpr std::size_t n = 16;
+  const float tiny[] = {1e-38f, -1e-38f, 1e-8f, -1e-8f, 1e-7f, -1e-7f,
+                        1e-6f, -1e-6f, 1e-5f, -1e-5f, 1e-4f, -1e-4f,
+                        1e-3f, -1e-3f, 1e-2f, -1e-2f};
+  std::vector<float> re(n), im(n), dr(n), di(n);
+  for (std::size_t i = 0; i < n; ++i) { re[i] = 0.25f + 0.03f * static_cast<float>(i); im[i] = tiny[i]; }
+  for (bool cosine : {false, true}) {
+    if (cosine) hyle::simd::ccos_f32_batch(re.data(), im.data(), dr.data(), di.data(), n);
+    else hyle::simd::csin_f32_batch(re.data(), im.data(), dr.data(), di.data(), n);
+    for (std::size_t i = 0; i < n; ++i) {
+      const std::complex<float> want = cosine
+          ? std::cos(std::complex<float>(re[i], im[i]))
+          : std::sin(std::complex<float>(re[i], im[i]));
+      EXPECT_NEAR(dr[i], want.real(), std::abs(want.real()) * 5e-6f + 1e-7f);
+      ASSERT_NE(want.imag(), 0.0f);
+      EXPECT_NEAR(di[i] / want.imag(), 1.0f, 2e-5f) << "i=" << i;
+    }
+  }
+}
+
 TEST(Math, ComplexPow) {
   constexpr int N = 128;
   std::vector<float> zr(N), zi(N), wr(N), wi(N), dr(N), di(N);
@@ -334,5 +481,61 @@ TEST(Math, ComplexPow) {
     const double tol = std::abs(want) * 1e-5 + 1e-5;
     EXPECT_NEAR(dr[i], want.real(), tol) << "cpow re i=" << i;
     EXPECT_NEAR(di[i], want.imag(), tol) << "cpow im i=" << i;
+  }
+}
+
+TEST(Math, ComplexPowSpecialTailAndAlias) {
+  const float inf = std::numeric_limits<float>::infinity();
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  const float denorm = std::numeric_limits<float>::denorm_min();
+  const std::vector<std::complex<float>> base = {
+      {0.0f, 0.0f}, {-0.0f, 0.0f}, {0.0f, -0.0f}, {-2.0f, 0.0f},
+      {-2.0f, -0.0f}, {1e-38f, 0.25f}, {0.25f, 1e-38f}, {1e18f, 0.5f},
+      {0.5f, -0.75f}, {-1.5f, 2.0f}, {inf, 1.0f}, {1.0f, inf},
+      {nan, 1.0f}, {1.0f, nan}, {2.0f, -3.0f}, {-0.25f, 0.75f}, {3.0f, 2.0f},
+      {0.5f, -0.75f}, {0.5f, -0.75f}, {0.5f, -0.75f}, {0.5f, -0.75f},
+      {0.5f, -0.75f}, {0.5f, -0.75f}};
+  const std::vector<std::complex<float>> exponent = {
+      {0.0f, 0.0f}, {1.0f, 0.0f}, {-1.0f, 0.0f}, {0.5f, 0.25f},
+      {0.5f, -0.25f}, {1.5f, 0.0f}, {-0.5f, 1.0f}, {0.1f, -0.2f},
+      {0.0f, 1.0f}, {2.0f, -0.5f}, {1.0f, 0.0f}, {0.5f, 0.25f},
+      {1.0f, 0.0f}, {0.5f, -0.5f}, {3.0f, 2.0f}, {-2.0f, 1.5f}, {0.75f, -0.4f},
+      {0.0f, 0.3f}, {-0.0f, 0.3f}, {0.3f, 0.0f}, {0.3f, -0.0f},
+      {denorm, 0.3f}, {0.3f, -denorm}};
+  ASSERT_EQ(base.size(), exponent.size());
+  std::vector<float> zr(base.size()), zi(base.size()), wr(base.size()), wi(base.size());
+  for (std::size_t i = 0; i < base.size(); ++i) {
+    zr[i] = base[i].real();
+    zi[i] = base[i].imag();
+    wr[i] = exponent[i].real();
+    wi[i] = exponent[i].imag();
+  }
+  hyle::simd::cpow_f32_batch(zr.data(), zi.data(), wr.data(), wi.data(), zr.data(), zi.data(),
+                              base.size());
+  for (std::size_t i = 0; i < base.size(); ++i) {
+    const std::complex<float> want = std::pow(base[i], exponent[i]);
+    expect_complex_component(zr[i], want.real(), "cpow special re", i);
+    expect_complex_component(zi[i], want.imag(), "cpow special im", i);
+  }
+
+  std::vector<float> ur(base.size() + 2, -123.0f), ui(base.size() + 2, -123.0f);
+  std::vector<float> uwr(base.size() + 2, -123.0f), uwi(base.size() + 2, -123.0f);
+  std::vector<float> dr(base.size() + 2, -321.0f), di(base.size() + 2, -321.0f);
+  for (std::size_t i = 0; i < base.size(); ++i) {
+    ur[i + 1] = base[i].real();
+    ui[i + 1] = base[i].imag();
+    uwr[i + 1] = exponent[i].real();
+    uwi[i + 1] = exponent[i].imag();
+  }
+  hyle::simd::cpow_f32_batch(ur.data() + 1, ui.data() + 1, uwr.data() + 1, uwi.data() + 1,
+                              dr.data() + 1, di.data() + 1, base.size());
+  for (const auto* guarded : {ur.data(), ui.data(), uwr.data(), uwi.data(), dr.data(), di.data()}) {
+    EXPECT_EQ(guarded[0], guarded == dr.data() || guarded == di.data() ? -321.0f : -123.0f);
+    EXPECT_EQ(guarded[base.size() + 1], guarded == dr.data() || guarded == di.data() ? -321.0f : -123.0f);
+  }
+  for (std::size_t i = 0; i < base.size(); ++i) {
+    const std::complex<float> want = std::pow(base[i], exponent[i]);
+    expect_complex_component(dr[i + 1], want.real(), "cpow unaligned re", i);
+    expect_complex_component(di[i + 1], want.imag(), "cpow unaligned im", i);
   }
 }

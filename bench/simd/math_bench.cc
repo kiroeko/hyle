@@ -191,6 +191,14 @@ int main() {
       for (std::size_t i = 0; i < kN; ++i) dst[i] = std::hypot(a[i], bb[i]);
       nb::doNotOptimizeAway(dst.data());
     });
+    b.run("HYLE safe", [&] {
+      hyle::simd::hypot_f32_batch(a.data(), bb.data(), dst.data(), kN);
+      nb::doNotOptimizeAway(dst.data());
+    });
+    b.run("HYLE fast", [&] {
+      hyle::simd::hypot_fast_f32_batch(a.data(), bb.data(), dst.data(), kN);
+      nb::doNotOptimizeAway(dst.data());
+    });
 #if defined(HYLE_BENCH_XSIMD)
     b.run("xsimd (same ISA SOTA)", [&] {
       using batch = xsimd::batch<float>;

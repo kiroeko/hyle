@@ -7,39 +7,53 @@
 // matches the vqsort semantics -- ascending = smallest first, descending = largest first. Like
 // vqsort, std::sort / nth_element are NOT stable (equal keys' order unspecified) -- same contract.
 //
-// NaN NOTE (f32/f64): std comparators give a strict-weak-order only for non-NaN input; NaN breaks
-// it (UB in std::sort). Highway's vqsort instead partitions NaNs to the back deterministically.
-// The sort tests feed finite data (the common case + a fair oracle comparison); NaN-bearing input
-// is a documented caller concern, out of scope for the scalar oracle.
+// Floating order matches VQSort: finite values follow the requested direction and every NaN is
+// ordered after every finite value for both directions. NaNs compare equivalent to each other.
+// This keeps the scalar fallback a valid strict-weak-order instead of feeding std with plain < on NaN.
 #include "src/simd/sort/kernels.h"
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <type_traits>
 
 namespace hyle::simd::detail {
+
+template <typename T, bool kAscending>
+struct ScalarOrder {
+  bool operator()(T a, T b) const noexcept {
+    if constexpr (std::is_floating_point_v<T>) {
+      const bool a_nan = std::isnan(a);
+      const bool b_nan = std::isnan(b);
+      if (a_nan || b_nan) return !a_nan && b_nan;
+    }
+    if constexpr (kAscending) return a < b;
+    else return a > b;
+  }
+};
 
 #define HYLE_SORT_SCALAR_DEFINE(T, tag)                                                     \
   void sort_##tag##_scalar(T* keys, std::size_t n, bool ascending) noexcept {               \
     if (ascending)                                                                          \
-      std::sort(keys, keys + n, std::less<T>{});                                            \
+      std::sort(keys, keys + n, ScalarOrder<T, true>{});                                            \
     else                                                                                    \
-      std::sort(keys, keys + n, std::greater<T>{});                                         \
+      std::sort(keys, keys + n, ScalarOrder<T, false>{});                                         \
   }                                                                                         \
   void psort_##tag##_scalar(T* keys, std::size_t n, std::size_t k, bool ascending)          \
       noexcept {                                                                            \
     if (ascending)                                                                          \
-      std::partial_sort(keys, keys + k, keys + n, std::less<T>{});                          \
+      std::partial_sort(keys, keys + k, keys + n, ScalarOrder<T, true>{});                          \
     else                                                                                    \
-      std::partial_sort(keys, keys + k, keys + n, std::greater<T>{});                       \
+      std::partial_sort(keys, keys + k, keys + n, ScalarOrder<T, false>{});                       \
   }                                                                                         \
   void select_##tag##_scalar(T* keys, std::size_t n, std::size_t k, bool ascending)         \
       noexcept {                                                                            \
     if (ascending)                                                                          \
-      std::nth_element(keys, keys + k, keys + n, std::less<T>{});                           \
+      std::nth_element(keys, keys + k, keys + n, ScalarOrder<T, true>{});                           \
     else                                                                                    \
-      std::nth_element(keys, keys + k, keys + n, std::greater<T>{});                        \
+      std::nth_element(keys, keys + k, keys + n, ScalarOrder<T, false>{});                        \
   }
 
 HYLE_SORT_KEY_TYPES(HYLE_SORT_SCALAR_DEFINE)

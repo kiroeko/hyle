@@ -118,10 +118,8 @@ HYLE_HWY_MATH_AVX2(asinh, Asinh, std::asinh)
 HYLE_HWY_MATH_AVX2(acosh, Acosh, std::acosh)
 #undef HYLE_HWY_MATH_AVX2
 
-// hypot: BINARY (two inputs), so it can't use the unary macro above. Highway wins here on
-// CORRECTNESS: xsimd's hypot is ~2.2x faster but returns inf when a^2/b^2 overflow FLT_MAX;
-// Highway's Hypot does exponent scaling to match std::hypot's full range (hypot exists precisely
-// to be overflow-safe). scalar std::hypot is the tail (also overflow-safe).
+// Full-range hypot core: Highway exponent scaling; scalar std::hypot tail. The explicit fast API
+// uses xsimd's direct formula in the xsimd TU.
 void hypot_f32_highway_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept {
   const hn::ScalableTag<float> d;
   const std::size_t w = hn::Lanes(d);

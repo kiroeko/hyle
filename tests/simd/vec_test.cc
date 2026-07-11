@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #include "hyle/simd/vec.h"
+#include "hyle/simd/dtype.h"
 #include "hyle/simd/random.h"
 
 // vec_test -- WIDTH-AGNOSTIC: this ONE source is compiled three times (scalar / sse4 /
@@ -511,6 +512,7 @@ TEST(Vec, MathExtSaturatedInt) {
   // MulFixedPoint15: Q1.15 mul = (2ab rounded) >> 16.
   Buf<std::int16_t> b, out2;
   for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<std::int16_t>(i * 1000 - 15000); b.data[i] = static_cast<std::int16_t>(20000 - i * 800); }
+  a.data[0] = mn; b.data[0] = mn;
   auto va2 = hs::Load(d, a.data), vb2 = hs::Load(d, b.data);
   hs::Store(hs::MulFixedPoint15(va2, vb2), d, out2.data);
   for (std::size_t i = 0; i < n; ++i) { int e = (static_cast<int>(a.data[i]) * b.data[i] + 0x4000) >> 15; EXPECT_EQ(out2.data[i], static_cast<std::int16_t>(e)) << "q15 i=" << i; }
@@ -989,6 +991,153 @@ TEST(Vec, MaskedFamily) {
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i]*b.data[i]+no.data[i] : 0) << "MaskedMulAdd i=" << i;
 }
 
+TEST(Vec, MaskedShiftAndReduceCompletion) {
+  const hs::ScalableTag<std::uint32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::uint32_t> a, bits, flags, no, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<std::uint32_t>(0x10203u + i * 17u);
+    bits.data[i] = static_cast<std::uint32_t>(i % 4);
+    flags.data[i] = static_cast<std::uint32_t>(i & 1u);
+    no.data[i] = 0xDEADBEEFu;
+  }
+  const auto va = hs::Load(d, a.data);
+  const auto vb = hs::Load(d, bits.data);
+  const auto vno = hs::Load(d, no.data);
+  const auto m = hs::Eq(hs::Load(d, flags.data), hs::Zero(d));
+  const auto active = [](std::size_t i) { return (i & 1u) == 0; };
+  hs::Store(hs::MaskedShl(m, va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i] << bits.data[i] : 0u);
+  hs::Store(hs::MaskedShlOr(m, vno, va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i] << bits.data[i] : no.data[i]);
+  hs::Store(hs::MaskedShr(m, va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i] >> bits.data[i] : 0u);
+  hs::Store(hs::MaskedShrOr(m, vno, va, vb), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i] >> bits.data[i] : no.data[i]);
+  hs::Store(hs::MaskedShiftLeft<3>(m, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i] << 3 : 0u);
+  hs::Store(hs::MaskedShiftLeftOr<3>(m, vno, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i] << 3 : no.data[i]);
+  hs::Store(hs::MaskedShiftRight<3>(m, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i] >> 3 : 0u);
+  hs::Store(hs::MaskedShiftRightOr<3>(m, vno, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], active(i) ? a.data[i] >> 3 : no.data[i]);
+
+  std::uint32_t sum = 0, minv = std::numeric_limits<std::uint32_t>::max(), maxv = 0;
+  for (std::size_t i = 0; i < n; ++i) if (active(i)) { sum += a.data[i]; minv = std::min(minv, a.data[i]); maxv = std::max(maxv, a.data[i]); }
+  EXPECT_EQ(hs::MaskedReduceSum(d, m, va), sum);
+  EXPECT_EQ(hs::MaskedReduceMin(d, m, va), minv);
+  EXPECT_EQ(hs::MaskedReduceMax(d, m, va), maxv);
+  const auto none = hs::Eq(hs::Load(d, flags.data), hs::Set(d, 7u));
+  EXPECT_EQ(hs::MaskedReduceSum(d, none, va), 0u);
+  EXPECT_EQ(hs::MaskedReduceMin(d, none, va), std::numeric_limits<std::uint32_t>::max());
+  EXPECT_EQ(hs::MaskedReduceMax(d, none, va), 0u);
+
+  const hs::ScalableTag<std::int32_t> di;
+  Buf<std::int32_t> si, siflags;
+  for (std::size_t i = 0; i < hs::Lanes(di); ++i) { si.data[i] = -static_cast<std::int32_t>(i + 1); siflags.data[i] = 1; }
+  const auto svi = hs::Load(di, si.data);
+  const auto sinone = hs::Eq(hs::Load(di, siflags.data), hs::Zero(di));
+  EXPECT_EQ(hs::MaskedReduceMin(di, sinone, svi), std::numeric_limits<std::int32_t>::max());
+  EXPECT_EQ(hs::MaskedReduceMax(di, sinone, svi), std::numeric_limits<std::int32_t>::lowest());
+
+  const hs::ScalableTag<float> df;
+  Buf<float> sf, sfflags;
+  for (std::size_t i = 0; i < hs::Lanes(df); ++i) { sf.data[i] = -static_cast<float>(i + 1); sfflags.data[i] = 1.0f; }
+  const auto svf = hs::Load(df, sf.data);
+  const auto sfnone = hs::Eq(hs::Load(df, sfflags.data), hs::Zero(df));
+  EXPECT_EQ(hs::MaskedReduceMin(df, sfnone, svf), std::numeric_limits<float>::infinity());
+  EXPECT_EQ(hs::MaskedReduceMax(df, sfnone, svf), -std::numeric_limits<float>::infinity());
+}
+
+TEST(Vec, MaskedApproxConvertAndCountCompletion) {
+  const hs::ScalableTag<float> df;
+  const hs::ScalableTag<std::int32_t> di;
+  const hs::ScalableTag<std::uint32_t> du;
+  const std::size_t n = hs::Lanes(df);
+  Buf<float> f, fflags, fout, fref;
+  Buf<std::int32_t> flags, iout;
+  Buf<std::uint32_t> u, uflags, uout;
+  for (std::size_t i = 0; i < n; ++i) {
+    f.data[i] = static_cast<float>(i + 1);
+    fflags.data[i] = static_cast<float>(i & 1u);
+    flags.data[i] = static_cast<std::int32_t>(i & 1u);
+    uflags.data[i] = static_cast<std::uint32_t>(i & 1u);
+    u.data[i] = i == 0 ? 0u : static_cast<std::uint32_t>(1u << (i % 31));
+  }
+  const auto vf = hs::Load(df, f.data);
+  const auto mf = hs::Eq(hs::Load(df, fflags.data), hs::Zero(df));
+  const auto mi = hs::Eq(hs::Load(di, flags.data), hs::Zero(di));
+  hs::Store(hs::ApproximateReciprocal(vf), df, fref.data);
+  hs::Store(hs::MaskedApproximateReciprocal(mf, vf), df, fout.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(fout.data[i], (i & 1u) == 0 ? fref.data[i] : 0.0f);
+  hs::Store(hs::ApproximateReciprocalSqrt(vf), df, fref.data);
+  hs::Store(hs::MaskedApproximateReciprocalSqrt(mf, vf), df, fout.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(fout.data[i], (i & 1u) == 0 ? fref.data[i] : 0.0f);
+  hs::Store(hs::MaskedConvertTo(mi, di, vf), di, iout.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(iout.data[i], (i & 1u) == 0 ? static_cast<std::int32_t>(f.data[i]) : 0);
+  const auto mu = hs::Eq(hs::Load(du, uflags.data), hs::Zero(du));
+  hs::Store(hs::MaskedLeadingZeroCount(mu, hs::Load(du, u.data)), du, uout.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(uout.data[i], (i & 1u) == 0 ? std::countl_zero(u.data[i]) : 0u);
+}
+
+TEST(Vec, MaskedFixedPointAndWidenCompletion) {
+  const hs::ScalableTag<std::int16_t> d16;
+  const hs::ScalableTag<std::int32_t> d32;
+  const std::size_t n16 = hs::Lanes(d16), n32 = hs::Lanes(d32);
+  Buf<std::int16_t> a, b, no, qout, qref;
+  Buf<std::int32_t> flags, wout, wref;
+  for (std::size_t i = 0; i < n16; ++i) {
+    a.data[i] = static_cast<std::int16_t>(i == 0 ? INT16_MIN : 1000 + i * 17);
+    b.data[i] = static_cast<std::int16_t>(i == 0 ? INT16_MIN : 2000 - i * 13);
+    no.data[i] = -123;
+  }
+  for (std::size_t i = 0; i < n32; ++i) flags.data[i] = static_cast<std::int32_t>(i & 1u);
+  const auto va = hs::Load(d16, a.data), vb = hs::Load(d16, b.data), vno = hs::Load(d16, no.data);
+  Buf<std::int16_t> flags16;
+  for (std::size_t i = 0; i < n16; ++i) flags16.data[i] = static_cast<std::int16_t>(i & 1u);
+  const auto m16 = hs::Eq(hs::Load(d16, flags16.data), hs::Zero(d16));
+  hs::Store(hs::MulFixedPoint15(va, vb), d16, qref.data);
+  hs::Store(hs::MaskedMulFixedPoint15(m16, va, vb), d16, qout.data);
+  for (std::size_t i = 0; i < n16; ++i) EXPECT_EQ(qout.data[i], (i & 1u) == 0 ? qref.data[i] : 0);
+  hs::Store(hs::MaskedSatAddOr(m16, vno, va, vb), d16, qout.data);
+  hs::Store(hs::MaskedSaturatedAddOr(m16, vno, va, vb), d16, qref.data);
+  for (std::size_t i = 0; i < n16; ++i) EXPECT_EQ(qout.data[i], qref.data[i]);
+  hs::Store(hs::MaskedSatSubOr(m16, vno, va, vb), d16, qout.data);
+  hs::Store(hs::MaskedSaturatedSubOr(m16, vno, va, vb), d16, qref.data);
+  for (std::size_t i = 0; i < n16; ++i) EXPECT_EQ(qout.data[i], qref.data[i]);
+  const auto m32 = hs::Eq(hs::Load(d32, flags.data), hs::Zero(d32));
+  hs::Store(hs::WidenMulPairwiseAdd(d32, va, vb), d32, wref.data);
+  hs::Store(hs::MaskedWidenMulPairwiseAdd(d32, m32, va, vb), d32, wout.data);
+  for (std::size_t i = 0; i < n32; ++i) EXPECT_EQ(wout.data[i], (i & 1u) == 0 ? wref.data[i] : 0);
+}
+
+TEST(Vec, MaskedComplexCompletion) {
+  const hs::ScalableTag<float> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<float> a, b, c, no, flags, out, ref;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<float>(i + 1);
+    b.data[i] = static_cast<float>(i + 3) * 0.25f;
+    c.data[i] = static_cast<float>(i + 5) * -0.5f;
+    no.data[i] = -77.0f;
+    flags.data[i] = static_cast<float>((i / 2) & 1u);
+  }
+  const auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data), vc = hs::Load(d, c.data);
+  const auto vno = hs::Load(d, no.data);
+  const auto m = hs::Eq(hs::Load(d, flags.data), hs::Zero(d));
+  const auto check = [&](auto got, auto want, float inactive) {
+    hs::Store(got, d, out.data); hs::Store(want, d, ref.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], ((i / 2) & 1u) == 0 ? ref.data[i] : inactive) << "i=" << i;
+  };
+  check(hs::MaskedMulComplex(m, va, vb), hs::MulComplex(va, vb), 0.0f);
+  check(hs::MaskedMulComplexOr(m, vno, va, vb), hs::MulComplex(va, vb), -77.0f);
+  check(hs::MaskedMulComplexConj(m, va, vb), hs::MulComplexConj(va, vb), 0.0f);
+  check(hs::MaskedMulComplexAdd(m, va, vb, vc), hs::MulComplexAdd(va, vb, vc), 0.0f);
+  check(hs::MaskedMulComplexConjAdd(m, va, vb, vc), hs::MulComplexConjAdd(va, vb, vc), 0.0f);
+}
+
 // ---- A-2 mask-domain logic ----------------------------------------------------------
 // Build two masks from comparisons, then check the mask And/Or/Xor/AndNot/Not/ExclusiveNeither
 // against per-lane bool references, plus IfThenZeroElse and MaskFromVec. Uses i32 lanes.
@@ -1201,6 +1350,97 @@ TEST(Vec, MulAddFamily) {
   for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], a.data[i] * b.data[i] + c.data[i], 1e-3f);
   hs::Store(hs::NegMulAdd(va, vb, vc), d, out.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], -(a.data[i] * b.data[i]) + c.data[i], 1e-3f);
+  hs::Store(hs::MulSub(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], a.data[i] * b.data[i] - c.data[i], 1e-3f);
+  hs::Store(hs::NegMulSub(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(out.data[i], -(a.data[i] * b.data[i]) - c.data[i], 1e-3f);
+  hs::Store(hs::MulAddSub(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_NEAR(out.data[i], a.data[i] * b.data[i] + (i % 2 ? c.data[i] : -c.data[i]), 1e-3f);
+  hs::Store(hs::MulSubAdd(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_NEAR(out.data[i], a.data[i] * b.data[i] + (i % 2 ? -c.data[i] : c.data[i]), 1e-3f);
+}
+
+TEST(Vec, MulSignVariantsUint32) {
+  const hs::ScalableTag<std::uint32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::uint32_t> a, b, c, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<std::uint32_t>(i + 2);
+    b.data[i] = static_cast<std::uint32_t>(i * 3 + 5);
+    c.data[i] = static_cast<std::uint32_t>(i * 7 + 1);
+  }
+  const auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data), vc = hs::Load(d, c.data);
+  hs::Store(hs::MulSub(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i] * b.data[i] - c.data[i]);
+  hs::Store(hs::NegMulSub(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], std::uint32_t{0} - (a.data[i] * b.data[i] + c.data[i]));
+  hs::Store(hs::MulAddSub(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], a.data[i] * b.data[i] +
+                              (i % 2 ? c.data[i] : std::uint32_t{0} - c.data[i]));
+  hs::Store(hs::MulSubAdd(va, vb, vc), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], a.data[i] * b.data[i] +
+                              (i % 2 ? std::uint32_t{0} - c.data[i] : c.data[i]));
+}
+
+TEST(Vec, MagnitudeMinMax) {
+  {
+    const hs::ScalableTag<std::int32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    Buf<std::int32_t> a, b, out;
+    const std::int32_t av[] = {-5, 5, std::numeric_limits<std::int32_t>::min(), -7, 8};
+    const std::int32_t bv[] = {3, -5, 4, 7, -9};
+    const std::int32_t min_ref[] = {3, -5, 4, -7, 8};
+    const std::int32_t max_ref[] = {-5, 5, std::numeric_limits<std::int32_t>::min(), 7, -9};
+    for (std::size_t i = 0; i < n; ++i) { a.data[i] = av[i % 5]; b.data[i] = bv[i % 5]; }
+    const auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+    hs::Store(hs::MinMagnitude(va, vb), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], min_ref[i % 5]) << "min lane " << i;
+    hs::Store(hs::MaxMagnitude(va, vb), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], max_ref[i % 5]) << "max lane " << i;
+  }
+  {
+    const hs::ScalableTag<std::uint32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    Buf<std::uint32_t> a, b, out;
+    for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<std::uint32_t>(i + 9); b.data[i] = static_cast<std::uint32_t>(i + 3); }
+    const auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+    hs::Store(hs::MinMagnitude(va, vb), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], b.data[i]);
+    hs::Store(hs::MaxMagnitude(va, vb), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]);
+  }
+  {
+    const hs::ScalableTag<float> d;
+    const std::size_t n = hs::Lanes(d);
+    ASSERT_GE(n, 4u);
+    Buf<float> a, b, out;
+    const float av[] = {0.0f, -0.0f, 4.0f, -4.0f};
+    const float bv[] = {-0.0f, 0.0f, -4.0f, 4.0f};
+#if defined(HYLE_SIMD_TARGET_NEON)
+    // Highway's AArch64 Min/Max are IEEE minimumNumber/maximumNumber, which
+    // canonicalize an opposite-signed zero tie to -0 for Min and +0 for Max.
+    const float min_ref[] = {-0.0f, -0.0f, -4.0f, -4.0f};
+    const float max_ref[] = {0.0f, 0.0f, 4.0f, 4.0f};
+#else
+    const float min_ref[] = {-0.0f, 0.0f, -4.0f, -4.0f};
+    const float max_ref[] = {0.0f, -0.0f, 4.0f, 4.0f};
+#endif
+    for (std::size_t i = 0; i < n; ++i) { a.data[i] = av[i % 4]; b.data[i] = bv[i % 4]; }
+    const auto va = hs::Load(d, a.data), vb = hs::Load(d, b.data);
+    hs::Store(hs::MinMagnitude(va, vb), d, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(std::bit_cast<std::uint32_t>(out.data[i]), std::bit_cast<std::uint32_t>(min_ref[i % 4]))
+          << "min lane " << i;
+    hs::Store(hs::MaxMagnitude(va, vb), d, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(std::bit_cast<std::uint32_t>(out.data[i]), std::bit_cast<std::uint32_t>(max_ref[i % 4]))
+          << "max lane " << i;
+  }
 }
 
 TEST(Vec, BitwiseUint32) {
@@ -1575,6 +1815,66 @@ TEST(Vec, WidenMulPairwiseAdd) {
                                static_cast<std::int32_t>(a.data[2 * i + 1]) * b.data[2 * i + 1]) << "i=" << i;
 }
 
+// MulEven/MulOdd: select alternating source lanes, widen once, then multiply.
+template <typename T>
+void CheckMulEvenOdd() {
+  using W = hs::MakeWide<T>;
+  const hs::ScalableTag<T> ds;
+  const hs::RepartitionToWide<decltype(ds)> dw;
+  const std::size_t ns = hs::Lanes(ds), nw = hs::Lanes(dw);
+  ASSERT_EQ(ns, 2 * nw);
+  Buf<T> a, b;
+  Buf<W> out;
+  for (std::size_t i = 0; i < ns; ++i) {
+    const int sign = i % 3 == 0 ? -1 : 1;
+    a.data[i] = static_cast<T>(sign * static_cast<int>(i + 2));
+    b.data[i] = static_cast<T>(static_cast<int>(i * 5 + 3));
+  }
+  const auto va = hs::Load(ds, a.data), vb = hs::Load(ds, b.data);
+  hs::Store(hs::MulEven(va, vb), dw, out.data);
+  for (std::size_t i = 0; i < nw; ++i)
+    EXPECT_EQ(out.data[i], static_cast<W>(a.data[2 * i]) * static_cast<W>(b.data[2 * i]))
+        << "even lane " << i;
+  hs::Store(hs::MulOdd(va, vb), dw, out.data);
+  for (std::size_t i = 0; i < nw; ++i)
+    EXPECT_EQ(out.data[i], static_cast<W>(a.data[2 * i + 1]) * static_cast<W>(b.data[2 * i + 1]))
+        << "odd lane " << i;
+}
+TEST(Vec, MulEvenOddInt8) { CheckMulEvenOdd<std::int8_t>(); }
+TEST(Vec, MulEvenOddUint8) { CheckMulEvenOdd<std::uint8_t>(); }
+TEST(Vec, MulEvenOddInt16) { CheckMulEvenOdd<std::int16_t>(); }
+TEST(Vec, MulEvenOddUint16) { CheckMulEvenOdd<std::uint16_t>(); }
+TEST(Vec, MulEvenOddInt32) { CheckMulEvenOdd<std::int32_t>(); }
+TEST(Vec, MulEvenOddUint32) { CheckMulEvenOdd<std::uint32_t>(); }
+
+TEST(Vec, Bf16MulEvenOddAdd) {
+  const hs::ScalableTag<std::uint16_t> dbf;
+  const hs::ScalableTag<float> df;
+  const std::size_t nbf = hs::Lanes(dbf), nf = hs::Lanes(df);
+  ASSERT_EQ(nbf, 2 * nf);
+  Buf<std::uint16_t> a, b;
+  Buf<float> c, out;
+  for (std::size_t i = 0; i < nbf; ++i) {
+    a.data[i] = hs::f32_to_bf16(static_cast<float>(static_cast<int>(i % 7) - 3)).bits;
+    b.data[i] = hs::f32_to_bf16(static_cast<float>(i % 5 + 1)).bits;
+  }
+  for (std::size_t i = 0; i < nf; ++i) c.data[i] = static_cast<float>(i) * 0.25f;
+  const auto va = hs::Load(dbf, a.data), vb = hs::Load(dbf, b.data);
+  const auto vc = hs::Load(df, c.data);
+  hs::Store(hs::MulEvenAdd(df, va, vb, vc), df, out.data);
+  for (std::size_t i = 0; i < nf; ++i) {
+    const float expected = hs::bf16_to_f32(hs::bfloat16_t::from_bits(a.data[2 * i])) *
+                               hs::bf16_to_f32(hs::bfloat16_t::from_bits(b.data[2 * i])) + c.data[i];
+    EXPECT_FLOAT_EQ(out.data[i], expected) << "even lane " << i;
+  }
+  hs::Store(hs::MulOddAdd(df, va, vb, vc), df, out.data);
+  for (std::size_t i = 0; i < nf; ++i) {
+    const float expected = hs::bf16_to_f32(hs::bfloat16_t::from_bits(a.data[2 * i + 1])) *
+                               hs::bf16_to_f32(hs::bfloat16_t::from_bits(b.data[2 * i + 1])) + c.data[i];
+    EXPECT_FLOAT_EQ(out.data[i], expected) << "odd lane " << i;
+  }
+}
+
 // AbsDiff: |a-b| per lane.
 template <typename T>
 void CheckAbsDiff() {
@@ -1689,7 +1989,7 @@ void CheckCompress() {
   Buf<T> v, lo, hi, out;
   for (std::size_t i = 0; i < n; ++i) { v.data[i] = static_cast<T>(i + 1); lo.data[i] = static_cast<T>(i % 2); hi.data[i] = 0; }
   auto m = hs::Gt(hs::Load(d, lo.data), hs::Load(d, hi.data));  // odd lanes true
-  T ref[64]; std::size_t k = 0;  // AVX-512 i8 = 64 lanes
+  T ref[64]{}; std::size_t k = 0;  // AVX-512 i8 = 64 lanes
   for (std::size_t i = 0; i < n; ++i) if (i % 2 == 1) ref[k++] = v.data[i];
   // Compress CONTRACT: the first CountTrue(m) lanes hold the active elements in order; the tail is
   // UNSPECIFIED (matches Highway/xsimd -- avx2 has no zeroing-compress, so a zero-tail guarantee
@@ -1702,8 +2002,33 @@ void CheckCompress() {
   EXPECT_EQ(cnt, k);
   for (std::size_t i = 0; i < k; ++i) EXPECT_EQ(sp.data[i], ref[i]) << "CompressStore " << i;
   // Expand(compress-packed, m) restores the true lanes.
-  hs::Store(hs::Expand(hs::Load(d, ref), m), d, out.data);
+  hs::Store(hs::Expand(hs::LoadU(d, ref), m), d, out.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], (i % 2 == 1) ? v.data[i] : T{0}) << "Expand " << i;
+
+  const auto check_mask = [&](std::uint64_t bits) {
+    for (std::size_t i = 0; i < n; ++i) lo.data[i] = static_cast<T>((bits >> i) & 1u);
+    m = hs::Gt(hs::Load(d, lo.data), hs::Load(d, hi.data));
+    k = 0;
+    for (std::size_t i = 0; i < n; ++i) if ((bits >> i) & 1u) ref[k++] = v.data[i];
+    hs::Store(hs::Compress(hs::Load(d, v.data), m), d, out.data);
+    for (std::size_t i = 0; i < k; ++i) EXPECT_EQ(out.data[i], ref[i]) << "Compress bits=" << bits << " i=" << i;
+    hs::Store(hs::Expand(hs::LoadU(d, ref), m), d, out.data);
+    std::size_t packed = 0;
+    for (std::size_t i = 0; i < n; ++i) {
+      const T expected = ((bits >> i) & 1u) ? ref[packed++] : T{0};
+      EXPECT_EQ(out.data[i], expected) << "Expand bits=" << bits << " i=" << i;
+    }
+  };
+  if (n <= 8) {
+    for (std::uint64_t bits = 0; bits < (std::uint64_t{1} << n); ++bits) check_mask(bits);
+  } else {
+    const std::uint64_t all = n == 64 ? ~std::uint64_t{0} : (std::uint64_t{1} << n) - 1;
+    const std::uint64_t masks[] = {
+        0, all, 1, std::uint64_t{1} << (n - 1), 1 | (std::uint64_t{1} << (n - 1)),
+        0x0180 & all, 0xA53C & all, 0xA5A5A5A5A5A5A5A5ull & all,
+        all >> (n / 2), all ^ (all >> (n / 2))};
+    for (const std::uint64_t bits : masks) check_mask(bits);
+  }
 }
 TEST(Vec, CompressI32) { CheckCompress<std::int32_t>(); }
 TEST(Vec, CompressFloat) { CheckCompress<float>(); }
@@ -1871,6 +2196,59 @@ TEST(Vec, IntDivI32) {
                                    100,   -100, 128,    -128,   1000,  1024, -1024,  65535,
                                    -65536, 999983, -999983, 2147483647 /*INT_MAX prime*/};
   for (std::int32_t dvz : divisors) CheckDivI32<std::int32_t>(dvz);
+}
+
+namespace {
+template <typename T>
+void CheckMod(T divisor) {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  const hs::Divisor<T> dv(divisor);
+  Buf<T> in, out;
+  const auto modular_neg = [](T value) noexcept {
+    if constexpr (std::is_signed_v<T>) return static_cast<T>(-value);
+    else return T{0} - value;
+  };
+  const T seeds[] = {T{0}, T{1}, modular_neg(T{1}), divisor, modular_neg(divisor),
+                     std::numeric_limits<T>::max(), std::numeric_limits<T>::min(),
+                     modular_neg(static_cast<T>(1234567))};
+  const auto ref = [divisor](T a) {
+    if constexpr (std::is_signed_v<T>) {
+      if (divisor == -1 && a == std::numeric_limits<T>::min()) return T{0};
+    }
+    return static_cast<T>(a % divisor);
+  };
+  for (std::size_t base = 0; base < sizeof(seeds) / sizeof(seeds[0]); ++base) {
+    for (std::size_t i = 0; i < n; ++i) {
+      in.data[i] = static_cast<T>(static_cast<std::make_unsigned_t<T>>(seeds[base]) +
+                                  static_cast<std::make_unsigned_t<T>>(i) * 0x71u);
+    }
+    const auto v = hs::Load(d, in.data);
+    hs::Store(hs::Mod(v, dv), d, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], ref(in.data[i])) << "mod d=" << divisor << " lane=" << i;
+
+    const auto active = hs::Eq(hs::And(v, hs::Set(d, static_cast<T>(1))), hs::Zero(d));
+    const T no = static_cast<T>(-77);
+    hs::Store(hs::MaskedModOr(active, hs::Set(d, no), v, dv), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) {
+      const bool is_active = (static_cast<std::make_unsigned_t<T>>(in.data[i]) & 1u) == 0;
+      EXPECT_EQ(out.data[i], is_active ? ref(in.data[i]) : no) << "masked mod lane=" << i;
+    }
+    hs::Store(hs::MaskedModOr(hs::FirstN(d, 0), hs::Set(d, no), v, dv), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], no) << "all-off lane=" << i;
+  }
+}
+}  // namespace
+
+TEST(Vec, IntModU32) {
+  const std::uint32_t divisors[] = {1u, 2u, 3u, 7u, 65535u, 999983u, 4294967291u};
+  for (const auto divisor : divisors) CheckMod(divisor);
+}
+
+TEST(Vec, IntModI32) {
+  const std::int32_t divisors[] = {1, -1, 2, -2, 3, -3, 7, -7, 65535, -65536, 999983, -999983};
+  for (const auto divisor : divisors) CheckMod(divisor);
 }
 
 // 128-bit integer compare: each ADJACENT PAIR of u64 lanes = one 128-bit value (even=low,

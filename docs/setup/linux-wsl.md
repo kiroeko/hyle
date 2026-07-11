@@ -24,9 +24,10 @@ cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release \
 **把 WSL 当一台独立机器，用它自己的原生 ext4，绝不在 `/mnt/c` 上构建/测试。**
 
 - `/mnt/c/...` 是 **9p 网络挂载**（Windows 盘），不稳、慢、CPU 打不饱和——重 IO / 构建 / 压力测试在上面**性能数字全废**，还可能触发诡异卡顿。
-- **正解**：WSL 里维护一个常驻 clone `~/hyle` 或 `/root/hyle`（**原生 ext4**），一切在那跑。
-- **同步走 git**（不 cp/rsync 跨 `/mnt/c`）：Windows 侧 commit + push → WSL 里 `cd /root/hyle && git fetch origin && git reset --hard origin/main`。这是唯一该碰 9p 的操作（一次 pack 读）。
-- 每台机器**各自的 `.deps`**（`/root/hyle/.deps`），FetchContent 缓存不跨机共享。
+- **唯一权威源是 Windows 工作树** `C:\public\project-hyle\hyle`；`/root/hyle` 只是可丢弃、可覆盖的原生 ext4 执行镜像，不从 WSL 目录反向恢复或合并代码。
+- 每次 WSL 验证前，从 `/mnt/c/public/project-hyle/hyle/` 受控执行 `rsync -a --delete` 覆盖 `/root/hyle/`。可排除并保留 WSL 本机 `.deps/` 与 `build*/`，但源码必须单向同步为 Windows 当前工作树，包括未提交改动。
+- 同步只负责搬源码；构建、测试、调试、压力与 benchmark 全部在 `/root/hyle` 运行，`/mnt/c` 上的执行结果不作验收证据。
+- `.deps` 与 build 目录留在 `/root/hyle`，避免跨 9p 共享 FetchContent 缓存和构建产物。
 
 ## 三、构建
 

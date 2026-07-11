@@ -77,15 +77,13 @@ HYLE_SIMD_API void acosh_f32_batch(const float* src, float* dst, std::size_t n) 
 HYLE_SIMD_API void lgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 
-// hypot(a,b) = sqrt(a*a + b*b), overflow-safe -- a BINARY op (two input arrays -> one output),
-// unlike every unary transcendental above. BOTH xsimd and Highway provide it. math_bench
-// (MSVC+GCC) found xsimd ~2.2x FASTER (0.14 vs 0.30 ns/op) -- BUT xsimd's hypot is NOT
-// overflow-safe: it computes sqrt(a*a+b*b) naively and returns inf once a^2/b^2 exceed FLT_MAX,
-// whereas Highway's Hypot does exponent scaling to match std::hypot across the full range.
-// Overflow-safety is the whole reason hypot exists over a naive sqrt, so CORRECTNESS beats the
-// 2.2x: HYLE borrows HIGHWAY here (the best-of winner isn't always the fastest -- a bounded,
-// wrong-for-large-inputs result is not a valid substitute). scalar std::hypot is oracle + fallback.
+// Two explicit hypot contracts; neither silently substitutes for the other:
+// - hypot_f32_batch: full-range std::hypot semantics via exponent scaling.
+// - hypot_fast_f32_batch: direct square/add/sqrt (FMA may be fused), ~2x faster, but callers must
+//   keep the intermediate sum representable and accept loss of underflow protection. No per-lane
+//   checks. dst may exactly alias a or b; other overlap is outside the contract. See usage-guide.md.
 HYLE_SIMD_API void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void hypot_fast_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 
 // AI activation COMBINED cores (simd-design "AI 数学函数"). Unlike the per-op transcendentals
 // above (each borrows one vendor polynomial), these COMPOSE the vectorized cores into the shapes
@@ -109,15 +107,15 @@ HYLE_SIMD_API void softmax_f32(float* data, std::size_t n) noexcept;
 // log_softmax(x)[i] = (x[i] - max) - log(sum_j exp(x[j] - max))  -- in place, numerically stable.
 HYLE_SIMD_API void log_softmax_f32(float* data, std::size_t n) noexcept;
 
-// ---- COMPLEX transcendentals (xsimd-ONLY: Highway's contrib/math has no complex support) -------
-// Borrowed from xsimd's batch<std::complex<float>> cores -- HYLE does not hand-roll complex
-// polynomial approximations (charter: 借验证核不手搓). Highway offers NO complex path, so these are
-// a single-source borrow (no best-of race), the complex analogue of the lgamma/tgamma gamma borrow.
+// ---- COMPLEX transcendentals --------------------------------------------------------------
+// Highway has no complex path. cexp/clog/csqrt borrow xsimd's verified AVX2
+// batch<complex<float>> core and otherwise use scalar std::complex. csin/ccos/ctanh/cpow use
+// HYLE's SoA composition on AVX2 and NEON: shared real primitives remove redundant work. Their
+// operation-specific exceptional lanes use std::complex; ctanh/cpow specifically isolate axes,
+// subnormal, non-finite, branch-cut and overflow-risk lanes without scalarizing regular neighbors.
 //
-// STORAGE = SoA (planar): real and imaginary parts in SEPARATE arrays (re[i], im[i]). This matches
-// xsimd's batch<complex>::load_unaligned(re, im) constructor exactly (zero interleave overhead) and
-// is the natural AI/DSP layout (FFT, signal). dst_re/dst_im may alias src_re/src_im. n arbitrary.
-// scalar std::complex<float> is the always-present oracle + fallback (x86 AVX2 core, else scalar).
+// STORAGE = SoA (planar): real and imaginary parts live in separate arrays. Exact in-place use
+// (dst_re==src_re and dst_im==src_im) is supported; arbitrary offset overlap is not. n arbitrary.
 //   cexp/clog/csqrt : the workhorses (FFT twiddle, transfer functions, roots)
 //   csin/ccos/ctan + csinh/ccosh/ctanh : trig / hyperbolic
 //   cpow : z^w (both complex)

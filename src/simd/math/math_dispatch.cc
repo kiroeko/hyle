@@ -140,11 +140,8 @@ void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   detail::tgamma_f32_scalar(src, dst, n);
 }
 
-// hypot(a,b): BINARY best-of. math_bench found xsimd ~2.2x faster, BUT xsimd's hypot is NOT
-// overflow-safe (returns inf when a^2/b^2 exceed FLT_MAX). Highway's Hypot does exponent scaling
-// to match std::hypot's full range -- and overflow-safety is hypot's entire reason to exist over
-// naive sqrt(a*a+b*b). So CORRECTNESS wins over the 2.2x: borrow Highway (same MSVC-AVX3-broken
-// 512-exclusion as log -- MSVC stays on the avx2 Highway core). scalar std::hypot is the floor.
+// Full-range hypot contract: Highway exponent scaling, scalar std::hypot fallback. The separate
+// hypot_fast_f32_batch below exposes xsimd's faster direct formula under a narrower input contract.
 void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
 #if !defined(_MSC_VER)
@@ -159,13 +156,25 @@ void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) 
   detail::hypot_f32_scalar(a, b, dst, n);
 }
 
-// complex transcendentals (xsimd-only). x86 AVX2 core when available, else scalar std::complex.
-// arm64 falls to scalar (Highway has no complex; xsimd-NEON complex not yet verified -> honest
-// scalar fallback, not a silent wrong path). All SoA planar (re/im separate arrays).
+// Direct-formula contract: faster xsimd core, no per-lane overflow/underflow checks.
+void hypot_fast_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::hypot_fast_f32_xsimd_avx512(a, b, dst, n); return; }
+  static const bool hw = have_avx2();
+  if (hw) { detail::hypot_fast_f32_xsimd_avx2(a, b, dst, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::hypot_fast_f32_xsimd_neon(a, b, dst, n); return;
+#endif
+  detail::hypot_fast_f32_scalar(a, b, dst, n);
+}
+
+// SoA complex transcendentals. cexp/clog/csqrt use xsimd AVX2 on x86 and the std::complex
+// scalar floor elsewhere. csin/ccos/ctanh/cpow use HYLE-owned AVX2/NEON orchestration below.
 #define HYLE_CX_UNARY_DISPATCH(name)                                                        \
   void name##_f32_batch(const float* sr, const float* si, float* dr, float* di,             \
                         std::size_t n) noexcept {                                           \
-    /* x86: xsimd avx2 when present, else scalar; other arches: scalar oracle */            \
+    /* x86: xsimd AVX2 when present; other arches: scalar oracle */                         \
     HYLE_CX_UNARY_BODY(name)                                                                \
   }
 #if defined(HYLE_ARCH_X64)
@@ -179,17 +188,49 @@ void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) 
 HYLE_CX_UNARY_DISPATCH(cexp)
 HYLE_CX_UNARY_DISPATCH(clog)
 HYLE_CX_UNARY_DISPATCH(csqrt)
-HYLE_CX_UNARY_DISPATCH(csin)
-HYLE_CX_UNARY_DISPATCH(ccos)
-HYLE_CX_UNARY_DISPATCH(ctanh)
 #undef HYLE_CX_UNARY_DISPATCH
 #undef HYLE_CX_UNARY_BODY
+
+void csin_f32_batch(const float* sr, const float* si, float* dr, float* di,
+                     std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw = have_avx2();
+  if (hw) { detail::csin_f32_hyle_avx2(sr, si, dr, di, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::csin_f32_hyle_neon(sr, si, dr, di, n); return;
+#endif
+  detail::csin_f32_scalar(sr, si, dr, di, n);
+}
+
+void ccos_f32_batch(const float* sr, const float* si, float* dr, float* di,
+                     std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw = have_avx2();
+  if (hw) { detail::ccos_f32_hyle_avx2(sr, si, dr, di, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::ccos_f32_hyle_neon(sr, si, dr, di, n); return;
+#endif
+  detail::ccos_f32_scalar(sr, si, dr, di, n);
+}
+
+void ctanh_f32_batch(const float* sr, const float* si, float* dr, float* di,
+                     std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw = have_avx2();
+  if (hw) { detail::ctanh_f32_hyle_avx2(sr, si, dr, di, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::ctanh_f32_hyle_neon(sr, si, dr, di, n); return;
+#endif
+  detail::ctanh_f32_scalar(sr, si, dr, di, n);
+}
 
 void cpow_f32_batch(const float* zr, const float* zi, const float* wr, const float* wi,
                     float* dr, float* di, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
   static const bool hw = have_avx2();
-  if (hw) { detail::cpow_f32_xsimd_avx2(zr, zi, wr, wi, dr, di, n); return; }
+  if (hw) { detail::cpow_f32_hyle_avx2(zr, zi, wr, wi, dr, di, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::cpow_f32_hyle_neon(zr, zi, wr, wi, dr, di, n); return;
 #endif
   detail::cpow_f32_scalar(zr, zi, wr, wi, dr, di, n);
 }

@@ -5,7 +5,7 @@
 | **阶段** | P3 |
 | **模块** | simd/ |
 | **前置** | simd-07（op 穷尽 ~90）、simd-02/03（五后端）、simd-05（int lane 广度） |
-| **状态** | ✅ 完成（2026-07-09，commit 086c5cb~b38776a + 修复 3022868）。三平台真机对拍：Win MSVC vec_test 193 / 每 ISA 变体 163；WSL GCC14.2 sse4/avx2/sse4_aes 163 + ASan 零错误；mac AppleClang neon 变体 163（含 ARM crypto 硬件真跑）；AVX512 无机仅编译验 |
+| **状态** | ✅ 完成（2026-07-09，commit 086c5cb~b38776a + 修复 3022868）。Win MSVC vec_test 193 / 每 ISA 变体 163；WSL GCC14.2 sse4/avx2/sse4_aes 163 + ASan 零错误；mac AppleClang neon 变体 163（含 ARM crypto 硬件真跑）；AVX512 后续已由 Intel SDE 执行对拍并确认 kAvx512 派发，性能仍只接受真机 benchmark |
 
 > **范围**：把 op 面从 simd-07 的 ~90 补到 ~217 个公开 op 名（对齐 Highway ~370 的typed变体能力面——我们的泛型模板一名多型，故名数更少但覆盖等价），补齐 A 档（结构性五后端）+ B 档（泛型层为主）+ C 档（Crypto/Complex）。**用户驱动**：simd-07 后发现"200 多个算子只做了 90 多个"，用户定"我们是基础库，不能总等消费者——做全"。
 > **cloc**：simd-08 全量 +4,709 行（9 文件）。五后端头增至 scalar 1176 / sse4 1561 / avx2 1643 / avx512 1473 / neon 1871（均在 ~2k 设计上限内）+ crypto_soft.h 111 + crypto_x86.h 82（共享软件参照 + x86 worker，消除 512B 表五后端重复）+ vec.h 泛型层 +348 + vec_test +768（测试 138→163 每变体）。

@@ -96,6 +96,9 @@ void tgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept {
 void hypot_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
 }
+void hypot_fast_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::sqrt(a[i] * a[i] + b[i] * b[i]);
+}
 
 // complex transcendentals: std::complex<float> per element -- the always-present oracle + fallback
 // for the xsimd complex borrow cores. SoA planar in/out (re[i], im[i]).

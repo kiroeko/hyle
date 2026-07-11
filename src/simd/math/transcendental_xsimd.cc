@@ -19,6 +19,7 @@
 #include <cstddef>
 
 #include "xsimd/xsimd.hpp"
+#include "src/simd/math/complex_hyle-inl.h"
 
 namespace hyle::simd::detail {
 
@@ -107,9 +108,18 @@ void tgamma_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept
   for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
 }
 
-// ---- complex transcendentals (xsimd-only; SoA planar re/im) -------------------------
-// batch<complex>::load_unaligned(re, im) reads the two planes into a complex batch; the store
-// writes them back. Tail = scalar std::complex. Highway has no complex path -> single source.
+void hypot_fast_f32_xsimd_avx2(const float* a, const float* b, float* dst,
+                               std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::hypot(batch::load_unaligned(a + i), batch::load_unaligned(b + i))
+        .store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::sqrt(a[i] * a[i] + b[i] * b[i]);
+}
+
+// ---- complex transcendentals (SoA planar re/im) ------------------------------------
+// xsimd owns the cexp/clog/csqrt borrow cores. Its ctanh/cpow paths remain same-TU benchmark
+// controls for HYLE's SoA candidates. Tail = scalar std::complex; Highway has no complex path.
 namespace {
 using ccf = std::complex<float>;
 template <cbatch (*Fn)(const cbatch&), ccf (*Sc)(const ccf&)>
@@ -122,16 +132,28 @@ void cunary_x(const float* sr, const float* si, float* dr, float* di, std::size_
 cbatch xb_exp(const cbatch& z) { return xsimd::exp(z); }   ccf sc_exp(const ccf& z) { return std::exp(z); }
 cbatch xb_log(const cbatch& z) { return xsimd::log(z); }   ccf sc_log(const ccf& z) { return std::log(z); }
 cbatch xb_sqrt(const cbatch& z) { return xsimd::sqrt(z); } ccf sc_sqrt(const ccf& z) { return std::sqrt(z); }
-cbatch xb_sin(const cbatch& z) { return xsimd::sin(z); }   ccf sc_sin(const ccf& z) { return std::sin(z); }
-cbatch xb_cos(const cbatch& z) { return xsimd::cos(z); }   ccf sc_cos(const ccf& z) { return std::cos(z); }
 cbatch xb_tanh(const cbatch& z) { return xsimd::tanh(z); } ccf sc_tanh(const ccf& z) { return std::tanh(z); }
 }  // namespace
 void cexp_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary_x<xb_exp, sc_exp>(sr, si, dr, di, n); }
 void clog_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary_x<xb_log, sc_log>(sr, si, dr, di, n); }
 void csqrt_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary_x<xb_sqrt, sc_sqrt>(sr, si, dr, di, n); }
-void csin_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary_x<xb_sin, sc_sin>(sr, si, dr, di, n); }
-void ccos_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary_x<xb_cos, sc_cos>(sr, si, dr, di, n); }
+void csin_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di,
+                         std::size_t n) noexcept {
+  complex_sincos_hyle<false>(sr, si, dr, di, n);
+}
+void ccos_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di,
+                         std::size_t n) noexcept {
+  complex_sincos_hyle<true>(sr, si, dr, di, n);
+}
+void ctanh_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di,
+                          std::size_t n) noexcept {
+  complex_ctanh_hyle(sr, si, dr, di, n);
+}
 void ctanh_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary_x<xb_tanh, sc_tanh>(sr, si, dr, di, n); }
+void cpow_f32_hyle_avx2(const float* zr, const float* zi, const float* wr, const float* wi,
+                         float* dr, float* di, std::size_t n) noexcept {
+  complex_cpow_hyle(zr, zi, wr, wi, dr, di, n);
+}
 void cpow_f32_xsimd_avx2(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept {
   std::size_t i = 0;
   for (; i + kCW <= n; i += kCW)

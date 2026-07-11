@@ -35,6 +35,17 @@
 3. **逐 op best-of-breed dispatch**:同 ISA 对标证实没有单一库三 op 全胜(xsimd 的 exp/tanh 快、Highway 的 log 快),dispatcher 按 op 选最快核(`math_dispatch.cc`,编译期选,零运行时开销)。
 4. **借核现状**:Highway + xsimd 均 vendored、无条件编进生产、默认全速,运行期 `cpu_features().avx2` 门控老 CPU 落 scalar 不 SIGILL。math_test 5/5、full simd 56/56。(注:SLEEF 已从项目移除,dispatcher 三 op 都没选它过——bench 顶部若仍有 SLEEF 注释属陈旧。)
 
+### `hypot_f32` 双契约：safe 与 fast 由用户显式选择
+
+xsimd 的 direct-formula `sqrt(a*a+b*b)` 吞吐约为 Highway exponent-scaling `Hypot` 的2倍，但不保护中间平方溢出/下溢。HYLE不再替用户二选一：`hypot_f32_batch` 保留完整 `std::hypot` 语义；`hypot_fast_f32_batch` 显式采用受限输入域契约，借 xsimd AVX2/AVX512/NEON 核，scalar tail 同样计算 direct formula，热路径无逐 lane 检查。
+
+| 真机 | safe | fast | `fast/safe` 判定 |
+|---|---:|---:|---|
+| WSL GCC14 AVX2 | 0.281 ns/op | **0.140 ns/op** | **2.03× WIN** (`bench-stat -n15`) |
+| Apple Silicon NEON | 0.454 ns/op | **0.220 ns/op** | **2.07× WIN** (`bench-stat -n15`) |
+
+f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合并spread，属于统计打平；没有收益就不增加受限API，故仅保留 `hypot_f64_batch`。输入域选择表见 `docs/guide/usage-guide.md` §2.2。
+
 ## simd f64 数学核（全 14 超越 + hypot,double 精度——CAE/求解器/几何路径）
 
 > f32 math 补全后**铺全 f64 批 API**(exp/log/tanh + sin/cos/exp2/log2/erf/atan/cbrt/expm1/log1p/asinh/acosh + tgamma/lgamma + hypot + dot/saxpy)。CAE 求解器/几何核大量用 double。vec.h 后端层本就全 f64,缺口只在公开批 API + 借核层。**winner 逐精度 bench(WSL GCC AVX2,4-wide f64,nanobench 20k epoch),不从 f32 外推**。
@@ -136,7 +147,7 @@
 - **xsimd 结构 op 面窄**:仅 compress/reduce_add/zip_lo 可比;数学核才是 xsimd 主场(见上文 best-of 表)。
 - **方法学**:亚纳秒 kernel 单次 % 是噪声(feedback_benchmark_inlining_asymmetry);必须 `-n15` 看中位倍数。曾单次误读"HYLE 102%"当微胜,15 次后真相是统计打平(min<1<max 互有胜负)。
 
-### 全量扫补充(`op_parity_full_bench.cc`,22 clean-shape op)——又揪出 4 个大输家
+### 全量扫补充(`op_parity_full_bench.cc`,23 clean-shape op)——又揪出 4 个大输家
 抽样漏掉的,全量扫补上(宏生成 unary/binary/compare 批量,med ns/op):
 | op | HYLE | Highway | 判定 |
 |---|---|---|---|
@@ -170,19 +181,19 @@
 | **TrailingZeroCount** | 1.4x | **打平** | 同上,TZCnt=min(be(x&-x)-127,32),unsigned-min 吸收 v=0 | (随 LZCnt 同核) |
 | **Compress** | 2.4x(avx2)/5x(sse4) | **打平** | ①去零尾税(契约改 unspecified 尾部,对齐 Highway,见下)②avx2:1KB packed 表 + srlv 展开、**movemask_ps 直取 mask**(原 mask_bits 标量压位循环是主瓶颈)③sse4:256 B pshufb 字节索引表 | avx2 ratio 0.99、sse4 1.00 |
 
-**Compress 契约变更(关键决策)**:HYLE 旧 Compress 保证不活跃尾部清零(强于 Highway"unspecified")。实测该保证在 AVX2/SSE4(无清零-compress 指令)是纯软件税(avx2 零尾 mask + 标量压位共 ~2x)。经核实①唯一消费者 vqsort 自带 Highway 不依赖②标准用法(`CompressStore` 只写 CountTrue / 只读前 CountTrue 个)不碰尾部③"整向量直接算"在正确代码里语义讲不通。故**契约改为尾部 unspecified**(对齐 Highway/xsimd),vec_test 契约测试只断言前 CountTrue 个 lane。各 target 尾部行为可不同(avx512 maskz 硬件清零、sse4/neon/scalar 的 store+reload 恰好清零、avx2 vpermd 不清零)——同 Highway 各 target 差异。**NEON 无需改**:LZCnt 用原生 vclzq、Compress store+reload 也已够(未测出输)。
+**Compress 契约变更(关键决策)**：HYLE 旧 Compress 保证不活跃尾部清零（强于 Highway `unspecified`）。实测该保证在 AVX2/SSE4（无清零-compress 指令）是纯软件税。经核实消费者只读取前 `CountTrue` 个 lane，故契约对齐 Highway/xsimd 为尾部 unspecified。各 target 尾部可不同。NEON 后续真机 benchmark 证明 store+标量循环+reload 并非“已够”：i32 Compress 慢 2.8×、Expand 慢 1.9×；现已改成 Highway 同类的 mask→byte-index table + `vqtbl1q_u8`，消除回退。
 
-**四固定宽后端最终态**:9 个原 store+reload 慢 op + 2 个残留 2.x 输家,**全部 ≥ 统计打平**(bench-stat -n15,gap«spread)。avx2/sse4 各 vec_test 169/169(WSL+MSVC)、avx512 SDE 169/169、neon qemu 169/169。**"自造件性能不如抄 Highway"的担忧彻底清账:HYLE 手写核 = Highway 同速,且保留 dtype/scalable/契约统一 + 不依赖 Highway。**
+**固定宽后端当前性能证据**：AVX2/SSE4 与 Apple-Silicon NEON 的已测 op 均 ≥ Highway 统计打平；NEON 主 sweep 曾揪出并修复 Compress/Expand 回退，多 lane-width 复测又暴露并修复 u8/i16/i64 回退；P3 性能闸又揪出并修复 complex 组合式回退。AVX512 的 Intel SDE 173/173 只证明正确性，不能证明性能，因此不把它计入“统计打平”。HYLE 保留 dtype/scalable/契约统一；性能结论只覆盖有真机 benchmark 的 ISA/op。
 
-**✅ 全四固定宽后端已铺完(2026-07-09,925c689/db0352b)**——同 pattern 铺到 avx512/sse4/neon,各 vec_test 169/169:
-| 后端 | 验证闸门 | 手法要点 | 残留输家(同 avx2) |
+**✅ 全四固定宽后端实现已铺完**——同 pattern 铺到 avx512/sse4/neon，各 vec_test 173/173；性能证据按下表区分真机与模拟器：
+| 后端 | 验证闸门 | 手法要点 | 性能结论 |
 |---|---|---|---|
-| **avx2**(256b) | WSL+MSVC 169/169 + 隔离 bench | 见上表 | LZCnt 2.4x/Compress 2.4x/TZCnt 1.4x |
-| **avx512**(512b) | Intel SDE 169/169 | 同 avx2 512-bit 化;MulByPow2 额外走原生 vscalef(512 有硬件)、GetExponent 用 vgetexp、Compress 用 maskz_compress | 同 avx2(vpshufb-LUT popcount,tier 无 VPOPCNTDQ) |
-| **sse4**(128b) | WSL+MSVC 169/169 + op_parity sse4 bench | ConcatEven/Odd 用 shuffle_ps 双源选 lane;余同 avx2 单块 | **实测**:PopCount 打平/微胜(0.16 vs 0.21,gap<spread)、ConcatEven 打平(1.00)、LZCnt 输 2.6x(同 avx2,Highway float-exp trick) |
-| **neon** | qemu-aarch64 169/169 | **硬件原生最省**:PopCount=vcntq_u8+vpaddlq、LZCnt=原生 vclzq(8/16/32)、ReverseBits=vrbitq_u8+vrevNq、Concat=vuzp1/2q、Dup=vtrn1/2q | 仅 64-bit LZCnt 走 smear+popcount(NEON 无 64-bit clz) |
+| **avx2**(256b) | WSL+MSVC 173/173 + 隔离 bench | 见上表 | 真机已测 op 全部 ≥ 统计打平 |
+| **avx512**(512b) | Intel SDE 173/173 | 同 avx2 512-bit 化;MulByPow2 额外走原生 vscalef(512 有硬件)、GetExponent 用 vgetexp、Compress 用 maskz_compress | 无真机数据，不作性能结论 |
+| **sse4**(128b) | WSL+MSVC 173/173 + op_parity sse4 bench | ConcatEven/Odd 用 shuffle_ps 双源选 lane;余同 avx2 单块 | 真机已测 op 全部 ≥ 统计打平 |
+| **neon** | Apple Silicon 173/173 + 主/full/widen/Q15/compact/P3 `bench-stat -n15` | PopCount=`vcntq_u8+vpaddlq`、LZCnt=`vclzq`、ReverseBits=`vrbitq_u8+vrevNq`、Concat=`vuzp1/2q`；Compress/Expand 按lane宽分档；complex用FMA友好直接公式 | 已测71个op全部 ≥ 统计打平；Expand i32约1.11×胜Highway |
 
-**MulByPow2 分档**:仅 avx512 有原生 vscalef,故 avx512 换原生;avx2/sse4/neon 无 scale 指令,保留 std::ldexp store+reload(与 Highway 同,非输家)。**SVE/RVV 无需改**:SVE 早用原生 svcnt/svclz/svuzp1/svuzp2;RVV 的 popcount/clz 属 Zvbb 扩展(rv64gcv 基础集无,已登记边界,同 Highway gate)。**定论:9 个 store+reload/std 标量慢 op 在全部固定宽后端(4)换原生,scalable(2)本就原生或按扩展 gate;LZCnt/Compress 残留是 Highway 算法更精巧(float-exp trick / 1KB packed table)非退化,已拿下绝大部分收益。**
+**MulByPow2 分档**:仅 avx512 有原生 vscalef,故 avx512 换原生;avx2/sse4/neon 无 scale 指令,保留 std::ldexp store+reload(与 Highway 同,非输家)。**SVE/RVV 无需改**:SVE 早用原生 svcnt/svclz/svuzp1/svuzp2;RVV 的 popcount/clz 属 Zvbb 扩展(rv64gcv 基础集无,已登记边界,同 Highway gate)。**定论:9 个 store+reload/std 标量慢 op 在全部固定宽后端(4)已换成原生或与 Highway 同类算法，真机已测后端无残留输家；scalable(2)本就原生或按扩展 gate。**
 
 ### 变宽 op 对照(`op_parity_widen_bench.cc`)——疑似输家实测澄清=全打平
 之前把变宽/SumsOf 标"疑似 store+reload 输家",实测(med ns/op)**全打平**——主路径走原生指令,`alignas` 只在 fallback 分支:
@@ -194,6 +205,40 @@
 | WidenMulPairwiseAdd i16→i32 | 0.036 | 0.036 | 打平(vpmaddwd) |
 | SumsOf8 u8→u64 | 0.014 | 0.014 | 打平(vpsadbw) |
 
-### 尚未逐个测的(~80,风险已定性)
+### Apple-Silicon NEON 真机复测（2026-07-10，`bench-stat -n15`）
+
+同TU、同Apple clang/NEON、HYLE与Highway均可内联；主sweep + full sweep + widen/Q15 + compact多宽sweep共覆盖71个结构/算术op：
+
+- full sweep加入P3全部24个公开名后为47/47，全部统计打平。Highway没有同名zeroing `MaskedMulComplex/MaskedMulComplexAdd`，这两项用其等价`IfThenElseZero(MulComplex*)`组合对照，其余22项直接对同名API。
+- `MaskedMulComplexConjAdd`初测0.249 vs 0.203 ns/op，ratio 0.815，18.5% gap大于3.4%合并spread，是明确回退；将`MulComplex/MulComplexConj`改为`DupEven/DupOdd + MulAdd/Sub + OddEven`直接公式后，完整24项复测中为0.204 vs 0.204，ratio 1.000、合并spread 6.9%，回到统计打平。
+- widen/Q15：PromoteUpper、ReorderDemote2、WidenMulPairwiseAdd、Q15 均打平；DemoteTo 为 0.055 vs 0.103 ns/op，HYLE 约 1.87× 更快；SumsOf8 为 0.029 vs 0.033，约 1.15× 更快。
+- 主 sweep 首次暴露 i32 `Compress` 0.489 vs 0.177 ns/op（HYLE 慢 2.8×）、`Expand` 0.370 vs 0.196（慢 1.9×）。根因是 HYLE store+标量循环+reload，而 Highway 使用 byte-index table + `vqtbl1q_u8`。
+- 第一轮修复后 i32 `Compress` 0.179 vs 0.177 ns/op，统计打平；`Expand` 0.177 vs 0.196，HYLE 约 1.11× 胜。继续逐 lane-width 测出 u8/i16/i64 回退并分档实现：u8 用双 8-byte table lookup，i16 用 base-index table 扩成 byte indices，i64 用 conditional swap。
+- 最终 compact sweep：u8 `Compress/Expand` 0.098/0.068 vs 0.103/0.069 ns/op，i16 为 0.089/0.089 vs 0.088/0.089，i64 为 0.310/0.312 vs 0.311/0.313；六项均统计打平。Q15 为 0.084 vs 0.084，`MIN*MIN` 契约修正未形成可判定回退。
+
+**scalable 性能边界**：SVE/RVV 本轮只有 QEMU 多 VL 正确性证据；QEMU 时序不能作为性能数据。获得 SVE/RVV 真机前，不声称 P0-P2 与 Highway 性能打平。
+
+### simd-12 vendor竞争与小数组税（2026-07-11）
+
+三套scaling bench统一用`public/direct/vendor/candidate/scalar`同调用边界、`bench-stat.py -n15`，并支持环境变量筛选N/K/分布/方向。AVX512 public与fixed-AVX2 direct不同tier时主动省略public行，SDE不作性能证据。
+
+- **bit-pack u16 11/13**：正确candidate相对原scalar fallback，Windows AVX2 pack为22.1/22.7x、unpack为32.1/26.8x；WSL 11-pack 23.3x、13-unpack 14.0x；Apple NEON 11-pack 19.8x、13-unpack 16.0x。candidate与错误Highway速度上界统计打平。`n=1` public/direct原慢29.9%，baseline直跑相同tail后打平。
+- **SoA csin/ccos最终版**：稳定`expm1`公式 + 逐lane特殊值覆盖后，Windows AVX2 random N=4096分别约1.29/1.28x胜xsimd；tiny-imag、pure-real与xsimd打平；每block一个特殊值时仍约9.0x胜全scalar。WSL GCC对xsimd统计打平；Apple NEON对xsimd统计打平、相对原生产scalar约2.2x。完整语义修正削减了早期不稳定公式的更高数字，文档只保留最终核数据。
+- **small-K sort**：整数/KV `partial_sort(k<=16)`的std核在N=16..1M最多3.4x胜Highway，最差KV64 N=1M/K16打平。KV32 N4096/K8：Windows约2.8x、WSL约2.0x、Apple NEON约4.8x胜Highway；升/降序均复测，public/std direct打平。自研有序前缀候选跨类型/重复键不稳定，未上架。
+
+### simd-13：SoA `ctanh/cpow` vendor displacement（N=4096，N=15）
+
+> 对照是同 TU、同 ISA、同 `HYLE_NOINLINE` 边界下的 xsimd direct；`HYLE public`单列可见 dispatcher 税。仅当 candidate/xsimd 的 gap 大于两边 run-to-run spread 之和时标 WIN。`ctanh` 的 near-pole/axis/subnormal/极大虚部及 `cpow` 的 branch-cut/zero/subnormal 路径故意走 scalar `std::complex`，不拿它们与不满足完整 oracle 的 xsimd 时序做替换裁决。
+
+| op / 分布 | Windows AVX2 | WSL AVX2 | Apple NEON | 结论 |
+|---|---|---|---|---|
+| `ctanh` random | 1.632 vs 2.011 ns，**1.222x WIN** | 1.703 vs 1.687，0.986x TIE | 3.483 vs 3.423，0.985x TIE | 常规吞吐无确认回退；Windows胜 |
+| `ctanh` large-real | 0.627 vs 1.970，**3.105x WIN** | 0.604 vs 1.655，**2.663x WIN** | 1.186 vs 3.393，**2.861x WIN** | 全平台胜；整块大实部极限快捷路径成立 |
+| `cpow` random | 3.064 vs 4.092，**1.336x WIN** | 3.120 vs 4.001，**1.322x WIN** | 5.637 vs 7.441，**1.320x WIN** | 全平台胜；一次 `log/exp/sincos` 编排成立 |
+| `cpow` large-base | 4.860 vs 8.652，**1.765x WIN** | 5.258 vs 8.793，**1.682x WIN** | 6.516 vs 7.793，**1.193x WIN** | 全平台胜 |
+
+Windows/WSL/Apple 的 public/direct 都落在 candidate direct 附近，未见 dispatcher 固定税掩盖算法差。Apple nanobench 的表格列带前导空白且输出流会随平台变化；`bench-stat.py`现解析合并 stdout/stderr 并规范化末列空白，避免把真实基准误报为“无行”。
+
+### 尚未逐个测的边界（风险已定性）
 - **纯 passthrough(~34)**:AES/CLMul(单指令)、And/Or/Xor/Not(mask 域)、Le/IfThenElse* 等——同一 intrinsic,抽样已验打平。
-- **需内存/mask harness(~45)**:LoadInterleaved2/3/4+Store(引用参数)、Gather/Scatter/CompressStore/MaskedLoad(内存+mask)、SetAtOr*/FindKnown*(mask 域)、ConvertTo/TruncateTo/U8FromU32(变宽,与已测 Promote/Demote 同族=原生 cvt,预期打平)、GetExponent/MulByPow2(store+reload+std,**疑似输**,待测)。**结论已基本收敛:该抄清单 = 上面 8 个 store+reload/标量 op;变宽族已澄清打平。**
+- **需内存/mask harness的剩余项**:LoadInterleaved2/3/4+Store(引用参数)、Gather/Scatter/CompressStore/MaskedLoad(内存+mask)、SetAtOr*/FindKnown*(mask域)、TruncateTo/U8FromU32(变宽,与已测Promote/Demote同族=原生cvt)。P3的24个Masked*已逐项补进full sweep；GetExponent已换原生指数域实现，MulByPow2按ISA分档且与Highway同类，不再列为疑似输家。

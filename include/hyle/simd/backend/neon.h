@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>  // std::memcpy (LoadMaskBits lane pun)
@@ -351,8 +352,8 @@ HYLE_FORCE_INLINE VecNeon<T, N> Div(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Min(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   VecNeon<T, N> r;
-  if constexpr (std::is_same_v<T, float>) r.raw = vminq_f32(a.raw, b.raw);
-  else if constexpr (std::is_same_v<T, double>) r.raw = vminq_f64(a.raw, b.raw);
+  if constexpr (std::is_same_v<T, float>) r.raw = vminnmq_f32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = vminnmq_f64(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vminq_s8(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vminq_u8(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vminq_s16(a.raw, b.raw);
@@ -365,8 +366,8 @@ HYLE_FORCE_INLINE VecNeon<T, N> Min(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Max(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   VecNeon<T, N> r;
-  if constexpr (std::is_same_v<T, float>) r.raw = vmaxq_f32(a.raw, b.raw);
-  else if constexpr (std::is_same_v<T, double>) r.raw = vmaxq_f64(a.raw, b.raw);
+  if constexpr (std::is_same_v<T, float>) r.raw = vmaxnmq_f32(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = vmaxnmq_f64(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vmaxq_s8(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vmaxq_u8(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vmaxq_s16(a.raw, b.raw);
@@ -499,13 +500,15 @@ HYLE_FORCE_INLINE VecNeon<T, N> MulRound(VecNeon<T, N> a, VecNeon<T, N> b) noexc
   static_assert(std::is_floating_point_v<T>, "MulRound is float only");
   return Round(Mul(a, b));
 }
-// MulFixedPoint15(a,b): Q1.15 fixed-point multiply with rounding (i16). NEON native
-// vqrdmulhq_s16 = rounding doubling multiply high = (2*a*b + 0x8000) >> 16 = the Q1.15 mul.
+// MulFixedPoint15(a,b): Q1.15 fixed-point multiply with x86 mulhrs rounding semantics.
+// vqrdmulhq_s16 differs only at MIN*MIN, where it saturates to MAX; HYLE keeps the modular MIN.
 template <std::size_t N>
 HYLE_FORCE_INLINE VecNeon<std::int16_t, N> MulFixedPoint15(VecNeon<std::int16_t, N> a,
                                                            VecNeon<std::int16_t, N> b) noexcept {
   VecNeon<std::int16_t, N> r;
-  r.raw = vqrdmulhq_s16(a.raw, b.raw);  // rounding doubling mul high = Q1.15
+  const int16x8_t minv = vdupq_n_s16(std::numeric_limits<std::int16_t>::min());
+  const uint16x8_t overflow = vandq_u16(vceqq_s16(a.raw, minv), vceqq_s16(b.raw, minv));
+  r.raw = vbslq_s16(overflow, minv, vqrdmulhq_s16(a.raw, b.raw));
   return r;
 }
 // SaturatedNeg(a) = (a==MIN)?MAX:-a; SaturatedAbs(a) = (a==MIN)?MAX:|a| (signed int). NEON has
@@ -1021,6 +1024,55 @@ HYLE_FORCE_INLINE VecNeon<std::uint8_t, N> U8FromU32(VecNeon<std::uint32_t, N> v
   StoreU(v, Simd<std::uint32_t, N, 0>(), src);
   for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
   return LoadU(Simd<std::uint8_t, N, 0>(), dst);
+}
+
+// P4: vuzp selects alternating dwords before vmull widens their products.
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::int64_t, N / 2> MulEven(VecNeon<std::int32_t, N> a,
+                                                       VecNeon<std::int32_t, N> b) noexcept {
+  static_assert(N == 4, "MulEven i32 requires a native NEON vector");
+  return VecNeon<std::int64_t, N / 2>{vmull_s32(vget_low_s32(vuzp1q_s32(a.raw, a.raw)),
+                                                vget_low_s32(vuzp1q_s32(b.raw, b.raw)))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::uint64_t, N / 2> MulEven(VecNeon<std::uint32_t, N> a,
+                                                        VecNeon<std::uint32_t, N> b) noexcept {
+  static_assert(N == 4, "MulEven u32 requires a native NEON vector");
+  return VecNeon<std::uint64_t, N / 2>{vmull_u32(vget_low_u32(vuzp1q_u32(a.raw, a.raw)),
+                                                 vget_low_u32(vuzp1q_u32(b.raw, b.raw)))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::int64_t, N / 2> MulOdd(VecNeon<std::int32_t, N> a,
+                                                      VecNeon<std::int32_t, N> b) noexcept {
+  static_assert(N == 4, "MulOdd i32 requires a native NEON vector");
+  return VecNeon<std::int64_t, N / 2>{vmull_s32(vget_low_s32(vuzp2q_s32(a.raw, a.raw)),
+                                                vget_low_s32(vuzp2q_s32(b.raw, b.raw)))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::uint64_t, N / 2> MulOdd(VecNeon<std::uint32_t, N> a,
+                                                       VecNeon<std::uint32_t, N> b) noexcept {
+  static_assert(N == 4, "MulOdd u32 requires a native NEON vector");
+  return VecNeon<std::uint64_t, N / 2>{vmull_u32(vget_low_u32(vuzp2q_u32(a.raw, a.raw)),
+                                                 vget_low_u32(vuzp2q_u32(b.raw, b.raw)))};
+}
+
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::uint32_t, N> MulHigh32(VecNeon<std::uint32_t, N> a,
+                                                      VecNeon<std::uint32_t, N> b) noexcept {
+  static_assert(N == 4, "MulHigh32 u32 requires a native NEON vector");
+  const uint64x2_t lo = vmull_u32(vget_low_u32(a.raw), vget_low_u32(b.raw));
+  const uint64x2_t hi = vmull_high_u32(a.raw, b.raw);
+  return VecNeon<std::uint32_t, N>{
+      vuzp2q_u32(vreinterpretq_u32_u64(lo), vreinterpretq_u32_u64(hi))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::int32_t, N> MulHigh32(VecNeon<std::int32_t, N> a,
+                                                     VecNeon<std::int32_t, N> b) noexcept {
+  static_assert(N == 4, "MulHigh32 i32 requires a native NEON vector");
+  const int64x2_t lo = vmull_s32(vget_low_s32(a.raw), vget_low_s32(b.raw));
+  const int64x2_t hi = vmull_high_s32(a.raw, b.raw);
+  return VecNeon<std::int32_t, N>{
+      vuzp2q_s32(vreinterpretq_s32_s64(lo), vreinterpretq_s32_s64(hi))};
 }
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------
@@ -1955,8 +2007,75 @@ HYLE_FORCE_INLINE void StoreN(detail::VN<D> v, D d, TFromD<D>* p, std::size_t n)
 }
 
 // ---- gather / scatter + compress / expand -------------------------------------------
-// Store+reload (capability-complete; NEON has no gather/scatter/compress hardware, so this IS
-// Highway's NEON approach). The scalar backend is the reference.
+namespace detail {
+template <std::size_t kLaneBytes, bool kExpand>
+consteval auto make_neon_compact_indices() {
+  constexpr std::size_t kLanes = 16 / kLaneBytes;
+  std::array<std::array<std::uint8_t, 16>, std::size_t{1} << kLanes> table{};
+  for (std::size_t bits = 0; bits < table.size(); ++bits) {
+    auto& row = table[bits];
+    if constexpr (kExpand) {
+      row.fill(0xFF);
+      std::size_t packed = 0;
+      for (std::size_t lane = 0; lane < kLanes; ++lane) {
+        if ((bits & (std::size_t{1} << lane)) == 0) continue;
+        for (std::size_t byte = 0; byte < kLaneBytes; ++byte)
+          row[lane * kLaneBytes + byte] =
+              static_cast<std::uint8_t>(packed * kLaneBytes + byte);
+        ++packed;
+      }
+    } else {
+      std::size_t packed = 0;
+      for (std::size_t lane = 0; lane < kLanes; ++lane) {
+        if ((bits & (std::size_t{1} << lane)) == 0) continue;
+        for (std::size_t byte = 0; byte < kLaneBytes; ++byte)
+          row[packed * kLaneBytes + byte] =
+              static_cast<std::uint8_t>(lane * kLaneBytes + byte);
+        ++packed;
+      }
+    }
+  }
+  return table;
+}
+
+template <std::size_t kLaneBytes>
+inline constexpr auto kNeonCompressIndices = make_neon_compact_indices<kLaneBytes, false>();
+template <std::size_t kLaneBytes>
+inline constexpr auto kNeonExpandIndices = make_neon_compact_indices<kLaneBytes, true>();
+
+template <std::size_t kLaneBytes, bool kExpand>
+consteval auto make_neon_half_indices() {
+  std::array<std::array<std::uint8_t, 8>, 256> table{};
+  for (std::size_t bits = 0; bits < table.size(); ++bits) {
+    auto& row = table[bits];
+    if constexpr (kExpand) row.fill(0x80);
+    std::size_t packed = 0;
+    for (std::size_t lane = 0; lane < 8; ++lane) {
+      if ((bits & (std::size_t{1} << lane)) == 0) continue;
+      if constexpr (kExpand) row[lane] = static_cast<std::uint8_t>(packed * kLaneBytes);
+      else row[packed] = static_cast<std::uint8_t>(lane * kLaneBytes);
+      ++packed;
+    }
+  }
+  return table;
+}
+
+template <std::size_t kLaneBytes>
+inline constexpr auto kNeonHalfCompressIndices = make_neon_half_indices<kLaneBytes, false>();
+template <std::size_t kLaneBytes>
+inline constexpr auto kNeonHalfExpandIndices = make_neon_half_indices<kLaneBytes, true>();
+
+HYLE_FORCE_INLINE uint8x16_t neon_i16_byte_indices(uint8x8_t lane_indices) noexcept {
+  const uint8x16_t repeated = vcombine_u8(lane_indices, lane_indices);
+  const uint8x16_t duplicated = vzip1q_u8(repeated, repeated);
+  alignas(16) static constexpr std::uint8_t offsets[16] = {
+      0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 1};
+  return vaddq_u8(duplicated, vld1q_u8(offsets));
+}
+}  // namespace detail
+
+// Gather/scatter and byte-lane compact still use the scalar reference. Wider compact/expand use the
+// same mask-index-table + vqtbl strategy as Highway's NEON backend.
 template <class D, typename IdxT>
 HYLE_FORCE_INLINE detail::VN<D> GatherIndex(D d, const TFromD<D>* base,
                                             VecNeon<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
@@ -1976,12 +2095,35 @@ HYLE_FORCE_INLINE void ScatterIndex(detail::VN<D> v, D d, TFromD<D>* base,
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Compress(VecNeon<T, N> v, MaskNeon<T, N> m) noexcept {
-  alignas(16) T src[N], dst[N] = {};
-  StoreU(v, Simd<T, N, 0>(), src);
   const unsigned bits = detail::mask_bits(m);
-  std::size_t k = 0;
-  for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1u) dst[k++] = src[i];
-  return LoadU(Simd<T, N, 0>(), dst);
+  const uint8x16_t bytes = detail::to_u8<T>(v.raw);
+  VecNeon<T, N> out;
+  if constexpr (sizeof(T) == 1) {
+    alignas(16) std::uint8_t src[16], dst[16] = {};
+    vst1q_u8(src, bytes);
+    std::size_t pos = 0;
+    for (std::size_t block = 0; block < 2; ++block) {
+      const unsigned block_bits = (bits >> (8 * block)) & 0xFFu;
+      const auto& indices = detail::kNeonHalfCompressIndices<1>[block_bits];
+      vst1_u8(dst + pos, vtbl1_u8(vld1_u8(src + 8 * block), vld1_u8(indices.data())));
+      pos += static_cast<std::size_t>(std::popcount(block_bits));
+    }
+    out.raw = detail::from_u8<T>(vld1q_u8(dst));
+  } else if constexpr (sizeof(T) == 2) {
+    const auto& bases = detail::kNeonHalfCompressIndices<2>[bits];
+    out.raw = detail::from_u8<T>(
+        vqtbl1q_u8(bytes, detail::neon_i16_byte_indices(vld1_u8(bases.data()))));
+  } else if constexpr (sizeof(T) == 4) {
+    const auto& indices = detail::kNeonCompressIndices<4>[bits];
+    out.raw = detail::from_u8<T>(vqtbl1q_u8(bytes, vld1q_u8(indices.data())));
+  } else {
+    const uint64x2_t mask0 = vdupq_n_u64(vgetq_lane_u64(m.raw, 0));
+    const uint64x2_t mask1 = vdupq_n_u64(vgetq_lane_u64(m.raw, 1));
+    const uint8x16_t swapped = vextq_u8(bytes, bytes, 8);
+    out.raw = detail::from_u8<T>(
+        vbslq_u8(vreinterpretq_u8_u64(vbicq_u64(mask1, mask0)), swapped, bytes));
+  }
+  return out;
 }
 template <class D>
 HYLE_FORCE_INLINE std::size_t CompressStore(detail::VN<D> v,
@@ -1997,12 +2139,36 @@ HYLE_FORCE_INLINE std::size_t CompressStore(detail::VN<D> v,
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Expand(VecNeon<T, N> v, MaskNeon<T, N> m) noexcept {
-  alignas(16) T src[N], dst[N];
-  StoreU(v, Simd<T, N, 0>(), src);
   const unsigned bits = detail::mask_bits(m);
-  std::size_t k = 0;
-  for (std::size_t i = 0; i < N; ++i) dst[i] = ((bits >> i) & 1u) ? src[k++] : T{0};
-  return LoadU(Simd<T, N, 0>(), dst);
+  const uint8x16_t bytes = detail::to_u8<T>(v.raw);
+  VecNeon<T, N> out;
+  if constexpr (sizeof(T) == 1) {
+    const unsigned bits_lo = bits & 0xFFu;
+    const unsigned bits_hi = bits >> 8;
+    const uint8x8_t src_lo = vget_low_u8(bytes);
+    alignas(16) static constexpr std::uint8_t iota[16] = {
+        0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15};
+    const uint8x16_t shift = vaddq_u8(
+        vld1q_u8(iota), vdupq_n_u8(static_cast<std::uint8_t>(std::popcount(bits_lo))));
+    const uint8x8_t src_hi = vget_low_u8(vqtbl1q_u8(bytes, shift));
+    const auto& idx_lo = detail::kNeonHalfExpandIndices<1>[bits_lo];
+    const auto& idx_hi = detail::kNeonHalfExpandIndices<1>[bits_hi];
+    out.raw = detail::from_u8<T>(vcombine_u8(
+        vtbl1_u8(src_lo, vld1_u8(idx_lo.data())),
+        vtbl1_u8(src_hi, vld1_u8(idx_hi.data()))));
+  } else if constexpr (sizeof(T) == 2) {
+    const auto& bases = detail::kNeonHalfExpandIndices<2>[bits];
+    out.raw = detail::from_u8<T>(
+        vqtbl1q_u8(bytes, detail::neon_i16_byte_indices(vld1_u8(bases.data()))));
+  } else if constexpr (sizeof(T) == 4) {
+    const auto& indices = detail::kNeonExpandIndices<4>[bits];
+    out.raw = detail::from_u8<T>(vqtbl1q_u8(bytes, vld1q_u8(indices.data())));
+  } else {
+    const auto compressed = Compress(v, m);
+    out.raw = detail::from_u8<T>(vbslq_u8(
+        vreinterpretq_u8_u64(m.raw), detail::to_u8<T>(compressed.raw), vdupq_n_u8(0)));
+  }
+  return out;
 }
 
 // ---- bit counts / sign helpers / misc -----------------------------------------------

@@ -52,7 +52,7 @@ def parse_run(text):
         cols = [c.strip() for c in ln.split("|")]
         if len(cols) < 6:
             continue
-        last = cols[-1]
+        last = cols[-1].strip()
         if cols[1] == "relative":          # header row: title is in the last col
             title = last
             continue
@@ -85,7 +85,7 @@ def main():
         r = subprocess.run(cmd, capture_output=True, text=True)
         if r.returncode != 0:
             sys.exit(f"bench exited {r.returncode}: {r.stderr[:400]}")
-        runs.append(parse_run(r.stdout))
+        runs.append(parse_run(r.stdout + r.stderr))
 
     keys = sorted({k for r in runs for k in r})
     if not keys:

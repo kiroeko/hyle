@@ -465,6 +465,38 @@ if(HYLE_BENCH_XSIMD)
 endif()
 hyle_apply_warnings(hyle_math_bench)
 
+# simd-12 scaling benches: every rival is entered through an explicit noinline wrapper in the same
+# fixed-ISA TU. This separates public/direct dispatch tax from vendor/candidate algorithm cost.
+add_executable(hyle_math_scaling_bench simd/math_scaling_bench.cc)
+target_link_libraries(hyle_math_scaling_bench PRIVATE hyle_simd nanobench)
+target_include_directories(hyle_math_scaling_bench PRIVATE "${PROJECT_SOURCE_DIR}")
+target_include_directories(hyle_math_scaling_bench SYSTEM PRIVATE
+  "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  hyle_set_isa(simd/math_scaling_bench.cc AVX2)
+endif()
+hyle_apply_warnings(hyle_math_scaling_bench)
+
+add_executable(hyle_bitpack_bench simd/bitpack_bench.cc)
+target_link_libraries(hyle_bitpack_bench PRIVATE hyle_simd nanobench)
+target_include_directories(hyle_bitpack_bench PRIVATE "${PROJECT_SOURCE_DIR}")
+target_include_directories(hyle_bitpack_bench SYSTEM PRIVATE
+  "${PROJECT_SOURCE_DIR}/third_party/highway")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  hyle_set_highway_isa(simd/bitpack_bench.cc)
+endif()
+hyle_apply_warnings(hyle_bitpack_bench)
+
+add_executable(hyle_sort_bench simd/sort_bench.cc)
+target_link_libraries(hyle_sort_bench PRIVATE hyle_simd nanobench)
+target_include_directories(hyle_sort_bench PRIVATE "${PROJECT_SOURCE_DIR}")
+target_include_directories(hyle_sort_bench SYSTEM PRIVATE
+  "${PROJECT_SOURCE_DIR}/third_party/highway")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  hyle_set_highway_isa(simd/sort_bench.cc)
+endif()
+hyle_apply_warnings(hyle_sort_bench)
+
 # gather/compress native-vs-emulated bench (simd-09 #66/#69, "measure don't assume"). Header-only
 # (includes vec.h at a fixed ISA target), so per-ISA exes like the vec_test variants: avx2 runs on
 # an AVX2 host, avx512 under Intel SDE. Only x86 (native gather/compress are x86 intrinsics).
@@ -528,6 +560,27 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     target_compile_options(hyle_op_parity_bench_sse4 PRIVATE -msse4.2 -maes -mpclmul)
   endif()
   hyle_apply_warnings(hyle_op_parity_bench_sse4)
+
+  add_executable(hyle_op_parity_full_bench_avx2 simd/op_parity_full_bench.cc)
+  target_link_libraries(hyle_op_parity_full_bench_avx2 PRIVATE nanobench)
+  target_include_directories(hyle_op_parity_full_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(hyle_op_parity_full_bench_avx2 SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_compile_definitions(hyle_op_parity_full_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
+  if(MSVC)
+    target_compile_options(hyle_op_parity_full_bench_avx2 PRIVATE /arch:AVX2)
+  else()
+    target_compile_options(hyle_op_parity_full_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
+  endif()
+  hyle_apply_warnings(hyle_op_parity_full_bench_avx2)
+endif()
+
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  add_executable(hyle_op_parity_full_bench_neon simd/op_parity_full_bench.cc)
+  target_link_libraries(hyle_op_parity_full_bench_neon PRIVATE nanobench)
+  target_include_directories(hyle_op_parity_full_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(hyle_op_parity_full_bench_neon SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_compile_definitions(hyle_op_parity_full_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
+  hyle_apply_warnings(hyle_op_parity_full_bench_neon)
 endif()
 
 # dtype cvt bench: fp16/bf16<->f32 batch. HYLE F16C dispatch vs scalar reference (+ Highway

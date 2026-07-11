@@ -18,7 +18,7 @@
 | `util/` | `hyle/util/{ref_counted,registry,scope_guard,...}.h` | ✅ | `Ref<T>`、Registry、`DEFER`、type_name |
 | `obs/` | `hyle/obs/log.h` | ✅ | level 门控 + sink 注册表日志 |
 | `sched/` | `hyle/sched/{scheduler,fiber,coro}.h` | 🔶 | fcontext 纤程 + work-stealing 调度 + fiber-aware 同步 + fiber sleep + 协程胶水(`Task<T>`/co_await 让出 fiber);取消/优雅关闭 待 |
-| `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测（含纯 AVX 档 kAvx）+ 可移植 `vec<T,N>`（scalar/SSE4.2/AVX2 实跑；fp16/bf16 dtype + 向量化数学核（Highway/xsimd）done；NEON 写+编+objdump 验未跑存疑；AVX512 后端+ops kernel 已默认派发，objdump 双平台验真发 zmm，但本箱 AVX2-only 未实跑=存疑） |
+| `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测（含纯 AVX 档 kAvx）+ 可移植 `vec<T,N>`；scalar/SSE4.2/AVX2/AVX512/NEON 定宽后端与 SVE/RVV scalable 后端均已执行对拍，AVX512 由 Intel SDE 验证正确性和 kAvx512 派发，性能结论仍只接受真机 benchmark |
 | `io/` | `hyle/io/{proactor,net,io_context,tcp,udp}.h` | ✅ | proactor 三后端 + read/write/socket/datagram 真 op(**无 stub**);co_await socket 层 + **shard-per-core**(每 worker 一 ring + fiber 亲和 spawn_on 绑核,share-nothing)+ **TcpListener/TcpStream + UdpSocket** RAII 封装;真 loopback TCP/UDP echo 三后端真测+TSan;echo+pipelined benchmark;park 合并(空闲真睡眠、eventfd 唤醒)。待 file/shmem(io-05)|
 | `compute/` `graph/` | — | 📋 | 尚未开工 |
 
@@ -178,7 +178,7 @@ if (hyle::simd::supports(hyle::simd::Isa::kAvx2)) { /* 调 AVX2 变体 */ }
 > ```
 > `dispatch.h` 的 `supports()`/`best_isa()` 是给你**自己的** kernel 做同样分发用的。模型是 fn-ptr 表（每调用一次指针间接；零间接的变体-DLL 模型是更重的后续里程碑）。**自动选择对 HYLE 自带 op 已可用,不再需要手动分发。**
 >
-> **AVX512 档存疑（诚实警示）**：`dot_f32`/`saxpy_f32` 的 AVX512 变体已接进派发——一台真 AVX512 CPU 会**默认**跑它。但 HYLE 开发箱是 AVX2-only(无 AVX512 硬件/SDE),该路径**只经 objdump 双平台验证真发 zmm 指令、未经执行对拍**(标 `存疑`)。这是平台优先库的取舍(详见 [`architecture/simd-design.md`](../architecture/simd-design.md) AVX512 节)。若你在 AVX512 机上用 HYLE 且要绝对保险,可暂以 `-march=native` 自编(走编译期路径、同样吃 AVX512 但避开运行期变体),或等 HYLE 在真 AVX512 硬件跑通对拍后摘掉存疑标。
+> **AVX512 验证边界**：`dot_f32`/`saxpy_f32` 的 AVX512 变体已接进派发，Intel SDE 已执行 `vec_test` 173/173，并确认运行时选择 kAvx512。SDE 是正确性与派发证据，不代表真实硬件时序；AVX512 性能结论仍只接受真机 benchmark（详见 [`architecture/simd-design.md`](../architecture/simd-design.md) AVX512 节）。
 
 ### 2.1 哪些行为是编译期定的、哪些是运行期探测的（三条轴，别混）
 
@@ -191,6 +191,25 @@ if (hyle::simd::supports(hyle::simd::Isa::kAvx2)) { /* 调 AVX2 变体 */ }
 | **`container/` SwissTable 的 SIMD 探测** | `probe.h` 的 SSSE3 `_mm_sign_epi8` 快路径 | **纯编译门控**（`HYLE_HAVE_SSSE3` 宏 + SSE2 兜底）| **故意的例外**：container 是 Tier 0,不依赖 `simd/`(Tier 1) 以免架构倒置,故内联一小段自包含探测并编译门控。**SSSE3 现为全局 baseline**(x86-64-v2)：CMake 顶层对 x86 GCC/Clang 全局加 `-mssse3`,MSVC x64 无条件,故 `HYLE_HAVE_SSSE3` 三平台默认成立、SSSE3 快路径默认生效。**无 SIGILL 风险**(SSE2 基线恒在兜底)。将来可选复用 `simd/ops` 做运行期探测,但不强耦合。|
 
 **一句话**：`simd/` 的双重探测设计是真的、自洽的；`platform.h` 是天然纯编译期的另一根轴；`container/probe.h` 是**有意的纯编译门控例外**(Tier 0 不倒挂依赖)——SSSE3 现为全局 baseline,快路径默认生效,正确安全,但不做运行期 dispatch。
+
+### 2.2 `hypot`：完整语义与受限极速版显式二选一
+
+```cpp
+#include "hyle/simd/math.h"
+
+// 与 std::hypot 一样做指数缩放：极大/极小量级也保持 overflow/underflow safety。
+hyle::simd::hypot_f32_batch(a, b, dst, n);
+
+// 直接计算 sqrt(a*a + b*b)：不做逐 lane 检查或缩放，由调用方保证输入域。
+hyle::simd::hypot_fast_f32_batch(a, b, dst, n);
+```
+
+| API | 选择条件 | 契约与代价 |
+|---|---|---|
+| `hypot_f32_batch` | 输入可能跨极端数量级，或需要完整 `std::hypot` 语义 | exponent scaling，避免中间平方溢出及不必要的下溢 |
+| `hypot_fast_f32_batch` | 调用方已知数据处于普通范围，吞吐优先 | direct square/add/sqrt，允许实现融合FMA；`a`、`b` 必须有限，且中间和必须可表示；不保护极小输入的平方下溢，末位舍入可随ISA不同 |
+
+`hypot_fast_f32_batch` 不在热路径逐元素检查契约。一个简单的**防溢出充分条件**是每个输入都满足 `|x| <= sqrt(FLT_MAX/2) ≈ 1.30438e19`；若输入可能接近上限、包含无穷/NaN，或必须保留极小非正规数，请用完整版本。`dst` 可与 `a` 或 `b` **完全同址**原位写回，但其他部分重叠不支持。真机 `bench-stat -n15`：AVX2为0.140 vs 0.281 ns/op（约 **2.03×**），Apple NEON为0.220 vs 0.454 ns/op（约 **2.07×**）。f64 direct-formula 试验仅统计打平，因此没有发布名不副实的 `hypot_fast_f64_batch`。
 
 ## 3. 各就绪模块最小用法
 

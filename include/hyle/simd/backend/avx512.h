@@ -578,6 +578,19 @@ HYLE_FORCE_INLINE Vec512<T, N> Shr(Vec512<T, N> a, Vec512<T, N> b) noexcept {
   return r;
 }
 
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::uint32_t, N> ShiftRightUniform(Vec512<std::uint32_t, N> a,
+                                                              int bits) noexcept {
+  static_assert(N == 16, "ShiftRightUniform u32 requires a native AVX-512 vector");
+  return Vec512<std::uint32_t, N>{_mm512_srl_epi32(a.raw, _mm_cvtsi32_si128(bits))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::int32_t, N> ShiftRightUniform(Vec512<std::int32_t, N> a,
+                                                             int bits) noexcept {
+  static_assert(N == 16, "ShiftRightUniform i32 requires a native AVX-512 vector");
+  return Vec512<std::int32_t, N>{_mm512_sra_epi32(a.raw, _mm_cvtsi32_si128(bits))};
+}
+
 // MulHigh: high 16 bits of the i16/u16 product (native mulhi, BW).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> MulHigh(Vec512<T, N> a, Vec512<T, N> b) noexcept {
@@ -873,6 +886,58 @@ HYLE_FORCE_INLINE Vec512<std::uint8_t, N> U8FromU32(Vec512<std::uint32_t, N> v) 
   Store(v, Simd<std::uint32_t, N, 0>(), src);
   for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
   return Load(Simd<std::uint8_t, N, 0>(), dst);
+}
+
+// P4: AVX-512 widens even dwords directly into qword products.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::int64_t, N / 2> MulEven(Vec512<std::int32_t, N> a,
+                                                       Vec512<std::int32_t, N> b) noexcept {
+  static_assert(N == 16, "MulEven i32 requires a native AVX-512 vector");
+  return Vec512<std::int64_t, N / 2>{_mm512_mul_epi32(a.raw, b.raw)};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::uint64_t, N / 2> MulEven(Vec512<std::uint32_t, N> a,
+                                                        Vec512<std::uint32_t, N> b) noexcept {
+  static_assert(N == 16, "MulEven u32 requires a native AVX-512 vector");
+  return Vec512<std::uint64_t, N / 2>{_mm512_mul_epu32(a.raw, b.raw)};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::int64_t, N / 2> MulOdd(Vec512<std::int32_t, N> a,
+                                                      Vec512<std::int32_t, N> b) noexcept {
+  static_assert(N == 16, "MulOdd i32 requires a native AVX-512 vector");
+  return Vec512<std::int64_t, N / 2>{_mm512_mul_epi32(_mm512_srli_epi64(a.raw, 32),
+                                                       _mm512_srli_epi64(b.raw, 32))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::uint64_t, N / 2> MulOdd(Vec512<std::uint32_t, N> a,
+                                                       Vec512<std::uint32_t, N> b) noexcept {
+  static_assert(N == 16, "MulOdd u32 requires a native AVX-512 vector");
+  return Vec512<std::uint64_t, N / 2>{_mm512_mul_epu32(_mm512_srli_epi64(a.raw, 32),
+                                                        _mm512_srli_epi64(b.raw, 32))};
+}
+
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::uint32_t, N> MulHigh32(Vec512<std::uint32_t, N> a,
+                                                      Vec512<std::uint32_t, N> b) noexcept {
+  static_assert(N == 16, "MulHigh32 u32 requires a native AVX-512 vector");
+  const __m512i even = _mm512_srli_epi64(_mm512_mul_epu32(a.raw, b.raw), 32);
+  const __m512i odd = _mm512_srli_epi64(
+      _mm512_mul_epu32(_mm512_srli_epi64(a.raw, 32), _mm512_srli_epi64(b.raw, 32)), 32);
+  return Vec512<std::uint32_t, N>{_mm512_or_si512(even, _mm512_slli_epi64(odd, 32))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec512<std::int32_t, N> MulHigh32(Vec512<std::int32_t, N> a,
+                                                     Vec512<std::int32_t, N> b) noexcept {
+  static_assert(N == 16, "MulHigh32 i32 requires a native AVX-512 vector");
+  const __m512i even = _mm512_mul_epi32(a.raw, b.raw);
+  constexpr auto kOddLanes = static_cast<_MM_PERM_ENUM>(_MM_SHUFFLE(3, 3, 1, 1));
+  const __m512i odd = _mm512_mul_epi32(_mm512_shuffle_epi32(a.raw, kOddLanes),
+                                       _mm512_shuffle_epi32(b.raw, kOddLanes));
+  const __m512i packed = _mm512_castps_si512(
+      _mm512_shuffle_ps(_mm512_castsi512_ps(even), _mm512_castsi512_ps(odd),
+                         _MM_SHUFFLE(3, 1, 3, 1)));
+  constexpr auto kPackHigh = static_cast<_MM_PERM_ENUM>(_MM_SHUFFLE(3, 1, 2, 0));
+  return Vec512<std::int32_t, N>{_mm512_shuffle_epi32(packed, kPackHigh)};
 }
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------

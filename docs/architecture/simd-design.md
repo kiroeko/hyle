@@ -105,34 +105,34 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 ## 落地清单
 
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
-2. ✅ SSE4.2 / AVX2 / AVX512 / NEON 后端 + 运行时 dispatch。**SSE4.2+AVX2=simd-02(实跑)、运行期 dispatch=simd-04、NEON=simd-03(mac 真机)、AVX512=simd-03 写 + simd-09 用 Intel SDE 真跑(vec_test 169/169 全 op 对拍 scalar oracle,dispatch 真选 kAvx512)**。四定宽 ISA 全真跑,不再"未跑存疑"。**+ SVE + RVV(simd-09,两个 scalable 后端)**:`backend/sve.h`(~76 op,qemu-aarch64 多 VL 128/256/512)+ `backend/rvv.h`(核心 op,qemu-riscv64 rv64gcv)。sizeless 类型用 traits 映射(见下 SVE/RVV 节)+ 运行期 Lanes(svcntw / vsetvlmax)。SVE 的 gather/compress/scatter/predicated-tail 全原生非 store+reload。两者 gtest + CMake gate(`-DHYLE_SIMD_SVE/RVV=ON`)+ qemu 脚本固化(`scripts/{sve,rvv}-qemu-test.sh`)。**RVV 复用 SVE 全部 scalable 机制、vec.h 共享层零改动**——坐实"sizeless=后端内模板元编程"对两个 ISA 都成立。
+2. ✅ SSE4.2 / AVX2 / AVX512 / NEON / SVE / RVV 后端 + 运行时 dispatch。四定宽 ISA 均真跑；AVX512 由 Intel SDE 跑 `vec_test` 173/173 并验证 dispatch 选中 kAvx512。SVE/RVV 用 sizeless traits + 运行期 `Lanes`，P0-P2 已补齐；SVE 15 tests×VL 128/256/384/512，RVV 12 tests×VLEN 128/256/512/1024。partial tag 的 `Rebind+kPow2+cap` 在 vec.h 共享层表达，后端用 predicate/`vl` 执行。
 3. ✅ dtype 转换（fp16/bf16 硬件路径）。**simd-05。** f32→bf16 的 **AVX-512-BF16 native `vcvtneps2bf16`** 档随 AVX512 变体 SDE 可真跑(此前仅 objdump 验)。
-4. 🔶 数学函数（借 Highway/xsimd 核）。**simd-06 exp/log/tanh + simd-09 补 11 个(sin/cos/exp2/log2/erf/atan/cbrt/expm1/log1p/asinh/acosh),per-op best-of GCC+MSVC 双平台 bench 定 winner,三平台 + AVX512-SDE 真跑。** **gelu/softmax 组合核=消费驱动缓**(compute-07 用 ggml 算子,不调 simd 的;非缺口)。
+4. ✅ 数学函数（借 Highway/xsimd 核）。simd-06 的 exp/log/tanh、simd-09 的 11 个 best-of 函数，以及 GELU/GELU-tanh/softmax/log-softmax 组合核均已落地并对拍 libm/标量参考。`hypot_f32_batch` 保留 Highway exponent-scaling 的完整语义；另显式提供 `hypot_fast_f32_batch` 借 xsimd direct-formula 核，由调用方承担输入域契约，AVX2/NEON 真机均约快 2.0×。f64 direct-formula 未测出可判定收益，故不暴露 fast 变体。
 5. ✅ `ops/`：dot_f32/saxpy_f32 跨 scalar/SSE4/AVX2/AVX512 dispatch;**AVX512 派发档 simd-09 Intel SDE 真跑坐实(tier 探针确认 kAvx512,非仅 objdump)**。reduce/对齐 memcpy/SwissTable 探测片段按需(container 已自有 SwissTable 探测)。
-6. ✅ 单测：每后端对拍 scalar 参考值、数学函数 ULP 测试、benchmark 对标 Highway/xsimd。**四 ISA(SSE4/AVX2/AVX512-SDE/NEON)+ scalar 全真跑对拍 + WSL ASan + AVX512 SDE;math ULP vs libm ~3.5;three-way best-of bench。**
+6. ✅ 单测：每后端对拍 scalar 参考值、数学函数 ULP 测试、benchmark 对标 Highway/xsimd。SSE4/AVX2/NEON 有真机性能数据；AVX512-SDE 与 SVE/RVV QEMU 只作正确性门，不作性能证据。math ULP vs libm 约 3.5，best-of 由真机 bench 决策。
 
-### AVX512 后端：已实现（写+原生编+objdump 验，未跑存疑）——纠"延期"误判
+### AVX512 后端：已实现并由 Intel SDE 真跑
 
-> **历史更正（2026-06，用户纠偏）**：我一度把 AVX512"理由化延期",理由是①不可真跑②mask 模型需 vec.h 改造。**两条都被推翻了。** 用户指出:没机器不该不做——平台优先永远不知道写没写对,这种地方应当**实现然后存疑**,否则可能永远落不了地。照做后发现第②条根本是误判。本节记录真相,免得再犯。
+> AVX512 使用后端自有 `Mask512` 包装 k-register，公开 D-tag/op 签名不变；无须改造 vec.h mask 模型。无 AVX512 真机不降低能力标准，Intel SDE 是执行闸门。
 
-**已实现**（`backend/avx512.h` 后端 + `ops/kernels_avx512.cc` 派发 kernel）：512 位 AVX-512 后端,lane f32/f64/i32/u32(16/8/16 lane),op 全集匹配契约。`kernels_avx512.cc` 是 3 行 TU(`#define HYLE_SIMD_TARGET_AVX512` + suffix + 共享 `kernel_impl.h`),与 avx2/sse4 TU 同构,16-wide(512/4B f32)编译同一份 kernel 体、零源码改动——D-tag 抽象的兑现。验证标准与 NEON 一致——**写 + 原生编译(`-mavx512f -mavx512bw -mavx512vl -mavx512dq` / MSVC `/arch:AVX512`,任何 x64 可编)+ objdump 验真发 zmm/k-reg 指令 + 未跑(无 AVX512 机/SDE)= 存疑待真跑**。
+**已实现**（`backend/avx512.h` + `ops/kernels_avx512.cc`）：512 位 AVX-512 后端覆盖全部 lane/op 契约。验证包括 GCC/MSVC 原生编译、objdump 的 zmm/k-register 指令，以及 Intel SDE `vec_test` 173/173；运行时 tier 探针确认选择 kAvx512。
 
 **objdump 实证**（铁证,非空谈,双平台）：backend dot→`vfmadd231ps %zmm`+`vextractf64x4` reduce；relu→`vcmpgt_oqps → %k1`+`vmovaps %zmm{%k1}{z}`(**k 寄存器掩码路径通**)；unsigned count→`vpcmpnleud → %k0`(原生无符号比较,无 xor-MSB)+`kmovw`+`popcnt`。派发 kernel TU(`kernels_avx512.cc.obj`):MSVC 33 条 zmm(`vfmadd213ps zmm`/`vmovups zmm`)、GCC-14 9 条 zmm(`vfmadd231ps zmm`/`vmovups zmm`/`vbroadcastss xmm→zmm`/`vextractf64x4 zmm→ymm`);两编译器 codegen 计数不同(GCC reduce 尾降 ymm/xmm),但核心 512-bit FMA/load 都真发。
 
-**第②条误判的更正(重要设计结论)**：我曾说"AVX512 的 k-reg mask 需要改造 vec.h 的 mask 抽象"。**错。** vec.h 的 `Mask` 本就是**每后端自定义**(scalar 用 `bool[]`、SSE/AVX2/NEON 用向量)——avx512.h 只是再定义自己的 `Mask512` 包 `__mmask16/8`,op 签名不变,vec.h 和测试**零改动**。比较直接写 k reg(`_mm512_cmp_*_mask`)、`IfThenElse`→`_mm512_mask_blend_*`、`CountTrue`→k 本就是位掩码 popcnt。**写它恰恰证明了抽象够用**——这正是用户"实现以验证设计"论点的兑现。附带红利:unsigned 比较有原生 epu32 mask 指令,比 SSE/AVX2 的 xor-MSB 技巧更干净。
+**Mask 模型**：vec.h 的 `Mask` 由每个后端自定义；AVX512 的 `Mask512` 直接包 `__mmask16/8`，op 签名不变。比较产出 k-register，`IfThenElse` 用 mask blend，`CountTrue` 对位掩码 popcount；unsigned 比较直接使用原生 epu32 mask 指令。
 
-**仍存疑的部分（诚实）**：未在 AVX512 硬件/SDE 上**执行**,故正确性是"指令级验证(双平台 objdump)+ 与低 ISA 后端同构推断 + 共享 `kernel_impl.h` 体(与已实跑的 avx2/sse4 同一份源码,仅宽度宏不同)",非"实跑对拍"。**待真验**:装 Intel SDE 或得 AVX512 机后,`ops_test`/`vec_test` 的对拍(宽度无关)直接可用——上真机即自证,无需改测试。
+**执行边界**：SDE 提供正确性与 dispatch 验证，不用于性能结论；AVX512 性能仍只接受真机 benchmark。
 
-**派发现状(2026-06,用户指令"写且默认派发")**:`kernels_avx512.cc` 已接进 `dispatch_ops.cc` 的 `selected_tier()`——AVX512 主机**默认派发到 zmm kernel**(不再降级 AVX2)。这是用户的明确取舍:平台优先库应让 AVX512 机器跑 AVX512 路径,即便该路径在本开发箱(AVX2-only)未执行验证过;靠双平台 objdump + 同构推断兜底,真机一跑即证伪或确认。**风险显式标注**:一台真 AVX512 CPU 会跑这条未执行验证的路径(`存疑`),已在本节与代码注释(`kernels_avx512.cc` 顶部)标明。这与早先"降级 AVX2、等真跑再接"的保守立场相反——后者已被用户推翻(理由同 NEON/backend:不派发就永远不知道写没写对,落不了地)。
+**派发现状**：`kernels_avx512.cc` 已接入 `dispatch_ops.cc::selected_tier()`；具备完整 ZMM OS-state 与 ISA 特性的主机默认派发到 AVX512 kernel，否则回落 AVX2/scalar。SDE 双向探针已验证 tier 选择。
 
-### AVX-512 dtype/math 上架（2026-07，同"实现+接线+编译验真、执行存疑"原则）
+### AVX-512 dtype/math 上架
 
-承上 ops 后端先例,把 dtype 与 math 的 AVX-512 路径也上架(performance.md AVX-512 节①③)。**同一纪律**:本机 AVX2-only,512-bit 路径双平台编译+objdump 验真发宽指令,执行对拍 `存疑` 待真机/SDE。
+dtype 与 math 的 AVX-512 路径已上架；本机虽是 AVX2-only，512-bit 代码除双平台编译/objdump 外，还由 Intel SDE 执行正确性与 tier 选择测试。
 
 - **① dtype `f32→bf16` native(`cvt_avx512bf16.cc`)**:`_mm512_cvtneps_pbh`(`VCVTNEPS2BF16`)把 AVX2 路径的 ~7-op RNE 序列(bias+shift+packus+permute)折成**单条**硬件 RNE 指令,16-wide。`dtype_dispatch` 的 `f32_to_bf16_batch` 优先 `avx512bf16` 档(`cpu_features().avx512bf16` 门控,该 flag 在 `dispatch.cc` 已 AND-fold XGETBV/ZMM),回退 AVX2→scalar。`bf16→f32` 无 512 win(纯 `<<16` 移位,AVX2 已最优),不加 512 变体。新 `AVX512_BF16` CMake tier(GCC `-mavx512bf16` 叠加四件套;MSVC `/arch:AVX512` 已含,probe 验)。**验真**:GCC14 `vcvtneps2bf16`(EVEX.512)、MSVC `vcvtneps2bf16 ymm,zmmword`。测试 `F32ToBf16Avx512MatchesScalar`(finite bit-exact、NaN equal-by-class——硬件 quiet 到自有 QNaN,同 F16C fp16 立场),本机无 bf16 故正确 SKIP。
 - **③ math 512b 变体(`transcendental_{xsimd,highway}_avx512.cc`)**:借同核、仅编译宽一档→zmm。`math_dispatch` 加 avx512 档优先(exp/tanh→xsimd-512、log→highway-512),回退 AVX2→scalar。新 `hyle_set_avx512_math_isa`(全 AVX-512 组**含 cd**——xsimd 的 avx512dq 核 `#error` 要求 cd;**+ AVX2 baseline**——Highway 静态 dispatch 需完整宏链选 AVX3,否则降级)。**验真**:GCC xsimd512 92zmm/highway512 43zmm、MSVC xsimd512 581zmm。
   - **MSVC Highway-AVX3 排除(probe 实锤,非接线 bug)**:Highway 在 `detect_targets.h:192` 把整个 AVX3 标 `HWY_BROKEN_MSVC`(MSVC AVX-512 codegen 已知 bug),故 `/arch:AVX512` 下 `hn::` 仍发 ymm(dumpbin 250 ymm/0 zmm)。MSVC 上**没有 512-bit log win**(avx2 highway log 已是 Highway 能给的最宽)。故 `transcendental_highway_avx512.cc` 与 dispatch 的 log-512 分支用 `#if !defined(_MSC_VER)` 守卫,MSVC log 留 avx2 highway,**不路由到 fake-512**。xsimd(exp/tanh)不受影响——其 512 batch 是纯 AVX-512F,MSVC 真发 zmm。
-- **执行存疑边界(同 ops)**:三项 512-bit 正确性=指令级验证(双平台 objdump)+ 同构推断(borrow 同核,仅宽度宏不同)+ 共享/对 oracle 测试。真机/SDE 跑既有 `dtype_test`/`math_test`/`ops_test`(全宽度无关或对 oracle/libm)即自证,**无需改测试**。本机双平台 56 过 + 1 正确 SKIP。
+- **执行验证**：dtype/math/ops 的 AVX512 路径均经 Intel SDE 正确性门；SDE 不作为性能背书，性能数据仍要求真机。
 
 ### op 覆盖补齐（2026-07,compute 前把 vec 后端 op 集补全）
 
@@ -161,6 +161,34 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 - **Compress 契约变更**:HYLE 旧契约保证不活跃尾部清零(强于 Highway"unspecified"),该保证在 AVX2/SSE4(无清零-compress 指令)是 ~2x 软件税。核实唯一消费者 vqsort 自带 Highway 不依赖 + 标准用法(`CompressStore`/前 `CountTrue`)不碰尾部后,**契约改为尾部 unspecified**(对齐 Highway/xsimd),各 target 尾部行为可不同(avx512 maskz 硬件清零、store+reload 路径恰好清零、avx2/sse4 vpermd/pshufb 不清零)。
 - SVE/RVV 无需改(SVE 早用原生 svcnt/svclz/svuzp;RVV popcount/clz 属 Zvbb 扩展,rv64gcv 无,登记边界同 Highway)。详见 `docs/performance/benchmarks-simd.md` op-parity 全表。
 
+### P3 定宽 Masked* 补全与 complex 直接公式
+
+泛型层新增24个可独立落地的 Masked* 名字，覆盖 variable/immediate shift及Or形、masked reduce、approximate reciprocal/rsqrt、convert/LZCnt、Q15、widen pairwise multiply-add、5个complex形态及Sat短名alias。非Or形false lane为0，Or形取`no`；compute-family维持HYLE既有`(mask, no, ...)`参数顺序。`MaskedModOr`已在 P4 复用 i32/u32 invariant `Divisor` 的 `Mod` 落地，仍不以逐lane标量循环补名。
+
+性能闸发现旧`MulComplexConj(a,b)=MulComplex(a,ComplexConj(b))`在Apple NEON令`MaskedMulComplexConjAdd`慢Highway 18.5%。底层`MulComplex/MulComplexConj`改为`DupEven/DupOdd + MulAdd/Sub + OddEven`直接公式，减少conj/reverse/addsub中间重排并允许FMA；P3 24/24公开名完整复测全部统计打平，该项为0.204 vs 0.204 ns/op。该底层变更同时通过SSE4/AVX2/AVX512-SDE/NEON、SVE/RVV多VL和ASan回归。
+
+### P4 定宽 Mul / Mod / Magnitude
+
+P4 新增12个公开名：四个 FMA 符号/交错变体、`MinMagnitude/MaxMagnitude`、`MulEven/MulOdd`、packed-bf16 的`MulEvenAdd/MulOddAdd`和 i32/u32 invariant `Mod/MaskedModOr`。浮点 FMA 变体复用 `MulAdd` 保留单次舍入，整数通过无符号位运算保持模语义；signed magnitude 不会在`INT_MIN`取绝对值时溢出。浮点 equal-magnitude tie 依赖目标 ISA 的 `Min/Max`，并逐 ISA 对齐 Highway：AArch64 NEON 用`vminnmq/vmaxnmq`，异号零分别为`-0/+0`。
+
+`MulEven/MulOdd` 泛型路径是交替 lane promote 加 multiply；i/u32→i/u64 由固定后端原生 widening multiply 接管。`Mod` 复用已有 Granlund-Montgomery reciprocal multiply，预计算`Divisor`不进入批量循环，余数为`a-q*d`；`INT_MIN/-1`按 HYLE 模 quotient 约定给出零余数。NEON 的 signed high-product 采用 Highway 同形`vmull[_high]+vuzp2`，消除多余输入重排与窄化。
+
+所有P4批量路径保持 Θ(n) 读写下界。Windows AVX2 三组独立`N=15`对照的`Mod`、`MaskedModOr`、`MulEven`、`MulOdd`均为统计TIE；Apple NEON三组独立`N=15`稳定复现前两项分别1.073x/1.058x WIN、两个 widening multiply TIE。P4 后主施工闭集为77/92，剩余软件项仅为 scalable P5。
+
+### simd-12 热点核与小调用路由
+
+- **bit-pack 11/13**：保留tier-dependent 8+3/8+5 block layout，自有核修正Highway 13 pack的`0x7C00<<3`截断错误、13 inverse错源与11/13 rawF先移后掩码。独立标量layout oracle + 全值域对拍；大N相对scalar约14~32x。`count<128`在baseline直接执行相同scalar tail，消除无向量工作时的跨TU税。raw/packed范围不允许重叠。
+- **SoA `csin/ccos`**：AVX2/NEON走`real sincos + expm1稳定sinh/cosh`。tiny imaginary不消减；±0、NaN/Inf与有限overflow只逐lane调用`std::complex`，regular邻居继续向量化；先保存异常lane结果再写输出，支持精确原位alias。Windows AVX2 random大N约1.28x胜xsimd；WSL与Apple NEON对xsimd统计打平，NEON相对原生产scalar约2.2x。
+- **small-K sort**：VQSort已有small-N network，不重造。整数/KV `partial_sort(k<=16)`走实测更快的std核，`k>16`回VQPartialSort；浮点不分流。scalar浮点比较器与VQSort统一为“有限值按方向，NaN始终末尾”的严格弱序。失败的有序前缀候选只保留benchmark负结论。
+
+三套scaling bench均把public/direct固定税与candidate/vendor算法差分开，支持N/K/分布/方向筛选；生产只保留正确且跨平台没有确认回退的路径。
+
+### simd-13：继续竞争 vendor complex 核
+
+- **`ctanh`**：普通 lane 计算一次 `sincos(2y)`，用 `expm1(|2x|)`推导小实部的双曲对；整块安全 large-real lane直接写出极限值，混合 block 的`|x|>20` lane用`q=exp(-2|x|)`渐近式，避免双曲溢出。real/imaginary axis、subnormal、NaN/Inf、近极点及会让`2y`溢出的有限虚部逐 lane 回退`std::complex`，不会连带正常邻 lane。异常结果先保存、vector store后覆盖，所以只支持的精确原位 alias 仍正确。
+- **`cpow`**：对 regular lane 计算一次`rho=hypot(z)`、`L=log(rho)`、`phi=atan2(z)`，再融合`A=w_re*L-w_im*phi`、`B=w_re*phi+w_im*L`，只做一次`exp(A)`和一次`sincos(B)`。base/exponent 的轴、subnormal、非有限、过大值、危险指数窗口与 branch-cut lane 均回退`std::pow`。
+- `ctanh/cpow`的 xsimd core 仍只保留在同 TU benchmark 中作公平对照；生产 AVX2/NEON 已走 HYLE SoA。`cexp`已同构无重写价值，`clog/csqrt`需要完整缩放/相位体系而没有可证结构性收益，继续保留 xsimd；VQSort、VQPartialSort、VQSelect 和除u16 11/13外的 bit-pack 同样继续保留 Highway。完整裁决见[`simd-13`](../milestones/simd-13-vendor-displacement-2.md)。
+
 ### SVE scalable 后端(simd-09,首个非定宽后端)——sizeless 类型如何融入 D-tag 契约
 
 用户"SVE/RVV 不假设向量长度,为啥冲击架构 / 模板元编程无法解决么"——**实证核查后纠正了一度过度渲染的"冲击全库地基"结论**:SVE/RVV **不冲击架构**,是 `backend/sve.h` 内部**模板元编程可解**的问题(qemu 多 VL 真跑坐实)。
@@ -170,30 +198,30 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 - 真正的挑战是 **sizeless 类型**:SVE 的 `svfloat32_t`/RVV 的 `vfloat32m1_t` 按 ACLE **不能做 sizeof / 结构体成员 / 数组元素 / 全局变量**。而定宽后端的 `Vec` 是 `struct { float32x4_t raw; using PrivateT; kPrivateN; }`——把寄存器当结构体成员。
 - **但 `DFromV`/`Vec` 每后端各自定义(非全库共享契约)**:一个 TU 只 include 一个后端头,后端从不共存 → sve.h 可自定义一套,不动其他后端或 vec.h 共享层。
 
-**模板元编程解法(全在 sve.h 内)**:
+**模板元编程解法**:
 1. `VFromD<D>` 用 traits 映射 `detail::SveVecT<T>::type`(替代 struct 成员包 raw)——sizeless 类型能做函数**参数/返回值/局部变量**(ABI 合法),HYLE 的 op 全是 `V Add(V,V)` 传值/返回,天然不碰禁区。
 2. `DFromV<V>` 用**反向 traits 特化表** `detail::DFromV_sve<V>`(替代 `V::PrivateT` 成员访问,sizeless 无成员)。
-3. store+reload 的 `T buf[kMaxLanes]` 是**标量数组**(T=float/int,合法);`kMaxLanes` 从"精确"变"上界"(kNativeVectorBytes=256=2048-bit 上界),循环边界用运行期 `Lanes(d)`。**但 SVE 的 gather/compress/scatter/predicated-tail 全走原生**(`svld1_gather`/`svcompact`/`svst1_scatter`/`svwhilelt`),不 store+reload——正是 scalable 的性能强项。
-4. `Lanes(d)` 运行期化:vec.h `HYLE_SIMD_HAVE_SCALABLE`(SVE/RVV target 翻 1)关掉泛型 constexpr Lanes,sve.h 供运行期 `svcntw/svcntb`。**这是唯一碰共享层处,且设计者早预留了宏。**
+3. store+reload 的 `T buf[kMaxLanes]` 是**标量数组**(T=float/int,合法);`kMaxLanes` 从"精确"变"上界"(kNativeVectorBytes=256=2048-bit 上界),循环边界用运行期 `Lanes(d)`。SVE 的 gather/compress/scatter/predicated-tail 走原生 `svld1_gather`/`svcompact`/`svst1_scatter`/`svwhilelt`。
+4. `Lanes(d)` 在 scalable target 运行期求值，并按 `kPow2` 缩放后受 `kMaxLanes` 截断；`Rebind<T,D>` 同步调整 `kPow2`，保证窄化后逻辑 lane 数不变。`FixedTag<T,N>` 因而仍是 `min(硬件 lanes,N)`；接受 D-tag 的 load/store、masked/gather/scatter、reduce、reverse、slide、whole-vector swizzle 与 widen/demote 只观察逻辑 active lanes。只接收 native `V` 的重载按 full-vector 契约运行，因为 sizeless `V` 本身不携带 partial tag。正 `kPow2` 只有在最小 128-bit 原生向量容不下目标 lane 数时才表示 grouped vector；SVE/RVV 当前单寄存器后端对此 fail-fast。
 
-**验证(qemu-aarch64,同一二进制强制 VL 128/256/512)**:~76 op(Set/Load/Store/算术/位/比较→svbool_t/选择/mask-reduce/值reduce/移位/Reverse/tail/compress/scatter/gather/ConvertTo/BitCast/饱和/分类/CopySign/位计数)对拍 scalar oracle **8 个 gtest 全绿 × 3 VL**。lane 数随 VL 正确缩放(f32:4/8/16,i8:16/32/64)。`scripts/sve-qemu-test.sh` 可复现(cross-build + qemu 多 VL,类比 AVX-512 的 Intel SDE)。CMake `-DHYLE_SIMD_SVE=ON` gate(真 SVE 机 ctest 直跑)。
+**验证(qemu-aarch64,同一二进制强制 VL 128/256/384/512)**：`tests/simd/sve_test.cc` 的 **16 个 gtest × 4 VL 全绿**；首项用 `PR_SVE_SET_VL` 设置并回读实际 VL，避免 CPU model 参数与进程当前 VL 脱节。覆盖十种 lane、P0 泛型消费者、P1 swizzle/分段 load-store、P2 widen/quantize/reduce、P4 FMA/magnitude/widen/bf16/mod，以及 partial tag 的 masked/gather/scatter、widen/demote 与跨 signedness/Q15 极值。另在 VL 2048 真正设置后复验 P2/partial；384-bit 门覆盖非 2 次幂 lane 数。`scripts/sve-qemu-test.sh` 可复现正式四宽门。
 
-**scalable 尾巴已补齐(2026-07-09,用户"simd 补全")**:原登记的可做边界全部做掉——SVE/RVV 都补了变量移位/reduce-and-or/swizzle(RVV 无 zip1/2 用 vrgather 合成)/舍入 Round-Floor-Ceil-Trunc/FindFirst-LastTrue/变宽 Promote-Demote-WidenMulPairwiseAdd(svunpk / vsext+vnclip / 位切片点积核,全 VL-agnostic 无 OOB)。**剩余仅硬件 gate**(SVE2 crypto +sve2-aes、RVV Zvbb popcount/clz rv64gcv 无)+ 语义受限项(f32↔f64 变宽非量化热路径、mask-bits 位域族 VL 超 uint64)。核心载荷面 + 常用 op 面两 scalable ISA 已覆盖。
+**scalable P0-P4 当前能力面**:SVE/RVV 已具备泛型 complex/128-cmp/Newton/rotate 所需原语、whole-vector swizzle/table/slide、原生 2/3/4 路分段 load-store，以及 PromoteEven/Odd、Truncate/U8FromU32、跨 signedness Demote2、widen-dot、SumsOf2/4/8、任意 lane 数 ReduceMul、Q15 与 saturated abs/neg。量化/点积与结构 op 已和 HYLE 定宽后端对称；P4新增的FMA/magnitude、even/odd widen、bf16 accumulate和i32/u32 Mod也由共享泛型层直接实例化。剩余软件项仅为 gap inventory 的 P5。硬边界仍是 SVE2 crypto、RVV Zvbb 与超过 `uint64_t` 容量的 mask-bits 位域接口。
 
 ### RVV scalable 后端(simd-09,第二个 scalable 后端,镜像 SVE)
 
-`backend/rvv.h` 复用 SVE 建立的**全部 scalable 机制**(`HYLE_SIMD_HAVE_SCALABLE`=1 → 运行期 Lanes、kNativeVectorBytes 上界、sizeless traits 映射 `RvvVecT<T>` + 反向表 `DFromV_rvv`)。首版 **LMUL=1**(kPow2=0),`Lanes(d)`=`vsetvlmax`。覆盖 Set/Load/Store/算术/位/比较→vbool/选择(vmerge)/mask-reduce(vcpop)/GetLane/值reduce(vred*)/移位。
+`backend/rvv.h` 复用 SVE 建立的 scalable 机制(`HYLE_SIMD_HAVE_SCALABLE`、运行期 Lanes、sizeless traits `RvvVecT<T>` + 反向表 `DFromV_rvv`)。原生类型保持 **LMUL=1**；逻辑 partial tag 用非正 `kPow2` + `vl` 表达，`Lanes(d)=min(vsetvlmax >> -kPow2,kMaxLanes)`，无需把 fractional-LMUL sizeless 类型扩散到公开 API。覆盖 Set/Load/Store/算术/位/比较→vbool/选择/mask/value reduce/移位及 P0-P4 的结构、量化与 Mul/Mod/Magnitude op。
 
 **RVV 独特处(vs SVE)**:① **每 intrinsic 显式 `vl`**(SVE 用隐式谓词)——从 `Lanes(d)` 算一次穿进每个 op;② **unsigned lane 用独立助记符**(`vminu/vmaxu/vmsltu/vmsgtu` 非 `vmin` 泛型),signed/unsigned `if constexpr` 分派(这是 RVV 铺量的主要 gotcha);③ mask 是 `vbool<ratio>_t`(ratio=SEW/LMUL)。
 
-**验证**:`tests/simd/rvv_test.cc`(8 gtest,VL-agnostic 对拍 scalar,含 unsigned-mnemonic/swizzle/舍入/Find*True/变宽覆盖)qemu-riscv64 全绿。`scripts/rvv-qemu-test.sh` 可复现(cross-build rv64gcv + qemu)。CMake `-DHYLE_SIMD_RVV=ON` gate。**边界**:Zvbb popcount/clz(rv64gcv 无 Zvbb)、f32↔f64 变宽留 backlog。**结论坐实**:SVE 趟通的 scalable 抽象**真的可复用**——RVV 后端只是换 intrinsic 方言(+vl 穿线 +unsigned 分派 + 无 zip1/2 用 vrgather 合成 swizzle),vec.h 共享层零改动,证明"sizeless=后端内模板元编程"的判断对两个 ISA 都成立。
+**验证**:`tests/simd/rvv_test.cc` **13 个 gtest × VLEN 128/256/512/1024 全绿**；`P4MulModMagnitude`直接实例化共享FMA/magnitude/widen/bf16/mod层，1024-bit 门同时覆盖 unsigned `ReduceMin/Max` 助记符分派、tail-zero、oversize StoreN 截断与 swizzle。`scripts/rvv-qemu-test.sh` 固化同一二进制四宽门。**边界**:QEMU 当前最高 1024-bit，代码对 2048-bit u8 的 FirstN/FindLastTrue 使用不截断的 unsigned 逻辑；更宽 RVV 由 2048-bit HYLE 上界 fail-fast。Zvbb 位计数仍按硬件 gate 登记。
 
-## 已定决策（1/2/4 已落地，3 SVE 进行中/RVV 排队）
+## 已定决策（1/2/3/4 均已落地）
 
 1. **vector 抽象用定宽 `vec<T,N>` 还是 scalable（length-agnostic）**？**scalable-friendly 接口 + 先实现定宽后端**——接口按 length-agnostic 设计（参考 Highway，将来加 SVE/RVV 不改 API），但首版只实现定宽后端（x86 SSE4.2/AVX2/AVX512 + ARM NEON，它们本就定宽）。对冲：不堵未来又不先背复杂度。
    > **深读 highway 落地约束**：照搬 highway 的 **D-tag 接口契约**——传零大小标签 `D=Simd<T,N,kPow2>`，op 形如 `VFromD<D> Set(D,T)`，`Lanes(d)` 取宽度。**关键：`Lanes(d)` 必须设计成可运行期求值**（定宽后端是 constexpr、SVE 后端是 `svcntw()` 运行期），否则将来加 SVE 要改 API。highway 已证同源码 x86/SVE 共存可行。**只照搬接口契约，不 vendor 整个 highway**（其 ops/ 全平台万行级、重宏元编程，违背"贴硬件/不过度抽象"）。给 `vec.h` 设硬上限（核心 op < ~2k 行/后端），超了就是丧失了不 vendor 的理由。
 2. **数学核 vendor 现成库还是自抄多项式**？**vendor Highway + xsimd（均在 `third_party/`、无条件默认编进生产）**，逐 op best-of-breed 选最快核（exp/tanh→xsimd、log→Highway）；adapter 几乎零成本（吃裸 intrinsic 向量，HYLE `vec.raw` 直接喂）。两库精度同档（~3.5ULP，AI 热路径足够），互为校验。
-3. **要不要 SVE/RVV**？**两者均已落地(simd-09,gtest+CMake gate+qemu 脚本固化)**:SVE ~76 op(qemu-aarch64 多 VL 128/256/512)、RVV 核心 op(qemu-riscv64 rv64gcv)。原判"未来项缓实现",用户 2026-07-09 要求做全(通用 infra 库=能力完整性)→ 验证 sizeless 非架构冲击后落地(见上 SVE/RVV 节)。D-tag 的 `Lanes(d)` 运行期口子 + `HYLE_SIMD_HAVE_SCALABLE` 宏是当初预留、现在兑现的接口。RVV(`backend/rvv.h`)**已镜像落地**(见下 RVV 节,riscv64-gcc + qemu-riscv64,rv64gcv,gtest 固化)。
+3. **要不要 SVE/RVV**？**两者均已落地并完成 scalable P0-P4 的共享泛型实例化**：SVE qemu-aarch64 VL 128/256/384/512，RVV qemu-riscv64 VLEN 128/256/512/1024；同一二进制逐宽对拍 scalar。D-tag 的运行期 `Lanes(d)`、partial `kPow2`/cap、sizeless traits 与原生 predication/`vl` 共同维持公开 API 不变。定宽 P3 Masked* 与 P4 Mul/Mod/Magnitude 已完成；剩余软件项为 P5，硬件 gate 以 gap inventory 为准。
 4. **dtype 层借谁**？**自造，但参照 highway 的 `PromoteTo/DemoteTo` intrinsic 用法**（F16C `_mm_cvtph_ps`、AVX512-BF16 `cvtne2ps`、NEON-BF16）——照抄 intrinsic 不照抄抽象。Highway/xsimd 数学核无 fp16/bf16，唯 highway 当原生 lane 类型且硬件路径全；但 dtype 逻辑不复杂（bf16=fp32 高 16 位移位），自造避开 vendor 整个 highway。
 
 ## 参考

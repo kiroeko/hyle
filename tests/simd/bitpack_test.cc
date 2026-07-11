@@ -102,6 +102,96 @@ TEST(BitPack, PackedSizeFormula) {
   EXPECT_EQ(packed_size<std::uint32_t>(10, 32), 10u);
 }
 
+std::vector<std::uint16_t> pack_lane_oracle(const std::uint16_t* raw, unsigned bits) {
+  std::vector<std::uint16_t> packed(bits, 0);
+  for (std::size_t pair = 0; pair < 8; ++pair) {
+    packed[pair] = static_cast<std::uint16_t>((raw[2 * pair] & 0xFFu) |
+                                              ((raw[2 * pair + 1] & 0xFFu) << 8));
+  }
+  if (bits == 11) {
+    for (std::size_t column = 0; column < 3; ++column) {
+      std::uint16_t word = 0;
+      for (std::size_t group = 0; group < 5; ++group) {
+        const std::size_t raw_index = column + 3 * group;
+        word = static_cast<std::uint16_t>(word |
+            (((raw[raw_index] >> 8) & 0x7u) << (3 * group)));
+      }
+      word = static_cast<std::uint16_t>(word | (((raw[15] >> (8 + column)) & 1u) << 15));
+      packed[8 + column] = word;
+    }
+  } else {
+    for (std::size_t column = 0; column < 5; ++column) {
+      std::uint16_t word = static_cast<std::uint16_t>(
+          ((raw[column] >> 8) & 0x1Fu) |
+          (((raw[column + 5] >> 8) & 0x1Fu) << 5) |
+          (((raw[column + 10] >> 8) & 0x1Fu) << 10) |
+          (((raw[15] >> (8 + column)) & 1u) << 15));
+      packed[8 + column] = word;
+    }
+  }
+  return packed;
+}
+
+void verify_u16_block_layout(unsigned bits) {
+  const Isa tier = active_bitpack_variant();
+  const std::size_t lanes = tier == Isa::kAvx512 ? 32 : tier == Isa::kAvx2 ? 16 :
+                            tier == Isa::kNeon ? 8 : 1;
+  const std::size_t count = lanes * 16;
+  const std::uint16_t mask = static_cast<std::uint16_t>((std::uint32_t{1} << bits) - 1);
+  std::vector<std::uint16_t> raw(count);
+  for (std::size_t group = 0; group < 16; ++group)
+    for (std::size_t lane = 0; lane < lanes; ++lane)
+      raw[group * lanes + lane] = static_cast<std::uint16_t>(
+          (group * 0x6D5u + lane * 0x9E3u + (group ^ lane) * 0x101u) & mask);
+
+  std::vector<std::uint16_t> expected(bits * lanes);
+  std::vector<std::uint16_t> lane_raw(16);
+  for (std::size_t lane = 0; lane < lanes; ++lane) {
+    for (std::size_t group = 0; group < 16; ++group)
+      lane_raw[group] = raw[group * lanes + lane];
+    const auto lane_packed = pack_lane_oracle(lane_raw.data(), bits);
+    for (std::size_t word = 0; word < bits; ++word)
+      expected[word * lanes + lane] = lane_packed[word];
+  }
+
+  std::vector<std::uint16_t> actual(bits * lanes);
+  std::vector<std::uint16_t> decoded(count);
+  pack(raw.data(), count, actual.data(), bits);
+  ASSERT_EQ(actual, expected) << "bits=" << bits;
+  unpack(expected.data(), count, decoded.data(), bits);
+  ASSERT_EQ(decoded, raw) << "bits=" << bits;
+}
+
+TEST(BitPack, U16IndependentLayout11) { verify_u16_block_layout(11); }
+TEST(BitPack, U16IndependentLayout13) { verify_u16_block_layout(13); }
+
+// Full legal domains for the two widths whose upstream Highway inverse is wrong. Offset every
+// buffer by one element and guard both ends so this also pins unaligned access and exact bounds.
+void exhaustive_u16(unsigned bits) {
+  const std::size_t count = std::size_t{1} << bits;
+  const std::size_t words = packed_size<std::uint16_t>(count, bits);
+  constexpr std::uint16_t kGuard = 0xA55Au;
+  std::vector<std::uint16_t> raw(count + 2, kGuard);
+  std::vector<std::uint16_t> packed(words + 2, kGuard);
+  std::vector<std::uint16_t> out(count + 2, kGuard);
+  for (std::size_t i = 0; i < count; ++i) raw[i + 1] = static_cast<std::uint16_t>(i);
+
+  pack(raw.data() + 1, count, packed.data() + 1, bits);
+  unpack(packed.data() + 1, count, out.data() + 1, bits);
+
+  EXPECT_EQ(raw.front(), kGuard);
+  EXPECT_EQ(raw.back(), kGuard);
+  EXPECT_EQ(packed.front(), kGuard);
+  EXPECT_EQ(packed.back(), kGuard);
+  EXPECT_EQ(out.front(), kGuard);
+  EXPECT_EQ(out.back(), kGuard);
+  for (std::size_t i = 0; i < count; ++i)
+    ASSERT_EQ(out[i + 1], static_cast<std::uint16_t>(i)) << "bits=" << bits << " i=" << i;
+}
+
+TEST(BitPack, U16Exhaustive11) { exhaustive_u16(11); }
+TEST(BitPack, U16Exhaustive13) { exhaustive_u16(13); }
+
 // The dispatcher reports a sane tier for this host (smoke check that it is wired).
 TEST(BitPack, ActiveVariantIsSane) {
   const Isa v = active_bitpack_variant();

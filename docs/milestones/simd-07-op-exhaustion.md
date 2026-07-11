@@ -5,7 +5,7 @@
 | **阶段** | P3 |
 | **模块** | simd/（+ container/ 消费者） |
 | **前置** | simd-02（SSE4/AVX2 后端）、simd-03（NEON/AVX512 后端）、simd-05（int lane 广度） |
-| **状态** | ✅ 完成（2026-07-06，commit a118ce8~9d3b6d3）。三平台真机对拍：Win MSVC / WSL GCC14.2 vec_test 168、每 ISA 变体 138；mac AppleClang neon 变体 138 + 全量 ctest 24/24；AVX512 无机仅编译验 |
+| **状态** | ✅ 完成（2026-07-06，commit a118ce8~9d3b6d3）。Win MSVC / WSL GCC14.2 vec_test 168、每 ISA 变体 138；mac AppleClang neon 变体 138 + 全量 ctest 24/24；AVX512 后续已由 Intel SDE 执行对拍并确认 kAvx512 派发，性能仍只接受真机 benchmark |
 
 > **范围**：把 vec.h 的 op 集从 ~35 补到 ~90+（对齐 Highway 的能力面），全 lane 类型；并让 SIMD 首次有真实内部消费者（container count/rfind）。**用户纠偏驱动**：变宽 Promote/Demote 与 swizzle 曾被以"需 partial 向量 / 无消费者"后置，用户指出"高性能 infra 库消费面最广，能力要提供到位，不能因暂无消费者后置"——推翻误判后补齐。
 > **cloc**：五后端头 5,840 行（scalar 867 / sse4 1194 / avx2 1279 / avx512 1185 / neon 1315，均在 ~2k 设计上限内）+ str_search 消费者 109 行 + vec_test 增至 168 测试。

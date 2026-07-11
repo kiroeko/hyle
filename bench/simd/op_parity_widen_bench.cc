@@ -61,6 +61,12 @@ int main(){
     b.run("HYLE", [&]{ for(std::size_t i=0;i+w16h<=kN;i+=w16h) hs::StoreU(hs::WidenMulPairwiseAdd(hd32, hs::LoadU(hd16,i16a.data()+i), hs::LoadU(hd16,i16b.data()+i)), hd32, o32.data()+i); nb::doNotOptimizeAway(o32.data()); });
     b.run("Highway", [&]{ for(std::size_t i=0;i+w16g<=kN;i+=w16g) hn::StoreU(hn::WidenMulPairwiseAdd(gd32, hn::LoadU(gd16,i16a.data()+i), hn::LoadU(gd16,i16b.data()+i)), gd32, o32.data()+i); nb::doNotOptimizeAway(o32.data()); });
   }
+  // MulFixedPoint15 i16
+  {
+    nb::Bench b; b.title("MulFixedPoint15 i16").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+w16h<=kN;i+=w16h) hs::StoreU(hs::MulFixedPoint15(hs::LoadU(hd16,i16a.data()+i), hs::LoadU(hd16,i16b.data()+i)), hd16, o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+w16g<=kN;i+=w16g) hn::StoreU(hn::MulFixedPoint15(hn::LoadU(gd16,i16a.data()+i), hn::LoadU(gd16,i16b.data()+i)), gd16, o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+  }
   // SumsOf8 u8->u64
   {
     nb::Bench b; b.title("SumsOf8 u8->u64").relative(true).batch(kN).minEpochIterations(8000);

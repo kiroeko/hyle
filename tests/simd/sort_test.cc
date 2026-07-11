@@ -1,9 +1,11 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <limits>
 #include <random>
 #include <type_traits>
 #include <vector>
@@ -163,6 +165,76 @@ TEST(Sort, I64) { run_all_for_type<std::int64_t>(); }
 TEST(Sort, F32) { run_all_for_type<float>(); }
 TEST(Sort, F64) { run_all_for_type<double>(); }
 
+TEST(Sort, FloatingNaNsLast) {
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
+    std::vector<float> values = {nan, 3.0f, -1.0f, nan, 2.0f, 0.0f};
+    sort(values.data(), values.size(), order);
+    ASSERT_FALSE(std::isnan(values[0]));
+    ASSERT_FALSE(std::isnan(values[1]));
+    ASSERT_FALSE(std::isnan(values[2]));
+    ASSERT_FALSE(std::isnan(values[3]));
+    ASSERT_TRUE(std::isnan(values[4]));
+    ASSERT_TRUE(std::isnan(values[5]));
+    if (order == SortOrder::kAscending) {
+      EXPECT_EQ(values[0], -1.0f); EXPECT_EQ(values[1], 0.0f);
+      EXPECT_EQ(values[2], 2.0f); EXPECT_EQ(values[3], 3.0f);
+    } else {
+      EXPECT_EQ(values[0], 3.0f); EXPECT_EQ(values[1], 2.0f);
+      EXPECT_EQ(values[2], 0.0f); EXPECT_EQ(values[3], -1.0f);
+    }
+  }
+}
+
+TEST(Sort, FloatingNaNsLastPartialAndSelect) {
+  const float nan = std::numeric_limits<float>::quiet_NaN();
+  const std::vector<float> source = {nan, 3.0f, -1.0f, nan, 2.0f, 0.0f};
+  for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
+    const bool asc = order == SortOrder::kAscending;
+    std::vector<float> partial = source;
+    partial_sort(partial.data(), partial.size(), 3, order);
+    const float expected_prefix[] = {asc ? -1.0f : 3.0f, asc ? 0.0f : 2.0f,
+                                     asc ? 2.0f : 0.0f};
+    for (std::size_t i = 0; i < 3; ++i) {
+      EXPECT_FALSE(std::isnan(partial[i]));
+      EXPECT_EQ(partial[i], expected_prefix[i]);
+    }
+
+    std::vector<float> selected = source;
+    select(selected.data(), selected.size(), 2, order);
+    EXPECT_FALSE(std::isnan(selected[2]));
+    EXPECT_EQ(selected[2], expected_prefix[2]);
+    for (std::size_t i = 0; i < 2; ++i) {
+      EXPECT_FALSE(std::isnan(selected[i]));
+      if (asc) EXPECT_LE(selected[i], selected[2]);
+      else EXPECT_GE(selected[i], selected[2]);
+    }
+    for (std::size_t i = 3; i < selected.size(); ++i) {
+      if (std::isnan(selected[i])) continue;
+      if (asc) EXPECT_GE(selected[i], selected[2]);
+      else EXPECT_LE(selected[i], selected[2]);
+    }
+  }
+}
+
+TEST(Sort, SmallKIntegerPartialSort) {
+  std::uint64_t seed = 0x51A11C0DEULL;
+  for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
+    for (int dist : {0, 4}) {
+      for (std::size_t n : {std::size_t{16}, std::size_t{64}, std::size_t{257},
+                            std::size_t{4096}}) {
+        for (std::size_t k : {std::size_t{1}, std::size_t{2}, std::size_t{4},
+                              std::size_t{8}, std::size_t{16}}) {
+          if (k <= n) {
+            expect_partial_sort<std::uint32_t>(n, k, dist, order, ++seed);
+            expect_partial_sort<std::int64_t>(n, k, dist, order, ++seed);
+          }
+        }
+      }
+    }
+  }
+}
+
 // KV (top-k): sort by key, value must ride along. Verify (1) keys come out ordered, (2) every
 // (key,value) pair is preserved (the multiset of pairs is unchanged -- value stays glued to its
 // key), which is the arg-sort/top-k contract. Uses value = a hash of the original key so a
@@ -206,6 +278,91 @@ void run_kv() {
 }
 TEST(Sort, KeyValue32) { run_kv<hyle::simd::KeyValue32, std::uint32_t>(); }
 TEST(Sort, KeyValue64) { run_kv<hyle::simd::KeyValue64, std::uint64_t>(); }
+
+template <typename KV, typename K>
+void run_kv_select() {
+  const K keys[] = {4, 1, 4, 2, 0, 2, 5, 3, 1};
+  std::vector<KV> source(sizeof(keys) / sizeof(keys[0]));
+  for (std::size_t i = 0; i < source.size(); ++i) {
+    source[i].key = keys[i];
+    source[i].value = static_cast<K>(100 + i);
+  }
+  for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
+    const bool asc = order == SortOrder::kAscending;
+    for (std::size_t k : {std::size_t{0}, source.size() / 2, source.size() - 1}) {
+      std::vector<KV> got = source;
+      std::vector<KV> ref = source;
+      auto by_key = [asc](const KV& a, const KV& b) { return asc ? a.key < b.key : a.key > b.key; };
+      std::nth_element(ref.begin(), ref.begin() + k, ref.end(), by_key);
+      select(got.data(), got.size(), k, order);
+      EXPECT_EQ(got[k].key, ref[k].key);
+      for (std::size_t i = 0; i < k; ++i) {
+        if (asc) EXPECT_LE(got[i].key, got[k].key);
+        else EXPECT_GE(got[i].key, got[k].key);
+      }
+      for (std::size_t i = k + 1; i < got.size(); ++i) {
+        if (asc) EXPECT_GE(got[i].key, got[k].key);
+        else EXPECT_LE(got[i].key, got[k].key);
+      }
+      auto by_pair = [](const KV& a, const KV& b) {
+        return a.key != b.key ? a.key < b.key : a.value < b.value;
+      };
+      std::sort(got.begin(), got.end(), by_pair);
+      std::sort(ref.begin(), ref.end(), by_pair);
+      for (std::size_t i = 0; i < got.size(); ++i) {
+        EXPECT_EQ(got[i].key, ref[i].key);
+        EXPECT_EQ(got[i].value, ref[i].value);
+      }
+    }
+  }
+}
+
+TEST(Sort, KeyValueSelect32) { run_kv_select<hyle::simd::KeyValue32, std::uint32_t>(); }
+TEST(Sort, KeyValueSelect64) { run_kv_select<hyle::simd::KeyValue64, std::uint64_t>(); }
+
+template <typename KV, typename K>
+void run_small_kv_partial() {
+  std::mt19937_64 rng(0x5A11C0DEULL + sizeof(KV));
+  for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
+    const bool asc = order == SortOrder::kAscending;
+    for (std::size_t n : {std::size_t{16}, std::size_t{64}, std::size_t{257},
+                          std::size_t{4096}}) {
+      std::vector<KV> source(n);
+      for (std::size_t i = 0; i < n; ++i) {
+        source[i].key = static_cast<K>(rng() & 31u);
+        source[i].value = static_cast<K>(i);
+      }
+      for (std::size_t k : {std::size_t{1}, std::size_t{2}, std::size_t{4},
+                            std::size_t{8}, std::size_t{16}}) {
+        std::vector<KV> got = source;
+        std::vector<KV> ref = source;
+        auto by_key = [asc](const KV& a, const KV& b) {
+          return asc ? a.key < b.key : a.key > b.key;
+        };
+        partial_sort(got.data(), got.size(), k, order);
+        std::partial_sort(ref.begin(), ref.begin() + k, ref.end(), by_key);
+        for (std::size_t i = 0; i < k; ++i) ASSERT_EQ(got[i].key, ref[i].key);
+
+        auto by_pair = [](const KV& a, const KV& b) {
+          return a.key != b.key ? a.key < b.key : a.value < b.value;
+        };
+        std::sort(got.begin(), got.end(), by_pair);
+        std::sort(ref.begin(), ref.end(), by_pair);
+        for (std::size_t i = 0; i < n; ++i) {
+          ASSERT_EQ(got[i].key, ref[i].key);
+          ASSERT_EQ(got[i].value, ref[i].value);
+        }
+      }
+    }
+  }
+}
+
+TEST(Sort, SmallKKeyValue32) {
+  run_small_kv_partial<hyle::simd::KeyValue32, std::uint32_t>();
+}
+TEST(Sort, SmallKKeyValue64) {
+  run_small_kv_partial<hyle::simd::KeyValue64, std::uint64_t>();
+}
 
 // The dispatcher reports a sane tier for this host (avx512/avx2 on x86, neon on arm64, else
 // scalar). Not asserting a specific value (depends on the build host), just that it is one of the

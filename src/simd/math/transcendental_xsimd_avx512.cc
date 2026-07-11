@@ -86,6 +86,14 @@ void tgamma_f64_xsimd_avx512(const double* src, double* dst, std::size_t n) noex
     xsimd::tgamma(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
   for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
 }
+void hypot_fast_f32_xsimd_avx512(const float* a, const float* b, float* dst,
+                                 std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::hypot(batch::load_unaligned(a + i), batch::load_unaligned(b + i))
+        .store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::sqrt(a[i] * a[i] + b[i] * b[i]);
+}
 }  // namespace hyle::simd::detail
 
 #endif  // HYLE_ARCH_X64

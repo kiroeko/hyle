@@ -636,6 +636,20 @@ HYLE_FORCE_INLINE Vec128<T, N> Shr(Vec128<T, N> a, Vec128<T, N> b) noexcept {
   return detail::shift_var_scalar<T, N>(a, b, false);  // no native variable shift on SSE4
 }
 
+// Uniform run-time shifts are native even though SSE4 lacks per-lane variable shifts.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::uint32_t, N> ShiftRightUniform(Vec128<std::uint32_t, N> a,
+                                                              int bits) noexcept {
+  static_assert(N == 4, "ShiftRightUniform u32 requires a native SSE4 vector");
+  return Vec128<std::uint32_t, N>{_mm_srl_epi32(a.raw, _mm_cvtsi32_si128(bits))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::int32_t, N> ShiftRightUniform(Vec128<std::int32_t, N> a,
+                                                             int bits) noexcept {
+  static_assert(N == 4, "ShiftRightUniform i32 requires a native SSE4 vector");
+  return Vec128<std::int32_t, N>{_mm_sra_epi32(a.raw, _mm_cvtsi32_si128(bits))};
+}
+
 // MulHigh: high 16 bits of the i16/u16 product (native mulhi).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> MulHigh(Vec128<T, N> a, Vec128<T, N> b) noexcept {
@@ -924,6 +938,55 @@ HYLE_FORCE_INLINE Vec128<std::uint8_t, N> U8FromU32(Vec128<std::uint32_t, N> v) 
   Store(v, Simd<std::uint32_t, N, 0>(), src);
   for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
   return Load(Simd<std::uint8_t, N, 0>(), dst);
+}
+
+// P4: SSE4 dword->qword multiply consumes the even dword of each qword.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::int64_t, N / 2> MulEven(Vec128<std::int32_t, N> a,
+                                                       Vec128<std::int32_t, N> b) noexcept {
+  static_assert(N == 4, "MulEven i32 requires a native SSE4 vector");
+  return Vec128<std::int64_t, N / 2>{_mm_mul_epi32(a.raw, b.raw)};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::uint64_t, N / 2> MulEven(Vec128<std::uint32_t, N> a,
+                                                        Vec128<std::uint32_t, N> b) noexcept {
+  static_assert(N == 4, "MulEven u32 requires a native SSE4 vector");
+  return Vec128<std::uint64_t, N / 2>{_mm_mul_epu32(a.raw, b.raw)};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::int64_t, N / 2> MulOdd(Vec128<std::int32_t, N> a,
+                                                      Vec128<std::int32_t, N> b) noexcept {
+  static_assert(N == 4, "MulOdd i32 requires a native SSE4 vector");
+  return Vec128<std::int64_t, N / 2>{_mm_mul_epi32(_mm_srli_epi64(a.raw, 32),
+                                                    _mm_srli_epi64(b.raw, 32))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::uint64_t, N / 2> MulOdd(Vec128<std::uint32_t, N> a,
+                                                       Vec128<std::uint32_t, N> b) noexcept {
+  static_assert(N == 4, "MulOdd u32 requires a native SSE4 vector");
+  return Vec128<std::uint64_t, N / 2>{_mm_mul_epu32(_mm_srli_epi64(a.raw, 32),
+                                                     _mm_srli_epi64(b.raw, 32))};
+}
+
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::uint32_t, N> MulHigh32(Vec128<std::uint32_t, N> a,
+                                                      Vec128<std::uint32_t, N> b) noexcept {
+  static_assert(N == 4, "MulHigh32 u32 requires a native SSE4 vector");
+  const __m128i even = _mm_srli_epi64(_mm_mul_epu32(a.raw, b.raw), 32);
+  const __m128i odd = _mm_srli_epi64(
+      _mm_mul_epu32(_mm_srli_epi64(a.raw, 32), _mm_srli_epi64(b.raw, 32)), 32);
+  return Vec128<std::uint32_t, N>{_mm_or_si128(even, _mm_slli_epi64(odd, 32))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec128<std::int32_t, N> MulHigh32(Vec128<std::int32_t, N> a,
+                                                     Vec128<std::int32_t, N> b) noexcept {
+  static_assert(N == 4, "MulHigh32 i32 requires a native SSE4 vector");
+  const __m128i even = _mm_mul_epi32(a.raw, b.raw);
+  const __m128i odd = _mm_mul_epi32(_mm_shuffle_epi32(a.raw, _MM_SHUFFLE(3, 3, 1, 1)),
+                                    _mm_shuffle_epi32(b.raw, _MM_SHUFFLE(3, 3, 1, 1)));
+  const __m128i packed = _mm_castps_si128(
+      _mm_shuffle_ps(_mm_castsi128_ps(even), _mm_castsi128_ps(odd), _MM_SHUFFLE(3, 1, 3, 1)));
+  return Vec128<std::int32_t, N>{_mm_shuffle_epi32(packed, _MM_SHUFFLE(3, 1, 2, 0))};
 }
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------

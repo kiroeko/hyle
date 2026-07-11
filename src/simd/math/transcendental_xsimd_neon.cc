@@ -21,6 +21,7 @@
 #include <cstddef>
 
 #include "xsimd/xsimd.hpp"
+#include "src/simd/math/complex_hyle-inl.h"
 
 namespace hyle::simd::detail {
 
@@ -34,6 +35,30 @@ void tgamma_f32_xsimd_neon(const float* src, float* dst, std::size_t n) noexcept
   for (; i + kW <= n; i += kW)
     xsimd::tgamma(batch::load_unaligned(src + i)).store_unaligned(dst + i);
   for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
+}
+void hypot_fast_f32_xsimd_neon(const float* a, const float* b, float* dst,
+                               std::size_t n) noexcept {
+  std::size_t i = 0;
+  for (; i + kW <= n; i += kW)
+    xsimd::hypot(batch::load_unaligned(a + i), batch::load_unaligned(b + i))
+        .store_unaligned(dst + i);
+  for (; i < n; ++i) dst[i] = std::sqrt(a[i] * a[i] + b[i] * b[i]);
+}
+void csin_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
+                         std::size_t n) noexcept {
+  complex_sincos_hyle<false>(sr, si, dr, di, n);
+}
+void ccos_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
+                         std::size_t n) noexcept {
+  complex_sincos_hyle<true>(sr, si, dr, di, n);
+}
+void ctanh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
+                          std::size_t n) noexcept {
+  complex_ctanh_hyle(sr, si, dr, di, n);
+}
+void cpow_f32_hyle_neon(const float* zr, const float* zi, const float* wr, const float* wi,
+                         float* dr, float* di, std::size_t n) noexcept {
+  complex_cpow_hyle(zr, zi, wr, wi, dr, di, n);
 }
 }  // namespace hyle::simd::detail
 

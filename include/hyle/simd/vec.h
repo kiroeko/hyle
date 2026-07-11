@@ -3,6 +3,7 @@
 #include <bit>          // countl_zero / countr_zero (Divisor magic-number precompute)
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <type_traits>  // conditional_t (MakeSigned/MakeUnsigned lane-type rebind)
 
 #include "hyle/macros.h"
@@ -99,22 +100,38 @@ using MakeNarrow = std::conditional_t<
             std::conditional_t<sizeof(T) == 4, std::uint16_t, std::uint8_t>>>>;
 // Rebind a tag D to the same lane COUNT but a same-width signed/unsigned integer lane type.
 template <class D>
-using RebindToUnsigned = Simd<MakeUnsigned<TFromD<D>>, D::kMaxLanes, 0>;
+using RebindToUnsigned = Simd<MakeUnsigned<TFromD<D>>, D::kMaxLanes, D{}.Pow2()>;
 template <class D>
-using RebindToSigned = Simd<MakeSigned<TFromD<D>>, D::kMaxLanes, 0>;
+using RebindToSigned = Simd<MakeSigned<TFromD<D>>, D::kMaxLanes, D{}.Pow2()>;
 
 // ---- tag re-typing (Highway Rebind / Repartition family) ---------------------------
-// Rebind<T2, D>: SAME lane COUNT as D, but lane type T2 (any width). The kPow2 is preserved so
-// the count still tracks D's scale. Used when an op yields the same number of lanes at a different
-// element type (e.g. a compare producing an integer mask-vector, PromoteTo's DESTINATION tag).
+// Rebind<T2, D>: SAME lane COUNT as D, but lane type T2. Scalable backends must adjust kPow2 by
+// the lane-width ratio (u32->u8 needs quarter-LMUL) so Lanes(Rebind<T2,D>) == Lanes(D). Fixed-width
+// backends ignore kPow2 and continue to use the exact compile-time lane count.
+namespace detail {
+template <typename To, class D>
+constexpr int rebind_pow2() noexcept {
+  using From = TFromD<D>;
+  int pow2 = D{}.Pow2();
+  if constexpr (sizeof(To) > sizeof(From)) {
+    std::size_t ratio = sizeof(To) / sizeof(From);
+    while (ratio > 1) { ++pow2; ratio >>= 1; }
+    if constexpr (D::kMaxLanes * sizeof(To) <= 16) pow2 = 0;
+  } else {
+    std::size_t ratio = sizeof(From) / sizeof(To);
+    while (ratio > 1) { --pow2; ratio >>= 1; }
+  }
+  return pow2;
+}
+}  // namespace detail
 template <typename T2, class D>
-using Rebind = Simd<T2, D::kMaxLanes, D::kPow2>;
+using Rebind = Simd<T2, D::kMaxLanes, detail::rebind_pow2<T2, D>()>;
 
 // Repartition<T2, D>: SAME total BYTES as D, re-divided into T2 lanes (so the COUNT changes by the
 // width ratio). Used for widen/narrow bit reinterpret views (e.g. viewing an u32 vector as u8).
 // count' = kMaxLanes * sizeof(T) / sizeof(T2). Requires the byte size to divide evenly.
 template <typename T2, class D>
-using Repartition = Simd<T2, D::kMaxLanes * sizeof(TFromD<D>) / sizeof(T2), D::kPow2>;
+using Repartition = Simd<T2, D::kMaxLanes * sizeof(TFromD<D>) / sizeof(T2), D{}.Pow2()>;
 
 // RepartitionToWide<D>: lanes twice as wide, HALF the count (Highway's name). The building block
 // for PromoteTo's 2x-wide destination and InterleaveWhole. RepartitionToNarrow is the inverse.
@@ -268,6 +285,100 @@ using Twice = typename D::Twice;
 template <class D>
 using MFromD = decltype(MaskFromVec(Zero(D())));
 
+// ---- P4 Mul / magnitude completion ----------------------------------------------------
+// `MulAdd` is the native FMA seam. Keep its single-rounding path for floating-point lanes;
+// integral negation is performed through the unsigned bit representation so MIN remains modular.
+template <class V>
+HYLE_FORCE_INLINE V MulSub(V mul, V x, V sub) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  const D d;
+  if constexpr (std::is_floating_point_v<T>) {
+    return MulAdd(mul, x, Neg(sub));
+  } else {
+    const RebindToUnsigned<D> du;
+    return MulAdd(mul, x, BitCast(d, Sub(Zero(du), BitCast(du, sub))));
+  }
+}
+
+template <class V>
+HYLE_FORCE_INLINE V NegMulSub(V mul, V x, V sub) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  const D d;
+  if constexpr (std::is_floating_point_v<T>) {
+    return Neg(MulAdd(mul, x, sub));
+  } else {
+    const RebindToUnsigned<D> du;
+    return BitCast(d, Sub(Zero(du), BitCast(du, MulAdd(mul, x, sub))));
+  }
+}
+
+// Even lanes are subtraction for MulAddSub and addition for MulSubAdd.
+template <class V>
+HYLE_FORCE_INLINE V MulAddSub(V mul, V x, V sub_or_add) noexcept {
+  return OddEven(MulAdd(mul, x, sub_or_add), MulSub(mul, x, sub_or_add));
+}
+
+template <class V>
+HYLE_FORCE_INLINE V MulSubAdd(V mul, V x, V sub_or_add) noexcept {
+  return OddEven(MulSub(mul, x, sub_or_add), MulAdd(mul, x, sub_or_add));
+}
+
+template <class V>
+HYLE_FORCE_INLINE V MinMagnitude(V a, V b) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  const D d;
+  if constexpr (std::is_unsigned_v<T>) {
+    return Min(a, b);
+  } else if constexpr (std::is_floating_point_v<T>) {
+    const V abs_a = Abs(a);
+    const V abs_b = Abs(b);
+    const V min = Min(IfThenElse(Eq(abs_a, abs_b), a, b), b);
+    return IfThenElse(Lt(abs_a, abs_b), a, min);
+  } else {
+    const RebindToUnsigned<D> du;
+    const auto a_bits = BitCast(du, a);
+    const auto b_bits = BitCast(du, b);
+    const auto a_negative = MaskFromVec(BitCast(du, VecFromMask(d, Lt(a, Zero(d)))));
+    const auto b_negative = MaskFromVec(BitCast(du, VecFromMask(d, Lt(b, Zero(d)))));
+    const auto abs_a = IfThenElse(a_negative, Sub(Zero(du), a_bits), a_bits);
+    const auto abs_b = IfThenElse(b_negative, Sub(Zero(du), b_bits), b_bits);
+    const auto equal = MaskFromVec(BitCast(d, VecFromMask(du, Eq(abs_a, abs_b))));
+    const auto less = MaskFromVec(BitCast(d, VecFromMask(du, Lt(abs_a, abs_b))));
+    const V min = Min(IfThenElse(equal, a, b), b);
+    return IfThenElse(less, a, min);
+  }
+}
+
+template <class V>
+HYLE_FORCE_INLINE V MaxMagnitude(V a, V b) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  const D d;
+  if constexpr (std::is_unsigned_v<T>) {
+    return Max(a, b);
+  } else if constexpr (std::is_floating_point_v<T>) {
+    const V abs_a = Abs(a);
+    const V abs_b = Abs(b);
+    const V max = Max(IfThenElse(Eq(abs_a, abs_b), b, a), a);
+    return IfThenElse(Lt(abs_a, abs_b), b, max);
+  } else {
+    const RebindToUnsigned<D> du;
+    const auto a_bits = BitCast(du, a);
+    const auto b_bits = BitCast(du, b);
+    const auto a_negative = MaskFromVec(BitCast(du, VecFromMask(d, Lt(a, Zero(d)))));
+    const auto b_negative = MaskFromVec(BitCast(du, VecFromMask(d, Lt(b, Zero(d)))));
+    const auto abs_a = IfThenElse(a_negative, Sub(Zero(du), a_bits), a_bits);
+    const auto abs_b = IfThenElse(b_negative, Sub(Zero(du), b_bits), b_bits);
+    const auto equal = MaskFromVec(BitCast(d, VecFromMask(du, Eq(abs_a, abs_b))));
+    const auto less = MaskFromVec(BitCast(d, VecFromMask(du, Lt(abs_a, abs_b))));
+    const V max = Max(IfThenElse(equal, b, a), a);
+    return IfThenElse(less, b, max);
+  }
+}
+
 // ---- Masked* family (compute-06 simd-08 B-1) ----------------------------------------
 // GENERIC layer: every Masked op is `IfThenElseZero(m, op(...))` (zero the off lanes) and its
 // *Or twin is `IfThenElse(m, op(...), or_v)` (fill off lanes from `or_v`). Backend-agnostic --
@@ -331,6 +442,93 @@ template <class M, class V> HYLE_FORCE_INLINE V MaskedMulAddOr(M m, V no, V a, V
 }
 template <class M, class V> HYLE_FORCE_INLINE V MaskedNegMulAdd(M m, V a, V b, V c) noexcept {
   return IfThenElseZero(m, NegMulAdd(a, b, c));
+}
+
+// P3 masked completion. HYLE compute-family Or signatures keep the established (mask, no, ...)
+// order above; false lanes are zero for non-Or forms and `no` for Or forms.
+template <class M, class V> HYLE_FORCE_INLINE V MaskedShl(M m, V v, V bits) noexcept {
+  return IfThenElseZero(m, Shl(v, bits));
+}
+template <class M, class V> HYLE_FORCE_INLINE V MaskedShlOr(M m, V no, V v, V bits) noexcept {
+  return IfThenElse(m, Shl(v, bits), no);
+}
+template <class M, class V> HYLE_FORCE_INLINE V MaskedShr(M m, V v, V bits) noexcept {
+  return IfThenElseZero(m, Shr(v, bits));
+}
+template <class M, class V> HYLE_FORCE_INLINE V MaskedShrOr(M m, V no, V v, V bits) noexcept {
+  return IfThenElse(m, Shr(v, bits), no);
+}
+template <int kBits, class M, class V>
+HYLE_FORCE_INLINE V MaskedShiftLeft(M m, V v) noexcept {
+  return IfThenElseZero(m, ShiftLeft<kBits>(v));
+}
+template <int kBits, class M, class V>
+HYLE_FORCE_INLINE V MaskedShiftLeftOr(M m, V no, V v) noexcept {
+  return IfThenElse(m, ShiftLeft<kBits>(v), no);
+}
+template <int kBits, class M, class V>
+HYLE_FORCE_INLINE V MaskedShiftRight(M m, V v) noexcept {
+  return IfThenElseZero(m, ShiftRight<kBits>(v));
+}
+template <int kBits, class M, class V>
+HYLE_FORCE_INLINE V MaskedShiftRightOr(M m, V no, V v) noexcept {
+  return IfThenElse(m, ShiftRight<kBits>(v), no);
+}
+
+template <class D, class M>
+HYLE_FORCE_INLINE TFromD<D> MaskedReduceSum(D d, M m, VFromD<D> v) noexcept {
+  return ReduceSum(d, IfThenElseZero(m, v));
+}
+template <class D, class M>
+HYLE_FORCE_INLINE TFromD<D> MaskedReduceMin(D d, M m, VFromD<D> v) noexcept {
+  using T = TFromD<D>;
+  T identity;
+  if constexpr (std::is_floating_point_v<T>) identity = std::numeric_limits<T>::infinity();
+  else identity = std::numeric_limits<T>::max();
+  return ReduceMin(d, IfThenElse(m, v, Set(d, identity)));
+}
+template <class D, class M>
+HYLE_FORCE_INLINE TFromD<D> MaskedReduceMax(D d, M m, VFromD<D> v) noexcept {
+  using T = TFromD<D>;
+  T identity;
+  if constexpr (std::is_floating_point_v<T>) identity = -std::numeric_limits<T>::infinity();
+  else identity = std::numeric_limits<T>::lowest();
+  return ReduceMax(d, IfThenElse(m, v, Set(d, identity)));
+}
+
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedApproximateReciprocal(M m, V v) noexcept {
+  return IfThenElseZero(m, ApproximateReciprocal(v));
+}
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedApproximateReciprocalSqrt(M m, V v) noexcept {
+  return IfThenElseZero(m, ApproximateReciprocalSqrt(v));
+}
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedLeadingZeroCount(M m, V v) noexcept {
+  return IfThenElseZero(m, LeadingZeroCount(v));
+}
+template <class M, class D, class V>
+HYLE_FORCE_INLINE VFromD<D> MaskedConvertTo(M m, D d, V v) noexcept {
+  return IfThenElseZero(m, ConvertTo(d, v));
+}
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedMulFixedPoint15(M m, V a, V b) noexcept {
+  return IfThenElseZero(m, MulFixedPoint15(a, b));
+}
+template <class D, class M, class V>
+HYLE_FORCE_INLINE VFromD<D> MaskedWidenMulPairwiseAdd(D d, M m, V a, V b) noexcept {
+  return IfThenElseZero(m, WidenMulPairwiseAdd(d, a, b));
+}
+
+// Highway's short Sat names are public aliases for HYLE's existing Saturated names.
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedSatAddOr(M m, V no, V a, V b) noexcept {
+  return MaskedSaturatedAddOr(m, no, a, b);
+}
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedSatSubOr(M m, V no, V a, V b) noexcept {
+  return MaskedSaturatedSubOr(m, no, a, b);
 }
 
 // ---- lane access + init helpers (compute-06 simd-08 B-3, generic layer) -------------
@@ -589,26 +787,27 @@ HYLE_FORCE_INLINE void SafeCopyN(std::size_t num, D d, const TFromD<D>* from, TF
 }
 
 // ---- complex arithmetic (simd-08 C, generic layer) ----------------------------------
-// Interleaved complex: even lane = real, odd lane = imaginary. Float lanes only. Composes
-// existing DupEven/DupOdd/Reverse2/AddSub/Neg/OddEven -- the standard vectorized complex
-// multiply (FFT butterfly / CAE frequency-domain kernels).
+// Interleaved complex: even lane = real, odd lane = imaginary. Float lanes only.
 // ComplexConj(v): negate the imaginary (odd) lanes = OddEven(Neg(v), v).
 template <class V> HYLE_FORCE_INLINE V ComplexConj(V v) noexcept {
   return OddEven(Neg(v), v);
 }
 // MulComplex(a, b) = (a.re + i a.im)(b.re + i b.im):
 //   re = a.re*b.re - a.im*b.im ; im = a.re*b.im + a.im*b.re
-// Implemented with the classic SIMD form: t1 = DupEven(a)*b (a.re broadcast * b),
-// t2 = DupOdd(a)*Reverse2(b) (a.im broadcast * swapped b), result = AddSub(t1, t2) which does
-// t1-t2 on even (real) lanes, t1+t2 on odd (imag) lanes.
 template <class V> HYLE_FORCE_INLINE V MulComplex(V a, V b) noexcept {
-  const V t1 = Mul(DupEven(a), b);
-  const V t2 = Mul(DupOdd(a), Reverse2(DFromV<V>(), b));
-  return AddSub(t1, t2);
+  const V u = DupEven(a);
+  const V v = DupOdd(a);
+  const V x = DupEven(b);
+  const V y = DupOdd(b);
+  return OddEven(MulAdd(u, y, Mul(v, x)), Sub(Mul(u, x), Mul(v, y)));
 }
 // MulComplexConj(a, b) = a * conj(b).
 template <class V> HYLE_FORCE_INLINE V MulComplexConj(V a, V b) noexcept {
-  return MulComplex(a, ComplexConj(b));
+  const V u = DupEven(a);
+  const V v = DupOdd(a);
+  const V x = DupEven(b);
+  const V y = DupOdd(b);
+  return OddEven(Sub(Mul(v, x), Mul(u, y)), MulAdd(u, x, Mul(v, y)));
 }
 // MulComplexAdd(a, b, c) = a*b + c ; MulComplexConjAdd(a, b, c) = a*conj(b) + c.
 template <class V> HYLE_FORCE_INLINE V MulComplexAdd(V a, V b, V c) noexcept {
@@ -616,6 +815,89 @@ template <class V> HYLE_FORCE_INLINE V MulComplexAdd(V a, V b, V c) noexcept {
 }
 template <class V> HYLE_FORCE_INLINE V MulComplexConjAdd(V a, V b, V c) noexcept {
   return Add(MulComplexConj(a, b), c);
+}
+
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedMulComplex(M m, V a, V b) noexcept {
+  return IfThenElseZero(m, MulComplex(a, b));
+}
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedMulComplexOr(M m, V no, V a, V b) noexcept {
+  return IfThenElse(m, MulComplex(a, b), no);
+}
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedMulComplexConj(M m, V a, V b) noexcept {
+  return IfThenElseZero(m, MulComplexConj(a, b));
+}
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedMulComplexAdd(M m, V a, V b, V c) noexcept {
+  return IfThenElseZero(m, MulComplexAdd(a, b, c));
+}
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedMulComplexConjAdd(M m, V a, V b, V c) noexcept {
+  return IfThenElseZero(m, MulComplexConjAdd(a, b, c));
+}
+
+// ---- P4 even/odd widening multiply ---------------------------------------------------
+template <class V>
+HYLE_FORCE_INLINE VFromD<RepartitionToWide<DFromV<V>>> MulEven(V a, V b) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  static_assert(std::is_integral_v<T> && sizeof(T) < sizeof(std::int64_t),
+                "MulEven supports i/u8, i/u16, and i/u32 lanes");
+  static_assert(D::kMaxLanes >= 2, "MulEven needs an even source lane count");
+  const RepartitionToWide<D> dw;
+  return Mul(PromoteEvenTo(dw, a), PromoteEvenTo(dw, b));
+}
+
+template <class V>
+HYLE_FORCE_INLINE VFromD<RepartitionToWide<DFromV<V>>> MulOdd(V a, V b) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  static_assert(std::is_integral_v<T> && sizeof(T) < sizeof(std::int64_t),
+                "MulOdd supports i/u8, i/u16, and i/u32 lanes");
+  static_assert(D::kMaxLanes >= 2, "MulOdd needs an even source lane count");
+  const RepartitionToWide<D> dw;
+  return Mul(PromoteOddTo(dw, a), PromoteOddTo(dw, b));
+}
+
+namespace detail {
+// HYLE's vector layer deliberately models bf16 storage as uint16_t bit carriers. These helpers
+// widen alternating IEEE bf16 encodings into f32 by moving their payload into the high f32 bits.
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> Bf16EvenToF32(D d, V bits) noexcept {
+  using SrcD = DFromV<V>;
+  static_assert(std::is_same_v<TFromD<D>, float>, "bf16 accumulation produces f32 lanes");
+  static_assert(std::is_same_v<TFromD<SrcD>, std::uint16_t>,
+                "bf16 inputs are uint16_t IEEE bit carriers");
+  static_assert(SrcD::kMaxLanes == 2 * D::kMaxLanes,
+                "bf16 source must have twice as many lanes as f32 output");
+  const Rebind<std::uint32_t, D> du32;
+  return BitCast(d, ShiftLeft<16>(PromoteEvenTo(du32, bits)));
+}
+
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> Bf16OddToF32(D d, V bits) noexcept {
+  using SrcD = DFromV<V>;
+  static_assert(std::is_same_v<TFromD<D>, float>, "bf16 accumulation produces f32 lanes");
+  static_assert(std::is_same_v<TFromD<SrcD>, std::uint16_t>,
+                "bf16 inputs are uint16_t IEEE bit carriers");
+  static_assert(SrcD::kMaxLanes == 2 * D::kMaxLanes,
+                "bf16 source must have twice as many lanes as f32 output");
+  const Rebind<std::uint32_t, D> du32;
+  return BitCast(d, ShiftLeft<16>(PromoteOddTo(du32, bits)));
+}
+}  // namespace detail
+
+// bf16 inputs are packed IEEE bit carriers (`uint16_t`); c and the result are f32.
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> MulEvenAdd(D d, V a_bf16, V b_bf16, VFromD<D> c) noexcept {
+  return MulAdd(detail::Bf16EvenToF32(d, a_bf16), detail::Bf16EvenToF32(d, b_bf16), c);
+}
+
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> MulOddAdd(D d, V a_bf16, V b_bf16, VFromD<D> c) noexcept {
+  return MulAdd(detail::Bf16OddToF32(d, a_bf16), detail::Bf16OddToF32(d, b_bf16), c);
 }
 
 // ---- vector integer division by a run-time scalar divisor (simd-09 线②#1) -----------
@@ -644,6 +926,19 @@ template <typename T>
 HYLE_FORCE_INLINE constexpr bool DivIsPow2(T x) noexcept {  // x>0 && single bit set
   return x > 0 && (x & (x - 1)) == 0;
 }
+
+// Fixed-width backends expose ConcatEven(hi, lo); scalable backends require the output tag.
+template <class D, class V>
+HYLE_FORCE_INLINE auto ConcatEvenForD(D d, V hi, V lo, int) noexcept
+    -> decltype(ConcatEven(d, hi, lo)) {
+  return ConcatEven(d, hi, lo);
+}
+template <class D, class V>
+HYLE_FORCE_INLINE auto ConcatEvenForD(D, V hi, V lo, long) noexcept
+    -> decltype(ConcatEven(hi, lo)) {
+  return ConcatEven(hi, lo);
+}
+
 // MulHigh(dividend, multiplier) for 32-bit lanes via the u32->u64 widen path. Unsigned
 // zero-extends (PromoteLowerTo on unsigned), signed sign-extends (on signed); ShiftRight<32>
 // is logical for u64 / arithmetic for i64, matching MULUH / MULSH. See the KEY NOTE above
@@ -661,9 +956,30 @@ HYLE_FORCE_INLINE V MulHighViaWiden(V dividend, MulT multiplier) noexcept {
   const auto phi = ShiftRight<32>(Mul(hi, m));
   const auto plo32 = BitCast(d, plo);            // even u32 lane = low 32 bits (little-endian)
   const auto phi32 = BitCast(d, phi);
-  return ConcatEven(phi32, plo32);               // [plo.even..., phi.even...] == per-lane MulHigh
+  return ConcatEvenForD(d, phi32, plo32, 0);     // [plo.even..., phi.even...] == per-lane MulHigh
 }
 }  // namespace detail
+
+// Fixed backends may provide native dword high-multiply overloads. The generic fallback retains
+// the proven widen/recombine implementation for scalar and scalable backends.
+template <class V>
+HYLE_FORCE_INLINE V MulHigh32(V dividend, V multiplier) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  static_assert(std::is_same_v<T, std::uint32_t> || std::is_same_v<T, std::int32_t>,
+                "MulHigh32 supports 32-bit integer lanes");
+  if constexpr (std::is_unsigned_v<T>) {
+    return detail::MulHighViaWiden<V, std::uint64_t>(dividend, ExtractLane(multiplier, 0));
+  } else {
+    return detail::MulHighViaWiden<V, std::int64_t>(dividend, ExtractLane(multiplier, 0));
+  }
+}
+
+template <class V>
+HYLE_FORCE_INLINE V ShiftRightUniform(V v, int bits) noexcept {
+  using D = DFromV<V>;
+  return Shr(v, Set(D(), static_cast<TFromD<D>>(bits)));
+}
 
 // Precomputed reciprocal parameters for one run-time divisor. Build once, reuse across Div().
 // T is uint32_t (unsigned, Fig 4.1) or int32_t (signed truncated-toward-zero, Fig 5.1).
@@ -737,12 +1053,12 @@ HYLE_FORCE_INLINE V Div(V dividend, const Divisor<TFromD<DFromV<V>>>& dv) noexce
   if constexpr (std::is_unsigned_v<T>) {
     if (dv.is_pow2_) {
       if (dv.pow2_shift_ == 0) return dividend;  // divisor == 1
-      return Shr(dividend, Set(d, static_cast<T>(dv.pow2_shift_)));  // logical shift
+      return ShiftRightUniform(dividend, dv.pow2_shift_);  // logical shift
     }
     // Fig 4.1: t1 = MULUH(m,a); q = (t1 + ((a - t1) >> 1)) >> sh2.
-    const V t1 = detail::MulHighViaWiden<V, std::uint64_t>(dividend, dv.multiplier_);
+    const V t1 = MulHigh32(dividend, Set(d, dv.multiplier_));
     const V sum = Add(t1, ShiftRight<1>(Sub(dividend, t1)));
-    return Shr(sum, Set(d, static_cast<T>(dv.shift_)));
+    return ShiftRightUniform(sum, dv.shift_);
   } else {
     const V dsign_vec = Set(d, dv.dsign_);
     constexpr int kSignBit = static_cast<int>(sizeof(T) * 8) - 1;
@@ -752,16 +1068,45 @@ HYLE_FORCE_INLINE V Div(V dividend, const Divisor<TFromD<DFromV<V>>>& dv) noexce
       const T mask_val =
           static_cast<T>((std::uint32_t{1} << static_cast<unsigned>(dv.pow2_shift_)) - 1u);
       const V bias = And(ShiftRight<kSignBit>(dividend), Set(d, mask_val));
-      const V q = Shr(Add(dividend, bias), Set(d, static_cast<T>(dv.pow2_shift_)));  // arithmetic
+      const V q = ShiftRightUniform(Add(dividend, bias), dv.pow2_shift_);  // arithmetic
       return Sub(Xor(q, dsign_vec), dsign_vec);
     }
     // Fig 5.1: q0 = a + MULSH(m,a); q0 = (q0 >> sh) - XSIGN(a); q = (q0 ^ dsign) - dsign.
-    const V mulh = detail::MulHighViaWiden<V, std::int64_t>(dividend, dv.multiplier_);
+    const V mulh = MulHigh32(dividend, Set(d, dv.multiplier_));
     V q0 = Add(dividend, mulh);
-    q0 = Shr(q0, Set(d, static_cast<T>(dv.shift_)));  // arithmetic shift (signed lane)
+    q0 = ShiftRightUniform(q0, dv.shift_);  // arithmetic shift (signed lane)
     q0 = Sub(q0, ShiftRight<kSignBit>(dividend));     // - XSIGN(a)
     return Sub(Xor(q0, dsign_vec), dsign_vec);
   }
+}
+
+// Remainder for the same i32/u32 invariant-divisor domain as Div(). Signed arithmetic is
+// performed through u32 bits so INT_MIN / -1 keeps Div's defined modular result (zero remainder).
+template <class V>
+HYLE_FORCE_INLINE V Mod(V dividend, const Divisor<TFromD<DFromV<V>>>& dv) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  static_assert(std::is_same_v<T, std::uint32_t> || std::is_same_v<T, std::int32_t>,
+                "Mod supports the i32/u32 Divisor domain only");
+  const D d;
+  const V quotient = Div(dividend, dv);
+  if constexpr (std::is_unsigned_v<T>) {
+    return Sub(dividend, Mul(quotient, Set(d, dv.GetDivisor())));
+  } else {
+    const RebindToUnsigned<D> du;
+    const auto dividend_bits = BitCast(du, dividend);
+    const auto quotient_bits = BitCast(du, quotient);
+    const auto divisor_bits = Set(du, static_cast<std::uint32_t>(dv.GetDivisor()));
+    return BitCast(d, Sub(dividend_bits, Mul(quotient_bits, divisor_bits)));
+  }
+}
+
+// Divisor construction rejects zero, so evaluating Mod in inactive lanes is safe; the final
+// select preserves the established HYLE `(mask, no, ...)` masked-operation parameter order.
+template <class M, class V>
+HYLE_FORCE_INLINE V MaskedModOr(M m, V no, V dividend,
+                                const Divisor<TFromD<DFromV<V>>>& dv) noexcept {
+  return IfThenElse(m, Mod(dividend, dv), no);
 }
 
 // ---- 128-bit integer compare (simd-09-cmp128) --------------------------------------------

@@ -1,6 +1,6 @@
-# SIMD 缺口清单（下一个 session 的施工蓝图）
+# SIMD 缺口清单
 
-> **这份文档回答:HYLE simd 到底还差什么。** 2026-07-10 用机械差集 + subagent 逐源验证编撰,作为**下一个 session 补 simd 的施工检查单**。覆盖四个信源:①消费者驱动延后项 ②标量/非标量 + 定长/变宽对称性漏项(本应对称)③xsimd/highway 有而 HYLE 无的非偏门 op ④文档明确登记的缺口。
+> **这份文档回答:HYLE simd 到底还差什么。** 2026-07-10 用机械差集 + 逐源验证建立，并随施工保持当前状态。覆盖四个信源:①消费者驱动延后项 ②标量/非标量 + 定长/变宽对称性漏项 ③xsimd/Highway 有而 HYLE 无的非偏门 op ④文档明确登记的缺口。
 >
 > **方法纪律(必读)**:原始 `grep` op 名差集**有噪音**——各后端宏风格不同(scalar 用 `HYLE_SIMD_SCALAR_BINOP(Add,...)`、avx2 用 `HYLE_SIMD_AVX2_ROUND(...)`,裸 grep 会漏报"缺 Add/Round")。**本清单每一项都经后端源码核实**,分类为:🔴 REAL-GAP(施工目标)/ 🟰 NAMING-DIFF(已有,别做)/ 🔒 HW-GATED(硬件门控,登记不做)/ ⚪ OBSCURE(偏门,跳过)。下个 session 施工前,对将做的每一项**再核一次当前源码**(可能已被后续 commit 补上)。
 
@@ -8,8 +8,9 @@
 
 - **定宽四后端(sse4/avx2/avx512/neon)op 面严格一致**(各 ~166-168,仅 avx2 多 2 个 A/B bench 变体)——**这块没问题**。
 - **scalar 完整**(是 oracle;"缺 Add/Mul" 是宏定义的 grep 假阳)——**没问题**。
-- **真问题 = 变宽(SVE/RVV)显著落后定宽 ~72 op**,且大多不是硬件借口。
-- **⚠️ 最要命的发现(headline)**:vec.h 的"泛型层一份 covers 五后端"对 scalable **是假的**——已发货的 complex / 128-cmp / Newton 泛型 op **依赖 SVE/RVV 没定义的底层原语**,今天只因 scalable TU 从没实例化它们才没崩;一旦 ARM/RISC-V 消费者(FFT/复数、vqsort-128)碰到就编译失败。**这不是覆盖问题,是潜在正确性/可构建性问题**,应作为下轮第一优先。
+- **定稿时的真问题 = 变宽(SVE/RVV)落后定宽 ~72 op**；当前 P0-P4 已闭环：scalable 量化/点积/结构 op 已对称，定宽 Masked* 与 Mul/Mod/Magnitude 已补齐，剩余软件项只有 P5。
+- vec.h 泛型 complex / 128-cmp / Newton 曾因 scalable TU 未实例化而掩盖底层原语缺口；P0 已用 SVE/RVV 直接实例化测试消除该潜在编译断裂。`CompressBits/LoadExpand` 仍受 scalable mask-bits 容量/`Expand` 边界约束，按下文硬边界与 P5 管理。
+- **主施工闭集 P0-P5 共92个去重公开op：已完成77，剩15，未完成率16.3%**。若把16个具名低优项和ARM剩余3个complex超越函数也计入，总计111项，剩34项，未完成率30.6%；硬件门控/明确不做项不进入分母。
 
 ## 0.5 每项 op 的执行决策流程(施工规程,逐 op 机械跑)
 
@@ -34,7 +35,7 @@
 ```
 
 **三条铁前置(踩过坑,别省)**:
-1. **correctness 是闸,速度在其后**:任何"更快"实现必先过 libm/scalar-oracle / round-trip 自洽对拍;不 overflow-safe / 精度不达标 / 语义偏离的"最快"**没资格入选**(hypot 借 Highway 不借快 2.2x 但非 overflow-safe 的 xsimd;揪出 Highway Pack16 / xsimd lgamma 两个 vendor bug——**借不等于信,借核同样过对拍闸**)。
+1. **契约内 correctness 是闸**:任何"更快"实现必先在其公开输入域内过 libm/scalar-oracle / round-trip 自洽对拍；若完整语义与显著加速冲突，提供显式 safe/fast 双入口而非静默换语义（`hypot_f32_batch` overflow-safe，`hypot_fast_f32_batch` 约快2倍但要求 direct-formula 输入域）。精度不达标或契约内错误的实现没资格入选；Highway Pack16 / xsimd lgamma vendor bug说明**借不等于信，借核同样过对拍闸**。
 2. **best-of 只在"有真实算法内容 + 三家有差异 + 不贴单一硬件指令"时才有意义**:纯直通指令(add/min/shuffle/位计数)三家编成同一条,不必 bench;数学函数(多项式逼近)是 best-of 主场;结构 op(gather/compress store+reload)库也无硬件指令,真加速是自造 native 非借库。
 3. **winner 不可外推,必须逐精度/逐 ISA bench**:f64 winner 与 f32 大面积相反(exp/tanh/exp2 翻转);SDE 验正确性可信、验性能不可信;bench 两边必须同等内联能力(同 TU / 都 header-only,否则跨 .so 不可内联=假 gap)。
 
@@ -42,34 +43,36 @@
 
 ## 1. 信源①②:变宽 vs 定宽对称性缺口(最大块)
 
-精确差集(宏感知提取,已去 crypto + Emulated):avx2 有而 **SVE 缺 72 / RVV 缺 74**(RVV 另缺 `PopulationCount`/`LeadingZeroCount`)。每项已对 `sve.h`/`rvv.h` 源码核实确缺。
+本清单定稿时的精确差集(宏感知、去 crypto + Emulated)是 avx2 有而 **SVE 缺 72 / RVV 缺 74**。P0-P2 已从 scalable 差集中消除；P3 是已完成的定宽 Highway parity 批，剩余 scalable 软件项集中在 P5，硬件门控项单独管理。
 
-### ⚠️ P0 — 解锁已发货的泛型层(正确性,非仅覆盖)
-vec.h 这些**已发货**的泛型 op 组合在 SVE/RVV **未定义**的底层原语上(subagent `grep -c`=0 坐实),现在编译过只因 scalable TU 不实例化;消费者一碰即断:
+### ✅ P0 — 解锁已发货的泛型层(正确性,非仅覆盖)
+原先这些 vec.h 泛型 op 依赖 scalable 后端未定义的底层原语；现在 SVE/RVV 测试 TU 已直接实例化消费者，编译断裂已消除：
 
-| 泛型 op(vec.h)| 依赖的、SVE/RVV 缺的原语 |
+| 泛型 op(vec.h)| 已补的 SVE/RVV 原语 |
 |---|---|
-| `MulComplex/MulComplexAdd/MulComplexConj*`(596-619)| `AddSub`, `DupEven`, `DupOdd`, `Reverse2` |
-| `Lt128/Eq128/Ne128/Min128/Max128`(777-812)| `Reverse2`, `DupOdd` |
-| `ReciprocalNewton/ReciprocalSqrtNewton`(438-448)| `ApproximateReciprocal`, `ApproximateReciprocalSqrt` |
-| `Rol/Ror`(470-471)| `RotateLeft/RotateRight` |
-| `CompressBits/LoadExpand`(500-519)| `LoadMaskBits` / `Expand` |
+| `MulComplex/MulComplexAdd/MulComplexConj*` | `DupEven`, `DupOdd`（直接 FMA 友好公式） |
+| `Lt128/Eq128/Ne128/Min128/Max128` | `Reverse2`, `DupOdd` |
+| `ReciprocalNewton/ReciprocalSqrtNewton` | `ApproximateReciprocal`, `ApproximateReciprocalSqrt` |
+| `Rol/Ror` | `RotateLeft/RotateRight` |
+| `CompressBits/LoadExpand` | `LoadMaskBits` / `Expand` |
 
-**P0 施工项(7 op × 2 后端,全有原生或平凡合成)**:`AddSub`(IfThenElse+even_mask,两后端已有 even_mask)、`DupEven/DupOdd`(SVE svtrn1/2(v,v);RVV vrgather (i&~1)/(i|1))、`Reverse2`(RVV vrgather idx^1;SVE svtbl)、`ApproximateReciprocal(+Sqrt)`(SVE svrecpe/svrsqrte;RVV vfrec7/vfrsqrt7)、`RotateLeft/Right`(shift-or 合成)。
+**P0 实现(8 op × 2 后端,原生或平凡合成)**:`AddSub`(IfThenElse+even_mask,两后端已有 even_mask)、`DupEven/DupOdd`(SVE svtrn1/2(v,v);RVV vrgather (i&~1)/(i|1))、`Reverse2`(RVV vrgather idx^1;SVE svtbl)、`ApproximateReciprocal(+Sqrt)`(SVE svrecpe/svrsqrte;RVV vfrec7/vfrsqrt7)、`RotateLeft/Right`(shift-or 合成)。complex 最终采用 Highway 的 `DupEven/DupOdd + MulAdd/Sub + OddEven` 直接公式，避免 `ComplexConj + Reverse2 + AddSub` 中间重排。
 
-### 🔴 P1 — 变宽 swizzle 族(高价值,ARM/RISC-V CAE/图形;原生 intrinsic 存在,~20 op)
+### ✅ P1 — 变宽 swizzle 族(高价值,ARM/RISC-V CAE/图形;原生 intrinsic,18 op)
 | op | approach(SVE / RVV)|
 |---|---|
 | `TableLookupBytes(Or0)`, `TableLookupLanes` | `svtbl`(+svsel)/ `vrgather` |
-| `Slide1Up/Down`, `SlideUp/DownLanes` | `svext`/`svsplice` / `vslideup`/`vslidedown`(原生) |
+| `Slide1Up/Down`, `SlideUp/DownLanes` | `svtbl` 运行期索引 / `vslideup`/`vslidedown`，partial 尾部显式清零 |
 | `LoadInterleaved2/3/4` + `StoreInterleaved2/3/4` | `svld2/3/4`+`svst2/3/4` / `vlseg2/3/4e`+`vsseg`(**原生分段,AoS↔SoA 大赢**)|
-| `InterleaveEven/Odd` | `svtrn1/2` / vrgather+even-odd mask(rvv.h 已有 helper)|
-| `Reverse4/8`, `ReverseLaneBytes` | svtbl 组反索引 / vrgather;SVE `svrevb` |
+| `InterleaveEven/Odd` | `svtrn1/2` / vrgather+even-odd mask |
+| `Reverse4/8`, `ReverseLaneBytes` | `svtbl` 组反索引 / `vrgather` |
 
-### 🔴 P2 — 变宽 widen/quantize + reduce(~12 op)
-`PromoteEvenTo/OddTo`、`TruncateTo`(带 ASan 栈-OOB 单平台陷阱教训)、`U8FromU32`、`ReorderDemote2To`(lane 序未定义契约,scalable 实现须注明其序)、`ReorderWidenMulAccumulate`、`SatWidenMulPairwiseAdd`、`SumsOf2/4/8`、`ReduceMul`(SVE/RVV 都无积归约原语 → log-step Mul+slide 级联合成)、`SumOfMulQuadAccumulate`(SVE `svdot` 原生 i8 点积)、`MulFixedPoint15`(svqrdmulh/vsmul)、`SaturatedAbs/Neg`(svqabs/svqneg 原生)。
+### ✅ P2 — 变宽 widen/quantize + reduce(15 op)
+`PromoteEvenTo/OddTo`、`TruncateTo`、`U8FromU32`、`ReorderDemote2To`、`ReorderWidenMulAccumulate`、`SatWidenMulPairwiseAdd`、`SumsOf2/4/8`、`ReduceMul`、`SumOfMulQuadAccumulate`、`MulFixedPoint15`、`SaturatedAbs/Neg` 均已落地。SVE i8 quad-dot 走 `svdot`；RVV 用两级 widen pairwise；ReduceMul 用支持非 2 次幂 lane 数的上升步长 Mul+slide。Q15 两后端采用同一 high/low 分解，明确保持 HYLE scalar/x86 的 `MIN*MIN -> MIN` 契约，而不是 RVV `vsmul` 的饱和 `MAX`。
 
-### 🔴 P5 — 变宽平凡合成 + mask 操作(易,~12 op)
+**验收**：本轮 cloc 净增 **+911 生产 / +688 测试 / +5 benchmark = +1,604 code LOC**。SVE 15 tests × VL 128/256/384/512、RVV 12 tests × VLEN 128/256/512/1024 全绿；SVE VL2048 的 P2/partial、Win/WSL fixed SIMD、WSL fixed-backend ASan、Apple-Silicon NEON 169/169、AVX512 SDE 169/169 复验通过；NEON 主/full/widen/Q15/compact 真机 bench 修复并追平 u8/i16/i32/i64 `Compress/Expand`。运行期 VL 断言确认每个 SVE gate 的真实宽度；对抗复审另修 partial masked/gather/scatter、partial PromoteUpper/Demote 与 NEON Q15 极值分歧。
+
+### 🔴 P5 — 变宽平凡合成 + mask 操作(易,15 op)
 `BroadcastSignBit`、`ExclusiveNeither`、`IsEitherNaN`、`FindKnownFirst/LastTrue`、`MulRound`、`BroadcastLane`(svdup_lane / vrgather)、`MulByPow2`、`GetExponent`(指数域位运算)、`SetBeforeFirst/OnlyFirst/AtOrBefore/AtOrAfterFirst`(SVE svbrk 系原生;RVV vfirst+iota 合成)、`Expand`、`TrailingZeroCount`(SVE svrbit+svclz)。
 
 ### 🔒 变宽硬件门控 / 语义受限(登记不做)
@@ -82,17 +85,32 @@ vec.h 这些**已发货**的泛型 op 组合在 SVE/RVV **未定义**的底层�
 
 ## 2. 信源③:Highway/xsimd 有、HYLE 无(去噪后,非偏门)
 
-HYLE 全集(所有后端+vec.h 泛型+宏展开 Masked=258 op)。以下经源码核实。
+P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 再新增12个后为294个。以下经源码核实。
 
-### 🔴 P3 — 定宽 Masked* 家族补全(便宜,一个宏块;兑现 Highway parity 声称)
-HYLE 实有 **35 个** Masked*(非文档说的 ~40)。Highway 有而 HYLE 缺、且便宜:
-`MaskedShl/Shr/ShiftLeft/ShiftRight(+Or)`(~8,Shl/Shr/ShiftLeft/ShiftRight 都在)、`MaskedReduceSum/Min/Max`、`MaskedApproximateReciprocal(+Sqrt)`、`MaskedLeadingZeroCount`、`MaskedConvertTo`、`MaskedMulComplex(Conj)(Add)`、`MaskedMulFixedPoint15`、`MaskedWidenMulPairwiseAdd`、`MaskedModOr/SatAddOr/SatSubOr`。约 25 个,全包已有 op。
+### ✅ P3 — 定宽 Masked* 家族补全(24 op)
 
-### 🔴 P4 — 定宽 Mul/Mod/Magnitude(中价值中成本)
-- FMA 符号变体(易,FMA+Neg 合成):`MulSub`、`MulAddSub`、`MulSubAdd`、`NegMulSub`(HYLE 只有 MulAdd/NegMulAdd)——复数/DSP 好用。
-- 加宽偶奇乘:`MulEven/MulOdd/MulEvenAdd/MulOddAdd`(定点/大数)。
-- `Mod`(+`MaskedModOr`):向量整数取模,扩展已有 Divisor/Div(Granlund-Montgomery)机制。高价值中成本。
-- `MinMagnitude/MaxMagnitude`(易,IfThenElse(Lt(Abs,Abs)))。
+已补齐24个可独立落地的公开名：
+
+- 8个 shift：`MaskedShl/MaskedShlOr/MaskedShr/MaskedShrOr`、`MaskedShiftLeft/Right` 及各自 `Or` 形；
+- 3个 reduce：`MaskedReduceSum/Min/Max`，全假 mask identity 分别为0、类型上界、类型下界；
+- 4个转换/近似/位计数：`MaskedApproximateReciprocal(+Sqrt)`、`MaskedLeadingZeroCount`、`MaskedConvertTo`；
+- 2个定点/加宽乘：`MaskedMulFixedPoint15`、`MaskedWidenMulPairwiseAdd`；
+- 5个 complex：`MaskedMulComplex`、`MaskedMulComplexOr`、`MaskedMulComplexConj`、`MaskedMulComplexAdd`、`MaskedMulComplexConjAdd`；
+- 2个 Highway 短名 parity alias：`MaskedSatAddOr/MaskedSatSubOr`。
+
+非 `Or` 形 false lane 为0，`Or` 形 false lane 取 `no`；HYLE compute-family 参数顺序保持 `(mask, no, ...)`。`MaskedModOr` 已在 P4 基于 i32/u32 invariant `Divisor` 的 `Mod` 落地；`Divisor(0)` fail-fast，mask false lane 只返回 `no`。
+
+**性能闭环**：同TU/同ISA `bench-stat.py -n15`逐个覆盖24/24公开名；其中Highway没有同名zeroing `MaskedMulComplex/MaskedMulComplexAdd`，对照使用其等价`IfThenElseZero(MulComplex*)`组合，其余22项直接对同名API。AVX2与Apple NEON全部统计打平。NEON首轮`MaskedMulComplexConjAdd`明确慢18.5%（0.249 vs 0.203 ns/op）；把底层complex从组合式改为Highway的FMA友好直接公式后，完整复测为0.204 vs 0.204，ratio 1.000、合并spread 6.9%，回到统计打平。
+
+**验收**：`cloc --diff`实测净增 **+107 production / +140 tests / +83 bench = +330 code LOC**；Windows/WSL scalar 239 passed+1硬件skip，SSE4/AVX2/SSE4-AES/AVX512-SDE与Apple NEON各173/173，WSL ASan三变体全绿；complex底层改动另由SVE 15 tests×4 VL、RVV 12 tests×4 VLEN回归。
+
+### ✅ P4 — 定宽 Mul/Mod/Magnitude(12 op)
+- FMA 符号变体：`MulSub`、`NegMulSub`、`MulAddSub`、`MulSubAdd`。浮点复用 FMA 保持单次舍入；整数经无符号位表示保持模算术。
+- 加宽偶奇乘：`MulEven/MulOdd` 覆盖 i/u8→16、i/u16→32、i/u32→64；`MulEvenAdd/MulOddAdd` 覆盖 packed-bf16 even/odd→f32 fused accumulate。
+- `Mod` 与 `MaskedModOr` 复用已有 Granlund-Montgomery `Divisor/Div`，范围明确为 invariant i32/u32；`INT_MIN / -1` 余数为零。
+- `MinMagnitude/MaxMagnitude` 覆盖 signed/unsigned 与浮点；`INT_MIN` magnitude 正确，浮点相等 magnitude 与 signed-zero tie 对齐同 ISA Highway。
+
+**性能闭环**：Windows AVX2 三组独立`N=15`中，`Mod`、`MaskedModOr`、`MulEven`、`MulOdd`每组均为统计 TIE。Apple NEON 初版 `MulHigh32` 有额外解交织/窄化，`Mod`慢21.9%、`MaskedModOr`慢18.1%；改为 Highway 同形 `vmull[_high] + vuzp2` 后，三组独立`N=15`均复现前两项为 HYLE 1.073x、1.058x WIN，两个 widen multiply 均为 TIE。
 
 ### 🔴 消费驱动 / 低优(按需)
 字节移位族(`ShiftLeftBytes/RightBytes`、`CombineShiftRightBytes/Lanes`,palignr,字符串/解析)、`Combine/LowerHalf/UpperHalf/ZeroExtendVector/InsertIntoUpper`(半向量合并族,窄化管线才需)、`PairwiseAdd/Sub(128)`(hadd,DSP)、`Shuffle2301/1032/...`(定 permute 模式,32-bit lane 有用)、`Stream`(非临时存)、`LoadDup128`、`ResizeBitCast`。
@@ -108,30 +126,31 @@ HYLE 实有 **35 个** Masked*(非文档说的 ~40)。Highway 有而 HYLE 缺、
 
 ## 3. 信源④:文档登记缺口(交叉核对,含纠错)
 
-- **gelu/softmax**:文档一处说"消费驱动缓"——**过期,已做**(simd-09 #67,math_test Activations/Softmax)。
+- **gelu/softmax**：已完成（simd-09 #67，`math_test` Activations/Softmax）。
 - **fp8 硬件 convert**:AVX10.2/GPU 专属;**scalar 位实现已完整**,非缓做。
-- **复数超越** `batch<complex>` exp/log/pow/sqrt/sin/cos/tanh:**定宽已借**(simd-09 线①-d);**但 ARM 是真缺口**(Highway 无复数路径,arm64 曾回落 scalar,xsimd-NEON 复数未验)。
+- **复数超越**：`csin/ccos/ctanh/cpow` 已在 AVX2/NEON 上架 HYLE SoA 编排；`ctanh/cpow` 分别消除复三角/双曲重复计算和 complex-pow 的重复 `log/exp`，异常 lane 逐 lane 使用 `std::complex`。`cexp/clog/csqrt` 仍借 xsimd AVX2、非 x86 落 scalar；ARM剩余真缺口因此是 `exp/log/sqrt` 三个（Highway无复数路径）。
 - **lgamma**:退 scalar libm(xsimd 向量 lane-mixing vendor bug);tgamma 已向量化。无 action。
 - **ReciprocalNewton**:HYLE 超越两库的点(它们只出裸估计)——保持。
-- **⚠️ 文档普遍把 complex/128-cmp/Newton 当"全局已做",实为定宽 only**(见 §1 P0)——本清单纠正之。
+- complex/128-cmp/Newton 已由 scalable P0 直接实例化，不再是定宽 only。
 
-## 4. 优先级施工单(下 session 检查单)
+## 4. 优先级施工单
 
 | 优先 | 内容 | op 数 | 价值 |
 |---|---|---|---|
-| **P0** | 解锁 scalable 泛型层:AddSub/DupEven/DupOdd/Reverse2/ApproxRecip(+Sqrt)/Rotate × SVE+RVV | ~7×2 | **最高**(修潜在断裂,非仅覆盖)|
-| **P1** | scalable swizzle 族(TableLookup/Slide/Interleaved load-store/InterleaveEven-Odd/Reverse4-8)| ~20 | 高(ARM/RISC-V CAE/图形,原生 intrinsic)|
-| **P2** | scalable widen/quantize/reduce(Promote-Even-Odd/Truncate/Demote2/SumsOf/ReduceMul/svdot/Q15/SatAbs-Neg)| ~12 | 高(量化/点积)|
-| **P3** | 定宽 Masked* 补全(Shl/Shr/Reduce/ApproxRecip/Complex/... +Or 形)| ~25 | 中(兑现 Highway parity,一个宏块)|
-| **P4** | 定宽 Mul/Mod/Magnitude(MulSub/AddSub/EvenOdd、Mod、Min/MaxMagnitude)| ~10 | 中 |
-| **P5** | scalable 平凡合成 + mask 操作 | ~12 | 中低(易)|
-| 按需 | 字节移位/半向量合并/Pairwise/Shuffle/Stream/xsimd-NEON 复数 | — | 低 |
+| **P0 ✅** | 解锁 scalable 泛型层:AddSub/DupEven/DupOdd/Reverse2/ApproxRecip(+Sqrt)/Rotate × SVE+RVV | 8 | 已完成 |
+| **P1 ✅** | scalable swizzle 族(TableLookup/Slide/Interleaved load-store/InterleaveEven-Odd/Reverse4-8)| 18 | 已完成 |
+| **P2 ✅** | scalable widen/quantize/reduce(Promote-Even-Odd/Truncate/Demote2/SumsOf/ReduceMul/svdot/Q15/SatAbs-Neg)| 15 | 已完成 |
+| **P3 ✅** | 定宽 Masked* 补全(Shl/Shr/Reduce/ApproxRecip/Complex/... +Or 形)| 24 | 已完成，性能无输家 |
+| **simd-12 ✅** | 自研热点核竞争 + math/sort/bit-pack小数组调用税收口 | — | 已完成；不改变op完成数。11/13 bit-pack、csin/ccos、small-K std路由均已裁决并上架 |
+| **P4 ✅** | 定宽 Mul/Mod/Magnitude(MulSub/AddSub/EvenOdd、Mod、Min/MaxMagnitude)| 12 | 已完成；同 ISA 性能无输家 |
+| **P5** | scalable 平凡合成 + mask 操作 | 15 | 中低(易)|
+| 按需 | 字节移位/半向量合并/Pairwise/Shuffle/Stream/ARM剩余3个复数超越函数 | — | 低 |
 | 🔒登记不做 | SVE2 crypto/RVV Zvbb/mask-bits VL>64/fp8-HW-convert | — | 硬件门控 |
 | ⚪不做 | 所有 *Blocks / *InRange / GaloisAffine / 视频专用 | — | 偏门/越 scope |
 
-**总施工量(P0-P5,不含按需/门控/偏门)≈ 86 op**(变宽约占 63,定宽 Masked/Mul/Mod 约 35 里去重)。**建议顺序 P0→P1→P2 先把 scalable 拉到定宽对称(这是"对不上"的主体),再 P3-P4 补定宽对 Highway 的零头。**
+P0-P4、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)与[`simd-14`](./simd-14-fixed-width-p4.md)已完成；下一步仅剩 P5 的 scalable 平凡合成与 mask 操作。两轮 vendor displacement 不新增公开 op；P4 新增 12 个公开 op，使完成度由65/92提升至77/92。硬件门控和语义受限项不混入软件完成度。
 
-## 5. 复现方法(下 session 起手可重跑)
+## 5. 复现方法
 
 ```bash
 # 每后端 op 集(宏感知需谨慎——见方法纪律)

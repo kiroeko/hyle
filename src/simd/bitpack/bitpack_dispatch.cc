@@ -6,6 +6,7 @@
 #include "hyle/macros.h"  // HYLE_FATAL_ASSERT (fail-fast on bits-contract violation)
 #include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
+#include "src/simd/bitpack/bitstream.h"
 #include "src/simd/bitpack/kernels.h"
 
 // bitpack_dispatch.cc -- baseline dispatcher for the Highway bit_pack borrow ops. Mirrors
@@ -70,15 +71,25 @@ bool have_avx512() noexcept {
 #define HYLE_BITPACK_TIER_UNPACK(tag) detail::unpack_##tag##_scalar(packed, count, raw, bits)
 #endif
 
+// Every SIMD tier's smallest block is 128 raw values (NEON); below that all wide TUs execute
+// only the identical scalar tail. Do it here to avoid a useless dispatch + cross-TU round trip.
 #define HYLE_BITPACK_DISPATCH(T, tag)                                                      \
   void pack(const T* raw, std::size_t count, T* packed, unsigned bits) noexcept {          \
     HYLE_FATAL_ASSERT(bits >= 1 && bits <= 8 * sizeof(T));                                 \
     if (count == 0) return;                                                                \
+    if (count < 128) {                                                                     \
+      detail::bitstream_pack(raw, count, packed, bits);                                    \
+      return;                                                                              \
+    }                                                                                      \
     HYLE_BITPACK_TIER_PACK(tag);                                                           \
   }                                                                                        \
   void unpack(const T* packed, std::size_t count, T* raw, unsigned bits) noexcept {        \
     HYLE_FATAL_ASSERT(bits >= 1 && bits <= 8 * sizeof(T));                                 \
     if (count == 0) return;                                                                \
+    if (count < 128) {                                                                     \
+      detail::bitstream_unpack(packed, count, raw, bits);                                  \
+      return;                                                                              \
+    }                                                                                      \
     HYLE_BITPACK_TIER_UNPACK(tag);                                                         \
   }
 

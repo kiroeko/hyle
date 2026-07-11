@@ -1,7 +1,7 @@
 #!/bin/bash
 # rvv-qemu-test.sh -- cross-compile the RVV backend gtest (tests/simd/rvv_test.cc) for rv64gcv and
-# run it under qemu-riscv64. RVV's vector length (VLEN) is a runtime property; the test is
-# VL-agnostic (queries vsetvlmax), so it is correct at whatever VLEN qemu provides (default 128).
+# run it under qemu-riscv64 at VLEN 128/256/512/1024. RVV's vector length is a runtime property;
+# the SAME binary must pass at every width, mirroring the SVE multi-VL gate.
 # There is no RISC-V dev machine in this project, so qemu is the correctness gate (analogous to
 # Intel SDE for AVX-512 and qemu-aarch64 for SVE).
 #
@@ -34,9 +34,13 @@ $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main.o"
 $CXX $FLAGS -c "$REPO/tests/simd/rvv_test.cc" -o "$OUT/rvv_test.o"
 $CXX $FLAGS "$OUT/rvv_test.o" "$OUT/gtest-all.o" "$OUT/gtest-main.o" -static -o "$OUT/rvv_gtest" -pthread
 
-echo "[2/3] running under qemu-riscv64 ..."
-"$QEMU" -L /usr/riscv64-linux-gnu "$OUT/rvv_gtest"
-rc=$?
+echo "[2/3] running under qemu-riscv64 at VLEN 128 / 256 / 512 / 1024 ..."
+rc=0
+for bits in 128 256 512 1024; do
+  echo "----- RVV VLEN=${bits}-bit -----"
+  "$QEMU" -cpu "rv64,v=true,vlen=${bits},elen=64" -L /usr/riscv64-linux-gnu \
+    "$OUT/rvv_gtest" || rc=$?
+done
 
 echo "[3/3] done (exit=$rc)"
 exit $rc

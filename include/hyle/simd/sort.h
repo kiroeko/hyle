@@ -19,10 +19,9 @@
 // vqsort is NOT a stable sort (order of equal keys is unspecified), matching std::sort/
 // std::nth_element (use a key-index pair if stability is needed).
 //
-// This header does NOT include Highway (a public header must stay vendor-free, like math.h only
-// declaring exp_f32_batch). It declares one overload per supported key type. Supported keys this
-// milestone: u32/i32/u64/i64/f32/f64. (u16/i16, uint128, K32V32/K64V64 top-k pairs are a future
-// extension when a consumer needs them -- the borrow scales trivially to them.)
+// This header does NOT include Highway. Scalar keys are u32/i32/u64/i64/f32/f64;
+// KeyValue32/64 provide zero-copy top-k payload pairs. u16/i16 and uint128 remain outside the
+// public surface.
 //
 // SEMANTICS (units of KEYS, mirroring the vqsort static entry points):
 //   sort(keys, n, order)            : full sort of keys[0..n).
@@ -31,8 +30,10 @@
 //   select(keys, n, k, order)       : keys[k] lands on the element it would have if fully
 //                                     sorted (nth_element); keys[0..k) all order-<= keys[k],
 //                                     keys[k+1..n) all order->=. k < n (contract).
-// A violated size contract (k > n for partial_sort, k >= n for select) is a caller bug and
-// aborts via HYLE_FATAL_ASSERT (fail-fast, not a silent clamp) -- except the degenerate n==0.
+// For f32/f64, NaNs are placed after all finite values in both directions; NaNs are equivalent
+// to each other and their relative order is unspecified. A violated size contract (k > n for
+// partial_sort, k >= n for select) is a caller bug and aborts via HYLE_FATAL_ASSERT (fail-fast,
+// not a silent clamp) -- except the degenerate n==0.
 
 namespace hyle::simd {
 

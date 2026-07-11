@@ -11,7 +11,7 @@
 > - **已决议(✅ + ♻️std取代 + 🔻硬件取代 + ⛔不吸纳)≈ 42/52 ≈ 81%**——含"取代/借/不要",不等于"写了代码"。
 > - **剩余未决:仅 4 行 🔶(有登记缺口)+ 5 行 📋**,且 2026-06-29 逐文件复核判定**这些基本是终态或归别处**:murmur(XXH3 已替,无剩用途)、type_traits/singleton(C++23 concepts/Meyers 取代)、float16/device_utils(CUDA 域→compute)、vector_utils(concepts 取代)、async_value/barrier(归 P5 sched)。**真·clay 吸纳欠账≈零。**
 > - **符号无行级权重**:`math/half.h` 一行 🔻♻️ = clay 6923 行(软件 fp16→硬件 F16C/AVX512 取代,不移植,且 simd-05 dtype 已落可移植 fp16/bf16);`parallel/thread_pool+worker`(494 行)→ sched 重写取代。HYLE 生产远小于 clay 的主因=**有意删/std取代/硬件取代**,非漏做。
-> - **进度真相**:clay 地基(sys/utils/container 主体)**吸纳基本收口**;距完成(自有 ~34k 投影,band 28-40k)的差距=**净新增支柱**(simd 支柱基本完成,SSE4.2/AVX2 实跑、NEON/AVX512 编+objdump 验未实跑;io 支柱基本完整=proactor 三后端+co_await+shard-per-core+Tcp/UDP+超时+TLS+HTTP/1.1,仅 shmem/HTTP2 待;compute/graph 未开工),那不是 clay 吸纳范畴。**clay 吸纳权重 ≈ 33%**——注意这是"占被重构旧 clay 库的比例",**不是项目对完整愿景的进度**(后者 2026-07-05 复评 = **~48% LOC / ~40% 能力**,16.25k÷~34k,含 compute/graph 两大未开工支柱;不含借入的 ggml。算式见 [`milestones/README.md` 整体进度节](../milestones/README.md))。
+> - **进度真相**:clay 地基(sys/utils/container 主体)**吸纳基本收口**；SIMD/IO/compute/graph 属于 HYLE 净新增支柱，不应计作 clay 欠账。simd-12 的正确 bit-pack 核、SoA complex 编排与 small-K 路由，以及 simd-13 的 SoA `ctanh/cpow` vendor displacement，在 clay 中均无对应能力，是 HYLE 净新增。**clay 吸纳权重 ≈ 33%**只描述旧 clay 库的覆盖比例，不代表项目整体完成度；整体状态只看 [`milestones/README.md`](../milestones/README.md)。
 >
 > **替换/延期核验结论(2026-06-29 逐项查 clay 源,回答"std/第三方替换的有没有暗漏 clay 逻辑、defer 的能否现在做")**:
 > - **std/第三方替换 = 真终态,无暗漏**:`result→std::expected`(ASSIGN_OR_RAISE 宏保留)、`sprintf→std::format`(clay 的"UTF-8 安全截断"本就是**注释掉的假功能**,HYLE 真 UTF-8 已落 string_algo:utf8_decode/length/icmp)、`func_traits/comparable→concepts/<=>`、`consts→<numbers>`、`thread_pool/worker→sched work-stealing`(重写超越)。逐个查过:**没有"std 其实没覆盖却被当替换"的坑**。
@@ -81,6 +81,8 @@
 | `math/half.h` | 6923 | simd-05 | 🔻♻️ | fp16 软件查表(巨)→ **硬件 F16C/AVX512-FP16 取代,不 1:1 移植**;只留必要接口 |
 | `math/utils.h` | 353 | math-01 | ✅♻️ | **绝大多数被 C++20/23 取代**(现代化红利):bit 操作→`<bit>`、clamp/minmax→`<algorithm>`、pow/abs→`<cmath>`、align_up→mem/alignment。std 真缺的 4 个自写进 `math/scalar.h`:`div_ceil`(改溢出安全)、`round_up_to_multiple`、`sgn`(死区)、`approx_eq`(相对eps);deg2rad 等图形域⛔ |
 | `math/consts.h` | 105 | math-01 | ♻️ | clay 头自注"same as C++20 `<numbers>`, will be replaced"——`<numbers>` + `std::numeric_limits` 取代 |
+
+`simd-14` 的 FMA 符号/交错、magnitude、even/odd widen、invariant remainder 与 packed-bf16 accumulate 是 HYLE `simd/` 的净新增能力；clay 没有对应 vector API，故不新增 clay 吸纳欠账，也不改变 `math/half.h` 的硬件 dtype 取代结论。
 
 ## 已修正的"完成"状态（红队核账发现的缩水）
 

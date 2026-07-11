@@ -621,6 +621,20 @@ HYLE_FORCE_INLINE Vec256<T, N> Shr(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   return r;
 }
 
+// Uniform run-time shifts use the scalar-count form instead of materializing a per-lane count.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::uint32_t, N> ShiftRightUniform(Vec256<std::uint32_t, N> a,
+                                                              int bits) noexcept {
+  static_assert(N == 8, "ShiftRightUniform u32 requires a native AVX2 vector");
+  return Vec256<std::uint32_t, N>{_mm256_srl_epi32(a.raw, _mm_cvtsi32_si128(bits))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::int32_t, N> ShiftRightUniform(Vec256<std::int32_t, N> a,
+                                                             int bits) noexcept {
+  static_assert(N == 8, "ShiftRightUniform i32 requires a native AVX2 vector");
+  return Vec256<std::int32_t, N>{_mm256_sra_epi32(a.raw, _mm_cvtsi32_si128(bits))};
+}
+
 // MulHigh: high 16 bits of the i16/u16 product (native mulhi).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> MulHigh(Vec256<T, N> a, Vec256<T, N> b) noexcept {
@@ -913,6 +927,56 @@ HYLE_FORCE_INLINE Vec256<std::uint8_t, N> U8FromU32(Vec256<std::uint32_t, N> v) 
   Store(v, Simd<std::uint32_t, N, 0>(), src);
   for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
   return Load(Simd<std::uint8_t, N, 0>(), dst);
+}
+
+// P4: AVX2 has native dword->qword products on the even dword of every qword.
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::int64_t, N / 2> MulEven(Vec256<std::int32_t, N> a,
+                                                       Vec256<std::int32_t, N> b) noexcept {
+  static_assert(N == 8, "MulEven i32 requires a native AVX2 vector");
+  return Vec256<std::int64_t, N / 2>{_mm256_mul_epi32(a.raw, b.raw)};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::uint64_t, N / 2> MulEven(Vec256<std::uint32_t, N> a,
+                                                        Vec256<std::uint32_t, N> b) noexcept {
+  static_assert(N == 8, "MulEven u32 requires a native AVX2 vector");
+  return Vec256<std::uint64_t, N / 2>{_mm256_mul_epu32(a.raw, b.raw)};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::int64_t, N / 2> MulOdd(Vec256<std::int32_t, N> a,
+                                                      Vec256<std::int32_t, N> b) noexcept {
+  static_assert(N == 8, "MulOdd i32 requires a native AVX2 vector");
+  return Vec256<std::int64_t, N / 2>{_mm256_mul_epi32(_mm256_srli_epi64(a.raw, 32),
+                                                       _mm256_srli_epi64(b.raw, 32))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::uint64_t, N / 2> MulOdd(Vec256<std::uint32_t, N> a,
+                                                       Vec256<std::uint32_t, N> b) noexcept {
+  static_assert(N == 8, "MulOdd u32 requires a native AVX2 vector");
+  return Vec256<std::uint64_t, N / 2>{_mm256_mul_epu32(_mm256_srli_epi64(a.raw, 32),
+                                                        _mm256_srli_epi64(b.raw, 32))};
+}
+
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::uint32_t, N> MulHigh32(Vec256<std::uint32_t, N> a,
+                                                      Vec256<std::uint32_t, N> b) noexcept {
+  static_assert(N == 8, "MulHigh32 u32 requires a native AVX2 vector");
+  const __m256i even = _mm256_srli_epi64(_mm256_mul_epu32(a.raw, b.raw), 32);
+  const __m256i odd = _mm256_srli_epi64(
+      _mm256_mul_epu32(_mm256_srli_epi64(a.raw, 32), _mm256_srli_epi64(b.raw, 32)), 32);
+  return Vec256<std::uint32_t, N>{_mm256_or_si256(even, _mm256_slli_epi64(odd, 32))};
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE Vec256<std::int32_t, N> MulHigh32(Vec256<std::int32_t, N> a,
+                                                     Vec256<std::int32_t, N> b) noexcept {
+  static_assert(N == 8, "MulHigh32 i32 requires a native AVX2 vector");
+  const __m256i even = _mm256_mul_epi32(a.raw, b.raw);
+  const __m256i odd = _mm256_mul_epi32(_mm256_shuffle_epi32(a.raw, _MM_SHUFFLE(3, 3, 1, 1)),
+                                       _mm256_shuffle_epi32(b.raw, _MM_SHUFFLE(3, 3, 1, 1)));
+  const __m256i packed = _mm256_castps_si256(
+      _mm256_shuffle_ps(_mm256_castsi256_ps(even), _mm256_castsi256_ps(odd),
+                         _MM_SHUFFLE(3, 1, 3, 1)));
+  return Vec256<std::int32_t, N>{_mm256_shuffle_epi32(packed, _MM_SHUFFLE(3, 1, 2, 0))};
 }
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------

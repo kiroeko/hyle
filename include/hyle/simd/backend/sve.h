@@ -72,6 +72,7 @@ template <typename T> HYLE_FORCE_INLINE svbool_t ptrue() noexcept {
   else if constexpr (sizeof(T) == 4) return svptrue_b32();
   else return svptrue_b64();
 }
+template <typename T> HYLE_FORCE_INLINE svbool_t even_lane_mask() noexcept;
 
 // Splat an unsigned shift count into the same-width unsigned vector SVE shifts require.
 template <typename T> HYLE_FORCE_INLINE auto dup_ucount(unsigned k) noexcept {
@@ -107,17 +108,38 @@ using DFromV = Simd<typename detail::DFromV_sve<V>::T,
 template <class V>
 using TFromV = typename detail::DFromV_sve<V>::T;
 
+// Forward declarations for generic compositions defined before the swizzle/bitcast sections.
+template <class V> HYLE_FORCE_INLINE V OddEven(V odd, V even) noexcept;
+template <class D, class V> HYLE_FORCE_INLINE VFromD<D> BitCast(D d, V v) noexcept;
+template <class D> HYLE_FORCE_INLINE svbool_t FirstN(D d, std::size_t n) noexcept;
+
 // ---- Lanes(d): RUNTIME vector length (the scalable hook; HAVE_SCALABLE=1 disables the
 // constexpr generic Lanes in vec.h so this one is THE Lanes). svcnt{b,h,w,d} return the
 // element count for the current VL at that width. ----
 template <class D>
 HYLE_FORCE_INLINE std::size_t Lanes(D) noexcept {
   using T = TFromD<D>;
-  if constexpr (sizeof(T) == 1) return svcntb();
-  else if constexpr (sizeof(T) == 2) return svcnth();
-  else if constexpr (sizeof(T) == 4) return svcntw();
-  else return svcntd();
+  std::size_t full;
+  if constexpr (sizeof(T) == 1) full = svcntb();
+  else if constexpr (sizeof(T) == 2) full = svcnth();
+  else if constexpr (sizeof(T) == 4) full = svcntw();
+  else full = svcntd();
+  constexpr int pow2 = D{}.Pow2();
+  static_assert(pow2 <= 0, "SVE grouped vectors are not represented by one native value");
+  const std::size_t scaled = full >> static_cast<unsigned>(-pow2);
+  return scaled < D::kMaxLanes ? scaled : D::kMaxLanes;
 }
+
+namespace detail {
+template <class D> HYLE_FORCE_INLINE svbool_t active(D d) noexcept {
+  using T = TFromD<D>;
+  const std::uint64_t n = static_cast<std::uint64_t>(Lanes(d));
+  if constexpr (sizeof(T) == 1) return svwhilelt_b8(std::uint64_t{0}, n);
+  else if constexpr (sizeof(T) == 2) return svwhilelt_b16(std::uint64_t{0}, n);
+  else if constexpr (sizeof(T) == 4) return svwhilelt_b32(std::uint64_t{0}, n);
+  else return svwhilelt_b64(std::uint64_t{0}, n);
+}
+}  // namespace detail
 
 // ---- initialization -----------------------------------------------------------------
 template <class D, typename T2>
@@ -146,20 +168,56 @@ HYLE_FORCE_INLINE VFromD<D> Zero(D d) noexcept {
 // svld1/svst1 under an all-true predicate move the full current-VL vector. SVE has no separate
 // aligned/unaligned form (the instruction handles any alignment), so Load==LoadU here.
 template <class D>
-HYLE_FORCE_INLINE VFromD<D> LoadU(D, const TFromD<D>* p) noexcept {
-  return svld1(detail::ptrue<TFromD<D>>(), p);
+HYLE_FORCE_INLINE VFromD<D> LoadU(D d, const TFromD<D>* p) noexcept {
+  return svld1(detail::active(d), p);
 }
 template <class D>
 HYLE_FORCE_INLINE VFromD<D> Load(D d, const TFromD<D>* p) noexcept {
   return LoadU(d, p);
 }
 template <class D>
-HYLE_FORCE_INLINE void StoreU(VFromD<D> v, D, TFromD<D>* p) noexcept {
-  svst1(detail::ptrue<TFromD<D>>(), p, v);
+HYLE_FORCE_INLINE void StoreU(VFromD<D> v, D d, TFromD<D>* p) noexcept {
+  svst1(detail::active(d), p, v);
 }
 template <class D>
 HYLE_FORCE_INLINE void Store(VFromD<D> v, D d, TFromD<D>* p) noexcept {
   StoreU(v, d, p);
+}
+
+// ---- interleaved load / store (native SVE ld2/3/4 + st2/3/4) ------------------------
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
+                                        VFromD<D>& v1) noexcept {
+  const auto tuple = svld2(detail::active(d), p);
+  v0 = svget2(tuple, 0); v1 = svget2(tuple, 1);
+}
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0,
+                                        VFromD<D>& v1, VFromD<D>& v2) noexcept {
+  const auto tuple = svld3(detail::active(d), p);
+  v0 = svget3(tuple, 0); v1 = svget3(tuple, 1); v2 = svget3(tuple, 2);
+}
+template <class D>
+HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0,
+                                        VFromD<D>& v1, VFromD<D>& v2,
+                                        VFromD<D>& v3) noexcept {
+  const auto tuple = svld4(detail::active(d), p);
+  v0 = svget4(tuple, 0); v1 = svget4(tuple, 1); v2 = svget4(tuple, 2); v3 = svget4(tuple, 3);
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d,
+                                         TFromD<D>* p) noexcept {
+  svst2(detail::active(d), p, svcreate2(v0, v1));
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D d,
+                                         TFromD<D>* p) noexcept {
+  svst3(detail::active(d), p, svcreate3(v0, v1, v2));
+}
+template <class D>
+HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2,
+                                         VFromD<D> v3, D d, TFromD<D>* p) noexcept {
+  svst4(detail::active(d), p, svcreate4(v0, v1, v2, v3));
 }
 
 // ---- arithmetic ---------------------------------------------------------------------
@@ -200,6 +258,20 @@ template <class V> HYLE_FORCE_INLINE V MulAdd(V a, V b, V c) noexcept {
 }
 template <class V> HYLE_FORCE_INLINE V NegMulAdd(V a, V b, V c) noexcept {
   return svmsb_x(detail::ptrue<TFromV<V>>(), a, b, c);  // c - a*b
+}
+// AddSub(a,b): a-b in even lanes, a+b in odd lanes. Base SVE has no integer addsub;
+// selecting between the two native arithmetic results preserves the contract for every lane type.
+template <class V> HYLE_FORCE_INLINE V AddSub(V a, V b) noexcept {
+  return OddEven(Add(a, b), Sub(a, b));
+}
+// Raw hardware estimates. ReciprocalNewton/ReciprocalSqrtNewton in vec.h refine these once.
+template <class V> HYLE_FORCE_INLINE V ApproximateReciprocal(V v) noexcept {
+  static_assert(std::is_floating_point_v<TFromV<V>>, "ApproximateReciprocal is float only");
+  return svrecpe(v);
+}
+template <class V> HYLE_FORCE_INLINE V ApproximateReciprocalSqrt(V v) noexcept {
+  static_assert(std::is_floating_point_v<TFromV<V>>, "ApproximateReciprocalSqrt is float only");
+  return svrsqrte(v);
 }
 
 // ---- bitwise (integer lanes) --------------------------------------------------------
@@ -254,13 +326,14 @@ template <class V> HYLE_FORCE_INLINE V IfThenZeroElse(svbool_t m, V no) noexcept
   using T = TFromV<V>;
   return svsel(m, Set(DFromV<V>(), static_cast<T>(0)), no);
 }
-// MaskFromVec (Highway contract: lane active where the MSB / sign bit is set). Test < 0 on the
-// signed view. For SVE we compare the vector < 0; for unsigned lanes the "MSB set" is >= half,
-// but Highway's MaskFromVec is defined on the bit pattern's MSB, which for unsigned == top bit.
-// Reinterpret to signed same-width and test < 0.
+// MaskFromVec: active where the lane's raw MSB is set. Numeric `v < 0` is wrong for unsigned
+// lanes and misses floating -0/negative-NaN, so compare a same-width signed bit view against zero.
 template <class V> HYLE_FORCE_INLINE svbool_t MaskFromVec(V v) noexcept {
   using T = TFromV<V>;
-  return svcmplt(detail::ptrue<T>(), v, Set(DFromV<V>(), static_cast<T>(0)));
+  if constexpr (sizeof(T) == 1) return svcmplt(detail::ptrue<T>(), svreinterpret_s8(v), std::int8_t{0});
+  else if constexpr (sizeof(T) == 2) return svcmplt(detail::ptrue<T>(), svreinterpret_s16(v), std::int16_t{0});
+  else if constexpr (sizeof(T) == 4) return svcmplt(detail::ptrue<T>(), svreinterpret_s32(v), std::int32_t{0});
+  else return svcmplt(detail::ptrue<T>(), svreinterpret_s64(v), std::int64_t{0});
 }
 // VecFromMask(d, m): all-ones (T(-1)) where active, else 0.
 template <class D> HYLE_FORCE_INLINE VFromD<D> VecFromMask(D d, svbool_t m) noexcept {
@@ -271,21 +344,20 @@ template <class D> HYLE_FORCE_INLINE VFromD<D> VecFromMask(D d, svbool_t m) noex
 // ---- mask reductions ----------------------------------------------------------------
 // AllTrue/AllFalse: test the mask against the lane-width all-true predicate. CountTrue: svcntp
 // under the lane-width predicate counts ACTIVE ELEMENTS (matching the lane count, not bytes).
-template <class D> HYLE_FORCE_INLINE bool AllTrue(D, svbool_t m) noexcept {
-  const svbool_t pg = detail::ptrue<TFromD<D>>();
-  return !svptest_any(pg, svnot_z(pg, m));  // no lane is false
+template <class D> HYLE_FORCE_INLINE bool AllTrue(D d, svbool_t m) noexcept {
+  const svbool_t pg = detail::active(d);
+  return !svptest_any(pg, svnot_z(pg, m));
 }
-template <class D> HYLE_FORCE_INLINE bool AllFalse(D, svbool_t m) noexcept {
-  return !svptest_any(detail::ptrue<TFromD<D>>(), m);
+template <class D> HYLE_FORCE_INLINE bool AllFalse(D d, svbool_t m) noexcept {
+  return !svptest_any(detail::active(d), m);
 }
-template <class D> HYLE_FORCE_INLINE std::size_t CountTrue(D, svbool_t m) noexcept {
-  // svcntp needs an explicit element-width suffix (not overloaded). Count active elements under
-  // the lane-width all-true predicate so the result is in LANES, not bytes.
+template <class D> HYLE_FORCE_INLINE std::size_t CountTrue(D d, svbool_t m) noexcept {
   using T = TFromD<D>;
-  if constexpr (sizeof(T) == 1) return static_cast<std::size_t>(svcntp_b8(svptrue_b8(), m));
-  else if constexpr (sizeof(T) == 2) return static_cast<std::size_t>(svcntp_b16(svptrue_b16(), m));
-  else if constexpr (sizeof(T) == 4) return static_cast<std::size_t>(svcntp_b32(svptrue_b32(), m));
-  else return static_cast<std::size_t>(svcntp_b64(svptrue_b64(), m));
+  const svbool_t pg = detail::active(d);
+  if constexpr (sizeof(T) == 1) return static_cast<std::size_t>(svcntp_b8(pg, m));
+  else if constexpr (sizeof(T) == 2) return static_cast<std::size_t>(svcntp_b16(pg, m));
+  else if constexpr (sizeof(T) == 4) return static_cast<std::size_t>(svcntp_b32(pg, m));
+  else return static_cast<std::size_t>(svcntp_b64(pg, m));
 }
 // FindFirstTrue: index of the first active lane, or -1 if none. svbrkb_z sets the lanes BEFORE the
 // first true (exclusive); counting them gives the first-true index. FindLastTrue: reverse the mask
@@ -303,15 +375,17 @@ template <typename T> HYLE_FORCE_INLINE svbool_t rev_mask(svbool_t m) noexcept {
 }  // namespace detail
 template <class D> HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(D d, svbool_t m) noexcept {
   using T = TFromD<D>;
-  if (!svptest_any(detail::ptrue<T>(), m)) return -1;
+  if (AllFalse(d, m)) return -1;
   return static_cast<std::ptrdiff_t>(CountTrue(d, detail::brkb_before_first<T>(m)));
 }
 template <class D> HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(D d, svbool_t m) noexcept {
   using T = TFromD<D>;
-  if (!svptest_any(detail::ptrue<T>(), m)) return -1;
-  const std::ptrdiff_t rev_first =
-      static_cast<std::ptrdiff_t>(CountTrue(d, detail::brkb_before_first<T>(detail::rev_mask<T>(m))));
-  return static_cast<std::ptrdiff_t>(Lanes(d)) - 1 - rev_first;
+  if (AllFalse(d, m)) return -1;
+  const svbool_t pg = detail::active(d);
+  if constexpr (sizeof(T) == 1) return static_cast<std::ptrdiff_t>(svmaxv(pg, svsel(m, svindex_u8(0, 1), svdup_n_u8(0))));
+  else if constexpr (sizeof(T) == 2) return static_cast<std::ptrdiff_t>(svmaxv(pg, svsel(m, svindex_u16(0, 1), svdup_n_u16(0))));
+  else if constexpr (sizeof(T) == 4) return static_cast<std::ptrdiff_t>(svmaxv(pg, svsel(m, svindex_u32(0, 1), svdup_n_u32(0))));
+  else return static_cast<std::ptrdiff_t>(svmaxv(pg, svsel(m, svindex_u64(0, 1), svdup_n_u64(0))));
 }
 
 
@@ -324,20 +398,20 @@ template <class V> HYLE_FORCE_INLINE TFromV<V> GetLane(V v) noexcept {
 // svaddv/sv{min,max}v/sv{and,orr,eor}v reduce across all active lanes to a scalar. Under the
 // lane-width all-true predicate this is the full-vector reduction. Signature matches Highway:
 // Reduce*(D, V) -> T.
-template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceSum(D, VFromD<D> v) noexcept {
-  return svaddv(detail::ptrue<TFromD<D>>(), v);
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceSum(D d, VFromD<D> v) noexcept {
+  return svaddv(detail::active(d), v);
 }
-template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMin(D, VFromD<D> v) noexcept {
-  return svminv(detail::ptrue<TFromD<D>>(), v);
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMin(D d, VFromD<D> v) noexcept {
+  return svminv(detail::active(d), v);
 }
-template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMax(D, VFromD<D> v) noexcept {
-  return svmaxv(detail::ptrue<TFromD<D>>(), v);
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMax(D d, VFromD<D> v) noexcept {
+  return svmaxv(detail::active(d), v);
 }
-template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceAnd(D, VFromD<D> v) noexcept {
-  return svandv(detail::ptrue<TFromD<D>>(), v);
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceAnd(D d, VFromD<D> v) noexcept {
+  return svandv(detail::active(d), v);
 }
-template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceOr(D, VFromD<D> v) noexcept {
-  return svorv(detail::ptrue<TFromD<D>>(), v);
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceOr(D d, VFromD<D> v) noexcept {
+  return svorv(detail::active(d), v);
 }
 
 // ---- shifts -------------------------------------------------------------------------
@@ -365,18 +439,80 @@ template <class V> HYLE_FORCE_INLINE V Shr(V a, V b) noexcept {
   if constexpr (std::is_signed_v<T>) return svasr_x(detail::ptrue<T>(), a, detail::to_ucount(b));
   else return svlsr_x(detail::ptrue<T>(), a, detail::to_ucount(b));
 }
+template <int kBits, class V> HYLE_FORCE_INLINE V RotateRight(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "RotateRight is integer-lane only");
+  constexpr int kSizeBits = static_cast<int>(sizeof(T) * 8);
+  static_assert(kBits >= 0 && kBits < kSizeBits, "rotate count in [0,bits)");
+  if constexpr (kBits == 0) {
+    return v;
+  } else {
+    const RebindToUnsigned<DFromV<V>> du;
+    const auto uv = BitCast(du, v);
+    return BitCast(DFromV<V>(), Or(ShiftRight<kBits>(uv), ShiftLeft<kSizeBits - kBits>(uv)));
+  }
+}
+template <int kBits, class V> HYLE_FORCE_INLINE V RotateLeft(V v) noexcept {
+  constexpr int kSizeBits = static_cast<int>(sizeof(TFromV<V>) * 8);
+  return RotateRight<(kSizeBits - kBits) % kSizeBits>(v);
+}
+
+// ---- whole-vector slides -------------------------------------------------------------
+template <class D> HYLE_FORCE_INLINE VFromD<D> SlideUpLanes(D d, VFromD<D> v,
+                                                            std::size_t amt) noexcept {
+  using T = TFromD<D>; using U = MakeUnsigned<T>;
+  const std::size_t n = Lanes(d);
+  HYLE_FATAL_ASSERT(amt <= n);
+  if (amt == n) return Zero(d);
+  if constexpr (sizeof(T) == 1)
+    return svtbl(v, svsub_x(svptrue_b8(), svindex_u8(0, 1), static_cast<U>(amt)));
+  else if constexpr (sizeof(T) == 2)
+    return svtbl(v, svsub_x(svptrue_b16(), svindex_u16(0, 1), static_cast<U>(amt)));
+  else if constexpr (sizeof(T) == 4)
+    return svtbl(v, svsub_x(svptrue_b32(), svindex_u32(0, 1), static_cast<U>(amt)));
+  else
+    return svtbl(v, svsub_x(svptrue_b64(), svindex_u64(0, 1), static_cast<U>(amt)));
+}
+template <class D> HYLE_FORCE_INLINE VFromD<D> SlideDownLanes(D d, VFromD<D> v,
+                                                              std::size_t amt) noexcept {
+  using T = TFromD<D>; using U = MakeUnsigned<T>;
+  const std::size_t n = Lanes(d);
+  HYLE_FATAL_ASSERT(amt <= n);
+  if (amt == n) return Zero(d);
+  VFromD<D> shifted;
+  if constexpr (sizeof(T) == 1)
+    shifted = svtbl(v, svadd_x(svptrue_b8(), svindex_u8(0, 1), static_cast<U>(amt)));
+  else if constexpr (sizeof(T) == 2)
+    shifted = svtbl(v, svadd_x(svptrue_b16(), svindex_u16(0, 1), static_cast<U>(amt)));
+  else if constexpr (sizeof(T) == 4)
+    shifted = svtbl(v, svadd_x(svptrue_b32(), svindex_u32(0, 1), static_cast<U>(amt)));
+  else
+    shifted = svtbl(v, svadd_x(svptrue_b64(), svindex_u64(0, 1), static_cast<U>(amt)));
+  return IfThenElse(FirstN(d, n - amt), shifted, Zero(d));
+}
+template <class D> HYLE_FORCE_INLINE VFromD<D> Slide1Up(D d, VFromD<D> v) noexcept {
+  return SlideUpLanes(d, v, 1);
+}
+template <class D> HYLE_FORCE_INLINE VFromD<D> Slide1Down(D d, VFromD<D> v) noexcept {
+  return SlideDownLanes(d, v, 1);
+}
 
 // ---- Reverse (whole-vector element reversal) ----------------------------------------
-template <class D> HYLE_FORCE_INLINE VFromD<D> Reverse(D, VFromD<D> v) noexcept {
-  return svrev(v);
+template <class D> HYLE_FORCE_INLINE VFromD<D> Reverse(D d, VFromD<D> v) noexcept {
+  using T = TFromD<D>; using U = MakeUnsigned<T>;
+  const U last = static_cast<U>(Lanes(d) - 1);
+  if constexpr (sizeof(T) == 1) return svtbl(v, svsub_x(svptrue_b8(), svdup_n_u8(last), svindex_u8(0, 1)));
+  else if constexpr (sizeof(T) == 2) return svtbl(v, svsub_x(svptrue_b16(), svdup_n_u16(last), svindex_u16(0, 1)));
+  else if constexpr (sizeof(T) == 4) return svtbl(v, svsub_x(svptrue_b32(), svdup_n_u32(last), svindex_u32(0, 1)));
+  else return svtbl(v, svsub_x(svptrue_b64(), svdup_n_u64(last), svindex_u64(0, 1)));
 }
 
 // ---- tail handling: FirstN / LoadN / StoreN (SVE NATIVE, not store+reload) ----------
 // FirstN(d, n): predicate with the first n lanes active. svwhilelt_b*(0, n) is exactly this and
 // is SVE's core tail primitive (no emulation). Returns svbool_t (our Mask type).
-template <class D> HYLE_FORCE_INLINE svbool_t FirstN(D, std::size_t n) noexcept {
+template <class D> HYLE_FORCE_INLINE svbool_t FirstN(D d, std::size_t n) noexcept {
   using T = TFromD<D>;
-  const std::uint64_t nn = static_cast<std::uint64_t>(n);
+  const std::uint64_t nn = static_cast<std::uint64_t>(n < Lanes(d) ? n : Lanes(d));
   if constexpr (sizeof(T) == 1) return svwhilelt_b8(std::uint64_t{0}, nn);
   else if constexpr (sizeof(T) == 2) return svwhilelt_b16(std::uint64_t{0}, nn);
   else if constexpr (sizeof(T) == 4) return svwhilelt_b32(std::uint64_t{0}, nn);
@@ -462,10 +598,13 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> PromoteLowerTo(Simd<DstT, NDst, 0>
   }
 }
 template <typename DstT, std::size_t NDst, class V>
-HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> PromoteUpperTo(Simd<DstT, NDst, 0>, V v) noexcept {
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> PromoteUpperTo(Simd<DstT, NDst, 0> dd, V v) noexcept {
   using SrcT = TFromV<V>;
   static_assert(sizeof(DstT) > sizeof(SrcT) && std::is_integral_v<DstT>, "PromoteUpperTo widens (integer)");
-  if constexpr (std::is_signed_v<DstT>) {
+  if constexpr (NDst < kNativeVectorBytes / sizeof(DstT)) {
+    const Simd<SrcT, 2 * NDst, 0> ds;
+    return PromoteLowerTo(dd, SlideDownLanes(ds, v, Lanes(dd)));
+  } else if constexpr (std::is_signed_v<DstT>) {
     if constexpr (sizeof(DstT) == 2) return svunpkhi_s16(v);
     else if constexpr (sizeof(DstT) == 4) return svunpkhi_s32(v);
     else return svunpkhi_s64(v);
@@ -479,25 +618,48 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> PromoteUpperTo(Simd<DstT, NDst, 0>
 // has no svqxtn (SVE2); clamp each wide lane to the narrow range, then svuzp1 the low halves (the
 // clamped value fits in the low half of each wide lane -> even narrow lanes carry it in order).
 template <typename DstT, std::size_t NDst, class V>
-HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> DemoteTo(Simd<DstT, NDst, 0>, V a, V b) noexcept {
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> DemoteTo(Simd<DstT, NDst, 0> dd, V a, V b) noexcept {
   using SrcT = TFromV<V>;
   static_assert(sizeof(DstT) < sizeof(SrcT), "DemoteTo narrows");
+  static_assert(NDst % 2 == 0, "DemoteTo requires two equal source halves");
   const svbool_t pg = detail::ptrue<SrcT>();
-  const SrcT lo = static_cast<SrcT>(std::numeric_limits<DstT>::min());
+  const SrcT lo = std::is_unsigned_v<SrcT> ? SrcT{0}
+                                                : static_cast<SrcT>(std::numeric_limits<DstT>::min());
   const SrcT hi = static_cast<SrcT>(std::numeric_limits<DstT>::max());
   const V vlo = Set(Simd<SrcT, kNativeVectorBytes / sizeof(SrcT), 0>{}, lo);
   const V vhi = Set(Simd<SrcT, kNativeVectorBytes / sizeof(SrcT), 0>{}, hi);
   const V ca = svmax_x(pg, svmin_x(pg, a, vhi), vlo);
   const V cb = svmax_x(pg, svmin_x(pg, b, vhi), vlo);
-  // reinterpret to the narrow lane type and take even narrow lanes (each holds a clamped low half).
   if constexpr (std::is_signed_v<DstT>) {
-    if constexpr (sizeof(DstT) == 1) return svuzp1_s8(svreinterpret_s8(ca), svreinterpret_s8(cb));
-    else if constexpr (sizeof(DstT) == 2) return svuzp1_s16(svreinterpret_s16(ca), svreinterpret_s16(cb));
-    else return svuzp1_s32(svreinterpret_s32(ca), svreinterpret_s32(cb));
+    const auto ba = [&]() {
+      if constexpr (sizeof(DstT) == 1) return svreinterpret_s8(ca);
+      else if constexpr (sizeof(DstT) == 2) return svreinterpret_s16(ca);
+      else return svreinterpret_s32(ca);
+    }();
+    const auto bb = [&]() {
+      if constexpr (sizeof(DstT) == 1) return svreinterpret_s8(cb);
+      else if constexpr (sizeof(DstT) == 2) return svreinterpret_s16(cb);
+      else return svreinterpret_s32(cb);
+    }();
+    if constexpr (NDst == kNativeVectorBytes / sizeof(DstT)) return svuzp1(ba, bb);
+    const auto na = svuzp1(ba, ba), nb = svuzp1(bb, bb);
+    const std::size_t half = Lanes(dd) / 2;
+    return IfThenElse(FirstN(dd, half), na, SlideUpLanes(dd, nb, half));
   } else {
-    if constexpr (sizeof(DstT) == 1) return svuzp1_u8(svreinterpret_u8(ca), svreinterpret_u8(cb));
-    else if constexpr (sizeof(DstT) == 2) return svuzp1_u16(svreinterpret_u16(ca), svreinterpret_u16(cb));
-    else return svuzp1_u32(svreinterpret_u32(ca), svreinterpret_u32(cb));
+    const auto ba = [&]() {
+      if constexpr (sizeof(DstT) == 1) return svreinterpret_u8(ca);
+      else if constexpr (sizeof(DstT) == 2) return svreinterpret_u16(ca);
+      else return svreinterpret_u32(ca);
+    }();
+    const auto bb = [&]() {
+      if constexpr (sizeof(DstT) == 1) return svreinterpret_u8(cb);
+      else if constexpr (sizeof(DstT) == 2) return svreinterpret_u16(cb);
+      else return svreinterpret_u32(cb);
+    }();
+    if constexpr (NDst == kNativeVectorBytes / sizeof(DstT)) return svuzp1(ba, bb);
+    const auto na = svuzp1(ba, ba), nb = svuzp1(bb, bb);
+    const std::size_t half = Lanes(dd) / 2;
+    return IfThenElse(FirstN(dd, half), na, SlideUpLanes(dd, nb, half));
   }
 }
 // WidenMulPairwiseAdd(d32, a_i16, b_i16): r[k] = a[2k]*b[2k] + a[2k+1]*b[2k+1] (the fixed-point dot
@@ -522,8 +684,8 @@ HYLE_FORCE_INLINE VFromD<Simd<std::int32_t, NDst, 0>> WidenMulPairwiseAdd(Simd<s
 // same-width unsigned/signed lanes; svld1_gather_index scales by element size (a true index, not
 // byte offset). 32/64-bit lanes only (SVE gather is defined there).
 template <class D, class VI>
-HYLE_FORCE_INLINE VFromD<D> GatherIndex(D, const TFromD<D>* base, VI idx) noexcept {
-  return svld1_gather_index(detail::ptrue<TFromD<D>>(), base, idx);
+HYLE_FORCE_INLINE VFromD<D> GatherIndex(D d, const TFromD<D>* base, VI idx) noexcept {
+  return svld1_gather_index(detail::active(d), base, idx);
 }
 
 // ---- swizzle (WHOLE-VECTOR scalable-native; SEE CONTRACT NOTE) ----------------------
@@ -535,13 +697,28 @@ HYLE_FORCE_INLINE VFromD<D> GatherIndex(D, const TFromD<D>* base, VI idx) noexce
 template <class V> HYLE_FORCE_INLINE V InterleaveLower(V a, V b) noexcept { return svzip1(a, b); }
 template <class V> HYLE_FORCE_INLINE V InterleaveUpper(V a, V b) noexcept { return svzip2(a, b); }
 template <class D, class V> HYLE_FORCE_INLINE V InterleaveLower(D, V a, V b) noexcept { return svzip1(a, b); }
-template <class D, class V> HYLE_FORCE_INLINE V InterleaveUpper(D, V a, V b) noexcept { return svzip2(a, b); }
+template <class D, class V> HYLE_FORCE_INLINE V InterleaveUpper(D d, V a, V b) noexcept {
+  const std::size_t half = Lanes(d) / 2;
+  return svzip1(SlideDownLanes(d, a, half), SlideDownLanes(d, b, half));
+}
 template <class V> HYLE_FORCE_INLINE V ZipLower(V a, V b) noexcept { return svzip1(a, b); }
 template <class V> HYLE_FORCE_INLINE V ZipUpper(V a, V b) noexcept { return svzip2(a, b); }
-// ConcatEven/Odd: gather the even/odd lanes of the concatenation [b:a] (Highway's ConcatEven(d,hi,
-// lo) = even lanes of lo then even lanes of hi). svuzp1/2 deinterleave across the whole vector.
-template <class D, class V> HYLE_FORCE_INLINE V ConcatEven(D, V hi, V lo) noexcept { return svuzp1(lo, hi); }
-template <class D, class V> HYLE_FORCE_INLINE V ConcatOdd(D, V hi, V lo) noexcept { return svuzp2(lo, hi); }
+// ConcatEven/Odd: gather the even/odd lanes of the logical concatenation [lo, hi]. For capped tags,
+// compact each source first; full-vector svuzp would put too many `lo` lanes before `hi`.
+template <class D, class V> HYLE_FORCE_INLINE V ConcatEven(D d, V hi, V lo) noexcept {
+  const std::size_t half = Lanes(d) / 2;
+  const auto m = detail::even_lane_mask<TFromV<V>>();
+  const V lo_packed = svcompact(m, lo), hi_packed = svcompact(m, hi);
+  return IfThenElse(FirstN(d, half), lo_packed, SlideUpLanes(d, hi_packed, half));
+}
+template <class D, class V> HYLE_FORCE_INLINE V ConcatOdd(D d, V hi, V lo) noexcept {
+  using T = TFromV<V>;
+  const std::size_t half = Lanes(d) / 2;
+  const svbool_t pg = detail::ptrue<T>();
+  const auto m = svnot_z(pg, detail::even_lane_mask<T>());
+  const V lo_packed = svcompact(m, lo), hi_packed = svcompact(m, hi);
+  return IfThenElse(FirstN(d, half), lo_packed, SlideUpLanes(d, hi_packed, half));
+}
 // OddEven(odd, even): even-position lanes from `even`, odd-position lanes from `odd`. Select on an
 // alternating "(lane index & 1)==0" predicate built from the width-matched iota.
 namespace detail {
@@ -555,6 +732,67 @@ template <typename T> HYLE_FORCE_INLINE svbool_t even_lane_mask() noexcept {
 }  // namespace detail
 template <class V> HYLE_FORCE_INLINE V OddEven(V odd, V even) noexcept {
   return svsel(detail::even_lane_mask<TFromV<V>>(), even, odd);
+}
+template <class V> HYLE_FORCE_INLINE V DupEven(V v) noexcept { return svtrn1(v, v); }
+template <class V> HYLE_FORCE_INLINE V DupOdd(V v) noexcept { return svtrn2(v, v); }
+template <class V> HYLE_FORCE_INLINE V InterleaveEven(V a, V b) noexcept { return svtrn1(a, b); }
+template <class V> HYLE_FORCE_INLINE V InterleaveOdd(V a, V b) noexcept { return svtrn2(a, b); }
+template <class D> HYLE_FORCE_INLINE VFromD<D> Reverse2(D, VFromD<D> v) noexcept {
+  using T = TFromD<D>;
+  const svbool_t pg = detail::ptrue<T>();
+  if constexpr (sizeof(T) == 1)
+    return svtbl(v, sveor_x(pg, svindex_u8(0, 1), svdup_n_u8(1)));
+  else if constexpr (sizeof(T) == 2)
+    return svtbl(v, sveor_x(pg, svindex_u16(0, 1), svdup_n_u16(1)));
+  else if constexpr (sizeof(T) == 4)
+    return svtbl(v, sveor_x(pg, svindex_u32(0, 1), svdup_n_u32(1)));
+  else
+    return svtbl(v, sveor_x(pg, svindex_u64(0, 1), svdup_n_u64(1)));
+}
+template <class D> HYLE_FORCE_INLINE VFromD<D> Reverse4(D d, VFromD<D> v) noexcept {
+  using T = TFromD<D>; HYLE_FATAL_ASSERT(Lanes(d) >= 4 && Lanes(d) % 4 == 0);
+  if constexpr (sizeof(T) == 1) return svtbl(v, sveor_x(svptrue_b8(), svindex_u8(0, 1), std::uint8_t{3}));
+  else if constexpr (sizeof(T) == 2) return svtbl(v, sveor_x(svptrue_b16(), svindex_u16(0, 1), std::uint16_t{3}));
+  else if constexpr (sizeof(T) == 4) return svtbl(v, sveor_x(svptrue_b32(), svindex_u32(0, 1), std::uint32_t{3}));
+  else return svtbl(v, sveor_x(svptrue_b64(), svindex_u64(0, 1), std::uint64_t{3}));
+}
+template <class D> HYLE_FORCE_INLINE VFromD<D> Reverse8(D d, VFromD<D> v) noexcept {
+  using T = TFromD<D>; HYLE_FATAL_ASSERT(Lanes(d) >= 8 && Lanes(d) % 8 == 0);
+  if constexpr (sizeof(T) == 1) return svtbl(v, sveor_x(svptrue_b8(), svindex_u8(0, 1), std::uint8_t{7}));
+  else if constexpr (sizeof(T) == 2) return svtbl(v, sveor_x(svptrue_b16(), svindex_u16(0, 1), std::uint16_t{7}));
+  else if constexpr (sizeof(T) == 4) return svtbl(v, sveor_x(svptrue_b32(), svindex_u32(0, 1), std::uint32_t{7}));
+  else return svtbl(v, sveor_x(svptrue_b64(), svindex_u64(0, 1), std::uint64_t{7}));
+}
+template <class V> HYLE_FORCE_INLINE V ReverseLaneBytes(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "ReverseLaneBytes is integer-only");
+  if constexpr (sizeof(T) == 1) return v;
+  else return BitCast(DFromV<V>(), svtbl(svreinterpret_u8(v),
+      sveor_x(svptrue_b8(), svindex_u8(0, 1), static_cast<std::uint8_t>(sizeof(T) - 1))));
+}
+
+// Indices are native unsigned scalable vectors (sizeless types cannot be wrapped in a struct).
+template <class D, class VI>
+HYLE_FORCE_INLINE VFromD<RebindToUnsigned<D>> IndicesFromVec(D, VI indices) noexcept {
+  static_assert(sizeof(TFromD<D>) == sizeof(TFromV<VI>), "Index/lane size mismatch");
+  return BitCast(RebindToUnsigned<D>(), indices);
+}
+template <class V, class VI> HYLE_FORCE_INLINE V TableLookupLanes(V v, VI indices) noexcept {
+  return svtbl(v, indices);
+}
+template <class V, class VI> HYLE_FORCE_INLINE VI TableLookupBytes(V table, VI indices) noexcept {
+  const svbool_t pg = svptrue_b8();
+  const svuint8_t idx = svreinterpret_u8(indices);
+  const svuint8_t local = svand_x(pg, idx, std::uint8_t{15});
+  const svuint8_t block = svbic_x(pg, svindex_u8(0, 1), std::uint8_t{15});
+  const svuint8_t out = svtbl(svreinterpret_u8(table), svadd_x(pg, block, local));
+  return BitCast(DFromV<VI>(), out);
+}
+template <class V, class VI> HYLE_FORCE_INLINE VI TableLookupBytesOr0(V table, VI indices) noexcept {
+  const svuint8_t idx = svreinterpret_u8(indices);
+  const svbool_t msb = svcmplt(svptrue_b8(), svreinterpret_s8(idx), std::int8_t{0});
+  const VI lookup = TableLookupBytes(table, indices);
+  return svsel(msb, Zero(DFromV<VI>()), lookup);
 }
 
 // ---- bit counting: population / leading-zero count ----------------------------------
@@ -662,29 +900,161 @@ template <class V> HYLE_FORCE_INLINE V MinNumber(V a, V b) noexcept {
 }
 
 // ---- masked load / blended store (SVE native predicated, fault-safe) ----------------
-template <class D> HYLE_FORCE_INLINE VFromD<D> MaskedLoad(svbool_t m, D, const TFromD<D>* p) noexcept {
-  return svld1(m, p);  // inactive lanes = 0, only active lanes touch memory (fault-safe)
+template <class D> HYLE_FORCE_INLINE VFromD<D> MaskedLoad(svbool_t m, D d, const TFromD<D>* p) noexcept {
+  const svbool_t active = detail::active(d);
+  const svbool_t masked = svand_z(active, active, m);
+  return svld1(masked, p);
 }
 template <class D>
-HYLE_FORCE_INLINE VFromD<D> MaskedLoadOr(VFromD<D> no, svbool_t m, D, const TFromD<D>* p) noexcept {
-  return svsel(m, svld1(m, p), no);
+HYLE_FORCE_INLINE VFromD<D> MaskedLoadOr(VFromD<D> no, svbool_t m, D d, const TFromD<D>* p) noexcept {
+  const svbool_t active = detail::active(d);
+  const svbool_t masked = svand_z(active, active, m);
+  return svsel(masked, svld1(masked, p), no);
 }
-template <class D> HYLE_FORCE_INLINE void BlendedStore(VFromD<D> v, svbool_t m, D, TFromD<D>* p) noexcept {
-  svst1(m, p, v);  // only active lanes written (fault-safe)
+template <class D> HYLE_FORCE_INLINE void BlendedStore(VFromD<D> v, svbool_t m, D d, TFromD<D>* p) noexcept {
+  const svbool_t active = detail::active(d);
+  svst1(svand_z(active, active, m), p, v);
 }
 
 // ---- scatter (SVE native svst1_scatter) + CompressStore -----------------------------
 template <class D, class VI>
-HYLE_FORCE_INLINE void ScatterIndex(VFromD<D> v, D, TFromD<D>* base, VI idx) noexcept {
-  svst1_scatter_index(detail::ptrue<TFromD<D>>(), base, idx, v);
+HYLE_FORCE_INLINE void ScatterIndex(VFromD<D> v, D d, TFromD<D>* base, VI idx) noexcept {
+  svst1_scatter_index(detail::active(d), base, idx, v);
 }
 // CompressStore(v, m, d, p): pack active lanes to the front, store CountTrue(m) of them, return
 // that count. svcompact packs; then a whilelt-predicated store writes exactly the active count.
 template <class D>
 HYLE_FORCE_INLINE std::size_t CompressStore(VFromD<D> v, svbool_t m, D d, TFromD<D>* p) noexcept {
-  const std::size_t cnt = CountTrue(d, m);
-  svst1(FirstN(d, cnt), p, svcompact(m, v));
+  const svbool_t active = detail::active(d);
+  const svbool_t masked = svand_z(active, active, m);
+  const std::size_t cnt = CountTrue(d, masked);
+  svst1(FirstN(d, cnt), p, svcompact(masked, v));
   return cnt;
+}
+
+// ---- P2 widen / quantize / reduction completion -------------------------------------
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> PromoteEvenTo(Simd<DstT, NDst, 0> dd,
+                                                            V v) noexcept {
+  using SrcT = TFromV<V>;
+  static_assert(sizeof(DstT) == 2 * sizeof(SrcT), "PromoteEvenTo requires adjacent widths");
+  if constexpr (std::is_same_v<SrcT, float> && std::is_same_v<DstT, double>) {
+    return svcvt_f64_f32_x(detail::ptrue<float>(), v);
+  } else {
+    static_assert(std::is_integral_v<SrcT> && std::is_integral_v<DstT>,
+                  "PromoteEvenTo supports integers and f32->f64");
+    if constexpr (std::is_signed_v<SrcT>) {
+      const Simd<MakeSigned<DstT>, NDst, 0> ds;
+      const auto bits = BitCast(ds, v);
+      const auto wide = [&]() {
+        if constexpr (sizeof(DstT) == 2) return svextb_s16_x(detail::active(ds), bits);
+        else if constexpr (sizeof(DstT) == 4) return svexth_s32_x(detail::active(ds), bits);
+        else return svextw_s64_x(detail::active(ds), bits);
+      }();
+      if constexpr (std::is_signed_v<DstT>) return wide;
+      else return BitCast(dd, wide);
+    } else {
+      const auto bits = BitCast(dd, v);
+      return And(bits, Set(dd, static_cast<DstT>(std::numeric_limits<MakeUnsigned<SrcT>>::max())));
+    }
+  }
+}
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> PromoteOddTo(Simd<DstT, NDst, 0> dd,
+                                                           V v) noexcept {
+  return PromoteEvenTo(dd, DupOdd(v));
+}
+
+template <typename DstT, std::size_t N, int kPow2, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, N, kPow2>> TruncateTo(Simd<DstT, N, kPow2> dd, V v) noexcept {
+  using SrcT = TFromV<V>;
+  static_assert(std::is_integral_v<DstT> && std::is_integral_v<SrcT> && sizeof(DstT) < sizeof(SrcT),
+                "TruncateTo is modular integer narrowing");
+  constexpr std::size_t ratio = sizeof(SrcT) / sizeof(DstT);
+  static_assert(ratio == 2 || ratio == 4 || ratio == 8);
+  auto out = BitCast(dd, v);
+  if constexpr (ratio >= 2) out = svuzp1(out, out);
+  if constexpr (ratio >= 4) out = svuzp1(out, out);
+  if constexpr (ratio >= 8) out = svuzp1(out, out);
+  return out;
+}
+template <class V>
+HYLE_FORCE_INLINE svuint8_t U8FromU32(V v) noexcept {
+  static_assert(std::is_same_v<TFromV<V>, std::uint32_t>, "U8FromU32 requires u32 lanes");
+  using DS = DFromV<V>;
+  return TruncateTo(Rebind<std::uint8_t, DS>{}, v);
+}
+
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> ReorderDemote2To(Simd<DstT, NDst, 0> d,
+                                                               V a, V b) noexcept {
+  return DemoteTo(d, a, b);
+}
+template <std::size_t NDst>
+HYLE_FORCE_INLINE svint16_t SatWidenMulPairwiseAdd(Simd<std::int16_t, NDst, 0> di16,
+                                                   svuint8_t a, svint8_t b) noexcept {
+  const Simd<std::uint16_t, NDst, 0> du16;
+  const auto ae = BitCast(di16, PromoteEvenTo(du16, a));
+  const auto ao = BitCast(di16, PromoteOddTo(du16, a));
+  return SaturatedAdd(Mul(ae, PromoteEvenTo(di16, b)), Mul(ao, PromoteOddTo(di16, b)));
+}
+template <std::size_t NDst>
+HYLE_FORCE_INLINE svint32_t ReorderWidenMulAccumulate(Simd<std::int32_t, NDst, 0> d32,
+                                                       svint16_t a, svint16_t b,
+                                                       svint32_t sum0,
+                                                       svint32_t& sum1) noexcept {
+  (void)sum1;
+  return Add(sum0, WidenMulPairwiseAdd(d32, a, b));
+}
+template <class V> HYLE_FORCE_INLINE V RearrangeToOddPlusEven(V sum0, V sum1) noexcept {
+  return Add(sum0, sum1);
+}
+template <std::size_t NDst>
+HYLE_FORCE_INLINE svint32_t SumOfMulQuadAccumulate(Simd<std::int32_t, NDst, 0>,
+                                                   svint8_t a, svint8_t b,
+                                                   svint32_t sum) noexcept {
+  return svdot_s32(sum, a, b);
+}
+
+HYLE_FORCE_INLINE svuint16_t SumsOf2(svuint8_t v) noexcept {
+  const DFromV<svuint16_t> d;
+  return Add(PromoteEvenTo(d, v), PromoteOddTo(d, v));
+}
+HYLE_FORCE_INLINE svuint32_t SumsOf4(svuint8_t v) noexcept {
+  return svdot_n_u32(Zero(DFromV<svuint32_t>{}), v, 1);
+}
+HYLE_FORCE_INLINE svuint64_t SumsOf8(svuint8_t v) noexcept {
+  const DFromV<svuint64_t> d;
+  const auto s4 = SumsOf4(v);
+  return Add(PromoteEvenTo(d, s4), PromoteOddTo(d, s4));
+}
+
+template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMul(D d, VFromD<D> v) noexcept {
+  const std::size_t n = Lanes(d);
+  VFromD<D> acc = v;
+  for (std::size_t step = 1; step < n; step *= 2) {
+    const auto shifted = SlideDownLanes(d, acc, step);
+    acc = Mul(acc, IfThenElse(FirstN(d, n - step), shifted, Set(d, TFromD<D>{1})));
+  }
+  return GetLane(acc);
+}
+HYLE_FORCE_INLINE svint16_t MulFixedPoint15(svint16_t a, svint16_t b) noexcept {
+  const DFromV<svint16_t> d;
+  const RebindToUnsigned<decltype(d)> du;
+  const svuint16_t lo = BitCast(du, Mul(a, b));
+  const svint16_t hi = MulHigh(a, b);
+  const svuint16_t rounding = ShiftRight<1>(Add(ShiftRight<14>(lo), Set(du, 1)));
+  return Add(Add(hi, hi), BitCast(d, rounding));
+}
+template <class V> HYLE_FORCE_INLINE V SaturatedNeg(V v) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>> && std::is_signed_v<TFromV<V>>,
+                "SaturatedNeg is signed-int");
+  return SaturatedSub(Zero(DFromV<V>()), v);
+}
+template <class V> HYLE_FORCE_INLINE V SaturatedAbs(V v) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>> && std::is_signed_v<TFromV<V>>,
+                "SaturatedAbs is signed-int");
+  return Max(v, SaturatedNeg(v));
 }
 
 }  // namespace hyle::simd

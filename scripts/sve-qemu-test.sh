@@ -1,6 +1,6 @@
 #!/bin/bash
 # sve-qemu-test.sh -- cross-compile the SVE backend gtest (tests/simd/sve_test.cc) for aarch64 and
-# run it under qemu-aarch64 at multiple SVE vector lengths (128/256/512-bit). This is the "one
+# run it under qemu-aarch64 at multiple SVE vector lengths (128/256/384/512-bit). This is the "one
 # binary, every width" scalable proof: SVE's vector length is a runtime property, so the SAME
 # binary must pass at every VL. There is no SVE dev machine in this project, so qemu's -cpu
 # max,sve<bits>=on is the correctness gate (analogous to Intel SDE for AVX-512).
@@ -34,11 +34,11 @@ $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main.o"
 $CXX $FLAGS -c "$REPO/tests/simd/sve_test.cc" -o "$OUT/sve_test.o"
 $CXX $FLAGS "$OUT/sve_test.o" "$OUT/gtest-all.o" "$OUT/gtest-main.o" -static -o "$OUT/sve_gtest" -pthread
 
-echo "[2/3] running under qemu at VL 128 / 256 / 512 ..."
+echo "[2/3] running under qemu at VL 128 / 256 / 384 / 512 ..."
 rc=0
-for bits in 128 256 512; do
+for bits in 128 256 384 512; do
   echo "----- SVE VL=${bits}-bit -----"
-  "$QEMU" -cpu "max,sve${bits}=on" -L /usr/aarch64-linux-gnu "$OUT/sve_gtest" || rc=$?
+  HYLE_EXPECT_SVE_BITS="$bits" "$QEMU" -cpu "max,sve${bits}=on" -L /usr/aarch64-linux-gnu "$OUT/sve_gtest" || rc=$?
 done
 
 echo "[3/3] done (exit=$rc)"

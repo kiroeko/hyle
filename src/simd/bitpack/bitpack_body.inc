@@ -25,24 +25,9 @@
 
 namespace hn = hwy::HWY_NAMESPACE;
 
-namespace hyle::simd::detail {
+#include "src/simd/bitpack/bitpack_hyle_u16-inl.h"
 
-// VENDOR-BUG SIDESTEP: Highway's hand-written Pack16<11> and Pack16<13> specializations do NOT
-// round-trip full-range 11-/13-bit values (probed on MSVC AVX2 AND the portable EMU128 target, so
-// it is the ALGORITHM, not codegen). Highway's own bit_pack_test masks inputs with `& kBits` (the
-// literal width number, e.g. `& 11`) instead of `& ((1<<kBits)-1)`, so it never feeds values wide
-// enough to expose it -- the bug ships untested upstream. All Pack8 widths, all Pack32 widths (the
-// generic unroller), and the other 14 Pack16 widths verify clean. For the two broken widths we
-// route the WHOLE array through the scalar bit-stream codec (bitstream.h -- correctness oracle,
-// round-trip tested), by forcing nblocks=0 so nothing hits the Highway block path. pack + unpack
-// share this predicate, so the layout stays self-consistent.
-template <typename T>
-constexpr bool bitpack_width_borrowable(unsigned bits) noexcept {
-  if constexpr (sizeof(T) == 2)
-    return bits != 11 && bits != 13;
-  else
-    return true;
-}
+namespace hyle::simd::detail {
 
 #define HYLE_BITPACK_PASTE2(a, b) a##b
 #define HYLE_BITPACK_PASTE(a, b) HYLE_BITPACK_PASTE2(a, b)
@@ -54,22 +39,28 @@ constexpr bool bitpack_width_borrowable(unsigned bits) noexcept {
 // 1-byte T (whose kBits only reaches 8). One Pack() call handles a block of B*Lanes(d) raw values.
 template <std::size_t kBits, class D, typename T>
 HWY_INLINE void bitpack_pack_one(D d, const T* raw, T* packed) {
-  if constexpr (sizeof(T) == 1)
+  if constexpr (sizeof(T) == 1) {
     hn::Pack8<kBits>().Pack(d, raw, packed);
-  else if constexpr (sizeof(T) == 2)
+  } else if constexpr (sizeof(T) == 2 && (kBits == 11 || kBits == 13)) {
+    bitpack_hyle_pack_u16<kBits>(d, raw, packed);
+  } else if constexpr (sizeof(T) == 2) {
     hn::Pack16<kBits>().Pack(d, raw, packed);
-  else
+  } else {
     hn::Pack32<kBits>().Pack(d, raw, packed);
+  }
 }
 
 template <std::size_t kBits, class D, typename T>
 HWY_INLINE void bitpack_unpack_one(D d, const T* packed, T* raw) {
-  if constexpr (sizeof(T) == 1)
+  if constexpr (sizeof(T) == 1) {
     hn::Pack8<kBits>().Unpack(d, packed, raw);
-  else if constexpr (sizeof(T) == 2)
+  } else if constexpr (sizeof(T) == 2 && (kBits == 11 || kBits == 13)) {
+    bitpack_hyle_unpack_u16<kBits>(d, packed, raw);
+  } else if constexpr (sizeof(T) == 2) {
     hn::Pack16<kBits>().Unpack(d, packed, raw);
-  else
+  } else {
     hn::Pack32<kBits>().Unpack(d, packed, raw);
+  }
 }
 
 // Fold: for the matching kBits (== bits), run the whole block loop with a compile-time packed
@@ -111,8 +102,7 @@ HWY_INLINE void bitpack_unpack_blocks(unsigned bits, D d, std::size_t N, std::si
     const hn::ScalableTag<T> d;                                                              \
     const std::size_t N = hn::Lanes(d);                                                      \
     const std::size_t block_size = N * B;                                                    \
-    const std::size_t nblocks =                                                              \
-        bitpack_width_borrowable<T>(bits) ? (count / block_size) : std::size_t{0};           \
+    const std::size_t nblocks = count / block_size;                                           \
     const std::size_t block_raw = nblocks * block_size;                                      \
     const std::size_t block_packed = nblocks * N * bits;                                     \
     bitpack_pack_blocks<T>(bits, d, N, nblocks, raw, packed,                                 \
@@ -125,8 +115,7 @@ HWY_INLINE void bitpack_unpack_blocks(unsigned bits, D d, std::size_t N, std::si
     const hn::ScalableTag<T> d;                                                              \
     const std::size_t N = hn::Lanes(d);                                                      \
     const std::size_t block_size = N * B;                                                    \
-    const std::size_t nblocks =                                                              \
-        bitpack_width_borrowable<T>(bits) ? (count / block_size) : std::size_t{0};           \
+    const std::size_t nblocks = count / block_size;                                           \
     const std::size_t block_raw = nblocks * block_size;                                      \
     const std::size_t block_packed = nblocks * N * bits;                                     \
     bitpack_unpack_blocks<T>(bits, d, N, nblocks, packed, raw,                               \

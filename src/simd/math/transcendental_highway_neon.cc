@@ -78,7 +78,7 @@ HYLE_HWY_MATH_NEON(asinh, Asinh, std::asinh)
 HYLE_HWY_MATH_NEON(acosh, Acosh, std::acosh)
 #undef HYLE_HWY_MATH_NEON
 
-// hypot: BINARY, Highway (overflow-safe -- xsimd's is faster on x86 but returns inf past FLT_MAX).
+// Full-range hypot core; the explicit fast API uses xsimd-NEON's direct formula.
 void hypot_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept {
   const hn::ScalableTag<float> d;
   const std::size_t w = hn::Lanes(d);

@@ -23,10 +23,10 @@
 // declaring sort). It declares one overload per lane type: uint8/uint16/uint32.
 //
 // SEMANTICS: pack takes `count` raw values, each carrying `bits` significant low bits, and writes
-// them densely into `packed`. unpack reverses it. The valid range of `bits` is [1, 8*sizeof(T)]
-// (1..8 for uint8, 1..16 for uint16, 1..32 for uint32). A `bits` outside that range is a caller
-// contract violation and aborts via HYLE_FATAL_ASSERT (fail-fast, not a silent clamp). count==0
-// is a no-op.
+// them densely into `packed`. unpack reverses it. Input and output ranges must not overlap.
+// The valid range of `bits` is [1, 8*sizeof(T)] (1..8 for uint8, 1..16 for uint16, 1..32 for
+// uint32). A `bits` outside that range is a caller contract violation and aborts via
+// HYLE_FATAL_ASSERT (fail-fast, not a silent clamp). count==0 is a no-op.
 //
 // LAYOUT / ROUND-TRIP CONTRACT: the packed byte layout is TIER-DEPENDENT (Highway interleaves the
 // block region by the live vector width; the sub-block tail uses a scalar bit-stream). The only
@@ -35,10 +35,9 @@
 // do NOT interpret the packed bytes as a portable wire format -- it is an in-memory codec. Use
 // packed_size<T>(count, bits) to size the `packed` buffer.
 //
-// (Impl note: Highway's Pack16<11> / Pack16<13> specializations do not round-trip full-range
-// values -- an upstream bug hidden by their test masking inputs with `& kBits` instead of
-// `& ((1<<kBits)-1)`. HYLE routes those two u16 widths through its own verified scalar bit-stream
-// codec instead of the borrow; the public contract is unchanged, round-trip holds for all widths.)
+// Highway's Pack16<11>/<13> inverse is wrong, and Pack16<13> also scatters rawF with a truncated
+// mask. HYLE owns corrected SIMD block kernels for those widths; independent layout-oracle and
+// full-domain tests pin them on AVX2/AVX512/NEON. Other widths continue through Highway.
 
 namespace hyle::simd {
 
