@@ -10,8 +10,8 @@
 - **scalar 完整**(是 oracle;"缺 Add/Mul" 是宏定义的 grep 假阳)——**没问题**。
 - **定稿时的真问题 = 变宽(SVE/RVV)落后定宽 ~72 op**；当前 P0-P5 已全闭环：scalable 量化/点积/结构 op 已对称，定宽 Masked* 与 Mul/Mod/Magnitude 已补齐，P5 平凡合成 + mask 前缀 + MulByPow2/Expand/TZCnt 已落地。
 - vec.h 泛型 complex / 128-cmp / Newton 曾因 scalable TU 未实例化而掩盖底层原语缺口；P0 已用 SVE/RVV 直接实例化测试消除该潜在编译断裂。`Expand` 已在 P5 落地（SVE store+reload / RVV viota+vrgather）。
-- **主施工闭集 P0-P5 共92个去重公开op：已完成91，剩 1（RVV `TrailingZeroCount` 归 Zvbb 硬件门控，不进软件分母）→ 软件面 100%**。若把16个具名低优项和ARM剩余3个complex超越函数也计入，总计111项，剩19项；硬件门控/明确不做项不进入分母。
-- **[`simd-16`](./simd-16-hw-gated-reclaim.md) 已翻案 RVV Zvbb/Zvbc**：`LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/native `Rotate` + `CLMulLower`/`CLMulUpper`（qemu 三档 × 4 VLEN 全绿；objdump 证硬件指令真发射）。RVV `PopulationCount` 仍工具链缺口；SVE2 AES/CLMul 仍只能编译验。
+- **主施工闭集 P0-P5 软件面 100%**。2026-07-12 directive2 复核后,先前登记的"硬件/工具门控"项**大多翻案做掉**(见下条);唯一真墙 = mask-bits VL>64(uint64 API 形状,非工具)。
+- **[`simd-16`](./simd-16-hw-gated-reclaim.md) + directive2 已翻案 RVV Zvbb/Zvbc + SVE2 全套**：RVV `LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/native `Rotate`/`CLMulLower`/`CLMulUpper` **+ `PopulationCount`(2026-07-12 b0ad404,inline-asm vcpop.v)**；**SVE2 `AES*`/`CLMul` 8 op 全套(2026-07-12 8c466f8,native svaese/svaesmc/svpmull)**——全 qemu 4 VLEN/VL + objdump 真指令。**先前"PopulationCount 工具链缺口 / SVE2 只能编译验"结论已推翻**(是当时测试 harness bug,非真墙;qemu 8.2.2 本就能跑)。
 
 ## 0.5 每项 op 的执行决策流程(施工规程,逐 op 机械跑)
 
@@ -80,8 +80,6 @@
 > 纪律纠错(`feedback_infra_capability_completeness`)：qemu-user 实测**支持 Zvbb/Zvbc**,"无硬件不做"对这些站不住；已翻案补做+真验。
 - **RVV `LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/`Rotate`**:✅ **已落地**——`#if defined(__riscv_zvbb)` + `-march=rv64gcv_zvbb` + `qemu -cpu rv64,v=true,zvbb=true`；objdump 见 `vclz.v`/`vctz.v`/`vbrev.v`/`vror.vi`/`vrol.vx`。
 - **RVV `CLMulLower`/`CLMulUpper`**:✅ **已落地**——`#if defined(__riscv_zvbc)`；`DupEven/DupOdd`+`vclmul`/`vclmulh`+`OddEven` 对齐 128-bit block 语义；objdump 见 `vclmul.vv`/`vclmulh.vv`。
-- **RVV `PopulationCount`**:🔒 仍不做——**2026-07-12 复核坐实真墙**:GCC-14 头无 per-lane `__riscv_vcpop_v_*`(inline-asm 可发射 `vcpop.v`=0x4a172157,汇编器认),但**本机 qemu-riscv64 8.2.2 未实现 Zvbb `vcpop.v`**——实测 popcount(0xF0F0F0F0) 返回原值非 16(静默 no-op,不 SIGILL),故无法真验。与 simd-16 已翻案的 LZCnt/TZCnt(qemu 8.2.2 **有**实现)不同,vcpop.v 是 qemu 8.2.2 的实现缺口。解锁需 qemu ≥9.x(源码编译,非 apt)。**(注:一次 agent 复核误报"qemu 真跑正确",逐条核实时 exit-0 检查没验算值=假阳,坐实"红队报告要核实")**。
-- **SVE2 `AES*`/`CLMul`**:🟡 只能编译验——`+sve2-aes` 编得过,但本机 qemu-aarch64 8.2.2 `-cpu max,sve2-aes=on` 报 "Property not found"(sve2-aes property 需 qemu ≥9.1);Apple Silicon 无 FEAT_SVE2 也测不了。真墙,解锁需 qemu 9.1+ 源码编译。
 - `LoadMaskBits`/`StoreMaskBits`/`BitsFromMask`:scalable VL 可达 2048-bit(i8=256 lane)超 uint64 位域容量,语义受限(窄 lane 数 ≤64 部分可后补)。**真墙=API 形状(uint64 装不下 256 bit),非工具链**。
 - **RVV `PopulationCount`**:✅ **已做**(2026-07-12,b0ad404)——翻案:Zvbb `vcpop.v` qemu 8.2.2 就正确执行(之前"no-op"是我 vmv.x.s+exit-code harness 读错);GCC-14 缺 C wrapper → inline-asm。rvv_test 4 VLEN 对拍 std::popcount + objdump 原生 vcpop.v。
 - **SVE2 `AES`/`CLMul`**:✅ **已做**(2026-07-12,8c466f8)——翻案:qemu 8.2.2 `-cpu max` 就执行(之前"Property not found"是用错 `sve2-aes=on` + 探针栈溢出误判)。8 op 全套 native svaese/svaesmc/svpmull;sve_test crypto tier 4 VL + objdump 原生指令。
@@ -166,7 +164,7 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 | 🔒 真墙 | mask-bits VL>64(uint64 API 形状装不下 256 lane) | — | 唯一真墙:改 API 契约才能解 |
 | ⚪不做 | 其余 *Blocks(SwapAdjacent等) / GaloisAffine(Highway内部detail非公开面) | — | 偏门/越 scope/非公开面 |
 
-P0-P5、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)、[`simd-14`](./simd-14-fixed-width-p4.md)、[`simd-15`](./simd-15-scalable-p5.md)与[`simd-16`](./simd-16-hw-gated-reclaim.md)已全部完成。**主施工闭集软件面 100%**；simd-16 另翻案 RVV Zvbb/Zvbc（TZCnt/LZCnt/ReverseBits/Rotate/CLMul），PopulationCount 仍工具链缺口。两轮 vendor displacement 不新增公开 op；P4 新增 12 个、P5 新增 15 个公开 op。硬件门控和语义受限项不混入软件完成度。
+P0-P5、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)、[`simd-14`](./simd-14-fixed-width-p4.md)、[`simd-15`](./simd-15-scalable-p5.md)与[`simd-16`](./simd-16-hw-gated-reclaim.md)已全部完成。**主施工闭集软件面 100%**；simd-16 翻案 RVV Zvbb/Zvbc（TZCnt/LZCnt/ReverseBits/Rotate/CLMul），directive2(2026-07-12)再翻案 **RVV PopulationCount + SVE2 AES/CLMul 全套 + Per4Lane 8/16**(先前"工具墙"是 harness bug)。两轮 vendor displacement 不新增公开 op；P4 新增 12 个、P5 新增 15 个公开 op。**唯一真墙 = mask-bits VL>64（uint64 API 形状）**；fp8-HW-convert 验证可达但非-bit-identical 不上架。
 
 
 ## 5. 复现方法

@@ -106,8 +106,8 @@ fp8 硬件 convert（E4M3/E5M2）走 Intel SDE `-future`（同 AVX512 SDE 先例
 
 | 项 | 理由 |
 |---|---|
-| RVV `PopulationCount` | GCC-14 头无 per-lane vcpop intrinsic（穷举坐实），工具链缺口非借口 |
-| SVE2 `AES*`/`CLMul` | 本机 qemu 版本 `-cpu max,sve2-aes=on` 报 Property not found，只能编译验无真跑 |
+| RVV `PopulationCount` | ~~GCC-14 头无 per-lane vcpop~~ → **已翻案做掉(2026-07-12 b0ad404)**:inline-asm `vcpop.v`,qemu 8.2.2 就正确执行(本条当时的"no-op"结论是 vmv.x.s+exit-code harness bug) |
+| SVE2 `AES*`/`CLMul` | ~~qemu Property not found 只能编译验~~ → **已翻案做掉(2026-07-12 8c466f8)**:`-cpu max`(非 `sve2-aes=on`)qemu 8.2.2 就真跑,8 op native svaese/svpmull 全 4 VL 验 |
 | scalable ASan | qemu-user + `-fsanitize=address` shadow-memory 段错误（实测），真边界 |
 | mask-bits 大 VL | VL 2048-bit i8=256 lane 超 uint64 位域，语义受限 |
 
