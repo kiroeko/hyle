@@ -125,4 +125,33 @@ void cpow_f32_scalar(const float* zr, const float* zi, const float* wr, const fl
   for (std::size_t i = 0; i < n; ++i) { cf r = std::pow(cf(zr[i], zi[i]), cf(wr[i], wi[i])); dr[i] = r.real(); di[i] = r.imag(); }
 }
 
+
+// simd-18 批G scalar oracles
+void acos_f32_scalar(const float* src, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::acos(src[i]); }
+void asin_f32_scalar(const float* src, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::asin(src[i]); }
+void sinh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::sinh(src[i]); }
+void cosh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::cosh(src[i]); }
+void tan_f32_scalar(const float* src, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::tan(src[i]); }
+void atanh_f32_scalar(const float* src, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::atanh(src[i]); }
+void log10_f32_scalar(const float* src, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::log10(src[i]); }
+void atan2_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::atan2(a[i], b[i]); }
+void pow_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::pow(a[i], b[i]); }
+void sincos_f32_scalar(const float* src, float* s, float* c, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) { s[i]=std::sin(src[i]); c[i]=std::cos(src[i]); } }
+void erfc_f32_scalar(const float* src, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::erfc(src[i]); }
+void exp10_f32_scalar(const float* src, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::pow(10.f, src[i]); }
+void fmod_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::fmod(a[i], b[i]); }
+void remainder_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::remainder(a[i], b[i]); }
+void nextafter_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::nextafter(a[i], b[i]); }
+void fdim_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::fdim(a[i], b[i]); }
+void acos_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::acos(src[i]); }
+void asin_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::asin(src[i]); }
+void sinh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::sinh(src[i]); }
+void cosh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::cosh(src[i]); }
+void tan_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::tan(src[i]); }
+void atanh_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::atanh(src[i]); }
+void log10_f64_scalar(const double* src, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::log10(src[i]); }
+void atan2_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::atan2(a[i], b[i]); }
+void pow_f64_scalar(const double* a, const double* b, double* dst, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) dst[i]=std::pow(a[i], b[i]); }
+void sincos_f64_scalar(const double* src, double* s, double* c, std::size_t n) noexcept { for (std::size_t i=0;i<n;++i) { s[i]=std::sin(src[i]); c[i]=std::cos(src[i]); } }
+
 }  // namespace hyle::simd::detail

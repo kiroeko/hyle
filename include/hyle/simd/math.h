@@ -47,6 +47,16 @@ HYLE_SIMD_API void expm1_f64_batch(const double* src, double* dst, std::size_t n
 HYLE_SIMD_API void log1p_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void asinh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void acosh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void acos_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void asin_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void sinh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void cosh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void tan_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void atanh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void log10_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void atan2_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void pow_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void sincos_f64_batch(const double* src, double* s, double* c, std::size_t n) noexcept;
 HYLE_SIMD_API void tgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void lgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void hypot_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept;
@@ -67,6 +77,23 @@ HYLE_SIMD_API void expm1_f32_batch(const float* src, float* dst, std::size_t n) 
 HYLE_SIMD_API void log1p_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void asinh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void acosh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+// simd-18 批G
+HYLE_SIMD_API void acos_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void asin_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void sinh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void cosh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void tan_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void atanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void log10_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void atan2_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void pow_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void sincos_f32_batch(const float* src, float* s, float* c, std::size_t n) noexcept;
+HYLE_SIMD_API void erfc_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void exp10_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void fmod_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void remainder_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void nextafter_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void fdim_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 
 // xsimd-ONLY borrows (Highway's contrib/math has no equivalent, so these are a single-source
 // borrow, NOT a best-of pick -- there is no second library to race). lgamma/tgamma are the

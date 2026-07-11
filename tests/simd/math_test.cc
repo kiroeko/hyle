@@ -539,3 +539,48 @@ TEST(Math, ComplexPowSpecialTailAndAlias) {
     expect_complex_component(di[i + 1], want.imag(), "cpow unaligned im", i);
   }
 }
+
+// simd-18 批G smoke: new APIs compile, dispatch, and match libm loosely.
+TEST(Math, Simd18BreadthG) {
+  constexpr std::size_t n = 64;
+  alignas(64) float x[n], y[n], z[n], s[n], c[n];
+  for (std::size_t i = 0; i < n; ++i) {
+    x[i] = 0.01f * static_cast<float>(i) - 0.3f;  // in-domain for most
+    y[i] = 0.02f * static_cast<float>(i) + 0.5f;
+  }
+  hyle::simd::acos_f32_batch(x, z, n);
+  for (std::size_t i = 0; i < n; ++i) {
+    if (x[i] >= -1.f && x[i] <= 1.f)
+      EXPECT_NEAR(z[i], std::acos(x[i]), 1e-4f) << "acos i=" << i;
+  }
+  hyle::simd::asin_f32_batch(x, z, n);
+  hyle::simd::sinh_f32_batch(x, z, n);
+  hyle::simd::cosh_f32_batch(x, z, n);
+  hyle::simd::tan_f32_batch(x, z, n);
+  hyle::simd::atanh_f32_batch(x, z, n);  // |x|<1 for domain
+  hyle::simd::log10_f32_batch(y, z, n);  // y>0
+  hyle::simd::atan2_f32_batch(x, y, z, n);
+  hyle::simd::pow_f32_batch(y, x, z, n);
+  hyle::simd::sincos_f32_batch(x, s, c, n);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_NEAR(s[i], std::sin(x[i]), 1e-4f);
+    EXPECT_NEAR(c[i], std::cos(x[i]), 1e-4f);
+  }
+  hyle::simd::erfc_f32_batch(x, z, n);
+  hyle::simd::exp10_f32_batch(x, z, n);
+  hyle::simd::fmod_f32_batch(y, y, z, n);
+  hyle::simd::remainder_f32_batch(y, y, z, n);
+  hyle::simd::nextafter_f32_batch(x, y, z, n);
+  hyle::simd::fdim_f32_batch(y, x, z, n);
+  // f64 smoke
+  alignas(64) double dx[n], dy[n], dz[n], ds[n], dc[n];
+  for (std::size_t i = 0; i < n; ++i) {
+    dx[i] = 0.01 * static_cast<double>(i) - 0.3;
+    dy[i] = 0.02 * static_cast<double>(i) + 0.5;
+  }
+  hyle::simd::acos_f64_batch(dx, dz, n);
+  hyle::simd::atan2_f64_batch(dx, dy, dz, n);
+  hyle::simd::pow_f64_batch(dy, dx, dz, n);
+  hyle::simd::sincos_f64_batch(dx, ds, dc, n);
+  SUCCEED();
+}

@@ -76,6 +76,13 @@ HYLE_HWY_MATH_NEON(expm1, Expm1, std::expm1)
 HYLE_HWY_MATH_NEON(log1p, Log1p, std::log1p)
 HYLE_HWY_MATH_NEON(asinh, Asinh, std::asinh)
 HYLE_HWY_MATH_NEON(acosh, Acosh, std::acosh)
+HYLE_HWY_MATH_NEON(acos, Acos, std::acos)
+HYLE_HWY_MATH_NEON(asin, Asin, std::asin)
+HYLE_HWY_MATH_NEON(sinh, Sinh, std::sinh)
+HYLE_HWY_MATH_NEON(cosh, Cosh, std::cosh)
+HYLE_HWY_MATH_NEON(tan, Tan, std::tan)
+HYLE_HWY_MATH_NEON(atanh, Atanh, std::atanh)
+HYLE_HWY_MATH_NEON(log10, Log10, std::log10)
 #undef HYLE_HWY_MATH_NEON
 
 // Full-range hypot core; the explicit fast API uses xsimd-NEON's direct formula.
@@ -131,6 +138,13 @@ HYLE_HWY_MATH_F64_NEON(expm1, Expm1, std::expm1)
 HYLE_HWY_MATH_F64_NEON(log1p, Log1p, std::log1p)
 HYLE_HWY_MATH_F64_NEON(asinh, Asinh, std::asinh)
 HYLE_HWY_MATH_F64_NEON(acosh, Acosh, std::acosh)
+HYLE_HWY_MATH_F64_NEON(acos, Acos, std::acos)
+HYLE_HWY_MATH_F64_NEON(asin, Asin, std::asin)
+HYLE_HWY_MATH_F64_NEON(sinh, Sinh, std::sinh)
+HYLE_HWY_MATH_F64_NEON(cosh, Cosh, std::cosh)
+HYLE_HWY_MATH_F64_NEON(tan, Tan, std::tan)
+HYLE_HWY_MATH_F64_NEON(atanh, Atanh, std::atanh)
+HYLE_HWY_MATH_F64_NEON(log10, Log10, std::log10)
 #undef HYLE_HWY_MATH_F64_NEON
 void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept {
   const hn::ScalableTag<double> d;
@@ -143,4 +157,42 @@ void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::
 
 }  // namespace hyle::simd::detail
 
+
+// simd-18 批G binary + sincos (Highway NEON)
+void atan2_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<float> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
+  for (; i + w <= n; i += w) hn::StoreU(hn::Atan2(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::atan2(a[i], b[i]);
+}
+void pow_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<float> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
+  for (; i + w <= n; i += w) hn::StoreU(hn::Pow(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::pow(a[i], b[i]);
+}
+void sincos_f32_highway_neon(const float* src, float* s, float* c, std::size_t n) noexcept {
+  const hn::ScalableTag<float> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
+  for (; i + w <= n; i += w) {
+    hn::Vec<hn::ScalableTag<float>> sv, cv; hn::SinCos(d, hn::LoadU(d, src + i), sv, cv);
+    hn::StoreU(sv, d, s + i); hn::StoreU(cv, d, c + i);
+  }
+  for (; i < n; ++i) { s[i] = std::sin(src[i]); c[i] = std::cos(src[i]); }
+}
+void atan2_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
+  for (; i + w <= n; i += w) hn::StoreU(hn::Atan2(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::atan2(a[i], b[i]);
+}
+void pow_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
+  for (; i + w <= n; i += w) hn::StoreU(hn::Pow(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::pow(a[i], b[i]);
+}
+void sincos_f64_highway_neon(const double* src, double* s, double* c, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
+  for (; i + w <= n; i += w) {
+    hn::Vec<hn::ScalableTag<double>> sv, cv; hn::SinCos(d, hn::LoadU(d, src + i), sv, cv);
+    hn::StoreU(sv, d, s + i); hn::StoreU(cv, d, c + i);
+  }
+  for (; i < n; ++i) { s[i] = std::sin(src[i]); c[i] = std::cos(src[i]); }
+}
 #endif  // HYLE_ARCH_ARM64
