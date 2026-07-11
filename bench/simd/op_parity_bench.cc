@@ -391,5 +391,62 @@ int main() {
     });
   }
 
+  // ---- 17. DemoteToNearestInt f64->i32 (simd-18 @opus: HYLE round+blend+cvtt compose vs Highway
+  // native). ~15% slower measured, but it's a CORRECTNESS difference not a loss: HYLE does the FULL
+  // emu128-spec sign-based saturation (Abs + 2 blends -> NaN yields sign-based MIN/MAX), while Highway's
+  // x86 native does only Min(v, MAX) + cvtpd2dq (NaN -> INT32_MIN, diverging from its OWN emu128 ref).
+  // The extra HYLE work buys spec-faithful NaN handling. Row documents the tradeoff. ----
+  {
+    const hs::ScalableTag<double> hdd; const hn::ScalableTag<double> gdd;
+    const hs::FixedTag<std::int32_t, hs::kNativeVectorBytes / sizeof(double)> hdi32{};
+    const hn::Rebind<std::int32_t, hn::ScalableTag<double>> gdi32{};
+    const std::size_t hwd = hs::Lanes(hdd), gwd = hn::Lanes(gdd);
+    std::vector<double> da(kN); std::vector<std::int32_t> o32(kN);
+    { std::mt19937_64 rng(27); std::uniform_real_distribution<double> d(-1e6, 1e6); for (auto& e : da) e = d(rng); }
+    nb::Bench bench; bench.title("DemoteToNearestInt f64->i32 (4096)").relative(true).batch(kN).minEpochIterations(10000);
+    bench.run("HYLE DemoteToNearestInt", [&] {
+      for (std::size_t i = 0; i + hwd <= kN; i += hwd)
+        hs::StoreU(hs::DemoteToNearestInt(hdi32, hs::LoadU(hdd, da.data() + i)), hdi32, o32.data() + i);
+      nb::doNotOptimizeAway(o32.data());
+    });
+    bench.run("Highway DemoteToNearestInt", [&] {
+      for (std::size_t i = 0; i + gwd <= kN; i += gwd)
+        hn::StoreU(hn::DemoteToNearestInt(gdi32, hn::LoadU(gdd, da.data() + i)), gdi32, o32.data() + i);
+      nb::doNotOptimizeAway(o32.data());
+    });
+  }
+
+  // ---- 18. DemoteMaskTo i32->i16 (simd-18 @opus: HYLE bitfield round-trip BitsFromMask->LoadMaskBits
+  // vs Highway vector-domain VecFromMask->single-vector-DemoteTo->MaskFromVec).
+  // KNOWN GAP (measured ~6x on avx2): bitfield's scalar re-pack loop in LoadMaskBits loses to Highway's
+  // in-register pack. bitfield is kept anyway because (a) it is OPTIMAL on AVX-512 where masks ARE the
+  // k-register bitfield (no data movement), (b) HYLE has no single-vector DemoteTo so the vector-domain
+  // path needs partial/full-tag gymnastics that are fragile, and (c) mask width-bridging is a COLD op
+  // (absolute 0.5ns, not an inner-loop primitive). Row kept as honest documentation of the tradeoff. ----
+  {
+    const hs::ScalableTag<std::int32_t> hd32; const hn::ScalableTag<std::int32_t> gd32;
+    using HD16 = hs::Rebind<std::int16_t, hs::ScalableTag<std::int32_t>>;
+    using GD16 = hn::Rebind<std::int16_t, hn::ScalableTag<std::int32_t>>;
+    const HD16 hd16{}; const GD16 gd16{};
+    const std::size_t hw32 = hs::Lanes(hd32), gw32 = hn::Lanes(gd32);
+    std::vector<std::int32_t> s32(kN);
+    { std::mt19937_64 rng(28); std::uniform_int_distribution<int> d(-1000,1000); for (auto& e : s32) e = d(rng); }
+    volatile std::uint64_t sink = 0;
+    nb::Bench bench; bench.title("DemoteMaskTo i32->i16 (4096)").relative(true).batch(kN).minEpochIterations(10000);
+    bench.run("HYLE DemoteMaskTo", [&] {
+      for (std::size_t i = 0; i + hw32 <= kN; i += hw32) {
+        auto m = hs::Gt(hs::LoadU(hd32, s32.data() + i), hs::Zero(hd32));
+        sink ^= hs::BitsFromMask(hd16, hs::DemoteMaskTo(hd16, hd32, m));
+      }
+    });
+    bench.run("Highway DemoteMaskTo", [&] {
+      for (std::size_t i = 0; i + gw32 <= kN; i += gw32) {
+        auto m = hn::Gt(hn::LoadU(gd32, s32.data() + i), hn::Zero(gd32));
+        sink ^= hn::BitsFromMask(gd16, hn::DemoteMaskTo(gd16, gd32, m));
+      }
+    });
+    nb::doNotOptimizeAway(sink);
+  }
+
   return 0;
 }

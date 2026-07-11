@@ -1207,15 +1207,18 @@ HYLE_FORCE_INLINE MFromD<D> UpperHalfOfMask(D d, MFromD<Twice<D>> m) noexcept {
 }
 
 // PromoteMaskTo / DemoteMaskTo / OrderedDemote2MasksTo: convert a mask between lane widths.
-// Highway bridges these through the *vector* domain (VecFromMask -> Promote/DemoteTo -> MaskFromVec),
-// but HYLE has no single-vector PromoteTo (only half-at-a-time PromoteLowerTo/UpperTo), and on
-// AVX-512 masks are k-registers -- the vector path would need vpmovm2* + widen + vpmov2m round-trips.
-// Instead we bridge through the *bit* domain: promote/demote PRESERVE lane count N, and every backend's
-// BitsFromMask/LoadMaskBits uses the identical "lane i <-> bit i" packing, so the 1-bit-per-lane
-// bitfield is lane-width-INDEPENDENT. A DFrom->DTo mask conversion is therefore just re-tagging the
-// same bits. This is uniform across all 5 backends and optimal on AVX-512 (the k-register already IS
-// the bitfield -- no expand/recompress). DFrom must have the same lane COUNT as DTo (Rebind), which the
-// static_asserts on lane size enforce transitively (same N, different width).
+// Highway bridges these through the *vector* domain (VecFromMask -> Promote/single-vector-DemoteTo ->
+// MaskFromVec). HYLE bridges through the *bit* domain instead: promote/demote PRESERVE lane count N,
+// and every backend's BitsFromMask/LoadMaskBits uses the identical "lane i <-> bit i" packing, so the
+// 1-bit-per-lane bitfield is lane-width-INDEPENDENT -- a DFrom->DTo conversion is just re-tagging the
+// same bits. This is uniform across all 5 backends and OPTIMAL on AVX-512 (the k-register already IS
+// the bitfield -- zero data movement). DFrom must have the same lane COUNT as DTo (Rebind).
+// TRADEOFF (measured, op_parity_bench §18): on vector-mask backends (sse4/avx2/neon) the bitfield
+// round-trip's scalar re-pack loop in LoadMaskBits is ~6x slower than Highway's in-register pack.
+// The vector-domain alternative (OrderedDemote2To+LowerHalf / PromoteLowerTo) needs BitCast/MaskFromVec
+// on the PARTIAL narrow Rebind tag (kPow2=-1), which HYLE's BitCast doesn't currently accept -- a
+// broader tag-system change. Kept bitfield because these are COLD ops (mask width-bridging, ~0.5ns
+// absolute, not inner-loop) and it is correct + avx512-optimal. Revisit if a hot consumer appears.
 template <class DTo, class DFrom>
 HYLE_FORCE_INLINE MFromD<DTo> PromoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom> m) noexcept {
   static_assert(sizeof(TFromD<DTo>) > sizeof(TFromD<DFrom>), "PromoteMaskTo widens the lane type");
