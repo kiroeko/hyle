@@ -2,7 +2,7 @@
 
 | 项 | 内容 |
 |---|---|
-| 状态 | 🔴 未开工（opus 出卡 / grok 实现 / opus 四查） |
+| 状态 | 🟢 WSL 已实现+验过（grok）：scalar/sse4/avx2 188；avx512 SDE 188；neon 已入待 mac |
 | 前置 | simd-16 |
 | 范围 | `backend/{scalar,sse4,avx2,avx512,neon}.h` + `vec_test.cc`。**不动** scalable（SVE/RVV 归批3+）、不动 vec.h 泛型层 |
 | 目标 | 追平 Highway 定宽广度：定模式 shuffle + 字节/lane 移位族 |

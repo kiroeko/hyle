@@ -2,7 +2,7 @@
 
 | 项 | 内容 |
 |---|---|
-| 状态 | 🔴 未开工（opus 出卡 / grok 实现 / opus 四查） |
+| 状态 | 🟢 WSL 已实现+验过（grok）：定宽 192/192（sse4/avx2/avx512 SDE）；neon 已入待 mac |
 | 前置 | simd-16 |
 | 范围 | `backend/{scalar,sse4,avx2,avx512,neon}.h` + `vec_test.cc`。**不动** scalable、不动 vec.h 泛型层 |
 | 目标 | 运行期(非编译期常量)移位/旋转 + 水平加减 + 非临时存 + 128 广播 + 浮点指数域 |

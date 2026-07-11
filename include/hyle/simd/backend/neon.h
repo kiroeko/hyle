@@ -2295,6 +2295,214 @@ HYLE_FORCE_INLINE VecNeon<T, N> ZeroIfNegative(VecNeon<T, N> v) noexcept {
   return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), Zero(Simd<T, N, 0>()), v);
 }
 
+
+// ---- simd-17 batch2: runtime *Same + Pairwise + Stream + LoadDup128 + exp domain ----
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ShiftLeftSame(VecNeon<T, N> v, int bits) noexcept {
+  static_assert(std::is_integral_v<T>, "ShiftLeftSame is integer-lane only");
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vshlq_s8(v.raw, vdupq_n_s8(static_cast<std::int8_t>(bits)));
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vshlq_u8(v.raw, vdupq_n_s8(static_cast<std::int8_t>(bits)));
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vshlq_s16(v.raw, vdupq_n_s16(static_cast<std::int16_t>(bits)));
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = vshlq_u16(v.raw, vdupq_n_s16(static_cast<std::int16_t>(bits)));
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vshlq_s32(v.raw, vdupq_n_s32(bits));
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = vshlq_u32(v.raw, vdupq_n_s32(bits));
+  else if constexpr (std::is_same_v<T, std::int64_t>) r.raw = vshlq_s64(v.raw, vdupq_n_s64(bits));
+  else r.raw = vshlq_u64(v.raw, vdupq_n_s64(bits));
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ShiftRightSame(VecNeon<T, N> v, int bits) noexcept {
+  static_assert(std::is_integral_v<T>, "ShiftRightSame is integer-lane only");
+  return ShiftLeftSame(v, -bits);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> RotateRightSame(VecNeon<T, N> v, int bits) noexcept {
+  static_assert(std::is_integral_v<T>, "RotateRightSame is integer-lane only");
+  constexpr int W = static_cast<int>(sizeof(T) * 8);
+  bits &= (W - 1);
+  if (bits == 0) return v;
+  return Or(ShiftRightSame(v, bits), ShiftLeftSame(v, W - bits));
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> RotateLeftSame(VecNeon<T, N> v, int bits) noexcept {
+  constexpr int W = static_cast<int>(sizeof(T) * 8);
+  bits &= (W - 1);
+  if (bits == 0) return v;
+  return RotateRightSame(v, W - bits);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> RoundingShiftRightSame(VecNeon<T, N> v, int s) noexcept {
+  static_assert(std::is_integral_v<T>, "RoundingShiftRightSame is integer-lane only");
+  if (s <= 0) return v;
+  return ShiftRightSame(Add(v, Set(Simd<T, N, 0>(), static_cast<T>(T{1} << (s - 1)))), s);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> RoundingShr(VecNeon<T, N> v, VecNeon<T, N> amounts) noexcept {
+  static_assert(std::is_integral_v<T>, "RoundingShr is integer-lane only");
+  alignas(16) T sv[N], sa[N], so[N];
+  StoreU(v, Simd<T, N, 0>(), sv); StoreU(amounts, Simd<T, N, 0>(), sa);
+  for (std::size_t i = 0; i < N; ++i) {
+    const int s = static_cast<int>(sa[i]);
+    if (s <= 0) so[i] = sv[i];
+    else so[i] = static_cast<T>((sv[i] + static_cast<T>(T{1} << (s - 1))) >> s);
+  }
+  return LoadU(Simd<T, N, 0>(), so);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> PairwiseAdd128(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  alignas(16) T sa[N], sb[N], so[N];
+  StoreU(a, Simd<T, N, 0>(), sa); StoreU(b, Simd<T, N, 0>(), sb);
+  for (std::size_t i = 0; i < N / 2; ++i) {
+    so[i] = static_cast<T>(sa[2 * i] + sa[2 * i + 1]);
+    so[N / 2 + i] = static_cast<T>(sb[2 * i] + sb[2 * i + 1]);
+  }
+  return LoadU(Simd<T, N, 0>(), so);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> PairwiseSub128(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  alignas(16) T sa[N], sb[N], so[N];
+  StoreU(a, Simd<T, N, 0>(), sa); StoreU(b, Simd<T, N, 0>(), sb);
+  for (std::size_t i = 0; i < N / 2; ++i) {
+    so[i] = static_cast<T>(sa[2 * i] - sa[2 * i + 1]);
+    so[N / 2 + i] = static_cast<T>(sb[2 * i] - sb[2 * i + 1]);
+  }
+  return LoadU(Simd<T, N, 0>(), so);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> PairwiseAdd(VecNeon<T, N> a, VecNeon<T, N> b) noexcept { return PairwiseAdd128(a, b); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> PairwiseSub(VecNeon<T, N> a, VecNeon<T, N> b) noexcept { return PairwiseSub128(a, b); }
+template <class D>
+HYLE_FORCE_INLINE void Stream(detail::VN<D> v, D d, TFromD<D>* aligned) noexcept { Store(v, d, aligned); }
+template <class D>
+HYLE_FORCE_INLINE detail::VN<D> LoadDup128(D d, const TFromD<D>* p) noexcept { return LoadU(d, p); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE auto GetBiasedExponent(VecNeon<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "GetBiasedExponent is float only");
+  using U = std::conditional_t<sizeof(T) == 4, std::uint32_t, std::uint64_t>;
+  const auto bits = BitCast(Simd<U, N, 0>(), v);
+  if constexpr (sizeof(T) == 4) return And(ShiftRight<23>(bits), Set(Simd<U, N, 0>(), U{0xFF}));
+  else return And(ShiftRight<52>(bits), Set(Simd<U, N, 0>(), U{0x7FF}));
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> MulByFloorPow2(VecNeon<T, N> v, VecNeon<T, N> exp) noexcept {
+  static_assert(std::is_floating_point_v<T>, "MulByFloorPow2 is float only");
+  // Store+reload scalar ldexp with Highway's NaN special-cases: NaN exp, (0,+inf), (inf,-inf)
+  // -> NaN. floor(exp) is clamped into int range first so the cast is never UB (a raw
+  // static_cast<int>(floor(+inf)) is UB). Matches the scalar oracle.
+  alignas(16) T sv[N], se[N], ro[N];
+  StoreU(v, Simd<T, N, 0>(), sv); StoreU(exp, Simd<T, N, 0>(), se);
+  for (std::size_t i = 0; i < N; ++i) {
+    if (std::isnan(se[i]) ||
+        (std::isinf(se[i]) && ((sv[i] == T{0} && se[i] > 0) || (std::isinf(sv[i]) && se[i] < 0)))) {
+      ro[i] = std::numeric_limits<T>::quiet_NaN();
+    } else {
+      const T fe = std::floor(se[i]);
+      const int ie = (fe >= static_cast<T>(std::numeric_limits<int>::max())) ? std::numeric_limits<int>::max()
+                   : (fe <= static_cast<T>(std::numeric_limits<int>::min())) ? std::numeric_limits<int>::min()
+                   : static_cast<int>(fe);
+      ro[i] = std::ldexp(sv[i], ie);
+    }
+  }
+  return LoadU(Simd<T, N, 0>(), ro);
+}
+
+// ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts (single 128-bit block) ----
+// NEON: vrev64 for adjacent-pair swap; vextq for rotate / half-swap / byte shifts.
+// CombineShiftRightBytes uses vextq(lo, hi, k) matching Highway arm_neon.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Shuffle2301(VecNeon<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "Shuffle2301 needs sizeof(T)==4");
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = vrev64q_f32(v.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vrev64q_s32(v.raw);
+  else r.raw = vrev64q_u32(v.raw);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Shuffle1032(VecNeon<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "Shuffle1032 needs sizeof(T)==4");
+  // Swap the two 64-bit halves: vext by 8 bytes of self.
+  VecNeon<T, N> r;
+  r.raw = detail::from_u8<T>(vextq_u8(detail::to_u8<T>(v.raw), detail::to_u8<T>(v.raw), 8));
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Shuffle0321(VecNeon<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "Shuffle0321 needs sizeof(T)==4");
+  // Rotate right 1 lane = vext by 4 bytes of self.
+  VecNeon<T, N> r;
+  r.raw = detail::from_u8<T>(vextq_u8(detail::to_u8<T>(v.raw), detail::to_u8<T>(v.raw), 4));
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Shuffle2103(VecNeon<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "Shuffle2103 needs sizeof(T)==4");
+  // Rotate left 1 lane = vext by 12 bytes of self.
+  VecNeon<T, N> r;
+  r.raw = detail::from_u8<T>(vextq_u8(detail::to_u8<T>(v.raw), detail::to_u8<T>(v.raw), 12));
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Shuffle0123(VecNeon<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "Shuffle0123 needs sizeof(T)==4");
+  // Full reverse of 4x32: reverse within each 64 then swap the two halves.
+  const auto rev = Shuffle2301(v);
+  return Shuffle1032(rev);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Shuffle01(VecNeon<T, N> v) noexcept {
+  static_assert(sizeof(T) == 8, "Shuffle01 needs sizeof(T)==8");
+  VecNeon<T, N> r;
+  r.raw = detail::from_u8<T>(vextq_u8(detail::to_u8<T>(v.raw), detail::to_u8<T>(v.raw), 8));
+  return r;
+}
+
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ShiftLeftBytes(VecNeon<T, N> v) noexcept {
+  static_assert(k >= 0 && k <= 16, "ShiftLeftBytes count in [0,16]");
+  if constexpr (k == 0) return v;
+  else if constexpr (k == 16) return Zero(Simd<T, N, 0>());
+  else {
+    // vext(zero, v, 16-k) shifts left by k bytes (low bytes filled with zero).
+    VecNeon<T, N> r;
+    r.raw = detail::from_u8<T>(vextq_u8(vdupq_n_u8(0), detail::to_u8<T>(v.raw), 16 - k));
+    return r;
+  }
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ShiftRightBytes(VecNeon<T, N> v) noexcept {
+  static_assert(k >= 0 && k <= 16, "ShiftRightBytes count in [0,16]");
+  if constexpr (k == 0) return v;
+  else if constexpr (k == 16) return Zero(Simd<T, N, 0>());
+  else {
+    VecNeon<T, N> r;
+    r.raw = detail::from_u8<T>(vextq_u8(detail::to_u8<T>(v.raw), vdupq_n_u8(0), k));
+    return r;
+  }
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ShiftLeftLanes(VecNeon<T, N> v) noexcept {
+  return ShiftLeftBytes<k * static_cast<int>(sizeof(T))>(v);
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ShiftRightLanes(VecNeon<T, N> v) noexcept {
+  return ShiftRightBytes<k * static_cast<int>(sizeof(T))>(v);
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> CombineShiftRightBytes(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept {
+  static_assert(k > 0 && k < 16, "CombineShiftRightBytes count in (0,16)");
+  // Highway: vextq(lo, hi, k) -- lo at low addresses, hi at high.
+  VecNeon<T, N> r;
+  r.raw = detail::from_u8<T>(vextq_u8(detail::to_u8<T>(lo.raw), detail::to_u8<T>(hi.raw), k));
+  return r;
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> CombineShiftRightLanes(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept {
+  return CombineShiftRightBytes<k * static_cast<int>(sizeof(T))>(hi, lo);
+}
+
 // ---- crypto: AES round primitives + carryless multiply (simd-08 档C) -----------------
 // ARM AES (vaeseq/vaesdq) FOLDS AddRoundKey into the instruction with a DIFFERENT ordering
 // than the AES-NI semantics this library adopted: AESE does AddRoundKey THEN SubBytes/ShiftRows

@@ -2382,3 +2382,238 @@ TEST(Vec, RandomXoshiro) {
   }
   EXPECT_NEAR(sum / count, 0.5, 0.05) << "uniform mean off (n=" << count << ")";  // ~0.5 expected
 }
+
+// ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts ----------------------
+// Oracle is the scalar backend's per-128-bit-block contract. Lane values = global index
+// so multi-block backends (avx2=2, avx512=4) must keep blocks independent.
+TEST(Vec, ShuffleFixedPatterns32) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_GE(n, 4u);
+  Buf<std::int32_t> in, out;
+  for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<std::int32_t>(i + 10);
+  const auto v = hs::Load(d, in.data);
+
+  auto check_map = [&](auto op, auto map4, const char* name) {
+    hs::Store(op(v), d, out.data);
+    for (std::size_t base = 0; base + 3 < n; base += 4) {
+      for (std::size_t i = 0; i < 4; ++i) {
+        EXPECT_EQ(out.data[base + i], in.data[base + map4(i)])
+            << name << " base=" << base << " i=" << i;
+      }
+    }
+  };
+  check_map([](auto x) { return hs::Shuffle2301(x); },
+            [](std::size_t i) { return i ^ 1; }, "Shuffle2301");
+  check_map([](auto x) { return hs::Shuffle1032(x); },
+            [](std::size_t i) { return i ^ 2; }, "Shuffle1032");
+  check_map([](auto x) { return hs::Shuffle0321(x); },
+            [](std::size_t i) { return (i + 1) & 3; }, "Shuffle0321");
+  check_map([](auto x) { return hs::Shuffle2103(x); },
+            [](std::size_t i) { return (i + 3) & 3; }, "Shuffle2103");
+  check_map([](auto x) { return hs::Shuffle0123(x); },
+            [](std::size_t i) { return i ^ 3; }, "Shuffle0123");
+}
+
+TEST(Vec, Shuffle01_64) {
+  const hs::ScalableTag<std::int64_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_GE(n, 2u);
+  Buf<std::int64_t> in, out;
+  for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<std::int64_t>(100 + i);
+  hs::Store(hs::Shuffle01(hs::Load(d, in.data)), d, out.data);
+  for (std::size_t base = 0; base + 1 < n; base += 2) {
+    EXPECT_EQ(out.data[base + 0], in.data[base + 1]) << "Shuffle01 base=" << base;
+    EXPECT_EQ(out.data[base + 1], in.data[base + 0]) << "Shuffle01 base=" << base;
+  }
+}
+
+TEST(Vec, ShiftBytesAndLanes) {
+  // Byte shifts on i8 so each byte is independently visible.
+  {
+    const hs::ScalableTag<std::uint8_t> d;
+    const std::size_t n = hs::Lanes(d);
+    Buf<std::uint8_t> in, out;
+    for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<std::uint8_t>(i + 1);
+    const auto v = hs::Load(d, in.data);
+
+    hs::Store(hs::ShiftLeftBytes<3>(v), d, out.data);
+    for (std::size_t base = 0; base < n; base += 16) {
+      for (std::size_t i = 0; i < 16 && base + i < n; ++i) {
+        const std::uint8_t exp = (i >= 3) ? in.data[base + i - 3] : std::uint8_t{0};
+        EXPECT_EQ(out.data[base + i], exp) << "ShiftLeftBytes<3> base=" << base << " i=" << i;
+      }
+    }
+    hs::Store(hs::ShiftRightBytes<5>(v), d, out.data);
+    for (std::size_t base = 0; base < n; base += 16) {
+      for (std::size_t i = 0; i < 16 && base + i < n; ++i) {
+        const std::uint8_t exp = (i + 5 < 16) ? in.data[base + i + 5] : std::uint8_t{0};
+        EXPECT_EQ(out.data[base + i], exp) << "ShiftRightBytes<5> base=" << base << " i=" << i;
+      }
+    }
+    // k=0 identity
+    hs::Store(hs::ShiftLeftBytes<0>(v), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], in.data[i]);
+  }
+  // Lane shifts on i32
+  {
+    const hs::ScalableTag<std::int32_t> d;
+    const std::size_t n = hs::Lanes(d);
+    Buf<std::int32_t> in, out;
+    for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<std::int32_t>(i + 7);
+    hs::Store(hs::ShiftLeftLanes<1>(hs::Load(d, in.data)), d, out.data);
+    for (std::size_t base = 0; base + 3 < n; base += 4) {
+      EXPECT_EQ(out.data[base + 0], 0);
+      EXPECT_EQ(out.data[base + 1], in.data[base + 0]);
+      EXPECT_EQ(out.data[base + 2], in.data[base + 1]);
+      EXPECT_EQ(out.data[base + 3], in.data[base + 2]);
+    }
+    hs::Store(hs::ShiftRightLanes<1>(hs::Load(d, in.data)), d, out.data);
+    for (std::size_t base = 0; base + 3 < n; base += 4) {
+      EXPECT_EQ(out.data[base + 0], in.data[base + 1]);
+      EXPECT_EQ(out.data[base + 1], in.data[base + 2]);
+      EXPECT_EQ(out.data[base + 2], in.data[base + 3]);
+      EXPECT_EQ(out.data[base + 3], 0);
+    }
+  }
+}
+
+TEST(Vec, CombineShiftRightBytes) {
+  const hs::ScalableTag<std::uint8_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::uint8_t> lo, hi, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    lo.data[i] = static_cast<std::uint8_t>(0x10 + i);
+    hi.data[i] = static_cast<std::uint8_t>(0x80 + i);
+  }
+  hs::Store(hs::CombineShiftRightBytes<4>(hs::Load(d, hi.data), hs::Load(d, lo.data)), d, out.data);
+  for (std::size_t base = 0; base < n; base += 16) {
+    for (std::size_t i = 0; i < 16 && base + i < n; ++i) {
+      const std::size_t src = 4 + i;
+      const std::uint8_t exp = (src < 16) ? lo.data[base + src] : hi.data[base + src - 16];
+      EXPECT_EQ(out.data[base + i], exp) << "CombineShiftRightBytes base=" << base << " i=" << i;
+    }
+  }
+  // Lane form: CombineShiftRightLanes<1> on i32 == CombineShiftRightBytes<4>
+  {
+    const hs::ScalableTag<std::int32_t> di;
+    const std::size_t ni = hs::Lanes(di);
+    Buf<std::int32_t> a, b, oa, ob;
+    for (std::size_t i = 0; i < ni; ++i) {
+      a.data[i] = static_cast<std::int32_t>(i + 1);
+      b.data[i] = static_cast<std::int32_t>(100 + i);
+    }
+    const auto va = hs::Load(di, a.data);
+    const auto vb = hs::Load(di, b.data);
+    hs::Store(hs::CombineShiftRightLanes<1>(vb, va), di, oa.data);
+    hs::Store(hs::CombineShiftRightBytes<4>(vb, va), di, ob.data);
+    for (std::size_t i = 0; i < ni; ++i) EXPECT_EQ(oa.data[i], ob.data[i]);
+  }
+}
+
+// ---- simd-17 batch2: *Same shifts, Pairwise, Stream, LoadDup128, exp domain ----------
+TEST(Vec, ShiftSameAndRotateSame) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> in, out;
+  for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<std::int32_t>((i + 1) * 3);
+  const auto v = hs::Load(d, in.data);
+  hs::Store(hs::ShiftLeftSame(v, 2), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], in.data[i] << 2);
+  hs::Store(hs::ShiftRightSame(v, 1), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], in.data[i] >> 1);
+  hs::Store(hs::RotateLeftSame(v, 4), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const auto u = static_cast<std::uint32_t>(in.data[i]);
+    EXPECT_EQ(static_cast<std::uint32_t>(out.data[i]), (u << 4) | (u >> 28));
+  }
+  hs::Store(hs::RoundingShiftRightSame(v, 2), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], (in.data[i] + 2) >> 2);
+}
+
+TEST(Vec, PairwiseAddSub) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_GE(n, 4u);
+  Buf<std::int32_t> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<std::int32_t>(i + 1);
+    b.data[i] = static_cast<std::int32_t>(10 + i);
+  }
+  hs::Store(hs::PairwiseAdd(hs::Load(d, a.data), hs::Load(d, b.data)), d, out.data);
+  for (std::size_t i = 0; i < n / 2; ++i) {
+    EXPECT_EQ(out.data[i], a.data[2 * i] + a.data[2 * i + 1]) << "PAdd a i=" << i;
+    EXPECT_EQ(out.data[n / 2 + i], b.data[2 * i] + b.data[2 * i + 1]) << "PAdd b i=" << i;
+  }
+  hs::Store(hs::PairwiseAdd128(hs::Load(d, a.data), hs::Load(d, b.data)), d, out.data);
+  for (std::size_t base = 0; base + 3 < n; base += 4) {
+    EXPECT_EQ(out.data[base + 0], a.data[base + 0] + a.data[base + 1]);
+    EXPECT_EQ(out.data[base + 1], a.data[base + 2] + a.data[base + 3]);
+    EXPECT_EQ(out.data[base + 2], b.data[base + 0] + b.data[base + 1]);
+    EXPECT_EQ(out.data[base + 3], b.data[base + 2] + b.data[base + 3]);
+  }
+}
+
+TEST(Vec, StreamAndLoadDup128) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> in, out;
+  for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<std::int32_t>(i + 5);
+  hs::Stream(hs::Load(d, in.data), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], in.data[i]);
+
+  Buf<std::int32_t> src128{};
+  for (std::size_t i = 0; i < 4 && i < n; ++i) src128.data[i] = static_cast<std::int32_t>(100 + i);
+  hs::Store(hs::LoadDup128(d, src128.data), d, out.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out.data[i], src128.data[i % 4]) << "LoadDup128 i=" << i;
+}
+
+TEST(Vec, GetBiasedExponentAndMulByFloorPow2) {
+  const hs::ScalableTag<float> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<float> in, exp, outf;
+  Buf<std::uint32_t> outu;
+  for (std::size_t i = 0; i < n; ++i) {
+    in.data[i] = (i % 3 == 0) ? 1.0f : (i % 3 == 1) ? 2.0f : 0.5f;
+    exp.data[i] = 2.5f;
+  }
+  hs::Store(hs::GetBiasedExponent(hs::Load(d, in.data)),
+            hs::RebindToUnsigned<hs::ScalableTag<float>>{}, outu.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::uint32_t expect = (in.data[i] == 1.0f) ? 127u : (in.data[i] == 2.0f) ? 128u : 126u;
+    EXPECT_EQ(outu.data[i], expect) << "biased i=" << i;
+  }
+  hs::Store(hs::MulByFloorPow2(hs::Load(d, in.data), hs::Load(d, exp.data)), d, outf.data);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_FLOAT_EQ(outf.data[i], in.data[i] * 4.0f) << "MulByFloorPow2 i=" << i;
+
+  // Negative operand: GetBiasedExponent uses |v|, so -2.0 still yields biased 128 (no sign leak).
+  Buf<float> neg;
+  for (std::size_t i = 0; i < n; ++i) neg.data[i] = -2.0f;
+  hs::Store(hs::GetBiasedExponent(hs::Load(d, neg.data)),
+            hs::RebindToUnsigned<hs::ScalableTag<float>>{}, outu.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(outu.data[i], 128u) << "biased neg i=" << i;
+
+  // Highway special cases (the red-team gap the earlier exp=2.5-only test missed):
+  //   MulByFloorPow2(v, NaN)=NaN, (0,+inf)=NaN, (inf,-inf)=NaN. Non-special inf paths pass through.
+  const float kNaN = std::numeric_limits<float>::quiet_NaN();
+  const float kInf = std::numeric_limits<float>::infinity();
+  Buf<float> sv, sexp, so;
+  for (std::size_t i = 0; i < n; ++i) {
+    const int c = static_cast<int>(i % 5);
+    if (c == 0) { sv.data[i] = 3.0f; sexp.data[i] = kNaN; }        // NaN exp -> NaN
+    else if (c == 1) { sv.data[i] = 0.0f; sexp.data[i] = kInf; }   // (0,+inf) -> NaN
+    else if (c == 2) { sv.data[i] = kInf; sexp.data[i] = -kInf; }  // (inf,-inf) -> NaN
+    else if (c == 3) { sv.data[i] = 4.0f; sexp.data[i] = kInf; }   // (finite,+inf) -> +inf
+    else { sv.data[i] = 3.0f; sexp.data[i] = 2.0f; }               // normal -> 12
+  }
+  hs::Store(hs::MulByFloorPow2(hs::Load(d, sv.data), hs::Load(d, sexp.data)), d, so.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const int c = static_cast<int>(i % 5);
+    if (c <= 2) EXPECT_TRUE(std::isnan(so.data[i])) << "special NaN i=" << i;
+    else if (c == 3) EXPECT_TRUE(std::isinf(so.data[i]) && so.data[i] > 0) << "special +inf i=" << i;
+    else EXPECT_FLOAT_EQ(so.data[i], 12.0f) << "special normal i=" << i;
+  }
+}

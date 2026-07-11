@@ -1,77 +1,112 @@
-# simd-17 批4：半向量合并族 —— 设计文档（需拍板路线）
+# simd-17 批4：半向量合并族（批0 之上，返回真实体）
 
 | 项 | 内容 |
 |---|---|
-| 状态 | 🟠 设计待拍板（opus 出设计 / 用户或 opus 定路线 / 再出施工卡给 grok） |
-| 前置 | simd-16；批1-3 无关可并行 |
-| 目标 | `LowerHalf` `UpperHalf` `Combine` `ZeroExtendVector` `InsertIntoUpper` `ResizeBitCast` `ZeroExtendResizeBitCast`（~7 op） |
-| 为何单独出设计 | 撞 HYLE"单后端-per-TU + 单一 native 宽度"架构，不是加函数，是**类型系统决策** |
+| 状态 | 🟢 施工卡就绪（批0 已铺地基；opus 出卡 / grok 实现 / opus 四查）|
+| 前置 | **批0（分层多宽度类型）已完成**（commit 6c12369+73e58e3）——本批的使能器 |
+| 范围 | `backend/{sse4,avx2,avx512}.h`（x86 层叠后）+ `backend/neon.h`（Vec64 半宽）+ `vec_test.cc`。不动 vec.h、不动 scalable |
+| 目标 | `LowerHalf` `UpperHalf` `Combine` `ZeroExtendVector` `InsertIntoUpper` `ResizeBitCast`（~6 op）返回**真半宽实体** |
 
-## 0. 问题陈述（为什么不能照抄 Highway）
+## 0. 批0 如何使能本批（读 simd-17-breadth-batch0-architecture.md）
 
-Highway 的半向量族返回**半宽向量类型**：`LowerHalf(Vec256<T>) → Vec128<T>`。这依赖 Highway 所有宽度类型（Vec128/256/512）**在同一 TU 共存**。
+批0 前：定宽后端单一 native 宽度，avx2 TU 无 `Vec128`，`LowerHalf(Vec256)` 无处返回。**曾被迫考虑"partial-tag 全宽存储"workaround（留永久债），已否决**。
 
-**HYLE 架构不同**（vec.h:216-239 实测）：
-- **一个 TU 只编一个后端**：`-DHYLE_SIMD_TARGET_AVX2` 只 include `avx2.h`，`kNativeVectorBytes=32`。sse4.h **不在这个 TU**。
-- 所以 avx2 TU 里**没有 `Vec128` 类型**——`Vec256` 的 `LowerHalf` 无处可返回。
-- `Simd` tag 已有 `Half`（vec.h:59 `Simd<T, N/2, kPow2-1>`），**类型 tag 层没问题**，问题是**Vec 存储类型**：avx2 的 `Vec256{__m256 raw}` 没有半宽变体。
+批0 后（实测验证）：
+- avx2.h 层叠 sse4.h → `Vec128` 与 `Vec256` 共存一 TU；avx512.h 层叠 avx2 → 三宽度共存。
+- `ScalableTag<float>::Half`（16B）**已验证解析到 `Vec128<float,4>`**，`Zero(Half{})` 走 sse4 的 width-band `requires` 重载。full tag → `Vec256<float,8>`。
+- **所以 `LowerHalf(Vec256)→Vec128` 现在返回真实体**（`_mm256_castps256_ps128`），不是打 tag 的全宽壳。这正是根本解法（研究文档方案①）。
 
-**这是早期"单一 native 宽度图方便"的直接后果**（`feedback_no_early_shortcut_as_excuse`）。做广度就该正面解决，不绕开。
+## 1. 语义（对齐 Highway，scalar oracle 式）
 
-## 1. 三条候选路线
+设 full 向量 `v` 有 `N` lane，半宽有 `N/2` lane。`Half<D>` = `Simd<T, N/2, kPow2-1>`（vec.h:59，已有）。
 
-### 路线 A：后端内引入半宽 Vec 类型（Highway 模型移植）
-每个定宽后端**额外定义半宽类型**并让全宽 op 能产出它：
-- avx2.h 加 `Vec128<T,N>{__m128i/__m128/__m128d raw}`（就是把 sse4 的 Vec128 搬一份进 avx2 TU）。
-- `LowerHalf(Vec256)→Vec128` = `_mm256_castsi256_si128`；`Combine(Vec128,Vec128)→Vec256` = `_mm256_set_m128i`。
-- avx512 加 `Vec256`（半）；sse4 加 `Vec64`（半的半，8 字节）。
-- **代价**：每后端多一套半宽类型 + 半宽上的基本 op（否则半宽向量拿到手不能用）。类型爆炸——Highway 正是为此有 Vec128/256/512 全套 + partial N。**这是最"正确"但最重的路线**（往 Highway 全类型系统靠）。
+| op | 签名 | 语义 |
+|---|---|---|
+| `LowerHalf(dh, v)` | `VFromD<Half<D>> LowerHalf(Half<D> dh, VFromD<D> v)` | 取 v 低 N/2 lane → 半宽向量 |
+| `LowerHalf(v)` | `VFromD<Half<DFromV<V>>> LowerHalf(V v)` | 便利重载，dh 从 v 推 |
+| `UpperHalf(dh, v)` | `VFromD<Half<D>> UpperHalf(Half<D> dh, VFromD<D> v)` | 取 v 高 N/2 lane → 半宽 |
+| `Combine(d, hi, lo)` | `VFromD<D> Combine(D d, VFromD<Half<D>> hi, VFromD<Half<D>> lo)` | 两半宽拼全宽：[lo, hi] |
+| `ZeroExtendVector(d, lo)` | `VFromD<D> ZeroExtendVector(D d, VFromD<Half<D>> lo)` | 低半=lo，高半=0 |
+| `InsertIntoUpper(d, hi, v)` | `VFromD<D> InsertIntoUpper(D d, VFromD<Half<D>> hi, VFromD<D> v)` | v 的高半替换为 hi |
+| `ResizeBitCast(d, v)` | `VFromD<D> ResizeBitCast(D d, V v)` | 位重解释到不同宽度 tag（可放大/缩小，多余位未定义/截断）|
 
-### 路线 B：半宽用 partial-tag 全宽存储（HYLE scalable 已用的 kMaxLanes 思路）
-半宽向量**物理上仍是全宽寄存器**，逻辑宽度由 tag 的 `N/kMaxLanes` 表达（只用低半 lane，高半忽略）：
-- `LowerHalf(d_half, Vec256 v) → Vec256`（同物理类型，但配 `Half<D>` tag，Lanes()返回 n/2）。低半就位，直接返回 v。
-- `UpperHalf(d_half, v)` = 把上半 slide/permute 到低半，返回全宽存储。
-- `Combine(d_full, hi_half, lo_half)` = 两个"只用低半的全宽向量"拼成真全宽：`lo` 低半就位 + `hi` 低半搬到上半 + blend。
-- `ZeroExtendVector(d_full, lo_half)` = lo 低半 + 上半清零。
-- **代价**：半宽向量的"物理全宽"要求所有消费它的 op 都认 partial tag（Lanes(d) 限制循环）。HYLE **定宽后端目前无 partial 语义**（`static_assert(kNativeWidth)`）——要放开这个 assert，让定宽后端接受 `N < kMaxLanes` 的 tag。这也是架构改动，但**复用 scalable 已验证的 kMaxLanes+Lanes(d) 模式**，比路线 A 的类型爆炸轻。
-- **风险**：全宽存储的"上半是垃圾"——`Store(half_vec, d_half, p)` 只能写 n/2 个（用 StoreN 或 partial store）。已有 partial-tag 测试（PartialTagSemantics）说明 HYLE 部分支持 partial，需确认覆盖面。
+**参数序（Highway 惯例，必对齐）**：`Combine(d, hi, lo)` = 结果 `[lo 在低半, hi 在高半]`。定宽 scalar.h 现有 Concat 是这个序，一致。
 
-### 路线 C：半宽 op 只在 scalar + 提供"到内存"的等价，不返回半宽向量类型
-承认定宽后端的半向量族**签名改为 memory-oriented**：
-- `StoreLowerHalf(v, d, p)` / `StoreUpperHalf` 直接写低/上半到内存（绕开半宽向量类型）。
-- `Combine(d, hi_ptr, lo_ptr)` 从两段内存拼。
-- **代价**：偏离 Highway 契约（返回值 vs 内存），消费者代码不能与 Highway 互换。**违背"追平广度"初衷**——这是"能力做了但接口不对齐"，最不推荐。
+## 2. sse4 施工卡（128→64 半宽，需引入 Vec64）
 
-## 2. opus 推荐：路线 B（partial-tag 全宽存储）
+sse4 的半宽是 **64 位**（`Vec128<T,N>` 的 half = `Vec64` 概念）。HYLE sse4 目前**无 Vec64 类型**——批4 sse4 部分需新增，或用 `Vec128<T,N/2>`（同 `__m128` 存储，低 64 位有效）表示半宽。
 
-**理由**：
-1. **复用已验证机制**：HYLE scalable 后端已跑 kMaxLanes + 运行期 Lanes(d) + PartialTagSemantics 测试。路线 B 把同一思路用到定宽——半宽 = `Half<D>` tag（Lanes 返回 n/2）+ 全宽物理存储。**不引入新类型系统**，只放开定宽的 `kNativeWidth` assert 到"接受 partial tag"。
-2. **比路线 A 轻**：不用给每后端造 Vec128/Vec64/Vec256-half 全套 + 半宽上的重复 op。
-3. **接口对齐 Highway**：`LowerHalf(d,v)`/`Combine(d,hi,lo)` 签名一致，返回向量（虽物理全宽），消费者可与 Highway 互换。
+**决策（对齐批0 的 band 模型）**：sse4 半宽 = `Vec128<T, N/2>`（物理 `__m128`，逻辑 N/2 lane 在低 64 位）。`Half<sse4-tag>` 的 byte width 落 `(0,16]` 仍是 sse4 band——**sse4 内部半宽不跨后端**，只是更窄的 partial tag，批0 的 band 已天然支持（TruncateTo 已用 `Vec128<u8,4>`）。
+- `LowerHalf(dh, Vec128<T,N> v)`：低 N/2 lane 已就位 → `return Vec128<T,N/2>{v.raw}`（同 raw，窄 tag）。
+- `UpperHalf(dh, v)`：高 N/2 移到低 → `_mm_unpackhi_epi64` 或 `_mm_srli_si128(v.raw, 8)` 后 `Vec128<T,N/2>{...}`。
+- `Combine(d, hi, lo)`：`_mm_unpacklo_epi64(lo.raw, hi.raw)`（lo 低 64 + hi 低 64 → 128）。
+- `ZeroExtendVector(d, lo)`：`_mm_move_epi64(lo.raw)`（低 64 保留，高 64 清零）。
+- `InsertIntoUpper(d, hi, v)`：`_mm_unpacklo_epi64(v.raw, hi.raw)`（v 低 64 + hi 低 64）。
 
-**路线 B 的具体设计**（待拍板后展开为施工卡）：
-- 定宽后端 `Vec256<T,N>` 的 `N` 已是模板参数——**放开 Set/Load 等的 `static_assert(kNativeWidth)`**，允许 `N = kMaxLanes/2` 的 partial tag（物理仍 `__m256`，逻辑 n/2 lane）。
-- `LowerHalf(Half<D> dh, VFromD<Twice<Half<D>>> v)`：低半就位 → 返回同 raw（配 dh tag）。
-- `UpperHalf(dh, v)`：avx2 `_mm256_permute2x128_si256` 把上 128 搬到下 128（或 `_mm256_extracti128` 存低）→ 全宽 raw。
-- `Combine(D d, half hi, half lo)`：avx2 `_mm256_permute2x128` 组合 lo 低半 + hi 低半。
-- `ZeroExtendVector(D d, half lo)`：lo 低半 + 上半 `_mm256_zextsi128_si256` 清零。
-- `InsertIntoUpper(D d, half hi, full v)`：把 hi 放进 v 的上半。
-- `ResizeBitCast` / `ZeroExtendResizeBitCast`：位宽重解释（同 raw 不同 tag）。
+## 3. avx2 施工卡（256→128 半宽，Vec128 已层叠共存）★核心
 
-**scalable（SVE/RVV）的半向量族**：Highway 也实现了（rvv `LowerHalf`=Trunc 半 LMUL；sve slide）。HYLE scalable 已是 kMaxLanes 模型，路线 B 天然契合——`LowerHalf` 返回同向量配 `Half` tag（Lanes 减半）。**路线 B 让定宽和 scalable 用同一 partial-tag 语义，统一。**
+**批0 已让 Vec128 共存**，直接抄 Highway x86_256（已侦察）：
+- `LowerHalf(dh, Vec256<T,N> v)`：
+  - f32 → `Vec128<float,N/2>{_mm256_castps256_ps128(v.raw)}`
+  - f64 → `_mm256_castpd256_pd128`；int → `_mm256_castsi256_si128`
+  - 零成本 cast（只是"忘记"高 128）。
+- `UpperHalf(dh, v)`：
+  - f32 → `_mm256_extractf128_ps(v.raw, 1)`；f64 → `_mm256_extractf128_pd(.,1)`；int → `_mm256_extracti128_si256(.,1)`
+- `Combine(d, hi, lo)`（抄 Highway:4893）：
+  - `ZeroExtendVector(d, lo)` 得 lo256 → `_mm256_inserti128_si256(lo256.raw, hi.raw, 1)`（int）；f32/f64 用 `_mm256_insertf128_*`
+- `ZeroExtendVector(d, lo)`（抄 Highway:4836）：
+  - `_mm256_zextsi128_si256(lo.raw)`（int，GCC/Clang 有 zext intrinsic）；f32 `_mm256_zextps128_ps256`；f64 `_mm256_zextpd128_pd256`
+  - **⚠️ MSVC 陷阱**（Highway 注释）：老 MSVC 的 `_mm256_inserti128` 不清零高位 → 用 `_mm256_zext*` 保证。grok 用 zext 系列即可，别用 insert-into-zero。
+- `InsertIntoUpper(d, hi, v)`：`_mm256_inserti128_si256(v.raw, hi.raw, 1)`（int）/ `_mm256_insertf128_*`（float）。
 
-## 3. 待拍板问题（需用户/opus 决策）
+## 4. avx512 施工卡（512→256 半宽，Vec256 已层叠共存）
 
-1. **路线 A / B / C 选哪个？**（opus 推荐 B）
-2. 若 B：**放开定宽 `static_assert(kNativeWidth)` 到接受 partial tag** 的影响面——现有多少 op 依赖"全宽"假设？需先审计（PartialTagSemantics 测试覆盖了哪些）。
-3. 半宽向量的 `Store` 语义：partial store 写 n/2 个（用现有 StoreN？还是新 StoreLowerHalf？）。
-4. 是否借此**统一定宽+scalable 的 partial 语义**（更大重构，但消除"定宽无 partial / scalable 有"的分裂）？
+批0 让 Vec256 共存，同 avx2 手法换 512 intrinsic：
+- `LowerHalf` → `_mm512_castps512_ps256` / `castpd512_pd256` / `castsi512_si256`
+- `UpperHalf` → `_mm512_extractf32x8_ps(v,1)` / `extractf64x4_pd(v,1)` / `extracti64x4_epi64(v,1)`
+- `Combine` → `_mm512_insertf32x8`/`insertf64x4`/`inserti64x4`（lo 放 0，hi 放 1，先 zext lo）
+- `ZeroExtendVector` → `_mm512_zextsi256_si512` / `zextps256_ps512` / `zextpd256_pd512`
+- `InsertIntoUpper` → insert 到 index 1
 
-## 4. 不在本批
+## 5. neon 施工卡（128→64 半宽，Vec64）
 
-- 一旦路线定了，出施工卡给 grok（B 路线的施工卡会比批1-3 长，因涉及放开 assert + 每后端 permute 手法）。
-- `LowerHalfOfMask`/`UpperHalfOfMask`（mask 的半）跟随向量半一起，但可能延到批4b。
+NEON 独立不层叠（aarch64）。半宽 = 64 位（`float32x2_t` 等）。HYLE neon **可能已有 Vec64 或需新增**——grok 先 grep。
+- `LowerHalf` → `vget_low_*`（`vget_low_f32(v)` 取低 64）
+- `UpperHalf` → `vget_high_*`
+- `Combine` → `vcombine_*`（`vcombine_f32(lo, hi)`）
+- `ZeroExtendVector` → `vcombine_*(lo, vdup_n_*(0))`
+- `InsertIntoUpper` → `vcombine_*(vget_low(v), hi)`
 
-## 5. clay 覆盖
+## 6. scalar oracle
 
-半向量族是窄化管线能力，clay 无对应；net 新增，不改 clay 结论。本文档是**设计决策记录**，实现待路线拍板。
+```
+LowerHalf(v):  r[i] = v[i]           for i in [0, N/2)
+UpperHalf(v):  r[i] = v[N/2 + i]     for i in [0, N/2)
+Combine(hi,lo): r[i] = lo[i] (i<N/2) ; r[i] = hi[i-N/2] (i>=N/2)
+ZeroExtendVector(lo): r[i] = lo[i] (i<N/2) ; 0 (i>=N/2)
+InsertIntoUpper(hi,v): r[i] = v[i] (i<N/2) ; hi[i-N/2] (i>=N/2)
+ResizeBitCast: 按字节重解释（min(src,dst) 字节拷贝，dst 多余位 0/未定义）
+```
+scalar 后端半宽用 `Vec<T, N/2>`（scalar 无宽度约束，天然支持）。
+
+## 7. 验收
+
+- scalar oracle 先写。`vec_test.cc` 加 `HalfVectorFamily` 测试组：
+  - 构造 full 向量 lane 值 = 全局 index（可辨）。
+  - `LowerHalf`/`UpperHalf` 结果对拍低/高半；`Combine(UpperHalf, LowerHalf)` round-trip == 原向量；`ZeroExtendVector` 高半全 0；`InsertIntoUpper` 只改高半。
+  - **round-trip 铁验**：`Combine(d, UpperHalf(dh,v), LowerHalf(dh,v)) == v`（拆了再拼回原样）。
+- 四平台：Win MSVC + WSL g++（sse4/avx2）+ AVX512 SDE + mac NEON。
+- **objdump 抽验**：`LowerHalf` 应是单条 `vextractf128`/`castsi256`（零或一指令），不是 store+reload。`Combine` 应是 `vinsertf128`。证明真实体路径，非 workaround。
+- **批0 回归**：本批加半宽 op 后，vec_test 原 184 test 仍全绿（半宽是新增，不改现有）。
+
+## 8. 关键陷阱（grok 必读）
+
+1. **Half<D> tag 已由批0 正确解析**（实测 `ScalableTag<float>::Half`→`Vec128<float,4>`）。grok 直接用 `VFromD<Half<D>>` 作半宽返回/参数类型,不要自己造半宽 tag。
+2. **ZeroExtendVector 必用 `_mm256_zext*` 系列**（不是 insert-into-zero）——MSVC 老版 insert 不清零高位（Highway 坑）。
+3. **参数序**：`Combine(d, hi, lo)` = `[lo, hi]`（lo 低半）。测试 round-trip 时 `Combine(d, UpperHalf, LowerHalf)` 才等于原值。
+4. **sse4/neon 半宽是 64 位**：若后端无 Vec64,用 `Vec128<T,N/2>`(sse4,低 64 有效)/ `float32x2_t`(neon)。grok 先 grep 现有半宽表示,拿不准标记问 opus。
+5. **LowerHalfOfMask/UpperHalfOfMask**（mask 的半）跟随向量半——本批可一并做,或延批4b。grok 视工作量定,mask 半宽在 avx512 是 k-reg 移位(`_kshiftri`),定宽是 mask 向量的半,scalar 是 bool 数组半。
+
+## 9. clay 覆盖
+
+半向量族是窄化管线能力，clay 无对应；net 新增。批0 使能后返回真实体，接口对齐 Highway。不改 clay 结论。

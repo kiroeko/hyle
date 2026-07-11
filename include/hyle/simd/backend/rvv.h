@@ -1121,6 +1121,30 @@ template <class D, class V> HYLE_FORCE_INLINE V InterleaveUpper(D d, V a, V b) n
   const std::size_t half = Lanes(d) / 2;
   return InterleaveLower(SlideDownLanes(d, a, half), SlideDownLanes(d, b, half));
 }
+
+// Concat{Lower,Upper}{Lower,Upper}(d,hi,lo): whole-vector half-concat (Highway scalable).
+// Same slide+FirstN+IfThenElse construction as SVE; RVV LMUL=1 so no Get/Set segment ops needed.
+template <class D, class V>
+HYLE_FORCE_INLINE V ConcatLowerLower(D d, V hi, V lo) noexcept {
+  const std::size_t h = Lanes(d) / 2;
+  return IfThenElse(FirstN(d, h), lo, SlideUpLanes(d, hi, h));
+}
+template <class D, class V>
+HYLE_FORCE_INLINE V ConcatUpperUpper(D d, V hi, V lo) noexcept {
+  const std::size_t h = Lanes(d) / 2;
+  return IfThenElse(FirstN(d, h), SlideDownLanes(d, lo, h), hi);
+}
+template <class D, class V>
+HYLE_FORCE_INLINE V ConcatLowerUpper(D d, V hi, V lo) noexcept {
+  const std::size_t h = Lanes(d) / 2;
+  return IfThenElse(FirstN(d, h), SlideDownLanes(d, lo, h), SlideUpLanes(d, hi, h));
+}
+template <class D, class V>
+HYLE_FORCE_INLINE V ConcatUpperLower(D d, V hi, V lo) noexcept {
+  const std::size_t h = Lanes(d) / 2;
+  return IfThenElse(FirstN(d, h), lo, hi);
+}
+
 // ConcatEven(hi,lo) = [lo even lanes, hi even lanes]; ConcatOdd = odd lanes. Build by compressing
 // each source with the even/odd mask (packs active lanes to front), then splice hi's packed half in
 // after lo's (vl/2 each). Use a slideup to place hi's compressed result at offset vl/2.

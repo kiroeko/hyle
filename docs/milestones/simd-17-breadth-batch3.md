@@ -2,7 +2,7 @@
 
 | 项 | 内容 |
 |---|---|
-| 状态 | 🔴 未开工（opus 出卡 / grok 实现 / opus 四查） |
+| 状态 | 🟢 qemu 多 VL 已实现+验过（grok）：SVE 128/256/384/512 + RVV 128/256/512/1024 全绿 |
 | 前置 | simd-16 |
 | 范围 | `backend/sve.h` + `backend/rvv.h` + `sve_test.cc`/`rvv_test.cc`。**不动**定宽（已全有）、不动 vec.h |
 | 目标 | 翻案 sve.h:696 "ConcatLowerLower etc. have no scalable meaning" 的误判 —— Highway 对 SVE/RVV **都实现了整向量半-concat**，HYLE 补齐 |

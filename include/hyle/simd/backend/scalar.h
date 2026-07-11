@@ -1206,6 +1206,288 @@ HYLE_FORCE_INLINE Vec<T, N> DupOdd(Vec<T, N> v) noexcept {
   for (std::size_t i = 0; i < N; ++i) r.raw[i] = v.raw[(i & ~std::size_t{1}) | 1];
   return r;
 }
+
+// ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts (per-128-bit-block) ----
+// Highway contract: 256/512-bit backends apply these ops independently inside each 16-byte
+// block. The scalar oracle models the same block-local rule so every backend agrees.
+namespace detail {
+template <typename T, std::size_t N, class Map4>
+HYLE_FORCE_INLINE Vec<T, N> shuffle32_blocks(Vec<T, N> v, Map4 map) noexcept {
+  static_assert(sizeof(T) == 4, "32-bit shuffle needs sizeof(T)==4");
+  constexpr std::size_t kBlock = 4;  // 16/sizeof(T)
+  Vec<T, N> r;
+  for (std::size_t base = 0; base < N; base += kBlock) {
+    for (std::size_t i = 0; i < kBlock && base + i < N; ++i)
+      r.raw[base + i] = v.raw[base + map(i)];
+  }
+  return r;
+}
+}  // namespace detail
+
+// Shuffle2301: [1,0,3,2] adjacent pair swap. Shuffle1032: [2,3,0,1] swap 64-bit halves.
+// Shuffle0321: [1,2,3,0] rotate right 1. Shuffle2103: [3,0,1,2] rotate left 1.
+// Shuffle0123: [3,2,1,0] reverse 4. Shuffle01 (64-bit): [1,0] swap the two 64-lanes.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Shuffle2301(Vec<T, N> v) noexcept {
+  return detail::shuffle32_blocks(v, [](std::size_t i) { return i ^ 1; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Shuffle1032(Vec<T, N> v) noexcept {
+  return detail::shuffle32_blocks(v, [](std::size_t i) { return i ^ 2; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Shuffle0321(Vec<T, N> v) noexcept {
+  return detail::shuffle32_blocks(v, [](std::size_t i) { return (i + 1) & 3; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Shuffle2103(Vec<T, N> v) noexcept {
+  return detail::shuffle32_blocks(v, [](std::size_t i) { return (i + 3) & 3; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Shuffle0123(Vec<T, N> v) noexcept {
+  return detail::shuffle32_blocks(v, [](std::size_t i) { return i ^ 3; });
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> Shuffle01(Vec<T, N> v) noexcept {
+  static_assert(sizeof(T) == 8, "Shuffle01 needs sizeof(T)==8");
+  Vec<T, N> r;
+  for (std::size_t base = 0; base < N; base += 2) {
+    r.raw[base + 0] = v.raw[base + 1];
+    r.raw[base + 1] = v.raw[base + 0];
+  }
+  return r;
+}
+
+// ShiftLeftBytes<k>/ShiftRightBytes<k>: per 16-byte block, shift k bytes, zero-fill.
+// CombineShiftRightBytes<k>(hi,lo): per block, take bytes [k..k+15] from the 32-byte window
+// [lo_block | hi_block] (lo at low addresses). Lanes wrappers = k*sizeof(T) bytes.
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ShiftLeftBytes(Vec<T, N> v) noexcept {
+  static_assert(k >= 0 && k <= 16, "ShiftLeftBytes count in [0,16]");
+  Vec<T, N> r{};
+  auto* rb = reinterpret_cast<std::uint8_t*>(r.raw);
+  const auto* vb = reinterpret_cast<const std::uint8_t*>(v.raw);
+  constexpr std::size_t kBytes = sizeof(T) * N;
+  for (std::size_t base = 0; base < kBytes; base += 16) {
+    for (std::size_t i = 0; i < 16 && base + i < kBytes; ++i)
+      rb[base + i] = (i >= static_cast<std::size_t>(k)) ? vb[base + i - static_cast<std::size_t>(k)] : std::uint8_t{0};
+  }
+  return r;
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ShiftRightBytes(Vec<T, N> v) noexcept {
+  static_assert(k >= 0 && k <= 16, "ShiftRightBytes count in [0,16]");
+  Vec<T, N> r{};
+  auto* rb = reinterpret_cast<std::uint8_t*>(r.raw);
+  const auto* vb = reinterpret_cast<const std::uint8_t*>(v.raw);
+  constexpr std::size_t kBytes = sizeof(T) * N;
+  for (std::size_t base = 0; base < kBytes; base += 16) {
+    for (std::size_t i = 0; i < 16 && base + i < kBytes; ++i)
+      rb[base + i] = (i + static_cast<std::size_t>(k) < 16) ? vb[base + i + static_cast<std::size_t>(k)] : std::uint8_t{0};
+  }
+  return r;
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ShiftLeftLanes(Vec<T, N> v) noexcept {
+  return ShiftLeftBytes<k * static_cast<int>(sizeof(T))>(v);
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ShiftRightLanes(Vec<T, N> v) noexcept {
+  return ShiftRightBytes<k * static_cast<int>(sizeof(T))>(v);
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> CombineShiftRightBytes(Vec<T, N> hi, Vec<T, N> lo) noexcept {
+  static_assert(k > 0 && k < 16, "CombineShiftRightBytes count in (0,16)");
+  Vec<T, N> r{};
+  auto* rb = reinterpret_cast<std::uint8_t*>(r.raw);
+  const auto* hb = reinterpret_cast<const std::uint8_t*>(hi.raw);
+  const auto* lb = reinterpret_cast<const std::uint8_t*>(lo.raw);
+  constexpr std::size_t kBytes = sizeof(T) * N;
+  for (std::size_t base = 0; base < kBytes; base += 16) {
+    for (std::size_t i = 0; i < 16 && base + i < kBytes; ++i) {
+      const std::size_t src = static_cast<std::size_t>(k) + i;
+      rb[base + i] = (src < 16) ? lb[base + src] : hb[base + src - 16];
+    }
+  }
+  return r;
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> CombineShiftRightLanes(Vec<T, N> hi, Vec<T, N> lo) noexcept {
+  return CombineShiftRightBytes<k * static_cast<int>(sizeof(T))>(hi, lo);
+}
+
+// ---- simd-17 batch2: runtime *Same shifts, Pairwise, Stream, LoadDup128, exp domain ----
+// ShiftLeftSame/RightSame: every lane shifts by the same runtime bit count.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ShiftLeftSame(Vec<T, N> v, int bits) noexcept {
+  static_assert(std::is_integral_v<T>, "ShiftLeftSame is integer-lane only");
+  Vec<T, N> r;
+  using U = std::make_unsigned_t<T>;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<T>(static_cast<U>(v.raw[i]) << bits);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> ShiftRightSame(Vec<T, N> v, int bits) noexcept {
+  static_assert(std::is_integral_v<T>, "ShiftRightSame is integer-lane only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = static_cast<T>(v.raw[i] >> bits);  // arith if signed
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> RotateRightSame(Vec<T, N> v, int bits) noexcept {
+  static_assert(std::is_integral_v<T>, "RotateRightSame is integer-lane only");
+  constexpr int W = static_cast<int>(sizeof(T) * 8);
+  bits &= (W - 1);
+  if (bits == 0) return v;
+  using U = std::make_unsigned_t<T>;
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    const U u = static_cast<U>(v.raw[i]);
+    r.raw[i] = static_cast<T>((u >> bits) | (u << (W - bits)));
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> RotateLeftSame(Vec<T, N> v, int bits) noexcept {
+  static_assert(std::is_integral_v<T>, "RotateLeftSame is integer-lane only");
+  constexpr int W = static_cast<int>(sizeof(T) * 8);
+  bits &= (W - 1);
+  if (bits == 0) return v;
+  return RotateRightSame(v, W - bits);
+}
+// RoundingShiftRightSame: (v + (1<<(s-1))) >> s; s==0 returns v.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> RoundingShiftRightSame(Vec<T, N> v, int s) noexcept {
+  static_assert(std::is_integral_v<T>, "RoundingShiftRightSame is integer-lane only");
+  if (s <= 0) return v;
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    const auto half = static_cast<T>(T{1} << (s - 1));
+    r.raw[i] = static_cast<T>((v.raw[i] + half) >> s);
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> RoundingShr(Vec<T, N> v, Vec<T, N> amounts) noexcept {
+  static_assert(std::is_integral_v<T>, "RoundingShr is integer-lane only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    const int s = static_cast<int>(amounts.raw[i]);
+    if (s <= 0) r.raw[i] = v.raw[i];
+    else {
+      const auto half = static_cast<T>(T{1} << (s - 1));
+      r.raw[i] = static_cast<T>((v.raw[i] + half) >> s);
+    }
+  }
+  return r;
+}
+
+// PairwiseAdd/Sub: full-vector [a-pair-sums..., b-pair-sums...].
+// PairwiseAdd128/Sub128: same layout but independent inside each 16-byte block.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> PairwiseAdd(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N / 2; ++i) {
+    r.raw[i] = static_cast<T>(a.raw[2 * i] + a.raw[2 * i + 1]);
+    r.raw[N / 2 + i] = static_cast<T>(b.raw[2 * i] + b.raw[2 * i + 1]);
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> PairwiseSub(Vec<T, N> a, Vec<T, N> b) noexcept {
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N / 2; ++i) {
+    r.raw[i] = static_cast<T>(a.raw[2 * i] - a.raw[2 * i + 1]);
+    r.raw[N / 2 + i] = static_cast<T>(b.raw[2 * i] - b.raw[2 * i + 1]);
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> PairwiseAdd128(Vec<T, N> a, Vec<T, N> b) noexcept {
+  constexpr std::size_t kBL = 16 / sizeof(T);  // lanes per 128-bit block
+  Vec<T, N> r;
+  for (std::size_t base = 0; base < N; base += kBL) {
+    const std::size_t h = kBL / 2;
+    for (std::size_t i = 0; i < h; ++i) {
+      r.raw[base + i] = static_cast<T>(a.raw[base + 2 * i] + a.raw[base + 2 * i + 1]);
+      r.raw[base + h + i] = static_cast<T>(b.raw[base + 2 * i] + b.raw[base + 2 * i + 1]);
+    }
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> PairwiseSub128(Vec<T, N> a, Vec<T, N> b) noexcept {
+  constexpr std::size_t kBL = 16 / sizeof(T);
+  Vec<T, N> r;
+  for (std::size_t base = 0; base < N; base += kBL) {
+    const std::size_t h = kBL / 2;
+    for (std::size_t i = 0; i < h; ++i) {
+      r.raw[base + i] = static_cast<T>(a.raw[base + 2 * i] - a.raw[base + 2 * i + 1]);
+      r.raw[base + h + i] = static_cast<T>(b.raw[base + 2 * i] - b.raw[base + 2 * i + 1]);
+    }
+  }
+  return r;
+}
+
+// Stream: non-temporal aligned store (scalar = ordinary Store).
+template <class D>
+HYLE_FORCE_INLINE void Stream(VFromD<D> v, D d, TFromD<D>* aligned) noexcept {
+  Store(v, d, aligned);
+}
+// LoadDup128: load 16 bytes and repeat into every 128-bit block of the full vector.
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> LoadDup128(D d, const TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  constexpr std::size_t kBL = 16 / sizeof(T);
+  VFromD<D> r;
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = p[i % kBL];
+  return r;
+}
+
+// GetBiasedExponent: IEEE biased exponent as unsigned same-width vector (no unbias).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE auto GetBiasedExponent(Vec<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "GetBiasedExponent is float only");
+  using U = std::conditional_t<sizeof(T) == 4, std::uint32_t, std::uint64_t>;
+  Vec<U, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    U bits;
+    std::memcpy(&bits, &v.raw[i], sizeof(T));
+    if constexpr (sizeof(T) == 4) r.raw[i] = (bits >> 23) & 0xFFu;
+    else r.raw[i] = (bits >> 52) & 0x7FFull;
+  }
+  return r;
+}
+// MulByFloorPow2(v, exp): v * 2^floor(exp) with float exp vector.
+namespace detail {
+// floor(exp) clamped into int range so the int-cast is never UB; ldexp then saturates
+// (+inf on huge positive, 0 on huge negative), matching v * 2^floor(exp) at the extremes.
+template <typename T>
+HYLE_FORCE_INLINE int floor_exp_to_int(T e) noexcept {
+  const T fe = std::floor(e);
+  if (fe >= static_cast<T>(std::numeric_limits<int>::max())) return std::numeric_limits<int>::max();
+  if (fe <= static_cast<T>(std::numeric_limits<int>::min())) return std::numeric_limits<int>::min();
+  return static_cast<int>(fe);
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> MulByFloorPow2(Vec<T, N> v, Vec<T, N> exp) noexcept {
+  static_assert(std::is_floating_point_v<T>, "MulByFloorPow2 is float only");
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i) {
+    if (std::isnan(exp.raw[i]) ||
+        (std::isinf(exp.raw[i]) && ((v.raw[i] == T{0} && exp.raw[i] > 0) ||
+                                    (std::isinf(v.raw[i]) && exp.raw[i] < 0)))) {
+      r.raw[i] = std::numeric_limits<T>::quiet_NaN();
+    } else {
+      r.raw[i] = std::ldexp(v.raw[i], detail::floor_exp_to_int(exp.raw[i]));
+    }
+  }
+  return r;
+}
+
 // TableLookupLanes: permute v by a per-lane index vector (IndicesFromVec wraps the index
 // vector; the scalar floor stores indices in a plain Vec of the same lane type). Highway's
 // permute -- index i selects source lane idx.raw[i].

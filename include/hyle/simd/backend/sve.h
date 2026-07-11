@@ -692,8 +692,9 @@ HYLE_FORCE_INLINE VFromD<D> GatherIndex(D d, const TFromD<D>* base, VI idx) noex
 // SCALABLE CONTRACT: on a scalable backend these are WHOLE-VECTOR, not per-128-bit-block like the
 // fixed-width x86 backends. SVE's svzip1/svuzp1/svtrn1 operate across the entire VL. This matches
 // the mathematical (scalar-oracle) definition and NEON's single-128-bit-block behavior; it differs
-// from AVX2's 256-bit "two blocks" only for the block-relative ops, which are NOT provided here
-// (ConcatLowerLower etc. have no scalable meaning). InterleaveLower(a,b) = [a0,b0,a1,b1,...].
+// from AVX2's 256-bit "two blocks" only for the block-relative ops. Concat* halves use Lanes(d)/2
+// (whole-vector half-concat; Highway arm_sve implements the same -- "no scalable meaning" was wrong).
+// InterleaveLower(a,b) = [a0,b0,a1,b1,...].
 template <class V> HYLE_FORCE_INLINE V InterleaveLower(V a, V b) noexcept { return svzip1(a, b); }
 template <class V> HYLE_FORCE_INLINE V InterleaveUpper(V a, V b) noexcept { return svzip2(a, b); }
 template <class D, class V> HYLE_FORCE_INLINE V InterleaveLower(D, V a, V b) noexcept { return svzip1(a, b); }
@@ -703,6 +704,35 @@ template <class D, class V> HYLE_FORCE_INLINE V InterleaveUpper(D d, V a, V b) n
 }
 template <class V> HYLE_FORCE_INLINE V ZipLower(V a, V b) noexcept { return svzip1(a, b); }
 template <class V> HYLE_FORCE_INLINE V ZipUpper(V a, V b) noexcept { return svzip2(a, b); }
+
+// Concat{Lower,Upper}{Lower,Upper}(d,hi,lo): whole-vector half-concat (Highway scalable).
+// h = Lanes(d)/2. Result layout:
+//   ConcatLowerLower = [lo[0..h), hi[0..h)]
+//   ConcatUpperUpper = [lo[h..n), hi[h..n)]
+//   ConcatLowerUpper = [lo[h..n), hi[0..h)]
+//   ConcatUpperLower = [lo[0..h), hi[h..n)]
+// Built from SlideUp/Down + FirstN select (HYLE has no Splice; SlideDown zero-fill is covered by mask).
+template <class D, class V>
+HYLE_FORCE_INLINE V ConcatLowerLower(D d, V hi, V lo) noexcept {
+  const std::size_t h = Lanes(d) / 2;
+  return IfThenElse(FirstN(d, h), lo, SlideUpLanes(d, hi, h));
+}
+template <class D, class V>
+HYLE_FORCE_INLINE V ConcatUpperUpper(D d, V hi, V lo) noexcept {
+  const std::size_t h = Lanes(d) / 2;
+  return IfThenElse(FirstN(d, h), SlideDownLanes(d, lo, h), hi);
+}
+template <class D, class V>
+HYLE_FORCE_INLINE V ConcatLowerUpper(D d, V hi, V lo) noexcept {
+  const std::size_t h = Lanes(d) / 2;
+  return IfThenElse(FirstN(d, h), SlideDownLanes(d, lo, h), SlideUpLanes(d, hi, h));
+}
+template <class D, class V>
+HYLE_FORCE_INLINE V ConcatUpperLower(D d, V hi, V lo) noexcept {
+  const std::size_t h = Lanes(d) / 2;
+  return IfThenElse(FirstN(d, h), lo, hi);
+}
+
 // ConcatEven/Odd: gather the even/odd lanes of the logical concatenation [lo, hi]. For capped tags,
 // compact each source first; full-vector svuzp would put too many `lo` lanes before `hi`.
 template <class D, class V> HYLE_FORCE_INLINE V ConcatEven(D d, V hi, V lo) noexcept {

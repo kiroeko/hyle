@@ -1025,3 +1025,41 @@ TEST(Sve, PartialTagSemantics) {
   const DR dr;
   EXPECT_EQ(hs::Lanes(dr), std::size_t{2});
 }
+
+// ---- simd-17 batch3: whole-vector half Concat* (scalable) ----------------------------
+// Oracle: h=n/2; ConcatLowerLower=[lo[0..h),hi[0..h)], etc. Multi-VL is the real gate.
+TEST(Sve, ConcatHalves) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_GE(n, std::size_t{2});
+  ASSERT_EQ(n % 2, std::size_t{0});
+  const std::size_t h = n / 2;
+  alignas(64) std::int32_t lo[kBuf], hi[kBuf], out[kBuf];
+  for (std::size_t i = 0; i < n; ++i) {
+    lo[i] = static_cast<std::int32_t>(i);
+    hi[i] = static_cast<std::int32_t>(100 + i);
+  }
+  const auto vlo = hs::Load(d, lo);
+  const auto vhi = hs::Load(d, hi);
+
+  hs::Store(hs::ConcatLowerLower(d, vhi, vlo), d, out);
+  for (std::size_t i = 0; i < h; ++i) {
+    EXPECT_EQ(out[i], lo[i]) << "LL lo i=" << i;
+    EXPECT_EQ(out[h + i], hi[i]) << "LL hi i=" << i;
+  }
+  hs::Store(hs::ConcatUpperUpper(d, vhi, vlo), d, out);
+  for (std::size_t i = 0; i < h; ++i) {
+    EXPECT_EQ(out[i], lo[h + i]) << "UU lo i=" << i;
+    EXPECT_EQ(out[h + i], hi[h + i]) << "UU hi i=" << i;
+  }
+  hs::Store(hs::ConcatLowerUpper(d, vhi, vlo), d, out);
+  for (std::size_t i = 0; i < h; ++i) {
+    EXPECT_EQ(out[i], lo[h + i]) << "LU lo i=" << i;
+    EXPECT_EQ(out[h + i], hi[i]) << "LU hi i=" << i;
+  }
+  hs::Store(hs::ConcatUpperLower(d, vhi, vlo), d, out);
+  for (std::size_t i = 0; i < h; ++i) {
+    EXPECT_EQ(out[i], lo[i]) << "UL lo i=" << i;
+    EXPECT_EQ(out[h + i], hi[h + i]) << "UL hi i=" << i;
+  }
+}

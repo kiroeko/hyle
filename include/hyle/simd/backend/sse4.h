@@ -75,10 +75,18 @@ struct Mask128 {
   static constexpr std::size_t kPrivateN = N;
 };
 
+// Width-agnostic vector<->tag aliases. IDENTICAL across the layered x86 backends (sse4/avx2/
+// avx512), so a guard defines them ONCE per TU -- sse4.h is always included first (avx2.h pulls
+// it, avx512.h pulls avx2.h), so it wins. Without the guard MSVC rejects the second alias-template
+// definition as C2386 (GCC tolerates the identical redefinition; the layered-include refactor
+// exposed the divergence). DFromV/TFromV are pure; VFromD is dependent (see below).
+#ifndef HYLE_SIMD_X86_VT_ALIASES
+#define HYLE_SIMD_X86_VT_ALIASES
 template <class V>
 using DFromV = Simd<typename V::PrivateT, V::kPrivateN, 0>;
 template <class V>
 using TFromV = typename V::PrivateT;
+#endif  // HYLE_SIMD_X86_VT_ALIASES
 
 // The 128-bit backend's vector type for tag D. N comes from D (== 16/sizeof(T) for a
 // native ScalableTag). A wrong-width tag is a compile error (static_assert below).
@@ -118,8 +126,12 @@ HYLE_FORCE_INLINE detail::V128<D> Zero(D) noexcept {
   return v;
 }
 
+// Dependent alias (resolves Zero at instantiation); guarded so layered includes define it once.
+#ifndef HYLE_SIMD_X86_VFROMD
+#define HYLE_SIMD_X86_VFROMD
 template <class D>
 using VFromD = decltype(Zero(D()));
+#endif  // HYLE_SIMD_X86_VFROMD
 
 // ---- load / store -------------------------------------------------------------------
 template <class D> requires HYLE_SIMD_W(D, 0, 16)
@@ -2002,6 +2014,253 @@ HYLE_FORCE_INLINE Vec128<T, N> IfNegativeThenElse(Vec128<T, N> v, Vec128<T, N> y
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> ZeroIfNegative(Vec128<T, N> v) noexcept {
   return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), Zero(Simd<T, N, 0>()), v);
+}
+
+
+// ---- simd-17 batch2: runtime *Same + Pairwise + Stream + LoadDup128 + exp domain ----
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ShiftLeftSame(Vec128<T, N> v, int bits) noexcept {
+  static_assert(std::is_integral_v<T>, "ShiftLeftSame is integer-lane only");
+  Vec128<T, N> r;
+  const __m128i c = _mm_cvtsi32_si128(bits);
+  if constexpr (detail::kI16<T>) r.raw = _mm_sll_epi16(v.raw, c);
+  else if constexpr (detail::kI32<T>) r.raw = _mm_sll_epi32(v.raw, c);
+  else if constexpr (detail::kI64<T>) r.raw = _mm_sll_epi64(v.raw, c);
+  else {
+    const __m128i sh = _mm_sll_epi16(v.raw, c);
+    const unsigned char m = static_cast<unsigned char>(0xFFu << (bits & 7));
+    r.raw = (bits >= 8) ? _mm_setzero_si128() : _mm_and_si128(sh, _mm_set1_epi8(static_cast<char>(m)));
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ShiftRightSame(Vec128<T, N> v, int bits) noexcept {
+  static_assert(std::is_integral_v<T>, "ShiftRightSame is integer-lane only");
+  Vec128<T, N> r;
+  const __m128i c = _mm_cvtsi32_si128(bits);
+  if constexpr (detail::kI16<T>) {
+    r.raw = detail::kSigned<T> ? _mm_sra_epi16(v.raw, c) : _mm_srl_epi16(v.raw, c);
+  } else if constexpr (detail::kI32<T>) {
+    r.raw = detail::kSigned<T> ? _mm_sra_epi32(v.raw, c) : _mm_srl_epi32(v.raw, c);
+  } else if constexpr (detail::kI64<T>) {
+    if constexpr (detail::kSigned<T>) {
+      alignas(16) T s[N]; Store(v, Simd<T, N, 0>(), s);
+      for (std::size_t i = 0; i < N; ++i) s[i] = static_cast<T>(s[i] >> bits);
+      return Load(Simd<T, N, 0>(), s);
+    } else r.raw = _mm_srl_epi64(v.raw, c);
+  } else {
+    alignas(16) T s[N]; Store(v, Simd<T, N, 0>(), s);
+    for (std::size_t i = 0; i < N; ++i) s[i] = static_cast<T>(s[i] >> bits);
+    return Load(Simd<T, N, 0>(), s);
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> RotateRightSame(Vec128<T, N> v, int bits) noexcept {
+  static_assert(std::is_integral_v<T>, "RotateRightSame is integer-lane only");
+  constexpr int W = static_cast<int>(sizeof(T) * 8);
+  bits &= (W - 1);
+  if (bits == 0) return v;
+  return Or(ShiftRightSame(v, bits), ShiftLeftSame(v, W - bits));
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> RotateLeftSame(Vec128<T, N> v, int bits) noexcept {
+  constexpr int W = static_cast<int>(sizeof(T) * 8);
+  bits &= (W - 1);
+  if (bits == 0) return v;
+  return RotateRightSame(v, W - bits);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> RoundingShiftRightSame(Vec128<T, N> v, int s) noexcept {
+  static_assert(std::is_integral_v<T>, "RoundingShiftRightSame is integer-lane only");
+  if (s <= 0) return v;
+  return ShiftRightSame(Add(v, Set(Simd<T, N, 0>(), static_cast<T>(T{1} << (s - 1)))), s);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> RoundingShr(Vec128<T, N> v, Vec128<T, N> amounts) noexcept {
+  static_assert(std::is_integral_v<T>, "RoundingShr is integer-lane only");
+  alignas(16) T sv[N], sa[N], so[N];
+  Store(v, Simd<T, N, 0>(), sv); Store(amounts, Simd<T, N, 0>(), sa);
+  for (std::size_t i = 0; i < N; ++i) {
+    const int s = static_cast<int>(sa[i]);
+    if (s <= 0) so[i] = sv[i];
+    else so[i] = static_cast<T>((sv[i] + static_cast<T>(T{1} << (s - 1))) >> s);
+  }
+  return Load(Simd<T, N, 0>(), so);
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> PairwiseAdd128(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_hadd_ps(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm_hadd_pd(a.raw, b.raw);
+  else if constexpr (detail::kI32<T>) r.raw = _mm_hadd_epi32(a.raw, b.raw);
+  else if constexpr (detail::kI16<T>) r.raw = _mm_hadd_epi16(a.raw, b.raw);
+  else {
+    alignas(16) T sa[N], sb[N], so[N];
+    Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+    for (std::size_t i = 0; i < N / 2; ++i) {
+      so[i] = static_cast<T>(sa[2 * i] + sa[2 * i + 1]);
+      so[N / 2 + i] = static_cast<T>(sb[2 * i] + sb[2 * i + 1]);
+    }
+    return Load(Simd<T, N, 0>(), so);
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> PairwiseSub128(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_hsub_ps(a.raw, b.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm_hsub_pd(a.raw, b.raw);
+  else if constexpr (detail::kI32<T>) r.raw = _mm_hsub_epi32(a.raw, b.raw);
+  else if constexpr (detail::kI16<T>) r.raw = _mm_hsub_epi16(a.raw, b.raw);
+  else {
+    alignas(16) T sa[N], sb[N], so[N];
+    Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+    for (std::size_t i = 0; i < N / 2; ++i) {
+      so[i] = static_cast<T>(sa[2 * i] - sa[2 * i + 1]);
+      so[N / 2 + i] = static_cast<T>(sb[2 * i] - sb[2 * i + 1]);
+    }
+    return Load(Simd<T, N, 0>(), so);
+  }
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> PairwiseAdd(Vec128<T, N> a, Vec128<T, N> b) noexcept { return PairwiseAdd128(a, b); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> PairwiseSub(Vec128<T, N> a, Vec128<T, N> b) noexcept { return PairwiseSub128(a, b); }
+template <class D>
+HYLE_FORCE_INLINE void Stream(detail::V128<D> v, D, TFromD<D>* aligned) noexcept {
+  using T = TFromD<D>;
+  if constexpr (std::is_same_v<T, float>) _mm_stream_ps(aligned, v.raw);
+  else if constexpr (std::is_same_v<T, double>) _mm_stream_pd(aligned, v.raw);
+  else _mm_stream_si128(reinterpret_cast<__m128i*>(aligned), v.raw);
+}
+template <class D> requires HYLE_SIMD_W(D, 0, 16)
+HYLE_FORCE_INLINE detail::V128<D> LoadDup128(D d, const TFromD<D>* p) noexcept { return LoadU(d, p); }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE auto GetBiasedExponent(Vec128<T, N> v) noexcept {
+  static_assert(std::is_floating_point_v<T>, "GetBiasedExponent is float only");
+  using U = std::conditional_t<sizeof(T) == 4, std::uint32_t, std::uint64_t>;
+  const auto bits = BitCast(Simd<U, N, 0>(), v);
+  if constexpr (sizeof(T) == 4) return And(ShiftRight<23>(bits), Set(Simd<U, N, 0>(), U{0xFF}));
+  else return And(ShiftRight<52>(bits), Set(Simd<U, N, 0>(), U{0x7FF}));
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> MulByFloorPow2(Vec128<T, N> v, Vec128<T, N> exp) noexcept {
+  static_assert(std::is_floating_point_v<T>, "MulByFloorPow2 is float only");
+  // Store+reload scalar ldexp with Highway's NaN special-cases: NaN exp, (0,+inf), (inf,-inf)
+  // -> NaN. floor(exp) is clamped into int range first so the cast is never UB (a raw
+  // static_cast<int>(floor(+inf)) is UB and diverged across backends -- avx512 dropped the
+  // finite*+inf lane). Matches the scalar oracle.
+  alignas(16) T sv[N], se[N], ro[N];
+  Store(v, Simd<T, N, 0>(), sv); Store(exp, Simd<T, N, 0>(), se);
+  for (std::size_t i = 0; i < N; ++i) {
+    if (std::isnan(se[i]) ||
+        (std::isinf(se[i]) && ((sv[i] == T{0} && se[i] > 0) || (std::isinf(sv[i]) && se[i] < 0)))) {
+      ro[i] = std::numeric_limits<T>::quiet_NaN();
+    } else {
+      const T fe = std::floor(se[i]);
+      const int ie = (fe >= static_cast<T>(std::numeric_limits<int>::max())) ? std::numeric_limits<int>::max()
+                   : (fe <= static_cast<T>(std::numeric_limits<int>::min())) ? std::numeric_limits<int>::min()
+                   : static_cast<int>(fe);
+      ro[i] = std::ldexp(sv[i], ie);
+    }
+  }
+  return Load(Simd<T, N, 0>(), ro);
+}
+
+// ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts (single 128-bit block) ----
+// Immediate constants match Highway / Intel SHUFPS encoding. Float uses _mm_shuffle_ps;
+// integer uses _mm_shuffle_epi32. Byte shifts are native SSSE3/SSE2 (_mm_slli/srli_si128,
+// _mm_alignr_epi8).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Shuffle2301(Vec128<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "Shuffle2301 needs sizeof(T)==4");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_shuffle_ps(v.raw, v.raw, 0xB1);
+  else r.raw = _mm_shuffle_epi32(v.raw, 0xB1);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Shuffle1032(Vec128<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "Shuffle1032 needs sizeof(T)==4");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_shuffle_ps(v.raw, v.raw, 0x4E);
+  else r.raw = _mm_shuffle_epi32(v.raw, 0x4E);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Shuffle0321(Vec128<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "Shuffle0321 needs sizeof(T)==4");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_shuffle_ps(v.raw, v.raw, 0x39);
+  else r.raw = _mm_shuffle_epi32(v.raw, 0x39);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Shuffle2103(Vec128<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "Shuffle2103 needs sizeof(T)==4");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_shuffle_ps(v.raw, v.raw, 0x93);
+  else r.raw = _mm_shuffle_epi32(v.raw, 0x93);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Shuffle0123(Vec128<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "Shuffle0123 needs sizeof(T)==4");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_shuffle_ps(v.raw, v.raw, 0x1B);
+  else r.raw = _mm_shuffle_epi32(v.raw, 0x1B);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> Shuffle01(Vec128<T, N> v) noexcept {
+  static_assert(sizeof(T) == 8, "Shuffle01 needs sizeof(T)==8");
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, double>) r.raw = _mm_shuffle_pd(v.raw, v.raw, 1);
+  else r.raw = _mm_shuffle_epi32(v.raw, 0x4E);
+  return r;
+}
+
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ShiftLeftBytes(Vec128<T, N> v) noexcept {
+  static_assert(k >= 0 && k <= 16, "ShiftLeftBytes count in [0,16]");
+  const __m128i i = detail::bitcast_raw_sse<__m128i>(v.raw);
+  const __m128i s = _mm_slli_si128(i, k);
+  Vec128<T, N> r;
+  r.raw = detail::bitcast_raw_sse<detail::Raw128T<T>>(s);
+  return r;
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ShiftRightBytes(Vec128<T, N> v) noexcept {
+  static_assert(k >= 0 && k <= 16, "ShiftRightBytes count in [0,16]");
+  const __m128i i = detail::bitcast_raw_sse<__m128i>(v.raw);
+  const __m128i s = _mm_srli_si128(i, k);
+  Vec128<T, N> r;
+  r.raw = detail::bitcast_raw_sse<detail::Raw128T<T>>(s);
+  return r;
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ShiftLeftLanes(Vec128<T, N> v) noexcept {
+  return ShiftLeftBytes<k * static_cast<int>(sizeof(T))>(v);
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> ShiftRightLanes(Vec128<T, N> v) noexcept {
+  return ShiftRightBytes<k * static_cast<int>(sizeof(T))>(v);
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> CombineShiftRightBytes(Vec128<T, N> hi, Vec128<T, N> lo) noexcept {
+  static_assert(k > 0 && k < 16, "CombineShiftRightBytes count in (0,16)");
+  const __m128i hi_i = detail::bitcast_raw_sse<__m128i>(hi.raw);
+  const __m128i lo_i = detail::bitcast_raw_sse<__m128i>(lo.raw);
+  const __m128i s = _mm_alignr_epi8(hi_i, lo_i, k);  // SSSE3
+  Vec128<T, N> r;
+  r.raw = detail::bitcast_raw_sse<detail::Raw128T<T>>(s);
+  return r;
+}
+template <int k, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> CombineShiftRightLanes(Vec128<T, N> hi, Vec128<T, N> lo) noexcept {
+  return CombineShiftRightBytes<k * static_cast<int>(sizeof(T))>(hi, lo);
 }
 
 // ---- crypto: AES round primitives + carryless multiply (simd-08 档C) -----------------
