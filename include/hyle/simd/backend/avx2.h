@@ -2594,6 +2594,123 @@ HYLE_FORCE_INLINE Vec256<T, N> BroadcastBlock(Vec256<T, N> v) noexcept {
   return r;
 }
 
+// ---- simd-18 批E: 128-bit block ops (avx2 = 2 blocks) --------------------------------
+// E1 SwapAdjacentBlocks: swap the two 128-bit halves.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> SwapAdjacentBlocks(Vec256<T, N> v) noexcept {
+  static_assert(sizeof(T) * N == 32, "SwapAdjacentBlocks needs full 256-bit vector");
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, double>)
+    r.raw = _mm256_permute4x64_pd(v.raw, _MM_SHUFFLE(1, 0, 3, 2));  // 0x4E
+  else if constexpr (std::is_same_v<T, float>) {
+    // bitcast via pd permute then back
+    r.raw = _mm256_castpd_ps(_mm256_permute4x64_pd(_mm256_castps_pd(v.raw), _MM_SHUFFLE(1, 0, 3, 2)));
+  } else {
+    r.raw = _mm256_permute4x64_epi64(v.raw, _MM_SHUFFLE(1, 0, 3, 2));
+  }
+  return r;
+}
+// E2 ReverseBlocks: 2 blocks -> same as SwapAdjacentBlocks.
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> ReverseBlocks(D, Vec256<T, N> v) noexcept {
+  return SwapAdjacentBlocks(v);
+}
+// E3 OddEvenBlocks: even block from `even`, odd block from `odd`.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> OddEvenBlocks(Vec256<T, N> odd, Vec256<T, N> even) noexcept {
+  static_assert(sizeof(T) * N == 32, "OddEvenBlocks needs full 256-bit vector");
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_blend_ps(odd.raw, even.raw, 0x0F);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_blend_pd(odd.raw, even.raw, 0x3);
+  else r.raw = _mm256_blend_epi32(odd.raw, even.raw, 0x0F);
+  return r;
+}
+// E4 InsertBlock<kBlock>(v, blk): insert a Vec128 block into position kBlock.
+template <int kBlock, class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> InsertBlock(D d, Vec256<T, N> v, Vec128<T, N / 2> blk) noexcept {
+  static_assert(kBlock == 0 || kBlock == 1, "avx2 InsertBlock: kBlock in {0,1}");
+  static_assert(sizeof(T) * N == 32, "InsertBlock needs full 256-bit vector");
+  const auto ins = ResizeBitCast(d, blk);  // Vec128 -> Vec256 low block, high zeroed
+  if constexpr (kBlock == 0) return ConcatUpperLower(v, ins);  // hi=v, lo=ins -> [ins.lo, v.hi]
+  else return ConcatLowerLower(ins, v);  // hi=ins, lo=v -> [v.lo, ins.lo]
+}
+// E5 SlideUpBlocks / SlideDownBlocks (kB in {0,1}).
+template <int kB, class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> SlideUpBlocks(D d, Vec256<T, N> v) noexcept {
+  static_assert(kB == 0 || kB == 1, "avx2 SlideUpBlocks: kB in {0,1}");
+  if constexpr (kB == 0) return v;
+  else return ConcatLowerLower(v, Zero(d));  // hi=v, lo=0 -> [0, v.lo]
+}
+template <int kB, class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> SlideDownBlocks(D d, Vec256<T, N> v) noexcept {
+  static_assert(kB == 0 || kB == 1, "avx2 SlideDownBlocks: kB in {0,1}");
+  if constexpr (kB == 0) return v;
+  else {
+    // Half free-alias lives after backend include; use nested D::Half / UpperHalf(v).
+    return ZeroExtendVector(d, UpperHalf(v));
+  }
+}
+// E6 InterleaveEvenBlocks / InterleaveOddBlocks
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> InterleaveEvenBlocks(D d, Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  (void)d;
+  return ConcatLowerLower(b, a);  // [a.lo, b.lo]
+}
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> InterleaveOddBlocks(D d, Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  (void)d;
+  return ConcatUpperUpper(b, a);  // [a.hi, b.hi]
+}
+// E7 aliases
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> InterleaveLowerBlocks(D d, Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  return InterleaveEvenBlocks(d, a, b);
+}
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> InterleaveUpperBlocks(D d, Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  return InterleaveOddBlocks(d, a, b);
+}
+// E8 InterleaveWholeLower/Upper: whole-vector continuous interleave (not per-block).
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> InterleaveWholeLower(D d, Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  (void)d;
+  return ConcatLowerLower(InterleaveUpper(a, b), InterleaveLower(a, b));
+}
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> InterleaveWholeUpper(D d, Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  (void)d;
+  return ConcatUpperUpper(InterleaveUpper(a, b), InterleaveLower(a, b));
+}
+// E9 Per4LaneBlockShuffle: per-128-block 4-lane permute (32-bit mainline + 64-bit).
+template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> Per4LaneBlockShuffle(Vec256<T, N> v) noexcept {
+  constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
+  Vec256<T, N> r;
+  if constexpr (sizeof(T) == 4) {
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_shuffle_ps(v.raw, v.raw, imm);
+    else r.raw = _mm256_shuffle_epi32(v.raw, imm);
+  } else if constexpr (sizeof(T) == 8) {
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm256_permute4x64_pd(v.raw, imm);
+    else r.raw = _mm256_permute4x64_epi64(v.raw, imm);
+  } else {
+    static_assert(sizeof(T) == 4 || sizeof(T) == 8, "Per4LaneBlockShuffle: 32/64-bit only (@opus 8/16)");
+  }
+  return r;
+}
+// E11 TwoTablesLookupLanes: dual-source permute. avx2 has no permutex2 without AVX512VL -> fallback.
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> TwoTablesLookupLanes(D d, Vec256<T, N> a, Vec256<T, N> b,
+                                                    Indices256<T, N> idx) noexcept {
+  // idx in [0,2N): <N from a, else from b. Blend of two TableLookupLanes.
+  alignas(32) T sa[N], sb[N], ix[N], out[N];
+  Store(a, d, sa); Store(b, d, sb); Store(idx.idx, d, ix);
+  for (std::size_t i = 0; i < N; ++i) {
+    const auto k = static_cast<std::size_t>(ix[i]);
+    out[i] = (k < N) ? sa[k] : sb[k - N];
+  }
+  return Load(d, out);
+}
+
 // ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts (per-128-bit-block) ----
 // _mm256_shuffle_epi32 / slli_si256 / alignr_epi8 all act independently on each 128-bit half,
 // which is exactly the Highway per-block contract.

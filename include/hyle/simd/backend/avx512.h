@@ -2439,6 +2439,256 @@ HYLE_FORCE_INLINE Vec512<T, N> BroadcastBlock(Vec512<T, N> v) noexcept {
   return r;
 }
 
+// ---- simd-18 批E: 128-bit block ops (avx512 = 4 blocks) ------------------------------
+// E1 SwapAdjacentBlocks: swap adjacent 128-bit pairs -> blocks [1,0,3,2].
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> SwapAdjacentBlocks(Vec512<T, N> v) noexcept {
+  static_assert(sizeof(T) * N == 64, "SwapAdjacentBlocks needs full 512-bit vector");
+  Vec512<T, N> r;
+  // _MM_PERM_CDAB = 0xB1: [1,0,3,2] of the four 128-bit lanes
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_shuffle_f32x4(v.raw, v.raw, 0xB1);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_shuffle_f64x2(v.raw, v.raw, 0xB1);
+  else r.raw = _mm512_shuffle_i32x4(v.raw, v.raw, 0xB1);
+  return r;
+}
+// E2 ReverseBlocks: reverse four 128-bit blocks -> [3,2,1,0] imm=0x1B.
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> ReverseBlocks(D, Vec512<T, N> v) noexcept {
+  static_assert(sizeof(T) * N == 64, "ReverseBlocks needs full 512-bit vector");
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_shuffle_f32x4(v.raw, v.raw, 0x1B);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_shuffle_f64x2(v.raw, v.raw, 0x1B);
+  else r.raw = _mm512_shuffle_i32x4(v.raw, v.raw, 0x1B);
+  return r;
+}
+// E3 OddEvenBlocks: even blocks from even, odd from odd.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> OddEvenBlocks(Vec512<T, N> odd, Vec512<T, N> even) noexcept {
+  static_assert(sizeof(T) * N == 64, "OddEvenBlocks needs full 512-bit vector");
+  Vec512<T, N> r;
+  // mask bits select `even` where set; odd elsewhere. 128-bit blocks of T:
+  // u64: 2 lanes/block -> mask 0x33 selects blocks 0,1 of even? Actually:
+  // card: int _mm512_mask_blend_epi64(0x33, odd, even) -- blend(k,a,b) takes b where k set.
+  // 0x33 = 00110011b: lanes 0,1,4,5 from even = blocks 0 and 2 (even blocks).
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_mask_blend_ps(0x0F0F, odd.raw, even.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_mask_blend_pd(0x33, odd.raw, even.raw);
+  else if constexpr (sizeof(T) == 8) r.raw = _mm512_mask_blend_epi64(0x33, odd.raw, even.raw);
+  else if constexpr (sizeof(T) == 4) r.raw = _mm512_mask_blend_epi32(0x0F0F, odd.raw, even.raw);
+  else if constexpr (sizeof(T) == 2) r.raw = _mm512_mask_blend_epi16(0x00FF00FF, odd.raw, even.raw);
+  else r.raw = _mm512_mask_blend_epi8(0x0000FFFF0000FFFFULL, odd.raw, even.raw);
+  return r;
+}
+// E4 InsertBlock
+template <int kBlock, class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> InsertBlock(D d, Vec512<T, N> v, Vec128<T, N / 4> blk) noexcept {
+  static_assert(kBlock >= 0 && kBlock < 4, "avx512 InsertBlock: kBlock in 0..3");
+  static_assert(sizeof(T) * N == 64, "InsertBlock needs full 512-bit vector");
+  if constexpr (kBlock == 0) {
+    // FirstN of 128-bit worth of lanes
+    constexpr std::size_t kLanes128 = 16 / sizeof(T);
+    return IfThenElse(FirstN(d, kLanes128), ResizeBitCast(d, blk), v);
+  } else {
+    Vec512<T, N> r;
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm512_insertf32x4(v.raw, blk.raw, kBlock);
+    else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_insertf64x2(v.raw, blk.raw, kBlock);
+    else r.raw = _mm512_inserti32x4(v.raw, blk.raw, kBlock);
+    return r;
+  }
+}
+// E5 SlideUpBlocks / SlideDownBlocks (kB in 0..3) via alignr_epi64 (2 i64 per 128-block).
+template <int kB, class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> SlideUpBlocks(D d, Vec512<T, N> v) noexcept {
+  static_assert(kB >= 0 && kB <= 3, "avx512 SlideUpBlocks: kB in 0..3");
+  if constexpr (kB == 0) return v;
+  else if constexpr (kB == 2) return ConcatLowerLower(v, Zero(d));
+  else {
+    // work in i64 domain: each block = 2 i64; Up by kB blocks = alignr with zero
+    const __m512i vi = detail::bitcast_raw_avx512<__m512i>(v.raw);
+    const __m512i z = _mm512_setzero_si512();
+    // Up kB=1: shift left by 1 block = 2 qwords from zero into low -> alignr(v,0,6) ?
+    // _mm512_alignr_epi64(a,b,imm): result[i] = concat(b,a)[i+imm]
+    // For SlideUp by 1 block (insert 1 zero block at low): result = [0, v0, v1, v2]
+    // concat(0,v)=[z0,z1,z2,z3, v0,v1,v2,v3] as qwords... wait 8 qwords.
+    // Actually alignr_epi64(hi, lo, imm) takes from (lo||hi) starting at imm.
+    // Highway: Up kB=1: alignr_epi64(v, 0, 6) -- let's verify: concat(0,v) has 16 qwords? No, each is 8.
+    // Intel: dst = (CONCAT(a,b) >> (imm*64))[511:0] where a is high half of concat.
+    // _mm512_alignr_epi64(a, b, count): result lane i = (b:a)[i+count] for i+count<8 else from a.
+    // Card says: Up kB=1: alignr(v, zero, 6); kB=3: alignr(v,0,2)
+    constexpr int count = (kB == 1) ? 6 : 2;  // kB==3
+    const __m512i s = _mm512_alignr_epi64(vi, z, count);
+    Vec512<T, N> r;
+    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
+    return r;
+  }
+}
+template <int kB, class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> SlideDownBlocks(D d, Vec512<T, N> v) noexcept {
+  static_assert(kB >= 0 && kB <= 3, "avx512 SlideDownBlocks: kB in 0..3");
+  if constexpr (kB == 0) return v;
+  else if constexpr (kB == 2) {
+    return ZeroExtendVector(d, UpperHalf(v));
+  } else {
+    const __m512i vi = detail::bitcast_raw_avx512<__m512i>(v.raw);
+    const __m512i z = _mm512_setzero_si512();
+    // Down kB=1: alignr(0,v,2); kB=3: alignr(0,v,6)
+    constexpr int count = (kB == 1) ? 2 : 6;
+    const __m512i s = _mm512_alignr_epi64(z, vi, count);
+    Vec512<T, N> r;
+    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
+    return r;
+  }
+}
+// E6 InterleaveEven/OddBlocks via composition
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> InterleaveEvenBlocks(D d, Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  return OddEvenBlocks(SlideUpBlocks<1>(d, b), a);
+}
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> InterleaveOddBlocks(D d, Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  return OddEvenBlocks(b, SlideDownBlocks<1>(d, a));
+}
+// E7 InterleaveLower/UpperBlocks via permutex2var index tables (u64 / f32 main).
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> InterleaveLowerBlocks(D d, Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  (void)d;
+  Vec512<T, N> r;
+  if constexpr (sizeof(T) == 8) {
+    const __m512i idx = _mm512_setr_epi64(0, 1, 8, 9, 2, 3, 10, 11);
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm512_permutex2var_pd(a.raw, idx, b.raw);
+    else r.raw = _mm512_permutex2var_epi64(a.raw, idx, b.raw);
+  } else if constexpr (sizeof(T) == 4) {
+    const __m512i idx = _mm512_setr_epi32(0,1,2,3, 16,17,18,19, 4,5,6,7, 20,21,22,23);
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm512_permutex2var_ps(a.raw, idx, b.raw);
+    else r.raw = _mm512_permutex2var_epi32(a.raw, idx, b.raw);
+  } else {
+    // fallback store+reload continuous lower-block interleave
+    alignas(64) T sa[N], sb[N], out[N];
+    Store(a, d, sa); Store(b, d, sb);
+    constexpr std::size_t blk = 16 / sizeof(T);
+    // Lower blocks of a,b interleaved: take block0 of a, block0 of b, block1 of a, block1 of b
+    std::size_t o = 0;
+    for (std::size_t bi = 0; bi < 2; ++bi) {
+      for (std::size_t j = 0; j < blk; ++j) out[o++] = sa[bi * blk + j];
+      for (std::size_t j = 0; j < blk; ++j) out[o++] = sb[bi * blk + j];
+    }
+    return Load(d, out);
+  }
+  return r;
+}
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> InterleaveUpperBlocks(D d, Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  (void)d;
+  Vec512<T, N> r;
+  if constexpr (sizeof(T) == 8) {
+    const __m512i idx = _mm512_setr_epi64(4, 5, 12, 13, 6, 7, 14, 15);
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm512_permutex2var_pd(a.raw, idx, b.raw);
+    else r.raw = _mm512_permutex2var_epi64(a.raw, idx, b.raw);
+  } else if constexpr (sizeof(T) == 4) {
+    const __m512i idx = _mm512_setr_epi32(8,9,10,11, 24,25,26,27, 12,13,14,15, 28,29,30,31);
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm512_permutex2var_ps(a.raw, idx, b.raw);
+    else r.raw = _mm512_permutex2var_epi32(a.raw, idx, b.raw);
+  } else {
+    alignas(64) T sa[N], sb[N], out[N];
+    Store(a, d, sa); Store(b, d, sb);
+    constexpr std::size_t blk = 16 / sizeof(T);
+    std::size_t o = 0;
+    for (std::size_t bi = 2; bi < 4; ++bi) {
+      for (std::size_t j = 0; j < blk; ++j) out[o++] = sa[bi * blk + j];
+      for (std::size_t j = 0; j < blk; ++j) out[o++] = sb[bi * blk + j];
+    }
+    return Load(d, out);
+  }
+  return r;
+}
+// E8 InterleaveWholeLower/Upper: continuous whole-vector interleave.
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> InterleaveWholeLower(D d, Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  (void)d;
+  Vec512<T, N> r;
+  if constexpr (sizeof(T) == 8) {
+    const __m512i idx = _mm512_setr_epi64(0, 8, 1, 9, 2, 10, 3, 11);
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm512_permutex2var_pd(a.raw, idx, b.raw);
+    else r.raw = _mm512_permutex2var_epi64(a.raw, idx, b.raw);
+  } else if constexpr (sizeof(T) == 4) {
+    const __m512i idx = _mm512_setr_epi32(0,16,1,17,2,18,3,19,4,20,5,21,6,22,7,23);
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm512_permutex2var_ps(a.raw, idx, b.raw);
+    else r.raw = _mm512_permutex2var_epi32(a.raw, idx, b.raw);
+  } else {
+    // store+reload continuous: out[2i]=a[i], out[2i+1]=b[i] for first N/2 pairs from low half
+    alignas(64) T sa[N], sb[N], out[N];
+    Store(a, d, sa); Store(b, d, sb);
+    for (std::size_t i = 0; i < N / 2; ++i) { out[2 * i] = sa[i]; out[2 * i + 1] = sb[i]; }
+    return Load(d, out);
+  }
+  return r;
+}
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> InterleaveWholeUpper(D d, Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  (void)d;
+  Vec512<T, N> r;
+  if constexpr (sizeof(T) == 8) {
+    const __m512i idx = _mm512_setr_epi64(4, 12, 5, 13, 6, 14, 7, 15);
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm512_permutex2var_pd(a.raw, idx, b.raw);
+    else r.raw = _mm512_permutex2var_epi64(a.raw, idx, b.raw);
+  } else if constexpr (sizeof(T) == 4) {
+    const __m512i idx = _mm512_setr_epi32(8,24,9,25,10,26,11,27,12,28,13,29,14,30,15,31);
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm512_permutex2var_ps(a.raw, idx, b.raw);
+    else r.raw = _mm512_permutex2var_epi32(a.raw, idx, b.raw);
+  } else {
+    alignas(64) T sa[N], sb[N], out[N];
+    Store(a, d, sa); Store(b, d, sb);
+    for (std::size_t i = 0; i < N / 2; ++i) {
+      out[2 * i] = sa[N / 2 + i];
+      out[2 * i + 1] = sb[N / 2 + i];
+    }
+    return Load(d, out);
+  }
+  return r;
+}
+// E9 Per4LaneBlockShuffle 32/64-bit
+template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> Per4LaneBlockShuffle(Vec512<T, N> v) noexcept {
+  constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);
+  Vec512<T, N> r;
+  if constexpr (sizeof(T) == 4) {
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm512_shuffle_ps(v.raw, v.raw, imm);
+    else r.raw = _mm512_shuffle_epi32(v.raw, static_cast<_MM_PERM_ENUM>(imm));
+  } else if constexpr (sizeof(T) == 8) {
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm512_permutex_pd(v.raw, imm);
+    else r.raw = _mm512_permutex_epi64(v.raw, imm);
+  } else {
+    static_assert(sizeof(T) == 4 || sizeof(T) == 8, "Per4LaneBlockShuffle: 32/64 only");
+  }
+  return r;
+}
+// E11 TwoTablesLookupLanes native permutex2var for 32/64; fallback for narrow.
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> TwoTablesLookupLanes(D d, Vec512<T, N> a, Vec512<T, N> b,
+                                                    Indices512<T, N> idx) noexcept {
+  Vec512<T, N> r;
+  if constexpr (sizeof(T) == 4) {
+    if constexpr (std::is_same_v<T, float>)
+      r.raw = _mm512_permutex2var_ps(a.raw, idx.idx.raw, b.raw);
+    else
+      r.raw = _mm512_permutex2var_epi32(a.raw, idx.idx.raw, b.raw);
+    return r;
+  } else if constexpr (sizeof(T) == 8) {
+    if constexpr (std::is_same_v<T, double>)
+      r.raw = _mm512_permutex2var_pd(a.raw, idx.idx.raw, b.raw);
+    else
+      r.raw = _mm512_permutex2var_epi64(a.raw, idx.idx.raw, b.raw);
+    return r;
+  } else {
+    alignas(64) T sa[N], sb[N], ix[N], out[N];
+    Store(a, d, sa); Store(b, d, sb); Store(idx.idx, d, ix);
+    for (std::size_t i = 0; i < N; ++i) {
+      const auto k = static_cast<std::size_t>(ix[i]);
+      out[i] = (k < N) ? sa[k] : sb[k - N];
+    }
+    return Load(d, out);
+  }
+}
+
 // ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts (per-128-bit-block) ----
 // _mm512_shuffle_epi32 / bslli_epi128 / alignr_epi8 act independently on each 128-bit quarter.
 template <typename T, std::size_t N>

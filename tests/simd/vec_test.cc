@@ -3263,3 +3263,131 @@ TEST(Vec, WidenMulAccumulateFamily) {
     }
   }
 }
+
+// ---- simd-18 批E: 128-bit block ops + TwoTablesLookupLanes + D3 ----------------------
+TEST(Vec, BlockOpsFamily) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  const std::size_t blocks = hs::Blocks(d);
+  Buf<std::int32_t> a, b, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<std::int32_t>(i + 1);
+    b.data[i] = static_cast<std::int32_t>(100 + i);
+  }
+  auto va = hs::Load(d, a.data);
+  auto vb = hs::Load(d, b.data);
+
+  // SwapAdjacentBlocks / ReverseBlocks: identity when blocks==1; swap halves when blocks==2.
+  hs::Store(hs::SwapAdjacentBlocks(va), d, out.data);
+  if (blocks == 1) {
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]);
+  } else if (blocks == 2) {
+    const std::size_t h = n / 2;
+    for (std::size_t i = 0; i < h; ++i) {
+      EXPECT_EQ(out.data[i], a.data[h + i]) << "swap lo i=" << i;
+      EXPECT_EQ(out.data[h + i], a.data[i]) << "swap hi i=" << i;
+    }
+  }
+  // ReverseBlocks equals Swap when blocks<=2
+  hs::Store(hs::ReverseBlocks(d, va), d, out.data);
+  if (blocks <= 2) {
+    auto sw = hs::SwapAdjacentBlocks(va);
+    Buf<std::int32_t> ref;
+    hs::Store(sw, d, ref.data);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], ref.data[i]);
+  }
+
+  // OddEvenBlocks: even block from even, odd from odd.
+  hs::Store(hs::OddEvenBlocks(vb, va), d, out.data);
+  if (blocks == 1) {
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]);  // returns even
+  } else if (blocks == 2) {
+    const std::size_t h = n / 2;
+    for (std::size_t i = 0; i < h; ++i) {
+      EXPECT_EQ(out.data[i], a.data[i]);       // even block from va
+      EXPECT_EQ(out.data[h + i], b.data[h + i]);  // odd block from vb
+    }
+  }
+
+  // SlideUpBlocks<0> / SlideDownBlocks<0> identity
+  hs::Store(hs::SlideUpBlocks<0>(d, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]);
+  hs::Store(hs::SlideDownBlocks<0>(d, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]);
+
+  // SlideUp/DownBlocks<1> only valid when Blocks>=2 (compile-time on fixed backends).
+  // One 128-bit block = 16/sizeof(T) lanes (not n/2 — avx512 has 4 blocks).
+  if constexpr (hs::kNativeVectorBytes >= 32) {
+    constexpr std::size_t kBlk = 16 / sizeof(std::int32_t);
+    hs::Store(hs::SlideUpBlocks<1>(d, va), d, out.data);
+    for (std::size_t i = 0; i < kBlk; ++i) EXPECT_EQ(out.data[i], 0) << "up1 zero i=" << i;
+    for (std::size_t i = 0; i + kBlk < n; ++i)
+      EXPECT_EQ(out.data[kBlk + i], a.data[i]) << "up1 data i=" << i;
+
+    hs::Store(hs::SlideDownBlocks<1>(d, va), d, out.data);
+    for (std::size_t i = 0; i + kBlk < n; ++i)
+      EXPECT_EQ(out.data[i], a.data[i + kBlk]) << "dn1 i=" << i;
+    for (std::size_t i = n - kBlk; i < n; ++i) EXPECT_EQ(out.data[i], 0) << "dn1 zero i=" << i;
+  }
+
+  // InterleaveWholeLower: continuous a0,b0,a1,b1,... for first N/2 pairs from low halves
+  hs::Store(hs::InterleaveWholeLower(d, va, vb), d, out.data);
+  for (std::size_t i = 0; i < n / 2; ++i) {
+    EXPECT_EQ(out.data[2 * i], a.data[i]) << "iwl a i=" << i;
+    EXPECT_EQ(out.data[2 * i + 1], b.data[i]) << "iwl b i=" << i;
+  }
+
+  // Per4LaneBlockShuffle 2301 on i32
+  if (n >= 4 && sizeof(std::int32_t) == 4) {
+    hs::Store(hs::Per4LaneBlockShuffle<2, 3, 0, 1>(va), d, out.data);
+    constexpr std::size_t blk = 4;
+    for (std::size_t base = 0; base + 3 < n; base += blk) {
+      EXPECT_EQ(out.data[base + 0], a.data[base + 1]);
+      EXPECT_EQ(out.data[base + 1], a.data[base + 0]);
+      EXPECT_EQ(out.data[base + 2], a.data[base + 3]);
+      EXPECT_EQ(out.data[base + 3], a.data[base + 2]);
+    }
+  }
+}
+
+TEST(Vec, TwoTablesLookupLanesFamily) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> a, b, idx, out;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = static_cast<std::int32_t>(i + 1);
+    b.data[i] = static_cast<std::int32_t>(1000 + i);
+    // cover both tables: even from a, odd from b
+    idx.data[i] = static_cast<std::int32_t>((i % 2 == 0) ? (i / 2) % n : n + (i / 2) % n);
+  }
+  auto ind = hs::IndicesFromVec(d, hs::Load(d, idx.data));
+  hs::Store(hs::TwoTablesLookupLanes(d, hs::Load(d, a.data), hs::Load(d, b.data), ind), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const auto k = static_cast<std::size_t>(idx.data[i]);
+    const auto exp = (k < n) ? a.data[k] : b.data[k - n];
+    EXPECT_EQ(out.data[i], exp) << "2tbl i=" << i;
+  }
+}
+
+TEST(Vec, SatWidenMulAccumFixedPoint) {
+  // D3 smoke: just ensure it compiles and runs; Q15-ish values.
+  const hs::ScalableTag<std::int16_t> d16;
+  const std::size_t n16 = hs::Lanes(d16);
+  using D32 = hs::RepartitionToWide<hs::ScalableTag<std::int16_t>>;
+  const D32 d32{};
+  const std::size_t n32 = hs::Lanes(d32);
+  Buf<std::int16_t> a, b;
+  Buf<std::int32_t> sum, out;
+  for (std::size_t i = 0; i < n16; ++i) {
+    a.data[i] = static_cast<std::int16_t>((i % 5) + 1);
+    b.data[i] = static_cast<std::int16_t>((i % 3) + 2);
+  }
+  for (std::size_t i = 0; i < n32; ++i) sum.data[i] = 10;
+  hs::Store(hs::SatWidenMulAccumFixedPoint(d32, hs::Load(d16, a.data), hs::Load(d16, b.data),
+                                           hs::Load(d32, sum.data)),
+            d32, out.data);
+  // result is finite i32 (no crash); spot-check non-zero for positive inputs
+  bool any = false;
+  for (std::size_t i = 0; i < n32; ++i) if (out.data[i] != 10) any = true;
+  EXPECT_TRUE(any || n32 == 0);
+}

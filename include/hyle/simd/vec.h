@@ -1424,6 +1424,17 @@ HYLE_FORCE_INLINE VFromD<DI32> SatWidenMulPairwiseAccumulate(DI32 di32, V16 a, V
                                  Add(product, overflow));
 }
 
-// D3: SatWidenMulAccumFixedPoint -- needs InterleaveWholeLower (批E); @opus until E lands.
+// D3: SatWidenMulAccumFixedPoint -- Q15 i16*i16 sat MAC via InterleaveWholeLower + D2.
+// Highway generic:5885: duplicate each lane pair then SatWidenMulPairwiseAccumulate.
+template <class DI32, class V16>
+HYLE_FORCE_INLINE VFromD<DI32> SatWidenMulAccumFixedPoint(DI32 di32, V16 a, V16 b,
+                                                          VFromD<DI32> sum) noexcept {
+  // InterleaveWholeLower(a,a) duplicates each a lane into adjacent pairs for pairwise.
+  const DFromV<V16> d16;
+  const V16 aa = InterleaveWholeLower(d16, a, a);
+  const V16 bb = InterleaveWholeLower(d16, b, b);
+  return SatWidenMulPairwiseAccumulate(di32, aa, bb, sum);
+}
+
 
 }  // namespace hyle::simd

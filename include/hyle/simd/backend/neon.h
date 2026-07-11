@@ -2858,4 +2858,81 @@ HYLE_FORCE_INLINE VecNeon<T, N> CLMulUpper(VecNeon<T, N> a, VecNeon<T, N> b) noe
 #endif
 }
 
+
+// ---- simd-18 批E: 128-bit block ops (single block = identity / Interleave* alias) ----
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> SwapAdjacentBlocks(VecNeon<T, N> v) noexcept { return v; }
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> ReverseBlocks(D, VecNeon<T, N> v) noexcept { return v; }
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> OddEvenBlocks(VecNeon<T, N> /*odd*/, VecNeon<T, N> even) noexcept { return even; }
+template <int kBlock, class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> InsertBlock(D, VecNeon<T, N> /*v*/, VecNeon<T, N> blk) noexcept {
+  static_assert(kBlock == 0, "single-block InsertBlock: kBlock==0 only");
+  return blk;
+}
+template <int kB, class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> SlideUpBlocks(D, VecNeon<T, N> v) noexcept {
+  static_assert(kB == 0, "single-block SlideUpBlocks: kB==0 only");
+  return v;
+}
+template <int kB, class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> SlideDownBlocks(D, VecNeon<T, N> v) noexcept {
+  static_assert(kB == 0, "single-block SlideDownBlocks: kB==0 only");
+  return v;
+}
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> InterleaveEvenBlocks(D, VecNeon<T, N> a, VecNeon<T, N> /*b*/) noexcept { return a; }
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> InterleaveOddBlocks(D, VecNeon<T, N> a, VecNeon<T, N> /*b*/) noexcept { return a; }
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> InterleaveLowerBlocks(D, VecNeon<T, N> a, VecNeon<T, N> /*b*/) noexcept { return a; }
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> InterleaveUpperBlocks(D, VecNeon<T, N> a, VecNeon<T, N> /*b*/) noexcept { return a; }
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> InterleaveWholeLower(D, VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  return InterleaveLower(a, b);
+}
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> InterleaveWholeUpper(D, VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  return InterleaveUpper(a, b);
+}
+// E9 Per4LaneBlockShuffle: 32-bit via store+reload oracle (single 128-block = whole vector for N=4).
+template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Per4LaneBlockShuffle(VecNeon<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4 || sizeof(T) == 8, "Per4LaneBlockShuffle: 32/64-bit only");
+  alignas(16) T s[N], o[N];
+  Store(v, Simd<T, N, 0>(), s);
+  if constexpr (sizeof(T) == 4) {
+    constexpr int sel[4] = {i0, i1, i2, i3};
+    constexpr std::size_t blk = 4;  // 4 lanes per 128-bit block for 32-bit
+    for (std::size_t base = 0; base < N; base += blk) {
+      for (std::size_t j = 0; j < blk && base + j < N; ++j)
+        o[base + j] = s[base + static_cast<std::size_t>(sel[j])];
+    }
+  } else {
+    // 64-bit: 2 lanes per 128-block; map i0.. via pairs (Highway uses permute4x64 on wider)
+    constexpr int sel[4] = {i0, i1, i2, i3};
+    for (std::size_t i = 0; i < N; ++i) {
+      const std::size_t base = (i / 2) * 2;
+      const int local = static_cast<int>(i % 2);
+      // within 2-lane block, only i0/i1 matter for 128; keep simple reverse if imm asks
+      o[i] = s[base + (static_cast<std::size_t>(sel[local]) & 1u)];
+    }
+  }
+  return Load(Simd<T, N, 0>(), o);
+}
+// E11 TwoTablesLookupLanes: dual-source table lookup.
+template <class D, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> TwoTablesLookupLanes(D d, VecNeon<T, N> a, VecNeon<T, N> b,
+                                                 IndicesNeon<T, N> idx) noexcept {
+  alignas(16) T sa[N], sb[N], ix[N], out[N];
+  Store(a, d, sa); Store(b, d, sb); Store(idx.idx, d, ix);
+  for (std::size_t i = 0; i < N; ++i) {
+    const auto k = static_cast<std::size_t>(ix[i]);
+    out[i] = (k < N) ? sa[k] : sb[k - N];
+  }
+  return Load(d, out);
+}
+
 }  // namespace hyle::simd
