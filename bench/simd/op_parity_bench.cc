@@ -391,11 +391,15 @@ int main() {
     });
   }
 
-  // ---- 17. DemoteToNearestInt f64->i32 (simd-18 @opus: HYLE round+blend+cvtt compose vs Highway
-  // native). ~15% slower measured, but it's a CORRECTNESS difference not a loss: HYLE does the FULL
-  // emu128-spec sign-based saturation (Abs + 2 blends -> NaN yields sign-based MIN/MAX), while Highway's
-  // x86 native does only Min(v, MAX) + cvtpd2dq (NaN -> INT32_MIN, diverging from its OWN emu128 ref).
-  // The extra HYLE work buys spec-faithful NaN handling. Row documents the tradeoff. ----
+  // ---- 17. DemoteToNearestInt f64->i32 (simd-18 @opus). THREE rows:
+  //  * HYLE (safe): FULL emu128-spec sign-based saturation (Abs+2 blends -> NaN yields sign-based
+  //    MIN/MAX). ~15% slower than Highway's x86 native, but that is a CORRECTNESS difference not a
+  //    loss -- Highway native does only Min(v,MAX)+cvtpd2dq (NaN -> INT32_MIN, diverging from its own
+  //    emu128 ref). The extra work buys spec-faithful NaN handling.
+  //  * HYLE (in-range fast): DemoteToNearestIntInRange = plain RNE + cvtt (2 instrs: vroundpd+
+  //    vcvttpd2dq). Caller guarantees finite & in-[MIN,MAX]. This is the hypot/hypot_fast-style opt-in
+  //    fast path -- should MATCH or beat Highway since it drops even Highway's Min clamp.
+  //  * Highway native. ----
   {
     const hs::ScalableTag<double> hdd; const hn::ScalableTag<double> gdd;
     const hs::FixedTag<std::int32_t, hs::kNativeVectorBytes / sizeof(double)> hdi32{};
@@ -404,9 +408,14 @@ int main() {
     std::vector<double> da(kN); std::vector<std::int32_t> o32(kN);
     { std::mt19937_64 rng(27); std::uniform_real_distribution<double> d(-1e6, 1e6); for (auto& e : da) e = d(rng); }
     nb::Bench bench; bench.title("DemoteToNearestInt f64->i32 (4096)").relative(true).batch(kN).minEpochIterations(10000);
-    bench.run("HYLE DemoteToNearestInt", [&] {
+    bench.run("HYLE DemoteToNearestInt (safe)", [&] {
       for (std::size_t i = 0; i + hwd <= kN; i += hwd)
         hs::StoreU(hs::DemoteToNearestInt(hdi32, hs::LoadU(hdd, da.data() + i)), hdi32, o32.data() + i);
+      nb::doNotOptimizeAway(o32.data());
+    });
+    bench.run("HYLE DemoteToNearestIntInRange (fast)", [&] {
+      for (std::size_t i = 0; i + hwd <= kN; i += hwd)
+        hs::StoreU(hs::DemoteToNearestIntInRange(hdi32, hs::LoadU(hdd, da.data() + i)), hdi32, o32.data() + i);
       nb::doNotOptimizeAway(o32.data());
     });
     bench.run("Highway DemoteToNearestInt", [&] {

@@ -1453,6 +1453,18 @@ HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestInt(DI32 di32, VF v) noexcept {
   const auto chosen = IfThenElse(in_range, Round(v), sat);  // now guaranteed within [MIN,MAX]
   return DemoteInRangeTo(di32, chosen);
 }
+// DemoteToNearestIntInRange(di32, v): FAST variant. Caller GUARANTEES every lane is finite and within
+// [INT32_MIN, INT32_MAX] (no overflow, no NaN/Inf). Then the sign-saturate blends of the safe form are
+// pure overhead, so this is just round-to-nearest-even + narrowing demote -- ~15% faster (op_parity
+// bench §17). This mirrors HYLE's ConvertInRangeTo/DemoteInRangeTo fast-path convention and the
+// hypot/hypot_fast split: correctness of the FULL form is never sacrificed, the caller opts into the
+// narrower contract explicitly. Out-of-range input here is UB (the cvtt sees an out-of-range value).
+template <class DI32, class VF>
+HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestIntInRange(DI32 di32, VF v) noexcept {
+  static_assert(std::is_same_v<TFromD<DI32>, std::int32_t>, "DemoteToNearestIntInRange: dst is i32");
+  static_assert(std::is_same_v<TFromD<DFromV<VF>>, double>, "DemoteToNearestIntInRange: src is f64");
+  return DemoteInRangeTo(di32, Round(v));  // RNE then narrow; caller guarantees in-range
+}
 
 // ---- simd-18 C4: shift-and-demote2 family (2-arg only; single-vector DemoteTo @opus) ----
 // RoundingShiftRight<k> already exists above. Compose with Reorder/Ordered demote2.

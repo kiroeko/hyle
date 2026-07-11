@@ -3215,6 +3215,20 @@ TEST(Vec, DemoteToNearestIntFamily) {
       EXPECT_EQ(out.data[i], oracle(src.data[i]))
           << "DemoteToNearestInt v=" << src.data[i] << " i=" << i;
   }
+  // Fast in-range variant: on inputs the caller guarantees are finite & in [MIN,MAX], it must equal
+  // the safe form (which reduces to plain RNE there). Pool restricted to representable values.
+  const double kInPool[] = {0.5, 1.5, 2.5, 3.5, -0.5, -1.5, -2.5, 2.3, -2.3, 7.0, 123456.5, -123456.5};
+  const std::size_t kInPoolN = sizeof(kInPool) / sizeof(kInPool[0]);
+  for (std::size_t base = 0; base < kInPoolN; base += n) {
+    for (std::size_t i = 0; i < n; ++i) src.data[i] = kInPool[(base + i) % kInPoolN];
+    Buf<std::int32_t> fast, safe;
+    hs::Store(hs::DemoteToNearestIntInRange(di, hs::Load(dd, src.data)), di, fast.data);
+    hs::Store(hs::DemoteToNearestInt(di, hs::Load(dd, src.data)), di, safe.data);
+    for (std::size_t i = 0; i < n; ++i) {
+      EXPECT_EQ(fast.data[i], oracle(src.data[i])) << "DemoteToNearestIntInRange v=" << src.data[i];
+      EXPECT_EQ(fast.data[i], safe.data[i]) << "InRange==safe on in-range v=" << src.data[i];
+    }
+  }
 }
 
 TEST(Vec, ShiftRightAndDemote2Family) {
