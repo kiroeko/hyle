@@ -6,18 +6,19 @@
 
 > **Highway = SOTA 标尺**(静态 dispatch,与 HYLE avx2 同 ISA、同 kernel 形状,只差抽象层)。**数字 = 15 遍进程级复测的中位数 op/s + run-to-run spread(`scripts/bench-stat.py` 驱动,沿 hashmap find-miss 那节的统计纪律)**;判定规则:差距 > 两变体 spread 之和才算赢/输,否则**统计平局**。
 >
-> **⚠️ 公平性更正(2026-06-30)**:此前此节标 dot"~1.10x 微超"、saxpy"~1.21x 微超" Highway——**是假象,源于对照被降级编译(对照方生成了低于预期 ISA 宽度的机器码)**。Highway 的 `HWY_STATIC_TARGET` 从完整 baseline 宏链(`detect_targets.h`)推断向量宽度:AVX2 baseline 需要 SSE4 baseline(`__PCLMUL__`+`__AES__`)再加 BMI2+FMA+F16C。bench 给 Highway 对照 TU 的是 HYLE 自家 kernel 的 AVX2 ISA 契约(`-mavx2 -mfma -mf16c`,刻意精简、关联 SIGILL-safety),在 **GCC/Clang 下让 Highway 静默降级到 SSSE3(128 位,Lanes=4)**——objdump 实证四个 `*_highway` kernel 全是 xmm 无 ymm。于是"parity"实际是 HYLE-256b vs Highway-128b,那 1.1-2x"赢"是宽度差不是抽象优势。修复:`hyle_set_highway_isa`(`HyleModule.cmake`)给对照 TU 补全 baseline(`-mbmi -mbmi2 -maes -mpclmul`),Highway 选回真 256 位 AVX2(`HWY_STATIC_TARGET=AVX2`、Lanes=8、四 kernel 全 emit ymm)。MSVC `/arch:AVX2` 本就含完整 baseline,故 Win 侧测的 dtype/math 节不受影响。下表是**修复后**的公平数据。
+> **⚠️ 对照公平性(两条承重前置,踩过坑固化)**:
+> 1. **对照必须补全 ISA baseline**:Highway `HWY_STATIC_TARGET` 从完整 baseline 宏链(`detect_targets.h`)推断向量宽度——AVX2 需 SSE4 baseline(`__PCLMUL__`/`__AES__`)+ BMI2+FMA+F16C。只给精简的 `-mavx2 -mfma -mf16c` 会让 GCC/Clang 下 Highway 静默降级到 SSSE3(128b,Lanes=4),objdump 见 xmm 无 ymm → 测成 HYLE-256b vs Highway-128b 的宽度差,非抽象层差异。`hyle_set_highway_isa`(`HyleModule.cmake`)给对照 TU 补全 baseline(`-mbmi -mbmi2 -maes -mpclmul`)选回真 256b AVX2。MSVC `/arch:AVX2` 本含完整 baseline。
+> 2. **对照必须用库的优化路径**:Highway 的 SOTA dot 是 `contrib/dot::Compute`(4 独立累加器 + 4x 展开,吃满 2 FMA ports × 4-cyc 延迟),不是教学式 `ScalableTag` 单累加器写法。拿单累加器当"SOTA 标尺"会把两边都锁在 FMA 延迟链上得出假平局。
 
 | kernel | scalar(auto-vec SSE2) | HYLE sse4(128b) | HYLE avx2(256b+FMA,4-acc) | Highway contrib/dot(**真 SOTA 4-acc**) | 结论(15 遍中位数) |
 |---|---|---|---|---|---|
 | **dot product** | 2.7 G op/s (1.0x) | 26 G (9.6x) | **42 G (15x)** | 42 G (15x) | **平真 SOTA**(ratio 0.984,gap 1.6% « spread 14%);4 累加器展开后 12.6→42 G |
 | **saxpy** y=a*x+y | 17.4 G (1.0x) | 17.4 G (1.0x) | **39 G (2.2x)** | 40 G (2.3x) | **平 Highway**(element-wise 带宽受限,单累加器已够,未改) |
 
-**结论(2026-07 红队揪出并修复第二个对照失真问题——dot 单累加器延迟链)**:
-1. **旧"dot 平 Highway 12.6 vs 12.7 G"是两个都用了次优写法的假平局**。HYLE `dot_f32`(`kernel_impl.h`)和 bench 的"SOTA 标尺"`dot_highway` **都是单累加器**(`acc = MulAdd(.., acc)`)——每条 FMA 串进下一条,throughput 被 FMA **延迟**(~4 cyc)绑死,每 4 周期才退休一条。bench 拿的 Highway 参照是其**教学式 `ScalableTag` 写法,不是** Highway 真正的 `contrib/dot::Compute`(4 独立累加器 + 4x 展开,注释明写"2 FMA ports × 4 cycle latency = up to 8 in-flight, always unroll 4x")。**这是继"Highway 静态 dispatch 静默降 128b"之后的第二个同类对照陷阱:对照用了非优化路径。**
-2. **修复=dot 主循环 4 独立累加器 + 归约树**(objdump 实证:主循环 4 条 `vfmadd231ps` 写 ymm0/1/2/3 + `vaddps` 树)。i9 双 FMA 端口下,4 链保持 ~8 FMA in-flight,从延迟绑定转 load 端口绑定。**dot 0.079→0.024 ns(3.3x,12.6→42 G op/s),对拍 Highway 真 `contrib/dot` 统计平局(ratio 0.984,gap 1.6%«spread 14%)**——真 SOTA 上限 42 G 而非旧标尺的 12.6 G。dot 是 AI 热路径主力(注意力/GEMM 内积),这是真收益。
-3. **saxpy/scale/reduce 未改**:saxpy(`y=a*x+y`)、scale(`y=a*x`)是 **element-wise 无跨迭代依赖**,本就带宽绑定,多累加器无益(saxpy 已 39 G 平 Highway 40 G)。reduce_max 有归约依赖(理论同 dot 可展开)但**是 bench-only kernel,非公开 op**(`ops.h` 只导出 dot_f32/saxpy_f32),故不改;若将来上架为公开 op 再同 dot 展开。
-> **意义 + 方法学印证**:这正是审查铁律"对标 SOTA 务必 objdump 确认对照真用了预期实现/宽度"的活例——第一次是对照被降级编译到 128b,这次是对照用了单累加器教学 kernel 冒充 SOTA。**两次都是"平局"掩盖了真实差距**:表面同速,实为两边都没到硬件上限。dot 真 SOTA 是 42 G,HYLE 现达到。**教训:'平 SOTA' 若对照本身可疑(如同形却都简单),要追问对照是不是该库的生产实现。**
+**当前实现要点**:
+1. **dot 主循环 4 独立累加器 + 归约树**(objdump:4 条 `vfmadd231ps` 写 ymm0/1/2/3 + `vaddps` 树)。单累加器会被 FMA 延迟(~4 cyc)绑死;i9 双 FMA 端口下 4 链保持 ~8 FMA in-flight,转为 load 端口绑定。dot 42 G op/s,对拍 Highway 真 `contrib/dot::Compute`(同样 4-acc/4x 展开)统计平局(ratio 0.984,gap 1.6%«spread 14%)。dot 是 AI 热路径主力(注意力/GEMM 内积)。
+2. **saxpy/scale 单累加器足够**:`y=a*x+y`、`y=a*x` element-wise 无跨迭代依赖,本就带宽绑定,多累加器无益(saxpy 39 G 平 Highway 40 G)。reduce_max 有归约依赖(理论同 dot 可展开)但**是 bench-only kernel 非公开 op**(`ops.h` 只导出 dot_f32/saxpy_f32),上架为公开 op 时再展开。
+> **方法学铁律(承重)**:"平 SOTA" 若对照本身可疑,必追问对照是不是该库的**生产实现**——objdump 确认对照真用了预期宽度(非静默降 128b)且真用了库的优化路径(非教学式单累加器)。否则"平局"会掩盖真实差距(两边都没到硬件上限)。
 
 ## simd 数学核（exp/log/tanh vs 标量 libm + 同 ISA SOTA xsimd/Highway，`math_bench.cc`）
 
@@ -115,7 +116,7 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 
 ## op-parity: HYLE 自造 op vs Highway vs xsimd 同 op 同 ISA(`op_parity_bench.cc`)
 
-> 回答"HYLE 手写了 ~180 op/后端(抄 Highway 的 per-op intrinsic 序列,不 vendor Highway ops/),
+> 回答"HYLE 手写了 ~228 op/后端(抄 Highway 的 per-op intrinsic 序列,不 vendor Highway ops/),
 > 这些自造件是否真不亏"。**同 TU 同 -march 两边都 header-only 可内联**(避内联不对称假差,
 > feedback_benchmark_inlining_asymmetry);`.raw` 就是裸 `__m256`,HYLE/Highway/xsimd 三方桥接零成本。
 > 判据:**看中位 ns/op 的稳定倍数**(亚纳秒 kernel 的 ratio-spread 易被调度离群值污染成假 TIE,

@@ -105,7 +105,7 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 ## 落地清单
 
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
-2. ✅ SSE4.2 / AVX2 / AVX512 / NEON / SVE / RVV 后端 + 运行时 dispatch。四定宽 ISA 均真跑；AVX512 由 Intel SDE 跑 `vec_test` 173/173 并验证 dispatch 选中 kAvx512。SVE/RVV 用 sizeless traits + 运行期 `Lanes`，P0-P2 已补齐；SVE 15 tests×VL 128/256/384/512，RVV 12 tests×VLEN 128/256/512/1024。partial tag 的 `Rebind+kPow2+cap` 在 vec.h 共享层表达，后端用 predicate/`vl` 执行。
+2. ✅ SSE4.2 / AVX2 / AVX512 / NEON / SVE / RVV 后端 + 运行时 dispatch。四定宽 ISA 均真跑；AVX512 由 Intel SDE 跑 `vec_test` 全绿并验证 dispatch 选中 kAvx512。SVE/RVV 用 sizeless traits + 运行期 `Lanes`，P0-P4 共享泛型已补齐；SVE 19 tests×VL 128/256/384/512，RVV 18 tests×VLEN 128/256/512/1024。partial tag 的 `Rebind+kPow2+cap` 在 vec.h 共享层表达，后端用 predicate/`vl` 执行。
 3. ✅ dtype 转换（fp16/bf16 硬件路径）。**simd-05。** f32→bf16 的 **AVX-512-BF16 native `vcvtneps2bf16`** 档随 AVX512 变体 SDE 可真跑(此前仅 objdump 验)。
 4. ✅ 数学函数（借 Highway/xsimd 核）。simd-06 的 exp/log/tanh、simd-09 的 11 个 best-of 函数，以及 GELU/GELU-tanh/softmax/log-softmax 组合核均已落地并对拍 libm/标量参考。`hypot_f32_batch` 保留 Highway exponent-scaling 的完整语义；另显式提供 `hypot_in_range_f32_batch` 借 xsimd direct-formula 核，由调用方承担输入域契约，AVX2/NEON 真机均约快 2.0×。f64 direct-formula 未测出可判定收益，故不暴露 fast 变体。
 5. ✅ `ops/`：dot_f32/saxpy_f32 跨 scalar/SSE4/AVX2/AVX512 dispatch;**AVX512 派发档 simd-09 Intel SDE 真跑坐实(tier 探针确认 kAvx512,非仅 objdump)**。reduce/对齐 memcpy/SwissTable 探测片段按需(container 已自有 SwissTable 探测)。
@@ -115,7 +115,7 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 > AVX512 使用后端自有 `Mask512` 包装 k-register，公开 D-tag/op 签名不变；无须改造 vec.h mask 模型。无 AVX512 真机不降低能力标准，Intel SDE 是执行闸门。
 
-**已实现**（`backend/avx512.h` + `ops/kernels_avx512.cc`）：512 位 AVX-512 后端覆盖全部 lane/op 契约。验证包括 GCC/MSVC 原生编译、objdump 的 zmm/k-register 指令，以及 Intel SDE `vec_test` 173/173；运行时 tier 探针确认选择 kAvx512。
+**已实现**（`backend/avx512.h` + `ops/kernels_avx512.cc`）：512 位 AVX-512 后端覆盖全部 lane/op 契约。验证包括 GCC/MSVC 原生编译、objdump 的 zmm/k-register 指令，以及 Intel SDE `vec_test` 全绿；运行时 tier 探针确认选择 kAvx512。
 
 **objdump 实证**（铁证,非空谈,双平台）：backend dot→`vfmadd231ps %zmm`+`vextractf64x4` reduce；relu→`vcmpgt_oqps → %k1`+`vmovaps %zmm{%k1}{z}`(**k 寄存器掩码路径通**)；unsigned count→`vpcmpnleud → %k0`(原生无符号比较,无 xor-MSB)+`kmovw`+`popcnt`。派发 kernel TU(`kernels_avx512.cc.obj`):MSVC 33 条 zmm(`vfmadd213ps zmm`/`vmovups zmm`)、GCC-14 9 条 zmm(`vfmadd231ps zmm`/`vmovups zmm`/`vbroadcastss xmm→zmm`/`vextractf64x4 zmm→ymm`);两编译器 codegen 计数不同(GCC reduce 尾降 ymm/xmm),但核心 512-bit FMA/load 都真发。
 
@@ -150,11 +150,11 @@ dtype 与 math 的 AVX-512 路径已上架；本机虽是 AVX2-only，512-bit �
 - **批10 gather/scatter + compress/expand** `GatherIndex/ScatterIndex`(embedding lookup 核)+`Compress/CompressStore/Expand`(稀疏过滤核)。**性能档已收口(见下 op-parity 节)**:avx2 GatherIndex→原生 vpgatherd、Compress→packed 索引表+vpermd、avx512→vpcompress/vpexpand/vpgather、sse4 Compress→pshufb 字节索引表;仅无硬件的宽度/后端保留 store+reload(同 Highway)。
 - **批11 位计数 + 符号 + 杂项** `PopulationCount/LeadingZeroCount/TrailingZeroCount`(**已全换原生**:vpshufb 半字节-LUT popcount、float-exp trick LZCnt/TZCnt、NEON vcntq/vclzq)+`Not/Clamp/RotateLeft/RotateRight/CopySign/BroadcastSignBit/IfNegativeThenElse/ZeroIfNegative`(全由现有 op 组合,四后端同构)。
 
-**op 覆盖现状**:量化(promote/demote/convert/满足 int8 GEMM 的 madd/mulhigh)、通用向量循环(移位/舍入/饱和/掩码尾部/reduce 全家族)、swizzle(interleave/concat/reverse/permute)、gather/scatter/compress/expand、位计数/符号——**全部四后端 + scalar 覆盖,三平台真机对拍 scalar oracle**。设计原则(用户 2026-07-06 纠偏):**高性能 infra 库的消费面最广,能力要提供到位,不能因"暂无消费者"后置**。**性能档也已收口(2026-07-09 op-parity,见下节)**:曾经 store+reload/std 标量的慢 op 全换原生 intrinsic 并对拍 Highway 拉到统计打平——能力面 + 性能面双达标。各后端仍在 ~2k 行设计上限内(最大 neon ~1.2k)。
+**op 覆盖现状**:量化(promote/demote/convert/满足 int8 GEMM 的 madd/mulhigh)、通用向量循环(移位/舍入/饱和/掩码尾部/reduce 全家族)、swizzle(interleave/concat/reverse/permute)、gather/scatter/compress/expand、位计数/符号——**全部四后端 + scalar 覆盖,三平台真机对拍 scalar oracle**。设计原则(用户 2026-07-06 纠偏):**高性能 infra 库的消费面最广,能力要提供到位,不能因"暂无消费者"后置**。**性能档也已收口(2026-07-09 op-parity,见下节)**:曾经 store+reload/std 标量的慢 op 全换原生 intrinsic 并对拍 Highway 拉到统计打平——能力面 + 性能面双达标。各后端实测 LOC(2026-07-12):scalar 2058 / sse4 2617 / avx512 2913 / avx2 2943 / neon 3008。**原始 ~2k 硬上限已被"做全 Highway op 面"的能力完整性指令突破**(op ~228/后端 + Crypto/complex/best-of 数学)——权衡是明确接受的:即便 3k 仍远小于 Highway 每-target ops/(万行级重宏元编程),不 vendor 的理由(贴硬件、可读、可控)依然成立。上限从"硬阈值"降级为"警戒线":单后端逼近 ~3.5-4k 时应重新审视是否有该拆的泛型层组合。
 
 ### op-parity 性能收口(simd-09 尾,2026-07-09)——自造件 vs Highway 同 ISA 同 op
 
-用户核心担忧:"自己手写了 ~217 op/后端,性能不如抄 Highway 就很愚蠢"。建 `bench/simd/op_parity_bench.cc`(HYLE vs Highway vs xsimd,**同 TU/同 ISA/两边 header-only 都内联**=真 codegen 差,非内联不对称;`bench-stat.py -n15` 看中位倍数,gap>两变体 spread 和才判赢/输)。
+用户核心担忧:"自己手写了 ~228 op/后端,性能不如抄 Highway 就很愚蠢"。建 `bench/simd/op_parity_bench.cc`(HYLE vs Highway vs xsimd,**同 TU/同 ISA/两边 header-only 都内联**=真 codegen 差,非内联不对称;`bench-stat.py -n15` 看中位倍数,gap>两变体 spread 和才判赢/输)。
 
 **结论:9 个 store+reload/std 标量慢 op(GetExponent/DupEven-Odd/ReverseBits/PopCount/LZCnt/TZCnt/Compress/ConcatEven-Odd)全换原生 + 2 个残留 2.x 输家(LZCnt/Compress)也追平 → 四固定宽后端全部 ≥ 统计打平**:
 - 手法:vpshufb 半字节-LUT(popcount/reversebits)、位提取指数域(GetExponent)、**float-exp trick**(LZCnt=min(158-biased_exp,32)、TZCnt=min(be(x&-x)-127,32),`cvtepi32_ps` 取指数)、packed 索引表+vpermd / pshufb 字节表(Compress)、vpermd/shuffle_ps/vuzp/vtrn(Concat/Dup)。NEON 硬件原生最省(vcntq/vclzq/vrbitq/vuzp/vtrn)。
@@ -204,7 +204,7 @@ P4 新增12个公开名：四个 FMA 符号/交错变体、`MinMagnitude/MaxMagn
 3. store+reload 的 `T buf[kMaxLanes]` 是**标量数组**(T=float/int,合法);`kMaxLanes` 从"精确"变"上界"(kNativeVectorBytes=256=2048-bit 上界),循环边界用运行期 `Lanes(d)`。SVE 的 gather/compress/scatter/predicated-tail 走原生 `svld1_gather`/`svcompact`/`svst1_scatter`/`svwhilelt`。
 4. `Lanes(d)` 在 scalable target 运行期求值，并按 `kPow2` 缩放后受 `kMaxLanes` 截断；`Rebind<T,D>` 同步调整 `kPow2`，保证窄化后逻辑 lane 数不变。`FixedTag<T,N>` 因而仍是 `min(硬件 lanes,N)`；接受 D-tag 的 load/store、masked/gather/scatter、reduce、reverse、slide、whole-vector swizzle 与 widen/demote 只观察逻辑 active lanes。只接收 native `V` 的重载按 full-vector 契约运行，因为 sizeless `V` 本身不携带 partial tag。正 `kPow2` 只有在最小 128-bit 原生向量容不下目标 lane 数时才表示 grouped vector；SVE/RVV 当前单寄存器后端对此 fail-fast。
 
-**验证(qemu-aarch64,同一二进制强制 VL 128/256/384/512)**：`tests/simd/sve_test.cc` 的 **16 个 gtest × 4 VL 全绿**；首项用 `PR_SVE_SET_VL` 设置并回读实际 VL，避免 CPU model 参数与进程当前 VL 脱节。覆盖十种 lane、P0 泛型消费者、P1 swizzle/分段 load-store、P2 widen/quantize/reduce、P4 FMA/magnitude/widen/bf16/mod，以及 partial tag 的 masked/gather/scatter、widen/demote 与跨 signedness/Q15 极值。另在 VL 2048 真正设置后复验 P2/partial；384-bit 门覆盖非 2 次幂 lane 数。`scripts/sve-qemu-test.sh` 可复现正式四宽门。
+**验证(qemu-aarch64,同一二进制强制 VL 128/256/384/512)**：`tests/simd/sve_test.cc` 的 **19 个 gtest × 4 VL 全绿**；首项用 `PR_SVE_SET_VL` 设置并回读实际 VL，避免 CPU model 参数与进程当前 VL 脱节。覆盖十种 lane、P0 泛型消费者、P1 swizzle/分段 load-store、P2 widen/quantize/reduce、P4 FMA/magnitude/widen/bf16/mod，以及 partial tag 的 masked/gather/scatter、widen/demote 与跨 signedness/Q15 极值。另在 VL 2048 真正设置后复验 P2/partial；384-bit 门覆盖非 2 次幂 lane 数。`scripts/sve-qemu-test.sh` 可复现正式四宽门。
 
 **scalable P0-P4 当前能力面**:SVE/RVV 已具备泛型 complex/128-cmp/Newton/rotate 所需原语、whole-vector swizzle/table/slide、原生 2/3/4 路分段 load-store，以及 PromoteEven/Odd、Truncate/U8FromU32、跨 signedness Demote2、widen-dot、SumsOf2/4/8、任意 lane 数 ReduceMul、Q15 与 saturated abs/neg。量化/点积与结构 op 已和 HYLE 定宽后端对称；P4新增的FMA/magnitude、even/odd widen、bf16 accumulate和i32/u32 Mod也由共享泛型层直接实例化。剩余软件项仅为 gap inventory 的 P5。硬边界仍是 SVE2 crypto、RVV Zvbb 与超过 `uint64_t` 容量的 mask-bits 位域接口。
 
@@ -219,7 +219,7 @@ P4 新增12个公开名：四个 FMA 符号/交错变体、`MinMagnitude/MaxMagn
 ## 已定决策（1/2/3/4 均已落地）
 
 1. **vector 抽象用定宽 `vec<T,N>` 还是 scalable（length-agnostic）**？**scalable-friendly 接口 + 先实现定宽后端**——接口按 length-agnostic 设计（参考 Highway，将来加 SVE/RVV 不改 API），但首版只实现定宽后端（x86 SSE4.2/AVX2/AVX512 + ARM NEON，它们本就定宽）。对冲：不堵未来又不先背复杂度。
-   > **深读 highway 落地约束**：照搬 highway 的 **D-tag 接口契约**——传零大小标签 `D=Simd<T,N,kPow2>`，op 形如 `VFromD<D> Set(D,T)`，`Lanes(d)` 取宽度。**关键：`Lanes(d)` 必须设计成可运行期求值**（定宽后端是 constexpr、SVE 后端是 `svcntw()` 运行期），否则将来加 SVE 要改 API。highway 已证同源码 x86/SVE 共存可行。**只照搬接口契约，不 vendor 整个 highway**（其 ops/ 全平台万行级、重宏元编程，违背"贴硬件/不过度抽象"）。给 `vec.h` 设硬上限（核心 op < ~2k 行/后端），超了就是丧失了不 vendor 的理由。
+   > **深读 highway 落地约束**：照搬 highway 的 **D-tag 接口契约**——传零大小标签 `D=Simd<T,N,kPow2>`，op 形如 `VFromD<D> Set(D,T)`，`Lanes(d)` 取宽度。**关键：`Lanes(d)` 必须设计成可运行期求值**（定宽后端是 constexpr、SVE 后端是 `svcntw()` 运行期），否则将来加 SVE 要改 API。highway 已证同源码 x86/SVE 共存可行。**只照搬接口契约，不 vendor 整个 highway**（其 ops/ 全平台万行级、重宏元编程，违背"贴硬件/不过度抽象"）。给 `vec.h` 设行数警戒线（初版 ~2k/后端；随做全 op 面已增至 2-3k，见上节实测），逼近 Highway 每-target 量级就是丧失了不 vendor 的理由。
 2. **数学核 vendor 现成库还是自抄多项式**？**vendor Highway + xsimd（均在 `third_party/`、无条件默认编进生产）**，逐 op best-of-breed 选最快核（exp/tanh→xsimd、log→Highway）；adapter 几乎零成本（吃裸 intrinsic 向量，HYLE `vec.raw` 直接喂）。两库精度同档（~3.5ULP，AI 热路径足够），互为校验。
 3. **要不要 SVE/RVV**？**两者均已落地并完成 scalable P0-P4 的共享泛型实例化**：SVE qemu-aarch64 VL 128/256/384/512，RVV qemu-riscv64 VLEN 128/256/512/1024；同一二进制逐宽对拍 scalar。D-tag 的运行期 `Lanes(d)`、partial `kPow2`/cap、sizeless traits 与原生 predication/`vl` 共同维持公开 API 不变。定宽 P3 Masked* 与 P4 Mul/Mod/Magnitude 已完成；剩余软件项为 P5，硬件 gate 以 gap inventory 为准。
 4. **dtype 层借谁**？**自造，但参照 highway 的 `PromoteTo/DemoteTo` intrinsic 用法**（F16C `_mm_cvtph_ps`、AVX512-BF16 `cvtne2ps`、NEON-BF16）——照抄 intrinsic 不照抄抽象。Highway/xsimd 数学核无 fp16/bf16，唯 highway 当原生 lane 类型且硬件路径全；但 dtype 逻辑不复杂（bf16=fp32 高 16 位移位），自造避开 vendor 整个 highway。
