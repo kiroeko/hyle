@@ -568,10 +568,10 @@ HYLE_FORCE_INLINE Vec128<T, N> SaturatedNeg(Vec128<T, N> a) noexcept {
   static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedNeg is signed-int");
   if constexpr (sizeof(T) <= 2) {
     return SaturatedSub(Zero(Simd<T, N, 0>()), a);  // 0 - a saturating
-  } else {  // i32/i64: no native satsub -> branchless vector select on the MIN corner (see avx2.h)
+  } else {  // i32/i64: no native satsub. Highway branchless bit trick: ~v - (v>MIN ? -1 : 0) = -v
+    // for v>MIN, MAX at v==MIN (~MIN==MAX). 3 ops vs old Eq+Set+Neg+IfThenElse (see avx2.h).
     const Simd<T, N, 0> d;
-    const auto is_min = Eq(a, Set(d, std::numeric_limits<T>::min()));
-    return IfThenElse(is_min, Set(d, std::numeric_limits<T>::max()), Neg(a));
+    return Sub(Not(a), VecFromMask(d, Gt(a, Set(d, std::numeric_limits<T>::min()))));
   }
 }
 // SaturatedAbs(a) = (a==MIN) ? MAX : |a|. |a| for a<0 is exactly SaturatedNeg(a), so reuse
@@ -579,9 +579,14 @@ HYLE_FORCE_INLINE Vec128<T, N> SaturatedNeg(Vec128<T, N> a) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> SaturatedAbs(Vec128<T, N> a) noexcept {
   static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedAbs is signed-int");
-  // |a| == Max(a, -a); SaturatedNeg makes a==MIN -> MAX so Max(MIN, MAX)=MAX is the saturated abs.
-  // Two ops (SaturatedNeg + Max) vs the old Lt+SaturatedNeg+IfThenElse blend (isolated -n15 ~1.4x).
-  return Max(a, SaturatedNeg(a));
+  if constexpr (sizeof(T) == 4) {  // Highway x86 i32: Min_u32(|v|, INT_MAX) -- |MIN| overflows to
+    // 0x80000000 (largest u32) so the unsigned Min clamps it. 2 ops (vpabsd+vpminud) vs 4 (see avx2).
+    const Simd<T, N, 0> d;
+    const Simd<std::uint32_t, N, 0> du;
+    return BitCast(d, Min(BitCast(du, Abs(a)), Set(du, static_cast<std::uint32_t>(0x7FFFFFFF))));
+  } else {  // i8/i16 (native satsub) / i64
+    return Max(a, SaturatedNeg(a));
+  }
 }
 
 // ---- float rounding to integral value (result stays float) --------------------------

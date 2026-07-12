@@ -572,10 +572,12 @@ HYLE_FORCE_INLINE Vec256<T, N> SaturatedNeg(Vec256<T, N> a) noexcept {
   static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedNeg is signed-int");
   if constexpr (sizeof(T) <= 2) {
     return SaturatedSub(Zero(Simd<T, N, 0>()), a);  // 0 - a saturating
-  } else {  // i32/i64: no native satsub -> vector select on the MIN corner
+  } else {  // i32/i64: no native satsub. Highway's branchless bit trick (generic_ops): -v == ~v+1
+    // == ~v-(-1); and ~MIN == MAX. So ~v - (v>MIN ? -1 : 0) gives -v for v>MIN and MAX at v==MIN.
+    // 3 ops (Not + Gt-as-vec + Sub) vs the old Eq+Set(MAX)+Neg+IfThenElse blend (op_parity sign-test
+    // caught this as a real ~1.09x loss the absolute-spread verdict had hidden).
     const Simd<T, N, 0> d;
-    const auto is_min = Eq(a, Set(d, std::numeric_limits<T>::min()));
-    return IfThenElse(is_min, Set(d, std::numeric_limits<T>::max()), Neg(a));
+    return Sub(Not(a), VecFromMask(d, Gt(a, Set(d, std::numeric_limits<T>::min()))));
   }
 }
 // SaturatedAbs(a) = (a==MIN) ? MAX : |a|. |a| for a<0 is exactly SaturatedNeg(a), so reuse
@@ -583,9 +585,16 @@ HYLE_FORCE_INLINE Vec256<T, N> SaturatedNeg(Vec256<T, N> a) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> SaturatedAbs(Vec256<T, N> a) noexcept {
   static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedAbs is signed-int");
-  // |a| == Max(a, -a); SaturatedNeg makes a==MIN -> MAX so Max(MIN, MAX)=MAX is the saturated abs.
-  // Two ops (SaturatedNeg + Max) vs the old Lt+SaturatedNeg+IfThenElse blend (isolated -n15 ~1.5x).
-  return Max(a, SaturatedNeg(a));
+  if constexpr (sizeof(T) == 4) {
+    // Highway x86 i32: Abs then clamp to INT_MAX as UNSIGNED. |MIN| overflows to MIN=0x80000000,
+    // which as u32 is the largest value, so Min_u32(|v|, INT_MAX) saturates it -- 2 ops (vpabsd +
+    // vpminud) vs Max(a,SaturatedNeg(a)) 4 ops (sign-test caught the ~1.24x the spread verdict hid).
+    const Simd<T, N, 0> d;
+    const Simd<std::uint32_t, N, 0> du;
+    return BitCast(d, Min(BitCast(du, Abs(a)), Set(du, static_cast<std::uint32_t>(0x7FFFFFFF))));
+  } else {  // i8/i16 (native satsub via SaturatedNeg) / i64: |a|==Max(a,-a), MIN->MAX by saturation.
+    return Max(a, SaturatedNeg(a));
+  }
 }
 
 // ---- float rounding to integral value (result stays float) --------------------------
