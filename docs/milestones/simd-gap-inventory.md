@@ -11,7 +11,8 @@
 - **定稿时的真问题 = 变宽(SVE/RVV)落后定宽 ~72 op**；当前 P0-P5 已全闭环：scalable 量化/点积/结构 op 已对称，定宽 Masked* 与 Mul/Mod/Magnitude 已补齐，P5 平凡合成 + mask 前缀 + MulByPow2/Expand/TZCnt 已落地。
 - vec.h 泛型 complex / 128-cmp / Newton 曾因 scalable TU 未实例化而掩盖底层原语缺口；P0 已用 SVE/RVV 直接实例化测试消除该潜在编译断裂。`Expand` 已在 P5 落地（SVE store+reload / RVV viota+vrgather）。
 - **主施工闭集 P0-P5 软件面 100%**。2026-07-12 directive2 复核后,先前登记的"硬件/工具门控"项**全部翻案做掉**(见下条);连最后的 mask-bits VL>64 也用 byte-buffer API 解掉(dbf88c0)——**已无真墙**(fp8-HW 是有意的正确性取舍,非墙)。
-- **公开 op 面对 Highway `HWY_API` 已完备**(2026-07-12 d6b1d13 收尾):最后一轮机械差集审计发现的 4 个薄封装缺口(`SetTableIndices`/`CompressBlocksNot`/`ZeroExtendResizeBitCast`/`Dup128MaskFromMaskBits`)已补,五平台真跑对拍底层原语。**剩余仅有意排除**:单向量 `PromoteTo`/`DemoteTo`/`ShiftRightAndDemoteTo`(HYLE 用 half-at-a-time + demote2 家族,批7 决策)、`GaloisAffine*`(Highway `detail::` 内部 GFNI 原语,非公开面)、f32→fp8 硬件方向(f32 源必双舍入,非 bit-identical)。
+- **公开 op 面对 Highway `HWY_API` 已完备**(2026-07-12 d6b1d13 收尾):机械差集审计发现的 4 个薄封装缺口(`SetTableIndices`/`CompressBlocksNot`/`ZeroExtendResizeBitCast`/`Dup128MaskFromMaskBits`)已补,五平台真跑对拍底层原语。
+- **又翻案两处我自己下过的"有意排除"(2026-07-12,用户点探)**:①单向量 `PromoteTo`/`DemoteTo`/`ShiftRightAndDemoteTo`(Rebind-tag 形)—— 复核后是**过保守,已补**(d488813,现有原语薄封装,五平台+ASan);②**f32→fp8 硬件方向 —— 已上架 bit-identical**(3fe8407):双舍入用 round-to-odd 中间步骤消除(Boldo-Melquiond,同 Highway F64→F16 手法),clang-20+SDE 真跑 + 486.6M 穷举 0 mismatch。**剩余仅真有意排除**:`GaloisAffine*`(Highway `detail::` 内部 GFNI 原语,非公开面);单向量 `PromoteTo`/`DemoteTo` 的**全寄存器 half-at-a-time 主路径**仍是 HYLE 原生首选(单向量形是便利封装,返回 partial 向量,读回需 `DFromV`)。
 - **[`simd-16`](./simd-16-hw-gated-reclaim.md) + directive2 已翻案 RVV Zvbb/Zvbc + SVE2 全套**：RVV `LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/native `Rotate`/`CLMulLower`/`CLMulUpper` **+ `PopulationCount`(2026-07-12 b0ad404,inline-asm vcpop.v)**；**SVE2 `AES*`/`CLMul` 8 op 全套(2026-07-12 8c466f8,native svaese/svaesmc/svpmull)**——全 qemu 4 VLEN/VL + objdump 真指令。**先前"PopulationCount 工具链缺口 / SVE2 只能编译验"结论已推翻**(是当时测试 harness bug,非真墙;qemu 8.2.2 本就能跑)。
 
 ## 0.5 每项 op 的执行决策流程(施工规程,逐 op 机械跑)
@@ -84,7 +85,7 @@
 - `LoadMaskBits`/`StoreMaskBits`/`BitsFromMask`:✅ **已做**(2026-07-12 dbf88c0)——SVE/RVV 用 **byte-buffer** API(`Store/LoadMaskBits(d, uint8_t*)`,1 bit/lane,同 Highway)绕开 uint64 装不下 256 lane;`BitsFromMask` 保留 uint64 便利版(Lanes≤64,否则 FATAL_ASSERT 引导用 byte 版)。SVE VL=2048(i8 256 lane)+ RVV VLEN=1024(i8 128 lane)真跑 round-trip。
 - **RVV `PopulationCount`**:✅ **已做**(2026-07-12,b0ad404)——翻案:Zvbb `vcpop.v` qemu 8.2.2 就正确执行(之前"no-op"是我 vmv.x.s+exit-code harness 读错);GCC-14 缺 C wrapper → inline-asm。rvv_test 4 VLEN 对拍 std::popcount + objdump 原生 vcpop.v。
 - **SVE2 `AES`/`CLMul`**:✅ **已做**(2026-07-12,8c466f8)——翻案:qemu 8.2.2 `-cpu max` 就执行(之前"Property not found"是用错 `sve2-aes=on` + 探针栈溢出误判)。8 op 全套 native svaese/svaesmc/svpmull;sve_test crypto tier 4 VL + objdump 原生指令。
-- **fp8 硬件 convert(AVX10.2)**:✅ **已上架(f16 源,2026-07-12 69efa5f)**——用户点破:该接 **f16 源**不是 f32 源。f16→f32 无损→`f32_to_f8(f16_to_f32)` 只舍入一次=与 AVX10.2 硬件同款单舍入=**bit-identical**(消除了 f32 源的双舍入)。`f16_to_f8e4m3_batch`/`f16_to_f8e5m2_batch` 公开 API;scalar 默认(任意平台 bit-exact)+ AVX10.2 硬件核(clang-20 `-mavx10.2-512`,CMake `check_cxx_compiler_flag` 门控 HYLE_HAVE_AVX10_2,GCC-14/MSVC 无 flag 走 scalar)+ 运行期 `cpu_features().avx10_2`(CPUID leaf 0x24)门控。**穷举全 65536 f16 实测:E4M3 0 差;E5M2 硬件核补 inf/NaN mask(Intel 饱和 vs OCP 保 inf)后 0 差** → 透明 dispatch 目标(结果不随 CPU 变)。SDE -dmr 真跑 tier=20 + 0 mismatch。**f32→fp8 方向仍只 scalar**(f32 源硬件必双舍入,非 bit-identical,不上架——那条判断依然成立)。
+- **fp8 硬件 convert(AVX10.2)**:✅ **f16 源 + f32 源两方向都已上架 bit-identical**(2026-07-12 69efa5f + 3fe8407)。f16 源:f16→f32 无损→`f32_to_f8(f16_to_f32)` 只舍入一次=与 AVX10.2 硬件同款单舍入=**bit-identical**。`f16_to_f8e4m3_batch`/`f16_to_f8e5m2_batch` 公开 API;scalar 默认(任意平台 bit-exact)+ AVX10.2 硬件核(clang-20 `-mavx10.2-512`,CMake `check_cxx_compiler_flag` 门控 HYLE_HAVE_AVX10_2,GCC-14/MSVC 无 flag 走 scalar)+ 运行期 `cpu_features().avx10_2`(CPUID leaf 0x24)门控。**穷举全 65536 f16 实测:E4M3 0 差;E5M2 硬件核补 inf/NaN mask(Intel 饱和 vs OCP 保 inf)后 0 差** → 透明 dispatch 目标(结果不随 CPU 变)。SDE -dmr 真跑 tier=20 + 0 mismatch。**f32→fp8 方向也已上架 bit-identical(2026-07-12 3fe8407)**:无 f32 直转 fp8 指令,走 f32→f16→fp8,双舍入用 **round-to-odd** 中间步骤消除(Boldo-Melquiond;f16 10 尾数位 ≥ fp8 2-3+2;同 Highway F64→F16 DemoteTo 手法:清 13 丢弃位、有余则 sticky 置保留 LSB)+ f32 源 inf/NaN fixup。可移植 scalar 穷举 486.6M 值 0 mismatch;clang-20+SDE 真跑 HW 核(llvm-objdump 坐实 vcvtps2phx+vcvtph2hf8s/bf8s,native avx10_2=0/SDE=1 双向坐实)0 mismatch。**先前"f32 源必双舍入不上架"结论已推翻**。
 - **Per4LaneBlockShuffle 8/16-bit**:✅ **已做**(2026-07-12,1ec8d87)——纯软件无硬件墙,directive2 复核后补:avx2/avx512 vpshufb 字节索引、sse4/neon/scalar store+reload 组循环泛化。五平台真跑。
 - scalable 后端**无 ASan 通道**:qemu-user + `-fsanitize=address` shadow-memory 段错误(实测),store+reload op 靠逻辑正确而非 ASan 根治,真边界。
 ### ⚪ 变宽不该做(定宽专属语义)
@@ -132,11 +133,11 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 
 `vec_test` `HighwayParityWrappers` 各自对拍底层原语,五平台真跑通过(scalar/sse4/avx2 GCC-14 + avx512 SDE + MSVC + NEON mac),全 217 Vec 测试无回归。
 
-**同批复核确认的有意排除**:`ShiftRightAndDemoteTo`/`RoundingShiftRightAndDemoteTo` 的**单向量**形——HYLE 无"半宽 DemoteTo 单实体"(同 `PromoteTo`/`DemoteTo` 单向量的有意差异,批7 决策);其双向量 `*AndDemote2To` 家族(简称 shift-right-then-`ReorderDemote2To`)已覆盖同等能力(`ShiftRightAndDemote2Family` 对拍)。登记为有意差异,非缺口。
+**~~同批曾登记的"有意排除"已翻案(2026-07-12 d488813)~~**:单向量 `PromoteTo`/`DemoteTo`/`ShiftRightAndDemoteTo`/`RoundingShiftRightAndDemoteTo`(Highway Rebind-tag 形,输入输出同 lane 数、在半寄存器里)**已补**——之前"HYLE 无半宽 DemoteTo 单实体"是过保守:它们是现有原语的薄封装(`DemoteTo(dn,v)=LowerHalf(DemoteTo(Twice<dn>,v,v))`、`PromoteTo(dw,v)=PromoteLowerTo(ZeroExtendVector(v))`),整数饱和+f64→f32 都覆盖。单向量形其实是 Highway 最常用的 promote/demote 写法。返回 partial 向量(kPow2=-1),HYLE Store 只吃 `Simd<T,N,0>`,读回用 `DFromV<decltype(r)>`;全寄存器 half-at-a-time 仍是原生首选主路径。`SingleVectorPromoteDemote` 对拍,五平台+ASan。
 
 ### 🟰 NAMING-DIFF(已有,别当缺口)
 - `Round/Ceil/Floor/Trunc`:`avx2.h` 宏 `HYLE_SIMD_AVX2_ROUND` 实例化,**已有**(grep 假阴)。
-- `PromoteTo`/`DemoteTo`(单向量一次性):HYLE 刻意用 half-at-a-time `PromoteLowerTo/UpperTo`(`simd-design.md` 批7 设计决策),Highway 单向量版是便利包装。**登记为有意差异,非缺口**。
+- `PromoteTo`/`DemoteTo`(单向量一次性):HYLE 原生首选仍是 half-at-a-time `PromoteLowerTo/UpperTo`(`simd-design.md` 批7),但 Highway 单向量便利形**已补为薄封装**(2026-07-12 d488813,见上"翻案"条)——曾登记"有意差异非缺口"是过保守。
 - 128-cmp 全家族 `Lt128/Lt128Upper/Eq128/Ne128/Min128/Max128`:`vec.h` **全有**(op 名搜索;行号勿硬引会漂移)。
 - Complex 算术 `ComplexConj/MulComplex/MulComplexConj/MulComplexAdd/MulComplexConjAdd`:`vec.h` **定宽已有**。
 
@@ -152,7 +153,7 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 ## 3. 信源④:文档登记缺口(交叉核对,含纠错)
 
 - **gelu/softmax**：已完成（simd-09 #67，`math_test` Activations/Softmax）。
-- **fp8 硬件 convert**:AVX10.2/GPU 专属;**scalar 位实现已完整**,非缓做。
+- **fp8 硬件 convert**:✅ **f16 源 + f32 源两个方向都已上架 bit-identical**(AVX10.2,clang-20 门控;69efa5f + 3fe8407);scalar 位实现是任意平台 bit-exact 默认。
 - **复数超越**：`csin/ccos/ctanh/cpow` 已在 AVX2/NEON 上架 HYLE SoA 编排；`ctanh/cpow` 分别消除复三角/双曲重复计算和 complex-pow 的重复 `log/exp`，异常 lane 逐 lane 使用 `std::complex`。`cexp/clog/csqrt`：x86 借 xsimd AVX2，**ARM 已在 simd-17 批5 补 `cexp/clog/csqrt_f32_hyle_neon`（xsimd batch<complex> NEON 核）**，dispatch ARM64 从 scalar 改指 hyle_neon。**ARM 复数缺口已闭**（待 mac 真机复验）。
 - **lgamma**:退 scalar libm(xsimd 向量 lane-mixing vendor bug);tgamma 已向量化。无 action。
 - **ReciprocalNewton**:HYLE 超越两库的点(它们只出裸估计)——保持。
@@ -172,11 +173,12 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 | **simd-16 ✅** | 翻案 RVV Zvbb/Zvbc：LZCnt/TZCnt/ReverseBits/Rotate + CLMul | ~6-7 | 已完成([`simd-16`](./simd-16-hw-gated-reclaim.md))；qemu 三档×4 VLEN + objdump 真指令 |
 | **simd-17 ✅** | 广度补全:批1 Shuffle/字节移位、批2 *Same/Pairwise/Stream、批3 scalable Concat、批4 半向量合并族、批5 复数ARM+SAD+BitShuffle/MultiRotateRight+Block提取 | — | 已完成([批5 doc](./simd-17-breadth-batch5.md));批4/5 待 Win MSVC + mac 平台复验 |
 | ✅ 2026-07-12 翻案做掉 | RVV PopulationCount(b0ad404)、SVE2 AES/CLMul(8c466f8)、Per4Lane 8/16(1ec8d87) | — | 均"工具墙"复核推翻(我的 harness 错),qemu 8.2.2 本就够 |
-| ✅ 2026-07-12 上架(f16 源) | fp8-HW-convert:f16_to_f8e4m3/e5m2_batch + AVX10.2 硬件核(69efa5f) | — | bit-identical(f16 源单舍入),SDE 0 mismatch;f32→fp8 方向仍 scalar(双舍入不上架) |
+| ✅ 2026-07-12 上架(f16+f32 源) | fp8-HW-convert:f16/f32_to_f8e4m3/e5m2_batch + AVX10.2 硬件核(69efa5f + 3fe8407) | — | 两方向都 bit-identical;f16 源单舍入,f32 源 round-to-odd 消双舍入(Boldo-Melquiond);SDE 0 mismatch + 486.6M 穷举 |
+| ✅ 2026-07-12 补(用户点探) | 单向量 `PromoteTo`/`DemoteTo`/`ShiftRightAndDemoteTo`(Highway Rebind-tag 形,d488813) | 4 | 现有原语薄封装(LowerHalf∘DemoteTo2 / PromoteLowerTo∘ZeroExtend);曾登记"有意排除"是过保守 |
 | ✅ 2026-07-12 做掉 | mask-bits VL>64(SVE/RVV byte-buffer StoreMaskBits/LoadMaskBits,dbf88c0) | — | 曾以为真墙,byte-buffer API 解掉;已无真墙 |
 | ⚪不做 | 其余 *Blocks(SwapAdjacent等) / GaloisAffine(Highway内部detail非公开面) | — | 偏门/越 scope/非公开面 |
 
-P0-P5、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)、[`simd-14`](./simd-14-fixed-width-p4.md)、[`simd-15`](./simd-15-scalable-p5.md)与[`simd-16`](./simd-16-hw-gated-reclaim.md)已全部完成。**主施工闭集软件面 100%**；simd-16 翻案 RVV Zvbb/Zvbc（TZCnt/LZCnt/ReverseBits/Rotate/CLMul），directive2(2026-07-12)再翻案 **RVV PopulationCount + SVE2 AES/CLMul 全套 + Per4Lane 8/16**(先前"工具墙"是 harness bug)。directive2 又用 byte-buffer 解掉 mask-bits VL>64(dbf88c0)。两轮 vendor displacement 不新增公开 op；P4 新增 12 个、P5 新增 15 个公开 op。**已无真墙,能力面全覆盖**;fp8-HW-convert 的 f16 源方向已上架(bit-identical,69efa5f),仅 f32→fp8 方向留 scalar(f32 源硬件必双舍入,非 bit-identical,有意不上架)。
+P0-P5、[`simd-12`](./simd-12-vendor-displacement.md)、[`simd-13`](./simd-13-vendor-displacement-2.md)、[`simd-14`](./simd-14-fixed-width-p4.md)、[`simd-15`](./simd-15-scalable-p5.md)与[`simd-16`](./simd-16-hw-gated-reclaim.md)已全部完成。**主施工闭集软件面 100%**；simd-16 翻案 RVV Zvbb/Zvbc（TZCnt/LZCnt/ReverseBits/Rotate/CLMul），directive2(2026-07-12)再翻案 **RVV PopulationCount + SVE2 AES/CLMul 全套 + Per4Lane 8/16**(先前"工具墙"是 harness bug)。directive2 又用 byte-buffer 解掉 mask-bits VL>64(dbf88c0)。两轮 vendor displacement 不新增公开 op；P4 新增 12 个、P5 新增 15 个公开 op。**已无真墙,能力面全覆盖**;fp8-HW-convert 的 **f16 源 + f32 源两个方向都已上架 bit-identical**(69efa5f + 3fe8407;f32 源用 round-to-odd 消双舍入)。2026-07-12 又补单向量 Promote/Demote(d488813)——翻案两处此前我自己下过的过保守"有意排除"。**剩余真有意排除仅 `GaloisAffine*`**(Highway `detail::` 内部 GFNI 原语非公开面)。
 
 
 ## 5. 复现方法
