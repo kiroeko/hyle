@@ -192,13 +192,16 @@ using Group = GroupSse2;
 #  include <arm_neon.h>
 namespace hyle::container::detail {
 // ---- ARM64 NEON group (8-wide) ----------------------------------------------
-// WRITTEN BUT NOT RUN: cross-compiles clean with aarch64 GCC14, but there is no
-// ARM machine to execute the test suite on. Produces a 1-bit-per-lane mask (a
-// matched lane's compare result 0xFF has its top bit set), so it satisfies the
-// SAME shared BitMask contract as GroupSse2/GroupPortable -- iteration, lowest(),
-// leading/trailing_zeros all work unchanged. (abseil's aarch64 group uses a
-// byte-mask with a /8 shift; HYLE packs to bits for one BitMask across all ISAs,
-// trading a few ops for not forking the mask type. Correctness identical.)
+// Real-hardware validated on Apple Silicon (swiss_table_test + probe_test green).
+// Produces a 1-bit-per-lane mask (a matched lane's compare result 0xFF has its top
+// bit set), so it satisfies the SAME shared BitMask contract as GroupSse2/
+// GroupPortable -- iteration, lowest(), leading/trailing_zeros all work unchanged.
+// TRADEOFF vs abseil's GroupAArch64Impl: abseil keeps the vceq result as a uint64
+// byte-mask and iterates it with a Shift=3 BitMask (bit position >> 3 = lane), zero
+// packing. HYLE's pack() below folds the 8-byte mask to 8 bits with a scalar loop so
+// ONE 32-bit BitMask type serves all ISAs. That scalar fold is a per-match cost in
+// the probe hot path -- a known ARM SOTA gap (a Shift=3 byte-mask BitMask variant
+// would remove it); accepted for now to keep a single mask type. Correctness identical.
 class GroupNeon {
  public:
   static constexpr std::size_t kWidth = 8;
