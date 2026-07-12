@@ -2084,25 +2084,25 @@ HYLE_FORCE_INLINE Vec256<T, N> MultiRotateRight(Vec256<T, N> v, Vec256<TI, NI> i
 // correctness-first store+reload; native (pmaddubsw with 1s / vpaddl chains) is a profiling upgrade.
 // scratch sized to the FULL 32 B register (not the logical lane count): _mm256_store/load_si256
 // move 32 B, so a partial-width src would be a stack OOB with src[N] -- same class as TruncateTo.
+// SumsOf2(u8)=pairwise sum of adjacent bytes -> u16. Native (Highway generic form): the even and
+// odd bytes each zero-extend to u16 (PromoteEvenTo/PromoteOddTo = vpand 0x00FF / vpsrlw 8), then
+// Add. dst[g]=src[2g]+src[2g+1] matches the segmented contract. Was store+reload+scalar loop
+// (op_parity: 9x slower than Highway). No overflow: 255+255=510 fits u16.
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec256<std::uint16_t, N / 2> SumsOf2(Vec256<std::uint8_t, N> v) noexcept {
   static_assert(N % 2 == 0, "avx2 SumsOf2 needs an even lane count");
-  alignas(32) std::uint8_t src[32];
-  alignas(32) std::uint16_t dst[32 / sizeof(std::uint16_t)] = {};
-  _mm256_store_si256(reinterpret_cast<__m256i*>(src), v.raw);
-  for (std::size_t g = 0; g < N / 2; ++g)
-    dst[g] = static_cast<std::uint16_t>(src[2 * g] + src[2 * g + 1]);
-  return Load(Simd<std::uint16_t, N / 2, 0>(), dst);
+  const Simd<std::uint16_t, N / 2, 0> dw;
+  return Add(PromoteEvenTo(dw, v), PromoteOddTo(dw, v));
 }
+// SumsOf4(u8)=sum of adjacent quads -> u32 = SumsOf2 applied twice (Highway generic form). The
+// inner SumsOf2 gives u16 pair-sums; the outer widens u16->u32 pairwise (PromoteEven/OddTo on u16
+// = vpand 0xFFFF / vpsrld 16) and adds. No overflow at either stage.
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec256<std::uint32_t, N / 4> SumsOf4(Vec256<std::uint8_t, N> v) noexcept {
   static_assert(N % 4 == 0, "avx2 SumsOf4 needs a lane count that is a multiple of 4");
-  alignas(32) std::uint8_t src[32];
-  alignas(32) std::uint32_t dst[32 / sizeof(std::uint32_t)] = {};
-  _mm256_store_si256(reinterpret_cast<__m256i*>(src), v.raw);
-  for (std::size_t g = 0; g < N / 4; ++g)
-    dst[g] = static_cast<std::uint32_t>(src[4 * g] + src[4 * g + 1] + src[4 * g + 2] + src[4 * g + 3]);
-  return Load(Simd<std::uint32_t, N / 4, 0>(), dst);
+  const auto s2 = SumsOf2(v);                       // u16, N/2 lanes
+  const Simd<std::uint32_t, N / 4, 0> dq;
+  return Add(PromoteEvenTo(dq, s2), PromoteOddTo(dq, s2));
 }
 
 // ---- reductions ---------------------------------------------------------------------
