@@ -2905,13 +2905,57 @@ HYLE_FORCE_INLINE Vec256<T, N> PairwiseSub128(Vec256<T, N> a, Vec256<T, N> b) no
 // are vectorized (vpermd) for 32-bit, so this drops the store+reload while keeping HYLE's segmented
 // layout (which differs from Highway's interleaved PairwiseAdd -- we keep our own contract, but at
 // optimal complexity). Other widths inherit ConcatEven/Odd's own fallback.
+// Segmented contract: so[i<N/2]=a[2i]+a[2i+1], so[N/2+i]=b[2i]+b[2i+1] (a's pair-sums low, b's
+// high). Generic form is Add(ConcatEven(b,a),ConcatOdd(b,a)); each Concat ends in the SAME
+// permute4x64<D8>, and permq is linear, so permq(x)+permq(y)=permq(x+y) -- factor the two permq
+// into ONE after the add. 32-bit path: 2*vshufps (in-lane even/odd dwords, per-128 interleaved
+// pair layout) + 1 vpadd + 1 vpermq<D8> to segment = 3 p5-uops, vs the unfactored 4 p5-uops.
+// (Tried native vphadd: 10% SLOWER in isolation -- hadd is a 3-uop complex insn, avoid.) Highway's
+// PairwiseAdd is a *different* (interleaved) contract that needs no cross-128 permute, so its ~1
+// extra p5-uop lead over HYLE here is inherent to the segmented contract, not a fixable loss.
+// Non-32-bit widths keep the generic Concat fallback.
+namespace detail {
+HYLE_FORCE_INLINE __m256i seg_permq(__m256i v) noexcept {
+  return _mm256_permute4x64_epi64(v, _MM_SHUFFLE(3, 1, 2, 0));
+}
+}  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> PairwiseAdd(Vec256<T, N> a, Vec256<T, N> b) noexcept {
-  return Add(ConcatEven(b, a), ConcatOdd(b, a));
+  if constexpr (sizeof(T) == 4) {
+    Vec256<T, N> r;
+    if constexpr (std::is_same_v<T, float>) {
+      const __m256 e = _mm256_shuffle_ps(a.raw, b.raw, _MM_SHUFFLE(2, 0, 2, 0));
+      const __m256 o = _mm256_shuffle_ps(a.raw, b.raw, _MM_SHUFFLE(3, 1, 3, 1));
+      r.raw = _mm256_castsi256_ps(detail::seg_permq(_mm256_castps_si256(_mm256_add_ps(e, o))));
+    } else {
+      const __m256 A = _mm256_castsi256_ps(a.raw), B = _mm256_castsi256_ps(b.raw);
+      const __m256i e = _mm256_castps_si256(_mm256_shuffle_ps(A, B, _MM_SHUFFLE(2, 0, 2, 0)));
+      const __m256i o = _mm256_castps_si256(_mm256_shuffle_ps(A, B, _MM_SHUFFLE(3, 1, 3, 1)));
+      r.raw = detail::seg_permq(_mm256_add_epi32(e, o));
+    }
+    return r;
+  } else {
+    return Add(ConcatEven(b, a), ConcatOdd(b, a));
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> PairwiseSub(Vec256<T, N> a, Vec256<T, N> b) noexcept {
-  return Sub(ConcatEven(b, a), ConcatOdd(b, a));
+  if constexpr (sizeof(T) == 4) {
+    Vec256<T, N> r;
+    if constexpr (std::is_same_v<T, float>) {
+      const __m256 e = _mm256_shuffle_ps(a.raw, b.raw, _MM_SHUFFLE(2, 0, 2, 0));
+      const __m256 o = _mm256_shuffle_ps(a.raw, b.raw, _MM_SHUFFLE(3, 1, 3, 1));
+      r.raw = _mm256_castsi256_ps(detail::seg_permq(_mm256_castps_si256(_mm256_sub_ps(e, o))));
+    } else {
+      const __m256 A = _mm256_castsi256_ps(a.raw), B = _mm256_castsi256_ps(b.raw);
+      const __m256i e = _mm256_castps_si256(_mm256_shuffle_ps(A, B, _MM_SHUFFLE(2, 0, 2, 0)));
+      const __m256i o = _mm256_castps_si256(_mm256_shuffle_ps(A, B, _MM_SHUFFLE(3, 1, 3, 1)));
+      r.raw = detail::seg_permq(_mm256_sub_epi32(e, o));
+    }
+    return r;
+  } else {
+    return Sub(ConcatEven(b, a), ConcatOdd(b, a));
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE void Stream(detail::V256<D> v, D, TFromD<D>* aligned) noexcept {
