@@ -194,7 +194,7 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 | **avx2**(256b) | WSL+MSVC 173/173 + 隔离 bench | 见上表 | 255 pair 中 241 平(94%);11 显著输家已归因(冷路径/内存harness/契约/硬件墙;TruncateTo 已修追平),见定论总账 |
 | **avx512**(512b) | Intel SDE 173/173 | 同 avx2 512-bit 化;MulByPow2 额外走原生 vscalef(512 有硬件)、GetExponent 用 vgetexp、Compress 用 maskz_compress | 无真机数据，不作性能结论 |
 | **sse4**(128b) | WSL+MSVC 173/173 + op_parity sse4 bench | ConcatEven/Odd 用 shuffle_ps 双源选 lane;余同 avx2 单块 | 215 pair **全部统计打平(100%)**;原变量移位/TruncateTo/Set*First 输家全部向量化追平,见定论总账 |
-| **neon** | Apple Silicon 173/173 + 主/full(190行)/widen/Q15/compact/P3 `bench-stat -n15` | PopCount=`vcntq_u8+vpaddlq`、LZCnt=`vclzq`、ReverseBits=`vrbitq_u8+vrevNq`、Concat=`vuzp1/2q`；Compress/Expand 按lane宽分档；complex用FMA友好直接公式 | full sweep 185 pair 中 180 统计平(97%)；RoundingShr/Set*First/CountTrue 已全部向量化追平；剩 5 项(ConvertTo/Shuffle2301/TrailingZeroCount 等)objdump 坐实两侧循环逐指令相同=nanobench 运行顺序伪影,非代码问题，见定论总账 |
+| **neon** | Apple Silicon 173/173 + 主/full(190行)/widen/Q15/compact/P3 `bench-stat -n15` | PopCount=`vcntq_u8+vpaddlq`、LZCnt=`vclzq`、ReverseBits=`vrbitq_u8+vrevNq`、Concat=`vuzp1/2q`；Compress/Expand 按lane宽分档；complex用FMA友好直接公式 | full sweep 185 pair 中 180 统计平(97%)；RoundingShr/Set*First/CountTrue 已全部向量化追平；剩 5 项(ConvertTo/Shuffle2301/TrailingZeroCount 等)两步实验坐实非代码问题(objdump 两侧循环逐指令相同 + 隔离 TU 单测两侧全平且换序不翻转)=长 bench 序列相邻 op 上下文串扰，见定论总账 |
 
 **MulByPow2 分档**:仅 avx512 有原生 vscalef,故 avx512 换原生;avx2/sse4/neon 无 scale 指令,保留 std::ldexp store+reload(与 Highway 同,非输家)。**SVE/RVV 无需改**:SVE 早用原生 svcnt/svclz/svuzp1/svuzp2;RVV 的 popcount/clz 属 Zvbb 扩展(rv64gcv 基础集无,已登记边界,同 Highway gate)。**定论:9 个 store+reload/std 标量慢 op 在全部固定宽后端(4)已换成原生或与 Highway 同类算法；scalable(2)本就原生或按扩展 gate。** 后续 `-n15` 全面对拍又在更大 op 面上揪出新一批显著项（见"三平台定论总账"）：多数是冷路径 mask 往返或 SSE4 无变量移位的纯 ISA 墙；可用 native 指令消除的 store+reload 输家（TruncateTo 三平台、NEON RoundingShr）均已换原生指令追平。
 
@@ -245,7 +245,7 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 
 **AVX2 — HYLE 更快 2 项**：LoadExpand i32（2.2×）、SetOnlyFirst i32（1.45×）。
 
-**NEON — 剩余 Highway 更快 5 项 = bench harness 顺序伪影，非代码问题（objdump 坐实）**：ConvertTo f32→i32、Shuffle2301、TrailingZeroCount 三者 HYLE 均恰为 0.125ns、Highway 0.088ns（1.4×）。隔离 TU（`hyle_shuf_loop` vs `hwy_shuf_loop`）编 `-O3 -S`，两侧循环体**逐指令完全相同**（`ldr q0 / rev64.4s / str q0`，零差异）→ 差异不来自 HYLE codegen，而是 nanobench 两个 `b.run` lambda 的运行**先后顺序/代码布局**（HYLE 恒先跑，承担 icache/分支预测器冷启动）。单指令 op 循环体几乎一致，故三者卡同一 0.125ns。MulByFloorPow2（1.11×）/RoundingShiftRightSame（1.14×）同属此类。**NEON — HYLE 更快 2 项**：RoundToInt f32→i32（1.23×）、TruncateTo u32→u16（1.06×）——同为顺序伪影的反向体现。
+**NEON — 剩余 Highway 更快 5 项 = 长 bench 序列的相邻测量串扰，非代码问题（两步实验坐实）**：ConvertTo f32→i32、Shuffle2301、TrailingZeroCount 在完整 `op_parity_full_bench` 里 HYLE 均恰为 0.125ns、Highway 0.088ns（1.4×）。① 隔离 TU 编 `-O3 -S`：两侧循环体**逐指令完全相同**（`ldr q0 / rev64.4s / str q0`，零差异）→ 不来自 HYLE codegen。② 隔离 TU 实测（Shuffle2301 单独 bench，两种 run 顺序各测）：**两侧都是 0.089ns、全部 TIE，且交换 HYLE/Highway 先后不翻转** → 也不是运行先后。真因是完整 bench 里 190 个 op 连续跑时**前序 op 对被测 op 的上下文串扰**（CPU 频率/预测器/端口状态），把 HYLE 侧那几个恰好排在重 op 之后的单指令 op 抬到 0.125ns；单独跑就回到 0.089ns 打平。MulByFloorPow2（1.11×）/RoundingShiftRightSame（1.14×）同属此类。**NEON — HYLE 更快 2 项**：RoundToInt f32→i32（1.23×）、TruncateTo u32→u16（1.06×）——同为序列串扰的反向体现。
 
 **跨平台一致的输家类别**（历史，现多数已修）：
 1. ~~**mask-domain 往返**（Set*First）~~ → **已修**（sse4+neon i64 位技巧向量化追平）；PromoteMaskTo/OrderedDemote2MasksTo 仅 avx2 剩（冷路径 movemask 往返，收益低）。
