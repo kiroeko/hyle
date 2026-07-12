@@ -3318,6 +3318,88 @@ TEST(Vec, ShiftRightAndDemote2Family) {
   }
 }
 
+// Single-vector Promote/Demote convenience forms (Highway's Rebind-tag shape, SAME lane count).
+// DemoteTo(dn, v): N wide -> N narrow (half register); PromoteTo(dw, v): N narrow -> N wide.
+TEST(Vec, SingleVectorPromoteDemote) {
+  // The single-vector result is a PARTIAL vector (Rebind tag, kPow2=-1); HYLE's Store only takes a
+  // concrete Simd<T,N,0> tag, so read the result back through DFromV<decltype(result)> (the same
+  // pattern HalfVectorFamily uses for LowerHalf results).
+  // DemoteTo i32 -> i16, saturating, N lanes -> N lanes.
+  {
+    const hs::ScalableTag<std::int32_t> dw;
+    const std::size_t n = hs::Lanes(dw);
+    const hs::Rebind<std::int16_t, hs::ScalableTag<std::int32_t>> dn;
+    Buf<std::int32_t> in;
+    Buf<std::int16_t> out;
+    for (std::size_t i = 0; i < n; ++i)
+      in.data[i] = static_cast<std::int32_t>(i) * 9000 - 20000;  // spans i16 saturation range
+    const auto r = hs::DemoteTo(dn, hs::Load(dw, in.data));
+    hs::Store(r, hs::DFromV<decltype(r)>{}, out.data);
+    for (std::size_t i = 0; i < n; ++i) {
+      const std::int32_t c = std::clamp(in.data[i], -32768, 32767);
+      EXPECT_EQ(out.data[i], static_cast<std::int16_t>(c)) << "DemoteTo i32->i16 i=" << i;
+    }
+  }
+  // DemoteTo f64 -> f32, N lanes -> N lanes.
+  {
+    const hs::ScalableTag<double> dw;
+    const std::size_t n = hs::Lanes(dw);
+    const hs::Rebind<float, hs::ScalableTag<double>> dn;
+    Buf<double> in;
+    Buf<float> out;
+    for (std::size_t i = 0; i < n; ++i) in.data[i] = 1.5 * static_cast<double>(i) - 3.25;
+    const auto r = hs::DemoteTo(dn, hs::Load(dw, in.data));
+    hs::Store(r, hs::DFromV<decltype(r)>{}, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], static_cast<float>(in.data[i])) << "DemoteTo f64->f32 i=" << i;
+  }
+  // PromoteTo i16 -> i32 (sign extend) and u8 -> u16 (zero extend), N lanes -> N lanes. The narrow
+  // INPUT is loaded via a concrete Simd<T,N,0> tag (Load likewise needs kPow2=0); the wrapper takes
+  // the wide dest tag dw and infers the narrow Rebind internally.
+  {
+    const hs::ScalableTag<std::int32_t> dw;
+    const std::size_t n = hs::Lanes(dw);
+    const hs::Simd<std::int16_t, hs::ScalableTag<std::int32_t>::kMaxLanes, 0> dn_load;
+    Buf<std::int16_t> in;
+    Buf<std::int32_t> out;
+    for (std::size_t i = 0; i < n; ++i)
+      in.data[i] = static_cast<std::int16_t>(-9 + static_cast<int>(i) * 3);
+    hs::Store(hs::PromoteTo(dw, hs::Load(dn_load, in.data)), dw, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], static_cast<std::int32_t>(in.data[i])) << "PromoteTo i16->i32 i=" << i;
+  }
+  {
+    const hs::ScalableTag<std::uint16_t> dw;
+    const std::size_t n = hs::Lanes(dw);
+    const hs::Simd<std::uint8_t, hs::ScalableTag<std::uint16_t>::kMaxLanes, 0> dn_load;
+    Buf<std::uint8_t> in;
+    Buf<std::uint16_t> out;
+    for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<std::uint8_t>(i * 7 + 1);
+    hs::Store(hs::PromoteTo(dw, hs::Load(dn_load, in.data)), dw, out.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out.data[i], static_cast<std::uint16_t>(in.data[i])) << "PromoteTo u8->u16 i=" << i;
+  }
+  // ShiftRightAndDemoteTo<k> / RoundingShiftRightAndDemoteTo<k>: i32 -> i16 single-vector.
+  {
+    const hs::ScalableTag<std::int32_t> dw;
+    const std::size_t n = hs::Lanes(dw);
+    const hs::Rebind<std::int16_t, hs::ScalableTag<std::int32_t>> dn;
+    Buf<std::int32_t> in;
+    Buf<std::int16_t> got, ref;
+    for (std::size_t i = 0; i < n; ++i) in.data[i] = static_cast<std::int32_t>((i + 1) * 137);
+    const auto v = hs::Load(dw, in.data);
+    using DR = hs::DFromV<decltype(hs::DemoteTo(dn, v))>;
+    hs::Store(hs::ShiftRightAndDemoteTo<3>(dn, v), DR{}, got.data);
+    hs::Store(hs::DemoteTo(dn, hs::ShiftRight<3>(v)), DR{}, ref.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(got.data[i], ref.data[i]) << "ShiftRightAndDemoteTo i=" << i;
+    hs::Store(hs::RoundingShiftRightAndDemoteTo<3>(dn, v), DR{}, got.data);
+    hs::Store(hs::DemoteTo(dn, hs::RoundingShiftRight<3>(v)), DR{}, ref.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(got.data[i], ref.data[i]) << "RoundingShiftRightAndDemoteTo i=" << i;
+  }
+}
+
 TEST(Vec, WidenMulAccumulateFamily) {
   // D1: WidenMulAccumulate i16*i16 -> dual i32 acc.
   {

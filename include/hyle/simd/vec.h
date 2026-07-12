@@ -1540,6 +1540,40 @@ HYLE_FORCE_INLINE VFromD<DN> OrderedRoundingShiftRightAndDemote2To(DN dn, V a, V
   return OrderedDemote2To(dn, RoundingShiftRight<k>(a), RoundingShiftRight<k>(b));
 }
 
+// ---- Highway single-vector Promote/Demote convenience forms (audit 2026-07-12) --------
+// HYLE's native width-changers are the full-register half-at-a-time forms (PromoteLowerTo/
+// PromoteUpperTo widen a full narrow vector, DemoteTo(dn,a,b) narrows TWO full wide vectors);
+// batch7 chose those because they map 1:1 onto the fixed-width register model. Highway ALSO
+// exposes single-vector PromoteTo(dw, v)/DemoteTo(dn, v) with a Rebind tag (SAME lane count,
+// input/output in a partial/half register) -- the most common quantization spelling. These are
+// thin compositions over the existing primitives, so callers get the familiar shape without a
+// second full-register op:
+//   DemoteTo(dn, v)   = LowerHalf(dn, DemoteTo(Twice<dn>, v, v))   -- N wide lanes -> N narrow
+//   PromoteTo(dw, v)  = PromoteLowerTo(dw, ZeroExtendVector(Twice<Dnarrow>, v)) -- N narrow -> N wide
+// DemoteTo(dn,v,v) yields ordered [demote(v), demote(v)]; LowerHalf takes the first N. Works for
+// integer saturating narrowing AND f64->f32 (the 2-arg DemoteTo covers both). PromoteTo zero-pads
+// the partial narrow to a full register, then PromoteLowerTo widens its low N lanes.
+template <class DN, class V>
+HYLE_FORCE_INLINE VFromD<DN> DemoteTo(DN dn, V v) noexcept {
+  return LowerHalf(dn, DemoteTo(Twice<DN>{}, v, v));
+}
+template <class DW, class V>
+HYLE_FORCE_INLINE VFromD<DW> PromoteTo(DW dw, V v) noexcept {
+  const Rebind<TFromD<DFromV<V>>, DW> dn;  // narrow tag, same lane count as dw
+  return PromoteLowerTo(dw, ZeroExtendVector(Twice<decltype(dn)>{}, v));
+}
+// ShiftRightAndDemoteTo / RoundingShiftRightAndDemoteTo (single-vector): shift each wide lane then
+// narrow to N lanes (the 1-arg counterpart of the *AndDemote2To family). = ShiftRight<k> + the
+// single-vector DemoteTo above.
+template <int k, class DN, class V>
+HYLE_FORCE_INLINE VFromD<DN> ShiftRightAndDemoteTo(DN dn, V v) noexcept {
+  return DemoteTo(dn, ShiftRight<k>(v));
+}
+template <int k, class DN, class V>
+HYLE_FORCE_INLINE VFromD<DN> RoundingShiftRightAndDemoteTo(DN dn, V v) noexcept {
+  return DemoteTo(dn, RoundingShiftRight<k>(v));
+}
+
 // ---- simd-18 批D: WidenMul accumulate family (generic composition) --------------------
 // D1: WidenMulAccumulate -- narrow mul,x widen half-at-a-time then FMA into dual wide acc.
 // Returns updated low; writes updated high via reference.
