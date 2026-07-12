@@ -3194,10 +3194,18 @@ HYLE_FORCE_INLINE Vec256<T, N> TwoTablesLookupLanes(D d, Vec256<T, N> a, Vec256<
   if constexpr (sizeof(T) == 4 && N == 8) {
     const auto from_a = TableLookupLanes(a, idx);
     const auto from_b = TableLookupLanes(b, idx);
-    // idx in [0,16): bit 3 (value 8) distinguishes the b-half. Build a lane mask from that bit.
-    const Simd<std::int32_t, N, 0> di;
-    const auto sel_b = Ne(And(BitCast(di, idx.idx), Set(di, 8)), Zero(di));
-    return IfThenElse(RebindMask(d, sel_b), from_b, from_a);
+    // idx in [0,16): bit 3 (value 8) distinguishes the b-half. Shift bit 3 into the sign bit and let
+    // ONE vblendvps pick per lane by MSB (hardware blendv keys off bit 31) -- Highway's exact shape.
+    // Replaces And(idx,8)+cmpeq(->mask)+blend (3 ops) with slli+blendv (2 ops); objdump 7->matches
+    // Highway's 4-insn body, killing the ~1.1x TwoTables loss.
+    const __m256i sel = _mm256_slli_epi32(_mm256_castps_si256(detail::as_ps(idx.idx.raw)), 28);
+    const __m256 fa = detail::as_ps(from_a.raw);
+    const __m256 fb = detail::as_ps(from_b.raw);
+    const __m256 blended = _mm256_blendv_ps(fa, fb, _mm256_castsi256_ps(sel));
+    Vec256<T, N> r;
+    if constexpr (std::is_same_v<T, float>) r.raw = blended;
+    else r.raw = _mm256_castps_si256(blended);
+    return r;
   } else {
     alignas(32) T sa[N], sb[N], ix[N], out[N];
     Store(a, d, sa); Store(b, d, sb); Store(idx.idx, d, ix);
