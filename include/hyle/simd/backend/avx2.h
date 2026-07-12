@@ -2434,16 +2434,31 @@ HYLE_FORCE_INLINE Vec256<T, N> ZipUpper(Vec256<T, N> a, Vec256<T, N> b) noexcept
 // Highway's AVX2 narrow path (IfThenElseZero + full LoadU -- caller ensures the vector is
 // loadable), BlendedStore writes only on-lanes (fault-safe, mask-driven).
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
-HYLE_FORCE_INLINE Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D d, std::size_t n) noexcept {
+HYLE_FORCE_INLINE Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D, std::size_t n) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  T ones;
-  auto* ob = reinterpret_cast<unsigned char*>(&ones);
-  for (std::size_t k = 0; k < sizeof(T); ++k) ob[k] = 0xFFu;  // all-ones lane pattern
-  alignas(32) T tmp[kN];
-  for (std::size_t i = 0; i < kN; ++i) tmp[i] = (i < n) ? ones : T{0};
+  // In-register iota<n compare -> all-ones mask lanes (Highway's form). Replaces the stack
+  // array + per-lane fill + Load: that scalar round-trip was fine on GCC (autovectorized / hidden
+  // under gather latency) but on MSVC it dominated FirstN's callers -- e.g. GatherIndexN, which
+  // rebuilds this mask each iteration, measured 6x slower than Highway on MSVC while GCC tied.
+  // cmpgt(splat(n), iota): lane i true iff n > i, i.e. i < n. Clamp n to kN (splat is a lane-typed
+  // value; n<=kN<=32 always fits every lane width). Per width: epi8/16/32/64 native cmpgt.
+  const int k = static_cast<int>(n < kN ? n : kN);
   Mask256<T, kN> m;
-  m.raw = Load(d, tmp).raw;
+  if constexpr (sizeof(T) == 4) {
+    const __m256i iota = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+    m.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(_mm256_cmpgt_epi32(_mm256_set1_epi32(k), iota));
+  } else if constexpr (sizeof(T) == 8) {
+    const __m256i iota = _mm256_set_epi64x(3, 2, 1, 0);
+    m.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(_mm256_cmpgt_epi64(_mm256_set1_epi64x(k), iota));
+  } else if constexpr (sizeof(T) == 2) {
+    const __m256i iota = _mm256_set_epi16(15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1, 0);
+    m.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(_mm256_cmpgt_epi16(_mm256_set1_epi16(static_cast<short>(k)), iota));
+  } else {  // sizeof(T) == 1
+    const __m256i iota = _mm256_setr_epi8(0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
+                                          16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31);
+    m.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(_mm256_cmpgt_epi8(_mm256_set1_epi8(static_cast<char>(k)), iota));
+  }
   return m;
 }
 template <class D>
@@ -2580,10 +2595,16 @@ HYLE_FORCE_INLINE detail::V256<D> GatherIndex(D d, const TFromD<D>* base,
 // per-lane MSB selects; VecFromMask gives all-ones lanes = MSB set. 32-bit lanes only; other widths
 // fall back to the generic scalar loop (in vec.h). This backs GatherIndexN/MaskedGatherIndex, which
 // were generic store+reload scalar loops (op_parity: 2.5x slower than Highway's native masked gather).
+// Native masked gather primitive (distinct name so the generic GatherIndexN in vec.h can dispatch
+// to it via an explicit target check -- relying on overload partial-ordering between this and the
+// generic MaskedGatherIndexOr was GCC-only: MSVC picked the scalar generic, leaving GatherIndexN
+// 6x slow). _mm256_mask_i32gather_* takes off-mask lanes from `no` and does NOT read their memory
+// (fault-safe, like Highway). 32-bit lanes only.
+#define HYLE_SIMD_AVX2_HAS_NATIVE_MASKED_GATHER32 1
 template <class D, typename IdxT>
   requires (sizeof(TFromD<D>) == 4 && sizeof(IdxT) == 4)
-HYLE_FORCE_INLINE detail::V256<D> MaskedGatherIndexOr(
-    detail::V256<D> no, Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D d, const TFromD<D>* base,
+HYLE_FORCE_INLINE detail::V256<D> NativeMaskedGatherOr32(
+    detail::V256<D> no, Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D, const TFromD<D>* base,
     Vec256<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
   using T = TFromD<D>;
   detail::V256<D> r;

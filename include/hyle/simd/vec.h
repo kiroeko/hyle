@@ -762,13 +762,21 @@ HYLE_FORCE_INLINE void ScatterOffset(VFromD<D> v, D d, TFromD<D>* base, VI offse
 template <class V, class M, class D, class VI>
 HYLE_FORCE_INLINE VFromD<D> MaskedGatherIndexOr(V no, M m, D d, const TFromD<D>* base, VI idx) noexcept {
   using T = TFromD<D>;
-  alignas(64) T nov[D::kMaxLanes]; Store(no, d, nov);
-  alignas(64) typename VI::PrivateT iv[D::kMaxLanes]; Store(idx, DFromV<VI>(), iv);
-  alignas(64) std::int32_t act[D::kMaxLanes]; Store(VecFromMask(d, m), d, reinterpret_cast<T*>(act));
-  alignas(64) T out[D::kMaxLanes];
-  for (std::size_t i = 0; i < Lanes(d); ++i)
-    out[i] = reinterpret_cast<const T*>(act)[i] ? base[static_cast<std::ptrdiff_t>(iv[i])] : nov[i];
-  return Load(d, out);
+  using IdxT = TFromD<DFromV<VI>>;
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_MASKED_GATHER32)
+  if constexpr (sizeof(T) == 4 && sizeof(IdxT) == 4) {
+    return NativeMaskedGatherOr32(no, m, d, base, idx);  // _mm256_mask_i32gather, fault-safe
+  } else
+#endif
+  {
+    alignas(64) T nov[D::kMaxLanes]; Store(no, d, nov);
+    alignas(64) typename VI::PrivateT iv[D::kMaxLanes]; Store(idx, DFromV<VI>(), iv);
+    alignas(64) std::int32_t act[D::kMaxLanes]; Store(VecFromMask(d, m), d, reinterpret_cast<T*>(act));
+    alignas(64) T out[D::kMaxLanes];
+    for (std::size_t i = 0; i < Lanes(d); ++i)
+      out[i] = reinterpret_cast<const T*>(act)[i] ? base[static_cast<std::ptrdiff_t>(iv[i])] : nov[i];
+    return Load(d, out);
+  }
 }
 template <class M, class D, class VI>
 HYLE_FORCE_INLINE VFromD<D> MaskedGatherIndex(M m, D d, const TFromD<D>* base, VI idx) noexcept {
@@ -1382,11 +1390,27 @@ HYLE_FORCE_INLINE V HighestSetBitIndex(V v) noexcept {
 template <class D, class VI>
 HYLE_FORCE_INLINE VFromD<D> GatherIndexNOr(VFromD<D> no, D d, const TFromD<D>* base,
                                            VI index, std::size_t max_lanes) noexcept {
-  // = MaskedGatherIndexOr(no, FirstN(max_lanes), ...): the first max_lanes lanes gather, the rest
-  // stay `no`. FirstN's mask makes the tail fault-safe (inactive lanes never read memory), so on
-  // 32-bit this binds the native masked-gather backend overload (_mm256_mask_i32gather, ~2.5x over
-  // the old scalar store+reload loop); other widths fall back to the generic scalar MaskedGather.
-  return MaskedGatherIndexOr(no, FirstN(d, max_lanes), d, base, index);
+  using T = TFromD<D>;
+  using IdxT = TFromD<DFromV<VI>>;
+  // First max_lanes lanes gather, rest stay `no`. FirstN's mask makes the tail fault-safe (inactive
+  // lanes never read memory). On avx2 32-bit call the native masked-gather primitive explicitly (a
+  // plain MaskedGatherIndexOr call bound the scalar generic on MSVC -- overload partial-ordering is
+  // compiler-dependent, so gate on the capability macro instead). Otherwise scalar store+reload.
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_MASKED_GATHER32)
+  if constexpr (sizeof(T) == 4 && sizeof(IdxT) == 4) {
+    return NativeMaskedGatherOr32(no, FirstN(d, max_lanes), d, base, index);
+  } else
+#endif
+  {
+    constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+    alignas(64) T out[N];
+    alignas(64) IdxT idx[N];
+    Store(no, d, out);
+    Store(index, DFromV<VI>(), idx);
+    const std::size_t lo = max_lanes < N ? max_lanes : N;
+    for (std::size_t i = 0; i < lo; ++i) out[i] = base[static_cast<std::ptrdiff_t>(idx[i])];
+    return Load(d, out);
+  }
 }
 template <class D, class VI>
 HYLE_FORCE_INLINE VFromD<D> GatherIndexN(D d, const TFromD<D>* base,
