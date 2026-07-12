@@ -148,59 +148,167 @@ HYLE_FORCE_INLINE void Store(Vec256<T, N> v, Simd<T, N, 0>, T* p) noexcept {
 }
 
 // ---- interleaved load / store (AoS <-> SoA) -----------------------------------------
-// correctness-first strided copy; native deinterleave shuffles are a profiling upgrade.
+// 32-bit and 64-bit lanes use in-register transpose (Highway's LoadInterleaved*/StoreInterleaved*
+// register recipe: block transpose across the two 128-bit halves via Concat*, then a per-128-block
+// shuffle/unpack tree -- no memory round-trip). 8/16-bit lanes keep the store+reload strided copy
+// (Highway uses a pshufb byte-table there; that port is deferred). The block transpose is the only
+// 256-bit-specific step (Concat{Lower,Upper}{Lower,Upper} = vperm2i128/vinsertf128/vpblendd); the
+// shuffle stage is identical to the 128-bit one because AVX2 unpack/shuffle_ps are per-128-block.
+namespace detail {
+// ShuffleTwo{2301,1230,3012}: pick two 32-bit lanes from each of a,b per 128-bit block (shuffle_ps).
+// T is one of int32/uint32/float (sizeof==4); reinterpret .raw to/from __m256 for shuffle_ps.
+template <int kImm, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> shuffle_two_ps(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  __m256 af, bf;
+  if constexpr (std::is_same_v<T, float>) { af = a.raw; bf = b.raw; }
+  else { af = _mm256_castsi256_ps(a.raw); bf = _mm256_castsi256_ps(b.raw); }
+  const __m256 s = _mm256_shuffle_ps(af, bf, kImm);
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = s;
+  else r.raw = _mm256_castps_si256(s);
+  return r;
+}
+}  // namespace detail
+
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
                                         VFromD<D>& v1) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T t0[N], t1[N];
-  for (std::size_t i = 0; i < N; ++i) { t0[i] = p[2 * i]; t1[i] = p[2 * i + 1]; }
-  v0 = Load(d, t0); v1 = Load(d, t1);
+  if constexpr (sizeof(T) >= 4) {
+    const auto A = LoadU(d, p), B = LoadU(d, p + N);
+    v0 = ConcatEven(B, A);   // even lanes = v0[]
+    v1 = ConcatOdd(B, A);    // odd  lanes = v1[]
+  } else {
+    alignas(32) T t0[N], t1[N];
+    for (std::size_t i = 0; i < N; ++i) { t0[i] = p[2 * i]; t1[i] = p[2 * i + 1]; }
+    v0 = Load(d, t0); v1 = Load(d, t1);
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T t0[N], t1[N], t2[N];
-  for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
-  v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
+  if constexpr (sizeof(T) == 4 || sizeof(T) == 8) {
+    // block transpose: 3 raw loads [1 0][3 2][5 4] -> A=[3 0] B=[4 1] C=[5 2]
+    const auto v10 = LoadU(d, p + 0 * N), v32 = LoadU(d, p + 1 * N), v54 = LoadU(d, p + 2 * N);
+    const auto A = ConcatUpperLower(v32, v10), B = ConcatLowerUpper(v54, v10),
+               C = ConcatUpperLower(v54, v32);
+    if constexpr (sizeof(T) == 4) {
+      const auto x02 = OddEven(C, B);
+      v0 = detail::shuffle_two_ps<_MM_SHUFFLE(1, 2, 3, 0)>(A, x02);
+      const auto x10 = OddEven(A, B), x12 = OddEven(B, C);
+      v1 = detail::shuffle_two_ps<_MM_SHUFFLE(2, 3, 0, 1)>(x10, x12);
+      const auto x20 = OddEven(B, A);
+      v2 = detail::shuffle_two_ps<_MM_SHUFFLE(3, 0, 1, 2)>(x20, C);
+    } else {  // 64-bit
+      v0 = OddEven(B, A);
+      v1 = CombineShiftRightBytes<sizeof(T)>(C, A);
+      v2 = OddEven(C, B);
+    }
+  } else {
+    alignas(32) T t0[N], t1[N], t2[N];
+    for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
+    v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2, VFromD<D>& v3) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T t0[N], t1[N], t2[N], t3[N];
-  for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
-  v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
+  if constexpr (sizeof(T) == 4 || sizeof(T) == 8) {
+    // block transpose: 4 raw loads [1 0][3 2][5 4][7 6] -> A=[4 0] B=[5 1] C=[6 2] Dd=[7 3]
+    const auto v10 = LoadU(d, p + 0 * N), v32 = LoadU(d, p + 1 * N), v54 = LoadU(d, p + 2 * N),
+               v76 = LoadU(d, p + 3 * N);
+    const auto A = ConcatLowerLower(v54, v10), B = ConcatUpperUpper(v54, v10),
+               C = ConcatLowerLower(v76, v32), Dd = ConcatUpperUpper(v76, v32);
+    if constexpr (sizeof(T) == 4) {
+      const auto e0 = InterleaveLower(A, C), o0 = InterleaveLower(B, Dd);
+      const auto e2 = InterleaveUpper(A, C), o2 = InterleaveUpper(B, Dd);
+      v0 = InterleaveLower(e0, o0); v1 = InterleaveUpper(e0, o0);
+      v2 = InterleaveLower(e2, o2); v3 = InterleaveUpper(e2, o2);
+    } else {  // 64-bit
+      v0 = InterleaveLower(A, C); v1 = InterleaveUpper(A, C);
+      v2 = InterleaveLower(B, Dd); v3 = InterleaveUpper(B, Dd);
+    }
+  } else {
+    alignas(32) T t0[N], t1[N], t2[N], t3[N];
+    for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
+    v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T t0[N], t1[N];
-  Store(v0, d, t0); Store(v1, d, t1);
-  for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
+  if constexpr (sizeof(T) >= 4) {
+    const auto v10L = InterleaveLower(v0, v1), v10U = InterleaveUpper(v0, v1);
+    StoreU(ConcatLowerLower(v10U, v10L), d, p + 0 * N);  // [1 0]
+    StoreU(ConcatUpperUpper(v10U, v10L), d, p + 1 * N);  // [3 2]
+  } else {
+    alignas(32) T t0[N], t1[N];
+    Store(v0, d, t0); Store(v1, d, t1);
+    for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T t0[N], t1[N], t2[N];
-  Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
-  for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
+  if constexpr (sizeof(T) == 4 || sizeof(T) == 8) {
+    VFromD<D> A, B, C;
+    if constexpr (sizeof(T) == 4) {
+      const Simd<std::uint64_t, N / 2, 0> dw;
+      const auto v10 = InterleaveLower(v0, v1), v01_20 = OddEven(v0, v2);
+      A = BitCast(d, InterleaveLower(BitCast(dw, v10), BitCast(dw, v01_20)));
+      const auto v1_321 = ShiftRightLanes<1>(v1), v0_32 = ShiftRightLanes<2>(v0);
+      const auto v21_11 = OddEven(v2, v1_321), v12_02 = OddEven(v1_321, v0_32);
+      B = BitCast(d, InterleaveLower(BitCast(dw, v21_11), BitCast(dw, v12_02)));
+      const auto v23_13 = OddEven(v2, v1_321), v03_22 = OddEven(v0, v2);
+      C = BitCast(d, InterleaveUpper(BitCast(dw, v03_22), BitCast(dw, v23_13)));
+    } else {  // 64-bit
+      A = InterleaveLower(v0, v1); B = OddEven(v0, v2); C = InterleaveUpper(v1, v2);
+    }
+    // StoreTransposedBlocks3: A=[3 0] B=[4 1] C=[5 2] -> out [1 0][3 2][5 4]
+    StoreU(ConcatLowerLower(B, A), d, p + 0 * N);
+    StoreU(ConcatUpperLower(A, C), d, p + 1 * N);
+    StoreU(ConcatUpperUpper(C, B), d, p + 2 * N);
+  } else {
+    alignas(32) T t0[N], t1[N], t2[N];
+    Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
+    for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, VFromD<D> v3, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T t0[N], t1[N], t2[N], t3[N];
-  Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2); Store(v3, d, t3);
-  for (std::size_t i = 0; i < N; ++i) { p[4*i]=t0[i]; p[4*i+1]=t1[i]; p[4*i+2]=t2[i]; p[4*i+3]=t3[i]; }
+  if constexpr (sizeof(T) == 4 || sizeof(T) == 8) {
+    VFromD<D> A, B, C, Dd;
+    if constexpr (sizeof(T) == 4) {
+      const Simd<std::uint64_t, N / 2, 0> dw;
+      const auto v10L = BitCast(dw, InterleaveLower(v0, v1)), v32L = BitCast(dw, InterleaveLower(v2, v3));
+      const auto v10U = BitCast(dw, InterleaveUpper(v0, v1)), v32U = BitCast(dw, InterleaveUpper(v2, v3));
+      A = BitCast(d, InterleaveLower(v10L, v32L)); B = BitCast(d, InterleaveUpper(v10L, v32L));
+      C = BitCast(d, InterleaveLower(v10U, v32U)); Dd = BitCast(d, InterleaveUpper(v10U, v32U));
+    } else {  // 64-bit
+      A = InterleaveLower(v0, v1); C = InterleaveUpper(v0, v1);
+      B = InterleaveLower(v2, v3); Dd = InterleaveUpper(v2, v3);
+    }
+    // StoreTransposedBlocks4: out0=CLL(B,A) out1=CLL(Dd,C) out2=CUU(B,A) out3=CUU(Dd,C)
+    StoreU(ConcatLowerLower(B, A), d, p + 0 * N);
+    StoreU(ConcatLowerLower(Dd, C), d, p + 1 * N);
+    StoreU(ConcatUpperUpper(B, A), d, p + 2 * N);
+    StoreU(ConcatUpperUpper(Dd, C), d, p + 3 * N);
+  } else {
+    alignas(32) T t0[N], t1[N], t2[N], t3[N];
+    Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2); Store(v3, d, t3);
+    for (std::size_t i = 0; i < N; ++i) { p[4*i]=t0[i]; p[4*i+1]=t1[i]; p[4*i+2]=t2[i]; p[4*i+3]=t3[i]; }
+  }
 }
 
 // ---- arithmetic ---------------------------------------------------------------------

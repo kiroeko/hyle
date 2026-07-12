@@ -456,5 +456,67 @@ int main() {
     nb::doNotOptimizeAway(sink);
   }
 
+  // ---- 19. Interleaved load/store (AoS<->SoA). HYLE now uses Highway's in-register transpose recipe
+  // (block transpose via Concat*/Shuffle128 + per-block shuffle_ps/unpack) instead of the old
+  // store-to-stack + scalar-gather. Three rows: HYLE (register transpose) vs Highway (same recipe) vs
+  // a "store+reload baseline" = the OLD HYLE impl, to quantify what the port bought. float3 (xyz) and
+  // float4 (RGBA) are the common consumers. store+reload should be the clear loser (memory round-trip). ----
+  {
+    std::vector<float> aos3(kN * 3), aos4(kN * 4);
+    for (std::size_t i = 0; i < kN * 3; ++i) aos3[i] = static_cast<float>(i);
+    for (std::size_t i = 0; i < kN * 4; ++i) aos4[i] = static_cast<float>(i);
+    volatile float fsink = 0;
+    {
+      nb::Bench bench; bench.title("LoadInterleaved3 f32 (4096)").relative(true).batch(kN).minEpochIterations(2000);
+      bench.run("HYLE register-transpose", [&] {
+        for (std::size_t i = 0; i + hw <= kN; i += hw) {
+          hs::VFromD<decltype(hd)> v0, v1, v2;
+          hs::LoadInterleaved3(hd, aos3.data() + i * 3, v0, v1, v2);
+          fsink += hs::GetLane(hs::Add(hs::Add(v0, v1), v2));
+        }
+      });
+      bench.run("Highway", [&] {
+        for (std::size_t i = 0; i + gw <= kN; i += gw) {
+          hn::VFromD<decltype(gd)> v0, v1, v2;
+          hn::LoadInterleaved3(gd, aos3.data() + i * 3, v0, v1, v2);
+          fsink += hn::GetLane(hn::Add(hn::Add(v0, v1), v2));
+        }
+      });
+      bench.run("store+reload baseline", [&] {  // the OLD HYLE deinterleave
+        for (std::size_t i = 0; i + hw <= kN; i += hw) {
+          alignas(64) float t0[16], t1[16], t2[16];
+          const float* p = aos3.data() + i * 3;
+          for (std::size_t j = 0; j < hw; ++j) { t0[j] = p[3*j]; t1[j] = p[3*j+1]; t2[j] = p[3*j+2]; }
+          fsink += hs::GetLane(hs::Add(hs::Add(hs::LoadU(hd, t0), hs::LoadU(hd, t1)), hs::LoadU(hd, t2)));
+        }
+      });
+    }
+    {
+      const auto v0 = hs::LoadU(hd, a.data()), v1 = hs::LoadU(hd, b.data()),
+                 v2 = hs::LoadU(hd, c.data()), v3 = hs::LoadU(hd, a.data());
+      const auto g0 = hn::LoadU(gd, a.data()), g1 = hn::LoadU(gd, b.data()),
+                 g2 = hn::LoadU(gd, c.data()), g3 = hn::LoadU(gd, a.data());
+      nb::Bench bench; bench.title("StoreInterleaved4 f32 (4096)").relative(true).batch(kN).minEpochIterations(2000);
+      bench.run("HYLE register-transpose", [&] {
+        for (std::size_t i = 0; i + hw <= kN; i += hw) hs::StoreInterleaved4(v0, v1, v2, v3, hd, aos4.data() + i * 4);
+        nb::doNotOptimizeAway(aos4.data());
+      });
+      bench.run("Highway", [&] {
+        for (std::size_t i = 0; i + gw <= kN; i += gw) hn::StoreInterleaved4(g0, g1, g2, g3, gd, aos4.data() + i * 4);
+        nb::doNotOptimizeAway(aos4.data());
+      });
+      bench.run("store+reload baseline", [&] {  // the OLD HYLE interleave
+        for (std::size_t i = 0; i + hw <= kN; i += hw) {
+          alignas(64) float t0[16], t1[16], t2[16], t3[16];
+          hs::StoreU(v0, hd, t0); hs::StoreU(v1, hd, t1); hs::StoreU(v2, hd, t2); hs::StoreU(v3, hd, t3);
+          float* p = aos4.data() + i * 4;
+          for (std::size_t j = 0; j < hw; ++j) { p[4*j]=t0[j]; p[4*j+1]=t1[j]; p[4*j+2]=t2[j]; p[4*j+3]=t3[j]; }
+        }
+        nb::doNotOptimizeAway(aos4.data());
+      });
+    }
+    nb::doNotOptimizeAway(fsink);
+  }
+
   return 0;
 }

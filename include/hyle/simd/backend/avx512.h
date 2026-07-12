@@ -156,59 +156,193 @@ HYLE_FORCE_INLINE void Store(Vec512<T, N> v, Simd<T, N, 0>, T* p) noexcept {
 }
 
 // ---- interleaved load / store (AoS <-> SoA) -----------------------------------------
-// correctness-first strided copy; native deinterleave shuffles are a profiling upgrade.
+// 32/64-bit: in-register transpose (Highway recipe). 512-bit = FOUR 128-bit blocks, so the block
+// transpose juggles blocks with 2-source Shuffle128 (_mm512_shuffle_i32x4/i64x2, imm = 4x2-bit
+// block selectors); the per-block shuffle/unpack stage is identical to the avx2 one (shuffle_ps
+// for 32-bit, unpack for 64-bit). 8/16-bit keep the store+reload fallback.
+namespace detail {
+// Shuffle128<perm>(a, b): pick one 128-bit block per output block from the 4-block pair (a,b).
+// perm = _MM_PERM_* (8-bit, 4x2-bit); low 2 bits pick out-block 0's source block (0..1 from a,
+// 2..3 from b), etc. Maps to _mm512_shuffle_{i32x4,i64x2,f32x4,f64x2}.
+template <int kPerm, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> shuffle128(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_shuffle_f32x4(a.raw, b.raw, kPerm);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm512_shuffle_f64x2(a.raw, b.raw, kPerm);
+  else r.raw = _mm512_shuffle_i32x4(a.raw, b.raw, kPerm);
+  return r;
+}
+// ShuffleTwo{2301,1230,3012} per-128-block via shuffle_ps (T is int32/uint32/float).
+template <int kImm, typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> shuffle_two_ps(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  __m512 af, bf;
+  if constexpr (std::is_same_v<T, float>) { af = a.raw; bf = b.raw; }
+  else { af = _mm512_castsi512_ps(a.raw); bf = _mm512_castsi512_ps(b.raw); }
+  const __m512 s = _mm512_shuffle_ps(af, bf, kImm);
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = s;
+  else r.raw = _mm512_castps_si512(s);
+  return r;
+}
+}  // namespace detail
+
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
                                         VFromD<D>& v1) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T t0[N], t1[N];
-  for (std::size_t i = 0; i < N; ++i) { t0[i] = p[2 * i]; t1[i] = p[2 * i + 1]; }
-  v0 = Load(d, t0); v1 = Load(d, t1);
+  if constexpr (sizeof(T) >= 4) {
+    const auto A = LoadU(d, p), B = LoadU(d, p + N);
+    v0 = ConcatEven(B, A); v1 = ConcatOdd(B, A);
+  } else {
+    alignas(64) T t0[N], t1[N];
+    for (std::size_t i = 0; i < N; ++i) { t0[i] = p[2 * i]; t1[i] = p[2 * i + 1]; }
+    v0 = Load(d, t0); v1 = Load(d, t1);
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T t0[N], t1[N], t2[N];
-  for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
-  v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
+  if constexpr (sizeof(T) == 4 || sizeof(T) == 8) {
+    // block transpose (Highway x86_512 LoadTransposedBlocks3): 3 loads -> A,B,C block-juggled.
+    const auto v3210 = LoadU(d, p + 0 * N), v7654 = LoadU(d, p + 1 * N), vba98 = LoadU(d, p + 2 * N);
+    const auto v5421 = detail::shuffle128<_MM_PERM_BACB>(v3210, v7654);
+    const auto va976 = detail::shuffle128<_MM_PERM_CBDC>(v7654, vba98);
+    const auto A = detail::shuffle128<_MM_PERM_CADA>(v3210, va976);
+    const auto B = detail::shuffle128<_MM_PERM_DBCA>(v5421, va976);
+    const auto C = detail::shuffle128<_MM_PERM_DADB>(v5421, vba98);
+    if constexpr (sizeof(T) == 4) {
+      const auto x02 = OddEven(C, B);
+      v0 = detail::shuffle_two_ps<_MM_SHUFFLE(1, 2, 3, 0)>(A, x02);
+      const auto x10 = OddEven(A, B), x12 = OddEven(B, C);
+      v1 = detail::shuffle_two_ps<_MM_SHUFFLE(2, 3, 0, 1)>(x10, x12);
+      const auto x20 = OddEven(B, A);
+      v2 = detail::shuffle_two_ps<_MM_SHUFFLE(3, 0, 1, 2)>(x20, C);
+    } else {  // 64-bit
+      v0 = OddEven(B, A);
+      v1 = CombineShiftRightBytes<sizeof(T)>(C, A);
+      v2 = OddEven(C, B);
+    }
+  } else {
+    alignas(64) T t0[N], t1[N], t2[N];
+    for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
+    v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, VFromD<D>& v1,
                                         VFromD<D>& v2, VFromD<D>& v3) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T t0[N], t1[N], t2[N], t3[N];
-  for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
-  v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
+  if constexpr (sizeof(T) == 4 || sizeof(T) == 8) {
+    // block transpose (Highway x86_512 LoadTransposedBlocks4).
+    const auto v3210 = LoadU(d, p + 0 * N), v7654 = LoadU(d, p + 1 * N),
+               vba98 = LoadU(d, p + 2 * N), vfedc = LoadU(d, p + 3 * N);
+    const auto v5410 = detail::shuffle128<_MM_PERM_BABA>(v3210, v7654);
+    const auto vdc98 = detail::shuffle128<_MM_PERM_BABA>(vba98, vfedc);
+    const auto v7632 = detail::shuffle128<_MM_PERM_DCDC>(v3210, v7654);
+    const auto vfeba = detail::shuffle128<_MM_PERM_DCDC>(vba98, vfedc);
+    const auto A = detail::shuffle128<_MM_PERM_CACA>(v5410, vdc98);
+    const auto B = detail::shuffle128<_MM_PERM_DBDB>(v5410, vdc98);
+    const auto C = detail::shuffle128<_MM_PERM_CACA>(v7632, vfeba);
+    const auto Dd = detail::shuffle128<_MM_PERM_DBDB>(v7632, vfeba);
+    if constexpr (sizeof(T) == 4) {
+      const auto e0 = InterleaveLower(A, C), o0 = InterleaveLower(B, Dd);
+      const auto e2 = InterleaveUpper(A, C), o2 = InterleaveUpper(B, Dd);
+      v0 = InterleaveLower(e0, o0); v1 = InterleaveUpper(e0, o0);
+      v2 = InterleaveLower(e2, o2); v3 = InterleaveUpper(e2, o2);
+    } else {  // 64-bit
+      v0 = InterleaveLower(A, C); v1 = InterleaveUpper(A, C);
+      v2 = InterleaveLower(B, Dd); v3 = InterleaveUpper(B, Dd);
+    }
+  } else {
+    alignas(64) T t0[N], t1[N], t2[N], t3[N];
+    for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
+    v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T t0[N], t1[N];
-  Store(v0, d, t0); Store(v1, d, t1);
-  for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
+  if constexpr (sizeof(T) >= 4) {
+    // StoreTransposedBlocks2 (512): InterleaveLower/Upper then block-juggle to [3 2 1 0][7 6 5 4].
+    const auto i = InterleaveLower(v0, v1), j = InterleaveUpper(v0, v1);
+    const auto j1j0i1i0 = detail::shuffle128<_MM_PERM_BABA>(i, j);
+    const auto j3j2i3i2 = detail::shuffle128<_MM_PERM_DCDC>(i, j);
+    StoreU(detail::shuffle128<_MM_PERM_DBCA>(j1j0i1i0, j1j0i1i0), d, p + 0 * N);
+    StoreU(detail::shuffle128<_MM_PERM_DBCA>(j3j2i3i2, j3j2i3i2), d, p + 1 * N);
+  } else {
+    alignas(64) T t0[N], t1[N];
+    Store(v0, d, t0); Store(v1, d, t1);
+    for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T t0[N], t1[N], t2[N];
-  Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
-  for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
+  if constexpr (sizeof(T) == 4 || sizeof(T) == 8) {
+    VFromD<D> A, B, C;
+    if constexpr (sizeof(T) == 4) {
+      const Simd<std::uint64_t, N / 2, 0> dw;
+      const auto v10 = InterleaveLower(v0, v1), v01_20 = OddEven(v0, v2);
+      A = BitCast(d, InterleaveLower(BitCast(dw, v10), BitCast(dw, v01_20)));
+      const auto v1_321 = ShiftRightLanes<1>(v1), v0_32 = ShiftRightLanes<2>(v0);
+      const auto v21_11 = OddEven(v2, v1_321), v12_02 = OddEven(v1_321, v0_32);
+      B = BitCast(d, InterleaveLower(BitCast(dw, v21_11), BitCast(dw, v12_02)));
+      const auto v23_13 = OddEven(v2, v1_321), v03_22 = OddEven(v0, v2);
+      C = BitCast(d, InterleaveUpper(BitCast(dw, v03_22), BitCast(dw, v23_13)));
+    } else {  // 64-bit
+      A = InterleaveLower(v0, v1); B = OddEven(v0, v2); C = InterleaveUpper(v1, v2);
+    }
+    // StoreTransposedBlocks3 (512): block-juggle A=[9630] B=[a741] C=[b852] -> [3210][7654][ba98].
+    const auto j2j0i2i0 = detail::shuffle128<_MM_PERM_CACA>(A, B);
+    const auto i3i1k2k0 = detail::shuffle128<_MM_PERM_DBCA>(C, A);
+    const auto j3j1k3k1 = detail::shuffle128<_MM_PERM_DBDB>(C, B);
+    StoreU(detail::shuffle128<_MM_PERM_CACA>(j2j0i2i0, i3i1k2k0), d, p + 0 * N);
+    StoreU(detail::shuffle128<_MM_PERM_DBAC>(j3j1k3k1, j2j0i2i0), d, p + 1 * N);
+    StoreU(detail::shuffle128<_MM_PERM_BDDB>(i3i1k2k0, j3j1k3k1), d, p + 2 * N);
+  } else {
+    alignas(64) T t0[N], t1[N], t2[N];
+    Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
+    for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, VFromD<D> v3, D d,
                                          TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T t0[N], t1[N], t2[N], t3[N];
-  Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2); Store(v3, d, t3);
-  for (std::size_t i = 0; i < N; ++i) { p[4*i]=t0[i]; p[4*i+1]=t1[i]; p[4*i+2]=t2[i]; p[4*i+3]=t3[i]; }
+  if constexpr (sizeof(T) == 4 || sizeof(T) == 8) {
+    VFromD<D> A, B, C, Dd;
+    if constexpr (sizeof(T) == 4) {
+      const Simd<std::uint64_t, N / 2, 0> dw;
+      const auto v10L = BitCast(dw, InterleaveLower(v0, v1)), v32L = BitCast(dw, InterleaveLower(v2, v3));
+      const auto v10U = BitCast(dw, InterleaveUpper(v0, v1)), v32U = BitCast(dw, InterleaveUpper(v2, v3));
+      A = BitCast(d, InterleaveLower(v10L, v32L)); B = BitCast(d, InterleaveUpper(v10L, v32L));
+      C = BitCast(d, InterleaveLower(v10U, v32U)); Dd = BitCast(d, InterleaveUpper(v10U, v32U));
+    } else {  // 64-bit
+      A = InterleaveLower(v0, v1); C = InterleaveUpper(v0, v1);
+      B = InterleaveLower(v2, v3); Dd = InterleaveUpper(v2, v3);
+    }
+    // StoreTransposedBlocks4 (512): block-juggle -> [3210][7654][ba98][fedc].
+    const auto j1j0i1i0 = detail::shuffle128<_MM_PERM_BABA>(A, B);
+    const auto l1l0k1k0 = detail::shuffle128<_MM_PERM_BABA>(C, Dd);
+    const auto j3j2i3i2 = detail::shuffle128<_MM_PERM_DCDC>(A, B);
+    const auto l3l2k3k2 = detail::shuffle128<_MM_PERM_DCDC>(C, Dd);
+    StoreU(detail::shuffle128<_MM_PERM_CACA>(j1j0i1i0, l1l0k1k0), d, p + 0 * N);
+    StoreU(detail::shuffle128<_MM_PERM_DBDB>(j1j0i1i0, l1l0k1k0), d, p + 1 * N);
+    StoreU(detail::shuffle128<_MM_PERM_CACA>(j3j2i3i2, l3l2k3k2), d, p + 2 * N);
+    StoreU(detail::shuffle128<_MM_PERM_DBDB>(j3j2i3i2, l3l2k3k2), d, p + 3 * N);
+  } else {
+    alignas(64) T t0[N], t1[N], t2[N], t3[N];
+    Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2); Store(v3, d, t3);
+    for (std::size_t i = 0; i < N; ++i) { p[4*i]=t0[i]; p[4*i+1]=t1[i]; p[4*i+2]=t2[i]; p[4*i+3]=t3[i]; }
+  }
 }
 
 // ---- arithmetic ---------------------------------------------------------------------

@@ -455,6 +455,62 @@ TEST(Vec, InterleavedLoadStore) {
   }
 }
 
+// Type-generic interleave round-trip: covers the register-transpose paths (32/64-bit) AND the
+// store+reload fallback (8/16-bit) across every lane type, on top of the i32 test above. Verifies
+// StoreInterleavedK writes correct AoS and LoadInterleavedK reads it back to the originals.
+namespace {
+template <typename T>
+void InterleaveRoundTrip() {
+  const hs::ScalableTag<T> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<T> s0, s1, s2, s3, r0, r1, r2, r3;
+  for (std::size_t i = 0; i < n; ++i) {
+    s0.data[i] = static_cast<T>(1 + i);   s1.data[i] = static_cast<T>(40 + i);
+    s2.data[i] = static_cast<T>(80 + i);  s3.data[i] = static_cast<T>(120 + i);
+  }
+  const auto v0 = hs::Load(d, s0.data), v1 = hs::Load(d, s1.data),
+             v2 = hs::Load(d, s2.data), v3 = hs::Load(d, s3.data);
+  hs::VFromD<decltype(d)> l0, l1, l2, l3;
+  T buf[kMaxLanes * 4];
+  // 2-way
+  hs::StoreInterleaved2(v0, v1, d, buf);
+  for (std::size_t i = 0; i < n; ++i) { EXPECT_EQ(buf[2*i], s0.data[i]); EXPECT_EQ(buf[2*i+1], s1.data[i]); }
+  hs::LoadInterleaved2(d, buf, l0, l1);
+  hs::Store(l0, d, r0.data); hs::Store(l1, d, r1.data);
+  for (std::size_t i = 0; i < n; ++i) { EXPECT_EQ(r0.data[i], s0.data[i]); EXPECT_EQ(r1.data[i], s1.data[i]); }
+  // 3-way
+  hs::StoreInterleaved3(v0, v1, v2, d, buf);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(buf[3*i], s0.data[i]); EXPECT_EQ(buf[3*i+1], s1.data[i]); EXPECT_EQ(buf[3*i+2], s2.data[i]);
+  }
+  hs::LoadInterleaved3(d, buf, l0, l1, l2);
+  hs::Store(l0, d, r0.data); hs::Store(l1, d, r1.data); hs::Store(l2, d, r2.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(r0.data[i], s0.data[i]); EXPECT_EQ(r1.data[i], s1.data[i]); EXPECT_EQ(r2.data[i], s2.data[i]);
+  }
+  // 4-way
+  hs::StoreInterleaved4(v0, v1, v2, v3, d, buf);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(buf[4*i], s0.data[i]);   EXPECT_EQ(buf[4*i+1], s1.data[i]);
+    EXPECT_EQ(buf[4*i+2], s2.data[i]); EXPECT_EQ(buf[4*i+3], s3.data[i]);
+  }
+  hs::LoadInterleaved4(d, buf, l0, l1, l2, l3);
+  hs::Store(l0, d, r0.data); hs::Store(l1, d, r1.data); hs::Store(l2, d, r2.data); hs::Store(l3, d, r3.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(r0.data[i], s0.data[i]); EXPECT_EQ(r1.data[i], s1.data[i]);
+    EXPECT_EQ(r2.data[i], s2.data[i]); EXPECT_EQ(r3.data[i], s3.data[i]);
+  }
+}
+}  // namespace
+TEST(Vec, InterleaveRoundTripAllWidths) {
+  InterleaveRoundTrip<std::uint32_t>();  // register transpose (shuffle_ps tree)
+  InterleaveRoundTrip<float>();
+  InterleaveRoundTrip<std::int64_t>();   // register transpose (64-bit unpack)
+  InterleaveRoundTrip<double>();
+  InterleaveRoundTrip<std::uint16_t>();  // store+reload fallback
+  InterleaveRoundTrip<std::uint8_t>();
+}
+
 // ---- A-7 math / arith extensions ----------------------------------------------------
 TEST(Vec, MathExtFloat) {
   const hs::ScalableTag<float> d;
