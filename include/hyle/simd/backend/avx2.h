@@ -2365,6 +2365,48 @@ HYLE_FORCE_INLINE void StoreN(detail::V256<D> v, D d, TFromD<D>* p, std::size_t 
   Store(v, d, tmp);
   for (std::size_t i = 0; i < k; ++i) p[i] = tmp[i];  // write only k lanes (fault-safe)
 }
+// LoadNOr(no, d, p, n): first min(n,N) lanes from p, `no` elsewhere. 4/8-byte lanes use NATIVE
+// _mm256_maskload (fault-safe: off-mask lanes are NOT read, so no OOB page fault) driven by an
+// in-register iota<k mask -- replaces the scalar per-lane fill+reload (op_parity sign-sweep: was
+// ~9.6x Highway, a real store+reload loss, not the ~2-4% layout bias). 8/16-bit have no AVX2
+// maskload -> keep the fault-safe scalar path (same as Highway there).
+template <class D> requires HYLE_SIMD_W(D, 16, 32)
+HYLE_FORCE_INLINE detail::V256<D> LoadNOr(detail::V256<D> no, D d, const TFromD<D>* p,
+                                          std::size_t n) noexcept {
+  using T = TFromD<D>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  const int k = static_cast<int>(n < kN ? n : kN);
+  if constexpr (sizeof(T) == 4) {
+    const __m256i iota = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+    const __m256i m = _mm256_cmpgt_epi32(_mm256_set1_epi32(k), iota);  // lane<k -> all-ones
+    detail::V256<D> r;
+    if constexpr (std::is_same_v<T, float>) {
+      const __m256 loaded = _mm256_maskload_ps(p, m);  // off-lane not read (fault-safe), =0
+      r.raw = _mm256_blendv_ps(no.raw, loaded, _mm256_castsi256_ps(m));
+    } else {
+      const __m256i loaded = _mm256_maskload_epi32(reinterpret_cast<const int*>(p), m);
+      r.raw = _mm256_blendv_epi8(no.raw, loaded, m);
+    }
+    return r;
+  } else if constexpr (sizeof(T) == 8) {
+    const __m256i iota = _mm256_set_epi64x(3, 2, 1, 0);
+    const __m256i m = _mm256_cmpgt_epi64(_mm256_set1_epi64x(k), iota);
+    detail::V256<D> r;
+    if constexpr (std::is_same_v<T, double>) {
+      const __m256d loaded = _mm256_maskload_pd(p, m);
+      r.raw = _mm256_blendv_pd(no.raw, loaded, _mm256_castsi256_pd(m));
+    } else {
+      const __m256i loaded = _mm256_maskload_epi64(reinterpret_cast<const long long*>(p), m);
+      r.raw = _mm256_blendv_epi8(no.raw, loaded, m);
+    }
+    return r;
+  } else {  // 8/16-bit: no AVX2 maskload -> fault-safe scalar (read only k lanes), same as Highway.
+    alignas(32) T tmp[kN];
+    Store(no, d, tmp);
+    for (int i = 0; i < k; ++i) tmp[i] = p[i];
+    return Load(d, tmp);
+  }
+}
 
 // ---- gather / scatter + compress / expand -------------------------------------------
 // NATIVE where AVX2 has it (vpgatherd for 32-bit lane+index -- the common i32/u32/f32 case),
