@@ -2140,19 +2140,50 @@ HYLE_FORCE_INLINE Vec256<T, N> ReverseLaneBytes(Vec256<T, N> v) noexcept {
   }
   return Load(Simd<T, N, 0>(), d);
 }
+namespace detail {
+// Reinterpret a 256-bit lane register as __m256 for shuffle_ps (float raw passes through; integer
+// raw is a bit-cast). Used by InterleaveEven/Odd's two-shuffle_ps path.
+HYLE_FORCE_INLINE __m256 as_ps(__m256 v) noexcept { return v; }
+HYLE_FORCE_INLINE __m256 as_ps(__m256i v) noexcept { return _mm256_castsi256_ps(v); }
+}  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> InterleaveEven(Vec256<T, N> a, Vec256<T, N> b) noexcept {
-  alignas(32) T sa[N], sb[N], d[N];
-  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
-  for (std::size_t i = 0; i < N / 2; ++i) { d[2 * i] = sa[2 * i]; d[2 * i + 1] = sb[2 * i]; }
-  return Load(Simd<T, N, 0>(), d);
+  if constexpr (sizeof(T) == 4 && N == 8) {
+    // d = [a0,b0,a2,b2, a4,b4,a6,b6] via two per-128-lane shuffle_ps (Highway x86_256 AVX2 path),
+    // NOT store+scalar-loop+reload (isolated -n15 was ~1.6x behind Highway). shuffle_ps runs on both
+    // 128-bit lanes, matching this op's whole-vector even-lane interleave (verified vs scalar oracle).
+    const __m256 va = detail::as_ps(a.raw);
+    const __m256 vb = detail::as_ps(b.raw);
+    const __m256 e = _mm256_shuffle_ps(va, vb, _MM_SHUFFLE(2, 0, 2, 0));   // [b2 b0 a2 a0] per lane
+    const __m256 r = _mm256_shuffle_ps(e, e, _MM_SHUFFLE(3, 1, 2, 0));     // [a0 b0 a2 b2] per lane
+    Vec256<T, N> out;
+    if constexpr (std::is_same_v<T, float>) out.raw = r;
+    else out.raw = _mm256_castps_si256(r);
+    return out;
+  } else {
+    alignas(32) T sa[N], sb[N], d[N];
+    Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+    for (std::size_t i = 0; i < N / 2; ++i) { d[2 * i] = sa[2 * i]; d[2 * i + 1] = sb[2 * i]; }
+    return Load(Simd<T, N, 0>(), d);
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> InterleaveOdd(Vec256<T, N> a, Vec256<T, N> b) noexcept {
-  alignas(32) T sa[N], sb[N], d[N];
-  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
-  for (std::size_t i = 0; i < N / 2; ++i) { d[2 * i] = sa[2 * i + 1]; d[2 * i + 1] = sb[2 * i + 1]; }
-  return Load(Simd<T, N, 0>(), d);
+  if constexpr (sizeof(T) == 4 && N == 8) {
+    const __m256 va = detail::as_ps(a.raw);
+    const __m256 vb = detail::as_ps(b.raw);
+    const __m256 e = _mm256_shuffle_ps(va, vb, _MM_SHUFFLE(3, 1, 3, 1));   // [b3 b1 a3 a1] per lane
+    const __m256 r = _mm256_shuffle_ps(e, e, _MM_SHUFFLE(3, 1, 2, 0));     // [a1 b1 a3 b3] per lane
+    Vec256<T, N> out;
+    if constexpr (std::is_same_v<T, float>) out.raw = r;
+    else out.raw = _mm256_castps_si256(r);
+    return out;
+  } else {
+    alignas(32) T sa[N], sb[N], d[N];
+    Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+    for (std::size_t i = 0; i < N / 2; ++i) { d[2 * i] = sa[2 * i + 1]; d[2 * i + 1] = sb[2 * i + 1]; }
+    return Load(Simd<T, N, 0>(), d);
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> Slide1Up(D d, detail::V256<D> v) noexcept {
