@@ -652,6 +652,23 @@ HYLE_FORCE_INLINE Vec256<T, N> NegMulAdd(Vec256<T, N> a, Vec256<T, N> b,
   else r = Sub(c, Mul(a, b));
   return r;
 }
+// MulSub(a,b,c)=a*b-c, NegMulSub(a,b,c)=-(a*b)-c: AVX2 FMA3 has native vfmsub/vfnmsub (one insn).
+// The generic float path was MulAdd(a,b,Neg(c)) = a NEG + a FMA (objdump 2 insn vs Highway's 1
+// vfmsub132ps). float/double only (requires); integer falls back to the generic.
+template <typename T, std::size_t N> requires std::is_floating_point_v<T>
+HYLE_FORCE_INLINE Vec256<T, N> MulSub(Vec256<T, N> a, Vec256<T, N> b, Vec256<T, N> c) noexcept {
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_fmsub_ps(a.raw, b.raw, c.raw);
+  else r.raw = _mm256_fmsub_pd(a.raw, b.raw, c.raw);
+  return r;
+}
+template <typename T, std::size_t N> requires std::is_floating_point_v<T>
+HYLE_FORCE_INLINE Vec256<T, N> NegMulSub(Vec256<T, N> a, Vec256<T, N> b, Vec256<T, N> c) noexcept {
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_fnmsub_ps(a.raw, b.raw, c.raw);
+  else r.raw = _mm256_fnmsub_pd(a.raw, b.raw, c.raw);
+  return r;
+}
 // MulAddSub(a,b,c): a*b-c in EVEN lanes, a*b+c in ODD lanes. AVX2 FMA3 has NATIVE vfmaddsub (one
 // instruction) -- the generic OddEven(MulAdd,MulSub) fallback compiled to xor+2*fma (objdump 3 insn
 // vs Highway's 1 vfmaddsub132ps). MulSubAdd is the sibling (even add, odd sub) = vfmsubadd. Integer
