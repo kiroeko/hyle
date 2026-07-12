@@ -38,6 +38,18 @@ Zero/CeilInt/FloorInt/AllBits0/MaskedReduceMax/DupEven/DupOdd/ShiftRight/IfThenE
 ## 已在本轮修复追平（符号检验确认）
 SaturatedNeg（位技巧 `~v-(v>MIN?-1:0)`）、SaturatedAbs i32（`Min_u32(Abs,INT_MAX)`）、PromoteMaskTo/OrderedDemote2MasksTo（向量域+PEXT+MaskFromNormalizedVec）、InterleaveEven/Odd（双 shuffle_ps）、TestBit（Eq(v&bit,bit)）、MulByFloorPow2 NEON（vcvtmq）。
 
+## 三平台交集（铁真输，排除单平台 harness/编译器伪影）——2026-07-12 补
+
+三平台(WSL GCC avx2 / MSVC avx2 / Mac NEON)各自 sign sweep 后求交集。**单平台独有的"输"多是 harness/编译器伪影**（NEON 22 输里 21 个单平台独有=串扰；MSVC 76 输含 Add/Max/Min f32 等单指令=MSVC harness），交集才是真算法输。
+
+**三平台都输（1，最硬）**：`MaskedApproxReciprocal f32`。
+
+**avx2 两编译器(GCC+MSVC)都输（20，x86 真算法输）**：Eq128 / Max128（128-cmp）、CompressStore / CompressBlendedStore / GatherOffset / LoadNOr / LoadInterleaved2 / BitShuffle / TwoTablesLookupLanes / MultiRotateRight（内存/复杂）、MaskedApproxReciprocal(Sqrt) / MaskedMulComplexConj / MaskedShiftLeft·Right<3>（Masked 族）、FindKnownLastTrue、MinNumber / MaxNumber、MulAddSub、ConcatOdd。
+
+**⚠️ MSVC 独有的大输（GCC 已追平但 MSVC 没有，编译器 codegen 差异，需查）**：SetAtOrAfterFirst/OnlyFirst/BeforeFirst/AtOrBeforeFirst 5×、OrderedDemote2MasksTo 4.6×、Reverse2/4/8 2.8×、Dup128MaskFromMaskBits 5.4×、PairwiseAdd/Sub。这些我在 WSL(GCC) 用向量化追平了，但 **MSVC 对同一份 C++ 的 codegen 没优化到位**——说明"追平"必须三平台各自验证，不能只信 GCC。
+
+**NEON 独有小输（1.01–1.07×，串扰待隔离确认）**：Not/Xor/And/Zero/DupEven/Shuffle 等单指令。
+
 ## 施工方针
 1. 大输优先（内存族 LoadNOr/Compress/Gather、MultiRotateRight）——收益最大且明确。
 2. 中输逐个对照 Highway 源码找多余步骤。
