@@ -2540,14 +2540,25 @@ HYLE_FORCE_INLINE VecNeon<T, N> RoundingShiftRightSame(VecNeon<T, N> v, int s) n
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> RoundingShr(VecNeon<T, N> v, VecNeon<T, N> amounts) noexcept {
   static_assert(std::is_integral_v<T>, "RoundingShr is integer-lane only");
-  alignas(16) T sv[N], sa[N], so[N];
-  StoreU(v, Simd<T, N, 0>(), sv); StoreU(amounts, Simd<T, N, 0>(), sa);
-  for (std::size_t i = 0; i < N; ++i) {
-    const int s = static_cast<int>(sa[i]);
-    if (s <= 0) so[i] = sv[i];
-    else so[i] = static_cast<T>((sv[i] + static_cast<T>(T{1} << (s - 1))) >> s);
+  // vrshlq is the rounding sibling of vshlq: NEGATIVE per-lane count = rounding right shift
+  // (a + (1 << (s-1))) >> s -- exactly this op's contract. The old store+reload+scalar loop was
+  // ~3.2x Highway (-n15); one vmax(amt,0) clamps the "s<=0 keeps v" case (a non-positive count
+  // becomes a 0 shift = identity), one vneg makes it a right shift, one vrshl rounds.
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vrshlq_s8(v.raw, vnegq_s8(vmaxq_s8(amounts.raw, vdupq_n_s8(0))));
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vrshlq_u8(v.raw, vnegq_s8(vmaxq_s8(vreinterpretq_s8_u8(amounts.raw), vdupq_n_s8(0))));
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vrshlq_s16(v.raw, vnegq_s16(vmaxq_s16(amounts.raw, vdupq_n_s16(0))));
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = vrshlq_u16(v.raw, vnegq_s16(vmaxq_s16(vreinterpretq_s16_u16(amounts.raw), vdupq_n_s16(0))));
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vrshlq_s32(v.raw, vnegq_s32(vmaxq_s32(amounts.raw, vdupq_n_s32(0))));
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = vrshlq_u32(v.raw, vnegq_s32(vmaxq_s32(vreinterpretq_s32_u32(amounts.raw), vdupq_n_s32(0))));
+  else if constexpr (std::is_same_v<T, std::int64_t>) {  // no vmaxq_s64: clamp via compare-select
+    const int64x2_t z = vdupq_n_s64(0), a = amounts.raw;
+    r.raw = vrshlq_s64(v.raw, vnegq_s64(vbslq_s64(vcgtq_s64(a, z), a, z)));
+  } else {  // u64: same clamp-select on the signed-reinterpreted count
+    const int64x2_t z = vdupq_n_s64(0), a = vreinterpretq_s64_u64(amounts.raw);
+    r.raw = vrshlq_u64(v.raw, vnegq_s64(vbslq_s64(vcgtq_s64(a, z), a, z)));
   }
-  return LoadU(Simd<T, N, 0>(), so);
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> PairwiseAdd128(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {

@@ -901,6 +901,35 @@ TEST(Vec, SumsOfNAndRoundShift) {
   // TestBit: bit 2 set?
   hs::Store(hs::VecFromMask(du, hs::TestBit(hs::Load(du, u.data), hs::Set(du, 4u))), du, ou.data);
   for (std::size_t i = 0; i < hs::Lanes(du); ++i) EXPECT_EQ(ou.data[i] != 0, (u.data[i] & 4u) != 0) << "testbit i=" << i;
+
+  // RoundingShr with PER-LANE vector amount: (v + (1<<(s-1))) >> s for s>0, keep v for s<=0.
+  // Covers signed (arithmetic, incl. s<=0 identity via negative amounts) + unsigned (logical).
+  {
+    const hs::ScalableTag<std::int32_t> di;
+    const std::size_t ni = hs::Lanes(di);
+    Buf<std::int32_t> iv, ia, io;
+    for (std::size_t i = 0; i < ni; ++i) {
+      iv.data[i] = static_cast<std::int32_t>(i * 137 - 300);   // mix of +/-
+      ia.data[i] = static_cast<std::int32_t>(i % 4) - 1;       // -1,0,1,2 -> exercises s<=0 keep
+    }
+    hs::Store(hs::RoundingShr(hs::Load(di, iv.data), hs::Load(di, ia.data)), di, io.data);
+    for (std::size_t i = 0; i < ni; ++i) {
+      const int s = static_cast<int>(ia.data[i]);
+      const std::int32_t want = (s <= 0) ? iv.data[i]
+                                         : static_cast<std::int32_t>((iv.data[i] + (std::int32_t{1} << (s - 1))) >> s);
+      EXPECT_EQ(io.data[i], want) << "rshr i32 i=" << i << " s=" << s;
+    }
+  }
+  {
+    Buf<std::uint32_t> ua, uo;
+    for (std::size_t i = 0; i < hs::Lanes(du); ++i) ua.data[i] = static_cast<std::uint32_t>(i % 5);  // 0..4
+    hs::Store(hs::RoundingShr(hs::Load(du, u.data), hs::Load(du, ua.data)), du, uo.data);
+    for (std::size_t i = 0; i < hs::Lanes(du); ++i) {
+      const unsigned s = ua.data[i];
+      const std::uint32_t want = (s == 0) ? u.data[i] : (u.data[i] + (1u << (s - 1))) >> s;
+      EXPECT_EQ(uo.data[i], want) << "rshr u32 i=" << i << " s=" << s;
+    }
+  }
 }
 
 // ---- B-3 lane access + init (generic layer) -----------------------------------------
