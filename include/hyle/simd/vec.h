@@ -220,6 +220,20 @@ static constexpr std::size_t kNativeVectorBytes = 16;
 // scalar floor (#else); simd-02 added the SSE4.2 + AVX2 backends below. simd-03 adds
 // `#elif defined(HYLE_SIMD_TARGET_NEON) #include "backend/neon.h"` (+ AVX-512) -- this
 // ladder is the only thing that changes per ISA.
+// Forward declarations of the 8/16-bit interleave shuffle-stage helpers (defined in the generic
+// layer below, after Dup128VecFromValues/TableLookupBytesOr0). The per-backend LoadInterleaved3/4 +
+// StoreInterleaved3/4 (included next) call these by qualified name, so they must be visible at the
+// backend's template-definition point even though their bodies come later.
+namespace detail {
+template <class D, class V> HYLE_FORCE_INLINE void Interleave3To_u8(D, V, V, V, V&, V&, V&) noexcept;
+template <class D, class V> HYLE_FORCE_INLINE void Interleave3To_u16(D, V, V, V, V&, V&, V&) noexcept;
+template <class D, class V> HYLE_FORCE_INLINE void Interleave4To_u8(D, V, V, V, V, V&, V&, V&, V&) noexcept;
+template <class D, class V> HYLE_FORCE_INLINE void Interleave4To_u16(D, V, V, V, V, V&, V&, V&, V&) noexcept;
+template <class D, class V> HYLE_FORCE_INLINE void Interleave3From_u8(D, V, V, V, V&, V&, V&) noexcept;
+template <class D, class V> HYLE_FORCE_INLINE void Interleave3From_u16(D, V, V, V, V&, V&, V&) noexcept;
+template <class D, class V> HYLE_FORCE_INLINE void Interleave4From_narrow(D, V, V, V, V, V&, V&, V&, V&) noexcept;
+}  // namespace detail
+
 }  // namespace hyle::simd
 
 #if defined(HYLE_SIMD_TARGET_AVX512)
@@ -1393,6 +1407,122 @@ HYLE_FORCE_INLINE VFromD<D> Dup128VecFromValues(D d, TFromD<D> t0, TFromD<D> t1)
   alignas(16) TFromD<D> blk[2] = {t0, t1};
   return LoadDup128(d, blk);
 }
+
+// ---- 8/16-bit interleave shuffle stage (Highway generic_ops recipe) ------------------
+// These operate on ALREADY-block-transposed inputs (A/B/C[/D]) and are width/backend-agnostic
+// (only TableLookupBytesOr0 / Xor3 / Or3 / Dup128VecFromValues / Add / CombineShiftRightBytes /
+// InterleaveLower/Upper -- all present on every backend). Each backend's LoadInterleaved3/4 &
+// StoreInterleaved3/4 does its OWN block transpose (128=raw, 256=Concat, 512=Shuffle128) then
+// calls these for the per-128-block byte gather/scatter. The byte-index tables are per-128-block
+// (Dup128VecFromValues replicates to every block); TableLookupBytesOr0 zeroes Z=0x80 lanes so the
+// 3-way Xor3/Or3 merges the disjoint partials. Ports Highway's 8-bit (u8 idx) and 16-bit (u8-byte
+// idx BitCast to d) LoadInterleaved3 / LoadInterleaved4 (unpack tree) / StoreInterleaved3 (Add-built
+// tables) / StoreInterleaved4 (widening-zip). detail:: internal; the public entries wrap them.
+namespace detail {
+inline constexpr std::uint8_t kIlZ = 0x80;  // TableLookupBytesOr0 "zero this lane" index
+
+// LoadInterleaved3, 8-bit lanes: A/B/C block-transposed -> deinterleaved v0,v1,v2.
+template <class D, class V>
+HYLE_FORCE_INLINE void Interleave3To_u8(D d, V A, V B, V C, V& v0, V& v1, V& v2) noexcept {
+  const RebindToUnsigned<D> du;
+  constexpr std::uint8_t Z = kIlZ;
+  const auto i0A = Dup128VecFromValues(du, 0,3,6,9,12,15,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z);
+  const auto i0B = Dup128VecFromValues(du, Z,Z,Z,Z,Z,Z,2,5,8,11,14,Z,Z,Z,Z,Z);
+  const auto i0C = Dup128VecFromValues(du, Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,1,4,7,10,13);
+  const auto i1A = Dup128VecFromValues(du, 1,4,7,10,13,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z);
+  const auto i1B = Dup128VecFromValues(du, Z,Z,Z,Z,Z,0,3,6,9,12,15,Z,Z,Z,Z,Z);
+  const auto i1C = Dup128VecFromValues(du, Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,2,5,8,11,14);
+  const auto i2A = Dup128VecFromValues(du, 2,5,8,11,14,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z);
+  const auto i2B = Dup128VecFromValues(du, Z,Z,Z,Z,Z,1,4,7,10,13,Z,Z,Z,Z,Z,Z);
+  const auto i2C = Dup128VecFromValues(du, Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,0,3,6,9,12,15);
+  v0 = Xor3(BitCast(d,TableLookupBytesOr0(A,i0A)),BitCast(d,TableLookupBytesOr0(B,i0B)),BitCast(d,TableLookupBytesOr0(C,i0C)));
+  v1 = Xor3(BitCast(d,TableLookupBytesOr0(A,i1A)),BitCast(d,TableLookupBytesOr0(B,i1B)),BitCast(d,TableLookupBytesOr0(C,i1C)));
+  v2 = Xor3(BitCast(d,TableLookupBytesOr0(A,i2A)),BitCast(d,TableLookupBytesOr0(B,i2B)),BitCast(d,TableLookupBytesOr0(C,i2C)));
+}
+// LoadInterleaved3, 16-bit lanes: byte-index tables (du8) BitCast to d.
+template <class D, class V>
+HYLE_FORCE_INLINE void Interleave3To_u16(D d, V A, V B, V C, V& v0, V& v1, V& v2) noexcept {
+  const Repartition<std::uint8_t, D> du8;
+  constexpr std::uint8_t Z = kIlZ;
+  const auto i0A = Dup128VecFromValues(du8, 0x00,0x01,0x06,0x07,0x0C,0x0D,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z);
+  const auto i0B = Dup128VecFromValues(du8, Z,Z,Z,Z,Z,Z,0x02,0x03,0x08,0x09,0x0E,0x0F,Z,Z,Z,Z);
+  const auto i0C = Dup128VecFromValues(du8, Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,0x04,0x05,0x0A,0x0B);
+  const auto i1A = Dup128VecFromValues(du8, 0x02,0x03,0x08,0x09,0x0E,0x0F,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z);
+  const auto i1B = Dup128VecFromValues(du8, Z,Z,Z,Z,Z,Z,0x04,0x05,0x0A,0x0B,Z,Z,Z,Z,Z,Z);
+  const auto i1C = Dup128VecFromValues(du8, Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,0x00,0x01,0x06,0x07,0x0C,0x0D);
+  const auto i2A = Dup128VecFromValues(du8, 0x04,0x05,0x0A,0x0B,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,Z);
+  const auto i2B = Dup128VecFromValues(du8, Z,Z,Z,Z,0x00,0x01,0x06,0x07,0x0C,0x0D,Z,Z,Z,Z,Z,Z);
+  const auto i2C = Dup128VecFromValues(du8, Z,Z,Z,Z,Z,Z,Z,Z,Z,Z,0x02,0x03,0x08,0x09,0x0E,0x0F);
+  v0 = Xor3(TableLookupBytesOr0(A,BitCast(d,i0A)),TableLookupBytesOr0(B,BitCast(d,i0B)),TableLookupBytesOr0(C,BitCast(d,i0C)));
+  v1 = Xor3(TableLookupBytesOr0(A,BitCast(d,i1A)),TableLookupBytesOr0(B,BitCast(d,i1B)),TableLookupBytesOr0(C,BitCast(d,i1C)));
+  v2 = Xor3(TableLookupBytesOr0(A,BitCast(d,i2A)),TableLookupBytesOr0(B,BitCast(d,i2B)),TableLookupBytesOr0(C,BitCast(d,i2C)));
+}
+// LoadInterleaved4, narrow (8/16-bit): pure InterleaveLower/Upper unpack tree; final stage in the
+// wide (u64) domain. A/B/C/E block-transposed. Works for u8 and u16 (wide = u64 either way on 256b).
+// 8-bit (16 lanes/block) needs FOUR unpack levels before the final u64-domain stage.
+template <class D, class V>
+HYLE_FORCE_INLINE void Interleave4To_u8(D d, V vA, V vB, V vC, V vD, V& v0, V& v1, V& v2, V& v3) noexcept {
+  const Repartition<std::uint64_t, D> d64;
+  const auto v5140 = InterleaveLower(vA, vB), vd9c8 = InterleaveLower(vC, vD);
+  const auto v7362 = InterleaveUpper(vA, vB), vfbea = InterleaveUpper(vC, vD);
+  const auto v6420 = InterleaveLower(v5140, v7362), veca8 = InterleaveLower(vd9c8, vfbea);
+  const auto v7531 = InterleaveUpper(v5140, v7362), vfdb9 = InterleaveUpper(vd9c8, vfbea);
+  const auto v10L = BitCast(d64, InterleaveLower(v6420, v7531)), v10U = BitCast(d64, InterleaveLower(veca8, vfdb9));
+  const auto v32L = BitCast(d64, InterleaveUpper(v6420, v7531)), v32U = BitCast(d64, InterleaveUpper(veca8, vfdb9));
+  v0 = BitCast(d, InterleaveLower(v10L, v10U)); v1 = BitCast(d, InterleaveUpper(v10L, v10U));
+  v2 = BitCast(d, InterleaveLower(v32L, v32U)); v3 = BitCast(d, InterleaveUpper(v32L, v32U));
+}
+// 16-bit (8 lanes/block) needs THREE unpack levels (one fewer than 8-bit).
+template <class D, class V>
+HYLE_FORCE_INLINE void Interleave4To_u16(D d, V vA, V vB, V vC, V vD, V& v0, V& v1, V& v2, V& v3) noexcept {
+  const Repartition<std::uint64_t, D> dw;
+  const auto va820 = InterleaveLower(vA, vB), vec64 = InterleaveLower(vC, vD);
+  const auto vb931 = InterleaveUpper(vA, vB), vfd75 = InterleaveUpper(vC, vD);
+  const auto v10_b830 = BitCast(dw, InterleaveLower(va820, vb931)), v10_fc74 = BitCast(dw, InterleaveLower(vec64, vfd75));
+  const auto v32_b830 = BitCast(dw, InterleaveUpper(va820, vb931)), v32_fc74 = BitCast(dw, InterleaveUpper(vec64, vfd75));
+  v0 = BitCast(d, InterleaveLower(v10_b830, v10_fc74)); v1 = BitCast(d, InterleaveUpper(v10_b830, v10_fc74));
+  v2 = BitCast(d, InterleaveLower(v32_b830, v32_fc74)); v3 = BitCast(d, InterleaveUpper(v32_b830, v32_fc74));
+}
+// StoreInterleaved3, 8-bit: build A/B/C via Add-derived byte tables + Or3 (block-domain, pre-transpose).
+template <class D, class V>
+HYLE_FORCE_INLINE void Interleave3From_u8(D d, V v0, V v1, V v2, V& A, V& B, V& C) noexcept {
+  const RebindToUnsigned<D> du; using TU = TFromD<decltype(du)>;
+  constexpr std::uint8_t Z = kIlZ;
+  const auto k5 = Set(du, TU{5}), k6 = Set(du, TU{6});
+  const auto a0 = Dup128VecFromValues(du, 0,Z,Z,1,Z,Z,2,Z,Z,3,Z,Z,4,Z,Z,5);
+  const auto a1 = Dup128VecFromValues(du, Z,0,Z,Z,1,Z,Z,2,Z,Z,3,Z,Z,4,Z,Z);
+  const auto a2 = CombineShiftRightBytes<15>(a1, a1);
+  A = BitCast(d, Or3(TableLookupBytesOr0(v0,a0),TableLookupBytesOr0(v1,a1),TableLookupBytesOr0(v2,a2)));
+  const auto b0 = Add(a2,k6), b1 = Add(a0,k5), b2 = Add(a1,k5);
+  B = BitCast(d, Or3(TableLookupBytesOr0(v0,b0),TableLookupBytesOr0(v1,b1),TableLookupBytesOr0(v2,b2)));
+  const auto c0 = Add(b2,k6), c1 = Add(b0,k5), c2 = Add(b1,k5);
+  C = BitCast(d, Or3(TableLookupBytesOr0(v0,c0),TableLookupBytesOr0(v1,c1),TableLookupBytesOr0(v2,c2)));
+}
+// StoreInterleaved3, 16-bit: byte-domain tables, k = 2*/3*sizeof.
+template <class D, class V>
+HYLE_FORCE_INLINE void Interleave3From_u16(D d, V v0, V v1, V v2, V& A, V& B, V& C) noexcept {
+  const Repartition<std::uint8_t, D> du8;
+  constexpr std::uint8_t Z = kIlZ;
+  const auto k2 = Set(du8, std::uint8_t{2*sizeof(TFromD<D>)}), k3 = Set(du8, std::uint8_t{3*sizeof(TFromD<D>)});
+  const auto a1 = Dup128VecFromValues(du8, Z,Z,0,1,Z,Z,Z,Z,2,3,Z,Z,Z,Z,4,5);
+  const auto a2 = Dup128VecFromValues(du8, Z,Z,Z,Z,0,1,Z,Z,Z,Z,2,3,Z,Z,Z,Z);
+  const auto a0 = CombineShiftRightBytes<2>(a1, a1);
+  A = BitCast(d, Or3(TableLookupBytesOr0(v0,BitCast(d,a0)),TableLookupBytesOr0(v1,BitCast(d,a1)),TableLookupBytesOr0(v2,BitCast(d,a2))));
+  const auto b0 = Add(a1,k3), b1 = Add(a2,k3), b2 = Add(a0,k2);
+  B = BitCast(d, Or3(TableLookupBytesOr0(v0,BitCast(d,b0)),TableLookupBytesOr0(v1,BitCast(d,b1)),TableLookupBytesOr0(v2,BitCast(d,b2))));
+  const auto c0 = Add(b1,k3), c1 = Add(b2,k3), c2 = Add(b0,k2);
+  C = BitCast(d, Or3(TableLookupBytesOr0(v0,BitCast(d,c0)),TableLookupBytesOr0(v1,BitCast(d,c1)),TableLookupBytesOr0(v2,BitCast(d,c2))));
+}
+// StoreInterleaved4, narrow (8/16-bit): widening-zip -> A/B/C/E (pre-transpose). wide = 2x lane.
+template <class D, class V>
+HYLE_FORCE_INLINE void Interleave4From_narrow(D d, V v0, V v1, V v2, V v3, V& A, V& B, V& C, V& E) noexcept {
+  const RepartitionToWide<D> dw;
+  const auto v10L = BitCast(dw, InterleaveLower(v0,v1)), v32L = BitCast(dw, InterleaveLower(v2,v3));
+  const auto v10U = BitCast(dw, InterleaveUpper(v0,v1)), v32U = BitCast(dw, InterleaveUpper(v2,v3));
+  A = BitCast(d, InterleaveLower(v10L,v32L)); B = BitCast(d, InterleaveUpper(v10L,v32L));
+  C = BitCast(d, InterleaveLower(v10U,v32U)); E = BitCast(d, InterleaveUpper(v10U,v32U));
+}
+}  // namespace detail
 
 // TwoTablesLookupLanes: per-backend native (simd-18 批E) -- two-source cross-vector permute.
 

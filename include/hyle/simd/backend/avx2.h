@@ -207,10 +207,11 @@ HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, 
       v1 = CombineShiftRightBytes<sizeof(T)>(C, A);
       v2 = OddEven(C, B);
     }
-  } else {
-    alignas(32) T t0[N], t1[N], t2[N];
-    for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
-    v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
+  } else {  // 8/16-bit: block transpose + byte-table gather (Highway recipe)
+    const auto v10 = LoadU(d, p + 0 * N), v32 = LoadU(d, p + 1 * N), v54 = LoadU(d, p + 2 * N);
+    const auto A = ConcatUpperLower(v32, v10), B = ConcatLowerUpper(v54, v10), C = ConcatUpperLower(v54, v32);
+    if constexpr (sizeof(T) == 1) detail::Interleave3To_u8(d, A, B, C, v0, v1, v2);
+    else detail::Interleave3To_u16(d, A, B, C, v0, v1, v2);
   }
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
@@ -233,25 +234,23 @@ HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, 
       v0 = InterleaveLower(A, C); v1 = InterleaveUpper(A, C);
       v2 = InterleaveLower(B, Dd); v3 = InterleaveUpper(B, Dd);
     }
-  } else {
-    alignas(32) T t0[N], t1[N], t2[N], t3[N];
-    for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
-    v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
+  } else {  // 8/16-bit: block transpose + unpack tree (Highway recipe)
+    const auto v10 = LoadU(d, p + 0 * N), v32 = LoadU(d, p + 1 * N), v54 = LoadU(d, p + 2 * N),
+               v76 = LoadU(d, p + 3 * N);
+    const auto A = ConcatLowerLower(v54, v10), B = ConcatUpperUpper(v54, v10),
+               C = ConcatLowerLower(v76, v32), Dd = ConcatUpperUpper(v76, v32);
+    if constexpr (sizeof(T) == 1) detail::Interleave4To_u8(d, A, B, C, Dd, v0, v1, v2, v3);
+    else detail::Interleave4To_u16(d, A, B, C, Dd, v0, v1, v2, v3);
   }
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  if constexpr (sizeof(T) >= 4) {
-    const auto v10L = InterleaveLower(v0, v1), v10U = InterleaveUpper(v0, v1);
-    StoreU(ConcatLowerLower(v10U, v10L), d, p + 0 * N);  // [1 0]
-    StoreU(ConcatUpperUpper(v10U, v10L), d, p + 1 * N);  // [3 2]
-  } else {
-    alignas(32) T t0[N], t1[N];
-    Store(v0, d, t0); Store(v1, d, t1);
-    for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
-  }
+  // Interleave2 is width-independent: InterleaveLower/Upper (per-128-block) + block transpose.
+  const auto v10L = InterleaveLower(v0, v1), v10U = InterleaveUpper(v0, v1);
+  StoreU(ConcatLowerLower(v10U, v10L), d, p + 0 * N);  // [1 0]
+  StoreU(ConcatUpperUpper(v10U, v10L), d, p + 1 * N);  // [3 2]
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D d,
@@ -276,10 +275,13 @@ HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v
     StoreU(ConcatLowerLower(B, A), d, p + 0 * N);
     StoreU(ConcatUpperLower(A, C), d, p + 1 * N);
     StoreU(ConcatUpperUpper(C, B), d, p + 2 * N);
-  } else {
-    alignas(32) T t0[N], t1[N], t2[N];
-    Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
-    for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
+  } else {  // 8/16-bit: byte-table scatter -> A/B/C then block transpose (Highway recipe)
+    VFromD<D> A, B, C;
+    if constexpr (sizeof(T) == 1) detail::Interleave3From_u8(d, v0, v1, v2, A, B, C);
+    else detail::Interleave3From_u16(d, v0, v1, v2, A, B, C);
+    StoreU(ConcatLowerLower(B, A), d, p + 0 * N);
+    StoreU(ConcatUpperLower(A, C), d, p + 1 * N);
+    StoreU(ConcatUpperUpper(C, B), d, p + 2 * N);
   }
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
@@ -304,10 +306,13 @@ HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v
     StoreU(ConcatLowerLower(Dd, C), d, p + 1 * N);
     StoreU(ConcatUpperUpper(B, A), d, p + 2 * N);
     StoreU(ConcatUpperUpper(Dd, C), d, p + 3 * N);
-  } else {
-    alignas(32) T t0[N], t1[N], t2[N], t3[N];
-    Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2); Store(v3, d, t3);
-    for (std::size_t i = 0; i < N; ++i) { p[4*i]=t0[i]; p[4*i+1]=t1[i]; p[4*i+2]=t2[i]; p[4*i+3]=t3[i]; }
+  } else {  // 8/16-bit: widening-zip -> A/B/C/Dd then block transpose (Highway recipe)
+    VFromD<D> A, B, C, Dd;
+    detail::Interleave4From_narrow(d, v0, v1, v2, v3, A, B, C, Dd);
+    StoreU(ConcatLowerLower(B, A), d, p + 0 * N);
+    StoreU(ConcatLowerLower(Dd, C), d, p + 1 * N);
+    StoreU(ConcatUpperUpper(B, A), d, p + 2 * N);
+    StoreU(ConcatUpperUpper(Dd, C), d, p + 3 * N);
   }
 }
 

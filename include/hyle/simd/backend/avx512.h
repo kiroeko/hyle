@@ -225,10 +225,15 @@ HYLE_FORCE_INLINE void LoadInterleaved3(D d, const TFromD<D>* p, VFromD<D>& v0, 
       v1 = CombineShiftRightBytes<sizeof(T)>(C, A);
       v2 = OddEven(C, B);
     }
-  } else {
-    alignas(64) T t0[N], t1[N], t2[N];
-    for (std::size_t i = 0; i < N; ++i) { t0[i] = p[3*i]; t1[i] = p[3*i+1]; t2[i] = p[3*i+2]; }
-    v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2);
+  } else {  // 8/16-bit: same 512 block transpose + byte-table gather (Highway recipe)
+    const auto v3210 = LoadU(d, p + 0 * N), v7654 = LoadU(d, p + 1 * N), vba98 = LoadU(d, p + 2 * N);
+    const auto v5421 = detail::shuffle128<_MM_PERM_BACB>(v3210, v7654);
+    const auto va976 = detail::shuffle128<_MM_PERM_CBDC>(v7654, vba98);
+    const auto A = detail::shuffle128<_MM_PERM_CADA>(v3210, va976);
+    const auto B = detail::shuffle128<_MM_PERM_DBCA>(v5421, va976);
+    const auto C = detail::shuffle128<_MM_PERM_DADB>(v5421, vba98);
+    if constexpr (sizeof(T) == 1) detail::Interleave3To_u8(d, A, B, C, v0, v1, v2);
+    else detail::Interleave3To_u16(d, A, B, C, v0, v1, v2);
   }
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
@@ -257,28 +262,31 @@ HYLE_FORCE_INLINE void LoadInterleaved4(D d, const TFromD<D>* p, VFromD<D>& v0, 
       v0 = InterleaveLower(A, C); v1 = InterleaveUpper(A, C);
       v2 = InterleaveLower(B, Dd); v3 = InterleaveUpper(B, Dd);
     }
-  } else {
-    alignas(64) T t0[N], t1[N], t2[N], t3[N];
-    for (std::size_t i = 0; i < N; ++i) { t0[i]=p[4*i]; t1[i]=p[4*i+1]; t2[i]=p[4*i+2]; t3[i]=p[4*i+3]; }
-    v0 = Load(d, t0); v1 = Load(d, t1); v2 = Load(d, t2); v3 = Load(d, t3);
+  } else {  // 8/16-bit: same 512 block transpose + unpack tree (Highway recipe)
+    const auto v3210 = LoadU(d, p + 0 * N), v7654 = LoadU(d, p + 1 * N),
+               vba98 = LoadU(d, p + 2 * N), vfedc = LoadU(d, p + 3 * N);
+    const auto v5410 = detail::shuffle128<_MM_PERM_BABA>(v3210, v7654);
+    const auto vdc98 = detail::shuffle128<_MM_PERM_BABA>(vba98, vfedc);
+    const auto v7632 = detail::shuffle128<_MM_PERM_DCDC>(v3210, v7654);
+    const auto vfeba = detail::shuffle128<_MM_PERM_DCDC>(vba98, vfedc);
+    const auto A = detail::shuffle128<_MM_PERM_CACA>(v5410, vdc98);
+    const auto B = detail::shuffle128<_MM_PERM_DBDB>(v5410, vdc98);
+    const auto C = detail::shuffle128<_MM_PERM_CACA>(v7632, vfeba);
+    const auto Dd = detail::shuffle128<_MM_PERM_DBDB>(v7632, vfeba);
+    if constexpr (sizeof(T) == 1) detail::Interleave4To_u8(d, A, B, C, Dd, v0, v1, v2, v3);
+    else detail::Interleave4To_u16(d, A, B, C, Dd, v0, v1, v2, v3);
   }
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void StoreInterleaved2(VFromD<D> v0, VFromD<D> v1, D d, TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  if constexpr (sizeof(T) >= 4) {
-    // StoreTransposedBlocks2 (512): InterleaveLower/Upper then block-juggle to [3 2 1 0][7 6 5 4].
-    const auto i = InterleaveLower(v0, v1), j = InterleaveUpper(v0, v1);
-    const auto j1j0i1i0 = detail::shuffle128<_MM_PERM_BABA>(i, j);
-    const auto j3j2i3i2 = detail::shuffle128<_MM_PERM_DCDC>(i, j);
-    StoreU(detail::shuffle128<_MM_PERM_DBCA>(j1j0i1i0, j1j0i1i0), d, p + 0 * N);
-    StoreU(detail::shuffle128<_MM_PERM_DBCA>(j3j2i3i2, j3j2i3i2), d, p + 1 * N);
-  } else {
-    alignas(64) T t0[N], t1[N];
-    Store(v0, d, t0); Store(v1, d, t1);
-    for (std::size_t i = 0; i < N; ++i) { p[2*i] = t0[i]; p[2*i+1] = t1[i]; }
-  }
+  // width-independent: InterleaveLower/Upper (per-block) + 512 block juggle to [3210][7654].
+  const auto i = InterleaveLower(v0, v1), j = InterleaveUpper(v0, v1);
+  const auto j1j0i1i0 = detail::shuffle128<_MM_PERM_BABA>(i, j);
+  const auto j3j2i3i2 = detail::shuffle128<_MM_PERM_DCDC>(i, j);
+  StoreU(detail::shuffle128<_MM_PERM_DBCA>(j1j0i1i0, j1j0i1i0), d, p + 0 * N);
+  StoreU(detail::shuffle128<_MM_PERM_DBCA>(j3j2i3i2, j3j2i3i2), d, p + 1 * N);
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
 HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v2, D d,
@@ -306,10 +314,16 @@ HYLE_FORCE_INLINE void StoreInterleaved3(VFromD<D> v0, VFromD<D> v1, VFromD<D> v
     StoreU(detail::shuffle128<_MM_PERM_CACA>(j2j0i2i0, i3i1k2k0), d, p + 0 * N);
     StoreU(detail::shuffle128<_MM_PERM_DBAC>(j3j1k3k1, j2j0i2i0), d, p + 1 * N);
     StoreU(detail::shuffle128<_MM_PERM_BDDB>(i3i1k2k0, j3j1k3k1), d, p + 2 * N);
-  } else {
-    alignas(64) T t0[N], t1[N], t2[N];
-    Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2);
-    for (std::size_t i = 0; i < N; ++i) { p[3*i]=t0[i]; p[3*i+1]=t1[i]; p[3*i+2]=t2[i]; }
+  } else {  // 8/16-bit: byte-table scatter -> A/B/C then same 512 store block juggle
+    VFromD<D> A, B, C;
+    if constexpr (sizeof(T) == 1) detail::Interleave3From_u8(d, v0, v1, v2, A, B, C);
+    else detail::Interleave3From_u16(d, v0, v1, v2, A, B, C);
+    const auto j2j0i2i0 = detail::shuffle128<_MM_PERM_CACA>(A, B);
+    const auto i3i1k2k0 = detail::shuffle128<_MM_PERM_DBCA>(C, A);
+    const auto j3j1k3k1 = detail::shuffle128<_MM_PERM_DBDB>(C, B);
+    StoreU(detail::shuffle128<_MM_PERM_CACA>(j2j0i2i0, i3i1k2k0), d, p + 0 * N);
+    StoreU(detail::shuffle128<_MM_PERM_DBAC>(j3j1k3k1, j2j0i2i0), d, p + 1 * N);
+    StoreU(detail::shuffle128<_MM_PERM_BDDB>(i3i1k2k0, j3j1k3k1), d, p + 2 * N);
   }
 }
 template <class D> requires HYLE_SIMD_W(D, 32, 64)
@@ -338,10 +352,17 @@ HYLE_FORCE_INLINE void StoreInterleaved4(VFromD<D> v0, VFromD<D> v1, VFromD<D> v
     StoreU(detail::shuffle128<_MM_PERM_DBDB>(j1j0i1i0, l1l0k1k0), d, p + 1 * N);
     StoreU(detail::shuffle128<_MM_PERM_CACA>(j3j2i3i2, l3l2k3k2), d, p + 2 * N);
     StoreU(detail::shuffle128<_MM_PERM_DBDB>(j3j2i3i2, l3l2k3k2), d, p + 3 * N);
-  } else {
-    alignas(64) T t0[N], t1[N], t2[N], t3[N];
-    Store(v0, d, t0); Store(v1, d, t1); Store(v2, d, t2); Store(v3, d, t3);
-    for (std::size_t i = 0; i < N; ++i) { p[4*i]=t0[i]; p[4*i+1]=t1[i]; p[4*i+2]=t2[i]; p[4*i+3]=t3[i]; }
+  } else {  // 8/16-bit: widening-zip -> A/B/C/Dd then same 512 store block juggle
+    VFromD<D> A, B, C, Dd;
+    detail::Interleave4From_narrow(d, v0, v1, v2, v3, A, B, C, Dd);
+    const auto j1j0i1i0 = detail::shuffle128<_MM_PERM_BABA>(A, B);
+    const auto l1l0k1k0 = detail::shuffle128<_MM_PERM_BABA>(C, Dd);
+    const auto j3j2i3i2 = detail::shuffle128<_MM_PERM_DCDC>(A, B);
+    const auto l3l2k3k2 = detail::shuffle128<_MM_PERM_DCDC>(C, Dd);
+    StoreU(detail::shuffle128<_MM_PERM_CACA>(j1j0i1i0, l1l0k1k0), d, p + 0 * N);
+    StoreU(detail::shuffle128<_MM_PERM_DBDB>(j1j0i1i0, l1l0k1k0), d, p + 1 * N);
+    StoreU(detail::shuffle128<_MM_PERM_CACA>(j3j2i3i2, l3l2k3k2), d, p + 2 * N);
+    StoreU(detail::shuffle128<_MM_PERM_DBDB>(j3j2i3i2, l3l2k3k2), d, p + 3 * N);
   }
 }
 

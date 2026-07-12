@@ -518,5 +518,38 @@ int main() {
     nb::doNotOptimizeAway(fsink);
   }
 
+  // ---- 20. Interleaved u8/u16 (byte-table gather path). Same three-way comparison for the 8/16-bit
+  // widths that now use Highway's TableLookupBytesOr0 recipe instead of store+reload. LoadInterleaved4
+  // u8 is the RGBA-bytes case (image pixels). ----
+  {
+    const hs::ScalableTag<std::uint8_t> hd8; const hn::ScalableTag<std::uint8_t> gd8;
+    const std::size_t hw8 = hs::Lanes(hd8), gw8 = hn::Lanes(gd8);
+    std::vector<std::uint8_t> aos(kN * 4);
+    for (std::size_t i = 0; i < kN * 4; ++i) aos[i] = static_cast<std::uint8_t>(i * 7 + 1);
+    volatile std::uint64_t bsink = 0;
+    nb::Bench bench; bench.title("LoadInterleaved4 u8 (4096, RGBA)").relative(true).batch(kN).minEpochIterations(2000);
+    bench.run("HYLE register-transpose", [&] {
+      for (std::size_t i = 0; i + hw8 <= kN; i += hw8) {
+        hs::VFromD<decltype(hd8)> v0,v1,v2,v3; hs::LoadInterleaved4(hd8, aos.data()+i*4, v0,v1,v2,v3);
+        bsink ^= hs::GetLane(hs::Add(hs::Add(v0,v1),hs::Add(v2,v3)));
+      }
+    });
+    bench.run("Highway", [&] {
+      for (std::size_t i = 0; i + gw8 <= kN; i += gw8) {
+        hn::VFromD<decltype(gd8)> v0,v1,v2,v3; hn::LoadInterleaved4(gd8, aos.data()+i*4, v0,v1,v2,v3);
+        bsink ^= hn::GetLane(hn::Add(hn::Add(v0,v1),hn::Add(v2,v3)));
+      }
+    });
+    bench.run("store+reload baseline", [&] {  // the OLD HYLE deinterleave
+      for (std::size_t i = 0; i + hw8 <= kN; i += hw8) {
+        alignas(64) std::uint8_t t0[64],t1[64],t2[64],t3[64];
+        const std::uint8_t* p = aos.data()+i*4;
+        for (std::size_t j=0;j<hw8;++j){t0[j]=p[4*j];t1[j]=p[4*j+1];t2[j]=p[4*j+2];t3[j]=p[4*j+3];}
+        bsink ^= hs::GetLane(hs::Add(hs::Add(hs::LoadU(hd8,t0),hs::LoadU(hd8,t1)),hs::Add(hs::LoadU(hd8,t2),hs::LoadU(hd8,t3))));
+      }
+    });
+    nb::doNotOptimizeAway(bsink);
+  }
+
   return 0;
 }
