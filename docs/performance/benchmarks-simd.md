@@ -233,6 +233,12 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 | Set{Only,Before,AtOrAfter,AtOrBefore}First | sse4+neon | 2.2–2.57×/1.3–1.5× | mask bitfield 往返 | i64 位技巧 `x\|-x`/`x&-x` + 跨 64 位块符号传播 |
 | CountTrue i32 | neon | 1.4× | mask_bits+popcount | `-vaddvq(mask)` 横向求和 |
 | SumOfMulQuadAccumulate / PromoteEvenTo·OddTo | 全平台 | ~13× | store+reload gather | 寄存器内 shift/mask 展开 |
+| MulByFloorPow2 f32 | neon | 1.12× | Floor+2×clamp+ConvertTo 四条 | 一条 `vcvtmq_s32_f32`（floor+cvt+饱和） |
+| InterleaveEven/Odd i32 | avx2 | 1.6–1.7× | store+reload | 两条 per-128-lane `shuffle_ps`（抽偶/奇+重排） |
+| TestBit i32 | 全平台 | 1.14× | `Ne(v&bit,0)`=cmpeq+NOT | `Eq(v&bit,bit)` 单条 cmpeq（+对齐 Highway 契约） |
+| SaturatedAbs i32 | avx2+sse4 | 1.4–1.5× | Lt+SaturatedNeg+blend | `Max(a,SaturatedNeg(a))`（简化；WSL store-bench 噪声大未能坐实追平） |
+
+**边界 TIE 复查（2026-07-12，回应"大 spread 会不会把真输判成 TIE"）**：完整-bench 的大 spread（WSL x86 store 类 op 达 40–113%）可能把真输误判 TIE（假阴性）。`borderline.py` 筛出所有 `|ratio_med−1|>10%` 却判 TIE 的 HYLE-slower 项，逐项隔离单-op bench 定性。**方法学纪律：测试缺陷（大 spread）两个方向都不能当结论**——既不能判"对手更快"，也不能拿"反正测不准"当借口放过真输。定性手段按可靠度：① sink-based op（TestBit spread 10%）隔离可判；② store 类 op WSL 噪声太大 → **改用代码审查（确定性，不受 bench 噪声影响）**看是否 store+reload/次优。结果：InterleaveEven/Odd（真 store+reload，已修）、TestBit（cmpeq+NOT，已修）是真输；AddSub/InterleaveWholeLower·Upper/ZeroIfNegative/IfNegativeThenElseZero 代码审查确认已是最优 native 向量组合（其 1.2–1.3× 是 WSL store-bench 噪声，非真输）。**WSL x86 store-based 亚纳秒 bench 的系统性大 spread 是环境测量局限**（无低噪声 x86 真机；NEON 在 Apple Silicon spread 2–4% 才能可靠定性 store 类）。
 
 **AVX2 — 剩余 Highway 更快 11 项**（全部硬件墙/契约/内存 harness/亚纳秒噪声，非算法可修）：
 | op | H/HYLE | 归因 |
