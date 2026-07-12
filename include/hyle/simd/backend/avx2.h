@@ -1948,7 +1948,16 @@ HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(Simd<T, N, 0>, Mask256<T, N> m)
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(Simd<T, N, 0>, Mask256<T, N> m) noexcept {
-  return static_cast<std::size_t>(31 - std::countl_zero(detail::mask_bits(m)));
+  // Contract: at least one lane true (bits != 0). std::countl_zero(0)==32 is DEFINED, so
+  // `31 - countl_zero(bits)` makes GCC emit a bits==0 guard (movq $-1 / test / je) that the
+  // contract already excludes -- a ~26% loss on this pure-ALU reduction vs Highway's bare bsr
+  // (measured; FindKnownFirstTrue via countr_zero=tzcnt has no such guard and ties). Assume
+  // nonzero so it lowers to a single bsr, matching Highway.
+  const unsigned bits = detail::mask_bits(m);
+  if (bits == 0) HYLE_UNREACHABLE();  // contract violation
+  // clz in size_t domain (Highway's form), so 31 - clz is size_t arithmetic and lowers to a bare
+  // bsr with no int->size_t sign-extend (cltq).
+  return 31u - static_cast<std::size_t>(std::countl_zero(bits));
 }
 
 // SumsOf8(v): sum each group of 8 u8 lanes into a u64 lane -- native psadbw against zero
@@ -2719,22 +2728,14 @@ template <class D>
 HYLE_FORCE_INLINE std::size_t CompressStore(detail::V256<D> v,
                                             Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
                                             D d, TFromD<D>* p) noexcept {
-  // CONTRACT: writes EXACTLY CountTrue lanes, p[count..) UNTOUCHED (tight-packing callers rely on
-  // it). This is a DIFFERENT, STRONGER contract than Highway's CompressStore, which writes a WHOLE
-  // vector and only promises the first count -- that is why Highway's bench row is ~6x faster here:
-  // it does one vpermd + one full vmovdqu, whereas an exact write on AVX2 (no native compress-store)
-  // fundamentally needs either a scalar pack or a masked store. MEASURED both: the scalar pack below
-  // beats the Compress(vpermd)+maskstore(FirstN) route (maskstore is slow on this uarch AND FirstN
-  // itself builds its mask via store+reload). So the scalar pack is the fastest form that still
-  // honors HYLE's precise-write contract. The gap to Highway is a contract difference, not a missed
-  // optimization -- a caller that can tolerate a full-vector store should use StoreU(Compress(v,m)).
-  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) TFromD<D> src[kN];
-  Store(v, d, src);
-  const unsigned bits = detail::mask_bits(m);
-  std::size_t k = 0;
-  for (std::size_t i = 0; i < kN; ++i) if ((bits >> i) & 1u) p[k++] = src[i];
-  return k;
+  // CONTRACT (aligned to Highway/xsimd): the first CountTrue lanes at p hold the active elements in
+  // order; p[count..N) are written but UNSPECIFIED. Compress is native vpermd (packs active lanes to
+  // the front, already TIE with Highway), then one full StoreU + return CountTrue. The old exact
+  // "tail-untouched" contract forced a scalar pack (~3.4x slower on AVX2, which has no native
+  // compress-store) and had NO consumer -- dropped. Tight-packing (pos += CompressStore(...,p+pos))
+  // still works: the next segment's StoreU overwrites this one's unspecified tail before it is read.
+  StoreU(Compress(v, m), d, p);
+  return CountTrue(d, m);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Expand(Vec256<T, N> v, Mask256<T, N> m) noexcept {

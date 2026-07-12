@@ -2394,13 +2394,11 @@ template <class D>
 HYLE_FORCE_INLINE std::size_t CompressStore(detail::VN<D> v,
                                             MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
                                             D d, TFromD<D>* p) noexcept {
-  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) TFromD<D> src[kN];
-  StoreU(v, d, src);
-  const unsigned bits = detail::mask_bits(m);
-  std::size_t k = 0;
-  for (std::size_t i = 0; i < kN; ++i) if ((bits >> i) & 1u) p[k++] = src[i];
-  return k;
+  // CONTRACT (aligned to Highway/xsimd): first CountTrue lanes = active elements in order, tail
+  // UNSPECIFIED. Compress is native (vtbl/vqtbl table-lookup, all widths), then one full StoreU +
+  // return CountTrue. Old exact tail-untouched contract (scalar pack) had no consumer -- dropped.
+  StoreU(Compress(v, m), d, p);
+  return CountTrue(d, m);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Expand(VecNeon<T, N> v, MaskNeon<T, N> m) noexcept {

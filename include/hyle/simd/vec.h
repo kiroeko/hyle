@@ -704,8 +704,9 @@ template <int kBits, class V> HYLE_FORCE_INLINE V RoundingShiftRight(V v) noexce
 template <class V, class M> HYLE_FORCE_INLINE V CompressNot(V v, M m) noexcept {
   return Compress(v, Not(m));
 }
-// CompressBlendedStore(v, m, d, p): write only the true-mask lanes to p (same as
-// CompressStore -- our CompressStore already writes exactly CountTrue lanes). Returns count.
+// CompressBlendedStore(v, m, d, p): pack active lanes to the front and store; first CountTrue lanes
+// hold them, tail UNSPECIFIED (= CompressStore, both aligned to Highway's whole-vector-store form).
+// Returns count.
 template <class V, class M, class D>
 HYLE_FORCE_INLINE std::size_t CompressBlendedStore(V v, M m, D d, TFromD<D>* p) noexcept {
   return CompressStore(v, m, d, p);
