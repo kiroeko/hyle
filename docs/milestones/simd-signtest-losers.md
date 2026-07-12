@@ -11,12 +11,13 @@
 **本轮全 avx2 sweep 的 HYLE 真输(rival WIN)完整清单 + 处置**：
 | op | ratio(H/H) | 处置 |
 |---|---:|---|
-| CompressStore / CompressBlendedStore i32 | 3.4× / 3.1× | **契约差异非可修**：Compress 本体 native vpermd 已 TIE(0.108 vs 0.110，超 xsimd 7×)；CompressStore 慢=HYLE **精确写契约**(只写 CountTrue 个，尾部不碰)vs Highway 整向量写。AVX2 无 native compress-store，精确写只能标量 pack。契约优先，`StoreU(Compress(v,m))` 可取 Highway 语义的平。**保留强契约。** |
+| ~~CompressStore / CompressBlendedStore i32~~ **已追平 3.4×→TIE** | ~~3.4× / 3.1×~~ | ✅ **弃精确写契约(用户判定零消费者"没啥用")**。旧=精确写 CountTrue 个/尾部不碰,AVX2 无 native compress-store 只能标量 pack。全项目仅 test/bench 调用无业务依赖尾部→改对齐 Highway 弱契约 `StoreU(Compress(v,m))+return CountTrue`(Compress 本体三后端 native 已 TIE)。CompressStore 0.341→0.105ns、Blended 0.346→0.111ns TIE。三平台绿。**调用约定变更:尾部 p[count..N) 现为 unspecified(不再保证不动)；紧凑打包 pos+=CompressStore 仍成立。** |
 | GatherIndexN / GatherIndexNOr i32 | 2.57×(GCC)/6×(MSVC) | ✅ **已追平**→native masked gather(`_mm256_mask_i32gather`+FirstN 掩码 fault-safe)。**根因二段**:GCC 靠 native gather 即平;MSVC 仍 6× 因 **FirstN 是标量 store+reload**(每迭代重建掩码),MSVC 没优化到位、主导耗时。改 FirstN 为 in-register `iota<n` compare(cmpgt splat/iota,按 lane 宽 epi8/16/32/64)→两编译器 TIE。FirstN 是 MaskedLoad/LoadN/StoreN/GatherIndexN 公共底层,一改多受益。 |
 | GatherOffset i32 | 1.18×(GCC)/5×(MSVC) | ✅ **已追平**→native vpgather scale=1(字节偏移),能力宏 if constexpr 门控。MSVC 5×→TIE、GCC 0.219→0.181ns。 |
 | SumsOf2 / SumsOf4 u8 | 9.1× / 8.6× | ✅ **已追平**(见上，补 bench 揪出)，三后端(avx2/sse4 PromoteEven/Odd+Add,neon vpaddlq_u8) |
 | LoadNOr i32 (half n) | 1.49× | native maskload 已用(9.6→1.5×)；残留需 Highway 递归二分(sub-128 partial-load 基础设施)，登记 |
-| FindKnownLastTrue 1.26 / IsNegative 1.19 / TrailingZeroCount 1.11 / HighestSetBitIndex 1.11 / FindLastTrue 1.07 / MinNumber 1.05 / MaxNumber 1.07 / Max128 1.04 / Eq128 1.02 / Lt128Upper 1.06 / MaskedShift 1.03 / MaskedModOr 1.03 / Mod 1.02 / RoundingShr 1.05 / BitShuffle 1.03 / CombineMasks 1.17 / MaskedApproxReciprocalSqrt 1.05 / ConcatLowerLower 1.08 / MultiRotateRight 1.09(已从 2.9×) | **内存-bound 掩盖 ALU 差 / 布局伪影**：`Load+单op+Store` 循环里多几条 ALU 藏在 load/store 延迟下(第五道关)；这些 objdump codegen 相同或 compute-bound 复测反 WIN(MinNumber compute-bound 1.8×WIN 铁证)。**低优先，多数不该动。** |
+| ~~FindKnownLastTrue 1.26~~ **已追平→TIE** | 1.26× | ✅ **objdump 复验揪出真差(非伪影)**:`31-std::countl_zero(bits)` 因 clz(0) 已定义→GCC 插 bits==0 守卫(movq -1/test/je),FindKnown* 契约保证非空。加 HYLE_UNREACHABLE(bits==0)+clz 在 size_t 域→裸 bsr,逐指令同 Highway。纯 ALU reduction 1.26→TIE(1.002)。教训:C 类"伪影"桶别想当然,ratio 偏高(>1.2)的必 objdump 复验——FindKnownFirstTrue(tzcnt)本就 TIE 而 LastTrue 有守卫=真差铁证。 |
+| IsNegative 1.19 / TrailingZeroCount 1.11 / HighestSetBitIndex 1.11 / FindLastTrue 1.07 / MinNumber 1.05 / MaxNumber 1.07 / Max128 1.04 / Eq128 1.02 / Lt128Upper 1.06 / MaskedShift 1.03 / MaskedModOr 1.03 / Mod 1.02 / RoundingShr 1.05 / BitShuffle 1.03 / CombineMasks 1.17 / MaskedApproxReciprocalSqrt 1.05 / ConcatLowerLower 1.08 / MultiRotateRight 1.09(已从 2.9×) | **内存-bound 掩盖 ALU 差 / 布局伪影**：`Load+单op+Store` 循环里多几条 ALU 藏在 load/store 延迟下(第五道关)。**IsNegative 已复验**:objdump 确有差(vpxor+vpcmpgtd 2 条 vs vpsrad 1 条),但 vpxor 是 zeroing idiom 零执行端口,compute-bound 链式 4× 复测 TIE(0.993)=真伪影,不改。MinNumber compute-bound 1.8×WIN 铁证。其余低优先。 |
 
 ---
 
