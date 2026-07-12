@@ -64,10 +64,27 @@ SaturatedNeg（位技巧 `~v-(v>MIN?-1:0)`）、SaturatedAbs i32（`Min_u32(Abs,
 - **真输门槛上调**：只有 ratio 明显超出布局偏差量级（经验 ≥ ~1.10×）**且** objdump codegen 不同，才是真算法输。据此，交集 20 项里真正该修的收窄到大 ratio 的内存/复杂族（LoadNOr 9.6/Compress 3/Gather 2.6/MultiRotate 2.9/LoadInterleaved2 1.34/TwoTables 1.11/MulHigh32 1.10）+ 逐个 objdump 确认 codegen 不同的中 ratio 项。1.02–1.05× 的（Eq128/Max128/MulAddSub/ConcatOdd/Min·MaxNumber/MaskedShift 等）先 objdump，codegen 相同即布局伪影不修。
 
 ## 已追平（本轮，符号检验+objdump 确认真 codegen 差+照 Highway 改+三平台验）
-SaturatedNeg i32（1.09×→位技巧 `~v-(v>MIN?-1:0)`）、SaturatedAbs i32（1.34×→`Min_u32(Abs,INT_MAX)`）、MulHigh32 u32（1.10×→shuffle-pick 5 条）、TwoTablesLookupLanes（1.11×→slli+blendv）、LoadInterleaved2 f32/i32（1.34×→shufps+permq）。**LoadNOr 9.6×→1.5×**（native maskload，剩余需 Highway 二分）。
+SaturatedNeg i32（1.09×→位技巧 `~v-(v>MIN?-1:0)`）、SaturatedAbs i32（1.34×→`Min_u32(Abs,INT_MAX)`）、MulHigh32 u32（1.10×→shuffle-pick 5 条）、TwoTablesLookupLanes（1.11×→slli+blendv）、LoadInterleaved2 f32/i32（1.34×→shufps+permq）、ConcatEven/Odd 32-bit（→shufps+permq deinterleave，ConcatOdd 1.03→TIE）、PairwiseAdd/Sub 32-bit（两次 vpermq factor 成一次 `permq(x+y)`，4→3 p5-uop；试 native vphadd 隔离慢 10% 放弃）。**LoadNOr 9.6×→1.5×**（native maskload，剩余需 Highway 二分）。
 
-## 128-cmp 族 objdump 定性（真 codegen 差但小+逻辑复杂，低优先）
-Eq128/Ne128/Lt128/Lt128Upper/Min128/Max128（1.02–1.06×）。objdump Max128：HYLE 11 insn（vpcmpgtq 后用 vpermq+vpermilpd+vpsrad+vpshufd 4 条广播 128-bit 比较结果），Highway 9 insn（vpslldq+vpunpckhqdq 2 条）。**真 codegen 差（非布局伪影），但 ratio 小 + 128-bit 大整数比较的高低 64 位广播逻辑易错**——低优先，收益远小于 MultiRotateRight 2.9×。
+## 剩余中/小 ratio 候选：四道关分类终审（2026-07-12，本轮做完）——**结论：无真输**
+按用户"最好把剩余分类做完"，对损失清单里剩余中小 ratio 项逐个走完整四道关（sign + 隔离单-op + objdump + 布局阈值），**全部证为 HYLE-WIN / TIE / 布局伪影，无一真输**：
+
+| op | full-bench sign | objdump | 隔离/compute-bound 复测 | 定性 |
+|---|---|---|---|---|
+| MaskedShiftLeft/Right<3> i32 | ~1.03 "WIN" | HYLE 与 Highway **逐指令相同** | — | **布局伪影**（codegen 同） |
+| RotateLeftSame u32 | 1.02 TIE | 功能等价（andl/negl+2 shift+por） | — | **布局伪影** |
+| FindLastTrue i32 | 1.06 "WIN" | HYLE **更少**指令（Highway 多 `movq -1` 默认） | — | HYLE 本就不输 |
+| MaskedMulComplexConj(Add) f32 | 1.02/1.01 TIE | HYLE 尾部多 `vpxor+vpcmpgtd` 重建 mask（18 vs 14） | — | ratio<gap 阈值，TIE |
+| MaskedModOr i32 | 1.03 "WIN" | — | — | HYLE-WIN |
+| Clamp i32 / MulByPow2 f32 / MulAddSub f32 | TIE~WIN | codegen 同（前轮已定） | — | 布局伪影/TIE |
+| **HighestSetBitIndex u32** | 1.11 "WIN" | HYLE 17 vs Highway 10（HYLE 走 LZCnt 的 min-32 clamp；Highway 走 `NormalizeForUIntTruncConvToF32` 多个 AndNot） | 隔离 1.06×WIN；**compute-bound 1.16×WIN** | **HYLE-WIN**（LZCnt 复用比 Highway normalize 更省，勿改） |
+| **Lt128Upper u64** | 1.05 "WIN" | HYLE 广播 3 条（vpermilpd+vpsrad+vpshufd）vs Highway 1 条（vpunpckhqdq） | 隔离 1.06×**WIN** | 内存 bound，ALU 差被 Load/Store 掩盖；sign 方向已翻成 WIN=布局 |
+| **MinNumber/MaxNumber f32** | 1.07/1.09 "WIN" | HYLE 查**双**操作数 NaN（5 insn）vs Highway 单（3 insn） | **compute-bound 链式 1.8×WIN！** | **HYLE 大胜**；前轮"1.07 慢"纯内存-bound 布局噪声；曾拟"简化到 3 条对齐 Highway"会**反而变慢**，撤销 |
+
+**关键教训（补第五道关）**：`Load+单op+Store` 循环是**内存带宽 bound**，objdump 里 HYLE 多几条 ALU 指令**不转化为真输**（藏在 load/store 延迟下），full-bench 甚至读成 HYLE-WIN。要判 ALU 差是否真实，**必须 compute-bound 复测**（每元素链 4~8 个同 op，去掉 load/store 主导）。MinNumber compute-bound 1.8×WIN 是铁证：更"重"的 codegen（双 NaN 检查）在真实计算负载下反而快——**指令数少 ≠ 更快，别拿 objdump 指令数当性能判据**。
+
+## 128-cmp 族 objdump 定性（真 codegen 差但内存-bound 掩盖，隔离读 WIN）
+Eq128/Ne128/Lt128/Lt128Upper/Min128/Max128（full-bench 1.02–1.06×）。objdump Max128：HYLE 11 insn（vpcmpgtq 后用 vpermq+vpermilpd+vpsrad+vpshufd 4 条广播 128-bit 比较结果），Highway 9 insn（vpslldq+vpunpckhqdq 2 条），Lt128Upper 同理 HYLE 3 条广播 vs Highway 1 条 vpunpckhqdq。**真 codegen 差（非布局伪影）**，但 `Load+cmp+Store` 是内存-bound，多的 2 条广播 ALU 藏在 load/store 延迟下：**Lt128Upper 隔离单-op sign 复测读 1.06× HYLE-WIN**（方向翻转）。即"codegen 更省"的 Highway 在真实内存负载下并不快。要坐实是否真差需 compute-bound 链式复测；ratio 小 + 128-bit 高低 64 位广播逻辑易错，**低优先**，收益远小于 MultiRotateRight 2.9×。
 
 ## 施工方针
 1. 大输优先（内存族 LoadNOr/Compress/Gather、MultiRotateRight）——收益最大且明确。
