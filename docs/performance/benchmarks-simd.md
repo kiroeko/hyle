@@ -252,4 +252,4 @@ Windows/WSL/Apple 的 public/direct 都落在 candidate direct 附近，未见 d
 - **`simd_bench` 补 dot_f64/saxpy_f64**:3.9x/2.4x vs scalar(CAE/求解器 double 热路径)。
 - **`sort_bench` 补 select/nth_element**:HYLE 借 VQSelectStatic 6.4x 快过 std::nth_element。
 - **`dtype_bench` 补 fp8 e4m3/e5m2↔f32**:**诚实发现 fp8 batch ≈ scalar loop(~100% 打平)**——分支型 per-element 位逻辑不自动向量化,当前无 SIMD 收益(印证"无硬件 fp8 convert";未来可 SIMD 化是优化机会)。
-- **登记不补**:bitpack u8/u32(u16 已验 codec round-trip + Highway parity;u8/u32 需 Pack8/Pack32 模板 + 新 inl 头 = 与价值不成比例的宽度扩展)。
+- **bitpack u8/u16/u32 public-API bench**(3baeedd):**纠正**——之前误标"登记不补 u8/u32",实际生产码 + round-trip 测试早全有(bitpack_body.inc 按 lane 宽选 Pack8/16/32,BitPack.U8/U16/U32 测),只是 bench 是 u16-only。补公开 pack/unpack 的 u8/u16/u32 bench vs scalar bitstream(u8 pack 77x/u32 pack 27x)。
