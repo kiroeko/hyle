@@ -42,7 +42,7 @@ SaturatedNeg（位技巧 `~v-(v>MIN?-1:0)`）、SaturatedAbs i32（`Min_u32(Abs,
 
 三平台(WSL GCC avx2 / MSVC avx2 / Mac NEON)各自 sign sweep 后求交集。**单平台独有的"输"多是 harness/编译器伪影**（NEON 22 输里 21 个单平台独有=串扰；MSVC 76 输含 Add/Max/Min f32 等单指令=MSVC harness），交集才是真算法输。
 
-**三平台都输（1，最硬）**：`MaskedApproxReciprocal f32`。
+**三平台都输（1）→ objdump 证伪为 harness 伪影**：`MaskedApproxReciprocal f32`。HYLE 与 Highway 源码逐字相同（都是 `IfThenElseZero(m, ApproximateReciprocal(v))`），隔离 TU 编 `-S` 两函数体**逐指令完全相同**（vmovups→vbroadcastss→vcmpps→vrcpps→vandps→vmovups）→ 不可能有真算法差，三平台都显 1.05–1.27× 是各平台完整-bench 的一致 harness 串扰。**⚠️关键教训：符号检验"一致同侧"+三平台交集仍不足以定真输——一致方向也可能来自一致的 harness 偏差；必须 objdump 看 codegen 是否真不同才能终审。** 交集里每一项都要 objdump 分类（codegen 不同=真输可修 / 相同=伪影）。
 
 **avx2 两编译器(GCC+MSVC)都输（20，x86 真算法输）**：Eq128 / Max128（128-cmp）、CompressStore / CompressBlendedStore / GatherOffset / LoadNOr / LoadInterleaved2 / BitShuffle / TwoTablesLookupLanes / MultiRotateRight（内存/复杂）、MaskedApproxReciprocal(Sqrt) / MaskedMulComplexConj / MaskedShiftLeft·Right<3>（Masked 族）、FindKnownLastTrue、MinNumber / MaxNumber、MulAddSub、ConcatOdd。
 
