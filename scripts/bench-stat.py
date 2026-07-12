@@ -33,12 +33,24 @@ Run under `setarch -R` on Linux if the exe is built with a sanitizer. Per the
 9p rule, run from a native-ext4 checkout, never /mnt/c.
 """
 import argparse
+import math
 import os
 import statistics
 import subprocess
 import sys
 
 BT = chr(96)  # backtick; nanobench wraps variant names in `...`
+
+
+def _binom_two_sided(k, n):
+    """Two-sided binomial tail P(|X - n/2| >= |k - n/2|) under H0 p=0.5, k=max(above,below).
+    Small n so exact via math.comb. Used by the paired sign test: if the ratio lands the same
+    side of 1.0 in k of n runs, this is the probability of that imbalance by chance."""
+    if n == 0:
+        return 1.0
+    tail = sum(math.comb(n, i) for i in range(k, n + 1))
+    p = tail / (2 ** n) * 2.0  # symmetric two-sided
+    return min(p, 1.0)
 
 
 def parse_run(text):
@@ -108,7 +120,11 @@ def main():
             titles.append(t)
 
     if args.pair:
-        print("\n=== pair ratios (RIVAL/BASELINE op/s; WIN/LOSE only if gap > combined spread) ===")
+        print("\n=== pair ratios (RIVAL/BASELINE op/s) ===")
+        print("    two verdicts: [spread] gap>combined-spread (absolute); [sign] PAIRED SIGN TEST on")
+        print("    per-run ratios -- if k/N runs land the SAME side of 1.0, binomial p<0.01 => real")
+        print("    win/loss EVEN when absolute spread is large (same-machine noise is CORRELATED, so")
+        print("    the ratio is far tighter than either variant's absolute spread). Trust [sign].")
     for base, rival in args.pair:
         any_hit = False
         for t in titles:
@@ -120,15 +136,28 @@ def main():
             rmed = statistics.median(ratios)
             combined = agg[bk][1] + agg[rk][1]
             gap = abs(rmed - 1.0) * 100.0
-            if gap <= combined:
-                verdict = "TIE(stat)"
-            elif rmed > 1:
-                verdict = "WIN"
+            # [spread] verdict: absolute (the old, conservative rule).
+            spread_v = "TIE" if gap <= combined else ("WIN" if rmed > 1 else "LOSE")
+            # [sign] verdict: paired sign test. Count runs with ratio>1 vs <1 (ignore exact ties).
+            n = len(ratios)
+            above = sum(1 for r in ratios if r > 1.0)
+            below = sum(1 for r in ratios if r < 1.0)
+            eff = above + below  # non-tied runs
+            k = max(above, below)
+            # two-sided binomial p under H0=0.5: P(X>=k) + P(X<=eff-k), doubled by symmetry.
+            p = _binom_two_sided(k, eff) if eff > 0 else 1.0
+            # sign is meaningful only if a CONSISTENT direction AND a non-trivial median gap (>1%)
+            # (guards against a 0.2% "win" that is 15/15 but practically nil).
+            if eff >= 6 and p < 0.01 and gap > 1.0:
+                sign_v = "WIN" if above > below else "LOSE"
             else:
-                verdict = "LOSE"
+                sign_v = "TIE"
+            # A row is a REAL non-tie if EITHER verdict is significant; flag disagreements loudly.
+            flag = "  <<< SIGN-CAUGHT (spread hid it)" if sign_v != "TIE" and spread_v == "TIE" else ""
             print(f"  {t[:34]:36s} {rival} / {base}")
             print(f"    ratio med {rmed:5.3f}  min {min(ratios):5.3f} max {max(ratios):5.3f}"
-                  f"  gap {gap:4.1f}% vs spread {combined:4.1f}%  -> {verdict}")
+                  f"  gap {gap:4.1f}% vs spread {combined:4.1f}%"
+                  f"  [spread]{spread_v} [sign]{sign_v} ({above}/{eff}>1, p={p:.1e}){flag}")
         if not any_hit:
             print(f"  (no rows matched pair: {base!r} / {rival!r})")
 
