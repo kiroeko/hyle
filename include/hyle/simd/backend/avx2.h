@@ -652,6 +652,24 @@ HYLE_FORCE_INLINE Vec256<T, N> NegMulAdd(Vec256<T, N> a, Vec256<T, N> b,
   else r = Sub(c, Mul(a, b));
   return r;
 }
+// MulAddSub(a,b,c): a*b-c in EVEN lanes, a*b+c in ODD lanes. AVX2 FMA3 has NATIVE vfmaddsub (one
+// instruction) -- the generic OddEven(MulAdd,MulSub) fallback compiled to xor+2*fma (objdump 3 insn
+// vs Highway's 1 vfmaddsub132ps). MulSubAdd is the sibling (even add, odd sub) = vfmsubadd. Integer
+// lanes have no fmaddsub -> generic OddEven fallback.
+template <typename T, std::size_t N> requires std::is_floating_point_v<T>
+HYLE_FORCE_INLINE Vec256<T, N> MulAddSub(Vec256<T, N> a, Vec256<T, N> b, Vec256<T, N> c) noexcept {
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_fmaddsub_ps(a.raw, b.raw, c.raw);
+  else r.raw = _mm256_fmaddsub_pd(a.raw, b.raw, c.raw);  // double
+  return r;
+}
+template <typename T, std::size_t N> requires std::is_floating_point_v<T>
+HYLE_FORCE_INLINE Vec256<T, N> MulSubAdd(Vec256<T, N> a, Vec256<T, N> b, Vec256<T, N> c) noexcept {
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_fmsubadd_ps(a.raw, b.raw, c.raw);
+  else r.raw = _mm256_fmsubadd_pd(a.raw, b.raw, c.raw);  // double
+  return r;
+}
 
 // ---- bitwise ------------------------------------------------------------------------
 #define HYLE_AVX2_BITOP(NAME, PS, PD, SI)                                  \
