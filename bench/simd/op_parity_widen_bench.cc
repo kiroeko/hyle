@@ -277,5 +277,26 @@ int main(){
     b.run("Highway", [&]{ for(std::size_t i=0;i+2*w32g<=kN;i+=2*w32g) hn::StoreU(hn::ReorderRoundingShiftRightAndDemote2To<2>(gd16,hn::LoadU(gd32,i32a.data()+i),hn::LoadU(gd32,i32a.data()+i+w32g)),gd16,o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
   }
 
+  // ---- directive2 覆盖补齐: SAD/pairwise-sum 族 (SumsOf8 已有; 补 2/4/8AbsDiff) ----
+  {
+    const hs::ScalableTag<std::uint16_t> hd16u; const hn::ScalableTag<std::uint16_t> gd16u;
+    std::vector<std::uint16_t> o16u(kN);
+    nb::Bench b; b.title("SumsOf2 u8->u16").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+w8h<=kN;i+=w8h) hs::StoreU(hs::SumsOf2(hs::LoadU(hd8,u8a.data()+i)), hd16u, o16u.data()+i/2); nb::doNotOptimizeAway(o16u.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+w8g<=kN;i+=w8g) hn::StoreU(hn::SumsOf2(hn::LoadU(gd8,u8a.data()+i)), gd16u, o16u.data()+i/2); nb::doNotOptimizeAway(o16u.data()); });
+  }
+  {
+    std::vector<std::uint32_t> o32u(kN);
+    nb::Bench b; b.title("SumsOf4 u8->u32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+w8h<=kN;i+=w8h) hs::StoreU(hs::SumsOf4(hs::LoadU(hd8,u8a.data()+i)), hd32u, o32u.data()+i/4); nb::doNotOptimizeAway(o32u.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+w8g<=kN;i+=w8g) hn::StoreU(hn::SumsOf4(hn::LoadU(gd8,u8a.data()+i)), gd32u, o32u.data()+i/4); nb::doNotOptimizeAway(o32u.data()); });
+  }
+  {
+    auto u8b = gen<std::uint8_t>(6, 0, 255);
+    nb::Bench b; b.title("SumsOf8AbsDiff u8->u64").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+w8h<=kN;i+=w8h) hs::StoreU(hs::SumsOf8AbsDiff(hs::LoadU(hd8,u8a.data()+i),hs::LoadU(hd8,u8b.data()+i)), hd64, o64.data()+i/8); nb::doNotOptimizeAway(o64.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+w8g<=kN;i+=w8g) hn::StoreU(hn::SumsOf8AbsDiff(hn::LoadU(gd8,u8a.data()+i),hn::LoadU(gd8,u8b.data()+i)), gd64, o64.data()+i/8); nb::doNotOptimizeAway(o64.data()); });
+  }
+
   return 0;
 }

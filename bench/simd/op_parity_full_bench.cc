@@ -774,5 +774,91 @@ int main(){
       b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=hn::FindKnownLastTrue(gdi,gk(i)); }); }
     nb::doNotOptimizeAway(sink);
   }
+
+  // ---- directive2 覆盖补齐: 128-bit block-swizzle 族 (permute2f128/permute4x64/blend, 单指令应 tie) ----
+  {
+    nb::Bench b; b.title("BroadcastBlock<1> i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::BroadcastBlock<1>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::BroadcastBlock<1>(hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("SwapAdjacentBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::SwapAdjacentBlocks(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::SwapAdjacentBlocks(hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("ReverseBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ReverseBlocks(hdi,hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ReverseBlocks(gdi,hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("OddEvenBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::OddEvenBlocks(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::OddEvenBlocks(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("ConcatLowerLower i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatLowerLower(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatLowerLower(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("ConcatUpperUpper i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatUpperUpper(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatUpperUpper(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("ConcatLowerUpper i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatLowerUpper(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatLowerUpper(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("ConcatUpperLower i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatUpperLower(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatUpperLower(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("InterleaveLowerBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::InterleaveLowerBlocks(hdi,hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::InterleaveLowerBlocks(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+
+  // ---- 覆盖补齐: byte/lane 移位 (vpslldq/vpsrldq per-128, 单指令应 tie) ----
+  {
+    nb::Bench b; b.title("ShiftLeftBytes<4> i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftLeftBytes<4>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftLeftBytes<4>(gdi,hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("ShiftRightBytes<4> i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftRightBytes<4>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftRightBytes<4>(gdi,hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("ShiftLeftLanes<1> i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftLeftLanes<1>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftLeftLanes<1>(gdi,hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("ShiftRightLanes<1> i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftRightLanes<1>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftRightLanes<1>(gdi,hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+
+  // ---- 覆盖补齐: ternary-bitwise (AVX2=2-op compose, AVX512=vpternlog 单条 -- 512 上可能真差) ----
+  {
+    nb::Bench b; b.title("Xor3 i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Xor3(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i),hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Xor3(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i),hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("Or3 i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Or3(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i),hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Or3(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i),hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
+  {
+    nb::Bench b; b.title("OrAnd i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::OrAnd(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i),hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::OrAnd(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i),hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+  }
   return 0;
 }
