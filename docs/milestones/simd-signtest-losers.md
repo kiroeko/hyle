@@ -50,6 +50,19 @@ SaturatedNeg（位技巧 `~v-(v>MIN?-1:0)`）、SaturatedAbs i32（`Min_u32(Abs,
 
 **NEON 独有小输（1.01–1.07×，串扰待隔离确认）**：Not/Xor/And/Zero/DupEven/Shuffle 等单指令。
 
+## "一边倒 HYLE 慢"根因调查（2026-07-12，用户观察驱动）——布局偏差非算法
+
+用户注意到 sign sweep **一边倒 HYLE 慢**（MSVC 76 sign-WIN 几乎无 sign-LOSE），怀疑伪影/顺序问题。三步决定性实验：
+1. **run 顺序不是根因**：同 op 各测 HYLE-first / Highway-first 两序（order_bias 探针）。MaskedApproxReciprocal **两序都 HYLE 慢 ~3.5%，不翻转** → 排除"先跑吃冷启动"。
+2. **nanobench 两 slot 公平**：同一份代码放两个 run slot（selfsame 探针，G/G 和 H/H）→ **都干净 TIE**（p=0.61/0.42）→ harness 对两 slot 无系统偏差。
+3. **codegen 相同却稳定慢**：mrecip 的 HYLE/Highway 内联后**逐指令相同**（objdump 证），却稳定 HYLE 慢 3.5% 且不随顺序翻转。
+
+**结论**：根因是**代码布局偏差**——HYLE/Highway 是不同函数符号，链接后落在不同地址/对齐，icache/DSB/预测细微差异；每个 bench 宏里 HYLE 恒先定义/先实例化，系统性地让 HYLE 的布局吃 ~2–4% 的亏。**这是真实但与算法/代码质量无关、且不可控（取决于链接布局）的效应。**
+
+**对真输判定的修正（第四道关）**：
+- **≤ ~1.05× 的一边倒 HYLE 慢**：极可能是这 ~2–4% 布局偏差，**不是真输**。除非 objdump 显示 codegen 真不同，否则不动。
+- **真输门槛上调**：只有 ratio 明显超出布局偏差量级（经验 ≥ ~1.10×）**且** objdump codegen 不同，才是真算法输。据此，交集 20 项里真正该修的收窄到大 ratio 的内存/复杂族（LoadNOr 9.6/Compress 3/Gather 2.6/MultiRotate 2.9/LoadInterleaved2 1.34/TwoTables 1.11/MulHigh32 1.10）+ 逐个 objdump 确认 codegen 不同的中 ratio 项。1.02–1.05× 的（Eq128/Max128/MulAddSub/ConcatOdd/Min·MaxNumber/MaskedShift 等）先 objdump，codegen 相同即布局伪影不修。
+
 ## 施工方针
 1. 大输优先（内存族 LoadNOr/Compress/Gather、MultiRotateRight）——收益最大且明确。
 2. 中输逐个对照 Highway 源码找多余步骤。
