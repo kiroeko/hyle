@@ -1931,25 +1931,21 @@ HYLE_FORCE_INLINE Vec128<T, N> MultiRotateRight(Vec128<T, N> v, Vec128<TI, NI> i
 // scratch sized to the FULL 16 B register (not the logical lane count): _mm_store/load_si128
 // move 16 B, so a partial-width src (e.g. Vec128<u8,8>) would be a stack OOB with src[N] --
 // same class as the TruncateTo fix above.
+// SumsOf2/4(u8): native pairwise widen-sum (Highway generic form) -- Add(PromoteEvenTo,
+// PromoteOddTo), SumsOf4 = the same applied twice. Was store+reload+scalar loop (op_parity: ~9x
+// slower than Highway on avx2, same shape here). No overflow: 255+255 fits u16, quad-sum fits u32.
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec128<std::uint16_t, N / 2> SumsOf2(Vec128<std::uint8_t, N> v) noexcept {
   static_assert(N % 2 == 0, "sse4 SumsOf2 needs an even lane count");
-  alignas(16) std::uint8_t src[16];
-  alignas(16) std::uint16_t dst[16 / sizeof(std::uint16_t)] = {};
-  _mm_store_si128(reinterpret_cast<__m128i*>(src), v.raw);
-  for (std::size_t g = 0; g < N / 2; ++g)
-    dst[g] = static_cast<std::uint16_t>(src[2 * g] + src[2 * g + 1]);
-  return Load(Simd<std::uint16_t, N / 2, 0>(), dst);
+  const Simd<std::uint16_t, N / 2, 0> dw;
+  return Add(PromoteEvenTo(dw, v), PromoteOddTo(dw, v));
 }
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec128<std::uint32_t, N / 4> SumsOf4(Vec128<std::uint8_t, N> v) noexcept {
   static_assert(N % 4 == 0, "sse4 SumsOf4 needs a lane count that is a multiple of 4");
-  alignas(16) std::uint8_t src[16];
-  alignas(16) std::uint32_t dst[16 / sizeof(std::uint32_t)] = {};
-  _mm_store_si128(reinterpret_cast<__m128i*>(src), v.raw);
-  for (std::size_t g = 0; g < N / 4; ++g)
-    dst[g] = static_cast<std::uint32_t>(src[4 * g] + src[4 * g + 1] + src[4 * g + 2] + src[4 * g + 3]);
-  return Load(Simd<std::uint32_t, N / 4, 0>(), dst);
+  const auto s2 = SumsOf2(v);
+  const Simd<std::uint32_t, N / 4, 0> dq;
+  return Add(PromoteEvenTo(dq, s2), PromoteOddTo(dq, s2));
 }
 
 // ---- reductions (shuffle-and-combine cascade, Highway generic_ops pattern) ----------

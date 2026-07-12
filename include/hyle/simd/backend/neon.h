@@ -1970,25 +1970,23 @@ HYLE_FORCE_INLINE VecNeon<T, N> MultiRotateRight(VecNeon<T, N> v, VecNeon<TI, NI
 // correctness-first store+reload; native (pmaddubsw with 1s / vpaddl chains) is a profiling upgrade.
 // scratch sized to the FULL 16 B register (not the logical lane count): vst1q/vld1q move 16 B,
 // so a partial-width src would be a stack OOB with src[N] -- same class as the TruncateTo fix.
+// SumsOf2/4(u8): native pairwise-add-long. vpaddlq_u8 IS SumsOf2 in one instruction (adjacent
+// u8 pairs -> u16); SumsOf4 = vpaddlq_u16 chained on top (adjacent u16 pairs -> u32). Was
+// store+reload+scalar loop. The 128-bit raw holds the low N valid lanes; vpaddl processes the
+// whole register so lanes 0..N/2-1 (resp N/4-1) are the wanted results.
 template <std::size_t N>
 HYLE_FORCE_INLINE VecNeon<std::uint16_t, N / 2> SumsOf2(VecNeon<std::uint8_t, N> v) noexcept {
   static_assert(N % 2 == 0, "neon SumsOf2 needs an even lane count");
-  alignas(16) std::uint8_t src[16];
-  alignas(16) std::uint16_t dst[16 / sizeof(std::uint16_t)] = {};
-  StoreU(v, Simd<std::uint8_t, N, 0>(), src);
-  for (std::size_t g = 0; g < N / 2; ++g)
-    dst[g] = static_cast<std::uint16_t>(src[2 * g] + src[2 * g + 1]);
-  return LoadU(Simd<std::uint16_t, N / 2, 0>(), dst);
+  VecNeon<std::uint16_t, N / 2> r;
+  r.raw = vpaddlq_u8(v.raw);
+  return r;
 }
 template <std::size_t N>
 HYLE_FORCE_INLINE VecNeon<std::uint32_t, N / 4> SumsOf4(VecNeon<std::uint8_t, N> v) noexcept {
   static_assert(N % 4 == 0, "neon SumsOf4 needs a lane count that is a multiple of 4");
-  alignas(16) std::uint8_t src[16];
-  alignas(16) std::uint32_t dst[16 / sizeof(std::uint32_t)] = {};
-  StoreU(v, Simd<std::uint8_t, N, 0>(), src);
-  for (std::size_t g = 0; g < N / 4; ++g)
-    dst[g] = static_cast<std::uint32_t>(src[4 * g] + src[4 * g + 1] + src[4 * g + 2] + src[4 * g + 3]);
-  return LoadU(Simd<std::uint32_t, N / 4, 0>(), dst);
+  VecNeon<std::uint32_t, N / 4> r;
+  r.raw = vpaddlq_u16(vpaddlq_u8(v.raw));
+  return r;
 }
 
 // ---- reductions (aarch64 horizontal vaddvq/vminvq/vmaxvq) ----------------------------
