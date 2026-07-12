@@ -583,7 +583,9 @@ HYLE_FORCE_INLINE Vec256<T, N> SaturatedNeg(Vec256<T, N> a) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> SaturatedAbs(Vec256<T, N> a) noexcept {
   static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedAbs is signed-int");
-  return IfThenElse(Lt(a, Zero(Simd<T, N, 0>())), SaturatedNeg(a), a);
+  // |a| == Max(a, -a); SaturatedNeg makes a==MIN -> MAX so Max(MIN, MAX)=MAX is the saturated abs.
+  // Two ops (SaturatedNeg + Max) vs the old Lt+SaturatedNeg+IfThenElse blend (isolated -n15 ~1.5x).
+  return Max(a, SaturatedNeg(a));
 }
 
 // ---- float rounding to integral value (result stays float) --------------------------
