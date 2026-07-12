@@ -11,6 +11,7 @@
 - **定稿时的真问题 = 变宽(SVE/RVV)落后定宽 ~72 op**；当前 P0-P5 已全闭环：scalable 量化/点积/结构 op 已对称，定宽 Masked* 与 Mul/Mod/Magnitude 已补齐，P5 平凡合成 + mask 前缀 + MulByPow2/Expand/TZCnt 已落地。
 - vec.h 泛型 complex / 128-cmp / Newton 曾因 scalable TU 未实例化而掩盖底层原语缺口；P0 已用 SVE/RVV 直接实例化测试消除该潜在编译断裂。`Expand` 已在 P5 落地（SVE store+reload / RVV viota+vrgather）。
 - **主施工闭集 P0-P5 软件面 100%**。2026-07-12 directive2 复核后,先前登记的"硬件/工具门控"项**全部翻案做掉**(见下条);连最后的 mask-bits VL>64 也用 byte-buffer API 解掉(dbf88c0)——**已无真墙**(fp8-HW 是有意的正确性取舍,非墙)。
+- **公开 op 面对 Highway `HWY_API` 已完备**(2026-07-12 d6b1d13 收尾):最后一轮机械差集审计发现的 4 个薄封装缺口(`SetTableIndices`/`CompressBlocksNot`/`ZeroExtendResizeBitCast`/`Dup128MaskFromMaskBits`)已补,五平台真跑对拍底层原语。**剩余仅有意排除**:单向量 `PromoteTo`/`DemoteTo`/`ShiftRightAndDemoteTo`(HYLE 用 half-at-a-time + demote2 家族,批7 决策)、`GaloisAffine*`(Highway `detail::` 内部 GFNI 原语,非公开面)、f32→fp8 硬件方向(f32 源必双舍入,非 bit-identical)。
 - **[`simd-16`](./simd-16-hw-gated-reclaim.md) + directive2 已翻案 RVV Zvbb/Zvbc + SVE2 全套**：RVV `LeadingZeroCount`/`TrailingZeroCount`/`ReverseBits`/native `Rotate`/`CLMulLower`/`CLMulUpper` **+ `PopulationCount`(2026-07-12 b0ad404,inline-asm vcpop.v)**；**SVE2 `AES*`/`CLMul` 8 op 全套(2026-07-12 8c466f8,native svaese/svaesmc/svpmull)**——全 qemu 4 VLEN/VL + objdump 真指令。**先前"PopulationCount 工具链缺口 / SVE2 只能编译验"结论已推翻**(是当时测试 harness bug,非真墙;qemu 8.2.2 本就能跑)。
 
 ## 0.5 每项 op 的执行决策流程(施工规程,逐 op 机械跑)
@@ -121,6 +122,17 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 
 ### ✅ 消费驱动 / 低优 —— **已在 simd-17 批5 / simd-18 批E 补齐**
 字节移位族(`ShiftLeftBytes/RightBytes`、`CombineShiftRightBytes/Lanes`)、`Combine/LowerHalf/UpperHalf/ZeroExtendVector/InsertIntoUpper`(半向量合并族)、`PairwiseAdd/Sub(128)`、`Shuffle2301/1032/...`(定 permute)、`Stream`、`LoadDup128`、`ResizeBitCast` **全已实现**(avx2.h/vec.h;vec_test 有 `ShiftBytesAndLanes`/`CombineShiftRightBytes`/`PairwiseAddSub`/`ShuffleFixedPatterns32`/`Shuffle01_64`/`StreamAndLoadDup128`/`HalfVectorFamily` 对拍)。
+
+### ✅ 公开 op 面差集审计(2026-07-12,d6b1d13)——4 个薄封装补齐
+对齐 Highway `HWY_API` 公开 op 面的机械差集复核,发现 4 个公开 op 在 HYLE 泛型层缺一个**具名入口**,底层原语全已存在,补薄封装(`vec.h` "Highway public-op-face parity" 块):
+- `SetTableIndices(d, ptr)` = `IndicesFromVec(d, LoadU(d, ptr))`——从指针加载 TableLookupLanes 索引;
+- `CompressBlocksNot(v, m)` = `CompressNot`(Highway 的 u64-only 别名);
+- `ZeroExtendResizeBitCast(dTo, dFrom, v)` = `ResizeBitCast`(HYLE 的 ResizeBitCast 已零填充多余目标字节,直接转发);
+- `Dup128MaskFromMaskBits(d, bits)`:取低 128-block 位复制到每个 128-bit block 后 `LoadMaskBits`(单 block=恒等)。
+
+`vec_test` `HighwayParityWrappers` 各自对拍底层原语,五平台真跑通过(scalar/sse4/avx2 GCC-14 + avx512 SDE + MSVC + NEON mac),全 217 Vec 测试无回归。
+
+**同批复核确认的有意排除**:`ShiftRightAndDemoteTo`/`RoundingShiftRightAndDemoteTo` 的**单向量**形——HYLE 无"半宽 DemoteTo 单实体"(同 `PromoteTo`/`DemoteTo` 单向量的有意差异,批7 决策);其双向量 `*AndDemote2To` 家族(简称 shift-right-then-`ReorderDemote2To`)已覆盖同等能力(`ShiftRightAndDemote2Family` 对拍)。登记为有意差异,非缺口。
 
 ### 🟰 NAMING-DIFF(已有,别当缺口)
 - `Round/Ceil/Floor/Trunc`:`avx2.h` 宏 `HYLE_SIMD_AVX2_ROUND` 实例化,**已有**(grep 假阴)。
