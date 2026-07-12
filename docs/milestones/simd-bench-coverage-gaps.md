@@ -1,6 +1,6 @@
 # SIMD test/benchmark 覆盖缺口清单
 
-> **状态（2026-07-12）**：施工完成——**禁止抽样，直通单指令也全补**。原 ~65 行 → `op_parity_full` 单文件 **139 行** + crypto 8 + parity_bench 扩 + widen 16 + dtype f16→fp8。CMake 已接 crypto/widen。WSL GCC14 AVX2 真编真跑全绿。
+> **状态（2026-07-12）**：施工完成——**禁止抽样，直通单指令也全补**。原 ~65 行 → **281 bench 行**(op_parity_full 190 + parity 61 + widen 22 + crypto 8) + dtype f16→fp8。**覆盖 245/255 真算子=96%**;剩 10 有据(DivIsPow2 非向量 op / bf16-dtype 域 / CompressBits byte-mask / block 变体 / Undef 语义)。**双平台真编真跑**:WSL GCC14 + Win MSVC /arch:AVX2 均通过。
 >
 > **方法纪律（必守）**：① 每 bench 行必须公平对拍（full baseline `-maes -mpclmul` 等，两边 header-inline）；② 统计法判定（`bench-stat.py -n15`）；③ **每个公开 op 都要有 bench 行，不许"抽样代表"**；④ Tier3 HYLE-only 只 vs scalar/裸估计。
 

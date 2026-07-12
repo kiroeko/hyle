@@ -235,5 +235,47 @@ int main(){
     });
   }
 
+  // ---- PromoteEvenTo / PromoteOddTo i8->i16 直测 (刚向量化的承重 op; sink via GetLane 避 partial store) ----
+  {
+    auto i8s = gen<std::int8_t>(21, -120, 120);
+    const hs::ScalableTag<std::int8_t> hi8; const hn::ScalableTag<std::int8_t> gi8;
+    const hs::ScalableTag<std::int16_t> hd16b; const hn::ScalableTag<std::int16_t> gd16b;
+    const std::size_t w8=hs::Lanes(hi8), w8g2=hn::Lanes(gi8);
+    std::int64_t sink=0;
+    {
+      nb::Bench b; b.title("PromoteEvenTo i8->i16").relative(true).batch(kN).minEpochIterations(8000);
+      b.run("HYLE", [&]{ for(std::size_t i=0;i+w8<=kN;i+=w8) sink+=hs::GetLane(hs::PromoteEvenTo(hd16b,hs::LoadU(hi8,i8s.data()+i))); });
+      b.run("Highway", [&]{ for(std::size_t i=0;i+w8g2<=kN;i+=w8g2) sink+=hn::GetLane(hn::PromoteEvenTo(gd16b,hn::LoadU(gi8,i8s.data()+i))); });
+    }
+    {
+      nb::Bench b; b.title("PromoteOddTo i8->i16").relative(true).batch(kN).minEpochIterations(8000);
+      b.run("HYLE", [&]{ for(std::size_t i=0;i+w8<=kN;i+=w8) sink+=hs::GetLane(hs::PromoteOddTo(hd16b,hs::LoadU(hi8,i8s.data()+i))); });
+      b.run("Highway", [&]{ for(std::size_t i=0;i+w8g2<=kN;i+=w8g2) sink+=hn::GetLane(hn::PromoteOddTo(gd16b,hn::LoadU(gi8,i8s.data()+i))); });
+    }
+    nb::doNotOptimizeAway(sink);
+  }
+
+  // ---- OrderedShiftRightAndDemote2To / ReorderShiftRightAndDemote2To i32->i16 (shift+narrow 融合) ----
+  {
+    nb::Bench b; b.title("OrderedShiftRightAndDemote2To<2> i32->i16").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+2*w32h<=kN;i+=2*w32h) hs::StoreU(hs::OrderedShiftRightAndDemote2To<2>(hd16,hs::LoadU(hd32,i32a.data()+i),hs::LoadU(hd32,i32a.data()+i+w32h)),hd16,o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+2*w32g<=kN;i+=2*w32g) hn::StoreU(hn::OrderedShiftRightAndDemote2To<2>(gd16,hn::LoadU(gd32,i32a.data()+i),hn::LoadU(gd32,i32a.data()+i+w32g)),gd16,o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+  }
+  {
+    nb::Bench b; b.title("ReorderShiftRightAndDemote2To<2> i32->i16").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+2*w32h<=kN;i+=2*w32h) hs::StoreU(hs::ReorderShiftRightAndDemote2To<2>(hd16,hs::LoadU(hd32,i32a.data()+i),hs::LoadU(hd32,i32a.data()+i+w32h)),hd16,o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+2*w32g<=kN;i+=2*w32g) hn::StoreU(hn::ReorderShiftRightAndDemote2To<2>(gd16,hn::LoadU(gd32,i32a.data()+i),hn::LoadU(gd32,i32a.data()+i+w32g)),gd16,o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+  }
+  {
+    nb::Bench b; b.title("OrderedRoundingShiftRightAndDemote2To<2> i32->i16").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+2*w32h<=kN;i+=2*w32h) hs::StoreU(hs::OrderedRoundingShiftRightAndDemote2To<2>(hd16,hs::LoadU(hd32,i32a.data()+i),hs::LoadU(hd32,i32a.data()+i+w32h)),hd16,o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+2*w32g<=kN;i+=2*w32g) hn::StoreU(hn::OrderedRoundingShiftRightAndDemote2To<2>(gd16,hn::LoadU(gd32,i32a.data()+i),hn::LoadU(gd32,i32a.data()+i+w32g)),gd16,o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+  }
+  {
+    nb::Bench b; b.title("ReorderRoundingShiftRightAndDemote2To<2> i32->i16").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+2*w32h<=kN;i+=2*w32h) hs::StoreU(hs::ReorderRoundingShiftRightAndDemote2To<2>(hd16,hs::LoadU(hd32,i32a.data()+i),hs::LoadU(hd32,i32a.data()+i+w32h)),hd16,o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+2*w32g<=kN;i+=2*w32g) hn::StoreU(hn::ReorderRoundingShiftRightAndDemote2To<2>(gd16,hn::LoadU(gd32,i32a.data()+i),hn::LoadU(gd32,i32a.data()+i+w32g)),gd16,o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+  }
+
   return 0;
 }

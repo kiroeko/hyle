@@ -116,6 +116,8 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 
 ## op-parity: HYLE 自造 op vs Highway vs xsimd 同 op 同 ISA(`op_parity_bench.cc`)
 
+> **覆盖率(2026-07-12 收口)**:op-parity 四文件(full/parity/widen/crypto)共 **281 bench 行**,覆盖 **245/255 真算子 = 96%**(分母=公开 op 面剔除 tag/trait/构造 helper + alias/纯直通-单指令-block变体等合理跳过后的真算子集)。**双平台真编真跑**:WSL GCC14 avx2 + Win MSVC /arch:AVX2 均编过跑通(full 190 行 / parity 61 / widen 22 / crypto 8)。剩 10 未覆盖全部有据:`DivIsPow2`(constexpr bool 非向量 op)、`Bf16EvenToF32`/`Bf16OddToF32`/`MulEvenAdd`/`MulOddAdd`/`U8FromU32`(bf16/dtype 域,dtype_bench 覆盖)、`CompressBits`/`CompressBitsStore`(预打包 byte-mask 指针,需特殊 harness)、`CompressBlocksNot`(block 变体)、`IfNegativeThenNegOrUndefIfZero`(Undef 语义难对拍)。
+>
 > 回答"HYLE 手写了 ~228 op/后端(抄 Highway 的 per-op intrinsic 序列,不 vendor Highway ops/),
 > 这些自造件是否真不亏"。**同 TU 同 -march 两边都 header-only 可内联**(避内联不对称假差,
 > feedback_benchmark_inlining_asymmetry);`.raw` 就是裸 `__m256`,HYLE/Highway/xsimd 三方桥接零成本。
