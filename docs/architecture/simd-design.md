@@ -61,6 +61,13 @@ clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只
 > - **函数指针表模型（Highway `HWY_DYNAMIC_DISPATCH`）**：单二进制内一张按 target 优先级排的函数指针表，**每次跨变体调用过一次指针间接**（非"进去后零间接"）。
 > 真正"热路径零间接"的只有**构建期 `-march=native` 静态路径**（或 highway `HWY_STATIC_TARGET`）。HYLE 若要"进去后零间接"须走变体 DLL 路线，不是 highway 的表。两条都可选，但要标清各自的间接成本。
 
+> **现状与决策（2026-07-12 评估）——HYLE 出厂用函数指针模型，变体-DLL 有意不做**：
+> - **出厂 = 函数指针模型**（`dispatch_ops.cc`：`static const Fn fn = resolve_*(); return fn(...)`，首次 CPUID 选一次并缓存，之后每次调用一次可预测间接调用）。这与 Highway `HWY_DYNAMIC_DISPATCH` 同档——**runtime dispatch 维度 HYLE 平 Highway，不领先也不欠**。
+> - **变体-DLL 评估结论：不做（收益≈0、成本中高、属错配复杂度）**。决定性事实：**全部 139 个公开 simd op 都是 whole-buffer 批量 op**（`dot_f32(x,y,n)`/`exp_f32_batch(src,dst,n)`/…，内部循环处理 `n` 元素）。那"一次间接调用"是**每 batch 一次**，被数千 cycle 的 kernel 彻底摊销——实测 dot 42 G op/s、saxpy 39 G 平 Highway，间接调用从不是瓶颈。变体-DLL 只对**细粒度、被内层循环密集调用的 op**（如 `Vec::Add` 每寄存器一调）有收益，而 HYLE 的细粒度 op 全是 `vec.h` header-only 模板（编译期单态化、随消费者 TU 内联、零间接、**根本不过 dispatch**）。过 dispatch 的只有批量 op → 要消除的间接不在热路径上。
+> - **成本侧**：拆 N 份独立 DLL（每 ISA 全套 kernel）+ 启动 score/dlopen 层 + 139 符号跨平台（`LoadLibrary`/`GetProcAddress` vs `dlopen`/`dlsym`）绑定 + 测试矩阵翻倍；且 **DLL 边界过不了内联**，若将来导出细粒度 op 反而可能比函数指针更慢。
+> - **触发条件（两者皆须满足，HYLE 当前都不满足）**：① 分发单一预编译二进制给未知 CPU（不许消费者自编）；② 消费者热循环密集调用细粒度 op。真要"进去后零间接"，更省的是**构建期 `-march=native` 静态路径**（已支持，平 `HWY_STATIC_TARGET`），非变体-DLL。
+> - **一句话**：这不是"欠 Highway 一个变体-DLL"，而是"当前函数指针模型对批量 op 面已最优，变体-DLL 是错配复杂度，有意不做"。若 op 面将来新增细粒度导出 op 或启动二进制分发需求，再重启此评估。
+
 **探测器隔离（llama.cpp 实证的坑）**：CPUID 探测代码必须编在 baseline ISA、独立 TU、**禁 LTO**——否则 LTO 把高级指令内联进探测函数，老 CPU 上探测自身先 SIGILL。`dispatch.h` 照此。
 
 **组合优于包含**：每个 ISA kernel 是独立组合单元（一个 TU / 一个 tag / 一个变体 DLL），**不是**上帝类 `Vec` 内部 `switch(caps)`/vtable 分支。加一个厂商特化（AMX/VNNI）= 加一个组合单元、改 1 文件、0 调用点、0 热路径开销。
