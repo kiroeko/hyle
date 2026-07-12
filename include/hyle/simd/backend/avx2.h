@@ -1229,10 +1229,16 @@ template <std::size_t N>
 HYLE_FORCE_INLINE Vec256<std::uint32_t, N> MulHigh32(Vec256<std::uint32_t, N> a,
                                                       Vec256<std::uint32_t, N> b) noexcept {
   static_assert(N == 8, "MulHigh32 u32 requires a native AVX2 vector");
-  const __m256i even = _mm256_srli_epi64(_mm256_mul_epu32(a.raw, b.raw), 32);
-  const __m256i odd = _mm256_srli_epi64(
-      _mm256_mul_epu32(_mm256_srli_epi64(a.raw, 32), _mm256_srli_epi64(b.raw, 32)), 32);
-  return Vec256<std::uint32_t, N>{_mm256_or_si256(even, _mm256_slli_epi64(odd, 32))};
+  // Same shuffle-pick shape as the i32 version below (and Highway's u32 MulHigh): shufd picks the
+  // odd dwords instead of srlq shifting, and shuffle_ps grabs the two products' high dwords in one
+  // op instead of srlq+sllq+or. 5 ops (2 mul + 2 shufd + shuffle_ps) vs the old 8 (2 mul + 4 srlq +
+  // sllq + or) -- sign-sweep + objdump caught the u32 path lagging the i32 path at ~1.10x Highway.
+  const __m256i even = _mm256_mul_epu32(a.raw, b.raw);  // products of even dwords (64b in lanes 0,2)
+  const __m256i odd = _mm256_mul_epu32(_mm256_shuffle_epi32(a.raw, _MM_SHUFFLE(3, 3, 1, 1)),
+                                       _mm256_shuffle_epi32(b.raw, _MM_SHUFFLE(3, 3, 1, 1)));
+  const __m256i packed = _mm256_castps_si256(  // high dwords of each 64b product -> [e1 o1 e3 o3]/lane
+      _mm256_shuffle_ps(_mm256_castsi256_ps(even), _mm256_castsi256_ps(odd), _MM_SHUFFLE(3, 1, 3, 1)));
+  return Vec256<std::uint32_t, N>{_mm256_shuffle_epi32(packed, _MM_SHUFFLE(3, 1, 2, 0))};
 }
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec256<std::int32_t, N> MulHigh32(Vec256<std::int32_t, N> a,
