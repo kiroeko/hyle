@@ -711,16 +711,80 @@ HYLE_FORCE_INLINE Vec128<T, N> shift_var_scalar(Vec128<T, N> a, Vec128<T, N> b, 
   r.raw = _mm_load_si128(reinterpret_cast<const __m128i*>(va));
   return r;
 }
+// Pow2_u32(bits) = 2^bits per 32-bit lane, VECTORIZED (Highway x86_128 Pow2). SSE4 has no
+// per-lane variable shift (_mm_sllv/_mm_srlv are AVX2), but "v << bits" == "v * 2^bits" and
+// "v >>u bits" == "MulHigh(v, 2^(32-bits))" -- both need 2^k as a vector, which we build by
+// stuffing k into an f32 exponent field (k in [0,31] -> 2^k is an EXACT power of two an f32
+// represents precisely) and converting back to int. This replaces the store+scalar-loop+reload
+// (op_parity -n15: sse4 Shl ~2.0x / RoundingShr ~1.7x / MaskedShl ~2.2x behind Highway).
+HYLE_FORCE_INLINE __m128i Pow2_u32(__m128i bits) noexcept {
+  const __m128i exp = _mm_slli_epi32(bits, 23);                     // k into the f32 exponent slot
+  const __m128i fbits = _mm_add_epi32(exp, _mm_set1_epi32(0x3F800000));  // + 1.0f bit pattern
+  const __m128 f = _mm_castsi128_ps(fbits);
+  // (int)2^k. k in [0,31] -> 2^k is exact in f32; 2^31/2^32 overflow int32 and cvttps2dq yields
+  // 0x80000000 (= 2^31 as u32), which is EXACTLY the multiplier we want. But GCC/Clang, when they
+  // can see the operand at compile time, constant-fold (int)float-overflow to SATURATION
+  // (0x7FFFFFFF) instead -- silently off-by-one (caught by VarShiftUint32). Force the real
+  // cvttps2dq via inline asm (same reason Highway wraps it); MSVC doesn't do this fold.
+#if defined(__GNUC__) || defined(__clang__)
+  __m128i r;
+  __asm__("cvttps2dq %1, %0" : "=x"(r) : "x"(f));
+  return r;
+#else
+  return _mm_cvttps_epi32(f);
+#endif
+}
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> Shl(Vec128<T, N> a, Vec128<T, N> b) noexcept {
   static_assert(std::is_integral_v<T>, "Shl is integer-lane only");
-  return detail::shift_var_scalar<T, N>(a, b, true);  // no native variable shift on SSE4
+  if constexpr (sizeof(T) == 4) {  // i32/u32: v << b == v * 2^b, one mullo (Highway手法)
+    Vec128<T, N> r;
+    r.raw = _mm_mullo_epi32(a.raw, detail::Pow2_u32(b.raw));
+    return r;
+  } else {  // TODO(i8/i16/i64): each needs a different width-banded mul; not bench losers yet.
+    return detail::shift_var_scalar<T, N>(a, b, true);
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> Shr(Vec128<T, N> a, Vec128<T, N> b) noexcept {
   static_assert(std::is_integral_v<T>, "Shr is integer-lane only");
-  return detail::shift_var_scalar<T, N>(a, b, false);  // no native variable shift on SSE4
+  if constexpr (sizeof(T) == 4) {
+    // u32: v >>u b == high 32 of (v * 2^(32-b)); do it on even+odd lanes via _mm_mul_epu32, then
+    // recombine. b==0 would need 2^32 (overflows) so patch those lanes back to v. (Highway手法.)
+    const __m128i b32 = _mm_sub_epi32(_mm_set1_epi32(32), b.raw);
+    const __m128i mul = detail::Pow2_u32(b32);
+    const __m128i in31 = _mm_shuffle_epi32(a.raw, 0x31);   // odd lanes -> even slots
+    const __m128i mul31 = _mm_shuffle_epi32(mul, 0x31);
+    const __m128i out20 = _mm_srli_epi64(_mm_mul_epu32(a.raw, mul), 32);  // z 2 z 0
+    const __m128i out31 = _mm_mul_epu32(in31, mul31);                     // 3 ? 1 ? (already hi)
+    // OddEven(out31, out20): even lanes from out20, odd lanes from out31.
+    const __m128i out = _mm_castps_si128(_mm_blend_ps(
+        _mm_castsi128_ps(out20), _mm_castsi128_ps(out31), 0b1010));
+    const __m128i zero = _mm_cmpeq_epi32(b.raw, _mm_setzero_si128());     // b==0 mask
+    const __m128i ru = _mm_or_si128(_mm_and_si128(zero, a.raw), _mm_andnot_si128(zero, out));
+    Vec128<T, N> r;
+    if constexpr (std::is_signed_v<T>) {
+      // arithmetic: clear sign, logical-shift, restore sign (Highway SignedShr).
+      const __m128i sign = _mm_srai_epi32(a.raw, 31);
+      const __m128i absx = _mm_xor_si128(a.raw, sign);
+      const __m128i b32s = _mm_sub_epi32(_mm_set1_epi32(32), b.raw);
+      const __m128i muls = detail::Pow2_u32(b32s);
+      const __m128i s31 = _mm_shuffle_epi32(absx, 0x31);
+      const __m128i m31 = _mm_shuffle_epi32(muls, 0x31);
+      const __m128i o20 = _mm_srli_epi64(_mm_mul_epu32(absx, muls), 32);
+      const __m128i o31 = _mm_mul_epu32(s31, m31);
+      const __m128i o = _mm_castps_si128(_mm_blend_ps(_mm_castsi128_ps(o20), _mm_castsi128_ps(o31), 0b1010));
+      const __m128i z = _mm_cmpeq_epi32(b.raw, _mm_setzero_si128());
+      const __m128i shifted = _mm_or_si128(_mm_and_si128(z, absx), _mm_andnot_si128(z, o));
+      r.raw = _mm_xor_si128(shifted, sign);
+    } else {
+      r.raw = ru;
+    }
+    return r;
+  } else {  // TODO(i8/i16/i64): width-banded; not bench losers yet.
+    return detail::shift_var_scalar<T, N>(a, b, false);
+  }
 }
 
 // Uniform run-time shifts are native even though SSE4 lacks per-lane variable shifts.
@@ -2372,14 +2436,27 @@ HYLE_FORCE_INLINE Vec128<T, N> RoundingShiftRightSame(Vec128<T, N> v, int s) noe
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> RoundingShr(Vec128<T, N> v, Vec128<T, N> amounts) noexcept {
   static_assert(std::is_integral_v<T>, "RoundingShr is integer-lane only");
-  alignas(16) T sv[N], sa[N], so[N];
-  Store(v, Simd<T, N, 0>(), sv); Store(amounts, Simd<T, N, 0>(), sa);
-  for (std::size_t i = 0; i < N; ++i) {
-    const int s = static_cast<int>(sa[i]);
-    if (s <= 0) so[i] = sv[i];
-    else so[i] = static_cast<T>((sv[i] + static_cast<T>(T{1} << (s - 1))) >> s);
+  if constexpr (sizeof(T) == 4) {
+    // (v + 2^(s-1)) >> s for s>0, else v. Now that Shr is vectorized (v>>b via mul-high, above),
+    // build the round bias 2^(s-1) with the same Pow2 helper and select s<=0 lanes back to v --
+    // no more store+scalar-loop+reload (op_parity -n15: sse4 RoundingShr ~1.7x behind Highway).
+    const Simd<T, N, 0> d;
+    const auto spos = Gt(amounts, Set(d, T{0}));                 // s > 0 lanes
+    const __m128i sm1 = _mm_sub_epi32(amounts.raw, _mm_set1_epi32(1));  // s-1 (only used where s>0)
+    Vec128<T, N> biasp; biasp.raw = detail::Pow2_u32(sm1);       // 2^(s-1)
+    const auto bias = IfThenElse(spos, biasp, Set(d, T{0}));     // 0 where s<=0
+    const auto shifted = Shr(Add(v, bias), amounts);            // arithmetic for i32, logical for u32
+    return IfThenElse(spos, shifted, v);                        // keep v where s<=0
+  } else {
+    alignas(16) T sv[N], sa[N], so[N];
+    Store(v, Simd<T, N, 0>(), sv); Store(amounts, Simd<T, N, 0>(), sa);
+    for (std::size_t i = 0; i < N; ++i) {
+      const int s = static_cast<int>(sa[i]);
+      if (s <= 0) so[i] = sv[i];
+      else so[i] = static_cast<T>((sv[i] + static_cast<T>(T{1} << (s - 1))) >> s);
+    }
+    return Load(Simd<T, N, 0>(), so);
   }
-  return Load(Simd<T, N, 0>(), so);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> PairwiseAdd128(Vec128<T, N> a, Vec128<T, N> b) noexcept {
