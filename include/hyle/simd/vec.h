@@ -1396,6 +1396,43 @@ HYLE_FORCE_INLINE VFromD<D> Dup128VecFromValues(D d, TFromD<D> t0, TFromD<D> t1)
 
 // TwoTablesLookupLanes: per-backend native (simd-18 批E) -- two-source cross-vector permute.
 
+// ---- Highway public-op-face parity: thin wrappers over existing primitives (audit 2026-07-12) ---
+// SetTableIndices(d, idx): TableLookupLanes indices loaded from a pointer. = IndicesFromVec(LoadU).
+// The index array holds one index per lane, same lane type as d (Highway allows a narrower TI; HYLE
+// keeps it same-type -- callers pass TFromD<D>* indices, which is the common shuffle-table case).
+template <class D>
+HYLE_FORCE_INLINE auto SetTableIndices(D d, const TFromD<D>* idx) noexcept {
+  return IndicesFromVec(d, LoadU(d, idx));
+}
+// CompressBlocksNot(v, mask): Highway's u64-only alias for CompressNot (kept for op-face parity).
+template <class V, class M>
+HYLE_FORCE_INLINE V CompressBlocksNot(V v, M mask) noexcept {
+  return CompressNot(v, mask);
+}
+// ZeroExtendResizeBitCast(d_to, d_from, v): reinterpret v's bytes into the d_to lane type, zero-
+// filling any excess destination bytes (widen) or dropping the high bytes (narrow). HYLE's
+// ResizeBitCast already zeroes excess destination bytes, so this is the named forwarding entry.
+template <class DTo, class DFrom>
+HYLE_FORCE_INLINE VFromD<DTo> ZeroExtendResizeBitCast(DTo d_to, DFrom /*d_from*/,
+                                                      VFromD<DFrom> v) noexcept {
+  return ResizeBitCast(d_to, v);
+}
+// Dup128MaskFromMaskBits(d, mask_bits): build a mask from the low (lanes-per-128-block) bits of
+// mask_bits, REPLICATED to every 128-bit block (Highway). LoadMaskBits fills lane i from bit i, so
+// pre-replicate the low block's bits across all blocks, then LoadMaskBits. (1 block => identity.)
+template <class D>
+HYLE_FORCE_INLINE MFromD<D> Dup128MaskFromMaskBits(D d, unsigned mask_bits) noexcept {
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+  constexpr std::size_t kBytes = kN * sizeof(TFromD<D>);
+  constexpr std::size_t kBlocks = kBytes <= 16 ? 1 : kBytes / 16;
+  constexpr std::size_t kLanesPer128 = kN / kBlocks;         // lanes in one 128-bit block
+  const std::uint64_t block_bits = mask_bits & ((kLanesPer128 >= 64) ? ~0ull
+                                                : ((1ull << kLanesPer128) - 1ull));
+  std::uint64_t bits = 0;
+  for (std::size_t b = 0; b < kBlocks; ++b) bits |= block_bits << (b * kLanesPer128);
+  return LoadMaskBits(d, bits);
+}
+
 // ---- simd-18 批C: demote / truncate helpers (generic composables) -------------------
 
 // Blocks(d): number of 128-bit blocks in a full vector of D. 1 for <=128-bit backends, 2 for

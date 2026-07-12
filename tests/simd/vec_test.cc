@@ -1208,6 +1208,49 @@ TEST(Vec, MaskBitsAndPrefixScan) {
   EXPECT_EQ(static_cast<std::ptrdiff_t>(hs::FindKnownFirstTrue(d, m)), first);
 }
 
+// Highway public-op-face parity wrappers (audit 2026-07-12): SetTableIndices / CompressBlocksNot /
+// ZeroExtendResizeBitCast / Dup128MaskFromMaskBits -- each vs its underlying primitive.
+TEST(Vec, HighwayParityWrappers) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  Buf<std::int32_t> a, idx, out, ref;
+  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<std::int32_t>(i * 10 + 1); idx.data[i] = static_cast<std::int32_t>(n - 1 - i); }
+  const auto va = hs::Load(d, a.data);
+  // SetTableIndices(d, ptr) == IndicesFromVec(d, LoadU(ptr)): reverse permute.
+  hs::Store(hs::TableLookupLanes(va, hs::SetTableIndices(d, idx.data)), d, out.data);
+  hs::Store(hs::TableLookupLanes(va, hs::IndicesFromVec(d, hs::Load(d, idx.data))), d, ref.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], ref.data[i]) << "SetTableIndices i=" << i;
+
+  // ZeroExtendResizeBitCast == ResizeBitCast (same-width identity here: i32 tag -> i32 tag).
+  hs::Store(hs::ZeroExtendResizeBitCast(d, d, va), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], a.data[i]) << "ZeroExtendResizeBitCast i=" << i;
+
+  // CompressBlocksNot(v, m) == CompressNot(v, m) on u64.
+  {
+    const hs::ScalableTag<std::uint64_t> d64;
+    const std::size_t n64 = hs::Lanes(d64);
+    Buf<std::uint64_t> b, c1, c2;
+    for (std::size_t i = 0; i < n64; ++i) b.data[i] = i;
+    const auto vb = hs::Load(d64, b.data);
+    const auto mb = hs::Eq(hs::And(vb, hs::Set(d64, 1)), hs::Set(d64, 1));  // odd lanes true
+    hs::Store(hs::CompressBlocksNot(vb, mb), d64, c1.data);
+    hs::Store(hs::CompressNot(vb, mb), d64, c2.data);
+    for (std::size_t i = 0; i < n64; ++i) EXPECT_EQ(c1.data[i], c2.data[i]) << "CompressBlocksNot i=" << i;
+  }
+
+  // Dup128MaskFromMaskBits: low-128-block bits replicated to every block. For i32, a 128-bit block
+  // is 4 lanes; bits=0b0101 (lanes 0,2 true) must hold in each block.
+  {
+    const unsigned block_bits = 0b0101u;  // lanes 0 and 2 of each 128-bit block
+    const auto m = hs::Dup128MaskFromMaskBits(d, block_bits);
+    hs::Store(hs::VecFromMask(d, m), d, out.data);
+    for (std::size_t i = 0; i < n; ++i) {
+      const bool want = ((block_bits >> (i % 4)) & 1u) != 0;  // per-4-lane block pattern
+      EXPECT_EQ(out.data[i] != 0, want) << "Dup128MaskFromMaskBits i=" << i;
+    }
+  }
+}
+
 // Prefix-scan on i8 lanes with the ONLY true lane at the LAST position (lane N-1). On avx2
 // N=32, so SetAtOrBeforeFirst computed `1u << (countr_zero+1)` = `1u << 32` = shift UB before
 // the fix (x86 masked it to 1u<<0 -> upto=0 -> wrong all-clear instead of all-set). This test
