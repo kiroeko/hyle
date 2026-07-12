@@ -4,16 +4,18 @@
 
 **⚠️极性纠正（重要）**：`bench-stat.py --pair HYLE Highway` 的 ratio = **rival(Highway) op/s ÷ base(HYLE) op/s**，且 `[sign]WIN/LOSE` 是**从 rival 视角**：`[sign]WIN`(ratio>1, Highway op/s 更高)= **HYLE 慢=HYLE 真输**；`[sign]LOSE`(ratio<1)= Highway 慢 = **HYLE 赢**。（本轮一度读反，用原始 ns/op 核对纠正：如 LoadExpand HYLE 0.633 vs Highway 1.360=HYLE 快，工具标 LOSE=Highway 输。）
 
+**⚠️三平台错开跑坐实"GCC 追平≠MSVC 追平"的公共底层坑**：GatherIndexN GCC native gather 即平,MSVC 仍 6×——dumpbin 证 MSVC 确实发 vpgatherdd(native 生效),但 **FirstN 底层是标量 store+reload**,GCC 自动优化/被 gather 延迟掩盖、MSVC 没优化到位主导耗时。教训:①一个 op 三平台表现分歧时,查它调用的**公共底层原语**(FirstN 被 MaskedLoad/LoadN/StoreN/GatherIndexN 共用)是否某平台没优化;②"native 指令已发"≠"已追平",指令外的掩码/索引构造标量步同样要 native 化;③MSVC 对标量 stack round-trip 的优化远弱于 GCC——store+reload 原语在 MSVC 上尤其是真输放大器。native 分发别靠 overload partial-ordering(GCC/MSVC 不一致),用能力宏 `#define HYLE_SIMD_AVX2_HAS_NATIVE_*` + `if constexpr` 显式门控。
+
 **补 bench 覆盖揪出的隐藏真输（directive 三点闭环范例）**：覆盖审计(377 op/276 已对拍/101 缺口)→ 补 15 高价值缺口 bench 行 → sign-sweep 立即揪出 **SumsOf2 9.1× / SumsOf4 8.6×**（三后端全 store+reload 标量循环，此前无 bench 完全隐形）→ 全部照 Highway 追平（avx2/sse4=PromoteEven/Odd+Add，neon=vpaddlq_u8 一条）→ TIE。**坐实"覆盖不足=真输隐形"，补 bench 是发现工具不只背书。**
 
 **本轮全 avx2 sweep 的 HYLE 真输(rival WIN)完整清单 + 处置**：
 | op | ratio(H/H) | 处置 |
 |---|---:|---|
 | CompressStore / CompressBlendedStore i32 | 3.4× / 3.1× | **契约差异非可修**：Compress 本体 native vpermd 已 TIE(0.108 vs 0.110，超 xsimd 7×)；CompressStore 慢=HYLE **精确写契约**(只写 CountTrue 个，尾部不碰)vs Highway 整向量写。AVX2 无 native compress-store，精确写只能标量 pack。契约优先，`StoreU(Compress(v,m))` 可取 Highway 语义的平。**保留强契约。** |
-| GatherIndexN / GatherIndexNOr i32 | 2.57× | ✅ **已追平**→native masked gather(`_mm256_mask_i32gather`+FirstN 掩码 fault-safe)，0.46→0.18ns TIE |
-| SumsOf2 / SumsOf4 u8 | 9.1× / 8.6× | ✅ **已追平**(见上，补 bench 揪出)，三后端 |
+| GatherIndexN / GatherIndexNOr i32 | 2.57×(GCC)/6×(MSVC) | ✅ **已追平**→native masked gather(`_mm256_mask_i32gather`+FirstN 掩码 fault-safe)。**根因二段**:GCC 靠 native gather 即平;MSVC 仍 6× 因 **FirstN 是标量 store+reload**(每迭代重建掩码),MSVC 没优化到位、主导耗时。改 FirstN 为 in-register `iota<n` compare(cmpgt splat/iota,按 lane 宽 epi8/16/32/64)→两编译器 TIE。FirstN 是 MaskedLoad/LoadN/StoreN/GatherIndexN 公共底层,一改多受益。 |
+| GatherOffset i32 | 1.18×(GCC)/5×(MSVC) | ✅ **已追平**→native vpgather scale=1(字节偏移),能力宏 if constexpr 门控。MSVC 5×→TIE、GCC 0.219→0.181ns。 |
+| SumsOf2 / SumsOf4 u8 | 9.1× / 8.6× | ✅ **已追平**(见上，补 bench 揪出)，三后端(avx2/sse4 PromoteEven/Odd+Add,neon vpaddlq_u8) |
 | LoadNOr i32 (half n) | 1.49× | native maskload 已用(9.6→1.5×)；残留需 Highway 递归二分(sub-128 partial-load 基础设施)，登记 |
-| GatherOffset i32 | 1.18× | 可 native vpgather(scale=1 byte-offset)追，但内存-bound 收益小，登记 |
 | FindKnownLastTrue 1.26 / IsNegative 1.19 / TrailingZeroCount 1.11 / HighestSetBitIndex 1.11 / FindLastTrue 1.07 / MinNumber 1.05 / MaxNumber 1.07 / Max128 1.04 / Eq128 1.02 / Lt128Upper 1.06 / MaskedShift 1.03 / MaskedModOr 1.03 / Mod 1.02 / RoundingShr 1.05 / BitShuffle 1.03 / CombineMasks 1.17 / MaskedApproxReciprocalSqrt 1.05 / ConcatLowerLower 1.08 / MultiRotateRight 1.09(已从 2.9×) | **内存-bound 掩盖 ALU 差 / 布局伪影**：`Load+单op+Store` 循环里多几条 ALU 藏在 load/store 延迟下(第五道关)；这些 objdump codegen 相同或 compute-bound 复测反 WIN(MinNumber compute-bound 1.8×WIN 铁证)。**低优先，多数不该动。** |
 
 ---
