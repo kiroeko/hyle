@@ -2654,11 +2654,13 @@ HYLE_FORCE_INLINE VecNeon<T, N> MulByFloorPow2(VecNeon<T, N> v, VecNeon<T, N> ex
   const Simd<T, N, 0> df;
   const auto is_nan_result =
       Or(IsNaN(exp), And(Eq(Abs(v), IfNegativeThenElseZero(exp, Inf(df))), IsInf(exp)));
-  // Clamp to +/-4096 before the cast: NEON fcvtzs also saturates out-of-range, so bound the float
-  // first to keep the cast exact and let MulByPow2 saturate by sign. 4096 > 3*1023 loses no exp.
-  const T kCap = static_cast<T>(4096);
-  const auto fe = Max(Min(Floor(exp), Set(df, kCap)), Set(df, -kCap));
-  const auto ie = ConvertTo(Simd<IT, N, 0>(), fe);
+  // floor(exp) AND convert-to-int in ONE native instruction: vcvtmq (fcvtms) rounds toward -inf and
+  // saturates out-of-range/inf to INT_MIN/MAX -- no separate Floor + clamp + ConvertTo (that 4-op
+  // chain lost ~1.12x to Highway's single FloorInt, isolated -n15). MulByPow2's own +/-3*bias clamp
+  // tolerates the saturated extremes (they map to 0 / inf by sign), so no pre-clamp is needed.
+  VecNeon<IT, N> ie;
+  if constexpr (sizeof(T) == 4) ie.raw = vcvtmq_s32_f32(exp.raw);
+  else ie.raw = vcvtmq_s64_f64(exp.raw);  // aarch64
   return IfThenElse(is_nan_result, NaN(df), MulByPow2(v, ie));
 }
 
