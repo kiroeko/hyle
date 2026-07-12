@@ -12,7 +12,7 @@
 | LoadNOr i32 (half n) | 9.64× | store+标量循环+reload；可用 native maskload(fault-safe) |
 | CompressStore i32 | 3.42× | 契约差异(精确写)+AVX2 无 native compress-store —— 待重审 Highway |
 | CompressBlendedStore i32 | 3.04× | 同上 |
-| MultiRotateRight u64 | 2.90× | Highway generic=DupEven+TableLookupBytes+Shr<u16>；Shr<u16> 需向量化 |
+| ~~MultiRotateRight u64~~ **已追平 2.9×→1.1×** | ~~2.90×~~ | ✅ 照 Highway generic 向量化(DupEven/Odd+TableLookupBytes+u16变量Shr+ConcatEven+InterleaveWholeLower)。补 3 子能力:16-bit 变量移位向量化(cvtepu16→srlv32→packus)、ConcatEven/Odd u8/u16 原生化(packus+permq，去 store+reload)、u16 Shr 去冗余 mask。1.037ns vs Highway 0.946ns。见下"已追平"区 |
 | GatherIndexN / GatherIndexNOr i32 | 2.59× | 变长 gather harness |
 | LoadInterleaved2 f32 | 1.34× | 待查 |
 | GatherOffset i32 | 1.16× | gather harness |
@@ -65,6 +65,8 @@ SaturatedNeg（位技巧 `~v-(v>MIN?-1:0)`）、SaturatedAbs i32（`Min_u32(Abs,
 
 ## 已追平（本轮，符号检验+objdump 确认真 codegen 差+照 Highway 改+三平台验）
 SaturatedNeg i32（1.09×→位技巧 `~v-(v>MIN?-1:0)`）、SaturatedAbs i32（1.34×→`Min_u32(Abs,INT_MAX)`）、MulHigh32 u32（1.10×→shuffle-pick 5 条）、TwoTablesLookupLanes（1.11×→slli+blendv）、LoadInterleaved2 f32/i32（1.34×→shufps+permq）、ConcatEven/Odd 32-bit（→shufps+permq deinterleave，ConcatOdd 1.03→TIE）、PairwiseAdd/Sub 32-bit（两次 vpermq factor 成一次 `permq(x+y)`，4→3 p5-uop；试 native vphadd 隔离慢 10% 放弃）。**LoadNOr 9.6×→1.5×**（native maskload，剩余需 Highway 二分）。
+
+**MultiRotateRight u64 2.9×→1.1×（大输，本轮照 Highway generic 向量化）**：旧=标量 N×8 双循环(2.83ns)。照 `generic_ops-inl.h:8484`：DupEven/DupOdd(vpermilpd)分离奇偶 u64 lane → TableLookupBytes(vpshufb)取每输出字节的相邻两源字节 → u16 变量 Shr 抽非对齐字节 → ConcatEven 打包低字节 → InterleaveWholeLower 重织。为此补 3 个原生子能力(均独立价值)：①**16-bit 变量移位向量化**(AVX2 无 sllv/srlv/srav_epi16=AVX512BW，照 Highway AVX2ShrU16Vec256：两半 u16→u32 cvt + native 32-bit 变量移位 + packus 回 u16 + permq D8；96 万随机含 count≥16 对拍绿)；②**ConcatEven/Odd u8/u16 原生化**(mask/srli+packus+permq，去 store+reload——u8 ConcatEven 的 store+reload 曾把向量版拖到 3.4ns 比标量还慢，是关键瓶颈)；③u16 Shr 去冗余 low-16 mask。objdump 81 insn/**0 mem**(旧 100/7) vs Highway 65。8 万随机 cross-check + gtest(rot=0/j*8 identity/splat 边界) + 221 avx2/220 sse4 test 全绿。最终 1.037ns vs Highway 0.946ns(1.1×，布局带内)。**教训：向量化"照抄"必须逐个确认子能力真的向量化了——u16 Shr / u8 ConcatEven 藏着 store+reload 时，"向量化版"反而比标量慢；objdump 数 `(%rsp)` 内存标记揪隐藏标量步。**
 
 ## 剩余中/小 ratio 候选：四道关分类终审（2026-07-12，本轮做完）——**结论：无真输**
 按用户"最好把剩余分类做完"，对损失清单里剩余中小 ratio 项逐个走完整四道关（sign + 隔离单-op + objdump + 布局阈值），**全部证为 HYLE-WIN / TIE / 布局伪影，无一真输**：
