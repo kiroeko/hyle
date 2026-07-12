@@ -237,13 +237,16 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 | InterleaveEven/Odd i32 | avx2 | 1.6–1.7× | store+reload | 两条 per-128-lane `shuffle_ps`（抽偶/奇+重排） |
 | TestBit i32 | 全平台 | 1.14× | `Ne(v&bit,0)`=cmpeq+NOT | `Eq(v&bit,bit)` 单条 cmpeq（+对齐 Highway 契约） |
 | SaturatedAbs i32 | avx2+sse4 | 1.4–1.5× | Lt+SaturatedNeg+blend | `Max(a,SaturatedNeg(a))`（简化；WSL store-bench 噪声大未能坐实追平） |
+| PromoteMaskTo i16→i32 | avx2 | 6.0× | LoadMaskBits bitfield 往返 | 向量域 `MaskFromVec(PromoteTo signed,VecFromMask)` → 隔离 1.21×（残留=2 条多余 srai，见下） |
+| OrderedDemote2MasksTo i32→i16 | avx2 | 14.2× | bitfield concat + i16 标量压位 sink | 向量 `OrderedDemote2To` + i16 mask_bits 换 PEXT → 隔离 1.31× |
+
+**mask 域残留 1.2–1.3×（objdump 定位，待 backend trusted-mask 构造消除）**：PromoteMaskTo/OrderedDemote2MasksTo 已从 6–14× 追到 1.2–1.3×（bitfield 往返 + i16 标量压位两大瓶颈已消）。隔离 objdump 铁证残留来源——HYLE 比 Highway 多**两条对已规范 mask 的多余 srai**（`vpsraw $15` 来自 `RebindMask` 内部 MaskFromVec、`vpsrad $31` 来自输出 MaskFromVec）：cmpgt/vpmovsxwd 结果本就是全 1/0 规范 mask，HYLE 的 Mask↔Vec 往返每次都 srai 规范化是多余的。彻底追平需 backend 加"信任向量已规范"的 mask 构造入口（绕过 srai），涉及 3 后端 Mask 抽象语义，作为独立项——非"做不了"，是需单独谨慎改 backend 构造语义。
 
 **边界 TIE 复查（2026-07-12，回应"大 spread 会不会把真输判成 TIE"）**：完整-bench 的大 spread（WSL x86 store 类 op 达 40–113%）可能把真输误判 TIE（假阴性）。`borderline.py` 筛出所有 `|ratio_med−1|>10%` 却判 TIE 的 HYLE-slower 项，逐项隔离单-op bench 定性。**方法学纪律：测试缺陷（大 spread）两个方向都不能当结论**——既不能判"对手更快"，也不能拿"反正测不准"当借口放过真输。定性手段按可靠度：① sink-based op（TestBit spread 10%）隔离可判；② store 类 op WSL 噪声太大 → **改用代码审查（确定性，不受 bench 噪声影响）**看是否 store+reload/次优。结果：InterleaveEven/Odd（真 store+reload，已修）、TestBit（cmpeq+NOT，已修）是真输；AddSub/InterleaveWholeLower·Upper/ZeroIfNegative/IfNegativeThenElseZero 代码审查确认已是最优 native 向量组合（其 1.2–1.3× 是 WSL store-bench 噪声，非真输）。**WSL x86 store-based 亚纳秒 bench 的系统性大 spread 是环境测量局限**（无低噪声 x86 真机；NEON 在 Apple Silicon spread 2–4% 才能可靠定性 store 类）。
 
-**AVX2 — 剩余 Highway 更快 11 项**（全部硬件墙/契约/内存 harness/亚纳秒噪声，非算法可修）：
+**AVX2 — 剩余 Highway 更快项**（mask 域 PromoteMaskTo/OrderedDemote2MasksTo 已从 14/6× 追到 1.2–1.3×，见上；下列为未攻项）：
 | op | H/HYLE | 归因 |
 |---|---:|---|
-| OrderedDemote2MasksTo / PromoteMaskTo | 14.2× / 6.0× | mask bitfield 往返（avx2 是冷路径；sse4/neon 已按 Set*First 同类手法可攻，但 avx2 movemask 往返本就便宜，收益低） |
 | LoadNOr / GatherIndexNOr / GatherIndexN | 9.6× / 2.6× / 2.5× | 变长内存 gather/load harness |
 | CompressStore / CompressBlendedStore | 3.4× / 3.1× | **契约差异**：HYLE 精确写 p[count..) 不触碰（强于 Highway 弱契约）；AVX2 无 native compress-store |
 | MultiRotateRight u64 | 2.9× | **AVX2 硬件墙**：Highway 核心 `srlv_epi16`=AVX512BW+VL，纯 AVX2 无 |
