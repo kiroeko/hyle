@@ -228,13 +228,16 @@ class GroupNeon {
   }
 
  private:
-  // Each lane of `m` is 0xFF (match) or 0x00; fold to bit i <- (lane i top bit).
+  // Each lane of `m` is 0xFF (match) or 0x00; fold to bit i <- lane i. NEON has no movemask,
+  // so use the vectorized idiom (same as hyle/simd/backend/neon.h mask_bits): AND each lane
+  // with a disjoint power-of-two weight {1,2,4,...,128}, then ONE horizontal add (vaddv_u8) --
+  // the sum's bits ARE the lane bitmask (weights are disjoint, each lane adds its weight or 0).
+  // Replaces the old 8-iteration scalar fold that ran per match() in the probe hot path
+  // (abseil's GroupAArch64Impl instead keeps a byte-mask + Shift=3 BitMask; this keeps HYLE's
+  // single 1-bit-per-lane BitMask across all ISAs but pays only 2 SIMD ops, not a scalar loop).
   static std::uint32_t pack(uint8x8_t m) noexcept {
-    std::uint64_t x = vget_lane_u64(vreinterpret_u64_u8(m), 0);
-    std::uint32_t r = 0;
-    for (int i = 0; i < 8; ++i)
-      if (x & (std::uint64_t{0x80} << (8 * i))) r |= (1u << i);
-    return r;
+    const uint8x8_t w = {1u, 2u, 4u, 8u, 16u, 32u, 64u, 128u};
+    return static_cast<std::uint32_t>(vaddv_u8(vand_u8(m, w)));
   }
   uint8x8_t ctrl_;
 };
