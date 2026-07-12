@@ -191,7 +191,7 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 **✅ 全四固定宽后端实现已铺完**——同 pattern 铺到 avx512/sse4/neon，各 vec_test 173/173；性能证据按下表区分真机与模拟器：
 | 后端 | 验证闸门 | 手法要点 | 性能结论 |
 |---|---|---|---|
-| **avx2**(256b) | WSL+MSVC 173/173 + 隔离 bench | 见上表 | 255 pair 中 241 平(94%);12 显著输家已归因(冷路径/内存harness/契约/硬件墙/TruncateTo可优化),见定论总账 |
+| **avx2**(256b) | WSL+MSVC 173/173 + 隔离 bench | 见上表 | 255 pair 中 241 平(94%);11 显著输家已归因(冷路径/内存harness/契约/硬件墙;TruncateTo 已修追平),见定论总账 |
 | **avx512**(512b) | Intel SDE 173/173 | 同 avx2 512-bit 化;MulByPow2 额外走原生 vscalef(512 有硬件)、GetExponent 用 vgetexp、Compress 用 maskz_compress | 无真机数据，不作性能结论 |
 | **sse4**(128b) | WSL+MSVC 173/173 + op_parity sse4 bench | ConcatEven/Odd 用 shuffle_ps 双源选 lane;余同 avx2 单块 | 215 pair 中 199 平(92%);14 显著输家几乎全是 SSE4 无变量移位 vpsllvd 的纯 ISA 墙,见定论总账 |
 | **neon** | Apple Silicon 173/173 + 主/full(190行)/widen/Q15/compact/P3 `bench-stat -n15` | PopCount=`vcntq_u8+vpaddlq`、LZCnt=`vclzq`、ReverseBits=`vrbitq_u8+vrevNq`、Concat=`vuzp1/2q`；Compress/Expand 按lane宽分档；complex用FMA友好直接公式 | full sweep 185 pair 中 179 统计平(96%)；6 显著输家=mask 往返(Set*First)+变量移位(RoundingShr)+CountTrue/ApproxRSqrt，见定论总账 |
@@ -216,14 +216,14 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 
 | ISA | 真机 | pair 数 | 统计平 | Highway 显著更快 | HYLE 显著更快 |
 |---|---|---:|---:|---:|---:|
-| **AVX2**(256b) | WSL GCC14.2 | 255 | 241 (94%) | 12 | 2 |
-| **SSE4**(128b) | WSL GCC14.2 | 215 | 199 (92%) | 14 | 2 |
+| **AVX2**(256b) | WSL GCC14.2 | 255 | 242 (95%) | 11 | 2 |
+| **SSE4**(128b) | WSL GCC14.2 | 215 | 200 (93%) | 13 | 2 |
 | **NEON**(128b) | Apple Silicon M-系 | 185 | 179 (96%) | 6 | 0 |
 | AVX512(512b) | Intel SDE | — | — | — | — |
 
-AVX512 只有 SDE 正确性（220 PASS），SDE 时序不可信，不计入性能账。sse4/neon 的 op_parity_bench（gather/mask 内存族）因 Highway 子-AVX2 无实现会编出 `hwy::Abort` 链接失败，那些行的子-AVX2 对照本就无意义（op 是 avx2-specific），故 sse4/neon 只统计 full+widen+crypto。
+> 数字为 TruncateTo 修复后（该项 avx2 2.45×/sse4 2.06× 已换 native PSHUFB 追平，见类别③）。AVX512 只有 SDE 正确性（220 PASS），SDE 时序不可信，不计入性能账。sse4/neon 的 op_parity_bench（gather/mask 内存族）因 Highway 子-AVX2 无实现会编出 `hwy::Abort` 链接失败，那些行的子-AVX2 对照本就无意义（op 是 avx2-specific），故 sse4/neon 只统计 full+widen+crypto。
 
-**AVX2 — Highway 显著更快 12 项 + 归因**：
+**AVX2 — Highway 显著更快 11 项 + 归因**（TruncateTo 已从此表移除）：
 | op | H/HYLE | 归因 | 可修? |
 |---|---:|---|---|
 | OrderedDemote2MasksTo i32→i16 | 14.2× | mask bitfield 往返（冷路径） | 冷路径，非热点 |
@@ -233,21 +233,21 @@ AVX512 只有 SDE 正确性（220 PASS），SDE 时序不可信，不计入性�
 | CompressBlendedStore i32 | 3.1× | 同上契约差异 | 契约优先 |
 | MultiRotateRight u64 | 2.9× | **AVX2 硬件墙**：Highway 核心 `srlv_epi16`=AVX512BW+VL，纯 AVX2 无 | 硬件墙 |
 | GatherIndexNOr / GatherIndexN i32 | 2.6× / 2.5× | 变长 gather harness | 内存 harness |
-| **TruncateTo u32→u16** | 2.45× | **store+reload**（注释即认；native pack 是升级） | **可优化** |
+| ~~TruncateTo u32→u16~~ | ~~2.45×~~→平 | 原 store+reload；**已换 native PSHUFB byte-gather** | ✅ **已修**（ratio 1.007，重测 182/185 平 98%） |
 | LoadInterleaved2 f32 | 1.35× | 中等 | 待查 |
 | FindKnownLastTrue i32 | 1.26× | countl_zero 尾 | 冷路径 |
 | TestBit i32 | 1.17× | 微小 | 亚纳秒噪声边缘 |
 
 **AVX2 — HYLE 显著更快 2 项**：LoadExpand i32（2.2×，native expand-load）、SetOnlyFirst i32（1.45×）。
 
-**SSE4 — Highway 显著更快 14 项**：Set{Only,Before,AtOrAfter,AtOrBefore}First / Shl / Shr / RoundingShr / MaskedShl(Or) / MaskedShr(Or) 全部 1.16–2.57×，同一根因 = **SSE4 无变量移位 vpsllvd/vpsrlvd**（AVX2 才有，故 avx2 这些全平）；TruncateTo u32→u16 2.06×（同 avx2 store+reload）。**SSE4 — HYLE 更快 2 项**：ReverseBits i32（1.67×）、IsFinite f32（1.35×）。
+**SSE4 — Highway 显著更快 14 项**：Set{Only,Before,AtOrAfter,AtOrBefore}First / Shl / Shr / RoundingShr / MaskedShl(Or) / MaskedShr(Or) 全部 1.16–2.57×，同一根因 = **SSE4 无变量移位 vpsllvd/vpsrlvd**（AVX2 才有，故 avx2 这些全平）；TruncateTo u32→u16 **已修**（2.06×→ratio 0.971 平，同 avx2 换 native PSHUFB）。**SSE4 — HYLE 更快 2 项**：ReverseBits i32（1.67×）、IsFinite f32（1.35×）。
 
 **NEON — Highway 显著更快 6 项**：RoundingShr i32（3.2×）、Set{AtOrAfter,Before,Only}First i32（1.3–1.5×，同 sse4 = mask bitfield 往返 `mask_bits→标量→LoadMaskBits`，Highway 用向量 running-mask）、CountTrue i32（1.4×）、ApproximateReciprocalSqrt f32（1.4×，NEON `vrsqrteq` 精度档差异）。**NEON — 无 HYLE 更快项，无 LOSE**。
 
 **跨平台一致的输家类别**（真信号，非单点噪声）：
 1. **mask-domain 往返**（Set*First / PromoteMaskTo / OrderedDemote2MasksTo）：sse4+neon 输、avx2 平（avx2 mask_bits 是单条 movemask，往返便宜）。冷路径，Highway 向量化 running-mask 更快但 HYLE 走 bitfield oracle 保正确。
 2. **变量移位依赖**（Shl/Shr/RoundingShr/MaskedSh* i32）：sse4+neon 输、avx2 平——纯 ISA 能力差（SSE4 无 vpsllvd）。
-3. **TruncateTo store+reload**：avx2+sse4 输 ~2×、neon 平（store+reload 在 NEON 相对便宜）——**唯一可用 native pack 消除的通用输家**。
+3. ~~**TruncateTo store+reload**：avx2+sse4 输 ~2×~~ → **已修**：换 native PSHUFB byte-gather（sse4 单条 shuffle_epi8；avx2 PSHUFB+VPERMD+压实 PSHUFB），avx2 2.45×→平、sse4 2.06×→平；四环境正确性验证（WSL avx2/sse4、MSVC avx2、Apple NEON）。这是三平台账里唯一"可用 native 指令消除"的通用输家，已消除。
 
 **Crypto（AES-NI + PCLMUL baseline）全平**：AES{Round,LastRound,RoundInv,LastRoundInv,InvMixColumns,KeyGenAssist} + CLMul{Lower,Upper} ratio 0.94–1.03。
 **widen/MAC 全平**（-n15）：ReorderWidenMulAccum / SatWidenMulPairwiseAdd·Accum / WidenMulAccum / SumsOfAdjQuadAbsDiff / OrderedDemote2To / ZeroExtendVector；**SumOfMulQuadAccumulate 已从 ~13× 追平**（根因 PromoteEvenTo/OddTo store+reload，已寄存器内向量化）。
