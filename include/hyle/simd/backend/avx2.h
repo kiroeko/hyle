@@ -175,7 +175,22 @@ HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
                                         VFromD<D>& v1) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  if constexpr (sizeof(T) >= 4) {
+  if constexpr (sizeof(T) == 4) {
+    // Highway's f32/i32 deinterleave: two in-lane vshufps (cheap, 88=even dwords, DD=odd) then one
+    // vpermq per result to fix the cross-128-lane order. Beats ConcatEven/Odd (each a full-width
+    // vpermps gather + a blend + a constant-table load) -- objdump: shufps+permq vs permps+blend
+    // was the ~1.34x LoadInterleaved2 loss.
+    const auto Av = LoadU(d, p), Bv = LoadU(d, p + N);
+    __m256 A, B;
+    if constexpr (std::is_same_v<T, float>) { A = Av.raw; B = Bv.raw; }
+    else { A = _mm256_castsi256_ps(Av.raw); B = _mm256_castsi256_ps(Bv.raw); }
+    const __m256 e = _mm256_shuffle_ps(A, B, _MM_SHUFFLE(2, 0, 2, 0));  // [A0 A2 B0 B2] per 128
+    const __m256 o = _mm256_shuffle_ps(A, B, _MM_SHUFFLE(3, 1, 3, 1));  // [A1 A3 B1 B3] per 128
+    const __m256i ei = _mm256_permute4x64_epi64(_mm256_castps_si256(e), _MM_SHUFFLE(3, 1, 2, 0));
+    const __m256i oi = _mm256_permute4x64_epi64(_mm256_castps_si256(o), _MM_SHUFFLE(3, 1, 2, 0));
+    if constexpr (std::is_same_v<T, float>) { v0.raw = _mm256_castsi256_ps(ei); v1.raw = _mm256_castsi256_ps(oi); }
+    else { v0.raw = ei; v1.raw = oi; }
+  } else if constexpr (sizeof(T) == 8) {
     const auto A = LoadU(d, p), B = LoadU(d, p + N);
     v0 = ConcatEven(B, A);   // even lanes = v0[]
     v1 = ConcatOdd(B, A);    // odd  lanes = v1[]
