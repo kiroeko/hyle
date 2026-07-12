@@ -738,6 +738,15 @@ HYLE_FORCE_INLINE VFromD<D> LoadExpand(M m, D d, const TFromD<D>* p) noexcept {
 template <class D, class VI>
 HYLE_FORCE_INLINE VFromD<D> GatherOffset(D d, const TFromD<D>* base, VI offsets) noexcept {
   using T = TFromD<D>;
+  using OffT = TFromD<DFromV<VI>>;
+  // avx2 32-bit: native vpgather with scale=1 (offset is a byte offset). Was a scalar byte-copy
+  // loop -- fine-ish on GCC (~1.2x) but MSVC didn't optimize it (~5x slower than Highway).
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_GATHER_OFFSET32)
+  if constexpr (sizeof(T) == 4 && sizeof(OffT) == 4) {
+    return NativeGatherOffset32(d, base, offsets);
+  } else
+#endif
+  {
   alignas(64) std::int64_t off[D::kMaxLanes];
   { alignas(64) typename VI::PrivateT tmp[D::kMaxLanes]; Store(offsets, DFromV<VI>(), tmp);
     for (std::size_t i = 0; i < Lanes(d); ++i) off[i] = static_cast<std::int64_t>(tmp[i]); }
@@ -746,6 +755,7 @@ HYLE_FORCE_INLINE VFromD<D> GatherOffset(D d, const TFromD<D>* base, VI offsets)
   for (std::size_t i = 0; i < Lanes(d); ++i) { T val; const auto* src = bytes + off[i];
     for (std::size_t b = 0; b < sizeof(T); ++b) reinterpret_cast<std::uint8_t*>(&val)[b] = src[b]; out[i] = val; }
   return Load(d, out);
+  }
 }
 template <class D, class VI>
 HYLE_FORCE_INLINE void ScatterOffset(VFromD<D> v, D d, TFromD<D>* base, VI offsets) noexcept {

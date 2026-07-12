@@ -2617,6 +2617,22 @@ HYLE_FORCE_INLINE detail::V256<D> NativeMaskedGatherOr32(
   }
   return r;
 }
+// Native byte-offset gather: _mm256_i32gather_* with scale=1 reads sizeof(T) bytes at base+off[i]
+// (off is a BYTE offset). 32-bit lanes with 32-bit offset only. Backs GatherOffset, which was a
+// generic scalar byte-copy loop (op_parity: MSVC ~5x slower than Highway; GCC ~1.2x).
+#define HYLE_SIMD_AVX2_HAS_NATIVE_GATHER_OFFSET32 1
+template <class D, typename OffT>
+  requires (sizeof(TFromD<D>) == 4 && sizeof(OffT) == 4)
+HYLE_FORCE_INLINE detail::V256<D> NativeGatherOffset32(
+    D, const TFromD<D>* base, Vec256<OffT, HYLE_SIMD_MAX_LANES_D(D)> off) noexcept {
+  using T = TFromD<D>;
+  detail::V256<D> r;
+  if constexpr (std::is_same_v<T, float>)
+    r.raw = _mm256_i32gather_ps(base, off.raw, 1);
+  else
+    r.raw = _mm256_i32gather_epi32(reinterpret_cast<const int*>(base), off.raw, 1);
+  return r;
+}
 // Store+reload reference kept accessible for the bench (native-vs-emulation A/B) + as the
 // fallback body above. Same result, different codegen -- gather_bench races the two.
 template <class D, typename IdxT>
