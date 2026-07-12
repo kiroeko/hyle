@@ -1382,16 +1382,11 @@ HYLE_FORCE_INLINE V HighestSetBitIndex(V v) noexcept {
 template <class D, class VI>
 HYLE_FORCE_INLINE VFromD<D> GatherIndexNOr(VFromD<D> no, D d, const TFromD<D>* base,
                                            VI index, std::size_t max_lanes) noexcept {
-  using T = TFromD<D>;
-  using IdxT = TFromD<DFromV<VI>>;
-  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T out[N];
-  alignas(64) IdxT idx[N];
-  Store(no, d, out);
-  Store(index, DFromV<VI>(), idx);
-  const std::size_t lo = max_lanes < N ? max_lanes : N;
-  for (std::size_t i = 0; i < lo; ++i) out[i] = base[static_cast<std::ptrdiff_t>(idx[i])];
-  return Load(d, out);
+  // = MaskedGatherIndexOr(no, FirstN(max_lanes), ...): the first max_lanes lanes gather, the rest
+  // stay `no`. FirstN's mask makes the tail fault-safe (inactive lanes never read memory), so on
+  // 32-bit this binds the native masked-gather backend overload (_mm256_mask_i32gather, ~2.5x over
+  // the old scalar store+reload loop); other widths fall back to the generic scalar MaskedGather.
+  return MaskedGatherIndexOr(no, FirstN(d, max_lanes), d, base, index);
 }
 template <class D, class VI>
 HYLE_FORCE_INLINE VFromD<D> GatherIndexN(D d, const TFromD<D>* base,

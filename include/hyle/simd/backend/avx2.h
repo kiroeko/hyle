@@ -2575,6 +2575,27 @@ HYLE_FORCE_INLINE detail::V256<D> GatherIndex(D d, const TFromD<D>* base,
     return Load(d, dst);
   }
 }
+// Native masked gather: _mm256_mask_i32gather_* takes off-mask lanes from `no` and does NOT read
+// their memory (fault-safe, like Highway's MaskedGatherIndex). The mask arg is a vector whose
+// per-lane MSB selects; VecFromMask gives all-ones lanes = MSB set. 32-bit lanes only; other widths
+// fall back to the generic scalar loop (in vec.h). This backs GatherIndexN/MaskedGatherIndex, which
+// were generic store+reload scalar loops (op_parity: 2.5x slower than Highway's native masked gather).
+template <class D, typename IdxT>
+  requires (sizeof(TFromD<D>) == 4 && sizeof(IdxT) == 4)
+HYLE_FORCE_INLINE detail::V256<D> MaskedGatherIndexOr(
+    detail::V256<D> no, Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D d, const TFromD<D>* base,
+    Vec256<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
+  using T = TFromD<D>;
+  detail::V256<D> r;
+  if constexpr (std::is_same_v<T, float>) {
+    const __m256 mv = _mm256_castsi256_ps(m.raw);  // mask lanes are all-ones -> MSB set
+    r.raw = _mm256_mask_i32gather_ps(no.raw, base, idx.raw, mv, 4);
+  } else {
+    r.raw = _mm256_mask_i32gather_epi32(no.raw, reinterpret_cast<const int*>(base), idx.raw,
+                                        m.raw, 4);
+  }
+  return r;
+}
 // Store+reload reference kept accessible for the bench (native-vs-emulation A/B) + as the
 // fallback body above. Same result, different codegen -- gather_bench races the two.
 template <class D, typename IdxT>
