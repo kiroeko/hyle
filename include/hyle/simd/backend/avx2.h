@@ -1416,18 +1416,17 @@ HYLE_FORCE_INLINE Vec256<T, N> ConcatEven(Vec256<T, N> hi, Vec256<T, N> lo) noex
   // [lo even lanes, hi even lanes]. NATIVE for 32-bit (8 lanes): vpermd gathers even lanes of each
   // (lo->low half, hi->high half) then blend. op_parity: store+reload was 1.7x slower.
   if constexpr (sizeof(T) == 4) {
-    const __m256i el = _mm256_setr_epi32(0, 2, 4, 6, 0, 0, 0, 0);  // lo's evens -> lanes 0..3
-    const __m256i eh = _mm256_setr_epi32(0, 0, 0, 0, 0, 2, 4, 6);  // hi's evens -> lanes 4..7
+    // [lo evens, hi evens] via shufps(88)+permq(D8) -- same deinterleave as LoadInterleaved2, cheaper
+    // than 2*vpermd(cross-lane gather)+blend (objdump: shufps+permq 2 insn vs permd*2+blend 3, and
+    // shufps is in-lane). shufps(lo,hi,2020) = [lo0 lo2 hi0 hi2] per 128; permq D8 fixes lane order.
+    __m256 L, H;
+    if constexpr (std::is_same_v<T, float>) { L = lo.raw; H = hi.raw; }
+    else { L = _mm256_castsi256_ps(lo.raw); H = _mm256_castsi256_ps(hi.raw); }
+    const __m256 s = _mm256_shuffle_ps(L, H, _MM_SHUFFLE(2, 0, 2, 0));
+    const __m256i p = _mm256_permute4x64_epi64(_mm256_castps_si256(s), _MM_SHUFFLE(3, 1, 2, 0));
     Vec256<T, N> r;
-    if constexpr (std::is_same_v<T, float>) {
-      const __m256 pl = _mm256_permutevar8x32_ps(lo.raw, el);
-      const __m256 ph = _mm256_permutevar8x32_ps(hi.raw, eh);
-      r.raw = _mm256_blend_ps(pl, ph, 0xF0);
-    } else {
-      const __m256i pl = _mm256_permutevar8x32_epi32(lo.raw, el);
-      const __m256i ph = _mm256_permutevar8x32_epi32(hi.raw, eh);
-      r.raw = _mm256_blend_epi32(pl, ph, 0xF0);
-    }
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_castsi256_ps(p);
+    else r.raw = p;
     return r;
   }
   alignas(32) T sl[N], sh[N], dst[N];
@@ -1437,20 +1436,18 @@ HYLE_FORCE_INLINE Vec256<T, N> ConcatEven(Vec256<T, N> hi, Vec256<T, N> lo) noex
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ConcatOdd(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
-  // [lo odd lanes, hi odd lanes]. NATIVE for 32-bit (vpermd odd-index gather + blend).
+  // [lo odd lanes, hi odd lanes] via shufps(DD)+permq(D8) -- mirror of ConcatEven (odd dwords 1,3),
+  // cheaper than 2*vpermd(cross-lane gather)+blend. shufps(lo,hi,3131) = [lo1 lo3 hi1 hi3] per 128;
+  // permq D8 fixes lane order to [lo odds..., hi odds...].
   if constexpr (sizeof(T) == 4) {
-    const __m256i ol = _mm256_setr_epi32(1, 3, 5, 7, 0, 0, 0, 0);
-    const __m256i oh = _mm256_setr_epi32(0, 0, 0, 0, 1, 3, 5, 7);
+    __m256 L, H;
+    if constexpr (std::is_same_v<T, float>) { L = lo.raw; H = hi.raw; }
+    else { L = _mm256_castsi256_ps(lo.raw); H = _mm256_castsi256_ps(hi.raw); }
+    const __m256 s = _mm256_shuffle_ps(L, H, _MM_SHUFFLE(3, 1, 3, 1));
+    const __m256i p = _mm256_permute4x64_epi64(_mm256_castps_si256(s), _MM_SHUFFLE(3, 1, 2, 0));
     Vec256<T, N> r;
-    if constexpr (std::is_same_v<T, float>) {
-      const __m256 pl = _mm256_permutevar8x32_ps(lo.raw, ol);
-      const __m256 ph = _mm256_permutevar8x32_ps(hi.raw, oh);
-      r.raw = _mm256_blend_ps(pl, ph, 0xF0);
-    } else {
-      const __m256i pl = _mm256_permutevar8x32_epi32(lo.raw, ol);
-      const __m256i ph = _mm256_permutevar8x32_epi32(hi.raw, oh);
-      r.raw = _mm256_blend_epi32(pl, ph, 0xF0);
-    }
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_castsi256_ps(p);
+    else r.raw = p;
     return r;
   }
   alignas(32) T sl[N], sh[N], dst[N];
