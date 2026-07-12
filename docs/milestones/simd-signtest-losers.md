@@ -1,4 +1,24 @@
-# SIMD 配对符号检验揪出的真输清单（2026-07-12）
+# SIMD 配对符号检验揪出的真输清单（2026-07-12，2026-07-13 复扫更新）
+
+## 2026-07-13 复扫（补全 bench 覆盖后重跑，含极性纠正）
+
+**⚠️极性纠正（重要）**：`bench-stat.py --pair HYLE Highway` 的 ratio = **rival(Highway) op/s ÷ base(HYLE) op/s**，且 `[sign]WIN/LOSE` 是**从 rival 视角**：`[sign]WIN`(ratio>1, Highway op/s 更高)= **HYLE 慢=HYLE 真输**；`[sign]LOSE`(ratio<1)= Highway 慢 = **HYLE 赢**。（本轮一度读反，用原始 ns/op 核对纠正：如 LoadExpand HYLE 0.633 vs Highway 1.360=HYLE 快，工具标 LOSE=Highway 输。）
+
+**补 bench 覆盖揪出的隐藏真输（directive 三点闭环范例）**：覆盖审计(377 op/276 已对拍/101 缺口)→ 补 15 高价值缺口 bench 行 → sign-sweep 立即揪出 **SumsOf2 9.1× / SumsOf4 8.6×**（三后端全 store+reload 标量循环，此前无 bench 完全隐形）→ 全部照 Highway 追平（avx2/sse4=PromoteEven/Odd+Add，neon=vpaddlq_u8 一条）→ TIE。**坐实"覆盖不足=真输隐形"，补 bench 是发现工具不只背书。**
+
+**本轮全 avx2 sweep 的 HYLE 真输(rival WIN)完整清单 + 处置**：
+| op | ratio(H/H) | 处置 |
+|---|---:|---|
+| CompressStore / CompressBlendedStore i32 | 3.4× / 3.1× | **契约差异非可修**：Compress 本体 native vpermd 已 TIE(0.108 vs 0.110，超 xsimd 7×)；CompressStore 慢=HYLE **精确写契约**(只写 CountTrue 个，尾部不碰)vs Highway 整向量写。AVX2 无 native compress-store，精确写只能标量 pack。契约优先，`StoreU(Compress(v,m))` 可取 Highway 语义的平。**保留强契约。** |
+| GatherIndexN / GatherIndexNOr i32 | 2.57× | ✅ **已追平**→native masked gather(`_mm256_mask_i32gather`+FirstN 掩码 fault-safe)，0.46→0.18ns TIE |
+| SumsOf2 / SumsOf4 u8 | 9.1× / 8.6× | ✅ **已追平**(见上，补 bench 揪出)，三后端 |
+| LoadNOr i32 (half n) | 1.49× | native maskload 已用(9.6→1.5×)；残留需 Highway 递归二分(sub-128 partial-load 基础设施)，登记 |
+| GatherOffset i32 | 1.18× | 可 native vpgather(scale=1 byte-offset)追，但内存-bound 收益小，登记 |
+| FindKnownLastTrue 1.26 / IsNegative 1.19 / TrailingZeroCount 1.11 / HighestSetBitIndex 1.11 / FindLastTrue 1.07 / MinNumber 1.05 / MaxNumber 1.07 / Max128 1.04 / Eq128 1.02 / Lt128Upper 1.06 / MaskedShift 1.03 / MaskedModOr 1.03 / Mod 1.02 / RoundingShr 1.05 / BitShuffle 1.03 / CombineMasks 1.17 / MaskedApproxReciprocalSqrt 1.05 / ConcatLowerLower 1.08 / MultiRotateRight 1.09(已从 2.9×) | **内存-bound 掩盖 ALU 差 / 布局伪影**：`Load+单op+Store` 循环里多几条 ALU 藏在 load/store 延迟下(第五道关)；这些 objdump codegen 相同或 compute-bound 复测反 WIN(MinNumber compute-bound 1.8×WIN 铁证)。**低优先，多数不该动。** |
+
+---
+
+# SIMD 配对符号检验揪出的真输清单（2026-07-12 原始）
 
 > 用户揪出旧 bench-stat "gap>spreadA+spreadB" 绝对判据把真输淹成平（同机噪声相关，ratio 远比绝对 spread 稳）。已加**配对符号检验**（`scripts/bench-stat.py` 的 `[sign]` 列：N 次 run 里 ratio 一致同侧、二项 p<0.01 即真输，无视绝对 spread）。以下是三平台全 sweep（op_parity full/parity/widen）在符号检验下的真输（HYLE 慢）清单，按 ratio 排序。
 >
