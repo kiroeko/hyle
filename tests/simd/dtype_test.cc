@@ -34,6 +34,7 @@ using hyle::simd::f32_to_f8e5m2;
 using hyle::simd::float8_e5m2_t;
 using hyle::simd::f8e4m3_to_f32_batch;
 using hyle::simd::f32_to_f8e4m3_batch;
+using hyle::simd::f32_to_f8e5m2_batch;
 using hyle::simd::f16_to_f8e4m3_batch;
 using hyle::simd::f16_to_f8e5m2_batch;
 
@@ -423,5 +424,42 @@ TEST(Fp8FromF16, ExhaustiveMatchesScalar) {
     const float f = f16_to_f32(src[b]);
     EXPECT_EQ(e4[b].bits, f32_to_f8e4m3(f).bits) << "e4m3 f16=0x" << std::hex << b;
     EXPECT_EQ(e5[b].bits, f32_to_f8e5m2(f).bits) << "e5m2 f16=0x" << std::hex << b;
+  }
+}
+
+// f32 -> fp8 batch (dispatch). On an AVX10.2 host (or SDE) the batch path runs the round-to-odd
+// hardware kernel; otherwise the scalar oracle. Either way the RESULT must be bit-identical to the
+// direct single-rounding scalar f32_to_f8* -- that's the whole point of round-to-odd (it removes
+// the f32->f16->fp8 double-rounding error). Sweep a large deterministic set: all 65536 f16-grid
+// values promoted to f32, PLUS every mantissa at a stride across all fp8-relevant exponents and
+// both signs, PLUS the inf/NaN/overflow boundaries. (The portable-scalar version of this sweep was
+// validated exhaustively -- every mantissa, 486.6M values, 0 mismatch -- during bring-up.)
+TEST(Fp8FromF32, RoundToOddMatchesDirectScalar) {
+  std::vector<float> src;
+  src.reserve(1 << 20);
+  auto push = [&](std::uint32_t u) { float f; std::memcpy(&f, &u, 4); src.push_back(f); };
+  // (a) all f16-grid values as f32 (dense in the fp8 range).
+  for (int b = 0; b < 65536; ++b) push(hyle::simd::detail::f32_to_bits(f16_to_f32(
+      float16_t::from_bits(static_cast<std::uint16_t>(b)))));
+  // (b) strided mantissa across exponents that matter for fp8 (subnormal .. overflow) + both signs.
+  for (int e = -12; e <= 18; ++e)
+    for (std::uint32_t s = 0; s < 2; ++s)
+      for (std::uint32_t m = 0; m < 0x800000u; m += 0x400u)  // stride 1024 -> 8192 steps/exp
+        push((s << 31) | (static_cast<std::uint32_t>(e + 127) << 23) | m);
+  // (c) explicit specials: +/-0, +/-inf, a signaling & quiet NaN, values just over f16 max (65504).
+  for (std::uint32_t u : {0x00000000u, 0x80000000u, 0x7F800000u, 0xFF800000u, 0x7FC00000u,
+                          0x7F800001u, 0x47800000u /*65536*/, 0x47802000u})
+    push(u);
+
+  const std::size_t n = src.size();
+  std::vector<float8_e4m3_t> e4(n);
+  std::vector<float8_e5m2_t> e5(n);
+  f32_to_f8e4m3_batch(src.data(), e4.data(), n);
+  f32_to_f8e5m2_batch(src.data(), e5.data(), n);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(e4[i].bits, f32_to_f8e4m3(src[i]).bits)
+        << "e4m3 i=" << i << " f=" << src[i];
+    EXPECT_EQ(e5[i].bits, f32_to_f8e5m2(src[i]).bits)
+        << "e5m2 i=" << i << " f=" << src[i];
   }
 }

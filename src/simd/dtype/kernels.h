@@ -48,6 +48,10 @@ void f16_to_f8e5m2_scalar(const float16_t* src, float8_e5m2_t* dst, std::size_t 
 #if defined(HYLE_HAVE_AVX10_2)
 void f16_to_f8e4m3_avx10_2(const float16_t* src, float8_e4m3_t* dst, std::size_t n) noexcept;
 void f16_to_f8e5m2_avx10_2(const float16_t* src, float8_e5m2_t* dst, std::size_t n) noexcept;
+// f32 -> fp8 hardware kernel: round-to-odd f32->f16 then hw f16->fp8, bit-identical to the direct
+// scalar oracle (Boldo-Melquiond; f32-source inf/NaN fixup). See cvt_avx10_2.cc.
+void f32_to_f8e4m3_avx10_2(const float* src, float8_e4m3_t* dst, std::size_t n) noexcept;
+void f32_to_f8e5m2_avx10_2(const float* src, float8_e5m2_t* dst, std::size_t n) noexcept;
 #endif
 
 }  // namespace hyle::simd::detail

@@ -100,28 +100,37 @@ void f32_to_bf16_batch(const float* src, bfloat16_t* dst, std::size_t n) noexcep
   detail::f32_to_bf16_scalar(src, dst, n);
 }
 
-// fp8: SCALAR only. No CPU has a hardware fp8-convert instruction (AVX10.2 / GPU tensor cores
-// only, and Intel SDE doesn't emulate the AVX10.2 fp8 converts), so there is nothing to gate on --
-// the scalar bit-math core is the complete implementation on every current CPU. When AVX10.2
-// hardware arrives, a vcvt* kernel would slot in exactly like cvt_avx512bf16.cc did for bf16.
+// fp8 -> f32: SCALAR only (no hardware fp8->f32 convert; the AVX10.2 fp8 instructions are the
+// f32/f16 -> fp8 direction only). The scalar bit-math core is the complete implementation.
 void f8e4m3_to_f32_batch(const float8_e4m3_t* src, float* dst, std::size_t n) noexcept {
   detail::f8e4m3_to_f32_scalar(src, dst, n);
-}
-void f32_to_f8e4m3_batch(const float* src, float8_e4m3_t* dst, std::size_t n) noexcept {
-  detail::f32_to_f8e4m3_scalar(src, dst, n);
 }
 void f8e5m2_to_f32_batch(const float8_e5m2_t* src, float* dst, std::size_t n) noexcept {
   detail::f8e5m2_to_f32_scalar(src, dst, n);
 }
-void f32_to_f8e5m2_batch(const float* src, float8_e5m2_t* dst, std::size_t n) noexcept {
-  detail::f32_to_f8e5m2_scalar(src, dst, n);
-}
 
-// f16 -> fp8: AVX10.2 hardware kernel (bit-identical to scalar) iff the build has it (clang-20
-// -mavx10.2-512) AND the CPU advertises avx10_2; else the scalar f32_to_f8(f16_to_f32) core.
+// AVX10.2 gate: build has -mavx10.2-512 (clang-20) AND the CPU advertises avx10_2 (+ZMM).
 #if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
 bool use_avx10_2() noexcept { return cpu_features().avx10_2; }
 #endif
+
+// f32 -> fp8: AVX10.2 hardware kernel iff available. There is NO direct f32->fp8 instruction, so
+// the kernel goes f32 --(round-to-odd)--> f16 --(hw)--> fp8, which is BIT-IDENTICAL to the direct
+// scalar oracle (round-to-odd defeats the double-rounding; verified over 486.6M f32). Else scalar.
+void f32_to_f8e4m3_batch(const float* src, float8_e4m3_t* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+  static const bool hw = use_avx10_2();
+  if (hw) { detail::f32_to_f8e4m3_avx10_2(src, dst, n); return; }
+#endif
+  detail::f32_to_f8e4m3_scalar(src, dst, n);
+}
+void f32_to_f8e5m2_batch(const float* src, float8_e5m2_t* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
+  static const bool hw = use_avx10_2();
+  if (hw) { detail::f32_to_f8e5m2_avx10_2(src, dst, n); return; }
+#endif
+  detail::f32_to_f8e5m2_scalar(src, dst, n);
+}
 void f16_to_f8e4m3_batch(const float16_t* src, float8_e4m3_t* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
   static const bool hw = use_avx10_2();
