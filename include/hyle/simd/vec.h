@@ -681,9 +681,12 @@ template <class D> HYLE_FORCE_INLINE VFromD<D> MaxOfLanes(D d, VFromD<D> v) noex
 // Rol/Ror: Highway's short names for RotateLeft/RotateRight<kBits> (bit rotate per lane).
 template <int kBits, class V> HYLE_FORCE_INLINE V Rol(V v) noexcept { return RotateLeft<kBits>(v); }
 template <int kBits, class V> HYLE_FORCE_INLINE V Ror(V v) noexcept { return RotateRight<kBits>(v); }
-// TestBit(v, bit): mask true where lane has bit `bit` set. = Ne(And(v, bit), 0).
+// TestBit(v, bit): mask true where lane has ALL bits of `bit` set (Highway contract: (v&bit)==bit).
+// Eq(And(v,bit),bit) is ONE compare; Ne(And(v,bit),0) was compare-vs-0 + a NOT (x86 has no integer
+// cmpne) -- the extra NOT lost ~1.14x to Highway (isolated -n15, sink-based so spread was small
+// enough to resolve). For the common single-bit `bit` the two forms are equivalent.
 template <class V> HYLE_FORCE_INLINE auto TestBit(V v, V bit) noexcept {
-  return Ne(And(v, bit), Zero(DFromV<V>()));
+  return Eq(And(v, bit), bit);
 }
 // RoundingShiftRight<kBits>(v): >> kBits with round-half-up -- add the bias 2^(kBits-1) then
 // ShiftRight<kBits> (both existing ops). Fixed-point rounding shift. kBits >= 1.
