@@ -1563,7 +1563,17 @@ HYLE_FORCE_INLINE bool AllFalse(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::size_t CountTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
-  return static_cast<std::size_t>(std::popcount(detail::mask_bits(m)));
+  // A mask lane is all-ones(-1)/0, so -sum(lanes) == number of true lanes. One horizontal add-across
+  // (vaddvq) beats extracting a bitfield then popcount (op_parity -n15: mask_bits+popcount was ~1.4x
+  // Highway, which uses this negate+addv). Full N only; partial falls back to the bitfield count.
+  if constexpr (N == 16 / sizeof(T)) {
+    if constexpr (sizeof(T) == 1) return static_cast<std::size_t>(vaddvq_s8(vnegq_s8(vreinterpretq_s8_u8(m.raw))));
+    else if constexpr (sizeof(T) == 2) return static_cast<std::size_t>(vaddvq_s16(vnegq_s16(vreinterpretq_s16_u16(m.raw))));
+    else if constexpr (sizeof(T) == 4) return static_cast<std::size_t>(vaddvq_s32(vnegq_s32(vreinterpretq_s32_u32(m.raw))));
+    else return static_cast<std::size_t>(vaddvq_s64(vnegq_s64(vreinterpretq_s64_u64(m.raw))));
+  } else {
+    return static_cast<std::size_t>(std::popcount(detail::mask_bits(m)));
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
