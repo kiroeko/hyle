@@ -1668,6 +1668,14 @@ HYLE_FORCE_INLINE Mask128<T, N> MaskFromVec(Vec128<T, N> v) noexcept {
   else m.raw = _mm_cmpgt_epi8(_mm_setzero_si128(), v.raw);  // i8: 0 > v  <=> v's sign set
   return m;
 }
+// MaskFromNormalizedVec: caller GUARANTEES v is already canonical all-ones/all-zero (e.g. PromoteTo/
+// OrderedDemote2To of a mask vector). Skips MaskFromVec's redundant srai. Mask128::raw IS the vec raw.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> MaskFromNormalizedVec(Vec128<T, N> v) noexcept {
+  Mask128<T, N> m;
+  m.raw = v.raw;
+  return m;
+}
 
 // mask <-> bits (reuse the mask_bits movemask helper).
 template <class D>

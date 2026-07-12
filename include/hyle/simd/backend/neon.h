@@ -1633,6 +1633,25 @@ HYLE_FORCE_INLINE MaskNeon<T, N> MaskFromVec(VecNeon<T, N> v) noexcept {
     m.raw = vreinterpretq_u64_s64(vshrq_n_s64(vreinterpretq_s64_u64(v.raw), 63));
   return m;
 }
+// MaskFromNormalizedVec: caller GUARANTEES v is already canonical all-ones/all-zero (PromoteTo/
+// OrderedDemote2To of a mask vector). Skips MaskFromVec's vshrq normalization; only reinterprets the
+// vector raw to the mask's unsigned-same-width raw (no instruction). Removes the redundant shift that
+// left the vector-domain PromoteMaskTo/OrderedDemote2MasksTo ~1.2x Highway.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskNeon<T, N> MaskFromNormalizedVec(VecNeon<T, N> v) noexcept {
+  MaskNeon<T, N> m;  // reinterpret the vector raw to the mask's unsigned-same-width raw (no shift).
+  if constexpr (std::is_same_v<T, float>) m.raw = vreinterpretq_u32_f32(v.raw);
+  else if constexpr (std::is_same_v<T, double>) m.raw = vreinterpretq_u64_f64(v.raw);
+  else if constexpr (std::is_same_v<T, std::int8_t>) m.raw = vreinterpretq_u8_s8(v.raw);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) m.raw = v.raw;
+  else if constexpr (std::is_same_v<T, std::int16_t>) m.raw = vreinterpretq_u16_s16(v.raw);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) m.raw = v.raw;
+  else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vreinterpretq_u32_s32(v.raw);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) m.raw = v.raw;
+  else if constexpr (std::is_same_v<T, std::int64_t>) m.raw = vreinterpretq_u64_s64(v.raw);
+  else m.raw = v.raw;  // u64
+  return m;
+}
 
 // ---- mask-domain logic (combine predicates for vectorized-loop control flow) --------
 // Boolean ops directly on masks (Highway And/Or/Xor/AndNot/Not/ExclusiveNeither). NEON's mask

@@ -1739,6 +1739,17 @@ HYLE_FORCE_INLINE Mask256<T, N> MaskFromVec(Vec256<T, N> v) noexcept {
   else m.raw = _mm256_cmpgt_epi8(_mm256_setzero_si256(), v.raw);  // i8: 0 > v  <=> v's sign set
   return m;
 }
+// MaskFromNormalizedVec: build a mask from a vector the caller GUARANTEES is already a canonical
+// all-ones/all-zero lane pattern (e.g. the output of PromoteTo/OrderedDemote2To applied to a mask
+// vector -- sign-extend/pack of -1/0 stays -1/0). Skips MaskFromVec's srai normalization (which is
+// redundant here) -- Mask256::raw IS the vector raw. Removes the extra vpsraw/vpsrad that made the
+// vector-domain PromoteMaskTo/OrderedDemote2MasksTo ~1.2x Highway despite the right algorithm.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask256<T, N> MaskFromNormalizedVec(Vec256<T, N> v) noexcept {
+  Mask256<T, N> m;
+  m.raw = v.raw;  // identity: raw types match, caller guarantees canonical pattern
+  return m;
+}
 
 // mask <-> bits (reuse the mask_bits movemask helper, 1 bit/lane).
 template <class D>

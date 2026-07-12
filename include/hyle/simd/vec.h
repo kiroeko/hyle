@@ -1248,12 +1248,16 @@ HYLE_FORCE_INLINE MFromD<DTo> PromoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom
   // same lane count N -> native vpmovsx). Spell full SIGNED narrow/wide tags (kPow2=0) so no
   // partial-Rebind BitCast is needed (mask type keys on (T,N) only). Signed is REQUIRED: unsigned
   // promote would zero-extend 0xFFFF->0x0000FFFF, corrupting the wide all-ones lane.
-  using TNarrow = MakeSigned<TFromD<DFrom>>;
+  // VecFromMask(d_from, m) is a no-op (mask raw IS the canonical -1/0 vector); BitCast to the signed
+  // narrow tag is a no-op int reinterpret. PromoteTo sign-extends (-1 stays -1). The promoted vector
+  // is STILL canonical, so MaskFromNormalizedVec skips MaskFromVec's redundant srai -- avoids the two
+  // extra vpsraw/vpsrad the RebindMask+MaskFromVec round-trip emitted (objdump-confirmed) to tie
+  // Highway's cmpgt->vpmovsxwd 5-instruction body.
   using TWide = MakeSigned<TFromD<DTo>>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(DFrom);
-  const Simd<TNarrow, kN, 0> di_from;
+  const Simd<MakeSigned<TFromD<DFrom>>, kN, 0> di_from;
   const Simd<TWide, kN, 0> dw;
-  return MaskFromVec(PromoteTo(dw, VecFromMask(di_from, RebindMask(di_from, m))));
+  return MaskFromNormalizedVec(PromoteTo(dw, BitCast(di_from, VecFromMask(d_from, m))));
 #endif
 }
 template <class DTo, class DFrom>
@@ -1294,13 +1298,15 @@ HYLE_FORCE_INLINE MFromD<DTo> OrderedDemote2MasksTo(DTo d_to, DFrom d_from, MFro
   // single biggest mask loser). Two masks' vectors (all-ones/-1) modular-narrow-interleave via the
   // existing OrderedDemote2To into [a-lanes..., b-lanes...]; -1 truncates to -1 (narrow all-ones),
   // 0 to 0. Signed narrow/wide tags (kPow2=0) so no partial-Rebind BitCast (mask keys on (T,N) only).
+  // VecFromMask(d_from,·) no-op + BitCast to signed wide (no-op int reinterpret); OrderedDemote2To
+  // packs the -1/0 lanes (stays canonical); MaskFromNormalizedVec skips the redundant srai.
   using TWide = MakeSigned<TFromD<DFrom>>;
   using TNarrow = MakeSigned<TFromD<DTo>>;
   constexpr std::size_t kNw = HYLE_SIMD_MAX_LANES_D(DFrom);
   const Simd<TWide, kNw, 0> dwide;
   const Simd<TNarrow, 2 * kNw, 0> dnarrow;
-  return MaskFromVec(OrderedDemote2To(dnarrow, VecFromMask(dwide, RebindMask(dwide, a)),
-                                                VecFromMask(dwide, RebindMask(dwide, b))));
+  return MaskFromNormalizedVec(OrderedDemote2To(dnarrow, BitCast(dwide, VecFromMask(d_from, a)),
+                                                         BitCast(dwide, VecFromMask(d_from, b))));
 #endif
 }
 
