@@ -1501,21 +1501,27 @@ namespace detail {
 // produce full-lane masks), so the lane's low byte bit represents the whole lane.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE unsigned mask_bits(Mask128<T, N> m) noexcept {
-  if constexpr (std::is_same_v<T, double>)
+  // Width-matched movemask so EVERY lane width is ONE instruction, not movemask_epi8 + a scalar
+  // bit-compaction loop (mirrors the avx2 fix: 4-byte -> movemask_ps, 8-byte -> movemask_pd). A mask
+  // lane is all-ones/all-zero so its SIGN bit represents it. Only 2-byte lanes lack a native
+  // movemask and keep the byte-mask compaction. Removes the ~N-iteration scalar tail that dominated
+  // every sse4 CountTrue/FindFirstTrue/Compress/mask-op (op_parity: was ~2.5x slower than Highway).
+  if constexpr (std::is_same_v<T, double>) {
     return static_cast<unsigned>(_mm_movemask_pd(m.raw));
-  else if constexpr (std::is_same_v<T, float>)
+  } else if constexpr (std::is_same_v<T, float>) {
     return static_cast<unsigned>(_mm_movemask_ps(m.raw));
-  else {
-    const unsigned bytes = static_cast<unsigned>(_mm_movemask_epi8(m.raw));  // 16 bits
-    if constexpr (sizeof(T) == 1) {
-      return bytes;  // 16 lanes, 1 bit/byte already
-    } else {
-      // Keep every sizeof(T)-th bit (the low byte of each lane), compacting to N bits.
-      unsigned out = 0;
-      for (std::size_t i = 0; i < N; ++i)
-        out |= ((bytes >> (i * sizeof(T))) & 1u) << i;
-      return out;
-    }
+  } else if constexpr (sizeof(T) == 8) {  // i64/u64 raw is __m128i -> reinterpret to pd
+    return static_cast<unsigned>(_mm_movemask_pd(_mm_castsi128_pd(m.raw)));
+  } else if constexpr (sizeof(T) == 4) {  // i32/u32 raw is __m128i -> reinterpret to ps
+    return static_cast<unsigned>(_mm_movemask_ps(_mm_castsi128_ps(m.raw)));
+  } else if constexpr (sizeof(T) == 1) {
+    return static_cast<unsigned>(_mm_movemask_epi8(m.raw));  // 16 lanes, 1 bit/byte already
+  } else {  // 2-byte lanes: no native 16-bit movemask -> byte-mask + compact every 2nd bit.
+    const unsigned bytes = static_cast<unsigned>(_mm_movemask_epi8(m.raw));
+    unsigned out = 0;
+    for (std::size_t i = 0; i < N; ++i)
+      out |= ((bytes >> (i * sizeof(T))) & 1u) << i;
+    return out;
   }
 }
 }  // namespace detail

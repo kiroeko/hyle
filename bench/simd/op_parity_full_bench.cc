@@ -363,14 +363,14 @@ int main(){
     b.run("HYLE", [&]{
       for(std::size_t i=0;i+hwu<=kN;i+=hwu) {
         auto r = hs::TruncateTo(hdn, hs::LoadU(hdu, ua.data()+i));
-        hs::Store(r, hs::DFromV<decltype(r)>{}, uo.data()+i);
+        hs::StoreU(r, hs::DFromV<decltype(r)>{}, uo.data()+i);
       }
       nb::doNotOptimizeAway(uo.data());
     });
     b.run("Highway", [&]{
       for(std::size_t i=0;i+gwu<=kN;i+=gwu) {
         auto r = hn::TruncateTo(gdn, hn::LoadU(gdu, ua.data()+i));
-        hn::Store(r, hn::DFromV<decltype(r)>{}, uo.data()+i);
+        hn::StoreU(r, hn::DFromV<decltype(r)>{}, uo.data()+i);
       }
       nb::doNotOptimizeAway(uo.data());
     });
