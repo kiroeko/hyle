@@ -551,5 +551,506 @@ int main() {
     nb::doNotOptimizeAway(bsink);
   }
 
+  // ---- 21. TableLookupLanes / TwoTablesLookupLanes / SetTableIndices (cross-lane permute) ----
+  {
+    std::vector<std::int32_t> idx(kN), ib(kN);
+    { std::mt19937_64 rng(31); std::uniform_int_distribution<int> d(0, static_cast<int>(hw) - 1);
+      for (std::size_t i = 0; i < kN; ++i) idx[i] = d(rng);
+      d = std::uniform_int_distribution<int>(0, static_cast<int>(2 * hw) - 1);
+      for (std::size_t i = 0; i < kN; ++i) ib[i] = d(rng); }
+    const auto table2 = geni(kN, 32);
+    {
+      nb::Bench bench; bench.title("TableLookupLanes i32 (4096)").relative(true).batch(kN).minEpochIterations(5000);
+      bench.run("HYLE", [&] {
+        for (std::size_t i = 0; i + hw <= kN; i += hw) {
+          auto v = hs::LoadU(hdi, ia.data() + i);
+          auto ind = hs::SetTableIndices(hdi, idx.data() + i);
+          hs::StoreU(hs::TableLookupLanes(v, ind), hdi, iout.data() + i);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+      bench.run("Highway", [&] {
+        for (std::size_t i = 0; i + gw <= kN; i += gw) {
+          auto v = hn::LoadU(gdi, ia.data() + i);
+          auto ind = hn::SetTableIndices(gdi, idx.data() + i);
+          hn::StoreU(hn::TableLookupLanes(v, ind), gdi, iout.data() + i);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+    }
+    {
+      nb::Bench bench; bench.title("TwoTablesLookupLanes i32 (4096)").relative(true).batch(kN).minEpochIterations(5000);
+      bench.run("HYLE", [&] {
+        for (std::size_t i = 0; i + hw <= kN; i += hw) {
+          auto a0 = hs::LoadU(hdi, ia.data() + i), a1 = hs::LoadU(hdi, table2.data() + i);
+          auto ind = hs::SetTableIndices(hdi, ib.data() + i);
+          hs::StoreU(hs::TwoTablesLookupLanes(hdi, a0, a1, ind), hdi, iout.data() + i);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+      bench.run("Highway", [&] {
+        for (std::size_t i = 0; i + gw <= kN; i += gw) {
+          auto a0 = hn::LoadU(gdi, ia.data() + i), a1 = hn::LoadU(gdi, table2.data() + i);
+          auto ind = hn::SetTableIndices(gdi, ib.data() + i);
+          hn::StoreU(hn::TwoTablesLookupLanes(gdi, a0, a1, ind), gdi, iout.data() + i);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+    }
+  }
+
+  // ---- 22. ScatterIndex / CompressStore / MaskedLoad / MaskedLoadOr / BlendedStore / LoadN / StoreN ----
+  {
+    std::vector<std::int32_t> table(kN, 0), idxbuf(kN);
+    { std::mt19937_64 rng(33); std::uniform_int_distribution<int> d(0, kN - 1); for (auto& e : idxbuf) e = d(rng); }
+    const auto imask = geni(kN, 34);
+    {
+      nb::Bench bench; bench.title("ScatterIndex i32 (4096)").relative(true).batch(kN).minEpochIterations(3000);
+      bench.run("HYLE", [&] {
+        for (std::size_t i = 0; i + hw <= kN; i += hw)
+          hs::ScatterIndex(hs::LoadU(hdi, ia.data() + i), hdi, table.data(), hs::LoadU(hdi, idxbuf.data() + i));
+        nb::doNotOptimizeAway(table.data());
+      });
+      bench.run("Highway", [&] {
+        for (std::size_t i = 0; i + gw <= kN; i += gw)
+          hn::ScatterIndex(hn::LoadU(gdi, ia.data() + i), gdi, table.data(), hn::LoadU(gdi, idxbuf.data() + i));
+        nb::doNotOptimizeAway(table.data());
+      });
+    }
+    {
+      volatile std::size_t written = 0;
+      nb::Bench bench; bench.title("CompressStore i32 (4096, 50%)").relative(true).batch(kN).minEpochIterations(3000);
+      bench.run("HYLE", [&] {
+        std::size_t pos = 0;
+        for (std::size_t i = 0; i + hw <= kN; i += hw) {
+          auto v = hs::LoadU(hdi, ia.data() + i);
+          auto m = hs::Gt(hs::LoadU(hdi, imask.data() + i), hs::Set(hdi, 0));
+          pos += hs::CompressStore(v, m, hdi, iout.data() + pos);
+          if (pos + hw > kN) pos = 0;
+        }
+        written = pos;
+      });
+      bench.run("Highway", [&] {
+        std::size_t pos = 0;
+        for (std::size_t i = 0; i + gw <= kN; i += gw) {
+          auto v = hn::LoadU(gdi, ia.data() + i);
+          auto m = hn::Gt(hn::LoadU(gdi, imask.data() + i), hn::Set(gdi, 0));
+          pos += hn::CompressStore(v, m, gdi, iout.data() + pos);
+          if (pos + gw > kN) pos = 0;
+        }
+        written = pos;
+      });
+      nb::doNotOptimizeAway(written);
+    }
+    {
+      nb::Bench bench; bench.title("MaskedLoad i32 (4096, 50%)").relative(true).batch(kN).minEpochIterations(5000);
+      bench.run("HYLE", [&] {
+        for (std::size_t i = 0; i + hw <= kN; i += hw) {
+          auto m = hs::Gt(hs::LoadU(hdi, imask.data() + i), hs::Set(hdi, 0));
+          hs::StoreU(hs::MaskedLoad(m, hdi, ia.data() + i), hdi, iout.data() + i);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+      bench.run("Highway", [&] {
+        for (std::size_t i = 0; i + gw <= kN; i += gw) {
+          auto m = hn::Gt(hn::LoadU(gdi, imask.data() + i), hn::Set(gdi, 0));
+          hn::StoreU(hn::MaskedLoad(m, gdi, ia.data() + i), gdi, iout.data() + i);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+    }
+    {
+      nb::Bench bench; bench.title("MaskedLoadOr i32 (4096)").relative(true).batch(kN).minEpochIterations(5000);
+      bench.run("HYLE", [&] {
+        for (std::size_t i = 0; i + hw <= kN; i += hw) {
+          auto m = hs::Gt(hs::LoadU(hdi, imask.data() + i), hs::Set(hdi, 0));
+          hs::StoreU(hs::MaskedLoadOr(hs::Set(hdi, -77), m, hdi, ia.data() + i), hdi, iout.data() + i);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+      bench.run("Highway", [&] {
+        for (std::size_t i = 0; i + gw <= kN; i += gw) {
+          auto m = hn::Gt(hn::LoadU(gdi, imask.data() + i), hn::Set(gdi, 0));
+          hn::StoreU(hn::MaskedLoadOr(hn::Set(gdi, -77), m, gdi, ia.data() + i), gdi, iout.data() + i);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+    }
+    {
+      nb::Bench bench; bench.title("BlendedStore i32 (4096, 50%)").relative(true).batch(kN).minEpochIterations(5000);
+      bench.run("HYLE", [&] {
+        for (std::size_t i = 0; i + hw <= kN; i += hw) {
+          auto m = hs::Gt(hs::LoadU(hdi, imask.data() + i), hs::Set(hdi, 0));
+          hs::BlendedStore(hs::LoadU(hdi, ia.data() + i), m, hdi, iout.data() + i);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+      bench.run("Highway", [&] {
+        for (std::size_t i = 0; i + gw <= kN; i += gw) {
+          auto m = hn::Gt(hn::LoadU(gdi, imask.data() + i), hn::Set(gdi, 0));
+          hn::BlendedStore(hn::LoadU(gdi, ia.data() + i), m, gdi, iout.data() + i);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+    }
+    {
+      const std::size_t k = hw / 2 == 0 ? 1 : hw / 2;
+      nb::Bench bench; bench.title("LoadN/StoreN i32 (half lanes)").relative(true).batch(kN).minEpochIterations(5000);
+      bench.run("HYLE", [&] {
+        for (std::size_t i = 0; i + hw <= kN; i += hw) {
+          auto v = hs::LoadN(hdi, ia.data() + i, k);
+          hs::StoreN(v, hdi, iout.data() + i, k);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+      bench.run("Highway", [&] {
+        for (std::size_t i = 0; i + gw <= kN; i += gw) {
+          auto v = hn::LoadN(gdi, ia.data() + i, k);
+          hn::StoreN(v, gdi, iout.data() + i, k);
+        }
+        nb::doNotOptimizeAway(iout.data());
+      });
+    }
+  }
+
+  // ---- 23. Bit ops: MulHigh i16/u16, MulHigh32, Reverse8, BitShuffle, MultiRotateRight ----
+  {
+    const hs::ScalableTag<std::int16_t> hd16; const hn::ScalableTag<std::int16_t> gd16;
+    const hs::ScalableTag<std::uint16_t> hdu16; const hn::ScalableTag<std::uint16_t> gdu16;
+    const std::size_t hw16 = hs::Lanes(hd16), gw16 = hn::Lanes(gd16);
+    std::vector<std::int16_t> sa(kN), sb(kN), so(kN);
+    std::vector<std::uint16_t> ua(kN), ub(kN), uo(kN);
+    { std::mt19937_64 rng(35); std::uniform_int_distribution<int> d(-30000,30000);
+      for (std::size_t i=0;i<kN;++i){ sa[i]=(std::int16_t)d(rng); sb[i]=(std::int16_t)d(rng);
+        ua[i]=(std::uint16_t)(d(rng)&0xFFFF); ub[i]=(std::uint16_t)(d(rng)&0xFFFF); } }
+    {
+      nb::Bench bench; bench.title("MulHigh i16 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{ for(std::size_t i=0;i+hw16<=kN;i+=hw16) hs::StoreU(hs::MulHigh(hs::LoadU(hd16,sa.data()+i),hs::LoadU(hd16,sb.data()+i)),hd16,so.data()+i); nb::doNotOptimizeAway(so.data()); });
+      bench.run("Highway", [&]{ for(std::size_t i=0;i+gw16<=kN;i+=gw16) hn::StoreU(hn::MulHigh(hn::LoadU(gd16,sa.data()+i),hn::LoadU(gd16,sb.data()+i)),gd16,so.data()+i); nb::doNotOptimizeAway(so.data()); });
+    }
+    {
+      nb::Bench bench; bench.title("MulHigh u16 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{ for(std::size_t i=0;i+hw16<=kN;i+=hw16) hs::StoreU(hs::MulHigh(hs::LoadU(hdu16,ua.data()+i),hs::LoadU(hdu16,ub.data()+i)),hdu16,uo.data()+i); nb::doNotOptimizeAway(uo.data()); });
+      bench.run("Highway", [&]{ for(std::size_t i=0;i+gw16<=kN;i+=gw16) hn::StoreU(hn::MulHigh(hn::LoadU(gdu16,ua.data()+i),hn::LoadU(gdu16,ub.data()+i)),gdu16,uo.data()+i); nb::doNotOptimizeAway(uo.data()); });
+    }
+  }
+  {
+    const hs::ScalableTag<std::uint32_t> hdu; const hn::ScalableTag<std::uint32_t> gdu;
+    const std::size_t hwu = hs::Lanes(hdu), gwu = hn::Lanes(gdu);
+    std::vector<std::uint32_t> ua(kN), ub(kN), uo(kN);
+    { std::mt19937_64 rng(36); for (auto& e : ua) e = static_cast<std::uint32_t>(rng()); for (auto& e : ub) e = static_cast<std::uint32_t>(rng()); }
+    nb::Bench bench; bench.title("MulHigh32 u32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+    bench.run("HYLE", [&]{ for(std::size_t i=0;i+hwu<=kN;i+=hwu) hs::StoreU(hs::MulHigh32(hs::LoadU(hdu,ua.data()+i),hs::LoadU(hdu,ub.data()+i)),hdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); });
+    bench.run("Highway", [&]{ for(std::size_t i=0;i+gwu<=kN;i+=gwu) hn::StoreU(hn::MulHigh(hn::LoadU(gdu,ua.data()+i),hn::LoadU(gdu,ub.data()+i)),gdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); });
+  }
+  {
+    nb::Bench bench; bench.title("Reverse8 i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+    bench.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Reverse8(hdi,hs::LoadU(hdi,ia.data()+i)),hdi,iout.data()+i); nb::doNotOptimizeAway(iout.data()); });
+    bench.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Reverse8(gdi,hn::LoadU(gdi,ia.data()+i)),gdi,iout.data()+i); nb::doNotOptimizeAway(iout.data()); });
+  }
+  // BitShuffle / MultiRotateRight: u64 data + u8 index (8 per data lane)
+  {
+    const hs::ScalableTag<std::uint64_t> hd64; const hn::ScalableTag<std::uint64_t> gd64;
+    const hs::ScalableTag<std::uint8_t> hd8; const hn::ScalableTag<std::uint8_t> gd8;
+    const std::size_t hw64 = hs::Lanes(hd64), gw64 = hn::Lanes(gd64);
+    const std::size_t hw8 = hs::Lanes(hd8);
+    std::vector<std::uint64_t> u64a(kN), u64o(kN);
+    std::vector<std::uint8_t> idx8(kN * 8);
+    { std::mt19937_64 rng(37); for (auto& e : u64a) e = rng();
+      std::uniform_int_distribution<int> d(0, 63); for (auto& e : idx8) e = static_cast<std::uint8_t>(d(rng)); }
+    {
+      nb::Bench bench; bench.title("BitShuffle u64 (4096)").relative(true).batch(kN).minEpochIterations(2000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i = 0; i + hw64 <= kN; i += hw64)
+          hs::StoreU(hs::BitShuffle(hs::LoadU(hd64, u64a.data()+i), hs::LoadU(hd8, idx8.data()+i*8)), hd64, u64o.data()+i);
+        nb::doNotOptimizeAway(u64o.data());
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i = 0; i + gw64 <= kN; i += gw64)
+          hn::StoreU(hn::BitShuffle(hn::LoadU(gd64, u64a.data()+i), hn::LoadU(gd8, idx8.data()+i*8)), gd64, u64o.data()+i);
+        nb::doNotOptimizeAway(u64o.data());
+      });
+    }
+    {
+      nb::Bench bench; bench.title("MultiRotateRight u64 (4096)").relative(true).batch(kN).minEpochIterations(2000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i = 0; i + hw64 <= kN; i += hw64)
+          hs::StoreU(hs::MultiRotateRight(hs::LoadU(hd64, u64a.data()+i), hs::LoadU(hd8, idx8.data()+i*8)), hd64, u64o.data()+i);
+        nb::doNotOptimizeAway(u64o.data());
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i = 0; i + gw64 <= kN; i += gw64)
+          hn::StoreU(hn::MultiRotateRight(hn::LoadU(gd64, u64a.data()+i), hn::LoadU(gd8, idx8.data()+i*8)), gd64, u64o.data()+i);
+        nb::doNotOptimizeAway(u64o.data());
+      });
+    }
+    (void)hw8;
+  }
+
+  // ---- 24. Interleave2 + StoreInterleaved3 (domain gap) + PromoteMaskTo ----
+  {
+    std::vector<float> aos2(kN * 2), aos3(kN * 3);
+    for (std::size_t i = 0; i < kN * 2; ++i) aos2[i] = static_cast<float>(i);
+    for (std::size_t i = 0; i < kN * 3; ++i) aos3[i] = static_cast<float>(i);
+    volatile float fsink = 0;
+    {
+      nb::Bench bench; bench.title("LoadInterleaved2 f32 (4096)").relative(true).batch(kN).minEpochIterations(2000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw){ hs::VFromD<decltype(hd)> v0,v1; hs::LoadInterleaved2(hd,aos2.data()+i*2,v0,v1); fsink+=hs::GetLane(hs::Add(v0,v1)); }
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw){ hn::VFromD<decltype(gd)> v0,v1; hn::LoadInterleaved2(gd,aos2.data()+i*2,v0,v1); fsink+=hn::GetLane(hn::Add(v0,v1)); }
+      });
+    }
+    {
+      const auto v0=hs::LoadU(hd,a.data()), v1=hs::LoadU(hd,b.data()), v2=hs::LoadU(hd,c.data());
+      const auto g0=hn::LoadU(gd,a.data()), g1=hn::LoadU(gd,b.data()), g2=hn::LoadU(gd,c.data());
+      nb::Bench bench; bench.title("StoreInterleaved2 f32 (4096)").relative(true).batch(kN).minEpochIterations(2000);
+      bench.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreInterleaved2(v0,v1,hd,aos2.data()+i*2); nb::doNotOptimizeAway(aos2.data()); });
+      bench.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreInterleaved2(g0,g1,gd,aos2.data()+i*2); nb::doNotOptimizeAway(aos2.data()); });
+    }
+    {
+      const auto v0=hs::LoadU(hd,a.data()), v1=hs::LoadU(hd,b.data()), v2=hs::LoadU(hd,c.data());
+      const auto g0=hn::LoadU(gd,a.data()), g1=hn::LoadU(gd,b.data()), g2=hn::LoadU(gd,c.data());
+      nb::Bench bench; bench.title("StoreInterleaved3 f32 (4096)").relative(true).batch(kN).minEpochIterations(2000);
+      bench.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreInterleaved3(v0,v1,v2,hd,aos3.data()+i*3); nb::doNotOptimizeAway(aos3.data()); });
+      bench.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreInterleaved3(g0,g1,g2,gd,aos3.data()+i*3); nb::doNotOptimizeAway(aos3.data()); });
+    }
+    nb::doNotOptimizeAway(fsink);
+  }
+  // ---- 25. Mask domain (DemoteMaskTo already §18): Promote / OrderedDemote2 / Combine / Half /
+  // Slide / Rebind / Set / Dup128MaskFromMaskBits. Sink via BitsFromMask so the mask isn't DCE'd. ----
+  {
+    volatile std::uint64_t sink = 0;
+    const auto imask = geni(kN, 39);
+    // PromoteMaskTo: Rebind i16 (same lane count as i32) -> ScalableTag i32
+    {
+      using HD16 = hs::Rebind<std::int16_t, hs::ScalableTag<std::int32_t>>;
+      using GD16 = hn::Rebind<std::int16_t, hn::ScalableTag<std::int32_t>>;
+      const HD16 hd16r{}; const GD16 gd16r{};
+      std::vector<std::int16_t> s16(kN);
+      { std::mt19937_64 rng(40); std::uniform_int_distribution<int> d(-1000,1000); for (auto& e : s16) e = (std::int16_t)d(rng); }
+      nb::Bench bench; bench.title("PromoteMaskTo i16->i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw) {
+          auto m = hs::Gt(hs::LoadU(hd16r, s16.data()+i), hs::Set(hd16r, std::int16_t{0}));
+          sink ^= hs::BitsFromMask(hdi, hs::PromoteMaskTo(hdi, hd16r, m));
+        }
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw) {
+          auto m = hn::Gt(hn::LoadU(gd16r, s16.data()+i), hn::Set(gd16r, std::int16_t{0}));
+          sink ^= hn::BitsFromMask(gdi, hn::PromoteMaskTo(gdi, gd16r, m));
+        }
+      });
+    }
+    // OrderedDemote2MasksTo i32+i32 -> i16 full
+    {
+      using HD16 = hs::RepartitionToNarrow<hs::ScalableTag<std::int32_t>>;
+      using GD16 = hn::RepartitionToNarrow<hn::ScalableTag<std::int32_t>>;
+      // Actually OrderedDemote2MasksTo wants DTo with 2N lanes of half width = full narrow ScalableTag i16
+      const hs::ScalableTag<std::int16_t> hd16; const hn::ScalableTag<std::int16_t> gd16;
+      nb::Bench bench; bench.title("OrderedDemote2MasksTo i32->i16 (4096)").relative(true).batch(kN).minEpochIterations(5000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+2*hw<=kN;i+=2*hw) {
+          auto ma = hs::Gt(hs::LoadU(hdi, imask.data()+i), hs::Zero(hdi));
+          auto mb = hs::Gt(hs::LoadU(hdi, imask.data()+i+hw), hs::Zero(hdi));
+          sink ^= hs::BitsFromMask(hd16, hs::OrderedDemote2MasksTo(hd16, hdi, ma, mb));
+        }
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+2*gw<=kN;i+=2*gw) {
+          auto ma = hn::Gt(hn::LoadU(gdi, imask.data()+i), hn::Zero(gdi));
+          auto mb = hn::Gt(hn::LoadU(gdi, imask.data()+i+gw), hn::Zero(gdi));
+          sink ^= hn::BitsFromMask(gd16, hn::OrderedDemote2MasksTo(gd16, gdi, ma, mb));
+        }
+      });
+    }
+    // CombineMasks / LowerHalfOfMask / UpperHalfOfMask
+    {
+      const hs::Half<hs::ScalableTag<std::int32_t>> hdh; const hn::Half<hn::ScalableTag<std::int32_t>> gdh;
+      const std::size_t hwh = hs::Lanes(hdh), gwh = hn::Lanes(gdh);
+      nb::Bench bench; bench.title("CombineMasks i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw) {
+          auto full = hs::Gt(hs::LoadU(hdi, imask.data()+i), hs::Zero(hdi));
+          auto lo = hs::LowerHalfOfMask(hdh, full);
+          auto hi = hs::UpperHalfOfMask(hdh, full);
+          sink ^= hs::BitsFromMask(hdi, hs::CombineMasks(hdi, hi, lo));
+        }
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw) {
+          auto full = hn::Gt(hn::LoadU(gdi, imask.data()+i), hn::Zero(gdi));
+          auto lo = hn::LowerHalfOfMask(gdh, full);
+          auto hi = hn::UpperHalfOfMask(gdh, full);
+          sink ^= hn::BitsFromMask(gdi, hn::CombineMasks(gdi, hi, lo));
+        }
+      });
+      (void)hwh; (void)gwh;
+    }
+    // SlideMask1Up/Down + SlideMaskUp/DownLanes
+    {
+      nb::Bench bench; bench.title("SlideMask1Up i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw) {
+          auto m = hs::Gt(hs::LoadU(hdi, imask.data()+i), hs::Zero(hdi));
+          sink ^= hs::BitsFromMask(hdi, hs::SlideMask1Up(hdi, m));
+        }
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw) {
+          auto m = hn::Gt(hn::LoadU(gdi, imask.data()+i), hn::Zero(gdi));
+          sink ^= hn::BitsFromMask(gdi, hn::SlideMask1Up(gdi, m));
+        }
+      });
+    }
+    {
+      nb::Bench bench; bench.title("SlideMask1Down i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw) {
+          auto m = hs::Gt(hs::LoadU(hdi, imask.data()+i), hs::Zero(hdi));
+          sink ^= hs::BitsFromMask(hdi, hs::SlideMask1Down(hdi, m));
+        }
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw) {
+          auto m = hn::Gt(hn::LoadU(gdi, imask.data()+i), hn::Zero(gdi));
+          sink ^= hn::BitsFromMask(gdi, hn::SlideMask1Down(gdi, m));
+        }
+      });
+    }
+    {
+      nb::Bench bench; bench.title("SlideMaskUpLanes i32 amt=2 (4096)").relative(true).batch(kN).minEpochIterations(5000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw) {
+          auto m = hs::Gt(hs::LoadU(hdi, imask.data()+i), hs::Zero(hdi));
+          sink ^= hs::BitsFromMask(hdi, hs::SlideMaskUpLanes(hdi, m, 2));
+        }
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw) {
+          auto m = hn::Gt(hn::LoadU(gdi, imask.data()+i), hn::Zero(gdi));
+          sink ^= hn::BitsFromMask(gdi, hn::SlideMaskUpLanes(gdi, m, 2));
+        }
+      });
+    }
+    {
+      nb::Bench bench; bench.title("SlideMaskDownLanes i32 amt=2 (4096)").relative(true).batch(kN).minEpochIterations(5000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw) {
+          auto m = hs::Gt(hs::LoadU(hdi, imask.data()+i), hs::Zero(hdi));
+          sink ^= hs::BitsFromMask(hdi, hs::SlideMaskDownLanes(hdi, m, 2));
+        }
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw) {
+          auto m = hn::Gt(hn::LoadU(gdi, imask.data()+i), hn::Zero(gdi));
+          sink ^= hn::BitsFromMask(gdi, hn::SlideMaskDownLanes(gdi, m, 2));
+        }
+      });
+    }
+    // RebindMask i32 -> f32, SetMask, Dup128MaskFromMaskBits
+    {
+      nb::Bench bench; bench.title("RebindMask i32->f32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw) {
+          auto m = hs::Gt(hs::LoadU(hdi, imask.data()+i), hs::Zero(hdi));
+          sink ^= hs::BitsFromMask(hd, hs::RebindMask(hd, m));
+        }
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw) {
+          auto m = hn::Gt(hn::LoadU(gdi, imask.data()+i), hn::Zero(gdi));
+          sink ^= hn::BitsFromMask(gd, hn::RebindMask(gd, m));
+        }
+      });
+    }
+    {
+      nb::Bench bench; bench.title("SetMask i32 (4096)").relative(true).batch(kN).minEpochIterations(10000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw)
+          sink ^= hs::BitsFromMask(hdi, hs::SetMask(hdi, (imask[i] & 1) != 0));
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw)
+          sink ^= hn::BitsFromMask(gdi, hn::SetMask(gdi, (imask[i] & 1) != 0));
+      });
+    }
+    {
+      nb::Bench bench; bench.title("Dup128MaskFromMaskBits i32 (4096)").relative(true).batch(kN).minEpochIterations(10000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw)
+          sink ^= hs::BitsFromMask(hdi, hs::Dup128MaskFromMaskBits(hdi, static_cast<unsigned>(imask[i] & 0xF)));
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw)
+          sink ^= hn::BitsFromMask(gdi, hn::Dup128MaskFromMaskBits(gdi, static_cast<unsigned>(imask[i] & 0xF)));
+      });
+    }
+    nb::doNotOptimizeAway(sink);
+  }
+
+  // ---- 26. Single-vector PromoteTo/DemoteTo/ShiftRightAndDemoteTo (Highway Rebind form) ----
+  // Avoid Store of partial-tag results (fixed-width Store may write a full register). Sink via GetLane.
+  {
+    using HD16 = hs::Rebind<std::int16_t, hs::ScalableTag<std::int32_t>>;
+    using GD16 = hn::Rebind<std::int16_t, hn::ScalableTag<std::int32_t>>;
+    const HD16 hd16r{}; const GD16 gd16r{};
+    const hs::ScalableTag<std::int16_t> hd16full; const hn::ScalableTag<std::int16_t> gd16full;
+    std::vector<std::int16_t> s16(kN);
+    { std::mt19937_64 rng(41); std::uniform_int_distribution<int> d(-30000,30000); for (auto& e : s16) e = (std::int16_t)d(rng); }
+    volatile std::int64_t sink = 0;
+    {
+      nb::Bench bench; bench.title("PromoteTo i16->i32 1-arg (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw) {
+          auto half = hs::LowerHalf(hs::LoadU(hd16full, s16.data()+i));
+          sink += hs::GetLane(hs::PromoteTo(hdi, half));
+        }
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw) {
+          auto half = hn::LowerHalf(hn::Half<decltype(gd16full)>(), hn::LoadU(gd16full, s16.data()+i));
+          sink += hn::GetLane(hn::PromoteTo(gdi, half));
+        }
+      });
+    }
+    {
+      nb::Bench bench; bench.title("DemoteTo i32->i16 1-arg (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw)
+          sink += hs::GetLane(hs::DemoteTo(hd16r, hs::LoadU(hdi, ia.data()+i)));
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw)
+          sink += hn::GetLane(hn::DemoteTo(gd16r, hn::LoadU(gdi, ia.data()+i)));
+      });
+    }
+    {
+      nb::Bench bench; bench.title("ShiftRightAndDemoteTo<3> i32->i16 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw)
+          sink += hs::GetLane(hs::ShiftRightAndDemoteTo<3>(hd16r, hs::LoadU(hdi, ia.data()+i)));
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw)
+          sink += hn::GetLane(hn::ShiftRightAndDemoteTo<3>(gd16r, hn::LoadU(gdi, ia.data()+i)));
+      });
+    }
+    {
+      nb::Bench bench; bench.title("RoundingShiftRightAndDemoteTo<3> i32->i16 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      bench.run("HYLE", [&]{
+        for (std::size_t i=0;i+hw<=kN;i+=hw)
+          sink += hs::GetLane(hs::RoundingShiftRightAndDemoteTo<3>(hd16r, hs::LoadU(hdi, ia.data()+i)));
+      });
+      bench.run("Highway", [&]{
+        for (std::size_t i=0;i+gw<=kN;i+=gw)
+          sink += hn::GetLane(hn::RoundingShiftRightAndDemoteTo<3>(gd16r, hn::LoadU(gdi, ia.data()+i)));
+      });
+    }
+    nb::doNotOptimizeAway(sink);
+  }
+
   return 0;
 }

@@ -2472,25 +2472,14 @@ HYLE_FORCE_INLINE auto GetBiasedExponent(Vec512<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> MulByFloorPow2(Vec512<T, N> v, Vec512<T, N> exp) noexcept {
   static_assert(std::is_floating_point_v<T>, "MulByFloorPow2 is float only");
-  // Store+reload scalar ldexp with Highway's NaN special-cases: NaN exp, (0,+inf), (inf,-inf)
-  // -> NaN. floor(exp) is clamped into int range first so the cast is never UB (a raw
-  // static_cast<int>(floor(+inf)) is UB -- this backend dropped the finite*+inf lane before the
-  // clamp). Matches the scalar oracle.
-  alignas(64) T sv[N], se[N], ro[N];
-  Store(v, Simd<T, N, 0>(), sv); Store(exp, Simd<T, N, 0>(), se);
-  for (std::size_t i = 0; i < N; ++i) {
-    if (std::isnan(se[i]) ||
-        (std::isinf(se[i]) && ((sv[i] == T{0} && se[i] > 0) || (std::isinf(sv[i]) && se[i] < 0)))) {
-      ro[i] = std::numeric_limits<T>::quiet_NaN();
-    } else {
-      const T fe = std::floor(se[i]);
-      const int ie = (fe >= static_cast<T>(std::numeric_limits<int>::max())) ? std::numeric_limits<int>::max()
-                   : (fe <= static_cast<T>(std::numeric_limits<int>::min())) ? std::numeric_limits<int>::min()
-                   : static_cast<int>(fe);
-      ro[i] = std::ldexp(sv[i], ie);
-    }
-  }
-  return Load(Simd<T, N, 0>(), ro);
+  // NATIVE vscalef(v, exp) = v * 2^floor(exp) EXACTLY (vscalef floors the exponent operand), which
+  // IS MulByFloorPow2's contract -- one instruction, no store+reload. vscalef also already yields
+  // the IEEE special-cases (NaN exp -> NaN; (0,+inf) -> NaN; (inf,-inf) -> NaN), matching the
+  // scalar oracle, so no separate blend is needed on AVX-512.
+  Vec512<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm512_scalef_ps(v.raw, exp.raw);
+  else r.raw = _mm512_scalef_pd(v.raw, exp.raw);
+  return r;
 }
 
 // ---- simd-17 batch4: half-vector family (512 -> 256 real Vec256 entity) -------------

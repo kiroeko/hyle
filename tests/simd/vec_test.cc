@@ -553,6 +553,20 @@ TEST(Vec, MathExtFloat) {
   Buf<std::int32_t> ei; for (std::size_t i = 0; i < n; ++i) ei.data[i] = static_cast<std::int32_t>(i % 5) - 2;  // -2..2
   hs::Store(hs::MulByPow2(va, hs::Load(di, ei.data)), d, out.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(out.data[i], std::ldexp(a.data[i], static_cast<int>(ei.data[i]))) << "mulbypow2 i=" << i;
+  // Red-team: the exp=-2..2 sweep above only exercises normal values -- the vectorized 3-part
+  // exponent build must also be correct through OVERFLOW (->inf), DENORMAL, and total UNDERFLOW
+  // (->0). These are exactly the ranges the single-2^e naive form would get wrong.
+  Buf<float> big; Buf<std::int32_t> ebig;
+  const int wide[] = {0, 1, -1, 130, -130, 200, -200, 127, -149, -150, 50, -50, 255, -255, 10, -10};
+  const float vals[] = {1.0f, 1.5f, 0.5f, 3.0f, 1e20f, 1e-20f, -2.0f, 7.0f,
+                        1.0f, 1.0f, -1.5f, 2.0f, 1.0f, 1.0f, 0.0f, -0.0f};
+  for (std::size_t i = 0; i < n; ++i) { big.data[i] = vals[i % 16]; ebig.data[i] = wide[i % 16]; }
+  hs::Store(hs::MulByPow2(hs::Load(d, big.data), hs::Load(di, ebig.data)), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float ref = std::ldexp(big.data[i], static_cast<int>(ebig.data[i]));
+    if (std::isnan(ref)) EXPECT_TRUE(std::isnan(out.data[i])) << "mulbypow2 wide nan i=" << i;
+    else EXPECT_EQ(out.data[i], ref) << "mulbypow2 wide i=" << i << " v=" << big.data[i] << " e=" << ebig.data[i];
+  }
 }
 TEST(Vec, MathExtSaturatedInt) {
   const hs::ScalableTag<std::int16_t> d;
@@ -2714,6 +2728,18 @@ TEST(Vec, GetBiasedExponentAndMulByFloorPow2) {
     if (c <= 2) EXPECT_TRUE(std::isnan(so.data[i])) << "special NaN i=" << i;
     else if (c == 3) EXPECT_TRUE(std::isinf(so.data[i]) && so.data[i] > 0) << "special +inf i=" << i;
     else EXPECT_FLOAT_EQ(so.data[i], 12.0f) << "special normal i=" << i;
+  }
+  // Red-team wide finite exponents (overflow->inf, denormal, underflow->0) with fractional floor.
+  Buf<float> wv, we, wo;
+  const float wvals[] = {1.5f, 3.0f, 1e20f, 1e-20f, 2.0f, -4.0f, 0.5f, 1.0f,
+                         7.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+  const float wexps[] = {130.9f, 200.1f, 50.5f, -200.7f, -150.2f, 10.5f, -149.9f, 127.0f,
+                         -10.3f, 3.5f, 0.0f, -1.0f, 2.0f, -2.0f, 5.5f, -5.5f};
+  for (std::size_t i = 0; i < n; ++i) { wv.data[i] = wvals[i % 16]; we.data[i] = wexps[i % 16]; }
+  hs::Store(hs::MulByFloorPow2(hs::Load(d, wv.data), hs::Load(d, we.data)), d, wo.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const float ref = std::ldexp(wv.data[i], static_cast<int>(std::floor(we.data[i])));
+    EXPECT_EQ(wo.data[i], ref) << "mulbyfloorpow2 wide i=" << i << " v=" << wv.data[i] << " e=" << we.data[i];
   }
 }
 

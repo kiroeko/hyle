@@ -83,5 +83,157 @@ int main(){
     b.run("HYLE", [&]{ for(std::size_t i=0;i+wfh<=kN;i+=wfh) hs::StoreU(hs::GetExponent(hs::LoadU(hdf,fa.data()+i)), hdf, fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
     b.run("Highway", [&]{ for(std::size_t i=0;i+wfg<=kN;i+=wfg) hn::StoreU(hn::GetExponent(hn::LoadU(gdf,fa.data()+i)), gdf, fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
   }
+
+  // ---- Tier1: widen MAC family ----
+  // ReorderWidenMulAccumulate i16->i32
+  {
+    nb::Bench b; b.title("ReorderWidenMulAccumulate i16->i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{
+      for (std::size_t i=0;i+w16h<=kN;i+=w16h) {
+        auto sum1 = hs::Zero(hd32);
+        auto sum0 = hs::ReorderWidenMulAccumulate(hd32, hs::LoadU(hd16,i16a.data()+i), hs::LoadU(hd16,i16b.data()+i), hs::Zero(hd32), sum1);
+        hs::StoreU(hs::RearrangeToOddPlusEven(sum0, sum1), hd32, o32.data()+i);
+      }
+      nb::doNotOptimizeAway(o32.data());
+    });
+    b.run("Highway", [&]{
+      for (std::size_t i=0;i+w16g<=kN;i+=w16g) {
+        auto sum1 = hn::Zero(gd32);
+        auto sum0 = hn::ReorderWidenMulAccumulate(gd32, hn::LoadU(gd16,i16a.data()+i), hn::LoadU(gd16,i16b.data()+i), hn::Zero(gd32), sum1);
+        hn::StoreU(hn::RearrangeToOddPlusEven(sum0, sum1), gd32, o32.data()+i);
+      }
+      nb::doNotOptimizeAway(o32.data());
+    });
+  }
+  // SatWidenMulPairwiseAdd u8*i8 -> i16
+  {
+    auto i8b = gen<std::int8_t>(11, -100, 100);
+    std::vector<std::int16_t> o16s(kN);
+    const hs::ScalableTag<std::int8_t> hi8; const hn::ScalableTag<std::int8_t> gi8;
+    nb::Bench b; b.title("SatWidenMulPairwiseAdd u8*i8->i16").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{
+      for (std::size_t i=0;i+w8h<=kN;i+=w8h)
+        hs::StoreU(hs::SatWidenMulPairwiseAdd(hd16, hs::LoadU(hd8,u8a.data()+i), hs::LoadU(hi8,i8b.data()+i)), hd16, o16s.data()+i);
+      nb::doNotOptimizeAway(o16s.data());
+    });
+    b.run("Highway", [&]{
+      for (std::size_t i=0;i+w8g<=kN;i+=w8g)
+        hn::StoreU(hn::SatWidenMulPairwiseAdd(gd16, hn::LoadU(gd8,u8a.data()+i), hn::LoadU(gi8,i8b.data()+i)), gd16, o16s.data()+i);
+      nb::doNotOptimizeAway(o16s.data());
+    });
+  }
+  // SumOfMulQuadAccumulate i8->i32
+  {
+    auto i8a = gen<std::int8_t>(12, -50, 50);
+    auto i8b = gen<std::int8_t>(13, -50, 50);
+    const hs::ScalableTag<std::int8_t> hi8; const hn::ScalableTag<std::int8_t> gi8;
+    const std::size_t w8ih=hs::Lanes(hi8), w8ig=hn::Lanes(gi8);
+    nb::Bench b; b.title("SumOfMulQuadAccumulate i8->i32").relative(true).batch(kN).minEpochIterations(5000);
+    b.run("HYLE", [&]{
+      for (std::size_t i=0;i+w8ih<=kN;i+=w8ih)
+        hs::StoreU(hs::SumOfMulQuadAccumulate(hd32, hs::LoadU(hi8,i8a.data()+i), hs::LoadU(hi8,i8b.data()+i), hs::Zero(hd32)), hd32, o32.data()+i/4);
+      nb::doNotOptimizeAway(o32.data());
+    });
+    b.run("Highway", [&]{
+      for (std::size_t i=0;i+w8ig<=kN;i+=w8ig)
+        hn::StoreU(hn::SumOfMulQuadAccumulate(gd32, hn::LoadU(gi8,i8a.data()+i), hn::LoadU(gi8,i8b.data()+i), hn::Zero(gd32)), gd32, o32.data()+i/4);
+      nb::doNotOptimizeAway(o32.data());
+    });
+  }
+  // WidenMulAccumulate i16->i32 (half-at-a-time dual acc)
+  {
+    nb::Bench b; b.title("WidenMulAccumulate i16->i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{
+      for (std::size_t i=0;i+w16h<=kN;i+=w16h) {
+        auto high = hs::Zero(hd32);
+        auto low = hs::WidenMulAccumulate(hd32, hs::LoadU(hd16,i16a.data()+i), hs::LoadU(hd16,i16b.data()+i), hs::Zero(hd32), high);
+        hs::StoreU(hs::Add(low, high), hd32, o32.data()+i);
+      }
+      nb::doNotOptimizeAway(o32.data());
+    });
+    b.run("Highway", [&]{
+      for (std::size_t i=0;i+w16g<=kN;i+=w16g) {
+        auto high = hn::Zero(gd32);
+        auto low = hn::WidenMulAccumulate(gd32, hn::LoadU(gd16,i16a.data()+i), hn::LoadU(gd16,i16b.data()+i), hn::Zero(gd32), high);
+        hn::StoreU(hn::Add(low, high), gd32, o32.data()+i);
+      }
+      nb::doNotOptimizeAway(o32.data());
+    });
+  }
+  // SatWidenMulPairwiseAccumulate i16->i32
+  {
+    nb::Bench b; b.title("SatWidenMulPairwiseAccumulate i16->i32").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{
+      for (std::size_t i=0;i+w16h<=kN;i+=w16h)
+        hs::StoreU(hs::SatWidenMulPairwiseAccumulate(hd32, hs::LoadU(hd16,i16a.data()+i), hs::LoadU(hd16,i16b.data()+i), hs::Zero(hd32)), hd32, o32.data()+i);
+      nb::doNotOptimizeAway(o32.data());
+    });
+    b.run("Highway", [&]{
+      for (std::size_t i=0;i+w16g<=kN;i+=w16g)
+        hn::StoreU(hn::SatWidenMulPairwiseAccumulate(gd32, hn::LoadU(gd16,i16a.data()+i), hn::LoadU(gd16,i16b.data()+i), hn::Zero(gd32)), gd32, o32.data()+i);
+      nb::doNotOptimizeAway(o32.data());
+    });
+  }
+  // SatWidenMulAccumFixedPoint: Highway takes Rebind<i16,di32> (same lane count as i32 = half-register).
+  // HYLE accepts full V16; ZeroExtendVector(LowerHalf) matches the half-register input width without a
+  // stack copy (InterleaveWholeLower only consumes the lower half).
+  {
+    const hn::Rebind<std::int16_t, decltype(gd32)> g16r;
+    nb::Bench b; b.title("SatWidenMulAccumFixedPoint i16->i32").relative(true).batch(kN).minEpochIterations(5000);
+    b.run("HYLE", [&]{
+      for (std::size_t i=0;i+w16h<=kN;i+=w16h) {
+        auto a = hs::ZeroExtendVector(hd16, hs::LowerHalf(hs::LoadU(hd16, i16a.data()+i)));
+        auto b2 = hs::ZeroExtendVector(hd16, hs::LowerHalf(hs::LoadU(hd16, i16b.data()+i)));
+        hs::StoreU(hs::SatWidenMulAccumFixedPoint(hd32, a, b2, hs::Zero(hd32)), hd32, o32.data()+i);
+      }
+      nb::doNotOptimizeAway(o32.data());
+    });
+    b.run("Highway", [&]{
+      for (std::size_t i=0;i+w32g<=kN;i+=w32g)
+        hn::StoreU(hn::SatWidenMulAccumFixedPoint(gd32, hn::LoadU(g16r,i16a.data()+i), hn::LoadU(g16r,i16b.data()+i), hn::Zero(gd32)), gd32, o32.data()+i);
+      nb::doNotOptimizeAway(o32.data());
+    });
+  }
+  // SumsOfAdjQuadAbsDiff<0,0> u8->u16 (template offsets match Highway mpsadbw defaults)
+  {
+    auto u8b = gen<std::uint8_t>(14, 0, 255);
+    std::vector<std::uint16_t> o16u(kN);
+    const hs::ScalableTag<std::uint16_t> hdu16; const hn::ScalableTag<std::uint16_t> gdu16;
+    nb::Bench b; b.title("SumsOfAdjQuadAbsDiff u8->u16").relative(true).batch(kN).minEpochIterations(5000);
+    b.run("HYLE", [&]{
+      for (std::size_t i=0;i+w8h<=kN;i+=w8h)
+        hs::StoreU(hs::SumsOfAdjQuadAbsDiff<0,0>(hs::LoadU(hd8,u8a.data()+i), hs::LoadU(hd8,u8b.data()+i)), hdu16, o16u.data()+i/2);
+      nb::doNotOptimizeAway(o16u.data());
+    });
+    b.run("Highway", [&]{
+      for (std::size_t i=0;i+w8g<=kN;i+=w8g)
+        hn::StoreU(hn::SumsOfAdjQuadAbsDiff<0,0>(hn::LoadU(gd8,u8a.data()+i), hn::LoadU(gd8,u8b.data()+i)), gdu16, o16u.data()+i/2);
+      nb::doNotOptimizeAway(o16u.data());
+    });
+  }
+  // OrderedDemote2To / ZeroExtendVector (single-vector Promote/Demote already thin wraps of Lower/PromoteLower)
+  {
+    nb::Bench b; b.title("OrderedDemote2To i32->i16").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{ for(std::size_t i=0;i+2*w32h<=kN;i+=2*w32h) hs::StoreU(hs::OrderedDemote2To(hd16, hs::LoadU(hd32,i32a.data()+i), hs::LoadU(hd32,i32a.data()+i+w32h)), hd16, o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+    b.run("Highway", [&]{ for(std::size_t i=0;i+2*w32g<=kN;i+=2*w32g) hn::StoreU(hn::OrderedDemote2To(gd16, hn::LoadU(gd32,i32a.data()+i), hn::LoadU(gd32,i32a.data()+i+w32g)), gd16, o16.data()+i); nb::doNotOptimizeAway(o16.data()); });
+  }
+  {
+    nb::Bench b; b.title("ZeroExtendVector i16 half->full").relative(true).batch(kN).minEpochIterations(8000);
+    b.run("HYLE", [&]{
+      for (std::size_t i=0;i+w16h<=kN;i+=w16h) {
+        auto half = hs::LowerHalf(hs::LoadU(hd16, i16a.data()+i));
+        hs::StoreU(hs::ZeroExtendVector(hd16, half), hd16, o16.data()+i);
+      }
+      nb::doNotOptimizeAway(o16.data());
+    });
+    b.run("Highway", [&]{
+      for (std::size_t i=0;i+w16g<=kN;i+=w16g) {
+        auto half = hn::LowerHalf(hn::Half<decltype(gd16)>(), hn::LoadU(gd16, i16a.data()+i));
+        hn::StoreU(hn::ZeroExtendVector(gd16, half), gd16, o16.data()+i);
+      }
+      nb::doNotOptimizeAway(o16.data());
+    });
+  }
+
   return 0;
 }

@@ -496,17 +496,34 @@ HYLE_FORCE_INLINE Vec256<T, N> GetExponent(Vec256<T, N> v) noexcept {
   }
   return r;
 }
-// MulByPow2(a, b) = a * 2^b (std::ldexp), b an integer-lane vector of matching width.
-// store+reload std::ldexp; no clean AVX2 native (AVX512 vscalefps is the hardware form).
+// MulByPow2(a, b) = a * 2^b, b an integer-lane vector of matching width. NO AVX2 native
+// (AVX-512 vscalefps is the hardware form). PORTED from Highway generic_ops MulByPow2: build the
+// power-of-two scale entirely IN THE VECTOR UNIT by packing exponent bits, instead of the old
+// store + scalar std::ldexp + reload (op_parity: that was ~19x slower than Highway's vector path).
+// The exponent is split into THREE clamped parts exp1+exp2+exp3 so the product v*2^e1*2^e2*2^e3 is
+// correctly rounded even into the denormal/overflow ranges (a single 2^e factor could itself
+// overflow to inf / underflow to 0 before the multiply). Each factorK = bit-pattern with biased
+// exponent (eK+bias) and zero mantissa = exactly 2^eK. Matches std::ldexp on the integer contract.
 template <typename T, std::size_t N, typename IT>
 HYLE_FORCE_INLINE Vec256<T, N> MulByPow2(Vec256<T, N> a, Vec256<IT, N> b) noexcept {
   static_assert(std::is_floating_point_v<T>, "float only");
-  alignas(32) T sa[N];
-  alignas(32) IT sb[N];
-  Store(a, Simd<T, N, 0>(), sa);
-  Store(b, Simd<IT, N, 0>(), sb);
-  for (std::size_t i = 0; i < N; ++i) sa[i] = std::ldexp(sa[i], static_cast<int>(sb[i]));
-  return Load(Simd<T, N, 0>(), sa);
+  static_assert(std::is_integral_v<IT> && std::is_signed_v<IT> && sizeof(IT) == sizeof(T),
+                "MulByPow2 exponent is a signed int lane matching the float width");
+  const Simd<T, N, 0> df;
+  const Simd<IT, N, 0> di;
+  constexpr int kMantBits = (sizeof(T) == 4) ? 23 : 52;
+  constexpr IT kBias = (sizeof(T) == 4) ? IT{127} : IT{1023};  // (kMaxBiasedExp>>1)
+  const auto clamped = Clamp(b, Set(di, static_cast<IT>(3 - 3 * kBias)), Set(di, static_cast<IT>(3 * kBias)));
+  const auto lo = Set(di, static_cast<IT>(1 - kBias));  // min per-part exponent (smallest normal)
+  const auto hi = Set(di, kBias);                        // max per-part exponent
+  const auto e3 = Clamp(clamped, lo, hi);
+  const auto e2 = Clamp(Sub(clamped, e3), lo, hi);
+  const auto e1 = Sub(Sub(clamped, e3), e2);
+  const auto biasv = Set(di, kBias);
+  const auto f1 = BitCast(df, ShiftLeft<kMantBits>(Add(e1, biasv)));
+  const auto f2 = BitCast(df, ShiftLeft<kMantBits>(Add(e2, biasv)));
+  const auto f3 = BitCast(df, ShiftLeft<kMantBits>(Add(e3, biasv)));
+  return Mul(Mul(Mul(a, f1), f2), f3);
 }
 // NaN-aware min/max (Highway MinNumber/MaxNumber): if one operand is NaN, return the OTHER.
 // x86 _mm256_min_ps/_mm256_max_ps return the second operand on any-NaN, so we can't map
@@ -548,19 +565,17 @@ HYLE_FORCE_INLINE Vec256<std::int16_t, N> MulFixedPoint15(Vec256<std::int16_t, N
   return r;
 }
 // SaturatedNeg(a) = (a==MIN) ? MAX : -a. i8/i16 reuse native SaturatedSub(0, a) (0-MIN
-// saturates to MAX); i32/i64 have no native satsub -> store+reload the scalar formula.
+// saturates to MAX); i32/i64 have no native satsub -> stay in the vector unit with the branchless
+// formula IfThenElse(a==MIN, MAX, -a) (Eq + Neg + blend), replacing the old store+reload scalar loop.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> SaturatedNeg(Vec256<T, N> a) noexcept {
   static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedNeg is signed-int");
   if constexpr (sizeof(T) <= 2) {
     return SaturatedSub(Zero(Simd<T, N, 0>()), a);  // 0 - a saturating
-  } else {  // i32/i64: no native satsub
-    alignas(32) T s[N];
-    Store(a, Simd<T, N, 0>(), s);
-    for (std::size_t i = 0; i < N; ++i)
-      s[i] = (s[i] == std::numeric_limits<T>::min()) ? std::numeric_limits<T>::max()
-                                                     : static_cast<T>(-s[i]);
-    return Load(Simd<T, N, 0>(), s);
+  } else {  // i32/i64: no native satsub -> vector select on the MIN corner
+    const Simd<T, N, 0> d;
+    const auto is_min = Eq(a, Set(d, std::numeric_limits<T>::min()));
+    return IfThenElse(is_min, Set(d, std::numeric_limits<T>::max()), Neg(a));
   }
 }
 // SaturatedAbs(a) = (a==MIN) ? MAX : |a|. |a| for a<0 is exactly SaturatedNeg(a), so reuse
@@ -803,25 +818,22 @@ HYLE_FORCE_INLINE Vec256<std::int32_t, NW> RearrangeToOddPlusEven(
 }
 
 // SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8 dot a[4i+0..3]*b[4i+0..3].
-// emulation: no SSE4/AVX2 VNNI; native vpdpbusd is an AVX512-VNNI profiling upgrade. Store the
-// operands to the stack, run the scalar 4-way loop, reload -- correctness over speed here.
+// No AVX2 VNNI (native vpdpbusd is AVX-512-VNNI). PORTED from Highway generic_ops: split each i8
+// operand into even/odd i16 halves (PromoteEven/OddTo), then two WidenMulPairwiseAdd (vpmaddwd)
+// each sum a pair of products into i32 -- their sum over even+odd = the 4-way quad dot. Fully
+// vectorized (2 vpmaddwd + 2 vpaddd), replacing the store + scalar 4-way loop + reload (op_parity:
+// that was ~10x slower). i8 GEMM / quantized-inference inner core, so the win is load-bearing.
 template <std::size_t NDst, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec256<std::int32_t, NDst> SumOfMulQuadAccumulate(
-    Simd<std::int32_t, NDst, 0>, Vec256<std::int8_t, NSrc> a, Vec256<std::int8_t, NSrc> b,
+    Simd<std::int32_t, NDst, 0> di32, Vec256<std::int8_t, NSrc> a, Vec256<std::int8_t, NSrc> b,
     Vec256<std::int32_t, NDst> sum) noexcept {
   static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
-  alignas(32) std::int8_t ab[32];
-  alignas(32) std::int8_t bb[32];
-  alignas(32) std::int32_t sb[8];
-  _mm256_store_si256(reinterpret_cast<__m256i*>(ab), a.raw);
-  _mm256_store_si256(reinterpret_cast<__m256i*>(bb), b.raw);
-  _mm256_store_si256(reinterpret_cast<__m256i*>(sb), sum.raw);
-  for (std::size_t i = 0; i < NDst; ++i)
-    for (std::size_t k = 0; k < 4; ++k)
-      sb[i] += static_cast<std::int32_t>(ab[4 * i + k]) * bb[4 * i + k];
-  Vec256<std::int32_t, NDst> r;
-  r.raw = _mm256_load_si256(reinterpret_cast<const __m256i*>(sb));
-  return r;
+  const Simd<std::int16_t, NSrc / 2, 0> di16;
+  const auto a0 = PromoteEvenTo(di16, a);
+  const auto b0 = PromoteEvenTo(di16, b);
+  const auto a1 = PromoteOddTo(di16, a);
+  const auto b1 = PromoteOddTo(di16, b);
+  return Add(sum, Add(WidenMulPairwiseAdd(di32, a0, b0), WidenMulPairwiseAdd(di32, a1, b1)));
 }
 
 // AbsDiff: |a-b| per lane. Integers via Sub(Max,Min) (Highway's generic); float via Abs(Sub).
@@ -1038,23 +1050,80 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> TruncateTo(Simd<DstT, N, 0>, Vec256<S
   for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
   return Load(Simd<DstT, N, 0>(), dst);
 }
+// PromoteEvenTo/PromoteOddTo: exact-2x integer widenings use a register-in shift/mask path
+// (the SumOfMulQuad i8->i16 hot path was ~13x Highway on the old store+reload). In a source
+// pair viewed as one destination lane, the EVEN source lane sits in the LOW half and the ODD
+// in the HIGH half. Signed = arithmetic shift to sign-fill; unsigned = logical shift / mask.
+// avx2 has no _mm256_srai_epi64, so signed i32->i64 rebuilds sign fill from srai_epi32(.,31).
+// Non-integer / non-2x / multi-level combos keep the correctness-first store+reload fallback.
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec256<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, Vec256<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
-  alignas(32) SrcT src[32 / sizeof(SrcT)];
-  alignas(32) DstT dst[32 / sizeof(DstT)] = {};
-  Store(v, Simd<SrcT, NSrc, 0>(), src);
-  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
-  return Load(Simd<DstT, NDst, 0>(), dst);
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(DstT) == 2 * sizeof(SrcT)) {
+    Vec256<DstT, NDst> r;
+    if constexpr (sizeof(SrcT) == 1) {  // i8/u8 -> i16/u16: even byte is the low byte of each i16
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm256_srai_epi16(_mm256_slli_epi16(v.raw, 8), 8);  // shift up to hi byte, sign-fill back
+      else
+        r.raw = _mm256_and_si256(v.raw, _mm256_set1_epi16(static_cast<short>(0x00FF)));  // zero-extend
+    } else if constexpr (sizeof(SrcT) == 2) {  // i16/u16 -> i32/u32: even word is the low word of each i32
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm256_srai_epi32(_mm256_slli_epi32(v.raw, 16), 16);
+      else
+        r.raw = _mm256_and_si256(v.raw, _mm256_set1_epi32(0x0000FFFF));
+    } else {  // sizeof 4: i32/u32 -> i64/u64; even dword is the low dword of each i64
+      if constexpr (std::is_signed_v<SrcT>) {
+        // No srai_epi64: low = even dword, high = sign(even dword) (its 32-bit sign shifted up).
+        const __m256i lo = _mm256_and_si256(v.raw, _mm256_set1_epi64x(0xFFFFFFFFLL));
+        const __m256i hi = _mm256_slli_epi64(_mm256_srai_epi32(v.raw, 31), 32);
+        r.raw = _mm256_or_si256(lo, hi);
+      } else {
+        r.raw = _mm256_and_si256(v.raw, _mm256_set1_epi64x(0xFFFFFFFFLL));
+      }
+    }
+    return r;
+  } else {
+    alignas(32) SrcT src[32 / sizeof(SrcT)];
+    alignas(32) DstT dst[32 / sizeof(DstT)] = {};
+    Store(v, Simd<SrcT, NSrc, 0>(), src);
+    for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
+    return Load(Simd<DstT, NDst, 0>(), dst);
+  }
 }
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec256<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, Vec256<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteOddTo: odd lanes narrow->wide");
-  alignas(32) SrcT src[32 / sizeof(SrcT)];
-  alignas(32) DstT dst[32 / sizeof(DstT)] = {};
-  Store(v, Simd<SrcT, NSrc, 0>(), src);
-  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
-  return Load(Simd<DstT, NDst, 0>(), dst);
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(DstT) == 2 * sizeof(SrcT)) {
+    Vec256<DstT, NDst> r;
+    if constexpr (sizeof(SrcT) == 1) {  // i8/u8 -> i16/u16: odd byte already in the high byte of each i16
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm256_srai_epi16(v.raw, 8);  // arithmetic: sign-fill from the hi byte
+      else
+        r.raw = _mm256_srli_epi16(v.raw, 8);  // logical: zero-extend from the hi byte
+    } else if constexpr (sizeof(SrcT) == 2) {  // i16/u16 -> i32/u32: odd word in the high word of each i32
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm256_srai_epi32(v.raw, 16);
+      else
+        r.raw = _mm256_srli_epi32(v.raw, 16);
+    } else {  // sizeof 4: i32/u32 -> i64/u64; odd dword in the high dword of each i64
+      if constexpr (std::is_signed_v<SrcT>) {
+        // No srai_epi64: low = odd dword (logical down), high = sign of the odd dword (kept in place).
+        const __m256i lo = _mm256_srli_epi64(v.raw, 32);
+        const __m256i hi = _mm256_and_si256(_mm256_srai_epi32(v.raw, 31),
+                                            _mm256_set1_epi64x(static_cast<long long>(0xFFFFFFFF00000000ULL)));
+        r.raw = _mm256_or_si256(lo, hi);
+      } else {
+        r.raw = _mm256_srli_epi64(v.raw, 32);
+      }
+    }
+    return r;
+  } else {
+    alignas(32) SrcT src[32 / sizeof(SrcT)];
+    alignas(32) DstT dst[32 / sizeof(DstT)] = {};
+    Store(v, Simd<SrcT, NSrc, 0>(), src);
+    for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
+    return Load(Simd<DstT, NDst, 0>(), dst);
+  }
 }
 template <std::size_t N>
 HYLE_FORCE_INLINE VFromD<Simd<std::uint8_t, N, 0>> U8FromU32(Vec256<std::uint32_t, N> v) noexcept {
@@ -1527,21 +1596,29 @@ namespace detail {
 // produce full-lane masks), so the lane's low byte bit represents the whole lane.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE unsigned mask_bits(Mask256<T, N> m) noexcept {
-  if constexpr (std::is_same_v<T, double>)
+  // A mask lane is all-ones/all-zero (compares produce full-lane patterns), so the lane's SIGN bit
+  // already represents it. Pick the WIDTH-MATCHED movemask so every lane width is ONE instruction,
+  // NOT movemask_epi8 + a scalar bit-compaction loop: 8-byte -> movemask_pd (4 bits), 4-byte ->
+  // movemask_ps (8 bits), 1-byte -> movemask_epi8 (32 bits). Only 2-byte lanes lack a native
+  // movemask, so they alone keep the byte-mask compaction. This matches Highway (which holds i32/
+  // i64 masks in the float domain for exactly this single-instruction extraction) and removes the
+  // ~20-instruction scalar tail that dominated every CountTrue/FindFirstTrue/Compress/mask-op.
+  if constexpr (std::is_same_v<T, double>) {
     return static_cast<unsigned>(_mm256_movemask_pd(m.raw));
-  else if constexpr (std::is_same_v<T, float>)
+  } else if constexpr (std::is_same_v<T, float>) {
     return static_cast<unsigned>(_mm256_movemask_ps(m.raw));
-  else {
-    const unsigned bytes = static_cast<unsigned>(_mm256_movemask_epi8(m.raw));  // 32 bits
-    if constexpr (sizeof(T) == 1) {
-      return bytes;  // 32 lanes, 1 bit/byte already
-    } else {
-      // Keep every sizeof(T)-th bit (the low byte of each lane), compacting to N bits.
-      unsigned out = 0;
-      for (std::size_t i = 0; i < N; ++i)
-        out |= ((bytes >> (i * sizeof(T))) & 1u) << i;
-      return out;
-    }
+  } else if constexpr (sizeof(T) == 8) {  // i64/u64 raw is __m256i: reinterpret to pd
+    return static_cast<unsigned>(_mm256_movemask_pd(_mm256_castsi256_pd(m.raw)));
+  } else if constexpr (sizeof(T) == 4) {  // i32/u32 raw is __m256i: reinterpret to ps
+    return static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
+  } else if constexpr (sizeof(T) == 1) {
+    return static_cast<unsigned>(_mm256_movemask_epi8(m.raw));  // 32 lanes, 1 bit/byte already
+  } else {  // 2-byte lanes: no native 16-bit movemask -> byte-mask + compact every 2nd bit.
+    const unsigned bytes = static_cast<unsigned>(_mm256_movemask_epi8(m.raw));
+    unsigned out = 0;
+    for (std::size_t i = 0; i < N; ++i)
+      out |= ((bytes >> (i * sizeof(T))) & 1u) << i;
+    return out;
   }
 }
 }  // namespace detail
@@ -2027,41 +2104,71 @@ HYLE_FORCE_INLINE Vec256<T, N> InterleaveOdd(Vec256<T, N> a, Vec256<T, N> b) noe
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> Slide1Up(D d, detail::V256<D> v) noexcept {
+  // Ported from Highway: shift every lane up by one (dst[0]=0, dst[i]=v[i-1]) IN THE VECTOR UNIT.
+  // ConcatLowerLower(v, Zero) = [v_lo | 0] gives each 128-bit block the correct byte to pull across
+  // its lower boundary; CombineShiftRightBytes<16-sizeof(T)>(v, that) is the per-block vpalignr that
+  // realizes the whole-vector 1-lane up-shift. Replaces the old store + scalar copy + reload.
   using T = TFromD<D>;
-  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T s[N]; alignas(32) T dst[N];
-  Store(v, d, s);
-  dst[0] = T{0};
-  for (std::size_t i = 1; i < N; ++i) dst[i] = s[i - 1];
-  return Load(d, dst);
+  const auto lo = ConcatLowerLower(v, Zero(d));
+  return CombineShiftRightBytes<16 - static_cast<int>(sizeof(T))>(v, lo);
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> Slide1Down(D d, detail::V256<D> v) noexcept {
+  // Mirror of Slide1Up: dst[N-1]=0, dst[i]=v[i+1]. ConcatUpperUpper(Zero, v) = [0 | v_hi] supplies
+  // the cross-boundary byte for the down-shift; CombineShiftRightBytes<sizeof(T)>(that, v) is the
+  // per-block vpalignr. Pure vector, no store+reload.
   using T = TFromD<D>;
-  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T s[N]; alignas(32) T dst[N];
-  Store(v, d, s);
-  dst[N - 1] = T{0};
-  for (std::size_t i = 0; i + 1 < N; ++i) dst[i] = s[i + 1];
-  return Load(d, dst);
+  const auto hi = ConcatUpperUpper(Zero(d), v);
+  return CombineShiftRightBytes<static_cast<int>(sizeof(T))>(hi, v);
 }
+// SlideUp/DownLanes(v, amt): shift lanes up/down by a RUNTIME amt, zero-fill. 32-bit lanes get a
+// vpermd path (one cross-lane permute + one compare-mask zero), so a runtime amt is still fully
+// vectorized -- HYLE does better than Highway here, which only vectorizes a compile-time-constant
+// amt and otherwise falls back. idx = iota-+amt selects the source lane; vpermd reads the low 3
+// index bits so out-of-range lanes wrap harmlessly and are then zeroed by the range mask. Other
+// widths keep the scalar store+reload (no single-instruction cross-lane permute on AVX2 for them).
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> SlideUpLanes(D d, detail::V256<D> v, std::size_t amt) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T s[N]; alignas(32) T dst[N] = {};
-  Store(v, d, s);
-  for (std::size_t i = amt; i < N; ++i) dst[i] = s[i - amt];
-  return Load(d, dst);
+  if constexpr (sizeof(T) == 4 && N == 8) {
+    const __m256i iota = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+    const __m256i amtv = _mm256_set1_epi32(static_cast<int>(amt));
+    const __m256i idx = _mm256_sub_epi32(iota, amtv);              // source lane i-amt
+    const __m256i keep = _mm256_cmpgt_epi32(iota, _mm256_sub_epi32(amtv, _mm256_set1_epi32(1)));  // i>=amt
+    const __m256i gathered = _mm256_permutevar8x32_epi32(
+        detail::bitcast_raw_avx2<__m256i>(v.raw), idx);
+    detail::V256<D> r;
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(_mm256_and_si256(gathered, keep));
+    return r;
+  } else {
+    alignas(32) T s[N]; alignas(32) T dst[N] = {};
+    Store(v, d, s);
+    for (std::size_t i = amt; i < N; ++i) dst[i] = s[i - amt];
+    return Load(d, dst);
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> SlideDownLanes(D d, detail::V256<D> v, std::size_t amt) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T s[N]; alignas(32) T dst[N] = {};
-  Store(v, d, s);
-  for (std::size_t i = 0; i + amt < N; ++i) dst[i] = s[i + amt];
-  return Load(d, dst);
+  if constexpr (sizeof(T) == 4 && N == 8) {
+    const __m256i iota = _mm256_setr_epi32(0, 1, 2, 3, 4, 5, 6, 7);
+    const __m256i amtv = _mm256_set1_epi32(static_cast<int>(amt));
+    const __m256i idx = _mm256_add_epi32(iota, amtv);             // source lane i+amt
+    const __m256i limit = _mm256_set1_epi32(static_cast<int>(N));
+    const __m256i keep = _mm256_cmpgt_epi32(limit, idx);          // i+amt < N
+    const __m256i gathered = _mm256_permutevar8x32_epi32(
+        detail::bitcast_raw_avx2<__m256i>(v.raw), idx);
+    detail::V256<D> r;
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(_mm256_and_si256(gathered, keep));
+    return r;
+  } else {
+    alignas(32) T s[N]; alignas(32) T dst[N] = {};
+    Store(v, d, s);
+    for (std::size_t i = 0; i + amt < N; ++i) dst[i] = s[i + amt];
+    return Load(d, dst);
+  }
 }
 template <int kLane, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> BroadcastLane(Vec256<T, N> v) noexcept { return Broadcast<kLane>(v); }
@@ -2106,12 +2213,28 @@ HYLE_FORCE_INLINE void BlendedStore(detail::V256<D> v,
                                     Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D d,
                                     TFromD<D>* p) noexcept {
   using T = TFromD<D>;
-  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T tmp[kN];
-  Store(v, d, tmp);
-  const unsigned bits = detail::mask_bits(m);
-  for (std::size_t i = 0; i < kN; ++i)
-    if ((bits >> i) & 1u) p[i] = tmp[i];  // write only on-lanes (fault-safe)
+  // 4/8-byte lanes: NATIVE masked store (one instruction, fault-safe on off-lanes) -- ported from
+  // Highway. _mm256_maskstore_* reads the high bit of each mask lane. 8/16-bit lanes have no
+  // maskstore on AVX2, so they keep the scalar per-lane path (Highway does the same). Replaces the
+  // old store + mask_bits + scalar loop (op_parity: that lost ~4x to the native maskstore).
+  if constexpr (std::is_same_v<T, float>) {
+    const Simd<std::int32_t, HYLE_SIMD_MAX_LANES_D(D), 0> di;
+    _mm256_maskstore_ps(p, BitCast(di, VecFromMask(d, m)).raw, v.raw);
+  } else if constexpr (std::is_same_v<T, double>) {
+    const Simd<std::int64_t, HYLE_SIMD_MAX_LANES_D(D), 0> di;
+    _mm256_maskstore_pd(p, BitCast(di, VecFromMask(d, m)).raw, v.raw);
+  } else if constexpr (sizeof(T) == 4) {
+    _mm256_maskstore_epi32(reinterpret_cast<int*>(p), m.raw, v.raw);
+  } else if constexpr (sizeof(T) == 8) {
+    _mm256_maskstore_epi64(reinterpret_cast<long long*>(p), m.raw, v.raw);
+  } else {  // 8/16-bit: no AVX2 maskstore -> scalar per-lane (fault-safe), same as Highway.
+    constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
+    alignas(32) T tmp[kN];
+    Store(v, d, tmp);
+    const unsigned bits = detail::mask_bits(m);
+    for (std::size_t i = 0; i < kN; ++i)
+      if ((bits >> i) & 1u) p[i] = tmp[i];
+  }
 }
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE detail::V256<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
@@ -2247,6 +2370,15 @@ template <class D>
 HYLE_FORCE_INLINE std::size_t CompressStore(detail::V256<D> v,
                                             Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
                                             D d, TFromD<D>* p) noexcept {
+  // CONTRACT: writes EXACTLY CountTrue lanes, p[count..) UNTOUCHED (tight-packing callers rely on
+  // it). This is a DIFFERENT, STRONGER contract than Highway's CompressStore, which writes a WHOLE
+  // vector and only promises the first count -- that is why Highway's bench row is ~6x faster here:
+  // it does one vpermd + one full vmovdqu, whereas an exact write on AVX2 (no native compress-store)
+  // fundamentally needs either a scalar pack or a masked store. MEASURED both: the scalar pack below
+  // beats the Compress(vpermd)+maskstore(FirstN) route (maskstore is slow on this uarch AND FirstN
+  // itself builds its mask via store+reload). So the scalar pack is the fastest form that still
+  // honors HYLE's precise-write contract. The gap to Highway is a contract difference, not a missed
+  // optimization -- a caller that can tolerate a full-vector store should use StoreU(Compress(v,m)).
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   alignas(32) TFromD<D> src[kN];
   Store(v, d, src);
@@ -2515,53 +2647,65 @@ HYLE_FORCE_INLINE Vec256<T, N> RoundingShr(Vec256<T, N> v, Vec256<T, N> amounts)
   }
   return Load(Simd<T, N, 0>(), so);
 }
+// PairwiseAdd128 / PairwiseSub128: per-128-block horizontal add/sub. NATIVE _mm256_hadd/hsub_*
+// (Highway's form) -- one instruction, layout [a0+a1,a2+a3,b0+b1,b2+b3] per block = HYLE's contract.
+// i16/i32/f32/f64 all have hadd; other widths keep the scalar fallback. Replaces store+reload.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> PairwiseAdd128(Vec256<T, N> a, Vec256<T, N> b) noexcept {
-  alignas(32) T sa[N], sb[N], so[N];
-  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
-  constexpr std::size_t kBL = 16 / sizeof(T);
-  for (std::size_t base = 0; base < N; base += kBL) {
-    const std::size_t h = kBL / 2;
-    for (std::size_t i = 0; i < h; ++i) {
-      so[base + i] = static_cast<T>(sa[base + 2 * i] + sa[base + 2 * i + 1]);
-      so[base + h + i] = static_cast<T>(sb[base + 2 * i] + sb[base + 2 * i + 1]);
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) { r.raw = _mm256_hadd_ps(a.raw, b.raw); return r; }
+  else if constexpr (std::is_same_v<T, double>) { r.raw = _mm256_hadd_pd(a.raw, b.raw); return r; }
+  else if constexpr (std::is_integral_v<T> && sizeof(T) == 4) { r.raw = _mm256_hadd_epi32(a.raw, b.raw); return r; }
+  else if constexpr (std::is_integral_v<T> && sizeof(T) == 2) { r.raw = _mm256_hadd_epi16(a.raw, b.raw); return r; }
+  else {
+    alignas(32) T sa[N], sb[N], so[N];
+    Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+    constexpr std::size_t kBL = 16 / sizeof(T);
+    for (std::size_t base = 0; base < N; base += kBL) {
+      const std::size_t h = kBL / 2;
+      for (std::size_t i = 0; i < h; ++i) {
+        so[base + i] = static_cast<T>(sa[base + 2 * i] + sa[base + 2 * i + 1]);
+        so[base + h + i] = static_cast<T>(sb[base + 2 * i] + sb[base + 2 * i + 1]);
+      }
     }
+    return Load(Simd<T, N, 0>(), so);
   }
-  return Load(Simd<T, N, 0>(), so);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> PairwiseSub128(Vec256<T, N> a, Vec256<T, N> b) noexcept {
-  alignas(32) T sa[N], sb[N], so[N];
-  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
-  constexpr std::size_t kBL = 16 / sizeof(T);
-  for (std::size_t base = 0; base < N; base += kBL) {
-    const std::size_t h = kBL / 2;
-    for (std::size_t i = 0; i < h; ++i) {
-      so[base + i] = static_cast<T>(sa[base + 2 * i] - sa[base + 2 * i + 1]);
-      so[base + h + i] = static_cast<T>(sb[base + 2 * i] - sb[base + 2 * i + 1]);
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) { r.raw = _mm256_hsub_ps(a.raw, b.raw); return r; }
+  else if constexpr (std::is_same_v<T, double>) { r.raw = _mm256_hsub_pd(a.raw, b.raw); return r; }
+  else if constexpr (std::is_integral_v<T> && sizeof(T) == 4) { r.raw = _mm256_hsub_epi32(a.raw, b.raw); return r; }
+  else if constexpr (std::is_integral_v<T> && sizeof(T) == 2) { r.raw = _mm256_hsub_epi16(a.raw, b.raw); return r; }
+  else {
+    alignas(32) T sa[N], sb[N], so[N];
+    Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
+    constexpr std::size_t kBL = 16 / sizeof(T);
+    for (std::size_t base = 0; base < N; base += kBL) {
+      const std::size_t h = kBL / 2;
+      for (std::size_t i = 0; i < h; ++i) {
+        so[base + i] = static_cast<T>(sa[base + 2 * i] - sa[base + 2 * i + 1]);
+        so[base + h + i] = static_cast<T>(sb[base + 2 * i] - sb[base + 2 * i + 1]);
+      }
     }
+    return Load(Simd<T, N, 0>(), so);
   }
-  return Load(Simd<T, N, 0>(), so);
 }
+// PairwiseAdd/Sub (whole-vector): HYLE contract packs a's pair-sums in the low half, b's in the
+// high half -- so[i<N/2] = a[2i]+a[2i+1], so[N/2+i] = b[2i]+b[2i+1]. That is exactly
+// Add(ConcatEven(b,a), ConcatOdd(b,a)): ConcatEven(b,a) = [a's even lanes..., b's even lanes...],
+// ConcatOdd = the odd lanes, so their sum has a's pair-sums packed low, b's high. ConcatEven/Odd
+// are vectorized (vpermd) for 32-bit, so this drops the store+reload while keeping HYLE's segmented
+// layout (which differs from Highway's interleaved PairwiseAdd -- we keep our own contract, but at
+// optimal complexity). Other widths inherit ConcatEven/Odd's own fallback.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> PairwiseAdd(Vec256<T, N> a, Vec256<T, N> b) noexcept {
-  alignas(32) T sa[N], sb[N], so[N];
-  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
-  for (std::size_t i = 0; i < N / 2; ++i) {
-    so[i] = static_cast<T>(sa[2 * i] + sa[2 * i + 1]);
-    so[N / 2 + i] = static_cast<T>(sb[2 * i] + sb[2 * i + 1]);
-  }
-  return Load(Simd<T, N, 0>(), so);
+  return Add(ConcatEven(b, a), ConcatOdd(b, a));
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> PairwiseSub(Vec256<T, N> a, Vec256<T, N> b) noexcept {
-  alignas(32) T sa[N], sb[N], so[N];
-  Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
-  for (std::size_t i = 0; i < N / 2; ++i) {
-    so[i] = static_cast<T>(sa[2 * i] - sa[2 * i + 1]);
-    so[N / 2 + i] = static_cast<T>(sb[2 * i] - sb[2 * i + 1]);
-  }
-  return Load(Simd<T, N, 0>(), so);
+  return Sub(ConcatEven(b, a), ConcatOdd(b, a));
 }
 template <class D>
 HYLE_FORCE_INLINE void Stream(detail::V256<D> v, D, TFromD<D>* aligned) noexcept {
@@ -2590,24 +2734,24 @@ HYLE_FORCE_INLINE auto GetBiasedExponent(Vec256<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> MulByFloorPow2(Vec256<T, N> v, Vec256<T, N> exp) noexcept {
   static_assert(std::is_floating_point_v<T>, "MulByFloorPow2 is float only");
-  // Store+reload scalar ldexp with Highway's NaN special-cases: NaN exp, (0,+inf), (inf,-inf)
-  // -> NaN. floor(exp) is clamped into int range first so the cast is never UB (a raw
-  // static_cast<int>(floor(+inf)) is UB and diverged across backends). Matches the scalar oracle.
-  alignas(32) T sv[N], se[N], ro[N];
-  Store(v, Simd<T, N, 0>(), sv); Store(exp, Simd<T, N, 0>(), se);
-  for (std::size_t i = 0; i < N; ++i) {
-    if (std::isnan(se[i]) ||
-        (std::isinf(se[i]) && ((sv[i] == T{0} && se[i] > 0) || (std::isinf(sv[i]) && se[i] < 0)))) {
-      ro[i] = std::numeric_limits<T>::quiet_NaN();
-    } else {
-      const T fe = std::floor(se[i]);
-      const int ie = (fe >= static_cast<T>(std::numeric_limits<int>::max())) ? std::numeric_limits<int>::max()
-                   : (fe <= static_cast<T>(std::numeric_limits<int>::min())) ? std::numeric_limits<int>::min()
-                   : static_cast<int>(fe);
-      ro[i] = std::ldexp(sv[i], ie);
-    }
-  }
-  return Load(Simd<T, N, 0>(), ro);
+  // Vectorized (ported from Highway generic_ops): v * 2^floor(exp) = MulByPow2(v, FloorInt(exp))
+  // with the IEEE special-cases blended in -- NaN exp, (|v|==0, +inf exp), (|v|==inf, -inf exp)
+  // all yield NaN. FloorInt saturates the float->int cast so it is never UB. The MulByPow2 core is
+  // the 3-part exponent-bit build (no store+reload). Matches the scalar oracle on all corners.
+  using IT = std::conditional_t<sizeof(T) == 4, std::int32_t, std::int64_t>;
+  const Simd<T, N, 0> df;
+  const auto is_nan_result =
+      Or(IsNaN(exp), And(Eq(Abs(v), IfNegativeThenElseZero(exp, Inf(df))), IsInf(exp)));
+  // Clamp floored exp to a SMALL magnitude (well within int range AND past MulByPow2's own 3*bias
+  // saturation) BEFORE the float->int cast. Critical: an out-of-range float->int cast on x86
+  // (cvttps2dq) returns INT_MIN for +inf too, which would flip a +inf exp to a huge NEGATIVE
+  // exponent (underflow to 0) instead of overflow to +inf. Clamping to +/-4096 keeps the cast exact
+  // and lets MulByPow2 saturate correctly by sign. 4096 > 3*1023 so no reachable exponent is lost.
+  const T kCap = static_cast<T>(4096);
+  const auto fe = Max(Min(Floor(exp), Set(df, kCap)), Set(df, -kCap));
+  const auto ie = ConvertTo(Simd<IT, N, 0>(), fe);
+  const auto scaled = MulByPow2(v, ie);
+  return IfThenElse(is_nan_result, NaN(df), scaled);
 }
 
 // ---- simd-17 batch4: half-vector family (256 -> 128 real Vec128 entity) -------------
@@ -2879,18 +3023,31 @@ HYLE_FORCE_INLINE Vec256<T, N> Per4LaneBlockShuffle(Vec256<T, N> v) noexcept {
   }
   return r;
 }
-// E11 TwoTablesLookupLanes: dual-source permute. avx2 has no permutex2 without AVX512VL -> fallback.
+// E11 TwoTablesLookupLanes: dual-source permute. avx2 has no permutex2 without AVX512VL. Ported
+// from Highway's AVX2 fallback: gather from BOTH tables with the same idx (each TableLookupLanes is
+// vpermd, which only reads the low log2(N) index bits, so idx>=N wraps into b's own lanes), then
+// select b's result where idx>=N. Pure vector -- no store+reload. The select mask is idx's bit
+// log2(N) (idx in [0,2N): that bit is set exactly for the b-half). Only 32-bit lanes here (matches
+// the op's Indices contract on AVX2); a scalar fallback covers any other width defensively.
 template <class D, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> TwoTablesLookupLanes(D d, Vec256<T, N> a, Vec256<T, N> b,
                                                     Indices256<T, N> idx) noexcept {
-  // idx in [0,2N): <N from a, else from b. Blend of two TableLookupLanes.
-  alignas(32) T sa[N], sb[N], ix[N], out[N];
-  Store(a, d, sa); Store(b, d, sb); Store(idx.idx, d, ix);
-  for (std::size_t i = 0; i < N; ++i) {
-    const auto k = static_cast<std::size_t>(ix[i]);
-    out[i] = (k < N) ? sa[k] : sb[k - N];
+  if constexpr (sizeof(T) == 4 && N == 8) {
+    const auto from_a = TableLookupLanes(a, idx);
+    const auto from_b = TableLookupLanes(b, idx);
+    // idx in [0,16): bit 3 (value 8) distinguishes the b-half. Build a lane mask from that bit.
+    const Simd<std::int32_t, N, 0> di;
+    const auto sel_b = Ne(And(BitCast(di, idx.idx), Set(di, 8)), Zero(di));
+    return IfThenElse(RebindMask(d, sel_b), from_b, from_a);
+  } else {
+    alignas(32) T sa[N], sb[N], ix[N], out[N];
+    Store(a, d, sa); Store(b, d, sb); Store(idx.idx, d, ix);
+    for (std::size_t i = 0; i < N; ++i) {
+      const auto k = static_cast<std::size_t>(ix[i]);
+      out[i] = (k < N) ? sa[k] : sb[k - N];
+    }
+    return Load(d, out);
   }
-  return Load(d, out);
 }
 
 // ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts (per-128-bit-block) ----

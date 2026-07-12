@@ -496,17 +496,30 @@ HYLE_FORCE_INLINE Vec128<T, N> GetExponent(Vec128<T, N> v) noexcept {
   }
   return r;
 }
-// MulByPow2(a, b) = a * 2^b (std::ldexp), b an integer-lane vector of matching width.
-// store+reload std::ldexp; no clean SSE4 native (AVX512 vscalefps is the hardware form).
+// MulByPow2(a, b) = a * 2^b, b an integer-lane vector. PORTED from Highway generic_ops (see avx2.h
+// for the full rationale): 3-part clamped exponent split, each part built as a 2^eK float via
+// exponent-bit packing, then multiplied -- entirely in the vector unit, no store+scalar-ldexp+reload
+// (that was the ~19x op_parity loss). Correctly rounded through denormal/overflow.
 template <typename T, std::size_t N, typename IT>
 HYLE_FORCE_INLINE Vec128<T, N> MulByPow2(Vec128<T, N> a, Vec128<IT, N> b) noexcept {
   static_assert(std::is_floating_point_v<T>, "float only");
-  alignas(16) T sa[N];
-  alignas(16) IT sb[N];
-  Store(a, Simd<T, N, 0>(), sa);
-  Store(b, Simd<IT, N, 0>(), sb);
-  for (std::size_t i = 0; i < N; ++i) sa[i] = std::ldexp(sa[i], static_cast<int>(sb[i]));
-  return Load(Simd<T, N, 0>(), sa);
+  static_assert(std::is_integral_v<IT> && std::is_signed_v<IT> && sizeof(IT) == sizeof(T),
+                "MulByPow2 exponent is a signed int lane matching the float width");
+  const Simd<T, N, 0> df;
+  const Simd<IT, N, 0> di;
+  constexpr int kMantBits = (sizeof(T) == 4) ? 23 : 52;
+  constexpr IT kBias = (sizeof(T) == 4) ? IT{127} : IT{1023};
+  const auto clamped = Clamp(b, Set(di, static_cast<IT>(3 - 3 * kBias)), Set(di, static_cast<IT>(3 * kBias)));
+  const auto lo = Set(di, static_cast<IT>(1 - kBias));
+  const auto hi = Set(di, kBias);
+  const auto e3 = Clamp(clamped, lo, hi);
+  const auto e2 = Clamp(Sub(clamped, e3), lo, hi);
+  const auto e1 = Sub(Sub(clamped, e3), e2);
+  const auto biasv = Set(di, kBias);
+  const auto f1 = BitCast(df, ShiftLeft<kMantBits>(Add(e1, biasv)));
+  const auto f2 = BitCast(df, ShiftLeft<kMantBits>(Add(e2, biasv)));
+  const auto f3 = BitCast(df, ShiftLeft<kMantBits>(Add(e3, biasv)));
+  return Mul(Mul(Mul(a, f1), f2), f3);
 }
 // NaN-aware min/max (Highway MinNumber/MaxNumber): if one operand is NaN, return the OTHER.
 // x86 _mm_min_ps/_mm_max_ps return the second operand on any-NaN, so we can't map directly;
@@ -554,13 +567,10 @@ HYLE_FORCE_INLINE Vec128<T, N> SaturatedNeg(Vec128<T, N> a) noexcept {
   static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "SaturatedNeg is signed-int");
   if constexpr (sizeof(T) <= 2) {
     return SaturatedSub(Zero(Simd<T, N, 0>()), a);  // 0 - a saturating
-  } else {  // i32/i64: no native satsub
-    alignas(16) T s[N];
-    Store(a, Simd<T, N, 0>(), s);
-    for (std::size_t i = 0; i < N; ++i)
-      s[i] = (s[i] == std::numeric_limits<T>::min()) ? std::numeric_limits<T>::max()
-                                                     : static_cast<T>(-s[i]);
-    return Load(Simd<T, N, 0>(), s);
+  } else {  // i32/i64: no native satsub -> branchless vector select on the MIN corner (see avx2.h)
+    const Simd<T, N, 0> d;
+    const auto is_min = Eq(a, Set(d, std::numeric_limits<T>::min()));
+    return IfThenElse(is_min, Set(d, std::numeric_limits<T>::max()), Neg(a));
   }
 }
 // SaturatedAbs(a) = (a==MIN) ? MAX : |a|. |a| for a<0 is exactly SaturatedNeg(a), so reuse
@@ -789,24 +799,8 @@ HYLE_FORCE_INLINE Vec128<std::int32_t, NW> RearrangeToOddPlusEven(
 // SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8 dot a[4i+0..3]*b[4i+0..3].
 // emulation: no SSE4/AVX2 VNNI; native vpdpbusd is an AVX512-VNNI profiling upgrade. Store the
 // operands to the stack, run the scalar 4-way loop, reload -- correctness over speed here.
-template <std::size_t NDst, std::size_t NSrc>
-HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> SumOfMulQuadAccumulate(
-    Simd<std::int32_t, NDst, 0>, Vec128<std::int8_t, NSrc> a, Vec128<std::int8_t, NSrc> b,
-    Vec128<std::int32_t, NDst> sum) noexcept {
-  static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
-  alignas(16) std::int8_t ab[16];
-  alignas(16) std::int8_t bb[16];
-  alignas(16) std::int32_t sb[4];
-  _mm_store_si128(reinterpret_cast<__m128i*>(ab), a.raw);
-  _mm_store_si128(reinterpret_cast<__m128i*>(bb), b.raw);
-  _mm_store_si128(reinterpret_cast<__m128i*>(sb), sum.raw);
-  for (std::size_t i = 0; i < NDst; ++i)
-    for (std::size_t k = 0; k < 4; ++k)
-      sb[i] += static_cast<std::int32_t>(ab[4 * i + k]) * bb[4 * i + k];
-  Vec128<std::int32_t, NDst> r;
-  r.raw = _mm_load_si128(reinterpret_cast<const __m128i*>(sb));
-  return r;
-}
+// SumOfMulQuadAccumulate is defined AFTER PromoteEvenTo/PromoteOddTo (below) so it can use the
+// vectorized i8->i16 split; see its definition following ConcatOdd.
 
 // AbsDiff: |a-b| per lane. Integers via Sub(Max,Min) (Highway's generic); float via Abs(Sub).
 template <typename T, std::size_t N>
@@ -1009,23 +1003,80 @@ HYLE_FORCE_INLINE Vec128<DstT, N> TruncateTo(Simd<DstT, N, 0>, Vec128<SrcT, N> v
   for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
   return Load(Simd<DstT, N, 0>(), dst);
 }
+// PromoteEvenTo/PromoteOddTo: exact-2x integer widenings use a register-in shift/mask path
+// (mirrors avx2 with 128-bit intrinsics). In a source pair viewed as one destination lane, the
+// EVEN source lane sits in the LOW half and the ODD in the HIGH half. Signed = arithmetic shift
+// to sign-fill; unsigned = logical shift / mask. SSE has no _mm_srai_epi64, so signed i32->i64
+// rebuilds sign fill from _mm_srai_epi32(.,31). Non-integer / non-2x / multi-level combos keep
+// the correctness-first store+reload fallback.
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec128<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, Vec128<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
-  alignas(16) SrcT src[16 / sizeof(SrcT)];
-  alignas(16) DstT dst[16 / sizeof(DstT)] = {};
-  Store(v, Simd<SrcT, NSrc, 0>(), src);
-  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
-  return Load(Simd<DstT, NDst, 0>(), dst);
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(DstT) == 2 * sizeof(SrcT)) {
+    Vec128<DstT, NDst> r;
+    if constexpr (sizeof(SrcT) == 1) {  // i8/u8 -> i16/u16: even byte is the low byte of each i16
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm_srai_epi16(_mm_slli_epi16(v.raw, 8), 8);  // shift up to hi byte, sign-fill back
+      else
+        r.raw = _mm_and_si128(v.raw, _mm_set1_epi16(static_cast<short>(0x00FF)));  // zero-extend
+    } else if constexpr (sizeof(SrcT) == 2) {  // i16/u16 -> i32/u32: even word is the low word of each i32
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm_srai_epi32(_mm_slli_epi32(v.raw, 16), 16);
+      else
+        r.raw = _mm_and_si128(v.raw, _mm_set1_epi32(0x0000FFFF));
+    } else {  // sizeof 4: i32/u32 -> i64/u64; even dword is the low dword of each i64
+      if constexpr (std::is_signed_v<SrcT>) {
+        // No srai_epi64: low = even dword, high = sign(even dword) (its 32-bit sign shifted up).
+        const __m128i lo = _mm_and_si128(v.raw, _mm_set1_epi64x(0xFFFFFFFFLL));
+        const __m128i hi = _mm_slli_epi64(_mm_srai_epi32(v.raw, 31), 32);
+        r.raw = _mm_or_si128(lo, hi);
+      } else {
+        r.raw = _mm_and_si128(v.raw, _mm_set1_epi64x(0xFFFFFFFFLL));
+      }
+    }
+    return r;
+  } else {
+    alignas(16) SrcT src[16 / sizeof(SrcT)];
+    alignas(16) DstT dst[16 / sizeof(DstT)] = {};
+    Store(v, Simd<SrcT, NSrc, 0>(), src);
+    for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
+    return Load(Simd<DstT, NDst, 0>(), dst);
+  }
 }
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec128<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, Vec128<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteOddTo: odd lanes narrow->wide");
-  alignas(16) SrcT src[16 / sizeof(SrcT)];
-  alignas(16) DstT dst[16 / sizeof(DstT)] = {};
-  Store(v, Simd<SrcT, NSrc, 0>(), src);
-  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
-  return Load(Simd<DstT, NDst, 0>(), dst);
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(DstT) == 2 * sizeof(SrcT)) {
+    Vec128<DstT, NDst> r;
+    if constexpr (sizeof(SrcT) == 1) {  // i8/u8 -> i16/u16: odd byte already in the high byte of each i16
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm_srai_epi16(v.raw, 8);  // arithmetic: sign-fill from the hi byte
+      else
+        r.raw = _mm_srli_epi16(v.raw, 8);  // logical: zero-extend from the hi byte
+    } else if constexpr (sizeof(SrcT) == 2) {  // i16/u16 -> i32/u32: odd word in the high word of each i32
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm_srai_epi32(v.raw, 16);
+      else
+        r.raw = _mm_srli_epi32(v.raw, 16);
+    } else {  // sizeof 4: i32/u32 -> i64/u64; odd dword in the high dword of each i64
+      if constexpr (std::is_signed_v<SrcT>) {
+        // No srai_epi64: low = odd dword (logical down), high = sign of the odd dword (kept in place).
+        const __m128i lo = _mm_srli_epi64(v.raw, 32);
+        const __m128i hi = _mm_and_si128(_mm_srai_epi32(v.raw, 31),
+                                         _mm_set1_epi64x(static_cast<long long>(0xFFFFFFFF00000000ULL)));
+        r.raw = _mm_or_si128(lo, hi);
+      } else {
+        r.raw = _mm_srli_epi64(v.raw, 32);
+      }
+    }
+    return r;
+  } else {
+    alignas(16) SrcT src[16 / sizeof(SrcT)];
+    alignas(16) DstT dst[16 / sizeof(DstT)] = {};
+    Store(v, Simd<SrcT, NSrc, 0>(), src);
+    for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
+    return Load(Simd<DstT, NDst, 0>(), dst);
+  }
 }
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec128<std::uint8_t, N> U8FromU32(Vec128<std::uint32_t, N> v) noexcept {
@@ -1187,6 +1238,22 @@ HYLE_FORCE_INLINE Vec128<T, N> ConcatOdd(Vec128<T, N> hi, Vec128<T, N> lo) noexc
   Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
   for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
   return Load(Simd<T, N, 0>(), dst);
+}
+// SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8 dot. PORTED from Highway generic
+// (see avx2.h): split each i8 operand into even/odd i16 halves, two WidenMulPairwiseAdd (pmaddwd)
+// sum the pairs, add over even+odd = the quad dot. Fully vectorized (defined here, after
+// PromoteEven/OddTo, so those are visible). Replaces the store + scalar 4-way loop + reload.
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> SumOfMulQuadAccumulate(
+    Simd<std::int32_t, NDst, 0> di32, Vec128<std::int8_t, NSrc> a, Vec128<std::int8_t, NSrc> b,
+    Vec128<std::int32_t, NDst> sum) noexcept {
+  static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
+  const Simd<std::int16_t, NSrc / 2, 0> di16;
+  const auto a0 = PromoteEvenTo(di16, a);
+  const auto b0 = PromoteEvenTo(di16, b);
+  const auto a1 = PromoteOddTo(di16, a);
+  const auto b1 = PromoteOddTo(di16, b);
+  return Add(sum, Add(WidenMulPairwiseAdd(di32, a0, b0), WidenMulPairwiseAdd(di32, a1, b1)));
 }
 // DupEven/DupOdd: broadcast the even/odd element of each adjacent pair. NATIVE for 32/64-bit lanes
 // (op_parity: avx2 store+reload was 10x slower); narrow 8/16-bit keep the mem swizzle.
@@ -1887,23 +1954,16 @@ HYLE_FORCE_INLINE Vec128<T, N> InterleaveOdd(Vec128<T, N> a, Vec128<T, N> b) noe
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V128<D> Slide1Up(D d, detail::V128<D> v) noexcept {
+  // Single 128-bit block: shift up one lane (dst[0]=0) = palignr(v, Zero, 16-sizeof(T)). Pure
+  // vector, replaces the old store + scalar copy + reload.
   using T = TFromD<D>;
-  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) T s[N]; alignas(16) T dst[N];
-  Store(v, d, s);
-  dst[0] = T{0};
-  for (std::size_t i = 1; i < N; ++i) dst[i] = s[i - 1];
-  return Load(d, dst);
+  return CombineShiftRightBytes<16 - static_cast<int>(sizeof(T))>(v, Zero(d));
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V128<D> Slide1Down(D d, detail::V128<D> v) noexcept {
+  // Shift down one lane (dst[N-1]=0) = palignr(Zero, v, sizeof(T)). Pure vector.
   using T = TFromD<D>;
-  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) T s[N]; alignas(16) T dst[N];
-  Store(v, d, s);
-  dst[N - 1] = T{0};
-  for (std::size_t i = 0; i + 1 < N; ++i) dst[i] = s[i + 1];
-  return Load(d, dst);
+  return CombineShiftRightBytes<static_cast<int>(sizeof(T))>(Zero(d), v);
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V128<D> SlideUpLanes(D d, detail::V128<D> v, std::size_t amt) noexcept {
@@ -2354,25 +2414,19 @@ HYLE_FORCE_INLINE auto GetBiasedExponent(Vec128<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> MulByFloorPow2(Vec128<T, N> v, Vec128<T, N> exp) noexcept {
   static_assert(std::is_floating_point_v<T>, "MulByFloorPow2 is float only");
-  // Store+reload scalar ldexp with Highway's NaN special-cases: NaN exp, (0,+inf), (inf,-inf)
-  // -> NaN. floor(exp) is clamped into int range first so the cast is never UB (a raw
-  // static_cast<int>(floor(+inf)) is UB and diverged across backends -- avx512 dropped the
-  // finite*+inf lane). Matches the scalar oracle.
-  alignas(16) T sv[N], se[N], ro[N];
-  Store(v, Simd<T, N, 0>(), sv); Store(exp, Simd<T, N, 0>(), se);
-  for (std::size_t i = 0; i < N; ++i) {
-    if (std::isnan(se[i]) ||
-        (std::isinf(se[i]) && ((sv[i] == T{0} && se[i] > 0) || (std::isinf(sv[i]) && se[i] < 0)))) {
-      ro[i] = std::numeric_limits<T>::quiet_NaN();
-    } else {
-      const T fe = std::floor(se[i]);
-      const int ie = (fe >= static_cast<T>(std::numeric_limits<int>::max())) ? std::numeric_limits<int>::max()
-                   : (fe <= static_cast<T>(std::numeric_limits<int>::min())) ? std::numeric_limits<int>::min()
-                   : static_cast<int>(fe);
-      ro[i] = std::ldexp(sv[i], ie);
-    }
-  }
-  return Load(Simd<T, N, 0>(), ro);
+  // Vectorized (see avx2.h): v * 2^floor(exp) = MulByPow2(v, FloorInt(exp)) with the IEEE NaN
+  // special-cases blended (NaN exp / (0,+inf) / (inf,-inf) -> NaN). Float floor clamped into int
+  // range before the (otherwise-UB for inf) cast. No store+reload.
+  using IT = std::conditional_t<sizeof(T) == 4, std::int32_t, std::int64_t>;
+  const Simd<T, N, 0> df;
+  const auto is_nan_result =
+      Or(IsNaN(exp), And(Eq(Abs(v), IfNegativeThenElseZero(exp, Inf(df))), IsInf(exp)));
+  // Clamp to +/-4096 before the cast: an out-of-range float->int (cvttps2dq) returns INT_MIN even
+  // for +inf, which would flip +inf exp to underflow. 4096 > 3*1023 so no reachable exp is lost.
+  const T kCap = static_cast<T>(4096);
+  const auto fe = Max(Min(Floor(exp), Set(df, kCap)), Set(df, -kCap));
+  const auto ie = ConvertTo(Simd<IT, N, 0>(), fe);
+  return IfThenElse(is_nan_result, NaN(df), MulByPow2(v, ie));
 }
 
 // ---- simd-17 batch4: half-vector family (128 -> 64 logical half) --------------------

@@ -257,5 +257,33 @@ int main() {
     });
   }
 
+  // f16 -> fp8 (source direction missing from earlier dtype_bench; vs scalar + vs f32 path cost)
+  {
+    nb::Bench b;
+    b.title("f16->f8e4m3 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
+    b.run("HYLE f16_to_f8e4m3_batch", [&] {
+      hyle::simd::f16_to_f8e4m3_batch(f16.data(), e4m3.data(), kN);
+      nb::doNotOptimizeAway(e4m3.data());
+    });
+    b.run("via f16->f32->f8e4m3 batch", [&] {
+      hyle::simd::f16_to_f32_batch(f16.data(), out_f32.data(), kN);
+      hyle::simd::f32_to_f8e4m3_batch(out_f32.data(), e4m3.data(), kN);
+      nb::doNotOptimizeAway(e4m3.data());
+    });
+  }
+  {
+    nb::Bench b;
+    b.title("f16->f8e5m2 batch (4096)").relative(true).batch(kN).minEpochIterations(1000);
+    b.run("HYLE f16_to_f8e5m2_batch", [&] {
+      hyle::simd::f16_to_f8e5m2_batch(f16.data(), e5m2.data(), kN);
+      nb::doNotOptimizeAway(e5m2.data());
+    });
+    b.run("via f16->f32->f8e5m2 batch", [&] {
+      hyle::simd::f16_to_f32_batch(f16.data(), out_f32.data(), kN);
+      hyle::simd::f32_to_f8e5m2_batch(out_f32.data(), e5m2.data(), kN);
+      nb::doNotOptimizeAway(e5m2.data());
+    });
+  }
+
   return 0;
 }

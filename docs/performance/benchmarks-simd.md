@@ -196,8 +196,8 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 
 **MulByPow2 分档**:仅 avx512 有原生 vscalef,故 avx512 换原生;avx2/sse4/neon 无 scale 指令,保留 std::ldexp store+reload(与 Highway 同,非输家)。**SVE/RVV 无需改**:SVE 早用原生 svcnt/svclz/svuzp1/svuzp2;RVV 的 popcount/clz 属 Zvbb 扩展(rv64gcv 基础集无,已登记边界,同 Highway gate)。**定论:9 个 store+reload/std 标量慢 op 在全部固定宽后端(4)已换成原生或与 Highway 同类算法，真机已测后端无残留输家；scalable(2)本就原生或按扩展 gate。**
 
-### 变宽 op 对照(`op_parity_widen_bench.cc`)——疑似输家实测澄清=全打平
-之前把变宽/SumsOf 标"疑似 store+reload 输家",实测(med ns/op)**全打平**——主路径走原生指令,`alignas` 只在 fallback 分支:
+### 变宽 op 对照(`op_parity_widen_bench.cc`)——原 7 行全打平 + 2026-07-12 加宽 MAC 扩至 16 行
+之前把变宽/SumsOf 标"疑似 store+reload 输家",实测(med ns/op)**原 7 行全打平**——主路径走原生指令,`alignas` 只在 fallback 分支:
 | op | HYLE | Highway | 判定 |
 |---|---|---|---|
 | PromoteUpperTo i16→i32 | 0.024 | 0.024 | 打平(cvtep) |
@@ -205,6 +205,57 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 | ReorderDemote2To i32→i16 | 0.041 | 0.041 | 打平 |
 | WidenMulPairwiseAdd i16→i32 | 0.036 | 0.036 | 打平(vpmaddwd) |
 | SumsOf8 u8→u64 | 0.014 | 0.014 | 打平(vpsadbw) |
+
+**2026-07-12 扩展**（WSL GCC14 AVX2 冒烟，待 `-n15`）：ReorderWidenMulAccumulate / SatWidenMulPairwiseAdd / WidenMulAccumulate / SatWidenMulPairwiseAccumulate / SumsOfAdjQuadAbsDiff / OrderedDemote2To / ZeroExtendVector **平**；**SumOfMulQuadAccumulate 输 ~10x**（HYLE store+reload vs Highway 紧循环/VNNI）；SatWidenMulAccumFixedPoint 初测失真（harness 栈拷贝，已改半宽 ZeroExtend，待复测）。
+
+### 2026-07-12 覆盖补全（crypto + Tier1–3）——发现新一批真输家
+
+> 施工蓝图 `docs/milestones/simd-bench-coverage-gaps.md`。新建 `crypto_bench.cc`；扩 full/parity/widen；CMake 接 `hyle_crypto_bench_avx2` + `hyle_op_parity_widen_bench_avx2`。**冒烟单遍**（须 `bench-stat -n15` 复核定论）。
+
+**Crypto（`crypto_bench.cc`，AES-NI + PCLMUL baseline）——全平**：
+| op | 判定（单遍 ratio ~0.94–1.03） |
+|---|---|
+| AESRound / AESLastRound / AESRoundInv / AESLastRoundInv / AESInvMixColumns / AESKeyGenAssist | 平 Highway |
+| CLMulLower / CLMulUpper (u64) | 平 Highway |
+
+**新平局族**：裸 MulComplex*5、128-cmp 6、ReduceMin/Max、TableLookupLanes、ScatterIndex、MaskedLoad(Or)、MulHigh i16/u16/32、Reverse2/4/8、BitShuffle、Load/StoreInterleaved2·3、AverageRound、GetBiasedExponent、Rotate*、AddSub、Clamp、多数 widen MAC。
+
+**新真输家（待抄 / profile，单遍）**：
+| op | ~gap | 备注 |
+|---|---|---|
+| Slide1Up/Down i32 | ~9x | 可能 store+reload |
+| MulByPow2 / MulByFloorPow2 | ~8–16x | **翻案**旧文"与 Highway 同非输家"——Highway AVX2 仍有向量路径远快于 `ldexp` |
+| TwoTablesLookupLanes | ~4.3x | avx2 无 permutex2 |
+| CompressStore / BlendedStore | ~3.6–4.1x | 与已修 Compress 不同入口 |
+| MultiRotateRight | ~3x | store+reload 族 |
+| SumOfMulQuadAccumulate | ~10x | HYLE 注释即 store+reload |
+| SaturatedAbs i32 / LoadN·StoreN | ~1.5x | 中等 |
+
+**Tier3 HYLE-only（非 parity）**：
+| op | 结果 |
+|---|---|
+| ReciprocalNewton vs ApproxRecip / Div(1,x) | 付 1 步 Newton ≈1.3x 慢于裸估计；**≈1.1x 快于 Div** |
+| ReciprocalSqrtNewton vs ApproxRSqrt / Div(1,Sqrt) | **≈2.1x 快于 Div(1,Sqrt)**——SOTA 吞吐背书成立 |
+
+### 2026-07-12 低优先补全（mask / Shuffle / 单向量 Promote / f16→fp8）
+
+**平**：Shuffle0123/1032/2301/0321/2103、Per4LaneBlockShuffle、MulRound、CombineShiftRightBytes/Lanes、单向量 PromoteTo/DemoteTo/ShiftRightAndDemote*、RebindMask。
+
+**新真输家（单遍）**：
+| 族 | ~gap | 备注 |
+|---|---|---|
+| PairwiseAdd/Sub/Add128/Sub128 | ~6–7× | HYLE store+reload 实现 |
+| SlideUp/DownLanes | ~8–9× | 与 Slide1 同族 |
+| PromoteMaskTo / OrderedDemote2Masks / CombineMasks / SlideMask* / SetMask / Dup128Mask | ~4–20× | bitfield 往返（冷路径，§18 已记）；非热路径 |
+| TruncateTo u32→u16 | ~2.5× | 中等 |
+
+**f16→fp8**（`dtype_bench`）：`f16_to_f8e4m3/e5m2_batch` vs `f16→f32→fp8` 两跳已接行（依赖 `hyle_simd` 链接，CMake 目标 `hyle_dtype_bench`）。
+
+### 2026-07-12 直通单指令全补（禁止抽样）
+
+`op_parity_full_bench` 现 **139 行**（含此前"跳过"的 And/Or/Xor/AndNot/Not、Min/Max f、Div、CopySign、Floor/Ceil/Round/Trunc、Ne/Le/Ge、IfThenElse*、Shift*Same、RoundToInt、ConvertTo、BitCast、Set/Zero、Load/Store、Mask 位运算、Add/Sub/Mul f）。
+
+冒烟：向量直通 **全平**；Mask And/Not ~3× 输（BitsFromMask 冷路径）；RoundToInt/ConvertTo f32→i32 ~1.2× 微慢。
 
 ### Apple-Silicon NEON 真机复测（2026-07-10，`bench-stat -n15`）
 

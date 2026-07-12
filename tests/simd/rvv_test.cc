@@ -957,6 +957,12 @@ TEST(Rvv, P5BatchC) {
     for (std::size_t i = 0; i < n; ++i) { a[i] = 1.5f + static_cast<float>(i) * 0.25f; b[i] = static_cast<std::int32_t>((i % 7)) - 3; }
     hs::Store(hs::MulByPow2(hs::Load(d, a), hs::Load(di, b)), d, o);
     for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(o[i], std::ldexp(a[i], b[i]), 1e-5f) << "MulByPow2 f32 " << i;
+    // Red-team wide exponents: the vectorized 3-part build must survive overflow/denormal/underflow.
+    const int we[] = {0, 130, -130, 200, -200, 127, -149, -150, 50, -50, 255, -255, 10, 1, -1, 90};
+    const float wv[] = {1.0f, 3.0f, 1e20f, 1e-20f, 2.0f, 7.0f, 1.0f, 1.0f, 1.5f, 0.5f, 1.0f, 1.0f, -2.0f, 1.0f, 1.0f, 1.0f};
+    for (std::size_t i = 0; i < n; ++i) { a[i] = wv[i % 16]; b[i] = we[i % 16]; }
+    hs::Store(hs::MulByPow2(hs::Load(d, a), hs::Load(di, b)), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], std::ldexp(a[i], b[i])) << "MulByPow2 f32 wide " << i;
   }
   {
     const hs::ScalableTag<double> d;
@@ -966,6 +972,11 @@ TEST(Rvv, P5BatchC) {
     for (std::size_t i = 0; i < n; ++i) { a[i] = 0.75 + static_cast<double>(i); b[i] = static_cast<std::int64_t>((i % 5)) - 2; }
     hs::Store(hs::MulByPow2(hs::Load(d, a), hs::Load(di, b)), d, o);
     for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(o[i], std::ldexp(a[i], static_cast<int>(b[i])), 1e-12) << "MulByPow2 f64 " << i;
+    const long long we[] = {0, 1023, -1023, 1100, -1100, -1074, 5, -5};
+    const double wv[] = {1.0, 2.0, 0.5, 1e100, 1e-100, 1.0, 3.0, 7.0};
+    for (std::size_t i = 0; i < n; ++i) { a[i] = wv[i % 8]; b[i] = we[i % 8]; }
+    hs::Store(hs::MulByPow2(hs::Load(d, a), hs::Load(di, b)), d, o);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(o[i], std::ldexp(a[i], static_cast<int>(b[i]))) << "MulByPow2 f64 wide " << i;
   }
 
   // Expand: dst[i] = m[i] ? src[k++] : 0

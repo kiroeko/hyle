@@ -1495,23 +1495,32 @@ HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(D d, M m) noexcept {
 }
 
 // ---- P5 batch C: MulByPow2 / Expand -------------------------------------------------
-// MulByPow2(a, b) = a * 2^b (std::ldexp). RVV base V has no vfscale, so store+reload the scalar
-// ldexp -- identical to the fixed-width AVX2/SSE4/NEON backends (no fscale there either). b is the
-// matching-width signed int vector. Scratch sized to kMaxLanes (widest VLEN).
+// MulByPow2(a, b) = a * 2^b. PORTED from Highway generic_ops (see avx2.h for full rationale):
+// 3-part clamped exponent split, each part built as a 2^eK float factor via exponent-bit packing,
+// then multiplied -- entirely in-vector, no store+scalar-ldexp+reload. RVV has native vmin/vmax
+// (Clamp) and vsll for every SEW, so this stays fully vectorized on the scalable backend too.
+// Correctly rounded through denormal/overflow. b is the matching-width signed int vector.
 template <class V, class VI> HYLE_FORCE_INLINE V MulByPow2(V a, VI b) noexcept {
   using T = TFromV<V>;
   static_assert(std::is_floating_point_v<T>, "MulByPow2 is float only");
   using IT = TFromV<VI>;
-  const DFromV<V> d;
+  static_assert(std::is_integral_v<IT> && std::is_signed_v<IT> && sizeof(IT) == sizeof(T),
+                "MulByPow2 exponent is a signed int lane matching the float width");
+  const DFromV<V> df;
   const DFromV<VI> di;
-  constexpr std::size_t kMax = DFromV<V>::kMaxLanes;
-  alignas(64) T sa[kMax];
-  alignas(64) IT sb[kMax];
-  const std::size_t n = Lanes(d);
-  Store(a, d, sa);
-  Store(b, di, sb);
-  for (std::size_t i = 0; i < n; ++i) sa[i] = std::ldexp(sa[i], static_cast<int>(sb[i]));
-  return Load(d, sa);
+  constexpr int kMantBits = (sizeof(T) == 4) ? 23 : 52;
+  constexpr IT kBias = (sizeof(T) == 4) ? IT{127} : IT{1023};
+  const VI clamped = Clamp(b, Set(di, static_cast<IT>(3 - 3 * kBias)), Set(di, static_cast<IT>(3 * kBias)));
+  const VI lo = Set(di, static_cast<IT>(1 - kBias));
+  const VI hi = Set(di, kBias);
+  const VI e3 = Clamp(clamped, lo, hi);
+  const VI e2 = Clamp(Sub(clamped, e3), lo, hi);
+  const VI e1 = Sub(Sub(clamped, e3), e2);
+  const VI biasv = Set(di, kBias);
+  const V f1 = BitCast(df, ShiftLeft<kMantBits>(Add(e1, biasv)));
+  const V f2 = BitCast(df, ShiftLeft<kMantBits>(Add(e2, biasv)));
+  const V f3 = BitCast(df, ShiftLeft<kMantBits>(Add(e3, biasv)));
+  return Mul(Mul(Mul(a, f1), f2), f3);
 }
 // Expand(v, m): scatter v's low CountTrue(m) lanes to the m-true positions, 0 elsewhere (inverse of
 // Compress). RVV is clean: viota(m) gives each lane the EXCLUSIVE prefix-count of active lanes below

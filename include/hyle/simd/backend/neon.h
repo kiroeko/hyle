@@ -454,17 +454,30 @@ HYLE_FORCE_INLINE VecNeon<T, N> GetExponent(VecNeon<T, N> v) noexcept {
   }
   return r;
 }
-// MulByPow2(a, b) = a * 2^b (b an integer-lane vector). store+reload std::ldexp for the
-// exact integer-exponent contract (correctness-first; no NEON scale instruction).
+// MulByPow2(a, b) = a * 2^b, b an integer-lane vector. PORTED from Highway generic_ops (see avx2.h
+// for full rationale): 3-part clamped exponent split built as 2^eK float factors via exponent-bit
+// packing, multiplied in-vector -- no store+scalar-ldexp+reload. Correctly rounded through
+// denormal/overflow. NEON has no scale instruction, so this vector build is the fast path.
 template <typename T, std::size_t N, typename IT>
 HYLE_FORCE_INLINE VecNeon<T, N> MulByPow2(VecNeon<T, N> a, VecNeon<IT, N> b) noexcept {
   static_assert(std::is_floating_point_v<T>, "float only");
-  alignas(16) T ta[N], tr[N];
-  alignas(16) IT tb[N];
-  Store(a, Simd<T, N, 0>(), ta);
-  Store(b, Simd<IT, N, 0>(), tb);
-  for (std::size_t i = 0; i < N; ++i) tr[i] = std::ldexp(ta[i], static_cast<int>(tb[i]));
-  return Load(Simd<T, N, 0>(), tr);
+  static_assert(std::is_integral_v<IT> && std::is_signed_v<IT> && sizeof(IT) == sizeof(T),
+                "MulByPow2 exponent is a signed int lane matching the float width");
+  const Simd<T, N, 0> df;
+  const Simd<IT, N, 0> di;
+  constexpr int kMantBits = (sizeof(T) == 4) ? 23 : 52;
+  constexpr IT kBias = (sizeof(T) == 4) ? IT{127} : IT{1023};
+  const auto clamped = Clamp(b, Set(di, static_cast<IT>(3 - 3 * kBias)), Set(di, static_cast<IT>(3 * kBias)));
+  const auto lo = Set(di, static_cast<IT>(1 - kBias));
+  const auto hi = Set(di, kBias);
+  const auto e3 = Clamp(clamped, lo, hi);
+  const auto e2 = Clamp(Sub(clamped, e3), lo, hi);
+  const auto e1 = Sub(Sub(clamped, e3), e2);
+  const auto biasv = Set(di, kBias);
+  const auto f1 = BitCast(df, ShiftLeft<kMantBits>(Add(e1, biasv)));
+  const auto f2 = BitCast(df, ShiftLeft<kMantBits>(Add(e2, biasv)));
+  const auto f3 = BitCast(df, ShiftLeft<kMantBits>(Add(e3, biasv)));
+  return Mul(Mul(Mul(a, f1), f2), f3);
 }
 // NaN-aware min/max (Highway MinNumber/MaxNumber): if one operand is NaN, return the other.
 // NEON has NATIVE IEEE NaN-aware vminnmq/vmaxnmq for f32 AND f64 (FMINNM/FMAXNM) -- exactly
@@ -795,23 +808,29 @@ HYLE_FORCE_INLINE VecNeon<std::int32_t, NW> RearrangeToOddPlusEven(
   return r;
 }
 
-// SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8*i8 dot. vdotq_s32 needs the
-// +dotprod extension (not baseline); correctness-first store+reload scalar loop for safety.
+// SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += a[4i+0..3]*b[4i+0..3] (4-way i8 dot
+// into i32; x86 VNNI vpdpbusd / ARM sdot semantics). NEON native widen-multiply path (no
+// store+reload, no PromoteEven/Odd): vmull_s8 low/high give the 16 i16 products (i8*i8 in
+// [-16256, 16384] never overflows i16); vpaddlq_s16 folds adjacent pairs into i32 (8 partial
+// sums), and vpaddq_s32 folds those pairs again so each output lane is exactly one quad dot.
+//   lo=vmull_s8(low)  -> [p0 p1 p2 p3 p4 p5 p6 p7]
+//   hi=vmull_high_s8  -> [p8 p9 p10 p11 p12 p13 p14 p15]
+//   vpaddlq_s16(lo)   -> [p0+p1, p2+p3, p4+p5, p6+p7]
+//   vpaddlq_s16(hi)   -> [p8+p9, p10+p11, p12+p13, p14+p15]
+//   vpaddq_s32(lo,hi) -> [quad0, quad1, quad2, quad3]  (matches the contract lane order)
 template <std::size_t NDst, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<std::int32_t, NDst> SumOfMulQuadAccumulate(
     Simd<std::int32_t, NDst, 0>, VecNeon<std::int8_t, NSrc> a, VecNeon<std::int8_t, NSrc> b,
     VecNeon<std::int32_t, NDst> sum) noexcept {
   static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
-  alignas(16) std::int8_t ta[NSrc], tb[NSrc];
-  alignas(16) std::int32_t ts[NDst];
-  vst1q_s8(ta, a.raw);
-  vst1q_s8(tb, b.raw);
-  vst1q_s32(ts, sum.raw);
-  for (std::size_t i = 0; i < NDst; ++i)
-    for (std::size_t k = 0; k < 4; ++k)
-      ts[i] += static_cast<std::int32_t>(ta[4 * i + k]) * tb[4 * i + k];
-  sum.raw = vld1q_s32(ts);
-  return sum;
+  const int16x8_t lo = vmull_s8(vget_low_s8(a.raw), vget_low_s8(b.raw));  // products 0..7
+  const int16x8_t hi = vmull_high_s8(a.raw, b.raw);                       // products 8..15
+  const int32x4_t lo_sum = vpaddlq_s16(lo);  // [p0+p1, p2+p3, p4+p5, p6+p7]
+  const int32x4_t hi_sum = vpaddlq_s16(hi);  // [p8+p9, p10+p11, p12+p13, p14+p15]
+  const int32x4_t quads = vpaddq_s32(lo_sum, hi_sum);  // [quad0, quad1, quad2, quad3]
+  VecNeon<std::int32_t, NDst> r;
+  r.raw = vaddq_s32(sum.raw, quads);
+  return r;
 }
 
 // AbsDiff: |a-b|. NEON has vabdq_* native for int + float.
@@ -1023,23 +1042,61 @@ HYLE_FORCE_INLINE VecNeon<DstT, N> TruncateTo(Simd<DstT, N, 0>, VecNeon<SrcT, N>
   for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
   return LoadU(Simd<DstT, N, 0>(), dst);
 }
+// PromoteEvenTo/PromoteOddTo: exact-2x integer widenings use a register-in vuzp+vmovl path
+// (mirrors the avx2/sse4 shift-in rewrite; the store+reload version round-tripped through the
+// stack). vuzp1q deinterleaves the EVEN source lanes into the low 64 bits (vuzp2q the ODD),
+// vget_low takes those 8/4/2 packed narrow lanes, and vmovl_s*/vmovl_u* widens them 2x with
+// arithmetic (signed) or logical (unsigned) fill -- the same idiom as MulEven/MulOdd below.
+// The result q-register holds NDst valid lanes in [0,NDst); a half-width dst (NDst<native)
+// simply ignores the high lanes, matching the contract (dst lane i = src lane 2i / 2i+1).
+// Non-integer / non-2x / multi-level combos keep the correctness-first store+reload fallback.
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, VecNeon<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
-  alignas(16) SrcT src[16 / sizeof(SrcT)];
-  alignas(16) DstT dst[16 / sizeof(DstT)] = {};
-  StoreU(v, Simd<SrcT, NSrc, 0>(), src);
-  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
-  return LoadU(Simd<DstT, NDst, 0>(), dst);
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(DstT) == 2 * sizeof(SrcT)) {
+    VecNeon<DstT, NDst> r;
+    if constexpr (sizeof(SrcT) == 1) {  // i8/u8 -> i16/u16
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s8(vget_low_s8(vuzp1q_s8(v.raw, v.raw)));
+      else r.raw = vmovl_u8(vget_low_u8(vuzp1q_u8(v.raw, v.raw)));
+    } else if constexpr (sizeof(SrcT) == 2) {  // i16/u16 -> i32/u32
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s16(vget_low_s16(vuzp1q_s16(v.raw, v.raw)));
+      else r.raw = vmovl_u16(vget_low_u16(vuzp1q_u16(v.raw, v.raw)));
+    } else {  // sizeof 4: i32/u32 -> i64/u64
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s32(vget_low_s32(vuzp1q_s32(v.raw, v.raw)));
+      else r.raw = vmovl_u32(vget_low_u32(vuzp1q_u32(v.raw, v.raw)));
+    }
+    return r;
+  } else {
+    alignas(16) SrcT src[16 / sizeof(SrcT)];
+    alignas(16) DstT dst[16 / sizeof(DstT)] = {};
+    StoreU(v, Simd<SrcT, NSrc, 0>(), src);
+    for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
+    return LoadU(Simd<DstT, NDst, 0>(), dst);
+  }
 }
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, VecNeon<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteOddTo: odd lanes narrow->wide");
-  alignas(16) SrcT src[16 / sizeof(SrcT)];
-  alignas(16) DstT dst[16 / sizeof(DstT)] = {};
-  StoreU(v, Simd<SrcT, NSrc, 0>(), src);
-  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
-  return LoadU(Simd<DstT, NDst, 0>(), dst);
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(DstT) == 2 * sizeof(SrcT)) {
+    VecNeon<DstT, NDst> r;
+    if constexpr (sizeof(SrcT) == 1) {  // i8/u8 -> i16/u16
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s8(vget_low_s8(vuzp2q_s8(v.raw, v.raw)));
+      else r.raw = vmovl_u8(vget_low_u8(vuzp2q_u8(v.raw, v.raw)));
+    } else if constexpr (sizeof(SrcT) == 2) {  // i16/u16 -> i32/u32
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s16(vget_low_s16(vuzp2q_s16(v.raw, v.raw)));
+      else r.raw = vmovl_u16(vget_low_u16(vuzp2q_u16(v.raw, v.raw)));
+    } else {  // sizeof 4: i32/u32 -> i64/u64
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s32(vget_low_s32(vuzp2q_s32(v.raw, v.raw)));
+      else r.raw = vmovl_u32(vget_low_u32(vuzp2q_u32(v.raw, v.raw)));
+    }
+    return r;
+  } else {
+    alignas(16) SrcT src[16 / sizeof(SrcT)];
+    alignas(16) DstT dst[16 / sizeof(DstT)] = {};
+    StoreU(v, Simd<SrcT, NSrc, 0>(), src);
+    for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
+    return LoadU(Simd<DstT, NDst, 0>(), dst);
+  }
 }
 template <std::size_t N>
 HYLE_FORCE_INLINE VecNeon<std::uint8_t, N> U8FromU32(VecNeon<std::uint32_t, N> v) noexcept {
@@ -2035,23 +2092,23 @@ HYLE_FORCE_INLINE VecNeon<T, N> InterleaveOdd(VecNeon<T, N> a, VecNeon<T, N> b) 
 }
 template <class D>
 HYLE_FORCE_INLINE detail::VN<D> Slide1Up(D d, detail::VN<D> v) noexcept {
+  // Shift up one lane (dst[0]=0) = vext(Zero, v, 16-sizeof(T)) on the byte view. Pure vector,
+  // replaces the old store + scalar copy + reload. (vextq directly; CombineShiftRightBytes is
+  // defined later in this header, so spell the intrinsic here.)
   using T = TFromD<D>;
-  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) T s[N], dst[N];
-  StoreU(v, d, s);
-  dst[0] = T{0};
-  for (std::size_t i = 1; i < N; ++i) dst[i] = s[i - 1];
-  return LoadU(d, dst);
+  constexpr int kBytes = 16 - static_cast<int>(sizeof(T));
+  detail::VN<D> r;
+  r.raw = detail::from_u8<T>(vextq_u8(detail::to_u8<T>(Zero(d).raw), detail::to_u8<T>(v.raw), kBytes));
+  return r;
 }
 template <class D>
 HYLE_FORCE_INLINE detail::VN<D> Slide1Down(D d, detail::VN<D> v) noexcept {
+  // Shift down one lane (dst[N-1]=0) = vext(v, Zero, sizeof(T)) on the byte view. Pure vector.
   using T = TFromD<D>;
-  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) T s[N], dst[N];
-  StoreU(v, d, s);
-  dst[N - 1] = T{0};
-  for (std::size_t i = 0; i + 1 < N; ++i) dst[i] = s[i + 1];
-  return LoadU(d, dst);
+  constexpr int kBytes = static_cast<int>(sizeof(T));
+  detail::VN<D> r;
+  r.raw = detail::from_u8<T>(vextq_u8(detail::to_u8<T>(v.raw), detail::to_u8<T>(Zero(d).raw), kBytes));
+  return r;
 }
 template <class D>
 HYLE_FORCE_INLINE detail::VN<D> SlideUpLanes(D d, detail::VN<D> v, std::size_t amt) noexcept {
@@ -2531,24 +2588,19 @@ HYLE_FORCE_INLINE auto GetBiasedExponent(VecNeon<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> MulByFloorPow2(VecNeon<T, N> v, VecNeon<T, N> exp) noexcept {
   static_assert(std::is_floating_point_v<T>, "MulByFloorPow2 is float only");
-  // Store+reload scalar ldexp with Highway's NaN special-cases: NaN exp, (0,+inf), (inf,-inf)
-  // -> NaN. floor(exp) is clamped into int range first so the cast is never UB (a raw
-  // static_cast<int>(floor(+inf)) is UB). Matches the scalar oracle.
-  alignas(16) T sv[N], se[N], ro[N];
-  StoreU(v, Simd<T, N, 0>(), sv); StoreU(exp, Simd<T, N, 0>(), se);
-  for (std::size_t i = 0; i < N; ++i) {
-    if (std::isnan(se[i]) ||
-        (std::isinf(se[i]) && ((sv[i] == T{0} && se[i] > 0) || (std::isinf(sv[i]) && se[i] < 0)))) {
-      ro[i] = std::numeric_limits<T>::quiet_NaN();
-    } else {
-      const T fe = std::floor(se[i]);
-      const int ie = (fe >= static_cast<T>(std::numeric_limits<int>::max())) ? std::numeric_limits<int>::max()
-                   : (fe <= static_cast<T>(std::numeric_limits<int>::min())) ? std::numeric_limits<int>::min()
-                   : static_cast<int>(fe);
-      ro[i] = std::ldexp(sv[i], ie);
-    }
-  }
-  return LoadU(Simd<T, N, 0>(), ro);
+  // Vectorized (see avx2.h): v * 2^floor(exp) = MulByPow2(v, FloorInt(exp)) with the IEEE NaN
+  // special-cases blended (NaN exp / (0,+inf) / (inf,-inf) -> NaN). Float floor clamped into int
+  // range before the (otherwise-UB for inf) cast. No store+reload.
+  using IT = std::conditional_t<sizeof(T) == 4, std::int32_t, std::int64_t>;
+  const Simd<T, N, 0> df;
+  const auto is_nan_result =
+      Or(IsNaN(exp), And(Eq(Abs(v), IfNegativeThenElseZero(exp, Inf(df))), IsInf(exp)));
+  // Clamp to +/-4096 before the cast: NEON fcvtzs also saturates out-of-range, so bound the float
+  // first to keep the cast exact and let MulByPow2 saturate by sign. 4096 > 3*1023 loses no exp.
+  const T kCap = static_cast<T>(4096);
+  const auto fe = Max(Min(Floor(exp), Set(df, kCap)), Set(df, -kCap));
+  const auto ie = ConvertTo(Simd<IT, N, 0>(), fe);
+  return IfThenElse(is_nan_result, NaN(df), MulByPow2(v, ie));
 }
 
 // ---- simd-17 batch4: half-vector family (128 -> 64 logical half) --------------------
