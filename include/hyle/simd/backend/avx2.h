@@ -1667,12 +1667,18 @@ HYLE_FORCE_INLINE unsigned mask_bits(Mask256<T, N> m) noexcept {
     return static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
   } else if constexpr (sizeof(T) == 1) {
     return static_cast<unsigned>(_mm256_movemask_epi8(m.raw));  // 32 lanes, 1 bit/byte already
-  } else {  // 2-byte lanes: no native 16-bit movemask -> byte-mask + compact every 2nd bit.
+  } else {  // 2-byte lanes: no native 16-bit movemask. movemask_epi8 gives 2 bits/lane.
     const unsigned bytes = static_cast<unsigned>(_mm256_movemask_epi8(m.raw));
+#if defined(__BMI2__)
+    // PEXT 0x55555555 pulls each lane's low byte-bit in ONE instruction -- replaces the ~16-iter
+    // scalar compaction that made i16 BitsFromMask the bottleneck of every i16 mask op (e.g.
+    // OrderedDemote2MasksTo sink was ~7x Highway). BMI2 ships with the AVX2 baseline (Haswell+).
+    return static_cast<unsigned>(_pext_u32(bytes, 0x55555555u));
+#else  // AVX2 without BMI2 (rare; e.g. a test TU compiled -mavx2 only): scalar compaction fallback.
     unsigned out = 0;
-    for (std::size_t i = 0; i < N; ++i)
-      out |= ((bytes >> (i * sizeof(T))) & 1u) << i;
+    for (std::size_t i = 0; i < N; ++i) out |= ((bytes >> (i * sizeof(T))) & 1u) << i;
     return out;
+#endif
   }
 }
 }  // namespace detail

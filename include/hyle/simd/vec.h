@@ -1239,7 +1239,22 @@ HYLE_FORCE_INLINE MFromD<D> UpperHalfOfMask(D d, MFromD<Twice<D>> m) noexcept {
 template <class DTo, class DFrom>
 HYLE_FORCE_INLINE MFromD<DTo> PromoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom> m) noexcept {
   static_assert(sizeof(TFromD<DTo>) > sizeof(TFromD<DFrom>), "PromoteMaskTo widens the lane type");
-  return LoadMaskBits(d_to, BitsFromMask(d_from, m));
+#if defined(HYLE_SIMD_TARGET_AVX512)
+  return LoadMaskBits(d_to, BitsFromMask(d_from, m));  // k-register IS the bitfield -- optimal
+#else
+  // Symmetric to DemoteMaskTo: stay in the vector domain instead of the LoadMaskBits scalar re-pack
+  // (op_parity §18: bitfield round-trip was ~6x Highway). A mask lane is all-ones(-1)/zero, so
+  // widening the mask == SIGN-extending its vector (single-vector PromoteTo: -1 stays -1, 0 stays 0,
+  // same lane count N -> native vpmovsx). Spell full SIGNED narrow/wide tags (kPow2=0) so no
+  // partial-Rebind BitCast is needed (mask type keys on (T,N) only). Signed is REQUIRED: unsigned
+  // promote would zero-extend 0xFFFF->0x0000FFFF, corrupting the wide all-ones lane.
+  using TNarrow = MakeSigned<TFromD<DFrom>>;
+  using TWide = MakeSigned<TFromD<DTo>>;
+  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(DFrom);
+  const Simd<TNarrow, kN, 0> di_from;
+  const Simd<TWide, kN, 0> dw;
+  return MaskFromVec(PromoteTo(dw, VecFromMask(di_from, RebindMask(di_from, m))));
+#endif
 }
 template <class DTo, class DFrom>
 HYLE_FORCE_INLINE MFromD<DTo> DemoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom> m) noexcept {
@@ -1270,9 +1285,23 @@ template <class DTo, class DFrom>
 HYLE_FORCE_INLINE MFromD<DTo> OrderedDemote2MasksTo(DTo d_to, DFrom d_from, MFromD<DFrom> a,
                                                     MFromD<DFrom> b) noexcept {
   static_assert(sizeof(TFromD<DTo>) * 2 == sizeof(TFromD<DFrom>), "OrderedDemote2MasksTo halves width");
+#if defined(HYLE_SIMD_TARGET_AVX512)
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(DFrom);
   const std::uint64_t bits = BitsFromMask(d_from, a) | (BitsFromMask(d_from, b) << kN);
-  return LoadMaskBits(d_to, bits);
+  return LoadMaskBits(d_to, bits);  // k-register bitfield concat -- optimal
+#else
+  // Vector domain (op_parity §18: the bitfield concat + LoadMaskBits re-pack was ~14x Highway, the
+  // single biggest mask loser). Two masks' vectors (all-ones/-1) modular-narrow-interleave via the
+  // existing OrderedDemote2To into [a-lanes..., b-lanes...]; -1 truncates to -1 (narrow all-ones),
+  // 0 to 0. Signed narrow/wide tags (kPow2=0) so no partial-Rebind BitCast (mask keys on (T,N) only).
+  using TWide = MakeSigned<TFromD<DFrom>>;
+  using TNarrow = MakeSigned<TFromD<DTo>>;
+  constexpr std::size_t kNw = HYLE_SIMD_MAX_LANES_D(DFrom);
+  const Simd<TWide, kNw, 0> dwide;
+  const Simd<TNarrow, 2 * kNw, 0> dnarrow;
+  return MaskFromVec(OrderedDemote2To(dnarrow, VecFromMask(dwide, RebindMask(dwide, a)),
+                                                VecFromMask(dwide, RebindMask(dwide, b))));
+#endif
 }
 
 // SlideMask1Up/Down + SlideMaskUp/DownLanes: mask analogues of the vector slides (batch2 family).
