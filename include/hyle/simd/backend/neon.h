@@ -1734,32 +1734,70 @@ HYLE_FORCE_INLINE std::size_t StoreMaskBits(D, MaskNeon<TFromD<D>, HYLE_SIMD_MAX
 }
 
 // ---- prefix-scan masks (leading-run helpers for parsing/tokenizing) -----------------
-// Highway SetBeforeFirst/SetAtOrBeforeFirst/SetOnlyFirst/SetAtOrAfterFirst: derive a run
-// relative to the FIRST true lane. Computed on the bitfield (mask_bits) then rebuilt via
-// LoadMaskBits -- identical to the scalar/sse4 oracle. N<=16 (i8) so a 32-bit field holds it.
+// For 32-bit lanes (i32/u32/f32, full N==4) these run PURELY IN THE VECTOR DOMAIN via Highway's
+// arm_neon bit tricks -- no mask_bits/LoadMaskBits scalar round-trip (op_parity -n15: sse4/neon
+// bitfield round-trip was ~1.3-2.5x behind Highway). Viewing the mask as two i64 blocks: "x | -x"
+// fills lowest-set..MSB within a block; the low block's sign is broadcast into the high block so a
+// first-true in the low 64 bits forces the whole high 64 bits on. Other widths keep the bitfield
+// fallback (not bench losers; N<=16 so a 32-bit field holds it).
+namespace detail {
+HYLE_FORCE_INLINE uint32x4_t set_at_or_after_first_i32(uint32x4_t vmu) noexcept {
+  const int64x2_t vm = vreinterpretq_s64_u32(vmu);
+  const int64x2_t or1 = vorrq_s64(vm, vnegq_s64(vm));            // lowest-set..MSB per i64 block
+  const int64x2_t inter = vzip1q_s64(vdupq_n_s64(0), or1);       // [0 : low-block] -> propagate sign
+  const int64x2_t vm2 = vshrq_n_s64(inter, 63);                  // BroadcastSignBit into high block
+  return vreinterpretq_u32_s64(vorrq_s64(or1, vm2));
+}
+HYLE_FORCE_INLINE uint32x4_t set_only_first_i32(uint32x4_t vmu) noexcept {
+  const int64x2_t vm = vreinterpretq_s64_u32(vmu);
+  const int64x2_t lowest = vandq_s64(vm, vnegq_s64(vm));         // x & -x per i64 (isolate low bit)
+  const int32x4_t only = vnegq_s32(vreinterpretq_s32_s64(lowest));  // Neg in i32 domain: owning lane
+  const int64x2_t inter = vzip1q_s64(vdupq_n_s64(0), vm);        // [0 : low-block-of-vm]
+  const uint64x2_t iszero = vceqq_s64(inter, vdupq_n_s64(0));    // high kept only if low block == 0
+  return vandq_u32(vreinterpretq_u32_s32(only), vreinterpretq_u32_u64(iszero));
+}
+}  // namespace detail
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE MaskNeon<T, N> SetBeforeFirst(MaskNeon<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
-  return LoadMaskBits(Simd<T, N, 0>(), before);
+HYLE_FORCE_INLINE MaskNeon<T, N> SetAtOrAfterFirst(MaskNeon<T, N> m) noexcept {
+  if constexpr (sizeof(T) == 4 && N == 4) {
+    MaskNeon<T, N> r; r.raw = detail::set_at_or_after_first_i32(m.raw); return r;
+  } else {
+    const unsigned b = detail::mask_bits(m);
+    const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
+    const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : full;
+    return LoadMaskBits(Simd<T, N, 0>(), full & ~before);
+  }
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE MaskNeon<T, N> SetAtOrBeforeFirst(MaskNeon<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  const unsigned upto = b ? ((1u << (std::countr_zero(b) + 1)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
-  return LoadMaskBits(Simd<T, N, 0>(), upto);
+HYLE_FORCE_INLINE MaskNeon<T, N> SetBeforeFirst(MaskNeon<T, N> m) noexcept {
+  if constexpr (sizeof(T) == 4 && N == 4) {
+    MaskNeon<T, N> r; r.raw = vmvnq_u32(detail::set_at_or_after_first_i32(m.raw)); return r;  // Not(AtOrAfter)
+  } else {
+    const unsigned b = detail::mask_bits(m);
+    const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+    return LoadMaskBits(Simd<T, N, 0>(), before);
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> SetOnlyFirst(MaskNeon<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  return LoadMaskBits(Simd<T, N, 0>(), b ? (1u << std::countr_zero(b)) : 0u);
+  if constexpr (sizeof(T) == 4 && N == 4) {
+    MaskNeon<T, N> r; r.raw = detail::set_only_first_i32(m.raw); return r;
+  } else {
+    const unsigned b = detail::mask_bits(m);
+    return LoadMaskBits(Simd<T, N, 0>(), b ? (1u << std::countr_zero(b)) : 0u);
+  }
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE MaskNeon<T, N> SetAtOrAfterFirst(MaskNeon<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
-  const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : full;
-  return LoadMaskBits(Simd<T, N, 0>(), full & ~before);
+HYLE_FORCE_INLINE MaskNeon<T, N> SetAtOrBeforeFirst(MaskNeon<T, N> m) noexcept {
+  if constexpr (sizeof(T) == 4 && N == 4) {
+    // == Not(AtOrAfterFirst(m shifted up one lane)); ShiftLeftLanes<1> for u32 = vext(zero,v,3).
+    const uint32x4_t shifted = vextq_u32(vdupq_n_u32(0), m.raw, 3);
+    MaskNeon<T, N> r; r.raw = vmvnq_u32(detail::set_at_or_after_first_i32(shifted)); return r;
+  } else {
+    const unsigned b = detail::mask_bits(m);
+    const unsigned upto = b ? ((1u << (std::countr_zero(b) + 1)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+    return LoadMaskBits(Simd<T, N, 0>(), upto);
+  }
 }
 // FindKnownFirstTrue/LastTrue: like FindFirstTrue but the caller guarantees >=1 true lane, so
 // the result is a plain size_t (no -1 sentinel). Highway's known-nonempty fast path.

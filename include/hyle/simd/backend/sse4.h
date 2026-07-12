@@ -1699,31 +1699,101 @@ HYLE_FORCE_INLINE std::size_t StoreMaskBits(D d, Mask128<TFromD<D>, HYLE_SIMD_MA
   return nbytes;
 }
 
-// prefix-scan masks (leading run relative to first true) -- computed on the bitfield then
-// rebuilt via LoadMaskBits. N<=16 so a 32-bit bitfield holds it.
+// prefix-scan masks (leading run relative to first true). For 32-bit lanes (the common i32/f32
+// case, op_parity -n15: sse4 bitfield round-trip was ~2.2-2.57x behind Highway) these are computed
+// PURELY IN THE VECTOR DOMAIN via Highway's x86_128 bit tricks -- no mask_bits/LoadMaskBits scalar
+// round-trip. A mask lane is all-ones/all-zero; viewing the 128-bit vector as two i64 blocks:
+//   * "x | -x" fills from the lowest set bit up to the MSB within each i64 block,
+//   * the low block's sign bit is propagated to the high block via shuffle_ps + arithmetic-shift
+//     broadcast (so a first-true in the low 64 bits forces the whole high 64 bits on).
+// Non-32-bit lanes keep the scalar bitfield fallback (not bench losers; would need per-width work).
+namespace detail {
+// Extract a mask's 128-bit lane pattern as __m128i regardless of T (float mask raw is __m128).
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Mask128<T, N> SetBeforeFirst(Mask128<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
-  return LoadMaskBits(Simd<T, N, 0>(), before);
+HYLE_FORCE_INLINE __m128i mask_raw_i(Mask128<T, N> m) noexcept {
+  if constexpr (std::is_same_v<T, float>) return _mm_castps_si128(m.raw);
+  else if constexpr (std::is_same_v<T, double>) return _mm_castpd_si128(m.raw);
+  else return m.raw;
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Mask128<T, N> SetAtOrBeforeFirst(Mask128<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  const unsigned upto = b ? ((1u << (std::countr_zero(b) + 1)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
-  return LoadMaskBits(Simd<T, N, 0>(), upto);
+HYLE_FORCE_INLINE Mask128<T, N> mask_from_i(__m128i v) noexcept {
+  Mask128<T, N> m;
+  if constexpr (std::is_same_v<T, float>) m.raw = _mm_castsi128_ps(v);
+  else if constexpr (std::is_same_v<T, double>) m.raw = _mm_castsi128_pd(v);
+  else m.raw = v;
+  return m;
+}
+// SetAtOrAfterFirst core on the raw lane vector (32-bit lanes, full 128-bit / N==4).
+HYLE_FORCE_INLINE __m128i set_at_or_after_first_i32(__m128i vm) noexcept {
+  const __m128i negx = _mm_sub_epi64(_mm_setzero_si128(), vm);  // -x per i64 block
+  const __m128i or1 = _mm_or_si128(vm, negx);                   // lowest-set..MSB filled per block
+  // Copy low block's sign (its high i32's MSB) into the high block: shuffle_ps(1,1,0,0) puts the
+  // low block's high dword into both hi-block dwords, then srai broadcasts that sign across.
+  const __m128 sh = _mm_shuffle_ps(_mm_setzero_ps(), _mm_castsi128_ps(or1), _MM_SHUFFLE(1, 1, 0, 0));
+  const __m128i vm2 = _mm_srai_epi32(_mm_castps_si128(sh), 31);
+  return _mm_or_si128(or1, vm2);
+}
+// SetOnlyFirst core (32-bit, full 128): isolate the lowest set bit across the whole vector.
+HYLE_FORCE_INLINE __m128i set_only_first_i32(__m128i vm) noexcept {
+  // only_first = -(x & -x) per i64 block gives an all-ones block iff that block held the lowest bit
+  // (turns the isolated bit into a full-width lane run); then mask off the high block if the low
+  // block was non-zero (vmask2: high block kept only when low block == 0).
+  const __m128i negx = _mm_sub_epi64(_mm_setzero_si128(), vm);
+  const __m128i lowest = _mm_and_si128(vm, negx);              // x & -x per i64 (isolate low set bit)
+  const __m128i only = _mm_sub_epi32(_mm_setzero_si128(), lowest);  // Neg in i32 domain: only the
+                                                                    // i32 lane owning that bit -> all-ones
+  // vmask2: for each i64, was the *lower* i64 block zero? InterleaveLower(zero, vm) puts vm's low
+  // block into the high 64 bits; ==zero tests it. Highway builds it via cmpeq; here directly.
+  const __m128i inter = _mm_unpacklo_epi64(_mm_setzero_si128(), vm);  // [0 : low-block-of-vm]
+  const __m128i is_zero = _mm_cmpeq_epi64(inter, _mm_setzero_si128());
+  return _mm_and_si128(only, is_zero);
+}
+}  // namespace detail
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> SetAtOrAfterFirst(Mask128<T, N> m) noexcept {
+  if constexpr (sizeof(T) == 4 && N == 4) {
+    return detail::mask_from_i<T, N>(detail::set_at_or_after_first_i32(detail::mask_raw_i(m)));
+  } else {
+    const unsigned b = detail::mask_bits(m);
+    const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
+    const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : full;
+    return LoadMaskBits(Simd<T, N, 0>(), full & ~before);
+  }
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask128<T, N> SetBeforeFirst(Mask128<T, N> m) noexcept {
+  if constexpr (sizeof(T) == 4 && N == 4) {
+    const __m128i aoa = detail::set_at_or_after_first_i32(detail::mask_raw_i(m));
+    return detail::mask_from_i<T, N>(_mm_xor_si128(aoa, _mm_set1_epi32(-1)));  // Not(AtOrAfter)
+  } else {
+    const unsigned b = detail::mask_bits(m);
+    const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+    return LoadMaskBits(Simd<T, N, 0>(), before);
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask128<T, N> SetOnlyFirst(Mask128<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  return LoadMaskBits(Simd<T, N, 0>(), b ? (1u << std::countr_zero(b)) : 0u);
+  if constexpr (sizeof(T) == 4 && N == 4) {
+    return detail::mask_from_i<T, N>(detail::set_only_first_i32(detail::mask_raw_i(m)));
+  } else {
+    const unsigned b = detail::mask_bits(m);
+    return LoadMaskBits(Simd<T, N, 0>(), b ? (1u << std::countr_zero(b)) : 0u);
+  }
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Mask128<T, N> SetAtOrAfterFirst(Mask128<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
-  const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : full;
-  return LoadMaskBits(Simd<T, N, 0>(), full & ~before);
+HYLE_FORCE_INLINE Mask128<T, N> SetAtOrBeforeFirst(Mask128<T, N> m) noexcept {
+  if constexpr (sizeof(T) == 4 && N == 4) {
+    // AtOrBeforeFirst(m) == BeforeFirst(m shifted up one lane): shifting the mask toward higher
+    // lanes moves its first-true to lane+1, so "strictly before" that == "at-or-before" the
+    // original first-true. ShiftLeftLanes<1> for i32 = byte shift by 4; then Not(AtOrAfterFirst).
+    const __m128i shifted = _mm_slli_si128(detail::mask_raw_i(m), 4);
+    const __m128i aoa = detail::set_at_or_after_first_i32(shifted);
+    return detail::mask_from_i<T, N>(_mm_xor_si128(aoa, _mm_set1_epi32(-1)));
+  } else {
+    const unsigned b = detail::mask_bits(m);
+    const unsigned upto = b ? ((1u << (std::countr_zero(b) + 1)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+    return LoadMaskBits(Simd<T, N, 0>(), upto);
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(Simd<T, N, 0>, Mask128<T, N> m) noexcept {

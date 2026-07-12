@@ -1307,6 +1307,35 @@ TEST(Vec, MaskBitsAndPrefixScan) {
   EXPECT_EQ(static_cast<std::ptrdiff_t>(hs::FindKnownFirstTrue(d, m)), first);
 }
 
+// EXHAUSTIVE prefix-scan: every mask pattern (2^Lanes) -- the sse4 32-bit vector path uses i64
+// bit tricks with cross-64-bit propagation that a single fixed pattern can't shake out (all-zero,
+// all-one, first-true in the HIGH 64-bit block, isolated bits, etc.).
+TEST(Vec, PrefixScanExhaustive) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_LE(n, 16u);
+  Buf<std::int32_t> a, o;
+  for (std::uint32_t pat = 0; pat < (1u << n); ++pat) {
+    for (std::size_t i = 0; i < n; ++i) a.data[i] = (pat >> i) & 1u ? 1 : 0;
+    const auto m = hs::Eq(hs::Load(d, a.data), hs::Set(d, 1));
+    std::ptrdiff_t first = -1;
+    for (std::size_t i = 0; i < n; ++i) if (a.data[i]) { first = static_cast<std::ptrdiff_t>(i); break; }
+    const bool none = (first < 0);
+    hs::Store(hs::VecFromMask(d, hs::SetBeforeFirst(m)), d, o.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(o.data[i] != 0, none ? true : static_cast<std::ptrdiff_t>(i) < first) << "before pat=" << pat << " i=" << i;
+    hs::Store(hs::VecFromMask(d, hs::SetAtOrAfterFirst(m)), d, o.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(o.data[i] != 0, none ? false : static_cast<std::ptrdiff_t>(i) >= first) << "atorafter pat=" << pat << " i=" << i;
+    hs::Store(hs::VecFromMask(d, hs::SetOnlyFirst(m)), d, o.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(o.data[i] != 0, none ? false : static_cast<std::ptrdiff_t>(i) == first) << "only pat=" << pat << " i=" << i;
+    hs::Store(hs::VecFromMask(d, hs::SetAtOrBeforeFirst(m)), d, o.data);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(o.data[i] != 0, none ? true : static_cast<std::ptrdiff_t>(i) <= first) << "atorbefore pat=" << pat << " i=" << i;
+  }
+}
+
 // Highway public-op-face parity wrappers (audit 2026-07-12): SetTableIndices / CompressBlocksNot /
 // ZeroExtendResizeBitCast / Dup128MaskFromMaskBits -- each vs its underlying primitive.
 TEST(Vec, HighwayParityWrappers) {
