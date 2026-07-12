@@ -804,10 +804,19 @@ HYLE_FORCE_INLINE Vec256<T, N> shift_var_16(Vec256<T, N> a, Vec256<T, N> b, bool
   if (left) { RA = _mm256_sllv_epi32(A, SA); RB = _mm256_sllv_epi32(B, SB); }
   else if (kSigned) { RA = _mm256_srav_epi32(A, SA); RB = _mm256_srav_epi32(B, SB); }
   else { RA = _mm256_srlv_epi32(A, SA); RB = _mm256_srlv_epi32(B, SB); }
-  const __m256i m = _mm256_set1_epi32(0xFFFF);
-  const __m256i packed = _mm256_packus_epi32(_mm256_and_si256(RA, m), _mm256_and_si256(RB, m));
+  // packus_epi32 signed-saturates to [0,0xFFFF]. Left shift can overflow bit15 into the upper half,
+  // and signed srav leaves sign bits up top -> both need the low-16 mask. Unsigned srlv already
+  // keeps the u32 in [0,0xFFFF] (right shift of a zero-extended <=0xFFFF value), so its mask is a
+  // no-op and is skipped (saves 2 vpand in the u16-Shr hot path, e.g. MultiRotateRight). left is a
+  // compile-time literal at every call (FORCE_INLINE), so this folds to no branch.
+  __m256i pa = RA, pb = RB;
+  if (left || kSigned) {
+    const __m256i m = _mm256_set1_epi32(0xFFFF);
+    pa = _mm256_and_si256(RA, m);
+    pb = _mm256_and_si256(RB, m);
+  }
   Vec256<T, N> r;
-  r.raw = _mm256_permute4x64_epi64(packed, _MM_SHUFFLE(3, 1, 2, 0));
+  r.raw = _mm256_permute4x64_epi64(_mm256_packus_epi32(pa, pb), _MM_SHUFFLE(3, 1, 2, 0));
   return r;
 }
 }  // namespace detail
