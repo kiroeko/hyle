@@ -124,6 +124,8 @@ P3 前机械快照为258个公开 op；P3 新增24个公开名后为282个，P4 
 ### ✅ 消费驱动 / 低优 —— **已在 simd-17 批5 / simd-18 批E 补齐**
 字节移位族(`ShiftLeftBytes/RightBytes`、`CombineShiftRightBytes/Lanes`)、`Combine/LowerHalf/UpperHalf/ZeroExtendVector/InsertIntoUpper`(半向量合并族)、`PairwiseAdd/Sub(128)`、`Shuffle2301/1032/...`(定 permute)、`Stream`、`LoadDup128`、`ResizeBitCast` **全已实现**(avx2.h/vec.h;vec_test 有 `ShiftBytesAndLanes`/`CombineShiftRightBytes`/`PairwiseAddSub`/`ShuffleFixedPatterns32`/`Shuffle01_64`/`StreamAndLoadDup128`/`HalfVectorFamily` 对拍)。
 
+**交织 load/store 性能修复(2026-07-12 9e8c168)**:`LoadInterleaved3/4`+`StoreInterleaved2/3/4` 的 x86 后端(sse4/avx2/avx512)此前是 store+reload 标量 gather,比 Highway 寄存器内转置慢 ~2.8-3.5x(op_parity_bench §19 坐实)。这是 `*Blocks`(SwapAdjacentBlocks/LoadTransposedBlocks)真正加速的算法——那些块 op 本身仍不做(Highway 内部编排面,越 scope),但它们服务的通用交织 op 已照抄 Highway 两段式 recipe(块转置 Concat*/Shuffle128 + 块内 shuffle_ps/unpack)追平:32/64-bit lane 走寄存器转置,8/16-bit 暂留 store+reload(Highway pshufb 字节表,登记延后);NEON 原生 vld3/vld4 已最优不动。实测追平/略超 Highway。
+
 ### ✅ 公开 op 面差集审计(2026-07-12,d6b1d13)——4 个薄封装补齐
 对齐 Highway `HWY_API` 公开 op 面的机械差集复核,发现 4 个公开 op 在 HYLE 泛型层缺一个**具名入口**,底层原语全已存在,补薄封装(`vec.h` "Highway public-op-face parity" 块):
 - `SetTableIndices(d, ptr)` = `IndicesFromVec(d, LoadU(d, ptr))`——从指针加载 TableLookupLanes 索引;
