@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>    // std::array (TruncateTo PSHUFB byte-index table)
 #include <cstddef>
 #include <cstdint>
 #include <cstring>  // std::memcpy (LoadMaskBits lane pun)
@@ -997,11 +998,31 @@ HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> DemoteInRangeTo(Simd<std::int32_t, 
 template <typename DstT, std::size_t N, typename SrcT>
 HYLE_FORCE_INLINE Vec128<DstT, N> TruncateTo(Simd<DstT, N, 0>, Vec128<SrcT, N> v) noexcept {
   static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
-  alignas(16) SrcT src[16 / sizeof(SrcT)];
-  alignas(16) DstT dst[16 / sizeof(DstT)] = {};
-  Store(v, Simd<SrcT, N, 0>(), src);
-  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
-  return Load(Simd<DstT, N, 0>(), dst);
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT>) {
+    // Modular narrowing = keep the low sizeof(DstT) bytes of each source lane, packed into the
+    // low N*sizeof(DstT) bytes of the result. One PSHUFB byte-gather does this in-register (the op
+    // is per-128-lane, and everything is one 128-bit lane here) -- no store+scalar-loop+reload,
+    // which the old code did and which -O3 did NOT fold to a pack (op_parity -n15 was ~2x Highway).
+    constexpr int sb = static_cast<int>(sizeof(SrcT)), db = static_cast<int>(sizeof(DstT));
+    alignas(16) constexpr auto idx = [] {
+      std::array<char, 16> t{};
+      for (int j = 0; j < 16; ++j) t[j] = static_cast<char>(0x80);  // default: emit 0
+      for (std::size_t i = 0; i < N; ++i)
+        for (int k = 0; k < db; ++k)
+          t[i * db + k] = static_cast<char>(i * sb + k);  // dst lane i byte k <- src lane i byte k
+      return t;
+    }();
+    const __m128i shuf = _mm_loadu_si128(reinterpret_cast<const __m128i*>(idx.data()));
+    Vec128<DstT, N> r;
+    r.raw = _mm_shuffle_epi8(v.raw, shuf);
+    return r;
+  } else {
+    alignas(16) SrcT src[16 / sizeof(SrcT)];
+    alignas(16) DstT dst[16 / sizeof(DstT)] = {};
+    Store(v, Simd<SrcT, N, 0>(), src);
+    for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
+    return Load(Simd<DstT, N, 0>(), dst);
+  }
 }
 // PromoteEvenTo/PromoteOddTo: exact-2x integer widenings use a register-in shift/mask path
 // (mirrors avx2 with 128-bit intrinsics). In a source pair viewed as one destination lane, the

@@ -1044,11 +1044,63 @@ HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> DemoteInRangeTo(Simd<std::int32_t, 
 template <typename DstT, std::size_t N, typename SrcT>
 HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> TruncateTo(Simd<DstT, N, 0>, Vec256<SrcT, N> v) noexcept {
   static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
-  alignas(32) SrcT src[32 / sizeof(SrcT)];
-  alignas(32) DstT dst[32 / sizeof(DstT)] = {};
-  Store(v, Simd<SrcT, N, 0>(), src);
-  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
-  return Load(Simd<DstT, N, 0>(), dst);
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT>) {
+    // Modular narrowing in-register: PSHUFB gathers the low sizeof(DstT) bytes of each source lane
+    // to the FRONT of its own 128-bit lane, then VPERMD concatenates the two lanes' front bytes to
+    // the low half. This is Highway's TableLookupBytes + Lower/UpperHalf pattern; it replaces the
+    // old store+scalar-loop+reload that -O3 did NOT fold to a pack (op_parity -n15 was ~2.45x
+    // Highway; the DemoteMaskTo bridge in vec.h rides this path too).
+    constexpr int sb = static_cast<int>(sizeof(SrcT)), db = static_cast<int>(sizeof(DstT));
+    constexpr int lanePer = static_cast<int>(N) / 2;      // source lanes in each 128-bit half
+    constexpr int frontBytes = lanePer * db;              // packed bytes at the front of each half
+    // Per-128-lane PSHUFB index: lane-local source lane i -> its low db bytes at the front.
+    alignas(32) constexpr auto sidx = [] {
+      std::array<char, 32> t{};
+      for (int j = 0; j < 32; ++j) t[j] = static_cast<char>(0x80);  // emit 0 elsewhere
+      for (int half = 0; half < 2; ++half)
+        for (int i = 0; i < lanePer; ++i)
+          for (int k = 0; k < db; ++k)
+            t[half * 16 + i * db + k] = static_cast<char>(i * sb + k);  // index is lane-local (0..15)
+      return t;
+    }();
+    const __m256i shuf = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(sidx.data()));
+    const __m256i g = _mm256_shuffle_epi8(v.raw, shuf);
+    // Now half0's valid bytes are dwords [0 .. frontBytes/4), half1's are dwords [4 .. 4+frontBytes/4).
+    // Concatenate them to the low dwords with one VPERMD.
+    constexpr int fd = (frontBytes + 3) / 4;              // dwords of valid data per half
+    alignas(32) constexpr auto pidx = [] {
+      std::array<std::int32_t, 8> t{};
+      for (int i = 0; i < fd; ++i) t[i] = i;               // half0 front dwords
+      for (int i = 0; i < fd; ++i) t[fd + i] = 4 + i;      // half1 front dwords
+      return t;
+    }();
+    const __m256i perm = _mm256_loadu_si256(reinterpret_cast<const __m256i*>(pidx.data()));
+    const __m128i cat = _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(g, perm));
+    // cat's low 128 now holds half0's fd dwords then half1's fd dwords. When frontBytes isn't a
+    // multiple of 4 (e.g. u64->u8 has frontBytes=2), each half's dword block still carries trailing
+    // hole bytes, so a final in-128 PSHUFB compacts every lane's low db bytes to the tight output
+    // position i*db. (When frontBytes%4==0 this is an identity shuffle the compiler folds away.)
+    alignas(16) constexpr auto cidx = [] {
+      std::array<char, 16> t{};
+      for (int j = 0; j < 16; ++j) t[j] = static_cast<char>(0x80);
+      for (int i = 0; i < static_cast<int>(N); ++i) {
+        const int half = i / lanePer, j = i % lanePer;
+        for (int k = 0; k < db; ++k)
+          t[i * db + k] = static_cast<char>(half * fd * 4 + j * db + k);
+      }
+      return t;
+    }();
+    const __m128i comp = _mm_loadu_si128(reinterpret_cast<const __m128i*>(cidx.data()));
+    VFromD<Simd<DstT, N, 0>> r;
+    r.raw = _mm_shuffle_epi8(cat, comp);
+    return r;
+  } else {
+    alignas(32) SrcT src[32 / sizeof(SrcT)];
+    alignas(32) DstT dst[32 / sizeof(DstT)] = {};
+    Store(v, Simd<SrcT, N, 0>(), src);
+    for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
+    return Load(Simd<DstT, N, 0>(), dst);
+  }
 }
 // PromoteEvenTo/PromoteOddTo: exact-2x integer widenings use a register-in shift/mask path
 // (the SumOfMulQuad i8->i16 hot path was ~13x Highway on the old store+reload). In a source

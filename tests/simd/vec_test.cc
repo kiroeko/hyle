@@ -3166,6 +3166,36 @@ TEST(Vec, DemoteTruncateHelpers) {
   hs::TruncateStore(hs::Load(du32, src.data), dn8, tout.data);
   for (std::size_t i = 0; i < hs::Lanes(dn8); ++i)
     EXPECT_EQ(tout.data[i], std::uint8_t(src.data[i] & 0xFF)) << "TruncStore i=" << i;
+
+  // TruncateTo native PSHUFB path: cover every integer width combo with NON-trivial bit patterns
+  // (the store+reload path was replaced by a byte-gather; a wrong index table would silently emit
+  // wrong low bytes). Modular truncation = keep the low sizeof(DstT) bytes of each source lane.
+  {  // u32 -> u16
+    const hs::FixedTag<std::uint16_t, hs::kNativeVectorBytes / sizeof(std::uint32_t)> d16{};
+    Buf<std::uint32_t> s; Buf<std::uint16_t> o;
+    for (std::size_t i = 0; i < nw; ++i) s.data[i] = 0xDEAD0000u + static_cast<std::uint32_t>(i * 37 + 1);
+    hs::Store(hs::TruncateTo(d16, hs::Load(du32, s.data)), d16, o.data);
+    for (std::size_t i = 0; i < nw; ++i) EXPECT_EQ(o.data[i], std::uint16_t(s.data[i] & 0xFFFFu)) << "t u32->u16 i=" << i;
+  }
+  {  // u64 -> u32 / u16 / u8
+    const hs::ScalableTag<std::uint64_t> d64;
+    const std::size_t n64 = hs::Lanes(d64);
+    Buf<std::uint64_t> s;
+    for (std::size_t i = 0; i < n64; ++i) s.data[i] = 0x0123456789ABCDEFull + static_cast<std::uint64_t>(i) * 0x1111ull;
+    auto v = hs::Load(d64, s.data);
+    const hs::FixedTag<std::uint32_t, hs::ScalableTag<std::uint64_t>::kMaxLanes> d32n{};
+    const hs::FixedTag<std::uint16_t, hs::ScalableTag<std::uint64_t>::kMaxLanes> d16n{};
+    const hs::FixedTag<std::uint8_t,  hs::ScalableTag<std::uint64_t>::kMaxLanes> d8n{};
+    Buf<std::uint32_t> o32; Buf<std::uint16_t> o16; Buf<std::uint8_t> o8;
+    hs::Store(hs::TruncateTo(d32n, v), d32n, o32.data);
+    hs::Store(hs::TruncateTo(d16n, v), d16n, o16.data);
+    hs::Store(hs::TruncateTo(d8n,  v), d8n,  o8.data);
+    for (std::size_t i = 0; i < n64; ++i) {
+      EXPECT_EQ(o32.data[i], std::uint32_t(s.data[i] & 0xFFFFFFFFull)) << "t u64->u32 i=" << i;
+      EXPECT_EQ(o16.data[i], std::uint16_t(s.data[i] & 0xFFFFull))     << "t u64->u16 i=" << i;
+      EXPECT_EQ(o8.data[i],  std::uint8_t (s.data[i] & 0xFFull))       << "t u64->u8 i="  << i;
+    }
+  }
 }
 
 // ---- simd-18 C remaining + D: OrderedDemote / InRange / shift-demote2 / WidenMulAccum ----
