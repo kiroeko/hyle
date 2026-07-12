@@ -260,6 +260,42 @@ bool selected_op(const char* op) {
   return text == nullptr || std::strcmp(text, op) == 0;
 }
 
+// Public-API pack/unpack for ALL widths (u8/u16/u32) vs the scalar bitstream reference. The detailed
+// u16 rows above dissect HYLE-core vs Highway vs the broken-vendor bound; THIS covers the shipped
+// pack()/unpack() for u8 and u32 too (the production code already supports all three -- only the
+// bench was u16-only). Type-generic so u8/u32 need no per-width Highway/candidate scaffolding.
+template <typename T>
+void bench_public(const char* type, std::size_t n, unsigned bits) {
+  std::mt19937_64 rng(99);
+  const T mask = (bits >= 8 * sizeof(T)) ? static_cast<T>(~T{0})
+                                         : static_cast<T>((T{1} << bits) - 1);
+  std::vector<T> raw(n), out(n);
+  for (auto& v : raw) v = static_cast<T>(rng() & mask);
+  const std::size_t words = std::max<std::size_t>(1, hyle::simd::packed_size<T>(n, bits));
+  std::vector<T> packed(words, T{0});
+  hyle::simd::pack(raw.data(), n, packed.data(), bits);  // warm + fill for unpack row
+  nb::Bench bench;
+  bench.title(std::string(type) + " public pack/unpack bits=" + std::to_string(bits) +
+              " n=" + std::to_string(n))
+      .unit("value").relative(true).batch(std::max<std::size_t>(n, 1));
+  bench.run("scalar pack", [&] {
+    hyle::simd::detail::bitstream_pack(raw.data(), n, packed.data(), bits);
+    nb::doNotOptimizeAway(packed.data());
+  });
+  bench.run("HYLE pack (public)", [&] {
+    hyle::simd::pack(raw.data(), n, packed.data(), bits);
+    nb::doNotOptimizeAway(packed.data());
+  });
+  bench.run("scalar unpack", [&] {
+    hyle::simd::detail::bitstream_unpack(packed.data(), n, out.data(), bits);
+    nb::doNotOptimizeAway(out.data());
+  });
+  bench.run("HYLE unpack (public)", [&] {
+    hyle::simd::unpack(packed.data(), n, out.data(), bits);
+    nb::doNotOptimizeAway(out.data());
+  });
+}
+
 }  // namespace
 
 int main() {
@@ -274,6 +310,13 @@ int main() {
       if (selected_op("pack")) bench_pack(n, bits);
       if (selected_op("unpack")) bench_unpack(n, bits);
     }
+  }
+  // Public-API sweep for all widths (u8/u16/u32) at a representative mid-range bit count each.
+  for (std::size_t n : counts()) {
+    if (!selected_number("HYLE_BENCH_N", n)) continue;
+    if (selected_number("HYLE_BENCH_BITS", 5)) bench_public<std::uint8_t>("u8", n, 5);
+    if (selected_number("HYLE_BENCH_BITS", 11)) bench_public<std::uint16_t>("u16", n, 11);
+    if (selected_number("HYLE_BENCH_BITS", 20)) bench_public<std::uint32_t>("u32", n, 20);
   }
   return 0;
 }
