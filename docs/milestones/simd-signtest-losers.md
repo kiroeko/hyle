@@ -63,6 +63,12 @@ SaturatedNeg（位技巧 `~v-(v>MIN?-1:0)`）、SaturatedAbs i32（`Min_u32(Abs,
 - **≤ ~1.05× 的一边倒 HYLE 慢**：极可能是这 ~2–4% 布局偏差，**不是真输**。除非 objdump 显示 codegen 真不同，否则不动。
 - **真输门槛上调**：只有 ratio 明显超出布局偏差量级（经验 ≥ ~1.10×）**且** objdump codegen 不同，才是真算法输。据此，交集 20 项里真正该修的收窄到大 ratio 的内存/复杂族（LoadNOr 9.6/Compress 3/Gather 2.6/MultiRotate 2.9/LoadInterleaved2 1.34/TwoTables 1.11/MulHigh32 1.10）+ 逐个 objdump 确认 codegen 不同的中 ratio 项。1.02–1.05× 的（Eq128/Max128/MulAddSub/ConcatOdd/Min·MaxNumber/MaskedShift 等）先 objdump，codegen 相同即布局伪影不修。
 
+## 已追平（本轮，符号检验+objdump 确认真 codegen 差+照 Highway 改+三平台验）
+SaturatedNeg i32（1.09×→位技巧 `~v-(v>MIN?-1:0)`）、SaturatedAbs i32（1.34×→`Min_u32(Abs,INT_MAX)`）、MulHigh32 u32（1.10×→shuffle-pick 5 条）、TwoTablesLookupLanes（1.11×→slli+blendv）、LoadInterleaved2 f32/i32（1.34×→shufps+permq）。**LoadNOr 9.6×→1.5×**（native maskload，剩余需 Highway 二分）。
+
+## 128-cmp 族 objdump 定性（真 codegen 差但小+逻辑复杂，低优先）
+Eq128/Ne128/Lt128/Lt128Upper/Min128/Max128（1.02–1.06×）。objdump Max128：HYLE 11 insn（vpcmpgtq 后用 vpermq+vpermilpd+vpsrad+vpshufd 4 条广播 128-bit 比较结果），Highway 9 insn（vpslldq+vpunpckhqdq 2 条）。**真 codegen 差（非布局伪影），但 ratio 小 + 128-bit 大整数比较的高低 64 位广播逻辑易错**——低优先，收益远小于 MultiRotateRight 2.9×。
+
 ## 施工方针
 1. 大输优先（内存族 LoadNOr/Compress/Gather、MultiRotateRight）——收益最大且明确。
 2. 中输逐个对照 Highway 源码找多余步骤。
