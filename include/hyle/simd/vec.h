@@ -1173,28 +1173,33 @@ HYLE_FORCE_INLINE V Lt128Vec(D d, V a, V b) noexcept {
   // qword), vs DupOdd+MaskFromVec's 4-insn broadcast (objdump; compute-bound 1.3x loss).
   return InterleaveUpper(vecHx, vecHx);
 }
+// NOTE all four wrap their verdict vector in MaskFromNormalizedVec, NOT MaskFromVec: the verdict is
+// built from VecFromMask (all-ones/0) through InterleaveUpper/And/Or/Reverse2 (all canonical-
+// preserving), so it is ALREADY a canonical all-ones/0 lane pattern. MaskFromVec would re-run its
+// u64 sign-broadcast (srai_epi32 + shuffle_epi32, 2 insns) redundantly -- the isolated-realistic loss
+// (Lt128Upper MSVC 0.90/NEON 0.85, Ne128 MSVC 0.92). Same trusted-mask trick already used by Min128/Max128.
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE auto Lt128(D d, V a, V b) noexcept {
-  return MaskFromVec(Lt128Vec(d, a, b));
+  return MaskFromNormalizedVec(Lt128Vec(d, a, b));
 }
 // Lt128Upper: compare ONLY the high 64 bits of each 128-bit pair (used for partial keys).
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE auto Lt128Upper(D d, V a, V b) noexcept {
   static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Lt128Upper needs u64 lanes");
   const V ltHL = VecFromMask(d, Lt(a, b));
-  return MaskFromVec(InterleaveUpper(ltHL, ltHL));  // dup hi verdict (vpunpckhqdq), see Lt128
+  return MaskFromNormalizedVec(InterleaveUpper(ltHL, ltHL));  // dup hi verdict (vpunpckhqdq), see Lt128
 }
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE auto Eq128(D d, V a, V b) noexcept {
   static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Eq128 needs u64 lanes");
   const V eqHL = VecFromMask(d, Eq(a, b));
-  return MaskFromVec(And(eqHL, Reverse2(d, eqHL)));  // both halves equal -> whole pair equal
+  return MaskFromNormalizedVec(And(eqHL, Reverse2(d, eqHL)));  // both halves equal -> whole pair equal
 }
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE auto Ne128(D d, V a, V b) noexcept {
   static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Ne128 needs u64 lanes");
   const V neHL = VecFromMask(d, Ne(a, b));
-  return MaskFromVec(Or(neHL, Reverse2(d, neHL)));   // either half differs -> pair differs
+  return MaskFromNormalizedVec(Or(neHL, Reverse2(d, neHL)));   // either half differs -> pair differs
 }
 // Min128/Max128: select the smaller / larger 128-bit value of each pair (returns a vector).
 // Lt128Vec's output is already canonical all-ones/0 per lane (built from VecFromMask + canonical-
