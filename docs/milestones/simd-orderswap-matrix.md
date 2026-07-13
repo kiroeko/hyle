@@ -28,44 +28,47 @@
 - 总 benched op = **266**
 - **op_parity 内存-bound harness 原始"两序都慢"读数 = 49**（Masked 修复前 64 → 修 Masked 后 50 → 修 LoadN 后 49）
   - win (MSVC) = 34 | wsl (GCC) = 15 | mac (NEON) = 4
-  - **⚠️ 这不是算法真输数**——见头号警告：MSVC 那 34 个抽样复核全是 harness 伪影（Neg/ZeroIfNegative/
-    BroadcastLane/Per4Lane/MulComplexAdd/TestBit/HighestSetBitIndex 隔离 realistic 全部 HYLE 赢/平）。
-- **隔离 realistic kernel 复核后确认的算法真输（很少）**：
-  - **BitShuffle u64**（MSVC 0.59，cold op，需 u8 变量移位 infra）
-  - **MultiRotateRight u64**（仅 MSVC 0.91；GCC 编译同源码 1.82× 赢）
-  - **LoadNOr i32**（WSL 0.68，需 sub-128 partial-load 递归半宽 infra）
-  - 其余 MSVC/WSL 的 <0.98 项须逐个隔离 realistic 复核；已核的全部反转为赢/平。
+  - **⚠️ 这不是算法真输数**——已把全部 <0.98 候选逐个搬进隔离 realistic TU 复核（见下方 §全量隔离复核结果）。
+- **隔离 realistic 复核后确认的真算法输 = 7 个 x86 候选**（另 LoadNOr 待 infra、TestBit/InterleaveLowerBlocks 单平台临界）：
+  BitShuffle、SetAtOrAfterFirst（两 x86 平台真慢）；Lt128Upper（MSVC+NEON）；Ne128、MultiRotateRight（仅 MSVC）。
+  **其余 36 个被 op_parity 标 L 的候选，隔离下 HYLE 全部赢/平（多为 1.1-3.8×）。**
 - 其余：平/赢 135，HYLE 全序赢 14，混合(单序/布局) 68
 
-### §已复核反转清单（op_parity 判"输"但隔离 realistic kernel 实测 HYLE 赢/平 = harness 伪判）
-| op | op_parity | 隔离 realistic kernel(HYLE/Highway 两序) | 结论 |
-|---|---|---|---|
-| **Neg i32**（单条 vpsubd） | win 0.91/0.96 | **MSVC 1.18×/1.22×** | **赢**（1 指令不可能算法输=铁证 harness 噪声） |
-| **ZeroIfNegative f32** | win 0.88/0.93 | **MSVC 1.29×/1.28×** | **赢** |
-| **BroadcastLane<3> i32** | win 0.82/0.82 | **MSVC 1.18×/1.19×** | **赢** |
-| **Per4LaneBlockShuffle i32** | win 0.92/0.91 | **MSVC 1.18×/1.19×** | **赢** |
-| **MulComplexAdd f32** | win 0.97/0.98 | **MSVC 1.08×/1.12×** | **赢** |
-| **TestBit i32** | win 0.94/0.94 | **MSVC 1.02×/1.00×** | **平/赢** |
-| **HighestSetBitIndex u32** | win 0.89/wsl 0.88 | WSL 1.40-1.48×、MSVC 1.02× | **两平台赢/平**(LZCnt float-exp trick) |
-| **MultiRotateRight u64** | 0.91 both | **WSL 1.82-1.83× 赢**；MSVC 0.91× 慢 | WSL 伪判(赢);**MSVC 真慢**(同算法 MSVC codegen 差) |
+### §全量隔离复核结果（2026-07-13：把 op_parity 所有 <0.98 候选逐个搬进隔离 realistic TU 复跑）
+把 op_parity 标 L 的候选（x86 43 个 + NEON 4 个）逐个放进只含 ~35 op 的隔离 TU（icache 压力小），
+4-累加器 streaming / 真实 transform，两序各测。**每个 TU 内嵌 `Neg i32` 作 ANCHOR**（单条 vpsubd
+== Highway，必须回到赢/平，证明该 TU 已去噪）：ANCHOR 实测 WSL 1.37-1.54×、MSVC 1.19-1.20×、
+NEON 0.92-0.99（NEON 噪声本就大，近 1.0 = 平）。
 
-### 真正剩余的 x86 硬核真输（realistic 复核后仍慢）
-| op | 平台 | 现状 | 根因 |
-|---|---|---|---|
-| **BitShuffle u64** | MSVC 0.59 | 真慢 | 标量; 8-blend byte-rotate 向量化 MSVC 反降(已回退),需 Highway 精确 u8-Rol |
-| **MultiRotateRight u64** | MSVC 0.91 | 真慢(仅 MSVC) | 同泛型算法 GCC 编译后 1.82× 赢, MSVC codegen 差 → 需 MSVC 专项手调或 VBMI multishift 门控 |
-| **LoadNOr i32** | WSL 0.68 | 部分改善 | LoadN 已 maskload 修好;LoadNOr 残留需 Highway 递归半宽二分(sub-128 partial-load infra) |
+**结论：x86 43 个候选里只有 7 个是真算法输，其余 36 个 op_parity 全误判（隔离下 HYLE 赢/平，多为 1.1-3.8×）。**
 
-### mac (NEON) 真输（4 个，多为内存-bound 临界）
-| op | mac | 备注 |
-|---|---|---|
-| CeilInt f32->i32 | 0.95/0.96 | 待 realistic 复核 |
-| Lt128Upper u64 | 0.91/0.96 | 128-cmp(NEON 侧) |
-| MaskedShiftRight<3> i32 | 0.95/0.97 | vshrq_n_s32+vandq=2 指令已最简,内存-bound 噪声 |
-| RoundingShiftRightSame i32 bits=5 | 0.98/0.96 | 临界 |
+#### 真算法输（隔离复核两序都明显低于 ANCHOR）
+| op | WSL | MSVC | NEON | 根因 / 处置 |
+|---|---|---|---|---|
+| **BitShuffle u64** | 0.70 | 0.58 | · | cold op,仍标量;向量化需 u8 变量 Shl/Shr native(Highway even/odd u16 递归)再组 Rol。8-blend 试过 MSVC 反降已回退 |
+| **SetAtOrAfterFirst i32** | 0.91 | 0.83 | · | mask→GPR movemask→标量→LoadMaskBits round-trip;Highway 纯向量(VecFromMask+shuffle+BroadcastSignBit)。x86_256-inl.h:9485 可照抄 |
+| **Lt128Upper u64** | 平 | 0.90 | 0.85 | 128-cmp Upper 变体,MSVC+NEON 真慢 |
+| **Ne128 u64** | 平 | 0.92 | · | 128-cmp;仅 MSVC |
+| **MultiRotateRight u64** | 1.82×赢 | 0.91 | · | 同泛型算法 GCC 编译 1.82× 赢、MSVC codegen 差;需 MSVC 专项或 VBMI multishift 门控 |
+| **TestBit reduce i32** | 1.7×赢 | 0.93 | 平 | 仅 MSVC 边缘(小 TU 曾 1.02,反复横跳=临界,非硬输) |
+| **InterleaveLowerBlocks i32** | 0.91-0.97 | 1.18×赢 | · | 仅 WSL 边缘 |
+| **LoadNOr i32**（未入综合 bench） | 0.68 | 部分改善 | · | 需 Highway 递归半宽 sub-128 partial-load infra(LoadN/StoreN 已 maskload 修好) |
 
-> MSVC 真输数(34)高于 GCC(15)：MSVC 对 store+reload/标量展开/向量序列调度 codegen 弱于 GCC。
-> **同一 VS2026 编译 Highway 快 = HYLE 源码写法问题,非 VC++ 版本问题。**
+#### op_parity 误判、隔离复核实为赢/平的 36 个（举证 harness 不可信）
+Neg 1.18×·ZeroIfNegative 1.29×·BroadcastLane<3> 1.18×·Per4LaneBlockShuffle 1.19×·MulComplexAdd 1.08×·
+MulComplexConjAdd 1.03×·HighestSetBitIndex 1.04-1.48×·IsNaN 平·IsNegative 平·MulByFloorPow2 平·
+MaskedApproxReciprocalSqrt 1.19×·MaskedWidenMulPairwiseAdd 1.26×(op_parity 曾判 0.82!)·MaskedShiftLeftOr 1.19×·
+MaskedShiftRightOr 1.20×·MaskedShrOr 1.25×·ConcatLowerLower 1.17×·Eq128 1.11×·Lt128 1.02-2.01×·
+FindKnownFirstTrue 1.10-1.61×·FindKnownLastTrue 1.98×·FindLastTrue 1.11-2.17×·OrderedDemote2To 1.26×·
+ReorderDemote2To 1.27-1.42×·ReorderShiftRightAndDemote2To 1.32×·RoundingShiftRight<2> 1.06-1.22×·
+RoundingShiftRightSame 平-1.23×·ShiftLeft<3> 1.20-1.44×·SlideMask1Up/Down 1.03-1.25×·TrailingZeroCount 1.13-1.53×·
+TruncateTo 1.12-1.44×·PromoteEvenTo 1.25-1.89×·SetOnlyFirst 1.31×(WSL)/平(MSVC)·SatWidenMulPairwiseAccumulate 1.02-1.44×·
+CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic 赢或平**。
+
+> **最终真输结论**：全库 266 op 中，隔离 realistic 复核后确认的真算法输 = **BitShuffle、SetAtOrAfterFirst（两 x86 平台）
+> + Lt128Upper（MSVC+NEON）+ Ne128/MultiRotateRight（仅 MSVC）+ LoadNOr（WSL，待 infra）**，另 TestBit/InterleaveLowerBlocks
+> 属单平台临界。**op_parity full_bench 的 L 标签(尤其 MSVC 列)绝大多数是 harness 伪影，不是算法输。**
+> MSVC 之所以伪影多：对 store+reload/标量展开/向量序列调度的 codegen 弱于 GCC，且 200-op TU 的 icache/DSB 压力更敏感。
 
 ---
 
