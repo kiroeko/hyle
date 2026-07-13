@@ -2529,14 +2529,20 @@ HYLE_FORCE_INLINE Vec256<T, N> ReverseBits(Vec256<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ReverseLaneBytes(Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReverseLaneBytes is integer-only");
-  alignas(32) T s[N], d[N];
-  Store(v, Simd<T, N, 0>(), s);
-  for (std::size_t i = 0; i < N; ++i) {
-    auto* db = reinterpret_cast<std::uint8_t*>(&d[i]);
-    const auto* sb = reinterpret_cast<const std::uint8_t*>(&s[i]);
-    for (std::size_t b = 0; b < sizeof(T); ++b) db[b] = sb[sizeof(T) - 1 - b];
-  }
-  return Load(Simd<T, N, 0>(), d);
+  // per-128-block vpshufb byte-reverse index (same table ReverseBits uses for its byte step).
+  // One vpshufb replaces the scalar store+byte-loop+reload that MSVC left un-vectorized (0.05 = 20x
+  // loss; GCC did fold it). 1-byte lanes = identity. Indices are per-128-half (vpshufb is per-block).
+  Vec256<T, N> r;
+  if constexpr (sizeof(T) == 1) { r.raw = v.raw; return r; }
+  __m256i idx;
+  if constexpr (sizeof(T) == 2)
+    idx = _mm256_setr_epi8(1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14, 1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14);
+  else if constexpr (sizeof(T) == 4)
+    idx = _mm256_setr_epi8(3,2,1,0,7,6,5,4,11,10,9,8,15,14,13,12, 3,2,1,0,7,6,5,4,11,10,9,8,15,14,13,12);
+  else
+    idx = _mm256_setr_epi8(7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8, 7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8);
+  r.raw = _mm256_shuffle_epi8(v.raw, idx);
+  return r;
 }
 namespace detail {
 // Reinterpret a 256-bit lane register as __m256 for shuffle_ps (float raw passes through; integer
