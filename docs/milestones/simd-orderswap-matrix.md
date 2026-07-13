@@ -99,21 +99,21 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 
 | op | win(hf) | win(hwf) | wsl(hf) | wsl(hwf) | mac(hf) | mac(hwf) | comment |
 |---|---|---|---|---|---|---|---|
-| HighestSetBitIndex u32 | 0.88L | 0.90L | 0.87L | 0.91L | 1.00= | 0.97L | 伪影·隔离赢/平 |
-| LoadNOr i32 (half n) | 0.85L | 0.74L | 0.66L | 0.64L | · | · | 伪影·隔离赢/平 |
+| HighestSetBitIndex u32 | 0.88L | 0.90L | 0.87L | 0.91L | 1.00= | 0.97L | 伪影·隔离赢/平(隔离1.36) |
+| LoadNOr i32 (half n) | 0.85L | 0.74L | 0.66L | 0.64L | · | · | 伪影·隔离赢/平(隔离1.19) |
 | AbsDiff i32 | 0.97L | 0.97L | 1.02W | 1.00= | 1.10W | 1.10W | op_parity噪声(未隔离复核) |
 | AllBits0 i32 | 0.97L | 0.97L | 0.99= | 0.98= | 1.00= | 1.04W | op_parity噪声(未隔离复核) |
 | BroadcastBlock<1> i32 | 0.93L | 0.95L | 1.00= | 1.00= | · | · | op_parity噪声(未隔离复核) |
-| BroadcastLane<3> i32 | 0.84L | 0.83L | 1.26W | 1.21W | 1.16W | 1.19W | 伪影·隔离赢/平 |
+| BroadcastLane<3> i32 | 0.84L | 0.83L | 1.26W | 1.21W | 1.16W | 1.19W | 伪影·隔离赢/平(隔离1.51) |
 | CeilInt f32->i32 | 1.69W | 1.51W | 1.47W | 1.47W | 0.95L | 0.96L | op_parity噪声(未隔离复核) |
 | CombineMasks i32 (4096) | 1.06W | 1.09W | 0.87L | 0.86L | · | · | op_parity噪声(未隔离复核) |
 | CompressNot i32 (4096, 50%) | 0.87L | 0.94L | 0.97L | 1.01= | · | · | op_parity噪声(未隔离复核) |
-| ConcatLowerLower i32 | 1.02W | 1.03W | 0.94L | 0.92L | · | · | 伪影·隔离赢/平 |
-| Eq128 u64 | 0.98L | 0.96L | 1.02W | 1.01= | 1.05W | 1.03W | 伪影·隔离赢/平 |
-| FindKnownFirstTrue i32 | 0.85L | 0.87L | 1.00= | 1.02W | 1.17W | 1.25W | 伪影·隔离赢/平 |
-| FindLastTrue i32 | 1.07W | 1.07W | 0.97L | 0.94L | 1.05W | 1.09W | 伪影·隔离赢/平 |
-| IsNaN f32 | 0.97L | 0.98L | 0.99= | 1.00= | 1.00= | 1.01= | 伪影·隔离赢/平 |
-| IsNegative i32 | 0.99= | 0.96L | 0.84L | 0.84L | 1.00= | 0.99= | 伪影·隔离赢/平 |
+| ConcatLowerLower i32 | 1.02W | 1.03W | 0.94L | 0.92L | · | · | 伪影·隔离赢/平(隔离1.30) |
+| Eq128 u64 | 0.98L | 0.96L | 1.02W | 1.01= | 1.05W | 1.03W | 伪影·隔离赢/平(隔离1.63) |
+| FindKnownFirstTrue i32 | 0.85L | 0.87L | 1.00= | 1.02W | 1.17W | 1.25W | 伪影·隔离赢/平(隔离1.61) |
+| FindLastTrue i32 | 1.07W | 1.07W | 0.97L | 0.94L | 1.05W | 1.09W | 伪影·隔离赢/平(隔离2.17) |
+| IsNaN f32 | 0.97L | 0.98L | 0.99= | 1.00= | 1.00= | 1.01= | 伪影·隔离赢/平(隔离2.02) |
+| IsNegative i32 | 0.99= | 0.96L | 0.84L | 0.84L | 1.00= | 0.99= | 伪影·隔离赢/平(隔离1.50) |
 | LoadN/StoreN i32 (half lanes) | 0.97L | 1.14W | 0.90L | 0.92L | · | · | 已修·赢/平 |
 | Lt128Upper u64 | 1.04W | 0.93L | 0.98= | 1.02= | 0.91L | 0.96L | 已修·赢/平 |
 | MaskedMulComplexConjAdd f32 | 0.97L | 0.97L | 1.00= | 1.00= | 1.12W | 1.07W | 已修·赢/平 |
@@ -122,31 +122,31 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 | MaskedShiftRightOr<3> i32 | 0.96L | 0.95L | 1.02W | 0.97L | 1.00= | 0.98L | 已修·赢/平 |
 | MaskedShrOr i32 | 0.95L | 0.97L | 1.04W | 1.01= | 1.09W | 1.08W | 已修·赢/平 |
 | MaskedWidenMulPairwiseAdd i16-i32 | 0.90L | 0.91L | 1.03W | 1.01= | 1.09W | 1.08W | 已修·赢/平 |
-| MulByFloorPow2 f32 | 1.01= | 1.02= | 0.97L | 0.96L | 1.00= | 1.00= | 伪影·隔离赢/平 |
+| MulByFloorPow2 f32 | 1.01= | 1.02= | 0.97L | 0.96L | 1.00= | 1.00= | 伪影·隔离赢/平(隔离2.48) |
 | Ne128 u64 | 0.94L | 0.93L | 0.99= | 1.00= | 1.08W | 1.07W | 已修·赢/平 |
-| OrderedDemote2To i32->i16 | 0.90L | 0.90L | 1.01= | 1.00= | · | · | 伪影·隔离赢/平 |
+| OrderedDemote2To i32->i16 | 0.90L | 0.90L | 1.01= | 1.00= | · | · | 伪影·隔离赢/平(隔离1.36) |
 | Per4LaneBlockShuffle 3210 i32 | 0.91L | 0.94L | 1.00= | 0.99= | 1.14W | 1.11W | op_parity噪声(未隔离复核) |
 | PromoteUpperTo i16->i32 | 0.94L | 0.93L | 0.99= | 0.99= | · | · | op_parity噪声(未隔离复核) |
-| ReorderDemote2To i32->i16 | 0.90L | 0.93L | 1.02= | 0.99= | · | · | 伪影·隔离赢/平 |
-| ReorderShiftRightAndDemote2To<2> i32->i16 | 0.95L | 0.92L | 0.99= | 1.00= | · | · | 伪影·隔离赢/平 |
+| ReorderDemote2To i32->i16 | 0.90L | 0.93L | 1.02= | 0.99= | · | · | 伪影·隔离赢/平(隔离1.36) |
+| ReorderShiftRightAndDemote2To<2> i32->i16 | 0.95L | 0.92L | 0.99= | 1.00= | · | · | 伪影·隔离赢/平(隔离1.34) |
 | ReverseBlocks i32 | 0.96L | 0.96L | 0.99= | 0.96L | · | · | op_parity噪声(未隔离复核) |
-| RoundingShiftRight<2> i32 | 0.86L | 0.93L | 1.07W | 1.09W | 1.12W | 1.08W | 伪影·隔离赢/平 |
+| RoundingShiftRight<2> i32 | 0.86L | 0.93L | 1.07W | 1.09W | 1.12W | 1.08W | 伪影·隔离赢/平(隔离1.20) |
 | RoundingShiftRightAndDemoteTo<3> i32->i16 (4096) | 0.90L | 0.91L | 1.13W | 1.11W | · | · | op_parity噪声(未隔离复核) |
-| RoundingShiftRightSame i32 bits=5 | 1.20W | 1.17W | 1.05W | 1.09W | 0.98L | 0.96L | 伪影·隔离赢/平 |
+| RoundingShiftRightSame i32 bits=5 | 1.20W | 1.17W | 1.05W | 1.09W | 0.98L | 0.96L | 伪影·隔离赢/平(隔离1.23) |
 | SatWidenMulPairwiseAccumulate i16->i32 | 0.92L | 0.90L | 1.03W | 1.00= | · | · | 已修·赢/平 |
-| SetOnlyFirst i32 | 0.83L | 0.83L | 1.68W | 1.67W | 1.00= | 1.00= | 伪影·隔离赢/平 |
-| ShiftLeft<3> i32 | 0.97L | 0.96L | 1.02W | 0.97L | 1.16W | 1.18W | 伪影·隔离赢/平 |
+| SetOnlyFirst i32 | 0.83L | 0.83L | 1.68W | 1.67W | 1.00= | 1.00= | 伪影·隔离赢/平(隔离1.40) |
+| ShiftLeft<3> i32 | 0.97L | 0.96L | 1.02W | 0.97L | 1.16W | 1.18W | 伪影·隔离赢/平(隔离1.43) |
 | ShiftRightAndDemoteTo<3> i32->i16 (4096) | 0.96L | 0.97L | 0.98L | 1.02= | · | · | op_parity噪声(未隔离复核) |
 | Shuffle0321 i32 | 0.97L | 0.97L | 1.02W | 0.99= | 1.13W | 1.11W | op_parity噪声(未隔离复核) |
-| SlideMask1Down i32 (4096) | 0.92L | 0.91L | 1.00= | 1.00= | · | · | 伪影·隔离赢/平 |
-| SlideMask1Up i32 (4096) | 0.92L | 0.90L | 1.01= | 1.00= | · | · | 伪影·隔离赢/平 |
+| SlideMask1Down i32 (4096) | 0.92L | 0.91L | 1.00= | 1.00= | · | · | 伪影·隔离赢/平(隔离1.22) |
+| SlideMask1Up i32 (4096) | 0.92L | 0.90L | 1.01= | 1.00= | · | · | 伪影·隔离赢/平(隔离1.25) |
 | Sub i32 | 0.98= | 1.01= | 0.77L | 0.98L | 1.10W | 1.06W | op_parity噪声(未隔离复核) |
 | SwapAdjacentBlocks i32 | 0.94L | 0.95L | 1.00= | 0.98= | · | · | op_parity噪声(未隔离复核) |
 | TestBit i32 | 0.94L | 0.93L | 1.01= | 1.00= | 1.00= | 0.99= | op_parity噪声(未隔离复核) |
-| TrailingZeroCount i32 | 1.00= | 1.03W | 0.92L | 0.91L | 1.10W | 1.07W | 伪影·隔离赢/平 |
-| TruncateTo u32->u16 | 0.89L | 0.89L | 1.01= | 0.96L | 1.16W | 1.12W | 伪影·隔离赢/平 |
+| TrailingZeroCount i32 | 1.00= | 1.03W | 0.92L | 0.91L | 1.10W | 1.07W | 伪影·隔离赢/平(隔离1.49) |
+| TruncateTo u32->u16 | 0.89L | 0.89L | 1.01= | 0.96L | 1.16W | 1.12W | 伪影·隔离赢/平(隔离1.44) |
 | WidenMulAccumulate i16->i32 | 0.98L | 1.01= | 0.98L | 0.98L | · | · | op_parity噪声(未隔离复核) |
-| ZeroIfNegative f32 | 0.92L | 0.92L | 1.12W | 1.08W | 1.15W | 1.13W | 伪影·隔离赢/平 |
+| ZeroIfNegative f32 | 0.92L | 0.92L | 1.12W | 1.08W | 1.15W | 1.13W | 伪影·隔离赢/平(隔离1.42) |
 | Add f32 | 1.00= | 0.99= | 1.00= | 0.98L | 1.13W | 1.13W | 混合(单序/布局) |
 | AddSub i32 | 1.03W | 1.02W | 0.76L | 1.02W | 1.10W | 1.10W | 混合(单序/布局) |
 | AllFalse i32 | 1.10W | 1.08W | 0.99= | 1.01= | 1.00= | 0.97L | 混合(单序/布局) |
@@ -165,7 +165,7 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 | DupOdd i32 | 0.98= | 0.97L | 0.99= | 1.00= | 1.12W | 1.12W | 混合(单序/布局) |
 | ExclusiveNeither i32 | 1.19W | 1.16W | 1.00= | 0.96L | 1.01= | 0.99= | 混合(单序/布局) |
 | FindFirstTrue i32 | 1.06W | 1.07W | 1.01= | 0.99= | 0.87L | 1.24W | 混合(单序/布局) |
-| FindKnownLastTrue i32 | 0.98= | 0.98L | 1.00= | 1.02W | 1.10W | 1.10W | 伪影·隔离赢/平 |
+| FindKnownLastTrue i32 | 0.98= | 0.98L | 1.00= | 1.02W | 1.10W | 1.10W | 伪影·隔离赢/平(隔离1.92) |
 | Floor f32 | 1.01= | 1.00= | 0.98L | 1.01= | 1.13W | 1.11W | 混合(单序/布局) |
 | GatherOffset i32 (4096) | 0.98L | 1.01= | 0.97L | 0.99= | · | · | 混合(单序/布局) |
 | GetBiasedExponent f32 | 1.01= | 0.97L | 1.15W | 1.16W | 1.00= | 0.98= | 混合(单序/布局) |
@@ -178,7 +178,7 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 | IsEitherNaN f32 | 1.00= | 1.01= | 0.99= | 0.98L | 1.00= | 1.00= | 混合(单序/布局) |
 | Load/Store i32 aligned | 1.00= | 1.01= | 1.00= | 1.01= | 1.07W | 0.87L | 混合(单序/布局) |
 | Lt i32 | 1.00= | 0.97L | 1.02= | 1.00= | 1.10W | 1.14W | 混合(单序/布局) |
-| Lt128 u64 | 1.01= | 0.96L | 1.03W | 1.00= | 1.08W | 1.04W | 伪影·隔离赢/平 |
+| Lt128 u64 | 1.01= | 0.96L | 1.03W | 1.00= | 1.08W | 1.04W | 伪影·隔离赢/平(隔离2.01) |
 | MaskedApproxReciprocal f32 | 1.01= | 1.01= | 0.96L | 0.99= | 1.12W | 1.02= | 已修·赢/平 |
 | MaskedApproxReciprocalSqrt f32 | 0.98L | 1.00= | 0.98= | 0.98= | 1.14W | 1.10W | 已修·赢/平 |
 | MaskedModOr i32 invariant | 1.00= | 1.01= | 0.99= | 0.97L | 1.07W | 1.06W | 已修·赢/平 |
@@ -192,11 +192,11 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 | Min128 u64 | 0.98L | 1.01= | 0.98= | 1.01= | 1.14W | 1.03W | 混合(单序/布局) |
 | MinNumber f32 | 1.00= | 1.00= | 0.98L | 1.01= | 1.11W | 1.13W | 混合(单序/布局) |
 | Mul i32 | 0.98L | 0.99= | 1.01= | 0.99= | 1.11W | 1.16W | 混合(单序/布局) |
-| MulComplexAdd f32 | 0.98L | 0.98= | 0.99= | 0.99= | 1.13W | 1.10W | 伪影·隔离赢/平 |
-| MulComplexConjAdd f32 | 0.96L | 0.99= | 0.99= | 1.01= | 1.11W | 1.09W | 伪影·隔离赢/平 |
+| MulComplexAdd f32 | 0.98L | 0.98= | 0.99= | 0.99= | 1.13W | 1.10W | 伪影·隔离赢/平(隔离2.17) |
+| MulComplexConjAdd f32 | 0.96L | 0.99= | 0.99= | 1.01= | 1.11W | 1.09W | 伪影·隔离赢/平(隔离2.13) |
 | MulHigh i16 (4096) | 0.97L | 1.01= | 0.96L | 1.00= | · | · | 混合(单序/布局) |
 | MultiRotateRight u64 (4096) | 0.98= | 0.97L | 1.01= | 1.00= | · | · | 已修·赢/平 |
-| Neg i32 | 1.10W | 1.06W | 0.98L | 1.03W | 1.38W | 1.33W | 伪影·隔离赢/平 |
+| Neg i32 | 1.10W | 1.06W | 0.98L | 1.03W | 1.38W | 1.33W | 伪影·隔离赢/平(隔离1.38) |
 | NegMulAdd f32 | 0.98L | 1.00= | 1.01= | 0.98L | 1.11W | 1.14W | 混合(单序/布局) |
 | OddEven i32 | 0.98L | 0.99= | 1.00= | 0.99= | 1.11W | 1.13W | 混合(单序/布局) |
 | OddEvenBlocks i32 | 0.99= | 0.98= | 0.99= | 0.97L | · | · | 混合(单序/布局) |
@@ -318,7 +318,7 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 | PairwiseAdd128 i32 | 0.99= | 1.03W | 1.00= | 1.00= | 1.07W | 1.05W | 平/赢 |
 | PairwiseSub i32 | 1.11W | 1.10W | 1.13W | 1.14W | 1.11W | 1.08W | HYLE赢(所有序) |
 | PairwiseSub128 i32 | 1.04W | 1.04W | 1.06W | 1.07W | 1.11W | 1.09W | HYLE赢(所有序) |
-| PromoteEvenTo i8->i16 | 1.00= | 1.01= | 1.02= | 1.00= | · | · | 伪影·隔离赢/平 |
+| PromoteEvenTo i8->i16 | 1.00= | 1.01= | 1.02= | 1.00= | · | · | 伪影·隔离赢/平(隔离1.73) |
 | PromoteOddTo i8->i16 | 1.02= | 0.99= | 1.00= | 1.01= | · | · | 平/赢 |
 | PromoteTo i16->i32 1-arg (4096) | 1.03W | 1.04W | 0.99= | 1.00= | · | · | 平/赢 |
 | RebindMask i32->f32 (4096) | 1.12W | 1.12W | 1.02= | 1.01= | · | · | 平/赢 |
@@ -334,7 +334,7 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 | RoundToInt f32->i32 | 1.29W | 1.26W | 1.20W | 1.21W | 1.26W | 1.19W | HYLE赢(所有序) |
 | RoundingShr i32 | 1.07W | 1.02W | 1.01= | 0.99= | 1.10W | 1.12W | 平/赢 |
 | SatWidenMulAccumFixedPoint i16->i32 | 1.85W | 1.90W | 1.75W | 1.76W | · | · | HYLE赢(所有序) |
-| SaturatedNeg i32 | 1.02= | 1.05W | 1.04W | 1.00= | 1.14W | 1.13W | 伪影·隔离赢/平 |
+| SaturatedNeg i32 | 1.02= | 1.05W | 1.04W | 1.00= | 1.14W | 1.13W | 伪影·隔离赢/平(隔离1.38) |
 | ScatterIndexN i32 (half n) | 1.22W | 1.08W | 1.11W | 1.22W | · | · | HYLE赢(所有序) |
 | ScatterOffset i32 (4096) | 1.10W | 1.05W | 0.99= | 0.99= | · | · | 平/赢 |
 | Set i32 | 1.00= | 1.00= | 1.00= | 1.02= | 0.99= | 1.01= | 平/赢 |
