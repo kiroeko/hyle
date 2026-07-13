@@ -84,11 +84,16 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 >
 > **comment 列 = 隔离 realistic 复核后的权威定性**：
 > - `真慢(X)` = 隔离复核仍慢的真算法输，全表**已清零**（原 MultiRotateRight/LoadNOr 均已修/证伪，见下）。
-> - `已修·赢/平` = 本会话已向量化/去冗余，隔离复核反超或追平(见上方 §已修 4 个 + Masked/LoadN/SatWiden)。
+> - `已修·赢/平` = 本会话已向量化/去冗余，隔离复核反超或追平(BitShuffle/SetAtOrAfterFirst/Lt128Upper/Ne128/MultiRotateRight + Masked/LoadN/SatWiden)。
 > - `伪影·隔离赢/平` = op_parity 判 L 但隔离复核 HYLE 实际赢/平(harness 伪影)。
 > - `临界(单平台)` = 单平台边缘横跳(InterleaveLowerBlocks/TestBit)。
 > - `未隔离复核` = 3 个低风险边角尚未搬进隔离 TU(CombineMasks/CompressStore阈值/RSRADemoteTo<3>/CeilInt-mac)。
-> - `平/赢`·`HYLE赢`·`混合` = op_parity 本就判平或赢的行(未标 L 或只单序 L)。
+> - `平/赢`·`HYLE赢` = op_parity 本就两序都判平或赢的行(未标 L)。
+> - `混合(单序/布局)` = **只有单个方向慢、换向就翻过来**的行(两子列一个 <1 一个 ≥1，如 `0.98L / 1.02W`)。
+>   成因是 harness 噪声、非算法差：**① 单序=第一槽冷启动**——op_parity 每个宏固定让 HYLE 先跑，先跑那槽吃
+>   icache/DSB 未预热+turbo 未拉满的惩罚；换向后慢的变成 Highway 那侧(慢跟"跑动顺序"走，不跟"库"走)。
+>   **② 布局偏差**——200-op 挤一个 TU，某 op 恒排在某重 op 后受指令布局/串扰影响。连"两序都慢"都不满足，
+>   本就够不上真输门槛，故不必逐个隔离复核。
 
 | op | win(hf) | win(hwf) | wsl(hf) | wsl(hwf) | mac(hf) | mac(hwf) | comment |
 |---|---|---|---|---|---|---|---|
