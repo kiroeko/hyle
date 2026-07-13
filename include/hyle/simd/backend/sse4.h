@@ -1623,12 +1623,13 @@ HYLE_FORCE_INLINE unsigned mask_bits(Mask128<T, N> m) noexcept {
     return static_cast<unsigned>(_mm_movemask_ps(_mm_castsi128_ps(m.raw)));
   } else if constexpr (sizeof(T) == 1) {
     return static_cast<unsigned>(_mm_movemask_epi8(m.raw));  // 16 lanes, 1 bit/byte already
-  } else {  // 2-byte lanes: no native 16-bit movemask -> byte-mask + compact every 2nd bit.
-    const unsigned bytes = static_cast<unsigned>(_mm_movemask_epi8(m.raw));
-    unsigned out = 0;
-    for (std::size_t i = 0; i < N; ++i)
-      out |= ((bytes >> (i * sizeof(T))) & 1u) << i;
-    return out;
+  } else {  // 2-byte lanes: no native 16-bit movemask. Pack i16 lanes down to i8 (saturating: a mask
+    // lane -1 stays -1, 0 stays 0), THEN movemask_epi8 gives exactly 1 bit/lane -- Highway's x86_128
+    // recipe. Replaces the ~N-iteration scalar bit-compaction (which GCC vectorized into a
+    // vpsrlvd/vpsllvd/vpor fold, the i16 BitsFromMask bottleneck behind DemoteMaskTo's ~0.33 vs HWY).
+    const __m128i packed = _mm_packs_epi16(m.raw, _mm_setzero_si128());  // 8xi16 -> low 8xi8
+    const unsigned bits = static_cast<unsigned>(_mm_movemask_epi8(packed));
+    return (N >= 32) ? bits : (bits & ((1u << N) - 1u));  // keep only the N valid lane bits
   }
 }
 }  // namespace detail

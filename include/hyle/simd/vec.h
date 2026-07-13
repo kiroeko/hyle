@@ -1334,11 +1334,16 @@ HYLE_FORCE_INLINE MFromD<DTo> DemoteMaskTo(DTo d_to, DFrom d_from, MFromD<DFrom>
   // independent of the Rebind partial tag's kPow2), so no partial-tag BitCast is needed. This cut the
   // gap to ~2x (vpackusdw + a reg move vs Highway's fused pack) -- the residual is a cold-op register
   // shuffle, not the algorithm; good enough for a rare mask-width bridge.
+  // VecFromMask(m) is the canonical -1/0 vector (mask raw IS that vector -- no normalization needed;
+  // spelling it on the signed narrow-lane tag di_from is a no-op reinterpret, so drop the extra
+  // RebindMask+its VecFromMask sign-normalize). TruncateTo keeps -1 as -1 / 0 as 0 (still canonical),
+  // so MaskFromNormalizedVec re-tags it directly instead of MaskFromVec's redundant sign broadcast
+  // (objdump: removes a leading vpsrad AND the trailing vpsraw -- 5 insns -> 3: vpshufb+vpermq+pack).
   using TN = MakeSigned<TFromD<DTo>>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(DFrom);
   const Simd<MakeSigned<TFromD<DFrom>>, kN, 0> di_from;
   const Simd<TN, kN, 0> dn;
-  return MaskFromVec(TruncateTo(dn, VecFromMask(di_from, RebindMask(di_from, m))));
+  return MaskFromNormalizedVec(TruncateTo(dn, VecFromMask(di_from, m)));
 #endif
 }
 // OrderedDemote2MasksTo(d_to, d_from, a, b): narrow two masks (each N lanes, width W) into one mask of
