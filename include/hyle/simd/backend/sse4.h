@@ -525,16 +525,19 @@ HYLE_FORCE_INLINE Vec128<T, N> MulByPow2(Vec128<T, N> a, Vec128<IT, N> b) noexce
 // NaN-aware min/max (Highway MinNumber/MaxNumber): if one operand is NaN, return the OTHER.
 // x86 _mm_min_ps/_mm_max_ps return the second operand on any-NaN, so we can't map directly;
 // reuse IsNaN + IfThenElse + Min/Max. Integer lanes have no NaN, so they are just Min/Max.
+// One-sided NaN fixup (see avx2.h): _mm_min/max_ps return the 2nd operand on any-NaN, so
+// IfThenElse(IsNaN(b), a, Min(a,b)) suffices (3 ops vs the old double-check's 5). Equivalence over
+// all 64 NaN/value combos verified.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> MinNumber(Vec128<T, N> a, Vec128<T, N> b) noexcept {
   if constexpr (std::is_floating_point_v<T>)
-    return IfThenElse(IsNaN(a), b, IfThenElse(IsNaN(b), a, Min(a, b)));
+    return IfThenElse(IsNaN(b), a, Min(a, b));
   else return Min(a, b);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> MaxNumber(Vec128<T, N> a, Vec128<T, N> b) noexcept {
   if constexpr (std::is_floating_point_v<T>)
-    return IfThenElse(IsNaN(a), b, IfThenElse(IsNaN(b), a, Max(a, b)));
+    return IfThenElse(IsNaN(b), a, Max(a, b));
   else return Max(a, b);
 }
 // AddSub(a,b): a-b in EVEN lanes, a+b in ODD lanes. Native SSE3 _mm_addsub_ps/pd (float).
