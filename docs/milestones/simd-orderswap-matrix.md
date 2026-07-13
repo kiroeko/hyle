@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;TZC/HSB 家族已修)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;TZC/HSB/DemoteMask 已修,x86 交集剩 1)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,9 +19,8 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 11 个
-- DemoteToNearestInt f64->i32 (4096): **0.39** —— 已知正确性取舍:HYLE safe 版做 emu128 谱系 NaN/饱和(Highway 原生只 Min+cvt);InRange 快路径同表 TIE
-- DemoteMaskTo i32->i16 (4096): **0.74** —— mask 宽度桥接冷 op,残余为寄存器搬运差(源注释已记录,接受)
+### MSVC(AVX2): 10 个
+- DemoteToNearestInt f64->i32 (4096): **0.61** —— 正确性取舍:HYLE 保完整 emu128 NaN-按符号饱和(+NaN→MAX/-NaN→MIN),Highway x86 native(Min+cvt)全 NaN→MIN 偏离自己的 emu128 参考;已从 0.39 改善(cvt-first native 去 Abs/Round/2×blendv),残余=保 +NaN→MAX 的符号提取 ~5 条,满平需弃 -NaN 语义;InRange 快路径 1.5x WIN
 - AddSub i32: **0.86** —— 仅 MSVC 0.86,GCC TIE
 - CompressNot i32 (4096, 50%): **0.86** —— 仅 MSVC 0.86
 - RoundingShiftRightAndDemoteTo<3> i32->i16 (4096): **0.89**
@@ -32,9 +31,8 @@
 - SatWidenMulPairwiseAccumulate i16->i32: **0.94**
 - MinOfLanes i32: **0.95**
 
-### WSL/GCC(AVX2): 11 个
-- DemoteToNearestInt f64->i32 (4096): **0.26** —— 已知正确性取舍:HYLE safe 版做 emu128 谱系 NaN/饱和(Highway 原生只 Min+cvt);InRange 快路径同表 TIE
-- DemoteMaskTo i32->i16 (4096): **0.33** —— mask 宽度桥接冷 op,残余为寄存器搬运差(源注释已记录,接受)
+### WSL/GCC(AVX2): 10 个
+- DemoteToNearestInt f64->i32 (4096): **0.42** —— 正确性取舍(同 MSVC 行):保完整 emu128 NaN-按符号;已从 0.26 改善(cvt-first native);满平需弃 -NaN→MIN 语义;InRange 快路径 2.0x WIN
 - LoadNOr i32 (half n): **0.55** —— 仅 GCC 输 0.55(旧文档曾据有偏复核"证伪不是真输",校准仪器推翻该免罪)
 - LoadN/StoreN i32 (half lanes): **0.66** —— 仅 GCC 输 0.66,与 LoadNOr 同族(partial load/store 路径)
 - CombineMasks i32 (4096): **0.84** —— 仅 GCC 0.84
@@ -50,9 +48,8 @@
 - MulAddSub f32: **0.90** —— 仅 NEON 0.90
 - MulSubAdd f32: **0.90** —— 仅 NEON 0.90
 
-### x86 双编译器交集(最高优先级): 2 个
-- DemoteMaskTo i32->i16 (4096): MSVC 0.74 / WSL 0.33
-- DemoteToNearestInt f64->i32 (4096): MSVC 0.39 / WSL 0.26
+### x86 双编译器交集(最高优先级): 1 个
+- DemoteToNearestInt f64->i32 (4096): MSVC 0.61 / WSL 0.42 —— 唯一残留,且是正确性取舍(保 emu128 NaN-按符号);满平需弃 -NaN→MIN 语义,待决
 
 ### 与旧报告的对照(演进:旧 harness -> v1 校准仪器 -> 修复 + v2 stagger)
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;
@@ -71,6 +68,15 @@
   漏了 Highway 的 Min(.,158) 钳制,导致 bit-31-set 输入(0x80000000..0xFFFFFFFF)signed cvtepi32_ps 变负、
   sign bit 泄漏到 >>23 → LZCnt/HSB 全错(LZCnt(2^31) 读 32 而非 0);gtest 因取值 <2^18 从未覆盖。
   已补 Min(158) 修正 + gtest 加全 bit 位扫。avx512 由 Intel SDE 真跑 221 全绿(非仅编译验)。
+- **2026-07-14 x86 双编译器交集清扫至 1(DemoteMaskTo 双平台解决 + DemoteToNearestInt 改善)**:
+  ① DemoteMaskTo(MSVC 0.82/GCC 0.33)——objdump 定位真瓶颈不在 mask-narrow 核心而在消费链尾部
+  BitsFromMask i16:sse4 的 2-byte lane 分支用 scalar 位压缩循环(GCC 向量化成 ~15 条 vpsrlvd/vpsllvd/
+  vpor),改 Highway 的 vpacksswb(i16→i8 pack)+movemask_epi8(4 条);DemoteMaskTo 核心再去冗余
+  (MaskFromNormalizedVec 替 MaskFromVec + 去 RebindMask,5→3 条)。MSVC 1.00 TIE / GCC 1.42 WIN(反超)。
+  ② DemoteToNearestInt(0.39/0.26)——cvt-first native(硬件 cvtpd2dq 一条 RNE+narrow,异常→INT32_MIN,
+  只正号异常 fixup MAX)去 Abs/Round/2×blendv,保完整 emu128 语义(穷举 ±NaN/±溢出 bad=0);MSVC
+  0.39→0.61 / GCC 0.26→0.42,仍 LOSE(保 +NaN→MAX 的符号提取无法省)。满平需弃 -NaN→MIN 语义采
+  3-op clamp(待决)。此为最后一个 x86 双编译器交集真输,且是正确性取舍非算法输。
 
 ## 全量表
 
@@ -119,10 +125,10 @@
 | ConvertTo i32->f32 | 1.00= | 0.99= | 1.00= |
 | CopySign f32 | 1.00= | 1.00= | 1.01= |
 | CountTrue i32 | 1.04= | 1.00= | 1.00= |
-| DemoteMaskTo i32->i16 (4096) | 0.74L | 0.33L | · |
+| DemoteMaskTo i32->i16 (4096) | 1.00= | 1.42W | · |
 | DemoteTo i32->i16 (sat) | 1.88W | 1.84W | · |
 | DemoteTo i32->i16 1-arg (4096) | 1.00= | 1.00= | · |
-| DemoteToNearestInt f64->i32 (4096) | 0.39L | 0.26L | · |
+| DemoteToNearestInt f64->i32 (4096) | 0.61L | 0.42L | · |
 | Div f32 | 1.00= | 1.00= | 1.00= |
 | Dup128MaskFromMaskBits i32 (4096) | 1.05? | 1.18W | · |
 | DupEven i32 | 1.00= | 0.99= | 0.99? |
