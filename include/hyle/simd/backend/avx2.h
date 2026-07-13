@@ -1167,7 +1167,21 @@ HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> DemoteInRangeTo(Simd<std::int32_t, 
 template <typename DstT, std::size_t N, typename SrcT>
 HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> TruncateTo(Simd<DstT, N, 0>, Vec256<SrcT, N> v) noexcept {
   static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
-  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT>) {
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(SrcT) == 4 &&
+                sizeof(DstT) == 2 && N == 8) {
+    // u32->u16, full 256-bit src (8 lanes -> Vec128<u16,8>): specialized 2-shuffle path matching
+    // Highway (LookupAndConcatHalves). The general path below does 3 shuffles + 3 loaded index
+    // vectors; here one vpshufb gathers each 128-half's low-16s to its front dword pair, then one
+    // vpermq (0xCC) concatenates the two halves' fronts to the low 128. (calibrated: general path
+    // MSVC 0.85; this drops to the vpshufb+vpermq Highway shape.)
+    const __m256i map = _mm256_setr_epi32(0x05040100, 0x0D0C0908, -1, -1,
+                                          0x05040100, 0x0D0C0908, -1, -1);
+    const __m256i quad = _mm256_shuffle_epi8(v.raw, map);
+    const __m256i cat = _mm256_permute4x64_epi64(quad, 0x08);  // low128 = [src q0, src q2]
+    VFromD<Simd<DstT, N, 0>> r;
+    r.raw = _mm256_castsi256_si128(cat);
+    return r;
+  } else if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT>) {
     // Modular narrowing in-register: PSHUFB gathers the low sizeof(DstT) bytes of each source lane
     // to the FRONT of its own 128-bit lane, then VPERMD concatenates the two lanes' front bytes to
     // the low half. This is Highway's TableLookupBytes + Lower/UpperHalf pattern; it replaces the
