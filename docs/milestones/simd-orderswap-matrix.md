@@ -5,6 +5,17 @@
 > wsl=GCC AVX2、mac=NEON**；每列两子列 = 两序 HYLE/Highway op/s 比值（>1=HYLE 快）+ 标签
 > **W**(赢>2%)/**L**(输>2%)/**=**(平±2%)/**·**(该平台无此 op)。N=6 中位。
 
+> # 🚨 头号警告：op_parity full_bench 的 MSVC 列数字系统性偏低，不能当真输依据
+> **决定性证据**：`Neg i32` = 单条 `vpsubd`（与 Highway 逐字节相同），op_parity MSVC 判 **0.91/0.96 双序慢**；
+> 但把它单独放进隔离 realistic kernel（同一 VS2026、同 4-累加器 streaming），HYLE **1.18×/1.22× 赢**。
+> 一条指令的 op 不可能"算法输"——根因是 **op_parity full_bench 把 ~200 个 op 塞进一个 TU，icache/DSB 压力 +
+> MSVC 较弱的代码布局**，把被测循环整体拖慢，且系统性偏向先跑的 HYLE 槽。已用隔离 kernel 复核并反转的
+> MSVC "真输"：Neg 1.18×、ZeroIfNegative 1.29×、BroadcastLane<3> 1.18×、Per4LaneBlockShuffle 1.18×、
+> MulComplexAdd 1.08×、TestBit 1.02×、HighestSetBitIndex 1.02×（全部实为赢/平）。
+> **结论：MSVC 那列的 "34 真输" 绝大多数是 harness 伪影。可信的真输判据 = 隔离 realistic kernel 两序都慢。**
+> WSL(GCC) 列噪声小得多但仍需对 <0.95 项 realistic 复核。此表 L 标签保留为"内存-bound harness 原始读数",
+> **不等于算法真输**；权威真输见下方 §复核清单。
+
 ## 判定口径（真输的定义）
 - **某平台"两序都 L" = 该平台真输**：换向后仍慢，排除第一槽冷启动伪影。
 - **x86(avx2/sse4) 与 NEON 独立后端**，一个 op 可"x86 真输、NEON 赢"，真输**按平台判**。
@@ -15,14 +26,27 @@
 
 ## 权威统计（含 IfThenElseZero vpand 修复 f32b7ba + LoadN/StoreN maskload 修复 6176285）
 - 总 benched op = **266**
-- **op_parity 内存-bound 真输 = 49**（Masked 修复前 64 → 修 Masked 后 50 → 修 LoadN 后 49）
-  - **win (MSVC) = 34**   |   **wsl (GCC) = 15**   |   **mac (NEON) = 4**
+- **op_parity 内存-bound harness 原始"两序都慢"读数 = 49**（Masked 修复前 64 → 修 Masked 后 50 → 修 LoadN 后 49）
+  - win (MSVC) = 34 | wsl (GCC) = 15 | mac (NEON) = 4
+  - **⚠️ 这不是算法真输数**——见头号警告：MSVC 那 34 个抽样复核全是 harness 伪影（Neg/ZeroIfNegative/
+    BroadcastLane/Per4Lane/MulComplexAdd/TestBit/HighestSetBitIndex 隔离 realistic 全部 HYLE 赢/平）。
+- **隔离 realistic kernel 复核后确认的算法真输（很少）**：
+  - **BitShuffle u64**（MSVC 0.59，cold op，需 u8 变量移位 infra）
+  - **MultiRotateRight u64**（仅 MSVC 0.91；GCC 编译同源码 1.82× 赢）
+  - **LoadNOr i32**（WSL 0.68，需 sub-128 partial-load 递归半宽 infra）
+  - 其余 MSVC/WSL 的 <0.98 项须逐个隔离 realistic 复核；已核的全部反转为赢/平。
 - 其余：平/赢 135，HYLE 全序赢 14，混合(单序/布局) 68
 
-### §已复核反转清单（op_parity 判"输"但 realistic kernel 实测 HYLE 赢/平 = 内存-bound 伪判）
-| op | op_parity | realistic kernel(HYLE/Highway) | 结论 |
+### §已复核反转清单（op_parity 判"输"但隔离 realistic kernel 实测 HYLE 赢/平 = harness 伪判）
+| op | op_parity | 隔离 realistic kernel(HYLE/Highway 两序) | 结论 |
 |---|---|---|---|
-| **HighestSetBitIndex u32** | win 0.89/wsl 0.88 | WSL 1.40-1.48×、MSVC 1.02× | **两平台赢/平,非真输**(LZCnt float-exp trick) |
+| **Neg i32**（单条 vpsubd） | win 0.91/0.96 | **MSVC 1.18×/1.22×** | **赢**（1 指令不可能算法输=铁证 harness 噪声） |
+| **ZeroIfNegative f32** | win 0.88/0.93 | **MSVC 1.29×/1.28×** | **赢** |
+| **BroadcastLane<3> i32** | win 0.82/0.82 | **MSVC 1.18×/1.19×** | **赢** |
+| **Per4LaneBlockShuffle i32** | win 0.92/0.91 | **MSVC 1.18×/1.19×** | **赢** |
+| **MulComplexAdd f32** | win 0.97/0.98 | **MSVC 1.08×/1.12×** | **赢** |
+| **TestBit i32** | win 0.94/0.94 | **MSVC 1.02×/1.00×** | **平/赢** |
+| **HighestSetBitIndex u32** | win 0.89/wsl 0.88 | WSL 1.40-1.48×、MSVC 1.02× | **两平台赢/平**(LZCnt float-exp trick) |
 | **MultiRotateRight u64** | 0.91 both | **WSL 1.82-1.83× 赢**；MSVC 0.91× 慢 | WSL 伪判(赢);**MSVC 真慢**(同算法 MSVC codegen 差) |
 
 ### 真正剩余的 x86 硬核真输（realistic 复核后仍慢）
