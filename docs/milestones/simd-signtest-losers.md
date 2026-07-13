@@ -8,6 +8,16 @@
 
 **补 bench 覆盖揪出的隐藏真输（directive 三点闭环范例）**：覆盖审计(377 op/276 已对拍/101 缺口)→ 补 15 高价值缺口 bench 行 → sign-sweep 立即揪出 **SumsOf2 9.1× / SumsOf4 8.6×**（三后端全 store+reload 标量循环，此前无 bench 完全隐形）→ 全部照 Highway 追平（avx2/sse4=PromoteEven/Odd+Add，neon=vpaddlq_u8 一条）→ TIE。**坐实"覆盖不足=真输隐形"，补 bench 是发现工具不只背书。**
 
+## 2026-07-13 方向确定性复核（N=25 三平台 + 交集，用户"看输赢方向是否确定"）
+不看 gap 大小、只看 sign 方向确定性(k/N 一致同侧 p<0.01)重扫。N=25 收紧后:GCC 24 项方向确定 HYLE-slow、MSVC ~72 项(含 Add/BitCast 纯直通=MSVC 布局偏差远强于 GCC)、NEON 36 项。
+- **三平台交集(GCC∩MSVC∩NEON)= 仅 2 项**:MaskedShiftLeft/Right<3>。objdump 复核**逐指令与 Highway 相同**(vpslld/vpsrad+vpcmpgtd+vpand)=一致布局/harness 偏差,非算法差,**不改**(同 MaskedApproxReciprocal 前例:三平台交集仍需 objdump 终审)。
+- **x86 两编译器交集(GCC∩MSVC)= 13 项**:多数本会话已分类(MinNumber/MaxNumber/HighestSetBitIndex compute-bound WIN=伪影、TruncateTo/MultiRotateRight 已修残留)。逐个 objdump:
+  - **Max128 / 128-cmp 族(Lt128/Lt128Upper/Min128/Eq128)= 真输已修**:objdump HYLE 广播 verdict 用 DupOdd+MaskFromVec(vpermq+vpermilpd+vpsrad+vpshufd 4条)vs Highway InterleaveUpper(vpunpckhqdq 1条)。**compute-bound 复测坐实 Max128 1.30×真输(非内存伪影)**→抽 Lt128Vec 向量域 + InterleaveUpper 广播 + Min/Max128 用 MaskFromNormalizedVec 跳过冗余 renormalize→1.30×→1.04×(布局floor),14 insn<Highway 17。
+  - **CompressNot 1.017×**:objdump HYLE `Not(mask)`(vpxor)+compress 表 vs Highway 预烘焙 NOT-索引表,差 1 条 vpxor,内存-bound floor,不值,登记。
+  - **MulByFloorPow2 1.02×**:objdump 结构近同(~48 insn 两边),布局floor,不改。
+  - **IsNegative 1.19×**:objdump 有差(vpxor+vpcmpgtd vs vpsrad)但 vpxor=zeroing idiom 零端口,compute-bound TIE=伪影,不改。
+- **教训**:方向确定 ≠ 算法输。方向确定只排除随机噪声,不排除**一致的布局/harness 偏差**(MSVC 把 Add f32 都判方向确定 HYLE-slow=铁证)。判真输仍须 objdump(codegen 不同)+compute-bound 复测(去内存主导)。三平台交集是最强过滤但仍非终审。
+
 **本轮全 avx2 sweep 的 HYLE 真输(rival WIN)完整清单 + 处置**：
 | op | ratio(H/H) | 处置 |
 |---|---:|---|
