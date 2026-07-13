@@ -1746,10 +1746,18 @@ HYLE_FORCE_INLINE VFromD<D> PromoteInRangeOddTo(D d, V v) noexcept {
 //   sat      = signbit(v) ? MIN : MAX        (MaskFromVec keys on the real sign bit == ScalarSignBit)
 //   chosen   = in_range ? RoundToEven(v) : sat
 // then DemoteInRangeTo(chosen). RoundToEven matches the oracle's bias+round-to-even exactly.
+// avx2/sse4/avx512 have a native cvt-first path (hardware cvtpd2dq does RNE+narrow in one instr and
+// returns INT32_MIN for every exception; only positive-signbit exceptions need a MIN->MAX fixup) that
+// reaches the SAME emu128 contract as the portable form below but drops the Abs/Round/2*blendv. It is
+// gated on a capability macro + if-constexpr on the (i32<-f64) shape; other backends use the portable
+// form. Both are spec-faithful (NaN saturates by sign bit), unlike Highway's x86 native (all NaN->MIN).
 template <class DI32, class VF>
 HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestInt(DI32 di32, VF v) noexcept {
   static_assert(std::is_same_v<TFromD<DI32>, std::int32_t>, "DemoteToNearestInt: dst is i32");
   static_assert(std::is_same_v<TFromD<DFromV<VF>>, double>, "DemoteToNearestInt: src is f64");
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_DEMOTE_NEAREST_INT)
+  return DemoteToNearestIntNative(di32, v);
+#else
   const DFromV<VF> df;
   const auto kMax = Set(df, 2147483647.0);        // (double)INT32_MAX (exact)
   const auto kMin = Set(df, -2147483648.0);       // (double)INT32_MIN (exact)
@@ -1757,6 +1765,7 @@ HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestInt(DI32 di32, VF v) noexcept {
   const auto sat = IfThenElse(MaskFromVec(v), kMin, kMax);  // sign bit set (incl -NaN) -> MIN
   const auto chosen = IfThenElse(in_range, Round(v), sat);  // now guaranteed within [MIN,MAX]
   return DemoteInRangeTo(di32, chosen);
+#endif
 }
 // DemoteToNearestIntInRange(di32, v): FAST variant. Caller GUARANTEES every lane is finite and within
 // [INT32_MIN, INT32_MAX] (no overflow, no NaN/Inf). Then the sign-saturate blends of the safe form are
