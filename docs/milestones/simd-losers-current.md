@@ -106,3 +106,26 @@ TruncateTo（2.45×，native PSHUFB）。
 - **GCC 追平≠MSVC 追平**：MSVC 对标量 stack round-trip 优化远弱，store+reload 原语在 MSVC 是真输
   放大器；且 MSVC 第一槽惩罚更强，其 sign-sweep"输"列表虚高。
 - **三平台错开跑**：WSL 与 MSVC 同物理机必须错开（不并发抢缓存）；Mac 独立可并行。
+
+---
+
+## §6 MSVC 剩余劣化项收尾 + Tier1 调查（2026-07-13）
+MSVC 上 HYLE 源码写法(store+reload / 标量展开 / __BMI2__ 门控)触发 codegen 劣化,Highway(同编译器)
+避开了 → 是 HYLE 源码问题非 VC++ 版本问题(order-swap 坐实:同一 VS2026 编译,Highway 快)。已修:
+- **Reverse2/Reverse/Reverse4/Reverse8**:swizzle_via_mem → native shuffle。Eq128/Lt128 族(compose
+  Reverse2)MSVC 5x → TIE。
+- **LoadMaskBits**:标量 per-lane 展开 → native 位测试(broadcast&bit==bit)。Set*First/mask 域 5x → TIE。
+- **i16 mask_bits PEXT 门控**:`__BMI2__` → `__BMI2__ || _MSC_VER`(MSVC 不定义 __BMI2__ 但支持 _pext_u32)。
+  OrderedDemote2MasksTo 5x → TIE。
+- **RoundingShr**:标量 → native 变量 Shl/Shr。**ScatterOffset/GatherOffset**:per-byte 循环 → 整-lane memcpy。
+- **MinNumber/MaxNumber**:双 NaN 检查 → 单侧(x86 min/max NaN 语义,64 组等价验证)。realistic kernel 1.6x → TIE。
+MSVC both-order-slow: 74 → 56(极端 0.17-0.21 五倍簇清零)。
+
+### Tier1 深挖(realistic streaming kernel + MSVC)结论
+- **BitShuffle u64**:realistic MSVC 0.58 真慢。照 Highway generic 向量化(vpshufb+per-byte-rotate+psadbw)
+  正确性 80k 对拍过,但 **per-byte rotate 的 8-blend 模拟在 MSVC 上更贵 → 0.58 反降到 0.46(回归!)**。
+  **教训:向量化 store+reload 不一定赢——重的向量模拟(8路 blend rotate)可能比标量还慢,尤其 MSVC。
+  已回退保留标量。** 要真追平需 Highway 的精确 u8-Rol 手法(AVX2 无 byte rotate,它另有更省的模拟),
+  且 BitShuffle 无 HYLE 消费者=冷 op,低优先,登记 defer。
+- **LoadN/StoreN、SatWidenMulAccumFixedPoint**:冷 op(SatWiden 无 src 消费者),鉴于 BitShuffle 教训
+  (重向量模拟可能regress MSVC),不冒险改,登记 defer,待有热消费者或确证轻量 native 手法再动。
