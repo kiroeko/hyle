@@ -1836,10 +1836,13 @@ HYLE_FORCE_INLINE unsigned mask_bits(Mask256<T, N> m) noexcept {
     return static_cast<unsigned>(_mm256_movemask_epi8(m.raw));  // 32 lanes, 1 bit/byte already
   } else {  // 2-byte lanes: no native 16-bit movemask. movemask_epi8 gives 2 bits/lane.
     const unsigned bytes = static_cast<unsigned>(_mm256_movemask_epi8(m.raw));
-#if defined(__BMI2__)
     // PEXT 0x55555555 pulls each lane's low byte-bit in ONE instruction -- replaces the ~16-iter
     // scalar compaction that made i16 BitsFromMask the bottleneck of every i16 mask op (e.g.
     // OrderedDemote2MasksTo sink was ~7x Highway). BMI2 ships with the AVX2 baseline (Haswell+).
+    // ⚠️ MSVC does NOT define __BMI2__ even under /arch:AVX2, yet _pext_u32 is available there and
+    // codegens `pext`; gate on _MSC_VER too, else MSVC falls to the scalar loop (the OrderedDemote2-
+    // MasksTo/i16-mask MSVC 5x-slow cluster). GCC/Clang define __BMI2__ with -mavx2 -mbmi2.
+#if defined(__BMI2__) || defined(_MSC_VER)
     return static_cast<unsigned>(_pext_u32(bytes, 0x55555555u));
 #else  // AVX2 without BMI2 (rare; e.g. a test TU compiled -mavx2 only): scalar compaction fallback.
     unsigned out = 0;
