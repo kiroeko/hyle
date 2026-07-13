@@ -2523,9 +2523,13 @@ HYLE_FORCE_INLINE VecNeon<T, N> LeadingZeroCount(VecNeon<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> TrailingZeroCount(VecNeon<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "TrailingZeroCount is integer-lane only");
-  // PopCount((x & -x) - 1): x&-x isolates the lowest set bit, -1 fills the trailing zeros.
-  const VecNeon<T, N> lowest = And(v, Neg(v));
-  return PopulationCount(Sub(lowest, Set(Simd<T, N, 0>(), static_cast<T>(1))));
+  // TZCnt(x) = LZCnt(reverse_all_bits(x)): reversing the bit order turns trailing zeros into
+  // leading zeros, then native vclz. HYLE's ReverseBits already reverses the WHOLE lane (vrbitq
+  // per-byte + vrevNq byte-order), so one ReverseBits + one LeadingZeroCount -- cheaper than the
+  // PopCount((x&-x)-1) chain (and+neg+sub+vcnt+vpaddl reduce) that lost ~0.69 to Highway on NEON.
+  // This is Highway's arm_neon TrailingZeroCount shape. 8-bit needs no byte-order step (ReverseBits
+  // handles it); all widths correct (x==0 -> reversed 0 -> LZCnt = bit width).
+  return LeadingZeroCount(ReverseBits(v));
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Not(VecNeon<T, N> v) noexcept {
