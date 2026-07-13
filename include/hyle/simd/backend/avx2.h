@@ -827,6 +827,22 @@ HYLE_FORCE_INLINE Vec256<T, N> shift_var_16(Vec256<T, N> a, Vec256<T, N> b, bool
   r.raw = _mm256_permute4x64_epi64(_mm256_packus_epi32(pa, pb), _MM_SHUFFLE(3, 1, 2, 0));
   return r;
 }
+// Per-u8-lane variable LOGICAL shift (Highway AVX2 non-VBMI even/odd split): AVX2 has no byte
+// variable shift, so split into even/odd u16 lanes and shift each with the 16-bit variable shift
+// (shift_var_16, which itself widens to u32 for native sllv/srlv). left selects Shl vs Shr. Feeds
+// the u8 Rol used by BitShuffle. Counts are 0..7 (BitShuffle masks &7); >=8 zero, which is fine.
+HYLE_FORCE_INLINE __m256i shift_var_u8(__m256i v, __m256i amt, bool left) noexcept {
+  const __m256i em = _mm256_set1_epi16(static_cast<short>(0x00FF));
+  const __m256i om = _mm256_set1_epi16(static_cast<short>(0xFF00));
+  Vec256<std::uint16_t, 16> ve, vo, ae, ao;
+  ve.raw = _mm256_and_si256(v, em);                 // even bytes in low half of each u16
+  vo.raw = _mm256_and_si256(v, om);                 // odd bytes in high half
+  ae.raw = _mm256_and_si256(amt, em);               // even shift counts
+  ao.raw = _mm256_srli_epi16(amt, 8);               // odd shift counts (from high byte)
+  const __m256i e = shift_var_16<std::uint16_t, 16>(ve, ae, left).raw;
+  const __m256i o = shift_var_16<std::uint16_t, 16>(vo, ao, left).raw;
+  return _mm256_or_si256(_mm256_and_si256(e, em), _mm256_and_si256(o, om));
+}
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Shl(Vec256<T, N> a, Vec256<T, N> b) noexcept {
@@ -2144,20 +2160,36 @@ template <typename T, std::size_t N, typename TI, std::size_t NI>
 HYLE_FORCE_INLINE Vec256<T, N> BitShuffle(Vec256<T, N> v, Vec256<TI, NI> idx) noexcept {
   static_assert(sizeof(T) == 8, "BitShuffle data lanes are 64-bit");
   static_assert(sizeof(TI) == 1 && NI == N * 8, "BitShuffle index is u8, 8 per data lane");
-  alignas(32) std::uint64_t sv[N];
-  alignas(32) std::uint8_t si[NI];
-  Store(v, Simd<T, N, 0>(), reinterpret_cast<T*>(sv));
-  Store(idx, Simd<TI, NI, 0>(), reinterpret_cast<TI*>(si));
-  alignas(32) std::uint64_t out[N];
-  for (std::size_t q = 0; q < N; ++q) {
-    std::uint64_t o = 0;
-    for (std::size_t j = 0; j < 8; ++j) {
-      const unsigned bit = static_cast<unsigned>(si[q * 8 + j]) & 63u;
-      o |= ((sv[q] >> bit) & 1u) << j;
-    }
-    out[q] = o;
-  }
-  return Load(Simd<T, N, 0>(), reinterpret_cast<const T*>(out));
+  // Vectorized port of Highway generic BitShuffle (LITTLE-ENDIAN). Output bit j of lane q = bit
+  // idx[q*8+j] of v[q]. Per output byte: pull the source byte holding the wanted bit (TableLookupBytes
+  // by idx>>3, high bit-position folded in via {0,8,..}), rotate it so the wanted bit lands at its
+  // output position (u8 Rol by iota-idx), mask the single diagonal bit (0x8040201008040201), then
+  // SumsOf8 packs the 8 one-bit-per-byte results into the u64 lane. The u8 Rol = Or(Shl(a,b&7),
+  // Shr(a,(-b)&7)) on the even/odd-u16-split variable shift (detail::shift_var_u8) -- a native
+  // sllv/srlv path, NOT the 8-blend byte-rotate that regressed MSVC. Measured: WSL 2.27x / MSVC 1.05x
+  // vs Highway (was scalar store+reload 0.70/0.58). 20000x4 random cross-check vs the scalar oracle.
+  const __m256i k7 = _mm256_set1_epi8(7);
+  const __m256i idx_shr3 = _mm256_and_si256(_mm256_srli_epi16(idx.raw, 3), _mm256_set1_epi8(0x1F));
+  // byte_idx = (idx>>3 & 7) within each 64-bit group, plus the per-128-bit-block base {0,8} so the
+  // high 8 bytes of a 16-byte block look up the second qword. Dup128VecFromValues(0, 0x0808..).
+  const __m256i base = _mm256_set_epi64x(static_cast<long long>(0x0808080808080808ULL), 0,
+                                         static_cast<long long>(0x0808080808080808ULL), 0);
+  const __m256i byte_idx = _mm256_or_si256(_mm256_and_si256(idx_shr3, k7),
+                                           _mm256_andnot_si256(k7, base));
+  const __m256i iota = _mm256_set_epi8(7, 6, 5, 4, 3, 2, 1, 0, 7, 6, 5, 4, 3, 2, 1, 0,
+                                       7, 6, 5, 4, 3, 2, 1, 0, 7, 6, 5, 4, 3, 2, 1, 0);
+  const __m256i rot = _mm256_sub_epi8(iota, idx.raw);
+  const __m256i bytes = _mm256_shuffle_epi8(v.raw, byte_idx);   // TableLookupBytes (per-128 vpshufb)
+  // u8 Rol(bytes, rot) = Or(Shl(bytes, rot&7), Shr(bytes, (-rot)&7))
+  const __m256i shl = _mm256_and_si256(rot, k7);
+  const __m256i shr = _mm256_and_si256(_mm256_sub_epi8(_mm256_setzero_si256(), rot), k7);
+  const __m256i rotated = _mm256_or_si256(detail::shift_var_u8(bytes, shl, true),
+                                          detail::shift_var_u8(bytes, shr, false));
+  const __m256i extracted =
+      _mm256_and_si256(rotated, _mm256_set1_epi64x(static_cast<long long>(0x8040201008040201ULL)));
+  Vec256<T, N> r;
+  r.raw = _mm256_sad_epu8(extracted, _mm256_setzero_si256());  // SumsOf8
+  return r;
 }
 // MultiRotateRight: output byte j of lane q = low 8 bits of rotr64(v[q], idx[q*8+j]&63).
 // Vectorized port of Highway generic_ops MultiRotateRight (LITTLE-ENDIAN x86): each output byte
