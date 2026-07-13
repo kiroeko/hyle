@@ -1549,6 +1549,14 @@ HYLE_FORCE_INLINE Mask512<T, N> MaskFromVec(Vec512<T, N> v) noexcept {
   else m.raw = _mm512_movepi32_mask(v.raw);
   return m;
 }
+// MaskFromNormalizedVec: caller guarantees v is already canonical all-ones/all-zero per lane. On
+// avx512 the mask is a k-register regardless, so the movepi sign extraction (MaskFromVec) IS the
+// natural conversion -- there is no redundant vector-domain srai to skip (that was avx2-specific,
+// where masks ARE vectors). Forward to MaskFromVec.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask512<T, N> MaskFromNormalizedVec(Vec512<T, N> v) noexcept {
+  return MaskFromVec(v);
+}
 // LoadMaskBits / BitsFromMask / StoreMaskBits: the k-register IS the packed bitfield already.
 template <class D>
 HYLE_FORCE_INLINE Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D, std::uint64_t bits) noexcept {
@@ -2224,7 +2232,10 @@ template <typename T> HYLE_FORCE_INLINE __m512i srli_w512(__m512i x, int s) noex
 HYLE_FORCE_INLINE __m512i u32_to_f32_biased_exp512(__m512i v) noexcept {
   const __m512i norm = _mm512_andnot_si512(_mm512_srli_epi32(v, 24), v);  // round-down guard
   const __m512 f = _mm512_cvtepi32_ps(norm);
-  return _mm512_srli_epi32(_mm512_castps_si512(f), 23);
+  const __m512i be = _mm512_srli_epi32(_mm512_castps_si512(f), 23);
+  // bit-31-set inputs read negative through the signed convert -> sign bit leaks past >>23 -> bogus
+  // exp. Highway clamps with Min(.,158) (biased exp of 2^31), pinning LZCnt=0 / TZCnt(2^31)=31.
+  return _mm512_min_epu32(be, _mm512_set1_epi32(158));
 }
 }  // namespace detail
 template <typename T, std::size_t N>

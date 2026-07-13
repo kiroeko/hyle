@@ -802,6 +802,13 @@ HYLE_FORCE_INLINE Mask<T, N> MaskFromVec(Vec<T, N> v) noexcept {
   }
   return m;
 }
+// MaskFromNormalizedVec(v): caller guarantees v is already a canonical all-ones/all-zero lane
+// pattern. The scalar mask is a per-lane bool, so the MSB test (MaskFromVec) is the natural
+// conversion -- there is no vector-domain sign-broadcast to skip (that was the avx2 optimization).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask<T, N> MaskFromNormalizedVec(Vec<T, N> v) noexcept {
+  return MaskFromVec(v);
+}
 
 // ---- mask-domain logic (combine predicates for vectorized-loop control flow) --------
 // Boolean ops directly on masks (Highway And/Or/Xor/AndNot/Not/ExclusiveNeither for masks).
@@ -879,9 +886,12 @@ HYLE_FORCE_INLINE Mask<T, N> SetBeforeFirst(Mask<T, N> m) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask<T, N> SetAtOrBeforeFirst(Mask<T, N> m) noexcept {
+  // = Or(SetBeforeFirst, SetOnlyFirst) (Highway). None-case (f==N): SetBeforeFirst is all-true, so
+  // this is all-true too -- `i <= f` with f==N is i<=N, true for every i in [0,N). Found-case: i<=f.
+  // (The earlier `&& f < N` guard wrongly forced the none-case all-false, contradicting Highway.)
   Mask<T, N> r; std::size_t f = N;
   for (std::size_t i = 0; i < N; ++i) if (m.raw[i]) { f = i; break; }
-  for (std::size_t i = 0; i < N; ++i) r.raw[i] = (i <= f && f < N);
+  for (std::size_t i = 0; i < N; ++i) r.raw[i] = (i <= f);
   return r;
 }
 template <typename T, std::size_t N>
