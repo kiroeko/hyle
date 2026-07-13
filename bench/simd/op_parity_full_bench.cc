@@ -1,9 +1,11 @@
 // op_parity_full -- FULL sweep of HYLE self-made ops vs Highway, same TU / same ISA / both inline.
 // Auto-covers the clean unary/binary/ternary/compare shapes on i32 (or f32 for float-only ops).
 // Ops needing bespoke harness (convert/widen/interleaved-load/crypto/gather) are in op_parity_bench.cc
-// or documented as skipped. Run with bench-stat.py -n15; read MEDIAN ns/op (sub-ns kernels: ratio
-// spread is noisy, median ratio is the signal). >100% HYLE faster, <100% HYLE slower.
-#include <nanobench.h>
+// or documented as skipped.
+// Measurement: op_parity_engine.h (pinned core, 4 code replicas per side, interleaved). Read the
+// output through scripts/op-parity-report.py, which aggregates replicas and gates on the
+// calibration anchors; raw single-replica rows are NOT comparable (placement bias, see
+// docs/debug/op-parity-harness-artifacts-hunt.md).
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
@@ -13,6 +15,7 @@
 #define HWY_HEADER_ONLY
 #include "hwy/highway.h"
 #include "hwy/contrib/intdiv/intdiv-inl.h"
+#include "op_parity_engine.h"
 namespace hn = hwy::HWY_NAMESPACE;
 namespace hs = hyle::simd;
 namespace nb = ankerl::nanobench;
@@ -21,54 +24,45 @@ namespace {
 constexpr std::size_t kN = 4096;
 std::vector<std::int32_t> geni(std::uint64_t s){ std::mt19937_64 r(s); std::uniform_int_distribution<int> d(-1000,1000); std::vector<std::int32_t> v(kN); for(auto&e:v)e=d(r); return v; }
 std::vector<float> genf(std::uint64_t s){ std::mt19937_64 r(s); std::uniform_real_distribution<float> d(0.5f,4.0f); std::vector<float> v(kN); for(auto&e:v)e=d(r); return v; }
-// Order-swap control: env HYLE_BENCH_HWYFIRST runs Highway BEFORE HYLE. Running each op in both
-// orders and keeping only ops that stay HYLE-slow in BOTH removes the first-slot cold-start
-// artifact (the first-run variant pays icache/DSB/turbo warmup). run_pair() emits both slots in
-// the flag-controlled order so EVERY op (macro or explicit) is covered uniformly.
-inline bool bench_hwy_first(){ static const bool v = std::getenv("HYLE_BENCH_HWYFIRST") != nullptr; return v; }
-template <class FH, class FG>
-inline void run_pair(nb::Bench& b, FH&& h, FG&& g){
-  if(bench_hwy_first()){ b.run("Highway", g); b.run("HYLE", h); }
-  else { b.run("HYLE", h); b.run("Highway", g); }
-}
 }
 
 // UNARY int:  out[i] = OP(a[i])
 #define UNARY_I(TITLE, HYOP, HWYOP) do { \
   nb::Bench b; b.title(TITLE).relative(true).batch(kN).minEpochIterations(8000); \
-  run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(HYOP(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, \
-              [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(HWYOP(hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }); \
+  HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+4*hw<=kN;i+=hw*4){ hs::StoreU(HYOP(hs::LoadU(hdi,p_a+i)),hdi,p_o+i); hs::StoreU(HYOP(hs::LoadU(hdi,p_a+i+1*hw)),hdi,p_o+i+1*hw); hs::StoreU(HYOP(hs::LoadU(hdi,p_a+i+2*hw)),hdi,p_o+i+2*hw); hs::StoreU(HYOP(hs::LoadU(hdi,p_a+i+3*hw)),hdi,p_o+i+3*hw); } nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, \
+              [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+4*gw<=kN;i+=gw*4){ hn::StoreU(HWYOP(hn::LoadU(gdi,p_a+i)),gdi,p_o+i); hn::StoreU(HWYOP(hn::LoadU(gdi,p_a+i+1*gw)),gdi,p_o+i+1*gw); hn::StoreU(HWYOP(hn::LoadU(gdi,p_a+i+2*gw)),gdi,p_o+i+2*gw); hn::StoreU(HWYOP(hn::LoadU(gdi,p_a+i+3*gw)),gdi,p_o+i+3*gw); } nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }); \
 } while(0)
 // BINARY int: out[i] = OP(a[i], b2[i])
 #define BINARY_I(TITLE, HYOP, HWYOP) do { \
   nb::Bench b; b.title(TITLE).relative(true).batch(kN).minEpochIterations(8000); \
-  run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(HYOP(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, \
-              [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(HWYOP(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }); \
+  HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+4*hw<=kN;i+=hw*4){ hs::StoreU(HYOP(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); hs::StoreU(HYOP(hs::LoadU(hdi,p_a+i+1*hw),hs::LoadU(hdi,p_b2+i+1*hw)),hdi,p_o+i+1*hw); hs::StoreU(HYOP(hs::LoadU(hdi,p_a+i+2*hw),hs::LoadU(hdi,p_b2+i+2*hw)),hdi,p_o+i+2*hw); hs::StoreU(HYOP(hs::LoadU(hdi,p_a+i+3*hw),hs::LoadU(hdi,p_b2+i+3*hw)),hdi,p_o+i+3*hw); } nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, \
+              [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+4*gw<=kN;i+=gw*4){ hn::StoreU(HWYOP(hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); hn::StoreU(HWYOP(hn::LoadU(gdi,p_a+i+1*gw),hn::LoadU(gdi,p_b2+i+1*gw)),gdi,p_o+i+1*gw); hn::StoreU(HWYOP(hn::LoadU(gdi,p_a+i+2*gw),hn::LoadU(gdi,p_b2+i+2*gw)),gdi,p_o+i+2*gw); hn::StoreU(HWYOP(hn::LoadU(gdi,p_a+i+3*gw),hn::LoadU(gdi,p_b2+i+3*gw)),gdi,p_o+i+3*gw); } nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }); \
 } while(0)
 // UNARY/BINARY/TERNARY float
 #define UNARY_F(TITLE, HYOP, HWYOP) do { \
   nb::Bench b; b.title(TITLE).relative(true).batch(kN).minEpochIterations(8000); \
-  run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(HYOP(hs::LoadU(hdf,fa.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }, \
-              [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(HWYOP(hn::LoadU(gdf,fa.data()+i)),gdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }); \
+  HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+4*hwf<=kN;i+=hwf*4){ hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i)),hdf,p_fo+i); hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i+1*hwf)),hdf,p_fo+i+1*hwf); hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i+2*hwf)),hdf,p_fo+i+2*hwf); hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i+3*hwf)),hdf,p_fo+i+3*hwf); } nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }, \
+              [&](auto rep){ auto* p_fa = fa.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+4*gwf<=kN;i+=gwf*4){ hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i)),gdf,p_fo+i); hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i+1*gwf)),gdf,p_fo+i+1*gwf); hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i+2*gwf)),gdf,p_fo+i+2*gwf); hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i+3*gwf)),gdf,p_fo+i+3*gwf); } nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }); \
 } while(0)
 #define BINARY_F(TITLE, HYOP, HWYOP) do { \
   nb::Bench b; b.title(TITLE).relative(true).batch(kN).minEpochIterations(8000); \
-  run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(HYOP(hs::LoadU(hdf,fa.data()+i),hs::LoadU(hdf,fb.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }, \
-              [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(HWYOP(hn::LoadU(gdf,fa.data()+i),hn::LoadU(gdf,fb.data()+i)),gdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }); \
+  HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_fb = fb.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+4*hwf<=kN;i+=hwf*4){ hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i),hs::LoadU(hdf,p_fb+i)),hdf,p_fo+i); hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i+1*hwf),hs::LoadU(hdf,p_fb+i+1*hwf)),hdf,p_fo+i+1*hwf); hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i+2*hwf),hs::LoadU(hdf,p_fb+i+2*hwf)),hdf,p_fo+i+2*hwf); hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i+3*hwf),hs::LoadU(hdf,p_fb+i+3*hwf)),hdf,p_fo+i+3*hwf); } nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }, \
+              [&](auto rep){ auto* p_fa = fa.data(); auto* p_fb = fb.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+4*gwf<=kN;i+=gwf*4){ hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i),hn::LoadU(gdf,p_fb+i)),gdf,p_fo+i); hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i+1*gwf),hn::LoadU(gdf,p_fb+i+1*gwf)),gdf,p_fo+i+1*gwf); hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i+2*gwf),hn::LoadU(gdf,p_fb+i+2*gwf)),gdf,p_fo+i+2*gwf); hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i+3*gwf),hn::LoadU(gdf,p_fb+i+3*gwf)),gdf,p_fo+i+3*gwf); } nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }); \
 } while(0)
 #define TERNARY_F(TITLE, HYOP, HWYOP) do { \
   nb::Bench b; b.title(TITLE).relative(true).batch(kN).minEpochIterations(8000); \
-  run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(HYOP(hs::LoadU(hdf,fa.data()+i),hs::LoadU(hdf,fb.data()+i),hs::LoadU(hdf,fc.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }, \
-              [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(HWYOP(hn::LoadU(gdf,fa.data()+i),hn::LoadU(gdf,fb.data()+i),hn::LoadU(gdf,fc.data()+i)),gdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }); \
+  HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_fb = fb.data(); auto* p_fc = fc.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+4*hwf<=kN;i+=hwf*4){ hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i),hs::LoadU(hdf,p_fb+i),hs::LoadU(hdf,p_fc+i)),hdf,p_fo+i); hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i+1*hwf),hs::LoadU(hdf,p_fb+i+1*hwf),hs::LoadU(hdf,p_fc+i+1*hwf)),hdf,p_fo+i+1*hwf); hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i+2*hwf),hs::LoadU(hdf,p_fb+i+2*hwf),hs::LoadU(hdf,p_fc+i+2*hwf)),hdf,p_fo+i+2*hwf); hs::StoreU(HYOP(hs::LoadU(hdf,p_fa+i+3*hwf),hs::LoadU(hdf,p_fb+i+3*hwf),hs::LoadU(hdf,p_fc+i+3*hwf)),hdf,p_fo+i+3*hwf); } nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }, \
+              [&](auto rep){ auto* p_fa = fa.data(); auto* p_fb = fb.data(); auto* p_fc = fc.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+4*gwf<=kN;i+=gwf*4){ hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i),hn::LoadU(gdf,p_fb+i),hn::LoadU(gdf,p_fc+i)),gdf,p_fo+i); hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i+1*gwf),hn::LoadU(gdf,p_fb+i+1*gwf),hn::LoadU(gdf,p_fc+i+1*gwf)),gdf,p_fo+i+1*gwf); hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i+2*gwf),hn::LoadU(gdf,p_fb+i+2*gwf),hn::LoadU(gdf,p_fc+i+2*gwf)),gdf,p_fo+i+2*gwf); hn::StoreU(HWYOP(hn::LoadU(gdf,p_fa+i+3*gwf),hn::LoadU(gdf,p_fb+i+3*gwf),hn::LoadU(gdf,p_fc+i+3*gwf)),gdf,p_fo+i+3*gwf); } nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }); \
 } while(0)
 // COMPARE int -> mask -> VecFromMask (store the mask as vec so the op isn't DCE'd)
 #define CMP_I(TITLE, HYOP, HWYOP) do { \
   nb::Bench b; b.title(TITLE).relative(true).batch(kN).minEpochIterations(8000); \
-  run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::VecFromMask(hdi,HYOP(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i))),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, \
-              [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::VecFromMask(gdi,HWYOP(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i))),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }); \
+  HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+4*hw<=kN;i+=hw*4){ hs::StoreU(hs::VecFromMask(hdi,HYOP(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i))),hdi,p_o+i); hs::StoreU(hs::VecFromMask(hdi,HYOP(hs::LoadU(hdi,p_a+i+1*hw),hs::LoadU(hdi,p_b2+i+1*hw))),hdi,p_o+i+1*hw); hs::StoreU(hs::VecFromMask(hdi,HYOP(hs::LoadU(hdi,p_a+i+2*hw),hs::LoadU(hdi,p_b2+i+2*hw))),hdi,p_o+i+2*hw); hs::StoreU(hs::VecFromMask(hdi,HYOP(hs::LoadU(hdi,p_a+i+3*hw),hs::LoadU(hdi,p_b2+i+3*hw))),hdi,p_o+i+3*hw); } nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, \
+              [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+4*gw<=kN;i+=gw*4){ hn::StoreU(hn::VecFromMask(gdi,HWYOP(hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i))),gdi,p_o+i); hn::StoreU(hn::VecFromMask(gdi,HWYOP(hn::LoadU(gdi,p_a+i+1*gw),hn::LoadU(gdi,p_b2+i+1*gw))),gdi,p_o+i+1*gw); hn::StoreU(hn::VecFromMask(gdi,HWYOP(hn::LoadU(gdi,p_a+i+2*gw),hn::LoadU(gdi,p_b2+i+2*gw))),gdi,p_o+i+2*gw); hn::StoreU(hn::VecFromMask(gdi,HWYOP(hn::LoadU(gdi,p_a+i+3*gw),hn::LoadU(gdi,p_b2+i+3*gw))),gdi,p_o+i+3*gw); } nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }); \
 } while(0)
 
 int main(){
+  hyle_bench::pin_and_boost();
   auto a=geni(1); auto b2=geni(2); std::vector<std::int32_t> o(kN);
   auto fa=genf(3); auto fb=genf(4); auto fc=genf(5); std::vector<float> fo(kN);
   const hs::ScalableTag<std::int32_t> hdi; const hn::ScalableTag<std::int32_t> gdi;
@@ -103,19 +97,19 @@ int main(){
   // IntDiv is the matching reusable-divisor API; both remainder paths are `a - q * divisor`.
   {
     nb::Bench bench; bench.title("Mod i32 invariant").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(bench, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto x=hs::LoadU(hdi,a.data()+i); const auto r=hs::Mod(x,hdiv); nb::doNotOptimizeAway(r); } }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto x=hn::LoadU(gdi,a.data()+i); const auto q=hn::IntDiv(gdi,x,gdiv); const auto r=hn::Sub(x,hn::Mul(q,hn::Set(gdi,gdiv.divisor))); nb::doNotOptimizeAway(r); } });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto x=hs::LoadU(hdi,p_a+i); const auto r=hs::Mod(x,hdiv); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto x=hn::LoadU(gdi,p_a+i); const auto q=hn::IntDiv(gdi,x,gdiv); const auto r=hn::Sub(x,hn::Mul(q,hn::Set(gdi,gdiv.divisor))); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); });
   }
   {
     nb::Bench bench; bench.title("MaskedModOr i32 invariant").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(bench, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto x=hs::LoadU(hdi,a.data()+i); const auto r=hs::MaskedModOr(hs::Gt(x,hs::Zero(hdi)),hs::Set(hdi,-77),x,hdiv); nb::doNotOptimizeAway(r); } }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto x=hn::LoadU(gdi,a.data()+i); const auto q=hn::IntDiv(gdi,x,gdiv); const auto r=hn::Sub(x,hn::Mul(q,hn::Set(gdi,gdiv.divisor))); const auto masked=hn::IfThenElse(hn::Gt(x,hn::Zero(gdi)),r,hn::Set(gdi,-77)); nb::doNotOptimizeAway(masked); } });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto x=hs::LoadU(hdi,p_a+i); const auto r=hs::MaskedModOr(hs::Gt(x,hs::Zero(hdi)),hs::Set(hdi,-77),x,hdiv); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto x=hn::LoadU(gdi,p_a+i); const auto q=hn::IntDiv(gdi,x,gdiv); const auto r=hn::Sub(x,hn::Mul(q,hn::Set(gdi,gdiv.divisor))); const auto masked=hn::IfThenElse(hn::Gt(x,hn::Zero(gdi)),r,hn::Set(gdi,-77)); nb::doNotOptimizeAway(masked); }  hyle_bench::mark(rep); });
   }
   {
     nb::Bench bench; bench.title("MulEven i32-i64").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(bench, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto r=hs::MulEven(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)); nb::doNotOptimizeAway(r); } }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto r=hn::MulEven(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)); nb::doNotOptimizeAway(r); } });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto r=hs::MulEven(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto r=hn::MulEven(hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); });
   }
   {
     nb::Bench bench; bench.title("MulOdd i32-i64").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(bench, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto r=hs::MulOdd(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)); nb::doNotOptimizeAway(r); } }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto r=hn::MulOdd(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)); nb::doNotOptimizeAway(r); } });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto r=hs::MulOdd(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto r=hn::MulOdd(hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); });
   }
 
   // unary float
@@ -141,7 +135,7 @@ int main(){
 
   const auto run_reduce = [&](const char* title, auto hop, auto gop) {
     nb::Bench bench; bench.title(title).relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(bench, [&]{ std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto v=hs::LoadU(hdi,a.data()+i); sink+=hop(hs::Gt(v,hs::Zero(hdi)),v); } nb::doNotOptimizeAway(sink); }, [&]{ std::int64_t sink=0; for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto v=hn::LoadU(gdi,a.data()+i); sink+=gop(hn::Gt(v,hn::Zero(gdi)),v); } nb::doNotOptimizeAway(sink); });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_a = a.data(); std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto v=hs::LoadU(hdi,p_a+i); sink+=hop(hs::Gt(v,hs::Zero(hdi)),v); } nb::doNotOptimizeAway(sink);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); std::int64_t sink=0; for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto v=hn::LoadU(gdi,p_a+i); sink+=gop(hn::Gt(v,hn::Zero(gdi)),v); } nb::doNotOptimizeAway(sink);  hyle_bench::mark(rep); });
   };
   run_reduce("MaskedReduceSum i32", [&](auto m,auto v){return hs::MaskedReduceSum(hdi,m,v);}, [&](auto m,auto v){return hn::MaskedReduceSum(gdi,m,v);});
   run_reduce("MaskedReduceMin i32", [&](auto m,auto v){return hs::MaskedReduceMin(hdi,m,v);}, [&](auto m,auto v){return hn::MaskedReduceMin(gdi,m,v);});
@@ -153,7 +147,7 @@ int main(){
 
   {
     nb::Bench bench; bench.title("MaskedConvertTo f32-i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(bench, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) { const auto v=hs::LoadU(hdf,fa.data()+i); const auto m=hs::Gt(hs::ConvertTo(hdi,v),hs::Set(hdi,2)); hs::StoreU(hs::MaskedConvertTo(m,hdi,v),hdi,o.data()+i); } nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) { const auto v=hn::LoadU(gdf,fa.data()+i); const auto m=hn::Gt(hn::ConvertTo(gdi,v),hn::Set(gdi,2)); hn::StoreU(hn::MaskedConvertTo(m,gdi,v),gdi,o.data()+i); } nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) { const auto v=hs::LoadU(hdf,p_fa+i); const auto m=hs::Gt(hs::ConvertTo(hdi,v),hs::Set(hdi,2)); hs::StoreU(hs::MaskedConvertTo(m,hdi,v),hdi,p_o+i); } nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) { const auto v=hn::LoadU(gdf,p_fa+i); const auto m=hn::Gt(hn::ConvertTo(gdi,v),hn::Set(gdi,2)); hn::StoreU(hn::MaskedConvertTo(m,gdi,v),gdi,p_o+i); } nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
 
   const hs::ScalableTag<std::int16_t> hd16; const hn::ScalableTag<std::int16_t> gd16;
@@ -162,19 +156,19 @@ int main(){
   for (std::size_t i=0;i<a16.size();++i) { const int j=static_cast<int>(i); a16[i]=static_cast<std::int16_t>(j*17-12000); b16[i]=static_cast<std::int16_t>(9000-j*11); }
   {
     nb::Bench bench; bench.title("MaskedMulFixedPoint15 i16").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(bench, [&]{ for(std::size_t i=0;i+hw16<=kN;i+=hw16) { const auto x=hs::LoadU(hd16,a16.data()+i), y=hs::LoadU(hd16,b16.data()+i); hs::StoreU(hs::MaskedMulFixedPoint15(hs::Gt(x,hs::Zero(hd16)),x,y),hd16,o16.data()+i); } nb::doNotOptimizeAway(o16.data()); }, [&]{ for(std::size_t i=0;i+gw16<=kN;i+=gw16) { const auto x=hn::LoadU(gd16,a16.data()+i), y=hn::LoadU(gd16,b16.data()+i); hn::StoreU(hn::MaskedMulFixedPoint15(hn::Gt(x,hn::Zero(gd16)),x,y),gd16,o16.data()+i); } nb::doNotOptimizeAway(o16.data()); });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_a16 = a16.data(); auto* p_b16 = b16.data(); auto* p_o16 = o16.data(); for(std::size_t i=0;i+hw16<=kN;i+=hw16) { const auto x=hs::LoadU(hd16,p_a16+i), y=hs::LoadU(hd16,p_b16+i); hs::StoreU(hs::MaskedMulFixedPoint15(hs::Gt(x,hs::Zero(hd16)),x,y),hd16,p_o16+i); } nb::doNotOptimizeAway(p_o16);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a16 = a16.data(); auto* p_b16 = b16.data(); auto* p_o16 = o16.data(); for(std::size_t i=0;i+gw16<=kN;i+=gw16) { const auto x=hn::LoadU(gd16,p_a16+i), y=hn::LoadU(gd16,p_b16+i); hn::StoreU(hn::MaskedMulFixedPoint15(hn::Gt(x,hn::Zero(gd16)),x,y),gd16,p_o16+i); } nb::doNotOptimizeAway(p_o16);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench bench; bench.title("MaskedWidenMulPairwiseAdd i16-i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(bench, [&]{ for(std::size_t si=0,oi=0;si+hw16<=kN*2&&oi+hw<=kN;si+=hw16,oi+=hw) { const auto x=hs::LoadU(hd16,a16.data()+si), y=hs::LoadU(hd16,b16.data()+si); const auto ref=hs::WidenMulPairwiseAdd(hdi,x,y); hs::StoreU(hs::MaskedWidenMulPairwiseAdd(hdi,hs::Gt(ref,hs::Zero(hdi)),x,y),hdi,o.data()+oi); } nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t si=0,oi=0;si+gw16<=kN*2&&oi+gw<=kN;si+=gw16,oi+=gw) { const auto x=hn::LoadU(gd16,a16.data()+si), y=hn::LoadU(gd16,b16.data()+si); const auto ref=hn::WidenMulPairwiseAdd(gdi,x,y); hn::StoreU(hn::MaskedWidenMulPairwiseAdd(gdi,hn::Gt(ref,hn::Zero(gdi)),x,y),gdi,o.data()+oi); } nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_a16 = a16.data(); auto* p_b16 = b16.data(); auto* p_o = o.data(); for(std::size_t si=0,oi=0;si+hw16<=kN*2&&oi+hw<=kN;si+=hw16,oi+=hw) { const auto x=hs::LoadU(hd16,p_a16+si), y=hs::LoadU(hd16,p_b16+si); const auto ref=hs::WidenMulPairwiseAdd(hdi,x,y); hs::StoreU(hs::MaskedWidenMulPairwiseAdd(hdi,hs::Gt(ref,hs::Zero(hdi)),x,y),hdi,p_o+oi); } nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a16 = a16.data(); auto* p_b16 = b16.data(); auto* p_o = o.data(); for(std::size_t si=0,oi=0;si+gw16<=kN*2&&oi+gw<=kN;si+=gw16,oi+=gw) { const auto x=hn::LoadU(gd16,p_a16+si), y=hn::LoadU(gd16,p_b16+si); const auto ref=hn::WidenMulPairwiseAdd(gdi,x,y); hn::StoreU(hn::MaskedWidenMulPairwiseAdd(gdi,hn::Gt(ref,hn::Zero(gdi)),x,y),gdi,p_o+oi); } nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench bench; bench.title("MaskedSatAddOr i16").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(bench, [&]{ for(std::size_t i=0;i+hw16<=kN;i+=hw16) { const auto x=hs::LoadU(hd16,a16.data()+i), y=hs::LoadU(hd16,b16.data()+i); hs::StoreU(hs::MaskedSatAddOr(hs::Gt(x,hs::Zero(hd16)),hs::Set(hd16,-77),x,y),hd16,o16.data()+i); } nb::doNotOptimizeAway(o16.data()); }, [&]{ for(std::size_t i=0;i+gw16<=kN;i+=gw16) { const auto x=hn::LoadU(gd16,a16.data()+i), y=hn::LoadU(gd16,b16.data()+i); hn::StoreU(hn::MaskedSatAddOr(hn::Set(gd16,-77),hn::Gt(x,hn::Zero(gd16)),x,y),gd16,o16.data()+i); } nb::doNotOptimizeAway(o16.data()); });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_a16 = a16.data(); auto* p_b16 = b16.data(); auto* p_o16 = o16.data(); for(std::size_t i=0;i+hw16<=kN;i+=hw16) { const auto x=hs::LoadU(hd16,p_a16+i), y=hs::LoadU(hd16,p_b16+i); hs::StoreU(hs::MaskedSatAddOr(hs::Gt(x,hs::Zero(hd16)),hs::Set(hd16,-77),x,y),hd16,p_o16+i); } nb::doNotOptimizeAway(p_o16);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a16 = a16.data(); auto* p_b16 = b16.data(); auto* p_o16 = o16.data(); for(std::size_t i=0;i+gw16<=kN;i+=gw16) { const auto x=hn::LoadU(gd16,p_a16+i), y=hn::LoadU(gd16,p_b16+i); hn::StoreU(hn::MaskedSatAddOr(hn::Set(gd16,-77),hn::Gt(x,hn::Zero(gd16)),x,y),gd16,p_o16+i); } nb::doNotOptimizeAway(p_o16);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench bench; bench.title("MaskedSatSubOr i16").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(bench, [&]{ for(std::size_t i=0;i+hw16<=kN;i+=hw16) { const auto x=hs::LoadU(hd16,a16.data()+i), y=hs::LoadU(hd16,b16.data()+i); hs::StoreU(hs::MaskedSatSubOr(hs::Gt(x,hs::Zero(hd16)),hs::Set(hd16,-77),x,y),hd16,o16.data()+i); } nb::doNotOptimizeAway(o16.data()); }, [&]{ for(std::size_t i=0;i+gw16<=kN;i+=gw16) { const auto x=hn::LoadU(gd16,a16.data()+i), y=hn::LoadU(gd16,b16.data()+i); hn::StoreU(hn::MaskedSatSubOr(hn::Set(gd16,-77),hn::Gt(x,hn::Zero(gd16)),x,y),gd16,o16.data()+i); } nb::doNotOptimizeAway(o16.data()); });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_a16 = a16.data(); auto* p_b16 = b16.data(); auto* p_o16 = o16.data(); for(std::size_t i=0;i+hw16<=kN;i+=hw16) { const auto x=hs::LoadU(hd16,p_a16+i), y=hs::LoadU(hd16,p_b16+i); hs::StoreU(hs::MaskedSatSubOr(hs::Gt(x,hs::Zero(hd16)),hs::Set(hd16,-77),x,y),hd16,p_o16+i); } nb::doNotOptimizeAway(p_o16);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a16 = a16.data(); auto* p_b16 = b16.data(); auto* p_o16 = o16.data(); for(std::size_t i=0;i+gw16<=kN;i+=gw16) { const auto x=hn::LoadU(gd16,p_a16+i), y=hn::LoadU(gd16,p_b16+i); hn::StoreU(hn::MaskedSatSubOr(hn::Set(gd16,-77),hn::Gt(x,hn::Zero(gd16)),x,y),gd16,p_o16+i); } nb::doNotOptimizeAway(p_o16);  hyle_bench::mark(rep); });
   }
 
   BINARY_F("MaskedMulComplex f32", [&](auto x,auto y){return hs::MaskedMulComplex(hs::Gt(x,hs::Set(hdf,2.0f)),x,y);}, [&](auto x,auto y){const auto m=hn::Gt(x,hn::Set(gdf,2.0f));return hn::IfThenElseZero(m,hn::MulComplex(x,y));});
@@ -194,7 +188,7 @@ int main(){
   {
     const auto run_full_reduce = [&](const char* title, auto hop, auto gop) {
       nb::Bench bench; bench.title(title).relative(true).batch(kN).minEpochIterations(8000);
-      run_pair(bench, [&]{ std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hop(hs::LoadU(hdi,a.data()+i)); nb::doNotOptimizeAway(sink); }, [&]{ std::int64_t sink=0; for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=gop(hn::LoadU(gdi,a.data()+i)); nb::doNotOptimizeAway(sink); });
+      HYLE_RUN_PAIR(bench, [&](auto rep){ auto* p_a = a.data(); std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hop(hs::LoadU(hdi,p_a+i)); nb::doNotOptimizeAway(sink);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); std::int64_t sink=0; for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=gop(hn::LoadU(gdi,p_a+i)); nb::doNotOptimizeAway(sink);  hyle_bench::mark(rep); });
     };
     run_full_reduce("ReduceMin i32", [&](auto v){return hs::ReduceMin(hdi,v);}, [&](auto v){return hn::ReduceMin(gdi,v);});
     run_full_reduce("ReduceMax i32", [&](auto v){return hs::ReduceMax(hdi,v);}, [&](auto v){return hn::ReduceMax(gdi,v);});
@@ -224,7 +218,7 @@ int main(){
     { std::mt19937_64 r(41); for(auto&e:ua)e=r(); for(auto&e:ub)e=r(); }
     auto cmp128 = [&](const char* title, auto hop, auto gop) {
       nb::Bench b; b.title(title).relative(true).batch(kN).minEpochIterations(8000);
-      run_pair(b, [&]{ for(std::size_t i=0;i+hwu<=kN;i+=hwu) hs::StoreU(hs::VecFromMask(hdu,hop(hs::LoadU(hdu,ua.data()+i),hs::LoadU(hdu,ub.data()+i))),hdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); }, [&]{ for(std::size_t i=0;i+gwu<=kN;i+=gwu) hn::StoreU(hn::VecFromMask(gdu,gop(hn::LoadU(gdu,ua.data()+i),hn::LoadU(gdu,ub.data()+i))),gdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); });
+      HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+hwu<=kN;i+=hwu) hs::StoreU(hs::VecFromMask(hdu,hop(hs::LoadU(hdu,p_ua+i),hs::LoadU(hdu,p_ub+i))),hdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+gwu<=kN;i+=gwu) hn::StoreU(hn::VecFromMask(gdu,gop(hn::LoadU(gdu,p_ua+i),hn::LoadU(gdu,p_ub+i))),gdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); });
     };
     cmp128("Lt128 u64", [&](auto x,auto y){return hs::Lt128(hdu,x,y);}, [&](auto x,auto y){return hn::Lt128(gdu,x,y);});
     cmp128("Lt128Upper u64", [&](auto x,auto y){return hs::Lt128Upper(hdu,x,y);}, [&](auto x,auto y){return hn::Lt128Upper(gdu,x,y);});
@@ -232,11 +226,11 @@ int main(){
     cmp128("Ne128 u64", [&](auto x,auto y){return hs::Ne128(hdu,x,y);}, [&](auto x,auto y){return hn::Ne128(gdu,x,y);});
     {
       nb::Bench b; b.title("Min128 u64").relative(true).batch(kN).minEpochIterations(8000);
-      run_pair(b, [&]{ for(std::size_t i=0;i+hwu<=kN;i+=hwu) hs::StoreU(hs::Min128(hdu,hs::LoadU(hdu,ua.data()+i),hs::LoadU(hdu,ub.data()+i)),hdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); }, [&]{ for(std::size_t i=0;i+gwu<=kN;i+=gwu) hn::StoreU(hn::Min128(gdu,hn::LoadU(gdu,ua.data()+i),hn::LoadU(gdu,ub.data()+i)),gdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); });
+      HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+hwu<=kN;i+=hwu) hs::StoreU(hs::Min128(hdu,hs::LoadU(hdu,p_ua+i),hs::LoadU(hdu,p_ub+i)),hdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+gwu<=kN;i+=gwu) hn::StoreU(hn::Min128(gdu,hn::LoadU(gdu,p_ua+i),hn::LoadU(gdu,p_ub+i)),gdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); });
     }
     {
       nb::Bench b; b.title("Max128 u64").relative(true).batch(kN).minEpochIterations(8000);
-      run_pair(b, [&]{ for(std::size_t i=0;i+hwu<=kN;i+=hwu) hs::StoreU(hs::Max128(hdu,hs::LoadU(hdu,ua.data()+i),hs::LoadU(hdu,ub.data()+i)),hdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); }, [&]{ for(std::size_t i=0;i+gwu<=kN;i+=gwu) hn::StoreU(hn::Max128(gdu,hn::LoadU(gdu,ua.data()+i),hn::LoadU(gdu,ub.data()+i)),gdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); });
+      HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+hwu<=kN;i+=hwu) hs::StoreU(hs::Max128(hdu,hs::LoadU(hdu,p_ua+i),hs::LoadU(hdu,p_ub+i)),hdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+gwu<=kN;i+=gwu) hn::StoreU(hn::Max128(gdu,hn::LoadU(gdu,p_ua+i),hn::LoadU(gdu,p_ub+i)),gdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); });
     }
   }
 
@@ -259,22 +253,22 @@ int main(){
     std::vector<std::uint16_t> u16a(kN), u16b(kN), u16o(kN);
     { std::mt19937_64 r(51); std::uniform_int_distribution<int> d(0,65535); for(auto&e:u16a)e=(std::uint16_t)d(r); for(auto&e:u16b)e=(std::uint16_t)d(r); }
     nb::Bench b; b.title("AverageRound u16").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwu16<=kN;i+=hwu16) hs::StoreU(hs::AverageRound(hs::LoadU(hdu16,u16a.data()+i),hs::LoadU(hdu16,u16b.data()+i)),hdu16,u16o.data()+i); nb::doNotOptimizeAway(u16o.data()); }, [&]{ for(std::size_t i=0;i+gwu16<=kN;i+=gwu16) hn::StoreU(hn::AverageRound(hn::LoadU(gdu16,u16a.data()+i),hn::LoadU(gdu16,u16b.data()+i)),gdu16,u16o.data()+i); nb::doNotOptimizeAway(u16o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_u16a = u16a.data(); auto* p_u16b = u16b.data(); auto* p_u16o = u16o.data(); for(std::size_t i=0;i+hwu16<=kN;i+=hwu16) hs::StoreU(hs::AverageRound(hs::LoadU(hdu16,p_u16a+i),hs::LoadU(hdu16,p_u16b+i)),hdu16,p_u16o+i); nb::doNotOptimizeAway(p_u16o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_u16a = u16a.data(); auto* p_u16b = u16b.data(); auto* p_u16o = u16o.data(); for(std::size_t i=0;i+gwu16<=kN;i+=gwu16) hn::StoreU(hn::AverageRound(hn::LoadU(gdu16,p_u16a+i),hn::LoadU(gdu16,p_u16b+i)),gdu16,p_u16o+i); nb::doNotOptimizeAway(p_u16o);  hyle_bench::mark(rep); });
   }
   {
     // MulByPow2 / MulByFloorPow2: float * 2^exp
     std::vector<std::int32_t> exp(kN);
     for (std::size_t i=0;i<kN;++i) exp[i] = static_cast<std::int32_t>((i % 7) - 3);
     nb::Bench b; b.title("MulByPow2 f32").relative(true).batch(kN).minEpochIterations(5000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::MulByPow2(hs::LoadU(hdf,fa.data()+i),hs::LoadU(hdi,exp.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::MulByPow2(hn::LoadU(gdf,fa.data()+i),hn::LoadU(gdi,exp.data()+i)),gdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_exp = exp.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::MulByPow2(hs::LoadU(hdf,p_fa+i),hs::LoadU(hdi,p_exp+i)),hdf,p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); auto* p_exp = exp.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::MulByPow2(hn::LoadU(gdf,p_fa+i),hn::LoadU(gdi,p_exp+i)),gdf,p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("MulByFloorPow2 f32").relative(true).batch(kN).minEpochIterations(5000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::MulByFloorPow2(hs::LoadU(hdf,fa.data()+i),hs::LoadU(hdf,fb.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::MulByFloorPow2(hn::LoadU(gdf,fa.data()+i),hn::LoadU(gdf,fb.data()+i)),gdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_fb = fb.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::MulByFloorPow2(hs::LoadU(hdf,p_fa+i),hs::LoadU(hdf,p_fb+i)),hdf,p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); auto* p_fb = fb.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::MulByFloorPow2(hn::LoadU(gdf,p_fa+i),hn::LoadU(gdf,p_fb+i)),gdf,p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("GetBiasedExponent f32").relative(true).batch(kN).minEpochIterations(5000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) { auto r=hs::GetBiasedExponent(hs::LoadU(hdf,fa.data()+i)); nb::doNotOptimizeAway(r); } }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) { auto r=hn::GetBiasedExponent(hn::LoadU(gdf,fa.data()+i)); nb::doNotOptimizeAway(r); } });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) { auto r=hs::GetBiasedExponent(hs::LoadU(hdf,p_fa+i)); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) { auto r=hn::GetBiasedExponent(hn::LoadU(gdf,p_fa+i)); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); });
   }
 
   // ---- Tier3: HYLE-only (no vendor same op) — vs scalar Div / raw estimate only ----
@@ -300,40 +294,40 @@ int main(){
   // Macro-hostile template commas: write explicit benches (UNARY_I splits on ',').
   {
     nb::Bench b; b.title("Per4LaneBlockShuffle 3210 i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Per4LaneBlockShuffle<3,2,1,0>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Per4LaneBlockShuffle<3,2,1,0>(hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Per4LaneBlockShuffle<3,2,1,0>(hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Per4LaneBlockShuffle<3,2,1,0>(hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("PairwiseAdd i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::PairwiseAdd(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::PairwiseAdd(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::PairwiseAdd(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::PairwiseAdd(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("PairwiseSub i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::PairwiseSub(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::PairwiseSub(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::PairwiseSub(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::PairwiseSub(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("PairwiseAdd128 i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::PairwiseAdd128(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::PairwiseAdd128(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::PairwiseAdd128(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::PairwiseAdd128(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("PairwiseSub128 i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::PairwiseSub128(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::PairwiseSub128(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::PairwiseSub128(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::PairwiseSub128(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("SlideUpLanes amt=2 i32").relative(true).batch(kN).minEpochIterations(5000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::SlideUpLanes(hdi,hs::LoadU(hdi,a.data()+i),2),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::SlideUpLanes(gdi,hn::LoadU(gdi,a.data()+i),2),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::SlideUpLanes(hdi,hs::LoadU(hdi,p_a+i),2),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::SlideUpLanes(gdi,hn::LoadU(gdi,p_a+i),2),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("SlideDownLanes amt=2 i32").relative(true).batch(kN).minEpochIterations(5000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::SlideDownLanes(hdi,hs::LoadU(hdi,a.data()+i),2),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::SlideDownLanes(gdi,hn::LoadU(gdi,a.data()+i),2),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::SlideDownLanes(hdi,hs::LoadU(hdi,p_a+i),2),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::SlideDownLanes(gdi,hn::LoadU(gdi,p_a+i),2),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   BINARY_F("MulRound f32", hs::MulRound, hn::MulRound);
   {
     nb::Bench b; b.title("CombineShiftRightBytes4 i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::CombineShiftRightBytes<4>(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::CombineShiftRightBytes<4>(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::CombineShiftRightBytes<4>(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::CombineShiftRightBytes<4>(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("CombineShiftRightLanes1 i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::CombineShiftRightLanes<1>(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::CombineShiftRightLanes<1>(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::CombineShiftRightLanes<1>(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::CombineShiftRightLanes<1>(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   // TruncateTo u32->u16 (same lane count partial)
   {
@@ -344,19 +338,19 @@ int main(){
     std::vector<std::uint32_t> ua(kN); std::vector<std::uint16_t> uo(kN);
     { std::mt19937_64 r(52); for(auto&e:ua)e=static_cast<std::uint32_t>(r()); }
     nb::Bench b; b.title("TruncateTo u32->u16").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_ua = ua.data(); auto* p_uo = uo.data();
       for(std::size_t i=0;i+hwu<=kN;i+=hwu) {
-        auto r = hs::TruncateTo(hdn, hs::LoadU(hdu, ua.data()+i));
-        hs::StoreU(r, hs::DFromV<decltype(r)>{}, uo.data()+i);
+        auto r = hs::TruncateTo(hdn, hs::LoadU(hdu, p_ua+i));
+        hs::StoreU(r, hs::DFromV<decltype(r)>{}, p_uo+i);
       }
-      nb::doNotOptimizeAway(uo.data());
-    }, [&]{
+      nb::doNotOptimizeAway(p_uo);
+     hyle_bench::mark(rep); }, [&](auto rep){ auto* p_ua = ua.data(); auto* p_uo = uo.data();
       for(std::size_t i=0;i+gwu<=kN;i+=gwu) {
-        auto r = hn::TruncateTo(gdn, hn::LoadU(gdu, ua.data()+i));
-        hn::StoreU(r, hn::DFromV<decltype(r)>{}, uo.data()+i);
+        auto r = hn::TruncateTo(gdn, hn::LoadU(gdu, p_ua+i));
+        hn::StoreU(r, hn::DFromV<decltype(r)>{}, p_uo+i);
       }
-      nb::doNotOptimizeAway(uo.data());
-    });
+      nb::doNotOptimizeAway(p_uo);
+     hyle_bench::mark(rep); });
   }
 
   // ---- 全量直通单指令（禁止抽样：用户要求每 op 都有 parity 行）----
@@ -392,143 +386,143 @@ int main(){
   {
     volatile int bits = 3;
     nb::Bench b; b.title("ShiftLeftSame i32 bits=3").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftLeftSame(hs::LoadU(hdi,a.data()+i),bits),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftLeftSame(hn::LoadU(gdi,a.data()+i),bits),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftLeftSame(hs::LoadU(hdi,p_a+i),bits),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftLeftSame(hn::LoadU(gdi,p_a+i),bits),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     volatile int bits = 3;
     nb::Bench b; b.title("ShiftRightSame i32 bits=3").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftRightSame(hs::LoadU(hdi,a.data()+i),bits),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftRightSame(hn::LoadU(gdi,a.data()+i),bits),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftRightSame(hs::LoadU(hdi,p_a+i),bits),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftRightSame(hn::LoadU(gdi,p_a+i),bits),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   // RoundToInt / NearestInt f32->i32
   {
     nb::Bench b; b.title("RoundToInt f32->i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::RoundToInt(hdi,hs::LoadU(hdf,fa.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::NearestInt(hn::LoadU(gdf,fa.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::RoundToInt(hdi,hs::LoadU(hdf,p_fa+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::NearestInt(hn::LoadU(gdf,p_fa+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   // ConvertTo f32<->i32
   {
     nb::Bench b; b.title("ConvertTo f32->i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::ConvertTo(hdi,hs::LoadU(hdf,fa.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::ConvertTo(gdi,hn::LoadU(gdf,fa.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::ConvertTo(hdi,hs::LoadU(hdf,p_fa+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::ConvertTo(gdi,hn::LoadU(gdf,p_fa+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("ConvertTo i32->f32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConvertTo(hdf,hs::LoadU(hdi,a.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConvertTo(gdf,hn::LoadU(gdi,a.data()+i)),gdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConvertTo(hdf,hs::LoadU(hdi,p_a+i)),hdf,p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConvertTo(gdf,hn::LoadU(gdi,p_a+i)),gdf,p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); });
   }
   // BitCast i32 <-> f32
   {
     nb::Bench b; b.title("BitCast i32->f32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::BitCast(hdf,hs::LoadU(hdi,a.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::BitCast(gdf,hn::LoadU(gdi,a.data()+i)),gdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::BitCast(hdf,hs::LoadU(hdi,p_a+i)),hdf,p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::BitCast(gdf,hn::LoadU(gdi,p_a+i)),gdf,p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("BitCast f32->i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::BitCast(hdi,hs::LoadU(hdf,fa.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::BitCast(gdi,hn::LoadU(gdf,fa.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::BitCast(hdi,hs::LoadU(hdf,p_fa+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::BitCast(gdi,hn::LoadU(gdf,p_fa+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   // Set / Zero / Load / Store (construction + memory)
   {
     nb::Bench b; b.title("Set i32").relative(true).batch(kN).minEpochIterations(10000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Set(hdi,static_cast<std::int32_t>(i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Set(gdi,static_cast<std::int32_t>(i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Set(hdi,static_cast<std::int32_t>(i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Set(gdi,static_cast<std::int32_t>(i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("Zero i32").relative(true).batch(kN).minEpochIterations(10000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Zero(hdi),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Zero(gdi),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Zero(hdi),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Zero(gdi),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("LoadU/StoreU i32").relative(true).batch(kN).minEpochIterations(10000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::LoadU(hdi,a.data()+i),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::LoadU(gdi,a.data()+i),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::LoadU(hdi,p_a+i),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::LoadU(gdi,p_a+i),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     // Aligned Load/Store requires 32-byte alignment; std::vector is not guaranteed.
     alignas(64) std::int32_t aa[4096], oo[4096];
     for (std::size_t i=0;i<kN;++i) aa[i]=a[i];
     nb::Bench b; b.title("Load/Store i32 aligned").relative(true).batch(kN).minEpochIterations(10000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::Store(hs::Load(hdi,aa+i),hdi,oo+i); nb::doNotOptimizeAway(oo); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::Store(hn::Load(gdi,aa+i),gdi,oo+i); nb::doNotOptimizeAway(oo); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::Store(hs::Load(hdi,aa+i),hdi,oo+i); nb::doNotOptimizeAway(oo);  hyle_bench::mark(rep); }, [&](auto rep){ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::Store(hn::Load(gdi,aa+i),gdi,oo+i); nb::doNotOptimizeAway(oo);  hyle_bench::mark(rep); });
   }
   // Mask bitwise And/Or/Xor/AndNot/Not (sink via BitsFromMask)
   {
     std::uint64_t sink = 0;
     nb::Bench b; b.title("Mask And i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data();
       for(std::size_t i=0;i+hw<=kN;i+=hw) {
-        auto m0=hs::Gt(hs::LoadU(hdi,a.data()+i),hs::Zero(hdi));
-        auto m1=hs::Gt(hs::LoadU(hdi,b2.data()+i),hs::Zero(hdi));
+        auto m0=hs::Gt(hs::LoadU(hdi,p_a+i),hs::Zero(hdi));
+        auto m1=hs::Gt(hs::LoadU(hdi,p_b2+i),hs::Zero(hdi));
         sink ^= hs::BitsFromMask(hdi, hs::And(m0,m1));
       }
-    }, [&]{
+     hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data();
       for(std::size_t i=0;i+gw<=kN;i+=gw) {
-        auto m0=hn::Gt(hn::LoadU(gdi,a.data()+i),hn::Zero(gdi));
-        auto m1=hn::Gt(hn::LoadU(gdi,b2.data()+i),hn::Zero(gdi));
+        auto m0=hn::Gt(hn::LoadU(gdi,p_a+i),hn::Zero(gdi));
+        auto m1=hn::Gt(hn::LoadU(gdi,p_b2+i),hn::Zero(gdi));
         sink ^= hn::BitsFromMask(gdi, hn::And(m0,m1));
       }
-    });
+     hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
   {
     std::uint64_t sink = 0;
     nb::Bench b; b.title("Mask Or i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data();
       for(std::size_t i=0;i+hw<=kN;i+=hw) {
-        auto m0=hs::Gt(hs::LoadU(hdi,a.data()+i),hs::Zero(hdi));
-        auto m1=hs::Gt(hs::LoadU(hdi,b2.data()+i),hs::Zero(hdi));
+        auto m0=hs::Gt(hs::LoadU(hdi,p_a+i),hs::Zero(hdi));
+        auto m1=hs::Gt(hs::LoadU(hdi,p_b2+i),hs::Zero(hdi));
         sink ^= hs::BitsFromMask(hdi, hs::Or(m0,m1));
       }
-    }, [&]{
+     hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data();
       for(std::size_t i=0;i+gw<=kN;i+=gw) {
-        auto m0=hn::Gt(hn::LoadU(gdi,a.data()+i),hn::Zero(gdi));
-        auto m1=hn::Gt(hn::LoadU(gdi,b2.data()+i),hn::Zero(gdi));
+        auto m0=hn::Gt(hn::LoadU(gdi,p_a+i),hn::Zero(gdi));
+        auto m1=hn::Gt(hn::LoadU(gdi,p_b2+i),hn::Zero(gdi));
         sink ^= hn::BitsFromMask(gdi, hn::Or(m0,m1));
       }
-    });
+     hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
   {
     std::uint64_t sink = 0;
     nb::Bench b; b.title("Mask Xor i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data();
       for(std::size_t i=0;i+hw<=kN;i+=hw) {
-        auto m0=hs::Gt(hs::LoadU(hdi,a.data()+i),hs::Zero(hdi));
-        auto m1=hs::Gt(hs::LoadU(hdi,b2.data()+i),hs::Zero(hdi));
+        auto m0=hs::Gt(hs::LoadU(hdi,p_a+i),hs::Zero(hdi));
+        auto m1=hs::Gt(hs::LoadU(hdi,p_b2+i),hs::Zero(hdi));
         sink ^= hs::BitsFromMask(hdi, hs::Xor(m0,m1));
       }
-    }, [&]{
+     hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data();
       for(std::size_t i=0;i+gw<=kN;i+=gw) {
-        auto m0=hn::Gt(hn::LoadU(gdi,a.data()+i),hn::Zero(gdi));
-        auto m1=hn::Gt(hn::LoadU(gdi,b2.data()+i),hn::Zero(gdi));
+        auto m0=hn::Gt(hn::LoadU(gdi,p_a+i),hn::Zero(gdi));
+        auto m1=hn::Gt(hn::LoadU(gdi,p_b2+i),hn::Zero(gdi));
         sink ^= hn::BitsFromMask(gdi, hn::Xor(m0,m1));
       }
-    });
+     hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
   {
     std::uint64_t sink = 0;
     nb::Bench b; b.title("Mask AndNot i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data();
       for(std::size_t i=0;i+hw<=kN;i+=hw) {
-        auto m0=hs::Gt(hs::LoadU(hdi,a.data()+i),hs::Zero(hdi));
-        auto m1=hs::Gt(hs::LoadU(hdi,b2.data()+i),hs::Zero(hdi));
+        auto m0=hs::Gt(hs::LoadU(hdi,p_a+i),hs::Zero(hdi));
+        auto m1=hs::Gt(hs::LoadU(hdi,p_b2+i),hs::Zero(hdi));
         sink ^= hs::BitsFromMask(hdi, hs::AndNot(m0,m1));
       }
-    }, [&]{
+     hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data();
       for(std::size_t i=0;i+gw<=kN;i+=gw) {
-        auto m0=hn::Gt(hn::LoadU(gdi,a.data()+i),hn::Zero(gdi));
-        auto m1=hn::Gt(hn::LoadU(gdi,b2.data()+i),hn::Zero(gdi));
+        auto m0=hn::Gt(hn::LoadU(gdi,p_a+i),hn::Zero(gdi));
+        auto m1=hn::Gt(hn::LoadU(gdi,p_b2+i),hn::Zero(gdi));
         sink ^= hn::BitsFromMask(gdi, hn::AndNot(m0,m1));
       }
-    });
+     hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
   {
     std::uint64_t sink = 0;
     nb::Bench b; b.title("Mask Not i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data();
       for(std::size_t i=0;i+hw<=kN;i+=hw) {
-        auto m0=hs::Gt(hs::LoadU(hdi,a.data()+i),hs::Zero(hdi));
+        auto m0=hs::Gt(hs::LoadU(hdi,p_a+i),hs::Zero(hdi));
         sink ^= hs::BitsFromMask(hdi, hs::Not(m0));
       }
-    }, [&]{
+     hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data();
       for(std::size_t i=0;i+gw<=kN;i+=gw) {
-        auto m0=hn::Gt(hn::LoadU(gdi,a.data()+i),hn::Zero(gdi));
+        auto m0=hn::Gt(hn::LoadU(gdi,p_a+i),hn::Zero(gdi));
         sink ^= hn::BitsFromMask(gdi, hn::Not(m0));
       }
-    });
+     hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
   // Add f32 (also in op_parity_bench; keep here so full sweep is self-contained)
@@ -546,15 +540,15 @@ int main(){
   // ---- round-to-int 族 (fused round + convert) ----
   {
     nb::Bench b; b.title("NearestInt f32->i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::NearestInt(hs::LoadU(hdf,fa.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::NearestInt(hn::LoadU(gdf,fa.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::NearestInt(hs::LoadU(hdf,p_fa+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::NearestInt(hn::LoadU(gdf,p_fa+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("CeilInt f32->i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::CeilInt(hs::LoadU(hdf,fa.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::CeilInt(hn::LoadU(gdf,fa.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::CeilInt(hs::LoadU(hdf,p_fa+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::CeilInt(hn::LoadU(gdf,p_fa+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("FloorInt f32->i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::FloorInt(hs::LoadU(hdf,fa.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::FloorInt(hn::LoadU(gdf,fa.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::FloorInt(hs::LoadU(hdf,p_fa+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::FloorInt(hn::LoadU(gdf,p_fa+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
 
   // ---- NaN-aware min/max + magnitude (IEEE minNum/maxNum + |·|-compare) ----
@@ -566,7 +560,7 @@ int main(){
   // ---- IfNegative 族 (sign-bit select, 无分支) ----
   {
     nb::Bench b; b.title("IfNegativeThenElse f32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::IfNegativeThenElse(hs::LoadU(hdf,fa.data()+i),hs::LoadU(hdf,fb.data()+i),hs::LoadU(hdf,fc.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::IfNegativeThenElse(hn::LoadU(gdf,fa.data()+i),hn::LoadU(gdf,fb.data()+i),hn::LoadU(gdf,fc.data()+i)),gdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fa = fa.data(); auto* p_fb = fb.data(); auto* p_fc = fc.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::IfNegativeThenElse(hs::LoadU(hdf,p_fa+i),hs::LoadU(hdf,p_fb+i),hs::LoadU(hdf,p_fc+i)),hdf,p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fa = fa.data(); auto* p_fb = fb.data(); auto* p_fc = fc.data(); auto* p_fo = fo.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) hn::StoreU(hn::IfNegativeThenElse(hn::LoadU(gdf,p_fa+i),hn::LoadU(gdf,p_fb+i),hn::LoadU(gdf,p_fc+i)),gdf,p_fo+i); nb::doNotOptimizeAway(p_fo);  hyle_bench::mark(rep); });
   }
   UNARY_F("IfNegativeThenElseZero f32", [&](auto v){return hs::IfNegativeThenElseZero(v,hs::Set(hdf,3.0f));}, [&](auto v){return hn::IfNegativeThenElseZero(v,hn::Set(gdf,3.0f));});
   UNARY_F("IfNegativeThenZeroElse f32", [&](auto v){return hs::IfNegativeThenZeroElse(v,hs::Set(hdf,3.0f));}, [&](auto v){return hn::IfNegativeThenZeroElse(v,hn::Set(gdf,3.0f));});
@@ -578,7 +572,7 @@ int main(){
     std::uint64_t sink=0;
     auto pred=[&](const char* t, auto hop, auto gop){
       nb::Bench b; b.title(t).relative(true).batch(kN).minEpochIterations(8000);
-      run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) sink^=hs::BitsFromMask(hdf,hop(hs::LoadU(hdf,fspecial.data()+i))); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) sink^=hn::BitsFromMask(gdf,gop(hn::LoadU(gdf,fspecial.data()+i))); });
+      HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fspecial = fspecial.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) sink^=hs::BitsFromMask(hdf,hop(hs::LoadU(hdf,p_fspecial+i)));  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fspecial = fspecial.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) sink^=hn::BitsFromMask(gdf,gop(hn::LoadU(gdf,p_fspecial+i)));  hyle_bench::mark(rep); });
     };
     pred("IsNaN f32", [&](auto v){return hs::IsNaN(v);}, [&](auto v){return hn::IsNaN(v);});
     pred("IsInf f32", [&](auto v){return hs::IsInf(v);}, [&](auto v){return hn::IsInf(v);});
@@ -588,7 +582,7 @@ int main(){
   {
     std::uint64_t sink=0;
     nb::Bench b; b.title("IsNegative i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) sink^=hs::BitsFromMask(hdi,hs::IsNegative(hs::LoadU(hdi,a.data()+i))); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) sink^=hn::BitsFromMask(gdi,hn::IsNegative(hn::LoadU(gdi,a.data()+i))); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) sink^=hs::BitsFromMask(hdi,hs::IsNegative(hs::LoadU(hdi,p_a+i)));  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) sink^=hn::BitsFromMask(gdi,hn::IsNegative(hn::LoadU(gdi,p_a+i)));  hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
 
@@ -598,7 +592,7 @@ int main(){
     std::uint64_t sink=0;
     auto mred=[&](const char* t, auto hop, auto gop){
       nb::Bench b; b.title(t).relative(true).batch(kN).minEpochIterations(8000);
-      run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw){ auto m=hs::Gt(hs::LoadU(hdi,im.data()+i),hs::Zero(hdi)); sink+=(std::uint64_t)hop(hdi,m);} }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw){ auto m=hn::Gt(hn::LoadU(gdi,im.data()+i),hn::Zero(gdi)); sink+=(std::uint64_t)gop(gdi,m);} });
+      HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_im = im.data(); for(std::size_t i=0;i+hw<=kN;i+=hw){ auto m=hs::Gt(hs::LoadU(hdi,p_im+i),hs::Zero(hdi)); sink+=(std::uint64_t)hop(hdi,m);}  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_im = im.data(); for(std::size_t i=0;i+gw<=kN;i+=gw){ auto m=hn::Gt(hn::LoadU(gdi,p_im+i),hn::Zero(gdi)); sink+=(std::uint64_t)gop(gdi,m);}  hyle_bench::mark(rep); });
     };
     mred("CountTrue i32", [&](auto d,auto m){return hs::CountTrue(d,m);}, [&](auto d,auto m){return hn::CountTrue(d,m);});
     mred("AllTrue i32", [&](auto d,auto m){return (std::size_t)hs::AllTrue(d,m);}, [&](auto d,auto m){return (std::size_t)hn::AllTrue(d,m);});
@@ -618,21 +612,21 @@ int main(){
   {
     volatile int bits=5;
     nb::Bench b; b.title("RotateLeftSame u32 bits=5").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ const hs::ScalableTag<std::uint32_t> hdu; for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::RotateLeftSame(hs::BitCast(hdu,hs::LoadU(hdi,a.data()+i)),bits),hdu,reinterpret_cast<std::uint32_t*>(o.data())+i); nb::doNotOptimizeAway(o.data()); }, [&]{ const hn::ScalableTag<std::uint32_t> gdu; for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::RotateLeftSame(hn::BitCast(gdu,hn::LoadU(gdi,a.data()+i)),bits),gdu,reinterpret_cast<std::uint32_t*>(o.data())+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); const hs::ScalableTag<std::uint32_t> hdu; for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::RotateLeftSame(hs::BitCast(hdu,hs::LoadU(hdi,p_a+i)),bits),hdu,reinterpret_cast<std::uint32_t*>(p_o)+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); const hn::ScalableTag<std::uint32_t> gdu; for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::RotateLeftSame(hn::BitCast(gdu,hn::LoadU(gdi,p_a+i)),bits),gdu,reinterpret_cast<std::uint32_t*>(p_o)+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     volatile int bits=5;
     nb::Bench b; b.title("RotateRightSame u32 bits=5").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ const hs::ScalableTag<std::uint32_t> hdu; for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::RotateRightSame(hs::BitCast(hdu,hs::LoadU(hdi,a.data()+i)),bits),hdu,reinterpret_cast<std::uint32_t*>(o.data())+i); nb::doNotOptimizeAway(o.data()); }, [&]{ const hn::ScalableTag<std::uint32_t> gdu; for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::RotateRightSame(hn::BitCast(gdu,hn::LoadU(gdi,a.data()+i)),bits),gdu,reinterpret_cast<std::uint32_t*>(o.data())+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); const hs::ScalableTag<std::uint32_t> hdu; for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::RotateRightSame(hs::BitCast(hdu,hs::LoadU(hdi,p_a+i)),bits),hdu,reinterpret_cast<std::uint32_t*>(p_o)+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); const hn::ScalableTag<std::uint32_t> gdu; for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::RotateRightSame(hn::BitCast(gdu,hn::LoadU(gdi,p_a+i)),bits),gdu,reinterpret_cast<std::uint32_t*>(p_o)+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     volatile int bits=5;
     nb::Bench b; b.title("RoundingShiftRightSame i32 bits=5").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::RoundingShiftRightSame(hs::LoadU(hdi,a.data()+i),bits),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::RoundingShiftRightSame(hn::LoadU(gdi,a.data()+i),bits),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::RoundingShiftRightSame(hs::LoadU(hdi,p_a+i),bits),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::RoundingShiftRightSame(hn::LoadU(gdi,p_a+i),bits),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("RoundingShiftRight<2> i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::RoundingShiftRight<2>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::RoundingShiftRight<2>(hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::RoundingShiftRight<2>(hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::RoundingShiftRight<2>(hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   // ---- SaturatedSub i16 (native vpsubsw) ----
   {
@@ -641,7 +635,7 @@ int main(){
     std::vector<std::int16_t> s16a(kN), s16b(kN), s16o(kN);
     { std::mt19937_64 r(61); std::uniform_int_distribution<int> dd(-30000,30000); for(auto&e:s16a)e=(std::int16_t)dd(r); for(auto&e:s16b)e=(std::int16_t)dd(r); }
     nb::Bench b; b.title("SaturatedSub i16").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw16<=kN;i+=hw16) hs::StoreU(hs::SaturatedSub(hs::LoadU(hd16,s16a.data()+i),hs::LoadU(hd16,s16b.data()+i)),hd16,s16o.data()+i); nb::doNotOptimizeAway(s16o.data()); }, [&]{ for(std::size_t i=0;i+gw16<=kN;i+=gw16) hn::StoreU(hn::SaturatedSub(hn::LoadU(gd16,s16a.data()+i),hn::LoadU(gd16,s16b.data()+i)),gd16,s16o.data()+i); nb::doNotOptimizeAway(s16o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_s16a = s16a.data(); auto* p_s16b = s16b.data(); auto* p_s16o = s16o.data(); for(std::size_t i=0;i+hw16<=kN;i+=hw16) hs::StoreU(hs::SaturatedSub(hs::LoadU(hd16,p_s16a+i),hs::LoadU(hd16,p_s16b+i)),hd16,p_s16o+i); nb::doNotOptimizeAway(p_s16o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_s16a = s16a.data(); auto* p_s16b = s16b.data(); auto* p_s16o = s16o.data(); for(std::size_t i=0;i+gw16<=kN;i+=gw16) hn::StoreU(hn::SaturatedSub(hn::LoadU(gd16,p_s16a+i),hn::LoadU(gd16,p_s16b+i)),gd16,p_s16o+i); nb::doNotOptimizeAway(p_s16o);  hyle_bench::mark(rep); });
   }
 
   // ---- SumOfLanes/MinOfLanes/MaxOfLanes (broadcast reduce), Shr(var), TestBit, BroadcastLane ----
@@ -654,19 +648,19 @@ int main(){
     std::vector<std::uint32_t> ua(kN), ub(kN), uo(kN);
     { std::mt19937_64 r(62); for(auto&e:ua)e=(std::uint32_t)r(); for(auto&e:ub)e=r()&31u; }
     nb::Bench b; b.title("Shr u32 (variable)").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Shr(hs::LoadU(hdu,ua.data()+i),hs::LoadU(hdu,ub.data()+i)),hdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Shr(hn::LoadU(gdu,ua.data()+i),hn::LoadU(gdu,ub.data()+i)),gdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Shr(hs::LoadU(hdu,p_ua+i),hs::LoadU(hdu,p_ub+i)),hdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Shr(hn::LoadU(gdu,p_ua+i),hn::LoadU(gdu,p_ub+i)),gdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); });
   }
   {
     std::uint64_t sink=0;
     nb::Bench b; b.title("TestBit i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) sink^=hs::BitsFromMask(hdi,hs::TestBit(hs::LoadU(hdi,a.data()+i),hs::Set(hdi,4))); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) sink^=hn::BitsFromMask(gdi,hn::TestBit(hn::LoadU(gdi,a.data()+i),hn::Set(gdi,4))); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) sink^=hs::BitsFromMask(hdi,hs::TestBit(hs::LoadU(hdi,p_a+i),hs::Set(hdi,4)));  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) sink^=hn::BitsFromMask(gdi,hn::TestBit(hn::LoadU(gdi,p_a+i),hn::Set(gdi,4)));  hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
   // ---- AllBits0/1, HighestSetBitIndex, MinMagnitude (bit-level utilities) ----
   {
     std::uint64_t sink=0;
     nb::Bench b; b.title("AllBits1 i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::AllBits1(hs::LoadU(hdi,a.data()+i)); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw){ auto v=hn::LoadU(gdi,a.data()+i); sink+=hn::AllTrue(gdi,hn::Eq(v,hn::Set(gdi,-1)));} });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::AllBits1(hs::LoadU(hdi,p_a+i));  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+gw<=kN;i+=gw){ auto v=hn::LoadU(gdi,p_a+i); sink+=hn::AllTrue(gdi,hn::Eq(v,hn::Set(gdi,-1)));}  hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
   {
@@ -674,14 +668,14 @@ int main(){
     std::vector<std::uint32_t> ua(kN), uo(kN);
     { std::mt19937_64 r(63); for(auto&e:ua)e=(std::uint32_t)r(); }
     nb::Bench b; b.title("HighestSetBitIndex u32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::HighestSetBitIndex(hs::LoadU(hdu,ua.data()+i)),hdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::HighestSetBitIndex(hn::LoadU(gdu,ua.data()+i)),gdu,uo.data()+i); nb::doNotOptimizeAway(uo.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_ua = ua.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::HighestSetBitIndex(hs::LoadU(hdu,p_ua+i)),hdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_ua = ua.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::HighestSetBitIndex(hn::LoadU(gdu,p_ua+i)),gdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); });
   }
   // ---- mask 生成谓词 SetOnlyFirst/SetBeforeFirst/SetAtOrBeforeFirst/SetAtOrAfterFirst/ExclusiveNeither/IsEitherNaN ----
   {
     const auto im=geni(64); std::uint64_t sink=0;
     auto mgen=[&](const char* t, auto hop, auto gop){
       nb::Bench b; b.title(t).relative(true).batch(kN).minEpochIterations(8000);
-      run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw){ auto m=hs::Gt(hs::LoadU(hdi,im.data()+i),hs::Zero(hdi)); sink^=hs::BitsFromMask(hdi,hop(m));} }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw){ auto m=hn::Gt(hn::LoadU(gdi,im.data()+i),hn::Zero(gdi)); sink^=hn::BitsFromMask(gdi,gop(m));} });
+      HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_im = im.data(); for(std::size_t i=0;i+hw<=kN;i+=hw){ auto m=hs::Gt(hs::LoadU(hdi,p_im+i),hs::Zero(hdi)); sink^=hs::BitsFromMask(hdi,hop(m));}  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_im = im.data(); for(std::size_t i=0;i+gw<=kN;i+=gw){ auto m=hn::Gt(hn::LoadU(gdi,p_im+i),hn::Zero(gdi)); sink^=hn::BitsFromMask(gdi,gop(m));}  hyle_bench::mark(rep); });
     };
     mgen("SetOnlyFirst i32", [&](auto m){return hs::SetOnlyFirst(m);}, [&](auto m){return hn::SetOnlyFirst(m);});
     mgen("SetBeforeFirst i32", [&](auto m){return hs::SetBeforeFirst(m);}, [&](auto m){return hn::SetBeforeFirst(m);});
@@ -692,19 +686,19 @@ int main(){
   {
     const auto im=geni(65), im2=geni(66); std::uint64_t sink=0;
     nb::Bench b; b.title("ExclusiveNeither i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw){ auto a0=hs::Gt(hs::LoadU(hdi,im.data()+i),hs::Zero(hdi)); auto b0=hs::Gt(hs::LoadU(hdi,im2.data()+i),hs::Zero(hdi)); sink^=hs::BitsFromMask(hdi,hs::ExclusiveNeither(a0,b0));} }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw){ auto a0=hn::Gt(hn::LoadU(gdi,im.data()+i),hn::Zero(gdi)); auto b0=hn::Gt(hn::LoadU(gdi,im2.data()+i),hn::Zero(gdi)); sink^=hn::BitsFromMask(gdi,hn::ExclusiveNeither(a0,b0));} });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_im = im.data(); auto* p_im2 = im2.data(); for(std::size_t i=0;i+hw<=kN;i+=hw){ auto a0=hs::Gt(hs::LoadU(hdi,p_im+i),hs::Zero(hdi)); auto b0=hs::Gt(hs::LoadU(hdi,p_im2+i),hs::Zero(hdi)); sink^=hs::BitsFromMask(hdi,hs::ExclusiveNeither(a0,b0));}  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_im = im.data(); auto* p_im2 = im2.data(); for(std::size_t i=0;i+gw<=kN;i+=gw){ auto a0=hn::Gt(hn::LoadU(gdi,p_im+i),hn::Zero(gdi)); auto b0=hn::Gt(hn::LoadU(gdi,p_im2+i),hn::Zero(gdi)); sink^=hn::BitsFromMask(gdi,hn::ExclusiveNeither(a0,b0));}  hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
   {
     auto fspec=fa; fspec[0]=std::numeric_limits<float>::quiet_NaN(); std::uint64_t sink=0;
     nb::Bench b; b.title("IsEitherNaN f32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) sink^=hs::BitsFromMask(hdf,hs::IsEitherNaN(hs::LoadU(hdf,fspec.data()+i),hs::LoadU(hdf,fb.data()+i))); }, [&]{ for(std::size_t i=0;i+gwf<=kN;i+=gwf) sink^=hn::BitsFromMask(gdf,hn::IsEitherNaN(hn::LoadU(gdf,fspec.data()+i),hn::LoadU(gdf,fb.data()+i))); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_fspec = fspec.data(); auto* p_fb = fb.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) sink^=hs::BitsFromMask(hdf,hs::IsEitherNaN(hs::LoadU(hdf,p_fspec+i),hs::LoadU(hdf,p_fb+i)));  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_fspec = fspec.data(); auto* p_fb = fb.data(); for(std::size_t i=0;i+gwf<=kN;i+=gwf) sink^=hn::BitsFromMask(gdf,hn::IsEitherNaN(hn::LoadU(gdf,p_fspec+i),hn::LoadU(gdf,p_fb+i)));  hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
   {
     std::uint64_t sink=0;
     nb::Bench b; b.title("AllBits0 i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::AllBits0(hs::LoadU(hdi,a.data()+i)); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw){ auto v=hn::LoadU(gdi,a.data()+i); sink+=hn::AllTrue(gdi,hn::Eq(v,hn::Zero(gdi)));} });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::AllBits0(hs::LoadU(hdi,p_a+i));  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); for(std::size_t i=0;i+gw<=kN;i+=gw){ auto v=hn::LoadU(gdi,p_a+i); sink+=hn::AllTrue(gdi,hn::Eq(v,hn::Zero(gdi)));}  hyle_bench::mark(rep); });
     nb::doNotOptimizeAway(sink);
   }
   // ---- FindKnownFirst/LastTrue (known-nonzero mask variants; caller guarantees ≥1 true) ----
@@ -714,11 +708,11 @@ int main(){
     auto mk=[&](std::size_t i){ auto v=hs::LoadU(hdi,im.data()+i); return hs::Or(hs::Gt(v,hs::Zero(hdi)), hs::FirstN(hdi,1)); };
     auto gk=[&](std::size_t i){ auto v=hn::LoadU(gdi,im.data()+i); return hn::Or(hn::Gt(v,hn::Zero(gdi)), hn::FirstN(gdi,1)); };
     { nb::Bench b; b.title("FindKnownFirstTrue i32").relative(true).batch(kN).minEpochIterations(8000);
-      run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::FindKnownFirstTrue(hdi,mk(i)); },
-                  [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=hn::FindKnownFirstTrue(gdi,gk(i)); }); }
+      HYLE_RUN_PAIR(b, [&](auto rep){ for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::FindKnownFirstTrue(hdi,mk(i));  hyle_bench::mark(rep); },
+                  [&](auto rep){ for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=hn::FindKnownFirstTrue(gdi,gk(i));  hyle_bench::mark(rep); }); }
     { nb::Bench b; b.title("FindKnownLastTrue i32").relative(true).batch(kN).minEpochIterations(8000);
-      run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::FindKnownLastTrue(hdi,mk(i)); },
-                  [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=hn::FindKnownLastTrue(gdi,gk(i)); }); }
+      HYLE_RUN_PAIR(b, [&](auto rep){ for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::FindKnownLastTrue(hdi,mk(i));  hyle_bench::mark(rep); },
+                  [&](auto rep){ for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=hn::FindKnownLastTrue(gdi,gk(i));  hyle_bench::mark(rep); }); }
     nb::doNotOptimizeAway(sink);
   }
 
@@ -729,72 +723,72 @@ int main(){
 #if defined(HYLE_SIMD_TARGET_AVX2) || defined(HYLE_SIMD_TARGET_AVX512)
   {
     nb::Bench b; b.title("BroadcastBlock<1> i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::BroadcastBlock<1>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::BroadcastBlock<1>(hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::BroadcastBlock<1>(hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::BroadcastBlock<1>(hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("SwapAdjacentBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::SwapAdjacentBlocks(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::SwapAdjacentBlocks(hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::SwapAdjacentBlocks(hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::SwapAdjacentBlocks(hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("ReverseBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ReverseBlocks(hdi,hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ReverseBlocks(gdi,hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ReverseBlocks(hdi,hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ReverseBlocks(gdi,hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("OddEvenBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::OddEvenBlocks(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::OddEvenBlocks(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::OddEvenBlocks(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::OddEvenBlocks(hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("ConcatLowerLower i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatLowerLower(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatLowerLower(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatLowerLower(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatLowerLower(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("ConcatUpperUpper i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatUpperUpper(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatUpperUpper(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatUpperUpper(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatUpperUpper(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("ConcatLowerUpper i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatLowerUpper(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatLowerUpper(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatLowerUpper(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatLowerUpper(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("ConcatUpperLower i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatUpperLower(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatUpperLower(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ConcatUpperLower(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ConcatUpperLower(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("InterleaveLowerBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::InterleaveLowerBlocks(hdi,hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::InterleaveLowerBlocks(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::InterleaveLowerBlocks(hdi,hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::InterleaveLowerBlocks(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
 #endif  // avx2/avx512 multi-block
 
   // ---- 覆盖补齐: byte/lane 移位 (vpslldq/vpsrldq per-128, 单指令应 tie) ----
   {
     nb::Bench b; b.title("ShiftLeftBytes<4> i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftLeftBytes<4>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftLeftBytes<4>(gdi,hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftLeftBytes<4>(hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftLeftBytes<4>(gdi,hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("ShiftRightBytes<4> i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftRightBytes<4>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftRightBytes<4>(gdi,hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftRightBytes<4>(hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftRightBytes<4>(gdi,hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("ShiftLeftLanes<1> i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftLeftLanes<1>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftLeftLanes<1>(gdi,hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftLeftLanes<1>(hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftLeftLanes<1>(gdi,hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("ShiftRightLanes<1> i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftRightLanes<1>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftRightLanes<1>(gdi,hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftRightLanes<1>(hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftRightLanes<1>(gdi,hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
 
   // ---- 覆盖补齐: ternary-bitwise (AVX2=2-op compose, AVX512=vpternlog 单条 -- 512 上可能真差) ----
   {
     nb::Bench b; b.title("Xor3 i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Xor3(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i),hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Xor3(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i),hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Xor3(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i),hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Xor3(hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i),hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("Or3 i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Or3(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i),hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Or3(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i),hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Or3(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i),hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Or3(hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i),hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   {
     nb::Bench b; b.title("OrAnd i32").relative(true).batch(kN).minEpochIterations(8000);
-    run_pair(b, [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::OrAnd(hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i),hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); }, [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::OrAnd(hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i),hn::LoadU(gdi,a.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::OrAnd(hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i),hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::OrAnd(hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i),hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
   return 0;
 }
