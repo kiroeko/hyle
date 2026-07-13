@@ -17,10 +17,11 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 18 个真输 + BroadcastLane<3>(放置伪影,列在下但不计真输)+ TruncateTo(已修移出)
-> 原 21 → Broadcast<0>(vpbroadcastd 修)、TruncateTo u32->u16(2-shuffle 特化修)移出;BroadcastLane<3>
-> 深入调研判为代码放置伪影(变体 C 逐字节同 Highway 仍 0.90,非指令输),不计入真输 = **18 个真算法输**。
-- ReverseLaneBytes u32 (4096): **0.05** —— MSVC 侧被测出 store+reload 兜底路径(源注释自认),GCC 已向量化 -> 仅 MSVC 22x 输
+### MSVC(AVX2): 14 个真输(本轮又修 4)+ BroadcastLane<3>(放置伪影,不计)
+> 原 21 → 已修/移出:Broadcast<0>(vpbroadcastd)、TruncateTo u32->u16(2-shuffle)、**ReverseLaneBytes
+> (vpshufb 0.05→1.00)、MaxOfLanes/MinOfLanes(in-vector reduce 0.86→0.96 TIE)**;BroadcastLane<3> 判放置
+> 伪影不计;SumOfLanes 0.78→0.90(改善,仍列)。**= 14 个真算法输**(SumOfLanes 含在内,余见下)。
+- ~~ReverseLaneBytes u32: 0.05~~ → **已修 1.00**(92f83f1):scalar store+byte-loop+reload 改单 vpshufb(复用 ReverseBits 字节反转表),MSVC 0.05→0.999 全平台 TIE。
 - DemoteToNearestInt f64->i32 (4096): **0.38** —— 已知正确性取舍:HYLE safe 版做 emu128 谱系 NaN/饱和(Highway 原生只 Min+cvt);InRange 快路径同表 TIE
 - ~~Broadcast<0> i32: 0.52~~ → **已修 1.00**(5b98ff8):store+reload 兜底改 native;lane 0 用 vpbroadcastd,全平台 TIE。
 - BroadcastLane<3> i32: **0.90(MSVC full_bench,判为放置伪影非指令输 —— 见下调研)** —— d5f0f60 store+reload
@@ -34,12 +35,12 @@
   **结论:vpermd 是全局广播最小指令,无更快指令可换;残留 0.90 = full_bench 位置噪声,非真算法输**。保留单
   vpermd(最简)。Broadcast<0> 用 vpbroadcastd 全平台 TIE 不受影响。bench 对照已改 hn::BroadcastLane(全局等价)。
 - DemoteMaskTo i32->i16 (4096): **0.70** —— mask 宽度桥接冷 op,残余为寄存器搬运差(源注释已记录,接受)
-- SumOfLanes i32: **0.78** —— 仅 MSVC 输 0.78(GCC 1.20 反赢) -> MSVC 对 HYLE 水平归约的 codegen 问题
+- SumOfLanes i32: 0.78 → **0.90**(5dff3b6 去 GPR round-trip,in-vector broadcast-reduce):残留同 BroadcastLane<3> 放置噪声类
 - HighestSetBitIndex u32: **0.84** —— 同 TZC 家族,x86 双编译器 0.84/0.87
 - AddSub i32: **0.84**
 - TruncateTo u32->u16: **0.85** —— 源码级确认:correctness-first store+reload(avx2.h 注释自认"native pack 是 profiling upgrade")
-- MaxOfLanes i32: **0.86**
-- MinOfLanes i32: **0.86**
+- ~~MaxOfLanes i32: 0.86~~ → **0.96 TIE**(5dff3b6 同 SumOfLanes)
+- ~~MinOfLanes i32: 0.86~~ → **0.96 TIE**(5dff3b6 同 SumOfLanes)
 - TrailingZeroCount i32: **0.87** —— 三平台唯一全输 op(0.87/0.87/0.68):HYLE 浮点指数技巧序列比 Highway 的对应序列贵
 - CompressNot i32 (4096, 50%): **0.88**
 - Per4LaneBlockShuffle 3210 i32: **0.89**
