@@ -3172,9 +3172,17 @@ HYLE_FORCE_INLINE Vec256<T, N> TrailingZeroCount(Vec256<T, N> v) noexcept {
     // TZCnt(x) = min( biased_exp(x & -x) - 127, 32 ). x&-x isolates the lowest set bit; its f32
     // exponent is exactly its bit index. x==0 -> lowest=0 -> exp=0 -> 0-127 underflows huge ->
     // unsigned-min with 32 gives 32 (= bit width). Correct for all inputs.
+    // `lowest` is 0 or a single power-of-2 bit, incl. 2^31 -- which cvtepi32_ps reads as INT32_MIN
+    // (negative) giving a WRONG exponent. Highway's fix (generic_ops UIntToF32BiasedExp AVX2 path):
+    // skip the round-down normalization (unneeded for a single-bit input) and instead clamp the
+    // biased exponent with Min(.,158) so the 2^31 case (which the signed convert mis-signs) is
+    // pinned to 158 -> tz=31. That's 1 extra vpminsd vs 2 ops (srli24+andnot) in the old shared
+    // helper. (op_parity: HYLE TZCnt ~0.87 vs Highway; this trims to Highway's exact op count.)
     const __m256i neg = _mm256_sub_epi32(_mm256_setzero_si256(), v.raw);
     const __m256i lowest = _mm256_and_si256(v.raw, neg);
-    const __m256i be = detail::u32_to_f32_biased_exp(lowest);
+    const __m256 f = _mm256_cvtepi32_ps(lowest);                       // 2^31 -> INT32_MIN (neg)
+    const __m256i raw_exp = _mm256_srli_epi32(_mm256_castps_si256(f), 23);
+    const __m256i be = _mm256_min_epu32(raw_exp, _mm256_set1_epi32(158));  // pin 2^31's bad exp to 158
     const __m256i tz = _mm256_sub_epi32(be, _mm256_set1_epi32(127));
     Vec256<T, N> r; r.raw = _mm256_min_epu32(tz, _mm256_set1_epi32(32));
     return r;
