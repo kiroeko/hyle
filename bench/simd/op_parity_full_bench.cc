@@ -776,6 +776,10 @@ int main(){
   }
 
   // ---- directive2 覆盖补齐: 128-bit block-swizzle 族 (permute2f128/permute4x64/blend, 单指令应 tie) ----
+  // MULTI-BLOCK ops: only defined on 256-bit+ (>=2 blocks). On 128-bit (sse4/neon) a 128-bit vector
+  // is a single block, so BroadcastBlock<1>/SwapAdjacent/Reverse/Concat*/InterleaveBlocks are
+  // degenerate/undefined (Highway static-asserts "Invalid block index"). Gate to avx2/avx512.
+#if defined(HYLE_SIMD_TARGET_AVX2) || defined(HYLE_SIMD_TARGET_AVX512)
   {
     nb::Bench b; b.title("BroadcastBlock<1> i32").relative(true).batch(kN).minEpochIterations(8000);
     b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::BroadcastBlock<1>(hs::LoadU(hdi,a.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
@@ -821,6 +825,7 @@ int main(){
     b.run("HYLE", [&]{ for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::InterleaveLowerBlocks(hdi,hs::LoadU(hdi,a.data()+i),hs::LoadU(hdi,b2.data()+i)),hdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
     b.run("Highway", [&]{ for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::InterleaveLowerBlocks(gdi,hn::LoadU(gdi,a.data()+i),hn::LoadU(gdi,b2.data()+i)),gdi,o.data()+i); nb::doNotOptimizeAway(o.data()); });
   }
+#endif  // avx2/avx512 multi-block
 
   // ---- 覆盖补齐: byte/lane 移位 (vpslldq/vpsrldq per-128, 单指令应 tie) ----
   {
