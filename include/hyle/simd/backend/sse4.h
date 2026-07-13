@@ -1537,13 +1537,25 @@ HYLE_FORCE_INLINE Vec128<T, N> IfThenElse(Mask128<T, N> m, Vec128<T, N> yes,
   else r.raw = _mm_blendv_epi8(no.raw, yes.raw, m.raw);
   return r;
 }
+// mask ? yes : 0  and  mask ? 0 : no. SSE4 mask raw IS the all-ones/all-zero lane pattern, so
+// zeroing is a bitwise AND / ANDNOT -- one pand/andps (1 cyc) instead of blendv (2 cyc, port-5).
+// Highway's exact SSE4 path (yes & VecFromMask). Feeds every generic Masked op.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> IfThenElseZero(Mask128<T, N> m, Vec128<T, N> yes) noexcept {
-  return IfThenElse(m, yes, Zero(Simd<T, N, 0>()));
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_and_ps(yes.raw, m.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm_and_pd(yes.raw, m.raw);
+  else r.raw = _mm_and_si128(yes.raw, m.raw);
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> IfThenZeroElse(Mask128<T, N> m, Vec128<T, N> no) noexcept {
-  return IfThenElse(m, Zero(Simd<T, N, 0>()), no);
+  // ~mask & no
+  Vec128<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm_andnot_ps(m.raw, no.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm_andnot_pd(m.raw, no.raw);
+  else r.raw = _mm_andnot_si128(m.raw, no.raw);
+  return r;
 }
 
 // ---- mask-domain logic (bitwise on the all-ones/all-zero lane mask) -----------------

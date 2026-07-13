@@ -1504,14 +1504,44 @@ HYLE_FORCE_INLINE VecNeon<T, N> IfThenElse(MaskNeon<T, N> m, VecNeon<T, N> yes, 
   else r.raw = vbslq_u64(m.raw, yes.raw, no.raw);  // u64
   return r;
 }
+// mask ? yes : 0 = yes & mask (the NEON mask raw is the all-ones/all-zero lane pattern). One
+// vandq instead of vbslq -- Highway's exact NEON path (yes & VecFromMask). vbslq reads+writes the
+// mask register (extra mov when the mask is reused, as in every Masked op); vandq/vbicq is 2-input.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> IfThenElseZero(MaskNeon<T, N> m, VecNeon<T, N> yes) noexcept {
-  return IfThenElse(m, yes, Zero(Simd<T, N, 0>()));
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>)
+    r.raw = vreinterpretq_f32_u32(vandq_u32(vreinterpretq_u32_f32(yes.raw), m.raw));
+  else if constexpr (std::is_same_v<T, double>)
+    r.raw = vreinterpretq_f64_u64(vandq_u64(vreinterpretq_u64_f64(yes.raw), m.raw));
+  else if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vandq_s8(yes.raw, vreinterpretq_s8_u8(m.raw));
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vandq_u8(yes.raw, m.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vandq_s16(yes.raw, vreinterpretq_s16_u16(m.raw));
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = vandq_u16(yes.raw, m.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vandq_s32(yes.raw, vreinterpretq_s32_u32(m.raw));
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = vandq_u32(yes.raw, m.raw);
+  else if constexpr (std::is_same_v<T, std::int64_t>) r.raw = vandq_s64(yes.raw, vreinterpretq_s64_u64(m.raw));
+  else r.raw = vandq_u64(yes.raw, m.raw);  // u64
+  return r;
 }
-// IfThenZeroElse(m, no): zero where m true, else `no` (the complement of IfThenElseZero).
+// IfThenZeroElse(m, no): zero where m true, else `no` = AndNot(mask, no) = no & ~mask (vbicq).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> IfThenZeroElse(MaskNeon<T, N> m, VecNeon<T, N> no) noexcept {
-  return IfThenElse(m, Zero(Simd<T, N, 0>()), no);
+  // vbicq_x(a, b) = a & ~b -> no & ~mask.
+  VecNeon<T, N> r;
+  if constexpr (std::is_same_v<T, float>)
+    r.raw = vreinterpretq_f32_u32(vbicq_u32(vreinterpretq_u32_f32(no.raw), m.raw));
+  else if constexpr (std::is_same_v<T, double>)
+    r.raw = vreinterpretq_f64_u64(vbicq_u64(vreinterpretq_u64_f64(no.raw), m.raw));
+  else if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vbicq_s8(no.raw, vreinterpretq_s8_u8(m.raw));
+  else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = vbicq_u8(no.raw, m.raw);
+  else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vbicq_s16(no.raw, vreinterpretq_s16_u16(m.raw));
+  else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = vbicq_u16(no.raw, m.raw);
+  else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vbicq_s32(no.raw, vreinterpretq_s32_u32(m.raw));
+  else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = vbicq_u32(no.raw, m.raw);
+  else if constexpr (std::is_same_v<T, std::int64_t>) r.raw = vbicq_s64(no.raw, vreinterpretq_s64_u64(m.raw));
+  else r.raw = vbicq_u64(no.raw, m.raw);  // u64
+  return r;
 }
 
 namespace detail {
