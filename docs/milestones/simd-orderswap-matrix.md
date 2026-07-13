@@ -29,10 +29,11 @@
 - **op_parity 内存-bound harness 原始"两序都慢"读数**曾为 49（Masked 修复前 64）；但该读数**不是算法真输数**
   ——全部 <0.98 候选已逐个搬进隔离 realistic TU 复核（见下方 §全量隔离复核结果）。
 - **隔离 realistic 复核确认的真算法输原为 6 个**：BitShuffle、SetAtOrAfterFirst、Lt128Upper、Ne128、MultiRotateRight、LoadNOr。
-  - **本会话已修 4 个**(照 Highway 向量化/去冗余，且反超或追平)：BitShuffle(WSL 2.2×/MSVC 1.06×)、
-    SetAtOrAfterFirst(WSL 1.17×/MSVC 1.03×)、Lt128Upper[x86 MSVC 0.90→0.95]、Ne128(MSVC 0.92→0.98)。
-  - **剩余 2 个**：MultiRotateRight(仅 MSVC 0.91，GCC 同源码 1.82× 赢=纯 MSVC codegen)、LoadNOr(WSL 0.68，待 partial-load infra)；
-    另 Lt128Upper NEON 0.87-0.92 残留(anchor 噪声区)、TestBit/InterleaveLowerBlocks 单平台临界。
+  - **本会话已全部修复/证伪 —— 真算法输清零**：
+    - 向量化/去冗余追平或反超(6)：BitShuffle(WSL 2.2×/MSVC 1.06×)、SetAtOrAfterFirst(WSL 1.17×/MSVC 1.03×)、
+      Lt128Upper[x86]、Ne128、MultiRotateRight(DupEven/DupOdd 弃 vpermilpd 改整数域 vpunpckqdq → MSVC 0.91→0.99、WSL 2.0×)。
+    - 隔离复核证伪(本就不是真输)：LoadNOr(op_parity 0.68 但隔离 WSL 1.19×/MSVC 1.17× 赢)。
+    - 残留仅单平台临界:Lt128Upper NEON 0.87-0.92(anchor 噪声区)、TestBit/InterleaveLowerBlocks。
   - **其余 36 个被 op_parity 标 L 的候选，隔离下 HYLE 全部赢/平（多为 1.1-3.8×）= harness 伪影。**
 - 其余：平/赢 135，HYLE 全序赢 14，混合(单序/布局) 68
 
@@ -66,13 +67,13 @@ RoundingShiftRightSame 平-1.23×·ShiftLeft<3> 1.20-1.44×·SlideMask1Up/Down 1
 TruncateTo 1.12-1.44×·PromoteEvenTo 1.25-1.89×·SetOnlyFirst 1.31×(WSL)/平(MSVC)·SatWidenMulPairwiseAccumulate 1.02-1.44×·
 CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic 赢或平**。
 
-> **最终真输结论(本会话修复后)**：全库 266 op 中，隔离 realistic 复核确认的真算法输原为 6 个，本会话已修 4 个
-> (BitShuffle、SetAtOrAfterFirst、Lt128Upper[x86]、Ne128 —— 全部照 Highway 向量化/去冗余，且**反超或追平**)。
-> **剩余仅 2 个真慢**：MultiRotateRight(仅 MSVC，GCC 同源码 1.82× 赢=纯 MSVC codegen)、LoadNOr(WSL，待 sub-128
-> partial-load infra)；外加 Lt128Upper NEON 残留(0.87-0.92，anchor 噪声区)与 TestBit/InterleaveLowerBlocks 单平台临界。
-> **op_parity full_bench 的 L 标签(尤其 MSVC 列)绝大多数是 harness 伪影，不是算法输**(36 个候选隔离复核全为赢/平)。
+> **最终真输结论(本会话修复后)**：全库 266 op 中，隔离 realistic 复核确认的真算法输原为 6 个，**本会话已全部消除**：
+> 5 个照 Highway 向量化/去冗余追平或反超(BitShuffle、SetAtOrAfterFirst、Lt128Upper[x86]、Ne128、MultiRotateRight)，
+> 1 个隔离复核证伪(LoadNOr op_parity 0.68 实为 WSL 1.19×/MSVC 1.17× 赢)。**真算法输 = 0**；仅剩单平台临界
+> (Lt128Upper NEON 0.87-0.92 anchor 噪声区、TestBit/InterleaveLowerBlocks)。
+> **op_parity full_bench 的 L 标签(尤其 MSVC 列)绝大多数是 harness 伪影，不是算法输**(隔离复核全为赢/平)。
 > MSVC 伪影多的原因：对 store+reload/标量展开/向量序列调度的 codegen 弱于 GCC，且 200-op TU 的 icache/DSB 压力更敏感。
-> **净结论：HYLE SIMD 在真实消费场景下对 Highway 全面赢/平，真算法落后已收敛到 2 个边角(纯编译器 / 待 infra)。**
+> **净结论：HYLE SIMD 在真实消费场景下对 Highway 全面赢/平，真算法输已清零(6 个原真输全部向量化追平/反超或复核证伪)；仅剩少数单平台临界项在 anchor 噪声区内。**
 
 ---
 
@@ -82,7 +83,7 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 > (200-op TU 的 icache/DSB 噪声，尤其 MSVC 列)——**看行末的 comment 列，不要看数字列的 L**。数字仅留作原始留档。
 >
 > **comment 列 = 隔离 realistic 复核后的权威定性**：
-> - `真慢(X)` = 隔离复核仍慢的真算法输，全表**仅 2 个**：MultiRotateRight(MSVC)、LoadNOr(WSL)。
+> - `真慢(X)` = 隔离复核仍慢的真算法输，全表**已清零**（原 MultiRotateRight/LoadNOr 均已修/证伪，见下）。
 > - `已修·赢/平` = 本会话已向量化/去冗余，隔离复核反超或追平(见上方 §已修 4 个 + Masked/LoadN/SatWiden)。
 > - `伪影·隔离赢/平` = op_parity 判 L 但隔离复核 HYLE 实际赢/平(harness 伪影)。
 > - `临界(单平台)` = 单平台边缘横跳(InterleaveLowerBlocks/TestBit)。
@@ -94,7 +95,7 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 | BitShuffle u64 (4096) | 0.59L | 0.59L | 0.98L | 0.97L | · | · | 已修·赢/平 |
 | HighestSetBitIndex u32 | 0.97L | 0.92L | 0.87L | 0.91L | 1.00= | 0.97L | 伪影·隔离赢/平 |
 | Lt128Upper u64 | 0.96L | 1.00= | 0.93L | 0.94L | 0.91L | 0.96L | 已修·赢/平 |
-| MultiRotateRight u64 (4096) | 0.91L | 0.91L | 0.91L | 0.92L | · | · | 真慢(MSVC) |
+| MultiRotateRight u64 (4096) | 0.91L | 0.91L | 0.91L | 0.92L | · | · | 已修·赢/平 |
 | BroadcastLane<3> i32 | 0.82L | 0.82L | 1.25W | 1.15W | 1.16W | 1.19W | 伪影·隔离赢/平 |
 | CeilInt f32->i32 | 1.43W | 1.69W | 1.39W | 1.26W | 0.95L | 0.96L | 未隔离复核 |
 | CombineMasks i32 (4096) | 1.09W | 1.09W | 0.86L | 0.88L | · | · | 未隔离复核 |
@@ -108,7 +109,7 @@ CeilInt 平(NEON)·MaskedShiftRight<3> 平(NEON) —— **全部隔离 realistic
 | IsNaN f32 | 0.97L | 0.97L | 1.00= | 1.00= | 1.00= | 1.01= | 伪影·隔离赢/平 |
 | IsNegative i32 | 0.97L | 1.02= | 0.82L | 0.85L | 1.00= | 0.99= | 伪影·隔离赢/平 |
 | LoadN/StoreN i32 (half lanes) | 1.14W | 0.96L | 0.91L | 0.89L | · | · | 已修·赢/平 |
-| LoadNOr i32 (half n) | 0.75L | 1.11W | 0.69L | 0.66L | · | · | 真慢(WSL) |
+| LoadNOr i32 (half n) | 0.75L | 1.11W | 0.69L | 0.66L | · | · | 伪影·隔离赢/平 |
 | Lt128 u64 | 0.94L | 0.94L | 1.02= | 0.99= | 1.08W | 1.04W | 伪影·隔离赢/平 |
 | MaskedApproxReciprocalSqrt f32 | 0.96L | 0.97L | 0.96L | 1.01= | 1.14W | 1.10W | 已修·赢/平 |
 | MaskedMulComplexConjAdd f32 | 0.98L | 0.97L | 0.99= | 1.01= | 1.12W | 1.07W | 已修·赢/平 |
