@@ -2021,12 +2021,38 @@ HYLE_FORCE_INLINE Mask256<T, N> SetOnlyFirst(Mask256<T, N> m) noexcept {
   const unsigned b = detail::mask_bits(m);
   return LoadMaskBits(Simd<T, N, 0>(), b ? (1u << std::countr_zero(b)) : 0u);
 }
+// SetAtOrAfterFirst: lane i true iff i >= first-true (inclusive prefix-OR up the lanes). Ported
+// from Highway's pure-vector AVX2 path (x86_256-inl.h) -- a lane-position sign-propagation entirely
+// in vector registers, NO mask->GPR movemask->scalar->LoadMaskBits round-trip (that round-trip was
+// the isolated-realistic loss: WSL 0.91 / MSVC 0.83). Works for any lane width: the mask raw is the
+// per-lane all-ones/all-zero pattern; reinterpret as i64, `v |= -v` sets each i64's sign bit if it
+// holds ANY true lane, then propagate that sign rightward across the i64 pair (shuffle_ps + srai32)
+// and across the two 128-bit blocks. MaskFromVec renormalizes to a per-lane mask. Verified exhaustively
+// vs the scalar oracle for i32 over all 256 lane patterns.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> SetAtOrAfterFirst(Mask256<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
-  const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : full;
-  return LoadMaskBits(Simd<T, N, 0>(), full & ~before);
+  if constexpr (sizeof(T) == 4) {  // 32/64-bit lanes: pure-vector (the benched i32/f32 case)
+    const __m256i vm0 = detail::mask_to_i<T>(m.raw);       // per-lane 0xFFFFFFFF/0 pattern
+    // step 1: within each i64, sign bit set iff that i64 contains any true lane.
+    __m256i v = _mm256_or_si256(vm0, _mm256_sub_epi64(_mm256_setzero_si256(), vm0));
+    // step 2: copy the sign of each even i64 into its odd sibling (low->high within a 128 block).
+    const __m256 vf = _mm256_castsi256_ps(v);
+    const __m256i vmask2 = _mm256_castps_si256(
+        _mm256_shuffle_ps(_mm256_setzero_ps(), vf, _MM_SHUFFLE(1, 1, 0, 0)));
+    v = _mm256_or_si256(v, _mm256_srai_epi32(vmask2, 31));
+    // step 3: copy the sign of the lower 128-bit half's top i32 lane into the whole upper 128.
+    const __m128i lo = _mm256_castsi256_si128(v);
+    const __m128i lo_top = _mm_shuffle_epi32(lo, _MM_SHUFFLE(3, 3, 3, 3));  // broadcast lane 3
+    const __m128i hi_fill = _mm_srai_epi32(lo_top, 31);
+    const __m256i spread = _mm256_inserti128_si256(_mm256_setzero_si256(), hi_fill, 1);
+    v = _mm256_or_si256(v, spread);
+    return MaskFromVec(Vec256<T, N>{detail::mask_from_i<T>(v)});
+  } else {  // 8/16/64-bit lanes: keep the bitfield path (sub-32b sign granularity is subtle; 64b rare).
+    const unsigned b = detail::mask_bits(m);
+    const unsigned full = (N >= 32) ? 0xFFFFFFFFu : ((1u << N) - 1u);
+    const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : full;
+    return LoadMaskBits(Simd<T, N, 0>(), full & ~before);
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(Simd<T, N, 0>, Mask256<T, N> m) noexcept {
