@@ -1443,7 +1443,24 @@ HYLE_FORCE_INLINE Vec256<T, N> ConcatUpperLower(Vec256<T, N> hi, Vec256<T, N> lo
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> Reverse(D, detail::V256<D> v) noexcept {
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  return detail::swizzle_via_mem(v, [](std::size_t i) { return N - 1 - i; });
+  using T = TFromD<D>;
+  // Full reverse. 32-bit (8 lanes) = vpermd reversed indices; 64-bit (4 lanes) = permute4x64 0x1B.
+  // Was store+reload (MSVC stack spill). Narrow 8/16-bit keep mem (cross-128 byte reverse is a
+  // 2-step vpshufb+vperm2i128; not a proven hot path).
+  if constexpr (sizeof(T) == 4) {
+    const __m256i idx = _mm256_setr_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+    detail::V256<D> r;
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(
+        _mm256_permutevar8x32_epi32(detail::bitcast_raw_avx2<__m256i>(v.raw), idx));
+    return r;
+  } else if constexpr (sizeof(T) == 8) {
+    detail::V256<D> r;
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(
+        _mm256_permute4x64_epi64(detail::bitcast_raw_avx2<__m256i>(v.raw), 0x1B));
+    return r;
+  } else {
+    return detail::swizzle_via_mem(v, [](std::size_t i) { return N - 1 - i; });
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> Reverse2(D, detail::V256<D> v) noexcept {
@@ -2289,11 +2306,48 @@ HYLE_FORCE_INLINE Vec256<T, N> Broadcast(Vec256<T, N> v) noexcept {
 // correctness-first store+reload; native shuffles are a profiling upgrade.
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> Reverse4(D, detail::V256<D> v) noexcept {
-  return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{3}) | ((i & 3) ^ 3); });
+  // Reverse each group of 4 lanes. 32-bit = vpshufd 0x1B ([3,2,1,0] per 128). Was store+reload
+  // (GCC folded, MSVC emitted stack spill -> ~2.8x slower). 16-bit native via vpshufb; other widths
+  // (8/64: 64 has only 4 lanes total = cross-128, rare) keep mem fallback.
+  using T = TFromD<D>;
+  if constexpr (sizeof(T) == 4) {
+    detail::V256<D> r;
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(
+        _mm256_shuffle_epi32(detail::bitcast_raw_avx2<__m256i>(v.raw), 0x1B));
+    return r;
+  } else if constexpr (sizeof(T) == 2) {  // reverse each 4 words = reverse 8 bytes within each 64b
+    const __m256i idx = _mm256_setr_epi8(6,7,4,5,2,3,0,1, 14,15,12,13,10,11,8,9,
+                                         6,7,4,5,2,3,0,1, 14,15,12,13,10,11,8,9);
+    detail::V256<D> r;
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(
+        _mm256_shuffle_epi8(detail::bitcast_raw_avx2<__m256i>(v.raw), idx));
+    return r;
+  } else {
+    return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{3}) | ((i & 3) ^ 3); });
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> Reverse8(D, detail::V256<D> v) noexcept {
-  return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{7}) | ((i & 7) ^ 7); });
+  // Reverse each group of 8 lanes. 32-bit (8 lanes = whole vector) = vpermd with reversed indices
+  // (one cross-lane permute). Was store+reload (MSVC ~2.3x). 16-bit native vpshufb (reverse 8 words
+  // within each 128 block); other widths keep mem fallback.
+  using T = TFromD<D>;
+  if constexpr (sizeof(T) == 4) {
+    const __m256i idx = _mm256_setr_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+    detail::V256<D> r;
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(
+        _mm256_permutevar8x32_epi32(detail::bitcast_raw_avx2<__m256i>(v.raw), idx));
+    return r;
+  } else if constexpr (sizeof(T) == 2) {  // reverse 8 words within each 128-bit block
+    const __m256i idx = _mm256_setr_epi8(14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1,
+                                         14,15,12,13,10,11,8,9,6,7,4,5,2,3,0,1);
+    detail::V256<D> r;
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(
+        _mm256_shuffle_epi8(detail::bitcast_raw_avx2<__m256i>(v.raw), idx));
+    return r;
+  } else {
+    return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{7}) | ((i & 7) ^ 7); });
+  }
 }
 // ReverseBits: reverse the bit order within each lane. NATIVE (Highway method): (1) reverse bits
 // WITHIN each byte via two vpshufb nibble-LUTs (low nibble reversed into high, high into low),
