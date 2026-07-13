@@ -1424,12 +1424,20 @@ HYLE_FORCE_INLINE V IfNegativeThenNegOrUndefIfZero(V mask, V v) noexcept {
 
 // HighestSetBitIndex(v): floor(log2(v)) = (bitwidth-1) - LeadingZeroCount, per integer lane.
 // Undefined for v==0 (matches Highway; LZCnt(0)=bitwidth gives -1). Integer lanes only.
+// avx2 has a direct 32-bit path (biased_exp - 127, Highway's u32 shape) that skips the LZCnt
+// round-trip's wasted Min(.,32)+Sub; dispatch to it via capability macro + if-constexpr (like
+// SumOfLanes). Other widths / backends use the generic (bits-1) - LeadingZeroCount identity.
 template <class V>
 HYLE_FORCE_INLINE V HighestSetBitIndex(V v) noexcept {
   using T = TFromD<DFromV<V>>;
   static_assert(std::is_integral_v<T>, "HighestSetBitIndex is integer-only");
   const DFromV<V> d;
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_HIGHEST_SET_BIT32)
+  if constexpr (sizeof(T) == 4) return HighestSetBitIndexNative(d, v);
+  else return Sub(Set(d, static_cast<T>(sizeof(T) * 8 - 1)), LeadingZeroCount(v));
+#else
   return Sub(Set(d, static_cast<T>(sizeof(T) * 8 - 1)), LeadingZeroCount(v));
+#endif
 }
 
 // GatherIndexN / GatherIndexNOr / ScatterIndexN: gather/scatter only the FIRST max_lanes elements

@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-13 校准仪器 v2 全量重测)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;TZC/HSB 家族已修)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,13 +19,11 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 13 个
+### MSVC(AVX2): 11 个
 - DemoteToNearestInt f64->i32 (4096): **0.39** —— 已知正确性取舍:HYLE safe 版做 emu128 谱系 NaN/饱和(Highway 原生只 Min+cvt);InRange 快路径同表 TIE
 - DemoteMaskTo i32->i16 (4096): **0.74** —— mask 宽度桥接冷 op,残余为寄存器搬运差(源注释已记录,接受)
-- HighestSetBitIndex u32: **0.82** —— 同 TZC 家族,x86 双编译器 0.83/0.85
 - AddSub i32: **0.86** —— 仅 MSVC 0.86,GCC TIE
 - CompressNot i32 (4096, 50%): **0.86** —— 仅 MSVC 0.86
-- TrailingZeroCount i32: **0.87** —— 三平台唯一全输 op(0.86/0.87/0.69):HYLE 浮点指数技巧序列比 Highway 的对应序列贵
 - RoundingShiftRightAndDemoteTo<3> i32->i16 (4096): **0.89**
 - BroadcastLane<3> i32: **0.92** —— 已定论保留 vpermd:MSVC 0.92 是 bench 形状特定差距(Highway 的 vbroadcasti128 仅在输入直接来自内存时被折叠成 load 口免费复制;寄存器输入下该序列被 MSVC 编成栈 spill(实测 0.47),而 vpermd 单 uop 更优,GCC 上 vpermd 反赢 1.13)
 - SumOfLanes i32: **0.92** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
@@ -34,14 +32,12 @@
 - SatWidenMulPairwiseAccumulate i16->i32: **0.94**
 - MinOfLanes i32: **0.95**
 
-### WSL/GCC(AVX2): 13 个
+### WSL/GCC(AVX2): 11 个
 - DemoteToNearestInt f64->i32 (4096): **0.26** —— 已知正确性取舍:HYLE safe 版做 emu128 谱系 NaN/饱和(Highway 原生只 Min+cvt);InRange 快路径同表 TIE
 - DemoteMaskTo i32->i16 (4096): **0.33** —— mask 宽度桥接冷 op,残余为寄存器搬运差(源注释已记录,接受)
 - LoadNOr i32 (half n): **0.55** —— 仅 GCC 输 0.55(旧文档曾据有偏复核"证伪不是真输",校准仪器推翻该免罪)
 - LoadN/StoreN i32 (half lanes): **0.66** —— 仅 GCC 输 0.66,与 LoadNOr 同族(partial load/store 路径)
 - CombineMasks i32 (4096): **0.84** —— 仅 GCC 0.84
-- HighestSetBitIndex u32: **0.85** —— 同 TZC 家族,x86 双编译器 0.83/0.85
-- TrailingZeroCount i32: **0.87** —— 三平台唯一全输 op(0.86/0.87/0.69):HYLE 浮点指数技巧序列比 Highway 的对应序列贵
 - ConcatLowerLower i32: **0.88** —— 仅 GCC 0.88
 - TableLookupBytes u8 (4096): **0.89** —— HYLE 多一条设计内的 vpand 索引掩码(安全语义,非缺陷)
 - RoundingShr i32: **0.94**
@@ -49,17 +45,14 @@
 - InterleaveLowerBlocks i32: **0.95**
 - PairwiseSub128 i32: **0.96**
 
-### Mac/NEON: 4 个
-- TrailingZeroCount i32: **0.69** —— 三平台唯一全输 op(0.86/0.87/0.69):HYLE 浮点指数技巧序列比 Highway 的对应序列贵
+### Mac/NEON: 3 个
 - RoundingShiftRightSame i32 bits=5: **0.81** —— 仅 NEON 0.81
 - MulAddSub f32: **0.90** —— 仅 NEON 0.90
 - MulSubAdd f32: **0.90** —— 仅 NEON 0.90
 
-### x86 双编译器交集(最高优先级): 4 个
+### x86 双编译器交集(最高优先级): 2 个
 - DemoteMaskTo i32->i16 (4096): MSVC 0.74 / WSL 0.33
 - DemoteToNearestInt f64->i32 (4096): MSVC 0.39 / WSL 0.26
-- HighestSetBitIndex u32: MSVC 0.82 / WSL 0.85
-- TrailingZeroCount i32: MSVC 0.87 / WSL 0.87 (Mac 也输 0.69 -> 三平台全输)
 
 ### 与旧报告的对照(演进:旧 harness -> v1 校准仪器 -> 修复 + v2 stagger)
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;
@@ -69,6 +62,15 @@
   相位相关曾让它们稳定读 0.83~0.96,stagger 后回到 TIE/UNSTABLE。
 - 旧"隔离复核"的 7 真输里,BitShuffle/SetAtOrAfterFirst/Lt128Upper/Ne128/MultiRotateRight 已被此前的
   修复收回(本表均 TIE/WIN,修复有效性经校准仪器确认);LoadNOr 的"证伪免罪"被推翻(WSL 0.55 真输)。
+- **2026-07-14 TZC/HSB 浮点指数家族修复(MSVC 13→11 / WSL 13→11 / Mac 4→3,x86 双编译器交集 4→2)**:
+  ① TrailingZeroCount(三平台唯一全输 0.86/0.87/0.69)——avx2/avx512/sse4 去掉共享 `u32_to_f32_biased_exp`
+  里对单 bit 输入无用的 round-down 归一、改 Min(raw_exp,158) 修 2^31 signed-cvt;NEON 改
+  `LeadingZeroCount(ReverseBits)`。三平台 TIE(1.00/1.00/0.98)。② HighestSetBitIndex(x86 双编译器 0.82/0.85)
+  ——加 native 直算 `biased_exp-127`(Highway u32 shape),跳过 `31-LeadingZeroCount` 往返里 defined 输入下
+  恒为 no-op 的 Min(.,32)+额外 Sub。双编译器 TIE(0.99/1.00)。③ **顺带揪出真正的正确性 bug**:该共享 helper
+  漏了 Highway 的 Min(.,158) 钳制,导致 bit-31-set 输入(0x80000000..0xFFFFFFFF)signed cvtepi32_ps 变负、
+  sign bit 泄漏到 >>23 → LZCnt/HSB 全错(LZCnt(2^31) 读 32 而非 0);gtest 因取值 <2^18 从未覆盖。
+  已补 Min(158) 修正 + gtest 加全 bit 位扫。avx512 由 Intel SDE 真跑 221 全绿(非仅编译验)。
 
 ## 全量表
 
@@ -143,7 +145,7 @@
 | GetBiasedExponent f32 | 1.00= | 1.02= | 1.00= |
 | GetExponent f32 | 0.98= | 1.01= | · |
 | Gt i32 | 1.01= | 1.02= | 1.04= |
-| HighestSetBitIndex u32 | 0.82L | 0.85L | 1.00= |
+| HighestSetBitIndex u32 | 0.99= | 1.00= | 1.00= |
 | IfNegativeThenElse f32 | 1.05W | 1.07W | 1.00= |
 | IfNegativeThenElseZero f32 | 1.36W | 1.08W | 1.03? |
 | IfNegativeThenZeroElse f32 | 1.31W | 1.08W | 1.02= |
@@ -350,7 +352,7 @@
 | TableLookupBytes u8 (4096) | 0.95? | 0.89L | · |
 | TableLookupLanes i32 (4096) | 1.00= | 0.99= | · |
 | TestBit i32 | 1.04= | 0.99= | 1.00= |
-| TrailingZeroCount i32 | 0.87L | 0.87L | 0.69L |
+| TrailingZeroCount i32 | 1.00= | 1.00= | 0.98= |
 | Trunc f32 | 1.00= | 1.00= | 1.04? |
 | TruncateTo u32->u16 | 1.00= | 1.00= | 1.00= |
 | TwoTablesLookupLanes i32 (4096) | 0.99= | 1.00= | · |

@@ -2359,7 +2359,10 @@ template <typename T> HYLE_FORCE_INLINE __m128i srli_w128(__m128i x, int s) noex
 HYLE_FORCE_INLINE __m128i u32_to_f32_biased_exp128(__m128i v) noexcept {
   const __m128i norm = _mm_andnot_si128(_mm_srli_epi32(v, 24), v);  // round-down guard for v>=2^24
   const __m128 f = _mm_cvtepi32_ps(norm);
-  return _mm_srli_epi32(_mm_castps_si128(f), 23);
+  const __m128i be = _mm_srli_epi32(_mm_castps_si128(f), 23);
+  // bit-31-set inputs read negative through the signed convert -> sign bit leaks past >>23 -> bogus
+  // exp. Highway clamps with Min(.,158) (biased exp of 2^31), pinning LZCnt=0 / TZCnt(2^31)=31.
+  return _mm_min_epu32(be, _mm_set1_epi32(158));
 }
 }  // namespace detail
 template <typename T, std::size_t N>

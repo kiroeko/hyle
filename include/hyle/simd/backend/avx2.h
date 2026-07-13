@@ -2407,7 +2407,13 @@ HYLE_FORCE_INLINE Vec256<T, N> reduce256_broadcast(Vec256<T, N> v) noexcept {
   return r;
 }
 }  // namespace detail
+// Gate the capability macro on AVX2 being the PRIMARY target: avx512.h includes this header for
+// Vec256 half-width helpers, but these natives operate on Vec256 only, so if the macro leaked into
+// the avx512 TU vec.h would dispatch them with Vec512 args (no overload). When avx512 is primary
+// the generic Set(d,ReduceX) path is used instead (correct; the native is an AVX2 MSVC codegen opt).
+#if defined(HYLE_SIMD_TARGET_AVX2)
 #define HYLE_SIMD_AVX2_HAS_NATIVE_REDUCE_BROADCAST32 1
+#endif
 template <class D> requires (sizeof(TFromD<D>) == 4)
 HYLE_FORCE_INLINE detail::V256<D> SumOfLanesNative(D, detail::V256<D> v) noexcept {
   return detail::reduce256_broadcast<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D), detail::RedOp::kAdd>(v);
@@ -2926,7 +2932,9 @@ HYLE_FORCE_INLINE detail::V256<D> GatherIndex(D d, const TFromD<D>* base,
 // generic MaskedGatherIndexOr was GCC-only: MSVC picked the scalar generic, leaving GatherIndexN
 // 6x slow). _mm256_mask_i32gather_* takes off-mask lanes from `no` and does NOT read their memory
 // (fault-safe, like Highway). 32-bit lanes only.
+#if defined(HYLE_SIMD_TARGET_AVX2)  // AVX2-primary only (avx512 TU includes this header; Vec256-only)
 #define HYLE_SIMD_AVX2_HAS_NATIVE_MASKED_GATHER32 1
+#endif
 template <class D, typename IdxT>
   requires (sizeof(TFromD<D>) == 4 && sizeof(IdxT) == 4)
 HYLE_FORCE_INLINE detail::V256<D> NativeMaskedGatherOr32(
@@ -2946,7 +2954,9 @@ HYLE_FORCE_INLINE detail::V256<D> NativeMaskedGatherOr32(
 // Native byte-offset gather: _mm256_i32gather_* with scale=1 reads sizeof(T) bytes at base+off[i]
 // (off is a BYTE offset). 32-bit lanes with 32-bit offset only. Backs GatherOffset, which was a
 // generic scalar byte-copy loop (op_parity: MSVC ~5x slower than Highway; GCC ~1.2x).
+#if defined(HYLE_SIMD_TARGET_AVX2)  // AVX2-primary only (avx512 TU includes this header; Vec256-only)
 #define HYLE_SIMD_AVX2_HAS_NATIVE_GATHER_OFFSET32 1
+#endif
 template <class D, typename OffT>
   requires (sizeof(TFromD<D>) == 4 && sizeof(OffT) == 4)
 HYLE_FORCE_INLINE detail::V256<D> NativeGatherOffset32(
@@ -3131,15 +3141,20 @@ template <typename T> HYLE_FORCE_INLINE __m256i srli_w(__m256i x, int s) noexcep
 // float-exponent trick (Highway generic_ops UIntToF32BiasedExp): the biased exponent of the f32
 // nearest to a u32 gives its bit-length, so LZCnt/TZCnt fall out of a single int->float convert +
 // exponent extract -- far cheaper than the smear+popcount chain. For 32-bit lanes: convert via
-// SIGNED cvtepi32_ps (1 instr; the top-bit-set case is folded by the internal min-with-158 that
-// the LZCnt formula's overall Min(.,32) subsumes), bitcast, >>23. Returns the biased exponent.
+// SIGNED cvtepi32_ps (1 instr, far cheaper than the u32->f32 sequence), bitcast, >>23, then clamp
+// with Min(.,158). Returns the biased exponent in [0,158].
 HYLE_FORCE_INLINE __m256i u32_to_f32_biased_exp(__m256i v) noexcept {
   // zero out bit (HighestSetBit-24) for v>=2^24 so the inexact convert rounds DOWN (never bumps
   // the exponent up a notch): v & ~(v>>24). Exact for v<2^24 (no-op there).
   const __m256i norm = _mm256_andnot_si256(_mm256_srli_epi32(v, 24), v);
-  const __m256 f = _mm256_cvtepi32_ps(norm);  // signed convert; norm<2^31 always (top 8 bits clear)
-  const __m256i bits = _mm256_castps_si256(f);
-  return _mm256_srli_epi32(bits, 23);  // biased exponent in [0,158]
+  const __m256 f = _mm256_cvtepi32_ps(norm);  // SIGNED convert
+  const __m256i be = _mm256_srli_epi32(_mm256_castps_si256(f), 23);
+  // Inputs with bit 31 set (v >= 2^31) read NEGATIVE through the signed convert (norm keeps bit 31,
+  // andnot only clears bit HighestSetBit-24), so the float sign bit leaks past >>23 giving a bogus
+  // exponent (256..414). Highway clamps with Min(.,158) (biased exp of 2^31); this pins every
+  // bit-31-set input to 158 -> LZCnt=0 / TZCnt(single bit)=31, both correct. Without it LZCnt(2^31)
+  // wrapped to a huge value and the trailing Min(.,32) mis-saturated to 32.
+  return _mm256_min_epu32(be, _mm256_set1_epi32(158));
 }
 }  // namespace detail
 template <typename T, std::size_t N>
@@ -3164,6 +3179,20 @@ HYLE_FORCE_INLINE Vec256<T, N> LeadingZeroCount(Vec256<T, N> v) noexcept {
     const Vec256<T, N> pc = PopulationCount(sm);
     return Sub(Set(Simd<T, N, 0>(), static_cast<T>(sizeof(T) * 8)), pc);
   }
+}
+// HighestSetBitIndex native (32-bit lanes): Highway's direct u32 shape = biased_exp - 127, skipping
+// the generic `(bits-1) - LeadingZeroCount` round-trip. HYLE's LZCnt does Min(158-be, 32) then the
+// generic Sub(31, lz); for a defined input (v!=0) be>=127 so 158-be<=31<32 -- the Min(.,32) is a
+// pure no-op here, and 31 - (158-be) == be-127. So the round-trip spends 2 wasted ops (the clamp +
+// an extra subtract). Direct be-127 matches Highway's op count. (op_parity: HYLE HSB was ~0.76.)
+#if defined(HYLE_SIMD_TARGET_AVX2)
+#define HYLE_SIMD_AVX2_HAS_NATIVE_HIGHEST_SET_BIT32 1
+#endif
+template <class D> requires (sizeof(TFromD<D>) == 4)
+HYLE_FORCE_INLINE detail::V256<D> HighestSetBitIndexNative(D, detail::V256<D> v) noexcept {
+  const __m256i be = detail::u32_to_f32_biased_exp(v.raw);  // clamped to [0,158]
+  detail::V256<D> r; r.raw = _mm256_sub_epi32(be, _mm256_set1_epi32(127));  // be-127 = floor(log2)
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> TrailingZeroCount(Vec256<T, N> v) noexcept {

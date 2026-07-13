@@ -2222,6 +2222,21 @@ void CheckBitCount() {
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<T>(std::countl_zero(static_cast<U>(a.data[i])))) << "lzcnt " << i;
   hs::Store(hs::TrailingZeroCount(v), d, out.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], static_cast<T>(std::countr_zero(static_cast<U>(a.data[i])))) << "tzcnt " << i;
+  // High-bit sweep: every single-bit value incl. the top bit (bit width-1). The signed-cvt
+  // float-exp path (32-bit LZCnt/TZCnt) mis-signs a top-bit-set input unless the biased exponent is
+  // clamped; the load above stays under 2^18 so this catches the boundary the pattern misses.
+  const int kb = sizeof(T) * 8;
+  for (int b = 0; b < kb; ++b) {
+    const U bit = static_cast<U>(U{1} << b);
+    for (std::size_t i = 0; i < n; ++i) a.data[i] = static_cast<T>(bit);
+    auto vb = hs::Load(d, a.data);
+    hs::Store(hs::LeadingZeroCount(vb), d, out.data);
+    EXPECT_EQ(out.data[0], static_cast<T>(std::countl_zero(bit))) << "lzcnt bit " << b;
+    hs::Store(hs::TrailingZeroCount(vb), d, out.data);
+    EXPECT_EQ(out.data[0], static_cast<T>(std::countr_zero(bit))) << "tzcnt bit " << b;
+    hs::Store(hs::PopulationCount(vb), d, out.data);
+    EXPECT_EQ(out.data[0], static_cast<T>(std::popcount(bit))) << "popcnt bit " << b;
+  }
 }
 TEST(Vec, BitCountUint32) { CheckBitCount<std::uint32_t>(); }
 TEST(Vec, BitCountInt32) { CheckBitCount<std::int32_t>(); }
@@ -3158,13 +3173,14 @@ TEST(Vec, VectorMiscAndGatherN) {
   for (std::size_t i = 0; i < n; ++i) { sel.data[i] = (i % 2) ? -1 : 0; yes.data[i] = 100 + int(i); no.data[i] = 200 + int(i); }
   hs::Store(hs::IfVecThenElse(hs::Load(d, sel.data), hs::Load(d, yes.data), hs::Load(d, no.data)), d, out.data);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out.data[i], (sel.data[i] < 0) ? yes.data[i] : no.data[i]) << "IfVec i=" << i;
-  // HighestSetBitIndex (unsigned lanes for clean floor-log2).
+  // HighestSetBitIndex (unsigned lanes for clean floor-log2). Sweep ALL bit positions incl. bit 31:
+  // the signed-cvt float-exp trick mis-signs bit-31-set inputs unless clamped to biased exp 158.
   const hs::ScalableTag<std::uint32_t> du;
   const std::size_t nu = hs::Lanes(du);
   Buf<std::uint32_t> uv, uo;
-  for (std::size_t i = 0; i < nu; ++i) uv.data[i] = std::uint32_t(1) << (i % 20);  // 2^k
+  for (std::size_t i = 0; i < nu; ++i) uv.data[i] = std::uint32_t(1) << (i % 32);  // 2^k, k up to 31
   hs::Store(hs::HighestSetBitIndex(hs::Load(du, uv.data)), du, uo.data);
-  for (std::size_t i = 0; i < nu; ++i) EXPECT_EQ(uo.data[i], std::uint32_t(i % 20)) << "HighestSetBit i=" << i;
+  for (std::size_t i = 0; i < nu; ++i) EXPECT_EQ(uo.data[i], std::uint32_t(i % 32)) << "HighestSetBit i=" << i;
 
   // GatherIndexN / Or / ScatterIndexN.
   constexpr std::size_t kTab = 64;
