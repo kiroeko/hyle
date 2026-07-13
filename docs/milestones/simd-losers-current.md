@@ -51,18 +51,36 @@ bench 里每个宏**恒定 HYLE 先跑**（`b.run("HYLE",...)` 在前），所�
 
 ---
 
-## 2. 复核确认为"伪影/非算法输"（不改，附证据）
+## 2. "非真输"复核 —— 按 order-swap 统一实测分三类（2026-07-13，用户"伪影都换顺序反转了？"逼出）
 
-| op | 完整-sweep ratio | 判定证据 |
-|---|---:|---|
-| **IsNegative i32** | 1.19× | objdump 有差(vpxor+vpcmpgtd vs vpsrad)但 vpxor=zeroing idiom 零执行端口；**隔离 TIE(1.000, p=1.0)**、compute-bound TIE |
-| **MinNumber / MaxNumber f32** | 1.05–1.08× | objdump HYLE 双 NaN 检查(5 insn) vs Highway(3)，但 **compute-bound 链式 1.8×WIN**——更"重"的 codegen 真实负载下反而快，照 objdump 简化会变慢 |
-| **HighestSetBitIndex u32** | 1.11× | objdump HYLE 17 vs Highway 10，但 **compute-bound 1.16×WIN**(LZCnt 复用比 Highway normalize 更省) |
-| **MaskedShiftLeft/Right<3> i32** | 1.04× | objdump **逐指令与 Highway 相同**；三平台交集但纯第一槽/顺序效应(见 §0) |
-| **Clamp i32** | 1.03× | **隔离 TIE(1.031, p=0.12)**；完整-sweep 方向是位置串扰 |
-| **CompressNot i32** | 1.02× | objdump 仅差 1 条 vpxor(HYLE 运行时 Not(mask) vs Highway 预烘焙 NOT-表)，内存-bound floor |
-| **MulByPow2 / MulByFloorPow2 f32** | 1.02× | objdump 结构近同，布局/floor |
-| **Lt128 / Eq128 / Ne128 u64** | 1.02–1.03× | 与 Max128 同族已改广播；残留是内存-bound floor(compute-bound 已 1.04×) |
+> 之前把 §2 一律标"伪影"不严谨:证据强度不一(有的只 objdump、有的只隔离、只有 MaskedShift 真做过
+> order-swap)。**统一对每项做 order-swap(op/s，两序)**，结果**不是所有项换序都反转**——分三类:
+
+### 2a. 真·第一槽伪影：慢的一边跟随跑动位置，换序反转 / 或隔离即 TIE
+| op | 证据 |
+|---|---|
+| **MaskedShiftLeft/Right<3> i32** | objdump **逐指令与 Highway 相同**；order-swap 慢边跟随位置翻转(HYLEfirst→HW快;HWfirst→HYLE快)。铁证伪影。 |
+| **Clamp i32** | 隔离 TIE(1.031,p=0.12)；order-swap 近平(8.38/8.37↔8.65/8.32) |
+| **CompressNot i32** | objdump 仅差 1 条 vpxor；order-swap 近平(9.48/9.46↔9.53/9.36) |
+| **Lt128 / Eq128 / Ne128 u64** | 与 Max128 同族已改广播；order-swap 近平(HWfirst 时 HYLE 反而快 3.49 vs 3.40) |
+
+### 2b. HYLE 其实更快（我曾误标为输）
+| op | 证据 |
+|---|---|
+| **MulByPow2 f32** | order-swap **两序 HYLE 都快**(4.24 vs 4.15;4.28 vs 4.19)——不是输，是 HYLE 赢，误判。 |
+
+### 2c. ⚠️内存-bound 慢但 compute-bound 快：**换序不反转**（我之前"伪影"标签在此类是错的）
+| op | order-swap(内存-bound) | compute-bound(链式) | 结论 |
+|---|---|---|---|
+| **IsNegative i32** | **两序 HYLE 都慢~5%**(36.7 vs 38.1;36.2 vs 39.8) | TIE(vpxor=zeroing idiom 零端口) | 内存-bound 真慢,计算负载抹平 |
+| **HighestSetBitIndex u32** | **两序 HYLE 都慢~11%**(14.6 vs 16.5 两序) | **1.16×WIN** | 内存-bound 慢,compute-bound HYLE 反赢 |
+| **MinNumber/MaxNumber f32** | **两序 HYLE 都慢~5%**(11.1 vs 12.2;10.9 vs 12.3) | **1.8×WIN** | 同上 |
+
+**2c 的诚实结论**:这三项**不是第一槽伪影**(换序不反转,两序都慢),但也**不是纯算法输**——它们在
+`Load+单op+Store` 内存-bound 形态下 HYLE 确实慢 5-11%,而在计算密集(链式)形态下 HYLE 反而更快。
+净影响**取决于消费者的使用模式**(算子被密集串起来用=HYLE 赢;稀疏内存流式用=Highway 略快)。
+把它们叫"伪影"是我的措辞错误——准确说是"内存-bound 与 compute-bound 方向相反,不可一概而论"。
+是否值得为内存-bound 形态优化,待有真实消费者的访问模式再定(目前 compute 消费多为密集,倾向不动)。
 
 ---
 
