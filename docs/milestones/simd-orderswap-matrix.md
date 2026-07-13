@@ -17,11 +17,14 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 21 个
+### MSVC(AVX2): 20 个(Broadcast<0> 已修移出;原 21)
 - ReverseLaneBytes u32 (4096): **0.05** —— MSVC 侧被测出 store+reload 兜底路径(源注释自认),GCC 已向量化 -> 仅 MSVC 22x 输
 - DemoteToNearestInt f64->i32 (4096): **0.38** —— 已知正确性取舍:HYLE safe 版做 emu128 谱系 NaN/饱和(Highway 原生只 Min+cvt);InRange 快路径同表 TIE
-- BroadcastLane<3> i32: **0.47** —— 源码级确认:HYLE Broadcast=store 到栈+标量提取+Set 兜底(avx2.h 注释自认"future native-permute 可特化");仅 MSVC 输(GCC 编得好 1.26W)
-- Broadcast<0> i32: **0.52** —— 同 BroadcastLane:store+reload 兜底,仅 MSVC 输
+- ~~Broadcast<0> i32: 0.52~~ → **已修 1.00**(5b98ff8):store+reload 兜底改 native;lane 0 用 vpbroadcastd,全平台 TIE。
+- ~~BroadcastLane<3> i32: 0.47~~ → **0.91**(d5f0f60 store+reload 改 native vpermd 全局 splat):Broadcast<0> 追平,
+  但 BroadcastLane<3>(全局 lane-3)HYLE 单 vpermd 在 MSVC 仍 0.91(WSL 1.14 赢)= 纯 MSVC vpermd 调度差(同
+  MultiRotateRight 类,GCC 同源码赢);vpermd 是全局广播的正确指令,非算法输。bench 原用 hn::Broadcast<0>
+  (per-block)对照 HYLE 全局 splat=不公平,已改 hn::BroadcastLane<0>(全局等价)。
 - DemoteMaskTo i32->i16 (4096): **0.70** —— mask 宽度桥接冷 op,残余为寄存器搬运差(源注释已记录,接受)
 - SumOfLanes i32: **0.78** —— 仅 MSVC 输 0.78(GCC 1.20 反赢) -> MSVC 对 HYLE 水平归约的 codegen 问题
 - HighestSetBitIndex u32: **0.84** —— 同 TZC 家族,x86 双编译器 0.84/0.87
@@ -93,9 +96,9 @@
 | BitCast i32->f32 | 1.00= | 0.99= | 1.00= |
 | BitShuffle u64 (4096) | 1.07W | 1.10W | · |
 | BlendedStore i32 (4096, 50%) | 0.99= | 1.00= | · |
-| Broadcast<0> i32 | 0.52L | 1.13W | 1.02= |
+| Broadcast<0> i32 | 1.00= | 1.00= | 1.02= |
 | BroadcastBlock<1> i32 | 0.98= | 1.00= | · |
-| BroadcastLane<3> i32 | 0.47L | 1.26W | 0.98= |
+| BroadcastLane<3> i32 | 0.91L | 1.14W | 0.98= |
 | BroadcastSignBit i32 | 1.00= | 1.01= | 0.98= |
 | Ceil f32 | 1.00= | 1.00= | 1.00= |
 | CeilInt f32->i32 | 1.50W | 1.55W | 1.01= |
