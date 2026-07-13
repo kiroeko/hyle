@@ -1155,20 +1155,30 @@ HYLE_FORCE_INLINE V MaskedModOr(M m, V no, V dividend,
 //
 // Lt128 truth table (Highway x86_128 Lt128Vec): with =H/=L = Eq of hi/lo, cH/cL = Lt of hi/lo,
 // out = cH | (=H & cL). Reverse2 brings the lo verdict up to the hi lane; DupOdd broadcasts.
+// Lt128Vec: the 128-bit less-than verdict as a VECTOR (all-ones/0, both lanes = pair verdict).
+// Min128/Max128 consume it via IfVecThenElse to stay in the vector domain (Highway's form) --
+// wrapping in MaskFromVec then IfThenElse round-trips the mask (extra vpsrad+vpshufd renormalize).
 template <class D, class V = VFromD<D>>
-HYLE_FORCE_INLINE auto Lt128(D d, V a, V b) noexcept {
+HYLE_FORCE_INLINE V Lt128Vec(D d, V a, V b) noexcept {
   static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Lt128 needs u64 lanes (128-bit pairs)");
   const auto eqHL = Eq(a, b);
   const V ltHL = VecFromMask(d, Lt(a, b));
   const V ltLatH = Reverse2(d, ltHL);            // lo's Lt verdict moved to the hi (odd) lane
   const V vecHx = IfThenElse(eqHL, ltLatH, ltHL);  // hi lane = (=H ? cL : cH)
-  return MaskFromVec(DupOdd(vecHx));             // broadcast hi verdict to both lanes of the pair
+  // Broadcast the hi verdict to both lanes: InterleaveUpper(vecHx,vecHx) = one vpunpckhqdq (dup hi
+  // qword), vs DupOdd+MaskFromVec's 4-insn broadcast (objdump; compute-bound 1.3x loss).
+  return InterleaveUpper(vecHx, vecHx);
+}
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE auto Lt128(D d, V a, V b) noexcept {
+  return MaskFromVec(Lt128Vec(d, a, b));
 }
 // Lt128Upper: compare ONLY the high 64 bits of each 128-bit pair (used for partial keys).
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE auto Lt128Upper(D d, V a, V b) noexcept {
   static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Lt128Upper needs u64 lanes");
-  return MaskFromVec(DupOdd(VecFromMask(d, Lt(a, b))));
+  const V ltHL = VecFromMask(d, Lt(a, b));
+  return MaskFromVec(InterleaveUpper(ltHL, ltHL));  // dup hi verdict (vpunpckhqdq), see Lt128
 }
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE auto Eq128(D d, V a, V b) noexcept {
@@ -1183,13 +1193,17 @@ HYLE_FORCE_INLINE auto Ne128(D d, V a, V b) noexcept {
   return MaskFromVec(Or(neHL, Reverse2(d, neHL)));   // either half differs -> pair differs
 }
 // Min128/Max128: select the smaller / larger 128-bit value of each pair (returns a vector).
+// Lt128Vec's output is already canonical all-ones/0 per lane (built from VecFromMask + canonical-
+// preserving IfThenElse/InterleaveUpper), so MaskFromNormalizedVec turns it into a mask WITHOUT the
+// redundant sign-broadcast (vpsrad+vpshufd) that IfVecThenElse's MaskFromVec would add. Highway's
+// IfVecThenElse blends on MSB directly; this matches it via the trusted-mask path.
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE V Min128(D d, V a, V b) noexcept {
-  return IfThenElse(Lt128(d, a, b), a, b);
+  return IfThenElse(MaskFromNormalizedVec(Lt128Vec(d, a, b)), a, b);
 }
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE V Max128(D d, V a, V b) noexcept {
-  return IfThenElse(Lt128(d, b, a), a, b);
+  return IfThenElse(MaskFromNormalizedVec(Lt128Vec(d, b, a)), a, b);
 }
 
 // ---- simd-18 批A: generic mask family (one definition, every backend) ---------------
