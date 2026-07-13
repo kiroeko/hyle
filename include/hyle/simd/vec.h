@@ -1801,7 +1801,11 @@ HYLE_FORCE_INLINE VFromD<D> WidenMulAccumulate(D d, VN mul, VN x, VFromD<D> low,
 }
 
 // D2: SatWidenMulPairwiseAccumulate -- i16 pairwise widen-mul, saturate-accumulate into i32.
-// HYLE SaturatedAdd is 8/16-bit only, so i32 sat-add is inlined (sign-same + result-sign-flip).
+// HYLE SaturatedAdd is 8/16-bit only, so i32 sat-add is inlined. Formula = Highway's i32
+// SaturatedAdd (generic_ops SaturatedAdd<i32>): the overflow mask is a single sign-bit vector
+// AndNot(Xor(a,b), Xor(a,sum)) (negative iff a,b same sign AND sum flipped) consumed directly by
+// IfNegativeThenElse -- no explicit Eq/Ne compares and only one BroadcastSignBit, vs the older
+// 3x-BroadcastSignBit + 2-compare form (that lost ~1.3x on MSVC in SatWidenMulPairwiseAccumulate).
 namespace detail {
 template <class V>
 HYLE_FORCE_INLINE V SaturatedAddI32(V a, V b) noexcept {
@@ -1810,18 +1814,16 @@ HYLE_FORCE_INLINE V SaturatedAddI32(V a, V b) noexcept {
   static_assert(std::is_same_v<T, std::int32_t>, "SaturatedAddI32: i32 only");
   const D d;
   // Wrapping add MUST go through the unsigned domain: a signed int32 overflow is C++ UB, and at
-  // -O3 GCC uses that UB to prove "sum keeps a's sign" and folds the overflow test to false --
-  // silently breaking saturation in optimized/LTO builds (caught by the D2 INT32_MIN corner:
-  // scalar passed at -O2 probe but failed in the -O3 -DNDEBUG gtest TU). Unsigned wrap is
-  // well-defined, so the sign-bit overflow check survives optimization. All backends agree.
+  // -O3 the compiler can use that UB to fold the overflow test away, silently breaking saturation
+  // (caught by the D2 INT32_MIN corner). Unsigned wrap is well-defined so the mask survives -O3/LTO.
   const RebindToUnsigned<D> du;
   const V sum = BitCast(d, Add(BitCast(du, a), BitCast(du, b)));  // defined wrapping add
-  // overflow iff a and b same sign AND sum flipped relative to a
-  const V sa = BroadcastSignBit(a);
-  const auto ov = And(Eq(sa, BroadcastSignBit(b)), Ne(sa, BroadcastSignBit(sum)));
-  // limit = a>=0 ? INT_MAX : INT_MIN  ==  Xor(sign_mask, 0x7FFFFFFF)
-  const V limit = Xor(sa, Set(d, T{0x7FFFFFFF}));
-  return IfThenElse(ov, limit, sum);
+  // overflow iff a,b same sign (Xor(a,b) sign bit clear) AND sum sign differs from a (Xor(a,sum)
+  // sign bit set) -> AndNot(Xor(a,b), Xor(a,sum)) has its sign bit set exactly on overflow.
+  const V overflow_mask = AndNot(Xor(a, b), Xor(a, sum));
+  // saturate to a>=0 ? INT_MAX : INT_MIN == Xor(BroadcastSignBit(a), 0x7FFFFFFF).
+  const V overflow_result = Xor(BroadcastSignBit(a), Set(d, T{0x7FFFFFFF}));
+  return IfNegativeThenElse(overflow_mask, overflow_result, sum);
 }
 }  // namespace detail
 
