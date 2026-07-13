@@ -2407,13 +2407,25 @@ HYLE_FORCE_INLINE Vec256<T, N> Broadcast(Vec256<T, N> v) noexcept {
   static_assert(kLane >= 0 && static_cast<std::size_t>(kLane) < N, "Broadcast lane out of range");
   Vec256<T, N> r;
   if constexpr (std::is_same_v<T, float>) {
-    r.raw = _mm256_permutevar8x32_ps(v.raw, _mm256_set1_epi32(kLane));
+    if constexpr (kLane == 0)  // vbroadcastss from the low element (cheaper than vpermps)
+      r.raw = _mm256_broadcastss_ps(_mm256_castps256_ps128(v.raw));
+    else
+      r.raw = _mm256_permutevar8x32_ps(v.raw, _mm256_set1_epi32(kLane));
   } else if constexpr (std::is_same_v<T, double>) {
-    r.raw = _mm256_permute4x64_pd(v.raw, static_cast<int>(kLane) * 0x55);
+    if constexpr (kLane == 0)
+      r.raw = _mm256_broadcastsd_pd(_mm256_castpd256_pd128(v.raw));
+    else
+      r.raw = _mm256_permute4x64_pd(v.raw, static_cast<int>(kLane) * 0x55);
   } else if constexpr (sizeof(T) == 4) {  // i32/u32
-    r.raw = _mm256_permutevar8x32_epi32(v.raw, _mm256_set1_epi32(kLane));
+    if constexpr (kLane == 0)  // lane 0 = vpbroadcastd from the low element (cheaper than vpermd)
+      r.raw = _mm256_broadcastd_epi32(_mm256_castsi256_si128(v.raw));
+    else
+      r.raw = _mm256_permutevar8x32_epi32(v.raw, _mm256_set1_epi32(kLane));
   } else if constexpr (sizeof(T) == 8) {  // i64/u64
-    r.raw = _mm256_permute4x64_epi64(v.raw, static_cast<int>(kLane) * 0x55);
+    if constexpr (kLane == 0)  // lane 0 = vpbroadcastq from the low element
+      r.raw = _mm256_broadcastq_epi64(_mm256_castsi256_si128(v.raw));
+    else
+      r.raw = _mm256_permute4x64_epi64(v.raw, static_cast<int>(kLane) * 0x55);
   } else {  // 8/16-bit: no cheap single-insn global broadcast across both halves -> fallback.
     alignas(32) T tmp[N];
     Store(v, Simd<T, N, 0>(), tmp);

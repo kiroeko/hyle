@@ -243,7 +243,10 @@ int main(){
   UNARY_I("Slide1Down i32", [&](auto v){return hs::Slide1Down(hdi,v);}, [&](auto v){return hn::Slide1Down(gdi,v);});
   UNARY_I("RotateLeft<3> i32", hs::RotateLeft<3>, hn::RotateLeft<3>);
   UNARY_I("RotateRight<3> i32", hs::RotateRight<3>, hn::RotateRight<3>);
-  UNARY_I("Broadcast<0> i32", hs::Broadcast<0>, hn::Broadcast<0>);
+  // HYLE Broadcast<k> is a GLOBAL lane splat (all N lanes); Highway's Broadcast<k> is per-128-block
+  // (different result on 256-bit -- verified). Compare against Highway's global equivalent
+  // BroadcastLane<k> for an apples-to-apples race (both cross-128).
+  UNARY_I("Broadcast<0> i32", hs::Broadcast<0>, hn::BroadcastLane<0>);
   BINARY_I("AddSub i32", hs::AddSub, hn::AddSub);
   BINARY_I("Clamp i32", [&](auto x,auto y){return hs::Clamp(x,hs::Min(x,y),hs::Max(x,y));}, [&](auto x,auto y){return hn::Clamp(x,hn::Min(x,y),hn::Max(x,y));});
   BINARY_I("RoundingShr i32", hs::RoundingShr, hn::RoundingShr);
