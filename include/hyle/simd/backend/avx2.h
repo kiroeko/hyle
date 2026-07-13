@@ -1595,7 +1595,10 @@ HYLE_FORCE_INLINE Vec256<T, N> DupEven(Vec256<T, N> v) noexcept {
   else if constexpr (detail::kI32<T>) r.raw = _mm256_shuffle_epi32(v.raw, _MM_SHUFFLE(2, 2, 0, 0));
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_permute_pd(v.raw, 0);   // [0,0] per 128b
   else if constexpr (detail::kI64<T>)
-    r.raw = _mm256_castpd_si256(_mm256_permute_pd(_mm256_castsi256_pd(v.raw), 0));
+    // integer-domain vpunpcklqdq (= InterleaveLower(v,v), Highway's form) NOT float-domain vpermilpd:
+    // avoids an int<->fp bypass delay when surrounded by integer ops and MSVC schedules it better
+    // (MultiRotateRight had 2x vpermilpd here where Highway has vpunpckl/hqdq -> MSVC 0.91x).
+    r.raw = _mm256_unpacklo_epi64(v.raw, v.raw);
   else return detail::swizzle_via_mem(v, [](std::size_t i) { return i & ~std::size_t{1}; });
   return r;
 }
@@ -1606,7 +1609,7 @@ HYLE_FORCE_INLINE Vec256<T, N> DupOdd(Vec256<T, N> v) noexcept {
   else if constexpr (detail::kI32<T>) r.raw = _mm256_shuffle_epi32(v.raw, _MM_SHUFFLE(3, 3, 1, 1));
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_permute_pd(v.raw, 0xF); // [1,1] per 128b
   else if constexpr (detail::kI64<T>)
-    r.raw = _mm256_castpd_si256(_mm256_permute_pd(_mm256_castsi256_pd(v.raw), 0xF));
+    r.raw = _mm256_unpackhi_epi64(v.raw, v.raw);  // integer-domain vpunpckhqdq (= InterleaveUpper), see DupEven
   else return detail::swizzle_via_mem(v, [](std::size_t i) { return (i & ~std::size_t{1}) | 1; });
   return r;
 }
