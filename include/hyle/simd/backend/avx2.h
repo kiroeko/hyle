@@ -1447,7 +1447,29 @@ HYLE_FORCE_INLINE detail::V256<D> Reverse(D, detail::V256<D> v) noexcept {
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V256<D> Reverse2(D, detail::V256<D> v) noexcept {
-  return detail::swizzle_via_mem(v, [](std::size_t i) { return i ^ 1; });
+  // Swap adjacent lanes (i^1). NATIVE shuffle per width (was store+reload swizzle_via_mem, which
+  // GCC folded to a shuffle but MSVC emitted as literal stack spill -> ~5x slower; this is the root
+  // cause of the MSVC Eq128/Lt128/Reverse2 cluster, since those compose Reverse2). All in-128-block.
+  using T = TFromD<D>;
+  detail::V256<D> r;
+  if constexpr (sizeof(T) == 8) {  // swap qword pairs: dword order [2,3,0,1] per 128 = 0x4E
+    const __m256i s = _mm256_shuffle_epi32(detail::bitcast_raw_avx2<__m256i>(v.raw), 0x4E);
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(s);
+  } else if constexpr (sizeof(T) == 4) {  // swap dword pairs: [1,0,3,2] per 128 = 0xB1
+    const __m256i s = _mm256_shuffle_epi32(detail::bitcast_raw_avx2<__m256i>(v.raw), 0xB1);
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(s);
+  } else if constexpr (sizeof(T) == 2) {  // swap word pairs via byte shuffle (rotate each dword by 16b)
+    const __m256i idx = _mm256_setr_epi8(2,3,0,1, 6,7,4,5, 10,11,8,9, 14,15,12,13,
+                                         2,3,0,1, 6,7,4,5, 10,11,8,9, 14,15,12,13);
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(
+        _mm256_shuffle_epi8(detail::bitcast_raw_avx2<__m256i>(v.raw), idx));
+  } else {  // 8-bit: swap byte pairs
+    const __m256i idx = _mm256_setr_epi8(1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14,
+                                         1,0,3,2,5,4,7,6,9,8,11,10,13,12,15,14);
+    r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(
+        _mm256_shuffle_epi8(detail::bitcast_raw_avx2<__m256i>(v.raw), idx));
+  }
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ConcatEven(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
