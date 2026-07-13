@@ -110,6 +110,30 @@ inline void mark(Tag) {
   ankerl::nanobench::doNotOptimizeAway(static_cast<int>(Tag::value));
 }
 
+// Phase stagger -- kernels call this FIRST: `hyle_bench::stagger(rep);`. Replica k pads ~16*k
+// bytes of straight-line code before the measured loop so the four replicas sample four distinct
+// 64B code phases. Without it, same-sized replica instantiations get laid out at a constant
+// stride; when that stride is a multiple of 64 the four copies share ONE phase (observed: all
+// HYLE vpermd replicas at phase 32 while Highway's stride of 720 swept 48/0/16/32), and
+// best-of-replicas then favors the sweeping side by up to ~10% even for byte-identical kernels.
+// The volatile stores run once per op() call, outside the timed loop's steady state -- their cost
+// is amortized over minEpochIterations and identical across sides.
+// Must force-inline: an outlined stagger would be ONE shared function and shift nothing.
+#if defined(_MSC_VER)
+#define HYLE_BENCH_FORCEINLINE __forceinline
+#else
+#define HYLE_BENCH_FORCEINLINE inline __attribute__((always_inline))
+#endif
+template <class Tag>
+HYLE_BENCH_FORCEINLINE void stagger(Tag) {
+  constexpr unsigned k = static_cast<unsigned>(Tag::value) & 3u;
+  volatile int s = 100;  // baseline store for every replica; k adds 2 more each (~16B/step)
+  if constexpr (k >= 1) { s = 101; s = 102; }
+  if constexpr (k >= 2) { s = 103; s = 104; }
+  if constexpr (k >= 3) { s = 105; s = 106; }
+  (void)s;
+}
+
 namespace detail {
 template <int SITE, int R, class FH, class FG>
 inline void run_round(ankerl::nanobench::Bench& b, FH& h, FG& g) {

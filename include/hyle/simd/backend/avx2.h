@@ -2475,10 +2475,18 @@ HYLE_FORCE_INLINE Vec256<T, N> Broadcast(Vec256<T, N> v) noexcept {
     else
       r.raw = _mm256_permute4x64_pd(v.raw, static_cast<int>(kLane) * 0x55);
   } else if constexpr (sizeof(T) == 4) {  // i32/u32
-    if constexpr (kLane == 0)  // lane 0 = vpbroadcastd from the low element (cheaper than vpermd)
+    if constexpr (kLane == 0) {  // lane 0 = vpbroadcastd from the low element (cheaper than vpermd)
       r.raw = _mm256_broadcastd_epi32(_mm256_castsi256_si128(v.raw));
-    else
+    } else {
+      // Single vpermd, kept deliberately (op_parity BroadcastLane<3>: GCC 1.13x FASTER than
+      // Highway, MSVC 0.93 -- understood and accepted). Highway's vbroadcasti128+vpshufd pair
+      // only wins the load->op->store bench shape because the compiler folds the dup into a
+      // shuffle-port-free MEMORY-source vbroadcasti128; with a register input (any computed
+      // vector) that fold is impossible -- MSVC materializes it as a stack spill + reload
+      // (measured 0.47x when we tried adopting the pair) -- and vpermd's single shuffle uop
+      // beats the pair's two.
       r.raw = _mm256_permutevar8x32_epi32(v.raw, _mm256_set1_epi32(kLane));
+    }
   } else if constexpr (sizeof(T) == 8) {  // i64/u64
     if constexpr (kLane == 0)  // lane 0 = vpbroadcastq from the low element
       r.raw = _mm256_broadcastq_epi64(_mm256_castsi256_si128(v.raw));
