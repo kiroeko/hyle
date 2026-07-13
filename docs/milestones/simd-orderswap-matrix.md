@@ -17,17 +17,22 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 20 个(Broadcast<0> 已修移出;原 21)
+### MSVC(AVX2): 18 个真输 + BroadcastLane<3>(放置伪影,列在下但不计真输)+ TruncateTo(已修移出)
+> 原 21 → Broadcast<0>(vpbroadcastd 修)、TruncateTo u32->u16(2-shuffle 特化修)移出;BroadcastLane<3>
+> 深入调研判为代码放置伪影(变体 C 逐字节同 Highway 仍 0.90,非指令输),不计入真输 = **18 个真算法输**。
 - ReverseLaneBytes u32 (4096): **0.05** —— MSVC 侧被测出 store+reload 兜底路径(源注释自认),GCC 已向量化 -> 仅 MSVC 22x 输
 - DemoteToNearestInt f64->i32 (4096): **0.38** —— 已知正确性取舍:HYLE safe 版做 emu128 谱系 NaN/饱和(Highway 原生只 Min+cvt);InRange 快路径同表 TIE
 - ~~Broadcast<0> i32: 0.52~~ → **已修 1.00**(5b98ff8):store+reload 兜底改 native;lane 0 用 vpbroadcastd,全平台 TIE。
-- BroadcastLane<3> i32: **0.88(MSVC 真输,未修)** —— d5f0f60 把 store+reload 兜底改成 native 单 vpermd
-  全局 lane-splat(比原兜底大幅改善,WSL 1.14 赢),但 MSVC 仍稳定 0.88-0.91 LOSE(钉核+双序+CALIBRATION
-  PASS 坐实,非未锁核假象)。试过照 Highway 的 2-op 形(vpshufd+vinserti128)——**更慢**,不是可抄的修法。
-  单 vpermd 已是全局广播的最小指令,MSVC 端此模式比 Highway 的 per-block 组合慢 ~12%,暂无更省指令可换 =
-  **MSVC-only 真输,登记待解**(GCC 无此问题)。bench 对照已从 hn::Broadcast<0>(per-block,不公平)改为
-  hn::BroadcastLane(全局等价)。⚠️ 排查中一度用无锚点隔离 TU 读到"1.19 WIN",加 Neg 锚点后锚点自身
-  OUT-OF-GATE(1.197)=该 TU 未校准、整体偏 HYLE ~20%,归一后仍 ~0.85 输——**再次印证:无锚点的隔离读数不可信**。
+- BroadcastLane<3> i32: **0.90(MSVC full_bench,判为放置伪影非指令输 —— 见下调研)** —— d5f0f60 store+reload
+  兜底改 native 单 vpermd 全局 lane-splat(WSL 1.14-1.17 赢)。MSVC full_bench 仍 0.90 LOSE(钉核+双序+
+  CALIBRATION PASS)。**深入调研定位(2026-07-13)**:dumpbin 显示 HYLE 循环 = 4×(vpermd 折 256b load + store),
+  最小指令、索引常量已提循环外、无 spill;Highway = 4×(vbroadcasti128 128b-load + vpshufd + store)。
+  **决定性实验**:把 HYLE 改成与 Highway 逐字节相同的 vbroadcasti128+vpshufd(变体 C),MSVC full_bench 仍
+  **0.898 LOSE**(几乎不动)——即**同一指令序列在 HYLE 的 full_bench 位置 vs Highway 的位置就差 ~10%**,
+  证明这不是指令/算法差,而是猎人日志记的 **SELF=2 代码放置伪影**(同文本不同地址 ±10-15%,4-副本采样对个别
+  op 未完全抵消)。⚠️ 隔离 TU 无法复核(每次锚点 Neg 都 OUT-OF-GATE 1.3-1.46=小 TU 每-op 放置方差过大)。
+  **结论:vpermd 是全局广播最小指令,无更快指令可换;残留 0.90 = full_bench 位置噪声,非真算法输**。保留单
+  vpermd(最简)。Broadcast<0> 用 vpbroadcastd 全平台 TIE 不受影响。bench 对照已改 hn::BroadcastLane(全局等价)。
 - DemoteMaskTo i32->i16 (4096): **0.70** —— mask 宽度桥接冷 op,残余为寄存器搬运差(源注释已记录,接受)
 - SumOfLanes i32: **0.78** —— 仅 MSVC 输 0.78(GCC 1.20 反赢) -> MSVC 对 HYLE 水平归约的 codegen 问题
 - HighestSetBitIndex u32: **0.84** —— 同 TZC 家族,x86 双编译器 0.84/0.87
