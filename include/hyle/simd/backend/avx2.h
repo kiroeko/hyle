@@ -2636,19 +2636,55 @@ template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE detail::V256<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  const std::size_t k = n < kN ? n : kN;
-  alignas(32) T tmp[kN] = {};
-  for (std::size_t i = 0; i < k; ++i) tmp[i] = p[i];  // read only k lanes (fault-safe)
-  return Load(d, tmp);
+  const int k = static_cast<int>(n < kN ? n : kN);
+  // 4/8-byte lanes: NATIVE _mm256_maskload_* -- off-mask lanes are NOT read (fault-safe) AND come
+  // back zero, which IS LoadN's contract (low k lanes from p, zero above). One instruction vs the
+  // scalar per-lane fill+reload (op_parity: that was ~1.6x Highway on x86, a real store+reload loss).
+  // Mask = iota<k, built in-register (same as LoadNOr/BlendedStore). 8/16-bit have no AVX2 maskload
+  // -> keep the fault-safe scalar path (reads only k lanes), same as Highway there.
+  if constexpr (sizeof(T) == 4) {
+    const __m256i iota = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+    const __m256i m = _mm256_cmpgt_epi32(_mm256_set1_epi32(k), iota);  // lane<k -> all-ones
+    detail::V256<D> r;
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_maskload_ps(p, m);
+    else r.raw = _mm256_maskload_epi32(reinterpret_cast<const int*>(p), m);
+    return r;
+  } else if constexpr (sizeof(T) == 8) {
+    const __m256i iota = _mm256_set_epi64x(3, 2, 1, 0);
+    const __m256i m = _mm256_cmpgt_epi64(_mm256_set1_epi64x(k), iota);
+    detail::V256<D> r;
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm256_maskload_pd(p, m);
+    else r.raw = _mm256_maskload_epi64(reinterpret_cast<const long long*>(p), m);
+    return r;
+  } else {  // 8/16-bit: no AVX2 maskload -> fault-safe scalar (read only k lanes), zero above.
+    alignas(32) T tmp[kN] = {};
+    for (int i = 0; i < k; ++i) tmp[i] = p[i];
+    return Load(d, tmp);
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE void StoreN(detail::V256<D> v, D d, TFromD<D>* p, std::size_t n) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  const std::size_t k = n < kN ? n : kN;
-  alignas(32) T tmp[kN];
-  Store(v, d, tmp);
-  for (std::size_t i = 0; i < k; ++i) p[i] = tmp[i];  // write only k lanes (fault-safe)
+  const int k = static_cast<int>(n < kN ? n : kN);
+  // 4/8-byte lanes: NATIVE _mm256_maskstore_* -- writes ONLY the low k lanes (fault-safe on the
+  // masked-off tail), matching StoreN's contract. One instruction vs store+scalar-loop (same win
+  // class as BlendedStore). 8/16-bit: no AVX2 maskstore -> scalar per-lane (writes only k), as Highway.
+  if constexpr (sizeof(T) == 4) {
+    const __m256i iota = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
+    const __m256i m = _mm256_cmpgt_epi32(_mm256_set1_epi32(k), iota);
+    if constexpr (std::is_same_v<T, float>) _mm256_maskstore_ps(p, m, v.raw);
+    else _mm256_maskstore_epi32(reinterpret_cast<int*>(p), m, v.raw);
+  } else if constexpr (sizeof(T) == 8) {
+    const __m256i iota = _mm256_set_epi64x(3, 2, 1, 0);
+    const __m256i m = _mm256_cmpgt_epi64(_mm256_set1_epi64x(k), iota);
+    if constexpr (std::is_same_v<T, double>) _mm256_maskstore_pd(p, m, v.raw);
+    else _mm256_maskstore_epi64(reinterpret_cast<long long*>(p), m, v.raw);
+  } else {  // 8/16-bit: no AVX2 maskstore -> scalar (write only k lanes), fault-safe.
+    alignas(32) T tmp[kN];
+    Store(v, d, tmp);
+    for (int i = 0; i < k; ++i) p[i] = tmp[i];
+  }
 }
 // LoadNOr(no, d, p, n): first min(n,N) lanes from p, `no` elsewhere. 4/8-byte lanes use NATIVE
 // _mm256_maskload (fault-safe: off-mask lanes are NOT read, so no OOB page fault) driven by an
