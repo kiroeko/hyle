@@ -2396,17 +2396,30 @@ HYLE_FORCE_INLINE T ReduceOr(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
   return detail::reduce_scalar2<T, N, detail::RedOp2::kOr>(v);
 }
 
-// Broadcast<i>: splat lane i across all lanes (matrix-row / bias splat). AVX2 cannot cheaply
-// permute an arbitrary lane across the 128-bit halves for every lane width, and this is not
-// a v1 hot path, so we extract-and-Set uniformly (a future native-permute pass -- vpermps /
-// vpbroadcast -- can specialize hot widths). Index-vector swizzles (TableLookup, Gather/
-// Scatter, Compress, Interleave/Zip) are DEFERRED as a cohesive effort (see scalar.h note).
+// Broadcast<i>: splat lane i across ALL N lanes (HYLE contract = global splat, NOT Highway's
+// per-128-block Broadcast). 32/64-bit use a native cross-lane permute (one vpermd/vpermps for
+// 8x32; vpermq/vpermpd for 4x64) with an all-kLane index -- replaces the store-to-stack + scalar-
+// extract + Set fallback that MSVC compiled to a spill and lost ~2x on (op_parity calibrated:
+// Broadcast<0>/BroadcastLane<3> MSVC 0.47-0.52; GCC hid it). 8/16-bit keep the fallback (no cheap
+// single-instruction global byte/word broadcast across both 128-bit halves on AVX2).
 template <int kLane, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Broadcast(Vec256<T, N> v) noexcept {
   static_assert(kLane >= 0 && static_cast<std::size_t>(kLane) < N, "Broadcast lane out of range");
-  alignas(32) T tmp[N];
-  Store(v, Simd<T, N, 0>(), tmp);
-  return Set(Simd<T, N, 0>(), tmp[kLane]);
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) {
+    r.raw = _mm256_permutevar8x32_ps(v.raw, _mm256_set1_epi32(kLane));
+  } else if constexpr (std::is_same_v<T, double>) {
+    r.raw = _mm256_permute4x64_pd(v.raw, static_cast<int>(kLane) * 0x55);
+  } else if constexpr (sizeof(T) == 4) {  // i32/u32
+    r.raw = _mm256_permutevar8x32_epi32(v.raw, _mm256_set1_epi32(kLane));
+  } else if constexpr (sizeof(T) == 8) {  // i64/u64
+    r.raw = _mm256_permute4x64_epi64(v.raw, static_cast<int>(kLane) * 0x55);
+  } else {  // 8/16-bit: no cheap single-insn global broadcast across both halves -> fallback.
+    alignas(32) T tmp[N];
+    Store(v, Simd<T, N, 0>(), tmp);
+    return Set(Simd<T, N, 0>(), tmp[kLane]);
+  }
+  return r;
 }
 
 // ---- swizzle: B-2 completions (Reverse4/8, ReverseBits/LaneBytes, InterleaveEven/Odd,
