@@ -3,6 +3,7 @@
 #include <bit>          // countl_zero / countr_zero (Divisor magic-number precompute)
 #include <cstddef>
 #include <cstdint>
+#include <cstring>  // std::memcpy (Gather/ScatterOffset whole-lane byte copy)
 #include <limits>
 #include <type_traits>  // conditional_t (MakeSigned/MakeUnsigned lane-type rebind)
 
@@ -753,8 +754,8 @@ HYLE_FORCE_INLINE VFromD<D> GatherOffset(D d, const TFromD<D>* base, VI offsets)
     for (std::size_t i = 0; i < Lanes(d); ++i) off[i] = static_cast<std::int64_t>(tmp[i]); }
   alignas(64) T out[D::kMaxLanes];
   const auto* bytes = reinterpret_cast<const std::uint8_t*>(base);
-  for (std::size_t i = 0; i < Lanes(d); ++i) { T val; const auto* src = bytes + off[i];
-    for (std::size_t b = 0; b < sizeof(T); ++b) reinterpret_cast<std::uint8_t*>(&val)[b] = src[b]; out[i] = val; }
+  for (std::size_t i = 0; i < Lanes(d); ++i)  // whole-lane memcpy (per-byte loop was ~2x on MSVC)
+    std::memcpy(&out[i], bytes + off[i], sizeof(T));
   return Load(d, out);
   }
 }
@@ -764,8 +765,11 @@ HYLE_FORCE_INLINE void ScatterOffset(VFromD<D> v, D d, TFromD<D>* base, VI offse
   alignas(64) T vals[D::kMaxLanes]; Store(v, d, vals);
   alignas(64) typename VI::PrivateT off[D::kMaxLanes]; Store(offsets, DFromV<VI>(), off);
   auto* bytes = reinterpret_cast<std::uint8_t*>(base);
-  for (std::size_t i = 0; i < Lanes(d); ++i) { auto* dst = bytes + static_cast<std::int64_t>(off[i]);
-    for (std::size_t b = 0; b < sizeof(T); ++b) dst[b] = reinterpret_cast<const std::uint8_t*>(&vals[i])[b]; }
+  // One whole-lane memcpy per element (byte offset). The old inner per-byte loop defeated MSVC's
+  // optimizer (~2x slower); memcpy of sizeof(T) compiles to a single typed store and is the same
+  // unaligned-safe semantics.
+  for (std::size_t i = 0; i < Lanes(d); ++i)
+    std::memcpy(bytes + static_cast<std::int64_t>(off[i]), &vals[i], sizeof(T));
 }
 // MaskedGatherIndexOr(no, m, d, base, idx): base[idx[i]] where m, else no[i] (no fault on
 // off-lanes). MaskedGatherIndex uses zero default. = IfThenElse(m, GatherIndex(...), no) -- but

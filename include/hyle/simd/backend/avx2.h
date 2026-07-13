@@ -3089,14 +3089,27 @@ HYLE_FORCE_INLINE Vec256<T, N> RoundingShiftRightSame(Vec256<T, N> v, int s) noe
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> RoundingShr(Vec256<T, N> v, Vec256<T, N> amounts) noexcept {
   static_assert(std::is_integral_v<T>, "RoundingShr is integer-lane only");
-  alignas(32) T sv[N], sa[N], so[N];
-  Store(v, Simd<T, N, 0>(), sv); Store(amounts, Simd<T, N, 0>(), sa);
-  for (std::size_t i = 0; i < N; ++i) {
-    const int s = static_cast<int>(sa[i]);
-    if (s <= 0) so[i] = sv[i];
-    else so[i] = static_cast<T>((sv[i] + static_cast<T>(T{1} << (s - 1))) >> s);
+  // result = (s>0) ? Shr(v + (1<<(s-1)), s) : v. Vectorized via native variable Shl/Shr (16/32-bit
+  // have them now) + a mask select on s>0. Was scalar store+reload (MSVC ~1.4x slower). bias =
+  // Shl(1, s-1) is only used where s>0, so s-1>=0 keeps the shift in range; where s<=0 we select v.
+  if constexpr (sizeof(T) == 4 || sizeof(T) == 2) {
+    const Simd<T, N, 0> d;
+    const auto zero = Zero(d);
+    const auto pos = Gt(amounts, zero);                       // s > 0
+    const auto sm1 = Sub(amounts, Set(d, T{1}));              // s-1 (only used when s>0)
+    const auto bias = Shl(Set(d, T{1}), sm1);                 // 1<<(s-1)
+    const auto shifted = Shr(Add(v, bias), amounts);          // (v+bias) >> s
+    return IfThenElse(pos, shifted, v);
+  } else {
+    alignas(32) T sv[N], sa[N], so[N];
+    Store(v, Simd<T, N, 0>(), sv); Store(amounts, Simd<T, N, 0>(), sa);
+    for (std::size_t i = 0; i < N; ++i) {
+      const int s = static_cast<int>(sa[i]);
+      if (s <= 0) so[i] = sv[i];
+      else so[i] = static_cast<T>((sv[i] + static_cast<T>(T{1} << (s - 1))) >> s);
+    }
+    return Load(Simd<T, N, 0>(), so);
   }
-  return Load(Simd<T, N, 0>(), so);
 }
 // PairwiseAdd128 / PairwiseSub128: per-128-block horizontal add/sub. NATIVE _mm256_hadd/hsub_*
 // (Highway's form) -- one instruction, layout [a0+a1,a2+a3,b0+b1,b2+b3] per block = HYLE's contract.
