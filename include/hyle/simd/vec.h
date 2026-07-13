@@ -670,14 +670,31 @@ template <class V> HYLE_FORCE_INLINE bool AllBits1(V v) noexcept {
 }
 // Vector-returning reductions (Highway SumOfLanes/MinOfLanes/MaxOfLanes): the horizontal
 // reduce broadcast to all lanes (vs the scalar ReduceSum/Min/Max). = Set(d, ReduceX(d, v)).
+// avx2 has an in-vector broadcast-reduce for 32-bit lanes (no vector->GPR->vector round-trip that
+// MSVC leaves in Set(d,ReduceX)); dispatch to it via capability macro + if-constexpr (NOT overload).
 template <class D> HYLE_FORCE_INLINE VFromD<D> SumOfLanes(D d, VFromD<D> v) noexcept {
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_REDUCE_BROADCAST32)
+  if constexpr (sizeof(TFromD<D>) == 4) return SumOfLanesNative(d, v);
+  else return Set(d, ReduceSum(d, v));
+#else
   return Set(d, ReduceSum(d, v));
+#endif
 }
 template <class D> HYLE_FORCE_INLINE VFromD<D> MinOfLanes(D d, VFromD<D> v) noexcept {
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_REDUCE_BROADCAST32)
+  if constexpr (sizeof(TFromD<D>) == 4) return MinOfLanesNative(d, v);
+  else return Set(d, ReduceMin(d, v));
+#else
   return Set(d, ReduceMin(d, v));
+#endif
 }
 template <class D> HYLE_FORCE_INLINE VFromD<D> MaxOfLanes(D d, VFromD<D> v) noexcept {
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_REDUCE_BROADCAST32)
+  if constexpr (sizeof(TFromD<D>) == 4) return MaxOfLanesNative(d, v);
+  else return Set(d, ReduceMax(d, v));
+#else
   return Set(d, ReduceMax(d, v));
+#endif
 }
 // Rol/Ror: Highway's short names for RotateLeft/RotateRight<kBits> (bit rotate per lane).
 template <int kBits, class V> HYLE_FORCE_INLINE V Rol(V v) noexcept { return RotateLeft<kBits>(v); }

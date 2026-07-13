@@ -2377,6 +2377,50 @@ HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
   else return reduce_scalar<T, N, detail::RedOp::kMax>(v);
 }
 
+// SumOfLanes/MinOfLanes/MaxOfLanes: horizontal reduce BROADCAST to all lanes. The generic vec.h
+// form is Set(d, ReduceX(d,v)) which round-trips vector->GPR (cvtsi128_si32)->vector (Set) -- MSVC
+// leaves that GPR hop in (SumOfLanes 0.78) while GCC folds it (1.20). Native path keeps it entirely
+// in vector: reduce-tree across both 128 halves + within-block, then broadcast the low lane with
+// vpermd/vpermps (no GPR). 32-bit lanes (i32/u32/f32) only; other widths fall back to the generic
+// Set(ReduceX). Gated by a capability macro (vec.h dispatches via if-constexpr, NOT overload
+// partial-ordering -- MSVC/GCC pick differently otherwise).
+namespace detail {
+template <typename T, std::size_t N, RedOp op>
+HYLE_FORCE_INLINE Vec256<T, N> reduce256_broadcast(Vec256<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "reduce256_broadcast is 32-bit lanes only");
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) {
+    // 128-bit reduce tree (same as reduce256), result in every lane of the low 128, then
+    // broadcast the low 128 across both halves (vinsertf128 low,low). No GPR round-trip.
+    __m128 lo = _mm256_castps256_ps128(v.raw);
+    __m128 s = op128<T, op>(lo, _mm256_extractf128_ps(v.raw, 1));
+    s = op128<T, op>(s, _mm_shuffle_ps(s, s, _MM_SHUFFLE(2, 3, 0, 1)));
+    s = op128<T, op>(s, _mm_shuffle_ps(s, s, _MM_SHUFFLE(1, 0, 3, 2)));  // reduction in all 4 lanes
+    r.raw = _mm256_insertf128_ps(_mm256_castps128_ps256(s), s, 1);       // broadcast to 8
+  } else {
+    __m128i lo = _mm256_castsi256_si128(v.raw);
+    __m128i s = op128<T, op>(lo, _mm256_extracti128_si256(v.raw, 1));
+    s = op128<T, op>(s, _mm_shuffle_epi32(s, _MM_SHUFFLE(2, 3, 0, 1)));
+    s = op128<T, op>(s, _mm_shuffle_epi32(s, _MM_SHUFFLE(1, 0, 3, 2)));   // reduction in all 4 lanes
+    r.raw = _mm256_inserti128_si256(_mm256_castsi128_si256(s), s, 1);     // broadcast to 8
+  }
+  return r;
+}
+}  // namespace detail
+#define HYLE_SIMD_AVX2_HAS_NATIVE_REDUCE_BROADCAST32 1
+template <class D> requires (sizeof(TFromD<D>) == 4)
+HYLE_FORCE_INLINE detail::V256<D> SumOfLanesNative(D, detail::V256<D> v) noexcept {
+  return detail::reduce256_broadcast<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D), detail::RedOp::kAdd>(v);
+}
+template <class D> requires (sizeof(TFromD<D>) == 4)
+HYLE_FORCE_INLINE detail::V256<D> MinOfLanesNative(D, detail::V256<D> v) noexcept {
+  return detail::reduce256_broadcast<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D), detail::RedOp::kMin>(v);
+}
+template <class D> requires (sizeof(TFromD<D>) == 4)
+HYLE_FORCE_INLINE detail::V256<D> MaxOfLanesNative(D, detail::V256<D> v) noexcept {
+  return detail::reduce256_broadcast<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D), detail::RedOp::kMax>(v);
+}
+
 // Reduction family completion: ReduceMul (product), ReduceAnd/Or (bitwise, integer lanes).
 // No native horizontal product/and/or across 256 bits for arbitrary widths, and horizontal
 // reduce is not the hot path (same rationale as reduce_scalar), so fold via a stack array.
