@@ -1931,15 +1931,37 @@ HYLE_FORCE_INLINE Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D d,
   // otherwise be a stack OOB read -- same trap as TruncateTo. Extra lanes past kN stay zero (unread).
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) T tmp[32 / sizeof(T)] = {};
-  for (std::size_t i = 0; i < kN; ++i) {
-    using U = std::make_unsigned_t<std::conditional_t<std::is_integral_v<T>, T, std::uint64_t>>;
-    U u = ((bits >> i) & 1) ? ~U{0} : U{0};
-    std::memcpy(&tmp[i], &u, sizeof(T));
-  }
   Mask256<T, kN> out;
-  out.raw = detail::mask_from_i<T>(_mm256_load_si256(reinterpret_cast<const __m256i*>(tmp)));
-  return out;
+  // NATIVE in-register bit-test (Highway's form): broadcast `bits`, AND with per-lane bit-position
+  // {1,2,4,...}, compare == bit-position -> lane i true iff bit i set. Was a scalar per-lane stack
+  // fill+Load; GCC folded it but MSVC emitted the literal scalar expand (movzx/and/neg/sbb per lane
+  // + stack spill) -> the SetOnlyFirst/Set*First/mask-domain cluster ran ~5x slower on MSVC.
+  if constexpr (sizeof(T) == 4) {  // 8 lanes
+    const __m256i bcast = _mm256_set1_epi32(static_cast<int>(bits));
+    const __m256i bit = _mm256_setr_epi32(1, 2, 4, 8, 16, 32, 64, 128);
+    out.raw = detail::mask_from_i<T>(_mm256_cmpeq_epi32(_mm256_and_si256(bcast, bit), bit));
+    return out;
+  } else if constexpr (sizeof(T) == 8) {  // 4 lanes
+    const __m256i bcast = _mm256_set1_epi64x(static_cast<long long>(bits));
+    const __m256i bit = _mm256_setr_epi64x(1, 2, 4, 8);
+    out.raw = detail::mask_from_i<T>(_mm256_cmpeq_epi64(_mm256_and_si256(bcast, bit), bit));
+    return out;
+  } else if constexpr (sizeof(T) == 2) {  // 16 lanes
+    const __m256i bcast = _mm256_set1_epi16(static_cast<short>(bits));
+    const __m256i bit = _mm256_setr_epi16(1, 2, 4, 8, 16, 32, 64, 128,
+                                          256, 512, 1024, 2048, 4096, 8192, 16384, (short)32768);
+    out.raw = detail::mask_from_i<T>(_mm256_cmpeq_epi16(_mm256_and_si256(bcast, bit), bit));
+    return out;
+  } else {  // 8-bit, 32 lanes: two 16-bit-group bit tests then a byte gather of the masks.
+    alignas(32) T tmp[32 / sizeof(T)] = {};
+    for (std::size_t i = 0; i < kN; ++i) {
+      using U = std::make_unsigned_t<T>;
+      U u = ((bits >> i) & 1) ? ~U{0} : U{0};
+      std::memcpy(&tmp[i], &u, sizeof(T));
+    }
+    out.raw = detail::mask_from_i<T>(_mm256_load_si256(reinterpret_cast<const __m256i*>(tmp)));
+    return out;
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE std::size_t StoreMaskBits(D d, Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m,
