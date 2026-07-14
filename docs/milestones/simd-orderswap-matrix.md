@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;TZC/HSB/DemoteMask/LoadN/Concat 族已修,GCC 真输→5)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;TZC/HSB/DemoteMask/LoadN/Concat 族已修,GCC 真输→4)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -31,12 +31,11 @@
 - SatWidenMulPairwiseAccumulate i16->i32: **0.94**
 - MinOfLanes i32: **0.95**
 
-### WSL/GCC(AVX2): 5 个
+### WSL/GCC(AVX2): 4 个(其余为设计取舍/测量噪声,非算法输)
 - DemoteToNearestInt f64->i32 (4096): **0.42** —— 正确性取舍(同 MSVC 行):保完整 emu128 NaN-按符号;已从 0.26 改善(cvt-first native);满平需弃 -NaN→MIN 语义;InRange 快路径 2.0x WIN
 - TableLookupBytes u8 (4096): **0.89** —— HYLE 多一条设计内的 vpand 索引掩码(安全语义,非缺陷)
-- RoundingShr i32: **0.94**
-- FindLastTrue i32: **0.95**
-- PairwiseSub128 i32: **0.96**
+- RoundingShr i32: **~0.93** —— 冷 op,0.85~0.94 跨运行抖动;试过 Highway 的 SaturatedSub 分支型(其契约 s>=0,HYLE 契约 s<=0→keep v 需额外 select)+ 自平均替 vpsllvd bias,MSVC 追平但 GCC 反退(vpmaxsd+vpblendvb 链更差),已回退;残余是 GCC 调度非算法
+- FindLastTrue i32: **~0.93** —— **测量噪声非真输**:objdump 与 Highway 逐指令等价(vmovmskps+test+bsr),标量返回小 op 被 call 开销主导,亚-ns ratio 抖动
 
 ### Mac/NEON: 3 个
 - RoundingShiftRightSame i32 bits=5: **0.81** —— 仅 NEON 0.81
@@ -141,7 +140,7 @@
 | FindFirstTrue i32 | 0.99= | 1.01= | 1.06= |
 | FindKnownFirstTrue i32 | 0.97= | 1.00= | 1.18W |
 | FindKnownLastTrue i32 | 1.07W | 1.00= | 1.12W |
-| FindLastTrue i32 | 1.02= | 0.95L | 1.19W |
+| FindLastTrue i32 | 1.02= | 0.93? | 1.19W |
 | Floor f32 | 1.00= | 0.99= | 0.94= |
 | FloorInt f32->i32 | 1.48W | 1.57W | 0.99= |
 | GatherIndex i32 (4096) | 1.00= | 1.02= | · |
@@ -268,7 +267,7 @@
 | PairwiseAdd i32 | 1.09W | 1.02= | 0.99= |
 | PairwiseAdd128 i32 | 1.00= | 0.99= | 1.00= |
 | PairwiseSub i32 | 1.10W | 1.02= | 1.00= |
-| PairwiseSub128 i32 | 1.10W | 0.96L | 1.00= |
+| PairwiseSub128 i32 | 1.10W | 0.99= | 1.00= |
 | Per4LaneBlockShuffle 3210 i32 | 0.86= | 0.98= | 1.00= |
 | PopulationCount u32 (4096) | 1.48W | 1.52W | · |
 | PromoteEvenTo i8->i16 | 0.99= | 1.00= | · |
