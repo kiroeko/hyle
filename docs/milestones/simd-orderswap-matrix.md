@@ -20,9 +20,9 @@
 
 ## 真输清单(校准仪器判决,按比值升序)
 ### MSVC(AVX2): 8 个
-- SetAtOrBeforeFirst i32: **0.90**
+- SetAtOrBeforeFirst i32: **0.90** —— 仅 MSVC(GCC 1.16 反赢);scalar-bits 形态(movemask→GPR blsmsk 式 countr_zero+shift→LoadMaskBits),模仿 AVX-512 blsmsk。已查:瓶颈是 mask↔GPR↔mask 往返(LoadMaskBits 的 vpbroadcastd+vpand+vpcmpeqd)MSVC codegen;消死分支(constexpr)无改善(0.86~0.89 抖动)。改向量域(Highway AVX2 shape)有伤 GCC 反赢风险,不强改
 - SumOfLanes i32: **0.91** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
-- SetBeforeFirst i32: **0.91** —— 仅 MSVC 0.89(本轮新进,GCC 1.3 反赢;borderline 待复核)
+- SetBeforeFirst i32: **0.91** —— 仅 MSVC(GCC 1.3 反赢),与 SetAtOrBeforeFirst 同族同因(scalar-bits mask↔GPR↔mask 往返 MSVC codegen);跨轮 0.87~0.92 在 LOSE/UNSTABLE/TIE 边界抖动。同不强改(改向量域伤 GCC 反赢)
 - RoundingShiftRightAndDemoteTo<3> i32->i16 (4096): **0.91**
 - BroadcastLane<3> i32: **0.93** —— 已定论保留 vpermd:MSVC 0.93 是 bench 形状特定差距(Highway 的内存源 vbroadcasti128 折叠红利;寄存器输入下 vpermd 更优,GCC 反赢 1.13)
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
