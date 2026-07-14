@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;TZC/HSB/DemoteMask 已修,x86 交集剩 1)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;TZC/HSB/DemoteMask/LoadN 族已修,x86 交集剩 1)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -31,10 +31,8 @@
 - SatWidenMulPairwiseAccumulate i16->i32: **0.94**
 - MinOfLanes i32: **0.95**
 
-### WSL/GCC(AVX2): 10 个
+### WSL/GCC(AVX2): 8 个
 - DemoteToNearestInt f64->i32 (4096): **0.42** —— 正确性取舍(同 MSVC 行):保完整 emu128 NaN-按符号;已从 0.26 改善(cvt-first native);满平需弃 -NaN→MIN 语义;InRange 快路径 2.0x WIN
-- LoadNOr i32 (half n): **0.55** —— 仅 GCC 输 0.55(旧文档曾据有偏复核"证伪不是真输",校准仪器推翻该免罪)
-- LoadN/StoreN i32 (half lanes): **0.66** —— 仅 GCC 输 0.66,与 LoadNOr 同族(partial load/store 路径)
 - CombineMasks i32 (4096): **0.84** —— 仅 GCC 0.84
 - ConcatLowerLower i32: **0.88** —— 仅 GCC 0.88
 - TableLookupBytes u8 (4096): **0.89** —— HYLE 多一条设计内的 vpand 索引掩码(安全语义,非缺陷)
@@ -77,6 +75,12 @@
   只正号异常 fixup MAX)去 Abs/Round/2×blendv,保完整 emu128 语义(穷举 ±NaN/±溢出 bad=0);MSVC
   0.39→0.61 / GCC 0.26→0.42,仍 LOSE(保 +NaN→MAX 的符号提取无法省)。满平需弃 -NaN→MIN 语义采
   3-op clamp(待决)。此为最后一个 x86 双编译器交集真输,且是正确性取舍非算法输。
+- **2026-07-14 LoadN/StoreN/LoadNOr 分档 LoadU(GCC 真输表 11→9)**:GCC 0.66/0.55 真输。objdump
+  定位=HYLE 用 vpmaskmovd/pd(Intel 上 gather-class 慢 uop),Highway 走分档 LoadU(n>=Lanes 整块,
+  否则 128-bit 半界拆:覆盖半整 LoadU + 跨界半 power-of-2 partial load)。隔离 bench 证 tiered 比
+  masked 快 1.67x。移植 Highway 256-bit 分档结构(新 partial_{load,store}128 helper;LoadNOr 用
+  Concat-half:不碰的半保持 no 不变、无 blend)。结果 LoadN/StoreN MSVC 1.09→1.56W/GCC 0.66→1.06W;
+  LoadNOr MSVC 0.84→1.18W/GCC 0.55→1.04(~TIE)。两平台净收益,fault-safe 契约不变(gtest MaskedTail 扫 k=0..N)。
 
 ## 全量表
 
@@ -177,8 +181,8 @@
 | LoadInterleaved2 f32 (4096) | 1.00= | 1.00= | · |
 | LoadInterleaved3 f32 (4096) | 0.99= | 1.00= | · |
 | LoadInterleaved4 u8 (4096, RGBA) | 1.00= | 0.98= | · |
-| LoadN/StoreN i32 (half lanes) | 1.09? | 0.66L | · |
-| LoadNOr i32 (half n) | 0.84? | 0.55L | · |
+| LoadN/StoreN i32 (half lanes) | 1.56W | 1.06W | · |
+| LoadNOr i32 (half n) | 1.18W | 1.04? | · |
 | LoadU/StoreU i32 | 1.00= | 0.99= | 0.99= |
 | Lt i32 | 1.00= | 0.99= | 0.98= |
 | Lt128 u64 | 1.00= | 0.99= | 0.99= |
