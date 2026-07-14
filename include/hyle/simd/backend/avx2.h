@@ -1494,7 +1494,14 @@ HYLE_FORCE_INLINE Vec256<T, N> perm2x128(Vec256<T, N> lo, Vec256<T, N> hi) noexc
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ConcatLowerLower(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
-  return detail::perm2x128<0x20>(lo, hi);  // [lo.low, hi.low]
+  // [lo.low128, hi.low128] via vinsertf128/vinserti128 (Highway's form): lo already holds lo.low128
+  // in lane 0, so insert hi's low 128 into lane 1. Prefer this over vperm2i128<0x20> -- same result
+  // and same cost on Intel, but vperm2i128 is 2 uops on AMD Zen while vinsert* is 1 everywhere.
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_insertf128_ps(lo.raw, _mm256_castps256_ps128(hi.raw), 1);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_insertf128_pd(lo.raw, _mm256_castpd256_pd128(hi.raw), 1);
+  else r.raw = _mm256_inserti128_si256(lo.raw, _mm256_castsi256_si128(hi.raw), 1);
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ConcatUpperUpper(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {

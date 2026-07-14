@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;TZC/HSB/DemoteMask/LoadN 族已修,x86 交集剩 1)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;TZC/HSB/DemoteMask/LoadN/Concat 族已修,GCC 真输→5)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -31,13 +31,11 @@
 - SatWidenMulPairwiseAccumulate i16->i32: **0.94**
 - MinOfLanes i32: **0.95**
 
-### WSL/GCC(AVX2): 7 个
+### WSL/GCC(AVX2): 5 个
 - DemoteToNearestInt f64->i32 (4096): **0.42** —— 正确性取舍(同 MSVC 行):保完整 emu128 NaN-按符号;已从 0.26 改善(cvt-first native);满平需弃 -NaN→MIN 语义;InRange 快路径 2.0x WIN
-- ConcatLowerLower i32: **0.88** —— 仅 GCC 0.88
 - TableLookupBytes u8 (4096): **0.89** —— HYLE 多一条设计内的 vpand 索引掩码(安全语义,非缺陷)
 - RoundingShr i32: **0.94**
 - FindLastTrue i32: **0.95**
-- InterleaveLowerBlocks i32: **0.95**
 - PairwiseSub128 i32: **0.96**
 
 ### Mac/NEON: 3 个
@@ -119,7 +117,7 @@
 | CompressNot i32 (4096, 50%) | 0.86L | 0.97? | · |
 | CompressStore i32 (4096, 50%) | 0.94L | 1.03= | · |
 | ConcatEven i32 (4096) | 0.99= | 1.00= | · |
-| ConcatLowerLower i32 | 0.95= | 0.88L | · |
+| ConcatLowerLower i32 | 1.02= | 0.98= | · |
 | ConcatLowerUpper i32 | 0.95= | 0.99= | · |
 | ConcatOdd i32 | 1.00= | 0.99= | 1.00= |
 | ConcatUpperLower i32 | 1.04= | 0.99= | · |
@@ -163,7 +161,7 @@
 | IfThenZeroElse i32 | 0.97? | 1.00= | 1.03= |
 | InterleaveEven i32 | 1.01= | 0.99= | 1.01= |
 | InterleaveLower i32 (4096) | 1.00= | 1.01= | · |
-| InterleaveLowerBlocks i32 | 0.91= | 0.95L | · |
+| InterleaveLowerBlocks i32 | 0.95= | 0.99= | · |
 | InterleaveOdd i32 | 1.01= | 1.00= | 1.02? |
 | InterleaveUpper i32 | 1.00= | 1.00= | 1.03= |
 | InterleaveWholeLower i32 | 1.00= | 1.00= | 1.03= |
