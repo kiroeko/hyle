@@ -152,6 +152,21 @@
   `vmovmskps edx` 索引)。删掉 `& 0xFF`→两编译器逐字节=Highway,MSVC 0.94→0.98 UNSTABLE、CompressStore
   0.99 TIE、CompressNot 0.95 UNSTABLE、GCC 不变(它本就用全宽寄存器)。**又一"签名级对比漏看标量尾巴"
   (同 FindLastTrue 的 movslq):`movzx`/`movslq` 这类 0 成本外观的标量补齐指令恰好就是那 6%。**
+- SOTA 覆盖补齐轮(2026-07-14):覆盖率复审(见 `simd-bench-coverage-and-vendor-surface.md` + 自校验
+  `scripts/simd-op-coverage.py`)揪出 14 个"可对拍却没 bench"的 op(旧文档假称覆盖或分母漏项),按
+  methodology 补 bench 后三平台跑校准,**测出并修掉 4 个真 SOTA 输**(commit 5510f0a):
+  - **U8FromU32 MSVC 0.088(11×!)**:store+reload 标量循环→Highway vpshufb 字节 gather + 两 128-block quad OR。
+  - **MulEvenAdd/MulOddAdd bf16 0.855/0.857**:Bf16Even/OddToF32 的 PromoteEven/OddTo 隔离 vpand 冗余
+    (u16 对 reinterpret u32 后 <<16 天然丢奇半)→改直接 shift/and,去 2 vpand(disasm HYLE 2vpand+2vpslld
+    vs Highway 裸 2vpslld)。喂 bf16 点积/GEMM。
+  - **CopySignToAbs 0.910**:转发全 CopySign(AndNot+And+Or),abs 无符号位故 AndNot 死码→Highway OrAnd 2-op。
+  三平台坐实:MSVC+GCC 各 avx2/sse4/scalar gtest + Mac NEON gtest 全绿;MSVC+GCC 校准 3 轮双序全 TIE、
+  Mac NEON 5-run gate-0.06 全 TIE,无 LOSE。新 17 行(掩码 FMA/位三元/掩码 gather-scatter/bf16/U8/
+  CopySignToAbs)已入全量表。
+  **口径澄清(30 个"有 bench 未测")**:①17 个是 HYLE-vs-Highway 校准对拍→已测已填;②5 个 HYLE 独创
+  无 Highway 对手(ReduceMul/And/Or 对拍标量 fold、ReciprocalNewton/SqrtNewton 对拍 Div/裸估计)=无"输
+  给 SOTA"之说,只查明显问题;③8 个 AES×6/CLMul×2 有 Highway 但在 crypto_bench(非校准仪器),要证
+  SOTA 需移进 op_parity 校准框架(登记待办)。
 
 ## 全量表
 
@@ -168,12 +183,14 @@
 | AllTrue i32 | 0.99= | 0.99= | 1.00? |
 | And i32 | 1.00= | 0.99= | 0.97= |
 | AndNot i32 | 1.00= | 1.01= | 1.02= |
+| AndXor i32 | 1.00= | 1.00= | 0.99= |
 | ApproximateReciprocal f32 | 1.00= | 1.01= | 1.00= |
 | ApproximateReciprocalSqrt f32 | 1.00= | 0.99= | 1.00= |
 | AverageRound u16 | 1.00= | 1.01= | 1.00= |
 | BitCast f32->i32 | 0.99= | 1.00= | 1.00= |
 | BitCast i32->f32 | 1.01= | 1.00= | 1.00= |
 | BitShuffle u64 (4096) | 1.07W | 1.11W | · |
+| BitwiseIfThenElse i32 | 1.00= | 0.98? | 0.99= |
 | BlendedStore i32 (4096, 50%) | 1.00= | 0.99= | · |
 | Broadcast<0> i32 | 0.99= | 0.99= | 1.05= |
 | BroadcastBlock<1> i32 | 1.03= | 1.01= | · |
@@ -199,6 +216,7 @@
 | ConvertTo f32->i32 | 1.42W | 1.11W | 1.01= |
 | ConvertTo i32->f32 | 0.99= | 0.99= | 1.01= |
 | CopySign f32 | 1.00= | 1.00= | 0.98= |
+| CopySignToAbs f32 | 1.00= | 1.00= | 0.99= |
 | CountTrue i32 | 1.04= | 1.00= | 1.00= |
 | DemoteMaskTo i32->i16 (4096) | 1.04= | 1.42W | · |
 | DemoteTo i32->i16 (sat) | 1.88W | 1.89W | · |
@@ -230,6 +248,7 @@
 | IfNegativeThenElse f32 | 1.05W | 1.10W | 1.01= |
 | IfNegativeThenElseZero f32 | 1.35W | 1.08W | 0.97= |
 | IfNegativeThenZeroElse f32 | 1.34W | 1.09W | 1.00= |
+| IfVecThenElse i32 | 0.94? | 0.99? | 0.98= |
 | IfThenElse i32 | 1.00= | 1.02= | 1.00= |
 | IfThenElseZero i32 | 0.97? | 0.99= | 1.00? |
 | IfThenZeroElse i32 | 0.97= | 1.01= | 0.95= |
@@ -266,21 +285,27 @@
 | MaskedApproxReciprocal f32 | 1.00= | 1.00= | 1.00= |
 | MaskedApproxReciprocalSqrt f32 | 1.00= | 0.99= | 1.00= |
 | MaskedConvertTo f32-i32 | 2.06W | 1.50W | 0.99= |
+| MaskedGatherIndex i32 (4096, 50%) | 1.00= | 1.01= | · |
+| MaskedGatherIndexOr i32 (4096, 50%) | 1.00= | 1.01= | · |
 | MaskedLeadingZeroCount i32 | 1.00= | 1.01= | 1.01= |
 | MaskedLoad i32 (4096, 50%) | 0.98= | 0.99= | · |
 | MaskedLoadOr i32 (4096) | 1.01= | 1.00= | · |
 | MaskedModOr i32 invariant | 0.97= | 0.98= | 1.06W |
+| MaskedMulAdd f32 | 1.00= | 1.01= | 0.98= |
+| MaskedMulAddOr f32 | 1.00= | 0.99= | 1.00= |
 | MaskedMulComplex f32 | 1.20W | 1.09W | 1.00= |
 | MaskedMulComplexAdd f32 | 1.14W | 1.02= | 1.00= |
 | MaskedMulComplexConj f32 | 1.21W | 1.08W | 1.00= |
 | MaskedMulComplexConjAdd f32 | 1.14W | 1.00= | 1.00= |
 | MaskedMulComplexOr f32 | 1.16W | 1.07W | 1.00= |
 | MaskedMulFixedPoint15 i16 | 0.99= | 1.00= | 1.00= |
+| MaskedNegMulAdd f32 | 1.00= | 1.00= | 1.00= |
 | MaskedReduceMax i32 | 1.00= | 1.00= | 1.00= |
 | MaskedReduceMin i32 | 1.00= | 1.00= | 1.00= |
 | MaskedReduceSum i32 | 1.00= | 1.00= | 1.00= |
 | MaskedSatAddOr i16 | 1.00= | 1.01= | 1.00= |
 | MaskedSatSubOr i16 | 1.00= | 1.00= | 1.00= |
+| MaskedScatterIndex i32 (4096, 50%) | 1.05? | 0.98= | · |
 | MaskedShiftLeft<3> i32 | 0.99= | 0.99= | 0.99= |
 | MaskedShiftLeftOr<3> i32 | 1.02= | 0.99= | 1.00? |
 | MaskedShiftRight<3> i32 | 0.99= | 0.99= | 0.99= |
@@ -314,11 +339,13 @@
 | MulComplexConj f32 | 1.46W | 1.20W | 1.00= |
 | MulComplexConjAdd f32 | 1.02= | 1.03= | 1.00= |
 | MulEven i32-i64 | 1.00= | 1.02= | 1.00= |
+| MulEvenAdd bf16->f32 | 1.00= | 0.99= | · |
 | MulFixedPoint15 i16 | 1.00= | 1.00= | · |
 | MulHigh i16 (4096) | 1.00= | 0.99= | · |
 | MulHigh u16 (4096) | 1.00= | 1.01= | · |
 | MulHigh32 u32 (4096) | 1.00= | 1.01= | · |
 | MulOdd i32-i64 | 0.97= | 0.91= | 1.00= |
+| MulOddAdd bf16->f32 | 1.00= | 0.99= | · |
 | MulRound f32 | 1.00= | 0.99= | 1.01? |
 | MulSub f32 | 1.00= | 0.99= | 0.98? |
 | MulSubAdd f32 | 1.02= | 1.00= | 1.01= |
@@ -436,11 +463,13 @@
 | TrailingZeroCount i32 | 0.99= | 1.00= | 1.04= |
 | Trunc f32 | 1.00= | 1.01= | 1.07? |
 | TruncateTo u32->u16 | 1.01= | 1.01= | 1.00= |
+| U8FromU32 u32->u8 | 0.99= | 0.99= | · |
 | TwoTablesLookupLanes i32 (4096) | 1.01= | 0.98= | · |
 | WidenMulAccumulate i16->i32 | 1.00= | 0.99= | · |
 | WidenMulPairwiseAdd i16->i32 | 1.00= | 0.98= | · |
 | Xor i32 | 0.99= | 1.01= | 1.02= |
 | Xor3 i32 | 1.63W | 1.00= | 1.04? |
+| XorAndNot i32 | 0.99= | 0.98? | 0.99= |
 | Zero i32 | 1.00= | 1.00= | 0.95= |
 | ZeroExtendVector i16 half->full | 1.02= | 1.00= | · |
 | ZeroIfNegative f32 | 1.02? | 1.09W | 1.01= |
