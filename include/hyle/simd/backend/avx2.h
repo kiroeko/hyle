@@ -3206,8 +3206,21 @@ HYLE_FORCE_INLINE std::size_t CompressStore(detail::V256<D> v,
   // "tail-untouched" contract forced a scalar pack (~3.4x slower on AVX2, which has no native
   // compress-store) and had NO consumer -- dropped. Tight-packing (pos += CompressStore(...,p+pos))
   // still works: the next segment's StoreU overwrites this one's unspecified tail before it is read.
-  StoreU(Compress(v, m), d, p);
-  return CountTrue(d, m);
+  using T = TFromD<D>;
+  if constexpr (sizeof(T) == 4) {
+    // Extract the mask bits ONCE and share between the compress permute and the count -- the plain
+    // `StoreU(Compress(v,m)) + CountTrue(m)` path pulls movemask twice (once inside Compress, once
+    // inside CountTrue). Highway's CompressStore does the same single-extraction (BitsFromMask ->
+    // PopCount + detail::Compress(v, mask_bits)). op_parity: this is the ~0.95 MSVC residual's share.
+    unsigned mbits;
+    if constexpr (std::is_same_v<T, float>) mbits = static_cast<unsigned>(_mm256_movemask_ps(m.raw));
+    else mbits = static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
+    StoreU(detail::compress32_by_bits(v, mbits), d, p);
+    return static_cast<std::size_t>(std::popcount(mbits));
+  } else {
+    StoreU(Compress(v, m), d, p);
+    return CountTrue(d, m);
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Expand(Vec256<T, N> v, Mask256<T, N> m) noexcept {
