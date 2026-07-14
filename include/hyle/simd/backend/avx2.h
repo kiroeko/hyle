@@ -2483,6 +2483,28 @@ HYLE_FORCE_INLINE auto op256(auto a, auto b) noexcept {
   }
 }
 
+// 128-bit lane-op for the Mul/And/Or reduction family (RedOp2), i32/u32 lanes only. mullo_epi32 is
+// the 32-bit product; And/Or are width-agnostic bit ops. Mirrors op128 so reduce256_2 can reuse the
+// same halving tree instead of a store+reload scalar loop.
+template <typename T, RedOp2 op>
+HYLE_FORCE_INLINE __m128i op128_2(__m128i a, __m128i b) noexcept {
+  if constexpr (op == RedOp2::kMul) return _mm_mullo_epi32(a, b);
+  else if constexpr (op == RedOp2::kAnd) return _mm_and_si128(a, b);
+  else return _mm_or_si128(a, b);
+}
+// 32-bit Mul/And/Or horizontal reduce via the halving tree (extract128->op->shuffle->op), no memory
+// round-trip. Same shape as reduce256's integer branch. 8/16/64-bit stay on the scalar fold.
+template <typename T, std::size_t N, RedOp2 op>
+HYLE_FORCE_INLINE T reduce256_2(Vec256<T, N> v) noexcept {
+  static_assert(sizeof(T) == 4, "reduce256_2 is 32-bit lanes only");
+  __m128i lo = _mm256_castsi256_si128(v.raw);
+  __m128i hi = _mm256_extracti128_si256(v.raw, 1);
+  __m128i s = op128_2<T, op>(lo, hi);                                 // 4 lanes
+  s = op128_2<T, op>(s, _mm_shuffle_epi32(s, _MM_SHUFFLE(2, 3, 0, 1)));
+  s = op128_2<T, op>(s, _mm_shuffle_epi32(s, _MM_SHUFFLE(1, 0, 3, 2)));
+  return static_cast<T>(_mm_cvtsi128_si32(s));
+}
+
 template <typename T, std::size_t N, RedOp op>
 HYLE_FORCE_INLINE T reduce256(Vec256<T, N> v) noexcept {
   if constexpr (std::is_same_v<T, double>) {  // 4 lanes -> combine halves -> 2-lane cascade
@@ -2635,17 +2657,20 @@ HYLE_FORCE_INLINE T reduce_scalar2(Vec256<T, N> v) noexcept {
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMul(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
-  return detail::reduce_scalar2<T, N, detail::RedOp2::kMul>(v);
+  if constexpr (detail::kI32<T>) return detail::reduce256_2<T, N, detail::RedOp2::kMul>(v);
+  else return detail::reduce_scalar2<T, N, detail::RedOp2::kMul>(v);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceAnd(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReduceAnd is integer-lane only");
-  return detail::reduce_scalar2<T, N, detail::RedOp2::kAnd>(v);
+  if constexpr (detail::kI32<T>) return detail::reduce256_2<T, N, detail::RedOp2::kAnd>(v);
+  else return detail::reduce_scalar2<T, N, detail::RedOp2::kAnd>(v);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceOr(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReduceOr is integer-lane only");
-  return detail::reduce_scalar2<T, N, detail::RedOp2::kOr>(v);
+  if constexpr (detail::kI32<T>) return detail::reduce256_2<T, N, detail::RedOp2::kOr>(v);
+  else return detail::reduce_scalar2<T, N, detail::RedOp2::kOr>(v);
 }
 
 // Broadcast<i>: splat lane i across ALL N lanes (HYLE contract = global splat, NOT Highway's
