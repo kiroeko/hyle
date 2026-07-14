@@ -2121,15 +2121,31 @@ HYLE_FORCE_INLINE Mask256<T, N> SetBeforeFirst(Mask256<T, N> m) noexcept {
   return LoadMaskBits(Simd<T, N, 0>(), before);
 #endif
 }
+template <class D> HYLE_FORCE_INLINE detail::V256<D> Slide1Up(D d, detail::V256<D> v) noexcept;  // fwd
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> SetAtOrBeforeFirst(Mask256<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  // countr_zero(b)+1 can reach 32 when the first true is lane 31 (N=32, i8/u8): 1u<<32 is shift
-  // UB (x86 masks it to 1u<<0 -> wrong result). Saturate to the all-ones mask in that case.
-  const unsigned tz1 = b ? (std::countr_zero(b) + 1) : 0;
-  const unsigned upto = b ? (tz1 >= 32 ? 0xFFFFFFFFu : (1u << tz1) - 1u)
-                          : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
-  return LoadMaskBits(Simd<T, N, 0>(), upto);
+  // at-or-before-first == complement of strictly-after-first == Not(SetAtOrAfterFirst(mask slid up 1
+  // lane)): sliding the mask up by one lane moves first-true to first+1, so at-or-after that is
+  // strictly-after the original first. COMPILER-SPLIT for 32-bit (same as SetBeforeFirst): MSVC uses
+  // the pure-vector form (Slide1Up is full-256, crosses the 128-block boundary correctly now that
+  // ConcatLowerLower is compiler-split) to drop the mask->GPR->LoadMaskBits round-trip; GCC keeps the
+  // scalar-bits blsmsk-style form it codegens to a WIN. Non-32-bit: bitfield either way.
+#if defined(_MSC_VER) && !defined(__clang__)
+  if constexpr (sizeof(T) == 4) {
+    const Simd<T, N, 0> d;
+    return Not(SetAtOrAfterFirst(Mask256<T, N>{detail::mask_from_i<T>(
+        Slide1Up(d, Vec256<T, N>{detail::mask_to_i<T>(m.raw)}).raw)}));
+  } else
+#endif
+  {
+    const unsigned b = detail::mask_bits(m);
+    // countr_zero(b)+1 can reach 32 when the first true is lane 31 (N=32, i8/u8): 1u<<32 is shift
+    // UB (x86 masks it to 1u<<0 -> wrong result). Saturate to the all-ones mask in that case.
+    const unsigned tz1 = b ? (std::countr_zero(b) + 1) : 0;
+    const unsigned upto = b ? (tz1 >= 32 ? 0xFFFFFFFFu : (1u << tz1) - 1u)
+                            : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+    return LoadMaskBits(Simd<T, N, 0>(), upto);
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> SetOnlyFirst(Mask256<T, N> m) noexcept {
