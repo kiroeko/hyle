@@ -31,10 +31,13 @@
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
 - Mod i32 invariant: **0.93**
 - MaxOfLanes i32: **0.95** —— 仅 MSVC 0.95(已从 0.86 改善,边缘)
-- (CompressNot / CompressStore i32 已移出:向量 Not(7c856fa)与重复 movemask(647d254)消除后,重测两轮
-  GCC 全 TIE、MSVC 在 0.95 附近 LOSE↔UNSTABLE 跨轮抖动且与 `Compress i32` 同源同速同判——非稳定 LOSE,
-  按"UNSTABLE/TIE 不算输赢"移出。残余=公共 compress32_by_bits 核(table+srlv+vpermd)的 MSVC codegen
-  逐指令同 Highway,疑绝对地址/table 布局级仪器抖动,要动是 Compress 的活。)
+- (Compress / CompressNot / CompressStore i32 全部移出,已到头无可改点:向量 Not(7c856fa)与重复
+  movemask(647d254)消除后重测两轮,GCC 全 TIE、MSVC 在 0.93~0.96 LOSE↔UNSTABLE 跨轮抖动。**dumpbin
+  坐实 HYLE 三者共享的 compress32_by_bits 核在 MSVC 上比 Highway 还干净**:同款 3 条(vpbroadcastd
+  [表+idx*4] + vpsrlvd ymm,[shifts常量] + vpermd),且 HYLE 无 Highway 的 `HWY_DASSERT(mask_bits<256)`
+  cmp/jae→Abort 分支、无栈帧;shifts 已被 MSVC 折成 .rdata 内存操作数。0.95 残余源=bench 调用形状的
+  一条 v-load(Highway 恰好把它折进 vpermd 内存操作数,非核可控)+ 绝对地址/table 布局级仪器抖动。
+  代码层已优于 Highway,非算法输——收口不再追。)
 
 ### WSL/GCC(AVX2): 1 个
 - FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump:两侧指令相同且循环顶同为 64B 对齐(GCC .p2align 吸收 stagger)-> 绝对地址级仪器残余,HYLE 代码无可修,非算法输
@@ -68,13 +71,15 @@
 - 第四轮(2026-07-14,commit 7c856fa):CompressNot i32(曾唯一 x86 双编译器交集,MSVC 0.81/GCC 0.94)
   弃泛型 `Compress(v,Not(m))` 的向量 Not,改 Highway 的 bits 域补码(`mbits^0xFF` 复用同一 compress
   索引表,即 Highway IndicesFromNotBits);dumpbin 坐实 = Compress + 单条 `not eax`。GCC→TIE、
-  MSVC→0.95(追到与 Compress 本身同速)。**x86 双编译器交集清零。** 副产:MSVC `Compress i32`
-  本身 0.94(公共 table+srlv+vpermd 路径 codegen,逐指令同 Highway,GCC 侧 TIE)= CompressNot MSVC
-  残余的真源,非 CompressNot 特有——要再啃是 Compress 的活,疑绝对地址/table 布局级仪器残余。
+  MSVC→0.95(追到与 Compress 本身同速)。**x86 双编译器交集清零。**
 - 第四轮续(commit 647d254):CompressStore i32 消重复 movemask —— 原 `StoreU(Compress(v,m))+CountTrue(m)`
   对同一 mask 双提取,改提一次 mbits 共享 compress+count(Highway 同款单提取)。MSVC 0.91→0.97 UNSTABLE、
-  GCC TIE。至此 Compress 三兄弟(Compress/CompressNot/CompressStore)可修部分(向量 Not、重复 movemask)
-  全消,同进打平抖动区;MSVC 残余统归共享 compress32_by_bits 核的绝对地址/布局级仪器抖动,非算法输。
+  GCC TIE。
+- **Compress 三兄弟收口定论(dumpbin 铁证)**:可修部分(向量 Not、重复 movemask)全消后,三者共享的
+  `compress32_by_bits` 核在 MSVC 上**比 Highway 还干净**——同款 3 条(vpbroadcastd[表+idx*4] + vpsrlvd
+  ymm,[shifts] + vpermd),HYLE 无 Highway 的 HWY_DASSERT cmp/jae→Abort 分支、无栈帧,shifts 已折成
+  .rdata 内存操作数。残余 0.93~0.96 = bench 调用形状的一条 v-load + 绝对地址/布局级仪器抖动,非核可控、
+  非算法输。**Compress/CompressNot/CompressStore 全部移出真输清单,此线到头不再追。**
 
 ## 全量表
 
