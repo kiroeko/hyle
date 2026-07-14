@@ -2099,10 +2099,27 @@ HYLE_FORCE_INLINE std::size_t StoreMaskBits(D d, Mask256<TFromD<D>, HYLE_SIMD_MA
 // rebuilt via LoadMaskBits. N may be 32 (i8) so the bitfield is 32-bit; the "full" mask uses
 // the (N>=32 ? 0xFFFFFFFFu : (1u<<N)-1u) guard to avoid the UB of (1u<<32).
 template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Mask256<T, N> SetAtOrAfterFirst(Mask256<T, N> m) noexcept;  // fwd (defined below)
+template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> SetBeforeFirst(Mask256<T, N> m) noexcept {
+  // before-first == complement of at-or-after-first. COMPILER-SPLIT for 32-bit lanes (measured):
+  //  - MSVC: Not(SetAtOrAfterFirst) is pure-vector (SetAtOrAfterFirst is vectorized for 32-bit),
+  //    dropping the mask->GPR->LoadMaskBits round-trip that cost ~0.9; brings MSVC to TIE.
+  //  - GCC: the scalar-bits form (movemask -> blsmsk-style countr_zero+shift -> LoadMaskBits) is
+  //    1.30x Highway (GCC codegens it superbly); the vector form regresses it to 0.91. Keep scalar.
+  // (Same compiler-split rationale as ConcatLowerLower.) Non-32-bit lanes: bitfield either way.
+#if defined(_MSC_VER) && !defined(__clang__)
+  if constexpr (sizeof(T) == 4) return Not(SetAtOrAfterFirst(m));
+  else {
+    const unsigned b = detail::mask_bits(m);
+    const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
+    return LoadMaskBits(Simd<T, N, 0>(), before);
+  }
+#else
   const unsigned b = detail::mask_bits(m);
   const unsigned before = b ? ((1u << std::countr_zero(b)) - 1u) : ((N >= 32 ? 0xFFFFFFFFu : (1u << N) - 1u));
   return LoadMaskBits(Simd<T, N, 0>(), before);
+#endif
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> SetAtOrBeforeFirst(Mask256<T, N> m) noexcept {
