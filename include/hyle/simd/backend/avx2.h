@@ -1154,16 +1154,15 @@ HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> DemoteInRangeTo(Simd<std::int32_t, 
   r.raw = _mm256_cvttpd_epi32(v.raw);
   return r;
 }
-// DemoteToNearestInt native (f64->i32, round-to-nearest-even + emu128 sign-saturate). The generic
-// vec.h form does Abs+Le+MaskFromVec+2*blendv+Round+cvtt (~8 ops, 2 port-5 blendv) to get the FULL
-// emu128 contract (|v|>MAX or NaN -> signbit ? MIN : MAX). This native reaches the SAME contract far
-// cheaper by leaning on the hardware cvtpd2dq: it does RNE+narrow in ONE instr and returns
-// 0x80000000 (INT32_MIN) for pos-overflow, neg-overflow AND NaN alike. Of those exceptions only the
-// POSITIVE-signbit ones (+overflow, +NaN) must become MAX; the negative ones are already MIN
-// (correct). So: where the result == INT32_MIN AND the f64 sign bit is clear, flip MIN->MAX. NaN's
-// sign is read from the f64 sign bit (srai of the raw bits), NOT a Ge(v,0) compare (unordered ->
-// false would misclassify +NaN). This keeps HYLE's spec-faithful NaN handling (Highway's x86 native
-// diverges from its own emu128 ref: it does Min(v,MAX)+cvt so ALL NaN -> MIN).
+// DemoteToNearestInt native (f64->i32): Highway's x86 sequence verbatim -- clamp high with minpd
+// then one hardware cvtpd2dq (RNE + narrow). Semantics (HYLE contract, uniform across backends,
+// see vec.h): finite values round-to-nearest-even and SATURATE; NaN (either sign) -> INT32_MAX;
+// +overflow -> INT32_MAX (via the clamp); -overflow -> INT32_MIN (cvt's 0x80000000 exception).
+// NaN -> MAX falls out of minpd's second-operand rule (either input NaN -> returns operand 2).
+// Decision record (2026-07-14): the old form spent ~2.5x emulating Highway's emu128 reference
+// (sign-based NaN saturation: cvt + sign-gather + flip) -- a semantic Highway itself does not
+// honor on x86 (its native default is exactly this Min+cvt) and no consumer asked for. Dropped;
+// callers with in-range guarantees keep the even faster DemoteToNearestIntInRange.
 // Gate on AVX2-primary: avx512.h includes this header for Vec256 helpers, but this native is
 // Vec256-only (avx512 f64 is Vec512, 8-wide) -- a leaked macro would dispatch Vec512 to it (no
 // overload). avx512 uses the portable form until it gets its own 8-wide native.
@@ -1174,24 +1173,17 @@ template <std::size_t NDst, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> DemoteToNearestIntNative(
     Simd<std::int32_t, NDst, 0>, Vec256<double, NSrc> v) noexcept {
   static_assert(NDst == NSrc, "DemoteToNearestIntNative: same lane count f64->i32");
+  const __m256d clamped = _mm256_min_pd(v.raw, _mm256_set1_pd(2147483647.0));
 #if defined(__GNUC__) && !defined(__clang__)
   // GCC's _mm256_cvtpd_epi32 is UB for out-of-range inputs (it may constant-fold wrong); force the
-  // hardware instruction so the 0x80000000 exception result we RELY ON is guaranteed (Highway does
-  // the same for its DemoteToNearestIntInRange GCC path).
+  // hardware instruction so the 0x80000000 exception result we RELY ON for -overflow is guaranteed
+  // (Highway does the same).
   __m128i raw;
-  __asm__("vcvtpd2dq {%1, %0|%0, %1}" : "=x"(raw) : "x"(v.raw) :);
+  __asm__("vcvtpd2dq {%1, %0|%0, %1}" : "=x"(raw) : "x"(clamped) :);
 #else
-  const __m128i raw = _mm256_cvtpd_epi32(v.raw);  // RNE + narrow; all exceptions -> 0x80000000
+  const __m128i raw = _mm256_cvtpd_epi32(clamped);  // RNE + narrow; -overflow -> 0x80000000
 #endif
-  const __m128i is_min = _mm_cmpeq_epi32(raw, _mm_set1_epi32(INT32_MIN));  // exception lanes
-  // per-f64 sign broadcast lives in each lane's HIGH dword; gather the 4 high dwords down to i32 lanes
-  const __m256i sgn = _mm256_srai_epi32(_mm256_castpd_si256(v.raw), 31);
-  const __m256i pk = _mm256_shuffle_epi32(sgn, _MM_SHUFFLE(3, 1, 3, 1));   // [s0 s1 s0 s1|s2 s3 s2 s3]
-  const __m128i neg = _mm_unpacklo_epi64(_mm256_castsi256_si128(pk), _mm256_extracti128_si256(pk, 1));
-  const __m128i pos_exc = _mm_andnot_si128(neg, is_min);                   // is_min & sign-clear
-  // flip 0x80000000 -> 0x7FFFFFFF exactly on positive-exception lanes (MIN^MAX == 0xFFFFFFFF)
-  const __m128i flip = _mm_and_si128(pos_exc, _mm_set1_epi32(INT32_MIN ^ INT32_MAX));
-  Vec128<std::int32_t, NDst> r; r.raw = _mm_xor_si128(raw, flip);
+  Vec128<std::int32_t, NDst> r; r.raw = raw;
   return r;
 }
 // TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.

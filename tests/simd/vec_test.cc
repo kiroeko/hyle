@@ -3409,18 +3409,18 @@ TEST(Vec, OrderedDemote2MasksToFamily) {
   }
 }
 
-// @opus: DemoteToNearestInt f64->i32 round-to-nearest-EVEN + sign-saturate on overflow/NaN.
-// Oracle = Highway emu128 semantics reimplemented per-lane (bias+round-even; |v|>INT32_MAX or NaN
-// -> signbit ? INT32_MIN : INT32_MAX). Covers halfway ties (round-even), negatives, and saturation.
+// @opus: DemoteToNearestInt f64->i32 round-to-nearest-EVEN + saturate; NaN (either sign) -> MAX.
+// Oracle = HYLE's uniform cross-backend contract (== Highway's x86 native Min+cvt mapping,
+// decision 2026-07-14): finite saturate to [MIN, MAX]; NaN/+overflow -> INT32_MAX; -overflow ->
+// INT32_MIN. Covers halfway ties (round-even), negatives, saturation, and +-NaN.
 TEST(Vec, DemoteToNearestIntFamily) {
   const hs::ScalableTag<double> dd;
   const std::size_t n = hs::Lanes(dd);
   const hs::FixedTag<std::int32_t, hs::kNativeVectorBytes / sizeof(double)> di{};
   ASSERT_EQ(hs::Lanes(di), n);
   auto oracle = [](double x) -> std::int32_t {
-    const double kMaxD = 2147483647.0;
-    if (!(std::fabs(x) <= kMaxD))  // NaN or too large
-      return std::signbit(x) ? INT32_MIN : INT32_MAX;
+    if (std::isnan(x) || x > 2147483647.0) return INT32_MAX;  // NaN (either sign) or +overflow
+    if (x < -2147483648.0) return INT32_MIN;                  // -overflow
     const double bias = (x < 0.0) ? -0.5 : 0.5;
     std::int32_t rounded = static_cast<std::int32_t>(x + bias);
     if (rounded == 0) return 0;
@@ -3429,11 +3429,12 @@ TEST(Vec, DemoteToNearestIntFamily) {
       rounded -= std::signbit(x) ? -1 : 1;
     return rounded;
   };
-  // A spread of exact halves (tie->even), ordinary values, negatives, and out-of-range/NaN.
+  // A spread of exact halves (tie->even), ordinary values, negatives, out-of-range, and +-NaN.
   const double kInf = std::numeric_limits<double>::infinity();
   const double kNaN = std::numeric_limits<double>::quiet_NaN();
   const double kPool[] = {0.5, 1.5, 2.5, 3.5, -0.5, -1.5, -2.5, 2.3, -2.3, 7.0,
-                          123456.5, -123456.5, 3e9, -3e9, kInf, -kInf, kNaN, 0.0};
+                          123456.5, -123456.5, 3e9, -3e9, kInf, -kInf, kNaN,
+                          std::copysign(kNaN, -1.0), -2147483648.0, 0.0};
   const std::size_t kPoolN = sizeof(kPool) / sizeof(kPool[0]);
   Buf<double> src;
   for (std::size_t base = 0; base < kPoolN; base += n) {

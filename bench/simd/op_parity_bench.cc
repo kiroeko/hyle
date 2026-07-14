@@ -377,11 +377,10 @@ int main() {
      hyle_bench::mark(rep); });
   }
 
-  // ---- 17. DemoteToNearestInt f64->i32 (simd-18 @opus). THREE rows:
-  //  * HYLE (safe): FULL emu128-spec sign-based saturation (Abs+2 blends -> NaN yields sign-based
-  //    MIN/MAX). ~15% slower than Highway's x86 native, but that is a CORRECTNESS difference not a
-  //    loss -- Highway native does only Min(v,MAX)+cvtpd2dq (NaN -> INT32_MIN, diverging from its own
-  //    emu128 ref). The extra work buys spec-faithful NaN handling.
+  // ---- 17. DemoteToNearestInt f64->i32 (simd-18 @opus; semantics decision 2026-07-14). Rows:
+  //  * HYLE default: Highway's x86 sequence verbatim (Min(v,MAX)+cvtpd2dq; NaN->MAX, saturating)
+  //    -- MUST tie. The old emu128 sign-based-NaN version (2.5x cost for a semantic Highway itself
+  //    honors on no hardware target) was dropped; see vec.h decision record.
   //  * HYLE (in-range fast): DemoteToNearestIntInRange = plain RNE + cvtt (2 instrs: vroundpd+
   //    vcvttpd2dq). Caller guarantees finite & in-[MIN,MAX]. This is the InRange-family opt-in
   //    fast path -- should MATCH or beat Highway since it drops even Highway's Min clamp.

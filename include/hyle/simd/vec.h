@@ -1741,19 +1741,21 @@ HYLE_FORCE_INLINE VFromD<D> PromoteInRangeOddTo(D d, V v) noexcept {
 }
 
 // DemoteToNearestInt(di32, v): f64 -> i32 rounding to NEAREST-EVEN (not truncating like
-// DemoteInRangeTo), with out-of-range and NaN SATURATING by sign to INT32_MIN/MAX (Highway's emu128
-// contract: |v| > (double)INT32_MAX, or NaN, -> signbit ? INT32_MIN : INT32_MAX). Both INT32_MIN and
-// INT32_MAX are EXACTLY representable as double, so the whole decision happens in the f64 domain and
-// the single final narrowing cvtt only ever sees an in-[MIN,MAX] value (no cvttpd UB):
-//   in_range = Abs(v) <= (double)INT32_MAX   (FALSE for NaN: the compare is unordered)
-//   sat      = signbit(v) ? MIN : MAX        (MaskFromVec keys on the real sign bit == ScalarSignBit)
-//   chosen   = in_range ? RoundToEven(v) : sat
-// then DemoteInRangeTo(chosen). RoundToEven matches the oracle's bias+round-to-even exactly.
-// avx2/sse4/avx512 have a native cvt-first path (hardware cvtpd2dq does RNE+narrow in one instr and
-// returns INT32_MIN for every exception; only positive-signbit exceptions need a MIN->MAX fixup) that
-// reaches the SAME emu128 contract as the portable form below but drops the Abs/Round/2*blendv. It is
-// gated on a capability macro + if-constexpr on the (i32<-f64) shape; other backends use the portable
-// form. Both are spec-faithful (NaN saturates by sign bit), unlike Highway's x86 native (all NaN->MIN).
+// DemoteInRangeTo). Contract (uniform across ALL backends): finite values saturate to
+// [INT32_MIN, INT32_MAX]; NaN of EITHER sign -> INT32_MAX; +/-inf saturate like overflow.
+// This is exactly Highway's x86 native behavior (Min(v, MAX) then cvtpd2dq: minpd's second-operand
+// rule sends NaN to MAX, the cvt exception sends -overflow to 0x80000000), which the avx2 backend
+// adopts verbatim. The portable form below reproduces the SAME mapping without relying on any
+// backend's Min NaN-ordering (NEON's vmin propagates NaN):
+//   lo     = v < (double)INT32_MIN ? MIN : v      (Lt unordered -> false: NaN keeps v)
+//   chosen = lo <= (double)INT32_MAX ? lo : MAX   (Le unordered -> false: NaN / +overflow -> MAX)
+// then RoundToEven + DemoteInRangeTo -- chosen is always in [MIN, MAX], both bounds exactly
+// representable as double, so the final narrowing cvtt never sees an out-of-range value.
+// Decision record (2026-07-14): the previous contract emulated Highway's emu128 reference
+// (sign-based NaN saturation) at ~2.5x cost -- a semantic Highway itself honors on no hardware
+// target (its own defaults: x86 NaN->MAX, NEON NaN->0) and no consumer required. HYLE adopts the
+// x86-native mapping as the single cross-backend contract (still stronger than Highway, which
+// leaves NaN target-dependent). Callers with in-range guarantees use DemoteToNearestIntInRange.
 template <class DI32, class VF>
 HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestInt(DI32 di32, VF v) noexcept {
   static_assert(std::is_same_v<TFromD<DI32>, std::int32_t>, "DemoteToNearestInt: dst is i32");
@@ -1764,10 +1766,9 @@ HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestInt(DI32 di32, VF v) noexcept {
   const DFromV<VF> df;
   const auto kMax = Set(df, 2147483647.0);        // (double)INT32_MAX (exact)
   const auto kMin = Set(df, -2147483648.0);       // (double)INT32_MIN (exact)
-  const auto in_range = Le(Abs(v), kMax);         // NaN -> false (unordered) -> saturate path
-  const auto sat = IfThenElse(MaskFromVec(v), kMin, kMax);  // sign bit set (incl -NaN) -> MIN
-  const auto chosen = IfThenElse(in_range, Round(v), sat);  // now guaranteed within [MIN,MAX]
-  return DemoteInRangeTo(di32, chosen);
+  const auto lo = IfThenElse(Lt(v, kMin), kMin, v);        // -overflow -> MIN; NaN keeps v
+  const auto chosen = IfThenElse(Le(lo, kMax), lo, kMax);  // NaN / +overflow -> MAX
+  return DemoteInRangeTo(di32, Round(chosen));
 #endif
 }
 // DemoteToNearestIntInRange(di32, v): FAST variant. Caller GUARANTEES every lane is finite and within
