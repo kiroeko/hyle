@@ -2530,6 +2530,48 @@ HYLE_FORCE_INLINE T reduce256(Vec256<T, N> v) noexcept {
     return static_cast<T>(_mm_cvtsi128_si32(s));
   }
 }
+// 128-bit lane-op for i16/u16 and i64/u64 reductions. i16 has native min/max; i64 has none on AVX2
+// (synthesize from cmpgt + blendv). Add is native for both widths.
+template <typename T, RedOp op>
+HYLE_FORCE_INLINE __m128i op128_narrow(__m128i a, __m128i b) noexcept {
+  if constexpr (sizeof(T) == 2) {  // i16/u16
+    if constexpr (op == RedOp::kAdd) return _mm_add_epi16(a, b);
+    else if constexpr (op == RedOp::kMin)
+      return std::is_same_v<T, std::int16_t> ? _mm_min_epi16(a, b) : _mm_min_epu16(a, b);
+    else
+      return std::is_same_v<T, std::int16_t> ? _mm_max_epi16(a, b) : _mm_max_epu16(a, b);
+  } else {  // i64/u64
+    if constexpr (op == RedOp::kAdd) return _mm_add_epi64(a, b);
+    else {  // min/max: select by 64-bit signed/unsigned compare (no native min/max_epi64 on SSE/AVX2)
+      __m128i gt;
+      if constexpr (std::is_same_v<T, std::int64_t>) gt = _mm_cmpgt_epi64(a, b);
+      else {  // unsigned: bias by sign bit then signed compare
+        const __m128i bias = _mm_set1_epi64x(static_cast<long long>(0x8000000000000000ULL));
+        gt = _mm_cmpgt_epi64(_mm_xor_si128(a, bias), _mm_xor_si128(b, bias));
+      }
+      // kMin: pick b where a>b; kMax: pick a where a>b
+      if constexpr (op == RedOp::kMin) return _mm_blendv_epi8(a, b, gt);
+      else return _mm_blendv_epi8(b, a, gt);
+    }
+  }
+}
+// Halving-tree horizontal reduce for i16/u16 (16 lanes) and i64/u64 (4 lanes) -- replaces the
+// store+reload scalar loop (op_parity: i16 was ~0.08 = 12x slower than Highway's tree, i64 ~0.7-0.9).
+template <typename T, std::size_t N, RedOp op>
+HYLE_FORCE_INLINE T reduce256_narrow(Vec256<T, N> v) noexcept {
+  __m128i lo = _mm256_castsi256_si128(v.raw);
+  __m128i hi = _mm256_extracti128_si256(v.raw, 1);
+  __m128i s = op128_narrow<T, op>(lo, hi);
+  if constexpr (sizeof(T) == 2) {                // 8 -> 4 -> 2 -> 1 (16-bit lanes)
+    s = op128_narrow<T, op>(s, _mm_shuffle_epi32(s, _MM_SHUFFLE(1, 0, 3, 2)));  // fold 8->4 dwords
+    s = op128_narrow<T, op>(s, _mm_shuffle_epi32(s, _MM_SHUFFLE(2, 3, 0, 1)));  // fold 4->2 dwords
+    s = op128_narrow<T, op>(s, _mm_srli_epi32(s, 16));                          // fold hi16|lo16
+    return static_cast<T>(static_cast<std::uint16_t>(_mm_cvtsi128_si32(s)));
+  } else {                                       // 2 -> 1 (64-bit lanes)
+    s = op128_narrow<T, op>(s, _mm_unpackhi_epi64(s, s));
+    return static_cast<T>(_mm_cvtsi128_si64(s));
+  }
+}
 }  // namespace detail
 
 // Reductions that lack a clean 256-bit lane-crossing path for narrow/64-bit int lanes
@@ -2553,18 +2595,24 @@ template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceSum(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
   if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
     return detail::reduce256<T, N, detail::RedOp::kAdd>(v);
-  else return reduce_scalar<T, N, detail::RedOp::kAdd>(v);
+  else if constexpr (detail::kI16<T> || detail::kI64<T>)
+    return detail::reduce256_narrow<T, N, detail::RedOp::kAdd>(v);
+  else return reduce_scalar<T, N, detail::RedOp::kAdd>(v);  // i8/u8: scalar fold
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMin(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
   if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
     return detail::reduce256<T, N, detail::RedOp::kMin>(v);
+  else if constexpr (detail::kI16<T> || detail::kI64<T>)
+    return detail::reduce256_narrow<T, N, detail::RedOp::kMin>(v);
   else return reduce_scalar<T, N, detail::RedOp::kMin>(v);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T ReduceMax(Simd<T, N, 0>, Vec256<T, N> v) noexcept {
   if constexpr (detail::kI32<T> || std::is_floating_point_v<T>)
     return detail::reduce256<T, N, detail::RedOp::kMax>(v);
+  else if constexpr (detail::kI16<T> || detail::kI64<T>)
+    return detail::reduce256_narrow<T, N, detail::RedOp::kMax>(v);
   else return reduce_scalar<T, N, detail::RedOp::kMax>(v);
 }
 

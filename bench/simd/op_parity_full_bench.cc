@@ -190,6 +190,13 @@ int main(){
       nb::Bench bench; bench.title(title).relative(true).batch(kN).minEpochIterations(8000);
       HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hop(hs::LoadU(hdi,p_a+i)); nb::doNotOptimizeAway(sink);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); std::int64_t sink=0; for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=gop(hn::LoadU(gdi,p_a+i)); nb::doNotOptimizeAway(sink);  hyle_bench::mark(rep); });
     };
+    // typed variant: caller passes the HYLE/Highway tags, lane counts, and a data pointer of the
+    // matching element type (for narrow-width reduces i16/i64 whose data isn't the shared i32 `a`).
+    const auto run_full_reduce_t = [&](const char* title, auto hd, auto gd, std::size_t hwl,
+                                       std::size_t gwl, const auto* p_src, auto hop, auto gop) {
+      nb::Bench bench; bench.title(title).relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); std::int64_t sink=0; for(std::size_t i=0;i+hwl<=kN;i+=hwl) sink+=(std::int64_t)hop(hs::LoadU(hd,p_src+i)); nb::doNotOptimizeAway(sink);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); std::int64_t sink=0; for(std::size_t i=0;i+gwl<=kN;i+=gwl) sink+=(std::int64_t)gop(hn::LoadU(gd,p_src+i)); nb::doNotOptimizeAway(sink);  hyle_bench::mark(rep); });
+    };
     run_full_reduce("ReduceMin i32", [&](auto v){return hs::ReduceMin(hdi,v);}, [&](auto v){return hn::ReduceMin(gdi,v);});
     run_full_reduce("ReduceMax i32", [&](auto v){return hs::ReduceMax(hdi,v);}, [&](auto v){return hn::ReduceMax(gdi,v);});
     // ReduceMul/And/Or: Highway has no same-name scalar reduce (only Sum/Min/Max). Tier3 vs scalar fold.
@@ -207,6 +214,24 @@ int main(){
       nb::Bench b; b.title("ReduceOr i32 (vs scalar fold)").relative(true).batch(kN).minEpochIterations(8000);
       b.run("HYLE", [&]{ std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::ReduceOr(hdi,hs::LoadU(hdi,a.data()+i)); nb::doNotOptimizeAway(sink); });
       b.run("scalar fold", [&]{ std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw){ std::int32_t p=0; for(std::size_t j=0;j<hw;++j) p|=a[i+j]; sink+=p; } nb::doNotOptimizeAway(sink); });
+    }
+    // narrow-width reduce (i16/i64) vs Highway -- HYLE currently store+reload folds these (only
+    // 32-bit+float tree); Highway trees them (SumOfLanes/MinOfLanes). Measure the gap.
+    {
+      const hs::ScalableTag<std::int16_t> h16; const hn::ScalableTag<std::int16_t> g16;
+      const std::size_t hw16=hs::Lanes(h16), gw16=hn::Lanes(g16);
+      std::vector<std::int16_t> r16(kN); { std::mt19937_64 r(31); std::uniform_int_distribution<int> d(-5000,5000); for(auto&e:r16)e=(std::int16_t)d(r); }
+      run_full_reduce_t("ReduceSum i16", h16,g16,hw16,gw16,r16.data(), [&](auto v){return hs::ReduceSum(h16,v);}, [&](auto v){return hn::ReduceSum(g16,v);});
+      run_full_reduce_t("ReduceMin i16", h16,g16,hw16,gw16,r16.data(), [&](auto v){return hs::ReduceMin(h16,v);}, [&](auto v){return hn::ReduceMin(g16,v);});
+      run_full_reduce_t("ReduceMax i16", h16,g16,hw16,gw16,r16.data(), [&](auto v){return hs::ReduceMax(h16,v);}, [&](auto v){return hn::ReduceMax(g16,v);});
+    }
+    {
+      const hs::ScalableTag<std::int64_t> h64; const hn::ScalableTag<std::int64_t> g64;
+      const std::size_t hw64=hs::Lanes(h64), gw64=hn::Lanes(g64);
+      std::vector<std::int64_t> r64(kN); { std::mt19937_64 r(32); std::uniform_int_distribution<long long> d(-1000000,1000000); for(auto&e:r64)e=d(r); }
+      run_full_reduce_t("ReduceSum i64", h64,g64,hw64,gw64,r64.data(), [&](auto v){return hs::ReduceSum(h64,v);}, [&](auto v){return hn::ReduceSum(g64,v);});
+      run_full_reduce_t("ReduceMin i64", h64,g64,hw64,gw64,r64.data(), [&](auto v){return hs::ReduceMin(h64,v);}, [&](auto v){return hn::ReduceMin(g64,v);});
+      run_full_reduce_t("ReduceMax i64", h64,g64,hw64,gw64,r64.data(), [&](auto v){return hs::ReduceMax(h64,v);}, [&](auto v){return hn::ReduceMax(g64,v);});
     }
   }
 
