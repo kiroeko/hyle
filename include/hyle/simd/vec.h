@@ -718,9 +718,17 @@ template <int kBits, class V> HYLE_FORCE_INLINE V RoundingShiftRight(V v) noexce
 // All compose existing ops (Compress/Expand/GatherIndex/LoadN/StoreN/CompressStore/CountTrue/
 // LoadMaskBits/IfThenElse). Highway specializes some on AVX-512 (vpcompress/vpgather) -- those
 // are profiling upgrades; the generic forms are correct on every backend.
-// CompressNot(v, m) = Compress(v, Not(m)).
+// CompressNot(v, m) = Compress(v, Not(m)). avx2 has a native 32-bit path that complements the mask
+// in the scalar bits domain (mbits ^ 0xFF) instead of a vector Not(m) -- dispatch to it via the
+// capability macro + if-constexpr on lane size (Highway's IndicesFromNotBits approach). Other
+// widths/backends use the portable Compress(v, Not(m)).
 template <class V, class M> HYLE_FORCE_INLINE V CompressNot(V v, M m) noexcept {
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_COMPRESS_NOT32)
+  if constexpr (sizeof(TFromD<DFromV<V>>) == 4) return CompressNotNative(v, m);
+  else return Compress(v, Not(m));
+#else
   return Compress(v, Not(m));
+#endif
 }
 // CompressBlendedStore(v, m, d, p): pack active lanes to the front and store; first CountTrue lanes
 // hold them, tail UNSPECIFIED (= CompressStore, both aligned to Highway's whole-vector-store form).

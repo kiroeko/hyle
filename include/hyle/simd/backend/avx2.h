@@ -3132,6 +3132,20 @@ struct CompressIdx32Packed {
 };
 inline constexpr CompressIdx32Packed kCompressIdx32Tbl{};
 inline constexpr const std::uint32_t* kCompressIdx32Packed = kCompressIdx32Tbl.packed;
+// Shared 8x32 compress core: given the 8-bit lane mask, gather the selected lanes to the front via
+// the packed index table + one vpermd (Compress and CompressNot differ ONLY in the mbits passed).
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> compress32_by_bits(Vec256<T, N> v, unsigned mbits) noexcept {
+  // broadcast the packed u32, then shift each of the 8 copies right by {0,4,...,28} so lane i
+  // holds its 3-bit index in the low bits (vpermd ignores bits 3..31).
+  const __m256i packed = _mm256_set1_epi32(static_cast<int>(kCompressIdx32Packed[mbits & 0xFFu]));
+  const __m256i shifts = _mm256_setr_epi32(0, 4, 8, 12, 16, 20, 24, 28);
+  const __m256i idx = _mm256_srlv_epi32(packed, shifts);
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_permutevar8x32_ps(v.raw, idx);
+  else r.raw = _mm256_permutevar8x32_epi32(v.raw, idx);
+  return r;
+}
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcept {
@@ -3149,15 +3163,7 @@ HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcep
     unsigned mbits;
     if constexpr (std::is_same_v<T, float>) mbits = static_cast<unsigned>(_mm256_movemask_ps(m.raw));
     else mbits = static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
-    // broadcast the packed u32, then shift each of the 8 copies right by {0,4,...,28} so lane i
-    // holds its 3-bit index in the low bits (vpermd ignores bits 3..31).
-    const __m256i packed = _mm256_set1_epi32(static_cast<int>(detail::kCompressIdx32Packed[mbits]));
-    const __m256i shifts = _mm256_setr_epi32(0, 4, 8, 12, 16, 20, 24, 28);
-    const __m256i idx = _mm256_srlv_epi32(packed, shifts);
-    Vec256<T, N> r;
-    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_permutevar8x32_ps(v.raw, idx);
-    else r.raw = _mm256_permutevar8x32_epi32(v.raw, idx);
-    return r;
+    return detail::compress32_by_bits(v, mbits);
   } else {
     alignas(32) T src[N], dst[N] = {};
     Store(v, Simd<T, N, 0>(), src);
@@ -3166,6 +3172,22 @@ HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcep
     for (std::size_t i = 0; i < N; ++i) if ((bits >> i) & 1u) dst[k++] = src[i];
     return Load(Simd<T, N, 0>(), dst);
   }
+}
+// CompressNot(v, m) native (32-bit lanes): pack the lanes where m is FALSE to the front. Highway's
+// trick -- complement the mask BITS in the scalar domain (mbits ^ 0xFF) and reuse the same
+// compress-index table, so there is NO vector Not(m) (the generic CompressNot = Compress(v, Not(m))
+// pays an extra vpxor/vpandn + routes the negated mask back through movemask). op_parity: HYLE was
+// MSVC 0.81 / GCC 0.94 vs Highway; the bits-domain complement matches Highway's IndicesFromNotBits.
+#if defined(HYLE_SIMD_TARGET_AVX2)
+#define HYLE_SIMD_AVX2_HAS_NATIVE_COMPRESS_NOT32 1
+#endif
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> CompressNotNative(Vec256<T, N> v, Mask256<T, N> m) noexcept {
+  static_assert(sizeof(T) == 4, "CompressNotNative: 32-bit lanes only");
+  unsigned mbits;
+  if constexpr (std::is_same_v<T, float>) mbits = static_cast<unsigned>(_mm256_movemask_ps(m.raw));
+  else mbits = static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
+  return detail::compress32_by_bits(v, mbits ^ 0xFFu);  // complement in bits domain: pack !m lanes
 }
 // AVX2 has no native compress (VBMI2's vpcompress is AVX-512 only), so Compress IS the store+
 // reload form -- CompressEmulated aliases it so gather_bench compiles the same A/B on both x86
