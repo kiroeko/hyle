@@ -1712,6 +1712,20 @@ HYLE_FORCE_INLINE Vec256<TI, NI> TableLookupBytes(Vec256<T, N> bytes, Vec256<TI,
   r.raw = detail::bitcast_raw_avx2<detail::Raw256T<TI>>(sh);
   return r;
 }
+// TableLookupBytesInRange: caller GUARANTEES every index byte is in [0, 15]. On that domain it
+// equals TableLookupBytes, minus the vpand (raw vpshufb: bits 4..6 are ignored by hardware and
+// bit7 is clear by precondition) -- 1 op, byte parity with Highway's TableLookupBytes. InRange-
+// family opt-in (same convention as Demote/ConvertInRange): the full-domain &15 guarantee of
+// TableLookupBytes stays available at +1 vpand.
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec256<TI, NI> TableLookupBytesInRange(Vec256<T, N> bytes, Vec256<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesInRange: same total byte width");
+  const __m256i br = detail::bitcast_raw_avx2<__m256i>(bytes.raw);
+  const __m256i ir = detail::bitcast_raw_avx2<__m256i>(idx.raw);
+  Vec256<TI, NI> r;
+  r.raw = detail::bitcast_raw_avx2<detail::Raw256T<TI>>(_mm256_shuffle_epi8(br, ir));
+  return r;
+}
 template <typename T, std::size_t N, typename TI, std::size_t NI>
 HYLE_FORCE_INLINE Vec256<TI, NI> TableLookupBytesOr0(Vec256<T, N> bytes, Vec256<TI, NI> idx) noexcept {
   static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesOr0: same total byte width");
@@ -3451,17 +3465,19 @@ HYLE_FORCE_INLINE Vec256<T, N> RoundingShiftRightSame(Vec256<T, N> v, int s) noe
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> RoundingShr(Vec256<T, N> v, Vec256<T, N> amounts) noexcept {
   static_assert(std::is_integral_v<T>, "RoundingShr is integer-lane only");
-  // result = (s>0) ? Shr(v + (1<<(s-1)), s) : v. Vectorized via native variable Shl/Shr (16/32-bit
-  // have them now) + a mask select on s>0. Was scalar store+reload (MSVC ~1.4x slower). bias =
-  // Shl(1, s-1) is only used where s>0, so s-1>=0 keeps the shift in range; where s<=0 we select v.
+  // result = (v + (1<<(s-1))) >> s. Contract: s in [0, lane_bits-1]; s==0 is the identity;
+  // NEGATIVE s is unspecified (narrowed 2026-07-14 -- Highway defines no negative-s behavior
+  // either; the old "s<=0 keeps v" promise cost Gt+Sub+blend, and GCC measured 0.95x Highway).
+  // bias = (1<<s)>>1 needs no branch or blend: s==0 gives (1>>1)==0. The >>1 must be LOGICAL --
+  // at s==lane_bits-1 the 1<<s bit sits in the sign position. 4 ops for 32-bit (vpsllvd + vpsrld
+  // + vpaddd + vpsravd) vs Highway's 7 (SaturatedSub+AverageRound composition).
   if constexpr (sizeof(T) == 4 || sizeof(T) == 2) {
     const Simd<T, N, 0> d;
-    const auto zero = Zero(d);
-    const auto pos = Gt(amounts, zero);                       // s > 0
-    const auto sm1 = Sub(amounts, Set(d, T{1}));              // s-1 (only used when s>0)
-    const auto bias = Shl(Set(d, T{1}), sm1);                 // 1<<(s-1)
-    const auto shifted = Shr(Add(v, bias), amounts);          // (v+bias) >> s
-    return IfThenElse(pos, shifted, v);
+    const auto shl_s = Shl(Set(d, T{1}), amounts);            // 1<<s (s==0 -> 1)
+    Vec256<T, N> bias;
+    if constexpr (sizeof(T) == 4) bias.raw = _mm256_srli_epi32(shl_s.raw, 1);
+    else bias.raw = _mm256_srli_epi16(shl_s.raw, 1);          // logical: (1<<s)>>1 == s?2^(s-1):0
+    return Shr(Add(v, bias), amounts);
   } else {
     alignas(32) T sv[N], sa[N], so[N];
     Store(v, Simd<T, N, 0>(), sv); Store(amounts, Simd<T, N, 0>(), sa);

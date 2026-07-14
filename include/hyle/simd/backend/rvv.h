@@ -1123,6 +1123,9 @@ template <class V, class VI> HYLE_FORCE_INLINE VI TableLookupBytes(V table, VI i
                                           __riscv_vadd(block, local, vl), vl);
   return BitCast(DFromV<VI>(), out);
 }
+template <class V, class VI> HYLE_FORCE_INLINE VI TableLookupBytesInRange(V table, VI indices) noexcept {
+  return TableLookupBytes(table, indices);  // masked form is valid on the in-range domain
+}
 template <class V, class VI> HYLE_FORCE_INLINE VI TableLookupBytesOr0(V table, VI indices) noexcept {
   const std::size_t vl = detail::vlmax<std::uint8_t>();
   const vint8m1_t signed_idx = __riscv_vreinterpret_i8m1(detail::bits_u8_rvv(indices));

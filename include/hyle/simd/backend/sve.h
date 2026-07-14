@@ -819,6 +819,9 @@ template <class V, class VI> HYLE_FORCE_INLINE VI TableLookupBytes(V table, VI i
   const svuint8_t out = svtbl(svreinterpret_u8(table), svadd_x(pg, block, local));
   return BitCast(DFromV<VI>(), out);
 }
+template <class V, class VI> HYLE_FORCE_INLINE VI TableLookupBytesInRange(V table, VI indices) noexcept {
+  return TableLookupBytes(table, indices);  // masked form is valid on the in-range domain
+}
 template <class V, class VI> HYLE_FORCE_INLINE VI TableLookupBytesOr0(V table, VI indices) noexcept {
   const svuint8_t idx = svreinterpret_u8(indices);
   const svbool_t msb = svcmplt(svptrue_b8(), svreinterpret_s8(idx), std::int8_t{0});

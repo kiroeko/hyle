@@ -1746,6 +1746,12 @@ HYLE_FORCE_INLINE Vec<TI, NI> TableLookupBytes(Vec<T, N> bytes, Vec<TI, NI> idx)
   }
   return r;
 }
+// TableLookupBytesInRange: index bytes in [0,15] guaranteed by caller. The masked form is a valid
+// (and memory-safe) implementation on that domain -- the reference backend keeps it.
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec<TI, NI> TableLookupBytesInRange(Vec<T, N> bytes, Vec<TI, NI> idx) noexcept {
+  return TableLookupBytes(bytes, idx);
+}
 template <typename T, std::size_t N, typename TI, std::size_t NI>
 HYLE_FORCE_INLINE Vec<TI, NI> TableLookupBytesOr0(Vec<T, N> bytes, Vec<TI, NI> idx) noexcept {
   static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesOr0: same total byte width");

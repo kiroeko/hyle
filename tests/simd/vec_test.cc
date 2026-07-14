@@ -352,6 +352,13 @@ TEST(Vec, TableLookupBytes) {
     std::uint8_t expect = (idx0.data[i] & 0x80) ? 0 : tbl.data[block + (idx0.data[i] & 15)];
     EXPECT_EQ(out.data[i], expect) << "TLBOr0 i=" << i;
   }
+  // InRange variant: on in-range indices (this test's idx pool is 0..15 by construction) it must
+  // equal TableLookupBytes exactly (it IS TableLookupBytes minus the index mask).
+  hs::Store(hs::TableLookupBytesInRange(vt, vi), d, out.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::size_t block = (i / 16) * 16;
+    EXPECT_EQ(out.data[i], tbl.data[block + (idx.data[i] & 15)]) << "TLBInRange i=" << i;
+  }
 }
 
 // ---- A-5 widen-dot (int8/16 GEMM quantization core) ---------------------------------
@@ -902,15 +909,15 @@ TEST(Vec, SumsOfNAndRoundShift) {
   hs::Store(hs::VecFromMask(du, hs::TestBit(hs::Load(du, u.data), hs::Set(du, 4u))), du, ou.data);
   for (std::size_t i = 0; i < hs::Lanes(du); ++i) EXPECT_EQ(ou.data[i] != 0, (u.data[i] & 4u) != 0) << "testbit i=" << i;
 
-  // RoundingShr with PER-LANE vector amount: (v + (1<<(s-1))) >> s for s>0, keep v for s<=0.
-  // Covers signed (arithmetic, incl. s<=0 identity via negative amounts) + unsigned (logical).
+  // RoundingShr with PER-LANE vector amount: (v + (1<<(s-1))) >> s, s in [0, 31] (s==0 identity;
+  // negative s UNSPECIFIED since 2026-07-14 contract narrowing -- Highway defines none either).
   {
     const hs::ScalableTag<std::int32_t> di;
     const std::size_t ni = hs::Lanes(di);
     Buf<std::int32_t> iv, ia, io;
     for (std::size_t i = 0; i < ni; ++i) {
       iv.data[i] = static_cast<std::int32_t>(i * 137 - 300);   // mix of +/-
-      ia.data[i] = static_cast<std::int32_t>(i % 4) - 1;       // -1,0,1,2 -> exercises s<=0 keep
+      ia.data[i] = static_cast<std::int32_t>(i % 4);           // 0,1,2,3 -> exercises s==0 identity
     }
     hs::Store(hs::RoundingShr(hs::Load(di, iv.data), hs::Load(di, ia.data)), di, io.data);
     for (std::size_t i = 0; i < ni; ++i) {

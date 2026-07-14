@@ -1332,6 +1332,16 @@ HYLE_FORCE_INLINE VecNeon<TI, NI> TableLookupBytes(VecNeon<T, N> bytes, VecNeon<
   r.raw = detail::from_u8<TI>(vqtbl1q_u8(detail::to_u8<T>(bytes.raw), lo));
   return r;
 }
+// TableLookupBytesInRange: index bytes in [0,15] guaranteed by caller -> raw tbl, no vand
+// (tbl's own out-of-range-gives-0 never triggers on the valid domain). See avx2.h.
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE VecNeon<TI, NI> TableLookupBytesInRange(VecNeon<T, N> bytes, VecNeon<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesInRange: same total byte width");
+  static_assert(sizeof(TI) * NI == 16, "neon TableLookupBytesInRange: single 128-bit block (16 bytes)");
+  VecNeon<TI, NI> r;
+  r.raw = detail::from_u8<TI>(vqtbl1q_u8(detail::to_u8<T>(bytes.raw), detail::to_u8<TI>(idx.raw)));
+  return r;
+}
 template <typename T, std::size_t N, typename TI, std::size_t NI>
 HYLE_FORCE_INLINE VecNeon<TI, NI> TableLookupBytesOr0(VecNeon<T, N> bytes, VecNeon<TI, NI> idx) noexcept {
   static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesOr0: same total byte width");
@@ -2631,8 +2641,10 @@ HYLE_FORCE_INLINE VecNeon<T, N> RotateLeftSame(VecNeon<T, N> v, int bits) noexce
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> RoundingShiftRightSame(VecNeon<T, N> v, int s) noexcept {
   static_assert(std::is_integral_v<T>, "RoundingShiftRightSame is integer-lane only");
-  if (s <= 0) return v;
-  return ShiftRightSame(Add(v, Set(Simd<T, N, 0>(), static_cast<T>(T{1} << (s - 1)))), s);
+  // Forward to RoundingShr: its vdup+clamp+negate of the count are loop-invariant and hoist,
+  // leaving ONE native vrshl in the loop -- Highway ARM composes it the same way (op_parity NEON
+  // measured 0.82 with the old Add(Set(1<<(s-1)))+ShiftRightSame form). s<=0 keeps v (the clamp).
+  return RoundingShr(v, Set(Simd<T, N, 0>(), static_cast<T>(s)));
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> RoundingShr(VecNeon<T, N> v, VecNeon<T, N> amounts) noexcept {

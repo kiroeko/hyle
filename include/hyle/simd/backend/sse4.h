@@ -1404,6 +1404,16 @@ HYLE_FORCE_INLINE Vec128<TI, NI> TableLookupBytes(Vec128<T, N> bytes, Vec128<TI,
   r.raw = detail::bitcast_raw_sse<detail::Raw128T<TI>>(sh);
   return r;
 }
+// TableLookupBytesInRange: index bytes in [0,15] guaranteed by caller -> raw pshufb (see avx2.h).
+template <typename T, std::size_t N, typename TI, std::size_t NI>
+HYLE_FORCE_INLINE Vec128<TI, NI> TableLookupBytesInRange(Vec128<T, N> bytes, Vec128<TI, NI> idx) noexcept {
+  static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesInRange: same total byte width");
+  const __m128i br = detail::bitcast_raw_sse<__m128i>(bytes.raw);
+  const __m128i ir = detail::bitcast_raw_sse<__m128i>(idx.raw);
+  Vec128<TI, NI> r;
+  r.raw = detail::bitcast_raw_sse<detail::Raw128T<TI>>(_mm_shuffle_epi8(br, ir));
+  return r;
+}
 template <typename T, std::size_t N, typename TI, std::size_t NI>
 HYLE_FORCE_INLINE Vec128<TI, NI> TableLookupBytesOr0(Vec128<T, N> bytes, Vec128<TI, NI> idx) noexcept {
   static_assert(sizeof(T) * N == sizeof(TI) * NI, "TableLookupBytesOr0: same total byte width");

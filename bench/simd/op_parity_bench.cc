@@ -247,7 +247,11 @@ int main() {
      hyle_bench::mark(rep); });
   }
 
-  // ---- 10. TableLookupBytes u8 (HYLE vs Highway -- native vpshufb both) ----
+  // ---- 10. TableLookupBytes u8. The PAIR compares contract-equivalent ops: HYLE
+  // TableLookupBytesInRange (caller guarantees idx in [0,15]) vs Highway TableLookupBytes (same
+  // precondition family) -- raw vpshufb both, MUST tie. HYLE's default TableLookupBytes promises
+  // &15 for ANY index byte (stronger than Highway; oracle-fixed semantics) at +1 vpand; it rides
+  // as the informational third row so its price stays visible. ----
   {
     const hs::ScalableTag<std::uint8_t> hd8; const hn::ScalableTag<std::uint8_t> gd8;
     const std::size_t hw8 = hs::Lanes(hd8), gw8 = hn::Lanes(gd8);
@@ -256,13 +260,18 @@ int main() {
     nb::Bench bench; bench.title("TableLookupBytes u8 (4096)").relative(true).batch(kN).minEpochIterations(5000);
     HYLE_RUN_PAIR(bench, [&](auto rep) { hyle_bench::stagger(rep); auto* p_tb = tb.data(); auto* p_ib8 = ib8.data(); auto* p_ob = ob.data();
       for (std::size_t i = 0; i + hw8 <= kN; i += hw8)
-        hs::StoreU(hs::TableLookupBytes(hs::LoadU(hd8, p_tb + i), hs::LoadU(hd8, p_ib8 + i)), hd8, p_ob + i);
+        hs::StoreU(hs::TableLookupBytesInRange(hs::LoadU(hd8, p_tb + i), hs::LoadU(hd8, p_ib8 + i)), hd8, p_ob + i);
       nb::doNotOptimizeAway(p_ob);
      hyle_bench::mark(rep); }, [&](auto rep) { hyle_bench::stagger(rep); auto* p_tb = tb.data(); auto* p_ib8 = ib8.data(); auto* p_ob = ob.data();
       for (std::size_t i = 0; i + gw8 <= kN; i += gw8)
         hn::StoreU(hn::TableLookupBytes(hn::LoadU(gd8, p_tb + i), hn::LoadU(gd8, p_ib8 + i)), gd8, p_ob + i);
       nb::doNotOptimizeAway(p_ob);
      hyle_bench::mark(rep); });
+    hyle_bench::run_third(bench, "HYLE TableLookupBytes (&15 semantics)", [&] { auto* p_tb = tb.data(); auto* p_ib8 = ib8.data(); auto* p_ob = ob.data();
+      for (std::size_t i = 0; i + hw8 <= kN; i += hw8)
+        hs::StoreU(hs::TableLookupBytes(hs::LoadU(hd8, p_tb + i), hs::LoadU(hd8, p_ib8 + i)), hd8, p_ob + i);
+      nb::doNotOptimizeAway(p_ob);
+    });
   }
 
   // ---- 11. LeadingZeroCount u32 (HYLE store+reload+std vs Highway) ----
