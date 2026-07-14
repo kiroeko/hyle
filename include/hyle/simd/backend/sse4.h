@@ -1669,7 +1669,8 @@ HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(Simd<T, N, 0>, Mask128<T, N> m) n
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(Simd<T, N, 0>, Mask128<T, N> m) noexcept {
   const unsigned b = detail::mask_bits(m);
-  return b ? static_cast<std::ptrdiff_t>(31 - std::countl_zero(b)) : -1;
+  // ptrdiff_t-domain subtract -- avoids a movslq before 64-bit consumers (see avx2.h FindLastTrue).
+  return b ? std::ptrdiff_t{31} - std::countl_zero(b) : std::ptrdiff_t{-1};
 }
 // VecFromMask: the mask's per-lane 0xFF../0 pattern as a vector (compares yield full-lane).
 // Mask128<T>::raw is Raw128T<T> -- for float/double it is ALREADY __m128/__m128d (compares

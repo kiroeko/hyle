@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;十四轮修复后 x86 双编译器交集清零,MSVC 真输 1 / GCC 1 / NEON 0)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;全部修复轮次收口后三平台真输清单 **全零**:MSVC 0 / GCC 0 / NEON 0)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,11 +19,19 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 1 个
-- BroadcastLane<3> i32: **0.93** —— 已定论保留 vpermd:MSVC 0.93 是 bench 形状特定差距(Highway 的内存源 vbroadcasti128 折叠红利;寄存器输入下 vpermd 更优,GCC 反赢 1.13)
+### MSVC(AVX2): 0 个
+- (BroadcastLane<3> 最终轮清零:0.93→**1.00 TIE**。旧"形状红利改不动"定论收回——可折叠与否取决于
+  确切 intrinsic 写法:MSVC 对 Highway 的 `inserti128(v, low128(v), 1)` 自 dup 形态有折叠 peephole
+  (load 输入→内存源 vbroadcasti128,shuffle 口免费),而 `broadcastsi128(cast)` 写法栈 spill——旧实验
+  的 0.47 由此而来,当时误判为"该序列本质需要内存源"。已按编译器分叉:MSVC=inserti128 自 dup+vpshufd,
+  GCC 保留 vpermd(1.13W);Slide1Up 金丝雀 1.00,无 ConcatLowerLower 类复合上下文回归。)
 
-### WSL/GCC(AVX2): 1 个
-- FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump:两侧指令相同且循环顶同为 64B 对齐(GCC .p2align 吸收 stagger)-> 绝对地址级仪器残余,HYLE 代码无可修,非算法输
+### WSL/GCC(AVX2): 0 个(full 0/201 LOSE)
+- (FindLastTrue 最终轮清零:0.94→**1.00 TIE**。旧"仪器残余"定论收回——规范化逐条 diff 发现两侧循环
+  14 vs 15 条:HYLE 多一条 movslq,因 `31 - std::countl_zero(b)` 的减法在 int 域做、进 64 位 sink 前
+  需符号扩展;Highway 的 Num0Bits* 为 size_t 宽全程 64 位。改 ptrdiff_t 域减法(avx2+sse4)即消。
+  方法教训:此前"objdump 逐指令等价"是**向量签名级**对比的假象——标量尾巴(寄存器宽度/扩展指令)
+  没有逐条比,一条指令恰好就是那 6%。)
 
 ### Mac/NEON: 0 个
 - (第十四轮清零:MulAddSub/MulSubAdd 弃两 FMA 的 OddEven(MulAdd,MulSub) 改 Highway 单 FMA 形,见演进段。)
@@ -115,6 +123,13 @@
   220 pass + MSVC avx2/sse4/scalar MulAdd 族全 pass。校准仪器 Mac 3+3 run 合并 --gate 0.06 **CALIBRATION PASS**:
   MulAddSub 0.88→0.97 TIE、MulSubAdd 0.87→1.01 TIE。**Mac/NEON 真输清零。三平台真输终态 MSVC 1 / GCC 1 / NEON 0,
   x86 双编译器交集 0。**
+- 最终轮(2026-07-14):用户对仅剩两个"定论地板"提出复审,**两个定论均被推翻并修成 TIE**——
+  ① FindLastTrue(GCC 0.94→1.00):真凶=一条 movslq(int 域减法的符号扩展),非仪器残余;
+  ② BroadcastLane<3>(MSVC 0.93→1.00):真凶=intrinsic 写法决定 MSVC 折叠与否,非"形状红利不可得"。
+  **至此 x86 两列真输清单双双归零(MSVC full 剩 AddSub 0.86 与 0.9x 边缘带徘徊者,详见全量表)。**
+  复审教训:被"定论"关闭的项,证据等级要过硬——签名级 disasm 对比、单一形态的否定实验,都不足以
+  盖棺;逐条 diff 与多形态尝试才算。
+
 ## 全量表
 
 | op | MSVC(AVX2) | WSL GCC(AVX2) | Mac(NEON) |

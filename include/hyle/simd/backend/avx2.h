@@ -2016,7 +2016,11 @@ template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(Simd<T, N, 0>, Mask256<T, N> m) noexcept {
   const unsigned b = detail::mask_bits(m);
   // highest set lane index = (bit-width-1) - clz; mask_bits packs 1 bit/lane (LSB=lane0).
-  return b ? static_cast<std::ptrdiff_t>(31 - std::countl_zero(b)) : -1;
+  // ptrdiff_t-domain subtract: countl_zero returns int, and `31 - clz` done in int forces GCC to
+  // emit a movslq sign-extension before the 64-bit consumer (op_parity: exactly the ~6% GCC
+  // FindLastTrue deficit vs Highway, whose Num0Bits* math is size_t-wide). bsr/lzcnt already
+  // zero-extend eax->rax for free, so the 64-bit-domain subtract costs nothing.
+  return b ? std::ptrdiff_t{31} - std::countl_zero(b) : std::ptrdiff_t{-1};
 }
 // VecFromMask(d, m): the mask's per-lane all-ones/all-zero bit pattern AS a vector. On AVX2
 // the Mask256 raw IS that pattern already (compares yield full-lane 0xFF..), so it's a
@@ -2643,14 +2647,21 @@ HYLE_FORCE_INLINE Vec256<T, N> Broadcast(Vec256<T, N> v) noexcept {
     if constexpr (kLane == 0) {  // lane 0 = vpbroadcastd from the low element (cheaper than vpermd)
       r.raw = _mm256_broadcastd_epi32(_mm256_castsi256_si128(v.raw));
     } else {
-      // Single vpermd, kept deliberately (op_parity BroadcastLane<3>: GCC 1.13x FASTER than
-      // Highway, MSVC 0.93 -- understood and accepted). Highway's vbroadcasti128+vpshufd pair
-      // only wins the load->op->store bench shape because the compiler folds the dup into a
-      // shuffle-port-free MEMORY-source vbroadcasti128; with a register input (any computed
-      // vector) that fold is impossible -- MSVC materializes it as a stack spill + reload
-      // (measured 0.47x when we tried adopting the pair) -- and vpermd's single shuffle uop
-      // beats the pair's two.
+#if defined(_MSC_VER) && !defined(__clang__)
+      // MSVC: Highway's exact formulation -- dup the block via inserti128(v, low128(v), 1) then
+      // in-block vpshufd. MSVC folds the self-dup of a freshly LOADED v into a shuffle-port-free
+      // memory-source vbroadcasti128 (the load->op->store shape; op_parity 0.93 -> parity).
+      // Formulation matters: broadcastsi128_si256(castsi256_si128(v)) is NOT recognized and
+      // stack-spills instead (measured 0.47x). GCC keeps the single-vpermd path below (measured
+      // 1.13x FASTER than this pair there).
+      __m256i dup;
+      if constexpr (kLane < 4) dup = _mm256_inserti128_si256(v.raw, _mm256_castsi256_si128(v.raw), 1);
+      else dup = _mm256_permute2x128_si256(v.raw, v.raw, 0x11);
+      r.raw = _mm256_shuffle_epi32(dup, (kLane & 3) * 0x55);
+#else
+      // Single vpermd (GCC/Clang: measured 1.13x faster than the dup+vpshufd pair).
       r.raw = _mm256_permutevar8x32_epi32(v.raw, _mm256_set1_epi32(kLane));
+#endif
     }
   } else if constexpr (sizeof(T) == 8) {  // i64/u64
     if constexpr (kLane == 0)  // lane 0 = vpbroadcastq from the low element
