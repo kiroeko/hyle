@@ -6,6 +6,8 @@
 > [`../debug/op-parity-harness-artifacts-hunt.md`](../debug/op-parity-harness-artifacts-hunt.md)),
 > 每个 op 均有三平台校准 parity 数据背书——**覆盖率已过"广度"阶段,当前真正的资产是"每个数字可信"**。
 > 本文取代旧 gap-inventory(SVE/RVV 缺口版,已完成并吸收进 simd-15~18 文档)。
+> 正交视角的姊妹文档:[`simd-complexity-opportunities.md`](./simd-complexity-opportunities.md)
+> ——本文管"op 面缺什么名字",它管"算法件哪里还能在复杂度层面超过现状"。
 
 ## 方法
 
