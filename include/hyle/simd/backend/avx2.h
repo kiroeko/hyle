@@ -2411,6 +2411,28 @@ HYLE_FORCE_INLINE auto op128(auto a, auto b) noexcept {
     }
   }
 }
+// 256-bit lane-op (Add/Min/Max), same RedOp dispatch as op128 -- used by the full-256 reduce shape.
+template <typename T, RedOp op>
+HYLE_FORCE_INLINE auto op256(auto a, auto b) noexcept {
+  if constexpr (std::is_same_v<T, float>) {
+    if constexpr (op == RedOp::kAdd) return _mm256_add_ps(a, b);
+    else if constexpr (op == RedOp::kMin) return _mm256_min_ps(a, b);
+    else return _mm256_max_ps(a, b);
+  } else if constexpr (std::is_same_v<T, double>) {
+    if constexpr (op == RedOp::kAdd) return _mm256_add_pd(a, b);
+    else if constexpr (op == RedOp::kMin) return _mm256_min_pd(a, b);
+    else return _mm256_max_pd(a, b);
+  } else {  // i32/u32
+    if constexpr (op == RedOp::kAdd) return _mm256_add_epi32(a, b);
+    else if constexpr (op == RedOp::kMin) {
+      if constexpr (std::is_same_v<T, std::int32_t>) return _mm256_min_epi32(a, b);
+      else return _mm256_min_epu32(a, b);
+    } else {
+      if constexpr (std::is_same_v<T, std::int32_t>) return _mm256_max_epi32(a, b);
+      else return _mm256_max_epu32(a, b);
+    }
+  }
+}
 
 template <typename T, std::size_t N, RedOp op>
 HYLE_FORCE_INLINE T reduce256(Vec256<T, N> v) noexcept {
@@ -2487,6 +2509,24 @@ template <typename T, std::size_t N, RedOp op>
 HYLE_FORCE_INLINE Vec256<T, N> reduce256_broadcast(Vec256<T, N> v) noexcept {
   static_assert(sizeof(T) == 4, "reduce256_broadcast is 32-bit lanes only");
   Vec256<T, N> r;
+#if defined(_MSC_VER) && !defined(__clang__)
+  // MSVC: stay full-256 the whole way (Highway's ReduceAcrossBlocks+ReduceWithinBlocks shape) --
+  // op(v, SwapAdjacentBlocks(v)) folds the two 128-blocks, then two per-128 shuffle_epi32/ps rounds
+  // leave the reduction in EVERY lane (no extract-to-xmm + broadcast-back). GCC prefers the 128-domain
+  // form below (it reads 1.16-1.19x Highway there); MSVC's 128-domain codegen lost ~0.91, this ties.
+  if constexpr (std::is_same_v<T, float>) {
+    __m256 t = op256<T, op>(v.raw, _mm256_permute2f128_ps(v.raw, v.raw, 0x01));
+    t = op256<T, op>(t, _mm256_shuffle_ps(t, t, _MM_SHUFFLE(2, 3, 0, 1)));
+    t = op256<T, op>(t, _mm256_shuffle_ps(t, t, _MM_SHUFFLE(1, 0, 3, 2)));
+    r.raw = t;
+  } else {
+    __m256i t = op256<T, op>(v.raw, _mm256_permute2x128_si256(v.raw, v.raw, 0x01));
+    t = op256<T, op>(t, _mm256_shuffle_epi32(t, _MM_SHUFFLE(2, 3, 0, 1)));
+    t = op256<T, op>(t, _mm256_shuffle_epi32(t, _MM_SHUFFLE(1, 0, 3, 2)));
+    r.raw = t;
+  }
+  return r;
+#else
   if constexpr (std::is_same_v<T, float>) {
     // 128-bit reduce tree (same as reduce256), result in every lane of the low 128, then
     // broadcast the low 128 across both halves (vinsertf128 low,low). No GPR round-trip.
@@ -2503,6 +2543,7 @@ HYLE_FORCE_INLINE Vec256<T, N> reduce256_broadcast(Vec256<T, N> v) noexcept {
     r.raw = _mm256_inserti128_si256(_mm256_castsi128_si256(s), s, 1);     // broadcast to 8
   }
   return r;
+#endif
 }
 }  // namespace detail
 // Gate the capability macro on AVX2 being the PRIMARY target: avx512.h includes this header for
