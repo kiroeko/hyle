@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;十轮修复后 x86 双编译器交集清零,MSVC 真输 4)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;十一轮修复后 x86 双编译器交集清零,MSVC 真输 3)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,8 +19,7 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 4 个
-- RoundingShiftRightAndDemoteTo<3> i32->i16 (4096): **0.91**
+### MSVC(AVX2): 3 个
 - BroadcastLane<3> i32: **0.93** —— 已定论保留 vpermd:MSVC 0.93 是 bench 形状特定差距(Highway 的内存源 vbroadcasti128 折叠红利;寄存器输入下 vpermd 更优,GCC 反赢 1.13)
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
 - Mod i32 invariant: **0.93**
@@ -96,6 +95,11 @@
   加全-256 HWY shape(op(v,SwapAdjacentBlocks(v))+两轮 256 shuffle,每 lane 已得结果无需 broadcast)。
   #if _MSC_VER:MSVC 全-256 / GCC 保 128-domain。MSVC Sum 0.91→1.05 TIE、Max 0.95→1.13 WIN、Min 0.96→1.13 WIN;
   GCC 三个保持 1.17~1.19 WIN。一个共享核分叉,三个 op 全解决。MSVC 真输 6→4。
+- 第十一轮(2026-07-14,commit 2fa1c2e):RoundingShiftRight<k> 弃 bias 常量(v+2^(k-1))>>k 改自减形
+  sv=v>>(k-1);sv-(sv>>1)(Highway 形,消 vpbroadcastd+vpaddd)。穷举证 bit-identical(4.3e9,diff=0)
+  非契约变更。RoundingShiftRightAndDemoteTo<3> MSVC 0.91→0.97 TIE、GCC 1.12W→1.00 TIE(GCC 丢的是旧
+  形态意外超 Highway 的 margin,新形态=Highway 逐指令→TIE,符合"有参考只能平"底线)。统一改(非分叉,
+  两编译器都 TIE 无 loser)。MSVC 真输 4→3。
 ## 全量表
 
 | op | MSVC(AVX2) | WSL GCC(AVX2) | Mac(NEON) |
@@ -316,7 +320,7 @@
 | Round f32 | 1.00= | 1.00= | 1.04= |
 | RoundToInt f32->i32 | 1.38W | 1.14W | 1.00= |
 | RoundingShiftRight<2> i32 | 1.08? | 0.99= | 0.99= |
-| RoundingShiftRightAndDemoteTo<3> i32->i16 (4096) | 0.91L | 1.12W | · |
+| RoundingShiftRightAndDemoteTo<3> i32->i16 (4096) | 0.97= | 1.00= | · |
 | RoundingShiftRightSame i32 bits=5 | 1.10W | 1.00= | 1.46W |
 | RoundingShr i32 | 1.48W | 1.15W | 1.00? |
 | SatWidenMulAccumFixedPoint i16->i32 | 1.90W | 1.78W | · |
