@@ -1485,11 +1485,16 @@ HYLE_FORCE_INLINE VFromD<D> NaN(D d) noexcept {
   return Set(d, std::numeric_limits<TFromD<D>>::quiet_NaN());
 }
 
-// IfVecThenElse(mask, yes, no): bitwise select using a VECTOR (per-lane MSB / all-bits) as the
-// selector, not a mask type. Generic = bridge the vector to the mask domain then IfThenElse.
+// IfVecThenElse(mask, yes, no): bitwise select using a VECTOR selector. CONTRACT (matches Highway):
+// result is implementation-defined where mask[i] is neither zero nor all-bits-set. So bridge via
+// MaskFromNormalizedVec, NOT MaskFromVec -- on avx2/sse4 that drops MaskFromVec's defensive sign-
+// broadcast (vpsrad $31) since the blendv only reads each lane's MSB and the contract already
+// requires all-bits masks (op_parity IfVecThenElse MSVC 0.94: that vpsrad was the only extra insn
+// vs Highway, which likewise trusts the mask). Other backends' MaskFromNormalizedVec forwards to
+// MaskFromVec (k-reg/scalar need the real extraction), so no change there.
 template <class V>
 HYLE_FORCE_INLINE V IfVecThenElse(V mask, V yes, V no) noexcept {
-  return IfThenElse(MaskFromVec(mask), yes, no);
+  return IfThenElse(MaskFromNormalizedVec(mask), yes, no);
 }
 
 // IfNegativeThenNegOrUndefIfZero(mask, v): where mask<0, negate v; where mask>0, keep v; where
