@@ -2769,6 +2769,59 @@ HYLE_FORCE_INLINE Vec256<T, N> ZipUpper(Vec256<T, N> a, Vec256<T, N> b) noexcept
 // LoadN/StoreN touch ONLY the first k lanes (fault-safe tail I/O); MaskedLoad mirrors
 // Highway's AVX2 narrow path (IfThenElseZero + full LoadU -- caller ensures the vector is
 // loadable), BlendedStore writes only on-lanes (fault-safe, mask-driven).
+namespace detail {
+// Fault-safe partial 128-bit load of k (0..4) 32-bit lanes, zero above -- Highway's power-of-2
+// decomposition (movq for 2, cvtsi32 for 1, insert for the odd 3rd). Reads EXACTLY k lanes, never
+// past. Beats vpmaskmovd (a slow gather-class uop on Intel; op_parity GCC: masked LoadN ~1.7x slower
+// than this tiered LoadU) while staying fault-safe. k must be <= 4.
+HYLE_FORCE_INLINE __m128i partial_load128_i32(const int* p, int k) noexcept {
+  switch (k) {
+    case 0: return _mm_setzero_si128();
+    case 1: return _mm_cvtsi32_si128(p[0]);
+    case 2: return _mm_loadl_epi64(reinterpret_cast<const __m128i*>(p));
+    case 3: return _mm_insert_epi32(_mm_loadl_epi64(reinterpret_cast<const __m128i*>(p)), p[2], 2);
+    default: return _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));  // k>=4: full 128
+  }
+}
+HYLE_FORCE_INLINE void partial_store128_i32(int* p, __m128i v, int k) noexcept {
+  switch (k) {
+    case 0: return;
+    case 1: p[0] = _mm_cvtsi128_si32(v); return;
+    case 2: _mm_storel_epi64(reinterpret_cast<__m128i*>(p), v); return;
+    case 3: _mm_storel_epi64(reinterpret_cast<__m128i*>(p), v); p[2] = _mm_extract_epi32(v, 2); return;
+    default: _mm_storeu_si128(reinterpret_cast<__m128i*>(p), v); return;  // k>=4: full 128
+  }
+}
+// 64-bit lane variants (k = 0..2).
+HYLE_FORCE_INLINE __m128i partial_load128_i64(const long long* p, int k) noexcept {
+  if (k <= 0) return _mm_setzero_si128();
+  if (k == 1) return _mm_loadl_epi64(reinterpret_cast<const __m128i*>(p));
+  return _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));  // k>=2: full 128
+}
+HYLE_FORCE_INLINE void partial_store128_i64(long long* p, __m128i v, int k) noexcept {
+  if (k <= 0) return;
+  if (k == 1) { _mm_storel_epi64(reinterpret_cast<__m128i*>(p), v); return; }
+  _mm_storeu_si128(reinterpret_cast<__m128i*>(p), v);  // k>=2
+}
+// 128-bit LoadNOr: first k (0..4) 32-bit lanes from p, `no128` elsewhere. Fault-safe partial load
+// then blend `no` only where k didn't cover. k>=4 (full half) is a plain LoadU (no blend) -- the
+// common exact-half tail case, so it's just one movdqu. (This is why Highway's Concat-half structure
+// beats a per-lane blendv: the untouched half is `no` verbatim, no mask needed.)
+HYLE_FORCE_INLINE __m128i partial_loador128_i32(__m128i no128, const int* p, int k) noexcept {
+  if (k >= 4) return _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
+  if (k <= 0) return no128;
+  const __m128i loaded = partial_load128_i32(p, k);            // low k real, 0 above
+  const __m128i iota = _mm_set_epi32(3, 2, 1, 0);
+  const __m128i m = _mm_cmpgt_epi32(_mm_set1_epi32(k), iota);  // lane<k -> all-ones
+  return _mm_blendv_epi8(no128, loaded, m);
+}
+HYLE_FORCE_INLINE __m128i partial_loador128_i64(__m128i no128, const long long* p, int k) noexcept {
+  if (k >= 2) return _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
+  if (k <= 0) return no128;
+  const __m128i loaded = _mm_loadl_epi64(reinterpret_cast<const __m128i*>(p));  // lane0 real
+  return _mm_blend_epi16(no128, loaded, 0x0F);  // low 64 bits from loaded, high 64 from no
+}
+}  // namespace detail
 template <class D> requires HYLE_SIMD_W(D, 16, 32)
 HYLE_FORCE_INLINE Mask256<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D, std::size_t n) noexcept {
   using T = TFromD<D>;
@@ -2841,26 +2894,30 @@ HYLE_FORCE_INLINE detail::V256<D> LoadN(D d, const TFromD<D>* p, std::size_t n) 
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   const int k = static_cast<int>(n < kN ? n : kN);
-  // 4/8-byte lanes: NATIVE _mm256_maskload_* -- off-mask lanes are NOT read (fault-safe) AND come
-  // back zero, which IS LoadN's contract (low k lanes from p, zero above). One instruction vs the
-  // scalar per-lane fill+reload (op_parity: that was ~1.6x Highway on x86, a real store+reload loss).
-  // Mask = iota<k, built in-register (same as LoadNOr/BlendedStore). 8/16-bit have no AVX2 maskload
-  // -> keep the fault-safe scalar path (reads only k lanes), same as Highway there.
+  // 4/8-byte lanes: TIERED fault-safe LoadU (Highway generic_ops 256-bit recursion), NOT vpmaskmovd.
+  // vpmaskmovd/pd is a slow gather-class uop on Intel (op_parity GCC: masked LoadN ~1.7x slower than
+  // this). Split at the 128-bit half: if k covers the low half, LoadU it whole + partial-load the
+  // rest into the high 128; else the low 128 is a partial load, high stays zero. Each sub-load reads
+  // EXACTLY the lanes k guarantees exist (fault-safe). 8/16-bit keep the scalar path (no fast partial).
   if constexpr (sizeof(T) == 4) {
-    const __m256i iota = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
-    const __m256i m = _mm256_cmpgt_epi32(_mm256_set1_epi32(k), iota);  // lane<k -> all-ones
+    const int* ip = reinterpret_cast<const int*>(p);
+    __m128i lo, hi;
+    if (k > 4) { lo = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ip)); hi = detail::partial_load128_i32(ip + 4, k - 4); }
+    else       { lo = detail::partial_load128_i32(ip, k); hi = _mm_setzero_si128(); }
     detail::V256<D> r;
-    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_maskload_ps(p, m);
-    else r.raw = _mm256_maskload_epi32(reinterpret_cast<const int*>(p), m);
+    const __m256i z = _mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1);
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_castsi256_ps(z); else r.raw = z;
     return r;
   } else if constexpr (sizeof(T) == 8) {
-    const __m256i iota = _mm256_set_epi64x(3, 2, 1, 0);
-    const __m256i m = _mm256_cmpgt_epi64(_mm256_set1_epi64x(k), iota);
+    const long long* lp = reinterpret_cast<const long long*>(p);
+    __m128i lo, hi;
+    if (k > 2) { lo = _mm_loadu_si128(reinterpret_cast<const __m128i*>(lp)); hi = detail::partial_load128_i64(lp + 2, k - 2); }
+    else       { lo = detail::partial_load128_i64(lp, k); hi = _mm_setzero_si128(); }
     detail::V256<D> r;
-    if constexpr (std::is_same_v<T, double>) r.raw = _mm256_maskload_pd(p, m);
-    else r.raw = _mm256_maskload_epi64(reinterpret_cast<const long long*>(p), m);
+    const __m256i z = _mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1);
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm256_castsi256_pd(z); else r.raw = z;
     return r;
-  } else {  // 8/16-bit: no AVX2 maskload -> fault-safe scalar (read only k lanes), zero above.
+  } else {  // 8/16-bit: no fast partial -> fault-safe scalar (read only k lanes), zero above.
     alignas(32) T tmp[kN] = {};
     for (int i = 0; i < k; ++i) tmp[i] = p[i];
     return Load(d, tmp);
@@ -2871,20 +2928,22 @@ HYLE_FORCE_INLINE void StoreN(detail::V256<D> v, D d, TFromD<D>* p, std::size_t 
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   const int k = static_cast<int>(n < kN ? n : kN);
-  // 4/8-byte lanes: NATIVE _mm256_maskstore_* -- writes ONLY the low k lanes (fault-safe on the
-  // masked-off tail), matching StoreN's contract. One instruction vs store+scalar-loop (same win
-  // class as BlendedStore). 8/16-bit: no AVX2 maskstore -> scalar per-lane (writes only k), as Highway.
+  // 4/8-byte lanes: TIERED fault-safe StoreU (mirror of LoadN), NOT vpmaskmovd -- the masked store is
+  // the same slow gather-class uop. Split at the 128-bit half; each sub-store writes EXACTLY k lanes.
+  // 8/16-bit: no fast partial -> scalar per-lane (writes only k), as Highway.
   if constexpr (sizeof(T) == 4) {
-    const __m256i iota = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
-    const __m256i m = _mm256_cmpgt_epi32(_mm256_set1_epi32(k), iota);
-    if constexpr (std::is_same_v<T, float>) _mm256_maskstore_ps(p, m, v.raw);
-    else _mm256_maskstore_epi32(reinterpret_cast<int*>(p), m, v.raw);
+    int* ip = reinterpret_cast<int*>(p);
+    __m256i z; if constexpr (std::is_same_v<T, float>) z = _mm256_castps_si256(v.raw); else z = v.raw;
+    const __m128i lo = _mm256_castsi256_si128(z);
+    if (k > 4) { _mm_storeu_si128(reinterpret_cast<__m128i*>(ip), lo); detail::partial_store128_i32(ip + 4, _mm256_extracti128_si256(z, 1), k - 4); }
+    else       { detail::partial_store128_i32(ip, lo, k); }
   } else if constexpr (sizeof(T) == 8) {
-    const __m256i iota = _mm256_set_epi64x(3, 2, 1, 0);
-    const __m256i m = _mm256_cmpgt_epi64(_mm256_set1_epi64x(k), iota);
-    if constexpr (std::is_same_v<T, double>) _mm256_maskstore_pd(p, m, v.raw);
-    else _mm256_maskstore_epi64(reinterpret_cast<long long*>(p), m, v.raw);
-  } else {  // 8/16-bit: no AVX2 maskstore -> scalar (write only k lanes), fault-safe.
+    long long* lp = reinterpret_cast<long long*>(p);
+    __m256i z; if constexpr (std::is_same_v<T, double>) z = _mm256_castpd_si256(v.raw); else z = v.raw;
+    const __m128i lo = _mm256_castsi256_si128(z);
+    if (k > 2) { _mm_storeu_si128(reinterpret_cast<__m128i*>(lp), lo); detail::partial_store128_i64(lp + 2, _mm256_extracti128_si256(z, 1), k - 2); }
+    else       { detail::partial_store128_i64(lp, lo, k); }
+  } else {  // 8/16-bit: no fast partial -> scalar (write only k lanes), fault-safe.
     alignas(32) T tmp[kN];
     Store(v, d, tmp);
     for (int i = 0; i < k; ++i) p[i] = tmp[i];
@@ -2901,31 +2960,34 @@ HYLE_FORCE_INLINE detail::V256<D> LoadNOr(detail::V256<D> no, D d, const TFromD<
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   const int k = static_cast<int>(n < kN ? n : kN);
+  // Concat-half structure (Highway generic_ops): the 128-bit half k does NOT touch keeps `no`
+  // VERBATIM (no mask, no blend) -- the untouched half is just `no`'s corresponding 128. Only the
+  // straddling half runs a partial-load-with-no-fill. Replaces vpmaskmovd (~9.6x Highway on GCC) AND
+  // avoids the full-width blendv+mask the first tier draft used. Exact-half tail (k==half) is one
+  // movdqu + one vinserti128.
   if constexpr (sizeof(T) == 4) {
-    const __m256i iota = _mm256_set_epi32(7, 6, 5, 4, 3, 2, 1, 0);
-    const __m256i m = _mm256_cmpgt_epi32(_mm256_set1_epi32(k), iota);  // lane<k -> all-ones
+    const int* ip = reinterpret_cast<const int*>(p);
+    __m256i noi; if constexpr (std::is_same_v<T, float>) noi = _mm256_castps_si256(no.raw); else noi = no.raw;
+    const __m128i no_lo = _mm256_castsi256_si128(noi), no_hi = _mm256_extracti128_si256(noi, 1);
+    __m128i lo, hi;
+    if (k > 4) { lo = _mm_loadu_si128(reinterpret_cast<const __m128i*>(ip)); hi = detail::partial_loador128_i32(no_hi, ip + 4, k - 4); }
+    else       { lo = detail::partial_loador128_i32(no_lo, ip, k); hi = no_hi; }
+    const __m256i z = _mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1);
     detail::V256<D> r;
-    if constexpr (std::is_same_v<T, float>) {
-      const __m256 loaded = _mm256_maskload_ps(p, m);  // off-lane not read (fault-safe), =0
-      r.raw = _mm256_blendv_ps(no.raw, loaded, _mm256_castsi256_ps(m));
-    } else {
-      const __m256i loaded = _mm256_maskload_epi32(reinterpret_cast<const int*>(p), m);
-      r.raw = _mm256_blendv_epi8(no.raw, loaded, m);
-    }
+    if constexpr (std::is_same_v<T, float>) r.raw = _mm256_castsi256_ps(z); else r.raw = z;
     return r;
   } else if constexpr (sizeof(T) == 8) {
-    const __m256i iota = _mm256_set_epi64x(3, 2, 1, 0);
-    const __m256i m = _mm256_cmpgt_epi64(_mm256_set1_epi64x(k), iota);
+    const long long* lp = reinterpret_cast<const long long*>(p);
+    __m256i noi; if constexpr (std::is_same_v<T, double>) noi = _mm256_castpd_si256(no.raw); else noi = no.raw;
+    const __m128i no_lo = _mm256_castsi256_si128(noi), no_hi = _mm256_extracti128_si256(noi, 1);
+    __m128i lo, hi;
+    if (k > 2) { lo = _mm_loadu_si128(reinterpret_cast<const __m128i*>(lp)); hi = detail::partial_loador128_i64(no_hi, lp + 2, k - 2); }
+    else       { lo = detail::partial_loador128_i64(no_lo, lp, k); hi = no_hi; }
+    const __m256i z = _mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1);
     detail::V256<D> r;
-    if constexpr (std::is_same_v<T, double>) {
-      const __m256d loaded = _mm256_maskload_pd(p, m);
-      r.raw = _mm256_blendv_pd(no.raw, loaded, _mm256_castsi256_pd(m));
-    } else {
-      const __m256i loaded = _mm256_maskload_epi64(reinterpret_cast<const long long*>(p), m);
-      r.raw = _mm256_blendv_epi8(no.raw, loaded, m);
-    }
+    if constexpr (std::is_same_v<T, double>) r.raw = _mm256_castsi256_pd(z); else r.raw = z;
     return r;
-  } else {  // 8/16-bit: no AVX2 maskload -> fault-safe scalar (read only k lanes), same as Highway.
+  } else {  // 8/16-bit: no fast partial -> fault-safe scalar (read only k lanes), same as Highway.
     alignas(32) T tmp[kN];
     Store(no, d, tmp);
     for (int i = 0; i < k; ++i) tmp[i] = p[i];
