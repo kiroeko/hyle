@@ -1844,8 +1844,28 @@ HYLE_FORCE_INLINE Mask256<T, N> IsEitherNaN(Vec256<T, N> a, Vec256<T, N> b) noex
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> IsInf(Vec256<T, N> v) noexcept {
   static_assert(std::is_floating_point_v<T>, "IsInf is float-only");
+#if defined(_MSC_VER) && !defined(__clang__)
+  // Integer-domain (Highway generic): (bits+bits) clears the sign bit; ==exponent-all-ones-mantissa-0
+  // is exactly +/-inf. Avoids the FP Abs(vandps)+vcmpeqps pair the Eq(Abs(v),inf) form emits, which
+  // MSVC codegens ~0.93; this ties. GCC prefers the FP form (1.14x) so it keeps it (#else).
+  using U = MakeUnsigned<T>;
+  const Simd<T, N, 0> d;
+  const Simd<U, N, 0> du;
+  const auto vu = BitCast(du, v);
+  U kExp2;  // (exponent all-ones, mantissa 0) << 1 : f32 0x7F800000<<1, f64 0x7FF0..<<1
+  if constexpr (std::is_same_v<T, float>) kExp2 = U{0xFF000000u};
+  else kExp2 = U{0xFFE0000000000000ull};
+  // Eq in the u-domain yields a canonical -1/0 vector-mask; reinterpret it to the float mask domain
+  // (same byte width, MaskFromVec-of-BitCast keeps the per-lane all-ones/zero pattern).
+  const auto um = Eq(Add(vu, vu), Set(du, kExp2));  // um.raw is __m256i (U integer)
+  Mask256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_castsi256_ps(um.raw);
+  else r.raw = _mm256_castsi256_pd(um.raw);
+  return r;
+#else
   const auto inf = Set(Simd<T, N, 0>(), std::numeric_limits<T>::infinity());
   return Eq(Abs(v), inf);
+#endif
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> IsFinite(Vec256<T, N> v) noexcept {

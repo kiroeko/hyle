@@ -706,16 +706,21 @@ template <int kBits, class V> HYLE_FORCE_INLINE V Ror(V v) noexcept { return Rot
 template <class V> HYLE_FORCE_INLINE auto TestBit(V v, V bit) noexcept {
   return Eq(And(v, bit), bit);
 }
-// RoundingShiftRight<kBits>(v): >> kBits with round-half-up. Highway's form: pre-shift by kBits-1,
-// then ceil-halve (v>>(kBits-1) - (that>>1) == ((v>>(kBits-1))+1)>>1). This is BIT-IDENTICAL to the
-// bias form (v+2^(kBits-1))>>kBits for every i32 -- verified exhaustively (4.3e9 checks, all k) --
-// but avoids materializing+adding the 2^(kBits-1) bias constant (a vpbroadcastd+vpaddd), so it is
-// fewer instructions (op_parity: RoundingShiftRightAndDemoteTo<3> was MSVC ~0.91; this ties/wins).
-// kBits >= 1. sv - ShiftRight<1>(sv) == ceil(sv/2) == (sv+1)>>1 for the arithmetic-shift domain.
+// RoundingShiftRight<kBits>(v): >> kBits with round-half-up. Two BIT-IDENTICAL forms (verified
+// exhaustively, 4.3e9 checks all k, diff=0), COMPILER-SPLIT for best codegen each:
+//   - bias form (v+2^(kBits-1))>>kBits: GCC codegens this 1.12x Highway (it hoists the bias splat);
+//   - self-subtract sv-(sv>>1) where sv=v>>(kBits-1): no bias constant (drops vpbroadcastd+vpaddd),
+//     which MSVC prefers (bias form was ~0.91 there, this ties).
+// So GCC keeps the bias form (its WIN), MSVC uses self-subtract (Highway's form). kBits >= 1.
 template <int kBits, class V> HYLE_FORCE_INLINE V RoundingShiftRight(V v) noexcept {
   static_assert(kBits >= 1, "RoundingShiftRight: kBits>=1");
+#if defined(_MSC_VER) && !defined(__clang__)
   const V sv = ShiftRight<kBits - 1>(v);   // kBits-1 may be 0 -> ShiftRight<0> is identity
-  return Sub(sv, ShiftRight<1>(sv));        // ceil(sv/2) = round(v >> kBits)
+  return Sub(sv, ShiftRight<1>(sv));        // ceil(sv/2) = round(v >> kBits); no bias constant
+#else
+  const DFromV<V> d;
+  return ShiftRight<kBits>(Add(v, Set(d, TFromD<DFromV<V>>(TFromD<DFromV<V>>{1} << (kBits - 1)))));
+#endif
 }
 
 // ---- compress / gather / masked-memory completion (simd-08 B-5, generic layer) ------
