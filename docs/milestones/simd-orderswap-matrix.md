@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;十三轮修复后 x86 双编译器交集清零,MSVC 真输 1)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;十四轮修复后 x86 双编译器交集清零,MSVC 真输 1 / GCC 1 / NEON 0)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -25,13 +25,8 @@
 ### WSL/GCC(AVX2): 1 个
 - FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump:两侧指令相同且循环顶同为 64B 对齐(GCC .p2align 吸收 stagger)-> 绝对地址级仪器残余,HYLE 代码无可修,非算法输
 
-### Mac/NEON: 2 个
-- MulSubAdd f32: **0.87** —— 仅 NEON 0.90
-- MulAddSub f32: **0.88** —— 仅 NEON 0.88
-
-### x86 双编译器交集(最高优先级): 0 个
-- (曾唯余 CompressNot i32,MSVC 0.81/GCC 0.94;commit 7c856fa 消向量 Not 后 GCC→1.02 ≥TIE、MSVC→0.93 且残余归 Compress 公共路径(同轮 Compress 本身 0.945),交集清零。独立双序复核确认。)
-- 注:MSVC `Compress i32` 0.94 与 CompressNot 同源,但 GCC 侧 Compress TIE,故不构成双编译器交集。
+### Mac/NEON: 0 个
+- (第十四轮清零:MulAddSub/MulSubAdd 弃两 FMA 的 OddEven(MulAdd,MulSub) 改 Highway 单 FMA 形,见演进段。)
 
 ### 与旧报告的对照(演进:旧 harness -> v1 校准仪器 -> 修复 + v2 stagger)
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
@@ -112,6 +107,14 @@
   Highway 同)。MSVC 0.93→0.97 TIE;GCC 0.99→1.00(本就 TIE,略升);姊妹 MaskedModOr 复合上下文 stack op
   6→4(共享同核)一并改善。gtest Div/Mod/Divisor 双平台 5 pass。纯 regalloc(非算法/非缺 Highway trick,
   MaskedModOr TIE + GCC TIE 双证)。MSVC 真输 2→1。**至此 MSVC 真输仅余 BroadcastLane<3>(bench 形状定论)。**
+- 第十四轮(2026-07-14,Apple Silicon 真机):MulAddSub/MulSubAdd f32 NEON——弃两 FMA 改 Highway 单 FMA 形。
+  HYLE 泛型层原 `OddEven(MulAdd(m,x,c), MulSub(m,x,c))` 发**两条 FMA**再选;Highway generic 先把加数在做减法
+  的 lane 预取反 `OddEven(c, Neg(c))` 再单条 `MulAdd(m,x,·)`=**一条 FMA**(取反的是循环不变 c 可外提)。
+  x86 AVX2 有 native vfmaddsub/vfmsubadd 覆盖泛型故不受影响,本改只动 neon/sve/rvv/scalar/sse4/avx512
+  (均无 fused add-sub 指令)。符号约定逐 lane 核对不变(MulAddSub 偶=减/MulSubAdd 偶=加)。真机 NEON gtest
+  220 pass + MSVC avx2/sse4/scalar MulAdd 族全 pass。校准仪器 Mac 3+3 run 合并 --gate 0.06 **CALIBRATION PASS**:
+  MulAddSub 0.88→0.97 TIE、MulSubAdd 0.87→1.01 TIE。**Mac/NEON 真输清零。三平台真输终态 MSVC 1 / GCC 1 / NEON 0,
+  x86 双编译器交集 0。**
 ## 全量表
 
 | op | MSVC(AVX2) | WSL GCC(AVX2) | Mac(NEON) |
@@ -265,7 +268,7 @@
 | Mul f32 | 1.01= | 0.99= | 1.01= |
 | Mul i32 | 0.99= | 1.02= | 0.98= |
 | MulAdd f32 (4096) | 1.00= | 1.01= | · |
-| MulAddSub f32 | 0.99= | 0.99= | 0.88L |
+| MulAddSub f32 | 0.99= | 0.99= | 0.97= |
 | MulByFloorPow2 f32 | 1.06W | 0.98= | 1.00= |
 | MulByPow2 f32 | 1.00= | 1.00= | 1.00= |
 | MulComplex f32 | 1.44W | 1.19W | 1.00= |
@@ -280,7 +283,7 @@
 | MulOdd i32-i64 | 0.97= | 0.91= | 1.00= |
 | MulRound f32 | 1.00= | 0.99= | 1.01? |
 | MulSub f32 | 1.00= | 0.99= | 0.98? |
-| MulSubAdd f32 | 1.02= | 1.00= | 0.87L |
+| MulSubAdd f32 | 1.02= | 1.00= | 1.01= |
 | MultiRotateRight u64 (4096) | 0.99= | 1.00= | · |
 | Ne i32 | 1.00= | 1.00= | 1.00= |
 | Ne128 u64 | 0.99= | 1.00= | 0.98? |

@@ -329,15 +329,40 @@ HYLE_FORCE_INLINE V NegMulSub(V mul, V x, V sub) noexcept {
   }
 }
 
-// Even lanes are subtraction for MulAddSub and addition for MulSubAdd.
+// Even lanes are subtraction for MulAddSub and addition for MulSubAdd. Pre-negate the addend on the
+// lanes that subtract, then a SINGLE MulAdd (Highway's generic form): one FMA + one OddEven, vs the
+// naive OddEven(MulAdd,MulSub) which issues TWO FMAs. The negation of sub_or_add is loop-invariant
+// so it hoists. x86 AVX2 has native vfmaddsub/vfmsubadd overriding these; this generic form serves
+// neon/sve/rvv/scalar/sse4/avx512 (none of which has a fused add-sub instruction).
+// OddEven(odd, even): dst even lanes take arg2, odd lanes take arg1.
 template <class V>
 HYLE_FORCE_INLINE V MulAddSub(V mul, V x, V sub_or_add) noexcept {
-  return OddEven(MulAdd(mul, x, sub_or_add), MulSub(mul, x, sub_or_add));
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  const D d;
+  V neg;  // -sub_or_add (integer via unsigned domain so MIN stays modular, matching MulSub)
+  if constexpr (std::is_floating_point_v<T>) {
+    neg = Neg(sub_or_add);
+  } else {
+    const RebindToUnsigned<D> du;
+    neg = BitCast(d, Sub(Zero(du), BitCast(du, sub_or_add)));
+  }
+  return MulAdd(mul, x, OddEven(sub_or_add, neg));  // even lanes -c (sub), odd lanes +c (add)
 }
 
 template <class V>
 HYLE_FORCE_INLINE V MulSubAdd(V mul, V x, V sub_or_add) noexcept {
-  return OddEven(MulSub(mul, x, sub_or_add), MulAdd(mul, x, sub_or_add));
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  const D d;
+  V neg;
+  if constexpr (std::is_floating_point_v<T>) {
+    neg = Neg(sub_or_add);
+  } else {
+    const RebindToUnsigned<D> du;
+    neg = BitCast(d, Sub(Zero(du), BitCast(du, sub_or_add)));
+  }
+  return MulAdd(mul, x, OddEven(neg, sub_or_add));  // even lanes +c (add), odd lanes -c (sub)
 }
 
 template <class V>
