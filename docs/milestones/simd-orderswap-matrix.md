@@ -144,6 +144,14 @@
   - 验证:MSVC+GCC 各 avx2/sse4/scalar gtest 9 pass;3-run 双序 CALIBRATION PASS,两 op 两编译器全 TIE,
     全表 LOSE 扫描归零(MaskedModOr 0.965 gate-edge 复测消失)。**方法学:`?` 不是"免检"——多轮锁核双序
     才能分清真 UNSTABLE 与被噪声淹没的真输;单轮 0.84 若 3-run 稳定就是真输,必查 disasm。**
+- 全量回归轮(2026-07-14):动了泛型层(IsNegative/AddSub)后跑全量——MSVC 221/220/305 + GCC 221/220/
+  scalar + avx512 SDE 221 + Mac NEON 220 gtest 全绿;GCC/Mac 全表 LOSE 归零。MSVC 全量 5-run 又暴出
+  **Compress i32 稳定 0.94(此前"dumpbin 已≥Highway 移出"的定论又被推翻)**:/FAs 逐条 diff 现 HYLE 比
+  Highway **多一条 `movzx edx,al`**——`compress32_by_bits` 里 `kTbl[mbits & 0xFFu]` 的 `& 0xFF` 让 MSVC
+  在 `vmovmskps eax` 后补零扩展 al→edx;而 movemask_ps 结果本就 0..255,`& 0xFF` 冗余(Highway 直接
+  `vmovmskps edx` 索引)。删掉 `& 0xFF`→两编译器逐字节=Highway,MSVC 0.94→0.98 UNSTABLE、CompressStore
+  0.99 TIE、CompressNot 0.95 UNSTABLE、GCC 不变(它本就用全宽寄存器)。**又一"签名级对比漏看标量尾巴"
+  (同 FindLastTrue 的 movslq):`movzx`/`movslq` 这类 0 成本外观的标量补齐指令恰好就是那 6%。**
 
 ## 全量表
 
@@ -178,7 +186,7 @@
 | CombineShiftRightBytes4 i32 | 1.04= | 0.99= | 1.00= |
 | CombineShiftRightLanes1 i32 | 0.96= | 0.99= | 1.00= |
 | ComplexConj f32 | 1.25W | 0.99= | 1.01= |
-| Compress i32 (4096, 50% dense) | 0.94? | 1.00= | · |
+| Compress i32 (4096, 50% dense) | 0.98? | 1.00= | · |
 | CompressBlendedStore i32 (4096, 50%) | 0.98? | 1.15W | · |
 | CompressNot i32 (4096, 50%) | 0.95? | 1.00= | · |
 | CompressStore i32 (4096, 50%) | 0.97? | 1.00= | · |

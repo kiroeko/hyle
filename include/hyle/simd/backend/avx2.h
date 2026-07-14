@@ -3256,7 +3256,10 @@ template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> compress32_by_bits(Vec256<T, N> v, unsigned mbits) noexcept {
   // broadcast the packed u32, then shift each of the 8 copies right by {0,4,...,28} so lane i
   // holds its 3-bit index in the low bits (vpermd ignores bits 3..31).
-  const __m256i packed = _mm256_set1_epi32(static_cast<int>(kCompressIdx32Packed[mbits & 0xFFu]));
+  // mbits is ALWAYS an 8-bit movemask_ps result (or its ^0xFF complement) -- callers guarantee
+  // 0..255, so NO `& 0xFF` here: that mask made MSVC emit a redundant `movzx edx,al` after vmovmskps
+  // (op_parity Compress 0.94; Highway indexes straight from the 8-bit movemask, no re-truncate).
+  const __m256i packed = _mm256_set1_epi32(static_cast<int>(kCompressIdx32Packed[mbits]));
   const __m256i shifts = _mm256_setr_epi32(0, 4, 8, 12, 16, 20, 24, 28);
   const __m256i idx = _mm256_srlv_epi32(packed, shifts);
   Vec256<T, N> r;
