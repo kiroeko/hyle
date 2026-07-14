@@ -30,10 +30,6 @@
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
 - Mod i32 invariant: **0.93**
 - MaxOfLanes i32: **0.95** —— 仅 MSVC 0.95(已从 0.86 改善,边缘)
-- (AddSub i32 已移出,commit 3f1b842:改 Add(a,OddEven(b,-b)) 后 GCC 0.94→TIE;MSVC 仍 0.84 但经查是
-  bench 调用形状特定(b 从内存双读的 vpblendd 内存操作数)——链式 b-在寄存器微基准 MSVC 三者持平 17ns、
-  dumpbin HYLE 4 条比 Highway 5 条还少,非算法输,同 BroadcastLane<3> 类。附带修 GCC 链式外提隐患:旧式
-  循环不变 b 无法外提,链式慢 24x,新式反超 Highway。)
 
 ### WSL/GCC(AVX2): 1 个
 - FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump:两侧指令相同且循环顶同为 64B 对齐(GCC .p2align 吸收 stagger)-> 绝对地址级仪器残余,HYLE 代码无可修,非算法输
