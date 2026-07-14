@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;九轮修复后 x86 双编译器交集清零,MSVC 真输 6)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;十轮修复后 x86 双编译器交集清零,MSVC 真输 4)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,13 +19,11 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 6 个
-- SumOfLanes i32: **0.91** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
+### MSVC(AVX2): 4 个
 - RoundingShiftRightAndDemoteTo<3> i32->i16 (4096): **0.91**
 - BroadcastLane<3> i32: **0.93** —— 已定论保留 vpermd:MSVC 0.93 是 bench 形状特定差距(Highway 的内存源 vbroadcasti128 折叠红利;寄存器输入下 vpermd 更优,GCC 反赢 1.13)
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
 - Mod i32 invariant: **0.93**
-- MaxOfLanes i32: **0.95** —— 仅 MSVC 0.95(已从 0.86 改善,边缘)
 
 ### WSL/GCC(AVX2): 1 个
 - FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump:两侧指令相同且循环顶同为 64B 对齐(GCC .p2align 吸收 stagger)-> 绝对地址级仪器残余,HYLE 代码无可修,非算法输
@@ -93,6 +91,11 @@
   上滑 1 lane)),用 Slide1Up(全 256 上滑,跨 128-block 正确;per-block ShiftLeftLanes<1> 边界会错已验)。
   MSVC 向量域 0.90→0.99 TIE、GCC 保 scalar-bits 1.16 WIN。全 256 i32 模式 bad=0。MSVC 真输 7→6。
   至此 Set*First 族(SetBeforeFirst/SetAtOrBeforeFirst)MSVC 全追平、GCC 全保反赢。
+- 第十轮(2026-07-14,commit 5e413c6):Sum/Min/MaxOfLanes 共享的 reduce256_broadcast 编译器分叉。
+  HYLE 128-domain(extracti128→xmm reduce→inserti128 broadcast)GCC 反赢 1.17~1.19 但 MSVC 差(0.91~0.96)。
+  加全-256 HWY shape(op(v,SwapAdjacentBlocks(v))+两轮 256 shuffle,每 lane 已得结果无需 broadcast)。
+  #if _MSC_VER:MSVC 全-256 / GCC 保 128-domain。MSVC Sum 0.91→1.05 TIE、Max 0.95→1.13 WIN、Min 0.96→1.13 WIN;
+  GCC 三个保持 1.17~1.19 WIN。一个共享核分叉,三个 op 全解决。MSVC 真输 6→4。
 ## 全量表
 
 | op | MSVC(AVX2) | WSL GCC(AVX2) | Mac(NEON) |
@@ -235,13 +238,13 @@
 | Max128 u64 | 0.99= | 0.97= | 1.00= |
 | MaxMagnitude f32 | 1.00= | 0.99= | 1.00= |
 | MaxNumber f32 | 0.99= | 1.00= | 0.98= |
-| MaxOfLanes i32 | 0.95L | 1.19W | 0.97? |
+| MaxOfLanes i32 | 1.13W | 1.19W | 0.97? |
 | Min f32 | 1.01= | 1.02= | 1.05= |
 | Min i32 (4096) | 1.00= | 1.01= | · |
 | Min128 u64 | 0.98= | 1.02= | 1.00= |
 | MinMagnitude f32 | 1.00= | 1.00= | 1.00= |
 | MinNumber f32 | 1.02= | 1.00= | 0.99= |
-| MinOfLanes i32 | 0.96? | 1.16W | 1.07= |
+| MinOfLanes i32 | 1.13W | 1.16W | 1.07= |
 | Mod i32 invariant | 0.93L | 0.99= | 1.07W |
 | Mul f32 | 1.01= | 0.99= | 1.01= |
 | Mul i32 | 0.99= | 1.02= | 0.98= |
@@ -362,7 +365,7 @@
 | StoreInterleaved4 f32 (4096) | 1.48W | 1.01? | · |
 | Sub f32 | 1.00= | 1.00= | 1.02? |
 | Sub i32 | 1.01= | 1.03= | 1.03= |
-| SumOfLanes i32 | 0.91L | 1.16W | 0.97= |
+| SumOfLanes i32 | 1.05= | 1.16W | 0.97= |
 | SumOfMulQuadAccumulate i8->i32 | 1.00= | 1.02= | · |
 | SumsOf2 u8->u16 | 0.98= | 1.00= | · |
 | SumsOf4 u8->u32 | 0.99= | 0.98= | · |
