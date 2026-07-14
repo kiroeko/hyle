@@ -3436,7 +3436,22 @@ HYLE_FORCE_INLINE Vec256<T, N> BroadcastSignBit(Vec256<T, N> v) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> IfNegativeThenElse(Vec256<T, N> v, Vec256<T, N> yes, Vec256<T, N> no) noexcept {
-  return IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), yes, no);
+  // blendv selects per lane by the selector's MSB, and "v < 0" IS v's sign bit -- feed v straight in
+  // as the blend control, skipping the explicit Lt(v,0) compare (vpcmpgtd) the generic
+  // IfThenElse(Lt(v,0),..) emits (Highway's IfNegativeThenElse shape). MUST use the LANE-WIDTH blend
+  // (vblendvps for 32-bit, vblendvpd for 64-bit) so each lane's high bit drives the whole lane; a
+  // per-byte vpblendvb would wrongly gate the low 3 bytes of a negative i32 by their own (clear) MSB.
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_blendv_ps(no.raw, yes.raw, v.raw);
+  else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_blendv_pd(no.raw, yes.raw, v.raw);
+  else if constexpr (sizeof(T) == 4)
+    r.raw = _mm256_castps_si256(_mm256_blendv_ps(_mm256_castsi256_ps(no.raw), _mm256_castsi256_ps(yes.raw), _mm256_castsi256_ps(v.raw)));
+  else if constexpr (sizeof(T) == 8)
+    r.raw = _mm256_castpd_si256(_mm256_blendv_pd(_mm256_castsi256_pd(no.raw), _mm256_castsi256_pd(yes.raw), _mm256_castsi256_pd(v.raw)));
+  else  // 8/16-bit: per-lane MSB happens to be the byte/word MSB; but vpblendvb is per-byte -> for
+        // 16-bit fall back to the compare form (correct for all widths). 8-bit: vpblendvb is exact.
+    r = IfThenElse(Lt(v, Zero(Simd<T, N, 0>())), yes, no);
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ZeroIfNegative(Vec256<T, N> v) noexcept {
