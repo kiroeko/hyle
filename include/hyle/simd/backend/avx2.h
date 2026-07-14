@@ -1361,11 +1361,27 @@ HYLE_FORCE_INLINE Vec256<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, Vec256<Sr
 }
 template <std::size_t N>
 HYLE_FORCE_INLINE VFromD<Simd<std::uint8_t, N, 0>> U8FromU32(Vec256<std::uint32_t, N> v) noexcept {
-  alignas(32) std::uint32_t src[32 / sizeof(std::uint32_t)];
-  alignas(32) std::uint8_t dst[32] = {};
-  Store(v, Simd<std::uint32_t, N, 0>(), src);
-  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
-  return Load(Simd<std::uint8_t, N, 0>(), dst);
+  if constexpr (N == 8) {
+    // Highway's shape: vpshufb gathers the low byte of each u32 into a quad per 128-bit block, then
+    // OR the two blocks' quads together (one 8-byte result). NO store+reload -- the scalar loop form
+    // was ~11x slower (op_parity U8FromU32 0.088). Input assumed range-limited [0,255] (same contract).
+    // Per-block byte indices: pick bytes 0,4,8,12 -> low 4 bytes; 0xFF lanes -> zero.
+    alignas(32) static const std::uint32_t kIdx[8] = {
+        0x0C080400u, ~0u, ~0u, ~0u, ~0u, 0x0C080400u, ~0u, ~0u};
+    const __m256i quad = _mm256_shuffle_epi8(v.raw, _mm256_load_si256(
+        reinterpret_cast<const __m256i*>(kIdx)));
+    const __m128i lo = _mm256_castsi256_si128(quad);       // block 0 quad in bytes 0..3
+    const __m128i hi = _mm256_extracti128_si256(quad, 1);  // block 1 quad in bytes 4..7
+    VFromD<Simd<std::uint8_t, N, 0>> r;
+    r.raw = _mm_or_si128(lo, hi);                          // 8 bytes packed into the low 64 bits
+    return r;
+  } else {
+    alignas(32) std::uint32_t src[32 / sizeof(std::uint32_t)];
+    alignas(32) std::uint8_t dst[32] = {};
+    Store(v, Simd<std::uint32_t, N, 0>(), src);
+    for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::uint8_t>(src[i]);
+    return Load(Simd<std::uint8_t, N, 0>(), dst);
+  }
 }
 
 // P4: AVX2 has native dword->qword products on the even dword of every qword.

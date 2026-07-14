@@ -676,10 +676,13 @@ template <class V> HYLE_FORCE_INLINE V IfNegativeThenElseZero(V v, V yes) noexce
 template <class V> HYLE_FORCE_INLINE V IfNegativeThenZeroElse(V v, V no) noexcept {
   return IfThenZeroElse(IsNegative(v), no);
 }
-// CopySignToAbs(abs, sign): apply sign's sign bit to abs (assumed non-negative). = OR the
-// sign bit of `sign` into `abs`. Reuses CopySign (abs treated as magnitude).
+// CopySignToAbs(abs, sign): apply sign's sign bit to abs (assumed non-negative). Highway's 2-op form
+// OrAnd(abs, SignBit, sign): abs has NO sign bit set, so full CopySign's AndNot(sign_bit,abs) is a
+// redundant op (op_parity: forwarding to CopySign read MSVC 0.91). OR the isolated sign bit straight in.
 template <class V> HYLE_FORCE_INLINE V CopySignToAbs(V abs, V sign) noexcept {
-  return CopySign(abs, sign);
+  using T = TFromD<DFromV<V>>;
+  const DFromV<V> d;
+  return OrAnd(abs, Set(d, static_cast<T>(-0.0)), sign);  // abs | (signbit & sign)
 }
 // ReciprocalNewton / ReciprocalSqrtNewton: ONE Newton-Raphson refinement step on top of the
 // hardware estimate (ApproximateReciprocal/Sqrt), lifting f32 from the ~12-bit (x86 rcp/rsqrt)
@@ -988,8 +991,11 @@ HYLE_FORCE_INLINE VFromD<D> Bf16EvenToF32(D d, V bits) noexcept {
                 "bf16 inputs are uint16_t IEEE bit carriers");
   static_assert(SrcD::kMaxLanes == 2 * D::kMaxLanes,
                 "bf16 source must have twice as many lanes as f32 output");
+  // u16 pairs [e,o] reinterpret as u32 = (o<<16)|e. Shift-left-16 puts the EVEN bf16 in the f32 high
+  // half (odd shifted out) -- no mask needed. PromoteEvenTo's isolating vpand was redundant here
+  // (op_parity MulEvenAdd bf16 0.85: the mask was 2 extra vpand vs Highway's bare 2 vpslld).
   const Rebind<std::uint32_t, D> du32;
-  return BitCast(d, ShiftLeft<16>(PromoteEvenTo(du32, bits)));
+  return BitCast(d, ShiftLeft<16>(BitCast(du32, bits)));
 }
 
 template <class D, class V>
@@ -1000,8 +1006,10 @@ HYLE_FORCE_INLINE VFromD<D> Bf16OddToF32(D d, V bits) noexcept {
                 "bf16 inputs are uint16_t IEEE bit carriers");
   static_assert(SrcD::kMaxLanes == 2 * D::kMaxLanes,
                 "bf16 source must have twice as many lanes as f32 output");
+  // ODD bf16 is already at bits [16:31] of the u32 pair (o<<16)|e, so just clear the low 16 (the even
+  // half) -- one vpand, no shift. PromoteOddTo + ShiftLeft<16> did a mask+shift-right then shift-left.
   const Rebind<std::uint32_t, D> du32;
-  return BitCast(d, ShiftLeft<16>(PromoteOddTo(du32, bits)));
+  return BitCast(d, And(BitCast(du32, bits), Set(du32, 0xFFFF0000u)));
 }
 }  // namespace detail
 
