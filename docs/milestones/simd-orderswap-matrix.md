@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;TZC/HSB/DemoteMask/LoadN/Concat 族已修,GCC 真输→4)
+# SIMD op parity 三平台矩阵(2026-07-13 校准仪器 v2 全量重测)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,356 +19,337 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 10 个
-- DemoteToNearestInt f64->i32 (4096): **0.61** —— 正确性取舍:HYLE 保完整 emu128 NaN-按符号饱和(+NaN→MAX/-NaN→MIN),Highway x86 native(Min+cvt)全 NaN→MIN 偏离自己的 emu128 参考;已从 0.39 改善(cvt-first native 去 Abs/Round/2×blendv),残余=保 +NaN→MAX 的符号提取 ~5 条,满平需弃 -NaN 语义;InRange 快路径 1.5x WIN
-- AddSub i32: **0.86** —— 仅 MSVC 0.86,GCC TIE
-- CompressNot i32 (4096, 50%): **0.86** —— 仅 MSVC 0.86
-- RoundingShiftRightAndDemoteTo<3> i32->i16 (4096): **0.89**
-- BroadcastLane<3> i32: **0.92** —— 已定论保留 vpermd:MSVC 0.92 是 bench 形状特定差距(Highway 的 vbroadcasti128 仅在输入直接来自内存时被折叠成 load 口免费复制;寄存器输入下该序列被 MSVC 编成栈 spill(实测 0.47),而 vpermd 单 uop 更优,GCC 上 vpermd 反赢 1.13)
-- SumOfLanes i32: **0.92** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
-- Mod i32 invariant: **0.93**
-- CompressStore i32 (4096, 50%): **0.94**
-- SatWidenMulPairwiseAccumulate i16->i32: **0.94**
-- MinOfLanes i32: **0.95**
+### MSVC(AVX2): 11 个
+- DemoteToNearestInt f64->i32 (4096): **0.61** —— 正确性取舍待定稿:HYLE 现版(cvt-first)仍保 sign-based NaN 饱和;决策=改随同 target 的 Highway 语义(x86 NaN->INT_MIN / NEON NaN->0)即追平,严格版无消费者、删
+- AddSub i32: **0.85** —— MSVC 0.86 / GCC 0.94(GCC 侧v10新进临界区),真实小差距
+- CompressNot i32 (4096, 50%): **0.88** —— 仅 MSVC 0.88
+- SetBeforeFirst i32: **0.89** —— 仅 MSVC 0.89(本轮新进,GCC 1.3 反赢;borderline 待复核)
+- SumOfLanes i32: **0.91** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
+- SatWidenMulPairwiseAccumulate i16->i32: **0.93**
+- BroadcastLane<3> i32: **0.93** —— 已定论保留 vpermd:MSVC 0.93 是 bench 形状特定差距(Highway 的内存源 vbroadcasti128 折叠红利;寄存器输入下 vpermd 更优,GCC 反赢 1.13)
+- IsInf f32: **0.93** —— 仅 MSVC 0.93
+- MaxOfLanes i32: **0.95** —— 仅 MSVC 0.95(已从 0.86 改善,边缘)
+- Not i32: **0.96** —— 仅 MSVC 0.96(阈值边缘徘徊型)
+- MinOfLanes i32: **0.97** —— 仅 MSVC 0.97(已从 0.86 改善,边缘)
 
-### WSL/GCC(AVX2): 4 个(其余为设计取舍/测量噪声,非算法输)
-- DemoteToNearestInt f64->i32 (4096): **0.42** —— 正确性取舍(同 MSVC 行):保完整 emu128 NaN-按符号;已从 0.26 改善(cvt-first native);满平需弃 -NaN→MIN 语义;InRange 快路径 2.0x WIN
-- TableLookupBytes u8 (4096): **0.89** —— HYLE 多一条设计内的 vpand 索引掩码(安全语义,非缺陷)
-- RoundingShr i32: **~0.93** —— 冷 op,0.85~0.94 跨运行抖动;试过 Highway 的 SaturatedSub 分支型(其契约 s>=0,HYLE 契约 s<=0→keep v 需额外 select)+ 自平均替 vpsllvd bias,MSVC 追平但 GCC 反退(vpmaxsd+vpblendvb 链更差),已回退;残余是 GCC 调度非算法
-- FindLastTrue i32: **~0.93** —— **测量噪声非真输**:objdump 与 Highway 逐指令等价(vmovmskps+test+bsr),标量返回小 op 被 call 开销主导,亚-ns ratio 抖动
+### WSL/GCC(AVX2): 5 个
+- DemoteToNearestInt f64->i32 (4096): **0.44** —— 正确性取舍待定稿:HYLE 现版(cvt-first)仍保 sign-based NaN 饱和;决策=改随同 target 的 Highway 语义(x86 NaN->INT_MIN / NEON NaN->0)即追平,严格版无消费者、删
+- TableLookupBytes u8 (4096): **0.88** —— 语义代价非缺陷:scalar oracle 固化 &15 全定义语义(比 Highway 的"越界=实现定义"承诺更强),vpand 是契约本体,保留
+- AddSub i32: **0.94** —— MSVC 0.86 / GCC 0.94(GCC 侧v10新进临界区),真实小差距
+- FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump 与 Highway 逐指令等价 -> 仪器单 op 残余分辨率边缘,非算法输
+- RoundingShr i32: **0.95** —— 仅 GCC 0.95;已试 Highway 分支型(MSVC 平/GCC 反退),判 GCC codegen 地板
 
 ### Mac/NEON: 3 个
-- RoundingShiftRightSame i32 bits=5: **0.81** —— 仅 NEON 0.81
-- MulAddSub f32: **0.90** —— 仅 NEON 0.90
+- RoundingShiftRightSame i32 bits=5: **0.82** —— 仅 NEON 0.82
+- MulAddSub f32: **0.88** —— 仅 NEON 0.88
 - MulSubAdd f32: **0.90** —— 仅 NEON 0.90
 
-### x86 双编译器交集(最高优先级): 1 个
-- DemoteToNearestInt f64->i32 (4096): MSVC 0.61 / WSL 0.42 —— 唯一残留,且是正确性取舍(保 emu128 NaN-按符号);满平需弃 -NaN→MIN 语义,待决
+### x86 双编译器交集(最高优先级): 2 个
+- AddSub i32: MSVC 0.85 / WSL 0.94
+- DemoteToNearestInt f64->i32 (4096): MSVC 0.61 / WSL 0.44
 
 ### 与旧报告的对照(演进:旧 harness -> v1 校准仪器 -> 修复 + v2 stagger)
-- 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;
-  经 5 组后端修复(ReverseLaneBytes 0.05->TIE、Broadcast<0>->TIE、TruncateTo->TIE、
-  SumOfLanes 0.78->0.91、Min/MaxOfLanes->TIE)+ v2 仪器修相位相关后,当前为上表数字。
-- v1 的假 LOSE 被 v2 消除的例子:Not i32 / TestBit / RebindMask / IsNegative(GCC)——同侧副本
-  相位相关曾让它们稳定读 0.83~0.96,stagger 后回到 TIE/UNSTABLE。
-- 旧"隔离复核"的 7 真输里,BitShuffle/SetAtOrAfterFirst/Lt128Upper/Ne128/MultiRotateRight 已被此前的
-  修复收回(本表均 TIE/WIN,修复有效性经校准仪器确认);LoadNOr 的"证伪免罪"被推翻(WSL 0.55 真输)。
-- **2026-07-14 TZC/HSB 浮点指数家族修复(MSVC 13→11 / WSL 13→11 / Mac 4→3,x86 双编译器交集 4→2)**:
-  ① TrailingZeroCount(三平台唯一全输 0.86/0.87/0.69)——avx2/avx512/sse4 去掉共享 `u32_to_f32_biased_exp`
-  里对单 bit 输入无用的 round-down 归一、改 Min(raw_exp,158) 修 2^31 signed-cvt;NEON 改
-  `LeadingZeroCount(ReverseBits)`。三平台 TIE(1.00/1.00/0.98)。② HighestSetBitIndex(x86 双编译器 0.82/0.85)
-  ——加 native 直算 `biased_exp-127`(Highway u32 shape),跳过 `31-LeadingZeroCount` 往返里 defined 输入下
-  恒为 no-op 的 Min(.,32)+额外 Sub。双编译器 TIE(0.99/1.00)。③ **顺带揪出真正的正确性 bug**:该共享 helper
-  漏了 Highway 的 Min(.,158) 钳制,导致 bit-31-set 输入(0x80000000..0xFFFFFFFF)signed cvtepi32_ps 变负、
-  sign bit 泄漏到 >>23 → LZCnt/HSB 全错(LZCnt(2^31) 读 32 而非 0);gtest 因取值 <2^18 从未覆盖。
-  已补 Min(158) 修正 + gtest 加全 bit 位扫。avx512 由 Intel SDE 真跑 221 全绿(非仅编译验)。
-- **2026-07-14 x86 双编译器交集清扫至 1(DemoteMaskTo 双平台解决 + DemoteToNearestInt 改善)**:
-  ① DemoteMaskTo(MSVC 0.82/GCC 0.33)——objdump 定位真瓶颈不在 mask-narrow 核心而在消费链尾部
-  BitsFromMask i16:sse4 的 2-byte lane 分支用 scalar 位压缩循环(GCC 向量化成 ~15 条 vpsrlvd/vpsllvd/
-  vpor),改 Highway 的 vpacksswb(i16→i8 pack)+movemask_epi8(4 条);DemoteMaskTo 核心再去冗余
-  (MaskFromNormalizedVec 替 MaskFromVec + 去 RebindMask,5→3 条)。MSVC 1.00 TIE / GCC 1.42 WIN(反超)。
-  ② DemoteToNearestInt(0.39/0.26)——cvt-first native(硬件 cvtpd2dq 一条 RNE+narrow,异常→INT32_MIN,
-  只正号异常 fixup MAX)去 Abs/Round/2×blendv,保完整 emu128 语义(穷举 ±NaN/±溢出 bad=0);MSVC
-  0.39→0.61 / GCC 0.26→0.42,仍 LOSE(保 +NaN→MAX 的符号提取无法省)。满平需弃 -NaN→MIN 语义采
-  3-op clamp(待决)。此为最后一个 x86 双编译器交集真输,且是正确性取舍非算法输。
-- **2026-07-14 LoadN/StoreN/LoadNOr 分档 LoadU(GCC 真输表 11→9)**:GCC 0.66/0.55 真输。objdump
-  定位=HYLE 用 vpmaskmovd/pd(Intel 上 gather-class 慢 uop),Highway 走分档 LoadU(n>=Lanes 整块,
-  否则 128-bit 半界拆:覆盖半整 LoadU + 跨界半 power-of-2 partial load)。隔离 bench 证 tiered 比
-  masked 快 1.67x。移植 Highway 256-bit 分档结构(新 partial_{load,store}128 helper;LoadNOr 用
-  Concat-half:不碰的半保持 no 不变、无 blend)。结果 LoadN/StoreN MSVC 1.09→1.56W/GCC 0.66→1.06W;
-  LoadNOr MSVC 0.84→1.18W/GCC 0.55→1.04(~TIE)。两平台净收益,fault-safe 契约不变(gtest MaskedTail 扫 k=0..N)。
+- 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
+  (第一轮:ReverseLaneBytes 0.05->TIE、Broadcast<0>、TruncateTo、SumOfLanes、Min/MaxOfLanes;
+  第二轮:TZC 三平台追平、HSBI、DemoteMaskTo 0.33->1.4W、LoadN/StoreN 与 LoadNOr 弃 vpmaskmovd
+  ->WIN、CombineMasks、ConcatLowerLower)+ v2 stagger 仪器修相位相关后,收敛为上表数字。
+- v1 的假 LOSE 被 v2 消除的例子:TestBit / RebindMask / IsNegative(GCC)——同侧副本相位相关
+  曾让它们稳定读 0.83~0.96,stagger 后回到 TIE/UNSTABLE。
+- 本轮回归教训:ConcatLowerLower 的 vinsert 形态 GCC 赢但 MSVC 在复合上下文(Slide1Up)编成
+  extract+栈 spill 掉到 0.099(单独 kernel 却 TIE)——复合上下文回归只有全表重测才抓得住,
+  已按编译器分叉(MSVC=vperm2i128 / GCC=vinsert)修复,Slide1Up/SlideMask1Up 复位 TIE/WIN。
 
 ## 全量表
 
 | op | MSVC(AVX2) | WSL GCC(AVX2) | Mac(NEON) |
 |---|---|---|---|
-| Abs i32 | 1.00= | 0.99= | 1.01= |
-| AbsDiff i32 | 1.00= | 1.01= | 1.01= |
-| Add f32 | 1.01= | 1.01= | 1.03= |
-| Add f32 (4096) | 1.00= | 0.99= | · |
-| AddSub i32 | 0.86L | 0.97= | 1.00= |
-| AllBits0 i32 | 1.00= | 0.99= | 1.00= |
+| Abs i32 | 1.00= | 1.02= | 0.97= |
+| AbsDiff i32 | 1.01= | 1.01= | 1.01? |
+| Add f32 | 1.00= | 0.99= | 0.99= |
+| Add f32 (4096) | 1.00= | 1.00= | · |
+| AddSub i32 | 0.85L | 0.94L | 1.01= |
+| AllBits0 i32 | 1.01= | 1.01= | 1.00= |
 | AllBits1 i32 | 1.00= | 1.00= | 1.00= |
-| AllFalse i32 | 0.98= | 1.01= | 1.00= |
-| AllTrue i32 | 0.99= | 1.00= | 0.99= |
-| And i32 | 1.01= | 1.00= | 1.00= |
-| AndNot i32 | 1.01= | 0.99= | 1.01= |
-| ApproximateReciprocal f32 | 1.01= | 1.01= | 1.00= |
-| ApproximateReciprocalSqrt f32 | 1.01= | 1.00= | 1.00= |
-| AverageRound u16 | 1.01= | 1.00= | 1.00= |
-| BitCast f32->i32 | 1.01= | 1.02= | 1.00= |
-| BitCast i32->f32 | 0.97= | 1.00= | 1.00= |
-| BitShuffle u64 (4096) | 1.06W | 1.12W | · |
+| AllFalse i32 | 1.00= | 0.99= | 1.00= |
+| AllTrue i32 | 0.99= | 1.00= | 1.00= |
+| And i32 | 1.00= | 1.02= | 1.03= |
+| AndNot i32 | 0.99= | 1.00= | 0.98= |
+| ApproximateReciprocal f32 | 1.00= | 1.00= | 1.00= |
+| ApproximateReciprocalSqrt f32 | 1.00= | 0.98= | 1.00= |
+| AverageRound u16 | 0.99= | 1.01= | 1.00= |
+| BitCast f32->i32 | 1.00= | 1.01= | 1.00= |
+| BitCast i32->f32 | 1.00? | 0.99= | 1.00= |
+| BitShuffle u64 (4096) | 1.06W | 1.11W | · |
 | BlendedStore i32 (4096, 50%) | 0.99= | 1.01= | · |
-| Broadcast<0> i32 | 1.00= | 1.00= | 1.00= |
-| BroadcastBlock<1> i32 | 1.02? | 1.00= | · |
-| BroadcastLane<3> i32 | 0.92L | 1.13W | 0.96= |
-| BroadcastSignBit i32 | 1.00= | 1.00= | 0.99= |
-| Ceil f32 | 1.00= | 0.98= | 0.99= |
-| CeilInt f32->i32 | 1.48W | 1.56W | 0.99= |
-| Clamp i32 | 1.00= | 0.99= | 0.99= |
-| CombineMasks i32 (4096) | 1.01= | 1.00= | · |
-| CombineShiftRightBytes4 i32 | 0.99= | 1.00= | 1.00= |
-| CombineShiftRightLanes1 i32 | 1.01= | 1.00= | 1.00= |
-| ComplexConj f32 | 1.25W | 1.01= | 1.01= |
-| Compress i32 (4096, 50% dense) | 0.98= | 1.04? | · |
-| CompressBlendedStore i32 (4096, 50%) | 1.00= | 1.22W | · |
-| CompressNot i32 (4096, 50%) | 0.86L | 0.97? | · |
-| CompressStore i32 (4096, 50%) | 0.94L | 1.03= | · |
-| ConcatEven i32 (4096) | 0.99= | 1.00= | · |
-| ConcatLowerLower i32 | 1.02= | 0.98= | · |
-| ConcatLowerUpper i32 | 0.95= | 0.99= | · |
-| ConcatOdd i32 | 1.00= | 0.99= | 1.00= |
-| ConcatUpperLower i32 | 1.04= | 0.99= | · |
-| ConcatUpperUpper i32 | 1.00= | 1.01= | · |
-| ConvertTo f32->i32 | 1.38W | 1.12? | 0.99= |
+| Broadcast<0> i32 | 1.00= | 1.00= | 0.97= |
+| BroadcastBlock<1> i32 | 0.98= | 0.98= | · |
+| BroadcastLane<3> i32 | 0.93L | 1.10W | 0.97? |
+| BroadcastSignBit i32 | 1.00= | 1.02= | 0.96= |
+| Ceil f32 | 1.00= | 1.00= | 1.01= |
+| CeilInt f32->i32 | 1.46W | 1.54W | 1.00= |
+| Clamp i32 | 1.00= | 0.99= | 1.01= |
+| CombineMasks i32 (4096) | 0.95= | 1.00= | · |
+| CombineShiftRightBytes4 i32 | 0.99= | 0.98? | 1.01= |
+| CombineShiftRightLanes1 i32 | 0.97= | 0.99= | 1.00= |
+| ComplexConj f32 | 1.24W | 1.00= | 0.98? |
+| Compress i32 (4096, 50% dense) | 0.98= | 1.03= | · |
+| CompressBlendedStore i32 (4096, 50%) | 0.99= | 1.18W | · |
+| CompressNot i32 (4096, 50%) | 0.88L | 1.00= | · |
+| CompressStore i32 (4096, 50%) | 0.93? | 0.98= | · |
+| ConcatEven i32 (4096) | 0.97= | 1.01= | · |
+| ConcatLowerLower i32 | 1.01= | 1.00= | · |
+| ConcatLowerUpper i32 | 1.00= | 0.98= | · |
+| ConcatOdd i32 | 1.00= | 0.99= | 0.99= |
+| ConcatUpperLower i32 | 1.01= | 1.00= | · |
+| ConcatUpperUpper i32 | 0.95= | 0.97? | · |
+| ConvertTo f32->i32 | 1.41W | 1.15W | 1.00= |
 | ConvertTo i32->f32 | 1.00= | 0.99= | 1.00= |
-| CopySign f32 | 1.00= | 1.00= | 1.01= |
-| CountTrue i32 | 1.04= | 1.00= | 1.00= |
-| DemoteMaskTo i32->i16 (4096) | 1.00= | 1.42W | · |
-| DemoteTo i32->i16 (sat) | 1.88W | 1.84W | · |
-| DemoteTo i32->i16 1-arg (4096) | 1.00= | 1.00= | · |
-| DemoteToNearestInt f64->i32 (4096) | 0.61L | 0.42L | · |
+| CopySign f32 | 1.00= | 0.98= | 0.96? |
+| CountTrue i32 | 1.02= | 0.99= | 1.00= |
+| DemoteMaskTo i32->i16 (4096) | 1.02= | 1.41W | · |
+| DemoteTo i32->i16 (sat) | 1.88W | 1.89W | · |
+| DemoteTo i32->i16 1-arg (4096) | 1.03= | 1.00= | · |
+| DemoteToNearestInt f64->i32 (4096) | 0.61L | 0.44L | · |
 | Div f32 | 1.00= | 1.00= | 1.00= |
-| Dup128MaskFromMaskBits i32 (4096) | 1.05? | 1.18W | · |
-| DupEven i32 | 1.00= | 0.99= | 0.99? |
-| DupOdd i32 | 0.99= | 1.00= | 0.97= |
-| Eq i32 | 1.00= | 1.00= | 0.99= |
-| Eq128 u64 | 1.00= | 1.01= | 1.04? |
-| ExclusiveNeither i32 | 1.00= | 1.01= | 1.01= |
-| Expand i32 (4096, 50%) | 2.22W | 2.14W | · |
-| FindFirstTrue i32 | 0.99= | 1.01= | 1.06= |
-| FindKnownFirstTrue i32 | 0.97= | 1.00= | 1.18W |
-| FindKnownLastTrue i32 | 1.07W | 1.00= | 1.12W |
-| FindLastTrue i32 | 1.02= | 0.93? | 1.19W |
-| Floor f32 | 1.00= | 0.99= | 0.94= |
-| FloorInt f32->i32 | 1.48W | 1.57W | 0.99= |
-| GatherIndex i32 (4096) | 1.00= | 1.02= | · |
-| GatherIndexN i32 (half n) | 1.00= | 0.98= | · |
-| GatherIndexNOr i32 (half n) | 1.01= | 1.00= | · |
-| GatherOffset i32 (4096) | 1.00= | 1.02= | · |
-| Ge i32 | 0.99= | 1.00= | 0.98= |
-| GetBiasedExponent f32 | 1.00= | 1.02= | 1.00= |
-| GetExponent f32 | 0.98= | 1.01= | · |
-| Gt i32 | 1.01= | 1.02= | 1.04= |
-| HighestSetBitIndex u32 | 0.99= | 1.00= | 1.00= |
+| Dup128MaskFromMaskBits i32 (4096) | 1.06? | 1.17W | · |
+| DupEven i32 | 0.99= | 1.00= | 0.99= |
+| DupOdd i32 | 1.00= | 1.01= | 1.02? |
+| Eq i32 | 1.00= | 1.01= | 1.03? |
+| Eq128 u64 | 1.01= | 1.00= | 1.03= |
+| ExclusiveNeither i32 | 1.03= | 1.01= | 1.00= |
+| Expand i32 (4096, 50%) | 1.76W | 2.14W | · |
+| FindFirstTrue i32 | 0.99= | 1.00= | 1.05= |
+| FindKnownFirstTrue i32 | 0.99= | 0.97= | 1.19W |
+| FindKnownLastTrue i32 | 1.05? | 1.00= | 1.11? |
+| FindLastTrue i32 | 1.02= | 0.94L | 1.15? |
+| Floor f32 | 1.00= | 0.97= | 1.02= |
+| FloorInt f32->i32 | 1.44W | 1.55W | 1.01= |
+| GatherIndex i32 (4096) | 1.00= | 1.01= | · |
+| GatherIndexN i32 (half n) | 1.00= | 1.01= | · |
+| GatherIndexNOr i32 (half n) | 1.00= | 1.00= | · |
+| GatherOffset i32 (4096) | 0.99= | 0.98= | · |
+| Ge i32 | 0.98= | 1.00= | 0.99= |
+| GetBiasedExponent f32 | 1.01= | 1.03= | 1.00= |
+| GetExponent f32 | 1.00= | 0.99= | · |
+| Gt i32 | 0.99= | 1.01= | 0.98= |
+| HighestSetBitIndex u32 | 0.98= | 0.99= | 1.00= |
 | IfNegativeThenElse f32 | 1.05W | 1.07W | 1.00= |
-| IfNegativeThenElseZero f32 | 1.36W | 1.08W | 1.03? |
-| IfNegativeThenZeroElse f32 | 1.31W | 1.08W | 1.02= |
-| IfThenElse i32 | 1.00= | 0.99= | 1.00= |
-| IfThenElseZero i32 | 0.97? | 1.00= | 1.02= |
-| IfThenZeroElse i32 | 0.97? | 1.00= | 1.03= |
-| InterleaveEven i32 | 1.01= | 0.99= | 1.01= |
+| IfNegativeThenElseZero f32 | 1.30W | 1.10W | 1.02= |
+| IfNegativeThenZeroElse f32 | 1.36W | 1.11W | 0.99= |
+| IfThenElse i32 | 1.00= | 1.01= | 1.00= |
+| IfThenElseZero i32 | 0.97? | 1.00= | 1.04= |
+| IfThenZeroElse i32 | 0.97? | 1.01= | 0.99? |
+| InterleaveEven i32 | 1.00= | 1.00= | 1.01? |
 | InterleaveLower i32 (4096) | 1.00= | 1.01= | · |
-| InterleaveLowerBlocks i32 | 0.95= | 0.99= | · |
-| InterleaveOdd i32 | 1.01= | 1.00= | 1.02? |
-| InterleaveUpper i32 | 1.00= | 1.00= | 1.03= |
-| InterleaveWholeLower i32 | 1.00= | 1.00= | 1.03= |
-| InterleaveWholeUpper i32 | 1.00= | 0.99= | 1.05= |
-| IsEitherNaN f32 | 1.00= | 1.00= | 0.99= |
-| IsFinite f32 | 0.99= | 1.31W | 1.00= |
-| IsInf f32 | 0.94? | 1.11? | 1.00= |
-| IsNaN f32 | 1.00= | 0.98= | 1.00= |
-| IsNegative i32 | 0.98= | 0.94? | 1.00= |
-| Le i32 | 0.99= | 1.01= | 1.00= |
-| LeadingZeroCount u32 (4096) | 1.05= | 1.17W | · |
-| Load/Store i32 aligned | 1.00= | 0.99= | 0.99= |
-| LoadExpand i32 (4096, 50%) | 2.24W | 2.15W | · |
+| InterleaveLowerBlocks i32 | 0.99= | 0.98? | · |
+| InterleaveOdd i32 | 1.00= | 1.00= | 0.98? |
+| InterleaveUpper i32 | 1.00= | 1.01= | 0.98= |
+| InterleaveWholeLower i32 | 1.01= | 0.99= | 0.97= |
+| InterleaveWholeUpper i32 | 1.00= | 1.00= | 1.00? |
+| IsEitherNaN f32 | 0.98= | 1.01= | 1.00= |
+| IsFinite f32 | 0.99= | 1.25W | 1.00= |
+| IsInf f32 | 0.93L | 1.13W | 1.00= |
+| IsNaN f32 | 1.00= | 1.02? | 1.00= |
+| IsNegative i32 | 0.97= | 0.94? | 1.00= |
+| Le i32 | 0.99= | 0.98? | 0.98= |
+| LeadingZeroCount u32 (4096) | 0.95= | 1.01= | · |
+| Load/Store i32 aligned | 0.99= | 1.01= | 0.99= |
+| LoadExpand i32 (4096, 50%) | 1.75W | 2.12W | · |
 | LoadInterleaved2 f32 (4096) | 1.00= | 1.00= | · |
-| LoadInterleaved3 f32 (4096) | 0.99= | 1.00= | · |
-| LoadInterleaved4 u8 (4096, RGBA) | 1.00= | 0.98= | · |
-| LoadN/StoreN i32 (half lanes) | 1.56W | 1.06W | · |
-| LoadNOr i32 (half n) | 1.18W | 1.04? | · |
-| LoadU/StoreU i32 | 1.00= | 0.99= | 0.99= |
-| Lt i32 | 1.00= | 0.99= | 0.98= |
-| Lt128 u64 | 1.00= | 0.99= | 0.99= |
-| Lt128Upper u64 | 1.00= | 1.00= | 0.95= |
-| Mask And i32 | 0.99= | 1.00= | 1.00= |
-| Mask AndNot i32 | 1.00= | 0.99= | 1.00= |
-| Mask Not i32 | 1.00= | 1.00= | 1.00= |
+| LoadInterleaved3 f32 (4096) | 0.99= | 0.99= | · |
+| LoadInterleaved4 u8 (4096, RGBA) | 1.01= | 1.02= | · |
+| LoadN/StoreN i32 (half lanes) | 1.58W | 1.03= | · |
+| LoadNOr i32 (half n) | 1.15W | 1.06W | · |
+| LoadU/StoreU i32 | 1.00= | 1.01= | 1.00= |
+| Lt i32 | 0.99= | 0.99= | 1.00= |
+| Lt128 u64 | 1.00= | 1.01= | 1.00= |
+| Lt128Upper u64 | 1.00= | 1.00= | 0.97? |
+| Mask And i32 | 1.01= | 1.01= | 1.00= |
+| Mask AndNot i32 | 1.00= | 1.01= | 1.00= |
+| Mask Not i32 | 1.00= | 0.99= | 1.00= |
 | Mask Or i32 | 0.99= | 1.00= | 1.00= |
-| Mask Xor i32 | 1.01= | 1.00= | 1.00= |
+| Mask Xor i32 | 1.00= | 0.98= | 1.00= |
 | MaskedApproxReciprocal f32 | 1.02= | 1.01= | 1.00= |
-| MaskedApproxReciprocalSqrt f32 | 1.00= | 1.00= | 1.00= |
-| MaskedConvertTo f32-i32 | 2.04W | 1.51W | 1.01= |
-| MaskedLeadingZeroCount i32 | 1.13W | 1.12W | 0.97= |
-| MaskedLoad i32 (4096, 50%) | 0.97= | 1.01= | · |
-| MaskedLoadOr i32 (4096) | 0.98? | 1.01= | · |
-| MaskedModOr i32 invariant | 0.98= | 0.99= | 1.06W |
-| MaskedMulComplex f32 | 1.19W | 1.08W | 1.00= |
-| MaskedMulComplexAdd f32 | 1.13W | 1.02= | 1.00= |
-| MaskedMulComplexConj f32 | 1.21W | 1.10W | 1.00= |
-| MaskedMulComplexConjAdd f32 | 1.13W | 1.03= | 1.00= |
-| MaskedMulComplexOr f32 | 1.16W | 1.05W | 1.00= |
-| MaskedMulFixedPoint15 i16 | 1.02= | 0.99= | 1.00= |
-| MaskedReduceMax i32 | 1.00= | 0.98= | 1.00= |
-| MaskedReduceMin i32 | 1.00= | 1.00= | 1.00= |
-| MaskedReduceSum i32 | 1.00= | 0.99= | 1.00= |
-| MaskedSatAddOr i16 | 0.99= | 0.99= | 1.00= |
-| MaskedSatSubOr i16 | 1.00= | 1.01= | 1.00= |
-| MaskedShiftLeft<3> i32 | 0.99= | 1.00= | 1.01= |
+| MaskedApproxReciprocalSqrt f32 | 0.99= | 0.99= | 1.00= |
+| MaskedConvertTo f32-i32 | 2.06W | 1.50W | 1.00= |
+| MaskedLeadingZeroCount i32 | 1.00= | 1.01= | 1.02= |
+| MaskedLoad i32 (4096, 50%) | 0.98= | 1.01= | · |
+| MaskedLoadOr i32 (4096) | 1.00= | 1.02= | · |
+| MaskedModOr i32 invariant | 0.98= | 0.98= | 1.06W |
+| MaskedMulComplex f32 | 1.19W | 1.09W | 1.00= |
+| MaskedMulComplexAdd f32 | 1.14W | 1.04= | 1.00= |
+| MaskedMulComplexConj f32 | 1.21W | 1.08? | 1.00= |
+| MaskedMulComplexConjAdd f32 | 1.14W | 1.01= | 1.00= |
+| MaskedMulComplexOr f32 | 1.17W | 1.06W | 1.00= |
+| MaskedMulFixedPoint15 i16 | 0.99= | 1.04? | 1.00= |
+| MaskedReduceMax i32 | 1.00= | 0.99= | 1.00= |
+| MaskedReduceMin i32 | 1.00= | 0.98= | 1.00= |
+| MaskedReduceSum i32 | 1.00= | 0.96? | 1.00= |
+| MaskedSatAddOr i16 | 1.00= | 0.99= | 1.00= |
+| MaskedSatSubOr i16 | 0.99= | 0.98= | 1.00= |
+| MaskedShiftLeft<3> i32 | 1.00= | 1.01= | 1.06= |
 | MaskedShiftLeftOr<3> i32 | 1.00= | 0.99= | 1.00= |
-| MaskedShiftRight<3> i32 | 0.99= | 0.99= | 1.02= |
-| MaskedShiftRightOr<3> i32 | 1.00= | 1.00= | 1.01= |
-| MaskedShl i32 | 1.02= | 1.00= | 1.02= |
-| MaskedShlOr i32 | 1.00= | 0.98? | 1.00= |
-| MaskedShr i32 | 1.02= | 1.01= | 0.99= |
-| MaskedShrOr i32 | 1.00= | 0.97= | 1.00= |
-| MaskedWidenMulPairwiseAdd i16-i32 | 1.00= | 1.00= | 0.99= |
-| Max f32 | 1.01= | 0.97= | 1.01? |
-| Max i32 | 0.99= | 1.00= | 0.97= |
-| Max128 u64 | 0.99= | 1.01= | 1.00= |
-| MaxMagnitude f32 | 1.00= | 1.01= | 1.00= |
-| MaxNumber f32 | 1.01= | 1.00= | 1.00= |
-| MaxOfLanes i32 | 0.97? | 1.16W | 0.98= |
-| Min f32 | 1.00= | 1.02= | 0.98= |
-| Min i32 (4096) | 1.00= | 1.02= | · |
-| Min128 u64 | 0.99= | 0.99= | 1.00= |
-| MinMagnitude f32 | 1.01= | 1.01= | 1.00= |
-| MinNumber f32 | 1.00= | 1.02= | 0.99= |
-| MinOfLanes i32 | 0.95L | 1.17W | 0.98= |
-| Mod i32 invariant | 0.93L | 1.00= | 1.07W |
-| Mul f32 | 0.99= | 1.01= | 1.02= |
-| Mul i32 | 1.01= | 0.99= | 1.00= |
-| MulAdd f32 (4096) | 1.00= | 1.00= | · |
-| MulAddSub f32 | 1.01= | 1.00= | 0.90L |
-| MulByFloorPow2 f32 | 1.06? | 0.98= | 1.00= |
-| MulByPow2 f32 | 1.00= | 1.01= | 1.00= |
-| MulComplex f32 | 1.42W | 1.22W | 1.00= |
+| MaskedShiftRight<3> i32 | 0.99= | 1.00= | 1.01= |
+| MaskedShiftRightOr<3> i32 | 1.00= | 1.02= | 1.00= |
+| MaskedShl i32 | 0.99= | 1.02= | 0.99= |
+| MaskedShlOr i32 | 1.00= | 1.02= | 1.00= |
+| MaskedShr i32 | 0.99= | 0.99= | 0.99= |
+| MaskedShrOr i32 | 1.01= | 1.00= | 1.00= |
+| MaskedWidenMulPairwiseAdd i16-i32 | 1.00= | 0.96? | 1.00= |
+| Max f32 | 1.01= | 1.00= | 1.00? |
+| Max i32 | 1.00= | 1.00= | 0.99= |
+| Max128 u64 | 0.99= | 0.99= | 1.00= |
+| MaxMagnitude f32 | 0.99= | 0.99= | 1.00= |
+| MaxNumber f32 | 0.99= | 1.01= | 0.99= |
+| MaxOfLanes i32 | 0.95L | 1.17W | 0.92= |
+| Min f32 | 1.00= | 0.99= | 1.03? |
+| Min i32 (4096) | 1.00= | 1.00= | · |
+| Min128 u64 | 1.00= | 1.01= | 1.00= |
+| MinMagnitude f32 | 1.00= | 1.00= | 1.00= |
+| MinNumber f32 | 1.01= | 1.01= | 0.95? |
+| MinOfLanes i32 | 0.97L | 1.15W | 0.96= |
+| Mod i32 invariant | 0.94? | 0.98= | 1.07W |
+| Mul f32 | 1.00= | 0.99= | 1.06= |
+| Mul i32 | 1.00= | 1.00= | 1.04= |
+| MulAdd f32 (4096) | 1.00= | 0.99= | · |
+| MulAddSub f32 | 1.00= | 1.01= | 0.88L |
+| MulByFloorPow2 f32 | 1.06W | 0.97= | 1.00= |
+| MulByPow2 f32 | 1.00= | 0.99= | 1.00= |
+| MulComplex f32 | 1.44W | 1.19W | 1.00= |
 | MulComplexAdd f32 | 1.02= | 1.03= | 1.00= |
-| MulComplexConj f32 | 1.43W | 1.20W | 1.00= |
-| MulComplexConjAdd f32 | 1.02= | 1.03= | 1.00= |
-| MulEven i32-i64 | 1.00= | 1.01= | 1.00= |
-| MulFixedPoint15 i16 | 1.00= | 0.99= | · |
-| MulHigh i16 (4096) | 1.00= | 1.01= | · |
-| MulHigh u16 (4096) | 1.00= | 1.01? | · |
-| MulHigh32 u32 (4096) | 0.98= | 1.02= | · |
-| MulOdd i32-i64 | 1.01= | 0.95= | 1.00= |
-| MulRound f32 | 0.98= | 1.00= | 0.98? |
-| MulSub f32 | 1.00= | 1.00= | 1.01= |
-| MulSubAdd f32 | 1.02= | 0.97= | 0.90L |
+| MulComplexConj f32 | 1.46W | 1.20W | 1.00= |
+| MulComplexConjAdd f32 | 1.02= | 1.03? | 1.00= |
+| MulEven i32-i64 | 1.00= | 1.06= | 1.00= |
+| MulFixedPoint15 i16 | 1.00= | 1.00= | · |
+| MulHigh i16 (4096) | 1.00= | 1.02= | · |
+| MulHigh u16 (4096) | 1.00= | 1.00= | · |
+| MulHigh32 u32 (4096) | 1.01= | 1.02= | · |
+| MulOdd i32-i64 | 0.97= | 0.97= | 1.00= |
+| MulRound f32 | 1.00= | 1.01= | 1.02= |
+| MulSub f32 | 1.00= | 1.00= | 0.98= |
+| MulSubAdd f32 | 1.01= | 1.00= | 0.90L |
 | MultiRotateRight u64 (4096) | 1.00= | 1.00= | · |
-| Ne i32 | 1.00= | 1.00= | 1.03= |
-| Ne128 u64 | 1.00= | 1.01= | 1.01= |
-| NearestInt f32->i32 | 1.35W | 1.10W | 1.00= |
-| Neg i32 | 1.00= | 0.99= | 0.96= |
-| NegMulAdd f32 | 1.00= | 1.00= | 1.00? |
-| NegMulSub f32 | 1.00= | 0.99= | 0.98= |
-| Not i32 | 0.99= | 0.99= | 0.99= |
-| OddEven i32 | 1.00= | 1.01= | 0.99= |
-| OddEvenBlocks i32 | 0.98= | 0.99= | · |
-| Or i32 | 1.01= | 1.00= | 0.97= |
-| Or3 i32 | 1.00= | 1.01= | 0.99= |
-| OrAnd i32 | 1.00= | 1.00= | 1.00= |
-| OrderedDemote2MasksTo i32->i16 (4096) | 1.00= | 1.01= | · |
-| OrderedDemote2To i32->i16 | 0.96= | 1.02? | · |
-| OrderedRoundingShiftRightAndDemote2To<2> i32->i16 | 1.13W | 1.24W | · |
-| OrderedShiftRightAndDemote2To<2> i32->i16 | 0.99= | 0.99? | · |
-| PairwiseAdd i32 | 1.09W | 1.02= | 0.99= |
-| PairwiseAdd128 i32 | 1.00= | 0.99= | 1.00= |
-| PairwiseSub i32 | 1.10W | 1.02= | 1.00= |
-| PairwiseSub128 i32 | 1.10W | 0.99= | 1.00= |
-| Per4LaneBlockShuffle 3210 i32 | 0.86= | 0.98= | 1.00= |
-| PopulationCount u32 (4096) | 1.48W | 1.52W | · |
-| PromoteEvenTo i8->i16 | 0.99= | 1.00= | · |
-| PromoteLowerTo i16->i32 (4096) | 0.99= | 0.98= | · |
-| PromoteMaskTo i16->i32 (4096) | 0.98= | 1.00= | · |
-| PromoteOddTo i8->i16 | 0.99= | 1.00= | · |
-| PromoteTo i16->i32 1-arg (4096) | 1.01= | 0.99= | · |
-| PromoteUpperTo i16->i32 | 1.01= | 1.01= | · |
-| RebindMask i32->f32 (4096) | 0.97? | 1.01= | · |
-| ReduceMax i32 | 1.18W | 1.02= | 1.00= |
+| Ne i32 | 0.99= | 1.00= | 1.00= |
+| Ne128 u64 | 1.00= | 1.00= | 0.97= |
+| NearestInt f32->i32 | 1.43W | 1.10W | 1.00= |
+| Neg i32 | 1.00= | 1.01= | 0.99? |
+| NegMulAdd f32 | 1.01= | 1.00= | 0.98= |
+| NegMulSub f32 | 1.01= | 0.99= | 1.01= |
+| Not i32 | 0.96L | 1.00= | 1.02= |
+| OddEven i32 | 1.00= | 1.00= | 1.02= |
+| OddEvenBlocks i32 | 1.00= | 1.01? | · |
+| Or i32 | 1.00= | 1.03= | 0.97= |
+| Or3 i32 | 1.00= | 0.99= | 1.00= |
+| OrAnd i32 | 1.00= | 1.02= | 1.00= |
+| OrderedDemote2MasksTo i32->i16 (4096) | 0.99= | 0.97= | · |
+| OrderedDemote2To i32->i16 | 0.99= | 1.00= | · |
+| OrderedRoundingShiftRightAndDemote2To<2> i32->i16 | 1.14W | 1.22W | · |
+| OrderedShiftRightAndDemote2To<2> i32->i16 | 1.00= | 0.99= | · |
+| PairwiseAdd i32 | 1.10W | 1.01= | 0.99= |
+| PairwiseAdd128 i32 | 0.99= | 0.99= | 1.00= |
+| PairwiseSub i32 | 1.10W | 0.99= | 0.99= |
+| PairwiseSub128 i32 | 1.09W | 0.96? | 1.00= |
+| Per4LaneBlockShuffle 3210 i32 | 0.90? | 1.00= | 1.00= |
+| PopulationCount u32 (4096) | 1.49W | 1.51W | · |
+| PromoteEvenTo i8->i16 | 0.96= | 0.99= | · |
+| PromoteLowerTo i16->i32 (4096) | 1.00= | 0.98= | · |
+| PromoteMaskTo i16->i32 (4096) | 1.01= | 1.00= | · |
+| PromoteOddTo i8->i16 | 0.99= | 0.99= | · |
+| PromoteTo i16->i32 1-arg (4096) | 1.00= | 1.00= | · |
+| PromoteUpperTo i16->i32 | 1.01= | 0.99= | · |
+| RebindMask i32->f32 (4096) | 0.93? | 1.02= | · |
+| ReduceMax i32 | 1.18W | 1.03= | 1.00= |
 | ReduceMin i32 | 1.18W | 1.03= | 1.00= |
-| ReduceSum f32 (4096) | 0.99= | 0.99= | · |
-| ReorderDemote2To i32->i16 | 0.99= | 1.04? | · |
-| ReorderRoundingShiftRightAndDemote2To<2> i32->i16 | 1.04= | 1.17W | · |
-| ReorderShiftRightAndDemote2To<2> i32->i16 | 1.00= | 1.03= | · |
+| ReduceSum f32 (4096) | 0.99= | 1.00= | · |
+| ReorderDemote2To i32->i16 | 1.00= | 0.99= | · |
+| ReorderRoundingShiftRightAndDemote2To<2> i32->i16 | 1.05? | 1.17W | · |
+| ReorderShiftRightAndDemote2To<2> i32->i16 | 1.00= | 1.00= | · |
 | ReorderWidenMulAccumulate i16->i32 | 1.00= | 1.01= | · |
-| Reverse i32 (4096) | 1.00= | 1.01= | · |
-| Reverse2 i32 | 1.00= | 1.00= | 0.99= |
-| Reverse4 i32 | 1.00= | 0.98= | 0.99= |
-| Reverse8 i32 (4096) | 1.00= | 0.99= | · |
-| ReverseBits i32 | 2.10W | 1.97W | 1.01= |
-| ReverseBlocks i32 | 1.05= | 1.00= | · |
-| ReverseLaneBytes u32 (4096) | 0.99= | 0.99= | · |
-| RotateLeft<3> i32 | 0.98= | 1.00= | 1.02= |
-| RotateLeftSame u32 bits=5 | 0.99= | 1.01= | 0.98= |
-| RotateRight<3> i32 | 0.99= | 1.01= | 1.01? |
-| RotateRightSame u32 bits=5 | 1.00= | 1.01= | 1.01= |
-| Round f32 | 1.00= | 1.01= | 0.98= |
-| RoundToInt f32->i32 | 1.43W | 1.11? | 1.00= |
-| RoundingShiftRight<2> i32 | 1.09= | 0.99= | 0.98= |
-| RoundingShiftRightAndDemoteTo<3> i32->i16 (4096) | 0.89L | 1.12W | · |
-| RoundingShiftRightSame i32 bits=5 | 1.09W | 1.00= | 0.81L |
-| RoundingShr i32 | 1.04W | 0.94L | 1.00= |
-| SatWidenMulAccumFixedPoint i16->i32 | 1.90W | 1.77W | · |
-| SatWidenMulPairwiseAccumulate i16->i32 | 0.94L | 1.00= | · |
-| SatWidenMulPairwiseAdd u8*i8->i16 | 1.01= | 1.00= | · |
-| SaturatedAbs i32 | 1.00= | 0.99= | 0.97= |
-| SaturatedAdd i16 (4096) | 1.00= | 1.00= | · |
-| SaturatedNeg i32 | 1.00= | 0.98= | 1.00= |
-| SaturatedSub i16 | 1.00= | 1.00= | 1.00= |
-| ScatterIndex i32 (4096) | 0.98= | 0.98= | · |
-| ScatterIndexN i32 (half n) | 1.23W | 1.37W | · |
-| ScatterOffset i32 (4096) | 1.02= | 1.02= | · |
-| Set i32 | 1.00= | 1.02= | 1.00= |
-| SetAtOrAfterFirst i32 | 1.00= | 1.00= | 1.00= |
-| SetAtOrBeforeFirst i32 | 0.99= | 1.15W | 1.00= |
-| SetBeforeFirst i32 | 1.00= | 1.23W | 1.00= |
-| SetMask i32 (4096) | 0.99= | 0.99= | · |
-| SetOnlyFirst i32 | 0.99= | 1.61W | 1.00= |
-| ShiftLeft<3> i32 | 1.01= | 1.01= | 1.00= |
-| ShiftLeftBytes<4> i32 | 1.00= | 0.99= | 1.00= |
-| ShiftLeftLanes<1> i32 | 1.00= | 1.00= | 1.01= |
-| ShiftLeftSame i32 bits=3 | 1.00= | 0.99= | 1.92W |
-| ShiftRight<3> i32 | 1.00= | 0.99= | 0.97= |
-| ShiftRightAndDemoteTo<3> i32->i16 (4096) | 0.99= | 1.01= | · |
-| ShiftRightBytes<4> i32 | 1.00= | 1.00= | 1.01= |
-| ShiftRightLanes<1> i32 | 1.00= | 1.01= | 1.00= |
-| ShiftRightSame i32 bits=3 | 1.00= | 1.00= | 1.22W |
-| Shl i32 | 1.01= | 0.99= | 1.02= |
-| Shr u32 (variable) | 1.00= | 1.02= | 1.00= |
-| Shuffle0123 i32 | 1.00= | 0.97= | 1.05= |
-| Shuffle0321 i32 | 1.00= | 1.01= | 1.00= |
-| Shuffle1032 i32 | 1.00= | 0.99= | 1.00? |
-| Shuffle2103 i32 | 1.00= | 0.99= | 0.98= |
-| Shuffle2301 i32 | 1.00= | 0.99= | 1.00= |
+| Reverse i32 (4096) | 1.00= | 1.02= | · |
+| Reverse2 i32 | 1.00= | 1.00= | 1.04? |
+| Reverse4 i32 | 1.00= | 1.00= | 1.10= |
+| Reverse8 i32 (4096) | 0.99= | 0.99= | · |
+| ReverseBits i32 | 2.09W | 1.94W | 1.04= |
+| ReverseBlocks i32 | 0.96= | 0.99= | · |
+| ReverseLaneBytes u32 (4096) | 1.02= | 1.01= | · |
+| RotateLeft<3> i32 | 1.00= | 1.01? | 1.00= |
+| RotateLeftSame u32 bits=5 | 0.99= | 1.01= | 0.97= |
+| RotateRight<3> i32 | 0.99= | 0.99= | 1.05= |
+| RotateRightSame u32 bits=5 | 1.00= | 0.99= | 1.01= |
+| Round f32 | 1.00= | 1.01= | 0.99= |
+| RoundToInt f32->i32 | 1.40W | 1.14? | 1.00= |
+| RoundingShiftRight<2> i32 | 1.11? | 0.98= | 0.99= |
+| RoundingShiftRightAndDemoteTo<3> i32->i16 (4096) | 0.99? | 1.11W | · |
+| RoundingShiftRightSame i32 bits=5 | 1.09W | 1.00= | 0.82L |
+| RoundingShr i32 | 1.05W | 0.95L | 1.00? |
+| SatWidenMulAccumFixedPoint i16->i32 | 1.90W | 1.78W | · |
+| SatWidenMulPairwiseAccumulate i16->i32 | 0.93L | 1.00= | · |
+| SatWidenMulPairwiseAdd u8*i8->i16 | 0.97= | 1.00= | · |
+| SaturatedAbs i32 | 1.02= | 0.99= | 1.03? |
+| SaturatedAdd i16 (4096) | 1.00= | 0.98= | · |
+| SaturatedNeg i32 | 1.01= | 0.99= | 1.08? |
+| SaturatedSub i16 | 1.00= | 1.02= | 1.00= |
+| ScatterIndex i32 (4096) | 1.02= | 1.01= | · |
+| ScatterIndexN i32 (half n) | 1.27W | 1.02= | · |
+| ScatterOffset i32 (4096) | 0.99? | 0.98= | · |
+| Set i32 | 1.00= | 1.00= | 1.00= |
+| SetAtOrAfterFirst i32 | 1.00= | 0.99= | 1.00= |
+| SetAtOrBeforeFirst i32 | 0.88? | 1.18W | 1.00= |
+| SetBeforeFirst i32 | 0.89L | 1.27W | 1.00= |
+| SetMask i32 (4096) | 0.98= | 1.00= | · |
+| SetOnlyFirst i32 | 0.95= | 1.65W | 1.00= |
+| ShiftLeft<3> i32 | 1.00= | 0.99= | 1.03= |
+| ShiftLeftBytes<4> i32 | 0.99= | 1.00= | 0.99= |
+| ShiftLeftLanes<1> i32 | 1.00= | 1.00= | 1.00= |
+| ShiftLeftSame i32 bits=3 | 0.98= | 1.00= | 1.91W |
+| ShiftRight<3> i32 | 1.00= | 1.01= | 1.02= |
+| ShiftRightAndDemoteTo<3> i32->i16 (4096) | 1.01= | 1.00= | · |
+| ShiftRightBytes<4> i32 | 1.01= | 1.00= | 0.99= |
+| ShiftRightLanes<1> i32 | 1.02= | 0.99= | 1.00= |
+| ShiftRightSame i32 bits=3 | 1.01= | 0.99= | 1.22W |
+| Shl i32 | 0.99= | 1.00= | 1.03? |
+| Shr u32 (variable) | 1.00= | 1.01= | 1.00= |
+| Shuffle0123 i32 | 1.00= | 0.99= | 1.02= |
+| Shuffle0321 i32 | 1.01= | 0.99= | 1.01= |
+| Shuffle1032 i32 | 1.00= | 1.00= | 0.98= |
+| Shuffle2103 i32 | 1.00= | 1.01= | 1.02= |
+| Shuffle2301 i32 | 1.00= | 0.99= | 0.98= |
 | Slide1Down i32 | 1.01= | 0.99= | 0.99= |
-| Slide1Up i32 | 1.00= | 1.00= | 1.02= |
-| SlideDownLanes amt=2 i32 | 0.99= | 0.99= | 1.00= |
-| SlideMask1Down i32 (4096) | 0.99= | 1.02= | · |
-| SlideMask1Up i32 (4096) | 1.00= | 0.99= | · |
-| SlideMaskDownLanes i32 amt=2 (4096) | 1.10W | 1.01= | · |
-| SlideMaskUpLanes i32 amt=2 (4096) | 1.06? | 1.00= | · |
+| Slide1Up i32 | 1.00= | 1.00= | 0.96? |
+| SlideDownLanes amt=2 i32 | 1.00= | 1.01= | 1.00= |
+| SlideMask1Down i32 (4096) | 1.10? | 1.02= | · |
+| SlideMask1Up i32 (4096) | 1.08W | 0.99= | · |
+| SlideMaskDownLanes i32 amt=2 (4096) | 1.09W | 0.99= | · |
+| SlideMaskUpLanes i32 amt=2 (4096) | 1.09W | 1.04W | · |
 | SlideUpLanes amt=2 i32 | 1.00= | 1.00= | 1.00= |
 | Sqrt f32 | 1.00= | 1.00= | 1.00= |
-| StoreInterleaved2 f32 (4096) | 0.99= | 1.00= | · |
-| StoreInterleaved3 f32 (4096) | 1.04? | 1.04? | · |
-| StoreInterleaved4 f32 (4096) | 1.49W | 1.27? | · |
-| Sub f32 | 0.99= | 1.01= | 0.97= |
-| Sub i32 | 1.00= | 0.99= | 1.02= |
-| SumOfLanes i32 | 0.92L | 1.14W | 1.01= |
-| SumOfMulQuadAccumulate i8->i32 | 0.99= | 1.02= | · |
-| SumsOf2 u8->u16 | 1.01= | 1.00= | · |
-| SumsOf4 u8->u32 | 1.00= | 0.99= | · |
-| SumsOf8 u8->u64 | 1.00? | 1.03? | · |
-| SumsOf8AbsDiff u8->u64 | 0.99= | 1.01= | · |
-| SumsOfAdjQuadAbsDiff u8->u16 | 0.98= | 1.00= | · |
-| SwapAdjacentBlocks i32 | 1.06= | 1.00= | · |
-| TableLookupBytes u8 (4096) | 0.95? | 0.89L | · |
-| TableLookupLanes i32 (4096) | 1.00= | 0.99= | · |
-| TestBit i32 | 1.04= | 0.99= | 1.00= |
-| TrailingZeroCount i32 | 1.00= | 1.00= | 0.98= |
-| Trunc f32 | 1.00= | 1.00= | 1.04? |
-| TruncateTo u32->u16 | 1.00= | 1.00= | 1.00= |
-| TwoTablesLookupLanes i32 (4096) | 0.99= | 1.00= | · |
-| WidenMulAccumulate i16->i32 | 1.00= | 1.00= | · |
-| WidenMulPairwiseAdd i16->i32 | 1.00= | 1.00= | · |
-| Xor i32 | 1.00= | 1.01? | 1.01= |
-| Xor3 i32 | 1.63W | 1.00= | 1.02= |
-| Zero i32 | 1.00= | 1.00= | 1.04= |
-| ZeroExtendVector i16 half->full | 0.96= | 1.00= | · |
-| ZeroIfNegative f32 | 1.04? | 1.09W | 1.00= |
+| StoreInterleaved2 f32 (4096) | 1.00= | 1.03? | · |
+| StoreInterleaved3 f32 (4096) | 1.03? | 1.15W | · |
+| StoreInterleaved4 f32 (4096) | 1.49W | 1.26W | · |
+| Sub f32 | 1.00= | 0.99= | 0.98= |
+| Sub i32 | 1.00= | 1.03= | 1.01? |
+| SumOfLanes i32 | 0.91L | 1.16W | 0.99= |
+| SumOfMulQuadAccumulate i8->i32 | 1.00= | 1.02= | · |
+| SumsOf2 u8->u16 | 0.98= | 1.00= | · |
+| SumsOf4 u8->u32 | 0.99= | 0.98= | · |
+| SumsOf8 u8->u64 | 1.00= | 1.01= | · |
+| SumsOf8AbsDiff u8->u64 | 1.05? | 0.99= | · |
+| SumsOfAdjQuadAbsDiff u8->u16 | 1.00= | 1.00= | · |
+| SwapAdjacentBlocks i32 | 0.95= | 1.01= | · |
+| TableLookupBytes u8 (4096) | 0.96= | 0.88L | · |
+| TableLookupLanes i32 (4096) | 1.00= | 1.00= | · |
+| TestBit i32 | 1.06? | 1.00= | 1.00= |
+| TrailingZeroCount i32 | 1.00= | 1.00= | 1.02? |
+| Trunc f32 | 1.00= | 1.01= | 0.98= |
+| TruncateTo u32->u16 | 1.01= | 0.98= | 1.00= |
+| TwoTablesLookupLanes i32 (4096) | 0.99= | 1.02= | · |
+| WidenMulAccumulate i16->i32 | 1.00= | 0.99= | · |
+| WidenMulPairwiseAdd i16->i32 | 1.00= | 0.98= | · |
+| Xor i32 | 0.99= | 0.98= | 0.96= |
+| Xor3 i32 | 1.61W | 0.98= | 1.01= |
+| Zero i32 | 1.00= | 1.00= | 1.06= |
+| ZeroExtendVector i16 half->full | 1.02= | 1.00= | · |
+| ZeroIfNegative f32 | 1.04W | 1.06? | 0.97? |
 
 ## 复现
 ```

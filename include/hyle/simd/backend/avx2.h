@@ -1494,14 +1494,22 @@ HYLE_FORCE_INLINE Vec256<T, N> perm2x128(Vec256<T, N> lo, Vec256<T, N> hi) noexc
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ConcatLowerLower(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
-  // [lo.low128, hi.low128] via vinsertf128/vinserti128 (Highway's form): lo already holds lo.low128
-  // in lane 0, so insert hi's low 128 into lane 1. Prefer this over vperm2i128<0x20> -- same result
-  // and same cost on Intel, but vperm2i128 is 2 uops on AMD Zen while vinsert* is 1 everywhere.
+#if defined(_MSC_VER) && !defined(__clang__)
+  // MSVC keeps vperm2i128<0x20>: the vinsert form below compiles fine standalone (bench TIE) but
+  // in COMPOSED contexts MSVC lowers the castsi256_si128+insert pair to vextractf128 + stack
+  // spills -- Slide1Up (= ConcatLowerLower(v, Zero) + vpalignr) measured 0.099x Highway, dragging
+  // SlideMask1Up (0.26) and SetAtOrBeforeFirst down with it; vperm2i128 restores parity.
+  return detail::perm2x128<0x20>(lo, hi);  // [lo.low, hi.low]
+#else
+  // GCC/Clang: [lo.low128, hi.low128] via vinsertf128/vinserti128 (Highway's form): lo already
+  // holds lo.low128 in lane 0, so insert hi's low 128 into lane 1. Measured GCC 0.88 -> 0.98 vs
+  // vperm2i128 (which is also 2 uops on AMD Zen1 while vinsert* is 1 everywhere).
   Vec256<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm256_insertf128_ps(lo.raw, _mm256_castps256_ps128(hi.raw), 1);
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_insertf128_pd(lo.raw, _mm256_castpd256_pd128(hi.raw), 1);
   else r.raw = _mm256_inserti128_si256(lo.raw, _mm256_castsi256_si128(hi.raw), 1);
   return r;
+#endif
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> ConcatUpperUpper(Vec256<T, N> hi, Vec256<T, N> lo) noexcept {
