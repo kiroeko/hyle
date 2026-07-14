@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-13 校准仪器 v2 全量重测)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;四轮修复后 x86 双编译器交集清零)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -20,7 +20,6 @@
 
 ## 真输清单(校准仪器判决,按比值升序)
 ### MSVC(AVX2): 13 个
-- CompressNot i32 (4096, 50%): **0.81** —— MSVC 0.88-0.90 / GCC 0.94 边缘带,真实小差距
 - AddSub i32: **0.85** —— MSVC 0.86 / GCC 0.94(GCC 侧v10新进临界区),真实小差距
 - SetAtOrBeforeFirst i32: **0.90**
 - SumOfLanes i32: **0.91** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
@@ -33,17 +32,19 @@
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
 - Mod i32 invariant: **0.93**
 - MaxOfLanes i32: **0.95** —— 仅 MSVC 0.95(已从 0.86 改善,边缘)
+- CompressNot i32 (4096, 50%): **0.95** —— 已消向量 Not(bits 域 mbits^0xFF,commit 7c856fa,dumpbin=Compress+单条 `not eax`,GCC 0.94→TIE);残余=公共 compress 路径(table+srlv+vpermd)的 MSVC codegen,与 `Compress i32`(同 ~0.94,TIE/LOSE 边界抖动)同源、逐指令同 Highway,非 CompressNot 特有——疑绝对地址/table 布局级仪器残余,要啃是 Compress 的活
 
-### WSL/GCC(AVX2): 2 个
-- CompressNot i32 (4096, 50%): **0.94** —— MSVC 0.88-0.90 / GCC 0.94 边缘带,真实小差距
+### WSL/GCC(AVX2): 1 个
 - FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump:两侧指令相同且循环顶同为 64B 对齐(GCC .p2align 吸收 stagger)-> 绝对地址级仪器残余,HYLE 代码无可修,非算法输
+- (CompressNot i32 已于 commit 7c856fa 移出:bits 域补码消向量 Not,GCC 0.94→TIE)
 
 ### Mac/NEON: 2 个
 - MulSubAdd f32: **0.87** —— 仅 NEON 0.90
 - MulAddSub f32: **0.88** —— 仅 NEON 0.88
 
-### x86 双编译器交集(最高优先级): 1 个
-- CompressNot i32 (4096, 50%): MSVC 0.81 / WSL 0.94
+### x86 双编译器交集(最高优先级): 0 个
+- (曾唯余 CompressNot i32,MSVC 0.81/GCC 0.94;commit 7c856fa 消向量 Not 后 GCC→TIE、MSVC→0.95 且残余归 Compress 公共路径,交集清零。)
+- 注:MSVC `Compress i32` 0.94 与 CompressNot 同源,但 GCC 侧 Compress TIE,故不构成双编译器交集。
 
 ### 与旧报告的对照(演进:旧 harness -> v1 校准仪器 -> 修复 + v2 stagger)
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
@@ -62,6 +63,12 @@
 - 本轮回归教训:ConcatLowerLower 的 vinsert 形态 GCC 赢但 MSVC 在复合上下文(Slide1Up)编成
   extract+栈 spill 掉到 0.099(单独 kernel 却 TIE)——复合上下文回归只有全表重测才抓得住,
   已按编译器分叉(MSVC=vperm2i128 / GCC=vinsert)修复,Slide1Up/SlideMask1Up 复位 TIE/WIN。
+- 第四轮(2026-07-14,commit 7c856fa):CompressNot i32(曾唯一 x86 双编译器交集,MSVC 0.81/GCC 0.94)
+  弃泛型 `Compress(v,Not(m))` 的向量 Not,改 Highway 的 bits 域补码(`mbits^0xFF` 复用同一 compress
+  索引表,即 Highway IndicesFromNotBits);dumpbin 坐实 = Compress + 单条 `not eax`。GCC→TIE、
+  MSVC→0.95(追到与 Compress 本身同速)。**x86 双编译器交集清零。** 副产:MSVC `Compress i32`
+  本身 0.94(公共 table+srlv+vpermd 路径 codegen,逐指令同 Highway,GCC 侧 TIE)= CompressNot MSVC
+  残余的真源,非 CompressNot 特有——要再啃是 Compress 的活,疑绝对地址/table 布局级仪器残余。
 
 ## 全量表
 
@@ -96,9 +103,9 @@
 | CombineShiftRightBytes4 i32 | 1.04= | 0.99= | 1.00= |
 | CombineShiftRightLanes1 i32 | 0.96= | 0.99= | 1.00= |
 | ComplexConj f32 | 1.25W | 0.99= | 1.01= |
-| Compress i32 (4096, 50% dense) | 0.98= | 1.02? | · |
+| Compress i32 (4096, 50% dense) | 0.94? | 1.01= | · |
 | CompressBlendedStore i32 (4096, 50%) | 0.98? | 1.15W | · |
-| CompressNot i32 (4096, 50%) | 0.81L | 0.94L | · |
+| CompressNot i32 (4096, 50%) | 0.95? | 1.00= | · |
 | CompressStore i32 (4096, 50%) | 0.91L | 1.00= | · |
 | ConcatEven i32 (4096) | 1.02= | 1.00? | · |
 | ConcatLowerLower i32 | 0.97= | 0.99= | · |
