@@ -19,7 +19,7 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 12 个
+### MSVC(AVX2): 11 个
 - AddSub i32: **0.85** —— MSVC 0.86 / GCC 0.94(GCC 侧v10新进临界区),真实小差距
 - SetAtOrBeforeFirst i32: **0.90**
 - SumOfLanes i32: **0.91** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
@@ -31,8 +31,10 @@
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
 - Mod i32 invariant: **0.93**
 - MaxOfLanes i32: **0.95** —— 仅 MSVC 0.95(已从 0.86 改善,边缘)
-- CompressNot i32 (4096, 50%): **0.93** —— 已消向量 Not(bits 域 mbits^0xFF,commit 7c856fa,dumpbin=Compress+单条 `not eax`);独立双序复核(2026-07-14):MSVC 0.93 与 `Compress i32` 同轮 0.945 同速,GCC 1.02 ≥TIE——修复确认,残余=公共 compress 路径(table+srlv+vpermd)的 MSVC codegen,逐指令同 Highway,非 CompressNot 特有,疑绝对地址/table 布局级仪器残余,要啃是 Compress 的活
-- (CompressStore i32 已移出:commit 647d254 消重复 movemask 后 MSVC 0.91→0.97 双序 UNSTABLE、GCC TIE,按"UNSTABLE 不算输赢"移出真输清单)
+- (CompressNot / CompressStore i32 已移出:向量 Not(7c856fa)与重复 movemask(647d254)消除后,重测两轮
+  GCC 全 TIE、MSVC 在 0.95 附近 LOSE↔UNSTABLE 跨轮抖动且与 `Compress i32` 同源同速同判——非稳定 LOSE,
+  按"UNSTABLE/TIE 不算输赢"移出。残余=公共 compress32_by_bits 核(table+srlv+vpermd)的 MSVC codegen
+  逐指令同 Highway,疑绝对地址/table 布局级仪器抖动,要动是 Compress 的活。)
 
 ### WSL/GCC(AVX2): 1 个
 - FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump:两侧指令相同且循环顶同为 64B 对齐(GCC .p2align 吸收 stagger)-> 绝对地址级仪器残余,HYLE 代码无可修,非算法输
@@ -107,9 +109,9 @@
 | CombineShiftRightBytes4 i32 | 1.04= | 0.99= | 1.00= |
 | CombineShiftRightLanes1 i32 | 0.96= | 0.99= | 1.00= |
 | ComplexConj f32 | 1.25W | 0.99= | 1.01= |
-| Compress i32 (4096, 50% dense) | 0.94L | 1.00= | · |
+| Compress i32 (4096, 50% dense) | 0.94? | 1.00= | · |
 | CompressBlendedStore i32 (4096, 50%) | 0.98? | 1.15W | · |
-| CompressNot i32 (4096, 50%) | 0.93L | 1.02? | · |
+| CompressNot i32 (4096, 50%) | 0.95? | 1.00= | · |
 | CompressStore i32 (4096, 50%) | 0.97? | 1.00= | · |
 | ConcatEven i32 (4096) | 1.02= | 1.00? | · |
 | ConcatLowerLower i32 | 0.97= | 0.99= | · |
