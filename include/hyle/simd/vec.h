@@ -1253,7 +1253,11 @@ template <class DTo, class MFrom>
 HYLE_FORCE_INLINE MFromD<DTo> RebindMask(DTo d_to, MFrom m) noexcept {
   using DFrom = Simd<MakeSigned<TFromD<DTo>>, DTo::kMaxLanes, DTo{}.Pow2()>;
   const DFrom d_from;
-  return MaskFromVec(BitCast(d_to, VecFromMask(d_from, m)));
+  // VecFromMask(m) is the canonical -1/0 vector and BitCast is a no-op reinterpret, so the result is
+  // still canonical -> MaskFromNormalizedVec re-tags it directly instead of MaskFromVec's redundant
+  // sign-broadcast (a vpsrad on avx2; Highway's avx2 RebindMask is a pure no-op re-type). SVE/RVV
+  // MaskFromNormalizedVec forwards to MaskFromVec (predicate/mask regs have no srai to skip).
+  return MaskFromNormalizedVec(BitCast(d_to, VecFromMask(d_from, m)));
 }
 
 // MaskFalse(d): all-false mask. MaskFromVec(Zero) -- no lane's MSB set.

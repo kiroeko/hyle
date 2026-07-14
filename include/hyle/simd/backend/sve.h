@@ -336,6 +336,12 @@ template <class V> HYLE_FORCE_INLINE svbool_t MaskFromVec(V v) noexcept {
   else if constexpr (sizeof(T) == 4) return svcmplt(detail::ptrue<T>(), svreinterpret_s32(v), std::int32_t{0});
   else return svcmplt(detail::ptrue<T>(), svreinterpret_s64(v), std::int64_t{0});
 }
+// MaskFromNormalizedVec: caller guarantees v is already canonical all-ones/all-zero per lane. SVE
+// masks are predicate registers, so the MSB compare (MaskFromVec) IS the natural conversion -- there
+// is no vector-domain sign-broadcast to skip (that was the avx2-only redundancy). Forward.
+template <class V> HYLE_FORCE_INLINE svbool_t MaskFromNormalizedVec(V v) noexcept {
+  return MaskFromVec(v);
+}
 // VecFromMask(d, m): all-ones (T(-1)) where active, else 0.
 template <class D> HYLE_FORCE_INLINE VFromD<D> VecFromMask(D d, svbool_t m) noexcept {
   using T = TFromD<D>;

@@ -818,6 +818,12 @@ template <class V> HYLE_FORCE_INLINE auto MaskFromVec(V v) noexcept {
     else return __riscv_vmslt(__riscv_vreinterpret_i64m1(v), std::int64_t{0}, vl);
   }
 }
+// MaskFromNormalizedVec: caller guarantees v is already canonical all-ones/all-zero per lane. RVV
+// masks are mask registers, so the MSB compare (MaskFromVec) IS the natural conversion -- no
+// vector-domain sign-broadcast to skip (avx2-only redundancy). Forward.
+template <class V> HYLE_FORCE_INLINE auto MaskFromNormalizedVec(V v) noexcept {
+  return MaskFromVec(v);
+}
 template <class D, class M> HYLE_FORCE_INLINE VFromD<D> VecFromMask(D d, M m) noexcept {
   using T = TFromD<D>;
   return IfThenElse(m, Set(d, static_cast<T>(-1)), Zero(d));
