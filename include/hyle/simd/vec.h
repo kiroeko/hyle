@@ -648,9 +648,26 @@ template <class V> HYLE_FORCE_INLINE V AndXor(V a, V b, V c) noexcept { return A
 template <class V> HYLE_FORCE_INLINE V BitwiseIfThenElse(V mask, V yes, V no) noexcept {
   return Or(And(mask, yes), AndNot(mask, no));
 }
-// IsNegative(v): mask true where the lane's sign bit is set (Highway; = Lt(v, 0) for signed).
+// IsNegative(v): mask true where the lane's sign bit is set. Highway's form = MaskFromVec of a
+// sign-bit broadcast (one arithmetic shift, vpsrad $31), NOT Lt(v,0) which needs a zeroed reg + a
+// vpcmpgtd (2 ops; op_parity: GCC 0.84 LOSE vs this). BitCast to signed so float lanes reuse the
+// integer sign-shift too. Unsigned lanes have no sign bit -> always-false (Lt path preserves that).
 template <class V> HYLE_FORCE_INLINE auto IsNegative(V v) noexcept {
-  return Lt(v, Zero(DFromV<V>()));
+  using D = DFromV<V>;
+  const D d;
+  using T = TFromD<D>;
+  if constexpr (std::is_integral_v<T> && std::is_signed_v<T>) {
+    // Signed int: sign-bit broadcast (one vpsrad) instead of Lt(v,0) which needs a zeroed reg + a
+    // vpcmpgtd (2 ops). BroadcastSignBit yields a canonical all-ones/all-zero vector, so
+    // MaskFromNormalizedVec re-tags it WITHOUT MaskFromVec's redundant second sign-shift
+    // (op_parity: GCC 0.84 LOSE -> TIE; MSVC also drops a vpsrad).
+    return MaskFromNormalizedVec(BroadcastSignBit(v));
+  } else {
+    // float/double: Lt(v,0) is a single vcmpltps -- the BitCast-to-signed sign-shift form would add
+    // a domain round-trip that regressed the IfNegativeThen* float consumers. unsigned: never
+    // negative (Highway excludes the overload; Lt gives the correct all-false).
+    return Lt(v, Zero(d));
+  }
 }
 // IfNegativeThenElseZero(v, yes): yes where v<0, else 0. IfNegativeThenZeroElse: 0 where v<0.
 template <class V> HYLE_FORCE_INLINE V IfNegativeThenElseZero(V v, V yes) noexcept {

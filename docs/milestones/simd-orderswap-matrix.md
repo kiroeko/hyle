@@ -126,9 +126,24 @@
 - 最终轮(2026-07-14):用户对仅剩两个"定论地板"提出复审,**两个定论均被推翻并修成 TIE**——
   ① FindLastTrue(GCC 0.94→1.00):真凶=一条 movslq(int 域减法的符号扩展),非仪器残余;
   ② BroadcastLane<3>(MSVC 0.93→1.00):真凶=intrinsic 写法决定 MSVC 折叠与否,非"形状红利不可得"。
-  **至此 x86 两列真输清单双双归零(MSVC full 剩 AddSub 0.86 与 0.9x 边缘带徘徊者,详见全量表)。**
   复审教训:被"定论"关闭的项,证据等级要过硬——签名级 disasm 对比、单一形态的否定实验,都不足以
   盖棺;逐条 diff 与多形态尝试才算。
+- 边缘带坐实轮(2026-07-14,锁核 3-run 双序):用户要求对 `?` 徘徊者按方法论多轮复测,**分清真 UNSTABLE
+  vs 单轮误判的真输**。3-run 合并(HYLE_BENCH_CPU=2 锁核)结论:IsNegative(MSVC)/Compress/CompressNot/
+  OrderedDemote2MasksTo 确属 UNSTABLE(单轮 0.84~0.95 是相位噪声,多轮判决翻转);**但 AddSub(MSVC)与
+  IsNegative(GCC)是被 `?` 掩盖的真输,双双 3-run 稳定 0.84、spread 小,修成 TIE**:
+  - **AddSub i32 MSVC 0.84→TIE**:/FAs 反汇编——泛型 `Add(a,OddEven(b,-b))` 在 **GCC 上 HYLE/Highway 逐字节
+    相同(故 GCC TIE)**,但 **MSVC 把 b 折成内存操作数读进 vpsubd+vpblendd 两次**(b 从 [mem] 读两遍),
+    Highway 先 vmovdqu 到寄存器只读一次。avx2/sse4 i32/u32 路径改显式 intrinsic(setzero+sub+blend_epi32
+    0x55+add)强制 b 落单寄存器→MSVC 逐字节追平 Highway;GCC 仍逐字节相同保持 TIE。
+  - **IsNegative i32 GCC 0.84→TIE**:HYLE `Lt(v,0)`=vpxor 造零+vpcmpgtd 两 op,Highway=BroadcastSignBit
+    单条 vpsrad$31。改 signed-int 走 `MaskFromNormalizedVec(BroadcastSignBit(v))`(canonical -1/0 免
+    MaskFromVec 的冗余二次 srai——MSVC 一度双 vpsrad 就是漏了这个)→两编译器逐字节=Highway 单 vpsrad。
+    **仅限 signed-int**:float 保 `Lt(v,0)`(单 vcmpltps;BitCast-to-signed 往返会拖累 IfNegativeThen* 的
+    float 消费者,实测反退 0.94),unsigned 保 Lt(恒 false 正确)。
+  - 验证:MSVC+GCC 各 avx2/sse4/scalar gtest 9 pass;3-run 双序 CALIBRATION PASS,两 op 两编译器全 TIE,
+    全表 LOSE 扫描归零(MaskedModOr 0.965 gate-edge 复测消失)。**方法学:`?` 不是"免检"——多轮锁核双序
+    才能分清真 UNSTABLE 与被噪声淹没的真输;单轮 0.84 若 3-run 稳定就是真输,必查 disasm。**
 
 ## 全量表
 
@@ -138,7 +153,7 @@
 | AbsDiff i32 | 1.00= | 1.00= | 1.02= |
 | Add f32 | 1.00= | 1.00= | 0.99= |
 | Add f32 (4096) | 1.00= | 0.99= | · |
-| AddSub i32 | 0.84? | 1.00= | 1.00? |
+| AddSub i32 | 1.01= | 1.00= | 1.00? |
 | AllBits0 i32 | 1.02= | 1.00= | 1.00= |
 | AllBits1 i32 | 0.98= | 0.98= | 1.00= |
 | AllFalse i32 | 0.99? | 1.01= | 1.00= |
@@ -221,7 +236,7 @@
 | IsFinite f32 | 1.00= | 1.33W | 1.00= |
 | IsInf f32 | 1.00= | 1.13W | 1.00= |
 | IsNaN f32 | 1.01= | 1.00= | 1.00? |
-| IsNegative i32 | 0.97? | 0.94? | 1.00= |
+| IsNegative i32 | 0.99? | 1.00= | 1.00= |
 | Le i32 | 1.00= | 1.00= | 0.98= |
 | LeadingZeroCount u32 (4096) | 0.95? | 1.01= | · |
 | Load/Store i32 aligned | 0.99= | 1.00= | 0.99= |

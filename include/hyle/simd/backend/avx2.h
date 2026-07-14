@@ -574,7 +574,16 @@ HYLE_FORCE_INLINE Vec256<T, N> AddSub(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Vec256<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm256_addsub_ps(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_addsub_pd(a.raw, b.raw);
-  else r = Add(a, OddEven(b, Sub(Zero(Simd<T, N, 0>()), b)));  // native addsub is float-only
+  else if constexpr (sizeof(T) == 4) {
+    // i32/u32: a + {even:-b, odd:+b}. Explicit intrinsics so b lands in ONE register (vmovdqu once).
+    // The generic Add(a,OddEven(b,-b)) is instruction-identical on GCC (TIE) but on MSVC folds b as a
+    // MEMORY operand into BOTH the vpsubd and the vpblendd (b read from [mem] twice) -> op_parity 0.84.
+    // Highway loads b once to a reg; matching that (single vpxor+vpsubd+vpblendd on the reg) ties.
+    const __m256i bb = b.raw;
+    const __m256i negb = _mm256_sub_epi32(_mm256_setzero_si256(), bb);
+    const __m256i even_neg = _mm256_blend_epi32(bb, negb, 0x55);  // even lanes(0,2,4,6)=-b, odd=+b
+    r.raw = _mm256_add_epi32(a.raw, even_neg);
+  } else r = Add(a, OddEven(b, Sub(Zero(Simd<T, N, 0>()), b)));  // i8/i16/i64: native addsub is float-only
   return r;
 }
 // MulRound(a,b) = round(a*b) to nearest-even, result stays float. Reuse Round + Mul.
