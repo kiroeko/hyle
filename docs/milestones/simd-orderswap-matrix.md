@@ -173,8 +173,16 @@
   不变)。三平台 gtest(全位/零选择子=契约域)全绿。②**ReduceMul/And/Or 32-bit 弃 store+reload 改 halving
   tree**(op128_2+reduce256_2,同 reduce256 shape)——vs 旧标量 fold:MSVC Mul 1.46×/And·Or 1.43×,GCC Mul
   1.32×/And·Or 2.2×;gtest 8 三平台+SDE 全绿。**独创 op(无 Highway 对手)仍按"比 baseline 快"判,发现 store+
-  reload 就树化。** ReduceSum/Min/Max 的 8/16/64-bit 仍 fold(只 32-bit+float 树化;Highway 走 SumOfLanes 向量
-  树对窄类型也快)=登记待办(#145,需窄宽 bench + 逐宽处理 i8/i16 sum 溢出、i64 无 min/max_epi64)。
+  reload 就树化。**
+- 窄宽 reduce 树化轮(2026-07-15,#145 收口):**ReduceSum/Min/Max i16+i64 弃 store+reload 改 halving tree**。
+  先补 op_parity 窄宽 bench(此前 i16/i64 reduce 零 bench)暴出大输:**i16 Sum/Min/Max 0.078~0.118(比
+  Highway 慢 8~13×!)、i64 0.67~0.87**。原注释"Highway 也 fallback"是**错的**——Highway 走 SumOfLanes/
+  MinOfLanes 向量树。加 op128_narrow(i16 原生 min/max_epi16/epu16;i64 无原生 min/max_epi64→cmpgt_epi64+
+  blendv 合成,无符号先 xor 符号位偏置)+reduce256_narrow。i16/u16/i64/u64 走树,i8/u8 留 fold(sum 需 widen,
+  收益低,有意留)。i16 树在 16-bit lane 内累加,wrap 与标量 accumulator 逐位一致。**结果 i16 0.08→1.02
+  (~13×)、i64 0.7→1.00,三平台(MSVC+GCC avx2/sse4/scalar + avx512-SDE + Mac NEON)gtest 8 全绿、全 TIE。**
+  **教训:代码里"Highway 也这样 fallback"的自辩注释必须核实——这次就是错的,Highway 明明树化了;零 bench
+  的能力面是盲区高发地(窄宽 reduce 慢 13× 一直没人知道)。**
 
 ## 全量表
 
