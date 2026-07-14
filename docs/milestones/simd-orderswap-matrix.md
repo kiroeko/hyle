@@ -31,9 +31,8 @@
 - SatWidenMulPairwiseAccumulate i16->i32: **0.94**
 - MinOfLanes i32: **0.95**
 
-### WSL/GCC(AVX2): 8 个
+### WSL/GCC(AVX2): 7 个
 - DemoteToNearestInt f64->i32 (4096): **0.42** —— 正确性取舍(同 MSVC 行):保完整 emu128 NaN-按符号;已从 0.26 改善(cvt-first native);满平需弃 -NaN→MIN 语义;InRange 快路径 2.0x WIN
-- CombineMasks i32 (4096): **0.84** —— 仅 GCC 0.84
 - ConcatLowerLower i32: **0.88** —— 仅 GCC 0.88
 - TableLookupBytes u8 (4096): **0.89** —— HYLE 多一条设计内的 vpand 索引掩码(安全语义,非缺陷)
 - RoundingShr i32: **0.94**
@@ -111,7 +110,7 @@
 | Ceil f32 | 1.00= | 0.98= | 0.99= |
 | CeilInt f32->i32 | 1.48W | 1.56W | 0.99= |
 | Clamp i32 | 1.00= | 0.99= | 0.99= |
-| CombineMasks i32 (4096) | 1.01= | 0.84L | · |
+| CombineMasks i32 (4096) | 1.01= | 1.00= | · |
 | CombineShiftRightBytes4 i32 | 0.99= | 1.00= | 1.00= |
 | CombineShiftRightLanes1 i32 | 1.01= | 1.00= | 1.00= |
 | ComplexConj f32 | 1.25W | 1.01= | 1.01= |

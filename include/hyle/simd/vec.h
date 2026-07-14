@@ -1267,19 +1267,22 @@ HYLE_FORCE_INLINE MFromD<D> SetMask(D d, bool val) noexcept {
 template <class D>
 HYLE_FORCE_INLINE MFromD<D> CombineMasks(D d, MFromD<Half<D>> hi, MFromD<Half<D>> lo) noexcept {
   const Half<D> dh;
-  return MaskFromVec(Combine(d, VecFromMask(dh, hi), VecFromMask(dh, lo)));
+  // Combine of two canonical (-1/0) mask vectors stays canonical, so MaskFromNormalizedVec re-tags
+  // it directly -- MaskFromVec would re-run a redundant sign-broadcast (objdump: a trailing vpsrad).
+  return MaskFromNormalizedVec(Combine(d, VecFromMask(dh, hi), VecFromMask(dh, lo)));
 }
 
 // LowerHalfOfMask / UpperHalfOfMask(d, m): take the low / high N/2 lanes of a full mask.
 template <class D>
 HYLE_FORCE_INLINE MFromD<D> LowerHalfOfMask(D d, MFromD<Twice<D>> m) noexcept {
   const Twice<D> dt;
-  return MaskFromVec(LowerHalf(d, VecFromMask(dt, m)));
+  // The half of a canonical mask vector is still canonical -> MaskFromNormalizedVec (no redundant srai).
+  return MaskFromNormalizedVec(LowerHalf(d, VecFromMask(dt, m)));
 }
 template <class D>
 HYLE_FORCE_INLINE MFromD<D> UpperHalfOfMask(D d, MFromD<Twice<D>> m) noexcept {
   const Twice<D> dt;
-  return MaskFromVec(UpperHalf(d, VecFromMask(dt, m)));
+  return MaskFromNormalizedVec(UpperHalf(d, VecFromMask(dt, m)));
 }
 
 // PromoteMaskTo / DemoteMaskTo / OrderedDemote2MasksTo: convert a mask between lane widths.
