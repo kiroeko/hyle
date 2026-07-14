@@ -229,6 +229,26 @@ int main() {
      hyle_bench::mark(rep); });
   }
 
+  // ---- coverage re-audit (2026-07-14): masked gather/scatter (HYLE scalar fallback vs Highway native) ----
+  {
+    std::vector<std::int32_t> table(kN);
+    for (std::size_t i = 0; i < kN; ++i) table[i] = static_cast<std::int32_t>(i * 3 + 1);
+    std::vector<std::int32_t> idxbuf(kN);
+    { std::mt19937_64 rng(19); std::uniform_int_distribution<int> d(0, kN - 1); for (auto& e : idxbuf) e = d(rng); }
+    {
+      nb::Bench bench; bench.title("MaskedGatherIndex i32 (4096, 50%)").relative(true).batch(kN).minEpochIterations(5000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_t=table.data(); auto* p_ix=idxbuf.data(); auto* p_o=iout.data(); for(std::size_t i=0;i+hw<=kN;i+=hw){ auto ix=hs::LoadU(hdi,p_ix+i); hs::StoreU(hs::MaskedGatherIndex(hs::Gt(ix,hs::Set(hdi,(std::int32_t)(kN/2))),hdi,p_t,ix),hdi,p_o+i);} nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_t=table.data(); auto* p_ix=idxbuf.data(); auto* p_o=iout.data(); for(std::size_t i=0;i+gw<=kN;i+=gw){ auto ix=hn::LoadU(gdi,p_ix+i); hn::StoreU(hn::MaskedGatherIndex(hn::Gt(ix,hn::Set(gdi,(std::int32_t)(kN/2))),gdi,p_t,ix),gdi,p_o+i);} nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
+    }
+    {
+      nb::Bench bench; bench.title("MaskedGatherIndexOr i32 (4096, 50%)").relative(true).batch(kN).minEpochIterations(5000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_t=table.data(); auto* p_ix=idxbuf.data(); auto* p_o=iout.data(); for(std::size_t i=0;i+hw<=kN;i+=hw){ auto ix=hs::LoadU(hdi,p_ix+i); hs::StoreU(hs::MaskedGatherIndexOr(hs::Set(hdi,-1),hs::Gt(ix,hs::Set(hdi,(std::int32_t)(kN/2))),hdi,p_t,ix),hdi,p_o+i);} nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_t=table.data(); auto* p_ix=idxbuf.data(); auto* p_o=iout.data(); for(std::size_t i=0;i+gw<=kN;i+=gw){ auto ix=hn::LoadU(gdi,p_ix+i); hn::StoreU(hn::MaskedGatherIndexOr(hn::Set(gdi,-1),hn::Gt(ix,hn::Set(gdi,(std::int32_t)(kN/2))),gdi,p_t,ix),gdi,p_o+i);} nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
+    }
+    {
+      nb::Bench bench; bench.title("MaskedScatterIndex i32 (4096, 50%)").relative(true).batch(kN).minEpochIterations(5000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia=ia.data(); auto* p_ix=idxbuf.data(); auto* p_t=table.data(); for(std::size_t i=0;i+hw<=kN;i+=hw){ auto ix=hs::LoadU(hdi,p_ix+i); hs::MaskedScatterIndex(hs::LoadU(hdi,p_ia+i),hs::Gt(ix,hs::Set(hdi,(std::int32_t)(kN/2))),hdi,p_t,ix);} nb::doNotOptimizeAway(p_t);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia=ia.data(); auto* p_ix=idxbuf.data(); auto* p_t=table.data(); for(std::size_t i=0;i+gw<=kN;i+=gw){ auto ix=hn::LoadU(gdi,p_ix+i); hn::MaskedScatterIndex(hn::LoadU(gdi,p_ia+i),hn::Gt(ix,hn::Set(gdi,(std::int32_t)(kN/2))),gdi,p_t,ix);} nb::doNotOptimizeAway(p_t);  hyle_bench::mark(rep); });
+    }
+  }
+
   // ---- 9. SaturatedAdd i16 (HYLE vs Highway -- both should be native vpaddsw) ----
   {
     const hs::ScalableTag<std::int16_t> hd16; const hn::ScalableTag<std::int16_t> gd16;

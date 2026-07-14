@@ -277,5 +277,34 @@ int main(){
     HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_u8a = u8a.data(); auto* p_u8b = u8b.data(); auto* p_o64 = o64.data(); for(std::size_t i=0;i+w8h<=kN;i+=w8h) hs::StoreU(hs::SumsOf8AbsDiff(hs::LoadU(hd8,p_u8a+i),hs::LoadU(hd8,p_u8b+i)), hd64, p_o64+i/8); nb::doNotOptimizeAway(p_o64);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_u8a = u8a.data(); auto* p_u8b = u8b.data(); auto* p_o64 = o64.data(); for(std::size_t i=0;i+w8g<=kN;i+=w8g) hn::StoreU(hn::SumsOf8AbsDiff(hn::LoadU(gd8,p_u8a+i),hn::LoadU(gd8,p_u8b+i)), gd64, p_o64+i/8); nb::doNotOptimizeAway(p_o64);  hyle_bench::mark(rep); });
   }
 
+  // ---- coverage re-audit (2026-07-14): bf16/dtype ops the old doc falsely claimed "covered by dtype_bench" ----
+  // bf16 = uint16 IEEE carrier (2N lanes) -> f32 (N lanes). MulEvenAdd/MulOddAdd are the bf16 dot-product FMA.
+  {
+    const hs::ScalableTag<std::uint16_t> hdbf; const hn::ScalableTag<std::uint16_t> gdbf;
+    const hs::ScalableTag<float> hdf; const hn::ScalableTag<float> gdf;
+    const std::size_t wbfh=hs::Lanes(hdbf), wbfg=hn::Lanes(gdbf);
+    // Highway's MulEvenAdd takes a bfloat16_t-typed vector (Repartition of the f32 tag); bit-cast the
+    // uint16 carrier load into it. HYLE's takes the uint16 carrier directly -- same bits, equal work.
+    const hn::Repartition<hwy::bfloat16_t, decltype(gdf)> gdbf16;
+    std::mt19937_64 rr(77); std::uniform_int_distribution<int> dd(0x3c00, 0x4200);  // benign bf16 exps
+    std::vector<std::uint16_t> bfa(kN), bfb(kN); for(std::size_t i=0;i<kN;++i){ bfa[i]=(std::uint16_t)dd(rr); bfb[i]=(std::uint16_t)dd(rr);}
+    std::vector<float> fcc(kN, 1.0f), foo(kN);
+    {
+      nb::Bench b; b.title("MulEvenAdd bf16->f32").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=bfa.data(); auto* p_b=bfb.data(); auto* p_c=fcc.data(); auto* p_o=foo.data(); for(std::size_t i=0;i+wbfh<=kN;i+=wbfh){ hs::StoreU(hs::MulEvenAdd(hdf, hs::LoadU(hdbf,p_a+i), hs::LoadU(hdbf,p_b+i), hs::LoadU(hdf,p_c+i/2)), hdf, p_o+i/2);} nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=bfa.data(); auto* p_b=bfb.data(); auto* p_c=fcc.data(); auto* p_o=foo.data(); for(std::size_t i=0;i+wbfg<=kN;i+=wbfg){ hn::StoreU(hn::MulEvenAdd(gdf, hn::BitCast(gdbf16,hn::LoadU(gdbf,p_a+i)), hn::BitCast(gdbf16,hn::LoadU(gdbf,p_b+i)), hn::LoadU(gdf,p_c+i/2)), gdf, p_o+i/2);} nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
+    }
+    {
+      nb::Bench b; b.title("MulOddAdd bf16->f32").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=bfa.data(); auto* p_b=bfb.data(); auto* p_c=fcc.data(); auto* p_o=foo.data(); for(std::size_t i=0;i+wbfh<=kN;i+=wbfh){ hs::StoreU(hs::MulOddAdd(hdf, hs::LoadU(hdbf,p_a+i), hs::LoadU(hdbf,p_b+i), hs::LoadU(hdf,p_c+i/2)), hdf, p_o+i/2);} nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=bfa.data(); auto* p_b=bfb.data(); auto* p_c=fcc.data(); auto* p_o=foo.data(); for(std::size_t i=0;i+wbfg<=kN;i+=wbfg){ hn::StoreU(hn::MulOddAdd(gdf, hn::BitCast(gdbf16,hn::LoadU(gdbf,p_a+i)), hn::BitCast(gdbf16,hn::LoadU(gdbf,p_b+i)), hn::LoadU(gdf,p_c+i/2)), gdf, p_o+i/2);} nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
+    }
+  }
+  // U8FromU32: u32 (N lanes) -> u8 (N lanes packed low). HYLE VFromD<Simd<u8,N,0>>, Highway Vec128<u8,8>.
+  {
+    auto u32a = gen<std::uint32_t>(21, 0, 255);
+    const hs::CappedTag<std::uint8_t, 8> hd8c; const hn::CappedTag<std::uint8_t, 8> gd8c;
+    nb::Bench b; b.title("U8FromU32 u32->u8").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=u32a.data(); auto* p_o=o8.data(); for(std::size_t i=0;i+w32h<=kN;i+=w32h) hs::StoreU(hs::U8FromU32(hs::LoadU(hd32u,p_a+i)), hd8c, p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=u32a.data(); auto* p_o=o8.data(); for(std::size_t i=0;i+w32g<=kN;i+=w32g) hn::StoreU(hn::U8FromU32(hn::LoadU(gd32u,p_a+i)), gd8c, p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
+  }
+
   return 0;
 }

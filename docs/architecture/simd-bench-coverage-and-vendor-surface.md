@@ -8,41 +8,94 @@
 
 ---
 
-## 1. op benchmark 覆盖率 = 96%（245/255 真算子）
+## 1. op benchmark 覆盖率（机械口径，见 `scripts/simd-op-coverage.py`）
 
-**权威留档**：[`../performance/benchmarks-simd.md`](../performance/benchmarks-simd.md)（"op-parity 覆盖率"节）。
+**权威留档**：数字由 `scripts/simd-op-coverage.py` 机械产出（可复现 + 自校验 + `--check` 可进 CI）；
+verdict 权威见 [`../milestones/simd-orderswap-matrix.md`](../milestones/simd-orderswap-matrix.md)。
 
-| 指标 | 数值 | 说明 |
+> **⚠️ 为什么旧"96%（245/255）"不可信**：手工/一次性 grep 统计反复出错（已测的 `Lt128/IsInf`
+> 被误报"没测"，虚增缺口；分母还混入 `detail::` helper 且被人为缩小）。**根因是没有自校验**。
+> 新脚本的闭环：**已测集必须 ⊆ 提取的全集**；任何已测 op 不在全集里 = 提取规则有盲区 → 报错重跑。
+> 开发时这个自校验抓出 10 个提取盲区（复合标题 `Load/Store`、`Mask And` 前缀、自定义 helper
+> `run_reduce/cmp128`、跨行字符串合并、大写宏泄漏），逐个修正后数字才可信。
+
+### 机械口径三档（快照 2026-07-14）
+
+| 指标 | 数值 | 口径 |
 |---|---|---|
-| 公开 op 名（headline） | ~228 | 泛型模板一名多型，对齐 Highway ~370 typed 变体（[`simd-design.md`](./simd-design.md)） |
-| 覆盖率分母（真算子集） | 255 | 公开 op 面剔除 tag/trait/构造 helper + alias/纯直通-单指令-block 变体后 |
-| **op-parity 已覆盖** | **245 / 255 = 96%** | HYLE 自造 op vs Highway/xsimd 同 op 同 ISA 对拍 |
-| op-parity 未覆盖 | 10 | 全部有据（见下），非遗漏 |
+| 公开 op 名（去重 8 头，剔除 `detail::`/大写宏/小写 helper） | **380** | `extract_public_ops` |
+| 不可测（constexpr 谓词/常量/introspection/单 lane 存取/tag helper，逐个带理由） | 26 | `NOT_BENCHABLE` |
+| 内部选择器变体（`*Native`/`*Emulated`，由伞 op 覆盖） | 10 | `SELECTOR_SUBSTR` |
+| 别名（`Rol`→RotateLeft 等，目标已测才算覆盖） | 4 | `ALIASES` |
+| **可测全集** | **340** | benchable |
+| 已有 bench（op_parity + crypto + gather） | 303 | benched |
+
+### ⭐ SOTA 状态三分（"有 bench" ≠ "已证 SOTA"）
+
+打平/反超 Highway（SOTA）的判据是**校准仪器出了 measured verdict 并落进矩阵**，不是"有 bench"。据此：
+
+| 档 | 数量 | 下一步动作 |
+|---|---|---|
+| **已证 SOTA**（矩阵有 measured verdict 行，TIE/WIN） | **269** | 已闭环，防回归监控 |
+| **有 bench 未测**（bench 在、还没跑校准仪器落矩阵） | **30** | 跑双序校准仪器 → 回填矩阵 |
+| **无 bench**（连性能测试都没有） | **41** | 先按 methodology 加 bench，再测 |
+| **合计"未证 SOTA"** | **71**（30 待测 + 41 待加测） | 这 71 是"要证明 ≥ Highway"的工作队列 |
+
+- **30 有 bench 未测** = 本会话新增 14（MulEvenAdd/MulOddAdd/U8FromU32/MaskedMulAdd 族/位三元/掩码
+  gather-scatter/CopySignToAbs/IfVecThenElse）+ 16 既存未回填矩阵（AES×6/CLMul×2/ReduceAnd/Mul/Or/
+  ReciprocalNewton/SqrtNewton/Store/StoreU/StoreN）。
+- **41 无 bench** 分三层:①结构性原语（VecFromMask/MaskFromVec/SignBit/BitsFromMask——CMP kernel 里
+  当 sink/输入被间接跑，但无独立 parity 行）②InRange 快变体（PromoteInRange*/DemoteInRangeTo/
+  ConvertInRangeTo/DemoteToNearestIntInRange）③真缺口（TableLookupBytesInRange/TableLookupBytesOr0/
+  MaskedSet/MaskedSetOr/InterleaveEvenBlocks/OddBlocks/UpperBlocks/SlideUpBlocks/SlideDownBlocks/
+  Lt128Vec/SumsOfShuffledQuadAbsDiff/OrderedTruncate2To/TruncateStore/Shuffle01/RearrangeToOddPlusEven/
+  SafeCopyN/SafeFillN/Stream/CompressBits/CompressBitsStore/CompressBlocksNot/MaskedIsNaN/
+  IfNegativeThenNegOrUndefIfZero/LoadMaskBits/StoreMaskBits/MaskFalse/MaskFromNormalizedVec/
+  Lower·UpperHalfOfMask）。
+- **完整实时清单跑 `python scripts/simd-op-coverage.py`**（本表是快照，脚本是真相）。
 
 ### op-parity 的三/四个文件
 
 `bench/simd/op_parity_*.cc`，用校准仪器（`op_parity_engine.h`：pin+replicate+stagger+锚点闸门+双序换向）：
 
-| 文件 | bench 行 | 覆盖面 |
-|---|---|---|
-| `op_parity_full_bench.cc` | ~190 | 主 op 面（UNARY/BINARY/TERNARY/CMP 宏 + 具名 title） |
-| `op_parity_bench.cc` | ~61 | mask 域、gather/scatter-N、tail load/store、bit ops 等 |
-| `op_parity_widen_bench.cc` | ~22 | 变宽 promote/demote/madd 族 |
-| `crypto_bench.cc` | 8 | AES 轮 + CLMul |
+| 文件 | 覆盖面 |
+|---|---|
+| `op_parity_full_bench.cc` | 主 op 面（UNARY/BINARY/TERNARY/CMP 宏 + 具名 title） |
+| `op_parity_bench.cc` | mask 域、gather/scatter-N、tail load/store、bit ops 等 |
+| `op_parity_widen_bench.cc` | 变宽 promote/demote/madd 族 |
+| `crypto_bench.cc` | AES 轮 + CLMul |
 
 双平台真编真跑：WSL GCC14 AVX2 + Win MSVC /arch:AVX2。
 
-### 未被 op-parity 覆盖的 10 个（有据跳过）
+### 旧"有据跳过 10 个"复审（4 个站不住）
 
-| op | 原因 |
-|---|---|
-| `DivIsPow2` | constexpr bool，非向量 op |
-| `IfNegativeThenNegOrUndefIfZero` | Undef 语义难对拍 |
-| `CompressBits` / `CompressBitsStore` | 预打包 byte-mask 指针，需特殊 harness |
-| `CompressBlocksNot` | block 变体 |
-| `Bf16EvenToF32` / `Bf16OddToF32` / `MulEvenAdd` / `MulOddAdd` / `U8FromU32` | bf16/dtype 域，由 `dtype_bench` 覆盖 |
+| op | 旧理由 | 复审判定 |
+|---|---|---|
+| `DivIsPow2` | constexpr bool | ✅ 真不可测（标量谓词），有效 |
+| `CompressBlocksNot` | block 变体 | ✅ 是 `CompressNot` 的 u64 别名，本体已测（op_parity_bench），有效 |
+| `Bf16EvenToF32` / `Bf16OddToF32` | bf16 域 | ⚠️ 是 `detail::` 内部 helper——**不应进公开分母**（分母污染），非"跳过" |
+| `MulEvenAdd` / `MulOddAdd` | "由 dtype_bench 覆盖" | ❌ **假称**：dtype_bench 只测整-buffer 转换批，从不调它们；这是 bf16 点积 FMA，Highway 有同名 op，**零性能覆盖** → 待补 |
+| `U8FromU32` | "由 dtype_bench 覆盖" | ❌ **假称**：同上，dtype_bench 不碰它 → 待补 |
+| `IfNegativeThenNegOrUndefIfZero` | Undef 语义难对拍 | ❌ 借口：吞吐可测（Undef 只在零 lane），Highway 有同名 op → 待补 |
+| `CompressBits` / `CompressBitsStore` | 需特殊 harness | ⚠️ 半真：需预打包 byte-mask buffer，但 Compress/CompressStore 本体已测，只是 bitfield 前导额外——harness 成本待评估 |
 
-### 覆盖率不被低估：op-parity 面之外另有专项 bench
+### 分母漏项（~15 个真 op，有 Highway 同名/等价，却不在任何 op_parity 也不在上面 10-skip 列）
+
+按藏真损失风险排序（`vec.h` 行号）：
+
+| 优先 | op | 位置 | Highway 等价 | 为何要测 |
+|---|---|---|---|---|
+| P0 | `MaskedMulAdd`/`MaskedNegMulAdd`/`MaskedMulAddOr` | vec.h:477/483/480 | 同名 | AI 热点 masked FMA；HYLE 组合 IfThenElseZero+MulAdd，**avx512 后端无原生 maskz-fmadd**，Highway 用单条 `_mm512_maskz_fmadd`——avx512 真差距候选（AVX2 两边都组合应 TIE） |
+| P0 | `MulEvenAdd`/`MulOddAdd` | vec.h:1010/1015 | 同名 | bf16 点积 FMA，多指令(PromoteEven/Odd+ShiftLeft<16>+MulAdd)；旧文档假称已覆盖 |
+| P1 | `XorAndNot`/`AndXor`/`BitwiseIfThenElse` | vec.h:644/645/648 | 同名/generic | AVX-512 可融单条 `vpternlog`，HYLE 组合两条（同 Xor3/Or3 已知"512 上可能真差"类） |
+| P1 | `MaskedGatherIndex`/`MaskedGatherIndexOr`/`MaskedScatterIndex` | vec.h:873/854/877 | 同名 | HYLE 标量回退 vs Highway 原生 masked gather，分歧大 |
+| P1 | `U8FromU32` | avx2.h:1363 | 同名 | 跨步 pack，非平凡；旧文档假称已覆盖 |
+| P2 | `CopySignToAbs`/`IfVecThenElse` | vec.h:681/1483 | 同名/generic | 便宜，低风险 |
+| P2 | `OrderedTruncate2To`/`TruncateStore`/`PromoteInRange{Lower,Upper,Even,Odd}To` | vec.h:1771/1782/1794-1806 | 同名 | 变宽 InRange 族，低风险 |
+
+（变宽 MAC 家族 ReorderWidenMulAccumulate/WidenMulAccumulate/SatWidenMul*/SumOfMulQuadAccumulate 已在 op_parity_widen 覆盖，无漏。）
+
+### op-parity 面之外另有专项 bench（不计入"未覆盖"）
 
 op-parity 只覆盖 `vec.h` 核心 op 面。以下能力面由独立 bench 兜底，**不应计入"未覆盖"**：
 
