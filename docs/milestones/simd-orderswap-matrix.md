@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;五轮修复后 x86 双编译器交集清零,MSVC 真输 10)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;六轮修复后 x86 双编译器交集清零,MSVC 真输 9)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,13 +19,12 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 10 个
+### MSVC(AVX2): 9 个
 - SetAtOrBeforeFirst i32: **0.90**
 - SumOfLanes i32: **0.91** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
 - SetBeforeFirst i32: **0.91** —— 仅 MSVC 0.89(本轮新进,GCC 1.3 反赢;borderline 待复核)
 - RoundingShiftRightAndDemoteTo<3> i32->i16 (4096): **0.91**
 - RebindMask i32->f32 (4096): **0.92**
-- SatWidenMulPairwiseAccumulate i16->i32: **0.93**
 - BroadcastLane<3> i32: **0.93** —— 已定论保留 vpermd:MSVC 0.93 是 bench 形状特定差距(Highway 的内存源 vbroadcasti128 折叠红利;寄存器输入下 vpermd 更优,GCC 反赢 1.13)
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
 - Mod i32 invariant: **0.93**
@@ -77,6 +76,11 @@
   链式(b 在寄存器)三者持平 17ns、dumpbin HYLE 4 条<Highway 5 条,判定 bench 调用形状特定(b 内存双读)
   非算法输,移出清单。**方法学:单编译器输 + 另一编译器 TIE/反赢时,先查链式(b 在寄存器)与 dumpbin——
   区分"真依赖链隐患(GCC 旧式 24x)"vs"bench 形状伪影(MSVC 内存操作数)",两者可同时存在于一个 op。**
+- 第六轮(2026-07-14,commit abbd7db):avx2 IfNegativeThenElse 直用符号位喂 blendv 省 vpcmpgtd。
+  原 IfThenElse(Lt(v,0),..) 先 vpcmpgtd 造全1掩码再 blendv;但 blendv 本按 lane MSB 选择,"v<0" 就是
+  符号位,直接把 v 当 blend 控制即可(Highway 形态)。用 lane 宽 blend(vblendvps/pd)防 per-byte 误选。
+  **广影响修复**——所有 IfNegativeThenElse 消费者受益。SatWidenMulPairwiseAccumulate MSVC 0.93→TIE
+  (dumpbin 消 vpxor+vpcmpgtd 后与 Highway 逐指令一致),GCC 保持 TIE。MSVC 真输 10→9。
 ## 全量表
 
 | op | MSVC(AVX2) | WSL GCC(AVX2) | Mac(NEON) |
@@ -301,7 +305,7 @@
 | RoundingShiftRightSame i32 bits=5 | 1.10W | 1.00= | 1.46W |
 | RoundingShr i32 | 1.48W | 1.15W | 1.00? |
 | SatWidenMulAccumFixedPoint i16->i32 | 1.90W | 1.78W | · |
-| SatWidenMulPairwiseAccumulate i16->i32 | 0.93L | 1.00= | · |
+| SatWidenMulPairwiseAccumulate i16->i32 | 1.00= | 1.00= | · |
 | SatWidenMulPairwiseAdd u8*i8->i16 | 0.97= | 1.00= | · |
 | SaturatedAbs i32 | 1.00= | 1.00= | 1.01= |
 | SaturatedAdd i16 (4096) | 1.00= | 1.00= | · |
