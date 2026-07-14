@@ -541,13 +541,15 @@ HYLE_FORCE_INLINE Vec128<T, N> MaxNumber(Vec128<T, N> a, Vec128<T, N> b) noexcep
   else return Max(a, b);
 }
 // AddSub(a,b): a-b in EVEN lanes, a+b in ODD lanes. Native SSE3 _mm_addsub_ps/pd (float).
-// Integer has no addsub -> blend Sub(even)/Add(odd) via OddEven (even<-b_arg, odd<-a_arg).
+// Integer has no addsub -> Add(a, OddEven(b, -b)) (Highway's generic shape): isolates the a-independent
+// OddEven(b,-b) so it hoists out of a loop with invariant b, vs OddEven(Add(a,b),Sub(a,b)) which
+// recomputes both a+b and a-b (both a-dependent) each call. Same win as the avx2 path.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> AddSub(Vec128<T, N> a, Vec128<T, N> b) noexcept {
   Vec128<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm_addsub_ps(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm_addsub_pd(a.raw, b.raw);
-  else r = OddEven(Add(a, b), Sub(a, b));  // native addsub is float-only
+  else r = Add(a, OddEven(b, Sub(Zero(Simd<T, N, 0>()), b)));  // native addsub is float-only
   return r;
 }
 // MulRound(a,b) = round(a*b) to nearest-even, result stays float. Reuse Round + Mul.

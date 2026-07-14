@@ -564,13 +564,17 @@ HYLE_FORCE_INLINE Vec256<T, N> MaxNumber(Vec256<T, N> a, Vec256<T, N> b) noexcep
   else return Max(a, b);
 }
 // AddSub(a,b): a-b in EVEN lanes, a+b in ODD lanes. Native _mm256_addsub_ps/pd (float).
-// Integer has no addsub -> blend Sub(even)/Add(odd) via OddEven (even<-b_arg, odd<-a_arg).
+// Integer has no addsub -> Add(a, OddEven(b, -b)) = a + {even:-b, odd:+b} (Highway's generic shape).
+// NOT OddEven(Add(a,b), Sub(a,b)): that recomputes BOTH a+b and a-b every call and both depend on a,
+// so the b-only work can't hoist; the chosen form isolates OddEven(b,-b) (independent of a) which the
+// compiler hoists out of a loop with invariant b -- op_parity: the old form was ~0.85 vs Highway on
+// MSVC AND lost ~24x in a chained microbench (a-dependent critical path of Add/Sub+blend every iter).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> AddSub(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   Vec256<T, N> r;
   if constexpr (std::is_same_v<T, float>) r.raw = _mm256_addsub_ps(a.raw, b.raw);
   else if constexpr (std::is_same_v<T, double>) r.raw = _mm256_addsub_pd(a.raw, b.raw);
-  else r = OddEven(Add(a, b), Sub(a, b));  // native addsub is float-only
+  else r = Add(a, OddEven(b, Sub(Zero(Simd<T, N, 0>()), b)));  // native addsub is float-only
   return r;
 }
 // MulRound(a,b) = round(a*b) to nearest-even, result stays float. Reuse Round + Mul.
