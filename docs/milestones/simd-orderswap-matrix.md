@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;四轮修复后 x86 双编译器交集清零)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;五轮修复后 x86 双编译器交集清零,MSVC 真输 10)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,8 +19,7 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 11 个
-- AddSub i32: **0.85** —— MSVC 0.86 / GCC 0.94(GCC 侧v10新进临界区),真实小差距
+### MSVC(AVX2): 10 个
 - SetAtOrBeforeFirst i32: **0.90**
 - SumOfLanes i32: **0.91** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
 - SetBeforeFirst i32: **0.91** —— 仅 MSVC 0.89(本轮新进,GCC 1.3 反赢;borderline 待复核)
@@ -31,17 +30,13 @@
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
 - Mod i32 invariant: **0.93**
 - MaxOfLanes i32: **0.95** —— 仅 MSVC 0.95(已从 0.86 改善,边缘)
-- (Compress / CompressNot / CompressStore i32 全部移出,已到头无可改点:向量 Not(7c856fa)与重复
-  movemask(647d254)消除后重测两轮,GCC 全 TIE、MSVC 在 0.93~0.96 LOSE↔UNSTABLE 跨轮抖动。**dumpbin
-  坐实 HYLE 三者共享的 compress32_by_bits 核在 MSVC 上比 Highway 还干净**:同款 3 条(vpbroadcastd
-  [表+idx*4] + vpsrlvd ymm,[shifts常量] + vpermd),且 HYLE 无 Highway 的 `HWY_DASSERT(mask_bits<256)`
-  cmp/jae→Abort 分支、无栈帧;shifts 已被 MSVC 折成 .rdata 内存操作数。0.95 残余源=bench 调用形状的
-  一条 v-load(Highway 恰好把它折进 vpermd 内存操作数,非核可控)+ 绝对地址/table 布局级仪器抖动。
-  代码层已优于 Highway,非算法输——收口不再追。)
+- (AddSub i32 已移出,commit 3f1b842:改 Add(a,OddEven(b,-b)) 后 GCC 0.94→TIE;MSVC 仍 0.84 但经查是
+  bench 调用形状特定(b 从内存双读的 vpblendd 内存操作数)——链式 b-在寄存器微基准 MSVC 三者持平 17ns、
+  dumpbin HYLE 4 条比 Highway 5 条还少,非算法输,同 BroadcastLane<3> 类。附带修 GCC 链式外提隐患:旧式
+  循环不变 b 无法外提,链式慢 24x,新式反超 Highway。)
 
 ### WSL/GCC(AVX2): 1 个
 - FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump:两侧指令相同且循环顶同为 64B 对齐(GCC .p2align 吸收 stagger)-> 绝对地址级仪器残余,HYLE 代码无可修,非算法输
-- (CompressNot i32 已于 commit 7c856fa 移出:bits 域补码消向量 Not,GCC 0.94→1.02 ≥TIE,独立双序复核确认)
 
 ### Mac/NEON: 2 个
 - MulSubAdd f32: **0.87** —— 仅 NEON 0.90
@@ -80,7 +75,12 @@
   ymm,[shifts] + vpermd),HYLE 无 Highway 的 HWY_DASSERT cmp/jae→Abort 分支、无栈帧,shifts 已折成
   .rdata 内存操作数。残余 0.93~0.96 = bench 调用形状的一条 v-load + 绝对地址/布局级仪器抖动,非核可控、
   非算法输。**Compress/CompressNot/CompressStore 全部移出真输清单,此线到头不再追。**
-
+- 第五轮(2026-07-14,commit 3f1b842):AddSub i32 改 Add(a,OddEven(b,Neg(b)))(avx2+sse4 整数路径,
+  Highway 形态)。旧式 OddEven(Add(a,b),Sub(a,b)) 两算术都依赖 a、循环不变 b 无法外提——链式微基准
+  GCC 旧式 164ns/新式 6.87ns(反超 Highway 13ns),24x 隐患。GCC op_parity 0.94→TIE。MSVC 仍 0.84 但
+  链式(b 在寄存器)三者持平 17ns、dumpbin HYLE 4 条<Highway 5 条,判定 bench 调用形状特定(b 内存双读)
+  非算法输,移出清单。**方法学:单编译器输 + 另一编译器 TIE/反赢时,先查链式(b 在寄存器)与 dumpbin——
+  区分"真依赖链隐患(GCC 旧式 24x)"vs"bench 形状伪影(MSVC 内存操作数)",两者可同时存在于一个 op。**
 ## 全量表
 
 | op | MSVC(AVX2) | WSL GCC(AVX2) | Mac(NEON) |
@@ -89,7 +89,7 @@
 | AbsDiff i32 | 1.00= | 1.00= | 1.02= |
 | Add f32 | 1.00= | 1.00= | 0.99= |
 | Add f32 (4096) | 1.00= | 0.99= | · |
-| AddSub i32 | 0.85L | 0.97? | 1.00? |
+| AddSub i32 | 0.84? | 1.00= | 1.00? |
 | AllBits0 i32 | 1.02= | 1.00= | 1.00= |
 | AllBits1 i32 | 0.98= | 0.98= | 1.00= |
 | AllFalse i32 | 0.99? | 1.01= | 1.00= |
