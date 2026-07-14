@@ -167,6 +167,14 @@
   无 Highway 对手(ReduceMul/And/Or 对拍标量 fold、ReciprocalNewton/SqrtNewton 对拍 Div/裸估计)=无"输
   给 SOTA"之说,只查明显问题;③8 个 AES×6/CLMul×2 有 Highway 但在 crypto_bench(非校准仪器),要证
   SOTA 需移进 op_parity 校准框架(登记待办)。
+- SOTA 收尾轮(2026-07-15):①**IfVecThenElse i32 MSVC 0.94→TIE**(用户直觉命中)——`MaskFromVec` 的防御性
+  sign-broadcast(vpsrad$31)对下游 vpblendv 冗余(只读 MSB),Highway 契约本就"非全0/全1 结果 implementation-
+  defined"故不广播;改 `MaskFromNormalizedVec`(avx2/sse4 跳 srai=逐字节同 Highway,其他后端转发 MaskFromVec
+  不变)。三平台 gtest(全位/零选择子=契约域)全绿。②**ReduceMul/And/Or 32-bit 弃 store+reload 改 halving
+  tree**(op128_2+reduce256_2,同 reduce256 shape)——vs 旧标量 fold:MSVC Mul 1.46×/And·Or 1.43×,GCC Mul
+  1.32×/And·Or 2.2×;gtest 8 三平台+SDE 全绿。**独创 op(无 Highway 对手)仍按"比 baseline 快"判,发现 store+
+  reload 就树化。** ReduceSum/Min/Max 的 8/16/64-bit 仍 fold(只 32-bit+float 树化;Highway 走 SumOfLanes 向量
+  树对窄类型也快)=登记待办(#145,需窄宽 bench + 逐宽处理 i8/i16 sum 溢出、i64 无 min/max_epi64)。
 
 ## 全量表
 
@@ -248,7 +256,7 @@
 | IfNegativeThenElse f32 | 1.05W | 1.10W | 1.01= |
 | IfNegativeThenElseZero f32 | 1.35W | 1.08W | 0.97= |
 | IfNegativeThenZeroElse f32 | 1.34W | 1.09W | 1.00= |
-| IfVecThenElse i32 | 0.94? | 0.99? | 0.98= |
+| IfVecThenElse i32 | 1.00= | 1.00= | 0.98= |
 | IfThenElse i32 | 1.00= | 1.02= | 1.00= |
 | IfThenElseZero i32 | 0.97? | 0.99= | 1.00? |
 | IfThenZeroElse i32 | 0.97= | 1.01= | 0.95= |
