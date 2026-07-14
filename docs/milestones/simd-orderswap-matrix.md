@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;六轮修复后 x86 双编译器交集清零,MSVC 真输 9)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;七轮修复后 x86 双编译器交集清零,MSVC 真输 8)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,12 +19,11 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 9 个
+### MSVC(AVX2): 8 个
 - SetAtOrBeforeFirst i32: **0.90**
 - SumOfLanes i32: **0.91** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
 - SetBeforeFirst i32: **0.91** —— 仅 MSVC 0.89(本轮新进,GCC 1.3 反赢;borderline 待复核)
 - RoundingShiftRightAndDemoteTo<3> i32->i16 (4096): **0.91**
-- RebindMask i32->f32 (4096): **0.92**
 - BroadcastLane<3> i32: **0.93** —— 已定论保留 vpermd:MSVC 0.93 是 bench 形状特定差距(Highway 的内存源 vbroadcasti128 折叠红利;寄存器输入下 vpermd 更优,GCC 反赢 1.13)
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
 - Mod i32 invariant: **0.93**
@@ -81,6 +80,12 @@
   符号位,直接把 v 当 blend 控制即可(Highway 形态)。用 lane 宽 blend(vblendvps/pd)防 per-byte 误选。
   **广影响修复**——所有 IfNegativeThenElse 消费者受益。SatWidenMulPairwiseAccumulate MSVC 0.93→TIE
   (dumpbin 消 vpxor+vpcmpgtd 后与 Highway 逐指令一致),GCC 保持 TIE。MSVC 真输 10→9。
+- 第七轮(2026-07-14,commit 3110d9d):RebindMask 改 MaskFromNormalizedVec 去冗余 srai。
+  RebindMask=MaskFromVec(BitCast(VecFromMask)) 里 MaskFromVec 重跑符号广播(avx2 一条 vpsrad);
+  VecFromMask→BitCast 已 canonical,改 MaskFromNormalizedVec 纯 re-tag(Highway avx2 RebindMask
+  本就是 no-op)。补全 MaskFromNormalizedVec 到 sve/rvv(转发 MaskFromVec)使 7 后端齐备。MSVC
+  0.92→TIE、GCC 保持 TIE。SVE(qemu VL=256)+RVV(qemu)RebindMask 探针 bad=0。MSVC 真输 9→8。
+  (同族去冗余:DemoteMaskTo/CombineMasks/LowerHalfOfMask/RebindMask 均 MaskFromVec→MaskFromNormalizedVec。)
 ## 全量表
 
 | op | MSVC(AVX2) | WSL GCC(AVX2) | Mac(NEON) |
@@ -279,7 +284,7 @@
 | PromoteOddTo i8->i16 | 0.99= | 0.99= | · |
 | PromoteTo i16->i32 1-arg (4096) | 0.99= | 0.99= | · |
 | PromoteUpperTo i16->i32 | 1.01= | 0.99= | · |
-| RebindMask i32->f32 (4096) | 0.92L | 0.99= | · |
+| RebindMask i32->f32 (4096) | 1.00= | 0.99= | · |
 | ReduceMax i32 | 1.17W | 1.02= | 1.00= |
 | ReduceMin i32 | 1.17W | 1.03? | 1.00= |
 | ReduceSum f32 (4096) | 0.98= | 1.00= | · |
