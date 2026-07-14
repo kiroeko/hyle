@@ -40,7 +40,7 @@ MaskedSaturatedAdd/Sub(非 Or 形态;`*Or` 形态已有)、MaskedAbs(Or)/MaskedS
 3. 分层成本低,正合 HYLE 两层策略:泛型层一份 IfThenElse 合成 covers scalar/sse4/avx2/neon,
    仅 avx512/sve/rvv 各写原生特化;oracle 直接由既有 Masked* 测试模式复制。
 
-## P2:顺手补齐(小,等消费者或顺路)
+## P2:顺手补齐(小)
 
 - **Eq128Upper / Ne128Upper / Max128Upper / Min128Upper**:HYLE 已有 Lt128/Lt128Upper/Eq128/
   Ne128/Min128/Max128,补齐 128-bit key 家族对称性(消费场景:128-bit key 排序)。
@@ -48,7 +48,7 @@ MaskedSaturatedAdd/Sub(非 Or 形态;`*Or` 形态已有)、MaskedAbs(Or)/MaskedS
   WidenMulPairwiseAdd/SatWidenMulPairwiseAccumulate(x86 真正有用的 vpmaddwd 路径在手),
   Low/High 拆分变体补 int16 点积面的完整性。
 
-## P3:机会型(硬件门控)
+## P3:机会型(更多硬件门控)
 
 - **GFNI:GaloisAffine(+GF2P8 乘)**:Icelake+/Zen4+,走 AES/CLMul 既有先例(SDE 真跑验证)。
   收益不只是新 op:GF(2^8) 仿射可反哺 ReverseBits/子字节置换等现有 op 的更优实现。
@@ -57,7 +57,7 @@ MaskedSaturatedAdd/Sub(非 Or 形态;`*Or` 形态已有)、MaskedAbs(Or)/MaskedS
 
 - ShuffleTwo1230/2301/3012、PerBlock2x2MatMul、LoadTransposedBlocks*/StoreTransposedBlocks*:
   Highway 内部积木/特化助手,HYLE 已有等价组合面。
-- 为镜像 Highway 全名单加 op。**成本模型:每个 op = 永久的 7 后端实现 × scalar oracle ×
+- 为了镜像 Highway 全名单加 op。**成本模型:每个 op = 永久的 7 后端实现 × scalar oracle ×
   三平台 parity 监控审计面**——op_parity 调查花三轮才把 255 个 op 的 parity 表洗到"数字直接
   可信",面越大洗得越贵。
 

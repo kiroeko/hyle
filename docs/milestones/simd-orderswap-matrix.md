@@ -23,7 +23,6 @@
 - AddSub i32: **0.85** —— MSVC 0.86 / GCC 0.94(GCC 侧v10新进临界区),真实小差距
 - SetAtOrBeforeFirst i32: **0.90**
 - SumOfLanes i32: **0.91** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
-- CompressStore i32 (4096, 50%): **0.91**
 - SetBeforeFirst i32: **0.91** —— 仅 MSVC 0.89(本轮新进,GCC 1.3 反赢;borderline 待复核)
 - RoundingShiftRightAndDemoteTo<3> i32->i16 (4096): **0.91**
 - RebindMask i32->f32 (4096): **0.92**
@@ -32,18 +31,19 @@
 - IsInf f32: **0.93** —— 仅 MSVC 0.93
 - Mod i32 invariant: **0.93**
 - MaxOfLanes i32: **0.95** —— 仅 MSVC 0.95(已从 0.86 改善,边缘)
-- CompressNot i32 (4096, 50%): **0.95** —— 已消向量 Not(bits 域 mbits^0xFF,commit 7c856fa,dumpbin=Compress+单条 `not eax`,GCC 0.94→TIE);残余=公共 compress 路径(table+srlv+vpermd)的 MSVC codegen,与 `Compress i32`(同 ~0.94,TIE/LOSE 边界抖动)同源、逐指令同 Highway,非 CompressNot 特有——疑绝对地址/table 布局级仪器残余,要啃是 Compress 的活
+- CompressNot i32 (4096, 50%): **0.93** —— 已消向量 Not(bits 域 mbits^0xFF,commit 7c856fa,dumpbin=Compress+单条 `not eax`);独立双序复核(2026-07-14):MSVC 0.93 与 `Compress i32` 同轮 0.945 同速,GCC 1.02 ≥TIE——修复确认,残余=公共 compress 路径(table+srlv+vpermd)的 MSVC codegen,逐指令同 Highway,非 CompressNot 特有,疑绝对地址/table 布局级仪器残余,要啃是 Compress 的活
+- CompressStore i32 (4096, 50%): **0.97** —— 已消重复 movemask(提一次 mbits 共享 compress+count,commit 647d254);MSVC 0.91→0.97 且双序 UNSTABLE(进打平抖动),GCC TIE。残余同 CompressNot=公共 compress32_by_bits 核(table+srlv+vpermd)的 MSVC codegen,非 CompressStore 特有
 
 ### WSL/GCC(AVX2): 1 个
 - FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump:两侧指令相同且循环顶同为 64B 对齐(GCC .p2align 吸收 stagger)-> 绝对地址级仪器残余,HYLE 代码无可修,非算法输
-- (CompressNot i32 已于 commit 7c856fa 移出:bits 域补码消向量 Not,GCC 0.94→TIE)
+- (CompressNot i32 已于 commit 7c856fa 移出:bits 域补码消向量 Not,GCC 0.94→1.02 ≥TIE,独立双序复核确认)
 
 ### Mac/NEON: 2 个
 - MulSubAdd f32: **0.87** —— 仅 NEON 0.90
 - MulAddSub f32: **0.88** —— 仅 NEON 0.88
 
 ### x86 双编译器交集(最高优先级): 0 个
-- (曾唯余 CompressNot i32,MSVC 0.81/GCC 0.94;commit 7c856fa 消向量 Not 后 GCC→TIE、MSVC→0.95 且残余归 Compress 公共路径,交集清零。)
+- (曾唯余 CompressNot i32,MSVC 0.81/GCC 0.94;commit 7c856fa 消向量 Not 后 GCC→1.02 ≥TIE、MSVC→0.93 且残余归 Compress 公共路径(同轮 Compress 本身 0.945),交集清零。独立双序复核确认。)
 - 注:MSVC `Compress i32` 0.94 与 CompressNot 同源,但 GCC 侧 Compress TIE,故不构成双编译器交集。
 
 ### 与旧报告的对照(演进:旧 harness -> v1 校准仪器 -> 修复 + v2 stagger)
@@ -69,6 +69,10 @@
   MSVC→0.95(追到与 Compress 本身同速)。**x86 双编译器交集清零。** 副产:MSVC `Compress i32`
   本身 0.94(公共 table+srlv+vpermd 路径 codegen,逐指令同 Highway,GCC 侧 TIE)= CompressNot MSVC
   残余的真源,非 CompressNot 特有——要再啃是 Compress 的活,疑绝对地址/table 布局级仪器残余。
+- 第四轮续(commit 647d254):CompressStore i32 消重复 movemask —— 原 `StoreU(Compress(v,m))+CountTrue(m)`
+  对同一 mask 双提取,改提一次 mbits 共享 compress+count(Highway 同款单提取)。MSVC 0.91→0.97 UNSTABLE、
+  GCC TIE。至此 Compress 三兄弟(Compress/CompressNot/CompressStore)可修部分(向量 Not、重复 movemask)
+  全消,同进打平抖动区;MSVC 残余统归共享 compress32_by_bits 核的绝对地址/布局级仪器抖动,非算法输。
 
 ## 全量表
 
@@ -103,10 +107,10 @@
 | CombineShiftRightBytes4 i32 | 1.04= | 0.99= | 1.00= |
 | CombineShiftRightLanes1 i32 | 0.96= | 0.99= | 1.00= |
 | ComplexConj f32 | 1.25W | 0.99= | 1.01= |
-| Compress i32 (4096, 50% dense) | 0.94? | 1.01= | · |
+| Compress i32 (4096, 50% dense) | 0.94L | 1.00= | · |
 | CompressBlendedStore i32 (4096, 50%) | 0.98? | 1.15W | · |
-| CompressNot i32 (4096, 50%) | 0.95? | 1.00= | · |
-| CompressStore i32 (4096, 50%) | 0.91L | 1.00= | · |
+| CompressNot i32 (4096, 50%) | 0.93L | 1.02? | · |
+| CompressStore i32 (4096, 50%) | 0.97? | 1.00= | · |
 | ConcatEven i32 (4096) | 1.02= | 1.00? | · |
 | ConcatLowerLower i32 | 0.97= | 0.99= | · |
 | ConcatLowerUpper i32 | 0.92= | 0.98= | · |
