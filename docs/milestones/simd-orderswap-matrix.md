@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;八轮修复后 x86 双编译器交集清零,MSVC 真输 7)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;九轮修复后 x86 双编译器交集清零,MSVC 真输 6)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,8 +19,7 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 7 个
-- SetAtOrBeforeFirst i32: **0.90** —— 仅 MSVC(GCC 1.16 反赢);= SetBeforeFirst|SetOnlyFirst,前半已由编译器分叉(commit a5410df)走向量域,残余是 SetOnlyFirst 的 mask↔GPR↔LoadMaskBits 往返(MSVC codegen)。SetOnlyFirst 单独也可分叉但收益更小,待评估
+### MSVC(AVX2): 6 个
 - SumOfLanes i32: **0.91** —— 仅 MSVC(GCC 反赢);已从 0.78 改善到 0.91(in-vector broadcast-reduce),残余为 MSVC 水平归约 codegen
 - RoundingShiftRightAndDemoteTo<3> i32->i16 (4096): **0.91**
 - BroadcastLane<3> i32: **0.93** —— 已定论保留 vpermd:MSVC 0.93 是 bench 形状特定差距(Highway 的内存源 vbroadcasti128 折叠红利;寄存器输入下 vpermd 更优,GCC 反赢 1.13)
@@ -90,6 +89,10 @@
   往返→0.89→TIE;GCC scalar-bits(blsmsk 式)本就 1.30x WIN,向量域反退 0.91。故 #if _MSC_VER 分叉
   (同 ConcatLowerLower/第三轮 AddSub 印证的"GCC 反赢陷阱"处置法:分叉而非统一)。全 256 i32 模式验 bad=0。
   MSVC 真输 8→7。**方法学:GCC 反赢的 op 不是"不能改",而是"分叉改"——MSVC 追平不牺牲 GCC 反赢。**
+- 第九轮(2026-07-14,commit 87d72ba):SetAtOrBeforeFirst 同法编译器分叉。=Not(SetAtOrAfterFirst(mask
+  上滑 1 lane)),用 Slide1Up(全 256 上滑,跨 128-block 正确;per-block ShiftLeftLanes<1> 边界会错已验)。
+  MSVC 向量域 0.90→0.99 TIE、GCC 保 scalar-bits 1.16 WIN。全 256 i32 模式 bad=0。MSVC 真输 7→6。
+  至此 Set*First 族(SetBeforeFirst/SetAtOrBeforeFirst)MSVC 全追平、GCC 全保反赢。
 ## 全量表
 
 | op | MSVC(AVX2) | WSL GCC(AVX2) | Mac(NEON) |
@@ -325,7 +328,7 @@
 | ScatterOffset i32 (4096) | 0.99= | 0.99= | · |
 | Set i32 | 1.00= | 1.00= | 1.00? |
 | SetAtOrAfterFirst i32 | 1.02= | 0.99= | 1.00= |
-| SetAtOrBeforeFirst i32 | 0.90L | 1.16W | 1.00= |
+| SetAtOrBeforeFirst i32 | 0.99= | 1.16W | 1.00= |
 | SetBeforeFirst i32 | 1.01= | 1.26W | 1.00= |
 | SetMask i32 (4096) | 1.00= | 1.01= | · |
 | SetOnlyFirst i32 | 0.92= | 1.65W | 1.00? |
