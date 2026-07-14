@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;十二轮修复后 x86 双编译器交集清零,MSVC 真输 2)
+# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;十三轮修复后 x86 双编译器交集清零,MSVC 真输 1)
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -19,9 +19,8 @@
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
 
 ## 真输清单(校准仪器判决,按比值升序)
-### MSVC(AVX2): 2 个
+### MSVC(AVX2): 1 个
 - BroadcastLane<3> i32: **0.93** —— 已定论保留 vpermd:MSVC 0.93 是 bench 形状特定差距(Highway 的内存源 vbroadcasti128 折叠红利;寄存器输入下 vpermd 更优,GCC 反赢 1.13)
-- Mod i32 invariant: **0.93**
 
 ### WSL/GCC(AVX2): 1 个
 - FindLastTrue i32: **0.94** —— 仅 GCC 0.94;objdump:两侧指令相同且循环顶同为 64B 对齐(GCC .p2align 吸收 stagger)-> 绝对地址级仪器残余,HYLE 代码无可修,非算法输
@@ -105,7 +104,14 @@
   = ±inf,x86_256 native 的 _mm256_fpclass 仅 AVX-512 故 AVX2 落泛型)。**又一"GCC 反赢陷阱"**:MSVC FP 式
   0.93、整数式追平;#if _MSC_VER:MSVC 整数域(u 掩码 castsi256_ps/pd 复回 float 掩码域)/ GCC 保 FP 域
   1.13W。gtest IsInf/Finite/NaN/Round 三平台(avx2/sse4/scalar)+ SDE avx512 全绿。MSVC 真输 3→2。
-  **至此 x86 双编译器交集仍 0,MSVC 真输仅余 BroadcastLane<3>(bench 形状定论)+ Mod i32 invariant。**
+- 第十三轮(2026-07-14):Mod i32 invariant——Div 的 dsign 广播下沉。/FAs 反汇编(必须带 -DHYLE_SIMD_TARGET_AVX2,
+  否则 ScalableTag 退化 128-bit vpmullq 路径,是错配陷阱)证 HYLE Fig5.1 与 Highway IntDivS **逐指令同算法**
+  (HYLE 22 向量 ALU op < Highway 23);唯一差=HYLE 把 dsign_vec 在 signed 分支顶部就 Set,非 pow2 路径要到
+  最后两 op 才用,活跃区跨越寄存器紧张的 MulHigh32→MSVC 把它塞进 callee-saved ymm6(sub rsp,40+xmm6 spill
+  +3 reg 拷贝)。把 dsign 下沉到 MulHigh32 之后(只在 Xor/Sub 用),活跃区收窄→spill 消失(rsp 40→24,与
+  Highway 同)。MSVC 0.93→0.97 TIE;GCC 0.99→1.00(本就 TIE,略升);姊妹 MaskedModOr 复合上下文 stack op
+  6→4(共享同核)一并改善。gtest Div/Mod/Divisor 双平台 5 pass。纯 regalloc(非算法/非缺 Highway trick,
+  MaskedModOr TIE + GCC TIE 双证)。MSVC 真输 2→1。**至此 MSVC 真输仅余 BroadcastLane<3>(bench 形状定论)。**
 ## 全量表
 
 | op | MSVC(AVX2) | WSL GCC(AVX2) | Mac(NEON) |
@@ -255,7 +261,7 @@
 | MinMagnitude f32 | 1.00= | 1.00= | 1.00= |
 | MinNumber f32 | 1.02= | 1.00= | 0.99= |
 | MinOfLanes i32 | 1.13W | 1.16W | 1.07= |
-| Mod i32 invariant | 0.93L | 0.99= | 1.07W |
+| Mod i32 invariant | 0.97= | 1.00= | 1.07W |
 | Mul f32 | 1.01= | 0.99= | 1.01= |
 | Mul i32 | 0.99= | 1.02= | 0.98= |
 | MulAdd f32 (4096) | 1.00= | 1.01= | · |

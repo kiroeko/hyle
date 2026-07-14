@@ -1134,9 +1134,9 @@ HYLE_FORCE_INLINE V Div(V dividend, const Divisor<TFromD<DFromV<V>>>& dv) noexce
     const V sum = Add(t1, ShiftRight<1>(Sub(dividend, t1)));
     return ShiftRightUniform(sum, dv.shift_);
   } else {
-    const V dsign_vec = Set(d, dv.dsign_);
     constexpr int kSignBit = static_cast<int>(sizeof(T) * 8) - 1;
     if (dv.is_pow2_) {
+      const V dsign_vec = Set(d, dv.dsign_);
       if (dv.pow2_shift_ == 0) return Sub(Xor(dividend, dsign_vec), dsign_vec);  // |d| == 1
       // Round toward zero: bias negatives by (2^k - 1) before the arithmetic shift.
       const T mask_val =
@@ -1146,10 +1146,14 @@ HYLE_FORCE_INLINE V Div(V dividend, const Divisor<TFromD<DFromV<V>>>& dv) noexce
       return Sub(Xor(q, dsign_vec), dsign_vec);
     }
     // Fig 5.1: q0 = a + MULSH(m,a); q0 = (q0 >> sh) - XSIGN(a); q = (q0 ^ dsign) - dsign.
+    // dsign is materialized AFTER MulHigh32 (its only uses are the final two ops): keeping it live
+    // across the register-hungry MulHigh made MSVC park it in a callee-saved ymm (rsp spill + reg
+    // copies, ~0.93); the short live range lets the allocator use a volatile reg like Highway does.
     const V mulh = MulHigh32(dividend, Set(d, dv.multiplier_));
     V q0 = Add(dividend, mulh);
     q0 = ShiftRightUniform(q0, dv.shift_);  // arithmetic shift (signed lane)
     q0 = Sub(q0, ShiftRight<kSignBit>(dividend));     // - XSIGN(a)
+    const V dsign_vec = Set(d, dv.dsign_);
     return Sub(Xor(q0, dsign_vec), dsign_vec);
   }
 }
