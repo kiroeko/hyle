@@ -619,6 +619,27 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   target_include_directories(hyle_op_parity_full_bench_neon SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
   target_compile_definitions(hyle_op_parity_full_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
   hyle_apply_warnings(hyle_op_parity_full_bench_neon)
+
+  # NEON parity for the mask/gather/tail/crypto TU (op_parity_bench) and the widen TU
+  # (bf16/U8/promote-demote). These were x86-only -- the recently-added masked-FMA / bit-ternary /
+  # masked-gather / bf16-dot / U8FromU32 / narrow-reduce ops had NO NEON perf bench (only gtest).
+  # gather/crypto Highway paths reference hwy::Abort (HWY_DASSERT) that Apple-clang doesn't DCE on
+  # arm64 -> compile highway's abort.cc in (op_parity_full doesn't hit it, so it links bare).
+  add_executable(hyle_op_parity_bench_neon simd/op_parity_bench.cc
+                 "${PROJECT_SOURCE_DIR}/third_party/highway/hwy/abort.cc")
+  target_link_libraries(hyle_op_parity_bench_neon PRIVATE nanobench)
+  target_include_directories(hyle_op_parity_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(hyle_op_parity_bench_neon SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway" "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+  target_compile_definitions(hyle_op_parity_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
+  hyle_apply_warnings(hyle_op_parity_bench_neon)
+
+  add_executable(hyle_op_parity_widen_bench_neon simd/op_parity_widen_bench.cc
+                 "${PROJECT_SOURCE_DIR}/third_party/highway/hwy/abort.cc")
+  target_link_libraries(hyle_op_parity_widen_bench_neon PRIVATE nanobench)
+  target_include_directories(hyle_op_parity_widen_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(hyle_op_parity_widen_bench_neon SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_compile_definitions(hyle_op_parity_widen_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
+  hyle_apply_warnings(hyle_op_parity_widen_bench_neon)
 endif()
 
 # dtype cvt bench: fp16/bf16<->f32 batch. HYLE F16C dispatch vs scalar reference (+ Highway

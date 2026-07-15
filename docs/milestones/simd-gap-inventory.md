@@ -1,21 +1,27 @@
 # SIMD op 面覆盖率清单(2026-07-14 实证审计)
 
-> 结论先行:HYLE 当前 255 个 SIMD op,**非掩码面与 Highway 已基本齐平**;对 Highway 全部公开名做差集
-> 并逐项甄别后,真缺的公开语义 ≈ 40 个名字,其中 ~28 个属于同一个家族(掩码基础算术)。变宽
-> SVE/RVV 追平定宽已在 simd-15~18 收口。经 op_parity 仪器重建(见
+> 结论先行:HYLE **公开 op 名 380 个**(机械去重,见下),**非掩码面与 Highway 已基本齐平**;对 Highway
+> 全部公开名做差集并逐项甄别后,真缺的公开语义 ≈ 40 个名字,其中 ~28 个属于同一个家族(掩码基础算术)。
+> 变宽 SVE/RVV 追平定宽已在 simd-15~18 收口。经 op_parity 仪器重建(见
 > [`../debug/op-parity-harness-artifacts-hunt.md`](../debug/op-parity-harness-artifacts-hunt.md)),
-> 每个 op 均有三平台校准 parity 数据背书——**覆盖率已过"广度"阶段,当前真正的资产是"每个数字可信"**。
+> 每个已测 op 均有三平台校准 parity 数据背书——**覆盖率已过"广度"阶段,当前真正的资产是"每个数字可信"**。
 > 本文取代旧 gap-inventory(SVE/RVV 缺口版,已完成并吸收进 simd-15~18 文档)。
 > 正交视角的姊妹文档:[`simd-complexity-opportunities.md`](./simd-complexity-opportunities.md)
 > ——本文管"op 面缺什么名字",它管"算法件哪里还能在复杂度层面超过现状"。
+>
+> **⚠️ 计数口径统一(2026-07-15)**:早先本文用的 "255 个 op / HYLE 侧 393 名" 是差集甄别口径、含水分
+> (混 detail helper、正则漏检),**已被自校验脚本 `scripts/simd-op-coverage.py` 的机械口径取代**:
+> **公开 op 名 380 → 可测全集 340**(− 26 不可测 − 10 内部选择器 − 4 别名)**→ 已写 bench 299(291 已证 SOTA)+ 41 待补 bench**。
+> "缺什么名字"(本文,vs Highway 语义差集)与"哪些还没写 perf bench"(那 41 个,见
+> [`simd-orderswap-matrix.md`](./simd-orderswap-matrix.md) "41 个待补 bench" 节)是两个正交问题——本文管前者。
 
 ## 方法
 
 Highway 侧:`generic_ops/x86_256/x86_128/arm_neon-inl.h` 提取全部 `HWY_API` 公开名(407,含大量
-重载/内部助手膨胀);HYLE 侧:vec.h + 7 后端头提取公开模板函数名(393)。差集 57 名,逐项 grep
-甄别后剔除三类水分:①Highway 内部积木(LoadTransposedBlocks*/Native*/AVX2Shl* 等,HYLE 以
-LoadInterleaved 等直接暴露等价能力);②HYLE 已有但差集正则漏检的(CompressBits/
-SumsOfShuffledQuadAbsDiff/PromoteInRangeTo 均在);③换名等价。**真实缺口 ≈ 40 名,聚类如下。**
+重载/内部助手膨胀);HYLE 侧机械口径见 `scripts/simd-op-coverage.py`(380 公开 op 名,花括号深度栈剔
+`namespace detail`)。差集逐项 grep 甄别后剔除三类水分:①Highway 内部积木(LoadTransposedBlocks*/
+Native*/AVX2Shl* 等,HYLE 以 LoadInterleaved 等直接暴露等价能力);②HYLE 已有但差集正则漏检的
+(CompressBits/SumsOfShuffledQuadAbsDiff/PromoteInRangeTo 均在);③换名等价。**真实缺口 ≈ 40 名,聚类如下。**
 
 ## 现状总表
 

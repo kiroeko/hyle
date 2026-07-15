@@ -301,9 +301,10 @@ int main(){
   // U8FromU32: u32 (N lanes) -> u8 (N lanes packed low). HYLE VFromD<Simd<u8,N,0>>, Highway Vec128<u8,8>.
   {
     auto u32a = gen<std::uint32_t>(21, 0, 255);
-    const hs::CappedTag<std::uint8_t, 8> hd8c; const hn::CappedTag<std::uint8_t, 8> gd8c;
+    // derive the store tag from the op's own result (DFromV) so lane count matches on every ISA
+    // (8 on AVX2, 4 on NEON) without hardcoding -- Rebind's Pow2 didn't match Simd<u8,N,0>.
     nb::Bench b; b.title("U8FromU32 u32->u8").relative(true).batch(kN).minEpochIterations(8000);
-    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=u32a.data(); auto* p_o=o8.data(); for(std::size_t i=0;i+w32h<=kN;i+=w32h) hs::StoreU(hs::U8FromU32(hs::LoadU(hd32u,p_a+i)), hd8c, p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=u32a.data(); auto* p_o=o8.data(); for(std::size_t i=0;i+w32g<=kN;i+=w32g) hn::StoreU(hn::U8FromU32(hn::LoadU(gd32u,p_a+i)), gd8c, p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=u32a.data(); auto* p_o=o8.data(); for(std::size_t i=0;i+w32h<=kN;i+=w32h){ auto r=hs::U8FromU32(hs::LoadU(hd32u,p_a+i)); hs::StoreU(r, hs::DFromV<decltype(r)>(), p_o+i);} nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=u32a.data(); auto* p_o=o8.data(); for(std::size_t i=0;i+w32g<=kN;i+=w32g){ auto r=hn::U8FromU32(hn::LoadU(gd32u,p_a+i)); hn::StoreU(r, hn::DFromV<decltype(r)>(), p_o+i);} nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
 
   return 0;

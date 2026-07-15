@@ -19,40 +19,37 @@ verdict 权威见 [`../milestones/simd-orderswap-matrix.md`](../milestones/simd-
 > 开发时这个自校验抓出 10 个提取盲区（复合标题 `Load/Store`、`Mask And` 前缀、自定义 helper
 > `run_reduce/cmp128`、跨行字符串合并、大写宏泄漏），逐个修正后数字才可信。
 
-### 机械口径三档（快照 2026-07-14）
+### 机械口径计数树（快照 2026-07-15）
 
-| 指标 | 数值 | 口径 |
+```
+380  公开 op 名（去重 8 后端头，剔 tag/trait/detail helper/大写宏/小写 helper）    [extract_public_ops]
+ └─ 340  可测全集
+      │   ( − 26 不可测   [NOT_BENCHABLE]: constexpr 谓词/常量产生器/introspection/单-lane 存取/纯 retag/构造 helper
+      │     − 10 内部选择器 [SELECTOR_SUBSTR]: *Native / *Emulated（由伞 op 覆盖）
+      │     −  4 别名      [ALIASES]: Rol→RotateLeft / Ror→RotateRight / ZipLower→InterleaveLower / ZipUpper→InterleaveUpper )
+      ├─ 299  已写 bench
+      │    ├─ 291  已证 SOTA（矩阵有 HYLE-vs-Highway measured verdict；含 5 个无对手 op = 逻辑自动 SOTA）
+      │    └─   8  有 bench 未跑校准 / 无 Highway 对手（见矩阵"HYLE 独有测试"表）
+      └─  41  没写 bench（待补，清单见矩阵"41 个待补 bench"节）
+```
+
+**统计方式**：脚本解析 vec.h + 7 后端头，花括号深度栈跳过 `namespace detail{}`，取 CamelCase 的
+`HYLE_FORCE_INLINE` 公开 op 名跨头去重；已测集扫 `op_parity_{full,,widen}_bench.cc` + `crypto/gather_bench.cc`
+全部字符串字面量映射 op 名。三档数字随代码演进，**跑 `python scripts/simd-op-coverage.py --check` 取实时值 + CI 门控**。
+
+### ⭐ SOTA 状态（"有 bench" ≠ "已证 SOTA"）
+
+打平/反超 Highway（SOTA）的判据是**校准仪器出了 measured verdict 并落进矩阵**，不是"有 bench"。
+
+| 档 | 数量 | 说明 |
 |---|---|---|
-| 公开 op 名（去重 8 头，剔除 `detail::`/大写宏/小写 helper） | **380** | `extract_public_ops` |
-| 不可测（constexpr 谓词/常量/introspection/单 lane 存取/tag helper，逐个带理由） | 26 | `NOT_BENCHABLE` |
-| 内部选择器变体（`*Native`/`*Emulated`，由伞 op 覆盖） | 10 | `SELECTOR_SUBSTR` |
-| 别名（`Rol`→RotateLeft 等，目标已测才算覆盖） | 4 | `ALIASES` |
-| **可测全集** | **340** | benchable |
-| 已有 bench（op_parity + crypto + gather） | 303 | benched |
+| **已证 SOTA** | **291** | 矩阵有 HYLE-vs-Highway verdict（TIE/WIN），含 5 个无对手 op（ReduceMul/And/Or·Reciprocal*Newton，对拍自家 baseline，逻辑自动 SOTA） |
+| **有 bench 未跑校准** | **8** | 主要是 Store 系（命名口径）+ 无对手 op 的 verdict 归属；非真缺口 |
+| **无 bench** | **41** | 结构原语间接跑 / InRange 快变体 / 真缺口——待补 |
 
-### ⭐ SOTA 状态三分（"有 bench" ≠ "已证 SOTA"）
-
-打平/反超 Highway（SOTA）的判据是**校准仪器出了 measured verdict 并落进矩阵**，不是"有 bench"。据此：
-
-| 档 | 数量 | 下一步动作 |
-|---|---|---|
-| **已证 SOTA**（矩阵有 measured verdict 行，TIE/WIN） | **269** | 已闭环，防回归监控 |
-| **有 bench 未测**（bench 在、还没跑校准仪器落矩阵） | **30** | 跑双序校准仪器 → 回填矩阵 |
-| **无 bench**（连性能测试都没有） | **41** | 先按 methodology 加 bench，再测 |
-| **合计"未证 SOTA"** | **71**（30 待测 + 41 待加测） | 这 71 是"要证明 ≥ Highway"的工作队列 |
-
-- **30 有 bench 未测** = 本会话新增 14（MulEvenAdd/MulOddAdd/U8FromU32/MaskedMulAdd 族/位三元/掩码
-  gather-scatter/CopySignToAbs/IfVecThenElse）+ 16 既存未回填矩阵（AES×6/CLMul×2/ReduceAnd/Mul/Or/
-  ReciprocalNewton/SqrtNewton/Store/StoreU/StoreN）。
-- **41 无 bench** 分三层:①结构性原语（VecFromMask/MaskFromVec/SignBit/BitsFromMask——CMP kernel 里
-  当 sink/输入被间接跑，但无独立 parity 行）②InRange 快变体（PromoteInRange*/DemoteInRangeTo/
-  ConvertInRangeTo/DemoteToNearestIntInRange）③真缺口（TableLookupBytesInRange/TableLookupBytesOr0/
-  MaskedSet/MaskedSetOr/InterleaveEvenBlocks/OddBlocks/UpperBlocks/SlideUpBlocks/SlideDownBlocks/
-  Lt128Vec/SumsOfShuffledQuadAbsDiff/OrderedTruncate2To/TruncateStore/Shuffle01/RearrangeToOddPlusEven/
-  SafeCopyN/SafeFillN/Stream/CompressBits/CompressBitsStore/CompressBlocksNot/MaskedIsNaN/
-  IfNegativeThenNegOrUndefIfZero/LoadMaskBits/StoreMaskBits/MaskFalse/MaskFromNormalizedVec/
-  Lower·UpperHalfOfMask）。
-- **完整实时清单跑 `python scripts/simd-op-coverage.py`**（本表是快照，脚本是真相）。
+**本会话把 SOTA-confirmed 从 245(旧高估口径) 拉到 291**：清扫 x86 双编译器真输至 0、补测 14 个漏 bench 的 op、
+修 4 个真损失（U8FromU32 11×/bf16 点积/CopySignToAbs/IfVecThenElse）、AES/CLMul 8 个 10×/6× 缺陷、窄宽 reduce
+i16 13×——全三平台坐实。**完整实时清单跑 `python scripts/simd-op-coverage.py`**（本节是快照，脚本是真相）。
 
 ### op-parity 的三/四个文件
 

@@ -1,4 +1,31 @@
-# SIMD op parity 三平台矩阵(2026-07-14 校准仪器 v2;全部修复轮次收口后三平台真输清单 **全零**:MSVC 0 / GCC 0 / NEON 0)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;三平台真输清单 **全零**:MSVC 0 / GCC 0 / NEON 0)
+
+> **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
+>
+> **统计方式(可复现)**:脚本解析 `vec.h` + 7 个后端头(avx2/sse4/avx512/neon/scalar/sve/rvv),用花括号
+> 深度栈跳过 `namespace detail{}`,取 `HYLE_FORCE_INLINE` 的公开 op 名(CamelCase,跳过全大写宏与小写
+> helper),跨头按 op 名去重。**自校验闭环**:已 bench 集必须 ⊆ 提取的全集,否则说明提取规则有盲区→报错
+> 重跑(开发时抓出过 10 个盲区:`Load/Store` 复合标题、`Mask And` 前缀、run_reduce/cmp128 自定义 helper、
+> 跨行字符串合并、大写宏泄漏)。已测集来自扫 `op_parity_{full,,widen}_bench.cc` + `crypto/gather_bench.cc`
+> 的所有字符串字面量、映射到 op 名。SOTA 判决集 = 本文全量表里有 verdict 行的 op。
+>
+> **计数树**:
+> ```
+> 380  公开 op 名(去重 8 后端头,剔 tag/trait/detail helper)
+>  └─ 340  可测全集
+>       │   ( − 26 不可测: constexpr 谓词(DivIsPow2)/常量产生器(Inf/NaN/Iota/Zero/Set)/
+>       │     introspection(Lanes/Blocks)/单-lane 标量存取(Get·Extract·InsertLane)/纯 retag(BitCast)/
+>       │     构造 helper(Combine/Lower·UpperHalf/LoadDup128/SetTableIndices/IndicesFromVec/FirstN)
+>       │     − 10 内部选择器变体(*Native/*Emulated,由伞 op 覆盖)
+>       │     − 4 别名(Rol→RotateLeft/Ror→RotateRight/ZipLower→InterleaveLower/ZipUpper→InterleaveUpper) )
+>       ├─ 299  已写 bench
+>       │    ├─ 291  已证 SOTA(下方全量表有 HYLE-vs-Highway measured verdict)
+>       │    └─   8  有 bench 未跑校准 / 无 Highway 对手(见"HYLE 独有测试(无对手 op)"表)
+>       └─  41  没写 bench(待补,清单见"41 个待补 bench"节)
+> ```
+> 之前对话里的 16/30/41/245 是不同时刻/口径的快照,**不可相加**;唯一权威数是上面这棵树。
+> **无 Highway 对手的 op(ReduceMul/And/Or、Reciprocal*Newton)逻辑上自动算 SOTA**(没有更快的参照可输,
+> 只能对拍自家标量/裸估计基线证明"比 baseline 快"),计入 291。
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
@@ -510,6 +537,39 @@
 | Zero i32 | 1.00= | 1.00= | 0.95= |
 | ZeroExtendVector i16 half->full | 1.02= | 1.00= | · |
 | ZeroIfNegative f32 | 1.02? | 1.09W | 1.01= |
+
+## HYLE 独有测试(无 Highway 对手的 op)
+
+Highway/xsimd 没有这些 op,无法做 HYLE-vs-Highway 对拍,故不在上方全量表。它们对拍**自家基线**(标量
+fold / 裸估计 / Div)证明"比 baseline 快",逻辑上自动算 SOTA(没有更快的参照库可输)。比值 = HYLE / baseline
+(>1 = HYLE 快)。
+
+| op | 对拍基线 | MSVC | WSL GCC | Mac NEON | 备注 |
+|---|---|---|---|---|---|
+| ReduceMul i32 | 标量 fold | 1.46× | 1.32× | 1.00×(编译器等价) | halving tree,x86 消 store+reload |
+| ReduceAnd i32 | 标量 fold | 1.43× | 2.2× | 1.00× | 同上 |
+| ReduceOr i32 | 标量 fold | 1.43× | 2.2× | 1.00× | 同上 |
+| ReciprocalNewton f32 | 裸 ApproxRecip | +33.6%(即 1 步 Newton 开销) | +5.9% | ~ | FMA 融合后;精修比裸估计精度高 ~20× |
+| ReciprocalSqrtNewton f32 | 裸 ApproxRSqrt | +37.8% | +22.3% | ~ | 同上;vs Div(1,Sqrt) 快 ~4× |
+
+(Reciprocal*Newton 的数字是"精修相对裸估计的额外开销",越小越好——1 步 Newton 换 ~20× 精度提升,仍远快于真 Div。)
+
+## 41 个待补 bench 的 op(可测全集里尚未写 bench)
+
+分三档(不是真输,是尚未测):
+- **结构性原语(在 CMP/mask 组合里被间接跑,但无独立 parity 行)**:BitsFromMask、MaskFromVec、
+  MaskFromNormalizedVec、VecFromMask、SignBit、ShiftRightUniform、LowerHalfOfMask、UpperHalfOfMask、
+  MaskFalse、LoadMaskBits、StoreMaskBits。
+- **InRange / 契约快变体(消费方保证输入域→跳边界处理)**:ConvertInRangeTo、DemoteInRangeTo、
+  DemoteToNearestIntInRange、PromoteInRange{Lower,Upper,Even,Odd}To、TableLookupBytesInRange、
+  TableLookupBytesOr0。
+- **真缺口(有 Highway 等价、值得补)**:MaskedSet、MaskedSetOr、MaskedIsNaN、InterleaveEvenBlocks、
+  InterleaveOddBlocks、InterleaveUpperBlocks、SlideUpBlocks、SlideDownBlocks、Lt128Vec、
+  SumsOfShuffledQuadAbsDiff、OrderedTruncate2To、TruncateStore、Shuffle01、RearrangeToOddPlusEven、
+  SafeCopyN、SafeFillN、Stream、CompressBits、CompressBitsStore、CompressBlocksNot、
+  IfNegativeThenNegOrUndefIfZero。
+
+实时清单跑 `python scripts/simd-op-coverage.py`(本节是快照)。
 
 ## 复现
 ```
