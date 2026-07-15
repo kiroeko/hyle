@@ -90,4 +90,14 @@ HYLE_SORT_KV_TYPES(HYLE_SORT_DECL_KV_TRIO, neon)
 #endif
 #undef HYLE_SORT_DECL_KV_TRIO
 
+// P1-3 streaming partial_sort (k ≪ n). Returns true if handled.
+bool stream_partial_u32(std::uint32_t* keys, std::size_t n, std::size_t k, bool asc) noexcept;
+bool stream_partial_i32(std::int32_t* keys, std::size_t n, std::size_t k, bool asc) noexcept;
+bool stream_partial_u64(std::uint64_t* keys, std::size_t n, std::size_t k, bool asc) noexcept;
+bool stream_partial_i64(std::int64_t* keys, std::size_t n, std::size_t k, bool asc) noexcept;
+bool stream_partial_f32(float* keys, std::size_t n, std::size_t k, bool asc) noexcept;
+bool stream_partial_f64(double* keys, std::size_t n, std::size_t k, bool asc) noexcept;
+bool stream_partial_kv32(KV32Bits* kv, std::size_t n, std::size_t k, bool asc) noexcept;
+bool stream_partial_kv64(KV64Bits* kv, std::size_t n, std::size_t k, bool asc) noexcept;
+
 }  // namespace hyle::simd::detail

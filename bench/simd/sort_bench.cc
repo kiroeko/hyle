@@ -299,7 +299,7 @@ void run_type(const char* name) {
                           std::size_t{1048576}}) {
       if (!selected_number("HYLE_BENCH_N", n)) continue;
       if (std::getenv("HYLE_BENCH_K") == nullptr) run_full<T>(name, n, few_unique);
-      std::vector<std::size_t> ks = {1, 2, 4, 8, 16, n / 10, n / 2};
+      std::vector<std::size_t> ks = {1, 2, 4, 8, 10, 16, 32, 64, 100, n / 10, n / 2};
       std::sort(ks.begin(), ks.end());
       ks.erase(std::unique(ks.begin(), ks.end()), ks.end());
       for (std::size_t k : ks) {

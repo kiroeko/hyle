@@ -95,9 +95,9 @@ bool try_radix_sort(T* keys, std::size_t n, SortOrder order) noexcept {
 #define HYLE_SORT_TIER_SELECT(tag) detail::select_##tag##_scalar(keys, n, k, asc)
 #endif
 
-// VQPartialSort's base case fully sorts a fixed network even when k is tiny. Across N=16..1M,
-// std::partial_sort wins for integer/KV k<=16 (up to 3.4x; KV64 N=1M k=16 ties, never loses).
-// Floating-point stays on VQSort because its documented NaN placement differs from std::less.
+// P1-3: k ≪ n uses streaming threshold partial (sorted prefix + single-compare reject).
+// Beats VQPartialSort on small-k large-n (VQ still partitions/writes the whole array).
+// Float included: StreamOrder matches NaN-after-finite contract (same as scalar floor).
 #define HYLE_SORT_DISPATCH(T, tag)                                                         \
   void sort(T* keys, std::size_t n, SortOrder order) noexcept {                            \
     if (n == 0) return;                                                                    \
@@ -109,9 +109,7 @@ bool try_radix_sort(T* keys, std::size_t n, SortOrder order) noexcept {
     HYLE_FATAL_ASSERT(k <= n);                                                             \
     if (n == 0 || k == 0) return;                                                          \
     const bool asc = (order == SortOrder::kAscending);                                     \
-    if constexpr (!std::is_floating_point_v<T>) {                                         \
-      if (k <= 16) { detail::psort_##tag##_scalar(keys, n, k, asc); return; }              \
-    }                                                                                      \
+    if (detail::stream_partial_##tag(keys, n, k, asc)) return;                             \
     HYLE_SORT_TIER_PSORT(tag);                                                             \
   }                                                                                        \
   void select(T* keys, std::size_t n, std::size_t k, SortOrder order) noexcept {           \
@@ -173,7 +171,7 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
     if (n == 0 || k == 0) return;                                                          \
     const bool asc = (order == SortOrder::kAscending);                                     \
     auto* h = reinterpret_cast<detail::DetT*>(kv);                                         \
-    if (k <= 16) { detail::psort_##kvtag##_scalar(h, n, k, asc); return; }                 \
+    if (detail::stream_partial_##kvtag(h, n, k, asc)) return;                              \
     HYLE_SORT_KV_LADDER_PSORT(kvtag, h);                                                   \
   }                                                                                        \
   void select(PubT* kv, std::size_t n, std::size_t k, SortOrder order) noexcept {          \

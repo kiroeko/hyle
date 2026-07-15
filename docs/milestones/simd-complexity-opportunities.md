@@ -133,13 +133,30 @@ scatter 仍是 pass 内主瓶颈(~74%),后续杠杆需别的形状(更大块/分
 
 阈值 4096 合理:大 n 稳赢 std;小 n 仍给 vqsort。
 
-### P1-3. 流式 top-k(小 k 大 n:全数据 partial_sort → 均摊 O(n) 过滤)
+### P1-3. 流式 top-k — **已落地(2026-07-15)**
 
-**现状**:top-k 走 `partial_sort`(vqsort 分区,触碰并重排全部数据)。
+**已做**:`partial_sort` 在 `k ≤ 64 && n ≥ 256 && k < n` 走流式阈值路径
+(`src/simd/sort/stream_topk.cc`):
+- 前 k 排序后阈值=`keys[k-1]`;扫剩余时单次比较拒绝;命中则把挤出的阈值写回 `keys[i]`
+  (保持置换/multiset)再插入有序前缀。
+- 覆盖全部标量键 + KV32/64;float 用与 scalar 相同的 NaN-after-finite 序。
+- `k > 64` 仍走 VQPartialSort / 原 tier 梯。
 
-**机会**:单遍"阈值向量比较 → 罕见命中才 compress 追加 → 缓冲满时重建阈值",随机数据下
-绝大多数向量批一条比较跳过,均摊 O(n) 且只读不写主数据。k≪n(top-10~100 of 1e7,检索/
-beam search 形状)预期数倍。KV top-k(sort.h 已有 KeyValue32/64)同法受益。
+**正确性**:`Sort.*` 16 tests **Win / WSL / Mac 全 PASS**(含 SmallK KV 置换对拍)。
+
+**时间(u32 random n=1M partial, ns/key;越低越好)**:
+| k | 平台 | std | Highway VQ | **HYLE public** | 相对 Highway |
+|---|---|---|---|---|---|
+| 10 | Win | 0.39 | 0.86 | **0.40** | **~2.2×** |
+| 64 | Win | 0.40 | 0.93 | **0.40** | **~2.3×** |
+| 100 | Win | 0.45 | 0.91 | 0.90(走 VQ) | ~1.0× |
+| 10 | WSL | 0.30 | 0.31 | **0.29** | ~持平 |
+| 64 | WSL | 0.31 | 0.34 | **0.32** | ~持平 |
+| 10 | Mac | 0.69 | 1.56 | **0.37** | **~4×** |
+| 64 | Mac | 0.30 | 0.96 | **0.30** | **~3×** |
+
+Win/Mac 小 k 明显赢 VQ(VQ 仍整表分区写);WSL 上 VQ 已够快→持平不亏。
+向量 compress 批过滤未做(标量阈值已吃到主收益);k>64 仍 VQ。
 
 ---
 
