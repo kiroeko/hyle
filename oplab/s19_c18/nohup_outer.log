@@ -1,0 +1,112 @@
+C18 start Wed Jul 15 19:17:14 CST 2026
+START tu=parity order=normal n=1 Wed Jul 15 19:17:14 CST 2026
+DONE tu=parity order=normal n=1 rc=0 lines=769 Wed Jul 15 19:19:35 CST 2026
+EXPECT[parity]=769 (baseline from first run)
+ORDER_OK normal (/Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_1.txt)
+START tu=full order=normal n=1 Wed Jul 15 19:19:35 CST 2026
+DONE tu=full order=normal n=1 rc=0 lines=2293 Wed Jul 15 19:26:37 CST 2026
+EXPECT[full]=2293 (baseline from first run)
+ORDER_OK normal (/Users/kiro/hyle/oplab/s19_c18/s19_full_normal_1.txt)
+START tu=widen order=normal n=1 Wed Jul 15 19:26:37 CST 2026
+DONE tu=widen order=normal n=1 rc=0 lines=308 Wed Jul 15 19:27:00 CST 2026
+EXPECT[widen]=308 (baseline from first run)
+ORDER_OK normal (/Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_1.txt)
+START tu=parity order=hwyfirst n=1 Wed Jul 15 19:27:00 CST 2026
+DONE tu=parity order=hwyfirst n=1 rc=0 lines=769 Wed Jul 15 19:29:20 CST 2026
+COMPLETE lines=769 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_1.txt
+ORDER_OK hwyfirst (/Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_1.txt)
+START tu=full order=hwyfirst n=1 Wed Jul 15 19:29:20 CST 2026
+DONE tu=full order=hwyfirst n=1 rc=0 lines=2293 Wed Jul 15 19:36:22 CST 2026
+COMPLETE lines=2293 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_1.txt
+ORDER_OK hwyfirst (/Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_1.txt)
+START tu=widen order=hwyfirst n=1 Wed Jul 15 19:36:22 CST 2026
+DONE tu=widen order=hwyfirst n=1 rc=0 lines=308 Wed Jul 15 19:36:44 CST 2026
+COMPLETE lines=308 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_1.txt
+ORDER_OK hwyfirst (/Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_1.txt)
+START tu=parity order=normal n=2 Wed Jul 15 19:36:44 CST 2026
+DONE tu=parity order=normal n=2 rc=0 lines=769 Wed Jul 15 19:39:06 CST 2026
+COMPLETE lines=769 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_2.txt
+ORDER_OK normal (/Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_2.txt)
+START tu=full order=normal n=2 Wed Jul 15 19:39:06 CST 2026
+DONE tu=full order=normal n=2 rc=0 lines=2293 Wed Jul 15 19:46:07 CST 2026
+COMPLETE lines=2293 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_full_normal_2.txt
+ORDER_OK normal (/Users/kiro/hyle/oplab/s19_c18/s19_full_normal_2.txt)
+START tu=widen order=normal n=2 Wed Jul 15 19:46:07 CST 2026
+DONE tu=widen order=normal n=2 rc=0 lines=308 Wed Jul 15 19:46:29 CST 2026
+COMPLETE lines=308 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_2.txt
+ORDER_OK normal (/Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_2.txt)
+START tu=parity order=hwyfirst n=2 Wed Jul 15 19:46:29 CST 2026
+DONE tu=parity order=hwyfirst n=2 rc=0 lines=769 Wed Jul 15 19:48:50 CST 2026
+COMPLETE lines=769 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_2.txt
+ORDER_OK hwyfirst (/Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_2.txt)
+START tu=full order=hwyfirst n=2 Wed Jul 15 19:48:50 CST 2026
+DONE tu=full order=hwyfirst n=2 rc=0 lines=2293 Wed Jul 15 19:55:49 CST 2026
+COMPLETE lines=2293 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_2.txt
+ORDER_OK hwyfirst (/Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_2.txt)
+START tu=widen order=hwyfirst n=2 Wed Jul 15 19:55:49 CST 2026
+DONE tu=widen order=hwyfirst n=2 rc=0 lines=308 Wed Jul 15 19:56:11 CST 2026
+COMPLETE lines=308 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_2.txt
+ORDER_OK hwyfirst (/Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_2.txt)
+START tu=parity order=normal n=3 Wed Jul 15 19:56:11 CST 2026
+DONE tu=parity order=normal n=3 rc=0 lines=769 Wed Jul 15 19:58:34 CST 2026
+COMPLETE lines=769 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_3.txt
+ORDER_OK normal (/Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_3.txt)
+START tu=full order=normal n=3 Wed Jul 15 19:58:34 CST 2026
+DONE tu=full order=normal n=3 rc=0 lines=2293 Wed Jul 15 20:05:35 CST 2026
+COMPLETE lines=2293 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_full_normal_3.txt
+ORDER_OK normal (/Users/kiro/hyle/oplab/s19_c18/s19_full_normal_3.txt)
+START tu=widen order=normal n=3 Wed Jul 15 20:05:35 CST 2026
+DONE tu=widen order=normal n=3 rc=0 lines=308 Wed Jul 15 20:05:57 CST 2026
+COMPLETE lines=308 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_3.txt
+ORDER_OK normal (/Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_3.txt)
+START tu=parity order=hwyfirst n=3 Wed Jul 15 20:05:57 CST 2026
+DONE tu=parity order=hwyfirst n=3 rc=0 lines=769 Wed Jul 15 20:08:18 CST 2026
+COMPLETE lines=769 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_3.txt
+ORDER_OK hwyfirst (/Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_3.txt)
+START tu=full order=hwyfirst n=3 Wed Jul 15 20:08:18 CST 2026
+DONE tu=full order=hwyfirst n=3 rc=0 lines=2293 Wed Jul 15 20:15:18 CST 2026
+COMPLETE lines=2293 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_3.txt
+ORDER_OK hwyfirst (/Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_3.txt)
+START tu=widen order=hwyfirst n=3 Wed Jul 15 20:15:18 CST 2026
+DONE tu=widen order=hwyfirst n=3 rc=0 lines=308 Wed Jul 15 20:15:39 CST 2026
+COMPLETE lines=308 match expect for /Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_3.txt
+ORDER_OK hwyfirst (/Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_3.txt)
+C18 all runs finished Wed Jul 15 20:15:39 CST 2026
+=== summary ===
+-rw-r--r--  1 kiro  staff  233976 Jul 15 19:36 /Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_1.txt
+-rw-r--r--  1 kiro  staff  232176 Jul 15 19:55 /Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_2.txt
+-rw-r--r--  1 kiro  staff  231546 Jul 15 20:15 /Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_3.txt
+-rw-r--r--  1 kiro  staff  232896 Jul 15 19:26 /Users/kiro/hyle/oplab/s19_c18/s19_full_normal_1.txt
+-rw-r--r--  1 kiro  staff  231636 Jul 15 19:46 /Users/kiro/hyle/oplab/s19_c18/s19_full_normal_2.txt
+-rw-r--r--  1 kiro  staff  232896 Jul 15 20:05 /Users/kiro/hyle/oplab/s19_c18/s19_full_normal_3.txt
+-rw-r--r--  1 kiro  staff   66323 Jul 15 19:29 /Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_1.txt
+-rw-r--r--  1 kiro  staff   67313 Jul 15 19:48 /Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_2.txt
+-rw-r--r--  1 kiro  staff   66775 Jul 15 20:08 /Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_3.txt
+-rw-r--r--  1 kiro  staff   67313 Jul 15 19:19 /Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_1.txt
+-rw-r--r--  1 kiro  staff   67135 Jul 15 19:39 /Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_2.txt
+-rw-r--r--  1 kiro  staff   67133 Jul 15 19:58 /Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_3.txt
+-rw-r--r--  1 kiro  staff   25652 Jul 15 19:36 /Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_1.txt
+-rw-r--r--  1 kiro  staff   25652 Jul 15 19:56 /Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_2.txt
+-rw-r--r--  1 kiro  staff   25652 Jul 15 20:15 /Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_3.txt
+-rw-r--r--  1 kiro  staff   25742 Jul 15 19:27 /Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_1.txt
+-rw-r--r--  1 kiro  staff   25652 Jul 15 19:46 /Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_2.txt
+-rw-r--r--  1 kiro  staff   25742 Jul 15 20:05 /Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_3.txt
+    2293 /Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_1.txt
+    2293 /Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_2.txt
+    2293 /Users/kiro/hyle/oplab/s19_c18/s19_full_hwyfirst_3.txt
+    2293 /Users/kiro/hyle/oplab/s19_c18/s19_full_normal_1.txt
+    2293 /Users/kiro/hyle/oplab/s19_c18/s19_full_normal_2.txt
+    2293 /Users/kiro/hyle/oplab/s19_c18/s19_full_normal_3.txt
+     769 /Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_1.txt
+     769 /Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_2.txt
+     769 /Users/kiro/hyle/oplab/s19_c18/s19_parity_hwyfirst_3.txt
+     769 /Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_1.txt
+     769 /Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_2.txt
+     769 /Users/kiro/hyle/oplab/s19_c18/s19_parity_normal_3.txt
+     308 /Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_1.txt
+     308 /Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_2.txt
+     308 /Users/kiro/hyle/oplab/s19_c18/s19_widen_hwyfirst_3.txt
+     308 /Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_1.txt
+     308 /Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_2.txt
+     308 /Users/kiro/hyle/oplab/s19_c18/s19_widen_normal_3.txt
+   20220 total

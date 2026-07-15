@@ -35,7 +35,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | done | ✓ | 276/276; also_run HalfCombine 23/23 全绿(13 原 DISABLED 转绿) | — | bb92d29 | 满宽 vcombine; 子满宽 u64 mask+shift 显式清 pad; 批复#11 ZeroExtend/Insert 验收 |
 | C16 | Concat* partial 路径 | done | ✓ | 276/276; HalfCombine also_run 23/23 | ConcatEven i32: HYLE~0.07 / HWY~0.06 (~94–104%); full_bench 四 Concat* 仅 avx2 门控,NEON 无该段 | b131ea6 | D 档=Combine(Lower/UpperHalf); 满宽 Q store+reload 不动 |
 | C17 | ResizeBitCast partial 审计 | done | ✓ | 276/276; also_run 23/23 | — | 4adca64 | D↔D exact-byte 无 Q 物化; Q/mixed 保持 to_q 路径(flip-safe) |
-| C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | todo | | | 记录 | | 判定=高能力方 |
+| C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | done | ✓ | 276/276 | 18/18 完整: parity×6=769行 full×6=2293 widen×6=308; PromoteMaskTo 六遍 ~99.5–100.1% @0.08ns | | 产物 `oplab/s19_c18/`; 换序 18/18 ORDER_OK; **判定=高能力方** |
 | C19 | 文档/矩阵回写 + cloc | todo | | | — | | 高能力方 |
 
 ## 执行侧犹疑/边界说明(C3–C13 集中,2026-07-15)
@@ -332,3 +332,36 @@ run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
 
 ### 自审结论
 - **可收**(非 no-change:落地 D↔D exact-byte)。  
+
+## C18 采集记录(执行侧,2026-07-15,只记录不判定)
+
+### 闸门
+| 项 | 结论 | 证据 |
+|---|---|---|
+| G1 | ✓ | 三 bench + gtest 重编 mtime `Jul 15 19:16` |
+| G3 | ✓ | **276/276 PASSED** |
+| G4 | 记录 | 18 文件完整;见下;判定高能力方 |
+| G5 | ✓ | 台账 + `oplab/s19_c18/` |
+
+### 完整性
+| TU | 期望行 | 6 文件 |
+|---|---:|---|
+| parity | 769 | 6/6 |
+| full | 2293 | 6/6 |
+| widen | 308 | 6/6 |
+
+手册旧写 parity=2227 已过时(本轮实测 769)。**零 INCOMPLETE/jetsam**。换序 env=`HYLE_BENCH_HWYFIRST` 18/18 ORDER_OK。
+
+### PromoteMaskTo i16→i32(parity 六遍摘要,不判定)
+全部副本对 relative **~99.5%–100.1%**,两侧 **~0.08 ns/op** / **~12.65–12.72 G op/s**。
+
+### 产物路径
+- Mac: `~/hyle/oplab/s19_c18/`
+- Windows 权威树: `oplab/s19_c18/`(已同步 18 txt + runner log + MANIFEST.md)
+
+### 犹疑
+23. **parity 行数 769 ≠ 手册 2227** — 以本轮 rc=0 全表实测为完整基线;手册数字过时,C19 可改 §3-4。  
+24. **未做 Windows avx2/sse4/scalar 复跑** — 卡片写「三个 NEON bench」+gtest;x86 复跑若需归 C19/高能力方。  
+
+### 自审结论
+- **采集可收**;判读/矩阵回写归 C19。  
