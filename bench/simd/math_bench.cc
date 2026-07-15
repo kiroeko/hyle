@@ -12,14 +12,21 @@
 //       until the baseline-ISA fix -- see performance.md math section).
 // active_math_variant() prints the live tier; "kScalar" => no vectorized math wired (HYLE row
 // ties the scalar baseline -- honest: no vectorization on a non-AVX2 host).
+//
+// P2-2 latency chain mode (below the throughput tables): throughput benches hide polynomial
+// dependency depth behind ILP across independent lanes. The latency section forces output ->
+// next input so Horner O(d) vs Estrin O(log d) is visible, and also measures product exp/log
+// under the same serial chain shape before any kernel rewrite is considered.
 #include <nanobench.h>
 
+#include <array>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
 #include <random>
 #include <vector>
 
+#include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/math.h"
 
@@ -180,6 +187,103 @@ void highway_run64(Op op, const double* src, double* dst, std::size_t n) {
   for (; i < n; ++i) dst[i] = scalar_of64(op, src[i]);
 }
 #endif
+
+// ---- P2-2 pure polynomial latency: Horner O(d) vs Estrin O(log d) ----
+// Small fixed coefficients keep the chain finite; each result becomes the next argument so
+// dependency depth cannot be hidden by independent lanes/ILP.
+constexpr std::size_t kPolyChain = 4096;
+
+template <std::size_t Degree>
+double horner_chain(double x, const std::array<double, Degree + 1>& c) noexcept {
+  double y = c[Degree];
+  for (std::size_t i = Degree; i-- > 0;) y = std::fma(y, x, c[i]);
+  return y;
+}
+
+// Explicit Estrin trees for the degrees we care about (product math polys cluster here).
+double estrin7(double x, const std::array<double, 8>& c) noexcept {
+  const double x2 = x * x;
+  const double x4 = x2 * x2;
+  const double p01 = std::fma(c[1], x, c[0]);
+  const double p23 = std::fma(c[3], x, c[2]);
+  const double p45 = std::fma(c[5], x, c[4]);
+  const double p67 = std::fma(c[7], x, c[6]);
+  return std::fma(x4, std::fma(x2, p67, p45), std::fma(x2, p23, p01));
+}
+double estrin11(double x, const std::array<double, 12>& c) noexcept {
+  const double x2 = x * x;
+  const double x4 = x2 * x2;
+  const double x8 = x4 * x4;
+  const double p01 = std::fma(c[1], x, c[0]);
+  const double p23 = std::fma(c[3], x, c[2]);
+  const double p45 = std::fma(c[5], x, c[4]);
+  const double p67 = std::fma(c[7], x, c[6]);
+  const double p89 = std::fma(c[9], x, c[8]);
+  const double pAB = std::fma(c[11], x, c[10]);
+  const double q0 = std::fma(x2, p23, p01);
+  const double q1 = std::fma(x2, p67, p45);
+  const double q2 = std::fma(x2, pAB, p89);
+  return std::fma(x8, q2, std::fma(x4, q1, q0));
+}
+double estrin15(double x, const std::array<double, 16>& c) noexcept {
+  const double x2 = x * x;
+  const double x4 = x2 * x2;
+  const double x8 = x4 * x4;
+  const double p01 = std::fma(c[1], x, c[0]);
+  const double p23 = std::fma(c[3], x, c[2]);
+  const double p45 = std::fma(c[5], x, c[4]);
+  const double p67 = std::fma(c[7], x, c[6]);
+  const double p89 = std::fma(c[9], x, c[8]);
+  const double pAB = std::fma(c[11], x, c[10]);
+  const double pCD = std::fma(c[13], x, c[12]);
+  const double pEF = std::fma(c[15], x, c[14]);
+  const double q0 = std::fma(x2, p23, p01);
+  const double q1 = std::fma(x2, p67, p45);
+  const double q2 = std::fma(x2, pAB, p89);
+  const double q3 = std::fma(x2, pEF, pCD);
+  return std::fma(x8, std::fma(x4, q3, q2), std::fma(x4, q1, q0));
+}
+
+template <std::size_t Degree>
+std::array<double, Degree + 1> poly_coeffs(std::uint64_t seed) {
+  std::mt19937_64 rng(seed);
+  std::uniform_real_distribution<double> dist(-0.1, 0.1);
+  std::array<double, Degree + 1> c{};
+  for (auto& e : c) e = dist(rng);
+  // Keep the fixed point of the chain inside a stable region so we measure arithmetic depth,
+  // not overflow/underflow recovery.
+  c[0] = 0.01;
+  c[Degree] = 0.05;
+  return c;
+}
+
+// Product-op latency chain: broadcast the serial state into exactly one live hardware vector,
+// then consume lane 0 next iteration. n=1 would take the scalar tail, which measures libm rather
+// than the vector kernel. The state transforms are affine and keep every iteration normal finite.
+template <class T>
+std::size_t chain_lanes() noexcept {
+  const auto isa = hyle::simd::active_math_variant();
+  if (isa == hyle::simd::Isa::kAvx512) return sizeof(T) == sizeof(double) ? 8 : 16;
+  if (isa == hyle::simd::Isa::kAvx2) return sizeof(T) == sizeof(double) ? 4 : 8;
+#if defined(HYLE_ARCH_ARM64)
+  return sizeof(T) == sizeof(double) ? 2 : 4;
+#else
+  return 1;
+#endif
+}
+template <class T, class Fn>
+T chain_unary_vector(Fn fn, T x0, std::size_t iters) noexcept {
+  std::array<T, 16> src{};
+  std::array<T, 16> dst{};
+  const std::size_t lanes = chain_lanes<T>();
+  T x = x0;
+  for (std::size_t i = 0; i < iters; ++i) {
+    for (std::size_t lane = 0; lane < lanes; ++lane) src[lane] = x;
+    fn(src.data(), dst.data(), lanes);
+    x = dst[0];
+  }
+  return x;
+}
 }  // namespace
 
 int main() {
@@ -342,6 +446,87 @@ int main() {
       nb::doNotOptimizeAway(dst.data());
     });
 #endif
+  }
+
+  // ---- P2-2: latency-bound chain mode ----
+  // Throughput tables above hide poly depth (independent lanes). Here each step consumes the
+  // previous result, so Horner depth O(d) vs Estrin O(log d) is measurable. Product exp/log
+  // chains use exactly one live hardware vector through the public batch API.
+  {
+    const auto c7 = poly_coeffs<7>(0xE5717ULL);
+    const auto c11 = poly_coeffs<11>(0xE5711ULL);
+    const auto c15 = poly_coeffs<15>(0xE5715ULL);
+
+    auto run_poly = [](const char* title, auto horner_fn, auto estrin_fn) {
+      nb::Bench b;
+      b.title(title).relative(true).batch(kPolyChain).minEpochIterations(2000);
+      b.run("Horner chain", [&] {
+        double x = 0.25;
+        for (std::size_t i = 0; i < kPolyChain; ++i) x = horner_fn(x);
+        nb::doNotOptimizeAway(x);
+      });
+      b.run("Estrin chain", [&] {
+        double x = 0.25;
+        for (std::size_t i = 0; i < kPolyChain; ++i) x = estrin_fn(x);
+        nb::doNotOptimizeAway(x);
+      });
+    };
+
+    run_poly(
+        "poly latency deg7 (chain 4096)",
+        [&](double x) { return horner_chain<7>(x, c7); },
+        [&](double x) { return estrin7(x, c7); });
+    run_poly(
+        "poly latency deg11 (chain 4096)",
+        [&](double x) { return horner_chain<11>(x, c11); },
+        [&](double x) { return estrin11(x, c11); });
+    run_poly(
+        "poly latency deg15 (chain 4096)",
+        [&](double x) { return horner_chain<15>(x, c15); },
+        [&](double x) { return estrin15(x, c15); });
+  }
+
+  {
+    constexpr std::size_t kOpChain = 4096;
+    nb::Bench b;
+    b.title("product op latency chain (one vector, 4096 steps)").relative(true).batch(kOpChain)
+        .minEpochIterations(1000);
+    b.run("HYLE exp_f64 vector chain", [&] {
+      const double r = chain_unary_vector(
+          [](const double* s, double* d, std::size_t n) {
+            hyle::simd::exp_f64_batch(s, d, n);
+            for (std::size_t i = 0; i < n; ++i) d[i] = 0.25 * (d[i] - 1.0);
+          },
+          0.1, kOpChain);
+      nb::doNotOptimizeAway(r);
+    });
+    b.run("HYLE log_f64 vector chain", [&] {
+      const double r = chain_unary_vector(
+          [](const double* s, double* d, std::size_t n) {
+            hyle::simd::log_f64_batch(s, d, n);
+            for (std::size_t i = 0; i < n; ++i) d[i] = std::fma(0.5, d[i], 1.0);
+          },
+          1.1, kOpChain);
+      nb::doNotOptimizeAway(r);
+    });
+    b.run("HYLE exp_f32 vector chain", [&] {
+      const float r = chain_unary_vector(
+          [](const float* s, float* d, std::size_t n) {
+            hyle::simd::exp_f32_batch(s, d, n);
+            for (std::size_t i = 0; i < n; ++i) d[i] = 0.25f * (d[i] - 1.0f);
+          },
+          0.1f, kOpChain);
+      nb::doNotOptimizeAway(r);
+    });
+    b.run("HYLE log_f32 vector chain", [&] {
+      const float r = chain_unary_vector(
+          [](const float* s, float* d, std::size_t n) {
+            hyle::simd::log_f32_batch(s, d, n);
+            for (std::size_t i = 0; i < n; ++i) d[i] = std::fma(0.5f, d[i], 1.0f);
+          },
+          1.1f, kOpChain);
+      nb::doNotOptimizeAway(r);
+    });
   }
   return 0;
 }

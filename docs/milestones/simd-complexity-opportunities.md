@@ -193,11 +193,35 @@ exceptional-vector 检查的真实 HYLE wrapper 是 **0.94–1.05 ns/op**，反�
 所以不做伪分流，所有平台保留表核；WSL 对 raw Highway 的 5% 差距留在证据中，不用不满足完整 IEEE
 契约的 direct benchmark 掩盖。f32 best-of-breed 不动。
 
-### P2-2. Estrin 多项式求值(依赖链深度 O(d) → O(log d))——先补 latency bench 再决定
+### P2-2. Estrin 多项式求值(依赖链深度 O(d) → O(log d)) — **调研收口:保留 bench、不改核(2026-07-16)**
 
-吞吐 bench 看不见它(迭代间 ILP 掩盖);只有 **latency-bound 链式消费者**受益。立项前置:
-给 math bench 加"链式延迟"模式(输出喂下一次输入),量出 Horner 深度差,有差再谈改核。
-这也是把"要证 scaling/复杂度,非单点 ratio"的纪律落到 math 侧。
+**先测再决定**:`hyle_math_bench` 新增两层链式 latency mode。纯多项式每步把结果喂给下一步，
+消除独立 lane/迭代的 ILP；产品行则把 serial state 广播到**恰好一个真实硬件向量**(不是 `n=1`
+标量 tail)，取 lane0 作为下一步输入。链内只用仿射回映射保持 normal-finite，避免 overflow、
+scalar libm 或第二个 transcendental 污染读数。`cloc` 实测 `math_bench.cc` 当前为 454 C++ code LOC；
+P2-2 latency block 占本轮 185 行 source diff，不另建产品运行时层。
+
+**纯 f64 FMA 多项式链**(Horner / Estrin，`ns/step`，4096-step chain):
+
+| 度数 | Win MSVC AVX2 | WSL GCC14 AVX2 | Mac AppleClang NEON |
+|---|---:|---:|---:|
+| 7 | 5.31 / **2.75** (**1.93×**) | 5.33 / **2.83** (**1.88×**) | 4.84 / **2.84** (**1.70×**) |
+| 11 | 8.23 / **3.48** (**2.36×**) | 8.24 / **3.47** (**2.37×**) | 7.63 / **3.55** (**2.15×**) |
+| 15 | 11.18 / **4.07** (**2.75×**) | 11.41 / **3.99** (**2.86×**) | 10.41 / **3.95** (**2.64×**) |
+
+**产品向量链(尺度锚点，不是新旧算法对拍)**:f64 `exp/log` 分别为 Win `18.60/20.25`、
+WSL `16.44/18.04`、Mac `13.46/15.20 ns/step`；f32 同样量级。它证明 bench 进入了向量核，
+但不能从这些绝对数推导单个多项式的收益。
+
+**不改生产核的原因**:
+- Highway f64 `ExpPoly` 已是 `Estrin` (`math-inl.h:1237-1251`)；f64 `LogPoly` 也已按 `x²/x⁴`
+  分组，非线性 Horner 长链(`:1313-1328`)。
+- P2-1 的上架表核更短：exp 是 4 次、log 是 5 次且已按 `r²` 分组
+  (`src/simd/math/table_f64.h`)；没有度 7+ 的 Horner 热点可转换。
+- 因此 1.7–2.9× 是**未来出现长自有多项式时的链式延迟上界证据**，不是对现有 exp/log
+  的可实现收益。为追数字重写低阶/已分组核会增加寄存器压力与精度回归面，拒绝。
+
+这条 bench 留作 P2-2 的回归闸门：只有新核先在链式行证明收益，才允许讨论 Estrin 改写。
 
 ### P2-3. 数学函数 InRange 分层
 
