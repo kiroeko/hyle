@@ -32,7 +32,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | **done+判定 TIE** | ✓ | — | 双序 6 遍 ×4 副本对全部 99.5–100.0%,两侧绝对吞吐同为 12.65–12.71 G op/s | d0702fa | **判定(高能力方 2026-07-15):0.575 → TIE 确认**,见下节判定记录 |
 | C13 | half/combine 穷举 oracle 测试(先行) | done | ✓ | 276/276 绿基线(满宽 10); 子满宽 13 案 DISABLED_ 挂账 | — | 38e37d5(+红名单回挂) | 满宽×10 绿; 13 红=既有 N 盲 half/pad 债(非 s19 回归,批复#11); C14/C15 验收=DISABLED 转绿 |
 | C14 | LowerHalf/UpperHalf native D | done | ✓ | 276/276; also_run: 13 DISABLED 零 UpperHalf/LowerHalf 失败, 余 ZeroExtend/Insert 红=C15 | — | ebeec1e | 满宽 Q→vget_low/high; 子满宽 Lower=raw; Upper=vshr_n_u64(NH*sizeof*8); 批复#11 Upper 转绿验收 |
-| C15 | Combine/ZeroExtendVector/InsertIntoUpper native | todo | | | — | | C13 先绿 |
+| C15 | Combine/ZeroExtendVector/InsertIntoUpper native | done | ✓ | 276/276; also_run HalfCombine 23/23 全绿(13 原 DISABLED 转绿) | — | | 满宽 vcombine; 子满宽 u64 mask+shift 显式清 pad; 批复#11 ZeroExtend/Insert 验收 |
 | C16 | Concat* partial 路径 | todo | | | — | | C13 先绿 |
 | C17 | ResizeBitCast partial 审计 | todo | | | — | | 低优 |
 | C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | todo | | | 记录 | | 判定=高能力方 |
@@ -247,3 +247,37 @@ run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
 
 ### 自审结论
 - **可收**。满宽 native D + 子满宽逻辑 UpperHalf 正确性修复落地;C15 接手 pad 清零族。  
+
+## C15 对抗自审(执行侧,2026-07-15)
+
+### 闸门核对
+| 项 | 结论 | 证据 |
+|---|---|---|
+| 白名单 | ✓ | 只改 `neon.h` Combine/ZeroExtendVector/InsertIntoUpper + detail `q_combine`/`d_dup_zero`;未动 tests/vec.h/其他 backend |
+| G1 | ✓ | touch 重编;mtime `Jul 15 18:49` |
+| G2 | ✓ | 随编译 |
+| G3 | ✓ | **276/276** 全绿;满宽 HalfCombine ×10 绿 |
+| G3.5 红名单转绿 | ✓ | also_run `HalfCombineOracle.*`:**23/23 PASSED**(含原 13 DISABLED 全绿) |
+| G4 | n/a | |
+| G5 | ✓ | 台账 C15 行 + 本节 |
+| 前缀 | ✓ | `perf(simd): s19-C15 ...` |
+
+### 正确性自审
+1. **满宽 Q 出**:`vcombine(lo.raw, hi.raw)` / `vcombine(lo, zero_d)` / `vcombine(q_get_low(v), hi)`。✓  
+2. **子满宽 D 出**:u64 视图 `lo & half_mask | (hi & half_mask)<<half_bits`,再 `& out_mask` **显式清 pad**(批复 #9,禁止依赖输入 pad=0)。✓  
+3. **ZeroExtend 根因**:旧 `neon_lower_half_zext(to_q(lo))` 在 D 上保留 lo 的 pad 当「高半」;现只取 half_mask 位。✓  
+4. **InsertIntoUpper 根因**:旧 combine 把 hi 放进 Q 高 64,`from_q` 对 D 出丢弃高半;现寄存器内移位拼入逻辑高半。✓  
+5. **未去 DISABLED_ 前缀**:C15 白名单不含 tests;验收=also_run 23/23。建议 C19 或独立 test 卡去前缀使默认套件常驻护栏。  
+
+### 犹疑/残留
+16. **标量 u64 mask 路径 vs NEON 移位**  
+    - 犹疑:子满宽用 `vget_lane`+标量 mask+`vdup_n_u64` 是否「不够 native」。  
+    - 处置:卡片 after 明示「u64 视图移位+或」;子满宽非热路径,正确性优先。满宽热路径是真 `vcombine`。  
+    - 残留:无功能。  
+17. **`1ull << kHalfBits` 编译期**  
+    - 子满宽 half_bits ≤32,无 UB;out_bits==64 用 `~0ull` 特判。✓  
+18. **13 案仍 DISABLED_ 名**  
+    - 默认 gtest 跳过;债已还清但名未摘。登记 C19/后续 test 卡去前缀。  
+
+### 自审结论
+- **可收**。C13 挂账 13 红在 C14+C15 后 also_run 全绿;half/combine 子满宽正确性债清零。  

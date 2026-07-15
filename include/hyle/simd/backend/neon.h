@@ -3425,6 +3425,34 @@ HYLE_FORCE_INLINE typename RawNeonD<T>::type q_get_high(typename RawNeon<T>::typ
   else if constexpr (std::is_same_v<T, std::int64_t>) return vget_high_s64(q);
   else return vget_high_u64(q);
 }
+// simd-19 C15: D→Q vcombine / zero D / sub-full u64 splice helpers.
+template <typename T>
+HYLE_FORCE_INLINE typename RawNeonD<T>::type d_dup_zero() noexcept {
+  if constexpr (std::is_same_v<T, float>) return vdup_n_f32(0);
+  else if constexpr (std::is_same_v<T, double>) return vdup_n_f64(0);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vdup_n_s8(0);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vdup_n_u8(0);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vdup_n_s16(0);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vdup_n_u16(0);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vdup_n_s32(0);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return vdup_n_u32(0);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vdup_n_s64(0);
+  else return vdup_n_u64(0);
+}
+template <typename T>
+HYLE_FORCE_INLINE typename RawNeon<T>::type q_combine(typename RawNeonD<T>::type lo,
+                                                       typename RawNeonD<T>::type hi) noexcept {
+  if constexpr (std::is_same_v<T, float>) return vcombine_f32(lo, hi);
+  else if constexpr (std::is_same_v<T, double>) return vcombine_f64(lo, hi);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vcombine_s8(lo, hi);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vcombine_u8(lo, hi);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vcombine_s16(lo, hi);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vcombine_u16(lo, hi);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vcombine_s32(lo, hi);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return vcombine_u32(lo, hi);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vcombine_s64(lo, hi);
+  else return vcombine_u64(lo, hi);
+}
 }  // namespace detail
 
 template <typename T, std::size_t NH, int kPow2, std::size_t N>
@@ -3469,24 +3497,90 @@ HYLE_FORCE_INLINE VecNeon<T, N / 2> UpperHalf(VecNeon<T, N> v) noexcept {
   static_assert(N >= 2, "UpperHalf needs N>=2");
   return UpperHalf(Simd<T, N / 2, 0>{}, v);
 }
+// simd-19 C15: Combine/ZeroExtend/InsertIntoUpper — full Q via vcombine; sub-full D via
+// u64 mask+shift splice with explicit pad clear (ledger #9 / disposition #11).
 template <typename T, std::size_t N, int kPow2>
 HYLE_FORCE_INLINE VecNeon<T, N> Combine(Simd<T, N, kPow2>,
                                         VecNeon<T, N / 2> hi, VecNeon<T, N / 2> lo) noexcept {
   static_assert(N >= 2, "Combine needs N>=2");
-  return detail::from_q<VecNeon<T, N>>(
-      detail::neon_combine_halves<T>(detail::to_q(lo), detail::to_q(hi)));
+  VecNeon<T, N> out;
+  if constexpr (N * sizeof(T) == 16) {
+    // Two full-D halves → Q.
+    out.raw = detail::q_combine<T>(lo.raw, hi.raw);
+  } else if constexpr (detail::kIsDBand<T, N>) {
+    // Sub-full: lo low-NH | (hi low-NH << half_bits); mask out pad beyond N.
+    constexpr int kHalfBits = static_cast<int>((N / 2) * sizeof(T) * 8);
+    constexpr int kOutBits = static_cast<int>(N * sizeof(T) * 8);
+    static_assert(kHalfBits > 0 && kHalfBits < 64, "Combine sub-full half bits in (0,64)");
+    static_assert(kOutBits > 0 && kOutBits <= 64, "Combine sub-full out bits in (0,64]");
+    constexpr std::uint64_t kHalfMask =
+        (std::uint64_t{1} << kHalfBits) - 1;
+    constexpr std::uint64_t kOutMask =
+        (kOutBits == 64) ? ~std::uint64_t{0} : ((std::uint64_t{1} << kOutBits) - 1);
+    const std::uint64_t lo_bits =
+        vget_lane_u64(detail::d_to_u64<T>(lo.raw), 0) & kHalfMask;
+    const std::uint64_t hi_bits =
+        (vget_lane_u64(detail::d_to_u64<T>(hi.raw), 0) & kHalfMask) << kHalfBits;
+    out.raw = detail::d_from_u64<T>(vdup_n_u64((lo_bits | hi_bits) & kOutMask));
+  } else {
+    out = detail::from_q<decltype(out)>(
+        detail::neon_combine_halves<T>(detail::to_q(lo), detail::to_q(hi)));
+  }
+  return out;
 }
 template <typename T, std::size_t N, int kPow2>
 HYLE_FORCE_INLINE VecNeon<T, N> ZeroExtendVector(Simd<T, N, kPow2>, VecNeon<T, N / 2> lo) noexcept {
   static_assert(N >= 2, "ZeroExtendVector needs N>=2");
-  return detail::from_q<VecNeon<T, N>>(detail::neon_lower_half_zext<T>(detail::to_q(lo)));
+  VecNeon<T, N> out;
+  if constexpr (N * sizeof(T) == 16) {
+    // Full Q: lo in low D, high D = zero (explicit; never trust input pad).
+    out.raw = detail::q_combine<T>(lo.raw, detail::d_dup_zero<T>());
+  } else if constexpr (detail::kIsDBand<T, N>) {
+    // Sub-full: keep only logical lo NH bits; high NH + pad explicitly zero.
+    constexpr int kHalfBits = static_cast<int>((N / 2) * sizeof(T) * 8);
+    constexpr int kOutBits = static_cast<int>(N * sizeof(T) * 8);
+    static_assert(kHalfBits > 0 && kHalfBits < 64, "ZeroExtend sub-full half bits in (0,64)");
+    static_assert(kOutBits > 0 && kOutBits <= 64, "ZeroExtend sub-full out bits in (0,64]");
+    constexpr std::uint64_t kHalfMask =
+        (std::uint64_t{1} << kHalfBits) - 1;
+    constexpr std::uint64_t kOutMask =
+        (kOutBits == 64) ? ~std::uint64_t{0} : ((std::uint64_t{1} << kOutBits) - 1);
+    const std::uint64_t lo_bits =
+        vget_lane_u64(detail::d_to_u64<T>(lo.raw), 0) & kHalfMask;
+    out.raw = detail::d_from_u64<T>(vdup_n_u64(lo_bits & kOutMask));
+  } else {
+    out = detail::from_q<decltype(out)>(detail::neon_lower_half_zext<T>(detail::to_q(lo)));
+  }
+  return out;
 }
 template <typename T, std::size_t N, int kPow2>
 HYLE_FORCE_INLINE VecNeon<T, N> InsertIntoUpper(Simd<T, N, kPow2>,
                                                 VecNeon<T, N / 2> hi, VecNeon<T, N> v) noexcept {
   static_assert(N >= 2, "InsertIntoUpper needs N>=2");
-  return detail::from_q<VecNeon<T, N>>(
-      detail::neon_combine_halves<T>(detail::to_q(v), detail::to_q(hi)));
+  VecNeon<T, N> out;
+  if constexpr (N * sizeof(T) == 16) {
+    // Full Q: low half of v (D) | hi (D).
+    out.raw = detail::q_combine<T>(detail::q_get_low<T>(v.raw), hi.raw);
+  } else if constexpr (detail::kIsDBand<T, N>) {
+    // Sub-full: v low-NH | (hi low-NH << half_bits); clear pad.
+    constexpr int kHalfBits = static_cast<int>((N / 2) * sizeof(T) * 8);
+    constexpr int kOutBits = static_cast<int>(N * sizeof(T) * 8);
+    static_assert(kHalfBits > 0 && kHalfBits < 64, "InsertUpper sub-full half bits in (0,64)");
+    static_assert(kOutBits > 0 && kOutBits <= 64, "InsertUpper sub-full out bits in (0,64]");
+    constexpr std::uint64_t kHalfMask =
+        (std::uint64_t{1} << kHalfBits) - 1;
+    constexpr std::uint64_t kOutMask =
+        (kOutBits == 64) ? ~std::uint64_t{0} : ((std::uint64_t{1} << kOutBits) - 1);
+    const std::uint64_t v_lo =
+        vget_lane_u64(detail::d_to_u64<T>(v.raw), 0) & kHalfMask;
+    const std::uint64_t hi_bits =
+        (vget_lane_u64(detail::d_to_u64<T>(hi.raw), 0) & kHalfMask) << kHalfBits;
+    out.raw = detail::d_from_u64<T>(vdup_n_u64((v_lo | hi_bits) & kOutMask));
+  } else {
+    out = detail::from_q<decltype(out)>(
+        detail::neon_combine_halves<T>(detail::to_q(v), detail::to_q(hi)));
+  }
+  return out;
 }
 template <typename DstT, std::size_t NDst, int kPow2, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<DstT, NDst> ResizeBitCast(Simd<DstT, NDst, kPow2>,
