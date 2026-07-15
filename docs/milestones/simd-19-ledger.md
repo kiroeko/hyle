@@ -25,7 +25,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C5 | 比较族 Eq/Ne/Gt/Ge/Lt/Le D-form | done | ✓ | 266/266 | — | c8314bd | kIsDBand: vceq/vcgt/vcge/vclt/vcle_*; Ne=Eq+vmvn_*/veor_u64; 64-bit D 探针 EXISTS |
 | C6 | MaskFromVec/MaskFromNormalizedVec/VecFromMask D | done | ✓ | 266/266 | — | 69649f3 | kIsDBand: vreinterpret_* + MaskFromVec vshr_n_s*; Q 原样; 探针 EXISTS |
 | C7 | mask And/Or/Xor/AndNot/Not D-form | done | ✓ | 266/266 | — | aad325a | kIsDBand: vand/vorr/veor/vbic_*; Not=vmvn_*/veor_u64; helpers 仍 Q; ExclusiveNeither 组合 |
-| C8 | PromoteLowerTo/PromoteTo partial 输入 D 路 | done | ✓ | 266/266 | PromoteMaskTo i16→i32: HYLE≈0.08 / HWY≈0.08 (~1.00) | (本提交) | PromoteLowerTo D: vmovl_*(v.raw)+vget_low_*; Q 原样; 探针 EXISTS |
+| C8 | PromoteLowerTo/PromoteTo partial 输入 D 路 | done | ✓ | 266/266 | PromoteMaskTo i16→i32: HYLE≈0.08 / HWY≈0.08 (~1.00) | 99ceab4 | PromoteLowerTo D: vmovl_*(v.raw)+vget_low_*; Q 原样; 探针 EXISTS |
 | C9 | DemoteTo partial 输出 D 路 | todo | | | — | | |
 | C10 | 向量 And/Or/Xor/AndNot/Not D-form | todo | | | — | | |
 | C11 | GetLane/ExtractLane/InsertLane D-form | todo | | | — | | |
