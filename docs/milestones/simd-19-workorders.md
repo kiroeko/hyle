@@ -151,6 +151,54 @@ W4 额外闸门 **G3.5 穷举 oracle**:边界 op 的专项测试必须先于实�
 - 预算:≤1.5h;同一错误修复 ≤2 次。
 ```
 
+## §6a W0 卡片(高能力方执行;每步一个提交、每步全绿)
+
+### W0a 表示层 + 垫片(✅ 已完成,提交 `6414273`,2026-07-15)
+- 已落地:`RawNeonD/MaskRawNeonD` 10 型特化、`kIsDBand<T,N>`、`RawNeonNT/MaskRawNeonNT` 分档 alias、
+  33+ 条 `static_assert` 矩阵、`to_q(vec/mask)`/`from_q<V>(q)` 垫片(终态形式,现仅恒等分支实例化)。
+- 闸门实录:Mac 构建 exit 0、二进制 mtime 新、`hyle_simd_neon_test` 220/220 绿。行为零变化(未切换)。
+- 注意:垫片签名与计划文档的 `from_q<T,N>` 不同,实际是 **`from_q<decltype(x)>(expr)`**(目的类型化,
+  机械包裹时不需要局部类型知识)。后续卡片一律按此写。
+
+### W0b 机械包裹(脚本 + 人审 diff;完成后树仍绿、行为仍零变化)
+1. **先做 `.raw` 全量清点**(改代码前,产出清单存 oplab):
+   ```bash
+   grep -n "\.raw" include/hyle/simd/backend/neon.h > oplab/s19_raw_sites.txt   # ~650 处
+   grep -n "&[a-zA-Z_]*\.raw\|sizeof(.*raw" include/hyle/simd/backend/neon.h    # 危险点:取址/sizeof
+   grep -n "VecNeon<[^>]*>{\|VN<D>{\|MN<D>{" include/hyle/simd/backend/neon.h   # 绕过 .raw 的聚合初始化
+   ```
+   **三类危险点必须逐条人工定处置**(flip 后 `sizeof(raw)`/取址语义会变!):取址→改为
+   `auto q = detail::to_q(x); memcpy(…, &q, …)`;`sizeof(x.raw)`→按旧语义写死 16 并加注释;聚合
+   初始化→改 `detail::from_q<V>(…)`。
+2. 写变换脚本 `oplab/s19_wrap.py`,两条规则:
+   - R1(读):表达式位置的 `X.raw` → `detail::to_q(X)`(X 为标识符;函数已在 detail 内也写
+     `detail::to_q`,查找会命中封闭命名空间,两处都合法)。
+   - R2(写):语句 `X.raw = EXPR;` → `X = detail::from_q<decltype(X)>(EXPR);`(先匹配 R2 再 R1,
+     同一行读写共存时 R2 的右侧再走 R1)。
+   - **匹配不上的 `.raw` 一律不改,输出到例外报告**;人工处理后重跑,直到例外报告为空。
+3. 例外:`to_q`/`from_q`/`VecNeon`/`MaskNeon` 定义本身、W0a 新增区域,脚本跳过(行号白名单)。
+4. 闸门:①Mac 构建 + 220 gtest 绿;②**代码生成同一性抽查**(此步 raw 类型未变,垫片是恒等,二进制
+   应功能等价):`objdump -d` 抽 3 个热 op(Add/Gt/PromoteMaskTo 实例化处)与包裹前 diff,只准有
+   符号地址差,不准有指令差;③`HYLE_BENCH_ONLY=PromoteMaskTo` 单 op 数值记台账(应与现状同)。
+5. 提交:`refactor(simd): s19-w0b route all neon raw access through evergreen shims (no-op)`。
+
+### W0c 翻转(一行级 diff,风险集中点)
+1. `VecNeon<T,N>::raw` 类型改 `detail::RawNeonNT<T, N>`;`MaskNeon<T,N>::raw` 改
+   `detail::MaskRawNeonNT<T, N>`。
+2. 构建。预期两类残错:W0b 例外清单漏网的 `.raw` 直用;跨 T/N 传 raw 的边界 op。**只准用两个垫片修**,
+   禁止就地写 `vget_low`/`vcombine`(那是 W1+ 卡的事,W0c 只求"全部经垫片、语义等价")。
+3. 闸门:①220 gtest 绿(**这是 flip 的真闸门**);②Windows 侧 avx2/sse4/scalar gtest 复跑(理论无关,
+   要证明);③`HYLE_BENCH_ONLY=PromoteMaskTo` 数值记台账(允许移动,记录即可,不判定);④打 tag
+   `s19-w0-green`。
+4. 提交:`feat(simd): s19-w0c flip VecNeon/MaskNeon raw to N-banded types`。
+
+### W0d 生成 C1~C19 卡片正文 + 台账
+1. 逐卡打开 neon.h 现状(post-W0c)函数体,把**真实代码**贴进卡片 before 栏;写 after 形状
+   (`if constexpr (detail::kIsDBand<T,N>) … D-form … else … 原 Q-form …`,摘掉该函数内的垫片调用)。
+2. 每卡映射表逐条过 §3-5 存在性探针(尤其 64-bit lane 的 D-form 与 `vqtbl`/reduce 类,别凭记忆)。
+3. 初始化 `simd-19-ledger.md`(§7 格式,C1~C19 全 `todo`);卡片正文追加到本文档 §6 之后。
+4. 提交:`docs(simd): s19-w0d generate work cards C1-C19 + ledger`。
+
 ## §7 台账(`docs/milestones/simd-19-ledger.md`,W0 初始化)
 
 ```markdown
