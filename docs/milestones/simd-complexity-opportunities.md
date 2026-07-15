@@ -82,15 +82,23 @@ softmax 等仍可在算法内手写 double 累加(局部,不扩公开 API)。
 
 ## P1:真·工作量/深度复杂度类(需要新算法件)
 
-### P1-1. Scan / PrefixSum 家族(深度 O(n) → O(n/w·log w);Highway 没有的能力)
+### P1-1. Scan / PrefixSum 家族 — **已落地(2026-07-15)**
 
-**现状**:op 面与算法层均无任何 scan(已 grep 确认);Highway/xsimd 也不提供公开 scan——
-做成即**超越参考库的能力项**,不是追平。标量前缀和的本质瓶颈是串行依赖链(≈1 elem/cycle 封顶)。
+**目标**:深度 O(n) 串行链 → O(n/w·log w)(向量 Kogge-Stone + 跨向量 carry)。Highway/xsimd
+无公开 scan → 能力面超越。
 
-**机会**:向量内 Kogge-Stone(log w 步 shift+add)+ 跨向量 carry 广播,实测这类实现对 u32/f32
-有 **4~6×**。消费者现成:CompressStore 偏移流、CSR/直方图前缀、compute 的 cumulative 类。
-建议面:`inclusive_scan/exclusive_scan`(u32/i32/u64/f32/f64),泛型层组合即可(Shift/Add/
-Broadcast 全有),SVE/RVV 有原生倾向指令可后续特化。
+**已做**:`include/hyle/simd/scan.h` — `inclusive_scan` / `exclusive_scan`
+(u32/i32/u64/i64/f32/f64),多 ISA 核 + dispatch;`Scan.*` 15 tests Win/WSL PASS;
+`hyle_scan_bench`(1M u32 ones, in-place reseed)。
+
+**时间(1M u32, inclusive vs 标量链)**:
+| 平台 | scalar | HYLE | 结论 |
+|---|---|---|---|
+| Win MSVC | 1.48 ns/op | **0.39** | **~3.8× 更快** |
+| WSL GCC | 0.25 ns/op | 0.37 | **~0.68× 更慢**(GCC 标量链已贴 ~1/cycle 墙;SlideUp 开销大) |
+
+**残留(时间主线)**:AVX2/512 上 `ShiftLeftLanes` 不能做跨 128b 半部 KS(slli_si256 半寄存器),
+现用 `SlideUpLanes` 正确但慢;要 WSL 也赢需手写跨 lane shuffle 的 KS 步。能力面先上架。
 
 ### P1-2. 整数键 radix sort + argsort(O(n log n) → O(n·⌈k/8⌉) 线性)
 

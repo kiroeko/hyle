@@ -21,6 +21,9 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     ops/kernels_sse4.cc
     ops/kernels_avx2.cc
     ops/kernels_avx512.cc
+    scan/kernels_sse4.cc
+    scan/kernels_avx2.cc
+    scan/kernels_avx512.cc
     dtype/cvt_f16c.cc
     dtype/cvt_avx2.cc
     dtype/cvt_avx512bf16.cc
@@ -51,6 +54,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # (x86's per-op xsimd/Highway split was a speed pick; arm64 starts with one verified core).
   list(APPEND _simd_arch_sources
     ops/kernels_neon.cc
+    scan/kernels_neon.cc
     dtype/cvt_neon.cc
     math/transcendental_highway_neon.cc
     math/transcendental_xsimd_neon.cc
@@ -68,6 +72,8 @@ set(_hwy_support "${PROJECT_SOURCE_DIR}/third_party/highway/hwy/abort.cc")
 hyle_add_module(simd SOURCES
   ops/dispatch_ops.cc
   ops/kernels_scalar.cc
+  scan/scan_dispatch.cc
+  scan/kernels_scalar.cc
   dtype/dtype_dispatch.cc
   dtype/cvt_scalar.cc
   math/math_dispatch.cc
@@ -94,6 +100,9 @@ if(HYLE_SIMD_X64)
   hyle_set_isa(ops/kernels_sse4.cc SSE42)
   hyle_set_isa(ops/kernels_avx2.cc AVX2)
   hyle_set_isa(ops/kernels_avx512.cc AVX512)
+  hyle_set_isa(scan/kernels_sse4.cc SSE42)
+  hyle_set_isa(scan/kernels_avx2.cc AVX2)
+  hyle_set_isa(scan/kernels_avx512.cc AVX512)
   # f16c TU caps at AVX+F16C (NOT AVX2): F16C shipped with AVX on Ivy Bridge (no AVX2);
   # AVX2 would let the auto-vectorized tail emit an AVX2 int op that SIGILLs there. The
   # AVX_F16C tier encodes exactly that cap (see hyle_isa_flags).
@@ -116,6 +125,7 @@ elseif(HYLE_SIMD_ARM64)
   # Apple-Silicon build; this TU finally compiles it into the dispatched dot/saxpy path.
   # cvt_neon.cc adds fp16(native vcvt)/bf16(integer) batch conversions.
   hyle_set_isa(ops/kernels_neon.cc NEON)
+  hyle_set_isa(scan/kernels_neon.cc NEON)
   hyle_set_isa(dtype/cvt_neon.cc NEON)
 endif()
 
