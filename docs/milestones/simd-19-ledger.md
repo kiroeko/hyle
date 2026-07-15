@@ -33,7 +33,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C13 | half/combine 穷举 oracle 测试(先行) | done | ✓ | 276/276 绿基线(满宽 10); 子满宽 13 案 DISABLED_ 挂账 | — | 38e37d5(+红名单回挂) | 满宽×10 绿; 13 红=既有 N 盲 half/pad 债(非 s19 回归,批复#11); C14/C15 验收=DISABLED 转绿 |
 | C14 | LowerHalf/UpperHalf native D | done | ✓ | 276/276; also_run: 13 DISABLED 零 UpperHalf/LowerHalf 失败, 余 ZeroExtend/Insert 红=C15 | — | ebeec1e | 满宽 Q→vget_low/high; 子满宽 Lower=raw; Upper=vshr_n_u64(NH*sizeof*8); 批复#11 Upper 转绿验收 |
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | done | ✓ | 276/276; also_run HalfCombine 23/23 全绿(13 原 DISABLED 转绿) | — | bb92d29 | 满宽 vcombine; 子满宽 u64 mask+shift 显式清 pad; 批复#11 ZeroExtend/Insert 验收 |
-| C16 | Concat* partial 路径 | done | ✓ | 276/276; HalfCombine also_run 23/23 | ConcatEven i32: HYLE~0.07 / HWY~0.06 (~94–104%); full_bench 四 Concat* 仅 avx2 门控,NEON 无该段 | | D 档=Combine(Lower/UpperHalf); 满宽 Q store+reload 不动 |
+| C16 | Concat* partial 路径 | done | ✓ | 276/276; HalfCombine also_run 23/23 | ConcatEven i32: HYLE~0.07 / HWY~0.06 (~94–104%); full_bench 四 Concat* 仅 avx2 门控,NEON 无该段 | b131ea6 | D 档=Combine(Lower/UpperHalf); 满宽 Q store+reload 不动 |
 | C17 | ResizeBitCast partial 审计 | todo | | | — | | 低优 |
 | C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | todo | | | 记录 | | 判定=高能力方 |
 | C19 | 文档/矩阵回写 + cloc | todo | | | — | | 高能力方 |
