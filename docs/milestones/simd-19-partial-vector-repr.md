@@ -1,8 +1,9 @@
 # simd-19: 定宽后端的部分向量表示(partial-vector representation)
 
-> **状态**:规划中(2026-07-15 编)。触发自 NEON perf 收口:`PromoteMaskTo i16→i32` 稳定 0.575 输
+> **状态**:施工中(2026-07-15 编+拍板选 A)。触发自 NEON perf 收口:`PromoteMaskTo i16→i32` 稳定 0.575 输
 > Highway,根因不是单 op 的实现,而是**定宽后端把每个 `Vec<T,N>` 都当满宽寄存器**——部分标签(partial
 > tag,`N < 满 lane`)的 op 被迫在满宽上做再掰回。属架构级欠缺,单点改不动,故单列里程碑。
+> **决策:选方案 A(根治,VecNeon 按 N 选窄 D/Q raw 类型),分阶段施工——见 §五。**
 
 ## 一、问题陈述(what & why)
 
@@ -66,13 +67,61 @@ PromoteMaskTo 是 COLD op(mask 宽度桥接,~0.5ns 绝对,非内循环)。0.575 
 - **收益**:零风险零工作量。
 - **代价**:留一个真输在清单;违背"有 Highway 参考只能平不能输"。
 
-## 五、建议
+## 五、决策:选 A(根治),分阶段施工(2026-07-15 用户拍板)
 
-**倾向选项 B 先做(窄手术解 PromoteMaskTo),同时评估选项 A 的 ROI**:
-- B 能立刻把最后一个"可修"NEON 真输清零(ScatterIndexN 是编译器寄存器类微差、非表示问题,另论),风险可控。
-- A 是根治但翻倍实现面,ROI 取决于**未来还有多少吃部分标签的热点 op**。当前只有 PromoteMaskTo 一个已量化
-  受损,其余同类都 TIE。若未来 partial-tag 消费者增多(如更多 mask 宽度桥接、half-vector widen 链),再上 A。
-- 先做 B + 在本文登记 A 的完整设计,等消费者信号。
+### 5.0 调研结论(动手前必读——决定施工形态)
+
+深读 `neon.h`(3297 行 / 270 op / 961 个 Q-form intrinsic / 650 处 `.raw`)与 Highway `arm_neon-inl.h` 后,
+三个决定施工形态的事实:
+
+1. **Highway 靠宏生成整个后端**:`Raw128<T,N>` 按 N 分档(满宽→`int16x8_t` Q,任何更窄→`int16x4_t` D),
+   每个 op 由 `HWY_NEON_DEF_FUNCTION_*` 宏对每个 (type × size) 自动展开——size-8 发 `vaddq_s16`、size-4/2/1
+   发 `vadd_s16`(`prefix##q` vs `prefix`)。**partial 向量能统一处理,正因为宏把 D/Q 两形都生成了。**
+2. **HYLE 刻意没走宏路**:每 op 手写 `if constexpr(T)` + 硬编 Q-form(`vaddq_*`),换来可读、可断点、贴硬件
+   (章程"不 vendor Highway 宏体系"的理由)。代价就是现在:没有 D-form,partial 只能满宽物化。
+3. **HYLE 现有 `Half` 是"满寄存器存低 64"**(neon.h:2811 明确注释):partial 向量 = 满 128-bit 寄存器、
+   高 64 位零/垃圾,`LowerHalf`/`UpperHalf`/`Combine` 用 `vget_low`+`vcombine` 在这个约定下搬运。**A 会打破
+   这个不变量**——partial 变成真 D 寄存器,这三个 half↔full 边界 op 要从"低 64 约定"改成真 D↔Q 转换。
+
+**故 A 的本质** = 给 HYLE 的 NEON op 面补上 D-form 维度。不照抄 Highway 的宏(违背章程),而是用**一个按 raw
+宽度分发的模板 helper**(如 `neon_bin<Qfn, Dfn>(a,b)`)把 D/Q 选择收敛到一处,避免 270 op × 2 的手写爆炸。
+
+### 5.1 分阶段施工计划
+
+**阶段 0 — 表示层骨架(高风险,先独立验证)**
+- `RawNeon<T,N>`(加 N 维):`N*sizeof(T) <= 8` → D 类型(`int16x4_t`/`int8x8_t`/`float32x2_t`/…),否则 Q。
+  64-bit lane(i64/u64/f64)N=1 → `int64x1_t` 等;N=2 → Q。
+- `MaskRawNeon<T,N>` 同步加 N 维(mask 是同宽无符号)。
+- `VecNeon<T,N>::raw` / `MaskNeon<T,N>::raw` 类型随之变。
+- **闸门**:此时全 backend 编不过(所有 op 硬编 Q-form 与新 raw 类型冲突)——预期。阶段 0 只验证 traits 本身
+  (`static_assert` raw 类型正确)+ 设计好 `neon_bin`/`neon_un` 宽度分发 helper 的签名。
+
+**阶段 1 — 宽度分发 helper + 批量迁移简单算术/位/比较 op**
+- `neon_bin<QFn,DFn>(a,b)` / `neon_un<QFn,DFn>(a)`:按 `sizeof(raw)==16` 选 Q 或 D 分支(constexpr)。
+- 迁移 Add/Sub/Mul/Min/Max/And/Or/Xor/AndNot/Neg/Abs/比较族/移位——这些 D/Q intrinsic 一一对应(`vaddq`↔`vadd`),
+  是机械迁移,量最大但最规整。逐 op 编过 + 现有 gtest 该 op 项绿。
+
+**阶段 2 — half↔full 边界 op 改真 D↔Q**
+- `LowerHalf`/`UpperHalf`/`Combine`/`ZeroExtendVector`/`Concat*`:从"满寄存器存低 64"约定改成真 D 结果 /
+  D→Q 组合。这是最容易出正确性 bug 的一批,逐 op 穷举对拍标量 oracle。
+
+**阶段 3 — 无 D-form 的 op(reduce/table/gather/特殊)兜底**
+- 部分 op 无 D-form intrinsic 或 D-form 语义不同(如跨 lane reduce、vqtbl 只有 Q)。这些:partial 输入先
+  `vcombine`(或保持 Q)、满宽做、必要时窄回。**保证正确**,性能不追(它们本就不是 partial 热点)。
+
+**阶段 4 — 收口验证**
+- PromoteMaskTo 0.575→TIE(校准);全量 op_parity 三 TU 复跑防复合回归;三平台 gtest(NEON + SDE avx512 +
+  scalar);cloc 量增长写回;确认没越过"不 vendor Highway"的行数警戒线(逼近 Highway 每-target 量级就是丧失
+  了不 vendor 的理由——见 simd-design §229)。
+
+**x86 侧**:同样表示缺失,但 x86 partial 受损未量化(PromoteMaskTo x86 已 TIE)。**先只做 NEON**(受损已量化、
+D/Q 区分显式收益最大);x86 的 partial 表示改造视 NEON 完成后是否发现量化受损再定,不在本里程碑强做。
+
+### 5.2 风险与退出条件
+- **若阶段 1 的 `neon_bin` 迁移使行数/复杂度逼近 Highway 宏体系量级** → 停下重估:要么接受"其实就该 vendor
+  Highway NEON"的结论,要么退回选项 B(窄手术)。行数警戒线是硬约束(章程)。
+- **若阶段 2 的 half↔full 改造引入难缠正确性 bug** → 该边界可保守用 `vcombine` 满宽兜底(牺牲该 op 的 partial
+  性能、保正确),不阻塞整体。
 
 ## 六、验收(无论选哪个)
 
