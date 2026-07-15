@@ -1160,17 +1160,31 @@ HYLE_FORCE_INLINE VecNeon<DstT, N> RoundToInt(Simd<DstT, N, 0>, VecNeon<SrcT, N>
 // vmovl_* widens the low half, vmovl_high_* (aarch64) widens the high half directly (no
 // separate vget_high). Signed sign-extends, unsigned zero-extends. f32->f64 via vcvt_f64_f32
 // (low 2 lanes) / vcvt_high_f64_f32 (high 2).
+// simd-19 C8: D-band input is already the low half (raw is D). Use vmovl_*/vcvt_f64_f32
+// on v.raw directly (sshll), then vget_low_* because output byte-width == input (<=8 → D).
+// Q-band keeps to_q + vget_low + vmovl + from_q.
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<DstT, NDst> PromoteLowerTo(Simd<DstT, NDst, 0>, VecNeon<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteLowerTo widens, src 2x lanes");
   VecNeon<DstT, NDst> r;
-  if constexpr (std::is_same_v<SrcT, std::int8_t>) r = detail::from_q<decltype(r)>(vmovl_s8(vget_low_s8(detail::to_q(v))));
-  else if constexpr (std::is_same_v<SrcT, std::uint8_t>) r = detail::from_q<decltype(r)>(vmovl_u8(vget_low_u8(detail::to_q(v))));
-  else if constexpr (std::is_same_v<SrcT, std::int16_t>) r = detail::from_q<decltype(r)>(vmovl_s16(vget_low_s16(detail::to_q(v))));
-  else if constexpr (std::is_same_v<SrcT, std::uint16_t>) r = detail::from_q<decltype(r)>(vmovl_u16(vget_low_u16(detail::to_q(v))));
-  else if constexpr (std::is_same_v<SrcT, std::int32_t>) r = detail::from_q<decltype(r)>(vmovl_s32(vget_low_s32(detail::to_q(v))));
-  else if constexpr (std::is_same_v<SrcT, std::uint32_t>) r = detail::from_q<decltype(r)>(vmovl_u32(vget_low_u32(detail::to_q(v))));
-  else r = detail::from_q<decltype(r)>(vcvt_f64_f32(vget_low_f32(detail::to_q(v))));  // f32 -> f64
+  if constexpr (detail::kIsDBand<SrcT, NSrc>) {
+    // Input raw is D; vmovl widens the whole D register to Q; output is D-band (same byte width).
+    if constexpr (std::is_same_v<SrcT, std::int8_t>) r.raw = vget_low_s16(vmovl_s8(v.raw));
+    else if constexpr (std::is_same_v<SrcT, std::uint8_t>) r.raw = vget_low_u16(vmovl_u8(v.raw));
+    else if constexpr (std::is_same_v<SrcT, std::int16_t>) r.raw = vget_low_s32(vmovl_s16(v.raw));
+    else if constexpr (std::is_same_v<SrcT, std::uint16_t>) r.raw = vget_low_u32(vmovl_u16(v.raw));
+    else if constexpr (std::is_same_v<SrcT, std::int32_t>) r.raw = vget_low_s64(vmovl_s32(v.raw));
+    else if constexpr (std::is_same_v<SrcT, std::uint32_t>) r.raw = vget_low_u64(vmovl_u32(v.raw));
+    else r.raw = vget_low_f64(vcvt_f64_f32(v.raw));  // f32x2 D -> f64x1 D (low of f64x2)
+  } else {
+    if constexpr (std::is_same_v<SrcT, std::int8_t>) r = detail::from_q<decltype(r)>(vmovl_s8(vget_low_s8(detail::to_q(v))));
+    else if constexpr (std::is_same_v<SrcT, std::uint8_t>) r = detail::from_q<decltype(r)>(vmovl_u8(vget_low_u8(detail::to_q(v))));
+    else if constexpr (std::is_same_v<SrcT, std::int16_t>) r = detail::from_q<decltype(r)>(vmovl_s16(vget_low_s16(detail::to_q(v))));
+    else if constexpr (std::is_same_v<SrcT, std::uint16_t>) r = detail::from_q<decltype(r)>(vmovl_u16(vget_low_u16(detail::to_q(v))));
+    else if constexpr (std::is_same_v<SrcT, std::int32_t>) r = detail::from_q<decltype(r)>(vmovl_s32(vget_low_s32(detail::to_q(v))));
+    else if constexpr (std::is_same_v<SrcT, std::uint32_t>) r = detail::from_q<decltype(r)>(vmovl_u32(vget_low_u32(detail::to_q(v))));
+    else r = detail::from_q<decltype(r)>(vcvt_f64_f32(vget_low_f32(detail::to_q(v))));  // f32 -> f64
+  }
   return r;
 }
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
