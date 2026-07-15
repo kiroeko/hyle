@@ -35,6 +35,12 @@ HYLE_SIMD_API void tanh_f32_batch(const float* src, float* dst, std::size_t n) n
 // there). See math_dispatch.cc. Full tiering: x86 avx512(GCC/Clang)/avx2 + arm64 NEON + scalar.
 HYLE_SIMD_API void exp_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void log_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+// Narrow-contract f64 table cores: all exp lanes must be finite in [-700, 700]; all log lanes
+// must be finite normal positive values (>= DBL_MIN). This permits the ISA core to omit the full
+// API's exceptional-vector check when that is faster; all platforms retain the same table
+// polynomial/ULP bound. Exact src==dst aliasing is supported.
+HYLE_SIMD_API void exp_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
+HYLE_SIMD_API void log_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void tanh_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void sin_f64_batch(const double* src, double* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void cos_f64_batch(const double* src, double* dst, std::size_t n) noexcept;

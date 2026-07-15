@@ -334,6 +334,36 @@ HYLE_MATH_F64_HIGHWAY(log10)
 #undef HYLE_MATH_F64_HIGHWAY
 #undef HYLE_MATH_F64_HIGHWAY_BODY
 
+// P2-3 narrow contracts: caller guarantees all lanes are normal finite values in the documented
+// exp/log domains, so the ISA core may bypass the exceptional-vector screen. The table core and
+// tier dispatch remain identical to the full API; old x86 / unsupported hosts use scalar libm.
+void exp_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+#if !defined(_MSC_VER)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::exp_in_range_f64_highway_avx512(src, dst, n); return; }
+#endif
+  static const bool hw = have_avx2();
+  if (hw) { detail::exp_in_range_f64_highway_avx2(src, dst, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::exp_in_range_f64_highway_neon(src, dst, n); return;
+#endif
+  detail::exp_f64_scalar(src, dst, n);
+}
+void log_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+#if !defined(_MSC_VER)
+  static const bool hw512 = have_avx512();
+  if (hw512) { detail::log_in_range_f64_highway_avx512(src, dst, n); return; }
+#endif
+  static const bool hw = have_avx2();
+  if (hw) { detail::log_in_range_f64_highway_avx2(src, dst, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+  detail::log_in_range_f64_highway_neon(src, dst, n); return;
+#endif
+  detail::log_f64_scalar(src, dst, n);
+}
+
 // hypot f64 (binary, overflow-safe -> Highway all platforms). Same tiering.
 void hypot_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)

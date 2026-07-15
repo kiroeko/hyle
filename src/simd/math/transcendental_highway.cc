@@ -91,6 +91,29 @@ void log_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcep
   }
   for (; i < n; ++i) dst[i] = std::log(src[i]);
 }
+void exp_in_range_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w)
+    hn::StoreU(table_f64::ExpNormal(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::exp(src[i]);
+}
+void log_in_range_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept {
+#if defined(HYLE_OS_LINUX) && defined(HYLE_COMPILER_GCC)
+  // GCC AVX2 hoists every table constant across the gather loop, causing register spills and a
+  // measured 25% regression (1.02–1.07 vs 0.77–0.85 ns/op). The full core's branch-local table
+  // block avoids that allocation; keep it until a no-check GCC form actually wins.
+  log_f64_highway_avx2(src, dst, n);
+  return;
+#endif
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w)
+    hn::StoreU(table_f64::LogNormal(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::log(src[i]);
+}
 void tanh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept {
   const hn::ScalableTag<double> d;
   const std::size_t w = hn::Lanes(d);

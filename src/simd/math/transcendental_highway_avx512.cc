@@ -143,6 +143,22 @@ void log_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexc
   }
   for (; i < n; ++i) dst[i] = std::log(src[i]);
 }
+void exp_in_range_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w)
+    hn::StoreU(table_f64::ExpNormal(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::exp(src[i]);
+}
+void log_in_range_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
+  const hn::ScalableTag<double> d;
+  const std::size_t w = hn::Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w)
+    hn::StoreU(table_f64::LogNormal(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i < n; ++i) dst[i] = std::log(src[i]);
+}
 void tanh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
   const hn::ScalableTag<double> d;
   const std::size_t w = hn::Lanes(d);

@@ -112,6 +112,8 @@ void log_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
 void tanh_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept;
 void exp_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
 void log_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void exp_in_range_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
+void log_in_range_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
 void tanh_f64_highway_avx2(const double* src, double* dst, std::size_t n) noexcept;
 // f64 rest (avx2): Highway wins 10 (sin/cos/exp2/log2/atan/cbrt/expm1/log1p/asinh/acosh) + hypot;
 // xsimd wins erf; tgamma xsimd-only. lgamma stays scalar (vendor lane-mixing bug).
@@ -241,6 +243,8 @@ void sincos_f32_highway_avx512(const float* src, float* s, float* c, std::size_t
 // f64 8-wide Highway siblings (GCC/Clang only, MSVC-AVX3-broken). Highway wins 13 f64 ops.
 void exp_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
 void log_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void exp_in_range_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
+void log_in_range_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
 void tanh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
 void sin_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
 void cos_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept;
@@ -319,6 +323,8 @@ void hypot_f32_highway_neon(const float* a, const float* b, float* dst, std::siz
 // f64 stay scalar on arm64, mirroring the f32 policy of not pulling xsimd-NEON for gamma-family).
 void exp_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
 void log_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void exp_in_range_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
+void log_in_range_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
 void tanh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
 void sin_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;
 void cos_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept;

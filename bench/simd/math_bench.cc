@@ -359,10 +359,13 @@ int main() {
     Op op;
     std::vector<double> src;
     void (*hyle_batch)(const double*, double*, std::size_t) noexcept;
+    void (*hyle_in_range)(const double*, double*, std::size_t) noexcept = nullptr;
   };
   Case64 cases64[] = {
-      {"exp f64 (4096)", Op::kExp, gen64(kN, -10.0, 10.0, 31), &hyle::simd::exp_f64_batch},
-      {"log f64 (4096)", Op::kLog, gen64(kN, 0.01, 100.0, 32), &hyle::simd::log_f64_batch},
+      {"exp f64 (4096)", Op::kExp, gen64(kN, -10.0, 10.0, 31), &hyle::simd::exp_f64_batch,
+       &hyle::simd::exp_in_range_f64_batch},
+      {"log f64 (4096)", Op::kLog, gen64(kN, 0.01, 100.0, 32), &hyle::simd::log_f64_batch,
+       &hyle::simd::log_in_range_f64_batch},
       {"tanh f64 (4096)", Op::kTanh, gen64(kN, -5.0, 5.0, 33), &hyle::simd::tanh_f64_batch},
       {"sin f64 (4096)", Op::kSin, gen64(kN, -3.14, 3.14, 34), &hyle::simd::sin_f64_batch},
       {"cos f64 (4096)", Op::kCos, gen64(kN, -3.14, 3.14, 35), &hyle::simd::cos_f64_batch},
@@ -387,6 +390,12 @@ int main() {
       c.hyle_batch(c.src.data(), dst64.data(), kN);
       nb::doNotOptimizeAway(dst64.data());
     });
+    if (c.hyle_in_range) {
+      b.run("HYLE *_f64_in_range (vectorized)", [&] {
+        c.hyle_in_range(c.src.data(), dst64.data(), kN);
+        nb::doNotOptimizeAway(dst64.data());
+      });
+    }
 #if defined(HYLE_BENCH_XSIMD)
     b.run("xsimd (same ISA SOTA)", [&] {
       xsimd_run64(c.op, c.src.data(), dst64.data(), kN);

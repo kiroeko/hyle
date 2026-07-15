@@ -160,6 +160,25 @@ std::vector<double> f64_log_ulp_inputs() {
   return in;
 }
 
+std::vector<double> f64_exp_in_range_inputs() {
+  std::vector<double> in = {-700.0, -1.0, -0.0, 0.0, 1.0, 700.0};
+  std::mt19937_64 rng(0xE6F64A11ULL);
+  std::uniform_real_distribution<double> dist(-700.0, 700.0);
+  for (std::size_t i = 0; i < 16384; ++i) in.push_back(dist(rng));
+  return in;
+}
+
+std::vector<double> f64_log_in_range_inputs() {
+  std::vector<double> in = {std::numeric_limits<double>::min(), 0.5, 1.0, 2.0,
+                            std::numeric_limits<double>::max()};
+  std::mt19937_64 rng(0x10AF64A11ULL);
+  std::uniform_real_distribution<double> exponent(-1022.0, 1022.0);
+  std::uniform_real_distribution<double> mantissa(1.0, 2.0);
+  for (std::size_t i = 0; i < 16384; ++i)
+    in.push_back(std::scalbn(mantissa(rng), static_cast<int>(exponent(rng))));
+  return in;
+}
+
 }  // namespace
 
 TEST(Math, F64ExpLogFullDomainUlp) {
@@ -167,6 +186,22 @@ TEST(Math, F64ExpLogFullDomainUlp) {
   // compiler/FMA differences; any P2-1 replacement must tighten this gate rather than weaken it.
   check_f64_ulp(hyle::simd::exp_f64_batch, std::exp, f64_exp_ulp_inputs(), 4, "exp_f64");
   check_f64_ulp(hyle::simd::log_f64_batch, std::log, f64_log_ulp_inputs(), 4, "log_f64");
+}
+
+TEST(Math, F64ExpLogInRangeUlpAndAlias) {
+  const auto exp_in = f64_exp_in_range_inputs();
+  const auto log_in = f64_log_in_range_inputs();
+  check_f64_ulp(hyle::simd::exp_in_range_f64_batch, std::exp, exp_in, 4, "exp_in_range_f64");
+  check_f64_ulp(hyle::simd::log_in_range_f64_batch, std::log, log_in, 4, "log_in_range_f64");
+
+  auto inplace = exp_in;
+  hyle::simd::exp_in_range_f64_batch(inplace.data(), inplace.data(), inplace.size());
+  for (std::size_t i = 0; i < inplace.size(); ++i)
+    EXPECT_LE(f64_ulp_distance(inplace[i], std::exp(exp_in[i])), 4U) << "exp in-place i=" << i;
+  inplace = log_in;
+  hyle::simd::log_in_range_f64_batch(inplace.data(), inplace.data(), inplace.size());
+  for (std::size_t i = 0; i < inplace.size(); ++i)
+    EXPECT_LE(f64_ulp_distance(inplace[i], std::log(log_in[i])), 4U) << "log in-place i=" << i;
 }
 
 // The rest of the f64 transcendentals (Highway wins all but erf; tgamma xsimd; lgamma scalar).

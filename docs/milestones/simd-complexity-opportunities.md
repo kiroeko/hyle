@@ -223,10 +223,31 @@ WSL `16.44/18.04`、Mac `13.46/15.20 ns/step`；f32 同样量级。它证明 ben
 
 这条 bench 留作 P2-2 的回归闸门：只有新核先在链式行证明收益，才允许讨论 Estrin 改写。
 
-### P2-3. 数学函数 InRange 分层
+### P2-3. f64 exp/log InRange 分层 — **已落地(2026-07-16)**
 
-`exp_in_range/log_in_range`(调用方保证无 overflow/denormal/非正数)砍掉边界处理 blend 层,
-house 惯例(InRange 家族)现成,顺手级,预期 10~20%。
+**公开面**:`exp_in_range_f64_batch` / `log_in_range_f64_batch`。前者要求每 lane 为
+`[-700,700]` 内有限数；后者要求每 lane 为有限、normal、正数(`>= DBL_MIN`)；两者都支持
+`src == dst`。同 `hypot_in_range_f32_batch`，这是调用方承诺更窄 domain 的 fast API；实现可在
+codegen 获益时移除检查，WSL/GCC 的反例见下。
+
+**实现/精度**:窄域 exp/log 在 ISA codegen 可获益时直接进 P2-1 N=128 表核、跳过
+exceptional-vector 检查；scalar tier仍走 libm，WSL/GCC log 的例外见下。`Math.F64ExpLogInRangeUlpAndAlias`
+覆盖 16K 正常有限随机、边界、ULP 与 in-place；Win/WSL/Mac 与 WSL SDE `-future` 的 AVX-512
+派发均为 `exp ≤2 ULP`、`log ≤1 ULP`。
+
+**五次 same-ISA 中位时间**(4096 正常有限输入，常规 / InRange，`ns/op`):
+
+| 平台 | exp | exp 收益 | log | log 收益 |
+|---|---:|---:|---:|---:|
+| Win MSVC AVX2 | 0.45 / **0.30** | **1.50×** | 0.71 / **0.56** | **1.27×** |
+| WSL GCC14 AVX2 | 0.44 / **0.28** | **1.57×** | 0.81 / **0.81** | 持平 |
+| Mac AppleClang NEON | 0.70 / **0.48** | **1.46×** | 0.97 / **0.65** | **1.49×** |
+
+**WSL log 的编译器分流**:直写 no-check table loop 连续五次为 `1.02–1.07 ns/op`，比完整核
+`0.77–0.85` 慢约 25%。反汇编显示 GCC 把所有 table/poly 常量跨 gather loop 常驻，寄存器压力
+抵消了省下的 check；Windows/Mac 不出现此形态。故 `HYLE_OS_LINUX && HYLE_COMPILER_GCC` 的
+`log_in_range_f64_batch` 复用完整 table core：契约仍成立且零回退，其他平台走无检查快核。不是
+把一个在 Linux 更慢的"fast" API 硬上架。
 
 ---
 
