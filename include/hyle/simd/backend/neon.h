@@ -818,31 +818,71 @@ HYLE_FORCE_INLINE RawNeonT<T> from_u32(uint32x4_t v) noexcept {
   else if constexpr (std::is_same_v<T, std::uint64_t>) return vreinterpretq_u64_u32(v);
   else return v;  // uint32_t
 }
+// simd-19 C10: D-band bitwise hub (64-bit, uint32x2_t), mirror of to_u32/from_u32.
+template <typename T>
+HYLE_FORCE_INLINE uint32x2_t to_u32_d(typename RawNeonD<T>::type v) noexcept {
+  if constexpr (std::is_same_v<T, float>) return vreinterpret_u32_f32(v);
+  else if constexpr (std::is_same_v<T, double>) return vreinterpret_u32_f64(v);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vreinterpret_u32_s8(v);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vreinterpret_u32_u8(v);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vreinterpret_u32_s16(v);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vreinterpret_u32_u16(v);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vreinterpret_u32_s32(v);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vreinterpret_u32_s64(v);
+  else if constexpr (std::is_same_v<T, std::uint64_t>) return vreinterpret_u32_u64(v);
+  else return v;  // uint32_t
+}
+template <typename T>
+HYLE_FORCE_INLINE typename RawNeonD<T>::type from_u32_d(uint32x2_t v) noexcept {
+  if constexpr (std::is_same_v<T, float>) return vreinterpret_f32_u32(v);
+  else if constexpr (std::is_same_v<T, double>) return vreinterpret_f64_u32(v);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vreinterpret_s8_u32(v);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vreinterpret_u8_u32(v);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vreinterpret_s16_u32(v);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vreinterpret_u16_u32(v);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vreinterpret_s32_u32(v);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vreinterpret_s64_u32(v);
+  else if constexpr (std::is_same_v<T, std::uint64_t>) return vreinterpret_u64_u32(v);
+  else return v;  // uint32_t
+}
 }  // namespace detail
 
+// simd-19 C10: D-band vector bitwise via vand/vorr/veor/vbic_u32 on D hub; Q keeps q-form.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> And(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   VecNeon<T, N> r;
-  r = detail::from_q<decltype(r)>(detail::from_u32<T>(vandq_u32(detail::to_u32<T>(detail::to_q(a)), detail::to_u32<T>(detail::to_q(b)))));
+  if constexpr (detail::kIsDBand<T, N>)
+    r.raw = detail::from_u32_d<T>(vand_u32(detail::to_u32_d<T>(a.raw), detail::to_u32_d<T>(b.raw)));
+  else
+    r = detail::from_q<decltype(r)>(detail::from_u32<T>(vandq_u32(detail::to_u32<T>(detail::to_q(a)), detail::to_u32<T>(detail::to_q(b)))));
   return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Or(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   VecNeon<T, N> r;
-  r = detail::from_q<decltype(r)>(detail::from_u32<T>(vorrq_u32(detail::to_u32<T>(detail::to_q(a)), detail::to_u32<T>(detail::to_q(b)))));
+  if constexpr (detail::kIsDBand<T, N>)
+    r.raw = detail::from_u32_d<T>(vorr_u32(detail::to_u32_d<T>(a.raw), detail::to_u32_d<T>(b.raw)));
+  else
+    r = detail::from_q<decltype(r)>(detail::from_u32<T>(vorrq_u32(detail::to_u32<T>(detail::to_q(a)), detail::to_u32<T>(detail::to_q(b)))));
   return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Xor(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   VecNeon<T, N> r;
-  r = detail::from_q<decltype(r)>(detail::from_u32<T>(veorq_u32(detail::to_u32<T>(detail::to_q(a)), detail::to_u32<T>(detail::to_q(b)))));
+  if constexpr (detail::kIsDBand<T, N>)
+    r.raw = detail::from_u32_d<T>(veor_u32(detail::to_u32_d<T>(a.raw), detail::to_u32_d<T>(b.raw)));
+  else
+    r = detail::from_q<decltype(r)>(detail::from_u32<T>(veorq_u32(detail::to_u32<T>(detail::to_q(a)), detail::to_u32<T>(detail::to_q(b)))));
   return r;
 }
-// AndNot(a,b) = ~a & b (Highway order). NEON vbicq(x,y) = x & ~y, so swap args: vbicq(b,a).
+// AndNot(a,b) = ~a & b (Highway order). NEON vbic(x,y) = x & ~y, so swap args: vbic(b,a).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> AndNot(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   VecNeon<T, N> r;
-  r = detail::from_q<decltype(r)>(detail::from_u32<T>(vbicq_u32(detail::to_u32<T>(detail::to_q(b)), detail::to_u32<T>(detail::to_q(a)))));
+  if constexpr (detail::kIsDBand<T, N>)
+    r.raw = detail::from_u32_d<T>(vbic_u32(detail::to_u32_d<T>(b.raw), detail::to_u32_d<T>(a.raw)));
+  else
+    r = detail::from_q<decltype(r)>(detail::from_u32<T>(vbicq_u32(detail::to_u32<T>(detail::to_q(b)), detail::to_u32<T>(detail::to_q(a)))));
   return r;
 }
 
@@ -2520,18 +2560,33 @@ HYLE_FORCE_INLINE VecNeon<std::uint32_t, N / 4> SumsOf4(VecNeon<std::uint8_t, N>
 }
 
 // ---- reductions (aarch64 horizontal vaddvq/vminvq/vmaxvq) ----------------------------
+// simd-19 C11: D-band GetLane uses vget_lane_*(raw, 0); Q keeps vgetq_lane + to_q.
+// ExtractLane/InsertLane live in vec.h (store+reload generic) — not in this backend.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE T GetLane(VecNeon<T, N> v) noexcept {
-  if constexpr (std::is_same_v<T, float>) return vgetq_lane_f32(detail::to_q(v), 0);
-  else if constexpr (std::is_same_v<T, double>) return vgetq_lane_f64(detail::to_q(v), 0);
-  else if constexpr (std::is_same_v<T, std::int8_t>) return vgetq_lane_s8(detail::to_q(v), 0);
-  else if constexpr (std::is_same_v<T, std::uint8_t>) return vgetq_lane_u8(detail::to_q(v), 0);
-  else if constexpr (std::is_same_v<T, std::int16_t>) return vgetq_lane_s16(detail::to_q(v), 0);
-  else if constexpr (std::is_same_v<T, std::uint16_t>) return vgetq_lane_u16(detail::to_q(v), 0);
-  else if constexpr (std::is_same_v<T, std::int32_t>) return vgetq_lane_s32(detail::to_q(v), 0);
-  else if constexpr (std::is_same_v<T, std::uint32_t>) return vgetq_lane_u32(detail::to_q(v), 0);
-  else if constexpr (std::is_same_v<T, std::int64_t>) return vgetq_lane_s64(detail::to_q(v), 0);
-  else return vgetq_lane_u64(detail::to_q(v), 0);  // u64
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (std::is_same_v<T, float>) return vget_lane_f32(v.raw, 0);
+    else if constexpr (std::is_same_v<T, double>) return vget_lane_f64(v.raw, 0);
+    else if constexpr (std::is_same_v<T, std::int8_t>) return vget_lane_s8(v.raw, 0);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) return vget_lane_u8(v.raw, 0);
+    else if constexpr (std::is_same_v<T, std::int16_t>) return vget_lane_s16(v.raw, 0);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) return vget_lane_u16(v.raw, 0);
+    else if constexpr (std::is_same_v<T, std::int32_t>) return vget_lane_s32(v.raw, 0);
+    else if constexpr (std::is_same_v<T, std::uint32_t>) return vget_lane_u32(v.raw, 0);
+    else if constexpr (std::is_same_v<T, std::int64_t>) return vget_lane_s64(v.raw, 0);
+    else return vget_lane_u64(v.raw, 0);
+  } else {
+    if constexpr (std::is_same_v<T, float>) return vgetq_lane_f32(detail::to_q(v), 0);
+    else if constexpr (std::is_same_v<T, double>) return vgetq_lane_f64(detail::to_q(v), 0);
+    else if constexpr (std::is_same_v<T, std::int8_t>) return vgetq_lane_s8(detail::to_q(v), 0);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) return vgetq_lane_u8(detail::to_q(v), 0);
+    else if constexpr (std::is_same_v<T, std::int16_t>) return vgetq_lane_s16(detail::to_q(v), 0);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) return vgetq_lane_u16(detail::to_q(v), 0);
+    else if constexpr (std::is_same_v<T, std::int32_t>) return vgetq_lane_s32(detail::to_q(v), 0);
+    else if constexpr (std::is_same_v<T, std::uint32_t>) return vgetq_lane_u32(detail::to_q(v), 0);
+    else if constexpr (std::is_same_v<T, std::int64_t>) return vgetq_lane_s64(detail::to_q(v), 0);
+    else return vgetq_lane_u64(detail::to_q(v), 0);  // u64
+  }
 }
 namespace detail {
 // Scalar fallback for reductions that lack a clean across-vector NEON reduce for the lane
@@ -3036,20 +3091,35 @@ HYLE_FORCE_INLINE VecNeon<T, N> TrailingZeroCount(VecNeon<T, N> v) noexcept {
   // handles it); all widths correct (x==0 -> reversed 0 -> LZCnt = bit width).
   return LeadingZeroCount(ReverseBits(v));
 }
+// simd-19 C10: Not via all-ones xor; D-band uses vdup_n_u8(0xFF) D raw, Q keeps q path.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Not(VecNeon<T, N> v) noexcept {
-  VecNeon<T, N> ones;  // all-ones bit pattern via a 16-byte 0xFF dup reinterpreted to T's raw
-  const uint8x16_t all = vdupq_n_u8(0xFF);
-  if constexpr (std::is_same_v<T, float>) ones = detail::from_q<decltype(ones)>(vreinterpretq_f32_u8(all));
-  else if constexpr (std::is_same_v<T, double>) ones = detail::from_q<decltype(ones)>(vreinterpretq_f64_u8(all));
-  else if constexpr (std::is_same_v<T, std::int8_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_s8_u8(all));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) ones = detail::from_q<decltype(ones)>(all);
-  else if constexpr (std::is_same_v<T, std::int16_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_s16_u8(all));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_u16_u8(all));
-  else if constexpr (std::is_same_v<T, std::int32_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_s32_u8(all));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_u32_u8(all));
-  else if constexpr (std::is_same_v<T, std::int64_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_s64_u8(all));
-  else ones = detail::from_q<decltype(ones)>(vreinterpretq_u64_u8(all));  // u64
+  VecNeon<T, N> ones;
+  if constexpr (detail::kIsDBand<T, N>) {
+    const uint8x8_t all = vdup_n_u8(0xFF);
+    if constexpr (std::is_same_v<T, float>) ones.raw = vreinterpret_f32_u8(all);
+    else if constexpr (std::is_same_v<T, double>) ones.raw = vreinterpret_f64_u8(all);
+    else if constexpr (std::is_same_v<T, std::int8_t>) ones.raw = vreinterpret_s8_u8(all);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) ones.raw = all;
+    else if constexpr (std::is_same_v<T, std::int16_t>) ones.raw = vreinterpret_s16_u8(all);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) ones.raw = vreinterpret_u16_u8(all);
+    else if constexpr (std::is_same_v<T, std::int32_t>) ones.raw = vreinterpret_s32_u8(all);
+    else if constexpr (std::is_same_v<T, std::uint32_t>) ones.raw = vreinterpret_u32_u8(all);
+    else if constexpr (std::is_same_v<T, std::int64_t>) ones.raw = vreinterpret_s64_u8(all);
+    else ones.raw = vreinterpret_u64_u8(all);
+  } else {
+    const uint8x16_t all = vdupq_n_u8(0xFF);
+    if constexpr (std::is_same_v<T, float>) ones = detail::from_q<decltype(ones)>(vreinterpretq_f32_u8(all));
+    else if constexpr (std::is_same_v<T, double>) ones = detail::from_q<decltype(ones)>(vreinterpretq_f64_u8(all));
+    else if constexpr (std::is_same_v<T, std::int8_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_s8_u8(all));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) ones = detail::from_q<decltype(ones)>(all);
+    else if constexpr (std::is_same_v<T, std::int16_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_s16_u8(all));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_u16_u8(all));
+    else if constexpr (std::is_same_v<T, std::int32_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_s32_u8(all));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_u32_u8(all));
+    else if constexpr (std::is_same_v<T, std::int64_t>) ones = detail::from_q<decltype(ones)>(vreinterpretq_s64_u8(all));
+    else ones = detail::from_q<decltype(ones)>(vreinterpretq_u64_u8(all));  // u64
+  }
   return Xor(v, ones);
 }
 template <typename T, std::size_t N>

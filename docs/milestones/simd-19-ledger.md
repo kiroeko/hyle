@@ -27,8 +27,8 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C7 | mask And/Or/Xor/AndNot/Not D-form | done | ✓ | 266/266 | — | aad325a | kIsDBand: vand/vorr/veor/vbic_*; Not=vmvn_*/veor_u64; helpers 仍 Q; ExclusiveNeither 组合 |
 | C8 | PromoteLowerTo/PromoteTo partial 输入 D 路 | done | ✓ | 266/266 | PromoteMaskTo i16→i32: HYLE≈0.08 / HWY≈0.08 (~1.00) | 99ceab4 | PromoteLowerTo D: vmovl_*(v.raw)+vget_low_*; Q 原样; 探针 EXISTS |
 | C9 | DemoteTo partial 输出 D 路 | done | ✓ | 266/266 | — | 734e6a6 | D 出: vqmovn/vcvt(vcombine(a.raw,b.raw)); Q 原样双 vqmovn+vcombine+from_q |
-| C10 | 向量 And/Or/Xor/AndNot/Not D-form | todo | | | — | | |
-| C11 | GetLane/ExtractLane/InsertLane D-form | todo | | | — | | |
+| C10 | 向量 And/Or/Xor/AndNot/Not D-form | done | ✓ | 266/266 | — | (本提交) | D: to_u32_d/from_u32_d+vand/vorr/veor/vbic_u32; Not=vdup_n_u8 FF xor; Q 原样 |
+| C11 | GetLane/ExtractLane/InsertLane D-form | done | ✓ | 266/266 | — | (本提交) | GetLane: vget_lane_*(raw,0); Extract/Insert 在 vec.h 泛型 store+reload 未动 |
 | C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | todo | | | 记录 | | 判定=高能力方 |
 | C13 | half/combine 穷举 oracle 测试(先行) | todo | | | — | | 只新增测试文件 |
 | C14 | LowerHalf/UpperHalf native D | todo | | | — | | C13 先绿 |
