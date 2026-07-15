@@ -20,10 +20,12 @@ using hyle::simd::add_f32;
 using hyle::simd::add_f64;
 using hyle::simd::best_isa;
 using hyle::simd::dot_f32;
+using hyle::simd::dot_f32_accurate;
 using hyle::simd::dot_f64;
 using hyle::simd::Isa;
 using hyle::simd::saxpy_f32;
 using hyle::simd::saxpy_f64;
+using hyle::simd::sum_f32_accurate;
 
 namespace {
 std::vector<float> gen(std::size_t n, float base) {
@@ -164,4 +166,73 @@ TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
 // Dispatch is stable: repeated calls return the same cached selection (no re-resolve).
 TEST(Ops, ActiveVariantStable) {
   EXPECT_EQ(active_variant(), active_variant());
+}
+
+// P0-3: accurate f32 sum/dot accumulate in f64. Empty/small sizes match double ref tightly;
+// the ill-conditioned large+tiny interleave is the point of the accurate path (fast f32
+// tree-reduce loses the 1.0 terms once the running sum sits at 1e8-scale).
+TEST(Ops, SumF32AccurateMatchesDoubleRef) {
+  for (std::size_t n : {std::size_t{0}, std::size_t{1}, std::size_t{7}, std::size_t{8},
+                        std::size_t{31}, std::size_t{64}, std::size_t{1000}}) {
+    if (n == 0) {
+      EXPECT_EQ(sum_f32_accurate(nullptr, 0), 0.0f);
+      continue;
+    }
+    auto x = gen(n, 0.5f);
+    double ref = 0.0;
+    for (float v : x) ref += static_cast<double>(v);
+    const float got = sum_f32_accurate(x.data(), n);
+    // f64 intermediate should land within a few ulp of the double sum when cast to f32.
+    EXPECT_NEAR(got, static_cast<float>(ref), 1e-5f + static_cast<float>(std::abs(ref)) * 1e-7f)
+        << "n=" << n;
+  }
+}
+
+TEST(Ops, DotF32AccurateMatchesDoubleRef) {
+  for (std::size_t n : {std::size_t{0}, std::size_t{1}, std::size_t{7}, std::size_t{8},
+                        std::size_t{31}, std::size_t{64}, std::size_t{1000}}) {
+    if (n == 0) {
+      EXPECT_EQ(dot_f32_accurate(nullptr, nullptr, 0), 0.0f);
+      continue;
+    }
+    auto x = gen(n, 0.5f), y = gen(n, -0.3f);
+    const double ref = ref_dot(x, y);
+    const float got = dot_f32_accurate(x.data(), y.data(), n);
+    EXPECT_NEAR(got, static_cast<float>(ref), 1e-5f + static_cast<float>(std::abs(ref)) * 1e-7f)
+        << "n=" << n;
+  }
+}
+
+// Ill-conditioned: [1e8, 1, 1e8, 1, ...] — f32 running sum at ~1e8 cannot absorb +1.0
+// (mantissa 24 bits). Accurate path must recover the small terms; fast path may not.
+TEST(Ops, AccurateBeatsFastOnIllConditionedSum) {
+  constexpr std::size_t n = 4096;
+  std::vector<float> x(n);
+  for (std::size_t i = 0; i < n; ++i) x[i] = (i % 2 == 0) ? 1.0e8f : 1.0f;
+  double ref = 0.0;
+  for (float v : x) ref += static_cast<double>(v);
+  const float acc = sum_f32_accurate(x.data(), n);
+  // Reconstruct a "fast" f32 sequential sum (worst-case O(n·ε) floor for comparison).
+  float fast_seq = 0.0f;
+  for (float v : x) fast_seq += v;
+  // Accurate must be closer to the double reference than naive f32 sequential.
+  const double err_acc = std::abs(static_cast<double>(acc) - ref);
+  const double err_fast = std::abs(static_cast<double>(fast_seq) - ref);
+  EXPECT_LT(err_acc, err_fast) << "acc=" << acc << " fast=" << fast_seq << " ref=" << ref;
+  // And land near the exact count: n/2 * 1e8 + n/2 * 1.
+  EXPECT_NEAR(acc, static_cast<float>(ref), 1.0f);
+}
+
+TEST(Ops, AccurateBeatsFastOnIllConditionedDot) {
+  constexpr std::size_t n = 4096;
+  std::vector<float> x(n), y(n, 1.0f);
+  for (std::size_t i = 0; i < n; ++i) x[i] = (i % 2 == 0) ? 1.0e8f : 1.0f;
+  const double ref = ref_dot(x, y);
+  const float acc = dot_f32_accurate(x.data(), y.data(), n);
+  const float fast = dot_f32(x.data(), y.data(), n);
+  const double err_acc = std::abs(static_cast<double>(acc) - ref);
+  const double err_fast = std::abs(static_cast<double>(fast) - ref);
+  // Accurate must not be worse than fast on this shape; typically strictly better.
+  EXPECT_LE(err_acc, err_fast + 1.0) << "acc=" << acc << " fast=" << fast << " ref=" << ref;
+  EXPECT_NEAR(acc, static_cast<float>(ref), 1.0f);
 }
