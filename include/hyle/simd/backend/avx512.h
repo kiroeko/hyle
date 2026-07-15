@@ -2011,43 +2011,116 @@ HYLE_FORCE_INLINE Vec512<T, N> InterleaveOdd(Vec512<T, N> a, Vec512<T, N> b) noe
   for (std::size_t i = 0; i < N / 2; ++i) { d[2 * i] = sa[2 * i + 1]; d[2 * i + 1] = sb[2 * i + 1]; }
   return Load(Simd<T, N, 0>(), d);
 }
+// Slide1Up/Down + SlideUp/DownLanes: FULL 512-bit lane slides (cross all 128b quarters).
+// 32/64-bit: native valignd/q (alignr_epi32/64) — NOT store+reload, NOT per-128 slli.
+// Other widths keep the generic store+reload (no single-uop cross-lane permute for them).
 template <class D>
 HYLE_FORCE_INLINE detail::V512<D> Slide1Up(D dd, detail::V512<D> v) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T s[N]; alignas(64) T dst[N];
-  Store(v, dd, s);
-  dst[0] = T{0};
-  for (std::size_t i = 1; i < N; ++i) dst[i] = s[i - 1];
-  return Load(dd, dst);
+  if constexpr (sizeof(T) == 4 && N == 16) {
+    // alignr_epi32(a,b,imm): concat a|b (a high), shift right imm dwords, take low 512.
+    // alignr(v, 0, 15) => [0, v0, v1, ..., v14].
+    detail::V512<D> r;
+    const __m512i z = _mm512_setzero_si512();
+    const __m512i s = _mm512_alignr_epi32(detail::bitcast_raw_avx512<__m512i>(v.raw), z, 15);
+    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
+    return r;
+  } else if constexpr (sizeof(T) == 8 && N == 8) {
+    detail::V512<D> r;
+    const __m512i z = _mm512_setzero_si512();
+    const __m512i s = _mm512_alignr_epi64(detail::bitcast_raw_avx512<__m512i>(v.raw), z, 7);
+    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
+    return r;
+  } else {
+    alignas(64) T s[N]; alignas(64) T dst[N];
+    Store(v, dd, s);
+    dst[0] = T{0};
+    for (std::size_t i = 1; i < N; ++i) dst[i] = s[i - 1];
+    return Load(dd, dst);
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V512<D> Slide1Down(D dd, detail::V512<D> v) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T s[N]; alignas(64) T dst[N];
-  Store(v, dd, s);
-  dst[N - 1] = T{0};
-  for (std::size_t i = 0; i + 1 < N; ++i) dst[i] = s[i + 1];
-  return Load(dd, dst);
+  if constexpr (sizeof(T) == 4 && N == 16) {
+    // alignr(0, v, 1) => [v1, v2, ..., v15, 0].
+    detail::V512<D> r;
+    const __m512i z = _mm512_setzero_si512();
+    const __m512i s = _mm512_alignr_epi32(z, detail::bitcast_raw_avx512<__m512i>(v.raw), 1);
+    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
+    return r;
+  } else if constexpr (sizeof(T) == 8 && N == 8) {
+    detail::V512<D> r;
+    const __m512i z = _mm512_setzero_si512();
+    const __m512i s = _mm512_alignr_epi64(z, detail::bitcast_raw_avx512<__m512i>(v.raw), 1);
+    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
+    return r;
+  } else {
+    alignas(64) T s[N]; alignas(64) T dst[N];
+    Store(v, dd, s);
+    dst[N - 1] = T{0};
+    for (std::size_t i = 0; i + 1 < N; ++i) dst[i] = s[i + 1];
+    return Load(dd, dst);
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V512<D> SlideUpLanes(D dd, detail::V512<D> v, std::size_t amt) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T s[N]; alignas(64) T dst[N] = {};
-  Store(v, dd, s);
-  for (std::size_t i = amt; i < N; ++i) dst[i] = s[i - amt];
-  return Load(dd, dst);
+  if (amt == 0) return v;
+  if (amt >= N) return Zero(dd);
+  if constexpr (sizeof(T) == 4 && N == 16) {
+    // valignd with zero: alignr_epi32(v, 0, 16-amt) => [0..0 (amt), v0..v_{N-amt-1}].
+    detail::V512<D> r;
+    const __m512i z = _mm512_setzero_si512();
+    const __m512i s =
+        _mm512_alignr_epi32(detail::bitcast_raw_avx512<__m512i>(v.raw), z,
+                            static_cast<int>(16 - amt));
+    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
+    return r;
+  } else if constexpr (sizeof(T) == 8 && N == 8) {
+    detail::V512<D> r;
+    const __m512i z = _mm512_setzero_si512();
+    const __m512i s =
+        _mm512_alignr_epi64(detail::bitcast_raw_avx512<__m512i>(v.raw), z,
+                            static_cast<int>(8 - amt));
+    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
+    return r;
+  } else {
+    alignas(64) T s[N]; alignas(64) T dst[N] = {};
+    Store(v, dd, s);
+    for (std::size_t i = amt; i < N; ++i) dst[i] = s[i - amt];
+    return Load(dd, dst);
+  }
 }
 template <class D>
 HYLE_FORCE_INLINE detail::V512<D> SlideDownLanes(D dd, detail::V512<D> v, std::size_t amt) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(64) T s[N]; alignas(64) T dst[N] = {};
-  Store(v, dd, s);
-  for (std::size_t i = 0; i + amt < N; ++i) dst[i] = s[i + amt];
-  return Load(dd, dst);
+  if (amt == 0) return v;
+  if (amt >= N) return Zero(dd);
+  if constexpr (sizeof(T) == 4 && N == 16) {
+    detail::V512<D> r;
+    const __m512i z = _mm512_setzero_si512();
+    const __m512i s =
+        _mm512_alignr_epi32(z, detail::bitcast_raw_avx512<__m512i>(v.raw), static_cast<int>(amt));
+    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
+    return r;
+  } else if constexpr (sizeof(T) == 8 && N == 8) {
+    detail::V512<D> r;
+    const __m512i z = _mm512_setzero_si512();
+    const __m512i s =
+        _mm512_alignr_epi64(z, detail::bitcast_raw_avx512<__m512i>(v.raw), static_cast<int>(amt));
+    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
+    return r;
+  } else {
+    alignas(64) T s[N]; alignas(64) T dst[N] = {};
+    Store(v, dd, s);
+    for (std::size_t i = 0; i + amt < N; ++i) dst[i] = s[i + amt];
+    return Load(dd, dst);
+  }
 }
 template <int kLane, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> BroadcastLane(Vec512<T, N> v) noexcept { return Broadcast<kLane>(v); }

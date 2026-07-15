@@ -91,14 +91,21 @@ softmax 等仍可在算法内手写 double 累加(局部,不扩公开 API)。
 (u32/i32/u64/i64/f32/f64),多 ISA 核 + dispatch;`Scan.*` 15 tests Win/WSL PASS;
 `hyle_scan_bench`(1M u32 ones, in-place reseed)。
 
+**跨 128b KS(已补全,非半吊子)**:
+- **禁用** `ShiftLeftLanes` 做 KS(`slli_si256` 半寄存器,算错)。
+- **AVX2**:`Slide1Up`=permute2x128+alignr(全宽);32-bit `SlideUpLanes`=vpermd。
+- **AVX-512**:`Slide1Up`/`SlideUpLanes` 32/64-bit 改 **valignd/q**(`alignr_epi32/64`),SDE-skx
+  手写 KS 检查 `AVX512_SLIDE_KS_OK`。
+- carry 用 `BroadcastLane(last)+GetLane`,去掉每块 `ExtractLane` store+reload。
+
 **时间(1M u32, inclusive vs 标量链)**:
 | 平台 | scalar | HYLE | 结论 |
 |---|---|---|---|
 | Win MSVC | 1.48 ns/op | **0.39** | **~3.8× 更快** |
-| WSL GCC | 0.25 ns/op | 0.37 | **~0.68× 更慢**(GCC 标量链已贴 ~1/cycle 墙;SlideUp 开销大) |
+| WSL GCC | 0.26 ns/op | 0.35 | **~0.74×**(GCC 标量已贴 ~1 cyc/elem 墙;单流 prefix 的
+  跨块 carry 串行使 SIMD 深度优势有限) |
 
-**残留(时间主线)**:AVX2/512 上 `ShiftLeftLanes` 不能做跨 128b 半部 KS(slli_si256 半寄存器),
-现用 `SlideUpLanes` 正确但慢;要 WSL 也赢需手写跨 lane shuffle 的 KS 步。能力面先上架。
+**残留**:单流 prefix 在「标量已 1 cyc/elem」的平台上难再大赢;再加速要分层/多流 scan,非本轮。
 
 ### P1-2. 整数键 radix sort + argsort(O(n log n) → O(n·⌈k/8⌉) 线性)
 
