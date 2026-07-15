@@ -1301,9 +1301,36 @@ HYLE_FORCE_INLINE VecNeon<T, N> DupOdd(VecNeon<T, N> v) noexcept {
   else r.raw = detail::from_u8<T>(vreinterpretq_u8_u64(vzip2q_u64(vreinterpretq_u64_u8(detail::to_u8<T>(v.raw)), vreinterpretq_u64_u8(detail::to_u8<T>(v.raw)))));
   return r;
 }
-// TableLookupLanes: runtime per-lane permute (index lanes hold integer VALUES). NEON's vqtbl
-// works on bytes; for lane-granular permute a store+reload gather over the numeric index is
-// the clean, oracle-matching form (single 128-bit block, not a hot path).
+// TableLookupLanes: runtime per-lane permute (index lanes hold integer VALUES). NEON's vqtbl works
+// on bytes, so Highway (arm_neon-inl.h) expands each lane index to B=sizeof(T) consecutive byte
+// indices (broadcast the lane's index byte to all B bytes via a vqtbl, <<log2(B) to scale, + a
+// {0,1,..,B-1} per-lane offset) then does one vqtbl1q. That replaces the old store+reload scalar
+// gather (measured 0.32 vs Highway on NEON). Integer lane types only: float/double indices are
+// stored as float values (their bits don't pun to byte indices), so those keep the store+reload
+// form. Contract is idx in [0,N) (same as Highway); out-of-range yields 0 (vqtbl1q on byte>=16),
+// not the old &(N-1) wrap -- matching Highway, and the wrap was defensive, never contractual.
+namespace detail {
+// Per-lane-width byte-expansion tables (16-byte, little-endian): kBroadcastLaneBytes picks each
+// output byte's owning-lane low index byte; kByteOffsets is {0..B-1} repeated. shift = log2(B).
+template <std::size_t B>
+HYLE_FORCE_INLINE uint8x16_t table_lane_byte_indices(uint8x16_t idx8) noexcept {
+  if constexpr (B == 1) {
+    return idx8;  // byte lanes: index already byte-granular
+  } else if constexpr (B == 2) {
+    alignas(16) static constexpr std::uint8_t kBcast[16] = {0,0,2,2,4,4,6,6,8,8,10,10,12,12,14,14};
+    alignas(16) static constexpr std::uint8_t kOff[16]   = {0,1,0,1,0,1,0,1,0,1,0,1,0,1,0,1};
+    return vaddq_u8(vshlq_n_u8(vqtbl1q_u8(idx8, vld1q_u8(kBcast)), 1), vld1q_u8(kOff));
+  } else if constexpr (B == 4) {
+    alignas(16) static constexpr std::uint8_t kBcast[16] = {0,0,0,0,4,4,4,4,8,8,8,8,12,12,12,12};
+    alignas(16) static constexpr std::uint8_t kOff[16]   = {0,1,2,3,0,1,2,3,0,1,2,3,0,1,2,3};
+    return vaddq_u8(vshlq_n_u8(vqtbl1q_u8(idx8, vld1q_u8(kBcast)), 2), vld1q_u8(kOff));
+  } else {  // B == 8
+    alignas(16) static constexpr std::uint8_t kBcast[16] = {0,0,0,0,0,0,0,0,8,8,8,8,8,8,8,8};
+    alignas(16) static constexpr std::uint8_t kOff[16]   = {0,1,2,3,4,5,6,7,0,1,2,3,4,5,6,7};
+    return vaddq_u8(vshlq_n_u8(vqtbl1q_u8(idx8, vld1q_u8(kBcast)), 3), vld1q_u8(kOff));
+  }
+}
+}  // namespace detail
 template <typename T, std::size_t N>
 struct IndicesNeon { VecNeon<T, N> idx; };
 template <class D>
@@ -1312,10 +1339,17 @@ HYLE_FORCE_INLINE IndicesNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> IndicesFromVe
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> TableLookupLanes(VecNeon<T, N> v, IndicesNeon<T, N> ind) noexcept {
-  alignas(16) T src[N], idx[N], dst[N];
-  StoreU(v, Simd<T, N, 0>(), src); StoreU(ind.idx, Simd<T, N, 0>(), idx);
-  for (std::size_t i = 0; i < N; ++i) dst[i] = src[static_cast<std::size_t>(idx[i]) & (N - 1)];
-  return LoadU(Simd<T, N, 0>(), dst);
+  if constexpr (std::is_integral_v<T> && sizeof(T) * N == 16) {
+    const uint8x16_t byte_idx = detail::table_lane_byte_indices<sizeof(T)>(detail::to_u8<T>(ind.idx.raw));
+    VecNeon<T, N> r;
+    r.raw = detail::from_u8<T>(vqtbl1q_u8(detail::to_u8<T>(v.raw), byte_idx));
+    return r;
+  } else {
+    alignas(16) T src[N], idx[N], dst[N];
+    StoreU(v, Simd<T, N, 0>(), src); StoreU(ind.idx, Simd<T, N, 0>(), idx);
+    for (std::size_t i = 0; i < N; ++i) dst[i] = src[static_cast<std::size_t>(idx[i]) & (N - 1)];
+    return LoadU(Simd<T, N, 0>(), dst);
+  }
 }
 
 // ---- byte table lookup (PSHUFB-style, single 128-bit block) -------------------------
@@ -3188,17 +3222,29 @@ HYLE_FORCE_INLINE VecNeon<T, N> Per4LaneBlockShuffle(VecNeon<T, N> v) noexcept {
   }
   return Load(Simd<T, N, 0>(), o);
 }
-// E11 TwoTablesLookupLanes: dual-source table lookup.
+// E11 TwoTablesLookupLanes: dual-source table lookup. Index in [0,2N): [0,N) picks a, [N,2N) picks
+// b. Integer lanes reuse the same byte-index expansion as TableLookupLanes but over a 32-byte table
+// {a,b} via vqtbl2q (Highway concats a,b then vqtbl). Replaces the old store+reload gather (0.21).
 template <class D, typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> TwoTablesLookupLanes(D d, VecNeon<T, N> a, VecNeon<T, N> b,
                                                  IndicesNeon<T, N> idx) noexcept {
-  alignas(16) T sa[N], sb[N], ix[N], out[N];
-  Store(a, d, sa); Store(b, d, sb); Store(idx.idx, d, ix);
-  for (std::size_t i = 0; i < N; ++i) {
-    const auto k = static_cast<std::size_t>(ix[i]);
-    out[i] = (k < N) ? sa[k] : sb[k - N];
+  if constexpr (std::is_integral_v<T> && sizeof(T) * N == 16) {
+    const uint8x16_t byte_idx = detail::table_lane_byte_indices<sizeof(T)>(detail::to_u8<T>(idx.idx.raw));
+    uint8x16x2_t tbl;  // tbl.val[0]=a bytes [0,16), tbl.val[1]=b bytes [16,32); byte_idx in [0,32)
+    tbl.val[0] = detail::to_u8<T>(a.raw);
+    tbl.val[1] = detail::to_u8<T>(b.raw);
+    VecNeon<T, N> r;
+    r.raw = detail::from_u8<T>(vqtbl2q_u8(tbl, byte_idx));
+    return r;
+  } else {
+    alignas(16) T sa[N], sb[N], ix[N], out[N];
+    Store(a, d, sa); Store(b, d, sb); Store(idx.idx, d, ix);
+    for (std::size_t i = 0; i < N; ++i) {
+      const auto k = static_cast<std::size_t>(ix[i]);
+      out[i] = (k < N) ? sa[k] : sb[k - N];
+    }
+    return Load(d, out);
   }
-  return Load(d, out);
 }
 
 }  // namespace hyle::simd
