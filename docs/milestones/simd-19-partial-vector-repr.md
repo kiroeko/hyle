@@ -4,6 +4,9 @@
 > Highway,根因不是单 op 的实现,而是**定宽后端把每个 `Vec<T,N>` 都当满宽寄存器**——部分标签(partial
 > tag,`N < 满 lane`)的 op 被迫在满宽上做再掰回。属架构级欠缺,单点改不动,故单列里程碑。
 > **决策:选方案 A(根治,VecNeon 按 N 选窄 D/Q raw 类型),分阶段施工——见 §五。**
+> **施工形态修订(2026-07-15,探针定案)**:原"阶段 0 全 backend 编不过——预期"的红树迁移,改为
+> **常绿垫片迁移**——树在每个提交点编译绿 + gtest 绿;必升 native-D 的热点仅 ~15-20 op,其余 250 个
+> 永久留垫片(垫片跨界已实测零成本)。见 §5.1(修订版)与 §5.3(探针)。
 
 ## 一、问题陈述(what & why)
 
@@ -86,28 +89,43 @@ PromoteMaskTo 是 COLD op(mask 宽度桥接,~0.5ns 绝对,非内循环)。0.575 
 **故 A 的本质** = 给 HYLE 的 NEON op 面补上 D-form 维度。不照抄 Highway 的宏(违背章程),而是用**一个按 raw
 宽度分发的模板 helper**(如 `neon_bin<Qfn, Dfn>(a,b)`)把 D/Q 选择收敛到一处,避免 270 op × 2 的手写爆炸。
 
-### 5.1 分阶段施工计划
+### 5.1 分阶段施工计划(2026-07-15 修订:常绿垫片迁移)
 
-**阶段 0 — 表示层骨架(高风险,先独立验证)**
+> 修订理由:原计划阶段 0 落 `RawNeon<T,N>` 后"全 backend 编不过——预期",意味着 270 op 全部迁完前整棵树
+> 长期不可编译:没有 gtest 安全网、没有可 bisect 的提交点。修订版用**垫片(shim)**让树在每个提交点都
+> 编译绿 + gtest 绿,并把"必须 native-D"的面从 270 op 缩到 ~15-20 op。垫片零成本已由探针实测(§5.3)。
+
+**阶段 0 — 表示层 + 垫片(同一提交,树保持绿)**
 - `RawNeon<T,N>`(加 N 维):`N*sizeof(T) <= 8` → D 类型(`int16x4_t`/`int8x8_t`/`float32x2_t`/…),否则 Q。
   64-bit lane(i64/u64/f64)N=1 → `int64x1_t` 等;N=2 → Q。
 - `MaskRawNeon<T,N>` 同步加 N 维(mask 是同宽无符号)。
 - `VecNeon<T,N>::raw` / `MaskNeon<T,N>::raw` 类型随之变。
-- **闸门**:此时全 backend 编不过(所有 op 硬编 Q-form 与新 raw 类型冲突)——预期。阶段 0 只验证 traits 本身
-  (`static_assert` raw 类型正确)+ 设计好 `neon_bin`/`neon_un` 宽度分发 helper 的签名。
+- **同一提交内**加两个 ~6 行垫片:`to_q(v)`(D→Q,`vcombine` 高半补零;满宽恒等)/ `from_q<T,N>(x)`
+  (Q→D,`vget_low`;满宽恒等)。traits 正确性用 `static_assert` 矩阵验证(全 T × 全合法 N)。
 
-**阶段 1 — 宽度分发 helper + 批量迁移简单算术/位/比较 op**
-- `neon_bin<QFn,DFn>(a,b)` / `neon_un<QFn,DFn>(a)`:按 `sizeof(raw)==16` 选 Q 或 D 分支(constexpr)。
-- 迁移 Add/Sub/Mul/Min/Max/And/Or/Xor/AndNot/Neg/Abs/比较族/移位——这些 D/Q intrinsic 一一对应(`vaddq`↔`vadd`),
-  是机械迁移,量最大但最规整。逐 op 编过 + 现有 gtest 该 op 项绿。
+**阶段 0.5 — 机械包裹(脚本化,一次线性源变换)**
+- 所有既有 op 体:`x.raw` 读取包成 `to_q(x)`,结果赋值包成 `from_q<T,N>(…)`。不改任何指令选择——partial
+  的物理类型变成 D,但所有 op 仍走今天的 Q 指令,语义与现状完全等价(满宽算 + 高位垃圾)。
+- 用源变换脚本做(同 bench 三 TU refit 的做法),人工只审 diff 形态是否统一。
+- **闸门(替代原阶段 0 闸门)**:此步完成后全树编译绿、gtest 绿、bench 无变化(垫片零成本,§5.3)。
+
+**阶段 1 — 热点升级 native-D(~15-20 op,逐个独立提交)**
+- 摘垫片换 D-form 的最小集(拿下 PromoteMaskTo 链所需):partial `LoadU/StoreU`(`ldr/str d`)、`Set/Zero/
+  Iota`、比较族、`MaskFromVec`/`VecFromMask`、`PromoteMaskTo`/`DemoteMaskTo` 本体(`sshll`/`xtn`)、
+  Promote*/Demote* 的输入侧。
+- 宽度分发 helper `neon_bin<QFn,DFn>` / `neon_un<QFn,DFn>`(按 `sizeof(raw)==16` constexpr 选)在此落地,
+  只服务升级过的 op;未升级 op 留垫片。
+- 每 op 独立:编绿 → gtest 绿 → `HYLE_BENCH_ONLY` 单 op bench。随时可停,已升级的收益已入账。
+- **简单算术/位/比较族不批量迁移**(与原计划相反):partial 算术非热点,留垫片;未来哪条 partial 路径被
+  量化受损,再按本阶段模式逐个升级。
 
 **阶段 2 — half↔full 边界 op 改真 D↔Q**
 - `LowerHalf`/`UpperHalf`/`Combine`/`ZeroExtendVector`/`Concat*`:从"满寄存器存低 64"约定改成真 D 结果 /
   D→Q 组合。这是最容易出正确性 bug 的一批,逐 op 穷举对拍标量 oracle。
 
-**阶段 3 — 无 D-form 的 op(reduce/table/gather/特殊)兜底**
-- 部分 op 无 D-form intrinsic 或 D-form 语义不同(如跨 lane reduce、vqtbl 只有 Q)。这些:partial 输入先
-  `vcombine`(或保持 Q)、满宽做、必要时窄回。**保证正确**,性能不追(它们本就不是 partial 热点)。
+**阶段 3 —(修订后此阶段消失)**
+- 无 D-form 的 op(跨 lane reduce、`vqtbl` 只有 Q 等)**永久留在垫片上**——垫片恰好就是原计划手工要写的
+  "`vcombine` 满宽兜底",现在自动、统一、零 per-op 工作量。
 
 **阶段 4 — 收口验证**
 - PromoteMaskTo 0.575→TIE(校准);全量 op_parity 三 TU 复跑防复合回归;三平台 gtest(NEON + SDE avx512 +
@@ -119,9 +137,29 @@ D/Q 区分显式收益最大);x86 的 partial 表示改造视 NEON 完成后是�
 
 ### 5.2 风险与退出条件
 - **若阶段 1 的 `neon_bin` 迁移使行数/复杂度逼近 Highway 宏体系量级** → 停下重估:要么接受"其实就该 vendor
-  Highway NEON"的结论,要么退回选项 B(窄手术)。行数警戒线是硬约束(章程)。
+  Highway NEON"的结论,要么退回选项 B(窄手术)。行数警戒线是硬约束(章程)。(常绿形态下触发概率大降:
+  未升级 op 只多一层统一包裹,仅升级过的 ~15-20 op 有 D 分支。)
 - **若阶段 2 的 half↔full 改造引入难缠正确性 bug** → 该边界可保守用 `vcombine` 满宽兜底(牺牲该 op 的 partial
   性能、保正确),不阻塞整体。
+
+### 5.3 施工形态探针(2026-07-15,Mac 真机定案)
+
+四变体同场对拍 PromoteMaskTo i16→i32 内核(`oplab/s19_probe.cc`,Apple clang -O2,3 遍稳定,四变体输出
+位级一致 MATCH):
+
+| 变体 | ns/elem | 读数 |
+|---|---|---|
+| HYLE 现状(真实 op 链) | 0.126~0.171 | ≈0.61×Highway,复现矩阵 0.575 |
+| **垫片版**(D 类型;compare 借 Q:`vcombine`→`cmgt.8h`→`vget_low`) | **0.075~0.077** | **与 Highway 不可区分** |
+| native-D 终态(`ldr d`+`vcmgt`+`sshll`) | 0.071~0.077 | 与 Highway 不可区分 |
+| Highway 真实链路 | 0.073~0.077 | 基准 |
+
+两个定案读数:
+1. **垫片跨界零成本**。架构原因:AArch64 上 D 寄存器物理上就是对应 Q 的低半——`vget_low` 不产生指令;任何
+   D 写入自动清零高 64 位,编译器据此消掉补零 `vcombine`。这是常绿迁移形态成立的前提,**已测,非猜**。
+2. 诚实脚注:垫片变体里 PromoteMaskTo 本体已按升级后建模(`sshll` 一条),故该行证明的是"**未升级 op 经
+   垫片不吃性能** + 终态到位",不是"不升级就自动变快"——旧 op 体的掰回链仍在,靠阶段 1 的热点升级消。
+   本探针为快探针(best-of-30,无交错无副本),方向性证据;验收仍走校准仪器(§六)。
 
 ## 六、验收(无论选哪个)
 
