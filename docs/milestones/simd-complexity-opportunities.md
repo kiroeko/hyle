@@ -69,14 +69,14 @@
 - 默认 `AVX512` 旗标仍无 `-mavx512vnni`(SKX 安全);VNNI 512 路径只在带该宏的 TU 生效。
 - 正式 op_parity `-n15` 重测 SumOfMulQuad(历史账已记 ~10×→追平;本轮是正确性闭环)。
 
-### P0-3. 大 n 归约的误差档(误差 O(n·ε) → O(log n·ε),速度不变)
+### P0-3. 大 n 归约的误差档 — **调研后不做(2026-07-15 退回)**
 
-**现状**:ReduceSum/dot 直线累加,误差界 O(n·ε);softmax 里已经出现 double 累加兜底
-(activations.cc:71 "double accum: n can be large (vocab ~128k)")——说明误差压力是真实的。
+**调研结论(时间主线)**:曾实现 `sum/dot_f32_accurate`(f64 中间累加)并真测:
+`dot_f32_accurate` 相对快路径 `dot_f32` **~6× 更慢**(WSL 0.128 vs 0.022 ns/op)。
+主线追的是**时间/吞吐**,不是误差阶 → **代码已 revert**(`6e31fcc`/`c63e7d1`)。
+softmax 等仍可在算法内手写 double 累加(局部,不扩公开 API)。
 
-**机会**:pairwise(树形)求和误差 O(log n·ε)、块内 Kahan 误差 O(ε),**吞吐几乎不变**
-(4-累加器结构天然就是 4 路树的第一层)。提供 `reduce_sum_accurate/dot_accurate` 变体,
-沿 InRange 家族的"消费者自选"惯例。这是"误差增长阶"意义上的复杂度改进,不是速度。
+**教训**:复杂度清单里「误差 O」项必须先问是否服务时间主线;纯精度档不做默认产品面。
 
 ---
 
