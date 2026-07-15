@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <vector>
 
+#include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/scan.h"
 
@@ -124,7 +125,10 @@ TEST(Scan, ExclusiveF64) {
 
 TEST(Scan, ActiveVariantIsRealTier) {
   const Isa a = active_scan_variant();
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
+  // Linux x64: pure scalar by policy (SIMD single-stream prefix loses to GCC chain).
+  EXPECT_EQ(a, Isa::kScalar);
+#elif defined(HYLE_ARCH_X64)
   EXPECT_GE(static_cast<std::uint32_t>(a), static_cast<std::uint32_t>(Isa::kSse42));
   EXPECT_LE(static_cast<std::uint32_t>(a), static_cast<std::uint32_t>(best_isa()));
 #elif defined(HYLE_ARCH_ARM64)

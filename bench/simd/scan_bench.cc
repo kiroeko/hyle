@@ -1,5 +1,7 @@
-// scan_bench -- scalar O(n) chain vs HYLE inclusive_scan (P1-1 time-complexity claim).
-// Avoids per-iter full vector copy (that dwarfs the scan); re-seed in place with a cheap fill.
+// scan_bench -- scalar O(n) chain vs HYLE inclusive_scan (P1-1).
+// On Linux x64 HYLE scan is pure scalar by policy (see scan_dispatch.cc); expect ~TIE with
+// the local scalar chain. On Windows HYLE is SIMD and should beat MSVC scalar substantially.
+// Avoids per-iter full vector copy; re-seed in place with a cheap fill.
 #include <nanobench.h>
 
 #include <cstddef>

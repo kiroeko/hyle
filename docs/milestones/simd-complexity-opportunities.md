@@ -101,11 +101,13 @@ softmax 等仍可在算法内手写 double 累加(局部,不扩公开 API)。
 **时间(1M u32, inclusive vs 标量链)**:
 | 平台 | scalar | HYLE | 结论 |
 |---|---|---|---|
-| Win MSVC | 1.48 ns/op | **0.39** | **~3.8× 更快** |
-| WSL GCC | 0.26 ns/op | 0.35 | **~0.74×**(GCC 标量已贴 ~1 cyc/elem 墙;单流 prefix 的
-  跨块 carry 串行使 SIMD 深度优势有限) |
+| Win MSVC | 1.48 ns/op | **0.39** | **~3.8× 更快**(SIMD KS) |
+| WSL GCC | 0.26 ns/op | SIMD 曾 0.35(~0.74×) | **分平台**:`HYLE_OS_LINUX && HYLE_ARCH_X64`
+  固定 pure scalar 链(与最快标量同级,不再亏) |
 
-**残留**:单流 prefix 在「标量已 1 cyc/elem」的平台上难再大赢;再加速要分层/多流 scan,非本轮。
+**分平台依据**(scan_wsl_probe):Linux x64 上 `a[i]+=a[i-1]` 已 ~1 cyc/elem;单流 SIMD KS+carry
+测得 0.70–0.84×(更慢)。`scan_dispatch.cc` 用 `HYLE_OS_LINUX`+`HYLE_ARCH_X64` 钉 pure scalar;
+Win 仍走 AVX2/512。Arm64 仍 NEON。
 
 ### P1-2. 整数键 radix sort + argsort(O(n log n) → O(n·⌈k/8⌉) 线性)
 
