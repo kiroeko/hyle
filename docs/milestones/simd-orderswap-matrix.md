@@ -17,7 +17,6 @@
   已用 4 次运行合并 + 8x epoch 补偿)。
 - **判读**:数字 = HYLE/Highway 配对中位比值(>1=HYLE 快);W=WIN,L=LOSE,==TIE,?=UNSTABLE(多运行判决不一致),
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
-  **†=MSVC harness/调度伪影**(dumpbin 证 bench 循环体逐指令最优且同 Highway,GCC 侧 TIE,非算法真输;见演进段 crypto 轮)。
 
 ## 真输清单(校准仪器判决,按比值升序)
 ### MSVC(AVX2): 0 个
@@ -189,11 +188,14 @@
   lambda**——函数名 decay 成函数指针,MSVC 在热循环里不内联该间接调用(AESKeyGenAssist 因显式拆 lo/hi
   一直是唯一 TIE=铁证);AESInvMixColumns(map1 unary)因此 0.072→TIE。②**aes256_map recombine 从
   `_mm256_set_m128i`(MSVC 展开成 FP 域 vinsertf128)改 castsi128+vinserti128 整数域**(匹配 Highway)。
-  **GCC 侧全部 TIE/WIN(AESRound 1.02/CLMul 1.00/AESInvMixColumns 1.12W)**——证明算法/op-graph 是 SOTA。
-  **†MSVC 二元 AES/CLMul 仍读 0.09/0.17**:但 dumpbin 实测 bench 循环体已**逐指令最优且与 Highway 相同**
-  (vmovdqu×2+vaesenc+vextracti128×2+vaesenc+vinserti128+vmovups,无 call 无 spill),GCC 又全 TIE,故
-  **†标记=MSVC 对这些 256-bit 双输入 crypto op 的 harness/调度伪影,非算法真输**(同"op-graph 相同+GCC 平
-  =非真输"判据;三度尝试 lambda/整数域 insert 未动读数,循环体已证最优,不再追)。gtest AES/CLMul 双平台过。
+  但 MSVC 二元 AES/CLMul 起初仍读 0.09/0.17。**我一度误判为 harness 伪影——错了(用户坚持"明显有问题,追查")。**
+  **真凶靠"带循环"的反汇编现形**(之前的单次调用 dump 干净,但循环体才和 bench 对等):map1/map2 template+
+  lambda 间接层让 MSVC 每迭代把两个 256-bit 输入**溢出到栈 scratch**($T1/$T2:vmovdqu+vextractf128 到栈再
+  reload)+ /GS cookie 帧;手写内联的 2-block 序列则与 Highway 逐字节相同、零溢出(AESKeyGenAssist 一直显式
+  拆 lo/hi 故一直 TIE=铁证)。**修:弃 aes256_map1/map2,每 op 直接拆 lo/hi 调 block worker(整数域
+  vinserti128 recombine)。MSVC 8 个全 0.09/0.17→TIE(AES 10×/CLMul 6× 消除);GCC 全 TIE/WIN。** gtest 双平台过。
+  **教训:稳定+双序一致+校准通过的读数别轻易判伪影;单次调用 dump 会骗人,要 dump 带循环的 bench 对等体;
+  用户"明显有问题"的直觉压过我的过早结论。**
 
 ## 全量表
 
@@ -204,14 +206,14 @@
 | Add f32 | 1.00= | 1.00= | 0.99= |
 | Add f32 (4096) | 1.00= | 0.99= | · |
 | AddSub i32 | 1.01= | 1.00= | 1.00? |
-| AESInvMixColumns u8 | 1.01= | 1.12W | · |
+| AESInvMixColumns u8 | 1.01= | 1.14W | · |
 | AESKeyGenAssist u8 | 1.03? | 1.00= | · |
-| AESLastRound u8 | 0.09?† | 1.02? | · |
-| AESLastRoundInv u8 | 0.09?† | 1.02? | · |
-| AESRound u8 | 0.09?† | 1.02? | · |
-| AESRoundInv u8 | 0.09?† | 1.02? | · |
-| CLMulLower u64 | 0.17?† | 1.00= | · |
-| CLMulUpper u64 | 0.17?† | 1.00= | · |
+| AESLastRound u8 | 1.00= | 1.02= | · |
+| AESLastRoundInv u8 | 1.00= | 1.01= | · |
+| AESRound u8 | 1.00= | 1.02= | · |
+| AESRoundInv u8 | 1.00= | 1.01= | · |
+| CLMulLower u64 | 1.00= | 1.00= | · |
+| CLMulUpper u64 | 1.00= | 1.00= | · |
 | AllBits0 i32 | 1.02= | 1.00= | 1.00= |
 | AllBits1 i32 | 0.98= | 0.98= | 1.00= |
 | AllFalse i32 | 0.99? | 1.01= | 1.00= |
