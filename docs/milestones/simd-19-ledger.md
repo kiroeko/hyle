@@ -33,7 +33,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C13 | half/combine 穷举 oracle 测试(先行) | done | ✓ | 276/276 绿基线(满宽 10); 子满宽 13 案 DISABLED_ 挂账 | — | 38e37d5(+红名单回挂) | 满宽×10 绿; 13 红=既有 N 盲 half/pad 债(非 s19 回归,批复#11); C14/C15 验收=DISABLED 转绿 |
 | C14 | LowerHalf/UpperHalf native D | done | ✓ | 276/276; also_run: 13 DISABLED 零 UpperHalf/LowerHalf 失败, 余 ZeroExtend/Insert 红=C15 | — | ebeec1e | 满宽 Q→vget_low/high; 子满宽 Lower=raw; Upper=vshr_n_u64(NH*sizeof*8); 批复#11 Upper 转绿验收 |
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | done | ✓ | 276/276; also_run HalfCombine 23/23 全绿(13 原 DISABLED 转绿) | — | bb92d29 | 满宽 vcombine; 子满宽 u64 mask+shift 显式清 pad; 批复#11 ZeroExtend/Insert 验收 |
-| C16 | Concat* partial 路径 | todo | | | — | | C13 先绿 |
+| C16 | Concat* partial 路径 | done | ✓ | 276/276; HalfCombine also_run 23/23 | ConcatEven i32: HYLE~0.07 / HWY~0.06 (~94–104%); full_bench 四 Concat* 仅 avx2 门控,NEON 无该段 | | D 档=Combine(Lower/UpperHalf); 满宽 Q store+reload 不动 |
 | C17 | ResizeBitCast partial 审计 | todo | | | — | | 低优 |
 | C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | todo | | | 记录 | | 判定=高能力方 |
 | C19 | 文档/矩阵回写 + cloc | todo | | | — | | 高能力方 |
@@ -281,3 +281,28 @@ run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
 
 ### 自审结论
 - **可收**。C13 挂账 13 红在 C14+C15 后 also_run 全绿;half/combine 子满宽正确性债清零。  
+
+## C16 对抗自审(执行侧,2026-07-15)
+
+### 闸门核对
+| 项 | 结论 | 证据 |
+|---|---|---|
+| 白名单 | ✓ | 只改 neon.h:`concat_halves` 分派 + 后置 `concat_halves_via_half_ops`;未动 tests/vec.h/ConcatEven/Odd |
+| G1 | ✓ | mtime `Jul 15 19:00` |
+| G2 | ✓ | |
+| G3 | ✓ | 276/276; also_run HalfCombine 23/23 |
+| G4 | 记录 | `HYLE_BENCH_ONLY=Concat`→ConcatEven i32 ~94–104%(未改 Even 路径);四 Concat* 在 full_bench 的 `#if avx2/avx512 multi-block` 内,NEON 无条目——冒烟以 gtest+ConcatEven 锚点代 |
+| G5 | ✓ | 台账 + 本节 |
+
+### 正确性自审
+1. **语义**:`Concat*(hi,lo)=Combine(d, pick_hi(hi), pick_lo(lo))`,与旧 store+reload 半选取一致。✓  
+2. **满宽不动**:`!kIsDBand` 仍走原 store+reload。✓  
+3. **D 档**:经 C14/C15 LowerHalf/UpperHalf/Combine(含 pad 清零)。✓  
+4. **定义序**:half ops 在后→forward declare + 后置 body,实例化时可见。✓  
+
+### 犹疑
+19. **满宽未升 native vcombine** — 卡片「满宽路径不动」字面遵守;性能优化可另卡。  
+20. **NEON 无四 Concat* bench 段** — full_bench 门控 avx2;G4 冒烟以 ConcatEven+gtest 代,不谎称跑了 LowerLower 段。  
+
+### 自审结论
+- **可收**。  

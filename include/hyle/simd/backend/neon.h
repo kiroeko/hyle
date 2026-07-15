@@ -1515,17 +1515,28 @@ HYLE_FORCE_INLINE VecNeon<T, N> InterleaveUpper(VecNeon<T, N> a, VecNeon<T, N> b
   return LoadU(Simd<T, N, 0>(), dst);
 }
 namespace detail {
-// concat helper: pick half `ah` (0=lower,1=upper) of a into result-lower, half `bh` of b into
-// result-upper. args (hi,lo) follow Highway; result = [from-lo-half, from-hi-half].
+// simd-19 C16: D-band Concat* composed from LowerHalf/UpperHalf/Combine (defined later).
+// Forward-declared here; body sits after the half family so it can call those ops.
+template <int loHalf, int hiHalf, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> concat_halves_via_half_ops(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept;
+
+// concat helper: pick half of lo into result-lower, half of hi into result-upper.
+// args (hi,lo) follow Highway; result = [from-lo-half, from-hi-half].
+// Full-Q: store+reload (unchanged). D-band: C14/C15 half ops (C16).
 template <int loHalf, int hiHalf, typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> concat_halves(VecNeon<T, N> hi, VecNeon<T, N> lo) noexcept {
-  alignas(16) T sh[N], sl[N], dst[N];
-  StoreU(hi, Simd<T, N, 0>(), sh); StoreU(lo, Simd<T, N, 0>(), sl);
-  for (std::size_t i = 0; i < N / 2; ++i) {
-    dst[i] = sl[loHalf * (N / 2) + i];
-    dst[N / 2 + i] = sh[hiHalf * (N / 2) + i];
+  if constexpr (kIsDBand<T, N>) {
+    static_assert(N >= 2, "Concat* D-band needs N>=2");
+    return concat_halves_via_half_ops<loHalf, hiHalf>(hi, lo);
+  } else {
+    alignas(16) T sh[N], sl[N], dst[N];
+    StoreU(hi, Simd<T, N, 0>(), sh); StoreU(lo, Simd<T, N, 0>(), sl);
+    for (std::size_t i = 0; i < N / 2; ++i) {
+      dst[i] = sl[loHalf * (N / 2) + i];
+      dst[N / 2 + i] = sh[hiHalf * (N / 2) + i];
+    }
+    return LoadU(Simd<T, N, 0>(), dst);
   }
-  return LoadU(Simd<T, N, 0>(), dst);
 }
 }  // namespace detail
 template <typename T, std::size_t N>
@@ -3582,6 +3593,24 @@ HYLE_FORCE_INLINE VecNeon<T, N> InsertIntoUpper(Simd<T, N, kPow2>,
   }
   return out;
 }
+// simd-19 C16: D-band Concat* = Combine(pick_half(hi), pick_half(lo)).
+// loHalf/hiHalf: 0=Lower, 1=Upper. Defined here so LowerHalf/UpperHalf/Combine are in scope.
+namespace detail {
+template <int loHalf, int hiHalf, typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> concat_halves_via_half_ops(VecNeon<T, N> hi,
+                                                           VecNeon<T, N> lo) noexcept {
+  static_assert(N >= 2, "concat_halves_via_half_ops needs N>=2");
+  const Simd<T, N, 0> d{};
+  const Simd<T, N / 2, 0> dh{};
+  VecNeon<T, N / 2> lo_part;
+  VecNeon<T, N / 2> hi_part;
+  if constexpr (loHalf == 0) lo_part = LowerHalf(dh, lo);
+  else lo_part = UpperHalf(dh, lo);
+  if constexpr (hiHalf == 0) hi_part = LowerHalf(dh, hi);
+  else hi_part = UpperHalf(dh, hi);
+  return Combine(d, hi_part, lo_part);
+}
+}  // namespace detail
 template <typename DstT, std::size_t NDst, int kPow2, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<DstT, NDst> ResizeBitCast(Simd<DstT, NDst, kPow2>,
                                                     VecNeon<SrcT, NSrc> v) noexcept {
