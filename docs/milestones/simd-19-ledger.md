@@ -34,7 +34,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C14 | LowerHalf/UpperHalf native D | done | ✓ | 276/276; also_run: 13 DISABLED 零 UpperHalf/LowerHalf 失败, 余 ZeroExtend/Insert 红=C15 | — | ebeec1e | 满宽 Q→vget_low/high; 子满宽 Lower=raw; Upper=vshr_n_u64(NH*sizeof*8); 批复#11 Upper 转绿验收 |
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | done | ✓ | 276/276; also_run HalfCombine 23/23 全绿(13 原 DISABLED 转绿) | — | bb92d29 | 满宽 vcombine; 子满宽 u64 mask+shift 显式清 pad; 批复#11 ZeroExtend/Insert 验收 |
 | C16 | Concat* partial 路径 | done | ✓ | 276/276; HalfCombine also_run 23/23 | ConcatEven i32: HYLE~0.07 / HWY~0.06 (~94–104%); full_bench 四 Concat* 仅 avx2 门控,NEON 无该段 | b131ea6 | D 档=Combine(Lower/UpperHalf); 满宽 Q store+reload 不动 |
-| C17 | ResizeBitCast partial 审计 | todo | | | — | | 低优 |
+| C17 | ResizeBitCast partial 审计 | done | ✓ | 276/276; also_run 23/23 | — | | D↔D exact-byte 无 Q 物化; Q/mixed 保持 to_q 路径(flip-safe) |
 | C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | todo | | | 记录 | | 判定=高能力方 |
 | C19 | 文档/矩阵回写 + cloc | todo | | | — | | 高能力方 |
 
@@ -306,3 +306,29 @@ run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
 
 ### 自审结论
 - **可收**。  
+
+## C17 对抗自审(执行侧,2026-07-15)
+
+### 审计结论
+| 项 | 判定 |
+|---|---|
+| 现状 | W0c 后 Q 临时量路径 flip-safe(to_q→memcpy min→from_q) |
+| 优化点 | partial→partial(D↔D)可 exact-byte 拷贝,省 to_q/from_q 各一次 |
+| 是否值得 | **值得做且已做**:改动 ≤15 行,语义与 pad 清零与 C15 一致,gtest 覆盖 ResizeBitCast widen/narrow |
+| 未做 | D↔Q / Q↔D 混合仍走 Q 临时(冷路径,收益小) |
+
+### 闸门
+| 项 | 结论 |
+|---|---|
+| 白名单 | ✓ 只改 neon.h ResizeBitCast |
+| G1 | ✓ mtime `Jul 15 19:15` |
+| G3 | ✓ 276/276; HalfCombine also_run 23/23 |
+| G4 | n/a(无 bench 字段) |
+| G5 | ✓ |
+
+### 犹疑
+21. **混合带未优化** — 卡片范围=partial→partial;混合保持原形,可另卡。  
+22. **`&v.raw` 取址** — D raw 为 8B NEON 类型,与 C4 StoreU memcpy 同形。✓  
+
+### 自审结论
+- **可收**(非 no-change:落地 D↔D exact-byte)。  

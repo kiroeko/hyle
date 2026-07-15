@@ -3611,19 +3611,31 @@ HYLE_FORCE_INLINE VecNeon<T, N> concat_halves_via_half_ops(VecNeon<T, N> hi,
   return Combine(d, hi_part, lo_part);
 }
 }  // namespace detail
+// simd-19 C17: D↔D exact-byte (no Q materialize); Q/mixed keep flip-safe Q temporary.
 template <typename DstT, std::size_t NDst, int kPow2, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<DstT, NDst> ResizeBitCast(Simd<DstT, NDst, kPow2>,
                                                     VecNeon<SrcT, NSrc> v) noexcept {
-  alignas(16) std::uint8_t buf[16] = {};
-  alignas(16) std::uint8_t src[16] = {};
-  const auto vq = detail::to_q(v);  // s19: partial raw is 8 bytes; memcpy 16 needs the Q view
-  std::memcpy(src, &vq, 16);
-  const std::size_t n = (sizeof(SrcT) * NSrc < sizeof(DstT) * NDst) ? sizeof(SrcT) * NSrc
-                                                                    : sizeof(DstT) * NDst;
-  std::memcpy(buf, src, n);
-  detail::RawNeonT<DstT> rq;
-  std::memcpy(&rq, buf, 16);
-  return detail::from_q<VecNeon<DstT, NDst>>(rq);
+  constexpr std::size_t kSrcBytes = sizeof(SrcT) * NSrc;
+  constexpr std::size_t kDstBytes = sizeof(DstT) * NDst;
+  constexpr std::size_t kCopy = (kSrcBytes < kDstBytes) ? kSrcBytes : kDstBytes;
+  if constexpr (detail::kIsDBand<SrcT, NSrc> && detail::kIsDBand<DstT, NDst>) {
+    // Both D registers (≤8B logical): copy min bytes, zero pad via zero-init buf.
+    alignas(8) std::uint8_t buf[8] = {};
+    std::memcpy(buf, &v.raw, kCopy);
+    VecNeon<DstT, NDst> out;
+    std::memcpy(&out.raw, buf, 8);
+    return out;
+  } else {
+    // Full Q or mixed band: Q temporary (W0c flip-safe).
+    alignas(16) std::uint8_t buf[16] = {};
+    alignas(16) std::uint8_t src[16] = {};
+    const auto vq = detail::to_q(v);  // partial raw is 8 bytes; memcpy 16 needs the Q view
+    std::memcpy(src, &vq, 16);
+    std::memcpy(buf, src, kCopy);
+    detail::RawNeonT<DstT> rq;
+    std::memcpy(&rq, buf, 16);
+    return detail::from_q<VecNeon<DstT, NDst>>(rq);
+  }
 }
 
 // ---- simd-17 batch1: fixed-pattern Shuffle + byte/lane shifts (single 128-bit block) ----
