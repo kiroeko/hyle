@@ -1203,22 +1203,39 @@ HYLE_FORCE_INLINE VecNeon<DstT, NDst> PromoteUpperTo(Simd<DstT, NDst, 0>, VecNeo
 // DemoteTo(dn, a, b): two FULL wide -> one FULL narrow, SATURATING, ordered [a..., b...].
 // vqmovn narrows+saturates each wide to a 64-bit half; vcombine concatenates a|b -- naturally
 // ordered (no block-crossing artifact like x86). vqmovun for signed->unsigned saturation.
+// simd-19 C9: D-band output (byte-width == one source) packs both D raw via vcombine then one
+// vqmovn/vcvt into r.raw. Q-band keeps dual vqmovn + vcombine + from_q.
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<DstT, NDst> DemoteTo(Simd<DstT, NDst, 0>, VecNeon<SrcT, NSrc> a,
                                                VecNeon<SrcT, NSrc> b) noexcept {
   static_assert(NDst == 2 * NSrc, "DemoteTo: narrow dst has 2x each wide src's lanes");
   VecNeon<DstT, NDst> r;
-  if constexpr (std::is_same_v<SrcT, double>)  // f64 -> f32
-    r = detail::from_q<decltype(r)>(vcombine_f32(vcvt_f32_f64(detail::to_q(a)), vcvt_f32_f64(detail::to_q(b))));
-  else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::int8_t>)
-    r = detail::from_q<decltype(r)>(vcombine_s8(vqmovn_s16(detail::to_q(a)), vqmovn_s16(detail::to_q(b))));
-  else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::uint8_t>)
-    r = detail::from_q<decltype(r)>(vcombine_u8(vqmovun_s16(detail::to_q(a)), vqmovun_s16(detail::to_q(b))));
-  else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::int16_t>)
-    r = detail::from_q<decltype(r)>(vcombine_s16(vqmovn_s32(detail::to_q(a)), vqmovn_s32(detail::to_q(b))));
-  else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::uint16_t>)
-    r = detail::from_q<decltype(r)>(vcombine_u16(vqmovun_s32(detail::to_q(a)), vqmovun_s32(detail::to_q(b))));
-  else static_assert(sizeof(DstT) == 0, "neon DemoteTo: unsupported width pair");
+  if constexpr (detail::kIsDBand<DstT, NDst>) {
+    // Output D: sources are also D-band (same byte width). One vcombine of D raw + one narrow.
+    if constexpr (std::is_same_v<SrcT, double>)  // f64x1 + f64x1 -> f32x2
+      r.raw = vcvt_f32_f64(vcombine_f64(a.raw, b.raw));
+    else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::int8_t>)
+      r.raw = vqmovn_s16(vcombine_s16(a.raw, b.raw));
+    else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::uint8_t>)
+      r.raw = vqmovun_s16(vcombine_s16(a.raw, b.raw));
+    else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::int16_t>)
+      r.raw = vqmovn_s32(vcombine_s32(a.raw, b.raw));
+    else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::uint16_t>)
+      r.raw = vqmovun_s32(vcombine_s32(a.raw, b.raw));
+    else static_assert(sizeof(DstT) == 0, "neon DemoteTo: unsupported width pair");
+  } else {
+    if constexpr (std::is_same_v<SrcT, double>)  // f64 -> f32
+      r = detail::from_q<decltype(r)>(vcombine_f32(vcvt_f32_f64(detail::to_q(a)), vcvt_f32_f64(detail::to_q(b))));
+    else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::int8_t>)
+      r = detail::from_q<decltype(r)>(vcombine_s8(vqmovn_s16(detail::to_q(a)), vqmovn_s16(detail::to_q(b))));
+    else if constexpr (std::is_same_v<SrcT, std::int16_t> && std::is_same_v<DstT, std::uint8_t>)
+      r = detail::from_q<decltype(r)>(vcombine_u8(vqmovun_s16(detail::to_q(a)), vqmovun_s16(detail::to_q(b))));
+    else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::int16_t>)
+      r = detail::from_q<decltype(r)>(vcombine_s16(vqmovn_s32(detail::to_q(a)), vqmovn_s32(detail::to_q(b))));
+    else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, std::uint16_t>)
+      r = detail::from_q<decltype(r)>(vcombine_u16(vqmovun_s32(detail::to_q(a)), vqmovun_s32(detail::to_q(b))));
+    else static_assert(sizeof(DstT) == 0, "neon DemoteTo: unsupported width pair");
+  }
   return r;
 }
 // ReorderDemote2To == DemoteTo on NEON (vcombine is already ordered; no reorder to skip).

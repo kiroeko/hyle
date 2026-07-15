@@ -26,7 +26,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C6 | MaskFromVec/MaskFromNormalizedVec/VecFromMask D | done | ✓ | 266/266 | — | 69649f3 | kIsDBand: vreinterpret_* + MaskFromVec vshr_n_s*; Q 原样; 探针 EXISTS |
 | C7 | mask And/Or/Xor/AndNot/Not D-form | done | ✓ | 266/266 | — | aad325a | kIsDBand: vand/vorr/veor/vbic_*; Not=vmvn_*/veor_u64; helpers 仍 Q; ExclusiveNeither 组合 |
 | C8 | PromoteLowerTo/PromoteTo partial 输入 D 路 | done | ✓ | 266/266 | PromoteMaskTo i16→i32: HYLE≈0.08 / HWY≈0.08 (~1.00) | 99ceab4 | PromoteLowerTo D: vmovl_*(v.raw)+vget_low_*; Q 原样; 探针 EXISTS |
-| C9 | DemoteTo partial 输出 D 路 | todo | | | — | | |
+| C9 | DemoteTo partial 输出 D 路 | done | ✓ | 266/266 | — | (本提交) | D 出: vqmovn/vcvt(vcombine(a.raw,b.raw)); Q 原样双 vqmovn+vcombine+from_q |
 | C10 | 向量 And/Or/Xor/AndNot/Not D-form | todo | | | — | | |
 | C11 | GetLane/ExtractLane/InsertLane D-form | todo | | | — | | |
 | C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | todo | | | 记录 | | 判定=高能力方 |
@@ -37,3 +37,57 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C17 | ResizeBitCast partial 审计 | todo | | | — | | 低优 |
 | C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | todo | | | 记录 | | 判定=高能力方 |
 | C19 | 文档/矩阵回写 + cloc | todo | | | — | | 高能力方 |
+
+## 执行侧犹疑/边界说明(C3–C9 集中,2026-07-15)
+
+供高能力方复审;非 blocker。每条写清「犹疑点 → 实际处置 → 残留风险」。
+
+1. **开工树不干净(C3)**  
+   - 犹疑:铁律 6 要求开工前 `git status` 干净,C3 接手时 `neon.h` 已有未提交 LoadU 草稿。  
+   - 处置:在草稿上过闸门并提交,报告中声明。  
+   - 残留:无(最终 commit 内容与卡片一致)。
+
+2. **台账 hash 二次提交(C1–C9 惯例)**  
+   - 犹疑:铁律 5/6 字面「恰好 1 提交」vs 代码提交时尚不知 hash。  
+   - 处置:沿 C1/C2 惯例,代码+台账状态同提交,再 docs 回填 hash。  
+   - 残留:形式 2 提交;内容可追溯。
+
+3. **G3 全量 266 vs 基线 220(C3 起)**  
+   - 犹疑:C2 后套件含 PartialBoundary 46;C3 时 StoreU 仍红是否算 G3 红。  
+   - 处置:C3 以 Vec 220 绿 + LoadU 23 绿为准,StoreU 红属 C2 红名单/C4 范围;C4 起 266 全绿。  
+   - 残留:无。
+
+4. **C5 Ne 的 D 反转未改 `mask_not` helper**  
+   - 犹疑:是否应升 `detail::mask_not` 到 N 档,还是只在 `Ne`/`Not` 内联。  
+   - 处置:白名单=六比较函数,D 反转内联于 `Ne`(vmvn_*/veor_u64);Q 仍调 `mask_not`。C7 `Not` 同策略。  
+   - 残留:`mask_not`/`mask_and` 等 helper 仍 Q-only;其他直调 helper 的冷路径仍垫片。
+
+5. **C7 未改 `ExclusiveNeither` / helpers 本体**  
+   - 犹疑:卡文「mask 逻辑族」是否含 helper。  
+   - 处置:只改公开 `And/Or/Xor/AndNot/Not`;`ExclusiveNeither=Not(Or)` 自动受益。  
+   - 残留:无功能;helper 仍 Q。
+
+6. **C8 / PromoteMaskTo 链路与 `vec.h` 只读**  
+   - 犹疑:`PromoteTo`=`ZeroExtendVector(Twice)+PromoteLowerTo`,C8 只动 `PromoteLowerTo` 时,PromoteMaskTo 热路径输入常是 Q(经 ZeroExtend),D 分支未必命中。  
+   - 处置:严格白名单只改 `PromoteLowerTo`;手跑 bench 记录。实测 C1–C8 累积后 PromoteMaskTo ≈ HWY 0.08/0.08。  
+   - 残留:归因未拆(比较/mask/load/C8 谁贡献多少);C12 双序再采。`ZeroExtendVector` 仍垫片,C15 才 native。
+
+7. **C8 D 出 `vmovl+vget_low` 语义**  
+   - 犹疑:vmovl 扩整颗 D 寄存器后 `vget_low` 是否等于「逻辑 lower half」。  
+   - 处置:对满 D(`N*sizeof==8`)与 partial(高 lane 由 Set/LoadU 置 0)均与旧 `to_q+vget_low+vmovl+from_q` 逻辑 lane 一致;gtest 含 promote 族全绿。  
+   - 残留:若调用方构造「高 lane 非零垃圾」的 partial,D/Q 路径与旧约定一致(都吃物理 D 低半)。
+
+8. **C9 双源 D 打包形**  
+   - 犹疑:卡文 `r.raw=vqmovn_*(…)` 对 2-arg DemoteTo 如何落;旧形 `vcombine(vqmovn(to_q(a)),vqmovn(to_q(b)))+from_q` 在 D 出时 `from_q=vget_low` 会丢掉 b 半(潜在既有脆弱)。  
+   - 处置:D 出采用 `r.raw=vqmovn(vcombine(a.raw,b.raw))`(单次 narrow,两 D 源拼成 Q 再压回 D);Q 出保持双 vqmovn。探针 EXISTS;266 绿。  
+   - 残留:**真 2-arg + 两路不同 partial 且 `N*sizeof<8`** 时,物理 D 高 lane 布局依赖调用方;主测是 full-width 与 single-vector `DemoteTo(dn,v)=LowerHalf(DemoteTo(Twice,v,v))`。C13 类 oracle 若补 partial demote 可再钉。
+
+9. **partial pad lane 参与运算(C5 起共性)**  
+   - 犹疑:D 寄存器上沿 lane 会进 compare/logic/promote。  
+   - 处置:与 C1 Set / C3 LoadU 置零约定对齐;不额外清 pad。  
+   - 残留:契约是「逻辑 N lane」;pad 非 API 保证。
+
+10. **`HYLE_BENCH_ONLY=PromoteMaskTo` 仍打印其他表(C8)**  
+    - 犹疑:过滤是否失效。  
+    - 处置:引擎仍跑多段,但 PromoteMaskTo 段完整;按卡片只摘该段入台账。  
+    - 残留:无(记录用)。
