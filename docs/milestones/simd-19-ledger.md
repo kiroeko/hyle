@@ -29,7 +29,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C9 | DemoteTo partial 输出 D 路 | done | ✓ | 266/266 | — | 734e6a6 | D 出: vqmovn/vcvt(vcombine(a.raw,b.raw)); Q 原样双 vqmovn+vcombine+from_q |
 | C10 | 向量 And/Or/Xor/AndNot/Not D-form | done | ✓ | 266/266 | — | b1f8470 | D: to_u32_d/from_u32_d+vand/vorr/veor/vbic_u32; Not=vdup_n_u8 FF xor; Q 原样 |
 | C11 | GetLane/ExtractLane/InsertLane D-form | done | ✓ | 266/266 | — | b1f8470 | GetLane: vget_lane_*(raw,0); Extract/Insert 在 vec.h 泛型 store+reload 未动 |
-| C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | done | ✓ | — | 见下节 C12 原始摘录; HYLE/HWY 均≈0.08 ns ~1.00 | d0702fa | 正常序×3 + HYLE_BENCH_HWY_FIRST=1×3; 判定=高能力方 |
+| C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | **done+判定 TIE** | ✓ | — | 双序 6 遍 ×4 副本对全部 99.5–100.0%,两侧绝对吞吐同为 12.65–12.71 G op/s | d0702fa | **判定(高能力方 2026-07-15):0.575 → TIE 确认**,见下节判定记录 |
 | C13 | half/combine 穷举 oracle 测试(先行) | todo | | | — | | 只新增测试文件 |
 | C14 | LowerHalf/UpperHalf native D | todo | | | — | | C13 先绿 |
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | todo | | | — | | C13 先绿 |
@@ -91,6 +91,30 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
     - 犹疑:过滤是否失效。  
     - 处置:引擎仍跑多段,但 PromoteMaskTo 段完整;按卡片只摘该段入台账。  
     - 残留:无(记录用)。
+
+## C12 判定记录(高能力方复核,2026-07-15)
+
+**判定:PromoteMaskTo i16→i32 NEON 0.575 → TIE,确认。** 依据(全部为复核方自采,非转录执行方数据):
+
+1. **执行方双序数据作废重采**:执行方用了 `HYLE_BENCH_HWY_FIRST=1`,engine 实际读
+   **`HYLE_BENCH_HWYFIRST`**(engine.h:83,无第二个下划线)——其"换序"3 遍实为正常序(其摘录里
+   HYLE# 仍在前可证)。env 名错误源自卡片原文,非执行方发明;卡片已更正。复核方以正确 env 重采:
+   正常序 ×3 + HYLE_BENCH_HWYFIRST=1 ×3(换序生效的直接证据:h 系列输出 HWY# 行在前)。
+2. **数据**:六遍 × 每遍 4 副本对,relative 全部落在 **99.5%–100.0%**;两侧绝对吞吐相同
+   (12.65–12.71 G op/s,err% ≤0.1%)。原始文件 mac:/tmp/c12_{n,h}{1,2,3}.txt。
+3. **锚点**:六遍中 Add f32 / MulAdd f32 / SaturatedAdd i16 / Min i32 的 best-of-replicas 均在
+   100–102.8%(Mac gate ±6% 内)。Min i32 每遍有一个 ~51% 单副本瞬态(已知 Mac ms 级干扰形态),
+   4 副本设计正确吸收。
+4. **定论级反汇编**(/tmp/s19_probe 重编于 C11 后头文件):真实 `hs::` 链 =
+   `ldr d1 ; sshll.4s ; cmgt.4s ; and.16b ; addv.4s`——与 Highway 原始 dumpbin 形状一致,
+   W0 前的 7 指令掰回链(`cmgt.8h+xtn+zip1+ushll+shl+cmlt`)消失。
+5. **脚注(照实记录)**:快探针 s19_probe 的 run_hyle 读 0.134 vs Highway 0.073,与校准仪器矛盾;
+   探针无 stagger/无副本/无交错,判定以校准仪器为准(布局彩票伪影,见 artifacts-hunt 文档)。
+   此脚注保留作为"为什么必须用校准仪器"的又一实例。
+
+复核抽查结论:C1–C11 提交范围全部只落 neon.h+台账 ✓;gtest 266/266 复核方重跑确认 ✓;
+C10/C11 共用一个提交(违"一卡一提交",内容合规,下不为例);C9 的 2-arg partial 残留风险接受,
+C13 oracle 扩展时补钉。矩阵回写(0.575 行 → TIE)归 C19。
 
 ## C12 PromoteMaskTo 双序采集(2026-07-15, Mac NEON, 只记录不判定)
 

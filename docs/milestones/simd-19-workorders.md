@@ -249,8 +249,10 @@ W4 额外闸门 **G3.5 穷举 oracle**:边界 op 的专项测试必须先于实�
 - 映射:`vgetq_lane_*` → `vget_lane_*`;`vsetq_lane_*` → `vset_lane_*`(lane 索引 <N 不变)。
 
 ### C12 收口采集(无代码)
-- `HYLE_BENCH_ONLY=PromoteMaskTo` 双序各 3 遍(§3-3;两序 = 正常跑 + `HYLE_BENCH_HWY_FIRST=1` 若
-  engine 支持,否则按矩阵复现节的双序跑法),原始输出全贴台账。判定高能力方做。
+- `HYLE_BENCH_ONLY=PromoteMaskTo` 双序各 3 遍(§3-3;两序 = 正常跑 + **`HYLE_BENCH_HWYFIRST=1`**
+  ——注意无第二个下划线,engine.h:83;换序生效的自检:输出里 HWY# 行应在 HYLE# 前),原始输出全贴
+  台账。判定高能力方做。(2026-07-15 教训:本卡初版写错 env 名致执行方三遍换序无效;env 生效性要用
+  输出特征自检,不能只看命令跑没跑成。)
 
 ### C13 half/combine 穷举 oracle(白名单 = tests/simd/ 新增 vec_half_combine_oracle_test.cc)
 - LowerHalf/UpperHalf/Combine/ZeroExtendVector/InsertIntoUpper × 全 (T,N) 合法组合,标量参考逐 lane
