@@ -458,10 +458,22 @@ hyle_apply_warnings(hyle_simd_bench)
 add_executable(hyle_math_bench simd/math_bench.cc)
 target_link_libraries(hyle_math_bench PRIVATE hyle_simd nanobench)
 option(HYLE_BENCH_XSIMD "build math bench vs xsimd (same-ISA transcendental SOTA)" OFF)
+option(HYLE_BENCH_HIGHWAY "build math bench vs Highway (same-ISA transcendental SOTA)" OFF)
 if(HYLE_BENCH_XSIMD)
   target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_XSIMD)
   target_include_directories(hyle_math_bench SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
-  hyle_set_isa(simd/math_bench.cc AVX2)  # xsimd lowers to AVX2 transcendentals
+endif()
+if(HYLE_BENCH_HIGHWAY)
+  target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_HIGHWAY)
+  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+endif()
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  if(HYLE_BENCH_XSIMD OR HYLE_BENCH_HIGHWAY)
+    hyle_set_highway_isa(simd/math_bench.cc)
+  endif()
+else()
+  # Clear an x86-only source property left by a prior configuration of this build directory.
+  hyle_clear_source_isa("${CMAKE_CURRENT_SOURCE_DIR}/simd/math_bench.cc")
 endif()
 hyle_apply_warnings(hyle_math_bench)
 
@@ -676,13 +688,8 @@ if(HYLE_BENCH_HIGHWAY)
   target_compile_definitions(hyle_dtype_bench PRIVATE HYLE_BENCH_HIGHWAY)
   target_include_directories(hyle_dtype_bench SYSTEM PRIVATE "${_hwy}")
   hyle_set_highway_isa(simd/dtype_bench.cc)
-  # math bench's Highway contrib/math (Exp/Log/Tanh) path -- same gate + full-baseline ISA
-  # (gap-fill #36: same-ISA transcendental SOTA). Note: this OVERRIDES the xsimd AVX2 tier set
-  # below/above on the same TU, but the highway baseline is a strict superset, so xsimd (which
-  # only needs -mavx2) still lowers to AVX2 transcendentals -- no regression to the xsimd rows.
-  target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_HIGHWAY)
-  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${_hwy}")
-  hyle_set_highway_isa(simd/math_bench.cc)
+  # math bench's Highway contrib/math comparison is configured beside its target above. Do not
+  # force its x86-only ISA flags here: HYLE_BENCH_HIGHWAY is also valid on NEON.
 endif()
 
 # Optional SOTA parity: HYLE fiber sync vs marl (the fiber-sync library this

@@ -695,6 +695,37 @@ fold / 裸估计 / Div)证明"比 baseline 快",逻辑上自动算 SOTA(没有�
 - **读法**:小 n 算力收益明显;大 n 逼近带宽墙与旧 multipass 持平,但不再双 exp 倒退。
   **不是** HYLE-vs-Highway 比值。
 
+### f64 exp/log 表驱动 range reduction(P2-1,2026-07-15)
+
+- **算法**:从 Arm Optimized Routines 的 AdvSIMD f64 核派生 N=128 方案。`exp` 以
+  `round(x*128/ln2)` 选 `2^(j/128)` scale 表，做 split-ln2 reduction 与 4 次
+  `exp(r)-1` 多项式；`log` 从 IEEE 位域精确拆 `x=2^k*z`，查 128 组 `{1/c,log(c)}`，
+  做 5 次 `log1p(r)-r` 多项式。实现是 Highway 泛型形式，覆盖 AVX2、AVX-512 与 NEON；
+  版权/许可与来源见 `src/simd/math/table_f64.h` 和根 `THIRD_PARTY_NOTICES`。
+- **迭代与闸门**:
+
+  | 轮次 | 结果 |
+  |---|---|
+  | 0 | Highway 旧核正常有限域精度可用，但向量 special lane 不保 libm 语义；新增全域 ULP gate 后先在 wrapper 中将含 NaN/Inf/域外/边界 lane 的整向量回退 `std::exp`/`std::log`。 |
+  | 1 | `exp` 的 Arm `vfmaq`→Highway `MulAdd` 参数次序误译，ULP gate 大幅失败，拒绝。 |
+  | 2 | `log` 的多项式与 `hi` 重建也有同类 FMA 次序误译，ULP gate 失败，拒绝。 |
+  | 3 | 按 `a*b+c` 语义重译并保留 split 常量，三平台全域 gate 均为 `exp ≤2 ULP`、`log ≤1 ULP`，接受。 |
+
+- **直接 same-ISA 复测**:每平台重配 `HYLE_BENCH_HIGHWAY=ON`，各独立运行 5 次；下表是
+  `4096` 正常有限输入的中位 `ns/op`。HYLE 行包含产品 wrapper 的 exceptional-vector 检查，
+  Highway 行是无 special handling 的直接基准，故用于核本吞吐对比而不是替代产品语义。
+
+  | 平台 | exp: HYLE / Highway | exp 判定 | log: HYLE / Highway | log 判定 |
+  |---|---:|---|---:|---|
+  | Win MSVC AVX2 | **0.43 / 0.83** | **1.93× 快** | **0.71 / 0.75** | **1.06× 快** |
+  | WSL GCC14 AVX2 | **0.44 / 0.83** | **1.89× 快** | 0.80 / **0.76** | HYLE 慢 5% |
+  | Mac AppleClang NEON | **0.70 / 1.35** | **1.93× 快** | **0.97 / 1.37** | **1.41× 快** |
+
+- **WSL log 分流复核并拒绝**:直接 Highway 的 `0.76` 并不能直接装进产品；保留同一个
+  exceptional-vector 检查后改走 `hn::Log` 的完整 HYLE wrapper 实测 **0.94–1.05 ns/op**，
+  比表核的 `0.74–0.83` 更慢。故不做 Linux 特判：产品 `log_f64_batch` 全平台保留表核，
+  WSL 的 5% 直接对手差距如实保留，不能拿没有 IEEE special 语义的基准行冒充可上架路径。
+
 ## 41 个待补 bench 的 op(可测全集里尚未写 bench)
 
 分三档(不是真输,是尚未测):

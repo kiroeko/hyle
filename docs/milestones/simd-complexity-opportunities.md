@@ -1,4 +1,4 @@
-# SIMD 复杂度级优化机会清单(2026-07-14 实证审计)
+# SIMD 复杂度级优化机会清单(2026-07-15 实证审计)
 
 > 结论先行:255-op parity 层的**常数因子之战已经打完**(三平台真输清单全零,见
 > [`simd-orderswap-matrix.md`](./simd-orderswap-matrix.md)),继续在 op-vs-op 层抠常数是负收益。
@@ -162,11 +162,37 @@ Win/Mac 小 k 明显赢 VQ(VQ 仍整表分区写);WSL 上 VQ 已够快→持平�
 
 ## P2:深度/度数级(常数大头,机制是降度数或降依赖链)
 
-### P2-1. exp/log f64 表驱动 range reduction(多项式度数 d → ~d/2)
+### P2-1. exp/log f64 表驱动 range reduction(多项式度数 d → ~d/2) — **已落地(2026-07-15)**
 
-**现状**:f64 转录函数全列"借 Highway 赢 xsimd"(benchmarks-simd.md),Highway 核是纯多项式。
-**机会**:2⁻ᵏ 段表 + 低阶多项式(SVML/vector-libm 路线),f64 exp/log 预期 1.2~1.5×。
-按章程走:先建精度闸门(ULP 对拍 oracle)再自写;f32 列已是 best-of-breed 不动。
+**实现**:`src/simd/math/table_f64.h` 是从 Arm Optimized Routines AdvSIMD f64 `exp`/`log`
+派生的 Highway 泛型 N=128 表核(MIT OR Apache-2.0 WITH LLVM-exception，保留 SPDX/版权头并在根
+`THIRD_PARTY_NOTICES` 归档)。它不是移植 ARM intrinsic：AVX2/AVX-512 用 Highway gather，NEON
+也走同一按 lane table lookup 语义。`cloc` 实测新表头为 162 C/C++ code LOC；wrapper 与 ULP gate
+保留在既有 TU/测试中，不另建运行时层。
+- `exp`: `round(x*128/ln2)` → 128 项 `2^(j/128)` scale table → split-ln2 reduction → 4 次
+  `exp(r)-1` 多项式。
+- `log`: IEEE 位域精确拆 `x=2^k*z` → 128 组 `{1/c,log(c)}` → 5 次 `log1p(r)-r` 多项式。
+- 含 NaN、Inf、log 非正/次正规或 exp 极端 lane 的向量整体回退 `std::exp`/`std::log`；这是 batch
+  API 的 IEEE/libm 契约，不把缺 special handling 的 raw Highway row 当可部署路径。
+
+**施工纠错**:先立 `Math.F64ExpLogFullDomainUlp`(特殊值、overflow/underflow 边界、`DBL_TRUE_MIN`、
+16K 确定性随机)。两次把 Arm `vfmaq(a,b,c)` 错译成 Highway `MulAdd` 的非 `a*b+c` 形态：先后令 exp、
+log ULP gate 失败，均已拒绝；按正确 FMA 参数次序重译后，**Win / WSL / Mac 全部 `exp ≤2 ULP`、
+`log ≤1 ULP`**，`Math.*` 三平台全绿。
+
+**五次 same-ISA 直接复测的中位时间**(4096 正常有限输入，`ns/op`；完整表和每轮原始读数见
+[`simd-orderswap-matrix.md`](./simd-orderswap-matrix.md)):
+
+| 平台 | exp HYLE / Highway | log HYLE / Highway | 结论 |
+|---|---:|---:|---|
+| Win MSVC AVX2 | **0.43 / 0.83** | **0.71 / 0.75** | exp 1.93×、log 1.06× 快 |
+| WSL GCC14 AVX2 | **0.44 / 0.83** | 0.80 / **0.76** | exp 1.89× 快；log 直接对手慢 5% |
+| Mac AppleClang NEON | **0.70 / 1.35** | **0.97 / 1.37** | exp 1.93×、log 1.41× 快 |
+
+**WSL log 的部署决定**:试过 `HYLE_OS_LINUX && HYLE_COMPILER_GCC` 改走 `hn::Log`，但带相同
+exceptional-vector 检查的真实 HYLE wrapper 是 **0.94–1.05 ns/op**，反而慢于表核 `0.74–0.83`。
+所以不做伪分流，所有平台保留表核；WSL 对 raw Highway 的 5% 差距留在证据中，不用不满足完整 IEEE
+契约的 direct benchmark 掩盖。f32 best-of-breed 不动。
 
 ### P2-2. Estrin 多项式求值(依赖链深度 O(d) → O(log d))——先补 latency bench 再决定
 

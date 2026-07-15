@@ -1,8 +1,14 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
+#include <bit>
 #include <cmath>
 #include <complex>
 #include <cstddef>
+#include <cstdint>
+#include <cstdio>
+#include <limits>
+#include <random>
 #include <vector>
 
 #include "hyle/simd/dispatch.h"
@@ -86,6 +92,81 @@ TEST(Math, F64MatchesLibm) {
   check_f64(hyle::simd::exp_f64_batch, std::expl, ein, "exp_f64");
   check_f64(hyle::simd::log_f64_batch, std::logl, lin, "log_f64");
   check_f64(hyle::simd::tanh_f64_batch, std::tanhl, tin, "tanh_f64");
+}
+
+namespace {
+
+std::uint64_t ordered_f64_bits(double x) noexcept {
+  const std::uint64_t bits = std::bit_cast<std::uint64_t>(x);
+  return (bits & (std::uint64_t{1} << 63)) != 0 ? ~bits + 1 : bits | (std::uint64_t{1} << 63);
+}
+
+std::uint64_t f64_ulp_distance(double a, double b) noexcept {
+  const std::uint64_t oa = ordered_f64_bits(a);
+  const std::uint64_t ob = ordered_f64_bits(b);
+  return oa >= ob ? oa - ob : ob - oa;
+}
+
+// Full-domain ULP gate for prospective P2-1 table reductions. std::exp/log is the production
+// scalar floor, so this catches a regression relative to the API's existing fallback semantics.
+void check_f64_ulp(void (*fn)(const double*, double*, std::size_t), double (*ref)(double),
+                   const std::vector<double>& in, std::uint64_t max_ulp, const char* name) {
+  std::vector<double> out(in.size());
+  fn(in.data(), out.data(), in.size());
+  std::uint64_t observed = 0;
+  for (std::size_t i = 0; i < in.size(); ++i) {
+    const double want = ref(in[i]);
+    const double got = out[i];
+    if (std::isnan(want)) {
+      EXPECT_TRUE(std::isnan(got)) << name << " i=" << i;
+      continue;
+    }
+    if (std::isinf(want)) {
+      EXPECT_EQ(got, want) << name << " i=" << i;
+      continue;
+    }
+    const std::uint64_t ulp = f64_ulp_distance(got, want);
+    observed = std::max(observed, ulp);
+    EXPECT_LE(ulp, max_ulp) << name << " in=" << std::hexfloat << in[i] << std::defaultfloat
+                            << " i=" << i << " got=" << std::hexfloat << got
+                            << " want=" << want << std::defaultfloat;
+  }
+  std::fprintf(stderr, "P2-1 %s max_ulp=%llu samples=%zu\n", name,
+               static_cast<unsigned long long>(observed), in.size());
+}
+
+std::vector<double> f64_exp_ulp_inputs() {
+  std::vector<double> in = {
+      -std::numeric_limits<double>::infinity(), -745.0, -744.4400719213812,
+      -708.3964185322641, -1.0, -0.0, 0.0, 1.0, 709.0, 709.782712893384,
+      std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()};
+  std::mt19937_64 rng(0xE6F64ULL);
+  std::uniform_real_distribution<double> dist(-745.0, 709.0);
+  for (std::size_t i = 0; i < 16384; ++i) in.push_back(dist(rng));
+  return in;
+}
+
+std::vector<double> f64_log_ulp_inputs() {
+  std::vector<double> in = {
+      -std::numeric_limits<double>::infinity(), -1.0, -0.0, 0.0,
+      std::numeric_limits<double>::denorm_min(), std::nextafter(std::numeric_limits<double>::min(), 0.0),
+      std::numeric_limits<double>::min(), std::nextafter(std::numeric_limits<double>::min(), 1.0),
+      0.5, 1.0, 2.0, std::numeric_limits<double>::max(),
+      std::numeric_limits<double>::infinity(), std::numeric_limits<double>::quiet_NaN()};
+  std::mt19937_64 rng(0x10AF64ULL);
+  std::uniform_real_distribution<double> exponent(-1074.0, 1023.0);
+  std::uniform_real_distribution<double> mantissa(1.0, 2.0);
+  for (std::size_t i = 0; i < 16384; ++i) in.push_back(std::scalbn(mantissa(rng), static_cast<int>(exponent(rng))));
+  return in;
+}
+
+}  // namespace
+
+TEST(Math, F64ExpLogFullDomainUlp) {
+  // Existing Highway standard kernels target 1 ULP upstream. Keep a small integration margin for
+  // compiler/FMA differences; any P2-1 replacement must tighten this gate rather than weaken it.
+  check_f64_ulp(hyle::simd::exp_f64_batch, std::exp, f64_exp_ulp_inputs(), 4, "exp_f64");
+  check_f64_ulp(hyle::simd::log_f64_batch, std::log, f64_log_ulp_inputs(), 4, "log_f64");
 }
 
 // The rest of the f64 transcendentals (Highway wins all but erf; tgamma xsimd; lgamma scalar).

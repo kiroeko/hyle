@@ -118,6 +118,13 @@ function(hyle_set_highway_isa src)
   set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
 endfunction()
 
+# Clear ISA flags previously assigned to a source when a reused build directory changes architecture.
+# CMake's source-file properties persist across reconfigure, so setting an empty value in a child
+# CMakeLists cannot override the parent-directory property left by an x86 configuration.
+function(hyle_clear_source_isa src)
+  set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "")
+endfunction()
+
 # hyle_set_avx512_math_isa(<source-file>) -- ISA flags for the AVX-512 (16-wide) borrow-core
 # math TUs (transcendental_xsimd_avx512.cc / transcendental_highway_avx512.cc). DISTINCT from
 # the ops AVX512 tier (f/bw/vl/dq) for TWO reasons proven by compile probes:

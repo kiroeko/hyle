@@ -21,10 +21,30 @@
 
 #include "hwy/highway.h"
 #include "hwy/contrib/math/math-inl.h"
+#include "src/simd/math/table_f64.h"
 
 namespace hn = hwy::HWY_NAMESPACE;
 
 namespace hyle::simd::detail {
+namespace {
+
+template <class D, class V>
+bool exp_f64_needs_scalar(D d, V x) noexcept {
+  const auto exceptional = hn::Or(
+      hn::Or(hn::IsNaN(x), hn::IsInf(x)),
+      hn::Or(hn::Lt(x, hn::Set(d, -700.0)), hn::Gt(x, hn::Set(d, 700.0))));
+  return !hn::AllFalse(d, exceptional);
+}
+
+template <class D, class V>
+bool log_f64_needs_scalar(D d, V x) noexcept {
+  const auto exceptional = hn::Or(
+      hn::Or(hn::IsNaN(x), hn::IsInf(x)),
+      hn::Or(hn::Le(x, hn::Zero(d)), hn::Lt(x, hn::Set(d, 0x1p-1022))));
+  return !hn::AllFalse(d, exceptional);
+}
+
+}  // namespace
 
 void exp_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept {
   const hn::ScalableTag<float> d;
@@ -102,14 +122,28 @@ void exp_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcep
   const hn::ScalableTag<double> d;
   const std::size_t w = hn::Lanes(d);
   std::size_t i = 0;
-  for (; i + w <= n; i += w) hn::StoreU(hn::Exp(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i + w <= n; i += w) {
+    const auto x = hn::LoadU(d, src + i);
+    if (exp_f64_needs_scalar(d, x)) {
+      for (std::size_t lane = 0; lane < w; ++lane) dst[i + lane] = std::exp(src[i + lane]);
+    } else {
+      hn::StoreU(table_f64::ExpNormal(d, x), d, dst + i);
+    }
+  }
   for (; i < n; ++i) dst[i] = std::exp(src[i]);
 }
 void log_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept {
   const hn::ScalableTag<double> d;
   const std::size_t w = hn::Lanes(d);
   std::size_t i = 0;
-  for (; i + w <= n; i += w) hn::StoreU(hn::Log(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i + w <= n; i += w) {
+    const auto x = hn::LoadU(d, src + i);
+    if (log_f64_needs_scalar(d, x)) {
+      for (std::size_t lane = 0; lane < w; ++lane) dst[i + lane] = std::log(src[i + lane]);
+    } else {
+      hn::StoreU(table_f64::LogNormal(d, x), d, dst + i);
+    }
+  }
   for (; i < n; ++i) dst[i] = std::log(src[i]);
 }
 void tanh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept {
