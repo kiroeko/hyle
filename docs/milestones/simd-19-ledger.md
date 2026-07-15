@@ -29,7 +29,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C9 | DemoteTo partial 输出 D 路 | done | ✓ | 266/266 | — | 734e6a6 | D 出: vqmovn/vcvt(vcombine(a.raw,b.raw)); Q 原样双 vqmovn+vcombine+from_q |
 | C10 | 向量 And/Or/Xor/AndNot/Not D-form | done | ✓ | 266/266 | — | b1f8470 | D: to_u32_d/from_u32_d+vand/vorr/veor/vbic_u32; Not=vdup_n_u8 FF xor; Q 原样 |
 | C11 | GetLane/ExtractLane/InsertLane D-form | done | ✓ | 266/266 | — | b1f8470 | GetLane: vget_lane_*(raw,0); Extract/Insert 在 vec.h 泛型 store+reload 未动 |
-| C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | todo | | | 记录 | | 判定=高能力方 |
+| C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | done | ✓ | — | 见下节 C12 原始摘录; HYLE/HWY 均≈0.08 ns ~1.00 | (本提交) | 正常序×3 + HYLE_BENCH_HWY_FIRST=1×3; 判定=高能力方 |
 | C13 | half/combine 穷举 oracle 测试(先行) | todo | | | — | | 只新增测试文件 |
 | C14 | LowerHalf/UpperHalf native D | todo | | | — | | C13 先绿 |
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | todo | | | — | | C13 先绿 |
@@ -91,3 +91,23 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
     - 犹疑:过滤是否失效。  
     - 处置:引擎仍跑多段,但 PromoteMaskTo 段完整;按卡片只摘该段入台账。  
     - 残留:无(记录用)。
+
+## C12 PromoteMaskTo 双序采集(2026-07-15, Mac NEON, 只记录不判定)
+
+摘要:六遍 HYLE/HWY 均 **≈0.08 ns/op**, relative 彼此 ~99.5%–100.1%(TIE 带内,供高能力方判)。
+
+### ORDER_NORMAL ×3 (`HYLE_BENCH_ONLY=PromoteMaskTo`)
+```
+run1: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.1%); #1–#3 同 0.08
+run2: HYLE#0 0.08 / HWY#0 0.08 (100.0%/99.9%); #1–#3 同 0.08
+run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
+```
+
+### ORDER_HWY_FIRST ×3 (`HYLE_BENCH_HWY_FIRST=1 HYLE_BENCH_ONLY=PromoteMaskTo`)
+```
+run1: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.1%); #1–#3 同 0.08
+run2: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
+run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
+```
+
+对照 W0 基线 ~0.57 / C8 单点 ~1.00:本采集六遍稳定在 ~1.00。
