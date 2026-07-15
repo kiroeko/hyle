@@ -174,13 +174,13 @@ inline constexpr bool kSigned = std::is_signed_v<T>;
 template <typename T, std::size_t N>
 struct VecNeon {
   static_assert(detail::kSupported<T>, "neon backend lane type unsupported");
-  typename detail::RawNeonT<T> raw;
+  detail::RawNeonNT<T, N> raw;  // s19-w0c: N-banded (full -> Q type, N*sizeof(T) <= 8 -> D type)
   using PrivateT = T;
   static constexpr std::size_t kPrivateN = N;
 };
 template <typename T, std::size_t N>
 struct MaskNeon {
-  typename detail::MaskRawNeonT<T> raw;
+  detail::MaskRawNeonNT<T, N> raw;  // s19-w0c: N-banded, same banding as VecNeon::raw
   using PrivateT = T;
   static constexpr std::size_t kPrivateN = N;
 };
