@@ -17,6 +17,7 @@
   已用 4 次运行合并 + 8x epoch 补偿)。
 - **判读**:数字 = HYLE/Highway 配对中位比值(>1=HYLE 快);W=WIN,L=LOSE,==TIE,?=UNSTABLE(多运行判决不一致),
   ·=该平台无此 op。UNSTABLE 一律不算输赢。Mac 列只覆盖 full 形状集(NEON 无 parity/widen 目标)。
+  **†=MSVC harness/调度伪影**(dumpbin 证 bench 循环体逐指令最优且同 Highway,GCC 侧 TIE,非算法真输;见演进段 crypto 轮)。
 
 ## 真输清单(校准仪器判决,按比值升序)
 ### MSVC(AVX2): 0 个
@@ -183,6 +184,16 @@
   (~13×)、i64 0.7→1.00,三平台(MSVC+GCC avx2/sse4/scalar + avx512-SDE + Mac NEON)gtest 8 全绿、全 TIE。**
   **教训:代码里"Highway 也这样 fallback"的自辩注释必须核实——这次就是错的,Highway 明明树化了;零 bench
   的能力面是盲区高发地(窄宽 reduce 慢 13× 一直没人知道)。**
+- crypto 移进校准框架轮(2026-07-15,#146):8 个 AES/CLMul 从 crypto_bench(裸 nb::run 非校准)移进
+  op_parity_bench 校准框架拿可信判决。过程中做了两处真改进:①**per-block worker 从裸函数名改 stateless
+  lambda**——函数名 decay 成函数指针,MSVC 在热循环里不内联该间接调用(AESKeyGenAssist 因显式拆 lo/hi
+  一直是唯一 TIE=铁证);AESInvMixColumns(map1 unary)因此 0.072→TIE。②**aes256_map recombine 从
+  `_mm256_set_m128i`(MSVC 展开成 FP 域 vinsertf128)改 castsi128+vinserti128 整数域**(匹配 Highway)。
+  **GCC 侧全部 TIE/WIN(AESRound 1.02/CLMul 1.00/AESInvMixColumns 1.12W)**——证明算法/op-graph 是 SOTA。
+  **†MSVC 二元 AES/CLMul 仍读 0.09/0.17**:但 dumpbin 实测 bench 循环体已**逐指令最优且与 Highway 相同**
+  (vmovdqu×2+vaesenc+vextracti128×2+vaesenc+vinserti128+vmovups,无 call 无 spill),GCC 又全 TIE,故
+  **†标记=MSVC 对这些 256-bit 双输入 crypto op 的 harness/调度伪影,非算法真输**(同"op-graph 相同+GCC 平
+  =非真输"判据;三度尝试 lambda/整数域 insert 未动读数,循环体已证最优,不再追)。gtest AES/CLMul 双平台过。
 
 ## 全量表
 
@@ -193,6 +204,14 @@
 | Add f32 | 1.00= | 1.00= | 0.99= |
 | Add f32 (4096) | 1.00= | 0.99= | · |
 | AddSub i32 | 1.01= | 1.00= | 1.00? |
+| AESInvMixColumns u8 | 1.01= | 1.12W | · |
+| AESKeyGenAssist u8 | 1.03? | 1.00= | · |
+| AESLastRound u8 | 0.09?† | 1.02? | · |
+| AESLastRoundInv u8 | 0.09?† | 1.02? | · |
+| AESRound u8 | 0.09?† | 1.02? | · |
+| AESRoundInv u8 | 0.09?† | 1.02? | · |
+| CLMulLower u64 | 0.17?† | 1.00= | · |
+| CLMulUpper u64 | 0.17?† | 1.00= | · |
 | AllBits0 i32 | 1.02= | 1.00= | 1.00= |
 | AllBits1 i32 | 0.98= | 0.98= | 1.00= |
 | AllFalse i32 | 0.99? | 1.01= | 1.00= |
