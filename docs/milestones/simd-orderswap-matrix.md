@@ -74,7 +74,7 @@
 | DemoteToNearestInt f64→i32 | 0.57 | 待查 |
 | PromoteMaskTo i16→i32 | 0.575 | 待查 |
 | SatWidenMulPairwiseAdd u8*i8→i16 | 0.575 | 待查(vmull 家族?) |
-| MulFixedPoint15 i16 | 0.69 | fallback vs Highway vqrdmulh |
+| MulFixedPoint15 i16 | 0.70 | **契约代价,非 blunder**:HYLE 保 x86 `_mm_mulhrs` 语义(MIN×MIN 回绕到 MIN),NEON vqrdmulh 在此饱和到 MAX,故 HYLE 加 5 op 修正(2 cmeq+and+bsl);x86 因 mulhrs 原生回绕故 0 修正=TIE。**平不了除非改契约**(NEON 允许 MIN×MIN 饱和,破 x86 位一致);待用户拍板 |
 | Dup128MaskFromMaskBits i32 | 0.725 | 待查 |
 | ScatterIndexN i32 | 0.87 | 待查 |
 | SumOfMulQuadAccumulate i8→i32 | 0.89 | 待查 |
