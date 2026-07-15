@@ -343,18 +343,39 @@ HYLE_FORCE_INLINE detail::VN<D> LoadU(D, const TFromD<D>* p) noexcept {
 template <class D>
 HYLE_FORCE_INLINE detail::VN<D> Load(D d, const TFromD<D>* p) noexcept { return LoadU(d, p); }
 
+// simd-19 C4: D-band StoreU writes only N*sizeof(T) bytes (vst1_* when ==8, else
+// memcpy of logical width). Full Q-band keeps vst1q_* + to_q (unchanged).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE void StoreU(VecNeon<T, N> v, Simd<T, N, 0>, T* p) noexcept {
-  if constexpr (std::is_same_v<T, float>) vst1q_f32(p, detail::to_q(v));
-  else if constexpr (std::is_same_v<T, double>) vst1q_f64(p, detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int8_t>) vst1q_s8(p, detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) vst1q_u8(p, detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int16_t>) vst1q_s16(p, detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) vst1q_u16(p, detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int32_t>) vst1q_s32(p, detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) vst1q_u32(p, detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int64_t>) vst1q_s64(p, detail::to_q(v));
-  else vst1q_u64(p, detail::to_q(v));
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (N * sizeof(T) == 8) {
+      // Exact D-register store (8 bytes). Mapping: vst1q_* → vst1_*.
+      if constexpr (std::is_same_v<T, float>) vst1_f32(p, v.raw);
+      else if constexpr (std::is_same_v<T, double>) vst1_f64(p, v.raw);
+      else if constexpr (std::is_same_v<T, std::int8_t>) vst1_s8(p, v.raw);
+      else if constexpr (std::is_same_v<T, std::uint8_t>) vst1_u8(p, v.raw);
+      else if constexpr (std::is_same_v<T, std::int16_t>) vst1_s16(p, v.raw);
+      else if constexpr (std::is_same_v<T, std::uint16_t>) vst1_u16(p, v.raw);
+      else if constexpr (std::is_same_v<T, std::int32_t>) vst1_s32(p, v.raw);
+      else if constexpr (std::is_same_v<T, std::uint32_t>) vst1_u32(p, v.raw);
+      else if constexpr (std::is_same_v<T, std::int64_t>) vst1_s64(p, v.raw);
+      else vst1_u64(p, v.raw);
+    } else {
+      // N*sizeof(T) < 8: write only the logical bytes (no full D spill).
+      std::memcpy(p, &v.raw, N * sizeof(T));
+    }
+  } else {
+    if constexpr (std::is_same_v<T, float>) vst1q_f32(p, detail::to_q(v));
+    else if constexpr (std::is_same_v<T, double>) vst1q_f64(p, detail::to_q(v));
+    else if constexpr (std::is_same_v<T, std::int8_t>) vst1q_s8(p, detail::to_q(v));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) vst1q_u8(p, detail::to_q(v));
+    else if constexpr (std::is_same_v<T, std::int16_t>) vst1q_s16(p, detail::to_q(v));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) vst1q_u16(p, detail::to_q(v));
+    else if constexpr (std::is_same_v<T, std::int32_t>) vst1q_s32(p, detail::to_q(v));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) vst1q_u32(p, detail::to_q(v));
+    else if constexpr (std::is_same_v<T, std::int64_t>) vst1q_s64(p, detail::to_q(v));
+    else vst1q_u64(p, detail::to_q(v));
+  }
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE void Store(VecNeon<T, N> v, Simd<T, N, 0> d, T* p) noexcept { StoreU(v, d, p); }
