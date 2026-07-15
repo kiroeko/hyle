@@ -31,7 +31,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C11 | GetLane/ExtractLane/InsertLane D-form | done | ✓ | 266/266 | — | b1f8470 | GetLane: vget_lane_*(raw,0); Extract/Insert 在 vec.h 泛型 store+reload 未动 |
 | C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | **done+判定 TIE** | ✓ | — | 双序 6 遍 ×4 副本对全部 99.5–100.0%,两侧绝对吞吐同为 12.65–12.71 G op/s | d0702fa | **判定(高能力方 2026-07-15):0.575 → TIE 确认**,见下节判定记录 |
 | C13 | half/combine 穷举 oracle 测试(先行) | done | ✓ | 276/276 绿基线(满宽 10); 子满宽 13 案 DISABLED_ 挂账 | — | 38e37d5(+红名单回挂) | 满宽×10 绿; 13 红=既有 N 盲 half/pad 债(非 s19 回归,批复#11); C14/C15 验收=DISABLED 转绿 |
-| C14 | LowerHalf/UpperHalf native D | todo | | | — | | C13 先绿 |
+| C14 | LowerHalf/UpperHalf native D | done | ✓ | 276/276; also_run: 13 DISABLED 零 UpperHalf/LowerHalf 失败, 余 ZeroExtend/Insert 红=C15 | — | | 满宽 Q→vget_low/high; 子满宽 Lower=raw; Upper=vshr_n_u64(NH*sizeof*8); 批复#11 Upper 转绿验收 |
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | todo | | | — | | C13 先绿 |
 | C16 | Concat* partial 路径 | todo | | | — | | C13 先绿 |
 | C17 | ResizeBitCast partial 审计 | todo | | | — | | 低优 |
@@ -214,3 +214,36 @@ run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
 ### 自审结论
 - **可收(有条件,判定层已批复 #11/#12)**。  
 - 执行差距:未做 `git show` 考古→误标回归;已记教训。  
+
+## C14 对抗自审(执行侧,2026-07-15)
+
+### 闸门核对
+| 项 | 结论 | 证据 |
+|---|---|---|
+| 白名单 | ✓ | 只改 `neon.h` LowerHalf/UpperHalf + detail helpers(`q_get_low/high`,`d_to_u64`,`d_from_u64`);未动 vec.h/tests/其他 backend |
+| G1 编译 | ✓ | touch neon.h 后真重编 link;mtime `Jul 15 18:44` |
+| G2 | ✓ | 随编译(traits 未改) |
+| G3 | ✓ | **276/276** 全绿;满宽 HalfCombineOracle ×10 绿 |
+| G3.5 Upper 转绿 | ✓ | `--gtest_also_run_disabled_tests --gtest_filter=HalfCombineOracle.*`:13 DISABLED **零** UpperHalf/LowerHalf 失败;失败仅 ZeroExtendVector + InsertIntoUpper(C15 范围) |
+| G4 | n/a | 本卡无 bench |
+| G5 | ✓ | 台账 C14 行 done + 本节 |
+| 前缀 | ✓ | `perf(simd): s19-C14 ...` |
+
+### 正确性自审
+1. **满宽 Q→D**:`vget_low_*`/`vget_high_*` 直接写 D raw,摘 `to_q/from_q` 垫片。✓  
+2. **子满宽 LowerHalf**:`out.raw = v.raw`(逻辑低半已在 D 低位);pad 非 API 保证(批复 #9)。✓  
+3. **子满宽 UpperHalf**:`vshr_n_u64(d_to_u64(raw), NH*sizeof(T)*8)` 再 reinterpret——取**逻辑**高半,禁用 `vget_high`(那是 N 盲读 pad 的根因)。✓  
+4. **移位量**:`kShiftBits = NH*sizeof(T)*8`,static_assert ∈(0,64);覆盖红名单全部形状(i8x2..f32x2)。✓  
+5. **未越权**:Combine/ZeroExtend/InsertIntoUpper 未动;13 案仍 DISABLED 挂账至 C15。✓  
+
+### 犹疑/残留
+13. **LowerHalf 子满宽 `out.raw=v.raw` 未清 pad**  
+    - 犹疑:半宽 Store 是否会写出高 lane 垃圾?  
+    - 处置:partial StoreU(C4)只写 `NH*sizeof(T)` 字节;oracle Store 用 FixedTag NH。与批复 #9 一致。  
+    - 残留:若调用方对 half 向量做依赖 pad 的 op,契约外。  
+14. **`vshr_n_u64` 立即数必须编译期常量**  
+    - 犹疑:NEON 要求 shift imm 为常量——`constexpr int kShiftBits` 满足。✓  
+15. **验收形态**:C14 不摘 DISABLED_ 前缀(ZeroExtend/Insert 仍红);验收=also_run 下无 Upper/Lower 失败消息。C15 全绿后再去 DISABLED_。
+
+### 自审结论
+- **可收**。满宽 native D + 子满宽逻辑 UpperHalf 正确性修复落地;C15 接手 pad 清零族。  

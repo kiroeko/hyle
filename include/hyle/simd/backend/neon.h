@@ -3369,10 +3369,78 @@ HYLE_FORCE_INLINE RawNeonT<T> neon_upper_half_zext(RawNeonT<T> v) noexcept {
 }
 }  // namespace detail
 
+// simd-19 C14: full-Q input → native vget_low/high into D raw; sub-full D input →
+// LowerHalf keeps raw (logical lo already low); UpperHalf takes logical hi via u64
+// right-shift by NH*sizeof(T)*8 (fixes pre-existing N-blind vget_high bug).
+namespace detail {
+template <typename T>
+HYLE_FORCE_INLINE typename RawNeonD<T>::type d_from_u64(uint64x1_t u) noexcept {
+  if constexpr (std::is_same_v<T, float>) return vreinterpret_f32_u64(u);
+  else if constexpr (std::is_same_v<T, double>) return vreinterpret_f64_u64(u);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vreinterpret_s8_u64(u);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vreinterpret_u8_u64(u);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vreinterpret_s16_u64(u);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vreinterpret_u16_u64(u);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vreinterpret_s32_u64(u);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return vreinterpret_u32_u64(u);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vreinterpret_s64_u64(u);
+  else return u;  // u64
+}
+template <typename T>
+HYLE_FORCE_INLINE uint64x1_t d_to_u64(typename RawNeonD<T>::type v) noexcept {
+  if constexpr (std::is_same_v<T, float>) return vreinterpret_u64_f32(v);
+  else if constexpr (std::is_same_v<T, double>) return vreinterpret_u64_f64(v);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vreinterpret_u64_s8(v);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vreinterpret_u64_u8(v);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vreinterpret_u64_s16(v);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vreinterpret_u64_u16(v);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vreinterpret_u64_s32(v);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return vreinterpret_u64_u32(v);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vreinterpret_u64_s64(v);
+  else return v;  // u64
+}
+template <typename T>
+HYLE_FORCE_INLINE typename RawNeonD<T>::type q_get_low(typename RawNeon<T>::type q) noexcept {
+  if constexpr (std::is_same_v<T, float>) return vget_low_f32(q);
+  else if constexpr (std::is_same_v<T, double>) return vget_low_f64(q);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vget_low_s8(q);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vget_low_u8(q);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vget_low_s16(q);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vget_low_u16(q);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vget_low_s32(q);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return vget_low_u32(q);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vget_low_s64(q);
+  else return vget_low_u64(q);
+}
+template <typename T>
+HYLE_FORCE_INLINE typename RawNeonD<T>::type q_get_high(typename RawNeon<T>::type q) noexcept {
+  if constexpr (std::is_same_v<T, float>) return vget_high_f32(q);
+  else if constexpr (std::is_same_v<T, double>) return vget_high_f64(q);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vget_high_s8(q);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vget_high_u8(q);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vget_high_s16(q);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vget_high_u16(q);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vget_high_s32(q);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return vget_high_u32(q);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vget_high_s64(q);
+  else return vget_high_u64(q);
+}
+}  // namespace detail
+
 template <typename T, std::size_t NH, int kPow2, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, NH> LowerHalf(Simd<T, NH, kPow2>, VecNeon<T, N> v) noexcept {
   static_assert(NH == N / 2 || (N == 1 && NH == 1), "LowerHalf: NH must be N/2");
-  return detail::from_q<VecNeon<T, NH>>(detail::neon_lower_half_zext<T>(detail::to_q(v)));
+  VecNeon<T, NH> out;
+  if constexpr (N * sizeof(T) == 16) {
+    // Full Q → D: native low 64.
+    out.raw = detail::q_get_low<T>(v.raw);
+  } else if constexpr (detail::kIsDBand<T, N>) {
+    // Sub-full D: logical low half already in low bits of the D register.
+    out.raw = v.raw;
+  } else {
+    out = detail::from_q<decltype(out)>(detail::neon_lower_half_zext<T>(detail::to_q(v)));
+  }
+  return out;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, (N > 1 ? N / 2 : 1)> LowerHalf(VecNeon<T, N> v) noexcept {
@@ -3381,7 +3449,20 @@ HYLE_FORCE_INLINE VecNeon<T, (N > 1 ? N / 2 : 1)> LowerHalf(VecNeon<T, N> v) noe
 template <typename T, std::size_t NH, int kPow2, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, NH> UpperHalf(Simd<T, NH, kPow2>, VecNeon<T, N> v) noexcept {
   static_assert(NH == N / 2, "UpperHalf: NH must be N/2");
-  return detail::from_q<VecNeon<T, NH>>(detail::neon_upper_half_zext<T>(detail::to_q(v)));
+  VecNeon<T, NH> out;
+  if constexpr (N * sizeof(T) == 16) {
+    // Full Q → D: native high 64.
+    out.raw = detail::q_get_high<T>(v.raw);
+  } else if constexpr (detail::kIsDBand<T, N>) {
+    // Sub-full D: logical high half = shift D raw right by NH*sizeof(T) bytes (u64 view).
+    // Must NOT use vget_high (that reads the zero pad from to_q, pre-existing N-blind bug).
+    constexpr int kShiftBits = static_cast<int>(NH * sizeof(T) * 8);
+    static_assert(kShiftBits > 0 && kShiftBits < 64, "UpperHalf sub-full shift in (0,64)");
+    out.raw = detail::d_from_u64<T>(vshr_n_u64(detail::d_to_u64<T>(v.raw), kShiftBits));
+  } else {
+    out = detail::from_q<decltype(out)>(detail::neon_upper_half_zext<T>(detail::to_q(v)));
+  }
+  return out;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N / 2> UpperHalf(VecNeon<T, N> v) noexcept {
