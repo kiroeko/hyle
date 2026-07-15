@@ -23,7 +23,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C3 | LoadU partial 窄读 | done | ✓ | Vec 220/220; LoadU_PageEnd 23/23 GREEN; StoreU 23/23 仍红(C4) | — | c1e3283 | kIsDBand: ==8→vld1_*; <8→vdup_n_0+memcpy N*sizeof(T); Q 分支 from_q 不变 |
 | C4 | StoreU partial 窄写 | done | ✓ | 266/266 (Vec 220 + PartialBoundary 46 全绿; StoreU 23/23 GREEN) | — | 4dc2505 | kIsDBand: ==8→vst1_*; <8→memcpy N*sizeof(T); Q 分支 to_q+vst1q 不变 |
 | C5 | 比较族 Eq/Ne/Gt/Ge/Lt/Le D-form | done | ✓ | 266/266 | — | c8314bd | kIsDBand: vceq/vcgt/vcge/vclt/vcle_*; Ne=Eq+vmvn_*/veor_u64; 64-bit D 探针 EXISTS |
-| C6 | MaskFromVec/MaskFromNormalizedVec/VecFromMask D | todo | | | — | | |
+| C6 | MaskFromVec/MaskFromNormalizedVec/VecFromMask D | done | ✓ | 266/266 | — | (本提交) | kIsDBand: vreinterpret_* + MaskFromVec vshr_n_s*; Q 原样; 探针 EXISTS |
 | C7 | mask And/Or/Xor/AndNot/Not D-form | todo | | | — | | |
 | C8 | PromoteLowerTo/PromoteTo partial 输入 D 路 | todo | | | — | | 靶心 |
 | C9 | DemoteTo partial 输出 D 路 | todo | | | — | | |

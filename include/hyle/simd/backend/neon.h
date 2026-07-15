@@ -1977,20 +1977,35 @@ HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(Simd<T, N, 0>, MaskNeon<T, N> m) n
 }
 // VecFromMask: the mask's per-lane 0xFF../0 pattern as a vector. MaskNeon.raw is the unsigned
 // same-width all-ones/all-zero vector (vceqq_* result), so reinterpret it to T's raw type.
+// simd-19 C6: D-band uses vreinterpret_* on native D raw; Q keeps vreinterpretq_* + to_q/from_q.
 template <class D>
 HYLE_FORCE_INLINE detail::VN<D> VecFromMask(D, MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m) noexcept {
   using T = TFromD<D>;
   detail::VN<D> r;
-  if constexpr (std::is_same_v<T, float>) r = detail::from_q<decltype(r)>(vreinterpretq_f32_u32(detail::to_q(m)));
-  else if constexpr (std::is_same_v<T, double>) r = detail::from_q<decltype(r)>(vreinterpretq_f64_u64(detail::to_q(m)));
-  else if constexpr (std::is_same_v<T, std::int8_t>) r = detail::from_q<decltype(r)>(vreinterpretq_s8_u8(detail::to_q(m)));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) r = detail::from_q<decltype(r)>(detail::to_q(m));
-  else if constexpr (std::is_same_v<T, std::int16_t>) r = detail::from_q<decltype(r)>(vreinterpretq_s16_u16(detail::to_q(m)));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) r = detail::from_q<decltype(r)>(detail::to_q(m));
-  else if constexpr (std::is_same_v<T, std::int32_t>) r = detail::from_q<decltype(r)>(vreinterpretq_s32_u32(detail::to_q(m)));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) r = detail::from_q<decltype(r)>(detail::to_q(m));
-  else if constexpr (std::is_same_v<T, std::int64_t>) r = detail::from_q<decltype(r)>(vreinterpretq_s64_u64(detail::to_q(m)));
-  else r = detail::from_q<decltype(r)>(detail::to_q(m));  // u64
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (std::is_same_v<T, float>) r.raw = vreinterpret_f32_u32(m.raw);
+    else if constexpr (std::is_same_v<T, double>) r.raw = vreinterpret_f64_u64(m.raw);
+    else if constexpr (std::is_same_v<T, std::int8_t>) r.raw = vreinterpret_s8_u8(m.raw);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) r.raw = m.raw;
+    else if constexpr (std::is_same_v<T, std::int16_t>) r.raw = vreinterpret_s16_u16(m.raw);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) r.raw = m.raw;
+    else if constexpr (std::is_same_v<T, std::int32_t>) r.raw = vreinterpret_s32_u32(m.raw);
+    else if constexpr (std::is_same_v<T, std::uint32_t>) r.raw = m.raw;
+    else if constexpr (std::is_same_v<T, std::int64_t>) r.raw = vreinterpret_s64_u64(m.raw);
+    else r.raw = m.raw;  // u64
+  } else {
+    if constexpr (std::is_same_v<T, float>) r = detail::from_q<decltype(r)>(vreinterpretq_f32_u32(detail::to_q(m)));
+    else if constexpr (std::is_same_v<T, double>) r = detail::from_q<decltype(r)>(vreinterpretq_f64_u64(detail::to_q(m)));
+    else if constexpr (std::is_same_v<T, std::int8_t>) r = detail::from_q<decltype(r)>(vreinterpretq_s8_u8(detail::to_q(m)));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) r = detail::from_q<decltype(r)>(detail::to_q(m));
+    else if constexpr (std::is_same_v<T, std::int16_t>) r = detail::from_q<decltype(r)>(vreinterpretq_s16_u16(detail::to_q(m)));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) r = detail::from_q<decltype(r)>(detail::to_q(m));
+    else if constexpr (std::is_same_v<T, std::int32_t>) r = detail::from_q<decltype(r)>(vreinterpretq_s32_u32(detail::to_q(m)));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) r = detail::from_q<decltype(r)>(detail::to_q(m));
+    else if constexpr (std::is_same_v<T, std::int64_t>) r = detail::from_q<decltype(r)>(vreinterpretq_s64_u64(detail::to_q(m)));
+    else r = detail::from_q<decltype(r)>(detail::to_q(m));  // u64
+  }
   return r;
 }
 // MaskFromVec(v): a lane is true iff its MSB is set (Highway; inverse of VecFromMask). NEON
@@ -1998,48 +2013,86 @@ HYLE_FORCE_INLINE detail::VN<D> VecFromMask(D, MaskNeon<TFromD<D>, HYLE_SIMD_MAX
 // sign bit smears across the whole lane (all-ones / all-zero), then reinterpret to the unsigned
 // MaskRawNeonT<T>. vshrq_n_s* is arithmetic for every width (8/16/32/64 on aarch64). float/double
 // have no signed shift, so pun to s32/s64 first (same bit-width, no data movement).
+// simd-19 C6: D-band uses vshr_n_* + vreinterpret_* on native D raw; Q keeps q-form + shims.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> MaskFromVec(VecNeon<T, N> v) noexcept {
   MaskNeon<T, N> m;
-  if constexpr (std::is_same_v<T, float>)
-    m = detail::from_q<decltype(m)>(vreinterpretq_u32_s32(vshrq_n_s32(vreinterpretq_s32_f32(detail::to_q(v)), 31)));
-  else if constexpr (std::is_same_v<T, double>)
-    m = detail::from_q<decltype(m)>(vreinterpretq_u64_s64(vshrq_n_s64(vreinterpretq_s64_f64(detail::to_q(v)), 63)));
-  else if constexpr (std::is_same_v<T, std::int8_t>)
-    m = detail::from_q<decltype(m)>(vreinterpretq_u8_s8(vshrq_n_s8(detail::to_q(v), 7)));
-  else if constexpr (std::is_same_v<T, std::uint8_t>)
-    m = detail::from_q<decltype(m)>(vreinterpretq_u8_s8(vshrq_n_s8(vreinterpretq_s8_u8(detail::to_q(v)), 7)));
-  else if constexpr (std::is_same_v<T, std::int16_t>)
-    m = detail::from_q<decltype(m)>(vreinterpretq_u16_s16(vshrq_n_s16(detail::to_q(v), 15)));
-  else if constexpr (std::is_same_v<T, std::uint16_t>)
-    m = detail::from_q<decltype(m)>(vreinterpretq_u16_s16(vshrq_n_s16(vreinterpretq_s16_u16(detail::to_q(v)), 15)));
-  else if constexpr (std::is_same_v<T, std::int32_t>)
-    m = detail::from_q<decltype(m)>(vreinterpretq_u32_s32(vshrq_n_s32(detail::to_q(v), 31)));
-  else if constexpr (std::is_same_v<T, std::uint32_t>)
-    m = detail::from_q<decltype(m)>(vreinterpretq_u32_s32(vshrq_n_s32(vreinterpretq_s32_u32(detail::to_q(v)), 31)));
-  else if constexpr (std::is_same_v<T, std::int64_t>)
-    m = detail::from_q<decltype(m)>(vreinterpretq_u64_s64(vshrq_n_s64(detail::to_q(v), 63)));
-  else  // u64
-    m = detail::from_q<decltype(m)>(vreinterpretq_u64_s64(vshrq_n_s64(vreinterpretq_s64_u64(detail::to_q(v)), 63)));
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (std::is_same_v<T, float>)
+      m.raw = vreinterpret_u32_s32(vshr_n_s32(vreinterpret_s32_f32(v.raw), 31));
+    else if constexpr (std::is_same_v<T, double>)
+      m.raw = vreinterpret_u64_s64(vshr_n_s64(vreinterpret_s64_f64(v.raw), 63));
+    else if constexpr (std::is_same_v<T, std::int8_t>)
+      m.raw = vreinterpret_u8_s8(vshr_n_s8(v.raw, 7));
+    else if constexpr (std::is_same_v<T, std::uint8_t>)
+      m.raw = vreinterpret_u8_s8(vshr_n_s8(vreinterpret_s8_u8(v.raw), 7));
+    else if constexpr (std::is_same_v<T, std::int16_t>)
+      m.raw = vreinterpret_u16_s16(vshr_n_s16(v.raw, 15));
+    else if constexpr (std::is_same_v<T, std::uint16_t>)
+      m.raw = vreinterpret_u16_s16(vshr_n_s16(vreinterpret_s16_u16(v.raw), 15));
+    else if constexpr (std::is_same_v<T, std::int32_t>)
+      m.raw = vreinterpret_u32_s32(vshr_n_s32(v.raw, 31));
+    else if constexpr (std::is_same_v<T, std::uint32_t>)
+      m.raw = vreinterpret_u32_s32(vshr_n_s32(vreinterpret_s32_u32(v.raw), 31));
+    else if constexpr (std::is_same_v<T, std::int64_t>)
+      m.raw = vreinterpret_u64_s64(vshr_n_s64(v.raw, 63));
+    else  // u64
+      m.raw = vreinterpret_u64_s64(vshr_n_s64(vreinterpret_s64_u64(v.raw), 63));
+  } else {
+    if constexpr (std::is_same_v<T, float>)
+      m = detail::from_q<decltype(m)>(vreinterpretq_u32_s32(vshrq_n_s32(vreinterpretq_s32_f32(detail::to_q(v)), 31)));
+    else if constexpr (std::is_same_v<T, double>)
+      m = detail::from_q<decltype(m)>(vreinterpretq_u64_s64(vshrq_n_s64(vreinterpretq_s64_f64(detail::to_q(v)), 63)));
+    else if constexpr (std::is_same_v<T, std::int8_t>)
+      m = detail::from_q<decltype(m)>(vreinterpretq_u8_s8(vshrq_n_s8(detail::to_q(v), 7)));
+    else if constexpr (std::is_same_v<T, std::uint8_t>)
+      m = detail::from_q<decltype(m)>(vreinterpretq_u8_s8(vshrq_n_s8(vreinterpretq_s8_u8(detail::to_q(v)), 7)));
+    else if constexpr (std::is_same_v<T, std::int16_t>)
+      m = detail::from_q<decltype(m)>(vreinterpretq_u16_s16(vshrq_n_s16(detail::to_q(v), 15)));
+    else if constexpr (std::is_same_v<T, std::uint16_t>)
+      m = detail::from_q<decltype(m)>(vreinterpretq_u16_s16(vshrq_n_s16(vreinterpretq_s16_u16(detail::to_q(v)), 15)));
+    else if constexpr (std::is_same_v<T, std::int32_t>)
+      m = detail::from_q<decltype(m)>(vreinterpretq_u32_s32(vshrq_n_s32(detail::to_q(v), 31)));
+    else if constexpr (std::is_same_v<T, std::uint32_t>)
+      m = detail::from_q<decltype(m)>(vreinterpretq_u32_s32(vshrq_n_s32(vreinterpretq_s32_u32(detail::to_q(v)), 31)));
+    else if constexpr (std::is_same_v<T, std::int64_t>)
+      m = detail::from_q<decltype(m)>(vreinterpretq_u64_s64(vshrq_n_s64(detail::to_q(v), 63)));
+    else  // u64
+      m = detail::from_q<decltype(m)>(vreinterpretq_u64_s64(vshrq_n_s64(vreinterpretq_s64_u64(detail::to_q(v)), 63)));
+  }
   return m;
 }
 // MaskFromNormalizedVec: caller GUARANTEES v is already canonical all-ones/all-zero (PromoteTo/
 // OrderedDemote2To of a mask vector). Skips MaskFromVec's vshrq normalization; only reinterprets the
 // vector raw to the mask's unsigned-same-width raw (no instruction). Removes the redundant shift that
 // left the vector-domain PromoteMaskTo/OrderedDemote2MasksTo ~1.2x Highway.
+// simd-19 C6: D-band pure vreinterpret_* / identity on D raw; Q keeps q-form + shims.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> MaskFromNormalizedVec(VecNeon<T, N> v) noexcept {
   MaskNeon<T, N> m;  // reinterpret the vector raw to the mask's unsigned-same-width raw (no shift).
-  if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vreinterpretq_u32_f32(detail::to_q(v)));
-  else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vreinterpretq_u64_f64(detail::to_q(v)));
-  else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vreinterpretq_u8_s8(detail::to_q(v)));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vreinterpretq_u16_s16(detail::to_q(v)));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vreinterpretq_u32_s32(detail::to_q(v)));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(detail::to_q(v));
-  else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vreinterpretq_u64_s64(detail::to_q(v)));
-  else m = detail::from_q<decltype(m)>(detail::to_q(v));  // u64
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (std::is_same_v<T, float>) m.raw = vreinterpret_u32_f32(v.raw);
+    else if constexpr (std::is_same_v<T, double>) m.raw = vreinterpret_u64_f64(v.raw);
+    else if constexpr (std::is_same_v<T, std::int8_t>) m.raw = vreinterpret_u8_s8(v.raw);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m.raw = v.raw;
+    else if constexpr (std::is_same_v<T, std::int16_t>) m.raw = vreinterpret_u16_s16(v.raw);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m.raw = v.raw;
+    else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vreinterpret_u32_s32(v.raw);
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m.raw = v.raw;
+    else if constexpr (std::is_same_v<T, std::int64_t>) m.raw = vreinterpret_u64_s64(v.raw);
+    else m.raw = v.raw;  // u64
+  } else {
+    if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vreinterpretq_u32_f32(detail::to_q(v)));
+    else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vreinterpretq_u64_f64(detail::to_q(v)));
+    else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vreinterpretq_u8_s8(detail::to_q(v)));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(detail::to_q(v));
+    else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vreinterpretq_u16_s16(detail::to_q(v)));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(detail::to_q(v));
+    else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vreinterpretq_u32_s32(detail::to_q(v)));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(detail::to_q(v));
+    else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vreinterpretq_u64_s64(detail::to_q(v)));
+    else m = detail::from_q<decltype(m)>(detail::to_q(v));  // u64
+  }
   return m;
 }
 
