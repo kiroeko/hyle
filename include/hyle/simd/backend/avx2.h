@@ -4305,78 +4305,66 @@ HYLE_FORCE_INLINE Vec256<T, N> CombineShiftRightLanes(Vec256<T, N> hi, Vec256<T,
 // AES-NI per-128 rather than requiring VAES (_mm256_aesenc_epi128, Ice Lake+, needs -mvaes).
 // Promoting to VAES is a pure profiling upgrade. Contract: a 256-bit vector = 32 bytes = two
 // 128-bit AES states (sizeof(T)*N == 32). Software fallback lives inside the block worker.
-namespace detail {
-template <typename BlockOp>
-HYLE_FORCE_INLINE __m256i aes256_map1(__m256i s, BlockOp op) noexcept {
-  const __m128i lo = op(_mm256_castsi256_si128(s));
-  const __m128i hi = op(_mm256_extracti128_si256(s, 1));
-  // integer-domain recombine: _mm256_set_m128i expands (on MSVC) to vinsertf128 (FP domain) over
-  // AES integer output -> a per-iteration domain-crossing bypass stall (op_parity: MSVC ~10x). Build
-  // it with castsi128 + vinserti128 explicitly to stay in the integer domain (GCC already did this).
-  return _mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1);
-}
-template <typename BlockOp>
-HYLE_FORCE_INLINE __m256i aes256_map2(__m256i s, __m256i k, BlockOp op) noexcept {
-  const __m128i lo = op(_mm256_castsi256_si128(s), _mm256_castsi256_si128(k));
-  const __m128i hi = op(_mm256_extracti128_si256(s, 1), _mm256_extracti128_si256(k, 1));
-  return _mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1);
-}
-}  // namespace detail
-// The per-block worker is passed as a stateless LAMBDA, not the bare function NAME: a function name
-// decays to a function POINTER, and MSVC does NOT inline the resulting indirect call inside a hot
-// loop -> op_parity measured the AES ops ~10x slower than Highway (AESKeyGenAssist, which already
-// splits lo/hi explicitly, was the lone TIE -- the tell). A stateless lambda is a unique type whose
-// operator() inlines directly, so aes256_map2/1 emit just the 2 vaesenc with no call.
+// CRITICAL: split lo/hi and call the per-block worker DIRECTLY. An earlier version routed through
+// template helpers (aes256_map1/map2) taking the block op as a lambda; in a hot loop MSVC lowered
+// that indirection to a stack round-trip of both 256-bit inputs ($T1/$T2 scratch: vmovdqu+
+// vextractf128 to stack, reload) plus a /GS security-cookie frame -> op_parity measured the binary
+// AES/CLMul ops ~10x slower than Highway.
+// The bench-loop dump of a hand-inlined 2-block sequence is byte-identical to Highway (2 vaesenc +
+// extracti128 + inserti128, no spill); AESKeyGenAssist, which already split explicitly, was the lone
+// TIE -- the tell. Recombine stays integer-domain (vinserti128, not set_m128i's FP vinsertf128).
+#define HYLE_AES2(BLK) \
+  const __m128i lo = detail::BLK(_mm256_castsi256_si128(a.raw), _mm256_castsi256_si128(b.raw)); \
+  const __m128i hi = detail::BLK(_mm256_extracti128_si256(a.raw, 1), _mm256_extracti128_si256(b.raw, 1)); \
+  return Vec256<T, N>{_mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1)}
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Vec256<T, N> AESRound(Vec256<T, N> state, Vec256<T, N> key) noexcept {
+HYLE_FORCE_INLINE Vec256<T, N> AESRound(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw,
-      [](__m128i s, __m128i k){ return detail::aes_round_block(s, k); })};
+  HYLE_AES2(aes_round_block);
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Vec256<T, N> AESLastRound(Vec256<T, N> state, Vec256<T, N> key) noexcept {
+HYLE_FORCE_INLINE Vec256<T, N> AESLastRound(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw,
-      [](__m128i s, __m128i k){ return detail::aes_last_round_block(s, k); })};
+  HYLE_AES2(aes_last_round_block);
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Vec256<T, N> AESRoundInv(Vec256<T, N> state, Vec256<T, N> key) noexcept {
+HYLE_FORCE_INLINE Vec256<T, N> AESRoundInv(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw,
-      [](__m128i s, __m128i k){ return detail::aes_round_inv_block(s, k); })};
+  HYLE_AES2(aes_round_inv_block);
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Vec256<T, N> AESLastRoundInv(Vec256<T, N> state, Vec256<T, N> key) noexcept {
+HYLE_FORCE_INLINE Vec256<T, N> AESLastRoundInv(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw,
-      [](__m128i s, __m128i k){ return detail::aes_last_round_inv_block(s, k); })};
+  HYLE_AES2(aes_last_round_inv_block);
 }
+#undef HYLE_AES2
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> AESInvMixColumns(Vec256<T, N> state) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map1(state.raw,
-      [](__m128i s){ return detail::aes_inv_mix_block(s); })};
+  const __m128i lo = detail::aes_inv_mix_block(_mm256_castsi256_si128(state.raw));
+  const __m128i hi = detail::aes_inv_mix_block(_mm256_extracti128_si256(state.raw, 1));
+  return Vec256<T, N>{_mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1)};
 }
 template <std::uint8_t kRcon, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> AESKeyGenAssist(Vec256<T, N> v) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  // kRcon is a compile-time immediate, so the per-block worker is templated (can't route
-  // through aes256_map1's plain fn-ptr) -- split lo/hi explicitly.
   const __m128i lo = detail::aes_keygen_block<kRcon>(_mm256_castsi256_si128(v.raw));
   const __m128i hi = detail::aes_keygen_block<kRcon>(_mm256_extracti128_si256(v.raw, 1));
-  return Vec256<T, N>{_mm256_set_m128i(hi, lo)};
+  return Vec256<T, N>{_mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1)};
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> CLMulLower(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 32, "CLMul needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(a.raw, b.raw,
-      [](__m128i x, __m128i y){ return detail::clmul_lower_block(x, y); })};
+  const __m128i lo = detail::clmul_lower_block(_mm256_castsi256_si128(a.raw), _mm256_castsi256_si128(b.raw));
+  const __m128i hi = detail::clmul_lower_block(_mm256_extracti128_si256(a.raw, 1), _mm256_extracti128_si256(b.raw, 1));
+  return Vec256<T, N>{_mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1)};
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> CLMulUpper(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 32, "CLMul needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(a.raw, b.raw,
-      [](__m128i x, __m128i y){ return detail::clmul_upper_block(x, y); })};
+  const __m128i lo = detail::clmul_upper_block(_mm256_castsi256_si128(a.raw), _mm256_castsi256_si128(b.raw));
+  const __m128i hi = detail::clmul_upper_block(_mm256_extracti128_si256(a.raw, 1), _mm256_extracti128_si256(b.raw, 1));
+  return Vec256<T, N>{_mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1)};
 }
 
 }  // namespace hyle::simd
