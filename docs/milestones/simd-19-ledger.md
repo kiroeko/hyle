@@ -35,7 +35,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | done | ✓ | 276/276; also_run HalfCombine 23/23 全绿(13 原 DISABLED 转绿) | — | bb92d29 | 满宽 vcombine; 子满宽 u64 mask+shift 显式清 pad; 批复#11 ZeroExtend/Insert 验收 |
 | C16 | Concat* partial 路径 | done | ✓ | 276/276; HalfCombine also_run 23/23 | ConcatEven i32: HYLE~0.07 / HWY~0.06 (~94–104%); full_bench 四 Concat* 仅 avx2 门控,NEON 无该段 | b131ea6 | D 档=Combine(Lower/UpperHalf); 满宽 Q store+reload 不动 |
 | C17 | ResizeBitCast partial 审计 | done | ✓ | 276/276; also_run 23/23 | — | 4adca64 | D↔D exact-byte 无 Q 物化; Q/mixed 保持 to_q 路径(flip-safe) |
-| C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | done | ✓ | 276/276 | 18/18 完整: parity×6=769行 full×6=2293 widen×6=308; PromoteMaskTo 六遍 ~99.5–100.1% @0.08ns | 256d5cc | 产物 `oplab/s19_c18/`; 换序 18/18 ORDER_OK; **判定=高能力方** |
+| C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | **done+判定 PASS** | ✓ | 276/276 | 三 TU 校准全 PASS; LOSE: parity 0/69, full 0/206, widen 1/28 | 256d5cc | **判定(高能力方):s19 无回归,验收标准 3 达成**;唯一 LOSE=SatWidenMulAccumFixedPoint 0.917 系矩阵既有 `0.94?` 边界项钉实,非 s19 回归,立 C20;见 C18 判定记录 |
 | C19 | 文档/矩阵回写 + cloc | todo | | | — | | 高能力方 |
 
 ## 执行侧犹疑/边界说明(C3–C13 集中,2026-07-15)
@@ -364,4 +364,29 @@ run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
 24. **未做 Windows avx2/sse4/scalar 复跑** — 卡片写「三个 NEON bench」+gtest;x86 复跑若需归 C19/高能力方。  
 
 ### 自审结论
-- **采集可收**;判读/矩阵回写归 C19。  
+- **采集可收**;判读/矩阵回写归 C19。
+
+## C18 判定记录(高能力方,2026-07-15)
+
+**判定:PASS——simd-19 无复合回归,验收标准 3 达成。** 依据:
+
+1. **产物完整性**:18/18 文件行数核对一致(parity 769×6 / full 2293×6 / widen 308×6);换序有效性
+   抽检 4 份(hwyfirst 文件首行 HWY#0 在前)✓。
+2. **三 TU 报告**(`scripts/op-parity-report.py --gate 0.06`,每 TU 六文件合并):
+   - parity:CALIBRATION PASS;LOSE **0/69**;UNSTABLE 2(ScatterIndexN 0.874 = 既有缓议项维持原状;
+     StoreInterleaved4 best 1.012/med 0.996 噪声带)。**PromoteMaskTo 1.000/1.000, spread 1.005——
+     在全量复合环境下复确认 TIE**(C12 是单 op 过滤环境,本次是终态确认)。
+   - full:CALIBRATION PASS;LOSE **0/206**;UNSTABLE 16 全部 best/med ∈ [0.94,1.05] 噪声带;WIN 8 保持。
+   - widen:CALIBRATION PASS;LOSE **1/28**:SatWidenMulAccumFixedPoint i16→i32 = 0.917/0.917
+     (双序一致:normal 序 HWY=107.9–109.8%,hwyfirst 序 HYLE=91.1–91.4%;spread 1.002/1.059)。
+3. **唯一 LOSE 定性:非 s19 回归**。矩阵既有记录该 op NEON 列 = `0.94?`(s19 前即边界未定项,从未
+   确认 TIE、不在真输清单)。本次复跑的贡献是把"?"钉成确认值。0.94→0.917 差值无证据归因 s19
+   (组合链 = vec.h `InterleaveWholeLower + SatWidenMulPairwiseAccumulate`,若需 100% 排除 s19 贡献,
+   做 `s19-w0-green` vs HEAD 的 widen kernel 指令 diff,登记为 C20 第一步)。MSVC/GCC 列 1.90W/1.78W
+   ——NEON 列疑似该组合链的指令选择缺口。**立 C20 修复卡**(证据阶梯:逐指令 diff 起步)。
+4. **C14–C17 范围抽查**:四提交全部仅触 neon.h+台账 ✓;C13 红名单 13 案由 C14/C15 转绿
+   (also_run 23/23)——**子满宽 half/pad 既有 bug 家族随本里程碑顺带修复**。
+5. **犹疑批复**:#23 通过(769 为 rc=0 实测完整基线,2227 是历史 op 集的数字;C19 把手册 §3-4 的
+   完整性判据改为"wc -l 相对同二进制首跑");#24 通过(x86 构造性无关维持成立——s19 全部代码提交
+   仅触 neon.h/tests;Windows 三目标复跑列入 C19 收口清单,下次 vcvars 环境形式性跑一遍)。
+   (#13–#22 未逐条批复,按需可补;其处置已随 C14–C17 的 also_run 证据链间接复核。)  
