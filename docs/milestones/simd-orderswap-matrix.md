@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;三平台真输清单 **全零**:MSVC 0 / GCC 0 / NEON 0)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 14**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中)
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -60,8 +60,32 @@
   方法教训:此前"objdump 逐指令等价"是**向量签名级**对比的假象——标量尾巴(寄存器宽度/扩展指令)
   没有逐条比,一条指令恰好就是那 6%。)
 
-### Mac/NEON: 0 个
-- (第十四轮清零:MulAddSub/MulSubAdd 弃两 FMA 的 OddEven(MulAdd,MulSub) 改 Highway 单 FMA 形,见演进段。)
+### Mac/NEON: 14 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序)
+> **背景**:此前 NEON 只有 op_parity_full_bench 一个 target,且它自 P4 起加的 op 从没在 NEON 重跑;
+> op_parity_bench_neon / widen_neon 到本会话才建(见 reference_simd_coverage_tool 记忆的"NEON 覆盖盲区")。
+> 首次三 TU 全跑,暴露一批 HYLE NEON 走 store+reload/scalar-fallback 而 Highway 用 native intrinsic
+> 的 op。**这些全不在"最近加的 33 个"里(那 33 个 NEON 仅 AESKeyGenAssist 一个输,已含在下表)**——是老 op
+> 的 ARM 欠账。"有 Highway 参考只能平不能输",逐个修复中(tasks 153-156)。
+
+| op | NEON 比值 | 根因(vs Highway) |
+|---|---|---|
+| AESKeyGenAssist u8 | 0.12 | scalar software core(aes_keygen_assist_soft memcpy)vs Highway 向量合成 DupOdd+AESLastRound(kRcon)+TableLookupBytes(RotWord) |
+| BlendedStore i32 | 0.18 | store+reload+标量逐 lane 写 vs Highway load-blend-store(IfThenElse+StoreU);⚠️HYLE 版 fault-safe 强契约,改前须确认契约 |
+| TwoTablesLookupLanes i32 | 0.21 | store+reload gather vs Highway byte-index 展开 + vqtbl2q |
+| SumsOfAdjQuadAbsDiff u8→u16 | 0.24 | fallback vs Highway native(vabal 家族) |
+| TableLookupLanes i32 | 0.32 | store+reload gather vs Highway BroadcastLaneBytes+ShiftLeft+ByteOffsets + vqtbl1q |
+| PromoteOddTo i8→i16 | 0.46 | vuzp+vmovl vs Highway 纯移位 bitcast(ShiftRight/And) |
+| PromoteEvenTo i8→i16 | 0.48 | 同上 |
+| DemoteToNearestInt f64→i32 | 0.57 | 待查 |
+| PromoteMaskTo i16→i32 | 0.575 | 待查 |
+| SatWidenMulPairwiseAdd u8*i8→i16 | 0.575 | 待查(vmull 家族?) |
+| MulFixedPoint15 i16 | 0.69 | fallback vs Highway vqrdmulh |
+| Dup128MaskFromMaskBits i32 | 0.725 | 待查 |
+| ScatterIndexN i32 | 0.87 | 待查 |
+| SumOfMulQuadAccumulate i8→i32 | 0.89 | 待查 |
+
+- (第十四轮清零:MulAddSub/MulSubAdd 弃两 FMA 的 OddEven(MulAdd,MulSub) 改 Highway 单 FMA 形,见演进段。
+  此前"NEON 0 输"是 NEON perf 覆盖不全的假象——只测过 full_bench 一部分。)
 
 ### 与旧报告的对照(演进:旧 harness -> v1 校准仪器 -> 修复 + v2 stagger)
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
@@ -233,14 +257,14 @@
 | Add f32 | 1.00= | 1.00= | 0.99= |
 | Add f32 (4096) | 1.00= | 0.99= | · |
 | AddSub i32 | 1.01= | 1.00= | 1.00? |
-| AESInvMixColumns u8 | 1.01= | 1.14W | · |
-| AESKeyGenAssist u8 | 1.03? | 1.00= | · |
-| AESLastRound u8 | 1.00= | 1.02= | · |
-| AESLastRoundInv u8 | 1.00= | 1.01= | · |
-| AESRound u8 | 1.00= | 1.02= | · |
-| AESRoundInv u8 | 1.00= | 1.01= | · |
-| CLMulLower u64 | 1.00= | 1.00= | · |
-| CLMulUpper u64 | 1.00= | 1.00= | · |
+| AESInvMixColumns u8 | 1.01= | 1.14W | 1.00= |
+| AESKeyGenAssist u8 | 1.03? | 1.00= | **0.12 LOSE** |
+| AESLastRound u8 | 1.00= | 1.02= | 1.00= |
+| AESLastRoundInv u8 | 1.00= | 1.01= | 1.00= |
+| AESRound u8 | 1.00= | 1.02= | 1.00= |
+| AESRoundInv u8 | 1.00= | 1.01= | 1.00= |
+| CLMulLower u64 | 1.00= | 1.00= | 1.00? |
+| CLMulUpper u64 | 1.00= | 1.00= | 1.00= |
 | AllBits0 i32 | 1.02= | 1.00= | 1.00= |
 | AllBits1 i32 | 0.98= | 0.98= | 1.00= |
 | AllFalse i32 | 0.99? | 1.01= | 1.00= |
@@ -349,8 +373,8 @@
 | MaskedApproxReciprocal f32 | 1.00= | 1.00= | 1.00= |
 | MaskedApproxReciprocalSqrt f32 | 1.00= | 0.99= | 1.00= |
 | MaskedConvertTo f32-i32 | 2.06W | 1.50W | 0.99= |
-| MaskedGatherIndex i32 (4096, 50%) | 1.00= | 1.01= | · |
-| MaskedGatherIndexOr i32 (4096, 50%) | 1.00= | 1.01= | · |
+| MaskedGatherIndex i32 (4096, 50%) | 1.00= | 1.01= | 1.01= |
+| MaskedGatherIndexOr i32 (4096, 50%) | 1.00= | 1.01= | 1.00? |
 | MaskedLeadingZeroCount i32 | 1.00= | 1.01= | 1.01= |
 | MaskedLoad i32 (4096, 50%) | 0.98= | 0.99= | · |
 | MaskedLoadOr i32 (4096) | 1.01= | 1.00= | · |
@@ -369,7 +393,7 @@
 | MaskedReduceSum i32 | 1.00= | 1.00= | 1.00= |
 | MaskedSatAddOr i16 | 1.00= | 1.01= | 1.00= |
 | MaskedSatSubOr i16 | 1.00= | 1.00= | 1.00= |
-| MaskedScatterIndex i32 (4096, 50%) | 1.05? | 0.98= | · |
+| MaskedScatterIndex i32 (4096, 50%) | 1.05? | 0.98= | 1.04? |
 | MaskedShiftLeft<3> i32 | 0.99= | 0.99= | 0.99= |
 | MaskedShiftLeftOr<3> i32 | 1.02= | 0.99= | 1.00? |
 | MaskedShiftRight<3> i32 | 0.99= | 0.99= | 0.99= |
@@ -403,13 +427,13 @@
 | MulComplexConj f32 | 1.46W | 1.20W | 1.00= |
 | MulComplexConjAdd f32 | 1.02= | 1.03= | 1.00= |
 | MulEven i32-i64 | 1.00= | 1.02= | 1.00= |
-| MulEvenAdd bf16->f32 | 1.00= | 0.99= | · |
+| MulEvenAdd bf16->f32 | 1.00= | 0.99= | 1.00= |
 | MulFixedPoint15 i16 | 1.00= | 1.00= | · |
 | MulHigh i16 (4096) | 1.00= | 0.99= | · |
 | MulHigh u16 (4096) | 1.00= | 1.01= | · |
 | MulHigh32 u32 (4096) | 1.00= | 1.01= | · |
 | MulOdd i32-i64 | 0.97= | 0.91= | 1.00= |
-| MulOddAdd bf16->f32 | 1.00= | 0.99= | · |
+| MulOddAdd bf16->f32 | 1.00= | 0.99= | 1.00= |
 | MulRound f32 | 1.00= | 0.99= | 1.01? |
 | MulSub f32 | 1.00= | 0.99= | 0.98? |
 | MulSubAdd f32 | 1.02= | 1.00= | 1.01= |
@@ -445,6 +469,12 @@
 | RebindMask i32->f32 (4096) | 1.00= | 0.99= | · |
 | ReduceMax i32 | 1.17W | 1.02= | 1.00= |
 | ReduceMin i32 | 1.17W | 1.03? | 1.00= |
+| ReduceSum i16 | 1.02= | 1.00= | 1.00= |
+| ReduceMin i16 | 1.00= | 1.00= | 1.00? |
+| ReduceMax i16 | 1.00= | 1.00= | 1.00= |
+| ReduceSum i64 | 1.00= | 1.00= | 0.99? |
+| ReduceMin i64 | 1.00= | 1.00= | 0.99? |
+| ReduceMax i64 | 1.00= | 1.00= | 0.96= |
 | ReduceSum f32 (4096) | 0.98= | 1.00= | · |
 | ReorderDemote2To i32->i16 | 1.00= | 0.99= | · |
 | ReorderRoundingShiftRightAndDemote2To<2> i32->i16 | 1.05? | 1.17W | · |
@@ -527,7 +557,7 @@
 | TrailingZeroCount i32 | 0.99= | 1.00= | 1.04= |
 | Trunc f32 | 1.00= | 1.01= | 1.07? |
 | TruncateTo u32->u16 | 1.01= | 1.01= | 1.00= |
-| U8FromU32 u32->u8 | 0.99= | 0.99= | · |
+| U8FromU32 u32->u8 | 0.99= | 0.99= | 1.00= |
 | TwoTablesLookupLanes i32 (4096) | 1.01= | 0.98= | · |
 | WidenMulAccumulate i16->i32 | 1.00= | 0.99= | · |
 | WidenMulPairwiseAdd i16->i32 | 1.00= | 0.98= | · |
