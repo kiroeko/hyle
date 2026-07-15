@@ -1842,25 +1842,29 @@ HYLE_FORCE_INLINE MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> LoadMaskBits(D, 
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   MaskNeon<T, kN> m;
-  // vld1q_* reads a FULL 16 B vector; a partial tag (kN < full) leaves lanes [kN, full) unread by the
-  // loop, so zero-init the scratch to avoid an uninitialized-lane read (partial tags arrive via the
-  // simd-18 PromoteMaskTo/DemoteMaskTo Rebind path).
+  // Vector bit-test (Highway arm_neon-inl.h) instead of the old scalar-loop-to-stack + vld1q
+  // store+reload: broadcast `bits` across all lanes, AND each lane with its governing bit selector
+  // {1,2,4,...}, then vtstq (test-nonzero) yields the all-ones/zero mask lane. A partial Rebind tag
+  // (kN < full) leaves lanes [kN,full) holding whatever high bits of `bits` select -- unused by the
+  // contract, and the caller only reads [0,kN). (op_parity: the store+reload form was the 0.72
+  // Dup128MaskFromMaskBits / mask-bridging loser vs Highway's TestBit.)
   if constexpr (sizeof(T) == 1) {
-    std::uint8_t tmp[16] = {};
-    for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? 0xFFu : 0u;
-    m.raw = vld1q_u8(tmp);
+    // 16 bytes: replicate the low byte of `bits` to bytes 0..7, the next byte to 8..15, then test
+    // {1,2,4,8,16,32,64,128} per 8-byte half (matches Highway's kRep8 + kBit).
+    alignas(16) static constexpr std::uint8_t kRep8[16] = {0,0,0,0,0,0,0,0, 1,1,1,1,1,1,1,1};
+    alignas(16) static constexpr std::uint8_t kBit[16] = {1,2,4,8,16,32,64,128, 1,2,4,8,16,32,64,128};
+    const uint8x16_t vbits = vreinterpretq_u8_u16(vdupq_n_u16(static_cast<std::uint16_t>(bits)));
+    const uint8x16_t rep = vqtbl1q_u8(vbits, vld1q_u8(kRep8));
+    m.raw = vtstq_u8(rep, vld1q_u8(kBit));
   } else if constexpr (sizeof(T) == 2) {
-    std::uint16_t tmp[8] = {};
-    for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? 0xFFFFu : 0u;
-    m.raw = vld1q_u16(tmp);
+    alignas(16) static constexpr std::uint16_t kBit[8] = {1,2,4,8,16,32,64,128};
+    m.raw = vtstq_u16(vdupq_n_u16(static_cast<std::uint16_t>(bits)), vld1q_u16(kBit));
   } else if constexpr (sizeof(T) == 4) {
-    std::uint32_t tmp[4] = {};
-    for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? 0xFFFFFFFFu : 0u;
-    m.raw = vld1q_u32(tmp);
+    alignas(16) static constexpr std::uint32_t kBit[4] = {1,2,4,8};
+    m.raw = vtstq_u32(vdupq_n_u32(static_cast<std::uint32_t>(bits)), vld1q_u32(kBit));
   } else {
-    std::uint64_t tmp[2] = {};
-    for (std::size_t i = 0; i < kN; ++i) tmp[i] = ((bits >> i) & 1) ? ~0ull : 0ull;
-    m.raw = vld1q_u64(tmp);
+    alignas(16) static constexpr std::uint64_t kBit[2] = {1,2};
+    m.raw = vtstq_u64(vdupq_n_u64(bits), vld1q_u64(kBit));
   }
   return m;
 }

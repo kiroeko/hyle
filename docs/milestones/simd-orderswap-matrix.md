@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 5**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 9 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt →TIE)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 4**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 10 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits →TIE)
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -60,7 +60,7 @@
   方法教训:此前"objdump 逐指令等价"是**向量签名级**对比的假象——标量尾巴(寄存器宽度/扩展指令)
   没有逐条比,一条指令恰好就是那 6%。)
 
-### Mac/NEON: 8 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15 已修见下)
+### Mac/NEON: 4 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;已修 10 个见演进段)
 >
 > **⚠️ "漏了" vs "无指令"——这 8(原 14)全属"漏了"**:能进这张表 = 有 Highway NEON 对手可对拍、跑出了比值,
 > 即两侧都在 NEON 上真跑,HYLE 只是走了 store+reload/标量而 Highway 向量化。**不是** "NEON 没这条指令"
@@ -77,8 +77,7 @@
 | BlendedStore i32 | 0.18 | store+reload+标量逐 lane 写 vs Highway load-blend-store(IfThenElse+StoreU);⚠️HYLE 版 fault-safe 强契约,改前须确认契约 |
 | SumsOfAdjQuadAbsDiff u8→u16 | 0.24 | fallback vs Highway native(vabal 家族) |
 | PromoteMaskTo i16→i32 | 0.575 | 待查 |
-| Dup128MaskFromMaskBits i32 | 0.725 | 待查 |
-| ScatterIndexN i32 | 0.87 | 待查 |
+| ScatterIndexN i32 | 0.87 | Highway NEON 也是标量 ExtractLane 循环(无 native scatter),ROI 低 |
 
 - (第十四轮清零:MulAddSub/MulSubAdd 弃两 FMA 的 OddEven(MulAdd,MulSub) 改 Highway 单 FMA 形,见演进段。
   此前"NEON 0 输"是 NEON perf 覆盖不全的假象——只测过 full_bench 一部分。)
@@ -132,6 +131,14 @@
   **同轮验证 MulOdd i32-i64:WSL 0.91→复测 best 1.04(med 1.107,spread 大)= 实为 TIE/偏赢,旧 0.91= 是噪声;
   MSVC 0.997 TIE。非真输,矩阵不变。教训:单元格 `?`(UNSTABLE)或大 spread 的低 best 值必 looped-dump 核实,
   别当噪声放过——恒等/常量特例是 Highway 常见而自造易漏的一类。**
+- **NEON 修复轮⑦(2026-07-15):LoadMaskBits 向量化 → Dup128MaskFromMaskBits 0.72→TIE**。LoadMaskBits 旧
+  实现为标量循环写栈数组 + vld1q(store+reload);改 Highway arm_neon-inl.h 的向量 bit-test:`vdupq` 广播
+  bits → 每 lane AND 位选择子 `{1,2,4,...}` → `vtstq`(test-nonzero)得 all-ones/0 掩码。8-bit 用 vqtbl1q
+  把低/高字节各复制到 8 字节半区再按 {1..128} 测(同 Highway kRep8+kBit)。Dup128MaskFromMaskBits(NEON 单
+  block 即 LoadMaskBits)0.72→1.00;220 NEON gtest 全绿。**PromoteMaskTo 未随之修好(仍 0.565)——它的瓶颈
+  不在 LoadMaskBits 而在 Rebind 部分标签(4-lane i16)仍物化整 q 寄存器(disasm:cmgt.8h→xtn→zip1→ushll→
+  shl→cmlt 一串),Highway 用 `d`(半寄存器 4-lane)load 后 sshll 全程 4-wide。这是 HYLE 部分标签 codegen
+  的更深问题,单 op 改不动,登记待后续标签系统改进。**
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
   (第一轮:ReverseLaneBytes 0.05->TIE、Broadcast<0>、TruncateTo、SumOfLanes、Min/MaxOfLanes;
   第二轮:TZC 三平台追平、HSBI、DemoteMaskTo 0.33->1.4W、LoadN/StoreN 与 LoadNOr 弃 vpmaskmovd
@@ -360,7 +367,7 @@
 | DemoteTo i32->i16 1-arg (4096) | 1.00= | 1.00= | 1.00= |
 | DemoteToNearestInt f64->i32 (4096) | 1.01= | 0.99= | 0.99= |
 | Div f32 | 1.00= | 1.01= | 1.00= |
-| Dup128MaskFromMaskBits i32 (4096) | 1.02= | 1.19W | 0.72 LOSE |
+| Dup128MaskFromMaskBits i32 (4096) | 1.02= | 1.19W | 1.00= |
 | DupEven i32 | 1.00= | 1.00= | 0.99= |
 | DupOdd i32 | 1.00= | 1.01= | 1.07= |
 | Eq i32 | 0.99= | 1.02= | 1.04= |
