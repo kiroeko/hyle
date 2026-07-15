@@ -112,6 +112,8 @@ CpuFeatures detect_x86() noexcept {
     f.avx512fp16 = bit(edx7, 23);
 
     cpuid(7, 1, abcd);
+    // AVX-VNNI (VEX encoding, 256-bit): leaf 7,1 EAX bit 4 — independent of AVX-512.
+    f.avx_vnni = bit(abcd[0], 4);
     f.avx512bf16 = bit(abcd[0], 5);
     // AVX10: leaf 7,1 EDX bit 19 advertises AVX10 support; the converged version is in leaf 0x24
     // subleaf 0, EBX[7:0]. AVX10.2 (the fp8 vcvtph2hf8/bf8 converts) = version >= 2.
@@ -139,8 +141,9 @@ CpuFeatures detect_x86() noexcept {
   f.avx512vl = cpu_avx512vl && avx512_ok;
   f.avx512dq = cpu_avx512dq && avx512_ok;
   f.avx512cd = cpu_avx512cd && avx512_ok;
-  // VNNI/BF16/FP16 are AVX-512 extensions: only usable if the AVX-512 base is usable.
+  // AVX-512 VNNI/BF16/FP16 need OS ZMM save; AVX-VNNI only needs YMM (same as avx2).
   f.avx512vnni = f.avx512vnni && avx512_ok;
+  f.avx_vnni = f.avx_vnni && os_ymm;
   f.avx512bf16 = f.avx512bf16 && avx512_ok;
   // AVX10.2 fp8 converts operate on ZMM (512-bit), so require OS ZMM save just like AVX-512.
   f.avx10_2 = cpu_avx10_2 && avx512_ok;

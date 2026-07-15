@@ -795,23 +795,33 @@ HYLE_FORCE_INLINE Vec512<std::int32_t, NW> RearrangeToOddPlusEven(
   return r;
 }
 
-// SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8*i8 dot. Native vpdpbusd needs
-// VNNI + is u8*i8 (wrong signedness for i8*i8); correctness-first store+reload scalar loop.
+// SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8*i8 dot.
+// Prefer VPDPBUSD when AVX512-VNNI is in the compile set (Highway signedness fix:
+// r0 = dpbusd(sum, a_as_u8, b); r1 = dpbusd(0, a_u8>>7, b)<<8; return r0-r1).
+// Else fully vectorized PromoteEven/Odd + madd path (same as avx2) — never store+reload.
 template <std::size_t NDst, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec512<std::int32_t, NDst> SumOfMulQuadAccumulate(
-    Simd<std::int32_t, NDst, 0>, Vec512<std::int8_t, NSrc> a, Vec512<std::int8_t, NSrc> b,
+    Simd<std::int32_t, NDst, 0> di32, Vec512<std::int8_t, NSrc> a, Vec512<std::int8_t, NSrc> b,
     Vec512<std::int32_t, NDst> sum) noexcept {
   static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
-  alignas(64) std::int8_t ta[NSrc], tb[NSrc];
-  alignas(64) std::int32_t ts[NDst];
-  _mm512_store_si512(ta, a.raw);
-  _mm512_store_si512(tb, b.raw);
-  _mm512_store_si512(ts, sum.raw);
-  for (std::size_t i = 0; i < NDst; ++i)
-    for (std::size_t k = 0; k < 4; ++k)
-      ts[i] += static_cast<std::int32_t>(ta[4 * i + k]) * tb[4 * i + k];
-  sum.raw = _mm512_load_si512(ts);
-  return sum;
+#if defined(__AVX512VNNI__)
+  (void)di32;
+  // a_top = 1 per byte where bit7 set (signed a < 0). Avoid relying on maskz_set1 alone.
+  const __m512i a_top =
+      _mm512_and_si512(_mm512_movm_epi8(_mm512_movepi8_mask(a.raw)), _mm512_set1_epi8(1));
+  const __m512i r0 = _mm512_dpbusd_epi32(sum.raw, a.raw, b.raw);
+  const __m512i r1 = _mm512_slli_epi32(_mm512_dpbusd_epi32(_mm512_setzero_si512(), a_top, b.raw), 8);
+  Vec512<std::int32_t, NDst> r;
+  r.raw = _mm512_sub_epi32(r0, r1);
+  return r;
+#else
+  const Simd<std::int16_t, NSrc / 2, 0> di16;
+  const auto a0 = PromoteEvenTo(di16, a);
+  const auto b0 = PromoteEvenTo(di16, b);
+  const auto a1 = PromoteOddTo(di16, a);
+  const auto b1 = PromoteOddTo(di16, b);
+  return Add(sum, Add(WidenMulPairwiseAdd(di32, a0, b0), WidenMulPairwiseAdd(di32, a1, b1)));
+#endif
 }
 
 // AbsDiff: |a-b| per lane. Integers via Sub(Max,Min) (Highway's generic); float via Abs(Sub).
@@ -1016,15 +1026,11 @@ HYLE_FORCE_INLINE Vec256<std::int32_t, NDst> DemoteInRangeTo(Simd<std::int32_t, 
   r.raw = _mm512_cvttpd_epi32(v.raw);
   return r;
 }
-// TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
-// correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.
-// Store()/Load() move a FULL 512-bit register (_mm512_store_si512 / _mm512_load_si512), so
-// the scratch buffers MUST be a whole register wide (64 B) regardless of logical lane count:
-// a narrow partial result still reloads 64 B via _mm512_load_si512, so a lane-count-sized
-// `DstT dst[N]` would be an out-of-bounds stack read. Size every buffer to 64 B. (Same class
-// of bug the x86-128/256 backends segfaulted on -- Vec.TruncateAndStridedPromote under GCC.)
-// Narrowing result is N DstT lanes; when < 64 bytes it reloads through the width-banded Load,
-// so the natural return type is VFromD<Simd<DstT,N,0>> (Vec128/Vec256 for sub-512 results).
+// TruncateTo: correctness-first store+reload (native pack/cvt is a profiling upgrade).
+// PromoteEvenTo/PromoteOddTo: exact-2x integer widenings use register shift/mask (same as avx2;
+// SumOfMulQuadAccumulate's non-VNNI path depends on this — store+reload here was ~10x LOSE).
+// Store()/Load() move a FULL 512-bit register, so scratch buffers are always 64 B wide.
+// TruncateTo may return Vec128/Vec256 for sub-512 N via width-banded Load.
 template <typename DstT, std::size_t N, typename SrcT>
 HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> TruncateTo(Simd<DstT, N, 0>, Vec512<SrcT, N> v) noexcept {
   static_assert(sizeof(DstT) < sizeof(SrcT), "TruncateTo narrows the lane type");
@@ -1037,20 +1043,62 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> TruncateTo(Simd<DstT, N, 0>, Vec512<S
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec512<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, Vec512<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
-  alignas(64) SrcT src[64 / sizeof(SrcT)];
-  alignas(64) DstT dst[64 / sizeof(DstT)] = {};
-  Store(v, Simd<SrcT, NSrc, 0>(), src);
-  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
-  return Load(Simd<DstT, NDst, 0>(), dst);
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(DstT) == 2 * sizeof(SrcT)) {
+    Vec512<DstT, NDst> r;
+    if constexpr (sizeof(SrcT) == 1) {  // i8/u8 -> i16/u16
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm512_srai_epi16(_mm512_slli_epi16(v.raw, 8), 8);
+      else
+        r.raw = _mm512_and_si512(v.raw, _mm512_set1_epi16(static_cast<short>(0x00FF)));
+    } else if constexpr (sizeof(SrcT) == 2) {  // i16/u16 -> i32/u32
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm512_srai_epi32(_mm512_slli_epi32(v.raw, 16), 16);
+      else
+        r.raw = _mm512_and_si512(v.raw, _mm512_set1_epi32(0x0000FFFF));
+    } else {  // i32/u32 -> i64/u64 (AVX-512 has srai_epi64)
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm512_srai_epi64(_mm512_slli_epi64(v.raw, 32), 32);
+      else
+        r.raw = _mm512_and_si512(v.raw, _mm512_set1_epi64(0xFFFFFFFFLL));
+    }
+    return r;
+  } else {
+    alignas(64) SrcT src[64 / sizeof(SrcT)];
+    alignas(64) DstT dst[64 / sizeof(DstT)] = {};
+    Store(v, Simd<SrcT, NSrc, 0>(), src);
+    for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i]);
+    return Load(Simd<DstT, NDst, 0>(), dst);
+  }
 }
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec512<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, Vec512<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteOddTo: odd lanes narrow->wide");
-  alignas(64) SrcT src[64 / sizeof(SrcT)];
-  alignas(64) DstT dst[64 / sizeof(DstT)] = {};
-  Store(v, Simd<SrcT, NSrc, 0>(), src);
-  for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
-  return Load(Simd<DstT, NDst, 0>(), dst);
+  if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(DstT) == 2 * sizeof(SrcT)) {
+    Vec512<DstT, NDst> r;
+    if constexpr (sizeof(SrcT) == 1) {  // i8/u8 -> i16/u16
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm512_srai_epi16(v.raw, 8);
+      else
+        r.raw = _mm512_srli_epi16(v.raw, 8);
+    } else if constexpr (sizeof(SrcT) == 2) {  // i16/u16 -> i32/u32
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm512_srai_epi32(v.raw, 16);
+      else
+        r.raw = _mm512_srli_epi32(v.raw, 16);
+    } else {  // i32/u32 -> i64/u64
+      if constexpr (std::is_signed_v<SrcT>)
+        r.raw = _mm512_srai_epi64(v.raw, 32);
+      else
+        r.raw = _mm512_srli_epi64(v.raw, 32);
+    }
+    return r;
+  } else {
+    alignas(64) SrcT src[64 / sizeof(SrcT)];
+    alignas(64) DstT dst[64 / sizeof(DstT)] = {};
+    Store(v, Simd<SrcT, NSrc, 0>(), src);
+    for (std::size_t i = 0; i < NDst; ++i) dst[i] = static_cast<DstT>(src[2 * i + 1]);
+    return Load(Simd<DstT, NDst, 0>(), dst);
+  }
 }
 template <std::size_t N>
 HYLE_FORCE_INLINE VFromD<Simd<std::uint8_t, N, 0>> U8FromU32(Vec512<std::uint32_t, N> v) noexcept {

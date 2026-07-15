@@ -51,7 +51,8 @@ struct CpuFeatures {
   bool avx512vl = false;   // 128/256-bit AVX-512 ops
   bool avx512dq = false;   // doubleword/quadword
   bool avx512cd = false;   // conflict detection
-  bool avx512vnni = false; // int8/int16 dot product (AI)
+  bool avx512vnni = false; // int8/int16 dot product (AI), EVEX
+  bool avx_vnni = false;   // AVX-VNNI (Alder Lake+): VEX 256-bit vpdpbusd, not AVX-512
   bool avx512bf16 = false; // bf16 dot product (AI)
   bool avx512fp16 = false; // native fp16 arithmetic
   bool avx10_2 = false;    // AVX10.2 (fp8 convert vcvtph2hf8/bf8; leaf 0x24 version >= 2)

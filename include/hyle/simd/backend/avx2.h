@@ -954,22 +954,33 @@ HYLE_FORCE_INLINE Vec256<std::int32_t, NW> RearrangeToOddPlusEven(
 }
 
 // SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += 4-way i8 dot a[4i+0..3]*b[4i+0..3].
-// No AVX2 VNNI (native vpdpbusd is AVX-512-VNNI). PORTED from Highway generic_ops: split each i8
-// operand into even/odd i16 halves (PromoteEven/OddTo), then two WidenMulPairwiseAdd (vpmaddwd)
-// each sum a pair of products into i32 -- their sum over even+odd = the 4-way quad dot. Fully
-// vectorized (2 vpmaddwd + 2 vpaddd), replacing the store + scalar 4-way loop + reload (op_parity:
-// that was ~10x slower). i8 GEMM / quantized-inference inner core, so the win is load-bearing.
+// AVX-VNNI (Alder Lake+, VEX vpdpbusd) exists independent of AVX-512 — use it when this TU is
+// compiled with -mavxvnni / __AVX_VNNI__. Default avx2 tier keeps Highway generic_ops port:
+// PromoteEven/Odd + two maddwd (fully vectorized). Runtime avx_vnni dispatch tier is future work.
 template <std::size_t NDst, std::size_t NSrc>
 HYLE_FORCE_INLINE Vec256<std::int32_t, NDst> SumOfMulQuadAccumulate(
     Simd<std::int32_t, NDst, 0> di32, Vec256<std::int8_t, NSrc> a, Vec256<std::int8_t, NSrc> b,
     Vec256<std::int32_t, NDst> sum) noexcept {
   static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
+#if defined(__AVX_VNNI__) || defined(__AVXVNNI__)
+  (void)di32;
+  // Signed i8×i8 via u8×i8 VPDPBUSD + Highway sign correction (see x86_128-inl.h:11160).
+  // a_top = 1 where a's bit7 set (no AVX512 mask ops — pure AVX2 compares).
+  const __m256i a_top =
+      _mm256_and_si256(_mm256_cmpgt_epi8(_mm256_setzero_si256(), a.raw), _mm256_set1_epi8(1));
+  const __m256i r0 = _mm256_dpbusd_epi32(sum.raw, a.raw, b.raw);
+  const __m256i r1 = _mm256_slli_epi32(_mm256_dpbusd_epi32(_mm256_setzero_si256(), a_top, b.raw), 8);
+  Vec256<std::int32_t, NDst> r;
+  r.raw = _mm256_sub_epi32(r0, r1);
+  return r;
+#else
   const Simd<std::int16_t, NSrc / 2, 0> di16;
   const auto a0 = PromoteEvenTo(di16, a);
   const auto b0 = PromoteEvenTo(di16, b);
   const auto a1 = PromoteOddTo(di16, a);
   const auto b1 = PromoteOddTo(di16, b);
   return Add(sum, Add(WidenMulPairwiseAdd(di32, a0, b0), WidenMulPairwiseAdd(di32, a1, b1)));
+#endif
 }
 
 // AbsDiff: |a-b| per lane. Integers via Sub(Max,Min) (Highway's generic); float via Abs(Sub).
