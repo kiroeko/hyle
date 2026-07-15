@@ -115,14 +115,16 @@ Win 仍走 AVX2/512。Arm64 仍 NEON。
 - `radix_sort` u32/i32/u64/i64/f32(LSD base-256,稳定);`argsort` u32/i32/f32
 - `sort()` 整数键在 `n >= kRadixSortMinN`(4096) 自动走 radix,小 n 仍 vqsort
 - 测试 `RadixSort.*` 9 tests Win/WSL PASS;bench `hyle_radix_sort_bench`
-- 实现:`src/simd/sort/radix_sort.cc`(portable;直方图 SIMD 可后续)
+- 实现:`src/simd/sort/radix_sort.cc`(portable)
+- **多直方图**(4 路私有 `count[256]` 再 reduce):hist 微基准 WSL **1.08×**;端到端 Win 1M
+  约 **+3–4%**(6.58→6.35 ms 量级),WSL 端到端基本持平。scatter 仍是主瓶颈。
 
-**时间(u32 random, vs std::sort, 单次 nanobench)**:
-| n | WSL radix | WSL auto | Win radix | Win auto |
-|---|---|---|---|---|
-| 1K | ~1.1× | **~2.2×**(vqsort) | **~2.0×** | 0.24×(vqsort 冷) |
-| 4K+ | **~6–8×** | 同 radix | **~6–9×** | 同 radix |
-| 1M | **~6.1×** | 同 | **~8.8×** | 同 |
+**时间(u32 random, vs std::sort, 多直方图后)**:
+| n | WSL radix | Win radix |
+|---|---|---|
+| 1K | ~1.1× | **~1.8×** |
+| 4K+ | **~6–7×** | **~6–11×** |
+| 1M | **~5.9×** | **~9.3×** |
 
 阈值 4096 合理:大 n 稳赢 std;小 n 仍给 vqsort。
 

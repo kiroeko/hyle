@@ -8,8 +8,9 @@
 #include <new>
 #include <type_traits>
 
-// LSD radix sort (base 256) + argsort. Portable C++ — histogram/scatter is the work; SIMD
-// histogram is a later optimization. Stable by construction (counting sort per digit).
+// LSD radix sort (base 256) + argsort. Stable by construction (counting sort per digit).
+// Histogram uses kHistWays private 256-bin counters (unrolled) then reduces — cuts store-port
+// conflicts on ++count[digit] without needing SIMD conflict detection.
 
 namespace hyle::simd {
 namespace {
@@ -17,6 +18,30 @@ namespace {
 constexpr unsigned kBits = 8;
 constexpr unsigned kBins = 1u << kBits;  // 256
 constexpr unsigned kMask = kBins - 1;
+constexpr unsigned kHistWays = 4;
+
+// 4-way private histograms → one count[256], then in-place prefix into the same buffer.
+template <typename GetDigit>
+void multi_histogram_prefix(std::size_t n, std::size_t count[kBins], GetDigit digit) noexcept {
+  alignas(64) std::size_t c0[kBins] = {};
+  alignas(64) std::size_t c1[kBins] = {};
+  alignas(64) std::size_t c2[kBins] = {};
+  alignas(64) std::size_t c3[kBins] = {};
+  std::size_t i = 0;
+  for (; i + kHistWays <= n; i += kHistWays) {
+    ++c0[digit(i)];
+    ++c1[digit(i + 1)];
+    ++c2[digit(i + 2)];
+    ++c3[digit(i + 3)];
+  }
+  for (; i < n; ++i) ++c0[digit(i)];
+  std::size_t sum = 0;
+  for (unsigned b = 0; b < kBins; ++b) {
+    const std::size_t total = c0[b] + c1[b] + c2[b] + c3[b];
+    count[b] = sum;
+    sum += total;
+  }
+}
 
 template <typename U>
 bool lsd_radix_unsigned(U* keys, std::size_t n) noexcept {
@@ -28,16 +53,10 @@ bool lsd_radix_unsigned(U* keys, std::size_t n) noexcept {
   constexpr unsigned kPasses = static_cast<unsigned>(sizeof(U) * 8 / kBits);
   for (unsigned pass = 0; pass < kPasses; ++pass) {
     const unsigned shift = pass * kBits;
-    std::size_t count[kBins] = {};
-    for (std::size_t i = 0; i < n; ++i) {
-      ++count[(static_cast<std::size_t>(in[i] >> shift) & kMask)];
-    }
-    std::size_t sum = 0;
-    for (unsigned b = 0; b < kBins; ++b) {
-      const std::size_t c = count[b];
-      count[b] = sum;
-      sum += c;
-    }
+    std::size_t count[kBins];
+    multi_histogram_prefix(n, count, [&](std::size_t i) noexcept {
+      return static_cast<std::size_t>(in[i] >> shift) & kMask;
+    });
     for (std::size_t i = 0; i < n; ++i) {
       const U k = in[i];
       out[count[(static_cast<std::size_t>(k >> shift) & kMask)]++] = k;
@@ -114,17 +133,11 @@ void argsort_impl(const K* keys, std::uint32_t* indices, std::size_t n, bool asc
   constexpr unsigned kPasses = static_cast<unsigned>(sizeof(U) * 8 / kBits);
   for (unsigned pass = 0; pass < kPasses; ++pass) {
     const unsigned shift = pass * kBits;
-    std::size_t count[kBins] = {};
-    for (std::size_t i = 0; i < n; ++i) {
+    std::size_t count[kBins];
+    multi_histogram_prefix(n, count, [&](std::size_t i) noexcept {
       const U sk = map(keys[in[i]], ascending);
-      ++count[(static_cast<std::size_t>(sk >> shift) & kMask)];
-    }
-    std::size_t sum = 0;
-    for (unsigned b = 0; b < kBins; ++b) {
-      const std::size_t c = count[b];
-      count[b] = sum;
-      sum += c;
-    }
+      return static_cast<std::size_t>(sk >> shift) & kMask;
+    });
     for (std::size_t i = 0; i < n; ++i) {
       const std::uint32_t idx = in[i];
       const U sk = map(keys[idx], ascending);
