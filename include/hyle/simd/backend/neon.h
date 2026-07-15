@@ -290,20 +290,54 @@ template <class D>
 using VFromD = decltype(Zero(D()));
 
 // ---- load / store (vld1q/vst1q; NEON has no aligned-vs-unaligned distinction) --------
+// simd-19 C3: D-band LoadU reads only N*sizeof(T) bytes (vld1_* when ==8, else
+// zeroed D + memcpy). Full Q-band keeps vld1q_* + from_q (unchanged).
 template <class D>
 HYLE_FORCE_INLINE detail::VN<D> LoadU(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   detail::VN<D> v;
-  if constexpr (std::is_same_v<T, float>) v = detail::from_q<decltype(v)>(vld1q_f32(p));
-  else if constexpr (std::is_same_v<T, double>) v = detail::from_q<decltype(v)>(vld1q_f64(p));
-  else if constexpr (std::is_same_v<T, std::int8_t>) v = detail::from_q<decltype(v)>(vld1q_s8(p));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) v = detail::from_q<decltype(v)>(vld1q_u8(p));
-  else if constexpr (std::is_same_v<T, std::int16_t>) v = detail::from_q<decltype(v)>(vld1q_s16(p));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) v = detail::from_q<decltype(v)>(vld1q_u16(p));
-  else if constexpr (std::is_same_v<T, std::int32_t>) v = detail::from_q<decltype(v)>(vld1q_s32(p));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) v = detail::from_q<decltype(v)>(vld1q_u32(p));
-  else if constexpr (std::is_same_v<T, std::int64_t>) v = detail::from_q<decltype(v)>(vld1q_s64(p));
-  else v = detail::from_q<decltype(v)>(vld1q_u64(p));
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (N * sizeof(T) == 8) {
+      // Exact D-register load (8 bytes). Mapping: vld1q_* → vld1_*.
+      if constexpr (std::is_same_v<T, float>) v.raw = vld1_f32(p);
+      else if constexpr (std::is_same_v<T, double>) v.raw = vld1_f64(p);
+      else if constexpr (std::is_same_v<T, std::int8_t>) v.raw = vld1_s8(p);
+      else if constexpr (std::is_same_v<T, std::uint8_t>) v.raw = vld1_u8(p);
+      else if constexpr (std::is_same_v<T, std::int16_t>) v.raw = vld1_s16(p);
+      else if constexpr (std::is_same_v<T, std::uint16_t>) v.raw = vld1_u16(p);
+      else if constexpr (std::is_same_v<T, std::int32_t>) v.raw = vld1_s32(p);
+      else if constexpr (std::is_same_v<T, std::uint32_t>) v.raw = vld1_u32(p);
+      else if constexpr (std::is_same_v<T, std::int64_t>) v.raw = vld1_s64(p);
+      else v.raw = vld1_u64(p);
+    } else {
+      // N*sizeof(T) < 8: zero the D register, then copy only the logical bytes.
+      typename detail::RawNeonD<T>::type tmp;
+      if constexpr (std::is_same_v<T, float>) tmp = vdup_n_f32(0.0f);
+      else if constexpr (std::is_same_v<T, double>) tmp = vdup_n_f64(0.0);
+      else if constexpr (std::is_same_v<T, std::int8_t>) tmp = vdup_n_s8(0);
+      else if constexpr (std::is_same_v<T, std::uint8_t>) tmp = vdup_n_u8(0);
+      else if constexpr (std::is_same_v<T, std::int16_t>) tmp = vdup_n_s16(0);
+      else if constexpr (std::is_same_v<T, std::uint16_t>) tmp = vdup_n_u16(0);
+      else if constexpr (std::is_same_v<T, std::int32_t>) tmp = vdup_n_s32(0);
+      else if constexpr (std::is_same_v<T, std::uint32_t>) tmp = vdup_n_u32(0);
+      else if constexpr (std::is_same_v<T, std::int64_t>) tmp = vdup_n_s64(0);
+      else tmp = vdup_n_u64(0);
+      std::memcpy(&tmp, p, N * sizeof(T));
+      v.raw = tmp;
+    }
+  } else {
+    if constexpr (std::is_same_v<T, float>) v = detail::from_q<decltype(v)>(vld1q_f32(p));
+    else if constexpr (std::is_same_v<T, double>) v = detail::from_q<decltype(v)>(vld1q_f64(p));
+    else if constexpr (std::is_same_v<T, std::int8_t>) v = detail::from_q<decltype(v)>(vld1q_s8(p));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) v = detail::from_q<decltype(v)>(vld1q_u8(p));
+    else if constexpr (std::is_same_v<T, std::int16_t>) v = detail::from_q<decltype(v)>(vld1q_s16(p));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) v = detail::from_q<decltype(v)>(vld1q_u16(p));
+    else if constexpr (std::is_same_v<T, std::int32_t>) v = detail::from_q<decltype(v)>(vld1q_s32(p));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) v = detail::from_q<decltype(v)>(vld1q_u32(p));
+    else if constexpr (std::is_same_v<T, std::int64_t>) v = detail::from_q<decltype(v)>(vld1q_s64(p));
+    else v = detail::from_q<decltype(v)>(vld1q_u64(p));
+  }
   return v;
 }
 template <class D>
