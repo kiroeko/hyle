@@ -1005,6 +1005,30 @@ HYLE_FORCE_INLINE VecNeon<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int3
   return r;
 }
 
+// SatWidenMulAccumFixedPoint i16→i32 NATIVE: one vqdmlal_s16 (SQDMLAL = sat doubling mul-add long).
+// Matches Highway arm_neon-inl.h:7467. Generic path (InterleaveWholeLower×2 + PairwiseAccumulate)
+// is ~0.92 vs HWY on NEON; this is the missing single-instruction form. Inputs: low NDst i16 lanes
+// of a,b (same contract as Highway Rebind<i16,di32> / generic's InterleaveWholeLower lower-half).
+#define HYLE_SIMD_NEON_HAS_NATIVE_SAT_WIDEN_MUL_ACCUM_FIXED_POINT 1
+template <std::size_t NDst, int kPow2, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<std::int32_t, NDst> SatWidenMulAccumFixedPointNative(
+    Simd<std::int32_t, NDst, kPow2>, VecNeon<std::int16_t, NSrc> a, VecNeon<std::int16_t, NSrc> b,
+    VecNeon<std::int32_t, NDst> sum) noexcept {
+  static_assert(NSrc >= NDst, "SatWidenMulAccumFixedPointNative: need >= NDst i16 lanes");
+  // Low 4 i16 as D-form operands for vqdmlal_s16 (always 4-lane mul long → 4 i32).
+  int16x4_t al;
+  int16x4_t bl;
+  if constexpr (detail::kIsDBand<std::int16_t, NSrc> && NSrc * sizeof(std::int16_t) == 8) {
+    al = a.raw;
+    bl = b.raw;
+  } else {
+    al = vget_low_s16(detail::to_q(a));
+    bl = vget_low_s16(detail::to_q(b));
+  }
+  const int32x4_t acc = vqdmlal_s16(detail::to_q(sum), al, bl);
+  return detail::from_q<VecNeon<std::int32_t, NDst>>(acc);
+}
+
 // SatWidenMulPairwiseAdd(di16, a_u8, b_i8): widen u8 a * i8 b, sum ADJACENT PAIRS into SATURATED
 // i16 (x86 maddubs). NEON has no maddubs, but Highway's vector synthesis (generic_ops-inl.h) is the
 // right form and drops the old correctness-first store+reload scalar loop (measured 0.575): split

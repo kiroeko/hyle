@@ -1967,16 +1967,20 @@ HYLE_FORCE_INLINE VFromD<DI32> SatWidenMulPairwiseAccumulate(DI32 di32, V16 a, V
                                  Add(product, overflow));
 }
 
-// D3: SatWidenMulAccumFixedPoint -- Q15 i16*i16 sat MAC via InterleaveWholeLower + D2.
-// Highway generic:5885: duplicate each lane pair then SatWidenMulPairwiseAccumulate.
+// D3: SatWidenMulAccumFixedPoint -- Q15 i16*i16 sat doubling MAC into i32.
+// NEON: single vqdmlal_s16 (Highway arm_neon native). Else generic InterleaveWholeLower + D2.
 template <class DI32, class V16>
 HYLE_FORCE_INLINE VFromD<DI32> SatWidenMulAccumFixedPoint(DI32 di32, V16 a, V16 b,
                                                           VFromD<DI32> sum) noexcept {
-  // InterleaveWholeLower(a,a) duplicates each a lane into adjacent pairs for pairwise.
+#if defined(HYLE_SIMD_NEON_HAS_NATIVE_SAT_WIDEN_MUL_ACCUM_FIXED_POINT)
+  return SatWidenMulAccumFixedPointNative(di32, a, b, sum);
+#else
+  // Highway generic:5885: duplicate each lane pair then SatWidenMulPairwiseAccumulate.
   const DFromV<V16> d16;
   const V16 aa = InterleaveWholeLower(d16, a, a);
   const V16 bb = InterleaveWholeLower(d16, b, b);
   return SatWidenMulPairwiseAccumulate(di32, aa, bb, sum);
+#endif
 }
 
 

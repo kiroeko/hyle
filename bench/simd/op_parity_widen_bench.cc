@@ -166,17 +166,17 @@ int main(){
       nb::doNotOptimizeAway(p_o32);
      hyle_bench::mark(rep); });
   }
-  // SatWidenMulAccumFixedPoint: Highway takes Rebind<i16,di32> (same lane count as i32 = half-register).
-  // HYLE accepts full V16; ZeroExtendVector(LowerHalf) matches the half-register input width without a
-  // stack copy (InterleaveWholeLower only consumes the lower half).
+  // SatWidenMulAccumFixedPoint: both sides use Rebind<i16,di32> (same lane count as i32) and step by
+  // w32 so trip counts match. (Older HYLE step-by-w16 + ZeroExtend(LowerHalf) did half as many stores.)
   {
     const hn::Rebind<std::int16_t, decltype(gd32)> g16r;
+    const hs::Rebind<std::int16_t, decltype(hd32)> h16r{};
     nb::Bench b; b.title("SatWidenMulAccumFixedPoint i16->i32").relative(true).batch(kN).minEpochIterations(5000);
     HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_i16a = i16a.data(); auto* p_i16b = i16b.data(); auto* p_o32 = o32.data();
-      for (std::size_t i=0;i+w16h<=kN;i+=w16h) {
-        auto a = hs::ZeroExtendVector(hd16, hs::LowerHalf(hs::LoadU(hd16, p_i16a+i)));
-        auto b2 = hs::ZeroExtendVector(hd16, hs::LowerHalf(hs::LoadU(hd16, p_i16b+i)));
-        hs::StoreU(hs::SatWidenMulAccumFixedPoint(hd32, a, b2, hs::Zero(hd32)), hd32, p_o32+i);
+      for (std::size_t i=0;i+w32h<=kN;i+=w32h) {
+        hs::StoreU(hs::SatWidenMulAccumFixedPoint(hd32, hs::LoadU(h16r, p_i16a+i), hs::LoadU(h16r, p_i16b+i),
+                                                   hs::Zero(hd32)),
+                   hd32, p_o32+i);
       }
       nb::doNotOptimizeAway(p_o32);
      hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_i16a = i16a.data(); auto* p_i16b = i16b.data(); auto* p_o32 = o32.data();
