@@ -4310,13 +4310,16 @@ template <typename BlockOp>
 HYLE_FORCE_INLINE __m256i aes256_map1(__m256i s, BlockOp op) noexcept {
   const __m128i lo = op(_mm256_castsi256_si128(s));
   const __m128i hi = op(_mm256_extracti128_si256(s, 1));
-  return _mm256_set_m128i(hi, lo);
+  // integer-domain recombine: _mm256_set_m128i expands (on MSVC) to vinsertf128 (FP domain) over
+  // AES integer output -> a per-iteration domain-crossing bypass stall (op_parity: MSVC ~10x). Build
+  // it with castsi128 + vinserti128 explicitly to stay in the integer domain (GCC already did this).
+  return _mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1);
 }
 template <typename BlockOp>
 HYLE_FORCE_INLINE __m256i aes256_map2(__m256i s, __m256i k, BlockOp op) noexcept {
   const __m128i lo = op(_mm256_castsi256_si128(s), _mm256_castsi256_si128(k));
   const __m128i hi = op(_mm256_extracti128_si256(s, 1), _mm256_extracti128_si256(k, 1));
-  return _mm256_set_m128i(hi, lo);
+  return _mm256_inserti128_si256(_mm256_castsi128_si256(lo), hi, 1);
 }
 }  // namespace detail
 // The per-block worker is passed as a stateless LAMBDA, not the bare function NAME: a function name
