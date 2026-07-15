@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 3**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 11 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits/BlendedStore →TIE)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 2**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 12 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits/BlendedStore/SumsOfAdjQuadAbsDiff →TIE)
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -60,9 +60,9 @@
   方法教训:此前"objdump 逐指令等价"是**向量签名级**对比的假象——标量尾巴(寄存器宽度/扩展指令)
   没有逐条比,一条指令恰好就是那 6%。)
 
-### Mac/NEON: 3 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;已修 11 个见演进段)
+### Mac/NEON: 2 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;已修 12 个见演进段)
 >
-> **⚠️ "漏了" vs "无指令"——这 3(原 14)全属"漏了"**:能进这张表 = 有 Highway NEON 对手可对拍、跑出了比值,
+> **⚠️ "漏了" vs "无指令"——这 2(原 14)全属"漏了"**:能进这张表 = 有 Highway NEON 对手可对拍、跑出了比值,
 > 即两侧都在 NEON 上真跑,HYLE 只是走了 store+reload/标量而 Highway 向量化。**不是** "NEON 没这条指令"
 > (那种根本没有 Highway NEON 侧、不会出现在对拍里)。真正"无指令测不了"的是全量表里 NEON 列为 `·`
 > 且 x86-only 的行(如 AVX-512 掩码族),那些是**从没测**、其中一部分确实 NEON 无对应——待单独甄别(见文末)。
@@ -74,7 +74,6 @@
 
 | op | NEON 比值 | 根因(vs Highway) |
 |---|---|---|
-| SumsOfAdjQuadAbsDiff u8→u16 | 0.24 | fallback vs Highway native(vabal 家族) |
 | PromoteMaskTo i16→i32 | 0.575 | Rebind 部分标签(4-lane i16)物化整 q 寄存器→cmgt.8h+xtn+zip1+ushll+shl+cmlt 一串;Highway 用半寄存器 d load 后全程 4-wide。HYLE 部分标签 codegen 深层问题,待标签系统改进 |
 | ScatterIndexN i32 | 0.87 | Highway NEON 也是标量 ExtractLane 循环(无 native scatter),ROI 低 |
 
@@ -143,6 +142,11 @@
   **契约变更(用户授权)**:NEON BlendedStore 现**读全 kN lane 的目标内存**(写回不变故无逻辑副作用),调用方
   须保证该区间可读——与 Highway NEON 同契约;x86(vpmaskmovd,真 fault-safe 且快)不变,故 fault-safety 成
   NEON-only 放宽。7 个 MaskedTail gtest(float/double/i8/i16/i32/i64/u8,k=0..n 全扫)全过。0.18→1.00 TIE。
+- **NEON 修复轮⑨(2026-07-15):SumsOfAdjQuadAbsDiff u8→u16 0.24→TIE**。旧 store+reload 三重标量循环(SAD
+  video quad)。改 Highway generic_ops-inl.h 向量合成:InterleaveLower/Upper(a,a) 复制每字节 →
+  CombineShiftRightBytes<kA*8+1 / +5> 取滑窗对 a01/a23;Broadcast<kB*2 / +1>(u16 视图)取 b01/b23;
+  SumsOf2(AbsDiff(a01,b01)) + SumsOf2(AbsDiff(a23,b23))。所有 op 都是 HYLE 自家 NEON。standalone 穷举对拍
+  标量 oracle:kAOffset{0,1}×kBOffset{0..3}×8 seed bad=0;220 NEON gtest 全绿。0.24→1.00 TIE。
   (第一轮:ReverseLaneBytes 0.05->TIE、Broadcast<0>、TruncateTo、SumOfLanes、Min/MaxOfLanes;
   第二轮:TZC 三平台追平、HSBI、DemoteMaskTo 0.33->1.4W、LoadN/StoreN 与 LoadNOr 弃 vpmaskmovd
   ->WIN、CombineMasks、ConcatLowerLower)+ v2 stagger 仪器修相位相关后,收敛为上表数字。
@@ -608,7 +612,7 @@
 | SumsOf4 u8->u32 | 0.99= | 0.98= | 1.00= |
 | SumsOf8 u8->u64 | 1.00= | 1.01= | 1.00= |
 | SumsOf8AbsDiff u8->u64 | 1.05? | 0.99= | 1.00= |
-| SumsOfAdjQuadAbsDiff u8->u16 | 1.00= | 1.00= | 0.24 LOSE |
+| SumsOfAdjQuadAbsDiff u8->u16 | 1.00= | 1.00= | 1.00= |
 | SwapAdjacentBlocks i32 | 0.98= | 1.01= | n/a¹ |
 | TableLookupBytes u8 (4096) | 1.00= | 1.00= | 1.00= |
 | TableLookupLanes i32 (4096) | 0.99= | 1.01= | 1.04= |

@@ -1979,28 +1979,33 @@ HYLE_FORCE_INLINE VecNeon<std::uint64_t, N / 8> SumsOf8AbsDiff(VecNeon<std::uint
 }
 
 // ---- simd-18 批F: SAD video quad ---------------------------------------------------
+// SumsOfAdjQuadAbsDiff<kAOffset,kBOffset>(a,b): for each of 8 outputs i, sum_{j=0..3}
+// |a[kAOffset*4+i+j] - b[kBOffset*4+j]|. Highway's vector recipe (generic_ops-inl.h), replacing the
+// old store+reload scalar triple loop (measured 0.24 vs Highway on NEON):
+//   a01 = sliding window of a bytes {i+0,i+1} interleaved; a23 = {i+2,i+3}. Built by duplicating
+//     each a byte (InterleaveLower/Upper a,a) then CombineShiftRightBytes<kAOffset*8+1 / +5>.
+//   b01 = broadcast the u16 at b-lane kBOffset*2 (bytes b[kB*4+0],b[kB*4+1]) to all pairs; b23 = the
+//     next u16 (b[kB*4+2],b[kB*4+3]). Broadcast<> on the u16 view.
+//   result = SumsOf2(AbsDiff(a01,b01)) + SumsOf2(AbsDiff(a23,b23)) -- each SumsOf2 folds the two
+//     |a-b| bytes of a pair into one u16, and the two pair-sums give the 4-wide quad SAD.
 template <int kAOffset, int kBOffset, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<std::uint16_t, N / 2> SumsOfAdjQuadAbsDiff(VecNeon<std::uint8_t, N> a,
                                                                   VecNeon<std::uint8_t, N> b) noexcept {
   static_assert(kAOffset == 0 || kAOffset == 1, "kAOffset in {0,1}");
   static_assert(kBOffset >= 0 && kBOffset <= 3, "kBOffset in {0..3}");
-  static_assert(N % 16 == 0, "SumsOfAdjQuadAbsDiff needs multiple of 16 u8 lanes");
-  alignas(16) std::uint8_t sa[N], sb[N];
-  alignas(16) std::uint16_t out[N / 2] = {};
-  Store(a, Simd<std::uint8_t, N, 0>(), sa);
-  Store(b, Simd<std::uint8_t, N, 0>(), sb);
-  for (std::size_t blk = 0; blk < N; blk += 16) {
-    for (int i = 0; i < 8; ++i) {
-      unsigned sum = 0;
-      for (int j = 0; j < 4; ++j) {
-        const auto da = static_cast<int>(sa[blk + static_cast<std::size_t>(kAOffset * 4 + i + j)]);
-        const auto db = static_cast<int>(sb[blk + static_cast<std::size_t>(kBOffset * 4 + j)]);
-        sum += static_cast<unsigned>(da >= db ? da - db : db - da);
-      }
-      out[blk / 2 + static_cast<std::size_t>(i)] = static_cast<std::uint16_t>(sum);
-    }
-  }
-  return Load(Simd<std::uint16_t, N / 2, 0>(), out);
+  static_assert(N == 16, "neon SumsOfAdjQuadAbsDiff: single 16xu8 block");
+  const Simd<std::uint8_t, 16, 0> d8;
+  const Simd<std::uint16_t, 8, 0> d16;
+  const auto a_lo = InterleaveLower(a, a);   // [a0 a0 a1 a1 ... a7 a7]
+  const auto a_hi = InterleaveUpper(a, a);   // [a8 a8 a9 a9 ... a15 a15]
+  const auto a01 = CombineShiftRightBytes<kAOffset * 8 + 1>(a_hi, a_lo);  // pairs {i+0,i+1}
+  const auto a23 = CombineShiftRightBytes<kAOffset * 8 + 5>(a_hi, a_lo);  // pairs {i+2,i+3}
+  const auto b_u16 = BitCast(d16, b);
+  const auto b01 = BitCast(d8, Broadcast<kBOffset * 2>(b_u16));      // {b[kB*4+0],b[kB*4+1]} x8
+  const auto b23 = BitCast(d8, Broadcast<kBOffset * 2 + 1>(b_u16));  // {b[kB*4+2],b[kB*4+3]} x8
+  const auto s01 = SumsOf2(AbsDiff(a01, b01));
+  const auto s23 = SumsOf2(AbsDiff(a23, b23));
+  return Add(s01, s23);
 }
 template <int i3, int i2, int i1, int i0, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<std::uint16_t, N / 2> SumsOfShuffledQuadAbsDiff(VecNeon<std::uint8_t, N> a,
