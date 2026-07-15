@@ -1,6 +1,7 @@
 # HYLE SIMD 架构评审(2026-07)
 
-> **结论先行**:架构没有系统性问题;有**两处真实的架构级债**——①定宽后端表示层丢 N(= simd-19,施工中)、
+> **结论先行**:架构没有系统性问题;有**两处真实的架构级债**——①定宽后端表示层丢 N(= simd-19,
+> **2026-07-15 NEON 侧已根治**;x86 残部=脆弱 TIE,见路线 3)、
 > ②手写 op 面的横切成本(simd-19 是它第一次真正收费)。两处都有不推倒重来的改善路径。**不需要推倒重来,
 > 也不该走向 vendor Highway。**
 > 背景:一个月 HYLE-vs-Highway 性能对齐(见 `docs/milestones/simd-orderswap-matrix.md`)后的架构侧复盘。
@@ -16,14 +17,16 @@
 
 ## 二、两处架构级债
 
-### 债① 表示层丢 N(simd-19,施工中)
+### 债① 表示层丢 N(simd-19;**NEON 侧已根治,2026-07-15 收口**)
 
 类型系统携带 N(`Rebind`/`Repartition` 产生 partial tag),scalable 后端(SVE/RVV)用 `kPow2`+`vl` 正确
-执行了它,但**定宽后端的物理表示不携带 N**——`VecNeon<int16_t,4>` 物理上仍是 `int16x8_t`,op 被迫满宽做
-再掰回。这是设计时漏掉的一个维度,是缺陷不是权衡。
+执行了它,但**定宽后端的物理表示曾不携带 N**——修复前 `VecNeon<int16_t,4>` 物理上仍是 `int16x8_t`,
+op 被迫满宽做再掰回。这是设计时漏掉的一个维度,是缺陷不是权衡。
 
-- **NEON**:受损已量化(PromoteMaskTo 0.575),修复路径已定(`docs/milestones/simd-19-partial-vector-repr.md`
-  §5.1 常绿垫片迁移,探针已证终态追平 + 垫片零成本)。
+- **NEON:已根治**(simd-19,当日立项/施工/收口)。`RawNeonNT<T,N>` D 档表示 + 常绿垫片迁移 + ~17
+  热点 native-D;PromoteMaskTo 0.575→TIE(C12 单 op 双序 + C18 全量双证,反汇编与 Highway 同形),
+  全量复跑零回归,顺带修复两个既有 bug 家族(partial LoadU/StoreU OOB、子满宽 half/pad N-盲语义)。
+  全记录:`docs/milestones/simd-19-partial-vector-repr.md` §八、`simd-19-ledger.md`。
 - **x86**:同样丢 N,但 x86 没有比 xmm 更窄的寄存器,所以那边的正确形态**不是"D 表示"而是"partial 时选
   消费低半的指令"**(`cvtepi16_epi32` 天然只吃低半)。当前 x86 partial 路径的 TIE 很多是编译器碰巧优化出来
   的——属**脆弱 TIE 而非健康 TIE**,编译器升级可能悄悄回归。处置见 §四-3。
@@ -91,7 +94,8 @@ helper 层 + 校准闸门。持续风险有界、可检测、有着力点。
 
 ## 五、底线判断
 
-simd-19 落完 + helper 层沉淀之后,HYLE simd 的形态(**手写可读 op 面 + 类型级 tag + 校准闸门**)长期站得住:
+simd-19 已落完(helper 层按路线 2 的修正暂不建,类型轴到来时再议),HYLE simd 的形态(**手写可读 op 面
++ 类型级 tag + 校准闸门**)长期站得住:
 新增 op 有方法论文档护航,新增维度有 helper 层着力,性能回归有仪器兜底。推倒重来没有依据;vendor Highway
 只在触发 §5.2 退出条件时才重新讨论。
 
