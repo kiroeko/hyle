@@ -1,16 +1,15 @@
 // simd-19 C13: exhaustive scalar-oracle for half/combine family.
 //
-// Whitelist: this file only (+ neon CMake wire-in, same as C2).
+// Whitelist: this file + tests/CMakeLists.txt single SOURCES line (C2/C13 template).
 // Ops: LowerHalf / UpperHalf / Combine / ZeroExtendVector / InsertIntoUpper.
 //
-// Legal shapes for this baseline = full NEON register per T (N*sizeof(T)==16, N>=2).
-// That is the C14-C16 hot path (full Q in → D halves out → Combine back). Sub-full
-// FixedTag primaries (N*sizeof<=8) currently see UpperHalf/ZeroExtend/InsertIntoUpper
-// wrong under to_q high-zero pad (W0c wrap); those stay out of the green baseline and
-// are listed in the ledger as known gaps (not this card's job to fix neon.h).
+// Green baseline = full NEON register (N*sizeof(T)==16). Sub-full primaries hung as
+// DISABLED_* redlist: pre-existing N-blind half/pad bugs (NOT s19 regression; ledger #11
+// disposition 96d99aa). C14→UpperHalf green; C15→ZeroExtend/InsertIntoUpper green.
+// Do NOT delete DISABLED cases (C2 hang-debt precedent).
 //
 // Oracle = hand-written per-lane arrays. MUST NOT call the ops under test for expected
-// values. Current full-register implementation must be fully green.
+// values.
 
 #include <gtest/gtest.h>
 
@@ -70,11 +69,11 @@ void OracleInsertUpper(const T* hi, const T* v, T* out) {
   for (std::size_t i = 0; i < NH; ++i) out[NH + i] = hi[i];
 }
 
-// Full-register family: N * sizeof(T) == 16.
+// Any legal half-able shape: N power-of-two >=2, N*sizeof(T)<=16.
 template <typename T, std::size_t N>
-void CheckHalfCombineFullReg() {
+void CheckHalfCombineFamily() {
   static_assert(N >= 2 && (N & (N - 1)) == 0, "N power of two >=2");
-  static_assert(N * sizeof(T) == 16, "full NEON register only");
+  static_assert(N * sizeof(T) <= 16, "fits NEON register");
   constexpr std::size_t NH = N / 2;
 
   alignas(16) T in[N];
@@ -149,10 +148,11 @@ void CheckHalfCombineFullReg() {
 
 }  // namespace
 
-#define HYLE_S19_HC_FULL(T, N, Name) \
-  TEST(HalfCombineOracle, Name) { CheckHalfCombineFullReg<T, N>(); }
+// ---- Green baseline: full register (N * sizeof(T) == 16) ----------------------------
 
-// Full register only (N * sizeof(T) == 16).
+#define HYLE_S19_HC_FULL(T, N, Name) \
+  TEST(HalfCombineOracle, Name) { CheckHalfCombineFamily<T, N>(); }
+
 HYLE_S19_HC_FULL(std::int8_t, 16, i8x16)
 HYLE_S19_HC_FULL(std::uint8_t, 16, u8x16)
 HYLE_S19_HC_FULL(std::int16_t, 8, i16x8)
@@ -165,3 +165,26 @@ HYLE_S19_HC_FULL(std::uint64_t, 2, u64x2)
 HYLE_S19_HC_FULL(double, 2, f64x2)
 
 #undef HYLE_S19_HC_FULL
+
+// ---- Redlist (DISABLED_): sub-full primaries, pre-existing N-blind half/pad bugs ------
+// First C13 run: 13 RED. Hang until C14 (UpperHalf) + C15 (ZeroExtend/InsertIntoUpper).
+// Default gtest skips DISABLED_*; use --gtest_also_run_disabled_tests to recheck.
+
+#define HYLE_S19_HC_REDLIST(T, N, Name) \
+  TEST(HalfCombineOracle, DISABLED_##Name) { CheckHalfCombineFamily<T, N>(); }
+
+HYLE_S19_HC_REDLIST(std::int8_t, 2, i8x2)
+HYLE_S19_HC_REDLIST(std::int8_t, 4, i8x4)
+HYLE_S19_HC_REDLIST(std::int8_t, 8, i8x8)
+HYLE_S19_HC_REDLIST(std::uint8_t, 2, u8x2)
+HYLE_S19_HC_REDLIST(std::uint8_t, 4, u8x4)
+HYLE_S19_HC_REDLIST(std::uint8_t, 8, u8x8)
+HYLE_S19_HC_REDLIST(std::int16_t, 2, i16x2)
+HYLE_S19_HC_REDLIST(std::int16_t, 4, i16x4)
+HYLE_S19_HC_REDLIST(std::uint16_t, 2, u16x2)
+HYLE_S19_HC_REDLIST(std::uint16_t, 4, u16x4)
+HYLE_S19_HC_REDLIST(std::int32_t, 2, i32x2)
+HYLE_S19_HC_REDLIST(std::uint32_t, 2, u32x2)
+HYLE_S19_HC_REDLIST(float, 2, f32x2)
+
+#undef HYLE_S19_HC_REDLIST

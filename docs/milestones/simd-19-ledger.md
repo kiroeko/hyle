@@ -30,7 +30,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C10 | 向量 And/Or/Xor/AndNot/Not D-form | done | ✓ | 266/266 | — | b1f8470 | D: to_u32_d/from_u32_d+vand/vorr/veor/vbic_u32; Not=vdup_n_u8 FF xor; Q 原样 |
 | C11 | GetLane/ExtractLane/InsertLane D-form | done | ✓ | 266/266 | — | b1f8470 | GetLane: vget_lane_*(raw,0); Extract/Insert 在 vec.h 泛型 store+reload 未动 |
 | C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | **done+判定 TIE** | ✓ | — | 双序 6 遍 ×4 副本对全部 99.5–100.0%,两侧绝对吞吐同为 12.65–12.71 G op/s | d0702fa | **判定(高能力方 2026-07-15):0.575 → TIE 确认**,见下节判定记录 |
-| C13 | half/combine 穷举 oracle 测试(先行) | done | ✓ | 276/276 (HalfCombineOracle 10/10 满寄存器全绿) | — | 38e37d5 | 新增 vec_half_combine_oracle_test.cc + neon CMake; 满宽×10型; 子满宽 D 主向量见犹疑#11 |
+| C13 | half/combine 穷举 oracle 测试(先行) | done | ✓ | 276/276 绿基线(满宽 10); 子满宽 13 案 DISABLED_ 挂账 | — | 38e37d5(+红名单回挂) | 满宽×10 绿; 13 红=既有 N 盲 half/pad 债(非 s19 回归,批复#11); C14/C15 验收=DISABLED 转绿 |
 | C14 | LowerHalf/UpperHalf native D | todo | | | — | | C13 先绿 |
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | todo | | | — | | C13 先绿 |
 | C16 | Concat* partial 路径 | todo | | | — | | C13 先绿 |
@@ -172,15 +172,16 @@ run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
 
 对照 W0 基线 ~0.57 / C8 单点 ~1.00:本采集六遍稳定在 ~1.00。
 
-11. **C13 合法 (T,N) 收窄为满寄存器**  
-    - 犹疑:卡文「全 (T,N) 合法组合」若含 N*sizeof≤8 的 FixedTag 主向量,理想 oracle 下 UpperHalf/ZeroExtend/InsertIntoUpper 红(to_q 高半恒零,W0c 后 D 主向量 half 的已知限制);与「当前必须全绿」冲突。首轮 13 红均落在子满宽。  
-    - 处置:绿基线只注册满宽 N*sizeof==16 的 10 型(C14 热路径:满 Q→D 半→Combine);子满宽 D 主向量不进绿基线,本条登记。  
-    - 残留:C14 若只改「输入满宽」路径,子满宽 UpperHalf 仍红;若判定层要求子满宽也绿,需另开卡修 D 主向量 half 语义。
+11. **C13 子满宽 13 红:归因与挂账**(执行初记 → 判定层更正)  
+    - 犹疑(执行初记,已更正):曾写「W0c 后已知限制」——**不准**。  
+    - 判定层定性(96d99aa):**既有 bug、非 s19 回归**。`a379477^` 起 `neon_upper_half_zext` 即 T-only/N-盲;子满宽主向量 UpperHalf 取物理高半而非逻辑高半;W0c 仅把垃圾变成确定性零。ZeroExtend/InsertIntoUpper 红=输入 pad 泄漏进逻辑 lane(批复 #9 实证)。  
+    - 处置:①绿基线=满宽×10;②**13 案以 `DISABLED_*` 重新入册挂账**(非删除);③C14 修 UpperHalf 子满宽逻辑高半;C15 修 ZeroExtend/InsertIntoUpper 显式清 pad;转绿计入 C14/C15 验收。  
+    - 红名单:`i8x2/4/8 u8x2/4/8 i16x2/4 u16x2/4 i32x2 u32x2 f32x2`。  
+    - 残留:DISABLED 默认跳过;C14/C15 验收须 `--gtest_also_run_disabled_tests` 或去 DISABLED_ 后全绿。  
+    - 教训:定性(回归 vs 考古)需 `git show <pre-s19>:path` 一条,不可凭 W0c 时间点推断。
 
-12. **C13 白名单 vs CMake 接线**  
-    - 犹疑:卡文白名单仅 `vec_half_combine_oracle_test.cc`;不改 CMake 则 neon 目标不编进新文件,G3 无法覆盖。  
-    - 处置:沿 C2 先例改 `tests/CMakeLists.txt` 一行 SOURCES 追加;未动其他 backend 测试目标。  
-    - 残留:字面越白名单 1 文件;意图上为卡可验收所必需。判定层可追认或改卡文。
+12. **C13 白名单 vs CMake 接线** — 判定通过追认  
+    - 处置:CMake 单行 SOURCES 追加为测试卡默认可验收条件(模板已改)。
 
 ## C13 对抗自审(执行侧,2026-07-15)
 
@@ -201,17 +202,15 @@ run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
 1. **Oracle 未调用被测 op**:`OracleLower/Upper/Combine/ZeroExtend/InsertUpper` 纯数组循环;期望值与 `hs::LowerHalf` 等隔离。✓  
 2. **Combine 参数序**:Highway `Combine(d, hi, lo)` → 内存 lo\|hi;oracle 与 HalfVectorFamily 一致。✓  
 3. **Store 半宽 tag**:用 `FixedTag<T,NH>`(kPow2=0) 存 half,避免 Half tag kPow2=-1 与 Store 契约冲突(抄 HalfVectorFamily 的 DFromV 意图)。✓  
-4. **范围收窄诚实性**:首轮含 D 主向量 23 case → 13 红;失败特征=UpperHalf 得 0、ZeroExtend 高半非 0、InsertIntoUpper 高半未替换——根因是 `to_q(D)=vcombine(D,0)` 后 `vget_high` 恒零,不是 oracle 写错。**未**改期望值去迁就坏实现;改为收窄注册集并台账登记。✓ 对抗自验  
-5. **未覆盖项(明确不声称)**:  
-   - 子满宽 FixedTag 主向量 half 族(已知红,见#11)  
-   - ScalableTag 路径(已有 `Vec.HalfVectorFamily`;本卡 FixedTag 钉 C14 输入形)  
-   - ResizeBitCast(属 C17,不在 C13 五 op 列表)
+4. **范围收窄 + 红名单挂账**:首轮 13 红;失败特征=UpperHalf 得 0、ZeroExtend 高半非 0、InsertIntoUpper 高半未替换。**未**改期望迁就。绿基线满宽×10;13 案 `DISABLED_*` 挂账(批复#11,非删除)。  
+5. **定性更正(判定层)**:13 红=**既有 N 盲 bug**,非 W0c/s19 回归;考古证据 `a379477^`。执行初记「W0c 限制」已更正。  
+6. **未覆盖/不声称**:ScalableTag(已有 HalfVectorFamily);ResizeBitCast(C17)。
 
 ### 与 C14–C16 的衔接
-- C13 绿基线 = 满宽 10 型 × 五 op;C14 改「输入满宽」的 Lower/Upper 时,这 10 案必须保持绿。  
-- C14 产出的 D 半再进 C15 Combine:本 oracle 的 Combine 回环已覆盖「满宽→半→合回」。  
-- 子满宽 D 主向量 half **不是**本绿基线的守护范围;若 C14 冷路径「保留包裹」使行为不变,子满宽仍红——不应用 C13 绿否证子满宽正确性。
+- 满宽 10 案:C14/C15 全程保持绿。  
+- 子满宽 13 DISABLED:C14 验收 UpperHalf 转绿;C15 验收 ZeroExtend/InsertIntoUpper 转绿(去 DISABLED_ 或 also_run_disabled)。  
+- Combine 回环已覆盖「满宽→半→合回」。
 
 ### 自审结论
-- **可收(有条件)**:满宽基线扎实、闸门原始输出齐、未改生产代码、未改期望迁就红。  
-- **须判定层知悉**:#11 范围收窄、#12 CMake 越字面白名单;二者执行侧已书面登记,不默默略过。  
+- **可收(有条件,判定层已批复 #11/#12)**。  
+- 执行差距:未做 `git show` 考古→误标回归;已记教训。  
