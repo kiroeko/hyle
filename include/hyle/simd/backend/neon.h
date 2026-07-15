@@ -1042,28 +1042,30 @@ HYLE_FORCE_INLINE VecNeon<DstT, N> TruncateTo(Simd<DstT, N, 0>, VecNeon<SrcT, N>
   for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<DstT>(src[i]);
   return LoadU(Simd<DstT, N, 0>(), dst);
 }
-// PromoteEvenTo/PromoteOddTo: exact-2x integer widenings use a register-in vuzp+vmovl path
-// (mirrors the avx2/sse4 shift-in rewrite; the store+reload version round-tripped through the
-// stack). vuzp1q deinterleaves the EVEN source lanes into the low 64 bits (vuzp2q the ODD),
-// vget_low takes those 8/4/2 packed narrow lanes, and vmovl_s*/vmovl_u* widens them 2x with
-// arithmetic (signed) or logical (unsigned) fill -- the same idiom as MulEven/MulOdd below.
-// The result q-register holds NDst valid lanes in [0,NDst); a half-width dst (NDst<native)
-// simply ignores the high lanes, matching the contract (dst lane i = src lane 2i / 2i+1).
-// Non-integer / non-2x / multi-level combos keep the correctness-first store+reload fallback.
+// PromoteEvenTo/PromoteOddTo: exact-2x integer widenings use Highway's in-register shift idiom
+// (arm_neon-inl.h via inside-inl.h). Reinterpret the narrow vector as the WIDE lane type: each wide
+// lane then holds [odd_src : even_src] (little-endian, even in the low half). EvenTo signed =
+// ShiftLeft<w>(bitcast) to park the even half in the high bits, then arithmetic ShiftRight<w> to
+// sign-extend (w = source width in bits). OddTo signed = arithmetic ShiftRight<w> alone (odd half
+// already in the high bits). Unsigned even = And with the low-half mask (1 op); unsigned odd =
+// logical ShiftRight<w>. Result wide lane i = src lane 2i (even) / 2i+1 (odd), identical to the old
+// vuzp+vmovl mapping -- but the old form compiled to a structured `ld2` deinterleave load (~2x cost
+// on Apple cores, measured 0.46-0.48 vs Highway); the shift form runs on a plain load. Non-integer /
+// non-2x / multi-level combos keep the correctness-first store+reload fallback.
 template <typename DstT, std::size_t NDst, typename SrcT, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<DstT, NDst> PromoteEvenTo(Simd<DstT, NDst, 0>, VecNeon<SrcT, NSrc> v) noexcept {
   static_assert(NSrc == 2 * NDst && sizeof(DstT) > sizeof(SrcT), "PromoteEvenTo: even lanes narrow->wide");
   if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(DstT) == 2 * sizeof(SrcT)) {
     VecNeon<DstT, NDst> r;
     if constexpr (sizeof(SrcT) == 1) {  // i8/u8 -> i16/u16
-      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s8(vget_low_s8(vuzp1q_s8(v.raw, v.raw)));
-      else r.raw = vmovl_u8(vget_low_u8(vuzp1q_u8(v.raw, v.raw)));
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vshrq_n_s16(vshlq_n_s16(vreinterpretq_s16_s8(v.raw), 8), 8);
+      else r.raw = vandq_u16(vreinterpretq_u16_u8(v.raw), vdupq_n_u16(0x00FFu));
     } else if constexpr (sizeof(SrcT) == 2) {  // i16/u16 -> i32/u32
-      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s16(vget_low_s16(vuzp1q_s16(v.raw, v.raw)));
-      else r.raw = vmovl_u16(vget_low_u16(vuzp1q_u16(v.raw, v.raw)));
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vshrq_n_s32(vshlq_n_s32(vreinterpretq_s32_s16(v.raw), 16), 16);
+      else r.raw = vandq_u32(vreinterpretq_u32_u16(v.raw), vdupq_n_u32(0x0000FFFFu));
     } else {  // sizeof 4: i32/u32 -> i64/u64
-      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s32(vget_low_s32(vuzp1q_s32(v.raw, v.raw)));
-      else r.raw = vmovl_u32(vget_low_u32(vuzp1q_u32(v.raw, v.raw)));
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vshrq_n_s64(vshlq_n_s64(vreinterpretq_s64_s32(v.raw), 32), 32);
+      else r.raw = vandq_u64(vreinterpretq_u64_u32(v.raw), vdupq_n_u64(0x00000000FFFFFFFFull));
     }
     return r;
   } else {
@@ -1080,14 +1082,14 @@ HYLE_FORCE_INLINE VecNeon<DstT, NDst> PromoteOddTo(Simd<DstT, NDst, 0>, VecNeon<
   if constexpr (std::is_integral_v<SrcT> && std::is_integral_v<DstT> && sizeof(DstT) == 2 * sizeof(SrcT)) {
     VecNeon<DstT, NDst> r;
     if constexpr (sizeof(SrcT) == 1) {  // i8/u8 -> i16/u16
-      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s8(vget_low_s8(vuzp2q_s8(v.raw, v.raw)));
-      else r.raw = vmovl_u8(vget_low_u8(vuzp2q_u8(v.raw, v.raw)));
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vshrq_n_s16(vreinterpretq_s16_s8(v.raw), 8);
+      else r.raw = vshrq_n_u16(vreinterpretq_u16_u8(v.raw), 8);
     } else if constexpr (sizeof(SrcT) == 2) {  // i16/u16 -> i32/u32
-      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s16(vget_low_s16(vuzp2q_s16(v.raw, v.raw)));
-      else r.raw = vmovl_u16(vget_low_u16(vuzp2q_u16(v.raw, v.raw)));
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vshrq_n_s32(vreinterpretq_s32_s16(v.raw), 16);
+      else r.raw = vshrq_n_u32(vreinterpretq_u32_u16(v.raw), 16);
     } else {  // sizeof 4: i32/u32 -> i64/u64
-      if constexpr (std::is_signed_v<SrcT>) r.raw = vmovl_s32(vget_low_s32(vuzp2q_s32(v.raw, v.raw)));
-      else r.raw = vmovl_u32(vget_low_u32(vuzp2q_u32(v.raw, v.raw)));
+      if constexpr (std::is_signed_v<SrcT>) r.raw = vshrq_n_s64(vreinterpretq_s64_s32(v.raw), 32);
+      else r.raw = vshrq_n_u64(vreinterpretq_u64_u32(v.raw), 32);
     }
     return r;
   } else {

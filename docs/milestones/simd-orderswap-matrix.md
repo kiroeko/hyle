@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 13**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;AESKeyGenAssist 已修 0.12→TIE)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 11**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 AESKeyGenAssist 0.12→TIE、PromoteEven/OddTo 0.46/0.48→TIE)
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -53,14 +53,14 @@
   的 0.47 由此而来,当时误判为"该序列本质需要内存源"。已按编译器分叉:MSVC=inserti128 自 dup+vpshufd,
   GCC 保留 vpermd(1.13W);Slide1Up 金丝雀 1.00,无 ConcatLowerLower 类复合上下文回归。)
 
-### WSL/GCC(AVX2): 0 个(full 0/201 LOSE)
+### WSL/GCC(AVX2): 0 个
 - (FindLastTrue 最终轮清零:0.94→**1.00 TIE**。旧"仪器残余"定论收回——规范化逐条 diff 发现两侧循环
   14 vs 15 条:HYLE 多一条 movslq,因 `31 - std::countl_zero(b)` 的减法在 int 域做、进 64 位 sink 前
   需符号扩展;Highway 的 Num0Bits* 为 size_t 宽全程 64 位。改 ptrdiff_t 域减法(avx2+sse4)即消。
   方法教训:此前"objdump 逐指令等价"是**向量签名级**对比的假象——标量尾巴(寄存器宽度/扩展指令)
   没有逐条比,一条指令恰好就是那 6%。)
 
-### Mac/NEON: 13 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;AESKeyGenAssist 已修见下)
+### Mac/NEON: 11 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;AESKeyGenAssist + PromoteEven/OddTo 已修见下)
 > **背景**:此前 NEON 只有 op_parity_full_bench 一个 target,且它自 P4 起加的 op 从没在 NEON 重跑;
 > op_parity_bench_neon / widen_neon 到本会话才建(见 reference_simd_coverage_tool 记忆的"NEON 覆盖盲区")。
 > 首次三 TU 全跑,暴露一批 HYLE NEON 走 store+reload/scalar-fallback 而 Highway 用 native intrinsic
@@ -73,8 +73,6 @@
 | TwoTablesLookupLanes i32 | 0.21 | store+reload gather vs Highway byte-index 展开 + vqtbl2q |
 | SumsOfAdjQuadAbsDiff u8→u16 | 0.24 | fallback vs Highway native(vabal 家族) |
 | TableLookupLanes i32 | 0.32 | store+reload gather vs Highway BroadcastLaneBytes+ShiftLeft+ByteOffsets + vqtbl1q |
-| PromoteOddTo i8→i16 | 0.46 | vuzp+vmovl vs Highway 纯移位 bitcast(ShiftRight/And) |
-| PromoteEvenTo i8→i16 | 0.48 | 同上 |
 | DemoteToNearestInt f64→i32 | 0.57 | 待查 |
 | PromoteMaskTo i16→i32 | 0.575 | 待查 |
 | SatWidenMulPairwiseAdd u8*i8→i16 | 0.575 | 待查(vmull 家族?) |
@@ -92,6 +90,13 @@
   _mm_aeskeygenassist 语义)。三原语都是 HYLE 自家已验 x86-bit-identical 的 NEON op,合成精确。仅
   `__ARM_FEATURE_AES` 路径改(需 vaese);无 AES 硬件时整个 crypto 家族本就软实现,保留 byte core。
   CryptoAES gtest 逐字节对 oracle(rcon=0x01)PASS。
+- **NEON 修复轮②(2026-07-15):PromoteEvenTo/PromoteOddTo 整数 2× 加宽 0.46/0.48→TIE**。旧 vuzp+vmovl
+  被编译器融成 `ld2.Nb` 结构化去交织 load(Apple 核 ~2× 代价);改 Highway inside-inl.h 的**寄存器内移位
+  idiom**:把窄向量 reinterpret 成宽 lane 型(每宽 lane = [奇:偶],小端偶在低半)。EvenTo signed =
+  `vshlq_n<w>` 把偶半移到高位再 `vshrq_n_s<w>`(算术右移符号扩展);OddTo signed = `vshrq_n_s<w>` 单条;
+  unsigned even = `vandq` 低半掩码,odd = `vshrq_n_u<w>`。落 `shl+sshr`(2 条,普通 load)替 `ld2`。lane
+  映射与旧式逐字节相同(dst[i]=src[2i]/2i+1),6 组宽度×符号(i8/u8→i16,i16/u16→i32,i32/u32→i64)
+  standalone 对拍标量 bad=0 + 220 NEON gtest 全绿。
 
 ### 与旧报告的对照(演进:旧 harness -> v1 校准仪器 -> 修复 + v2 stagger)
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
@@ -466,10 +471,10 @@
 | PairwiseSub128 i32 | 1.10W | 1.00= | 1.01= |
 | Per4LaneBlockShuffle 3210 i32 | 0.87? | 1.00= | 1.00= |
 | PopulationCount u32 (4096) | 1.48W | 1.49W | · |
-| PromoteEvenTo i8->i16 | 0.96= | 0.99= | · |
+| PromoteEvenTo i8->i16 | 0.96= | 0.99= | 1.00= |
 | PromoteLowerTo i16->i32 (4096) | 1.00= | 1.00= | · |
 | PromoteMaskTo i16->i32 (4096) | 1.00= | 1.00= | · |
-| PromoteOddTo i8->i16 | 0.99= | 0.99= | · |
+| PromoteOddTo i8->i16 | 0.99= | 0.99= | 1.00= |
 | PromoteTo i16->i32 1-arg (4096) | 0.99= | 0.99= | · |
 | PromoteUpperTo i16->i32 | 1.01= | 0.99= | · |
 | RebindMask i32->f32 (4096) | 1.00= | 0.99= | · |
