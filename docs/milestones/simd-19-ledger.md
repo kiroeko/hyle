@@ -31,7 +31,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C11 | GetLane/ExtractLane/InsertLane D-form | done | ✓ | 266/266 | — | b1f8470 | GetLane: vget_lane_*(raw,0); Extract/Insert 在 vec.h 泛型 store+reload 未动 |
 | C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | **done+判定 TIE** | ✓ | — | 双序 6 遍 ×4 副本对全部 99.5–100.0%,两侧绝对吞吐同为 12.65–12.71 G op/s | d0702fa | **判定(高能力方 2026-07-15):0.575 → TIE 确认**,见下节判定记录 |
 | C13 | half/combine 穷举 oracle 测试(先行) | done | ✓ | 276/276 绿基线(满宽 10); 子满宽 13 案 DISABLED_ 挂账 | — | 38e37d5(+红名单回挂) | 满宽×10 绿; 13 红=既有 N 盲 half/pad 债(非 s19 回归,批复#11); C14/C15 验收=DISABLED 转绿 |
-| C14 | LowerHalf/UpperHalf native D | done | ✓ | 276/276; also_run: 13 DISABLED 零 UpperHalf/LowerHalf 失败, 余 ZeroExtend/Insert 红=C15 | — | | 满宽 Q→vget_low/high; 子满宽 Lower=raw; Upper=vshr_n_u64(NH*sizeof*8); 批复#11 Upper 转绿验收 |
+| C14 | LowerHalf/UpperHalf native D | done | ✓ | 276/276; also_run: 13 DISABLED 零 UpperHalf/LowerHalf 失败, 余 ZeroExtend/Insert 红=C15 | — | ebeec1e | 满宽 Q→vget_low/high; 子满宽 Lower=raw; Upper=vshr_n_u64(NH*sizeof*8); 批复#11 Upper 转绿验收 |
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | todo | | | — | | C13 先绿 |
 | C16 | Concat* partial 路径 | todo | | | — | | C13 先绿 |
 | C17 | ResizeBitCast partial 审计 | todo | | | — | | 低优 |
