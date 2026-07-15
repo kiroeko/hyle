@@ -42,12 +42,6 @@ HYLE_SIMD_API void saxpy_f64(double a, const double* x, double* y, std::size_t n
 HYLE_SIMD_API void add_f32(const float* x, const float* y, float* z, std::size_t n) noexcept;
 HYLE_SIMD_API void add_f64(const double* x, const double* y, double* z, std::size_t n) noexcept;
 
-// Accurate f32 reductions (P0-3): accumulate in f64 (vector PromoteLower/Upper + f64 FMA),
-// cast back to f32. Error ~O(n·ε_f64) vs fast path O(n·ε_f32). Consumer opts in; does not
-// replace dot_f32. See simd-complexity-opportunities.md P0-3.
-HYLE_SIMD_API float sum_f32_accurate(const float* x, std::size_t n) noexcept;
-HYLE_SIMD_API float dot_f32_accurate(const float* x, const float* y, std::size_t n) noexcept;
-
 // The ISA tier the dispatcher actually selected (resolved once from best_isa()). For
 // tests/diagnostics: proves dispatch picked the host's best variant, not just the floor.
 HYLE_SIMD_API Isa active_variant() noexcept;

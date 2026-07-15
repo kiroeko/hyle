@@ -47,17 +47,4 @@ void add_f64_avx2(const double* x, const double* y, double* z, std::size_t n) no
 void add_f64_avx512(const double* x, const double* y, double* z, std::size_t n) noexcept;
 void add_f64_neon(const double* x, const double* y, double* z, std::size_t n) noexcept;
 
-// Accurate f32 sum/dot (f64 intermediate). Same ISA suffix scheme as the fast kernels.
-float sum_f32_accurate_scalar(const float* x, std::size_t n) noexcept;
-float sum_f32_accurate_sse4(const float* x, std::size_t n) noexcept;
-float sum_f32_accurate_avx2(const float* x, std::size_t n) noexcept;
-float sum_f32_accurate_avx512(const float* x, std::size_t n) noexcept;
-float sum_f32_accurate_neon(const float* x, std::size_t n) noexcept;
-
-float dot_f32_accurate_scalar(const float* x, const float* y, std::size_t n) noexcept;
-float dot_f32_accurate_sse4(const float* x, const float* y, std::size_t n) noexcept;
-float dot_f32_accurate_avx2(const float* x, const float* y, std::size_t n) noexcept;
-float dot_f32_accurate_avx512(const float* x, const float* y, std::size_t n) noexcept;
-float dot_f32_accurate_neon(const float* x, const float* y, std::size_t n) noexcept;
-
 }  // namespace hyle::simd::detail

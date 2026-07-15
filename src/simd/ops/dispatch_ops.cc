@@ -118,32 +118,6 @@ AddF64Fn resolve_add_f64() noexcept {
   }
 }
 
-using SumAccFn = float (*)(const float*, std::size_t) noexcept;
-SumAccFn resolve_sum_f32_accurate() noexcept {
-  switch (selected_tier()) {
-#if defined(HYLE_ARCH_X64)
-    case Isa::kAvx512: return &detail::sum_f32_accurate_avx512;
-    case Isa::kAvx2: return &detail::sum_f32_accurate_avx2;
-    case Isa::kSse42: return &detail::sum_f32_accurate_sse4;
-#elif defined(HYLE_ARCH_ARM64)
-    case Isa::kNeon: return &detail::sum_f32_accurate_neon;
-#endif
-    default: return &detail::sum_f32_accurate_scalar;
-  }
-}
-DotFn resolve_dot_f32_accurate() noexcept {
-  switch (selected_tier()) {
-#if defined(HYLE_ARCH_X64)
-    case Isa::kAvx512: return &detail::dot_f32_accurate_avx512;
-    case Isa::kAvx2: return &detail::dot_f32_accurate_avx2;
-    case Isa::kSse42: return &detail::dot_f32_accurate_sse4;
-#elif defined(HYLE_ARCH_ARM64)
-    case Isa::kNeon: return &detail::dot_f32_accurate_neon;
-#endif
-    default: return &detail::dot_f32_accurate_scalar;
-  }
-}
-
 }  // namespace
 
 // Each cached once via a function-local static (Meyers: thread-safe init-once, C++11+).
@@ -172,14 +146,6 @@ void add_f32(const float* x, const float* y, float* z, std::size_t n) noexcept {
 void add_f64(const double* x, const double* y, double* z, std::size_t n) noexcept {
   static const AddF64Fn fn = resolve_add_f64();
   fn(x, y, z, n);
-}
-float sum_f32_accurate(const float* x, std::size_t n) noexcept {
-  static const SumAccFn fn = resolve_sum_f32_accurate();
-  return fn(x, n);
-}
-float dot_f32_accurate(const float* x, const float* y, std::size_t n) noexcept {
-  static const DotFn fn = resolve_dot_f32_accurate();
-  return fn(x, y, n);
 }
 Isa active_variant() noexcept {
   static const Isa tier = selected_tier();

@@ -69,22 +69,14 @@
 - 默认 `AVX512` 旗标仍无 `-mavx512vnni`(SKX 安全);VNNI 512 路径只在带该宏的 TU 生效。
 - 正式 op_parity `-n15` 重测 SumOfMulQuad(历史账已记 ~10×→追平;本轮是正确性闭环)。
 
-### P0-3. 大 n 归约的误差档 — **已落地(f64 中间累加,2026-07-15)**
+### P0-3. 大 n 归约的误差档(误差 O(n·ε) → O(log n·ε),速度不变)
 
-**原状**:`dot_f32` 4-acc f32 树归约,误差界 O(n·ε_f32);softmax 已用 double 累加兜底
-(activations.cc)——误差压力真实。
+**现状**:ReduceSum/dot 直线累加,误差界 O(n·ε);softmax 里已经出现 double 累加兜底
+(activations.cc:71 "double accum: n can be large (vocab ~128k)")——说明误差压力是真实的。
 
-**已做**(消费者自选,不替换快路径):
-- `sum_f32_accurate` / `dot_f32_accurate`(`ops.h` + 多 ISA 核 + dispatch)
-- 实现:每 f32 向量 `PromoteLower/UpperTo` → f64,f64 MulAdd/Add 四路累加,末尾 cast 回 f32
-- 误差 ~O(n·ε_f64)(远严于 f32);吞吐仍是向量宽循环(多一次 promote + 半宽 f64 算)
-
-**正确性**(2026-07-15):`Ops.*` 14 tests 含 4 个 accurate 测 —
-`Sum/DotF32AccurateMatchesDoubleRef` + ill-conditioned `AccurateBeatsFastOnIllConditioned*` —
-**Win MSVC / WSL GCC 均 PASSED**。
-
-**机会残留**:Kahan/纯 pairwise 树(不升 f64)若要在 f32 寄存器内做可另开;f64 accurate 档;
-softmax 内部可改调 `sum_f32_accurate`(现已手写 double 标量累加,功能等价)。
+**机会**:pairwise(树形)求和误差 O(log n·ε)、块内 Kahan 误差 O(ε),**吞吐几乎不变**
+(4-累加器结构天然就是 4 路树的第一层)。提供 `reduce_sum_accurate/dot_accurate` 变体,
+沿 InRange 家族的"消费者自选"惯例。这是"误差增长阶"意义上的复杂度改进,不是速度。
 
 ---
 
