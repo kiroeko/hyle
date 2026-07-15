@@ -38,7 +38,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | todo | | | 记录 | | 判定=高能力方 |
 | C19 | 文档/矩阵回写 + cloc | todo | | | — | | 高能力方 |
 
-## 执行侧犹疑/边界说明(C3–C9 集中,2026-07-15)
+## 执行侧犹疑/边界说明(C3–C13 集中,2026-07-15)
 
 供高能力方复审;非 blocker。每条写清「犹疑点 → 实际处置 → 残留风险」。
 
@@ -164,3 +164,42 @@ run3: HYLE#0 0.08 / HWY#0 0.08 (100.0%/100.0%); #1–#3 同 0.08
     - 犹疑:卡文「全 (T,N) 合法组合」若含 N*sizeof≤8 的 FixedTag 主向量,理想 oracle 下 UpperHalf/ZeroExtend/InsertIntoUpper 红(to_q 高半恒零,W0c 后 D 主向量 half 的已知限制);与「当前必须全绿」冲突。首轮 13 红均落在子满宽。  
     - 处置:绿基线只注册满宽 N*sizeof==16 的 10 型(C14 热路径:满 Q→D 半→Combine);子满宽 D 主向量不进绿基线,本条登记。  
     - 残留:C14 若只改「输入满宽」路径,子满宽 UpperHalf 仍红;若判定层要求子满宽也绿,需另开卡修 D 主向量 half 语义。
+
+12. **C13 白名单 vs CMake 接线**  
+    - 犹疑:卡文白名单仅 `vec_half_combine_oracle_test.cc`;不改 CMake 则 neon 目标不编进新文件,G3 无法覆盖。  
+    - 处置:沿 C2 先例改 `tests/CMakeLists.txt` 一行 SOURCES 追加;未动其他 backend 测试目标。  
+    - 残留:字面越白名单 1 文件;意图上为卡可验收所必需。判定层可追认或改卡文。
+
+## C13 对抗自审(执行侧,2026-07-15)
+
+### 闸门核对
+| 项 | 结论 | 证据 |
+|---|---|---|
+| 白名单 | **有条件通过** | 新增测试 + ledger + CMake(见#12);未动 neon.h/vec.h/其他 backend |
+| G1 编译 | ✓ | 真编 `vec_half_combine_oracle_test.cc.o` + link |
+| mtime | ✓ | `Jul 15 18:15` / 同步 ~10:15Z,非 stale |
+| G2 | ✓ | 随编译(本卡无改 traits) |
+| G3 | ✓ | **276/276** = 220 Vec + 46 PartialBoundary + **10 HalfCombineOracle**;全量非过滤 |
+| G4 | n/a | 无 bench |
+| G5 | ✓ | 台账行 + 犹疑#11/#12 |
+| 提交 | ✓ | `38e37d5` test + `faa95b6` hash 回填(铁律 6 允许) |
+| 前缀 | ✓ | `test(simd): s19-C13 ...`(W4 测先行) |
+
+### 正确性自审(oracle 与范围)
+1. **Oracle 未调用被测 op**:`OracleLower/Upper/Combine/ZeroExtend/InsertUpper` 纯数组循环;期望值与 `hs::LowerHalf` 等隔离。✓  
+2. **Combine 参数序**:Highway `Combine(d, hi, lo)` → 内存 lo\|hi;oracle 与 HalfVectorFamily 一致。✓  
+3. **Store 半宽 tag**:用 `FixedTag<T,NH>`(kPow2=0) 存 half,避免 Half tag kPow2=-1 与 Store 契约冲突(抄 HalfVectorFamily 的 DFromV 意图)。✓  
+4. **范围收窄诚实性**:首轮含 D 主向量 23 case → 13 红;失败特征=UpperHalf 得 0、ZeroExtend 高半非 0、InsertIntoUpper 高半未替换——根因是 `to_q(D)=vcombine(D,0)` 后 `vget_high` 恒零,不是 oracle 写错。**未**改期望值去迁就坏实现;改为收窄注册集并台账登记。✓ 对抗自验  
+5. **未覆盖项(明确不声称)**:  
+   - 子满宽 FixedTag 主向量 half 族(已知红,见#11)  
+   - ScalableTag 路径(已有 `Vec.HalfVectorFamily`;本卡 FixedTag 钉 C14 输入形)  
+   - ResizeBitCast(属 C17,不在 C13 五 op 列表)
+
+### 与 C14–C16 的衔接
+- C13 绿基线 = 满宽 10 型 × 五 op;C14 改「输入满宽」的 Lower/Upper 时,这 10 案必须保持绿。  
+- C14 产出的 D 半再进 C15 Combine:本 oracle 的 Combine 回环已覆盖「满宽→半→合回」。  
+- 子满宽 D 主向量 half **不是**本绿基线的守护范围;若 C14 冷路径「保留包裹」使行为不变,子满宽仍红——不应用 C13 绿否证子满宽正确性。
+
+### 自审结论
+- **可收(有条件)**:满宽基线扎实、闸门原始输出齐、未改生产代码、未改期望迁就红。  
+- **须判定层知悉**:#11 范围收窄、#12 CMake 越字面白名单;二者执行侧已书面登记,不默默略过。  
