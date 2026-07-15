@@ -73,13 +73,15 @@ ssh -o BatchMode=yes kiro@172.22.10.198 \
   'export PATH=/opt/homebrew/bin:$PATH && cmake --build ~/hyle/build-mac --target hyle_op_parity_bench_neon -j \
    && HYLE_BENCH_ONLY=<卡片给定的过滤串> ~/hyle/build-mac/bin/hyle_op_parity_bench_neon'
 ```
-**禁止**不带 `HYLE_BENCH_ONLY` 跑(全量 2227 行会被 jetsam SIGKILL);**禁止**多个 bench 进程并发。
+**禁止**不带 `HYLE_BENCH_ONLY` 跑(全量会被 jetsam SIGKILL;完整行数基线 2026-07-15:parity 769 /
+full 2293 / widen 308);**禁止**多个 bench 进程并发。
 
 **3-4 全量 bench(只有 W5 收口卡用,夜跑):**
 ```bash
 ssh -o BatchMode=yes kiro@172.22.10.198 'export PATH=/opt/homebrew/bin:$PATH && nohup sh -c \
   "~/hyle/build-mac/bin/hyle_op_parity_bench_neon > /tmp/s19_full_1.txt 2>&1" &'
-# 完整性判定:wc -l = 2227 才算完整,短的是被 kill 的,作废重跑
+# 完整性判定:wc -l 与完整基线一致(2026-07-15:parity 769 / full 2293 / widen 308;随 op 集演进
+# 以同二进制首个完整跑为准),短的是被 kill 的,作废重跑
 ```
 
 **3-5 intrinsic 存在性探针(对映射表有疑问时,唯一合法的验证方式):**

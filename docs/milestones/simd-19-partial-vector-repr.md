@@ -1,6 +1,6 @@
 # simd-19: 定宽后端的部分向量表示(partial-vector representation)
 
-> **状态**:施工中(2026-07-15 编+拍板选 A)。触发自 NEON perf 收口:`PromoteMaskTo i16→i32` 稳定 0.575 输
+> **状态**:**完成 ✅**(2026-07-15 当日立项/施工/收口;验收记录见 §八)。触发自 NEON perf 收口:`PromoteMaskTo i16→i32` 稳定 0.575 输
 > Highway,根因不是单 op 的实现,而是**定宽后端把每个 `Vec<T,N>` 都当满宽寄存器**——部分标签(partial
 > tag,`N < 满 lane`)的 op 被迫在满宽上做再掰回。属架构级欠缺,单点改不动,故单列里程碑。
 > **决策:选方案 A(根治,VecNeon 按 N 选窄 D/Q raw 类型),分阶段施工——见 §五。**
@@ -174,3 +174,30 @@ D/Q 区分显式收益最大);x86 的 partial 表示改造视 NEON 完成后是�
 - 症状与 dumpbin:`docs/milestones/simd-orderswap-matrix.md`(真输清单 PromoteMaskTo 行 + NEON 修复演进段)。
 - scalable partial-tag 机制(已实现,可借鉴表示思路):`docs/architecture/simd-design.md` §212/§220,`simd-15`。
 - Highway `Raw128<T,N>` / `Vec128<T,N>` 分档:`third_party/highway/hwy/ops/arm_neon-inl.h`。
+
+## 八、收口记录(2026-07-15,C19)
+
+对照 §六验收逐条:
+
+1. **PromoteMaskTo 0.575 → TIE ✅**:C12 单 op 双序 6 遍 ×4 副本对 99.5–100.0%(校准 PASS)+ 反汇编
+   `ldr d ; sshll.4s ; cmgt.4s` 与 Highway 同形;C18 全量复合环境 1.000/1.000 终态复确认。
+2. **gtest 全绿 ✅**:NEON 276/276(基线 220 + 护栏 46 + oracle 10;此外 13 个子满宽 DISABLED 案由
+   C14/C15 转绿计入 also_run 23/23);x86 构造性无关(全部代码提交仅触 neon.h/tests)+ Windows
+   scalar/sse4/avx2 形式复跑(结果见台账 C19 行)。
+3. **无同类回归 ✅**:C18 三 TU × 双序 ×3 全量复跑,校准全 PASS,LOSE:parity 0/69、full 0/206、
+   widen 1/28——唯一 LOSE(SatWidenMulAccumFixedPoint 0.92)为矩阵既有 `0.94?` 边界项钉实,非 s19
+   回归,已立 C20 修复卡。
+4. **cloc 与警戒线 ✅**:neon.h 3297 → 4002 行(+705,+21%);新增测试 381 行(护栏 191 + oracle 190)。
+   对照 Highway `arm_neon-inl.h` 10982 行,HYLE NEON 后端为其 **36%**——未越"不 vendor Highway"行数
+   警戒线(§5.2),退出条件未触发。
+
+**额外交付(立项时未计划)**:测试先行卡挖出并修复两个**既有** bug 家族——①partial LoadU/StoreU
+满 16 字节读写(OOB);②子满宽 UpperHalf/ZeroExtendVector/InsertIntoUpper 的 N-盲语义。均非 s19 引入,
+随本里程碑清偿。
+
+**施工形态复盘**:常绿垫片迁移全程兑现——W0a/W0b/W0c 每步编译绿 + gtest 绿,W0c 翻转一次编译过零残错;
+探针预测(垫片零成本、终态同 Highway)与实测一致。执行采用 AI 分派工单制(19 卡),全记录:
+`simd-19-workorders.md`(卡片/铁律/批复)+ `simd-19-ledger.md`(台账/判定)。
+
+**遗留**:C20(SatWidenMulAccumFixedPoint,独立卡,非本里程碑范围);x86 侧 partial 表示不做
+(§5.1 既定),脆弱 TIE 健康化见 `simd-arch-review-2026-07.md` 路线 3。

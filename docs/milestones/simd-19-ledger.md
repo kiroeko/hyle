@@ -36,7 +36,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C16 | Concat* partial 路径 | done | ✓ | 276/276; HalfCombine also_run 23/23 | ConcatEven i32: HYLE~0.07 / HWY~0.06 (~94–104%); full_bench 四 Concat* 仅 avx2 门控,NEON 无该段 | b131ea6 | D 档=Combine(Lower/UpperHalf); 满宽 Q store+reload 不动 |
 | C17 | ResizeBitCast partial 审计 | done | ✓ | 276/276; also_run 23/23 | — | 4adca64 | D↔D exact-byte 无 Q 物化; Q/mixed 保持 to_q 路径(flip-safe) |
 | C18 | 全量 NEON bench 夜跑 ×3 双序 + 采集 | **done+判定 PASS** | ✓ | 276/276 | 三 TU 校准全 PASS; LOSE: parity 0/69, full 0/206, widen 1/28 | 256d5cc | **判定(高能力方):s19 无回归,验收标准 3 达成**;唯一 LOSE=SatWidenMulAccumFixedPoint 0.917 系矩阵既有 `0.94?` 边界项钉实,非 s19 回归,立 C20;见 C18 判定记录 |
-| C19 | 文档/矩阵回写 + cloc | todo | | | — | | 高能力方 |
+| C19 | 文档/矩阵回写 + cloc | done | ✓ | Win 形式复跑:sse4 220/220 + avx2 221/221 全绿(09:54 新鲜);scalar smoke exit 0(非 gtest);hyle_simd.dll 链接失败系复跑方 vcvars(VS2022)与 build 树工具集(VS18/14.50)混用,非代码问题 | — | (hash 回填) | 矩阵:标题行+真输清单换血+全量表 2 行+轮⑩;simd-19 doc §八收口;手册 §3-4 基线 769/2293/308;cloc neon.h 3297→4002(+21%,Highway 的 36%,未越警戒线) |
 
 ## 执行侧犹疑/边界说明(C3–C13 集中,2026-07-15)
 

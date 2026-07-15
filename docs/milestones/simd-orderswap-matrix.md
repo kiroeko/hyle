@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 2**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 12 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits/BlendedStore/SumsOfAdjQuadAbsDiff →TIE)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 2**——已修 13 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits/BlendedStore/SumsOfAdjQuadAbsDiff/**PromoteMaskTo(simd-19 表示层根治)** →TIE;余 2 = ScatterIndexN 0.87 缓议 + SatWidenMulAccumFixedPoint 0.92(原 0.94? 边界项经 s19-C18 全量复跑钉实,C20 修复中))
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -74,8 +74,12 @@
 
 | op | NEON 比值 | 根因(vs Highway) |
 |---|---|---|
-| PromoteMaskTo i16→i32 | 0.575 | Rebind 部分标签(4-lane i16)物化整 q 寄存器→cmgt.8h+xtn+zip1+ushll+shl+cmlt 一串;Highway 用半寄存器 d load 后全程 4-wide。HYLE 部分标签 codegen 深层问题,待标签系统改进 |
-| ScatterIndexN i32 | 0.87 | 两侧都编成 4 路展开的谓词 scatter(非 store+reload)。差异是寄存器类:HYLE 提取值到 FP 寄存器(`mov s2,v0[i]`+`str s2`)、Highway 到 GPR(`mov.s w8`+`str w8`),且 Highway 合并边界检查(3 分支/4 lane vs HYLE 4 分支)。编译器寄存器类选择造成的微差,非算法输;ROI 低,暂缓 |
+| ScatterIndexN i32 | 0.87 | 两侧都编成 4 路展开的谓词 scatter(非 store+reload)。差异是寄存器类:HYLE 提取值到 FP 寄存器(`mov s2,v0[i]`+`str s2`)、Highway 到 GPR(`mov.s w8`+`str w8`),且 Highway 合并边界检查(3 分支/4 lane vs HYLE 4 分支)。编译器寄存器类选择造成的微差,非算法输;ROI 低,暂缓(s19-C18 复测 0.874 维持) |
+| SatWidenMulAccumFixedPoint i16→i32 | 0.92 | 原全量表 `0.94?` 边界项,s19-C18 全量复跑双序钉实(0.917/0.917,spread 1.002/1.059,非 s19 回归——s19 全部提交仅触 neon.h D 档路径,此 op 为 vec.h 组合 `InterleaveWholeLower+SatWidenMulPairwiseAccumulate` 满宽链)。MSVC/GCC 列 1.90W/1.78W,疑 NEON 组合链指令选择缺口。**C20 修复卡已立**(第一步 `s19-w0-green` vs HEAD 指令 diff) |
+
+- **PromoteMaskTo i16→i32 0.575 → 1.00 TIE(2026-07-15,simd-19 表示层根治,轮⑩)**:根因是定宽后端
+  表示层丢 N,已由 simd-19 D 档表示修复——证据链见 `simd-19-ledger.md` C12(单 op 双序 6 遍 99.5–100.0%
+  + 反汇编 `ldr d;sshll.4s;cmgt.4s` 与 Highway 同形)与 C18(全量复合环境 1.000/1.000)。
 
 - (第十四轮清零:MulAddSub/MulSubAdd 弃两 FMA 的 OddEven(MulAdd,MulSub) 改 Highway 单 FMA 形,见演进段。
   此前"NEON 0 输"是 NEON perf 覆盖不全的假象——只测过 full_bench 一部分。)
@@ -150,6 +154,17 @@
   (第一轮:ReverseLaneBytes 0.05->TIE、Broadcast<0>、TruncateTo、SumOfLanes、Min/MaxOfLanes;
   第二轮:TZC 三平台追平、HSBI、DemoteMaskTo 0.33->1.4W、LoadN/StoreN 与 LoadNOr 弃 vpmaskmovd
   ->WIN、CombineMasks、ConcatLowerLower)+ v2 stagger 仪器修相位相关后,收敛为上表数字。
+- **NEON 修复轮⑩(2026-07-15,simd-19 表示层根治):PromoteMaskTo 0.575→1.00 TIE**。不是单 op 修复——
+  定宽后端表示层补上 N 维:`RawNeonNT<T,N>`(`N*sizeof(T)<=8` → 真 D 寄存器类型)+ **常绿垫片迁移**
+  (`to_q/from_q`;W0a 并行 traits → W0b 脚本包裹 650+ 处 raw 访问 → W0c 一行翻转,每步编译绿 + gtest 绿)
+  + ~17 个热点 op 摘垫片换 native-D(Set/Load/Store、比较族、mask 桥、Promote/Demote、half/Combine、
+  Concat)。终态反汇编:`ldr d ; sshll.4s ; cmgt.4s` 与 Highway 同形,7 指令掰回链消失。顺带清偿两个
+  **既有** bug 家族(均由测试先行卡挖出,非 s19 引入):①partial LoadU/StoreU 满 16 字节读写(OOB,
+  护栏测试 46 案全绿);②子满宽 UpperHalf/ZeroExtendVector/InsertIntoUpper 的 N-盲语义(oracle 13 案
+  DISABLED→全绿)。全量复跑(三 TU × 双序 × 3,校准全 PASS)LOSE:parity 0/69、full 0/206、widen 1/28
+  (唯一 LOSE = 上表 SatWidenMulAccumFixedPoint,既有 `0.94?` 边界项钉实,非回归)。neon.h 3297→4002 行
+  (+21%,为 Highway arm_neon-inl.h 10982 行的 36%,未越"不 vendor"警戒线)。施工采用 AI 分派工单制
+  (19 卡 + 铁律 + 台账 + 批复),全记录:`simd-19-ledger.md` / `simd-19-workorders.md`。
 - v1 的假 LOSE 被 v2 消除的例子:TestBit / RebindMask / IsNegative(GCC)——同侧副本相位相关
   曾让它们稳定读 0.83~0.96,stagger 后回到 TIE/UNSTABLE。
 - 第三轮(2026-07-14):RoundingShr 改 4-op bias=(1<<s)>>1(负 s 收窄 unspecified)MSVC 1.06W/GCC
@@ -525,7 +540,7 @@
 | PopulationCount u32 (4096) | 1.48W | 1.49W | 1.00= |
 | PromoteEvenTo i8->i16 | 0.96= | 0.99= | 1.00= |
 | PromoteLowerTo i16->i32 (4096) | 1.00= | 1.00= | 1.00= |
-| PromoteMaskTo i16->i32 (4096) | 1.00= | 1.00= | 0.57 LOSE |
+| PromoteMaskTo i16->i32 (4096) | 1.00= | 1.00= | 1.00= |
 | PromoteOddTo i8->i16 | 0.99= | 0.99= | 1.00= |
 | PromoteTo i16->i32 1-arg (4096) | 0.99= | 0.99= | 1.00= |
 | PromoteUpperTo i16->i32 | 1.01= | 0.99= | 1.00= |
@@ -560,7 +575,7 @@
 | RoundingShiftRightAndDemoteTo<3> i32->i16 (4096) | 0.97= | 1.11W | 0.99= |
 | RoundingShiftRightSame i32 bits=5 | 1.10W | 1.00= | 1.46W |
 | RoundingShr i32 | 1.48W | 1.15W | 1.00? |
-| SatWidenMulAccumFixedPoint i16->i32 | 1.90W | 1.78W | 0.94? |
+| SatWidenMulAccumFixedPoint i16->i32 | 1.90W | 1.78W | 0.92 LOSE |
 | SatWidenMulPairwiseAccumulate i16->i32 | 1.00= | 1.00= | 1.00= |
 | SatWidenMulPairwiseAdd u8*i8->i16 | 0.97= | 1.00= | 1.00= |
 | SaturatedAbs i32 | 1.00= | 1.00= | 1.01= |
