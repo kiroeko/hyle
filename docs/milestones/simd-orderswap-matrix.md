@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 2**——已修 13 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits/BlendedStore/SumsOfAdjQuadAbsDiff/**PromoteMaskTo(simd-19 表示层根治)** →TIE;余 2 = ScatterIndexN 0.87 缓议 + SatWidenMulAccumFixedPoint 0.92(原 0.94? 边界项经 s19-C18 全量复跑钉实,C20 修复中))
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 1**——已修 14 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits/BlendedStore/SumsOfAdjQuadAbsDiff/**PromoteMaskTo(simd-19 表示层根治)**/**SatWidenMulAccumFixedPoint(C20 vqdmlal)** →TIE;余 1 = ScatterIndexN 0.87(修复中))
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -74,8 +74,13 @@
 
 | op | NEON 比值 | 根因(vs Highway) |
 |---|---|---|
-| ScatterIndexN i32 | 0.87 | 两侧都编成 4 路展开的谓词 scatter(非 store+reload)。差异是寄存器类:HYLE 提取值到 FP 寄存器(`mov s2,v0[i]`+`str s2`)、Highway 到 GPR(`mov.s w8`+`str w8`),且 Highway 合并边界检查(3 分支/4 lane vs HYLE 4 分支)。编译器寄存器类选择造成的微差,非算法输;ROI 低,暂缓(s19-C18 复测 0.874 维持) |
-| SatWidenMulAccumFixedPoint i16→i32 | 0.92 | 原全量表 `0.94?` 边界项,s19-C18 全量复跑双序钉实(0.917/0.917,spread 1.002/1.059,非 s19 回归——s19 全部提交仅触 neon.h D 档路径,此 op 为 vec.h 组合 `InterleaveWholeLower+SatWidenMulPairwiseAccumulate` 满宽链)。MSVC/GCC 列 1.90W/1.78W,疑 NEON 组合链指令选择缺口。**C20 修复卡已立**(第一步 `s19-w0-green` vs HEAD 指令 diff) |
+| ScatterIndexN i32 | 0.87 | 两侧都编成 4 路展开的谓词 scatter(非 store+reload)。差异是寄存器类:HYLE 提取值到 FP 寄存器(`mov s2,v0[i]`+`str s2`)、Highway 到 GPR(`mov.s w8`+`str w8`),且 Highway 合并边界检查(3 分支/4 lane vs HYLE 4 分支)。编译器寄存器类选择造成的微差,非算法输;s19-C18 复测 0.874 维持。**2026-07-15 撤销缓议,修复中**(方向:GetLane 走 GPR 提取替代 vst1q_lane 的 FP 直存 + 合并边界检查) |
+
+- **SatWidenMulAccumFixedPoint i16→i32 0.92 → 0.98 TIE(2026-07-15,C20)**:补 NEON 原生
+  `SatWidenMulAccumFixedPointNative`(单条 `vqdmlal_s16`,对齐 Highway arm_neon-inl.h:7467),vec.h
+  按宏门控路由。判定:双序 6 遍合并 best 0.982/med 0.988,同机同构建兄弟校准 PASS;276 gtest 绿。
+  诚实注记:修复提交同时把 bench 内核改对称(旧 HYLE 侧步长 w16、store 数减半,与 HWY 侧形状不对称)
+  ——历史 0.92 里 op 慢与内核形状各占多少已不可分,当前对称内核下为 TIE 是本判定的全部主张。
 
 - **PromoteMaskTo i16→i32 0.575 → 1.00 TIE(2026-07-15,simd-19 表示层根治,轮⑩)**:根因是定宽后端
   表示层丢 N,已由 simd-19 D 档表示修复——证据链见 `simd-19-ledger.md` C12(单 op 双序 6 遍 99.5–100.0%
@@ -575,7 +580,7 @@
 | RoundingShiftRightAndDemoteTo<3> i32->i16 (4096) | 0.97= | 1.11W | 0.99= |
 | RoundingShiftRightSame i32 bits=5 | 1.10W | 1.00= | 1.46W |
 | RoundingShr i32 | 1.48W | 1.15W | 1.00? |
-| SatWidenMulAccumFixedPoint i16->i32 | 1.90W | 1.78W | 0.92 LOSE |
+| SatWidenMulAccumFixedPoint i16->i32 | 1.90W | 1.78W | 0.98= |
 | SatWidenMulPairwiseAccumulate i16->i32 | 1.00= | 1.00= | 1.00= |
 | SatWidenMulPairwiseAdd u8*i8->i16 | 0.97= | 1.00= | 1.00= |
 | SaturatedAbs i32 | 1.00= | 1.00= | 1.01= |
