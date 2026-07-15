@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 9**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables →TIE)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 8**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15 →TIE)
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -60,7 +60,12 @@
   方法教训:此前"objdump 逐指令等价"是**向量签名级**对比的假象——标量尾巴(寄存器宽度/扩展指令)
   没有逐条比,一条指令恰好就是那 6%。)
 
-### Mac/NEON: 9 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables 已修见下)
+### Mac/NEON: 8 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15 已修见下)
+>
+> **⚠️ "漏了" vs "无指令"——这 8(原 14)全属"漏了"**:能进这张表 = 有 Highway NEON 对手可对拍、跑出了比值,
+> 即两侧都在 NEON 上真跑,HYLE 只是走了 store+reload/标量而 Highway 向量化。**不是** "NEON 没这条指令"
+> (那种根本没有 Highway NEON 侧、不会出现在对拍里)。真正"无指令测不了"的是全量表里 NEON 列为 `·`
+> 且 x86-only 的行(如 AVX-512 掩码族),那些是**从没测**、其中一部分确实 NEON 无对应——待单独甄别(见文末)。
 > **背景**:此前 NEON 只有 op_parity_full_bench 一个 target,且它自 P4 起加的 op 从没在 NEON 重跑;
 > op_parity_bench_neon / widen_neon 到本会话才建(见 reference_simd_coverage_tool 记忆的"NEON 覆盖盲区")。
 > 首次三 TU 全跑,暴露一批 HYLE NEON 走 store+reload/scalar-fallback 而 Highway 用 native intrinsic
@@ -74,7 +79,6 @@
 | DemoteToNearestInt f64→i32 | 0.57 | 待查 |
 | PromoteMaskTo i16→i32 | 0.575 | 待查 |
 | SatWidenMulPairwiseAdd u8*i8→i16 | 0.575 | 待查(vmull 家族?) |
-| MulFixedPoint15 i16 | 0.70 | **契约代价,非 blunder**:HYLE 保 x86 `_mm_mulhrs` 语义(MIN×MIN 回绕到 MIN),NEON vqrdmulh 在此饱和到 MAX,故 HYLE 加 5 op 修正(2 cmeq+and+bsl);x86 因 mulhrs 原生回绕故 0 修正=TIE。**平不了除非改契约**(NEON 允许 MIN×MIN 饱和,破 x86 位一致);待用户拍板 |
 | Dup128MaskFromMaskBits i32 | 0.725 | 待查 |
 | ScatterIndexN i32 | 0.87 | 待查 |
 | SumOfMulQuadAccumulate i8→i32 | 0.89 | 待查 |
@@ -102,6 +106,11 @@
   以浮点值存(位不 pun 成字节索引)保留 store+reload。契约 idx∈[0,N)(同 Highway);越界得 0(旧 &(N-1)
   回绕是防御性、非契约,取消)。CheckSwizzle<T> reverse-permute gtest 逐值 PASS(i8/i16/i32/i64)+ 220
   NEON gtest 全绿。
+- **NEON 修复轮④(2026-07-15,改契约):MulFixedPoint15 0.70→1.00 TIE**。旧 NEON 为保 x86 `_mm_mulhrs`
+  的 MIN×MIN 回绕语义,加 5 个向量 op 修正(disasm:movi+2 cmeq+mvn+orn+bsl 包 vqrdmulh)。用户拍板
+  **契约放宽**:MIN×MIN(两 -1.0→积 +1.0 不可表示)为 impl-defined——x86/scalar 回绕到 MIN、NEON
+  vqrdmulh 饱和到 MAX(+0.99997,数值上更接近真值),调用方不得依赖(scalar.h 契约注 + neon 注 + gtest
+  lane0 放宽接受两者)。NEON 落 bare `vqrdmulhq_s16` 单条=TIE。220 NEON gtest 全绿。
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
   (第一轮:ReverseLaneBytes 0.05->TIE、Broadcast<0>、TruncateTo、SumOfLanes、Min/MaxOfLanes;
   第二轮:TZC 三平台追平、HSBI、DemoteMaskTo 0.33->1.4W、LoadN/StoreN 与 LoadNOr 弃 vpmaskmovd
@@ -442,7 +451,7 @@
 | MulComplexConjAdd f32 | 1.02= | 1.03= | 1.00= |
 | MulEven i32-i64 | 1.00= | 1.02= | 1.00= |
 | MulEvenAdd bf16->f32 | 1.00= | 0.99= | 1.00= |
-| MulFixedPoint15 i16 | 1.00= | 1.00= | · |
+| MulFixedPoint15 i16 | 1.00= | 1.00= | 1.00= |
 | MulHigh i16 (4096) | 1.00= | 0.99= | · |
 | MulHigh u16 (4096) | 1.00= | 1.01= | · |
 | MulHigh32 u32 (4096) | 1.00= | 1.01= | · |

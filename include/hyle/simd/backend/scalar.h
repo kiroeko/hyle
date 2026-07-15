@@ -242,6 +242,8 @@ HYLE_FORCE_INLINE Vec<T, N> MulRound(Vec<T, N> a, Vec<T, N> b) noexcept {
 }
 // MulFixedPoint15(a,b): Q1.15 * Q1.15 -> Q1.15 = (2*a*b) >> 16 with rounding (i16, x86
 // _mm*_mulhrs_epi16). The int16 fixed-point multiply for DSP / quantized activations.
+// CONTRACT: the MIN*MIN corner (both -1.0 -> product +1.0, unrepresentable in Q1.15) is
+// IMPL-DEFINED -- scalar/x86 wrap to MIN, NEON saturates to MAX. Callers must not depend on it.
 template <std::size_t N>
 HYLE_FORCE_INLINE Vec<std::int16_t, N> MulFixedPoint15(Vec<std::int16_t, N> a, Vec<std::int16_t, N> b) noexcept {
   Vec<std::int16_t, N> r;

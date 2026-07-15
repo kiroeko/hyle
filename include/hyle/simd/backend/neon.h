@@ -515,15 +515,18 @@ HYLE_FORCE_INLINE VecNeon<T, N> MulRound(VecNeon<T, N> a, VecNeon<T, N> b) noexc
   static_assert(std::is_floating_point_v<T>, "MulRound is float only");
   return Round(Mul(a, b));
 }
-// MulFixedPoint15(a,b): Q1.15 fixed-point multiply with x86 mulhrs rounding semantics.
-// vqrdmulhq_s16 differs only at MIN*MIN, where it saturates to MAX; HYLE keeps the modular MIN.
+// MulFixedPoint15(a,b): Q1.15 rounded fixed-point multiply, (2*a*b + 0x4000) >> 15. The MIN*MIN
+// corner (both -1.0 in Q1.15 -> product +1.0, unrepresentable) is IMPL-DEFINED per the op contract:
+// NEON's vqrdmulhq_s16 saturates it to MAX (+0.99997, the numerically closest representable value),
+// x86 _mm_mulhrs_epi16 wraps it to MIN. Both are accepted; callers must not depend on the MIN*MIN
+// result (see usage note). This lets NEON use the bare hardware instruction -- the old modular-MIN
+// correction cost 5 extra vector ops (2 cmeq + and + bsl) for that one degenerate lane (measured
+// 0.70 vs Highway); dropping it is a TIE.
 template <std::size_t N>
 HYLE_FORCE_INLINE VecNeon<std::int16_t, N> MulFixedPoint15(VecNeon<std::int16_t, N> a,
                                                            VecNeon<std::int16_t, N> b) noexcept {
   VecNeon<std::int16_t, N> r;
-  const int16x8_t minv = vdupq_n_s16(std::numeric_limits<std::int16_t>::min());
-  const uint16x8_t overflow = vandq_u16(vceqq_s16(a.raw, minv), vceqq_s16(b.raw, minv));
-  r.raw = vbslq_s16(overflow, minv, vqrdmulhq_s16(a.raw, b.raw));
+  r.raw = vqrdmulhq_s16(a.raw, b.raw);
   return r;
 }
 // SaturatedNeg(a) = (a==MIN)?MAX:-a; SaturatedAbs(a) = (a==MIN)?MAX:|a| (signed int). NEON has

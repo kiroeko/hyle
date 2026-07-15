@@ -586,13 +586,16 @@ TEST(Vec, MathExtSaturatedInt) {
   for (std::size_t i = 0; i < n; ++i) { int e = (a.data[i]==mn) ? 32767 : -a.data[i]; EXPECT_EQ(out.data[i], static_cast<std::int16_t>(e)) << "satneg i=" << i; }
   hs::Store(hs::SaturatedAbs(va), d, out.data);
   for (std::size_t i = 0; i < n; ++i) { int e = (a.data[i]==mn) ? 32767 : (a.data[i]<0?-a.data[i]:a.data[i]); EXPECT_EQ(out.data[i], static_cast<std::int16_t>(e)) << "satabs i=" << i; }
-  // MulFixedPoint15: Q1.15 mul = (2ab rounded) >> 16.
+  // MulFixedPoint15: Q1.15 mul = (2ab rounded) >> 16. Lane 0 = MIN*MIN, whose product (+1.0) is
+  // unrepresentable and hence IMPL-DEFINED: x86/scalar wrap to MIN, NEON's vqrdmulh saturates to
+  // MAX. Accept both there; every other lane is the exact rounded formula.
   Buf<std::int16_t> b, out2;
   for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<std::int16_t>(i * 1000 - 15000); b.data[i] = static_cast<std::int16_t>(20000 - i * 800); }
   a.data[0] = mn; b.data[0] = mn;
   auto va2 = hs::Load(d, a.data), vb2 = hs::Load(d, b.data);
   hs::Store(hs::MulFixedPoint15(va2, vb2), d, out2.data);
-  for (std::size_t i = 0; i < n; ++i) { int e = (static_cast<int>(a.data[i]) * b.data[i] + 0x4000) >> 15; EXPECT_EQ(out2.data[i], static_cast<std::int16_t>(e)) << "q15 i=" << i; }
+  EXPECT_TRUE(out2.data[0] == mn || out2.data[0] == std::numeric_limits<std::int16_t>::max()) << "q15 MIN*MIN impl-defined, got " << out2.data[0];
+  for (std::size_t i = 1; i < n; ++i) { int e = (static_cast<int>(a.data[i]) * b.data[i] + 0x4000) >> 15; EXPECT_EQ(out2.data[i], static_cast<std::int16_t>(e)) << "q15 i=" << i; }
 }
 
 // ---- C complex arithmetic -----------------------------------------------------------
