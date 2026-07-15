@@ -741,6 +741,11 @@ int main() {
     nb::Bench bench; bench.title("MulHigh32 u32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
     HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+hwu<=kN;i+=hwu) hs::StoreU(hs::MulHigh32(hs::LoadU(hdu,p_ua+i),hs::LoadU(hdu,p_ub+i)),hdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+gwu<=kN;i+=gwu) hn::StoreU(hn::MulHigh(hn::LoadU(gdu,p_ua+i),hn::LoadU(gdu,p_ub+i)),gdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); });
   }
+  // Reverse8 / BitShuffle / MultiRotateRight are x86-shaped (need >=8 i32 lanes / 512-bit u64
+  // path). Highway NEON hard-asserts them (arm_neon-inl.h:6535, i32 NEON = 4 lanes), so guard the
+  // whole cluster off NEON -- HYLE's own NEON backend has the correct narrow-vector semantics but
+  // there is no Highway NEON counterpart to pair against here.
+#if !defined(HYLE_SIMD_TARGET_NEON)
   {
     nb::Bench bench; bench.title("Reverse8 i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
     HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia = ia.data(); auto* p_iout = iout.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::Reverse8(hdi,hs::LoadU(hdi,p_ia+i)),hdi,p_iout+i); nb::doNotOptimizeAway(p_iout);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia = ia.data(); auto* p_iout = iout.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::Reverse8(gdi,hn::LoadU(gdi,p_ia+i)),gdi,p_iout+i); nb::doNotOptimizeAway(p_iout);  hyle_bench::mark(rep); });
@@ -781,6 +786,7 @@ int main() {
     }
     (void)hw8;
   }
+#endif  // !HYLE_SIMD_TARGET_NEON
 
   // ---- 24. Interleave2 + StoreInterleaved3 (domain gap) + PromoteMaskTo ----
   {

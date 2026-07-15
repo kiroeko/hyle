@@ -31,6 +31,7 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <string>
 #include <type_traits>
 #include <utility>
 
@@ -81,6 +82,31 @@ inline void pin_and_boost() {
 inline bool hwy_first() {
   static const bool v = std::getenv("HYLE_BENCH_HWYFIRST") != nullptr;
   return v;
+}
+
+// Subset filter: env HYLE_BENCH_ONLY="Foo,Bar" runs only pairs whose title contains one of the
+// comma-separated substrings, so a single-op fix reruns in seconds instead of the whole 200-op TU
+// (the full sweep is long enough that macOS jetsam SIGKILLs it mid-run, discarding entire passes).
+// Calibration anchors always run regardless -- the report's gate needs them present. Substring
+// match on the title (e.g. "AESKeyGen" matches "AESKeyGenAssist u8"); empty/unset = run everything.
+inline bool title_selected(const std::string& title) {
+  static const char* filt = std::getenv("HYLE_BENCH_ONLY");
+  if (!filt || !*filt) return true;
+  // anchors: same names the report's ANCHORS set keys on -- keep them so CALIBRATION can pass.
+  static const char* kAnchors[] = {"Neg i32", "Sub i32", "Mul i32", "Max i32", "ShiftLeft<3> i32",
+                                    "Add f32", "MulAdd f32", "Min i32", "SaturatedAdd i16"};
+  for (const char* a : kAnchors)
+    if (title.find(a) != std::string::npos) return true;
+  const std::string f(filt);
+  std::size_t start = 0;
+  while (start <= f.size()) {
+    std::size_t comma = f.find(',', start);
+    const std::size_t end = (comma == std::string::npos) ? f.size() : comma;
+    if (end > start && title.find(f.substr(start, end - start)) != std::string::npos) return true;
+    if (comma == std::string::npos) break;
+    start = comma + 1;
+  }
+  return false;
 }
 
 // Epoch-length scale. Default epochs (~1-2ms at these ops' speeds) are fine on the pinned Windows
@@ -154,6 +180,7 @@ inline void run_round(ankerl::nanobench::Bench& b, FH& h, FG& g) {
 // times each, interleaved.
 template <int SITE, class FH, class FG>
 inline void run_pair_replicated(ankerl::nanobench::Bench& b, FH&& h, FG&& g) {
+  if (!title_selected(b.title())) return;  // HYLE_BENCH_ONLY subset filter
   b.minEpochIterations(b.minEpochIterations() * epoch_scale());
   detail::run_round<SITE, 0>(b, h, g);
   detail::run_round<SITE, 1>(b, h, g);
