@@ -767,24 +767,29 @@ HYLE_FORCE_INLINE VecNeon<std::int32_t, NDst> WidenMulPairwiseAdd(Simd<std::int3
 }
 
 // SatWidenMulPairwiseAdd(di16, a_u8, b_i8): widen u8 a * i8 b, sum ADJACENT PAIRS into SATURATED
-// i16 (x86 maddubs). emulation: NEON has no maddubs; correctness-first store+reload scalar loop.
+// i16 (x86 maddubs). NEON has no maddubs, but Highway's vector synthesis (generic_ops-inl.h) is the
+// right form and drops the old correctness-first store+reload scalar loop (measured 0.575): split
+// even/odd bytes, widen each to i16 (a as unsigned, b as signed), multiply, and SaturatedAdd the
+// two products -- exactly a[2i]*b[2i] (+sat) a[2i+1]*b[2i+1]. vmovl deinterleaves via even/odd
+// reinterpret like PromoteEven/OddTo; vqaddq_s16 is the saturating add.
 template <std::size_t NDst, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<std::int16_t, NDst> SatWidenMulPairwiseAdd(
     Simd<std::int16_t, NDst, 0>, VecNeon<std::uint8_t, NSrc> a,
     VecNeon<std::int8_t, NSrc> b) noexcept {
   static_assert(NSrc == 2 * NDst, "SatWidenMulPairwiseAdd: u8/i8 -> i16 pairwise");
-  alignas(16) std::uint8_t ta[NSrc];
-  alignas(16) std::int8_t tb[NSrc];
-  alignas(16) std::int16_t tr[NDst];
-  vst1q_u8(ta, a.raw);
-  vst1q_s8(tb, b.raw);
-  for (std::size_t i = 0; i < NDst; ++i) {
-    const int p = static_cast<int>(ta[2 * i]) * tb[2 * i] +
-                  static_cast<int>(ta[2 * i + 1]) * tb[2 * i + 1];
-    tr[i] = static_cast<std::int16_t>(p < -32768 ? -32768 : (p > 32767 ? 32767 : p));
-  }
+  // Even lanes: a[2i] (u8, zero-extend) and b[2i] (i8, sign-extend) live in the low byte of each
+  // i16 pair after reinterpret. a_even = u16 & 0x00FF; a_odd = u16 >> 8. b_even = sign-extend low
+  // byte (shl 8 then arithmetic shr 8); b_odd = arithmetic shr 8.
+  const uint16x8_t au = vreinterpretq_u16_u8(a.raw);
+  const int16x8_t bi = vreinterpretq_s16_s8(b.raw);
+  const int16x8_t a_even = vreinterpretq_s16_u16(vandq_u16(au, vdupq_n_u16(0x00FFu)));
+  const int16x8_t a_odd = vreinterpretq_s16_u16(vshrq_n_u16(au, 8));
+  const int16x8_t b_even = vshrq_n_s16(vshlq_n_s16(bi, 8), 8);
+  const int16x8_t b_odd = vshrq_n_s16(bi, 8);
+  const int16x8_t p_even = vmulq_s16(a_even, b_even);
+  const int16x8_t p_odd = vmulq_s16(a_odd, b_odd);
   VecNeon<std::int16_t, NDst> r;
-  r.raw = vld1q_s16(tr);
+  r.raw = vqaddq_s16(p_even, p_odd);  // saturating adjacent-pair sum
   return r;
 }
 
@@ -812,27 +817,29 @@ HYLE_FORCE_INLINE VecNeon<std::int32_t, NW> RearrangeToOddPlusEven(
 }
 
 // SumOfMulQuadAccumulate(di32, a_i8, b_i8, sum): sum[i] += a[4i+0..3]*b[4i+0..3] (4-way i8 dot
-// into i32; x86 VNNI vpdpbusd / ARM sdot semantics). NEON native widen-multiply path (no
-// store+reload, no PromoteEven/Odd): vmull_s8 low/high give the 16 i16 products (i8*i8 in
-// [-16256, 16384] never overflows i16); vpaddlq_s16 folds adjacent pairs into i32 (8 partial
-// sums), and vpaddq_s32 folds those pairs again so each output lane is exactly one quad dot.
-//   lo=vmull_s8(low)  -> [p0 p1 p2 p3 p4 p5 p6 p7]
-//   hi=vmull_high_s8  -> [p8 p9 p10 p11 p12 p13 p14 p15]
-//   vpaddlq_s16(lo)   -> [p0+p1, p2+p3, p4+p5, p6+p7]
-//   vpaddlq_s16(hi)   -> [p8+p9, p10+p11, p12+p13, p14+p15]
-//   vpaddq_s32(lo,hi) -> [quad0, quad1, quad2, quad3]  (matches the contract lane order)
+// into i32; x86 VNNI vpdpbusd / ARM sdot semantics). When the dot-product extension is present
+// (Apple Silicon, Armv8.2+dotprod) this IS a single instruction -- vdotq_s32(sum, a, b) -- exactly
+// as Highway uses; the old vmull_s8 low/high + double vpaddl fold (5 ops) was leaving that on the
+// table (measured 0.89 vs Highway). Fall back to the widen-multiply fold when dotprod is absent.
+//   fallback: lo=vmull_s8(low)/hi=vmull_high_s8 -> 16 i16 products (i8*i8 in [-16256,16384], no
+//   i16 overflow); vpaddlq_s16 folds adjacent pairs into i32; vpaddq_s32 folds again -> one quad
+//   dot per lane, matching the contract lane order.
 template <std::size_t NDst, std::size_t NSrc>
 HYLE_FORCE_INLINE VecNeon<std::int32_t, NDst> SumOfMulQuadAccumulate(
     Simd<std::int32_t, NDst, 0>, VecNeon<std::int8_t, NSrc> a, VecNeon<std::int8_t, NSrc> b,
     VecNeon<std::int32_t, NDst> sum) noexcept {
   static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
+  VecNeon<std::int32_t, NDst> r;
+#if defined(__ARM_FEATURE_DOTPROD)
+  r.raw = vdotq_s32(sum.raw, a.raw, b.raw);  // single VNNI-equivalent instruction
+#else
   const int16x8_t lo = vmull_s8(vget_low_s8(a.raw), vget_low_s8(b.raw));  // products 0..7
   const int16x8_t hi = vmull_high_s8(a.raw, b.raw);                       // products 8..15
   const int32x4_t lo_sum = vpaddlq_s16(lo);  // [p0+p1, p2+p3, p4+p5, p6+p7]
   const int32x4_t hi_sum = vpaddlq_s16(hi);  // [p8+p9, p10+p11, p12+p13, p14+p15]
   const int32x4_t quads = vpaddq_s32(lo_sum, hi_sum);  // [quad0, quad1, quad2, quad3]
-  VecNeon<std::int32_t, NDst> r;
   r.raw = vaddq_s32(sum.raw, quads);
+#endif
   return r;
 }
 

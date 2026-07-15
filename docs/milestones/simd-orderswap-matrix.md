@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 8**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15 →TIE)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 6**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 8 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate →TIE)
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -78,10 +78,8 @@
 | SumsOfAdjQuadAbsDiff u8→u16 | 0.24 | fallback vs Highway native(vabal 家族) |
 | DemoteToNearestInt f64→i32 | 0.57 | 待查 |
 | PromoteMaskTo i16→i32 | 0.575 | 待查 |
-| SatWidenMulPairwiseAdd u8*i8→i16 | 0.575 | 待查(vmull 家族?) |
 | Dup128MaskFromMaskBits i32 | 0.725 | 待查 |
 | ScatterIndexN i32 | 0.87 | 待查 |
-| SumOfMulQuadAccumulate i8→i32 | 0.89 | 待查 |
 
 - (第十四轮清零:MulAddSub/MulSubAdd 弃两 FMA 的 OddEven(MulAdd,MulSub) 改 Highway 单 FMA 形,见演进段。
   此前"NEON 0 输"是 NEON perf 覆盖不全的假象——只测过 full_bench 一部分。)
@@ -111,6 +109,13 @@
   **契约放宽**:MIN×MIN(两 -1.0→积 +1.0 不可表示)为 impl-defined——x86/scalar 回绕到 MIN、NEON
   vqrdmulh 饱和到 MAX(+0.99997,数值上更接近真值),调用方不得依赖(scalar.h 契约注 + neon 注 + gtest
   lane0 放宽接受两者)。NEON 落 bare `vqrdmulhq_s16` 单条=TIE。220 NEON gtest 全绿。
+- **NEON 修复轮⑤(2026-07-15,widen 乘加家族):SumOfMulQuadAccumulate 0.89→TIE、SatWidenMulPairwiseAdd
+  0.575→TIE**。① SumOfMulQuadAccumulate:旧 vmull_s8 lo/hi + 双 vpaddl fold(5 op),而 Apple Silicon
+  有 dotprod 扩展——Highway 用单条 `vdotq_s32(sum,a,b)`。加 `#if __ARM_FEATURE_DOTPROD` 走 vdotq(VNNI
+  等价单指令),无 dotprod 退回 vmull fold。② SatWidenMulPairwiseAdd:旧 store+reload 标量循环,改 Highway
+  向量合成(generic_ops-inl.h):even/odd 字节各自 widen 到 i16(a 零扩展 vand/vshr、b 符扩展 vshl+vshr),
+  vmulq_s16 各自乘,vqaddq_s16 饱和加邻对。单积 i8*u8∈[-32640,32385] 不溢 i16,只和饱和=maddubs 语义。
+  两者专用 gtest(含饱和例)+ 220 NEON gtest 全绿。
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
   (第一轮:ReverseLaneBytes 0.05->TIE、Broadcast<0>、TruncateTo、SumOfLanes、Min/MaxOfLanes;
   第二轮:TZC 三平台追平、HSBI、DemoteMaskTo 0.33->1.4W、LoadN/StoreN 与 LoadNOr 弃 vpmaskmovd
@@ -527,7 +532,7 @@
 | RoundingShr i32 | 1.48W | 1.15W | 1.00? |
 | SatWidenMulAccumFixedPoint i16->i32 | 1.90W | 1.78W | 0.94? |
 | SatWidenMulPairwiseAccumulate i16->i32 | 1.00= | 1.00= | 1.00= |
-| SatWidenMulPairwiseAdd u8*i8->i16 | 0.97= | 1.00= | 0.57 LOSE |
+| SatWidenMulPairwiseAdd u8*i8->i16 | 0.97= | 1.00= | 1.00= |
 | SaturatedAbs i32 | 1.00= | 1.00= | 1.01= |
 | SaturatedAdd i16 (4096) | 1.00= | 1.00= | 1.00= |
 | SaturatedNeg i32 | 1.00= | 1.02= | 0.99= |
@@ -572,7 +577,7 @@
 | Sub f32 | 1.00= | 1.00= | 1.02? |
 | Sub i32 | 1.01= | 1.03= | 1.03= |
 | SumOfLanes i32 | 1.05= | 1.16W | 0.97= |
-| SumOfMulQuadAccumulate i8->i32 | 1.00= | 1.02= | 0.89 LOSE |
+| SumOfMulQuadAccumulate i8->i32 | 1.00= | 1.02= | 1.00= |
 | SumsOf2 u8->u16 | 0.98= | 1.00= | 1.00= |
 | SumsOf4 u8->u32 | 0.99= | 0.98= | 1.00= |
 | SumsOf8 u8->u64 | 1.00= | 1.01= | 1.00= |
