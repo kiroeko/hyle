@@ -265,12 +265,18 @@ W4 额外闸门 **G3.5 穷举 oracle**:边界 op 的专项测试必须先于实�
 - LowerHalf/UpperHalf/Combine/ZeroExtendVector/InsertIntoUpper × 全 (T,N) 合法组合,标量参考逐 lane
   对拍(参考实现手写数组语义,禁止调被测 op)。**当前实现必须全绿**(这是改前基线),然后 C14-C16
   改动全程保持绿。
-### C14 LowerHalf/UpperHalf native D(neon.h:3026-3043)
-- after:输入满宽时 `out.raw = vget_low_*(v.raw)` / `vget_high_*(v.raw)`(直接产 D,零指令/一条);
-  输入 partial(N≤半宽)保留包裹形(冷路径)。
-### C15 Combine/ZeroExtendVector/InsertIntoUpper native(neon.h:3045-3060)
-- after:两输入均 D 时 `out.raw = vcombine_*(lo.raw, hi.raw)`;ZeroExtendVector = `vcombine_*(lo.raw,
-  vdup_n_*(0))`。输出必满宽(N*sizeof(T)==16 才有意义)——静态断言现有约束不变。
+### C14 LowerHalf/UpperHalf native D(neon.h:3026-3043)(2026-07-15 批复 #11 扩围)
+- after(满宽输入,热路径):`out.raw = vget_low_*(v.raw)` / `vget_high_*(v.raw)`(直接产 D)。
+- after(子满宽输入,**正确性修复**——既有 bug,见台账批复 #11):UpperHalf 必须取**逻辑**高半:
+  D raw 按 u64 视图右移 `NH*sizeof(T)*8` 位再 reinterpret(`vshr_n_u64` 路),不得再用 vget_high;
+  LowerHalf 子满宽 = raw 原样(逻辑低半已在低位)。
+- 验收追加:C13 的子满宽 13 案红名单重新入册,本卡负责 UpperHalf 部分转绿。
+### C15 Combine/ZeroExtendVector/InsertIntoUpper native(neon.h:3045-3060)(2026-07-15 批复 #11 扩围)
+- after(输出满宽):两输入均 D 时 `out.raw = vcombine_*(lo.raw, hi.raw)`;ZeroExtendVector =
+  `vcombine_*(lo.raw, vdup_n_*(0))`。
+- after(输出子满宽,**正确性修复**):寄存器内拼接/清零(u64 视图移位+或),且 ZeroExtendVector/
+  InsertIntoUpper **必须显式清/写 pad 区**,禁止依赖输入 pad 为零(台账批复 #9 规则)。
+- 验收追加:红名单其余案(ZeroExtend/InsertIntoUpper)本卡转绿;C13 满宽 10 案全程保持绿。
 ### C16 Concat{LowerLower,LowerUpper,UpperLower,UpperUpper} partial 路径(grep 定位)
 - 输入 partial 时经 C14/C15 的 D 原语组合;满宽路径不动。改前先确认矩阵中这些 op 现为 TIE,改后
   `HYLE_BENCH_ONLY=Concat` 冒烟无回退。
