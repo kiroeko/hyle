@@ -59,29 +59,6 @@ int main() {
     b.run("HYLE dot_f32 (public dispatch)", [&] {
       ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot_f32(x.data(), y.data(), kN));
     });
-    // P0-3: accurate f64-intermediate path — expect slower than fast f32 4-acc; measure the tax.
-    b.run("HYLE dot_f32_accurate", [&] {
-      ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot_f32_accurate(x.data(), y.data(), kN));
-    });
-  }
-
-  // P0-3 sum: no public fast sum_f32 — baseline is naive f32 sequential + double sequential.
-  {
-    ankerl::nanobench::Bench b;
-    b.title("sum (4096 f32)").relative(true).batch(kN).minEpochIterations(2000);
-    b.run("f32 sequential", [&] {
-      float s = 0.0f;
-      for (std::size_t i = 0; i < kN; ++i) s += x[i];
-      ankerl::nanobench::doNotOptimizeAway(s);
-    });
-    b.run("double sequential", [&] {
-      double s = 0.0;
-      for (std::size_t i = 0; i < kN; ++i) s += static_cast<double>(x[i]);
-      ankerl::nanobench::doNotOptimizeAway(s);
-    });
-    b.run("HYLE sum_f32_accurate", [&] {
-      ankerl::nanobench::doNotOptimizeAway(hyle::simd::sum_f32_accurate(x.data(), kN));
-    });
   }
 
   {
