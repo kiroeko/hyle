@@ -2866,6 +2866,7 @@ HYLE_FORCE_INLINE __m512i per4_byte_index_512() noexcept {
 }  // namespace detail
 template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec512<T, N> Per4LaneBlockShuffle(Vec512<T, N> v) noexcept {
+  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) return v;  // identity: no-op (see avx2.h)
   Vec512<T, N> r;
   if constexpr (sizeof(T) == 4) {
     constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);

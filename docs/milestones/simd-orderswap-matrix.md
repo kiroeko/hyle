@@ -123,6 +123,15 @@
   再 `vcvtnq_s64_f64`(RNE)+vmovn 精确窄化。**NaN→MAX 契约不变**(与 x86 min_pd+cvt 同法),两条抑 NaN
   clamp 替原泛型的 IfThenElse(Lt)/IfThenElse(Le) cmp+bsl 对。DemoteToNearestIntFamily gtest(NaN/溢出/
   InRange==safe)全过 + 220 全绿;full 0.57→0.99、InRange fast 也归 1.00。
+- **Per4LaneBlockShuffle<3,2,1,0> MSVC 0.88→1.00 TIE(2026-07-15,用户直觉揪出)**。此格曾判 UNSTABLE
+  (best 0.88 稳定但 spread 1.17 淹过闸门),用户质疑"0.87 判平很奇怪"。**looped bench-equivalent dumpbin
+  坐实是真输不是噪声**:`<3,2,1,0>` 是**恒等置换**(0xE4=_MM_SHUFFLE(3,2,1,0)),Highway 有 SizeTag<0xE4>
+  特化直接 `return v`(只剩 load+store),HYLE 却照发 `vpshufd [mem],0xE4` 一条冗余恒等 shuffle。修:五后端
+  (avx2/sse4/avx512/neon/scalar)Per4LaneBlockShuffle 顶部加 `if constexpr(i3==3&&i2==2&&i1==1&&i0==0)
+  return v;`。MSVC 0.88→1.00;gtest 覆盖恒等(<3,2,1,0>==输入)+ 非恒等(<2,3,0,1>)305 GCC 全绿。
+  **同轮验证 MulOdd i32-i64:WSL 0.91→复测 best 1.04(med 1.107,spread 大)= 实为 TIE/偏赢,旧 0.91= 是噪声;
+  MSVC 0.997 TIE。非真输,矩阵不变。教训:单元格 `?`(UNSTABLE)或大 spread 的低 best 值必 looped-dump 核实,
+  别当噪声放过——恒等/常量特例是 Highway 常见而自造易漏的一类。**
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
   (第一轮:ReverseLaneBytes 0.05->TIE、Broadcast<0>、TruncateTo、SumOfLanes、Min/MaxOfLanes;
   第二轮:TZC 三平台追平、HSBI、DemoteMaskTo 0.33->1.4W、LoadN/StoreN 与 LoadNOr 弃 vpmaskmovd
@@ -498,7 +507,7 @@
 | PairwiseAdd128 i32 | 1.00= | 1.00= | 1.02= |
 | PairwiseSub i32 | 1.11W | 0.98? | 1.01= |
 | PairwiseSub128 i32 | 1.10W | 1.00= | 1.01= |
-| Per4LaneBlockShuffle 3210 i32 | 0.87? | 1.00= | 1.00= |
+| Per4LaneBlockShuffle 3210 i32 | 1.00= | 1.00= | 1.00= |
 | PopulationCount u32 (4096) | 1.48W | 1.49W | 1.00= |
 | PromoteEvenTo i8->i16 | 0.96= | 0.99= | 1.00= |
 | PromoteLowerTo i16->i32 (4096) | 1.00= | 1.00= | 1.00= |

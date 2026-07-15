@@ -4154,6 +4154,10 @@ HYLE_FORCE_INLINE __m256i per4_byte_index() noexcept {
 }  // namespace detail
 template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Per4LaneBlockShuffle(Vec256<T, N> v) noexcept {
+  // Identity permutation (i3,i2,i1,i0 == 3,2,1,0) is a no-op -- return v so the compiler emits
+  // nothing instead of a redundant vpshufd/vpermq with an identity immediate (Highway does the
+  // same via its SizeTag<0xE4> overload; without this HYLE issued an extra shuffle, ~0.88 on MSVC).
+  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) return v;
   Vec256<T, N> r;
   if constexpr (sizeof(T) == 4) {
     constexpr int imm = _MM_SHUFFLE(i3, i2, i1, i0);

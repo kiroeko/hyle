@@ -2031,6 +2031,7 @@ template <int i3, int i2, int i1, int i0, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec<T, N> Per4LaneBlockShuffle(Vec<T, N> v) noexcept {
   static_assert(sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8,
                 "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
+  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) return v;  // identity: no-op (see avx2.h)
   alignas(16) T s[N], o[N];
   Store(v, Simd<T, N, 0>(), s);
   if constexpr (sizeof(T) <= 2) {
