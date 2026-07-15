@@ -1644,85 +1644,161 @@ HYLE_FORCE_INLINE MaskRawNeonT<T> mask_not(MaskRawNeonT<T> m) noexcept {
 }
 }  // namespace detail
 
+// simd-19 C5: D-band compares use vceq/vcgt/vcge/vclt/vcle_* on native D raw;
+// Q-band keeps vceqq/... + to_q/from_q. Ne = Eq then D-form invert (vmvn_* /
+// veor_u64 for 64-bit lanes; no vmvn_u64).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> Eq(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   MaskNeon<T, N> m;
-  if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vceqq_f32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vceqq_f64(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vceqq_s8(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(vceqq_u8(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vceqq_s16(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(vceqq_u16(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vceqq_s32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(vceqq_u32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vceqq_s64(detail::to_q(a), detail::to_q(b)));  // aarch64
-  else m = detail::from_q<decltype(m)>(vceqq_u64(detail::to_q(a), detail::to_q(b)));  // u64 (aarch64)
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (std::is_same_v<T, float>) m.raw = vceq_f32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, double>) m.raw = vceq_f64(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int8_t>) m.raw = vceq_s8(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m.raw = vceq_u8(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int16_t>) m.raw = vceq_s16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m.raw = vceq_u16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vceq_s32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m.raw = vceq_u32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int64_t>) m.raw = vceq_s64(a.raw, b.raw);
+    else m.raw = vceq_u64(a.raw, b.raw);
+  } else {
+    if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vceqq_f32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vceqq_f64(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vceqq_s8(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(vceqq_u8(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vceqq_s16(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(vceqq_u16(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vceqq_s32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(vceqq_u32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vceqq_s64(detail::to_q(a), detail::to_q(b)));  // aarch64
+    else m = detail::from_q<decltype(m)>(vceqq_u64(detail::to_q(a), detail::to_q(b)));  // u64 (aarch64)
+  }
   return m;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> Ne(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   MaskNeon<T, N> m = Eq(a, b);
-  m = detail::from_q<decltype(m)>(detail::mask_not<T>(detail::to_q(m)));
+  if constexpr (detail::kIsDBand<T, N>) {
+    // D-form invert: vmvn for 8/16/32-bit mask lanes; 64-bit uses veor (no vmvn_u64).
+    if constexpr (sizeof(T) == 1) m.raw = vmvn_u8(m.raw);
+    else if constexpr (sizeof(T) == 2) m.raw = vmvn_u16(m.raw);
+    else if constexpr (sizeof(T) == 8) m.raw = veor_u64(m.raw, vdup_n_u64(~0ull));
+    else m.raw = vmvn_u32(m.raw);
+  } else {
+    m = detail::from_q<decltype(m)>(detail::mask_not<T>(detail::to_q(m)));
+  }
   return m;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> Gt(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   MaskNeon<T, N> m;
-  if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vcgtq_f32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vcgtq_f64(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vcgtq_s8(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(vcgtq_u8(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vcgtq_s16(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(vcgtq_u16(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vcgtq_s32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(vcgtq_u32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vcgtq_s64(detail::to_q(a), detail::to_q(b)));  // aarch64
-  else m = detail::from_q<decltype(m)>(vcgtq_u64(detail::to_q(a), detail::to_q(b)));  // u64 (aarch64)
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (std::is_same_v<T, float>) m.raw = vcgt_f32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, double>) m.raw = vcgt_f64(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int8_t>) m.raw = vcgt_s8(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m.raw = vcgt_u8(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int16_t>) m.raw = vcgt_s16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m.raw = vcgt_u16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vcgt_s32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m.raw = vcgt_u32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int64_t>) m.raw = vcgt_s64(a.raw, b.raw);
+    else m.raw = vcgt_u64(a.raw, b.raw);
+  } else {
+    if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vcgtq_f32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vcgtq_f64(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vcgtq_s8(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(vcgtq_u8(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vcgtq_s16(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(vcgtq_u16(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vcgtq_s32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(vcgtq_u32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vcgtq_s64(detail::to_q(a), detail::to_q(b)));  // aarch64
+    else m = detail::from_q<decltype(m)>(vcgtq_u64(detail::to_q(a), detail::to_q(b)));  // u64 (aarch64)
+  }
   return m;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> Lt(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   MaskNeon<T, N> m;
-  if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vcltq_f32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vcltq_f64(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vcltq_s8(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(vcltq_u8(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vcltq_s16(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(vcltq_u16(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vcltq_s32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(vcltq_u32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vcltq_s64(detail::to_q(a), detail::to_q(b)));  // aarch64
-  else m = detail::from_q<decltype(m)>(vcltq_u64(detail::to_q(a), detail::to_q(b)));  // u64 (aarch64)
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (std::is_same_v<T, float>) m.raw = vclt_f32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, double>) m.raw = vclt_f64(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int8_t>) m.raw = vclt_s8(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m.raw = vclt_u8(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int16_t>) m.raw = vclt_s16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m.raw = vclt_u16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vclt_s32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m.raw = vclt_u32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int64_t>) m.raw = vclt_s64(a.raw, b.raw);
+    else m.raw = vclt_u64(a.raw, b.raw);
+  } else {
+    if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vcltq_f32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vcltq_f64(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vcltq_s8(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(vcltq_u8(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vcltq_s16(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(vcltq_u16(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vcltq_s32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(vcltq_u32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vcltq_s64(detail::to_q(a), detail::to_q(b)));  // aarch64
+    else m = detail::from_q<decltype(m)>(vcltq_u64(detail::to_q(a), detail::to_q(b)));  // u64 (aarch64)
+  }
   return m;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> Ge(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   MaskNeon<T, N> m;
-  if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vcgeq_f32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vcgeq_f64(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vcgeq_s8(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(vcgeq_u8(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vcgeq_s16(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(vcgeq_u16(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vcgeq_s32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(vcgeq_u32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vcgeq_s64(detail::to_q(a), detail::to_q(b)));  // aarch64
-  else m = detail::from_q<decltype(m)>(vcgeq_u64(detail::to_q(a), detail::to_q(b)));  // u64 (aarch64)
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (std::is_same_v<T, float>) m.raw = vcge_f32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, double>) m.raw = vcge_f64(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int8_t>) m.raw = vcge_s8(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m.raw = vcge_u8(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int16_t>) m.raw = vcge_s16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m.raw = vcge_u16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vcge_s32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m.raw = vcge_u32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int64_t>) m.raw = vcge_s64(a.raw, b.raw);
+    else m.raw = vcge_u64(a.raw, b.raw);
+  } else {
+    if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vcgeq_f32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vcgeq_f64(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vcgeq_s8(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(vcgeq_u8(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vcgeq_s16(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(vcgeq_u16(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vcgeq_s32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(vcgeq_u32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vcgeq_s64(detail::to_q(a), detail::to_q(b)));  // aarch64
+    else m = detail::from_q<decltype(m)>(vcgeq_u64(detail::to_q(a), detail::to_q(b)));  // u64 (aarch64)
+  }
   return m;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> Le(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
   MaskNeon<T, N> m;
-  if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vcleq_f32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vcleq_f64(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vcleq_s8(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(vcleq_u8(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vcleq_s16(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(vcleq_u16(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vcleq_s32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(vcleq_u32(detail::to_q(a), detail::to_q(b)));
-  else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vcleq_s64(detail::to_q(a), detail::to_q(b)));  // aarch64
-  else m = detail::from_q<decltype(m)>(vcleq_u64(detail::to_q(a), detail::to_q(b)));  // u64 (aarch64)
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (std::is_same_v<T, float>) m.raw = vcle_f32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, double>) m.raw = vcle_f64(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int8_t>) m.raw = vcle_s8(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m.raw = vcle_u8(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int16_t>) m.raw = vcle_s16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m.raw = vcle_u16(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int32_t>) m.raw = vcle_s32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m.raw = vcle_u32(a.raw, b.raw);
+    else if constexpr (std::is_same_v<T, std::int64_t>) m.raw = vcle_s64(a.raw, b.raw);
+    else m.raw = vcle_u64(a.raw, b.raw);
+  } else {
+    if constexpr (std::is_same_v<T, float>) m = detail::from_q<decltype(m)>(vcleq_f32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, double>) m = detail::from_q<decltype(m)>(vcleq_f64(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int8_t>) m = detail::from_q<decltype(m)>(vcleq_s8(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) m = detail::from_q<decltype(m)>(vcleq_u8(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int16_t>) m = detail::from_q<decltype(m)>(vcleq_s16(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) m = detail::from_q<decltype(m)>(vcleq_u16(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int32_t>) m = detail::from_q<decltype(m)>(vcleq_s32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) m = detail::from_q<decltype(m)>(vcleq_u32(detail::to_q(a), detail::to_q(b)));
+    else if constexpr (std::is_same_v<T, std::int64_t>) m = detail::from_q<decltype(m)>(vcleq_s64(detail::to_q(a), detail::to_q(b)));  // aarch64
+    else m = detail::from_q<decltype(m)>(vcleq_u64(detail::to_q(a), detail::to_q(b)));  // u64 (aarch64)
+  }
   return m;
 }
 
