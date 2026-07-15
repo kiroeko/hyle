@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 4**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 10 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits →TIE)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 3**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 11 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits/BlendedStore →TIE)
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -60,9 +60,9 @@
   方法教训:此前"objdump 逐指令等价"是**向量签名级**对比的假象——标量尾巴(寄存器宽度/扩展指令)
   没有逐条比,一条指令恰好就是那 6%。)
 
-### Mac/NEON: 4 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;已修 10 个见演进段)
+### Mac/NEON: 3 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;已修 11 个见演进段)
 >
-> **⚠️ "漏了" vs "无指令"——这 8(原 14)全属"漏了"**:能进这张表 = 有 Highway NEON 对手可对拍、跑出了比值,
+> **⚠️ "漏了" vs "无指令"——这 3(原 14)全属"漏了"**:能进这张表 = 有 Highway NEON 对手可对拍、跑出了比值,
 > 即两侧都在 NEON 上真跑,HYLE 只是走了 store+reload/标量而 Highway 向量化。**不是** "NEON 没这条指令"
 > (那种根本没有 Highway NEON 侧、不会出现在对拍里)。真正"无指令测不了"的是全量表里 NEON 列为 `·`
 > 且 x86-only 的行(如 AVX-512 掩码族),那些是**从没测**、其中一部分确实 NEON 无对应——待单独甄别(见文末)。
@@ -74,9 +74,8 @@
 
 | op | NEON 比值 | 根因(vs Highway) |
 |---|---|---|
-| BlendedStore i32 | 0.18 | store+reload+标量逐 lane 写 vs Highway load-blend-store(IfThenElse+StoreU);⚠️HYLE 版 fault-safe 强契约,改前须确认契约 |
 | SumsOfAdjQuadAbsDiff u8→u16 | 0.24 | fallback vs Highway native(vabal 家族) |
-| PromoteMaskTo i16→i32 | 0.575 | 待查 |
+| PromoteMaskTo i16→i32 | 0.575 | Rebind 部分标签(4-lane i16)物化整 q 寄存器→cmgt.8h+xtn+zip1+ushll+shl+cmlt 一串;Highway 用半寄存器 d load 后全程 4-wide。HYLE 部分标签 codegen 深层问题,待标签系统改进 |
 | ScatterIndexN i32 | 0.87 | Highway NEON 也是标量 ExtractLane 循环(无 native scatter),ROI 低 |
 
 - (第十四轮清零:MulAddSub/MulSubAdd 弃两 FMA 的 OddEven(MulAdd,MulSub) 改 Highway 单 FMA 形,见演进段。
@@ -139,7 +138,11 @@
   不在 LoadMaskBits 而在 Rebind 部分标签(4-lane i16)仍物化整 q 寄存器(disasm:cmgt.8h→xtn→zip1→ushll→
   shl→cmlt 一串),Highway 用 `d`(半寄存器 4-lane)load 后 sshll 全程 4-wide。这是 HYLE 部分标签 codegen
   的更深问题,单 op 改不动,登记待后续标签系统改进。**
-- 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
+- **NEON 修复轮⑧(2026-07-15,改契约):BlendedStore 0.18→TIE**。NEON 无 masked-store 指令,旧实现标量
+  逐 lane 写(store+reload、fault-safe);改 Highway load-blend-store:`StoreU(IfThenElse(m,v,LoadU(p)),p)`。
+  **契约变更(用户授权)**:NEON BlendedStore 现**读全 kN lane 的目标内存**(写回不变故无逻辑副作用),调用方
+  须保证该区间可读——与 Highway NEON 同契约;x86(vpmaskmovd,真 fault-safe 且快)不变,故 fault-safety 成
+  NEON-only 放宽。7 个 MaskedTail gtest(float/double/i8/i16/i32/i64/u8,k=0..n 全扫)全过。0.18→1.00 TIE。
   (第一轮:ReverseLaneBytes 0.05->TIE、Broadcast<0>、TruncateTo、SumOfLanes、Min/MaxOfLanes;
   第二轮:TZC 三平台追平、HSBI、DemoteMaskTo 0.33->1.4W、LoadN/StoreN 与 LoadNOr 弃 vpmaskmovd
   ->WIN、CombineMasks、ConcatLowerLower)+ v2 stagger 仪器修相位相关后,收敛为上表数字。
@@ -335,7 +338,7 @@
 | BitCast i32->f32 | 1.01= | 1.00= | 1.00= |
 | BitShuffle u64 (4096) | 1.07W | 1.11W | n/a² |
 | BitwiseIfThenElse i32 | 1.00= | 0.98? | 0.99= |
-| BlendedStore i32 (4096, 50%) | 1.00= | 0.99= | 0.18 LOSE |
+| BlendedStore i32 (4096, 50%) | 1.00= | 0.99= | 1.00= |
 | Broadcast<0> i32 | 0.99= | 0.99= | 1.05= |
 | BroadcastBlock<1> i32 | 1.03= | 1.01= | n/a¹ |
 | BroadcastLane<3> i32 | 0.93L | 1.14W | 1.00= |

@@ -2355,17 +2355,19 @@ HYLE_FORCE_INLINE detail::VN<D> MaskedLoadOr(detail::VN<D> no,
                                              D d, const TFromD<D>* p) noexcept {
   return IfThenElse(m, LoadU(d, p), no);
 }
+// BlendedStore(v, m, d, p): store on-lanes of v, leave off-lane memory unchanged. NEON has no
+// masked-store instruction, so this is load-blend-store (Highway arm_neon-inl.h): read the full
+// destination, IfThenElse(m, v, old), StoreU. CONTRACT NOTE: unlike the x86 backends (vpmaskmovd,
+// genuinely fault-safe -- off lanes are never accessed), the NEON form READS the full vector region
+// at p, so the caller must guarantee all kN lanes' worth of memory at p is readable (it always
+// writes them back unchanged, so no logical off-lane mutation). The old scalar per-lane store was
+// fault-safe but store+reload-slow (0.18 vs Highway); this trades NEON-only fault-safety -- which
+// callers near an unmapped page must not rely on -- for the vector path. Same contract as Highway NEON.
 template <class D>
 HYLE_FORCE_INLINE void BlendedStore(detail::VN<D> v,
                                     MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> m, D d,
                                     TFromD<D>* p) noexcept {
-  using T = TFromD<D>;
-  constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) T tmp[kN];
-  Store(v, d, tmp);
-  const unsigned bits = detail::mask_bits(m);
-  for (std::size_t i = 0; i < kN; ++i)
-    if ((bits >> i) & 1u) p[i] = tmp[i];
+  StoreU(IfThenElse(m, v, LoadU(d, p)), d, p);
 }
 template <class D>
 HYLE_FORCE_INLINE detail::VN<D> LoadN(D d, const TFromD<D>* p, std::size_t n) noexcept {
