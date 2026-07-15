@@ -68,6 +68,85 @@ template <> struct MaskRawNeon<std::int64_t> { using type = uint64x2_t; };
 template <> struct MaskRawNeon<std::uint64_t> { using type = uint64x2_t; };
 template <typename T> using MaskRawNeonT = typename MaskRawNeon<T>::type;
 
+// ---- simd-19: N-banded raw traits (partial-vector representation) ----------------------
+// Physical register type for a LOGICAL N-lane vector: full width keeps the 128-bit Q type;
+// any narrower shape (N*sizeof(T) <= 8, produced by Rebind/Repartition partial tags and the
+// half-vector family) gets the true 64-bit D type, so partial ops can run N-wide with zero
+// fixup (PromoteMaskTo 0.575 root cause -- docs/milestones/simd-19-partial-vector-repr.md).
+// W0a: these traits exist in PARALLEL; VecNeon/MaskNeon keep full-width RawNeonT until the
+// evergreen shim wrap (to_q/from_q below) lands, then one flip commit switches them.
+template <typename T> struct RawNeonD;
+template <> struct RawNeonD<float> { using type = float32x2_t; };
+template <> struct RawNeonD<double> { using type = float64x1_t; };
+template <> struct RawNeonD<std::int8_t> { using type = int8x8_t; };
+template <> struct RawNeonD<std::uint8_t> { using type = uint8x8_t; };
+template <> struct RawNeonD<std::int16_t> { using type = int16x4_t; };
+template <> struct RawNeonD<std::uint16_t> { using type = uint16x4_t; };
+template <> struct RawNeonD<std::int32_t> { using type = int32x2_t; };
+template <> struct RawNeonD<std::uint32_t> { using type = uint32x2_t; };
+template <> struct RawNeonD<std::int64_t> { using type = int64x1_t; };
+template <> struct RawNeonD<std::uint64_t> { using type = uint64x1_t; };
+
+template <typename T> struct MaskRawNeonD;
+template <> struct MaskRawNeonD<float> { using type = uint32x2_t; };
+template <> struct MaskRawNeonD<double> { using type = uint64x1_t; };
+template <> struct MaskRawNeonD<std::int8_t> { using type = uint8x8_t; };
+template <> struct MaskRawNeonD<std::uint8_t> { using type = uint8x8_t; };
+template <> struct MaskRawNeonD<std::int16_t> { using type = uint16x4_t; };
+template <> struct MaskRawNeonD<std::uint16_t> { using type = uint16x4_t; };
+template <> struct MaskRawNeonD<std::int32_t> { using type = uint32x2_t; };
+template <> struct MaskRawNeonD<std::uint32_t> { using type = uint32x2_t; };
+template <> struct MaskRawNeonD<std::int64_t> { using type = uint64x1_t; };
+template <> struct MaskRawNeonD<std::uint64_t> { using type = uint64x1_t; };
+
+template <typename T, std::size_t N>
+inline constexpr bool kIsDBand = (N * sizeof(T) <= 8);
+
+template <typename T, std::size_t N>
+using RawNeonNT = std::conditional_t<kIsDBand<T, N>, typename RawNeonD<T>::type,
+                                     typename RawNeon<T>::type>;
+template <typename T, std::size_t N>
+using MaskRawNeonNT = std::conditional_t<kIsDBand<T, N>, typename MaskRawNeonD<T>::type,
+                                         typename MaskRawNeon<T>::type>;
+
+// simd-19 W0a gate: banded trait correctness for every (T, legal N). Full -> Q, sub -> D.
+static_assert(std::is_same_v<RawNeonNT<std::int8_t, 16>, int8x16_t>);
+static_assert(std::is_same_v<RawNeonNT<std::int8_t, 8>, int8x8_t> &&
+              std::is_same_v<RawNeonNT<std::int8_t, 4>, int8x8_t> &&
+              std::is_same_v<RawNeonNT<std::int8_t, 1>, int8x8_t>);
+static_assert(std::is_same_v<RawNeonNT<std::uint8_t, 16>, uint8x16_t> &&
+              std::is_same_v<RawNeonNT<std::uint8_t, 8>, uint8x8_t>);
+static_assert(std::is_same_v<RawNeonNT<std::int16_t, 8>, int16x8_t> &&
+              std::is_same_v<RawNeonNT<std::int16_t, 4>, int16x4_t> &&
+              std::is_same_v<RawNeonNT<std::int16_t, 2>, int16x4_t> &&
+              std::is_same_v<RawNeonNT<std::int16_t, 1>, int16x4_t>);
+static_assert(std::is_same_v<RawNeonNT<std::uint16_t, 8>, uint16x8_t> &&
+              std::is_same_v<RawNeonNT<std::uint16_t, 4>, uint16x4_t>);
+static_assert(std::is_same_v<RawNeonNT<std::int32_t, 4>, int32x4_t> &&
+              std::is_same_v<RawNeonNT<std::int32_t, 2>, int32x2_t> &&
+              std::is_same_v<RawNeonNT<std::int32_t, 1>, int32x2_t>);
+static_assert(std::is_same_v<RawNeonNT<std::uint32_t, 4>, uint32x4_t> &&
+              std::is_same_v<RawNeonNT<std::uint32_t, 2>, uint32x2_t>);
+static_assert(std::is_same_v<RawNeonNT<float, 4>, float32x4_t> &&
+              std::is_same_v<RawNeonNT<float, 2>, float32x2_t> &&
+              std::is_same_v<RawNeonNT<float, 1>, float32x2_t>);
+static_assert(std::is_same_v<RawNeonNT<std::int64_t, 2>, int64x2_t> &&
+              std::is_same_v<RawNeonNT<std::int64_t, 1>, int64x1_t>);
+static_assert(std::is_same_v<RawNeonNT<std::uint64_t, 2>, uint64x2_t> &&
+              std::is_same_v<RawNeonNT<std::uint64_t, 1>, uint64x1_t>);
+static_assert(std::is_same_v<RawNeonNT<double, 2>, float64x2_t> &&
+              std::is_same_v<RawNeonNT<double, 1>, float64x1_t>);
+static_assert(std::is_same_v<MaskRawNeonNT<std::int8_t, 16>, uint8x16_t> &&
+              std::is_same_v<MaskRawNeonNT<std::int8_t, 8>, uint8x8_t>);
+static_assert(std::is_same_v<MaskRawNeonNT<std::int16_t, 8>, uint16x8_t> &&
+              std::is_same_v<MaskRawNeonNT<std::int16_t, 4>, uint16x4_t>);
+static_assert(std::is_same_v<MaskRawNeonNT<float, 4>, uint32x4_t> &&
+              std::is_same_v<MaskRawNeonNT<float, 2>, uint32x2_t> &&
+              std::is_same_v<MaskRawNeonNT<std::int32_t, 1>, uint32x2_t>);
+static_assert(std::is_same_v<MaskRawNeonNT<double, 2>, uint64x2_t> &&
+              std::is_same_v<MaskRawNeonNT<double, 1>, uint64x1_t> &&
+              std::is_same_v<MaskRawNeonNT<std::uint64_t, 1>, uint64x1_t>);
+
 template <typename T>
 inline constexpr bool kSupported =
     std::is_same_v<T, float> || std::is_same_v<T, double> ||
@@ -116,6 +195,52 @@ template <class D>
 using MN = MaskNeon<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)>;
 template <class D>
 inline constexpr bool kNativeWidth = HYLE_SIMD_MAX_LANES_D(D) * sizeof(TFromD<D>) <= 16;
+
+// ---- simd-19 evergreen shims: sole raw accessors during the D-band migration ------------
+// to_q(x): full-width Q view of a vec/mask raw. Q band: identity. D band: vcombine with a
+// zero high half -- any AArch64 D-register write already zero-extends the V register, so
+// the combine typically vanishes after regalloc (probe: simd-19 doc section 5.3).
+// from_q<decltype(x)>(q): back to x's canonical raw (vget_low for D, identity for Q).
+// Destination-typed so mechanically wrapped sites need no local type knowledge:
+// `x.raw = expr` -> `x = detail::from_q<decltype(x)>(expr)`.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE RawNeonT<T> to_q(VecNeon<T, N> v) noexcept {
+  if constexpr (sizeof(v.raw) == 16) return v.raw;
+  else if constexpr (std::is_same_v<T, float>) return vcombine_f32(v.raw, vdup_n_f32(0.f));
+  else if constexpr (std::is_same_v<T, double>) return vcombine_f64(v.raw, vdup_n_f64(0.0));
+  else if constexpr (std::is_same_v<T, std::int8_t>) return vcombine_s8(v.raw, vdup_n_s8(0));
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return vcombine_u8(v.raw, vdup_n_u8(0));
+  else if constexpr (std::is_same_v<T, std::int16_t>) return vcombine_s16(v.raw, vdup_n_s16(0));
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return vcombine_u16(v.raw, vdup_n_u16(0));
+  else if constexpr (std::is_same_v<T, std::int32_t>) return vcombine_s32(v.raw, vdup_n_s32(0));
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return vcombine_u32(v.raw, vdup_n_u32(0));
+  else if constexpr (std::is_same_v<T, std::int64_t>) return vcombine_s64(v.raw, vdup_n_s64(0));
+  else return vcombine_u64(v.raw, vdup_n_u64(0));
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE MaskRawNeonT<T> to_q(MaskNeon<T, N> m) noexcept {
+  if constexpr (sizeof(m.raw) == 16) return m.raw;
+  else if constexpr (sizeof(T) == 1) return vcombine_u8(m.raw, vdup_n_u8(0));
+  else if constexpr (sizeof(T) == 2) return vcombine_u16(m.raw, vdup_n_u16(0));
+  else if constexpr (sizeof(T) == 4) return vcombine_u32(m.raw, vdup_n_u32(0));
+  else return vcombine_u64(m.raw, vdup_n_u64(0));
+}
+template <class V, class QRaw>
+HYLE_FORCE_INLINE V from_q(QRaw q) noexcept {
+  V out;
+  if constexpr (sizeof(out.raw) == 16) out.raw = q;
+  else if constexpr (std::is_same_v<QRaw, float32x4_t>) out.raw = vget_low_f32(q);
+  else if constexpr (std::is_same_v<QRaw, float64x2_t>) out.raw = vget_low_f64(q);
+  else if constexpr (std::is_same_v<QRaw, int8x16_t>) out.raw = vget_low_s8(q);
+  else if constexpr (std::is_same_v<QRaw, uint8x16_t>) out.raw = vget_low_u8(q);
+  else if constexpr (std::is_same_v<QRaw, int16x8_t>) out.raw = vget_low_s16(q);
+  else if constexpr (std::is_same_v<QRaw, uint16x8_t>) out.raw = vget_low_u16(q);
+  else if constexpr (std::is_same_v<QRaw, int32x4_t>) out.raw = vget_low_s32(q);
+  else if constexpr (std::is_same_v<QRaw, uint32x4_t>) out.raw = vget_low_u32(q);
+  else if constexpr (std::is_same_v<QRaw, int64x2_t>) out.raw = vget_low_s64(q);
+  else out.raw = vget_low_u64(q);
+  return out;
+}
 }  // namespace detail
 
 // ---- initialization -----------------------------------------------------------------
