@@ -1025,16 +1025,41 @@ template <typename DstT, std::size_t N, typename SrcT>
 HYLE_FORCE_INLINE VecNeon<DstT, N> ConvertInRangeTo(Simd<DstT, N, 0> d, VecNeon<SrcT, N> v) noexcept {
   return ConvertTo(d, v);
 }
-// simd-18 C3: DemoteInRangeTo f64->i32 -- portable truncate (Nxf64 -> Nxi32).
-// NEON has no single-instruction f64x2->i32x2 demote; store+reload with cast is the oracle.
+// simd-18 C3: DemoteInRangeTo f64->i32 -- in-register truncate (Nxf64 -> Nxi32). Caller guarantees
+// in-range (the InRange contract), so this is plain truncate-toward-zero with no saturation/NaN
+// concern: vcvtq_s64_f64 converts the 2 f64 lanes to i64 (truncating), vmovn_s64 narrows to i32
+// (low 32 bits = the exact value since it's in [INT32_MIN,INT32_MAX]). The old store+reload scalar
+// cast was the f64->i32 demote bottleneck behind DemoteToNearestInt(InRange) on NEON (0.57 / the
+// in-range fast path). The upper i32 lanes (N<4) are unused by the contract.
 template <std::size_t N>
 HYLE_FORCE_INLINE VecNeon<std::int32_t, N> DemoteInRangeTo(Simd<std::int32_t, N, 0> dn,
                                                             VecNeon<double, N> v) noexcept {
-  alignas(16) double src[2] = {};
-  alignas(16) std::int32_t dst[4] = {};
-  Store(v, Simd<double, N, 0>(), src);
-  for (std::size_t i = 0; i < N; ++i) dst[i] = static_cast<std::int32_t>(src[i]);
-  return Load(dn, dst);
+  const int64x2_t i64 = vcvtq_s64_f64(v.raw);            // truncate f64x2 -> i64x2
+  const int32x2_t lo = vmovn_s64(i64);                   // narrow -> i32x2 (low half of each)
+  VecNeon<std::int32_t, N> r;
+  r.raw = vcombine_s32(lo, vdup_n_s32(0));               // [d0, d1, 0, 0]; N<=2 uses low lanes
+  (void)dn;
+  return r;
+}
+// DemoteToNearestInt f64->i32 NATIVE (NaN/+overflow -> INT32_MAX, -overflow -> INT32_MIN; the
+// uniform cross-backend contract). NEON's vminnmq/vmaxnmq are IEEE minNum/maxNum -- they SUPPRESS
+// NaN (return the non-NaN operand), so vminnmq(v, MAX) maps NaN AND +overflow to MAX and clamps
+// the top, vmaxnmq(., MIN) clamps the bottom; the result is finite & in [MIN,MAX], so vcvtnq_s64_f64
+// (round-to-nearest-even, in-range) + vmovn_s64 narrows exactly. Two NaN-suppressing clamp
+// instructions replace the generic path's IfThenElse(Lt)/IfThenElse(Le) cmp+bsl pairs (measured
+// 0.57). Same contract as x86's min_pd + cvtpd2dq native form.
+#define HYLE_SIMD_NEON_HAS_NATIVE_DEMOTE_NEAREST_INT 1
+template <std::size_t NDst, std::size_t NSrc>
+HYLE_FORCE_INLINE VecNeon<std::int32_t, NDst> DemoteToNearestIntNative(
+    Simd<std::int32_t, NDst, 0>, VecNeon<double, NSrc> v) noexcept {
+  static_assert(NDst == NSrc, "DemoteToNearestIntNative: same lane count f64->i32");
+  const float64x2_t kMax = vdupq_n_f64(2147483647.0);   // (double)INT32_MAX (exact)
+  const float64x2_t kMin = vdupq_n_f64(-2147483648.0);  // (double)INT32_MIN (exact)
+  const float64x2_t clamped = vmaxnmq_f64(vminnmq_f64(v.raw, kMax), kMin);  // NaN->MAX, saturate
+  const int64x2_t i64 = vcvtnq_s64_f64(clamped);        // RNE convert (in-range now)
+  VecNeon<std::int32_t, NDst> r;
+  r.raw = vcombine_s32(vmovn_s64(i64), vdup_n_s32(0));   // narrow -> i32
+  return r;
 }
 // TruncateTo/PromoteEvenTo/PromoteOddTo/U8FromU32: strided/modular width changers.
 // correctness-first store+reload; native pack/cvt narrowing is a profiling upgrade.

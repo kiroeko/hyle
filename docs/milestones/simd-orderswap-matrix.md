@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 6**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 8 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate →TIE)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 5**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;已修 9 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt →TIE)
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -76,7 +76,6 @@
 |---|---|---|
 | BlendedStore i32 | 0.18 | store+reload+标量逐 lane 写 vs Highway load-blend-store(IfThenElse+StoreU);⚠️HYLE 版 fault-safe 强契约,改前须确认契约 |
 | SumsOfAdjQuadAbsDiff u8→u16 | 0.24 | fallback vs Highway native(vabal 家族) |
-| DemoteToNearestInt f64→i32 | 0.57 | 待查 |
 | PromoteMaskTo i16→i32 | 0.575 | 待查 |
 | Dup128MaskFromMaskBits i32 | 0.725 | 待查 |
 | ScatterIndexN i32 | 0.87 | 待查 |
@@ -116,6 +115,14 @@
   向量合成(generic_ops-inl.h):even/odd 字节各自 widen 到 i16(a 零扩展 vand/vshr、b 符扩展 vshl+vshr),
   vmulq_s16 各自乘,vqaddq_s16 饱和加邻对。单积 i8*u8∈[-32640,32385] 不溢 i16,只和饱和=maddubs 语义。
   两者专用 gtest(含饱和例)+ 220 NEON gtest 全绿。
+- **NEON 修复轮⑥(2026-07-15):DemoteToNearestInt f64→i32 0.57→TIE(契约不变)**。两处:①DemoteInRangeTo
+  f64→i32 弃 store+reload 标量 cast,改 `vcvtq_s64_f64`(截断)+`vmovn_s64`(窄化)在寄存器内做;②新增
+  NEON native DemoteToNearestIntNative(HYLE_SIMD_NEON_HAS_NATIVE_DEMOTE_NEAREST_INT 门控,vec.h 接入):
+  用 IEEE minNum/maxNum 的 `vminnmq_f64`/`vmaxnmq_f64`——它们**抑制 NaN**(返回非 NaN 操作数),故
+  `vmaxnmq(vminnmq(v,MAX),MIN)` 一举把 NaN 与 +溢出映射到 MAX、-溢出到 MIN,结果 finite in-range,
+  再 `vcvtnq_s64_f64`(RNE)+vmovn 精确窄化。**NaN→MAX 契约不变**(与 x86 min_pd+cvt 同法),两条抑 NaN
+  clamp 替原泛型的 IfThenElse(Lt)/IfThenElse(Le) cmp+bsl 对。DemoteToNearestIntFamily gtest(NaN/溢出/
+  InRange==safe)全过 + 220 全绿;full 0.57→0.99、InRange fast 也归 1.00。
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
   (第一轮:ReverseLaneBytes 0.05->TIE、Broadcast<0>、TruncateTo、SumOfLanes、Min/MaxOfLanes;
   第二轮:TZC 三平台追平、HSBI、DemoteMaskTo 0.33->1.4W、LoadN/StoreN 与 LoadNOr 弃 vpmaskmovd
@@ -342,7 +349,7 @@
 | DemoteMaskTo i32->i16 (4096) | 1.04= | 1.42W | 1.00= |
 | DemoteTo i32->i16 (sat) | 1.88W | 1.89W | 1.92W |
 | DemoteTo i32->i16 1-arg (4096) | 1.00= | 1.00= | 1.00= |
-| DemoteToNearestInt f64->i32 (4096) | 1.01= | 0.99= | 0.57 LOSE |
+| DemoteToNearestInt f64->i32 (4096) | 1.01= | 0.99= | 0.99= |
 | Div f32 | 1.00= | 1.01= | 1.00= |
 | Dup128MaskFromMaskBits i32 (4096) | 1.02= | 1.19W | 0.72 LOSE |
 | DupEven i32 | 1.00= | 1.00= | 0.99= |

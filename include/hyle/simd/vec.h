@@ -1843,7 +1843,7 @@ template <class DI32, class VF>
 HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestInt(DI32 di32, VF v) noexcept {
   static_assert(std::is_same_v<TFromD<DI32>, std::int32_t>, "DemoteToNearestInt: dst is i32");
   static_assert(std::is_same_v<TFromD<DFromV<VF>>, double>, "DemoteToNearestInt: src is f64");
-#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_DEMOTE_NEAREST_INT)
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_DEMOTE_NEAREST_INT) || defined(HYLE_SIMD_NEON_HAS_NATIVE_DEMOTE_NEAREST_INT)
   return DemoteToNearestIntNative(di32, v);
 #else
   const DFromV<VF> df;
