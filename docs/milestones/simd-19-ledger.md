@@ -18,7 +18,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 
 | 卡 | op | 状态 | G1 | G3 | G4(数值) | 提交 | 备注 |
 |---|---|---|---|---|---|---|---|
-| C1 | Set/Zero D-form | done | ✓ | 220/220 | — | | Set: kIsDBand→vdup_n_*; Zero 转发未改 |
+| C1 | Set/Zero D-form | done | ✓ | 220/220 | — | ea37f98 | Set: kIsDBand→vdup_n_*; Zero 转发未改 |
 | C2 | LoadU/StoreU 边界护栏测试(先行) | todo | | | — | | 只新增测试文件 |
 | C3 | LoadU partial 窄读 | todo | | | — | | 修 OOB 读 |
 | C4 | StoreU partial 窄写 | todo | | | — | | 修 OOB 写,C2 测试必须先绿 |
