@@ -26,7 +26,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C6 | MaskFromVec/MaskFromNormalizedVec/VecFromMask D | done | ✓ | 266/266 | — | 69649f3 | kIsDBand: vreinterpret_* + MaskFromVec vshr_n_s*; Q 原样; 探针 EXISTS |
 | C7 | mask And/Or/Xor/AndNot/Not D-form | done | ✓ | 266/266 | — | aad325a | kIsDBand: vand/vorr/veor/vbic_*; Not=vmvn_*/veor_u64; helpers 仍 Q; ExclusiveNeither 组合 |
 | C8 | PromoteLowerTo/PromoteTo partial 输入 D 路 | done | ✓ | 266/266 | PromoteMaskTo i16→i32: HYLE≈0.08 / HWY≈0.08 (~1.00) | 99ceab4 | PromoteLowerTo D: vmovl_*(v.raw)+vget_low_*; Q 原样; 探针 EXISTS |
-| C9 | DemoteTo partial 输出 D 路 | done | ✓ | 266/266 | — | (本提交) | D 出: vqmovn/vcvt(vcombine(a.raw,b.raw)); Q 原样双 vqmovn+vcombine+from_q |
+| C9 | DemoteTo partial 输出 D 路 | done | ✓ | 266/266 | — | 734e6a6 | D 出: vqmovn/vcvt(vcombine(a.raw,b.raw)); Q 原样双 vqmovn+vcombine+from_q |
 | C10 | 向量 And/Or/Xor/AndNot/Not D-form | todo | | | — | | |
 | C11 | GetLane/ExtractLane/InsertLane D-form | todo | | | — | | |
 | C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | todo | | | 记录 | | 判定=高能力方 |
