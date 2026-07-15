@@ -696,14 +696,17 @@ template <class V> HYLE_FORCE_INLINE V CopySignToAbs(V abs, V sign) noexcept {
 template <class V> HYLE_FORCE_INLINE V ReciprocalNewton(V x) noexcept {
   const DFromV<V> d;
   const V y0 = ApproximateReciprocal(x);
-  return Mul(y0, Sub(Set(d, TFromD<DFromV<V>>{2}), Mul(x, y0)));
+  // (2 - x*y0) as one FMA: NegMulAdd(x,y0,2) = 2 - x*y0. Mul(x,y0)+Sub was 2 separate ops that
+  // MSVC/GCC don't auto-contract (op_parity dump: vmulps+vsubps). FMA is also >= as precise.
+  return Mul(y0, NegMulAdd(x, y0, Set(d, TFromD<DFromV<V>>{2})));
 }
 template <class V> HYLE_FORCE_INLINE V ReciprocalSqrtNewton(V x) noexcept {
   using T = TFromD<DFromV<V>>;
   const DFromV<V> d;
   const V y0 = ApproximateReciprocalSqrt(x);
   const V half_x = Mul(Set(d, T{0.5}), x);
-  return Mul(y0, Sub(Set(d, T{1.5}), Mul(half_x, Mul(y0, y0))));
+  // (1.5 - half_x*y0^2) as one FMA on the y0^2 term: NegMulAdd(half_x, y0*y0, 1.5).
+  return Mul(y0, NegMulAdd(half_x, Mul(y0, y0), Set(d, T{1.5})));
 }
 // AllBits0/AllBits1(d, v): whole-vector all-zero / all-one test. Via AllTrue/AllFalse on a
 // self-compare mask (Eq(v, Zero) all-true == all bits zero).
