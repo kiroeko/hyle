@@ -3052,16 +3052,36 @@ HYLE_FORCE_INLINE VecNeon<T, N> AESInvMixColumns(VecNeon<T, N> state) noexcept {
   VecNeon<T, N> r; std::memcpy(&r.raw, s, 16); return r;
 #endif
 }
-// AESKeyGenAssist<kRcon>: ARM has no dedicated instruction (its key schedule differs); the
-// software byte core matches _mm_aeskeygenassist_si128 semantics exactly. Key-schedule setup
-// is not a hot path, so the software floor is the right call on NEON.
+// AESKeyGenAssist<kRcon>: ARM has no dedicated instruction (its key schedule differs). When AES
+// hardware is present, synthesize it the way Highway does (arm_neon-inl.h): DupOdd broadcasts the
+// two SubWord source words (bytes 4..7 and 12..15), AESLastRound applies SubBytes+ShiftRows with a
+// per-lane rcon xor key, and a fixed byte shuffle (kRotWordShuffle) undoes ARM's ShiftRows-before-
+// SubBytes ordering to land the RotWord/SubWord result matching _mm_aeskeygenassist_si128. All three
+// primitives are HYLE's own verified-x86-bit-identical NEON ops, so the composition is exact -- and
+// it replaces the old scalar byte core that measured 8x slower than Highway on NEON. Without AES
+// hardware the whole crypto family is soft anyway, so keep the byte core there.
 template <std::uint8_t kRcon, typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> AESKeyGenAssist(VecNeon<T, N> v) noexcept {
   static_assert(sizeof(T) * N == 16, "AES op needs a 128-bit vector");
+#if defined(__ARM_FEATURE_AES)
+  alignas(16) static constexpr std::uint8_t kRconXorMask[16] = {
+      0, kRcon, 0, 0, 0, 0, 0, 0, 0, kRcon, 0, 0, 0, 0, 0, 0};
+  alignas(16) static constexpr std::uint8_t kRotWordShuffle[16] = {
+      0, 13, 10, 7, 1, 14, 11, 4, 8, 5, 2, 15, 9, 6, 3, 12};
+  uint32x4_t v32;
+  std::memcpy(&v32, &v.raw, 16);
+  const uint32x4_t w13_32 = vtrn2q_u32(v32, v32);  // DupOdd: [w1,w1,w3,w3]
+  uint8x16_t w13;
+  std::memcpy(&w13, &w13_32, 16);
+  const uint8x16_t sub = detail::aes_last_round_u8(w13, vld1q_u8(kRconXorMask));
+  const uint8x16_t out = vqtbl1q_u8(sub, vld1q_u8(kRotWordShuffle));  // RotWord (indices in-range)
+  VecNeon<T, N> r; std::memcpy(&r.raw, &out, 16); return r;
+#else
   std::uint8_t s[16];
   std::memcpy(s, &v.raw, 16);
   detail::aes_keygen_assist_soft(s, kRcon);
   VecNeon<T, N> r; std::memcpy(&r.raw, s, 16); return r;
+#endif
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> CLMulLower(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {

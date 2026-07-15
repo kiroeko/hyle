@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 14**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中)
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 13**——NEON 首次全 perf 覆盖暴露一批 ARM store+reload 欠账,修复中;AESKeyGenAssist 已修 0.12→TIE)
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -60,7 +60,7 @@
   方法教训:此前"objdump 逐指令等价"是**向量签名级**对比的假象——标量尾巴(寄存器宽度/扩展指令)
   没有逐条比,一条指令恰好就是那 6%。)
 
-### Mac/NEON: 14 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序)
+### Mac/NEON: 13 个(2026-07-15 首次全 perf 覆盖暴露;按比值升序;AESKeyGenAssist 已修见下)
 > **背景**:此前 NEON 只有 op_parity_full_bench 一个 target,且它自 P4 起加的 op 从没在 NEON 重跑;
 > op_parity_bench_neon / widen_neon 到本会话才建(见 reference_simd_coverage_tool 记忆的"NEON 覆盖盲区")。
 > 首次三 TU 全跑,暴露一批 HYLE NEON 走 store+reload/scalar-fallback 而 Highway 用 native intrinsic
@@ -69,7 +69,6 @@
 
 | op | NEON 比值 | 根因(vs Highway) |
 |---|---|---|
-| AESKeyGenAssist u8 | 0.12 | scalar software core(aes_keygen_assist_soft memcpy)vs Highway 向量合成 DupOdd+AESLastRound(kRcon)+TableLookupBytes(RotWord) |
 | BlendedStore i32 | 0.18 | store+reload+标量逐 lane 写 vs Highway load-blend-store(IfThenElse+StoreU);⚠️HYLE 版 fault-safe 强契约,改前须确认契约 |
 | TwoTablesLookupLanes i32 | 0.21 | store+reload gather vs Highway byte-index 展开 + vqtbl2q |
 | SumsOfAdjQuadAbsDiff u8→u16 | 0.24 | fallback vs Highway native(vabal 家族) |
@@ -86,6 +85,13 @@
 
 - (第十四轮清零:MulAddSub/MulSubAdd 弃两 FMA 的 OddEven(MulAdd,MulSub) 改 Highway 单 FMA 形,见演进段。
   此前"NEON 0 输"是 NEON perf 覆盖不全的假象——只测过 full_bench 一部分。)
+- **NEON 修复轮①(2026-07-15):AESKeyGenAssist 0.12→1.00 TIE**。弃 scalar software core(memcpy 到栈
+  数组 + aes_keygen_assist_soft 逐字节),改 Highway arm_neon-inl.h 的向量合成:`DupOdd(u32)`(vtrn2q_u32
+  广播两个 SubWord 源字)→`AESLastRound(kRconXorMask)`(SubBytes+ShiftRows+逐 lane rcon xor)→
+  `TableLookupBytes(kRotWordShuffle)`(vqtbl1q 修正 ARM ShiftRows-先于-SubBytes 的字节序,落到
+  _mm_aeskeygenassist 语义)。三原语都是 HYLE 自家已验 x86-bit-identical 的 NEON op,合成精确。仅
+  `__ARM_FEATURE_AES` 路径改(需 vaese);无 AES 硬件时整个 crypto 家族本就软实现,保留 byte core。
+  CryptoAES gtest 逐字节对 oracle(rcon=0x01)PASS。
 
 ### 与旧报告的对照(演进:旧 harness -> v1 校准仪器 -> 修复 + v2 stagger)
 - 旧 op_parity 报 ~40-50 个 0.xx(MSVC 列);v1 校准仪器判 MSVC 21 / WSL 11 / Mac 3;两轮后端修复
@@ -258,7 +264,7 @@
 | Add f32 (4096) | 1.00= | 0.99= | · |
 | AddSub i32 | 1.01= | 1.00= | 1.00? |
 | AESInvMixColumns u8 | 1.01= | 1.14W | 1.00= |
-| AESKeyGenAssist u8 | 1.03? | 1.00= | **0.12 LOSE** |
+| AESKeyGenAssist u8 | 1.03? | 1.00= | 1.00= |
 | AESLastRound u8 | 1.00= | 1.02= | 1.00= |
 | AESLastRoundInv u8 | 1.00= | 1.01= | 1.00= |
 | AESRound u8 | 1.00= | 1.02= | 1.00= |
