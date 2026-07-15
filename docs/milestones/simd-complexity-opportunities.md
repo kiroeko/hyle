@@ -16,18 +16,20 @@
 
 ## 立即可做:仓内已坐实的三处证据(P0)
 
-### P0-1. softmax/log_softmax 的 pass 融合(内存流量 5n → 2n) — **已落地 2026-07-15**
+### P0-1. softmax/log_softmax 的 pass 融合 — **已落地(单次 exp 融合 multipass,2026-07-15)**
 
-**原状**:softmax = 标量 max → subtract → exp → 标量 sum → divide,**4~5 次过数据**。
+**原状**:max → sub → exp → sum → scale,**4~5 遍**;中间 sum 单独扫。
 
-**已做**:Online max+sum-of-exp(Milakov–Gimelshein;`online_max_sum_exp`)单遍读出 `(m,s)`;
-softmax 第二遍按 4K chunk 做 `(x-m)→exp_f32_batch→/s`(chunk 内热缓存);log_softmax 第二遍
-单次 `x - (m+log s)`。实现:`src/simd/math/activations.cc`。
+**已做(修订)**:先 max;再按 4K chunk 做 `(x-m)→exp_f32_batch→累加 sum`(**整表只向量 exp 一次**);
+最后 scale。log_softmax:max + 标量 sum-exp 得 logZ,再一遍 `x-(m+log s)`。
+实现:`src/simd/math/activations.cc`。
 
-**正确性**:`Math.Softmax` 对拍 double 稳定参考 — **Win MSVC / WSL GCC / Mac NEON 三平台 PASSED**。
+**曾试 online max+sum-exp**:pass1 标量 exp 攒 s + pass2 再向量 exp = **双 exp**,Mac 上 n=128K
+比旧 multipass 慢 ~1.6×,已弃。CPU 有向量 exp 时「单次 exp + 少扫」才是正收益。
 
-**机会残留**:pass1 仍为标量 online(可再向量化 tile);scaling bench(n=1e3..1e8 斜率)未建——
-按落地纪律下一步是 activation scaling,非再抠核。
+**正确性**:`Math.Softmax` — Win / WSL / Mac PASSED。
+
+**机会残留**:scaling bench(n 扫到 1e8)量化 vs 标量/旧路径;pass 内 sum 可再向量化。
 
 ### P0-2. AVX-VNNI 通道 + 修 avx512 SumOfMulQuadAccumulate 的标量洞(指令类)
 

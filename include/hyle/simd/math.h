@@ -136,11 +136,11 @@ HYLE_SIMD_API void sigmoid_f32_batch(const float* src, float* dst, std::size_t n
 HYLE_SIMD_API void silu_f32_batch(const float* src, float* dst, std::size_t n) noexcept;
 
 // softmax(x)[i] = exp(x[i] - max) / sum_j exp(x[j] - max)  -- IN PLACE.
-// Online max+sum-of-exp (one streaming read) + chunked vectorized exp/normalize write.
+// Fused multipass: max → one vectorized exp (sum accumulated same chunks) → scale.
 // n == 0 is a no-op.
 HYLE_SIMD_API void softmax_f32(float* data, std::size_t n) noexcept;
 // log_softmax(x)[i] = (x[i] - max) - log(sum_j exp(x[j] - max))  -- in place, numerically stable.
-// Online (m,s) then single subtract pass of (m + log s).
+// max + sum-exp for logZ, then single subtract of (m + log s).
 HYLE_SIMD_API void log_softmax_f32(float* data, std::size_t n) noexcept;
 
 // ---- COMPLEX transcendentals --------------------------------------------------------------
