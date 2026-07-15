@@ -701,7 +701,7 @@ fold / 裸估计 / Div)证明"比 baseline 快",逻辑上自动算 SOTA(没有�
   `round(x*128/ln2)` 选 `2^(j/128)` scale 表，做 split-ln2 reduction 与 4 次
   `exp(r)-1` 多项式；`log` 从 IEEE 位域精确拆 `x=2^k*z`，查 128 组 `{1/c,log(c)}`，
   做 5 次 `log1p(r)-r` 多项式。实现是 Highway 泛型形式，覆盖 AVX2、AVX-512 与 NEON；
-  版权/许可与来源见 `src/simd/math/table_f64.h` 和根 `THIRD_PARTY_NOTICES`。
+  版权/许可与来源见 `src/simd/math/table_f64.h`。
 - **迭代与闸门**:
 
   | 轮次 | 结果 |

@@ -165,10 +165,9 @@ Win/Mac 小 k 明显赢 VQ(VQ 仍整表分区写);WSL 上 VQ 已够快→持平�
 ### P2-1. exp/log f64 表驱动 range reduction(多项式度数 d → ~d/2) — **已落地(2026-07-15)**
 
 **实现**:`src/simd/math/table_f64.h` 是从 Arm Optimized Routines AdvSIMD f64 `exp`/`log`
-派生的 Highway 泛型 N=128 表核(MIT OR Apache-2.0 WITH LLVM-exception，保留 SPDX/版权头并在根
-`THIRD_PARTY_NOTICES` 归档)。它不是移植 ARM intrinsic：AVX2/AVX-512 用 Highway gather，NEON
-也走同一按 lane table lookup 语义。`cloc` 实测新表头为 162 C/C++ code LOC；wrapper 与 ULP gate
-保留在既有 TU/测试中，不另建运行时层。
+派生的 Highway 泛型 N=128 表核(MIT OR Apache-2.0 WITH LLVM-exception，保留 SPDX/版权头)。
+它不是移植 ARM intrinsic：AVX2/AVX-512 用 Highway gather，NEON 也走同一按 lane table lookup 语义。
+`cloc` 实测新表头为 162 C/C++ code LOC；wrapper 与 ULP gate 保留在既有 TU/测试中，不另建运行时层。
 - `exp`: `round(x*128/ln2)` → 128 项 `2^(j/128)` scale table → split-ln2 reduction → 4 次
   `exp(r)-1` 多项式。
 - `log`: IEEE 位域精确拆 `x=2^k*z` → 128 组 `{1/c,log(c)}` → 5 次 `log1p(r)-r` 多项式。
