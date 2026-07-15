@@ -29,7 +29,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C9 | DemoteTo partial 输出 D 路 | done | ✓ | 266/266 | — | 734e6a6 | D 出: vqmovn/vcvt(vcombine(a.raw,b.raw)); Q 原样双 vqmovn+vcombine+from_q |
 | C10 | 向量 And/Or/Xor/AndNot/Not D-form | done | ✓ | 266/266 | — | b1f8470 | D: to_u32_d/from_u32_d+vand/vorr/veor/vbic_u32; Not=vdup_n_u8 FF xor; Q 原样 |
 | C11 | GetLane/ExtractLane/InsertLane D-form | done | ✓ | 266/266 | — | b1f8470 | GetLane: vget_lane_*(raw,0); Extract/Insert 在 vec.h 泛型 store+reload 未动 |
-| C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | done | ✓ | — | 见下节 C12 原始摘录; HYLE/HWY 均≈0.08 ns ~1.00 | (本提交) | 正常序×3 + HYLE_BENCH_HWY_FIRST=1×3; 判定=高能力方 |
+| C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | done | ✓ | — | 见下节 C12 原始摘录; HYLE/HWY 均≈0.08 ns ~1.00 | d0702fa | 正常序×3 + HYLE_BENCH_HWY_FIRST=1×3; 判定=高能力方 |
 | C13 | half/combine 穷举 oracle 测试(先行) | todo | | | — | | 只新增测试文件 |
 | C14 | LowerHalf/UpperHalf native D | todo | | | — | | C13 先绿 |
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | todo | | | — | | C13 先绿 |
