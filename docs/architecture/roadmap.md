@@ -10,45 +10,45 @@
 
 ```
 error/  ────────────────────────────────────┐ (status + std::expected，零上游)
-  │                                          │
-  ▼                                          │
-platform/ (thread/vm/dynlib/path/fs/park)    │
-  │                                          │
-  ├──────────────┐                           │
-  ▼              ▼                            │  obs/ hook 接口
-mem/          time/                          │  (最小埋点 API，
-(mimalloc      (单调钟+                       │   P0 先定、空实现，
- backing,       时间轮)                       │   各模块热路径嵌)
- 修 alignment)   │                            │
-  │              │                            │   simd/  ← 依赖 platform(借 CPUID
-  ▼              │                            │   (可移植       探测,2026-07 下沉);不 include
-container/       │                            │    vector+      mem;container 自带内联 SSE
-(ring/MPMC/      │                            │    dispatch)    探测片段,不依赖 simd/,但同样
- intrusive/      │                            │    │            借 platform 的 CPUID 上 AVX2 变体)
- SwissTable)     │                            │    │  喂 compute kernel
-  │              │                            │    │
-  └────────┬─────┴────────────────────────────────┘
-           ▼
-   ┌─────────────────────────┐
-   │  sched/  【关键路径瓶颈】 │  ← 依赖 container(队列原语)+time(deadline)
-   │  fcontext+work-stealing  │     +platform(park)+mem(fiber栈)
-   │  +Waker completion 脊    │     （不依赖 simd）
-   │  +fiber-aware sync       │
-   └───────────┬─────────────┘
-       ┌───────┼───────┐
-       ▼       ▼       ▼
-     io/    compute/  (graph/)
-   (proactor (device/   跑在 sched 上
-    +liburing) stream/
-       │       kernel
-       │       +ggml)←── simd/ 喂 kernel
-       │       │
-       └───┬───┘
-           ▼
-   C-ABI shim（各模块稳定后逐个封）+ ffi 绑定（build-time）
+  │                                          │  obs/ hook 接口
+  ▼                                          │  (最小埋点 API，P0 先定、
+platform/ (thread/vm/dynlib/path/fs/park)    │   空实现，各模块热路径嵌；
+  │                                          │   零 HYLE 依赖根)
+  ├──────────────┬───────────────┐           │
+  ▼              ▼               ▼           │
+mem/          time/           simd/          │
+mimalloc      单调钟加         (可移植         │
+ backing,       时间轮         vector+        │
+ 修 alignment）  │             dispatch)      │
+  │              │               │           │  simd 依赖 platform(借 CPUID
+  ▼              │               │ 喂         │  探测,2026-07 下沉);不 include mem;
+container/       │               │ compute   │  container 自带内联 SSE 探测片段,
+(ring/MPMC/      │               │ kernel    │  不依赖 simd/,但同样借 platform 的
+ intrusive/      │               │           │  CPUID 上 AVX2 变体
+ SwissTable)     │               │           │
+  │              │               │           │
+  └────────┬─────┘               │           │
+           ▼                     │           │
+   ┌─────────────────────────┐   │           │
+   │  sched/  (关键路径瓶颈)  │   │           │  ← 依赖 container(队列原语)+time
+   │  fcontext+work-stealing │   │           │    (deadline)+platform(park)+mem
+   │  +Waker completion 脊   │   │           │    (fiber栈)（不依赖 simd）
+   │  +fiber-aware sync      │   │           │
+   └───────────┬─────────────┘   │           │
+       ┌───────┼───────┐         │           │
+       ▼       ▼       ▼         │           │
+     io/    compute/  (graph/)   │           │
+   (proactor (device/   跑在      │           │
+    +liburing) stream/  sched 上  │           │
+       │       kernel             │           │
+       │       +ggml) ◀───────────┘           │
+       │       │   (simd 喂 kernel)            │
+       └───┬───┘                              │
+           ▼                                  │
+   C-ABI shim（各模块稳定后逐个封）+ ffi 绑定（build-time） ◀ obs/ 埋点贯穿
 ```
 
-**无环校验**：error → platform → {mem,time,simd} → container → sched → {io,compute} → graph。单向，无回边。`simd/` **依赖 platform**（2026-07：CPUID 探测 `CpuFeatures`/`best_isa` 下沉 platform，simd 借它做运行期 ISA dispatch；此前 simd 是"零 HYLE 依赖根"、只用 `platform.h` 宏伞，下沉后升级为依赖 platform 模块本身）——仍可与 mem/container/sched 链**大体并行**，最终只喂 compute 的 kernel，**不在通往 sched 的关键路径上**。CPUID 下沉 platform 让 container 也能查同一探测、安全上 AVX2 变体（如 container·str 的 count/rfind），不必依赖 simd。（曾计划 simd 依赖 mem 的对齐契约，但 kernel 走 LoadU/StoreU 非对齐 load，该边未落地。）
+**无环校验**：error → platform → {mem, time, simd}；{mem,time} → container → sched → {io, compute}；simd → compute；compute/io → graph。单向，无回边。`simd/` **依赖 platform**（2026-07：CPUID 探测 `CpuFeatures`/`best_isa` 下沉 platform，simd 借它做运行期 ISA dispatch；此前 simd 是"零 HYLE 依赖根"、只用 `platform.h` 宏伞，下沉后升级为依赖 platform 模块本身）——simd 从 platform 分叉后**单边只喂 compute 的 kernel**，**不进 container、不进 sched 的关键路径**，故可与 mem/container/sched 链**大体并行**、晚点交付。CPUID 下沉 platform 让 container 也能查同一探测、安全上 AVX2 变体（如 container·str 的 count/rfind），不必依赖 simd。（曾计划 simd 依赖 mem 的对齐契约，但 kernel 走 LoadU/StoreU 非对齐 load，该边未落地。）
 
 ## 二、施工计划：两个轴别混
 

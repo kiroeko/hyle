@@ -179,7 +179,7 @@
   `vmovmskps edx` 索引)。删掉 `& 0xFF`→两编译器逐字节=Highway,MSVC 0.94→0.98 UNSTABLE、CompressStore
   0.99 TIE、CompressNot 0.95 UNSTABLE、GCC 不变(它本就用全宽寄存器)。**又一"签名级对比漏看标量尾巴"
   (同 FindLastTrue 的 movslq):`movzx`/`movslq` 这类 0 成本外观的标量补齐指令恰好就是那 6%。**
-- SOTA 覆盖补齐轮(2026-07-14):覆盖率复审(见 `simd-bench-coverage-and-vendor-surface.md` + 自校验
+- SOTA 覆盖补齐轮(2026-07-14):覆盖率复审(见 `../architecture/simd-vendor-surface.md`(vendor 借用面) + 自校验
   `scripts/simd-op-coverage.py`)揪出 14 个"可对拍却没 bench"的 op(旧文档假称覆盖或分母漏项),按
   methodology 补 bench 后三平台跑校准,**测出并修掉 4 个真 SOTA 输**(commit 5510f0a):
   - **U8FromU32 MSVC 0.088(11×!)**:store+reload 标量循环→Highway vpshufb 字节 gather + 两 128-block quad OR。
@@ -570,6 +570,23 @@ fold / 裸估计 / Div)证明"比 baseline 快",逻辑上自动算 SOTA(没有�
   IfNegativeThenNegOrUndefIfZero。
 
 实时清单跑 `python scripts/simd-op-coverage.py`(本节是快照)。
+
+## 语义缺口(对 Highway op 名的差集,与"41 待补 bench"正交)
+
+上面 41 个是"HYLE 已有该 op 但没写 perf bench";**这一节是"HYLE 连该 op 名都还没有"**(对 Highway
+全部 `HWY_API` 公开名做差集甄别,剔除内部积木/换名等价后,真缺 ≈40 名)。两者正交:前者补 bench,后者
+补实现。(本节从原 `simd-gap-inventory.md` 收编,该文件已退役为指针。)
+
+- **P1 掩码基础算术/逻辑/比较家族(~28 名,唯一建议主动补的结构性缺口)**:MaskedAdd/Sub/Mul/Div/Min/Max
+  (+`Or` 回填)、MaskedOr/Xor、MaskedNe/Lt/Le/Gt/Ge、MaskedSaturatedAdd/Sub、MaskedAbs(Or)/MaskedSqrt(Or)。
+  值得补的理由:①AVX-512 上是单条掩码指令(`vpaddd {k}{z}`),走 `IfThenElseZero(m,Add)` 组合等于赌编译器
+  融合——MSVC 不可靠;②SVE/RVV 原生就是谓词化(`svadd_z`),这family是其天然表面;③分层成本低(泛型层一份
+  IfThenElse covers scalar/sse4/avx2/neon,仅 avx512/sve/rvv 写原生特化)。
+- **P2 顺手补齐(小)**:Eq128Upper/Ne128Upper/Max128Upper/Min128Upper(补 128-bit key 家族对称)、
+  WidenLowMulAdd/WidenHighMulAdd/WidenMulAdd(补 int16 点积面完整性)。
+- **P3 机会型(硬件门控)**:GFNI GaloisAffine(+GF2P8 乘,Icelake+/Zen4+,走 AES/CLMul 先例;GF(2^8) 仿射
+  可反哺 ReverseBits/子字节置换的更优实现)。
+- **明确不做**:ShuffleTwo*/PerBlock2x2MatMul/LoadTransposedBlocks*(缺能力类或无消费者;名字数不是 KPI)。
 
 ## 复现
 ```
