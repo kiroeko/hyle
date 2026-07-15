@@ -255,16 +255,31 @@ HYLE_FORCE_INLINE detail::VN<D> Set(D, T2 t) noexcept {
   // high half unused/zero) are both legal after simd-17 batch4 half-vector family.
   static_assert(detail::kNativeWidth<D>, "neon backend max width is 128-bit");
   detail::VN<D> v;
-  if constexpr (std::is_same_v<T, float>) v = detail::from_q<decltype(v)>(vdupq_n_f32(static_cast<float>(t)));
-  else if constexpr (std::is_same_v<T, double>) v = detail::from_q<decltype(v)>(vdupq_n_f64(static_cast<double>(t)));
-  else if constexpr (std::is_same_v<T, std::int8_t>) v = detail::from_q<decltype(v)>(vdupq_n_s8(static_cast<std::int8_t>(t)));
-  else if constexpr (std::is_same_v<T, std::uint8_t>) v = detail::from_q<decltype(v)>(vdupq_n_u8(static_cast<std::uint8_t>(t)));
-  else if constexpr (std::is_same_v<T, std::int16_t>) v = detail::from_q<decltype(v)>(vdupq_n_s16(static_cast<std::int16_t>(t)));
-  else if constexpr (std::is_same_v<T, std::uint16_t>) v = detail::from_q<decltype(v)>(vdupq_n_u16(static_cast<std::uint16_t>(t)));
-  else if constexpr (std::is_same_v<T, std::int32_t>) v = detail::from_q<decltype(v)>(vdupq_n_s32(static_cast<std::int32_t>(t)));
-  else if constexpr (std::is_same_v<T, std::uint32_t>) v = detail::from_q<decltype(v)>(vdupq_n_u32(static_cast<std::uint32_t>(t)));
-  else if constexpr (std::is_same_v<T, std::int64_t>) v = detail::from_q<decltype(v)>(vdupq_n_s64(static_cast<std::int64_t>(t)));
-  else v = detail::from_q<decltype(v)>(vdupq_n_u64(static_cast<std::uint64_t>(t)));
+  constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+  if constexpr (detail::kIsDBand<T, N>) {
+    // D-band: native 64-bit duplex (vdup_n_*), no Q pad / from_q.
+    if constexpr (std::is_same_v<T, float>) v.raw = vdup_n_f32(static_cast<float>(t));
+    else if constexpr (std::is_same_v<T, double>) v.raw = vdup_n_f64(static_cast<double>(t));
+    else if constexpr (std::is_same_v<T, std::int8_t>) v.raw = vdup_n_s8(static_cast<std::int8_t>(t));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) v.raw = vdup_n_u8(static_cast<std::uint8_t>(t));
+    else if constexpr (std::is_same_v<T, std::int16_t>) v.raw = vdup_n_s16(static_cast<std::int16_t>(t));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) v.raw = vdup_n_u16(static_cast<std::uint16_t>(t));
+    else if constexpr (std::is_same_v<T, std::int32_t>) v.raw = vdup_n_s32(static_cast<std::int32_t>(t));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) v.raw = vdup_n_u32(static_cast<std::uint32_t>(t));
+    else if constexpr (std::is_same_v<T, std::int64_t>) v.raw = vdup_n_s64(static_cast<std::int64_t>(t));
+    else v.raw = vdup_n_u64(static_cast<std::uint64_t>(t));
+  } else {
+    if constexpr (std::is_same_v<T, float>) v = detail::from_q<decltype(v)>(vdupq_n_f32(static_cast<float>(t)));
+    else if constexpr (std::is_same_v<T, double>) v = detail::from_q<decltype(v)>(vdupq_n_f64(static_cast<double>(t)));
+    else if constexpr (std::is_same_v<T, std::int8_t>) v = detail::from_q<decltype(v)>(vdupq_n_s8(static_cast<std::int8_t>(t)));
+    else if constexpr (std::is_same_v<T, std::uint8_t>) v = detail::from_q<decltype(v)>(vdupq_n_u8(static_cast<std::uint8_t>(t)));
+    else if constexpr (std::is_same_v<T, std::int16_t>) v = detail::from_q<decltype(v)>(vdupq_n_s16(static_cast<std::int16_t>(t)));
+    else if constexpr (std::is_same_v<T, std::uint16_t>) v = detail::from_q<decltype(v)>(vdupq_n_u16(static_cast<std::uint16_t>(t)));
+    else if constexpr (std::is_same_v<T, std::int32_t>) v = detail::from_q<decltype(v)>(vdupq_n_s32(static_cast<std::int32_t>(t)));
+    else if constexpr (std::is_same_v<T, std::uint32_t>) v = detail::from_q<decltype(v)>(vdupq_n_u32(static_cast<std::uint32_t>(t)));
+    else if constexpr (std::is_same_v<T, std::int64_t>) v = detail::from_q<decltype(v)>(vdupq_n_s64(static_cast<std::int64_t>(t)));
+    else v = detail::from_q<decltype(v)>(vdupq_n_u64(static_cast<std::uint64_t>(t)));
+  }
   return v;
 }
 template <class D>
