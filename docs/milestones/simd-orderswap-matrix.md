@@ -1,4 +1,4 @@
-# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 1**——已修 14 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits/BlendedStore/SumsOfAdjQuadAbsDiff/**PromoteMaskTo(simd-19 表示层根治)**/**SatWidenMulAccumFixedPoint(C20 vqdmlal)** →TIE;余 1 = ScatterIndexN 0.87(修复中))
+# SIMD op parity 三平台矩阵(2026-07-15 校准仪器 v2;真输:MSVC 0 / GCC 0 / **NEON 1**——已修 14 个 op:AESKeyGenAssist/PromoteEven/OddTo/TableLookupLanes/TwoTables/MulFixedPoint15/SatWidenMulPairwiseAdd/SumOfMulQuadAccumulate/DemoteToNearestInt/Dup128MaskFromMaskBits/BlendedStore/SumsOfAdjQuadAbsDiff/**PromoteMaskTo(simd-19 表示层根治)**/**SatWidenMulAccumFixedPoint(C20 vqdmlal)** →TIE;余 1 = ScatterIndexN 0.87(定论级缓议:两 formulation 实测阴性,详见真输清单))
 
 > **权威计数(唯一口径 = `scripts/simd-op-coverage.py` 机械算 + 自校验,勿手数/勿拼快照)**。
 >
@@ -74,7 +74,7 @@
 
 | op | NEON 比值 | 根因(vs Highway) |
 |---|---|---|
-| ScatterIndexN i32 | 0.87 | 两侧都编成 4 路展开的谓词 scatter(非 store+reload)。差异是寄存器类:HYLE 提取值到 FP 寄存器(`mov s2,v0[i]`+`str s2`)、Highway 到 GPR(`mov.s w8`+`str w8`),且 Highway 合并边界检查(3 分支/4 lane vs HYLE 4 分支)。编译器寄存器类选择造成的微差,非算法输;s19-C18 复测 0.874 维持。**2026-07-15 撤销缓议,修复中**(方向:GetLane 走 GPR 提取替代 vst1q_lane 的 FP 直存 + 合并边界检查) |
+| ScatterIndexN i32 | 0.87 | 两侧都编成 4 路展开的谓词 scatter。差异是寄存器类与调度微差;s19-C18 复测 0.874 维持。**2026-07-15 修复尝试后定论级缓议**:形② per-lane GetLane+合并边界检查(clang 把它规范化回 FP 直存/st1-lane,探针反汇编证实)实测 0.868 ≈ 不变;形③ 成对 u64 GPR 提取(强制 GPR)实测 **0.722 更差**——Apple Silicon 上 FP 直存本就是正确选择,Highway 的 ~13% 是调度器级微差,源码级不可得(仅剩 inline asm,违章程且该 op 绝对代价亚纳秒,ROI 为负)。两 formulation 阴性 + 探针证据,缓议升定论级;尝试已回滚,保持泛型实现 |
 
 - **SatWidenMulAccumFixedPoint i16→i32 0.92 → 0.98 TIE(2026-07-15,C20)**:补 NEON 原生
   `SatWidenMulAccumFixedPointNative`(单条 `vqdmlal_s16`,对齐 Highway arm_neon-inl.h:7467),vec.h
