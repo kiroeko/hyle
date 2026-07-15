@@ -75,7 +75,7 @@
 | op | NEON 比值 | 根因(vs Highway) |
 |---|---|---|
 | PromoteMaskTo i16→i32 | 0.575 | Rebind 部分标签(4-lane i16)物化整 q 寄存器→cmgt.8h+xtn+zip1+ushll+shl+cmlt 一串;Highway 用半寄存器 d load 后全程 4-wide。HYLE 部分标签 codegen 深层问题,待标签系统改进 |
-| ScatterIndexN i32 | 0.87 | Highway NEON 也是标量 ExtractLane 循环(无 native scatter),ROI 低 |
+| ScatterIndexN i32 | 0.87 | 两侧都编成 4 路展开的谓词 scatter(非 store+reload)。差异是寄存器类:HYLE 提取值到 FP 寄存器(`mov s2,v0[i]`+`str s2`)、Highway 到 GPR(`mov.s w8`+`str w8`),且 Highway 合并边界检查(3 分支/4 lane vs HYLE 4 分支)。编译器寄存器类选择造成的微差,非算法输;ROI 低,暂缓 |
 
 - (第十四轮清零:MulAddSub/MulSubAdd 弃两 FMA 的 OddEven(MulAdd,MulSub) 改 Highway 单 FMA 形,见演进段。
   此前"NEON 0 输"是 NEON perf 覆盖不全的假象——只测过 full_bench 一部分。)
