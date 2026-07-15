@@ -311,7 +311,12 @@ Windows/WSL/Apple 的 public/direct 都落在 candidate direct 附近，未见 d
 覆盖审计揪出的零-bench 能力面已补，全部进 CI bench 目标:
 - **f64 全 14 超越进 `math_bench`**:最高风险(f64 winner 与 f32 大面积翻转但无留档 bench)。HYLE 借核 ≥ xsimd/Highway 每 op → dispatch 选核正确,现有回归 bench。
 - **f32 11 个 simd-09 op 接上 HYLE 行**(曾是 nullptr 未接线候选):sin/cos/exp2/log2/erf/atan/cbrt/expm1/log1p/asinh/acosh,回归 dispatch winner。
-- **`activation_bench`(新)**:gelu 11.9x / gelu_tanh 18.5x / sigmoid·silu 6.2x / softmax 1.6x vs scalar;RNG VectorXoshiro 2.7x vs mt19937。**⚠️坑**:inline VectorXoshiro 吃 bench TU 的 vec.h 后端,不定义 `HYLE_SIMD_TARGET_AVX2` 会退 128-bit 后端反比 mt19937 慢(同 inlining-asymmetry 类,CMake 已 pin)。
+- **`activation_bench`**:gelu/gelu_tanh/sigmoid/silu 仍大幅胜标量;softmax 经 P0-1 单次 exp 融合 multipass
+  后 Mac NEON n=4096 **1.16× vs scalar 3-pass**(115.9%;曾 online 双 exp 反成 0.67× 已弃)。chrono AB:
+  融合/旧 multipass ≈0.81×(4K)~1.0×(128K)。**无 Highway 对手**(composite)。RNG VectorXoshiro 2.7x vs mt19937。
+  **⚠️坑**:inline VectorXoshiro 吃 bench TU 的 vec.h 后端,不定义 `HYLE_SIMD_TARGET_AVX2` 会退 128-bit
+  后端反比 mt19937 慢(同 inlining-asymmetry 类,CMake 已 pin)。详见
+  `docs/milestones/simd-complexity-opportunities.md` P0-1 / `simd-orderswap-matrix.md` 算法层备忘。
 - **`simd_bench` 补 dot_f64/saxpy_f64**:3.9x/2.4x vs scalar(CAE/求解器 double 热路径)。
 - **`sort_bench` 补 select/nth_element**:HYLE 借 VQSelectStatic 6.4x 快过 std::nth_element。
 - **`dtype_bench` 补 fp8 e4m3/e5m2↔f32**:**诚实发现 fp8 batch ≈ scalar loop(~100% 打平)**——分支型 per-element 位逻辑不自动向量化,当前无 SIMD 收益(印证"无硬件 fp8 convert";未来可 SIMD 化是优化机会)。

@@ -30,6 +30,10 @@
 > 之前对话里的 16/30/41/245/8 是不同时刻/口径的快照,**不可相加**;唯一权威数是上面这棵树
 > (或当下重跑 `python scripts/simd-op-coverage.py`)。
 
+> **算法层/composite(非 op-vs-Highway 矩阵)**:`softmax`/`log_softmax` 等组合核不在本全量表
+> (Highway 无对等公开 API)。P0-1 单次 exp 融合 multipass 的性能与弯路见下「算法层备忘」+
+> [`simd-complexity-opportunities.md`](./simd-complexity-opportunities.md) P0-1。
+
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
 > 代码放置运气、闭包栈 4K 别名,合计可达 ±30~40%),单条 `vpsubd` 的 `Neg i32` 曾被它测成
@@ -669,6 +673,27 @@ fold / 裸估计 / Div)证明"比 baseline 快",逻辑上自动算 SOTA(没有�
 | ReciprocalSqrtNewton f32 | 裸 ApproxRSqrt | +37.8% | +22.3% | ~ | 同上;vs Div(1,Sqrt) 快 ~4× |
 
 (Reciprocal*Newton 的数字是"精修相对裸估计的额外开销",越小越好——1 步 Newton 换 ~20× 精度提升,仍远快于真 Div。)
+
+## 算法层备忘(composite;非 op-vs-Highway)
+
+这些是 `math.h` 组合核 / 算法件,不进上方全量表(Highway 无对等公开 API 或形状不是单 op)。
+对拍基线 = 标量参考 / 自家旧实现。细节与弯路见 [`simd-complexity-opportunities.md`](./simd-complexity-opportunities.md)。
+
+### softmax / log_softmax(P0-1,2026-07-15,`d9685ff`)
+
+- **算法**:单次 exp 融合 multipass — max → 4K chunk 内 `(x-m)+exp_f32_batch+sum` → scale。
+  整表只做 **一次** 向量 exp(曾试 online max+sum-exp 因双 exp 在 n=128K 慢 1.6× 已弃)。
+- **正确性**:`Math.Softmax` 对拍 double 稳定参考 — Win MSVC / WSL GCC / Mac NEON 全绿。
+- **性能(Mac NEON)**:
+
+| 对比 | n=4K | n=32K | n=128K |
+|---|---:|---:|---:|
+| 融合 / 标量 3-pass | **0.41×** 时间(快) | 0.66× | 0.91× |
+| 融合 / 旧 multipass(5 遍) | **0.81×** | 0.86× | ~1.00× |
+| `activation_bench` vs scalar | **1.16×** 吞吐(115.9%) | — | — |
+
+- **读法**:小 n 算力收益明显;大 n 逼近带宽墙与旧 multipass 持平,但不再双 exp 倒退。
+  **不是** HYLE-vs-Highway 比值。
 
 ## 41 个待补 bench 的 op(可测全集里尚未写 bench)
 

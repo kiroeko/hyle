@@ -20,16 +20,27 @@
 
 **原状**:max → sub → exp → sum → scale,**4~5 遍**;中间 sum 单独扫。
 
-**已做(修订)**:先 max;再按 4K chunk 做 `(x-m)→exp_f32_batch→累加 sum`(**整表只向量 exp 一次**);
+**已做**:先 max;再按 4K chunk 做 `(x-m)→exp_f32_batch→累加 sum`(**整表只向量 exp 一次**);
 最后 scale。log_softmax:max + 标量 sum-exp 得 logZ,再一遍 `x-(m+log s)`。
-实现:`src/simd/math/activations.cc`。
+实现:`src/simd/math/activations.cc`(`d9685ff`)。
 
-**曾试 online max+sum-exp**:pass1 标量 exp 攒 s + pass2 再向量 exp = **双 exp**,Mac 上 n=128K
-比旧 multipass 慢 ~1.6×,已弃。CPU 有向量 exp 时「单次 exp + 少扫」才是正收益。
+**曾试 online max+sum-exp(已弃)**:pass1 标量 exp 攒 s + pass2 再向量 exp = **双 exp**,Mac n=128K
+比旧 multipass 慢 ~1.6×。CPU 有向量 exp 时「单次 exp + 少扫」才是正收益。
 
-**正确性**:`Math.Softmax` — Win / WSL / Mac PASSED。
+**正确性**:`Math.Softmax` 对拍 double 稳定参考 — **Win MSVC / WSL GCC / Mac NEON 三平台 PASSED**。
 
-**机会残留**:scaling bench(n 扫到 1e8)量化 vs 标量/旧路径;pass 内 sum 可再向量化。
+**性能(Mac NEON,2026-07-15;对拍对象=标量 3-pass / 旧 multipass,非 Highway——Highway 无 softmax 组合 API)**:
+
+| 场景 | 结果 |
+|---|---|
+| `activation_bench` n=4096 vs scalar 3-pass | HYLE **1.16×**(115.9%; 1.42 vs 1.65 ns/op) |
+| chrono AB n=4K 融合 / 旧 multipass | **0.81×**(更快) |
+| chrono AB n=32K 融合 / 旧 multipass | **0.86×** |
+| chrono AB n=128K 融合 / 旧 multipass | **~1.00×**(持平,逼近带宽墙) |
+| chrono AB n=4K/32K/128K 融合 / scalar | **0.41× / 0.66× / 0.91×**(均不慢于标量) |
+| 双 exp online(已弃) n=128K / 旧 multipass | **1.60× 更慢**(反例,写入档案) |
+
+**机会残留**:正式 scaling bench(n=1e3..1e8 斜率写入 matrix/bench 文档);sum 累加可再向量化。
 
 ### P0-2. AVX-VNNI 通道 + 修 avx512 SumOfMulQuadAccumulate 的标量洞(指令类)
 
