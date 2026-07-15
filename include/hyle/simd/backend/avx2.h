@@ -4319,30 +4319,40 @@ HYLE_FORCE_INLINE __m256i aes256_map2(__m256i s, __m256i k, BlockOp op) noexcept
   return _mm256_set_m128i(hi, lo);
 }
 }  // namespace detail
+// The per-block worker is passed as a stateless LAMBDA, not the bare function NAME: a function name
+// decays to a function POINTER, and MSVC does NOT inline the resulting indirect call inside a hot
+// loop -> op_parity measured the AES ops ~10x slower than Highway (AESKeyGenAssist, which already
+// splits lo/hi explicitly, was the lone TIE -- the tell). A stateless lambda is a unique type whose
+// operator() inlines directly, so aes256_map2/1 emit just the 2 vaesenc with no call.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> AESRound(Vec256<T, N> state, Vec256<T, N> key) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw, detail::aes_round_block)};
+  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw,
+      [](__m128i s, __m128i k){ return detail::aes_round_block(s, k); })};
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> AESLastRound(Vec256<T, N> state, Vec256<T, N> key) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw, detail::aes_last_round_block)};
+  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw,
+      [](__m128i s, __m128i k){ return detail::aes_last_round_block(s, k); })};
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> AESRoundInv(Vec256<T, N> state, Vec256<T, N> key) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw, detail::aes_round_inv_block)};
+  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw,
+      [](__m128i s, __m128i k){ return detail::aes_round_inv_block(s, k); })};
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> AESLastRoundInv(Vec256<T, N> state, Vec256<T, N> key) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw, detail::aes_last_round_inv_block)};
+  return Vec256<T, N>{detail::aes256_map2(state.raw, key.raw,
+      [](__m128i s, __m128i k){ return detail::aes_last_round_inv_block(s, k); })};
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> AESInvMixColumns(Vec256<T, N> state) noexcept {
   static_assert(sizeof(T) * N == 32, "AES op needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map1(state.raw, detail::aes_inv_mix_block)};
+  return Vec256<T, N>{detail::aes256_map1(state.raw,
+      [](__m128i s){ return detail::aes_inv_mix_block(s); })};
 }
 template <std::uint8_t kRcon, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> AESKeyGenAssist(Vec256<T, N> v) noexcept {
@@ -4356,12 +4366,14 @@ HYLE_FORCE_INLINE Vec256<T, N> AESKeyGenAssist(Vec256<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> CLMulLower(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 32, "CLMul needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(a.raw, b.raw, detail::clmul_lower_block)};
+  return Vec256<T, N>{detail::aes256_map2(a.raw, b.raw,
+      [](__m128i x, __m128i y){ return detail::clmul_lower_block(x, y); })};
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> CLMulUpper(Vec256<T, N> a, Vec256<T, N> b) noexcept {
   static_assert(sizeof(T) * N == 32, "CLMul needs a 256-bit vector (two 128-bit blocks)");
-  return Vec256<T, N>{detail::aes256_map2(a.raw, b.raw, detail::clmul_upper_block)};
+  return Vec256<T, N>{detail::aes256_map2(a.raw, b.raw,
+      [](__m128i x, __m128i y){ return detail::clmul_upper_block(x, y); })};
 }
 
 }  // namespace hyle::simd

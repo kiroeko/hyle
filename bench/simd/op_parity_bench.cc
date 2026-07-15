@@ -1089,5 +1089,40 @@ int main() {
     }
   }
 
+  // ---- crypto AES/CLMul: moved here from crypto_bench (which used uncalibrated nb::run and let
+  // Highway's loop hoist -> a fake ~10x; disasm proved HYLE's op-graph is identical, 2x vaesenc).
+  // Calibrated load->op->store per lane-group (distinct memory + store sink defeats CSE/hoist). ----
+  {
+    std::vector<std::uint8_t> cs(kN), ck(kN), cout(kN);
+    { std::mt19937_64 r(51); std::uniform_int_distribution<int> d(0,255); for(std::size_t i=0;i<kN;++i){ cs[i]=(std::uint8_t)d(r); ck[i]=(std::uint8_t)d(r);} }
+    const hs::ScalableTag<std::uint8_t> hc8; const hn::ScalableTag<std::uint8_t> gc8;
+    const std::size_t hcw=hs::Lanes(hc8), gcw=hn::Lanes(gc8);
+    const auto aes_binary = [&](const char* title, auto hop, auto gop){
+      nb::Bench b; b.title(title).relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* ps=cs.data(); auto* pk=ck.data(); auto* po=cout.data(); for(std::size_t i=0;i+hcw<=kN;i+=hcw) hs::StoreU(hop(hs::LoadU(hc8,ps+i),hs::LoadU(hc8,pk+i)),hc8,po+i); nb::doNotOptimizeAway(po);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* ps=cs.data(); auto* pk=ck.data(); auto* po=cout.data(); for(std::size_t i=0;i+gcw<=kN;i+=gcw) hn::StoreU(gop(hn::LoadU(gc8,ps+i),hn::LoadU(gc8,pk+i)),gc8,po+i); nb::doNotOptimizeAway(po);  hyle_bench::mark(rep); });
+    };
+    const auto aes_unary = [&](const char* title, auto hop, auto gop){
+      nb::Bench b; b.title(title).relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* ps=cs.data(); auto* po=cout.data(); for(std::size_t i=0;i+hcw<=kN;i+=hcw) hs::StoreU(hop(hs::LoadU(hc8,ps+i)),hc8,po+i); nb::doNotOptimizeAway(po);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* ps=cs.data(); auto* po=cout.data(); for(std::size_t i=0;i+gcw<=kN;i+=gcw) hn::StoreU(gop(hn::LoadU(gc8,ps+i)),gc8,po+i); nb::doNotOptimizeAway(po);  hyle_bench::mark(rep); });
+    };
+    aes_binary("AESRound u8", [&](auto s,auto k){return hs::AESRound(s,k);}, [&](auto s,auto k){return hn::AESRound(s,k);});
+    aes_binary("AESLastRound u8", [&](auto s,auto k){return hs::AESLastRound(s,k);}, [&](auto s,auto k){return hn::AESLastRound(s,k);});
+    aes_binary("AESRoundInv u8", [&](auto s,auto k){return hs::AESRoundInv(s,k);}, [&](auto s,auto k){return hn::AESRoundInv(s,k);});
+    aes_binary("AESLastRoundInv u8", [&](auto s,auto k){return hs::AESLastRoundInv(s,k);}, [&](auto s,auto k){return hn::AESLastRoundInv(s,k);});
+    aes_unary("AESInvMixColumns u8", [&](auto s){return hs::AESInvMixColumns(s);}, [&](auto s){return hn::AESInvMixColumns(s);});
+    aes_unary("AESKeyGenAssist u8", [&](auto s){return hs::AESKeyGenAssist<0x01>(s);}, [&](auto s){return hn::AESKeyGenAssist<0x01>(s);});
+    // CLMul: u64 lanes
+    std::vector<std::uint64_t> ca(kN), cb(kN), cou(kN);
+    { std::mt19937_64 r(52); for(std::size_t i=0;i<kN;++i){ ca[i]=r(); cb[i]=r(); } }
+    const hs::ScalableTag<std::uint64_t> hc64; const hn::ScalableTag<std::uint64_t> gc64;
+    const std::size_t hcw64=hs::Lanes(hc64), gcw64=hn::Lanes(gc64);
+    const auto clmul=[&](const char* title, auto hop, auto gop){
+      nb::Bench b; b.title(title).relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* pa=ca.data(); auto* pb=cb.data(); auto* po=cou.data(); for(std::size_t i=0;i+hcw64<=kN;i+=hcw64) hs::StoreU(hop(hs::LoadU(hc64,pa+i),hs::LoadU(hc64,pb+i)),hc64,po+i); nb::doNotOptimizeAway(po);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* pa=ca.data(); auto* pb=cb.data(); auto* po=cou.data(); for(std::size_t i=0;i+gcw64<=kN;i+=gcw64) hn::StoreU(gop(hn::LoadU(gc64,pa+i),hn::LoadU(gc64,pb+i)),gc64,po+i); nb::doNotOptimizeAway(po);  hyle_bench::mark(rep); });
+    };
+    clmul("CLMulLower u64", [&](auto a,auto b){return hs::CLMulLower(a,b);}, [&](auto a,auto b){return hn::CLMulLower(a,b);});
+    clmul("CLMulUpper u64", [&](auto a,auto b){return hs::CLMulUpper(a,b);}, [&](auto a,auto b){return hn::CLMulUpper(a,b);});
+  }
+
   return 0;
 }
