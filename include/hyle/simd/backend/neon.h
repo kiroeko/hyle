@@ -2133,26 +2133,73 @@ HYLE_FORCE_INLINE MaskRawNeonT<T> mask_bic(MaskRawNeonT<T> a, MaskRawNeonT<T> b)
   else return vbicq_u32(a, b);
 }
 }  // namespace detail
+// simd-19 C7: D-band mask logic uses vand/vorr/veor/vbic/vmvn_* on native D raw;
+// Q-band keeps mask_* helpers + to_q/from_q. 64-bit Not: no vmvn_u64 → veor_u64(~0).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> And(MaskNeon<T, N> a, MaskNeon<T, N> b) noexcept {
-  MaskNeon<T, N> m; m = detail::from_q<decltype(m)>(detail::mask_and<T>(detail::to_q(a), detail::to_q(b))); return m;
+  MaskNeon<T, N> m;
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (sizeof(T) == 1) m.raw = vand_u8(a.raw, b.raw);
+    else if constexpr (sizeof(T) == 2) m.raw = vand_u16(a.raw, b.raw);
+    else if constexpr (sizeof(T) == 8) m.raw = vand_u64(a.raw, b.raw);
+    else m.raw = vand_u32(a.raw, b.raw);
+  } else {
+    m = detail::from_q<decltype(m)>(detail::mask_and<T>(detail::to_q(a), detail::to_q(b)));
+  }
+  return m;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> Or(MaskNeon<T, N> a, MaskNeon<T, N> b) noexcept {
-  MaskNeon<T, N> m; m = detail::from_q<decltype(m)>(detail::mask_or<T>(detail::to_q(a), detail::to_q(b))); return m;
+  MaskNeon<T, N> m;
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (sizeof(T) == 1) m.raw = vorr_u8(a.raw, b.raw);
+    else if constexpr (sizeof(T) == 2) m.raw = vorr_u16(a.raw, b.raw);
+    else if constexpr (sizeof(T) == 8) m.raw = vorr_u64(a.raw, b.raw);
+    else m.raw = vorr_u32(a.raw, b.raw);
+  } else {
+    m = detail::from_q<decltype(m)>(detail::mask_or<T>(detail::to_q(a), detail::to_q(b)));
+  }
+  return m;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> Xor(MaskNeon<T, N> a, MaskNeon<T, N> b) noexcept {
-  MaskNeon<T, N> m; m = detail::from_q<decltype(m)>(detail::mask_xor<T>(detail::to_q(a), detail::to_q(b))); return m;
+  MaskNeon<T, N> m;
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (sizeof(T) == 1) m.raw = veor_u8(a.raw, b.raw);
+    else if constexpr (sizeof(T) == 2) m.raw = veor_u16(a.raw, b.raw);
+    else if constexpr (sizeof(T) == 8) m.raw = veor_u64(a.raw, b.raw);
+    else m.raw = veor_u32(a.raw, b.raw);
+  } else {
+    m = detail::from_q<decltype(m)>(detail::mask_xor<T>(detail::to_q(a), detail::to_q(b)));
+  }
+  return m;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> AndNot(MaskNeon<T, N> a, MaskNeon<T, N> b) noexcept {
-  // ~a & b (Highway order). vbicq(x,y) = x & ~y, so swap: vbicq(b,a).
-  MaskNeon<T, N> m; m = detail::from_q<decltype(m)>(detail::mask_bic<T>(detail::to_q(b), detail::to_q(a))); return m;
+  // ~a & b (Highway order). vbic(x,y) = x & ~y, so swap: vbic(b,a).
+  MaskNeon<T, N> m;
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (sizeof(T) == 1) m.raw = vbic_u8(b.raw, a.raw);
+    else if constexpr (sizeof(T) == 2) m.raw = vbic_u16(b.raw, a.raw);
+    else if constexpr (sizeof(T) == 8) m.raw = vbic_u64(b.raw, a.raw);
+    else m.raw = vbic_u32(b.raw, a.raw);
+  } else {
+    m = detail::from_q<decltype(m)>(detail::mask_bic<T>(detail::to_q(b), detail::to_q(a)));
+  }
+  return m;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> Not(MaskNeon<T, N> a) noexcept {
-  MaskNeon<T, N> m; m = detail::from_q<decltype(m)>(detail::mask_not<T>(detail::to_q(a))); return m;
+  MaskNeon<T, N> m;
+  if constexpr (detail::kIsDBand<T, N>) {
+    if constexpr (sizeof(T) == 1) m.raw = vmvn_u8(a.raw);
+    else if constexpr (sizeof(T) == 2) m.raw = vmvn_u16(a.raw);
+    else if constexpr (sizeof(T) == 8) m.raw = veor_u64(a.raw, vdup_n_u64(~0ull));  // no vmvn_u64
+    else m.raw = vmvn_u32(a.raw);
+  } else {
+    m = detail::from_q<decltype(m)>(detail::mask_not<T>(detail::to_q(a)));
+  }
+  return m;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE MaskNeon<T, N> ExclusiveNeither(MaskNeon<T, N> a, MaskNeon<T, N> b) noexcept {
