@@ -360,7 +360,7 @@
 | BlendedStore i32 (4096, 50%) | 1.00= | 0.99= | 1.00= |
 | Broadcast<0> i32 | 0.99= | 0.99= | 1.05= |
 | BroadcastBlock<1> i32 | 1.03= | 1.01= | n/a¹ |
-| BroadcastLane<3> i32 | 0.93L | 1.14W | 1.00= |
+| BroadcastLane<3> i32 | 1.00= | 1.14W | 1.00= |
 | BroadcastSignBit i32 | 1.01= | 1.00= | 0.99= |
 | Ceil f32 | 1.01= | 0.99= | 0.99= |
 | CeilInt f32->i32 | 1.50W | 1.54W | 0.99= |
@@ -399,7 +399,7 @@
 | FindFirstTrue i32 | 0.99= | 1.00= | 1.05= |
 | FindKnownFirstTrue i32 | 0.97= | 1.00= | 1.18W |
 | FindKnownLastTrue i32 | 1.08W | 1.01= | 1.12W |
-| FindLastTrue i32 | 1.02= | 0.94L | 1.16W |
+| FindLastTrue i32 | 1.02= | 1.00= | 1.16W |
 | Floor f32 | 1.01= | 1.00= | 1.01= |
 | FloorInt f32->i32 | 1.49W | 1.55W | 0.99= |
 | GatherIndex i32 (4096) | 1.00= | 1.01= | 1.00= |
