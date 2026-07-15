@@ -199,6 +199,82 @@ W4 额外闸门 **G3.5 穷举 oracle**:边界 op 的专项测试必须先于实�
 3. 初始化 `simd-19-ledger.md`(§7 格式,C1~C19 全 `todo`);卡片正文追加到本文档 §6 之后。
 4. 提交:`docs(simd): s19-w0d generate work cards C1-C19 + ledger`。
 
+## §6b 卡片正文 C1~C19(W0d 生成,2026-07-15;行号锚以 `s19-w0-green` tag 为准)
+
+通用规则(每卡适用,不再重复):白名单 = 指定函数体;改法 = 在函数内加
+`if constexpr (detail::kIsDBand<T, N>) { …D 分支,直接用 x.raw(已是 D 类型)… } else { …保留现有
+包裹形… }`;D 分支**不得**调用 `to_q/from_q`(直接 raw 对 raw);Q 分支不动。闸门 G1→G2→G3→G5
+(§4);G4 仅 C12/C18。映射表疑问用 §3-5 探针。**发现测试红一律 revert,严禁改 tests/ 已有文件。**
+
+### C1 Set/Zero(neon.h:252/271)
+- before(Set):`v = detail::from_q<decltype(v)>(vdupq_n_f32(…))` 等 10 分支;Zero 转发 Set。
+- after:kIsDBand 时 `v.raw = vdup_n_f32(…)` 等(q 后缀去掉)。
+- 映射:`vdupq_n_{f32,f64,s8,u8,s16,u16,s32,u32,s64,u64}` → `vdup_n_*`(全部存在,含 vdup_n_f64)。
+
+### C2 LoadU/StoreU 边界护栏测试(先行;白名单 = tests/simd/ 新增文件 vec_partial_boundary_test.cc)
+- 内容:①StoreU 尾部护栏——对每个 partial 形状 (T,N),在 N*sizeof(T) 后填哨兵字节,StoreU 后断言
+  哨兵未被改写;②LoadU 只读边界——把源放在页尾(mmap PROT_NONE 下一页,或 asan 下堆尾),LoadU 不崩。
+- **预期:当前实现下①必红**(既有满宽写)。此卡验收 = 测试**存在且红**(红名单写进台账),C3/C4 修
+  复后转绿。这是全手册唯一"以红为过"的卡。
+### C3 LoadU partial 窄读(neon.h:279)
+- after:kIsDBand 且 `N*sizeof(T)==8` → `vld1_*`(8 字节);`<8` → `detail::RawNeonD<T>::type tmp =
+  vdup_n_*(0); std::memcpy(&tmp, p, N*sizeof(T)); v.raw = tmp;`。
+- 映射:`vld1q_*` → `vld1_*`(10 型全存在)。C2 的②转绿。
+### C4 StoreU partial 窄写(neon.h:298)
+- after:`==8` → `vst1_*`;`<8` → `std::memcpy(p, &v.raw, N*sizeof(T))`。C2 的①转绿。
+- 映射:`vst1q_*` → `vst1_*`。
+
+### C5 比较族(neon.h:1578-1658 六函数)
+- 映射:`vceqq/vcgtq/vcgeq/vcltq/vcleq_*` → `vceq/vcgt/vcge/vclt/vcle_*`;Ne = Eq+Not 时用
+  `vmvn_*`(u64 无 vmvn_u64:用 `veor_u64(x, vdup_n_u64(~0ull))`,探针验证)。
+- 64-bit lane D-form(vceq_s64/vcgt_s64/vceq_f64 等)AArch64 存在——逐条探针后再写。
+### C6 MaskFromVec / MaskFromNormalizedVec / VecFromMask(neon.h:1856/1883 附近/1835)
+- 纯 reinterpret + (MaskFromVec 的) 归一化移位:`vreinterpretq_*` → `vreinterpret_*`;
+  `vshrq_n/vcltzq` 类归一化 → `vshr_n/vcltz_*` D 形。
+### C7 mask 逻辑族(neon.h:1938-1958)
+- 映射:`vandq/vorrq/veorq/vbicq/vmvnq_u{8,16,32,64}` → `vand/vorr/veor/vbic/vmvn_*`
+  (vmvn 无 64-bit:同 C5 的 veor 反转)。
+
+### C8 Promote 族 partial 输入 D 路(neon.h:1094 PromoteLowerTo 及其被 vec.h PromoteTo 调用的路径)——**靶心**
+- 现状(包裹后):`vmovl_s16(vget_low_s16(detail::to_q(v)))` 形。
+- after:输入是 D band 时直接 `vmovl_s16(v.raw)`(= sshll,输入本来就是 D!)——去掉 to_q+vget_low。
+  输出宽形若仍 partial(如 i8×4→i16×4)则结果也是 D:`vget_low(vmovl_*(…))` 或用 `vmovl` 后 from_q,
+  卡内按 (SrcT,DstT,N) 逐组写死,不留自由发挥。
+- 完成后手跑 `HYLE_BENCH_ONLY=PromoteMaskTo` 记台账(应显著向 1.0 收敛——链条 ldr d + sshll + cmgt.4s)。
+### C9 DemoteTo partial 输出 D 路(neon.h:1123)
+- 现状:`vqmovn/vmovn` 产 D 后走 zext-Q 约定 + from_q。after:输出 D band 时直接 `r.raw = vqmovn_*(…)`。
+### C10 向量逻辑族(neon.h:754-780 + Not:2763)
+- 同 C7 映射,向量版(含 f32/f64:按位用 vreinterpret 到整型再回,照现有 Q 分支形状抄成 D)。
+### C11 lane 存取(GetLane/ExtractLane/InsertLane,grep 定位)
+- 映射:`vgetq_lane_*` → `vget_lane_*`;`vsetq_lane_*` → `vset_lane_*`(lane 索引 <N 不变)。
+
+### C12 收口采集(无代码)
+- `HYLE_BENCH_ONLY=PromoteMaskTo` 双序各 3 遍(§3-3;两序 = 正常跑 + `HYLE_BENCH_HWY_FIRST=1` 若
+  engine 支持,否则按矩阵复现节的双序跑法),原始输出全贴台账。判定高能力方做。
+
+### C13 half/combine 穷举 oracle(白名单 = tests/simd/ 新增 vec_half_combine_oracle_test.cc)
+- LowerHalf/UpperHalf/Combine/ZeroExtendVector/InsertIntoUpper × 全 (T,N) 合法组合,标量参考逐 lane
+  对拍(参考实现手写数组语义,禁止调被测 op)。**当前实现必须全绿**(这是改前基线),然后 C14-C16
+  改动全程保持绿。
+### C14 LowerHalf/UpperHalf native D(neon.h:3026-3043)
+- after:输入满宽时 `out.raw = vget_low_*(v.raw)` / `vget_high_*(v.raw)`(直接产 D,零指令/一条);
+  输入 partial(N≤半宽)保留包裹形(冷路径)。
+### C15 Combine/ZeroExtendVector/InsertIntoUpper native(neon.h:3045-3060)
+- after:两输入均 D 时 `out.raw = vcombine_*(lo.raw, hi.raw)`;ZeroExtendVector = `vcombine_*(lo.raw,
+  vdup_n_*(0))`。输出必满宽(N*sizeof(T)==16 才有意义)——静态断言现有约束不变。
+### C16 Concat{LowerLower,LowerUpper,UpperLower,UpperUpper} partial 路径(grep 定位)
+- 输入 partial 时经 C14/C15 的 D 原语组合;满宽路径不动。改前先确认矩阵中这些 op 现为 TIE,改后
+  `HYLE_BENCH_ONLY=Concat` 冒烟无回退。
+### C17 ResizeBitCast 审计(neon.h:3062 附近,低优)
+- 现状已翻转安全(Q 临时量)。审计项:partial→partial 小尺寸时可换 exact-byte memcpy 省一次 Q 物化;
+  不值得就台账记 `no-change` 关卡。
+
+### C18 全量收口采集(高能力方判读)
+- 同步后夜跑:三个 NEON bench 目标,双序各 3 遍,`nohup` 串行(§3-4;`wc -l` 验完整);gtest 220;
+  输出文件名 `s19_<tu>_<order>_<n>.txt` 全部留存。
+### C19 文档回写(高能力方)
+- 矩阵 PromoteMaskTo 行、simd-19 doc 状态/验收节、cloc 增长、本台账收尾。
+
 ## §7 台账(`docs/milestones/simd-19-ledger.md`,W0 初始化)
 
 ```markdown
