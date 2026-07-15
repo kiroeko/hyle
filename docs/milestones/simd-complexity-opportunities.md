@@ -16,19 +16,18 @@
 
 ## 立即可做:仓内已坐实的三处证据(P0)
 
-### P0-1. softmax/log_softmax 的 pass 融合(内存流量 5n → 2n)
+### P0-1. softmax/log_softmax 的 pass 融合(内存流量 5n → 2n) — **已落地 2026-07-15**
 
-**现状(src/simd/math/activations.cc:64-71,注释自认)**:softmax = 标量 max 折叠 → subtract
-一遍 → exp 一遍(向量)→ 标量 sum 折叠 → divide 一遍,**共 4~5 次过数据,其中两次是标量折叠**;
-注释同时写明消费形状 "vocab ~128k"——正是内存流量主导的尺寸。
+**原状**:softmax = 标量 max → subtract → exp → 标量 sum → divide,**4~5 次过数据**。
 
-**机会**:Online softmax(Milakov–Gimelshein 2018)把 max 与 sum 融合成单遍在线更新
-(`m'=max(m,x); s'=s·exp(m-m')+exp(x-m')`),加一遍归一化输出 = **2 遍全向量**。
-逐元素核都顶在带宽墙上,**减少遍数是唯一能"穿墙"的复杂度改进**:流量 5n→2n,预期 2~3×,
-n 越大越接近流量比。log_softmax 同法。
+**已做**:Online max+sum-of-exp(Milakov–Gimelshein;`online_max_sum_exp`)单遍读出 `(m,s)`;
+softmax 第二遍按 4K chunk 做 `(x-m)→exp_f32_batch→/s`(chunk 内热缓存);log_softmax 第二遍
+单次 `x - (m+log s)`。实现:`src/simd/math/activations.cc`。
 
-**SOTA 参照**:oneDNN/FlashAttention 世系的 online softmax;标量折叠向量化部分可直接复用
-ReduceMax/ReduceSum 已有核。消费者:activation_bench 在册 + compute 的 LLM 形状。
+**正确性**:`Math.Softmax` 对拍 double 稳定参考 — **Win MSVC / WSL GCC / Mac NEON 三平台 PASSED**。
+
+**机会残留**:pass1 仍为标量 online(可再向量化 tile);scaling bench(n=1e3..1e8 斜率)未建——
+按落地纪律下一步是 activation scaling,非再抠核。
 
 ### P0-2. AVX-VNNI 通道 + 修 avx512 SumOfMulQuadAccumulate 的标量洞(指令类)
 

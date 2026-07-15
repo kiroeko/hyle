@@ -6,8 +6,8 @@
 // combine math (the 0.5x(1+...), the 1/(1+e), the divide) runs scalar -- it is cheap relative to
 // the transcendental it wraps, and staying baseline keeps this TU SIGILL-safe with no -march.
 //
-// softmax/log_softmax are REDUCTIONS (max + sum-of-exp), done in place: the exp pass is the
-// vectorized cost (exp_f32_batch), the max/sum are simple scalar folds (memory-bound anyway).
+// softmax/log_softmax: online max+sum-of-exp (Milakov–Gimelshein) — one streaming read for
+// (m,s), then one write pass. Avoids the old 4~5 full-array sweeps (max / sub / exp / sum / scale).
 #include "hyle/simd/math.h"
 
 #include <cmath>
@@ -20,6 +20,28 @@ namespace {
 constexpr float kSqrt2Inv = 0.70710678118654752440f;      // 1/sqrt(2)  (erf-gelu)
 constexpr float kSqrt2OverPi = 0.79788456080286535588f;   // sqrt(2/pi) (tanh-gelu)
 constexpr float kGeluCoefA = 0.044715f;                   // tanh-gelu cubic coef (ggml)
+
+// Online (m, s): s = Σ exp(x_i - m) with m = max x. Single forward pass, double sum.
+// n >= 1. Uses std::exp in double for the running scale (same stability class as the old sum fold).
+inline void online_max_sum_exp(const float* data, std::size_t n, float& m_out,
+                               double& s_out) noexcept {
+  float m = data[0];
+  double s = 1.0;  // exp(data[0] - m) == 1
+  for (std::size_t i = 1; i < n; ++i) {
+    const float x = data[i];
+    if (x <= m) {
+      s += std::exp(static_cast<double>(x - m));
+    } else {
+      s = s * std::exp(static_cast<double>(m - x)) + 1.0;
+      m = x;
+    }
+  }
+  m_out = m;
+  s_out = s;
+}
+
+// Chunk size for pass-2 exp+scale: keep the three logical ops in cache (~16 KiB floats).
+constexpr std::size_t kSoftmaxChunk = 4096;
 }  // namespace
 
 // gelu(x) = 0.5 x (1 + erf(x / sqrt2)). Vectorize the erf pass, combine scalar.
@@ -61,32 +83,32 @@ void silu_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = src[i] / (1.0f + e[i]);
 }
 
-// softmax in place: subtract the max (numerical stability), exp, normalize by the sum.
+// softmax in place (online): pass1 = (m,s) in one read; pass2 = chunked (x-m) → exp → /s.
+// Memory traffic: ~2n words streaming vs old 4~5 full sweeps (vocab ~128k is bandwidth-bound).
 void softmax_f32(float* data, std::size_t n) noexcept {
   if (n == 0) return;
-  float mx = data[0];
-  for (std::size_t i = 1; i < n; ++i) mx = data[i] > mx ? data[i] : mx;
-  for (std::size_t i = 0; i < n; ++i) data[i] -= mx;   // x - max (<= 0, exp in (0,1])
-  exp_f32_batch(data, data, n);                        // exp(x - max) (vectorized)
-  double sum = 0.0;                                    // double accum: n can be large (vocab ~128k)
-  for (std::size_t i = 0; i < n; ++i) sum += static_cast<double>(data[i]);
-  const float inv = static_cast<float>(1.0 / sum);
-  for (std::size_t i = 0; i < n; ++i) data[i] *= inv;
+  float m = 0.f;
+  double s = 0.0;
+  online_max_sum_exp(data, n, m, s);
+  const float inv = static_cast<float>(1.0 / s);
+  for (std::size_t base = 0; base < n; base += kSoftmaxChunk) {
+    const std::size_t c = (n - base < kSoftmaxChunk) ? (n - base) : kSoftmaxChunk;
+    float* p = data + base;
+    for (std::size_t i = 0; i < c; ++i) p[i] -= m;  // x - max (<= 0)
+    exp_f32_batch(p, p, c);                         // vectorized exp
+    for (std::size_t i = 0; i < c; ++i) p[i] *= inv;
+  }
 }
 
-// log_softmax in place: (x - max) - log(sum exp(x - max)). Keeps the shifted logits, then
-// subtracts logZ. More stable than log(softmax) (no exp underflow -> log(0)).
+// log_softmax in place (online): pass1 = (m,s); pass2 = x - (m + log s). True 2-pass, no exp write.
+// More stable than log(softmax); matches old contract.
 void log_softmax_f32(float* data, std::size_t n) noexcept {
   if (n == 0) return;
-  float mx = data[0];
-  for (std::size_t i = 1; i < n; ++i) mx = data[i] > mx ? data[i] : mx;
-  double sum = 0.0;
-  for (std::size_t i = 0; i < n; ++i) {
-    data[i] -= mx;                                     // shifted logit (kept)
-    sum += std::exp(static_cast<double>(data[i]));     // sum exp(x - max)
-  }
-  const float log_z = static_cast<float>(std::log(sum));
-  for (std::size_t i = 0; i < n; ++i) data[i] -= log_z;
+  float m = 0.f;
+  double s = 0.0;
+  online_max_sum_exp(data, n, m, s);
+  const float shift = m + static_cast<float>(std::log(s));
+  for (std::size_t i = 0; i < n; ++i) data[i] -= shift;
 }
 
 }  // namespace hyle::simd
