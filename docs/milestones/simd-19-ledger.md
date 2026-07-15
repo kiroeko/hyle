@@ -19,7 +19,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | 卡 | op | 状态 | G1 | G3 | G4(数值) | 提交 | 备注 |
 |---|---|---|---|---|---|---|---|
 | C1 | Set/Zero D-form | done | ✓ | 220/220 | — | ea37f98 | Set: kIsDBand→vdup_n_*; Zero 转发未改 |
-| C2 | LoadU/StoreU 边界护栏测试(先行) | done | ✓ | 以红为过:StoreU 23/23 RED;LoadU page-end SIGSEGV(exit 138);基线 Vec 220/220 仍绿 | — | (本提交) | 新增 `tests/simd/vec_partial_boundary_test.cc` + neon CMake 接线;红名单=全部 StoreU_NoWritePast_*;C3/C4 转绿 |
+| C2 | LoadU/StoreU 边界护栏测试(先行) | done | ✓ | 以红为过:StoreU 23/23 RED;LoadU page-end SIGSEGV(exit 138);基线 Vec 220/220 仍绿 | — | 3f20ebe | 新增 `tests/simd/vec_partial_boundary_test.cc` + neon CMake 接线;红名单=全部 StoreU_NoWritePast_*;C3/C4 转绿 |
 | C3 | LoadU partial 窄读 | todo | | | — | | 修 OOB 读 |
 | C4 | StoreU partial 窄写 | todo | | | — | | 修 OOB 写,C2 测试必须先绿 |
 | C5 | 比较族 Eq/Ne/Gt/Ge/Lt/Le D-form | todo | | | — | | |
