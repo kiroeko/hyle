@@ -9,23 +9,26 @@
 > 跨行字符串合并、大写宏泄漏)。已测集来自扫 `op_parity_{full,,widen}_bench.cc` + `crypto/gather_bench.cc`
 > 的所有字符串字面量、映射到 op 名。SOTA 判决集 = 本文全量表里有 verdict 行的 op。
 >
-> **计数树**:
+> **计数树**(2026-07-15 现跑 `scripts/simd-op-coverage.py`,取代旧 380/299/291/8 快照):
 > ```
-> 380  公开 op 名(去重 8 后端头,剔 tag/trait/detail helper)
+> 381  公开 op 名(去重 8 后端头,剔 tag/trait/detail helper)
 >  └─ 340  可测全集
 >       │   ( − 26 不可测: constexpr 谓词(DivIsPow2)/常量产生器(Inf/NaN/Iota/Zero/Set)/
 >       │     introspection(Lanes/Blocks)/单-lane 标量存取(Get·Extract·InsertLane)/纯 retag(BitCast)/
 >       │     构造 helper(Combine/Lower·UpperHalf/LoadDup128/SetTableIndices/IndicesFromVec/FirstN)
->       │     − 10 内部选择器变体(*Native/*Emulated,由伞 op 覆盖)
+>       │     − 11 内部选择器变体(*Native/*Emulated,由伞 op 覆盖)
 >       │     − 4 别名(Rol→RotateLeft/Ror→RotateRight/ZipLower→InterleaveLower/ZipUpper→InterleaveUpper) )
->       ├─ 299  已写 bench
->       │    ├─ 291  已证 SOTA(下方全量表有 HYLE-vs-Highway measured verdict)
->       │    └─   8  有 bench 未跑校准 / 无 Highway 对手(见"HYLE 独有测试(无对手 op)"表)
->       └─  41  没写 bench(待补,清单见"41 个待补 bench"节)
+>       ├─ 303  已写 bench(脚本从 op_parity 标题字面量映射到 op 名)
+>       │    ├─ 296  已证 SOTA(下方全量表有 HYLE-vs-Highway measured verdict;
+>       │    │       含无 Highway 对手的 ReduceMul/And/Or、Reciprocal*Newton——逻辑自动 SOTA,
+>       │    │       见"HYLE 独有测试(无对手 op)"表)
+>       │    └─   3  脚本口径假缺口:Store / StoreN / StoreU
+>       │           (复合标题 LoadU/StoreU、LoadN/StoreN 已在全量表校准;裸名对不上 verdict 键,
+>       │            非"没跑校准"。真·待测 = 0)
+>       └─  41  没写 bench(待补,清单以脚本 UNCOVERED 为准 / 见"41 个待补 bench"节)
 > ```
-> 之前对话里的 16/30/41/245 是不同时刻/口径的快照,**不可相加**;唯一权威数是上面这棵树。
-> **无 Highway 对手的 op(ReduceMul/And/Or、Reciprocal*Newton)逻辑上自动算 SOTA**(没有更快的参照可输,
-> 只能对拍自家标量/裸估计基线证明"比 baseline 快"),计入 291。
+> 之前对话里的 16/30/41/245/8 是不同时刻/口径的快照,**不可相加**;唯一权威数是上面这棵树
+> (或当下重跑 `python scripts/simd-op-coverage.py`)。
 
 > 本表由重建后的测量引擎产出(`bench/simd/op_parity_engine.h` + `scripts/op-parity-report.py`),
 > 取代旧的"原始读数+人工伪影标签"体系。旧 op_parity 的数字被证明携带三层测量伪影(P/E 调度、
