@@ -114,17 +114,22 @@ Win 仍走 AVX2/512。Arm64 仍 NEON。
 **已做**:
 - `radix_sort` u32/i32/u64/i64/f32(LSD base-256,稳定);`argsort` u32/i32/f32
 - `sort()` 整数键在 `n >= kRadixSortMinN`(4096) 自动走 radix,小 n 仍 vqsort
-- 测试 `RadixSort.*` 9 tests Win/WSL PASS;bench `hyle_radix_sort_bench`
+- 测试 `RadixSort.*` 9 tests **Win / WSL / Mac 全 PASS**;bench `hyle_radix_sort_bench`
 - 实现:`src/simd/sort/radix_sort.cc`(portable)
 - **多直方图**(4 路私有 `count[256]` 再 reduce):hist 微基准 WSL **1.08×**;端到端 Win 1M
-  约 **+3–4%**(6.58→6.35 ms 量级),WSL 端到端基本持平。scatter 仍是主瓶颈。
+  约 **+3–4%**(6.58→6.35 ms 量级),WSL 端到端基本持平。
 
-**时间(u32 random, vs std::sort, 多直方图后)**:
-| n | WSL radix | Win radix |
-|---|---|---|
-| 1K | ~1.1× | **~1.8×** |
-| 4K+ | **~6–7×** | **~6–11×** |
-| 1M | **~5.9×** | **~9.3×** |
+**scatter 块化试过并弃(2026-07-15 同机 AB)**:per-bin `kScatterBuf=16` 暂存 + `memcpy` flush。
+Win 1M u32 对照:**直写 6.28 ms / 9.2×** vs **缓冲 7.56 ms / 7.8×**(~20% 税:双写 + flush 分支)。
+WSL/Mac 缓冲路径正确性过,但 e2e 不优于直写 → **保留直写 scatter**,多直方图留下。
+scatter 仍是 pass 内主瓶颈(~74%),后续杠杆需别的形状(更大块/分区/并行),不是小缓冲。
+
+**时间(u32 random, vs std::sort, 多直方图+直写 scatter;2026-07-15 三平台)**:
+| n | WSL | Win | Mac NEON |
+|---|---|---|---|
+| 1K | ~0.7× | **~1.8×** | ~1.2× |
+| 4K+ | **~5–6×** | **~6–9×** | **~2.5–4×** |
+| 1M | **~5.6×**(8.2 ms) | **~9.2×**(6.3 ms) | **~3.8×**(4.1 ms) |
 
 阈值 4096 合理:大 n 稳赢 std;小 n 仍给 vqsort。
 

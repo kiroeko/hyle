@@ -57,6 +57,8 @@ bool lsd_radix_unsigned(U* keys, std::size_t n) noexcept {
     multi_histogram_prefix(n, count, [&](std::size_t i) noexcept {
       return static_cast<std::size_t>(in[i] >> shift) & kMask;
     });
+    // Direct scatter wins e2e vs per-bin buffered (kScatterBuf=16): Win 1M u32
+    // 6.28ms direct vs 7.56ms buffered (~20% tax from double write + flush branch).
     for (std::size_t i = 0; i < n; ++i) {
       const U k = in[i];
       out[count[(static_cast<std::size_t>(k >> shift) & kMask)]++] = k;
