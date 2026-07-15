@@ -30,7 +30,7 @@ G4 只记录数值不判定;判定统一 C12/C18 由高能力方做。
 | C10 | 向量 And/Or/Xor/AndNot/Not D-form | done | ✓ | 266/266 | — | b1f8470 | D: to_u32_d/from_u32_d+vand/vorr/veor/vbic_u32; Not=vdup_n_u8 FF xor; Q 原样 |
 | C11 | GetLane/ExtractLane/InsertLane D-form | done | ✓ | 266/266 | — | b1f8470 | GetLane: vget_lane_*(raw,0); Extract/Insert 在 vec.h 泛型 store+reload 未动 |
 | C12 | 收口:PromoteMaskTo bench 采集(双序 6 遍) | **done+判定 TIE** | ✓ | — | 双序 6 遍 ×4 副本对全部 99.5–100.0%,两侧绝对吞吐同为 12.65–12.71 G op/s | d0702fa | **判定(高能力方 2026-07-15):0.575 → TIE 确认**,见下节判定记录 |
-| C13 | half/combine 穷举 oracle 测试(先行) | done | ✓ | 276/276 (HalfCombineOracle 10/10 满寄存器全绿) | — | (本提交) | 新增 vec_half_combine_oracle_test.cc + neon CMake; 满宽×10型; 子满宽 D 主向量见犹疑#11 |
+| C13 | half/combine 穷举 oracle 测试(先行) | done | ✓ | 276/276 (HalfCombineOracle 10/10 满寄存器全绿) | — | 38e37d5 | 新增 vec_half_combine_oracle_test.cc + neon CMake; 满宽×10型; 子满宽 D 主向量见犹疑#11 |
 | C14 | LowerHalf/UpperHalf native D | todo | | | — | | C13 先绿 |
 | C15 | Combine/ZeroExtendVector/InsertIntoUpper native | todo | | | — | | C13 先绿 |
 | C16 | Concat* partial 路径 | todo | | | — | | C13 先绿 |
