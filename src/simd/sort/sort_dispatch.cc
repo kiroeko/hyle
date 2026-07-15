@@ -42,6 +42,18 @@ bool have_avx512() noexcept {
 #endif
 }
 
+// P1-2: large integer arrays use stable LSD radix. Template so float/double discard cleanly.
+template <typename T>
+bool try_radix_sort(T* keys, std::size_t n, SortOrder order) noexcept {
+  if constexpr (std::is_integral_v<T>) {
+    if (n >= kRadixSortMinN) {
+      radix_sort(keys, n, order);
+      return true;
+    }
+  }
+  return false;
+}
+
 }  // namespace
 
 // Generates the three public overloads (sort/partial_sort/select) for one key type. The tier
@@ -89,6 +101,7 @@ bool have_avx512() noexcept {
 #define HYLE_SORT_DISPATCH(T, tag)                                                         \
   void sort(T* keys, std::size_t n, SortOrder order) noexcept {                            \
     if (n == 0) return;                                                                    \
+    if (try_radix_sort(keys, n, order)) return;                                            \
     const bool asc = (order == SortOrder::kAscending);                                     \
     HYLE_SORT_TIER_SORT(tag);                                                              \
   }                                                                                        \

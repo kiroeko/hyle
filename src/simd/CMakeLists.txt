@@ -81,6 +81,7 @@ hyle_add_module(simd SOURCES
   math/activations.cc
   sort/sort_dispatch.cc
   sort/vqsort_scalar.cc
+  sort/radix_sort.cc
   bitpack/bitpack_dispatch.cc
   bitpack/bitpack_scalar.cc
   ${_hwy_support}

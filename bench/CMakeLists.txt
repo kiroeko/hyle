@@ -514,6 +514,11 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
 endif()
 hyle_apply_warnings(hyle_sort_bench)
 
+# P1-2: radix vs std::sort / HYLE sort auto-threshold crossover.
+add_executable(hyle_radix_sort_bench simd/radix_sort_bench.cc)
+target_link_libraries(hyle_radix_sort_bench PRIVATE hyle_simd nanobench)
+hyle_apply_warnings(hyle_radix_sort_bench)
+
 # gather/compress native-vs-emulated bench (simd-09 #66/#69, "measure don't assume"). Header-only
 # (includes vec.h at a fixed ISA target), so per-ISA exes like the vec_test variants: avx2 runs on
 # an AVX2 host, avx512 under Intel SDE. Only x86 (native gather/compress are x86 intrinsics).

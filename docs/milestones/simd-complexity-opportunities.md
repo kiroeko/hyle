@@ -109,16 +109,22 @@ softmax 等仍可在算法内手写 double 累加(局部,不扩公开 API)。
 测得 0.70–0.84×(更慢)。`scan_dispatch.cc` 用 `HYLE_OS_LINUX`+`HYLE_ARCH_X64` 钉 pure scalar;
 Win 仍走 AVX2/512。Arm64 仍 NEON。
 
-### P1-2. 整数键 radix sort + argsort(O(n log n) → O(n·⌈k/8⌉) 线性)
+### P1-2. 整数键 radix sort + argsort — **已落地(2026-07-15)**
 
-**现状(include/hyle/simd/sort.h)**:sort/partial_sort/select 全部借 Highway vqsort =
-**比较排序 O(n log n)**;argsort 无面(文档教用户"自己拼 key-index 对")。
+**已做**:
+- `radix_sort` u32/i32/u64/i64/f32(LSD base-256,稳定);`argsort` u32/i32/f32
+- `sort()` 整数键在 `n >= kRadixSortMinN`(4096) 自动走 radix,小 n 仍 vqsort
+- 测试 `RadixSort.*` 9 tests Win/WSL PASS;bench `hyle_radix_sort_bench`
+- 实现:`src/simd/sort/radix_sort.cc`(portable;直方图 SIMD 可后续)
 
-**机会**:u32/u64/f32(键翻转技巧)的 LSD radix,u32=4 遍线性,**大 n 时按构造超过 vqsort**
-——vqsort 论文自己承认的边界,Intel x86-simd-sort/IPS4o 在整数键大 n 同走 radix。附带
-argsort(64 位 key|idx 打包 radix)与稳定性(radix 天然稳定,补上 vqsort 缺的稳定档)。
-Highway 无 radix contrib → 自造(章程:借无可借)。**交叉点必须实测标注**(预期 n≈1e5~1e6
-分界,小 n 仍归 vqsort,公开面做成按 n 自动分派或双入口)。代价:O(n) 暂存 + 直方图。
+**时间(u32 random, vs std::sort, 单次 nanobench)**:
+| n | WSL radix | WSL auto | Win radix | Win auto |
+|---|---|---|---|---|
+| 1K | ~1.1× | **~2.2×**(vqsort) | **~2.0×** | 0.24×(vqsort 冷) |
+| 4K+ | **~6–8×** | 同 radix | **~6–9×** | 同 radix |
+| 1M | **~6.1×** | 同 | **~8.8×** | 同 |
+
+阈值 4096 合理:大 n 稳赢 std;小 n 仍给 vqsort。
 
 ### P1-3. 流式 top-k(小 k 大 n:全数据 partial_sort → 均摊 O(n) 过滤)
 

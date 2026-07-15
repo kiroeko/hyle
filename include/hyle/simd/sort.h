@@ -116,4 +116,33 @@ HYLE_SIMD_API void select(KeyValue64* kv, std::size_t n, std::size_t k,
 // 256-bit one is, kNeon on arm64, else kScalar (std::sort floor). For tests/diagnostics.
 HYLE_SIMD_API Isa active_sort_variant() noexcept;
 
+// --- P1-2: LSD radix sort (stable, O(n · passes)) + argsort ---------------------------------
+// Integer / float keys via LSD base-256 (8-bit digits). STABLE (equal keys keep relative order),
+// unlike vqsort. Needs O(n) temporary storage (malloc); on OOM falls back to sort().
+// u32 = 4 passes, u64 = 8, f32 = bit-flip then 4. Intended for large n (auto threshold in
+// sort() for integer keys is kRadixSortMinN; explicit radix_sort always uses radix).
+//
+// argsort: writes indices[0..n) as a permutation of 0..n-1 such that
+//   keys[indices[i]] is sorted by `order` (stable). indices is output-only.
+
+inline constexpr std::size_t kRadixSortMinN = 4096;  // sort() auto-picks radix above this
+
+HYLE_SIMD_API void radix_sort(std::uint32_t* keys, std::size_t n,
+                              SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void radix_sort(std::int32_t* keys, std::size_t n,
+                              SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void radix_sort(std::uint64_t* keys, std::size_t n,
+                              SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void radix_sort(std::int64_t* keys, std::size_t n,
+                              SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void radix_sort(float* keys, std::size_t n,
+                              SortOrder order = SortOrder::kAscending) noexcept;
+
+HYLE_SIMD_API void argsort(const std::uint32_t* keys, std::uint32_t* indices, std::size_t n,
+                           SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void argsort(const std::int32_t* keys, std::uint32_t* indices, std::size_t n,
+                           SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void argsort(const float* keys, std::uint32_t* indices, std::size_t n,
+                           SortOrder order = SortOrder::kAscending) noexcept;
+
 }  // namespace hyle::simd
