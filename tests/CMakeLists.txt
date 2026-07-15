@@ -142,7 +142,10 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
   # vec_partial_boundary_test.cc: simd-19 C2 LoadU/StoreU partial guardrails (expected
   # red for StoreU OOB until C3/C4; only meaningful on NEON D/Q backends).
+  # vec_half_combine_oracle_test.cc: simd-19 C13 half/combine exhaustive scalar oracle
+  # (baseline green before C14-C16 native D half/combine).
   hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc simd/vec_partial_boundary_test.cc
+                simd/vec_half_combine_oracle_test.cc
                 DEFINES HYLE_SIMD_TARGET_NEON OPTIONS ${_neon_flags})
   # SVE variant: the FIRST scalable-width backend (backend/sve.h). Its op face is VL-agnostic, so
   # it uses a DEDICATED sve_test.cc (not vec_test.cc, which pins Lanes to a compile-time constant).
