@@ -135,14 +135,9 @@ set_target_properties(hyle_simd PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 # polynomials are fastest, Highway's contrib/math log is fastest. So math_dispatch picks
 # PER OP: exp/tanh -> xsimd, log -> Highway (scalar libm is the fallback floor).
 #
-# Both are VENDORED in third_party (header-only, like xxhash). The machine-dependent guard
-# is ARCHITECTURE: the x86 borrow-core TUs lower to AVX2/AVX512 intrinsics (X86-ONLY, in the
-# SOURCES split). On aarch64 the SAME Highway contrib/math cores lower to NEON
-# (transcendental_highway_neon.cc, in the arm64 SOURCES) -- Highway for all three ops there.
-# Runtime cpu_features().avx2 gates the x86 entry so an old x86 CPU also falls to scalar (no
-# SIGILL); arm64 needs no gate (NEON is the ARMv8 baseline).
-# X2 math + X3 vqsort are pure HYLE D-tag (no third_party/highway or xsimd includes).
-# Symbol names keep *_highway_* / *_xsimd_* for best-of math dispatch wiring.
+# Math kernels are pure HYLE D-tag ports (simd-20 X2); symbol names keep *_highway_* /
+# *_xsimd_* for best-of dispatch wiring only. Architecture split: x86 AVX2/AVX512 TUs vs
+# arm64 NEON TUs. Runtime cpu_features().avx2 gates x86; arm64 NEON is baseline.
 if(HYLE_SIMD_X64)
   hyle_set_isa(math/transcendental_highway.cc AVX2)
   hyle_set_isa(math/transcendental_xsimd.cc AVX2)

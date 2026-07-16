@@ -1,12 +1,10 @@
 # simd-20: vendor 摘除——库零 vendor 依赖,bench 引用外部 highway/xsimd
 
-> **状态**:X0/X1/X2/X3 已落地(2026-07-16); **X4 待执行**（删 `third_party/` + 闸门收口）。
+> **状态**:**X0–X4 全部落地(2026-07-16)**。库零 Highway/xsimd；bench 仅经外部 pin 对拍。
 > **动机**(用户):库里只有少数专项 kernel 借 highway/xsimd,却把整库拖进 `third_party/` 当依赖,不应该;
-> 借用的代码移植进 HYLE 后，Highway/xsimd 仅作为外部 benchmark 对照。X0 已将 bench 接到外部 pin 目录；
-> X1 bitpack、X2 math、**X3 vqsort** 已迁为 HYLE。产品 `hyle_simd` **零** `third_party/{highway,xsimd}` include。
-> **前提修正(盘点见 `docs/architecture/simd-vendor-surface.md`)**:初始借用面是 4 个——①超越函数
-> ②vqsort ③bitpack ④simdutf(可选)。X1 后 bitpack 不借；X2 后 math 不借；**X3 后 vqsort 不借**。
-> `include/` 始终零泄漏，移植只使用 HYLE D-tag 原语。
+> 借用的代码移植进 HYLE 后，Highway/xsimd 仅作为外部 benchmark 对照。X0 bench 外部 pin；X1 bitpack、
+> X2 math、X3 vqsort 移植；**X4 删 `third_party/{highway,xsimd}` + `check-no-vendor.sh` 闸门**。
+> **前提修正**:初始借用面 4 个——①超越函数 ②vqsort ③bitpack ④simdutf(可选)。①–③ 已移植；④ 本里程碑不动。
 
 ## 一、端态
 
@@ -21,7 +19,7 @@
 4. 性能不回退:每个移植 kernel 与原借核 A/B(op_parity 框架,借核走外部 vendor 编译)——**摘除
    期间旧借核天然还在,就是现成对照组**。
 
-## 二、分阶段(X0/X1/X2/X3 已落地，X4 收口)
+## 二、分阶段(X0–X4 全部落地)
 
 **X0 — 构建管线先行(已落地 2026-07-16)**
 - bench 的 Highway/xsimd include 全部改根到 `HYLE_BENCH_VENDOR_DIR`：Windows 默认
@@ -106,11 +104,17 @@
 - `cloc` 移植核约 **6,034 code LOC**（`vqsort_hyle/` 头 6,010 + 三 ISA TU 24）；sse4 partial I/O
   为正确性支撑，不计入移植核主量。
 
-**X4 — 摘除与收口**
-- 删 `third_party/{highway,xsimd}`;`check-no-vendor.sh` 进闸;三平台全绿(gtest + bench 锚点);
-  `simd-vendor-surface.md` 改写为"库零 vendor,bench 外部对拍"终态;cloc 增长写回本文。
-- simdutf:默认关的可选项,**本里程碑不动**,单独决策(要么同模式移植 UTF-8 计数核,要么保留
-  可选外部依赖并同样挪出仓库)。
+**X4 — 摘除与收口(已落地 2026-07-16)**
+- 从 git 删除 `third_party/highway`（247 文件）与 `third_party/xsimd`（114 文件）；产品 CMake
+  在 X2/X3 已无其 include，删除后 `hyle_simd` 仍独立可编。
+- 闸门：`scripts/check-no-vendor.sh`——断言 (1) `include/`+`src/` 无 `#include <hwy/|xsimd/>`
+  (2) 上述 third_party 目录不存在 (3) 产品 CMake 无路径引用。HYLE 移植文件名
+  `math_xsimd_hyle-inl.h` 等**不**触发（只匹配真实 vendor 头路径）。
+- `simd-vendor-surface.md` 改写为终态："库零 Highway/xsimd，bench 外部 pin 对拍"。
+- 验证：`check-no-vendor.sh` PASS；Win MSVC + WSL GCC14 在无 in-tree highway/xsimd 下
+  `hyle_simd_test` 331 PASS + 1 BF16 SKIP。Mac 与 bench 锚点随外部 pin 目录，不依赖本删树。
+- simdutf:默认关的可选项,**本里程碑不动**（仍可在 `third_party/simdutf`）。
+- 本步净变：删 ~9.4 MB vendor 树；新增闸门脚本 + 文档收口（无移植核 LOC 增长）。
 
 ## 三、工单化(交中上 AI 的部分)
 

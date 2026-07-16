@@ -8,9 +8,9 @@ depending on a hand-crafted directory layout.
 
 Every `HYLE_BUILD_BENCH=ON` configuration needs external, exact-revision
 `highway/` and `xsimd/` checkouts. SIMD scaling/parity harnesses compile those
-headers even when their optional comparison rows are off. This keeps each
-benchmark rival fixed while simd-20 ports its product kernels away from the
-in-repo copies.
+headers even when their optional comparison rows are off. Product code under
+`include/` + `src/` has **zero** in-tree Highway/xsimd (simd-20 X4); only
+benchmarks may consume these external checkouts.
 
 ```sh
 # Windows Git Bash: default C:/public/project-hyle
@@ -32,6 +32,16 @@ recorded revisions. CMake independently rejects absent, mismatched, or dirty
 checkouts. Pass the same root via `-DHYLE_BENCH_VENDOR_DIR=<root>`; Windows and
 macOS have matching defaults, while Linux/WSL intentionally requires that
 explicit path.
+
+## `check-no-vendor.sh` — product zero-Highway/xsimd gate (simd-20 X4)
+
+Fails if `include/` or `src/` `#include` real vendor headers (`hwy/...`,
+`xsimd/...`), if `third_party/{highway,xsimd}` still exist, or if product CMake
+still points at those in-tree paths. Run after any simd vendor-port change:
+
+```sh
+scripts/check-no-vendor.sh
+```
 
 ## `setup-bench-libs.sh` — fetch other gated SOTA references
 

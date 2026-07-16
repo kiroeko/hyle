@@ -1,6 +1,6 @@
-# Pinned benchmark rivals for simd-20 vendor extraction.
-# Keep these revisions independent of the copies temporarily consumed by product
-# sources: benchmark rows are the unchanged external reference during each port.
+# Pinned external benchmark rivals (simd-20 X4+).
+# Product code no longer vendors highway/xsimd in-tree; only HYLE_BUILD_BENCH=ON
+# targets consume these checkouts via HYLE_BENCH_VENDOR_DIR.
 set(HYLE_BENCH_VENDOR_HIGHWAY_REPOSITORY "https://github.com/google/highway.git")
 set(HYLE_BENCH_VENDOR_HIGHWAY_REV "83eff39371e5e6494b305b253f8a3c06f831faf4")
 set(HYLE_BENCH_VENDOR_XSIMD_REPOSITORY "https://github.com/xtensor-stack/xsimd.git")
