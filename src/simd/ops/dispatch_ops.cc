@@ -2,7 +2,7 @@
 
 #include <cstddef>
 
-#include "hyle/platform.h"
+#include "src/simd/dispatch_internal.h"
 #include "src/simd/ops/kernels.h"
 
 // dispatch_ops.cc -- the BASELINE dispatcher TU (no -march). It maps best_isa() to one of
@@ -14,108 +14,75 @@
 namespace hyle::simd {
 namespace {
 
-// Map the host's detected top tier to the BEST variant we actually compiled. On x86 we
-// shipped scalar / sse4 / avx2 / avx512; the dispatcher picks the highest tier whose kernel
-// exists, else falls to the next lower one (never SIGILLs -- each tier is runtime-gated by
-// best_isa()). On a non-x86 build only scalar exists, so this returns kScalar. This is the
-// function-pointer equivalent of llama.cpp's startup score-and-pick.
-Isa selected_tier() noexcept {
-#if defined(HYLE_ARCH_X64)
-  const Isa best = best_isa();
-  const auto v = static_cast<std::uint32_t>(best);
-  if (v >= static_cast<std::uint32_t>(Isa::kAvx512)) return Isa::kAvx512;
-  if (v >= static_cast<std::uint32_t>(Isa::kAvx2)) return Isa::kAvx2;
-  if (v >= static_cast<std::uint32_t>(Isa::kSse42)) return Isa::kSse42;
-  return Isa::kScalar;
-#elif defined(HYLE_ARCH_ARM64)
-  // aarch64 ships scalar + neon; NEON is the ARMv8 baseline so best_isa() returns kNeon on
-  // any real arm64 CPU (cpu.cc). Pick neon when present, else the scalar floor.
-  if (static_cast<std::uint32_t>(best_isa()) >= static_cast<std::uint32_t>(Isa::kNeon))
-    return Isa::kNeon;
-  return Isa::kScalar;
-#else
-  return Isa::kScalar;  // unknown arch: portable floor
-#endif
-}
-
 using DotFn = float (*)(const float*, const float*, std::size_t) noexcept;
 using SaxpyFn = void (*)(float, const float*, float*, std::size_t) noexcept;
 using DotF64Fn = double (*)(const double*, const double*, std::size_t) noexcept;
 using SaxpyF64Fn = void (*)(double, const double*, double*, std::size_t) noexcept;
 
 DotFn resolve_dot() noexcept {
-  switch (selected_tier()) {
 #if defined(HYLE_ARCH_X64)
-    case Isa::kAvx512: return &detail::dot_f32_avx512;
-    case Isa::kAvx2: return &detail::dot_f32_avx2;
-    case Isa::kSse42: return &detail::dot_f32_sse4;
+  return detail::resolve_default_variant<DotFn>(&detail::dot_f32_scalar, &detail::dot_f32_sse4,
+                                                &detail::dot_f32_avx2, &detail::dot_f32_avx512);
 #elif defined(HYLE_ARCH_ARM64)
-    case Isa::kNeon: return &detail::dot_f32_neon;
+  return detail::resolve_default_variant<DotFn>(&detail::dot_f32_scalar, &detail::dot_f32_neon);
+#else
+  return detail::resolve_default_variant<DotFn>(&detail::dot_f32_scalar);
 #endif
-    default: return &detail::dot_f32_scalar;
-  }
 }
 SaxpyFn resolve_saxpy() noexcept {
-  switch (selected_tier()) {
 #if defined(HYLE_ARCH_X64)
-    case Isa::kAvx512: return &detail::saxpy_f32_avx512;
-    case Isa::kAvx2: return &detail::saxpy_f32_avx2;
-    case Isa::kSse42: return &detail::saxpy_f32_sse4;
+  return detail::resolve_default_variant<SaxpyFn>(&detail::saxpy_f32_scalar, &detail::saxpy_f32_sse4,
+                                                  &detail::saxpy_f32_avx2, &detail::saxpy_f32_avx512);
 #elif defined(HYLE_ARCH_ARM64)
-    case Isa::kNeon: return &detail::saxpy_f32_neon;
+  return detail::resolve_default_variant<SaxpyFn>(&detail::saxpy_f32_scalar, &detail::saxpy_f32_neon);
+#else
+  return detail::resolve_default_variant<SaxpyFn>(&detail::saxpy_f32_scalar);
 #endif
-    default: return &detail::saxpy_f32_scalar;
-  }
 }
 DotF64Fn resolve_dot_f64() noexcept {
-  switch (selected_tier()) {
 #if defined(HYLE_ARCH_X64)
-    case Isa::kAvx512: return &detail::dot_f64_avx512;
-    case Isa::kAvx2: return &detail::dot_f64_avx2;
-    case Isa::kSse42: return &detail::dot_f64_sse4;
+  return detail::resolve_default_variant<DotF64Fn>(&detail::dot_f64_scalar, &detail::dot_f64_sse4,
+                                                   &detail::dot_f64_avx2, &detail::dot_f64_avx512);
 #elif defined(HYLE_ARCH_ARM64)
-    case Isa::kNeon: return &detail::dot_f64_neon;
+  return detail::resolve_default_variant<DotF64Fn>(&detail::dot_f64_scalar, &detail::dot_f64_neon);
+#else
+  return detail::resolve_default_variant<DotF64Fn>(&detail::dot_f64_scalar);
 #endif
-    default: return &detail::dot_f64_scalar;
-  }
 }
 SaxpyF64Fn resolve_saxpy_f64() noexcept {
-  switch (selected_tier()) {
 #if defined(HYLE_ARCH_X64)
-    case Isa::kAvx512: return &detail::saxpy_f64_avx512;
-    case Isa::kAvx2: return &detail::saxpy_f64_avx2;
-    case Isa::kSse42: return &detail::saxpy_f64_sse4;
+  return detail::resolve_default_variant<SaxpyF64Fn>(&detail::saxpy_f64_scalar,
+                                                     &detail::saxpy_f64_sse4,
+                                                     &detail::saxpy_f64_avx2,
+                                                     &detail::saxpy_f64_avx512);
 #elif defined(HYLE_ARCH_ARM64)
-    case Isa::kNeon: return &detail::saxpy_f64_neon;
+  return detail::resolve_default_variant<SaxpyF64Fn>(&detail::saxpy_f64_scalar,
+                                                     &detail::saxpy_f64_neon);
+#else
+  return detail::resolve_default_variant<SaxpyF64Fn>(&detail::saxpy_f64_scalar);
 #endif
-    default: return &detail::saxpy_f64_scalar;
-  }
 }
 using AddF32Fn = void (*)(const float*, const float*, float*, std::size_t) noexcept;
 using AddF64Fn = void (*)(const double*, const double*, double*, std::size_t) noexcept;
 AddF32Fn resolve_add_f32() noexcept {
-  switch (selected_tier()) {
 #if defined(HYLE_ARCH_X64)
-    case Isa::kAvx512: return &detail::add_f32_avx512;
-    case Isa::kAvx2: return &detail::add_f32_avx2;
-    case Isa::kSse42: return &detail::add_f32_sse4;
+  return detail::resolve_default_variant<AddF32Fn>(&detail::add_f32_scalar, &detail::add_f32_sse4,
+                                                   &detail::add_f32_avx2, &detail::add_f32_avx512);
 #elif defined(HYLE_ARCH_ARM64)
-    case Isa::kNeon: return &detail::add_f32_neon;
+  return detail::resolve_default_variant<AddF32Fn>(&detail::add_f32_scalar, &detail::add_f32_neon);
+#else
+  return detail::resolve_default_variant<AddF32Fn>(&detail::add_f32_scalar);
 #endif
-    default: return &detail::add_f32_scalar;
-  }
 }
 AddF64Fn resolve_add_f64() noexcept {
-  switch (selected_tier()) {
 #if defined(HYLE_ARCH_X64)
-    case Isa::kAvx512: return &detail::add_f64_avx512;
-    case Isa::kAvx2: return &detail::add_f64_avx2;
-    case Isa::kSse42: return &detail::add_f64_sse4;
+  return detail::resolve_default_variant<AddF64Fn>(&detail::add_f64_scalar, &detail::add_f64_sse4,
+                                                   &detail::add_f64_avx2, &detail::add_f64_avx512);
 #elif defined(HYLE_ARCH_ARM64)
-    case Isa::kNeon: return &detail::add_f64_neon;
+  return detail::resolve_default_variant<AddF64Fn>(&detail::add_f64_scalar, &detail::add_f64_neon);
+#else
+  return detail::resolve_default_variant<AddF64Fn>(&detail::add_f64_scalar);
 #endif
-    default: return &detail::add_f64_scalar;
-  }
 }
 
 }  // namespace
@@ -148,7 +115,7 @@ void add_f64(const double* x, const double* y, double* z, std::size_t n) noexcep
   fn(x, y, z, n);
 }
 Isa active_variant() noexcept {
-  static const Isa tier = selected_tier();
+  static const Isa tier = detail::default_dispatched_isa();
   return tier;
 }
 

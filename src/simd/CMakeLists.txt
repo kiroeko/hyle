@@ -1,5 +1,7 @@
 # simd: runtime ISA dispatch + portable vec<T,N> D-tag abstraction (simd-design).
 #
+include(HyleDispatch)
+
 # The CPUID PROBE moved to platform/ (platform/cpu.{h,cc}); simd/dispatch.h now forwards
 # those names into hyle::simd so the call sites below are unchanged. simd PUBLIC_DEPS
 # platform to link the detector (best_isa/cpu_features).
@@ -18,12 +20,6 @@ set(_simd_arch_sources "")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(HYLE_SIMD_X64 TRUE)
   list(APPEND _simd_arch_sources
-    ops/kernels_sse4.cc
-    ops/kernels_avx2.cc
-    ops/kernels_avx512.cc
-    scan/kernels_sse4.cc
-    scan/kernels_avx2.cc
-    scan/kernels_avx512.cc
     dtype/cvt_f16c.cc
     dtype/cvt_avx2.cc
     dtype/cvt_avx512bf16.cc
@@ -53,8 +49,6 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # which lower to NEON here (probed: target=NEON, matches libm) -- Highway for all three
   # (x86's per-op xsimd/Highway split was a speed pick; arm64 starts with one verified core).
   list(APPEND _simd_arch_sources
-    ops/kernels_neon.cc
-    scan/kernels_neon.cc
     dtype/cvt_neon.cc
     math/transcendental_highway_neon.cc
     math/transcendental_xsimd_neon.cc
@@ -71,9 +65,7 @@ set(_hwy_support "${PROJECT_SOURCE_DIR}/third_party/highway/hwy/abort.cc")
 
 hyle_add_module(simd SOURCES
   ops/dispatch_ops.cc
-  ops/kernels_scalar.cc
   scan/scan_dispatch.cc
-  scan/kernels_scalar.cc
   dtype/dtype_dispatch.cc
   dtype/cvt_scalar.cc
   math/math_dispatch.cc
@@ -94,17 +86,28 @@ hyle_add_module(simd SOURCES
 # flag) and uses /arch:AVX2 for the 256-bit TUs. The "src/..."-rooted #includes in the
 # kernel TUs need PROJECT_SOURCE_DIR on the include path.
 target_include_directories(hyle_simd PRIVATE "${PROJECT_SOURCE_DIR}")
+
+# ops/ and scan/ are the two modules whose variant TUs are mechanically identical: each defines
+# a target macro plus a symbol suffix, then includes one generic kernel body. Generate those TUs
+# from the shared build mechanism; it filters the full target list by architecture and applies the
+# exact tier flags through hyle_set_isa. Their dispatchers remain handwritten because scan's Linux
+# scalar policy is a semantic contract, not build metadata.
+hyle_add_dispatched_kernel(
+  TARGET hyle_simd
+  NAME ops
+  IMPL "src/simd/ops/kernel_impl.h"
+  TARGETS scalar sse4 avx2 avx512 neon)
+hyle_add_dispatched_kernel(
+  TARGET hyle_simd
+  NAME scan
+  IMPL "src/simd/scan/kernel_impl.h"
+  TARGETS scalar sse4 avx2 avx512 neon)
+
 # Per-ISA codegen flags via the single-source hyle_set_isa (HyleModule.cmake) -- one tier
 # name per TU, no hand-written /arch-vs-(-m) mapping to drift. scalar TU gets none. Gated by
 # arch: the wide x86 TUs only exist in an x86 build (see the SOURCES split above), and the
 # neon TU only in an aarch64 build -- setting flags on a TU not in SOURCES would error.
 if(HYLE_SIMD_X64)
-  hyle_set_isa(ops/kernels_sse4.cc SSE42)
-  hyle_set_isa(ops/kernels_avx2.cc AVX2)
-  hyle_set_isa(ops/kernels_avx512.cc AVX512)
-  hyle_set_isa(scan/kernels_sse4.cc SSE42)
-  hyle_set_isa(scan/kernels_avx2.cc AVX2)
-  hyle_set_isa(scan/kernels_avx512.cc AVX512)
   # f16c TU caps at AVX+F16C (NOT AVX2): F16C shipped with AVX on Ivy Bridge (no AVX2);
   # AVX2 would let the auto-vectorized tail emit an AVX2 int op that SIGILLs there. The
   # AVX_F16C tier encodes exactly that cap (see hyle_isa_flags).
@@ -126,8 +129,6 @@ elseif(HYLE_SIMD_ARM64)
   # backend was written+objdump-verified earlier (simd-03) but never RAN until a real
   # Apple-Silicon build; this TU finally compiles it into the dispatched dot/saxpy path.
   # cvt_neon.cc adds fp16(native vcvt)/bf16(integer) batch conversions.
-  hyle_set_isa(ops/kernels_neon.cc NEON)
-  hyle_set_isa(scan/kernels_neon.cc NEON)
   hyle_set_isa(dtype/cvt_neon.cc NEON)
 endif()
 

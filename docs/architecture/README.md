@@ -50,7 +50,9 @@ HYLE infra（通用、不特化、贴硬件）
 | [`lifecycle-design.md`](./lifecycle-design.md) | **失败边界**：fail-fast 绝不 try-catch + 四类失败分类 + 取消(结构化并发/await点) + 背压 + 优雅关闭 + 故障隔离=进程边界 + 跨 C-ABI 错误约定 |
 | [`compute-design.md`](./compute-design.md) | 异构计算选型：device/stream/kernel 两层抽象 + 借上游 ggml（adapter 隔离）+ shader 一等公民 + GPU completion 接 sched |
 | [`borrowing-ggml-memory-model.md`](./borrowing-ggml-memory-model.md) | **借 ggml 的显存归属边界**：host 归 HYLE（mem 喂入/取出）、device 归 ggml（gallocr 自管），就像 llama.cpp——CUDA 结构性否决外部显存注入（gdb 坐实），HYLE 显存自管是 compute-04/06 自造 kernel 的领域 |
-| [`simd-design.md`](./simd-design.md) | SIMD 选型：精简可移植 vector + 运行时 dispatch（clay 最大缺口）+ dtype(fp16/bf16) + 借 Highway/xsimd 数学核(vendored) + container 探测 tier 澄清 || [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 自造专用分配器（arena/pool/stack/fiber栈/pinned）+ 修 5 bug + NUMA/大页/64B 对齐契约 |
+| [`simd-design.md`](./simd-design.md) | SIMD 选型：精简可移植 vector + 运行时 dispatch（clay 最大缺口）+ dtype(fp16/bf16) + 借 Highway/xsimd 数学核(vendored) + container 探测 tier 澄清 |
+| [`simd-dispatch-guide.md`](./simd-dispatch-guide.md) | SIMD 双腿选择与动态 batch kernel 接入：静态宏 API、CPUID dispatch、生成 variant TU 与 ABI/验证契约 |
+| [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 自造专用分配器（arena/pool/stack/fiber栈/pinned）+ 修 5 bug + NUMA/大页/64B 对齐契约 |
 | [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
 | [`graph-design.md`](./graph-design.md) | **graph 支柱选型**：北极星② CAD/BIM/CAE 编排——依赖 DAG 增量重算(graph-01,clay taskgraph 零增量资产、从零造脏标记/缓存)+ 数据并行层(graph-02 parallel_for/reduce,归属拍板归 graph)；clay 继承面 ~800-1.5k 骨架 vs 从零 3-4k 增量引擎；纯编排层零自有执行资源(跑 sched+compute 之上)|
 | [`graph-02-design.md`](./graph-02-design.md) | **graph-02 数据并行层设计**：parallel_for/reduce/scan/sort over range，跑 HYLE sched(不借 oneTBB 运行时,只借其设计)。五决策：分块=递归 split+grainsize(work-stealing 友好非静态均分)/reduce=fast+deterministic 双档(浮点结合性)/kernel=Body 收 subrange(接 simd 紧循环)/scan v1 就做/复用 graph-01 sched 基建。分块靠 graph-02、块内靠 simd 的零阻抗接缝 |

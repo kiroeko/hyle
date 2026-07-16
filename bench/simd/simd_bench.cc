@@ -10,12 +10,16 @@
 // zero-indirection ceiling, so the gap between them IS the dispatch tax, printed honestly.
 #include <nanobench.h>
 
+#include <array>
 #include <cstddef>
+#include <cstdio>
 #include <cstdint>
 #include <random>
+#include <string>
 #include <vector>
 
 #include "bench/simd/simd_kernels.h"
+#include "hyle/platform.h"
 #include "hyle/simd/ops.h"  // public dispatched dot_f32 / saxpy_f32 / active_variant
 
 namespace {
@@ -27,6 +31,25 @@ std::vector<float> gen(std::size_t n, std::uint64_t seed) {
   std::vector<float> v(n);
   for (auto& e : v) e = dist(rng);
   return v;
+}
+
+using DirectDotFn = float (*)(const float*, const float*, std::size_t);
+
+// hyle_simd's variant entry symbols are private to the DLL, as they must be. The benchmark has
+// same-ISA local x64 anchors for scalar/SSE4/AVX2; use one only when it matches the public tier.
+// AVX-512 and NEON intentionally omit this comparison rather than crossing an ABI boundary or
+// comparing different widths and mislabeling the result as dispatch overhead.
+DirectDotFn direct_active_dot() noexcept {
+#if defined(HYLE_ARCH_X64)
+  switch (hyle::simd::active_variant()) {
+    case hyle::simd::Isa::kAvx2: return &hyle_bench::dot_avx2;
+    case hyle::simd::Isa::kSse42: return &hyle_bench::dot_sse4;
+    case hyle::simd::Isa::kScalar: return &hyle_bench::dot_scalar;
+    default: return nullptr;
+  }
+#else
+  return nullptr;
+#endif
 }
 }  // namespace
 
@@ -59,6 +82,25 @@ int main() {
     b.run("HYLE dot_f32 (public dispatch)", [&] {
       ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot_f32(x.data(), y.data(), kN));
     });
+  }
+
+  // The 4096 row above shows the steady-state ceiling. Sweep batch sizes with the SAME active
+  // implementation on both sides so this reports only the cached dispatcher indirect-call tax.
+  if (const DirectDotFn direct_dot = direct_active_dot()) {
+    for (const std::size_t n : std::array<std::size_t, 6>{1, 16, 64, 256, 1024, kN}) {
+      ankerl::nanobench::Bench b;
+      const std::string title = "dispatch overhead dot_f32 (n=" + std::to_string(n) + ")";
+      b.title(title.c_str()).relative(true).batch(n).minEpochIterations(n <= 16 ? 500000 : 10000);
+      b.run("direct active kernel", [&] {
+        ankerl::nanobench::doNotOptimizeAway(direct_dot(x.data(), y.data(), n));
+      });
+      b.run("HYLE dot_f32 (public dispatch)", [&] {
+        ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot_f32(x.data(), y.data(), n));
+      });
+    }
+  } else {
+    std::printf("dispatch scaling omitted: no same-ISA local direct anchor for tier=%s\n",
+                hyle::simd::isa_name(hyle::simd::active_variant()));
   }
 
   {

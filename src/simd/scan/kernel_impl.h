@@ -1,5 +1,5 @@
 // Shared scan kernel bodies (Kogge-Stone within vector + carry across vectors).
-// Each TU defines HYLE_SIMD_TARGET_* + HYLE_KERNEL_SUFFIX then includes this.
+// Each generated TU defines HYLE_SIMD_TARGET_* + HYLE_SIMD_VARIANT_SUFFIX then includes this.
 
 #include <cstddef>
 #include <cstdint>
@@ -7,12 +7,14 @@
 #include "hyle/simd/vec.h"
 #include "src/simd/scan/kernels.h"
 
-#ifndef HYLE_KERNEL_SUFFIX
-#  error "define HYLE_KERNEL_SUFFIX before including scan/kernel_impl.h"
+#ifndef HYLE_SIMD_VARIANT_SUFFIX
+#  error "define HYLE_SIMD_VARIANT_SUFFIX before including scan/kernel_impl.h"
 #endif
 
-#define HYLE_SIMD_CAT_(a, b) a##b
-#define HYLE_SIMD_CAT(a, b) HYLE_SIMD_CAT_(a, b)
+// This is an intentionally multi-included implementation header. Keep helper macro names local
+// and undefine them below so a later include cannot inherit a stale suffix or token-paste helper.
+#define HYLE_SIMD_SCAN_CAT_(a, b) a##b
+#define HYLE_SIMD_SCAN_CAT(a, b) HYLE_SIMD_SCAN_CAT_(a, b)
 
 namespace hyle::simd::detail {
 namespace {
@@ -108,23 +110,26 @@ HYLE_FORCE_INLINE void exclusive_scan_kernel(T* data, std::size_t n) noexcept {
 
 }  // namespace
 
-#define HYLE_SCAN_DEF(T, tag)                                                                  \
-  void HYLE_SIMD_CAT(inclusive_scan_##tag##_, HYLE_KERNEL_SUFFIX)(T * data,                    \
-                                                                  std::size_t n) noexcept {    \
+#define HYLE_SIMD_SCAN_DEF(T, tag)                                                             \
+  void HYLE_SIMD_SCAN_CAT(inclusive_scan_##tag##_, HYLE_SIMD_VARIANT_SUFFIX)(T * data,          \
+                                                                               std::size_t n) noexcept { \
     inclusive_scan_kernel<T>(data, n);                                                         \
   }                                                                                            \
-  void HYLE_SIMD_CAT(exclusive_scan_##tag##_, HYLE_KERNEL_SUFFIX)(T * data,                    \
-                                                                  std::size_t n) noexcept {    \
+  void HYLE_SIMD_SCAN_CAT(exclusive_scan_##tag##_, HYLE_SIMD_VARIANT_SUFFIX)(T * data,          \
+                                                                               std::size_t n) noexcept { \
     exclusive_scan_kernel<T>(data, n);                                                         \
   }
 
-HYLE_SCAN_DEF(std::uint32_t, u32)
-HYLE_SCAN_DEF(std::int32_t, i32)
-HYLE_SCAN_DEF(std::uint64_t, u64)
-HYLE_SCAN_DEF(std::int64_t, i64)
-HYLE_SCAN_DEF(float, f32)
-HYLE_SCAN_DEF(double, f64)
+HYLE_SIMD_SCAN_DEF(std::uint32_t, u32)
+HYLE_SIMD_SCAN_DEF(std::int32_t, i32)
+HYLE_SIMD_SCAN_DEF(std::uint64_t, u64)
+HYLE_SIMD_SCAN_DEF(std::int64_t, i64)
+HYLE_SIMD_SCAN_DEF(float, f32)
+HYLE_SIMD_SCAN_DEF(double, f64)
 
-#undef HYLE_SCAN_DEF
+#undef HYLE_SIMD_SCAN_DEF
 
 }  // namespace hyle::simd::detail
+
+#undef HYLE_SIMD_SCAN_CAT
+#undef HYLE_SIMD_SCAN_CAT_

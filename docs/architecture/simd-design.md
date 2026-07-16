@@ -122,15 +122,15 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 > AVX512 使用后端自有 `Mask512` 包装 k-register，公开 D-tag/op 签名不变；无须改造 vec.h mask 模型。无 AVX512 真机不降低能力标准，Intel SDE 是执行闸门。
 
-**已实现**（`backend/avx512.h` + `ops/kernels_avx512.cc`）：512 位 AVX-512 后端覆盖全部 lane/op 契约。验证包括 GCC/MSVC 原生编译、objdump 的 zmm/k-register 指令，以及 Intel SDE `vec_test` 全绿；运行时 tier 探针确认选择 kAvx512。
+**已实现**（`backend/avx512.h` + `cmake/HyleDispatch.cmake` 生成的 ops AVX-512 TU）：512 位 AVX-512 后端覆盖全部 lane/op 契约。验证包括 GCC/MSVC 原生编译、objdump 的 zmm/k-register 指令，以及 Intel SDE `vec_test` 全绿；运行时 tier 探针确认选择 kAvx512。
 
-**objdump 实证**（铁证,非空谈,双平台）：backend dot→`vfmadd231ps %zmm`+`vextractf64x4` reduce；relu→`vcmpgt_oqps → %k1`+`vmovaps %zmm{%k1}{z}`(**k 寄存器掩码路径通**)；unsigned count→`vpcmpnleud → %k0`(原生无符号比较,无 xor-MSB)+`kmovw`+`popcnt`。派发 kernel TU(`kernels_avx512.cc.obj`):MSVC 33 条 zmm(`vfmadd213ps zmm`/`vmovups zmm`)、GCC-14 9 条 zmm(`vfmadd231ps zmm`/`vmovups zmm`/`vbroadcastss xmm→zmm`/`vextractf64x4 zmm→ymm`);两编译器 codegen 计数不同(GCC reduce 尾降 ymm/xmm),但核心 512-bit FMA/load 都真发。
+**objdump 实证**（铁证,非空谈,双平台）：backend dot→`vfmadd231ps %zmm`+`vextractf64x4` reduce；relu→`vcmpgt_oqps → %k1`+`vmovaps %zmm{%k1}{z}`(**k 寄存器掩码路径通**)；unsigned count→`vpcmpnleud → %k0`(原生无符号比较,无 xor-MSB)+`kmovw`+`popcnt`。生成的 ops AVX-512 TU：MSVC 33 条 zmm(`vfmadd213ps zmm`/`vmovups zmm`)、GCC-14 9 条 zmm(`vfmadd231ps zmm`/`vmovups zmm`/`vbroadcastss xmm→zmm`/`vextractf64x4 zmm→ymm`);两编译器 codegen 计数不同(GCC reduce 尾降 ymm/xmm),但核心 512-bit FMA/load 都真发。
 
 **Mask 模型**：vec.h 的 `Mask` 由每个后端自定义；AVX512 的 `Mask512` 直接包 `__mmask16/8`，op 签名不变。比较产出 k-register，`IfThenElse` 用 mask blend，`CountTrue` 对位掩码 popcount；unsigned 比较直接使用原生 epu32 mask 指令。
 
 **执行边界**：SDE 提供正确性与 dispatch 验证，不用于性能结论；AVX512 性能仍只接受真机 benchmark。
 
-**派发现状**：`kernels_avx512.cc` 已接入 `dispatch_ops.cc::selected_tier()`；具备完整 ZMM OS-state 与 ISA 特性的主机默认派发到 AVX512 kernel，否则回落 AVX2/scalar。SDE 双向探针已验证 tier 选择。
+**派发现状**：`hyle_add_dispatched_kernel` 生成的 AVX-512 TU 已接入 `dispatch_ops.cc`；具备完整 ZMM OS-state 与 ISA 特性的主机默认派发到 AVX512 kernel，否则回落 AVX2/scalar。SDE 双向探针已验证 tier 选择。
 
 ### AVX-512 dtype/math 上架
 

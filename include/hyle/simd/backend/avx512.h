@@ -2073,21 +2073,43 @@ HYLE_FORCE_INLINE detail::V512<D> SlideUpLanes(D dd, detail::V512<D> v, std::siz
   if (amt >= N) return Zero(dd);
   if constexpr (sizeof(T) == 4 && N == 16) {
     // valignd with zero: alignr_epi32(v, 0, 16-amt) => [0..0 (amt), v0..v_{N-amt-1}].
+    // The intrinsic's lane offset is an immediate. GCC happened to fold some callers, but MSVC
+    // rejects a runtime value, so enumerate the bounded public API range explicitly.
     detail::V512<D> r;
     const __m512i z = _mm512_setzero_si512();
-    const __m512i s =
-        _mm512_alignr_epi32(detail::bitcast_raw_avx512<__m512i>(v.raw), z,
-                            static_cast<int>(16 - amt));
-    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
-    return r;
+    const __m512i raw = detail::bitcast_raw_avx512<__m512i>(v.raw);
+    switch (amt) {
+      case 1: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 15)); return r;
+      case 2: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 14)); return r;
+      case 3: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 13)); return r;
+      case 4: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 12)); return r;
+      case 5: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 11)); return r;
+      case 6: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 10)); return r;
+      case 7: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 9)); return r;
+      case 8: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 8)); return r;
+      case 9: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 7)); return r;
+      case 10: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 6)); return r;
+      case 11: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 5)); return r;
+      case 12: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 4)); return r;
+      case 13: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 3)); return r;
+      case 14: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 2)); return r;
+      case 15: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(raw, z, 1)); return r;
+      default: return Zero(dd);  // amt >= N returned above
+    }
   } else if constexpr (sizeof(T) == 8 && N == 8) {
     detail::V512<D> r;
     const __m512i z = _mm512_setzero_si512();
-    const __m512i s =
-        _mm512_alignr_epi64(detail::bitcast_raw_avx512<__m512i>(v.raw), z,
-                            static_cast<int>(8 - amt));
-    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
-    return r;
+    const __m512i raw = detail::bitcast_raw_avx512<__m512i>(v.raw);
+    switch (amt) {
+      case 1: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(raw, z, 7)); return r;
+      case 2: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(raw, z, 6)); return r;
+      case 3: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(raw, z, 5)); return r;
+      case 4: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(raw, z, 4)); return r;
+      case 5: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(raw, z, 3)); return r;
+      case 6: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(raw, z, 2)); return r;
+      case 7: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(raw, z, 1)); return r;
+      default: return Zero(dd);  // amt >= N returned above
+    }
   } else {
     alignas(64) T s[N]; alignas(64) T dst[N] = {};
     Store(v, dd, s);
@@ -2102,19 +2124,42 @@ HYLE_FORCE_INLINE detail::V512<D> SlideDownLanes(D dd, detail::V512<D> v, std::s
   if (amt == 0) return v;
   if (amt >= N) return Zero(dd);
   if constexpr (sizeof(T) == 4 && N == 16) {
+    // Like SlideUpLanes, valignd requires an immediate offset on every supported compiler.
     detail::V512<D> r;
     const __m512i z = _mm512_setzero_si512();
-    const __m512i s =
-        _mm512_alignr_epi32(z, detail::bitcast_raw_avx512<__m512i>(v.raw), static_cast<int>(amt));
-    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
-    return r;
+    const __m512i raw = detail::bitcast_raw_avx512<__m512i>(v.raw);
+    switch (amt) {
+      case 1: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 1)); return r;
+      case 2: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 2)); return r;
+      case 3: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 3)); return r;
+      case 4: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 4)); return r;
+      case 5: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 5)); return r;
+      case 6: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 6)); return r;
+      case 7: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 7)); return r;
+      case 8: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 8)); return r;
+      case 9: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 9)); return r;
+      case 10: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 10)); return r;
+      case 11: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 11)); return r;
+      case 12: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 12)); return r;
+      case 13: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 13)); return r;
+      case 14: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 14)); return r;
+      case 15: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi32(z, raw, 15)); return r;
+      default: return Zero(dd);  // amt >= N returned above
+    }
   } else if constexpr (sizeof(T) == 8 && N == 8) {
     detail::V512<D> r;
     const __m512i z = _mm512_setzero_si512();
-    const __m512i s =
-        _mm512_alignr_epi64(z, detail::bitcast_raw_avx512<__m512i>(v.raw), static_cast<int>(amt));
-    r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(s);
-    return r;
+    const __m512i raw = detail::bitcast_raw_avx512<__m512i>(v.raw);
+    switch (amt) {
+      case 1: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(z, raw, 1)); return r;
+      case 2: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(z, raw, 2)); return r;
+      case 3: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(z, raw, 3)); return r;
+      case 4: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(z, raw, 4)); return r;
+      case 5: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(z, raw, 5)); return r;
+      case 6: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(z, raw, 6)); return r;
+      case 7: r.raw = detail::bitcast_raw_avx512<detail::Raw512T<T>>(_mm512_alignr_epi64(z, raw, 7)); return r;
+      default: return Zero(dd);  // amt >= N returned above
+    }
   } else {
     alignas(64) T s[N]; alignas(64) T dst[N] = {};
     Store(v, dd, s);

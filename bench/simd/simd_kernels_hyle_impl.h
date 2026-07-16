@@ -1,6 +1,6 @@
 // simd_kernels_hyle_impl.h -- shared HYLE kernel bodies, written ONCE against the D-tag
 // abstraction (ScalableTag idiom). Each per-ISA TU (simd_kernels_sse4.cc / _avx2.cc)
-// #defines HYLE_SIMD_TARGET_* + HYLE_KERNEL_SUFFIX then includes this, so the SAME source
+// #defines HYLE_SIMD_TARGET_* + HYLE_BENCH_VARIANT_SUFFIX then includes this, so the SAME source
 // compiles to dot_sse4/dot_avx2 etc. -- demonstrating the abstraction's portability AND
 // giving honest per-ISA codegen (one backend per TU).
 //
@@ -12,20 +12,20 @@
 #include "hyle/simd/vec.h"
 #include "bench/simd/simd_kernels.h"
 
-#ifndef HYLE_KERNEL_SUFFIX
-#error "define HYLE_KERNEL_SUFFIX (e.g. sse4) before including"
+#ifndef HYLE_BENCH_VARIANT_SUFFIX
+#error "define HYLE_BENCH_VARIANT_SUFFIX (e.g. sse4) before including"
 #endif
 
 #define HYLE_BENCH_CAT_(a, b) a##b
 #define HYLE_BENCH_CAT(a, b) HYLE_BENCH_CAT_(a, b)
-#define DOT_FN HYLE_BENCH_CAT(dot_, HYLE_KERNEL_SUFFIX)
-#define SAXPY_FN HYLE_BENCH_CAT(saxpy_, HYLE_KERNEL_SUFFIX)
-#define REDUCE_MAX_FN HYLE_BENCH_CAT(reduce_max_, HYLE_KERNEL_SUFFIX)
-#define SCALE_FN HYLE_BENCH_CAT(scale_, HYLE_KERNEL_SUFFIX)
+#define HYLE_BENCH_DOT_FN HYLE_BENCH_CAT(dot_, HYLE_BENCH_VARIANT_SUFFIX)
+#define HYLE_BENCH_SAXPY_FN HYLE_BENCH_CAT(saxpy_, HYLE_BENCH_VARIANT_SUFFIX)
+#define HYLE_BENCH_REDUCE_MAX_FN HYLE_BENCH_CAT(reduce_max_, HYLE_BENCH_VARIANT_SUFFIX)
+#define HYLE_BENCH_SCALE_FN HYLE_BENCH_CAT(scale_, HYLE_BENCH_VARIANT_SUFFIX)
 
 namespace hyle_bench {
 
-float DOT_FN(const float* x, const float* y, std::size_t n) {
+float HYLE_BENCH_DOT_FN(const float* x, const float* y, std::size_t n) {
   namespace hs = hyle::simd;
   const hs::ScalableTag<float> d;
   const std::size_t w = hs::Lanes(d);
@@ -49,7 +49,7 @@ float DOT_FN(const float* x, const float* y, std::size_t n) {
   return sum;
 }
 
-void SAXPY_FN(float a, const float* x, float* y, std::size_t n) {
+void HYLE_BENCH_SAXPY_FN(float a, const float* x, float* y, std::size_t n) {
   namespace hs = hyle::simd;
   const hs::ScalableTag<float> d;
   const std::size_t w = hs::Lanes(d);
@@ -62,7 +62,7 @@ void SAXPY_FN(float a, const float* x, float* y, std::size_t n) {
   for (; i < n; ++i) y[i] = a * x[i] + y[i];  // tail
 }
 
-float REDUCE_MAX_FN(const float* x, std::size_t n) {
+float HYLE_BENCH_REDUCE_MAX_FN(const float* x, std::size_t n) {
   namespace hs = hyle::simd;
   const hs::ScalableTag<float> d;
   const std::size_t w = hs::Lanes(d);
@@ -75,7 +75,7 @@ float REDUCE_MAX_FN(const float* x, std::size_t n) {
   return m;
 }
 
-void SCALE_FN(float a, const float* x, float* y, std::size_t n) {
+void HYLE_BENCH_SCALE_FN(float a, const float* x, float* y, std::size_t n) {
   namespace hs = hyle::simd;
   const hs::ScalableTag<float> d;
   const std::size_t w = hs::Lanes(d);
@@ -86,3 +86,10 @@ void SCALE_FN(float a, const float* x, float* y, std::size_t n) {
 }
 
 }  // namespace hyle_bench
+
+#undef HYLE_BENCH_SCALE_FN
+#undef HYLE_BENCH_REDUCE_MAX_FN
+#undef HYLE_BENCH_SAXPY_FN
+#undef HYLE_BENCH_DOT_FN
+#undef HYLE_BENCH_CAT
+#undef HYLE_BENCH_CAT_

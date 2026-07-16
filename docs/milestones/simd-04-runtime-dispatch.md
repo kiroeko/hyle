@@ -20,29 +20,27 @@ simd-01 造了 CPUID 探测器（`best_isa()`），simd-02 造了各 ISA 后端�
 
 ## 在架构中的位置
 
-`simd/ops/` 子层。fn-ptr 表模型（像 Highway `HWY_DYNAMIC_DISPATCH`）：每 ISA kernel 独立 `-march` TU，baseline dispatcher 取 fn-ptr。**零间接的变体-DLL 模型**（每 ISA 独立 .so + dlopen，调用全直接）是更重的后续里程碑——conventions §10 记两种皆一等公民，按部署选。
+`simd/ops/` 子层。fn-ptr 表模型（像 Highway `HWY_DYNAMIC_DISPATCH`）：每 ISA kernel 独立 `-march` TU，baseline dispatcher 取 fn-ptr。变体-DLL 已复审为错配复杂度：当前公开面全是 whole-buffer batch API，一次间接调用被内核循环摊销；部署选择与边界见 [`../architecture/simd-dispatch-guide.md`](../architecture/simd-dispatch-guide.md)。
 
 ## 具体事务（做什么）
 
-- [x] `include/hyle/simd/ops.h`：公开派发入口 `dot_f32`/`saxpy_f32`/`active_variant`（HYLE_SIMD_API 导出）。注释标清 fn-ptr 表模型 = 每调用一次指针间接（诚实，非零间接）。
-- [x] `src/simd/ops/kernels.h`：内部变体符号声明 `detail::dot_f32_{scalar,sse4,avx2}` 等。
-- [x] `src/simd/ops/kernel_impl.h`：共享 kernel 体（ScalableTag 写法，HYLE_KERNEL_SUFFIX 命名），编 3 次。
-- [x] `kernels_{scalar,sse4,avx2}.cc`：3 个变体 TU,各 `HYLE_SIMD_TARGET_*` + `-march`。
-- [x] `src/simd/ops/dispatch_ops.cc`：baseline dispatcher，`selected_tier()` 映射 best_isa→{scalar,sse42,avx2}，`resolve_*` 选 fn-ptr，公开入口经 Meyers static 缓存转发。
-- [x] CMake：变体 TU per-source `-march`，dispatcher 保持 baseline，整模块 LTO off。
-- [x] `tests/simd/ops_test.cc`：派发结果对拍 double 参考 + `active_variant()==best_isa 映射 tier` + tail/n=0 边界。
-- [x] **明确不做**：变体-DLL 零间接模型；avx512/neon 变体（待 simd-03 后端）；dot/saxpy 之外的 op（按需加）。
+- [x] `include/hyle/simd/ops.h`：公开派发入口 `dot`/`saxpy`/`add` 的 f32/f64 API 与 `active_variant`（HYLE_SIMD_API 导出）。每调用一次指针间接，内核循环保持静态全内联。
+- [x] `src/simd/ops/kernels.h`：内部变体符号声明 `detail::*_{scalar,sse4,avx2,avx512,neon}`。
+- [x] `src/simd/ops/kernel_impl.h`：共享 kernel 体（ScalableTag 写法，以 `HYLE_SIMD_VARIANT_SUFFIX` 命名），由构建生成的 TU 多次编译。
+- [x] `cmake/HyleDispatch.cmake`：按架构生成 scalar/x64/arm64 变体 TU，并以 `hyle_set_isa` 施加唯一的 per-source flag。
+- [x] `src/simd/dispatch_internal.h` + `dispatch_ops.cc`：baseline dispatcher 使用 canonical ISA resolver；公开入口经 Meyers static 缓存转发。
+- [x] `tests/simd/ops_test.cc`：派发结果对拍 double 参考、active tier、tail/n=0 边界；完整机制验收见 `simd-21`。
+- [x] **明确不做**：变体-DLL 零间接模型；没有稳定 batch 契约的寄存器级 `vec.h` 原语保持静态宏腿。
 
 ## 交付物
 
-- ops.h（公开）+ 5 个内部文件（kernels.h/kernel_impl.h/3 变体 TU/dispatch_ops.cc）+ ops_test。cloc：生产 111、测试 67。这是**派发接线**非新算法，故精瘦合理。
+- `ops.h`（公开）+ `kernels.h`/`kernel_impl.h`/`dispatch_ops.cc`（内部）+ `HyleDispatch.cmake` 的构建期 variant TU + ops_test。动态 dispatch 机制的当前总面与验证见 `simd-21`。
 
 ## 验收标准
 
-- **编译**：✅ Win MSVC 19.50（/W4 零告警）+ Linux GCC14.2 Release（零告警）。
-- **正确性**：✅ 双平台 `hyle_simd_test` 36/36（31 既有 + 5 派发）。派发结果对拍 double 精度参考（相对容差，容 fp reorder 但抓逻辑 bug——精确 per-op 数学在 vec_test 整数 oracle 钉死）；`active_variant()` 本机 = kAvx2（证 best_isa 真被消费选 kernel）。全量 ctest 13/13 无回归。
-- **SIGILL 安全（红队代码分析核实，未在非 AVX2 机实跑——本机即 AVX2,无老硬件可验,同 NEON"仅未跑"口径）**：老 CPU（无 AVX2）→ `selected_tier()` 返 kSse42/kScalar → `&dot_f32_avx2` **永不取址、永不调用**；avx2 符号在二进制中但不执行=安全；baseline dispatcher + LTO off + 独立 TU = 无跨 TU 内联。**FMA gating 闭合 AVX2-without-FMA 漏洞**（kAvx2 要求 fma 位，故 AVX2 kernel 的 `_mm256_fmadd` 永不在无 FMA CPU 跑）。**待补真验**：在禁 AVX2 的环境（如 QEMU `-cpu` 限 SSE4.2、或 `sde -snb`）实跑确认不 SIGILL，登记为后续。
-- **对抗自审修掉的真 bug**：`kNativeVectorBytes` 原 `inline constexpr`（外部链接）但**各 TU 值不同**（avx2 TU=32，其余=16）——inline 变量须各 TU 定义一致,divergent = IFNDR。simd-02 时各变体在独立测试 exe 故潜伏；simd-04 把 scalar+sse4+avx2 kernel TU 链进**同一 hyle_simd.dll**,变真 ODR 雷。改 `static constexpr`(内部链接,各 TU 自有正确值,仅常量折叠入模板参数不 odr-use)。
+- **编译/正确性**：当前三平台的生成 TU、公开 batch API 与 active-tier 测试均通过；精确测试矩阵和计数见 `simd-21`。
+- **SIGILL 安全**：baseline dispatcher + LTO off + 独立宽 ISA TU 保证未知 CPU 先执行的代码不含宽指令；AVX2 仅在 CPUID feature group 满足时解析。特殊特征（F16C/BF16/AVX10）不使用 canonical resolver，而由对应模块精确 gate。
+- **对抗自审保留的教训**：跨 ISA TU 的 `kNativeVectorBytes` 不能是外部链接 inline 变量；各宽度不同的常量须为内部链接 `static constexpr`，避免同一 DLL 内 ODR 违规。
 
 ## 参考
 

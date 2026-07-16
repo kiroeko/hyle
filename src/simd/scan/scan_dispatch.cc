@@ -3,7 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/platform.h"
+#include "src/simd/dispatch_internal.h"
 #include "src/simd/scan/kernels.h"
 
 // Baseline dispatcher (no -march). Same selected_tier model as ops/dispatch_ops.cc.
@@ -21,18 +21,8 @@ Isa selected_tier() noexcept {
 #if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
   // See file header: SIMD single-stream prefix loses to GCC's scalar chain on this OS/arch.
   return Isa::kScalar;
-#elif defined(HYLE_ARCH_X64)
-  const auto v = static_cast<std::uint32_t>(best_isa());
-  if (v >= static_cast<std::uint32_t>(Isa::kAvx512)) return Isa::kAvx512;
-  if (v >= static_cast<std::uint32_t>(Isa::kAvx2)) return Isa::kAvx2;
-  if (v >= static_cast<std::uint32_t>(Isa::kSse42)) return Isa::kSse42;
-  return Isa::kScalar;
-#elif defined(HYLE_ARCH_ARM64)
-  if (static_cast<std::uint32_t>(best_isa()) >= static_cast<std::uint32_t>(Isa::kNeon))
-    return Isa::kNeon;
-  return Isa::kScalar;
 #else
-  return Isa::kScalar;
+  return detail::default_dispatched_isa();
 #endif
 }
 
@@ -63,57 +53,56 @@ ScanFn<T> resolve_inclusive() noexcept;
 template <typename T>
 ScanFn<T> resolve_exclusive() noexcept;
 
-#define HYLE_RESOLVE(T, tag)                                                                   \
-  template <>                                                                                  \
-  ScanFn<T> resolve_inclusive<T>() noexcept {                                                  \
-    switch (selected_tier()) {                                                                 \
-      HYLE_ARCH_CASES(inclusive_scan_##tag, inclusive_scan_pure<T>)                            \
-    }                                                                                          \
-  }                                                                                            \
-  template <>                                                                                  \
-  ScanFn<T> resolve_exclusive<T>() noexcept {                                                  \
-    switch (selected_tier()) {                                                                 \
-      HYLE_ARCH_CASES(exclusive_scan_##tag, exclusive_scan_pure<T>)                            \
-    }                                                                                          \
-  }
-
 #if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
 // Force pure scalar regardless of CPUID tier (selected_tier already returns kScalar, but
 // keep the pure loop — not the soft-SIMD scalar backend KS).
-#  define HYLE_ARCH_CASES(fnbase, pure_fn)                                                     \
-    default:                                                                                   \
-      return &pure_fn;
+#  define HYLE_SIMD_SCAN_RESOLVE(T, tag)                                                       \
+    template <>                                                                                \
+    ScanFn<T> resolve_inclusive<T>() noexcept { return &inclusive_scan_pure<T>; }              \
+    template <>                                                                                \
+    ScanFn<T> resolve_exclusive<T>() noexcept { return &exclusive_scan_pure<T>; }
 #elif defined(HYLE_ARCH_X64)
-#  define HYLE_ARCH_CASES(fnbase, pure_fn)                                                     \
-    case Isa::kAvx512:                                                                         \
-      return &detail::fnbase##_avx512;                                                         \
-    case Isa::kAvx2:                                                                           \
-      return &detail::fnbase##_avx2;                                                           \
-    case Isa::kSse42:                                                                          \
-      return &detail::fnbase##_sse4;                                                           \
-    default:                                                                                   \
-      return &pure_fn;
+#  define HYLE_SIMD_SCAN_RESOLVE(T, tag)                                                       \
+    template <>                                                                                \
+    ScanFn<T> resolve_inclusive<T>() noexcept {                                                \
+      return detail::resolve_default_variant<ScanFn<T>>(                                       \
+          &inclusive_scan_pure<T>, &detail::inclusive_scan_##tag##_sse4,                      \
+          &detail::inclusive_scan_##tag##_avx2, &detail::inclusive_scan_##tag##_avx512);      \
+    }                                                                                           \
+    template <>                                                                                \
+    ScanFn<T> resolve_exclusive<T>() noexcept {                                                \
+      return detail::resolve_default_variant<ScanFn<T>>(                                       \
+          &exclusive_scan_pure<T>, &detail::exclusive_scan_##tag##_sse4,                      \
+          &detail::exclusive_scan_##tag##_avx2, &detail::exclusive_scan_##tag##_avx512);      \
+    }
 #elif defined(HYLE_ARCH_ARM64)
-#  define HYLE_ARCH_CASES(fnbase, pure_fn)                                                     \
-    case Isa::kNeon:                                                                           \
-      return &detail::fnbase##_neon;                                                           \
-    default:                                                                                   \
-      return &pure_fn;
+#  define HYLE_SIMD_SCAN_RESOLVE(T, tag)                                                       \
+    template <>                                                                                \
+    ScanFn<T> resolve_inclusive<T>() noexcept {                                                \
+      return detail::resolve_default_variant<ScanFn<T>>(                                       \
+          &inclusive_scan_pure<T>, &detail::inclusive_scan_##tag##_neon);                     \
+    }                                                                                           \
+    template <>                                                                                \
+    ScanFn<T> resolve_exclusive<T>() noexcept {                                                \
+      return detail::resolve_default_variant<ScanFn<T>>(                                       \
+          &exclusive_scan_pure<T>, &detail::exclusive_scan_##tag##_neon);                     \
+    }
 #else
-#  define HYLE_ARCH_CASES(fnbase, pure_fn)                                                     \
-    default:                                                                                   \
-      return &pure_fn;
+#  define HYLE_SIMD_SCAN_RESOLVE(T, tag)                                                       \
+    template <>                                                                                \
+    ScanFn<T> resolve_inclusive<T>() noexcept { return &inclusive_scan_pure<T>; }              \
+    template <>                                                                                \
+    ScanFn<T> resolve_exclusive<T>() noexcept { return &exclusive_scan_pure<T>; }
 #endif
 
-HYLE_RESOLVE(std::uint32_t, u32)
-HYLE_RESOLVE(std::int32_t, i32)
-HYLE_RESOLVE(std::uint64_t, u64)
-HYLE_RESOLVE(std::int64_t, i64)
-HYLE_RESOLVE(float, f32)
-HYLE_RESOLVE(double, f64)
+HYLE_SIMD_SCAN_RESOLVE(std::uint32_t, u32)
+HYLE_SIMD_SCAN_RESOLVE(std::int32_t, i32)
+HYLE_SIMD_SCAN_RESOLVE(std::uint64_t, u64)
+HYLE_SIMD_SCAN_RESOLVE(std::int64_t, i64)
+HYLE_SIMD_SCAN_RESOLVE(float, f32)
+HYLE_SIMD_SCAN_RESOLVE(double, f64)
 
-#undef HYLE_RESOLVE
-#undef HYLE_ARCH_CASES
+#undef HYLE_SIMD_SCAN_RESOLVE
 
 }  // namespace
 

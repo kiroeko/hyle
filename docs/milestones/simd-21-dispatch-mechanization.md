@@ -1,77 +1,74 @@
-# simd-21: 双腿分发机制化(静态宏腿不动,动态 cpuid 腿从手抄样板变成机制)
+# simd-21: 双腿分发机制化
 
-> **状态**:规划(2026-07-16)。**触发**:用户担忧"hyle simd 到处必须用宏、没有动态分发,不像 Highway
-> 能两条腿走路"。**事实修正(先说结论)**:两条腿都已存在——
-> ①静态腿 = header 级 `hs::` op 面,per-TU `HYLE_SIMD_TARGET_*` 宏,零间接零损失(章程主路径:
-> "编译期优先,运行期零 dispatch");
-> ②动态腿 = `src/simd/{ops,math,sort,bitpack,dtype,scan}` 六模块的
-> "目标无关 `kernel_impl.h` + 薄 per-ISA TU(`kernels_{scalar,sse4,avx2,avx512,neon}.cc`)+
-> `dispatch_ops.cc` 按 `best_isa()` 一次冷跳选路"(simd-04 建成,hyle_simd.dll 即此物,面向
-> "产品发单一二进制、客户 CPU 未知"场景)。
-> **真正缺的**:动态腿是六份手抄样板,没有可复用机制、没有消费者接入故事、没有文档——以至于项目
-> 作者本人都没意识到它在。本里程碑 = 把它机制化,不是从零发明。
+> **状态**:已落地(2026-07-16)。静态宏腿保持零开销；动态腿把可机械化的 variant TU 接线收敛为
+> CMake 机制，并保留模块自行表达 CPUID 特征、算法与正确性策略的权利。使用说明见
+> [`../architecture/simd-dispatch-guide.md`](../architecture/simd-dispatch-guide.md)。
 
-## 一、现状盘点(证据)
+## 一、两条腿与边界
 
-| 腿 | 形态 | 位置 | 状态 |
+| 腿 | 适用面 | 形态 | 运行时成本 |
 |---|---|---|---|
-| 静态(宏) | 每 TU 定义 `HYLE_SIMD_TARGET_<ISA>` + 对应 `-march`,vec.h 阶梯选后端头,全内联 | `include/hyle/simd/vec.h` 目标阶梯;bench 三 TU、tests 变体即用法 | ✅ 主路径,零损失,不动 |
-| 动态(cpuid) | 目标无关 impl 头被 N 个薄 TU 各以不同宏+旗标编译,dispatcher 按 `best_isa()` 填函数表,调用 = 一次间接跳 | `src/simd/ops/{kernel_impl.h,kernels.h,kernels_*.cc,dispatch_ops.cc}`,math/sort/bitpack/dtype/scan 同构 | ✅ 能用,❌ 六份手抄、无机制、无文档 |
+| 静态宏腿 | `vec.h` 的寄存器/D-tag 原语 | 消费者 TU 定义 `HYLE_SIMD_TARGET_*`，编译器选择 backend 与 lane 类型 | 零；所有操作可内联 |
+| 动态 CPUID 腿 | 稳定 ABI 的 whole-buffer/batch API | baseline dispatcher 选 per-ISA kernel 函数指针并缓存 | 每 batch 一次可预测间接调用 |
 
-关键既有资产:ODR/每 TU 宽度隔离、per-ISA `-march` 旗标(`cmake/HyleModule.cmake` 的
-`hyle_set_highway_isa` 等)、`best_isa()`/`cpu_features()` 单源检测——**所有难题已在六个模块里趟平
-六遍**。机制化 = 提取公因式。
+宏腿不是漏了 CPUID：寄存器类型、lane 数与返回类型本身依赖 ISA，不能安全地伪装成一个运行时 API。
+只有能定义 POD/指针 batch 契约的语义操作才进入动态腿。盘点后，`ops`、`math`、`dtype`、`scan`、
+`sort`、`bitpack` 的公开 batch 面均已有动态分发；没有“应动态但仍仅静态宏”的能力缺口。
 
-## 二、设计原则(回答"动态怎么不拖累内联")
+## 二、已落地的机械化范围
 
-1. **分发粒度 = kernel/batch 级,永远不是 per-op 级**。动态腿的间接跳只发生在"一批工作"的入口
-   (一次冷跳,首调解析后缓存函数指针);进了 kernel 内部,代码是该 ISA 静态编译的 `hs::` 全内联形
-   ——与静态腿逐指令相同。Highway 的 `HWY_DYNAMIC_DISPATCH` 同理(它也是函数级不是 op 级)。
-   所以两条腿的内循环性能**同源同形**,动态腿的代价只有入口一跳 + 二进制体积 ×N 份 kernel。
-2. **不 vendor Highway 的 `foreach_target.h` 宏体系**(章程)。Highway 用预处理器把用户代码对每个
-   target 重复展开;HYLE 用**构建系统**干同一件事:薄 TU 由 CMake 函数在 configure 期生成——
-   这正是六个模块手写薄 TU 的自动化,不引入宏森林。
-3. **静态腿零改动**:机制化只服务动态腿;不需要动态的场景(自家引擎按架构重编)照旧宏路,零间接。
-4. `best_isa()`/`cpu_features()` 保持唯一真源;分发表解析一次(静态 init 或首调 + 原子缓存)。
+`cmake/HyleDispatch.cmake` 提供：
 
-## 三、方案(M0 机制 → M1 试点 → M2 消费者故事 → M3 收敛 → M4 度量)
+```cmake
+hyle_add_dispatched_kernel(
+  TARGET hyle_simd
+  NAME ops
+  IMPL "src/simd/ops/kernel_impl.h"
+  TARGETS scalar sse4 avx2 avx512 neon)
+```
 
-**M0 — 机制本体(高能力方,~1 天)**
-- `cmake/HyleDispatch.cmake`:`hyle_add_dispatched_kernel(<name> IMPL <impl.h> FNS <sig 列表>
-  TARGETS scalar sse4 avx2 avx512 neon)`——configure 期生成薄 TU(每个 ~5 行:定义目标宏、include
-  impl、实例化并注册)+ 按 ISA 挂旗标 + 生成 dispatcher TU(函数表 + `best_isa()` 解析)。
-- `include/hyle/simd/dispatch.h`(~100 行):注册表模板、一次性解析、调用桩。x86 基线 = sse4
-  (以现状 dispatch_ops 的既有基线为准),scalar 永远兜底;arm64 基线 = neon。
-- 生成物与现有手写形对拍:同一 impl 走新机制 vs 手写薄 TU,objdump kernel 应同形(闸门)。
+它在**构建目录**生成薄 variant TU，复用 `hyle_set_isa` 的唯一 flag 映射，并按架构过滤：x64 为
+`scalar/sse4/avx2/avx512`，arm64 为 `scalar/neon`，未知架构仅 scalar。`ops` 与 `scan` 已迁移；
+手写的十个薄 TU 已删除。
 
-**M1 — 试点收敛(可交执行 AI,工单模式)**
-- 选最小模块(`scan/` 或 `dtype/`)迁到 M0 机制;gtest 全绿 + kernel objdump 同形 + bench canary
-  无回退(校准仪器)。此卡是机制的实弹验收。
+这项机制只覆盖“一个目标无关 `kernel_impl.h` 被多个 ISA 编译”的真实公因式。生成 TU 在 include 前
+定义 `HYLE_SIMD_TARGET_<ISA>` 与 `HYLE_SIMD_VARIANT_SUFFIX`，include 后立即取消定义；没有生成源码
+进入仓库。
 
-**M2 — 消费者接入故事(高能力方,半天;这是"彻底"的关键)**
-- 文档 `docs/architecture/simd-dispatch-guide.md`:两条腿怎么选(决策树:自家可重编→静态宏;
-  发布单二进制/客户 CPU 未知→动态);写一个动态 kernel 的完整三件套示例
-  (impl.h 契约:只写 `hs::` 泛型、禁 `#if` 目标判断、入参出参 POD/指针;CMake 一行;调用点)。
-- 给北极星消费者立样板:推理侧一个真实 fused kernel(可与 R1 softmax 调研合流)走此机制。
+`src/simd/dispatch_internal.h` 提供完整 canonical ISA 阶梯的 `default_dispatched_isa()` 与
+`resolve_default_variant()`。`ops` 使用它消除了六份手写 tier switch；`scan` 使用它但保留
+Linux x64 的纯标量性能裁决。`cloc` 实测机制本体为 128 code LOC：`HyleDispatch.cmake` 86、
+`dispatch_internal.h` 42；其余改动复用既有 kernel body 与模块语义。
 
-**M3 —(逐步)其余五模块收敛到机制**
-- 每模块一张工单卡(执行 AI);不改行为只换接线,闸门 = gtest + objdump 同形 + canary。
-  存量模块能用就不急,机制在即可。
+## 三、刻意不泛化的部分
 
-**M4 — 其他内容**
-- 冷跳成本 bench:direct vs dispatched 同 kernel,batch 大小摊销曲线(给消费者一个"batch 多大
-  起动态腿开销 <1%"的数字);纳入校准 canary 防复合回归。
+不生成 C++ dispatcher，也不在公共 `dispatch.h` 放注册模板。函数签名、特殊 CPU feature、fallback
+与 ABI 是模块语义，而非 CMake 元数据：
 
-## 四、"彻底快改"的最小路径
+- `dtype` 按 F16C、AVX512-BF16、AVX10 等精确 feature gate 选择；
+- `math` 按操作选择不同供应商核、特殊值策略与 MSVC AVX-512 限制；
+- `sort`/`bitpack` 还含算法前置分流与 Highway 静态 target 约束；
+- `scan` 的 Linux x64 纯标量路径是实测性能策略。
 
-M0 + M2 ≈ **1~2 天高能力方工作**——因为六个既有模块已把 ODR、每 TU 宽度、march 旗标、cpuid 检测
-全部趟平,这是提取不是发明。M1/M3 用现成工单制交执行 AI。没有大爆炸:静态腿与六模块现状在机制
-落地前后行为不变。
+这些模块继续手写 dispatcher，避免把 `FNS` 字符串代码生成变成无法审计的宏系统。将来只有新增模块同时
+满足 shared impl header、完整 ISA 阶梯、无额外 feature/算法策略时，才使用 CMake helper。
+
+## 四、宏与 ISA 契约
+
+1. `kernel_impl.h` 是刻意多重 include 的私有实现头；入口只使用
+   `HYLE_SIMD_VARIANT_SUFFIX`。所有 token-paste 辅助宏以模块前缀命名并在头尾 `#undef`，不污染同一
+   TU 的后续 include。
+2. variant TU 只生成内部符号；导出 API 仍在 baseline dispatcher，以固定 POD/指针 ABI 表达。
+3. dispatcher/probe 保持 baseline 编译，`hyle_simd` 强制 LTO 关闭；宽 ISA 指令只能出现在 per-ISA TU。
+4. AVX-512 `SlideUpLanes`/`SlideDownLanes` 的 `valign` offset 是 intrinsic immediate。实现显式展开
+   有界 lane offset，修复了 MSVC 因运行时 offset 拒绝编译而暴露的跨编译器缺陷。
 
 ## 五、验收
 
-1. 新增一个动态 kernel 只需三件:impl.h + CMake 一行 + 调用点;不复制任何样板。
-2. 静态腿零改动(git 可证)、零性能变化(canary)。
-3. M1 试点:gtest 全绿、kernel objdump 与手写形同形、bench 无回退。
-4. 摊销曲线数字写入 guide;两条腿的决策树文档化。
-5. 章程对齐:编译期优先不变;动态腿即 motivation.md 的"运行期一次冷跳兜底",不 vendor 宏体系。
+- Windows MSVC：生成 x64 的八个 `ops`/`scan` TU；`hyle_simd_test` 331 PASS、1 个无硬件 BF16 SKIP，
+  `hyle_simd_avx2_test` 221 PASS。
+- WSL GCC14：`hyle_simd_test` 331 PASS、1 个无硬件 BF16 SKIP，`hyle_simd_avx2_test` 221 PASS；
+  SDE `-future` 的 `hyle_simd_avx512_test` 221 PASS。
+- Mac Apple Silicon：只生成 `scalar/neon` 的四个 TU；`hyle_simd_test` 328 PASS、1 个无硬件 BF16 SKIP。
+- `bench/simd/simd_bench.cc` 新增 same-active-ISA 的 direct/public dispatch batch-size sweep。它把小 batch
+  的固定间接调用税与大 batch 内核吞吐分开；没有同 ISA direct anchor 的 tier 明确省略该对照，不伪造结果。

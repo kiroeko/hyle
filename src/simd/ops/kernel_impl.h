@@ -1,6 +1,6 @@
 // kernel_impl.h -- the SHARED kernel bodies, written ONCE against the D-tag abstraction
-// (ScalableTag idiom, no intrinsics). Each per-ISA TU #defines HYLE_SIMD_TARGET_* +
-// HYLE_KERNEL_SUFFIX then includes this, so the SAME source compiles to
+// (ScalableTag idiom, no intrinsics). Each generated per-ISA TU #defines HYLE_SIMD_TARGET_* +
+// HYLE_SIMD_VARIANT_SUFFIX then includes this, so the SAME source compiles to
 // detail::dot_f32_sse4 / detail::dot_f32_avx2 / detail::dot_f32_scalar. The backend +
 // -march make the loop 4-wide (SSE), 8-wide+FMA (AVX2), or scalar -- the kernel author
 // writes one loop. These are the functions the dispatcher (dispatch_ops.cc) selects among.
@@ -14,18 +14,21 @@
 #include "hyle/simd/vec.h"
 #include "src/simd/ops/kernels.h"
 
-#ifndef HYLE_KERNEL_SUFFIX
-#error "define HYLE_KERNEL_SUFFIX (scalar|sse4|avx2|avx512) before including kernel_impl.h"
+#ifndef HYLE_SIMD_VARIANT_SUFFIX
+#error "define HYLE_SIMD_VARIANT_SUFFIX before including ops/kernel_impl.h"
 #endif
 
-#define HYLE_SIMD_CAT_(a, b) a##b
-#define HYLE_SIMD_CAT(a, b) HYLE_SIMD_CAT_(a, b)
-#define DOT_F32_FN HYLE_SIMD_CAT(dot_f32_, HYLE_KERNEL_SUFFIX)
-#define SAXPY_F32_FN HYLE_SIMD_CAT(saxpy_f32_, HYLE_KERNEL_SUFFIX)
-#define DOT_F64_FN HYLE_SIMD_CAT(dot_f64_, HYLE_KERNEL_SUFFIX)
-#define SAXPY_F64_FN HYLE_SIMD_CAT(saxpy_f64_, HYLE_KERNEL_SUFFIX)
-#define ADD_F32_FN HYLE_SIMD_CAT(add_f32_, HYLE_KERNEL_SUFFIX)
-#define ADD_F64_FN HYLE_SIMD_CAT(add_f64_, HYLE_KERNEL_SUFFIX)
+// This is an intentionally multi-included implementation header. Keep its helper macros scoped
+// to this file and undefine them below: a generic name such as HYLE_SIMD_CAT can silently alter a
+// later include in the same TU.
+#define HYLE_SIMD_OPS_CAT_(a, b) a##b
+#define HYLE_SIMD_OPS_CAT(a, b) HYLE_SIMD_OPS_CAT_(a, b)
+#define HYLE_SIMD_OPS_DOT_F32_FN HYLE_SIMD_OPS_CAT(dot_f32_, HYLE_SIMD_VARIANT_SUFFIX)
+#define HYLE_SIMD_OPS_SAXPY_F32_FN HYLE_SIMD_OPS_CAT(saxpy_f32_, HYLE_SIMD_VARIANT_SUFFIX)
+#define HYLE_SIMD_OPS_DOT_F64_FN HYLE_SIMD_OPS_CAT(dot_f64_, HYLE_SIMD_VARIANT_SUFFIX)
+#define HYLE_SIMD_OPS_SAXPY_F64_FN HYLE_SIMD_OPS_CAT(saxpy_f64_, HYLE_SIMD_VARIANT_SUFFIX)
+#define HYLE_SIMD_OPS_ADD_F32_FN HYLE_SIMD_OPS_CAT(add_f32_, HYLE_SIMD_VARIANT_SUFFIX)
+#define HYLE_SIMD_OPS_ADD_F64_FN HYLE_SIMD_OPS_CAT(add_f64_, HYLE_SIMD_VARIANT_SUFFIX)
 
 namespace hyle::simd::detail {
 
@@ -81,11 +84,20 @@ HYLE_FORCE_INLINE void add_kernel(const T* x, const T* y, T* z, std::size_t n) n
   for (; i < n; ++i) z[i] = x[i] + y[i];  // tail
 }
 
-float DOT_F32_FN(const float* x, const float* y, std::size_t n) noexcept { return dot_kernel<float>(x, y, n); }
-void SAXPY_F32_FN(float a, const float* x, float* y, std::size_t n) noexcept { saxpy_kernel<float>(a, x, y, n); }
-void ADD_F32_FN(const float* x, const float* y, float* z, std::size_t n) noexcept { add_kernel<float>(x, y, z, n); }
-double DOT_F64_FN(const double* x, const double* y, std::size_t n) noexcept { return dot_kernel<double>(x, y, n); }
-void SAXPY_F64_FN(double a, const double* x, double* y, std::size_t n) noexcept { saxpy_kernel<double>(a, x, y, n); }
-void ADD_F64_FN(const double* x, const double* y, double* z, std::size_t n) noexcept { add_kernel<double>(x, y, z, n); }
+float HYLE_SIMD_OPS_DOT_F32_FN(const float* x, const float* y, std::size_t n) noexcept { return dot_kernel<float>(x, y, n); }
+void HYLE_SIMD_OPS_SAXPY_F32_FN(float a, const float* x, float* y, std::size_t n) noexcept { saxpy_kernel<float>(a, x, y, n); }
+void HYLE_SIMD_OPS_ADD_F32_FN(const float* x, const float* y, float* z, std::size_t n) noexcept { add_kernel<float>(x, y, z, n); }
+double HYLE_SIMD_OPS_DOT_F64_FN(const double* x, const double* y, std::size_t n) noexcept { return dot_kernel<double>(x, y, n); }
+void HYLE_SIMD_OPS_SAXPY_F64_FN(double a, const double* x, double* y, std::size_t n) noexcept { saxpy_kernel<double>(a, x, y, n); }
+void HYLE_SIMD_OPS_ADD_F64_FN(const double* x, const double* y, double* z, std::size_t n) noexcept { add_kernel<double>(x, y, z, n); }
 
 }  // namespace hyle::simd::detail
+
+#undef HYLE_SIMD_OPS_ADD_F64_FN
+#undef HYLE_SIMD_OPS_ADD_F32_FN
+#undef HYLE_SIMD_OPS_SAXPY_F64_FN
+#undef HYLE_SIMD_OPS_DOT_F64_FN
+#undef HYLE_SIMD_OPS_SAXPY_F32_FN
+#undef HYLE_SIMD_OPS_DOT_F32_FN
+#undef HYLE_SIMD_OPS_CAT
+#undef HYLE_SIMD_OPS_CAT_
