@@ -148,6 +148,9 @@ target_link_libraries(app PRIVATE "${HYLE_SIMD_LIB}")
 
 ## 2. SIMD 的编译变体模型（`HYLE_SIMD_TARGET_*` 是什么）
 
+常用 batch 能力、开发期调用示例和 close-01 C ABI 迁移边界集中在
+[`simd-usage.md`](./simd-usage.md)。本节只解释如何构建和选择 ISA 变体。
+
 > 这是"编译选项多"的另一处来源，单列澄清——**普通使用者基本不用碰它**。
 
 `simd/` 有两套用法，按你的部署方式选：

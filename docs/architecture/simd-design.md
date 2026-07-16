@@ -39,7 +39,6 @@
 
 ```
 simd/
-├─ algorithms.h   普通 C++ span/连续容器外观（header-only，不新增 ABI/派发）
 ├─ vec.h          D-tag/寄存器语义（387 个公开/selector 名，不做逐 op 动态派发）
 ├─ backend/       per-ISA 实现（编译多版本）
 │  ├─ sse4.h   avx2.h  avx512.h     (x86)

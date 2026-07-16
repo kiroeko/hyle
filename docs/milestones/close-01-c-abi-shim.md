@@ -15,7 +15,10 @@
 
 **HYLE 发布给外部使用者绑定的、唯一承诺 ABI 稳定的接缝 = 纯 `extern "C"` C 头 shim。** 推论：
 
-1. **C++ 公开头（`include/hyle/**/*.h`）不是发布 ABI 面**。它们是"同一 C++ 工具链下的便利头"，**不承诺跨编译器/跨 STL/跨语言稳定**（模板/`std::expected`/类布局都会泄漏）。今天 samples 用它们集成属"C++ ABI 跨 DLL"，**不等于** charter §6 承诺的稳定 C ABI。
+1. **C++ 头（`include/hyle/**/*.h`，除 `include/hyle/c/`）不是发布产品面**。它们服务内部实现、
+   同工具链源码开发和 expert kernel，**不承诺跨编译器/跨 STL/跨语言稳定**。核心仓库也不另建
+   `std::vector`、C#、Java 或 Rust 容器 facade；这些薄适配由消费方或独立 binding 项目拥有。
+   今天 samples 直接使用 C++ 头属开发期集成，**不等于** charter §6 承诺的稳定 C ABI。
 2. **未做 close-01 之前，HYLE 不具备"可发布给 FFI 消费方"的资格**。Python ctypes / Rust bindgen / TS N-API 绑的必须是 C shim，不是现在的 C++ 头。**发布说明里必须讲清这条**，别让用户拿 C++ `.dll` 去跨语言绑然后踩 mangling。
 3. **内部 C++23 的 ABI 风险由 C 头完全隔离**（charter §85）——这是内部敢用 C++23 的前提，也是 close-01 存在的全部理由。
 
@@ -27,11 +30,19 @@
 
 ## 具体事务（开工时细化，先占位）
 
-- [ ] 每个对外模块封一层 `include/hyle/c/<mod>.h`（或等价单独命名空间），**纯 C、可被 C 编译器 include**，与 C++ 便利头物理隔离。
+- [ ] 每个对外模块封一层 `include/hyle/c/<mod>.h`（或等价单独命名空间），**纯 C、可被 C 编译器 include**，与内部 C++ 头物理隔离。
 - [ ] 先做样板：拿**最接近 C ABI 的模块试封第一层**（`mem` 的 `Allocator` 已是 vtable + 不透明 state，最贴；或 `container` SwissTable 的 type-erased 核）。
+- [ ] SIMD 是首批语义样板之一：新增 `include/hyle/c/simd.h`；add/dot/math/scan/dtype/sort/
+      bitpack 等无状态接口只用 pointer/count/POD，随机数状态使用
+      `hyle_simd_random_o` make/destroy/fill，不冻结 C++ `RandomState` 布局。
+- [ ] SIMD C 头提供固定宽度 enum/POD、尺寸与对齐断言，以及可版本协商的 `hyle_simd_api_t`；
+      具体函数名和版本号在 close-01 实现时冻结，C shim 只转发现有 dispatcher/kernel。
 - [ ] `samples/` 加一个 **纯 C consumer**（用 C 编译器编，只 include C shim），证明跨语言可绑。
-- [ ] 目录约定坐实：`include/hyle/c/` = 稳定 C ABI（承诺）；`include/hyle/<mod>/` = C++ 便利头（不承诺跨编译器）。
+- [ ] 目录约定坐实：`include/hyle/c/` = 稳定且受支持的发布面；`include/hyle/<mod>/` = 内部/
+      同工具链 source surface，不作为发布契约宣传。
 - [ ] conventions §2 的 `decls.h`（前向声明 + 导出宏）一并落地，卡住"公开头不泄漏内部类型"。
+- [ ] close-01 完成 SIMD shim 时同步更新 `docs/guide/simd-usage.md`：把开发期 C++ 示例换成纯 C，
+      补 version/allocator/opaque 生命周期，并保留普通动态、exact library、fixed TU 三层选择说明。
 
 ## 验收标准（"算完成"的硬指标）
 
@@ -55,5 +66,4 @@
   - [ ] **静态 vs 动态的分发抉择**：动态=依赖用户机有库但制品小、安全库可独立更新；静态=单一制品无依赖但 CVE 要重编 + 体积 + 静态链 OpenSSL 的符号/初始化坑。默认动态；提供 `HYLE_STATIC` 全静态构建选项时，第三方也尽量静态链成单一制品。
   - [ ] 每个可选依赖（OpenSSL/将来的 ggml 等）都遵循"不开该能力=零依赖"（io-08 已立此范式：TLS 独立目标，不要 TLS 就不背 OpenSSL）。
 - **为什么归 close 而非 io-08**：install/export/依赖分发是**一次性统一做**的收口件（对所有模块 + 所有第三方依赖），塞进单个功能里程碑会把它撑成打包里程碑，且要等对外 C-ABI 面（本文档主体）定型后才有意义。io-08 只需保证"TLS 可选 + 动态链干净 + 给 install 留好接口"。
-
 

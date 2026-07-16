@@ -1,14 +1,14 @@
-# simd-23：C++ 易用性外观与性能证据收口
+# simd-23：SIMD 性能证据收口与发布入口裁决
 
-> 状态：✅ SIMD 41-name 性能闭环 + 实用 op 审计 + C++ facade 已完成（2026-07-16）。依赖 simd-22；
-> 不改变 close-01/02 的稳定 C ABI 承诺。
+> 状态：✅ SIMD 41-name 性能闭环 + 实用 op 审计完成；❌ C++ 容器 facade 于 2026-07-17
+> 按 close-01 产品铁律撤回。依赖 simd-22；发布给用户的唯一稳定入口是纯 C ABI。
 
 ## 为什么有这一项
 
-simd-22 已解决“同一 kernel 如何同时服务未知 CPU、整库固定 ISA 和用户 TU 固定 ISA”，但普通 C++
-用户仍要认识各模块的 pointer/count 命名，且容易把 8 个 SIMD 头机械提取出的 387 个公开/selector
-名字误认为日常入口。
-本里程碑补的是**发现性、类型安全和组合便利**，不是再造一层 kernel，也不是给 387 个机械提取名逐个加动态派发。
+simd-22 已解决“同一 kernel 如何同时服务未知 CPU、整库固定 ISA 和用户 TU 固定 ISA”。本里程碑先
+完成性能证据闭环；期间曾增加 `algorithms.h` 作为 C++ 容器便利面，但复核 close-01 后确认这会制造
+第二套“普通用户入口”：即使 STL 没有穿过 DLL seam，核心库仍替一种消费语言拥有了容器适配层，
+与“发布只提供 C ABI，消费方看着办”的约定冲突，因此撤回。
 
 另一条独立问题是性能证据。`container/hash.h` 与 SwissTable 按依赖图有意不依赖 `simd`；这不妨碍
 它们追求 SOTA，但必须用独立 benchmark 证明，不能为了复用 SIMD API 反转 `container -> simd` 依赖。
@@ -16,14 +16,11 @@ simd-22 已解决“同一 kernel 如何同时服务未知 CPU、整库固定 IS
 ## 产品边界
 
 ```text
-                       C++ source user
+                 close-01 public product boundary
+                    include/hyle/c/simd.h
+                 pointer / POD / opaque handle
                               |
-                 hyle/simd/algorithms.h
-                 span overloads + clean names
-                 header-only, no exported ABI
-                              |
-                 pointer / scalar / count API
-                 stable semantic batch boundary
+                 internal C++ pointer/count core
                     /                    \
        unknown CPU / exact library       fixed user TU
           Runtime / direct symbol          native:: kernel
@@ -31,8 +28,6 @@ simd-22 已解决“同一 kernel 如何同时服务未知 CPU、整库固定 IS
                      shared D-tag body
                             |
                          vec.h DSL
-
-  close-01 stable ABI: include/hyle/c/simd.h -> pointer/POD/opaque handle only
 
   container/hash + SwissTable
           |
@@ -42,62 +37,20 @@ simd-22 已解决“同一 kernel 如何同时服务未知 CPU、整库固定 IS
 
 四层含义：
 
-1. `algorithms.h` 是普通 C++ 用户入口，只有 inline overload/view；它不产生新 ABI 符号。
-2. 现有 pointer/count batch API 是唯一 kernel 语义源，也是未来 C shim 的包装对象。
-3. `native::`/`vec.h` 继续给明确目标 ISA 的专家用户；不强迫普通用户理解 D-tag。
-4. hash/hashmap 属于 container。允许其内部使用自包含 ISA 路径，但不经 simd Runtime，也不从 simd
-   facade 再导出。
+1. `include/hyle/c/simd.h` 是未来唯一发布入口；纯 C、语言中立、版本化。
+2. 现有 C++ pointer/count batch API 是 kernel 语义源和 C shim 的内部转发目标，不是稳定发布 ABI。
+3. `native::`/`vec.h` 是固定目标源码级 expert surface，不承诺跨工具链 ABI。
+4. hash/hashmap 属于 container；不能为了复用 SIMD 反转依赖。
 
-## C++ 外观设计
+## 发布入口裁决（2026-07-17）
 
-新增统一入口 `include/hyle/simd/algorithms.h`，在 `hyle::simd` 中为已有语义 API 添加 `std::span`
-overload 和无类型后缀的重载。模块头仍可单独 include；伞头只是可发现性入口。
-
-目标调用形状：
-
-```cpp
-#include "hyle/simd/algorithms.h"
-
-std::vector<float> x(n), y(n), out(n);
-hyle::simd::add(x, y, out);              // contiguous_range convenience
-const float d = hyle::simd::dot(x, y);
-hyle::simd::exp(x, out);                 // overload -> exp_f32_batch
-hyle::simd::inclusive_scan(out);
-hyle::simd::sort(out);
-
-hyle::simd::RandomState state{12345};
-hyle::simd::random_fill(state, out);
-```
-
-第一版的函数签名只接受 `std::span`，不做任意 range 模板；`std::vector`/`std::array` 等活着的连续
-容器可以使用标准的隐式 span 转换直接调用。这样保留清晰诊断，也不接受非连续 range。
-
-### 首批家族
-
-| 家族 | 普通外观 | 转发目标 |
-|---|---|---|
-| 基础数组 | `add/dot/saxpy` | ops pointer/count API |
-| RNG | `random_fill(state, span)` | random pointer/count API |
-| scan | `inclusive_scan/exclusive_scan` | scan pointer/count API |
-| dtype | `convert(src, dst)` | 已支持的 dtype pair |
-| math | `exp/log/tanh/... (src, dst)` | `*_f32_batch` / `*_f64_batch` |
-| sort/select | `sort/stable_sort/partial_sort/select` | sort pointer/count API |
-| bitpack | typed wrapper，显式所需输出大小 | bitpack pointer/POD API |
-
-不纳入首批：
-
-- `vec.h` 单寄存器 op：它们是 expert DSL，不是 batch facade。
-- hash/hashmap：归 container，不能制造 `simd::hash` 的错误所有权。
-- image/matvec/thread-pool：分别等待真实 domain/compute/sched 消费者，不照抄 Highway contrib 目录。
-- 纯粹换名但没有更清楚语义的 overload。
-
-### 合同与开销
-
-- 两输入/输出长度不一致是调用者 bug，使用 release-surviving `HYLE_FATAL_ASSERT`；不返回 `Result`。
-- 外部资源、分配或平台失败才走 `Status/Result`；本 facade 不引入这些失败点。
-- wrapper 必须 inline、零分配，只做 `data()/size()` 提取和一次底层调用。
-- 不缓存第二份 Runtime，不新增函数表 slot，不在 wrapper 中自行探测 CPUID。
-- 代表性 wrapper 用优化后 IR/assembly 或 link map 证明被完全消除；合成 wrapper 不建 nanobench。
+- 删除 `include/hyle/simd/algorithms.h` 及其 `std::span/std::vector` 测试。
+- HYLE 核心不维护 C++、C#、Java、Rust 等任一语言的容器 facade；消费方用本语言容器取得
+  pointer/count 后调用同一 C ABI。
+- close-01 必须把 SIMD whole-buffer 语义面纳入 `include/hyle/c/simd.h`；无状态操作用 pointer/POD，
+  RNG 等状态对象用 create/destroy 配对的 opaque handle。
+- 现有 `include/hyle/simd/*.h` 在 close-01 前只服务仓库内部和同工具链开发，不得在发布文档中称为
+  普通用户入口。
 
 ## 387 个公开/selector 名与 benchmark：显式分类已经闭环
 
@@ -196,18 +149,19 @@ nanobench”：只有 native 项补独立 parity；alias/synthetic/paired/algori
 - MSVC AVX-512 编译闸同时发现上一轮 AVX2 quarter-width 测试误套到 512-bit target，以及分层 include
   后 capability 宏缺 `Vec512` ScatterIndexN overload；测试现只覆盖适用边界，AVX-512 增加原生 masked
   scatter，`hyle_simd_avx512_test` 已恢复编译通过。
-- `include/hyle/simd/algorithms.h` 提供 header-only span overload，覆盖 ops、RNG、scan、dtype、
-  real math、sort/select/radix/argsort、bitpack。它只做长度合同和 `data()/size()` 转发；不产生新导出
-  符号、不缓存 Runtime、不探测 CPUID，也不改变 pointer/POD C ABI 收口路线。
+- 对 ops、RNG、scan、dtype、real math、sort/select/radix/argsort、bitpack 完成普通用户语义目录；
+  目录转入 `docs/guide/simd-usage.md`。短暂实现过的 `algorithms.h` 容器原型已于 2026-07-17 撤回，
+  避免在 close-01 C ABI 之外形成第二套发布入口。
 
 ## 实施顺序（性能四步先行，facade 最后）
 
-> **2026-07-16 状态**：步骤 1–6 已完成。九份 v4 report 的 union 为 303/303；320-case 表中
+> **2026-07-17 状态**：性能步骤 1–4 已完成，步骤 5–6 已完成产品裁决和语义目录、C ABI 实现等待
+> close-01。九份 v4 report 的 union 为 303/303；320-case 表中
 > Windows/WSL/Mac 明确 LOSE 均为 0，旧 ScatterIndexN 与本轮发现的 SatWiden/CompressNot/Mod/
 > SetOnlyFirst/IsFinite 回归均已修复，所有 `<0.98` 行已分类并写入
 > `simd-orderswap-matrix.md`。旧 41-name 候选已显式分类，15 个 native 新行在各平台可用 target 的第二轮狩猎为
-> 0 个明确 LOSE；`algorithms.h` 与编译/运行测试已落地。container hash/hashmap 的独立 SOTA 证据线
-> 仍是后续任务，不属于本次 SIMD facade 提交。
+> 0 个明确 LOSE；普通用户语义已写入 `docs/guide/simd-usage.md`，不再发布 STL 容器 facade。
+> container hash/hashmap 的独立 SOTA 证据线仍是后续任务，不属于本次 SIMD 收口。
 
 ### 1. 重测 303 个已有 benchmark 覆盖项并修仪器
 
@@ -248,17 +202,18 @@ simd-22 改动了头文件组织、target 选择和共享 native body。旧的 2
 - 对全部 41 个名字逐项交付证据：native parity、paired/info 账本、alias/synthetic 正确性与零开销、
   algorithm 真实工作集 benchmark；然后对新产生的稳定 LOSE 再走一轮 Highway 落后项狩猎。
 
-### 5. C++ facade（✅，四步性能工作完成后实施）
+### 5. 发布入口裁决（✅）
 
-- 新增 `algorithms.h`、编译测试与文档索引。
-- 先落 ops/RNG/scan 三家族，确定 span、const、aliasing 和长度合同。
-- 用汇编/IR 抽查 debug 合同存在、release 成功路径无额外循环/分配/派发。
+- 撤回 `algorithms.h` 原型及测试，不在核心仓库拥有某一种消费语言的容器包装。
+- 发布入口统一归 close-01 的纯 C ABI；无状态能力用 pointer/count/POD，状态对象用 opaque handle。
+- C++、C#、Rust 等调用者从自己的容器取得地址和长度，自行维护薄绑定。
 
-### 6. 扩到现有语义面（✅）
+### 6. 普通用户语义目录（✅；C ABI 实现等待 close-01）
 
-- dtype/math，再到 sort/select/bitpack；每家族只转发已存在的 batch kernel。
+- 目录覆盖 ops/RNG/scan、dtype/math、sort/select/bitpack，每家族只对应已存在的 batch kernel。
 - 同步普通用户、整库 exact、`native::` 三条示例，避免把 fixed target 描述成“免动态税”。
-- 生成或维护普通 API 索引，清楚地区分普通语义面与 387 个 expert/selector 名。
+- `docs/guide/simd-usage.md` 清楚地区分普通语义面与 387 个 expert/selector 名，并预留 close-01
+  名称和生命周期迁移清单。
 
 ### 7. container 性能收口
 
@@ -268,15 +223,16 @@ simd-22 改动了头文件组织、target 选择和共享 native body。旧的 2
 
 ### 8. ABI 与发布检查
 
-- C++ facade 不出现在 ABI symbol allowlist，公共模板/STL 不穿过 DLL seam。
-- close-01 实现时只包装 pointer/POD batch core，不包装 span overload、`Runtime` 或 D-tag。
-- C shim 与 C++ facade 共用同一批 scalar oracle 和 per-ISA kernel，不形成第三套实现。
+- 核心不发布 STL/container facade，公共模板/STL 不穿过 DLL seam。
+- close-01 实现时只包装 pointer/POD batch core，不包装 `Runtime`、D-tag 或 target-dependent vector。
+- C shim 与内部 C++ core 共用同一批 scalar oracle 和 per-ISA kernel，不形成第三套实现。
 
 ## 验收标准
 
-- 普通用户只 include `hyle/simd/algorithms.h`，无需宏、CPUID 或目标 ISA 知识即可调用所有首批家族。
-- exact-library 和 `native::` 用法保持可用；facade 不增加第二次派发或每元素分支。
-- 所有 facade 长度/可写性/类型合同有编译或运行测试，代表性 release wrapper 证实零额外开销。
+- `docs/guide/simd-usage.md` 覆盖普通用户常用家族、调用合同和三种目标选择；不要求理解寄存器 op。
+- close-01 验收时，普通用户只 include `hyle/c/simd.h`，无需宏、CPUID 或目标 ISA 知识即可调用
+  首批家族；当前里程碑不冒充已经交付该 ABI。
+- exact-library 和 `native::` 用法保持可用；C shim 不增加第二次派发或每元素分支。
 - coverage 报告不再把 alias/synthetic/paired 项计为 missing benchmark。
 - 当前 HEAD 的 Windows/WSL/macOS 全量 orderswap 已按方法论重新出数，所有报告 calibration pass；
   旧 `ScatterIndexN` 与全部 0.90–0.96 项均有稳定性分类，稳定异常有逐指令证据。

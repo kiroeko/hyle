@@ -158,7 +158,7 @@ HYLE_SIMD_API void log_softmax_f32(float* data, std::size_t n) noexcept;
 // STORAGE = SoA (planar): real and imaginary parts live in separate arrays. Exact in-place use
 // (dst_re==src_re and dst_im==src_im) is supported; arbitrary offset overlap is not. n arbitrary.
 //   cexp/clog/csqrt : the workhorses (FFT twiddle, transfer functions, roots)
-//   csin/ccos/ctan + csinh/ccosh/ctanh : trig / hyperbolic
+//   csin/ccos + ctanh : currently shipped trig / hyperbolic subset
 //   cpow : z^w (both complex)
 HYLE_SIMD_API void cexp_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
 HYLE_SIMD_API void clog_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;

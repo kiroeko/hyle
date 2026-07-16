@@ -9,6 +9,7 @@
 | 文档 | 给谁 / 讲什么 |
 |---|---|
 | [`usage-guide.md`](./usage-guide.md) | **怎么用**：模块就绪度、构建选项全集、SIMD 编译变体模型、各模块最小用法、C-ABI 边界。**集成第一站。** |
+| [`simd-usage.md`](./simd-usage.md) | **SIMD 怎么选和怎么调**：普通动态派发、整库固定 ISA、固定 kernel、常用 batch 能力与调用合同；并标明 close-01 C ABI 迁移边界。 |
 | [`usage-contract.md`](./usage-contract.md) | **怎么调才不出 UB**：为 SOTA 性能保留的调用安全红线（fiber 勿跨 `yield()` 持有 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离）。每条带机制+安全模式+后果。**热路径集成前必读。** |
 
 ## 三份文档的分工（别混）

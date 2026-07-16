@@ -43,7 +43,7 @@ target-dependent vector/mask 类型穿过边界，就只能在编译期确定 ta
 
 | 层 | 当前规模（2026-07-16） | 面向谁 | 稳定边界 |
 |---|---:|---|---|
-| 普通语义 batch API | 107 个不同函数名、153 个导出 overload | 不知道客户 CPU 的应用/库用户 | pointer/POD/opaque state；自动 Runtime 或整库 exact |
+| C++ batch core（开发期） | 107 个不同函数名、153 个导出 overload | HYLE 内部/同工具链测试 | pointer/POD/opaque state；不是发布 ABI |
 | `native::` whole-buffer kernel | ops/random/scan | 固定 ISA、需要跨调用内联的源码用户 | target-bound C++，不承诺跨 ISA 类型稳定 |
 | `vec.h` 寄存器 DSL | 387 个去重公开/selector 名 | 编写自定义 SIMD kernel 的高级用户 | target-bound vector/mask；只在 TU 内编译期实例化 |
 | `detail::*_{isa}` | 每 ISA 稳定符号薄包装 | HYLE dispatcher/测试 | internal，不是用户 API |
@@ -55,16 +55,15 @@ math、dtype、sort/select、scan、bitpack、RNG 与基础 ops，并非只有�
 target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch API 更直接。Highway 的优势是
 `contrib/{algo,dot,hash,image,intdiv,matvec,random,sort,...}` 分类和组合入口更成熟。
 
-普通 C++ 易用性外观已由 `hyle/simd/algorithms.h` 落地；它没有给 387 个寄存器名字各包一层 Runtime：
+普通应用的发布外观不归 SIMD C++ 头所有：
 
-1. `algorithms.h` 统一收拢 ops/RNG/scan/dtype/math/sort/select/bitpack 的 `std::span` overload；
-   `std::vector` 等连续容器可直接隐式形成 span，长度不一致用 release-surviving fatal assert。
-2. facade 只转发现有 pointer/count API，不复制 kernel、Runtime 或错误语义。具体范围与性能闸门见
-   [`simd-23`](../milestones/simd-23-cxx-facade-and-perf-closure.md)。close-01/02 只把同一个 pointer/POD
-   core 封成纯 C ABI，不导出 span/STL。
+1. `include/hyle/c/simd.h` 将由 close-01 提供唯一稳定入口，只含 pointer/count、POD、opaque handle
+   和版本化函数表；C、C++、C#、Java、Rust 等消费方在各自工程里适配本语言容器。
+2. HYLE 不提供 `std::span`/`std::vector` 伞头，也不在核心仓库维护某一种语言的容器便利层；这避免
+   “C ABI 是发布契约，但文档却把 C++ facade 当普通用户入口”的双重产品面。
 3. 是否补 `algo`、hash、image、matvec 等高层能力按 HYLE 模块边界和真实消费者决定，不为了镜像 Highway
    contrib 目录而堆 API。
-4. `vec.h` 继续作为明确的 expert surface；改善文档、示例和命名检索，不把它伪装成普通应用层。
+4. `vec.h`/`native::` 是源码级 expert surface，不承诺稳定 ABI，也不伪装成发布入口。
 
 `container/hash.h` 和 SwissTable 不属于这个 facade。container 在依赖图上有意不依赖 simd，可在模块
 内部使用自包含 ISA 路径和 platform CPU probe；其性能用独立 hash/hashmap SOTA benchmark 收口，不能
@@ -94,25 +93,25 @@ target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch 
 
 ## 普通用户：不知道目标 CPU
 
-普通 C++ 用户优先包含统一外观并直接传连续容器：
+发布完成后，普通用户只调用 close-01 的 C ABI，例如：
 
-```cpp
-#include "hyle/simd/algorithms.h"
+```c
+#include "hyle/c/simd.h"
 
-hyle::simd::add(x, y, out);
-hyle::simd::exp(x, out);
-hyle::simd::inclusive_scan(out);
-hyle::simd::sort(out);
-
-hyle::simd::RandomState state(12345);
-hyle::simd::random_fill(state, random);
+hyle_simd_add_f32(x, y, out, count);
+hyle_simd_exp_f32(x, out, count);
+hyle_simd_inclusive_scan_f32(out, count);
 ```
 
-这些 API 不暴露 SIMD 类型。预编译库内含各 ISA kernel；`runtime()` 首次调用根据 platform 探测选择
-一个不可变函数表。ops/RNG 每个 whole-buffer 调用经过一次函数指针；math/dtype/sort/bitpack 按共享
-module metadata 直接进入其最佳专用核。用户不应自行调用 CPUID。
+上面的确切命名和版本化函数表在 close-01 开工时冻结；这里钉的是边界形状，不提前伪造已实现 API。
+预编译库内含各 ISA kernel，C shim 转发到内部 batch core，由 Runtime 根据 platform 探测选择最佳实现。
+用户不自行调用 CPUID，也不需要知道 HYLE 内部的 C++ `Runtime`、D-tag 或 STL。
 
-诊断或需要把选择提升到更外层时可以保存表引用：
+在 close-01 完成前，现有 `include/hyle/simd/*.h` 仅供仓库开发、测试和同工具链源码集成；它们不是
+可发布承诺。消费方需要容器便利时，在自己的边界上用 `.data()/size()`、slice、Span 或 MemorySegment
+包装 C ABI，HYLE 核心不替任一语言选择容器模型。
+
+HYLE 内部诊断或同工具链开发需要把选择提升到更外层时，可以保存 C++ 表引用：
 
 ```cpp
 const hyle::simd::Runtime& rt = hyle::simd::runtime();
