@@ -199,4 +199,3 @@ hyle::simd::random_fill(state, out);
 - 真正 native 缺口完成三平台可用项的校准 parity；`Stream` 以带宽口径测量。
 - hash 与 hashmap 独立出报告；hashmap 至少有 absl + F14、统一 hasher + 默认 hasher 两套证据。
 - `container` 依赖图中仍无 `simd`，`simd` facade 中也无 hash/hashmap 再导出。
-
