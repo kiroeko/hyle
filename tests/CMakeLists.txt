@@ -96,7 +96,9 @@ target_include_directories(hyle_container_test SYSTEM PRIVATE
 # arch flag to enable the intrinsics; MSVC x64 has SSE4.2 unconditionally and uses
 # /arch:AVX2 for the 256-bit build. These variant exes run on the build host, which must
 # support the ISA (both dev platforms are AVX2 -- matches the variant-DLL test model).
-hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/ops_test.cc simd/scan_test.cc simd/dtype_test.cc simd/math_test.cc simd/sort_test.cc simd/radix_sort_test.cc simd/bitpack_test.cc)
+hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/native_test.cc
+              simd/runtime_test.cc simd/ops_test.cc simd/scan_test.cc simd/dtype_test.cc
+              simd/math_test.cc simd/sort_test.cc simd/radix_sort_test.cc simd/bitpack_test.cc)
 # vec_test compiled per ISA variant: same source, different HYLE_SIMD_TARGET_* + the
 # matching codegen flags from the single-source hyle_isa_flags (no MSVC/else drift here).
 # Arch-gated (mirrors src/simd's CMAKE_SYSTEM_PROCESSOR split): x86 builds the sse4/avx2
@@ -106,8 +108,8 @@ hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/ops_test.
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_isa_flags(_sse4_flags SSE42)
   hyle_isa_flags(_avx2_flags AVX2)
-  hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_flags})
-  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
+  hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_flags})
+  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
   # simd-08 档C crypto: the base sse4/avx2 variants above compile WITHOUT -maes/-mpclmul, so on
   # GCC/Clang the AES/CLMul op face takes the SOFTWARE fallback. This extra variant adds those
   # flags (SSE42_AES tier) so the AES-NI / PCLMULQDQ HARDWARE path is actually compiled + run
@@ -115,7 +117,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # software. (On MSVC both variants are identical since AES-NI is unconditional there, but the
   # variant is harmless and keeps one build matrix across compilers.)
   hyle_isa_flags(_sse4_aes_flags SSE42_AES)
-  hyle_add_test(simd NAME sse4_aes SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_aes_flags})
+  hyle_add_test(simd NAME sse4_aes SOURCES simd/vec_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_aes_flags})
   # AVX-512 vec_test variant: exercises the avx512.h backend's FULL op face (incl. simd-08
   # crypto + simd-09 cmp128/intdiv/RNG that route through the 512-bit backend). Historically
   # avx512.h was "written + objdump-verified zmm but NEVER RUN" (no AVX-512 dev machine). This
@@ -125,7 +127,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # auto-run ctest -- it is built for compile validation + manual SDE execution. The optional
   # HYLE_SIMD_AVX512_RUNNABLE gate marks the host as真 AVX-512 (or SDE-wrapped) to auto-run.
   hyle_isa_flags(_avx512_flags AVX512)
-  hyle_add_test(simd NAME avx512 SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags})
+  hyle_add_test(simd NAME avx512 SOURCES simd/vec_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags})
   # AVX512_DL variant: same avx512.h backend, compiled with GFNI/VBMI/BITALG so the NATIVE
   # BitShuffle (VPSHUFBITQMB) / MultiRotateRight (VPMULTISHIFTQB) paths are taken instead of the
   # store+reload fallback. Built for compile validation + SDE execution (Ice Lake ISA); NOT
@@ -136,7 +138,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # variant there a pointless duplicate.
   if(NOT MSVC)
     hyle_isa_flags(_avx512dl_flags AVX512_DL)
-    hyle_add_test(simd NAME avx512_dl SOURCES simd/vec_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512dl_flags})
+    hyle_add_test(simd NAME avx512_dl SOURCES simd/vec_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512dl_flags})
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
@@ -144,7 +146,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # red for StoreU OOB until C3/C4; only meaningful on NEON D/Q backends).
   # vec_half_combine_oracle_test.cc: simd-19 C13 half/combine exhaustive scalar oracle
   # (baseline green before C14-C16 native D half/combine).
-  hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc simd/vec_partial_boundary_test.cc
+  hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc simd/native_test.cc simd/vec_partial_boundary_test.cc
                 simd/vec_half_combine_oracle_test.cc
                 DEFINES HYLE_SIMD_TARGET_NEON OPTIONS ${_neon_flags})
   # SVE variant: the FIRST scalable-width backend (backend/sve.h). Its op face is VL-agnostic, so
@@ -156,7 +158,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # docs/architecture/simd-design.md (SVE section) / scripts. NOT auto-built on a plain aarch64
   # build (would need +sve which some arm64 hosts lack), so it is opt-in.
   if(HYLE_SIMD_SVE)
-    hyle_add_test(simd NAME sve SOURCES simd/sve_test.cc DEFINES HYLE_SIMD_TARGET_SVE OPTIONS -march=armv8-a+sve)
+    hyle_add_test(simd NAME sve SOURCES simd/sve_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_SVE OPTIONS -march=armv8-a+sve)
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")
   # RVV variant (backend/rvv.h), the SECOND scalable backend. Same gating rationale as SVE:
@@ -164,7 +166,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")
   # it; on a non-RVV box it is cross-compiled (riscv64-linux-gnu-g++ -march=rv64gcv) and run under
   # qemu-riscv64-static (scripts/rvv-qemu-test.sh). Gated by HYLE_SIMD_RVV.
   if(HYLE_SIMD_RVV)
-    hyle_add_test(simd NAME rvv SOURCES simd/rvv_test.cc DEFINES HYLE_SIMD_TARGET_RVV OPTIONS -march=rv64gcv)
+    hyle_add_test(simd NAME rvv SOURCES simd/rvv_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_RVV OPTIONS -march=rv64gcv)
   endif()
 endif()
 if(HYLE_HAS_FCONTEXT)

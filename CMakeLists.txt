@@ -29,6 +29,10 @@ endif()
 # ---- global options ---------------------------------------------------------
 option(HYLE_BUILD_TESTS "build unit tests (GoogleTest)" ON)
 option(HYLE_BUILD_BENCH "build microbenchmarks (nanobench)" OFF)
+set(HYLE_SIMD_EXACT_TARGET "" CACHE STRING
+    "Build hyle_simd for one required ISA; empty enables runtime dispatch")
+set_property(CACHE HYLE_SIMD_EXACT_TARGET PROPERTY STRINGS
+             "" SCALAR SSE4 AVX2 AVX512 NEON SVE RVV)
 option(HYLE_STATIC      "build static lib (default SHARED)" OFF)
 option(HYLE_WERROR      "treat warnings as errors (CI on, local off)" OFF)
 set(HYLE_SANITIZER "off" CACHE STRING "off|asan|tsan|ubsan")

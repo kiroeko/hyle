@@ -12,16 +12,33 @@
 namespace hyle::simd::detail {
 
 inline Isa default_dispatched_isa() noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  return Isa::kAvx512;
+#elif defined(HYLE_SIMD_EXACT_TARGET_AVX2)
+  return Isa::kAvx2;
+#elif defined(HYLE_SIMD_EXACT_TARGET_SSE4)
+  return Isa::kSse42;
+#elif defined(HYLE_SIMD_EXACT_TARGET_SVE)
+  return Isa::kSve;
+#elif defined(HYLE_SIMD_EXACT_TARGET_NEON)
+  return Isa::kNeon;
+#elif defined(HYLE_SIMD_EXACT_TARGET_RVV)
+  return Isa::kRvv;
+#elif defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
+  return Isa::kScalar;
+#elif defined(HYLE_ARCH_X64)
   const auto tier = static_cast<std::uint32_t>(best_isa());
   if (tier >= static_cast<std::uint32_t>(Isa::kAvx512)) return Isa::kAvx512;
   if (tier >= static_cast<std::uint32_t>(Isa::kAvx2)) return Isa::kAvx2;
   if (tier >= static_cast<std::uint32_t>(Isa::kSse42)) return Isa::kSse42;
   return Isa::kScalar;
 #elif defined(HYLE_ARCH_ARM64)
-  return static_cast<std::uint32_t>(best_isa()) >= static_cast<std::uint32_t>(Isa::kNeon)
-             ? Isa::kNeon
-             : Isa::kScalar;
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (best_isa() == Isa::kSve) return Isa::kSve;
+#endif
+  return best_isa() == Isa::kNeon ? Isa::kNeon : Isa::kScalar;
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  return best_isa() == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
 #else
   return Isa::kScalar;
 #endif
@@ -39,8 +56,20 @@ inline Fn resolve_default_variant(Fn scalar, Fn sse4, Fn avx2, Fn avx512) noexce
 }
 #elif defined(HYLE_ARCH_ARM64)
 template <class Fn>
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+inline Fn resolve_default_variant(Fn scalar, Fn neon, Fn sve) noexcept {
+  if (default_dispatched_isa() == Isa::kSve) return sve;
+  return default_dispatched_isa() == Isa::kNeon ? neon : scalar;
+}
+#else
 inline Fn resolve_default_variant(Fn scalar, Fn neon) noexcept {
   return default_dispatched_isa() == Isa::kNeon ? neon : scalar;
+}
+#endif
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+template <class Fn>
+inline Fn resolve_default_variant(Fn scalar, Fn rvv) noexcept {
+  return default_dispatched_isa() == Isa::kRvv ? rvv : scalar;
 }
 #else
 template <class Fn>

@@ -50,7 +50,7 @@
 |---|---|
 | [mem 内存](./docs/architecture/mem-design.md) | 通用 malloc 借 mimalloc + 自造专用分配器 + 修 5 bug + NUMA/大页/64B 对齐 |
 | [container 容器](./docs/architecture/container-design.md) | 唯一造不借的 T0 + SwissTable SIMD 探测 + SmallVector/intrusive/lock-free（供 sched）|
-| [simd 向量化](./docs/architecture/simd-design.md) | 精简可移植 vector + 运行时 dispatch + dtype(fp16/bf16) + 借 Highway/xsimd 数学核(vendored) |
+| [simd 向量化](./docs/architecture/simd-design.md) | D-tag/七后端 + 自有 math/dtype/算法核 + Runtime/native/exact 双轨派发 |
 | [sched 调度器](./docs/architecture/sched-design.md) | fcontext 切换 + 无锁 work-stealing + Waker completion 脊 + 协程/fiber 统一 |
 | [io 网络设计](./docs/architecture/io-design.md) | proactor 模型 + 四后端 + 调度绑定 |
 | [compute 异构计算](./docs/architecture/compute-design.md) | device/stream/kernel 抽象 + ggml 解耦 + shader 一等公民 |
@@ -84,7 +84,7 @@ hyle/
 ├─ bench/                 nanobench 对标 SOTA（container/mem/sched/simd/io/time/platform/error + rust/ crossbeam）
 ├─ samples/               可运行示例工程
 ├─ scripts/               工具（bench-stat.py 统计法等）
-├─ third_party/           vendored（mimalloc/Highway/xsimd/simdutf/nanobench…）
+├─ third_party/           产品/测试依赖（mimalloc/ggml/googletest/nanobench…；SIMD vendor 对照外置）
 └─ docs/
    ├─ setup/              开发环境准备（按平台：windows/linux-wsl/macos + dependencies；构建/测试/性能测试 × 三平台）
    ├─ architecture/       架构设计文档（设计/背景/决策；代码才是唯一信源）

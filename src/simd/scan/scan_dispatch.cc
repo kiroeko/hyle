@@ -17,15 +17,6 @@
 namespace hyle::simd {
 namespace {
 
-Isa selected_tier() noexcept {
-#if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
-  // See file header: SIMD single-stream prefix loses to GCC's scalar chain on this OS/arch.
-  return Isa::kScalar;
-#else
-  return detail::default_dispatched_isa();
-#endif
-}
-
 template <typename T>
 using ScanFn = void (*)(T*, std::size_t) noexcept;
 
@@ -76,6 +67,19 @@ ScanFn<T> resolve_exclusive() noexcept;
           &detail::exclusive_scan_##tag##_avx2, &detail::exclusive_scan_##tag##_avx512);      \
     }
 #elif defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#  define HYLE_SIMD_SCAN_RESOLVE(T, tag)                                                       \
+    template <> ScanFn<T> resolve_inclusive<T>() noexcept {                                   \
+      return detail::resolve_default_variant<ScanFn<T>>(                                      \
+          &inclusive_scan_pure<T>, &detail::inclusive_scan_##tag##_neon,                     \
+          &detail::inclusive_scan_##tag##_sve);                                               \
+    }                                                                                          \
+    template <> ScanFn<T> resolve_exclusive<T>() noexcept {                                   \
+      return detail::resolve_default_variant<ScanFn<T>>(                                      \
+          &exclusive_scan_pure<T>, &detail::exclusive_scan_##tag##_neon,                     \
+          &detail::exclusive_scan_##tag##_sve);                                               \
+    }
+#else
 #  define HYLE_SIMD_SCAN_RESOLVE(T, tag)                                                       \
     template <>                                                                                \
     ScanFn<T> resolve_inclusive<T>() noexcept {                                                \
@@ -86,6 +90,17 @@ ScanFn<T> resolve_exclusive() noexcept;
     ScanFn<T> resolve_exclusive<T>() noexcept {                                                \
       return detail::resolve_default_variant<ScanFn<T>>(                                       \
           &exclusive_scan_pure<T>, &detail::exclusive_scan_##tag##_neon);                     \
+    }
+#endif
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#  define HYLE_SIMD_SCAN_RESOLVE(T, tag)                                                       \
+    template <> ScanFn<T> resolve_inclusive<T>() noexcept {                                   \
+      return detail::resolve_default_variant<ScanFn<T>>(                                      \
+          &inclusive_scan_pure<T>, &detail::inclusive_scan_##tag##_rvv);                      \
+    }                                                                                          \
+    template <> ScanFn<T> resolve_exclusive<T>() noexcept {                                   \
+      return detail::resolve_default_variant<ScanFn<T>>(                                      \
+          &exclusive_scan_pure<T>, &detail::exclusive_scan_##tag##_rvv);                      \
     }
 #else
 #  define HYLE_SIMD_SCAN_RESOLVE(T, tag)                                                       \
@@ -124,10 +139,5 @@ HYLE_SCAN_API(float)
 HYLE_SCAN_API(double)
 
 #undef HYLE_SCAN_API
-
-Isa active_scan_variant() noexcept {
-  static const Isa tier = selected_tier();
-  return tier;
-}
 
 }  // namespace hyle::simd

@@ -7,8 +7,8 @@
 #include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/scan.h"
+#include "hyle/simd/runtime.h"
 
-using hyle::simd::active_scan_variant;
 using hyle::simd::best_isa;
 using hyle::simd::exclusive_scan;
 using hyle::simd::inclusive_scan;
@@ -124,7 +124,7 @@ TEST(Scan, ExclusiveF64) {
 }
 
 TEST(Scan, ActiveVariantIsRealTier) {
-  const Isa a = active_scan_variant();
+  const Isa a = hyle::simd::runtime().scan.isa;
 #if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
   // Linux x64: pure scalar by policy (SIMD single-stream prefix loses to GCC chain).
   EXPECT_EQ(a, Isa::kScalar);

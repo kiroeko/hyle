@@ -9,9 +9,9 @@
 ### simd/（Tier 1）
 | 库 | 角色 | 说明 |
 |---|---|---|
-| **highway** | 借 | transcendental 数学核（log 等）+ dtype 对照；vendored 在 `third_party/`、无条件默认编进生产。其 scalable-friendly 接口 + HWY_DYNAMIC_DISPATCH 亦是 vec 抽象的范本 |
-| **xsimd** | 借 | transcendental 数学核（exp/tanh），vendored 在 `third_party/`、无条件默认编进生产；逐 op best-of-breed 与 highway 互选最快核 |
-| **simdutf** | 借 | utf8 validate/count SIMD 核，vendored 在 `third_party/`、无条件默认编进生产（自带内部 ISA dispatch）|
+| **highway** | 参考 + bench 对照 | D-tag/scalable/dynamic-dispatch 架构范本与 SOTA oracle；simd-20 后不进产品构建，外部 pin checkout 仅用于 benchmark |
+| **xsimd** | 参考 + bench 对照 | 数学 best-of 与精度/性能 oracle；simd-20 后不进产品构建 |
+| **simdutf** | 可选薄借 | 仅 `HYLE_SIMD_SIMDUTF` 门控 utf8 validate/count；未定义时不 include，不属于 Runtime/native 核心面 |
 | **sleef** | **已退役(clone 留存)** | 曾评估作 transcendental 核,选定 highway+xsimd 后退役;仍 clone 供对照,不进构建 |
 | **nanobench** | 借(测试期)| 微基准框架,vendored 在 `third_party/`;`scripts/bench-stat.py` 在其上做 n=15 统计判定(gap>spread 才判赢) |
 
@@ -92,7 +92,7 @@
 
 ## 开工优先级（按 roadmap 阶段）
 
-- **P3-P4 即用**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、highway/xsimd/simdutf（simd，vendored 数学核 + utf8）。
+- **P3-P4 即用**：marl（sched 精读）、moodycamel（队列）、boost.context（fcontext）、abseil/folly（container）、highway/xsimd（SIMD 架构与外部 benchmark 对照）、simdutf（可选 UTF-8 薄借）。
 - **P5 即用**：ggml + llama.cpp（compute 主力借/参考）、oneDNN/oneMath（Intel 加速，CPU/数学后端）、seastar（io reactor_backend）。
 - **P6 / 按需**：simdjson/flatbuffers/capnproto（serialize）、xxHash（hash，设默认 hasher）、tracy（obs，借设计）、**oneTBB/taskflow（graph-02 数据并行设计对照）、nghttp2（io-11 HTTP/2 借核）、eigen/openvdb（北极星② CAE/几何,更后置按需）**。oneDPL/oneDAL **边界外**（见下）。
 

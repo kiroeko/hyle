@@ -17,6 +17,8 @@
 #  define HYLE_ARCH_X64 1
 #elif defined(__aarch64__) || defined(_M_ARM64)
 #  define HYLE_ARCH_ARM64 1
+#elif defined(__riscv) && (__riscv_xlen == 64)
+#  define HYLE_ARCH_RISCV64 1
 #endif
 
 // ---- compiler ----

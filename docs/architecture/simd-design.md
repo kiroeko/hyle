@@ -1,6 +1,11 @@
 # HYLE simd/ 设计
 
 > SIMD 抽象层（Tier 1，性能焦点 #1）。clay 这块基本空白，HYLE 净新 ~5-8k 行（详见 hyle-scope.md 规模节）。上游约束见 [`hyle-scope.md`](./hyle-scope.md)、[`engineering-charter.md`](./engineering-charter.md)。
+>
+> **2026-07-16 终态索引**：部署和维护以
+> [`simd-dispatch-guide.md`](./simd-dispatch-guide.md) 为准；vendor 边界以
+> [`simd-vendor-surface.md`](./simd-vendor-surface.md) 为准。本文后半保留各阶段性能、指令和契约决策，
+> 但早期“借核/静态路径/变体 DLL”讨论属于决策史，不再覆盖 simd-20/22 的最终实现。
 
 ## clay 现状：近乎空白
 
@@ -13,18 +18,19 @@
 | 库 | 性质 | 对 HYLE |
 |---|---|---|
 | **std::simd（C++26 P1928）** | 定宽、无运行时 dispatch | ❌ 不能当核心——"表达不了 90% 真实 SIMD 代码"（gather/scatter/mask/swizzle 弱）；仅可作平凡循环的薄互操作 |
-| **Highway（Google）** | 可移植 + 运行时 dispatch + scalable vector（AVX512/NEON/SVE/RVV/WASM）| 金标准；不 vendor 整套抽象（idiom 重），但其 **contrib/math 多项式核已 vendored** 借用（log 等）|
-| **xsimd** | 定宽 + 优化数学函数（exp/log/trig）| 数学核已 vendored 借用（exp/tanh）|
+| **Highway（Google）** | 可移植 + 运行时 dispatch + scalable vector（AVX512/NEON/SVE/RVV/WASM）| 架构与 SOTA 对照；产品库零依赖，bench 用外部 pin checkout 对拍 |
+| **xsimd** | 定宽 + 优化数学函数（exp/log/trig）| 数学 SOTA 对照；产品库零依赖，历史借核已由 simd-20 摘除 |
 
-## 核心决策：自造精简抽象 + 运行时 dispatch + 借数学核
+## 核心决策：自有 SIMD 实现 + runtime/native/exact 双轨
 
 与 io/（借 liburing 不借 asio）、compute/（借 ggml 算子不借框架）同构——**借难且已解决的、造贴自己需求的**：
 
 | 部件 | 造/借 | 理由 |
 |---|---|---|
 | 可移植 vector 抽象 `vec<T,N>` + 多 ISA 后端 | 🔧 **自造（精简）** | 焦点 #1；不 vendor 整个 Highway（idiom 重、违背贴硬件）；参考其 scalable-vector + dispatch 理念造精简版 |
-| 运行时 dispatch（CPUID + 多版本）| 🔧 **自造** | clay 完全没有，是核心缺口 |
-| transcendental 数学核（exp/log/sin）| ✅ **借 Highway/xsimd 多项式核（vendored）** | 手推多项式逼近易错，已解决问题；逐 op best-of-breed 选最快核 |
+| 运行时 dispatch（CPUID/HWCAP + 多版本）| 🔧 **自造** | `platform::cpu` 探测 + 版本化 `Runtime`，服务未知客户 CPU |
+| 固定目标调用 | 🔧 **自造** | 整库 `HYLE_SIMD_EXACT_TARGET` 保留普通 API；源码 TU 用 `hyle_target_simd + native::` 内联 |
+| transcendental 数学核（exp/log/sin）| 🔧 **自有实现** | simd-20 已摘除 Highway/xsimd 产品依赖；保留历史符号名，外部库只作 benchmark oracle |
 | dtype 转换（fp16/bf16/int8/fp8）| 🔧 自造（硬件路径 + 软件 fallback）| 替换 clay 纯软件 half 表 |
 | AI 数学函数（gelu/softmax/tanh）| 🔧 自造（组合数学核）| HYLE 特定，AI 热路径 |
 | std::simd 互操作 | ⚠️ 薄封装 | 平凡循环可转发给它，非核心 |
@@ -33,20 +39,45 @@
 
 ```
 simd/
-├─ vec.h          可移植 vector 类型 vec<T, Width>（load/store/算术/fma/compare/mask/shuffle）
+├─ vec.h          D-tag/寄存器语义（381 个公开 op 名，不做逐 op 动态派发）
 ├─ backend/       per-ISA 实现（编译多版本）
 │  ├─ sse4.h   avx2.h  avx512.h     (x86)
-│  ├─ neon.h   sve.h                 (arm)
-│  └─ scalar.h                       (无 SIMD fallback)
-├─ dispatch.h     运行时 CPUID 探测 + 函数指针表选最优后端
+│  ├─ neon.h   sve.h                 (arm64)
+│  ├─ rvv.h                          (riscv64)
+│  └─ scalar.h                       (portable fallback)
+├─ native/        ops/random/scan 的唯一 D-tag kernel body（固定目标、可内联）
+├─ runtime.h      版本/大小/ISA + ops/random 函数表 + module ISA/features
+├─ target.h       当前 exact target 常量
+├─ fat_kernel.h   用户 whole-buffer kernel 的稳定入口选择器
+├─ dispatch.h     platform CPU 探测的兼容转发；探测实现在 platform/cpu.{h,cc}
 ├─ dtype/         fp16/bf16/int8/fp8 ↔ fp32（F16C/AVX512-FP16/BF16 硬件 + 软件 fallback）
-├─ math/          exp/log/tanh/gelu/softmax/erf（借 Highway/xsimd 核 + 组合）
-└─ ops/           供 container/compute 用的 SIMD 原语（如 SwissTable 探测、reduce、memcpy）
+├─ math/          HYLE exp/log/tanh/gelu/softmax/erf 实现与 per-op winner
+├─ random/        runtime-safe RandomState fill 的 per-ISA 薄包装
+└─ ops/           稳定 whole-buffer API 与 per-ISA 薄包装
 ```
 
-## dispatch：编译期消变体，运行期最多冷跳一次（三层）
+## dispatch：runtime/native/exact 双轨（simd-22 终态）
 
-clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只用 SSE2**，这是真缺口。修正方向不是"运行时函数指针表每次查"（那是热路径间接、违背极致），而是三层模型，**热路径任何一层都零间接**。
+派发单位是完整 pointer/POD/opaque-state kernel，不是 381 个寄存器 op：
+
+| 用户模式 | 公共调用面 | 选择发生处 | 调用边界 |
+|---|---|---|---|
+| 未知客户 CPU / 预编译库 | 普通 batch API | `runtime()` 首次初始化时由 CPUID+XGETBV/HWCAP 选不可变表 | ops/random 每 batch 一次函数指针；其余模块读统一 ISA/features |
+| 整个 HYLE 固定 ISA | 同一普通 batch API | `HYLE_SIMD_EXACT_TARGET` 令 dispatcher 编译期直连目标符号 | 无 CPUID、无 Runtime 引用；仍保留稳定库入口 |
+| 用户源码 TU 固定 ISA | `native::` + `vec.h` | `hyle_target_simd` 同时施加 target 宏和 codegen flag | 共享 D-tag body 在用户 TU 内实例化/内联 |
+| 用户自定义多版本 kernel | pointer/POD entry | `hyle_add_fat_kernel` 生成变体，`select_fat_kernel` 动态选一次或 exact 选定 | vector/mask 不得穿过 entry |
+
+CMake 为 ops/random/scan 从同一 `kernel_impl.h` 生成 scalar/SSE4/AVX2/AVX512/NEON/SVE/RVV
+薄 TU；wrapper 只增加稳定符号，算法唯一来源是 `native/`。dtype/math/sort/bitpack 保留模块手写 dispatcher，
+因为 feature gate、per-op winner 和算法阈值属于模块语义。完整 ASCII 图和维护规则见
+[`simd-dispatch-guide.md`](./simd-dispatch-guide.md)。
+
+### 历史决策记录：为什么不做 per-ISA DLL
+
+以下是 2026-07-12 对 DLL 模型的评估记录。它解释为什么默认 runtime 采用 whole-buffer 函数表；其中
+早期 `-march=native` “静态路径”已经由可审计的 `HYLE_SIMD_EXACT_TARGET` 与 `hyle_target_simd` 取代。
+
+clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只用 SSE2**，这是真缺口。下面的三层表是当时对候选模型的比较，不是当前调用链；终态选择是 whole-buffer Runtime 表 + exact/native 固定目标两条一等路径。
 
 | 层 | 时机 | C++ 机制 | 热路径开销 |
 |---|---|---|---|
@@ -63,16 +94,16 @@ clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只
 
 > **现状与决策（2026-07-12 评估）——HYLE 出厂用函数指针模型，变体-DLL 有意不做**：
 > - **出厂 = 函数指针模型**（`dispatch_ops.cc`：`static const Fn fn = resolve_*(); return fn(...)`，首次 CPUID 选一次并缓存，之后每次调用一次可预测间接调用）。这与 Highway `HWY_DYNAMIC_DISPATCH` 同档——**runtime dispatch 维度 HYLE 平 Highway，不领先也不欠**。
-> - **变体-DLL 评估结论：不做（收益≈0、成本中高、属错配复杂度）**。决定性事实：**全部 139 个公开 simd op 都是 whole-buffer 批量 op**（`dot_f32(x,y,n)`/`exp_f32_batch(src,dst,n)`/…，内部循环处理 `n` 元素）。那"一次间接调用"是**每 batch 一次**，被数千 cycle 的 kernel 彻底摊销——实测 dot 42 G op/s、saxpy 39 G 平 Highway，间接调用从不是瓶颈。变体-DLL 只对**细粒度、被内层循环密集调用的 op**（如 `Vec::Add` 每寄存器一调）有收益，而 HYLE 的细粒度 op 全是 `vec.h` header-only 模板（编译期单态化、随消费者 TU 内联、零间接、**根本不过 dispatch**）。过 dispatch 的只有批量 op → 要消除的间接不在热路径上。
-> - **成本侧**：拆 N 份独立 DLL（每 ISA 全套 kernel）+ 启动 score/dlopen 层 + 139 符号跨平台（`LoadLibrary`/`GetProcAddress` vs `dlopen`/`dlsym`）绑定 + 测试矩阵翻倍；且 **DLL 边界过不了内联**，若将来导出细粒度 op 反而可能比函数指针更慢。
-> - **触发条件（两者皆须满足，HYLE 当前都不满足）**：① 分发单一预编译二进制给未知 CPU（不许消费者自编）；② 消费者热循环密集调用细粒度 op。真要"进去后零间接"，更省的是**构建期 `-march=native` 静态路径**（已支持，平 `HWY_STATIC_TARGET`），非变体-DLL。
+> - **变体-DLL 评估结论：不做（收益≈0、成本中高、属错配复杂度）**。当时统计的 139 项是稳定 whole-buffer/batch API，不是今天脚本提取的 381 个寄存器 op 名；后者始终只在 `vec.h`/native kernel 内编译期实例化。跨变体的一次间接调用发生在 batch 边界，被完整循环摊销；DLL 对这种粒度没有结构性收益。
+> - **成本侧**：拆 N 份独立 DLL（每 ISA 全套 kernel）+ 启动 score/dlopen 层 + 大量符号跨平台绑定 + 测试矩阵翻倍；且 DLL 边界本身阻断内联。
+> - **触发条件**：只有当必须分发独立 ISA 动态库，并且真实 profile 证明稳定 whole-buffer 边界仍是瓶颈时才重启评估。已知目标部署直接使用 `HYLE_SIMD_EXACT_TARGET`；需要用户 TU 内联则使用 `hyle_target_simd + native::`。
 > - **一句话**：这不是"欠 Highway 一个变体-DLL"，而是"当前函数指针模型对批量 op 面已最优，变体-DLL 是错配复杂度，有意不做"。若 op 面将来新增细粒度导出 op 或启动二进制分发需求，再重启此评估。
 
-**探测器隔离（llama.cpp 实证的坑）**：CPUID 探测代码必须编在 baseline ISA、独立 TU、**禁 LTO**——否则 LTO 把高级指令内联进探测函数，老 CPU 上探测自身先 SIGILL。`dispatch.h` 照此。
+**探测器隔离（llama.cpp 实证的坑）**：CPUID 探测代码必须编在 baseline ISA、独立 TU、**禁 LTO**——否则 LTO 把高级指令内联进探测函数，老 CPU 上探测自身先 SIGILL。当前由 `platform/cpu.cc` 负责探测，`runtime.cc` 只消费结果；`hyle_simd` 同样关闭 LTO。
 
 **组合优于包含**：每个 ISA kernel 是独立组合单元（一个 TU / 一个 tag / 一个变体 DLL），**不是**上帝类 `Vec` 内部 `switch(caps)`/vtable 分支。加一个厂商特化（AMX/VNNI）= 加一个组合单元、改 1 文件、0 调用点、0 热路径开销。
 
-**探测档 ≠ kernel 档（kAvx 的案例,2026-06）**：`best_isa()` 的枚举档报告的是**CPU 真实能力**,与"我们编了哪些 kernel"是**两层**。`Isa::kAvx`(纯 256-bit float,Sandy/Ivy Bridge:有 AVX 无 AVX2 的 256-bit 整数)就是这个分离的实例——`f.avx` 早已被探测(且 AND 进 OS-YMM-save 的 `read_xcr0` 门),但之前没有对应枚举档,Ivy Bridge 被误报成 `kSse42`。补 `kAvx` 让 `best_isa()` 诚实。但**没有 avx-only kernel**,故 `dispatch_ops.cc` 的 `selected_tier()` 把 AVX 主机 clamp 到 sse4 变体跑。两层故意分开:**探测层求真**(CPU 是什么如实报)、**kernel 层务实**(只编值得编的档,缺档向下 clamp,绝不 SIGILL)。有意思的印证:dtype 的 f16c kernel 门正是 `f16c && avx`=Ivy Bridge,所以纯 AVX 机本就在跑 f16c dtype kernel,`kAvx` 只是给这个已存在的能力起了名。
+**探测档 ≠ kernel 档（kAvx 的案例,2026-06）**：`best_isa()` 的枚举档报告的是**CPU 真实能力**,与"我们编了哪些 kernel"是**两层**。`Isa::kAvx`(纯 256-bit float,Sandy/Ivy Bridge:有 AVX 无 AVX2 的 256-bit 整数)就是这个分离的实例——`f.avx` 早已被探测(且 AND 进 OS-YMM-save 的 `read_xcr0` 门),但之前没有对应枚举档,Ivy Bridge 被误报成 `kSse42`。补 `kAvx` 让 `best_isa()` 诚实。但**没有 avx-only kernel**，当前 `Runtime` 构造会把没有实现的能力档规范化到实际可用 kernel，同时在 dtype features 中单独保留 F16C 等精确能力。两层故意分开:**探测层求真**(CPU 是什么如实报)、**kernel 层务实**(只编值得编的档,缺档向下 clamp,绝不 SIGILL)。
 
 > 详见横切原则 [`coding-conventions.md` → 能力 dispatch](./coding-conventions.md)。`compute/` 的后端选择是同一模型，粒度从"指令集"换成"设备/扩展"。
 
@@ -112,10 +143,10 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 ## 落地清单
 
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
-2. ✅ SSE4.2 / AVX2 / AVX512 / NEON / SVE / RVV 后端 + 运行时 dispatch。四定宽 ISA 均真跑；AVX512 由 Intel SDE 跑 `vec_test` 全绿并验证 dispatch 选中 kAvx512。SVE/RVV 用 sizeless traits + 运行期 `Lanes`，P0-P4 共享泛型已补齐；SVE 19 tests×VL 128/256/384/512，RVV 18 tests×VLEN 128/256/512/1024。partial tag 的 `Rebind+kPow2+cap` 在 vec.h 共享层表达，后端用 predicate/`vl` 执行。
+2. ✅ SSE4.2 / AVX2 / AVX512 / NEON / SVE / RVV 后端 + 双轨部署。四定宽 ISA 均真跑；AVX512 由 Intel SDE 验证。SVE/RVV 用 sizeless traits + 运行期 `Lanes`；预编译 Runtime 的 scalable 变体覆盖 ops/random/scan，dtype/math/sort/bitpack 分别诚实保持 NEON/scalar。native/Runtime 最终纵切另以 VL/VLEN 128/256/512 各 8/8 验证。partial tag 的 `Rebind+kPow2+cap` 在 vec.h 共享层表达，后端用 predicate/`vl` 执行。
 3. ✅ dtype 转换（fp16/bf16 硬件路径）。**simd-05。** f32→bf16 的 **AVX-512-BF16 native `vcvtneps2bf16`** 档随 AVX512 变体 SDE 可真跑(此前仅 objdump 验)。
-4. ✅ 数学函数（借 Highway/xsimd 核）。simd-06 的 exp/log/tanh、simd-09 的 11 个 best-of 函数，以及 GELU/GELU-tanh/softmax/log-softmax 组合核均已落地并对拍 libm/标量参考。`hypot_f32_batch` 保留 Highway exponent-scaling 的完整语义；另显式提供 `hypot_in_range_f32_batch` 借 xsimd direct-formula 核，由调用方承担输入域契约，AVX2/NEON 真机均约快 2.0×。f64 direct-formula 未测出可判定收益，故不暴露 fast 变体。
-5. ✅ `ops/`：dot_f32/saxpy_f32 跨 scalar/SSE4/AVX2/AVX512 dispatch;**AVX512 派发档 simd-09 Intel SDE 真跑坐实(tier 探针确认 kAvx512,非仅 objdump)**。reduce/对齐 memcpy/SwissTable 探测片段按需(container 已自有 SwissTable 探测)。
+4. ✅ 数学函数。simd-06/09 的 best-of 选择与 GELU/softmax 组合核均已落地；simd-20 将历史 Highway/xsimd 产品核摘为 HYLE 自有实现，外部库仅在 benchmark 中作对照。`hypot_f32_batch` 保留 overflow-safe 语义，`hypot_in_range_f32_batch` 显式采用 direct-formula 输入域契约。
+5. ✅ `ops/`：dot/saxpy/add 的 f32/f64 共享 native body 跨 scalar/SSE4/AVX2/AVX512/NEON/SVE/RVV；普通 API 走 Runtime，exact build 编译期直连，用户 TU 可走 `native::` 内联。
 6. ✅ 单测：每后端对拍 scalar 参考值、数学函数 ULP 测试、benchmark 对标 Highway/xsimd。SSE4/AVX2/NEON 有真机性能数据；AVX512-SDE 与 SVE/RVV QEMU 只作正确性门，不作性能证据。math ULP vs libm 约 3.5，best-of 由真机 bench 决策。
 
 ### AVX512 后端：已实现并由 Intel SDE 真跑
@@ -130,15 +161,15 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 
 **执行边界**：SDE 提供正确性与 dispatch 验证，不用于性能结论；AVX512 性能仍只接受真机 benchmark。
 
-**派发现状**：`hyle_add_dispatched_kernel` 生成的 AVX-512 TU 已接入 `dispatch_ops.cc`；具备完整 ZMM OS-state 与 ISA 特性的主机默认派发到 AVX512 kernel，否则回落 AVX2/scalar。SDE 双向探针已验证 tier 选择。
+**派发现状**：`hyle_add_dispatched_kernel` 生成的 AVX-512 薄 TU 已接入统一 Runtime；具备完整 ZMM OS-state 与 ISA 特性的主机默认选择 AVX512 kernel，否则回落 AVX2/SSE4/scalar。exact AVX512 构建则在编译期直连，不查询 Runtime。
 
 ### AVX-512 dtype/math 上架
 
 dtype 与 math 的 AVX-512 路径已上架；本机虽是 AVX2-only，512-bit 代码除双平台编译/objdump 外，还由 Intel SDE 执行正确性与 tier 选择测试。
 
 - **① dtype `f32→bf16` native(`cvt_avx512bf16.cc`)**:`_mm512_cvtneps_pbh`(`VCVTNEPS2BF16`)把 AVX2 路径的 ~7-op RNE 序列(bias+shift+packus+permute)折成**单条**硬件 RNE 指令,16-wide。`dtype_dispatch` 的 `f32_to_bf16_batch` 优先 `avx512bf16` 档(`cpu_features().avx512bf16` 门控,该 flag 在 `dispatch.cc` 已 AND-fold XGETBV/ZMM),回退 AVX2→scalar。`bf16→f32` 无 512 win(纯 `<<16` 移位,AVX2 已最优),不加 512 变体。新 `AVX512_BF16` CMake tier(GCC `-mavx512bf16` 叠加四件套;MSVC `/arch:AVX512` 已含,probe 验)。**验真**:GCC14 `vcvtneps2bf16`(EVEX.512)、MSVC `vcvtneps2bf16 ymm,zmmword`。测试 `F32ToBf16Avx512MatchesScalar`(finite bit-exact、NaN equal-by-class——硬件 quiet 到自有 QNaN,同 F16C fp16 立场),本机无 bf16 故正确 SKIP。
-- **③ math 512b 变体(`transcendental_{xsimd,highway}_avx512.cc`)**:借同核、仅编译宽一档→zmm。`math_dispatch` 加 avx512 档优先(exp/tanh→xsimd-512、log→highway-512),回退 AVX2→scalar。新 `hyle_set_avx512_math_isa`(全 AVX-512 组**含 cd**——xsimd 的 avx512dq 核 `#error` 要求 cd;**+ AVX2 baseline**——Highway 静态 dispatch 需完整宏链选 AVX3,否则降级)。**验真**:GCC xsimd512 92zmm/highway512 43zmm、MSVC xsimd512 581zmm。
-  - **MSVC Highway-AVX3 排除(probe 实锤,非接线 bug)**:Highway 在 `detect_targets.h:192` 把整个 AVX3 标 `HWY_BROKEN_MSVC`(MSVC AVX-512 codegen 已知 bug),故 `/arch:AVX512` 下 `hn::` 仍发 ymm(dumpbin 250 ymm/0 zmm)。MSVC 上**没有 512-bit log win**(avx2 highway log 已是 Highway 能给的最宽)。故 `transcendental_highway_avx512.cc` 与 dispatch 的 log-512 分支用 `#if !defined(_MSC_VER)` 守卫,MSVC log 留 avx2 highway,**不路由到 fake-512**。xsimd(exp/tanh)不受影响——其 512 batch 是纯 AVX-512F,MSVC 真发 zmm。
+- **③ math 512b 变体(`transcendental_{xsimd,highway}_avx512.cc`)**：文件/符号保留历史来源名，但 simd-20 后实现已自包含于 HYLE。`math_dispatch` 在 GCC/Clang 优先 HYLE 512 核，回退 AVX2→scalar；`hyle_set_avx512_math_isa` 保留所需的完整 AVX-512 group。**验真**：GCC 与 MSVC 均用对象级指令检查，执行正确性由 SDE 覆盖。
+  - **MSVC 512-bit log 排除仍保留**：最初由 Highway `HWY_BROKEN_MSVC` 暴露，摘除 vendor 后也不把未证实获益的 MSVC log 路径伪装成 512；MSVC log 保持已验证的 AVX2 HYLE 核，其他 512 math 路径按实际 codegen 使用。
 - **执行验证**：dtype/math/ops 的 AVX512 路径均经 Intel SDE 正确性门；SDE 不作为性能背书，性能数据仍要求真机。
 
 ### op 覆盖补齐（2026-07,compute 前把 vec 后端 op 集补全）
@@ -194,7 +225,7 @@ P4 新增12个公开名：四个 FMA 符号/交错变体、`MinMagnitude/MaxMagn
 
 - **`ctanh`**：普通 lane 计算一次 `sincos(2y)`，用 `expm1(|2x|)`推导小实部的双曲对；整块安全 large-real lane直接写出极限值，混合 block 的`|x|>20` lane用`q=exp(-2|x|)`渐近式，避免双曲溢出。real/imaginary axis、subnormal、NaN/Inf、近极点及会让`2y`溢出的有限虚部逐 lane 回退`std::complex`，不会连带正常邻 lane。异常结果先保存、vector store后覆盖，所以只支持的精确原位 alias 仍正确。
 - **`cpow`**：对 regular lane 计算一次`rho=hypot(z)`、`L=log(rho)`、`phi=atan2(z)`，再融合`A=w_re*L-w_im*phi`、`B=w_re*phi+w_im*L`，只做一次`exp(A)`和一次`sincos(B)`。base/exponent 的轴、subnormal、非有限、过大值、危险指数窗口与 branch-cut lane 均回退`std::pow`。
-- `ctanh/cpow`的 xsimd core 仍只保留在同 TU benchmark 中作公平对照；生产 AVX2/NEON 已走 HYLE SoA。`cexp`已同构无重写价值，`clog/csqrt`需要完整缩放/相位体系而没有可证结构性收益，继续保留 xsimd；VQSort、VQPartialSort、VQSelect 和除u16 11/13外的 bit-pack 同样继续保留 Highway。完整裁决见[`simd-13`](../milestones/simd-13-vendor-displacement-2.md)。
+- `ctanh/cpow` 的 xsimd core 只在外部 benchmark 对照中存在；生产 AVX2/NEON 走 HYLE SoA。本文当时“继续保留 xsimd/Highway”的 `clog/csqrt`、VQSort 与 bit-pack 结论后来由 simd-20 全部摘除，终态见 [`simd-vendor-surface.md`](./simd-vendor-surface.md)。完整阶段裁决见 [`simd-13`](../milestones/simd-13-vendor-displacement-2.md)。
 
 ### SVE scalable 后端(simd-09,首个非定宽后端)——sizeless 类型如何融入 D-tag 契约
 
@@ -227,7 +258,7 @@ P4 新增12个公开名：四个 FMA 符号/交错变体、`MinMagnitude/MaxMagn
 
 1. **vector 抽象用定宽 `vec<T,N>` 还是 scalable（length-agnostic）**？**scalable-friendly 接口 + 先实现定宽后端**——接口按 length-agnostic 设计（参考 Highway，将来加 SVE/RVV 不改 API），但首版只实现定宽后端（x86 SSE4.2/AVX2/AVX512 + ARM NEON，它们本就定宽）。对冲：不堵未来又不先背复杂度。
    > **深读 highway 落地约束**：照搬 highway 的 **D-tag 接口契约**——传零大小标签 `D=Simd<T,N,kPow2>`，op 形如 `VFromD<D> Set(D,T)`，`Lanes(d)` 取宽度。**关键：`Lanes(d)` 必须设计成可运行期求值**（定宽后端是 constexpr、SVE 后端是 `svcntw()` 运行期），否则将来加 SVE 要改 API。highway 已证同源码 x86/SVE 共存可行。**只照搬接口契约，不 vendor 整个 highway**（其 ops/ 全平台万行级、重宏元编程，违背"贴硬件/不过度抽象"）。给 `vec.h` 设行数警戒线（初版 ~2k/后端；随做全 op 面已增至 2-3k，见上节实测），逼近 Highway 每-target 量级就是丧失了不 vendor 的理由。
-2. **数学核 vendor 现成库还是自抄多项式**？**vendor Highway + xsimd（均在 `third_party/`、无条件默认编进生产）**，逐 op best-of-breed 选最快核（exp/tanh→xsimd、log→Highway）；adapter 几乎零成本（吃裸 intrinsic 向量，HYLE `vec.raw` 直接喂）。两库精度同档（~3.5ULP，AI 热路径足够），互为校验。
+2. **数学核 vendor 现成库还是自有实现**？阶段上先借 Highway/xsimd 建立 best-of 与精度基线，再由 simd-20 提取成 HYLE 自有实现。产品 `include/`/`src/` 零 Highway/xsimd 依赖；外部 pin checkout 只在 benchmark 中继续充当性能与精度对照。
 3. **要不要 SVE/RVV**？**两者均已落地并完成 scalable P0-P4 的共享泛型实例化**：SVE qemu-aarch64 VL 128/256/384/512，RVV qemu-riscv64 VLEN 128/256/512/1024；同一二进制逐宽对拍 scalar。D-tag 的运行期 `Lanes(d)`、partial `kPow2`/cap、sizeless traits 与原生 predication/`vl` 共同维持公开 API 不变。定宽 P3 Masked* 与 P4 Mul/Mod/Magnitude 已完成；剩余软件项为 P5，硬件 gate 以 gap inventory 为准。
 4. **dtype 层借谁**？**自造，但参照 highway 的 `PromoteTo/DemoteTo` intrinsic 用法**（F16C `_mm_cvtph_ps`、AVX512-BF16 `cvtne2ps`、NEON-BF16）——照抄 intrinsic 不照抄抽象。Highway/xsimd 数学核无 fp16/bf16，唯 highway 当原生 lane 类型且硬件路径全；但 dtype 逻辑不复杂（bf16=fp32 高 16 位移位），自造避开 vendor 整个 highway。
 

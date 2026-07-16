@@ -33,7 +33,4 @@ HYLE_SIMD_API void exclusive_scan(std::int64_t* data, std::size_t n) noexcept;
 HYLE_SIMD_API void exclusive_scan(float* data, std::size_t n) noexcept;
 HYLE_SIMD_API void exclusive_scan(double* data, std::size_t n) noexcept;
 
-// ISA tier selected for scan kernels (same model as ops active_variant).
-HYLE_SIMD_API Isa active_scan_variant() noexcept;
-
 }  // namespace hyle::simd

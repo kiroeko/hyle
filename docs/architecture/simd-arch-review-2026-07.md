@@ -6,6 +6,12 @@
 > 也不该走向 vendor Highway。**
 > 背景:一个月 HYLE-vs-Highway 性能对齐(见 `docs/milestones/simd-orderswap-matrix.md`)后的架构侧复盘。
 
+> **2026-07-16 补充（simd-20/22）**：本文评审的两项债针对寄存器表示与 backend op 横切面，结论仍成立；
+> 当时尚未收口的第三类问题——分散 `active_*` API、只有静态 `VectorXoshiro`、普通 API 与固定目标入口
+> 缺少统一模型——已由 [`simd-dispatch-guide.md`](./simd-dispatch-guide.md) 的 Runtime/native/exact 双轨
+> 解决。产品也已零 Highway/xsimd，外部库只保留为 benchmark 对照。这是增量重构，不推翻本文对 D-tag/
+> backend 地基的判断。
+
 ## 一、判断依据(架构质量怎么测,不靠感觉)
 
 在校准仪器(锚点校准 + 双序判定 + 三平台,见 `docs/performance/simd-op-benchmark-methodology.md`)下:
@@ -43,7 +49,7 @@ simd-19 阶段 1 正好是它的落地场。
 
 ### 债② 追问:Highway 宏体系是不是"正确答案"?HYLE 不走它会不会持续出问题?(2026-07-15)
 
-数据(本仓 `third_party/highway/hwy/ops/arm_neon-inl.h`,10982 行):`HWY_NEON_DEF_FUNCTION*` 宏调用
+数据(当时用于调研的 Highway checkout `hwy/ops/arm_neon-inl.h`,10982 行):`HWY_NEON_DEF_FUNCTION*` 宏调用
 286 处,`template <` 966 处——**Highway 的 NEON 后端也只有规整那部分由宏生成,其余大量仍是手写特化**。
 宏解决的是"规整 op × (type×size) 矩阵的机械展开";难的那部分(本月 ~20 轮修复对应的指令选择、编译器
 怪癖、契约边界)两家都得手写。
@@ -107,3 +113,4 @@ simd-19 已落完(helper 层按路线 2 的修正暂不建,类型轴到来时再
 - 测量方法论:`docs/performance/simd-op-benchmark-methodology.md`
 - 仪器伪影狩猎记录:`docs/debug/op-parity-harness-artifacts-hunt.md`
 - 章程(不 vendor / 行数警戒线):`docs/architecture/engineering-charter.md`,`simd-design.md` §229
+- 双轨派发终态与维护规则：[`simd-dispatch-guide.md`](./simd-dispatch-guide.md)

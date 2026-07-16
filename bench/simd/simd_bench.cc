@@ -3,7 +3,7 @@
 // relative to the first (scalar). Answers "is HYLE SIMD at SOTA?" with real numbers, and
 // "how much over auto-vec?" -- both printed, win or lose.
 //
-// ALSO races the PUBLIC dispatched entry points (hyle::simd::dot_f32 / saxpy_f32 from
+// ALSO races the PUBLIC dispatched entry points (hyle::simd::dot / saxpy from
 // ops.h) against the same-ISA local kernel. Those exported symbols go through one cached
 // fn-pointer (the "one binary, any CPU" dispatch model ops.h documents); this is the only
 // bench that measures that indirection cost -- the local hyle_bench::dot_avx2 above is the
@@ -20,7 +20,8 @@
 
 #include "bench/simd/simd_kernels.h"
 #include "hyle/platform.h"
-#include "hyle/simd/ops.h"  // public dispatched dot_f32 / saxpy_f32 / active_variant
+#include "hyle/simd/ops.h"  // public runtime-dispatched dot / saxpy
+#include "hyle/simd/runtime.h"
 
 namespace {
 constexpr std::size_t kN = 4096;  // fits L1; isolates compute throughput, not memory BW
@@ -41,7 +42,7 @@ using DirectDotFn = float (*)(const float*, const float*, std::size_t);
 // comparing different widths and mislabeling the result as dispatch overhead.
 DirectDotFn direct_active_dot() noexcept {
 #if defined(HYLE_ARCH_X64)
-  switch (hyle::simd::active_variant()) {
+  switch (hyle::simd::runtime().isa) {
     case hyle::simd::Isa::kAvx2: return &hyle_bench::dot_avx2;
     case hyle::simd::Isa::kSse42: return &hyle_bench::dot_sse4;
     case hyle::simd::Isa::kScalar: return &hyle_bench::dot_scalar;
@@ -80,7 +81,7 @@ int main() {
     // PUBLIC dispatched entry (fn-ptr indirection): the shipped library symbol.
     // Gap vs "HYLE avx2" above = the dispatch tax (one cached indirect call).
     b.run("HYLE dot_f32 (public dispatch)", [&] {
-      ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot_f32(x.data(), y.data(), kN));
+      ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot(x.data(), y.data(), kN));
     });
   }
 
@@ -95,12 +96,12 @@ int main() {
         ankerl::nanobench::doNotOptimizeAway(direct_dot(x.data(), y.data(), n));
       });
       b.run("HYLE dot_f32 (public dispatch)", [&] {
-        ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot_f32(x.data(), y.data(), n));
+        ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot(x.data(), y.data(), n));
       });
     }
   } else {
     std::printf("dispatch scaling omitted: no same-ISA local direct anchor for tier=%s\n",
-                hyle::simd::isa_name(hyle::simd::active_variant()));
+                hyle::simd::isa_name(hyle::simd::runtime().isa));
   }
 
   {
@@ -126,7 +127,7 @@ int main() {
     });
 #endif
     b.run("HYLE saxpy_f32 (public dispatch)", [&] {
-      hyle::simd::saxpy_f32(1.001f, x.data(), ys.data(), kN);
+      hyle::simd::saxpy(1.001f, x.data(), ys.data(), kN);
       ankerl::nanobench::doNotOptimizeAway(ys[0]);
     });
   }
@@ -190,7 +191,7 @@ int main() {
         ankerl::nanobench::doNotOptimizeAway(s);
       });
       b.run("HYLE dot_f64 (public dispatch)", [&] {
-        ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot_f64(xd.data(), yd.data(), kN));
+        ankerl::nanobench::doNotOptimizeAway(hyle::simd::dot(xd.data(), yd.data(), kN));
       });
     }
     {
@@ -202,7 +203,7 @@ int main() {
         ankerl::nanobench::doNotOptimizeAway(yds[0]);
       });
       b.run("HYLE saxpy_f64 (public dispatch)", [&] {
-        hyle::simd::saxpy_f64(1.001, xd.data(), yds.data(), kN);
+        hyle::simd::saxpy(1.001, xd.data(), yds.data(), kN);
         ankerl::nanobench::doNotOptimizeAway(yds[0]);
       });
     }

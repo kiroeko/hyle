@@ -8,6 +8,7 @@
 #include "hyle/platform.h"
 #include "hyle/simd/dtype.h"
 #include "hyle/simd/dtype_ops.h"
+#include "hyle/simd/runtime.h"
 
 // dtype_test -- fp16/bf16 conversion correctness. Two layers:
 //  (1) element conversions (dtype.h) vs known IEEE-754 bit patterns + exhaustive
@@ -16,7 +17,6 @@
 //      kernel; we cross-check it against the scalar element core for every fp16 pattern
 //      (finite: bit-equal; NaN: equal-by-class) -- the hardware-vs-software gate.
 
-using hyle::simd::active_dtype_variant;
 using hyle::simd::bf16_to_f32;
 using hyle::simd::bfloat16_t;
 using hyle::simd::f16_to_f32;
@@ -301,15 +301,19 @@ TEST(DtypeBatch, F32ToBf16Avx512MatchesScalar) {
 TEST(DtypeBatch, ActiveVariantEngagesHardwareWhenAvailable) {
 #if defined(HYLE_ARCH_X64)
   if (hyle::simd::cpu_features().f16c)
-    EXPECT_EQ(active_dtype_variant(), Isa::kAvx2);
+    EXPECT_NE(hyle::simd::runtime().dtype.features &
+                  hyle::simd::Runtime::kFeatureF16c,
+              0u);
   else
-    EXPECT_EQ(active_dtype_variant(), Isa::kScalar);
+    EXPECT_EQ(hyle::simd::runtime().dtype.features &
+                  hyle::simd::Runtime::kFeatureF16c,
+              0u);
 #elif defined(HYLE_ARCH_ARM64)
   // aarch64: fp16 via native vcvt + bf16 via NEON integer are ALWAYS compiled (NEON is the
   // ARMv8 baseline), so the dtype dispatcher engages the NEON tier, never the scalar floor.
-  EXPECT_EQ(active_dtype_variant(), Isa::kNeon);
+  EXPECT_EQ(hyle::simd::runtime().dtype.isa, Isa::kNeon);
 #else
-  EXPECT_EQ(active_dtype_variant(), Isa::kScalar);
+  EXPECT_EQ(hyle::simd::runtime().dtype.isa, Isa::kScalar);
 #endif
 }
 

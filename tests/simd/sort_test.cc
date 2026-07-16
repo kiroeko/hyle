@@ -12,6 +12,7 @@
 
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/sort.h"
+#include "hyle/simd/runtime.h"
 
 // sort_test -- the borrowed Highway vqsort (whatever tier is live: avx512/avx2/neon/scalar) must
 // agree with the std:: oracle on every (type, length, distribution, order). The dispatcher picks
@@ -26,7 +27,6 @@
 // (recursion), with distributions: random, all-equal, already-sorted, reverse-sorted, few-unique
 // (heavy duplicates -- stresses the partition).
 
-using hyle::simd::active_sort_variant;
 using hyle::simd::Isa;
 using hyle::simd::partial_sort;
 using hyle::simd::select;
@@ -366,8 +366,8 @@ TEST(Sort, SmallKKeyValue64) {
 
 // The dispatcher reports a sane tier for this host (avx512/avx2 on x86, neon on arm64, else
 // scalar). Not asserting a specific value (depends on the build host), just that it is one of the
-// expected tiers -- a smoke check that active_sort_variant is wired.
+// expected tiers -- a smoke check that the shared runtime metadata is wired.
 TEST(Sort, ActiveVariantIsSane) {
-  const Isa v = active_sort_variant();
+  const Isa v = hyle::simd::runtime().sort.isa;
   EXPECT_TRUE(v == Isa::kAvx512 || v == Isa::kAvx2 || v == Isa::kNeon || v == Isa::kScalar);
 }

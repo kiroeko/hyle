@@ -17,6 +17,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/simd/sort.h"
+#include "hyle/simd/runtime.h"
 
 namespace {
 namespace nb = ankerl::nanobench;
@@ -319,7 +320,7 @@ void run_type(const char* name) {
 int main() {
   static_assert(sizeof(KeyValue32) == sizeof(hwy::K32V32));
   static_assert(sizeof(KeyValue64) == sizeof(hwy::K64V64));
-  std::printf("HYLE sort tier=%u\n", static_cast<unsigned>(hyle::simd::active_sort_variant()));
+  std::printf("HYLE sort tier=%u\n", static_cast<unsigned>(hyle::simd::runtime().sort.isa));
   run_type<std::uint32_t>("u32");
   run_type<std::uint64_t>("u64");
   run_type<KeyValue32>("kv32");

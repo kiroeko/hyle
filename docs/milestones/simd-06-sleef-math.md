@@ -26,7 +26,7 @@ AI 热路径（softmax/gelu/attention）被 exp/log/tanh 主导。手搓多项�
 
 ## 具体事务
 
-- [x] `include/hyle/simd/math.h`：`exp_f32_batch`/`log_f32_batch`/`tanh_f32_batch` + `active_math_variant`。
+- [x] `include/hyle/simd/math.h`：`exp_f32_batch`/`log_f32_batch`/`tanh_f32_batch`；当前层由统一 `runtime().math.isa` 报告。
 - [x] `src/simd/math/`：scalar libm 核（`std::exp/log/tanh`,**永远编、跨平台、ULP oracle + 非 x86/arm fallback floor**）+ **Highway/xsimd 借核**（`transcendental_highway.cc` log、`transcendental_xsimd.cc` exp/tanh,AVX2;`*_avx512.cc` 512b 变体;`transcendental_highway_neon.cc` arm64 全三 op）+ baseline dispatcher（`math_dispatch.cc`:x86 按 best_isa 选 avx512/avx2 借核否则 libm;arm64 走 Highway NEON;非 x86/arm 走 libm）。
 - [x] CMake：Highway+xsimd include dir 无条件（header-only vendored,不可缺失,无 opt-in 门）;x86 借核 TU 按 tier 设 `-mavx2`/`-mavx512*`（`hyle_set_highway_isa`/`hyle_set_avx512_math_isa`）;arm64 NEON TU 无额外 flag（ARMv8 baseline）。
 - [x] `tests/simd/math_test.cc`：exp/log/tanh 批量对拍 libm（收紧到 `4e-7`≈3.4 ULP）+ tail + active 报告（arch-aware:x86 kAvx2/kAvx512、arm64 kNeon、else kScalar）。
@@ -35,7 +35,7 @@ AI 热路径（softmax/gelu/attention）被 exp/log/tanh 主导。手搓多项�
 ## 验收标准
 
 - **编译**：✅ 三平台——Win MSVC 19.50 + Linux GCC14.2 + macOS clang21,零告警（Highway AVX3 在 MSVC 会发 ymm 已 `#if !_MSC_VER` 排除,退 AVX2）。
-- **正确性**：✅ exp/log/tanh 向量化核对拍 libm 全过——x86 AVX2/AVX512（`active_math_variant()`=kAvx2/kAvx512 证借核真生效）+ **arm64 NEON**（Highway lower 到 NEON,`=kNeon`,真机 M4 Air 验）+ scalar libm 双平台。收紧容差 `4e-7`(实测 worst 5x 余量,坏核会 fail)后所有路径仍过。
+- **正确性**：✅ exp/log/tanh 向量化核对拍 libm 全过——x86 AVX2/AVX512（`runtime().math.isa` 证借核真生效）+ **arm64 NEON**（Highway lower 到 NEON,真机 M4 Air 验）+ scalar libm 双平台。收紧容差 `4e-7`(实测 worst 5x 余量,坏核会 fail)后所有路径仍过。
 - **借非造**：向量化核是 Highway `hn::Exp/Log/Tanh` + xsimd `_u10`(1ULP)cores,HYLE 零多项式手搓——adapter 只喂 `vec.raw` 等价的 `__m256`/NEON vector。
 - **诚实边界**：① gelu/softmax 组合核待后续。② AVX512 借核在无 AVX512 机/SDE 上未真跑（GCC objdump 验 zmm）。③ **arm64 用 Highway 跑全三 op**;x86 的 xsimd(exp/tanh)/Highway(log) per-op 拆分是速度调优,arm64 的 xsimd-NEON 逐 op 调优待实测（Highway-NEON 已够用）。
 

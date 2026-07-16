@@ -3,7 +3,7 @@
 #include <cstddef>
 
 #include "hyle/platform.h"
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/runtime.h"
 #include "src/simd/math/kernels.h"
 
 // math_dispatch.cc -- baseline dispatcher for the transcendental batch ops, PER-OP
@@ -21,10 +21,15 @@
 namespace hyle::simd {
 namespace {
 
+#if defined(HYLE_ARCH_X64)
 // AVX2 x86 host? (the borrow cores are x86 AVX2-only). On non-x86 this is always false.
 bool have_avx2() noexcept {
-#if defined(HYLE_ARCH_X64)
-  return cpu_features().avx2;
+#if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_ARCH_X64)
+  return runtime().math.isa == Isa::kAvx2 || runtime().math.isa == Isa::kAvx512;
 #else
   return false;
 #endif
@@ -34,13 +39,17 @@ bool have_avx2() noexcept {
 // there). The 16-wide borrow cores are reached only here; an AVX2-but-not-512 host stays on
 // the 8-wide cores. best_isa()>=kAvx512 is the same condition, expressed via the features.
 bool have_avx512() noexcept {
-#if defined(HYLE_ARCH_X64)
-  const auto& f = cpu_features();
-  return f.avx512f && f.avx512bw && f.avx512vl && f.avx512dq && f.avx512cd;
+#if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_ARCH_X64)
+  return runtime().math.isa == Isa::kAvx512;
 #else
   return false;
 #endif
 }
+#endif
 
 }  // namespace
 
@@ -405,18 +414,6 @@ void tgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
 void lgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
   detail::lgamma_f64_scalar(src, dst, n);  // scalar only (vendor vectorized-lgamma bug)
 }
-
-Isa active_math_variant() noexcept {
-#if defined(HYLE_ARCH_X64)
-  static const Isa tier = have_avx512() ? Isa::kAvx512 : (have_avx2() ? Isa::kAvx2 : Isa::kScalar);
-  return tier;
-#elif defined(HYLE_ARCH_ARM64)
-  return Isa::kNeon;  // Highway NEON cores always compiled (ARMv8 baseline)
-#else
-  return Isa::kScalar;
-#endif
-}
-
 
 // simd-18 批G binary Highway (atan2/pow) + sincos + xsimd extras (scalar path first)
 void atan2_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {

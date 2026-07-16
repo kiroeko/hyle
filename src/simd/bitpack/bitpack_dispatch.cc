@@ -5,7 +5,7 @@
 
 #include "hyle/macros.h"  // HYLE_FATAL_ASSERT (fail-fast on bits-contract violation)
 #include "hyle/platform.h"
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/runtime.h"
 #include "src/simd/bitpack/bitstream.h"
 #include "src/simd/bitpack/kernels.h"
 
@@ -19,9 +19,14 @@
 namespace hyle::simd {
 namespace {
 
-bool have_avx2() noexcept {
 #if defined(HYLE_ARCH_X64)
-  return cpu_features().avx2;
+bool have_avx2() noexcept {
+#if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_ARCH_X64)
+  return runtime().bitpack.isa == Isa::kAvx2 || runtime().bitpack.isa == Isa::kAvx512;
 #else
   return false;
 #endif
@@ -29,13 +34,17 @@ bool have_avx2() noexcept {
 
 // AVX-512 group (f+bw+vl+dq+cd) -- same condition as sort_dispatch's have_avx512.
 bool have_avx512() noexcept {
-#if defined(HYLE_ARCH_X64)
-  const auto& f = cpu_features();
-  return f.avx512f && f.avx512bw && f.avx512vl && f.avx512dq && f.avx512cd;
+#if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_ARCH_X64)
+  return runtime().bitpack.isa == Isa::kAvx512;
 #else
   return false;
 #endif
 }
+#endif
 
 }  // namespace
 
@@ -91,17 +100,5 @@ bool have_avx512() noexcept {
 
 HYLE_BITPACK_TYPES(HYLE_BITPACK_DISPATCH)
 #undef HYLE_BITPACK_DISPATCH
-
-Isa active_bitpack_variant() noexcept {
-#if defined(HYLE_ARCH_X64)
-  static const Isa tier =
-      have_avx512() ? Isa::kAvx512 : (have_avx2() ? Isa::kAvx2 : Isa::kScalar);
-  return tier;
-#elif defined(HYLE_ARCH_ARM64)
-  return Isa::kNeon;  // HYLE NEON core always compiled (ARMv8 baseline)
-#else
-  return Isa::kScalar;
-#endif
-}
 
 }  // namespace hyle::simd

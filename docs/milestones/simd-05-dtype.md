@@ -25,7 +25,7 @@ AI infra 数值刚需：fp16/bf16 是混合精度训练/推理 + KV-cache 的主
 ## 具体事务（做什么）
 
 - [x] `dtype.h`：`float16_t`/`bfloat16_t`（uint16 背衬，像 Highway wrapper）+ 标量转换核 `f16_to_f32`/`f32_to_f16`/`bf16_to_f32`/`f32_to_bf16`，**逐行照搬 Highway base.h**（F32FromF16/F16FromF32/F32FromBF16/BF16FromF32）——处理 subnormal/inf/nan/RNE，非查表非手推。
-- [x] `dtype_ops.h` + `dtype/`：批量转换派发 API（`f16_to_f32_batch` 等 + `active_dtype_variant`）。fp16 走 F16C 变体 TU（`cvt_f16c.cc`，`_mm256_cvtph_ps`/`_mm256_cvtps_ph` + `_MM_FROUND_NO_EXC`）；scalar 兜底 TU；baseline dispatcher 按 `f16c && avx` 门控。
+- [x] `dtype_ops.h` + `dtype/`：批量转换派发 API（`f16_to_f32_batch` 等；当前层由统一 `runtime().dtype` 报告）。fp16 走 F16C 变体 TU（`cvt_f16c.cc`，`_mm256_cvtph_ps`/`_mm256_cvtps_ph` + `_MM_FROUND_NO_EXC`）；scalar 兜底 TU；baseline dispatcher 按 `f16c && avx` 门控。
 - [x] CMake：F16C TU 编 `-mf16c -mavx`（**非 avx2**，见下安全修复）。
 - [x] `tests/simd/dtype_test.cc`：已知位模式 + 全 65536 fp16 往返 + RNE tie-to-even oracle + 全 65536 硬件-vs-标量对拍 + tail + bf16 RNE/NaN。
 - [x] **明确不做**：AVX-512-FP16 原生算术、AVX-512-BF16 `vcvtne2ps`、int8/fp8（后续）；bf16 显式 AVX2 8-wide kernel（deferred，标量 auto-vec 4-wide 兜着）。
@@ -37,7 +37,7 @@ AI infra 数值刚需：fp16/bf16 是混合精度训练/推理 + KV-cache 的主
 ## 验收标准
 
 - **编译**：✅ Win MSVC 19.50（/W4 零告警，C4556 false-positive 局部抑制如 Highway）+ Linux GCC14.2（零告警）。
-- **正确性**：✅ 双平台 `hyle_simd_test` 47/47（含 dtype 9）。**全 65536 fp16 位模式硬件(F16C `vcvtph2ps`)-vs-标量逐位对拍**（finite 位等 / NaN 按类）+ 全 65536 fp16→f32→fp16 往返 + RNE tie-to-even hand-oracle。`active_dtype_variant()` 本机 = kAvx2（F16C 真启用）。全量 ctest 13/13 无回归。
+- **正确性**：✅ 双平台 `hyle_simd_test` 47/47（含 dtype 9）。**全 65536 fp16 位模式硬件(F16C `vcvtph2ps`)-vs-标量逐位对拍**（finite 位等 / NaN 按类）+ 全 65536 fp16→f32→fp16 往返 + RNE tie-to-even hand-oracle。`runtime().dtype` 本机报告 kAvx2 + F16C。全量 ctest 13/13 无回归。
 - **对照 Highway**：标量转换逐行对照 base.h；F16C intrinsic `_MM_FROUND_NO_EXC` 对照（Highway 同此立 immediate=8，C4556 同款抑制）。
 
 ## 对抗式自审（红队揪出 2 个本机测不到的 SIGILL 真 bug）

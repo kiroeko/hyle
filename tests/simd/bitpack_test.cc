@@ -8,6 +8,7 @@
 
 #include "hyle/simd/bitpack.h"
 #include "hyle/simd/dispatch.h"
+#include "hyle/simd/runtime.h"
 
 // bitpack_test -- the borrowed Highway bit_pack (whatever tier is live: avx512/avx2/neon/scalar)
 // must ROUND-TRIP: pack `count` values (each masked to `bits` low bits) then unpack must recover
@@ -20,7 +21,6 @@
 // unpack reads packed[0 .. packed_size) so an under-count would read OOB (ASan would catch it) --
 // we size the packed buffer to packed_size and rely on ASan/valgrind in CI for the OOB check.
 
-using hyle::simd::active_bitpack_variant;
 using hyle::simd::Isa;
 using hyle::simd::pack;
 using hyle::simd::packed_size;
@@ -133,7 +133,7 @@ std::vector<std::uint16_t> pack_lane_oracle(const std::uint16_t* raw, unsigned b
 }
 
 void verify_u16_block_layout(unsigned bits) {
-  const Isa tier = active_bitpack_variant();
+  const Isa tier = hyle::simd::runtime().bitpack.isa;
   const std::size_t lanes = tier == Isa::kAvx512 ? 32 : tier == Isa::kAvx2 ? 16 :
                             tier == Isa::kNeon ? 8 : 1;
   const std::size_t count = lanes * 16;
@@ -194,6 +194,6 @@ TEST(BitPack, U16Exhaustive13) { exhaustive_u16(13); }
 
 // The dispatcher reports a sane tier for this host (smoke check that it is wired).
 TEST(BitPack, ActiveVariantIsSane) {
-  const Isa v = active_bitpack_variant();
+  const Isa v = hyle::simd::runtime().bitpack.isa;
   EXPECT_TRUE(v == Isa::kAvx512 || v == Isa::kAvx2 || v == Isa::kNeon || v == Isa::kScalar);
 }

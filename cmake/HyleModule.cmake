@@ -46,6 +46,8 @@ function(hyle_isa_flags out_var tier)
       # is therefore a GCC/Clang+SDE construct (see tests/CMakeLists.txt gate); this case exists so
       # a stray AVX512_DL request on MSVC still resolves rather than FATAL_ERROR.
       set(${out_var} "/arch:AVX512" PARENT_SCOPE)
+    elseif(tier STREQUAL "NEON")
+      set(${out_var} "" PARENT_SCOPE)  # AArch64 baseline; meaningful only on an ARM target
     else()
       message(FATAL_ERROR "hyle_isa_flags: unknown tier '${tier}'")
     endif()
@@ -79,6 +81,10 @@ function(hyle_isa_flags out_var tier)
       # kernel TU needs NO extra -march (Apple clang / aarch64 gcc emit v-regs by default).
       # Empty flag list, same as SSE42-on-MSVC.
       set(${out_var} "" PARENT_SCOPE)
+    elseif(tier STREQUAL "SVE")
+      set(${out_var} "-march=armv8-a+sve" PARENT_SCOPE)
+    elseif(tier STREQUAL "RVV")
+      set(${out_var} "-march=rv64gcv" PARENT_SCOPE)
     else()
       message(FATAL_ERROR "hyle_isa_flags: unknown tier '${tier}'")
     endif()

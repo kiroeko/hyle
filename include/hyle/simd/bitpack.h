@@ -63,8 +63,4 @@ HYLE_SIMD_API void unpack(const std::uint16_t* packed, std::size_t count, std::u
 HYLE_SIMD_API void unpack(const std::uint32_t* packed, std::size_t count, std::uint32_t* raw,
                           unsigned bits) noexcept;  // bits 1..32
 
-// The tier the bitpack ops selected: kAvx512 if the 512-bit HYLE core is live, kAvx2 if the
-// 256-bit one is, kNeon on arm64, else kScalar (the bit-stream floor). For tests/diagnostics.
-HYLE_SIMD_API Isa active_bitpack_variant() noexcept;
-
 }  // namespace hyle::simd

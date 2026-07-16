@@ -3,7 +3,7 @@
 #include <cstddef>
 
 #include "hyle/platform.h"
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/runtime.h"
 #include "src/simd/dtype/kernels.h"
 
 // dtype_dispatch.cc -- baseline dispatcher for the batch dtype conversions. fp16 picks the
@@ -14,6 +14,7 @@
 namespace hyle::simd {
 namespace {
 
+#if defined(HYLE_ARCH_X64)
 // The fp16 hardware kernel (cvt_f16c.cc) uses 256-bit YMM ops (_mm256_cvtph_ps etc.), so
 // it needs BOTH F16C *and* AVX with OS-saved YMM. Gate on f16c && avx:
 //  - f.avx is already XGETBV-gated (os_ymm), so this never runs YMM on a stale OS that
@@ -24,8 +25,12 @@ namespace {
 // level, so neither the intrinsics nor the auto-vectorized scalar tail can emit an AVX2
 // instruction that would SIGILL on an F16C+AVX-but-not-AVX2 CPU.
 bool use_f16c() noexcept {
-#if defined(HYLE_ARCH_X64)
-  return cpu_features().f16c && cpu_features().avx;
+#if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_ARCH_X64)
+  return (runtime().dtype.features & Runtime::kFeatureF16c) != 0;
 #else
   return false;
 #endif
@@ -35,8 +40,12 @@ bool use_f16c() noexcept {
 // packus, permute4x64), so it needs AVX2 with OS-saved YMM. cpu_features().avx2 is the
 // AVX2 flag; .avx is XGETBV-gated (os_ymm), so requiring both is the honest YMM gate.
 bool use_avx2() noexcept {
-#if defined(HYLE_ARCH_X64)
-  return cpu_features().avx2 && cpu_features().avx;
+#if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_ARCH_X64)
+  return runtime().dtype.isa == Isa::kAvx2 || runtime().dtype.isa == Isa::kAvx512;
 #else
   return false;
 #endif
@@ -48,12 +57,15 @@ bool use_avx2() noexcept {
 // the honest gate for a 512-bit instruction. Only f32->bf16 has a win (the convert folds
 // the AVX2 RNE sequence into one op); bf16->f32 stays on the optimal AVX2 <<16 shift.
 bool use_avx512bf16() noexcept {
-#if defined(HYLE_ARCH_X64)
-  return cpu_features().avx512bf16;
+#if defined(HYLE_SIMD_EXACT)
+  return false;  // AVX-512 base does not imply the optional BF16 extension.
+#elif defined(HYLE_ARCH_X64)
+  return (runtime().dtype.features & Runtime::kFeatureAvx512Bf16) != 0;
 #else
   return false;
 #endif
 }
+#endif
 
 }  // namespace
 
@@ -111,7 +123,9 @@ void f8e5m2_to_f32_batch(const float8_e5m2_t* src, float* dst, std::size_t n) no
 
 // AVX10.2 gate: build has -mavx10.2-512 (clang-20) AND the CPU advertises avx10_2 (+ZMM).
 #if defined(HYLE_ARCH_X64) && defined(HYLE_HAVE_AVX10_2)
-bool use_avx10_2() noexcept { return cpu_features().avx10_2; }
+bool use_avx10_2() noexcept {
+  return (runtime().dtype.features & Runtime::kFeatureAvx10_2) != 0;
+}
 #endif
 
 // f32 -> fp8: AVX10.2 hardware kernel iff available. There is NO direct f32->fp8 instruction, so
@@ -144,17 +158,6 @@ void f16_to_f8e5m2_batch(const float16_t* src, float8_e5m2_t* dst, std::size_t n
   if (hw) { detail::f16_to_f8e5m2_avx10_2(src, dst, n); return; }
 #endif
   detail::f16_to_f8e5m2_scalar(src, dst, n);
-}
-
-Isa active_dtype_variant() noexcept {
-#if defined(HYLE_ARCH_X64)
-  static const Isa tier = use_f16c() ? Isa::kAvx2 : Isa::kScalar;
-  return tier;
-#elif defined(HYLE_ARCH_ARM64)
-  return Isa::kNeon;  // fp16 via native vcvt + bf16 via NEON integer, always compiled
-#else
-  return Isa::kScalar;
-#endif
 }
 
 }  // namespace hyle::simd

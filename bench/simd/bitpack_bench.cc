@@ -12,6 +12,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/simd/bitpack.h"
+#include "hyle/simd/runtime.h"
 #include "hyle/simd/vec.h"
 #include "hwy/highway.h"
 #include "hwy/contrib/bit_pack/bit_pack-inl.h"
@@ -208,7 +209,7 @@ std::vector<std::size_t> counts() {
 }
 
 bool public_matches_direct_tier() {
-  return hyle::simd::active_bitpack_variant() != hyle::simd::Isa::kAvx512;
+  return hyle::simd::runtime().bitpack.isa != hyle::simd::Isa::kAvx512;
 }
 
 std::vector<T> input(std::size_t n, unsigned bits) {
@@ -359,7 +360,7 @@ void bench_public(const char* type, std::size_t n, unsigned bits) {
 
 int main() {
   std::printf("HYLE bit-pack tier=%u, direct Highway lanes=%zu\n",
-              static_cast<unsigned>(hyle::simd::active_bitpack_variant()), hn::Lanes(D{}));
+              static_cast<unsigned>(hyle::simd::runtime().bitpack.isa), hn::Lanes(D{}));
   if (!public_matches_direct_tier())
     std::printf("HYLE public row omitted: runtime AVX512 vs fixed-AVX2 direct TU\n");
   for (unsigned bits : {10u, 11u, 12u, 13u, 14u}) {

@@ -13,6 +13,7 @@
 
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/math.h"
+#include "hyle/simd/runtime.h"
 
 // math_test -- exp/log/tanh batch ops vs libm reference. The batch path runs whichever
 // tier is live (SLEEF AVX2 if -DHYLE_SIMD_SLEEF + AVX2 host, else scalar libm). Either
@@ -20,7 +21,6 @@
 // _u10 (1-ULP), log/tanh are _u35 (3.5-ULP -- the AI-appropriate, ~2-3x faster tier; see
 // transcendental_sleef.cc). The tolerance below is set to the 3.5-ULP class with margin.
 
-using hyle::simd::active_math_variant;
 using hyle::simd::exp_f32_batch;
 using hyle::simd::Isa;
 using hyle::simd::log_f32_batch;
@@ -355,7 +355,7 @@ TEST(Math, TailSizes) {
 // lib was built with SLEEF AND the host has AVX2. Correctness is proven by the
 // Exp/Log/Tanh-vs-libm tests above regardless of which tier ran.
 TEST(Math, ActiveVariantReported) {
-  const Isa v = active_math_variant();
+  const Isa v = hyle::simd::runtime().math.isa;
 #if defined(HYLE_ARCH_X64)
   // x86: scalar floor, or AVX2 / AVX-512 borrow cores when the CPU has them.
   EXPECT_TRUE(v == Isa::kScalar || v == Isa::kAvx2 || v == Isa::kAvx512);

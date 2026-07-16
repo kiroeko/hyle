@@ -59,6 +59,8 @@ struct CpuFeatures {
   // ---- arm (read false on non-ARM) ----
   bool neon = false;       // baseline on aarch64 (always true there)
   bool sve = false;        // scalable vectors (runtime-length; see vec.h Lanes())
+  // ---- RISC-V (read false on non-RISC-V) ----
+  bool rvv = false;        // V extension; runtime VLEN is queried by the backend
 };
 
 // Coarse ISA tiers, ORDERED so a larger value is a strictly more capable variant on
@@ -79,6 +81,9 @@ enum class Isa : std::uint32_t {
   // arm tiers
   kNeon = 110,
   kSve = 120,
+
+  // RISC-V tiers
+  kRvv = 210,
 };
 
 // The probed feature set for THIS process's CPU. Detected once (CPUID + XGETBV on

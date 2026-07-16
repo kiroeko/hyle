@@ -3,12 +3,18 @@
 > **目标（用户定，2026-07-11）**：HYLE simd 终极目标 = **覆盖面广** + **时间复杂度性能 SOTA**。本文调研 Highway / xsimd / std::simd 架构，对照 HYLE 现状，判定**根本解法**并给出演进方案。
 >
 > **修订说明（2026-07-11 二稿）**：初稿曾推荐"方案②partial-tag 全宽存储"。经深入核实 Highway 源码 + HYLE 冲突面，**推翻该推荐**——方案② 是绕过问题的 workaround，留永久语义债。**根本解法是方案①：分层 include 多宽度类型 + 宽度-SFINAE**（Highway 原型）。本稿据此重写。
+>
+> **终态说明（2026-07-16）**：本文是 simd-19 之前针对 partial-vector 表示的研究记录，不是当前部署
+> 文档。实际 NEON 落地采用 `RawNeonNT<T,N>` D-band + 常绿垫片/热点 native-D，x86 采用低半消费指令与
+> canary，而非机械照搬全文提议的所有 layered include。多版本派发也已由 simd-22 统一为 Runtime/native/
+> exact；当前规范见 [`simd-dispatch-guide.md`](./simd-dispatch-guide.md)，实际表示层裁决见
+> [`simd-arch-review-2026-07.md`](./simd-arch-review-2026-07.md)。
 
 ## 0. 结论先行（根本解法）
 
 - **根本解法 = 定宽后端分层 include（avx2.h→sse4.h→...）让 `Vec128/Vec256/Vec512` 在宽 target 里共存 + `Set/Zero` 等 D-dispatched 函数改宽度-SFINAE**。这是 Highway 的确切模型，`LowerHalf/Combine/Concat*/PromoteTo/宽度转换` 全族返回**真实体**，广度天花板 = Highway。
-- **性能 SOTA 与架构正交**：单 kernel 速度靠"每 ISA 独立 -march 编译 + 全内联零封装 + 算法 best-of"，HYLE 已具备（变体-TU + 零间接 dispatch），**分层 include 不影响它**。
-- **HYLE 当前架构 = "单后端-per-TU + 单一 native 宽度"是早期图快的选择**（`feedback_no_early_shortcut_as_excuse`），是**当前广度天花板的唯一根因**。批4 半向量族撞墙就是它。
+- **性能 SOTA 与架构正交**：单 kernel 速度靠每 ISA 独立 codegen、全内联固定目标 body 与算法 best-of。动态模式只在 whole-buffer 边界间接一次；exact/native 模式直连，**分层 include 不影响内核 codegen**。
+- **HYLE 当时架构 = "单后端-per-TU + 单一 native 宽度"是早期图快的选择**（`feedback_no_early_shortcut_as_excuse`），是当时广度天花板的根因。批4 半向量族撞墙就是它。
 - **代价 = 一次性有界重构**（~24 个 D-dispatched 函数改 SFINAE + detail 去重 + 分层 include），**非永久债**。不推翻变体-TU/dispatch/scalable 任何地基。
 
 ## 1. 三库架构对比
@@ -37,14 +43,14 @@
 
 `simd<T, Abi>`，ABI 参数化，`split`/`concat` 有半向量但 op 面最窄（无 gather/compress/complex），广度不足以对标 Highway。
 
-### 1.4 HYLE 现状
+### 1.4 HYLE 当时现状
 
 **抄了 Highway 的 tag 层但没抄 Vec 存储层**：
 - tag `Simd<T,N,kPow2>` 含 `Half/Twice`（vec.h:59）✅ ——**类型 tag 层能算出半宽**。
 - 但 Vec 存储是**单后端单宽度**：avx2 TU 只有 `Vec256{__m256 raw}` + `static_assert(kNativeWidth)`（avx2.h:101）。**sse4.h 不在 avx2 TU**（vec.h:225-239 `#elif` 择一），`Vec128` 不共存 → `LowerHalf` 无处返回。
 - **裂缝**：tag 说"有半宽"，Vec 说"存不下"。这就是广度天花板。
 
-**已 SOTA 的部分（不动）**：变体-TU 每 ISA -march（CMakeLists，等价 foreach_target 效果）、fn-ptr dispatch（simd-04，等价 HWY_DYNAMIC_DISPATCH）、scalable kMaxLanes+运行期 Lanes(d)、best-of 算法借抄。
+**当时已 SOTA、后来继续保留的部分**：每 ISA 独立 codegen、whole-buffer 函数表派发、scalable kMaxLanes + 运行期 `Lanes(d)`、per-op best-of。simd-22 在其上补了 exact/native 入口，没有改写表示层结论。
 
 ## 2. HYLE 分层 include 的冲突面（实测，有界）
 
@@ -64,7 +70,7 @@
 ## 3. 性能：分层 include 零影响单 kernel SOTA
 
 - 单 kernel 靠①每 ISA -march 编译 ②全内联零封装 ③intrinsic 直发 ④算法 best-of——**分层 include 不碰任何一条**。
-- 变体-TU 正交性核实：`kernels_avx2.cc` 只 `#define HYLE_SIMD_TARGET_AVX2` + include（实测）。层叠让 avx2 TU 多见 Vec128（SSE 指令，-mavx2 下 VEX-128 零惩罚），**dispatch fn-ptr 选 ISA 不变**。
+- 变体-TU 正交性核实：当前由 `hyle_add_dispatched_kernel` 在构建目录生成薄 AVX2 TU，只定义 target/suffix 后包含同一 `kernel_impl.h`。层叠让 AVX2 TU 多见 Vec128 不改变 Runtime 选 ISA。
 - 半向量 op 的 permute 成本（如 `UpperHalf` 的 extracti128）与 Highway 同——非 HYLE 独有劣势，且返回真实体后**下游 op 全宽度正确**，无"逻辑半/物理全"错位的隐藏成本。
 
 ## 4. 演进方案（根本解法 vs 被否决的 workaround）
@@ -88,7 +94,7 @@
 1. **批0（根本重构，最先，是使能器）**：分层 include + 宽度-SFINAE + detail 去重。**不加新 op**，只重构类型地基。**正确性判据 = 现有 vec_test 全后端 100% 绿（零回归）**。这是风险最高的一步，opus 重点验。
 2. **批1/2/3/5（广度，与批0 正交但落在其上）**：Shuffle/字节移位、*Same/Pairwise、Concat scalable、复数 ARM+偏门。全宽 Vec→Vec / scalable，天然重载安全。
 3. **批4（半向量族，批0 之上变平凡）**：`LowerHalf/Combine/ZeroExtendVector/...` 返回真 Vec128/Vec64——批0 铺好后就是照抄 Highway `_mm256_castsi256_si128`/`set_m128i`。
-4. **不动**：变体-TU、fn-ptr dispatch、best-of、crypto/数学核借法、scalable kMaxLanes。
+4. **不动**：变体-TU、whole-buffer dispatch、best-of、crypto/数学算法与 scalable kMaxLanes；simd-20 只摘除产品 vendor 依赖，simd-22 只统一部署入口。
 
 ## 6. 一句话总结
 

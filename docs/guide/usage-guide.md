@@ -169,7 +169,8 @@ float dot(const float* x, const float* y, size_t n) {
   return s;
 }
 ```
-同一份源码，`-march` 决定它编成 SSE4.2(4 lane) 还是 AVX2(8 lane)。**这是你 99% 时候要用的方式。**
+同一份源码，目标 ISA 决定它编成 SSE4.2(4 lane) 还是 AVX2(8 lane)。只有在你明确控制部署 CPU
+或正在编写 HYLE 的变体 TU 时才使用这条路径；普通应用应优先使用下面的自动派发 API。
 
 **(B) 分发单一二进制到未知 CPU（运行期选 ISA）**：若你分发一个要在各种 CPU 上跑的二进制，不能 `-march=native`（老 CPU 会 SIGILL）。模型是"每 ISA 编一份变体 + 启动时 CPUID 选最优"。`HYLE_SIMD_TARGET_SSE4`/`_AVX2`/`_AVX512` 宏就是给**变体 TU** 用的——同一份 kernel 源码编 N 份，每份配一个宏 + 对应 `-march`。**运行期探测用 `dispatch.h`**：
 
@@ -178,15 +179,21 @@ float dot(const float* x, const float* y, size_t n) {
 if (hyle::simd::supports(hyle::simd::Isa::kAvx2)) { /* 调 AVX2 变体 */ }
 // best_isa() 给最高可用档；isa_name() 打印
 ```
-> **现状（simd-04 起）**：运行期变体选择**已就绪**。对 HYLE 自带的派发型 op（`hyle/simd/ops.h` 的 `dot_f32`/`saxpy_f32`、`hyle/simd/dtype_ops.h` 的 fp16/bf16 批量转换），**你什么都不用做**——它们内部按 `best_isa()` 选 fn-ptr（首次调用定一次、缓存），自动跑到最优 ISA：
+> **现状（simd-22 起）**：普通应用不定义任何 SIMD 宏或 `-march`。对 HYLE 自带的派发型
+> batch op，直接调用普通 API；共享的 `Runtime` 表只选择一次，之后每个 batch 经过一次间接调用：
 > ```cpp
 > #include "hyle/simd/ops.h"
-> float d = hyle::simd::dot_f32(x, y, n);          // 自动选 scalar/SSE4.2/AVX2/AVX512
-> // hyle::simd::active_variant() 报实际选中的档
+> #include "hyle/simd/runtime.h"
+> float d = hyle::simd::dot(x, y, n);              // 自动选 scalar/SSE4.2/AVX2/AVX512
+> auto selected = hyle::simd::runtime().isa;
 > ```
-> `dispatch.h` 的 `supports()`/`best_isa()` 是给你**自己的** kernel 做同样分发用的。模型是 fn-ptr 表（每调用一次指针间接；零间接的变体-DLL 模型是更重的后续里程碑）。**自动选择对 HYLE 自带 op 已可用,不再需要手动分发。**
+> 若部署 ISA 已知，用 `hyle_target_simd(TARGET app ISA AVX2)` 配置整个 target，并调用
+> `hyle::simd::native::*`；这条路径没有 CPUID 或函数指针调用。若要让 HYLE 的全部普通 batch API
+> 也固定目标，配置 HYLE 时传 `-DHYLE_SIMD_EXACT_TARGET=AVX2`。完整边界和示例见
+> [`simd-dispatch-guide.md`](../architecture/simd-dispatch-guide.md)。
 >
-> **AVX512 验证边界**：`dot_f32`/`saxpy_f32` 的 AVX512 变体已接进派发，Intel SDE 已执行 `vec_test` 173/173，并确认运行时选择 kAvx512。SDE 是正确性与派发证据，不代表真实硬件时序；AVX512 性能结论仍只接受真机 benchmark（详见 [`architecture/simd-design.md`](../architecture/simd-design.md) AVX512 节）。
+> **AVX512 验证边界**：`dot`/`saxpy` 的 AVX512 变体已接进派发，Intel SDE 已执行正确性验证。
+> SDE 是正确性与派发证据，不代表真实硬件时序；AVX512 性能结论仍只接受真机 benchmark。
 
 ### 2.1 哪些行为是编译期定的、哪些是运行期探测的（三条轴，别混）
 

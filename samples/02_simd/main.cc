@@ -1,14 +1,13 @@
 // Sample 02 -- simd: two levels of the SIMD pillar.
 //
-//  (A) DISPATCHED OPS (ops.h) -- the easy, portable path. dot_f32()/saxpy_f32() pick the
+//  (A) DISPATCHED OPS (ops.h) -- the easy, portable path. dot()/saxpy() pick the
 //      best ISA kernel at RUNTIME from the host's CPUID (scalar/SSE4.2/AVX2). One binary
 //      runs fast everywhere; an old CPU never executes an instruction it lacks. This is
-//      what most consumers want. active_variant() tells you which kernel got selected.
+//      what most consumers want. runtime().isa tells you which kernel got selected.
 //
-//  (B) DIRECT vec<T,N> KERNEL (vec.h) -- write your own portable kernel against the D-tag
-//      abstraction (ScalableTag + Lanes), no intrinsics. The backend + your -march decide
-//      the width. Compiled at baseline here = SSE2; add -march=native (see CMakeLists) to
-//      widen. Use this when you need a custom kernel the dispatched ops don't provide.
+//  (B) EXACT-TARGET KERNEL -- source users can bind the whole target to one ISA and use
+//      native APIs or compose a kernel from D-tag primitives. There is no CPUID or indirect
+//      call; the resulting binary requires that deployment ISA.
 //
 // Build: see ../README.md.
 
@@ -16,8 +15,10 @@
 #include <cstdio>
 #include <vector>
 
-#include "hyle/simd/dispatch.h"  // best_isa / isa_name / active_variant
-#include "hyle/simd/ops.h"       // dot_f32 / saxpy_f32 (runtime-dispatched)
+#include "hyle/simd/dispatch.h"  // best_isa / isa_name
+#include "hyle/simd/native/ops.h"
+#include "hyle/simd/ops.h"       // dot / saxpy (runtime-dispatched)
+#include "hyle/simd/runtime.h"
 #include "hyle/simd/vec.h"       // vec<T,N> D-tag, for the direct kernel
 
 // (B) A direct portable kernel: sum of squares = dot(x, x). Written once against the
@@ -41,7 +42,7 @@ int main() {
   // What ISA did the runtime dispatcher choose on THIS machine?
   std::printf("host best ISA: %s | dispatched kernels run as: %s\n",
               hyle::simd::isa_name(hyle::simd::best_isa()),
-              hyle::simd::isa_name(hyle::simd::active_variant()));
+              hyle::simd::isa_name(hyle::simd::runtime().isa));
 
   constexpr std::size_t n = 1000;
   std::vector<float> x(n), y(n);
@@ -51,15 +52,17 @@ int main() {
   }
 
   // (A) dispatched ops
-  float dot = hyle::simd::dot_f32(x.data(), y.data(), n);
+  float dot = hyle::simd::dot(x.data(), y.data(), n);
   std::printf("dot(x,y)            = %.4f  (dispatched)\n", dot);
 
   // saxpy mutates y in place: y = a*x + y
-  hyle::simd::saxpy_f32(0.5f, x.data(), y.data(), n);
+  hyle::simd::saxpy(0.5f, x.data(), y.data(), n);
   std::printf("y[0] after saxpy    = %.4f  (dispatched)\n", y[0]);
 
   // (B) direct vec kernel
   std::printf("sum_of_squares(x)   = %.4f  (direct vec<T,N> kernel)\n",
               sum_of_squares(x.data(), n));
+  std::printf("dot(x,x)            = %.4f  (native exact-target kernel)\n",
+              hyle::simd::native::dot(x.data(), x.data(), n));
   return 0;
 }

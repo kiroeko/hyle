@@ -58,7 +58,9 @@ endif()
 
 # X3: product simd no longer links third_party/highway (vqsort ported to HYLE D-tag).
 hyle_add_module(simd SOURCES
+  runtime.cc
   ops/dispatch_ops.cc
+  random/random_dispatch.cc
   scan/scan_dispatch.cc
   dtype/dtype_dispatch.cc
   dtype/cvt_scalar.cc
@@ -73,6 +75,10 @@ hyle_add_module(simd SOURCES
   bitpack/bitpack_scalar.cc
   ${_simd_arch_sources}
   PUBLIC_DEPS hyle_platform)
+
+if(HYLE_SIMD_EXACT_TARGET)
+  hyle_exact_simd_library(TARGET hyle_simd ISA "${HYLE_SIMD_EXACT_TARGET}")
+endif()
 
 # Per-variant ISA flags: each kernel TU gets ONLY its target's -march; the dispatcher and
 # probe stay baseline. MSVC x64 has SSE4.2 intrinsics unconditionally (sse4/scalar need no
@@ -89,12 +95,17 @@ hyle_add_dispatched_kernel(
   TARGET hyle_simd
   NAME ops
   IMPL "src/simd/ops/kernel_impl.h"
-  TARGETS scalar sse4 avx2 avx512 neon)
+  TARGETS scalar sse4 avx2 avx512 neon sve rvv)
 hyle_add_dispatched_kernel(
   TARGET hyle_simd
   NAME scan
   IMPL "src/simd/scan/kernel_impl.h"
-  TARGETS scalar sse4 avx2 avx512 neon)
+  TARGETS scalar sse4 avx2 avx512 neon sve rvv)
+hyle_add_dispatched_kernel(
+  TARGET hyle_simd
+  NAME random
+  IMPL "src/simd/random/kernel_impl.h"
+  TARGETS scalar sse4 avx2 avx512 neon sve rvv)
 
 # Per-ISA codegen flags via the single-source hyle_set_isa (HyleModule.cmake) -- one tier
 # name per TU, no hand-written /arch-vs-(-m) mapping to drift. scalar TU gets none. Gated by

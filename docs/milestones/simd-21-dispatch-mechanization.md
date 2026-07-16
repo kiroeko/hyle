@@ -1,8 +1,8 @@
 # simd-21: 双腿分发机制化
 
-> **状态**:已落地(2026-07-16)。静态宏腿保持零开销；动态腿把可机械化的 variant TU 接线收敛为
-> CMake 机制，并保留模块自行表达 CPUID 特征、算法与正确性策略的权利。使用说明见
-> [`../architecture/simd-dispatch-guide.md`](../architecture/simd-dispatch-guide.md)。
+> **状态**:已落地，并由 [simd-22](./simd-22-dual-track.md) 扩展/修正。本文记录 variant TU
+> 机械化的历史设计；新的公共 `Runtime`/`native` 双轨接口、能力边界与迁移状态以
+> [`../architecture/simd-dispatch-guide.md`](../architecture/simd-dispatch-guide.md) 为准。
 
 ## 一、两条腿与边界
 
@@ -12,8 +12,9 @@
 | 动态 CPUID 腿 | 稳定 ABI 的 whole-buffer/batch API | baseline dispatcher 选 per-ISA kernel 函数指针并缓存 | 每 batch 一次可预测间接调用 |
 
 宏腿不是漏了 CPUID：寄存器类型、lane 数与返回类型本身依赖 ISA，不能安全地伪装成一个运行时 API。
-只有能定义 POD/指针 batch 契约的语义操作才进入动态腿。盘点后，`ops`、`math`、`dtype`、`scan`、
-`sort`、`bitpack` 的公开 batch 面均已有动态分发；没有“应动态但仍仅静态宏”的能力缺口。
+只有能定义 POD/指针/opaque-state batch 契约的语义操作才进入动态腿。本文当时所称“没有缺口”
+只统计了已有 batch 声明，遗漏了 `VectorXoshiro` 这类高层静态-only 能力，也没有为源码消费者提供
+公共的精确目标入口；simd-22 已用 runtime-safe RNG 和 `native` 路径补上第一条竖切。
 
 ## 二、已落地的机械化范围
 

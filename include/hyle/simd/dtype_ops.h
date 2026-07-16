@@ -45,8 +45,4 @@ HYLE_SIMD_API void f32_to_f8e5m2_batch(const float* src, float8_e5m2_t* dst, std
 HYLE_SIMD_API void f16_to_f8e4m3_batch(const float16_t* src, float8_e4m3_t* dst, std::size_t n) noexcept;
 HYLE_SIMD_API void f16_to_f8e5m2_batch(const float16_t* src, float8_e5m2_t* dst, std::size_t n) noexcept;
 
-// The ISA tier the fp16 batch conversions selected (kAvx2 if F16C present, else kScalar).
-// For tests/diagnostics -- proves the hardware path engages when the CPU supports it.
-HYLE_SIMD_API Isa active_dtype_variant() noexcept;
-
 }  // namespace hyle::simd

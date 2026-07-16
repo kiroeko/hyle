@@ -18,7 +18,7 @@
 //     all three ops -- dispatcher picks PER OP: exp/tanh -> xsimd path; log -> Highway path.
 //
 // At runtime exp/log/tanh route to the best core when cpu_features().avx2, else scalar
-// libm (so an old CPU never SIGILLs). active_math_variant() reports kAvx2 vs kScalar.
+// libm (so an old CPU never SIGILLs). runtime().math.isa reports the selected broad tier.
 // (SLEEF was dropped: not header-only, and ranked third on every op -> never selected.)
 
 namespace hyle::simd {
@@ -168,9 +168,5 @@ HYLE_SIMD_API void ccos_f32_batch(const float* src_re, const float* src_im, floa
 HYLE_SIMD_API void ctanh_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
 // cpow(z, w): both operands complex. Four input planes, two output planes.
 HYLE_SIMD_API void cpow_f32_batch(const float* z_re, const float* z_im, const float* w_re, const float* w_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
-
-// The tier the math batch ops selected: kAvx2 if a vectorized AVX2 core is live, else
-// kScalar (libm). For tests/diagnostics.
-HYLE_SIMD_API Isa active_math_variant() noexcept;
 
 }  // namespace hyle::simd

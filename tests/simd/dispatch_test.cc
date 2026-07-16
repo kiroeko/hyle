@@ -86,12 +86,22 @@ TEST(Dispatch, Avx512ExtensionsImplyBase) {
 TEST(Dispatch, SupportsIsMonotone) {
   EXPECT_TRUE(supports(best_isa()));
   EXPECT_TRUE(supports(Isa::kScalar));  // floor: always supported
+#if defined(HYLE_ARCH_X64)
+  EXPECT_FALSE(supports(Isa::kNeon));
+  EXPECT_FALSE(supports(Isa::kRvv));
+#elif defined(HYLE_ARCH_ARM64)
+  EXPECT_FALSE(supports(Isa::kAvx2));
+  EXPECT_FALSE(supports(Isa::kRvv));
+#elif defined(HYLE_ARCH_RISCV64)
+  EXPECT_FALSE(supports(Isa::kAvx2));
+  EXPECT_FALSE(supports(Isa::kNeon));
+#endif
 }
 
 // isa_name covers every enumerator (no "unknown" for a real tier).
 TEST(Dispatch, IsaNameCoversAllTiers) {
   for (Isa t : {Isa::kScalar, Isa::kSse2, Isa::kSsse3, Isa::kSse42, Isa::kAvx,
-                Isa::kAvx2, Isa::kAvx512, Isa::kNeon, Isa::kSve}) {
+                Isa::kAvx2, Isa::kAvx512, Isa::kNeon, Isa::kSve, Isa::kRvv}) {
     EXPECT_STRNE(isa_name(t), "unknown");
   }
 }

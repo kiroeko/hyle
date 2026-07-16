@@ -8,22 +8,20 @@
 #include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/ops.h"
+#include "hyle/simd/runtime.h"
 
 // ops_test -- validates the RUNTIME-DISPATCHED ops (simd-04). Unlike vec_test (compiled
 // per-ISA), this links the ONE dispatcher and checks: (1) results match a naive scalar
-// reference regardless of which variant the host selected; (2) active_variant() really
+// reference regardless of which variant the host selected; (2) runtime().isa really
 // picked the host's best compiled tier -- proving best_isa() is now LIVE (consumed to
 // select a kernel), not the dead detector the simd-01 audit flagged.
 
-using hyle::simd::active_variant;
-using hyle::simd::add_f32;
-using hyle::simd::add_f64;
+using hyle::simd::add;
 using hyle::simd::best_isa;
-using hyle::simd::dot_f32;
-using hyle::simd::dot_f64;
+using hyle::simd::dot;
 using hyle::simd::Isa;
-using hyle::simd::saxpy_f32;
-using hyle::simd::saxpy_f64;
+using hyle::simd::runtime;
+using hyle::simd::saxpy;
 
 namespace {
 std::vector<float> gen(std::size_t n, float base) {
@@ -62,14 +60,14 @@ TEST(Ops, DotMatchesReference) {
                         std::size_t{64}, std::size_t{1000}}) {
     auto x = gen(n, 0.5f), y = gen(n, -0.3f);
     const double ref = ref_dot(x, y);
-    float got = dot_f32(x.data(), y.data(), n);
+    float got = dot(x.data(), y.data(), n);
     const float tol = static_cast<float>(std::abs(ref)) * 1e-4f + 1e-4f;
     EXPECT_NEAR(got, static_cast<float>(ref), tol) << "n=" << n;
   }
 }
 
 TEST(Ops, DotEmptyIsZero) {
-  EXPECT_EQ(dot_f32(nullptr, nullptr, 0), 0.0f);
+  EXPECT_EQ(dot(static_cast<const float*>(nullptr), static_cast<const float*>(nullptr), 0), 0.0f);
 }
 
 // f64 dot vs a long-double reference. f64 tolerance is far tighter than f32 (the whole point of
@@ -79,14 +77,14 @@ TEST(Ops, DotF64MatchesReference) {
                         std::size_t{64}, std::size_t{1000}}) {
     auto x = gend(n, 0.5), y = gend(n, -0.3);
     const long double ref = ref_dot_d(x, y);
-    double got = dot_f64(x.data(), y.data(), n);
+    double got = dot(x.data(), y.data(), n);
     const double tol = static_cast<double>(std::abs(ref)) * 1e-12 + 1e-12;
     EXPECT_NEAR(got, static_cast<double>(ref), tol) << "n=" << n;
   }
 }
 
 TEST(Ops, DotF64EmptyIsZero) {
-  EXPECT_EQ(dot_f64(nullptr, nullptr, 0), 0.0);
+  EXPECT_EQ(dot(static_cast<const double*>(nullptr), static_cast<const double*>(nullptr), 0), 0.0);
 }
 
 // saxpy result matches naive reference; tail handled.
@@ -97,7 +95,7 @@ TEST(Ops, SaxpyMatchesReference) {
     std::vector<float> expect(n);
     const float a = 1.5f;
     for (std::size_t i = 0; i < n; ++i) expect[i] = a * x[i] + y[i];
-    saxpy_f32(a, x.data(), y.data(), n);
+    saxpy(a, x.data(), y.data(), n);
     for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(y[i], expect[i]) << "n=" << n << " i=" << i;
   }
 }
@@ -110,7 +108,7 @@ TEST(Ops, SaxpyF64MatchesReference) {
     std::vector<double> expect(n);
     const double a = 1.5;
     for (std::size_t i = 0; i < n; ++i) expect[i] = a * x[i] + y[i];
-    saxpy_f64(a, x.data(), y.data(), n);
+    saxpy(a, x.data(), y.data(), n);
     for (std::size_t i = 0; i < n; ++i) EXPECT_DOUBLE_EQ(y[i], expect[i]) << "n=" << n << " i=" << i;
   }
 }
@@ -120,7 +118,7 @@ TEST(Ops, AddF32MatchesReference) {
   for (std::size_t n : {std::size_t{1}, std::size_t{8}, std::size_t{31}, std::size_t{257}, std::size_t{1000}}) {
     auto x = gen(n, 0.5f), y = gen(n, -0.3f);
     std::vector<float> z(n, -1.0f);
-    add_f32(x.data(), y.data(), z.data(), n);
+    add(x.data(), y.data(), z.data(), n);
     for (std::size_t i = 0; i < n; ++i) EXPECT_FLOAT_EQ(z[i], x[i] + y[i]) << "n=" << n << " i=" << i;
   }
 }
@@ -128,17 +126,17 @@ TEST(Ops, AddF64MatchesReference) {
   for (std::size_t n : {std::size_t{1}, std::size_t{8}, std::size_t{31}, std::size_t{257}, std::size_t{1000}}) {
     auto x = gend(n, 0.5), y = gend(n, -0.3);
     std::vector<double> z(n, -1.0);
-    add_f64(x.data(), y.data(), z.data(), n);
+    add(x.data(), y.data(), z.data(), n);
     for (std::size_t i = 0; i < n; ++i) EXPECT_DOUBLE_EQ(z[i], x[i] + y[i]) << "n=" << n << " i=" << i;
   }
 }
 
 // THE simd-04 point: the dispatcher selected the host's best COMPILED tier. We ship
-// scalar/sse4/avx2/avx512, so on an x86 host active_variant() must equal best_isa() mapped
+// scalar/sse4/avx2/avx512, so on an x86 host runtime().isa must equal best_isa() mapped
 // to {scalar,sse42,avx2,avx512} -- never below what the CPU supports, never above what we
 // compiled. This proves best_isa() is actually consumed (was dead before simd-04).
 TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
-  const Isa active = active_variant();
+  const Isa active = runtime().isa;
 #if defined(HYLE_ARCH_X64)
   const auto best = static_cast<std::uint32_t>(best_isa());
   Isa expect;
@@ -163,5 +161,5 @@ TEST(Ops, ActiveVariantMatchesBestCompiledTier) {
 
 // Dispatch is stable: repeated calls return the same cached selection (no re-resolve).
 TEST(Ops, ActiveVariantStable) {
-  EXPECT_EQ(active_variant(), active_variant());
+  EXPECT_EQ(&runtime(), &runtime());
 }

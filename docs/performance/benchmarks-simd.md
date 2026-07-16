@@ -22,7 +22,7 @@
 
 ## simd 数学核（exp/log/tanh vs 标量 libm + 同 ISA SOTA xsimd/Highway，`math_bench.cc`）
 
-> 环境:**双平台**——Win MSVC19.50 + **Linux GCC14.2 原生 ext4,各 15 遍中位数+spread**(`scripts/bench-stat.py`),nanobench,4096 f32(L1 常驻)。**两个标尺**:① 标量 `std::exp/log/tanh`(测向量化加速本身);② **同 ISA SOTA = xsimd + Highway contrib/math**(同 `-mavx2`)。HYLE 借 Highway/xsimd 验证过的核(已 vendored、无条件默认编进生产,不手搓多项式)。`active_math_variant()` 报当前层。
+> 环境:**双平台**——Win MSVC19.50 + **Linux GCC14.2 原生 ext4,各 15 遍中位数+spread**(`scripts/bench-stat.py`),nanobench,4096 f32(L1 常驻)。**两个标尺**:① 标量 `std::exp/log/tanh`(测向量化加速本身);② **同 ISA SOTA = xsimd + Highway contrib/math**(同 `-mavx2`)。HYLE 借 Highway/xsimd 验证过的核(已 vendored、无条件默认编进生产,不手搓多项式)。统一运行时表的 `runtime().math.isa` 报当前层。
 
 | kernel | 标量 libm | HYLE(best-of-breed) | xsimd | Highway | 结论(双平台 15 遍) |
 |---|---|---|---|---|---|
@@ -73,7 +73,7 @@ f64 direct-formula 试验为0.554 vs safe 0.593 ns/op，6.7% gap小于24.7%合�
 
 
 
-> 环境:**双平台**——Win MSVC19.50 + **Linux GCC14.2 原生 ext4,各 15 遍中位数+spread**(`scripts/bench-stat.py`),nanobench,4096。三组:HYLE F16C/AVX2 硬件 dispatch / HYLE scalar 参考 / Highway(gated SOTA,baseline 齐已验 488 ymem、真 256 位未被降级编译)。`active_dtype_variant()` 报 `AVX2/F16C`。std 无 fp16/bf16 批量等价物。**dtype 是平台高度依赖项**:判定按双平台分列。
+> 环境:**双平台**——Win MSVC19.50 + **Linux GCC14.2 原生 ext4,各 15 遍中位数+spread**(`scripts/bench-stat.py`),nanobench,4096。三组:HYLE F16C/AVX2 硬件 dispatch / HYLE scalar 参考 / Highway(gated SOTA,baseline 齐已验 488 ymem、真 256 位未被降级编译)。统一运行时表的 `runtime().dtype` 报告 ISA 与 F16C 等精确 feature。std 无 fp16/bf16 批量等价物。**dtype 是平台高度依赖项**:判定按双平台分列。
 
 | 转换 | HYLE | vs scalar | vs Highway(SOTA) | 结论 |
 |---|---|---|---|---|

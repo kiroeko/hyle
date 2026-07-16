@@ -51,7 +51,7 @@ void host_saxpy_f32(const LaunchConfig&, const KernelArgs& args) noexcept {
   require(args, 2, n);
   const float* x = static_cast<const float*>(args.buffers[0]);
   float* y = static_cast<float*>(args.buffers[1]);
-  simd::saxpy_f32(a, x, y, static_cast<std::size_t>(n));  // y[i] = a*x[i] + y[i]
+  simd::saxpy(a, x, y, static_cast<std::size_t>(n));  // y[i] = a*x[i] + y[i]
 }
 
 void host_vecadd_f32(const LaunchConfig&, const KernelArgs& args) noexcept {
@@ -62,7 +62,7 @@ void host_vecadd_f32(const LaunchConfig&, const KernelArgs& args) noexcept {
   const float* a = static_cast<const float*>(args.buffers[0]);
   const float* b = static_cast<const float*>(args.buffers[1]);
   float* c = static_cast<float*>(args.buffers[2]);
-  simd::add_f32(a, b, c, static_cast<std::size_t>(n));
+  simd::add(a, b, c, static_cast<std::size_t>(n));
 }
 
 void host_dot_f32(const LaunchConfig&, const KernelArgs& args) noexcept {
@@ -71,7 +71,7 @@ void host_dot_f32(const LaunchConfig&, const KernelArgs& args) noexcept {
   const float* x = static_cast<const float*>(args.buffers[0]);
   const float* y = static_cast<const float*>(args.buffers[1]);
   float* out = static_cast<float*>(args.buffers[2]);
-  out[0] = simd::dot_f32(x, y, static_cast<std::size_t>(n));  // reduction -> out[0]
+  out[0] = simd::dot(x, y, static_cast<std::size_t>(n));  // reduction -> out[0]
 }
 
 void host_exp_f32(const LaunchConfig&, const KernelArgs& args) noexcept {
@@ -88,7 +88,7 @@ void host_saxpy_f64(const LaunchConfig&, const KernelArgs& args) noexcept {
   require(args, 2, n);
   const double* x = static_cast<const double*>(args.buffers[0]);
   double* y = static_cast<double*>(args.buffers[1]);
-  simd::saxpy_f64(a, x, y, static_cast<std::size_t>(n));
+  simd::saxpy(a, x, y, static_cast<std::size_t>(n));
 }
 
 void host_dot_f64(const LaunchConfig&, const KernelArgs& args) noexcept {
@@ -97,7 +97,7 @@ void host_dot_f64(const LaunchConfig&, const KernelArgs& args) noexcept {
   const double* x = static_cast<const double*>(args.buffers[0]);
   const double* y = static_cast<const double*>(args.buffers[1]);
   double* out = static_cast<double*>(args.buffers[2]);
-  out[0] = simd::dot_f64(x, y, static_cast<std::size_t>(n));
+  out[0] = simd::dot(x, y, static_cast<std::size_t>(n));
 }
 
 void host_exp_f64(const LaunchConfig&, const KernelArgs& args) noexcept {

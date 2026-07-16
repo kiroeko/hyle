@@ -20,7 +20,11 @@
 | math | `math_hyle-inl.h` / `math_xsimd_hyle-inl.h` + ISA TU | best-of 符号名保留 `*_highway_*` / `*_xsimd_*` |
 | bitpack | `bitpack_hyle-inl.h` + ISA TU | Pack8/16/32 D-tag |
 | vqsort | `vqsort_hyle/` + ISA TU | sort/partial/select + KV |
-| 核心 op | `vec.h` + 五后端 | intrinsic / 自造 |
+| 核心 op | `vec.h` + scalar/x86/ARM/RISC-V 七后端 | intrinsic / 自造 |
+
+这些产品 kernel 遵循同一双轨边界：ops/random/scan 的 per-ISA wrapper 与 `native::` 复用同一 D-tag body；
+math/bitpack/vqsort 虽保留各自算法 dispatcher，也只通过 pointer/POD batch API 暴露。vendor 摘除与
+runtime/native/exact 派发彼此正交，详见 [`simd-dispatch-guide.md`](./simd-dispatch-guide.md)。
 
 ## 仍可选薄借
 

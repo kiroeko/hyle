@@ -11,7 +11,7 @@
 
 #include "hyle/simd/vec.h"
 #include "hyle/simd/dtype.h"
-#include "hyle/simd/random.h"
+#include "hyle/simd/native/random.h"
 
 // vec_test -- WIDTH-AGNOSTIC: this ONE source is compiled three times (scalar / sse4 /
 // avx2 targets, see tests/CMakeLists.txt) and validates whichever backend is compiled
@@ -2538,7 +2538,7 @@ TEST(Vec, RandomXoshiro) {
   const hs::ScalableTag<std::uint64_t> d;
   const std::size_t n = hs::Lanes(d);
   // Lane 0 must match the scalar oracle for many draws.
-  hs::VectorXoshiro rng{0xC0FFEEull};
+  hs::native::VectorXoshiro rng{0xC0FFEEull};
   ScalarXoshiro oracle{0xC0FFEEull};
   Buf<std::uint64_t> out;
   for (int iter = 0; iter < 32; ++iter) {
@@ -2547,14 +2547,14 @@ TEST(Vec, RandomXoshiro) {
   }
   // Streams are decorrelated (Jump per lane): no two lanes produce the same value in a draw.
   if (n >= 2) {
-    hs::VectorXoshiro rng2{0x1234ull};
+    hs::native::VectorXoshiro rng2{0x1234ull};
     hs::Store(rng2.Next(), d, out.data);
     for (std::size_t i = 0; i < n; ++i)
       for (std::size_t j = i + 1; j < n; ++j)
         EXPECT_NE(out.data[i], out.data[j]) << "lanes " << i << "," << j << " correlated";
   }
   // Reproducible: same seed -> identical sequence.
-  hs::VectorXoshiro a{42}, b{42};
+  hs::native::VectorXoshiro a{42}, b{42};
   Buf<std::uint64_t> oa, ob;
   for (int iter = 0; iter < 8; ++iter) {
     hs::Store(a.Next(), d, oa.data);
@@ -2565,7 +2565,7 @@ TEST(Vec, RandomXoshiro) {
   const hs::ScalableTag<double> df;
   const std::size_t nf = hs::Lanes(df);
   alignas(64) double u[hs::ScalableTag<double>::kMaxLanes];
-  hs::VectorXoshiro urng{7};
+  hs::native::VectorXoshiro urng{7};
   double sum = 0.0;
   int count = 0;
   for (int iter = 0; iter < 200; ++iter) {

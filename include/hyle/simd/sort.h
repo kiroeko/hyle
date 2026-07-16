@@ -110,10 +110,6 @@ HYLE_SIMD_API void select(KeyValue32* kv, std::size_t n, std::size_t k,
 HYLE_SIMD_API void select(KeyValue64* kv, std::size_t n, std::size_t k,
                           SortOrder order = SortOrder::kAscending) noexcept;
 
-// The tier the sort ops selected: kAvx512 if the 512-bit port core is live, kAvx2 if the
-// 256-bit one is, kNeon on arm64, else kScalar (std::sort floor). For tests/diagnostics.
-HYLE_SIMD_API Isa active_sort_variant() noexcept;
-
 // --- P1-2: LSD radix sort (stable, O(n · passes)) + argsort ---------------------------------
 // Integer / float keys via LSD base-256 (8-bit digits). STABLE (equal keys keep relative order),
 // unlike vqsort. Needs O(n) temporary storage (malloc); on OOM falls back to sort().

@@ -10,6 +10,10 @@
 
 #include <cstdint>
 
+#if defined(HYLE_OS_LINUX) && (defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64))
+#include <sys/auxv.h>
+#endif
+
 #if defined(HYLE_ARCH_X64)
 #  if defined(HYLE_COMPILER_MSVC)
 #    include <intrin.h>
@@ -160,8 +164,17 @@ CpuFeatures detect() noexcept {
 #elif defined(HYLE_ARCH_ARM64)
   CpuFeatures f;
   f.neon = true;  // mandatory on aarch64
-  // SVE runtime detection (getauxval AT_HWCAP) deferred with the SVE backend; the
-  // scalable-vector Lanes() path in vec.h is the API hook that keeps that door open.
+#if defined(HYLE_OS_LINUX)
+  constexpr unsigned long kHwcapSve = 1ul << 22;
+  f.sve = (getauxval(AT_HWCAP) & kHwcapSve) != 0;
+#endif
+  return f;
+#elif defined(HYLE_ARCH_RISCV64)
+  CpuFeatures f;
+#if defined(HYLE_OS_LINUX)
+  constexpr unsigned long kHwcapIsaV = 1ul << ('V' - 'A');
+  f.rvv = (getauxval(AT_HWCAP) & kHwcapIsaV) != 0;
+#endif
   return f;
 #else
   return CpuFeatures{};  // scalar-only platform
@@ -195,6 +208,8 @@ Isa compute_best(const CpuFeatures& f) noexcept {
   if (f.sve) return Isa::kSve;
   if (f.neon) return Isa::kNeon;
   return Isa::kScalar;
+#elif defined(HYLE_ARCH_RISCV64)
+  return f.rvv ? Isa::kRvv : Isa::kScalar;
 #else
   (void)f;
   return Isa::kScalar;
@@ -214,9 +229,16 @@ Isa best_isa() noexcept {
 }
 
 bool supports(Isa isa) noexcept {
-  // Same-arch monotonic compare: tiers are gap-spaced per arch (see Isa), and kScalar
-  // (0) is below every arch tier, so a plain >= is correct within an arch and never
-  // claims a cross-arch tier (an x86 build never sees kNeon as best_isa).
+  if (isa == Isa::kScalar) return true;
+#if defined(HYLE_ARCH_X64)
+  if (isa < Isa::kSse2 || isa > Isa::kAvx512) return false;
+#elif defined(HYLE_ARCH_ARM64)
+  if (isa != Isa::kNeon && isa != Isa::kSve) return false;
+#elif defined(HYLE_ARCH_RISCV64)
+  if (isa != Isa::kRvv) return false;
+#else
+  return false;
+#endif
   return static_cast<std::uint32_t>(best_isa()) >= static_cast<std::uint32_t>(isa);
 }
 
@@ -231,6 +253,7 @@ const char* isa_name(Isa isa) noexcept {
     case Isa::kAvx512: return "avx512";
     case Isa::kNeon: return "neon";
     case Isa::kSve: return "sve";
+    case Isa::kRvv: return "rvv";
   }
   return "unknown";
 }

@@ -6,7 +6,7 @@
 
 #include "hyle/macros.h"  // HYLE_FATAL_ASSERT (fail-fast on size-contract violation)
 #include "hyle/platform.h"
-#include "hyle/simd/dispatch.h"
+#include "hyle/simd/runtime.h"
 #include "src/simd/sort/kernels.h"
 
 // sort_dispatch.cc -- baseline dispatcher for the vqsort borrow ops. Mirrors math_dispatch.cc:
@@ -23,9 +23,14 @@
 namespace hyle::simd {
 namespace {
 
-bool have_avx2() noexcept {
 #if defined(HYLE_ARCH_X64)
-  return cpu_features().avx2;
+bool have_avx2() noexcept {
+#if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_ARCH_X64)
+  return runtime().sort.isa == Isa::kAvx2 || runtime().sort.isa == Isa::kAvx512;
 #else
   return false;
 #endif
@@ -34,13 +39,17 @@ bool have_avx2() noexcept {
 // AVX-512 group (f+bw+vl+dq+cd) -- same condition as math_dispatch's have_avx512 / best_isa()>=
 // kAvx512. vqsort's sorting networks + Compress widen to 512-bit here.
 bool have_avx512() noexcept {
-#if defined(HYLE_ARCH_X64)
-  const auto& f = cpu_features();
-  return f.avx512f && f.avx512bw && f.avx512vl && f.avx512dq && f.avx512cd;
+#if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_ARCH_X64)
+  return runtime().sort.isa == Isa::kAvx512;
 #else
   return false;
 #endif
 }
+#endif
 
 // P1-2: large integer arrays use stable LSD radix. Template so float/double discard cleanly.
 template <typename T>
@@ -184,17 +193,5 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
 HYLE_SORT_KV_DISPATCH(KeyValue32, KV32Bits, kv32)
 HYLE_SORT_KV_DISPATCH(KeyValue64, KV64Bits, kv64)
 #undef HYLE_SORT_KV_DISPATCH
-
-Isa active_sort_variant() noexcept {
-#if defined(HYLE_ARCH_X64)
-  static const Isa tier =
-      have_avx512() ? Isa::kAvx512 : (have_avx2() ? Isa::kAvx2 : Isa::kScalar);
-  return tier;
-#elif defined(HYLE_ARCH_ARM64)
-  return Isa::kNeon;  // Highway NEON vqsort core always compiled (ARMv8 baseline)
-#else
-  return Isa::kScalar;
-#endif
-}
 
 }  // namespace hyle::simd

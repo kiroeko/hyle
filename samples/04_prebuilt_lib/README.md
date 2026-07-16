@@ -12,8 +12,8 @@ mode that **validates HYLE's export boundary** (`HYLE_<MOD>_API`):
 ## Honest scope (what this does and does NOT validate)
 
 - ✅ Validates: HYLE's **C++ API** reachable across a **shared-library (dllexport/import)**
-  boundary, and across a **static archive**. The consumer calls `hyle::simd::dot_f32` and
-  `active_variant()` from the prebuilt `hyle_simd`.
+  boundary, and across a **static archive**. The consumer calls `hyle::simd::dot` and reads
+  `runtime().isa` from the prebuilt `hyle_simd`.
 - ❌ Does NOT validate a pure **`extern "C"` C-ABI**: that flat-C-header shim is a planned
   milestone (P6), not implemented yet. This is "C++ ABI across a DLL", not "a C ABI". We
   deliberately call a C-friendly free function to keep the surface minimal.

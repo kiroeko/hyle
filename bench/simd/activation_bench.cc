@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "hyle/simd/math.h"
+#include "hyle/simd/native/random.h"
 #include "hyle/simd/random.h"
 
 namespace {
@@ -101,8 +102,6 @@ int main() {
   // WHOLE VECTOR of N independent-stream u64, stored per SIMD width.
   {
     alignas(64) std::vector<std::uint64_t> out(kN);
-    const hyle::simd::ScalableTag<std::uint64_t> d;
-    const std::size_t w = hyle::simd::Lanes(d);
     nb::Bench b;
     b.title("RNG u64 fill (4096)").relative(true).batch(kN).minEpochIterations(1000);
     b.run("std::mt19937_64", [&] {
@@ -110,10 +109,14 @@ int main() {
       for (std::size_t i = 0; i < kN; ++i) out[i] = rng();
       nb::doNotOptimizeAway(out.data());
     });
-    b.run("HYLE VectorXoshiro", [&] {
-      hyle::simd::VectorXoshiro rng(12345);
-      for (std::size_t i = 0; i + w <= kN; i += w)
-        hyle::simd::Store(rng.Next(), d, out.data() + i);
+    b.run("HYLE runtime random_fill", [&] {
+      hyle::simd::RandomState state(12345);
+      hyle::simd::random_fill(state, out.data(), out.size());
+      nb::doNotOptimizeAway(out.data());
+    });
+    b.run("HYLE native random_fill", [&] {
+      hyle::simd::RandomState state(12345);
+      hyle::simd::native::random_fill(state, out.data(), out.size());
       nb::doNotOptimizeAway(out.data());
     });
   }

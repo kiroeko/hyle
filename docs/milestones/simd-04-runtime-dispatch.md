@@ -24,12 +24,12 @@ simd-01 造了 CPUID 探测器（`best_isa()`），simd-02 造了各 ISA 后端�
 
 ## 具体事务（做什么）
 
-- [x] `include/hyle/simd/ops.h`：公开派发入口 `dot`/`saxpy`/`add` 的 f32/f64 API 与 `active_variant`（HYLE_SIMD_API 导出）。每调用一次指针间接，内核循环保持静态全内联。
+- [x] `include/hyle/simd/ops.h`：公开派发入口 `dot`/`saxpy`/`add` 的 f32/f64 API。最初的 `active_variant` 已在 simd-22 被统一 `runtime().ops` 元数据取代；每调用一次指针间接，内核循环保持静态全内联。
 - [x] `src/simd/ops/kernels.h`：内部变体符号声明 `detail::*_{scalar,sse4,avx2,avx512,neon}`。
 - [x] `src/simd/ops/kernel_impl.h`：共享 kernel 体（ScalableTag 写法，以 `HYLE_SIMD_VARIANT_SUFFIX` 命名），由构建生成的 TU 多次编译。
 - [x] `cmake/HyleDispatch.cmake`：按架构生成 scalar/x64/arm64 变体 TU，并以 `hyle_set_isa` 施加唯一的 per-source flag。
 - [x] `src/simd/dispatch_internal.h` + `dispatch_ops.cc`：baseline dispatcher 使用 canonical ISA resolver；公开入口经 Meyers static 缓存转发。
-- [x] `tests/simd/ops_test.cc`：派发结果对拍 double 参考、active tier、tail/n=0 边界；完整机制验收见 `simd-21`。
+- [x] `tests/simd/ops_test.cc`：派发结果对拍 double 参考、`runtime().ops` tier、tail/n=0 边界；完整机制验收见 `simd-21/22`。
 - [x] **明确不做**：变体-DLL 零间接模型；没有稳定 batch 契约的寄存器级 `vec.h` 原语保持静态宏腿。
 
 ## 交付物

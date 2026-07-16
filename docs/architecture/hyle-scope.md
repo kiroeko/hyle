@@ -89,7 +89,7 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 **结论：scope 结构上完整——不缺顶层模块**（核心计算/并发 7 + 支撑层 4 已覆盖 计算/并发/内存/IO + 基质 全部）。曾识别**两个模块内的缺口**,补在既有模块里、不新增顶层——**两者现均已落地**:
 
 1. ✅ **`sched/` fiber-aware 同步原语已落地（sched-05）**:CV 地基 + Mutex(futex)/WaitGroup/Latch/Channel,双模 fiber/裸线程,对标 marl 全线追平/反超。`std::mutex` 会阻塞 worker 破坏 M:N 的隐患由"短锁用 futex、长等待用 fiber-aware CV"分工解决。
-2. ✅ **`simd/` dtype 层已落地（simd-05/06）**:fp16/bf16 ↔ fp32 转换(F16C 硬件路径)+ SIMD 数学核(exp/log/tanh,借 Highway/xsimd vendored)。int8/fp8 + gelu/softmax 登记后续广度。
+2. ✅ **`simd/` dtype/math 层已落地并完成双轨收口（simd-05/06/20/22）**：fp16/bf16 ↔ fp32 硬件路径、fp8、HYLE 自有数学核与组合核；普通 Runtime、整库 exact、用户 TU native 三种部署面已统一，产品零 Highway/xsimd。
 
 其余（math 标量、quant）都能并进既有模块,无需新顶层。
 
@@ -118,8 +118,8 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 | mimalloc | ~15k | 已 vendored |
 | xxhash | ~6k | 已 vendored |
 | fcontext | ~0.8k | 已 vendored（仅 3 汇编） |
-| highway/xsimd（数学核子集） | ~10-30k | 已 vendored（simd-06，无条件默认编进生产） |
-| simdutf | ~10k | 已 vendored（utf8 SIMD，无条件默认） |
+| highway/xsimd | 0 产品 LOC | simd-20 已摘除；外部 pin checkout 只用于 benchmark 对照 |
+| simdutf | 可选外部依赖 | 仅 `HYLE_SIMD_SIMDUTF` 门控的 UTF-8 薄借，不属于 SIMD 核心产品面 |
 | liburing | ~12k | 将借（io） |
 | **ggml** | **100k+** | **将借（compute）——单独就压过 HYLE 自有全部** |
 | simdjson/flatbuffers/capnproto | tens of k | 将借（serialize） |

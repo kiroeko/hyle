@@ -10,7 +10,7 @@
 //       wiring is SOTA"; a loss vs the borrowed lib = our dispatch/build has overhead (this
 //       bench caught exactly that: the product Highway log core shipped 128-bit on Linux
 //       until the baseline-ISA fix -- see performance.md math section).
-// active_math_variant() prints the live tier; "kScalar" => no vectorized math wired (HYLE row
+// runtime().math.isa prints the live tier; "kScalar" => no vectorized math wired (HYLE row
 // ties the scalar baseline -- honest: no vectorization on a non-AVX2 host).
 //
 // P2-2 latency chain mode (below the throughput tables): throughput benches hide polynomial
@@ -29,6 +29,7 @@
 #include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
 #include "hyle/simd/math.h"
+#include "hyle/simd/runtime.h"
 
 #if defined(HYLE_BENCH_XSIMD)
 #  include "xsimd/xsimd.hpp"
@@ -262,7 +263,7 @@ std::array<double, Degree + 1> poly_coeffs(std::uint64_t seed) {
 // than the vector kernel. The state transforms are affine and keep every iteration normal finite.
 template <class T>
 std::size_t chain_lanes() noexcept {
-  const auto isa = hyle::simd::active_math_variant();
+  const auto isa = hyle::simd::runtime().math.isa;
   if (isa == hyle::simd::Isa::kAvx512) return sizeof(T) == sizeof(double) ? 8 : 16;
   if (isa == hyle::simd::Isa::kAvx2) return sizeof(T) == sizeof(double) ? 4 : 8;
 #if defined(HYLE_ARCH_ARM64)
@@ -287,7 +288,7 @@ T chain_unary_vector(Fn fn, T x0, std::size_t iters) noexcept {
 }  // namespace
 
 int main() {
-  std::printf("HYLE math tier live: %s\n\n", variant_name(hyle::simd::active_math_variant()));
+  std::printf("HYLE math tier live: %s\n\n", variant_name(hyle::simd::runtime().math.isa));
 
   std::vector<float> dst(kN);
 
