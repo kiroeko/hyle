@@ -27,8 +27,8 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     math/transcendental_xsimd.cc
     math/transcendental_highway_avx512.cc
     math/transcendental_xsimd_avx512.cc
-    sort/vqsort_highway_avx2.cc
-    sort/vqsort_highway_avx512.cc
+    sort/vqsort_hyle_avx2.cc
+    sort/vqsort_hyle_avx512.cc
     bitpack/bitpack_hyle_avx2.cc
     bitpack/bitpack_hyle_avx512.cc)
   # AVX10.2 f16->fp8 convert TU: only the compilers that accept -mavx10.2-512 (clang-20+; GCC-14
@@ -52,17 +52,11 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     dtype/cvt_neon.cc
     math/transcendental_highway_neon.cc
     math/transcendental_xsimd_neon.cc
-    sort/vqsort_highway_neon.cc
+    sort/vqsort_hyle_neon.cc
     bitpack/bitpack_hyle_neon.cc)
 endif()
 
-# Highway runtime support: the borrowed Highway cores (math sin/cos..., vqsort, bit_pack) call
-# hwy::Abort via HWY_DASSERT. Release (-O2) DCEs that call so the symbol never appears; but a
-# RelWithDebInfo+ASan build keeps it -> `undefined reference to hwy::Abort` when linking an exe
-# against libhyle_simd. hwy/abort.cc DEFINES it (plain baseline C++, no -march). Compile it in
-# so EVERY build config links cleanly, not just the ones where the optimizer happens to DCE it.
-set(_hwy_support "${PROJECT_SOURCE_DIR}/third_party/highway/hwy/abort.cc")
-
+# X3: product simd no longer links third_party/highway (vqsort ported to HYLE D-tag).
 hyle_add_module(simd SOURCES
   ops/dispatch_ops.cc
   scan/scan_dispatch.cc
@@ -77,7 +71,6 @@ hyle_add_module(simd SOURCES
   sort/stream_topk.cc
   bitpack/bitpack_dispatch.cc
   bitpack/bitpack_scalar.cc
-  ${_hwy_support}
   ${_simd_arch_sources}
   PUBLIC_DEPS hyle_platform)
 
@@ -148,27 +141,17 @@ set_target_properties(hyle_simd PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 # (transcendental_highway_neon.cc, in the arm64 SOURCES) -- Highway for all three ops there.
 # Runtime cpu_features().avx2 gates the x86 entry so an old x86 CPU also falls to scalar (no
 # SIGILL); arm64 needs no gate (NEON is the ARMv8 baseline).
-# Highway remains for X3 vqsort borrow only. Math (X2) is pure HYLE -- no xsimd include.
-target_include_directories(hyle_simd SYSTEM PRIVATE
-  "${PROJECT_SOURCE_DIR}/third_party/highway")
+# X2 math + X3 vqsort are pure HYLE D-tag (no third_party/highway or xsimd includes).
+# Symbol names keep *_highway_* / *_xsimd_* for best-of math dispatch wiring.
 if(HYLE_SIMD_X64)
-  # X2 math path is pure HYLE D-tag: Highway winners in math_hyle-inl.h (+ P2-1 table_f64),
-  # xsimd winners in math_xsimd_hyle-inl.h. Symbol names keep *_highway_* / *_xsimd_* for
-  # best-of dispatch wiring. hyle_set_isa supplies the AVX2/AVX-512 codegen flags.
   hyle_set_isa(math/transcendental_highway.cc AVX2)
   hyle_set_isa(math/transcendental_xsimd.cc AVX2)
   hyle_set_isa(math/transcendental_xsimd_avx512.cc AVX512)
   hyle_set_isa(math/transcendental_highway_avx512.cc AVX512)
-  # vqsort borrow cores (simd-09 sort). SAME Highway-static-dispatch ISA requirement as the math
-  # borrow: HWY_STATIC_TARGET reads the FULL baseline macro chain, so the avx2 core needs the full
-  # AVX2 baseline (hyle_set_highway_isa) or it silently downgrades to SSSE3; the avx512 core needs
-  # the AVX-512 group on top (hyle_set_avx512_sort_isa) to resolve AVX3. Unlike math, vqsort's
-  # AVX3 target is NOT MSVC-broken, so the 512 TU compiles on MSVC too (no exclusion).
-  hyle_set_highway_isa(sort/vqsort_highway_avx2.cc)
-  hyle_set_avx512_sort_isa(sort/vqsort_highway_avx512.cc)
-  # HYLE bit-pack variants use the D-tag backend selected by their target macro. Unlike the
-  # remaining vendor cores, they need no vendor ISA baseline: hyle_set_isa supplies precisely the
-  # AVX2 / AVX-512 codegen required by their corresponding dispatcher gates.
+  # HYLE vqsort / bit-pack variants: D-tag backend selected by HYLE_SIMD_TARGET_*;
+  # hyle_set_isa supplies the AVX2 / AVX-512 codegen for their dispatcher gates.
+  hyle_set_isa(sort/vqsort_hyle_avx2.cc AVX2)
+  hyle_set_isa(sort/vqsort_hyle_avx512.cc AVX512)
   hyle_set_isa(bitpack/bitpack_hyle_avx2.cc AVX2)
   hyle_set_isa(bitpack/bitpack_hyle_avx512.cc AVX512)
 endif()

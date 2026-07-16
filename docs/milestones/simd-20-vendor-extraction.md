@@ -1,12 +1,12 @@
 # simd-20: vendor 摘除——库零 vendor 依赖,bench 引用外部 highway/xsimd
 
-> **状态**:X0/X1/X2 已落地(2026-07-16); X3~X4 待执行。**动机**(用户):库里只有少数专项 kernel 借
-> highway/xsimd,却把整库拖进 `third_party/` 当依赖,不应该;借用的代码移植进 HYLE 后，Highway/xsimd
-> 仅作为外部 benchmark 对照。X0 已将 bench 接到外部 pin 目录；X1 bitpack、X2 math 已迁为 HYLE；
-> 产品侧仅剩 vqsort 借 `third_party/highway`（X3）。
+> **状态**:X0/X1/X2/X3 已落地(2026-07-16); **X4 待执行**（删 `third_party/` + 闸门收口）。
+> **动机**(用户):库里只有少数专项 kernel 借 highway/xsimd,却把整库拖进 `third_party/` 当依赖,不应该;
+> 借用的代码移植进 HYLE 后，Highway/xsimd 仅作为外部 benchmark 对照。X0 已将 bench 接到外部 pin 目录；
+> X1 bitpack、X2 math、**X3 vqsort** 已迁为 HYLE。产品 `hyle_simd` **零** `third_party/{highway,xsimd}` include。
 > **前提修正(盘点见 `docs/architecture/simd-vendor-surface.md`)**:初始借用面是 4 个——①超越函数
-> ②vqsort ③bitpack ④simdutf(可选)。X1 后 bitpack 不借；**X2 后 math 不借**。`include/` 始终
-> 零泄漏，移植只使用 HYLE D-tag 原语。
+> ②vqsort ③bitpack ④simdutf(可选)。X1 后 bitpack 不借；X2 后 math 不借；**X3 后 vqsort 不借**。
+> `include/` 始终零泄漏，移植只使用 HYLE D-tag 原语。
 
 ## 一、端态
 
@@ -21,7 +21,7 @@
 4. 性能不回退:每个移植 kernel 与原借核 A/B(op_parity 框架,借核走外部 vendor 编译)——**摘除
    期间旧借核天然还在,就是现成对照组**。
 
-## 二、分阶段(X0/X1/X2 已落地，X3 每卡常绿)
+## 二、分阶段(X0/X1/X2/X3 已落地，X4 收口)
 
 **X0 — 构建管线先行(已落地 2026-07-16)**
 - bench 的 Highway/xsimd include 全部改根到 `HYLE_BENCH_VENDOR_DIR`：Windows 默认
@@ -74,7 +74,7 @@
   `transcendental_xsimd_{avx2,avx512,neon}.cc` 与 `complex_hyle-inl.h` 去掉 `xsimd::`。
 - best-of dispatch **保留**：符号名仍为 `*_highway_*` / `*_xsimd_*`，只是两侧都是 HYLE 代码。
   `lgamma`/`remainder`/`nextafter` 仍 scalar。
-- 产品 CMake：`hyle_simd` **不再** include `third_party/xsimd`；`third_party/highway` 仅 vqsort（X3）。
+- 产品 CMake：`hyle_simd` **不再** include `third_party/xsimd`；当时 `third_party/highway` 仅剩 vqsort（已由 X3 摘除）。
 - 支撑修：`ConvertTo` f64↔i64（avx2/neon/avx512）、`RebindMask` 源类型、`DemoteToNearestInt` partial-tag、
   `[[maybe_unused]]` 属性序（GCC）。
 - 验证（真编真测）：
@@ -84,11 +84,27 @@
 - `cloc` 新增移植核 **2,231 code LOC**（`math_hyle-inl.h` 1,712 + `math_xsimd_hyle-inl.h` 510 +
   body.inc 9）；既有 TU/后端/CMake 为接线与支撑改动。
 
-**X3 — vqsort 移植(排序面不可由 radix 替代)**
-- `hwy/contrib/sort` 体量大(排序网络 + traits + 分区)。R5 已落地 radix sort/argsort，但它只在大规模
-  整数键排序有明确优势；小 n、浮点排序、partial/select 与完整 KV 面仍依赖 vqsort。因此 radix 是
-  独立算法件，不能作为不移植 vqsort 的理由；X3 按 X2 模式逐模块 port。
-- 闸门:正确性穷举(现有 sort 测试)+ bench vs 旧借核(sort 是招牌件,持平才准换)。
+**X3 — vqsort 移植(已落地 2026-07-16)**
+- `hwy/contrib/sort`（排序网络 + traits + 分区 + VQSort/Partial/Select）语义移植到
+  `src/simd/sort/vqsort_hyle/`：`vqsort-inl.h` / `sorting_networks-inl.h` / `traits{,128}-inl.h` /
+  `shared-inl.h` / `vqsort_ops.h`（Highway→HYLE D-tag 兼容层）+ Apache-2.0 头与 SHA
+  `83eff39371e5e6494b305b253f8a3c06f831faf4`。ISA TU `vqsort_hyle_{avx2,avx512,neon}.cc` 替换原
+  `vqsort_highway_*.cc`；`vqsort_body.inc` 改调 `vqsort::VQSortStatic` 等。R5 radix 仍为独立大整数
+  键路径，不替代 vqsort 的小 n / 浮点 / partial / select / KV 面。
+- 产品 CMake：**去掉** `third_party/highway` include；`hyle_simd` 产品面零 highway/xsimd 依赖。
+- 支撑修（x86 partial-tag 与 Highway Vec32/Vec64 契约对齐，GCC 真崩 / MSVC 堆损）：
+  1. SSE4 `LoadU`/`StoreU`/`Load`/`Store` 按 `N*sizeof(T)` 窄访问（16/8/4/其它 → full /
+     `loadl_epi64` / `load_ss|cvtsi32` / memcpy），禁止 partial tag 全宽 16B 越界。
+  2. 所有喂给全宽 `Load`/`Store` 的 scratch 改为 `alignas(16) T tmp[16/sizeof(T)]`（`LoadN`/
+     `StoreN`/`FirstN`/`BlendedStore`/`OddEven`/`Interleave*`/`swizzle_via_mem`/reduce/Gather 等），
+     避免 `CappedTag<u32,1>` 栈 OOB 与 `vmovq`+`vmovdqa` 对齐 SIGSEGV。
+- 验证（真编真测）：
+  - Win MSVC：`Sort.*` 16/16 + `RadixSort.*` 9/9；`hyle_simd_test` 331 PASS + 1 BF16 SKIP
+  - WSL GCC14：同 25/25 Sort/Radix + 331 PASS + 1 SKIP（修前 `Sort.U32` SIGSEGV、
+    `FloatingNaNsLast` 后 double-free，均已消）
+  - Mac NEON：本轮未重跑（无 SSE4 路径；X4 收口时三端再全绿）
+- `cloc` 移植核约 **6,034 code LOC**（`vqsort_hyle/` 头 6,010 + 三 ISA TU 24）；sse4 partial I/O
+  为正确性支撑，不计入移植核主量。
 
 **X4 — 摘除与收口**
 - 删 `third_party/{highway,xsimd}`;`check-no-vendor.sh` 进闸;三平台全绿(gtest + bench 锚点);

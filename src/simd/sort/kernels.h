@@ -5,12 +5,13 @@
 
 #include "hyle/platform.h"  // HYLE_ARCH_X64 / HYLE_ARCH_ARM64 (borrow cores are arch-specific)
 
-// kernels.h (internal) -- per-tier vqsort borrow symbols the sort dispatcher takes the address
-// of. Same shape as math/kernels.h: the scalar TU (std::sort/partial_sort/nth_element) is ALWAYS
+// kernels.h (internal) -- per-tier vqsort symbols the sort dispatcher takes the address of.
+// Same shape as math/kernels.h: the scalar TU (std::sort/partial_sort/nth_element) is ALWAYS
 // defined + is the non-x86 / fallback floor (NOT a stub -- it is the correctness oracle). The
-// Highway vqsort borrow cores are vendored header-only and compiled per ISA tier on the matching
-// arch (x86 avx2/avx512, arm64 neon); sort_dispatch enters them only when the CPU supports the
-// tier (cpu_features()), so the wide codegen never runs on an older CPU. Not a public header.
+// wide cores are a HYLE port of Highway vqsort (src/simd/sort/vqsort_hyle/), compiled per ISA
+// tier on the matching arch (x86 avx2/avx512, arm64 neon); sort_dispatch enters them only when
+// the CPU supports the tier (cpu_features()), so the wide codegen never runs on an older CPU.
+// Not a public header.
 //
 // The compile-time SortAscending/SortDescending order tag is chosen INSIDE each TU from the
 // runtime `ascending` bool -- so one symbol per (type,op,tier) covers both directions (the tag
@@ -41,10 +42,9 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_SCALAR)
 #undef HYLE_SORT_DECL_SCALAR
 
 #if defined(HYLE_ARCH_X64)
-// AVX2 (256-bit) + AVX-512 (512-bit) Highway vqsort borrow cores. Entered by sort_dispatch when
-// cpu_features().avx2 / the avx512 group. Unlike Highway's math (contrib/math) which is AVX3-
-// broken on MSVC, vqsort's AVX3 target is NOT broken there (it is plain integer/compare SIMD,
-// not the FP transcendental codegen), so the 512 core exists on MSVC too -- no _MSC_VER exclusion.
+// AVX2 (256-bit) + AVX-512 (512-bit) HYLE vqsort port cores. Entered by sort_dispatch when
+// cpu_features().avx2 / the avx512 group. The 512 core exists on MSVC too (plain integer/compare
+// SIMD, no _MSC_VER exclusion).
 #define HYLE_SORT_DECL_AVX2(T, tag) HYLE_SORT_DECL_TRIO(T, tag, avx2)
 HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_AVX2)
 #undef HYLE_SORT_DECL_AVX2
@@ -54,8 +54,8 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_AVX512)
 #endif  // HYLE_ARCH_X64
 
 #if defined(HYLE_ARCH_ARM64)
-// aarch64 NEON Highway vqsort core (ARMv8 baseline; sort_dispatch enters it unconditionally,
-// no runtime gate -- NEON is guaranteed present, like the math NEON borrow).
+// aarch64 NEON HYLE vqsort port core (ARMv8 baseline; sort_dispatch enters it unconditionally,
+// no runtime gate -- NEON is guaranteed present).
 #define HYLE_SORT_DECL_NEON(T, tag) HYLE_SORT_DECL_TRIO(T, tag, neon)
 HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_NEON)
 #undef HYLE_SORT_DECL_NEON
@@ -64,12 +64,9 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_NEON)
 #undef HYLE_SORT_DECL_TRIO
 
 // --- key-value (top-k) symbols -----------------------------------------------------------
-// KV sorts by key (value rides along); borrow maps to Highway K32V32/K64V64 (zero-copy cast).
-// The HYLE public KeyValue32/64 are byte-identical to Highway's, so the bridge reinterpret_casts.
-// Symbols are declared with the OPAQUE public struct pointers (kernels.h can't see Highway's
-// types and shouldn't); the bridge TU does the cast internally.
-// Byte-identical to public KeyValue32/64 AND Highway K32V32/K64V64 (same alignas + field order),
-// so both reinterpret_casts (public->KVBits in dispatch, KVBits->Highway in the bridge) are valid.
+// KV sorts by key (value rides along). Public KeyValue32/64 are byte-identical to the port's
+// K32V32/K64V64 (same alignas + field order), so dispatch reinterpret_casts public->KVBits and
+// the port TU casts KVBits->K32V32/K64V64 zero-copy.
 struct alignas(8) KV32Bits { std::uint32_t value; std::uint32_t key; };
 struct alignas(16) KV64Bits { std::uint64_t value; std::uint64_t key; };
 #define HYLE_SORT_DECL_KV_TRIO(KVT, kvtag, tier)                                              \

@@ -12,11 +12,10 @@
 // TIERS + PER-OP BEST-OF-BREED dispatch (math_dispatch.cc):
 //   - scalar libm reference: std::exp/log/tanh per element. ALWAYS compiled, the ULP
 //     oracle + the non-x86 / non-AVX2 fallback. NOT a stub.
-//   - two vendored header-only AVX2 cores (8-wide, ~3.5-ULP class), wired UNCONDITIONALLY
-//     on x86 (third_party/highway + third_party/xsimd; no opt-in gate -- a perf library
-//     ships its fastest path by default). The same-ISA bench found NO single library wins
-//     all three ops: xsimd's exp/tanh polynomials are fastest, Highway's log is fastest.
-//     So the dispatcher picks PER OP: exp/tanh -> xsimd > Highway; log -> Highway > xsimd.
+//   - two HYLE-ported AVX2 cores (8-wide, ~3.5-ULP class; algorithms from Highway/xsimd,
+//     now pure D-tag under src/simd/math/*_hyle-inl.h). Wired UNCONDITIONALLY on x86 (a perf
+//     library ships its fastest path by default). Same-ISA bench: no single algorithm wins
+//     all three ops -- dispatcher picks PER OP: exp/tanh -> xsimd path; log -> Highway path.
 //
 // At runtime exp/log/tanh route to the best core when cpu_features().avx2, else scalar
 // libm (so an old CPU never SIGILLs). active_math_variant() reports kAvx2 vs kScalar.

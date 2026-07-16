@@ -6,12 +6,11 @@
 #include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
 
 // sort.h -- in-place vectorized sort / partial_sort / select (simd-09 line②, "算法级能力").
-// This is Highway's flagship contrib -- HYLE has no hand-rolled counterpart, so (charter:
-// 借核不手搓) the accelerated path BORROWS Highway's verified vqsort core (VQSortStatic /
-// VQPartialSortStatic / VQSelectStatic in hwy/contrib/sort/vqsort-inl.h). It is a thin wrapper,
-// STRUCTURALLY IDENTICAL to the math borrow (transcendental_highway.cc): the vendor headers are
-// static single-target (no dynamic dispatch), compiled per ISA tier at their own -march, and
-// entered through a baseline dispatcher (sort_dispatch.cc) gated on cpu_features().
+// The accelerated path is a HYLE port of Highway's verified vqsort (VQSortStatic /
+// VQPartialSortStatic / VQSelectStatic; origin hwy/contrib/sort, SHA 83eff393…). The port lives
+// under src/simd/sort/vqsort_hyle/ and uses only hyle::simd D-tag primitives. Per-ISA TUs are
+// compiled at their own -march and entered through a baseline dispatcher (sort_dispatch.cc)
+// gated on cpu_features().
 //
 // TIERS (sort_dispatch.cc, same shape as math_dispatch): x86 avx512 -> avx2 -> scalar; arm64
 // NEON; else scalar. The scalar floor is std::sort / std::partial_sort / std::nth_element --
@@ -19,9 +18,8 @@
 // vqsort is NOT a stable sort (order of equal keys is unspecified), matching std::sort/
 // std::nth_element (use a key-index pair if stability is needed).
 //
-// This header does NOT include Highway. Scalar keys are u32/i32/u64/i64/f32/f64;
-// KeyValue32/64 provide zero-copy top-k payload pairs. u16/i16 and uint128 remain outside the
-// public surface.
+// Scalar keys are u32/i32/u64/i64/f32/f64; KeyValue32/64 provide zero-copy top-k payload pairs.
+// u16/i16 and uint128 remain outside the public surface.
 //
 // SEMANTICS (units of KEYS, mirroring the vqsort static entry points):
 //   sort(keys, n, order)            : full sort of keys[0..n).
@@ -37,8 +35,8 @@
 
 namespace hyle::simd {
 
-// Sort direction. Ascending = smallest first; Descending = largest first. Maps to Highway's
-// SortAscending{} / SortDescending{} order tags inside the borrow TUs.
+// Sort direction. Ascending = smallest first; Descending = largest first. Maps to the port's
+// SortAscending{} / SortDescending{} order tags inside the ISA TUs.
 enum class SortOrder : std::uint8_t { kAscending, kDescending };
 
 // --- full sort (in place) ---
@@ -88,10 +86,10 @@ HYLE_SIMD_API void select(double* keys, std::size_t n, std::size_t k,
 // key, read the values out in key order. vqsort terminates recursion earlier for KV than for a
 // full 128-bit key (only the key half is compared), so this is the fast path for "sort scores,
 // keep track of which lane each came from" -- attention/logits top-k sampling, MoE routing,
-// sparse index building. Layout is {value, key} (little-endian, value first) to match Highway's
-// K32V32/K64V64 byte-for-byte, so the borrow is a zero-copy reinterpret_cast; construct with the
-// designated fields, don't assume field order. Sorts by `key` only; equal keys' value order is
-// unspecified (vqsort is not stable), same as the scalar-T ops.
+// sparse index building. Layout is {value, key} (little-endian, value first), byte-identical to
+// the port's K32V32/K64V64 for zero-copy reinterpret_cast; construct with the designated fields,
+// don't assume field order. Sorts by `key` only; equal keys' value order is unspecified (vqsort
+// is not stable), same as the scalar-T ops.
 struct alignas(8) KeyValue32 {
   std::uint32_t value;  // payload (e.g. original index)
   std::uint32_t key;    // sort key (e.g. score)
@@ -112,7 +110,7 @@ HYLE_SIMD_API void select(KeyValue32* kv, std::size_t n, std::size_t k,
 HYLE_SIMD_API void select(KeyValue64* kv, std::size_t n, std::size_t k,
                           SortOrder order = SortOrder::kAscending) noexcept;
 
-// The tier the sort ops selected: kAvx512 if the 512-bit borrow core is live, kAvx2 if the
+// The tier the sort ops selected: kAvx512 if the 512-bit port core is live, kAvx2 if the
 // 256-bit one is, kNeon on arm64, else kScalar (std::sort floor). For tests/diagnostics.
 HYLE_SIMD_API Isa active_sort_variant() noexcept;
 

@@ -135,47 +135,91 @@ using VFromD = decltype(Zero(D()));
 #endif  // HYLE_SIMD_X86_VFROMD
 
 // ---- load / store -------------------------------------------------------------------
+// Partial tags (CappedTag/FixedTag with N*sizeof(T) < 16) must touch ONLY the logical
+// bytes -- same contract as Highway's Vec64/Vec32 specializations. Full-width LoadU/StoreU
+// would over-read/write past small arrays (vqsort Sort8Rows kKeysPerRow=1 on a 6-float
+// buffer → heap corruption). Scratch buffers that feed Load/Store are sized to a full
+// 16 B register (see TruncateTo / LoadN comments); partial Load/Store still only use the
+// low logical lanes of that scratch.
 template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE detail::V128<D> LoadU(D, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
+  constexpr std::size_t kBytes = HYLE_SIMD_MAX_LANES_D(D) * sizeof(T);
   detail::V128<D> v;
-  if constexpr (std::is_same_v<T, float>)
-    v.raw = _mm_loadu_ps(p);
-  else if constexpr (std::is_same_v<T, double>)
-    v.raw = _mm_loadu_pd(p);
-  else
-    v.raw = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
+  if constexpr (kBytes == 16) {
+    if constexpr (std::is_same_v<T, float>)
+      v.raw = _mm_loadu_ps(p);
+    else if constexpr (std::is_same_v<T, double>)
+      v.raw = _mm_loadu_pd(p);
+    else
+      v.raw = _mm_loadu_si128(reinterpret_cast<const __m128i*>(p));
+  } else if constexpr (kBytes == 8) {
+    // Avoid __m64 (removed on MSVC x64): load low 64 via integer, cast.
+    const __m128i lo = _mm_loadl_epi64(reinterpret_cast<const __m128i*>(p));
+    if constexpr (std::is_same_v<T, float>)
+      v.raw = _mm_castsi128_ps(lo);
+    else if constexpr (std::is_same_v<T, double>)
+      v.raw = _mm_castsi128_pd(lo);
+    else
+      v.raw = lo;
+  } else if constexpr (kBytes == 4) {
+    if constexpr (std::is_same_v<T, float>)
+      v.raw = _mm_load_ss(p);
+    else {
+      std::uint32_t bits = 0;
+      std::memcpy(&bits, p, 4);
+      v.raw = _mm_cvtsi32_si128(static_cast<int>(bits));
+    }
+  } else {
+    // 1/2-byte lanes or other sub-8 partials: zero + exact-byte copy (Highway safe path).
+    if constexpr (std::is_same_v<T, float>)
+      v.raw = _mm_setzero_ps();
+    else if constexpr (std::is_same_v<T, double>)
+      v.raw = _mm_setzero_pd();
+    else
+      v.raw = _mm_setzero_si128();
+    std::memcpy(&v.raw, p, kBytes);
+  }
   return v;
 }
 template <class D> requires HYLE_SIMD_W(D, 0, 16)
-HYLE_FORCE_INLINE detail::V128<D> Load(D, const TFromD<D>* p) noexcept {
-  using T = TFromD<D>;
-  detail::V128<D> v;
-  if constexpr (std::is_same_v<T, float>)
-    v.raw = _mm_load_ps(p);
-  else if constexpr (std::is_same_v<T, double>)
-    v.raw = _mm_load_pd(p);
-  else
-    v.raw = _mm_load_si128(reinterpret_cast<const __m128i*>(p));
-  return v;
+HYLE_FORCE_INLINE detail::V128<D> Load(D d, const TFromD<D>* p) noexcept {
+  // Partial tags have no stricter alignment contract than LoadU (Highway: LoadU==Load for <128).
+  return LoadU(d, p);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE void StoreU(Vec128<T, N> v, Simd<T, N, 0>, T* p) noexcept {
-  if constexpr (std::is_same_v<T, float>)
-    _mm_storeu_ps(p, v.raw);
-  else if constexpr (std::is_same_v<T, double>)
-    _mm_storeu_pd(p, v.raw);
-  else
-    _mm_storeu_si128(reinterpret_cast<__m128i*>(p), v.raw);
+  constexpr std::size_t kBytes = N * sizeof(T);
+  if constexpr (kBytes == 16) {
+    if constexpr (std::is_same_v<T, float>)
+      _mm_storeu_ps(p, v.raw);
+    else if constexpr (std::is_same_v<T, double>)
+      _mm_storeu_pd(p, v.raw);
+    else
+      _mm_storeu_si128(reinterpret_cast<__m128i*>(p), v.raw);
+  } else if constexpr (kBytes == 8) {
+    __m128i lo;
+    if constexpr (std::is_same_v<T, float>)
+      lo = _mm_castps_si128(v.raw);
+    else if constexpr (std::is_same_v<T, double>)
+      lo = _mm_castpd_si128(v.raw);
+    else
+      lo = v.raw;
+    _mm_storel_epi64(reinterpret_cast<__m128i*>(p), lo);
+  } else if constexpr (kBytes == 4) {
+    if constexpr (std::is_same_v<T, float>)
+      _mm_store_ss(p, v.raw);
+    else {
+      const std::uint32_t bits = static_cast<std::uint32_t>(_mm_cvtsi128_si32(v.raw));
+      std::memcpy(p, &bits, 4);
+    }
+  } else {
+    std::memcpy(p, &v.raw, kBytes);
+  }
 }
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE void Store(Vec128<T, N> v, Simd<T, N, 0>, T* p) noexcept {
-  if constexpr (std::is_same_v<T, float>)
-    _mm_store_ps(p, v.raw);
-  else if constexpr (std::is_same_v<T, double>)
-    _mm_store_pd(p, v.raw);
-  else
-    _mm_store_si128(reinterpret_cast<__m128i*>(p), v.raw);
+HYLE_FORCE_INLINE void Store(Vec128<T, N> v, Simd<T, N, 0> d, T* p) noexcept {
+  StoreU(v, d, p);
 }
 
 // ---- interleaved load / store (AoS <-> SoA) -----------------------------------------
@@ -205,7 +249,7 @@ HYLE_FORCE_INLINE void LoadInterleaved2(D d, const TFromD<D>* p, VFromD<D>& v0,
     const auto A = LoadU(d, p), B = LoadU(d, p + N);
     v0 = ConcatEven(B, A); v1 = ConcatOdd(B, A);
   } else {
-    alignas(16) T t0[N], t1[N];
+    alignas(16) T t0[16 / sizeof(T)], t1[16 / sizeof(T)];
     for (std::size_t i = 0; i < N; ++i) { t0[i] = p[2 * i]; t1[i] = p[2 * i + 1]; }
     v0 = Load(d, t0); v1 = Load(d, t1);
   }
@@ -713,7 +757,7 @@ HYLE_FORCE_INLINE Vec128<T, N> ShiftRight(Vec128<T, N> a) noexcept {
 namespace detail {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> shift_var_scalar(Vec128<T, N> a, Vec128<T, N> b, bool left) noexcept {
-  alignas(16) T va[N], vb[N];
+  alignas(16) T va[16 / sizeof(T)], vb[16 / sizeof(T)];
   _mm_store_si128(reinterpret_cast<__m128i*>(va), a.raw);
   _mm_store_si128(reinterpret_cast<__m128i*>(vb), b.raw);
   for (std::size_t i = 0; i < N; ++i)
@@ -1242,7 +1286,7 @@ HYLE_FORCE_INLINE Vec128<std::int32_t, N> MulHigh32(Vec128<std::int32_t, N> a,
 namespace detail {
 template <typename T, std::size_t N, typename IdxFn>
 HYLE_FORCE_INLINE Vec128<T, N> swizzle_via_mem(Vec128<T, N> v, IdxFn idx) noexcept {
-  alignas(16) T src[N], dst[N];
+  alignas(16) T src[16 / sizeof(T)], dst[16 / sizeof(T)];
   Store(v, Simd<T, N, 0>(), src);
   for (std::size_t i = 0; i < N; ++i) dst[i] = src[idx(i)];
   return Load(Simd<T, N, 0>(), dst);
@@ -1252,7 +1296,7 @@ HYLE_FORCE_INLINE Vec128<T, N> swizzle_via_mem(Vec128<T, N> v, IdxFn idx) noexce
 // OddEven(a,b): even lanes <- b, odd <- a.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> OddEven(Vec128<T, N> a, Vec128<T, N> b) noexcept {
-  alignas(16) T sa[N], sb[N], dst[N];
+  alignas(16) T sa[16 / sizeof(T)], sb[16 / sizeof(T)], dst[16 / sizeof(T)];
   Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
   for (std::size_t i = 0; i < N; ++i) dst[i] = (i & 1) ? sa[i] : sb[i];
   return Load(Simd<T, N, 0>(), dst);
@@ -1268,14 +1312,14 @@ HYLE_FORCE_INLINE detail::V128<D> Reverse2(D, detail::V128<D> v) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> InterleaveLower(Vec128<T, N> a, Vec128<T, N> b) noexcept {
-  alignas(16) T sa[N], sb[N], dst[N];
+  alignas(16) T sa[16 / sizeof(T)], sb[16 / sizeof(T)], dst[16 / sizeof(T)];
   Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
   for (std::size_t i = 0; i < N / 2; ++i) { dst[2 * i] = sa[i]; dst[2 * i + 1] = sb[i]; }
   return Load(Simd<T, N, 0>(), dst);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> InterleaveUpper(Vec128<T, N> a, Vec128<T, N> b) noexcept {
-  alignas(16) T sa[N], sb[N], dst[N];
+  alignas(16) T sa[16 / sizeof(T)], sb[16 / sizeof(T)], dst[16 / sizeof(T)];
   Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
   for (std::size_t i = 0; i < N / 2; ++i) { dst[2 * i] = sa[N / 2 + i]; dst[2 * i + 1] = sb[N / 2 + i]; }
   return Load(Simd<T, N, 0>(), dst);
@@ -1283,7 +1327,7 @@ HYLE_FORCE_INLINE Vec128<T, N> InterleaveUpper(Vec128<T, N> a, Vec128<T, N> b) n
 namespace detail {
 template <int loHalf, int hiHalf, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> concat_halves(Vec128<T, N> hi, Vec128<T, N> lo) noexcept {
-  alignas(16) T sh[N], sl[N], dst[N];
+  alignas(16) T sh[16 / sizeof(T)], sl[16 / sizeof(T)], dst[16 / sizeof(T)];
   Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
   for (std::size_t i = 0; i < N / 2; ++i) {
     dst[i] = sl[loHalf * (N / 2) + i];
@@ -1314,7 +1358,7 @@ HYLE_FORCE_INLINE Vec128<T, N> ConcatEven(Vec128<T, N> hi, Vec128<T, N> lo) noex
                                               _MM_SHUFFLE(2, 0, 2, 0)));
     return r;
   }
-  alignas(16) T sh[N], sl[N], dst[N];
+  alignas(16) T sh[16 / sizeof(T)], sl[16 / sizeof(T)], dst[16 / sizeof(T)];
   Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
   for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i]; dst[N / 2 + i] = sh[2 * i]; }
   return Load(Simd<T, N, 0>(), dst);
@@ -1331,7 +1375,7 @@ HYLE_FORCE_INLINE Vec128<T, N> ConcatOdd(Vec128<T, N> hi, Vec128<T, N> lo) noexc
                                               _MM_SHUFFLE(3, 1, 3, 1)));
     return r;
   }
-  alignas(16) T sh[N], sl[N], dst[N];
+  alignas(16) T sh[16 / sizeof(T)], sl[16 / sizeof(T)], dst[16 / sizeof(T)];
   Store(hi, Simd<T, N, 0>(), sh); Store(lo, Simd<T, N, 0>(), sl);
   for (std::size_t i = 0; i < N / 2; ++i) { dst[i] = sl[2 * i + 1]; dst[N / 2 + i] = sh[2 * i + 1]; }
   return Load(Simd<T, N, 0>(), dst);
@@ -1384,7 +1428,7 @@ HYLE_FORCE_INLINE Indices128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> IndicesFromVec
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> TableLookupLanes(Vec128<T, N> v, Indices128<T, N> ind) noexcept {
-  alignas(16) T src[N], idx[N], dst[N];
+  alignas(16) T src[16 / sizeof(T)], idx[16 / sizeof(T)], dst[16 / sizeof(T)];
   Store(v, Simd<T, N, 0>(), src); Store(ind.idx, Simd<T, N, 0>(), idx);
   for (std::size_t i = 0; i < N; ++i) dst[i] = src[static_cast<std::size_t>(idx[i]) & (N - 1)];
   return Load(Simd<T, N, 0>(), dst);
@@ -2019,7 +2063,8 @@ HYLE_FORCE_INLINE T reduce128(Vec128<T, N> v, F f) noexcept {
 // RedOp defined in x86_detail.h (shared across layered x86 backends).
 template <typename T, std::size_t N, RedOp op>
 HYLE_FORCE_INLINE T reduce_scalar(Vec128<T, N> v) noexcept {
-  alignas(16) T tmp[N];
+  // Full 16 B scratch: _mm_store_si128 always writes a whole register.
+  alignas(16) T tmp[16 / sizeof(T)];
   _mm_store_si128(reinterpret_cast<__m128i*>(tmp), v.raw);
   T acc = tmp[0];
   for (std::size_t i = 1; i < N; ++i) {
@@ -2056,7 +2101,8 @@ namespace detail {
 // RedOp2 defined in x86_detail.h (shared across layered x86 backends).
 template <typename T, std::size_t N, RedOp2 op>
 HYLE_FORCE_INLINE T reduce_scalar2(Vec128<T, N> v) noexcept {
-  alignas(16) T tmp[N];
+  // Full 16 B scratch: Store always writes a whole register (partial-tag safe).
+  alignas(16) T tmp[16 / sizeof(T)];
   Store(v, Simd<T, N, 0>(), tmp);
   T acc = tmp[0];
   for (std::size_t i = 1; i < N; ++i) {
@@ -2088,7 +2134,8 @@ HYLE_FORCE_INLINE T ReduceOr(Simd<T, N, 0>, Vec128<T, N> v) noexcept {
 template <int kLane, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> Broadcast(Vec128<T, N> v) noexcept {
   static_assert(kLane >= 0 && static_cast<std::size_t>(kLane) < N, "Broadcast lane out of range");
-  alignas(16) T tmp[N];
+  // Full 16 B scratch: Store always writes a whole register (partial-tag safe).
+  alignas(16) T tmp[16 / sizeof(T)];
   Store(v, Simd<T, N, 0>(), tmp);
   return Set(Simd<T, N, 0>(), tmp[kLane]);
 }
@@ -2130,7 +2177,7 @@ HYLE_FORCE_INLINE Vec128<T, N> ReverseBits(Vec128<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> ReverseLaneBytes(Vec128<T, N> v) noexcept {
   static_assert(std::is_integral_v<T>, "ReverseLaneBytes is integer-only");
-  alignas(16) T s[N], d[N];
+  alignas(16) T s[16 / sizeof(T)], d[16 / sizeof(T)];
   Store(v, Simd<T, N, 0>(), s);
   for (std::size_t i = 0; i < N; ++i) {
     auto* db = reinterpret_cast<std::uint8_t*>(&d[i]);
@@ -2141,14 +2188,14 @@ HYLE_FORCE_INLINE Vec128<T, N> ReverseLaneBytes(Vec128<T, N> v) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> InterleaveEven(Vec128<T, N> a, Vec128<T, N> b) noexcept {
-  alignas(16) T sa[N], sb[N], d[N];
+  alignas(16) T sa[16 / sizeof(T)], sb[16 / sizeof(T)], d[16 / sizeof(T)];
   Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
   for (std::size_t i = 0; i < N / 2; ++i) { d[2 * i] = sa[2 * i]; d[2 * i + 1] = sb[2 * i]; }
   return Load(Simd<T, N, 0>(), d);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> InterleaveOdd(Vec128<T, N> a, Vec128<T, N> b) noexcept {
-  alignas(16) T sa[N], sb[N], d[N];
+  alignas(16) T sa[16 / sizeof(T)], sb[16 / sizeof(T)], d[16 / sizeof(T)];
   Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
   for (std::size_t i = 0; i < N / 2; ++i) { d[2 * i] = sa[2 * i + 1]; d[2 * i + 1] = sb[2 * i + 1]; }
   return Load(Simd<T, N, 0>(), d);
@@ -2170,7 +2217,7 @@ template <class D>
 HYLE_FORCE_INLINE detail::V128<D> SlideUpLanes(D d, detail::V128<D> v, std::size_t amt) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) T s[N]; alignas(16) T dst[N] = {};
+  alignas(16) T s[16 / sizeof(T)]; alignas(16) T dst[16 / sizeof(T)] = {};
   Store(v, d, s);
   for (std::size_t i = amt; i < N; ++i) dst[i] = s[i - amt];
   return Load(d, dst);
@@ -2179,7 +2226,7 @@ template <class D>
 HYLE_FORCE_INLINE detail::V128<D> SlideDownLanes(D d, detail::V128<D> v, std::size_t amt) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) T s[N]; alignas(16) T dst[N] = {};
+  alignas(16) T s[16 / sizeof(T)]; alignas(16) T dst[16 / sizeof(T)] = {};
   Store(v, d, s);
   for (std::size_t i = 0; i + amt < N; ++i) dst[i] = s[i + amt];
   return Load(d, dst);
@@ -2196,6 +2243,10 @@ HYLE_FORCE_INLINE Vec128<T, N> ZipUpper(Vec128<T, N> a, Vec128<T, N> b) noexcept
 // lane pattern via stack array + Load (a valid blendv/movemask selector for every lane
 // type); LoadN/StoreN touch only the first k lanes (fault-safe); MaskedLoad = IfThenElse
 // Zero + full LoadU (Highway's non-AVX3 narrow path); BlendedStore writes only on-lanes.
+// Load/Store always move a FULL 16 B register (_mm_load/store_si128), so every scratch that
+// feeds them MUST be whole-register wide -- same trap as TruncateTo / LoadMaskBits. Partial
+// tags (e.g. CappedTag<u32,1> from vqsort Sort2To2) have kN*sizeof(T) < 16; sizing tmp[kN]
+// is a stack OOB (GCC SIGSEGV on Sort.U32; MSVC often silent). Extra lanes past kN stay 0.
 template <class D> requires HYLE_SIMD_W(D, 0, 16)
 HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D d, std::size_t n) noexcept {
   using T = TFromD<D>;
@@ -2203,7 +2254,7 @@ HYLE_FORCE_INLINE Mask128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D d, std::
   T ones;
   auto* ob = reinterpret_cast<unsigned char*>(&ones);
   for (std::size_t k = 0; k < sizeof(T); ++k) ob[k] = 0xFFu;
-  alignas(16) T tmp[kN];
+  alignas(16) T tmp[16 / sizeof(T)] = {};
   for (std::size_t i = 0; i < kN; ++i) tmp[i] = (i < n) ? ones : T{0};
   Mask128<T, kN> m;
   m.raw = Load(d, tmp).raw;
@@ -2226,7 +2277,7 @@ HYLE_FORCE_INLINE void BlendedStore(detail::V128<D> v,
                                     TFromD<D>* p) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) T tmp[kN];
+  alignas(16) T tmp[16 / sizeof(T)];
   Store(v, d, tmp);
   const unsigned bits = detail::mask_bits(m);
   for (std::size_t i = 0; i < kN; ++i)
@@ -2237,7 +2288,7 @@ HYLE_FORCE_INLINE detail::V128<D> LoadN(D d, const TFromD<D>* p, std::size_t n) 
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   const std::size_t k = n < kN ? n : kN;
-  alignas(16) T tmp[kN] = {};
+  alignas(16) T tmp[16 / sizeof(T)] = {};
   for (std::size_t i = 0; i < k; ++i) tmp[i] = p[i];
   return Load(d, tmp);
 }
@@ -2246,7 +2297,7 @@ HYLE_FORCE_INLINE void StoreN(detail::V128<D> v, D d, TFromD<D>* p, std::size_t 
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   const std::size_t k = n < kN ? n : kN;
-  alignas(16) T tmp[kN];
+  alignas(16) T tmp[16 / sizeof(T)];
   Store(v, d, tmp);
   for (std::size_t i = 0; i < k; ++i) p[i] = tmp[i];
 }
@@ -2258,7 +2309,9 @@ template <class D, typename IdxT>
 HYLE_FORCE_INLINE detail::V128<D> GatherIndex(D d, const TFromD<D>* base,
                                               Vec128<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) IdxT ix[kN]; alignas(16) TFromD<D> dst[kN];
+  // Full 16 B scratch: Store/Load always touch a whole register (partial-tag safe).
+  alignas(16) IdxT ix[16 / sizeof(IdxT)];
+  alignas(16) TFromD<D> dst[16 / sizeof(TFromD<D>)] = {};
   Store(idx, Simd<IdxT, kN, 0>(), ix);
   for (std::size_t i = 0; i < kN; ++i) dst[i] = base[static_cast<std::ptrdiff_t>(ix[i])];
   return Load(d, dst);
@@ -2267,7 +2320,9 @@ template <class D, typename IdxT>
 HYLE_FORCE_INLINE void ScatterIndex(detail::V128<D> v, D d, TFromD<D>* base,
                                     Vec128<IdxT, HYLE_SIMD_MAX_LANES_D(D)> idx) noexcept {
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) IdxT ix[kN]; alignas(16) TFromD<D> src[kN];
+  // Full 16 B scratch: Store always writes a whole register (partial-tag safe).
+  alignas(16) IdxT ix[16 / sizeof(IdxT)];
+  alignas(16) TFromD<D> src[16 / sizeof(TFromD<D>)];
   Store(idx, Simd<IdxT, kN, 0>(), ix); Store(v, d, src);
   for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
 }
@@ -2308,7 +2363,7 @@ HYLE_FORCE_INLINE Vec128<T, N> Compress(Vec128<T, N> v, Mask128<T, N> m) noexcep
     else r.raw = _mm_shuffle_epi8(v.raw, byte_idx);
     return r;
   } else {
-    alignas(16) T src[N], dst[N] = {};
+    alignas(16) T src[16 / sizeof(T)], dst[16 / sizeof(T)] = {};
     Store(v, Simd<T, N, 0>(), src);
     const unsigned bits = detail::mask_bits(m);
     std::size_t k = 0;
@@ -2328,7 +2383,7 @@ HYLE_FORCE_INLINE std::size_t CompressStore(detail::V128<D> v,
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> Expand(Vec128<T, N> v, Mask128<T, N> m) noexcept {
-  alignas(16) T src[N], dst[N];
+  alignas(16) T src[16 / sizeof(T)], dst[16 / sizeof(T)];
   Store(v, Simd<T, N, 0>(), src);
   const unsigned bits = detail::mask_bits(m);
   std::size_t k = 0;
@@ -2344,7 +2399,7 @@ namespace detail {
 template <typename T, std::size_t N, int kind>
 HYLE_FORCE_INLINE Vec128<T, N> bitcount_via_mem(Vec128<T, N> v) noexcept {
   using U = std::make_unsigned_t<T>;
-  alignas(16) T s[N], d[N];
+  alignas(16) T s[16 / sizeof(T)], d[16 / sizeof(T)];
   Store(v, Simd<T, N, 0>(), s);
   for (std::size_t i = 0; i < N; ++i) {
     const U u = static_cast<U>(s[i]);
@@ -2453,7 +2508,7 @@ HYLE_FORCE_INLINE Vec128<T, N> RotateRight(Vec128<T, N> v) noexcept {
     return Or(ShiftRight<kBits>(v), ShiftLeft<kSizeBits - kBits>(v));
   else {  // signed ShiftRight is arithmetic -> rotate on the unsigned pattern (store+reload)
     using U = std::make_unsigned_t<T>;
-    alignas(16) T s[N], d[N];
+    alignas(16) T s[16 / sizeof(T)], d[16 / sizeof(T)];
     Store(v, Simd<T, N, 0>(), s);
     for (std::size_t i = 0; i < N; ++i) { const U u = static_cast<U>(s[i]); d[i] = static_cast<T>((u >> kBits) | (u << (kSizeBits - kBits))); }
     return Load(Simd<T, N, 0>(), d);
@@ -2512,12 +2567,12 @@ HYLE_FORCE_INLINE Vec128<T, N> ShiftRightSame(Vec128<T, N> v, int bits) noexcept
     r.raw = detail::kSigned<T> ? _mm_sra_epi32(v.raw, c) : _mm_srl_epi32(v.raw, c);
   } else if constexpr (detail::kI64<T>) {
     if constexpr (detail::kSigned<T>) {
-      alignas(16) T s[N]; Store(v, Simd<T, N, 0>(), s);
+      alignas(16) T s[16 / sizeof(T)]; Store(v, Simd<T, N, 0>(), s);
       for (std::size_t i = 0; i < N; ++i) s[i] = static_cast<T>(s[i] >> bits);
       return Load(Simd<T, N, 0>(), s);
     } else r.raw = _mm_srl_epi64(v.raw, c);
   } else {
-    alignas(16) T s[N]; Store(v, Simd<T, N, 0>(), s);
+    alignas(16) T s[16 / sizeof(T)]; Store(v, Simd<T, N, 0>(), s);
     for (std::size_t i = 0; i < N; ++i) s[i] = static_cast<T>(s[i] >> bits);
     return Load(Simd<T, N, 0>(), s);
   }
@@ -2559,7 +2614,7 @@ HYLE_FORCE_INLINE Vec128<T, N> RoundingShr(Vec128<T, N> v, Vec128<T, N> amounts)
     const auto shifted = Shr(Add(v, bias), amounts);            // arithmetic for i32, logical for u32
     return IfThenElse(spos, shifted, v);                        // keep v where s<=0
   } else {
-    alignas(16) T sv[N], sa[N], so[N];
+    alignas(16) T sv[16 / sizeof(T)], sa[16 / sizeof(T)], so[16 / sizeof(T)];
     Store(v, Simd<T, N, 0>(), sv); Store(amounts, Simd<T, N, 0>(), sa);
     for (std::size_t i = 0; i < N; ++i) {
       const int s = static_cast<int>(sa[i]);
@@ -2577,7 +2632,7 @@ HYLE_FORCE_INLINE Vec128<T, N> PairwiseAdd128(Vec128<T, N> a, Vec128<T, N> b) no
   else if constexpr (detail::kI32<T>) r.raw = _mm_hadd_epi32(a.raw, b.raw);
   else if constexpr (detail::kI16<T>) r.raw = _mm_hadd_epi16(a.raw, b.raw);
   else {
-    alignas(16) T sa[N], sb[N], so[N];
+    alignas(16) T sa[16 / sizeof(T)], sb[16 / sizeof(T)], so[16 / sizeof(T)];
     Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
     for (std::size_t i = 0; i < N / 2; ++i) {
       so[i] = static_cast<T>(sa[2 * i] + sa[2 * i + 1]);
@@ -2595,7 +2650,7 @@ HYLE_FORCE_INLINE Vec128<T, N> PairwiseSub128(Vec128<T, N> a, Vec128<T, N> b) no
   else if constexpr (detail::kI32<T>) r.raw = _mm_hsub_epi32(a.raw, b.raw);
   else if constexpr (detail::kI16<T>) r.raw = _mm_hsub_epi16(a.raw, b.raw);
   else {
-    alignas(16) T sa[N], sb[N], so[N];
+    alignas(16) T sa[16 / sizeof(T)], sb[16 / sizeof(T)], so[16 / sizeof(T)];
     Store(a, Simd<T, N, 0>(), sa); Store(b, Simd<T, N, 0>(), sb);
     for (std::size_t i = 0; i < N / 2; ++i) {
       so[i] = static_cast<T>(sa[2 * i] - sa[2 * i + 1]);
@@ -2927,7 +2982,7 @@ HYLE_FORCE_INLINE Vec128<T, N> Per4LaneBlockShuffle(Vec128<T, N> v) noexcept {
   static_assert(sizeof(T) == 1 || sizeof(T) == 2 || sizeof(T) == 4 || sizeof(T) == 8,
                 "Per4LaneBlockShuffle: 1/2/4/8-byte lanes");
   if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) return v;  // identity: no-op (see avx2.h)
-  alignas(16) T s[N], o[N];
+  alignas(16) T s[16 / sizeof(T)], o[16 / sizeof(T)];
   Store(v, Simd<T, N, 0>(), s);
   if constexpr (sizeof(T) <= 2) {
     // 8/16-bit: kLanesPer128 lanes per 128-block, in groups of 4; out[base+group*4+j]=src idx[j].
@@ -2960,7 +3015,7 @@ HYLE_FORCE_INLINE Vec128<T, N> Per4LaneBlockShuffle(Vec128<T, N> v) noexcept {
 template <class D, typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> TwoTablesLookupLanes(D d, Vec128<T, N> a, Vec128<T, N> b,
                                                  Indices128<T, N> idx) noexcept {
-  alignas(16) T sa[N], sb[N], ix[N], out[N];
+  alignas(16) T sa[16 / sizeof(T)], sb[16 / sizeof(T)], ix[16 / sizeof(T)], out[16 / sizeof(T)];
   Store(a, d, sa); Store(b, d, sb); Store(idx.idx, d, ix);
   for (std::size_t i = 0; i < N; ++i) {
     const auto k = static_cast<std::size_t>(ix[i]);

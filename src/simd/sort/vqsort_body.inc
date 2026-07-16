@@ -1,80 +1,71 @@
-// vqsort_body.inc -- the SHARED body of the Highway vqsort borrow cores. Included by each ISA
-// tier TU (vqsort_highway_avx2.cc / _avx512.cc / _neon.cc) AFTER it defines HYLE_SORT_TIER (the
-// symbol suffix: avx2 / avx512 / neon) and includes the Highway headers. This is NOT a standalone
-// TU (no include guard on purpose -- it is textually pasted once per tier with a different suffix,
-// exactly like the math borrow TUs share the HYLE_HWY_MATH_* macro pattern).
+// vqsort_body.inc -- shared body of the HYLE vqsort port cores. Included by each
+// ISA tier TU (vqsort_hyle_avx2.cc / _avx512.cc / _neon.cc) AFTER it defines
+// HYLE_SORT_TIER (symbol suffix: avx2 / avx512 / neon) and HYLE_SIMD_TARGET_*.
+// This is NOT a standalone TU (no include guard -- textually pasted once per tier).
 //
-// Each tier compiles at its own -march (via hyle_set_highway_isa / hyle_set_avx512_sort_isa in
-// CMake), so hn:: / VQSortStatic lower to that tier's width. VQSORT_ONLY_STATIC=1 (set by the TU
-// before including vqsort-inl.h) makes it header-only: no link against vqsort.cc, entropy comes
-// from the stack/clock fallback (Fill16BytesStatic) instead of Fill16BytesSecure.
-//
-// The runtime `ascending` bool selects the compile-time order tag: both hwy::SortAscending{} and
-// hwy::SortDescending{} instantiations are emitted, the branch picks one (zero dispatch cost --
-// the tag is an empty type). Key types (u32/i32/u64/i64/f32/f64) ARE Highway lane types, so they
-// pass straight through as the Key template arg.
+// Origin algorithm: Highway hwy/contrib/sort/vqsort-inl.h VQSortStatic path
+// (SHA 83eff39371e5e6494b305b253f8a3c06f831faf4). Ported to HYLE D-tag primitives
+// under src/simd/sort/vqsort_hyle/.
 
 #include "src/simd/sort/kernels.h"
 
 #include <cstddef>
 #include <cstdint>
 
-namespace hn = hwy::HWY_NAMESPACE;
+#include "src/simd/sort/vqsort_hyle/vqsort-inl.h"
 
 namespace hyle::simd::detail {
 
 #define HYLE_SORT_PASTE2(a, b) a##b
 #define HYLE_SORT_PASTE(a, b) HYLE_SORT_PASTE2(a, b)
-// Builds e.g. sort_u32_avx2 -- HYLE_SORT_TIER is a macro so it needs the two-level paste to
-// expand before concatenation.
+// Builds e.g. sort_u32_avx2 -- HYLE_SORT_TIER is a macro so it needs two-level paste.
 #define HYLE_SORT_SYM(stem, tag) HYLE_SORT_PASTE(stem##_##tag##_, HYLE_SORT_TIER)
 
 #define HYLE_SORT_DEFINE(T, tag)                                                              \
   void HYLE_SORT_SYM(sort, tag)(T* keys, std::size_t n, bool ascending) noexcept {            \
     if (ascending)                                                                            \
-      hn::VQSortStatic(keys, n, hwy::SortAscending{});                                        \
+      vqsort::VQSortStatic(keys, n, vqsort::SortAscending{});                                 \
     else                                                                                      \
-      hn::VQSortStatic(keys, n, hwy::SortDescending{});                                       \
+      vqsort::VQSortStatic(keys, n, vqsort::SortDescending{});                                \
   }                                                                                           \
   void HYLE_SORT_SYM(psort, tag)(T* keys, std::size_t n, std::size_t k, bool ascending)       \
       noexcept {                                                                              \
     if (ascending)                                                                            \
-      hn::VQPartialSortStatic(keys, n, k, hwy::SortAscending{});                              \
+      vqsort::VQPartialSortStatic(keys, n, k, vqsort::SortAscending{});                       \
     else                                                                                      \
-      hn::VQPartialSortStatic(keys, n, k, hwy::SortDescending{});                             \
+      vqsort::VQPartialSortStatic(keys, n, k, vqsort::SortDescending{});                      \
   }                                                                                           \
   void HYLE_SORT_SYM(select, tag)(T* keys, std::size_t n, std::size_t k, bool ascending)      \
       noexcept {                                                                              \
     if (ascending)                                                                            \
-      hn::VQSelectStatic(keys, n, k, hwy::SortAscending{});                                   \
+      vqsort::VQSelectStatic(keys, n, k, vqsort::SortAscending{});                            \
     else                                                                                      \
-      hn::VQSelectStatic(keys, n, k, hwy::SortDescending{});                                  \
+      vqsort::VQSelectStatic(keys, n, k, vqsort::SortDescending{});                           \
   }
 
 HYLE_SORT_KEY_TYPES(HYLE_SORT_DEFINE)
 
 #undef HYLE_SORT_DEFINE
 
-// KV (top-k): HYLE's KV32Bits/KV64Bits are byte-identical to Highway's K32V32/K64V64 ({value,
-// key}, same alignas), so reinterpret_cast is a zero-copy view. VQSortStatic<K32V32> sorts by
-// the key field (Highway compares only .key -- Lt128Upper, hence "faster than 128-bit key").
-#define HYLE_SORT_KV_DEFINE(KVT, HwyT, kvtag)                                                 \
+// KV (top-k): HYLE KV32Bits/KV64Bits are byte-identical to the port's K32V32/K64V64
+// ({value, key}, same alignas), so reinterpret_cast is a zero-copy view.
+#define HYLE_SORT_KV_DEFINE(KVT, PortT, kvtag)                                                \
   void HYLE_SORT_SYM(sort, kvtag)(KVT* kv, std::size_t n, bool ascending) noexcept {          \
-    auto* h = reinterpret_cast<hwy::HwyT*>(kv);                                               \
-    if (ascending) hn::VQSortStatic(h, n, hwy::SortAscending{});                              \
-    else hn::VQSortStatic(h, n, hwy::SortDescending{});                                       \
+    auto* h = reinterpret_cast<vqsort::PortT*>(kv);                                           \
+    if (ascending) vqsort::VQSortStatic(h, n, vqsort::SortAscending{});                       \
+    else vqsort::VQSortStatic(h, n, vqsort::SortDescending{});                                \
   }                                                                                           \
   void HYLE_SORT_SYM(psort, kvtag)(KVT* kv, std::size_t n, std::size_t k, bool ascending)     \
       noexcept {                                                                              \
-    auto* h = reinterpret_cast<hwy::HwyT*>(kv);                                               \
-    if (ascending) hn::VQPartialSortStatic(h, n, k, hwy::SortAscending{});                    \
-    else hn::VQPartialSortStatic(h, n, k, hwy::SortDescending{});                             \
+    auto* h = reinterpret_cast<vqsort::PortT*>(kv);                                           \
+    if (ascending) vqsort::VQPartialSortStatic(h, n, k, vqsort::SortAscending{});             \
+    else vqsort::VQPartialSortStatic(h, n, k, vqsort::SortDescending{});                      \
   }                                                                                           \
   void HYLE_SORT_SYM(select, kvtag)(KVT* kv, std::size_t n, std::size_t k, bool ascending)    \
       noexcept {                                                                              \
-    auto* h = reinterpret_cast<hwy::HwyT*>(kv);                                               \
-    if (ascending) hn::VQSelectStatic(h, n, k, hwy::SortAscending{});                         \
-    else hn::VQSelectStatic(h, n, k, hwy::SortDescending{});                                  \
+    auto* h = reinterpret_cast<vqsort::PortT*>(kv);                                           \
+    if (ascending) vqsort::VQSelectStatic(h, n, k, vqsort::SortAscending{});                  \
+    else vqsort::VQSelectStatic(h, n, k, vqsort::SortDescending{});                           \
   }
 HYLE_SORT_KV_DEFINE(KV32Bits, K32V32, kv32)
 HYLE_SORT_KV_DEFINE(KV64Bits, K64V64, kv64)
