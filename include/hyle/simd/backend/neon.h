@@ -1223,7 +1223,11 @@ HYLE_FORCE_INLINE VecNeon<DstT, N> ConvertTo(Simd<DstT, N, 0>, VecNeon<SrcT, N> 
     r = detail::from_q<decltype(r)>(vcvtq_s32_f32(detail::to_q(v)));        // truncate toward zero
   else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, float>)
     r = detail::from_q<decltype(r)>(vcvtq_f32_s32(detail::to_q(v)));
-  else static_assert(sizeof(DstT) == 0, "neon ConvertTo: only f32<->i32 (same width) supported");
+  else if constexpr (std::is_same_v<SrcT, std::int64_t> && std::is_same_v<DstT, double>)
+    r = detail::from_q<decltype(r)>(vcvtq_f64_s64(detail::to_q(v)));
+  else if constexpr (std::is_same_v<SrcT, double> && std::is_same_v<DstT, std::int64_t>)
+    r = detail::from_q<decltype(r)>(vcvtq_s64_f64(detail::to_q(v)));        // truncate toward zero
+  else static_assert(sizeof(DstT) == 0, "neon ConvertTo: f32<->i32 or f64<->i64 only");
   return r;
 }
 template <typename DstT, std::size_t N, typename SrcT>

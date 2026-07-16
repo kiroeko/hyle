@@ -1317,12 +1317,17 @@ HYLE_FORCE_INLINE V Max128(D d, V a, V b) noexcept {
 // only re-types it. Building block for the widen/narrow-mask ops below and cross-type predication.
 template <class DTo, class MFrom>
 HYLE_FORCE_INLINE MFromD<DTo> RebindMask(DTo d_to, MFrom m) noexcept {
-  using DFrom = Simd<MakeSigned<TFromD<DTo>>, DTo::kMaxLanes, DTo{}.Pow2()>;
+  // Source tag must match m's lane type (e.g. f32 mask -> float D). Deriving DFrom from DTo was
+  // wrong when rebinding across same-width types (f32 mask -> i32 mask): VecFromMask then expected
+  // an i32 mask and MSVC rejected the f32 mask. PrivateT/kPrivateN recover m's native tag.
+  using DFrom = Simd<typename MFrom::PrivateT, MFrom::kPrivateN, 0>;
   const DFrom d_from;
   // VecFromMask(m) is the canonical -1/0 vector and BitCast is a no-op reinterpret, so the result is
   // still canonical -> MaskFromNormalizedVec re-tags it directly instead of MaskFromVec's redundant
   // sign-broadcast (a vpsrad on avx2; Highway's avx2 RebindMask is a pure no-op re-type). SVE/RVV
   // MaskFromNormalizedVec forwards to MaskFromVec (predicate/mask regs have no srai to skip).
+  static_assert(sizeof(TFromD<DTo>) == sizeof(typename MFrom::PrivateT),
+                "RebindMask: same lane width required");
   return MaskFromNormalizedVec(BitCast(d_to, VecFromMask(d_from, m)));
 }
 
@@ -1843,15 +1848,18 @@ template <class DI32, class VF>
 HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestInt(DI32 di32, VF v) noexcept {
   static_assert(std::is_same_v<TFromD<DI32>, std::int32_t>, "DemoteToNearestInt: dst is i32");
   static_assert(std::is_same_v<TFromD<DFromV<VF>>, double>, "DemoteToNearestInt: src is f64");
+  // DemoteInRangeTo / native overloads require kPow2==0; Rebind<i32, f64-tag> may yield kPow2=-1.
+  (void)di32;
+  const Simd<std::int32_t, DI32::kMaxLanes, 0> di_full;
 #if defined(HYLE_SIMD_AVX2_HAS_NATIVE_DEMOTE_NEAREST_INT) || defined(HYLE_SIMD_NEON_HAS_NATIVE_DEMOTE_NEAREST_INT)
-  return DemoteToNearestIntNative(di32, v);
+  return DemoteToNearestIntNative(di_full, v);
 #else
   const DFromV<VF> df;
   const auto kMax = Set(df, 2147483647.0);        // (double)INT32_MAX (exact)
   const auto kMin = Set(df, -2147483648.0);       // (double)INT32_MIN (exact)
   const auto lo = IfThenElse(Lt(v, kMin), kMin, v);        // -overflow -> MIN; NaN keeps v
   const auto chosen = IfThenElse(Le(lo, kMax), lo, kMax);  // NaN / +overflow -> MAX
-  return DemoteInRangeTo(di32, Round(chosen));
+  return DemoteInRangeTo(di_full, Round(chosen));
 #endif
 }
 // DemoteToNearestIntInRange(di32, v): FAST variant. Caller GUARANTEES every lane is finite and within
@@ -1865,7 +1873,9 @@ template <class DI32, class VF>
 HYLE_FORCE_INLINE VFromD<DI32> DemoteToNearestIntInRange(DI32 di32, VF v) noexcept {
   static_assert(std::is_same_v<TFromD<DI32>, std::int32_t>, "DemoteToNearestIntInRange: dst is i32");
   static_assert(std::is_same_v<TFromD<DFromV<VF>>, double>, "DemoteToNearestIntInRange: src is f64");
-  return DemoteInRangeTo(di32, Round(v));  // RNE then narrow; caller guarantees in-range
+  (void)di32;
+  const Simd<std::int32_t, DI32::kMaxLanes, 0> di_full;
+  return DemoteInRangeTo(di_full, Round(v));  // RNE then narrow; caller guarantees in-range
 }
 
 // ---- simd-18 C4: shift-and-demote2 family (2-arg only; single-vector DemoteTo @opus) ----

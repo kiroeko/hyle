@@ -8,19 +8,19 @@
 
 **关键前提**：`include/` 里**零** vendor 调用——所有头文件里的 `hwy`/`xsimd` 字样都是注释（契约对齐说明或性能标注）。公开 API 只吃裸指针，vendor include 全部关在 `src/simd/**` 内部 TU（+ 一个 container 文件），**vendor 类型永不泄漏到 include**。
 
-实际借用共 **3 处专项 kernel**，均为薄借（vendor 做真活，HYLE 只写编排 + 尾部）+ 运行期/编译期门控：
+实际借用共 **2 处专项 kernel**（vqsort + 可选 UTF-8），均为薄借 + 运行期/编译期门控。math 与 bitpack 已是 HYLE 实现。
 
-## 1. 超越函数 / math（最大借用，薄借，逐 op best-of）
+## 1. 超越函数 / math（HYLE 实现，best-of 保留）
 
 - **dispatch**：`src/simd/math/math_dispatch.cc`；decls `src/simd/math/kernels.h`
-- **借核 TU**：
-  - x86：`transcendental_xsimd.cc` / `transcendental_highway.cc` / `transcendental_highway_avx512.cc` / `transcendental_xsimd_avx512.cc`
-  - arm64：`transcendental_highway_neon.cc` / `transcendental_xsimd_neon.cc`
-  - 复数 SoA：`complex_hyle-inl.h`（cexp/clog/csqrt 借 xsimd AVX2 核；csin/ccos/ctanh/cpow 是 HYLE 编排 xsimd 原语）
+- **实现**：
+  - Highway 算法侧：`math_hyle-inl.h`（contrib/math 语义移植）+ `table_f64.h`（P2-1 N=128 f64 exp/log）
+  - xsimd 算法侧：`math_xsimd_hyle-inl.h` + `math_xsimd_body.inc`
+  - ISA TU：`transcendental_{highway,xsimd}_{avx2,avx512,neon}.cc`（符号名保留 `*_highway_*` / `*_xsimd_*` 供 best-of 接线）
+  - 复数 SoA：`complex_hyle-inl.h`（纯 HYLE 编排，依赖 port 后的 Exp/Log/SinCos/…）
   - scalar 底：`transcendental_scalar.cc`
-- **借什么**：Highway contrib/math 的 `hn::Exp/Log/Tanh/…` 和 `xsimd::exp/tanh/…` 做真向量化；HYLE 只写 batch 循环 + libm 尾。
-- **winner（逐 op 逐精度 bench 定）**：f32 多为 xsimd（exp/tanh/exp2/erf/tgamma + xsimd 独有 erfc/exp10/fmod/fdim）；Highway 赢 log/sin/cos/log2/atan/cbrt/expm1/log1p/asinh/acosh/… 及大部分。**f64 几乎全 Highway**（xsimd 只赢 erf + tgamma）。`lgamma`/`remainder`/`nextafter` 留 scalar（vendor bug）。
-- **门控**：运行期 `cpu_features().avx2/avx512`；NEON arm64 无条件。AVX-512 Highway 在 MSVC 关闭（`!defined(_MSC_VER)`，HWY_BROKEN AVX3）。
+- **winner 表不变**（编译期 per-op）：f32 多为 xsimd 算法路径（exp/tanh/exp2/erf/tgamma + erfc/exp10/fmod/fdim）；Highway 算法路径赢 log/sin/cos/…；f64 几乎全 Highway 算法路径（xsimd 路径赢 erf + tgamma）。`lgamma`/`remainder`/`nextafter` 留 scalar。
+- **门控**：运行期 `cpu_features().avx2/avx512`；NEON arm64 无条件。产品 math 不再 `#include` highway/xsimd。
 
 ## 2. vqsort（薄借，纯 Highway）
 
@@ -42,15 +42,12 @@
 
 ## 不借、全自造的部分
 
-`vec.h`/`ops.h` + 五后端（avx2/sse4/neon/scalar/scalable）的核心 op 面、RNG（xoshiro256）、cmp128、swizzle、quantize、crypto（AES/CLMul）、fp8（`cvt_avx10_2.cc` 手写 `_mm512_*`，无 Highway/xsimd）—— 100% HYLE 自己的 intrinsic。无 intdiv/RNG 借用。
+`vec.h`/`ops.h` + 五后端（avx2/sse4/neon/scalar/scalable）的核心 op 面、RNG（xoshiro256）、cmp128、swizzle、quantize、crypto（AES/CLMul）、fp8、**math**、**bitpack**—— 100% HYLE 自己的 intrinsic / 移植核。
 
-**一句话**：HYLE 自造整个核心 SIMD 面 + fp8 + bitpack；只对三个"难自己超越"的专项 kernel（超越函数 / vqsort / 可选 UTF-8）做薄借，全关在 `src/simd/**` 内部 TU，vendor 类型不入 `include/`。
+**一句话**：HYLE 自造核心 SIMD 面 + fp8 + bitpack + math；只对 vqsort 与可选 UTF-8 做薄借，全关在 `src/**` 内部 TU，vendor 类型不入 `include/`。
 
 ## vendor 摘除状态
 
-simd-20 的 X0 已将**bench** 侧 Highway/xsimd 改为 `HYLE_BENCH_VENDOR_DIR` 中 SHA pin 的外部、干净
-Git checkout；它们是每张移植卡不变的对照组。产品仍暂时使用本页列出的 `third_party/` math/vqsort 借核，直到 X2 math、X3 vqsort
-分别完成 oracle 与 A/B 闸门。bitpack 的 X1 已迁为 HYLE 内核；`simdutf` 不在本轮范围。
+simd-20：X0 bench 外部 pin、X1 bitpack、**X2 math** 已落地。产品 `hyle_simd` 的 CMake 只为 **vqsort** 保留 `third_party/highway` include；**不再** include `third_party/xsimd`。剩余 X3 vqsort → X4 删 `third_party/` 与闸门收口。`simdutf` 不在本轮范围。
 
-借核与移植核都必须过 round-trip/oracle（已抓到 Highway Pack16 + xsimd lgamma 两个 vendor bug），保持
-"借不等于信"。完整阶段与验证见 [`../milestones/simd-20-vendor-extraction.md`](../milestones/simd-20-vendor-extraction.md)。
+移植核过 round-trip/oracle（已抓到 Highway Pack16 + xsimd lgamma 两个 vendor bug），保持"借不等于信"。完整阶段与验证见 [`../milestones/simd-20-vendor-extraction.md`](../milestones/simd-20-vendor-extraction.md)。

@@ -904,7 +904,11 @@ HYLE_FORCE_INLINE Vec512<DstT, N> ConvertTo(Simd<DstT, N, 0>, Vec512<SrcT, N> v)
     r.raw = _mm512_cvttps_epi32(v.raw);        // truncate toward zero
   else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, float>)
     r.raw = _mm512_cvtepi32_ps(v.raw);
-  else static_assert(sizeof(DstT) == 0, "avx512 ConvertTo: only f32<->i32 (same width) supported");
+  else if constexpr (std::is_same_v<SrcT, std::int64_t> && std::is_same_v<DstT, double>)
+    r.raw = _mm512_cvtepi64_pd(v.raw);         // AVX-512DQ
+  else if constexpr (std::is_same_v<SrcT, double> && std::is_same_v<DstT, std::int64_t>)
+    r.raw = _mm512_cvttpd_epi64(v.raw);        // AVX-512DQ, truncate toward zero
+  else static_assert(sizeof(DstT) == 0, "avx512 ConvertTo: f32<->i32 or f64<->i64 only");
   return r;
 }
 template <typename DstT, std::size_t N, typename SrcT>

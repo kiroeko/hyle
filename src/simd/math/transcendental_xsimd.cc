@@ -1,13 +1,6 @@
-// xsimd-accelerated AVX2 transcendentals (8-wide). BORROWS xsimd's verified math cores
-// (xsimd::exp/tanh) -- HYLE does not hand-roll these (charter: 借验证核不手搓). The same-ISA
-// bench (math_bench) found xsimd's exp/tanh polynomials fastest at the ~3.5-ULP class
-// (Highway wins log), so per-op best-of-breed (math_dispatch.cc) uses xsimd for EXP/TANH
-// ONLY -- hence log is not defined here (it would be dead code: Highway serves log).
-//
-// x86-only: xsimd::batch<float> lowers to the 8-wide AVX2 register here, so the TU compiles
-// to nothing on non-x86 (math_dispatch falls to the scalar libm floor there). Header-only +
-// vendored in third_party, so it can't be missing -- no opt-in define gates it, only the
-// architecture does. Compiled at -mavx2; reached only when cpu_features().avx2.
+// xsimd-algorithm AVX2 transcendentals (8-wide), now HYLE D-tag product kernels
+// (math_xsimd_hyle-inl.h). Symbol names keep the historical *_xsimd_avx2 suffix used by
+// math_dispatch / benches. Algorithms/constants from xsimd SHA 5d2490f.
 #include "hyle/platform.h"  // HYLE_ARCH_X64 -- MUST precede the guard below
 
 #if defined(HYLE_ARCH_X64)
@@ -18,222 +11,241 @@
 #include <complex>
 #include <cstddef>
 
-#include "xsimd/xsimd.hpp"
+#define HYLE_SIMD_TARGET_AVX2
+#include "hyle/simd/vec.h"
+#include "src/simd/math/math_xsimd_hyle-inl.h"
+#include "src/simd/math/math_xsimd_body.inc"
 #include "src/simd/math/complex_hyle-inl.h"
 
 namespace hyle::simd::detail {
-
-namespace {
-using batch = xsimd::batch<float>;
-using cbatch = xsimd::batch<std::complex<float>>;
-constexpr std::size_t kCW = cbatch::size;  // complex lanes per batch (== float batch size)
-constexpr std::size_t kW = batch::size;  // 8 at AVX2
-using dbatch = xsimd::batch<double>;
-constexpr std::size_t kDW = dbatch::size;  // 4 at AVX2
-}  // namespace
+using namespace hyle::simd;
+using namespace xsimd_hyle;
+using xsimd_body::unary_loop;
+using xsimd_body::binary_loop;
 
 void exp_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::exp(batch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::exp(src[i]);  // tail = libm (scalar oracle)
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Exp(d, v); },
+             [](float x) { return std::exp(x); });
 }
 void tanh_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::tanh(batch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::tanh(src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Tanh(d, v); },
+             [](float x) { return std::tanh(x); });
 }
 
-// f64 (4-wide AVX2) borrow cores. xsimd::batch<double> lowers to the 4-lane ymm. Same verified
-// polynomials as the f32 path, just double precision. Winner (xsimd vs Highway) is bench-decided
-// per op in math_dispatch -- these exist so best-of can pick them.
 void exp_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::exp(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::exp(src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Exp(d, v); },
+             [](double x) { return std::exp(x); });
 }
 void log_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::log(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::log(src[i]);
+  // Log remains the Highway product winner; keep the symbol for dispatch/benches.
+  unary_loop(src, dst, n, [](auto d, auto v) { return Log(d, v); },
+             [](double x) { return std::log(x); });
 }
 void tanh_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::tanh(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::tanh(src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Tanh(d, v); },
+             [](double x) { return std::tanh(x); });
 }
-// erf f64: the ONE remaining op xsimd wins at f64 (bench: xsimd 1.3x Highway -- Highway wins the
-// other 10). tgamma f64: xsimd-only (Highway has no gamma). lgamma stays scalar (the f32 vectorized
-// lgamma lane-mixing bug is an algorithm bug -- assume it affects f64 too; not worth the risk).
 void erf_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::erf(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::erf(src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Erf(d, v); },
+             [](double x) { return std::erf(x); });
 }
 void tgamma_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::tgamma(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Tgamma(d, v); },
+             [](double x) { return std::tgamma(x); });
 }
 
-// simd-09: xsimd wins exp2/erf at the same ISA (bench-decided; Highway serves the rest).
 void exp2_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::exp2(batch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::exp2(src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Exp2(d, v); },
+             [](float x) { return std::exp2(x); });
 }
 void erf_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::erf(batch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::erf(src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Erf(d, v); },
+             [](float x) { return std::erf(x); });
 }
-
-// xsimd-ONLY borrow: Highway's contrib/math has no gamma, so there is no best-of race -- xsimd
-// is the single source. Only TGAMMA is borrowed: xsimd's vectorized LGAMMA has a lane-mixing bug
-// (a lane in [1.25,1.5) gets the wrong argument-reduction kernel when it shares a vector with a
-// lane in [0.75,1.25); reproduced GCC-x86 + MSVC-x86 + GCC-NEON => algorithm, not codegen). So
-// lgamma stays on the scalar libm reference. See docs/debug/xsimd-lgamma-lane-mixing-hunt.md.
 void tgamma_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::tgamma(batch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::tgamma(src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Tgamma(d, v); },
+             [](float x) { return std::tgamma(x); });
 }
 
 void hypot_in_range_f32_xsimd_avx2(const float* a, const float* b, float* dst,
-                               std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::hypot(batch::load_unaligned(a + i), batch::load_unaligned(b + i))
-        .store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::sqrt(a[i] * a[i] + b[i] * b[i]);
+                                   std::size_t n) noexcept {
+  binary_loop(a, b, dst, n, [](auto d, auto x, auto y) { return xsimd_hyle::HypotInRange(d, x, y); },
+              [](float x, float y) { return std::sqrt(x * x + y * y); });
 }
 
-// ---- simd-18 批G: xsimd-only extras (Highway has none of these). f32 (8-wide) + f64 (4-wide).
-// unary erfc/exp10; binary fmod/remainder/nextafter/fdim. Tails use libm (the scalar oracle).
 void erfc_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::erfc(batch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::erfc(src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Erfc(d, v); },
+             [](float x) { return std::erfc(x); });
 }
 void exp10_f32_xsimd_avx2(const float* src, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::exp10(batch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::pow(10.0f, src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Exp10(d, v); },
+             [](float x) { return std::pow(10.0f, x); });
 }
 void fmod_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::fmod(batch::load_unaligned(a + i), batch::load_unaligned(b + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::fmod(a[i], b[i]);
+  binary_loop(a, b, dst, n, [](auto d, auto x, auto y) { return xsimd_hyle::Fmod(d, x, y); },
+              [](float x, float y) { return std::fmod(x, y); });
 }
 void remainder_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::remainder(batch::load_unaligned(a + i), batch::load_unaligned(b + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::remainder(a[i], b[i]);
+  // simd-20: remainder stays scalar (not an xsimd product port target).
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::remainder(a[i], b[i]);
 }
 void nextafter_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::nextafter(batch::load_unaligned(a + i), batch::load_unaligned(b + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::nextafter(a[i], b[i]);
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::nextafter(a[i], b[i]);
 }
 void fdim_f32_xsimd_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kW <= n; i += kW)
-    xsimd::fdim(batch::load_unaligned(a + i), batch::load_unaligned(b + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::fdim(a[i], b[i]);
+  binary_loop(a, b, dst, n, [](auto d, auto x, auto y) { return xsimd_hyle::Fdim(d, x, y); },
+              [](float x, float y) { return std::fdim(x, y); });
 }
 void erfc_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::erfc(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::erfc(src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Erfc(d, v); },
+             [](double x) { return std::erfc(x); });
 }
 void exp10_f64_xsimd_avx2(const double* src, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::exp10(dbatch::load_unaligned(src + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::pow(10.0, src[i]);
+  unary_loop(src, dst, n, [](auto d, auto v) { return xsimd_hyle::Exp10(d, v); },
+             [](double x) { return std::pow(10.0, x); });
 }
 void fmod_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::fmod(dbatch::load_unaligned(a + i), dbatch::load_unaligned(b + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::fmod(a[i], b[i]);
+  binary_loop(a, b, dst, n, [](auto d, auto x, auto y) { return xsimd_hyle::Fmod(d, x, y); },
+              [](double x, double y) { return std::fmod(x, y); });
 }
-void remainder_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::remainder(dbatch::load_unaligned(a + i), dbatch::load_unaligned(b + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::remainder(a[i], b[i]);
+void remainder_f64_xsimd_avx2(const double* a, const double* b, double* dst,
+                              std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::remainder(a[i], b[i]);
 }
-void nextafter_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::nextafter(dbatch::load_unaligned(a + i), dbatch::load_unaligned(b + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::nextafter(a[i], b[i]);
+void nextafter_f64_xsimd_avx2(const double* a, const double* b, double* dst,
+                              std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) dst[i] = std::nextafter(a[i], b[i]);
 }
 void fdim_f64_xsimd_avx2(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kDW <= n; i += kDW)
-    xsimd::fdim(dbatch::load_unaligned(a + i), dbatch::load_unaligned(b + i)).store_unaligned(dst + i);
-  for (; i < n; ++i) dst[i] = std::fdim(a[i], b[i]);
+  binary_loop(a, b, dst, n, [](auto d, auto x, auto y) { return xsimd_hyle::Fdim(d, x, y); },
+              [](double x, double y) { return std::fdim(x, y); });
 }
 
-// ---- complex transcendentals (SoA planar re/im) ------------------------------------
-// xsimd owns the cexp/clog/csqrt borrow cores. Its ctanh/cpow paths remain same-TU benchmark
-// controls for HYLE's SoA candidates. Tail = scalar std::complex; Highway has no complex path.
+// ---- complex SoA ------------------------------------------------------------
+// cexp/clog/csqrt: thin SoA loops using HYLE math (no xsimd batch<complex>).
+// csin/ccos/ctanh/cpow: HYLE-owned complex_hyle-inl.h (also pure HYLE now).
+
 namespace {
 using ccf = std::complex<float>;
-template <cbatch (*Fn)(const cbatch&), ccf (*Sc)(const ccf&)>
-void cunary_x(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept {
+
+void cexp_loop(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept {
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
-  for (; i + kCW <= n; i += kCW)
-    Fn(cbatch::load_unaligned(sr + i, si + i)).store_unaligned(dr + i, di + i);
-  for (; i < n; ++i) { ccf r = Sc(ccf(sr[i], si[i])); dr[i] = r.real(); di[i] = r.imag(); }
+  for (; i + w <= n; i += w) {
+    const auto re = LoadU(d, sr + i);
+    const auto im = LoadU(d, si + i);
+    const auto mag = xsimd_hyle::Exp(d, re);
+    auto s = Zero(d), c = Zero(d);
+    SinCos(d, im, s, c);
+    StoreU(Mul(mag, c), d, dr + i);
+    StoreU(Mul(mag, s), d, di + i);
+  }
+  for (; i < n; ++i) {
+    const ccf r = std::exp(ccf(sr[i], si[i]));
+    dr[i] = r.real();
+    di[i] = r.imag();
+  }
 }
-cbatch xb_exp(const cbatch& z) { return xsimd::exp(z); }   ccf sc_exp(const ccf& z) { return std::exp(z); }
-cbatch xb_log(const cbatch& z) { return xsimd::log(z); }   ccf sc_log(const ccf& z) { return std::log(z); }
-cbatch xb_sqrt(const cbatch& z) { return xsimd::sqrt(z); } ccf sc_sqrt(const ccf& z) { return std::sqrt(z); }
-cbatch xb_tanh(const cbatch& z) { return xsimd::tanh(z); } ccf sc_tanh(const ccf& z) { return std::tanh(z); }
+
+void clog_loop(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept {
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) {
+    const auto re = LoadU(d, sr + i);
+    const auto im = LoadU(d, si + i);
+    StoreU(Log(d, xsimd_hyle::HypotInRange(d, re, im)), d, dr + i);
+    StoreU(Atan2(d, im, re), d, di + i);
+  }
+  for (; i < n; ++i) {
+    const ccf r = std::log(ccf(sr[i], si[i]));
+    dr[i] = r.real();
+    di[i] = r.imag();
+  }
+}
+
+void csqrt_loop(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept {
+  // Branch-cut-correct principal sqrt via magnitude + half-angle; exceptional lanes use libm.
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) {
+    const auto re = LoadU(d, sr + i);
+    const auto im = LoadU(d, si + i);
+    const auto rho = xsimd_hyle::HypotInRange(d, re, im);
+    const auto half = Set(d, 0.5f);
+    // t = sqrt((rho + |re|) / 2)
+    const auto t = Sqrt(Mul(Add(rho, Abs(re)), half));
+    // if re >= 0: (t, im/(2t)); else: (|im|/(2t), copysign(t, im))
+    const auto two_t = Add(t, t);
+    const auto safe_t = IfThenElse(Eq(t, Zero(d)), Set(d, 1.0f), t);
+    const auto safe_two_t = IfThenElse(Eq(t, Zero(d)), Set(d, 1.0f), two_t);
+    const auto pos = Ge(re, Zero(d));
+    const auto out_re = IfThenElse(pos, t, Div(Abs(im), safe_two_t));
+    const auto out_im = IfThenElse(pos, Div(im, safe_two_t), CopySign(t, im));
+    // zero/inf/nan lanes: scalar fixup below if any exceptional
+    const auto exceptional =
+        Or(Or(IsNaN(re), IsNaN(im)), Or(IsInf(re), IsInf(im)));
+    StoreU(out_re, d, dr + i);
+    StoreU(out_im, d, di + i);
+    if (!AllFalse(d, exceptional) || !AllFalse(d, Eq(t, Zero(d)))) {
+      for (std::size_t lane = 0; lane < w; ++lane) {
+        const ccf r = std::sqrt(ccf(sr[i + lane], si[i + lane]));
+        // Only rewrite lanes that may be wrong under the fast formula.
+        if (!std::isfinite(sr[i + lane]) || !std::isfinite(si[i + lane]) ||
+            (sr[i + lane] == 0.0f && si[i + lane] == 0.0f)) {
+          dr[i + lane] = r.real();
+          di[i + lane] = r.imag();
+        }
+      }
+    }
+    (void)safe_t;
+  }
+  for (; i < n; ++i) {
+    const ccf r = std::sqrt(ccf(sr[i], si[i]));
+    dr[i] = r.real();
+    di[i] = r.imag();
+  }
+}
 }  // namespace
-void cexp_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary_x<xb_exp, sc_exp>(sr, si, dr, di, n); }
-void clog_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary_x<xb_log, sc_log>(sr, si, dr, di, n); }
-void csqrt_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary_x<xb_sqrt, sc_sqrt>(sr, si, dr, di, n); }
-void csin_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di,
+
+void cexp_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di,
                          std::size_t n) noexcept {
+  cexp_loop(sr, si, dr, di, n);
+}
+void clog_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di,
+                         std::size_t n) noexcept {
+  clog_loop(sr, si, dr, di, n);
+}
+void csqrt_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di,
+                          std::size_t n) noexcept {
+  csqrt_loop(sr, si, dr, di, n);
+}
+void csin_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di,
+                        std::size_t n) noexcept {
   complex_sincos_hyle<false>(sr, si, dr, di, n);
 }
 void ccos_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di,
-                         std::size_t n) noexcept {
+                        std::size_t n) noexcept {
   complex_sincos_hyle<true>(sr, si, dr, di, n);
 }
 void ctanh_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di,
-                          std::size_t n) noexcept {
+                         std::size_t n) noexcept {
   complex_ctanh_hyle(sr, si, dr, di, n);
 }
-void ctanh_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary_x<xb_tanh, sc_tanh>(sr, si, dr, di, n); }
+void ctanh_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di,
+                          std::size_t n) noexcept {
+  // Historical xsimd-control symbol: same HYLE SoA path (zero-xsimd product).
+  complex_ctanh_hyle(sr, si, dr, di, n);
+}
 void cpow_f32_hyle_avx2(const float* zr, const float* zi, const float* wr, const float* wi,
-                         float* dr, float* di, std::size_t n) noexcept {
+                        float* dr, float* di, std::size_t n) noexcept {
   complex_cpow_hyle(zr, zi, wr, wi, dr, di, n);
 }
-void cpow_f32_xsimd_avx2(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept {
-  std::size_t i = 0;
-  for (; i + kCW <= n; i += kCW)
-    xsimd::pow(cbatch::load_unaligned(zr + i, zi + i), cbatch::load_unaligned(wr + i, wi + i)).store_unaligned(dr + i, di + i);
-  for (; i < n; ++i) { ccf r = std::pow(ccf(zr[i], zi[i]), ccf(wr[i], wi[i])); dr[i] = r.real(); di[i] = r.imag(); }
+void cpow_f32_xsimd_avx2(const float* zr, const float* zi, const float* wr, const float* wi,
+                         float* dr, float* di, std::size_t n) noexcept {
+  complex_cpow_hyle(zr, zi, wr, wi, dr, di, n);
 }
 
 }  // namespace hyle::simd::detail

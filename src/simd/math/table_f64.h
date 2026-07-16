@@ -4,17 +4,18 @@
 //
 // Arm's AdvSIMD reference uses N=128 segments: exp uses a scale table and degree-4
 // exp(r)-1 polynomial; log uses {1/c, log(c)} table entries and degree-5 log1p(r)-r.
-// This Highway form preserves that arithmetic across AVX2, AVX-512 and NEON. Exceptional
+// This HYLE form preserves that arithmetic across AVX2, AVX-512 and NEON. Exceptional
 // lanes are deliberately excluded by the callers and handled by scalar libm there.
 #pragma once
 
 #include <cstddef>
 #include <cstdint>
 
-#include "hwy/highway.h"
+#include "hyle/macros.h"
+#include "hyle/simd/vec.h"
 
 namespace hyle::simd::detail::table_f64 {
-namespace hn = hwy::HWY_NAMESPACE;
+using namespace hyle::simd;
 
 inline constexpr std::size_t kTableBits = 7;
 inline constexpr std::size_t kTableSize = std::size_t{1} << kTableBits;
@@ -126,66 +127,66 @@ alignas(64) inline constexpr double kLogC[kTableSize] = {
 };
 
 template <class D, class V>
-HWY_INLINE V ExpNormal(D d, V x) noexcept {
-  const auto du64 = hn::Rebind<std::uint64_t, D>();
-  const auto di64 = hn::Rebind<std::int64_t, D>();
-  const auto shift = hn::Set(d, 0x1.8p52);
+HYLE_FORCE_INLINE V ExpNormal(D d, V x) noexcept {
+  const auto du64 = Rebind<std::uint64_t, D>();
+  const auto di64 = Rebind<std::int64_t, D>();
+  const auto shift = Set(d, 0x1.8p52);
 
   // n = round(x * N/ln2); its low kTableBits select 2^(j/N).
-  const V z = hn::MulAdd(x, hn::Set(d, 0x1.71547652b82fep7), shift);
-  const V n = hn::Sub(z, shift);
-  const auto bits = hn::BitCast(du64, z);
-  const auto index = hn::BitCast(
-      di64, hn::And(bits, hn::Set(du64, static_cast<std::uint64_t>(kTableMask))));
+  const V z = MulAdd(x, Set(d, 0x1.71547652b82fep7), shift);
+  const V n = Sub(z, shift);
+  const auto bits = BitCast(du64, z);
+  const auto index = BitCast(
+      di64, And(bits, Set(du64, static_cast<std::uint64_t>(kTableMask))));
 
-  V r = hn::MulAdd(n, hn::Set(d, -0x1.62e42fefa39efp-8), x);
-  r = hn::MulAdd(n, hn::Set(d, -0x1.abc9e3b39803f3p-63), r);
+  V r = MulAdd(n, Set(d, -0x1.62e42fefa39efp-8), x);
+  r = MulAdd(n, Set(d, -0x1.abc9e3b39803f3p-63), r);
 
   // exp(r)-1 = r + r^2 * (c0 + c1*r + c2*r^2).
-  const V r2 = hn::Mul(r, r);
-  V poly = hn::MulAdd(hn::Set(d, 0x1.55555c75adbb2p-3), r,
-                       hn::Set(d, 0x1.ffffffffffd43p-2));
-  poly = hn::MulAdd(hn::Set(d, 0x1.55555da646206p-5), r2, poly);
-  poly = hn::MulAdd(poly, r2, r);
+  const V r2 = Mul(r, r);
+  V poly = MulAdd(Set(d, 0x1.55555c75adbb2p-3), r,
+                       Set(d, 0x1.ffffffffffd43p-2));
+  poly = MulAdd(Set(d, 0x1.55555da646206p-5), r2, poly);
+  poly = MulAdd(poly, r2, r);
 
-  const auto scale_bits = hn::Add(hn::GatherIndex(du64, kExpScaleBits, index),
-                                  hn::ShiftLeft<52 - kTableBits>(bits));
-  const V scale = hn::BitCast(d, scale_bits);
-  return hn::MulAdd(scale, poly, scale);
+  const auto scale_bits = Add(GatherIndex(du64, kExpScaleBits, index),
+                                  ShiftLeft<52 - kTableBits>(bits));
+  const V scale = BitCast(d, scale_bits);
+  return MulAdd(scale, poly, scale);
 }
 
 template <class D, class V>
-HWY_INLINE V LogNormal(D d, V x) noexcept {
-  const auto du64 = hn::Rebind<std::uint64_t, D>();
-  const auto di64 = hn::Rebind<std::int64_t, D>();
-  const auto off = hn::Set(du64, 0x3fe6900900000000ULL);
-  const auto sign_exp = hn::Set(du64, 0xfff0000000000000ULL);
-  const auto bits = hn::BitCast(du64, x);
+HYLE_FORCE_INLINE V LogNormal(D d, V x) noexcept {
+  const auto du64 = Rebind<std::uint64_t, D>();
+  const auto di64 = Rebind<std::int64_t, D>();
+  const auto off = Set(du64, 0x3fe6900900000000ULL);
+  const auto sign_exp = Set(du64, 0xfff0000000000000ULL);
+  const auto bits = BitCast(du64, x);
 
   // x = 2^k z, z is exact in [off, 2*off); table index chooses c near z.
-  const auto tmp = hn::Sub(bits, off);
-  const auto index = hn::BitCast(
-      di64, hn::And(hn::ShiftRight<52 - kTableBits>(tmp),
-                    hn::Set(du64, static_cast<std::uint64_t>(kTableMask))));
-  const auto zbits = hn::Sub(bits, hn::And(tmp, sign_exp));
-  const V z = hn::BitCast(d, zbits);
-  const V invc = hn::GatherIndex(d, kLogInvC, index);
-  const V logc = hn::GatherIndex(d, kLogC, index);
-  const V kd = hn::ConvertTo(d, hn::ShiftRight<52>(hn::BitCast(di64, tmp)));
-  const V ln2 = hn::Set(d, 0x1.62e42fefa39efp-1);
+  const auto tmp = Sub(bits, off);
+  const auto index = BitCast(
+      di64, And(ShiftRight<52 - kTableBits>(tmp),
+                    Set(du64, static_cast<std::uint64_t>(kTableMask))));
+  const auto zbits = Sub(bits, And(tmp, sign_exp));
+  const V z = BitCast(d, zbits);
+  const V invc = GatherIndex(d, kLogInvC, index);
+  const V logc = GatherIndex(d, kLogC, index);
+  const V kd = ConvertTo(d, ShiftRight<52>(BitCast(di64, tmp)));
+  const V ln2 = Set(d, 0x1.62e42fefa39efp-1);
 
-  const V r = hn::MulAdd(z, invc, hn::Set(d, -1.0));
-  const V hi = hn::MulAdd(kd, ln2, hn::Add(logc, r));
-  const V r2 = hn::Mul(r, r);
+  const V r = MulAdd(z, invc, Set(d, -1.0));
+  const V hi = MulAdd(kd, ln2, Add(logc, r));
+  const V r2 = Mul(r, r);
 
   // log1p(r)-r = r^2 * (c0 + c1*r + r^2*(c2 + c3*r + c4*r^2)).
-  const V p = hn::MulAdd(r, hn::Set(d, 0x1.55555555170d4p-2),
-                          hn::Set(d, -0x1.ffffffffffff7p-2));
-  V q = hn::MulAdd(r, hn::Set(d, 0x1.999b2e90e94cap-3),
-                   hn::Set(d, -0x1.0000000399c27p-2));
-  q = hn::MulAdd(r2, hn::Set(d, -0x1.554e550bd501ep-3), q);
-  q = hn::MulAdd(q, r2, p);
-  return hn::MulAdd(q, r2, hi);
+  const V p = MulAdd(r, Set(d, 0x1.55555555170d4p-2),
+                          Set(d, -0x1.ffffffffffff7p-2));
+  V q = MulAdd(r, Set(d, 0x1.999b2e90e94cap-3),
+                   Set(d, -0x1.0000000399c27p-2));
+  q = MulAdd(r2, Set(d, -0x1.554e550bd501ep-3), q);
+  q = MulAdd(q, r2, p);
+  return MulAdd(q, r2, hi);
 }
 
 }  // namespace hyle::simd::detail::table_f64

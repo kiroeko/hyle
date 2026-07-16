@@ -7,9 +7,16 @@
 #include <cstdint>
 
 #include "hyle/macros.h"
-#include "xsimd/xsimd.hpp"
+#include "hyle/simd/vec.h"
+#include "src/simd/math/math_hyle-inl.h"
+#include "src/simd/math/math_xsimd_hyle-inl.h"
+
+// Pure HYLE SoA complex kernels. Requires HYLE_SIMD_TARGET_* defined before vec.h
+// in the including TU (same contract as math_hyle / math_xsimd ports).
 
 namespace hyle::simd::detail {
+using namespace hyle::simd;
+using namespace xsimd_hyle;
 
 HYLE_FORCE_INLINE bool complex_sincos_regular_lane(float real, float imag) noexcept {
   const std::uint32_t real_bits = std::bit_cast<std::uint32_t>(real);
@@ -22,33 +29,33 @@ HYLE_FORCE_INLINE bool complex_sincos_regular_lane(float real, float imag) noexc
   return (imag_bits & 0x7FFFFFFFu) <= std::bit_cast<std::uint32_t>(88.0f);
 }
 
-// SoA complex sin/cos. xsimd's batch<complex> path independently computes sin+cos and
-// sinh+cosh, duplicating both argument reduction and exp. One real sincos plus one exp/recriprocal
-// yields both pairs while preserving signed zero on sinh via copysign.
+// SoA complex sin/cos. One real sincos plus one expm1-derived sinh/cosh pair.
 template <bool kCos>
 HYLE_FORCE_INLINE void complex_sincos_hyle(const float* sr, const float* si, float* dr,
                                            float* di, std::size_t n) noexcept {
-  using Batch = xsimd::batch<float>;
-  constexpr std::size_t width = Batch::size;
-  const Batch half(0.5f);
-  const Batch one(1.0f);
+  const ScalableTag<float> d;
+  const std::size_t width = Lanes(d);
+  const auto half = Set(d, 0.5f);
+  const auto one = Set(d, 1.0f);
+  const auto two = Set(d, 2.0f);
   std::size_t i = 0;
   for (; i + width <= n; i += width) {
-    const Batch x = Batch::load_unaligned(sr + i);
-    const Batch y = Batch::load_unaligned(si + i);
-    const bool regular = xsimd::all(x != Batch(0.0f)) &&
-                         xsimd::all(xsimd::abs(x) <= Batch(3.402823466e38f)) &&
-                         xsimd::all(xsimd::abs(y) <= Batch(88.0f));
-    const auto sc = xsimd::sincos(x);
-    const Batch sx = xsimd::select(x == Batch(0.0f), x, sc.first);
-    const Batch t = xsimd::expm1(xsimd::abs(y));
-    const Batch e = one + t;
-    const Batch ch = one + (t * t) / (Batch(2.0f) * e);
-    Batch sh = xsimd::copysign(half * t * (e + one) / e, y);
-    sh = xsimd::select(y == Batch(0.0f), y, sh);
+    const auto x = LoadU(d, sr + i);
+    const auto y = LoadU(d, si + i);
+    const bool regular = AllTrue(d, Ne(x, Zero(d))) &&
+                         AllTrue(d, Le(Abs(x), Set(d, 3.402823466e38f))) &&
+                         AllTrue(d, Le(Abs(y), Set(d, 88.0f)));
+    auto sx = Zero(d), cx = Zero(d);
+    SinCos(d, x, sx, cx);
+    sx = IfThenElse(Eq(x, Zero(d)), x, sx);
+    const auto t = Expm1(d, Abs(y));
+    const auto e = Add(one, t);
+    const auto ch = Add(one, Div(Mul(t, t), Mul(two, e)));
+    auto sh = CopySign(Div(Mul(Mul(half, t), Add(e, one)), e), y);
+    sh = IfThenElse(Eq(y, Zero(d)), y, sh);
     std::uint32_t exceptional = 0;
-    float exceptional_re[width];
-    float exceptional_im[width];
+    float exceptional_re[64];
+    float exceptional_im[64];
     if (!regular) {
       for (std::size_t lane = 0; lane < width; ++lane) {
         const float real = sr[i + lane];
@@ -63,11 +70,11 @@ HYLE_FORCE_INLINE void complex_sincos_hyle(const float* sr, const float* si, flo
     }
 
     if constexpr (kCos) {
-      (sc.second * ch).store_unaligned(dr + i);
-      (-(sx * sh)).store_unaligned(di + i);
+      StoreU(Mul(cx, ch), d, dr + i);
+      StoreU(Neg(Mul(sx, sh)), d, di + i);
     } else {
-      (sx * ch).store_unaligned(dr + i);
-      (sc.second * sh).store_unaligned(di + i);
+      StoreU(Mul(sx, ch), d, dr + i);
+      StoreU(Mul(cx, sh), d, di + i);
     }
     if (exceptional != 0) {
       for (std::size_t lane = 0; lane < width; ++lane) {
@@ -89,7 +96,7 @@ HYLE_FORCE_INLINE bool complex_ctanh_regular_lane(float real, float imag, float 
   constexpr std::uint32_t kAbs = 0x7FFFFFFFu;
   constexpr std::uint32_t kExponent = 0x7F800000u;
   constexpr std::uint32_t kMinNormal = 0x00800000u;
-  constexpr std::uint32_t kMaxSafeImag = 0x7EFFffffu;  // max finite / 2: 2 * imag stays finite
+  constexpr std::uint32_t kMaxSafeImag = 0x7EFFffffu;
   const std::uint32_t real_bits = std::bit_cast<std::uint32_t>(real);
   const std::uint32_t imag_bits = std::bit_cast<std::uint32_t>(imag);
   const std::uint32_t abs_real = real_bits & kAbs;
@@ -102,64 +109,62 @@ HYLE_FORCE_INLINE bool complex_ctanh_regular_lane(float real, float imag, float 
   return std::isfinite(denominator) && std::abs(denominator) > 0.01f;
 }
 
-// SoA complex tanh. xsimd's complex path computes sin/cos and sinh/cosh independently. This
-// computes sincos(2y) once and uses expm1(|2x|) to derive both hyperbolic terms without losing
-// small real parts. Large real parts instead use exp(-|2x|), avoiding overflow. Near poles and
-// other exceptional lanes use std::complex lane-by-lane.
 HYLE_FORCE_INLINE void complex_ctanh_hyle(const float* sr, const float* si, float* dr, float* di,
                                           std::size_t n) noexcept {
-  using Batch = xsimd::batch<float>;
-  constexpr std::size_t width = Batch::size;
-  const Batch one(1.0f);
-  const Batch half(0.5f);
-  const Batch two(2.0f);
-  const Batch min_normal(1.17549435e-38f);
-  const Batch max_safe_imag(1.701411733e38f);
+  const ScalableTag<float> d;
+  const std::size_t width = Lanes(d);
+  const auto one = Set(d, 1.0f);
+  const auto half = Set(d, 0.5f);
+  const auto two = Set(d, 2.0f);
+  const auto min_normal = Set(d, 1.17549435e-38f);
+  const auto max_safe_imag = Set(d, 1.701411733e38f);
   std::size_t i = 0;
   for (; i + width <= n; i += width) {
-    const Batch x = Batch::load_unaligned(sr + i);
-    const Batch y = Batch::load_unaligned(si + i);
-    const Batch abs_x = xsimd::abs(x);
-    const Batch abs_y = xsimd::abs(y);
-    if (xsimd::all(abs_x > Batch(20.0f)) &&
-        xsimd::all(abs_x <= Batch(3.402823466e38f)) &&
-        xsimd::all(abs_y >= min_normal) && xsimd::all(abs_y <= max_safe_imag)) {
-      const auto large_sc = xsimd::sincos(two * y);
-      xsimd::copysign(one, x).store_unaligned(dr + i);
-      xsimd::copysign(Batch(0.0f), large_sc.first).store_unaligned(di + i);
+    const auto x = LoadU(d, sr + i);
+    const auto y = LoadU(d, si + i);
+    const auto abs_x = Abs(x);
+    const auto abs_y = Abs(y);
+    if (AllTrue(d, Gt(abs_x, Set(d, 20.0f))) &&
+        AllTrue(d, Le(abs_x, Set(d, 3.402823466e38f))) &&
+        AllTrue(d, Ge(abs_y, min_normal)) && AllTrue(d, Le(abs_y, max_safe_imag))) {
+      auto s = Zero(d), c = Zero(d);
+      SinCos(d, Mul(two, y), s, c);
+      StoreU(CopySign(one, x), d, dr + i);
+      StoreU(CopySign(Zero(d), s), d, di + i);
       continue;
     }
-    const auto sc = xsimd::sincos(two * y);
-    const Batch t = xsimd::expm1(two * xsimd::min(abs_x, Batch(20.0f)));
-    const Batch e = one + t;
-    const Batch ch = one + (t * t) / (two * e);
-    const Batch sh = xsimd::copysign(half * t * (e + one) / e, x);
-    const Batch denominator = ch + sc.second;
-    const auto large = abs_x > Batch(20.0f);
-    Batch out_re = sh / denominator;
-    Batch out_im = sc.first / denominator;
-    Batch regular_denominator = xsimd::abs(denominator);
-    if (!xsimd::all(abs_x <= Batch(20.0f))) {
-      const Batch q = xsimd::exp(-(two * abs_x));
-      const Batch q2 = q * q;
-      const Batch large_denominator = one + q2 + two * q * sc.second;
-      const Batch large_re = xsimd::copysign((one - q2) / large_denominator, x);
-      const Batch large_im = (two * q * sc.first) / large_denominator;
-      out_re = xsimd::select(large, large_re, out_re);
-      out_im = xsimd::select(large, large_im, out_im);
-      regular_denominator = xsimd::select(large, one, regular_denominator);
+    auto s = Zero(d), c = Zero(d);
+    SinCos(d, Mul(two, y), s, c);
+    const auto t = Expm1(d, Mul(two, Min(abs_x, Set(d, 20.0f))));
+    const auto e = Add(one, t);
+    const auto ch = Add(one, Div(Mul(t, t), Mul(two, e)));
+    const auto sh = CopySign(Div(Mul(Mul(half, t), Add(e, one)), e), x);
+    const auto denominator = Add(ch, c);
+    const auto large = Gt(abs_x, Set(d, 20.0f));
+    auto out_re = Div(sh, denominator);
+    auto out_im = Div(s, denominator);
+    auto regular_denominator = Abs(denominator);
+    if (!AllTrue(d, Le(abs_x, Set(d, 20.0f)))) {
+      const auto q = xsimd_hyle::Exp(d, Neg(Mul(two, abs_x)));
+      const auto q2 = Mul(q, q);
+      const auto large_denominator = Add(Add(one, q2), Mul(Mul(two, q), c));
+      const auto large_re = CopySign(Div(Sub(one, q2), large_denominator), x);
+      const auto large_im = Div(Mul(Mul(two, q), s), large_denominator);
+      out_re = IfThenElse(large, large_re, out_re);
+      out_im = IfThenElse(large, large_im, out_im);
+      regular_denominator = IfThenElse(large, one, regular_denominator);
     }
-    const bool regular = xsimd::all(abs_x >= min_normal) &&
-                         xsimd::all(abs_x <= Batch(3.402823466e38f)) &&
-                         xsimd::all(abs_y >= min_normal) &&
-                         xsimd::all(abs_y <= max_safe_imag) &&
-                         xsimd::all(regular_denominator > Batch(0.01f));
+    const bool regular = AllTrue(d, Ge(abs_x, min_normal)) &&
+                         AllTrue(d, Le(abs_x, Set(d, 3.402823466e38f))) &&
+                         AllTrue(d, Ge(abs_y, min_normal)) &&
+                         AllTrue(d, Le(abs_y, max_safe_imag)) &&
+                         AllTrue(d, Gt(regular_denominator, Set(d, 0.01f)));
     std::uint32_t exceptional = 0;
-    float exceptional_re[width];
-    float exceptional_im[width];
+    float exceptional_re[64];
+    float exceptional_im[64];
     if (!regular) {
-      float denominators[width];
-      denominator.store_unaligned(denominators);
+      float denominators[64];
+      StoreU(denominator, d, denominators);
       for (std::size_t lane = 0; lane < width; ++lane) {
         const float real = sr[i + lane];
         const float imag = si[i + lane];
@@ -170,8 +175,8 @@ HYLE_FORCE_INLINE void complex_ctanh_hyle(const float* sr, const float* si, floa
         exceptional_im[lane] = value.imag();
       }
     }
-    out_re.store_unaligned(dr + i);
-    out_im.store_unaligned(di + i);
+    StoreU(out_re, d, dr + i);
+    StoreU(out_im, d, di + i);
     if (exceptional != 0) {
       for (std::size_t lane = 0; lane < width; ++lane) {
         if ((exceptional & (std::uint32_t{1} << lane)) == 0) continue;
@@ -206,45 +211,43 @@ HYLE_FORCE_INLINE bool complex_cpow_regular_lane(float zr, float zi, float wr, f
          rho > 0.0f && std::isfinite(exponent) && exponent > -80.0f && exponent < 80.0f;
 }
 
-// SoA complex power. xsimd's generic expression computes log(rho) twice and exp twice when the
-// exponent has an imaginary component. Reuse one log(rho), fuse the two linear combinations, then
-// evaluate one exp and one sincos. Singular, axis, subnormal and non-finite lanes use std::pow.
 HYLE_FORCE_INLINE void complex_cpow_hyle(const float* zr, const float* zi, const float* wr,
                                          const float* wi, float* dr, float* di,
                                          std::size_t n) noexcept {
-  using Batch = xsimd::batch<float>;
-  constexpr std::size_t width = Batch::size;
+  const ScalableTag<float> d;
+  const std::size_t width = Lanes(d);
   std::size_t i = 0;
   for (; i + width <= n; i += width) {
-    const Batch zre = Batch::load_unaligned(zr + i);
-    const Batch zim = Batch::load_unaligned(zi + i);
-    const Batch wre = Batch::load_unaligned(wr + i);
-    const Batch wim = Batch::load_unaligned(wi + i);
-    const Batch rho = xsimd::hypot(zre, zim);
-    const Batch log_rho = xsimd::log(rho);
-    const Batch phi = xsimd::atan2(zim, zre);
-    const Batch exponent = wre * log_rho - wim * phi;
-    const Batch angle = wre * phi + wim * log_rho;
-    const Batch magnitude = xsimd::exp(exponent);
-    const auto sc = xsimd::sincos(angle);
+    const auto zre = LoadU(d, zr + i);
+    const auto zim = LoadU(d, zi + i);
+    const auto wre = LoadU(d, wr + i);
+    const auto wim = LoadU(d, wi + i);
+    const auto rho = xsimd_hyle::HypotInRange(d, zre, zim);
+    const auto log_rho = Log(d, rho);
+    const auto phi = Atan2(d, zim, zre);
+    const auto exponent = Sub(Mul(wre, log_rho), Mul(wim, phi));
+    const auto angle = Add(Mul(wre, phi), Mul(wim, log_rho));
+    const auto magnitude = xsimd_hyle::Exp(d, exponent);
+    auto s = Zero(d), c = Zero(d);
+    SinCos(d, angle, s, c);
     std::uint32_t exceptional = 0;
-    float exceptional_re[width];
-    float exceptional_im[width];
-    const bool regular = xsimd::all(xsimd::abs(zre) >= Batch(1.17549435e-38f)) &&
-                         xsimd::all(xsimd::abs(zim) >= Batch(1.17549435e-38f)) &&
-                         xsimd::all(xsimd::abs(wre) >= Batch(1.17549435e-38f)) &&
-                         xsimd::all(xsimd::abs(wim) >= Batch(1.17549435e-38f)) &&
-                         xsimd::all(xsimd::abs(zre) <= Batch(1.0e18f)) &&
-                         xsimd::all(xsimd::abs(zim) <= Batch(1.0e18f)) &&
-                         xsimd::all(xsimd::abs(wre) <= Batch(1.0e4f)) &&
-                         xsimd::all(xsimd::abs(wim) <= Batch(1.0e4f)) &&
-                         xsimd::all(exponent > Batch(-80.0f)) &&
-                         xsimd::all(exponent < Batch(80.0f));
+    float exceptional_re[64];
+    float exceptional_im[64];
+    const bool regular = AllTrue(d, Ge(Abs(zre), Set(d, 1.17549435e-38f))) &&
+                         AllTrue(d, Ge(Abs(zim), Set(d, 1.17549435e-38f))) &&
+                         AllTrue(d, Ge(Abs(wre), Set(d, 1.17549435e-38f))) &&
+                         AllTrue(d, Ge(Abs(wim), Set(d, 1.17549435e-38f))) &&
+                         AllTrue(d, Le(Abs(zre), Set(d, 1.0e18f))) &&
+                         AllTrue(d, Le(Abs(zim), Set(d, 1.0e18f))) &&
+                         AllTrue(d, Le(Abs(wre), Set(d, 1.0e4f))) &&
+                         AllTrue(d, Le(Abs(wim), Set(d, 1.0e4f))) &&
+                         AllTrue(d, Gt(exponent, Set(d, -80.0f))) &&
+                         AllTrue(d, Lt(exponent, Set(d, 80.0f)));
     if (!regular) {
-      float rhos[width];
-      float exponents[width];
-      rho.store_unaligned(rhos);
-      exponent.store_unaligned(exponents);
+      float rhos[64];
+      float exponents[64];
+      StoreU(rho, d, rhos);
+      StoreU(exponent, d, exponents);
       for (std::size_t lane = 0; lane < width; ++lane) {
         if (complex_cpow_regular_lane(zr[i + lane], zi[i + lane], wr[i + lane], wi[i + lane],
                                       rhos[lane], exponents[lane])) {
@@ -257,8 +260,8 @@ HYLE_FORCE_INLINE void complex_cpow_hyle(const float* zr, const float* zi, const
         exceptional_im[lane] = value.imag();
       }
     }
-    (magnitude * sc.second).store_unaligned(dr + i);
-    (magnitude * sc.first).store_unaligned(di + i);
+    StoreU(Mul(magnitude, c), d, dr + i);
+    StoreU(Mul(magnitude, s), d, di + i);
     if (exceptional != 0) {
       for (std::size_t lane = 0; lane < width; ++lane) {
         if ((exceptional & (std::uint32_t{1} << lane)) == 0) continue;

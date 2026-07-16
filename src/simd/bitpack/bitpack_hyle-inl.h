@@ -4,7 +4,7 @@
 // HYLE semantic migration of Pack8<1..8>, Pack16<1..16>, and Pack32<1..32> from
 // Highway source: hwy/contrib/bit_pack/bit_pack-inl.h
 // upstream commit SHA: 83eff39371e5e6494b305b253f8a3c06f831faf4
-// This implementation uses only hyle::simd D-tag primitives; see THIRD_PARTY_NOTICES.
+// This implementation uses only hyle::simd D-tag primitives.
 #pragma once
 
 #include <cstddef>

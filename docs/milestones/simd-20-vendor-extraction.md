@@ -1,19 +1,17 @@
 # simd-20: vendor 摘除——库零 vendor 依赖,bench 引用外部 highway/xsimd
 
-> **状态**:X0/X1 已落地(2026-07-16); X2~X4 待执行。**动机**(用户):库里只有少数专项 kernel 借
+> **状态**:X0/X1/X2 已落地(2026-07-16); X3~X4 待执行。**动机**(用户):库里只有少数专项 kernel 借
 > highway/xsimd,却把整库拖进 `third_party/` 当依赖,不应该;借用的代码移植进 HYLE 后，Highway/xsimd
-> 仅作为外部 benchmark 对照。X0 已将 Windows `C:\public\project-hyle\{highway,xsimd}`、Mac
-> `~/vendor/{highway,xsimd}` 与 WSL 自选目录接入 bench；X1 已将产品 bitpack 移为 HYLE，余下借核在
-> 各自通过对照闸门前仍使用 `third_party/`。
+> 仅作为外部 benchmark 对照。X0 已将 bench 接到外部 pin 目录；X1 bitpack、X2 math 已迁为 HYLE；
+> 产品侧仅剩 vqsort 借 `third_party/highway`（X3）。
 > **前提修正(盘点见 `docs/architecture/simd-vendor-surface.md`)**:初始借用面是 4 个——①超越函数
-> (最大,~25-30 函数 ×2 精度,逐 op best-of 借 Highway contrib/math 与 xsimd)②vqsort
-> (`hn::VQSortStatic` 族)③bitpack(`hn::Pack8/16/32`)④simdutf(编译期可选,默认关)。X1 后 bitpack
-> 已不借 vendor。`include/` 始终零泄漏，移植只使用 HYLE D-tag 原语。
+> ②vqsort ③bitpack ④simdutf(可选)。X1 后 bitpack 不借；**X2 后 math 不借**。`include/` 始终
+> 零泄漏，移植只使用 HYLE D-tag 原语。
 
 ## 一、端态
 
-1. `hyle` 库(include/ + src/)**零** highway/xsimd 依赖;移植代码带原始 license 头 + 出处注释,
-   仓库根加 `THIRD_PARTY_NOTICES`(Highway Apache-2.0、xsimd BSD-3,允许复制,须署名)。
+1. `hyle` 库(include/ + src/)**零** highway/xsimd 依赖;移植代码带原始 license 头 + 出处注释
+   (Apache-2.0 / BSD-3 保留在各移植文件头；项目已获授权，不另设根级 notices 文件)。
 2. `third_party/highway`、`third_party/xsimd` 从仓库删除;bench 目标经 CMake 缓存变量
    `HYLE_BENCH_VENDOR_DIR`(Windows 默认 `C:/public/project-hyle`,Mac `~/vendor`,WSL 自定)引用
    外部副本,**只有 bench 目标**挂这些 include。
@@ -23,15 +21,15 @@
 4. 性能不回退:每个移植 kernel 与原借核 A/B(op_parity 框架,借核走外部 vendor 编译)——**摘除
    期间旧借核天然还在,就是现成对照组**。
 
-## 二、分阶段(X0/X1 已落地，X2~X3 每卡常绿)
+## 二、分阶段(X0/X1/X2 已落地，X3 每卡常绿)
 
 **X0 — 构建管线先行(已落地 2026-07-16)**
 - bench 的 Highway/xsimd include 全部改根到 `HYLE_BENCH_VENDOR_DIR`：Windows 默认
   `C:/public/project-hyle`，macOS 默认 `~/vendor`，WSL/Linux 必显式指定。`cmake/vendor-versions.cmake`
   是唯一 pin 源；CMake 同时校验 checkout 的路径、`HEAD` 与 clean `git status`。`scripts/fetch-bench-vendors.sh`
-  与 `.ps1` 读同一 manifest，拒绝覆写非 Git 或脏 checkout；根目录 `THIRD_PARTY_NOTICES` 已就位。`bench`
-  preset 使用隔离的 `build-bench`，`win`/`wsl` preset 显式复位 `HYLE_BUILD_BENCH=OFF`，防止一次 bench
-  配置让随后的产品 build 意外依赖外部目录。
+  与 `.ps1` 读同一 manifest，拒绝覆写非 Git 或脏 checkout。`bench` preset 使用隔离的 `build-bench`，
+  `win`/`wsl` preset 显式复位 `HYLE_BUILD_BENCH=OFF`，防止一次 bench 配置让随后的产品 build 意外
+  依赖外部目录。
 - `simd-19-workorders.md` 的 Mac 同步明确分开产品 `third_party/` 与含 `.git` 的外部 bench 对照；各平台
   setup/bench 文档使用同一变量与 fetch 流程。产品 `third_party/{highway,xsimd}` 此时仍只服务
   `src/simd/**` 借核，故外部目录不会进入库编译。
@@ -42,8 +40,7 @@
   `hyle_op_parity_bench_neon` 均真实运行。WSL 另以 `HYLE_BUILD_BENCH=OFF` 与不存在的
   `HYLE_BENCH_VENDOR_DIR` 构建 `hyle_simd`，证明产品库不读取外部 benchmark vendor；反向以
   `HYLE_BUILD_BENCH=ON` 配置不存在的根，CMake 在 `Highway/hwy/highway.h` 处按预期拒绝。
-- `cloc --diff` 对 067e0fa 的 X0 机制净增 **215 code LOC**：CMake 85、Bourne shell 72、PowerShell 58；
-  `THIRD_PARTY_NOTICES` 的许可证正文不计入代码 LOC。
+- `cloc --diff` 对 067e0fa 的 X0 机制净增 **215 code LOC**：CMake 85、Bourne shell 72、PowerShell 58。
 
 **X1 — bitpack 移植(已落地 2026-07-16)**
 - `src/simd/bitpack/bitpack_hyle-inl.h` 将 Highway `Pack8<1..8>`、`Pack16<1..16>`、
@@ -68,15 +65,24 @@
 - 对 X0 后的 scoped tree 执行 `cloc --diff`：新增 **2,562** code LOC、修改 **217**、删除 **38**；主体是
   2,474 行 HYLE Pack8/16/32 port，另有三 ISA TU 与 benchmark correct-reference control。
 
-**X2 — 超越函数移植(最大面,逐函数工单)**
-- Highway 侧(f64 几乎全部 + f32 的 log/sin/cos/…):`hwy/contrib/math/math-inl.h` 逐函数 port 到
-  hs::(系数表/Estrin/range-reduction 原样搬,api 调用改前缀;特殊值 mask 路径逐条对照)。
-- xsimd 侧(f32 exp/tanh/erf/… 9 个赢家 + f64 erf/tgamma):xsimd::batch 惯用法→hs:: 翻译,
-  判断密度更高,卡片要贴双侧源码。
-- 每卡闸门:精度 oracle(vs libm/双精度参考,ULP 阈值与现状持平——现有 math 测试即闸)+ bench A/B
-  vs 旧借核持平以上 + 逐精度逐 ISA winner 表复核(移植后 best-of dispatch 保留,只是两侧都成了
-  HYLE 代码)。
-- `lgamma/remainder/nextafter` 本就 scalar(vendor bug),不移植。
+**X2 — 超越函数移植(已落地 2026-07-16)**
+- Highway 算法侧：`math_hyle-inl.h` 移植 `hwy/contrib/math/math-inl.h`（Apache-2.0，SHA
+  `83eff393…`）；f64 exp/log **融合 P2-1**，继续走 `table_f64.h` N=128 表核（不回退 `hn::Exp/Log`）。
+  ISA TU `transcendental_highway_{avx2,avx512,neon}.cc` 改 HYLE D-tag + `HYLE_SIMD_TARGET_*`。
+- xsimd 算法侧：`math_xsimd_hyle-inl.h` + `math_xsimd_body.inc` 移植产品赢家
+  （exp/exp2/exp10/tanh/erf/erfc/tgamma/hypot_in_range/fdim/fmod 等，BSD-3，SHA `5d2490f…`）；
+  `transcendental_xsimd_{avx2,avx512,neon}.cc` 与 `complex_hyle-inl.h` 去掉 `xsimd::`。
+- best-of dispatch **保留**：符号名仍为 `*_highway_*` / `*_xsimd_*`，只是两侧都是 HYLE 代码。
+  `lgamma`/`remainder`/`nextafter` 仍 scalar。
+- 产品 CMake：`hyle_simd` **不再** include `third_party/xsimd`；`third_party/highway` 仅 vqsort（X3）。
+- 支撑修：`ConvertTo` f64↔i64（avx2/neon/avx512）、`RebindMask` 源类型、`DemoteToNearestInt` partial-tag、
+  `[[maybe_unused]]` 属性序（GCC）。
+- 验证（真编真测）：
+  - Win MSVC：`Math.*` 24/24；`hyle_simd_test` 331 PASS + 1 BF16 SKIP；P2-1 `exp≤2` / `log≤1` ULP
+  - WSL GCC14：同 24/24 Math + 331 PASS + 1 SKIP
+  - Mac Apple Silicon NEON：24/24 Math；`hyle_simd_test` 328 PASS + 1 SKIP
+- `cloc` 新增移植核 **2,231 code LOC**（`math_hyle-inl.h` 1,712 + `math_xsimd_hyle-inl.h` 510 +
+  body.inc 9）；既有 TU/后端/CMake 为接线与支撑改动。
 
 **X3 — vqsort 移植(排序面不可由 radix 替代)**
 - `hwy/contrib/sort` 体量大(排序网络 + traits + 分区)。R5 已落地 radix sort/argsort，但它只在大规模
@@ -113,4 +119,4 @@
 1. 库零 vendor:`check-no-vendor.sh` 绿;外部目录改名后库构建仍成功。
 2. 三平台 gtest 全绿;math 精度 oracle 全绿(ULP 与现状持平)。
 3. 移植 kernel bench A/B vs 原借核:全部 TIE 以上(校准仪器判定)。
-4. `third_party/{highway,xsimd}` 已删;fetch 脚本可从零重建外部目录;NOTICES 齐。
+4. `third_party/{highway,xsimd}` 已删;fetch 脚本可从零重建外部目录;移植文件头 license/出处齐。

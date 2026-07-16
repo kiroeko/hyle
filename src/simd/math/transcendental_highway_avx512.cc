@@ -1,5 +1,5 @@
 // Highway-accelerated AVX-512 transcendental (16-wide). The 512-bit sibling of
-// transcendental_highway.cc -- SAME borrowed Highway contrib/math core (hn::Log), the ONLY
+// transcendental_highway.cc -- SAME borrowed Highway contrib/math core (Log), the ONLY
 // difference is this TU is compiled with the AVX-512 baseline so HWY_STATIC_TARGET resolves
 // to AVX3 (zmm, Lanes=16) instead of AVX2 (ymm, Lanes=8). Per-op best-of-breed is unchanged
 // (Highway serves log; xsimd serves exp/tanh), this just adds the wider tier.
@@ -18,12 +18,12 @@
 // Static single-target dispatch: like transcendental_highway.cc, Highway's HWY_STATIC_TARGET
 // must see the FULL baseline macro chain to pick AVX3: the AVX2 baseline (SSE4=PCLMUL+AES +
 // BMI2+FMA+F16C) PLUS the AVX-512 group (f/bw/vl/dq/cd). The hyle_set_avx512_math_isa CMake
-// flag set supplies all of it, so hn:: lowers to 512-bit on GCC/Clang (objdump: 299 zmm).
+// flag set supplies all of it, so  lowers to 512-bit on GCC/Clang (objdump: 299 zmm).
 //
 // !!! MSVC EXCLUSION (probe-found, not a wiring bug): Highway marks its ENTIRE AVX3 target
 // HWY_BROKEN on MSVC (detect_targets.h:192 HWY_BROKEN_MSVC -- MSVC's AVX-512 codegen has a
 // known compiler bug, https://github.com/Mysticial/Flops/issues/16). So under /arch:AVX512
-// Highway SILENTLY stays at AVX2 and hn:: emits ymm, not zmm (dumpbin: 250 ymm / 0 zmm).
+// Highway SILENTLY stays at AVX2 and  emits ymm, not zmm (dumpbin: 250 ymm / 0 zmm).
 // There is therefore NO 512-bit log win on MSVC -- the avx2 highway log core is already the
 // widest Highway can give there. We exclude this TU on MSVC (the symbol is not defined) and
 // math_dispatch keeps MSVC's AVX-512 log on the avx2 core, rather than route to a fake-512
@@ -37,39 +37,40 @@
 #include <cmath>
 #include <cstddef>
 
-#include "hwy/highway.h"
-#include "hwy/contrib/math/math-inl.h"
+// HYLE D-tag backend for this TU (must precede vec.h).
+#define HYLE_SIMD_TARGET_AVX512
+#include "hyle/simd/vec.h"
+#include "src/simd/math/math_hyle-inl.h"
 #include "src/simd/math/table_f64.h"
 
-namespace hn = hwy::HWY_NAMESPACE;
-
 namespace hyle::simd::detail {
+using namespace hyle::simd;
 namespace {
 
 template <class D, class V>
 bool exp_f64_needs_scalar(D d, V x) noexcept {
-  const auto exceptional = hn::Or(
-      hn::Or(hn::IsNaN(x), hn::IsInf(x)),
-      hn::Or(hn::Lt(x, hn::Set(d, -700.0)), hn::Gt(x, hn::Set(d, 700.0))));
-  return !hn::AllFalse(d, exceptional);
+  const auto exceptional = Or(
+      Or(IsNaN(x), IsInf(x)),
+      Or(Lt(x, Set(d, -700.0)), Gt(x, Set(d, 700.0))));
+  return !AllFalse(d, exceptional);
 }
 
 template <class D, class V>
 bool log_f64_needs_scalar(D d, V x) noexcept {
-  const auto exceptional = hn::Or(
-      hn::Or(hn::IsNaN(x), hn::IsInf(x)),
-      hn::Or(hn::Le(x, hn::Zero(d)), hn::Lt(x, hn::Set(d, 0x1p-1022))));
-  return !hn::AllFalse(d, exceptional);
+  const auto exceptional = Or(
+      Or(IsNaN(x), IsInf(x)),
+      Or(Le(x, Zero(d)), Lt(x, Set(d, 0x1p-1022))));
+  return !AllFalse(d, exceptional);
 }
 
 }  // namespace
 
 void log_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Log(d, hn::LoadU(d, src + i)), d, dst + i);
+    StoreU(Log(d, LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::log(src[i]);  // tail = libm (scalar oracle)
 }
 
@@ -77,11 +78,11 @@ void log_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcep
 // caveat as log. objdump-verified zmm PENDING execution on real AVX-512 (math_test validates).
 #define HYLE_HWY_MATH_512(name, hwyfn, libmfn)                                  \
   void name##_f32_highway_avx512(const float* src, float* dst, std::size_t n) noexcept { \
-    const hn::ScalableTag<float> d;                                            \
-    const std::size_t w = hn::Lanes(d);                                        \
+    const ScalableTag<float> d;                                            \
+    const std::size_t w = Lanes(d);                                        \
     std::size_t i = 0;                                                         \
     for (; i + w <= n; i += w)                                                 \
-      hn::StoreU(hn::hwyfn(d, hn::LoadU(d, src + i)), d, dst + i);              \
+      StoreU(hwyfn(d, LoadU(d, src + i)), d, dst + i);              \
     for (; i < n; ++i) dst[i] = libmfn(src[i]);                                \
   }
 HYLE_HWY_MATH_512(sin, Sin, std::sin)
@@ -104,74 +105,74 @@ HYLE_HWY_MATH_512(log10, Log10, std::log10)
 
 // Full-range hypot 16-wide sibling (GCC/Clang only; fast xsimd sibling is separate).
 void hypot_f32_highway_avx512(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Hypot(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+    StoreU(Hypot(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
 }
 
 // f64 (8-wide AVX-512) Highway siblings. Highway wins 13 of the 14 f64 unary/binary ops it serves
 // (exp/log/tanh + sin/cos/exp2/log2/atan/cbrt/expm1/log1p/asinh/acosh + hypot; xsimd only wins erf).
-// Same MSVC-AVX3-broken exclusion. hn::ScalableTag<double> = 8 lanes at AVX-512.
+// Same MSVC-AVX3-broken exclusion. ScalableTag<double> = 8 lanes at AVX-512.
 void exp_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
-    const auto x = hn::LoadU(d, src + i);
+    const auto x = LoadU(d, src + i);
     if (exp_f64_needs_scalar(d, x)) {
       for (std::size_t lane = 0; lane < w; ++lane) dst[i + lane] = std::exp(src[i + lane]);
     } else {
-      hn::StoreU(table_f64::ExpNormal(d, x), d, dst + i);
+      StoreU(table_f64::ExpNormal(d, x), d, dst + i);
     }
   }
   for (; i < n; ++i) dst[i] = std::exp(src[i]);
 }
 void log_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
-    const auto x = hn::LoadU(d, src + i);
+    const auto x = LoadU(d, src + i);
     if (log_f64_needs_scalar(d, x)) {
       for (std::size_t lane = 0; lane < w; ++lane) dst[i + lane] = std::log(src[i + lane]);
     } else {
-      hn::StoreU(table_f64::LogNormal(d, x), d, dst + i);
+      StoreU(table_f64::LogNormal(d, x), d, dst + i);
     }
   }
   for (; i < n; ++i) dst[i] = std::log(src[i]);
 }
 void exp_in_range_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(table_f64::ExpNormal(d, hn::LoadU(d, src + i)), d, dst + i);
+    StoreU(table_f64::ExpNormal(d, LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::exp(src[i]);
 }
 void log_in_range_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(table_f64::LogNormal(d, hn::LoadU(d, src + i)), d, dst + i);
+    StoreU(table_f64::LogNormal(d, LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::log(src[i]);
 }
 void tanh_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
-  for (; i + w <= n; i += w) hn::StoreU(hn::Tanh(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i + w <= n; i += w) StoreU(Tanh(d, LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::tanh(src[i]);
 }
 #define HYLE_HWY_MATH_F64_512(name, hwyfn, libmfn)                              \
   void name##_f64_highway_avx512(const double* src, double* dst, std::size_t n) noexcept { \
-    const hn::ScalableTag<double> d;                                           \
-    const std::size_t w = hn::Lanes(d);                                        \
+    const ScalableTag<double> d;                                           \
+    const std::size_t w = Lanes(d);                                        \
     std::size_t i = 0;                                                         \
-    for (; i + w <= n; i += w) hn::StoreU(hn::hwyfn(d, hn::LoadU(d, src + i)), d, dst + i); \
+    for (; i + w <= n; i += w) StoreU(hwyfn(d, LoadU(d, src + i)), d, dst + i); \
     for (; i < n; ++i) dst[i] = libmfn(src[i]);                                \
   }
 HYLE_HWY_MATH_F64_512(sin, Sin, std::sin)
@@ -193,69 +194,69 @@ HYLE_HWY_MATH_F64_512(atanh, Atanh, std::atanh)
 HYLE_HWY_MATH_F64_512(log10, Log10, std::log10)
 #undef HYLE_HWY_MATH_F64_512
 void hypot_f64_highway_avx512(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Hypot(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+    StoreU(Hypot(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
 }
 
 
 // simd-18 批G binary + sincos (Highway)
 void atan2_f32_highway_avx512(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Atan2(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+    StoreU(Atan2(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::atan2(a[i], b[i]);
 }
 void pow_f32_highway_avx512(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Pow(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+    StoreU(Pow(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::pow(a[i], b[i]);
 }
 void sincos_f32_highway_avx512(const float* src, float* s, float* c, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
-    hn::Vec<hn::ScalableTag<float>> sv, cv;
-    hn::SinCos(d, hn::LoadU(d, src + i), sv, cv);
-    hn::StoreU(sv, d, s + i);
-    hn::StoreU(cv, d, c + i);
+    VFromD<ScalableTag<float>> sv, cv;
+    SinCos(d, LoadU(d, src + i), sv, cv);
+    StoreU(sv, d, s + i);
+    StoreU(cv, d, c + i);
   }
   for (; i < n; ++i) { s[i] = std::sin(src[i]); c[i] = std::cos(src[i]); }
 }
 void atan2_f64_highway_avx512(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Atan2(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+    StoreU(Atan2(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::atan2(a[i], b[i]);
 }
 void pow_f64_highway_avx512(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Pow(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+    StoreU(Pow(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::pow(a[i], b[i]);
 }
 void sincos_f64_highway_avx512(const double* src, double* s, double* c, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
-    hn::Vec<hn::ScalableTag<double>> sv, cv;
-    hn::SinCos(d, hn::LoadU(d, src + i), sv, cv);
-    hn::StoreU(sv, d, s + i);
-    hn::StoreU(cv, d, c + i);
+    VFromD<ScalableTag<double>> sv, cv;
+    SinCos(d, LoadU(d, src + i), sv, cv);
+    StoreU(sv, d, s + i);
+    StoreU(cv, d, c + i);
   }
   for (; i < n; ++i) { s[i] = std::sin(src[i]); c[i] = std::cos(src[i]); }
 }

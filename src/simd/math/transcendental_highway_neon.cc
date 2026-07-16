@@ -1,6 +1,6 @@
 // Highway-accelerated NEON transcendentals (aarch64, 4-wide 128-bit). BORROWS Highway's
-// verified contrib/math cores (hn::Exp/Log/Tanh) -- HYLE does not hand-roll these (charter:
-// 借验证核不手搓). Highway lowers hn:: to NEON here (probed on Apple Silicon: target=NEON,
+// verified contrib/math cores (Exp/Log/Tanh) -- HYLE does not hand-roll these (charter:
+// 借验证核不手搓). Highway lowers  to NEON here (probed on Apple Silicon: target=NEON,
 // Lanes=4, all three ops match libm at Highway's ~3.5-ULP class).
 //
 // Unlike the x86 side (which splits xsimd for exp/tanh + Highway for log, a per-op SPEED
@@ -19,57 +19,58 @@
 #include <cmath>
 #include <cstddef>
 
-#include "hwy/highway.h"
-#include "hwy/contrib/math/math-inl.h"
+// HYLE D-tag backend for this TU (must precede vec.h).
+#define HYLE_SIMD_TARGET_NEON
+#include "hyle/simd/vec.h"
+#include "src/simd/math/math_hyle-inl.h"
 #include "src/simd/math/table_f64.h"
 
-namespace hn = hwy::HWY_NAMESPACE;
-
 namespace hyle::simd::detail {
+using namespace hyle::simd;
 namespace {
 
 template <class D, class V>
 bool exp_f64_needs_scalar(D d, V x) noexcept {
-  const auto exceptional = hn::Or(
-      hn::Or(hn::IsNaN(x), hn::IsInf(x)),
-      hn::Or(hn::Lt(x, hn::Set(d, -700.0)), hn::Gt(x, hn::Set(d, 700.0))));
-  return !hn::AllFalse(d, exceptional);
+  const auto exceptional = Or(
+      Or(IsNaN(x), IsInf(x)),
+      Or(Lt(x, Set(d, -700.0)), Gt(x, Set(d, 700.0))));
+  return !AllFalse(d, exceptional);
 }
 
 template <class D, class V>
 bool log_f64_needs_scalar(D d, V x) noexcept {
-  const auto exceptional = hn::Or(
-      hn::Or(hn::IsNaN(x), hn::IsInf(x)),
-      hn::Or(hn::Le(x, hn::Zero(d)), hn::Lt(x, hn::Set(d, 0x1p-1022))));
-  return !hn::AllFalse(d, exceptional);
+  const auto exceptional = Or(
+      Or(IsNaN(x), IsInf(x)),
+      Or(Le(x, Zero(d)), Lt(x, Set(d, 0x1p-1022))));
+  return !AllFalse(d, exceptional);
 }
 
 }  // namespace
 
 void exp_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Exp(d, hn::LoadU(d, src + i)), d, dst + i);
+    StoreU(Exp(d, LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::exp(src[i]);  // tail = libm (scalar oracle)
 }
 
 void log_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Log(d, hn::LoadU(d, src + i)), d, dst + i);
+    StoreU(Log(d, LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::log(src[i]);  // tail = libm (scalar oracle)
 }
 
 void tanh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Tanh(d, hn::LoadU(d, src + i)), d, dst + i);
+    StoreU(Tanh(d, LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::tanh(src[i]);  // tail = libm (scalar oracle)
 }
 
@@ -78,11 +79,11 @@ void tanh_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept
 // win). exp2/erf also go through Highway here (whereas x86 borrows xsimd for those two).
 #define HYLE_HWY_MATH_NEON(name, hwyfn, libmfn)                                 \
   void name##_f32_highway_neon(const float* src, float* dst, std::size_t n) noexcept { \
-    const hn::ScalableTag<float> d;                                            \
-    const std::size_t w = hn::Lanes(d);                                        \
+    const ScalableTag<float> d;                                            \
+    const std::size_t w = Lanes(d);                                        \
     std::size_t i = 0;                                                         \
     for (; i + w <= n; i += w)                                                 \
-      hn::StoreU(hn::hwyfn(d, hn::LoadU(d, src + i)), d, dst + i);              \
+      StoreU(hwyfn(d, LoadU(d, src + i)), d, dst + i);              \
     for (; i < n; ++i) dst[i] = libmfn(src[i]);                                \
   }
 HYLE_HWY_MATH_NEON(sin, Sin, std::sin)
@@ -107,74 +108,74 @@ HYLE_HWY_MATH_NEON(log10, Log10, std::log10)
 
 // Full-range hypot core; the explicit fast API uses xsimd-NEON's direct formula.
 void hypot_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Hypot(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+    StoreU(Hypot(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
 }
 
 // f64 (2-wide NEON) Highway siblings. arm64 uses Highway for ALL f64 ops (one verified core; the
-// x86 per-op xsimd/Highway split is an x86 speed pick). hn::ScalableTag<double> = 2 lanes on NEON.
+// x86 per-op xsimd/Highway split is an x86 speed pick). ScalableTag<double> = 2 lanes on NEON.
 // erf also goes through Highway here (x86 borrows xsimd for erf-f64). exp/log/tanh + 11 unary + hypot.
 void exp_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
-    const auto x = hn::LoadU(d, src + i);
+    const auto x = LoadU(d, src + i);
     if (exp_f64_needs_scalar(d, x)) {
       for (std::size_t lane = 0; lane < w; ++lane) dst[i + lane] = std::exp(src[i + lane]);
     } else {
-      hn::StoreU(table_f64::ExpNormal(d, x), d, dst + i);
+      StoreU(table_f64::ExpNormal(d, x), d, dst + i);
     }
   }
   for (; i < n; ++i) dst[i] = std::exp(src[i]);
 }
 void log_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w) {
-    const auto x = hn::LoadU(d, src + i);
+    const auto x = LoadU(d, src + i);
     if (log_f64_needs_scalar(d, x)) {
       for (std::size_t lane = 0; lane < w; ++lane) dst[i + lane] = std::log(src[i + lane]);
     } else {
-      hn::StoreU(table_f64::LogNormal(d, x), d, dst + i);
+      StoreU(table_f64::LogNormal(d, x), d, dst + i);
     }
   }
   for (; i < n; ++i) dst[i] = std::log(src[i]);
 }
 void exp_in_range_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(table_f64::ExpNormal(d, hn::LoadU(d, src + i)), d, dst + i);
+    StoreU(table_f64::ExpNormal(d, LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::exp(src[i]);
 }
 void log_in_range_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(table_f64::LogNormal(d, hn::LoadU(d, src + i)), d, dst + i);
+    StoreU(table_f64::LogNormal(d, LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::log(src[i]);
 }
 void tanh_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
-  for (; i + w <= n; i += w) hn::StoreU(hn::Tanh(d, hn::LoadU(d, src + i)), d, dst + i);
+  for (; i + w <= n; i += w) StoreU(Tanh(d, LoadU(d, src + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::tanh(src[i]);
 }
 #define HYLE_HWY_MATH_F64_NEON(name, hwyfn, libmfn)                             \
   void name##_f64_highway_neon(const double* src, double* dst, std::size_t n) noexcept { \
-    const hn::ScalableTag<double> d;                                           \
-    const std::size_t w = hn::Lanes(d);                                        \
+    const ScalableTag<double> d;                                           \
+    const std::size_t w = Lanes(d);                                        \
     std::size_t i = 0;                                                         \
-    for (; i + w <= n; i += w) hn::StoreU(hn::hwyfn(d, hn::LoadU(d, src + i)), d, dst + i); \
+    for (; i + w <= n; i += w) StoreU(hwyfn(d, LoadU(d, src + i)), d, dst + i); \
     for (; i < n; ++i) dst[i] = libmfn(src[i]);                                \
   }
 HYLE_HWY_MATH_F64_NEON(sin, Sin, std::sin)
@@ -197,11 +198,11 @@ HYLE_HWY_MATH_F64_NEON(atanh, Atanh, std::atanh)
 HYLE_HWY_MATH_F64_NEON(log10, Log10, std::log10)
 #undef HYLE_HWY_MATH_F64_NEON
 void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d;
-  const std::size_t w = hn::Lanes(d);
+  const ScalableTag<double> d;
+  const std::size_t w = Lanes(d);
   std::size_t i = 0;
   for (; i + w <= n; i += w)
-    hn::StoreU(hn::Hypot(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+    StoreU(Hypot(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::hypot(a[i], b[i]);
 }
 
@@ -209,38 +210,38 @@ void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::
 // calls detail::pow_f32_highway_neon etc.); a stray namespace close here put them in the global ns
 // and broke the NEON link (caught only when Mac finally re-linked batch-G).
 void atan2_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
-  for (; i + w <= n; i += w) hn::StoreU(hn::Atan2(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  const ScalableTag<float> d; const std::size_t w = Lanes(d); std::size_t i = 0;
+  for (; i + w <= n; i += w) StoreU(Atan2(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::atan2(a[i], b[i]);
 }
 void pow_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
-  for (; i + w <= n; i += w) hn::StoreU(hn::Pow(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  const ScalableTag<float> d; const std::size_t w = Lanes(d); std::size_t i = 0;
+  for (; i + w <= n; i += w) StoreU(Pow(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::pow(a[i], b[i]);
 }
 void sincos_f32_highway_neon(const float* src, float* s, float* c, std::size_t n) noexcept {
-  const hn::ScalableTag<float> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
+  const ScalableTag<float> d; const std::size_t w = Lanes(d); std::size_t i = 0;
   for (; i + w <= n; i += w) {
-    hn::Vec<hn::ScalableTag<float>> sv, cv; hn::SinCos(d, hn::LoadU(d, src + i), sv, cv);
-    hn::StoreU(sv, d, s + i); hn::StoreU(cv, d, c + i);
+    VFromD<ScalableTag<float>> sv, cv; SinCos(d, LoadU(d, src + i), sv, cv);
+    StoreU(sv, d, s + i); StoreU(cv, d, c + i);
   }
   for (; i < n; ++i) { s[i] = std::sin(src[i]); c[i] = std::cos(src[i]); }
 }
 void atan2_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
-  for (; i + w <= n; i += w) hn::StoreU(hn::Atan2(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  const ScalableTag<double> d; const std::size_t w = Lanes(d); std::size_t i = 0;
+  for (; i + w <= n; i += w) StoreU(Atan2(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::atan2(a[i], b[i]);
 }
 void pow_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
-  for (; i + w <= n; i += w) hn::StoreU(hn::Pow(d, hn::LoadU(d, a + i), hn::LoadU(d, b + i)), d, dst + i);
+  const ScalableTag<double> d; const std::size_t w = Lanes(d); std::size_t i = 0;
+  for (; i + w <= n; i += w) StoreU(Pow(d, LoadU(d, a + i), LoadU(d, b + i)), d, dst + i);
   for (; i < n; ++i) dst[i] = std::pow(a[i], b[i]);
 }
 void sincos_f64_highway_neon(const double* src, double* s, double* c, std::size_t n) noexcept {
-  const hn::ScalableTag<double> d; const std::size_t w = hn::Lanes(d); std::size_t i = 0;
+  const ScalableTag<double> d; const std::size_t w = Lanes(d); std::size_t i = 0;
   for (; i + w <= n; i += w) {
-    hn::Vec<hn::ScalableTag<double>> sv, cv; hn::SinCos(d, hn::LoadU(d, src + i), sv, cv);
-    hn::StoreU(sv, d, s + i); hn::StoreU(cv, d, c + i);
+    VFromD<ScalableTag<double>> sv, cv; SinCos(d, LoadU(d, src + i), sv, cv);
+    StoreU(sv, d, s + i); StoreU(cv, d, c + i);
   }
   for (; i < n; ++i) { s[i] = std::sin(src[i]); c[i] = std::cos(src[i]); }
 }

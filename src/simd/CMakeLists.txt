@@ -45,7 +45,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # ops NEON kernel reuses the neon.h D-tag backend (dot/saxpy) -- the simd-03 real-run
   # target. dtype NEON (cvt_neon.cc) is hand-written per-backend intrinsics: fp16 via native
   # ARMv8.2 vcvt, bf16 via NEON integer bit-math (bit-identical to scalar). math NEON
-  # (transcendental_highway_neon.cc) BORROWS Highway's contrib/math cores (Exp/Log/Tanh),
+  # (transcendental_highway_neon.cc) HYLE port of Highway contrib/math + P2-1 table_f64,
   # which lower to NEON here (probed: target=NEON, matches libm) -- Highway for all three
   # (x86's per-op xsimd/Highway split was a speed pick; arm64 starts with one verified core).
   list(APPEND _simd_arch_sources
@@ -148,23 +148,17 @@ set_target_properties(hyle_simd PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 # (transcendental_highway_neon.cc, in the arm64 SOURCES) -- Highway for all three ops there.
 # Runtime cpu_features().avx2 gates the x86 entry so an old x86 CPU also falls to scalar (no
 # SIGILL); arm64 needs no gate (NEON is the ARMv8 baseline).
+# Highway remains for X3 vqsort borrow only. Math (X2) is pure HYLE -- no xsimd include.
 target_include_directories(hyle_simd SYSTEM PRIVATE
-  "${PROJECT_SOURCE_DIR}/third_party/highway"
-  "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+  "${PROJECT_SOURCE_DIR}/third_party/highway")
 if(HYLE_SIMD_X64)
-  # transcendental_highway.cc uses Highway's STATIC dispatch (hn::Exp/Log/Tanh), whose
-  # HWY_STATIC_TARGET resolves vector width from the FULL AVX2 baseline macro chain (SSE4=
-  # PCLMUL+AES + BMI2+FMA+F16C). The bare AVX2 tier (-mavx2 -mfma -mf16c) is missing
-  # bmi2/aes/pclmul, so on GCC/Clang Highway SILENTLY downgrades to 128-bit SSSE3 -- the
-  # shipped log core ran at half width. hyle_set_highway_isa adds the missing baseline so the
-  # PRODUCT core gets true 256-bit AVX2. (MSVC /arch:AVX2 already implies the full set.)
-  # xsimd does NOT need this -- its batch<float> width comes from its own headers.
-  hyle_set_highway_isa(math/transcendental_highway.cc)
+  # X2 math path is pure HYLE D-tag: Highway winners in math_hyle-inl.h (+ P2-1 table_f64),
+  # xsimd winners in math_xsimd_hyle-inl.h. Symbol names keep *_highway_* / *_xsimd_* for
+  # best-of dispatch wiring. hyle_set_isa supplies the AVX2/AVX-512 codegen flags.
+  hyle_set_isa(math/transcendental_highway.cc AVX2)
   hyle_set_isa(math/transcendental_xsimd.cc AVX2)
-  # AVX-512 (16-wide) math borrow cores: same xsimd/Highway cores compiled one tier wider.
-  # Reached only when best_isa()>=kAvx512.
-  hyle_set_avx512_math_isa(math/transcendental_xsimd_avx512.cc)
-  hyle_set_avx512_math_isa(math/transcendental_highway_avx512.cc)
+  hyle_set_isa(math/transcendental_xsimd_avx512.cc AVX512)
+  hyle_set_isa(math/transcendental_highway_avx512.cc AVX512)
   # vqsort borrow cores (simd-09 sort). SAME Highway-static-dispatch ISA requirement as the math
   # borrow: HWY_STATIC_TARGET reads the FULL baseline macro chain, so the avx2 core needs the full
   # AVX2 baseline (hyle_set_highway_isa) or it silently downgrades to SSSE3; the avx512 core needs

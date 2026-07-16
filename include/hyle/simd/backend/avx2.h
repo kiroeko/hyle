@@ -1063,7 +1063,18 @@ HYLE_FORCE_INLINE Vec256<DstT, N> ConvertTo(Simd<DstT, N, 0>, Vec256<SrcT, N> v)
     r.raw = _mm256_cvttps_epi32(v.raw);        // truncate toward zero
   else if constexpr (std::is_same_v<SrcT, std::int32_t> && std::is_same_v<DstT, float>)
     r.raw = _mm256_cvtepi32_ps(v.raw);
-  else static_assert(sizeof(DstT) == 0, "avx2 ConvertTo: only f32<->i32 (same width) supported");
+  else if constexpr (std::is_same_v<SrcT, std::int64_t> && std::is_same_v<DstT, double>) {
+    // No AVX2 cvtepi64_pd; lane extract is exact for |x| < 2^52 (math table exponents).
+    alignas(32) std::int64_t tmp[4];
+    _mm256_store_si256(reinterpret_cast<__m256i*>(tmp), v.raw);
+    r.raw = _mm256_set_pd(static_cast<double>(tmp[3]), static_cast<double>(tmp[2]),
+                          static_cast<double>(tmp[1]), static_cast<double>(tmp[0]));
+  } else if constexpr (std::is_same_v<SrcT, double> && std::is_same_v<DstT, std::int64_t>) {
+    alignas(32) double tmp[4];
+    _mm256_store_pd(tmp, v.raw);
+    r.raw = _mm256_set_epi64x(static_cast<std::int64_t>(tmp[3]), static_cast<std::int64_t>(tmp[2]),
+                              static_cast<std::int64_t>(tmp[1]), static_cast<std::int64_t>(tmp[0]));
+  } else static_assert(sizeof(DstT) == 0, "avx2 ConvertTo: f32<->i32 or f64<->i64 only");
   return r;
 }
 template <typename DstT, std::size_t N, typename SrcT>
