@@ -56,7 +56,7 @@ Native*/AVX2Shl* 等,HYLE 以 LoadInterleaved 等直接暴露等价能力);②HY
 | 优先级 | 上游能力 | HYLE 现状 / 判断 | 动作 |
 |---|---|---|---|
 | P0 | Highway 2026 contrib/algo：`Count`、`Find`、`MinValue`、`MaxValue`、`IsSorted` | HYLE 的连续数组公共语义只有 add/dot/saxpy 等，缺最常见 search/reduction。它们天然是 pointer/count C ABI，普通用户价值高 | 增加 typed whole-buffer search/reduction core、动态/固定双轨和 Highway/stdlib benchmark；close-01 再封 C 名 |
-| P0 | HYLE vqsort 大数组 partition | 端口中 `HYLE_VQSORT_USE_VECTOR_PARTITION=0`，源码注明 Compress/StoreLeftRight 曾 OOB；radix 和 small-k stream 遮住部分路径，但 KV、f64 和一般 partial/select 仍可能走 HeapSort | 单列正确性+ASan 修复 vector partition，随后按类型/N/k 对拍 std 与 Highway；未闭环前不能称 sort SOTA |
+| P0 | HYLE vqsort 大数组 partition | ✅ simd-24 已删除 HeapSort 保险丝；AVX2 u64/KV 根因是缺少 pair-vpermd Compress，已补真 partition | Windows、WSL ASan、macOS NEON 正确性已过；NEON KV64 仍约慢 Highway 27%，继续性能狩猎，详见 simd-24 |
 | P1 | Highway contrib/dot：f16×f16、bf16×bf16、f32×bf16、i16×i16 | HYLE whole-buffer dot 只有 f32/f64；底层已有 widen/dtype 积木，但没有融合入口 | 按 AI/量化消费者优先补 bf16、mixed bf16、i16；f16 由真机收益决定，禁止“先转换整表再 dot”的额外内存 pass |
 | P1 | Highway vqsort key 面：i16/u16/f16/u128 | HYLE public sort 只有 i/u32、i/u64、f32/f64、KV32/64；port 内部已含若干 traits，但 f16 目前明确是 placeholder | i16/u16 与 128-bit POD key 先做；f16 必须统一 HYLE dtype/排序 NaN 合同后再做 |
 | P1 | xsimd `mul_hi` / fused `mul_hilo`，含 i/u8、i/u32、i/u64 | HYLE `MulHigh` 只直接覆盖 16-bit，另有 `MulHigh32`；缺完整 64-bit high half 和共享 partials 的 hi+lo | 作为 hash/big-int/Montgomery/PRNG 的 register 候选；先找消费者并对拍 codegen，不能为名字齐平复制七后端 |
@@ -85,7 +85,8 @@ Native*/AVX2Shl* 等,HYLE 以 LoadInterleaved 等直接暴露等价能力);②HY
 3. 对 mixed-precision dot 给出“实现”或“有证据拒绝”的结论。
 
 三项闭环后，SIMD 算法核才适合暂时告一段落，把普通用户发布入口交给 close-01。P1 的排序扩型和
-P2 complex 可由消费者驱动，不阻塞 C ABI 首版。
+原先“P2 complex 等消费者”的延期裁决已被 simd-24 取代：HYLE 作为基础库，审计确认的通用候选全部
+按阶段实现；优先级只决定顺序，不再决定是否落地。C ABI 仍在 close-01 统一封装。
 
 ## P1:掩码基础算术/逻辑/比较家族（✅ 已有，旧差集误报）
 

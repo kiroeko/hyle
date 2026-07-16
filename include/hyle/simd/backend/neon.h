@@ -2961,6 +2961,19 @@ HYLE_FORCE_INLINE detail::VN<D> LoadN(D d, const TFromD<D>* p, std::size_t n) no
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   const std::size_t k = n < kN ? n : kN;
+  if constexpr (kN == 2 && sizeof(T) == 8) {
+    if (k == 0) return Zero(d);
+    if (k == 2) return LoadU(d, p);
+
+    detail::VN<D> v;
+    if constexpr (std::is_same_v<T, double>)
+      v.raw = vsetq_lane_f64(p[0], vdupq_n_f64(0.0), 0);
+    else if constexpr (std::is_same_v<T, std::int64_t>)
+      v.raw = vsetq_lane_s64(p[0], vdupq_n_s64(0), 0);
+    else
+      v.raw = vsetq_lane_u64(p[0], vdupq_n_u64(0), 0);
+    return v;
+  }
   alignas(16) T tmp[kN] = {};
   for (std::size_t i = 0; i < k; ++i) tmp[i] = p[i];
   return Load(d, tmp);
@@ -2970,6 +2983,19 @@ HYLE_FORCE_INLINE void StoreN(detail::VN<D> v, D d, TFromD<D>* p, std::size_t n)
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
   const std::size_t k = n < kN ? n : kN;
+  if constexpr (kN == 2 && sizeof(T) == 8) {
+    if (k == 2) {
+      StoreU(v, d, p);
+    } else if (k == 1) {
+      if constexpr (std::is_same_v<T, double>)
+        vst1q_lane_f64(p, v.raw, 0);
+      else if constexpr (std::is_same_v<T, std::int64_t>)
+        vst1q_lane_s64(p, v.raw, 0);
+      else
+        vst1q_lane_u64(p, v.raw, 0);
+    }
+    return;
+  }
   alignas(16) T tmp[kN];
   Store(v, d, tmp);
   for (std::size_t i = 0; i < k; ++i) p[i] = tmp[i];
@@ -2997,6 +3023,16 @@ consteval auto make_neon_compact_indices() {
       std::size_t packed = 0;
       for (std::size_t lane = 0; lane < kLanes; ++lane) {
         if ((bits & (std::size_t{1} << lane)) == 0) continue;
+        for (std::size_t byte = 0; byte < kLaneBytes; ++byte)
+          row[packed * kLaneBytes + byte] =
+              static_cast<std::uint8_t>(lane * kLaneBytes + byte);
+        ++packed;
+      }
+      // Keep inactive lanes after the active prefix. Compress only promises
+      // the prefix, so this stronger true-partition result is ABI-compatible
+      // and lets vqsort use one table lookup plus two full stores.
+      for (std::size_t lane = 0; lane < kLanes; ++lane) {
+        if ((bits & (std::size_t{1} << lane)) != 0) continue;
         for (std::size_t byte = 0; byte < kLaneBytes; ++byte)
           row[packed * kLaneBytes + byte] =
               static_cast<std::uint8_t>(lane * kLaneBytes + byte);

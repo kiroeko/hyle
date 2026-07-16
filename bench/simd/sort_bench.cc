@@ -18,6 +18,9 @@
 #include "hyle/macros.h"
 #include "hyle/simd/sort.h"
 #include "hyle/simd/runtime.h"
+#if defined(HYLE_OS_MACOS) && defined(HYLE_ARCH_ARM64)
+#include "src/simd/sort/kernels.h"
+#endif
 
 namespace {
 namespace nb = ankerl::nanobench;
@@ -67,6 +70,22 @@ HYLE_NOINLINE void hyle_partial_sort(T* values, std::size_t n, std::size_t k,
   hyle::simd::partial_sort(values, n, k,
                            ascending ? SortOrder::kAscending : SortOrder::kDescending);
 }
+
+#if defined(HYLE_OS_MACOS) && defined(HYLE_ARCH_ARM64)
+template <typename T>
+HYLE_NOINLINE void hyle_vqsort_core_partial(T* values, std::size_t n,
+                                             std::size_t k,
+                                             bool ascending) noexcept {
+  static_assert(IsKeyValue<T>::value);
+  if constexpr (std::is_same_v<T, KeyValue32>) {
+    auto* kv = reinterpret_cast<hyle::simd::detail::KV32Bits*>(values);
+    hyle::simd::detail::psort_kv32_neon(kv, n, k, ascending);
+  } else {
+    auto* kv = reinterpret_cast<hyle::simd::detail::KV64Bits*>(values);
+    hyle::simd::detail::psort_kv64_neon(kv, n, k, ascending);
+  }
+}
+#endif
 
 // select (Quickselect / nth_element): partition so the k-th order statistic is in place and all
 // smaller keys precede it (order within each side unspecified). Cheaper than partial_sort (no sort
@@ -225,16 +244,27 @@ void run_partial(const char* type, std::size_t n, std::size_t k, bool few_unique
     std_partial_sort(work.data(), n, k, ascending);
     nb::doNotOptimizeAway(work.data());
   });
-  bench.run("HYLE candidate direct", [&] {
-    std::copy(source.begin(), source.end(), work.begin());
-    candidate_partial_sort(work.data(), n, k, ascending);
-    nb::doNotOptimizeAway(work.data());
-  });
+  if (k <= 64) {
+    bench.run("HYLE insertion candidate", [&] {
+      std::copy(source.begin(), source.end(), work.begin());
+      candidate_partial_sort(work.data(), n, k, ascending);
+      nb::doNotOptimizeAway(work.data());
+    });
+  }
   bench.run("Highway direct", [&] {
     std::copy(source.begin(), source.end(), work.begin());
     highway_partial_sort(work.data(), n, k, ascending);
     nb::doNotOptimizeAway(work.data());
   });
+#if defined(HYLE_OS_MACOS) && defined(HYLE_ARCH_ARM64)
+  if constexpr (IsKeyValue<T>::value) {
+    bench.run("HYLE vqsort core", [&] {
+      std::copy(source.begin(), source.end(), work.begin());
+      hyle_vqsort_core_partial(work.data(), n, k, ascending);
+      nb::doNotOptimizeAway(work.data());
+    });
+  }
+#endif
   bench.run("HYLE public", [&] {
     std::copy(source.begin(), source.end(), work.begin());
     hyle_partial_sort(work.data(), n, k, ascending);

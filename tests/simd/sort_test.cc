@@ -235,6 +235,59 @@ TEST(Sort, SmallKIntegerPartialSort) {
   }
 }
 
+// vqsort's partition loop intentionally performs full-width stores near both
+// ends of the active range. Keep live objects immediately outside that range
+// so an incorrect Compress/StoreLeftRight contract is caught without relying
+// on an allocator redzone. ASan supplies the stronger allocation-boundary
+// check in the sanitizer build.
+TEST(Sort, PartitionDoesNotTouchAdjacentObjects) {
+  constexpr std::size_t kGuard = 32;
+  constexpr std::uint32_t kLeft = 0xA17ECAFEu;
+  constexpr std::uint32_t kRight = 0xBADC0FFEu;
+  std::mt19937_64 rng(0xC0FFEE1234567890ULL);
+
+  // Dense coverage around base-case/partition boundaries plus awkward large
+  // sizes. Repeat with duplicate-heavy and full-range inputs, both orders and
+  // all three public entry points.
+  const std::size_t sizes[] = {33,  47,  63,  64,  65,  95,  127, 128,
+                               129, 191, 255, 256, 257, 511, 1023, 4093};
+  for (const SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
+    for (const bool few_unique : {false, true}) {
+      for (const std::size_t n : sizes) {
+        std::vector<std::uint32_t> storage(n + 2 * kGuard);
+        std::fill_n(storage.begin(), kGuard, kLeft);
+        std::fill_n(storage.end() - kGuard, kGuard, kRight);
+        auto* const data = storage.data() + kGuard;
+        for (std::size_t i = 0; i < n; ++i) {
+          data[i] = few_unique ? static_cast<std::uint32_t>(rng() & 7u)
+                               : static_cast<std::uint32_t>(rng());
+        }
+        const std::vector<std::uint32_t> input(data, data + n);
+
+        const auto check_guards = [&] {
+          EXPECT_TRUE(std::all_of(storage.begin(), storage.begin() + kGuard,
+                                  [](std::uint32_t x) { return x == kLeft; }))
+              << "left guard n=" << n;
+          EXPECT_TRUE(std::all_of(storage.end() - kGuard, storage.end(),
+                                  [](std::uint32_t x) { return x == kRight; }))
+              << "right guard n=" << n;
+        };
+
+        sort(data, n, order);
+        check_guards();
+
+        std::copy(input.begin(), input.end(), data);
+        partial_sort(data, n, n / 2, order);
+        check_guards();
+
+        std::copy(input.begin(), input.end(), data);
+        select(data, n, n / 2, order);
+        check_guards();
+      }
+    }
+  }
+}
+
 // KV (top-k): sort by key, value must ride along. Verify (1) keys come out ordered, (2) every
 // (key,value) pair is preserved (the multiset of pairs is unchanged -- value stays glued to its
 // key), which is the arg-sort/top-k contract. Uses value = a hash of the original key so a

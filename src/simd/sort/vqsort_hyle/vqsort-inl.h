@@ -116,8 +116,6 @@ void HeapPartialSort(Traits st, T* HWY_RESTRICT lanes, const size_t num_lanes,
   HeapSort(st, lanes, k_lanes);
 }
 
-#if VQSORT_ENABLED || HWY_IDE
-
 // ------------------------------ BaseCase
 
 // Special cases where `num_lanes` is in the specified range (inclusive).
@@ -246,7 +244,7 @@ HWY_NOINLINE void Sort8Rows(Traits st, T* HWY_RESTRICT keys, size_t num_lanes,
   v6 = LoadU(d, buf + 0x6 * kLanesPerRow);
   v7 = LoadU(d, buf + 0x7 * kLanesPerRow);
 #endif  // HWY_MEM_OPS_MIGHT_FAULT
-#if !HWY_MEM_OPS_MIGHT_FAULT || HWY_IDE
+#if !HWY_MEM_OPS_MIGHT_FAULT
   (void)buf;
   const V vnum_lanes = Set(d, ConvertScalarTo<T>(num_lanes));
   // First offset where not all vector are guaranteed valid.
@@ -301,7 +299,7 @@ HWY_NOINLINE void Sort8Rows(Traits st, T* HWY_RESTRICT keys, size_t num_lanes,
   HWY_ASSUME(remaining < 256);  // helps FirstN
   SafeCopyN(remaining, dmax, buf + i, keys + i);
 #endif  // HWY_MEM_OPS_MIGHT_FAULT
-#if !HWY_MEM_OPS_MIGHT_FAULT || HWY_IDE
+#if !HWY_MEM_OPS_MIGHT_FAULT
   BlendedStore(v4, m4, d, keys + 0x4 * kLanesPerRow);
   BlendedStore(v5, m5, d, keys + 0x5 * kLanesPerRow);
   BlendedStore(v6, m6, d, keys + 0x6 * kLanesPerRow);
@@ -347,7 +345,7 @@ HWY_NOINLINE void Sort16Rows(Traits st, T* HWY_RESTRICT keys, size_t num_lanes,
   ve = LoadU(d, buf + 0xe * kLanesPerRow);
   vf = LoadU(d, buf + 0xf * kLanesPerRow);
 #endif  // HWY_MEM_OPS_MIGHT_FAULT
-#if !HWY_MEM_OPS_MIGHT_FAULT || HWY_IDE
+#if !HWY_MEM_OPS_MIGHT_FAULT
   (void)buf;
   const V vnum_lanes = Set(d, ConvertScalarTo<T>(num_lanes));
   // First offset where not all vector are guaranteed valid.
@@ -428,7 +426,7 @@ HWY_NOINLINE void Sort16Rows(Traits st, T* HWY_RESTRICT keys, size_t num_lanes,
   HWY_ASSUME(remaining < 256);  // helps FirstN
   SafeCopyN(remaining, dmax, buf + i, keys + i);
 #endif  // HWY_MEM_OPS_MIGHT_FAULT
-#if !HWY_MEM_OPS_MIGHT_FAULT || HWY_IDE
+#if !HWY_MEM_OPS_MIGHT_FAULT
   BlendedStore(v8, m8, d, keys + 0x8 * kLanesPerRow);
   BlendedStore(v9, m9, d, keys + 0x9 * kLanesPerRow);
   BlendedStore(va, ma, d, keys + 0xa * kLanesPerRow);
@@ -551,9 +549,9 @@ HWY_INLINE size_t PartitionRightmost(D d, Traits st, T* const keys,
     const Vec<D> v = LoadU(d, pReadR);
 
     const Mask<D> comp = st.Compare(d, pivot, v);
-    const size_t numL = SafeCompressStore(v, Not(comp), d, buf + bufL);
+    const size_t numL = CompressStore(v, Not(comp), d, buf + bufL);
     bufL += numL;
-    (void)SafeCompressStore(v, comp, d, buf + bufR);
+    (void)CompressStore(v, comp, d, buf + bufR);
     bufR += (N - numL);
   }
 
@@ -566,9 +564,9 @@ HWY_INLINE size_t PartitionRightmost(D d, Traits st, T* const keys,
     const Vec<D> v = LoadN(d, pReadR, remaining);
 
     const Mask<D> comp = st.Compare(d, pivot, v);
-    const size_t numL = SafeCompressStore(v, AndNot(comp, mask), d, buf + bufL);
+    const size_t numL = CompressStore(v, AndNot(comp, mask), d, buf + bufL);
     bufL += numL;
-    (void)SafeCompressStore(v, comp, d, buf + bufR);
+    (void)CompressStore(v, comp, d, buf + bufR);
     bufR += (remaining - numL);
   }
 
@@ -602,6 +600,31 @@ HWY_INLINE void StoreLeftRight(D d, Traits st, const Vec<D> v,
   HWY_DASSERT(remaining >= 2 * N);
 
   remaining -= N;
+#if defined(HYLE_SIMD_TARGET_AVX2)
+  if constexpr (sizeof(T) == 8) {
+    // AVX2 CompressNot(u64) is a true stable partition (false lanes, then
+    // true lanes) implemented by one vpermd over adjacent u32 pairs. This is
+    // the Highway fast path and is especially important for 128-bit KV keys.
+    const Vec<D> lr = st.CompressKeys(v, comp);
+    const size_t num_left = N - CountTrue(d, comp);
+    StoreU(lr, d, keys + writeL);
+    StoreU(lr, d, keys + remaining + writeL);
+    writeL += num_left;
+    return;
+  }
+#endif
+#if defined(HYLE_SIMD_TARGET_NEON)
+  if constexpr (sizeof(T) != 1) {
+    // NEON's table-lookup Compress is a true partition for 16/32/64-bit
+    // lanes, matching Highway's vqsort fast-path contract.
+    const Vec<D> lr = st.CompressKeys(v, comp);
+    const size_t num_left = N - CountTrue(d, comp);
+    StoreU(lr, d, keys + writeL);
+    StoreU(lr, d, keys + remaining + writeL);
+    writeL += num_left;
+    return;
+  }
+#endif
   // Exact-count stores only. HYLE CompressStore/StoreU write a full native
   // vector (unspecified tail); dual full-vector stores near the right boundary
   // overrun the keys array. SafeCompressStore writes exactly CountTrue lanes.
@@ -631,7 +654,7 @@ HWY_INLINE void StoreRightAndBuf(D d, Traits st, const Vec<D> v,
                                  size_t& bufL) {
   const size_t N = Lanes(d);
   const Mask<D> comp = st.Compare(d, pivot, v);
-  const size_t numL = SafeCompressStore(v, Not(comp), d, buf + bufL);
+  const size_t numL = CompressStore(v, Not(comp), d, buf + bufL);
   const size_t numR = N - numL;
   bufL += numL;
   writeR -= numR;
@@ -1784,8 +1807,6 @@ HWY_INLINE bool HandleSpecialCases(D d, Traits st, T* HWY_RESTRICT keys,
   return false;  // not finished sorting
 }
 
-#endif  // VQSORT_ENABLED
-
 template <class D, class Traits, typename T, HWY_IF_FLOAT(T)>
 HWY_INLINE size_t CountAndReplaceNaN(D d, Traits st, T* HWY_RESTRICT keys,
                                      size_t num) {
@@ -1831,7 +1852,7 @@ HWY_INLINE size_t PartitionNaNToBack(D d, Traits, T* HWY_RESTRICT keys,
   if (num >= N) {
     for (; i <= num - N; i += N) {
       const Vec<D> v = LoadU(d, keys + i);
-      w += SafeCompressStore(v, Not(IsNaN(v)), d, keys + w);
+      w += CompressStore(v, Not(IsNaN(v)), d, keys + w);
     }
   }
   const size_t remaining = num - i;
@@ -1872,24 +1893,11 @@ void Sort(D d, Traits st, T* HWY_RESTRICT keys, const size_t num,
 
   const size_t num_nan = CountAndReplaceNaN(d, st, keys, num);
 
-#if VQSORT_ENABLED || HWY_IDE
   if (!HandleSpecialCases(d, st, keys, num, buf)) {
-#if HYLE_VQSORT_USE_VECTOR_PARTITION
     uint64_t* HWY_RESTRICT state = GetGeneratorStateStatic();
     const size_t max_levels = 50;
     Recurse<RecurseMode::kSort>(d, st, keys, num, buf, state, max_levels);
-#else
-    HeapSort(st, keys, num);
-#endif
   }
-#else   // !VQSORT_ENABLED
-  (void)d;
-  (void)buf;
-  if (VQSORT_PRINT >= 1) {
-    HWY_WARN("using slow HeapSort because vqsort disabled\n");
-  }
-  HeapSort(st, keys, num);
-#endif  // VQSORT_ENABLED
 
   if (num_nan != 0) {
     Fill(d, GetLane(SortPoisonNaN(d)), num_nan, keys + num - num_nan);
@@ -1919,9 +1927,7 @@ void PartialSort(D d, Traits st, T* HWY_RESTRICT keys, size_t num, size_t k,
   const size_t k_valid = (k < num_valid) ? k : num_valid;
   if (num_valid == 0) return;
 
-#if VQSORT_ENABLED || HWY_IDE
-  if (!HandleSpecialCases(d, st, keys, num_valid, buf)) {  // TODO
-#if HYLE_VQSORT_USE_VECTOR_PARTITION
+  if (!HandleSpecialCases(d, st, keys, num_valid, buf)) {
     uint64_t* HWY_RESTRICT state = GetGeneratorStateStatic();
     const size_t max_levels = 50;
     if (k_valid < num_valid) {
@@ -1929,18 +1935,7 @@ void PartialSort(D d, Traits st, T* HWY_RESTRICT keys, size_t num, size_t k,
                                     max_levels, k_valid);
     }
     Recurse<RecurseMode::kSort>(d, st, keys, k_valid, buf, state, max_levels);
-#else
-    HeapPartialSort(st, keys, num_valid, k_valid);
-#endif
   }
-#else   // !VQSORT_ENABLED
-  (void)d;
-  (void)buf;
-  if (VQSORT_PRINT >= 1) {
-    HWY_WARN("using slow HeapSort because vqsort disabled\n");
-  }
-  HeapPartialSort(st, keys, num_valid, k_valid);
-#endif  // VQSORT_ENABLED
 }
 
 template <class D, class Traits, typename T>
@@ -1964,25 +1959,12 @@ void Select(D d, Traits st, T* HWY_RESTRICT keys, const size_t num,
   const size_t num_valid = num - PartitionNaNToBack(d, st, keys, num);
   if (k >= num_valid) return;
 
-#if VQSORT_ENABLED || HWY_IDE
-  if (!HandleSpecialCases(d, st, keys, num_valid, buf)) {  // TODO
-#if HYLE_VQSORT_USE_VECTOR_PARTITION
+  if (!HandleSpecialCases(d, st, keys, num_valid, buf)) {
     uint64_t* HWY_RESTRICT state = GetGeneratorStateStatic();
     const size_t max_levels = 50;
     Recurse<RecurseMode::kSelect>(d, st, keys, num_valid, buf, state,
                                   max_levels, k);
-#else
-    HeapSelect(st, keys, num_valid, k);
-#endif
   }
-#else   // !VQSORT_ENABLED
-  (void)d;
-  (void)buf;
-  if (VQSORT_PRINT >= 1) {
-    HWY_WARN("using slow HeapSort because vqsort disabled\n");
-  }
-  HeapSelect(st, keys, num_valid, k);
-#endif  // VQSORT_ENABLED
 }
 
 // Sorts `keys[0..num-1]` according to the order defined by `st.Compare`.
@@ -2103,4 +2085,3 @@ void VQSelectStatic(Key* HWY_RESTRICT keys, const size_t num_keys,
 }  // namespace vqsort
 }  // namespace detail
 }  // namespace hyle::simd
-

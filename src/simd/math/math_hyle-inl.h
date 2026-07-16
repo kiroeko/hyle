@@ -677,8 +677,6 @@ struct AsinImpl<float> {
   }
 };
 
-#if 1 /* HYLE product targets always have f64+i64 */
-
 template <>
 struct AsinImpl<double> {
   // Polynomial approximation for asin(x) over the range [0, 0.5).
@@ -701,8 +699,6 @@ struct AsinImpl<double> {
   }
 };
 
-#endif
-
 template <>
 struct AtanImpl<float> {
   // Polynomial approximation for atan(x) over the range [0, 1.0).
@@ -721,8 +717,6 @@ struct AtanImpl<float> {
     return MulAdd(Estrin(y, k0, k1, k2, k3, k4, k5, k6, k7), Mul(y, x), x);
   }
 };
-
-#if 1 /* HYLE product targets always have f64+i64 */
 
 template <>
 struct AtanImpl<double> {
@@ -755,8 +749,6 @@ struct AtanImpl<double> {
                   Mul(y, x), x);
   }
 };
-
-#endif
 
 template <>
 struct ErfImpl<float> {
@@ -812,8 +804,6 @@ struct ErfImpl<float> {
     return Set(d, +14.0f);
   }
 };
-
-#if 1 /* HYLE product targets always have f64+i64 */
 
 template <>
 struct ErfImpl<double> {
@@ -893,8 +883,6 @@ struct ErfImpl<double> {
   }
 };
 
-#endif
-
 template <>
 struct CosSinImpl<float> {
   // Rounds float toward zero and returns as std::int32_t.
@@ -964,8 +952,6 @@ struct CosSinImpl<float> {
     return BitCast(d, ShiftLeft<31>(And(q, kOne)));
   }
 };
-
-#if 1 /* HYLE product targets always have f64+i64 */
 
 template <>
 struct CosSinImpl<double> {
@@ -1044,8 +1030,6 @@ struct CosSinImpl<double> {
         d, ShiftLeft<63>(PromoteTo(Rebind<std::int64_t, D>(), And(q, kOne))));
   }
 };
-
-#endif
 
 template <>
 struct ExpImpl<float> {
@@ -1159,7 +1143,6 @@ struct ExtPrecLog2ForPowImpl<float> {
   }
 };
 
-#if 1 /* HYLE product targets always have f64+i64 */
 template <>
 struct ExpImpl<double> {
   // Rounds double toward zero and returns as std::int32_t.
@@ -1270,7 +1253,6 @@ struct LogImpl<double> {
   }
 };
 
-#if 1 /* HYLE product targets always have f64 */
 template <>
 struct ExtPrecLog2ForPowImpl<double> {
   // Approximates Log2(x) over the range [sqrt(2) / 2, sqrt(2)].
@@ -1287,9 +1269,6 @@ struct ExtPrecLog2ForPowImpl<double> {
     return Estrin(z_sqr_hi, k0, k1, k2, k3, k4, k5, k6);
   }
 };
-#endif
-
-#endif
 
 template <class D, class V, bool kAllowSubnormals = true>
 HYLE_FORCE_INLINE V Log(const D d, V x) {
@@ -1756,7 +1735,6 @@ struct SinCosImpl<float> {
   }
 };
 
-#if 1 /* HYLE product targets always have f64+i64 */
 template <>
 struct SinCosImpl<double> {
   template <class D, class V = VFromD<D>, std::enable_if_t<std::is_same_v<hyle::simd::TFromD<D>, double>, int> = 0>
@@ -1765,7 +1743,6 @@ struct SinCosImpl<double> {
             -2.69515142907905952645E-15, x, s, c);
   }
 };
-#endif
 
 }  // namespace impl
 

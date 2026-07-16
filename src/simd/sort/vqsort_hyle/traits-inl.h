@@ -143,9 +143,7 @@ struct KeyLane : public KeyLaneBase<LaneType, KeyType> {
 
   template <class V, class M>
   HWY_INLINE V CompressKeys(V keys, M mask) const {
-    // True partition (left=mask false, right=mask true). HYLE CompressNot leaves
-    // the high half unspecified; StoreLeftRight with CompressIsPartition needs both.
-    return CompressPartitionNot(keys, mask);
+    return CompressNot(keys, mask);
   }
 
   // Broadcasts one key into a vector
@@ -597,4 +595,3 @@ struct TraitsLane : public Base {
 }  // namespace vqsort
 }  // namespace detail
 }  // namespace hyle::simd
-

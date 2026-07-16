@@ -2217,6 +2217,32 @@ TEST(Vec, CompressI64) { CheckCompress<std::int64_t>(); }
 TEST(Vec, CompressI16) { CheckCompress<std::int16_t>(); }
 TEST(Vec, CompressI8) { CheckCompress<std::int8_t>(); }
 
+TEST(Vec, CompressCappedI64) {
+  const hs::CappedTag<std::int64_t, 2> d;
+  const std::size_t n = hs::Lanes(d);
+  alignas(64) std::int64_t values[8] = {11, 22};
+  alignas(64) std::int64_t mask_lanes[8] = {};
+  alignas(64) std::int64_t zeros[8] = {};
+  alignas(64) std::int64_t out[8] = {};
+
+  for (std::uint64_t bits = 0; bits < (std::uint64_t{1} << n); ++bits) {
+    for (std::size_t i = 0; i < n; ++i)
+      mask_lanes[i] = static_cast<std::int64_t>((bits >> i) & 1u);
+    const auto mask = hs::Gt(hs::Load(d, mask_lanes), hs::Load(d, zeros));
+    const auto v = hs::Load(d, values);
+
+    hs::Store(hs::Compress(v, mask), d, out);
+    std::size_t packed = 0;
+    for (std::size_t i = 0; i < n; ++i)
+      if ((bits >> i) & 1u) EXPECT_EQ(out[packed++], values[i]);
+
+    hs::Store(hs::CompressNot(v, mask), d, out);
+    packed = 0;
+    for (std::size_t i = 0; i < n; ++i)
+      if (((bits >> i) & 1u) == 0) EXPECT_EQ(out[packed++], values[i]);
+  }
+}
+
 // Bit counts (popcount/lzcnt/tzcnt), Not, Clamp, Rotate, and sign helpers.
 template <typename T>
 void CheckBitCount() {

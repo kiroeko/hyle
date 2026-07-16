@@ -788,7 +788,14 @@ template <int kBits, class V> HYLE_FORCE_INLINE V RoundingShiftRight(V v) noexce
 // widths/backends use the portable Compress(v, Not(m)).
 template <class V, class M> HYLE_FORCE_INLINE V CompressNot(V v, M m) noexcept {
 #if defined(HYLE_SIMD_AVX2_HAS_NATIVE_COMPRESS_NOT32)
-  if constexpr (sizeof(TFromD<DFromV<V>>) == 4) return CompressNotNative(v, m);
+  if constexpr (sizeof(TFromD<DFromV<V>>) == 4 &&
+                sizeof(TFromD<DFromV<V>>) * DFromV<V>::kMaxLanes == 32)
+    return CompressNotNative(v, m);
+#if defined(HYLE_SIMD_AVX2_HAS_NATIVE_COMPRESS_NOT64)
+  else if constexpr (sizeof(TFromD<DFromV<V>>) == 8 &&
+                     sizeof(TFromD<DFromV<V>>) * DFromV<V>::kMaxLanes == 32)
+    return CompressNotNative(v, m);
+#endif
   else return Compress(v, Not(m));
 #else
   return Compress(v, Not(m));
@@ -1806,6 +1813,16 @@ HYLE_FORCE_INLINE auto SetTableIndices(D d, const TFromD<D>* idx) noexcept {
 // CompressBlocksNot(v, mask): Highway's u64-only alias for CompressNot (kept for op-face parity).
 template <class V, class M>
 HYLE_FORCE_INLINE V CompressBlocksNot(V v, M mask) noexcept {
+#if defined(HYLE_SIMD_TARGET_NEON)
+  // One NEON register is exactly one 128-bit block, so there is nothing to
+  // compact across blocks. Highway makes this overload a no-op; avoiding the
+  // generic Not + mask extraction + table lookup matters for KV64 vqsort,
+  // where every vector contains exactly one key.
+  if constexpr (sizeof(TFromD<DFromV<V>>) == 8 && DFromV<V>::kMaxLanes == 2) {
+    (void)mask;
+    return v;
+  }
+#endif
   return CompressNot(v, mask);
 }
 // ZeroExtendResizeBitCast(d_to, d_from, v): reinterpret v's bytes into the d_to lane type, zero-

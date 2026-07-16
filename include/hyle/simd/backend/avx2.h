@@ -3474,6 +3474,30 @@ struct CompressNotIdx32Packed {
   }
 };
 inline constexpr CompressNotIdx32Packed kCompressNotIdx32Tbl{};
+
+// AVX2 has no variable 64-bit permute, but vpermd can move each u64 as an
+// adjacent pair of u32 lanes. Keep both selected and unselected lanes in the
+// table: this makes the result a true partition, which lets vqsort emit one
+// permute plus two full stores for 64-bit keys/KV blocks.
+struct CompressIdx64Pairs {
+  alignas(32) std::int32_t lanes[16][8]{};
+  constexpr explicit CompressIdx64Pairs(bool selected_first) {
+    for (unsigned bits = 0; bits < 16; ++bits) {
+      unsigned out = 0;
+      for (unsigned pass = 0; pass < 2; ++pass) {
+        const bool want_selected = (pass == 0) == selected_first;
+        for (unsigned lane = 0; lane < 4; ++lane) {
+          if ((((bits >> lane) & 1u) != 0) == want_selected) {
+            lanes[bits][out++] = static_cast<std::int32_t>(2 * lane);
+            lanes[bits][out++] = static_cast<std::int32_t>(2 * lane + 1);
+          }
+        }
+      }
+    }
+  }
+};
+inline constexpr CompressIdx64Pairs kCompressIdx64Pairs{true};
+inline constexpr CompressIdx64Pairs kCompressNotIdx64Pairs{false};
 // Shared 8x32 compress core: given the 8-bit lane mask, gather the selected lanes to the front via
 // the packed index table + one vpermd (Compress and CompressNot differ ONLY in the mbits passed).
 template <typename T, std::size_t N>
@@ -3505,6 +3529,19 @@ HYLE_FORCE_INLINE Vec256<T, N> compress32_by_not_bits(Vec256<T, N> v,
   else r.raw = _mm256_permutevar8x32_epi32(v.raw, idx);
   return r;
 }
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> compress64_by_bits(Vec256<T, N> v, unsigned mbits,
+                                                  bool selected_first) noexcept {
+  const auto& table = selected_first ? kCompressIdx64Pairs : kCompressNotIdx64Pairs;
+  const __m256i idx = _mm256_load_si256(
+      reinterpret_cast<const __m256i*>(table.lanes[mbits]));
+  Vec256<T, N> r;
+  const __m256i raw = detail::bitcast_raw_avx2<__m256i>(v.raw);
+  r.raw = detail::bitcast_raw_avx2<detail::Raw256T<T>>(
+      _mm256_permutevar8x32_epi32(raw, idx));
+  return r;
+}
 }  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcept {
@@ -3514,8 +3551,7 @@ HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcep
   // first CountTrue(m) lanes are defined; the tail is UNSPECIFIED (matches Highway/xsimd -- so no
   // zero-tail mask, which cost ~2x on AVX2 where there is no zeroing-compress instruction). Safe
   // use = CompressStore (writes exactly CountTrue) or read only the first CountTrue lanes.
-  // Other widths keep store+reload (no 8/16/64-bit vpermd on AVX2); that path happens to zero its
-  // tail (a store+reload byproduct, still within the "unspecified" contract).
+  // 64-bit lanes use vpermd on adjacent u32 pairs. Other widths keep store+reload.
   if constexpr (sizeof(T) == 4) {
     // 8-bit mask straight from movemask_ps (one instruction) -- NOT detail::mask_bits, whose i32
     // path scalar-compacts movemask_epi8's 32 bits (an ~8-iteration loop that dominated the op).
@@ -3523,6 +3559,8 @@ HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcep
     if constexpr (std::is_same_v<T, float>) mbits = static_cast<unsigned>(_mm256_movemask_ps(m.raw));
     else mbits = static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
     return detail::compress32_by_bits(v, mbits);
+  } else if constexpr (sizeof(T) == 8 && N == 4) {
+    return detail::compress64_by_bits(v, detail::mask_bits(m), true);
   } else {
     alignas(32) T src[N], dst[N] = {};
     Store(v, Simd<T, N, 0>(), src);
@@ -3538,14 +3576,25 @@ HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcep
 // extra vpxor/vpandn + routes the negated mask back through movemask.
 #if defined(HYLE_SIMD_TARGET_AVX2)
 #define HYLE_SIMD_AVX2_HAS_NATIVE_COMPRESS_NOT32 1
+#define HYLE_SIMD_AVX2_HAS_NATIVE_COMPRESS_NOT64 1
 #endif
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> CompressNotNative(Vec256<T, N> v, Mask256<T, N> m) noexcept {
-  static_assert(sizeof(T) == 4, "CompressNotNative: 32-bit lanes only");
-  unsigned mbits;
-  if constexpr (std::is_same_v<T, float>) mbits = static_cast<unsigned>(_mm256_movemask_ps(m.raw));
-  else mbits = static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
-  return detail::compress32_by_not_bits(v, mbits);
+  static_assert(sizeof(T) == 4 || sizeof(T) == 8,
+                "CompressNotNative: 32/64-bit lanes only");
+  if constexpr (sizeof(T) == 8) {
+    if constexpr (N == 4)
+      return detail::compress64_by_bits(v, detail::mask_bits(m), false);
+    else
+      return Compress(v, Not(m));
+  } else {
+    unsigned mbits;
+    if constexpr (std::is_same_v<T, float>)
+      mbits = static_cast<unsigned>(_mm256_movemask_ps(m.raw));
+    else
+      mbits = static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
+    return detail::compress32_by_not_bits(v, mbits);
+  }
 }
 // AVX2 has no native compress (VBMI2's vpcompress is AVX-512 only), so Compress IS the store+
 // reload form -- CompressEmulated aliases it so gather_bench compiles the same A/B on both x86

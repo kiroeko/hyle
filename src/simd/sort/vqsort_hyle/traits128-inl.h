@@ -11,7 +11,7 @@ namespace hyle::simd {
 namespace detail {
 namespace vqsort {
 
-// Also used by HeapSort, so do not require VQSORT_ENABLED.
+// Shared by the 128-bit key sorting paths.
 
 // Highway does not provide a lane type for 128-bit keys, so we use uint64_t
 // along with an abstraction layer for single-lane vs. lane-pair, which is
@@ -33,9 +33,7 @@ struct KeyAny128 {
 
   template <class V, class M>
   HWY_INLINE V CompressKeys(V keys, M mask) const {
-    // Pair-replicated masks (Lt128Upper) keep 128-bit key+value together when
-    // partitioning by u64 lanes; need a true partition (not unspecified tail).
-    return CompressPartitionNot(keys, mask);
+    return CompressBlocksNot(keys, mask);
   }
 
   template <class D, HWY_IF_U64_D(D)>
@@ -499,4 +497,3 @@ struct Traits128 : public Base {
 }  // namespace vqsort
 }  // namespace detail
 }  // namespace hyle::simd
-

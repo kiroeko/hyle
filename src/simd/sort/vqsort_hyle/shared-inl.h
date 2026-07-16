@@ -6,6 +6,6 @@
 // HYLE semantic migration of Highway vqsort shared constants.
 // Origin file: hwy/contrib/sort/shared-inl.h
 // upstream commit SHA: 83eff39371e5e6494b305b253f8a3c06f831faf4
-// RandomBits / SortConstants / SortTag / VQSORT_ENABLED live in vqsort_ops.h.
+// RandomBits / SortConstants / SortTag live in vqsort_ops.h.
 #pragma once
 #include "src/simd/sort/vqsort_hyle/vqsort_ops.h"

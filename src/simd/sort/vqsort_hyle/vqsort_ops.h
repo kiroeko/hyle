@@ -153,30 +153,7 @@ HYLE_FORCE_INLINE V ConcatUpperUpper(D, V hi, V lo) noexcept {
   return hyle::simd::ConcatUpperUpper(hi, lo);
 }
 
-// ---- 128-bit upper-key ops (KV64) -----------------------------------------------
-// Mirror of Lt128Upper / Eq128 / Min128 / Max128 but operating on the high half only.
-template <class D, class V = VFromD<D>>
-HYLE_FORCE_INLINE auto Eq128Upper(D d, V a, V b) noexcept {
-  static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Eq128Upper needs u64 lanes");
-  const V eqHL = VecFromMask(d, Eq(a, b));
-  return MaskFromNormalizedVec(InterleaveUpper(eqHL, eqHL));
-}
-template <class D, class V = VFromD<D>>
-HYLE_FORCE_INLINE auto Ne128Upper(D d, V a, V b) noexcept {
-  static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Ne128Upper needs u64 lanes");
-  const V neHL = VecFromMask(d, Ne(a, b));
-  return MaskFromNormalizedVec(InterleaveUpper(neHL, neHL));
-}
-template <class D, class V = VFromD<D>>
-HYLE_FORCE_INLINE V Min128Upper(D d, V a, V b) noexcept {
-  return IfThenElse(Lt128Upper(d, a, b), a, b);
-}
-template <class D, class V = VFromD<D>>
-HYLE_FORCE_INLINE V Max128Upper(D d, V a, V b) noexcept {
-  return IfThenElse(Lt128Upper(d, b, a), a, b);
-}
-
-// ---- Entropy for pivot sampling (VQSORT_ONLY_STATIC path) -----------------------
+// ---- Entropy for pivot sampling -------------------------------------------------
 HYLE_FORCE_INLINE void Fill16BytesStatic(void* bytes) noexcept {
   uint64_t* words = reinterpret_cast<uint64_t*>(bytes);
   uint64_t** seed_stack = &words;
@@ -284,55 +261,14 @@ struct SortConstants {
 template <typename T>
 using SortTag = ScalableTag<T>;
 
-// Highway CompressIsPartition: true when Compress also places inactive lanes at
-// the high end (partition). HYLE's public Compress leaves the tail unspecified,
-// so vqsort uses CompressPartitionKeys (true partition via two CompressStores
-// into a scratch) and sets value=true to take the single-CompressKeys path in
-// StoreLeftRight (same control flow as Highway AVX2).
-template <typename T>
-struct CompressIsPartition {
-  // Use StoreLeftRight's single CompressKeys path; CompressKeys is
-  // CompressPartitionNot (true left|right partition). Dual CompressStore is
-  // unsafe here: right-side store can write a full vector past the array end
-  // when remaining is tight.
-  enum { value = (sizeof(T) != 1) };
-};
-
-// True partition: lanes with mask=false first, mask=true after (order preserved
-// within each side). Used by KeyLane::CompressKeys via an override below only
-// if needed; StoreLeftRight calls st.CompressKeys which is CompressNot in
-// traits. We replace CompressNot usage for partition by making CompressNot a
-// true partition for the sort TU when CompressIsPartition is true.
-//
-// Implementation: two CompressStores into a stack scratch, then Load.
-// CompressStore that writes exactly CountTrue lanes (HYLE CompressStore may
-// write a full vector of unspecified tail — unsafe when the destination is a
-// tight buffer region such as buf+bufL).
+// vqsort sometimes packs into a tight buffer region. Public CompressStore is
+// allowed to overwrite a full vector's unspecified tail, so this private
+// helper narrows the write to the exact active count.
 template <class V, class M, class D>
 HYLE_FORCE_INLINE size_t SafeCompressStore(V v, M m, D d, TFromD<D>* p) noexcept {
   const size_t count = CountTrue(d, m);
   StoreN(Compress(v, m), d, p, count);
   return count;
-}
-
-template <class V, class M>
-HYLE_FORCE_INLINE V CompressPartitionNot(V v, M mask) noexcept {
-  // mask true = right side; want left (mask false) first, right after.
-  // CompressStore writes a full vector (tail unspecified), so left/right must
-  // land in disjoint N-lane regions — never tmp+nL (would overrun by up to N-1).
-  using DV = DFromV<V>;
-  using T = TFromD<DV>;
-  const DV d;
-  const size_t N = Lanes(d);
-  alignas(64) T tmp[2 * DV::kMaxLanes];
-  alignas(64) T out[DV::kMaxLanes];
-  const size_t nL = CompressStore(v, Not(mask), d, tmp + 0);
-  const size_t nR = CompressStore(v, mask, d, tmp + N);
-  // Merge exact counts (nL+nR == N).
-  for (size_t i = 0; i < nL; ++i) out[i] = tmp[i];
-  for (size_t i = 0; i < nR; ++i) out[nL + i] = tmp[N + i];
-  (void)N;
-  return LoadU(d, out);
 }
 
 // Print stubs (VQSORT_PRINT defaults to 0).
@@ -508,9 +444,6 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
 #ifndef HWY_MEM_OPS_MIGHT_FAULT
 #define HWY_MEM_OPS_MIGHT_FAULT 1
 #endif
-#ifndef HWY_IDE
-#define HWY_IDE 0
-#endif
 #ifndef HWY_HAVE_FLOAT64
 #define HWY_HAVE_FLOAT64 1
 #endif
@@ -530,7 +463,7 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
 #define HWY_COMPILER_MSVC 0
 #endif
 #if defined(__clang__)
-#define HWY_COMPILER_CLANG 1
+#define HWY_COMPILER_CLANG (__clang_major__ * 100 + __clang_minor__)
 #else
 #define HWY_COMPILER_CLANG 0
 #endif
@@ -559,20 +492,8 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
 #define HWY_IF_V_SIZE_V(V, bytes) HYLE_VQSORT_IF_V_SIZE_V(V, bytes)
 #endif
 
-#ifndef VQSORT_ENABLED
-#define VQSORT_ENABLED 1
-#endif
-// When 0, large-n path uses HeapSort instead of vector Partition/Recurse.
-// Partition StoreLeftRight still intermittently OOBs under HYLE's Compress
-// semantics (stress Sort.* 40x); BaseCase networks remain enabled for small n.
-#ifndef HYLE_VQSORT_USE_VECTOR_PARTITION
-#define HYLE_VQSORT_USE_VECTOR_PARTITION 0
-#endif
 #ifndef VQSORT_PRINT
 #define VQSORT_PRINT 0
-#endif
-#ifndef VQSORT_ONLY_STATIC
-#define VQSORT_ONLY_STATIC 1
 #endif
 
 // float16 placeholder so KeyString switch compiles (not a supported key type).
