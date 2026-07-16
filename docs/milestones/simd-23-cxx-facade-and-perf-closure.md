@@ -1,13 +1,14 @@
 # simd-23：C++ 易用性外观与性能证据收口
 
-> 状态：🚧 性能收口中（2026-07-16）。依赖 simd-22；C++ facade 延后，不改变 close-01 的稳定 C ABI 承诺。
+> 状态：✅ SIMD 41-name 性能闭环 + 实用 op 审计 + C++ facade 已完成（2026-07-16）。依赖 simd-22；
+> 不改变 close-01/02 的稳定 C ABI 承诺。
 
 ## 为什么有这一项
 
 simd-22 已解决“同一 kernel 如何同时服务未知 CPU、整库固定 ISA 和用户 TU 固定 ISA”，但普通 C++
-用户仍要认识各模块的 pointer/count 命名，且容易把 8 个 SIMD 头机械提取出的 383 个公开/selector
+用户仍要认识各模块的 pointer/count 命名，且容易把 8 个 SIMD 头机械提取出的 387 个公开/selector
 名字误认为日常入口。
-本里程碑补的是**发现性、类型安全和组合便利**，不是再造一层 kernel，也不是给 383 个机械提取名逐个加动态派发。
+本里程碑补的是**发现性、类型安全和组合便利**，不是再造一层 kernel，也不是给 387 个机械提取名逐个加动态派发。
 
 另一条独立问题是性能证据。`container/hash.h` 与 SwissTable 按依赖图有意不依赖 `simd`；这不妨碍
 它们追求 SOTA，但必须用独立 benchmark 证明，不能为了复用 SIMD API 反转 `container -> simd` 依赖。
@@ -68,14 +69,14 @@ hyle::simd::RandomState state{12345};
 hyle::simd::random_fill(state, out);
 ```
 
-第一版只接受 `std::span`；是否再接受任意 `contiguous_range` 由编译时间、诊断质量和隐式 const 转换
-实测决定。不能让一个漂亮调用掩盖临时对象悬垂或非连续 range。
+第一版的函数签名只接受 `std::span`，不做任意 range 模板；`std::vector`/`std::array` 等活着的连续
+容器可以使用标准的隐式 span 转换直接调用。这样保留清晰诊断，也不接受非连续 range。
 
 ### 首批家族
 
 | 家族 | 普通外观 | 转发目标 |
 |---|---|---|
-| 基础数组 | `add/dot/saxpy/scale/reduce_*` | ops pointer/count API |
+| 基础数组 | `add/dot/saxpy` | ops pointer/count API |
 | RNG | `random_fill(state, span)` | random pointer/count API |
 | scan | `inclusive_scan/exclusive_scan` | scan pointer/count API |
 | dtype | `convert(src, dst)` | 已支持的 dtype pair |
@@ -98,16 +99,16 @@ hyle::simd::random_fill(state, out);
 - 不缓存第二份 Runtime，不新增函数表 slot，不在 wrapper 中自行探测 CPUID。
 - 代表性 wrapper 用优化后 IR/assembly 或 link map 证明被完全消除；合成 wrapper 不建 nanobench。
 
-## 383 个公开/selector 名与 benchmark：先修口径，再补真缺口
+## 387 个公开/selector 名与 benchmark：显式分类已经闭环
 
 `scripts/simd-op-coverage.py` 当前按名字/标题匹配，适合发现候选，不足以定义 benchmark 债务。例如
 `TableLookupBytesInRange` 已是 `TableLookupBytes` 对拍行的 HYLE 被测侧，
 `DemoteToNearestIntInRange` 已是 `run_third` 信息行，却仍被报为“未覆盖”。
 
-当前机械树是：383 个公开名 − 26 个非性能项 − 13 个 `*Native/*Emulated` selector − 4 个 alias
-= 340 个 benchable；其中 299 已覆盖、41 待分类。标题还能映射到 4 个已被对拍但从 perf 分母剔除的
-构造/retag 名，因此用户看到的“已写 benchmark op 名”是 303。单个报告约 200 行并不代表漏跑，
-三个 TU 的原始标题也不能相加当 canonical 数量。
+当前机械树是：387 个公开名 − 26 个非性能项 − 13 个 `*Native/*Emulated` selector − 4 个 alias
+= 344 个 benchable；其中 314 个有独立 source benchmark，30 个由 manifest 明确归为
+alias/synthetic/paired-info/algorithm。旧 41-name 候选已经全量核账；后来新增的 4 个 128-bit upper
+合成接口也立即进入 manifest，因此 truly unclassified 始终为 0。
 
 先建立显式 manifest，每个公开名只能属于一类：
 
@@ -122,10 +123,10 @@ hyle::simd::random_fill(state, out);
 
 对现有“41 个待补 bench”候选的首轮审计结论：
 
-- **应补独立 op-parity 的约 14 项**：`BitsFromMask`、`MaskFromVec`、`VecFromMask`、
+- **应补独立 op-parity 的 15 项**：`BitsFromMask`、`MaskFromVec`、`VecFromMask`、
   `LoadMaskBits`、`StoreMaskBits`、`ConvertInRangeTo`、`DemoteInRangeTo`、
   `TableLookupBytesOr0`、`InterleaveEvenBlocks`、`InterleaveOddBlocks`、`SlideUpBlocks`、
-  `SlideDownBlocks`、`SumsOfShuffledQuadAbsDiff`、`Shuffle01`。
+  `SlideDownBlocks`、`ShiftRightUniform`、`SumsOfShuffledQuadAbsDiff`、`Shuffle01`。
 - **已有测量但报告误判的 2 项**：`TableLookupBytesInRange`、
   `DemoteToNearestIntInRange`。
 - **`Stream` 单列算法 benchmark**：工作集必须大于 LLC、地址满足非临时写合同，并报告带宽；不能用
@@ -175,13 +176,38 @@ nanobench”：只有 native 项补独立 parity；alias/synthetic/paired/algori
 预编译 batch/双轨架构、自有算法核、跨模块依赖与 C ABI，而不是宣称每条 intrinsic 都比 Highway 快。
 任何“快 X%”只来自 scorecard 中同合同的实测格子，不把 API 易用性换算成虚假的性能倍数。
 
+## 2026-07-16 闭环证据
+
+- `scripts/simd-op-manifest.json` 对旧 41 项给出唯一分类：15 native、6 alias、15 synthetic、
+  2 paired/info、3 algorithm；新增 4 个 128-bit upper 接口同样归 synthetic。coverage CI 校验 native
+  必须有独立 source row、alias/synthetic 禁止误入独立分母、algorithm 证据文件必须存在。
+- 15 个 native 新行在 Windows MSVC AVX2、WSL GCC AVX2、macOS AppleClang NEON 各自可用
+  target 的 focused 双序多轮报告均为 **0 LOSE**。最大的真回归 `SumsOfShuffledQuadAbsDiff` 来自 HYLE 的
+  store/scalar/reload oracle：Windows 约 0.08x、Mac 约 0.11x；改成寄存器 recipe 后，WSL 的恒等/
+  非恒等排列认证为约 1.49x/1.43x WIN，Mac 两者中心值约 0.99、认证为 TIE。SSE4 同步移除 scalar
+  oracle，AVX-512 保持原生 DB-SAD。
+- `Stream` 用 256 MiB 工作集、每进程 6 次交错中位数测量。三次外层复跑的 HYLE/Highway 吞吐比：
+  Windows `1.001/1.021/1.005`，WSL `0.988/1.047/1.058`；Apple Silicon
+  `3.787/3.316/3.468`。ARM 大幅差异可由源码解释：Highway AppleClang 路径在每个 16B store 前
+  发 write-prefetch，而 HYLE/普通 Store 直接写；这是 whole-buffer 合同证据，不进入 L1 op 分母。
+- 实用缺口复核纠正了旧文档：基础 `Masked*` 家族早已完整；Highway 的
+  `WidenLow/HighMulAdd` 是内部 helper，HYLE 已公开更完整的 accumulate 消费者语义。本轮只新增
+  `Eq128Upper/Ne128Upper/Min128Upper/Max128Upper` 四个有用户价值的 128-bit key 对称接口。
+- MSVC AVX-512 编译闸同时发现上一轮 AVX2 quarter-width 测试误套到 512-bit target，以及分层 include
+  后 capability 宏缺 `Vec512` ScatterIndexN overload；测试现只覆盖适用边界，AVX-512 增加原生 masked
+  scatter，`hyle_simd_avx512_test` 已恢复编译通过。
+- `include/hyle/simd/algorithms.h` 提供 header-only span overload，覆盖 ops、RNG、scan、dtype、
+  real math、sort/select/radix/argsort、bitpack。它只做长度合同和 `data()/size()` 转发；不产生新导出
+  符号、不缓存 Runtime、不探测 CPUID，也不改变 pointer/POD C ABI 收口路线。
+
 ## 实施顺序（性能四步先行，facade 最后）
 
-> **2026-07-16 状态**：步骤 1–3 已完成。九份 v4 report 的 union 为 303/303；320-case 表中
+> **2026-07-16 状态**：步骤 1–6 已完成。九份 v4 report 的 union 为 303/303；320-case 表中
 > Windows/WSL/Mac 明确 LOSE 均为 0，旧 ScatterIndexN 与本轮发现的 SatWiden/CompressNot/Mod/
 > SetOnlyFirst/IsFinite 回归均已修复，所有 `<0.98` 行已分类并写入
-> `simd-orderswap-matrix.md`。下一任务是步骤 4 的 41-name 覆盖补全和第二轮 Highway 落后项狩猎；
-> C++ facade 继续延后，不与性能闭环混做。
+> `simd-orderswap-matrix.md`。旧 41-name 候选已显式分类，15 个 native 新行在各平台可用 target 的第二轮狩猎为
+> 0 个明确 LOSE；`algorithms.h` 与编译/运行测试已落地。container hash/hashmap 的独立 SOTA 证据线
+> 仍是后续任务，不属于本次 SIMD facade 提交。
 
 ### 1. 重测 303 个已有 benchmark 覆盖项并修仪器
 
@@ -214,25 +240,25 @@ simd-22 改动了头文件组织、target 选择和共享 native body。旧的 2
   分桶；0.93 裸数字不是结论。
 - 稳定 LOSE 执行规范化逐指令 diff、端口/依赖链和多形态实验；完整步骤以主方法论 §4 为准。
 
-### 4. 闭环 41 个名字并做第二轮 Highway 落后项狩猎
+### 4. 闭环 41 个名字并做第二轮 Highway 落后项狩猎（✅）
 
-- 将 383-name 提取结果与显式 manifest 合并，脚本校验新增 op 必须分类。
+- 将 387-name 提取结果与显式 manifest 合并，脚本校验新增 op 必须分类。
 - 修正 orderswap 报告，把 paired/info 与真正 missing 分开。
 - 冻结“synthetic 不进 benchmark 分母”的 CI 规则。
 - 对全部 41 个名字逐项交付证据：native parity、paired/info 账本、alias/synthetic 正确性与零开销、
   algorithm 真实工作集 benchmark；然后对新产生的稳定 LOSE 再走一轮 Highway 落后项狩猎。
 
-### 5. C++ facade（四步性能工作完成后）
+### 5. C++ facade（✅，四步性能工作完成后实施）
 
 - 新增 `algorithms.h`、编译测试与文档索引。
 - 先落 ops/RNG/scan 三家族，确定 span、const、aliasing 和长度合同。
 - 用汇编/IR 抽查 debug 合同存在、release 成功路径无额外循环/分配/派发。
 
-### 6. 扩到现有语义面
+### 6. 扩到现有语义面（✅）
 
 - dtype/math，再到 sort/select/bitpack；每家族只转发已存在的 batch kernel。
 - 同步普通用户、整库 exact、`native::` 三条示例，避免把 fixed target 描述成“免动态税”。
-- 生成或维护普通 API 索引，清楚地区分 107 个语义名与 383 个 expert/selector 名。
+- 生成或维护普通 API 索引，清楚地区分普通语义面与 387 个 expert/selector 名。
 
 ### 7. container 性能收口
 

@@ -1103,6 +1103,51 @@ int main() {
     }
   }
 
+  // ---- 30. Previously-unmeasured native mask/bitfield seams. Keep these separate from synthetic
+  // helpers so a slow mask transition cannot hide inside a larger consumer. ----
+  {
+    std::uint64_t sink = 0;
+    std::vector<std::uint8_t> mask_bytes(kN);
+    for (std::size_t i = 0; i < kN; ++i) mask_bytes[i] = static_cast<std::uint8_t>(i * 37u);
+    {
+      nb::Bench bench; bench.title("BitsFromMask i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia=ia.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) sink^=hs::BitsFromMask(hdi,hs::Gt(hs::LoadU(hdi,p_ia+i),hs::Zero(hdi))); nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); },
+                           [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia=ia.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) sink^=hn::BitsFromMask(gdi,hn::Gt(hn::LoadU(gdi,p_ia+i),hn::Zero(gdi))); nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); });
+    }
+    {
+      nb::Bench bench; bench.title("MaskFromVec i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia=ia.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) sink^=hs::BitsFromMask(hdi,hs::MaskFromVec(hs::LoadU(hdi,p_ia+i))); nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); },
+                           [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia=ia.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) sink^=hn::BitsFromMask(gdi,hn::MaskFromVec(hn::LoadU(gdi,p_ia+i))); nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); });
+    }
+    {
+      nb::Bench bench; bench.title("VecFromMask i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia=ia.data(); auto* p_o=iout.data(); for(std::size_t i=0;i+hw<=kN;i+=hw){ auto m=hs::Gt(hs::LoadU(hdi,p_ia+i),hs::Zero(hdi)); hs::StoreU(hs::VecFromMask(hdi,m),hdi,p_o+i);} nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                           [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia=ia.data(); auto* p_o=iout.data(); for(std::size_t i=0;i+gw<=kN;i+=gw){ auto m=hn::Gt(hn::LoadU(gdi,p_ia+i),hn::Zero(gdi)); hn::StoreU(hn::VecFromMask(gdi,m),gdi,p_o+i);} nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+    }
+    {
+      nb::Bench bench; bench.title("LoadMaskBits i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_bits=mask_bytes.data(); auto* p_o=iout.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::VecFromMask(hdi,hs::LoadMaskBits(hdi,static_cast<std::uint64_t>(p_bits[i]))),hdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                           [&](auto rep){ hyle_bench::stagger(rep); auto* p_bits=mask_bytes.data(); auto* p_o=iout.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::VecFromMask(gdi,hn::LoadMaskBits(gdi,p_bits+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+    }
+    {
+      nb::Bench bench; bench.title("StoreMaskBits i32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia=ia.data(); auto* p_bits=mask_bytes.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::StoreMaskBits(hdi,hs::Gt(hs::LoadU(hdi,p_ia+i),hs::Zero(hdi)),p_bits+i); nb::doNotOptimizeAway(p_bits); nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); },
+                           [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia=ia.data(); auto* p_bits=mask_bytes.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=hn::StoreMaskBits(gdi,hn::Gt(hn::LoadU(gdi,p_ia+i),hn::Zero(gdi)),p_bits+i); nb::doNotOptimizeAway(p_bits); nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); });
+    }
+  }
+
+  // Raw high-bit-zeroing byte shuffle. This is distinct from the stronger HYLE default
+  // TableLookupBytes contract already measured in section 10.
+  {
+    std::vector<std::uint8_t> bytes(kN), indices(kN), shuffled(kN);
+    for(std::size_t i=0;i<kN;++i){ bytes[i]=static_cast<std::uint8_t>(i); indices[i]=(i&1)?static_cast<std::uint8_t>(0x80):static_cast<std::uint8_t>(i&15); }
+    const hs::ScalableTag<std::uint8_t> hdu8; const hn::ScalableTag<std::uint8_t> gdu8;
+    const std::size_t hwu8=hs::Lanes(hdu8), gwu8=hn::Lanes(gdu8);
+    nb::Bench bench; bench.title("TableLookupBytesOr0 u8 (4096)").relative(true).batch(kN).minEpochIterations(5000);
+    HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_b=bytes.data(); auto* p_i=indices.data(); auto* p_o=shuffled.data(); for(std::size_t i=0;i+hwu8<=kN;i+=hwu8) hs::StoreU(hs::TableLookupBytesOr0(hs::LoadU(hdu8,p_b+i),hs::LoadU(hdu8,p_i+i)),hdu8,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_b=bytes.data(); auto* p_i=indices.data(); auto* p_o=shuffled.data(); for(std::size_t i=0;i+gwu8<=kN;i+=gwu8) hn::StoreU(hn::TableLookupBytesOr0(hn::LoadU(gdu8,p_b+i),hn::LoadU(gdu8,p_i+i)),gdu8,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
+
   // ---- crypto AES/CLMul: moved here from crypto_bench (which used uncalibrated nb::run and let
   // Highway's loop hoist -> a fake ~10x; disasm proved HYLE's op-graph is identical, 2x vaesenc).
   // Calibrated load->op->store per lane-group (distinct memory + store sink defeats CSE/hoist). ----

@@ -39,13 +39,13 @@ target-dependent vector/mask 类型穿过边界，就只能在编译期确定 ta
 
 ## 用户面分层与易用性判断
 
-“383 个公开/selector 名”不等于普通应用要直接面对 383 个函数，也不等于它们全是 internal：
+“387 个公开/selector 名”不等于普通应用要直接面对 387 个函数，也不等于它们全是 internal：
 
 | 层 | 当前规模（2026-07-16） | 面向谁 | 稳定边界 |
 |---|---:|---|---|
 | 普通语义 batch API | 107 个不同函数名、153 个导出 overload | 不知道客户 CPU 的应用/库用户 | pointer/POD/opaque state；自动 Runtime 或整库 exact |
 | `native::` whole-buffer kernel | ops/random/scan | 固定 ISA、需要跨调用内联的源码用户 | target-bound C++，不承诺跨 ISA 类型稳定 |
-| `vec.h` 寄存器 DSL | 383 个去重公开/selector 名 | 编写自定义 SIMD kernel 的高级用户 | target-bound vector/mask；只在 TU 内编译期实例化 |
+| `vec.h` 寄存器 DSL | 387 个去重公开/selector 名 | 编写自定义 SIMD kernel 的高级用户 | target-bound vector/mask；只在 TU 内编译期实例化 |
 | `detail::*_{isa}` | 每 ISA 稳定符号薄包装 | HYLE dispatcher/测试 | internal，不是用户 API |
 
 规模可用 `rg "^HYLE_SIMD_API" include/hyle/simd` 与 `scripts/simd-op-coverage.py` 重算。普通语义面已经覆盖
@@ -55,11 +55,11 @@ math、dtype、sort/select、scan、bitpack、RNG 与基础 ops，并非只有�
 target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch API 更直接。Highway 的优势是
 `contrib/{algo,dot,hash,image,intdiv,matvec,random,sort,...}` 分类和组合入口更成熟。
 
-因此当前欠账是**C++ 易用性外观**，不是再给 383 个名字各包一层 Runtime：
+普通 C++ 易用性外观已由 `hyle/simd/algorithms.h` 落地；它没有给 387 个寄存器名字各包一层 Runtime：
 
-1. 给普通语义 API 建统一分类/索引，避免用户从 `math.h` 等大头里搜索。
-2. 在现有 C++ pointer/count API 上另加 header-only `std::span`/typed-view C++ facade；facade 只转发，
-   不复制 kernel、Runtime 或错误语义。具体范围与性能闸门见
+1. `algorithms.h` 统一收拢 ops/RNG/scan/dtype/math/sort/select/bitpack 的 `std::span` overload；
+   `std::vector` 等连续容器可直接隐式形成 span，长度不一致用 release-surviving fatal assert。
+2. facade 只转发现有 pointer/count API，不复制 kernel、Runtime 或错误语义。具体范围与性能闸门见
    [`simd-23`](../milestones/simd-23-cxx-facade-and-perf-closure.md)。close-01/02 只把同一个 pointer/POD
    core 封成纯 C ABI，不导出 span/STL。
 3. 是否补 `algo`、hash、image、matvec 等高层能力按 HYLE 模块边界和真实消费者决定，不为了镜像 Highway
@@ -72,7 +72,7 @@ target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch 
 
 ## 380+ 个 op 是否都要双腿
 
-当前 `scripts/simd-op-coverage.py` 从 `vec.h` 与各 backend 机械提取出 383 个公开/selector 寄存器名。
+当前 `scripts/simd-op-coverage.py` 从 `vec.h` 与各 backend 机械提取出 387 个公开/selector 寄存器名。
 它们**都能用于两种部署方式的 kernel body**，但不应各自拥有一个动态函数：
 
 | 能力层 | 例子 | native | runtime | 原因 |
@@ -85,7 +85,7 @@ target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch 
 | 算法 kernel | sort、bitpack、transcendental、softmax | 按需 | 是 | 预编译库必须适配未知 CPU；静态腿只在确有源码用户需求时提供 |
 | 只有 scalar 胜出/实现的操作 | 部分 libm 或策略路径 | 可选 | 直接 scalar | 没有第二个有价值的实现就没有派发必要 |
 
-所以双轨的单位是**完整 kernel**，不是 383 个寄存器名。判断一个新能力是否进入 runtime 表，需要同时满足：
+所以双轨的单位是**完整 kernel**，不是 387 个寄存器名。判断一个新能力是否进入 runtime 表，需要同时满足：
 
 1. 能用 pointer/POD/opaque-state 表达，不泄漏 vector/mask 类型；
 2. 工作量足以摊销每 batch 一次函数指针调用；
@@ -94,16 +94,18 @@ target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch 
 
 ## 普通用户：不知道目标 CPU
 
-包含模块的普通头并直接调用：
+普通 C++ 用户优先包含统一外观并直接传连续容器：
 
 ```cpp
-#include "hyle/simd/ops.h"
-#include "hyle/simd/random.h"
+#include "hyle/simd/algorithms.h"
 
-hyle::simd::add(x, y, out, count);
+hyle::simd::add(x, y, out);
+hyle::simd::exp(x, out);
+hyle::simd::inclusive_scan(out);
+hyle::simd::sort(out);
 
 hyle::simd::RandomState state(12345);
-hyle::simd::random_fill(state, random, count);
+hyle::simd::random_fill(state, random);
 ```
 
 这些 API 不暴露 SIMD 类型。预编译库内含各 ISA kernel；`runtime()` 首次调用根据 platform 探测选择
@@ -157,7 +159,7 @@ hyle::simd::native::random_fill(state, random, count);
 backend，允许完全内联；它不调用 `runtime()`、不探测 CPUID、也不经过函数指针。生成的二进制要求部署
 CPU 真正支持所选 ISA。
 
-需要组合新算法的高级用户也在固定 target 的 TU 中使用 `vec.h` 的 383 个公开/selector 积木。若同一个自定义算法要
+需要组合新算法的高级用户也在固定 target 的 TU 中使用 `vec.h` 的 387 个公开/selector 积木。若同一个自定义算法要
 发布给未知 CPU，应把**整个 pointer/POD kernel**编成多个 variant，再在外层派发，不能动态调用每个
 `Add`/`Load`。
 

@@ -1188,7 +1188,14 @@ HYLE_FORCE_INLINE Vec128<std::int32_t, NDst> DemoteInRangeTo(Simd<std::int32_t, 
                                                               Vec256<double, NSrc> v) noexcept {
   static_assert(NDst == NSrc, "DemoteInRangeTo: same lane count f64->i32");
   Vec128<std::int32_t, NDst> r;
+#if defined(__GNUC__) && !defined(__clang__)
+  // Match Highway's GCC workaround. GCC models the intrinsic as undefined for out-of-range
+  // lanes even though this API's InRange contract excludes them; inline asm both preserves the
+  // hardware instruction and avoids GCC's value-range/code-placement-dependent lowering.
+  __asm__("vcvttpd2dq {%1, %0|%0, %1}" : "=v"(r.raw) : "v"(v.raw));
+#else
   r.raw = _mm256_cvttpd_epi32(v.raw);
+#endif
   return r;
 }
 // DemoteToNearestInt native (f64->i32): Highway's x86 sequence verbatim -- clamp high with minpd
@@ -2357,29 +2364,32 @@ template <int i3, int i2, int i1, int i0, std::size_t N>
 HYLE_FORCE_INLINE Vec256<std::uint16_t, N / 2> SumsOfShuffledQuadAbsDiff(Vec256<std::uint8_t, N> a,
                                                                           Vec256<std::uint8_t, N> b) noexcept {
   static_assert(N == 32, "avx2 SumsOfShuffledQuadAbsDiff: full 32xu8");
-  alignas(32) std::uint8_t sa[32], sb[32];
-  alignas(32) std::uint16_t out[16] = {};
-  Store(a, Simd<std::uint8_t, N, 0>(), sa);
-  Store(b, Simd<std::uint8_t, N, 0>(), sb);
-  constexpr int sel[4] = {i0, i1, i2, i3};
-  for (std::size_t blk = 0; blk < 32; blk += 16) {
-    std::uint8_t sh[16];
-    for (int q = 0; q < 4; ++q)
-      for (int bi = 0; bi < 4; ++bi) sh[q * 4 + bi] = sa[blk + static_cast<std::size_t>(sel[q] * 4 + bi)];
-    constexpr int kSBase[4] = {0, 2, 8, 10};  // per-pair start byte in shuffled a (Highway)
-    for (int pair = 0; pair < 4; ++pair) {
-      for (int odd = 0; odd < 2; ++odd) {
-        unsigned sum = 0;
-        for (int j = 0; j < 4; ++j) {
-          const int da = static_cast<int>(sh[kSBase[pair] + odd + j]);
-          const int db = static_cast<int>(sb[blk + static_cast<std::size_t>(pair * 4 + j)]);
-          sum += static_cast<unsigned>(da >= db ? da - db : db - da);
-        }
-        out[blk / 2 + static_cast<std::size_t>(pair * 2 + odd)] = static_cast<std::uint16_t>(sum);
-      }
-    }
-  }
-  return Load(Simd<std::uint16_t, N / 2, 0>(), out);
+  static_assert(0 <= i0 && i0 <= 3 && 0 <= i1 && i1 <= 3 &&
+                0 <= i2 && i2 <= 3 && 0 <= i3 && i3 <= 3,
+                "SumsOfShuffledQuadAbsDiff indices are in [0,3]");
+
+  // Highway's AVX2 generic recipe, expressed directly so this backend does not fall back to the
+  // old store/scalar/reload oracle (~0.08x Highway on MSVC). Shuffle a's dwords within each 128-bit
+  // block, form the overlapping 0123/2345 and 1234/3456 byte windows, then sum four u8 absolute
+  // differences into u32 and interleave their low u16 halves.
+  const __m256i shuf = _mm256_shuffle_epi32(a.raw, _MM_SHUFFLE(i3, i2, i1, i0));
+  const __m256i a0123_2345 =
+      _mm256_blend_epi32(shuf, _mm256_slli_si256(shuf, 2), 0xAA);
+  const __m256i a1234_3456 = _mm256_blend_epi32(
+      _mm256_srli_si256(shuf, 1), _mm256_slli_si256(shuf, 1), 0xAA);
+  const auto absdiff = [](__m256i x, __m256i y) noexcept {
+    return _mm256_sub_epi8(_mm256_max_epu8(x, y), _mm256_min_epu8(x, y));
+  };
+  const __m256i ones8 = _mm256_set1_epi8(1);
+  const __m256i ones16 = _mm256_set1_epi16(1);
+  const auto sums4 = [&](const __m256i diff) noexcept {
+    return _mm256_madd_epi16(_mm256_maddubs_epi16(diff, ones8), ones16);
+  };
+  const __m256i even = sums4(absdiff(a0123_2345, b.raw));
+  const __m256i odd = _mm256_slli_epi32(sums4(absdiff(a1234_3456, b.raw)), 16);
+  Vec256<std::uint16_t, N / 2> r;
+  r.raw = _mm256_blend_epi16(even, odd, 0xAA);
+  return r;
 }
 
 // simd-17 batch5: BitShuffle / MultiRotateRight -- portable store+reload (matches scalar oracle

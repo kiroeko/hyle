@@ -2507,6 +2507,31 @@ TEST(Vec, Compare128) {
     EXPECT_EQ(out.data[p],   b_lt ? ab.data[p]   : bb.data[p])   << "max128 lo p=" << p;
     EXPECT_EQ(out.data[p+1], b_lt ? ab.data[p+1] : bb.data[p+1]) << "max128 hi p=" << p;
   }
+  // Upper-only family ignores the low half and selects the complete pair from the high half.
+  hs::Store(hs::VecFromMask(d, hs::Eq128Upper(d, va, vb)), d, out.data);
+  for (std::size_t p = 0; p < n; p += 2) {
+    const bool eq = ab.data[p + 1] == bb.data[p + 1];
+    EXPECT_EQ(out.data[p] != 0, eq) << "eq128u lo p=" << p;
+    EXPECT_EQ(out.data[p + 1] != 0, eq) << "eq128u hi p=" << p;
+  }
+  hs::Store(hs::VecFromMask(d, hs::Ne128Upper(d, va, vb)), d, out.data);
+  for (std::size_t p = 0; p < n; p += 2) {
+    const bool ne = ab.data[p + 1] != bb.data[p + 1];
+    EXPECT_EQ(out.data[p] != 0, ne) << "ne128u lo p=" << p;
+    EXPECT_EQ(out.data[p + 1] != 0, ne) << "ne128u hi p=" << p;
+  }
+  hs::Store(hs::Min128Upper(d, va, vb), d, out.data);
+  for (std::size_t p = 0; p < n; p += 2) {
+    const bool a_lt = ab.data[p + 1] < bb.data[p + 1];
+    EXPECT_EQ(out.data[p], a_lt ? ab.data[p] : bb.data[p]) << "min128u lo p=" << p;
+    EXPECT_EQ(out.data[p + 1], a_lt ? ab.data[p + 1] : bb.data[p + 1]) << "min128u hi p=" << p;
+  }
+  hs::Store(hs::Max128Upper(d, va, vb), d, out.data);
+  for (std::size_t p = 0; p < n; p += 2) {
+    const bool b_lt = bb.data[p + 1] < ab.data[p + 1];
+    EXPECT_EQ(out.data[p], b_lt ? ab.data[p] : bb.data[p]) << "max128u lo p=" << p;
+    EXPECT_EQ(out.data[p + 1], b_lt ? ab.data[p + 1] : bb.data[p + 1]) << "max128u hi p=" << p;
+  }
 }
 
 // ---- simd-09-rng: N parallel xoshiro256** streams --------------------------------------
@@ -2901,7 +2926,10 @@ TEST(Vec, HalfVectorFamily) {
     EXPECT_EQ(lo_out.data[i], in.data[i]) << "ResizeBitCast narrow i=" << i;
 
   // Quarter-width exercises physical-XMM/logical-<16B boundaries on AVX2: bytes beyond the
-  // logical source/destination must be zero rather than inherited from another lane.
+  // logical source/destination must be zero rather than inherited from another lane. AVX-512
+  // intentionally exposes only adjacent 512<->256 ResizeBitCast steps, not a direct 128<->512
+  // jump, so this AVX2 boundary probe does not apply there.
+#if !defined(HYLE_SIMD_TARGET_AVX512)
   using DQ = typename DH::Half;
   const DQ dq{};
   const auto quarter = hs::LowerHalf(dq, lo);
@@ -2921,6 +2949,7 @@ TEST(Vec, HalfVectorFamily) {
   hs::Store(hs::ResizeBitCast(d, narrow_q), d, out.data);
   for (std::size_t i = nq; i < n; ++i)
     EXPECT_EQ(out.data[i], 0) << "ResizeBitCast quarter narrow excess i=" << i;
+#endif
 }
 
 // Float lane variant of half-vector family (catches f32 cast/extract paths on x86).

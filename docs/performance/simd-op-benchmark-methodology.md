@@ -15,7 +15,8 @@
 另 4 个 `BitCast/Set/Zero/ZeroExtendVector` 虽被对拍，但按构造/retag 从性能分母剔除），不是 GTest
 case 数，也不是报告行数。一个 canonical op 可能有多个类型、参数和 kernel 形状；三个 TU 的标题行
 去重前多于 303，反过来“某名字测过一次”也不证明它的所有 overload/形状都测过。
-最后的 **41** 是同一覆盖树中尚未写独立 benchmark 的名字，也不等于 41 个都该有 L1 nanobench。
+历史上的 **41** 是同一覆盖树中尚未写独立 benchmark 的名字，并不等于 41 个都该有 L1 nanobench；
+它们现已由 manifest 全量分类并闭环。
 
 1. **先重测 303**：simd-22 双轨重构和 Highway/xsimd 内化后，在 Windows/WSL/macOS 从新鲜
    二进制重跑现有 parity/full/widen；先修仪器与不对称测试形状，不能一看到 0.93 就改算法。
@@ -27,11 +28,11 @@ case 数，也不是报告行数。一个 canonical op 可能有多个类型、�
    alias/synthetic 补正确性和零开销证据，algorithm 用真实工作集 benchmark。合成 op 不为凑数进入
    nanobench 分母。
 
-2026-07-16 已完成上述 1–3：九份报告 union 303/303，320 个 case 的三平台明确 LOSE 均为 0；
-完整计数、新矩阵和 `<0.98` 全扫表见 orderswap matrix。下一步从第 4 项继续，不再重复调校已通过的
-303 报告。
-
-C++ 易用性 facade 在这四步之后；它不能与底层性能回归修复混成一次接口改造。
+2026-07-16 已完成上述 1–4：九份报告 union 303/303，320 个旧 case 的三平台明确 LOSE 均为 0；
+41-name manifest 中 15 个 native 新行在三平台各自可用 target 上的第二轮狩猎同样为 0 LOSE。最大的新增回归
+`SumsOfShuffledQuadAbsDiff`（Windows 0.08x、Mac 0.11x）已从 scalar spill 改为寄存器 recipe，WSL
+认证为 1.43–1.49x WIN，Mac 两种 shuffle 中心值约 0.99、认证为 TIE。完整计数与证据见 orderswap matrix/simd-23。
+C++ facade 随后单独落地，没有与底层修复混成第三套 kernel。
 
 ---
 
@@ -109,6 +110,25 @@ C++ 易用性 facade 在这四步之后；它不能与底层性能回归修复�
 - 必须**源码级逐 intrinsic 验证**两侧完全同指令(不是"看起来都是一条 vpaddd",是打开两边源码
   逐参数核对;bench 注释里的"MUST tie"不算证据——TableLookupBytes 曾因此混入,实际多一条 vpand)。
 - 首次入列后跑一轮看读数——锚点本身持续偏离 1.00 就说明资格审查有漏。
+
+### 1.5 覆盖 manifest：不是每个公开名都要独立 benchmark
+
+`scripts/simd-op-coverage.py --check` 与 `scripts/simd-op-manifest.json` 是覆盖口径的共同真源。一个
+未独立对拍的公开名必须且只能按下列证据处理：
+
+| class | 独立 L1 parity | 必需证据 |
+|---|---:|---|
+| `native` | 是 | 对等 Highway row；三平台可用腿做 focused 双序认证 |
+| `alias` | 否 | `covered_by` 指向已对拍目标 |
+| `synthetic` | 否 | 正确性 + 组成目标已对拍；禁止为凑分母重复测 |
+| `paired_info` | 否 | 已在 pair/run_third 中出现，修账本 |
+| `algorithm` | 否 | 真实工作集/吞吐 benchmark，不用 L1 单寄存器循环 |
+
+CI 必须拒绝三种漂移：新增 uncovered 未分类、native 没有 source row、alias/synthetic 被误加独立 row。
+新增合成接口应在同一提交更新 manifest，不能让“待补 benchmark”数字先虚增再靠文档解释。
+
+`Stream` 是标准反例：它的非临时写合同必须用大于 LLC 的缓冲区、交错顺序和必要 fence 测 GiB/s；
+把它塞进 `kN=4096` 的 L1 harness 只会测到缓存写，不是该 op 的产品语义。
 
 ---
 

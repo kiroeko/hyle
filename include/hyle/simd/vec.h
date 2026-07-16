@@ -1320,6 +1320,20 @@ HYLE_FORCE_INLINE auto Ne128(D d, V a, V b) noexcept {
   const V neHL = VecFromMask(d, Ne(a, b));
   return MaskFromNormalizedVec(Or(neHL, Reverse2(d, neHL)));   // either half differs -> pair differs
 }
+// Upper-only twins compare the high u64 of every 128-bit pair and broadcast that verdict to both
+// lanes. These are useful for composite keys whose low half is payload or a secondary key.
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE auto Eq128Upper(D d, V a, V b) noexcept {
+  static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Eq128Upper needs u64 lanes");
+  const V eqHL = VecFromMask(d, Eq(a, b));
+  return MaskFromNormalizedVec(InterleaveUpper(eqHL, eqHL));
+}
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE auto Ne128Upper(D d, V a, V b) noexcept {
+  static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Ne128Upper needs u64 lanes");
+  const V neHL = VecFromMask(d, Ne(a, b));
+  return MaskFromNormalizedVec(InterleaveUpper(neHL, neHL));
+}
 // Min128/Max128: select the smaller / larger 128-bit value of each pair (returns a vector).
 // Lt128Vec's output is already canonical all-ones/0 per lane (built from VecFromMask + canonical-
 // preserving IfThenElse/InterleaveUpper), so MaskFromNormalizedVec turns it into a mask WITHOUT the
@@ -1332,6 +1346,14 @@ HYLE_FORCE_INLINE V Min128(D d, V a, V b) noexcept {
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE V Max128(D d, V a, V b) noexcept {
   return IfThenElse(MaskFromNormalizedVec(Lt128Vec(d, b, a)), a, b);
+}
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE V Min128Upper(D d, V a, V b) noexcept {
+  return IfThenElse(Lt128Upper(d, a, b), a, b);
+}
+template <class D, class V = VFromD<D>>
+HYLE_FORCE_INLINE V Max128Upper(D d, V a, V b) noexcept {
+  return IfThenElse(Lt128Upper(d, b, a), a, b);
 }
 
 // ---- simd-18 批A: generic mask family (one definition, every backend) ---------------

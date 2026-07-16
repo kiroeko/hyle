@@ -2288,6 +2288,22 @@ HYLE_FORCE_INLINE void ScatterIndex(detail::V512<D> v, D d, TFromD<D>* base,
   Store(idx, Simd<IdxT, kN, 0>(), ix); Store(v, d, src);
   for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
 }
+namespace detail {
+// avx512.h layers on avx2.h, whose capability macro also reaches vec.h. Supply the matching
+// overload instead of accidentally binding only the Vec256 helper. AVX-512F masked scatter is
+// exactly ScatterIndexN's first-N contract for i32 lanes.
+template <std::size_t N>
+HYLE_FORCE_INLINE void scatter_index_n_native_i32(Vec512<std::int32_t, N> v,
+                                                  std::int32_t* base,
+                                                  Vec512<std::int32_t, N> index,
+                                                  std::size_t max_lanes) noexcept {
+  static_assert(N == 16, "AVX-512 ScatterIndexN i32 requires a full vector");
+  const __mmask16 mask = max_lanes >= N
+                             ? static_cast<__mmask16>(0xFFFFu)
+                             : static_cast<__mmask16>((std::uint32_t{1} << max_lanes) - 1u);
+  _mm512_mask_i32scatter_epi32(base, mask, index.raw, v.raw, 4);
+}
+}  // namespace detail
 // NATIVE vpcompress/vpexpand for 32-/64-bit lanes (AVX-512F has them: maskz_compress_epi32/64
 // + _ps/_pd). 8-/16-bit need VBMI2 (vpcompressb/w) which is NOT in the F+BW+VL+DQ+CD baseline,
 // so those stay store+reload. Native is a clear win here (real hardware compaction, unlike AVX2

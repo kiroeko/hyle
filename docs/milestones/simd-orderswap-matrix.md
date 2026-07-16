@@ -16,23 +16,19 @@
 >
 > **计数树**（2026-07-16 现跑 `scripts/simd-op-coverage.py`）：
 > ```
-> 383  公开 op 名(去重 8 后端头,剔 tag/trait/detail helper；新增 2 个 *NewtonNative selector)
->  └─ 340  可测全集
+> 387  公开 op 名(去重 8 后端头,剔 tag/trait/detail helper)
+>  └─ 344  可测全集
 >       │   ( − 26 不可测: constexpr 谓词(DivIsPow2)/常量产生器(Inf/NaN/Iota/Zero/Set)/
 >       │     introspection(Lanes/Blocks)/单-lane 标量存取(Get·Extract·InsertLane)/纯 retag(BitCast)/
 >       │     构造 helper(Combine/Lower·UpperHalf/LoadDup128/SetTableIndices/IndicesFromVec/FirstN)
 >       │     − 13 内部选择器变体(*Native/*Emulated,由伞 op 覆盖)
 >       │     − 4 别名(Rol→RotateLeft/Ror→RotateRight/ZipLower→InterleaveLower/ZipUpper→InterleaveUpper) )
->       ├─ 299  可测全集内已有 bench（canonical op 名；一个名字可有多个类型/参数/形状标题）
->       │    ├─ 296  历史矩阵已有 measured verdict；本轮 v4 正在重认证并允许 INCONCLUSIVE
->       │    │       HYLE 独有 op 另用 replicated info baseline 记账，不冒充 Highway/SOTA verdict)
->       │    └─   3  脚本口径假缺口:Store / StoreN / StoreU
->       │           (复合标题 LoadU/StoreU、LoadN/StoreN 已在全量表校准;裸名对不上 verdict 键,
->       │            非"没跑校准"。真·待测 = 0)
->       └─  41  没写 bench(待补,清单以脚本 UNCOVERED 为准 / 见"41 个待补 bench"节)
+>       ├─ 314  可测全集内有独立 source benchmark
+>       └─  30  不独立测且已显式分类
+>              (alias 6 / synthetic 19 / paired-info 2 / algorithm 3；truly unclassified = 0)
 >
-> 303  benchmark 标题映射到的公开 op 名（= 上述 299 + 4 个虽被对拍但从 perf 分母剔除的
->      BitCast / Set / Zero / ZeroExtendVector）。303 不是单个 executable 的行数，也不代表
+> 318  benchmark 源映射到的公开 op 名（= 上述 314 + 4 个虽被对拍但从 perf 分母剔除的
+>      BitCast / Set / Zero / ZeroExtendVector）。旧“303”是第一轮重构后再认证快照；318 不是单个 executable 的行数，也不代表
 >      每个 overload/类型/参数形状都已覆盖。
 > ```
 > 之前对话里的 16/30/41/245/8 是不同时刻/口径的快照,**不可相加**;唯一权威数是上面这棵树
@@ -810,6 +806,20 @@ NEON 已改原生 reciprocal/rsqrt Newton，Apple reciprocal 选择更快更准�
 
 ## 41 个待分类候选（不是 41 个待补 benchmark）
 
+**2026-07-16 已闭环。** `scripts/simd-op-manifest.json` 将旧 41 项固定为 15 native、6 alias、
+15 synthetic、2 paired/info、3 algorithm；新增 4 个 128-bit upper 合成接口后 manifest 为 45 项，
+coverage 的未分类数仍为 0。15 个 native 新行在 Windows/WSL/Mac 各自可用 target 的 focused 双序认证均为 **0 LOSE**。
+
+第二轮狩猎唯一发现的真回归是 `SumsOfShuffledQuadAbsDiff`：Windows 约 0.08x、Mac 约 0.11x，
+原因是 HYLE SSE/AVX2/NEON 仍走 store/scalar/reload oracle。改为 Highway 同构的寄存器 recipe，补恒等
+和非恒等 shuffle 两种测试形状后，WSL 认证约 1.49x/1.43x WIN，Mac 中心值均约 0.99、认证为 TIE；
+SSE4 同步向量化，AVX-512 继续使用原生 DB-SAD。
+
+`Stream` 另走 256 MiB 带宽 benchmark。三次外层复跑 HYLE/Highway 比值为 Windows
+`1.001/1.021/1.005`、WSL `0.988/1.047/1.058`、Mac `3.787/3.316/3.468`。Apple 的大幅优势
+来自 Highway 每 16B store 前的 write-prefetch，而 HYLE/普通 Store 直接写；它是算法/工作集证据，
+不进入 L1 op-parity 分母。
+
 旧脚本按 op 名与 benchmark 标题做启发式匹配，因此这 41 个名字只适合作为审计入口。它会把成对测量、
 `run_third` 信息行、精确 alias 和合成 op 都报成“尚未写 bench”。simd-23 将以显式 manifest 取代
 这个口径；**合成 op 不进入 benchmark 分母**。
@@ -834,8 +844,8 @@ NEON 已改原生 reciprocal/rsqrt Newton，Apple reciprocal 选择更快更准�
 等 alias/合成项只需正确性和零开销检查，不补孤立 nanobench。完整分类与验收见
 [`simd-23`](./simd-23-cxx-facade-and-perf-closure.md)。
 
-候选清单仍可跑 `python scripts/simd-op-coverage.py`，但在 manifest 落地前不得把它的计数当作 benchmark
-完成率。
+候选清单可用 `python scripts/simd-op-coverage.py --check` 复算；CI 会拒绝新增未分类项、缺 row 的
+native 项，以及误进独立分母的 alias/synthetic 项。
 
 ## 语义缺口(对 Highway op 名的差集,与"41 待补 bench"正交)
 
@@ -843,13 +853,9 @@ NEON 已改原生 reciprocal/rsqrt Newton，Apple reciprocal 选择更快更准�
 全部 `HWY_API` 公开名做差集甄别,剔除内部积木/换名等价后,真缺 ≈40 名)。两者正交:前者补 bench,后者
 补实现。(本节从原 `simd-gap-inventory.md` 收编,该文件已退役为指针。)
 
-- **P1 掩码基础算术/逻辑/比较家族(~28 名,唯一建议主动补的结构性缺口)**:MaskedAdd/Sub/Mul/Div/Min/Max
-  (+`Or` 回填)、MaskedOr/Xor、MaskedNe/Lt/Le/Gt/Ge、MaskedSaturatedAdd/Sub、MaskedAbs(Or)/MaskedSqrt(Or)。
-  值得补的理由:①AVX-512 上是单条掩码指令(`vpaddd {k}{z}`),走 `IfThenElseZero(m,Add)` 组合等于赌编译器
-  融合——MSVC 不可靠;②SVE/RVV 原生就是谓词化(`svadd_z`),这family是其天然表面;③分层成本低(泛型层一份
-  IfThenElse covers scalar/sse4/avx2/neon,仅 avx512/sve/rvv 写原生特化)。
-- **P2 顺手补齐(小)**:Eq128Upper/Ne128Upper/Max128Upper/Min128Upper(补 128-bit key 家族对称)、
-  WidenLowMulAdd/WidenHighMulAdd/WidenMulAdd(补 int16 点积面完整性)。
+- **P1 旧误报已纠正**：基础 Masked 算术/逻辑/比较/一元家族早已在 `vec.h` 完整生成并有 oracle。
+- **P2 已闭合**：Eq128Upper/Ne128Upper/Max128Upper/Min128Upper 已补；Highway 的
+  WidenLow/HighMulAdd 是 internal helper，HYLE 已暴露更完整的 WidenMulAccumulate 消费者能力，不镜像名字。
 - **P3 机会型(硬件门控)**:GFNI GaloisAffine(+GF2P8 乘,Icelake+/Zen4+,走 AES/CLMul 先例;GF(2^8) 仿射
   可反哺 ReverseBits/子字节置换的更优实现)。
 - **明确不做**:ShuffleTwo*/PerBlock2x2MatMul/LoadTransposedBlocks*(缺能力类或无消费者;名字数不是 KPI)。

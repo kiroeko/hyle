@@ -155,10 +155,15 @@ inline bool title_selected(const std::string& title) {
   static const char* filt = std::getenv("HYLE_BENCH_ONLY");
   if (!filt || !*filt) return true;
   // anchors: same names the report's ANCHORS set keys on -- keep them so CALIBRATION can pass.
-  static const char* kAnchors[] = {"Neg i32", "Sub i32", "Mul i32", "Max i32", "ShiftLeft<3> i32",
-                                    "Add f32", "MulAdd f32", "Min i32", "SaturatedAdd i16"};
+  // Exact titles only. Substring matching used to pull MaskedMulAdd/MulComplexAdd/etc. into a
+  // focused run merely because "MulAdd f32" is an anchor, turning a six-op Mac rerun into 29
+  // rows and several minutes. Every TU's actual anchor titles are enumerated here.
+  static const char* kAnchors[] = {
+      "Neg i32", "Sub i32", "Mul i32", "Max i32", "ShiftLeft<3> i32",
+      "Add f32", "Add f32 (4096)", "MulAdd f32 (4096)", "Min i32 (4096)",
+      "SaturatedAdd i16 (4096)"};
   for (const char* a : kAnchors)
-    if (title.find(a) != std::string::npos) return true;
+    if (title == a) return true;
   const std::string f(filt);
   std::size_t start = 0;
   while (start <= f.size()) {

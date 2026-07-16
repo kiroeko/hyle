@@ -1928,29 +1928,30 @@ HYLE_FORCE_INLINE Vec128<std::uint16_t, N / 2> SumsOfAdjQuadAbsDiff(Vec128<std::
 template <int i3, int i2, int i1, int i0, std::size_t N>
 HYLE_FORCE_INLINE Vec128<std::uint16_t, N / 2> SumsOfShuffledQuadAbsDiff(Vec128<std::uint8_t, N> a,
                                                                           Vec128<std::uint8_t, N> b) noexcept {
-  // No dbsad on sse4: portable oracle (same as scalar).
   static_assert(N == 16, "sse4 SumsOfShuffledQuadAbsDiff: full 16xu8");
-  alignas(16) std::uint8_t sa[16], sb[16];
-  alignas(16) std::uint16_t out[8] = {};
-  Store(a, Simd<std::uint8_t, N, 0>(), sa);
-  Store(b, Simd<std::uint8_t, N, 0>(), sb);
-  constexpr int sel[4] = {i0, i1, i2, i3};
-  std::uint8_t sh[16];
-  for (int q = 0; q < 4; ++q)
-    for (int bi = 0; bi < 4; ++bi) sh[q * 4 + bi] = sa[sel[q] * 4 + bi];
-  constexpr int kSBase[4] = {0, 2, 8, 10};  // per-pair start byte in shuffled a (Highway)
-  for (int pair = 0; pair < 4; ++pair) {
-    for (int odd = 0; odd < 2; ++odd) {
-      unsigned sum = 0;
-      for (int j = 0; j < 4; ++j) {
-        const int da = static_cast<int>(sh[kSBase[pair] + odd + j]);
-        const int db = static_cast<int>(sb[pair * 4 + j]);
-        sum += static_cast<unsigned>(da >= db ? da - db : db - da);
-      }
-      out[pair * 2 + odd] = static_cast<std::uint16_t>(sum);
-    }
-  }
-  return Load(Simd<std::uint16_t, N / 2, 0>(), out);
+  static_assert(0 <= i0 && i0 <= 3 && 0 <= i1 && i1 <= 3 &&
+                0 <= i2 && i2 <= 3 && 0 <= i3 && i3 <= 3,
+                "SumsOfShuffledQuadAbsDiff indices are in [0,3]");
+
+  // SSE4 has no DB-SAD instruction, but the same register-only recipe used by Highway and the
+  // AVX2 backend is available. This replaces the old store/scalar/reload correctness oracle.
+  const __m128i shuf = _mm_shuffle_epi32(a.raw, _MM_SHUFFLE(i3, i2, i1, i0));
+  const __m128i a0123_2345 = _mm_blend_epi16(shuf, _mm_slli_si128(shuf, 2), 0xCC);
+  const __m128i a1234_3456 =
+      _mm_blend_epi16(_mm_srli_si128(shuf, 1), _mm_slli_si128(shuf, 1), 0xCC);
+  const auto absdiff = [](__m128i x, __m128i y) noexcept {
+    return _mm_sub_epi8(_mm_max_epu8(x, y), _mm_min_epu8(x, y));
+  };
+  const __m128i ones8 = _mm_set1_epi8(1);
+  const __m128i ones16 = _mm_set1_epi16(1);
+  const auto sums4 = [&](const __m128i diff) noexcept {
+    return _mm_madd_epi16(_mm_maddubs_epi16(diff, ones8), ones16);
+  };
+  const __m128i even = sums4(absdiff(a0123_2345, b.raw));
+  const __m128i odd = _mm_slli_epi32(sums4(absdiff(a1234_3456, b.raw)), 16);
+  Vec128<std::uint16_t, N / 2> r;
+  r.raw = _mm_blend_epi16(even, odd, 0xAA);
+  return r;
 }
 
 // simd-17 batch5: BitShuffle / MultiRotateRight -- portable store+reload (matches scalar oracle

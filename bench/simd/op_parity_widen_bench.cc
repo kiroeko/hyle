@@ -24,6 +24,9 @@ template <class T> std::vector<T> gen(std::uint64_t s, T lo, T hi){ std::mt19937
 int main(){
   hyle_bench::pin_and_boost();
   std::vector<float> f32a(kN, 1.25f), f32b(kN, -0.5f), f32o(kN);
+  std::vector<double> f64a(kN);
+  for (std::size_t i = 0; i < kN; ++i)
+    f64a[i] = static_cast<double>(static_cast<int>(i % 2001) - 1000) + 0.75;
   auto i16a = gen<std::int16_t>(1, -30000, 30000);
   auto i16b = gen<std::int16_t>(2, -30000, 30000);
   auto i32a = gen<std::int32_t>(3, -1000000, 1000000);
@@ -39,10 +42,14 @@ int main(){
   const hs::ScalableTag<std::uint32_t> hd32u; const hn::ScalableTag<std::uint32_t> gd32u;
   const hs::ScalableTag<std::uint64_t> hd64; const hn::ScalableTag<std::uint64_t> gd64;
   const hs::ScalableTag<float> hdf; const hn::ScalableTag<float> gdf;
+  const hs::ScalableTag<double> hdf64; const hn::ScalableTag<double> gdf64;
+  const hs::Simd<std::int32_t, decltype(hdf64)::kMaxLanes, 0> hdi32f64;
+  const hn::Rebind<std::int32_t, decltype(gdf64)> gdi32f64;
   const std::size_t w16h=hs::Lanes(hd16), w16g=hn::Lanes(gd16);
   const std::size_t w32h=hs::Lanes(hd32), w32g=hn::Lanes(gd32);
   const std::size_t w8h=hs::Lanes(hd8), w8g=hn::Lanes(gd8);
   const std::size_t wfh=hs::Lanes(hdf), wfg=hn::Lanes(gdf);
+  const std::size_t wf64h=hs::Lanes(hdf64), wf64g=hn::Lanes(gdf64);
 
   // Per-TU calibration anchor: both sides are source-verified Load/Add/Store at the same ISA.
   // Widen formerly borrowed calibration from a sibling executable, which could not catch stale
@@ -214,6 +221,39 @@ int main(){
      hyle_bench::mark(rep); });
   }
   // OrderedDemote2To / ZeroExtendVector (single-vector Promote/Demote already thin wraps of Lower/PromoteLower)
+  // InRange conversions are separate contracts and, for f64->i32, separate hardware shapes.
+  // Inputs stay strictly finite and representable on both sides.
+  {
+    nb::Bench b; b.title("ConvertInRangeTo f32->i32").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=f32a.data(); auto* p_o=o32.data(); for(std::size_t i=0;i+wfh<=kN;i+=wfh) hs::StoreU(hs::ConvertInRangeTo(hd32,hs::LoadU(hdf,p_a+i)),hd32,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=f32a.data(); auto* p_o=o32.data(); for(std::size_t i=0;i+wfg<=kN;i+=wfg) hn::StoreU(hn::ConvertInRangeTo(gd32,hn::LoadU(gdf,p_a+i)),gd32,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
+  {
+    nb::Bench b; b.title("DemoteInRangeTo f64->i32").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=f64a.data(); auto* p_o=o32.data(); for(std::size_t i=0;i+wf64h<=kN;i+=wf64h) hs::StoreU(hs::DemoteInRangeTo(hdi32f64,hs::LoadU(hdf64,p_a+i)),hdi32f64,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=f64a.data(); auto* p_o=o32.data(); for(std::size_t i=0;i+wf64g<=kN;i+=wf64g) hn::StoreU(hn::DemoteInRangeTo(gdi32f64,hn::LoadU(gdf64,p_a+i)),gdi32f64,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
+
+  // DB-SAD family: four-byte shuffle followed by pairwise absolute-difference sums.
+  {
+    auto u8b = gen<std::uint8_t>(22, 0, 255);
+    std::vector<std::uint16_t> o16u(kN);
+    const hs::RepartitionToWide<decltype(hd8)> hdu16;
+    const hn::RepartitionToWide<decltype(gd8)> gdu16;
+    nb::Bench b; b.title("SumsOfShuffledQuadAbsDiff u8->u16 identity").relative(true).batch(kN).minEpochIterations(5000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=u8a.data(); auto* p_b=u8b.data(); auto* p_o=o16u.data(); for(std::size_t i=0;i+w8h<=kN;i+=w8h) hs::StoreU(hs::SumsOfShuffledQuadAbsDiff<3,2,1,0>(hs::LoadU(hd8,p_a+i),hs::LoadU(hd8,p_b+i)),hdu16,p_o+i/2); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=u8a.data(); auto* p_b=u8b.data(); auto* p_o=o16u.data(); for(std::size_t i=0;i+w8g<=kN;i+=w8g) hn::StoreU(hn::SumsOfShuffledQuadAbsDiff<3,2,1,0>(hn::LoadU(gd8,p_a+i),hn::LoadU(gd8,p_b+i)),gdu16,p_o+i/2); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
+  {
+    auto u8b = gen<std::uint8_t>(23, 0, 255);
+    std::vector<std::uint16_t> o16u(kN);
+    const hs::RepartitionToWide<decltype(hd8)> hdu16;
+    const hn::RepartitionToWide<decltype(gd8)> gdu16;
+    nb::Bench b; b.title("SumsOfShuffledQuadAbsDiff u8->u16 permuted").relative(true).batch(kN).minEpochIterations(5000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=u8a.data(); auto* p_b=u8b.data(); auto* p_o=o16u.data(); for(std::size_t i=0;i+w8h<=kN;i+=w8h) hs::StoreU(hs::SumsOfShuffledQuadAbsDiff<2,0,3,1>(hs::LoadU(hd8,p_a+i),hs::LoadU(hd8,p_b+i)),hdu16,p_o+i/2); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=u8a.data(); auto* p_b=u8b.data(); auto* p_o=o16u.data(); for(std::size_t i=0;i+w8g<=kN;i+=w8g) hn::StoreU(hn::SumsOfShuffledQuadAbsDiff<2,0,3,1>(hn::LoadU(gd8,p_a+i),hn::LoadU(gd8,p_b+i)),gdu16,p_o+i/2); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
+
   {
     nb::Bench b; b.title("OrderedDemote2To i32->i16").relative(true).batch(kN).minEpochIterations(8000);
     HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_i32a = i32a.data(); auto* p_o16 = o16.data(); for(std::size_t i=0;i+2*w32h<=kN;i+=2*w32h) hs::StoreU(hs::OrderedDemote2To(hd16, hs::LoadU(hd32,p_i32a+i), hs::LoadU(hd32,p_i32a+i+w32h)), hd16, p_o16+i); nb::doNotOptimizeAway(p_o16);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_i32a = i32a.data(); auto* p_o16 = o16.data(); for(std::size_t i=0;i+2*w32g<=kN;i+=2*w32g) hn::StoreU(hn::OrderedDemote2To(gd16, hn::LoadU(gd32,p_i32a+i), hn::LoadU(gd32,p_i32a+i+w32g)), gd16, p_o16+i); nb::doNotOptimizeAway(p_o16);  hyle_bench::mark(rep); });

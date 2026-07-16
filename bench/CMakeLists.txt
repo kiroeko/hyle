@@ -700,6 +700,19 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   endif()
   hyle_apply_warnings(hyle_op_parity_widen_bench_avx2)
 
+  # Stream is a non-temporal-store algorithm contract, measured on a >LLC working set rather
+  # than in the L1 op-parity harness.
+  add_executable(hyle_stream_bench_avx2 simd/stream_bench.cc)
+  target_include_directories(hyle_stream_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(hyle_stream_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
+  target_compile_definitions(hyle_stream_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
+  if(MSVC)
+    target_compile_options(hyle_stream_bench_avx2 PRIVATE /arch:AVX2)
+  else()
+    target_compile_options(hyle_stream_bench_avx2 PRIVATE -mavx2 -mfma -mf16c -mbmi -mbmi2 -maes -mpclmul)
+  endif()
+  hyle_apply_warnings(hyle_stream_bench_avx2)
+
   # crypto AES/CLMul (Tier1; needs AES-NI + PCLMUL baseline)
   add_executable(hyle_crypto_bench_avx2 simd/crypto_bench.cc)
   target_link_libraries(hyle_crypto_bench_avx2 PRIVATE nanobench)
@@ -742,6 +755,12 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   target_include_directories(hyle_op_parity_widen_bench_neon SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
   target_compile_definitions(hyle_op_parity_widen_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
   hyle_apply_warnings(hyle_op_parity_widen_bench_neon)
+
+  add_executable(hyle_stream_bench_neon simd/stream_bench.cc)
+  target_include_directories(hyle_stream_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
+  target_include_directories(hyle_stream_bench_neon SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
+  target_compile_definitions(hyle_stream_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
+  hyle_apply_warnings(hyle_stream_bench_neon)
 endif()
 
 # dtype cvt bench: fp16/bf16<->f32 batch. HYLE F16C dispatch vs scalar reference (+ Highway

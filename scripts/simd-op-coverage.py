@@ -25,6 +25,7 @@ Run:  python scripts/simd-op-coverage.py          (report)
       python scripts/simd-op-coverage.py --check   (exit 1 if benched is not a subset or uncovered grows)
 """
 import argparse
+import json
 import os
 import re
 import sys
@@ -43,6 +44,7 @@ BENCH_FILES = ["op_parity_full_bench.cc", "op_parity_bench.cc", "op_parity_widen
 # this table, and a historical row is not automatically a current-HEAD SOTA certificate: v4 may
 # classify the new measurement as INCONCLUSIVE. Current execution coverage is audited via --reports.
 MATRIX = os.path.join(ROOT, "docs", "milestones", "simd-orderswap-matrix.md")
+MANIFEST = os.path.join(ROOT, "scripts", "simd-op-manifest.json")
 
 # Ops that exist but are NOT perf-benchable against a vector reference. Each with a REASON,
 # so the exclusion is auditable (no silent shrinking of the denominator).
@@ -206,6 +208,11 @@ def extract_matrix_ops(all_ops):
             ops |= (_title_to_ops(m.group(1), all_ops) & all_ops)
     return ops
 
+def load_manifest():
+    with open(MANIFEST, encoding="utf-8") as src:
+        doc = json.load(src)
+    return doc.get("ops", {})
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--check", action="store_true")
@@ -223,6 +230,7 @@ def main():
         all_ops |= ops
 
     benched = extract_benched(all_ops)
+    manifest = load_manifest()
 
     # benchable = all public ops − not-benchable − internal selectors − aliases-of-benched.
     # An alias counts as covered iff its target op is benched (else the alias masks a real gap).
@@ -237,6 +245,31 @@ def main():
     covered = sorted(benchable & benched_known)
     uncovered = sorted(benchable - benched_known)
     benched_excluded = sorted(benched_known - benchable)
+
+    valid_classes = {"native", "alias", "synthetic", "paired_info", "algorithm"}
+    manifest_unknown = sorted(set(manifest) - all_ops)
+    manifest_bad_class = sorted(
+        name for name, item in manifest.items() if item.get("class") not in valid_classes)
+    manifest_native_missing = sorted(
+        name for name, item in manifest.items()
+        if item.get("class") == "native" and name not in benched_known)
+    manifest_non_native_benched = sorted(
+        name for name, item in manifest.items()
+        if item.get("class") in {"alias", "synthetic"} and name in benched_known)
+    manifest_unclassified = sorted(set(uncovered) - set(manifest))
+    manifest_stale = sorted(
+        name for name, item in manifest.items()
+        if item.get("class") != "native" and name not in uncovered)
+    manifest_broken_coverage = []
+    manifest_missing_evidence = []
+    for name, item in manifest.items():
+        for target in item.get("covered_by", []):
+            if target not in benched_known:
+                manifest_broken_coverage.append(f"{name} -> {target}")
+        if item.get("class") == "algorithm":
+            evidence = item.get("evidence", "")
+            if not evidence or not os.path.exists(os.path.join(ROOT, evidence)):
+                manifest_missing_evidence.append(f"{name}: {evidence or '<missing>'}")
 
     # Historical matrix bookkeeping. Current certification comes from v4 report files, not merely
     # from the presence of an old row.
@@ -260,24 +293,49 @@ def main():
     print(f"UNCOVERED (benchable-benched): {len(uncovered)}")
     print(f"coverage: {len(covered)}/{len(benchable)} = "
           f"{100.0*len(covered)/max(1,len(benchable)):.1f}%")
+    class_counts = {kind: sum(1 for item in manifest.values() if item.get("class") == kind)
+                    for kind in sorted(valid_classes)}
+    classified_non_bench = sorted(set(uncovered) & set(manifest))
+    print(f"\nexplicit manifest:       {len(manifest)} classified gap names")
+    print("  " + ", ".join(f"{kind}={count}" for kind, count in class_counts.items()))
+    print(f"  independently benched native rows: "
+          f"{class_counts['native'] - len(manifest_native_missing)}/{class_counts['native']}")
+    print(f"  intentionally non-parity names still classified: {len(classified_non_bench)}")
+    print(f"  truly unclassified benchable names: {len(manifest_unclassified)}")
 
     if orphans:
         print("\n!! SELF-CHECK FAILED: these benched ops are NOT in the extracted op set.")
         print("   => extraction rules have a blind spot; fix DEF_RE / namespace handling and re-run.")
         for o in orphans:
             print(f"     - {o}")
+    if manifest_unknown or manifest_bad_class or manifest_native_missing or manifest_non_native_benched or manifest_unclassified or manifest_stale or manifest_broken_coverage or manifest_missing_evidence:
+        print("\n!! MANIFEST CHECK FAILED")
+        for label, values in (
+                ("unknown names", manifest_unknown),
+                ("invalid classes", manifest_bad_class),
+                ("native rows still missing", manifest_native_missing),
+                ("alias/synthetic accidentally benched", manifest_non_native_benched),
+                ("unclassified uncovered names", manifest_unclassified),
+                ("stale non-native entries no longer uncovered", manifest_stale),
+                ("covered_by target not source-benched", manifest_broken_coverage),
+                ("algorithm evidence missing", manifest_missing_evidence)):
+            if values:
+                print(f"  {label}:")
+                for value in values:
+                    print(f"    - {value}")
 
     print(f"\n--- historical matrix ledger (not a current SOTA certificate) ---")
     print(f"benchable ops with a historical matrix row: {len(benchable & matrix_ops)}")
     print(f"benched but absent from the historical matrix: "
           f"{len(sota_pending_benched)}")
-    print(f"not benched at all (add bench first):                    {len(uncovered)}")
+    print(f"not independently benched (classified aliases/synthetic/algorithms included): {len(uncovered)}")
     print(f"==> TOTAL absent from historical matrix or source bench: {len(not_yet_sota)} "
           f"({len(sota_pending_benched)} measure + {len(uncovered)} add-bench)")
 
-    print(f"\nUNCOVERED benchable ops -- need a bench first ({len(uncovered)}):")
+    print(f"\nNOT INDEPENDENTLY BENCHED ({len(uncovered)}; see manifest class, not all need a row):")
     for o in uncovered:
-        print(f"  - {o}")
+        kind = manifest.get(o, {}).get("class", "UNCLASSIFIED")
+        print(f"  - {o} [{kind}]")
     print(f"\nBENCHED but absent from historical matrix ({len(sota_pending_benched)}):")
     for o in sota_pending_benched:
         print(f"  - {o}")
@@ -299,6 +357,11 @@ def main():
             return 1
         if report_missing:
             print("\nFAIL: executed reports do not cover every source-benched op name.")
+            return 1
+        if (manifest_unknown or manifest_bad_class or manifest_native_missing or
+                manifest_non_native_benched or manifest_unclassified or manifest_stale or
+                manifest_broken_coverage or manifest_missing_evidence):
+            print("\nFAIL: explicit SIMD op manifest is incomplete or inconsistent.")
             return 1
     return 0
 

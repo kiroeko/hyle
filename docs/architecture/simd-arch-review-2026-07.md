@@ -73,8 +73,8 @@ helper 层 + 校准闸门。持续风险有界、可检测、有着力点。
 
 - **MSVC 复合上下文劣化 / 寄存器类微差**:编译器层的事,fork 纪律(`#if _MSC_VER && !__clang__`,GCC-反赢
   陷阱教训)已是正确应对;不存在架构级修法(除非生成 asm)。
-- **覆盖面缺口**(masked arith 族等 ~41 个待补 bench + P1 名单):广度债,清单在
-  `docs/milestones/simd-gap-inventory.md`,与结构无关。
+- **覆盖面缺口已闭环**：旧 41 个候选已由 manifest 分类；masked arith P1 是旧差集误报，代码早已
+  完整。15 个 native 新行在三平台各自可用 target 上的第二轮狩猎为 0 LOSE，见 simd-23 / orderswap matrix。
 - **API 镜像 Highway**:是使能逐-op 对拍的**选择**,不是被动跟随的证据——InRange 契约族(TableLookupBytes
   等)证明能在镜像之上有节制地做得更好。代价是继承了 Highway 的 op 面设计决策(如 mask 宽度桥接族的存在),
   可接受。
@@ -94,7 +94,8 @@ helper 层 + 校准闸门。持续风险有界、可检测、有着力点。
 3. **x86 partial 健康化(审计 + canary,不做表示改造)**。把 Rebind 产物路径上靠编译器运气的脆弱 TIE 找出
    来,显式改为低半消费指令,并加 bench canary 防编译器升级回归。成本远低于表示改造,收益是消掉"未量化的
    同类雷"。
-4. **按 gap-inventory 补 P1 覆盖面**(masked arith 族 ~28 名)。新 op 一律过校准仪器 + oracle 闸门再进表。
+4. **✅ gap-inventory 复核完成**：补 4 个 upper-only 128-bit key 接口；拒绝复制 Highway internal
+   widen helper；新增 op 同提交进 manifest/oracle。
 5. **把测量体系当架构质量的常设准绳**。锚点校准、双序判定、三平台 gtest、复合上下文 canary——这套仪器是
    这轮对齐战最大的资产;"架构好不好"从此靠它读数,不靠感觉。
 

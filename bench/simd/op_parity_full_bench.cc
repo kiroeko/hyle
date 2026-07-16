@@ -790,7 +790,46 @@ int main(){
     nb::Bench b; b.title("InterleaveLowerBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
     HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::InterleaveLowerBlocks(hdi,hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b2+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); auto* p_b2 = b2.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::InterleaveLowerBlocks(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b2+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o);  hyle_bench::mark(rep); });
   }
+  {
+    nb::Bench b; b.title("InterleaveEvenBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); auto* p_b=b2.data(); auto* p_o=o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::InterleaveEvenBlocks(hdi,hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); auto* p_b=b2.data(); auto* p_o=o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::InterleaveEvenBlocks(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
+  {
+    nb::Bench b; b.title("InterleaveOddBlocks i32").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); auto* p_b=b2.data(); auto* p_o=o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::InterleaveOddBlocks(hdi,hs::LoadU(hdi,p_a+i),hs::LoadU(hdi,p_b+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); auto* p_b=b2.data(); auto* p_o=o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::InterleaveOddBlocks(gdi,hn::LoadU(gdi,p_a+i),hn::LoadU(gdi,p_b+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
+  {
+    nb::Bench b; b.title("SlideUpBlocks<1> i32").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); auto* p_o=o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::SlideUpBlocks<1>(hdi,hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); auto* p_o=o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::SlideUpBlocks<1>(gdi,hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
+  {
+    nb::Bench b; b.title("SlideDownBlocks<1> i32").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); auto* p_o=o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::SlideDownBlocks<1>(hdi,hs::LoadU(hdi,p_a+i)),hdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); auto* p_o=o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::SlideDownBlocks<1>(gdi,hn::LoadU(gdi,p_a+i)),gdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
 #endif  // avx2/avx512 multi-block
+
+  // ShiftRightUniform is the scalar-count helper used by invariant integer division. It has
+  // backend-native x86 overloads; compare it with Highway's equivalent scalar-count shift.
+  {
+    nb::Bench b; b.title("ShiftRightUniform i32 bits=3").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); auto* p_o=o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::StoreU(hs::ShiftRightUniform(hs::LoadU(hdi,p_a+i),3),hdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); auto* p_o=o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::StoreU(hn::ShiftRightSame(hn::LoadU(gdi,p_a+i),3),gdi,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
+
+  // 64-bit adjacent-lane swap, valid on every fixed-width target in this suite.
+  {
+    std::vector<std::uint64_t> a64(kN), o64(kN);
+    for(std::size_t i=0;i<kN;++i) a64[i]=static_cast<std::uint64_t>(i)*0x9e3779b97f4a7c15ull;
+    const hs::ScalableTag<std::uint64_t> hd64; const hn::ScalableTag<std::uint64_t> gd64;
+    const std::size_t hw64=hs::Lanes(hd64), gw64=hn::Lanes(gd64);
+    nb::Bench b; b.title("Shuffle01 u64").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a64.data(); auto* p_o=o64.data(); for(std::size_t i=0;i+hw64<=kN;i+=hw64) hs::StoreU(hs::Shuffle01(hs::LoadU(hd64,p_a+i)),hd64,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); },
+                         [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a64.data(); auto* p_o=o64.data(); for(std::size_t i=0;i+gw64<=kN;i+=gw64) hn::StoreU(hn::Shuffle01(hn::LoadU(gd64,p_a+i)),gd64,p_o+i); nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
+  }
 
   // ---- 覆盖补齐: byte/lane 移位 (vpslldq/vpsrldq per-128, 单指令应 tie) ----
   {

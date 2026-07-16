@@ -2563,33 +2563,46 @@ template <int i3, int i2, int i1, int i0, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<std::uint16_t, N / 2> SumsOfShuffledQuadAbsDiff(VecNeon<std::uint8_t, N> a,
                                                                        VecNeon<std::uint8_t, N> b) noexcept {
   static_assert(N % 16 == 0, "SumsOfShuffledQuadAbsDiff needs multiple of 16 u8");
-  // Portable dbsad oracle: shuffle a's 4 dwords per 16B block by (i0,i1,i2,i3), then for each
-  // of 4 base positions p=0..3 compute two SADs of 4 bytes (at p and p+1) vs b[0..3] within block
-  // — yielding 8 u16 results (even=pos p, odd=pos p+1) matching Intel DBSAD ordering.
-  alignas(16) std::uint8_t sa[N], sb[N];
-  alignas(16) std::uint16_t out[N / 2] = {};
-  Store(a, Simd<std::uint8_t, N, 0>(), sa);
-  Store(b, Simd<std::uint8_t, N, 0>(), sb);
-  constexpr int sel[4] = {i0, i1, i2, i3};
-  for (std::size_t blk = 0; blk < N; blk += 16) {
-    std::uint8_t sh[16];
-    for (int q = 0; q < 4; ++q)
-      for (int bi = 0; bi < 4; ++bi)
-        sh[q * 4 + bi] = sa[blk + static_cast<std::size_t>(sel[q] * 4 + bi)];
-    constexpr int kSBase[4] = {0, 2, 8, 10};  // per-pair start byte in shuffled a (Highway)
-    for (int pair = 0; pair < 4; ++pair) {
-      for (int odd = 0; odd < 2; ++odd) {
-        unsigned sum = 0;
-        for (int j = 0; j < 4; ++j) {
-          const int da = static_cast<int>(sh[kSBase[pair] + odd + j]);
-          const int db = static_cast<int>(sb[blk + static_cast<std::size_t>(pair * 4 + j)]);
-          sum += static_cast<unsigned>(da >= db ? da - db : db - da);
-        }
-        out[blk / 2 + static_cast<std::size_t>(pair * 2 + odd)] = static_cast<std::uint16_t>(sum);
-      }
-    }
+  static_assert(N == 16, "NEON SumsOfShuffledQuadAbsDiff is one 128-bit block");
+  static_assert(0 <= i0 && i0 <= 3 && 0 <= i1 && i1 <= 3 &&
+                0 <= i2 && i2 <= 3 && 0 <= i3 && i3 <= 3,
+                "SumsOfShuffledQuadAbsDiff indices are in [0,3]");
+
+  // Highway's generic register recipe. The old correctness oracle spilled both vectors and ran
+  // 64 scalar abs/sub/add operations (~0.11x Highway on Apple Silicon). TBL shuffles a's dwords;
+  // EXT builds the two overlapping windows; UABDL's equivalent here is UABD + two UADDLP stages.
+  uint8x16_t shuf;
+  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) {
+    // Per4LaneBlockShuffle<3,2,1,0> is the identity. Keeping a TBL here was the last stable
+    // code-shape difference versus Highway on Apple Silicon (about 0.96x in the parity harness).
+    shuf = detail::to_q(a);
+  } else {
+    const uint8x16_t indices = {
+        static_cast<std::uint8_t>(4 * i0 + 0), static_cast<std::uint8_t>(4 * i0 + 1),
+        static_cast<std::uint8_t>(4 * i0 + 2), static_cast<std::uint8_t>(4 * i0 + 3),
+        static_cast<std::uint8_t>(4 * i1 + 0), static_cast<std::uint8_t>(4 * i1 + 1),
+        static_cast<std::uint8_t>(4 * i1 + 2), static_cast<std::uint8_t>(4 * i1 + 3),
+        static_cast<std::uint8_t>(4 * i2 + 0), static_cast<std::uint8_t>(4 * i2 + 1),
+        static_cast<std::uint8_t>(4 * i2 + 2), static_cast<std::uint8_t>(4 * i2 + 3),
+        static_cast<std::uint8_t>(4 * i3 + 0), static_cast<std::uint8_t>(4 * i3 + 1),
+        static_cast<std::uint8_t>(4 * i3 + 2), static_cast<std::uint8_t>(4 * i3 + 3)};
+    shuf = vqtbl1q_u8(detail::to_q(a), indices);
   }
-  return Load(Simd<std::uint16_t, N / 2, 0>(), out);
+  const uint8x16_t zero = vdupq_n_u8(0);
+  const uint32x4_t odd32 = {0, UINT32_MAX, 0, UINT32_MAX};
+  const uint8x16_t a0123_2345 = vreinterpretq_u8_u32(vbslq_u32(
+      odd32, vreinterpretq_u32_u8(vextq_u8(zero, shuf, 14)), vreinterpretq_u32_u8(shuf)));
+  const uint8x16_t a1234_3456 = vreinterpretq_u8_u32(vbslq_u32(
+      odd32, vreinterpretq_u32_u8(vextq_u8(zero, shuf, 15)),
+      vreinterpretq_u32_u8(vextq_u8(shuf, zero, 1))));
+  const auto sums4 = [](uint8x16_t x, uint8x16_t y) noexcept {
+    return vpaddlq_u16(vpaddlq_u8(vabdq_u8(x, y)));
+  };
+  const uint32x4_t even = sums4(a0123_2345, detail::to_q(b));
+  const uint32x4_t odd = vshlq_n_u32(sums4(a1234_3456, detail::to_q(b)), 16);
+  VecNeon<std::uint16_t, N / 2> r;
+  r = detail::from_q<decltype(r)>(vorrq_u16(vreinterpretq_u16_u32(even), vreinterpretq_u16_u32(odd)));
+  return r;
 }
 
 // simd-17 batch5: BitShuffle / MultiRotateRight -- portable store+reload (matches scalar oracle
