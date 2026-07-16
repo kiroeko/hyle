@@ -251,15 +251,18 @@ exceptional-vector 检查；scalar tier仍走 libm，WSL/GCC log 的例外见下
 
 ---
 
-## P3:消费者/硬件驱动的候补
+## P3:消费者触发的候补 — **本轮审计：全部暂缓(2026-07-16)**
 
-| 项 | 机制 | 触发条件 |
+P3 的原语基础不等于产品机会：没有真实消费者时，不新增 runtime/API 或只测孤立原语。每项须先由
+消费者定出契约，再做端到端 scaling bench；AVX-512 SDE 仅可验证正确性，不作性能证据。
+
+| 项 | 已有基础与机制 | 立项门槛 |
 |---|---|---|
-| 直方图/分组聚合 | AVX-512 `vpconflictd` 把批内冲突解决从最坏串行 O(w) 降到 O(批内 distinct);AVX2 字节切片私有桶 | graph/compute 出现聚合消费者;SDE 可验 |
-| 小表 gather→vpshufb LUT | 表 ≤16/32 项时 shuffle 查表比 vpgatherdd 快 5~10×(gather 是慢 uop) | 出现小表 gather 消费者(量化码本/调色板) |
-| 复数 split 布局 + FFT | split-complex 链式运算免逐 op shuffle(math_scaling_bench 正测复数链);FFT 是 O(n²)→O(n log n) 的终极项 | DSP/卷积消费者出现;FFT 无消费者不启动 |
-| crypto 多块流水 + 聚合 GHASH | AES 4~8 块 in-flight 隐藏延迟;Gueron 聚合归约 O(n)→O(n/4) 次 CLMul 归约 | HYLE 只有 AES/CLMul 原语无 GCM 组合(io TLS 走 OpenSSL);等 GCM 消费者 |
-| 计数器型 RNG(Philox) | 流创建 O(jump) → O(1),任意寻址 | 大规模并行流消费者;xoshiro 现状够用 |
+| 直方图/分组聚合 | radix 内部已有 4 路私有 256-bin histogram；它不是通用分组 API。`vpconflictd` 可处理 AVX-512 批内冲突 | graph/compute 出现 dense 字节聚合消费者；首项仅 `u8→u64[256]` histogram，验证 `sum(bins)==n` 并测输入规模斜率 |
+| 小表 LUT | `TableLookupBytes[InRange/Or0]` 已在 AVX2/NEON/SVE 等后端映射 shuffle/table lookup；仓内没有码本、调色板或量化消费者 | HYLE 自有 int4 dequant 消费者出现；随它做 packed-nibble→16 项 int8 codebook 的端到端路径，对拍标量与 `GatherIndex` |
+| 复数 split 布局 + FFT | 现有 SoA complex batch API；`math_scaling_bench` 只测 unary/pow，**未测复数链**。FFT 可将 DFT 的 O(n²) 降至 O(n log n) | DSP/卷积消费者出现后，先定 C2C/R2C、精度、长度、in/out-of-place、workspace、归一化及 CPU/GPU 合同；再以 DFT oracle 和 2^k scaling 验证 |
+| crypto 多块流水 + 聚合 GHASH | HYLE 只有 AES/CLMul 原语；TLS 记录加密完全由 OpenSSL 负责。Gueron 聚合可减少 CLMul 归约次数 | 非 TLS 的 GCM 消费者出现，并先定 key schedule、nonce 唯一性、AAD/尾块、tag 验证与失败语义；NIST KAT 覆盖硬件及软件路径 |
+| 计数器型 RNG(Philox) | `Rng` 有 `jump()`，SIMD 有按 lane 批量 `VectorXoshiro`；当前仅测试/bench 使用 | 出现 dropout、采样、Monte-Carlo 或 GPU 对齐流，且要求按元素 index、任务切分或 worker 数变化仍严格复现；届时由消费者定义 counter/key 合同 |
 
 ---
 

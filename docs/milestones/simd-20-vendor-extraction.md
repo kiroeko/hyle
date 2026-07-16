@@ -2,7 +2,7 @@
 
 > **状态**:规划(2026-07-15)。**动机**(用户):库里只有少数专项 kernel 借 highway/xsimd,却把整库
 > 拖进 `third_party/` 当依赖,不应该;借用的代码移植进 HYLE,highway/xsimd 挪出仓库到
-> `C:\public\project-hyle\{highway,xsimd}`,只供性能对拍(op_parity 的 `hn::` 侧)引用。
+> `C:\public\project-hyle\{highway,xsimd}`(已挪),只供性能对拍(op_parity 的 `hn::` 侧)引用。
 > **前提修正(盘点见 `docs/architecture/simd-vendor-surface.md`)**:借用面不是"几个 op",是 4 个面——
 > ①超越函数(最大,~25-30 函数 ×2 精度,逐 op best-of 借 Highway contrib/math 与 xsimd)②vqsort
 > (`hn::VQSortStatic` 族)③bitpack(`hn::Pack8/16/32`)④simdutf(编译期可选,默认关)。
@@ -49,11 +49,10 @@
   HYLE 代码)。
 - `lgamma/remainder/nextafter` 本就 scalar(vendor bug),不移植。
 
-**X3 — vqsort 处置(先决策后移植,不盲搬)**
-- `hwy/contrib/sort` 体量大(排序网络 + traits + 分区)。**先等 R5 调研结论**
-  (`simd-complexity-research-brief.md`:自造 radix/argsort vs 借):若 R5 立项自造且可覆盖
-  sort/partial/select+KV 面,vqsort 移植降为不做,直接换自造;若 R5 不立项,vqsort 按 X2 模式
-  逐模块 port。
+**X3 — vqsort 移植(排序面不可由 radix 替代)**
+- `hwy/contrib/sort` 体量大(排序网络 + traits + 分区)。R5 已落地 radix sort/argsort，但它只在大规模
+  整数键排序有明确优势；小 n、浮点排序、partial/select 与完整 KV 面仍依赖 vqsort。因此 radix 是
+  独立算法件，不能作为不移植 vqsort 的理由；X3 按 X2 模式逐模块 port。
 - 闸门:正确性穷举(现有 sort 测试)+ bench vs 旧借核(sort 是招牌件,持平才准换)。
 
 **X4 — 摘除与收口**
