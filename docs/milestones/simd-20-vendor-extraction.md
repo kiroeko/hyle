@@ -1,15 +1,14 @@
 # simd-20: vendor 摘除——库零 vendor 依赖,bench 引用外部 highway/xsimd
 
-> **状态**:X0 已落地(2026-07-16); X1~X4 待执行。**动机**(用户):库里只有少数专项 kernel 借
+> **状态**:X0/X1 已落地(2026-07-16); X2~X4 待执行。**动机**(用户):库里只有少数专项 kernel 借
 > highway/xsimd,却把整库拖进 `third_party/` 当依赖,不应该;借用的代码移植进 HYLE 后，Highway/xsimd
 > 仅作为外部 benchmark 对照。X0 已将 Windows `C:\public\project-hyle\{highway,xsimd}`、Mac
-> `~/vendor/{highway,xsimd}` 与 WSL 自选目录接入 bench；产品源码仍暂用 `third_party/`，直到每项 port
-> 通过对照闸门。
-> **前提修正(盘点见 `docs/architecture/simd-vendor-surface.md`)**:借用面不是"几个 op",是 4 个面——
-> ①超越函数(最大,~25-30 函数 ×2 精度,逐 op best-of 借 Highway contrib/math 与 xsimd)②vqsort
-> (`hn::VQSortStatic` 族)③bitpack(`hn::Pack8/16/32`)④simdutf(编译期可选,默认关)。
-> 幸运的是 `include/` 零泄漏(vendor 全关在 `src/simd/**` TU),且 **HYLE op 面镜像 Highway API,
-> "copy"实际是 `hn::`→`hs::` 移植,大半机械**——适合工单化交给中上 AI。
+> `~/vendor/{highway,xsimd}` 与 WSL 自选目录接入 bench；X1 已将产品 bitpack 移为 HYLE，余下借核在
+> 各自通过对照闸门前仍使用 `third_party/`。
+> **前提修正(盘点见 `docs/architecture/simd-vendor-surface.md`)**:初始借用面是 4 个——①超越函数
+> (最大,~25-30 函数 ×2 精度,逐 op best-of 借 Highway contrib/math 与 xsimd)②vqsort
+> (`hn::VQSortStatic` 族)③bitpack(`hn::Pack8/16/32`)④simdutf(编译期可选,默认关)。X1 后 bitpack
+> 已不借 vendor。`include/` 始终零泄漏，移植只使用 HYLE D-tag 原语。
 
 ## 一、端态
 
@@ -24,7 +23,7 @@
 4. 性能不回退:每个移植 kernel 与原借核 A/B(op_parity 框架,借核走外部 vendor 编译)——**摘除
    期间旧借核天然还在,就是现成对照组**。
 
-## 二、分阶段(X0 先行可独立落地,X1~X3 每卡常绿)
+## 二、分阶段(X0/X1 已落地，X2~X3 每卡常绿)
 
 **X0 — 构建管线先行(已落地 2026-07-16)**
 - bench 的 Highway/xsimd include 全部改根到 `HYLE_BENCH_VENDOR_DIR`：Windows 默认
@@ -46,12 +45,28 @@
 - `cloc --diff` 对 067e0fa 的 X0 机制净增 **215 code LOC**：CMake 85、Bourne shell 72、PowerShell 58；
   `THIRD_PARTY_NOTICES` 的许可证正文不计入代码 LOC。
 
-**X1 — bitpack 移植(最小面,先证明移植模式)**
-- `hn::Pack8/16/32<kBits>` 的用法翻译成 `hs::` 等价(HYLE op 面已镜像所需原语;`bit_pack-inl.h`
-  的 Pack 实现本身写在 hn:: 泛型 op 上,逐函数 port);`bitpack_hyle_u16-inl.h` 已是 hn:: 原语编排,
-  纯改前缀。
-- 闸门:现有 round-trip oracle 全绿(曾抓到 Highway Pack16 bug 的那套)+ bench A/B vs 旧借核
-  (三 ISA:avx2/avx512/neon)。
+**X1 — bitpack 移植(已落地 2026-07-16)**
+- `src/simd/bitpack/bitpack_hyle-inl.h` 将 Highway `Pack8<1..8>`、`Pack16<1..16>`、
+  `Pack32<1..32>` 逐行翻为 HYLE D-tag 原语；三份 `bitpack_hyle_{avx2,avx512,neon}.cc` 以各自
+  ISA 编译，原 Highway bitpack TU 已删除。dispatcher、ABI、`count < 128` scalar cutoff 与 scalar
+  tail 均未改变。
+- `bitpack_hyle_u16-inl.h` 保留 11/13-bit 修正布局：13-bit rawF 用 `0x8000` scatter mask，两个
+  inverse 保持先选源向量再 shift/mask。产品 bitpack 源目录无 `hwy`/`hn::`/`HWY_*`。
+- benchmark 保留外部、pin 校验的 Highway 直接行；11/13 另保留**正确**的 pre-X1 Highway-primitive
+  reference，和已知错误的 Highway upper-bound 分开，后者不作正确性或性能判定。
+- Apple 的同 ISA 对拍揭示 HYLE generic `Xor3` 曾降成两个依赖 EOR，而 Highway 使用 SHA3 `EOR3`；
+  NEON full-vector `Xor3` 现以 `__ARM_FEATURE_SHA3` 门控 `veor3q_u8`，objdump 确认 bitpack 内核
+  发出 `eor3.16b`，D-band 仍走原两 Xor 实现。
+- 验证：Windows MSVC `hyle_simd_test` 331 PASS + 1 BF16 SKIP；WSL GCC14 同为 331 PASS + 1 SKIP，
+  并以 SDE `-future` 跑 AVX-512 bitpack 10/10 PASS；Apple Silicon `hyle_simd_test` 328 PASS + 1
+  SKIP、`hyle_simd_neon_test` 276 PASS。三端均构建并运行 `hyle_bitpack_bench`，外部 vendor SHA/clean
+  gate 通过。
+- 同 ISA 对拍（12 次、`n=65536`）：通用 u16 10-bit pack 的 HYLE public / Highway direct 为 Windows
+  1.015（TIE）、WSL 0.995（TIE）、macOS 1.016（WIN）。修正 13-bit unpack 对正确 pre-X1 reference：
+  Windows 1.156（WIN）、WSL 1.006（TIE）；macOS 在 `n=1048576` 为 1.004（TIE），11-bit 为 1.010
+  （TIE）。
+- 对 X0 后的 scoped tree 执行 `cloc --diff`：新增 **2,562** code LOC、修改 **217**、删除 **38**；主体是
+  2,474 行 HYLE Pack8/16/32 port，另有三 ISA TU 与 benchmark correct-reference control。
 
 **X2 — 超越函数移植(最大面,逐函数工单)**
 - Highway 侧(f64 几乎全部 + f32 的 log/sin/cos/…):`hwy/contrib/math/math-inl.h` 逐函数 port 到

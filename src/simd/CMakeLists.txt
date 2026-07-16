@@ -29,8 +29,8 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
     math/transcendental_xsimd_avx512.cc
     sort/vqsort_highway_avx2.cc
     sort/vqsort_highway_avx512.cc
-    bitpack/bitpack_highway_avx2.cc
-    bitpack/bitpack_highway_avx512.cc)
+    bitpack/bitpack_hyle_avx2.cc
+    bitpack/bitpack_hyle_avx512.cc)
   # AVX10.2 f16->fp8 convert TU: only the compilers that accept -mavx10.2-512 (clang-20+; GCC-14
   # stops at avx10.1, MSVC has none) can build it. Probe the flag; if present, compile the TU and
   # define HYLE_HAVE_AVX10_2 so the header decls + dispatch gate light up. Otherwise the f16->fp8
@@ -53,7 +53,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     math/transcendental_highway_neon.cc
     math/transcendental_xsimd_neon.cc
     sort/vqsort_highway_neon.cc
-    bitpack/bitpack_highway_neon.cc)
+    bitpack/bitpack_hyle_neon.cc)
 endif()
 
 # Highway runtime support: the borrowed Highway cores (math sin/cos..., vqsort, bit_pack) call
@@ -172,13 +172,11 @@ if(HYLE_SIMD_X64)
   # AVX3 target is NOT MSVC-broken, so the 512 TU compiles on MSVC too (no exclusion).
   hyle_set_highway_isa(sort/vqsort_highway_avx2.cc)
   hyle_set_avx512_sort_isa(sort/vqsort_highway_avx512.cc)
-  # bit_pack borrow cores (simd-09 bitpack). SAME Highway-static-dispatch ISA requirement as the
-  # vqsort borrow: the avx2 core needs the full AVX2 baseline (hyle_set_highway_isa) or it silently
-  # downgrades to SSSE3; the avx512 core needs the AVX-512 group on top (hyle_set_avx512_bitpack_isa)
-  # to resolve AVX3. Like vqsort, bit_pack's AVX3 target is NOT MSVC-broken, so the 512 TU compiles
-  # on MSVC too (no exclusion).
-  hyle_set_highway_isa(bitpack/bitpack_highway_avx2.cc)
-  hyle_set_avx512_bitpack_isa(bitpack/bitpack_highway_avx512.cc)
+  # HYLE bit-pack variants use the D-tag backend selected by their target macro. Unlike the
+  # remaining vendor cores, they need no vendor ISA baseline: hyle_set_isa supplies precisely the
+  # AVX2 / AVX-512 codegen required by their corresponding dispatcher gates.
+  hyle_set_isa(bitpack/bitpack_hyle_avx2.cc AVX2)
+  hyle_set_isa(bitpack/bitpack_hyle_avx512.cc AVX512)
 endif()
 
 # BASELINE ASSUMPTION (the SIGILL-safety contract): for a DISTRIBUTABLE binary, build the

@@ -3,20 +3,19 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/platform.h"  // HYLE_ARCH_X64 / HYLE_ARCH_ARM64 (borrow cores are arch-specific)
+#include "hyle/platform.h"  // HYLE_ARCH_X64 / HYLE_ARCH_ARM64 (SIMD cores are arch-specific)
 
-// kernels.h (internal) -- per-tier bitpack borrow symbols the bitpack dispatcher takes the address
-// of. Same shape as sort/kernels.h: the scalar TU (pure contiguous bit-stream codec) is ALWAYS
-// defined + is the non-x86 / fallback floor (NOT a stub -- it is a self-consistent codec). The
-// Highway bit_pack borrow cores (Pack8/Pack16/Pack32) are vendored header-only and compiled per
-// ISA tier on the matching arch (x86 avx2/avx512, arm64 neon); bitpack_dispatch enters them only
-// when the CPU supports the tier (cpu_features()), so the wide codegen never runs on an older CPU.
-// Not a public header.
+// kernels.h (internal) -- per-tier HYLE bitpack symbols the dispatcher takes the address of. Same
+// shape as sort/kernels.h: the scalar TU (pure contiguous bit-stream codec) is ALWAYS defined + is
+// the non-x86 / fallback floor (NOT a stub -- it is a self-consistent codec). The HYLE D-tag
+// Pack8/Pack16/Pack32 implementation is compiled per ISA tier on the matching architecture (x86
+// avx2/avx512, arm64 neon); bitpack_dispatch enters it only when the CPU supports the tier, so wide
+// codegen never runs on an older CPU. Not a public header.
 //
-// The runtime `bits` is turned into the compile-time kBits template arg INSIDE each borrow TU (a
-// fold over std::index_sequence<1..B>), so one symbol per (type,op,tier) covers every width. The
-// block region (whole multiples of N*B raw values) uses Highway's Pack<kBits>; the sub-block tail
-// falls to the scalar bit-stream codec (same-tier round trip, see bitpack.h layout contract).
+// The runtime `bits` is folded to the compile-time kBits template argument inside each HYLE target
+// TU (std::index_sequence<1..B>), so one symbol per (type,op,tier) covers every width. Whole N*B
+// raw-value blocks use Pack<kBits>; the sub-block tail uses the scalar bit-stream codec (same-tier
+// round trip, see bitpack.h layout contract).
 
 namespace hyle::simd::detail {
 
@@ -40,9 +39,9 @@ HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_SCALAR)
 #undef HYLE_BITPACK_DECL_SCALAR
 
 #if defined(HYLE_ARCH_X64)
-// AVX2 (256-bit) + AVX-512 (512-bit) Highway bit_pack borrow cores. Entered by bitpack_dispatch
-// when cpu_features().avx2 / the avx512 group. bit_pack is integer shift/or/and SIMD (not FP
-// transcendentals), so its AVX3 target is NOT MSVC-broken -- the 512 core exists on MSVC too.
+// AVX2 (256-bit) + AVX-512 (512-bit) HYLE bitpack cores. Entered by bitpack_dispatch when
+// cpu_features().avx2 / the avx512 group. The kernels use integer shift/or/and SIMD (not FP
+// transcendentals), so the 512 core exists on MSVC too.
 #define HYLE_BITPACK_DECL_AVX2(T, tag) HYLE_BITPACK_DECL_PAIR(T, tag, avx2)
 HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_AVX2)
 #undef HYLE_BITPACK_DECL_AVX2
@@ -52,8 +51,8 @@ HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_AVX512)
 #endif  // HYLE_ARCH_X64
 
 #if defined(HYLE_ARCH_ARM64)
-// aarch64 NEON Highway bit_pack core (ARMv8 baseline; bitpack_dispatch enters it unconditionally,
-// no runtime gate -- NEON is guaranteed present, like the vqsort NEON borrow).
+// aarch64 NEON HYLE bitpack core (ARMv8 baseline; bitpack_dispatch enters it unconditionally,
+// no runtime gate -- NEON is guaranteed present).
 #define HYLE_BITPACK_DECL_NEON(T, tag) HYLE_BITPACK_DECL_PAIR(T, tag, neon)
 HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_NEON)
 #undef HYLE_BITPACK_DECL_NEON

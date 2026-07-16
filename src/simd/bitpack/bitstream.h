@@ -6,7 +6,7 @@
 // bitstream.h (internal) -- the pure scalar contiguous bit-stream codec that is BOTH the scalar
 // floor (bitpack_scalar.cc, whole-array) AND the sub-block tail helper inside every SIMD tier
 // (bitpack_body.inc). Keeping ONE codec used by both is what makes the same-tier round trip hold:
-// a SIMD tier packs the whole N*B blocks with Highway's Pack<kBits> and the leftover tail with
+// a SIMD tier packs the whole N*B blocks with HYLE Pack<kBits> and the leftover tail with
 // THIS codec; unpack mirrors the split, so unpack(pack(x)) == x. (The packed bytes are an in-
 // memory codec, not a portable wire format -- see bitpack.h.)
 //

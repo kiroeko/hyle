@@ -12,11 +12,14 @@
 
 #include "hyle/macros.h"
 #include "hyle/simd/bitpack.h"
+#include "hyle/simd/vec.h"
 #include "hwy/highway.h"
 #include "hwy/contrib/bit_pack/bit_pack-inl.h"
+#include "src/simd/bitpack/bitpack_hyle-inl.h"
 #include "src/simd/bitpack/bitstream.h"
 
 namespace hn = hwy::HWY_NAMESPACE;
+#include "bench/simd/bitpack_highway_u16_reference-inl.h"
 #include "src/simd/bitpack/bitpack_hyle_u16-inl.h"
 
 namespace {
@@ -24,6 +27,7 @@ namespace nb = ankerl::nanobench;
 
 using T = std::uint16_t;
 using D = hn::ScalableTag<T>;
+using HyleD = hyle::simd::ScalableTag<T>;
 
 HYLE_NOINLINE void scalar_pack(const T* raw, std::size_t count, T* packed,
                                unsigned bits) noexcept {
@@ -67,8 +71,8 @@ void highway_unpack(const T* packed, std::size_t count, T* raw) noexcept {
 
 template <unsigned kBits>
 void candidate_pack_blocks(const T* raw, std::size_t count, T* packed) noexcept {
-  const D d;
-  const std::size_t lanes = hn::Lanes(d);
+  const HyleD d;
+  const std::size_t lanes = hyle::simd::Lanes(d);
   const std::size_t block_size = lanes * 16;
   const std::size_t blocks = count / block_size;
   for (std::size_t b = 0; b < blocks; ++b) {
@@ -82,8 +86,8 @@ void candidate_pack_blocks(const T* raw, std::size_t count, T* packed) noexcept 
 
 template <unsigned kBits>
 void candidate_unpack_blocks(const T* packed, std::size_t count, T* raw) noexcept {
-  const D d;
-  const std::size_t lanes = hn::Lanes(d);
+  const HyleD d;
+  const std::size_t lanes = hyle::simd::Lanes(d);
   const std::size_t block_size = lanes * 16;
   const std::size_t blocks = count / block_size;
   for (std::size_t b = 0; b < blocks; ++b) {
@@ -105,6 +109,51 @@ HYLE_NOINLINE void candidate_unpack(const T* packed, std::size_t count, T* raw,
                                     unsigned bits) noexcept {
   if (bits == 11) candidate_unpack_blocks<11>(packed, count, raw);
   else candidate_unpack_blocks<13>(packed, count, raw);
+}
+
+// Exact pre-X1 correct control: the same 11/13 layouts and tail split as the prior product path,
+// but compiled only into this external-Highway benchmark. Unlike the vendor's direct 11/13 rows,
+// this reference round-trips correctly and is therefore the meaningful port-performance baseline.
+template <unsigned kBits>
+void highway_corrected_pack_blocks(const T* raw, std::size_t count, T* packed) noexcept {
+  const D d;
+  const std::size_t lanes = hn::Lanes(d);
+  const std::size_t block_size = lanes * 16;
+  const std::size_t blocks = count / block_size;
+  for (std::size_t b = 0; b < blocks; ++b) {
+    hyle::simd::detail::bitpack_highway_reference_pack_u16<kBits>(
+        d, raw + b * block_size, packed + b * lanes * kBits);
+  }
+  const std::size_t block_raw = blocks * block_size;
+  hyle::simd::detail::bitstream_pack(raw + block_raw, count - block_raw,
+                                     packed + blocks * lanes * kBits, kBits);
+}
+
+template <unsigned kBits>
+void highway_corrected_unpack_blocks(const T* packed, std::size_t count, T* raw) noexcept {
+  const D d;
+  const std::size_t lanes = hn::Lanes(d);
+  const std::size_t block_size = lanes * 16;
+  const std::size_t blocks = count / block_size;
+  for (std::size_t b = 0; b < blocks; ++b) {
+    hyle::simd::detail::bitpack_highway_reference_unpack_u16<kBits>(
+        d, packed + b * lanes * kBits, raw + b * block_size);
+  }
+  const std::size_t block_raw = blocks * block_size;
+  hyle::simd::detail::bitstream_unpack(packed + blocks * lanes * kBits,
+                                       count - block_raw, raw + block_raw, kBits);
+}
+
+HYLE_NOINLINE void highway_corrected_pack(const T* raw, std::size_t count, T* packed,
+                                          unsigned bits) noexcept {
+  if (bits == 11) highway_corrected_pack_blocks<11>(raw, count, packed);
+  else highway_corrected_pack_blocks<13>(raw, count, packed);
+}
+
+HYLE_NOINLINE void highway_corrected_unpack(const T* packed, std::size_t count, T* raw,
+                                            unsigned bits) noexcept {
+  if (bits == 11) highway_corrected_unpack_blocks<11>(packed, count, raw);
+  else highway_corrected_unpack_blocks<13>(packed, count, raw);
 }
 
 HYLE_NOINLINE void current_direct_pack(const T* raw, std::size_t count, T* packed,
@@ -197,6 +246,10 @@ void bench_pack(std::size_t n, unsigned bits) {
       candidate_pack(raw.data(), n, packed.data(), bits);
       nb::doNotOptimizeAway(packed.data());
     });
+    bench.run("Highway corrected reference", [&] {
+      highway_corrected_pack(raw.data(), n, packed.data(), bits);
+      nb::doNotOptimizeAway(packed.data());
+    });
     bench.run("Highway broken upper bound", [&] {
       broken_vendor_pack(raw.data(), n, packed.data(), bits);
       nb::doNotOptimizeAway(packed.data());
@@ -211,6 +264,7 @@ void bench_unpack(std::size_t n, unsigned bits) {
   std::vector<T> packed_direct(words);
   std::vector<T> packed_scalar(words);
   std::vector<T> packed_candidate(words);
+  std::vector<T> packed_highway_corrected(words);
   std::vector<T> packed_broken(words);
   std::vector<T> out(std::max<std::size_t>(n, 1));
   hyle::simd::pack(raw.data(), n, packed_public.data(), bits);
@@ -218,6 +272,7 @@ void bench_unpack(std::size_t n, unsigned bits) {
   scalar_pack(raw.data(), n, packed_scalar.data(), bits);
   if (bits == 11 || bits == 13) {
     candidate_pack(raw.data(), n, packed_candidate.data(), bits);
+    highway_corrected_pack(raw.data(), n, packed_highway_corrected.data(), bits);
     broken_vendor_pack(raw.data(), n, packed_broken.data(), bits);
   }
 
@@ -241,6 +296,10 @@ void bench_unpack(std::size_t n, unsigned bits) {
   if (bits == 11 || bits == 13) {
     bench.run("HYLE candidate direct", [&] {
       candidate_unpack(packed_candidate.data(), n, out.data(), bits);
+      nb::doNotOptimizeAway(out.data());
+    });
+    bench.run("Highway corrected reference", [&] {
+      highway_corrected_unpack(packed_highway_corrected.data(), n, out.data(), bits);
       nb::doNotOptimizeAway(out.data());
     });
     bench.run("Highway broken upper bound", [&] {

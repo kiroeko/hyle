@@ -875,6 +875,22 @@ HYLE_FORCE_INLINE VecNeon<T, N> Xor(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
     r = detail::from_q<decltype(r)>(detail::from_u32<T>(veorq_u32(detail::to_u32<T>(detail::to_q(a)), detail::to_u32<T>(detail::to_q(b)))));
   return r;
 }
+// SHA3 supplies EOR3 for full 128-bit vectors. Highway uses the same instruction when the compiler
+// advertises __ARM_FEATURE_SHA3; preserve that mapping so Xor3-heavy ports (notably bitpack) do not
+// regress to two dependent EORs. Partial D-band vectors still use the generic two-Xor form below.
+#if defined(__ARM_FEATURE_SHA3)
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> Xor3(VecNeon<T, N> a, VecNeon<T, N> b, VecNeon<T, N> c) noexcept {
+  if constexpr (!detail::kIsDBand<T, N>) {
+    const uint8x16_t a8 = vreinterpretq_u8_u32(detail::to_u32<T>(detail::to_q(a)));
+    const uint8x16_t b8 = vreinterpretq_u8_u32(detail::to_u32<T>(detail::to_q(b)));
+    const uint8x16_t c8 = vreinterpretq_u8_u32(detail::to_u32<T>(detail::to_q(c)));
+    return detail::from_q<VecNeon<T, N>>(
+        detail::from_u32<T>(vreinterpretq_u32_u8(veor3q_u8(a8, b8, c8))));
+  }
+  return Xor(a, Xor(b, c));
+}
+#endif
 // AndNot(a,b) = ~a & b (Highway order). NEON vbic(x,y) = x & ~y, so swap args: vbic(b,a).
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> AndNot(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {

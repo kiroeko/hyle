@@ -8,7 +8,7 @@
 
 **关键前提**：`include/` 里**零** vendor 调用——所有头文件里的 `hwy`/`xsimd` 字样都是注释（契约对齐说明或性能标注）。公开 API 只吃裸指针，vendor include 全部关在 `src/simd/**` 内部 TU（+ 一个 container 文件），**vendor 类型永不泄漏到 include**。
 
-实际借用共 **4 处专项 kernel**，全是薄借（vendor 做真活，HYLE 只写编排 + 尾部）+ 运行期/编译期门控：
+实际借用共 **3 处专项 kernel**，均为薄借（vendor 做真活，HYLE 只写编排 + 尾部）+ 运行期/编译期门控：
 
 ## 1. 超越函数 / math（最大借用，薄借，逐 op best-of）
 
@@ -28,11 +28,11 @@
 - **借什么**：`hn::VQSortStatic / VQPartialSortStatic / VQSelectStatic`（header-only，`VQSORT_ONLY_STATIC=1`）。sort/partial-sort/select 覆盖 u32/i32/u64/i64/f32/f64 + KV32/KV64 top-k（reinterpret 到 Highway K32V32/K64V64）。
 - **门控**：AVX2/AVX512/NEON 运行期派发。
 
-## 3. bitpack（多数薄借，一处 HYLE 自造绕 bug）
+## 3. bitpack（HYLE SIMD 实现）
 
-- **位置**：`src/simd/bitpack/bitpack_body.inc` + `bitpack_highway_{avx2,avx512,neon}.cc`；`bitpack_dispatch.cc`
-- **借什么**：`hn::Pack8/16/32<kBits>` 做 block 打包；HYLE 写 scalar-bitstream 尾（`bitstream.h`）。
-- **窄例外**：`bitpack_hyle_u16-inl.h` 是 HYLE 自造 u16 11/13-bit packer（用 `hn::` 原语），绕 Highway 满位宽 round-trip bug。
+- **位置**：`src/simd/bitpack/bitpack_hyle-inl.h` + `bitpack_hyle_{avx2,avx512,neon}.cc`；`bitpack_dispatch.cc`
+- **实现**：HYLE D-tag `Pack8/16/32<kBits>` 做完整 block 打包；`bitstream.h` 只处理不足一个 SIMD block 的尾。
+- **u16 例外布局**：`bitpack_hyle_u16-inl.h` 保留 11/13-bit 的已验证 SIMD 修正布局，涵盖 13-bit rawF scatter mask 与两个 inverse 的向量选择。
 
 ## 4. UTF-8 计数（薄借，编译期可选）
 
@@ -44,13 +44,13 @@
 
 `vec.h`/`ops.h` + 五后端（avx2/sse4/neon/scalar/scalable）的核心 op 面、RNG（xoshiro256）、cmp128、swizzle、quantize、crypto（AES/CLMul）、fp8（`cvt_avx10_2.cc` 手写 `_mm512_*`，无 Highway/xsimd）—— 100% HYLE 自己的 intrinsic。无 intdiv/RNG 借用。
 
-**一句话**：HYLE 自造整个核心 SIMD 面 + fp8；只对四个"难自己超越"的招牌 kernel（超越函数 / vqsort / bitpack / 可选 UTF-8）做薄借，全关在 `src/simd/**` 内部 TU，vendor 类型不入 `include/`。
+**一句话**：HYLE 自造整个核心 SIMD 面 + fp8 + bitpack；只对三个"难自己超越"的专项 kernel（超越函数 / vqsort / 可选 UTF-8）做薄借，全关在 `src/simd/**` 内部 TU，vendor 类型不入 `include/`。
 
 ## vendor 摘除状态
 
 simd-20 的 X0 已将**bench** 侧 Highway/xsimd 改为 `HYLE_BENCH_VENDOR_DIR` 中 SHA pin 的外部、干净
-Git checkout；它们是每张移植卡不变的对照组。产品仍暂时使用本页列出的 `third_party/` 借核，直到 X1
-bitpack、X2 math、X3 vqsort 分别完成 oracle 与 A/B 闸门。`simdutf` 不在本轮范围。
+Git checkout；它们是每张移植卡不变的对照组。产品仍暂时使用本页列出的 `third_party/` math/vqsort 借核，直到 X2 math、X3 vqsort
+分别完成 oracle 与 A/B 闸门。bitpack 的 X1 已迁为 HYLE 内核；`simdutf` 不在本轮范围。
 
 借核与移植核都必须过 round-trip/oracle（已抓到 Highway Pack16 + xsimd lgamma 两个 vendor bug），保持
 "借不等于信"。完整阶段与验证见 [`../milestones/simd-20-vendor-extraction.md`](../milestones/simd-20-vendor-extraction.md)。

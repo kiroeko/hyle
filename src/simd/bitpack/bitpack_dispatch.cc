@@ -9,16 +9,12 @@
 #include "src/simd/bitpack/bitstream.h"
 #include "src/simd/bitpack/kernels.h"
 
-// bitpack_dispatch.cc -- baseline dispatcher for the Highway bit_pack borrow ops. Mirrors
-// sort_dispatch.cc: per-type it routes to the widest LIVE tier -> x86 avx512 -> avx2 -> scalar;
-// arm64 NEON (unconditional -- ARMv8 baseline); everything else the scalar bit-stream floor. The
-// borrow cores are vendored header-only (can't be missing) + compiled per tier; this dispatcher
-// only enters a wide tier when the CPU supports it (cpu_features()), so an old CPU never SIGILLs.
-//
-// bit_pack borrows ONE lib (Highway -- only it ships a vectorized fixed-width packer), so there is
-// no per-op library pick, just the tier ladder. bit_pack's AVX-512 target is NOT MSVC-broken
-// (integer shift/or/and SIMD, not FP transcendentals), so the 512 tier is used on all compilers --
-// no _MSC_VER exclusion (same as vqsort).
+// bitpack_dispatch.cc -- baseline dispatcher for HYLE SIMD bitpack. Mirrors sort_dispatch.cc:
+// per type it routes to the widest live tier -> x86 avx512 -> avx2 -> scalar; arm64 NEON
+// (unconditional -- ARMv8 baseline); everything else the scalar bit-stream floor. It enters a
+// wide tier only when cpu_features() permits it, so an old CPU never executes a wide instruction.
+// The AVX-512 kernel uses integer shift/or/and SIMD rather than FP transcendentals, and is used on
+// all supported compilers.
 
 namespace hyle::simd {
 namespace {
@@ -102,7 +98,7 @@ Isa active_bitpack_variant() noexcept {
       have_avx512() ? Isa::kAvx512 : (have_avx2() ? Isa::kAvx2 : Isa::kScalar);
   return tier;
 #elif defined(HYLE_ARCH_ARM64)
-  return Isa::kNeon;  // Highway NEON bit_pack core always compiled (ARMv8 baseline)
+  return Isa::kNeon;  // HYLE NEON core always compiled (ARMv8 baseline)
 #else
   return Isa::kScalar;
 #endif

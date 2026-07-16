@@ -566,8 +566,16 @@ target_link_libraries(hyle_bitpack_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_bitpack_bench PRIVATE "${PROJECT_SOURCE_DIR}")
 target_include_directories(hyle_bitpack_bench SYSTEM PRIVATE
   "${_hyle_bench_highway_dir}")
+# The direct vendor comparison remains AVX2-fixed. Compile the HYLE u16 correction benchmark at
+# the same ISA and select its matching D-tag backend, avoiding an inline/vector-width asymmetry.
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_set_highway_isa(simd/bitpack_bench.cc)
+  set_source_files_properties(simd/bitpack_bench.cc PROPERTIES
+    COMPILE_DEFINITIONS "HYLE_SIMD_TARGET_AVX2")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  hyle_set_isa(simd/bitpack_bench.cc NEON)
+  set_source_files_properties(simd/bitpack_bench.cc PROPERTIES
+    COMPILE_DEFINITIONS "HYLE_SIMD_TARGET_NEON")
 endif()
 hyle_apply_warnings(hyle_bitpack_bench)
 

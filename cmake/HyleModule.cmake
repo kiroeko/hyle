@@ -165,26 +165,6 @@ function(hyle_set_avx512_sort_isa src)
   set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
 endfunction()
 
-# hyle_set_avx512_bitpack_isa(<source-file>) -- ISA flags for the AVX-512 (512-bit) Highway bit_pack
-# borrow TU (src/simd/bitpack/bitpack_highway_avx512.cc). SAME requirement as the vqsort AVX-512
-# borrow: Highway's HWY_STATIC_TARGET must see the FULL baseline macro chain to pick AVX3 -- the
-# AVX2 baseline (SSE4=PCLMUL+AES + BMI2+FMA+F16C) PLUS the AVX-512 group (f/bw/vl/dq/cd), else it
-# silently downgrades to the 256-bit target (the shipped bit_pack would run at half width). A
-# separate function from hyle_set_avx512_sort_isa only for a self-documenting call site (the flag
-# set is identical -- bit_pack has no extra ISA need beyond the Highway AVX3 baseline). MSVC's
-# /arch:AVX512 implies the whole set; UNLIKE the math AVX3 log core, bit_pack's AVX3 target is NOT
-# HWY_BROKEN on MSVC (integer shift/or/and SIMD, not FP transcendentals), so this TU is compiled
-# there. Only reached when best_isa() >= kAvx512 (runtime-gated in bitpack_dispatch), so the zmm
-# codegen never runs on a non-AVX512 CPU.
-function(hyle_set_avx512_bitpack_isa src)
-  if(MSVC)
-    set(_flags "/arch:AVX512")
-  else()
-    set(_flags "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512cd;-mavx2;-mfma;-mf16c;-mbmi;-mbmi2;-maes;-mpclmul")
-  endif()
-  set_source_files_properties("${src}" PROPERTIES COMPILE_OPTIONS "${_flags}")
-endfunction()
-
 # hyle_add_module(<name> [SOURCES ...] [DEPS ...] [PUBLIC_DEPS ...])
 # Declares a HYLE module as a library target `hyle_<name>` with conventional
 # include dirs, warnings, sanitizer flags, and a tri-state export macro.

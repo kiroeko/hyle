@@ -1,19 +1,10 @@
-// bitpack_body.inc -- the SHARED body of the Highway bit_pack borrow cores. Included by each ISA
-// tier TU (bitpack_highway_avx2.cc / _avx512.cc / _neon.cc) AFTER it defines HYLE_BITPACK_TIER
-// (the symbol suffix: avx2 / avx512 / neon) and includes the Highway headers. NOT a standalone TU
-// (no include guard on purpose -- textually pasted once per tier with a different suffix, exactly
-// like vqsort_body.inc / the math borrow TUs).
+// bitpack_body.inc -- shared HYLE SIMD bit-pack implementation. Each HYLE target TU defines
+// HYLE_SIMD_TARGET_* and HYLE_SIMD_VARIANT_SUFFIX before including this file. It is deliberately
+// multi-included, once per ISA tier, so ScalableTag selects that TU's native vector width.
 //
-// Each tier compiles at its own -march (via hyle_set_highway_isa / hyle_set_avx512_bitpack_isa in
-// CMake), so hn:: / Pack8/16/32 lower to that tier's width. The runtime `bits` is folded to the
-// compile-time kBits template arg via an index_sequence over 1..B (B = 8*sizeof(T)); only kBits in
-// [1,B] are instantiated, so Pack8<9> etc never exist.
-//
-// SPLIT: the whole N*B-value BLOCKS (N = Lanes(d)) go through Highway's Pack<kBits>::Pack (which
-// emits kBits*N packed elements per block); the sub-block TAIL (< N*B values) goes through the
-// scalar bit-stream codec (bitstream.h) -- the SAME codec the scalar floor uses, so a same-host
-// (same-tier) round trip is exact. The tail's packed offset is nblocks*N*bits elements, which
-// equals nblocks*N*kBits (runtime bits == the folded kBits), so it lands right after the blocks.
+// Full blocks contain B * Lanes(d) raw values (B = 8 * sizeof(T)) and are packed by the migrated
+// Pack8/Pack16/Pack32 specializations. The remaining sub-block tail uses the scalar bit stream;
+// the packed offset is nblocks * Lanes(d) * bits, exactly after the vector block region.
 
 #include "src/simd/bitpack/kernels.h"
 
@@ -21,106 +12,99 @@
 #include <cstdint>
 #include <utility>
 
+#include "hyle/simd/vec.h"
+#include "src/simd/bitpack/bitpack_hyle-inl.h"
+#include "src/simd/bitpack/bitpack_hyle_u16-inl.h"
 #include "src/simd/bitpack/bitstream.h"
 
-namespace hn = hwy::HWY_NAMESPACE;
-
-#include "src/simd/bitpack/bitpack_hyle_u16-inl.h"
+#ifndef HYLE_SIMD_VARIANT_SUFFIX
+#error "define HYLE_SIMD_VARIANT_SUFFIX before including bitpack_body.inc"
+#endif
 
 namespace hyle::simd::detail {
 
 #define HYLE_BITPACK_PASTE2(a, b) a##b
 #define HYLE_BITPACK_PASTE(a, b) HYLE_BITPACK_PASTE2(a, b)
-// Builds e.g. pack_u8_avx2 -- HYLE_BITPACK_TIER is a macro so it needs the two-level paste.
-#define HYLE_BITPACK_SYM(stem, tag) HYLE_BITPACK_PASTE(stem##_##tag##_, HYLE_BITPACK_TIER)
+#define HYLE_BITPACK_SYM(stem) HYLE_BITPACK_PASTE(stem, HYLE_SIMD_VARIANT_SUFFIX)
 
-// Select the right Highway packer class by lane byte size (Pack8/Pack16/Pack32). if constexpr
-// discards the untaken branches from instantiation, so Pack16<kBits> is never instantiated for a
-// 1-byte T (whose kBits only reaches 8). One Pack() call handles a block of B*Lanes(d) raw values.
+// kBits remains compile-time-specialized. The corrected u16 11/13 layouts supersede the upstream
+// implementations; all other widths use the direct semantic migration.
 template <std::size_t kBits, class D, typename T>
-HWY_INLINE void bitpack_pack_one(D d, const T* raw, T* packed) {
+HYLE_FORCE_INLINE void bitpack_pack_one(D d, const T* raw, T* packed) noexcept {
   if constexpr (sizeof(T) == 1) {
-    hn::Pack8<kBits>().Pack(d, raw, packed);
+    Pack8<kBits>().Pack(d, raw, packed);
   } else if constexpr (sizeof(T) == 2 && (kBits == 11 || kBits == 13)) {
     bitpack_hyle_pack_u16<kBits>(d, raw, packed);
   } else if constexpr (sizeof(T) == 2) {
-    hn::Pack16<kBits>().Pack(d, raw, packed);
+    Pack16<kBits>().Pack(d, raw, packed);
   } else {
-    hn::Pack32<kBits>().Pack(d, raw, packed);
+    Pack32<kBits>().Pack(d, raw, packed);
   }
 }
 
 template <std::size_t kBits, class D, typename T>
-HWY_INLINE void bitpack_unpack_one(D d, const T* packed, T* raw) {
+HYLE_FORCE_INLINE void bitpack_unpack_one(D d, const T* packed, T* raw) noexcept {
   if constexpr (sizeof(T) == 1) {
-    hn::Pack8<kBits>().Unpack(d, packed, raw);
+    Pack8<kBits>().Unpack(d, packed, raw);
   } else if constexpr (sizeof(T) == 2 && (kBits == 11 || kBits == 13)) {
     bitpack_hyle_unpack_u16<kBits>(d, packed, raw);
   } else if constexpr (sizeof(T) == 2) {
-    hn::Pack16<kBits>().Unpack(d, packed, raw);
+    Pack16<kBits>().Unpack(d, packed, raw);
   } else {
-    hn::Pack32<kBits>().Unpack(d, packed, raw);
+    Pack32<kBits>().Unpack(d, packed, raw);
   }
 }
 
-// Fold: for the matching kBits (== bits), run the whole block loop with a compile-time packed
-// stride of kBits*N. `nblocks` blocks of N*B raw values each. Only kBits in [1,B] instantiated.
 template <typename T, class D, std::size_t... Ks>
-HWY_INLINE void bitpack_pack_blocks(unsigned bits, D d, std::size_t N, std::size_t nblocks,
-                                    const T* raw, T* packed, std::index_sequence<Ks...>) {
+HYLE_FORCE_INLINE void bitpack_pack_blocks(unsigned bits, D d, std::size_t lanes,
+                                           std::size_t nblocks, const T* raw, T* packed,
+                                           std::index_sequence<Ks...>) noexcept {
   constexpr std::size_t B = 8 * sizeof(T);
   (void)(((bits == Ks + 1) ? (([&] {
-            const std::size_t raw_step = N * B;
-            const std::size_t packed_step = N * (Ks + 1);
+            const std::size_t raw_step = lanes * B;
+            const std::size_t packed_step = lanes * (Ks + 1);
             for (std::size_t b = 0; b < nblocks; ++b)
               bitpack_pack_one<Ks + 1>(d, raw + b * raw_step, packed + b * packed_step);
-          }()),
-           true)
-                           : false) ||
-         ...);
+          }()), true) : false) || ...);
 }
 
 template <typename T, class D, std::size_t... Ks>
-HWY_INLINE void bitpack_unpack_blocks(unsigned bits, D d, std::size_t N, std::size_t nblocks,
-                                      const T* packed, T* raw, std::index_sequence<Ks...>) {
+HYLE_FORCE_INLINE void bitpack_unpack_blocks(unsigned bits, D d, std::size_t lanes,
+                                             std::size_t nblocks, const T* packed, T* raw,
+                                             std::index_sequence<Ks...>) noexcept {
   constexpr std::size_t B = 8 * sizeof(T);
   (void)(((bits == Ks + 1) ? (([&] {
-            const std::size_t raw_step = N * B;
-            const std::size_t packed_step = N * (Ks + 1);
+            const std::size_t raw_step = lanes * B;
+            const std::size_t packed_step = lanes * (Ks + 1);
             for (std::size_t b = 0; b < nblocks; ++b)
               bitpack_unpack_one<Ks + 1>(d, packed + b * packed_step, raw + b * raw_step);
-          }()),
-           true)
-                           : false) ||
-         ...);
+          }()), true) : false) || ...);
 }
 
-#define HYLE_BITPACK_DEFINE(T, tag)                                                          \
-  void HYLE_BITPACK_SYM(pack, tag)(const T* raw, std::size_t count, T* packed, unsigned bits) \
-      noexcept {                                                                             \
-    constexpr std::size_t B = 8 * sizeof(T);                                                 \
-    const hn::ScalableTag<T> d;                                                              \
-    const std::size_t N = hn::Lanes(d);                                                      \
-    const std::size_t block_size = N * B;                                                    \
-    const std::size_t nblocks = count / block_size;                                           \
-    const std::size_t block_raw = nblocks * block_size;                                      \
-    const std::size_t block_packed = nblocks * N * bits;                                     \
-    bitpack_pack_blocks<T>(bits, d, N, nblocks, raw, packed,                                 \
-                           std::make_index_sequence<B>{});                                   \
-    bitstream_pack<T>(raw + block_raw, count - block_raw, packed + block_packed, bits);      \
-  }                                                                                          \
-  void HYLE_BITPACK_SYM(unpack, tag)(const T* packed, std::size_t count, T* raw,             \
-                                     unsigned bits) noexcept {                               \
-    constexpr std::size_t B = 8 * sizeof(T);                                                 \
-    const hn::ScalableTag<T> d;                                                              \
-    const std::size_t N = hn::Lanes(d);                                                      \
-    const std::size_t block_size = N * B;                                                    \
-    const std::size_t nblocks = count / block_size;                                           \
-    const std::size_t block_raw = nblocks * block_size;                                      \
-    const std::size_t block_packed = nblocks * N * bits;                                     \
-    bitpack_unpack_blocks<T>(bits, d, N, nblocks, packed, raw,                               \
-                             std::make_index_sequence<B>{});                                 \
-    bitstream_unpack<T>(packed + block_packed, count - block_raw, raw + block_raw, bits);    \
+#define HYLE_BITPACK_DEFINE(T, tag)                                                        \
+  void HYLE_BITPACK_SYM(pack_##tag##_)(const T* raw, std::size_t count, T* packed,         \
+                                       unsigned bits) noexcept {                            \
+    constexpr std::size_t B = 8 * sizeof(T);                                               \
+    const ScalableTag<T> d;                                                                 \
+    const std::size_t lanes = Lanes(d);                                                     \
+    const std::size_t block_size = lanes * B;                                               \
+    const std::size_t nblocks = count / block_size;                                         \
+    const std::size_t block_raw = nblocks * block_size;                                     \
+    const std::size_t block_packed = nblocks * lanes * bits;                                \
+    bitpack_pack_blocks<T>(bits, d, lanes, nblocks, raw, packed, std::make_index_sequence<B>{}); \
+    bitstream_pack<T>(raw + block_raw, count - block_raw, packed + block_packed, bits);    \
+  }                                                                                         \
+  void HYLE_BITPACK_SYM(unpack_##tag##_)(const T* packed, std::size_t count, T* raw,       \
+                                         unsigned bits) noexcept {                          \
+    constexpr std::size_t B = 8 * sizeof(T);                                               \
+    const ScalableTag<T> d;                                                                 \
+    const std::size_t lanes = Lanes(d);                                                     \
+    const std::size_t block_size = lanes * B;                                               \
+    const std::size_t nblocks = count / block_size;                                         \
+    const std::size_t block_raw = nblocks * block_size;                                     \
+    const std::size_t block_packed = nblocks * lanes * bits;                                \
+    bitpack_unpack_blocks<T>(bits, d, lanes, nblocks, packed, raw, std::make_index_sequence<B>{}); \
+    bitstream_unpack<T>(packed + block_packed, count - block_raw, raw + block_raw, bits);  \
   }
 
 HYLE_BITPACK_TYPES(HYLE_BITPACK_DEFINE)
