@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <bit>
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
@@ -46,6 +47,43 @@ long double ref_dot_d(const std::vector<double>& x, const std::vector<double>& y
   for (std::size_t i = 0; i < x.size(); ++i) s += static_cast<long double>(x[i]) * y[i];
   return s;
 }
+
+std::vector<const hyle::simd::Runtime*> available_runtimes() {
+  std::vector<const hyle::simd::Runtime*> out;
+  for (hyle::simd::Isa isa : {hyle::simd::Isa::kScalar, hyle::simd::Isa::kSse42,
+                              hyle::simd::Isa::kAvx2, hyle::simd::Isa::kAvx512,
+                              hyle::simd::Isa::kNeon, hyle::simd::Isa::kSve,
+                              hyle::simd::Isa::kRvv}) {
+    if (const auto* table = hyle::simd::runtime_for(isa)) out.push_back(table);
+  }
+  return out;
+}
+
+float ref_dot_bf16(const std::vector<hyle::simd::bfloat16_t>& x,
+                   const std::vector<hyle::simd::bfloat16_t>& y) {
+  float sum = 0.0f;
+  for (std::size_t i = 0; i < x.size(); ++i)
+    sum += hyle::simd::bf16_to_f32(x[i]) * hyle::simd::bf16_to_f32(y[i]);
+  return sum;
+}
+
+float ref_dot_f16(const std::vector<hyle::simd::float16_t>& x,
+                  const std::vector<hyle::simd::float16_t>& y) {
+  float sum = 0.0f;
+  for (std::size_t i = 0; i < x.size(); ++i)
+    sum += hyle::simd::f16_to_f32(x[i]) * hyle::simd::f16_to_f32(y[i]);
+  return sum;
+}
+
+std::int64_t ref_dot_i16(const std::vector<std::int16_t>& x,
+                         const std::vector<std::int16_t>& y) {
+  std::uint64_t sum = 0;
+  for (std::size_t i = 0; i < x.size(); ++i) {
+    const std::int64_t product = static_cast<std::int64_t>(x[i]) * y[i];
+    sum += static_cast<std::uint64_t>(product);
+  }
+  return std::bit_cast<std::int64_t>(sum);
+}
 }  // namespace
 
 // dot result matches a DOUBLE-precision reference across sizes that exercise full vectors
@@ -85,6 +123,93 @@ TEST(Ops, DotF64MatchesReference) {
 
 TEST(Ops, DotF64EmptyIsZero) {
   EXPECT_EQ(dot(static_cast<const double*>(nullptr), static_cast<const double*>(nullptr), 0), 0.0);
+}
+
+TEST(Ops, MixedPrecisionDotsMatchReferenceOnEveryRuntimeTier) {
+  for (std::size_t n : {std::size_t{0}, std::size_t{1}, std::size_t{7},
+                        std::size_t{8}, std::size_t{31}, std::size_t{64},
+                        std::size_t{257}, std::size_t{1000}}) {
+    std::vector<float> f32(n);
+    std::vector<hyle::simd::bfloat16_t> bf0(n), bf1(n);
+    std::vector<hyle::simd::float16_t> f16a(n), f16b(n);
+    for (std::size_t i = 0; i < n; ++i) {
+      const float a = (static_cast<int>(i % 23) - 11) * 0.125f;
+      const float b = (static_cast<int>((i * 7) % 29) - 14) * 0.0625f;
+      f32[i] = a + 0.0001f;
+      bf0[i] = hyle::simd::f32_to_bf16(a);
+      bf1[i] = hyle::simd::f32_to_bf16(b);
+      f16a[i] = hyle::simd::f32_to_f16(a);
+      f16b[i] = hyle::simd::f32_to_f16(b);
+    }
+
+    const float bf_ref = ref_dot_bf16(bf0, bf1);
+    const float f16_ref = ref_dot_f16(f16a, f16b);
+    float mixed_ref = 0.0f;
+    for (std::size_t i = 0; i < n; ++i)
+      mixed_ref += f32[i] * hyle::simd::bf16_to_f32(bf1[i]);
+    const float bf_tol = std::abs(bf_ref) * 2e-5f + 2e-5f;
+    const float f16_tol = std::abs(f16_ref) * 2e-5f + 2e-5f;
+    const float mixed_tol = std::abs(mixed_ref) * 2e-5f + 2e-5f;
+
+    EXPECT_NEAR(dot(bf0.data(), bf1.data(), n), bf_ref, bf_tol) << "public bf16 n=" << n;
+    EXPECT_NEAR(dot(f32.data(), bf1.data(), n), mixed_ref, mixed_tol)
+        << "public f32xbf16 n=" << n;
+    EXPECT_NEAR(dot(bf1.data(), f32.data(), n), mixed_ref, mixed_tol)
+        << "public bf16xf32 n=" << n;
+    EXPECT_NEAR(dot(f16a.data(), f16b.data(), n), f16_ref, f16_tol)
+        << "public f16 n=" << n;
+
+    for (const auto* table : available_runtimes()) {
+      EXPECT_NEAR(table->ops.dot_bf16_bf16(bf0.data(), bf1.data(), n),
+                  bf_ref, bf_tol) << "bf16 tier=" << static_cast<int>(table->isa) << " n=" << n;
+      EXPECT_NEAR(table->ops.dot_f32_bf16(f32.data(), bf1.data(), n),
+                  mixed_ref, mixed_tol)
+          << "mixed tier=" << static_cast<int>(table->isa) << " n=" << n;
+      EXPECT_NEAR(table->ops.dot_f16_f16(f16a.data(), f16b.data(), n),
+                  f16_ref, f16_tol) << "f16 tier=" << static_cast<int>(table->isa) << " n=" << n;
+    }
+  }
+}
+
+TEST(Ops, MixedPrecisionDotsPreserveSpecialAndInputSemantics) {
+  std::vector<hyle::simd::bfloat16_t> bf_nan(
+      64, hyle::simd::f32_to_bf16(1.0f));
+  const std::vector<hyle::simd::bfloat16_t> bf_one(
+      64, hyle::simd::f32_to_bf16(1.0f));
+  bf_nan[17] = hyle::simd::f32_to_bf16(NAN);  // inside a full vector block
+  EXPECT_TRUE(std::isnan(dot(bf_nan.data(), bf_one.data(), bf_nan.size())));
+
+  std::vector<hyle::simd::float16_t> f16_inf_zero(
+      64, hyle::simd::f32_to_f16(1.0f));
+  std::vector<hyle::simd::float16_t> f16_zero_one(
+      64, hyle::simd::f32_to_f16(1.0f));
+  f16_inf_zero[9] = hyle::simd::f32_to_f16(INFINITY);
+  f16_zero_one[9] = hyle::simd::f32_to_f16(0.0f);
+  EXPECT_TRUE(std::isnan(dot(f16_inf_zero.data(), f16_zero_one.data(), 64)));
+
+  const float full_precision = 1.0001f;
+  const auto one = hyle::simd::f32_to_bf16(1.0f);
+  EXPECT_FLOAT_EQ(dot(&full_precision, &one, 1), full_precision);
+  EXPECT_FLOAT_EQ(dot(&one, &full_precision, 1), full_precision);
+}
+
+TEST(Ops, I16DotIsExactAndModuloDefinedOnEveryRuntimeTier) {
+  constexpr std::size_t kCount = 1025;
+  std::vector<std::int16_t> x(kCount), y(kCount);
+  for (std::size_t i = 0; i < kCount; ++i) {
+    x[i] = (i % 5 == 0) ? std::int16_t{-32768}
+                        : static_cast<std::int16_t>(static_cast<int>(i % 65536) - 32768);
+    y[i] = (i % 7 == 0) ? std::int16_t{-32768}
+                        : static_cast<std::int16_t>(32767 - static_cast<int>(i % 65536));
+  }
+  const std::int64_t expected = ref_dot_i16(x, y);
+  EXPECT_EQ(dot(x.data(), y.data(), x.size()), expected);
+  for (const auto* table : available_runtimes())
+    EXPECT_EQ(table->ops.dot_i16_i16(x.data(), y.data(), x.size()), expected)
+        << "tier=" << static_cast<int>(table->isa);
+
+  EXPECT_EQ(dot(static_cast<const std::int16_t*>(nullptr),
+                static_cast<const std::int16_t*>(nullptr), 0), 0);
 }
 
 // saxpy result matches naive reference; tail handled.

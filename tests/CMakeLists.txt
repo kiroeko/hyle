@@ -142,10 +142,9 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
-  # vec_partial_boundary_test.cc: simd-19 C2 LoadU/StoreU partial guardrails (expected
-  # red for StoreU OOB until C3/C4; only meaningful on NEON D/Q backends).
-  # vec_half_combine_oracle_test.cc: simd-19 C13 half/combine exhaustive scalar oracle
-  # (baseline green before C14-C16 native D half/combine).
+  # Partial LoadU/StoreU page-boundary guardrails and the exhaustive half/combine
+  # scalar oracle are NEON D/Q representation tests, so they belong only to this
+  # architecture-specific target. All cases are permanent default-on regressions.
   hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc simd/native_test.cc simd/vec_partial_boundary_test.cc
                 simd/vec_half_combine_oracle_test.cc
                 DEFINES HYLE_SIMD_TARGET_NEON OPTIONS ${_neon_flags})

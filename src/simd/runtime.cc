@@ -32,6 +32,8 @@ namespace {
   const Runtime name = {                                                           \
       Runtime::kTableVersion, sizeof(Runtime), tier,                              \
       {&detail::dot_f32_##suffix, &detail::dot_f64_##suffix,                       \
+       &detail::dot_bf16_bf16_##suffix, &detail::dot_f32_bf16_##suffix,            \
+       &detail::dot_f16_f16_##suffix, &detail::dot_i16_i16_##suffix,               \
        &detail::saxpy_f32_##suffix, &detail::saxpy_f64_##suffix,                   \
        &detail::add_f32_##suffix, &detail::add_f64_##suffix},                      \
       {&detail::random_fill_u64_##suffix, &detail::random_fill_f32_##suffix,       \
@@ -118,6 +120,9 @@ Runtime selected_runtime() noexcept {
   result.dtype.features = 0;
 #elif defined(HYLE_ARCH_X64)
   const auto& f = cpu_features();
+  if (f.f16c && f.avx) result.ops.dot_f16_f16 = &detail::dot_f16_f16_f16c;
+  if (f.avx512bf16)
+    result.ops.dot_bf16_bf16 = &detail::dot_bf16_bf16_avx512bf16;
   result.dtype.isa = f.avx2 ? Isa::kAvx2 : Isa::kScalar;
   if (f.f16c && f.avx) result.dtype.features |= Runtime::kFeatureF16c;
   if (f.avx512bf16) {

@@ -607,6 +607,21 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
 endif()
 hyle_apply_warnings(hyle_search_bench)
 
+add_executable(hyle_mixed_dot_bench simd/mixed_dot_bench.cc)
+target_link_libraries(hyle_mixed_dot_bench PRIVATE hyle_simd nanobench)
+target_include_directories(hyle_mixed_dot_bench SYSTEM PRIVATE
+  "${_hyle_bench_highway_dir}")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  hyle_set_highway_isa(simd/mixed_dot_bench.cc)
+  set_source_files_properties(simd/mixed_dot_bench.cc PROPERTIES
+    COMPILE_DEFINITIONS "HYLE_SIMD_TARGET_AVX2")
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  hyle_set_isa(simd/mixed_dot_bench.cc NEON)
+  set_source_files_properties(simd/mixed_dot_bench.cc PROPERTIES
+    COMPILE_DEFINITIONS "HYLE_SIMD_TARGET_NEON")
+endif()
+hyle_apply_warnings(hyle_mixed_dot_bench)
+
 add_executable(hyle_sort_bench simd/sort_bench.cc)
 target_link_libraries(hyle_sort_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_sort_bench PRIVATE "${PROJECT_SOURCE_DIR}")

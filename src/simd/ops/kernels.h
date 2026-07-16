@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+
+#include "hyle/simd/dtype.h"
 
 // kernels.h (internal) -- declares the per-ISA variant symbols the dispatcher takes the
 // address of. Each is DEFINED in its own -march TU (kernels_scalar/sse4/avx2.cc) from the
@@ -34,6 +37,32 @@ double dot_f64_avx512(const double* x, const double* y, std::size_t n) noexcept;
 double dot_f64_neon(const double* x, const double* y, std::size_t n) noexcept;
 double dot_f64_sve(const double* x, const double* y, std::size_t n) noexcept;
 double dot_f64_rvv(const double* x, const double* y, std::size_t n) noexcept;
+
+#define HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(suffix)                                  \
+  float dot_bf16_bf16_##suffix(const bfloat16_t*, const bfloat16_t*,              \
+                                std::size_t) noexcept;                             \
+  float dot_f32_bf16_##suffix(const float*, const bfloat16_t*,                    \
+                               std::size_t) noexcept;                              \
+  float dot_f16_f16_##suffix(const float16_t*, const float16_t*,                  \
+                              std::size_t) noexcept;                               \
+  std::int64_t dot_i16_i16_##suffix(const std::int16_t*, const std::int16_t*,     \
+                                     std::size_t) noexcept;
+
+HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(scalar)
+HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(sse4)
+HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(avx2)
+HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(avx512)
+HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(neon)
+HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(sve)
+HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(rvv)
+
+#undef HYLE_SIMD_OPS_DECLARE_MIXED_DOTS
+
+// Precise-feature kernels are not broad ISA variants. The runtime table selects
+// them only after CPUID/OS-state gating.
+float dot_f16_f16_f16c(const float16_t*, const float16_t*, std::size_t) noexcept;
+float dot_bf16_bf16_avx512bf16(const bfloat16_t*, const bfloat16_t*,
+                               std::size_t) noexcept;
 
 void saxpy_f64_scalar(double a, const double* x, double* y, std::size_t n) noexcept;
 void saxpy_f64_sse4(double a, const double* x, double* y, std::size_t n) noexcept;

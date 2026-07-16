@@ -44,7 +44,7 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 
 | 头（开发期） | 常用能力 | 适合做什么 |
 |---|---|---|
-| `ops.h` | `add`、`dot`、`saxpy` | 连续浮点数组的基础 BLAS-like 操作 |
+| `ops.h` | `add`、同精度/混合精度 `dot`、`saxpy` | 连续数组的基础 BLAS-like 操作与量化存储 dot |
 | `random.h` | `RandomState`、`random_fill` | 可复现、跨 ISA 位一致的批量随机数；非加密 |
 | `scan.h` | `inclusive_scan`、`exclusive_scan` | 原地前缀和，支持 u/i32、u/i64、f32、f64 |
 | `dtype_ops.h` | f16/bf16/fp8 与 f32 批量转换 | 模型权重、激活、KV cache 和混合精度数据搬运 |
@@ -77,6 +77,22 @@ hyle::simd::add(x.data(), y.data(), out.data(), x.size());
 const float inner = hyle::simd::dot(x.data(), y.data(), x.size());
 hyle::simd::saxpy(0.25f, x.data(), y.data(), x.size());
 ```
+
+模型权重或激活以窄类型存储时，不要先扩成一个临时 f32 数组；同一个入口会在寄存器中 widening：
+
+```cpp
+#include "hyle/simd/ops.h"
+
+std::vector<hyle::simd::bfloat16_t> weights(n);
+std::vector<hyle::simd::float16_t> left(n), right(n);
+std::vector<float> activations(n);
+
+const float score = hyle::simd::dot(activations.data(), weights.data(), n);
+const float half_dot = hyle::simd::dot(left.data(), right.data(), n);
+```
+
+`bf16×bf16`、`f32×bf16` 和 `f16×f16` 都累加到 f32；`f32×bf16` 不会把 f32 输入降精度。
+`i16×i16` 的乘积精确，以模 `2^64` 的二补码合同返回 i64，因此溢出行为不依赖 C++ UB。
 
 ```cpp
 #include "hyle/simd/random.h"
@@ -146,6 +162,7 @@ bitpack 的完整块布局依赖当前 ISA tier，只保证同 tier `unpack(pack
 - `partial_sort` 要求 `k <= n`；`select` 在 `n > 0` 时要求 `k < n`。
 - bitpack 的 `bits` 必须在元素位宽内，输入输出不得重叠。
 - 浮点 scan 的结合顺序随 ISA 宽度变化；不要要求不同 ISA 得到逐位相同的浮点前缀和。
+- 浮点 dot 也使用多累加器/vector reduction；结果遵守数值容差而非跨 ISA 逐位相同。
 - 窄合同 `InRange` API 不做逐 lane 防御；违反范围前置条件的结果不受保证。
 - 所有批量 RNG 都是非加密随机数。
 

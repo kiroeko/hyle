@@ -20,6 +20,8 @@ set(_simd_arch_sources "")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(HYLE_SIMD_X64 TRUE)
   list(APPEND _simd_arch_sources
+    ops/dot_f16c.cc
+    ops/dot_avx512bf16.cc
     dtype/cvt_f16c.cc
     dtype/cvt_avx2.cc
     dtype/cvt_avx512bf16.cc
@@ -118,6 +120,10 @@ hyle_add_dispatched_kernel(
 # arch: the wide x86 TUs only exist in an x86 build (see the SOURCES split above), and the
 # neon TU only in an aarch64 build -- setting flags on a TU not in SOURCES would error.
 if(HYLE_SIMD_X64)
+  # Mixed-dot precise-feature kernels follow the same safety split as dtype:
+  # F16C remains usable on pre-AVX2 Ivy Bridge; AVX512-BF16 is runtime-gated.
+  hyle_set_isa(ops/dot_f16c.cc AVX_F16C)
+  hyle_set_isa(ops/dot_avx512bf16.cc AVX512_BF16)
   # f16c TU caps at AVX+F16C (NOT AVX2): F16C shipped with AVX on Ivy Bridge (no AVX2);
   # AVX2 would let the auto-vectorized tail emit an AVX2 int op that SIGILLs there. The
   # AVX_F16C tier encodes exactly that cap (see hyle_isa_flags).

@@ -8,7 +8,6 @@
 // under #if defined(__riscv_zvbb)/__riscv_zvbc (see simd-16). scalable P0-P5 covered here.
 #include <gtest/gtest.h>
 
-#define HYLE_SIMD_TARGET_RVV 1
 #include "hyle/simd/vec.h"
 
 #include <bit>

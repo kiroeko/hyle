@@ -119,6 +119,8 @@ network/组合 codegen，不能武断归因给某一个 primitive。该项继续
 | math vendor port 的 7 个 `#if 1` | 移植残留，不改变当前语义但伪装成能力门 | **删除** |
 | `HYLE_TESTING` | 由 `HYLE_BUILD_TESTS` 派生的正规 test-only ABI gate | 保留；SIMD 生产算法未受它切换 |
 | `HYLE_S19_*` 与 13 个 `DISABLED_` half-combine 用例 | simd-19 临时分批名；修复后仍默认跳过回归 | 宏改为描述性 test-local 名称；13 项在 Apple NEON 显式跑 20 轮全绿后恢复默认启用 |
+| 测试 TU 内重复的 `HYLE_SIMD_TARGET_SVE/RVV` | CMake 与 QEMU 脚本已经传入，源码又自行定义 | **删除源码重复定义**；target 只能由构建入口选择，测试源码不再暗改 ISA |
+| SIMD 边界/oracle 测试生成宏 | 批量注册不同 lane/宽度组合，属于合理的 X-macro 用途 | 保留并收窄为 `HYLE_SIMD_TEST_*`，每个宏在本文件用完即 `#undef` |
 | `HYLE_SIMD_*_HAS_NATIVE_*` | 后端 capability selector | 保留；表达 codegen 能力，不是测试开关 |
 | `HYLE_SIMD_PREFER_VECTOR_DIVISOR_SIGN` | NEON divisor codegen 策略 | 保留，后续可改 constexpr trait |
 | `VQSORT_PRINT` | Highway port 遗留的外部可覆盖诊断宏 | **删除**；固定为 port 命名空间内 `kVqsortDiagnosticLevel=0`，产品代码形状不再受外部宏改变 |
@@ -195,9 +197,41 @@ whole-buffer 派发损失，也抓到并消除了一个原先会让 Highway 稳�
 
 ### 阶段 3：mixed-precision dot
 
-- 顺序：bf16×bf16→f32 accumulate、f32×bf16、i16×i16→i64/明确溢出合同、f16×f16；
-- 禁止先转换完整数组再 dot 的额外内存 pass；tail 与 alias 走同一 oracle；
-- x86 F16C/BF16/VNNI、Arm FP16/BF16/DotProd 只有硬件存在时走原生，否则 widening kernel。
+**已完成。** `hyle/simd/ops.h` 的 runtime 轨和 `hyle/simd/native/ops.h` 的 fixed 轨现在同时提供：
+
+- `bf16 × bf16 -> f32`、`f32 × bf16 -> f32`（含对称参数顺序）和 `f16 × f16 -> f32`；
+- `i16 × i16 -> i64`：每个乘积精确，以无符号 bit pattern 模 `2^64` 累加，最后按二补码返回，
+  不触发 C++ signed-overflow UB；
+- 所有浮点版本直接在寄存器中 widening/accumulate，不先转换完整数组；`f32 × bf16` 从不把 f32
+  降精度。长度 0、非整 vector tail、NaN、`inf*0` 和 i16 极值均有逐 tier oracle。
+
+Runtime table 升至 v4。x86 的 optional feature 不再粗暴等同于 broad ISA tier：AVX+F16C 有独立 TU，
+因此 Ivy Bridge 类机器不必有 AVX2；AVX512-BF16 用独立 `vdpbf16ps` TU，并由 CPUID+OS ZMM gate
+补丁到已选表。普通 AVX2/SSE4/NEON/SVE/RVV 使用 widening kernel；Apple NEON 的 f16 使用原生
+FP16 conversion/FMA。公开签名只有 pointer、dtype POD、标量和 size；它们是 C++ convenience ABI，
+不是 `include/hyle/c/` 承诺的稳定 C ABI，close-01/02 收口时再由薄 C facade 复用同一 kernel。
+
+同 ISA、n=1M 的诊断 benchmark（B element/s）如下；f16/i16 因 Highway 没有相同返回/溢出合同，
+只与同合同 scalar 比，不能伪装成 Highway 胜负：
+
+| 平台/操作 | 对照 | HYLE fixed | HYLE public | 结论 |
+|---|---:|---:|---:|---|
+| Windows AVX2 bf16×bf16 | Highway 19.87 | 20.78 | 20.82 | HYLE 约 1.05x |
+| Windows AVX2 f32×bf16 | Highway 14.50 | 14.17 | 14.38 | 0.98–0.99x，误差带重叠，需保留观察但非稳定真输 |
+| Windows AVX2 f16×f16 | scalar 0.676 | 20.28 | 20.28 | 约 30x scalar |
+| Windows AVX2 i16×i16 | scalar 2.91 | 11.68 | 11.89 | 约 4.0x scalar |
+| Apple NEON bf16×bf16 | Highway 16.94 | 16.93 | 16.83 | 0.994–1.00x，持平 |
+| Apple NEON f32×bf16 | Highway 16.80 | 17.65 | 17.78 | HYLE 约 1.06x |
+| Apple NEON f16×f16 | scalar 1.34 | 16.80 | 16.77 | 约 12.5x scalar |
+| Apple NEON i16×i16 | scalar 3.43 | 10.85 | 10.79 | 约 3.16x scalar |
+
+验证包括 Windows MSVC public/fixed/每个可执行 runtime tier 20 轮、WSL GCC ASan 10 轮、Apple
+NEON 20 轮；最终全量为 Windows 351 pass/1 hardware skip、WSL 349/1、macOS dynamic 348/1，
+另有 macOS fixed NEON 294/294。GCC/MSVC 的 AVX512 产品编译闸和反汇编分别确认
+`vdpbf16ps`/`vcvtph2ps`。SVE、RVV
+产品 ops kernel 均交叉编译；同时修复了 scalable VL>128 时 128-bit compare 误用 whole-vector
+`InterleaveUpper` 的既有正确性漏洞，此后 SVE 128/256/384/512-bit 与 RVV 128/256/512/1024-bit
+QEMU 矩阵全部通过。
 
 ### 阶段 4：`mul_hi/mul_hilo`
 

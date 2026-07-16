@@ -1,15 +1,7 @@
-// simd-19 C13: exhaustive scalar-oracle for half/combine family.
-//
-// Whitelist: this file + tests/CMakeLists.txt single SOURCES line (C2/C13 template).
-// Ops: LowerHalf / UpperHalf / Combine / ZeroExtendVector / InsertIntoUpper.
-//
-// Green baseline = full NEON register (N*sizeof(T)==16). Sub-full primaries hung as
-// DISABLED_* redlist: pre-existing N-blind half/pad bugs (NOT s19 regression; ledger #11
-// disposition 96d99aa). C14→UpperHalf green; C15→ZeroExtend/InsertIntoUpper green.
-// Do NOT delete DISABLED cases (C2 hang-debt precedent).
-//
-// Oracle = hand-written per-lane arrays. MUST NOT call the ops under test for expected
-// values.
+// Exhaustive scalar oracle for the half/combine family. Full-register and sub-full
+// shapes are permanent default-on regressions for LowerHalf, UpperHalf, Combine,
+// ZeroExtendVector, and InsertIntoUpper. Expected values are computed only with
+// hand-written scalar array operations, never with the SIMD operations under test.
 
 #include <gtest/gtest.h>
 
@@ -150,41 +142,41 @@ void CheckHalfCombineFamily() {
 
 // ---- Green baseline: full register (N * sizeof(T) == 16) ----------------------------
 
-#define HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(T, N, Name) \
+#define HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(T, N, Name) \
   TEST(HalfCombineOracle, Name) { CheckHalfCombineFamily<T, N>(); }
 
-HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(std::int8_t, 16, i8x16)
-HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(std::uint8_t, 16, u8x16)
-HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(std::int16_t, 8, i16x8)
-HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(std::uint16_t, 8, u16x8)
-HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(std::int32_t, 4, i32x4)
-HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(std::uint32_t, 4, u32x4)
-HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(float, 4, f32x4)
-HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(std::int64_t, 2, i64x2)
-HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(std::uint64_t, 2, u64x2)
-HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST(double, 2, f64x2)
+HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(std::int8_t, 16, i8x16)
+HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(std::uint8_t, 16, u8x16)
+HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(std::int16_t, 8, i16x8)
+HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(std::uint16_t, 8, u16x8)
+HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(std::int32_t, 4, i32x4)
+HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(std::uint32_t, 4, u32x4)
+HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(float, 4, f32x4)
+HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(std::int64_t, 2, i64x2)
+HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(std::uint64_t, 2, u64x2)
+HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(double, 2, f64x2)
 
-#undef HYLE_INSTANTIATE_FULL_HALF_COMBINE_TEST
+#undef HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE
 
 // ---- Sub-full primary vectors ------------------------------------------------------
 // These cases originally exposed N-blind half/pad bugs. They are permanent
 // default-on regressions now that UpperHalf/ZeroExtend/InsertIntoUpper are fixed.
 
-#define HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(T, N, Name) \
+#define HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(T, N, Name) \
   TEST(HalfCombineOracle, Name) { CheckHalfCombineFamily<T, N>(); }
 
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::int8_t, 2, i8x2)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::int8_t, 4, i8x4)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::int8_t, 8, i8x8)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::uint8_t, 2, u8x2)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::uint8_t, 4, u8x4)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::uint8_t, 8, u8x8)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::int16_t, 2, i16x2)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::int16_t, 4, i16x4)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::uint16_t, 2, u16x2)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::uint16_t, 4, u16x4)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::int32_t, 2, i32x2)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(std::uint32_t, 2, u32x2)
-HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST(float, 2, f32x2)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::int8_t, 2, i8x2)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::int8_t, 4, i8x4)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::int8_t, 8, i8x8)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::uint8_t, 2, u8x2)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::uint8_t, 4, u8x4)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::uint8_t, 8, u8x8)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::int16_t, 2, i16x2)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::int16_t, 4, i16x4)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::uint16_t, 2, u16x2)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::uint16_t, 4, u16x4)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::int32_t, 2, i32x2)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::uint32_t, 2, u32x2)
+HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(float, 2, f32x2)
 
-#undef HYLE_INSTANTIATE_PARTIAL_HALF_COMBINE_TEST
+#undef HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE

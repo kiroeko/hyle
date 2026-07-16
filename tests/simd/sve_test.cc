@@ -10,7 +10,6 @@
 // here mirrors backend/sve.h; hardware-gated SVE2 crypto remains outside this base-SVE target.
 #include <gtest/gtest.h>
 
-#define HYLE_SIMD_TARGET_SVE 1
 #include "hyle/simd/vec.h"
 
 #include <bit>

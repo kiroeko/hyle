@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "hyle/simd/dispatch.h"
+#include "hyle/simd/dtype.h"
 
 namespace hyle::simd {
 
@@ -11,11 +12,18 @@ class RandomState;
 
 struct Runtime {
   // Version of this C++ convenience table, not the stable C ABI from include/hyle/c/.
-  static constexpr std::uint32_t kTableVersion = 3;
+  static constexpr std::uint32_t kTableVersion = 4;
 
   struct Ops {
     float (*dot_f32)(const float*, const float*, std::size_t) noexcept;
     double (*dot_f64)(const double*, const double*, std::size_t) noexcept;
+    float (*dot_bf16_bf16)(const bfloat16_t*, const bfloat16_t*,
+                           std::size_t) noexcept;
+    float (*dot_f32_bf16)(const float*, const bfloat16_t*, std::size_t) noexcept;
+    float (*dot_f16_f16)(const float16_t*, const float16_t*,
+                         std::size_t) noexcept;
+    std::int64_t (*dot_i16_i16)(const std::int16_t*, const std::int16_t*,
+                                std::size_t) noexcept;
     void (*saxpy_f32)(float, const float*, float*, std::size_t) noexcept;
     void (*saxpy_f64)(double, const double*, double*, std::size_t) noexcept;
     void (*add_f32)(const float*, const float*, float*, std::size_t) noexcept;

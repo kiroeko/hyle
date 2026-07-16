@@ -35,6 +35,38 @@ double dot(const double* x, const double* y, std::size_t n) noexcept {
   return runtime().ops.dot_f64(x, y, n);
 #endif
 }
+float dot(const bfloat16_t* x, const bfloat16_t* y, std::size_t n) noexcept {
+#if defined(HYLE_SIMD_EXACT)
+  return HYLE_OP(dot_bf16_bf16)(x, y, n);
+#else
+  return runtime().ops.dot_bf16_bf16(x, y, n);
+#endif
+}
+float dot(const float* x, const bfloat16_t* y, std::size_t n) noexcept {
+#if defined(HYLE_SIMD_EXACT)
+  return HYLE_OP(dot_f32_bf16)(x, y, n);
+#else
+  return runtime().ops.dot_f32_bf16(x, y, n);
+#endif
+}
+float dot(const bfloat16_t* x, const float* y, std::size_t n) noexcept {
+  return dot(y, x, n);
+}
+float dot(const float16_t* x, const float16_t* y, std::size_t n) noexcept {
+#if defined(HYLE_SIMD_EXACT)
+  return HYLE_OP(dot_f16_f16)(x, y, n);
+#else
+  return runtime().ops.dot_f16_f16(x, y, n);
+#endif
+}
+std::int64_t dot(const std::int16_t* x, const std::int16_t* y,
+                 std::size_t n) noexcept {
+#if defined(HYLE_SIMD_EXACT)
+  return HYLE_OP(dot_i16_i16)(x, y, n);
+#else
+  return runtime().ops.dot_i16_i16(x, y, n);
+#endif
+}
 void saxpy(float a, const float* x, float* y, std::size_t n) noexcept {
 #if defined(HYLE_SIMD_EXACT)
   HYLE_OP(saxpy_f32)(a, x, y, n);

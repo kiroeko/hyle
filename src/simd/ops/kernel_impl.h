@@ -24,6 +24,24 @@ double HYLE_SIMD_OPS_FN(dot_f64_)(const double* x, const double* y,
                                   std::size_t n) noexcept {
   return native::dot(x, y, n);
 }
+float HYLE_SIMD_OPS_FN(dot_bf16_bf16_)(const bfloat16_t* x,
+                                       const bfloat16_t* y,
+                                       std::size_t n) noexcept {
+  return native::dot(x, y, n);
+}
+float HYLE_SIMD_OPS_FN(dot_f32_bf16_)(const float* x, const bfloat16_t* y,
+                                      std::size_t n) noexcept {
+  return native::dot(x, y, n);
+}
+float HYLE_SIMD_OPS_FN(dot_f16_f16_)(const float16_t* x, const float16_t* y,
+                                     std::size_t n) noexcept {
+  return native::dot(x, y, n);
+}
+std::int64_t HYLE_SIMD_OPS_FN(dot_i16_i16_)(const std::int16_t* x,
+                                            const std::int16_t* y,
+                                            std::size_t n) noexcept {
+  return native::dot(x, y, n);
+}
 void HYLE_SIMD_OPS_FN(saxpy_f32_)(float a, const float* x, float* y,
                                   std::size_t n) noexcept {
   native::saxpy(a, x, y, n);

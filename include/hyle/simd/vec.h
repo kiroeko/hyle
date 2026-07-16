@@ -1295,9 +1295,14 @@ HYLE_FORCE_INLINE V Lt128Vec(D d, V a, V b) noexcept {
   const V ltHL = VecFromMask(d, Lt(a, b));
   const V ltLatH = Reverse2(d, ltHL);            // lo's Lt verdict moved to the hi (odd) lane
   const V vecHx = IfThenElse(eqHL, ltLatH, ltHL);  // hi lane = (=H ? cL : cH)
-  // Broadcast the hi verdict to both lanes: InterleaveUpper(vecHx,vecHx) = one vpunpckhqdq (dup hi
-  // qword), vs DupOdd+MaskFromVec's 4-insn broadcast (objdump; compute-bound 1.3x loss).
+  // Fixed-width InterleaveUpper is block-local and maps to one vpunpckhqdq. On SVE/RVV it means
+  // the upper half of the *whole scalable vector*, so it is not an adjacent-pair broadcast once
+  // VL > 128; DupOdd is the width-independent spelling there.
+#if HYLE_SIMD_HAVE_SCALABLE
+  return DupOdd(vecHx);
+#else
   return InterleaveUpper(vecHx, vecHx);
+#endif
 }
 // NOTE all four wrap their verdict vector in MaskFromNormalizedVec, NOT MaskFromVec: the verdict is
 // built from VecFromMask (all-ones/0) through InterleaveUpper/And/Or/Reverse2 (all canonical-
@@ -1313,7 +1318,11 @@ template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE auto Lt128Upper(D d, V a, V b) noexcept {
   static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Lt128Upper needs u64 lanes");
   const V ltHL = VecFromMask(d, Lt(a, b));
+#if HYLE_SIMD_HAVE_SCALABLE
+  return MaskFromNormalizedVec(DupOdd(ltHL));
+#else
   return MaskFromNormalizedVec(InterleaveUpper(ltHL, ltHL));  // dup hi verdict (vpunpckhqdq), see Lt128
+#endif
 }
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE auto Eq128(D d, V a, V b) noexcept {
@@ -1333,13 +1342,21 @@ template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE auto Eq128Upper(D d, V a, V b) noexcept {
   static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Eq128Upper needs u64 lanes");
   const V eqHL = VecFromMask(d, Eq(a, b));
+#if HYLE_SIMD_HAVE_SCALABLE
+  return MaskFromNormalizedVec(DupOdd(eqHL));
+#else
   return MaskFromNormalizedVec(InterleaveUpper(eqHL, eqHL));
+#endif
 }
 template <class D, class V = VFromD<D>>
 HYLE_FORCE_INLINE auto Ne128Upper(D d, V a, V b) noexcept {
   static_assert(std::is_same_v<TFromD<D>, std::uint64_t>, "Ne128Upper needs u64 lanes");
   const V neHL = VecFromMask(d, Ne(a, b));
+#if HYLE_SIMD_HAVE_SCALABLE
+  return MaskFromNormalizedVec(DupOdd(neHL));
+#else
   return MaskFromNormalizedVec(InterleaveUpper(neHL, neHL));
+#endif
 }
 // Min128/Max128: select the smaller / larger 128-bit value of each pair (returns a vector).
 // Lt128Vec's output is already canonical all-ones/0 per lane (built from VecFromMask + canonical-

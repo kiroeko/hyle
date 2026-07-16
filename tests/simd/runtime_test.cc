@@ -26,6 +26,10 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_EQ(active.table_version, hs::Runtime::kTableVersion);
   EXPECT_EQ(active.table_size, sizeof(hs::Runtime));
   EXPECT_NE(active.ops.dot_f32, nullptr);
+  EXPECT_NE(active.ops.dot_bf16_bf16, nullptr);
+  EXPECT_NE(active.ops.dot_f32_bf16, nullptr);
+  EXPECT_NE(active.ops.dot_f16_f16, nullptr);
+  EXPECT_NE(active.ops.dot_i16_i16, nullptr);
   EXPECT_NE(active.random.fill_u64, nullptr);
   const hs::Runtime* exact = hs::runtime_for(active.isa);
   ASSERT_NE(exact, nullptr);
