@@ -2189,7 +2189,13 @@ template <class D>
 HYLE_FORCE_INLINE Mask512<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D)> FirstN(D, std::size_t n) noexcept {
   using T = TFromD<D>;
   constexpr std::size_t kN = HYLE_SIMD_MAX_LANES_D(D);
-  const std::uint64_t full = (kN >= 64) ? ~0ull : ((1ull << kN) - 1ull);
+  const std::uint64_t full = [] {
+    if constexpr (kN >= 64) {
+      return ~std::uint64_t{0};
+    } else {
+      return (std::uint64_t{1} << kN) - 1;
+    }
+  }();
   const std::uint64_t bits = (n >= kN) ? full : ((1ull << n) - 1ull);
   Mask512<T, kN> m;
   m.raw = static_cast<typename detail::KMaskT<T>>(bits);

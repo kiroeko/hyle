@@ -97,7 +97,7 @@ target_include_directories(hyle_container_test SYSTEM PRIVATE
 # /arch:AVX2 for the 256-bit build. These variant exes run on the build host, which must
 # support the ISA (both dev platforms are AVX2 -- matches the variant-DLL test model).
 hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/native_test.cc
-              simd/runtime_test.cc simd/ops_test.cc simd/scan_test.cc simd/dtype_test.cc
+              simd/runtime_test.cc simd/ops_test.cc simd/search_test.cc simd/scan_test.cc simd/dtype_test.cc
               simd/math_test.cc simd/sort_test.cc simd/radix_sort_test.cc simd/bitpack_test.cc)
 # vec_test compiled per ISA variant: same source, different HYLE_SIMD_TARGET_* + the
 # matching codegen flags from the single-source hyle_isa_flags (no MSVC/else drift here).

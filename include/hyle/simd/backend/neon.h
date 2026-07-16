@@ -2114,15 +2114,47 @@ HYLE_FORCE_INLINE unsigned mask_bits(MaskNeon<T, N> m) noexcept {
   else if constexpr (sizeof(T) == 8) return mask_bits_2(detail::to_q(m));  // f64 / i64 / u64
   else return mask_bits_4(detail::to_q(m));  // f32 / i32 / u32
 }
+
+// Four bits per byte are sufficient for the mask queries below and are
+// cheaper to extract than a packed one-bit-per-lane mask. This is Highway's
+// vshrn idiom: every active all-ones byte becomes one 0xF nibble, then the
+// eight output bytes can be moved to a scalar register without a horizontal
+// reduction or a constant vector.
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE std::uint64_t mask_nibbles(MaskNeon<T, N> m) noexcept {
+  const auto q = detail::to_q(m);
+  uint16x8_t u16;
+  if constexpr (sizeof(T) == 1)
+    u16 = vreinterpretq_u16_u8(q);
+  else if constexpr (sizeof(T) == 2)
+    u16 = q;
+  else if constexpr (sizeof(T) == 4)
+    u16 = vreinterpretq_u16_u32(q);
+  else
+    u16 = vreinterpretq_u16_u64(q);
+  const uint8x8_t nibbles = vshrn_n_u16(u16, 4);
+  std::uint64_t bits = vget_lane_u64(vreinterpret_u64_u8(nibbles), 0);
+  constexpr std::size_t kActiveBits = N * sizeof(T) * 4;
+  if constexpr (kActiveBits < 64)
+    bits &= (std::uint64_t{1} << kActiveBits) - 1;
+  return bits;
+}
 }  // namespace detail
 
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE bool AllTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
-  return detail::mask_bits(m) == (1u << N) - 1u;
+  constexpr std::size_t kActiveBits = N * sizeof(T) * 4;
+  const std::uint64_t expected = [] {
+    if constexpr (kActiveBits == 64)
+      return ~std::uint64_t{0};
+    else
+      return (std::uint64_t{1} << kActiveBits) - 1;
+  }();
+  return detail::mask_nibbles(m) == expected;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE bool AllFalse(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
-  return detail::mask_bits(m) == 0u;
+  return detail::mask_nibbles(m) == 0;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::size_t CountTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
@@ -2140,13 +2172,18 @@ HYLE_FORCE_INLINE std::size_t CountTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcep
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::ptrdiff_t FindFirstTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  return b ? static_cast<std::ptrdiff_t>(std::countr_zero(b)) : -1;
+  const std::uint64_t b = detail::mask_nibbles(m);
+  constexpr unsigned kBitsPerLane = 4 * sizeof(T);
+  return b ? static_cast<std::ptrdiff_t>(std::countr_zero(b) / kBitsPerLane)
+           : -1;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::ptrdiff_t FindLastTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);  // packs N bits (N<=16), LSB = lane 0
-  return b ? static_cast<std::ptrdiff_t>(31 - std::countl_zero(b)) : -1;  // highest set lane
+  const std::uint64_t b = detail::mask_nibbles(m);
+  constexpr unsigned kBitsPerLane = 4 * sizeof(T);
+  return b ? static_cast<std::ptrdiff_t>((63 - std::countl_zero(b)) /
+                                         kBitsPerLane)
+           : -1;
 }
 // VecFromMask: the mask's per-lane 0xFF../0 pattern as a vector. MaskNeon.raw is the unsigned
 // same-width all-ones/all-zero vector (vceqq_* result), so reinterpret it to T's raw type.
@@ -2499,11 +2536,15 @@ HYLE_FORCE_INLINE MaskNeon<T, N> SetAtOrBeforeFirst(MaskNeon<T, N> m) noexcept {
 // the result is a plain size_t (no -1 sentinel). Highway's known-nonempty fast path.
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
-  return static_cast<std::size_t>(std::countr_zero(detail::mask_bits(m)));
+  constexpr unsigned kBitsPerLane = 4 * sizeof(T);
+  return static_cast<std::size_t>(
+      std::countr_zero(detail::mask_nibbles(m)) / kBitsPerLane);
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(Simd<T, N, 0>, MaskNeon<T, N> m) noexcept {
-  return static_cast<std::size_t>(31 - std::countl_zero(detail::mask_bits(m)));
+  constexpr unsigned kBitsPerLane = 4 * sizeof(T);
+  return static_cast<std::size_t>(
+      (63 - std::countl_zero(detail::mask_nibbles(m))) / kBitsPerLane);
 }
 
 // SumsOf8(v): 16 u8 lanes -> 2 u64. NEON has no SAD; fold via the pairwise-widening-add

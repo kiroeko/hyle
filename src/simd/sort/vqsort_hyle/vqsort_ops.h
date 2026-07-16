@@ -271,7 +271,9 @@ HYLE_FORCE_INLINE size_t SafeCompressStore(V v, M m, D d, TFromD<D>* p) noexcept
   return count;
 }
 
-// Print stubs (VQSORT_PRINT defaults to 0).
+// Diagnostic hooks remain compiled out in the shipped port. Keep this an
+// internal constant instead of an externally overridable algorithm macro.
+inline constexpr int kVqsortDiagnosticLevel = 0;
 template <class D>
 HYLE_FORCE_INLINE void MaybePrintVector(D, const char*, Vec<D>, size_t = 0,
                                         size_t = 16) noexcept {}
@@ -490,10 +492,6 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
 #define HWY_IF_LANES_LE(N, limit) HYLE_VQSORT_IF_LANES_LE(N, limit)
 #define HWY_IF_LANES_GT(N, limit) HYLE_VQSORT_IF_LANES_GT(N, limit)
 #define HWY_IF_V_SIZE_V(V, bytes) HYLE_VQSORT_IF_V_SIZE_V(V, bytes)
-#endif
-
-#ifndef VQSORT_PRINT
-#define VQSORT_PRINT 0
 #endif
 
 // float16 placeholder so KeyString switch compiles (not a supported key type).

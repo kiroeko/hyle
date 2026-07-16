@@ -596,6 +596,17 @@ add_executable(hyle_scan_bench simd/scan_bench.cc)
 target_link_libraries(hyle_scan_bench PRIVATE hyle_simd nanobench)
 hyle_apply_warnings(hyle_scan_bench)
 
+add_executable(hyle_search_bench simd/search_bench.cc)
+target_link_libraries(hyle_search_bench PRIVATE hyle_simd nanobench)
+target_include_directories(hyle_search_bench SYSTEM PRIVATE
+  "${_hyle_bench_highway_dir}")
+if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+  hyle_set_highway_isa(simd/search_bench.cc)
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+  hyle_set_isa(simd/search_bench.cc NEON)
+endif()
+hyle_apply_warnings(hyle_search_bench)
+
 add_executable(hyle_sort_bench simd/sort_bench.cc)
 target_link_libraries(hyle_sort_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_sort_bench PRIVATE "${PROJECT_SOURCE_DIR}")

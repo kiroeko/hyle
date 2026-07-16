@@ -11,7 +11,7 @@ class RandomState;
 
 struct Runtime {
   // Version of this C++ convenience table, not the stable C ABI from include/hyle/c/.
-  static constexpr std::uint32_t kTableVersion = 2;
+  static constexpr std::uint32_t kTableVersion = 3;
 
   struct Ops {
     float (*dot_f32)(const float*, const float*, std::size_t) noexcept;
@@ -26,6 +26,30 @@ struct Runtime {
     void (*fill_u64)(RandomState*, std::uint64_t*, std::size_t) noexcept;
     void (*fill_f32)(RandomState*, float*, std::size_t) noexcept;
     void (*fill_f64)(RandomState*, double*, std::size_t) noexcept;
+  };
+
+  struct Search {
+#define HYLE_RUNTIME_SEARCH_FIELDS(T, tag)                                    \
+    std::size_t (*count_equal_##tag)(const T*, std::size_t, T) noexcept;      \
+    std::size_t (*find_equal_##tag)(const T*, std::size_t, T) noexcept;       \
+    T (*min_value_##tag)(const T*, std::size_t) noexcept;                     \
+    T (*max_value_##tag)(const T*, std::size_t) noexcept;                     \
+    void (*minmax_value_##tag)(const T*, std::size_t, T*, T*) noexcept;       \
+    bool (*is_sorted_asc_##tag)(const T*, std::size_t) noexcept;              \
+    bool (*is_sorted_desc_##tag)(const T*, std::size_t) noexcept;
+
+    HYLE_RUNTIME_SEARCH_FIELDS(std::int8_t, i8)
+    HYLE_RUNTIME_SEARCH_FIELDS(std::uint8_t, u8)
+    HYLE_RUNTIME_SEARCH_FIELDS(std::int16_t, i16)
+    HYLE_RUNTIME_SEARCH_FIELDS(std::uint16_t, u16)
+    HYLE_RUNTIME_SEARCH_FIELDS(std::int32_t, i32)
+    HYLE_RUNTIME_SEARCH_FIELDS(std::uint32_t, u32)
+    HYLE_RUNTIME_SEARCH_FIELDS(std::int64_t, i64)
+    HYLE_RUNTIME_SEARCH_FIELDS(std::uint64_t, u64)
+    HYLE_RUNTIME_SEARCH_FIELDS(float, f32)
+    HYLE_RUNTIME_SEARCH_FIELDS(double, f64)
+
+#undef HYLE_RUNTIME_SEARCH_FIELDS
   };
 
   // Module-wide selection metadata. Some modules choose individual implementations by precise
@@ -47,6 +71,7 @@ struct Runtime {
   Isa isa;
   Ops ops;
   Random random;
+  Search search;
   Module scan;
   Module dtype;
   Module math;

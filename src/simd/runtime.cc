@@ -4,9 +4,29 @@
 #include "src/simd/dispatch_internal.h"
 #include "src/simd/ops/kernels.h"
 #include "src/simd/random/kernels.h"
+#include "src/simd/search/kernels.h"
 
 namespace hyle::simd {
 namespace {
+
+#define HYLE_SEARCH_RUNTIME_ONE(T, tag, suffix)                                  \
+  &detail::count_equal_##tag##_##suffix, &detail::find_equal_##tag##_##suffix,   \
+      &detail::min_value_##tag##_##suffix, &detail::max_value_##tag##_##suffix,  \
+      &detail::minmax_value_##tag##_##suffix,                                   \
+      &detail::is_sorted_asc_##tag##_##suffix,                                  \
+      &detail::is_sorted_desc_##tag##_##suffix,
+
+#define HYLE_SEARCH_RUNTIME(suffix)                                               \
+  {HYLE_SEARCH_RUNTIME_ONE(std::int8_t, i8, suffix)                               \
+   HYLE_SEARCH_RUNTIME_ONE(std::uint8_t, u8, suffix)                              \
+   HYLE_SEARCH_RUNTIME_ONE(std::int16_t, i16, suffix)                             \
+   HYLE_SEARCH_RUNTIME_ONE(std::uint16_t, u16, suffix)                            \
+   HYLE_SEARCH_RUNTIME_ONE(std::int32_t, i32, suffix)                             \
+   HYLE_SEARCH_RUNTIME_ONE(std::uint32_t, u32, suffix)                            \
+   HYLE_SEARCH_RUNTIME_ONE(std::int64_t, i64, suffix)                             \
+   HYLE_SEARCH_RUNTIME_ONE(std::uint64_t, u64, suffix)                            \
+   HYLE_SEARCH_RUNTIME_ONE(float, f32, suffix)                                    \
+   HYLE_SEARCH_RUNTIME_ONE(double, f64, suffix)}
 
 #define HYLE_RUNTIME_TABLE(name, tier, suffix)                                      \
   const Runtime name = {                                                           \
@@ -16,6 +36,7 @@ namespace {
        &detail::add_f32_##suffix, &detail::add_f64_##suffix},                      \
       {&detail::random_fill_u64_##suffix, &detail::random_fill_f32_##suffix,       \
        &detail::random_fill_f64_##suffix},                                         \
+      HYLE_SEARCH_RUNTIME(suffix),                                                 \
       {tier, 0}, {tier, 0}, {tier, 0}, {tier, 0}, {tier, 0}}
 
 HYLE_RUNTIME_TABLE(kScalarRuntime, Isa::kScalar, scalar);
@@ -35,6 +56,8 @@ HYLE_RUNTIME_TABLE(kRvvRuntime, Isa::kRvv, rvv);
 #endif
 
 #undef HYLE_RUNTIME_TABLE
+#undef HYLE_SEARCH_RUNTIME
+#undef HYLE_SEARCH_RUNTIME_ONE
 
 const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
   switch (isa) {

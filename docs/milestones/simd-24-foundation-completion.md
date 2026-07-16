@@ -1,6 +1,6 @@
 # simd-24：基础 SIMD 能力补全
 
-> 状态：🚧 进行中（阶段 1 vqsort 正确性/ASan 已收口；NEON KV64 残余落后和 exact 单腿产物缺口已显式记录）。依赖 simd-22/23。
+> 状态：🚧 进行中（阶段 1 vqsort、阶段 2 search/reduction 已实现；NEON KV64 残余落后和 exact 单腿产物缺口已显式记录）。依赖 simd-22/23。
 > 本阶段不再以“等待消费者”为缺口延期理由：HYLE 是基础库，已确认有通用价值的能力按顺序补齐。
 
 ## 目标与边界
@@ -118,9 +118,10 @@ network/组合 codegen，不能武断归因给某一个 primitive。该项继续
 | `HYLE_VQSORT_USE_VECTOR_PARTITION` | 事故保险丝，生产可退回 HeapSort | **删除** |
 | math vendor port 的 7 个 `#if 1` | 移植残留，不改变当前语义但伪装成能力门 | **删除** |
 | `HYLE_TESTING` | 由 `HYLE_BUILD_TESTS` 派生的正规 test-only ABI gate | 保留；SIMD 生产算法未受它切换 |
+| `HYLE_S19_*` 与 13 个 `DISABLED_` half-combine 用例 | simd-19 临时分批名；修复后仍默认跳过回归 | 宏改为描述性 test-local 名称；13 项在 Apple NEON 显式跑 20 轮全绿后恢复默认启用 |
 | `HYLE_SIMD_*_HAS_NATIVE_*` | 后端 capability selector | 保留；表达 codegen 能力，不是测试开关 |
 | `HYLE_SIMD_PREFER_VECTOR_DIVISOR_SIGN` | NEON divisor codegen 策略 | 保留，后续可改 constexpr trait |
-| `VQSORT_PRINT` | 私有编译期诊断级别 | 暂留在 port 内，不进入公开 build contract |
+| `VQSORT_PRINT` | Highway port 遗留的外部可覆盖诊断宏 | **删除**；固定为 port 命名空间内 `kVqsortDiagnosticLevel=0`，产品代码形状不再受外部宏改变 |
 | `VQSORT_ENABLED` / `HWY_IDE` / 产品内 `VQSORT_ONLY_STATIC` | Highway port 兼容残留；曾可改变产品代码形状 | **删除**；benchmark 中同名宏只配置外部 Highway 静态入口 |
 | `HWY_MEM_OPS_MIGHT_FAULT` | 决定尾部加载是否必须 fault-safe | 保留为内部移植 shim；值固定为安全侧 |
 | `HWY_HAVE_FLOAT64/16` | 当前 sort 类型能力门 | 随阶段 5 类型扩展改为 HYLE 类型 trait |
@@ -143,13 +144,54 @@ scalar/SSE4/AVX2/AVX512 的符号集合，手写 sort/dtype/math TU 列表也仍
 
 ## 后续实施顺序
 
-### 阶段 2：search/reduction
+### 阶段 2：search/reduction（已实现）
 
-- 首批语义：typed `count/find/find_if-equal/min/max/minmax/is_sorted`；空输入、not-found index、NaN 与
-  升降序合同先冻结；
-- scalar oracle + SSE4/AVX2/AVX512/NEON/SVE/RVV kernel，共用 pointer/count body；
-- Runtime/exact/native 三条路径和 std/Highway benchmark 同时落地；
-- close-01 只需薄 C shim，不再重写算法。
+首批 whole-buffer API 已落到 `hyle/simd/search.h`：`count_equal`、`find_equal`、`min_value`、
+`max_value`、融合 `minmax_value` 和升/降序 `is_sorted`。全部使用 pointer/count/标量或输出指针，覆盖
+i/u8、i/u16、i/u32、i/u64、f32、f64；没有 STL/回调/ISA 相关类型穿过普通入口，close-01 可直接增加
+薄 C shim。
+
+合同冻结如下：空输入 count=0、find=0、is_sorted=true，min/max 返回类型 identity；not-found 返回 n；
+浮点相等遵守 IEEE（NaN 不相等），min/max/minmax 只要输入含 NaN 就传播 NaN，is_sorted 与标准库的
+严格比较语义一致。实现共用一份 native D-tag body，由生成器产出 scalar、SSE4、AVX2、AVX512、NEON、
+SVE、RVV TU；普通入口走 Runtime 表，exact 入口编译期直连，源码专家可包含
+`hyle/simd/native/search.h` 内联。
+
+性能 body 包含四路 count/min/max/minmax 累加、两路 find/is_sorted、向量 tail 和融合 minmax。count 的
+32/64-bit 路径在向量 lane 中累计谓词，避免每个输入向量都串行 movemask/popcount。浮点 minmax 在
+热循环中向量累计 NaN mask，只在末尾归约一次。
+
+NEON 首测还暴露了一个后端级真 lose：HYLE 的 `AllFalse/FindFirstTrue` 先把 mask 压成一 bit/lane，
+需要常量向量和横向加；Highway 只用 `vshrn` 抽取每字节四个 predicate bits。HYLE 改为相同复杂度的
+nibble extractor，并让 AllTrue/AllFalse/FindFirst/FindLast/KnownFirst/KnownLast 共用；f32 absent-find 从
+约 21.7B element/s 提升到 25.8B/s，反超同 ISA Highway 的 23.8B/s。该修复不是 benchmark 特判，
+同时改善全部 NEON mask 查询。
+
+#### 三平台证据（2026-07-17）
+
+- Windows MSVC：Search 6 tests（全部 10 类型、tail/空输入/NaN/升降序、scalar/SSE4/AVX2/AVX512
+  Runtime table）连续 20 轮；主 DLL 全对象干净重编译后完整 348 tests 为 347 pass、1 项因宿主无
+  AVX512-BF16 正常 skip；exact-AVX2 的 Search+Runtime 11 tests 连续 10 轮；AVX512 干净重编译消除了
+  `FirstN<i8>` 的 64-bit shift UB 警告。
+- WSL GCC 14：Search 6 tests 连续 20 轮；完整 `hyle_simd_test` 346 tests 中 345 pass、1 项因宿主无
+  AVX512-BF16 正常 skip。
+- Apple Silicon/AppleClang：Search 6 tests 连续 20 轮；修改 NEON mask primitive 后专用 NEON backend
+  280 tests 全绿；另将 13 个历史 disabled half-combine 用例显式启用连续 20 轮全绿后恢复默认测试，合计
+  293 项；Runtime/native/Search 14 tests 连续 5 轮。
+
+同 ISA、n=1M 的诊断 benchmark（B element/s，越高越好）显示 public 与 fixed 基本重合：
+
+| 平台/类型 | 操作 | Highway | HYLE fixed | 结论 |
+|---|---|---:|---:|---|
+| Windows AVX2 u32 | count | 21.25 | 21.12 | 持平 |
+| Windows AVX2 u32 | fused minmax vs Highway Min+Max | 11.10 | 18.95 | HYLE 约 1.7x |
+| Windows AVX2 f32 | fused minmax vs Highway Min+Max | 11.40 | 16.42 | HYLE 约 1.44x，且传播 NaN |
+| Apple NEON u32 | find absent | 21.82 | 25.73 | HYLE 约 1.18x |
+| Apple NEON f32 | find absent | 23.80 | 25.77 | HYLE 约 1.08x |
+| Apple NEON f32 | fused minmax vs Highway Min+Max | 14.67 | 15.60 | HYLE 约 1.06x，且传播 NaN |
+
+这些是新增 semantic kernel 的同 ISA 诊断，不替代 simd-op 认证矩阵；它们证明接口双轨没有引入可见
+whole-buffer 派发损失，也抓到并消除了一个原先会让 Highway 稳定快一步的 NEON primitive 形状。
 
 ### 阶段 3：mixed-precision dot
 

@@ -1,13 +1,7 @@
-// simd-19 C2: LoadU / StoreU partial-shape boundary guardrails.
-//
-// Whitelist card: this file only (wired into hyle_simd_neon_test).
-//
-// ① StoreU must not write past N*sizeof(T) (sentinel after logical width).
-// ② LoadU must not read past N*sizeof(T) (source at end of RW page, next page PROT_NONE).
-//
-// Pre-C3/C4 NEON uses full-register vld1q/vst1q for every N, so ① is expected RED
-// (existing OOB write) and ② may SIGSEGV until C3 narrows the load. Acceptance for C2
-// is "tests exist and ① is red"; C3/C4 turn them green.
+// LoadU / StoreU partial-shape boundary guardrails for the NEON backend.
+// StoreU must not write past N*sizeof(T), and LoadU must not read past it.
+// The load cases place the logical range at the end of a readable page so an
+// accidental full-register access faults in the following guard page.
 
 #include <gtest/gtest.h>
 
@@ -20,9 +14,9 @@
 #if defined(__APPLE__) || defined(__linux__)
 #include <sys/mman.h>
 #include <unistd.h>
-#define HYLE_S19_HAS_MMAP 1
+#define HYLE_TEST_HAS_GUARD_PAGES 1
 #else
-#define HYLE_S19_HAS_MMAP 0
+#define HYLE_TEST_HAS_GUARD_PAGES 0
 #endif
 
 #include "hyle/simd/vec.h"
@@ -46,8 +40,7 @@ T PatternValue() {
   else return static_cast<T>(0xA3);
 }
 
-// ① StoreU tail guard: after StoreU, bytes [N*sizeof(T), N*sizeof(T)+16) must stay
-// sentinel 0xA5. Full-register vst1q on partial tags overwrites the pad → RED today.
+// StoreU tail guard: bytes [N*sizeof(T), N*sizeof(T)+16) stay sentinel 0xA5.
 template <typename T, std::size_t N>
 void CheckStoreUNoWritePastLogical() {
   static_assert(N >= 1 && (N & (N - 1)) == 0, "N power of two");
@@ -79,9 +72,9 @@ void CheckStoreUNoWritePastLogical() {
   }
 }
 
-#if HYLE_S19_HAS_MMAP
-// ② LoadU only-read boundary: place exactly N*sizeof(T) bytes at the end of a RW
-// page; the next page is PROT_NONE. A full-register vld1q faults until C3.
+#if HYLE_TEST_HAS_GUARD_PAGES
+// LoadU read boundary: place exactly N*sizeof(T) bytes at the end of a RW page;
+// the next page is PROT_NONE.
 template <typename T, std::size_t N>
 void CheckLoadUPageEndNoFault() {
   static_assert(N * sizeof(T) <= 8, "partial / D-band shapes only");
@@ -124,68 +117,68 @@ void CheckLoadUPageEndNoFault() {
 
 }  // namespace
 
-// ---- StoreU sentinel cases (expected RED on pre-C4 NEON for every partial shape) ----
+// ---- StoreU sentinel cases --------------------------------------------------------
 
-#define HYLE_S19_STORE(T, N, Name) \
+#define HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(T, N, Name) \
   TEST(PartialBoundary, StoreU_NoWritePast_##Name) { CheckStoreUNoWritePastLogical<T, N>(); }
 
-HYLE_S19_STORE(std::int8_t, 1, i8x1)
-HYLE_S19_STORE(std::int8_t, 2, i8x2)
-HYLE_S19_STORE(std::int8_t, 4, i8x4)
-HYLE_S19_STORE(std::int8_t, 8, i8x8)
-HYLE_S19_STORE(std::uint8_t, 1, u8x1)
-HYLE_S19_STORE(std::uint8_t, 2, u8x2)
-HYLE_S19_STORE(std::uint8_t, 4, u8x4)
-HYLE_S19_STORE(std::uint8_t, 8, u8x8)
-HYLE_S19_STORE(std::int16_t, 1, i16x1)
-HYLE_S19_STORE(std::int16_t, 2, i16x2)
-HYLE_S19_STORE(std::int16_t, 4, i16x4)
-HYLE_S19_STORE(std::uint16_t, 1, u16x1)
-HYLE_S19_STORE(std::uint16_t, 2, u16x2)
-HYLE_S19_STORE(std::uint16_t, 4, u16x4)
-HYLE_S19_STORE(std::int32_t, 1, i32x1)
-HYLE_S19_STORE(std::int32_t, 2, i32x2)
-HYLE_S19_STORE(std::uint32_t, 1, u32x1)
-HYLE_S19_STORE(std::uint32_t, 2, u32x2)
-HYLE_S19_STORE(std::int64_t, 1, i64x1)
-HYLE_S19_STORE(std::uint64_t, 1, u64x1)
-HYLE_S19_STORE(float, 1, f32x1)
-HYLE_S19_STORE(float, 2, f32x2)
-HYLE_S19_STORE(double, 1, f64x1)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::int8_t, 1, i8x1)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::int8_t, 2, i8x2)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::int8_t, 4, i8x4)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::int8_t, 8, i8x8)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::uint8_t, 1, u8x1)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::uint8_t, 2, u8x2)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::uint8_t, 4, u8x4)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::uint8_t, 8, u8x8)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::int16_t, 1, i16x1)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::int16_t, 2, i16x2)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::int16_t, 4, i16x4)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::uint16_t, 1, u16x1)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::uint16_t, 2, u16x2)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::uint16_t, 4, u16x4)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::int32_t, 1, i32x1)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::int32_t, 2, i32x2)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::uint32_t, 1, u32x1)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::uint32_t, 2, u32x2)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::int64_t, 1, i64x1)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(std::uint64_t, 1, u64x1)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(float, 1, f32x1)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(float, 2, f32x2)
+HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST(double, 1, f64x1)
 
-#undef HYLE_S19_STORE
+#undef HYLE_INSTANTIATE_PARTIAL_STORE_BOUNDARY_TEST
 
-// ---- LoadU page-end cases (expected fault/RED until C3 narrow load) ----
+// ---- LoadU page-end cases --------------------------------------------------------
 
-#if HYLE_S19_HAS_MMAP
+#if HYLE_TEST_HAS_GUARD_PAGES
 
-#define HYLE_S19_LOAD(T, N, Name) \
+#define HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(T, N, Name) \
   TEST(PartialBoundary, LoadU_PageEnd_##Name) { CheckLoadUPageEndNoFault<T, N>(); }
 
-HYLE_S19_LOAD(std::int8_t, 1, i8x1)
-HYLE_S19_LOAD(std::int8_t, 2, i8x2)
-HYLE_S19_LOAD(std::int8_t, 4, i8x4)
-HYLE_S19_LOAD(std::int8_t, 8, i8x8)
-HYLE_S19_LOAD(std::uint8_t, 1, u8x1)
-HYLE_S19_LOAD(std::uint8_t, 2, u8x2)
-HYLE_S19_LOAD(std::uint8_t, 4, u8x4)
-HYLE_S19_LOAD(std::uint8_t, 8, u8x8)
-HYLE_S19_LOAD(std::int16_t, 1, i16x1)
-HYLE_S19_LOAD(std::int16_t, 2, i16x2)
-HYLE_S19_LOAD(std::int16_t, 4, i16x4)
-HYLE_S19_LOAD(std::uint16_t, 1, u16x1)
-HYLE_S19_LOAD(std::uint16_t, 2, u16x2)
-HYLE_S19_LOAD(std::uint16_t, 4, u16x4)
-HYLE_S19_LOAD(std::int32_t, 1, i32x1)
-HYLE_S19_LOAD(std::int32_t, 2, i32x2)
-HYLE_S19_LOAD(std::uint32_t, 1, u32x1)
-HYLE_S19_LOAD(std::uint32_t, 2, u32x2)
-HYLE_S19_LOAD(std::int64_t, 1, i64x1)
-HYLE_S19_LOAD(std::uint64_t, 1, u64x1)
-HYLE_S19_LOAD(float, 1, f32x1)
-HYLE_S19_LOAD(float, 2, f32x2)
-HYLE_S19_LOAD(double, 1, f64x1)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::int8_t, 1, i8x1)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::int8_t, 2, i8x2)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::int8_t, 4, i8x4)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::int8_t, 8, i8x8)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::uint8_t, 1, u8x1)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::uint8_t, 2, u8x2)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::uint8_t, 4, u8x4)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::uint8_t, 8, u8x8)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::int16_t, 1, i16x1)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::int16_t, 2, i16x2)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::int16_t, 4, i16x4)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::uint16_t, 1, u16x1)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::uint16_t, 2, u16x2)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::uint16_t, 4, u16x4)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::int32_t, 1, i32x1)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::int32_t, 2, i32x2)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::uint32_t, 1, u32x1)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::uint32_t, 2, u32x2)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::int64_t, 1, i64x1)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(std::uint64_t, 1, u64x1)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(float, 1, f32x1)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(float, 2, f32x2)
+HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST(double, 1, f64x1)
 
-#undef HYLE_S19_LOAD
+#undef HYLE_INSTANTIATE_PARTIAL_LOAD_BOUNDARY_TEST
 
-#endif  // HYLE_S19_HAS_MMAP
+#endif  // HYLE_TEST_HAS_GUARD_PAGES
