@@ -2899,6 +2899,28 @@ TEST(Vec, HalfVectorFamily) {
   hs::Store(hs::ResizeBitCast(dh0, v), dh0, lo_out.data);
   for (std::size_t i = 0; i < nh; ++i)
     EXPECT_EQ(lo_out.data[i], in.data[i]) << "ResizeBitCast narrow i=" << i;
+
+  // Quarter-width exercises physical-XMM/logical-<16B boundaries on AVX2: bytes beyond the
+  // logical source/destination must be zero rather than inherited from another lane.
+  using DQ = typename DH::Half;
+  const DQ dq{};
+  const auto quarter = hs::LowerHalf(dq, lo);
+  using DQ0 = hs::DFromV<decltype(quarter)>;
+  const DQ0 dq0{};
+  const std::size_t nq = hs::Lanes(dq0);
+  hs::Store(hs::ResizeBitCast(d, quarter), d, out.data);
+  for (std::size_t i = 0; i < nq; ++i)
+    EXPECT_EQ(out.data[i], in.data[i]) << "ResizeBitCast quarter widen low i=" << i;
+  for (std::size_t i = nq; i < n; ++i)
+    EXPECT_EQ(out.data[i], 0) << "ResizeBitCast quarter widen zero i=" << i;
+
+  const auto narrow_q = hs::ResizeBitCast(dq0, v);
+  hs::Store(narrow_q, dq0, lo_out.data);
+  for (std::size_t i = 0; i < nq; ++i)
+    EXPECT_EQ(lo_out.data[i], in.data[i]) << "ResizeBitCast quarter narrow i=" << i;
+  hs::Store(hs::ResizeBitCast(d, narrow_q), d, out.data);
+  for (std::size_t i = nq; i < n; ++i)
+    EXPECT_EQ(out.data[i], 0) << "ResizeBitCast quarter narrow excess i=" << i;
 }
 
 // Float lane variant of half-vector family (catches f32 cast/extract paths on x86).
@@ -3218,6 +3240,10 @@ TEST(Vec, VectorMiscAndGatherN) {
   hs::ScatterIndexN(hs::Load(d, sval.data), d, dst.data(), hs::Load(d, sidx.data), take);
   for (std::size_t i = 0; i < n && i < kTab; ++i)
     EXPECT_EQ(dst[i], (i < take) ? int(500 + i) : -1) << "ScatterIndexN i=" << i;
+  std::fill(dst.begin(), dst.end(), -1);
+  hs::ScatterIndexN(hs::Load(d, sval.data), d, dst.data(), hs::Load(d, sidx.data), n);
+  for (std::size_t i = 0; i < n && i < kTab; ++i)
+    EXPECT_EQ(dst[i], int(500 + i)) << "ScatterIndexN full i=" << i;
 }
 
 // ---- simd-18 批C(部分): Blocks / OrderedTruncate2To / TruncateStore --------------------------
@@ -3952,26 +3978,31 @@ TEST(Vec, Dup128VecFromValues) {
 }
 
 TEST(Vec, SatWidenMulAccumFixedPoint) {
-  // D3 smoke: just ensure it compiles and runs; Q15-ish values.
-  const hs::ScalableTag<std::int16_t> d16;
-  const std::size_t n16 = hs::Lanes(d16);
+  // Also guards AVX2 ResizeBitCast's register-only 128->256 widening path.
+  // Contract input is Rebind<i16, D32>: same lane count as the i32 accumulator and half its bytes.
+  // This specifically guards the partial-vector representation used by width-banded x86/NEON.
   using D32 = hs::RepartitionToWide<hs::ScalableTag<std::int16_t>>;
   const D32 d32{};
+  const hs::Rebind<std::int16_t, D32> d16{};
   const std::size_t n32 = hs::Lanes(d32);
   Buf<std::int16_t> a, b;
   Buf<std::int32_t> sum, out;
-  for (std::size_t i = 0; i < n16; ++i) {
+  for (std::size_t i = 0; i < n32; ++i) {
     a.data[i] = static_cast<std::int16_t>((i % 5) + 1);
     b.data[i] = static_cast<std::int16_t>((i % 3) + 2);
+    sum.data[i] = (i & 1) ? -10 : 10;
   }
-  for (std::size_t i = 0; i < n32; ++i) sum.data[i] = 10;
   hs::Store(hs::SatWidenMulAccumFixedPoint(d32, hs::Load(d16, a.data), hs::Load(d16, b.data),
                                            hs::Load(d32, sum.data)),
             d32, out.data);
-  // result is finite i32 (no crash); spot-check non-zero for positive inputs
-  bool any = false;
-  for (std::size_t i = 0; i < n32; ++i) if (out.data[i] != 10) any = true;
-  EXPECT_TRUE(any || n32 == 0);
+  for (std::size_t i = 0; i < n32; ++i) {
+    const std::int64_t exact = static_cast<std::int64_t>(sum.data[i]) +
+                               2 * static_cast<std::int64_t>(a.data[i]) * b.data[i];
+    const auto expected = static_cast<std::int32_t>(
+        std::clamp(exact, static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::min()),
+                   static_cast<std::int64_t>(std::numeric_limits<std::int32_t>::max())));
+    EXPECT_EQ(out.data[i], expected) << "lane=" << i;
+  }
 }
 
 // ---- simd-18 批F: SAD video quad ----------------------------------------------------

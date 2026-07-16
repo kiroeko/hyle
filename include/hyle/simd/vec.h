@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <bit>          // countl_zero / countr_zero (Divisor magic-number precompute)
 #include <cstddef>
 #include <cstdint>
@@ -694,6 +695,9 @@ template <class V> HYLE_FORCE_INLINE V CopySignToAbs(V abs, V sign) noexcept {
 //   1/x   : y1 = y0 (2 - x y0)         (Newton for f(y)=1/y - x)
 //   1/sqrt: y1 = y0 (1.5 - 0.5 x y0^2) (Newton for f(y)=1/y^2 - x)
 template <class V> HYLE_FORCE_INLINE V ReciprocalNewton(V x) noexcept {
+#if defined(HYLE_SIMD_NEON_HAS_NATIVE_RECIPROCAL_NEWTON_F32)
+  if constexpr (std::is_same_v<TFromD<DFromV<V>>, float>) return ReciprocalNewtonNative(x);
+#endif
   const DFromV<V> d;
   const V y0 = ApproximateReciprocal(x);
   // (2 - x*y0) as one FMA: NegMulAdd(x,y0,2) = 2 - x*y0. Mul(x,y0)+Sub was 2 separate ops that
@@ -702,6 +706,9 @@ template <class V> HYLE_FORCE_INLINE V ReciprocalNewton(V x) noexcept {
 }
 template <class V> HYLE_FORCE_INLINE V ReciprocalSqrtNewton(V x) noexcept {
   using T = TFromD<DFromV<V>>;
+#if defined(HYLE_SIMD_NEON_HAS_NATIVE_RECIPROCAL_NEWTON_F32)
+  if constexpr (std::is_same_v<T, float>) return ReciprocalSqrtNewtonNative(x);
+#endif
   const DFromV<V> d;
   const V y0 = ApproximateReciprocalSqrt(x);
   const V half_x = Mul(Set(d, T{0.5}), x);
@@ -1122,13 +1129,14 @@ struct Divisor {
                   "Divisor: simd-09 线②#1 supports u32 / i32 only");
     HYLE_FATAL_ASSERT(d != 0);  // caller contract: division by zero fails fast (not silent)
     divisor_ = d;
+    is_neg_one_ = false;
     if constexpr (std::is_unsigned_v<T>) {
       dsign_ = 0;
       if (detail::DivIsPow2(d)) {  // also catches d == 1 (pow2_shift == 0)
         is_pow2_ = true;
         pow2_shift_ = std::countr_zero(static_cast<std::uint32_t>(d));
-        multiplier_ = 1;
-        shift_ = 0;
+        mul_shift_[0] = 1;
+        mul_shift_[1] = 0;
         return;
       }
       is_pow2_ = false;
@@ -1137,37 +1145,40 @@ struct Divisor {
           32u - static_cast<unsigned>(std::countl_zero(static_cast<std::uint32_t>(d - 1u)));
       const std::uint64_t two_l = std::uint64_t{1} << l;
       const std::uint64_t m = (((two_l - d) << 32) / d) + 1u;
-      multiplier_ = static_cast<T>(m);
-      shift_ = static_cast<int>(l) - 1;  // sh2 = l-1 (sh1 == 1 for non-pow2)
+      mul_shift_[0] = static_cast<T>(m);
+      mul_shift_[1] = static_cast<T>(static_cast<int>(l) - 1);  // sh2 = l-1
     } else {
       using UT = std::uint32_t;
       dsign_ = (d < 0) ? static_cast<T>(-1) : static_cast<T>(0);
+      is_neg_one_ = (d == static_cast<T>(-1));
       const UT abs_d =
           (d < 0) ? static_cast<UT>(UT{0} - static_cast<UT>(d)) : static_cast<UT>(d);
       if (detail::DivIsPow2(abs_d)) {  // also |d| == 1, and INT_MIN (abs = 2^31)
         is_pow2_ = true;
         pow2_shift_ = std::countr_zero(abs_d);
-        multiplier_ = 1;
-        shift_ = 0;
+        mul_shift_[0] = 1;
+        mul_shift_[1] = 0;
         return;
       }
       is_pow2_ = false;
       pow2_shift_ = 0;
       const unsigned sh = 31u - static_cast<unsigned>(std::countl_zero(abs_d - 1u));  // l-1
       const std::uint64_t m = (std::uint64_t{0x100000000} << sh) / abs_d + 1u;
-      multiplier_ = static_cast<T>(static_cast<std::uint32_t>(m));  // low 32 bits, as signed
-      shift_ = static_cast<int>(sh);
+      mul_shift_[0] = static_cast<T>(static_cast<std::uint32_t>(m));  // low 32 bits, as signed
+      mul_shift_[1] = static_cast<T>(sh);
     }
   }
 
   T GetDivisor() const noexcept { return divisor_; }
 
+  // Kept as a true two-element array so NEON may safely load multiplier+shift into one D register
+  // and use multiplier from lane 0. Byte offsets remain identical to Highway's two scalar fields.
+  std::array<T, 2> mul_shift_;  // [Fig 4.1/5.1 multiplier, unsigned sh2 / signed sh]
   T divisor_;
-  T multiplier_;    // Fig 4.1 m (u32) / Fig 5.1 m = m0 - 2^32 reinterpreted signed (i32)
   T dsign_;         // signed: -1 if divisor<0 else 0; unsigned: 0
-  int shift_;       // unsigned sh2 / signed sh
-  int pow2_shift_;  // log2(|divisor|) when is_pow2_
   bool is_pow2_;
+  bool is_neg_one_;  // layout parity with Highway DivisorParamsS; reserved for floor division
+  int pow2_shift_;  // log2(|divisor|) when is_pow2_
 };
 
 // Div(dividend, divisor): per-lane dividend / divisor (truncated toward zero for signed),
@@ -1183,31 +1194,48 @@ HYLE_FORCE_INLINE V Div(V dividend, const Divisor<TFromD<DFromV<V>>>& dv) noexce
       return ShiftRightUniform(dividend, dv.pow2_shift_);  // logical shift
     }
     // Fig 4.1: t1 = MULUH(m,a); q = (t1 + ((a - t1) >> 1)) >> sh2.
-    const V t1 = MulHigh32(dividend, Set(d, dv.multiplier_));
+    const V t1 = MulHigh32(dividend, Set(d, dv.mul_shift_[0]));
     const V sum = Add(t1, ShiftRight<1>(Sub(dividend, t1)));
-    return ShiftRightUniform(sum, dv.shift_);
+    return ShiftRightUniform(sum, static_cast<int>(dv.mul_shift_[1]));
   } else {
     constexpr int kSignBit = static_cast<int>(sizeof(T) * 8) - 1;
     if (dv.is_pow2_) {
+#if defined(HYLE_SIMD_PREFER_VECTOR_DIVISOR_SIGN)
       const V dsign_vec = Set(d, dv.dsign_);
       if (dv.pow2_shift_ == 0) return Sub(Xor(dividend, dsign_vec), dsign_vec);  // |d| == 1
+#else
+      if (dv.pow2_shift_ == 0) return dv.dsign_ == 0 ? dividend : Neg(dividend);  // |d| == 1
+#endif
       // Round toward zero: bias negatives by (2^k - 1) before the arithmetic shift.
       const T mask_val =
           static_cast<T>((std::uint32_t{1} << static_cast<unsigned>(dv.pow2_shift_)) - 1u);
       const V bias = And(ShiftRight<kSignBit>(dividend), Set(d, mask_val));
       const V q = ShiftRightUniform(Add(dividend, bias), dv.pow2_shift_);  // arithmetic
+#if defined(HYLE_SIMD_PREFER_VECTOR_DIVISOR_SIGN)
       return Sub(Xor(q, dsign_vec), dsign_vec);
+#else
+      return dv.dsign_ == 0 ? q : Neg(q);
+#endif
     }
     // Fig 5.1: q0 = a + MULSH(m,a); q0 = (q0 >> sh) - XSIGN(a); q = (q0 ^ dsign) - dsign.
-    // dsign is materialized AFTER MulHigh32 (its only uses are the final two ops): keeping it live
-    // across the register-hungry MulHigh made MSVC park it in a callee-saved ymm (rsp spill + reg
-    // copies, ~0.93); the short live range lets the allocator use a volatile reg like Highway does.
-    const V mulh = MulHigh32(dividend, Set(d, dv.multiplier_));
+#if defined(HYLE_SIMD_HAS_NATIVE_MUL_HIGH32_SCALAR_I32)
+    const V mulh = detail::mul_high32_scalar_i32(dividend, dv.mul_shift_.data());
+#else
+    const V multiplier = Set(d, dv.mul_shift_[0]);
+    const V mulh = MulHigh32(dividend, multiplier);
+#endif
     V q0 = Add(dividend, mulh);
-    q0 = ShiftRightUniform(q0, dv.shift_);  // arithmetic shift (signed lane)
+    q0 = ShiftRightUniform(q0, static_cast<int>(dv.mul_shift_[1]));  // arithmetic shift
     q0 = Sub(q0, ShiftRight<kSignBit>(dividend));     // - XSIGN(a)
+    // dsign is invariant and only ever 0/-1. A predictable scalar branch costs less than
+    // broadcasting it plus two vector ops, and avoids extending another vector live range across
+    // MulHigh32 (which forced an extra ymm copy in MSVC's Mod loop).
+#if defined(HYLE_SIMD_PREFER_VECTOR_DIVISOR_SIGN)
     const V dsign_vec = Set(d, dv.dsign_);
     return Sub(Xor(q0, dsign_vec), dsign_vec);
+#else
+    return dv.dsign_ == 0 ? q0 : Neg(q0);
+#endif
   }
 }
 
@@ -1578,6 +1606,13 @@ HYLE_FORCE_INLINE void ScatterIndexN(VFromD<D> v, D d, TFromD<D>* base,
   using T = TFromD<D>;
   using IdxT = TFromD<DFromV<VI>>;
   constexpr std::size_t N = HYLE_SIMD_MAX_LANES_D(D);
+#if defined(HYLE_SIMD_HAS_NATIVE_SCATTER_INDEX_N_I32)
+  if constexpr (std::is_same_v<T, std::int32_t> && std::is_same_v<IdxT, std::int32_t> &&
+                N == HYLE_SIMD_MAX_LANES_D(DFromV<VI>)) {
+    detail::scatter_index_n_native_i32(v, base, index, max_lanes);
+    return;
+  }
+#endif
   alignas(64) T lanes[N];
   alignas(64) IdxT idx[N];
   Store(v, d, lanes);
@@ -1985,10 +2020,16 @@ HYLE_FORCE_INLINE VFromD<DI32> SatWidenMulAccumFixedPoint(DI32 di32, V16 a, V16 
 #if defined(HYLE_SIMD_NEON_HAS_NATIVE_SAT_WIDEN_MUL_ACCUM_FIXED_POINT)
   return SatWidenMulAccumFixedPointNative(di32, a, b, sum);
 #else
-  // Highway generic:5885: duplicate each lane pair then SatWidenMulPairwiseAccumulate.
-  const DFromV<V16> d16;
-  const V16 aa = InterleaveWholeLower(d16, a, a);
-  const V16 bb = InterleaveWholeLower(d16, b, b);
+  // Highway generic:5885: Rebind<i16, DI32> has the same lane count as DI32 but occupies half
+  // its bytes. First zero-resize it to the full-byte Repartition tag, then duplicate each lane so
+  // WidenMulPairwiseAdd produces one doubled product per i32 lane. Calling Interleave directly on
+  // the partial Rebind vector used to rely on every fixed backend representing partial tags in a
+  // full register; width-banded x86/NEON representations correctly exposed that latent mismatch.
+  const Repartition<std::int16_t, DI32> d16_full;
+  const auto a_full = ResizeBitCast(d16_full, a);
+  const auto b_full = ResizeBitCast(d16_full, b);
+  const auto aa = InterleaveWholeLower(d16_full, a_full, a_full);
+  const auto bb = InterleaveWholeLower(d16_full, b_full, b_full);
   return SatWidenMulPairwiseAccumulate(di32, aa, bb, sum);
 #endif
 }

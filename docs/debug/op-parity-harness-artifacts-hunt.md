@@ -3,6 +3,73 @@
 > 调查日志（已结案）。关联:[`../milestones/simd-orderswap-matrix.md`](../milestones/simd-orderswap-matrix.md)（本次调查后全量重写）、`bench/simd/op_parity_engine.h`（重建后的测量引擎）、`scripts/op-parity-report.py`（聚合+校准闸门）。
 > 结论先行:op_parity 老 harness 报的 ~40-50 个 "0.xx"（MSVC 列集中）**绝大多数是测量伪影,不是 HYLE 真慢**。伪影由三层独立因素叠加,全部用受控实验坐实:①不钉核时 13900K P/E 核迁移(±10~30% 随机);②同一 TU 内每个被测循环的**代码放置运气**(uop-cache/取指几何,±10~15%,尾部 ~30%,逐指令相同的循环也中招,换序不能抵消,每次重编译重掷);③kernel lambda 每迭代重载闭包捕获链 → **闭包栈地址与 store 流 4K 别名**(~25%,由启动器的环境块大小决定,换启动器就翻车)。修法不是贴标签,而是重建仪器:钉核+每侧 4 个独立代码副本采样放置+指针外提斩断捕获链+宏循环 4× 展开+**"已知真值=1.00"锚点校准闸门**。重建后锚点从 0.75~1.49 收敛到 **0.99~1.03(双启动器/双序一致)**,三平台重测:真输远少于旧报告(x86 两平台交集仅 3 个,详见重写后的矩阵文档)。
 
+> **2026-07-16 仪器 v3**：保留上述已验证的 pin/replica/stagger/指针外提/anchor 机制，不推倒重来。
+> 报告器新增 run metadata、R/R+8 双 layout-bank 认证、每文件 anchor 中位归一、paired replica
+> bootstrap 95% CI，以及 `INCONCLUSIVE` 状态；校准失败会真正抑制所有 verdict。权威报告要求双序各
+> 至少两份，避免再把一个 0.93 点估计强行解释成 TIE 或 LOSE。实现与规程见当前
+> `op_parity_engine.h`、`op-parity-report.py` 和 benchmark methodology。
+
+> **2026-07-16 v4 复审（simd-22 后）**：v3 的“16 个 paired placement samples”仍把同一
+> 二进制内的 replica 当成独立样本，CI 会过窄。决定性反例是 MSVC `Not i32`：报告稳定给
+> 0.962 LOSE，但 HYLE/Highway 两个热循环逐指令完全相同（同一 `vpcmpeqd` 常量和 4×
+> `vpxor/load/store/loop-control`）。v4 改为按完整 run 分簇的层级 bootstrap，并以单侧 replica
+> spread 推导 `place_u`；只有整个 CI 落入等价带才叫 TIE。引擎 metadata 同时记录 affinity/
+> priority 返回值、实际逻辑 CPU 和 Windows efficiency class；绑定失败或混核会使认证失败。
+> 复测还清掉一个 v3 残留：anchor gate 曾同时检查 paired 和 `best-of-replicas`，但 best 本身正是
+> 固定代码放置的函数；Mac `ShiftLeft<3>` 出现 paired=1.028、median=1.014、best=1.075，且单侧
+> replica spread=1.267。继续跑同一二进制不会重掷 placement。v4 现只用 raw paired anchor 检查
+> run-wide H/G 偏斜；best/spread 继续显示，且每个 op 的 verdict 仍受 hierarchical CI、双序和
+> `place_u` 三重约束。这是移除自相矛盾的校准条件，不是放宽 LOSE/TIE 判决。
+>
+> 本轮还抓出一个与计时无关但同样致命的构建伪影：Windows performance tree 曾在中文
+> `/showIncludes` 下 configure、英文 DevShell 下 build，Ninja 的 `msvc_deps_prefix` 不匹配，导致
+> SIMD 头文件改动不触发重编译。已规定新鲜 `build-bench-v3` 全程 `VSLANG=1033`，并核对 obj/exe
+> 时间戳和真实编译日志。
+
+## v4. simd-22 后复测：LOSE 必须经过形状、核心与代码生成三重拆解
+
+- **`SatWidenMulAccumFixedPoint` 的 0.08 不是算法地板**：simd-22 表示层重构后 AVX2
+  `ResizeBitCast` 退化为 store/memcpy/reload，修为寄存器 cast/extract/insert 后 Windows/WSL 回到
+  TIE；测试 oracle 也加强为真正的定点饱和参考。
+- **`FindKnownFirstTrue` 是测试形状错误**：旧 kernel 在闭包里反复 `.data()`，且测成
+  `FirstN+Or` 的合成路径，不是直接 op。改为指针外提和直接调用后 TIE。
+- **`CompressNot` 的 MSVC ~0.946 是可修的真实差距**：HYLE 用 `mbits ^ 0xFF` 复用 Compress
+  LUT，Highway 用独立 Not LUT，少一条标量 xor；补独立 1 KiB LUT 后两 x86 平台 TIE。
+- **`Mod i32 invariant` 的 0.93 最终不是地板**：HYLE `Divisor` 的字段布局与 Highway 不同，且
+  signed `Div` 把不变的 `dsign` 广播成向量后做 xor/sub，扩大了 `MulHigh32` 周围的寄存器活跃区；
+  MSVC 因而多一条 ymm copy/保存。字段顺序与 Highway 对齐，并利用 `dsign` 只可能为 0/-1，在标量
+  invariant 分支中选择 `q`/`Neg(q)`，消掉广播和两条向量 op。另一个独立问题是旧“寄存器 sink”
+  每个 vector 都调用一次外部 `doNotOptimizeAwaySink`，调用成本淹没 op；现改为两侧对称 xor 累积，
+  循环后只 sink 一次，同时保留真实 load→Mod→store 形状。Windows 定点复测：Div **1.153**、Mod
+  累积 **1.154**、Mod store **1.119**，均不再低于 Highway。教训是形状问题与真实 codegen 问题可以
+  同时存在，不能因前者就停止逐条汇编调查。
+- **`ScatterIndexN` 的 Windows/NEON 真输已清零**：泛型实现物化两个 aligned scratch 数组；MSVC
+  拒绝内联后产生 208-byte 栈帧和调用，full 一度只有 0.24–0.33。AVX2 i32 full 改成 runtime count
+  switch + compile-time lane extraction，热路径全寄存器，full **0.995**、half **1.260**。AArch64 没有
+  scatter 指令，但机械 switch 仍不如 Highway；按其 `generic_ops-inl.h` 精确采用固定四次循环和
+  `i < max_lanes` 谓词后，AppleClang 对 half 标量化成相同的 `ldp/ldpsw/str`，逐条汇编与 Highway
+  同形，n=1/half/full 分别 **0.997/0.997/0.998**。无需 inline asm，也不再接受“编译器调度地板”。
+- **`SetOnlyFirst` 0.933 是 MSVC 特有的表示往返**：原实现 mask→GPR→`countr_zero`→
+  `LoadMaskBits`。在 MSVC 上改为 `suffix=SetAtOrAfterFirst(m)`、再以
+  `suffix & ~Slide1Up(suffix)` 隔离第一个 true，结果 **0.998**。同一向量式在 GCC 反而约 0.96，
+  所以只在 MSVC 选择它，GCC 保留原 scalar-bits 路径并维持 **1.63 WIN**。机械照搬 Highway 的
+  half-vector Combine 形状在 HYLE width-banded 表示下曾退到 0.107，已回滚；参考的是算法/汇编形状，
+  不是无条件复制源码。
+- **`IsFinite f32` 0.964 是漏掉的 Highway 编译器特化**：HYLE 的 Abs+FP-compare 在 MSVC 较慢；
+  按 Highway AVX2/MSVC 路径用整数左移清 sign、右移提 exponent、signed compare 后复测 **0.993
+  TIE**。GCC 保留原 FP 路径，避免把另一编译器的赢面拉回去。
+- **Mac `Mod i32 invariant store` 0.932 是两个 x86 修复不能跨平台照搬的反例**：逐条 probe 汇编
+  显示 HYLE `MulHigh32(a, Set(multiplier))` 丢失标量广播信息，成为
+  `ld1r+smull+ext+smull`，Highway 是 `ldr d+smull lane+smull2 lane`；同时 MSVC 受益的 scalar
+  sign 分支在 AppleClang 变成 `cmeq+dup+neg+bit`，比 Highway vector sign 的 `dup+eor+sub` 多一条。
+  NEON 现从 `Divisor::multiplier_` 地址安全加载相邻 64 bit、以 lane 0 做两次 widening multiply，
+  并恢复 vector sign；x86 仍保留 scalar sign。定点双序四文件：Mod 累积 **0.993**、真实 store
+  **1.080**、MaskedModOr **0.994**，均无 LOSE；279 个 NEON 测试通过。
+- **所有最终报告中 ratio `<0.98` 的行都要过一眼，但不等于都要改**：本轮剩余低值分成两类：
+  `Not`/`IfThenElseZero`/`IfThenZeroElse` 等两侧热循环逐条相同或同一条 intrinsic；Concat/MulOdd/
+  Interleave 等自身 replica spread 很大且 CI 跨过等价带。它们记录为 placement/inconclusive，不能
+  以点估计冒充 LOSE，也不能为了“好看”改报告口径。
+
 ## 0. 背景
 op_parity 三个 bench(`op_parity_bench/full/widen`)逐 op 对拍 HYLE vs Highway(同 TU 同 ISA 双方都内联),报 ratio=HYLE÷Highway。旧数据显示 ~40-50 op 在 0.xx,集中在 MSVC 列。头号疑点:`Neg i32` 两侧都是单条 `vpsubd`(源码级确认 `_mm256_sub_epi32(zero,v)`),真值必须=1.00,却被判 0.91。一条指令不可能算法输 → harness 有系统性偏差,但根因从未被坐实。
 

@@ -2,7 +2,7 @@
 // truncate/convert/SumsOf/ReorderDemote2To/WidenMulPairwiseAdd) vs Highway. These change lane
 // count/width so they need explicit dst tags, not the uniform loop of op_parity_full. They are the
 // prime store+reload suspects. Same TU / same ISA / both inline.
-// Measurement: op_parity_engine.h (pinned core, replicated kernels); read via
+// Measurement: op_parity_engine.h v4 (execution audit, dual-bank clustered replicas); read via
 // scripts/op-parity-report.py only.
 #include <cstddef>
 #include <cstdint>
@@ -23,6 +23,7 @@ template <class T> std::vector<T> gen(std::uint64_t s, T lo, T hi){ std::mt19937
 
 int main(){
   hyle_bench::pin_and_boost();
+  std::vector<float> f32a(kN, 1.25f), f32b(kN, -0.5f), f32o(kN);
   auto i16a = gen<std::int16_t>(1, -30000, 30000);
   auto i16b = gen<std::int16_t>(2, -30000, 30000);
   auto i32a = gen<std::int32_t>(3, -1000000, 1000000);
@@ -37,9 +38,20 @@ int main(){
   const hs::ScalableTag<std::uint8_t> hd8;  const hn::ScalableTag<std::uint8_t> gd8;
   const hs::ScalableTag<std::uint32_t> hd32u; const hn::ScalableTag<std::uint32_t> gd32u;
   const hs::ScalableTag<std::uint64_t> hd64; const hn::ScalableTag<std::uint64_t> gd64;
+  const hs::ScalableTag<float> hdf; const hn::ScalableTag<float> gdf;
   const std::size_t w16h=hs::Lanes(hd16), w16g=hn::Lanes(gd16);
   const std::size_t w32h=hs::Lanes(hd32), w32g=hn::Lanes(gd32);
   const std::size_t w8h=hs::Lanes(hd8), w8g=hn::Lanes(gd8);
+  const std::size_t wfh=hs::Lanes(hdf), wfg=hn::Lanes(gdf);
+
+  // Per-TU calibration anchor: both sides are source-verified Load/Add/Store at the same ISA.
+  // Widen formerly borrowed calibration from a sibling executable, which could not catch stale
+  // flags or placement failure specific to this binary.
+  {
+    nb::Bench b; b.title("Add f32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* pa=f32a.data(); auto* pb=f32b.data(); auto* po=f32o.data(); for(std::size_t i=0;i+4*wfh<=kN;i+=4*wfh){ hs::StoreU(hs::Add(hs::LoadU(hdf,pa+i),hs::LoadU(hdf,pb+i)),hdf,po+i); hs::StoreU(hs::Add(hs::LoadU(hdf,pa+i+wfh),hs::LoadU(hdf,pb+i+wfh)),hdf,po+i+wfh); hs::StoreU(hs::Add(hs::LoadU(hdf,pa+i+2*wfh),hs::LoadU(hdf,pb+i+2*wfh)),hdf,po+i+2*wfh); hs::StoreU(hs::Add(hs::LoadU(hdf,pa+i+3*wfh),hs::LoadU(hdf,pb+i+3*wfh)),hdf,po+i+3*wfh); } nb::doNotOptimizeAway(po); hyle_bench::mark(rep); },
+      [&](auto rep){ hyle_bench::stagger(rep); auto* pa=f32a.data(); auto* pb=f32b.data(); auto* po=f32o.data(); for(std::size_t i=0;i+4*wfg<=kN;i+=4*wfg){ hn::StoreU(hn::Add(hn::LoadU(gdf,pa+i),hn::LoadU(gdf,pb+i)),gdf,po+i); hn::StoreU(hn::Add(hn::LoadU(gdf,pa+i+wfg),hn::LoadU(gdf,pb+i+wfg)),gdf,po+i+wfg); hn::StoreU(hn::Add(hn::LoadU(gdf,pa+i+2*wfg),hn::LoadU(gdf,pb+i+2*wfg)),gdf,po+i+2*wfg); hn::StoreU(hn::Add(hn::LoadU(gdf,pa+i+3*wfg),hn::LoadU(gdf,pb+i+3*wfg)),gdf,po+i+3*wfg); } nb::doNotOptimizeAway(po); hyle_bench::mark(rep); });
+  }
 
   // PromoteUpperTo i16->i32 (HYLE half-at-a-time dst = ScalableTag<i32>; Highway = Rebind<i32> on Half)
   {
@@ -166,7 +178,7 @@ int main(){
       nb::doNotOptimizeAway(p_o32);
      hyle_bench::mark(rep); });
   }
-  // SatWidenMulAccumFixedPoint: both sides use Rebind<i16,di32> (same lane count as i32) and step by
+  // SatWidenMulAccumFixedPoint regression canary: both sides use Rebind<i16,di32> (same lane count as i32) and step by
   // w32 so trip counts match. (Older HYLE step-by-w16 + ZeroExtend(LowerHalf) did half as many stores.)
   {
     const hn::Rebind<std::int16_t, decltype(gd32)> g16r;

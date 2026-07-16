@@ -7,6 +7,7 @@
 #include <cmath>   // std::logb / std::ldexp (GetExponent / MulByPow2 store+reload)
 #include <limits>  // std::numeric_limits<T>::infinity() (FP classification splat)
 #include <type_traits>
+#include <utility>
 
 #include <immintrin.h>  // AVX/AVX2/FMA (and transitively SSE*)
 
@@ -438,6 +439,7 @@ HYLE_FORCE_INLINE Vec256<T, N> Neg(Vec256<T, N> a) noexcept {
   else r.raw = _mm256_sub_epi32(_mm256_setzero_si256(), a.raw);
   return r;
 }
+
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> Abs(Vec256<T, N> a) noexcept {
   Vec256<T, N> r;
@@ -1917,8 +1919,27 @@ HYLE_FORCE_INLINE Mask256<T, N> IsInf(Vec256<T, N> v) noexcept {
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> IsFinite(Vec256<T, N> v) noexcept {
   static_assert(std::is_floating_point_v<T>, "IsFinite is float-only");
+#if defined(_MSC_VER) && !defined(__clang__)
+  // Match Highway's AVX2/MSVC path. Clearing the sign and extracting the exponent in the integer
+  // domain avoids Abs + floating-point compare, which is measurably slower in MSVC. Use an
+  // explicit shift-left here: Highway also avoids vu + vu because MSVC has miscompiled that form.
+  const __m256i bits = detail::bitcast_raw_avx2<__m256i>(v.raw);
+  Mask256<T, N> out;
+  if constexpr (std::is_same_v<T, float>) {
+    const __m256i shifted = _mm256_slli_epi32(bits, 1);
+    const __m256i exponent = _mm256_srli_epi32(shifted, 24);  // 23 mantissa bits + cleared sign
+    out.raw = _mm256_castsi256_ps(_mm256_cmpgt_epi32(_mm256_set1_epi32(0xFF), exponent));
+  } else {
+    const __m256i shifted = _mm256_slli_epi64(bits, 1);
+    const __m256i exponent = _mm256_srli_epi64(shifted, 53);  // 52 mantissa bits + cleared sign
+    out.raw = _mm256_castsi256_pd(
+        _mm256_cmpgt_epi64(_mm256_set1_epi64x(0x7FF), exponent));
+  }
+  return out;
+#else
   const auto inf = Set(Simd<T, N, 0>(), std::numeric_limits<T>::infinity());
   return Lt(Abs(v), inf);  // ordered <: NaN and inf both fail, only finite lanes true
+#endif
 }
 
 // ---- mask ops -----------------------------------------------------------------------
@@ -2220,8 +2241,26 @@ HYLE_FORCE_INLINE Mask256<T, N> SetAtOrBeforeFirst(Mask256<T, N> m) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Mask256<T, N> SetOnlyFirst(Mask256<T, N> m) noexcept {
-  const unsigned b = detail::mask_bits(m);
-  return LoadMaskBits(Simd<T, N, 0>(), b ? (1u << std::countr_zero(b)) : 0u);
+#if defined(_MSC_VER)
+  if constexpr (sizeof(T) == 4 && N == 8) {
+    // Isolate the transition into the inclusive suffix:  suffix & ~Slide1Up(suffix).
+    // This stays in HYLE's native 256-bit representation; mechanically porting Highway's
+    // half-vector construction prevents folding through HYLE's width-banded Combine layer.
+    const Simd<T, N, 0> d;
+    const auto suffix = SetAtOrAfterFirst(m);
+    const __m256i suffix_i = detail::mask_to_i<T>(suffix.raw);
+    const auto shifted = Slide1Up(d, Vec256<T, N>{detail::mask_from_i<T>(suffix_i)});
+    Mask256<T, N> out;
+    out.raw = detail::mask_from_i<T>(
+        _mm256_andnot_si256(detail::bitcast_raw_avx2<__m256i>(shifted.raw), suffix_i));
+    return out;
+  } else {
+#endif
+    const unsigned b = detail::mask_bits(m);
+    return LoadMaskBits(Simd<T, N, 0>(), b ? (1u << std::countr_zero(b)) : 0u);
+#if defined(_MSC_VER)
+  }
+#endif
 }
 // SetAtOrAfterFirst: lane i true iff i >= first-true (inclusive prefix-OR up the lanes). Ported
 // from Highway's pure-vector AVX2 path (x86_256-inl.h) -- a lane-position sign-propagation entirely
@@ -2258,7 +2297,12 @@ HYLE_FORCE_INLINE Mask256<T, N> SetAtOrAfterFirst(Mask256<T, N> m) noexcept {
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::size_t FindKnownFirstTrue(Simd<T, N, 0>, Mask256<T, N> m) noexcept {
-  return static_cast<std::size_t>(std::countr_zero(detail::mask_bits(m)));
+  const unsigned bits = detail::mask_bits(m);
+  // Contract guarantees a true lane. std::countr_zero is defined for zero, so MSVC otherwise
+  // preserves a zero fallback around BitScanForward; tell the optimizer the impossible case and
+  // match Highway's Num0BitsBelowLS1Bit_Nonzero32 single-instruction path.
+  if (bits == 0) HYLE_UNREACHABLE();
+  return static_cast<std::size_t>(std::countr_zero(bits));
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(Simd<T, N, 0>, Mask256<T, N> m) noexcept {
@@ -3340,6 +3384,57 @@ HYLE_FORCE_INLINE void ScatterIndex(detail::V256<D> v, D d, TFromD<D>* base,
   Store(idx, Simd<IdxT, kN, 0>(), ix); Store(v, d, src);
   for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
 }
+
+// MSVC may refuse to inline vec.h's generic ScatterIndexN because its two aligned scratch arrays
+// require a large dynamically-aligned frame. Keep the hot i32 shape entirely in registers. The
+// count remains runtime, but each selected body has immediate lane indices, allowing vpextrd to
+// write values directly to their scattered destinations (the same shape as Highway's fallback).
+#define HYLE_SIMD_HAS_NATIVE_SCATTER_INDEX_N_I32 1
+namespace detail {
+template <std::size_t kLane>
+HYLE_FORCE_INLINE void scatter_index_n_i32_lane(__m256i values, __m256i indices,
+                                                 std::int32_t* base) noexcept {
+  const auto index = static_cast<std::int32_t>(_mm256_extract_epi32(indices, kLane));
+  base[static_cast<std::ptrdiff_t>(index)] =
+      static_cast<std::int32_t>(_mm256_extract_epi32(values, kLane));
+}
+template <std::size_t... kLane>
+HYLE_FORCE_INLINE void scatter_index_n_i32_lanes(__m256i values, __m256i indices,
+                                                  std::int32_t* base,
+                                                  std::index_sequence<kLane...>) noexcept {
+  (scatter_index_n_i32_lane<kLane>(values, indices, base), ...);
+}
+}  // namespace detail
+
+namespace detail {
+template <std::size_t N, std::size_t NI>
+HYLE_FORCE_INLINE void scatter_index_n_native_i32(Vec256<std::int32_t, N> v,
+                                                   std::int32_t* base,
+                                                   Vec256<std::int32_t, NI> index,
+                                                   std::size_t max_lanes) noexcept {
+  static_assert(N == 8 && NI == 8, "AVX2 native i32 ScatterIndexN requires full vectors");
+  const std::size_t count = max_lanes < 8 ? max_lanes : 8;
+#define HYLE_AVX2_SCATTER_N_CASE(n)                                                        \
+  case n:                                                                                 \
+    detail::scatter_index_n_i32_lanes(v.raw, index.raw, base, std::make_index_sequence<n>{}); \
+    return
+  switch (count) {
+    HYLE_AVX2_SCATTER_N_CASE(0);
+    HYLE_AVX2_SCATTER_N_CASE(1);
+    HYLE_AVX2_SCATTER_N_CASE(2);
+    HYLE_AVX2_SCATTER_N_CASE(3);
+    HYLE_AVX2_SCATTER_N_CASE(4);
+    HYLE_AVX2_SCATTER_N_CASE(5);
+    HYLE_AVX2_SCATTER_N_CASE(6);
+    HYLE_AVX2_SCATTER_N_CASE(7);
+    default:
+      detail::scatter_index_n_i32_lanes(v.raw, index.raw, base,
+                                         std::make_index_sequence<8>{});
+      return;
+  }
+#undef HYLE_AVX2_SCATTER_N_CASE
+}
+}  // namespace detail
 // Compress index table for 8x i32: for each 8-bit mask, the 8 vpermd indices that gather the
 // active lanes to the front. PACKED to 1 KiB (Highway's method): each entry is a u32 holding the
 // eight 3-bit(-ish) indices in nibbles [0:4,4:8,...,28:32]; broadcast + per-lane shift by
@@ -3361,6 +3456,14 @@ struct CompressIdx32Packed {
 };
 inline constexpr CompressIdx32Packed kCompressIdx32Tbl{};
 inline constexpr const std::uint32_t* kCompressIdx32Packed = kCompressIdx32Tbl.packed;
+struct CompressNotIdx32Packed {
+  std::uint32_t packed[256]{};
+  constexpr CompressNotIdx32Packed() {
+    for (unsigned bits = 0; bits < 256; ++bits)
+      packed[bits] = kCompressIdx32Tbl.packed[bits ^ 0xFFu];
+  }
+};
+inline constexpr CompressNotIdx32Packed kCompressNotIdx32Tbl{};
 // Shared 8x32 compress core: given the 8-bit lane mask, gather the selected lanes to the front via
 // the packed index table + one vpermd (Compress and CompressNot differ ONLY in the mbits passed).
 template <typename T, std::size_t N>
@@ -3371,6 +3474,20 @@ HYLE_FORCE_INLINE Vec256<T, N> compress32_by_bits(Vec256<T, N> v, unsigned mbits
   // 0..255, so NO `& 0xFF` here: that mask made MSVC emit a redundant `movzx edx,al` after vmovmskps
   // (op_parity Compress 0.94; Highway indexes straight from the 8-bit movemask, no re-truncate).
   const __m256i packed = _mm256_set1_epi32(static_cast<int>(kCompressIdx32Packed[mbits]));
+  const __m256i shifts = _mm256_setr_epi32(0, 4, 8, 12, 16, 20, 24, 28);
+  const __m256i idx = _mm256_srlv_epi32(packed, shifts);
+  Vec256<T, N> r;
+  if constexpr (std::is_same_v<T, float>) r.raw = _mm256_permutevar8x32_ps(v.raw, idx);
+  else r.raw = _mm256_permutevar8x32_epi32(v.raw, idx);
+  return r;
+}
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> compress32_by_not_bits(Vec256<T, N> v,
+                                                       unsigned mbits) noexcept {
+  // Dedicated reversed LUT, matching Highway's IndicesFromNotBits256: indexing the original mask
+  // avoids the scalar `xor 255` that remained visible in MSVC's hot loop (~5%).
+  const __m256i packed =
+      _mm256_set1_epi32(static_cast<int>(kCompressNotIdx32Tbl.packed[mbits]));
   const __m256i shifts = _mm256_setr_epi32(0, 4, 8, 12, 16, 20, 24, 28);
   const __m256i idx = _mm256_srlv_epi32(packed, shifts);
   Vec256<T, N> r;
@@ -3406,10 +3523,9 @@ HYLE_FORCE_INLINE Vec256<T, N> Compress(Vec256<T, N> v, Mask256<T, N> m) noexcep
   }
 }
 // CompressNot(v, m) native (32-bit lanes): pack the lanes where m is FALSE to the front. Highway's
-// trick -- complement the mask BITS in the scalar domain (mbits ^ 0xFF) and reuse the same
-// compress-index table, so there is NO vector Not(m) (the generic CompressNot = Compress(v, Not(m))
-// pays an extra vpxor/vpandn + routes the negated mask back through movemask). op_parity: HYLE was
-// MSVC 0.81 / GCC 0.94 vs Highway; the bits-domain complement matches Highway's IndicesFromNotBits.
+// trick -- use a dedicated 1 KiB index table keyed by the original mask bits, so there is no vector
+// Not(m) and no scalar xor in the hot loop. The generic CompressNot = Compress(v, Not(m)) pays an
+// extra vpxor/vpandn + routes the negated mask back through movemask.
 #if defined(HYLE_SIMD_TARGET_AVX2)
 #define HYLE_SIMD_AVX2_HAS_NATIVE_COMPRESS_NOT32 1
 #endif
@@ -3419,7 +3535,7 @@ HYLE_FORCE_INLINE Vec256<T, N> CompressNotNative(Vec256<T, N> v, Mask256<T, N> m
   unsigned mbits;
   if constexpr (std::is_same_v<T, float>) mbits = static_cast<unsigned>(_mm256_movemask_ps(m.raw));
   else mbits = static_cast<unsigned>(_mm256_movemask_ps(_mm256_castsi256_ps(m.raw)));
-  return detail::compress32_by_bits(v, mbits ^ 0xFFu);  // complement in bits domain: pack !m lanes
+  return detail::compress32_by_not_bits(v, mbits);
 }
 // AVX2 has no native compress (VBMI2's vpcompress is AVX-512 only), so Compress IS the store+
 // reload form -- CompressEmulated aliases it so gather_bench compiles the same A/B on both x86
@@ -3992,43 +4108,54 @@ HYLE_FORCE_INLINE detail::V256<D> InsertIntoUpper(
 }
 // ResizeBitCast: Vec256 -> avx2-band D (same/narrow within 256); Vec128 -> avx2-band D (widen);
 // Vec256 -> sse4-band D (narrow to 128). Excess destination bytes zeroed.
+namespace detail {
+template <std::size_t kBytes>
+HYLE_FORCE_INLINE __m128i keep_low_bytes_128(__m128i v) noexcept {
+  static_assert(kBytes <= 16);
+  if constexpr (kBytes == 16) {
+    return v;
+  } else {
+#define HYLE_KEEP_BYTE(i) static_cast<char>((i) < kBytes ? -1 : 0)
+    const __m128i mask = _mm_setr_epi8(
+        HYLE_KEEP_BYTE(0), HYLE_KEEP_BYTE(1), HYLE_KEEP_BYTE(2), HYLE_KEEP_BYTE(3),
+        HYLE_KEEP_BYTE(4), HYLE_KEEP_BYTE(5), HYLE_KEEP_BYTE(6), HYLE_KEEP_BYTE(7),
+        HYLE_KEEP_BYTE(8), HYLE_KEEP_BYTE(9), HYLE_KEEP_BYTE(10), HYLE_KEEP_BYTE(11),
+        HYLE_KEEP_BYTE(12), HYLE_KEEP_BYTE(13), HYLE_KEEP_BYTE(14), HYLE_KEEP_BYTE(15));
+#undef HYLE_KEEP_BYTE
+    return _mm_and_si128(v, mask);
+  }
+}
+}  // namespace detail
+
 template <class D, typename SrcT, std::size_t NSrc> requires HYLE_SIMD_W(D, 16, 32)
-HYLE_FORCE_INLINE detail::V256<D> ResizeBitCast(D d, Vec256<SrcT, NSrc> v) noexcept {
-  using DstT = TFromD<D>;
-  constexpr std::size_t NDst = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) std::uint8_t buf[32] = {};
-  alignas(32) SrcT src[NSrc];
-  Store(v, Simd<SrcT, NSrc, 0>(), src);
-  const std::size_t n = (sizeof(SrcT) * NSrc < sizeof(DstT) * NDst) ? sizeof(SrcT) * NSrc
-                                                                    : sizeof(DstT) * NDst;
-  std::memcpy(buf, src, n);
-  return Load(d, reinterpret_cast<const DstT*>(buf));
+HYLE_FORCE_INLINE detail::V256<D> ResizeBitCast(D /*d*/, Vec256<SrcT, NSrc> v) noexcept {
+  // Both entities already occupy one YMM register. Re-type only; the old store/memcpy/reload
+  // fallback survived the width-banded representation refactor and caused a 12x regression in
+  // SatWidenMulAccumFixedPoint. Logical lane counts do not change the physical 32-byte entity.
+  detail::V256<D> r;
+  r.raw = detail::bitcast_raw_avx2<decltype(r.raw)>(v.raw);
+  return r;
 }
 template <class D, typename SrcT, std::size_t NSrc> requires HYLE_SIMD_W(D, 16, 32)
-HYLE_FORCE_INLINE detail::V256<D> ResizeBitCast(D d, Vec128<SrcT, NSrc> v) noexcept {
-  // Widen: zero-extend 128 -> 256 then bit-view as Dst (same as ZeroExtend when types match).
-  using DstT = TFromD<D>;
-  constexpr std::size_t NDst = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(32) std::uint8_t buf[32] = {};
-  alignas(16) SrcT src[NSrc];
-  Store(v, Simd<SrcT, NSrc, 0>(), src);
-  const std::size_t n = (sizeof(SrcT) * NSrc < sizeof(DstT) * NDst) ? sizeof(SrcT) * NSrc
-                                                                    : sizeof(DstT) * NDst;
-  std::memcpy(buf, src, n);
-  return Load(d, reinterpret_cast<const DstT*>(buf));
+HYLE_FORCE_INLINE detail::V256<D> ResizeBitCast(D /*d*/, Vec128<SrcT, NSrc> v) noexcept {
+  // Widen: one register insert with a guaranteed zero upper half, then re-type. This is Highway's
+  // <=16B -> 32B shape without its unspecified upper bytes, preserving HYLE's zero-fill contract.
+  const __m128i lo = detail::keep_low_bytes_128<sizeof(SrcT) * NSrc>(
+      detail::bitcast_raw_sse<__m128i>(v.raw));
+  const __m256i wide = _mm256_inserti128_si256(_mm256_setzero_si256(), lo, 0);
+  detail::V256<D> r;
+  r.raw = detail::bitcast_raw_avx2<decltype(r.raw)>(wide);
+  return r;
 }
 template <class D, typename SrcT, std::size_t NSrc> requires HYLE_SIMD_W(D, 0, 16)
-HYLE_FORCE_INLINE detail::V128<D> ResizeBitCast(D d, Vec256<SrcT, NSrc> v) noexcept {
-  // Narrow 256 -> 128: take low min-bytes.
-  using DstT = TFromD<D>;
-  constexpr std::size_t NDst = HYLE_SIMD_MAX_LANES_D(D);
-  alignas(16) std::uint8_t buf[16] = {};
-  alignas(32) SrcT src[NSrc];
-  Store(v, Simd<SrcT, NSrc, 0>(), src);
-  const std::size_t n = (sizeof(SrcT) * NSrc < sizeof(DstT) * NDst) ? sizeof(SrcT) * NSrc
-                                                                    : sizeof(DstT) * NDst;
-  std::memcpy(buf, src, n);
-  return Load(d, reinterpret_cast<const DstT*>(buf));
+HYLE_FORCE_INLINE detail::V128<D> ResizeBitCast(D /*d*/, Vec256<SrcT, NSrc> v) noexcept {
+  // Narrow: take the low XMM and clear bytes outside a partial destination's logical extent.
+  const __m256i bits = detail::bitcast_raw_avx2<__m256i>(v.raw);
+  constexpr std::size_t kDstBytes = sizeof(TFromD<D>) * HYLE_SIMD_MAX_LANES_D(D);
+  const __m128i lo = detail::keep_low_bytes_128<kDstBytes>(_mm256_castsi256_si128(bits));
+  detail::V128<D> r;
+  r.raw = detail::bitcast_raw_sse<decltype(r.raw)>(lo);
+  return r;
 }
 
 // ---- simd-17 batch5: 128-bit block extract/broadcast (avx2 = 2 blocks) ---------------

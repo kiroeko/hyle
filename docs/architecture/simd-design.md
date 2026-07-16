@@ -39,7 +39,7 @@
 
 ```
 simd/
-├─ vec.h          D-tag/寄存器语义（381 个公开 op 名，不做逐 op 动态派发）
+├─ vec.h          D-tag/寄存器语义（383 个公开/selector 名，不做逐 op 动态派发）
 ├─ backend/       per-ISA 实现（编译多版本）
 │  ├─ sse4.h   avx2.h  avx512.h     (x86)
 │  ├─ neon.h   sve.h                 (arm64)
@@ -58,7 +58,7 @@ simd/
 
 ## dispatch：runtime/native/exact 双轨（simd-22 终态）
 
-派发单位是完整 pointer/POD/opaque-state kernel，不是 381 个寄存器 op：
+派发单位是完整 pointer/POD/opaque-state kernel，不是 383 个寄存器名：
 
 | 用户模式 | 公共调用面 | 选择发生处 | 调用边界 |
 |---|---|---|---|
@@ -94,7 +94,7 @@ clay 是编译期固定指令集且只到 SSE2——**跑在 AVX512 机器上只
 
 > **现状与决策（2026-07-12 评估）——HYLE 出厂用函数指针模型，变体-DLL 有意不做**：
 > - **出厂 = 函数指针模型**（`dispatch_ops.cc`：`static const Fn fn = resolve_*(); return fn(...)`，首次 CPUID 选一次并缓存，之后每次调用一次可预测间接调用）。这与 Highway `HWY_DYNAMIC_DISPATCH` 同档——**runtime dispatch 维度 HYLE 平 Highway，不领先也不欠**。
-> - **变体-DLL 评估结论：不做（收益≈0、成本中高、属错配复杂度）**。当时统计的 139 项是稳定 whole-buffer/batch API，不是今天脚本提取的 381 个寄存器 op 名；后者始终只在 `vec.h`/native kernel 内编译期实例化。跨变体的一次间接调用发生在 batch 边界，被完整循环摊销；DLL 对这种粒度没有结构性收益。
+> - **变体-DLL 评估结论：不做（收益≈0、成本中高、属错配复杂度）**。当时统计的 139 项是稳定 whole-buffer/batch API，不是今天脚本提取的 383 个公开/selector 寄存器名；后者始终只在 `vec.h`/native kernel 内编译期实例化。跨变体的一次间接调用发生在 batch 边界，被完整循环摊销；DLL 对这种粒度没有结构性收益。
 > - **成本侧**：拆 N 份独立 DLL（每 ISA 全套 kernel）+ 启动 score/dlopen 层 + 大量符号跨平台绑定 + 测试矩阵翻倍；且 DLL 边界本身阻断内联。
 > - **触发条件**：只有当必须分发独立 ISA 动态库，并且真实 profile 证明稳定 whole-buffer 边界仍是瓶颈时才重启评估。已知目标部署直接使用 `HYLE_SIMD_EXACT_TARGET`；需要用户 TU 内联则使用 `hyle_target_simd + native::`。
 > - **一句话**：这不是"欠 Highway 一个变体-DLL"，而是"当前函数指针模型对批量 op 面已最优，变体-DLL 是错配复杂度，有意不做"。若 op 面将来新增细粒度导出 op 或启动二进制分发需求，再重启此评估。

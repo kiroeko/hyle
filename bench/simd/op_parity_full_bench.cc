@@ -2,7 +2,7 @@
 // Auto-covers the clean unary/binary/ternary/compare shapes on i32 (or f32 for float-only ops).
 // Ops needing bespoke harness (convert/widen/interleaved-load/crypto/gather) are in op_parity_bench.cc
 // or documented as skipped.
-// Measurement: op_parity_engine.h (pinned core, 4 code replicas per side, interleaved). Read the
+// Measurement: op_parity_engine.h v4 (execution audit, dual-bank replicas, clustered CI, fresh TU). Read the
 // output through scripts/op-parity-report.py, which aggregates replicas and gates on the
 // calibration anchors; raw single-replica rows are NOT comparable (placement bias, see
 // docs/debug/op-parity-harness-artifacts-hunt.md).
@@ -96,12 +96,20 @@ int main(){
   // P4 invariant divide: parameter precompute is outside both timed loops. Highway's contrib
   // IntDiv is the matching reusable-divisor API; both remainder paths are `a - q * divisor`.
   {
+    nb::Bench bench; bench.title("Div i32 invariant").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); auto acc=hs::Zero(hdi); for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto x=hs::LoadU(hdi,p_a+i); acc=hs::Xor(acc,hs::Div(x,hdiv)); } nb::doNotOptimizeAway(acc); hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); auto acc=hn::Zero(gdi); for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto x=hn::LoadU(gdi,p_a+i); acc=hn::Xor(acc,hn::IntDiv(gdi,x,gdiv)); } nb::doNotOptimizeAway(acc); hyle_bench::mark(rep); });
+  }
+  {
     nb::Bench bench; bench.title("Mod i32 invariant").relative(true).batch(kN).minEpochIterations(8000);
-    HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto x=hs::LoadU(hdi,p_a+i); const auto r=hs::Mod(x,hdiv); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto x=hn::LoadU(gdi,p_a+i); const auto q=hn::IntDiv(gdi,x,gdiv); const auto r=hn::Sub(x,hn::Mul(q,hn::Set(gdi,gdiv.divisor))); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); auto acc=hs::Zero(hdi); for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto x=hs::LoadU(hdi,p_a+i); acc=hs::Xor(acc,hs::Mod(x,hdiv)); } nb::doNotOptimizeAway(acc); hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); auto acc=hn::Zero(gdi); for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto x=hn::LoadU(gdi,p_a+i); const auto q=hn::IntDiv(gdi,x,gdiv); const auto r=hn::Sub(x,hn::Mul(q,hn::Set(gdi,gdiv.divisor))); acc=hn::Xor(acc,r); } nb::doNotOptimizeAway(acc); hyle_bench::mark(rep); });
+  }
+  {
+    nb::Bench bench; bench.title("Mod i32 invariant store").relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto x=hs::LoadU(hdi,p_a+i); hs::StoreU(hs::Mod(x,hdiv),hdi,p_o+i); } nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); auto* p_o = o.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto x=hn::LoadU(gdi,p_a+i); const auto q=hn::IntDiv(gdi,x,gdiv); hn::StoreU(hn::Sub(x,hn::Mul(q,hn::Set(gdi,gdiv.divisor))),gdi,p_o+i); } nb::doNotOptimizeAway(p_o); hyle_bench::mark(rep); });
   }
   {
     nb::Bench bench; bench.title("MaskedModOr i32 invariant").relative(true).batch(kN).minEpochIterations(8000);
-    HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto x=hs::LoadU(hdi,p_a+i); const auto r=hs::MaskedModOr(hs::Gt(x,hs::Zero(hdi)),hs::Set(hdi,-77),x,hdiv); nb::doNotOptimizeAway(r); }  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto x=hn::LoadU(gdi,p_a+i); const auto q=hn::IntDiv(gdi,x,gdiv); const auto r=hn::Sub(x,hn::Mul(q,hn::Set(gdi,gdiv.divisor))); const auto masked=hn::IfThenElse(hn::Gt(x,hn::Zero(gdi)),r,hn::Set(gdi,-77)); nb::doNotOptimizeAway(masked); }  hyle_bench::mark(rep); });
+    HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); auto acc=hs::Zero(hdi); for(std::size_t i=0;i+hw<=kN;i+=hw) { const auto x=hs::LoadU(hdi,p_a+i); const auto r=hs::MaskedModOr(hs::Gt(x,hs::Zero(hdi)),hs::Set(hdi,-77),x,hdiv); acc=hs::Xor(acc,r); } nb::doNotOptimizeAway(acc); hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a = a.data(); auto acc=hn::Zero(gdi); for(std::size_t i=0;i+gw<=kN;i+=gw) { const auto x=hn::LoadU(gdi,p_a+i); const auto q=hn::IntDiv(gdi,x,gdiv); const auto r=hn::Sub(x,hn::Mul(q,hn::Set(gdi,gdiv.divisor))); const auto masked=hn::IfThenElse(hn::Gt(x,hn::Zero(gdi)),r,hn::Set(gdi,-77)); acc=hn::Xor(acc,masked); } nb::doNotOptimizeAway(acc); hyle_bench::mark(rep); });
   }
   {
     nb::Bench bench; bench.title("MulEven i32-i64").relative(true).batch(kN).minEpochIterations(8000);
@@ -201,19 +209,16 @@ int main(){
     run_full_reduce("ReduceMax i32", [&](auto v){return hs::ReduceMax(hdi,v);}, [&](auto v){return hn::ReduceMax(gdi,v);});
     // ReduceMul/And/Or: Highway has no same-name scalar reduce (only Sum/Min/Max). Tier3 vs scalar fold.
     {
-      nb::Bench b; b.title("ReduceMul i32 (vs scalar fold)").relative(true).batch(kN).minEpochIterations(8000);
-      b.run("HYLE", [&]{ std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::ReduceMul(hdi,hs::LoadU(hdi,a.data()+i)); nb::doNotOptimizeAway(sink); });
-      b.run("scalar fold", [&]{ std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw){ std::int32_t p=1; for(std::size_t j=0;j<hw;++j) p*=a[i+j]; sink+=p; } nb::doNotOptimizeAway(sink); });
+      nb::Bench b; b.title("ReduceMul i32 [info HYLE/scalar fold]").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_INFO_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::ReduceMul(hdi,hs::LoadU(hdi,p_a+i)); nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw){ std::int32_t p=1; for(std::size_t j=0;j<hw;++j) p*=p_a[i+j]; sink+=p; } nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); });
     }
     {
-      nb::Bench b; b.title("ReduceAnd i32 (vs scalar fold)").relative(true).batch(kN).minEpochIterations(8000);
-      b.run("HYLE", [&]{ std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::ReduceAnd(hdi,hs::LoadU(hdi,a.data()+i)); nb::doNotOptimizeAway(sink); });
-      b.run("scalar fold", [&]{ std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw){ std::int32_t p=~0; for(std::size_t j=0;j<hw;++j) p&=a[i+j]; sink+=p; } nb::doNotOptimizeAway(sink); });
+      nb::Bench b; b.title("ReduceAnd i32 [info HYLE/scalar fold]").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_INFO_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::ReduceAnd(hdi,hs::LoadU(hdi,p_a+i)); nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw){ std::int32_t p=~0; for(std::size_t j=0;j<hw;++j) p&=p_a[i+j]; sink+=p; } nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); });
     }
     {
-      nb::Bench b; b.title("ReduceOr i32 (vs scalar fold)").relative(true).batch(kN).minEpochIterations(8000);
-      b.run("HYLE", [&]{ std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::ReduceOr(hdi,hs::LoadU(hdi,a.data()+i)); nb::doNotOptimizeAway(sink); });
-      b.run("scalar fold", [&]{ std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw){ std::int32_t p=0; for(std::size_t j=0;j<hw;++j) p|=a[i+j]; sink+=p; } nb::doNotOptimizeAway(sink); });
+      nb::Bench b; b.title("ReduceOr i32 [info HYLE/scalar fold]").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_INFO_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::ReduceOr(hdi,hs::LoadU(hdi,p_a+i)); nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_a=a.data(); std::int64_t sink=0; for(std::size_t i=0;i+hw<=kN;i+=hw){ std::int32_t p=0; for(std::size_t j=0;j<hw;++j) p|=p_a[i+j]; sink+=p; } nb::doNotOptimizeAway(sink); hyle_bench::mark(rep); });
     }
     // narrow-width reduce (i16/i64) vs Highway -- HYLE currently store+reload folds these (only
     // 32-bit+float tree); Highway trees them (SumOfLanes/MinOfLanes). Measure the gap.
@@ -301,16 +306,14 @@ int main(){
 
   // ---- Tier3: HYLE-only (no vendor same op) — vs scalar Div / raw estimate only ----
   {
-    nb::Bench b; b.title("ReciprocalNewton f32 (vs Div / ApproxRecip)").relative(true).batch(kN).minEpochIterations(5000);
-    b.run("HYLE ReciprocalNewton", [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::ReciprocalNewton(hs::LoadU(hdf,fa.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
-    b.run("HYLE ApproximateReciprocal", [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::ApproximateReciprocal(hs::LoadU(hdf,fa.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
-    b.run("HYLE Div(1,x)", [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::Div(hs::Set(hdf,1.0f),hs::LoadU(hdf,fa.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
-  }
-  {
-    nb::Bench b; b.title("ReciprocalSqrtNewton f32 (vs Sqrt-Div / ApproxRSqrt)").relative(true).batch(kN).minEpochIterations(5000);
-    b.run("HYLE ReciprocalSqrtNewton", [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::ReciprocalSqrtNewton(hs::LoadU(hdf,fa.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
-    b.run("HYLE ApproximateReciprocalSqrt", [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::ApproximateReciprocalSqrt(hs::LoadU(hdf,fa.data()+i)),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
-    b.run("HYLE Div(1,Sqrt)", [&]{ for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(hs::Div(hs::Set(hdf,1.0f),hs::Sqrt(hs::LoadU(hdf,fa.data()+i))),hdf,fo.data()+i); nb::doNotOptimizeAway(fo.data()); });
+    const auto run_info_unary = [&](const char* title, auto aop, auto bop) {
+      nb::Bench b; b.title(title).relative(true).batch(kN).minEpochIterations(5000);
+      HYLE_RUN_INFO_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_fa=fa.data(); auto* p_fo=fo.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(aop(hs::LoadU(hdf,p_fa+i)),hdf,p_fo+i); nb::doNotOptimizeAway(p_fo); hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_fa=fa.data(); auto* p_fo=fo.data(); for(std::size_t i=0;i+hwf<=kN;i+=hwf) hs::StoreU(bop(hs::LoadU(hdf,p_fa+i)),hdf,p_fo+i); nb::doNotOptimizeAway(p_fo); hyle_bench::mark(rep); });
+    };
+    run_info_unary("ReciprocalNewton f32 [info Newton/Approx]", [&](auto x){return hs::ReciprocalNewton(x);}, [&](auto x){return hs::ApproximateReciprocal(x);});
+    run_info_unary("ReciprocalNewton f32 [info Newton/Div]", [&](auto x){return hs::ReciprocalNewton(x);}, [&](auto x){return hs::Div(hs::Set(hdf,1.0f),x);});
+    run_info_unary("ReciprocalSqrtNewton f32 [info Newton/Approx]", [&](auto x){return hs::ReciprocalSqrtNewton(x);}, [&](auto x){return hs::ApproximateReciprocalSqrt(x);});
+    run_info_unary("ReciprocalSqrtNewton f32 [info Newton/DivSqrt]", [&](auto x){return hs::ReciprocalSqrtNewton(x);}, [&](auto x){return hs::Div(hs::Set(hdf,1.0f),hs::Sqrt(x));});
   }
 
   // ---- Low-priority Tier2 rest: Shuffle*/Per4Lane/Pairwise/SlideLanes/MulRound/CombineShift ----
@@ -731,16 +734,18 @@ int main(){
   }
   // ---- FindKnownFirst/LastTrue (known-nonzero mask variants; caller guarantees ≥1 true) ----
   {
-    const auto im=geni(67); std::uint64_t sink=0;
-    // ensure lane 0 true so the "known" precondition holds
-    auto mk=[&](std::size_t i){ auto v=hs::LoadU(hdi,im.data()+i); return hs::Or(hs::Gt(v,hs::Zero(hdi)), hs::FirstN(hdi,1)); };
-    auto gk=[&](std::size_t i){ auto v=hn::LoadU(gdi,im.data()+i); return hn::Or(hn::Gt(v,hn::Zero(gdi)), hn::FirstN(gdi,1)); };
-    { nb::Bench b; b.title("FindKnownFirstTrue i32").relative(true).batch(kN).minEpochIterations(8000);
-      HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::FindKnownFirstTrue(hdi,mk(i));  hyle_bench::mark(rep); },
-                  [&](auto rep){ hyle_bench::stagger(rep); for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=hn::FindKnownFirstTrue(gdi,gk(i));  hyle_bench::mark(rep); }); }
+    auto im=geni(67); std::uint64_t sink=0;
+    // Make every loaded chunk nonzero in DATA, not by timing FirstN+Or inside the op under test.
+    // The old mk/gk helper also hid im.data() inside a captured closure, violating the harness's
+    // pointer-hoist rule and reintroducing the 4K alias artifact this instrument was built to avoid.
+    HYLE_FATAL_ASSERT(hw == gw);
+    for (std::size_t i=0; i<kN; i+=hw) im[i]=1;
+    { /* nonzero-mask contract canary */ nb::Bench b; b.title("FindKnownFirstTrue i32").relative(true).batch(kN).minEpochIterations(8000);
+      HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_im=im.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::FindKnownFirstTrue(hdi,hs::Gt(hs::LoadU(hdi,p_im+i),hs::Zero(hdi)));  hyle_bench::mark(rep); },
+                  [&](auto rep){ hyle_bench::stagger(rep); auto* p_im=im.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=hn::FindKnownFirstTrue(gdi,hn::Gt(hn::LoadU(gdi,p_im+i),hn::Zero(gdi)));  hyle_bench::mark(rep); }); }
     { nb::Bench b; b.title("FindKnownLastTrue i32").relative(true).batch(kN).minEpochIterations(8000);
-      HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::FindKnownLastTrue(hdi,mk(i));  hyle_bench::mark(rep); },
-                  [&](auto rep){ hyle_bench::stagger(rep); for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=hn::FindKnownLastTrue(gdi,gk(i));  hyle_bench::mark(rep); }); }
+      HYLE_RUN_PAIR(b, [&](auto rep){ hyle_bench::stagger(rep); auto* p_im=im.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) sink+=hs::FindKnownLastTrue(hdi,hs::Gt(hs::LoadU(hdi,p_im+i),hs::Zero(hdi)));  hyle_bench::mark(rep); },
+                  [&](auto rep){ hyle_bench::stagger(rep); auto* p_im=im.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) sink+=hn::FindKnownLastTrue(gdi,hn::Gt(hn::LoadU(gdi,p_im+i),hn::Zero(gdi)));  hyle_bench::mark(rep); }); }
     nb::doNotOptimizeAway(sink);
   }
 

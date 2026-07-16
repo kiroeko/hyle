@@ -9,7 +9,7 @@
 // difference, not a call/inline artifact. Compiled per-ISA (HYLE_SIMD_TARGET_* + matching -march),
 // like gather_bench: run the avx2 exe on an AVX2 host, the avx512 exe under Intel SDE.
 //
-// Reads (via scripts/op-parity-report.py ONLY -- raw rows carry per-replica placement bias, see
+// Reads (via scripts/op-parity-report.py v4 ONLY -- raw rows carry per-replica placement bias, see
 // docs/debug/op-parity-harness-artifacts-hunt.md): ratio >1 => HYLE faster; <1 => HYLE SLOWER (the case
 // that would justify switching that op to a Highway call); ~1 => tie (self-made costs nothing,
 // keep it for the dtype/scalable control it buys).
@@ -1088,6 +1088,14 @@ int main() {
     {
       nb::Bench bench; bench.title("ScatterIndexN i32 (half n)").relative(true).batch(kN).minEpochIterations(3000);
       HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia = ia.data(); auto* p_stbl = stbl.data(); auto* p_idxb = idxb.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::ScatterIndexN(hs::LoadU(hdi,p_ia+i),hdi,p_stbl,hs::LoadU(hdi,p_idxb+i),kNlan); nb::doNotOptimizeAway(p_stbl);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia = ia.data(); auto* p_stbl = stbl.data(); auto* p_idxb = idxb.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::ScatterIndexN(hn::LoadU(gdi,p_ia+i),gdi,p_stbl,hn::LoadU(gdi,p_idxb+i),kNlan); nb::doNotOptimizeAway(p_stbl);  hyle_bench::mark(rep); });
+    }
+    {
+      nb::Bench bench; bench.title("ScatterIndexN i32 (one lane)").relative(true).batch(kN).minEpochIterations(3000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia = ia.data(); auto* p_stbl = stbl.data(); auto* p_idxb = idxb.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::ScatterIndexN(hs::LoadU(hdi,p_ia+i),hdi,p_stbl,hs::LoadU(hdi,p_idxb+i),1); nb::doNotOptimizeAway(p_stbl);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia = ia.data(); auto* p_stbl = stbl.data(); auto* p_idxb = idxb.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::ScatterIndexN(hn::LoadU(gdi,p_ia+i),gdi,p_stbl,hn::LoadU(gdi,p_idxb+i),1); nb::doNotOptimizeAway(p_stbl);  hyle_bench::mark(rep); });
+    }
+    {
+      nb::Bench bench; bench.title("ScatterIndexN i32 (full n)").relative(true).batch(kN).minEpochIterations(3000);
+      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia = ia.data(); auto* p_stbl = stbl.data(); auto* p_idxb = idxb.data(); for(std::size_t i=0;i+hw<=kN;i+=hw) hs::ScatterIndexN(hs::LoadU(hdi,p_ia+i),hdi,p_stbl,hs::LoadU(hdi,p_idxb+i),hw); nb::doNotOptimizeAway(p_stbl);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ia = ia.data(); auto* p_stbl = stbl.data(); auto* p_idxb = idxb.data(); for(std::size_t i=0;i+gw<=kN;i+=gw) hn::ScatterIndexN(hn::LoadU(gdi,p_ia+i),gdi,p_stbl,hn::LoadU(gdi,p_idxb+i),gw); nb::doNotOptimizeAway(p_stbl);  hyle_bench::mark(rep); });
     }
     {
       nb::Bench bench; bench.title("LoadNOr i32 (half n)").relative(true).batch(kN).minEpochIterations(5000);

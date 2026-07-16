@@ -11,14 +11,16 @@
 >
 > **⚠️ 计数口径统一(2026-07-15)**:早先本文用的 "255 个 op / HYLE 侧 393 名" 是差集甄别口径、含水分
 > (混 detail helper、正则漏检),**已被自校验脚本 `scripts/simd-op-coverage.py` 的机械口径取代**:
-> **公开 op 名 380 → 可测全集 340**(− 26 不可测 − 10 内部选择器 − 4 别名)**→ 已写 bench 299(291 已证 SOTA)+ 41 待补 bench**。
+> **公开/selector 名 383 → 可测全集 340**（− 26 不可测 − 13 内部选择器 − 4 别名）
+> **→ benchable 内已覆盖 299 + 41 待分类**。另有 4 个构造/retag 名虽出现在对拍标题中但从性能
+> 分母剔除，所以 raw source-benched 名为 303。
 > "缺什么名字"(本文,vs Highway 语义差集)与"哪些还没写 perf bench"(那 41 个,见
 > [`simd-orderswap-matrix.md`](./simd-orderswap-matrix.md) "41 个待补 bench" 节)是两个正交问题——本文管前者。
 
 ## 方法
 
 Highway 侧:`generic_ops/x86_256/x86_128/arm_neon-inl.h` 提取全部 `HWY_API` 公开名(407,含大量
-重载/内部助手膨胀);HYLE 侧机械口径见 `scripts/simd-op-coverage.py`(380 公开 op 名,花括号深度栈剔
+重载/内部助手膨胀);HYLE 侧机械口径见 `scripts/simd-op-coverage.py`(383 公开/selector 名,花括号深度栈剔
 `namespace detail`)。差集逐项 grep 甄别后剔除三类水分:①Highway 内部积木(LoadTransposedBlocks*/
 Native*/AVX2Shl* 等,HYLE 以 LoadInterleaved 等直接暴露等价能力);②HYLE 已有但差集正则漏检的
 (CompressBits/SumsOfShuffledQuadAbsDiff/PromoteInRangeTo 均在);③换名等价。**真实缺口 ≈ 40 名,聚类如下。**

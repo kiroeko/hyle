@@ -1,12 +1,13 @@
 # simd-23：C++ 易用性外观与性能证据收口
 
-> 状态：📋 计划（2026-07-16）。依赖 simd-22；不改变 close-01 的稳定 C ABI 承诺。
+> 状态：🚧 性能收口中（2026-07-16）。依赖 simd-22；C++ facade 延后，不改变 close-01 的稳定 C ABI 承诺。
 
 ## 为什么有这一项
 
 simd-22 已解决“同一 kernel 如何同时服务未知 CPU、整库固定 ISA 和用户 TU 固定 ISA”，但普通 C++
-用户仍要认识各模块的 pointer/count 命名，且容易把 `vec.h` 的 381 个寄存器 op 误认为日常入口。
-本里程碑补的是**发现性、类型安全和组合便利**，不是再造一层 kernel，也不是给 381 个 op 逐个加动态派发。
+用户仍要认识各模块的 pointer/count 命名，且容易把 8 个 SIMD 头机械提取出的 383 个公开/selector
+名字误认为日常入口。
+本里程碑补的是**发现性、类型安全和组合便利**，不是再造一层 kernel，也不是给 383 个机械提取名逐个加动态派发。
 
 另一条独立问题是性能证据。`container/hash.h` 与 SwissTable 按依赖图有意不依赖 `simd`；这不妨碍
 它们追求 SOTA，但必须用独立 benchmark 证明，不能为了复用 SIMD API 反转 `container -> simd` 依赖。
@@ -97,11 +98,16 @@ hyle::simd::random_fill(state, out);
 - 不缓存第二份 Runtime，不新增函数表 slot，不在 wrapper 中自行探测 CPUID。
 - 代表性 wrapper 用优化后 IR/assembly 或 link map 证明被完全消除；合成 wrapper 不建 nanobench。
 
-## 381 个 op 与 benchmark：先修口径，再补真缺口
+## 383 个公开/selector 名与 benchmark：先修口径，再补真缺口
 
 `scripts/simd-op-coverage.py` 当前按名字/标题匹配，适合发现候选，不足以定义 benchmark 债务。例如
 `TableLookupBytesInRange` 已是 `TableLookupBytes` 对拍行的 HYLE 被测侧，
 `DemoteToNearestIntInRange` 已是 `run_third` 信息行，却仍被报为“未覆盖”。
+
+当前机械树是：383 个公开名 − 26 个非性能项 − 13 个 `*Native/*Emulated` selector − 4 个 alias
+= 340 个 benchable；其中 299 已覆盖、41 待分类。标题还能映射到 4 个已被对拍但从 perf 分母剔除的
+构造/retag 名，因此用户看到的“已写 benchmark op 名”是 303。单个报告约 200 行并不代表漏跑，
+三个 TU 的原始标题也不能相加当 canonical 数量。
 
 先建立显式 manifest，每个公开名只能属于一类：
 
@@ -128,7 +134,8 @@ hyle::simd::random_fill(state, out);
   `MaskedSet*`、`PromoteInRange*`、`OrderedTruncate2To`、`TruncateStore`、`CompressBits*`、
   `SafeCopyN/SafeFillN`。它们不因“能写一行 bench”而进入分母。
 
-最终数字以 manifest 逐项代码审计为准；验收不能继续宣称“补 41 个 benchmark”。
+最终数字以 manifest 逐项代码审计为准。验收必须**闭环全部 41 个名字**，但不能宣称“补 41 个
+nanobench”：只有 native 项补独立 parity；alias/synthetic/paired/algorithm 各交自己的正确证据。
 
 ## hash/hashmap SOTA 证据线（不接入 simd）
 
@@ -151,40 +158,89 @@ hyle::simd::random_fill(state, out);
 这样能回答两个不同问题：“HYLE 的 hash 快不快”与“控制字节探测/表布局快不快”。若默认 hasher 场景
 赢、统一 hasher 场景输，就不能把结果归功于 hashmap；反之亦然。
 
-## 实施顺序
+## HYLE 相对 Highway 的量化结论
 
-### A. 覆盖账本先行
+不能用一个总倍数回答“HYLE 强多少”。simd-23 维护分层 scorecard，所有格子标明平台、工作集、复杂度
+与统计置信度：
 
-- 将 381-op 提取结果与显式 manifest 合并，脚本校验新增 op 必须分类。
+| 层 | 比什么 | 合格结论 |
+|---|---|---|
+| 寄存器 op | orderswap 全量同 ISA 同 TU | WIN/TIE/LOSE 占比 + 稳定异常；目标是零明确 LOSE，不把 TIE 宣传成优势 |
+| whole-buffer kernel | dot/add/scan/RNG/math/dtype/sort/bitpack | 同语义、同复杂度的吞吐/延迟曲线，报告小 N 调用成本与大 N 带宽/计算墙 |
+| 算法复杂度 | sort/select/top-k/bitpack 等 | 输入规模阶梯验证 O(n)、O(n log n)、O(n log k) 等，不允许只在一个 N 上报倍数 |
+| 未知 CPU 产品面 | HYLE ordinary batch vs Highway dynamic 用法 | 量化用户代码量、首次选择和每 batch 调用成本；功能优势与速度优势分栏 |
+| 固定 ISA 产品面 | HYLE exact/native vs Highway static target | 代表 kernel 汇编/吞吐，证明两者都能零运行时判断，不把它叫“省动态税” |
+
+最终回答应诚实区分：底层原语若大多 TIE，说明 HYLE 抽象没有性能损失；HYLE 是否值得选，主要取决于
+预编译 batch/双轨架构、自有算法核、跨模块依赖与 C ABI，而不是宣称每条 intrinsic 都比 Highway 快。
+任何“快 X%”只来自 scorecard 中同合同的实测格子，不把 API 易用性换算成虚假的性能倍数。
+
+## 实施顺序（性能四步先行，facade 最后）
+
+> **2026-07-16 状态**：步骤 1–3 已完成。九份 v4 report 的 union 为 303/303；320-case 表中
+> Windows/WSL/Mac 明确 LOSE 均为 0，旧 ScatterIndexN 与本轮发现的 SatWiden/CompressNot/Mod/
+> SetOnlyFirst/IsFinite 回归均已修复，所有 `<0.98` 行已分类并写入
+> `simd-orderswap-matrix.md`。下一任务是步骤 4 的 41-name 覆盖补全和第二轮 Highway 落后项狩猎；
+> C++ facade 继续延后，不与性能闭环混做。
+
+### 1. 重测 303 个已有 benchmark 覆盖项并修仪器
+
+simd-22 改动了头文件组织、target 选择和共享 native body。旧的 2026-07-15 orderswap 数据仍是历史
+证据，但不能自动证明重构后的二进制仍保持原结论。新增 op benchmark 和 facade 零开销结论之前，先：
+
+- 按 `simd-op-benchmark-methodology.md` 从当前 HEAD 新鲜构建，不复用重构前 exe；检查目标时间戳与
+  AVX2/NEON target define/flags。
+- Windows 与 WSL 错开运行；三个 x86 TU（parity/full/widen）均双序至少 2 轮。macOS 三个 NEON TU
+  串行、双序各 2–3 轮，使用 8x epoch 与 `--gate 0.06`。
+- 每个报告必须先过 anchors；任何 calibration fail 使该份整表作废，不拿后续单元格解释性能。
+- “303”来自 coverage tree，不是 GTest case 数；正确性测试仍按各平台实际 discover 数报告。
+- 先审计 benchmark 对称性、pointer-hoist、每 TU 自有 anchor、双 layout-bank 和报告 CI，再看 op 数字。
+- Windows 使用固定 `VSLANG` 的全新性能 build tree，验证头依赖、obj/exe 时间戳和真实重编译，封死
+  Ninja `msvc_deps_prefix` 语言错配造成的 stale-exe 假数据。
+- 形成“重构后仪器证书”：HEAD、编译器/flags、机器、输入原始文件、anchor 区间、各判决计数和完整
+  report 命令。没有这份证书，后续性能判决不得进入权威矩阵。
+
+### 2. 用新旧全表与 HYLE 独有 benchmark 狩猎重构回归
+
+- 对比重构前后 303×Windows/WSL/macOS orderswap 全表，另比 HYLE 独有测试；按 TU、op、平台列出
+  新增 LOSE、WIN 消失和置信区间显著下移。
+- 优先查 interface shape、Highway/xsimd 内化、头/target 机械搬运和宽度表示变化；这类回归恢复前，
+  不把下降归类成“HYLE 算法本来就输”。
+- 修共享原语后重跑受影响平台全表和复合消费者金丝雀，不以单 op 探针收口。
+
+### 3. 排除回归后狩猎稳定真输 Highway 的 op
+
+- 先复验历史 NEON `ScatterIndexN i32`，并把所有 0.90–0.96 项按 `LOSE / INCONCLUSIVE / TIE`
+  分桶；0.93 裸数字不是结论。
+- 稳定 LOSE 执行规范化逐指令 diff、端口/依赖链和多形态实验；完整步骤以主方法论 §4 为准。
+
+### 4. 闭环 41 个名字并做第二轮 Highway 落后项狩猎
+
+- 将 383-name 提取结果与显式 manifest 合并，脚本校验新增 op 必须分类。
 - 修正 orderswap 报告，把 paired/info 与真正 missing 分开。
 - 冻结“synthetic 不进 benchmark 分母”的 CI 规则。
+- 对全部 41 个名字逐项交付证据：native parity、paired/info 账本、alias/synthetic 正确性与零开销、
+  algorithm 真实工作集 benchmark；然后对新产生的稳定 LOSE 再走一轮 Highway 落后项狩猎。
 
-### B. 最小外观骨架
+### 5. C++ facade（四步性能工作完成后）
 
 - 新增 `algorithms.h`、编译测试与文档索引。
 - 先落 ops/RNG/scan 三家族，确定 span、const、aliasing 和长度合同。
 - 用汇编/IR 抽查 debug 合同存在、release 成功路径无额外循环/分配/派发。
 
-### C. 扩到现有语义面
+### 6. 扩到现有语义面
 
 - dtype/math，再到 sort/select/bitpack；每家族只转发已存在的 batch kernel。
 - 同步普通用户、整库 exact、`native::` 三条示例，避免把 fixed target 描述成“免动态税”。
-- 生成或维护普通 API 索引，清楚地区分 107 个语义名与 381 个 expert op。
+- 生成或维护普通 API 索引，清楚地区分 107 个语义名与 383 个 expert/selector 名。
 
-### D. SIMD 性能缺口
-
-- 按 manifest 补约 14 个原生 op parity；遵守现有 HYLE-first/Highway-first 双序和校准闸门。
-- 独立补 `Stream` 大工作集带宽 benchmark。
-- Win x86、WSL x86、macOS NEON 跑性能；AVX512/SVE/RVV 没有可信真机时只作正确性，不用模拟器
-  数字宣称性能。
-
-### E. container 性能收口
+### 7. container 性能收口
 
 - 扩 hash 边界长度 benchmark。
 - 接入 F14 gated benchmark，补统一/default hasher 两套 hashmap 矩阵。
 - 结果记入 performance ledger；只在跨平台、多轮统计达到闸门后写 SOTA 结论。
 
-### F. ABI 与发布检查
+### 8. ABI 与发布检查
 
 - C++ facade 不出现在 ABI symbol allowlist，公共模板/STL 不穿过 DLL seam。
 - close-01 实现时只包装 pointer/POD batch core，不包装 span overload、`Runtime` 或 D-tag。
@@ -196,6 +252,8 @@ hyle::simd::random_fill(state, out);
 - exact-library 和 `native::` 用法保持可用；facade 不增加第二次派发或每元素分支。
 - 所有 facade 长度/可写性/类型合同有编译或运行测试，代表性 release wrapper 证实零额外开销。
 - coverage 报告不再把 alias/synthetic/paired 项计为 missing benchmark。
+- 当前 HEAD 的 Windows/WSL/macOS 全量 orderswap 已按方法论重新出数，所有报告 calibration pass；
+  旧 `ScatterIndexN` 与全部 0.90–0.96 项均有稳定性分类，稳定异常有逐指令证据。
 - 真正 native 缺口完成三平台可用项的校准 parity；`Stream` 以带宽口径测量。
 - hash 与 hashmap 独立出报告；hashmap 至少有 absl + F14、统一 hasher + 默认 hasher 两套证据。
 - `container` 依赖图中仍无 `simd`，`simd` facade 中也无 hash/hashmap 再导出。

@@ -8,6 +8,7 @@
 #include <cmath>  // std::ldexp/std::logb (MulByPow2 / GetExponent store+reload)
 #include <limits>  // std::numeric_limits<T>::infinity (IsInf/IsFinite splat)
 #include <type_traits>
+#include <utility>
 
 #include <arm_neon.h>
 
@@ -634,6 +635,31 @@ HYLE_FORCE_INLINE VecNeon<T, N> ApproximateReciprocalSqrt(VecNeon<T, N> a) noexc
   if constexpr (std::is_same_v<T, float>) r = detail::from_q<decltype(r)>(vrsqrteq_f32(detail::to_q(a)));
   else r = detail::from_q<decltype(r)>(vrsqrteq_f64(detail::to_q(a)));  // aarch64
   return r;
+}
+
+// ARM has dedicated Newton-step instructions for its reciprocal estimates. Route the f32 refined
+// helpers through them instead of spelling the correction as generic FMA arithmetic; this keeps
+// the same one-step algorithm while matching the intended NEON pipeline.
+#define HYLE_SIMD_NEON_HAS_NATIVE_RECIPROCAL_NEWTON_F32 1
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<float, N> ReciprocalNewtonNative(VecNeon<float, N> x) noexcept {
+  const float32x4_t qx = detail::to_q(x);
+#if defined(__APPLE__)
+  // Apple Silicon's vector fdiv beats estimate+vrecps for this one-step accuracy contract, while
+  // also returning the correctly rounded reciprocal. Keep other NEON CPUs on the refinement path
+  // until they have their own measured platform split.
+  return detail::from_q<VecNeon<float, N>>(vdivq_f32(vdupq_n_f32(1.0f), qx));
+#else
+  const float32x4_t y0 = vrecpeq_f32(qx);
+  return detail::from_q<VecNeon<float, N>>(vmulq_f32(y0, vrecpsq_f32(qx, y0)));
+#endif
+}
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<float, N> ReciprocalSqrtNewtonNative(VecNeon<float, N> x) noexcept {
+  const float32x4_t qx = detail::to_q(x);
+  const float32x4_t y0 = vrsqrteq_f32(qx);
+  const float32x4_t step = vrsqrtsq_f32(vmulq_f32(qx, y0), y0);
+  return detail::from_q<VecNeon<float, N>>(vmulq_f32(y0, step));
 }
 // GetExponent(v) = floor(log2(|v|)) as float. Extract the IEEE-754 exponent field via integer
 // vector ops -- no store+reload/libm (op_parity: the old std::logb path was 30x slower on avx2).
@@ -1510,6 +1536,27 @@ HYLE_FORCE_INLINE VecNeon<std::int32_t, N> MulHigh32(VecNeon<std::int32_t, N> a,
   return detail::from_q<VecNeon<std::int32_t, N>>(
       vuzp2q_s32(vreinterpretq_s32_s64(lo), vreinterpretq_s32_s64(hi)));
 }
+
+// In invariant division the multiplier is scalar. Keeping that fact in the signature lets
+// AppleClang use the scalar-lane smull/smull2 form, matching Highway; passing Set(multiplier)
+// through the vector overload otherwise becomes ld1r + smull + ext + smull.
+#define HYLE_SIMD_HAS_NATIVE_MUL_HIGH32_SCALAR_I32 1
+namespace detail {
+template <std::size_t N>
+HYLE_FORCE_INLINE VecNeon<std::int32_t, N> mul_high32_scalar_i32(
+    VecNeon<std::int32_t, N> a, const std::int32_t* mul_shift) noexcept {
+  static_assert(N == 4, "MulHigh32Scalar i32 requires a native NEON vector");
+  const int32x2_t mul = vld1_s32(mul_shift);
+  const int64x2_t lo = vmull_lane_s32(vget_low_s32(detail::to_q(a)), mul, 0);
+  const int64x2_t hi = vmull_high_lane_s32(detail::to_q(a), mul, 0);
+  return detail::from_q<VecNeon<std::int32_t, N>>(
+      vuzp2q_s32(vreinterpretq_s32_s64(lo), vreinterpretq_s32_s64(hi)));
+}
+}  // namespace detail
+
+// NEON codegen prefers Highway's vector sign correction. The scalar invariant branch that saves
+// two vector ops on x86 becomes cmeq+dup+neg+bit on AppleClang, one instruction worse here.
+#define HYLE_SIMD_PREFER_VECTOR_DIVISOR_SIGN 1
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------
 // NEON is a SINGLE 128-bit block, so InterleaveLower/Upper are whole-vector (== the scalar
@@ -3002,6 +3049,47 @@ HYLE_FORCE_INLINE void ScatterIndex(detail::VN<D> v, D d, TFromD<D>* base,
   StoreU(idx, Simd<IdxT, kN, 0>(), ix); StoreU(v, d, src);
   for (std::size_t i = 0; i < kN; ++i) base[static_cast<std::ptrdiff_t>(ix[i])] = src[i];
 }
+
+// AArch64 has no vector scatter instruction, but immediate lane extraction avoids materializing
+// both vectors on the stack. Runtime count selects one small compile-time-unrolled body.
+#define HYLE_SIMD_HAS_NATIVE_SCATTER_INDEX_N_I32 1
+namespace detail {
+HYLE_FORCE_INLINE std::int32_t extract_lane_i32(VecNeon<std::int32_t, 4> v,
+                                                std::size_t i) noexcept {
+#if defined(__clang__) || defined(__GNUC__)
+  if (__builtin_constant_p(i)) {
+    switch (i) {
+      case 0: return vgetq_lane_s32(v.raw, 0);
+      case 1: return vgetq_lane_s32(v.raw, 1);
+      case 2: return vgetq_lane_s32(v.raw, 2);
+      default: return vgetq_lane_s32(v.raw, 3);
+    }
+  }
+#endif
+  alignas(16) std::int32_t lanes[4];
+  vst1q_s32(lanes, v.raw);
+  return lanes[i];
+}
+}  // namespace detail
+
+namespace detail {
+template <std::size_t N, std::size_t NI>
+HYLE_FORCE_INLINE void scatter_index_n_native_i32(VecNeon<std::int32_t, N> v,
+                                                   std::int32_t* base,
+                                                   VecNeon<std::int32_t, NI> index,
+                                                   std::size_t max_lanes) noexcept {
+  static_assert(N == 4 && NI == 4, "NEON native i32 ScatterIndexN requires full vectors");
+  // This deliberately mirrors Highway generic_ops-inl.h ScatterIndexN. Keeping max_lanes as the
+  // per-lane predicate lets AppleClang unroll the fixed four iterations, scalarize half-width
+  // source loads to ldp/ldpsw, and choose its lower-latency lane-extraction schedule.
+  for (std::size_t i = 0; i < 4; ++i) {
+    if (i < max_lanes) {
+      base[static_cast<std::ptrdiff_t>(detail::extract_lane_i32(index, i))] =
+          detail::extract_lane_i32(v, i);
+    }
+  }
+}
+}  // namespace detail
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE VecNeon<T, N> Compress(VecNeon<T, N> v, MaskNeon<T, N> m) noexcept {
   const unsigned bits = detail::mask_bits(m);

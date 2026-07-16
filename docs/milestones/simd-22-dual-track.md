@@ -10,7 +10,7 @@
 - 未知部署 CPU 的预编译库用户：target-neutral batch API + `runtime()` 函数表；
 - close-01：在二者之外另封纯 C shim，不把 C++ 类型误当稳定 ABI。
 
-不把 381 个寄存器 op 逐个动态化。范围与用户决策树见
+不把 383 个公开/selector 寄存器名逐个动态化。范围与用户决策树见
 [`../architecture/simd-dispatch-guide.md`](../architecture/simd-dispatch-guide.md)。
 
 ## 总体架构图
@@ -90,7 +90,7 @@
      -> vec.h -> backend/avx2.h
 ```
 
-这里没有 lane 级或 381-op 级动态判断。CPU 探测和建表只发生一次；ops/random 在每个完整 batch
+这里没有 lane 级或 383-name 级动态判断。CPU 探测和建表只发生一次；ops/random 在每个完整 batch
 边界有一次函数指针调用。scan 缓存解析后的函数指针；dtype/math/sort/bitpack 读取同一张 Runtime 的
 module ISA/features，保留其 per-op winner、F16C/BF16 等非 canonical feature 和算法阈值。
 

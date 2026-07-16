@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""SIMD op benchmark coverage — mechanical, self-validating.
+"""SIMD op benchmark coverage - mechanical, self-validating.
 
 The point of this script is to answer ONE question reliably: how many HYLE SIMD ops
 CAN be perf-benched against a Highway/xsimd reference, and how many actually ARE?
@@ -7,18 +7,24 @@ CAN be perf-benched against a Highway/xsimd reference, and how many actually ARE
 Every prior attempt to count this by hand or by a one-shot grep was wrong (ops that were
 demonstrably benched got reported "missing", inflating the gap). The fix is a self-check:
 
-    BENCHED must be a SUBSET of BENCHABLE.
+    BENCHED must be a SUBSET of the extracted public-op set.
 
-If any op that appears in an op_parity bench is NOT in the extracted benchable set, the
+If any op that appears in an op_parity bench is NOT in the extracted public-op set, the
 EXTRACTION RULES have a blind spot (they missed that op's definition form). The script then
 FAILS LOUDLY and lists the offenders, so the rules get fixed and re-run. Only once
-`benched ⊆ benchable` holds is the denominator trustworthy, and:
+`benched <= benchable` holds is the denominator trustworthy, and:
 
-    uncovered = benchable − benched      <- the real number.
+    covered   = benchable intersection benched
+    uncovered = benchable minus benched      <- the real number.
+
+Some construction/retag operations are deliberately excluded from the performance denominator
+even though a parity title exercises them. Therefore the raw "benched op names" count can be
+larger than the covered subset; the report prints both instead of pretending they are identical.
 
 Run:  python scripts/simd-op-coverage.py          (report)
-      python scripts/simd-op-coverage.py --check   (exit 1 if benched⊄benchable or uncovered grows)
+      python scripts/simd-op-coverage.py --check   (exit 1 if benched is not a subset or uncovered grows)
 """
+import argparse
 import os
 import re
 import sys
@@ -33,9 +39,9 @@ HEADERS = ["vec.h"] + [f"backend/{b}.h" for b in
 # reference per-op so they count as coverage for the ops they title.
 BENCH_FILES = ["op_parity_full_bench.cc", "op_parity_bench.cc", "op_parity_widen_bench.cc",
                "crypto_bench.cc", "gather_bench.cc"]
-# authoritative per-op measured-verdict table (the calibrated instrument's results). An op having a
-# bench is NOT the same as having a measured verdict: only ops with a row here are confirmed TIE/WIN
-# (i.e. "proven >= Highway / SOTA"). benched-minus-matrix = benched but not yet measured.
+# Historical per-op matrix ledger. An op having a source benchmark is not the same as appearing in
+# this table, and a historical row is not automatically a current-HEAD SOTA certificate: v4 may
+# classify the new measurement as INCONCLUSIVE. Current execution coverage is audited via --reports.
 MATRIX = os.path.join(ROOT, "docs", "milestones", "simd-orderswap-matrix.md")
 
 # Ops that exist but are NOT perf-benchable against a vector reference. Each with a REASON,
@@ -164,12 +170,32 @@ def extract_benched(all_ops):
             benched |= (_title_to_ops(s, all_ops) & all_ops)
     return benched
 
+def extract_reported(report_paths, all_ops):
+    """Map titles that actually appeared in raw/aggregated reports back to canonical op names."""
+    title_re = re.compile(r"\|\s*relative\s*\|.*\|\s*([^|]+?)\s*$")
+    reported = set()
+    for path in report_paths:
+        with open(path, "rb") as src:
+            raw = src.read()
+        encoding = "utf-16" if raw.startswith((b"\xff\xfe", b"\xfe\xff")) else "utf-8"
+        for line in raw.decode(encoding, errors="replace").splitlines():
+            match = title_re.match(line)
+            if match:
+                reported |= (_title_to_ops(match.group(1).strip(), all_ops) & all_ops)
+                continue
+            # op-parity-report TSV: first field is the exact nanobench title.
+            if "\t" in line and not line.startswith("op\t"):
+                title = line.split("\t", 1)[0]
+                if title.startswith("# "):
+                    title = title[2:]
+                reported |= (_title_to_ops(title, all_ops) & all_ops)
+    return reported
+
 def is_selector(name):
     return any(s in name for s in SELECTOR_SUBSTR)
 
 def extract_matrix_ops(all_ops):
-    """Op names with a measured verdict row in simd-orderswap-matrix.md (| Op ... | val | val | val |).
-    Having a row = the calibrated instrument produced a TIE/WIN/LOSE for it = SOTA status is known."""
+    """Op names with a historical row in simd-orderswap-matrix.md."""
     if not os.path.exists(MATRIX):
         return set()
     ops = set()
@@ -181,7 +207,12 @@ def extract_matrix_ops(all_ops):
     return ops
 
 def main():
-    check = "--check" in sys.argv
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--check", action="store_true")
+    parser.add_argument("--reports", nargs="+", metavar="PATH",
+                        help="audit op names that actually appear in these raw/aggregated reports")
+    args = parser.parse_args()
+    check = args.check
 
     all_ops = set()
     per_header = {}
@@ -205,9 +236,10 @@ def main():
 
     covered = sorted(benchable & benched_known)
     uncovered = sorted(benchable - benched_known)
+    benched_excluded = sorted(benched_known - benchable)
 
-    # SOTA status: an op is "SOTA-confirmed" only if it has a MEASURED verdict row in the matrix.
-    # benched-but-not-in-matrix = has a bench but not yet run through the calibrated instrument.
+    # Historical matrix bookkeeping. Current certification comes from v4 report files, not merely
+    # from the presence of an old row.
     matrix_ops = extract_matrix_ops(all_ops)
     sota_pending_benched = sorted((benchable & benched_known) - matrix_ops)  # bench yes, verdict no
     not_yet_sota = sorted(set(uncovered) | set(sota_pending_benched))        # everything unproven
@@ -220,7 +252,11 @@ def main():
     print(f"  internal selector variants (*Native/*Emulated): "
           f"{sum(1 for o in all_ops if is_selector(o))}")
     print(f"\nBENCHABLE universe:      {len(benchable)}")
-    print(f"benched (op_parity):     {len(benched_known)}")
+    print(f"benched op names (raw):  {len(benched_known)}")
+    print(f"  covered + benchable:   {len(covered)}")
+    print(f"  exercised but excluded from perf denominator: {len(benched_excluded)}")
+    if benched_excluded:
+        print(f"    ({', '.join(benched_excluded)})")
     print(f"UNCOVERED (benchable-benched): {len(uncovered)}")
     print(f"coverage: {len(covered)}/{len(benchable)} = "
           f"{100.0*len(covered)/max(1,len(benchable)):.1f}%")
@@ -231,24 +267,38 @@ def main():
         for o in orphans:
             print(f"     - {o}")
 
-    print(f"\n--- SOTA status (matrix = measured-verdict rows) ---")
-    print(f"benchable ops with a measured verdict (SOTA-confirmed): {len(benchable & matrix_ops)}")
-    print(f"benched but NOT yet measured (bench exists, run calibrated instrument): "
+    print(f"\n--- historical matrix ledger (not a current SOTA certificate) ---")
+    print(f"benchable ops with a historical matrix row: {len(benchable & matrix_ops)}")
+    print(f"benched but absent from the historical matrix: "
           f"{len(sota_pending_benched)}")
     print(f"not benched at all (add bench first):                    {len(uncovered)}")
-    print(f"==> TOTAL not-yet-proven-SOTA: {len(not_yet_sota)} "
+    print(f"==> TOTAL absent from historical matrix or source bench: {len(not_yet_sota)} "
           f"({len(sota_pending_benched)} measure + {len(uncovered)} add-bench)")
 
     print(f"\nUNCOVERED benchable ops -- need a bench first ({len(uncovered)}):")
     for o in uncovered:
         print(f"  - {o}")
-    print(f"\nBENCHED but not yet measured -- run calibrated instrument ({len(sota_pending_benched)}):")
+    print(f"\nBENCHED but absent from historical matrix ({len(sota_pending_benched)}):")
     for o in sota_pending_benched:
         print(f"  - {o}")
 
+    report_missing = []
+    if args.reports:
+        reported = extract_reported(args.reports, all_ops)
+        report_missing = sorted(benched_known - reported)
+        print(f"\n--- executed-report audit ({len(args.reports)} files) ---")
+        print(f"source-benched names: {len(benched_known)}")
+        print(f"names observed in reports: {len(benched_known & reported)}")
+        print(f"source-benched but absent from report union: {len(report_missing)}")
+        for op in report_missing:
+            print(f"  - {op}")
+
     if check:
         if orphans:
-            print("\nFAIL: self-check (benched ⊄ all_ops).")
+            print("\nFAIL: self-check (benched is not a subset of all_ops).")
+            return 1
+        if report_missing:
+            print("\nFAIL: executed reports do not cover every source-benched op name.")
             return 1
     return 0
 
