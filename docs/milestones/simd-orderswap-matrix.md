@@ -726,9 +726,13 @@ fold / 裸估计 / Div)证明"比 baseline 快",逻辑上自动算 SOTA(没有�
   比表核的 `0.74–0.83` 更慢。故不做 Linux 特判：产品 `log_f64_batch` 全平台保留表核，
   WSL 的 5% 直接对手差距如实保留，不能拿没有 IEEE special 语义的基准行冒充可上架路径。
 
-## 41 个待补 bench 的 op(可测全集里尚未写 bench)
+## 41 个待分类候选（不是 41 个待补 benchmark）
 
-分三档(不是真输,是尚未测):
+旧脚本按 op 名与 benchmark 标题做启发式匹配，因此这 41 个名字只适合作为审计入口。它会把成对测量、
+`run_third` 信息行、精确 alias 和合成 op 都报成“尚未写 bench”。simd-23 将以显式 manifest 取代
+这个口径；**合成 op 不进入 benchmark 分母**。
+
+原始候选分三档如下（保留快照以便逐项核账）：
 - **结构性原语(在 CMP/mask 组合里被间接跑,但无独立 parity 行)**:BitsFromMask、MaskFromVec、
   MaskFromNormalizedVec、VecFromMask、SignBit、ShiftRightUniform、LowerHalfOfMask、UpperHalfOfMask、
   MaskFalse、LoadMaskBits、StoreMaskBits。
@@ -741,7 +745,15 @@ fold / 裸估计 / Div)证明"比 baseline 快",逻辑上自动算 SOTA(没有�
   SafeCopyN、SafeFillN、Stream、CompressBits、CompressBitsStore、CompressBlocksNot、
   IfNegativeThenNegOrUndefIfZero。
 
-实时清单跑 `python scripts/simd-op-coverage.py`(本节是快照)。
+首轮核账：`TableLookupBytesInRange` 已在 `TableLookupBytes` 成对行中测量，
+`DemoteToNearestIntInRange` 已是 `run_third` 信息行；约 14 项有独立 native/contract 性能价值，另将
+`Stream` 放入大于 LLC 的带宽 benchmark。`SignBit`、`ShiftRightUniform`、`MaskedSet*`、
+`PromoteInRange*`、`OrderedTruncate2To`、`TruncateStore`、`CompressBits*`、`SafeCopyN/SafeFillN`
+等 alias/合成项只需正确性和零开销检查，不补孤立 nanobench。完整分类与验收见
+[`simd-23`](./simd-23-cxx-facade-and-perf-closure.md)。
+
+候选清单仍可跑 `python scripts/simd-op-coverage.py`，但在 manifest 落地前不得把它的计数当作 benchmark
+完成率。
 
 ## 语义缺口(对 Highway op 名的差集,与"41 待补 bench"正交)
 

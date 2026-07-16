@@ -58,11 +58,17 @@ target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch 
 因此当前欠账是**C++ 易用性外观**，不是再给 381 个 op 各包一层 Runtime：
 
 1. 给普通语义 API 建统一分类/索引，避免用户从 `math.h` 等大头里搜索。
-2. close-01/02 收口纯 C pointer/POD ABI 时，在其上另加 header-only `std::span`/typed-view C++ facade；
-   facade 只转发，不复制 kernel、Runtime 或错误语义。
+2. 在现有 C++ pointer/count API 上另加 header-only `std::span`/typed-view C++ facade；facade 只转发，
+   不复制 kernel、Runtime 或错误语义。具体范围与性能闸门见
+   [`simd-23`](../milestones/simd-23-cxx-facade-and-perf-closure.md)。close-01/02 只把同一个 pointer/POD
+   core 封成纯 C ABI，不导出 span/STL。
 3. 是否补 `algo`、hash、image、matvec 等高层能力按 HYLE 模块边界和真实消费者决定，不为了镜像 Highway
    contrib 目录而堆 API。
 4. `vec.h` 继续作为明确的 expert surface；改善文档、示例和命名检索，不把它伪装成普通应用层。
+
+`container/hash.h` 和 SwissTable 不属于这个 facade。container 在依赖图上有意不依赖 simd，可在模块
+内部使用自包含 ISA 路径和 platform CPU probe；其性能用独立 hash/hashmap SOTA benchmark 收口，不能
+为了复用 Runtime 反转依赖，也不能从 `hyle::simd` 再导出 hash。
 
 ## 380+ 个 op 是否都要双腿
 

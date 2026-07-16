@@ -133,7 +133,7 @@ container/       │               │ compute   │  container 自带内联 SSE
 | P0 | error 跨三编译器编译；`std::expected` 往返；埋点 API 编译期零开销验证 |
 | P1 | platform 三平台（Linux/Win/mac）编译；dynlib 加载冒烟；park 原语单测 |
 | P2 | **mem：alignment 保证测试（64B 对齐必须真生效）**、并发分配 TSan、对标裸 mimalloc 不退化；time：单调性、时间轮到期精度 |
-| P3 | container：hashmap 对拍 std + 基准对标 absl/F14、lock-free 队列 TSan + 线性化测试；simd：每后端对拍 scalar、数学函数 ULP 精度 |
+| P3 | container：hash 函数与 hashmap 分开测，hash 对拍 XXH3/wyhash、表统一/默认 hasher 对拍 absl/F14；lock-free 队列 TSan + 线性化测试；simd：每后端对拍 scalar、数学函数 ULP 精度，synthetic op 不进入性能分母 |
 | P4 | **sched：百万次 fiber 切换基准、work-stealing 公平性、fiber-sync 正确性（TSan）、防惊群验证** |
 | P5 | io：echo/吞吐基准、proactor 四后端对齐；compute：device 枚举、CPU+GPU 后端对拍、completion 唤醒 fiber 链路通 |
 | P6 | graph：DAG 执行正确性；C-ABI shim：FFI 冒烟（TS/Python 各调一个）；全栈 sanitizer CI |
