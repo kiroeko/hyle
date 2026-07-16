@@ -51,8 +51,13 @@
 **3-1 同步(Windows → Mac,单向覆盖,保留 Mac 的 build-mac/.deps):**
 ```bash
 tar -C /c/public/project-hyle/hyle -cf - --exclude=build --exclude=.git --exclude='*.obj' \
-    include tests bench src CMakeLists.txt cmake third_party/highway \
+    include tests bench src CMakeLists.txt cmake scripts third_party/highway third_party/xsimd \
   | ssh -o BatchMode=yes kiro@172.22.10.198 'tar -C ~/hyle -xf -'
+
+# simd-20：bench 的 unchanged Highway/xsimd 对照与产品 third_party 副本分开同步；
+# .git 也要保留，CMake 才能校验 pinned revision。
+tar -C /c/public/project-hyle -cf - highway xsimd \
+  | ssh -o BatchMode=yes kiro@172.22.10.198 'mkdir -p ~/vendor && tar -C ~/vendor -xf -'
 ```
 
 **3-2 构建 + 单元测试(闸门 G1/G3 用):**

@@ -72,13 +72,19 @@ setarch -R ./build-tsan/bin/hyle_sched_test    # -R 关 ASLR，稳定 TSan
 ## 六、性能测试（bench）
 
 ```bash
+# external vendor 和构建均在 ext4；WSL 不设隐式默认目录。
+scripts/fetch-bench-vendors.sh --dir "$HOME/vendor"
+
 cmake -S . -B build-bench -G Ninja -DCMAKE_BUILD_TYPE=Release \
-  -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DHYLE_BUILD_BENCH=ON
+  -DCMAKE_C_COMPILER=gcc-14 -DCMAKE_CXX_COMPILER=g++-14 -DHYLE_BUILD_BENCH=ON \
+  -DHYLE_BENCH_VENDOR_DIR="$HOME/vendor"
 cmake --build build-bench --target hyle_sched_bench
 ./build-bench/bin/hyle_sched_bench
 ```
 
 - **必须原生 ext4**（见 9p 铁律）——`/mnt/c` 上 bench 数字无效（CPU 打不饱和）。
+- SIMD bench 将 `HYLE_BENCH_VENDOR_DIR` 的固定版 Highway/xsimd 当对照；它们只供 bench，
+  不替代本轮仍由产品源码使用的 `third_party/` 副本。
 - 统计对标用 `scripts/bench-stat.py`（多遍取统计，防单遍噪声）。
 
 ## 七、可选依赖

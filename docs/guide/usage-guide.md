@@ -40,7 +40,7 @@ target_link_libraries(your_app PRIVATE hyle::container hyle::mem hyle::simd)
 HYLE 的构建开关分**两个范畴**，别混（速查：**A 类产品参数 5 个 + B 类 bench 门 10 个 + 2 个 preset**）：
 
 - **A. 产品构建参数**（`HYLE_<名>`，全大写下划线 = CMake cache 变量，共 **5 个**：`HYLE_STATIC` / `HYLE_BUILD_TESTS` / `HYLE_BUILD_BENCH` / `HYLE_WERROR` / `HYLE_SANITIZER`；外加 CMake 内建 `CMAKE_BUILD_TYPE`）——影响**出厂的库**：静态/动态、sanitizer、CI 严格度。这是你集成时唯一要管的。（注：SIMD 不暴露硬件开关——默认编全部 ISA 变体、运行期 CPUID 选最优，见 §2。）
-- **B. 开发/基准对照门**（`HYLE_BENCH_<名>`，共 **10 个 gate**；其中 7 个 clone 类各配一个 `HYLE_<X>_DIR` 路径变量，3 个 vendored 类无路径变量）——**只往 benchmark 加对照行，对出厂库零影响**，仅 `-DHYLE_BUILD_BENCH=ON` 时存在。集成方永远用不到（见 §1.2.1）。
+- **B. 开发/基准对照门**（`HYLE_BENCH_<名>`，共 **10 个 gate**；其中 7 个 clone 类各配一个 `HYLE_<X>_DIR` 路径变量）——**只往 benchmark 加对照行，对出厂库零影响**。此外，任何 `-DHYLE_BUILD_BENCH=ON` 都须有 `HYLE_BENCH_VENDOR_DIR` 指向固定版 Highway/xsimd 对照 checkout；Windows/mac 有默认，Linux/WSL 显式设置。集成方永远用不到（见 §1.2.1）。
 - **2 个 CMake preset**（`bench` / `bench-all-sota`，唯一的 `CMakePresets.json`）——是"一组 `-D` 一次设好"的**预设包**，不是参数本身，`--preset` 选用。
 
 > **命名约定**：凡产品参数都是 `HYLE_<名>` cache 变量，用 `-D` 设；bench 对照门统一带 `HYLE_BENCH_` 前缀，自我标记为 B 类。CMakePresets 里的 `bench` / `bench-all-sota` 是**预设包**（不是参数本身），`--preset` 选用——它们只是"把一组 `-D` 一次设好"的快捷方式，`bench-` 前缀表明展开的全是 B 类 bench 门。
@@ -71,11 +71,11 @@ HYLE 的构建开关分**两个范畴**，别混（速查：**A 类产品参数 
 | 选项 | 默认 | 作用 |
 |---|---|---|
 | `HYLE_BENCH_ABSL` + `HYLE_ABSL_DIR` | `OFF` | SwissTable vs `absl::flat_hash_map`;SmallVector vs `absl::InlinedVector` |
-| `HYLE_BENCH_HIGHWAY` | `OFF` | simd vec / dtype / math vs Google Highway（指向 `third_party/`，已 vendored，仅 toggle 对比行） |
+| `HYLE_BENCH_HIGHWAY` | `OFF` | simd vec / dtype / math vs 固定版外部 Google Highway（只 toggle 对比行） |
 
-> 还有 `HYLE_BENCH_{MOODYCAMEL,TBB,RIGTORP,XSIMD,SIMDUTF,BOOST,WYHASH,MARL}`(队列/分配器/math/utf8/侵入容器/hash 对标)。其中 `HYLE_BENCH_{HIGHWAY,XSIMD,SIMDUTF}` 指向 `third_party/` 已 vendored 库(不再需 sibling clone),其余仍是 opt-in sibling clone。**一键全开**:`scripts/setup-bench-libs.sh` clone 需要 sibling 的那些后 `cmake --preset bench-all-sota`。全清单与运行法见 [`scripts/README.md`](../../scripts/README.md)。
+> 还有 `HYLE_BENCH_{MOODYCAMEL,TBB,RIGTORP,XSIMD,SIMDUTF,BOOST,WYHASH,MARL}`(队列/分配器/math/utf8/侵入容器/hash 对标)。`HYLE_BENCH_{HIGHWAY,XSIMD}` 都使用 `HYLE_BENCH_VENDOR_DIR` 下的固定外部 checkout；SIMDUTF 仍在 `third_party/`。其余是 opt-in sibling clone。**一键全开**：先运行 `scripts/fetch-bench-vendors.{sh,ps1}`，再运行 `scripts/setup-bench-libs.sh`，最后 `cmake --preset bench-all-sota`。全清单与运行法见 [`scripts/README.md`](../../scripts/README.md)。
 >
-> **向量化数学核(Highway/xsimd)与 utf8 SIMD(simdutf)已 vendored 在 `third_party/`、无条件编进生产、默认全速**——无 `-D` 开关,运行期 `cpu_features().avx2` 门控(老 CPU 落 scalar 不 SIGILL)。上面的 `HYLE_BENCH_*` 仅 toggle bench 的 SOTA 对比行,不影响产品默认。
+> **向量化数学核(Highway/xsimd)与 utf8 SIMD(simdutf)当前仍在 `third_party/` 无条件编进生产、默认全速**——这是 simd-20 的迁移中状态；外部 checkout 仅供 unchanged benchmark 对照。无产品 `-D` 开关，运行期 `cpu_features().avx2` 门控(老 CPU 落 scalar 不 SIGILL)。上面的 `HYLE_BENCH_*` 仅 toggle bench 的 SOTA 对比行,不影响产品默认。
 
 **集成方最小命令**（静态链、不编测试）：
 ```bash
@@ -89,11 +89,19 @@ cmake --build build
 
 | preset | 作用 |
 |---|---|
-| `bench` | `HYLE_BUILD_BENCH=ON` + Release，HYLE 自身 + std/vendored 对照，无外部 clone |
-| `bench-all-sota` | 继承 `bench`，再把全部 10 个 `HYLE_BENCH_*` gate 一次设 ON（clone 类需先 `setup-bench-libs.sh`） |
+| `bench` | `HYLE_BUILD_BENCH=ON` + Release，独立 `build-bench` cache；先有 `HYLE_BENCH_VENDOR_DIR` 中固定版 Highway/xsimd |
+| `bench-all-sota` | 继承 `bench`，再把全部 10 个 `HYLE_BENCH_*` gate 一次设 ON（先 fetch SIMD vendors，clone 类再跑 `setup-bench-libs.sh`） |
 
 ```bash
+# Windows/macOS（vendor 默认目录）
+scripts/fetch-bench-vendors.sh
+scripts/setup-bench-libs.sh
 cmake --preset bench-all-sota && cmake --build --preset bench-all-sota
+
+# Linux/WSL（vendor 在 ext4；generic preset 不替你选择 GCC14）
+scripts/fetch-bench-vendors.sh --dir "$HOME/vendor"
+CC=gcc-14 CXX=g++-14 cmake --preset bench-all-sota -DHYLE_BENCH_VENDOR_DIR="$HOME/vendor"
+cmake --build --preset bench-all-sota
 ```
 
 > 集成方不需要任何 preset——它们纯为开发期跑基准服务。产品构建只用 §1.2 的 A 类 `-D` 参数。

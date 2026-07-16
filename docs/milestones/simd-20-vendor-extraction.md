@@ -1,8 +1,10 @@
 # simd-20: vendor 摘除——库零 vendor 依赖,bench 引用外部 highway/xsimd
 
-> **状态**:规划(2026-07-15)。**动机**(用户):库里只有少数专项 kernel 借 highway/xsimd,却把整库
-> 拖进 `third_party/` 当依赖,不应该;借用的代码移植进 HYLE,highway/xsimd 挪出仓库到
-> `C:\public\project-hyle\{highway,xsimd}`(已挪),只供性能对拍(op_parity 的 `hn::` 侧)引用。
+> **状态**:X0 已落地(2026-07-16); X1~X4 待执行。**动机**(用户):库里只有少数专项 kernel 借
+> highway/xsimd,却把整库拖进 `third_party/` 当依赖,不应该;借用的代码移植进 HYLE 后，Highway/xsimd
+> 仅作为外部 benchmark 对照。X0 已将 Windows `C:\public\project-hyle\{highway,xsimd}`、Mac
+> `~/vendor/{highway,xsimd}` 与 WSL 自选目录接入 bench；产品源码仍暂用 `third_party/`，直到每项 port
+> 通过对照闸门。
 > **前提修正(盘点见 `docs/architecture/simd-vendor-surface.md`)**:借用面不是"几个 op",是 4 个面——
 > ①超越函数(最大,~25-30 函数 ×2 精度,逐 op best-of 借 Highway contrib/math 与 xsimd)②vqsort
 > (`hn::VQSortStatic` 族)③bitpack(`hn::Pack8/16/32`)④simdutf(编译期可选,默认关)。
@@ -24,13 +26,25 @@
 
 ## 二、分阶段(X0 先行可独立落地,X1~X3 每卡常绿)
 
-**X0 — 构建管线先行(高能力方,独立收益,不等移植)**
-- bench 目标的 vendor include 切到 `HYLE_BENCH_VENDOR_DIR`;fetch 脚本 + SHA pin + NOTICES;
-  Mac/WSL 同步流程加"vendor 目录单独同步"(Mac:`~/vendor/highway`;同步命令写死进
-  `simd-19-workorders.md` §3 同款格式)。
-- 此步后 `third_party/{highway,xsimd}` 只剩 `src/simd/**` 借核在用,依赖面立刻可见、可度量。
-- 闸门:三平台 bench 目标构建 + 锚点 PASS;库目标构建证明与 vendor 目录无关(临时改名外部目录再
-  构建库,应成功)。
+**X0 — 构建管线先行(已落地 2026-07-16)**
+- bench 的 Highway/xsimd include 全部改根到 `HYLE_BENCH_VENDOR_DIR`：Windows 默认
+  `C:/public/project-hyle`，macOS 默认 `~/vendor`，WSL/Linux 必显式指定。`cmake/vendor-versions.cmake`
+  是唯一 pin 源；CMake 同时校验 checkout 的路径、`HEAD` 与 clean `git status`。`scripts/fetch-bench-vendors.sh`
+  与 `.ps1` 读同一 manifest，拒绝覆写非 Git 或脏 checkout；根目录 `THIRD_PARTY_NOTICES` 已就位。`bench`
+  preset 使用隔离的 `build-bench`，`win`/`wsl` preset 显式复位 `HYLE_BUILD_BENCH=OFF`，防止一次 bench
+  配置让随后的产品 build 意外依赖外部目录。
+- `simd-19-workorders.md` 的 Mac 同步明确分开产品 `third_party/` 与含 `.git` 的外部 bench 对照；各平台
+  setup/bench 文档使用同一变量与 fetch 流程。产品 `third_party/{highway,xsimd}` 此时仍只服务
+  `src/simd/**` 借核，故外部目录不会进入库编译。
+- 验证：Windows MSVC 编译 `hyle_simd`、math/bitpack/sort/parity bench，`hyle_simd_test` 331 PASS +
+  1 个无 BF16 硬件 SKIP、AVX2 221 PASS；WSL GCC14 同为 331 PASS + 1 SKIP、AVX2 221 PASS；
+  Apple Silicon 编译 NEON、math/bitpack/sort/parity bench，`hyle_simd_test` 328 PASS + 1 SKIP。三端
+  均以 pin checkout 配置成功；Windows/WSL `hyle_simd_bench` 与 Mac `HYLE_BENCH_ONLY=Add`
+  `hyle_op_parity_bench_neon` 均真实运行。WSL 另以 `HYLE_BUILD_BENCH=OFF` 与不存在的
+  `HYLE_BENCH_VENDOR_DIR` 构建 `hyle_simd`，证明产品库不读取外部 benchmark vendor；反向以
+  `HYLE_BUILD_BENCH=ON` 配置不存在的根，CMake 在 `Highway/hwy/highway.h` 处按预期拒绝。
+- `cloc --diff` 对 067e0fa 的 X0 机制净增 **215 code LOC**：CMake 85、Bourne shell 72、PowerShell 58；
+  `THIRD_PARTY_NOTICES` 的许可证正文不计入代码 LOC。
 
 **X1 — bitpack 移植(最小面,先证明移植模式)**
 - `hn::Pack8/16/32<kBits>` 的用法翻译成 `hs::` 等价(HYLE op 面已镜像所需原语;`bit_pack-inl.h`
@@ -76,8 +90,8 @@
 - **xsimd 翻译的语义陷阱**(batch 语义与 hs:: 细节差,如 NaN 传播/舍入)→ 靠精度 oracle 逐 ULP
   兜底,卡片要求贴特殊值测试输出(±0/±Inf/NaN/denormal)。
 - **移植后性能回退** → 每卡 bench A/B 持平方准合入;回退即 revert 归因(证据阶梯照矩阵)。
-- **外部目录漂移**(有人手动改了 C:\public\project-hyle 副本)→ fetch 脚本 SHA 校验,bench 输出头
-  打印 vendor SHA(可加进 engine 打印,X0 顺手)。
+- **外部目录漂移**(有人手动改 benchmark 副本)→ CMake 配置同时拒绝错 SHA 与脏 checkout，fetch
+  脚本从 `vendor-versions.cmake` 的唯一 pin 源恢复。
 
 ## 五、验收
 

@@ -46,7 +46,11 @@
 
 **一句话**：HYLE 自造整个核心 SIMD 面 + fp8；只对四个"难自己超越"的招牌 kernel（超越函数 / vqsort / bitpack / 可选 UTF-8）做薄借，全关在 `src/simd/**` 内部 TU，vendor 类型不入 `include/`。
 
-## vendor 收窄备忘（TODO）
+## vendor 摘除状态
 
-- **是否收窄借用面**：超越函数是最大借用面且逐 op best-of，短期难自造超越；vqsort/bitpack 是招牌算法件，薄借合理。若未来要"零 vendor"需重估各自 ROI。
-- **借核对拍闸门**：借核同样要过 round-trip/oracle（已抓到 Highway Pack16 + xsimd lgamma 两个 vendor bug），维持"借不等于信"。
+simd-20 的 X0 已将**bench** 侧 Highway/xsimd 改为 `HYLE_BENCH_VENDOR_DIR` 中 SHA pin 的外部、干净
+Git checkout；它们是每张移植卡不变的对照组。产品仍暂时使用本页列出的 `third_party/` 借核，直到 X1
+bitpack、X2 math、X3 vqsort 分别完成 oracle 与 A/B 闸门。`simdutf` 不在本轮范围。
+
+借核与移植核都必须过 round-trip/oracle（已抓到 Highway Pack16 + xsimd lgamma 两个 vendor bug），保持
+"借不等于信"。完整阶段与验证见 [`../milestones/simd-20-vendor-extraction.md`](../milestones/simd-20-vendor-extraction.md)。

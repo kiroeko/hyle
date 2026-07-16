@@ -11,7 +11,8 @@
       "condition": { "type": "equals", "lhs": "${hostSystemName}", "rhs": "Windows" },
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
-        "OPENSSL_ROOT_DIR": "$env{OPENSSL_ROOT_DIR}"
+        "OPENSSL_ROOT_DIR": "$env{OPENSSL_ROOT_DIR}",
+        "HYLE_BUILD_BENCH": "OFF"
       },
       "environment": {
         "OPENSSL_ROOT_DIR": "C:/public/vcpkg/installed/x64-windows"
@@ -27,7 +28,8 @@
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "CMAKE_C_COMPILER": "gcc-14",
-        "CMAKE_CXX_COMPILER": "g++-14"
+        "CMAKE_CXX_COMPILER": "g++-14",
+        "HYLE_BUILD_BENCH": "OFF"
       }
     },
     {
@@ -42,10 +44,10 @@
     },
     {
       "name": "bench",
-      "displayName": "benchmarks (no external SOTA rivals)",
-      "description": "Release + microbenchmarks. HYLE baselines + std/vendored rivals only (no clones needed).",
+      "displayName": "benchmarks (pinned SIMD vendors)",
+      "description": "Release + microbenchmarks in an isolated build-bench cache. SIMD benches require the pinned external Highway/xsimd checkouts selected by HYLE_BENCH_VENDOR_DIR; run scripts/fetch-bench-vendors.{sh,ps1} first. On Linux/WSL, invoke this generic preset with CC=gcc-14 CXX=g++-14.",
       "generator": "Ninja",
-      "binaryDir": "${sourceDir}/build",
+      "binaryDir": "${sourceDir}/build-bench",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
         "HYLE_BUILD_BENCH": "ON"
@@ -54,7 +56,7 @@
     {
       "name": "bench-all-sota",
       "displayName": "benchmarks + ALL gated SOTA rivals (DEV-ONLY, not a product build)",
-      "description": "DEV/BENCH-ONLY one-shot: flips every -DHYLE_BENCH_* gate ON so each bench races its real SOTA rival (not just std). These HYLE_BENCH_* gates are a SEPARATE category from the product build params (HYLE_STATIC/SANITIZER/WERROR/ISA tier) -- they ONLY add comparison rows to the benchmarks and NEVER affect the shipped library. The clone-based rivals (absl/tbb/marl/moodycamel/rigtorp/boost) must be present as repo siblings first: run scripts/setup-bench-libs.sh (boost::intrusive needs the boost submodule checked out). Highway/xsimd/simdutf are VENDORED in third_party (no clone needed) -- their gates just toggle the comparison rows. Vectorized exp/log/tanh + utf8 are already unconditional in the product build (no flag).",
+      "description": "DEV/BENCH-ONLY one-shot: flips every -DHYLE_BENCH_* gate ON so each bench races its real SOTA rival (not just std). These HYLE_BENCH_* gates are a SEPARATE category from the product build params (HYLE_STATIC/SANITIZER/WERROR/ISA tier) -- they ONLY add comparison rows to the benchmarks and NEVER affect the shipped library. Fetch pinned Highway/xsimd first with scripts/fetch-bench-vendors.{sh,ps1}; clone the other gated rivals (absl/tbb/marl/moodycamel/rigtorp/boost) with scripts/setup-bench-libs.sh (boost::intrusive needs the boost submodule checked out). simdutf remains vendored. Vectorized exp/log/tanh + utf8 are already unconditional in the product build (no flag).",
       "inherits": "bench",
       "cacheVariables": {
         "HYLE_BENCH_ABSL": "ON",

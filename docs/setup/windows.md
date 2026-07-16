@@ -67,12 +67,17 @@ ctest --test-dir build --output-on-failure
 ## 六、性能测试（bench）
 
 ```bat
-:: bench 默认关，需 -DHYLE_BUILD_BENCH=ON 重配
-cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DHYLE_BUILD_BENCH=ON
-cmake --build build --target hyle_sched_bench
-cd build\bin && hyle_sched_bench.exe
+:: 先拉固定版 Highway/xsimd；默认根为 C:/public/project-hyle
+powershell -ExecutionPolicy Bypass -File scripts/fetch-bench-vendors.ps1
+
+:: bench 用独立 build-bench，不能污染日常 build 的产品 cache。
+cmake -S . -B build-bench -G Ninja -DCMAKE_BUILD_TYPE=Release -DHYLE_BUILD_BENCH=ON
+cmake --build build-bench --target hyle_sched_bench
+cd build-bench\bin && hyle_sched_bench.exe
 ```
 
+- 所有 SIMD bench 都用 `HYLE_BENCH_VENDOR_DIR` 下的固定版 Highway/xsimd；Windows 默认
+  `C:/public/project-hyle`，改目录时 CMake 也传 `-DHYLE_BENCH_VENDOR_DIR=<root>`。
 - bench 目标名：`hyle_add_bench(<mod>)` → `hyle_<mod>_bench`。
 - **Windows 性能数字注意**：Release + 关掉后台干扰；nanobench 自带统计。跨平台对标以 Linux 原生 ext4 为准（Windows NTFS 亦可信，但重 IO 对比看 Linux）。
 

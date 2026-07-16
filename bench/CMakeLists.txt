@@ -2,6 +2,78 @@
 # nanobench is a single-header lib (vendored third_party/nanobench); compile its
 # impl into one static lib that bench exes link. hyle_add_bench(<mod>) (see
 # HyleModule.cmake) makes hyle_<mod>_bench linked to hyle_<mod> + nanobench.
+#
+# Highway/xsimd are deliberately external and pinned here: benchmark rivals must
+# remain unchanged while simd-20 ports their product kernels into HYLE. Product
+# targets still consume their in-repo copies until the staged extraction finishes.
+include(vendor-versions)
+
+if(WIN32)
+  set(_hyle_bench_vendor_default "C:/public/project-hyle")
+elseif(APPLE)
+  set(_hyle_bench_vendor_default "$ENV{HOME}/vendor")
+else()
+  # A WSL/Linux checkout is user-local; require an explicit cache or environment
+  # value rather than silently assuming a sibling clone that may drift.
+  set(_hyle_bench_vendor_default "$ENV{HYLE_BENCH_VENDOR_DIR}")
+endif()
+set(HYLE_BENCH_VENDOR_DIR "${_hyle_bench_vendor_default}" CACHE PATH
+    "Directory containing pinned external highway/ and xsimd/ benchmark checkouts")
+unset(_hyle_bench_vendor_default)
+
+if(NOT HYLE_BENCH_VENDOR_DIR)
+  message(FATAL_ERROR
+    "HYLE_BUILD_BENCH=ON on Linux/WSL requires -DHYLE_BENCH_VENDOR_DIR=<directory>. "
+    "Run HYLE_BENCH_VENDOR_DIR=<directory> scripts/fetch-bench-vendors.sh first.")
+endif()
+
+set(_hyle_bench_highway_dir "${HYLE_BENCH_VENDOR_DIR}/highway")
+set(_hyle_bench_xsimd_dir "${HYLE_BENCH_VENDOR_DIR}/xsimd")
+
+function(hyle_require_pinned_bench_vendor name directory revision required_file)
+  if(NOT EXISTS "${directory}/${required_file}")
+    message(FATAL_ERROR
+      "HYLE_BENCH_VENDOR_DIR='${HYLE_BENCH_VENDOR_DIR}' lacks ${name}/${required_file}. "
+      "Run scripts/fetch-bench-vendors.sh (or .ps1 on Windows) to populate pinned vendors.")
+  endif()
+
+  find_package(Git REQUIRED)
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" -C "${directory}" rev-parse HEAD
+    RESULT_VARIABLE _hyle_vendor_git_status
+    OUTPUT_VARIABLE _hyle_vendor_head
+    ERROR_VARIABLE _hyle_vendor_git_error
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(NOT _hyle_vendor_git_status EQUAL 0)
+    message(FATAL_ERROR
+      "${name} benchmark vendor at '${directory}' is not a Git checkout: ${_hyle_vendor_git_error}")
+  endif()
+  if(NOT _hyle_vendor_head STREQUAL revision)
+    message(FATAL_ERROR
+      "${name} benchmark vendor is ${_hyle_vendor_head}, but simd-20 requires ${revision}. "
+      "Run scripts/fetch-bench-vendors.sh to restore the pinned revision.")
+  endif()
+
+  execute_process(
+    COMMAND "${GIT_EXECUTABLE}" -C "${directory}" status --porcelain
+    RESULT_VARIABLE _hyle_vendor_dirty_status
+    OUTPUT_VARIABLE _hyle_vendor_dirty
+    ERROR_VARIABLE _hyle_vendor_dirty_error
+    OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(NOT _hyle_vendor_dirty_status EQUAL 0 OR NOT _hyle_vendor_dirty STREQUAL "")
+    message(FATAL_ERROR
+      "${name} benchmark vendor at '${directory}' has local changes. "
+      "Benchmark parity requires the clean pinned checkout; run scripts/fetch-bench-vendors.sh. "
+      "${_hyle_vendor_dirty_error}")
+  endif()
+endfunction()
+
+hyle_require_pinned_bench_vendor(
+  "Highway" "${_hyle_bench_highway_dir}" "${HYLE_BENCH_VENDOR_HIGHWAY_REV}" "hwy/highway.h")
+hyle_require_pinned_bench_vendor(
+  "xsimd" "${_hyle_bench_xsimd_dir}" "${HYLE_BENCH_VENDOR_XSIMD_REV}" "include/xsimd/xsimd.hpp")
+message(STATUS
+  "HYLE bench vendors: Highway ${HYLE_BENCH_VENDOR_HIGHWAY_REV}, xsimd ${HYLE_BENCH_VENDOR_XSIMD_REV} (${HYLE_BENCH_VENDOR_DIR})")
 
 add_library(nanobench STATIC nanobench_impl.cc)
 target_include_directories(nanobench SYSTEM PUBLIC
@@ -453,19 +525,19 @@ hyle_apply_warnings(hyle_simd_bench)
 # math bench: HYLE's dispatched exp/log/tanh (vectorized borrow core) vs scalar libm +
 # same-ISA SOTA rivals (gap-fill #36): xsimd (-DHYLE_BENCH_XSIMD) and Highway contrib/math
 # (-DHYLE_BENCH_HIGHWAY, wired in the Highway block below). Both lower to AVX2 transcendentals
-# so they match HYLE's AVX2 path. The rival libs are now VENDORED in third_party (the gates
-# just toggle the bench-side comparison rows). Own exe.
+# so they match HYLE's AVX2 path. The rivals come from the separately pinned external
+# checkouts; the gates only toggle their bench-side comparison rows. Own exe.
 add_executable(hyle_math_bench simd/math_bench.cc)
 target_link_libraries(hyle_math_bench PRIVATE hyle_simd nanobench)
 option(HYLE_BENCH_XSIMD "build math bench vs xsimd (same-ISA transcendental SOTA)" OFF)
 option(HYLE_BENCH_HIGHWAY "build math bench vs Highway (same-ISA transcendental SOTA)" OFF)
 if(HYLE_BENCH_XSIMD)
   target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_XSIMD)
-  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${_hyle_bench_xsimd_dir}/include")
 endif()
 if(HYLE_BENCH_HIGHWAY)
   target_compile_definitions(hyle_math_bench PRIVATE HYLE_BENCH_HIGHWAY)
-  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_include_directories(hyle_math_bench SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
 endif()
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(HYLE_BENCH_XSIMD OR HYLE_BENCH_HIGHWAY)
@@ -483,7 +555,7 @@ add_executable(hyle_math_scaling_bench simd/math_scaling_bench.cc)
 target_link_libraries(hyle_math_scaling_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_math_scaling_bench PRIVATE "${PROJECT_SOURCE_DIR}")
 target_include_directories(hyle_math_scaling_bench SYSTEM PRIVATE
-  "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+  "${_hyle_bench_xsimd_dir}/include")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_set_isa(simd/math_scaling_bench.cc AVX2)
 endif()
@@ -493,7 +565,7 @@ add_executable(hyle_bitpack_bench simd/bitpack_bench.cc)
 target_link_libraries(hyle_bitpack_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_bitpack_bench PRIVATE "${PROJECT_SOURCE_DIR}")
 target_include_directories(hyle_bitpack_bench SYSTEM PRIVATE
-  "${PROJECT_SOURCE_DIR}/third_party/highway")
+  "${_hyle_bench_highway_dir}")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_set_highway_isa(simd/bitpack_bench.cc)
 endif()
@@ -520,7 +592,7 @@ add_executable(hyle_sort_bench simd/sort_bench.cc)
 target_link_libraries(hyle_sort_bench PRIVATE hyle_simd nanobench)
 target_include_directories(hyle_sort_bench PRIVATE "${PROJECT_SOURCE_DIR}")
 target_include_directories(hyle_sort_bench SYSTEM PRIVATE
-  "${PROJECT_SOURCE_DIR}/third_party/highway")
+  "${_hyle_bench_highway_dir}")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_set_highway_isa(simd/sort_bench.cc)
 endif()
@@ -559,7 +631,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   add_executable(hyle_op_parity_bench_avx2 simd/op_parity_bench.cc)
   target_link_libraries(hyle_op_parity_bench_avx2 PRIVATE nanobench)
   target_include_directories(hyle_op_parity_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_bench_avx2 SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway" "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+  target_include_directories(hyle_op_parity_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}" "${_hyle_bench_xsimd_dir}/include")
   target_compile_definitions(hyle_op_parity_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
   # PER-TARGET flags (not set_source_files_properties, which would leak onto the avx512 target that
   # shares this source): full AVX2 baseline so Highway static dispatch picks true 256-bit.
@@ -573,7 +645,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   add_executable(hyle_op_parity_bench_avx512 simd/op_parity_bench.cc)
   target_link_libraries(hyle_op_parity_bench_avx512 PRIVATE nanobench)
   target_include_directories(hyle_op_parity_bench_avx512 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_bench_avx512 SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway" "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+  target_include_directories(hyle_op_parity_bench_avx512 SYSTEM PRIVATE "${_hyle_bench_highway_dir}" "${_hyle_bench_xsimd_dir}/include")
   target_compile_definitions(hyle_op_parity_bench_avx512 PRIVATE HYLE_SIMD_TARGET_AVX512)
   hyle_isa_flags(_op_avx512 AVX512)
   target_compile_options(hyle_op_parity_bench_avx512 PRIVATE ${_op_avx512})
@@ -586,7 +658,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   add_executable(hyle_op_parity_bench_sse4 simd/op_parity_bench.cc)
   target_link_libraries(hyle_op_parity_bench_sse4 PRIVATE nanobench)
   target_include_directories(hyle_op_parity_bench_sse4 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_bench_sse4 SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway" "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+  target_include_directories(hyle_op_parity_bench_sse4 SYSTEM PRIVATE "${_hyle_bench_highway_dir}" "${_hyle_bench_xsimd_dir}/include")
   target_compile_definitions(hyle_op_parity_bench_sse4 PRIVATE HYLE_SIMD_TARGET_SSE4)
   if(MSVC)
     # MSVC has no /arch:SSE4; SSE4.2 intrinsics are unconditional on x64.
@@ -598,7 +670,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   add_executable(hyle_op_parity_full_bench_avx2 simd/op_parity_full_bench.cc)
   target_link_libraries(hyle_op_parity_full_bench_avx2 PRIVATE nanobench)
   target_include_directories(hyle_op_parity_full_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_full_bench_avx2 SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_include_directories(hyle_op_parity_full_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
   target_compile_definitions(hyle_op_parity_full_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
   if(MSVC)
     target_compile_options(hyle_op_parity_full_bench_avx2 PRIVATE /arch:AVX2 /bigobj)
@@ -611,7 +683,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   add_executable(hyle_op_parity_widen_bench_avx2 simd/op_parity_widen_bench.cc)
   target_link_libraries(hyle_op_parity_widen_bench_avx2 PRIVATE nanobench)
   target_include_directories(hyle_op_parity_widen_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_widen_bench_avx2 SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_include_directories(hyle_op_parity_widen_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
   target_compile_definitions(hyle_op_parity_widen_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
   if(MSVC)
     target_compile_options(hyle_op_parity_widen_bench_avx2 PRIVATE /arch:AVX2 /bigobj)
@@ -624,7 +696,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   add_executable(hyle_crypto_bench_avx2 simd/crypto_bench.cc)
   target_link_libraries(hyle_crypto_bench_avx2 PRIVATE nanobench)
   target_include_directories(hyle_crypto_bench_avx2 PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_crypto_bench_avx2 SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_include_directories(hyle_crypto_bench_avx2 SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
   target_compile_definitions(hyle_crypto_bench_avx2 PRIVATE HYLE_SIMD_TARGET_AVX2)
   if(MSVC)
     target_compile_options(hyle_crypto_bench_avx2 PRIVATE /arch:AVX2)
@@ -638,7 +710,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   add_executable(hyle_op_parity_full_bench_neon simd/op_parity_full_bench.cc)
   target_link_libraries(hyle_op_parity_full_bench_neon PRIVATE nanobench)
   target_include_directories(hyle_op_parity_full_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_full_bench_neon SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_include_directories(hyle_op_parity_full_bench_neon SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
   target_compile_definitions(hyle_op_parity_full_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
   hyle_apply_warnings(hyle_op_parity_full_bench_neon)
 
@@ -648,18 +720,18 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # gather/crypto Highway paths reference hwy::Abort (HWY_DASSERT) that Apple-clang doesn't DCE on
   # arm64 -> compile highway's abort.cc in (op_parity_full doesn't hit it, so it links bare).
   add_executable(hyle_op_parity_bench_neon simd/op_parity_bench.cc
-                 "${PROJECT_SOURCE_DIR}/third_party/highway/hwy/abort.cc")
+                 "${_hyle_bench_highway_dir}/hwy/abort.cc")
   target_link_libraries(hyle_op_parity_bench_neon PRIVATE nanobench)
   target_include_directories(hyle_op_parity_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_bench_neon SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway" "${PROJECT_SOURCE_DIR}/third_party/xsimd/include")
+  target_include_directories(hyle_op_parity_bench_neon SYSTEM PRIVATE "${_hyle_bench_highway_dir}" "${_hyle_bench_xsimd_dir}/include")
   target_compile_definitions(hyle_op_parity_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
   hyle_apply_warnings(hyle_op_parity_bench_neon)
 
   add_executable(hyle_op_parity_widen_bench_neon simd/op_parity_widen_bench.cc
-                 "${PROJECT_SOURCE_DIR}/third_party/highway/hwy/abort.cc")
+                 "${_hyle_bench_highway_dir}/hwy/abort.cc")
   target_link_libraries(hyle_op_parity_widen_bench_neon PRIVATE nanobench)
   target_include_directories(hyle_op_parity_widen_bench_neon PRIVATE "${PROJECT_SOURCE_DIR}/include")
-  target_include_directories(hyle_op_parity_widen_bench_neon SYSTEM PRIVATE "${PROJECT_SOURCE_DIR}/third_party/highway")
+  target_include_directories(hyle_op_parity_widen_bench_neon SYSTEM PRIVATE "${_hyle_bench_highway_dir}")
   target_compile_definitions(hyle_op_parity_widen_bench_neon PRIVATE HYLE_SIMD_TARGET_NEON)
   hyle_apply_warnings(hyle_op_parity_widen_bench_neon)
 endif()
@@ -672,11 +744,11 @@ add_executable(hyle_dtype_bench simd/dtype_bench.cc)
 target_link_libraries(hyle_dtype_bench PRIVATE hyle_simd nanobench)
 hyle_apply_warnings(hyle_dtype_bench)
 
-# Optional SOTA parity: HYLE avx2 vs Highway avx2, head to head (same ISA). Highway is now
-# VENDORED in third_party; -DHYLE_BENCH_HIGHWAY just toggles the comparison rows.
+# Optional SOTA parity: HYLE avx2 vs the separately pinned Highway checkout, head to head
+# at the same ISA. -DHYLE_BENCH_HIGHWAY only toggles the comparison rows.
 option(HYLE_BENCH_HIGHWAY "build the simd-vs-Highway parity bench" OFF)
 if(HYLE_BENCH_HIGHWAY)
-  set(_hwy "${PROJECT_SOURCE_DIR}/third_party/highway")
+  set(_hwy "${_hyle_bench_highway_dir}")
   target_compile_definitions(hyle_simd_bench PRIVATE HYLE_BENCH_HIGHWAY)
   target_include_directories(hyle_simd_bench SYSTEM PRIVATE "${_hwy}")
   # Highway static-dispatch resolves its width from the FULL AVX2 baseline (SSE4=PCLMUL+AES,

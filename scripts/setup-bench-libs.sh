@@ -3,9 +3,9 @@
 # benchmarks compare against (abseil/folly/moodycamel/oneTBB/marl/
 # crossbeam-deque/rigtorp-MPMCQueue/xxHash/wyhash/mimalloc/liburing/asio/libuv).
 #
-# NOTE: Highway, xsimd and simdutf are NOT cloned here -- they are vendored in
-# third_party/ and built unconditionally, so HYLE_BENCH_{HIGHWAY,XSIMD,SIMDUTF}
-# need no sibling clone. (SLEEF was removed from the project entirely.)
+# NOTE: Highway/xsimd use the separately pinned fetch-bench-vendors.{sh,ps1}
+# flow because every SIMD bench needs their unchanged external copies. simdutf
+# remains vendored in third_party/. (SLEEF was removed from the project entirely.)
 #
 # WHY: the gated benches (-DHYLE_BENCH_ABSL / _TBB / _MARL / _MOODYCAMEL /
 # _RIGTORP / _BOOST, and the Rust crossbeam crate) point
