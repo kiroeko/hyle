@@ -336,21 +336,58 @@ int hyle_fs_directory_iterate(const char* path, hyle_fs_visit_fn visit,
 hyle_cpu_features hyle_cpu_features_get(void) {
   hyle_cpu_features out{};
   const auto& f = hyle::platform::cpu_features();
-  out.sse2 = f.sse2;
-  out.ssse3 = f.ssse3;
-  out.sse41 = f.sse41;
-  out.sse42 = f.sse42;
-  out.avx = f.avx;
-  out.avx2 = f.avx2;
-  out.avx512f = f.avx512f;
-  out.fma = f.fma;
-  out.f16c = f.f16c;
-  out.bmi1 = f.bmi1;
-  out.bmi2 = f.bmi2;
-  out.neon = f.neon;
-  out.sve = f.sve;
+#define HYLE_B(x) out.x = f.x ? 1 : 0
+  HYLE_B(sse2);
+  HYLE_B(ssse3);
+  HYLE_B(sse41);
+  HYLE_B(sse42);
+  HYLE_B(avx);
+  HYLE_B(avx2);
+  HYLE_B(fma);
+  HYLE_B(f16c);
+  HYLE_B(lzcnt);
+  HYLE_B(bmi1);
+  HYLE_B(bmi2);
+  HYLE_B(avx512f);
+  HYLE_B(avx512bw);
+  HYLE_B(avx512vl);
+  HYLE_B(avx512dq);
+  HYLE_B(avx512cd);
+  HYLE_B(avx512vnni);
+  HYLE_B(avx_vnni);
+  HYLE_B(avx512bf16);
+  HYLE_B(avx512fp16);
+  HYLE_B(avx10_2);
+  HYLE_B(neon);
+  HYLE_B(sve);
+  HYLE_B(sve2);
+  HYLE_B(sve_aes);
+  HYLE_B(sve_pmull);
+  HYLE_B(sve_i8mm);
+  HYLE_B(sve_f32mm);
+  HYLE_B(sve_f64mm);
+  HYLE_B(sve_bf16);
+  HYLE_B(arm_i8mm);
+  HYLE_B(arm_bf16);
+  HYLE_B(rvv);
+  HYLE_B(rvv_zvbb);
+  HYLE_B(rvv_zvbc);
+  HYLE_B(rvv_zvkned);
+  HYLE_B(rvv_zvfh);
+  HYLE_B(rvv_zvfhmin);
+#undef HYLE_B
   out.logical_cpus = hyle::platform::hardware_concurrency();
+  out.best_isa = static_cast<uint32_t>(hyle::platform::best_isa());
   return out;
+}
+
+int hyle_cpu_supports_isa(uint32_t isa) {
+  return hyle::platform::supports(static_cast<hyle::platform::Isa>(isa)) ? 1
+                                                                         : 0;
+}
+
+const char* hyle_cpu_isa_name(uint32_t isa) {
+  return hyle::platform::isa_name(static_cast<hyle::platform::Isa>(isa));
 }
 
 int hyle_platform_c_abi_version(void) { return HYLE_PLATFORM_C_ABI_VERSION; }

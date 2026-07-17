@@ -194,19 +194,44 @@ HYLE_PLATFORM_C_API int hyle_fs_directory_iterate(const char* path,
                                                   void* ctx);
 
 /* ========================================================================== */
-/* CPU features (subset POD; full probe lives in platform/cpu)                */
+/* CPU features (1:1 with hyle::platform::CpuFeatures bools, as int 0/1)      */
 /* ========================================================================== */
 
 typedef struct hyle_cpu_features {
   /* x86 (0 on non-x86) */
-  int sse2, ssse3, sse41, sse42, avx, avx2, avx512f, fma, f16c, bmi1, bmi2;
-  /* arm (0 on non-arm) */
-  int neon, sve;
-  /* logical processors (>=1) */
-  unsigned logical_cpus;
+  int sse2, ssse3, sse41, sse42;
+  int avx, avx2, fma, f16c, lzcnt, bmi1, bmi2;
+  int avx512f, avx512bw, avx512vl, avx512dq, avx512cd;
+  int avx512vnni, avx_vnni, avx512bf16, avx512fp16, avx10_2;
+  /* arm (0 on non-ARM) */
+  int neon, sve, sve2, sve_aes, sve_pmull, sve_i8mm, sve_f32mm, sve_f64mm,
+      sve_bf16, arm_i8mm, arm_bf16;
+  /* RISC-V (0 on non-RISC-V) */
+  int rvv, rvv_zvbb, rvv_zvbc, rvv_zvkned, rvv_zvfh, rvv_zvfhmin;
+  /* extras for C convenience (not fields of C++ CpuFeatures) */
+  unsigned logical_cpus; /* >=1 */
+  uint32_t best_isa;     /* hyle::platform::Isa numeric value */
 } hyle_cpu_features;
 
+/* Coarse ISA tier values (match hyle::platform::Isa). */
+enum {
+  HYLE_ISA_SCALAR = 0,
+  HYLE_ISA_SSE2 = 10,
+  HYLE_ISA_SSSE3 = 11,
+  HYLE_ISA_SSE42 = 12,
+  HYLE_ISA_AVX = 15,
+  HYLE_ISA_AVX2 = 20,
+  HYLE_ISA_AVX512 = 30,
+  HYLE_ISA_NEON = 110,
+  HYLE_ISA_SVE = 120,
+  HYLE_ISA_RVV = 210
+};
+
 HYLE_PLATFORM_C_API hyle_cpu_features hyle_cpu_features_get(void);
+/* 1 if this process can run the given HYLE_ISA_* tier (same-arch compare). */
+HYLE_PLATFORM_C_API int hyle_cpu_supports_isa(uint32_t isa);
+/* "scalar", "avx2", ... — stable English name for logging. */
+HYLE_PLATFORM_C_API const char* hyle_cpu_isa_name(uint32_t isa);
 
 /* ========================================================================== */
 /* Optional API table                                                         */

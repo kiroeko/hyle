@@ -123,8 +123,11 @@ int main(void) {
 
   hyle_cpu_features cpu = hyle_cpu_features_get();
   CHECK(cpu.logical_cpus >= 1u);
+  CHECK(hyle_cpu_isa_name(cpu.best_isa) != NULL);
+  CHECK(hyle_cpu_supports_isa(HYLE_ISA_SCALAR) == 1);
 #if defined(_WIN32) || defined(__x86_64__) || defined(_M_X64)
   CHECK(cpu.sse2 == 1);
+  CHECK(hyle_cpu_supports_isa(HYLE_ISA_SSE2) == 1);
 #endif
 
   if (g_fails) {

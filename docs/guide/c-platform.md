@@ -116,7 +116,7 @@ hyle_fs_directory_iterate(dir, my_visit, NULL);
 | `DynLib::open/get/current/symbol` | ✅ |
 | `vm_*` + `VmRegion` + guarded | ✅ |
 | `fs` / env / iterate | ✅ 主表面 |
-| `CpuFeatures` 全字段 | **子集**（常用 x86/arm + logical_cpus）；完整字段仍在 C++ |
+| `CpuFeatures` 全 bool 字段 | ✅ 1:1（C 用 `int` 0/1）+ `logical_cpus` + `best_isa` + `supports`/`isa_name` |
 | path 字符串（container） | 不在 platform C 面 |
 
 有意不导出：C++ 模板 `for_each_entry`（C 用 `hyle_fs_directory_iterate`）、path 词法（container）、测试专用钩子。
