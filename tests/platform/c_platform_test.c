@@ -57,6 +57,7 @@ int main(void) {
   /* v4 appended fields present */
   CHECK(api.fs_get_permissions != NULL);
   CHECK(api.fs_create_symlink != NULL);
+  CHECK(api.fs_create_hard_link != NULL);
   CHECK(api.fs_create_temp_file != NULL);
   CHECK(api.fs_close_fd != NULL);
   CHECK(api.fs_set_env_var != NULL);
@@ -259,6 +260,15 @@ int main(void) {
      * exercise open + destroy-null here. A non-empty map is covered by the C++ test. */
     hyle_mapped_file_o* m = hyle_mapped_file_open(tpath, HYLE_MAP_READ_ONLY, 0, 0);
     hyle_mapped_file_destroy(m);
+
+    /* hard link: a second name for the same file (same volume). */
+    char hpath[1040];
+    snprintf(hpath, sizeof(hpath), "%s.hln", tpath);
+    if (hyle_fs_create_hard_link(tpath, hpath)) {
+      CHECK(hyle_fs_exists(hpath));
+      CHECK(hyle_fs_is_symlink(hpath) == 0);  /* hard link, not a symlink */
+      hyle_fs_remove_file(hpath);
+    }
     hyle_fs_remove_file(tpath);
   }
 

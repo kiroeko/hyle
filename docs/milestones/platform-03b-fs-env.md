@@ -73,6 +73,7 @@ clay fs 每个返回路径的 API 都走 `Allocator*` + `const char*`,目录列�
 
 - **fs 权限**：`get_permissions`/`set_permissions`（POSIX chmod 低 9 位；Windows 无 POSIX 模型 → 由 READONLY 合成 0444/0666，只认写位）+ 跨平台可靠子集 `is_readonly`/`set_readonly`。
 - **符号链接**：`create_symlink`（Windows 需开发者模式/管理员，无则 soft-fail）/`is_symlink`/`read_symlink`（Windows 走 `FSCTL_GET_REPARSE_POINT` 解析 reparse buffer 取真实 target，**非** `GetFinalPathNameByHandle` 的解析后路径）；`FileInfo` 加 `is_symlink`（POSIX lstat / Win REPARSE_POINT 属性）。
+- **硬链接**：`create_hard_link`（POSIX `link` / Win `CreateHardLinkW`）——同卷、仅文件的第二个目录项，共享同一文件数据，无需特权。对齐 Rust `std::fs::hard_link`。
 - **原子临时文件**：`create_temp_file` 返回**打开的句柄**（`OwnedFd`）+ 路径 —— TOCTOU 安全范式（SEI CERT FIO21-C / Rust `NamedTempFile`），非只返路径（`GetTempFileName` 式不安全）。POSIX `mkstemp` / Win `GetTempFileName`+`CreateFile`。
 - **`OwnedFd`**：零成本 fd/HANDLE 所有权 RAII（Rust `OwnedFd`/seastar `file_desc` 血统）——move-only、无 vtable/堆/refcount、一个 word；temp file 的返回类型，未来同步文件 fd 可复用。
 - **env 写**：`set_env_var`/`unset_env_var`（POSIX setenv/unsetenv、Win `_putenv_s`；文档标注与并发读非线程安全）。
@@ -81,7 +82,12 @@ clay fs 每个返回路径的 API 都走 `Allocator*` + `const char*`,目录列�
 
 **C ABI v4**：以上全部导出到 `hyle_platform_api` 表尾（保 v2/v3 前缀布局），`hyle_file_info` 加 `is_symlink`，thread opts 加 priority，MappedFile 走 opaque handle，temp file 走 `intptr_t` fd + `hyle_fs_close_fd`。文档 `docs/guide/c-platform.md` 1:1。
 
-**三平台真验**：Win MSVC platform 105/105 + C ABI v4 passed；WSL Linux platform 106/106（symlink 有特权跑，Win 无特权时 SKIP 差 1）+ C ABI passed。**两个 Windows-only 真 bug 在真机测出并修**：① MappedFile offset 误用 page 对齐（Win 要 allocation granularity）② read_symlink 误用 GetFinalPathNameByHandle（拿到解析后路径非 target）—— 均改实现，非改测试掩盖。
+**三平台真验（含测试硬化后终值）**：Win MSVC platform 120/120、WSL Linux 122/122、macOS arm64 122/122，C ABI v4 三平台 passed（Win 少 2 = symlink 需特权时 SKIP）。
+
+**对抗式审查连打出的真 bug / 平台语义（均改实现或分平台，非掩盖）**：
+① MappedFile offset 误用 page 对齐（Win 要 allocation granularity）；② read_symlink 误用 GetFinalPathNameByHandle（拿到解析后路径非 target）；③ MappedFile length 越 EOF 未校验（Win RW 静默扩文件 / POSIX SIGBUS）；④ create_temp_file Windows 非原子（GetTempFileName 两步 → 改 CREATE_NEW 自旋真原子）；⑤ macOS thread 优先级 setpriority 误改整进程 → 改 pthread_setschedparam；⑥ read_symlink reparse buffer 未做越界校验；⑦ DynLib::get macOS 按 install-name 匹配（测试用搜索别名 → 改用 libSystem.B.dylib）；⑧ set_env_var(name,"") Windows 删除变量 / POSIX 保留空值（分平台断言 + 文档）。
+
+**测试从"测不崩"升级到"测生效"**：VM guard/protect 与 MappedFile RO 的写入用 death test 证实真 fault；thread name/affinity 从线程内回读验证真生效；temp file 通过 fd 真写读回；wake_all 证实释放全部 N 等待者。
 
 ## 参考
 

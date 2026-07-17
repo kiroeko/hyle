@@ -12,7 +12,7 @@
 |---|---|---|---|
 | `error/` | `hyle/error/status.h` `result.h` `error_handler.h` | ✅ | `Status` / `std::expected` 错误模型 + `ASSIGN_OR_RAISE` |
 | `mem/` | `hyle/mem/allocator.h` 等 | ✅ | `Allocator` vtable（mimalloc backing）+ arena/pool/stack |
-| `platform/` | `hyle/platform/{thread,wait,dynlib,fs}.h` | 🔶 | thread+park、dynlib、fs/env（vm 待） |
+| `platform/` | `hyle/platform/{thread,wait,dynlib,fs,virtual_memory,numa,mapped_file,cpu}.h` | ✅ | thread(name/affinity/priority)+park、dynlib、fs(权限/symlink/hardlink/tempfile/env)、虚拟内存+guard、NUMA/大页、文件内存映射、CPU 特性探测。三平台真机验证 |
 | `container/` | `hyle/container/{swiss_table,carray,small_vector,string_ref,...}.h` | ✅ | SwissTable、CArray、SmallVector、lock-free 队列、string_ref |
 | `time/` | `hyle/time/clock.h` | ✅ | 单调钟/墙钟/sleep（ns） |
 | `util/` | `hyle/util/{ref_counted,registry,scope_guard,...}.h` | ✅ | `Ref<T>`、Registry、`DEFER`、type_name |
@@ -446,6 +446,44 @@ HYLE_DEFER(std::fclose(fp));         // 作用域退出时执行（C++23 仍无 
 HYLE 内部 C++23，对外稳定边界走 **vtable 结构体 `xxx_api_t` + 不透明实例 + `make_X()/destroy_X()` 工厂**（分配责任锁在 DLL 内，禁客户端 `new/delete` HYLE 对象）。若你跨 DLL 边界用 HYLE 类型或做 FFI 绑定，遵此范式；纯 `extern "C"` C 头 shim 正在逐模块封（P6）。细节见 [`architecture/coding-conventions.md` §4](../architecture/coding-conventions.md)。
 
 ## 5. 安全边界（必读补充）
+
+### 3.9 platform —— OS 抽象（线程/VM/文件映射/fs/动态库/CPU 探测）
+
+最底层 OS 封装，其它模块的地基；也可直接用。全部 move-only RAII、跨平台（Win/Linux/mac 三平台真机验证）。
+
+```cpp
+// 虚拟内存：保留/提交分离 + guard page（fiber 栈、大缓冲的地基）
+#include "hyle/platform/virtual_memory.h"
+using namespace hyle::platform;
+VmRegion r = VmRegion::reserve_guarded(64 * 1024);  // 低 1 页永久 no-access 守护页
+r.commit_usable();                                   // 提交可用区为 RW
+void* p = r.usable();                                // 首个可写字节（越界写→守护页 fault）
+
+// 文件内存映射：RO / RW(回盘) / COW(私有)，对标 Rust memmap2
+#include "hyle/platform/mapped_file.h"
+MappedFile m = MappedFile::open("weights.bin", MappedFile::Mode::kReadOnly);
+if (m.valid()) { const float* w = static_cast<const float*>(m.data()); /* 零拷贝读 */ }
+
+// 文件系统 + 原子临时文件（返回打开的句柄，TOCTOU 安全）
+#include "hyle/platform/fs.h"
+char path[1024];
+OwnedFd fd = create_temp_file(nullptr, "myapp", path, sizeof path);  // mkstemp/CREATE_NEW
+set_permissions("f.txt", 0644);  create_hard_link("a.txt", "b.txt");
+char tgt[4096];  read_symlink("link", tgt, sizeof tgt);  // buffer-fill：返回完整长度
+
+// 线程：ABI-clean 句柄 + name/affinity/stack/priority（best-effort，需权限时软降级）
+#include "hyle/platform/thread.h"
+ThreadOpts opts; opts.name = "worker"; opts.affinity_cpu = 0; opts.priority = ThreadPriority::kHigh;
+auto t = Thread::spawn(&entry, ctx, opts);
+
+// 动态库（RTLD_NOLOAD 附着已加载；macOS 传 install-name）+ CPU 特性
+#include "hyle/platform/dynlib.h"
+#include "hyle/platform/cpu.h"
+DynLib lib = DynLib::open("plugin.so");  auto fn = lib.symbol_as<int(*)()>("entry");
+if (cpu_features().avx2) { /* 运行期安全走 AVX2 */ }  // best_isa() 是 simd dispatch 的依据
+```
+
+**跨平台语义提醒**：`create_symlink` 在 Windows 需开发者模式/管理员（无则软失败）；`set_env_var(name,"")` 在 Windows 删除变量、POSIX 保留空值；thread priority/affinity 是 best-effort（无权限软降级）。纯 C / FFI 消费者用 `hyle/c/platform.h`（见 [`c-platform.md`](./c-platform.md)）。
 
 本指南讲"正常用法"。**为 SOTA 性能保留的调用约束**（违反 = UB，非 HYLE bug）单独列在 [`usage-contract.md`](./usage-contract.md)（同目录）：fiber 跨 yield 的 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离等。集成前过一遍。
 
