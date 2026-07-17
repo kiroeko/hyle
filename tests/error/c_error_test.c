@@ -129,6 +129,31 @@ int main(void) {
   CHECK(hyle_status_is_not_found(dst));
   hyle_status_free(&dst);
 
+  /* move edge cases: NULL src frees dst; self-move is a no-op short-circuit */
+  {
+    hyle_status m = hyle_status_internal("to-be-freed");
+    CHECK(hyle_status_is_internal(m));
+    hyle_status_move(&m, NULL);           /* NULL src -> frees dst, leaves it OK */
+    CHECK(hyle_status_is_ok(m));
+
+    hyle_status self = hyle_status_aborted("keep");
+    hyle_status_move(&self, &self);       /* dst==src -> no-op, still valid */
+    CHECK(hyle_status_is_aborted(self));
+    hyle_status_free(&self);
+
+    hyle_status_move(NULL, NULL);         /* NULL dst -> safe no-op */
+  }
+
+  /* free is idempotent and NULL-safe */
+  hyle_status_free(NULL);                 /* must not crash */
+  {
+    hyle_status f = hyle_status_data_loss("x");
+    hyle_status_free(&f);
+    CHECK(hyle_status_is_ok(f));           /* cleared to OK */
+    hyle_status_free(&f);                  /* second free is safe (idempotent) */
+    CHECK(hyle_status_is_ok(f));
+  }
+
   /* with message + internal factory */
   hyle_status boom = hyle_status_internal("boom");
   CHECK(hyle_status_is_internal(boom));

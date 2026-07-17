@@ -277,17 +277,62 @@ uint64_t h = hyle::container::hash_bytes_inline(p, n);  // 与 hash_bytes 结果
 ```
 `hash_bytes_inline` 覆盖**全部长度**（≤16 内联 mix / 17-128 XXH3 / >128 wyhash，与 `hash_bytes` 同分派）——**刻意只做一个全长度函数，不按长度拆成多个 API**：≤16B 段默认 `hash_bytes` 本就内联（inline 变体与它字节级同码、零差别），长串段 seam 已摊平（省的 ~1ns 是噪声），**真有收益的只有 17~128B 短串这一段**。为"对称"给每个长度带都配一个 inline 入口只会制造和默认完全相同的冗余 API + 选择困惑，违背"不为对称加复杂度"——所以就这一个函数，用户按"要不要消 seam"而非"按长度"决策。**适用边界（重要）**：`hash_bytes_inline` 是 **header-inline、非 C-ABI 导出符号**，要求你**源码内嵌 / 静态链接 HYLE**（它把 xxhash.h/wyhash.h 编进你的 TU）；**纯 DLL / C-FFI 消费者用不了它，用默认 `hash_bytes`**（那才是 C-ABI 稳定、DLL 可调的）。默认 `hash.h` 不含它——不 include 就零代价。不确定就用 `hash_bytes`。
 
-### 3.3 error —— Status / expected
+### 3.3 error —— Status / Result / 诊断
+
+**`Status`** 是 8 字节 tagged-word 错误载体（`sizeof(Status)==sizeof(void*)`），三态零开销分级：
+- OK（`rep_==0`，最常见）与**无消息**错误（内联码）——**都不碰堆**；
+- 只有**带消息**的错误才 malloc 一次（引用计数，拷贝共享同一 backing）。
+
 ```cpp
 #include "hyle/error/status.h"
-#include "hyle/error/result.h"   // ASSIGN_OR_RAISE / RETURN_NOT_OK
-hyle::Status do_thing() {
-  HYLE_RETURN_NOT_OK(step1());
-  HYLE_ASSIGN_OR_RAISE(auto val, step2());   // 失败即提前返回其 Status
-  return hyle::Status::Ok();
+using hyle::Status; using hyle::StatusCode;
+
+Status a = Status::Ok();                      // OK，零分配
+Status b = Status::NotFound();                // 无消息，内联码，零分配
+Status c = Status::Internal("shard 7 gone");  // 带消息，堆 rep（refcount）
+
+if (!c.ok()) c.code();          // StatusCode::Internal（16 个 abseil/gRPC canonical 码）
+c.IsInternal();                 // 每码一个谓词：IsNotFound() / IsCancelled() / ...
+c.message();                    // string_view（无消息时为空），不拥有
+char buf[128];
+c.ToString(buf, sizeof buf);    // "Internal: shard 7 gone"；snprintf 式，返回完整长度
+```
+
+**`Result<T>` = `std::expected<T, Status>`**（C++23，monadic `and_then`/`transform` 免费）。两个传播宏做 Rust `?`-式早返回，在返回 `Status` 或 `Result<T>` 的函数里都能用：
+
+```cpp
+#include "hyle/error/result.h"   // Result<T> + HYLE_RETURN_NOT_OK / HYLE_ASSIGN_OR_RAISE
+hyle::Result<int> parse(std::string_view s);
+
+hyle::Result<int> do_thing() {
+  HYLE_RETURN_NOT_OK(step1());               // step1() 返回 Status；非 OK 立即返回
+  HYLE_ASSIGN_OR_RAISE(int v, parse("42"));  // 成功绑定 v，失败提前返回其 Status
+  return v + 1;
 }
 ```
-**约定**：自家 bug 不返 Status——用 `HYLE_FATAL_ASSERT`（fail-fast，见 `hyle/macros.h`）。Status 只表达运营失败。
+
+**约定（重要）**：`Status` 只表达**运营失败**（找不到、超时、权限、OOM…）。**自家 bug 不返 Status**——用 `HYLE_FATAL_ASSERT`（fail-fast，见 `hyle/macros.h`）。区分外部边界（该返 Status）vs 调用方契约违反（该 assert）。带消息构造在 OOM 时优雅降级：保留码、丢消息，绝不 abort。
+
+**诊断通道**（人读的日志/告警，区别于机读的 Status 返回值）：
+
+```cpp
+#include "hyle/error/error_handler.h"
+HYLE_WARN("retry %d/%d", i, n);      // 格式化后送当前 handler
+HYLE_ERROR("connect failed: %s", e);
+HYLE_FATAL("unrecoverable");         // 报告后 trap（永不返回）
+
+// 软断言：release 存活（不像 <cassert> 被 NDEBUG 编掉），失败时报告而非 UB，求值为 bool
+if (!HYLE_ASSERT(p != nullptr)) return Status::InvalidArgument("null p");
+
+// 安装自定义 sink（默认写 stderr）：把 HYLE 诊断接进宿主 logger。
+hyle::ErrorRecord rec;   // 零分配计数器：测试里捕获诊断
+rec.install();
+// ... 触发一些 HYLE_WARN/ERROR ...
+rec.count(hyle::Severity::Error);   // 统计
+rec.restore();
+```
+
+跨 DLL / C-FFI 消费者用纯 C 面（`hyle/c/error.h`），见 [`c-error.md`](./c-error.md)。
 
 ### 3.4 sched —— 纤程 + 调度器
 ```cpp
@@ -297,7 +342,7 @@ using namespace hyle::sched;
 void task(void* arg) { /* ... */ Fiber::yield(); /* ... */ }
 
 Scheduler sched(8, system_allocator(), /*queue_capacity=*/1024);   // 8 worker, 队列容量须 2 的幂
-auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, &task, arg);
+auto f = std::make_unique<Fiber>(kDefaultStackSize, &task, arg);  // 栈=guarded FiberStack
 sched.spawn(f.get());
 sched.shutdown();   // 排空（等所有 fiber 完成）再 join worker
 ```
