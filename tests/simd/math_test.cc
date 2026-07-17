@@ -9,6 +9,7 @@
 #include <cstdio>
 #include <limits>
 #include <random>
+#include <tuple>
 #include <vector>
 
 #include "hyle/simd/dispatch.h"
@@ -446,7 +447,28 @@ std::complex<double> r_log(std::complex<double> z) { return std::log(z); }
 std::complex<double> r_sqrt(std::complex<double> z) { return std::sqrt(z); }
 std::complex<double> r_sin(std::complex<double> z) { return std::sin(z); }
 std::complex<double> r_cos(std::complex<double> z) { return std::cos(z); }
+std::complex<double> r_tan(std::complex<double> z) { return std::tan(z); }
+std::complex<double> r_sinh(std::complex<double> z) { return std::sinh(z); }
+std::complex<double> r_cosh(std::complex<double> z) { return std::cosh(z); }
 std::complex<double> r_tanh(std::complex<double> z) { return std::tanh(z); }
+
+void check_cunary_f64(
+    void (*fn)(const double*, const double*, double*, double*, std::size_t),
+    std::complex<double> (*ref)(std::complex<double>), const char* name) {
+  constexpr int N = 201;
+  std::vector<double> sr(N), si(N), dr(N), di(N);
+  for (int i = 0; i < N; ++i) {
+    sr[i] = -3.0 + 6.0 * i / N + 0.017;
+    si[i] = -2.5 + 5.0 * i / N + 0.013;
+  }
+  fn(sr.data(), si.data(), dr.data(), di.data(), N);
+  for (int i = 0; i < N; ++i) {
+    const std::complex<double> want = ref({sr[i], si[i]});
+    const double tol = std::abs(want) * 3e-11 + 2e-12;
+    EXPECT_NEAR(dr[i], want.real(), tol) << name << " re i=" << i;
+    EXPECT_NEAR(di[i], want.imag(), tol) << name << " im i=" << i;
+  }
+}
 }  // namespace
 
 TEST(Math, ComplexTranscendentals) {
@@ -455,7 +477,101 @@ TEST(Math, ComplexTranscendentals) {
   check_cunary(hyle::simd::csqrt_f32_batch, r_sqrt, "csqrt");
   check_cunary(hyle::simd::csin_f32_batch, r_sin, "csin");
   check_cunary(hyle::simd::ccos_f32_batch, r_cos, "ccos");
+  check_cunary(hyle::simd::ctan_f32_batch, r_tan, "ctan");
+  check_cunary(hyle::simd::csinh_f32_batch, r_sinh, "csinh");
+  check_cunary(hyle::simd::ccosh_f32_batch, r_cosh, "ccosh");
   check_cunary(hyle::simd::ctanh_f32_batch, r_tanh, "ctanh");
+}
+
+TEST(Math, ComplexTranscendentalsF64) {
+  check_cunary_f64(hyle::simd::cexp_f64_batch, r_exp, "cexp_f64");
+  check_cunary_f64(hyle::simd::clog_f64_batch, r_log, "clog_f64");
+  check_cunary_f64(hyle::simd::csqrt_f64_batch, r_sqrt, "csqrt_f64");
+  check_cunary_f64(hyle::simd::csin_f64_batch, r_sin, "csin_f64");
+  check_cunary_f64(hyle::simd::ccos_f64_batch, r_cos, "ccos_f64");
+  check_cunary_f64(hyle::simd::ctan_f64_batch, r_tan, "ctan_f64");
+  check_cunary_f64(hyle::simd::csinh_f64_batch, r_sinh, "csinh_f64");
+  check_cunary_f64(hyle::simd::ccosh_f64_batch, r_cosh, "ccosh_f64");
+  check_cunary_f64(hyle::simd::ctanh_f64_batch, r_tanh, "ctanh_f64");
+}
+
+TEST(Math, ComplexF64SpecialTailAndExactAlias) {
+  using Fn = void (*)(const double*, const double*, double*, double*, std::size_t);
+  struct Op {
+    const char* name;
+    Fn fn;
+    std::complex<double> (*ref)(std::complex<double>);
+  };
+  const Op ops[] = {
+      {"cexp", hyle::simd::cexp_f64_batch, r_exp},
+      {"clog", hyle::simd::clog_f64_batch, r_log},
+      {"csqrt", hyle::simd::csqrt_f64_batch, r_sqrt},
+      {"csin", hyle::simd::csin_f64_batch, r_sin},
+      {"ccos", hyle::simd::ccos_f64_batch, r_cos},
+      {"ctan", hyle::simd::ctan_f64_batch, r_tan},
+      {"csinh", hyle::simd::csinh_f64_batch, r_sinh},
+      {"ccosh", hyle::simd::ccosh_f64_batch, r_cosh},
+      {"ctanh", hyle::simd::ctanh_f64_batch, r_tanh},
+  };
+  const double inf = std::numeric_limits<double>::infinity();
+  const double nan = std::numeric_limits<double>::quiet_NaN();
+  const double denorm = std::numeric_limits<double>::denorm_min();
+  const std::vector<std::complex<double>> input = {
+      {0.0, 0.0},       {-0.0, 0.0},  {0.0, -0.0}, {denorm, -denorm},
+      {1.0e-200, 2e-200}, {1.0, -2.0},  {inf, 0.0},  {-inf, 0.0},
+      {0.0, inf},       {0.0, -inf}, {nan, 1.0},  {1.0, nan},
+      {2.0, -3.0},      {-0.5, 0.75}, {3.0, 2.0}, {0.25, -0.5},
+      {1.5, 0.125},
+  };
+  for (const Op& op : ops) {
+    std::vector<double> re(input.size()), im(input.size());
+    for (std::size_t i = 0; i < input.size(); ++i) {
+      re[i] = input[i].real();
+      im[i] = input[i].imag();
+    }
+    op.fn(re.data(), im.data(), re.data(), im.data(), input.size());
+    for (std::size_t i = 0; i < input.size(); ++i) {
+      const std::complex<double> want = op.ref(input[i]);
+      for (const auto [got, expected, part] :
+           {std::tuple{re[i], want.real(), "re"}, std::tuple{im[i], want.imag(), "im"}}) {
+        if (std::isnan(expected)) {
+          EXPECT_TRUE(std::isnan(got)) << op.name << ' ' << part << " i=" << i;
+        } else if (std::isinf(expected)) {
+          EXPECT_TRUE(std::isinf(got)) << op.name << ' ' << part << " i=" << i;
+          EXPECT_EQ(std::signbit(got), std::signbit(expected))
+              << op.name << ' ' << part << " i=" << i;
+        } else {
+          EXPECT_NEAR(got, expected, std::abs(expected) * 4e-11 + 2e-12)
+              << op.name << ' ' << part << " i=" << i;
+          if (expected == 0.0) {
+            EXPECT_EQ(std::signbit(got), std::signbit(expected))
+                << op.name << ' ' << part << " i=" << i;
+          }
+        }
+      }
+    }
+  }
+}
+
+TEST(Math, ComplexF64PowTailAndExactAlias) {
+  constexpr std::size_t n = 67;
+  std::vector<double> zr(n), zi(n), wr(n), wi(n);
+  for (std::size_t i = 0; i < n; ++i) {
+    zr[i] = 0.25 + 0.013 * double(i);
+    zi[i] = -0.75 + 0.017 * double(i);
+    wr[i] = 0.5 + 0.009 * double(i);
+    wi[i] = 0.2 + 0.003 * double(i);
+  }
+  const std::vector<double> original_re = zr;
+  const std::vector<double> original_im = zi;
+  hyle::simd::cpow_f64_batch(zr.data(), zi.data(), wr.data(), wi.data(), zr.data(), zi.data(), n);
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::complex<double> want =
+        std::pow(std::complex<double>(original_re[i], original_im[i]),
+                 std::complex<double>(wr[i], wi[i]));
+    EXPECT_NEAR(zr[i], want.real(), std::abs(want) * 5e-11 + 2e-12) << "re i=" << i;
+    EXPECT_NEAR(zi[i], want.imag(), std::abs(want) * 5e-11 + 2e-12) << "im i=" << i;
+  }
 }
 
 void expect_complex_component(float got, float want, const char* part, std::size_t i) {

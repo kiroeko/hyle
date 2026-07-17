@@ -17,6 +17,7 @@
 #include "hyle/simd/math.h"
 #include "hyle/simd/runtime.h"
 #include "src/simd/math/complex_hyle-inl.h"
+#include "src/simd/math/complex_typed_hyle-inl.h"
 #include "xsimd/xsimd.hpp"
 
 namespace {
@@ -52,6 +53,9 @@ HYLE_COMPLEX_UNARY(log)
 HYLE_COMPLEX_UNARY(sqrt)
 HYLE_COMPLEX_UNARY(sin)
 HYLE_COMPLEX_UNARY(cos)
+HYLE_COMPLEX_UNARY(tan)
+HYLE_COMPLEX_UNARY(sinh)
+HYLE_COMPLEX_UNARY(cosh)
 HYLE_COMPLEX_UNARY(tanh)
 #undef HYLE_COMPLEX_UNARY
 
@@ -66,6 +70,18 @@ HYLE_NOINLINE void candidate_cos(const float* sr, const float* si, float* dr, fl
 HYLE_NOINLINE void candidate_tanh(const float* sr, const float* si, float* dr, float* di,
                                   std::size_t n) noexcept {
   hyle::simd::detail::complex_ctanh_hyle(sr, si, dr, di, n);
+}
+HYLE_NOINLINE void candidate_tan(const float* sr, const float* si, float* dr, float* di,
+                                 std::size_t n) noexcept {
+  hyle::simd::detail::complex_tan_typed_hyle(sr, si, dr, di, n);
+}
+HYLE_NOINLINE void candidate_sinh(const float* sr, const float* si, float* dr, float* di,
+                                  std::size_t n) noexcept {
+  hyle::simd::detail::complex_sinhcosh_typed_hyle<float, false>(sr, si, dr, di, n);
+}
+HYLE_NOINLINE void candidate_cosh(const float* sr, const float* si, float* dr, float* di,
+                                  std::size_t n) noexcept {
+  hyle::simd::detail::complex_sinhcosh_typed_hyle<float, true>(sr, si, dr, di, n);
 }
 
 HYLE_NOINLINE void scalar_pow(const float* zr, const float* zi, const float* wr, const float* wi,
@@ -233,6 +249,9 @@ int main() {
       {"sqrt", scalar_sqrt, xsimd_sqrt, nullptr, hyle::simd::csqrt_f32_batch},
       {"sin", scalar_sin, xsimd_sin, candidate_sin, hyle::simd::csin_f32_batch},
       {"cos", scalar_cos, xsimd_cos, candidate_cos, hyle::simd::ccos_f32_batch},
+      {"tan", scalar_tan, xsimd_tan, candidate_tan, hyle::simd::ctan_f32_batch},
+      {"sinh", scalar_sinh, xsimd_sinh, candidate_sinh, hyle::simd::csinh_f32_batch},
+      {"cosh", scalar_cosh, xsimd_cosh, candidate_cosh, hyle::simd::ccosh_f32_batch},
       {"tanh", scalar_tanh, xsimd_tanh, candidate_tanh, hyle::simd::ctanh_f32_batch},
   };
   std::printf("HYLE math tier=%u, xsimd complex lanes=%zu\n",

@@ -22,6 +22,7 @@
 #include "src/simd/math/math_hyle-inl.h"
 #include "src/simd/math/math_xsimd_hyle-inl.h"
 #include "src/simd/math/complex_hyle-inl.h"
+#include "src/simd/math/complex_typed_hyle-inl.h"
 #include "src/simd/math/table_f64.h"
 
 namespace hyle::simd::detail {
@@ -349,6 +350,18 @@ void HYLE_SCALABLE_HYLE_TYPED(ccos, f32)(const float* sr, const float* si, float
                                          float* di, std::size_t n) noexcept {
   complex_sincos_hyle<true>(sr, si, dr, di, n);
 }
+void HYLE_SCALABLE_HYLE_TYPED(ctan, f32)(const float* sr, const float* si, float* dr,
+                                         float* di, std::size_t n) noexcept {
+  complex_tan_typed_hyle(sr, si, dr, di, n);
+}
+void HYLE_SCALABLE_HYLE_TYPED(csinh, f32)(const float* sr, const float* si, float* dr,
+                                          float* di, std::size_t n) noexcept {
+  complex_sinhcosh_typed_hyle<float, false>(sr, si, dr, di, n);
+}
+void HYLE_SCALABLE_HYLE_TYPED(ccosh, f32)(const float* sr, const float* si, float* dr,
+                                          float* di, std::size_t n) noexcept {
+  complex_sinhcosh_typed_hyle<float, true>(sr, si, dr, di, n);
+}
 void HYLE_SCALABLE_HYLE_TYPED(ctanh, f32)(const float* sr, const float* si, float* dr,
                                           float* di, std::size_t n) noexcept {
   complex_ctanh_hyle(sr, si, dr, di, n);
@@ -357,6 +370,33 @@ void HYLE_SCALABLE_HYLE_TYPED(cpow, f32)(const float* zr, const float* zi, const
                                          const float* wi, float* dr, float* di,
                                          std::size_t n) noexcept {
   complex_cpow_hyle(zr, zi, wr, wi, dr, di, n);
+}
+
+#define HYLE_DEFINE_SCALABLE_COMPLEX_F64(name, body)                               \
+  void HYLE_SCALABLE_HYLE_TYPED(name, f64)(const double* sr, const double* si,      \
+                                            double* dr, double* di,                 \
+                                            std::size_t n) noexcept {               \
+    body;                                                                           \
+  }
+HYLE_DEFINE_SCALABLE_COMPLEX_F64(cexp, complex_exp_typed_hyle(sr, si, dr, di, n))
+HYLE_DEFINE_SCALABLE_COMPLEX_F64(clog, complex_log_typed_hyle(sr, si, dr, di, n))
+HYLE_DEFINE_SCALABLE_COMPLEX_F64(csqrt, complex_sqrt_typed_hyle(sr, si, dr, di, n))
+HYLE_DEFINE_SCALABLE_COMPLEX_F64(
+    csin, (complex_sincos_typed_hyle<double, false>(sr, si, dr, di, n)))
+HYLE_DEFINE_SCALABLE_COMPLEX_F64(
+    ccos, (complex_sincos_typed_hyle<double, true>(sr, si, dr, di, n)))
+HYLE_DEFINE_SCALABLE_COMPLEX_F64(ctan, complex_tan_typed_hyle(sr, si, dr, di, n))
+HYLE_DEFINE_SCALABLE_COMPLEX_F64(
+    csinh, (complex_sinhcosh_typed_hyle<double, false>(sr, si, dr, di, n)))
+HYLE_DEFINE_SCALABLE_COMPLEX_F64(
+    ccosh, (complex_sinhcosh_typed_hyle<double, true>(sr, si, dr, di, n)))
+HYLE_DEFINE_SCALABLE_COMPLEX_F64(ctanh, complex_tanh_typed_hyle(sr, si, dr, di, n))
+#undef HYLE_DEFINE_SCALABLE_COMPLEX_F64
+
+void HYLE_SCALABLE_HYLE_TYPED(cpow, f64)(
+    const double* zr, const double* zi, const double* wr, const double* wi, double* dr,
+    double* di, std::size_t n) noexcept {
+  complex_pow_typed_hyle(zr, zi, wr, wi, dr, di, n);
 }
 
 #undef HYLE_SCALABLE_HYLE_TYPED

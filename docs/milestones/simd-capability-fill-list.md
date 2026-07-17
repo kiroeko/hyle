@@ -10,7 +10,7 @@
 > - 变宽底账：`scripts/simd-scalable-coverage.py` + `scripts/simd-scalable-op-manifest.json`
 > - 覆盖率：`scripts/simd-op-coverage.py`
 
-**一句话**：定宽面与主 whole-buffer 核已立；**SVE/RVV 主产品核（math/dtype/bitpack/sort）已有真实 TU + QEMU 门，SVE partition 已吃满物理 VL，精细 feature probe 已落地**，不再是「整模块 hard clamp」。还缺的是 **NEON KV64 性能**、**变宽真机签字**、**simd-24 尾部算法面（C）**，以及 **双轨产物/垫片收尾/分发机械化（D）**。不要再为齐 387 名字抠常数。
+**一句话**：定宽面与主 whole-buffer 核已立；**SVE/RVV 主产品核（math/dtype/bitpack/sort）已有真实 TU + QEMU 门，SVE partition 已吃满物理 VL，精细 feature probe 已落地**，不再是「整模块 hard clamp」。simd-24 的 C1–C3 能力面已经补完；还缺的是 **NEON KV64 性能**、**变宽真机签字**，以及 **双轨产物/垫片收尾/分发机械化（D）**。不要再为齐 387 名字抠常数。
 
 ---
 
@@ -27,13 +27,13 @@
 | NEON mask 查询 primitive（nibble 路径） | ✅ |
 | SVE/RVV 寄存器正确性 + 多 VL/VLEN QEMU | ✅ |
 | **portable_missing 可移植原语 backlog** | ✅ **0 项**（原 ~22 已全部补齐；见 simd-25 §阶段 0） |
-| **SVE/RVV math 主 HYLE/Highway 产品 TU + Runtime** | ✅ QEMU 多 VL；gamma/complex 等仍可 per-op fallback |
+| **SVE/RVV math 主 HYLE/Highway 产品 TU + Runtime** | ✅ QEMU 多 VL；复数 f32/f64 走真实 scalable body，仅 6 个精确实数 op 保留 scalar |
 | **SVE/RVV dtype f16/bf16↔f32 产品 TU + Runtime** | ✅；fp8 故意保持 scalar/可选硬件 |
 | **SVE/RVV bitpack 产品 TU + Runtime** | ✅（固定 128-bit logical block，与 NEON layout 一致） |
 | **RVV sort 产品 TU（LMUL=1）+ Runtime** | ✅ |
 | **SVE sort 产品 TU + Runtime** | ✅ full-VL partition；只有要求 2 的幂 lane 的基础 network 保持 128/256-bit cap |
 | **SVE/RVV 精细 feature probe** | ✅ HWCAP2 / riscv_hwprobe；baseline、LTO-off detector |
-| **公开 scalable 产品派发门** | ✅ SVE 94×5；RVV base 90×4，Zvbb/Zvbc 各 91×4 |
+| **公开 scalable 产品派发门** | ✅ SVE 98×5；RVV base 93×4，Zvbb/Zvbc 各 94×4 |
 | 定宽 op 常数因子对齐战（历史矩阵主体） | ✅ 无新 LOSE 证据时不再全表重抠 |
 
 ---
@@ -97,7 +97,7 @@
 |---|---|---|
 | **C1** | **`MulHigh` / `MulHighLow`** | ✅ 单一 `MulHigh` 覆盖 i/u8/16/32/64；删公开 `MulHigh32` 特例；`MulHighLow` 返回 low、写 high，widen/64-bit 路径共享 partial；AVX2 首轮 i/u8 0.1–0.15×、i64 0.8× 回退已修至约同速；register/native-only，不进 C ABI/Runtime 表 |
 | **C2** | **sort key 扩展** | ✅ `i16/u16` + unsigned `UInt128 {lo,hi}` POD 已覆盖 sort/partial/select 与 scalar/AVX2/AVX512/NEON/SVE/RVV；顺带修复 SVE1 16-bit register-only Compress 和 NEON 16-bit true-partition 丢 key；f16/bf16 仍须先统一 dtype/NaN total-order |
-| **C3** | **complex** | f32 `ctan/csinh/ccosh`；现有 c* 扩 **f64**；SoA real/imag |
+| **C3** | **complex** | ✅ f32 补 `ctan/csinh/ccosh`；`cexp/clog/csqrt/csin/ccos/ctan/csinh/ccosh/ctanh/cpow` 全部覆盖 **f64**；公开边界保持 SoA pointer/count，AVX2/NEON/SVE/RVV 共用 typed D-tag body；Windows 与 SVE/RVV 多宽 QEMU 已过，真机性能待 A3 |
 
 与 A/B 正交。无真机时默认序：**C3 → D1/D6 → D5/D7 → D2**；A1/A3/B5/B7 进入“有硅再签字”队列。
 
@@ -171,7 +171,7 @@
 2.  A3/B5 变宽真机 scorecard（有硅时）
 3.  C1    mul_hi / mul_hilo  ✅
 4.  C2    sort key i16/u16/u128（✅）
-5.  C3    complex + f64
+5.  C3    complex + f64  ✅
 6.  B6/B7/B8  按消费与证据穿插
 7.  D1+D6 exact 单腿 + dispatcher 生成收敛（可与算法并行）
 8.  D5+D7 模块 isa 合同与 exact/native 测试闸
@@ -180,7 +180,7 @@
 // D8 仅 f16/bf16 类型轴启动时评估
 ```
 
-主工单线：**simd-24 的 C3**；机制线 **D1/D2/D5/D6/D7** 可在无真机环境继续。A1、A3/B5 与 B7 性能决策挂起到取得对应硅。
+算法补缺线 C1–C3 已收口；当前主工单转入 **D1/D6 → D5/D7 → D2**。A1、A3/B5 与 B7 性能决策挂起到取得对应硅。
 
 ---
 

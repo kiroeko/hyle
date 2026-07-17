@@ -62,7 +62,7 @@ Native*/AVX2Shl* 等,HYLE 以 LoadInterleaved 等直接暴露等价能力);②HY
 | P1 | Highway contrib/dot：f16×f16、bf16×bf16、f32×bf16、i16×i16 | HYLE whole-buffer dot 只有 f32/f64；底层已有 widen/dtype 积木，但没有融合入口 | 按 AI/量化消费者优先补 bf16、mixed bf16、i16；f16 由真机收益决定，禁止“先转换整表再 dot”的额外内存 pass |
 | P1 | Highway vqsort key 面：i16/u16/f16/u128 | HYLE public sort 只有 i/u32、i/u64、f32/f64、KV32/64；port 内部已含若干 traits，但 f16 目前明确是 placeholder | i16/u16 与 128-bit POD key 先做；f16 必须统一 HYLE dtype/排序 NaN 合同后再做 |
 | ✅ | xsimd `mul_hi` / fused `mul_hilo`，含 i/u8、i/u32、i/u64 | 已统一为 HYLE `MulHigh` 全整数宽度 + `MulHighLow`；删 `MulHigh32` 公开特例，widen/64-bit 软件路径共享 partial，scalable 用原生 low/high 指令 | register/native 能力已完成并进入 parity bench；不进动态 C ABI |
-| P2 | xsimd complex trig/hyperbolic 与 f64 complex | HYLE 只有 f32 `cexp/clog/csqrt/csin/ccos/ctanh/cpow`；旧注释误写已有 ctan/csinh/ccosh | 先纠正文档；有 FFT/solver 消费者后补 ctan/csinh/ccosh 与 f64，不把 trivial conj/real/imag 包装成独立 kernel |
+| ✅ | xsimd complex trig/hyperbolic 与 f64 complex | f32/f64 均已覆盖 `cexp/clog/csqrt/csin/ccos/ctan/csinh/ccosh/ctanh/cpow`；AVX2/NEON/SVE/RVV 共用 typed D-tag body | SoA pointer/count ABI；trivial conj/real/imag 不包装成独立 kernel |
 | P2 | xsimd `frexp/ldexp`、mask predicates 等 | 对应寄存器积木多已存在（如 `MulByPow2`、分类和 mask reduce），但无普通 batch 语义 | 只有真实消费者或相对编译器循环的稳定收益才上 whole-buffer API |
 
 ### 明确不吸纳

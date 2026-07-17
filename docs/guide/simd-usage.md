@@ -59,8 +59,9 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 - 二元函数：`atan2`、`pow`、`hypot`、`fmod`、`remainder`、`nextafter`、`fdim`。
 - AI 语义：`gelu_f32_batch`、`gelu_tanh_f32_batch`、`sigmoid_f32_batch`、
   `silu_f32_batch`、原地 `softmax_f32` 和 `log_softmax_f32`。
-- 复数 SoA：`cexp`、`clog`、`csqrt`、`csin`、`ccos`、`ctanh`、`cpow`；实部和虚部放在
-  两个数组中，避免把某种语言的 complex ABI 固化到边界上。
+- 复数 SoA：f32/f64 均提供 `cexp`、`clog`、`csqrt`、`csin`、`ccos`、`ctan`、`csinh`、
+  `ccosh`、`ctanh`、`cpow`；实部和虚部放在两个数组中，避免把某种语言的 complex ABI
+  固化到边界上。命名形如 `ctan_f32_batch` / `ctan_f64_batch`，输入输出可完全同址。
 - `*_in_range_*` 是调用者承诺输入范围的快速合同，不是自动检查后回退的安全版本。
 
 ## 当前开发期调用示例

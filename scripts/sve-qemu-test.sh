@@ -55,6 +55,7 @@ $CXX $FLAGS -c "$REPO/src/simd/dtype/cvt_scalable.cc" -o "$OUT/dtype_sve.o"
 $CXX $FLAGS -c "$REPO/src/simd/bitpack/bitpack_hyle_scalable.cc" -o "$OUT/bitpack_sve.o"
 $CXX $FLAGS -c "$REPO/src/simd/sort/vqsort_hyle_sve.cc" -o "$OUT/sort_sve.o"
 $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test.o"
+$CXX $COMMON_FLAGS -c "$REPO/tests/simd/neon_math_product_test.cc" -o "$OUT/neon_math_product_test.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/math_dispatch.cc" -o "$OUT/math_dispatch.o"
@@ -86,6 +87,7 @@ for module in ops random scan search; do
 done
 $CXX $FLAGS "$OUT/sve_test.o" "$OUT/scalable_math_compile.o" \
   "$OUT/scalable_math_product_test.o" "$OUT/scalable_math_dispatch_test.o" \
+  "$OUT/neon_math_product_test.o" \
   "$OUT/scalable_dtype_product_test.o" \
   "$OUT/scalable_bitpack_product_test.o" \
   "$OUT/scalable_sort_product_test.o" \

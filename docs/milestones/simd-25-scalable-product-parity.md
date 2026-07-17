@@ -105,19 +105,21 @@ SVE 六个 AES op 原已具备 SVE2-AES 快路和软件保底；RVV 现在补齐
   保持现有特殊值合同。
 
 随后把 HYLE-owned xsimd-derived D-tag body 也编入同一 scalable TU：`erfc/exp10/fmod/fdim` 的
-f32/f64、`tgamma` 的 f32/f64、`hypot_in_range` f32，以及 `cexp/clog/csqrt/csin/ccos/ctanh/cpow`
-f32。complex 特殊 lane 的 bitmap 同时从 32 bit 修正为 64 bit，覆盖 SVE 最大 2048-bit 时的 64 个
-f32 lane。现在 math 只有 6 个有明确正确性裁决的 scalar-only API：`lgamma/remainder/nextafter` 的
+f32/f64、`tgamma` 的 f32/f64、`hypot_in_range` f32，以及完整 SoA complex 集合
+`cexp/clog/csqrt/csin/ccos/ctan/csinh/ccosh/ctanh/cpow` 的 f32/f64。复数 typed D-tag body
+在 AVX2、NEON、SVE、RVV 共用；regular chunk 保持向量计算，特殊值、分支切线、极端幅度或 pole
+风险 chunk 在写输出前回落 `std::complex`，因此 exact in-place 仍成立。现在 math 只有 6 个有明确
+正确性裁决的 scalar-only API：`lgamma/remainder/nextafter` 的
 f32/f64；这不是模块降级。`lgamma` 是已复现的 vendor lane-mixing bug，后两者要求精确 libm 语义。
 
 当前证据：两套脚本同时链接 CPU probe、真实 `Runtime`、baseline dispatcher、scalar 与 scalable
 variant 表，不再只直调内部 kernel。加入 platform dispatch 与 public product 探针后，SVE 当前脚本为
-**94 tests × VL 128/256/384/512/2048**，RVV base 为 **90 tests × VLEN
+**98 tests × VL 128/256/384/512/2048**（其中 1 项直调 NEON typed complex 产品核），RVV base 为 **93 tests × VLEN
 128/256/512/1024**；公开 ops/random/search/scan/math/dtype/bitpack/sort batch API、tail、对应 module
 tier 以及 extension/semantic 能力均在门内验证。
 exact SVE/RVV dispatcher 的未定义符号检查也确认不引用 `runtime()`、`best_isa()` 或
 `cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。扩展构建也独立全绿：
-SVE2-AES 为 **94×5**，RVV Zvbb 与 Zvbc 各 **91×4**；因此 base fallback 与已有硬件扩展路径没有
+SVE2-AES 的历史门为 **94×5**，当前 RVV Zvbb/Zvbc 各为 **94×4**；因此 base fallback 与已有硬件扩展路径没有
 同名重定义或越级 codegen 冲突。
 
 ### 当前产品层矩阵
@@ -184,7 +186,7 @@ SVE/RVV fp8 convert，不因 dtype module tier 已升级就把它伪装成 scala
 ## 阶段 3：math（产品 tier 已完成，性能验收继续）
 
 SVE/RVV 的 HYLE/Highway 主 body 与 HYLE-owned xsimd-derived body 已生成真实产品 TU 并接 Runtime，
-QEMU 多 VL/VLEN 的 direct、Runtime 和公开 API 门均完成。`tgamma`、complex、direct hypot 与 extras
+QEMU 多 VL/VLEN 的 direct、Runtime 和公开 API 门均完成。`tgamma`、f32/f64 complex、direct hypot 与 extras
 已经 scalable；`lgamma/remainder/nextafter` 的 scalar 裁决有正确性证据。下一步是真机性能验收。
 验收沿用现有 ULP 合同，继续扩大 NaN/Inf/subnormal/domain edge、tail 和跨 lane 混合输入。
 

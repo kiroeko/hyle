@@ -155,6 +155,12 @@ TEST(ScalableMathProduct, HyleDerivedComplexKernelsCoverWideExceptionalLanes) {
               [](std::complex<float> z) { return std::sin(z); });
   check_unary(HYLE_SCALABLE_PRODUCT(ccos_f32_hyle),
               [](std::complex<float> z) { return std::cos(z); });
+  check_unary(HYLE_SCALABLE_PRODUCT(ctan_f32_hyle),
+              [](std::complex<float> z) { return std::tan(z); });
+  check_unary(HYLE_SCALABLE_PRODUCT(csinh_f32_hyle),
+              [](std::complex<float> z) { return std::sinh(z); });
+  check_unary(HYLE_SCALABLE_PRODUCT(ccosh_f32_hyle),
+              [](std::complex<float> z) { return std::cosh(z); });
   check_unary(HYLE_SCALABLE_PRODUCT(ctanh_f32_hyle),
               [](std::complex<float> z) { return std::tanh(z); });
 
@@ -164,6 +170,53 @@ TEST(ScalableMathProduct, HyleDerivedComplexKernelsCoverWideExceptionalLanes) {
         std::pow(std::complex<float>(zr[i], zi[i]), std::complex<float>(wr[i], wi[i]));
     ExpectNearRelative(dr[i], expected.real(), 3e-5f);
     ExpectNearRelative(di[i], expected.imag(), 3e-5f);
+  }
+
+  const std::size_t w64 = hs::Lanes(hs::ScalableTag<double>{});
+  const std::size_t n64 = 2 * w64 + 3;
+  ASSERT_LE(n64, kMaxLanes);
+  alignas(64) double zr64[kMaxLanes], zi64[kMaxLanes], wr64[kMaxLanes], wi64[kMaxLanes];
+  alignas(64) double dr64[kMaxLanes], di64[kMaxLanes];
+  for (std::size_t i = 0; i < n64; ++i) {
+    zr64[i] = 0.25 + 0.02 * double(i % 31);
+    zi64[i] = -0.8 + 0.04 * double(i % 37);
+    wr64[i] = 0.5 + 0.01 * double(i % 29);
+    wi64[i] = 0.2 + 0.005 * double(i % 17);
+  }
+  const auto check_unary64 = [&](auto fn, auto oracle) {
+    fn(zr64, zi64, dr64, di64, n64);
+    for (std::size_t i = 0; i < n64; ++i) {
+      const std::complex<double> expected = oracle(std::complex<double>(zr64[i], zi64[i]));
+      ExpectNearRelative(dr64[i], expected.real(), 4e-11);
+      ExpectNearRelative(di64[i], expected.imag(), 4e-11);
+    }
+  };
+  check_unary64(HYLE_SCALABLE_PRODUCT(cexp_f64_hyle),
+                [](std::complex<double> z) { return std::exp(z); });
+  check_unary64(HYLE_SCALABLE_PRODUCT(clog_f64_hyle),
+                [](std::complex<double> z) { return std::log(z); });
+  check_unary64(HYLE_SCALABLE_PRODUCT(csqrt_f64_hyle),
+                [](std::complex<double> z) { return std::sqrt(z); });
+  check_unary64(HYLE_SCALABLE_PRODUCT(csin_f64_hyle),
+                [](std::complex<double> z) { return std::sin(z); });
+  check_unary64(HYLE_SCALABLE_PRODUCT(ccos_f64_hyle),
+                [](std::complex<double> z) { return std::cos(z); });
+  check_unary64(HYLE_SCALABLE_PRODUCT(ctan_f64_hyle),
+                [](std::complex<double> z) { return std::tan(z); });
+  check_unary64(HYLE_SCALABLE_PRODUCT(csinh_f64_hyle),
+                [](std::complex<double> z) { return std::sinh(z); });
+  check_unary64(HYLE_SCALABLE_PRODUCT(ccosh_f64_hyle),
+                [](std::complex<double> z) { return std::cosh(z); });
+  check_unary64(HYLE_SCALABLE_PRODUCT(ctanh_f64_hyle),
+                [](std::complex<double> z) { return std::tanh(z); });
+
+  HYLE_SCALABLE_PRODUCT(cpow_f64_hyle)(zr64, zi64, wr64, wi64, dr64, di64, n64);
+  for (std::size_t i = 0; i < n64; ++i) {
+    const std::complex<double> expected =
+        std::pow(std::complex<double>(zr64[i], zi64[i]),
+                 std::complex<double>(wr64[i], wi64[i]));
+    ExpectNearRelative(dr64[i], expected.real(), 6e-11);
+    ExpectNearRelative(di64[i], expected.imag(), 6e-11);
   }
 }
 

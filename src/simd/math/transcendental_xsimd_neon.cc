@@ -15,6 +15,7 @@
 #include "src/simd/math/math_xsimd_hyle-inl.h"
 #include "src/simd/math/math_xsimd_body.inc"
 #include "src/simd/math/complex_hyle-inl.h"
+#include "src/simd/math/complex_typed_hyle-inl.h"
 
 namespace hyle::simd::detail {
 using namespace hyle::simd;
@@ -39,6 +40,18 @@ void csin_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
 void ccos_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
                         std::size_t n) noexcept {
   complex_sincos_hyle<true>(sr, si, dr, di, n);
+}
+void ctan_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
+                        std::size_t n) noexcept {
+  complex_tan_typed_hyle(sr, si, dr, di, n);
+}
+void csinh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
+                         std::size_t n) noexcept {
+  complex_sinhcosh_typed_hyle<float, false>(sr, si, dr, di, n);
+}
+void ccosh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
+                         std::size_t n) noexcept {
+  complex_sinhcosh_typed_hyle<float, true>(sr, si, dr, di, n);
 }
 void ctanh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
                          std::size_t n) noexcept {
@@ -107,6 +120,31 @@ void clog_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
 void csqrt_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di,
                          std::size_t n) noexcept {
   csqrt_loop(sr, si, dr, di, n);
+}
+
+#define HYLE_DEFINE_COMPLEX_F64_NEON(name, body)                                   \
+  void name##_f64_hyle_neon(const double* sr, const double* si, double* dr,         \
+                             double* di, std::size_t n) noexcept {                   \
+    body;                                                                           \
+  }
+HYLE_DEFINE_COMPLEX_F64_NEON(cexp, complex_exp_typed_hyle(sr, si, dr, di, n))
+HYLE_DEFINE_COMPLEX_F64_NEON(clog, complex_log_typed_hyle(sr, si, dr, di, n))
+HYLE_DEFINE_COMPLEX_F64_NEON(csqrt, complex_sqrt_typed_hyle(sr, si, dr, di, n))
+HYLE_DEFINE_COMPLEX_F64_NEON(
+    csin, (complex_sincos_typed_hyle<double, false>(sr, si, dr, di, n)))
+HYLE_DEFINE_COMPLEX_F64_NEON(
+    ccos, (complex_sincos_typed_hyle<double, true>(sr, si, dr, di, n)))
+HYLE_DEFINE_COMPLEX_F64_NEON(ctan, complex_tan_typed_hyle(sr, si, dr, di, n))
+HYLE_DEFINE_COMPLEX_F64_NEON(
+    csinh, (complex_sinhcosh_typed_hyle<double, false>(sr, si, dr, di, n)))
+HYLE_DEFINE_COMPLEX_F64_NEON(
+    ccosh, (complex_sinhcosh_typed_hyle<double, true>(sr, si, dr, di, n)))
+HYLE_DEFINE_COMPLEX_F64_NEON(ctanh, complex_tanh_typed_hyle(sr, si, dr, di, n))
+#undef HYLE_DEFINE_COMPLEX_F64_NEON
+
+void cpow_f64_hyle_neon(const double* zr, const double* zi, const double* wr,
+                        const double* wi, double* dr, double* di, std::size_t n) noexcept {
+  complex_pow_typed_hyle(zr, zi, wr, wi, dr, di, n);
 }
 
 }  // namespace hyle::simd::detail

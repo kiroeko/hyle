@@ -331,6 +331,64 @@ void cpow_f32_batch(const float* zr, const float* zi, const float* wr, const flo
   detail::cpow_f32_scalar(zr, zi, wr, wi, dr, di, n);
 }
 
+// The complete typed HYLE complex family shares one D-tag body per operation. This covers the
+// f32 additions and the full f64 surface without coupling the public ABI to an ISA vector type.
+#if defined(HYLE_ARCH_X64)
+#define HYLE_COMPLEX_TYPED_UNARY_BODY(type, tag, name)                              \
+  static const bool hw = have_avx2();                                               \
+  if (hw) { detail::name##_##tag##_hyle_avx2(sr, si, dr, di, n); return; }           \
+  detail::name##_##tag##_scalar(sr, si, dr, di, n);
+#elif defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#define HYLE_COMPLEX_TYPED_UNARY_BODY(type, tag, name)                              \
+  if (have_sve_math()) { HYLE_HYLE_NAME_II(name, tag, sve)(sr, si, dr, di, n); return; } \
+  detail::name##_##tag##_hyle_neon(sr, si, dr, di, n);
+#elif defined(HYLE_ARCH_ARM64)
+#define HYLE_COMPLEX_TYPED_UNARY_BODY(type, tag, name)                              \
+  detail::name##_##tag##_hyle_neon(sr, si, dr, di, n);
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#define HYLE_COMPLEX_TYPED_UNARY_BODY(type, tag, name)                              \
+  if (have_rvv_math()) { HYLE_HYLE_NAME_II(name, tag, rvv)(sr, si, dr, di, n); return; } \
+  detail::name##_##tag##_scalar(sr, si, dr, di, n);
+#else
+#define HYLE_COMPLEX_TYPED_UNARY_BODY(type, tag, name) \
+  detail::name##_##tag##_scalar(sr, si, dr, di, n);
+#endif
+#define HYLE_COMPLEX_TYPED_UNARY(type, tag, name)                                  \
+  void name##_##tag##_batch(const type* sr, const type* si, type* dr, type* di,     \
+                             std::size_t n) noexcept {                               \
+    HYLE_COMPLEX_TYPED_UNARY_BODY(type, tag, name)                                  \
+  }
+HYLE_COMPLEX_TYPED_UNARY(float, f32, ctan)
+HYLE_COMPLEX_TYPED_UNARY(float, f32, csinh)
+HYLE_COMPLEX_TYPED_UNARY(float, f32, ccosh)
+HYLE_COMPLEX_TYPED_UNARY(double, f64, cexp)
+HYLE_COMPLEX_TYPED_UNARY(double, f64, clog)
+HYLE_COMPLEX_TYPED_UNARY(double, f64, csqrt)
+HYLE_COMPLEX_TYPED_UNARY(double, f64, csin)
+HYLE_COMPLEX_TYPED_UNARY(double, f64, ccos)
+HYLE_COMPLEX_TYPED_UNARY(double, f64, ctan)
+HYLE_COMPLEX_TYPED_UNARY(double, f64, csinh)
+HYLE_COMPLEX_TYPED_UNARY(double, f64, ccosh)
+HYLE_COMPLEX_TYPED_UNARY(double, f64, ctanh)
+#undef HYLE_COMPLEX_TYPED_UNARY
+#undef HYLE_COMPLEX_TYPED_UNARY_BODY
+
+void cpow_f64_batch(const double* zr, const double* zi, const double* wr, const double* wi,
+                    double* dr, double* di, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_X64)
+  static const bool hw = have_avx2();
+  if (hw) { detail::cpow_f64_hyle_avx2(zr, zi, wr, wi, dr, di, n); return; }
+#elif defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (have_sve_math()) { HYLE_HYLE_NAME_II(cpow, f64, sve)(zr, zi, wr, wi, dr, di, n); return; }
+#endif
+  detail::cpow_f64_hyle_neon(zr, zi, wr, wi, dr, di, n); return;
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) { HYLE_HYLE_NAME_II(cpow, f64, rvv)(zr, zi, wr, wi, dr, di, n); return; }
+#endif
+  detail::cpow_f64_scalar(zr, zi, wr, wi, dr, di, n);
+}
+
 // Highway-winning: sin cos log2 atan cbrt expm1 log1p asinh acosh. On MSVC the 512 Highway is
 // broken (would emit ymm), so the avx512 branch is GCC/Clang-only; MSVC falls to avx2 highway.
 #define HYLE_MATH_DISPATCH_HIGHWAY(name)                                         \

@@ -159,15 +159,29 @@ HYLE_SIMD_API void log_softmax_f32(float* data, std::size_t n) noexcept;
 // STORAGE = SoA (planar): real and imaginary parts live in separate arrays. Exact in-place use
 // (dst_re==src_re and dst_im==src_im) is supported; arbitrary offset overlap is not. n arbitrary.
 //   cexp/clog/csqrt : the workhorses (FFT twiddle, transfer functions, roots)
-//   csin/ccos + ctanh : currently shipped trig / hyperbolic subset
+//   csin/ccos/ctan + csinh/ccosh/ctanh : complex trig and hyperbolic families
 //   cpow : z^w (both complex)
 HYLE_SIMD_API void cexp_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
 HYLE_SIMD_API void clog_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
 HYLE_SIMD_API void csqrt_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
 HYLE_SIMD_API void csin_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
 HYLE_SIMD_API void ccos_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void ctan_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void csinh_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void ccosh_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
 HYLE_SIMD_API void ctanh_f32_batch(const float* src_re, const float* src_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
 // cpow(z, w): both operands complex. Four input planes, two output planes.
 HYLE_SIMD_API void cpow_f32_batch(const float* z_re, const float* z_im, const float* w_re, const float* w_im, float* dst_re, float* dst_im, std::size_t n) noexcept;
+
+HYLE_SIMD_API void cexp_f64_batch(const double* src_re, const double* src_im, double* dst_re, double* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void clog_f64_batch(const double* src_re, const double* src_im, double* dst_re, double* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void csqrt_f64_batch(const double* src_re, const double* src_im, double* dst_re, double* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void csin_f64_batch(const double* src_re, const double* src_im, double* dst_re, double* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void ccos_f64_batch(const double* src_re, const double* src_im, double* dst_re, double* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void ctan_f64_batch(const double* src_re, const double* src_im, double* dst_re, double* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void csinh_f64_batch(const double* src_re, const double* src_im, double* dst_re, double* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void ccosh_f64_batch(const double* src_re, const double* src_im, double* dst_re, double* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void ctanh_f64_batch(const double* src_re, const double* src_im, double* dst_re, double* dst_im, std::size_t n) noexcept;
+HYLE_SIMD_API void cpow_f64_batch(const double* z_re, const double* z_im, const double* w_re, const double* w_im, double* dst_re, double* dst_im, std::size_t n) noexcept;
 
 }  // namespace hyle::simd

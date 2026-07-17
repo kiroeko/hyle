@@ -99,7 +99,8 @@ hypot 是 **binary best-of**(两库都有,非独有)。xsimd direct-formula 核�
 
 ### 线①-d 复数超越函数(✅ 2026-07-09,用户"xsimd 独有的复数超越函数抄过来")
 
-复数 API 是 **SoA planar**（实部虚部分离数组 re[i]/im[i]）——匹配 xsimd `load_unaligned(re, im)` 的零交织构造，且是 FFT/信号的自然布局；精确原位 dst alias src 可用。Highway无复数路径：`cexp/clog/csqrt`在x86借 xsimd AVX2、其余架构使用`std::complex`；`csin/ccos/ctanh/cpow`现由HYLE SoA在AVX2/NEON编排，异常 lane回退`std::complex`。完整当前路由与竞赛裁决见[`simd-12`](./simd-12-vendor-displacement.md)和[`simd-13`](./simd-13-vendor-displacement-2.md)。
+复数 API 是 **SoA planar**（实部虚部分离数组 re[i]/im[i]）——匹配 xsimd `load_unaligned(re, im)` 的零交织构造，且是 FFT/信号的自然布局；精确原位 dst alias src 可用。这里记录的是 simd-09 落地时的旧路由；当前 f32/f64 完整集合及 AVX2/NEON/SVE/RVV 共用 typed D-tag body 见
+[`simd-capability-fill-list`](./simd-capability-fill-list.md) C3。
 
 ### 线③ fp8 dtype(E4M3/E5M2,✅ 2026-07-09,用户"fp8 推理常见精度还是要做的")
 

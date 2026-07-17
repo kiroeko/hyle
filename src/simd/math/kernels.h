@@ -87,15 +87,25 @@ void tgamma_f32_scalar(const float* src, float* dst, std::size_t n) noexcept;
 // hypot: full-range scalar oracle plus direct-formula fast contract.
 void hypot_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 void hypot_in_range_f32_scalar(const float* a, const float* b, float* dst, std::size_t n) noexcept;
-// SoA complex transcendentals: scalar std::complex oracle; xsimd supplies cexp/clog/csqrt AVX2,
-// while HYLE-owned csin/ccos/ctanh/cpow siblings exist for AVX2 and NEON.
-void cexp_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void clog_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void csqrt_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void csin_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ccos_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
-void ctanh_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+// SoA complex transcendental scalar oracles and fallback.
+#define HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, name) \
+  void name##_##tag##_scalar(const type*, const type*, type*, type*, std::size_t) noexcept;
+#define HYLE_DECLARE_COMPLEX_SCALAR_SET(type, tag) \
+  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, cexp)   \
+  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, clog)   \
+  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, csqrt)  \
+  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, csin)   \
+  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, ccos)   \
+  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, ctan)   \
+  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, csinh)  \
+  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, ccosh)  \
+  HYLE_DECLARE_COMPLEX_SCALAR_UNARY(type, tag, ctanh)
+HYLE_DECLARE_COMPLEX_SCALAR_SET(float, f32)
+HYLE_DECLARE_COMPLEX_SCALAR_SET(double, f64)
+#undef HYLE_DECLARE_COMPLEX_SCALAR_SET
+#undef HYLE_DECLARE_COMPLEX_SCALAR_UNARY
 void cpow_f32_scalar(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
+void cpow_f64_scalar(const double* zr, const double* zi, const double* wr, const double* wi, double* dr, double* di, std::size_t n) noexcept;
 
 #if defined(HYLE_ARCH_X64)
 // Per-op best-of-breed borrow cores (x86 AVX2, ~3.5 ULP). The same-ISA bench picked the
@@ -170,10 +180,27 @@ void clog_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di,
 void csqrt_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void csin_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void ccos_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void ctan_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void csinh_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void ccosh_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void ctanh_f32_hyle_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void ctanh_f32_xsimd_avx2(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void cpow_f32_hyle_avx2(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
 void cpow_f32_xsimd_avx2(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
+#define HYLE_DECLARE_COMPLEX_F64_AVX2(name) \
+  void name##_f64_hyle_avx2(const double*, const double*, double*, double*, std::size_t) noexcept;
+HYLE_DECLARE_COMPLEX_F64_AVX2(cexp)
+HYLE_DECLARE_COMPLEX_F64_AVX2(clog)
+HYLE_DECLARE_COMPLEX_F64_AVX2(csqrt)
+HYLE_DECLARE_COMPLEX_F64_AVX2(csin)
+HYLE_DECLARE_COMPLEX_F64_AVX2(ccos)
+HYLE_DECLARE_COMPLEX_F64_AVX2(ctan)
+HYLE_DECLARE_COMPLEX_F64_AVX2(csinh)
+HYLE_DECLARE_COMPLEX_F64_AVX2(ccosh)
+HYLE_DECLARE_COMPLEX_F64_AVX2(ctanh)
+#undef HYLE_DECLARE_COMPLEX_F64_AVX2
+void cpow_f64_hyle_avx2(const double*, const double*, const double*, const double*, double*,
+                        double*, std::size_t) noexcept;
 // hypot dual contract: Highway provides full-range scaling; xsimd provides the explicit fast
 // direct-formula variant. See math.h and usage-guide.md.
 void hypot_f32_highway_avx2(const float* a, const float* b, float* dst, std::size_t n) noexcept;
@@ -310,12 +337,29 @@ void tgamma_f32_xsimd_neon(const float* src, float* dst, std::size_t n) noexcept
 void hypot_in_range_f32_xsimd_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
 void csin_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void ccos_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void ctan_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void csinh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+void ccosh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void ctanh_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void cpow_f32_hyle_neon(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept;
 // simd-17 batch5: ARM complex cexp/clog/csqrt (xsimd batch complex on NEON; was scalar floor).
 void cexp_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void clog_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
 void csqrt_f32_hyle_neon(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept;
+#define HYLE_DECLARE_COMPLEX_F64_NEON(name) \
+  void name##_f64_hyle_neon(const double*, const double*, double*, double*, std::size_t) noexcept;
+HYLE_DECLARE_COMPLEX_F64_NEON(cexp)
+HYLE_DECLARE_COMPLEX_F64_NEON(clog)
+HYLE_DECLARE_COMPLEX_F64_NEON(csqrt)
+HYLE_DECLARE_COMPLEX_F64_NEON(csin)
+HYLE_DECLARE_COMPLEX_F64_NEON(ccos)
+HYLE_DECLARE_COMPLEX_F64_NEON(ctan)
+HYLE_DECLARE_COMPLEX_F64_NEON(csinh)
+HYLE_DECLARE_COMPLEX_F64_NEON(ccosh)
+HYLE_DECLARE_COMPLEX_F64_NEON(ctanh)
+#undef HYLE_DECLARE_COMPLEX_F64_NEON
+void cpow_f64_hyle_neon(const double*, const double*, const double*, const double*, double*,
+                        double*, std::size_t) noexcept;
 // hypot binary: Highway (overflow-safe; xsimd's is faster but returns inf past FLT_MAX). Highway
 // contrib/math lowers to NEON here, same as the other arm64 Highway ops.
 void hypot_f32_highway_neon(const float* a, const float* b, float* dst, std::size_t n) noexcept;
@@ -404,8 +448,21 @@ void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::
   void csqrt_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
   void csin_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
   void ccos_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
+  void ctan_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
+  void csinh_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
+  void ccosh_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
   void ctanh_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
-  void cpow_f32_hyle_##suffix(const float*, const float*, const float*, const float*, float*, float*, std::size_t) noexcept;
+  void cpow_f32_hyle_##suffix(const float*, const float*, const float*, const float*, float*, float*, std::size_t) noexcept; \
+  void cexp_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
+  void clog_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
+  void csqrt_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
+  void csin_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
+  void ccos_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
+  void ctan_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
+  void csinh_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
+  void ccosh_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
+  void ctanh_f64_hyle_##suffix(const double*, const double*, double*, double*, std::size_t) noexcept; \
+  void cpow_f64_hyle_##suffix(const double*, const double*, const double*, const double*, double*, double*, std::size_t) noexcept;
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
 HYLE_DECLARE_SCALABLE_MATH(sve)
 #endif

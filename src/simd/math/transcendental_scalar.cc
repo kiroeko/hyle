@@ -100,29 +100,55 @@ void hypot_in_range_f32_scalar(const float* a, const float* b, float* dst, std::
   for (std::size_t i = 0; i < n; ++i) dst[i] = std::sqrt(a[i] * a[i] + b[i] * b[i]);
 }
 
-// complex transcendentals: std::complex<float> per element -- the always-present oracle + fallback
-// for the xsimd complex borrow cores. SoA planar in/out (re[i], im[i]).
+// complex transcendentals: std::complex per element -- the always-present oracle + fallback.
+// SoA planar in/out (re[i], im[i]).
 namespace {
-using cf = std::complex<float>;
-template <cf (*Fn)(const cf&)>
-void cunary(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept {
-  for (std::size_t i = 0; i < n; ++i) { cf r = Fn(cf(sr[i], si[i])); dr[i] = r.real(); di[i] = r.imag(); }
+template <typename T, class Fn>
+void cunary(const T* sr, const T* si, T* dr, T* di, std::size_t n, Fn&& fn) noexcept {
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::complex<T> r = fn(std::complex<T>(sr[i], si[i]));
+    dr[i] = r.real();
+    di[i] = r.imag();
+  }
 }
-cf c_exp(const cf& z) { return std::exp(z); }
-cf c_log(const cf& z) { return std::log(z); }
-cf c_sqrt(const cf& z) { return std::sqrt(z); }
-cf c_sin(const cf& z) { return std::sin(z); }
-cf c_cos(const cf& z) { return std::cos(z); }
-cf c_tanh(const cf& z) { return std::tanh(z); }
+template <typename T>
+void cpow_scalar(const T* zr, const T* zi, const T* wr, const T* wi, T* dr, T* di,
+                 std::size_t n) noexcept {
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::complex<T> r =
+        std::pow(std::complex<T>(zr[i], zi[i]), std::complex<T>(wr[i], wi[i]));
+    dr[i] = r.real();
+    di[i] = r.imag();
+  }
+}
 }  // namespace
-void cexp_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary<c_exp>(sr, si, dr, di, n); }
-void clog_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary<c_log>(sr, si, dr, di, n); }
-void csqrt_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary<c_sqrt>(sr, si, dr, di, n); }
-void csin_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary<c_sin>(sr, si, dr, di, n); }
-void ccos_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary<c_cos>(sr, si, dr, di, n); }
-void ctanh_f32_scalar(const float* sr, const float* si, float* dr, float* di, std::size_t n) noexcept { cunary<c_tanh>(sr, si, dr, di, n); }
-void cpow_f32_scalar(const float* zr, const float* zi, const float* wr, const float* wi, float* dr, float* di, std::size_t n) noexcept {
-  for (std::size_t i = 0; i < n; ++i) { cf r = std::pow(cf(zr[i], zi[i]), cf(wr[i], wi[i])); dr[i] = r.real(); di[i] = r.imag(); }
+#define HYLE_DEFINE_COMPLEX_SCALAR_UNARY(type, tag, name, fn)                       \
+  void name##_##tag##_scalar(const type* sr, const type* si, type* dr, type* di,    \
+                             std::size_t n) noexcept {                               \
+    cunary(sr, si, dr, di, n, [](std::complex<type> z) { return std::fn(z); });      \
+  }
+#define HYLE_DEFINE_COMPLEX_SCALAR_SET(type, tag)       \
+  HYLE_DEFINE_COMPLEX_SCALAR_UNARY(type, tag, cexp, exp)   \
+  HYLE_DEFINE_COMPLEX_SCALAR_UNARY(type, tag, clog, log)   \
+  HYLE_DEFINE_COMPLEX_SCALAR_UNARY(type, tag, csqrt, sqrt) \
+  HYLE_DEFINE_COMPLEX_SCALAR_UNARY(type, tag, csin, sin)   \
+  HYLE_DEFINE_COMPLEX_SCALAR_UNARY(type, tag, ccos, cos)   \
+  HYLE_DEFINE_COMPLEX_SCALAR_UNARY(type, tag, ctan, tan)   \
+  HYLE_DEFINE_COMPLEX_SCALAR_UNARY(type, tag, csinh, sinh) \
+  HYLE_DEFINE_COMPLEX_SCALAR_UNARY(type, tag, ccosh, cosh) \
+  HYLE_DEFINE_COMPLEX_SCALAR_UNARY(type, tag, ctanh, tanh)
+HYLE_DEFINE_COMPLEX_SCALAR_SET(float, f32)
+HYLE_DEFINE_COMPLEX_SCALAR_SET(double, f64)
+#undef HYLE_DEFINE_COMPLEX_SCALAR_SET
+#undef HYLE_DEFINE_COMPLEX_SCALAR_UNARY
+
+void cpow_f32_scalar(const float* zr, const float* zi, const float* wr, const float* wi,
+                     float* dr, float* di, std::size_t n) noexcept {
+  cpow_scalar(zr, zi, wr, wi, dr, di, n);
+}
+void cpow_f64_scalar(const double* zr, const double* zi, const double* wr, const double* wi,
+                     double* dr, double* di, std::size_t n) noexcept {
+  cpow_scalar(zr, zi, wr, wi, dr, di, n);
 }
 
 
