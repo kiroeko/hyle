@@ -3149,6 +3149,14 @@ consteval auto make_neon_half_indices() {
       else row[packed] = static_cast<std::uint8_t>(lane * kLaneBytes);
       ++packed;
     }
+    // The 16-bit vqsort fast path stores this as a true stable partition: selected lanes first,
+    // then unselected lanes. Its former zero-filled tail duplicated lane 0 and dropped keys.
+    if constexpr (!kExpand && kLaneBytes == 2) {
+      for (std::size_t lane = 0; lane < 8; ++lane) {
+        if ((bits & (std::size_t{1} << lane)) != 0) continue;
+        row[packed++] = static_cast<std::uint8_t>(lane * kLaneBytes);
+      }
+    }
   }
   return table;
 }

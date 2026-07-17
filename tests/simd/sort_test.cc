@@ -32,6 +32,7 @@ using hyle::simd::partial_sort;
 using hyle::simd::select;
 using hyle::simd::sort;
 using hyle::simd::SortOrder;
+using hyle::simd::UInt128;
 
 namespace {
 
@@ -158,12 +159,79 @@ void run_all_for_type() {
 
 }  // namespace
 
+TEST(Sort, U16) { run_all_for_type<std::uint16_t>(); }
+TEST(Sort, I16) { run_all_for_type<std::int16_t>(); }
 TEST(Sort, U32) { run_all_for_type<std::uint32_t>(); }
 TEST(Sort, I32) { run_all_for_type<std::int32_t>(); }
 TEST(Sort, U64) { run_all_for_type<std::uint64_t>(); }
 TEST(Sort, I64) { run_all_for_type<std::int64_t>(); }
 TEST(Sort, F32) { run_all_for_type<float>(); }
 TEST(Sort, F64) { run_all_for_type<double>(); }
+
+namespace {
+
+bool less_u128(const UInt128& a, const UInt128& b) {
+  return a.hi < b.hi || (a.hi == b.hi && a.lo < b.lo);
+}
+bool equal_u128(const UInt128& a, const UInt128& b) {
+  return a.lo == b.lo && a.hi == b.hi;
+}
+
+std::vector<UInt128> make_u128(std::size_t n) {
+  std::mt19937_64 rng(0x1285A17ULL + n);
+  std::vector<UInt128> out(n);
+  for (std::size_t i = 0; i < n; ++i) {
+    out[i] = UInt128{rng(), rng()};
+    if (i % 7 == 0) out[i].hi &= 3;        // repeated high words exercise low-word ordering
+    if (i % 13 == 0) out[i] = UInt128{};   // duplicates
+  }
+  if (n > 2) {
+    out[0] = UInt128{0, 1};
+    out[1] = UInt128{~std::uint64_t{0}, 0};
+    out[2] = UInt128{~std::uint64_t{0}, ~std::uint64_t{0}};
+  }
+  return out;
+}
+
+}  // namespace
+
+TEST(Sort, U128SortPartialAndSelect) {
+  for (const std::size_t n : {std::size_t{1}, std::size_t{2}, std::size_t{7},
+                              std::size_t{31}, std::size_t{257}, std::size_t{4096}}) {
+    const auto source = make_u128(n);
+    for (SortOrder order : {SortOrder::kAscending, SortOrder::kDescending}) {
+      const bool asc = order == SortOrder::kAscending;
+      const auto before128 = [asc](const UInt128& a, const UInt128& b) {
+        return asc ? less_u128(a, b) : less_u128(b, a);
+      };
+      auto expected = source;
+      std::sort(expected.begin(), expected.end(), before128);
+
+      auto got = source;
+      sort(got.data(), got.size(), order);
+      ASSERT_TRUE(std::equal(got.begin(), got.end(), expected.begin(), equal_u128))
+          << "sort n=" << n << " asc=" << asc;
+
+      for (const std::size_t k : {std::size_t{0}, n / 2, n}) {
+        got = source;
+        auto ref = source;
+        partial_sort(got.data(), got.size(), k, order);
+        std::partial_sort(ref.begin(), ref.begin() + k, ref.end(), before128);
+        ASSERT_TRUE(std::equal(got.begin(), got.begin() + k, ref.begin(), equal_u128))
+            << "partial n=" << n << " k=" << k << " asc=" << asc;
+      }
+
+      for (const std::size_t k : {std::size_t{0}, n / 2, n - 1}) {
+        got = source;
+        select(got.data(), got.size(), k, order);
+        ASSERT_TRUE(equal_u128(got[k], expected[k]))
+            << "select n=" << n << " k=" << k << " asc=" << asc;
+        for (std::size_t i = 0; i < k; ++i) ASSERT_FALSE(before128(got[k], got[i]));
+        for (std::size_t i = k + 1; i < n; ++i) ASSERT_FALSE(before128(got[i], got[k]));
+      }
+    }
+  }
+}
 
 TEST(Sort, FloatingNaNsLast) {
   const float nan = std::numeric_limits<float>::quiet_NaN();

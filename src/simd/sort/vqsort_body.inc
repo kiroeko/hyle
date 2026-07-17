@@ -47,6 +47,29 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DEFINE)
 
 #undef HYLE_SORT_DEFINE
 
+// Unsigned 128-bit numeric keys: two u64 words, low word first. The vqsort traits compare high
+// then low and already provide the paired-lane sorting networks.
+#define HYLE_SORT_U128_DEFINE(KT, tag, tier)                                                \
+  void HYLE_SORT_SYM(sort, tag)(KT* keys, std::size_t n, bool ascending) noexcept {         \
+    auto* h = reinterpret_cast<vqsort::uint128_t*>(keys);                                  \
+    if (ascending) vqsort::VQSortStatic(h, n, vqsort::SortAscending{});                    \
+    else vqsort::VQSortStatic(h, n, vqsort::SortDescending{});                             \
+  }                                                                                        \
+  void HYLE_SORT_SYM(psort, tag)(KT* keys, std::size_t n, std::size_t k, bool ascending)   \
+      noexcept {                                                                           \
+    auto* h = reinterpret_cast<vqsort::uint128_t*>(keys);                                  \
+    if (ascending) vqsort::VQPartialSortStatic(h, n, k, vqsort::SortAscending{});          \
+    else vqsort::VQPartialSortStatic(h, n, k, vqsort::SortDescending{});                   \
+  }                                                                                        \
+  void HYLE_SORT_SYM(select, tag)(KT* keys, std::size_t n, std::size_t k, bool ascending)  \
+      noexcept {                                                                           \
+    auto* h = reinterpret_cast<vqsort::uint128_t*>(keys);                                  \
+    if (ascending) vqsort::VQSelectStatic(h, n, k, vqsort::SortAscending{});               \
+    else vqsort::VQSelectStatic(h, n, k, vqsort::SortDescending{});                        \
+  }
+HYLE_SORT_U128_TYPES(HYLE_SORT_U128_DEFINE, ignored)
+#undef HYLE_SORT_U128_DEFINE
+
 // KV (top-k): HYLE KV32Bits/KV64Bits are byte-identical to the port's K32V32/K64V64
 // ({value, key}, same alignas), so reinterpret_cast is a zero-copy view.
 #define HYLE_SORT_KV_DEFINE(KVT, PortT, kvtag)                                                \

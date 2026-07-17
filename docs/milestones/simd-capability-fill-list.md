@@ -96,10 +96,10 @@
 | # | 项 | 说明 |
 |---|---|---|
 | **C1** | **`MulHigh` / `MulHighLow`** | ✅ 单一 `MulHigh` 覆盖 i/u8/16/32/64；删公开 `MulHigh32` 特例；`MulHighLow` 返回 low、写 high，widen/64-bit 路径共享 partial；AVX2 首轮 i/u8 0.1–0.15×、i64 0.8× 回退已修至约同速；register/native-only，不进 C ABI/Runtime 表 |
-| **C2** | **sort key 扩展** | 先 **i16/u16 + 128-bit POD**；**f16 placeholder** 须先统一 dtype/NaN total-order |
+| **C2** | **sort key 扩展** | ✅ `i16/u16` + unsigned `UInt128 {lo,hi}` POD 已覆盖 sort/partial/select 与 scalar/AVX2/AVX512/NEON/SVE/RVV；顺带修复 SVE1 16-bit register-only Compress 和 NEON 16-bit true-partition 丢 key；f16/bf16 仍须先统一 dtype/NaN total-order |
 | **C3** | **complex** | f32 `ctan/csinh/ccosh`；现有 c* 扩 **f64**；SoA real/imag |
 
-与 A/B 正交。无真机时默认序：**C2 → C3 → D1/D6 → D5/D7 → D2**；A1/A3/B5/B7 进入“有硅再签字”队列。
+与 A/B 正交。无真机时默认序：**C3 → D1/D6 → D5/D7 → D2**；A1/A3/B5/B7 进入“有硅再签字”队列。
 
 ---
 
@@ -170,7 +170,7 @@
 1.  A1    NEON KV64 性能狩猎
 2.  A3/B5 变宽真机 scorecard（有硅时）
 3.  C1    mul_hi / mul_hilo  ✅
-4.  C2    sort key i16/u16/u128
+4.  C2    sort key i16/u16/u128（✅）
 5.  C3    complex + f64
 6.  B6/B7/B8  按消费与证据穿插
 7.  D1+D6 exact 单腿 + dispatcher 生成收敛（可与算法并行）
@@ -180,7 +180,7 @@
 // D8 仅 f16/bf16 类型轴启动时评估
 ```
 
-主工单线：**simd-24 的 C2–C3**；机制线 **D1/D2/D5/D6/D7** 可在无真机环境继续。A1、A3/B5 与 B7 性能决策挂起到取得对应硅。
+主工单线：**simd-24 的 C3**；机制线 **D1/D2/D5/D6/D7** 可在无真机环境继续。A1、A3/B5 与 B7 性能决策挂起到取得对应硅。
 
 ---
 

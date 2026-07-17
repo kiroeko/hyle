@@ -114,8 +114,10 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(_fixed_partial_tests simd/vec_partial_boundary_test.cc simd/vec_half_combine_oracle_test.cc)
   hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc simd/native_test.cc ${_fixed_partial_tests}
                 DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_flags})
-  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc simd/native_test.cc ${_fixed_partial_tests}
+  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc simd/native_test.cc
+                simd/sort_kernel_test.cc ${_fixed_partial_tests}
                 DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
+  target_include_directories(hyle_simd_avx2_test PRIVATE "${PROJECT_SOURCE_DIR}")
   # simd-08 档C crypto: the base sse4/avx2 variants above compile WITHOUT -maes/-mpclmul, so on
   # GCC/Clang the AES/CLMul op face takes the SOFTWARE fallback. This extra variant adds those
   # flags (SSE42_AES tier) so the AES-NI / PCLMULQDQ HARDWARE path is actually compiled + run
@@ -133,8 +135,10 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # auto-run ctest -- it is built for compile validation + manual SDE execution. The optional
   # HYLE_SIMD_AVX512_RUNNABLE gate marks the host as真 AVX-512 (or SDE-wrapped) to auto-run.
   hyle_isa_flags(_avx512_flags AVX512)
-  hyle_add_test(simd NAME avx512 SOURCES simd/vec_test.cc simd/native_test.cc ${_fixed_partial_tests}
+  hyle_add_test(simd NAME avx512 SOURCES simd/vec_test.cc simd/native_test.cc
+                simd/sort_kernel_test.cc ${_fixed_partial_tests}
                 DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags})
+  target_include_directories(hyle_simd_avx512_test PRIVATE "${PROJECT_SOURCE_DIR}")
   # AVX512_DL variant: same avx512.h backend, compiled with GFNI/VBMI/BITALG so the NATIVE
   # BitShuffle (VPSHUFBITQMB) / MultiRotateRight (VPMULTISHIFTQB) paths are taken instead of the
   # store+reload fallback. Built for compile validation + SDE execution (Ice Lake ISA); NOT
@@ -151,9 +155,11 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
   # The same fixed-width partial proof covers NEON's physical D/Q split. All cases
   # are permanent default-on regressions.
-  hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc simd/native_test.cc simd/vec_partial_boundary_test.cc
+  hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc simd/native_test.cc
+                simd/sort_kernel_test.cc simd/vec_partial_boundary_test.cc
                 simd/vec_half_combine_oracle_test.cc
                 DEFINES HYLE_SIMD_TARGET_NEON OPTIONS ${_neon_flags})
+  target_include_directories(hyle_simd_neon_test PRIVATE "${PROJECT_SOURCE_DIR}")
   # SVE variant: the FIRST scalable-width backend (backend/sve.h). Its op face is VL-agnostic, so
   # it uses a DEDICATED sve_test.cc (not vec_test.cc, which pins Lanes to a compile-time constant).
   # Gated by HYLE_SIMD_SVE=ON because SVE needs `-march=...+sve` and a CPU/emulator that supports

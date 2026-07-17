@@ -27,6 +27,7 @@ namespace nb = ankerl::nanobench;
 using hyle::simd::KeyValue32;
 using hyle::simd::KeyValue64;
 using hyle::simd::SortOrder;
+using hyle::simd::UInt128;
 
 template <typename T>
 struct IsKeyValue : std::false_type {};
@@ -51,6 +52,8 @@ std::vector<T> make_input(std::size_t n, bool few_unique) {
       values[i] = {static_cast<std::uint32_t>(i), static_cast<std::uint32_t>(raw)};
     } else if constexpr (std::is_same_v<T, KeyValue64>) {
       values[i] = {static_cast<std::uint64_t>(i), raw};
+    } else if constexpr (std::is_same_v<T, UInt128>) {
+      values[i] = {raw, few_unique ? (rng() & 7u) : rng()};
     } else {
       values[i] = static_cast<T>(raw);
     }
@@ -102,8 +105,14 @@ HYLE_NOINLINE void std_nth(T* keys, std::size_t n, std::size_t k, bool ascending
 }
 template <typename T>
 HYLE_NOINLINE void highway_select(T* keys, std::size_t n, std::size_t k, bool ascending) noexcept {
-  if (ascending) hwy::HWY_NAMESPACE::VQSelectStatic(keys, n, k, hwy::SortAscending{});
-  else hwy::HWY_NAMESPACE::VQSelectStatic(keys, n, k, hwy::SortDescending{});
+  if constexpr (std::is_same_v<T, UInt128>) {
+    auto* h = reinterpret_cast<hwy::uint128_t*>(keys);
+    if (ascending) hwy::HWY_NAMESPACE::VQSelectStatic(h, n, k, hwy::SortAscending{});
+    else hwy::HWY_NAMESPACE::VQSelectStatic(h, n, k, hwy::SortDescending{});
+  } else {
+    if (ascending) hwy::HWY_NAMESPACE::VQSelectStatic(keys, n, k, hwy::SortAscending{});
+    else hwy::HWY_NAMESPACE::VQSelectStatic(keys, n, k, hwy::SortDescending{});
+  }
 }
 
 template <typename T>
@@ -144,6 +153,10 @@ HYLE_NOINLINE void highway_sort(T* values, std::size_t n, bool ascending) noexce
     auto* h = reinterpret_cast<hwy::K64V64*>(values);
     if (ascending) hwy::HWY_NAMESPACE::VQSortStatic(h, n, hwy::SortAscending{});
     else hwy::HWY_NAMESPACE::VQSortStatic(h, n, hwy::SortDescending{});
+  } else if constexpr (std::is_same_v<T, UInt128>) {
+    auto* h = reinterpret_cast<hwy::uint128_t*>(values);
+    if (ascending) hwy::HWY_NAMESPACE::VQSortStatic(h, n, hwy::SortAscending{});
+    else hwy::HWY_NAMESPACE::VQSortStatic(h, n, hwy::SortDescending{});
   } else {
     if (ascending) hwy::HWY_NAMESPACE::VQSortStatic(values, n, hwy::SortAscending{});
     else hwy::HWY_NAMESPACE::VQSortStatic(values, n, hwy::SortDescending{});
@@ -159,6 +172,10 @@ HYLE_NOINLINE void highway_partial_sort(T* values, std::size_t n, std::size_t k,
     else hwy::HWY_NAMESPACE::VQPartialSortStatic(h, n, k, hwy::SortDescending{});
   } else if constexpr (std::is_same_v<T, KeyValue64>) {
     auto* h = reinterpret_cast<hwy::K64V64*>(values);
+    if (ascending) hwy::HWY_NAMESPACE::VQPartialSortStatic(h, n, k, hwy::SortAscending{});
+    else hwy::HWY_NAMESPACE::VQPartialSortStatic(h, n, k, hwy::SortDescending{});
+  } else if constexpr (std::is_same_v<T, UInt128>) {
+    auto* h = reinterpret_cast<hwy::uint128_t*>(values);
     if (ascending) hwy::HWY_NAMESPACE::VQPartialSortStatic(h, n, k, hwy::SortAscending{});
     else hwy::HWY_NAMESPACE::VQPartialSortStatic(h, n, k, hwy::SortDescending{});
   } else {
@@ -350,9 +367,14 @@ void run_type(const char* name) {
 int main() {
   static_assert(sizeof(KeyValue32) == sizeof(hwy::K32V32));
   static_assert(sizeof(KeyValue64) == sizeof(hwy::K64V64));
+  static_assert(sizeof(UInt128) == sizeof(hwy::uint128_t));
+  static_assert(alignof(UInt128) == alignof(hwy::uint128_t));
   std::printf("HYLE sort tier=%u\n", static_cast<unsigned>(hyle::simd::runtime().sort.isa));
+  run_type<std::uint16_t>("u16");
+  run_type<std::int16_t>("i16");
   run_type<std::uint32_t>("u32");
   run_type<std::uint64_t>("u64");
+  run_type<UInt128>("u128");
   run_type<KeyValue32>("kv32");
   run_type<KeyValue64>("kv64");
   return 0;

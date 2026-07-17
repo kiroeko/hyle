@@ -42,6 +42,8 @@ bool before(T a, T b, bool ascending) {
   }
 HYLE_DIRECT_ONE(std::uint32_t, u32)
 HYLE_DIRECT_ONE(std::int32_t, i32)
+HYLE_DIRECT_ONE(std::uint16_t, u16)
+HYLE_DIRECT_ONE(std::int16_t, i16)
 HYLE_DIRECT_ONE(std::uint64_t, u64)
 HYLE_DIRECT_ONE(std::int64_t, i64)
 HYLE_DIRECT_ONE(float, f32)
@@ -149,6 +151,8 @@ void check_kv(void (*sort_fn)(KV*, std::size_t, bool)) {
 
 TEST(ScalableSortProduct, U32EntryPoints) { check_keys<std::uint32_t>(); }
 TEST(ScalableSortProduct, I32EntryPoints) { check_keys<std::int32_t>(); }
+TEST(ScalableSortProduct, U16EntryPoints) { check_keys<std::uint16_t>(); }
+TEST(ScalableSortProduct, I16EntryPoints) { check_keys<std::int16_t>(); }
 TEST(ScalableSortProduct, U64EntryPoints) { check_keys<std::uint64_t>(); }
 TEST(ScalableSortProduct, I64EntryPoints) { check_keys<std::int64_t>(); }
 TEST(ScalableSortProduct, F32EntryPoints) { check_keys<float>(); }
@@ -163,6 +167,24 @@ TEST(ScalableSortProduct, KeyValuePayloadsRemainAttached) {
       [](auto* p, std::size_t n, bool asc) { HYLE_SCALABLE_SORT(sort_kv32)(p, n, asc); });
   check_kv<hs::detail::KV64Bits, std::uint64_t>(
       [](auto* p, std::size_t n, bool asc) { HYLE_SCALABLE_SORT(sort_kv64)(p, n, asc); });
+}
+
+TEST(ScalableSortProduct, U128EntryPoints) {
+  using U = hs::detail::U128Bits;
+  auto less = [](const U& a, const U& b) {
+    return a.hi < b.hi || (a.hi == b.hi && a.lo < b.lo);
+  };
+  std::vector<U> values(257);
+  for (std::size_t i = 0; i < values.size(); ++i)
+    values[i] = U{static_cast<std::uint64_t>(i * 0x9E3779B9u),
+                  static_cast<std::uint64_t>((i * 37 + i / 5) & 31u)};
+  auto expected = values;
+  std::sort(expected.begin(), expected.end(), less);
+  HYLE_SCALABLE_SORT(sort_u128)(values.data(), values.size(), true);
+  for (std::size_t i = 0; i < values.size(); ++i) {
+    ASSERT_EQ(values[i].hi, expected[i].hi);
+    ASSERT_EQ(values[i].lo, expected[i].lo);
+  }
 }
 
 TEST(ScalableSortProduct, RuntimeAndPublicApiUseScalableTier) {

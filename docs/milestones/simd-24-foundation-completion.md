@@ -247,11 +247,17 @@ QEMU 矩阵全部通过。
   冗余。改为 Highway 同形的 word-product + `vpblendvb`、高半专用 Knuth 路径后，
   i/u8 与 i64 已约 1.00×，u64 约 0.98–0.99×，融合 u64 约 1.06×。
 
-### 阶段 5：sort key 扩展
+### 阶段 5：sort key 扩展 ✅
 
-- i16/u16、128-bit POD key 先落；f16/bf16 在统一 dtype 与 NaN total-order 后落；
-- 每种类型都覆盖 sort/partial/select、KV 携带、canary/ASan 与规模阶梯；
-- 与 radix crossover 分开测，不用 radix 的胜利遮住 vqsort 落后。
+- `i16/u16` 与 unsigned `UInt128 {lo,hi}` POD 已接通 scalar/AVX2/AVX512/NEON/SVE/RVV
+  的 sort/partial/select；`UInt128` 以 `(hi,lo)` 作无符号数值序，不依赖编译器 `__int128` ABI；
+- 新的 direct fixed-tier test 绕过 Runtime，AVX2 真机、AVX512 SDE、NEON QEMU 都直接执行产品核；
+  SVE 五种 VL 与 RVV base/Zvbb/Zvbc 四种 VLEN 的产品门包含新 key；
+- 施工中实抓并修复两个旧后端洞：SVE1 没有 16-bit `svcompact`，现用 Highway 同形的
+  widen-compact-pack-splice 寄存器路径；NEON 16-bit compress 的未选 tail 曾重复 lane 0，
+  与 vqsort true-partition 快路合同冲突并丢 key，现已补成稳定两侧 partition；
+- `sort_bench` 已增加同合同 Highway 的 i16/u16/u128 行。f16/bf16 仍等待统一 dtype 与
+  NaN total-order，不拿 radix crossover 掩盖 vqsort。
 
 ### 阶段 6：complex/f64 complex
 

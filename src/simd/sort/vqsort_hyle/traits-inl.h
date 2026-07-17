@@ -29,7 +29,7 @@ struct KeyLaneBase {
            : IsSame<KeyTypeArg, int16_t>()     ? "i16"
            : IsSame<KeyTypeArg, int32_t>()     ? "i32"
            : IsSame<KeyTypeArg, int64_t>()     ? "i64"
-           : IsSame<KeyTypeArg, uint16_t>()    ? "u32"
+           : IsSame<KeyTypeArg, uint16_t>()    ? "u16"
            : IsSame<KeyTypeArg, uint32_t>()    ? "u32"
            : IsSame<KeyTypeArg, uint64_t>()    ? "u64"
            : IsSame<KeyTypeArg, K32V32>() ? "k+v=64"

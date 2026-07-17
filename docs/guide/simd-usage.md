@@ -138,8 +138,10 @@ hyle::simd::partial_sort(keys, n, 10);  // [0, 10) 是排好序的最小 10 个
 hyle::simd::select(keys, n, k);         // keys[k] 到达完全排序后的位置
 ```
 
-需要“分数排序时索引跟着走”时使用 `KeyValue32/64`；需要稳定排序时显式用 `radix_sort` 或
-`argsort`，不要假设普通 `sort` 对相等 key 稳定。
+普通 key 支持 i/u16、i/u32、i/u64、f32/f64。没有可移植 `uint128_t` ABI 时使用
+`UInt128 {lo, hi}`，按 `(hi, lo)` 的 unsigned 数值序排序。需要“分数排序时索引跟着走”时使用
+`KeyValue32/64`；需要稳定排序时显式用 `radix_sort` 或 `argsort`，不要假设普通 `sort`
+对相等 key 稳定。
 
 ```cpp
 #include "hyle/simd/bitpack.h"
@@ -151,8 +153,8 @@ hyle::simd::pack(raw.data(), raw.size(), packed.data(), bits);
 hyle::simd::unpack(packed.data(), raw.size(), decoded.data(), bits);
 ```
 
-bitpack 的完整块布局依赖当前 ISA tier，只保证同 tier `unpack(pack(x)) == x`。它适合进程内/同机
-临时压缩，**不是跨机器文件或网络 wire format**。
+bitpack 使用固定 128-bit logical block，跨 ISA/VL 保持同一块布局；格式仍应通过正式格式版本
+管理，而不是把未版本化的内存缓冲直接当长期文件或网络 wire format。
 
 ## 必须遵守的调用合同
 
@@ -191,7 +193,7 @@ AVX2 symbol。未知客户 CPU 的发布包应使用默认 fat build。
 | `add(x, y, out, n)` 等无状态 batch | `hyle_simd_*` 纯 C 函数，pointer + count + POD enum |
 | `RandomState` | `hyle_simd_random_o*` opaque handle + create/destroy/fill |
 | `SortOrder` | 固定宽度 C enum/value |
-| `float16_t`、`KeyValue32/64` | 有尺寸、对齐和版本断言的 C POD |
+| `float16_t`、`UInt128`、`KeyValue32/64` | 有尺寸、对齐和版本断言的 C POD |
 | 模块批量入口 | 可选的 versioned `hyle_simd_api_t` 函数表 |
 
 close-01 完成时，本文必须同步完成四件事：改用可被 C 编译器包含的正式头；增加纯 C 示例；写明

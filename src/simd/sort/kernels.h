@@ -19,8 +19,10 @@
 
 namespace hyle::simd::detail {
 
-// X-macro over the six supported key types this milestone: <C++ type>, <short tag>.
+// X-macro over the scalar key types: <C++ type>, <short tag>.
 #define HYLE_SORT_KEY_TYPES(X)   \
+  X(std::uint16_t, u16)          \
+  X(std::int16_t, i16)           \
   X(std::uint32_t, u32)          \
   X(std::int32_t, i32)           \
   X(std::uint64_t, u64)          \
@@ -74,6 +76,32 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_RVV)
 
 #undef HYLE_SORT_DECL_TRIO
 
+// Unsigned 128-bit numeric key. The public UInt128 and the port's uint128_t are byte-identical
+// to this internal POD; keeping the public type out of internal headers avoids an API dependency
+// in per-target kernels.
+struct alignas(16) U128Bits { std::uint64_t lo; std::uint64_t hi; };
+#define HYLE_SORT_DECL_U128_TRIO(T, tag, tier)                                               \
+  void sort_##tag##_##tier(T* keys, std::size_t n, bool ascending) noexcept;                 \
+  void psort_##tag##_##tier(T* keys, std::size_t n, std::size_t k, bool ascending) noexcept; \
+  void select_##tag##_##tier(T* keys, std::size_t n, std::size_t k, bool ascending) noexcept;
+#define HYLE_SORT_U128_TYPES(X, tier) X(U128Bits, u128, tier)
+
+HYLE_SORT_U128_TYPES(HYLE_SORT_DECL_U128_TRIO, scalar)
+#if defined(HYLE_ARCH_X64)
+HYLE_SORT_U128_TYPES(HYLE_SORT_DECL_U128_TRIO, avx2)
+HYLE_SORT_U128_TYPES(HYLE_SORT_DECL_U128_TRIO, avx512)
+#endif
+#if defined(HYLE_ARCH_ARM64)
+HYLE_SORT_U128_TYPES(HYLE_SORT_DECL_U128_TRIO, neon)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+HYLE_SORT_U128_TYPES(HYLE_SORT_DECL_U128_TRIO, sve)
+#endif
+#endif
+#if defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+HYLE_SORT_U128_TYPES(HYLE_SORT_DECL_U128_TRIO, rvv)
+#endif
+#undef HYLE_SORT_DECL_U128_TRIO
+
 // --- key-value (top-k) symbols -----------------------------------------------------------
 // KV sorts by key (value rides along). Public KeyValue32/64 are byte-identical to the port's
 // K32V32/K64V64 (same alignas + field order), so dispatch reinterpret_casts public->KVBits and
@@ -107,6 +135,8 @@ HYLE_SORT_KV_TYPES(HYLE_SORT_DECL_KV_TRIO, rvv)
 // P1-3 streaming partial_sort (k ≪ n). Returns true if handled.
 bool stream_partial_u32(std::uint32_t* keys, std::size_t n, std::size_t k, bool asc) noexcept;
 bool stream_partial_i32(std::int32_t* keys, std::size_t n, std::size_t k, bool asc) noexcept;
+bool stream_partial_u16(std::uint16_t* keys, std::size_t n, std::size_t k, bool asc) noexcept;
+bool stream_partial_i16(std::int16_t* keys, std::size_t n, std::size_t k, bool asc) noexcept;
 bool stream_partial_u64(std::uint64_t* keys, std::size_t n, std::size_t k, bool asc) noexcept;
 bool stream_partial_i64(std::int64_t* keys, std::size_t n, std::size_t k, bool asc) noexcept;
 bool stream_partial_f32(float* keys, std::size_t n, std::size_t k, bool asc) noexcept;

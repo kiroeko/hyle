@@ -85,6 +85,12 @@ bool try_stream_partial_kv(KVT* kv, std::size_t n, std::size_t k, bool ascending
 // Called from sort_dispatch; returns true if handled.
 namespace detail {
 
+bool stream_partial_u16(std::uint16_t* keys, std::size_t n, std::size_t k, bool asc) noexcept {
+  return try_stream_partial(keys, n, k, asc);
+}
+bool stream_partial_i16(std::int16_t* keys, std::size_t n, std::size_t k, bool asc) noexcept {
+  return try_stream_partial(keys, n, k, asc);
+}
 bool stream_partial_u32(std::uint32_t* keys, std::size_t n, std::size_t k, bool asc) noexcept {
   return try_stream_partial(keys, n, k, asc);
 }

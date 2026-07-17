@@ -59,6 +59,25 @@ struct ScalarOrder {
 HYLE_SORT_KEY_TYPES(HYLE_SORT_SCALAR_DEFINE)
 #undef HYLE_SORT_SCALAR_DEFINE
 
+struct ScalarOrder128 {
+  bool ascending;
+  bool operator()(const U128Bits& a, const U128Bits& b) const noexcept {
+    const bool less = a.hi < b.hi || (a.hi == b.hi && a.lo < b.lo);
+    const bool greater = a.hi > b.hi || (a.hi == b.hi && a.lo > b.lo);
+    return ascending ? less : greater;
+  }
+};
+
+void sort_u128_scalar(U128Bits* keys, std::size_t n, bool ascending) noexcept {
+  std::sort(keys, keys + n, ScalarOrder128{ascending});
+}
+void psort_u128_scalar(U128Bits* keys, std::size_t n, std::size_t k, bool ascending) noexcept {
+  std::partial_sort(keys, keys + k, keys + n, ScalarOrder128{ascending});
+}
+void select_u128_scalar(U128Bits* keys, std::size_t n, std::size_t k, bool ascending) noexcept {
+  std::nth_element(keys, keys + k, keys + n, ScalarOrder128{ascending});
+}
+
 // KV scalar floor: sort by .key (value rides along). Comparators compare only the key field.
 #define HYLE_SORT_KV_SCALAR_DEFINE(KVT, kvtag, tier)                                          \
   void sort_##kvtag##_##tier(KVT* kv, std::size_t n, bool ascending) noexcept {               \

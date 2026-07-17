@@ -19,8 +19,9 @@
 // vqsort is NOT a stable sort (order of equal keys is unspecified), matching std::sort/
 // std::nth_element (use a key-index pair if stability is needed).
 //
-// Scalar keys are u32/i32/u64/i64/f32/f64; KeyValue32/64 provide zero-copy top-k payload pairs.
-// u16/i16 and uint128 remain outside the public surface.
+// Scalar keys are u16/i16/u32/i32/u64/i64/f32/f64. UInt128 is an unsigned 128-bit POD key;
+// KeyValue32/64 provide zero-copy top-k payload pairs. All public data surfaces are pointers,
+// counts, and fixed-layout PODs (no standard-library container crosses the library boundary).
 //
 // SEMANTICS (units of KEYS, mirroring the vqsort static entry points):
 //   sort(keys, n, order)            : full sort of keys[0..n).
@@ -41,6 +42,10 @@ namespace hyle::simd {
 enum class SortOrder : std::uint8_t { kAscending, kDescending };
 
 // --- full sort (in place) ---
+HYLE_SIMD_API void sort(std::uint16_t* keys, std::size_t n,
+                        SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void sort(std::int16_t* keys, std::size_t n,
+                        SortOrder order = SortOrder::kAscending) noexcept;
 HYLE_SIMD_API void sort(std::uint32_t* keys, std::size_t n,
                         SortOrder order = SortOrder::kAscending) noexcept;
 HYLE_SIMD_API void sort(std::int32_t* keys, std::size_t n,
@@ -55,6 +60,10 @@ HYLE_SIMD_API void sort(double* keys, std::size_t n,
                         SortOrder order = SortOrder::kAscending) noexcept;
 
 // --- partial sort: sorted smallest/largest k in [0,k) (in place) ---
+HYLE_SIMD_API void partial_sort(std::uint16_t* keys, std::size_t n, std::size_t k,
+                                SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void partial_sort(std::int16_t* keys, std::size_t n, std::size_t k,
+                                SortOrder order = SortOrder::kAscending) noexcept;
 HYLE_SIMD_API void partial_sort(std::uint32_t* keys, std::size_t n, std::size_t k,
                                 SortOrder order = SortOrder::kAscending) noexcept;
 HYLE_SIMD_API void partial_sort(std::int32_t* keys, std::size_t n, std::size_t k,
@@ -69,6 +78,10 @@ HYLE_SIMD_API void partial_sort(double* keys, std::size_t n, std::size_t k,
                                 SortOrder order = SortOrder::kAscending) noexcept;
 
 // --- select (nth_element): keys[k] placed, partitioned around it (in place) ---
+HYLE_SIMD_API void select(std::uint16_t* keys, std::size_t n, std::size_t k,
+                          SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void select(std::int16_t* keys, std::size_t n, std::size_t k,
+                          SortOrder order = SortOrder::kAscending) noexcept;
 HYLE_SIMD_API void select(std::uint32_t* keys, std::size_t n, std::size_t k,
                           SortOrder order = SortOrder::kAscending) noexcept;
 HYLE_SIMD_API void select(std::int32_t* keys, std::size_t n, std::size_t k,
@@ -80,6 +93,30 @@ HYLE_SIMD_API void select(std::int64_t* keys, std::size_t n, std::size_t k,
 HYLE_SIMD_API void select(float* keys, std::size_t n, std::size_t k,
                           SortOrder order = SortOrder::kAscending) noexcept;
 HYLE_SIMD_API void select(double* keys, std::size_t n, std::size_t k,
+                          SortOrder order = SortOrder::kAscending) noexcept;
+
+// --- unsigned 128-bit keys ---------------------------------------------------------------
+// Numeric order is lexicographic by (hi, lo). The explicit POD keeps the ABI independent of
+// compiler-specific __int128 support and is byte-identical to the internal vqsort key.
+struct alignas(16) UInt128 {
+  std::uint64_t lo;
+  std::uint64_t hi;
+};
+inline constexpr bool operator==(UInt128 a, UInt128 b) noexcept {
+  return a.lo == b.lo && a.hi == b.hi;
+}
+inline constexpr bool operator<(UInt128 a, UInt128 b) noexcept {
+  return a.hi < b.hi || (a.hi == b.hi && a.lo < b.lo);
+}
+inline constexpr bool operator>(UInt128 a, UInt128 b) noexcept { return b < a; }
+inline constexpr bool operator<=(UInt128 a, UInt128 b) noexcept { return !(b < a); }
+inline constexpr bool operator>=(UInt128 a, UInt128 b) noexcept { return !(a < b); }
+
+HYLE_SIMD_API void sort(UInt128* keys, std::size_t n,
+                        SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void partial_sort(UInt128* keys, std::size_t n, std::size_t k,
+                                SortOrder order = SortOrder::kAscending) noexcept;
+HYLE_SIMD_API void select(UInt128* keys, std::size_t n, std::size_t k,
                           SortOrder order = SortOrder::kAscending) noexcept;
 
 // --- key-value pairs (top-k): sort by KEY, VALUE rides along ------------------------------

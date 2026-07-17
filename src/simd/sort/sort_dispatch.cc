@@ -56,7 +56,8 @@ bool have_avx512() noexcept {
 // P1-2: large integer arrays use stable LSD radix. Template so float/double discard cleanly.
 template <typename T>
 bool try_radix_sort(T* keys, std::size_t n, SortOrder order) noexcept {
-  if constexpr (std::is_integral_v<T>) {
+  if constexpr (std::is_same_v<T, std::uint32_t> || std::is_same_v<T, std::int32_t> ||
+                std::is_same_v<T, std::uint64_t> || std::is_same_v<T, std::int64_t>) {
     if (n >= kRadixSortMinN) {
       radix_sort(keys, n, order);
       return true;
@@ -249,6 +250,34 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
 HYLE_SORT_KV_DISPATCH(KeyValue32, KV32Bits, kv32)
 HYLE_SORT_KV_DISPATCH(KeyValue64, KV64Bits, kv64)
 #undef HYLE_SORT_KV_DISPATCH
+
+static_assert(sizeof(UInt128) == sizeof(detail::U128Bits));
+static_assert(alignof(UInt128) == alignof(detail::U128Bits));
+static_assert(std::is_standard_layout_v<UInt128>);
+static_assert(std::is_standard_layout_v<detail::U128Bits>);
+
+void sort(UInt128* keys, std::size_t n, SortOrder order) noexcept {
+  if (n == 0) return;
+  const bool asc = (order == SortOrder::kAscending);
+  auto* h = reinterpret_cast<detail::U128Bits*>(keys);
+  HYLE_SORT_KV_LADDER_SORT(u128, h);
+}
+
+void partial_sort(UInt128* keys, std::size_t n, std::size_t k, SortOrder order) noexcept {
+  HYLE_FATAL_ASSERT(k <= n);
+  if (n == 0 || k == 0) return;
+  const bool asc = (order == SortOrder::kAscending);
+  auto* h = reinterpret_cast<detail::U128Bits*>(keys);
+  HYLE_SORT_KV_LADDER_PSORT(u128, h);
+}
+
+void select(UInt128* keys, std::size_t n, std::size_t k, SortOrder order) noexcept {
+  HYLE_FATAL_ASSERT(k < n);
+  const bool asc = (order == SortOrder::kAscending);
+  auto* h = reinterpret_cast<detail::U128Bits*>(keys);
+  HYLE_SORT_KV_LADDER_SELECT(u128, h);
+}
+
 #undef HYLE_SORT_TIER_SORT
 #undef HYLE_SORT_TIER_PSORT
 #undef HYLE_SORT_TIER_SELECT

@@ -665,11 +665,40 @@ template <class D> HYLE_FORCE_INLINE void StoreN(VFromD<D> v, D d, TFromD<D>* p,
   svst1(FirstN(d, n), p, v);
 }
 
-// ---- compress (SVE NATIVE svcompact, not store+reload) ------------------------------
-// Compress(v, m): pack the active lanes to the low end. SVE svcompact is exactly this for 32/64-bit
-// lanes (the widths that have it). Highway contract: inactive lanes' contents are unspecified.
+// ---- compress -----------------------------------------------------------------------
+// SVE1 has native compact only for 32/64-bit lanes. For 16-bit integers, mirror Highway:
+// widen the lower/upper halves to 32-bit, compact each natively, pack their low halfwords, then
+// splice at the runtime number of selected lower-half lanes. This is VL-agnostic and register-only.
 template <class V> HYLE_FORCE_INLINE V Compress(V v, svbool_t m) noexcept {
-  return svcompact(m, v);
+  using T = TFromV<V>;
+  if constexpr (sizeof(T) == 2) {
+    static_assert(std::is_integral_v<T>, "SVE 16-bit Compress supports integer lanes");
+    const svbool_t mask_lo = svunpklo_b(m);
+    const svbool_t mask_hi = svunpkhi_b(m);
+    if constexpr (std::is_signed_v<T>) {
+      const svint32_t compact_lo = svcompact(mask_lo, svunpklo_s32(v));
+      const svint32_t compact_hi = svcompact(mask_hi, svunpkhi_s32(v));
+      const svint16_t bits_lo = svreinterpret_s16_s32(compact_lo);
+      const svint16_t bits_hi = svreinterpret_s16_s32(compact_hi);
+      const svint16_t packed_lo = svuzp1_s16(bits_lo, bits_lo);
+      const svint16_t packed_hi = svuzp1_s16(bits_hi, bits_hi);
+      const std::size_t count_lo = svcntp_b32(svptrue_b32(), mask_lo);
+      return svsplice_s16(svwhilelt_b16(std::uint64_t{0}, count_lo), packed_lo, packed_hi);
+    } else {
+      const svuint32_t compact_lo = svcompact(mask_lo, svunpklo_u32(v));
+      const svuint32_t compact_hi = svcompact(mask_hi, svunpkhi_u32(v));
+      const svuint16_t bits_lo = svreinterpret_u16_u32(compact_lo);
+      const svuint16_t bits_hi = svreinterpret_u16_u32(compact_hi);
+      const svuint16_t packed_lo = svuzp1_u16(bits_lo, bits_lo);
+      const svuint16_t packed_hi = svuzp1_u16(bits_hi, bits_hi);
+      const std::size_t count_lo = svcntp_b32(svptrue_b32(), mask_lo);
+      return svsplice_u16(svwhilelt_b16(std::uint64_t{0}, count_lo), packed_lo, packed_hi);
+    }
+  } else {
+    static_assert(sizeof(T) == 4 || sizeof(T) == 8,
+                  "SVE1 Compact has no byte-lane implementation");
+    return svcompact(m, v);
+  }
 }
 
 // ---- same-width conversions (f32<->i32, the (de)quantize core) ----------------------
@@ -915,7 +944,7 @@ HYLE_FORCE_INLINE V UpperHalf(DH dh, V v) noexcept {
 template <class D, class V> HYLE_FORCE_INLINE V ConcatEven(D d, V hi, V lo) noexcept {
   const std::size_t half = Lanes(d) / 2;
   const auto m = detail::even_lane_mask<TFromV<V>>();
-  const V lo_packed = svcompact(m, lo), hi_packed = svcompact(m, hi);
+  const V lo_packed = Compress(lo, m), hi_packed = Compress(hi, m);
   return IfThenElse(FirstN(d, half), lo_packed, SlideUpLanes(d, hi_packed, half));
 }
 template <class D, class V> HYLE_FORCE_INLINE V ConcatOdd(D d, V hi, V lo) noexcept {
@@ -923,7 +952,7 @@ template <class D, class V> HYLE_FORCE_INLINE V ConcatOdd(D d, V hi, V lo) noexc
   const std::size_t half = Lanes(d) / 2;
   const svbool_t pg = detail::ptrue<T>();
   const auto m = svnot_z(pg, detail::even_lane_mask<T>());
-  const V lo_packed = svcompact(m, lo), hi_packed = svcompact(m, hi);
+  const V lo_packed = Compress(lo, m), hi_packed = Compress(hi, m);
   return IfThenElse(FirstN(d, half), lo_packed, SlideUpLanes(d, hi_packed, half));
 }
 // OddEven(odd, even): even-position lanes from `even`, odd-position lanes from `odd`. Select on an
@@ -1563,13 +1592,14 @@ HYLE_FORCE_INLINE void ScatterIndex(VFromD<D> v, D d, TFromD<D>* base, VI idx) n
   svst1_scatter_index(detail::active(d), base, idx, v);
 }
 // CompressStore(v, m, d, p): pack active lanes to the front, store CountTrue(m) of them, return
-// that count. svcompact packs; then a whilelt-predicated store writes exactly the active count.
+// that count. Compress is native for 32/64 and register-only emulated for 16-bit; then a
+// whilelt-predicated store writes exactly the active count.
 template <class D>
 HYLE_FORCE_INLINE std::size_t CompressStore(VFromD<D> v, svbool_t m, D d, TFromD<D>* p) noexcept {
   const svbool_t active = detail::active(d);
   const svbool_t masked = svand_z(active, active, m);
   const std::size_t cnt = CountTrue(d, masked);
-  svst1(FirstN(d, cnt), p, svcompact(masked, v));
+  svst1(FirstN(d, cnt), p, Compress(v, masked));
   return cnt;
 }
 
