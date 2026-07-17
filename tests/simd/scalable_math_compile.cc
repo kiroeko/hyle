@@ -3,6 +3,7 @@
 // the real target compiler, catching backend operations that shallow header tests do not reach.
 
 #include "src/simd/math/math_hyle-inl.h"
+#include "src/simd/math/math_xsimd_hyle-inl.h"
 #include "src/simd/math/table_f64.h"
 
 namespace hyle::simd::test {
@@ -42,6 +43,12 @@ void instantiate_math(D d, TFromD<D>* p) {
   y = Atan2(d, y, x);
   y = Pow(d, y, x);
   y = Hypot(d, y, x);
+  y = xsimd_hyle::Erfc(d, y);
+  y = xsimd_hyle::Exp10(d, y);
+  y = xsimd_hyle::Fmod(d, y, x);
+  y = xsimd_hyle::Fdim(d, y, x);
+  y = xsimd_hyle::Tgamma(d, y);
+  y = xsimd_hyle::HypotInRange(d, y, x);
   StoreU(y, d, p);
 }
 

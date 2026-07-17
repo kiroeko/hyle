@@ -350,8 +350,7 @@ void sincos_f64_highway_neon(const double* src, double* s, double* c, std::size_
 void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 #endif  // HYLE_ARCH_ARM64
 
-// Length-agnostic siblings of the HYLE/Highway math body. Optional xsimd-only kernels
-// (gamma, direct-form hypot, complex) intentionally retain their independently verified fallback.
+// Length-agnostic siblings of the HYLE/Highway and HYLE-owned xsimd-derived math bodies.
 #define HYLE_DECLARE_SCALABLE_UNARY(type, tag, name, suffix) \
   void name##_##tag##_highway_##suffix(const type*, type*, std::size_t) noexcept;
 #define HYLE_DECLARE_SCALABLE_UNARY_SET(type, tag, suffix) \
@@ -388,7 +387,25 @@ void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::
   void hypot_f64_highway_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
   void atan2_f64_highway_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
   void pow_f64_highway_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
-  void sincos_f64_highway_##suffix(const double*, double*, double*, std::size_t) noexcept;
+  void sincos_f64_highway_##suffix(const double*, double*, double*, std::size_t) noexcept; \
+  void erfc_f32_hyle_##suffix(const float*, float*, std::size_t) noexcept;          \
+  void erfc_f64_hyle_##suffix(const double*, double*, std::size_t) noexcept;        \
+  void exp10_f32_hyle_##suffix(const float*, float*, std::size_t) noexcept;         \
+  void exp10_f64_hyle_##suffix(const double*, double*, std::size_t) noexcept;       \
+  void tgamma_f32_hyle_##suffix(const float*, float*, std::size_t) noexcept;        \
+  void tgamma_f64_hyle_##suffix(const double*, double*, std::size_t) noexcept;      \
+  void fmod_f32_hyle_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
+  void fmod_f64_hyle_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
+  void fdim_f32_hyle_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
+  void fdim_f64_hyle_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
+  void hypot_in_range_f32_hyle_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
+  void cexp_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
+  void clog_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
+  void csqrt_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
+  void csin_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
+  void ccos_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
+  void ctanh_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
+  void cpow_f32_hyle_##suffix(const float*, const float*, const float*, const float*, float*, float*, std::size_t) noexcept;
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
 HYLE_DECLARE_SCALABLE_MATH(sve)
 #endif

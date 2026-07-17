@@ -13,7 +13,8 @@
 // gated on cpu_features().
 //
 // TIERS (sort_dispatch.cc, same shape as math_dispatch): x86 avx512 -> avx2 -> scalar; arm64
-// NEON; else scalar. The scalar floor is std::sort / std::partial_sort / std::nth_element --
+// SVE-256-capped -> NEON; riscv64 RVV -> scalar. The scalar floor is std::sort /
+// std::partial_sort / std::nth_element --
 // ALWAYS compiled, the correctness oracle + the non-x86 / old-CPU fallback (never a SIGILL).
 // vqsort is NOT a stable sort (order of equal keys is unspecified), matching std::sort/
 // std::nth_element (use a key-index pair if stability is needed).

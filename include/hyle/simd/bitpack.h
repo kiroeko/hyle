@@ -10,8 +10,9 @@
 // compile once for each target ISA and are selected by the baseline dispatcher.
 //
 // TIERS (bitpack_dispatch.cc): x86 avx512 -> avx2 -> scalar; arm64 SVE -> NEON; riscv64 RVV ->
-// scalar. The scalar floor is a pure contiguous bit-stream codec -- ALWAYS compiled (never a
-// SIGILL). The wide kernels use integer shift/or/and SIMD.
+// scalar. SVE/RVV are real product kernels; NEON/scalar are used only when a scalable variant is
+// unavailable. The scalar floor is a pure contiguous bit-stream codec -- ALWAYS compiled (never
+// a SIGILL). The wide kernels use integer shift/or/and SIMD.
 //
 // This public header declares one overload per lane type: uint8/uint16/uint32.
 //

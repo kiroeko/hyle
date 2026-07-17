@@ -10,8 +10,10 @@
 #include "src/simd/bitpack/kernels.h"
 
 // bitpack_dispatch.cc -- baseline dispatcher for HYLE SIMD bitpack. Mirrors sort_dispatch.cc:
-// per type it routes to the widest live tier -> x86 avx512 -> avx2 -> scalar; arm64 SVE -> NEON;
-// riscv64 RVV -> scalar; everything else the scalar bit-stream floor. It enters a
+// per type it routes to the widest live tier -> x86 avx512 -> avx2 -> scalar;
+// arm64 SVE -> NEON; riscv64 RVV -> scalar; everything else the scalar bit-stream floor. SVE/RVV
+// are real product TUs; the right-hand tier is only the fallback when the scalable variant is not
+// built or supported. It enters a
 // wide tier only when cpu_features() permits it, so an old CPU never executes a wide instruction.
 // The AVX-512 kernel uses integer shift/or/and SIMD rather than FP transcendentals, and is used on
 // all supported compilers.

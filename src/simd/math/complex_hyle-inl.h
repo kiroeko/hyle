@@ -16,7 +16,6 @@
 
 namespace hyle::simd::detail {
 using namespace hyle::simd;
-using namespace xsimd_hyle;
 
 HYLE_FORCE_INLINE bool complex_sincos_regular_lane(float real, float imag) noexcept {
   const std::uint32_t real_bits = std::bit_cast<std::uint32_t>(real);
@@ -53,7 +52,7 @@ HYLE_FORCE_INLINE void complex_sincos_hyle(const float* sr, const float* si, flo
     const auto ch = Add(one, Div(Mul(t, t), Mul(two, e)));
     auto sh = CopySign(Div(Mul(Mul(half, t), Add(e, one)), e), y);
     sh = IfThenElse(Eq(y, Zero(d)), y, sh);
-    std::uint32_t exceptional = 0;
+    std::uint64_t exceptional = 0;
     float exceptional_re[64];
     float exceptional_im[64];
     if (!regular) {
@@ -61,7 +60,7 @@ HYLE_FORCE_INLINE void complex_sincos_hyle(const float* sr, const float* si, flo
         const float real = sr[i + lane];
         const float imag = si[i + lane];
         if (complex_sincos_regular_lane(real, imag)) continue;
-        exceptional |= std::uint32_t{1} << lane;
+        exceptional |= std::uint64_t{1} << lane;
         const std::complex<float> z(real, imag);
         const std::complex<float> value = kCos ? std::cos(z) : std::sin(z);
         exceptional_re[lane] = value.real();
@@ -78,7 +77,7 @@ HYLE_FORCE_INLINE void complex_sincos_hyle(const float* sr, const float* si, flo
     }
     if (exceptional != 0) {
       for (std::size_t lane = 0; lane < width; ++lane) {
-        if ((exceptional & (std::uint32_t{1} << lane)) == 0) continue;
+        if ((exceptional & (std::uint64_t{1} << lane)) == 0) continue;
         dr[i + lane] = exceptional_re[lane];
         di[i + lane] = exceptional_im[lane];
       }
@@ -159,7 +158,7 @@ HYLE_FORCE_INLINE void complex_ctanh_hyle(const float* sr, const float* si, floa
                          AllTrue(d, Ge(abs_y, min_normal)) &&
                          AllTrue(d, Le(abs_y, max_safe_imag)) &&
                          AllTrue(d, Gt(regular_denominator, Set(d, 0.01f)));
-    std::uint32_t exceptional = 0;
+    std::uint64_t exceptional = 0;
     float exceptional_re[64];
     float exceptional_im[64];
     if (!regular) {
@@ -169,7 +168,7 @@ HYLE_FORCE_INLINE void complex_ctanh_hyle(const float* sr, const float* si, floa
         const float real = sr[i + lane];
         const float imag = si[i + lane];
         if (complex_ctanh_regular_lane(real, imag, denominators[lane])) continue;
-        exceptional |= std::uint32_t{1} << lane;
+        exceptional |= std::uint64_t{1} << lane;
         const std::complex<float> value = std::tanh(std::complex<float>(real, imag));
         exceptional_re[lane] = value.real();
         exceptional_im[lane] = value.imag();
@@ -179,7 +178,7 @@ HYLE_FORCE_INLINE void complex_ctanh_hyle(const float* sr, const float* si, floa
     StoreU(out_im, d, di + i);
     if (exceptional != 0) {
       for (std::size_t lane = 0; lane < width; ++lane) {
-        if ((exceptional & (std::uint32_t{1} << lane)) == 0) continue;
+        if ((exceptional & (std::uint64_t{1} << lane)) == 0) continue;
         dr[i + lane] = exceptional_re[lane];
         di[i + lane] = exceptional_im[lane];
       }
@@ -230,7 +229,7 @@ HYLE_FORCE_INLINE void complex_cpow_hyle(const float* zr, const float* zi, const
     const auto magnitude = xsimd_hyle::Exp(d, exponent);
     auto s = Zero(d), c = Zero(d);
     SinCos(d, angle, s, c);
-    std::uint32_t exceptional = 0;
+    std::uint64_t exceptional = 0;
     float exceptional_re[64];
     float exceptional_im[64];
     const bool regular = AllTrue(d, Ge(Abs(zre), Set(d, 1.17549435e-38f))) &&
@@ -253,7 +252,7 @@ HYLE_FORCE_INLINE void complex_cpow_hyle(const float* zr, const float* zi, const
                                       rhos[lane], exponents[lane])) {
           continue;
         }
-        exceptional |= std::uint32_t{1} << lane;
+        exceptional |= std::uint64_t{1} << lane;
         const std::complex<float> value = std::pow(std::complex<float>(zr[i + lane], zi[i + lane]),
                                                     std::complex<float>(wr[i + lane], wi[i + lane]));
         exceptional_re[lane] = value.real();
@@ -264,7 +263,7 @@ HYLE_FORCE_INLINE void complex_cpow_hyle(const float* zr, const float* zi, const
     StoreU(Mul(magnitude, s), d, di + i);
     if (exceptional != 0) {
       for (std::size_t lane = 0; lane < width; ++lane) {
-        if ((exceptional & (std::uint32_t{1} << lane)) == 0) continue;
+        if ((exceptional & (std::uint64_t{1} << lane)) == 0) continue;
         dr[i + lane] = exceptional_re[lane];
         di[i + lane] = exceptional_im[lane];
       }

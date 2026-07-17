@@ -10,8 +10,9 @@
 #include "src/simd/sort/kernels.h"
 
 // sort_dispatch.cc -- baseline dispatcher for the vqsort borrow ops. Mirrors math_dispatch.cc:
-// per-type it routes to the widest LIVE tier -> x86 avx512 -> avx2 -> scalar; arm64 NEON
-// (unconditional -- ARMv8 baseline); everything else the std:: scalar floor. The borrow cores are
+// per-type it routes to the widest LIVE tier -> x86 avx512 -> avx2 -> scalar;
+// arm64 SVE-256-capped -> NEON; riscv64 RVV -> scalar. The right-hand tier is the fallback when a
+// scalable variant is unavailable, not an unconditional module clamp. The borrow cores are
 // vendored header-only (can't be missing) + compiled per tier; this dispatcher only enters a wide
 // tier when the CPU supports it (cpu_features()), so an old CPU never SIGILLs.
 //

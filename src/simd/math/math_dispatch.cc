@@ -83,6 +83,8 @@ bool have_rvv_math() noexcept {
 
 #define HYLE_MATH_NAME_I(name, tag, suffix) detail::name##_##tag##_highway_##suffix
 #define HYLE_MATH_NAME_II(name, tag, suffix) HYLE_MATH_NAME_I(name, tag, suffix)
+#define HYLE_HYLE_NAME_I(name, tag, suffix) detail::name##_##tag##_hyle_##suffix
+#define HYLE_HYLE_NAME_II(name, tag, suffix) HYLE_HYLE_NAME_I(name, tag, suffix)
 #define HYLE_SCALAR_MATH_NAME_I(name, tag) detail::name##_##tag##_scalar
 #define HYLE_SCALAR_MATH_NAME(name, tag) HYLE_SCALAR_MATH_NAME_I(name, tag)
 #if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
@@ -144,8 +146,9 @@ void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
 
 // simd-09 dispatchers. Two shapes: xsimd-winning ops (exp2/erf) mirror exp (xsimd 512->avx2->
 // scalar); Highway-winning ops (the other 9) mirror log (Highway 512 GCC-only ->avx2->scalar,
-// MSVC keeps avx2 highway since its AVX3 is broken). arm64 always routes to the NEON Highway
-// core. Per-op winner was bench-decided (GCC+MSVC cross-checked) -- see math.h.
+// MSVC keeps avx2 highway since its AVX3 is broken). SVE/RVV compile the shared D-tag body in
+// their scalable product TU. Per-op winner was bench-decided (GCC+MSVC cross-checked) -- see
+// math.h.
 
 // xsimd-winning: exp2, erf (written longhand -- only two, mirror exp's 512->avx2->scalar).
 void exp2_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
@@ -171,9 +174,9 @@ void erf_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   detail::erf_f32_scalar(src, dst, n);
 }
 
-// xsimd-only borrows (gamma family): tgamma is vectorized (xsimd shape 512->avx2->scalar on x86,
-// xsimd-NEON on arm64 -- Highway has no gamma so it can't use the Highway-NEON path the other
-// ops do). LGAMMA is NOT vectorized: xsimd's vectorized lgamma has a lane-mixing bug (wrong
+// xsimd-derived gamma family: tgamma is vectorized on x86/NEON/SVE/RVV. Highway has no gamma,
+// so the portable path is HYLE's D-tag port. LGAMMA is NOT vectorized: xsimd's vectorized lgamma
+// has a lane-mixing bug (wrong
 // argument-reduction kernel for a lane in [1.25,1.5) sharing a vector with a lane in [0.75,1.25);
 // reproduced GCC-x86 + MSVC-x86 + GCC-NEON => algorithm, not codegen; see
 // docs/debug/xsimd-lgamma-lane-mixing-hunt.md). So lgamma is the scalar libm reference on every
@@ -188,7 +191,12 @@ void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   static const bool hw = have_avx2();
   if (hw) { detail::tgamma_f32_xsimd_avx2(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (have_sve_math()) { HYLE_HYLE_NAME_II(tgamma, f32, sve)(src, dst, n); return; }
+#endif
   detail::tgamma_f32_xsimd_neon(src, dst, n); return;
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) { HYLE_HYLE_NAME_II(tgamma, f32, rvv)(src, dst, n); return; }
 #endif
   detail::tgamma_f32_scalar(src, dst, n);
 }
@@ -217,13 +225,18 @@ void hypot_in_range_f32_batch(const float* a, const float* b, float* dst, std::s
   static const bool hw = have_avx2();
   if (hw) { detail::hypot_in_range_f32_xsimd_avx2(a, b, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (have_sve_math()) { HYLE_HYLE_NAME_II(hypot_in_range, f32, sve)(a, b, dst, n); return; }
+#endif
   detail::hypot_in_range_f32_xsimd_neon(a, b, dst, n); return;
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) { HYLE_HYLE_NAME_II(hypot_in_range, f32, rvv)(a, b, dst, n); return; }
 #endif
   detail::hypot_in_range_f32_scalar(a, b, dst, n);
 }
 
-// SoA complex transcendentals. cexp/clog/csqrt: xsimd AVX2 on x86, HYLE/xsimd NEON on ARM64,
-// scalar std::complex elsewhere. csin/ccos/ctanh/cpow use HYLE-owned AVX2/NEON orchestration.
+// SoA complex transcendentals. x86 uses AVX2; ARM64 uses SVE then NEON; RISC-V uses RVV. The
+// scalable paths compile the same HYLE D-tag bodies and retain scalar std::complex lane fixups.
 #define HYLE_CX_UNARY_DISPATCH(name)                                                        \
   void name##_f32_batch(const float* sr, const float* si, float* dr, float* di,             \
                         std::size_t n) noexcept {                                           \
@@ -234,9 +247,17 @@ void hypot_in_range_f32_batch(const float* a, const float* b, float* dst, std::s
   static const bool hw = have_avx2();                                                       \
   if (hw) { detail::name##_f32_xsimd_avx2(sr, si, dr, di, n); return; }                      \
   detail::name##_f32_scalar(sr, si, dr, di, n);
+#elif defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#define HYLE_CX_UNARY_BODY(name)                                                            \
+  if (have_sve_math()) { HYLE_HYLE_NAME_II(name, f32, sve)(sr, si, dr, di, n); return; }    \
+  detail::name##_f32_hyle_neon(sr, si, dr, di, n);
 #elif defined(HYLE_ARCH_ARM64)
 #define HYLE_CX_UNARY_BODY(name)                                                            \
   detail::name##_f32_hyle_neon(sr, si, dr, di, n);
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#define HYLE_CX_UNARY_BODY(name)                                                            \
+  if (have_rvv_math()) { HYLE_HYLE_NAME_II(name, f32, rvv)(sr, si, dr, di, n); return; }    \
+  detail::name##_f32_scalar(sr, si, dr, di, n);
 #else
 #define HYLE_CX_UNARY_BODY(name) detail::name##_f32_scalar(sr, si, dr, di, n);
 #endif
@@ -252,7 +273,12 @@ void csin_f32_batch(const float* sr, const float* si, float* dr, float* di,
   static const bool hw = have_avx2();
   if (hw) { detail::csin_f32_hyle_avx2(sr, si, dr, di, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (have_sve_math()) { HYLE_HYLE_NAME_II(csin, f32, sve)(sr, si, dr, di, n); return; }
+#endif
   detail::csin_f32_hyle_neon(sr, si, dr, di, n); return;
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) { HYLE_HYLE_NAME_II(csin, f32, rvv)(sr, si, dr, di, n); return; }
 #endif
   detail::csin_f32_scalar(sr, si, dr, di, n);
 }
@@ -263,7 +289,12 @@ void ccos_f32_batch(const float* sr, const float* si, float* dr, float* di,
   static const bool hw = have_avx2();
   if (hw) { detail::ccos_f32_hyle_avx2(sr, si, dr, di, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (have_sve_math()) { HYLE_HYLE_NAME_II(ccos, f32, sve)(sr, si, dr, di, n); return; }
+#endif
   detail::ccos_f32_hyle_neon(sr, si, dr, di, n); return;
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) { HYLE_HYLE_NAME_II(ccos, f32, rvv)(sr, si, dr, di, n); return; }
 #endif
   detail::ccos_f32_scalar(sr, si, dr, di, n);
 }
@@ -274,7 +305,12 @@ void ctanh_f32_batch(const float* sr, const float* si, float* dr, float* di,
   static const bool hw = have_avx2();
   if (hw) { detail::ctanh_f32_hyle_avx2(sr, si, dr, di, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (have_sve_math()) { HYLE_HYLE_NAME_II(ctanh, f32, sve)(sr, si, dr, di, n); return; }
+#endif
   detail::ctanh_f32_hyle_neon(sr, si, dr, di, n); return;
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) { HYLE_HYLE_NAME_II(ctanh, f32, rvv)(sr, si, dr, di, n); return; }
 #endif
   detail::ctanh_f32_scalar(sr, si, dr, di, n);
 }
@@ -285,7 +321,12 @@ void cpow_f32_batch(const float* zr, const float* zi, const float* wr, const flo
   static const bool hw = have_avx2();
   if (hw) { detail::cpow_f32_hyle_avx2(zr, zi, wr, wi, dr, di, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (have_sve_math()) { HYLE_HYLE_NAME_II(cpow, f32, sve)(zr, zi, wr, wi, dr, di, n); return; }
+#endif
   detail::cpow_f32_hyle_neon(zr, zi, wr, wi, dr, di, n); return;
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) { HYLE_HYLE_NAME_II(cpow, f32, rvv)(zr, zi, wr, wi, dr, di, n); return; }
 #endif
   detail::cpow_f32_scalar(zr, zi, wr, wi, dr, di, n);
 }
@@ -443,7 +484,7 @@ void hypot_f64_batch(const double* a, const double* b, double* dst, std::size_t 
 #endif
   detail::hypot_f64_scalar(a, b, dst, n);
 }
-// erf f64 (xsimd wins at f64, the one exception to Highway's f64 sweep). arm64: Highway-NEON erf.
+// erf f64 (xsimd wins at f64, the one exception to Highway's fixed-width f64 sweep).
 void erf_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
   static const bool hw512 = have_avx512();
@@ -455,15 +496,18 @@ void erf_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
 #endif
   detail::erf_f64_scalar(src, dst, n);
 }
-// tgamma f64 (xsimd-only; Highway has no gamma). arm64 tgamma f64 stays scalar (no xsimd-NEON f64
-// gamma core -- same policy as not borrowing xsimd-NEON for gamma-family). lgamma f64 always scalar
-// (vendor vectorized-lgamma lane-mixing bug, assume it affects f64 too).
+// tgamma f64 (xsimd-derived; Highway has no gamma) has SVE/RVV D-tag products. lgamma f64 remains
+// scalar on every target because of the vendor algorithm bug documented by the f32 comment.
 void tgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
   static const bool hw512 = have_avx512();
   if (hw512) { detail::tgamma_f64_xsimd_avx512(src, dst, n); return; }
   static const bool hw = have_avx2();
   if (hw) { detail::tgamma_f64_xsimd_avx2(src, dst, n); return; }
+#elif defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (have_sve_math()) { HYLE_HYLE_NAME_II(tgamma, f64, sve)(src, dst, n); return; }
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) { HYLE_HYLE_NAME_II(tgamma, f64, rvv)(src, dst, n); return; }
 #endif
   detail::tgamma_f64_scalar(src, dst, n);
 }
@@ -570,8 +614,8 @@ void sincos_f64_batch(const double* src, double* s, double* c, std::size_t n) no
 #undef HYLE_MATH_NAME_I
 #undef HYLE_SCALAR_MATH_NAME
 #undef HYLE_SCALAR_MATH_NAME_I
-// simd-18 批G xsimd-only (erfc/exp10/fmod/remainder/nextafter/fdim): real xsimd AVX2 core on
-// x86 (Highway has none of these), scalar libm elsewhere/tail. f32 + f64.
+// simd-18 batch G, now HYLE D-tag code: x86 uses AVX2; SVE/RVV use their scalable product TU.
+// remainder/nextafter remain scalar below because the vector algorithms violate exact semantics.
 #if defined(HYLE_ARCH_X64)
 #define HYLE_XSIMD_UNARY(name)                                                              \
   void name##_f32_batch(const float* s, float* d, std::size_t n) noexcept {                 \
@@ -593,6 +637,44 @@ void sincos_f64_batch(const double* src, double* s, double* c, std::size_t n) no
   void name##_f64_batch(const double* a, const double* b, double* d, std::size_t n) noexcept { \
     static const bool hw = have_avx2();                                                     \
     if (hw) { detail::name##_f64_xsimd_avx2(a, b, d, n); return; }                          \
+    detail::name##_f64_scalar(a, b, d, n);                                                  \
+  }
+#elif defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#define HYLE_XSIMD_UNARY(name)                                                              \
+  void name##_f32_batch(const float* s, float* d, std::size_t n) noexcept {                 \
+    if (have_sve_math()) { HYLE_HYLE_NAME_II(name, f32, sve)(s, d, n); return; }            \
+    detail::name##_f32_scalar(s, d, n);                                                     \
+  }                                                                                         \
+  void name##_f64_batch(const double* s, double* d, std::size_t n) noexcept {               \
+    if (have_sve_math()) { HYLE_HYLE_NAME_II(name, f64, sve)(s, d, n); return; }            \
+    detail::name##_f64_scalar(s, d, n);                                                     \
+  }
+#define HYLE_XSIMD_BINARY(name)                                                             \
+  void name##_f32_batch(const float* a, const float* b, float* d, std::size_t n) noexcept { \
+    if (have_sve_math()) { HYLE_HYLE_NAME_II(name, f32, sve)(a, b, d, n); return; }         \
+    detail::name##_f32_scalar(a, b, d, n);                                                  \
+  }                                                                                         \
+  void name##_f64_batch(const double* a, const double* b, double* d, std::size_t n) noexcept { \
+    if (have_sve_math()) { HYLE_HYLE_NAME_II(name, f64, sve)(a, b, d, n); return; }         \
+    detail::name##_f64_scalar(a, b, d, n);                                                  \
+  }
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#define HYLE_XSIMD_UNARY(name)                                                              \
+  void name##_f32_batch(const float* s, float* d, std::size_t n) noexcept {                 \
+    if (have_rvv_math()) { HYLE_HYLE_NAME_II(name, f32, rvv)(s, d, n); return; }            \
+    detail::name##_f32_scalar(s, d, n);                                                     \
+  }                                                                                         \
+  void name##_f64_batch(const double* s, double* d, std::size_t n) noexcept {               \
+    if (have_rvv_math()) { HYLE_HYLE_NAME_II(name, f64, rvv)(s, d, n); return; }            \
+    detail::name##_f64_scalar(s, d, n);                                                     \
+  }
+#define HYLE_XSIMD_BINARY(name)                                                             \
+  void name##_f32_batch(const float* a, const float* b, float* d, std::size_t n) noexcept { \
+    if (have_rvv_math()) { HYLE_HYLE_NAME_II(name, f32, rvv)(a, b, d, n); return; }         \
+    detail::name##_f32_scalar(a, b, d, n);                                                  \
+  }                                                                                         \
+  void name##_f64_batch(const double* a, const double* b, double* d, std::size_t n) noexcept { \
+    if (have_rvv_math()) { HYLE_HYLE_NAME_II(name, f64, rvv)(a, b, d, n); return; }         \
     detail::name##_f64_scalar(a, b, d, n);                                                  \
   }
 #else
@@ -626,4 +708,6 @@ void nextafter_f64_batch(const double* a, const double* b, double* d, std::size_
 HYLE_XSIMD_BINARY(fdim)
 #undef HYLE_XSIMD_UNARY
 #undef HYLE_XSIMD_BINARY
+#undef HYLE_HYLE_NAME_II
+#undef HYLE_HYLE_NAME_I
 }  // namespace hyle::simd

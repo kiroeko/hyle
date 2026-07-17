@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cmath>
+#include <complex>
 #include <cstddef>
 
 namespace hs = hyle::simd;
@@ -61,6 +62,108 @@ TEST(ScalableMathProduct, F64TableBinaryAndSinCos) {
     ExpectNearRelative(out[i], std::hypot(a[i], b[i]), 3e-13);
     ExpectNearRelative(s[i], std::sin(a[i]), 3e-13);
     ExpectNearRelative(c[i], std::cos(a[i]), 3e-13);
+  }
+}
+
+TEST(ScalableMathProduct, HyleDerivedRealKernelsAndTail) {
+  const std::size_t w32 = hs::Lanes(hs::ScalableTag<float>{});
+  const std::size_t n32 = 2 * w32 + 3;
+  ASSERT_LE(n32, kMaxLanes);
+  alignas(64) float x32[kMaxLanes], y32[kMaxLanes], out32[kMaxLanes];
+  for (std::size_t i = 0; i < n32; ++i) {
+    x32[i] = 0.1f + 0.075f * float(i % 53);
+    y32[i] = 0.3f + 0.125f * float(i % 11);
+  }
+
+  HYLE_SCALABLE_PRODUCT(erfc_f32_hyle)(x32, out32, n32);
+  for (std::size_t i = 0; i < n32; ++i)
+    ExpectNearRelative(out32[i], std::erfc(x32[i]), 5e-6f);
+  HYLE_SCALABLE_PRODUCT(exp10_f32_hyle)(x32, out32, n32);
+  for (std::size_t i = 0; i < n32; ++i)
+    ExpectNearRelative(out32[i], std::pow(10.0f, x32[i]), 6e-6f);
+  for (std::size_t i = 0; i < n32; ++i)
+    x32[i] = 0.05f + 9.95f * float(i + 1) / float(n32 + 1);
+  HYLE_SCALABLE_PRODUCT(tgamma_f32_hyle)(x32, out32, n32);
+  for (std::size_t i = 0; i < n32; ++i)
+    ExpectNearRelative(out32[i], std::tgamma(x32[i]), 5e-6f);
+  HYLE_SCALABLE_PRODUCT(fmod_f32_hyle)(x32, y32, out32, n32);
+  for (std::size_t i = 0; i < n32; ++i)
+    ExpectNearRelative(out32[i], std::fmod(x32[i], y32[i]), 2e-6f);
+  HYLE_SCALABLE_PRODUCT(fdim_f32_hyle)(x32, y32, out32, n32);
+  for (std::size_t i = 0; i < n32; ++i)
+    ExpectNearRelative(out32[i], std::fdim(x32[i], y32[i]), 2e-6f);
+  HYLE_SCALABLE_PRODUCT(hypot_in_range_f32_hyle)(x32, y32, out32, n32);
+  for (std::size_t i = 0; i < n32; ++i)
+    ExpectNearRelative(out32[i], std::sqrt(std::fma(x32[i], x32[i], y32[i] * y32[i])),
+                       2e-6f);
+
+  const std::size_t w64 = hs::Lanes(hs::ScalableTag<double>{});
+  const std::size_t n64 = 2 * w64 + 3;
+  ASSERT_LE(n64, kMaxLanes);
+  alignas(64) double x64[kMaxLanes], y64[kMaxLanes], out64[kMaxLanes];
+  for (std::size_t i = 0; i < n64; ++i) {
+    x64[i] = 0.1 + 0.075 * double(i % 53);
+    y64[i] = 0.3 + 0.125 * double(i % 11);
+  }
+  HYLE_SCALABLE_PRODUCT(erfc_f64_hyle)(x64, out64, n64);
+  for (std::size_t i = 0; i < n64; ++i)
+    ExpectNearRelative(out64[i], std::erfc(x64[i]), 2e-12);
+  HYLE_SCALABLE_PRODUCT(exp10_f64_hyle)(x64, out64, n64);
+  for (std::size_t i = 0; i < n64; ++i)
+    ExpectNearRelative(out64[i], std::pow(10.0, x64[i]), 2e-12);
+  for (std::size_t i = 0; i < n64; ++i)
+    x64[i] = 0.5 + 14.5 * double(i + 1) / double(n64 + 1);
+  HYLE_SCALABLE_PRODUCT(tgamma_f64_hyle)(x64, out64, n64);
+  for (std::size_t i = 0; i < n64; ++i)
+    ExpectNearRelative(out64[i], std::tgamma(x64[i]), 2e-12);
+  HYLE_SCALABLE_PRODUCT(fmod_f64_hyle)(x64, y64, out64, n64);
+  for (std::size_t i = 0; i < n64; ++i)
+    ExpectNearRelative(out64[i], std::fmod(x64[i], y64[i]), 2e-12);
+  HYLE_SCALABLE_PRODUCT(fdim_f64_hyle)(x64, y64, out64, n64);
+  for (std::size_t i = 0; i < n64; ++i)
+    ExpectNearRelative(out64[i], std::fdim(x64[i], y64[i]), 2e-12);
+}
+
+TEST(ScalableMathProduct, HyleDerivedComplexKernelsCoverWideExceptionalLanes) {
+  const std::size_t w = hs::Lanes(hs::ScalableTag<float>{});
+  const std::size_t n = 2 * w + 3;
+  ASSERT_LE(n, kMaxLanes);
+  alignas(64) float zr[kMaxLanes], zi[kMaxLanes], wr[kMaxLanes], wi[kMaxLanes];
+  alignas(64) float dr[kMaxLanes], di[kMaxLanes];
+  for (std::size_t i = 0; i < n; ++i) {
+    zr[i] = (i % 7 == 0) ? 0.0f : 0.25f + 0.02f * float(i % 31);
+    zi[i] = -0.8f + 0.04f * float(i % 37);
+    wr[i] = (i % 13 == 0) ? 0.0f : 0.5f + 0.01f * float(i % 29);
+    wi[i] = 0.2f + 0.005f * float(i % 17);
+  }
+
+  const auto check_unary = [&](auto fn, auto oracle) {
+    fn(zr, zi, dr, di, n);
+    for (std::size_t i = 0; i < n; ++i) {
+      const std::complex<float> expected = oracle(std::complex<float>(zr[i], zi[i]));
+      ExpectNearRelative(dr[i], expected.real(), 2e-5f);
+      ExpectNearRelative(di[i], expected.imag(), 2e-5f);
+    }
+  };
+  check_unary(HYLE_SCALABLE_PRODUCT(cexp_f32_hyle),
+              [](std::complex<float> z) { return std::exp(z); });
+  check_unary(HYLE_SCALABLE_PRODUCT(clog_f32_hyle),
+              [](std::complex<float> z) { return std::log(z); });
+  check_unary(HYLE_SCALABLE_PRODUCT(csqrt_f32_hyle),
+              [](std::complex<float> z) { return std::sqrt(z); });
+  check_unary(HYLE_SCALABLE_PRODUCT(csin_f32_hyle),
+              [](std::complex<float> z) { return std::sin(z); });
+  check_unary(HYLE_SCALABLE_PRODUCT(ccos_f32_hyle),
+              [](std::complex<float> z) { return std::cos(z); });
+  check_unary(HYLE_SCALABLE_PRODUCT(ctanh_f32_hyle),
+              [](std::complex<float> z) { return std::tanh(z); });
+
+  HYLE_SCALABLE_PRODUCT(cpow_f32_hyle)(zr, zi, wr, wi, dr, di, n);
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::complex<float> expected =
+        std::pow(std::complex<float>(zr[i], zi[i]), std::complex<float>(wr[i], wi[i]));
+    ExpectNearRelative(dr[i], expected.real(), 3e-5f);
+    ExpectNearRelative(di[i], expected.imag(), 3e-5f);
   }
 }
 

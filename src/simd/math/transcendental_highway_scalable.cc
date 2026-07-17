@@ -10,6 +10,7 @@
 #include "src/simd/math/kernels.h"
 
 #include <cmath>
+#include <complex>
 #include <cstddef>
 
 #if defined(HYLE_ARCH_ARM64) && !defined(HYLE_SIMD_TARGET_SVE)
@@ -19,6 +20,8 @@
 #endif
 #include "hyle/simd/vec.h"
 #include "src/simd/math/math_hyle-inl.h"
+#include "src/simd/math/math_xsimd_hyle-inl.h"
+#include "src/simd/math/complex_hyle-inl.h"
 #include "src/simd/math/table_f64.h"
 
 namespace hyle::simd::detail {
@@ -39,6 +42,11 @@ namespace {
   HYLE_SCALABLE_MATH_TYPED_I(name, tag, suffix)
 #define HYLE_SCALABLE_MATH_TYPED(name, tag) \
   HYLE_SCALABLE_MATH_TYPED_II(name, tag, HYLE_SCALABLE_MATH_SUFFIX)
+#define HYLE_SCALABLE_HYLE_TYPED_I(name, tag, suffix) name##_##tag##_hyle_##suffix
+#define HYLE_SCALABLE_HYLE_TYPED_II(name, tag, suffix) \
+  HYLE_SCALABLE_HYLE_TYPED_I(name, tag, suffix)
+#define HYLE_SCALABLE_HYLE_TYPED(name, tag) \
+  HYLE_SCALABLE_HYLE_TYPED_II(name, tag, HYLE_SCALABLE_MATH_SUFFIX)
 
 template <class D, class V>
 bool exp_f64_needs_scalar(D d, V x) noexcept {
@@ -210,6 +218,150 @@ HYLE_SCALABLE_SINCOS(float, f32)
 HYLE_SCALABLE_SINCOS(double, f64)
 #undef HYLE_SCALABLE_SINCOS
 
+// HYLE-owned xsimd-derived bodies. These are D-tag algorithms, so scalable targets should not
+// fall back merely because their historical symbol lived in an x86/NEON TU.
+#define HYLE_SCALABLE_HYLE_UNARY(type, tag, name, vec_fn, scalar_fn)               \
+  void HYLE_SCALABLE_HYLE_TYPED(name, tag)(const type* src, type* dst,              \
+                                            std::size_t n) noexcept {                \
+    unary_loop(src, dst, n,                                                        \
+               [](auto d, auto x) { return xsimd_hyle::vec_fn(d, x); },            \
+               [](type x) { return scalar_fn(x); });                               \
+  }
+HYLE_SCALABLE_HYLE_UNARY(float, f32, erfc, Erfc, std::erfc)
+HYLE_SCALABLE_HYLE_UNARY(double, f64, erfc, Erfc, std::erfc)
+HYLE_SCALABLE_HYLE_UNARY(float, f32, exp10, Exp10, [](float x) { return std::pow(10.0f, x); })
+HYLE_SCALABLE_HYLE_UNARY(double, f64, exp10, Exp10, [](double x) { return std::pow(10.0, x); })
+HYLE_SCALABLE_HYLE_UNARY(float, f32, tgamma, Tgamma, std::tgamma)
+HYLE_SCALABLE_HYLE_UNARY(double, f64, tgamma, Tgamma, std::tgamma)
+#undef HYLE_SCALABLE_HYLE_UNARY
+
+#define HYLE_SCALABLE_HYLE_BINARY(type, tag, name, vec_fn, scalar_fn)              \
+  void HYLE_SCALABLE_HYLE_TYPED(name, tag)(const type* a, const type* b, type* dst,  \
+                                            std::size_t n) noexcept {                \
+    binary_loop(a, b, dst, n,                                                      \
+                [](auto d, auto x, auto y) { return xsimd_hyle::vec_fn(d, x, y); }, \
+                [](type x, type y) { return scalar_fn(x, y); });                    \
+  }
+HYLE_SCALABLE_HYLE_BINARY(float, f32, fmod, Fmod, std::fmod)
+HYLE_SCALABLE_HYLE_BINARY(double, f64, fmod, Fmod, std::fmod)
+HYLE_SCALABLE_HYLE_BINARY(float, f32, fdim, Fdim, std::fdim)
+HYLE_SCALABLE_HYLE_BINARY(double, f64, fdim, Fdim, std::fdim)
+HYLE_SCALABLE_HYLE_BINARY(float, f32, hypot_in_range, HypotInRange,
+                          [](float x, float y) { return std::sqrt(x * x + y * y); })
+#undef HYLE_SCALABLE_HYLE_BINARY
+
+namespace {
+using ccf = std::complex<float>;
+
+void cexp_loop(const float* sr, const float* si, float* dr, float* di,
+               std::size_t n) noexcept {
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) {
+    const auto re = LoadU(d, sr + i);
+    const auto im = LoadU(d, si + i);
+    const auto mag = xsimd_hyle::Exp(d, re);
+    auto s = Zero(d), c = Zero(d);
+    SinCos(d, im, s, c);
+    StoreU(Mul(mag, c), d, dr + i);
+    StoreU(Mul(mag, s), d, di + i);
+  }
+  for (; i < n; ++i) {
+    const ccf r = std::exp(ccf(sr[i], si[i]));
+    dr[i] = r.real();
+    di[i] = r.imag();
+  }
+}
+
+void clog_loop(const float* sr, const float* si, float* dr, float* di,
+               std::size_t n) noexcept {
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) {
+    const auto re = LoadU(d, sr + i);
+    const auto im = LoadU(d, si + i);
+    StoreU(Log(d, xsimd_hyle::HypotInRange(d, re, im)), d, dr + i);
+    StoreU(Atan2(d, im, re), d, di + i);
+  }
+  for (; i < n; ++i) {
+    const ccf r = std::log(ccf(sr[i], si[i]));
+    dr[i] = r.real();
+    di[i] = r.imag();
+  }
+}
+
+void csqrt_loop(const float* sr, const float* si, float* dr, float* di,
+                std::size_t n) noexcept {
+  const ScalableTag<float> d;
+  const std::size_t w = Lanes(d);
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) {
+    const auto re = LoadU(d, sr + i);
+    const auto im = LoadU(d, si + i);
+    const auto rho = xsimd_hyle::HypotInRange(d, re, im);
+    const auto t = Sqrt(Mul(Add(rho, Abs(re)), Set(d, 0.5f)));
+    const auto two_t = Add(t, t);
+    const auto safe_two_t = IfThenElse(Eq(t, Zero(d)), Set(d, 1.0f), two_t);
+    const auto pos = Ge(re, Zero(d));
+    const auto out_re = IfThenElse(pos, t, Div(Abs(im), safe_two_t));
+    const auto out_im = IfThenElse(pos, Div(im, safe_two_t), CopySign(t, im));
+    StoreU(out_re, d, dr + i);
+    StoreU(out_im, d, di + i);
+    const auto exceptional = Or(Or(IsNaN(re), IsNaN(im)), Or(IsInf(re), IsInf(im)));
+    if (!AllFalse(d, exceptional) || !AllFalse(d, Eq(t, Zero(d)))) {
+      for (std::size_t lane = 0; lane < w; ++lane) {
+        if (!std::isfinite(sr[i + lane]) || !std::isfinite(si[i + lane]) ||
+            (sr[i + lane] == 0.0f && si[i + lane] == 0.0f)) {
+          const ccf r = std::sqrt(ccf(sr[i + lane], si[i + lane]));
+          dr[i + lane] = r.real();
+          di[i + lane] = r.imag();
+        }
+      }
+    }
+  }
+  for (; i < n; ++i) {
+    const ccf r = std::sqrt(ccf(sr[i], si[i]));
+    dr[i] = r.real();
+    di[i] = r.imag();
+  }
+}
+}  // namespace
+
+void HYLE_SCALABLE_HYLE_TYPED(cexp, f32)(const float* sr, const float* si, float* dr,
+                                         float* di, std::size_t n) noexcept {
+  cexp_loop(sr, si, dr, di, n);
+}
+void HYLE_SCALABLE_HYLE_TYPED(clog, f32)(const float* sr, const float* si, float* dr,
+                                         float* di, std::size_t n) noexcept {
+  clog_loop(sr, si, dr, di, n);
+}
+void HYLE_SCALABLE_HYLE_TYPED(csqrt, f32)(const float* sr, const float* si, float* dr,
+                                          float* di, std::size_t n) noexcept {
+  csqrt_loop(sr, si, dr, di, n);
+}
+void HYLE_SCALABLE_HYLE_TYPED(csin, f32)(const float* sr, const float* si, float* dr,
+                                         float* di, std::size_t n) noexcept {
+  complex_sincos_hyle<false>(sr, si, dr, di, n);
+}
+void HYLE_SCALABLE_HYLE_TYPED(ccos, f32)(const float* sr, const float* si, float* dr,
+                                         float* di, std::size_t n) noexcept {
+  complex_sincos_hyle<true>(sr, si, dr, di, n);
+}
+void HYLE_SCALABLE_HYLE_TYPED(ctanh, f32)(const float* sr, const float* si, float* dr,
+                                          float* di, std::size_t n) noexcept {
+  complex_ctanh_hyle(sr, si, dr, di, n);
+}
+void HYLE_SCALABLE_HYLE_TYPED(cpow, f32)(const float* zr, const float* zi, const float* wr,
+                                         const float* wi, float* dr, float* di,
+                                         std::size_t n) noexcept {
+  complex_cpow_hyle(zr, zi, wr, wi, dr, di, n);
+}
+
+#undef HYLE_SCALABLE_HYLE_TYPED
+#undef HYLE_SCALABLE_HYLE_TYPED_II
+#undef HYLE_SCALABLE_HYLE_TYPED_I
 #undef HYLE_SCALABLE_MATH_TYPED
 #undef HYLE_SCALABLE_MATH_TYPED_II
 #undef HYLE_SCALABLE_MATH_TYPED_I

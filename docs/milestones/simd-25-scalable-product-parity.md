@@ -1,6 +1,6 @@
 # simd-25：SVE/RVV 语义与产品层追平
 
-> 状态：🚧 进行中（分类账、基础闭包与 SVE/RVV math/dtype/bitpack/sort 产品核已落地；剩余原语、SVE 全 VL partition 与真机性能待完成）。依赖 simd-22 双轨与
+> 状态：🚧 进行中（分类账、寄存器语义闭包与 SVE/RVV math/dtype/bitpack/sort 产品核已落地；SVE 全 VL partition 与真机性能待完成）。依赖 simd-22 双轨与
 > simd-24 已有产品核。
 >
 > 本里程碑重新限定 simd-15~18 的“追平”：它们完成的是 scalable P0~P4 正确性与
@@ -103,16 +103,18 @@ SVE 六个 AES op 原已具备 SVE2-AES 快路和软件保底；RVV 现在补齐
 - f64 table `exp/log` 及 in-range 入口；完整入口遇到异常 lane 时按整个 vector chunk 回落 libm，
   保持现有特殊值合同。
 
-这不是“整个 math 模块已纯 scalable”：gamma、complex、direct-form hypot 与 xsimd-only extras 仍使用
-原有 NEON/scalar per-op fallback。`Runtime::math.isa == kSve/kRvv` 表示主 HYLE/Highway math tier已启用，
-不是声称每个冷门函数都有 scalable body。
+随后把 HYLE-owned xsimd-derived D-tag body 也编入同一 scalable TU：`erfc/exp10/fmod/fdim` 的
+f32/f64、`tgamma` 的 f32/f64、`hypot_in_range` f32，以及 `cexp/clog/csqrt/csin/ccos/ctanh/cpow`
+f32。complex 特殊 lane 的 bitmap 同时从 32 bit 修正为 64 bit，覆盖 SVE 最大 2048-bit 时的 64 个
+f32 lane。现在 math 只有 6 个有明确正确性裁决的 scalar-only API：`lgamma/remainder/nextafter` 的
+f32/f64；这不是模块降级。`lgamma` 是已复现的 vendor lane-mixing bug，后两者要求精确 libm 语义。
 
 当前证据：两套脚本同时链接 CPU probe、真实 `Runtime`、baseline dispatcher、scalar 与 scalable
-variant 表，不再只直调内部 kernel。SVE 为 **44 tests × VL 128/256/384/512/2048** 全绿，RVV 为
-**41 tests × VLEN 128/256/512/1024** 全绿；公开 math/dtype/bitpack/sort batch API、tail、对应 module tier
+variant 表，不再只直调内部 kernel。SVE 为 **47 tests × VL 128/256/384/512/2048** 全绿，RVV 为
+**44 tests × VLEN 128/256/512/1024** 全绿；公开 math/dtype/bitpack/sort batch API、tail、对应 module tier
 以及 extension/semantic 能力均在门内验证。exact SVE/RVV dispatcher 的未定义符号检查也确认不引用
 `runtime()`、`best_isa()` 或 `cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。
-扩展构建也独立全绿：SVE2-AES 为 44×5，RVV Zvbb 与 Zvbc 各 42×4；因此 base fallback 与已有
+扩展构建也独立全绿：SVE2-AES 为 47×5，RVV Zvbb 与 Zvbc 各 45×4；因此 base fallback 与已有
 硬件扩展路径没有同名重定义或越级 codegen 冲突。
 
 ### 当前产品层矩阵
@@ -120,7 +122,7 @@ variant 表，不再只直调内部 kernel。SVE 为 **44 tests × VL 128/256/38
 | 模块 | SVE | RVV | 下一缺口 |
 |---|---|---|---|
 | ops/random/scan/search | 真实 scalable variant | 真实 scalable variant | 真机性能证据 |
-| math 主 HYLE/Highway op | 真实 SVE 产品 TU | 真实 RVV 产品 TU | optional per-op fallback 与真机性能 |
+| math | 主 HYLE/Highway + HYLE-owned xsimd-derived scalable TU；6 个正确性裁决 scalar op | 同左 | 真机性能与复杂特殊值扩大验收 |
 | dtype f16/bf16↔f32 | 真实 SVE 产品 TU | 真实 RVV 产品 TU | 真机性能；fp8 保持 scalar/可选硬件 |
 | sort/select | 真实 SVE-256 capped 产品 TU | 真实 RVV LMUL=1 产品 TU | SVE 全 VL partition；两端真机性能 |
 | bitpack | 真实 SVE 产品 TU（固定 128-bit logical block） | 真实 RVV 产品 TU（固定 128-bit logical block） | 真机性能与多 logical-block 并行化 |
@@ -160,12 +162,12 @@ subnormal chunk 回到现有标量 oracle。验收穷举全部 65,536 个 f16/bf
 fp8 继续保持 scalar 或 x86 AVX10.2 optional hardware path：目前没有可假定存在且已证收益的 base
 SVE/RVV fp8 convert，不因 dtype module tier 已升级就把它伪装成 scalable。
 
-## 阶段 3：math（主产品 tier 已完成，per-op/性能验收继续）
+## 阶段 3：math（产品 tier 已完成，性能验收继续）
 
-SVE/RVV 的 HYLE/Highway 主 body 已生成真实产品 TU 并接 Runtime，QEMU 多 VL/VLEN 的 direct、Runtime
-和公开 API 门均完成。下一步是裁决 gamma、complex、direct hypot 等 per-op fallback 是否值得新增
-scalable 实现，并完成真机性能验收。验收沿用现有 ULP 合同，继续扩大 NaN/Inf/subnormal/domain edge、
-tail 和跨 lane 混合输入。
+SVE/RVV 的 HYLE/Highway 主 body 与 HYLE-owned xsimd-derived body 已生成真实产品 TU 并接 Runtime，
+QEMU 多 VL/VLEN 的 direct、Runtime 和公开 API 门均完成。`tgamma`、complex、direct hypot 与 extras
+已经 scalable；`lgamma/remainder/nextafter` 的 scalar 裁决有正确性证据。下一步是真机性能验收。
+验收沿用现有 ULP 合同，继续扩大 NaN/Inf/subnormal/domain edge、tail 和跨 lane 混合输入。
 
 Runtime 改为逐 op/feature 的 scalable 或已认证 fallback；不能仅修改 `runtime().math.isa` 元数据。
 
@@ -180,7 +182,7 @@ LMUL=1 native type 无法让 V-only swizzle 的 `DFromV` 恢复逻辑半宽，�
 fractional LMUL。未来只有在真机证明寄存器压力/吞吐收益后，才扩展真正的 `mf2` native type。
 
 验收覆盖六种 scalar key 与 KV32/KV64 的 sort/partial/select、升降序、随机/少值/有序/逆序、NaN
-始终末尾、payload multiset、左右 canary、Runtime 和 public API。完整门禁 41 tests 在 VLEN
+始终末尾、payload multiset、左右 canary、Runtime 和 public API。当前完整门禁 44 tests 在 VLEN
 128/256/512/1024 全绿；exact RVV dispatcher 对 `runtime/best_isa/cpu_features` 的未定义符号检查为空。
 
 ### SVE
@@ -190,7 +192,7 @@ VL=128/256/512 全绿，但 VL=384 的 12-lane u32 基础网络即段错误，�
 lane 数”的模型墙。产品第一阶段采用 SVE-256 capped tier：TU-local
 `HYLE_SIMD_SVE_DFROMV_MAX_BYTES=32` 与 `CappedTag` 同时限制 D-aware 和 V-only swizzle；VL=128
 执行 128 bit，VL≥256 执行 256 bit。它全程生成 SVE 指令、没有 NEON/scalar fallback，并在五档 VL
-覆盖全部 sort/partial/select、六种 key、KV、NaN、canary、Runtime/public API，完整门禁共 44 tests 全绿。
+覆盖全部 sort/partial/select、六种 key、KV、NaN、canary、Runtime/public API，当前完整门禁共 47 tests 全绿。
 
 这是产品可用性收口，不冒充“随 VL 扩展”：VL>256 的额外 lanes 当前闲置。下一性能阶段以全 VL
 predicate/compact 完成大数组 partition，保留 capped network 作为 base case；真机证明收益后再替换
