@@ -1205,6 +1205,49 @@ TEST(Rvv, ConcatHalves) {
   }
 }
 
+TEST(Rvv, RuntimeShiftsRoundedAverageAndBlockShuffles) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  alignas(64) std::int32_t in[kBuf], amounts[kBuf], out[kBuf];
+  for (std::size_t i = 0; i < n; ++i) { in[i] = static_cast<std::int32_t>(i * 137) - 300; amounts[i] = static_cast<std::int32_t>(i & 3u); }
+  const auto v = hs::Load(d, in);
+  hs::Store(hs::ShiftLeftSame(v, 2), d, out);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(static_cast<std::uint32_t>(out[i]), static_cast<std::uint32_t>(in[i]) << 2);
+  hs::Store(hs::ShiftRightSame(v, 2), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], in[i] >> 2);
+  hs::Store(hs::RotateLeftSame(v, 4), d, out);
+  for (std::size_t i = 0; i < n; ++i) { const auto u = static_cast<std::uint32_t>(in[i]); EXPECT_EQ(static_cast<std::uint32_t>(out[i]), (u << 4) | (u >> 28)); }
+  hs::Store(hs::RoundingShr(v, hs::Load(d, amounts)), d, out);
+  for (std::size_t i = 0; i < n; ++i) { const int s = amounts[i]; const auto expected = s == 0 ? in[i] : (in[i] + (std::int32_t{1} << (s - 1))) >> s; EXPECT_EQ(out[i], expected); }
+  hs::Store(hs::RoundingShiftRightSame(v, 3), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], (in[i] + 4) >> 3);
+
+  auto check32 = [&](auto op, auto map, const char* name) {
+    hs::Store(op(v), d, out);
+    for (std::size_t base = 0; base < n; base += 4)
+      for (std::size_t i = 0; i < 4; ++i) EXPECT_EQ(out[base + i], in[base + map(i)]) << name << " lane=" << base + i;
+  };
+  check32([](auto x) { return hs::Shuffle2301(x); }, [](std::size_t i) { return i ^ 1u; }, "2301");
+  check32([](auto x) { return hs::Shuffle0321(x); }, [](std::size_t i) { return (i + 1u) & 3u; }, "0321");
+  check32([](auto x) { return hs::Shuffle2103(x); }, [](std::size_t i) { return (i + 3u) & 3u; }, "2103");
+  check32([](auto x) { return hs::Shuffle0123(x); }, [](std::size_t i) { return i ^ 3u; }, "0123");
+
+  const hs::ScalableTag<std::uint8_t> d8;
+  const std::size_t n8 = hs::Lanes(d8);
+  alignas(64) std::uint8_t a8[kBuf], b8[kBuf], o8[kBuf];
+  for (std::size_t i = 0; i < n8; ++i) { a8[i] = static_cast<std::uint8_t>(i * 3u); b8[i] = static_cast<std::uint8_t>(255u - i); }
+  hs::Store(hs::AverageRound(hs::Load(d8, a8), hs::Load(d8, b8)), d8, o8);
+  for (std::size_t i = 0; i < n8; ++i) EXPECT_EQ(o8[i], static_cast<std::uint8_t>((static_cast<unsigned>(a8[i]) + b8[i] + 1u) >> 1));
+
+  const hs::ScalableTag<std::uint64_t> d64;
+  const std::size_t n64 = hs::Lanes(d64);
+  alignas(64) std::uint64_t a64[kBuf], o64[kBuf];
+  for (std::size_t i = 0; i < n64; ++i) a64[i] = 100u + i;
+  hs::Store(hs::Shuffle01(hs::Load(d64, a64)), d64, o64);
+  for (std::size_t i = 0; i < n64; i += 2) { EXPECT_EQ(o64[i], a64[i + 1]); EXPECT_EQ(o64[i + 1], a64[i]); }
+}
+
 // mask <-> packed bits byte-buffer round-trip (VL>64 fix): RVV VLEN can exceed a uint64 lane count,
 // so StoreMaskBits/LoadMaskBits use a byte buffer (1 bit/lane). Round-trip must reproduce the mask.
 template <typename T>

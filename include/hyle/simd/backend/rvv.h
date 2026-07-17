@@ -578,6 +578,48 @@ template <class V> HYLE_FORCE_INLINE V Shr(V a, V b) noexcept {
   if constexpr (std::is_signed_v<TFromV<V>>) return __riscv_vsra(a, detail::to_ucount_rvv(b, vl), vl);
   else return __riscv_vsrl(a, detail::to_ucount_rvv(b, vl), vl);
 }
+template <class V> HYLE_FORCE_INLINE V ShiftLeftSame(V v, int bits) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "ShiftLeftSame is integer-lane only");
+  return Shl(v, Set(DFromV<V>(), static_cast<T>(bits)));
+}
+template <class V> HYLE_FORCE_INLINE V ShiftRightSame(V v, int bits) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "ShiftRightSame is integer-lane only");
+  return Shr(v, Set(DFromV<V>(), static_cast<T>(bits)));
+}
+template <class V> HYLE_FORCE_INLINE V RotateRightSame(V v, int bits) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "RotateRightSame is integer-lane only");
+  constexpr int kBits = static_cast<int>(sizeof(T) * 8);
+  bits &= kBits - 1;
+  if (bits == 0) return v;
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto uv = BitCast(du, v);
+  return BitCast(DFromV<V>(), Or(ShiftRightSame(uv, bits), ShiftLeftSame(uv, kBits - bits)));
+}
+template <class V> HYLE_FORCE_INLINE V RotateLeftSame(V v, int bits) noexcept {
+  constexpr int kBits = static_cast<int>(sizeof(TFromV<V>) * 8);
+  bits &= kBits - 1;
+  return bits == 0 ? v : RotateRightSame(v, kBits - bits);
+}
+template <class V> HYLE_FORCE_INLINE V RoundingShr(V v, V amounts) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "RoundingShr is integer-lane only");
+  const std::size_t vl = detail::vlmax<T>();
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto uamounts = BitCast(du, amounts);
+  if constexpr (std::is_signed_v<T>)
+    return __riscv_vssra(v, uamounts, __RISCV_VXRM_RNU, vl);
+  else
+    return __riscv_vssrl(v, uamounts, __RISCV_VXRM_RNU, vl);
+}
+template <class V> HYLE_FORCE_INLINE V RoundingShiftRightSame(V v, int bits) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "RoundingShiftRightSame is integer-lane only");
+  if (bits <= 0) return v;
+  return RoundingShr(v, Set(DFromV<V>(), static_cast<T>(bits)));
+}
 template <int kBits, class V> HYLE_FORCE_INLINE V RotateRight(V v) noexcept {
   using T = TFromV<V>;
   static_assert(std::is_integral_v<T>, "RotateRight is integer-lane only");
@@ -666,6 +708,13 @@ template <class V> HYLE_FORCE_INLINE V SaturatedSub(V a, V b) noexcept {
   const std::size_t vl = detail::vlmax<TFromV<V>>();
   if constexpr (std::is_signed_v<TFromV<V>>) return __riscv_vssub(a, b, vl);
   else return __riscv_vssubu(a, b, vl);
+}
+template <class V> HYLE_FORCE_INLINE V AverageRound(V a, V b) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_unsigned_v<T> && sizeof(T) <= 2, "AverageRound is u8/u16 only");
+  const auto d = DFromV<V>();
+  const auto one = Set(d, T{1});
+  return Add(Add(ShiftRight<1>(a), ShiftRight<1>(b)), Or(And(a, one), And(b, one)));
 }
 template <class V> HYLE_FORCE_INLINE V MulHigh(V a, V b) noexcept {  // high half of widening mul
   const std::size_t vl = detail::vlmax<TFromV<V>>();
@@ -1398,6 +1447,47 @@ HYLE_FORCE_INLINE V Shuffle1032(V v) noexcept {
   const std::size_t vl = detail::vlmax<T>();
   const auto idx = __riscv_vxor(detail::iota_u_rvv<T>(vl), U{2}, vl);
   return __riscv_vrgather(v, idx, vl);
+}
+template <class V>
+HYLE_FORCE_INLINE V Shuffle2301(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(sizeof(T) == 4, "Shuffle2301 needs 32-bit lanes");
+  const std::size_t vl = detail::vlmax<T>();
+  return __riscv_vrgather(v, __riscv_vxor(detail::iota_u_rvv<T>(vl), std::uint32_t{1}, vl), vl);
+}
+template <class V>
+HYLE_FORCE_INLINE V Shuffle0321(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(sizeof(T) == 4, "Shuffle0321 needs 32-bit lanes");
+  const std::size_t vl = detail::vlmax<T>();
+  const auto id = detail::iota_u_rvv<T>(vl);
+  const auto block = __riscv_vand(id, std::uint32_t{~3u}, vl);
+  const auto within = __riscv_vand(__riscv_vadd(id, std::uint32_t{1}, vl), std::uint32_t{3}, vl);
+  return __riscv_vrgather(v, __riscv_vor(block, within, vl), vl);
+}
+template <class V>
+HYLE_FORCE_INLINE V Shuffle2103(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(sizeof(T) == 4, "Shuffle2103 needs 32-bit lanes");
+  const std::size_t vl = detail::vlmax<T>();
+  const auto id = detail::iota_u_rvv<T>(vl);
+  const auto block = __riscv_vand(id, std::uint32_t{~3u}, vl);
+  const auto within = __riscv_vand(__riscv_vadd(id, std::uint32_t{3}, vl), std::uint32_t{3}, vl);
+  return __riscv_vrgather(v, __riscv_vor(block, within, vl), vl);
+}
+template <class V>
+HYLE_FORCE_INLINE V Shuffle0123(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(sizeof(T) == 4, "Shuffle0123 needs 32-bit lanes");
+  const std::size_t vl = detail::vlmax<T>();
+  return __riscv_vrgather(v, __riscv_vxor(detail::iota_u_rvv<T>(vl), std::uint32_t{3}, vl), vl);
+}
+template <class V>
+HYLE_FORCE_INLINE V Shuffle01(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(sizeof(T) == 8, "Shuffle01 needs 64-bit lanes");
+  const std::size_t vl = detail::vlmax<T>();
+  return __riscv_vrgather(v, __riscv_vxor(detail::iota_u_rvv<T>(vl), std::uint64_t{1}, vl), vl);
 }
 // Broadcast<kLane>(v): splat lane kLane across all lanes (vrgather by a constant index).
 template <int kLane, class V> HYLE_FORCE_INLINE V Broadcast(V v) noexcept {

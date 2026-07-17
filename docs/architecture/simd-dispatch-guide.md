@@ -205,7 +205,7 @@ KV32/KV64。RVV 使用诚实的 LMUL=1 全宽 tag，而不是用逻辑半宽伪�
 native type。SVE 采用 SVE-256 capped tier：VL=128 时用 128 bit，VL≥256 时用 256 bit；这是为了让
 sorting network 始终保持 2 的幂 lane 数，真实执行 SVE 指令，但不声称随更宽 VL 扩展吞吐。
 
-当前 SVE 门为 39 tests × VL 128/256/384/512/2048，RVV 门为 36 tests × VLEN
+当前 SVE 门为 40 tests × VL 128/256/384/512/2048，RVV 门为 37 tests × VLEN
 128/256/512/1024；门内包含真实 CPU probe、Runtime、公开 math/dtype/bitpack/sort batch API 与 tail。dtype 还
 穷举全部 f16/bf16 存储编码并覆盖全位域 f32 样本。sizeless SVE/RVV vector
 不能成为 `VectorXoshiro` 成员，所以固定目标代码使用 `native::random_fill`。这些 QEMU 结果是正确性与

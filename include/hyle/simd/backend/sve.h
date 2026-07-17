@@ -506,6 +506,51 @@ template <class V> HYLE_FORCE_INLINE V Shr(V a, V b) noexcept {
   if constexpr (std::is_signed_v<T>) return svasr_x(detail::ptrue<T>(), a, detail::to_ucount(b));
   else return svlsr_x(detail::ptrue<T>(), a, detail::to_ucount(b));
 }
+template <class V> HYLE_FORCE_INLINE V ShiftLeftSame(V v, int bits) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "ShiftLeftSame is integer-lane only");
+  return Shl(v, Set(DFromV<V>(), static_cast<T>(bits)));
+}
+template <class V> HYLE_FORCE_INLINE V ShiftRightSame(V v, int bits) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "ShiftRightSame is integer-lane only");
+  return Shr(v, Set(DFromV<V>(), static_cast<T>(bits)));
+}
+template <class V> HYLE_FORCE_INLINE V RotateRightSame(V v, int bits) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "RotateRightSame is integer-lane only");
+  constexpr int kBits = static_cast<int>(sizeof(T) * 8);
+  bits &= kBits - 1;
+  if (bits == 0) return v;
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto uv = BitCast(du, v);
+  return BitCast(DFromV<V>(), Or(ShiftRightSame(uv, bits), ShiftLeftSame(uv, kBits - bits)));
+}
+template <class V> HYLE_FORCE_INLINE V RotateLeftSame(V v, int bits) noexcept {
+  constexpr int kBits = static_cast<int>(sizeof(TFromV<V>) * 8);
+  bits &= kBits - 1;
+  return bits == 0 ? v : RotateRightSame(v, kBits - bits);
+}
+template <class V> HYLE_FORCE_INLINE V RoundingShr(V v, V amounts) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "RoundingShr is integer-lane only");
+  // SVE's native rounding variable shift (RSHL) is SVE2-only. Keep the base-SVE backend honest:
+  // synthesize the round bias per lane, then use the base-SVE variable shift. Masking s-1 before
+  // Shl is important because s==0 must be identity and an underflowed unsigned count is invalid.
+  const auto d = DFromV<V>();
+  const auto zero = Zero(d);
+  const auto one = Set(d, T{1});
+  const auto positive = Gt(amounts, zero);
+  const auto safe_sm1 = IfThenElse(positive, Sub(amounts, one), zero);
+  const auto bias = IfThenElse(positive, Shl(one, safe_sm1), zero);
+  return IfThenElse(positive, Shr(Add(v, bias), amounts), v);
+}
+template <class V> HYLE_FORCE_INLINE V RoundingShiftRightSame(V v, int bits) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_integral_v<T>, "RoundingShiftRightSame is integer-lane only");
+  if (bits <= 0) return v;
+  return RoundingShr(v, Set(DFromV<V>(), static_cast<T>(bits)));
+}
 template <int kBits, class V> HYLE_FORCE_INLINE V RotateRight(V v) noexcept {
   using T = TFromV<V>;
   static_assert(std::is_integral_v<T>, "RotateRight is integer-lane only");
@@ -965,6 +1010,39 @@ HYLE_FORCE_INLINE V Shuffle1032(V v) noexcept {
   static_assert(sizeof(TFromV<V>) == 4, "Shuffle1032 needs 32-bit lanes");
   return svtbl(v, sveor_x(svptrue_b32(), svindex_u32(0, 1), std::uint32_t{2}));
 }
+template <class V>
+HYLE_FORCE_INLINE V Shuffle2301(V v) noexcept {
+  static_assert(sizeof(TFromV<V>) == 4, "Shuffle2301 needs 32-bit lanes");
+  return svtbl(v, sveor_x(svptrue_b32(), svindex_u32(0, 1), std::uint32_t{1}));
+}
+template <class V>
+HYLE_FORCE_INLINE V Shuffle0321(V v) noexcept {
+  static_assert(sizeof(TFromV<V>) == 4, "Shuffle0321 needs 32-bit lanes");
+  const auto pg = svptrue_b32();
+  const auto id = svindex_u32(0, 1);
+  const auto block = svand_x(pg, id, std::uint32_t{~3u});
+  const auto within = svand_x(pg, svadd_x(pg, id, std::uint32_t{1}), std::uint32_t{3});
+  return svtbl(v, svorr_x(pg, block, within));
+}
+template <class V>
+HYLE_FORCE_INLINE V Shuffle2103(V v) noexcept {
+  static_assert(sizeof(TFromV<V>) == 4, "Shuffle2103 needs 32-bit lanes");
+  const auto pg = svptrue_b32();
+  const auto id = svindex_u32(0, 1);
+  const auto block = svand_x(pg, id, std::uint32_t{~3u});
+  const auto within = svand_x(pg, svadd_x(pg, id, std::uint32_t{3}), std::uint32_t{3});
+  return svtbl(v, svorr_x(pg, block, within));
+}
+template <class V>
+HYLE_FORCE_INLINE V Shuffle0123(V v) noexcept {
+  static_assert(sizeof(TFromV<V>) == 4, "Shuffle0123 needs 32-bit lanes");
+  return svtbl(v, sveor_x(svptrue_b32(), svindex_u32(0, 1), std::uint32_t{3}));
+}
+template <class V>
+HYLE_FORCE_INLINE V Shuffle01(V v) noexcept {
+  static_assert(sizeof(TFromV<V>) == 8, "Shuffle01 needs 64-bit lanes");
+  return svtbl(v, sveor_x(svptrue_b64(), svindex_u64(0, 1), std::uint64_t{1}));
+}
 template <class V> HYLE_FORCE_INLINE V DupEven(V v) noexcept { return svtrn1(v, v); }
 template <class V> HYLE_FORCE_INLINE V DupOdd(V v) noexcept { return svtrn2(v, v); }
 template <class V> HYLE_FORCE_INLINE V InterleaveEven(V a, V b) noexcept { return svtrn1(a, b); }
@@ -1069,6 +1147,15 @@ HYLE_FORCE_INLINE VFromD<D> BitCast(D, V v) noexcept {
 // ---- saturating arithmetic (integer) ------------------------------------------------
 template <class V> HYLE_FORCE_INLINE V SaturatedAdd(V a, V b) noexcept { return svqadd(a, b); }
 template <class V> HYLE_FORCE_INLINE V SaturatedSub(V a, V b) noexcept { return svqsub(a, b); }
+template <class V> HYLE_FORCE_INLINE V AverageRound(V a, V b) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_unsigned_v<T> && sizeof(T) <= 2, "AverageRound is u8/u16 only");
+  // SVE2 has URHADD; base SVE uses the overflow-safe identity
+  // (a>>1) + (b>>1) + ((a&1)|(b&1)).
+  const auto d = DFromV<V>();
+  const auto one = Set(d, T{1});
+  return Add(Add(ShiftRight<1>(a), ShiftRight<1>(b)), Or(And(a, one), And(b, one)));
+}
 
 // ---- misc lane math -----------------------------------------------------------------
 template <class V> HYLE_FORCE_INLINE V AbsDiff(V a, V b) noexcept {
