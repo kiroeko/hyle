@@ -1084,17 +1084,18 @@ HYLE_FORCE_INLINE auto ConcatEvenForD(D, V hi, V lo, long) noexcept
 // zero-extends (PromoteLowerTo on unsigned), signed sign-extends (on signed); ShiftRight<32>
 // is logical for u64 / arithmetic for i64, matching MULUH / MULSH. See the KEY NOTE above
 // for why the recombine is BitCast+ConcatEven rather than ReorderDemote2To.
-template <class V, typename WideT, typename MulT>
-HYLE_FORCE_INLINE V MulHighViaWiden(V dividend, MulT multiplier) noexcept {
+template <class V, typename WideT>
+HYLE_FORCE_INLINE V MulHighViaWiden(V dividend, V multiplier) noexcept {
   using D = DFromV<V>;
   using WideD = Simd<WideT, D::kMaxLanes / 2, 0>;
   const D d;
   const WideD dw;
   const auto lo = PromoteLowerTo(dw, dividend);  // low  N/2 lanes -> full wide
   const auto hi = PromoteUpperTo(dw, dividend);  // high N/2 lanes -> full wide
-  const auto m = Set(dw, static_cast<WideT>(multiplier));
-  const auto plo = ShiftRight<32>(Mul(lo, m));   // high 32 bits into low half of each lane
-  const auto phi = ShiftRight<32>(Mul(hi, m));
+  const auto mlo = PromoteLowerTo(dw, multiplier);
+  const auto mhi = PromoteUpperTo(dw, multiplier);
+  const auto plo = ShiftRight<32>(Mul(lo, mlo));  // high 32 bits into low half of each lane
+  const auto phi = ShiftRight<32>(Mul(hi, mhi));
   const auto plo32 = BitCast(d, plo);            // even u32 lane = low 32 bits (little-endian)
   const auto phi32 = BitCast(d, phi);
   return ConcatEvenForD(d, phi32, plo32, 0);     // [plo.even..., phi.even...] == per-lane MulHigh
@@ -1110,9 +1111,9 @@ HYLE_FORCE_INLINE V MulHigh32(V dividend, V multiplier) noexcept {
   static_assert(std::is_same_v<T, std::uint32_t> || std::is_same_v<T, std::int32_t>,
                 "MulHigh32 supports 32-bit integer lanes");
   if constexpr (std::is_unsigned_v<T>) {
-    return detail::MulHighViaWiden<V, std::uint64_t>(dividend, ExtractLane(multiplier, 0));
+    return detail::MulHighViaWiden<V, std::uint64_t>(dividend, multiplier);
   } else {
-    return detail::MulHighViaWiden<V, std::int64_t>(dividend, ExtractLane(multiplier, 0));
+    return detail::MulHighViaWiden<V, std::int64_t>(dividend, multiplier);
   }
 }
 

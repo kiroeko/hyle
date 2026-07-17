@@ -1232,6 +1232,20 @@ TEST(Sve, WholeVectorPairwiseLookupDemoteAndScale) {
   for (std::size_t i = 0; i < nf; ++i) { fv[i] = static_cast<float>(i + 1); fe[i] = static_cast<float>(static_cast<int>(i % 5) - 2) + 0.75f; }
   hs::Store(hs::MulByFloorPow2(hs::Load(df, fv), hs::Load(df, fe)), df, fo);
   for (std::size_t i = 0; i < nf; ++i) EXPECT_EQ(fo[i], std::ldexp(fv[i], static_cast<int>(std::floor(fe[i]))));
+
+  const hs::ScalableTag<std::uint32_t> du;
+  const std::size_t nu = hs::Lanes(du);
+  alignas(64) std::uint32_t ua[kBuf], ub[kBuf], uc[kBuf], uo[kBuf];
+  for (std::size_t i = 0; i < nu; ++i) { ua[i] = 0x80000000u + static_cast<std::uint32_t>(i * 97u); ub[i] = 0x10203040u + static_cast<std::uint32_t>(i); uc[i] = 0x55AA00FFu; }
+  const auto uva = hs::Load(du, ua), uvb = hs::Load(du, ub), uvc = hs::Load(du, uc);
+  hs::Store(hs::Xor3(uva, uvb, uvc), du, uo);
+  for (std::size_t i = 0; i < nu; ++i) EXPECT_EQ(uo[i], ua[i] ^ ub[i] ^ uc[i]);
+  hs::Store(hs::ShiftRightUniform(uva, 3), du, uo);
+  for (std::size_t i = 0; i < nu; ++i) EXPECT_EQ(uo[i], ua[i] >> 3);
+  hs::Store(hs::MulHigh32(uva, uvb), du, uo);
+  for (std::size_t i = 0; i < nu; ++i) EXPECT_EQ(uo[i], static_cast<std::uint32_t>((static_cast<std::uint64_t>(ua[i]) * ub[i]) >> 32));
+  hs::Store(hs::LoadNOr(hs::Set(du, 0xDEADBEEFu), du, ua, nu / 2), du, uo);
+  for (std::size_t i = 0; i < nu; ++i) EXPECT_EQ(uo[i], i < nu / 2 ? ua[i] : 0xDEADBEEFu);
 }
 
 TEST(Sve, RuntimeShiftsRoundedAverageAndBlockShuffles) {

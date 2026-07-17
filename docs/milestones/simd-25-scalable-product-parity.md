@@ -41,7 +41,7 @@ Runtime / exact / native + QEMU + real-hardware parity
 
 | 分类 | 数量 | 含义 |
 |---|---:|---|
-| `shared_generic` | 10 | 已在 `vec.h` 一次实现，只欠 scalable 实例化证明 |
+| `shared_generic` | 10 | 已在 `vec.h` 一次实现，并由正式 SVE/RVV 多 VL/VLEN 门禁直接实例化验证 |
 | `selector` | 13 | Native/Emulated 内部选择器，不是独立用户能力 |
 | `fixed_model` | 20 | half/128-bit block/固定寄存器拼装，按产品合同裁决 |
 | `extension_gated` | 9 | 依赖可选 ISA 或流式存储合同；含 RVV 仍缺的六个 AES 名 |
