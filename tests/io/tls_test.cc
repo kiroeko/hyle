@@ -184,8 +184,8 @@ TEST(IoTls, HandshakeAndEncryptedEcho) {
   auto dc = std::make_unique<Drive>();
   ds->task = tls_server(system_allocator(), &io, &ls, &sctx, r.get());
   dc->task = tls_client(system_allocator(), &io, &cctx, r.get());
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
   sched.drain();

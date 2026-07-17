@@ -130,7 +130,7 @@ TEST(IoFile, OpenWriteReadStatSyncClose) {
   auto r = std::make_unique<FileResult>();
   auto d = std::make_unique<Drive>();
   d->task = file_coro(system_allocator(), &io, path.c_str(), r.get());
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn_on(kOwner, &f);
   sched.drain();
   sched.shutdown();
@@ -161,7 +161,7 @@ TEST(IoFile, OpenMissingFails) {
   auto r = std::make_unique<FileResult>();
   auto d = std::make_unique<Drive>();
   d->task = open_missing_coro(system_allocator(), &io, r.get());
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn_on(kOwner, &f);
   sched.drain();
   sched.shutdown();
@@ -181,7 +181,7 @@ TEST(IoFile, FallocateExtends) {
   auto r = std::make_unique<FileResult>();
   auto d = std::make_unique<Drive>();
   d->task = fallocate_coro(system_allocator(), &io, path.c_str(), r.get());
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn_on(kOwner, &f);
   sched.drain();
   sched.shutdown();

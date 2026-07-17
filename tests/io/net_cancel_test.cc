@@ -125,8 +125,8 @@ TEST(NetCancel, TokenCancelUnblocksRecv) {
   auto dc = std::make_unique<Drive>();
   ds->task = cancel_server(system_allocator(), &io, &ls, r.get());
   dc->task = cancel_client(system_allocator(), &io, r.get(), kPort);
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
 
@@ -135,7 +135,7 @@ TEST(NetCancel, TokenCancelUnblocksRecv) {
   // core). It is spawned up front and internally waits on connected via sleep.
   auto dk = std::make_unique<Drive>();
   dk->task = canceller(system_allocator(), r.get());
-  Fiber fk(system_allocator(), kDefaultStackSize, &drive_entry, dk.get());
+  Fiber fk(kDefaultStackSize, &drive_entry, dk.get());
   sched.spawn_on(kOwner, &fk);
 
   sched.drain();
@@ -183,7 +183,7 @@ TEST(NetCancel, AlreadyCancelledRecvReturnsCancelledImmediately) {
   auto r = std::make_unique<PrecancelResult>();
   auto d = std::make_unique<Drive>();
   d->task = precancel_client(system_allocator(), &io, r.get(), &tok, s.fd());
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn_on(kOwner, &f);
   sched.drain();
   sched.shutdown();

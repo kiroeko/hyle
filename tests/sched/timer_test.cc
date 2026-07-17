@@ -45,7 +45,7 @@ void sleep_entry(void* p) {
 TEST(SchedTimer, SleepResumesAfterDeadline) {
   SleepProbe s;
   s.sleep_ns = 30 * kMs;
-  Fiber f(system_allocator(), kDefaultStackSize, &sleep_entry, &s);
+  Fiber f(kDefaultStackSize, &sleep_entry, &s);
   {
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(&f);
@@ -70,7 +70,7 @@ TEST(SchedTimer, ManyDifferentDeadlinesAllResume) {
     p->sleep_ns = static_cast<std::uint64_t>(i + 1) * kMs;  // 1..64 ms
     probes.push_back(std::move(p));
     fibers.push_back(std::make_unique<Fiber>(
-        system_allocator(), kDefaultStackSize, &sleep_entry, probes[i].get()));
+        kDefaultStackSize, &sleep_entry, probes[i].get()));
   }
   {
     Scheduler sched(4, system_allocator(), 1024);
@@ -88,7 +88,7 @@ TEST(SchedTimer, ManyDifferentDeadlinesAllResume) {
 TEST(SchedTimer, ZeroSleepResumesPromptly) {
   SleepProbe s;
   s.sleep_ns = 0;
-  Fiber f(system_allocator(), kDefaultStackSize, &sleep_entry, &s);
+  Fiber f(kDefaultStackSize, &sleep_entry, &s);
   {
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(&f);
@@ -127,7 +127,7 @@ TEST(SchedTimer, ConcurrentSleepersStress) {
     c->counter = &counter;
     probes.push_back(std::move(c));
     fibers.push_back(std::make_unique<Fiber>(
-        system_allocator(), kDefaultStackSize, &chain_entry, probes[i].get()));
+        kDefaultStackSize, &chain_entry, probes[i].get()));
   }
   {
     Scheduler sched(4, system_allocator(), 1024);
@@ -166,14 +166,14 @@ TEST(SchedTimer, MixedSleepersAndRunnables) {
 
   for (int i = 0; i < kSleepers; ++i) {
     ss.push_back(std::make_unique<S>(S{&woke}));
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+    fibers.push_back(std::make_unique<Fiber>(
                                              kDefaultStackSize,
                                              static_cast<Fiber::EntryFn>(sleeper),
                                              ss.back().get()));
   }
   for (int i = 0; i < kBusy; ++i) {
     bs.push_back(std::make_unique<B>(B{&ran}));
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+    fibers.push_back(std::make_unique<Fiber>(
                                              kDefaultStackSize,
                                              static_cast<Fiber::EntryFn>(busy),
                                              bs.back().get()));

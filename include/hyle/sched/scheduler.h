@@ -14,6 +14,10 @@
 #  define HYLE_SCHED_API HYLE_IMPORT
 #endif
 
+namespace hyle::mem {
+class FiberStackPool;  // sched-10: recycles spawn_task fiber stacks (avoid mmap churn)
+}  // namespace hyle::mem
+
 namespace hyle::sched {
 
 class Fiber;
@@ -53,6 +57,15 @@ class HYLE_SCHED_API Scheduler {
   // The number of worker threads (for choosing a spawn_on target / sizing an
   // IoContext's per-worker rings).
   unsigned num_workers() const noexcept;
+
+  // Shared fiber-stack recycle pool for a given USABLE size (sched-10 spawn_task).
+  // Returns a pool whose tier matches `usable_bytes` when it equals one of the
+  // standard tiers (Small/Default/Large), else nullptr (caller allocates a
+  // one-off stack). The pool is owned by the scheduler and outlives every fiber
+  // it hands out (all spawn_task drivers are destroyed during shutdown() before
+  // the scheduler dies), so a Fiber may safely release its stack back on destroy.
+  // Thread-safe: acquire may run on any thread, release on the worker dispatch.
+  mem::FiberStackPool* fiber_stack_pool(std::size_t usable_bytes) noexcept;
 
   // Block the calling thread until every spawned fiber has finished.
   void drain();

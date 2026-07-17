@@ -81,10 +81,6 @@ void Fiber::release_stack_() noexcept {
 Fiber::Fiber(std::size_t stack_size, EntryFn entry, void* arg)
     : Fiber(mem::FiberStack::allocate(stack_size), entry, arg, nullptr) {}
 
-Fiber::Fiber(mem::Allocator /*alloc*/, std::size_t stack_size, EntryFn entry,
-             void* arg)
-    : Fiber(mem::FiberStack::allocate(stack_size), entry, arg, nullptr) {}
-
 Fiber::Fiber(mem::FiberStack stack, EntryFn entry, void* arg,
              mem::FiberStackPool* pool)
     : stack_(std::move(stack)), pool_(pool), entry_(entry), arg_(arg) {

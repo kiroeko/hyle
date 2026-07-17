@@ -4,7 +4,6 @@
 #include <cstddef>
 
 #include "hyle/macros.h"
-#include "hyle/mem/allocator.h"
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/visibility.h"
 
@@ -58,12 +57,6 @@ class Fiber {
   // (pool must outlive the fiber).
   HYLE_SCHED_API Fiber(mem::FiberStack stack, EntryFn entry, void* arg,
                        mem::FiberStackPool* pool = nullptr);
-
-  // Source-compat constructor: `alloc` is IGNORED for the stack (kept so existing
-  // call sites that pass system_allocator() keep compiling). Stack is always a
-  // guarded FiberStack of `stack_size` usable bytes.
-  HYLE_SCHED_API Fiber(mem::Allocator alloc, std::size_t stack_size, EntryFn entry,
-                       void* arg);
 
   HYLE_SCHED_API ~Fiber();
 

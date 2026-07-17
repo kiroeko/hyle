@@ -35,8 +35,10 @@ extern "C" {
 #  define HYLE_PLATFORM_C_API
 #endif
 
-/* Breaking change to hyle_platform_api layout bumps this. */
-#define HYLE_PLATFORM_C_ABI_VERSION 2
+/* Breaking change to hyle_platform_api layout bumps this. v3 appended NUMA +
+ * hugepage/THP primitives (all new fields at the END of hyle_platform_api, so a
+ * v2 caller's prefix reads are unchanged; only the version gate rejects v2). */
+#define HYLE_PLATFORM_C_ABI_VERSION 3
 
 /* ========================================================================== */
 /* wait / Parker                                                              */
@@ -171,6 +173,56 @@ HYLE_PLATFORM_C_API void* hyle_vm_alloc_rw(size_t size);
 static inline int hyle_vm_free_rw(void* p, size_t size) {
   return hyle_vm_release(p, hyle_page_align_up(size));
 }
+
+/* Set the thread-local vm error string (NULL clears). Mirrors the C++
+ * vm_set_last_error; lets an FFI soft-fail path leave a breadcrumb. */
+HYLE_PLATFORM_C_API void hyle_vm_set_last_error(const char* msg);
+
+/* ========================================================================== */
+/* Hugepage / THP hints (v3) — soft advice, never required for correctness.   */
+/* ========================================================================== */
+
+/* Large/huge page size in bytes (0 if unknown/unsupported). */
+HYLE_PLATFORM_C_API size_t hyle_large_page_size(void);
+/* Round up to large_page_size() (falls back to page on 0). n==0 -> 0. */
+static inline size_t hyle_large_page_align_up(size_t n) {
+  if (n == 0) return 0;
+  size_t lp = hyle_large_page_size();
+  size_t p = lp != 0 ? lp : hyle_page_size();
+  if (p == 0) return 0;
+  return (n + (p - 1)) & ~(p - 1);
+}
+/* MADV_HUGEPAGE / MADV_NOHUGEPAGE on Linux; false + vm_last_error elsewhere.
+ * ptr must be page-aligned; size rounded up. Empty range -> 1 (no-op). */
+HYLE_PLATFORM_C_API int hyle_vm_advise_hugepage(void* ptr, size_t size);
+HYLE_PLATFORM_C_API int hyle_vm_advise_no_hugepage(void* ptr, size_t size);
+
+/* ========================================================================== */
+/* NUMA topology + placement (v3)                                             */
+/* ========================================================================== */
+
+#define HYLE_NUMA_ANY (-1) /* "no NUMA constraint" for reserve/bind */
+
+typedef enum hyle_numa_policy {
+  HYLE_NUMA_PREFERRED = 0, /* soft home node (never fails the process) */
+  HYLE_NUMA_BIND = 1,      /* hard node (Linux MPOL_BIND; may fail) */
+  HYLE_NUMA_INTERLEAVE = 2 /* stripe across all nodes (Linux) */
+} hyle_numa_policy;
+
+/* Node count (>=1) and the calling thread's home node (< count). */
+HYLE_PLATFORM_C_API unsigned hyle_numa_node_count(void);
+HYLE_PLATFORM_C_API unsigned hyle_numa_current_node(void);
+
+/* Bind an existing page-aligned mapping. Empty range -> 1. Honest contract:
+ * single-node box -> 1 (no-op); multi-node hard bind / interleave without an OS
+ * API -> 0 (+ vm_last_error). See hyle::platform::vm_bind_numa. */
+HYLE_PLATFORM_C_API int hyle_vm_bind_numa(void* ptr, size_t size, int node,
+                                          hyle_numa_policy policy);
+/* Stripe [ptr,ptr+size) across all nodes (alias for INTERLEAVE). */
+HYLE_PLATFORM_C_API int hyle_vm_bind_numa_interleave(void* ptr, size_t size);
+/* Reserve `size` (page-rounded) preferring `node` (HYLE_NUMA_ANY == plain
+ * reserve). NULL on failure. Commit/release with the usual hyle_vm_* APIs. */
+HYLE_PLATFORM_C_API void* hyle_vm_reserve_numa(size_t size, int node);
 
 /* RAII region (opaque). destroy releases the reservation. */
 typedef struct hyle_vm_region_o hyle_vm_region_o;
@@ -364,6 +416,17 @@ typedef struct hyle_platform_api {
   const char* (*cpu_isa_name)(uint32_t);
 
   int (*c_abi_version)(void);
+
+  /* ---- v3 appended: hugepage/THP + NUMA (kept LAST for prefix compat) ---- */
+  void (*vm_set_last_error)(const char*);
+  size_t (*large_page_size)(void);
+  int (*vm_advise_hugepage)(void*, size_t);
+  int (*vm_advise_no_hugepage)(void*, size_t);
+  unsigned (*numa_node_count)(void);
+  unsigned (*numa_current_node)(void);
+  int (*vm_bind_numa)(void*, size_t, int, hyle_numa_policy);
+  int (*vm_bind_numa_interleave)(void*, size_t);
+  void* (*vm_reserve_numa)(size_t, int);
 } hyle_platform_api;
 
 HYLE_PLATFORM_C_API int hyle_platform_api_get(hyle_platform_api* out,

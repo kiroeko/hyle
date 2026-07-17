@@ -2,7 +2,7 @@
 
 > **发布面**：`include/hyle/c/platform.h`  
 > **实现**：`src/platform/c_platform.cc`（链 `hyle_platform`；spawn 失败依赖 `hyle_error`）  
-> **ABI 版本**：`HYLE_PLATFORM_C_ABI_VERSION`（当前 **2**）  
+> **ABI 版本**：`HYLE_PLATFORM_C_ABI_VERSION`（当前 **3**）  
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言 / 跨编译器只许绑本头（及 `hyle/c/error.h`）。不要 include `hyle/platform/*.h`。
@@ -30,6 +30,8 @@
 | DynLib | open / get / current / close / symbol / open_symbol | close 释放 |
 | VM 自由函数 | reserve/commit/…/alloc_rw | reserve 配对 release |
 | VM region | `hyle_vm_region_*` | destroy 释放 |
+| hugepage/THP | `hyle_vm_advise_hugepage` 等 | soft 建议，无句柄 |
+| NUMA | `hyle_numa_*` / `hyle_vm_reserve_numa` / `hyle_vm_bind_numa*` | reserve 配对 release |
 | fs/env | buffer-fill / visitor | 无堆句柄 |
 | cpu | `hyle_cpu_features_get` 等 | 值返回 POD |
 | 表 | `hyle_platform_api_get` | 可选 FFI 函数指针包 |
@@ -95,12 +97,36 @@
 | `hyle_page_align_up` | **inline**：上取整；0→0 |
 | `hyle_vm_reserve` / `commit` / `decommit` / `release` / `protect` | 原语；bool→int 1/0 |
 | `hyle_vm_last_error` | |
+| `hyle_vm_set_last_error(msg)` | 设线程局部错误串；NULL 清空（v3） |
 | `hyle_vm_alloc_rw(size)` | reserve+commit RW（size 上取整） |
 | `hyle_vm_free_rw(p, size)` | **inline**：`release(p, page_align_up(size))` |
 | `hyle_vm_region_reserve` / `reserve_guarded` | 不透明 region；guarded 低 1 页 NOACCESS |
 | `hyle_vm_region_destroy` | |
 | `hyle_vm_region_valid` / `data` / `size` / `usable` / `usable_size` / `has_guard` | 查询 |
 | `hyle_vm_region_commit` / `commit_usable` / `decommit` / `protect` | 子区间 |
+
+### 3.4b Hugepage / THP（DLL + inline，v3）
+
+soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名区无等价 → 返回 0 + `vm_last_error`。
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_large_page_size` | 大页字节（未知/不支持→0） |
+| `hyle_large_page_align_up(n)` | **inline**：上取整到大页（0 回退普通页）；n==0→0 |
+| `hyle_vm_advise_hugepage(ptr, size)` | 空范围→1；ptr 须页对齐；bool→int |
+| `hyle_vm_advise_no_hugepage(ptr, size)` | 同上，反向建议 |
+
+### 3.4c NUMA 拓扑 + 放置（DLL + 常量，v3）
+
+| 符号 | 说明 |
+|---|---|
+| `HYLE_NUMA_ANY` | `(-1)`：无 NUMA 约束 |
+| `hyle_numa_policy` | `PREFERRED`(软) / `BIND`(硬,Linux) / `INTERLEAVE`(全节点条带) |
+| `hyle_numa_node_count` | 节点数 ≥1 |
+| `hyle_numa_current_node` | 调用线程 home 节点（< count） |
+| `hyle_vm_bind_numa(ptr, size, node, policy)` | 绑定已有映射；空范围→1；单节点→1(no-op)；多节点无 OS API 的硬绑定/交错→0(+`vm_last_error`) |
+| `hyle_vm_bind_numa_interleave(ptr, size)` | 全节点条带（INTERLEAVE 别名） |
+| `hyle_vm_reserve_numa(size, node)` | 预留偏好 `node`（ANY==普通 reserve）；失败 NULL；用 `hyle_vm_*` commit/release |
 
 ### 3.5 fs / env（DLL）
 
@@ -139,9 +165,9 @@
 | `hyle_platform_c_abi_version` | 等于宏 |
 | `hyle_platform_api_get(out, expected_abi)` | 0 成功；-1 失败 |
 
-`hyle_platform_api` 字段 = **全部 DLL 自由函数**（无 header-inline）：wait×4 + parker×5 + thread×7 + dynlib×9 + vm 自由×8 + region×13 + fs/env×18 + cpu×3 + `c_abi_version`，外加 `abi_version` 整型。
+`hyle_platform_api` 字段 = **全部 DLL 自由函数**（无 header-inline）：wait×4 + parker×5 + thread×7 + dynlib×9 + vm 自由×8 + region×13 + fs/env×18 + cpu×3 + `c_abi_version`，外加 `abi_version` 整型。**v3 追加（列在表尾，保 v2 前缀布局不变）**：`vm_set_last_error` + hugepage×3（`large_page_size` / `vm_advise_hugepage` / `vm_advise_no_hugepage`）+ numa×5（`numa_node_count` / `numa_current_node` / `vm_bind_numa` / `vm_bind_numa_interleave` / `vm_reserve_numa`）= 9 个。
 
-**不进表**：`hyle_page_align_up`、`hyle_vm_free_rw`、thread opts helpers / `HYLE_THREAD_OPTS_INIT`。
+**不进表**：`hyle_page_align_up`、`hyle_large_page_align_up`、`hyle_vm_free_rw`、thread opts helpers / `HYLE_THREAD_OPTS_INIT`。
 
 ### 3.8 有意不导出
 
@@ -220,7 +246,10 @@ hyle_fs_temp_directory(tmp, sizeof tmp);
 ## 5. 版本
 
 - v2：完整 `hyle_platform_api` 表、`open_symbol`、`vm_alloc_rw`、thread opts 糖、CPU 全字段（v1 已有）
+- v3：NUMA（node 查询 / preferred·bind·interleave / `reserve_numa`）+ hugepage·THP hint + `vm_set_last_error`。新字段一律追加在 `hyle_platform_api` 表尾，v2 调用方的前缀读取不受影响；仅版本门 `hyle_platform_api_get` 拒绝旧号。
 - 破坏性变更升 `HYLE_PLATFORM_C_ABI_VERSION`
+
+> **有意不导出**：mem 的 `StatsAllocator` / `LeakTracker`（AllocStats 计数 + 泄漏追踪）是**有状态 C++ 类**，属 mem 模块而非 platform；C ABI 化成本高且无 FFI 需求 → 仅 C++。NUMA/hugepage 是 platform 层自由函数原语，故进本表。
 
 ---
 

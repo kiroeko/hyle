@@ -76,13 +76,13 @@ TEST(IoSignal, WaitReturnsRaisedSignal) {
   // Waiter fiber: arm the wait, then a raiser fiber (spawned after) fires SIGTERM.
   auto dw = std::make_unique<Drive>();
   dw->task = wait_coro(system_allocator(), r.get(), sigs.get());
-  Fiber fw(system_allocator(), kDefaultStackSize, &drive_entry, dw.get());
+  Fiber fw(kDefaultStackSize, &drive_entry, dw.get());
 
   // Raiser fiber: raise SIGTERM. Runs on the same worker (pinned) but after the
   // waiter has suspended on the pipe read (spawned second, FIFO local queue).
   auto dr = std::make_unique<Drive>();
   dr->task = raise_coro(system_allocator());
-  Fiber fr(system_allocator(), kDefaultStackSize, &drive_entry, dr.get());
+  Fiber fr(kDefaultStackSize, &drive_entry, dr.get());
 
   sched.spawn_on(kOwner, &fw);
   sched.spawn_on(kOwner, &fr);

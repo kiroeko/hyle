@@ -178,8 +178,8 @@ TEST(IoTimeout, TimeoutWinsReturnsETimedout) {
   auto dc = std::make_unique<Drive>();
   ds->task = timeout_server(system_allocator(), &io, &ls, r.get());
   dc->task = timeout_client(system_allocator(), &io, r.get(), kPort);
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
   sched.drain();
@@ -204,8 +204,8 @@ TEST(IoTimeout, IoWinsReturnsBytes) {
   auto dc = std::make_unique<Drive>();
   ds->task = iowin_server(system_allocator(), &io, &ls, r.get());
   dc->task = iowin_client(system_allocator(), &io, r.get(), kPort);
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
   sched.drain();
@@ -245,7 +245,7 @@ TEST(IoTimeout, AcceptTimesOut) {
   auto r = std::make_unique<AcceptResult>();
   auto d = std::make_unique<Drive>();
   d->task = accept_timeout_client(system_allocator(), &io, &ls, r.get());
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn_on(kOwner, &f);
   sched.drain();
   sched.shutdown();
@@ -271,8 +271,8 @@ TEST(IoTimeout, TimeoutPathDoesNotLeakSlot) {
     ds->task = timeout_server(system_allocator(), &io, &ls, r.get());
     // The timed op's slot comes from CountingAlloc -> its alloc/free is counted.
     dc->task = timeout_client(CountingAlloc::make(), &io, r.get(), kPort);
-    Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-    Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+    Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+    Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
     sched.spawn_on(kOwner, &fs);
     sched.spawn_on(kOwner, &fc);
     sched.drain();
@@ -339,8 +339,8 @@ TEST(IoTimeout, BaseOpCompletionRoutingIntact) {
   auto dc = std::make_unique<Drive>();
   ds->task = base_recv_server(system_allocator(), &io, &ls, &held);
   dc->task = base_recv_client(system_allocator(), &io, st.get(), kPort);
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
   sched.drain();

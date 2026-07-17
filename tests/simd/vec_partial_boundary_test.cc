@@ -11,18 +11,12 @@
 #include <cstring>
 #include <type_traits>
 
-#if defined(_WIN32)
-#define WIN32_LEAN_AND_MEAN
-#define NOMINMAX
-#include <windows.h>
+// Guard pages via the platform VM primitives (platform-02b) -- one portable path
+// instead of per-OS VirtualAlloc/mmap. reserve() gives a raw reservation; we
+// commit the low page RW and protect the high page as kNone so an over-read
+// faults there.
+#include "hyle/platform/virtual_memory.h"
 #define HYLE_SIMD_TEST_HAS_GUARD_PAGES 1
-#elif defined(__APPLE__) || defined(__linux__)
-#include <sys/mman.h>
-#include <unistd.h>
-#define HYLE_SIMD_TEST_HAS_GUARD_PAGES 1
-#else
-#define HYLE_SIMD_TEST_HAS_GUARD_PAGES 0
-#endif
 
 #include "hyle/simd/vec.h"
 
@@ -86,28 +80,17 @@ void CheckLoadUPageEndNoFault() {
   static_assert(N * sizeof(T) < hs::kNativeVectorBytes, "partial shapes only");
   constexpr std::size_t kLogical = N * sizeof(T);
 
-#if defined(_WIN32)
-  SYSTEM_INFO system_info{};
-  GetSystemInfo(&system_info);
-  const std::size_t page = static_cast<std::size_t>(system_info.dwPageSize);
+  namespace pf = hyle::platform;
+  const std::size_t page = pf::page_size();
   ASSERT_GT(page, 0u);
 
-  void* mem = VirtualAlloc(nullptr, page * 2, MEM_RESERVE | MEM_COMMIT, PAGE_READWRITE);
-  ASSERT_NE(mem, nullptr);
-  auto* base = static_cast<unsigned char*>(mem);
-  DWORD old_protect = 0;
-  ASSERT_NE(VirtualProtect(base + page, page, PAGE_NOACCESS, &old_protect), 0);
-#else
-  const long page_l = sysconf(_SC_PAGESIZE);
-  ASSERT_GT(page_l, 0);
-  const std::size_t page = static_cast<std::size_t>(page_l);
-
-  void* mem = mmap(nullptr, page * 2, PROT_READ | PROT_WRITE,
-                   MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
-  ASSERT_NE(mem, MAP_FAILED);
-  auto* base = static_cast<unsigned char*>(mem);
-  ASSERT_EQ(mprotect(base + page, page, PROT_NONE), 0);
-#endif
+  // Reserve two pages: [0,page) becomes RW (holds the data), [page,2*page) stays
+  // no-access so an over-read past the logical range faults in it.
+  pf::VmRegion region = pf::VmRegion::reserve(page * 2);
+  ASSERT_TRUE(region.valid()) << pf::vm_last_error();
+  ASSERT_TRUE(region.commit(0, page)) << pf::vm_last_error();
+  ASSERT_TRUE(region.protect(page, page, pf::Protect::kNone)) << pf::vm_last_error();
+  auto* base = static_cast<unsigned char*>(region.data());
 
   // Exactly kLogical bytes ending at the first-page boundary.
   auto* p = reinterpret_cast<T*>(base + page - kLogical);
@@ -128,12 +111,7 @@ void CheckLoadUPageEndNoFault() {
     EXPECT_EQ(got, value) << "LoadU page-end lane " << i << " sizeof(T)=" << sizeof(T)
                            << " N=" << N;
   }
-
-#if defined(_WIN32)
-  EXPECT_NE(VirtualFree(mem, 0, MEM_RELEASE), 0);
-#else
-  EXPECT_EQ(munmap(mem, page * 2), 0);
-#endif
+  // region releases both pages on scope exit (RAII).
 }
 #endif
 

@@ -583,7 +583,7 @@ TEST(VulkanCompute, CoAwaitCompletion) {
   int result = -100;
   auto d = std::make_unique<Drive>();
   d->task = vk_await_coro(system_allocator(), &result);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive, d.get());
+  Fiber f(kDefaultStackSize, &drive, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();

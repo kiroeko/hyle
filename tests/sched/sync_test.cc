@@ -38,7 +38,7 @@ void run_fibers(unsigned workers, int count, Fn entry, void* arg) {
   std::vector<std::unique_ptr<Fiber>> fibers;
   fibers.reserve(count);
   for (int i = 0; i < count; ++i) {
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+    fibers.push_back(std::make_unique<Fiber>(
                                              kDefaultStackSize, entry, arg));
   }
   Scheduler sched(workers, system_allocator(), 1024);
@@ -104,10 +104,10 @@ TEST(Sync, WaitGroupWaitsForAll) {
   a.wg.add(kN);
   // Build coordinator + workers as a single fiber set sharing `a`.
   std::vector<std::unique_ptr<Fiber>> fibers;
-  fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  fibers.push_back(std::make_unique<Fiber>(kDefaultStackSize,
                                            &wg_coordinator, &a));
   for (int i = 0; i < kN; ++i) {
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+    fibers.push_back(std::make_unique<Fiber>(
                                              kDefaultStackSize, &wg_worker, &a));
   }
   Scheduler sched(4, system_allocator(), 1024);
@@ -142,10 +142,10 @@ TEST(Sync, LatchReleasesAllWaiters) {
   a.latch = &latch;
   std::vector<std::unique_ptr<Fiber>> fibers;
   for (int i = 0; i < kWaiters; ++i)
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+    fibers.push_back(std::make_unique<Fiber>(
                                              kDefaultStackSize, &latch_waiter, &a));
   for (int i = 0; i < kCount; ++i)
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+    fibers.push_back(std::make_unique<Fiber>(
                                              kDefaultStackSize, &latch_counter, &a));
   Scheduler sched(4, system_allocator(), 1024);
   for (auto& f : fibers) sched.spawn(f.get());
@@ -185,9 +185,9 @@ TEST(Sync, ChannelProducerConsumer) {
   a.ch = &ch;
   a.n = kN;
   std::unique_ptr<Fiber> prod = std::make_unique<Fiber>(
-      system_allocator(), kDefaultStackSize, &chan_producer, &a);
+      kDefaultStackSize, &chan_producer, &a);
   std::unique_ptr<Fiber> cons = std::make_unique<Fiber>(
-      system_allocator(), kDefaultStackSize, &chan_consumer, &a);
+      kDefaultStackSize, &chan_consumer, &a);
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(prod.get());
   sched.spawn(cons.get());
@@ -240,12 +240,12 @@ TEST(Sync, ChannelMultiProducerMultiConsumer) {
 
   std::vector<std::unique_ptr<Fiber>> fibers;
   for (int i = 0; i < kProducers; ++i)
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+    fibers.push_back(std::make_unique<Fiber>(
                                              kDefaultStackSize, &mpmc_producer, &a));
   for (int i = 0; i < kConsumers; ++i)
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+    fibers.push_back(std::make_unique<Fiber>(
                                              kDefaultStackSize, &mpmc_consumer, &a));
-  fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  fibers.push_back(std::make_unique<Fiber>(kDefaultStackSize,
                                            &mpmc_closer, &a));
   Scheduler sched(4, system_allocator(), 1024);
   for (auto& f : fibers) sched.spawn(f.get());
@@ -286,9 +286,9 @@ TEST(Sync, CvNotifyAllWakesAllFibers) {
   CvBroadcastArg a;
   std::vector<std::unique_ptr<Fiber>> fibers;
   for (int i = 0; i < kWaiters; ++i)
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+    fibers.push_back(std::make_unique<Fiber>(
                                              kDefaultStackSize, &cv_waiter, &a));
-  fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  fibers.push_back(std::make_unique<Fiber>(kDefaultStackSize,
                                            &cv_broadcaster, &a));
   Scheduler sched(4, system_allocator(), 1024);
   for (auto& f : fibers) sched.spawn(f.get());
@@ -325,7 +325,7 @@ TEST(Sync, CvThreadWaiterWokenByFiber) {
     a.resumed.store(true, std::memory_order_release);
   });
   std::unique_ptr<Fiber> notifier = std::make_unique<Fiber>(
-      system_allocator(), kDefaultStackSize, &cross_notifier_fiber, &a);
+      kDefaultStackSize, &cross_notifier_fiber, &a);
   {
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(notifier.get());
@@ -349,7 +349,7 @@ void cv_fiber_waiter(void* p) {
 TEST(Sync, CvFiberWaiterWokenByThread) {
   CrossArg a;
   std::unique_ptr<Fiber> waiter = std::make_unique<Fiber>(
-      system_allocator(), kDefaultStackSize, &cv_fiber_waiter, &a);
+      kDefaultStackSize, &cv_fiber_waiter, &a);
   {
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(waiter.get());
@@ -540,7 +540,7 @@ TEST(Sync, SemaphoreCloseWakesWaiters) {
   std::vector<std::unique_ptr<Fiber>> fibers;
   fibers.reserve(kFibers);
   for (int i = 0; i < kFibers; ++i)
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+    fibers.push_back(std::make_unique<Fiber>(kDefaultStackSize,
                                              &sem_close_body, &a));
   Scheduler sched(4, system_allocator(), 1024);
   for (auto& f : fibers) sched.spawn(f.get());
@@ -574,9 +574,9 @@ TEST(Sync, SemaphoreFifoNoSkip) {
   SemFifoArg small{&sem, 1, &order_ctr};
   // Spawn A(need 4) first so it takes the FIFO head, then B(need 1). Single worker
   // + a spawn gap makes the enqueue order deterministic.
-  auto fa = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto fa = std::make_unique<Fiber>(kDefaultStackSize,
                                     &sem_fifo_body, &big);
-  auto fb = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto fb = std::make_unique<Fiber>(kDefaultStackSize,
                                     &sem_fifo_body, &small);
   Scheduler sched(1, system_allocator(), 256);
   sched.spawn(fa.get());
@@ -642,10 +642,10 @@ TEST(Sync, RwLockReadersShareWriterExclusive) {
   std::vector<std::unique_ptr<Fiber>> fibers;
   fibers.reserve(kWriters + kReaders);
   for (int i = 0; i < kWriters; ++i)
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+    fibers.push_back(std::make_unique<Fiber>(kDefaultStackSize,
                                              &rw_writer_body, &a));
   for (int i = 0; i < kReaders; ++i)
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+    fibers.push_back(std::make_unique<Fiber>(kDefaultStackSize,
                                              &rw_reader_body, &a));
   Scheduler sched(4, system_allocator(), 1024);
   for (auto& f : fibers) sched.spawn(f.get());
@@ -683,7 +683,7 @@ TEST(Sync, RwLockReadersOverlap) {
   std::vector<std::unique_ptr<Fiber>> fibers;
   fibers.reserve(kReaders);
   for (int i = 0; i < kReaders; ++i)
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+    fibers.push_back(std::make_unique<Fiber>(kDefaultStackSize,
                                              &rw_overlap_body, a.get()));
   Scheduler sched(kReaders, system_allocator(), 1024);  // enough workers for all
   for (auto& f : fibers) sched.spawn(f.get());
@@ -732,9 +732,9 @@ TEST(Sync, OneshotDeliversValue) {
   auto a = std::make_unique<OneshotArg>();
   a->tx = std::move(tx);
   a->rx = std::move(rx);
-  auto ftx = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto ftx = std::make_unique<Fiber>(kDefaultStackSize,
                                      &oneshot_tx_body, a.get());
-  auto frx = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto frx = std::make_unique<Fiber>(kDefaultStackSize,
                                      &oneshot_rx_body, a.get());
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(frx.get());  // receiver blocks first
@@ -780,7 +780,7 @@ TEST(Sync, WatchSeesLatestValue) {
   EXPECT_EQ(rx.borrow(), 0);  // late subscriber sees current immediately
   auto a = std::make_unique<WatchArg>();
   a->rx = rx;  // copy (watch receivers are copyable)
-  auto frx = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto frx = std::make_unique<Fiber>(kDefaultStackSize,
                                      &watch_rx_body, a.get());
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(frx.get());
@@ -832,9 +832,9 @@ TEST(Sync, BroadcastFanOutToAll) {
   a0->n = kN;
   a1->rx = rx1;
   a1->n = kN;
-  auto f0 = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto f0 = std::make_unique<Fiber>(kDefaultStackSize,
                                     &bcast_rx_body, a0.get());
-  auto f1 = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto f1 = std::make_unique<Fiber>(kDefaultStackSize,
                                     &bcast_rx_body, a1.get());
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(f0.get());
@@ -900,7 +900,7 @@ TEST(Sync, OneshotClosedAwaitsReceiverDrop) {
   auto [tx, rx] = make_oneshot<int>(system_allocator());
   auto a = std::make_unique<OneshotClosedArg>();
   a->tx = std::move(tx);
-  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto f = std::make_unique<Fiber>(kDefaultStackSize,
                                    &oneshot_closed_body, a.get());
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(f.get());
@@ -980,7 +980,7 @@ TEST(Sync, OneshotSenderDropRaceNoHang) {
       a->done->store(true, std::memory_order_release);
       (void)r;
     };
-    auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, body,
+    auto f = std::make_unique<Fiber>(kDefaultStackSize, body,
                                      arg.get());
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(f.get());
@@ -1012,7 +1012,7 @@ TEST(Sync, WatchSenderDropRaceNoHang) {
       (void)a->rx.changed();  // must return (Cancelled on close), never hang
       a->done->store(true, std::memory_order_release);
     };
-    auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, body,
+    auto f = std::make_unique<Fiber>(kDefaultStackSize, body,
                                      arg.get());
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(f.get());

@@ -20,12 +20,18 @@
 
 ## 契约
 
-- Preferred 默认；Bind/Interleave 显式  
+- Preferred 默认（软；永不失败进程）；Bind/Interleave 显式  
+- **诚实失败**：单 node 上任何 per-node 策略是真 no-op → true；**多 node 但平台无 API**（Windows post-hoc 硬 Bind / 非 Linux Interleave）→ **false + `vm_set_last_error`**，不再假装成功。`vm_reserve_numa` 的 preferred 绑定失败**保留映射**（区可用），仅写 `vm_last_error` 供观测  
 - 单 node 平凡成功；无特权时 1GiB 预留 false 不崩  
 - 无 libnuma/hwloc  
+
+## C ABI（close-01，v3）
+
+NUMA/大页原语随 platform C ABI v3 导出（`include/hyle/c/platform.h`，`hyle_platform_api` 表尾追加，保 v2 前缀布局）：`hyle_numa_node_count` / `hyle_numa_current_node` / `hyle_vm_bind_numa` / `hyle_vm_bind_numa_interleave` / `hyle_vm_reserve_numa` + hugepage `hyle_large_page_size` / `hyle_vm_advise_hugepage(_no)` + `hyle_vm_set_last_error`。stats（`StatsAllocator`/`LeakTracker`）是 mem 有状态类，仅 C++。详见 `docs/guide/c-platform.md`。
 
 ## 验收
 
 - platform/mem Numa* 全绿；大 MemoryArena 可分配释放  
-- 双平台 mem/platform 回归不破  
+- 双平台 mem/platform 回归不破；C ABI `hyle_platform_c_test` v3 smoke 过  
+- Bind 诚实失败：多 node Windows 硬 Bind/Interleave 返 false（`numa_test.cc` 按平台断言）  
 

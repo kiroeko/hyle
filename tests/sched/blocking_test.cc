@@ -104,9 +104,9 @@ TEST(Blocking, WorkerNotStalledByBlockingCall) {
   std::atomic<bool> b_ran{false};
   std::atomic<bool> a_joined{false};
   OffloadArg arg{&pool, &b_ran, &a_joined};
-  auto fa = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto fa = std::make_unique<Fiber>(kDefaultStackSize,
                                     &offload_a, &arg);
-  auto fb = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto fb = std::make_unique<Fiber>(kDefaultStackSize,
                                     &offload_b, &arg);
   Scheduler sched(1, system_allocator(), 256);  // ONE worker
   sched.spawn(fa.get());

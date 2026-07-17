@@ -113,8 +113,8 @@ TEST(IoUdp, RecvFromSendToEchoRoundTrip) {
   auto dc = std::make_unique<Drive>();
   ds->task = server_coro(system_allocator(), &srv, r.get());
   dc->task = client_coro(system_allocator(), &cli, r.get());
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
 
   // Both pinned to the owner core (shard-per-core); server spawned first so it is
   // waiting in recv_from before the client sends.

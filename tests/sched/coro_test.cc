@@ -68,7 +68,7 @@ void drive_int_entry(void* p) {
 TEST(Coro, TaskReturnsValueFrameFromAllocator) {
   auto d = std::make_unique<DriveInt>();
   d->task = add_coro(system_allocator(), 20, 22);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_int_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_int_entry, d.get());
   {
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(&f);
@@ -85,7 +85,7 @@ TEST(Coro, CoAwaitSuspendsFiberResumedByForeignWake) {
   auto box = std::make_unique<WaitBox>();
   auto d = std::make_unique<DriveInt>();
   d->task = waiting_coro(system_allocator(), box.get());
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_int_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_int_entry, d.get());
   {
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(&f);
@@ -124,7 +124,7 @@ TEST(Coro, NestedCoAwaitComposes) {
   auto box = std::make_unique<WaitBox>();
   auto d = std::make_unique<DriveInt>();
   d->task = outer_coro(system_allocator(), box.get());
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_int_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_int_entry, d.get());
   {
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(&f);

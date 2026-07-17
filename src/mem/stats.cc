@@ -41,15 +41,15 @@ void stats_free(void* st, void* ptr, std::size_t size,
     s->backing.deallocate(ptr, size, alignment);
     return;
   }
+  // When leak tracking is on, account the free by the size RECORDED at alloc
+  // time (robust to a caller passing the wrong size to deallocate). Falls back
+  // to the caller's size for untracked ptrs / when tracking is off.
+  std::size_t account = size;
   if (s->leaks) {
-    // If tracked, prefer recorded size for counters (robust to wrong size arg).
-    std::size_t tracked = size;
-    // track_free erases; recover size from map first.
-    // Re-look: track_free doesn't return size. Keep caller size for counters.
-    (void)s->leaks->track_free(ptr);
-    (void)tracked;
+    std::size_t recorded = 0;
+    if (s->leaks->track_free(ptr, &recorded)) account = recorded;
   }
-  if (size > 0) s->stats.record_free(size);
+  if (account > 0) s->stats.record_free(account);
   s->backing.deallocate(ptr, size, alignment);
 }
 
@@ -97,7 +97,7 @@ void LeakTracker::track_alloc(void* p, std::size_t size) noexcept {
   impl_->lock.unlock();
 }
 
-bool LeakTracker::track_free(void* p) noexcept {
+bool LeakTracker::track_free(void* p, std::size_t* out_size) noexcept {
   if (impl_ == nullptr || p == nullptr) return false;
   impl_->lock.lock();
   auto it = impl_->live.find(p);
@@ -105,6 +105,7 @@ bool LeakTracker::track_free(void* p) noexcept {
     impl_->lock.unlock();
     return false;
   }
+  if (out_size != nullptr) *out_size = it->second;
   impl_->live.erase(it);
   impl_->lock.unlock();
   return true;

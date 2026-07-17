@@ -88,6 +88,10 @@ HYLE_PLATFORM_API bool vm_protect(void* ptr, std::size_t size, Protect prot) noe
 // vm_* call on the same thread (dynlib-style, no allocator).
 HYLE_PLATFORM_API const char* vm_last_error() noexcept;
 
+// Set the thread-local vm_last_error string (platform TUs + soft-fail paths).
+// msg==nullptr clears. Used by numa.cc when bind fails but reservation is kept.
+HYLE_PLATFORM_API void vm_set_last_error(const char* msg) noexcept;
+
 // ---- hugepage / THP hints ---------------------------------------------------
 // Soft advice only: never required for correctness. Linux uses madvise
 // (MADV_HUGEPAGE / MADV_NOHUGEPAGE). Windows/macOS have no portable equivalent

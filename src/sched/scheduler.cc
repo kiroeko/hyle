@@ -10,6 +10,7 @@
 #include "hyle/container/sharded_queue.h"
 #include "hyle/container/ws_fifo_queue.h"
 #include "hyle/macros.h"
+#include "hyle/mem/fiber_stack.h"
 #include "hyle/platform/thread.h"
 #include "hyle/platform/wait.h"
 #include "hyle/sched/fiber.h"
@@ -153,6 +154,25 @@ struct Scheduler::Impl {
   // tree. Distinct from `stop` (which ends the worker LOOP in phase 2): a worker
   // keeps running while !accepting so in-flight fibers can drain.
   std::atomic<bool> accepting{true};
+
+  // Shared fiber-stack recycle pools, one per standard tier (sched-10 spawn_task).
+  // spawn_task acquires from the tier matching its stack size and the Fiber
+  // releases back on destroy (in the worker dispatch), so a hot spawn/join loop
+  // reuses stacks instead of paying reserve_guarded's 3 syscalls (VirtualAlloc
+  // reserve + commit + VirtualProtect / mmap + mprotect) every time. The pools
+  // live on the Impl, which outlives every driver (shutdown() drains all fibers
+  // before ~Scheduler), so release-on-destroy is always into a live pool.
+  // FiberStackPool holds a SpinLock + inline slot array (non-movable) -> heap it.
+  mem::FiberStackPool pool_small{mem::kFiberStackSmall};
+  mem::FiberStackPool pool_default{mem::kFiberStackDefault};
+  mem::FiberStackPool pool_large{mem::kFiberStackLarge};
+
+  mem::FiberStackPool* fiber_stack_pool(std::size_t usable) noexcept {
+    if (usable == mem::kFiberStackSmall) return &pool_small;
+    if (usable == mem::kFiberStackDefault) return &pool_default;
+    if (usable == mem::kFiberStackLarge) return &pool_large;
+    return nullptr;  // non-tier size: caller allocates a one-off stack
+  }
 
   // io poll hook (io-04). Registered by an io::IoContext via set_io_poll; the
   // worker loop calls it to reap io completions. Null when no io is in use ->
@@ -724,6 +744,9 @@ void Scheduler::spawn_on(unsigned worker_idx, Fiber* fiber) {
   impl_->spawn_on(worker_idx, fiber);
 }
 unsigned Scheduler::num_workers() const noexcept { return impl_->n; }
+mem::FiberStackPool* Scheduler::fiber_stack_pool(std::size_t usable_bytes) noexcept {
+  return impl_->fiber_stack_pool(usable_bytes);
+}
 void Scheduler::drain() { impl_->drain(); }
 void Scheduler::shutdown() { impl_->shutdown(); }
 bool Scheduler::accepting() const noexcept {

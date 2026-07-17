@@ -32,7 +32,7 @@ static int visit_cb(const char* name, int is_dir, void* ctx) {
 
 int main(void) {
   CHECK(hyle_platform_c_abi_version() == HYLE_PLATFORM_C_ABI_VERSION);
-  CHECK(HYLE_PLATFORM_C_ABI_VERSION == 2);
+  CHECK(HYLE_PLATFORM_C_ABI_VERSION == 3);
 
   hyle_platform_api api;
   CHECK(hyle_platform_api_get(&api, HYLE_PLATFORM_C_ABI_VERSION) == 0);
@@ -44,8 +44,19 @@ int main(void) {
   CHECK(api.cpu_features_get != NULL);
   CHECK(api.c_abi_version != NULL);
   CHECK(api.c_abi_version() == HYLE_PLATFORM_C_ABI_VERSION);
+  /* v3 appended fields present */
+  CHECK(api.vm_set_last_error != NULL);
+  CHECK(api.large_page_size != NULL);
+  CHECK(api.vm_advise_hugepage != NULL);
+  CHECK(api.vm_advise_no_hugepage != NULL);
+  CHECK(api.numa_node_count != NULL);
+  CHECK(api.numa_current_node != NULL);
+  CHECK(api.vm_bind_numa != NULL);
+  CHECK(api.vm_bind_numa_interleave != NULL);
+  CHECK(api.vm_reserve_numa != NULL);
   CHECK(hyle_platform_api_get(NULL, HYLE_PLATFORM_C_ABI_VERSION) == -1);
   CHECK(hyle_platform_api_get(&api, 999) == -1);
+  CHECK(hyle_platform_api_get(&api, 2) == -1); /* old ABI rejected */
 
   /* Parker */
   hyle_parker_o* p = hyle_parker_create();
@@ -158,6 +169,58 @@ int main(void) {
   CHECK(cpu.sse2 == 1);
   CHECK(hyle_cpu_supports_isa(HYLE_ISA_SSE2) == 1);
 #endif
+
+  /* v3: NUMA topology + placement */
+  {
+    unsigned nc = hyle_numa_node_count();
+    CHECK(nc >= 1u);
+    CHECK(hyle_numa_current_node() < nc);
+
+    /* set/clear last-error round trip */
+    hyle_vm_set_last_error("c_plat_probe");
+    CHECK(strcmp(hyle_vm_last_error(), "c_plat_probe") == 0);
+    hyle_vm_set_last_error(NULL);
+    CHECK(hyle_vm_last_error()[0] == '\0');
+
+    size_t pg = hyle_page_size();
+    /* ANY == plain reserve; region is writable after commit. */
+    void* rn = hyle_vm_reserve_numa(pg * 2, HYLE_NUMA_ANY);
+    CHECK(rn != NULL);
+    CHECK(hyle_vm_commit(rn, pg * 2));
+    ((unsigned char*)rn)[0] = 0x5A;
+    CHECK(((unsigned char*)rn)[0] == 0x5A);
+    /* Empty range bind is always a no-op success. */
+    CHECK(hyle_vm_bind_numa(NULL, 0, 0, HYLE_NUMA_PREFERRED) == 1);
+    /* Preferred to a valid node: soft, always OK. */
+    CHECK(hyle_vm_bind_numa(rn, pg * 2, 0, HYLE_NUMA_PREFERRED) == 1);
+    /* Single-node box: hard bind / interleave degrade to no-op success. */
+    if (nc <= 1u) {
+      CHECK(hyle_vm_bind_numa(rn, pg * 2, 0, HYLE_NUMA_BIND) == 1);
+      CHECK(hyle_vm_bind_numa_interleave(rn, pg * 2) == 1);
+    }
+    CHECK(hyle_vm_release(rn, pg * 2));
+
+    /* reserve preferring the current home node. */
+    void* rl = hyle_vm_reserve_numa(pg, (int)hyle_numa_current_node());
+    CHECK(rl != NULL);
+    CHECK(hyle_vm_release(rl, pg));
+  }
+
+  /* v3: hugepage / THP hints (soft; size may be 0 on exotic arches) */
+  {
+    size_t lp = hyle_large_page_size();
+    CHECK(hyle_large_page_align_up(0) == 0u);
+    if (lp != 0u) {
+      CHECK(hyle_large_page_align_up(1) == lp);
+    }
+    /* advise is best-effort: call on a committed region, don't assert result. */
+    size_t pg = hyle_page_size();
+    void* h = hyle_vm_alloc_rw(pg);
+    CHECK(h != NULL);
+    (void)hyle_vm_advise_hugepage(h, pg);
+    (void)hyle_vm_advise_no_hugepage(h, pg);
+    CHECK(hyle_vm_free_rw(h, pg));
+  }
 
   if (g_fails) {
     fprintf(stderr, "c_platform_test: %d failed\n", g_fails);

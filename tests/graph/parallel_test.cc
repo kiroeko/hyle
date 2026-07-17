@@ -118,7 +118,7 @@ TEST(GraphParallel, DiamondMatchesSerial) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = diamond_coro(system_allocator(), &sched, &a, &b, &c, &e, &val);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -155,7 +155,7 @@ TEST(GraphParallel, IncrementalReRunsOnlyDirty) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = incr_coro(system_allocator(), &sched, &a, &b, &c, &val);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -205,7 +205,7 @@ TEST(GraphParallel, WideLevelRunsConcurrently) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = wide_coro(system_allocator(), &sched, cells, kWide, &peak);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -242,7 +242,7 @@ TEST(GraphParallel, FailingNodeSurfacesAndStaysDirty) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = fail_coro(system_allocator(), &sched, &f, &was_err, &still_dirty);
-  Fiber ff(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber ff(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&ff);
   sched.drain();
   sched.shutdown();
@@ -274,7 +274,7 @@ TEST(GraphParallel, MidLevelFailureStopsLaterLevels) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = mid_fail_coro(system_allocator(), &sched, &a, &mid, &tail, &mid_dirty, &tail_runs);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -315,7 +315,7 @@ TEST(GraphParallel, MixedDirtyCleanAndMultiLevel) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = mixed_coro(system_allocator(), &sched, &s0, &s1, &mid, &tail, &out);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -344,7 +344,7 @@ TEST(GraphParallel, EmptyAndAllCleanAreNoOps) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = empty_and_clean_coro(system_allocator(), &sched, &a);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -379,7 +379,7 @@ TEST(GraphParallel, WavefrontDiamondMatchesSerial) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = wf_diamond_coro(tsan_visible_allocator(), &sched, &a, &b, &c, &e, &val);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -414,7 +414,7 @@ TEST(GraphParallel, WavefrontIncrementalReRunsOnlyDirty) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = wf_incr_coro(tsan_visible_allocator(), &sched, &a, &b, &c, &val);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -464,7 +464,7 @@ TEST(GraphParallel, WavefrontShortLegNotBlockedBySlowSibling) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = wf_legs_coro(tsan_visible_allocator(), &sched, &slow, &f0, &f1, &f2);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -505,7 +505,7 @@ TEST(GraphParallel, WavefrontFailureStopsSuccessors) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = wf_fail_coro(tsan_visible_allocator(), &sched, &f, &down, &dummy, &was_err, &f_dirty, &down_runs);
-  Fiber ff(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber ff(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&ff);
   sched.drain();
   sched.shutdown();
@@ -548,7 +548,7 @@ TEST(GraphParallel, WavefrontManyIndependentTerminalsNoUAF) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = wf_many_terminals_coro(tsan_visible_allocator(), &sched, leaves, kLeaves, &peak);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -584,7 +584,7 @@ TEST(GraphParallel, WavefrontMixedDirtyCleanDeps) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = wf_mixed_deps_coro(tsan_visible_allocator(), &sched, &a, &b, &sink, &out);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -611,7 +611,7 @@ TEST(GraphParallel, WavefrontEmptyAndAllCleanNoOp) {
   Scheduler sched(4, system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = wf_empty_clean_coro(tsan_visible_allocator(), &sched, &a);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();

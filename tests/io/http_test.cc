@@ -227,8 +227,8 @@ int smuggle_served(const char* raw, std::uint16_t port) {
   auto dc = std::make_unique<Drive>();
   ds->task = smuggle_server(system_allocator(), &io, &ls, &r);
   dc->task = smuggle_client(system_allocator(), &io, raw, port);
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
   sched.drain();
@@ -299,8 +299,8 @@ TEST(IoHttp, GetKeepAlive) {
   auto dc = std::make_unique<Drive>();
   ds->task = server_fiber(system_allocator(), &io, &ls, r.get());
   dc->task = client_fiber(system_allocator(), &io, r.get());
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
   sched.drain();
@@ -367,8 +367,8 @@ TEST(IoHttp, ReadsCloseDelimitedBody) {
   auto dc = std::make_unique<Drive>();
   ds->task = closebody_server(system_allocator(), &io, &ls, kBodySize);
   dc->task = closebody_client(system_allocator(), &io, &r, kCbPort);
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
   sched.drain();

@@ -186,6 +186,32 @@ TEST(LeakTracker, DoubleFreeNotTracked) {
   EXPECT_EQ(lt.outstanding(), 0u);
 }
 
+TEST(LeakTracker, TrackFreeReturnsRecordedSize) {
+  LeakTracker lt;
+  void* fake = reinterpret_cast<void*>(static_cast<std::uintptr_t>(0x2000));
+  lt.track_alloc(fake, 4096);
+  std::size_t got = 0;
+  EXPECT_TRUE(lt.track_free(fake, &got));
+  EXPECT_EQ(got, 4096u);
+  // Untracked ptr leaves out_size untouched.
+  std::size_t sentinel = 123u;
+  EXPECT_FALSE(lt.track_free(fake, &sentinel));
+  EXPECT_EQ(sentinel, 123u);
+}
+
+TEST(StatsAllocator, WrongFreeSizeAccountedByRecorded) {
+  // With leak tracking, a caller that frees with the WRONG size must not
+  // corrupt live_bytes — accounting uses the recorded alloc size.
+  StatsAllocator sa(system_allocator(), /*track_leaks=*/true);
+  auto a = sa.get();
+  void* p = a.allocate(200);
+  ASSERT_NE(p, nullptr);
+  EXPECT_EQ(sa.snapshot().live_bytes, 200u);
+  a.deallocate(p, 999);  // deliberately wrong size
+  EXPECT_TRUE(sa.balanced());
+  EXPECT_EQ(sa.snapshot().live_bytes, 0u);
+}
+
 TEST(StatsAllocator, SystemAllocatorUnaffected) {
   // system path has no hidden stats — allocate without StatsAllocator is fine.
   auto a = system_allocator();

@@ -194,35 +194,71 @@ bool vm_bind_numa(void* ptr, std::size_t size, int node,
   size = page_align_up(size);
   if (size == 0) return true;
 
+  const unsigned nodes = numa_node_count();
+
   if (policy == NumaPolicy::kInterleave) {
 #if defined(HYLE_OS_LINUX)
-    unsigned long mask = all_nodes_mask(numa_node_count());
+    unsigned long mask = all_nodes_mask(nodes);
     long rc =
         sys_mbind(ptr, size, MPOL_INTERLEAVE, &mask, sizeof(mask) * 8, 0);
-    return rc == 0;
+    if (rc != 0) {
+      vm_set_last_error("vm_bind_numa: mbind(MPOL_INTERLEAVE) failed");
+      return false;
+    }
+    return true;
 #else
-    (void)ptr;
-    return true;  // no portable interleave on Win/mac — soft success
+    // Striping across nodes is a genuine no-op on a single-node box (true);
+    // on a real multi-node box we have no portable API -> honest false.
+    if (nodes <= 1) return true;
+    vm_set_last_error("vm_bind_numa: interleave unsupported on this platform");
+    return false;
 #endif
   }
 
   if (node == kNumaAny) return true;
-  if (node < 0 || static_cast<unsigned>(node) >= numa_node_count()) return false;
+  if (node < 0 || static_cast<unsigned>(node) >= nodes) {
+    vm_set_last_error("vm_bind_numa: node index out of range");
+    return false;
+  }
+
+  // Single-node machine: any per-node policy is a genuine no-op.
+  if (nodes <= 1) return true;
 
 #if defined(HYLE_OS_LINUX)
-  if (static_cast<unsigned>(node) >= sizeof(unsigned long) * 8u) return false;
+  if (static_cast<unsigned>(node) >= sizeof(unsigned long) * 8u) {
+    vm_set_last_error("vm_bind_numa: node index exceeds mask width");
+    return false;
+  }
   unsigned long mask = 1UL << static_cast<unsigned>(node);
   const unsigned long mode =
       (policy == NumaPolicy::kBind) ? MPOL_BIND : MPOL_PREFERRED;
   long rc = sys_mbind(ptr, size, mode, &mask, sizeof(mask) * 8, 0);
-  return rc == 0;
-#elif defined(HYLE_OS_WINDOWS)
-  // Post-hoc hard bind is not generally available for anonymous VirtualAlloc.
-  // Allocation-time placement is vm_reserve_numa. Preferred/Bind both soft-ok.
-  (void)policy;
+  if (rc != 0) {
+    vm_set_last_error(policy == NumaPolicy::kBind
+                          ? "vm_bind_numa: mbind(MPOL_BIND) failed"
+                          : "vm_bind_numa: mbind(MPOL_PREFERRED) failed");
+    return false;
+  }
   return true;
+#elif defined(HYLE_OS_WINDOWS)
+  // No post-hoc bind for anonymous VirtualAlloc. Preferred is SOFT (real
+  // placement is done at reserve time by vm_reserve_numa via VirtualAlloc2) ->
+  // report success. Hard Bind cannot be honored post-hoc on a multi-node box ->
+  // honest false (don't pretend).
+  if (policy == NumaPolicy::kBind) {
+    vm_set_last_error(
+        "vm_bind_numa: hard bind unavailable on Windows post-alloc "
+        "(use vm_reserve_numa at allocation time)");
+    return false;
+  }
+  return true;  // preferred: best-effort, nothing to do post-hoc
 #else
-  (void)policy;
+  // Non-Linux POSIX (e.g. macOS) never reports >1 node today, so this is only
+  // reached defensively; hard bind has no API -> honest false.
+  if (policy == NumaPolicy::kBind) {
+    vm_set_last_error("vm_bind_numa: hard bind unavailable on this platform");
+    return false;
+  }
   return true;
 #endif
 }
@@ -253,7 +289,12 @@ void* vm_reserve_numa(std::size_t size, int node) noexcept {
 #elif defined(HYLE_OS_LINUX)
   void* p = vm_reserve(size);
   if (p == nullptr) return nullptr;
-  (void)vm_bind_numa(p, size, node, NumaPolicy::kPreferred);
+  // Soft preferred placement: a bind failure must NOT drop the reservation
+  // (the mapping is fully usable on any node). We keep the region and leave a
+  // breadcrumb in vm_last_error for observability instead of swallowing it.
+  if (!vm_bind_numa(p, size, node, NumaPolicy::kPreferred)) {
+    vm_set_last_error("vm_reserve_numa: preferred bind failed (region kept)");
+  }
   return p;
 #else
   return vm_reserve(size);

@@ -101,9 +101,24 @@ TEST(Numa, BindHardAndInterleave) {
   void* base = vm_reserve(p * 4);
   ASSERT_NE(base, nullptr);
   ASSERT_TRUE(vm_commit(base, p * 4));
-  // Soft success on single-node / Windows; may fail hard-bind on tight multi-node.
-  (void)vm_bind_numa(base, p * 4, 0, NumaPolicy::kBind);
-  EXPECT_TRUE(vm_bind_numa_interleave(base, p * 4));
+  // Honest contract: on a single-node box every per-node policy is a genuine
+  // no-op -> true. On a real multi-node box, hard bind / interleave only work
+  // where the OS exposes an API (Linux); elsewhere they must report false (not
+  // pretend). Region stays usable regardless, so the memset below always works.
+  const bool single_node = numa_node_count() <= 1u;
+  bool hard = vm_bind_numa(base, p * 4, 0, NumaPolicy::kBind);
+  bool inter = vm_bind_numa_interleave(base, p * 4);
+  if (single_node) {
+    EXPECT_TRUE(hard);
+    EXPECT_TRUE(inter);
+  }
+#if defined(_WIN32)
+  // Multi-node Windows: no post-hoc hard bind / interleave -> honest false.
+  if (!single_node) {
+    EXPECT_FALSE(hard);
+    EXPECT_FALSE(inter);
+  }
+#endif
   std::memset(base, 0x5A, p);
   EXPECT_EQ(static_cast<unsigned char*>(base)[0], 0x5A);
   ASSERT_TRUE(vm_release(base, p * 4));

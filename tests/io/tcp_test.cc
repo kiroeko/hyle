@@ -118,8 +118,8 @@ TEST(IoTcp, ListenerAcceptEchoRoundTrip) {
   auto dc = std::make_unique<Drive>();
   ds->task = server_coro(system_allocator(), &io, &ls, r.get());
   dc->task = client_coro(system_allocator(), &io, r.get());
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
 
   // Both connection fibers pinned to the owner core (shard-per-core).
   sched.spawn_on(kOwner, &fs);

@@ -152,8 +152,11 @@ class HYLE_MEM_API LeakTracker {
   LeakTracker& operator=(LeakTracker&& o) noexcept;
 
   void track_alloc(void* p, std::size_t size) noexcept;
-  // Returns false if ptr was not tracked (double-free / foreign ptr).
-  bool track_free(void* p) noexcept;
+  // Erase a tracked allocation. Returns false if ptr was not tracked
+  // (double-free / foreign ptr). When non-null, *out_size receives the size
+  // recorded at track_alloc time (untouched on a false return) — lets callers
+  // account frees by the RECORDED size, robust to a wrong size passed to free.
+  bool track_free(void* p, std::size_t* out_size = nullptr) noexcept;
   std::size_t outstanding() const noexcept;
   // Copy up to `cap` live entries into `out`. Returns total outstanding
   // (may be > cap if truncated).

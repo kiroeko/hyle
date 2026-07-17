@@ -150,7 +150,7 @@ TEST(GpuAwait, CoAwaitStreamCompletion) {
   int result = -100;
   auto d = std::make_unique<Drive>();
   d->task = gpu_await_coro(system_allocator(), &result);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();
@@ -176,7 +176,7 @@ TEST(GpuAwait, ConcurrentAwaits) {
   for (int i = 0; i < kFibers; ++i) {
     auto d = std::make_unique<Drive>();
     d->task = gpu_await_coro(system_allocator(), &results[i]);
-    auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+    auto f = std::make_unique<Fiber>(kDefaultStackSize,
                                      &drive_entry, d.get());
     sched.spawn(f.get());
     drives.push_back(std::move(d));

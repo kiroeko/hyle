@@ -41,7 +41,7 @@ void waiting_entry(void* p) {
 // A fiber suspends; a FOREIGN (non-worker) thread wakes it; it resumes to done.
 TEST(Waker, SuspendThenWakeFromForeignThread) {
   Episode e;
-  Fiber f(system_allocator(), kDefaultStackSize, &waiting_entry, &e);
+  Fiber f(kDefaultStackSize, &waiting_entry, &e);
   {
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(&f);
@@ -68,7 +68,7 @@ TEST(Waker, ManyWakeBeforeSuspendRace) {
   fibers.reserve(kN);
   for (int i = 0; i < kN; ++i) {
     eps.push_back(std::make_unique<Episode>());
-    fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+    fibers.push_back(std::make_unique<Fiber>(
                                              kDefaultStackSize, &waiting_entry,
                                              eps[i].get()));
   }
@@ -103,8 +103,8 @@ void waker_entry(void* p) {
 TEST(Waker, WakeFromWorkerFiber) {
   Episode e;
   Waker2 w2{&e};
-  Fiber waiter(system_allocator(), kDefaultStackSize, &waiting_entry, &e);
-  Fiber waker(system_allocator(), kDefaultStackSize, &waker_entry, &w2);
+  Fiber waiter(kDefaultStackSize, &waiting_entry, &e);
+  Fiber waker(kDefaultStackSize, &waker_entry, &w2);
   {
     Scheduler sched(2, system_allocator(), 256);
     sched.spawn(&waiter);

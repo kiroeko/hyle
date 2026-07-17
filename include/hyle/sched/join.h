@@ -9,6 +9,7 @@
 #include "hyle/error/status.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/fiber_stack.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
@@ -414,10 +415,18 @@ JoinHandle<T> spawn_task(Scheduler& sched, mem::Allocator alloc, Task<T> task,
   auto* d = static_cast<TaskDriver<T>*>(
       alloc.allocate(sizeof(TaskDriver<T>), alignof(TaskDriver<T>)));
   HYLE_FATAL_ASSERT(d != nullptr);
+  // Recycle the fiber stack through the scheduler's shared per-tier pool when the
+  // size is a standard tier (the common case: kDefaultStackSize) -- a hot
+  // spawn/join loop then reuses stacks instead of reserve_guarded'ing every time.
+  // A non-tier size gets a one-off stack (pool == nullptr, released on destroy).
+  mem::FiberStackPool* pool = sched.fiber_stack_pool(stack_size);
+  mem::FiberStack stack =
+      pool != nullptr ? pool->acquire() : mem::FiberStack::allocate(stack_size);
   new (d) TaskDriver<T>{alloc, std::move(task), st,
-                        Fiber(alloc, stack_size, &TaskDriver<T>::entry, d)};
+                        Fiber(std::move(stack), &TaskDriver<T>::entry, d, pool)};
   // dispatch() frees the driver via this hook AFTER the fiber finishes and is off
-  // its stack (a fiber must never free its own stack from within entry).
+  // its stack (a fiber must never free its own stack from within entry). The
+  // Fiber dtor returns the stack to `pool` (if any) at that safe point.
   d->fiber.set_on_finish(&TaskDriver<T>::destroy, d);
   sched.spawn(&d->fiber);
   return JoinHandle<T>(st);

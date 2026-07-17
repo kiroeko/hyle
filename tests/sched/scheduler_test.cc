@@ -45,7 +45,7 @@ TEST(Scheduler, ManyFibersAllComplete) {
   {
     Scheduler sched(8, system_allocator(), 1024);
     for (int i = 0; i < kFibers; ++i) {
-      fibers.push_back(std::make_unique<Fiber>(system_allocator(),
+      fibers.push_back(std::make_unique<Fiber>(
                                                kDefaultStackSize, &body_entry,
                                                &bodies[i]));
       sched.spawn(fibers[i].get());
@@ -95,10 +95,10 @@ TEST(Scheduler, StealingDistributesLocalWork) {
     Scheduler sched(4, system_allocator(), 1024);
     for (int i = 0; i < kChildren; ++i) {
       pool.push_back(std::make_unique<Fiber>(
-          system_allocator(), kDefaultStackSize, &body_entry, &bodies[i]));
+          kDefaultStackSize, &body_entry, &bodies[i]));
     }
     SeedArgs sa{&sched, kChildren, &pool, &bodies, &ran, &completed};
-    Fiber seed(system_allocator(), kDefaultStackSize, &seed_entry, &sa);
+    Fiber seed(kDefaultStackSize, &seed_entry, &sa);
     sched.spawn(&seed);
     sched.shutdown();
   }
@@ -111,7 +111,7 @@ TEST(Scheduler, SingleWorkerStillWorks) {
   std::atomic<int> ran{0};
   std::atomic<int> completed{0};
   Body b{5, &ran, &completed};
-  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto f = std::make_unique<Fiber>(kDefaultStackSize,
                                    &body_entry, &b);
   {
     Scheduler sched(1, system_allocator(), 64);
@@ -138,7 +138,7 @@ TEST(Scheduler, NoLostWakeupAcrossParks) {
     Scheduler sched(8, system_allocator(), 64);
     for (int i = 0; i < kFibers; ++i) {
       fibers.push_back(std::make_unique<Fiber>(
-          system_allocator(), kDefaultStackSize, &body_entry, &bodies[i]));
+          kDefaultStackSize, &body_entry, &bodies[i]));
       sched.spawn(fibers[i].get());
       // Let the pool settle into parked state before the next spawn.
       std::this_thread::sleep_for(std::chrono::milliseconds(2));
@@ -167,12 +167,12 @@ void yield_hog(void* p) {
 TEST(Scheduler, GlobalQueueNotStarvedByLocalFirehose) {
   std::atomic<bool> stop{false};
   YieldHog hog{&stop};
-  auto fh = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto fh = std::make_unique<Fiber>(kDefaultStackSize,
                                     &yield_hog, &hog);
   std::atomic<int> vran{0};
   std::atomic<int> vdone{0};
   Body victim{0, &vran, &vdone};  // 0 yields -> completes in one run
-  auto fv = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto fv = std::make_unique<Fiber>(kDefaultStackSize,
                                     &body_entry, &victim);
   bool ran_while_hogging = false;
   {

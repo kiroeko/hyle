@@ -1,13 +1,11 @@
 #include <gtest/gtest.h>
 
-#include "hyle/mem/allocator.h"
 #include "hyle/mem/fiber_stack.h"
 #include "hyle/sched/fiber.h"
 
 using hyle::mem::FiberStack;
 using hyle::mem::FiberStackPool;
 using hyle::mem::kFiberStackDefault;
-using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::kLargeStackSize;
@@ -41,17 +39,6 @@ TEST(FiberGuard, DefaultCtorHasGuard) {
   f.resume();
   EXPECT_EQ(v, 100);
   EXPECT_TRUE(f.done());
-}
-
-TEST(FiberGuard, CompatAllocatorCtorStillGuarded) {
-  int v = 0;
-  // Legacy signature: allocator ignored for stack; still guarded.
-  Fiber f(system_allocator(), kDefaultStackSize, &mark_entry, &v);
-  EXPECT_TRUE(f.has_stack_guard());
-  f.resume();
-  f.resume();
-  EXPECT_TRUE(f.done());
-  EXPECT_EQ(v, 100);
 }
 
 TEST(FiberGuard, TierSizes) {

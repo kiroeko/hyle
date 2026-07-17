@@ -67,7 +67,7 @@ int run(Make make, int workers = 4) {
   Scheduler sched(static_cast<unsigned>(workers), system_allocator(), 256);
   auto d = std::make_unique<Drive>();
   d->task = make(&sched);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn(&f);
   sched.drain();
   sched.shutdown();

@@ -56,7 +56,7 @@ TEST(Affinity, PinnedFiberStaysOnItsWorkerAcrossYields) {
     Scheduler sched(kWorkers, system_allocator(), 256);
     auto pr = std::make_unique<PinProbe>();
     pr->target = static_cast<int>(target);
-    Fiber f(system_allocator(), kDefaultStackSize, &pin_probe_entry, pr.get());
+    Fiber f(kDefaultStackSize, &pin_probe_entry, pr.get());
     sched.spawn_on(target, &f);
     sched.drain();
     sched.shutdown();
@@ -80,7 +80,7 @@ TEST(Affinity, ManyPinnedFibersEachStayHome) {
     for (int j = 0; j < kPerWorker; ++j) {
       auto pr = std::make_unique<PinProbe>();
       pr->target = static_cast<int>(wk);
-      auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+      auto f = std::make_unique<Fiber>(kDefaultStackSize,
                                        &pin_probe_entry, pr.get());
       sched.spawn_on(wk, f.get());
       probes.push_back(std::move(pr));
@@ -126,7 +126,7 @@ TEST(Affinity, PinnedFiberWakesBackOnOwnerWorker) {
   Scheduler sched(kWorkers, system_allocator(), 256);
   auto w = std::make_unique<WakePin>();
   w->target = static_cast<int>(kTarget);
-  Fiber f(system_allocator(), kDefaultStackSize, &wake_pin_entry, w.get());
+  Fiber f(kDefaultStackSize, &wake_pin_entry, w.get());
   sched.spawn_on(kTarget, &f);
 
   while (!w->ready.load(std::memory_order_acquire)) std::this_thread::yield();

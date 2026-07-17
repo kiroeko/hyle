@@ -50,4 +50,4 @@
 ## 参考
 
 - backlog-map A 类 platform-02b 行；`mem-design.md` fiber_stack；`sched-design.md` §1 固定栈 + guard page。  
-- 现有 ad-hoc 模式：`tests/simd/vec_partial_boundary_test.cc`（本 API 落地后可逐步改用 `VmRegion`，非本步义务）。
+- 现有 ad-hoc 模式：`tests/simd/vec_partial_boundary_test.cc` **已改用 `VmRegion`**（2026-07-17）——`reserve(2*page)` + `commit` 低页 + `protect(kNone)` 高页，消除 per-OS `VirtualAlloc`/`mmap`/`mprotect` 分支（simd 本就 `PUBLIC_DEPS hyle_platform` 做 cpuid dispatch，零新增依赖）。

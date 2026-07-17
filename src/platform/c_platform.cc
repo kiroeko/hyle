@@ -11,6 +11,7 @@
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/dynlib.h"
 #include "hyle/platform/fs.h"
+#include "hyle/platform/numa.h"
 #include "hyle/platform/thread.h"
 #include "hyle/platform/virtual_memory.h"
 #include "hyle/platform/wait.h"
@@ -39,6 +40,13 @@ hyle::platform::Protect to_cpp_protect(hyle_protect p) noexcept {
   if (p == HYLE_PROTECT_READ) return Protect::kRead;
   if (p == HYLE_PROTECT_READ_WRITE) return Protect::kReadWrite;
   return Protect::kNone;
+}
+
+hyle::platform::NumaPolicy to_cpp_numa_policy(hyle_numa_policy p) noexcept {
+  using hyle::platform::NumaPolicy;
+  if (p == HYLE_NUMA_BIND) return NumaPolicy::kBind;
+  if (p == HYLE_NUMA_INTERLEAVE) return NumaPolicy::kInterleave;
+  return NumaPolicy::kPreferred;
 }
 
 hyle::platform::ThreadOpts to_cpp_opts(const hyle_thread_opts* opts) {
@@ -424,6 +432,43 @@ const char* hyle_cpu_isa_name(uint32_t isa) {
   return hyle::platform::isa_name(static_cast<hyle::platform::Isa>(isa));
 }
 
+/* ---- v3: hugepage/THP + NUMA ------------------------------------------------ */
+
+void hyle_vm_set_last_error(const char* msg) {
+  hyle::platform::vm_set_last_error(msg);
+}
+
+size_t hyle_large_page_size(void) { return hyle::platform::large_page_size(); }
+
+int hyle_vm_advise_hugepage(void* ptr, size_t size) {
+  return hyle::platform::vm_advise_hugepage(ptr, size) ? 1 : 0;
+}
+
+int hyle_vm_advise_no_hugepage(void* ptr, size_t size) {
+  return hyle::platform::vm_advise_no_hugepage(ptr, size) ? 1 : 0;
+}
+
+unsigned hyle_numa_node_count(void) { return hyle::platform::numa_node_count(); }
+
+unsigned hyle_numa_current_node(void) {
+  return hyle::platform::numa_current_node();
+}
+
+int hyle_vm_bind_numa(void* ptr, size_t size, int node, hyle_numa_policy policy) {
+  return hyle::platform::vm_bind_numa(ptr, size, node,
+                                      to_cpp_numa_policy(policy))
+             ? 1
+             : 0;
+}
+
+int hyle_vm_bind_numa_interleave(void* ptr, size_t size) {
+  return hyle::platform::vm_bind_numa_interleave(ptr, size) ? 1 : 0;
+}
+
+void* hyle_vm_reserve_numa(size_t size, int node) {
+  return hyle::platform::vm_reserve_numa(size, node);
+}
+
 int hyle_platform_c_abi_version(void) { return HYLE_PLATFORM_C_ABI_VERSION; }
 
 int hyle_platform_api_get(hyle_platform_api* out, int expected_abi) {
@@ -505,6 +550,17 @@ int hyle_platform_api_get(hyle_platform_api* out, int expected_abi) {
   out->cpu_isa_name = &hyle_cpu_isa_name;
 
   out->c_abi_version = &hyle_platform_c_abi_version;
+
+  /* v3 appended */
+  out->vm_set_last_error = &hyle_vm_set_last_error;
+  out->large_page_size = &hyle_large_page_size;
+  out->vm_advise_hugepage = &hyle_vm_advise_hugepage;
+  out->vm_advise_no_hugepage = &hyle_vm_advise_no_hugepage;
+  out->numa_node_count = &hyle_numa_node_count;
+  out->numa_current_node = &hyle_numa_current_node;
+  out->vm_bind_numa = &hyle_vm_bind_numa;
+  out->vm_bind_numa_interleave = &hyle_vm_bind_numa_interleave;
+  out->vm_reserve_numa = &hyle_vm_reserve_numa;
   return 0;
 }
 

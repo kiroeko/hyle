@@ -45,7 +45,7 @@ TEST(Shutdown, LongLivedFiberWindsDownOnSignal) {
   auto exited = std::make_unique<std::atomic<bool>>(false);
   auto iters = std::make_unique<std::atomic<int>>(0);
   LongLived body{exited.get(), iters.get()};
-  Fiber f(system_allocator(), kDefaultStackSize, &longlived_entry, &body);
+  Fiber f(kDefaultStackSize, &longlived_entry, &body);
 
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(&f);
@@ -76,7 +76,7 @@ TEST(Shutdown, SpawnRejectedAfterBeginShutdown) {
   struct B { std::atomic<bool>* ran; };
   B b{&ran};
   auto entry = [](void* p) { static_cast<B*>(p)->ran->store(true); };
-  Fiber f(system_allocator(), kDefaultStackSize, entry, &b);
+  Fiber f(kDefaultStackSize, entry, &b);
   sched.spawn(&f);
 
   EXPECT_TRUE(sched.drain_for(500'000'000));  // nothing admitted -> drains at once
@@ -97,7 +97,7 @@ TEST(Shutdown, DrainForTimesOutOnStuckFiber) {
     auto* st = static_cast<Stuck*>(p);
     while (st->go->load(std::memory_order_acquire)) Fiber::yield();
   };
-  Fiber f(system_allocator(), kDefaultStackSize, entry, &s);
+  Fiber f(kDefaultStackSize, entry, &s);
 
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(&f);

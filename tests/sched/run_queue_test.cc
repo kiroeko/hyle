@@ -106,9 +106,9 @@ void worker_fiber(void* p) {
 TEST(Worker, RoundRobinDrivesAllToCompletion) {
   std::vector<int> log;
   FArg a0{0, 2, &log}, a1{1, 2, &log}, a2{2, 2, &log};
-  Fiber f0(system_allocator(), kDefaultStackSize, &worker_fiber, &a0);
-  Fiber f1(system_allocator(), kDefaultStackSize, &worker_fiber, &a1);
-  Fiber f2(system_allocator(), kDefaultStackSize, &worker_fiber, &a2);
+  Fiber f0(kDefaultStackSize, &worker_fiber, &a0);
+  Fiber f1(kDefaultStackSize, &worker_fiber, &a1);
+  Fiber f2(kDefaultStackSize, &worker_fiber, &a2);
 
   Worker w(system_allocator(), 64);
   w.schedule(&f0);
@@ -129,7 +129,7 @@ TEST(Worker, RoundRobinDrivesAllToCompletion) {
 TEST(Worker, NoYieldFiberRunsOnce) {
   std::vector<int> log;
   FArg a{5, 0, &log};  // zero yields: runs straight to done
-  Fiber f(system_allocator(), kDefaultStackSize, &worker_fiber, &a);
+  Fiber f(kDefaultStackSize, &worker_fiber, &a);
   Worker w(system_allocator(), 8);
   w.schedule(&f);
   EXPECT_EQ(w.run(), 1u);

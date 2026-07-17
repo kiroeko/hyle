@@ -2,10 +2,8 @@
 
 #include <vector>
 
-#include "hyle/mem/allocator.h"
 #include "hyle/sched/fiber.h"
 
-using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 
@@ -44,7 +42,7 @@ void probe_entry(void* arg) {
 
 TEST(Fiber, StackPreservedAcrossNestedYields) {
   Probe p;
-  Fiber f(system_allocator(), kDefaultStackSize, &probe_entry, &p);
+  Fiber f(kDefaultStackSize, &probe_entry, &p);
 
   p.seq.push_back(0);
   EXPECT_FALSE(f.done());
@@ -71,7 +69,7 @@ void no_yield_entry(void* arg) { *static_cast<int*>(arg) = 7; }
 
 TEST(Fiber, RunsToCompletionWithoutYield) {
   int v = 0;
-  Fiber f(system_allocator(), kDefaultStackSize, &no_yield_entry, &v);
+  Fiber f(kDefaultStackSize, &no_yield_entry, &v);
   EXPECT_FALSE(f.done());
   f.resume();
   EXPECT_TRUE(f.done());
@@ -97,8 +95,8 @@ void indep_entry(void* arg) {
 
 TEST(Fiber, TwoFibersHaveIndependentStacks) {
   Indep a{10, -1}, b{20, -1};
-  Fiber fa(system_allocator(), kDefaultStackSize, &indep_entry, &a);
-  Fiber fb(system_allocator(), kDefaultStackSize, &indep_entry, &b);
+  Fiber fa(kDefaultStackSize, &indep_entry, &a);
+  Fiber fb(kDefaultStackSize, &indep_entry, &b);
   // Interleave the two fibers' resumes; their locals must stay separate.
   fa.resume(); fb.resume();   // both at first yield
   fa.resume(); fb.resume();   // both incremented, at second yield

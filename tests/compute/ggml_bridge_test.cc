@@ -108,7 +108,7 @@ void matmul_fiber(void* p) {
 int drive_one(const Device& device, BlockingPool& pool, int m, int k, int n,
               int n_threads) {
   MatmulArg arg{device, &pool, m, k, n, n_threads};
-  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto f = std::make_unique<Fiber>(kDefaultStackSize,
                                    &matmul_fiber, &arg);
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(f.get());
@@ -213,7 +213,7 @@ void elementwise_fiber(void* p) {
 }
 int drive_elementwise(const Device& device, BlockingPool& pool) {
   EwArg arg{device, &pool};
-  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, &elementwise_fiber, &arg);
+  auto f = std::make_unique<Fiber>(kDefaultStackSize, &elementwise_fiber, &arg);
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(f.get());
   sched.drain();
@@ -326,7 +326,7 @@ void ffn_fiber(void* p) {
 }
 int drive_ffn(const Device& device, BlockingPool& pool) {
   FfnArg arg{device, &pool};
-  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, &ffn_fiber, &arg);
+  auto f = std::make_unique<Fiber>(kDefaultStackSize, &ffn_fiber, &arg);
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(f.get());
   sched.drain();
@@ -366,7 +366,7 @@ TEST(GgmlBridge, ConcurrentIndependentBackends) {
   Scheduler sched(4, system_allocator(), 256);
   for (int i = 0; i < kFibers; ++i) {
     auto a = std::make_unique<MatmulArg>(d, &pool, 8, 16, 4, /*n_threads=*/1);
-    auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+    auto f = std::make_unique<Fiber>(kDefaultStackSize,
                                      &matmul_fiber, a.get());
     sched.spawn(f.get());
     args.push_back(std::move(a));
@@ -443,7 +443,7 @@ void batch_fiber(void* p) {
 TEST(GgmlBridge, BatchedMatmul) {
   BlockingPool pool(system_allocator());
   BatchArg arg{default_device(), &pool};
-  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto f = std::make_unique<Fiber>(kDefaultStackSize,
                                    &batch_fiber, &arg);
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(f.get());
@@ -539,7 +539,7 @@ void reuse_fiber(void* p) {
 TEST(GgmlBridge, BackendReuseAcrossShapes) {
   BlockingPool pool(system_allocator());
   ReuseArg arg{default_device(), &pool};
-  auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+  auto f = std::make_unique<Fiber>(kDefaultStackSize,
                                    &reuse_fiber, &arg);
   Scheduler sched(2, system_allocator(), 256);
   sched.spawn(f.get());

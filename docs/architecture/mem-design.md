@@ -25,7 +25,7 @@
 | 默认分配器 `SystemAllocator` | ✅ **自造(编译期内联)** | 无状态、内联 mimalloc、零接缝税(实测 97.1% 平裸 mi);容器默认参,注入是 opt-in |
 | arena / region 分配器 | 🔧 继承 MemoryArena + 修 64 槽上限 | 无锁块池是真资产 |
 | object pool / stack allocator | 🔧 **推倒重写**（bug 3/4）| clay 实现有 UB |
-| fiber 栈池 | ✅ **自造**(mem-08) | sched/ 的 fiber 栈。`mem::FiberStack` = `VmRegion::reserve_guarded`（低 1 页永久 guard）+ 分级 `Small/Default/Large` + `FiberStackPool` 回收；`Fiber` 默认路径全走 guarded 栈（旧 `Allocator` 参仅源码兼容、不用于栈） |
+| fiber 栈池 | ✅ **自造**(mem-08) | sched/ 的 fiber 栈。`mem::FiberStack` = `VmRegion::reserve_guarded`（低 1 页永久 guard）+ 分级 `Small/Default/Large` + `FiberStackPool` 回收；`Fiber` 只有 `(size,…)` 与 `(FiberStack,…,pool*)` 两个构造，`spawn_task` 走 `Scheduler` 持有的 per-tier `FiberStackPool`（foreign acquire / worker-dispatch release，SpinLock 往返）复用栈，省每次 3 次 mmap/VirtualAlloc syscall |
 | pinned memory | 🔧 **自造**（封 cudaHostAlloc）| compute/ GPU DMA 用 |
 | NUMA / 大页 / cache-line 对齐 | 🔧 自造（部分借 mimalloc 能力）| 极致内存焦点 |
 

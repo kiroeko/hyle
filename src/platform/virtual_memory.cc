@@ -145,6 +145,14 @@ std::size_t large_page_size() noexcept {
 
 const char* vm_last_error() noexcept { return g_error; }
 
+void vm_set_last_error(const char* msg) noexcept {
+  if (msg == nullptr) {
+    clear_error();
+    return;
+  }
+  set_error(msg);
+}
+
 bool vm_advise_hugepage(void* ptr, std::size_t size) noexcept {
   clear_error();
   if (ptr == nullptr || size == 0) return true;

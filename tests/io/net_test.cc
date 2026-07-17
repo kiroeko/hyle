@@ -157,7 +157,7 @@ TEST(IoNet, CoAwaitSendRecvRoundTrip) {
 
   auto d = std::make_unique<Drive>();
   d->task = echo_coro(system_allocator(), &st);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
 
   sched.spawn_on(kOwner, &f);  // pin to the fd's owner worker
   sched.drain();
@@ -225,8 +225,8 @@ TEST(IoNet, TwoFiberEchoPinnedToCore) {
   auto dc = std::make_unique<Drive>();
   ds->task = server_coro(system_allocator(), &c);
   dc->task = client_coro(system_allocator(), &c);
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
 
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
@@ -273,9 +273,9 @@ TEST(IoNet, ManyConnectionsShardedAcrossCores) {
     auto dc = std::make_unique<Drive>();
     ds->task = server_coro(system_allocator(), c.get());
     dc->task = client_coro(system_allocator(), c.get());
-    auto fs = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+    auto fs = std::make_unique<Fiber>(kDefaultStackSize,
                                       &drive_entry, ds.get());
-    auto fc = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
+    auto fc = std::make_unique<Fiber>(kDefaultStackSize,
                                       &drive_entry, dc.get());
     sched.spawn_on(owner, fs.get());  // both fibers pinned to the fd's core
     sched.spawn_on(owner, fc.get());
@@ -343,8 +343,8 @@ TEST(IoNet, FullDuplexSameFdEpoll) {
     auto dw = std::make_unique<Drive>();
     dr->task = duplex_recv(system_allocator(), &st);
     dw->task = duplex_send(system_allocator(), &st);
-    Fiber fr(system_allocator(), kDefaultStackSize, &drive_entry, dr.get());
-    Fiber fw(system_allocator(), kDefaultStackSize, &drive_entry, dw.get());
+    Fiber fr(kDefaultStackSize, &drive_entry, dr.get());
+    Fiber fw(kDefaultStackSize, &drive_entry, dw.get());
     sched.spawn_on(kOwner, &fr);  // recv(a): arms fd a for EPOLLIN, blocks
     sched.spawn_on(kOwner, &fw);  // send(a): arms fd a for EPOLLOUT, concurrent
     // Feed recv(a) by writing to the peer end b (plain blocking write is fine here).
@@ -435,7 +435,7 @@ TEST(IoNet, MultishotRecvAwaitable) {
   st.bgid = kBgid;
   auto d = std::make_unique<Drive>();
   d->task = multishot_recv_coro(system_allocator(), &st);
-  Fiber f(system_allocator(), kDefaultStackSize, &drive_entry, d.get());
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn_on(kOwner, &f);
   sched.drain();
   sched.shutdown();
