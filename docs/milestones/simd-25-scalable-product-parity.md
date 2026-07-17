@@ -37,19 +37,19 @@ Runtime / exact / native + QEMU + real-hardware parity
 `scripts/simd-scalable-coverage.py` 机械复现四个定宽后端并集，并把 SVE、RVV **分别**与之比较，由
 `scripts/simd-scalable-op-manifest.json` 逐项分类。v1 曾使用 SVE∪RVV：某个 op 只要任一后端实现，
 另一后端的洞就会消失。RVV sort 补原语时该缺陷被 `--check` 暴露，v2 改为分类“至少一个 scalable
-后端仍缺”的名字，并同时输出两份 backend-local missing 集。当前 43 个名字分为：
+后端仍缺”的名字，并同时输出两份 backend-local missing 集。当前 32 个名字分为：
 
 | 分类 | 数量 | 含义 |
 |---|---:|---|
 | `shared_generic` | 10 | 已在 `vec.h` 一次实现，并由正式 SVE/RVV 多 VL/VLEN 门禁直接实例化验证 |
 | `selector` | 13 | Native/Emulated 内部选择器，不是独立用户能力 |
-| `fixed_model` | 11 | half/128-bit block/固定寄存器拼装，按产品合同裁决；9 项明确的 per-128-block 语义已补齐 |
+| `fixed_model` | 0 | 原 20 项 half/128-bit block/固定寄存器拼装均已按 scalable 合同补齐 |
 | `extension_gated` | 9 | 依赖可选 ISA 或流式存储合同；含 RVV 仍缺的六个 AES 名 |
 | `portable_missing` | 0 | 22 项可移植 backlog 已全部补齐；same-shift/rotate/rounding/shuffle/average、whole/pairwise/demote/scale/lookup 与 SAD 家族均有 SVE/RVV 实现 |
 
 脚本同时输出 backend-local、`backend | vec.h`、scalable union/common 和 SVE/RVV 各自 missing 数；
-这些仍只是语法面，不冒充编译可实例化或产品能力。当前 SVE、RVV 分别缺定宽并集 37/43 个名字，
-两者共同实现 207 个、至少一端缺 43 个。`--check` 要求这 43 项恰好分类一次，任何新增、消失或重复都会失败。
+这些仍只是语法面，不冒充编译可实例化或产品能力。当前 SVE、RVV 分别缺定宽并集 26/32 个名字，
+两者共同实现 218 个、至少一端缺 32 个。`--check` 要求这 32 项恰好分类一次，任何新增、消失或重复都会失败。
 
 ### 阶段 1 首轮进展（2026-07-17）
 
@@ -70,7 +70,16 @@ gap。v2 以逐后端口径重建时为 80 项；补齐两端 sort 传递原语�
 随后补齐两端 9 项有稳定跨平台合同的 fixed-model 操作：byte/lane 左右移、combine-shift、
 `PairwiseAdd128/PairwiseSub128` 与 `Per4LaneBlockShuffle`。实现均以 128-bit logical block 为边界，
 SVE 使用 predicate + `tbl`，RVV 使用 mask + `vrgather`，没有 store/reload 标量化。SVE 的 384-bit
-三块非二次幂 VL 也纳入门禁，证明 block 边界不串扰；缺口因此由 52 降至当前 43 项。
+三块非二次幂 VL 也纳入门禁，证明 block 边界不串扰；缺口因此由 52 曾降至 43 项。
+
+第二批继续补齐 `SlideUp/DownBlocks`、四种 block interleave、block extract/insert/broadcast、
+`InsertIntoUpper` 与 `ResizeBitCast`，fixed-model 20 项至此归零。奇数 block 数沿用 Highway 合同：
+384-bit 下 lower 为 `[a0,b0,a1]`，upper 为 `[a1,b1,a2]`；提取出的 sizeless native 值由
+128-bit capped tag 消费低 block。两端均使用 table/gather、slide 与 predicate/mask，未引入标量数组。
+sizeless 值本身不编码 capped source 宽度，因此跨逻辑宽度 resize 使用精确形状
+`ResizeBitCast(to, from, v)`；它在 widening 时按 source tag 补零。两参数形状仅表示 full-register view，
+不能用来猜测一个已经擦除的 capped source 宽度。
+机械差集由 43 降至 32，剩余仅为已验证的 shared generic、非独立能力 selector 与 optional extension。
 
 ### 首个产品层纵切：SVE/RVV math（2026-07-17）
 

@@ -40,19 +40,7 @@
     "fixed_model": {
       "rationale": "Expresses a fixed register half or 128-bit block construction. Add a scalable implementation only when a product kernel needs the precise block contract; otherwise document a scalable-native equivalent or N/A.",
       "action": "consumer_or_contract_driven",
-      "ops": [
-        "BroadcastBlock",
-        "ExtractBlock",
-        "InsertBlock",
-        "InsertIntoUpper",
-        "InterleaveEvenBlocks",
-        "InterleaveLowerBlocks",
-        "InterleaveOddBlocks",
-        "InterleaveUpperBlocks",
-        "ResizeBitCast",
-        "SlideDownBlocks",
-        "SlideUpBlocks"
-      ]
+      "ops": []
     },
     "extension_gated": {
       "rationale": "The semantic is useful, but an efficient implementation depends on an optional ISA facility or memory-ordering contract. Provide a separately compiled feature variant or an explicit fallback, never assume the extension from base SVE/RVV.",

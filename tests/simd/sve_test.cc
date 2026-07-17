@@ -1316,6 +1316,62 @@ TEST(Sve, RuntimeShiftsRoundedAverageAndBlockShuffles) {
   hs::Store(hs::Per4LaneBlockShuffle<2, 3, 0, 1>(v), d, out);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], in[i ^ 1u]);
 
+  const hs::Half<hs::ScalableTag<std::int32_t>> dh;
+  hs::Store(hs::InsertIntoUpper(d, hs::Load(dh, amounts), v), d, out);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out[i], i < n / 2 ? in[i] : amounts[i - n / 2]) << "InsertUpper lane=" << i;
+
+  if (n >= 8) {
+    constexpr std::size_t kBlockLanes = 4;
+    const std::size_t blocks = n / kBlockLanes;
+    hs::Store(hs::SlideUpBlocks<1>(d, v), d, out);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out[i], i < kBlockLanes ? 0 : in[i - kBlockLanes]) << "SlideUpBlock lane=" << i;
+    hs::Store(hs::SlideDownBlocks<1>(d, v), d, out);
+    for (std::size_t i = 0; i < n; ++i)
+      EXPECT_EQ(out[i], i + kBlockLanes < n ? in[i + kBlockLanes] : 0) << "SlideDownBlock lane=" << i;
+
+    hs::Store(hs::InterleaveEvenBlocks(d, v, vb32), d, out);
+    for (std::size_t i = 0; i < n; ++i) {
+      const std::size_t ob = i / kBlockLanes, local = i & 3u;
+      const std::size_t src = (ob & ~std::size_t{1}) * kBlockLanes + local;
+      EXPECT_EQ(out[i], (ob & 1u) == 0 ? in[src] : amounts[src]) << "InterleaveEven lane=" << i;
+    }
+    hs::Store(hs::InterleaveOddBlocks(d, v, vb32), d, out);
+    for (std::size_t i = 0; i < n; ++i) {
+      const std::size_t ob = i / kBlockLanes, local = i & 3u;
+      const std::size_t src_block = ob | 1u;
+      const std::int32_t expected = src_block < blocks
+          ? ((ob & 1u) == 0 ? in[src_block * kBlockLanes + local]
+                             : amounts[src_block * kBlockLanes + local])
+          : 0;
+      EXPECT_EQ(out[i], expected) << "InterleaveOdd lane=" << i;
+    }
+    auto check_lu = [&](auto result, bool upper, const char* name) {
+      hs::Store(result, d, out);
+      for (std::size_t i = 0; i < n; ++i) {
+        const std::size_t ob = i / kBlockLanes, local = i & 3u;
+        const std::size_t src_block = ob / 2 + (upper ? blocks / 2 : 0);
+        const std::size_t src = src_block * kBlockLanes + local;
+        EXPECT_EQ(out[i], (ob & 1u) == 0 ? in[src] : amounts[src]) << name << " lane=" << i;
+      }
+    };
+    check_lu(hs::InterleaveLowerBlocks(d, v, vb32), false, "InterleaveLower");
+    check_lu(hs::InterleaveUpperBlocks(d, v, vb32), true, "InterleaveUpper");
+
+    const hs::CappedTag<std::int32_t, 4> db;
+    alignas(64) std::int32_t block_out[kBuf];
+    hs::Store(hs::ExtractBlock<1>(v), db, block_out);
+    for (std::size_t i = 0; i < 4; ++i) EXPECT_EQ(block_out[i], in[4 + i]);
+    hs::Store(hs::BroadcastBlock<1>(v), d, out);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], in[4 + (i & 3u)]);
+    hs::Store(hs::InsertBlock<1>(d, v, hs::ExtractBlock<0>(vb32)), d, out);
+    for (std::size_t i = 0; i < n; ++i) {
+      const auto expected = i >= 4 && i < 8 ? amounts[i - 4] : in[i];
+      EXPECT_EQ(out[i], expected) << "InsertBlock lane=" << i;
+    }
+  }
+
   const hs::ScalableTag<std::uint8_t> d8;
   const std::size_t n8 = hs::Lanes(d8);
   alignas(64) std::uint8_t a8[kBuf], b8[kBuf], o8[kBuf];
@@ -1324,6 +1380,11 @@ TEST(Sve, RuntimeShiftsRoundedAverageAndBlockShuffles) {
   for (std::size_t i = 0; i < n8; ++i)
     EXPECT_EQ(o8[i], static_cast<std::uint8_t>((static_cast<unsigned>(a8[i]) + b8[i] + 1u) >> 1));
   const auto va8 = hs::Load(d8, a8), vb8 = hs::Load(d8, b8);
+  hs::Store(hs::ResizeBitCast(d, hs::ResizeBitCast(d8, v)), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], in[i]);
+  const hs::CappedTag<std::uint8_t, 16> d8_block;
+  hs::Store(hs::ResizeBitCast(d8, d8_block, hs::Load(d8_block, a8)), d8, o8);
+  for (std::size_t i = 0; i < n8; ++i) EXPECT_EQ(o8[i], i < 16 ? a8[i] : 0);
   hs::Store(hs::ShiftLeftBytes<3>(va8), d8, o8);
   for (std::size_t i = 0; i < n8; ++i) {
     const std::size_t local = i & 15u;

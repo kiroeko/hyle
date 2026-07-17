@@ -286,6 +286,11 @@ TEST(Vec, BitCastWidthChanging) {
   const auto* ref = reinterpret_cast<const std::int8_t*>(in.data);
   for (std::size_t b = 0; b < n32 * sizeof(std::int32_t); ++b)
     EXPECT_EQ(o8.data[b], ref[b]) << "byte " << b;
+  // Explicit source-tag form is the portable shape when logical widths may differ on a
+  // sizeless backend; fixed-width backends forward to their type-aware ResizeBitCast.
+  hs::Store(hs::ResizeBitCast(d8, di, vi), d8, o8.data);
+  for (std::size_t b = 0; b < n32 * sizeof(std::int32_t); ++b)
+    EXPECT_EQ(o8.data[b], ref[b]) << "precise resize byte " << b;
 }
 
 // ---- A-3 FP classification ----------------------------------------------------------

@@ -128,6 +128,7 @@ using TFromV = typename detail::DFromV_sve<V>::T;
 
 // Forward declarations for generic compositions defined before the swizzle/bitcast sections.
 template <class V> HYLE_FORCE_INLINE V OddEven(V odd, V even) noexcept;
+template <class V> HYLE_FORCE_INLINE V OddEvenBlocks(V odd, V even) noexcept;
 template <class D, class V> HYLE_FORCE_INLINE VFromD<D> BitCast(D d, V v) noexcept;
 template <class D> HYLE_FORCE_INLINE svbool_t FirstN(D d, std::size_t n) noexcept;
 
@@ -1035,6 +1036,103 @@ HYLE_FORCE_INLINE V CombineShiftRightBytes(V hi, V lo) noexcept {
   return BitCast(d, CombineShiftRightLanes<kBytes>(BitCast(d8, hi), BitCast(d8, lo)));
 }
 
+template <int kBlocks, class D>
+HYLE_FORCE_INLINE VFromD<D> SlideUpBlocks(D d, VFromD<D> v) noexcept {
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(TFromD<D>);
+  static_assert(kBlocks >= 0 && kBlocks < static_cast<int>(kNativeVectorBytes / 16),
+                "SlideUpBlocks count exceeds scalable architectural maximum");
+  return SlideUpLanes(d, v, static_cast<std::size_t>(kBlocks) * kLanesPerBlock);
+}
+template <int kBlocks, class D>
+HYLE_FORCE_INLINE VFromD<D> SlideDownBlocks(D d, VFromD<D> v) noexcept {
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(TFromD<D>);
+  static_assert(kBlocks >= 0 && kBlocks < static_cast<int>(kNativeVectorBytes / 16),
+                "SlideDownBlocks count exceeds scalable architectural maximum");
+  return SlideDownLanes(d, v, static_cast<std::size_t>(kBlocks) * kLanesPerBlock);
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> InterleaveEvenBlocks(
+    D d, VFromD<D> a, VFromD<D> b) noexcept {
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(TFromD<D>);
+  return OddEvenBlocks(SlideUpLanes(d, b, kLanesPerBlock), a);
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> InterleaveOddBlocks(
+    D d, VFromD<D> a, VFromD<D> b) noexcept {
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(TFromD<D>);
+  return OddEvenBlocks(b, SlideDownLanes(d, a, kLanesPerBlock));
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> InterleaveLowerBlocks(
+    D d, VFromD<D> a, VFromD<D> b) noexcept {
+  using T = TFromD<D>;
+  using U = MakeUnsigned<T>;
+  const RebindToUnsigned<D> du;
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  constexpr int kBlockShift = sizeof(T) == 1 ? 4 : sizeof(T) == 2 ? 3 :
+                              sizeof(T) == 4 ? 2 : 1;
+  const auto id = detail::lane_iota<T>();
+  const auto local = And(id, Set(du, static_cast<U>(kLanesPerBlock - 1)));
+  const auto src_block = ShiftRight<1>(ShiftRight<kBlockShift>(id));
+  const auto idx = Or(ShiftLeft<kBlockShift>(src_block), local);
+  return OddEvenBlocks(svtbl(b, idx), svtbl(a, idx));
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> InterleaveUpperBlocks(
+    D d, VFromD<D> a, VFromD<D> b) noexcept {
+  using T = TFromD<D>;
+  using U = MakeUnsigned<T>;
+  const RebindToUnsigned<D> du;
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  constexpr int kBlockShift = sizeof(T) == 1 ? 4 : sizeof(T) == 2 ? 3 :
+                              sizeof(T) == 4 ? 2 : 1;
+  const auto id = detail::lane_iota<T>();
+  const auto local = And(id, Set(du, static_cast<U>(kLanesPerBlock - 1)));
+  const auto src_block = Add(ShiftRight<1>(ShiftRight<kBlockShift>(id)),
+                             Set(du, static_cast<U>((Lanes(d) / kLanesPerBlock) / 2)));
+  const auto idx = Or(ShiftLeft<kBlockShift>(src_block), local);
+  return OddEvenBlocks(svtbl(b, idx), svtbl(a, idx));
+}
+template <int kBlock, class D>
+HYLE_FORCE_INLINE VFromD<D> InsertBlock(
+    D d, VFromD<D> v, VFromD<D> block) noexcept {
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(TFromD<D>);
+  static_assert(kBlock >= 0 && kBlock < static_cast<int>(kNativeVectorBytes / 16),
+                "InsertBlock index exceeds scalable architectural maximum");
+  constexpr std::size_t kOffset = static_cast<std::size_t>(kBlock) * kLanesPerBlock;
+  const auto shifted = SlideUpLanes(d, block, kOffset);
+  return IfThenElse(FirstN(d, kOffset), v,
+                    IfThenElse(FirstN(d, kOffset + kLanesPerBlock), shifted, v));
+}
+template <int kBlock, class V>
+HYLE_FORCE_INLINE V ExtractBlock(V v) noexcept {
+  using T = TFromV<V>;
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  static_assert(kBlock >= 0 && kBlock < static_cast<int>(kNativeVectorBytes / 16),
+                "ExtractBlock index exceeds scalable architectural maximum");
+  const DFromV<V> d;
+  return SlideDownLanes(d, v, static_cast<std::size_t>(kBlock) * kLanesPerBlock);
+}
+template <int kBlock, class V>
+HYLE_FORCE_INLINE V BroadcastBlock(V v) noexcept {
+  using T = TFromV<V>;
+  using U = MakeUnsigned<T>;
+  const RebindToUnsigned<DFromV<V>> du;
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  static_assert(kBlock >= 0 && kBlock < static_cast<int>(kNativeVectorBytes / 16),
+                "BroadcastBlock index exceeds scalable architectural maximum");
+  const auto local = And(detail::lane_iota<T>(),
+                         Set(du, static_cast<U>(kLanesPerBlock - 1)));
+  const auto idx = Add(local, Set(du, static_cast<U>(kBlock * kLanesPerBlock)));
+  return svtbl(v, idx);
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> InsertIntoUpper(
+    D d, VFromD<D> hi, VFromD<D> v) noexcept {
+  const std::size_t half = Lanes(d) / 2;
+  return IfThenElse(FirstN(d, half), v, SlideUpLanes(d, hi, half));
+}
+
 template <class D>
 HYLE_FORCE_INLINE VFromD<D> LoadDup128(D d, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
@@ -1343,6 +1441,13 @@ HYLE_FORCE_INLINE VFromD<D> BitCast(D, V v) noexcept {
   else if constexpr (std::is_same_v<T, std::uint32_t>) return svreinterpret_u32(v);
   else if constexpr (std::is_same_v<T, std::int64_t>) return svreinterpret_s64(v);
   else return svreinterpret_u64(v);
+}
+
+// Two-argument form: source is the full physical register view. The shared three-argument
+// ResizeBitCast(to, from, v) supplies capped-source metadata and zero-fills on logical widening.
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> ResizeBitCast(D d, V v) noexcept {
+  return BitCast(d, v);
 }
 
 // ---- saturating arithmetic (integer) ------------------------------------------------

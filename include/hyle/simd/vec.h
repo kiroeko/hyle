@@ -301,6 +301,28 @@ using Twice = typename D::Twice;
 template <class D>
 using MFromD = decltype(MaskFromVec(Zero(D())));
 
+// Precise resize form. A scalable native value does not encode the logical width of a capped
+// source tag, so ResizeBitCast(to, v) can only infer a full-register source view. Callers that
+// resize across logical byte extents pass both tags; widening then zero-fills bytes beyond the
+// source extent, matching the fixed-width contract. On fixed backends the ordinary two-argument
+// backend operation already has the required width metadata in V's type.
+template <class DTo, class DFrom, class V>
+HYLE_FORCE_INLINE VFromD<DTo> ResizeBitCast(DTo d_to, DFrom d_from, V v) noexcept {
+  const auto resized = ResizeBitCast(d_to, v);
+#if HYLE_SIMD_HAVE_SCALABLE
+  const std::size_t source_bytes = Lanes(d_from) * sizeof(TFromD<DFrom>);
+  const std::size_t destination_bytes = Lanes(d_to) * sizeof(TFromD<DTo>);
+  if (source_bytes < destination_bytes) {
+    const Repartition<std::uint8_t, DTo> d8;
+    const auto bits = BitCast(d8, resized);
+    return BitCast(d_to, IfThenElse(FirstN(d8, source_bytes), bits, Zero(d8)));
+  }
+#else
+  (void)d_from;
+#endif
+  return resized;
+}
+
 // ---- P4 Mul / magnitude completion ----------------------------------------------------
 // `MulAdd` is the native FMA seam. Keep its single-rounding path for floating-point lanes;
 // integral negation is performed through the unsigned bit representation so MIN remains modular.

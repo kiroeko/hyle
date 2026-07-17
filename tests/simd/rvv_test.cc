@@ -1310,6 +1310,33 @@ TEST(Rvv, RuntimeShiftsRoundedAverageAndBlockShuffles) {
   hs::Store(hs::Per4LaneBlockShuffle<2, 3, 0, 1>(v), d, out);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], in[i ^ 1u]);
 
+  const hs::Half<hs::ScalableTag<std::int32_t>> dh;
+  hs::Store(hs::InsertIntoUpper(d, hs::Load(dh, amounts), v), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], i < n / 2 ? in[i] : amounts[i - n / 2]);
+  if (n >= 8) {
+    constexpr std::size_t kBlockLanes = 4;
+    const std::size_t blocks = n / kBlockLanes;
+    hs::Store(hs::SlideUpBlocks<1>(d, v), d, out);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], i < 4 ? 0 : in[i - 4]);
+    hs::Store(hs::SlideDownBlocks<1>(d, v), d, out);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], i + 4 < n ? in[i + 4] : 0);
+    hs::Store(hs::InterleaveEvenBlocks(d, v, vb32), d, out);
+    for (std::size_t i = 0; i < n; ++i) { const std::size_t ob = i / 4, local = i & 3u, src = (ob & ~std::size_t{1}) * 4 + local; EXPECT_EQ(out[i], (ob & 1u) == 0 ? in[src] : amounts[src]); }
+    hs::Store(hs::InterleaveOddBlocks(d, v, vb32), d, out);
+    for (std::size_t i = 0; i < n; ++i) { const std::size_t ob = i / 4, local = i & 3u, sb = ob | 1u; const std::int32_t expected = sb < blocks ? ((ob & 1u) == 0 ? in[sb * 4 + local] : amounts[sb * 4 + local]) : 0; EXPECT_EQ(out[i], expected); }
+    auto check_lu = [&](auto result, bool upper) { hs::Store(result, d, out); for (std::size_t i = 0; i < n; ++i) { const std::size_t ob = i / 4, local = i & 3u, sb = ob / 2 + (upper ? blocks / 2 : 0), src = sb * 4 + local; EXPECT_EQ(out[i], (ob & 1u) == 0 ? in[src] : amounts[src]); } };
+    check_lu(hs::InterleaveLowerBlocks(d, v, vb32), false);
+    check_lu(hs::InterleaveUpperBlocks(d, v, vb32), true);
+    const hs::CappedTag<std::int32_t, 4> db;
+    alignas(64) std::int32_t block_out[kBuf];
+    hs::Store(hs::ExtractBlock<1>(v), db, block_out);
+    for (std::size_t i = 0; i < 4; ++i) EXPECT_EQ(block_out[i], in[4 + i]);
+    hs::Store(hs::BroadcastBlock<1>(v), d, out);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], in[4 + (i & 3u)]);
+    hs::Store(hs::InsertBlock<1>(d, v, hs::ExtractBlock<0>(vb32)), d, out);
+    for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], i >= 4 && i < 8 ? amounts[i - 4] : in[i]);
+  }
+
   const hs::ScalableTag<std::uint8_t> d8;
   const std::size_t n8 = hs::Lanes(d8);
   alignas(64) std::uint8_t a8[kBuf], b8[kBuf], o8[kBuf];
@@ -1317,6 +1344,11 @@ TEST(Rvv, RuntimeShiftsRoundedAverageAndBlockShuffles) {
   hs::Store(hs::AverageRound(hs::Load(d8, a8), hs::Load(d8, b8)), d8, o8);
   for (std::size_t i = 0; i < n8; ++i) EXPECT_EQ(o8[i], static_cast<std::uint8_t>((static_cast<unsigned>(a8[i]) + b8[i] + 1u) >> 1));
   const auto va8 = hs::Load(d8, a8), vb8 = hs::Load(d8, b8);
+  hs::Store(hs::ResizeBitCast(d, hs::ResizeBitCast(d8, v)), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], in[i]);
+  const hs::CappedTag<std::uint8_t, 16> d8_block;
+  hs::Store(hs::ResizeBitCast(d8, d8_block, hs::Load(d8_block, a8)), d8, o8);
+  for (std::size_t i = 0; i < n8; ++i) EXPECT_EQ(o8[i], i < 16 ? a8[i] : 0);
   hs::Store(hs::ShiftLeftBytes<3>(va8), d8, o8);
   for (std::size_t i = 0; i < n8; ++i) { const std::size_t local = i & 15u; EXPECT_EQ(o8[i], local < 3 ? 0 : a8[i - 3]); }
   hs::Store(hs::ShiftRightBytes<5>(va8), d8, o8);
