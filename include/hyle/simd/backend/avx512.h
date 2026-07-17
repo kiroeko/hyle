@@ -738,15 +738,61 @@ HYLE_FORCE_INLINE Vec512<std::int32_t, N> ShiftRightUniform(Vec512<std::int32_t,
   return Vec512<std::int32_t, N>{_mm512_sra_epi32(a.raw, _mm_cvtsi32_si128(bits))};
 }
 
-// MulHigh: high 16 bits of the i16/u16 product (native mulhi, BW).
+// MulHigh: byte lanes use word products and register-only byte reconstruction; 16-bit lanes use
+// native mulhi (BW).
+namespace detail {
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Vec512<T, N> MulHigh(Vec512<T, N> a, Vec512<T, N> b) noexcept {
-  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh is 16-bit int only");
+HYLE_FORCE_INLINE Vec512<T, N> MulHighLow8Native(Vec512<T, N> a, Vec512<T, N> b,
+                                                  Vec512<T, N>& high) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 1, "MulHighLow8Native is 8-bit int only");
+  static_assert(N == 64, "MulHighLow8Native requires a native AVX-512 vector");
+  const __m512i even_a =
+      std::is_signed_v<T> ? _mm512_srai_epi16(_mm512_slli_epi16(a.raw, 8), 8)
+                          : _mm512_and_si512(a.raw, _mm512_set1_epi16(0x00FF));
+  const __m512i even_b =
+      std::is_signed_v<T> ? _mm512_srai_epi16(_mm512_slli_epi16(b.raw, 8), 8)
+                          : _mm512_and_si512(b.raw, _mm512_set1_epi16(0x00FF));
+  const __m512i odd_a =
+      std::is_signed_v<T> ? _mm512_srai_epi16(a.raw, 8) : _mm512_srli_epi16(a.raw, 8);
+  const __m512i odd_b =
+      std::is_signed_v<T> ? _mm512_srai_epi16(b.raw, 8) : _mm512_srli_epi16(b.raw, 8);
+  const __m512i even = _mm512_mullo_epi16(even_a, even_b);
+  const __m512i odd = _mm512_mullo_epi16(odd_a, odd_b);
+  high.raw =
+      _mm512_mask_blend_epi8(0x5555555555555555ull, odd, _mm512_srli_epi16(even, 8));
+  return Vec512<T, N>{
+      _mm512_mask_blend_epi8(0xAAAAAAAAAAAAAAAAull, even, _mm512_slli_epi16(odd, 8))};
+}
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> MulHigh8Native(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 1, "MulHigh8Native is 8-bit int only");
+  static_assert(N == 64, "MulHigh8Native requires a native AVX-512 vector");
+  const __m512i even_a =
+      std::is_signed_v<T> ? _mm512_srai_epi16(_mm512_slli_epi16(a.raw, 8), 8)
+                          : _mm512_and_si512(a.raw, _mm512_set1_epi16(0x00FF));
+  const __m512i even_b =
+      std::is_signed_v<T> ? _mm512_srai_epi16(_mm512_slli_epi16(b.raw, 8), 8)
+                          : _mm512_and_si512(b.raw, _mm512_set1_epi16(0x00FF));
+  const __m512i odd_a =
+      std::is_signed_v<T> ? _mm512_srai_epi16(a.raw, 8) : _mm512_srli_epi16(a.raw, 8);
+  const __m512i odd_b =
+      std::is_signed_v<T> ? _mm512_srai_epi16(b.raw, 8) : _mm512_srli_epi16(b.raw, 8);
+  const __m512i even = _mm512_mullo_epi16(even_a, even_b);
+  const __m512i odd = _mm512_mullo_epi16(odd_a, odd_b);
+  return Vec512<T, N>{
+      _mm512_mask_blend_epi8(0x5555555555555555ull, odd, _mm512_srli_epi16(even, 8))};
+}
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec512<T, N> MulHigh16Native(Vec512<T, N> a, Vec512<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh16Native is 16-bit int only");
   Vec512<T, N> r;
   if constexpr (std::is_signed_v<T>) r.raw = _mm512_mulhi_epi16(a.raw, b.raw);
   else r.raw = _mm512_mulhi_epu16(a.raw, b.raw);
   return r;
 }
+}  // namespace detail
 
 // WidenMulPairwiseAdd(d32, a_i16, b_i16): _mm512_madd_epi16 (BW) multiplies i16 pairs and sums
 // adjacent pairs into i32 -- the fixed-point dot core. a/b are FULL i16 (2N lanes), result N i32.
@@ -1142,9 +1188,10 @@ HYLE_FORCE_INLINE Vec512<std::uint64_t, N / 2> MulOdd(Vec512<std::uint32_t, N> a
                                                         _mm512_srli_epi64(b.raw, 32))};
 }
 
+namespace detail {
 template <std::size_t N>
-HYLE_FORCE_INLINE Vec512<std::uint32_t, N> MulHigh32(Vec512<std::uint32_t, N> a,
-                                                      Vec512<std::uint32_t, N> b) noexcept {
+HYLE_FORCE_INLINE Vec512<std::uint32_t, N> MulHigh32Native(Vec512<std::uint32_t, N> a,
+                                                            Vec512<std::uint32_t, N> b) noexcept {
   static_assert(N == 16, "MulHigh32 u32 requires a native AVX-512 vector");
   const __m512i even = _mm512_srli_epi64(_mm512_mul_epu32(a.raw, b.raw), 32);
   const __m512i odd = _mm512_srli_epi64(
@@ -1152,8 +1199,8 @@ HYLE_FORCE_INLINE Vec512<std::uint32_t, N> MulHigh32(Vec512<std::uint32_t, N> a,
   return Vec512<std::uint32_t, N>{_mm512_or_si512(even, _mm512_slli_epi64(odd, 32))};
 }
 template <std::size_t N>
-HYLE_FORCE_INLINE Vec512<std::int32_t, N> MulHigh32(Vec512<std::int32_t, N> a,
-                                                     Vec512<std::int32_t, N> b) noexcept {
+HYLE_FORCE_INLINE Vec512<std::int32_t, N> MulHigh32Native(Vec512<std::int32_t, N> a,
+                                                           Vec512<std::int32_t, N> b) noexcept {
   static_assert(N == 16, "MulHigh32 i32 requires a native AVX-512 vector");
   const __m512i even = _mm512_mul_epi32(a.raw, b.raw);
   constexpr auto kOddLanes = static_cast<_MM_PERM_ENUM>(_MM_SHUFFLE(3, 3, 1, 1));
@@ -1165,6 +1212,7 @@ HYLE_FORCE_INLINE Vec512<std::int32_t, N> MulHigh32(Vec512<std::int32_t, N> a,
   constexpr auto kPackHigh = static_cast<_MM_PERM_ENUM>(_MM_SHUFFLE(3, 1, 2, 0));
   return Vec512<std::int32_t, N>{_mm512_shuffle_epi32(packed, kPackHigh)};
 }
+}  // namespace detail
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------
 // AVX-512 store+reload swizzles (correct + simple; not a proven hot path, and native 512b

@@ -382,17 +382,53 @@ HYLE_FORCE_INLINE Vec<T, N> Shr(Vec<T, N> a, Vec<T, N> b) noexcept {
   return r;
 }
 
-// MulHigh: high half of the full-width product (i16/u16 -> the top 16 bits of the 32-bit
-// product). Native _mm*_mulhi_ep{i,u}16 on x86; NEON widens+takes the high halves.
+// Fixed-width native hook used by vec.h's all-integer MulHigh contract.
+namespace detail {
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Vec<T, N> MulHigh(Vec<T, N> a, Vec<T, N> b) noexcept {
-  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh is 16-bit int only");
+HYLE_FORCE_INLINE Vec<T, N> MulHighLow8Native(Vec<T, N> a, Vec<T, N> b,
+                                               Vec<T, N>& high) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 1, "MulHighLow8Native is 8-bit int only");
+  using U = std::make_unsigned_t<T>;
+  using W = std::conditional_t<std::is_signed_v<T>, std::int16_t, std::uint16_t>;
+  Vec<T, N> low;
+  for (std::size_t i = 0; i < N; ++i) {
+    const W product = static_cast<W>(a.raw[i]) * static_cast<W>(b.raw[i]);
+    low.raw[i] = std::bit_cast<T>(static_cast<U>(product));
+    high.raw[i] = static_cast<T>(product >> 8);
+  }
+  return low;
+}
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> MulHigh8Native(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 1, "MulHigh8Native is 8-bit int only");
+  using W = std::conditional_t<std::is_signed_v<T>, std::int16_t, std::uint16_t>;
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<T>((static_cast<W>(a.raw[i]) * static_cast<W>(b.raw[i])) >> 8);
+  return r;
+}
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> MulHigh16Native(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh16Native is 16-bit int only");
   using W = std::conditional_t<std::is_signed_v<T>, std::int32_t, std::uint32_t>;
   Vec<T, N> r;
   for (std::size_t i = 0; i < N; ++i)
     r.raw[i] = static_cast<T>((static_cast<W>(a.raw[i]) * static_cast<W>(b.raw[i])) >> 16);
   return r;
 }
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec<T, N> MulHigh32Native(Vec<T, N> a, Vec<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 4, "MulHigh32Native is 32-bit int only");
+  using W = std::conditional_t<std::is_signed_v<T>, std::int64_t, std::uint64_t>;
+  Vec<T, N> r;
+  for (std::size_t i = 0; i < N; ++i)
+    r.raw[i] = static_cast<T>((static_cast<W>(a.raw[i]) * static_cast<W>(b.raw[i])) >> 32);
+  return r;
+}
+}  // namespace detail
 
 // WidenMulPairwiseAdd(d32, a_i16, b_i16): multiply i16 lanes, sum ADJACENT PAIRS into i32
 // lanes -- the fixed-point dot-product core (x86 _mm*_madd_epi16, NEON vmull+pairwise). The

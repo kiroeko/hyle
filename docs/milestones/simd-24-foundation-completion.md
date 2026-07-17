@@ -233,11 +233,19 @@ NEON 20 轮；最终全量为 Windows 351 pass/1 hardware skip、WSL 349/1、mac
 `InterleaveUpper` 的既有正确性漏洞，此后 SVE 128/256/384/512-bit 与 RVV 128/256/512/1024-bit
 QEMU 矩阵全部通过。
 
-### 阶段 4：`mul_hi/mul_hilo`
+### 阶段 4：`MulHigh/MulHighLow` ✅
 
-- 统一现有 `MulHigh`/`MulHigh32` 命名和 lane 合同，补 i/u8、i/u32、i/u64；
-- `mul_hilo` 共享乘法 partial，不实现成两个独立 multiply；
-- register op 只走 fixed/native 轨；用全位宽 oracle、边界值、汇编和 Highway/xsimd parity 验收。
+- 已统一为 `MulHigh`，覆盖 i/u8、i/u16、i/u32、i/u64；公开 `MulHigh32` 宽度特例已移除，
+  invariant division 也改走统一名；
+- `MulHighLow(a,b,high)` 返回 low、写 high；i/u8、i/u32 的 widen product 与 i/u64 的
+  Knuth 四 limb product 同时生成高低半，不重复软件 partial。SVE/RVV 对应 low/high 两条原生指令；
+- 它是 target-bound register op，不进 C ABI，也不为单 op 增加 Runtime 函数指针；
+- 验收：MSVC 与 GCC scalar/SSE4/AVX2 全宽边界 + partial-one-lane，AVX512 SDE，
+  SVE 5 VL、RVV base/Zvbb/Zvbc 各 4 VLEN；`op_parity_bench` 已扩为八种 `MulHigh`
+  及 `MulHighLow u64` 对同 ISA Highway。AVX2 首轮暴露 i/u8 约 0.1–0.15×、i64 约
+  0.8× 的真实回退；根因分别是 byte `Interleave*` 落栈和 i64 sign-broadcast/低半
+  冗余。改为 Highway 同形的 word-product + `vpblendvb`、高半专用 Knuth 路径后，
+  i/u8 与 i64 已约 1.00×，u64 约 0.98–0.99×，融合 u64 约 1.06×。
 
 ### 阶段 5：sort key 扩展
 

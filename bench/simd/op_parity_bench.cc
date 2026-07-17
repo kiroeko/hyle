@@ -714,33 +714,97 @@ int main() {
     }
   }
 
-  // ---- 23. Bit ops: MulHigh i16/u16, MulHigh32, Reverse8, BitShuffle, MultiRotateRight ----
+  // ---- 23. Bit ops: all-width MulHigh + fused MulHighLow, Reverse8, BitShuffle,
+  // MultiRotateRight. C1 deliberately benchmarks every lane width because x86/NEON use
+  // different constructions (native i16, widened i8/i32, four-limb i64).
+  auto bench_mul_high = []<typename T>(const char* title, std::uint64_t seed) {
+    const hs::ScalableTag<T> hd;
+    const hn::ScalableTag<T> gd;
+    const std::size_t hw = hs::Lanes(hd), gw = hn::Lanes(gd);
+    std::vector<T> a(kN), b(kN), out(kN);
+    std::mt19937_64 rng(seed);
+    for (auto& e : a) e = static_cast<T>(rng());
+    for (auto& e : b) e = static_cast<T>(rng());
+    nb::Bench bench;
+    bench.title(title).relative(true).batch(kN).minEpochIterations(8000);
+    HYLE_RUN_PAIR(
+        bench,
+        [&](auto rep) {
+          hyle_bench::stagger(rep);
+          for (std::size_t i = 0; i + hw <= kN; i += hw)
+            hs::StoreU(hs::MulHigh(hs::LoadU(hd, a.data() + i),
+                                   hs::LoadU(hd, b.data() + i)),
+                       hd, out.data() + i);
+          nb::doNotOptimizeAway(out.data());
+          hyle_bench::mark(rep);
+        },
+        [&](auto rep) {
+          hyle_bench::stagger(rep);
+          for (std::size_t i = 0; i + gw <= kN; i += gw)
+            hn::StoreU(hn::MulHigh(hn::LoadU(gd, a.data() + i),
+                                   hn::LoadU(gd, b.data() + i)),
+                       gd, out.data() + i);
+          nb::doNotOptimizeAway(out.data());
+          hyle_bench::mark(rep);
+        });
+  };
+#if !defined(HYLE_SIMD_TARGET_SSE4)
+  // Highway's SSE4 face only supplies the native i/u16 rows without an Abort fallback.
+  bench_mul_high.template operator()<std::int8_t>("MulHigh i8 (4096)", 35);
+  bench_mul_high.template operator()<std::uint8_t>("MulHigh u8 (4096)", 36);
+#endif
+  bench_mul_high.template operator()<std::int16_t>("MulHigh i16 (4096)", 37);
+  bench_mul_high.template operator()<std::uint16_t>("MulHigh u16 (4096)", 38);
+#if !defined(HYLE_SIMD_TARGET_SSE4)
+  bench_mul_high.template operator()<std::int32_t>("MulHigh i32 (4096)", 39);
+  bench_mul_high.template operator()<std::uint32_t>("MulHigh u32 (4096)", 40);
+  bench_mul_high.template operator()<std::int64_t>("MulHigh i64 (4096)", 41);
+  bench_mul_high.template operator()<std::uint64_t>("MulHigh u64 (4096)", 42);
+#endif
+
+  // Highway's SSE4 target deliberately maps u64 low multiply to Abort (no baseline vector
+  // implementation), so there is no same-contract vendor pair for the fused row there. AVX2,
+  // AVX-512 and NEON do have both low and high operations.
+#if !defined(HYLE_SIMD_TARGET_SSE4)
   {
-    const hs::ScalableTag<std::int16_t> hd16; const hn::ScalableTag<std::int16_t> gd16;
-    const hs::ScalableTag<std::uint16_t> hdu16; const hn::ScalableTag<std::uint16_t> gdu16;
-    const std::size_t hw16 = hs::Lanes(hd16), gw16 = hn::Lanes(gd16);
-    std::vector<std::int16_t> sa(kN), sb(kN), so(kN);
-    std::vector<std::uint16_t> ua(kN), ub(kN), uo(kN);
-    { std::mt19937_64 rng(35); std::uniform_int_distribution<int> d(-30000,30000);
-      for (std::size_t i=0;i<kN;++i){ sa[i]=(std::int16_t)d(rng); sb[i]=(std::int16_t)d(rng);
-        ua[i]=(std::uint16_t)(d(rng)&0xFFFF); ub[i]=(std::uint16_t)(d(rng)&0xFFFF); } }
-    {
-      nb::Bench bench; bench.title("MulHigh i16 (4096)").relative(true).batch(kN).minEpochIterations(8000);
-      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_sa = sa.data(); auto* p_sb = sb.data(); auto* p_so = so.data(); for(std::size_t i=0;i+hw16<=kN;i+=hw16) hs::StoreU(hs::MulHigh(hs::LoadU(hd16,p_sa+i),hs::LoadU(hd16,p_sb+i)),hd16,p_so+i); nb::doNotOptimizeAway(p_so);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_sa = sa.data(); auto* p_sb = sb.data(); auto* p_so = so.data(); for(std::size_t i=0;i+gw16<=kN;i+=gw16) hn::StoreU(hn::MulHigh(hn::LoadU(gd16,p_sa+i),hn::LoadU(gd16,p_sb+i)),gd16,p_so+i); nb::doNotOptimizeAway(p_so);  hyle_bench::mark(rep); });
-    }
-    {
-      nb::Bench bench; bench.title("MulHigh u16 (4096)").relative(true).batch(kN).minEpochIterations(8000);
-      HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+hw16<=kN;i+=hw16) hs::StoreU(hs::MulHigh(hs::LoadU(hdu16,p_ua+i),hs::LoadU(hdu16,p_ub+i)),hdu16,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+gw16<=kN;i+=gw16) hn::StoreU(hn::MulHigh(hn::LoadU(gdu16,p_ua+i),hn::LoadU(gdu16,p_ub+i)),gdu16,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); });
-    }
+    const hs::ScalableTag<std::uint64_t> hd;
+    const hn::ScalableTag<std::uint64_t> gd;
+    const std::size_t hw = hs::Lanes(hd), gw = hn::Lanes(gd);
+    std::vector<std::uint64_t> a(kN), b(kN), lo(kN), hi(kN);
+    std::mt19937_64 rng(43);
+    for (auto& e : a) e = rng();
+    for (auto& e : b) e = rng();
+    nb::Bench bench;
+    bench.title("MulHighLow u64 (4096)").relative(true).batch(kN).minEpochIterations(4000);
+    HYLE_RUN_PAIR(
+        bench,
+        [&](auto rep) {
+          hyle_bench::stagger(rep);
+          for (std::size_t i = 0; i + hw <= kN; i += hw) {
+            auto high = hs::Zero(hd);
+            const auto low = hs::MulHighLow(hs::LoadU(hd, a.data() + i),
+                                             hs::LoadU(hd, b.data() + i), high);
+            hs::StoreU(low, hd, lo.data() + i);
+            hs::StoreU(high, hd, hi.data() + i);
+          }
+          nb::doNotOptimizeAway(lo.data());
+          nb::doNotOptimizeAway(hi.data());
+          hyle_bench::mark(rep);
+        },
+        [&](auto rep) {
+          hyle_bench::stagger(rep);
+          for (std::size_t i = 0; i + gw <= kN; i += gw) {
+            const auto va = hn::LoadU(gd, a.data() + i);
+            const auto vb = hn::LoadU(gd, b.data() + i);
+            hn::StoreU(hn::Mul(va, vb), gd, lo.data() + i);
+            hn::StoreU(hn::MulHigh(va, vb), gd, hi.data() + i);
+          }
+          nb::doNotOptimizeAway(lo.data());
+          nb::doNotOptimizeAway(hi.data());
+          hyle_bench::mark(rep);
+        });
   }
-  {
-    const hs::ScalableTag<std::uint32_t> hdu; const hn::ScalableTag<std::uint32_t> gdu;
-    const std::size_t hwu = hs::Lanes(hdu), gwu = hn::Lanes(gdu);
-    std::vector<std::uint32_t> ua(kN), ub(kN), uo(kN);
-    { std::mt19937_64 rng(36); for (auto& e : ua) e = static_cast<std::uint32_t>(rng()); for (auto& e : ub) e = static_cast<std::uint32_t>(rng()); }
-    nb::Bench bench; bench.title("MulHigh32 u32 (4096)").relative(true).batch(kN).minEpochIterations(8000);
-    HYLE_RUN_PAIR(bench, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+hwu<=kN;i+=hwu) hs::StoreU(hs::MulHigh32(hs::LoadU(hdu,p_ua+i),hs::LoadU(hdu,p_ub+i)),hdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); }, [&](auto rep){ hyle_bench::stagger(rep); auto* p_ua = ua.data(); auto* p_ub = ub.data(); auto* p_uo = uo.data(); for(std::size_t i=0;i+gwu<=kN;i+=gwu) hn::StoreU(hn::MulHigh(hn::LoadU(gdu,p_ua+i),hn::LoadU(gdu,p_ub+i)),gdu,p_uo+i); nb::doNotOptimizeAway(p_uo);  hyle_bench::mark(rep); });
-  }
+#endif
   // Reverse8 / BitShuffle / MultiRotateRight are x86-shaped (need >=8 i32 lanes / 512-bit u64
   // path). Highway NEON hard-asserts them (arm_neon-inl.h:6535, i32 NEON = 4 lanes), so guard the
   // whole cluster off NEON -- HYLE's own NEON backend has the correct narrow-vector semantics but

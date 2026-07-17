@@ -25,6 +25,7 @@
     "MaskedSet": {"class": "synthetic", "covered_by": ["Set", "IfThenElseZero"]},
     "MaskedSetOr": {"class": "synthetic", "covered_by": ["Set", "IfThenElse"]},
     "Min128Upper": {"class": "synthetic", "covered_by": ["Lt128Upper", "IfThenElse"]},
+    "MulHighLow": {"class": "native", "evidence": "bench/simd/op_parity_bench.cc"},
     "Ne128Upper": {"class": "synthetic", "covered_by": ["Ne", "InterleaveUpper"]},
     "OrderedTruncate2To": {"class": "synthetic", "covered_by": ["BitCast", "ConcatEven"]},
     "PromoteInRangeEvenTo": {"class": "alias", "covered_by": ["PromoteEvenTo"]},

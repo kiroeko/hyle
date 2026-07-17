@@ -56,7 +56,7 @@
 
 | # | 项 | 状态 |
 |---|---|---|
-| **B0** | 语义分类账 v2（分后端 missing，防并集假绿） | ✅ 当前 missing-any **23**；仅 shared generic 10 + selector 13；`portable_missing` **0** |
+| **B0** | 语义分类账 v2（分后端 missing，防并集假绿） | ✅ 当前 missing-any **22**；仅 shared generic 9 + selector 13；`portable_missing` **0** |
 | **B1** | portable_missing 实现 | ✅ |
 | **B2** | math / dtype / bitpack / sort 真实 scalable 产品 TU + Runtime | ✅ 主路径；见下边界 |
 | **B3** | RVV sort LMUL=1；SVE full-VL partition + capped base network | ✅ |
@@ -69,8 +69,8 @@
 | **B5** | 真机性能（= A3） | 未签字 | 同 A3 | 无硅宣称 SVE SOTA |
 | **B6** | math 精确标量 per-op | `lgamma/remainder/nextafter` 因正确性合同保留 scalar | 只有 scalable 实现能保持精确合同且有收益时再换 | 为齐 tier 元数据牺牲语义 |
 | **B7** | bitpack 多 logical-block 并行 | 每次 128b active | 真机收益证据后再做 | 无证据改格式 |
-| **B8** | shared_generic / fixed_model 长尾 | 10 + 20 名分类在账 | shared：实例化证明；fixed：产品依赖才做，否则 N/A | 为齐名抄 128-block 全家桶 |
-| **B9** | extension_gated（含 RVV AES 等） | 9 项 | 有扩展/合同再做 | 无硬件装假快路 |
+| **B8** | shared_generic / fixed_model 长尾 | **9 + 0**；shared 已由产品/QEMU 实例化，fixed_model 已清零 | 维持机械闸；出现新消费者再分类 | 为齐名抄 128-block 全家桶 |
+| **B9** | extension_gated（含 RVV AES 等） | 语义缺口 **0**；可选扩展只剩产品机会项 | 有扩展、产品合同与收益证据再做独立 feature TU | 无硬件装假快路 |
 
 ### 机械参考（语法面，≠ 用户能力）
 
@@ -78,15 +78,15 @@
 
 | 后端 | local public ops |
 |---|---:|
-| avx2 | 238 |
-| neon | 225 |
-| avx512 | 224 |
-| sse4 | 221 |
+| avx2 | 236 |
+| neon | 223 |
+| avx512 | 222 |
+| sse4 | 219 |
 | **sve** | **227** |
-| scalar | 203 |
+| scalar | 202 |
 | **rvv** | **227** |
 
-- fixed missing：SVE **23** / RVV **23**；missing-any **23**（shared_generic 10 + selector 13 + fixed_model 0 + extension_gated 0 + portable_missing **0**）
+- fixed missing：SVE **22** / RVV **22**；missing-any **22**（shared_generic 9 + selector 13 + fixed_model 0 + extension_gated 0 + portable_missing **0**）
 - 产品种子：math/sort/dtype 传递闭包 **0**；bitpack 余 **Xor3** 等个位
 
 ---
@@ -95,11 +95,11 @@
 
 | # | 项 | 说明 |
 |---|---|---|
-| **C1** | **`mul_hi` / `mul_hilo`** | 统一合同；补 i/u8、i/u32、i/u64；`mul_hilo` 共享 partial；只 fixed/native |
+| **C1** | **`MulHigh` / `MulHighLow`** | ✅ 单一 `MulHigh` 覆盖 i/u8/16/32/64；删公开 `MulHigh32` 特例；`MulHighLow` 返回 low、写 high，widen/64-bit 路径共享 partial；AVX2 首轮 i/u8 0.1–0.15×、i64 0.8× 回退已修至约同速；register/native-only，不进 C ABI/Runtime 表 |
 | **C2** | **sort key 扩展** | 先 **i16/u16 + 128-bit POD**；**f16 placeholder** 须先统一 dtype/NaN total-order |
 | **C3** | **complex** | f32 `ctan/csinh/ccosh`；现有 c* 扩 **f64**；SoA real/imag |
 
-与 A/B 正交。默认序：**A1 → A3 → C1 → C2 → C3**。
+与 A/B 正交。无真机时默认序：**C2 → C3 → D1/D6 → D5/D7 → D2**；A1/A3/B5/B7 进入“有硅再签字”队列。
 
 ---
 
@@ -169,7 +169,7 @@
 ```text
 1.  A1    NEON KV64 性能狩猎
 2.  A3/B5 变宽真机 scorecard（有硅时）
-3.  C1    mul_hi / mul_hilo
+3.  C1    mul_hi / mul_hilo  ✅
 4.  C2    sort key i16/u16/u128
 5.  C3    complex + f64
 6.  B6/B7/B8  按消费与证据穿插
@@ -180,7 +180,7 @@
 // D8 仅 f16/bf16 类型轴启动时评估
 ```
 
-主工单线：**A1 + simd-25 剩余真机证据 + simd-24 的 C1–C3**；机制线 **D1/D2/D5** 可并行、不挡能力补缺。
+主工单线：**simd-24 的 C2–C3**；机制线 **D1/D2/D5/D6/D7** 可在无真机环境继续。A1、A3/B5 与 B7 性能决策挂起到取得对应硅。
 
 ---
 

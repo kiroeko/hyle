@@ -9,6 +9,10 @@
 #include <vector>
 #include <algorithm>
 
+#if defined(_MSC_VER) && defined(_M_X64)
+#  include <intrin.h>
+#endif
+
 #include "hyle/simd/vec.h"
 #include "hyle/simd/dtype.h"
 #include "hyle/simd/native/random.h"
@@ -1968,20 +1972,121 @@ TEST(Vec, VarShiftUint32) { CheckVarShift<std::uint32_t>(); }
 TEST(Vec, VarShiftInt64) { CheckVarShift<std::int64_t>(); }
 TEST(Vec, VarShiftUint64) { CheckVarShift<std::uint64_t>(); }
 
-// MulHigh: top 16 bits of the i16/u16 product.
+// MulHigh/MulHighLow: full-width integer product split for every integer lane width.
+// The 64-bit oracle deliberately uses compiler 128-bit multiply rather than HYLE's
+// four-limb vector construction, so a shared carry bug cannot make the test self-fulfilling.
+template <typename T>
+T ReferenceMulHighLow(T a, T b, T& high) {
+  using U = std::make_unsigned_t<T>;
+  const U ua = static_cast<U>(a);
+  const U ub = static_cast<U>(b);
+  U lo;
+  U hi;
+  if constexpr (sizeof(T) < 8) {
+    using W = std::conditional_t<sizeof(T) == 1, std::uint16_t,
+              std::conditional_t<sizeof(T) == 2, std::uint32_t, std::uint64_t>>;
+    const W product = static_cast<W>(ua) * static_cast<W>(ub);
+    lo = static_cast<U>(product);
+    hi = static_cast<U>(product >> (sizeof(T) * 8));
+  } else {
+#if defined(__GNUC__) || defined(__clang__)
+    __extension__ using U128 = unsigned __int128;
+    const U128 product = static_cast<U128>(ua) * static_cast<U128>(ub);
+    lo = static_cast<U>(product);
+    hi = static_cast<U>(product >> 64);
+#elif defined(_MSC_VER) && defined(_M_X64)
+    std::uint64_t hi64;
+    lo = static_cast<U>(_umul128(static_cast<std::uint64_t>(ua),
+                                 static_cast<std::uint64_t>(ub), &hi64));
+    hi = static_cast<U>(hi64);
+#else
+    // Portable oracle for unusual host compilers.
+    constexpr std::uint64_t kMask = 0xFFFFFFFFull;
+    const std::uint64_t p00 = (ua & kMask) * (ub & kMask);
+    const std::uint64_t p01 = (ua & kMask) * (ub >> 32);
+    const std::uint64_t p10 = (ua >> 32) * (ub & kMask);
+    const std::uint64_t carry = (p00 >> 32) + (p01 & kMask) + (p10 & kMask);
+    lo = static_cast<U>((p00 & kMask) | (carry << 32));
+    hi = static_cast<U>((ua >> 32) * (ub >> 32) + (p01 >> 32) +
+                        (p10 >> 32) + (carry >> 32));
+#endif
+  }
+  if constexpr (std::is_signed_v<T>) {
+    if (a < 0) hi -= ub;
+    if (b < 0) hi -= ua;
+  }
+  high = std::bit_cast<T>(hi);
+  return std::bit_cast<T>(lo);
+}
+
 template <typename T>
 void CheckMulHigh() {
   const hs::ScalableTag<T> d;
   const std::size_t n = hs::Lanes(d);
-  using W = std::conditional_t<std::is_signed_v<T>, std::int32_t, std::uint32_t>;
-  Buf<T> a, b, out;
-  for (std::size_t i = 0; i < n; ++i) { a.data[i] = static_cast<T>(i * 137 + 3); b.data[i] = static_cast<T>(i * 251 + 7); }
-  hs::Store(hs::MulHigh(hs::Load(d, a.data), hs::Load(d, b.data)), d, out.data);
-  for (std::size_t i = 0; i < n; ++i)
-    EXPECT_EQ(out.data[i], static_cast<T>((static_cast<W>(a.data[i]) * static_cast<W>(b.data[i])) >> 16)) << "i=" << i;
+  using U = std::make_unsigned_t<T>;
+  constexpr int kBits = sizeof(T) * 8;
+  const U kSign = U{1} << (kBits - 1);
+  const U patterns[] = {
+      U{0}, U{1}, static_cast<U>(~U{0}), static_cast<U>(kSign),
+      static_cast<U>(kSign - 1), static_cast<U>(U{0x55} * (U(~U{0}) / U{0xFF})),
+      static_cast<U>(U{0xAA} * (U(~U{0}) / U{0xFF})), static_cast<U>(kSign + 1)};
+  Buf<T> a, b, got_hi, got_hi_split, got_lo;
+  for (std::size_t i = 0; i < n; ++i) {
+    a.data[i] = std::bit_cast<T>(patterns[i % std::size(patterns)]);
+    b.data[i] = std::bit_cast<T>(patterns[(i * 5 + 3) % std::size(patterns)]);
+  }
+  const auto va = hs::Load(d, a.data);
+  const auto vb = hs::Load(d, b.data);
+  hs::Store(hs::MulHigh(va, vb), d, got_hi.data);
+  auto vhi = hs::Zero(d);
+  hs::Store(hs::MulHighLow(va, vb, vhi), d, got_lo.data);
+  hs::Store(vhi, d, got_hi_split.data);
+  for (std::size_t i = 0; i < n; ++i) {
+    T expected_hi;
+    const T expected_lo = ReferenceMulHighLow(a.data[i], b.data[i], expected_hi);
+    EXPECT_EQ(got_hi.data[i], expected_hi) << "high i=" << i;
+    EXPECT_EQ(got_hi_split.data[i], expected_hi) << "split high i=" << i;
+    EXPECT_EQ(got_lo.data[i], expected_lo) << "split low i=" << i;
+  }
 }
+TEST(Vec, MulHighInt8) { CheckMulHigh<std::int8_t>(); }
+TEST(Vec, MulHighUint8) { CheckMulHigh<std::uint8_t>(); }
 TEST(Vec, MulHighInt16) { CheckMulHigh<std::int16_t>(); }
 TEST(Vec, MulHighUint16) { CheckMulHigh<std::uint16_t>(); }
+TEST(Vec, MulHighInt32) { CheckMulHigh<std::int32_t>(); }
+TEST(Vec, MulHighUint32) { CheckMulHigh<std::uint32_t>(); }
+TEST(Vec, MulHighInt64) { CheckMulHigh<std::int64_t>(); }
+TEST(Vec, MulHighUint64) { CheckMulHigh<std::uint64_t>(); }
+
+template <typename T>
+void CheckMulHighPartialOneLane() {
+  const hs::FixedTag<T, 1> d;
+  using U = std::make_unsigned_t<T>;
+  alignas(64) T a[1] = {std::bit_cast<T>(static_cast<U>(~U{0} - U{6}))};
+  alignas(64) T b[1] = {
+      std::bit_cast<T>(static_cast<U>((U{1} << (sizeof(T) * 8 - 1)) + U{3}))};
+  alignas(64) T got_lo[1], got_hi[1], got_hi_only[1];
+  auto high = hs::Zero(d);
+  hs::Store(hs::MulHighLow(hs::Load(d, a), hs::Load(d, b), high), d, got_lo);
+  hs::Store(high, d, got_hi);
+  hs::Store(hs::MulHigh(hs::Load(d, a), hs::Load(d, b)), d, got_hi_only);
+  T expected_hi;
+  const T expected_lo = ReferenceMulHighLow(a[0], b[0], expected_hi);
+  EXPECT_EQ(got_lo[0], expected_lo);
+  EXPECT_EQ(got_hi[0], expected_hi);
+  EXPECT_EQ(got_hi_only[0], expected_hi);
+}
+
+TEST(Vec, MulHighPartialOneLaneAllWidths) {
+  CheckMulHighPartialOneLane<std::int8_t>();
+  CheckMulHighPartialOneLane<std::uint8_t>();
+  CheckMulHighPartialOneLane<std::int16_t>();
+  CheckMulHighPartialOneLane<std::uint16_t>();
+  CheckMulHighPartialOneLane<std::int32_t>();
+  CheckMulHighPartialOneLane<std::uint32_t>();
+  CheckMulHighPartialOneLane<std::int64_t>();
+  CheckMulHighPartialOneLane<std::uint64_t>();
+}
 
 // WidenMulPairwiseAdd: multiply i16 pairs, sum adjacent into i32 (fixed-point dot core).
 TEST(Vec, WidenMulPairwiseAdd) {

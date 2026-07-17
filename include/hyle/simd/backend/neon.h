@@ -1016,9 +1016,53 @@ HYLE_FORCE_INLINE VecNeon<T, N> Shr(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
 
 // MulHigh: high 16 bits of the i16/u16 product. NEON has no direct mulhi -> widen both halves
 // (vmull low + vmull_high), then take the high 16 bits of each 32-bit product via vshrn/uzp.
+namespace detail {
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE VecNeon<T, N> MulHigh(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
-  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh is 16-bit int only");
+HYLE_FORCE_INLINE VecNeon<T, N> MulHighLow8Native(VecNeon<T, N> a, VecNeon<T, N> b,
+                                                   VecNeon<T, N>& high) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 1, "MulHighLow8Native is 8-bit int only");
+  static_assert(N == 16, "MulHighLow8Native requires a native NEON vector");
+  VecNeon<T, N> low;
+  if constexpr (std::is_signed_v<T>) {
+    const int16x8_t lo_product =
+        vmull_s8(vget_low_s8(detail::to_q(a)), vget_low_s8(detail::to_q(b)));
+    const int16x8_t hi_product = vmull_high_s8(detail::to_q(a), detail::to_q(b));
+    low = detail::from_q<decltype(low)>(
+        vcombine_s8(vmovn_s16(lo_product), vmovn_s16(hi_product)));
+    high = detail::from_q<decltype(high)>(
+        vcombine_s8(vshrn_n_s16(lo_product, 8), vshrn_n_s16(hi_product, 8)));
+  } else {
+    const uint16x8_t lo_product =
+        vmull_u8(vget_low_u8(detail::to_q(a)), vget_low_u8(detail::to_q(b)));
+    const uint16x8_t hi_product = vmull_high_u8(detail::to_q(a), detail::to_q(b));
+    low = detail::from_q<decltype(low)>(
+        vcombine_u8(vmovn_u16(lo_product), vmovn_u16(hi_product)));
+    high = detail::from_q<decltype(high)>(
+        vcombine_u8(vshrn_n_u16(lo_product, 8), vshrn_n_u16(hi_product, 8)));
+  }
+  return low;
+}
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> MulHigh8Native(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 1, "MulHigh8Native is 8-bit int only");
+  static_assert(N == 16, "MulHigh8Native requires a native NEON vector");
+  VecNeon<T, N> r;
+  if constexpr (std::is_signed_v<T>) {
+    const int16x8_t lo = vmull_s8(vget_low_s8(detail::to_q(a)), vget_low_s8(detail::to_q(b)));
+    const int16x8_t hi = vmull_high_s8(detail::to_q(a), detail::to_q(b));
+    r = detail::from_q<decltype(r)>(vcombine_s8(vshrn_n_s16(lo, 8), vshrn_n_s16(hi, 8)));
+  } else {
+    const uint16x8_t lo = vmull_u8(vget_low_u8(detail::to_q(a)), vget_low_u8(detail::to_q(b)));
+    const uint16x8_t hi = vmull_high_u8(detail::to_q(a), detail::to_q(b));
+    r = detail::from_q<decltype(r)>(vcombine_u8(vshrn_n_u16(lo, 8), vshrn_n_u16(hi, 8)));
+  }
+  return r;
+}
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE VecNeon<T, N> MulHigh16Native(VecNeon<T, N> a, VecNeon<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh16Native is 16-bit int only");
   VecNeon<T, N> r;
   if constexpr (std::is_signed_v<T>) {
     const int32x4_t lo = vmull_s16(vget_low_s16(detail::to_q(a)), vget_low_s16(detail::to_q(b)));
@@ -1031,6 +1075,7 @@ HYLE_FORCE_INLINE VecNeon<T, N> MulHigh(VecNeon<T, N> a, VecNeon<T, N> b) noexce
   }
   return r;
 }
+}  // namespace detail
 
 // WidenMulPairwiseAdd(d32, a_i16, b_i16): multiply i16 pairs and sum adjacent pairs into i32.
 // NEON: vmull low/high gives 8 i32 products; pairwise-add adjacent (vpaddq) folds to 4 i32.
@@ -1518,9 +1563,10 @@ HYLE_FORCE_INLINE VecNeon<std::uint64_t, N / 2> MulOdd(VecNeon<std::uint32_t, N>
                 vget_low_u32(vuzp2q_u32(detail::to_q(b), detail::to_q(b)))));
 }
 
+namespace detail {
 template <std::size_t N>
-HYLE_FORCE_INLINE VecNeon<std::uint32_t, N> MulHigh32(VecNeon<std::uint32_t, N> a,
-                                                      VecNeon<std::uint32_t, N> b) noexcept {
+HYLE_FORCE_INLINE VecNeon<std::uint32_t, N> MulHigh32Native(VecNeon<std::uint32_t, N> a,
+                                                            VecNeon<std::uint32_t, N> b) noexcept {
   static_assert(N == 4, "MulHigh32 u32 requires a native NEON vector");
   const uint64x2_t lo = vmull_u32(vget_low_u32(detail::to_q(a)), vget_low_u32(detail::to_q(b)));
   const uint64x2_t hi = vmull_high_u32(detail::to_q(a), detail::to_q(b));
@@ -1528,14 +1574,15 @@ HYLE_FORCE_INLINE VecNeon<std::uint32_t, N> MulHigh32(VecNeon<std::uint32_t, N> 
       vuzp2q_u32(vreinterpretq_u32_u64(lo), vreinterpretq_u32_u64(hi)));
 }
 template <std::size_t N>
-HYLE_FORCE_INLINE VecNeon<std::int32_t, N> MulHigh32(VecNeon<std::int32_t, N> a,
-                                                     VecNeon<std::int32_t, N> b) noexcept {
+HYLE_FORCE_INLINE VecNeon<std::int32_t, N> MulHigh32Native(VecNeon<std::int32_t, N> a,
+                                                           VecNeon<std::int32_t, N> b) noexcept {
   static_assert(N == 4, "MulHigh32 i32 requires a native NEON vector");
   const int64x2_t lo = vmull_s32(vget_low_s32(detail::to_q(a)), vget_low_s32(detail::to_q(b)));
   const int64x2_t hi = vmull_high_s32(detail::to_q(a), detail::to_q(b));
   return detail::from_q<VecNeon<std::int32_t, N>>(
       vuzp2q_s32(vreinterpretq_s32_s64(lo), vreinterpretq_s32_s64(hi)));
 }
+}  // namespace detail
 
 // In invariant division the multiplier is scalar. Keeping that fact in the signature lets
 // AppleClang use the scalar-lane smull/smull2 form, matching Highway; passing Set(multiplier)

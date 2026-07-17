@@ -859,15 +859,60 @@ HYLE_FORCE_INLINE Vec128<std::int32_t, N> ShiftRightUniform(Vec128<std::int32_t,
   return Vec128<std::int32_t, N>{_mm_sra_epi32(a.raw, _mm_cvtsi32_si128(bits))};
 }
 
-// MulHigh: high 16 bits of the i16/u16 product (native mulhi).
+// Fixed-width native hook used by vec.h's all-integer MulHigh contract.
+namespace detail {
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Vec128<T, N> MulHigh(Vec128<T, N> a, Vec128<T, N> b) noexcept {
-  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh is 16-bit int only");
+HYLE_FORCE_INLINE Vec128<T, N> MulHighLow8Native(Vec128<T, N> a, Vec128<T, N> b,
+                                                  Vec128<T, N>& high) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 1, "MulHighLow8Native is 8-bit int only");
+  static_assert(N == 16, "MulHighLow8Native requires a native SSE4 vector");
+  const __m128i even_a =
+      std::is_signed_v<T> ? _mm_srai_epi16(_mm_slli_epi16(a.raw, 8), 8)
+                          : _mm_and_si128(a.raw, _mm_set1_epi16(0x00FF));
+  const __m128i even_b =
+      std::is_signed_v<T> ? _mm_srai_epi16(_mm_slli_epi16(b.raw, 8), 8)
+                          : _mm_and_si128(b.raw, _mm_set1_epi16(0x00FF));
+  const __m128i odd_a = std::is_signed_v<T> ? _mm_srai_epi16(a.raw, 8)
+                                             : _mm_srli_epi16(a.raw, 8);
+  const __m128i odd_b = std::is_signed_v<T> ? _mm_srai_epi16(b.raw, 8)
+                                             : _mm_srli_epi16(b.raw, 8);
+  const __m128i even = _mm_mullo_epi16(even_a, even_b);
+  const __m128i odd = _mm_mullo_epi16(odd_a, odd_b);
+  high.raw = _mm_blendv_epi8(odd, _mm_srli_epi16(even, 8), _mm_set1_epi16(0x00FF));
+  return Vec128<T, N>{
+      _mm_blendv_epi8(even, _mm_slli_epi16(odd, 8),
+                      _mm_set1_epi16(static_cast<short>(0xFF00)))};
+}
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> MulHigh8Native(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 1, "MulHigh8Native is 8-bit int only");
+  static_assert(N == 16, "MulHigh8Native requires a native SSE4 vector");
+  const __m128i even_a =
+      std::is_signed_v<T> ? _mm_srai_epi16(_mm_slli_epi16(a.raw, 8), 8)
+                          : _mm_and_si128(a.raw, _mm_set1_epi16(0x00FF));
+  const __m128i even_b =
+      std::is_signed_v<T> ? _mm_srai_epi16(_mm_slli_epi16(b.raw, 8), 8)
+                          : _mm_and_si128(b.raw, _mm_set1_epi16(0x00FF));
+  const __m128i odd_a = std::is_signed_v<T> ? _mm_srai_epi16(a.raw, 8)
+                                             : _mm_srli_epi16(a.raw, 8);
+  const __m128i odd_b = std::is_signed_v<T> ? _mm_srai_epi16(b.raw, 8)
+                                             : _mm_srli_epi16(b.raw, 8);
+  const __m128i even = _mm_mullo_epi16(even_a, even_b);
+  const __m128i odd = _mm_mullo_epi16(odd_a, odd_b);
+  return Vec128<T, N>{
+      _mm_blendv_epi8(odd, _mm_srli_epi16(even, 8), _mm_set1_epi16(0x00FF))};
+}
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec128<T, N> MulHigh16Native(Vec128<T, N> a, Vec128<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh16Native is 16-bit int only");
   Vec128<T, N> r;
   if constexpr (std::is_signed_v<T>) r.raw = _mm_mulhi_epi16(a.raw, b.raw);
   else r.raw = _mm_mulhi_epu16(a.raw, b.raw);
   return r;
 }
+}  // namespace detail
 
 // WidenMulPairwiseAdd(d32, a_i16, b_i16): _mm_madd_epi16 multiplies i16 pairs and sums
 // adjacent pairs into i32 -- the fixed-point dot core. a/b are FULL i16 (2N lanes), result
@@ -1258,9 +1303,10 @@ HYLE_FORCE_INLINE Vec128<std::uint64_t, N / 2> MulOdd(Vec128<std::uint32_t, N> a
                                                      _mm_srli_epi64(b.raw, 32))};
 }
 
+namespace detail {
 template <std::size_t N>
-HYLE_FORCE_INLINE Vec128<std::uint32_t, N> MulHigh32(Vec128<std::uint32_t, N> a,
-                                                      Vec128<std::uint32_t, N> b) noexcept {
+HYLE_FORCE_INLINE Vec128<std::uint32_t, N> MulHigh32Native(Vec128<std::uint32_t, N> a,
+                                                            Vec128<std::uint32_t, N> b) noexcept {
   static_assert(N == 4, "MulHigh32 u32 requires a native SSE4 vector");
   const __m128i even = _mm_srli_epi64(_mm_mul_epu32(a.raw, b.raw), 32);
   const __m128i odd = _mm_srli_epi64(
@@ -1268,8 +1314,8 @@ HYLE_FORCE_INLINE Vec128<std::uint32_t, N> MulHigh32(Vec128<std::uint32_t, N> a,
   return Vec128<std::uint32_t, N>{_mm_or_si128(even, _mm_slli_epi64(odd, 32))};
 }
 template <std::size_t N>
-HYLE_FORCE_INLINE Vec128<std::int32_t, N> MulHigh32(Vec128<std::int32_t, N> a,
-                                                     Vec128<std::int32_t, N> b) noexcept {
+HYLE_FORCE_INLINE Vec128<std::int32_t, N> MulHigh32Native(Vec128<std::int32_t, N> a,
+                                                           Vec128<std::int32_t, N> b) noexcept {
   static_assert(N == 4, "MulHigh32 i32 requires a native SSE4 vector");
   const __m128i even = _mm_mul_epi32(a.raw, b.raw);
   const __m128i odd = _mm_mul_epi32(_mm_shuffle_epi32(a.raw, _MM_SHUFFLE(3, 3, 1, 1)),
@@ -1278,6 +1324,7 @@ HYLE_FORCE_INLINE Vec128<std::int32_t, N> MulHigh32(Vec128<std::int32_t, N> a,
       _mm_shuffle_ps(_mm_castsi128_ps(even), _mm_castsi128_ps(odd), _MM_SHUFFLE(3, 1, 3, 1)));
   return Vec128<std::int32_t, N>{_mm_shuffle_epi32(packed, _MM_SHUFFLE(3, 1, 2, 0))};
 }
+}  // namespace detail
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------
 // SSE4 packs the whole vector in a single 128-bit register (like NEON, unlike AVX2's two
@@ -2531,7 +2578,16 @@ HYLE_FORCE_INLINE Vec128<T, N> CopySign(Vec128<T, N> mag, Vec128<T, N> sign) noe
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> BroadcastSignBit(Vec128<T, N> v) noexcept {
   static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "BroadcastSignBit is signed-int only");
-  return ShiftRight<static_cast<int>(sizeof(T) * 8) - 1>(v);
+  Vec128<T, N> r;
+  if constexpr (sizeof(T) == 1)
+    r.raw = _mm_cmpgt_epi8(_mm_setzero_si128(), v.raw);
+  else if constexpr (sizeof(T) == 2)
+    r.raw = _mm_srai_epi16(v.raw, 15);
+  else if constexpr (sizeof(T) == 4)
+    r.raw = _mm_srai_epi32(v.raw, 31);
+  else
+    r.raw = _mm_cmpgt_epi64(_mm_setzero_si128(), v.raw);
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, N> IfNegativeThenElse(Vec128<T, N> v, Vec128<T, N> yes, Vec128<T, N> no) noexcept {

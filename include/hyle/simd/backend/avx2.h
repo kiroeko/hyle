@@ -897,15 +897,65 @@ HYLE_FORCE_INLINE Vec256<std::int32_t, N> ShiftRightUniform(Vec256<std::int32_t,
   return Vec256<std::int32_t, N>{_mm256_sra_epi32(a.raw, _mm_cvtsi32_si128(bits))};
 }
 
-// MulHigh: high 16 bits of the i16/u16 product (native mulhi).
+// MulHigh: byte lanes use two word products and keep their high bytes entirely in-register;
+// 16-bit lanes use native mulhi. Keeping the byte reconstruction here avoids vec.h's generic
+// InterleaveOdd path, which is intentionally correctness-first for non-dword AVX2 lanes.
+namespace detail {
 template <typename T, std::size_t N>
-HYLE_FORCE_INLINE Vec256<T, N> MulHigh(Vec256<T, N> a, Vec256<T, N> b) noexcept {
-  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh is 16-bit int only");
+HYLE_FORCE_INLINE Vec256<T, N> MulHighLow8Native(Vec256<T, N> a, Vec256<T, N> b,
+                                                  Vec256<T, N>& high) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 1, "MulHighLow8Native is 8-bit int only");
+  static_assert(N == 32, "MulHighLow8Native requires a native AVX2 vector");
+  const __m256i even_a =
+      std::is_signed_v<T> ? _mm256_srai_epi16(_mm256_slli_epi16(a.raw, 8), 8)
+                          : _mm256_and_si256(a.raw, _mm256_set1_epi16(0x00FF));
+  const __m256i even_b =
+      std::is_signed_v<T> ? _mm256_srai_epi16(_mm256_slli_epi16(b.raw, 8), 8)
+                          : _mm256_and_si256(b.raw, _mm256_set1_epi16(0x00FF));
+  const __m256i odd_a =
+      std::is_signed_v<T> ? _mm256_srai_epi16(a.raw, 8) : _mm256_srli_epi16(a.raw, 8);
+  const __m256i odd_b =
+      std::is_signed_v<T> ? _mm256_srai_epi16(b.raw, 8) : _mm256_srli_epi16(b.raw, 8);
+  const __m256i even = _mm256_mullo_epi16(even_a, even_b);
+  const __m256i odd = _mm256_mullo_epi16(odd_a, odd_b);
+  const __m256i low_bytes = _mm256_set1_epi16(0x00FF);
+  high.raw = _mm256_blendv_epi8(odd, _mm256_srli_epi16(even, 8), low_bytes);
+  return Vec256<T, N>{
+      _mm256_blendv_epi8(even, _mm256_slli_epi16(odd, 8), _mm256_xor_si256(
+          low_bytes, _mm256_set1_epi16(static_cast<short>(0xFFFF))))};
+}
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> MulHigh8Native(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 1, "MulHigh8Native is 8-bit int only");
+  static_assert(N == 32, "MulHigh8Native requires a native AVX2 vector");
+  const __m256i even_a =
+      std::is_signed_v<T> ? _mm256_srai_epi16(_mm256_slli_epi16(a.raw, 8), 8)
+                          : _mm256_and_si256(a.raw, _mm256_set1_epi16(0x00FF));
+  const __m256i even_b =
+      std::is_signed_v<T> ? _mm256_srai_epi16(_mm256_slli_epi16(b.raw, 8), 8)
+                          : _mm256_and_si256(b.raw, _mm256_set1_epi16(0x00FF));
+  const __m256i odd_a =
+      std::is_signed_v<T> ? _mm256_srai_epi16(a.raw, 8) : _mm256_srli_epi16(a.raw, 8);
+  const __m256i odd_b =
+      std::is_signed_v<T> ? _mm256_srai_epi16(b.raw, 8) : _mm256_srli_epi16(b.raw, 8);
+  const __m256i even = _mm256_mullo_epi16(even_a, even_b);
+  const __m256i odd = _mm256_mullo_epi16(odd_a, odd_b);
+  // Low output bytes come from even>>8, high output bytes are already odd[15:8].
+  // vpblendvb performs that interleave in one instruction (Highway's x86 shape).
+  return Vec256<T, N>{_mm256_blendv_epi8(
+      odd, _mm256_srli_epi16(even, 8), _mm256_set1_epi16(0x00FF))};
+}
+
+template <typename T, std::size_t N>
+HYLE_FORCE_INLINE Vec256<T, N> MulHigh16Native(Vec256<T, N> a, Vec256<T, N> b) noexcept {
+  static_assert(std::is_integral_v<T> && sizeof(T) == 2, "MulHigh16Native is 16-bit int only");
   Vec256<T, N> r;
   if constexpr (std::is_signed_v<T>) r.raw = _mm256_mulhi_epi16(a.raw, b.raw);
   else r.raw = _mm256_mulhi_epu16(a.raw, b.raw);
   return r;
 }
+}  // namespace detail
 
 // WidenMulPairwiseAdd(d32, a_i16, b_i16): _mm256_madd_epi16 multiplies i16 pairs and sums
 // adjacent pairs into i32 -- the fixed-point dot core. a/b are FULL i16 (2N lanes), result
@@ -1445,9 +1495,10 @@ HYLE_FORCE_INLINE Vec256<std::uint64_t, N / 2> MulOdd(Vec256<std::uint32_t, N> a
                                                         _mm256_srli_epi64(b.raw, 32))};
 }
 
+namespace detail {
 template <std::size_t N>
-HYLE_FORCE_INLINE Vec256<std::uint32_t, N> MulHigh32(Vec256<std::uint32_t, N> a,
-                                                      Vec256<std::uint32_t, N> b) noexcept {
+HYLE_FORCE_INLINE Vec256<std::uint32_t, N> MulHigh32Native(Vec256<std::uint32_t, N> a,
+                                                            Vec256<std::uint32_t, N> b) noexcept {
   static_assert(N == 8, "MulHigh32 u32 requires a native AVX2 vector");
   // Same shuffle-pick shape as the i32 version below (and Highway's u32 MulHigh): shufd picks the
   // odd dwords instead of srlq shifting, and shuffle_ps grabs the two products' high dwords in one
@@ -1461,8 +1512,8 @@ HYLE_FORCE_INLINE Vec256<std::uint32_t, N> MulHigh32(Vec256<std::uint32_t, N> a,
   return Vec256<std::uint32_t, N>{_mm256_shuffle_epi32(packed, _MM_SHUFFLE(3, 1, 2, 0))};
 }
 template <std::size_t N>
-HYLE_FORCE_INLINE Vec256<std::int32_t, N> MulHigh32(Vec256<std::int32_t, N> a,
-                                                     Vec256<std::int32_t, N> b) noexcept {
+HYLE_FORCE_INLINE Vec256<std::int32_t, N> MulHigh32Native(Vec256<std::int32_t, N> a,
+                                                           Vec256<std::int32_t, N> b) noexcept {
   static_assert(N == 8, "MulHigh32 i32 requires a native AVX2 vector");
   const __m256i even = _mm256_mul_epi32(a.raw, b.raw);
   const __m256i odd = _mm256_mul_epi32(_mm256_shuffle_epi32(a.raw, _MM_SHUFFLE(3, 3, 1, 1)),
@@ -1472,6 +1523,7 @@ HYLE_FORCE_INLINE Vec256<std::int32_t, N> MulHigh32(Vec256<std::int32_t, N> a,
                          _MM_SHUFFLE(3, 1, 3, 1)));
   return Vec256<std::int32_t, N>{_mm256_shuffle_epi32(packed, _MM_SHUFFLE(3, 1, 2, 0))};
 }
+}  // namespace detail
 
 // ---- swizzle (lane rearrangement) ---------------------------------------------------
 // AVX2's shuffle/unpack/blend operate PER 128-BIT BLOCK; only vpermd/vpermq/vperm2i128 cross
@@ -3837,7 +3889,17 @@ HYLE_FORCE_INLINE Vec256<T, N> CopySign(Vec256<T, N> mag, Vec256<T, N> sign) noe
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> BroadcastSignBit(Vec256<T, N> v) noexcept {
   static_assert(std::is_integral_v<T> && std::is_signed_v<T>, "BroadcastSignBit is signed-int only");
-  return ShiftRight<static_cast<int>(sizeof(T) * 8) - 1>(v);  // arithmetic shift replicates sign
+  Vec256<T, N> r;
+  if constexpr (sizeof(T) == 1)
+    r.raw = _mm256_cmpgt_epi8(_mm256_setzero_si256(), v.raw);
+  else if constexpr (sizeof(T) == 2)
+    r.raw = _mm256_srai_epi16(v.raw, 15);
+  else if constexpr (sizeof(T) == 4)
+    r.raw = _mm256_srai_epi32(v.raw, 31);
+  else
+    // AVX2 has no arithmetic qword shift, but sign broadcast is exactly zero > v.
+    r.raw = _mm256_cmpgt_epi64(_mm256_setzero_si256(), v.raw);
+  return r;
 }
 template <typename T, std::size_t N>
 HYLE_FORCE_INLINE Vec256<T, N> IfNegativeThenElse(Vec256<T, N> v, Vec256<T, N> yes, Vec256<T, N> no) noexcept {

@@ -1070,19 +1070,13 @@ HYLE_FORCE_INLINE VFromD<D> MulOddAdd(D d, V a_bf16, V b_bf16, VFromD<D> c) noex
 // unsigned / Fig 5.1 signed), the same algorithm libdivide and Highway use. HYLE owns the
 // algorithm at the GENERIC layer (composed from Set/Mul/Add/Sub/Shift/BitCast/ConcatEven)
 // rather than vendoring Highway's D-tag/Repartition idiom -- "borrow the algorithm
-// contract, not the library abstraction" (simd-design). Scope: 32-bit lanes (u32/i32);
-// 8/16/64-bit are a later extension (u64 needs 128-bit multiply HYLE lacks; 8/16 need a
-// different widen path). Precomputing params is relatively costly, so build a Divisor once
-// and reuse it across many Div() calls (the whole point vs a scalar `/`).
+// contract, not the library abstraction" (simd-design). Divisor's public contract remains
+// 32-bit lanes (u32/i32), although the register layer now has all-width MulHigh/MulHighLow.
+// Precomputing params is relatively costly, so build a Divisor once and reuse it across many
+// Div() calls (the whole point vs a scalar `/`).
 //
-// KEY IMPLEMENTATION NOTE (the ReorderDemote2To trap): 32-bit lanes have no native MulHigh
-// (HYLE's MulHigh is 16-bit only), so we widen u32->u64 (PromoteLowerTo/UpperTo), Mul, then
-// ShiftRight<32> to land the high half of each product in the LOW 32 bits of its u64 lane.
-// Recombining two u64 vectors back to one u32 vector via ReorderDemote2To is UNSAFE here:
-// its lane order is unspecified by contract (block-interleaved on wide x86). Instead we
-// BitCast each u64 vector to u32 -- on little-endian x86/NEON the wanted low-32 sits in the
-// EVEN u32 lane -- and use ConcatEven, whose order ([lo.even..., hi.even...]) IS contract-
-// guaranteed identical on every backend. So the recombine is provably backend-agnostic.
+// KEY IMPLEMENTATION NOTE: invariant division consumes the unified MulHigh operation. Fixed
+// backends use their optimized dword hook; scalable backends use native mulh.
 
 namespace detail {
 template <typename T>
@@ -1090,54 +1084,200 @@ HYLE_FORCE_INLINE constexpr bool DivIsPow2(T x) noexcept {  // x>0 && single bit
   return x > 0 && (x & (x - 1)) == 0;
 }
 
-// Fixed-width backends expose ConcatEven(hi, lo); scalable backends require the output tag.
-template <class D, class V>
-HYLE_FORCE_INLINE auto ConcatEvenForD(D d, V hi, V lo, int) noexcept
-    -> decltype(ConcatEven(d, hi, lo)) {
-  return ConcatEven(d, hi, lo);
-}
-template <class D, class V>
-HYLE_FORCE_INLINE auto ConcatEvenForD(D, V hi, V lo, long) noexcept
-    -> decltype(ConcatEven(hi, lo)) {
-  return ConcatEven(hi, lo);
+// One-lane/partial fallback. Full fixed vectors use the register algorithms below; this exists so
+// FixedTag<T, 1> and other logical partials preserve the same contract instead of tripping a
+// backend's full-register assertion.
+template <typename T>
+HYLE_FORCE_INLINE T MulHighLowScalar(T a, T b, T& high) noexcept {
+  static_assert(std::is_integral_v<T>, "MulHighLowScalar is integer-only");
+  using U = std::make_unsigned_t<T>;
+  U ua = static_cast<U>(a);
+  U ub = static_cast<U>(b);
+  U lo;
+  U hi;
+  if constexpr (sizeof(T) < sizeof(std::uint64_t)) {
+    using W = std::conditional_t<sizeof(T) == 1, std::uint16_t,
+                                  std::conditional_t<sizeof(T) == 2, std::uint32_t,
+                                                     std::uint64_t>>;
+    const W product = static_cast<W>(ua) * static_cast<W>(ub);
+    constexpr int kBits = static_cast<int>(sizeof(T) * 8);
+    lo = static_cast<U>(product);
+    hi = static_cast<U>(product >> kBits);
+  } else {
+    // Knuth 32-bit limbs. This is also the portable floor for compilers without __int128/_umul128.
+    constexpr std::uint64_t kMask32 = 0xFFFFFFFFull;
+    const std::uint64_t a0 = ua & kMask32;
+    const std::uint64_t a1 = ua >> 32;
+    const std::uint64_t b0 = ub & kMask32;
+    const std::uint64_t b1 = ub >> 32;
+    const std::uint64_t p00 = a0 * b0;
+    const std::uint64_t p01 = a0 * b1;
+    const std::uint64_t p10 = a1 * b0;
+    const std::uint64_t carry = (p00 >> 32) + (p01 & kMask32) + (p10 & kMask32);
+    lo = static_cast<U>((p00 & kMask32) | (carry << 32));
+    hi = static_cast<U>(a1 * b1 + (p01 >> 32) + (p10 >> 32) + (carry >> 32));
+  }
+  if constexpr (std::is_signed_v<T>) {
+    // Convert unsigned high-half to two's-complement signed high-half.
+    if (a < 0) hi -= ub;
+    if (b < 0) hi -= ua;
+  }
+  high = std::bit_cast<T>(hi);
+  return std::bit_cast<T>(lo);
 }
 
-// MulHigh(dividend, multiplier) for 32-bit lanes via the u32->u64 widen path. Unsigned
-// zero-extends (PromoteLowerTo on unsigned), signed sign-extends (on signed); ShiftRight<32>
-// is logical for u64 / arithmetic for i64, matching MULUH / MULSH. See the KEY NOTE above
-// for why the recombine is BitCast+ConcatEven rather than ReorderDemote2To.
-template <class V, typename WideT>
-HYLE_FORCE_INLINE V MulHighViaWiden(V dividend, V multiplier) noexcept {
+template <class V>
+HYLE_FORCE_INLINE V MulHighLowViaMemory(V a, V b, V& high) noexcept {
   using D = DFromV<V>;
-  using WideD = Simd<WideT, D::kMaxLanes / 2, 0>;
+  using T = TFromD<D>;
+  alignas(64) T aa[D::kMaxLanes] = {};
+  alignas(64) T bb[D::kMaxLanes] = {};
+  alignas(64) T lo[D::kMaxLanes] = {};
+  alignas(64) T hi[D::kMaxLanes] = {};
   const D d;
-  const WideD dw;
-  const auto lo = PromoteLowerTo(dw, dividend);  // low  N/2 lanes -> full wide
-  const auto hi = PromoteUpperTo(dw, dividend);  // high N/2 lanes -> full wide
-  const auto mlo = PromoteLowerTo(dw, multiplier);
-  const auto mhi = PromoteUpperTo(dw, multiplier);
-  const auto plo = ShiftRight<32>(Mul(lo, mlo));  // high 32 bits into low half of each lane
-  const auto phi = ShiftRight<32>(Mul(hi, mhi));
-  const auto plo32 = BitCast(d, plo);            // even u32 lane = low 32 bits (little-endian)
-  const auto phi32 = BitCast(d, phi);
-  return ConcatEvenForD(d, phi32, plo32, 0);     // [plo.even..., phi.even...] == per-lane MulHigh
+  Store(a, d, aa);
+  Store(b, d, bb);
+  for (std::size_t i = 0; i < D::kMaxLanes; ++i) lo[i] = MulHighLowScalar(aa[i], bb[i], hi[i]);
+  high = Load(d, hi);
+  return Load(d, lo);
+}
+
+// i/u8 and i/u32: each widened product contains [low, high] adjacent lane halves. One pair of
+// MulEven/MulOdd results therefore supplies BOTH outputs; do not recompute Mul for MulHighLow.
+template <class V>
+HYLE_FORCE_INLINE V MulHighLowViaWiden(V a, V b, V& high) noexcept {
+  using D = DFromV<V>;
+  const D d;
+  const V even = BitCast(d, MulEven(a, b));
+  const V odd = BitCast(d, MulOdd(a, b));
+  high = InterleaveOdd(even, odd);
+  return InterleaveEven(even, odd);
+}
+
+// Fixed-width u64 64x64->128 using four 32x32 products (the Highway/Knuth construction).
+// Returns low and writes high so MulHighLow shares the partial products.
+template <class V>
+HYLE_FORCE_INLINE V MulHighLow64Unsigned(V a, V b, V& high) noexcept {
+  using D64 = DFromV<V>;
+  const D64 d64;
+  const RepartitionToNarrow<D64> d32;
+  const V mask_low = Set(d64, std::uint64_t{0xFFFFFFFFull});
+  const auto a32 = BitCast(d32, a);
+  const auto b32 = BitCast(d32, b);
+  // Adjacent dword swap places every qword's high limb in an even dword, the input shape
+  // MulEven consumes. This is also friendlier to x86 execution ports than two qword shifts.
+  const auto ah32 = Shuffle2301(a32);
+  const auto bh32 = Shuffle2301(b32);
+
+  const V a0b0 = MulEven(a32, b32);
+  const V w3 = And(a0b0, mask_low);
+  const V t2 = Add(MulEven(ah32, b32), ShiftRight<32>(a0b0));
+  const V w2 = And(t2, mask_low);
+  const V w1 = ShiftRight<32>(t2);
+  const V t = Add(MulEven(a32, bh32), w2);
+  const V carry = ShiftRight<32>(t);
+  high = Add(Add(MulEven(ah32, bh32), w1), carry);
+  return Add(ShiftLeft<32>(t), w3);
+}
+
+// High-only form of the same Knuth construction. Keeping it separate is intentional: MSVC did
+// not reliably eliminate the low-half reconstruction through the output-reference fused helper,
+// leaving MulHigh(i64) about 20% behind Highway on AVX2.
+template <class V>
+HYLE_FORCE_INLINE V MulHigh64Unsigned(V a, V b) noexcept {
+  using D64 = DFromV<V>;
+  const D64 d64;
+  const RepartitionToNarrow<D64> d32;
+  const V mask_low = Set(d64, std::uint64_t{0xFFFFFFFFull});
+  const auto a32 = BitCast(d32, a);
+  const auto b32 = BitCast(d32, b);
+  const auto ah32 = Shuffle2301(a32);
+  const auto bh32 = Shuffle2301(b32);
+
+  const V a0b0 = MulEven(a32, b32);
+  const V t2 = Add(MulEven(ah32, b32), ShiftRight<32>(a0b0));
+  const V w2 = And(t2, mask_low);
+  const V w1 = ShiftRight<32>(t2);
+  const V t = Add(MulEven(a32, bh32), w2);
+  return Add(Add(MulEven(ah32, bh32), w1), ShiftRight<32>(t));
 }
 }  // namespace detail
 
-// Fixed backends may provide native dword high-multiply overloads. The generic fallback retains
-// the proven widen/recombine implementation for scalar and scalable backends.
+// Full-width integer product split. MulHighLow returns the LOW lane half and writes the HIGH lane
+// half. This is a target-bound register operation: vector values never cross the C ABI and no
+// per-op runtime dispatch pointer is introduced.
 template <class V>
-HYLE_FORCE_INLINE V MulHigh32(V dividend, V multiplier) noexcept {
+HYLE_FORCE_INLINE V MulHighLow(V a, V b, V& high) noexcept {
   using D = DFromV<V>;
   using T = TFromD<D>;
-  static_assert(std::is_same_v<T, std::uint32_t> || std::is_same_v<T, std::int32_t>,
-                "MulHigh32 supports 32-bit integer lanes");
-  if constexpr (std::is_unsigned_v<T>) {
-    return detail::MulHighViaWiden<V, std::uint64_t>(dividend, multiplier);
+  static_assert(std::is_integral_v<T>, "MulHighLow supports integer lanes");
+
+#if defined(HYLE_SIMD_TARGET_SVE) || defined(HYLE_SIMD_TARGET_RVV)
+  // Scalable ISAs have native low/high multiply instructions. There are no shared software
+  // partials to reuse, so issue the two architecturally distinct operations.
+  high = MulHigh(a, b);
+  return Mul(a, b);
+#else
+  // Fixed backends keep partial logical vectors in a physical full register, but their native
+  // widen helpers are full-width. Preserve exact partial semantics with the scalar fallback.
+  if constexpr (D::kMaxLanes * sizeof(T) != kNativeVectorBytes) {
+    return detail::MulHighLowViaMemory(a, b, high);
+  } else if constexpr (sizeof(T) == 1) {
+    return detail::MulHighLow8Native(a, b, high);
+  } else if constexpr (sizeof(T) == 4) {
+    return detail::MulHighLowViaWiden(a, b, high);
+  } else if constexpr (sizeof(T) == 2) {
+    high = detail::MulHigh16Native(a, b);
+    const RebindToUnsigned<D> du;
+    return BitCast(D{}, Mul(BitCast(du, a), BitCast(du, b)));
   } else {
-    return detail::MulHighViaWiden<V, std::int64_t>(dividend, multiplier);
+    const RebindToUnsigned<D> du;
+    auto high_u = Zero(du);
+    const auto low_u = detail::MulHighLow64Unsigned(BitCast(du, a), BitCast(du, b), high_u);
+    if constexpr (std::is_unsigned_v<T>) {
+      high = high_u;
+      return low_u;
+    } else {
+      // Signed high = unsigned high - (a<0 ? b : 0) - (b<0 ? a : 0).
+      const V high_s = BitCast(D{}, high_u);
+      high = Sub(Sub(high_s, And(BroadcastSignBit(a), b)),
+                 And(a, BroadcastSignBit(b)));
+      return BitCast(D{}, low_u);
+    }
+  }
+#endif
+}
+
+// Upper sizeof(T)*8 bits of each full-width lane product.
+#if !defined(HYLE_SIMD_TARGET_SVE) && !defined(HYLE_SIMD_TARGET_RVV)
+template <class V>
+HYLE_FORCE_INLINE V MulHigh(V a, V b) noexcept {
+  using D = DFromV<V>;
+  using T = TFromD<D>;
+  static_assert(std::is_integral_v<T>, "MulHigh supports integer lanes");
+  if constexpr (D::kMaxLanes * sizeof(T) != kNativeVectorBytes) {
+    V high;
+    (void)detail::MulHighLowViaMemory(a, b, high);
+    return high;
+  } else if constexpr (sizeof(T) == 1) {
+    return detail::MulHigh8Native(a, b);
+  } else if constexpr (sizeof(T) == 2) {
+    return detail::MulHigh16Native(a, b);
+  } else if constexpr (sizeof(T) == 4) {
+    return detail::MulHigh32Native(a, b);
+  } else {
+    const RebindToUnsigned<D> du;
+    const auto high_u = detail::MulHigh64Unsigned(BitCast(du, a), BitCast(du, b));
+    if constexpr (std::is_unsigned_v<T>) {
+      return high_u;
+    } else {
+      const V high_s = BitCast(D{}, high_u);
+      return Sub(Sub(high_s, And(BroadcastSignBit(a), b)),
+                 And(a, BroadcastSignBit(b)));
+    }
   }
 }
+#endif
 
 template <class V>
 HYLE_FORCE_INLINE V ShiftRightUniform(V v, int bits) noexcept {
@@ -1224,7 +1364,7 @@ HYLE_FORCE_INLINE V Div(V dividend, const Divisor<TFromD<DFromV<V>>>& dv) noexce
       return ShiftRightUniform(dividend, dv.pow2_shift_);  // logical shift
     }
     // Fig 4.1: t1 = MULUH(m,a); q = (t1 + ((a - t1) >> 1)) >> sh2.
-    const V t1 = MulHigh32(dividend, Set(d, dv.mul_shift_[0]));
+    const V t1 = MulHigh(dividend, Set(d, dv.mul_shift_[0]));
     const V sum = Add(t1, ShiftRight<1>(Sub(dividend, t1)));
     return ShiftRightUniform(sum, static_cast<int>(dv.mul_shift_[1]));
   } else {
@@ -1252,14 +1392,14 @@ HYLE_FORCE_INLINE V Div(V dividend, const Divisor<TFromD<DFromV<V>>>& dv) noexce
     const V mulh = detail::mul_high32_scalar_i32(dividend, dv.mul_shift_.data());
 #else
     const V multiplier = Set(d, dv.mul_shift_[0]);
-    const V mulh = MulHigh32(dividend, multiplier);
+    const V mulh = MulHigh(dividend, multiplier);
 #endif
     V q0 = Add(dividend, mulh);
     q0 = ShiftRightUniform(q0, static_cast<int>(dv.mul_shift_[1]));  // arithmetic shift
     q0 = Sub(q0, ShiftRight<kSignBit>(dividend));     // - XSIGN(a)
     // dsign is invariant and only ever 0/-1. A predictable scalar branch costs less than
     // broadcasting it plus two vector ops, and avoids extending another vector live range across
-    // MulHigh32 (which forced an extra ymm copy in MSVC's Mod loop).
+    // MulHigh (which forced an extra ymm copy in MSVC's Mod loop).
 #if defined(HYLE_SIMD_PREFER_VECTOR_DIVISOR_SIGN)
     const V dsign_vec = Set(d, dv.dsign_);
     return Sub(Xor(q0, dsign_vec), dsign_vec);
