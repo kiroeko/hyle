@@ -5,6 +5,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/fiber_stack.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -17,20 +18,22 @@
 
 namespace hyle::sched {
 
-// Default fiber stack size. 64 KiB suits the common (io-ish) fiber: deep enough
-// for ordinary call chains, small enough to keep millions affordable. sched-
-// design §1 calls for *tiered* sizes later (small io stacks / large compute
-// stacks); until that lands this is the one documented default, not a literal
-// sprinkled at call sites.
-inline constexpr std::size_t kDefaultStackSize = 64 * 1024;
+// Tiered fiber stack sizes (usable bytes; a guard page is added below).
+// Prefer these over raw literals so io / default / compute stay consistent.
+inline constexpr std::size_t kSmallStackSize = mem::kFiberStackSmall;
+inline constexpr std::size_t kDefaultStackSize = mem::kFiberStackDefault;
+inline constexpr std::size_t kLargeStackSize = mem::kFiberStackLarge;
 
 // Stackful fiber: a cooperative unit of execution with its own stack, able to
 // suspend (yield) at ANY call depth and be resumed later. Built on the vendored
 // fcontext assembly (see src/sched/fcontext.h). This is the scheduling unit the
 // rest of sched/ will manage; sched-01 only proves the switch works.
 //
+// Stack storage is mem::FiberStack (platform VM + permanent low guard page).
+// Stack grows down from top() toward base()/guard.
+//
 // Usage:
-//   Fiber f(alloc, 64*1024, &my_entry, arg);
+//   Fiber f(kDefaultStackSize, &my_entry, arg);
 //   f.resume();            // runs my_entry until it yields or returns
 //   ... Fiber::yield() ... // called from inside my_entry, returns to resume()
 //   f.resume();            // continues after the yield
@@ -40,16 +43,28 @@ inline constexpr std::size_t kDefaultStackSize = 64 * 1024;
 // time. Move-only ownership of the stack.
 //
 // API macro is on the methods, not the class: exporting the whole class would
-// drag the mem::Allocator member across the seam (MSVC C4251). Method-level
-// export keeps the layout client-side and clean (same pattern as Parker).
+// drag members across the seam (MSVC C4251). Method-level export keeps the layout
+// client-side (same pattern as Parker).
 class Fiber {
  public:
   using EntryFn = void (*)(void* arg);
 
-  // Allocates a `stack_size`-byte stack from `alloc` and prepares `entry` to run
-  // on it. Does not start running until the first resume().
-  HYLE_SCHED_API Fiber(mem::Allocator alloc, std::size_t stack_size,
-                       EntryFn entry, void* arg);
+  // Allocate a guarded stack of `stack_size` usable bytes and prepare `entry`.
+  // Does not start running until the first resume().
+  HYLE_SCHED_API Fiber(std::size_t stack_size, EntryFn entry, void* arg);
+
+  // Take ownership of a pre-built stack (e.g. from FiberStackPool::acquire).
+  // If `pool` is non-null, the stack is released back to that pool on destroy
+  // (pool must outlive the fiber).
+  HYLE_SCHED_API Fiber(mem::FiberStack stack, EntryFn entry, void* arg,
+                       mem::FiberStackPool* pool = nullptr);
+
+  // Source-compat constructor: `alloc` is IGNORED for the stack (kept so existing
+  // call sites that pass system_allocator() keep compiling). Stack is always a
+  // guarded FiberStack of `stack_size` usable bytes.
+  HYLE_SCHED_API Fiber(mem::Allocator alloc, std::size_t stack_size, EntryFn entry,
+                       void* arg);
+
   HYLE_SCHED_API ~Fiber();
 
   HYLE_SCHED_API Fiber(Fiber&& other) noexcept;
@@ -62,6 +77,14 @@ class Fiber {
 
   // True once the entry function has returned (fiber is spent).
   bool done() const noexcept { return finished_; }
+
+  // Usable stack size in bytes (page-rounded; excludes the guard page).
+  std::size_t stack_size() const noexcept {
+    return stack_.valid() ? stack_.size() : 0;
+  }
+  bool has_stack_guard() const noexcept {
+    return stack_.valid() && stack_.has_guard();
+  }
 
   // Suspend the currently-running fiber, returning control to its resumer.
   // Must be called from within a fiber's call stack (asserts otherwise).
@@ -152,11 +175,12 @@ class Fiber {
   // exposing transfer_t/fcontext_t in this public header.
   friend struct FiberLaunch;
 
+  void release_stack_() noexcept;
+
   void* fctx_ = nullptr;        // fcontext_t: fiber's suspended context
   void* return_ctx_ = nullptr;  // fcontext_t: resumer's context to jump back to
-  void* stack_ = nullptr;       // low address of the allocated stack
-  std::size_t stack_size_ = 0;
-  mem::Allocator alloc_;
+  mem::FiberStack stack_;       // guarded usable region (owns VM)
+  mem::FiberStackPool* pool_ = nullptr;  // optional recycle target (non-owning)
   EntryFn entry_ = nullptr;
   void* arg_ = nullptr;
   bool finished_ = false;

@@ -21,7 +21,8 @@
 
 | 里程碑 | 缺什么 | 就绪度 | 建议 |
 |---|---|---|---|
-| ~~platform-02b~~ | ~~virtual_memory~~ | ✅ **完成(2026-07-17)** | `vm_reserve/commit/decommit/release/protect` + RAII `VmRegion` + `reserve_guarded`；双平台 9/9。见 [platform-02b-virtual-memory.md](./platform-02b-virtual-memory.md)。**下游未接线**：fiber 栈 guard 仍待 mem/sched 消费本 API |
+| ~~platform-02b~~ | ~~virtual_memory~~ | ✅ **完成(2026-07-17)** | 见 [platform-02b-virtual-memory.md](./platform-02b-virtual-memory.md)。**下游 mem-08 ✅** |
+| ~~mem-08~~ | ~~fiber_stack guard+分级+池~~ | ✅ **完成(2026-07-17)** | 见 [mem-08-fiber-stack.md](./mem-08-fiber-stack.md)。`Fiber` 默认 guarded |
 | mem-06 | NUMA + 大页 + stats 下溢修复 | 🟢 就绪 | 优先级低(单机未压 NUMA);北极星未要求,**可缓** |
 | ~~simd-03 尾 NEON/AVX512 真机跑~~ | ~~缺硬件~~ | ✅ **已解(2026-07-09)** | NEON=mac 真机(simd-07 起);AVX512=simd-09 用 **Intel SDE 9.48.0**(WSL /root,`sde64 -future`)真跑——vec_test avx512 变体 173/173 全 op 对拍 + math/sort/bitpack tier 探针确认 dispatch 真选 kAvx512。四 ISA 全真跑,不再硬阻塞。**教训:"无硬件→理由化不验"是陷阱,SDE 是 AVX-512 无机时的真验闸门** |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
@@ -48,7 +49,7 @@
 > **compute-06 内部欠账(2026-07-08 登记)**:compute-06 按验收(三平台 vecadd+合批+co_await 全绿)已 ✅,但 kompute 25 点核对表"应做(抄/改)"21 项里做了 12、欠 9。**里程碑"明确不做"表(compute-06-vulkan-spirv.md:191)已接住多队列/运行时GLSL/Image/spirv-opt(B类消费者驱动,合理等);上面两行接住剩下无归属的**——① 是正确性硬伤(基础库义务,必做)、② 是性能收尾。避免这些散落在核对表/memory 里无排期。
 > **simd-09 线② 全 5 件完成(2026-07-09)**:通用原语 intdiv/cmp128/RNG **自实现泛型层**;重型件 vqsort/bit_pack **vendor 薄封装 Highway**(用户"vqsort 先做、bit_pack 也要,不能用 Highway 么"→修正了之前"无 flat 入口无法薄借"的过度结论:公开层吃裸指针不 include highway、借核 TU 内部用 Highway D-tag,与数学核借法同构;VQSortStatic/-DVQSORT_ONLY_STATIC 与 Pack<kBits> 都 header-only)。x86 全绿(MSVC+WSL GCC)。**借核过对拍闸门揪出 Highway vendor bug**:Pack16<11>/<13> 满位宽 round-trip 失败(三处独立探针坐实算法 bug),回退 HYLE bitstream codec 绕过,见 docs/debug/highway-pack16-roundtrip-hunt.md。剩:NEON 待 mac(#63)、K32V32 top-k 键值对留消费驱动。
 
-**A 类结论**:全部"就绪但低优先级",不阻塞北极星。simd-03 硬件硬阻塞已解。**platform-02b ✅(2026-07-17)**——host VM 原语已落地;fiber 栈 guard **接线**仍是下游(非 A 类占位)。剩余 A 类(mem-06/bench-02)按需。**compute-06 收尾②性能收尾 2026-07-08 全清**——核对表 25 项该做的(#25 计时/#11-12 barrier/#1 cache 落盘/#6 HOST_CACHED/#2-3 spec constants/tools+load_spirv/#14-16 record-replay)全完成=compute-06b/c/d,记录见 compute-06 里程碑状态行;仅剩消费者驱动的边角项(上表,无当前消费者按需)。(收尾① staging 亦已完成,均从本表移除。)
+**A 类结论**:全部"就绪但低优先级",不阻塞北极星。simd-03 硬件硬阻塞已解。**platform-02b + mem-08 ✅**——VM 原语与 fiber 栈 guard/分级/池已接线。剩余 A 类(mem-06/bench-02)按需。**compute-06 收尾②性能收尾 2026-07-08 全清**——核对表 25 项该做的(#25 计时/#11-12 barrier/#1 cache 落盘/#6 HOST_CACHED/#2-3 spec constants/tools+load_spirv/#14-16 record-replay)全完成=compute-06b/c/d,记录见 compute-06 里程碑状态行;仅剩消费者驱动的边角项(上表,无当前消费者按需)。(收尾① staging 亦已完成,均从本表移除。)
 
 ## 三、B 类:能力驱动的半成品机制(前置就绪度是排期关键)
 

@@ -45,11 +45,8 @@ namespace {
 // nullptr when no fiber is executing (we're on the resumer's stack).
 thread_local Fiber* t_current = nullptr;
 
-// Stacks are cache-line aligned (single source: HYLE_CACHE_LINE_SIZE, which also
-// comfortably satisfies the 16-byte x64 stack ABI). A stack smaller than one OS
-// page can't hold a guard page later and is almost certainly a caller mistake.
-constexpr std::size_t kStackAlign = HYLE_CACHE_LINE_SIZE;
-constexpr std::size_t kMinStackSize = 4096;  // one typical OS page
+// Usable stack must be at least one OS page (guard is extra below).
+constexpr std::size_t kMinStackSize = 4096;
 
 }  // namespace
 
@@ -71,60 +68,78 @@ struct FiberLaunch {
   }
 };
 
-Fiber::Fiber(mem::Allocator alloc, std::size_t stack_size, EntryFn entry,
+void Fiber::release_stack_() noexcept {
+  if (!stack_.valid()) return;
+  if (pool_ != nullptr) {
+    pool_->release(std::move(stack_));
+  } else {
+    stack_.reset();
+  }
+  pool_ = nullptr;
+}
+
+Fiber::Fiber(std::size_t stack_size, EntryFn entry, void* arg)
+    : Fiber(mem::FiberStack::allocate(stack_size), entry, arg, nullptr) {}
+
+Fiber::Fiber(mem::Allocator /*alloc*/, std::size_t stack_size, EntryFn entry,
              void* arg)
-    : stack_size_(stack_size), alloc_(alloc), entry_(entry), arg_(arg) {
-  HYLE_FATAL_ASSERT(alloc_.valid());
+    : Fiber(mem::FiberStack::allocate(stack_size), entry, arg, nullptr) {}
+
+Fiber::Fiber(mem::FiberStack stack, EntryFn entry, void* arg,
+             mem::FiberStackPool* pool)
+    : stack_(std::move(stack)), pool_(pool), entry_(entry), arg_(arg) {
   HYLE_FATAL_ASSERT(entry_ != nullptr);
-  HYLE_FATAL_ASSERT(stack_size_ >= kMinStackSize);
-  stack_ = alloc_.allocate(stack_size_, kStackAlign);
-  HYLE_FATAL_ASSERT(stack_ != nullptr);
+  HYLE_FATAL_ASSERT(stack_.valid());
+  HYLE_FATAL_ASSERT(stack_.has_guard());
+  HYLE_FATAL_ASSERT(stack_.size() >= kMinStackSize);
   // Stack grows down: make_fcontext wants the TOP (highest address).
-  void* top = static_cast<char*>(stack_) + stack_size_;
-  fctx_ = make_fcontext(top, stack_size_, &FiberLaunch::trampoline);
+  fctx_ = make_fcontext(stack_.top(), stack_.size(), &FiberLaunch::trampoline);
   tsan_fiber_ = HYLE_TSAN_CREATE_FIBER();  // null in non-TSan builds
 }
 
 Fiber::~Fiber() {
-  if (stack_ != nullptr) {
-    alloc_.deallocate(stack_, stack_size_, kStackAlign);
-  }
+  release_stack_();
   HYLE_TSAN_DESTROY_FIBER(tsan_fiber_);
 }
 
 Fiber::Fiber(Fiber&& o) noexcept
-    : fctx_(o.fctx_),
+    : fctx_(std::exchange(o.fctx_, nullptr)),
       return_ctx_(o.return_ctx_),
-      stack_(o.stack_),
-      stack_size_(o.stack_size_),
-      alloc_(o.alloc_),
+      stack_(std::move(o.stack_)),
+      pool_(std::exchange(o.pool_, nullptr)),
       entry_(o.entry_),
       arg_(o.arg_),
       finished_(o.finished_),
-      tsan_fiber_(o.tsan_fiber_) {
-  o.stack_ = nullptr;
-  o.fctx_ = nullptr;
-  o.tsan_fiber_ = nullptr;  // moved-from must not destroy the handle
+      wait_requested_(o.wait_requested_),
+      owner_worker_(o.owner_worker_),
+      on_finish_(o.on_finish_),
+      on_finish_ctx_(o.on_finish_ctx_),
+      cancel_flag_(o.cancel_flag_),
+      name_(o.name_),
+      tsan_fiber_(std::exchange(o.tsan_fiber_, nullptr)) {
+  // wake_state_ starts fresh on the moved-to object (rendezvous is per-episode).
 }
 
 Fiber& Fiber::operator=(Fiber&& o) noexcept {
   if (this != &o) {
     // Overwriting a live stack would leak it; a half-run fiber can't be dropped
     // mid-flight safely -> fail-fast (mirrors Thread's joinable assert).
-    HYLE_FATAL_ASSERT(stack_ == nullptr);
+    HYLE_FATAL_ASSERT(!stack_.valid());
     HYLE_TSAN_DESTROY_FIBER(tsan_fiber_);  // null on a moved-from target; safe
-    fctx_ = o.fctx_;
+    fctx_ = std::exchange(o.fctx_, nullptr);
     return_ctx_ = o.return_ctx_;
-    stack_ = o.stack_;
-    stack_size_ = o.stack_size_;
-    alloc_ = o.alloc_;
+    stack_ = std::move(o.stack_);
+    pool_ = std::exchange(o.pool_, nullptr);
     entry_ = o.entry_;
     arg_ = o.arg_;
     finished_ = o.finished_;
-    tsan_fiber_ = o.tsan_fiber_;
-    o.stack_ = nullptr;
-    o.fctx_ = nullptr;
-    o.tsan_fiber_ = nullptr;
+    wait_requested_ = o.wait_requested_;
+    owner_worker_ = o.owner_worker_;
+    on_finish_ = o.on_finish_;
+    on_finish_ctx_ = o.on_finish_ctx_;
+    cancel_flag_ = o.cancel_flag_;
+    name_ = o.name_;
+    tsan_fiber_ = std::exchange(o.tsan_fiber_, nullptr);
   }
   return *this;
 }

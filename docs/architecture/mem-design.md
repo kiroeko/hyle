@@ -25,7 +25,7 @@
 | 默认分配器 `SystemAllocator` | ✅ **自造(编译期内联)** | 无状态、内联 mimalloc、零接缝税(实测 97.1% 平裸 mi);容器默认参,注入是 opt-in |
 | arena / region 分配器 | 🔧 继承 MemoryArena + 修 64 槽上限 | 无锁块池是真资产 |
 | object pool / stack allocator | 🔧 **推倒重写**（bug 3/4）| clay 实现有 UB |
-| fiber 栈池 | 🔧 **自造**(池化部分✅) | sched/ 的 fiber 栈。**池化已落地**(`MemoryArena::as_allocator` 复用定长块,fork-join +13% 实测);**guard page + 分级栈大小仍待** |
+| fiber 栈池 | ✅ **自造**(mem-08) | sched/ 的 fiber 栈。`mem::FiberStack` = `VmRegion::reserve_guarded`（低 1 页永久 guard）+ 分级 `Small/Default/Large` + `FiberStackPool` 回收；`Fiber` 默认路径全走 guarded 栈（旧 `Allocator` 参仅源码兼容、不用于栈） |
 | pinned memory | 🔧 **自造**（封 cudaHostAlloc）| compute/ GPU DMA 用 |
 | NUMA / 大页 / cache-line 对齐 | 🔧 自造（部分借 mimalloc 能力）| 极致内存焦点 |
 
@@ -40,7 +40,7 @@ mem/
 ├─ arena.h         Arena bump 分配器 + MemoryArena 无锁块池(分片,片数随核数)
 ├─ pool.h          定长池(推倒重写,修 alloc/free 不匹配)
 ├─ stack.h         StackAllocator LIFO(推倒重写,修拷贝 bug)
-├─ fiber_stack.h   fiber 栈池(定长 + guard page + 池化)→ 给 sched/
+├─ fiber_stack.h   fiber 栈(定长 usable + guard + 分级 + FiberStackPool)→ sched::Fiber
 ├─ numa.h          NUMA 就近放置 hint(OS 分配层:mbind/numa_alloc / VirtualAllocExNuma)
 ├─ hugepage.h      大页(madvise(MADV_HUGEPAGE) / MEM_LARGE_PAGES / mimalloc THP）
 └─ stats.h         分配统计 + 泄漏追踪(修 32/64 下溢)
@@ -111,10 +111,10 @@ device/pinned/unified 内存归 compute/ 的 stream-bound buffer,**不经 mem/ �
 1. `Allocator` 注入接缝改造:拆单函数→3 指针 `{alloc,free,realloc}`(消 Win64 压栈+派发分支)+ **修 alignment 丢弃** + 默认编译期 `SystemAllocator`(内联,注入降 opt-in)。
 2. system allocator 换 mimalloc backing（封在 vtable 后，不外露 mimalloc 类型——同 ggml 解耦）。
 3. arena 继承 + 修 64 槽上限；pool/stack 推倒重写修 UB。
-4. fiber 栈池（给 sched）、pinned（给 compute）。
-5. NUMA/大页/cache-line 对齐。
-6. stats 修下溢 + 泄漏追踪（debug 构建）。
-7. 单测：对齐保证、并发分配 TSan、泄漏检测、NUMA 就近性验证、benchmark 对标裸 mimalloc（专用分配器应更快）。
+4. fiber 栈（给 sched）✅ mem-08：guard + 分级 + 池；pinned 归 compute/。
+5. NUMA/大页/cache-line 对齐（mem-06 占位；cache-line 对齐已部分落地）。
+6. stats 修下溢 + 泄漏追踪（debug 构建，mem-06）。
+7. 单测：对齐保证、并发分配 TSan、泄漏检测、NUMA 就近性验证、benchmark 对标裸 mimalloc（专用分配器应更快）；fiber_stack 布局/池/Fiber 接线。
 
 ## 决策（已定）
 
