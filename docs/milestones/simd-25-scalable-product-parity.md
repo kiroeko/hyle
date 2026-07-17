@@ -79,9 +79,9 @@ Runtime / exact / native + QEMU + real-hardware parity
 不是声称每个冷门函数都有 scalable body。
 
 当前证据：两套脚本同时链接 CPU probe、真实 `Runtime`、baseline dispatcher、scalar 与 scalable
-variant 表，不再只直调内部 kernel。SVE 为 **24 tests × VL 128/256/384/512** 全绿，RVV 为
-**21 tests × VLEN 128/256/512/1024** 全绿；公开 `exp/log/hypot` batch API、tail 与
-`runtime().math.isa` 均在门内验证。exact SVE/RVV dispatcher 的未定义符号检查也确认不引用
+variant 表，不再只直调内部 kernel。SVE 为 **27 tests × VL 128/256/384/512** 全绿，RVV 为
+**24 tests × VLEN 128/256/512/1024** 全绿；公开 math/dtype batch API、tail 与对应 module tier
+均在门内验证。exact SVE/RVV dispatcher 的未定义符号检查也确认不引用
 `runtime()`、`best_isa()` 或 `cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。
 
 ### 当前产品层矩阵
@@ -90,7 +90,7 @@ variant 表，不再只直调内部 kernel。SVE 为 **24 tests × VL 128/256/38
 |---|---|---|---|
 | ops/random/scan/search | 真实 scalable variant | 真实 scalable variant | 真机性能证据 |
 | math 主 HYLE/Highway op | 真实 SVE 产品 TU | 真实 RVV 产品 TU | optional per-op fallback 与真机性能 |
-| dtype | NEON | scalar | 首要实现项，先闭 bf16/f16 |
+| dtype f16/bf16↔f32 | 真实 SVE 产品 TU | 真实 RVV 产品 TU | 真机性能；fp8 保持 scalar/可选硬件 |
 | sort/select | NEON | scalar | 独立算法战役，不能只改元数据 |
 | bitpack | NEON | scalar | 先固定跨线程/VL 稳定格式合同 |
 
@@ -120,8 +120,13 @@ tail、跨页 canary、跨线程不同 VL 的 pack/unpack round-trip。不能把
 
 ### dtype
 
-依次实现 bf16↔f32、f16↔f32、经收益裁决的 fp8。基础位运算路径和 optional hardware path 分开；
-接口保持 pointer/count/POD，close-01 可直接包 C ABI。RVV 当前 scalar fallback 优先消除。
+bf16↔f32、f16↔f32 已由共享 D-tag body 分别编成 SVE/RVV 产品 TU，并接入 Runtime/exact/public batch
+API。bf16 四条路径 bit-exact；f16 解码全向量化，f32→f16 的 normal finite chunk 向量化，特殊值与
+subnormal chunk 回到现有标量 oracle。验收穷举全部 65,536 个 f16/bf16 存储编码，并对 16,387 个
+全位域 f32 样本验证编码结果。接口保持 pointer/count/POD，close-01 可直接包 C ABI。
+
+fp8 继续保持 scalar 或 x86 AVX10.2 optional hardware path：目前没有可假定存在且已证收益的 base
+SVE/RVV fp8 convert，不因 dtype module tier 已升级就把它伪装成 scalable。
 
 ## 阶段 3：math（主产品 tier 已完成，per-op/性能验收继续）
 

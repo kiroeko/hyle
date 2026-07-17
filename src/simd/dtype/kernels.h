@@ -22,6 +22,19 @@ void f32_to_f16_neon(const float* src, float16_t* dst, std::size_t n) noexcept;
 void bf16_to_f32_neon(const bfloat16_t* src, float* dst, std::size_t n) noexcept;
 void f32_to_bf16_neon(const float* src, bfloat16_t* dst, std::size_t n) noexcept;
 
+#define HYLE_DECLARE_SCALABLE_DTYPE(suffix)                                      \
+  void f16_to_f32_##suffix(const float16_t*, float*, std::size_t) noexcept;      \
+  void f32_to_f16_##suffix(const float*, float16_t*, std::size_t) noexcept;      \
+  void bf16_to_f32_##suffix(const bfloat16_t*, float*, std::size_t) noexcept;    \
+  void f32_to_bf16_##suffix(const float*, bfloat16_t*, std::size_t) noexcept;
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+HYLE_DECLARE_SCALABLE_DTYPE(sve)
+#endif
+#if defined(HYLE_SIMD_HAS_RVV_VARIANT)
+HYLE_DECLARE_SCALABLE_DTYPE(rvv)
+#endif
+#undef HYLE_DECLARE_SCALABLE_DTYPE
+
 // bf16 batch (scalar reference + AVX2 8-wide integer)
 void bf16_to_f32_scalar(const bfloat16_t* src, float* dst, std::size_t n) noexcept;
 void f32_to_bf16_scalar(const float* src, bfloat16_t* dst, std::size_t n) noexcept;

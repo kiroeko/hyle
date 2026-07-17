@@ -67,14 +67,58 @@ bool use_avx512bf16() noexcept {
 }
 #endif
 
+#if defined(HYLE_ARCH_ARM64)
+bool use_sve_dtype() noexcept {
+#if defined(HYLE_SIMD_EXACT_TARGET_SVE)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  return runtime().dtype.isa == Isa::kSve;
+#else
+  return false;
+#endif
+}
+#elif defined(HYLE_ARCH_RISCV64)
+bool use_rvv_dtype() noexcept {
+#if defined(HYLE_SIMD_EXACT_TARGET_RVV)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  return runtime().dtype.isa == Isa::kRvv;
+#else
+  return false;
+#endif
+}
+#endif
+
 }  // namespace
+
+#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#define HYLE_DTYPE_CALL(name, ...)                                                \
+  do {                                                                            \
+    if (use_sve_dtype()) detail::name##_sve(__VA_ARGS__);                        \
+    else detail::name##_neon(__VA_ARGS__);                                       \
+  } while (false)
+#elif defined(HYLE_ARCH_ARM64)
+#define HYLE_DTYPE_CALL(name, ...) detail::name##_neon(__VA_ARGS__)
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#define HYLE_DTYPE_CALL(name, ...)                                                \
+  do {                                                                            \
+    if (use_rvv_dtype()) detail::name##_rvv(__VA_ARGS__);                        \
+    else detail::name##_scalar(__VA_ARGS__);                                     \
+  } while (false)
+#elif defined(HYLE_ARCH_RISCV64)
+#define HYLE_DTYPE_CALL(name, ...) detail::name##_scalar(__VA_ARGS__)
+#endif
 
 void f16_to_f32_batch(const float16_t* src, float* dst, std::size_t n) noexcept {
 #if defined(HYLE_ARCH_X64)
   static const bool hw = use_f16c();
   if (hw) { detail::f16_to_f32_f16c(src, dst, n); return; }
-#elif defined(HYLE_ARCH_ARM64)
-  detail::f16_to_f32_neon(src, dst, n); return;  // native ARMv8.2 vcvt (always present)
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_DTYPE_CALL(f16_to_f32, src, dst, n); return;
 #endif
   detail::f16_to_f32_scalar(src, dst, n);
 }
@@ -83,8 +127,8 @@ void f32_to_f16_batch(const float* src, float16_t* dst, std::size_t n) noexcept 
 #if defined(HYLE_ARCH_X64)
   static const bool hw = use_f16c();
   if (hw) { detail::f32_to_f16_f16c(src, dst, n); return; }
-#elif defined(HYLE_ARCH_ARM64)
-  detail::f32_to_f16_neon(src, dst, n); return;
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_DTYPE_CALL(f32_to_f16, src, dst, n); return;
 #endif
   detail::f32_to_f16_scalar(src, dst, n);
 }
@@ -95,8 +139,8 @@ void bf16_to_f32_batch(const bfloat16_t* src, float* dst, std::size_t n) noexcep
 #if defined(HYLE_ARCH_X64)
   static const bool hw = use_avx2();
   if (hw) { detail::bf16_to_f32_avx2(src, dst, n); return; }
-#elif defined(HYLE_ARCH_ARM64)
-  detail::bf16_to_f32_neon(src, dst, n); return;  // NEON integer, bit-identical to scalar
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_DTYPE_CALL(bf16_to_f32, src, dst, n); return;
 #endif
   detail::bf16_to_f32_scalar(src, dst, n);
 }
@@ -106,8 +150,8 @@ void f32_to_bf16_batch(const float* src, bfloat16_t* dst, std::size_t n) noexcep
   if (bf16hw) { detail::f32_to_bf16_avx512bf16(src, dst, n); return; }  // VCVTNEPS2BF16
   static const bool hw = use_avx2();
   if (hw) { detail::f32_to_bf16_avx2(src, dst, n); return; }
-#elif defined(HYLE_ARCH_ARM64)
-  detail::f32_to_bf16_neon(src, dst, n); return;  // NEON integer RNE, bit-identical
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_DTYPE_CALL(f32_to_bf16, src, dst, n); return;
 #endif
   detail::f32_to_bf16_scalar(src, dst, n);
 }
@@ -159,5 +203,9 @@ void f16_to_f8e5m2_batch(const float16_t* src, float8_e5m2_t* dst, std::size_t n
 #endif
   detail::f16_to_f8e5m2_scalar(src, dst, n);
 }
+
+#if defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+#undef HYLE_DTYPE_CALL
+#endif
 
 }  // namespace hyle::simd

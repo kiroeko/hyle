@@ -45,12 +45,16 @@ run_tier() {
   $CXX $FLAGS -c "$REPO/tests/simd/rvv_test.cc" -o "$OUT/rvv_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_compile.cc" -o "$OUT/scalable_math_compile_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test_${name}.o"
+  $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalable_dtype_product_test_${name}.o"
   $CXX $FLAGS -c "$REPO/src/simd/math/transcendental_highway_scalable.cc" -o "$OUT/math_rvv_${name}.o"
+  $CXX $FLAGS -c "$REPO/src/simd/dtype/cvt_scalable.cc" -o "$OUT/dtype_rvv_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/math_dispatch.cc" -o "$OUT/math_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_scalar.cc" -o "$OUT/math_scalar_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/dtype_dispatch.cc" -o "$OUT/dtype_dispatch_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_scalar.cc" -o "$OUT/dtype_scalar_${name}.o"
   for module in ops random search; do
     printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
       $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar_${name}.o"
@@ -59,7 +63,9 @@ run_tier() {
   done
   $CXX $FLAGS "$OUT/rvv_test_${name}.o" "$OUT/scalable_math_compile_${name}.o" \
     "$OUT/scalable_math_product_test_${name}.o" "$OUT/scalable_math_dispatch_test_${name}.o" \
+    "$OUT/scalable_dtype_product_test_${name}.o" \
     "$OUT/math_rvv_${name}.o" "$OUT/math_scalar_${name}.o" "$OUT/math_dispatch_${name}.o" \
+    "$OUT/dtype_rvv_${name}.o" "$OUT/dtype_scalar_${name}.o" "$OUT/dtype_dispatch_${name}.o" \
     "$OUT/cpu_${name}.o" "$OUT/runtime_${name}.o" \
     "$OUT/ops_scalar_${name}.o" "$OUT/ops_rvv_${name}.o" \
     "$OUT/random_scalar_${name}.o" "$OUT/random_rvv_${name}.o" \
