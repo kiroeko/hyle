@@ -71,14 +71,7 @@ const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
 #elif defined(HYLE_ARCH_ARM64)
     case Isa::kNeon: return &kNeonRuntime;
 #if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-    case Isa::kSve: {
-      static const Runtime table = [] {
-        Runtime r = kSveRuntime;
-        r.sort.isa = Isa::kNeon;
-        return r;
-      }();
-      return &table;
-    }
+    case Isa::kSve: return &kSveRuntime;
 #endif
 #elif defined(HYLE_ARCH_RISCV64)
 #if defined(HYLE_SIMD_HAS_RVV_VARIANT)
@@ -130,12 +123,12 @@ Runtime selected_runtime() noexcept {
 #endif
 
 #if defined(HYLE_ARCH_ARM64)
-  // Math, common dtype conversions and bitpack have length-agnostic SVE product TUs. Sort remains
-  // NEON. Bitpack freezes a 128-bit logical block so its bytes do not depend on the thread's VL.
+  // Math, common dtype conversions, bitpack and sort have SVE product TUs. Bitpack freezes a
+  // 128-bit logical block so its bytes do not depend on the thread's VL.
   if (result.isa == Isa::kSve) {
     result.dtype.isa = Isa::kSve;
     result.math.isa = Isa::kSve;
-    result.sort.isa = Isa::kNeon;
+    result.sort.isa = Isa::kSve;
     result.bitpack.isa = Isa::kSve;
   }
 #elif defined(HYLE_ARCH_RISCV64)

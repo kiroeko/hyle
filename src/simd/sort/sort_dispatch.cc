@@ -94,6 +94,23 @@ bool try_radix_sort(T* keys, std::size_t n, SortOrder order) noexcept {
     if (hw2) { detail::select_##tag##_avx2(keys, n, k, asc); return; } \
     detail::select_##tag##_scalar(keys, n, k, asc); \
   } while (0)
+#elif defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#if defined(HYLE_SIMD_EXACT_TARGET_SVE)
+#define HYLE_SORT_USE_SVE() true
+#elif defined(HYLE_SIMD_EXACT)
+#define HYLE_SORT_USE_SVE() false
+#else
+#define HYLE_SORT_USE_SVE() (runtime().sort.isa == Isa::kSve)
+#endif
+#define HYLE_SORT_TIER_SORT(tag) do { if (HYLE_SORT_USE_SVE()) {                    \
+  detail::sort_##tag##_sve(keys, n, asc); return; }                                 \
+  detail::sort_##tag##_neon(keys, n, asc); } while (0)
+#define HYLE_SORT_TIER_PSORT(tag) do { if (HYLE_SORT_USE_SVE()) {                   \
+  detail::psort_##tag##_sve(keys, n, k, asc); return; }                             \
+  detail::psort_##tag##_neon(keys, n, k, asc); } while (0)
+#define HYLE_SORT_TIER_SELECT(tag) do { if (HYLE_SORT_USE_SVE()) {                  \
+  detail::select_##tag##_sve(keys, n, k, asc); return; }                            \
+  detail::select_##tag##_neon(keys, n, k, asc); } while (0)
 #elif defined(HYLE_ARCH_ARM64)
 #define HYLE_SORT_TIER_SORT(tag)   detail::sort_##tag##_neon(keys, n, asc)
 #define HYLE_SORT_TIER_PSORT(tag)  detail::psort_##tag##_neon(keys, n, k, asc)
@@ -175,6 +192,16 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
     if (hw2) { detail::select_##kvtag##_avx2(h, n, k, asc); return; } \
     detail::select_##kvtag##_scalar(h, n, k, asc); \
   } while (0)
+#elif defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#define HYLE_SORT_KV_LADDER_SORT(kvtag, h) do { if (HYLE_SORT_USE_SVE()) {          \
+  detail::sort_##kvtag##_sve(h, n, asc); return; }                                  \
+  detail::sort_##kvtag##_neon(h, n, asc); } while (0)
+#define HYLE_SORT_KV_LADDER_PSORT(kvtag, h) do { if (HYLE_SORT_USE_SVE()) {         \
+  detail::psort_##kvtag##_sve(h, n, k, asc); return; }                              \
+  detail::psort_##kvtag##_neon(h, n, k, asc); } while (0)
+#define HYLE_SORT_KV_LADDER_SELECT(kvtag, h) do { if (HYLE_SORT_USE_SVE()) {        \
+  detail::select_##kvtag##_sve(h, n, k, asc); return; }                             \
+  detail::select_##kvtag##_neon(h, n, k, asc); } while (0)
 #elif defined(HYLE_ARCH_ARM64)
 #define HYLE_SORT_KV_LADDER_SORT(kvtag, h)   detail::sort_##kvtag##_neon(h, n, asc)
 #define HYLE_SORT_KV_LADDER_PSORT(kvtag, h)  detail::psort_##kvtag##_neon(h, n, k, asc)
@@ -228,6 +255,9 @@ HYLE_SORT_KV_DISPATCH(KeyValue64, KV64Bits, kv64)
 #undef HYLE_SORT_KV_LADDER_SELECT
 #if defined(HYLE_SORT_USE_RVV)
 #undef HYLE_SORT_USE_RVV
+#endif
+#if defined(HYLE_SORT_USE_SVE)
+#undef HYLE_SORT_USE_SVE
 #endif
 
 }  // namespace hyle::simd

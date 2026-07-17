@@ -167,6 +167,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
                   simd/scalable_math_compile.cc simd/scalable_math_product_test.cc
                   simd/scalable_math_dispatch_test.cc simd/scalable_dtype_product_test.cc
                   simd/scalable_bitpack_product_test.cc simd/fixed128_bitpack_reference.cc
+                  simd/scalable_sort_product_test.cc
                   DEFINES HYLE_SIMD_TARGET_SVE HYLE_SIMD_HAS_SVE_VARIANT=1
                   OPTIONS -march=armv8-a+sve)
   endif()

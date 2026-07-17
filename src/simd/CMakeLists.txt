@@ -60,7 +60,8 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     list(APPEND _simd_arch_sources
       bitpack/bitpack_hyle_scalable.cc
       dtype/cvt_scalable.cc
-      math/transcendental_highway_scalable.cc)
+      math/transcendental_highway_scalable.cc
+      sort/vqsort_hyle_sve.cc)
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
   set(HYLE_SIMD_RISCV64 TRUE)
@@ -163,6 +164,7 @@ elseif(HYLE_SIMD_ARM64)
     hyle_set_isa(math/transcendental_highway_scalable.cc SVE)
     hyle_set_isa(dtype/cvt_scalable.cc SVE)
     hyle_set_isa(bitpack/bitpack_hyle_scalable.cc SVE)
+    hyle_set_isa(sort/vqsort_hyle_sve.cc SVE)
   endif()
 elseif(HYLE_SIMD_RISCV64)
   hyle_set_isa(math/transcendental_highway_scalable.cc RVV)

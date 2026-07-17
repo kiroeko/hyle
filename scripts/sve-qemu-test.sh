@@ -1,6 +1,6 @@
 #!/bin/bash
 # sve-qemu-test.sh -- cross-compile the SVE backend gtest (tests/simd/sve_test.cc) for aarch64 and
-# run it under qemu-aarch64 at multiple SVE vector lengths (128/256/384/512-bit). This is the "one
+# run it under qemu-aarch64 at multiple SVE vector lengths (128/256/384/512/2048-bit). This is the "one
 # binary, every width" scalable proof: SVE's vector length is a runtime property, so the SAME
 # binary must pass at every VL. There is no SVE dev machine in this project, so qemu's -cpu
 # max,sve<bits>=on is the correctness gate (analogous to Intel SDE for AVX-512).
@@ -43,10 +43,12 @@ $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_compile.cc" -o "$OUT/scalable_mat
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test.o"
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalable_dtype_product_test.o"
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_bitpack_product_test.cc" -o "$OUT/scalable_bitpack_product_test.o"
+$CXX $FLAGS -c "$REPO/tests/simd/scalable_sort_product_test.cc" -o "$OUT/scalable_sort_product_test.o"
 $CXX $COMMON_FLAGS -c "$REPO/tests/simd/fixed128_bitpack_reference.cc" -o "$OUT/fixed128_bitpack_reference.o"
 $CXX $FLAGS -c "$REPO/src/simd/math/transcendental_highway_scalable.cc" -o "$OUT/math_sve.o"
 $CXX $FLAGS -c "$REPO/src/simd/dtype/cvt_scalable.cc" -o "$OUT/dtype_sve.o"
 $CXX $FLAGS -c "$REPO/src/simd/bitpack/bitpack_hyle_scalable.cc" -o "$OUT/bitpack_sve.o"
+$CXX $FLAGS -c "$REPO/src/simd/sort/vqsort_hyle_sve.cc" -o "$OUT/sort_sve.o"
 $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime.o"
@@ -60,6 +62,11 @@ $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_neon.cc" -o "$OUT/dtype_neon.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_dispatch.cc" -o "$OUT/bitpack_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_scalar.cc" -o "$OUT/bitpack_scalar.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_hyle_neon.cc" -o "$OUT/bitpack_neon.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/sort_dispatch.cc" -o "$OUT/sort_dispatch.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_scalar.cc" -o "$OUT/sort_scalar.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_hyle_neon.cc" -o "$OUT/sort_neon.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/radix_sort.cc" -o "$OUT/radix_sort.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/stream_topk.cc" -o "$OUT/stream_topk.o"
 for module in ops random search; do
   printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
     $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar.o"
@@ -72,19 +79,22 @@ $CXX $FLAGS "$OUT/sve_test.o" "$OUT/scalable_math_compile.o" \
   "$OUT/scalable_math_product_test.o" "$OUT/scalable_math_dispatch_test.o" \
   "$OUT/scalable_dtype_product_test.o" \
   "$OUT/scalable_bitpack_product_test.o" \
+  "$OUT/scalable_sort_product_test.o" \
   "$OUT/fixed128_bitpack_reference.o" \
   "$OUT/math_sve.o" "$OUT/math_neon.o" "$OUT/math_xsimd_neon.o" \
   "$OUT/math_scalar.o" "$OUT/math_dispatch.o" "$OUT/cpu.o" "$OUT/runtime.o" \
   "$OUT/dtype_sve.o" "$OUT/dtype_neon.o" "$OUT/dtype_scalar.o" "$OUT/dtype_dispatch.o" \
   "$OUT/bitpack_sve.o" "$OUT/bitpack_neon.o" "$OUT/bitpack_scalar.o" "$OUT/bitpack_dispatch.o" \
+  "$OUT/sort_sve.o" "$OUT/sort_neon.o" "$OUT/sort_scalar.o" "$OUT/sort_dispatch.o" \
+  "$OUT/radix_sort.o" "$OUT/stream_topk.o" \
   "$OUT/ops_scalar.o" "$OUT/ops_neon.o" "$OUT/ops_sve.o" \
   "$OUT/random_scalar.o" "$OUT/random_neon.o" "$OUT/random_sve.o" \
   "$OUT/search_scalar.o" "$OUT/search_neon.o" "$OUT/search_sve.o" "$OUT/gtest-all.o" \
   "$OUT/gtest-main.o" -static -o "$OUT/sve_gtest" -pthread
 
-echo "[2/3] running under qemu at VL 128 / 256 / 384 / 512 ..."
+echo "[2/3] running under qemu at VL 128 / 256 / 384 / 512 / 2048 ..."
 rc=0
-for bits in 128 256 384 512; do
+for bits in 128 256 384 512 2048; do
   echo "----- SVE VL=${bits}-bit -----"
   HYLE_EXPECT_SVE_BITS="$bits" "$QEMU" -cpu "max,sve${bits}=on" -L /usr/aarch64-linux-gnu "$OUT/sve_gtest" || rc=$?
 done

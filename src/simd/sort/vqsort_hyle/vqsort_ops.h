@@ -24,7 +24,8 @@
 
 // Must be included only from a TU that already defined HYLE_SIMD_TARGET_*.
 #if !defined(HYLE_SIMD_TARGET_AVX2) && !defined(HYLE_SIMD_TARGET_AVX512) && \
-    !defined(HYLE_SIMD_TARGET_NEON) && !defined(HYLE_SIMD_TARGET_RVV)
+    !defined(HYLE_SIMD_TARGET_NEON) && !defined(HYLE_SIMD_TARGET_RVV) && \
+    !defined(HYLE_SIMD_TARGET_SVE)
 #error "vqsort_ops.h requires a supported HYLE SIMD target"
 #endif
 
@@ -269,12 +270,16 @@ struct SortConstants {
   }
 };
 
-// SortTag: one full native vector. Upstream Highway uses RVV LMUL=1/2 to increase the available
-// register groups. HYLE's RVV backend currently has LMUL=1 native types only; spelling kPow2=-1
-// would reduce D-aware operations while V-only sorting swizzles recover a full-width DFromV. Use
-// the honest LMUL=1 shape until fractional native types exist.
+// SortTag: RVV uses one full native vector. SVE caps at 256 logical bits because the imported
+// sorting networks require a power-of-two lane count, whereas legal SVE VL includes 384 etc.
+// The SVE TU applies the same cap to DFromV so V-only swizzles cannot silently recover full VL.
 template <typename T>
-using SortTag = ScalableTag<T>;
+using SortTag =
+#if defined(HYLE_SIMD_TARGET_SVE)
+    CappedTag<T, 32 / sizeof(T)>;
+#else
+    ScalableTag<T>;
+#endif
 
 // vqsort sometimes packs into a tight buffer region. Public CompressStore is
 // allowed to overwrite a full vector's unspecified tail, so this private
@@ -455,6 +460,9 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
 #elif defined(HYLE_SIMD_TARGET_RVV)
 #define HWY_TARGET HWY_RVV
 #define HWY_MAX_BYTES 256
+#elif defined(HYLE_SIMD_TARGET_SVE)
+#define HWY_TARGET HWY_SVE_256
+#define HWY_MAX_BYTES 32
 #else
 #define HWY_TARGET HWY_SCALAR
 #define HWY_MAX_BYTES 16

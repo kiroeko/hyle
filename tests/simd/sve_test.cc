@@ -71,6 +71,57 @@ TEST(Sve, LoadStoreAllTypes) {
   CheckLoadStore<std::uint64_t>();
 }
 
+TEST(Sve, Block128Ops) {
+  const hs::ScalableTag<std::uint32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  constexpr std::size_t kLanesPerBlock = 4;
+  ASSERT_GE(n, kLanesPerBlock);
+  alignas(64) std::uint32_t a[kBuf], b[kBuf], out[kBuf];
+  for (std::size_t i = 0; i < n; ++i) {
+    a[i] = static_cast<std::uint32_t>(100 + i);
+    b[i] = static_cast<std::uint32_t>(1000 + i);
+  }
+  const auto va = hs::Load(d, a);
+  const auto vb = hs::Load(d, b);
+
+  hs::Store(hs::LoadDup128(d, a), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], a[i % kLanesPerBlock]);
+
+  hs::Store(hs::OddEvenBlocks(va, vb), d, out);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(out[i], ((i / kLanesPerBlock) & 1u) == 0 ? b[i] : a[i]);
+  }
+
+  hs::Store(hs::SwapAdjacentBlocks(va), d, out);
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::size_t candidate = i ^ kLanesPerBlock;
+    EXPECT_EQ(out[i], a[candidate < n ? candidate : i]);
+  }
+
+  hs::Store(hs::ReverseBlocks(d, va), d, out);
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::size_t block = i / kLanesPerBlock;
+    const std::size_t within = i % kLanesPerBlock;
+    const std::size_t expected = (n / kLanesPerBlock - 1 - block) * kLanesPerBlock + within;
+    EXPECT_EQ(out[i], a[expected]);
+  }
+
+  hs::Store(hs::Shuffle1032(va), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], a[i ^ 2u]);
+
+  // At VL=2048, u8 has 256 lanes: the lane count itself does not fit in uint8_t. This catches
+  // accidental narrowing in the unpaired-block bound calculation.
+  const hs::ScalableTag<std::uint8_t> d8;
+  const std::size_t n8 = hs::Lanes(d8);
+  alignas(64) std::uint8_t bytes[kBuf], bytes_out[kBuf];
+  for (std::size_t i = 0; i < n8; ++i) bytes[i] = static_cast<std::uint8_t>(i);
+  hs::Store(hs::SwapAdjacentBlocks(hs::Load(d8, bytes)), d8, bytes_out);
+  for (std::size_t i = 0; i < n8; ++i) {
+    const std::size_t candidate = i ^ 16u;
+    EXPECT_EQ(bytes_out[i], bytes[candidate < n8 ? candidate : i]);
+  }
+}
+
 // ---- Phase B: arithmetic / bitwise / compare / select / mask-reduce -----------------
 template <typename T>
 void CheckIntArith() {

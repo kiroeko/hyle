@@ -146,11 +146,12 @@ void check_kv(void (*sort_fn)(KV*, std::size_t, bool)) {
 
 }  // namespace
 
-TEST(ScalableSortProduct, AllScalarKeyTypesAndEntryPoints) {
-  check_keys<std::uint32_t>(); check_keys<std::int32_t>();
-  check_keys<std::uint64_t>(); check_keys<std::int64_t>();
-  check_keys<float>(); check_keys<double>();
-}
+TEST(ScalableSortProduct, U32EntryPoints) { check_keys<std::uint32_t>(); }
+TEST(ScalableSortProduct, I32EntryPoints) { check_keys<std::int32_t>(); }
+TEST(ScalableSortProduct, U64EntryPoints) { check_keys<std::uint64_t>(); }
+TEST(ScalableSortProduct, I64EntryPoints) { check_keys<std::int64_t>(); }
+TEST(ScalableSortProduct, F32EntryPoints) { check_keys<float>(); }
+TEST(ScalableSortProduct, F64EntryPoints) { check_keys<double>(); }
 
 TEST(ScalableSortProduct, FloatingNaNsRemainLast) {
   check_nan<float>(); check_nan<double>();

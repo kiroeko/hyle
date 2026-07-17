@@ -102,10 +102,20 @@ template <class D>
 using VFromD = typename detail::SveVecT<TFromD<D>>::type;
 
 // DFromV: recover the tag from a vector type. Uses the reverse traits table (no V::PrivateT).
-// The recovered tag is ScalableTag<T> == Simd<T, kNativeVectorBytes/sizeof(T)>.
+// The default recovered tag is ScalableTag<T>; an algorithm TU may apply the private cap below.
+// Most TUs recover the full physical VL. A product TU may deliberately cap every recovered tag
+// (including V-only swizzles) when an algorithm requires a power-of-two sorting network. This is
+// TU-local codegen policy, never part of the public ABI.
+#if defined(HYLE_SIMD_SVE_DFROMV_MAX_BYTES)
+template <class V>
+using DFromV = Simd<typename detail::DFromV_sve<V>::T,
+                    HYLE_SIMD_SVE_DFROMV_MAX_BYTES /
+                        sizeof(typename detail::DFromV_sve<V>::T), 0>;
+#else
 template <class V>
 using DFromV = Simd<typename detail::DFromV_sve<V>::T,
                     kNativeVectorBytes / sizeof(typename detail::DFromV_sve<V>::T), 0>;
+#endif
 template <class V>
 using TFromV = typename detail::DFromV_sve<V>::T;
 
@@ -521,14 +531,19 @@ template <class D> HYLE_FORCE_INLINE VFromD<D> SlideUpLanes(D d, VFromD<D> v,
   const std::size_t n = Lanes(d);
   HYLE_FATAL_ASSERT(amt <= n);
   if (amt == n) return Zero(d);
+  VFromD<D> shifted;
   if constexpr (sizeof(T) == 1)
-    return svtbl(v, svsub_x(svptrue_b8(), svindex_u8(0, 1), static_cast<U>(amt)));
+    shifted = svtbl(v, svsub_x(svptrue_b8(), svindex_u8(0, 1), static_cast<U>(amt)));
   else if constexpr (sizeof(T) == 2)
-    return svtbl(v, svsub_x(svptrue_b16(), svindex_u16(0, 1), static_cast<U>(amt)));
+    shifted = svtbl(v, svsub_x(svptrue_b16(), svindex_u16(0, 1), static_cast<U>(amt)));
   else if constexpr (sizeof(T) == 4)
-    return svtbl(v, svsub_x(svptrue_b32(), svindex_u32(0, 1), static_cast<U>(amt)));
+    shifted = svtbl(v, svsub_x(svptrue_b32(), svindex_u32(0, 1), static_cast<U>(amt)));
   else
-    return svtbl(v, svsub_x(svptrue_b64(), svindex_u64(0, 1), static_cast<U>(amt)));
+    shifted = svtbl(v, svsub_x(svptrue_b64(), svindex_u64(0, 1), static_cast<U>(amt)));
+  // At the architectural maximum VL=2048, u8 has 256 lanes. Unsigned underflow of the first
+  // indices wraps to 254/255, which are valid table indices instead of out-of-range zero. Mask the
+  // inserted prefix explicitly for all lane widths so correctness never relies on index overflow.
+  return IfThenElse(FirstN(d, amt), Zero(d), shifted);
 }
 template <class D> HYLE_FORCE_INLINE VFromD<D> SlideDownLanes(D d, VFromD<D> v,
                                                               std::size_t amt) noexcept {
@@ -852,6 +867,103 @@ template <typename T> HYLE_FORCE_INLINE svbool_t even_lane_mask() noexcept {
 }  // namespace detail
 template <class V> HYLE_FORCE_INLINE V OddEven(V odd, V even) noexcept {
   return svsel(detail::even_lane_mask<TFromV<V>>(), even, odd);
+}
+
+// ---- 128-bit block operations -------------------------------------------------------
+// SVE vectors contain an implementation-defined number of 128-bit blocks. These helpers keep
+// each block's lane order and also define the unpaired final block for VL=384 etc. as unchanged.
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> LoadDup128(D d, const TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  if (Lanes(d) * sizeof(T) <= 16) return LoadU(d, p);
+  const svbool_t pg = svptrue_b8();
+  if constexpr (std::is_same_v<T, float>) return svld1rq_f32(pg, p);
+  else if constexpr (std::is_same_v<T, double>) return svld1rq_f64(pg, p);
+  else if constexpr (std::is_same_v<T, std::int8_t>) return svld1rq_s8(pg, p);
+  else if constexpr (std::is_same_v<T, std::uint8_t>) return svld1rq_u8(pg, p);
+  else if constexpr (std::is_same_v<T, std::int16_t>) return svld1rq_s16(pg, p);
+  else if constexpr (std::is_same_v<T, std::uint16_t>) return svld1rq_u16(pg, p);
+  else if constexpr (std::is_same_v<T, std::int32_t>) return svld1rq_s32(pg, p);
+  else if constexpr (std::is_same_v<T, std::uint32_t>) return svld1rq_u32(pg, p);
+  else if constexpr (std::is_same_v<T, std::int64_t>) return svld1rq_s64(pg, p);
+  else return svld1rq_u64(pg, p);
+}
+
+template <class V>
+HYLE_FORCE_INLINE V OddEvenBlocks(V odd, V even) noexcept {
+  using T = TFromV<V>;
+  const svbool_t pg = detail::ptrue<T>();
+  constexpr unsigned kShift = sizeof(T) == 1 ? 4 : sizeof(T) == 2 ? 3 :
+                              sizeof(T) == 4 ? 2 : 1;
+  if constexpr (sizeof(T) == 1) {
+    const auto block = svlsr_x(pg, svindex_u8(0, 1), kShift);
+    return svsel(svcmpeq(pg, svand_x(pg, block, std::uint8_t{1}), std::uint8_t{0}), even, odd);
+  } else if constexpr (sizeof(T) == 2) {
+    const auto block = svlsr_x(pg, svindex_u16(0, 1), kShift);
+    return svsel(svcmpeq(pg, svand_x(pg, block, std::uint16_t{1}), std::uint16_t{0}), even, odd);
+  } else if constexpr (sizeof(T) == 4) {
+    const auto block = svlsr_x(pg, svindex_u32(0, 1), kShift);
+    return svsel(svcmpeq(pg, svand_x(pg, block, std::uint32_t{1}), std::uint32_t{0}), even, odd);
+  } else {
+    const auto block = svlsr_x(pg, svindex_u64(0, 1), kShift);
+    return svsel(svcmpeq(pg, svand_x(pg, block, std::uint64_t{1}), std::uint64_t{0}), even, odd);
+  }
+}
+
+template <class V>
+HYLE_FORCE_INLINE V SwapAdjacentBlocks(V v) noexcept {
+  using T = TFromV<V>;
+  const std::size_t n = Lanes(DFromV<V>());
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  if (n <= kLanesPerBlock) return v;
+  const bool has_unpaired_block = ((n / kLanesPerBlock) & 1u) != 0;
+  const svbool_t pg = detail::ptrue<T>();
+  if constexpr (sizeof(T) == 1) {
+    const auto id = svindex_u8(0, 1); auto idx = sveor_x(pg, id, std::uint8_t{kLanesPerBlock});
+    if (has_unpaired_block) idx = svsel(svcmplt(pg, id, static_cast<std::uint8_t>(n - kLanesPerBlock)), idx, id);
+    return svtbl(v, idx);
+  } else if constexpr (sizeof(T) == 2) {
+    const auto id = svindex_u16(0, 1); auto idx = sveor_x(pg, id, std::uint16_t{kLanesPerBlock});
+    if (has_unpaired_block) idx = svsel(svcmplt(pg, id, static_cast<std::uint16_t>(n - kLanesPerBlock)), idx, id);
+    return svtbl(v, idx);
+  } else if constexpr (sizeof(T) == 4) {
+    const auto id = svindex_u32(0, 1); auto idx = sveor_x(pg, id, std::uint32_t{kLanesPerBlock});
+    if (has_unpaired_block) idx = svsel(svcmplt(pg, id, static_cast<std::uint32_t>(n - kLanesPerBlock)), idx, id);
+    return svtbl(v, idx);
+  } else {
+    const auto id = svindex_u64(0, 1); auto idx = sveor_x(pg, id, std::uint64_t{kLanesPerBlock});
+    if (has_unpaired_block) idx = svsel(svcmplt(pg, id, static_cast<std::uint64_t>(n - kLanesPerBlock)), idx, id);
+    return svtbl(v, idx);
+  }
+}
+
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> ReverseBlocks(D d, VFromD<D> v) noexcept {
+  using T = TFromD<D>;
+  const std::size_t n = Lanes(d);
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  if (n <= kLanesPerBlock) return v;
+  const svbool_t pg = detail::ptrue<T>();
+  constexpr unsigned kShift = sizeof(T) == 1 ? 4 : sizeof(T) == 2 ? 3 :
+                              sizeof(T) == 4 ? 2 : 1;
+#define HYLE_SVE_REVERSE_BLOCKS(BITS, UTYPE)                                            \
+  const auto id = svindex_u##BITS(0, 1);                                                \
+  const auto within = svand_x(pg, id, static_cast<UTYPE>(kLanesPerBlock - 1));          \
+  const auto block = svlsr_x(pg, id, kShift);                                           \
+  const auto reversed = svsubr_x(pg, block, static_cast<UTYPE>(n / kLanesPerBlock - 1)); \
+  const auto start = svlsl_x(pg, reversed, kShift);                                     \
+  return svtbl(v, svorr_x(pg, start, within))
+  if constexpr (sizeof(T) == 1) { HYLE_SVE_REVERSE_BLOCKS(8, std::uint8_t); }
+  else if constexpr (sizeof(T) == 2) { HYLE_SVE_REVERSE_BLOCKS(16, std::uint16_t); }
+  else if constexpr (sizeof(T) == 4) { HYLE_SVE_REVERSE_BLOCKS(32, std::uint32_t); }
+  else { HYLE_SVE_REVERSE_BLOCKS(64, std::uint64_t); }
+#undef HYLE_SVE_REVERSE_BLOCKS
+}
+
+template <class V>
+HYLE_FORCE_INLINE V Shuffle1032(V v) noexcept {
+  static_assert(sizeof(TFromV<V>) == 4, "Shuffle1032 needs 32-bit lanes");
+  return svtbl(v, sveor_x(svptrue_b32(), svindex_u32(0, 1), std::uint32_t{2}));
 }
 template <class V> HYLE_FORCE_INLINE V DupEven(V v) noexcept { return svtrn1(v, v); }
 template <class V> HYLE_FORCE_INLINE V DupOdd(V v) noexcept { return svtrn2(v, v); }
@@ -1299,11 +1411,15 @@ template <class V> HYLE_FORCE_INLINE V Expand(V v, svbool_t m) noexcept {
   for (std::size_t i = 0; i < n; ++i) dst[i] = mv[i] ? src[k++] : T{0};
   return Load(d, dst);
 }
+template <class V> HYLE_FORCE_INLINE V ReverseBits(V v) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "ReverseBits is integer-lane only");
+  return svrbit_x(detail::ptrue<TFromV<V>>(), v);
+}
 // TrailingZeroCount(v) = LeadingZeroCount(ReverseBits(v)) (Highway's arm_sve identity). svrbit is
 // the native per-lane bit reversal; svclz (LeadingZeroCount) then counts from the (now high) end.
 template <class V> HYLE_FORCE_INLINE V TrailingZeroCount(V v) noexcept {
   static_assert(std::is_integral_v<TFromV<V>>, "TrailingZeroCount is integer-lane only");
-  return LeadingZeroCount(svrbit_x(detail::ptrue<TFromV<V>>(), v));
+  return LeadingZeroCount(ReverseBits(v));
 }
 
 // ---- Crypto: AES + CLMul (simd-16 reclaim; native SVE2-AES, else software per-128-block) --------

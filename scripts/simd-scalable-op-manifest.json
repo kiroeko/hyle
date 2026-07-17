@@ -51,20 +51,16 @@
         "InterleaveLowerBlocks",
         "InterleaveOddBlocks",
         "InterleaveUpperBlocks",
-        "LoadDup128",
-        "OddEvenBlocks",
         "PairwiseAdd128",
         "PairwiseSub128",
         "Per4LaneBlockShuffle",
         "ResizeBitCast",
-        "ReverseBlocks",
         "ShiftLeftBytes",
         "ShiftLeftLanes",
         "ShiftRightBytes",
         "ShiftRightLanes",
         "SlideDownBlocks",
-        "SlideUpBlocks",
-        "SwapAdjacentBlocks"
+        "SlideUpBlocks"
       ]
     },
     "extension_gated": {
@@ -97,13 +93,11 @@
         "RotateRightSame",
         "RoundingShiftRightSame",
         "RoundingShr",
-        "ReverseBits",
         "ShiftLeftSame",
         "ShiftRightSame",
         "Shuffle01",
         "Shuffle0123",
         "Shuffle0321",
-        "Shuffle1032",
         "Shuffle2103",
         "Shuffle2301",
         "SumsOf8AbsDiff",
@@ -121,14 +115,6 @@
     "dtype": [
       "OrderedDemote2To"
     ],
-    "sort": [
-      "LoadDup128",
-      "OddEvenBlocks",
-      "ReverseBlocks",
-      "ShiftLeftLanes",
-      "Shuffle1032",
-      "Shuffle2301",
-      "SwapAdjacentBlocks"
-    ]
+    "sort": []
   }
 }
