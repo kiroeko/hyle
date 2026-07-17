@@ -348,50 +348,55 @@ void atan2_f64_highway_neon(const double* a, const double* b, double* dst, std::
 void pow_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 void sincos_f64_highway_neon(const double* src, double* s, double* c, std::size_t n) noexcept;
 void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+#endif  // HYLE_ARCH_ARM64
 
-#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-// Length-agnostic SVE siblings of the HYLE/Highway math body. Optional xsimd-only kernels
+// Length-agnostic siblings of the HYLE/Highway math body. Optional xsimd-only kernels
 // (gamma, direct-form hypot, complex) intentionally retain their independently verified fallback.
-#define HYLE_DECLARE_SVE_UNARY(type, tag, name) \
-  void name##_##tag##_highway_sve(const type*, type*, std::size_t) noexcept;
-#define HYLE_DECLARE_SVE_UNARY_SET(type, tag) \
-  HYLE_DECLARE_SVE_UNARY(type, tag, exp)       \
-  HYLE_DECLARE_SVE_UNARY(type, tag, log)       \
-  HYLE_DECLARE_SVE_UNARY(type, tag, tanh)      \
-  HYLE_DECLARE_SVE_UNARY(type, tag, sin)       \
-  HYLE_DECLARE_SVE_UNARY(type, tag, cos)       \
-  HYLE_DECLARE_SVE_UNARY(type, tag, exp2)      \
-  HYLE_DECLARE_SVE_UNARY(type, tag, log2)      \
-  HYLE_DECLARE_SVE_UNARY(type, tag, erf)       \
-  HYLE_DECLARE_SVE_UNARY(type, tag, atan)      \
-  HYLE_DECLARE_SVE_UNARY(type, tag, cbrt)      \
-  HYLE_DECLARE_SVE_UNARY(type, tag, expm1)     \
-  HYLE_DECLARE_SVE_UNARY(type, tag, log1p)     \
-  HYLE_DECLARE_SVE_UNARY(type, tag, asinh)     \
-  HYLE_DECLARE_SVE_UNARY(type, tag, acosh)     \
-  HYLE_DECLARE_SVE_UNARY(type, tag, acos)      \
-  HYLE_DECLARE_SVE_UNARY(type, tag, asin)      \
-  HYLE_DECLARE_SVE_UNARY(type, tag, sinh)      \
-  HYLE_DECLARE_SVE_UNARY(type, tag, cosh)      \
-  HYLE_DECLARE_SVE_UNARY(type, tag, tan)       \
-  HYLE_DECLARE_SVE_UNARY(type, tag, atanh)     \
-  HYLE_DECLARE_SVE_UNARY(type, tag, log10)
-HYLE_DECLARE_SVE_UNARY_SET(float, f32)
-HYLE_DECLARE_SVE_UNARY_SET(double, f64)
-#undef HYLE_DECLARE_SVE_UNARY_SET
-#undef HYLE_DECLARE_SVE_UNARY
-
-void exp_in_range_f64_highway_sve(const double*, double*, std::size_t) noexcept;
-void log_in_range_f64_highway_sve(const double*, double*, std::size_t) noexcept;
-void hypot_f32_highway_sve(const float*, const float*, float*, std::size_t) noexcept;
-void atan2_f32_highway_sve(const float*, const float*, float*, std::size_t) noexcept;
-void pow_f32_highway_sve(const float*, const float*, float*, std::size_t) noexcept;
-void sincos_f32_highway_sve(const float*, float*, float*, std::size_t) noexcept;
-void hypot_f64_highway_sve(const double*, const double*, double*, std::size_t) noexcept;
-void atan2_f64_highway_sve(const double*, const double*, double*, std::size_t) noexcept;
-void pow_f64_highway_sve(const double*, const double*, double*, std::size_t) noexcept;
-void sincos_f64_highway_sve(const double*, double*, double*, std::size_t) noexcept;
+#define HYLE_DECLARE_SCALABLE_UNARY(type, tag, name, suffix) \
+  void name##_##tag##_highway_##suffix(const type*, type*, std::size_t) noexcept;
+#define HYLE_DECLARE_SCALABLE_UNARY_SET(type, tag, suffix) \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, exp, suffix)      \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, log, suffix)      \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, tanh, suffix)     \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, sin, suffix)      \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, cos, suffix)      \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, exp2, suffix)     \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, log2, suffix)     \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, erf, suffix)      \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, atan, suffix)     \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, cbrt, suffix)     \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, expm1, suffix)    \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, log1p, suffix)    \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, asinh, suffix)    \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, acosh, suffix)    \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, acos, suffix)     \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, asin, suffix)     \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, sinh, suffix)     \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, cosh, suffix)     \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, tan, suffix)      \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, atanh, suffix)    \
+  HYLE_DECLARE_SCALABLE_UNARY(type, tag, log10, suffix)
+#define HYLE_DECLARE_SCALABLE_MATH(suffix)                                           \
+  HYLE_DECLARE_SCALABLE_UNARY_SET(float, f32, suffix)                               \
+  HYLE_DECLARE_SCALABLE_UNARY_SET(double, f64, suffix)                              \
+  void exp_in_range_f64_highway_##suffix(const double*, double*, std::size_t) noexcept; \
+  void log_in_range_f64_highway_##suffix(const double*, double*, std::size_t) noexcept; \
+  void hypot_f32_highway_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
+  void atan2_f32_highway_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
+  void pow_f32_highway_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
+  void sincos_f32_highway_##suffix(const float*, float*, float*, std::size_t) noexcept; \
+  void hypot_f64_highway_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
+  void atan2_f64_highway_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
+  void pow_f64_highway_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
+  void sincos_f64_highway_##suffix(const double*, double*, double*, std::size_t) noexcept;
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+HYLE_DECLARE_SCALABLE_MATH(sve)
 #endif
+#if defined(HYLE_SIMD_HAS_RVV_VARIANT)
+HYLE_DECLARE_SCALABLE_MATH(rvv)
 #endif
+#undef HYLE_DECLARE_SCALABLE_MATH
+#undef HYLE_DECLARE_SCALABLE_UNARY_SET
+#undef HYLE_DECLARE_SCALABLE_UNARY
 
 }  // namespace hyle::simd::detail

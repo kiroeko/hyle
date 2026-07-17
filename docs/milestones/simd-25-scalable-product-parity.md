@@ -1,6 +1,6 @@
 # simd-25：SVE/RVV 语义与产品层追平
 
-> 状态：🚧 进行中（分类账、基础闭包与首个 SVE math 产品核已落地）。依赖 simd-22 双轨与
+> 状态：🚧 进行中（分类账、基础闭包与 SVE/RVV math 主产品核已落地）。依赖 simd-22 双轨与
 > simd-24 已有产品核。
 >
 > 本里程碑重新限定 simd-15~18 的“追平”：它们完成的是 scalable P0~P4 正确性与
@@ -63,25 +63,36 @@ Runtime / exact / native + QEMU + real-hardware parity
 实例化。机械差集从初始 80 降至 73：`fixed_model 28→24`、`portable_missing 26→23`；manifest
 只保存当前未完成项，初始数字保留在上表作为基线。
 
-### 首个产品层纵切：SVE math（2026-07-17）
+### 首个产品层纵切：SVE/RVV math（2026-07-17）
 
-`transcendental_highway_sve.cc` 已把 HYLE D-tag math body 编成独立 `+sve` 产品 TU，保持
-pointer/count 接缝与 per-call `Lanes(d)`。baseline `math_dispatch.cc` 只在 Runtime 选中 SVE 时进入该
-TU；exact SVE 在编译期恒选该符号，不查询 Runtime/CPUID。已接入：
+`transcendental_highway_scalable.cc` 把同一份 HYLE D-tag math body 分别编成独立 `+sve` / `+v`
+产品 TU，保持 pointer/count 接缝与 per-call `Lanes(d)`。baseline `math_dispatch.cc` 只在 Runtime
+选中 SVE/RVV 时进入对应 TU；exact SVE/RVV 在编译期恒选对应符号，不查询 Runtime/CPU probe。已接入：
 
 - f32/f64 的 HYLE/Highway unary 集合；
 - `atan2/pow/hypot/sincos`；
 - f64 table `exp/log` 及 in-range 入口；完整入口遇到异常 lane 时按整个 vector chunk 回落 libm，
   保持现有特殊值合同。
 
-这不是“整个 math 模块已纯 SVE”：gamma、complex、direct-form hypot 与 xsimd-only extras 仍使用原有
-NEON/scalar per-op fallback。`Runtime::math.isa == kSve` 表示主 HYLE/Highway math tier 已启用 SVE，
-不是声称每个冷门函数都有 SVE body。
+这不是“整个 math 模块已纯 scalable”：gamma、complex、direct-form hypot 与 xsimd-only extras 仍使用
+原有 NEON/scalar per-op fallback。`Runtime::math.isa == kSve/kRvv` 表示主 HYLE/Highway math tier已启用，
+不是声称每个冷门函数都有 scalable body。
 
-当前证据：Windows Clang AArch64+SVE 对产品 TU、dispatcher、Runtime 与测试完成交叉编译；Windows
-普通 x86 构建及 SSE4/AVX2/AES 回归通过。`sve-qemu-test.sh` 已纳入产品 TU、全 math compile probe、
-多 VL core/tail 测试；实际 QEMU 128/256/384/512 执行仍等待可用的 Linux AArch64 cross toolchain，
-因此此纵切尚未签为完成，亦无真机性能结论。
+当前证据：两套脚本同时链接 CPU probe、真实 `Runtime`、baseline dispatcher、scalar 与 scalable
+variant 表，不再只直调内部 kernel。SVE 为 **24 tests × VL 128/256/384/512** 全绿，RVV 为
+**21 tests × VLEN 128/256/512/1024** 全绿；公开 `exp/log/hypot` batch API、tail 与
+`runtime().math.isa` 均在门内验证。exact SVE/RVV dispatcher 的未定义符号检查也确认不引用
+`runtime()`、`best_isa()` 或 `cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。
+
+### 当前产品层矩阵
+
+| 模块 | SVE | RVV | 下一缺口 |
+|---|---|---|---|
+| ops/random/scan/search | 真实 scalable variant | 真实 scalable variant | 真机性能证据 |
+| math 主 HYLE/Highway op | 真实 SVE 产品 TU | 真实 RVV 产品 TU | optional per-op fallback 与真机性能 |
+| dtype | NEON | scalar | 首要实现项，先闭 bf16/f16 |
+| sort/select | NEON | scalar | 独立算法战役，不能只改元数据 |
+| bitpack | NEON | scalar | 先固定跨线程/VL 稳定格式合同 |
 
 ## 阶段 1：target/feature mechanization 与编译探针
 
@@ -112,11 +123,12 @@ tail、跨页 canary、跨线程不同 VL 的 pack/unpack round-trip。不能把
 依次实现 bf16↔f32、f16↔f32、经收益裁决的 fp8。基础位运算路径和 optional hardware path 分开；
 接口保持 pointer/count/POD，close-01 可直接包 C ABI。RVV 当前 scalar fallback 优先消除。
 
-## 阶段 3：math
+## 阶段 3：math（主产品 tier 已完成，per-op/性能验收继续）
 
-SVE 的 HYLE/Highway 主 body 已生成真实产品 TU 并接 Runtime；下一步是完成 QEMU/真机验收，并裁决
-gamma、complex、direct hypot 等 per-op fallback 是否值得新增 SVE 实现。RVV 仍需补传递闭包并生成
-对应 TU。验收沿用现有 ULP 合同，并覆盖 NaN/Inf/subnormal/domain edge、tail 和跨 lane 混合输入。
+SVE/RVV 的 HYLE/Highway 主 body 已生成真实产品 TU 并接 Runtime，QEMU 多 VL/VLEN 的 direct、Runtime
+和公开 API 门均完成。下一步是裁决 gamma、complex、direct hypot 等 per-op fallback 是否值得新增
+scalable 实现，并完成真机性能验收。验收沿用现有 ULP 合同，继续扩大 NaN/Inf/subnormal/domain edge、
+tail 和跨 lane 混合输入。
 
 Runtime 改为逐 op/feature 的 scalable 或已认证 fallback；不能仅修改 `runtime().math.isa` 元数据。
 

@@ -35,14 +35,36 @@ run_tier() {
   local qemu_cpu="$3"
   local bin="$OUT/rvv_gtest_${name}"
 
-  local FLAGS="-std=c++23 -O2 -march=${march} -DHYLE_SIMD_TARGET_RVV -pthread \
+  local COMMON_FLAGS="-std=c++23 -O2 -march=rv64gc -DHYLE_SIMD_HAS_RVV_VARIANT=1 -pthread \
     -I$REPO/include -I$REPO -I$GT/include -I$GT"
+  local FLAGS="$COMMON_FLAGS -march=${march} -DHYLE_SIMD_TARGET_RVV"
 
-  echo "[${name}] cross-compiling gtest + rvv_test.cc (-march=${march}) ..."
+  echo "[${name}] cross-compiling register + product-math probes (-march=${march}) ..."
   $CXX $FLAGS -c "$GT/src/gtest-all.cc"  -o "$OUT/gtest-all_${name}.o"
   $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/rvv_test.cc" -o "$OUT/rvv_test_${name}.o"
-  $CXX $FLAGS "$OUT/rvv_test_${name}.o" "$OUT/gtest-all_${name}.o" "$OUT/gtest-main_${name}.o" \
+  $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_compile.cc" -o "$OUT/scalable_math_compile_${name}.o"
+  $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test_${name}.o"
+  $CXX $FLAGS -c "$REPO/src/simd/math/transcendental_highway_scalable.cc" -o "$OUT/math_rvv_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/math_dispatch.cc" -o "$OUT/math_dispatch_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_scalar.cc" -o "$OUT/math_scalar_${name}.o"
+  for module in ops random search; do
+    printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
+      $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar_${name}.o"
+    printf '#define HYLE_SIMD_VARIANT_SUFFIX rvv\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
+      $CXX $FLAGS -x c++ -c - -o "$OUT/${module}_rvv_${name}.o"
+  done
+  $CXX $FLAGS "$OUT/rvv_test_${name}.o" "$OUT/scalable_math_compile_${name}.o" \
+    "$OUT/scalable_math_product_test_${name}.o" "$OUT/scalable_math_dispatch_test_${name}.o" \
+    "$OUT/math_rvv_${name}.o" "$OUT/math_scalar_${name}.o" "$OUT/math_dispatch_${name}.o" \
+    "$OUT/cpu_${name}.o" "$OUT/runtime_${name}.o" \
+    "$OUT/ops_scalar_${name}.o" "$OUT/ops_rvv_${name}.o" \
+    "$OUT/random_scalar_${name}.o" "$OUT/random_rvv_${name}.o" \
+    "$OUT/search_scalar_${name}.o" "$OUT/search_rvv_${name}.o" \
+    "$OUT/gtest-all_${name}.o" "$OUT/gtest-main_${name}.o" \
     -static -o "$bin" -pthread
 
   echo "[${name}] running under qemu-riscv64 at VLEN 128 / 256 / 512 / 1024 (cpu=${qemu_cpu}) ..."

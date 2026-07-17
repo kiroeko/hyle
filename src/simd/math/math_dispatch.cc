@@ -65,12 +65,36 @@ bool have_sve_math() noexcept {
 }
 #endif
 
+#if defined(HYLE_ARCH_RISCV64)
+bool have_rvv_math() noexcept {
+#if defined(HYLE_SIMD_EXACT_TARGET_RVV)
+  return true;
+#elif defined(HYLE_SIMD_EXACT)
+  return false;
+#elif defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  return runtime().math.isa == Isa::kRvv;
+#else
+  return false;
+#endif
+}
+#endif
+
 }  // namespace
 
+#define HYLE_MATH_NAME_I(name, tag, suffix) detail::name##_##tag##_highway_##suffix
+#define HYLE_MATH_NAME_II(name, tag, suffix) HYLE_MATH_NAME_I(name, tag, suffix)
+#define HYLE_SCALAR_MATH_NAME_I(name, tag) detail::name##_##tag##_scalar
+#define HYLE_SCALAR_MATH_NAME(name, tag) HYLE_SCALAR_MATH_NAME_I(name, tag)
 #if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
-#define HYLE_ARM_MATH_SELECT(sve, neon) (have_sve_math() ? (sve) : (neon))
+#define HYLE_SCALABLE_MATH(name, tag) \
+  (have_sve_math() ? HYLE_MATH_NAME_II(name, tag, sve) : HYLE_MATH_NAME_II(name, tag, neon))
 #elif defined(HYLE_ARCH_ARM64)
-#define HYLE_ARM_MATH_SELECT(sve, neon) (neon)
+#define HYLE_SCALABLE_MATH(name, tag) HYLE_MATH_NAME_II(name, tag, neon)
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#define HYLE_SCALABLE_MATH(name, tag) \
+  (have_rvv_math() ? HYLE_MATH_NAME_II(name, tag, rvv) : HYLE_SCALAR_MATH_NAME(name, tag))
+#elif defined(HYLE_ARCH_RISCV64)
+#define HYLE_SCALABLE_MATH(name, tag) HYLE_SCALAR_MATH_NAME(name, tag)
 #endif
 
 void exp_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
@@ -81,9 +105,8 @@ void exp_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   if (hw) {
     detail::exp_f32_xsimd_avx2(src, dst, n); return;       // exp: xsimd fastest
   }
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::exp_f32_highway_sve,
-                       detail::exp_f32_highway_neon)(src, dst, n); return;
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(exp, f32)(src, dst, n); return;
 #endif
   detail::exp_f32_scalar(src, dst, n);
 }
@@ -100,9 +123,8 @@ void log_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   if (hw) {
     detail::log_f32_highway_avx2(src, dst, n); return;     // log: Highway fastest
   }
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::log_f32_highway_sve,
-                       detail::log_f32_highway_neon)(src, dst, n); return;
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(log, f32)(src, dst, n); return;
 #endif
   detail::log_f32_scalar(src, dst, n);
 }
@@ -114,9 +136,8 @@ void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   if (hw) {
     detail::tanh_f32_xsimd_avx2(src, dst, n); return;      // tanh: xsimd fastest
   }
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::tanh_f32_highway_sve,
-                       detail::tanh_f32_highway_neon)(src, dst, n); return;
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(tanh, f32)(src, dst, n); return;
 #endif
   detail::tanh_f32_scalar(src, dst, n);
 }
@@ -133,9 +154,8 @@ void exp2_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   if (hw512) { detail::exp2_f32_xsimd_avx512(src, dst, n); return; }
   static const bool hw = have_avx2();
   if (hw) { detail::exp2_f32_xsimd_avx2(src, dst, n); return; }
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::exp2_f32_highway_sve,
-                       detail::exp2_f32_highway_neon)(src, dst, n); return;
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(exp2, f32)(src, dst, n); return;
 #endif
   detail::exp2_f32_scalar(src, dst, n);
 }
@@ -145,9 +165,8 @@ void erf_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   if (hw512) { detail::erf_f32_xsimd_avx512(src, dst, n); return; }
   static const bool hw = have_avx2();
   if (hw) { detail::erf_f32_xsimd_avx2(src, dst, n); return; }
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::erf_f32_highway_sve,
-                       detail::erf_f32_highway_neon)(src, dst, n); return;
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(erf, f32)(src, dst, n); return;
 #endif
   detail::erf_f32_scalar(src, dst, n);
 }
@@ -184,9 +203,8 @@ void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) 
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::hypot_f32_highway_avx2(a, b, dst, n); return; }
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::hypot_f32_highway_sve,
-                       detail::hypot_f32_highway_neon)(a, b, dst, n); return;
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(hypot, f32)(a, b, dst, n); return;
 #endif
   detail::hypot_f32_scalar(a, b, dst, n);
 }
@@ -293,10 +311,9 @@ void cpow_f32_batch(const float* zr, const float* zi, const float* wr, const flo
   if (hw) { detail::name##_f32_highway_avx2(src, dst, n); return; }              \
   detail::name##_f32_scalar(src, dst, n);
 #endif
-#elif defined(HYLE_ARCH_ARM64)
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
 #define HYLE_MATH_HIGHWAY_BODY(name)                                             \
-  HYLE_ARM_MATH_SELECT(detail::name##_f32_highway_sve,                          \
-                       detail::name##_f32_highway_neon)(src, dst, n);
+  HYLE_SCALABLE_MATH(name, f32)(src, dst, n);
 #else
 #define HYLE_MATH_HIGHWAY_BODY(name) detail::name##_f32_scalar(src, dst, n);
 #endif
@@ -339,10 +356,9 @@ HYLE_MATH_DISPATCH_HIGHWAY(log10)
   if (hw) { detail::name##_f64_highway_avx2(src, dst, n); return; }                \
   detail::name##_f64_scalar(src, dst, n);
 #endif
-#elif defined(HYLE_ARCH_ARM64)
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
 #define HYLE_MATH_F64_HIGHWAY_BODY(name)                                         \
-  HYLE_ARM_MATH_SELECT(detail::name##_f64_highway_sve,                          \
-                       detail::name##_f64_highway_neon)(src, dst, n);
+  HYLE_SCALABLE_MATH(name, f64)(src, dst, n);
 #else
 #define HYLE_MATH_F64_HIGHWAY_BODY(name) detail::name##_f64_scalar(src, dst, n);
 #endif
@@ -385,8 +401,12 @@ void exp_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexc
   static const bool hw = have_avx2();
   if (hw) { detail::exp_in_range_f64_highway_avx2(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::exp_in_range_f64_highway_sve,
-                       detail::exp_in_range_f64_highway_neon)(src, dst, n); return;
+  HYLE_SCALABLE_MATH(exp_in_range, f64)(src, dst, n); return;
+#elif defined(HYLE_ARCH_RISCV64)
+#if defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) { detail::exp_in_range_f64_highway_rvv(src, dst, n); return; }
+#endif
+  detail::exp_f64_scalar(src, dst, n); return;
 #endif
   detail::exp_f64_scalar(src, dst, n);
 }
@@ -399,8 +419,12 @@ void log_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexc
   static const bool hw = have_avx2();
   if (hw) { detail::log_in_range_f64_highway_avx2(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::log_in_range_f64_highway_sve,
-                       detail::log_in_range_f64_highway_neon)(src, dst, n); return;
+  HYLE_SCALABLE_MATH(log_in_range, f64)(src, dst, n); return;
+#elif defined(HYLE_ARCH_RISCV64)
+#if defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) { detail::log_in_range_f64_highway_rvv(src, dst, n); return; }
+#endif
+  detail::log_f64_scalar(src, dst, n); return;
 #endif
   detail::log_f64_scalar(src, dst, n);
 }
@@ -414,9 +438,8 @@ void hypot_f64_batch(const double* a, const double* b, double* dst, std::size_t 
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::hypot_f64_highway_avx2(a, b, dst, n); return; }
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::hypot_f64_highway_sve,
-                       detail::hypot_f64_highway_neon)(a, b, dst, n); return;
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(hypot, f64)(a, b, dst, n); return;
 #endif
   detail::hypot_f64_scalar(a, b, dst, n);
 }
@@ -427,9 +450,8 @@ void erf_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
   if (hw512) { detail::erf_f64_xsimd_avx512(src, dst, n); return; }
   static const bool hw = have_avx2();
   if (hw) { detail::erf_f64_xsimd_avx2(src, dst, n); return; }
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::erf_f64_highway_sve,
-                       detail::erf_f64_highway_neon)(src, dst, n); return;
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(erf, f64)(src, dst, n); return;
 #endif
   detail::erf_f64_scalar(src, dst, n);
 }
@@ -459,9 +481,8 @@ void atan2_f32_batch(const float* a, const float* b, float* dst, std::size_t n) 
   static const bool hw = have_avx2();
   if (hw) { detail::atan2_f32_highway_avx2(a, b, dst, n); return; }
   detail::atan2_f32_scalar(a, b, dst, n);
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::atan2_f32_highway_sve,
-                       detail::atan2_f32_highway_neon)(a, b, dst, n);
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(atan2, f32)(a, b, dst, n);
 #else
   detail::atan2_f32_scalar(a, b, dst, n);
 #endif
@@ -475,9 +496,8 @@ void pow_f32_batch(const float* a, const float* b, float* dst, std::size_t n) no
   static const bool hw = have_avx2();
   if (hw) { detail::pow_f32_highway_avx2(a, b, dst, n); return; }
   detail::pow_f32_scalar(a, b, dst, n);
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::pow_f32_highway_sve,
-                       detail::pow_f32_highway_neon)(a, b, dst, n);
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(pow, f32)(a, b, dst, n);
 #else
   detail::pow_f32_scalar(a, b, dst, n);
 #endif
@@ -491,9 +511,8 @@ void sincos_f32_batch(const float* src, float* s, float* c, std::size_t n) noexc
   static const bool hw = have_avx2();
   if (hw) { detail::sincos_f32_highway_avx2(src, s, c, n); return; }
   detail::sincos_f32_scalar(src, s, c, n);
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::sincos_f32_highway_sve,
-                       detail::sincos_f32_highway_neon)(src, s, c, n);
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(sincos, f32)(src, s, c, n);
 #else
   detail::sincos_f32_scalar(src, s, c, n);
 #endif
@@ -507,9 +526,8 @@ void atan2_f64_batch(const double* a, const double* b, double* dst, std::size_t 
   static const bool hw = have_avx2();
   if (hw) { detail::atan2_f64_highway_avx2(a, b, dst, n); return; }
   detail::atan2_f64_scalar(a, b, dst, n);
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::atan2_f64_highway_sve,
-                       detail::atan2_f64_highway_neon)(a, b, dst, n);
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(atan2, f64)(a, b, dst, n);
 #else
   detail::atan2_f64_scalar(a, b, dst, n);
 #endif
@@ -523,9 +541,8 @@ void pow_f64_batch(const double* a, const double* b, double* dst, std::size_t n)
   static const bool hw = have_avx2();
   if (hw) { detail::pow_f64_highway_avx2(a, b, dst, n); return; }
   detail::pow_f64_scalar(a, b, dst, n);
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::pow_f64_highway_sve,
-                       detail::pow_f64_highway_neon)(a, b, dst, n);
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(pow, f64)(a, b, dst, n);
 #else
   detail::pow_f64_scalar(a, b, dst, n);
 #endif
@@ -539,17 +556,20 @@ void sincos_f64_batch(const double* src, double* s, double* c, std::size_t n) no
   static const bool hw = have_avx2();
   if (hw) { detail::sincos_f64_highway_avx2(src, s, c, n); return; }
   detail::sincos_f64_scalar(src, s, c, n);
-#elif defined(HYLE_ARCH_ARM64)
-  HYLE_ARM_MATH_SELECT(detail::sincos_f64_highway_sve,
-                       detail::sincos_f64_highway_neon)(src, s, c, n);
+#elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+  HYLE_SCALABLE_MATH(sincos, f64)(src, s, c, n);
 #else
   detail::sincos_f64_scalar(src, s, c, n);
 #endif
 }
 
-#if defined(HYLE_ARCH_ARM64)
-#undef HYLE_ARM_MATH_SELECT
+#if defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
+#undef HYLE_SCALABLE_MATH
 #endif
+#undef HYLE_MATH_NAME_II
+#undef HYLE_MATH_NAME_I
+#undef HYLE_SCALAR_MATH_NAME
+#undef HYLE_SCALAR_MATH_NAME_I
 // simd-18 批G xsimd-only (erfc/exp10/fmod/remainder/nextafter/fdim): real xsimd AVX2 core on
 // x86 (Highway has none of these), scalar libm elsewhere/tail. f32 + f64.
 #if defined(HYLE_ARCH_X64)

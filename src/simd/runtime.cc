@@ -85,7 +85,7 @@ const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
     case Isa::kRvv: {
       static const Runtime table = [] {
         Runtime r = kRvvRuntime;
-        r.dtype.isa = r.math.isa = r.sort.isa = r.bitpack.isa = Isa::kScalar;
+        r.dtype.isa = r.sort.isa = r.bitpack.isa = Isa::kScalar;
         return r;
       }();
       return &table;
@@ -144,9 +144,9 @@ Runtime selected_runtime() noexcept {
     result.bitpack.isa = Isa::kNeon;
   }
 #elif defined(HYLE_ARCH_RISCV64)
-  // The first RVV runtime slice covers the generic D-tag whole-buffer kernels.
+  // RVV math now has a length-agnostic product TU. dtype/sort/bitpack remain scalar.
   result.dtype.isa = Isa::kScalar;
-  result.math.isa = Isa::kScalar;
+  result.math.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.sort.isa = Isa::kScalar;
   result.bitpack.isa = Isa::kScalar;
 #endif

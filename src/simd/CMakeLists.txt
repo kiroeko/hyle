@@ -57,8 +57,11 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     sort/vqsort_hyle_neon.cc
     bitpack/bitpack_hyle_neon.cc)
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    list(APPEND _simd_arch_sources math/transcendental_highway_sve.cc)
+    list(APPEND _simd_arch_sources math/transcendental_highway_scalable.cc)
   endif()
+elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
+  set(HYLE_SIMD_RISCV64 TRUE)
+  list(APPEND _simd_arch_sources math/transcendental_highway_scalable.cc)
 endif()
 
 # X3: product simd no longer links third_party/highway (vqsort ported to HYLE D-tag).
@@ -150,8 +153,10 @@ elseif(HYLE_SIMD_ARM64)
   # cvt_neon.cc adds fp16(native vcvt)/bf16(integer) batch conversions.
   hyle_set_isa(dtype/cvt_neon.cc NEON)
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-    hyle_set_isa(math/transcendental_highway_sve.cc SVE)
+    hyle_set_isa(math/transcendental_highway_scalable.cc SVE)
   endif()
+elseif(HYLE_SIMD_RISCV64)
+  hyle_set_isa(math/transcendental_highway_scalable.cc RVV)
 endif()
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:

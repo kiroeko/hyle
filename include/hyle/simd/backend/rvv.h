@@ -713,6 +713,23 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> ConvertTo(Simd<DstT, N, 0> dd, V v) n
   else  // int64 -> double
     return __riscv_vfcvt_f_x_v_f64m1(v, vl);
 }
+template <typename DstT, std::size_t N, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> ConvertInRangeTo(
+    Simd<DstT, N, 0> d, V v) noexcept {
+  return ConvertTo(d, v);
+}
+// vfncvt writes one i32 per active f64 lane into an mf2 result. HYLE deliberately keeps native
+// RVV values in LMUL=1 carriers even when the logical tag is a half vector, so extend the
+// fractional result without changing its low-lane order. Only the first f64-lane-count elements
+// are active; callers retain that count through Rebind's kPow2=-1 logical tag.
+template <std::size_t N>
+HYLE_FORCE_INLINE vint32m1_t DemoteInRangeTo(Simd<std::int32_t, N, 0>,
+                                              vfloat64m1_t v) noexcept {
+  const std::size_t vlmax = detail::vlmax<double>();
+  const std::size_t vl = vlmax < N ? vlmax : N;
+  const vint32mf2_t narrow = __riscv_vfncvt_rtz_x_f_w_i32mf2(v, vl);
+  return __riscv_vlmul_ext_v_i32mf2_i32m1(narrow);
+}
 // RoundToInt: float->int, round-to-nearest-even (vfcvt with default rounding mode = RNE).
 template <typename DstT, std::size_t N, class V>
 HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> RoundToInt(Simd<DstT, N, 0> dd, V v) noexcept {
@@ -995,25 +1012,37 @@ template <class D, class VI>
 HYLE_FORCE_INLINE VFromD<D> GatherIndex(D d, const TFromD<D>* base, VI idx) noexcept {
   using T = TFromD<D>;
   const std::size_t vl = Lanes(d);
-  const auto boff = __riscv_vmul(idx, static_cast<TFromV<VI>>(sizeof(T)), vl);  // element->byte
-  if constexpr (std::is_same_v<T, float>) return __riscv_vluxei32_v_f32m1(base, boff, vl);
-  else if constexpr (sizeof(T) == 4 && std::is_signed_v<T>) return __riscv_vluxei32_v_i32m1(reinterpret_cast<const std::int32_t*>(base), boff, vl);
-  else if constexpr (sizeof(T) == 4) return __riscv_vluxei32_v_u32m1(reinterpret_cast<const std::uint32_t*>(base), boff, vl);
-  else if constexpr (std::is_same_v<T, double>) return __riscv_vluxei64_v_f64m1(base, boff, vl);
-  else if constexpr (sizeof(T) == 8 && std::is_signed_v<T>) return __riscv_vluxei64_v_i64m1(reinterpret_cast<const std::int64_t*>(base), boff, vl);
-  else return __riscv_vluxei64_v_u64m1(reinterpret_cast<const std::uint64_t*>(base), boff, vl);
+  static_assert(sizeof(TFromV<VI>) == sizeof(T), "RVV gather index width must match lane width");
+  const auto scaled = __riscv_vmul(idx, static_cast<TFromV<VI>>(sizeof(T)), vl);
+  if constexpr (sizeof(T) == 4) {
+    const vuint32m1_t boff = detail::bits_u32_rvv(scaled);
+    if constexpr (std::is_same_v<T, float>) return __riscv_vluxei32_v_f32m1(base, boff, vl);
+    else if constexpr (std::is_signed_v<T>) return __riscv_vluxei32_v_i32m1(reinterpret_cast<const std::int32_t*>(base), boff, vl);
+    else return __riscv_vluxei32_v_u32m1(reinterpret_cast<const std::uint32_t*>(base), boff, vl);
+  } else {
+    const vuint64m1_t boff = detail::bits_u64_rvv(scaled);
+    if constexpr (std::is_same_v<T, double>) return __riscv_vluxei64_v_f64m1(base, boff, vl);
+    else if constexpr (std::is_signed_v<T>) return __riscv_vluxei64_v_i64m1(reinterpret_cast<const std::int64_t*>(base), boff, vl);
+    else return __riscv_vluxei64_v_u64m1(reinterpret_cast<const std::uint64_t*>(base), boff, vl);
+  }
 }
 template <class D, class VI>
 HYLE_FORCE_INLINE void ScatterIndex(VFromD<D> v, D d, TFromD<D>* base, VI idx) noexcept {
   using T = TFromD<D>;
   const std::size_t vl = Lanes(d);
-  const auto boff = __riscv_vmul(idx, static_cast<TFromV<VI>>(sizeof(T)), vl);
-  if constexpr (std::is_same_v<T, float>) __riscv_vsuxei32_v_f32m1(base, boff, v, vl);
-  else if constexpr (sizeof(T) == 4 && std::is_signed_v<T>) __riscv_vsuxei32_v_i32m1(reinterpret_cast<std::int32_t*>(base), boff, v, vl);
-  else if constexpr (sizeof(T) == 4) __riscv_vsuxei32_v_u32m1(reinterpret_cast<std::uint32_t*>(base), boff, v, vl);
-  else if constexpr (std::is_same_v<T, double>) __riscv_vsuxei64_v_f64m1(base, boff, v, vl);
-  else if constexpr (sizeof(T) == 8 && std::is_signed_v<T>) __riscv_vsuxei64_v_i64m1(reinterpret_cast<std::int64_t*>(base), boff, v, vl);
-  else __riscv_vsuxei64_v_u64m1(reinterpret_cast<std::uint64_t*>(base), boff, v, vl);
+  static_assert(sizeof(TFromV<VI>) == sizeof(T), "RVV scatter index width must match lane width");
+  const auto scaled = __riscv_vmul(idx, static_cast<TFromV<VI>>(sizeof(T)), vl);
+  if constexpr (sizeof(T) == 4) {
+    const vuint32m1_t boff = detail::bits_u32_rvv(scaled);
+    if constexpr (std::is_same_v<T, float>) __riscv_vsuxei32_v_f32m1(base, boff, v, vl);
+    else if constexpr (std::is_signed_v<T>) __riscv_vsuxei32_v_i32m1(reinterpret_cast<std::int32_t*>(base), boff, v, vl);
+    else __riscv_vsuxei32_v_u32m1(reinterpret_cast<std::uint32_t*>(base), boff, v, vl);
+  } else {
+    const vuint64m1_t boff = detail::bits_u64_rvv(scaled);
+    if constexpr (std::is_same_v<T, double>) __riscv_vsuxei64_v_f64m1(base, boff, v, vl);
+    else if constexpr (std::is_signed_v<T>) __riscv_vsuxei64_v_i64m1(reinterpret_cast<std::int64_t*>(base), boff, v, vl);
+    else __riscv_vsuxei64_v_u64m1(reinterpret_cast<std::uint64_t*>(base), boff, v, vl);
+  }
 }
 
 // ---- compress (RVV NATIVE vcompress) + CompressStore --------------------------------
