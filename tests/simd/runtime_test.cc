@@ -36,22 +36,34 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_NE(active.ops.dot_f16_f16, nullptr);
   EXPECT_NE(active.ops.dot_i16_i16, nullptr);
   EXPECT_NE(active.random.fill_u64, nullptr);
+  EXPECT_NE(active.math.features & hs::Runtime::kFeatureMathExactLibmScalar, 0u);
+  EXPECT_NE(active.dtype.features & hs::Runtime::kFeatureDtypeFp8Scalar, 0u);
+  if (active.sort.isa == hs::Isa::kSve)
+    EXPECT_NE(active.sort.features & hs::Runtime::kFeatureSortCappedNetwork, 0u);
+  if (active.bitpack.isa == hs::Isa::kSve || active.bitpack.isa == hs::Isa::kRvv)
+    EXPECT_NE(active.bitpack.features & hs::Runtime::kFeatureBitpackLogical128, 0u);
   const hs::Runtime* exact = hs::runtime_for(active.isa);
   ASSERT_NE(exact, nullptr);
   EXPECT_EQ(active.ops.dot_f32, exact->ops.dot_f32);
   EXPECT_EQ(active.random.fill_u64, exact->random.fill_u64);
-#if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
-  EXPECT_EQ(active.scan.isa, hs::Isa::kScalar);
-#else
-  EXPECT_EQ(active.scan.isa, active.isa);
-#endif
-
   const hs::Runtime* scalar = hs::runtime_for(hs::Isa::kScalar);
-  ASSERT_NE(scalar, nullptr);
-  EXPECT_EQ(scalar->isa, hs::Isa::kScalar);
+  if (scalar == nullptr) {
+    // A non-scalar exact artifact intentionally contains one canonical tier only.
+    EXPECT_NE(active.isa, hs::Isa::kScalar);
+    EXPECT_EQ(active.scan.isa, active.isa);
+  } else {
+    EXPECT_EQ(scalar->isa, hs::Isa::kScalar);
+#if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
+    EXPECT_EQ(active.scan.isa, hs::Isa::kScalar);
+#else
+    EXPECT_EQ(active.scan.isa, active.isa);
+#endif
+  }
 
 #if defined(HYLE_ARCH_X64)
   EXPECT_EQ(hs::runtime_for(hs::Isa::kNeon), nullptr);
+  if (const hs::Runtime* sse = hs::runtime_for(hs::Isa::kSse42))
+    EXPECT_EQ(sse->math.isa, hs::Isa::kScalar);
 #elif defined(HYLE_ARCH_ARM64)
   EXPECT_EQ(hs::runtime_for(hs::Isa::kAvx2), nullptr);
 #elif defined(HYLE_ARCH_RISCV64)
@@ -88,8 +100,14 @@ TEST(SimdRuntime, RandomSequenceIgnoresIsaWidth) {
   std::array<std::uint64_t, kCount> scalar{};
 
   hs::runtime().random.fill_u64(&active_state, active.data(), active.size());
-  hs::runtime_for(hs::Isa::kScalar)->random.fill_u64(&scalar_state, scalar.data(),
-                                                      scalar.size());
+  const hs::Runtime* scalar_runtime = hs::runtime_for(hs::Isa::kScalar);
+  if (scalar_runtime != nullptr) {
+    scalar_runtime->random.fill_u64(&scalar_state, scalar.data(), scalar.size());
+  } else {
+    // Single-leg exact artifacts have no scalar table; determinism remains testable with a
+    // second state on the sole compiled tier.
+    hs::runtime().random.fill_u64(&scalar_state, scalar.data(), scalar.size());
+  }
   EXPECT_EQ(active, scalar);
 }
 

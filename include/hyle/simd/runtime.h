@@ -12,7 +12,7 @@ class RandomState;
 
 struct Runtime {
   // Version of this C++ convenience table, not the stable C ABI from include/hyle/c/.
-  static constexpr std::uint32_t kTableVersion = 4;
+  static constexpr std::uint32_t kTableVersion = 5;
 
   struct Ops {
     float (*dot_f32)(const float*, const float*, std::size_t) noexcept;
@@ -72,6 +72,13 @@ struct Runtime {
     kFeatureF16c = 1ull << 0,
     kFeatureAvx512Bf16 = 1ull << 1,
     kFeatureAvx10_2 = 1ull << 2,
+    // Module contract/diagnostic flags. `Module::isa` is the broad product tier; these bits make
+    // intentional per-op fallbacks and scalable-model constraints observable.
+    kFeatureMathExactLibmScalar = 1ull << 16,
+    kFeatureDtypeFp8Scalar = 1ull << 17,
+    kFeaturePerOpLowerTier = 1ull << 18,
+    kFeatureSortCappedNetwork = 1ull << 19,
+    kFeatureBitpackLogical128 = 1ull << 20,
   };
 
   std::uint32_t table_version;

@@ -4,7 +4,30 @@
 
 #include "hyle/platform.h"
 #include "hyle/simd/runtime.h"
+#include "src/simd/dispatch_internal.h"
 #include "src/simd/math/kernels.h"
+
+// An exact scalar artifact must remain scalar even on architectures whose ordinary baseline
+// includes SIMD (notably AArch64/NEON). All headers are already parsed; hiding the architecture
+// selector for this dispatch TU makes the existing final scalar branches authoritative without
+// duplicating the large per-op ladder.
+#if defined(HYLE_SIMD_EXACT_TARGET_SCALAR) && defined(HYLE_ARCH_ARM64)
+#define HYLE_MATH_RESTORE_ARCH_ARM64 1
+#undef HYLE_ARCH_ARM64
+#elif defined(HYLE_SIMD_EXACT_TARGET_SCALAR) && defined(HYLE_ARCH_RISCV64)
+#define HYLE_MATH_RESTORE_ARCH_RISCV64 1
+#undef HYLE_ARCH_RISCV64
+#endif
+
+#if defined(HYLE_ARCH_X64) && \
+    !defined(HYLE_SIMD_EXACT_TARGET_SSE4) && !defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
+#define HYLE_MATH_X64 1
+#endif
+#if defined(HYLE_SIMD_COMPILED_AVX512)
+#define HYLE_MATH_IF_AVX512(condition) if (condition)
+#else
+#define HYLE_MATH_IF_AVX512(condition) if constexpr (false)
+#endif
 
 // math_dispatch.cc -- baseline dispatcher for the transcendental batch ops, PER-OP
 // best-of-breed across the two vendored header-only backends. The same-ISA bench found NO
@@ -21,7 +44,7 @@
 namespace hyle::simd {
 namespace {
 
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 // AVX2 x86 host? (the borrow cores are x86 AVX2-only). On non-x86 this is always false.
 bool have_avx2() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
@@ -100,9 +123,11 @@ bool have_rvv_math() noexcept {
 #endif
 
 void exp_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::exp_f32_xsimd_avx512(src, dst, n); return; }  // 16-wide
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::exp_f32_xsimd_avx512(src, dst, n); return;
+  }  // 16-wide
   static const bool hw = have_avx2();
   if (hw) {
     detail::exp_f32_xsimd_avx2(src, dst, n); return;       // exp: xsimd fastest
@@ -113,13 +138,15 @@ void exp_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   detail::exp_f32_scalar(src, dst, n);
 }
 void log_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   // Highway's AVX3 is HWY_BROKEN on MSVC (would emit ymm), so the 512 log core exists only
   // on GCC/Clang. On MSVC we fall through to the avx2 highway log -- the widest Highway gives
   // there (no 512 win to be had). See transcendental_highway_avx512.cc MSVC EXCLUSION.
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::log_f32_highway_avx512(src, dst, n); return; }  // 16-wide (GCC/Clang)
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::log_f32_highway_avx512(src, dst, n); return;
+  }  // 16-wide (GCC/Clang)
 #endif
   static const bool hw = have_avx2();
   if (hw) {
@@ -131,9 +158,11 @@ void log_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   detail::log_f32_scalar(src, dst, n);
 }
 void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::tanh_f32_xsimd_avx512(src, dst, n); return; }  // 16-wide
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::tanh_f32_xsimd_avx512(src, dst, n); return;
+  }  // 16-wide
   static const bool hw = have_avx2();
   if (hw) {
     detail::tanh_f32_xsimd_avx2(src, dst, n); return;      // tanh: xsimd fastest
@@ -152,9 +181,11 @@ void tanh_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
 
 // xsimd-winning: exp2, erf (written longhand -- only two, mirror exp's 512->avx2->scalar).
 void exp2_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::exp2_f32_xsimd_avx512(src, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::exp2_f32_xsimd_avx512(src, dst, n); return;
+  }
   static const bool hw = have_avx2();
   if (hw) { detail::exp2_f32_xsimd_avx2(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
@@ -163,9 +194,11 @@ void exp2_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   detail::exp2_f32_scalar(src, dst, n);
 }
 void erf_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::erf_f32_xsimd_avx512(src, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::erf_f32_xsimd_avx512(src, dst, n); return;
+  }
   static const bool hw = have_avx2();
   if (hw) { detail::erf_f32_xsimd_avx2(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
@@ -185,9 +218,11 @@ void lgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
   detail::lgamma_f32_scalar(src, dst, n);
 }
 void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::tgamma_f32_xsimd_avx512(src, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::tgamma_f32_xsimd_avx512(src, dst, n); return;
+  }
   static const bool hw = have_avx2();
   if (hw) { detail::tgamma_f32_xsimd_avx2(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
@@ -204,10 +239,12 @@ void tgamma_f32_batch(const float* src, float* dst, std::size_t n) noexcept {
 // Full-range hypot contract: Highway exponent scaling, scalar std::hypot fallback. The separate
 // hypot_in_range_f32_batch below exposes xsimd's faster direct formula under a narrower input contract.
 void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::hypot_f32_highway_avx512(a, b, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::hypot_f32_highway_avx512(a, b, dst, n); return;
+  }
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::hypot_f32_highway_avx2(a, b, dst, n); return; }
@@ -219,9 +256,11 @@ void hypot_f32_batch(const float* a, const float* b, float* dst, std::size_t n) 
 
 // Direct-formula contract: faster xsimd core, no per-lane overflow/underflow checks.
 void hypot_in_range_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::hypot_in_range_f32_xsimd_avx512(a, b, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::hypot_in_range_f32_xsimd_avx512(a, b, dst, n); return;
+  }
   static const bool hw = have_avx2();
   if (hw) { detail::hypot_in_range_f32_xsimd_avx2(a, b, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
@@ -242,7 +281,7 @@ void hypot_in_range_f32_batch(const float* a, const float* b, float* dst, std::s
                         std::size_t n) noexcept {                                           \
     HYLE_CX_UNARY_BODY(name)                                                                \
   }
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #define HYLE_CX_UNARY_BODY(name)                                                            \
   static const bool hw = have_avx2();                                                       \
   if (hw) { detail::name##_f32_xsimd_avx2(sr, si, dr, di, n); return; }                      \
@@ -269,7 +308,7 @@ HYLE_CX_UNARY_DISPATCH(csqrt)
 
 void csin_f32_batch(const float* sr, const float* si, float* dr, float* di,
                      std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw = have_avx2();
   if (hw) { detail::csin_f32_hyle_avx2(sr, si, dr, di, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
@@ -285,7 +324,7 @@ void csin_f32_batch(const float* sr, const float* si, float* dr, float* di,
 
 void ccos_f32_batch(const float* sr, const float* si, float* dr, float* di,
                      std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw = have_avx2();
   if (hw) { detail::ccos_f32_hyle_avx2(sr, si, dr, di, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
@@ -301,7 +340,7 @@ void ccos_f32_batch(const float* sr, const float* si, float* dr, float* di,
 
 void ctanh_f32_batch(const float* sr, const float* si, float* dr, float* di,
                      std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw = have_avx2();
   if (hw) { detail::ctanh_f32_hyle_avx2(sr, si, dr, di, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
@@ -317,7 +356,7 @@ void ctanh_f32_batch(const float* sr, const float* si, float* dr, float* di,
 
 void cpow_f32_batch(const float* zr, const float* zi, const float* wr, const float* wi,
                     float* dr, float* di, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw = have_avx2();
   if (hw) { detail::cpow_f32_hyle_avx2(zr, zi, wr, wi, dr, di, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
@@ -333,7 +372,7 @@ void cpow_f32_batch(const float* zr, const float* zi, const float* wr, const flo
 
 // The complete typed HYLE complex family shares one D-tag body per operation. This covers the
 // f32 additions and the full f64 surface without coupling the public ABI to an ISA vector type.
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #define HYLE_COMPLEX_TYPED_UNARY_BODY(type, tag, name)                              \
   static const bool hw = have_avx2();                                               \
   if (hw) { detail::name##_##tag##_hyle_avx2(sr, si, dr, di, n); return; }           \
@@ -375,7 +414,7 @@ HYLE_COMPLEX_TYPED_UNARY(double, f64, ctanh)
 
 void cpow_f64_batch(const double* zr, const double* zi, const double* wr, const double* wi,
                     double* dr, double* di, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw = have_avx2();
   if (hw) { detail::cpow_f64_hyle_avx2(zr, zi, wr, wi, dr, di, n); return; }
 #elif defined(HYLE_ARCH_ARM64)
@@ -396,11 +435,11 @@ void cpow_f64_batch(const double* zr, const double* zi, const double* wr, const 
     /* x86: 512 (GCC/Clang) -> avx2 -> scalar; arm64: NEON; else scalar */       \
     HYLE_MATH_HIGHWAY_BODY(name)                                                 \
   }
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
 #define HYLE_MATH_HIGHWAY_BODY(name)                                             \
   static const bool hw512 = have_avx512();                                       \
-  if (hw512) { detail::name##_f32_highway_avx512(src, dst, n); return; }         \
+  HYLE_MATH_IF_AVX512(hw512) { detail::name##_f32_highway_avx512(src, dst, n); return; } \
   static const bool hw = have_avx2();                                            \
   if (hw) { detail::name##_f32_highway_avx2(src, dst, n); return; }              \
   detail::name##_f32_scalar(src, dst, n);
@@ -441,11 +480,11 @@ HYLE_MATH_DISPATCH_HIGHWAY(log10)
 // acosh + hypot) -- the near-OPPOSITE of f32 (xsimd wins exp/tanh/exp2 there). xsimd wins only f64
 // erf. This is exactly why winners must be benched per precision, not extrapolated from f32.
 // Full tiering now: x86 avx512(GCC/Clang)->avx2->scalar; arm64 NEON; else scalar.
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
 #define HYLE_MATH_F64_HIGHWAY_BODY(name)                                           \
   static const bool hw512 = have_avx512();                                         \
-  if (hw512) { detail::name##_f64_highway_avx512(src, dst, n); return; }           \
+  HYLE_MATH_IF_AVX512(hw512) { detail::name##_f64_highway_avx512(src, dst, n); return; } \
   static const bool hw = have_avx2();                                              \
   if (hw) { detail::name##_f64_highway_avx2(src, dst, n); return; }                \
   detail::name##_f64_scalar(src, dst, n);
@@ -492,10 +531,12 @@ HYLE_MATH_F64_HIGHWAY(log10)
 // exp/log domains, so the ISA core may bypass the exceptional-vector screen. The table core and
 // tier dispatch remain identical to the full API; old x86 / unsupported hosts use scalar libm.
 void exp_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::exp_in_range_f64_highway_avx512(src, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::exp_in_range_f64_highway_avx512(src, dst, n); return;
+  }
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::exp_in_range_f64_highway_avx2(src, dst, n); return; }
@@ -510,10 +551,12 @@ void exp_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexc
   detail::exp_f64_scalar(src, dst, n);
 }
 void log_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::log_in_range_f64_highway_avx512(src, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::log_in_range_f64_highway_avx512(src, dst, n); return;
+  }
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::log_in_range_f64_highway_avx2(src, dst, n); return; }
@@ -530,10 +573,12 @@ void log_in_range_f64_batch(const double* src, double* dst, std::size_t n) noexc
 
 // hypot f64 (binary, overflow-safe -> Highway all platforms). Same tiering.
 void hypot_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::hypot_f64_highway_avx512(a, b, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::hypot_f64_highway_avx512(a, b, dst, n); return;
+  }
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::hypot_f64_highway_avx2(a, b, dst, n); return; }
@@ -544,9 +589,11 @@ void hypot_f64_batch(const double* a, const double* b, double* dst, std::size_t 
 }
 // erf f64 (xsimd wins at f64, the one exception to Highway's fixed-width f64 sweep).
 void erf_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::erf_f64_xsimd_avx512(src, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::erf_f64_xsimd_avx512(src, dst, n); return;
+  }
   static const bool hw = have_avx2();
   if (hw) { detail::erf_f64_xsimd_avx2(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
@@ -557,9 +604,11 @@ void erf_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
 // tgamma f64 (xsimd-derived; Highway has no gamma) has SVE/RVV D-tag products. lgamma f64 remains
 // scalar on every target because of the vendor algorithm bug documented by the f32 comment.
 void tgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::tgamma_f64_xsimd_avx512(src, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::tgamma_f64_xsimd_avx512(src, dst, n); return;
+  }
   static const bool hw = have_avx2();
   if (hw) { detail::tgamma_f64_xsimd_avx2(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
@@ -575,10 +624,12 @@ void lgamma_f64_batch(const double* src, double* dst, std::size_t n) noexcept {
 
 // simd-18 批G binary Highway (atan2/pow) + sincos + xsimd extras (scalar path first)
 void atan2_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::atan2_f32_highway_avx512(a, b, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::atan2_f32_highway_avx512(a, b, dst, n); return;
+  }
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::atan2_f32_highway_avx2(a, b, dst, n); return; }
@@ -590,10 +641,12 @@ void atan2_f32_batch(const float* a, const float* b, float* dst, std::size_t n) 
 #endif
 }
 void pow_f32_batch(const float* a, const float* b, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::pow_f32_highway_avx512(a, b, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::pow_f32_highway_avx512(a, b, dst, n); return;
+  }
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::pow_f32_highway_avx2(a, b, dst, n); return; }
@@ -605,10 +658,12 @@ void pow_f32_batch(const float* a, const float* b, float* dst, std::size_t n) no
 #endif
 }
 void sincos_f32_batch(const float* src, float* s, float* c, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::sincos_f32_highway_avx512(src, s, c, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::sincos_f32_highway_avx512(src, s, c, n); return;
+  }
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::sincos_f32_highway_avx2(src, s, c, n); return; }
@@ -620,10 +675,12 @@ void sincos_f32_batch(const float* src, float* s, float* c, std::size_t n) noexc
 #endif
 }
 void atan2_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::atan2_f64_highway_avx512(a, b, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::atan2_f64_highway_avx512(a, b, dst, n); return;
+  }
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::atan2_f64_highway_avx2(a, b, dst, n); return; }
@@ -635,10 +692,12 @@ void atan2_f64_batch(const double* a, const double* b, double* dst, std::size_t 
 #endif
 }
 void pow_f64_batch(const double* a, const double* b, double* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::pow_f64_highway_avx512(a, b, dst, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::pow_f64_highway_avx512(a, b, dst, n); return;
+  }
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::pow_f64_highway_avx2(a, b, dst, n); return; }
@@ -650,10 +709,12 @@ void pow_f64_batch(const double* a, const double* b, double* dst, std::size_t n)
 #endif
 }
 void sincos_f64_batch(const double* src, double* s, double* c, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #if !defined(_MSC_VER)
   static const bool hw512 = have_avx512();
-  if (hw512) { detail::sincos_f64_highway_avx512(src, s, c, n); return; }
+  HYLE_MATH_IF_AVX512(hw512) {
+    detail::sincos_f64_highway_avx512(src, s, c, n); return;
+  }
 #endif
   static const bool hw = have_avx2();
   if (hw) { detail::sincos_f64_highway_avx2(src, s, c, n); return; }
@@ -674,7 +735,7 @@ void sincos_f64_batch(const double* src, double* s, double* c, std::size_t n) no
 #undef HYLE_SCALAR_MATH_NAME_I
 // simd-18 batch G, now HYLE D-tag code: x86 uses AVX2; SVE/RVV use their scalable product TU.
 // remainder/nextafter remain scalar below because the vector algorithms violate exact semantics.
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_MATH_X64)
 #define HYLE_XSIMD_UNARY(name)                                                              \
   void name##_f32_batch(const float* s, float* d, std::size_t n) noexcept {                 \
     static const bool hw = have_avx2();                                                     \
@@ -768,4 +829,15 @@ HYLE_XSIMD_BINARY(fdim)
 #undef HYLE_XSIMD_BINARY
 #undef HYLE_HYLE_NAME_II
 #undef HYLE_HYLE_NAME_I
+#undef HYLE_MATH_IF_AVX512
+#if defined(HYLE_MATH_X64)
+#undef HYLE_MATH_X64
+#endif
+#if defined(HYLE_MATH_RESTORE_ARCH_ARM64)
+#define HYLE_ARCH_ARM64 1
+#undef HYLE_MATH_RESTORE_ARCH_ARM64
+#elif defined(HYLE_MATH_RESTORE_ARCH_RISCV64)
+#define HYLE_ARCH_RISCV64 1
+#undef HYLE_MATH_RESTORE_ARCH_RISCV64
+#endif
 }  // namespace hyle::simd

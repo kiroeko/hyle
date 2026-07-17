@@ -14,7 +14,8 @@ target-dependent vector/mask 类型穿过边界，就只能在编译期确定 ta
      unknown customer CPU     fixed HYLE library       fixed consumer TU
        ordinary batch API      ordinary batch API          native:: API
              |                        |                  hyle_target_simd
-      baseline dispatcher      exact compile-time             |
+      baseline dispatcher      generated target manifest      |
+             |                 one Runtime table/source set   |
              |                 direct target symbol           |
       cpu_features/best_isa            |                      |
              |                         |                      |
@@ -34,7 +35,8 @@ target-dependent vector/mask 类型穿过边界，就只能在编译期确定 ta
      future C ABI: opaque handle + POD + version/size vtable -> ordinary batch API only
 ```
 
-动态和固定目标只在进入完整 kernel 前分叉；进入 `native` body 后都使用同一个 backend 实现。寄存器
+fat 与 exact 的 generated TU、手写产品 TU、Runtime table 和 exact suffix 都由
+`hyle_simd_target_manifest` 的同一 target list 驱动。动态和固定目标只在进入完整 kernel 前分叉；进入 `native` body 后都使用同一个 backend 实现。寄存器
 类型绝不穿过 per-ISA entry，C ABI 也绝不暴露 `Runtime`、D-tag、C++ 类布局或 STL。
 
 ## 用户面分层与易用性判断
@@ -120,8 +122,21 @@ auto math_tier = rt.math.isa;
 bool has_f16c = (rt.dtype.features & hyle::simd::Runtime::kFeatureF16c) != 0;
 ```
 
-`runtime_for(Isa)` 用于测试、限档或显式运行策略。它仍走稳定函数表边界，**不是固定目标直连接口**；请求当前
-CPU/OS 不支持或本架构未编译的精确 tier 时返回 `nullptr`。
+fat 产物中的 `runtime_for(Isa)` 用于测试、限档或显式运行策略。它仍走稳定函数表边界，**不是固定目标
+直连接口**；请求当前 CPU/OS 不支持或本架构未编译的 tier 时返回 `nullptr`。exact 产物只有一张
+canonical table：请求该 tier 返回它，其余一律 `nullptr`，并且不会为了诊断查询 CPU。
+
+`Module::isa` 表示该模块的**主产品 tier**，不是“每个 op 都使用该 ISA”。`features` 公开以下诊断事实：
+
+| feature | 含义 |
+|---|---|
+| `kFeatureMathExactLibmScalar` | 精确语义裁决的 libm 操作仍逐项 scalar |
+| `kFeatureDtypeFp8Scalar` | fp8 基础路径仍是 scalar/可选硬件档 |
+| `kFeaturePerOpLowerTier` | 至少一个已认证 winner 有意使用较低 canonical tier |
+| `kFeatureSortCappedNetwork` | SVE partition 吃满 VL，但基础 network 有 128/256-bit cap |
+| `kFeatureBitpackLogical128` | 指令可 scalable，外部 bitstream 仍按固定 128-bit logical block |
+
+该表是版本化的 C++ 诊断便利面（当前 `kTableVersion=5`），不是 close-01 的稳定 C ABI。
 
 ## 已知目标用户：两种精确目标模式
 
@@ -133,7 +148,13 @@ cmake -S hyle -B build-avx2 -DHYLE_SIMD_EXACT_TARGET=AVX2
 
 此时所有普通 batch API 都保留原签名，但 dispatcher 在编译期直连该 ISA 的实现；ops、RNG、scan、
 dtype、math、sort、bitpack 的 dispatch object 均不引用 `runtime()`。库不会执行 CPUID，并要求运行 CPU
-满足所选 canonical ISA。AVX-512-BF16/AVX10.2 这类非 canonical 可选扩展不因 `AVX512` 名称而被臆定。
+满足所选 canonical ISA。构建只生成一张 canonical Runtime table 和一套对应的 generated kernel suffix；
+scalar 精确语义核、AVX512 中实测胜出的 AVX2 per-op 核仍可作为目标产品的显式依赖，这不等于重新带回
+fat dispatch。AVX-512-BF16/AVX10.2 这类非 canonical 可选扩展不因 `AVX512` 名称而被臆定。
+
+每个 exact 配置都会提供 `hyle_simd_exact_artifact_check`：它核对 manifest、Ninja source graph、CPU-probe
+导入和 x86 对象的越级指令。当前 Windows 已覆盖 scalar/SSE4/AVX2/AVX512；SVE/RVV 用
+`scripts/simd-scalable-exact-qemu-test.sh` 检查单 suffix、无 probe 引用并执行多 VL/VLEN。
 
 若只固定自己的一个 target，并希望 kernel 跨调用内联：
 
@@ -209,8 +230,8 @@ bitpack 的物理指令使用 scalable backend，但 logical D-tag 固定为 128
 KV32/KV64：RVV 使用诚实的 LMUL=1 全宽 tag；SVE 的递归 partition 使用完整物理 VL，只有需要 2 的幂
 lane 数的 sorting network 保持 128/256-bit cap。
 
-当前脚本门为 SVE **94 tests × VL 128/256/384/512/2048**，RVV base **90 tests × VLEN
-128/256/512/1024**；扩展门为 SVE2-AES **94×5**、RVV Zvbb/Zvbc 各 **91×4**。门内包含 CPU probe、
+当前 fat 脚本门为 SVE **98 tests × VL 128/256/384/512/2048**，RVV base **93 tests × VLEN
+128/256/512/1024**，RVV Zvbb/Zvbc 各 **94×4**；exact 门另为 SVE **43×5**、RVV **43×4**。门内包含 CPU probe、
 Runtime、公开 ops/random/search/scan/math/dtype/bitpack/sort batch API、tail 和 feature 蕴含关系。
 qemu-aarch64 能正向验证 HWCAP2 扩展位；qemu-riscv64-user 8.2 能执行 Zvbb/Zvbc，但不模拟
 `riscv_hwprobe` 可选位，故 RVV
@@ -237,3 +258,5 @@ Highway 通过 `foreach_target.h` 重包含 TU、target namespace 与 `HWY_EXPOR
 3. 每个 runtime kernel 对拍 scalar oracle；每个 native header 至少在 SSE4/AVX2/AVX-512/NEON 编译；
    scalable body 还必须在至少三种 SVE VL / RVV VLEN 下执行。
 4. 只在 whole-buffer 边界付一次间接调用；禁止在 lane/寄存器循环内查 runtime 表。
+5. x86 partial 以 XMM/YMM/ZMM 分层表达；sub-XMM 逻辑向量物理上仍是 XMM。升级编译器时必须跑
+   exact-byte/guard-page、half/combine oracle 与 `op_parity_widen_bench`，不能从“类型有 N”推断 codegen 必然健康。

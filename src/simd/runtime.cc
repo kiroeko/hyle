@@ -29,33 +29,43 @@ namespace {
    HYLE_SEARCH_RUNTIME_ONE(double, f64, suffix)}
 
 #define HYLE_RUNTIME_TABLE(name, tier, suffix)                                      \
-  const Runtime name = {                                                           \
-      Runtime::kTableVersion, sizeof(Runtime), tier,                              \
-      {&detail::dot_f32_##suffix, &detail::dot_f64_##suffix,                       \
-       &detail::dot_bf16_bf16_##suffix, &detail::dot_f32_bf16_##suffix,            \
-       &detail::dot_f16_f16_##suffix, &detail::dot_i16_i16_##suffix,               \
-       &detail::saxpy_f32_##suffix, &detail::saxpy_f64_##suffix,                   \
-       &detail::add_f32_##suffix, &detail::add_f64_##suffix},                      \
-      {&detail::random_fill_u64_##suffix, &detail::random_fill_f32_##suffix,       \
-       &detail::random_fill_f64_##suffix},                                         \
-      HYLE_SEARCH_RUNTIME(suffix),                                                 \
-      {tier, 0}, {tier, 0}, {tier, 0}, {tier, 0}, {tier, 0}}
+  const Runtime name = [] {                                                         \
+    Runtime value = {                                                               \
+        Runtime::kTableVersion, sizeof(Runtime), tier,                              \
+        {&detail::dot_f32_##suffix, &detail::dot_f64_##suffix,                      \
+         &detail::dot_bf16_bf16_##suffix, &detail::dot_f32_bf16_##suffix,           \
+         &detail::dot_f16_f16_##suffix, &detail::dot_i16_i16_##suffix,              \
+         &detail::saxpy_f32_##suffix, &detail::saxpy_f64_##suffix,                  \
+         &detail::add_f32_##suffix, &detail::add_f64_##suffix},                     \
+        {&detail::random_fill_u64_##suffix, &detail::random_fill_f32_##suffix,      \
+         &detail::random_fill_f64_##suffix},                                        \
+        HYLE_SEARCH_RUNTIME(suffix),                                                \
+        {tier, 0},                                                                  \
+        {tier, Runtime::kFeatureDtypeFp8Scalar},                                    \
+        {tier, Runtime::kFeatureMathExactLibmScalar},                               \
+        {tier, 0}, {tier, 0}};                                                      \
+    if constexpr (tier == Isa::kSse42) {                                            \
+      value.dtype.isa = value.math.isa = value.sort.isa = value.bitpack.isa =       \
+          Isa::kScalar;                                                             \
+    } else if constexpr (tier == Isa::kAvx2) {                                      \
+      value.dtype.features |= Runtime::kFeatureF16c;                                \
+    } else if constexpr (tier == Isa::kAvx512) {                                    \
+      value.dtype.isa = Isa::kAvx2;                                                 \
+      value.dtype.features |= Runtime::kFeatureF16c;                                \
+      value.math.features |= Runtime::kFeaturePerOpLowerTier;                       \
+    } else if constexpr (tier == Isa::kSve) {                                       \
+      value.sort.features |= Runtime::kFeatureSortCappedNetwork;                    \
+      value.bitpack.features |= Runtime::kFeatureBitpackLogical128;                 \
+    } else if constexpr (tier == Isa::kRvv) {                                       \
+      value.bitpack.features |= Runtime::kFeatureBitpackLogical128;                 \
+    }                                                                               \
+    return value;                                                                   \
+  }()
 
-HYLE_RUNTIME_TABLE(kScalarRuntime, Isa::kScalar, scalar);
-#if defined(HYLE_ARCH_X64)
-HYLE_RUNTIME_TABLE(kSse4Runtime, Isa::kSse42, sse4);
-HYLE_RUNTIME_TABLE(kAvx2Runtime, Isa::kAvx2, avx2);
-HYLE_RUNTIME_TABLE(kAvx512Runtime, Isa::kAvx512, avx512);
-#elif defined(HYLE_ARCH_ARM64)
-HYLE_RUNTIME_TABLE(kNeonRuntime, Isa::kNeon, neon);
-#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-HYLE_RUNTIME_TABLE(kSveRuntime, Isa::kSve, sve);
-#endif
-#elif defined(HYLE_ARCH_RISCV64)
-#if defined(HYLE_SIMD_HAS_RVV_VARIANT)
-HYLE_RUNTIME_TABLE(kRvvRuntime, Isa::kRvv, rvv);
-#endif
-#endif
+#define HYLE_DEFINE_RUNTIME(pretty, suffix, isa) \
+  HYLE_RUNTIME_TABLE(k##pretty##Runtime, Isa::k##isa, suffix);
+HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_DEFINE_RUNTIME)
+#undef HYLE_DEFINE_RUNTIME
 
 #undef HYLE_RUNTIME_TABLE
 #undef HYLE_SEARCH_RUNTIME
@@ -63,23 +73,10 @@ HYLE_RUNTIME_TABLE(kRvvRuntime, Isa::kRvv, rvv);
 
 const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
   switch (isa) {
-    case Isa::kScalar: return &kScalarRuntime;
-#if defined(HYLE_ARCH_X64)
-    case Isa::kSse42: return &kSse4Runtime;
-    case Isa::kAvx2: return &kAvx2Runtime;
-    case Isa::kAvx512: return &kAvx512Runtime;
-#elif defined(HYLE_ARCH_ARM64)
-    case Isa::kNeon: return &kNeonRuntime;
-#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
-    case Isa::kSve: return &kSveRuntime;
-#endif
-#elif defined(HYLE_ARCH_RISCV64)
-#if defined(HYLE_SIMD_HAS_RVV_VARIANT)
-    case Isa::kRvv: {
-      return &kRvvRuntime;
-    }
-#endif
-#endif
+#define HYLE_RUNTIME_CASE(pretty, suffix, isa_token) \
+    case Isa::k##isa_token: return &k##pretty##Runtime;
+    HYLE_SIMD_FOR_EACH_COMPILED_TARGET(HYLE_RUNTIME_CASE)
+#undef HYLE_RUNTIME_CASE
     default: return nullptr;
   }
 }
@@ -87,7 +84,11 @@ const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
 Runtime selected_runtime() noexcept {
   const Isa tier = detail::default_dispatched_isa();
   const Runtime* base = runtime_for_supported_isa(tier);
+#if defined(HYLE_SIMD_EXACT)
+  Runtime result = base != nullptr ? *base : HYLE_SIMD_EXACT_RUNTIME;
+#else
   Runtime result = base != nullptr ? *base : kScalarRuntime;
+#endif
 
 #if !defined(HYLE_SIMD_EXACT) && defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
   // GCC's scalar dependency chain beats the single-stream Kogge-Stone kernel on this platform.
@@ -96,16 +97,18 @@ Runtime selected_runtime() noexcept {
 
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
   result.dtype.isa = Isa::kAvx2;
-  result.dtype.features = Runtime::kFeatureF16c;
+  result.dtype.features |= Runtime::kFeatureF16c;
+  result.math.features |= Runtime::kFeaturePerOpLowerTier;
 #elif defined(HYLE_SIMD_EXACT_TARGET_AVX2)
   result.dtype.isa = Isa::kAvx2;
-  result.dtype.features = Runtime::kFeatureF16c;
+  result.dtype.features |= Runtime::kFeatureF16c;
 #elif defined(HYLE_SIMD_EXACT_TARGET_SSE4) || defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
   result.dtype.isa = Isa::kScalar;
-  result.dtype.features = 0;
+  result.math.isa = Isa::kScalar;
+  result.sort.isa = Isa::kScalar;
+  result.bitpack.isa = Isa::kScalar;
 #elif defined(HYLE_SIMD_EXACT_TARGET_NEON) || defined(HYLE_SIMD_EXACT_TARGET_SVE)
   result.dtype.isa = Isa::kNeon;
-  result.dtype.features = 0;
 #elif defined(HYLE_ARCH_X64)
   const auto& f = cpu_features();
   if (f.f16c && f.avx) result.ops.dot_f16_f16 = &detail::dot_f16_f16_f16c;
@@ -118,6 +121,15 @@ Runtime selected_runtime() noexcept {
     result.dtype.features |= Runtime::kFeatureAvx512Bf16;
   }
   if (f.avx10_2) result.dtype.features |= Runtime::kFeatureAvx10_2;
+  const Isa product_tier =
+      result.isa == Isa::kAvx512 ? Isa::kAvx512
+      : result.isa == Isa::kAvx2 ? Isa::kAvx2
+                                 : Isa::kScalar;
+  result.math.isa = product_tier;
+  result.sort.isa = product_tier;
+  result.bitpack.isa = product_tier;
+  if (product_tier == Isa::kAvx512)
+    result.math.features |= Runtime::kFeaturePerOpLowerTier;
 #elif defined(HYLE_ARCH_ARM64)
   result.dtype.isa = Isa::kNeon;
 #endif
@@ -129,7 +141,9 @@ Runtime selected_runtime() noexcept {
     result.dtype.isa = Isa::kSve;
     result.math.isa = Isa::kSve;
     result.sort.isa = Isa::kSve;
+    result.sort.features |= Runtime::kFeatureSortCappedNetwork;
     result.bitpack.isa = Isa::kSve;
+    result.bitpack.features |= Runtime::kFeatureBitpackLogical128;
   }
 #elif defined(HYLE_ARCH_RISCV64)
   // RVV math, common dtype conversions and fixed-logical-block bitpack have product TUs.
@@ -137,6 +151,8 @@ Runtime selected_runtime() noexcept {
   result.math.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.sort.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.bitpack.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
+  if (result.isa == Isa::kRvv)
+    result.bitpack.features |= Runtime::kFeatureBitpackLogical128;
 #endif
   return result;
 }
@@ -150,6 +166,11 @@ const Runtime& runtime() noexcept {
 
 const Runtime* runtime_for(Isa isa) noexcept {
   const Runtime* result = runtime_for_supported_isa(isa);
+#if defined(HYLE_SIMD_EXACT)
+  // Exact deployment is an assertion by the builder. Do not reintroduce CPU probing through the
+  // diagnostic table; only the one compiled canonical tier exists.
+  return result;
+#else
   if (result == nullptr || isa == Isa::kScalar) return result;
 #if defined(HYLE_ARCH_X64)
   if (isa != Isa::kSse42 && isa != Isa::kAvx2 && isa != Isa::kAvx512) return nullptr;
@@ -161,6 +182,7 @@ const Runtime* runtime_for(Isa isa) noexcept {
   return nullptr;
 #endif
   return supports(isa) ? result : nullptr;
+#endif
 }
 
 }  // namespace hyle::simd

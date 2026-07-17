@@ -4,6 +4,7 @@
 
 #include "hyle/platform.h"
 #include "hyle/simd/runtime.h"
+#include "src/simd/dispatch_internal.h"
 #include "src/simd/dtype/kernels.h"
 
 // dtype_dispatch.cc -- baseline dispatcher for the batch dtype conversions. fp16 picks the
@@ -95,6 +96,17 @@ bool use_rvv_dtype() noexcept {
 
 }  // namespace
 
+#if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
+#define HYLE_DTYPE_EXACT_F16(name, ...) detail::name##_f16c(__VA_ARGS__)
+#define HYLE_DTYPE_EXACT_BF16(name, ...) detail::name##_avx2(__VA_ARGS__)
+#elif defined(HYLE_SIMD_EXACT_TARGET_SSE4) || defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
+#define HYLE_DTYPE_EXACT_F16(name, ...) detail::name##_scalar(__VA_ARGS__)
+#define HYLE_DTYPE_EXACT_BF16(name, ...) detail::name##_scalar(__VA_ARGS__)
+#elif defined(HYLE_SIMD_EXACT)
+#define HYLE_DTYPE_EXACT_F16(name, ...) HYLE_SIMD_EXACT_SYMBOL(name)(__VA_ARGS__)
+#define HYLE_DTYPE_EXACT_BF16(name, ...) HYLE_SIMD_EXACT_SYMBOL(name)(__VA_ARGS__)
+#endif
+
 #if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
 #define HYLE_DTYPE_CALL(name, ...)                                                \
   do {                                                                            \
@@ -114,38 +126,52 @@ bool use_rvv_dtype() noexcept {
 #endif
 
 void f16_to_f32_batch(const float16_t* src, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_SIMD_EXACT)
+  HYLE_DTYPE_EXACT_F16(f16_to_f32, src, dst, n); return;
+#elif defined(HYLE_ARCH_X64)
   static const bool hw = use_f16c();
   if (hw) { detail::f16_to_f32_f16c(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
   HYLE_DTYPE_CALL(f16_to_f32, src, dst, n); return;
 #endif
+#if !defined(HYLE_SIMD_EXACT)
   detail::f16_to_f32_scalar(src, dst, n);
+#endif
 }
 
 void f32_to_f16_batch(const float* src, float16_t* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_SIMD_EXACT)
+  HYLE_DTYPE_EXACT_F16(f32_to_f16, src, dst, n); return;
+#elif defined(HYLE_ARCH_X64)
   static const bool hw = use_f16c();
   if (hw) { detail::f32_to_f16_f16c(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
   HYLE_DTYPE_CALL(f32_to_f16, src, dst, n); return;
 #endif
+#if !defined(HYLE_SIMD_EXACT)
   detail::f32_to_f16_scalar(src, dst, n);
+#endif
 }
 
 // bf16: AVX2 8-wide integer kernel iff the CPU has AVX2, else the scalar core. bf16<->f32
 // is pure bit-math, so the AVX2 path is bit-identical to scalar (NaN payloads included).
 void bf16_to_f32_batch(const bfloat16_t* src, float* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_SIMD_EXACT)
+  HYLE_DTYPE_EXACT_BF16(bf16_to_f32, src, dst, n); return;
+#elif defined(HYLE_ARCH_X64)
   static const bool hw = use_avx2();
   if (hw) { detail::bf16_to_f32_avx2(src, dst, n); return; }
 #elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
   HYLE_DTYPE_CALL(bf16_to_f32, src, dst, n); return;
 #endif
+#if !defined(HYLE_SIMD_EXACT)
   detail::bf16_to_f32_scalar(src, dst, n);
+#endif
 }
 void f32_to_bf16_batch(const float* src, bfloat16_t* dst, std::size_t n) noexcept {
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_SIMD_EXACT)
+  HYLE_DTYPE_EXACT_BF16(f32_to_bf16, src, dst, n); return;
+#elif defined(HYLE_ARCH_X64)
   static const bool bf16hw = use_avx512bf16();
   if (bf16hw) { detail::f32_to_bf16_avx512bf16(src, dst, n); return; }  // VCVTNEPS2BF16
   static const bool hw = use_avx2();
@@ -153,7 +179,9 @@ void f32_to_bf16_batch(const float* src, bfloat16_t* dst, std::size_t n) noexcep
 #elif defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
   HYLE_DTYPE_CALL(f32_to_bf16, src, dst, n); return;
 #endif
+#if !defined(HYLE_SIMD_EXACT)
   detail::f32_to_bf16_scalar(src, dst, n);
+#endif
 }
 
 // fp8 -> f32: SCALAR only (no hardware fp8->f32 convert; the AVX10.2 fp8 instructions are the
@@ -206,6 +234,10 @@ void f16_to_f8e5m2_batch(const float16_t* src, float8_e5m2_t* dst, std::size_t n
 
 #if defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64)
 #undef HYLE_DTYPE_CALL
+#endif
+#if defined(HYLE_SIMD_EXACT)
+#undef HYLE_DTYPE_EXACT_F16
+#undef HYLE_DTYPE_EXACT_BF16
 #endif
 
 }  // namespace hyle::simd

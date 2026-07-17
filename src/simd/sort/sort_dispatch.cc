@@ -7,6 +7,7 @@
 #include "hyle/macros.h"  // HYLE_FATAL_ASSERT (fail-fast on size-contract violation)
 #include "hyle/platform.h"
 #include "hyle/simd/runtime.h"
+#include "src/simd/dispatch_internal.h"
 #include "src/simd/sort/kernels.h"
 
 // sort_dispatch.cc -- baseline dispatcher for the vqsort borrow ops. Mirrors math_dispatch.cc:
@@ -25,7 +26,15 @@
 namespace hyle::simd {
 namespace {
 
-#if defined(HYLE_ARCH_X64)
+#define HYLE_SORT_SYMBOL_I(name, tag) name##_##tag
+#define HYLE_SORT_SYMBOL(name, tag) HYLE_SORT_SYMBOL_I(name, tag)
+#if defined(HYLE_SIMD_EXACT_TARGET_SSE4) || defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
+#define HYLE_SORT_EXACT_SYMBOL(name) detail::HYLE_SIMD_SUFFIXED_SYMBOL(name, scalar)
+#elif defined(HYLE_SIMD_EXACT)
+#define HYLE_SORT_EXACT_SYMBOL(name) HYLE_SIMD_EXACT_SYMBOL(name)
+#endif
+
+#if defined(HYLE_ARCH_X64) && !defined(HYLE_SIMD_EXACT)
 bool have_avx2() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
   return true;
@@ -72,7 +81,14 @@ bool try_radix_sort(T* keys, std::size_t n, SortOrder order) noexcept {
 // ladder is identical for all types; only the detail:: symbol suffix (tag) differs. `ascending`
 // collapses SortOrder to the bool the borrow cores take. Size contract (fail-fast): n==0 is a
 // no-op; partial_sort needs k<=n; select needs k<n (matches VQSelectStatic's k<num precondition).
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_SIMD_EXACT)
+#define HYLE_SORT_TIER_SORT(tag) \
+  HYLE_SORT_EXACT_SYMBOL(HYLE_SORT_SYMBOL(sort, tag))(keys, n, asc)
+#define HYLE_SORT_TIER_PSORT(tag) \
+  HYLE_SORT_EXACT_SYMBOL(HYLE_SORT_SYMBOL(psort, tag))(keys, n, k, asc)
+#define HYLE_SORT_TIER_SELECT(tag) \
+  HYLE_SORT_EXACT_SYMBOL(HYLE_SORT_SYMBOL(select, tag))(keys, n, k, asc)
+#elif defined(HYLE_ARCH_X64)
 #define HYLE_SORT_TIER_SORT(tag) \
   do { \
     static const bool hw512 = have_avx512(); \
@@ -170,7 +186,14 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
 // KV (top-k) dispatch. Same tier ladder as the scalar-T ops, but over the KV symbol suffix
 // (kv32/kv64). The public KeyValue32/64 are byte-identical to the internal KV32Bits/KV64Bits
 // ({value,key}), so we reinterpret_cast the public pointer to the detail struct the kernels take.
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_SIMD_EXACT)
+#define HYLE_SORT_KV_LADDER_SORT(kvtag, h) \
+  HYLE_SORT_EXACT_SYMBOL(HYLE_SORT_SYMBOL(sort, kvtag))(h, n, asc)
+#define HYLE_SORT_KV_LADDER_PSORT(kvtag, h) \
+  HYLE_SORT_EXACT_SYMBOL(HYLE_SORT_SYMBOL(psort, kvtag))(h, n, k, asc)
+#define HYLE_SORT_KV_LADDER_SELECT(kvtag, h) \
+  HYLE_SORT_EXACT_SYMBOL(HYLE_SORT_SYMBOL(select, kvtag))(h, n, k, asc)
+#elif defined(HYLE_ARCH_X64)
 #define HYLE_SORT_KV_LADDER_SORT(kvtag, h) \
   do { \
     static const bool hw512 = have_avx512(); \
@@ -290,5 +313,10 @@ void select(UInt128* keys, std::size_t n, std::size_t k, SortOrder order) noexce
 #if defined(HYLE_SORT_USE_SVE)
 #undef HYLE_SORT_USE_SVE
 #endif
+#if defined(HYLE_SORT_EXACT_SYMBOL)
+#undef HYLE_SORT_EXACT_SYMBOL
+#endif
+#undef HYLE_SORT_SYMBOL
+#undef HYLE_SORT_SYMBOL_I
 
 }  // namespace hyle::simd

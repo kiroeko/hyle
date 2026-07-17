@@ -44,7 +44,19 @@ ScanFn<T> resolve_inclusive() noexcept;
 template <typename T>
 ScanFn<T> resolve_exclusive() noexcept;
 
-#if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
+#if defined(HYLE_SIMD_EXACT)
+#  define HYLE_SCAN_EXACT_NAME_I(name, tag) name##_##tag
+#  define HYLE_SCAN_EXACT_NAME(name, tag) HYLE_SCAN_EXACT_NAME_I(name, tag)
+#  define HYLE_SIMD_SCAN_RESOLVE(T, tag)                                                    \
+    template <>                                                                              \
+    ScanFn<T> resolve_inclusive<T>() noexcept {                                              \
+      return &HYLE_SIMD_EXACT_SYMBOL(HYLE_SCAN_EXACT_NAME(inclusive_scan, tag));            \
+    }                                                                                         \
+    template <>                                                                              \
+    ScanFn<T> resolve_exclusive<T>() noexcept {                                              \
+      return &HYLE_SIMD_EXACT_SYMBOL(HYLE_SCAN_EXACT_NAME(exclusive_scan, tag));            \
+    }
+#elif defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
 // Force pure scalar regardless of CPUID tier (selected_tier already returns kScalar, but
 // keep the pure loop — not the soft-SIMD scalar backend KS).
 #  define HYLE_SIMD_SCAN_RESOLVE(T, tag)                                                       \
@@ -118,6 +130,10 @@ HYLE_SIMD_SCAN_RESOLVE(float, f32)
 HYLE_SIMD_SCAN_RESOLVE(double, f64)
 
 #undef HYLE_SIMD_SCAN_RESOLVE
+#if defined(HYLE_SIMD_EXACT)
+#undef HYLE_SCAN_EXACT_NAME
+#undef HYLE_SCAN_EXACT_NAME_I
+#endif
 
 }  // namespace
 

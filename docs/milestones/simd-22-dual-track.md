@@ -10,7 +10,7 @@
 - 未知部署 CPU 的预编译库用户：target-neutral batch API + `runtime()` 函数表；
 - close-01：在二者之外另封纯 C shim，不把 C++ 类型误当稳定 ABI。
 
-不把 383 个公开/selector 寄存器名逐个动态化。范围与用户决策树见
+不把 387 个公开/selector 寄存器名逐个动态化。范围与用户决策树见
 [`../architecture/simd-dispatch-guide.md`](../architecture/simd-dispatch-guide.md)。
 
 ## 总体架构图
@@ -27,8 +27,8 @@
       ordinary batch API       ordinary batch API              native:: API
       pointer/POD/opaque       same public signature           hyle_target_simd(...)
              |                        |                                 |
-      baseline dispatcher      compile-time #if direct                  |
-      (no wide instructions)   HYLE_SIMD_EXACT_TARGET_*                 |
+      baseline dispatcher      generated target manifest                |
+      (no wide instructions)   one table + direct exact suffix           |
              |                        |                                 |
       +------+------------------------+                                 |
       |                                                                 |
@@ -90,12 +90,13 @@
      -> vec.h -> backend/avx2.h
 ```
 
-这里没有 lane 级或 383-name 级动态判断。CPU 探测和建表只发生一次；ops/random 在每个完整 batch
+这里没有 lane 级或 387-name 级动态判断。CPU 探测和建表只发生一次；ops/random 在每个完整 batch
 边界有一次函数指针调用。scan 缓存解析后的函数指针；dtype/math/sort/bitpack 读取同一张 Runtime 的
 module ISA/features，保留其 per-op winner、F16C/BF16 等非 canonical feature 和算法阈值。
 
-`runtime_for(Isa)` 是显式取某张当前 CPU/OS 确实支持的表，主要用于测试、限档和外层策略；它不是
-强行执行不支持指令的接口，也不是 fixed-target 接口。
+fat 中的 `runtime_for(Isa)` 是显式取某张当前 CPU/OS 确实支持的表，主要用于测试、限档和外层策略；
+它不是强行执行不支持指令的接口，也不是 fixed-target 接口。exact 中只有指定 canonical tier 的表，
+不再为 `runtime_for` 做 CPU 探测。
 
 ## 固定式调用到底怎么走
 
@@ -105,14 +106,17 @@ module ISA/features，保留其 per-op winner、F16C/BF16 等非 canonical featu
 
 ```text
 -DHYLE_SIMD_EXACT_TARGET=AVX2
-  -> hyle_exact_simd_library 给 hyle_simd dispatcher 定义 HYLE_SIMD_EXACT_TARGET_AVX2
-  -> add()/random_fill()/scan()/dtype/math/sort/bitpack 的 #if 分支直接引用 *_avx2
-  -> dispatch object 不引用 runtime()
+  -> hyle_simd_target_manifest 只列 AVX2
+  -> 同一清单过滤 generated TU、手写产品 TU、Runtime table 与 exact suffix
+  -> add()/random_fill()/scan()/dtype/math/sort/bitpack 直接引用所选实现
+  -> dispatch object 不引用 cpu_features()/best_isa()
   -> variant 薄包装 -> 同一 native body -> AVX2 backend
 ```
 
 它适合容器镜像、游戏主机、设备固件或已规定最低 ISA 的服务部署。普通 API 名字不变，整个 HYLE
-库要求运行机器满足该 ISA。AVX512 只代表 canonical AVX-512 group，不擅自假定可选 BF16/AVX10.2。
+库要求运行机器满足该 ISA。exact 是“一张 canonical table”，不是“绝不含任何低档函数”：精确 scalar
+fallback 和 AVX512 中已认证的 AVX2 per-op winner 可作为显式实现依赖，但没有 fat 选择阶梯。AVX512
+只代表 canonical AVX-512 group，不擅自假定可选 BF16/AVX10.2。
 
 ### 用户 TU exact：走 `native::` 并允许内联
 
@@ -140,7 +144,7 @@ hyle_target_simd(TARGET my_kernel ISA AVX2)
 | variant wrapper | `src/simd/ops/kernel_impl.h` | 只把 native body 导出成 `detail::*_scalar/avx2/...` 稳定符号 |
 | variant declarations | `src/simd/ops/kernels.h` | 声明 dispatcher 能引用的各 ISA 符号 |
 | 动态/exact dispatcher | `src/simd/ops/dispatch_ops.cc` | dynamic 取 Runtime 表；exact `#if` 直连目标符号 |
-| 机械构建 | `src/simd/CMakeLists.txt` + `HyleDispatch.cmake` | 从同一 impl header 生成并施加每 ISA codegen flag |
+| 机械构建 | `src/simd/CMakeLists.txt` + `HyleDispatch.cmake` | 同一 manifest 决定 target/source/table/suffix；同一 impl header 生成并施加 codegen flag |
 | Runtime 元数据 | `runtime.h` + `runtime.cc` | 整表版本、函数子表、模块真实 ISA/features 与降级关系 |
 | 验证 | `runtime_test.cc` + `native_test.cc` + 模块测试 | dynamic、exact、跨 ISA oracle、符号无 Runtime 引用、多 VL |
 
@@ -148,7 +152,8 @@ hyle_target_simd(TARGET my_kernel ISA AVX2)
 
 1. 返回值或参数若含 vector/mask，只加到 `vec.h`/backend/native，不进 Runtime。
 2. 是 pointer/POD whole-buffer 语义且有多条有价值实现，先写一份 native body，再加薄 variant 和动态入口。
-3. 只有一个获胜实现时，Runtime module metadata 可以诚实指向 scalar/NEON 等现有核，不为“覆盖率”伪造宽腿。
+3. 只有一个获胜实现时，Runtime module metadata 可以诚实指向 scalar/NEON 等现有核；module
+   feature bits 还要标出 per-op lower tier、精确 libm scalar、fp8 scalar、capped network 与 logical block。
 4. exact dispatcher 必须直接引用目标符号；用对象符号检查确保没有意外 `runtime()`/`cpu_features()` 引用。
 5. SVE/RVV 要用至少三种 VL/VLEN 运行；不得把 sizeless vector 存进对象或跨稳定边界。
 6. 新增/调整 `Runtime` 字段必须递增 `kTableVersion`，并同步 `table_size` 测试；未来 C vtable 独立版本化。
@@ -166,6 +171,7 @@ hyle_target_simd(TARGET my_kernel ISA AVX2)
 | D6 | sort/bitpack 保留算法分流，runtime 诊断统一；exact build 编译期直连 | 已完成 |
 | D7 | 公共 `hyle_add_fat_kernel` + `select_fat_kernel`，稳定 entry contract | 已完成 |
 | D8 | Linux SVE/RVV HWCAP、Isa、构建和 ops/random/scan runtime 变体 | 已完成 |
+| D8.1 | exact target manifest：source/table/suffix 同源；四档 x86 artifact 闸 + SVE/RVV exact 多宽门 | 已完成（2026-07-17） |
 | D9 | close-01 纯 C `hyle_simd_api_t`/opaque state 薄封装 | 等 close-01 |
 
 ## 首个纵切验收

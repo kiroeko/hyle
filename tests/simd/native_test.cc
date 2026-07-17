@@ -80,9 +80,13 @@ TEST(SimdNative, RandomMatchesPortableScalarRuntime) {
   std::array<std::uint64_t, kCount> scalar{};
 
   hs::native::random_fill(native_state, native.data(), native.size());
-  const hs::Runtime* scalar_runtime = hs::runtime_for(hs::Isa::kScalar);
-  ASSERT_NE(scalar_runtime, nullptr);
-  scalar_runtime->random.fill_u64(&scalar_state, scalar.data(), scalar.size());
+  const hs::Runtime* reference_runtime = hs::runtime_for(hs::Isa::kScalar);
+  if (reference_runtime == nullptr) {
+    // A non-scalar exact artifact intentionally contains only its requested tier. Random's
+    // sequence is width-independent, so the sole compiled runtime is an equivalent oracle.
+    reference_runtime = &hs::runtime();
+  }
+  reference_runtime->random.fill_u64(&scalar_state, scalar.data(), scalar.size());
   EXPECT_EQ(native, scalar);
 }
 

@@ -1,6 +1,21 @@
 # simd: runtime ISA dispatch + portable vec<T,N> D-tag abstraction (simd-design).
 #
 include(HyleDispatch)
+hyle_simd_target_manifest(
+  OUT_VARIANTS _simd_variants
+  OUT_HEADER _simd_target_manifest_header)
+string(TOUPPER "${HYLE_SIMD_EXACT_TARGET}" _simd_exact_target)
+
+foreach(_variant scalar sse4 avx2 avx512 neon sve rvv)
+  list(FIND _simd_variants "${_variant}" _variant_index)
+  if(NOT _variant_index EQUAL -1)
+    string(TOUPPER "${_variant}" _variant_upper)
+    set(HYLE_SIMD_BUILD_${_variant_upper} TRUE)
+  endif()
+endforeach()
+if(NOT HYLE_SIMD_EXACT_TARGET)
+  set(HYLE_SIMD_BUILD_FAT TRUE)
+endif()
 
 # The CPUID PROBE moved to platform/ (platform/cpu.{h,cc}); simd/dispatch.h now forwards
 # those names into hyle::simd so the call sites below are unchanged. simd PUBLIC_DEPS
@@ -19,27 +34,41 @@ include(HyleDispatch)
 set(_simd_arch_sources "")
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   set(HYLE_SIMD_X64 TRUE)
-  list(APPEND _simd_arch_sources
-    ops/dot_f16c.cc
-    ops/dot_avx512bf16.cc
-    dtype/cvt_f16c.cc
-    dtype/cvt_avx2.cc
-    dtype/cvt_avx512bf16.cc
-    math/transcendental_highway.cc
-    math/transcendental_xsimd.cc
-    math/transcendental_highway_avx512.cc
-    math/transcendental_xsimd_avx512.cc
-    sort/vqsort_hyle_avx2.cc
-    sort/vqsort_hyle_avx512.cc
-    bitpack/bitpack_hyle_avx2.cc
-    bitpack/bitpack_hyle_avx512.cc)
+  if(HYLE_SIMD_BUILD_FAT)
+    list(APPEND _simd_arch_sources
+      ops/dot_f16c.cc
+      ops/dot_avx512bf16.cc
+      dtype/cvt_avx512bf16.cc)
+  endif()
+  if(HYLE_SIMD_BUILD_AVX2 OR HYLE_SIMD_BUILD_AVX512)
+    # Canonical AVX-512 does not imply optional BF16/AVX10.2, and several math/dtype winners
+    # intentionally remain AVX2-width. These are per-op implementation dependencies, not an
+    # additional runtime target.
+    list(APPEND _simd_arch_sources
+      dtype/cvt_f16c.cc
+      dtype/cvt_avx2.cc
+      math/transcendental_highway.cc
+      math/transcendental_xsimd.cc)
+  endif()
+  if(HYLE_SIMD_BUILD_AVX2)
+    list(APPEND _simd_arch_sources
+      sort/vqsort_hyle_avx2.cc
+      bitpack/bitpack_hyle_avx2.cc)
+  endif()
+  if(HYLE_SIMD_BUILD_AVX512)
+    list(APPEND _simd_arch_sources
+      math/transcendental_highway_avx512.cc
+      math/transcendental_xsimd_avx512.cc
+      sort/vqsort_hyle_avx512.cc
+      bitpack/bitpack_hyle_avx512.cc)
+  endif()
   # AVX10.2 f16->fp8 convert TU: only the compilers that accept -mavx10.2-512 (clang-20+; GCC-14
   # stops at avx10.1, MSVC has none) can build it. Probe the flag; if present, compile the TU and
   # define HYLE_HAVE_AVX10_2 so the header decls + dispatch gate light up. Otherwise the f16->fp8
   # batch stays on the (bit-identical) scalar core -- no build dependency on clang-20.
   include(CheckCXXCompilerFlag)
   check_cxx_compiler_flag("-mavx10.2-512" HYLE_CXX_HAS_AVX10_2)
-  if(HYLE_CXX_HAS_AVX10_2)
+  if(HYLE_SIMD_BUILD_FAT AND HYLE_CXX_HAS_AVX10_2)
     list(APPEND _simd_arch_sources dtype/cvt_avx10_2.cc)
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
@@ -50,13 +79,15 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # (transcendental_highway_neon.cc) HYLE port of Highway contrib/math + P2-1 table_f64,
   # which lower to NEON here (probed: target=NEON, matches libm) -- Highway for all three
   # (x86's per-op xsimd/Highway split was a speed pick; arm64 starts with one verified core).
-  list(APPEND _simd_arch_sources
-    dtype/cvt_neon.cc
-    math/transcendental_highway_neon.cc
-    math/transcendental_xsimd_neon.cc
-    sort/vqsort_hyle_neon.cc
-    bitpack/bitpack_hyle_neon.cc)
-  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(HYLE_SIMD_BUILD_NEON)
+    list(APPEND _simd_arch_sources
+      dtype/cvt_neon.cc
+      math/transcendental_highway_neon.cc
+      math/transcendental_xsimd_neon.cc
+      sort/vqsort_hyle_neon.cc
+      bitpack/bitpack_hyle_neon.cc)
+  endif()
+  if(HYLE_SIMD_BUILD_SVE)
     list(APPEND _simd_arch_sources
       bitpack/bitpack_hyle_scalable.cc
       dtype/cvt_scalable.cc
@@ -65,11 +96,13 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
   set(HYLE_SIMD_RISCV64 TRUE)
-  list(APPEND _simd_arch_sources
-    bitpack/bitpack_hyle_scalable.cc
-    dtype/cvt_scalable.cc
-    math/transcendental_highway_scalable.cc)
-  list(APPEND _simd_arch_sources sort/vqsort_hyle_rvv.cc)
+  if(HYLE_SIMD_BUILD_RVV)
+    list(APPEND _simd_arch_sources
+      bitpack/bitpack_hyle_scalable.cc
+      dtype/cvt_scalable.cc
+      math/transcendental_highway_scalable.cc
+      sort/vqsort_hyle_rvv.cc)
+  endif()
 endif()
 
 # X3: product simd no longer links third_party/highway (vqsort ported to HYLE D-tag).
@@ -93,6 +126,19 @@ hyle_add_module(simd SOURCES
   ${_simd_arch_sources}
   PUBLIC_DEPS hyle_platform)
 
+if(MSVC AND
+   (_simd_exact_target STREQUAL "SCALAR" OR
+    _simd_exact_target STREQUAL "SSE4"))
+  # Recent MSVC STL headers embed their own AVX sorting variants and runtime selector into any TU
+  # that instantiates std::sort. They are safe, but would violate an exact scalar/SSE artifact's
+  # stronger "contains no higher-tier instructions" contract.
+  set_source_files_properties(
+    sort/vqsort_scalar.cc
+    sort/radix_sort.cc
+    sort/stream_topk.cc
+    PROPERTIES COMPILE_DEFINITIONS _DISABLE_VECTOR_ALGORITHMS=1)
+endif()
+
 if(HYLE_SIMD_EXACT_TARGET)
   hyle_exact_simd_library(TARGET hyle_simd ISA "${HYLE_SIMD_EXACT_TARGET}")
 endif()
@@ -101,9 +147,17 @@ endif()
 # probe stay baseline. MSVC x64 has SSE4.2 intrinsics unconditionally (sse4/scalar need no
 # flag) and uses /arch:AVX2 for the 256-bit TUs. The "src/..."-rooted #includes in the
 # kernel TUs need PROJECT_SOURCE_DIR on the include path.
-target_include_directories(hyle_simd PRIVATE "${PROJECT_SOURCE_DIR}")
+target_include_directories(hyle_simd PRIVATE
+  "${PROJECT_SOURCE_DIR}"
+  "${CMAKE_CURRENT_BINARY_DIR}/generated")
+if(HYLE_SIMD_BUILD_SVE)
+  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HAS_SVE_VARIANT=1)
+endif()
+if(HYLE_SIMD_BUILD_RVV)
+  target_compile_definitions(hyle_simd PRIVATE HYLE_SIMD_HAS_RVV_VARIANT=1)
+endif()
 
-# ops/ and scan/ are the two modules whose variant TUs are mechanically identical: each defines
+# These four modules have mechanically identical variant TUs: each defines
 # a target macro plus a symbol suffix, then includes one generic kernel body. Generate those TUs
 # from the shared build mechanism; it filters the full target list by architecture and applies the
 # exact tier flags through hyle_set_isa. Their dispatchers remain handwritten because scan's Linux
@@ -136,21 +190,23 @@ hyle_add_dispatched_kernel(
 if(HYLE_SIMD_X64)
   # Mixed-dot precise-feature kernels follow the same safety split as dtype:
   # F16C remains usable on pre-AVX2 Ivy Bridge; AVX512-BF16 is runtime-gated.
-  hyle_set_isa(ops/dot_f16c.cc AVX_F16C)
-  hyle_set_isa(ops/dot_avx512bf16.cc AVX512_BF16)
+  if(HYLE_SIMD_BUILD_FAT)
+    hyle_set_isa(ops/dot_f16c.cc AVX_F16C)
+    hyle_set_isa(ops/dot_avx512bf16.cc AVX512_BF16)
+    hyle_set_isa(dtype/cvt_avx512bf16.cc AVX512_BF16)
+  endif()
   # f16c TU caps at AVX+F16C (NOT AVX2): F16C shipped with AVX on Ivy Bridge (no AVX2);
   # AVX2 would let the auto-vectorized tail emit an AVX2 int op that SIGILLs there. The
   # AVX_F16C tier encodes exactly that cap (see hyle_isa_flags).
-  hyle_set_isa(dtype/cvt_f16c.cc AVX_F16C)
-  # bf16 TU needs only AVX2 256-bit INTEGER ops (no FMA/F16C). Only reached when cpu has AVX2.
-  hyle_set_isa(dtype/cvt_avx2.cc AVX2_INT)
-  # bf16 native convert TU: AVX-512 + VCVTNEPS2BF16. Only reached when cpu_features().avx512bf16
-  # (runtime-gated in dtype_dispatch), so the bf16 instruction never runs on a CPU lacking it.
-  hyle_set_isa(dtype/cvt_avx512bf16.cc AVX512_BF16)
+  if(HYLE_SIMD_BUILD_AVX2 OR HYLE_SIMD_BUILD_AVX512)
+    hyle_set_isa(dtype/cvt_f16c.cc AVX_F16C)
+    # bf16 TU needs only AVX2 256-bit INTEGER ops (no FMA/F16C). Only reached when cpu has AVX2.
+    hyle_set_isa(dtype/cvt_avx2.cc AVX2_INT)
+  endif()
   # AVX10.2 fp8 TU: only present when the compiler flag probed OK. -mavx10.2-512 implies the full
   # AVX-512 + AVX10.2 vector face; runtime-gated on cpu_features().avx10_2 so it never runs on a
   # CPU lacking it. HYLE_HAVE_AVX10_2 lights up the header decls + dispatch branch everywhere.
-  if(HYLE_CXX_HAS_AVX10_2)
+  if(HYLE_SIMD_BUILD_FAT AND HYLE_CXX_HAS_AVX10_2)
     set_source_files_properties(dtype/cvt_avx10_2.cc PROPERTIES COMPILE_OPTIONS "-mavx10.2-512")
     target_compile_definitions(hyle_simd PRIVATE HYLE_HAVE_AVX10_2)
   endif()
@@ -159,23 +215,39 @@ elseif(HYLE_SIMD_ARM64)
   # backend was written+objdump-verified earlier (simd-03) but never RAN until a real
   # Apple-Silicon build; this TU finally compiles it into the dispatched dot/saxpy path.
   # cvt_neon.cc adds fp16(native vcvt)/bf16(integer) batch conversions.
-  hyle_set_isa(dtype/cvt_neon.cc NEON)
-  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+  if(HYLE_SIMD_BUILD_NEON)
+    hyle_set_isa(dtype/cvt_neon.cc NEON)
+  endif()
+  if(HYLE_SIMD_BUILD_SVE)
     hyle_set_isa(math/transcendental_highway_scalable.cc SVE)
     hyle_set_isa(dtype/cvt_scalable.cc SVE)
     hyle_set_isa(bitpack/bitpack_hyle_scalable.cc SVE)
     hyle_set_isa(sort/vqsort_hyle_sve.cc SVE)
   endif()
 elseif(HYLE_SIMD_RISCV64)
-  hyle_set_isa(math/transcendental_highway_scalable.cc RVV)
-  hyle_set_isa(dtype/cvt_scalable.cc RVV)
-  hyle_set_isa(bitpack/bitpack_hyle_scalable.cc RVV)
-  hyle_set_isa(sort/vqsort_hyle_rvv.cc RVV)
+  if(HYLE_SIMD_BUILD_RVV)
+    hyle_set_isa(math/transcendental_highway_scalable.cc RVV)
+    hyle_set_isa(dtype/cvt_scalable.cc RVV)
+    hyle_set_isa(bitpack/bitpack_hyle_scalable.cc RVV)
+    hyle_set_isa(sort/vqsort_hyle_rvv.cc RVV)
+  endif()
 endif()
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:
 # it keeps the AVX2 kernel TU's codegen from being inlined into the baseline dispatcher.
 set_target_properties(hyle_simd PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
+
+if(HYLE_SIMD_EXACT_TARGET)
+  find_package(Python3 REQUIRED COMPONENTS Interpreter)
+  add_custom_target(hyle_simd_exact_artifact_check
+    COMMAND "${Python3_EXECUTABLE}"
+      "${PROJECT_SOURCE_DIR}/scripts/simd-exact-artifact-check.py"
+      --build-dir "${CMAKE_BINARY_DIR}"
+      --isa "${HYLE_SIMD_EXACT_TARGET}"
+      --binary "$<TARGET_FILE:hyle_simd>"
+    DEPENDS hyle_simd
+    VERBATIM)
+endif()
 
 # --- Vectorized transcendentals: PER-OP best-of-breed --------------------------------
 # exp/log/tanh BORROW verified header-only vendor cores (借核不手搓). The same-ISA bench
@@ -187,16 +259,24 @@ set_target_properties(hyle_simd PROPERTIES INTERPROCEDURAL_OPTIMIZATION OFF)
 # *_xsimd_* for best-of dispatch wiring only. Architecture split: x86 AVX2/AVX512 TUs vs
 # arm64 NEON TUs. Runtime cpu_features().avx2 gates x86; arm64 NEON is baseline.
 if(HYLE_SIMD_X64)
-  hyle_set_isa(math/transcendental_highway.cc AVX2)
-  hyle_set_isa(math/transcendental_xsimd.cc AVX2)
-  hyle_set_isa(math/transcendental_xsimd_avx512.cc AVX512)
-  hyle_set_isa(math/transcendental_highway_avx512.cc AVX512)
+  if(HYLE_SIMD_BUILD_AVX2 OR HYLE_SIMD_BUILD_AVX512)
+    hyle_set_isa(math/transcendental_highway.cc AVX2)
+    hyle_set_isa(math/transcendental_xsimd.cc AVX2)
+  endif()
+  if(HYLE_SIMD_BUILD_AVX512)
+    hyle_set_isa(math/transcendental_xsimd_avx512.cc AVX512)
+    hyle_set_isa(math/transcendental_highway_avx512.cc AVX512)
+  endif()
   # HYLE vqsort / bit-pack variants: D-tag backend selected by HYLE_SIMD_TARGET_*;
   # hyle_set_isa supplies the AVX2 / AVX-512 codegen for their dispatcher gates.
-  hyle_set_isa(sort/vqsort_hyle_avx2.cc AVX2)
-  hyle_set_isa(sort/vqsort_hyle_avx512.cc AVX512)
-  hyle_set_isa(bitpack/bitpack_hyle_avx2.cc AVX2)
-  hyle_set_isa(bitpack/bitpack_hyle_avx512.cc AVX512)
+  if(HYLE_SIMD_BUILD_AVX2)
+    hyle_set_isa(sort/vqsort_hyle_avx2.cc AVX2)
+    hyle_set_isa(bitpack/bitpack_hyle_avx2.cc AVX2)
+  endif()
+  if(HYLE_SIMD_BUILD_AVX512)
+    hyle_set_isa(sort/vqsort_hyle_avx512.cc AVX512)
+    hyle_set_isa(bitpack/bitpack_hyle_avx512.cc AVX512)
+  endif()
 endif()
 
 # BASELINE ASSUMPTION (the SIGILL-safety contract): for a DISTRIBUTABLE binary, build the

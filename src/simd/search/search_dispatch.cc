@@ -1,26 +1,11 @@
 #include "hyle/simd/search.h"
 
 #include "hyle/simd/runtime.h"
+#include "src/simd/dispatch_internal.h"
 #include "src/simd/search/kernels.h"
 
-#if defined(HYLE_SIMD_EXACT_TARGET_AVX512)
-#define HYLE_SEARCH_OP(name) detail::name##_avx512
-#elif defined(HYLE_SIMD_EXACT_TARGET_AVX2)
-#define HYLE_SEARCH_OP(name) detail::name##_avx2
-#elif defined(HYLE_SIMD_EXACT_TARGET_SSE4)
-#define HYLE_SEARCH_OP(name) detail::name##_sse4
-#elif defined(HYLE_SIMD_EXACT_TARGET_NEON)
-#define HYLE_SEARCH_OP(name) detail::name##_neon
-#elif defined(HYLE_SIMD_EXACT_TARGET_SVE)
-#define HYLE_SEARCH_OP(name) detail::name##_sve
-#elif defined(HYLE_SIMD_EXACT_TARGET_RVV)
-#define HYLE_SEARCH_OP(name) detail::name##_rvv
-#elif defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
-#define HYLE_SEARCH_OP(name) detail::name##_scalar
-#endif
-
 #if defined(HYLE_SIMD_EXACT)
-#define HYLE_SEARCH_CALL(name, ...) HYLE_SEARCH_OP(name)(__VA_ARGS__)
+#define HYLE_SEARCH_CALL(name, ...) HYLE_SIMD_EXACT_SYMBOL(name)(__VA_ARGS__)
 #else
 #define HYLE_SEARCH_CALL(name, ...) runtime().search.name(__VA_ARGS__)
 #endif
@@ -64,7 +49,3 @@ HYLE_SEARCH_DISPATCH(double, f64)
 }  // namespace hyle::simd
 
 #undef HYLE_SEARCH_CALL
-
-#ifdef HYLE_SEARCH_OP
-#undef HYLE_SEARCH_OP
-#endif

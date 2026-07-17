@@ -4,12 +4,20 @@
 
 #include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
+#include "src/simd/target_manifest.h"
 
 // Internal helpers for batch-kernel dispatchers. This deliberately lives outside the public
 // dispatch header: callers export fixed POD function signatures, while each module retains its
 // own feature gates and fallback contract. These helpers only cover the common full-ISA ladder
 // emitted by hyle_add_dispatched_kernel.
 namespace hyle::simd::detail {
+
+#define HYLE_SIMD_SUFFIXED_SYMBOL_I(name, suffix) name##_##suffix
+#define HYLE_SIMD_SUFFIXED_SYMBOL(name, suffix) HYLE_SIMD_SUFFIXED_SYMBOL_I(name, suffix)
+#if defined(HYLE_SIMD_EXACT)
+#define HYLE_SIMD_EXACT_SYMBOL(name) \
+  ::hyle::simd::detail::HYLE_SIMD_SUFFIXED_SYMBOL(name, HYLE_SIMD_EXACT_VARIANT)
+#endif
 
 inline Isa default_dispatched_isa() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX512)

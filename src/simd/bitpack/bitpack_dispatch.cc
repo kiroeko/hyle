@@ -8,6 +8,7 @@
 #include "hyle/simd/runtime.h"
 #include "src/simd/bitpack/bitstream.h"
 #include "src/simd/bitpack/kernels.h"
+#include "src/simd/dispatch_internal.h"
 
 // bitpack_dispatch.cc -- baseline dispatcher for HYLE SIMD bitpack. Mirrors sort_dispatch.cc:
 // per type it routes to the widest live tier -> x86 avx512 -> avx2 -> scalar;
@@ -21,7 +22,15 @@
 namespace hyle::simd {
 namespace {
 
-#if defined(HYLE_ARCH_X64)
+#define HYLE_BITPACK_SYMBOL_I(name, tag) name##_##tag
+#define HYLE_BITPACK_SYMBOL(name, tag) HYLE_BITPACK_SYMBOL_I(name, tag)
+#if defined(HYLE_SIMD_EXACT_TARGET_SSE4) || defined(HYLE_SIMD_EXACT_TARGET_SCALAR)
+#define HYLE_BITPACK_EXACT_SYMBOL(name) detail::HYLE_SIMD_SUFFIXED_SYMBOL(name, scalar)
+#elif defined(HYLE_SIMD_EXACT)
+#define HYLE_BITPACK_EXACT_SYMBOL(name) HYLE_SIMD_EXACT_SYMBOL(name)
+#endif
+
+#if defined(HYLE_ARCH_X64) && !defined(HYLE_SIMD_EXACT)
 bool have_avx2() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_AVX2) || defined(HYLE_SIMD_EXACT_TARGET_AVX512)
   return true;
@@ -53,7 +62,12 @@ bool have_avx512() noexcept {
 // Generates the two public overloads (pack/unpack) for one lane type. The tier ladder is identical
 // for all types; only the detail:: symbol suffix (tag) differs. `bits` contract (fail-fast):
 // 1 <= bits <= 8*sizeof(T). count==0 is a no-op.
-#if defined(HYLE_ARCH_X64)
+#if defined(HYLE_SIMD_EXACT)
+#define HYLE_BITPACK_TIER_PACK(tag) \
+  HYLE_BITPACK_EXACT_SYMBOL(HYLE_BITPACK_SYMBOL(pack, tag))(raw, count, packed, bits)
+#define HYLE_BITPACK_TIER_UNPACK(tag) \
+  HYLE_BITPACK_EXACT_SYMBOL(HYLE_BITPACK_SYMBOL(unpack, tag))(packed, count, raw, bits)
+#elif defined(HYLE_ARCH_X64)
 #define HYLE_BITPACK_TIER_PACK(tag) \
   do { \
     static const bool hw512 = have_avx512(); \
@@ -160,5 +174,10 @@ HYLE_BITPACK_TYPES(HYLE_BITPACK_DISPATCH)
 #if defined(HYLE_BITPACK_USE_RVV)
 #undef HYLE_BITPACK_USE_RVV
 #endif
+#if defined(HYLE_BITPACK_EXACT_SYMBOL)
+#undef HYLE_BITPACK_EXACT_SYMBOL
+#endif
+#undef HYLE_BITPACK_SYMBOL
+#undef HYLE_BITPACK_SYMBOL_I
 
 }  // namespace hyle::simd

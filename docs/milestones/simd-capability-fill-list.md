@@ -10,7 +10,7 @@
 > - 变宽底账：`scripts/simd-scalable-coverage.py` + `scripts/simd-scalable-op-manifest.json`
 > - 覆盖率：`scripts/simd-op-coverage.py`
 
-**一句话**：定宽面与主 whole-buffer 核已立；**SVE/RVV 主产品核（math/dtype/bitpack/sort）已有真实 TU + QEMU 门，SVE partition 已吃满物理 VL，精细 feature probe 已落地**，不再是「整模块 hard clamp」。simd-24 的 C1–C3 能力面已经补完；还缺的是 **NEON KV64 性能**、**变宽真机签字**，以及 **双轨产物/垫片收尾/分发机械化（D）**。不要再为齐 387 名字抠常数。
+**一句话**：定宽面与主 whole-buffer 核已立；**SVE/RVV 主产品核（math/dtype/bitpack/sort）已有真实 TU + QEMU 门，SVE partition 已吃满物理 VL，精细 feature probe 已落地**，不再是「整模块 hard clamp」。simd-24 的 C1–C3 能力面已补完，D1/D2/D5/D6/D7 机制收口也已完成；还缺的是 **NEON KV64 性能**、**变宽真机签字**，以及有消费者/硬件后才启动的 VNNI/GFNI/类型 helper。不要再为齐 387 名字抠常数。
 
 ---
 
@@ -117,23 +117,23 @@
 |---|---|
 | 双轨**语义模型**（pointer/POD 边界、共享 native body、vector 不过界） | ✅ simd-22 |
 | fat Runtime 主路径（未知 CPU 选表） | ✅ |
-| exact **调用**绑到固定 ISA（固定调用腿） | ✅ |
+| exact 单 canonical target 产物（普通 API 固定直连） | ✅；允许该 target 的逐-op scalar/lower-tier 依赖 |
 | ops/random/scan/search 等生成/表驱动 + 模块手写 dispatcher 同构 | ✅ 主行为 |
 | NEON partial 表示 + 垫片迁移 + 热点 native-D | ✅ 债① NEON 侧 |
 | 拒绝 Highway 宏体系；手写后端 + `if constexpr` | ✅ 章程收口 |
 | 变体-DLL「进库零间接」 | ✅ **有意不做**（batch 粒度无结构性收益） |
 
-### D.1–D.8 不够完善、应补的机制项
+### D.1–D.8 机制项现状
 
 | # | 项 | 现状（不够在哪） | 做什么 | 不做/边界 |
 |---|---|---|---|---|
-| **D1** | **exact 单腿产物机械化** | exact 只固定**调用腿**；dispatch/runtime 表与 sort/dtype/math TU 列表仍按 **fat 符号集**组织；删非目标 TU → link 未解析符号 | **同一 target manifest** 生成：source list、声明、Runtime/dispatch 表、exact binding；每 exact ISA 验证链接符号 + 无越级指令 | 不改热路径多一次分支；不阻塞 fat Runtime 正确性 |
-| **D2** | **x86 partial 健康化 + canary** | NEON 垫片债已收；x86 partial 多靠编译器「碰巧」低半路径 → **脆弱 TIE**，升级可能回归 | 审计 Rebind/partial 热点 → 显式低半指令；bench **canary** 防静默回退；文档写清 partial 合同 | 不做 x86 上「比 xmm 更窄寄存器」的假表示改造 |
+| **D1** | **exact 单腿产物机械化** | ✅ `hyle_simd_target_manifest` 同时控制 generated TU、手写产品 TU、Runtime table 与 exact symbol；exact 只含一个 canonical table，不做 CPUID | `hyle_simd_exact_artifact_check` 检查 manifest、build graph、CPU-probe import 和 x86 对象越级指令 | scalar/per-op lower-tier 核可作为所选产品 target 的诚实依赖，不伪称 optional BF16/AVX10.2 |
+| **D2** | **x86 partial 健康化 + canary** | ✅ AVX2 widen 显式 XMM half，SSE4 truncate/promote 为寄存器路径；exact-byte/guard-page、half/combine oracle 与 `op_parity_widen_bench` canary 在位 | 编译器升级继续跑 SSE4/AVX2 专项和 widen benchmark；出现稳定 <0.98 再狩猎 | x86 sub-XMM 仍物理占 XMM，这是 ISA 模型，不造假窄类型 |
 | **D3** | **AVX-VNNI runtime 档** | 有 `cpu_features().avx_vnni` + 编译期 `#if`；默认 avx2 TU **不**带 `-mavxvnni` | 独立 `AVX2_VNNI`（或等价）TU + Runtime/表选择；禁止编进无 VNNI 的 baseline | 无消费可继续挂起 |
 | **D4** | （可选）**GFNI** | 机会型 | 有 Ice Lake+/SDE 再上；可反哺 ReverseBits 等 | 非硬缺 |
-| **D5** | **模块 isa 元数据合同** | 如 `Runtime::math.isa == kSve` 只表示**主** HYLE/Highway tier，**≠** 每个冷门 op（gamma/complex…）都有 scalable body；dtype/sort/bitpack 亦有边界（capped、logical block、fp8 scalar） | 文档/诊断 API 写清「模块 tier vs per-op fallback」；禁止对外一句「已上 SVE」掩盖 fallback | 不为元数据齐平强行实现全部冷门 scalable |
-| **D6** | **dispatcher 生成不统一** | ops/search 等可 `hyle_add_dispatched_kernel`；math/dtype/sort/bitpack **手写** tier 宏/阶梯，与 exact 单腿问题耦合 | 与 **D1** 同一 manifest/生成器收敛；新模块默认走生成路径 | 不强制一夜重写所有手写 dispatcher 若行为已正确 |
-| **D7** | **双轨测试矩阵缺口** | scalable exact 已在 QEMU 门检查不引用 Runtime/CPU probe；定宽 exact 各 ISA「仅含目标符号、无越级」自动化仍不足；`native::` 与 public 同合同对拍未处处强制 | CI：exact-AVX2/NEON/… 符号/指令闸；关键 kernel public vs fixed/native 诊断 bench | 不为每个 op 造动态函数指针 |
+| **D5** | **模块 isa 元数据合同** | ✅ `Module::isa` 明确表示主产品 tier；feature bits 标出 exact-libm scalar、fp8 scalar、per-op lower tier、SVE capped network、bitpack logical-128 | `Runtime` C++ 诊断表 v5；架构文档列出含义 | 不为元数据齐平强行实现全部冷门 scalable |
+| **D6** | **dispatcher 生成统一** | ✅ generated 模块由 manifest 过滤；math/dtype/sort/bitpack 的 exact 分支统一用 manifest suffix，fat 分支保留各自必要的 feature/per-op 策略 | 新的机械同构模块继续用 `hyle_add_dispatched_kernel` | 不把不同算法策略强塞成同一阶梯 |
+| **D7** | **双轨测试矩阵** | ✅ Windows fat 366；exact AVX2 366；x86 scalar/SSE4/AVX2/AVX512 artifact 闸；SVE exact 43×5、RVV exact 43×4；fat scalable 继续跑全产品矩阵 | 真机到位后补执行/性能，不改正确性结论 | 不为每个 op 造动态函数指针 |
 | **D8** | **垫片/helper 层后续** | simd-19 **未建** `neon_bin<QFn,DFn>` 式宽度 helper（实践用垫片+热点分支）；**类型轴**（f16/bf16 lane 指令）到来时垫片兜不住 | 仅当 f16/bf16 后端横切收费时再建类型→intrinsic 收敛层；沿用已实证的工单迁移法 | 现在为空建 helper = 过度抽象；**不要**为「消灭垫片痕迹」重写 270 op |
 
 ### D.9 宏：不是「重构做到一半」
@@ -173,14 +173,14 @@
 4.  C2    sort key i16/u16/u128（✅）
 5.  C3    complex + f64  ✅
 6.  B6/B7/B8  按消费与证据穿插
-7.  D1+D6 exact 单腿 + dispatcher 生成收敛（可与算法并行）
-8.  D5+D7 模块 isa 合同与 exact/native 测试闸
-9.  D2    x86 partial canary（可全程并行）
+7.  D1+D6 exact 单腿 + dispatcher 生成收敛  ✅
+8.  D5+D7 模块 isa 合同与 exact/native 测试闸  ✅
+9.  D2    x86 partial 健康化 + canary  ✅（真机性能随常规 scorecard）
 10. D3/D4 有消费再上
 // D8 仅 f16/bf16 类型轴启动时评估
 ```
 
-算法补缺线 C1–C3 已收口；当前主工单转入 **D1/D6 → D5/D7 → D2**。A1、A3/B5 与 B7 性能决策挂起到取得对应硅。
+算法补缺线 C1–C3 与当前应做的机制线 D1/D2/D5/D6/D7 均已收口。A1、A3/B5 与 B7 性能决策挂起到取得对应硅；D3/D4/D8 只在出现消费或类型轴时启动。
 
 ---
 
@@ -248,9 +248,9 @@ thread_pool → sched；matvec → compute；hash → container；image / 万能
 
 **机制线可后置、但不应假装已完**（与算法收口可分两阶段签字）：
 
-8. **D1** exact 单腿可链、无越级指令闸；或书面「仅固定调用腿、产物仍 fat」；
-9. **D2** x86 partial canary 在位；
-10. **D7** exact/native 关键路径有自动化闸（不必全矩阵一次做完）。
+8. **D1** exact 单腿可链、无越级指令闸（✅）；
+9. **D2** x86 partial canary 在位（✅）；
+10. **D7** exact/native 关键路径有自动化闸（✅；真机性能另算）。
 
 ---
 

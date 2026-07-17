@@ -1,6 +1,6 @@
 # simd-24：基础 SIMD 能力补全
 
-> 状态：🚧 进行中（阶段 1 vqsort、阶段 2 search/reduction 已实现；NEON KV64 残余落后和 exact 单腿产物缺口已显式记录）。依赖 simd-22/23。
+> 状态：能力/机制施工已完成；剩余硬件签证为 NEON KV64 与 SVE/RVV 真机性能。依赖 simd-22/23。
 > 本阶段不再以“等待消费者”为缺口延期理由：HYLE 是基础库，已确认有通用价值的能力按顺序补齐。
 
 ## 目标与边界
@@ -132,17 +132,17 @@ network/组合 codegen，不能武断归因给某一个 primitive。该项继续
 对照 benchmark，用来配置参考库；`HYLE_SIMD_*_HAS_NATIVE_*` 是 backend 向 `vec.h` 报告 codegen
 能力的内部选择器，不是用户开关。
 
-## exact 单腿产物的已知 mechanization 缺口
+## exact 单腿产物 mechanization（已解决）
 
-本轮为缩短 WSL sanitizer 构建曾尝试让 `HYLE_SIMD_EXACT_TARGET=AVX2` 只生成/编译 AVX2 TU。链接随即
-暴露：当前 exact 模式已把运行时选择编译期绑定到指定 ISA，但多个 dispatch/runtime 表仍统一引用
-scalar/SSE4/AVX2/AVX512 的符号集合，手写 sort/dtype/math TU 列表也仍按 fat library 组织。因此它是
-“固定调用腿”，还不是真正只含一套 kernel 的最小单腿二进制。
+早期实验曾证明“只删非目标 TU”会让统一 fat 表留下未解析符号。现由
+`hyle_simd_target_manifest` 一次解析 canonical target list，并同时驱动 generated TU、手写产品 TU、
+Runtime table 与 exact suffix；exact `runtime_for` 只暴露所选表且不做 CPU probe。scalar 精确核和
+AVX512 中逐-op 选择的 AVX2 winner 可作为显式依赖，但不再携带其它 canonical dispatch table。
 
-该实验性 CMake 过滤没有提交，因为只删 TU 会制造未解析符号。完整修复必须由同一份 target manifest
-同时生成 source list、declaration、dispatch table 和 exact binding，再验证每个 exact ISA 的链接符号及
-无越级指令。它不影响未知 CPU 的 fat runtime 正确性，也不在热循环引入额外判断，但属于 simd-22
-双轨产物合同尚未彻底机械化的明确欠账。
+`hyle_simd_exact_artifact_check` 已在 Windows scalar/SSE4/AVX2/AVX512 上检查 manifest、build graph、
+CPU-probe import 和 x86 对象越级指令；exact AVX2 还通过 366 项公共合同测试。SVE/RVV 由
+`simd-scalable-exact-qemu-test.sh` 分别通过 43×5 和 43×4，并检查 exact dispatch object 不引用
+`cpu_features/best_isa/supports`。因此本节保留为历史根因记录，不再是欠账。
 
 ## 后续实施顺序
 
