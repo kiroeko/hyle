@@ -15,8 +15,16 @@ FetchContent_MakeAvailable(googletest)
 
 hyle_add_test(core SOURCES core/scaffolding_test.cc)
 hyle_add_test(error SOURCES error/status_test.cc error/error_handler_test.cc)
+# close-01 sample: pure C TU (C compiler) linking only the C ABI header.
+add_executable(hyle_error_c_test error/c_error_test.c)
+target_link_libraries(hyle_error_c_test PRIVATE hyle_error)
+# Ensure the .c file is compiled as C, not C++ (some generators sniff extension).
+set_source_files_properties(error/c_error_test.c PROPERTIES LANGUAGE C)
+hyle_apply_warnings(hyle_error_c_test)
+hyle_apply_sanitizer(hyle_error_c_test)
+add_test(NAME hyle_error_c_test COMMAND hyle_error_c_test)
 hyle_add_test(obs SOURCES obs/log_test.cc)
-hyle_add_test(platform SOURCES platform/wait_test.cc platform/thread_test.cc platform/dynlib_test.cc platform/fs_test.cc)
+hyle_add_test(platform SOURCES platform/wait_test.cc platform/thread_test.cc platform/dynlib_test.cc platform/fs_test.cc platform/virtual_memory_test.cc)
 hyle_add_test(mem SOURCES mem/allocator_test.cc mem/memory_arena_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc DEPS hyle_platform)
 hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc util/type_name_test.cc util/registry_test.cc util/random_test.cc util/spin_lock_test.cc util/demangle_test.cc DEPS hyle_container)
 hyle_add_test(time SOURCES time/clock_test.cc time/timer_wheel_test.cc time/common_timeout_queue_test.cc DEPS hyle_platform)

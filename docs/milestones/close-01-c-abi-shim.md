@@ -7,7 +7,7 @@
 | **Tier** | 边界 |
 | **LOC 估** | 2-3k |
 | **骨架?** | 否 |
-| **状态** | 📋 计划（**承诺已锁定，实现待排期**） |
+| **状态** | 🔶 **部分落地**：error C-ABI 样板 ✅（2026-07-17）；全模块 shim / 跨编译器 / FFI 冒烟仍待 |
 
 > **本文件的目的**：把"发布后用户必须用稳定 C ABI"这件事**白纸黑字钉死**，避免后面忘了或被"反正 C++ 头能用"糊弄过去。实现细节临到开工再细化，但**产品铁律 + 验收门槛现在就定**。
 
@@ -30,8 +30,9 @@
 
 ## 具体事务（开工时细化，先占位）
 
-- [ ] 每个对外模块封一层 `include/hyle/c/<mod>.h`（或等价单独命名空间），**纯 C、可被 C 编译器 include**，与内部 C++ 头物理隔离。
-- [ ] 先做样板：拿**最接近 C ABI 的模块试封第一层**（`mem` 的 `Allocator` 已是 vtable + 不透明 state，最贴；或 `container` SwissTable 的 type-erased 核）。
+- [x] 每个对外模块封一层 `include/hyle/c/<mod>.h`（或等价单独命名空间），**纯 C、可被 C 编译器 include**，与内部 C++ 头物理隔离。**目录约定已坐实**：`include/hyle/c/` 起手。
+- [x] **第一块样板 = error**（2026-07-17）：`include/hyle/c/error.h`（**全符号 `hyle_*`**）+ `src/error/c_error.cc` + 纯 C `hyle_error_c_test`。面：`hyle_status` 拥有型句柄（ok/new/free/clone/**move**/equals）+ 全码表 inline 工厂/谓词 + message/to_string + handler + **`hyle_error_api` 函数指针表** + ABI 版本协商。用户文档：[`docs/guide/c-error.md`](../guide/c-error.md)。Win MSVC 真过。`mem`/simd 等后续 shim 仍待。
+- [ ] 其余模块继续封：`mem` 的 `Allocator` 已是 vtable + 不透明 state，最贴下一刀；或 `container` SwissTable 的 type-erased 核。
 - [ ] SIMD 是首批语义样板之一：新增 `include/hyle/c/simd.h`；add/dot/math/scan/dtype/sort/
       bitpack 等无状态接口只用 pointer/count/POD，随机数状态使用
       `hyle_simd_random_o` make/destroy/fill，不冻结 C++ `RandomState` 布局。

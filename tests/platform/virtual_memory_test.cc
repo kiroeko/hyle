@@ -1,0 +1,153 @@
+#include "hyle/platform/virtual_memory.h"
+
+#include <gtest/gtest.h>
+
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <utility>
+
+using hyle::platform::page_align_up;
+using hyle::platform::page_size;
+using hyle::platform::Protect;
+using hyle::platform::vm_commit;
+using hyle::platform::vm_decommit;
+using hyle::platform::vm_last_error;
+using hyle::platform::vm_protect;
+using hyle::platform::vm_release;
+using hyle::platform::vm_reserve;
+using hyle::platform::VmRegion;
+
+TEST(VirtualMemory, PageSizeIsSane) {
+  std::size_t p = page_size();
+  EXPECT_GE(p, 4096u);
+  EXPECT_EQ(p & (p - 1), 0u);  // power of two
+  EXPECT_EQ(page_align_up(0), 0u);
+  EXPECT_EQ(page_align_up(1), p);
+  EXPECT_EQ(page_align_up(p), p);
+  EXPECT_EQ(page_align_up(p + 1), 2 * p);
+}
+
+TEST(VirtualMemory, ReserveCommitWriteRelease) {
+  std::size_t p = page_size();
+  void* base = vm_reserve(p * 2);
+  ASSERT_NE(base, nullptr) << vm_last_error();
+  ASSERT_TRUE(vm_commit(base, p * 2)) << vm_last_error();
+
+  auto* bytes = static_cast<unsigned char*>(base);
+  for (std::size_t i = 0; i < p * 2; ++i) bytes[i] = static_cast<unsigned char>(i & 0xff);
+  for (std::size_t i = 0; i < p * 2; ++i) {
+    EXPECT_EQ(bytes[i], static_cast<unsigned char>(i & 0xff));
+  }
+
+  ASSERT_TRUE(vm_release(base, p * 2)) << vm_last_error();
+}
+
+TEST(VirtualMemory, ProtectNoneThenRestore) {
+  std::size_t p = page_size();
+  void* base = vm_reserve(p * 2);
+  ASSERT_NE(base, nullptr) << vm_last_error();
+  ASSERT_TRUE(vm_commit(base, p * 2)) << vm_last_error();
+
+  // Lock the high page; low page stays RW so we still have a writable area.
+  auto* bytes = static_cast<unsigned char*>(base);
+  ASSERT_TRUE(vm_protect(bytes + p, p, Protect::kNone)) << vm_last_error();
+
+  // Low page still writable.
+  bytes[0] = 0xAB;
+  EXPECT_EQ(bytes[0], 0xAB);
+
+  // Restore high page and write through it.
+  ASSERT_TRUE(vm_protect(bytes + p, p, Protect::kReadWrite)) << vm_last_error();
+  bytes[p] = 0xCD;
+  EXPECT_EQ(bytes[p], 0xCD);
+
+  ASSERT_TRUE(vm_release(base, p * 2)) << vm_last_error();
+}
+
+TEST(VirtualMemory, DecommitAndRecommit) {
+  std::size_t p = page_size();
+  void* base = vm_reserve(p);
+  ASSERT_NE(base, nullptr) << vm_last_error();
+  ASSERT_TRUE(vm_commit(base, p)) << vm_last_error();
+  std::memset(base, 0x11, p);
+
+  ASSERT_TRUE(vm_decommit(base, p)) << vm_last_error();
+  ASSERT_TRUE(vm_commit(base, p)) << vm_last_error();
+  // After recommit contents are undefined; just prove we can write again.
+  std::memset(base, 0x22, p);
+  EXPECT_EQ(static_cast<unsigned char*>(base)[0], 0x22);
+
+  ASSERT_TRUE(vm_release(base, p)) << vm_last_error();
+}
+
+TEST(VirtualMemory, SizeRoundsUp) {
+  std::size_t p = page_size();
+  // Request 1 byte -> one page reservation.
+  void* base = vm_reserve(1);
+  ASSERT_NE(base, nullptr) << vm_last_error();
+  ASSERT_TRUE(vm_commit(base, 1)) << vm_last_error();
+  static_cast<unsigned char*>(base)[0] = 7;
+  EXPECT_EQ(static_cast<unsigned char*>(base)[0], 7);
+  // Release with the rounded size callers must use after reserve.
+  ASSERT_TRUE(vm_release(base, p)) << vm_last_error();
+}
+
+TEST(VirtualMemory, VmRegionRAII) {
+  std::size_t p = page_size();
+  VmRegion r = VmRegion::reserve(p * 3);
+  ASSERT_TRUE(r.valid()) << vm_last_error();
+  EXPECT_EQ(r.size(), p * 3);
+  EXPECT_FALSE(r.has_guard());
+  ASSERT_TRUE(r.commit_usable()) << vm_last_error();
+  std::memset(r.data(), 0x5A, r.size());
+  EXPECT_EQ(static_cast<unsigned char*>(r.data())[0], 0x5A);
+
+  VmRegion moved = std::move(r);
+  EXPECT_FALSE(r.valid());
+  EXPECT_TRUE(moved.valid());
+  EXPECT_EQ(static_cast<unsigned char*>(moved.data())[1], 0x5A);
+  // moved dtor releases
+}
+
+TEST(VirtualMemory, GuardedLayout) {
+  std::size_t p = page_size();
+  std::size_t usable_req = p * 2 + 17;  // forces round-up
+  VmRegion r = VmRegion::reserve_guarded(usable_req);
+  ASSERT_TRUE(r.valid()) << vm_last_error();
+  EXPECT_TRUE(r.has_guard());
+  EXPECT_EQ(r.size(), p + page_align_up(usable_req));
+  EXPECT_EQ(r.usable_size(), page_align_up(usable_req));
+  EXPECT_EQ(static_cast<std::byte*>(r.usable()),
+            static_cast<std::byte*>(r.data()) + p);
+
+  // Usable range is writable end-to-end.
+  auto* u = static_cast<unsigned char*>(r.usable());
+  for (std::size_t i = 0; i < r.usable_size(); ++i) u[i] = static_cast<unsigned char>(i);
+  EXPECT_EQ(u[0], 0);
+  EXPECT_EQ(u[r.usable_size() - 1],
+            static_cast<unsigned char>((r.usable_size() - 1) & 0xff));
+
+  // Guard page is the first page -- we do not touch it (would SIGSEGV/AV).
+  // Re-protect usable as read-only and verify write path is still mapped.
+  ASSERT_TRUE(r.protect(p, r.usable_size(), Protect::kRead)) << vm_last_error();
+  EXPECT_EQ(u[0], 0);
+  ASSERT_TRUE(r.protect(p, r.usable_size(), Protect::kReadWrite)) << vm_last_error();
+  u[0] = 0xEE;
+  EXPECT_EQ(u[0], 0xEE);
+}
+
+TEST(VirtualMemory, OutOfRangeCommitFails) {
+  std::size_t p = page_size();
+  VmRegion r = VmRegion::reserve(p);
+  ASSERT_TRUE(r.valid());
+  EXPECT_FALSE(r.commit(p, p));  // offset past end
+  EXPECT_FALSE(r.commit(0, p * 2));  // length past end
+}
+
+TEST(VirtualMemory, ReleaseNullIsOk) {
+  EXPECT_TRUE(vm_release(nullptr, page_size()));
+  VmRegion empty;
+  EXPECT_FALSE(empty.valid());
+  empty.release();  // no-op
+}

@@ -1,4 +1,4 @@
-hyle_add_module(platform SOURCES wait.cc thread.cc dynlib.cc fs.cc cpu.cc PUBLIC_DEPS hyle_error)
+hyle_add_module(platform SOURCES wait.cc thread.cc dynlib.cc fs.cc cpu.cc virtual_memory.cc PUBLIC_DEPS hyle_error)
 
 # cpu.cc is the CPUID PROBE translation unit and MUST stay LTO-free (conventions §10 /
 # llama.cpp's hard-won bug): with LTO on, the linker can inline an advanced-ISA

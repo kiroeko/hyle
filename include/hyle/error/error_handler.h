@@ -115,3 +115,20 @@ struct HYLE_ERROR_API ErrorRecord {
        : (::hyle::error_report(::hyle::Severity::Error, __FILE__, __LINE__,  \
                                "assertion failed: %s", #cond),               \
           false))
+
+// ---- stub / deprecation convenience (HYLE names; not clay identifiers) ------
+// Temporary unfinished API body: log which function is missing, then mark the
+// path unreachable. NOT a recoverable error -- for that return
+// Status(StatusCode::Unimplemented, ...).
+#define HYLE_NOT_IMPLEMENTED()                                                 \
+  do {                                                                         \
+    ::hyle::error_report(::hyle::Severity::Error, __FILE__, __LINE__,          \
+                         "'%s' not yet implemented", __func__);               \
+    HYLE_UNREACHABLE();                                                        \
+  } while (0)
+
+// Soft deprecation notice (does not abort; function may continue).
+#define HYLE_DEPRECATED_WARNING(message)                                       \
+  ::hyle::error_report(::hyle::Severity::Warning, __FILE__, __LINE__,          \
+                       "function `%s` has been deprecated. %s", __func__,      \
+                       (message))

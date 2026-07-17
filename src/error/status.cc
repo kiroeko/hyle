@@ -46,8 +46,26 @@ StatusRep* as_rep(std::uintptr_t rep) noexcept {
 
 }  // namespace
 
+#if defined(HYLE_TESTING)
+namespace {
+// Test-only latch: next status_make_heap behaves as malloc-failure once cleared
+// by the call (or sticky until disabled). Lets tests exercise the OOM degrade
+// path without mocking the CRT.
+std::atomic<bool> g_force_status_oom{false};
+}  // namespace
+
+void status_test_force_oom(bool enable) noexcept {
+  g_force_status_oom.store(enable, std::memory_order_relaxed);
+}
+#endif
+
 std::uintptr_t status_make_heap(StatusCode code, const char* msg,
                                 std::size_t len) {
+#if defined(HYLE_TESTING)
+  if (g_force_status_oom.load(std::memory_order_relaxed)) {
+    return 0;
+  }
+#endif
   void* mem = std::malloc(sizeof(StatusRep) + len + 1);
   // OOM while building an error message is operational, not a bug: return 0 so
   // the caller degrades to the message-less inline encoding (charter: OOM -> a

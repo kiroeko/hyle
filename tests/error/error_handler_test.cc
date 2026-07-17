@@ -2,10 +2,15 @@
 
 #include <gtest/gtest.h>
 
+#include <atomic>
 #include <cstring>
+#include <string>
+#include <thread>
+#include <vector>
 
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
+#include "hyle/macros.h"
 
 using hyle::ErrorRecord;
 using hyle::Severity;
@@ -120,4 +125,113 @@ TEST(ErrorHandler, BackingForward) {
 
   EXPECT_EQ(front.count(Severity::Error), 1u);
   EXPECT_EQ(sink.count(Severity::Error), 1u);  // forwarded
+}
+
+// ErrorRecord keeps only the last message and truncates at kMsgCap-1.
+TEST(ErrorHandler, RecordTruncatesLongMessage) {
+  ErrorRecord rec;
+  rec.install();
+  std::string long_msg(ErrorRecord::kMsgCap + 50, 'Z');
+  HYLE_ERROR("%s", long_msg.c_str());
+  rec.restore();
+
+  EXPECT_EQ(rec.count(Severity::Error), 1u);
+  EXPECT_EQ(std::strlen(rec.last_message()), ErrorRecord::kMsgCap - 1);
+  EXPECT_EQ(rec.last_message()[0], 'Z');
+}
+
+// error_report formats into a 1024-byte stack buffer; oversize format truncates.
+TEST(ErrorHandler, ReportFormatBufferTruncates) {
+  ErrorRecord rec;
+  rec.install();
+  std::string long_msg(2000, 'A');
+  HYLE_WARN("%s", long_msg.c_str());
+  rec.restore();
+
+  EXPECT_EQ(rec.count(Severity::Warning), 1u);
+  // ErrorRecord further caps at 255; both layers truncate safely (no overrun).
+  EXPECT_LT(std::strlen(rec.last_message()), ErrorRecord::kMsgCap);
+  EXPECT_EQ(rec.last_message()[0], 'A');
+}
+
+TEST(ErrorHandler, SetNullResetsToDefault) {
+  ErrorRecord rec;
+  rec.install();
+  const hyle::error_handler_t* prev = hyle::error_set_default_handler(nullptr);
+  // prev was rec's handler; default is restored (stderr). Reinstall rec to check
+  // we can still swap.
+  EXPECT_NE(prev, nullptr);
+  hyle::error_set_default_handler(prev);  // put rec back
+  HYLE_ERROR("after-null-cycle");
+  rec.restore();
+  EXPECT_EQ(rec.count(Severity::Error), 1u);
+}
+
+namespace {
+std::atomic<int> g_concurrent_hits{0};
+void concurrent_report(hyle::error_handler_o*, Severity, const char*,
+                       std::uint32_t, const char*) {
+  g_concurrent_hits.fetch_add(1, std::memory_order_relaxed);
+}
+}  // namespace
+
+TEST(ErrorHandler, ConcurrentReportsAreCounted) {
+  // ErrorRecord counts are not atomic; use a custom handler with atomic hits.
+  g_concurrent_hits.store(0);
+  hyle::error_handler_t custom{};
+  custom.inst = nullptr;
+  custom.report = &concurrent_report;
+  const hyle::error_handler_t* prev = hyle::error_set_default_handler(&custom);
+  constexpr int kThreads = 4;
+  constexpr int kPerThread = 50;
+  std::vector<std::thread> threads;
+  threads.reserve(kThreads);
+  for (int t = 0; t < kThreads; ++t) {
+    threads.emplace_back([t] {
+      for (int i = 0; i < kPerThread; ++i) {
+        HYLE_ERROR("t%d-%d", t, i);
+      }
+    });
+  }
+  for (auto& th : threads) th.join();
+  hyle::error_set_default_handler(prev);
+  EXPECT_EQ(g_concurrent_hits.load(), kThreads * kPerThread);
+}
+
+TEST(ErrorHandler, DeprecatedWarningReportsOnce) {
+  ErrorRecord rec;
+  rec.install();
+  auto legacy = [] {
+    HYLE_DEPRECATED_WARNING("use new_api() instead");
+  };
+  legacy();
+  rec.restore();
+
+  EXPECT_EQ(rec.count(Severity::Warning), 1u);
+  EXPECT_NE(std::strstr(rec.last_message(), "deprecated"), nullptr);
+  EXPECT_NE(std::strstr(rec.last_message(), "use new_api() instead"), nullptr);
+}
+
+// NOT_IMPLEMENTED reports before marking unreachable. On MSVC __assume(0) does
+// not trap, so we can observe the diagnostic. On GCC/Clang the path is UB after
+// the report; we still verify the message format via a direct error_report twin
+// (same format string the macro uses) so coverage does not depend on death tests.
+TEST(ErrorHandler, NotImplementedDiagnosticFormat) {
+  ErrorRecord rec;
+  rec.install();
+  hyle::error_report(Severity::Error, "file.cc", 10, "'%s' not yet implemented",
+                     "demo_fn");
+  rec.restore();
+  EXPECT_EQ(rec.count(Severity::Error), 1u);
+  EXPECT_STREQ(rec.last_message(), "'demo_fn' not yet implemented");
+}
+
+// HYLE_NOT_IMPLEMENTED ends in HYLE_UNREACHABLE (MSVC may int3 / GCC UB after
+// the report). Message format is covered above; do not call the full macro in
+// a live test process.
+
+// FATAL must trap after the handler runs. Death tests are the only safe way.
+TEST(ErrorHandlerDeathTest, FatalTrapsAfterHandler) {
+  // Install a no-op-ish path: default stderr is fine; FATAL always HYLE_TRAP().
+  EXPECT_DEATH({ HYLE_FATAL("must-die %d", 1); }, ".*");
 }

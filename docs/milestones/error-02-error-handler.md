@@ -16,7 +16,7 @@
 - **改进②(干净 fatal)**：clay 默认 fatal 干 `rand()%1 + *(int*)0=10 + exit(-1)`(故意空写触发调试器)——脏且 UB。HYLE 派发器在 handler 返回后 `HYLE_TRAP()`:handler 仍可先记录/弹框,但崩溃由派发保证(任何 handler 都崩),fail-fast 干净。
 - **改进③(补 HYLE_ASSERT)**：charter §5 要求的"求值 bool + release 不消失 + 失败记录非 UB"此前缺失(只有 FATAL_ASSERT)。现补:`if(!HYLE_ASSERT(p)) return ...;` 可恢复;真测求值一次(无双副作用)、release 语义。
 - **改进④(record handler 无分配)**：clay record 用 carray<char*>+Allocator 存每条;HYLE `ErrorRecord` counts[3]+last[256] 内联,零堆分配,可选 backing 转发。
-- **gap 登记**：`error_api_t->def/log` 全局默认 → HYLE `error_default_handler()/error_set_default_handler()`(atomic 可运行时换);`CLAY_NOT_IMPLEMENTED/DEPRECATED_WARNING` 便利宏未移植(罕用,需要时补),登记。
+- **gap 登记**：`error_api_t->def/log` 全局默认 → HYLE `error_default_handler()/error_set_default_handler()`(atomic 可运行时换)。**便利宏 ✅(2026-07-17)**：`HYLE_NOT_IMPLEMENTED` / `HYLE_DEPRECATED_WARNING`（**HYLE 命名**，非 clay 前缀）。
 
 ## 对抗式自审（六类）
 

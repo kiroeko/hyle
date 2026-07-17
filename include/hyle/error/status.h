@@ -58,6 +58,12 @@ HYLE_ERROR_API void status_retain(std::uintptr_t rep) noexcept;
 HYLE_ERROR_API void status_release(std::uintptr_t rep) noexcept;
 HYLE_ERROR_API StatusCode status_heap_code(std::uintptr_t rep) noexcept;
 HYLE_ERROR_API std::string_view status_heap_message(std::uintptr_t rep) noexcept;
+
+// Test-only: next status_make_heap fails as if malloc returned null (OOM path).
+// Shipped builds strip this (HYLE_TESTING off).
+#if defined(HYLE_TESTING)
+HYLE_ERROR_API void status_test_force_oom(bool enable) noexcept;
+#endif
 }  // namespace detail
 
 // ---- Status -----------------------------------------------------------------
@@ -155,6 +161,21 @@ class [[nodiscard]] Status {
   }
   friend bool operator!=(const Status& a, const Status& b) noexcept {
     return !(a == b);
+  }
+
+  // ---- C-ABI ownership transfer (hyle/c/error.h bridge only) ----------------
+  // Steal the tagged word (leaves *this OK). Pair with adopt_rep on the C side
+  // of a boundary so heap reps are not double-released.
+  std::uintptr_t release_rep() noexcept {
+    std::uintptr_t r = rep_;
+    rep_ = 0;
+    return r;
+  }
+  // Take ownership of a tagged word produced by release_rep() or equivalent.
+  static Status adopt_rep(std::uintptr_t rep) noexcept {
+    Status s;
+    s.rep_ = rep;
+    return s;
   }
 
  private:

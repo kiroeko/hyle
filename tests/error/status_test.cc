@@ -4,6 +4,7 @@
 #include <string_view>
 #include <type_traits>
 #include <utility>
+#include <cstring>
 
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
@@ -232,4 +233,81 @@ TEST(AssignOrRaise, ThreeLevelBubble) {
   ASSERT_FALSE(r.has_value());
   EXPECT_TRUE(r.error().IsInvalidArgument());
   EXPECT_EQ(r.error().message(), "negative");
+}
+
+TEST(AssignOrRaise, RaisesOnSecondError) {
+  // First assign ok, second fails -- exercises multi-assign + __COUNTER__.
+  Result<int> r = sum_two(1, -2);
+  ASSERT_FALSE(r.has_value());
+  EXPECT_TRUE(r.error().IsInvalidArgument());
+}
+
+// ---- edge cases toward full coverage ----------------------------------------
+
+TEST(Status, SelfAssignmentCopyAndMove) {
+  Status a = Status::Internal("self");
+  a = a;  // copy self-assign
+  EXPECT_TRUE(a.IsInternal());
+  EXPECT_EQ(a.message(), "self");
+  a = std::move(a);  // guarded by this != &o — still Internal
+  EXPECT_TRUE(a.IsInternal());
+  EXPECT_EQ(a.message(), "self");
+}
+
+TEST(Status, LongMessageToStringAndView) {
+  std::string long_msg(400, 'x');
+  Status s = Status::DataLoss(long_msg);
+  EXPECT_TRUE(s.has_message());
+  EXPECT_EQ(s.message(), long_msg);
+  char tiny[8];
+  std::size_t need = s.ToString(tiny, sizeof(tiny));
+  // "DataLoss: " (10) + 400
+  EXPECT_EQ(need, 10u + 400u);
+  EXPECT_EQ(std::strlen(tiny), 7u);  // truncated + NUL
+  EXPECT_EQ(s.ToString(nullptr, 0), need);
+}
+
+TEST(Status, EmptyMessageStringViewIsEmpty) {
+  Status s = Status::Cancelled();  // no message
+  EXPECT_FALSE(s.has_message());
+  EXPECT_TRUE(s.message().empty());
+  EXPECT_EQ(to_str(s), "Cancelled");
+}
+
+TEST(Status, OomDegradesToInlineCodeWithoutMessage) {
+  // Force status_make_heap to fail: code must survive, message dropped.
+  hyle::detail::status_test_force_oom(true);
+  Status s = Status::Internal("this message is dropped under forced OOM");
+  hyle::detail::status_test_force_oom(false);
+
+  EXPECT_TRUE(s.IsInternal());
+  EXPECT_FALSE(s.has_message());
+  EXPECT_TRUE(s.message().empty());
+  EXPECT_EQ(to_str(s), "Internal");
+}
+
+TEST(Status, UnknownCodeNameFallback) {
+  // Out-of-table code (not produced by factories) still names safely.
+  auto bogus = static_cast<StatusCode>(999);
+  EXPECT_EQ(status_code_name(bogus), "Unknown");
+}
+
+TEST(Result, TransformSkipsOnError) {
+  Result<int> r = std::unexpected(Status::Aborted("no"));
+  bool ran = false;
+  Result<int> out = r.transform([&](int v) {
+    ran = true;
+    return v + 1;
+  });
+  EXPECT_FALSE(ran);
+  ASSERT_FALSE(out.has_value());
+  EXPECT_TRUE(out.error().IsAborted());
+}
+
+TEST(Result, VoidOkAndError) {
+  Result<void> ok{};
+  EXPECT_TRUE(ok.has_value());
+  Result<void> err = std::unexpected(Status::Unavailable("down"));
+  ASSERT_FALSE(err.has_value());
+  EXPECT_TRUE(err.error().IsUnavailable());
 }
