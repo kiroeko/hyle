@@ -14,6 +14,7 @@
 #include "hyle/platform/fs.h"
 
 #include <cerrno>
+#include <cstdint>
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
@@ -25,6 +26,7 @@
 #if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
+#  include <winioctl.h>  // FSCTL_GET_REPARSE_POINT for read_symlink
 #  include <cwchar>  // std::wcslen for the directory_iterate pattern
 #else
 #  include <dirent.h>
@@ -62,6 +64,10 @@ bool join_path(char* dst, std::size_t cap, const char* a,
   dst[la + 1 + lb] = '\0';
   return true;
 }
+
+// Close a raw fd/HANDLE. DEFINED in each platform section below (close() vs
+// CloseHandle); DECLARED here so the platform-agnostic OwnedFd tail can call it.
+void close_raw(std::intptr_t raw) noexcept;
 
 }  // namespace
 
@@ -201,6 +207,7 @@ FileInfo stat(const char* path) noexcept {
   bool dir = (d.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
   r.exists = true;
   r.is_directory = dir;
+  r.is_symlink = (d.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT) != 0;
   r.size = dir ? 0
                : (static_cast<std::uint64_t>(d.nFileSizeHigh) << 32) |
                      d.nFileSizeLow;
@@ -351,6 +358,142 @@ bool directory_iterate(const char* path,
   return true;
 }
 
+namespace {
+void close_raw(std::intptr_t raw) noexcept {
+  if (raw != OwnedFd::kInvalid) CloseHandle(reinterpret_cast<HANDLE>(raw));
+}
+}  // namespace
+
+std::uint32_t get_permissions(const char* path) noexcept {
+  WidePath wp(path);
+  if (wp.w() == nullptr) return 0;
+  DWORD a = GetFileAttributesW(wp.w());
+  if (a == INVALID_FILE_ATTRIBUTES) return 0;
+  // No POSIX permission model on Windows: synthesize from the READONLY attribute.
+  return (a & FILE_ATTRIBUTE_READONLY) ? 0444u : 0666u;
+}
+
+bool set_permissions(const char* path, std::uint32_t mode) noexcept {
+  WidePath wp(path);
+  if (wp.w() == nullptr) return false;
+  DWORD a = GetFileAttributesW(wp.w());
+  if (a == INVALID_FILE_ATTRIBUTES) return false;
+  // Honor only the write bits: any owner/group/other write clear => READONLY.
+  const bool writable = (mode & 0222u) != 0;
+  if (writable) a &= ~static_cast<DWORD>(FILE_ATTRIBUTE_READONLY);
+  else a |= FILE_ATTRIBUTE_READONLY;
+  return SetFileAttributesW(wp.w(), a) != 0;
+}
+
+bool is_readonly(const char* path) noexcept {
+  WidePath wp(path);
+  if (wp.w() == nullptr) return false;
+  DWORD a = GetFileAttributesW(wp.w());
+  return a != INVALID_FILE_ATTRIBUTES && (a & FILE_ATTRIBUTE_READONLY) != 0;
+}
+
+bool set_readonly(const char* path, bool readonly) noexcept {
+  return set_permissions(path, readonly ? 0444u : 0666u);
+}
+
+bool create_symlink(const char* target, const char* link) noexcept {
+  WidePath wt(target), wl(link);
+  if (wt.w() == nullptr || wl.w() == nullptr) return false;
+  // Flag bit is target type; add UNPRIVILEGED_CREATE so Developer Mode suffices.
+  DWORD flags = SYMBOLIC_LINK_FLAG_ALLOW_UNPRIVILEGED_CREATE;
+  if (is_directory(target)) flags |= SYMBOLIC_LINK_FLAG_DIRECTORY;
+  // Needs Developer Mode or admin; returns 0 without the privilege (soft-fail).
+  return CreateSymbolicLinkW(wl.w(), wt.w(), flags) != 0;
+}
+
+bool is_symlink(const char* path) noexcept { return stat(path).is_symlink; }
+
+std::size_t read_symlink(const char* path, char* dst, std::size_t cap) noexcept {
+  WidePath wp(path);
+  if (wp.w() == nullptr) return 0;
+  // Open the link ITSELF (OPEN_REPARSE_POINT) and pull its stored target out of
+  // the raw reparse buffer -- GetFinalPathNameByHandle would resolve THROUGH the
+  // link to the final object, not report the link's own target string.
+  HANDLE h = CreateFileW(wp.w(), 0, FILE_SHARE_READ | FILE_SHARE_WRITE, nullptr,
+                         OPEN_EXISTING,
+                         FILE_FLAG_BACKUP_SEMANTICS | FILE_FLAG_OPEN_REPARSE_POINT,
+                         nullptr);
+  if (h == INVALID_HANDLE_VALUE) return 0;
+
+  // REPARSE_DATA_BUFFER (ntifs.h; not in the plain Win32 SDK headers, so lay it
+  // out locally -- the shape is stable ABI).
+  struct ReparseHeader {
+    ULONG ReparseTag;
+    USHORT ReparseDataLength;
+    USHORT Reserved;
+    USHORT SubstituteNameOffset;
+    USHORT SubstituteNameLength;
+    USHORT PrintNameOffset;
+    USHORT PrintNameLength;
+    ULONG Flags;
+    wchar_t PathBuffer[1];
+  };
+  alignas(ReparseHeader) unsigned char raw[16 * 1024];  // MAXIMUM_REPARSE_DATA_BUFFER_SIZE
+  DWORD got = 0;
+  BOOL ok = DeviceIoControl(h, FSCTL_GET_REPARSE_POINT, nullptr, 0, raw,
+                            sizeof(raw), &got, nullptr);
+  CloseHandle(h);
+  if (!ok) return 0;
+  auto* rep = reinterpret_cast<ReparseHeader*>(raw);
+  if (rep->ReparseTag != IO_REPARSE_TAG_SYMLINK) return 0;  // not a symlink
+  // Prefer the human-readable PrintName; fall back to SubstituteName.
+  USHORT off = rep->PrintNameLength ? rep->PrintNameOffset
+                                    : rep->SubstituteNameOffset;
+  USHORT len = rep->PrintNameLength ? rep->PrintNameLength
+                                    : rep->SubstituteNameLength;
+  const wchar_t* name =
+      reinterpret_cast<const wchar_t*>(
+          reinterpret_cast<const unsigned char*>(rep->PathBuffer) + off);
+  return fill_w(dst, cap, name, static_cast<int>(len / sizeof(wchar_t)));
+}
+
+OwnedFd create_temp_file(const char* dir, const char* prefix, char* dst,
+                         std::size_t cap) noexcept {
+  char dirbuf[1024];
+  if (dir == nullptr) {
+    std::size_t n = temp_directory(dirbuf, sizeof(dirbuf));
+    if (n == 0 || n >= sizeof(dirbuf)) return OwnedFd{};
+    dir = dirbuf;
+  }
+  WidePath wd(dir);
+  if (wd.w() == nullptr) return OwnedFd{};
+  wchar_t wpre[16];
+  const char* p = prefix != nullptr ? prefix : "tmp";
+  int pn = MultiByteToWideChar(CP_UTF8, 0, p, -1, wpre, 16);
+  if (pn <= 0) { wpre[0] = L't'; wpre[1] = L'\0'; }
+  // GetTempFileNameW creates a unique 0-byte file and returns its path.
+  wchar_t wpath[MAX_PATH];
+  if (GetTempFileNameW(wd.w(), wpre, 0, wpath) == 0) return OwnedFd{};
+  // Reopen it for read/write, keeping the on-disk file (it already exists).
+  HANDLE h = CreateFileW(wpath, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
+                         OPEN_EXISTING, FILE_ATTRIBUTE_TEMPORARY, nullptr);
+  if (h == INVALID_HANDLE_VALUE) return OwnedFd{};
+  int un = WideCharToMultiByte(CP_UTF8, 0, wpath, -1, nullptr, 0, nullptr, nullptr);
+  if (un > 0) {
+    // reuse fill via a stack UTF-8 copy
+    char u8[MAX_PATH * 3];
+    if (WideCharToMultiByte(CP_UTF8, 0, wpath, -1, u8, sizeof(u8), nullptr,
+                            nullptr) > 0) {
+      fill(dst, cap, u8, std::strlen(u8));
+    }
+  }
+  return OwnedFd{reinterpret_cast<std::intptr_t>(h)};
+}
+
+bool set_env_var(const char* name, const char* value) noexcept {
+  return name != nullptr &&
+         _putenv_s(name, value != nullptr ? value : "") == 0;
+}
+
+bool unset_env_var(const char* name) noexcept {
+  return name != nullptr && _putenv_s(name, "") == 0;
+}
+
 #else
 
 // ---- POSIX ------------------------------------------------------------------
@@ -364,6 +507,10 @@ FileInfo stat(const char* path) noexcept {
   r.exists = reg || r.is_directory;
   r.size = reg ? static_cast<std::uint64_t>(s.st_size) : 0;
   r.modified_time = static_cast<std::int64_t>(s.st_mtime);
+  // stat() follows symlinks; an extra lstat tells us if the path ITSELF is a link
+  // (a symlink to a dir still reports is_directory=true above, as callers expect).
+  struct ::stat ls;
+  if (::lstat(path, &ls) == 0 && S_ISLNK(ls.st_mode)) r.is_symlink = true;
   return r;
 }
 
@@ -492,6 +639,88 @@ std::size_t get_env_var(const char* name, char* dst, std::size_t cap) noexcept {
   return fill(dst, cap, v, std::strlen(v));
 }
 
+namespace {
+void close_raw(std::intptr_t raw) noexcept {
+  if (raw != OwnedFd::kInvalid) ::close(static_cast<int>(raw));
+}
+}  // namespace
+
+std::uint32_t get_permissions(const char* path) noexcept {
+  struct ::stat s;
+  if (::stat(path, &s) != 0) return 0;
+  return static_cast<std::uint32_t>(s.st_mode & 0777);
+}
+
+bool set_permissions(const char* path, std::uint32_t mode) noexcept {
+  return ::chmod(path, static_cast<mode_t>(mode & 0777)) == 0;
+}
+
+bool is_readonly(const char* path) noexcept {
+  struct ::stat s;
+  if (::stat(path, &s) != 0) return false;
+  return (s.st_mode & S_IWUSR) == 0;
+}
+
+bool set_readonly(const char* path, bool readonly) noexcept {
+  struct ::stat s;
+  if (::stat(path, &s) != 0) return false;
+  mode_t m = readonly ? (s.st_mode & ~static_cast<mode_t>(0222))
+                      : (s.st_mode | S_IWUSR);
+  return ::chmod(path, m & 0777) == 0;
+}
+
+bool create_symlink(const char* target, const char* link) noexcept {
+  return ::symlink(target, link) == 0;
+}
+
+bool is_symlink(const char* path) noexcept {
+  struct ::stat ls;
+  return ::lstat(path, &ls) == 0 && S_ISLNK(ls.st_mode);
+}
+
+std::size_t read_symlink(const char* path, char* dst, std::size_t cap) noexcept {
+  char buf[4096];
+  ssize_t n = ::readlink(path, buf, sizeof(buf));
+  if (n < 0) return 0;
+  return fill(dst, cap, buf, static_cast<std::size_t>(n));
+}
+
+OwnedFd create_temp_file(const char* dir, const char* prefix, char* dst,
+                         std::size_t cap) noexcept {
+  char dirbuf[1024];
+  if (dir == nullptr) {
+    std::size_t n = temp_directory(dirbuf, sizeof(dirbuf));
+    if (n == 0 || n >= sizeof(dirbuf)) return OwnedFd{};
+    dir = dirbuf;
+  }
+  const char* p = prefix != nullptr ? prefix : "tmp";
+  // Build "<dir>/<prefix>XXXXXX" (mkstemp replaces the 6 X's atomically).
+  char tmpl[1024];
+  std::size_t dl = std::strlen(dir), pl = std::strlen(p);
+  if (dl + 1 + pl + 6 + 1 > sizeof(tmpl)) return OwnedFd{};
+  std::memcpy(tmpl, dir, dl);
+  std::size_t w = dl;
+  if (w == 0 || tmpl[w - 1] != '/') tmpl[w++] = '/';
+  std::memcpy(tmpl + w, p, pl);
+  w += pl;
+  std::memcpy(tmpl + w, "XXXXXX", 6);
+  w += 6;
+  tmpl[w] = '\0';
+  int fd = ::mkstemp(tmpl);
+  if (fd < 0) return OwnedFd{};
+  fill(dst, cap, tmpl, std::strlen(tmpl));
+  return OwnedFd{static_cast<std::intptr_t>(fd)};
+}
+
+bool set_env_var(const char* name, const char* value) noexcept {
+  return name != nullptr &&
+         ::setenv(name, value != nullptr ? value : "", 1) == 0;
+}
+
+bool unset_env_var(const char* name) noexcept {
+  return name != nullptr && ::unsetenv(name) == 0;
+}
+
 bool directory_iterate(const char* path,
                        bool (*visit)(const char*, bool, void*),
                        void* ctx) noexcept {
@@ -528,6 +757,24 @@ bool directory_iterate(const char* path,
 #endif
 
 // ---- portable (built on the primitives above) -------------------------------
+
+// OwnedFd: platform-agnostic RAII; close_raw() is the per-OS close (defined in
+// each section above, declared at the top of the file).
+OwnedFd::~OwnedFd() { close_raw(raw_); }
+
+OwnedFd& OwnedFd::operator=(OwnedFd&& o) noexcept {
+  if (this != &o) {
+    close_raw(raw_);
+    raw_ = o.raw_;
+    o.raw_ = kInvalid;
+  }
+  return *this;
+}
+
+void OwnedFd::reset() noexcept {
+  close_raw(raw_);
+  raw_ = kInvalid;
+}
 
 bool exists(const char* path) noexcept { return stat(path).exists; }
 bool is_directory(const char* path) noexcept { return stat(path).is_directory; }

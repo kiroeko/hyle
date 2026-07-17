@@ -6,6 +6,7 @@
 
 using hyle::platform::Thread;
 using hyle::platform::ThreadOpts;
+using hyle::platform::ThreadPriority;
 namespace this_thread = hyle::platform::this_thread;
 
 TEST(Thread, SpawnRunsAndJoins) {
@@ -118,6 +119,24 @@ TEST(Thread, AffinityOutOfRangeDoesNotCrash) {
   ASSERT_TRUE(r.has_value());
   std::move(*r).join();
   EXPECT_TRUE(ran.load());
+}
+
+TEST(Thread, PriorityBestEffortRuns) {
+  // Priority is best-effort (raising needs privilege on POSIX). Every level must
+  // spawn + run + join cleanly regardless of whether the OS actually grants it.
+  for (ThreadPriority p : {ThreadPriority::kLowest, ThreadPriority::kLow,
+                           ThreadPriority::kNormal, ThreadPriority::kHigh,
+                           ThreadPriority::kHighest}) {
+    std::atomic<bool> ran{false};
+    ThreadOpts opts;
+    opts.priority = p;
+    auto r = Thread::spawn(
+        [](void* a) { static_cast<std::atomic<bool>*>(a)->store(true); }, &ran,
+        opts);
+    ASSERT_TRUE(r.has_value());
+    std::move(*r).join();
+    EXPECT_TRUE(ran.load());
+  }
 }
 
 TEST(Thread, ManyThreadsJoinClean) {

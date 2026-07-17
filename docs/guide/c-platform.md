@@ -2,7 +2,7 @@
 
 > **发布面**：`include/hyle/c/platform.h`  
 > **实现**：`src/platform/c_platform.cc`（链 `hyle_platform`；spawn 失败依赖 `hyle_error`）  
-> **ABI 版本**：`HYLE_PLATFORM_C_ABI_VERSION`（当前 **3**）  
+> **ABI 版本**：`HYLE_PLATFORM_C_ABI_VERSION`（当前 **4**）  
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言 / 跨编译器只许绑本头（及 `hyle/c/error.h`）。不要 include `hyle/platform/*.h`。
@@ -33,6 +33,8 @@
 | hugepage/THP | `hyle_vm_advise_hugepage` 等 | soft 建议，无句柄 |
 | NUMA | `hyle_numa_*` / `hyle_vm_reserve_numa` / `hyle_vm_bind_numa*` | reserve 配对 release |
 | fs/env | buffer-fill / visitor | 无堆句柄 |
+| fs 权限/链接/临时文件/env 写 | `hyle_fs_get_permissions` / `hyle_fs_*_symlink` / `hyle_fs_create_temp_file` / `hyle_fs_set_env_var` | temp file 返回 fd（`hyle_fs_close_fd` 释放） |
+| MappedFile | `hyle_mapped_file_*` | destroy 释放 |
 | cpu | `hyle_cpu_features_get` 等 | 值返回 POD |
 | 表 | `hyle_platform_api_get` | 可选 FFI 函数指针包 |
 
@@ -69,10 +71,11 @@
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_thread_opts` | `name` / `has_stack_size`+`stack_size` / `has_affinity_cpu`+`affinity_cpu` |
+| `hyle_thread_opts` | `name` / `has_stack_size`+`stack_size` / `has_affinity_cpu`+`affinity_cpu` / `has_priority`+`priority`（v4） |
+| `hyle_thread_priority`（v4） | `LOWEST`/`LOW`/`NORMAL`/`HIGH`/`HIGHEST`（-2..2）；best-effort，POSIX 提权需权限 |
 | `HYLE_THREAD_OPTS_INIT` | 零初始化宏 |
 | `hyle_thread_opts_default` | 返回默认 opts |
-| `hyle_thread_opts_set_name` / `set_stack_size` / `set_affinity` | setter |
+| `hyle_thread_opts_set_name` / `set_stack_size` / `set_affinity` / `set_priority`（v4） | setter |
 
 ### 3.3 DynLib（DLL）
 
@@ -132,7 +135,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_file_info` | `exists` / `is_directory` / `size` / `modified_time` |
+| `hyle_file_info` | `exists` / `is_directory` / `size` / `modified_time` / `is_symlink`（v4） |
 | `hyle_fs_stat` | 整包 |
 | `hyle_fs_exists` / `is_directory` / `file_size` | |
 | `hyle_fs_make_directory` / `make_directory_recursive` | |
@@ -144,6 +147,30 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_env_get(name, dst, cap)` | 未设置→`HYLE_ENV_NOT_SET` |
 | `hyle_fs_visit_fn` | `(name, is_dir, ctx)→int`；0 停止 |
 | `hyle_fs_directory_iterate` | 打开失败→0 |
+
+### 3.5b fs 权限 / 符号链接 / 临时文件 / env 写（DLL，v4）
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_fs_get_permissions(path)` | 低 9 位权限；Windows 由 READONLY 合成（0444/0666）；0=失败 |
+| `hyle_fs_set_permissions(path, mode)` | POSIX chmod；Windows 只认写位→READONLY |
+| `hyle_fs_is_readonly(path)` / `set_readonly(path, ro)` | 跨平台可靠子集 |
+| `hyle_fs_create_symlink(target, link)` | Windows 需开发者模式/管理员，无则→0 |
+| `hyle_fs_is_symlink(path)` | 自身是否符号链接（不跟随） |
+| `hyle_fs_read_symlink(path, dst, cap)` | buffer-fill；非链接/失败→0 |
+| `hyle_fs_create_temp_file(dir, prefix, dst, cap)` | 原子创建；返回**打开的** fd（`intptr_t`，-1 失败，TOCTOU 安全）；路径写 dst |
+| `hyle_fs_close_fd(fd)` | 关闭 create_temp_file 返回的 fd；-1 安全 |
+| `hyle_fs_set_env_var(name, value)` / `unset_env_var(name)` | 进程级；与并发读非线程安全 |
+
+### 3.5c MappedFile —— 文件内存映射（DLL，v4）
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_map_mode` | `READ_ONLY` / `READ_WRITE` / `COPY_ON_WRITE`（对标 memmap2） |
+| `hyle_mapped_file_open(path, mode, offset, length)` | length=0→到 EOF；offset 页对齐；失败 NULL（见 `hyle_vm_last_error`） |
+| `hyle_mapped_file_destroy(m)` | unmap + 关句柄 |
+| `hyle_mapped_file_valid/data/size(m)` | 查询 |
+| `hyle_mapped_file_flush(m)` | 回写脏页（RW；RO/COW 为 no-op 返 1） |
 
 ### 3.6 CPU（DLL + 常量）
 
@@ -165,7 +192,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_platform_c_abi_version` | 等于宏 |
 | `hyle_platform_api_get(out, expected_abi)` | 0 成功；-1 失败 |
 
-`hyle_platform_api` 字段 = **全部 DLL 自由函数**（无 header-inline）：wait×4 + parker×5 + thread×7 + dynlib×9 + vm 自由×8 + region×13 + fs/env×18 + cpu×3 + `c_abi_version`，外加 `abi_version` 整型。**v3 追加（列在表尾，保 v2 前缀布局不变）**：`vm_set_last_error` + hugepage×3（`large_page_size` / `vm_advise_hugepage` / `vm_advise_no_hugepage`）+ numa×5（`numa_node_count` / `numa_current_node` / `vm_bind_numa` / `vm_bind_numa_interleave` / `vm_reserve_numa`）= 9 个。
+`hyle_platform_api` 字段 = **全部 DLL 自由函数**（无 header-inline）：wait×4 + parker×5 + thread×7 + dynlib×9 + vm 自由×8 + region×13 + fs/env×18 + cpu×3 + `c_abi_version`，外加 `abi_version` 整型。**v3 追加（列在表尾，保 v2 前缀布局不变）**：`vm_set_last_error` + hugepage×3（`large_page_size` / `vm_advise_hugepage` / `vm_advise_no_hugepage`）+ numa×5（`numa_node_count` / `numa_current_node` / `vm_bind_numa` / `vm_bind_numa_interleave` / `vm_reserve_numa`）= 9 个。**v4 追加（同样表尾）**：fs×11（`fs_get_permissions` / `set_permissions` / `is_readonly` / `set_readonly` / `create_symlink` / `is_symlink` / `read_symlink` / `create_temp_file` / `close_fd` / `set_env_var` / `unset_env_var`）+ mapped_file×6（`open` / `destroy` / `valid` / `data` / `size` / `flush`）= 17 个。
 
 **不进表**：`hyle_page_align_up`、`hyle_large_page_align_up`、`hyle_vm_free_rw`、thread opts helpers / `HYLE_THREAD_OPTS_INIT`。
 
@@ -247,6 +274,7 @@ hyle_fs_temp_directory(tmp, sizeof tmp);
 
 - v2：完整 `hyle_platform_api` 表、`open_symbol`、`vm_alloc_rw`、thread opts 糖、CPU 全字段（v1 已有）
 - v3：NUMA（node 查询 / preferred·bind·interleave / `reserve_numa`）+ hugepage·THP hint + `vm_set_last_error`。新字段一律追加在 `hyle_platform_api` 表尾，v2 调用方的前缀读取不受影响；仅版本门 `hyle_platform_api_get` 拒绝旧号。
+- v4：fs 权限（get/set + is/set_readonly）、符号链接（create/is/read）、原子临时文件（`create_temp_file` 返回打开的 fd，TOCTOU 安全）+ `close_fd`、env 写（set/unset）；`hyle_file_info` 加 `is_symlink`；thread `priority`（5 档）；MappedFile（RO/RW/COW 文件内存映射）。同样表尾追加，v2/v3 前缀布局不变。
 - 破坏性变更升 `HYLE_PLATFORM_C_ABI_VERSION`
 
 > **有意不导出**：mem 的 `StatsAllocator` / `LeakTracker`（AllocStats 计数 + 泄漏追踪）是**有状态 C++ 类**，属 mem 模块而非 platform；C ABI 化成本高且无 FFI 需求 → 仅 C++。NUMA/hugepage 是 platform 层自由函数原语，故进本表。

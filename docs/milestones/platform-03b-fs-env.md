@@ -4,7 +4,7 @@
 |---|---|
 | **阶段** | P1 |
 | **模块** | platform/ |
-| **状态** | ✅ 完成（Win x64 MSVC 19.50 + Linux x64 GCC14.2 双平台 fs 14/14；platform 套件 19→33）|
+| **状态** | ✅ 完成（Win MSVC + Linux GCC14 双平台）；**v4 收口补全 2026-07-17**（fs 权限/symlink/tempfile/env-write + OwnedFd + MappedFile + thread priority；Win platform 105/105 + WSL 106/106 + C ABI v4）|
 
 > **范围**：吸纳 clay `sys/os.h` 的 `file_system_api_t`(13 fn) + `os.shared.cc` 的可移植 helper(make_directory_recursive/touch/traverse) + `os_info_api_t`。这是 clay path/os 的 **syscall 半**;纯字符串半已在 platform-03a(container/path.h)。
 > **cloc**：**生产 379 行**(fs.h 59 + fs.cc 320) + **测试 162 行**。
@@ -43,7 +43,7 @@ clay fs 每个返回路径的 API 都走 `Allocator*` + `const char*`,目录列�
 | `os_info_api_t.avx_support` | 📋 simd §10 | CPUID 探测属 simd dispatch,登记不在此 |
 | **新增** `get_env_var` | ✅ | clay os.h 无显式 env 读取 API;HYLE 补(区分 unset=kEnvNotSet vs set-but-empty=0) |
 
-**clay os.linux.cc 全 830 行已读 → fs 原语全是真 syscall**(stat/opendir-readdir/mkdir/unlink/nftw/rename/sendfile/getcwd/chdir/getpwuid),os.shared.cc 209 行 helper 也真。无美化空函数。`file_io_api_t`(open/read/write)+ `mmap_*` 属文件 IO 域 → **io-05**,非本步。`socket_*` → io-04。`thread_api_t`/`time_api_t` 已 platform-01/time-01。
+**clay os.linux.cc 全 830 行已读 → fs 原语全是真 syscall**(stat/opendir-readdir/mkdir/unlink/nftw/rename/sendfile/getcwd/chdir/getpwuid),os.shared.cc 209 行 helper 也真。无美化空函数。`file_io_api_t`(open/read/write)属异步文件 IO 域 → **io-05**(proactor,已完成)。`mmap_*` 拆两半:**单进程文件内存映射 → `platform::MappedFile`**(收口时补,见下 v4 段);**跨进程 shmem → io-05**(未做)。`socket_*` → io-04。`thread_api_t`/`time_api_t` 已 platform-01/time-01。
 
 ## 对抗式自审（六类）
 
@@ -67,6 +67,23 @@ clay fs 每个返回路径的 API 都走 `Allocator*` + `const char*`,目录列�
 - `src/platform/fs.cc`(Win Win32 API 分支 + POSIX 分支 + 可移植 helper)
 - `tests/platform/fs_test.cc`(14)
 
+## 收口补全（v4，2026-07-17）—— 能力面完整，不预设消费者
+
+收口纪律（基础库按能力面完整验收，不等消费者）补齐 fs/thread 缺口 + 新增 MappedFile：
+
+- **fs 权限**：`get_permissions`/`set_permissions`（POSIX chmod 低 9 位；Windows 无 POSIX 模型 → 由 READONLY 合成 0444/0666，只认写位）+ 跨平台可靠子集 `is_readonly`/`set_readonly`。
+- **符号链接**：`create_symlink`（Windows 需开发者模式/管理员，无则 soft-fail）/`is_symlink`/`read_symlink`（Windows 走 `FSCTL_GET_REPARSE_POINT` 解析 reparse buffer 取真实 target，**非** `GetFinalPathNameByHandle` 的解析后路径）；`FileInfo` 加 `is_symlink`（POSIX lstat / Win REPARSE_POINT 属性）。
+- **原子临时文件**：`create_temp_file` 返回**打开的句柄**（`OwnedFd`）+ 路径 —— TOCTOU 安全范式（SEI CERT FIO21-C / Rust `NamedTempFile`），非只返路径（`GetTempFileName` 式不安全）。POSIX `mkstemp` / Win `GetTempFileName`+`CreateFile`。
+- **`OwnedFd`**：零成本 fd/HANDLE 所有权 RAII（Rust `OwnedFd`/seastar `file_desc` 血统）——move-only、无 vtable/堆/refcount、一个 word；temp file 的返回类型，未来同步文件 fd 可复用。
+- **env 写**：`set_env_var`/`unset_env_var`（POSIX setenv/unsetenv、Win `_putenv_s`；文档标注与并发读非线程安全）。
+- **`MappedFile`**（新 `mapped_file.h/.cc`）：文件内存映射 RAII，三模式 RO/RW/COW（对标 Rust memmap2 Mmap/MmapMut/MmapCopy）。POSIX mmap MAP_SHARED/PRIVATE + msync；Win CreateFileMapping/MapViewOfFile PAGE_READONLY/READWRITE/WRITECOPY + FlushViewOfFile。**offset 内部对齐**（Win 按 dwAllocationGranularity 64K / POSIX 按 page），`data()` 返回请求 offset 的精确位置（memmap2 风格，支持任意 offset）。归 platform（同步 host 内存，与 VmRegion 同层）；跨进程 shmem 仍归 io-05。
+- **thread priority**：`ThreadOpts::priority`（5 档 kLowest..kHighest 可移植梯）——Win `SetThreadPriority`、POSIX `setpriority` nice 映射，best-effort（提权需权限 → soft no-op）。
+
+**C ABI v4**：以上全部导出到 `hyle_platform_api` 表尾（保 v2/v3 前缀布局），`hyle_file_info` 加 `is_symlink`，thread opts 加 priority，MappedFile 走 opaque handle，temp file 走 `intptr_t` fd + `hyle_fs_close_fd`。文档 `docs/guide/c-platform.md` 1:1。
+
+**三平台真验**：Win MSVC platform 105/105 + C ABI v4 passed；WSL Linux platform 106/106（symlink 有特权跑，Win 无特权时 SKIP 差 1）+ C ABI passed。**两个 Windows-only 真 bug 在真机测出并修**：① MappedFile offset 误用 page 对齐（Win 要 allocation granularity）② read_symlink 误用 GetFinalPathNameByHandle（拿到解析后路径非 target）—— 均改实现，非改测试掩盖。
+
 ## 参考
 
 - clay `sys/os.h`(file_system_api_t/os_info_api_t)、`os.linux.cc`(POSIX 真实现)、`os.shared.cc`(可移植 helper)。conventions §1(禁 std 流)、§4(buffer-fill 替隐藏分配)、§10(CPUID→simd)。platform-03a(path::normalize 供 absolute 组合)。
+- 收口 v4 对标：Rust `std::os::fd::OwnedFd`(零成本 fd RAII)、Rust `tempfile`/SEI CERT FIO21-C/OWASP(temp file 返句柄防 TOCTOU)、Rust `memmap2`(Mmap/MmapMut/MmapCopy 三模式)、folly `File`/`MemoryMapping`、seastar `file_desc`。

@@ -11,6 +11,7 @@
 #include "hyle/platform/cpu.h"
 #include "hyle/platform/dynlib.h"
 #include "hyle/platform/fs.h"
+#include "hyle/platform/mapped_file.h"
 #include "hyle/platform/numa.h"
 #include "hyle/platform/thread.h"
 #include "hyle/platform/virtual_memory.h"
@@ -55,6 +56,10 @@ hyle::platform::ThreadOpts to_cpp_opts(const hyle_thread_opts* opts) {
   if (opts->name != nullptr && opts->name[0] != '\0') o.name = opts->name;
   if (opts->has_stack_size) o.stack_size = opts->stack_size;
   if (opts->has_affinity_cpu) o.affinity_cpu = opts->affinity_cpu;
+  if (opts->has_priority) {
+    o.priority = static_cast<hyle::platform::ThreadPriority>(
+        static_cast<std::int8_t>(opts->priority));
+  }
   return o;
 }
 
@@ -81,6 +86,9 @@ struct hyle_dynlib_o {
 };
 struct hyle_vm_region_o {
   hyle::platform::VmRegion region;
+};
+struct hyle_mapped_file_o {
+  hyle::platform::MappedFile mf;
 };
 
 extern "C" {
@@ -314,6 +322,7 @@ hyle_file_info hyle_fs_stat(const char* path) {
   out.is_directory = i.is_directory ? 1 : 0;
   out.size = i.size;
   out.modified_time = i.modified_time;
+  out.is_symlink = i.is_symlink ? 1 : 0;
   return out;
 }
 int hyle_fs_exists(const char* path) {
@@ -469,6 +478,70 @@ void* hyle_vm_reserve_numa(size_t size, int node) {
   return hyle::platform::vm_reserve_numa(size, node);
 }
 
+/* ---- v4: fs perms/symlink/tempfile/env-write + mapped file ----------------- */
+
+uint32_t hyle_fs_get_permissions(const char* path) {
+  return path ? hyle::platform::get_permissions(path) : 0;
+}
+int hyle_fs_set_permissions(const char* path, uint32_t mode) {
+  return path && hyle::platform::set_permissions(path, mode) ? 1 : 0;
+}
+int hyle_fs_is_readonly(const char* path) {
+  return path && hyle::platform::is_readonly(path) ? 1 : 0;
+}
+int hyle_fs_set_readonly(const char* path, int readonly) {
+  return path && hyle::platform::set_readonly(path, readonly != 0) ? 1 : 0;
+}
+int hyle_fs_create_symlink(const char* target, const char* link) {
+  return target && link && hyle::platform::create_symlink(target, link) ? 1 : 0;
+}
+int hyle_fs_is_symlink(const char* path) {
+  return path && hyle::platform::is_symlink(path) ? 1 : 0;
+}
+size_t hyle_fs_read_symlink(const char* path, char* dst, size_t cap) {
+  return path ? hyle::platform::read_symlink(path, dst, cap) : 0;
+}
+intptr_t hyle_fs_create_temp_file(const char* dir, const char* prefix, char* dst,
+                                  size_t cap) {
+  hyle::platform::OwnedFd fd = hyle::platform::create_temp_file(dir, prefix, dst, cap);
+  return fd.release();  // transfer ownership to the C caller (close via close_fd)
+}
+void hyle_fs_close_fd(intptr_t fd) {
+  hyle::platform::OwnedFd owned{fd};  // adopts and closes on scope exit
+  (void)owned;
+}
+int hyle_fs_set_env_var(const char* name, const char* value) {
+  return name && hyle::platform::set_env_var(name, value) ? 1 : 0;
+}
+int hyle_fs_unset_env_var(const char* name) {
+  return name && hyle::platform::unset_env_var(name) ? 1 : 0;
+}
+
+hyle_mapped_file_o* hyle_mapped_file_open(const char* path, hyle_map_mode mode,
+                                          size_t offset, size_t length) {
+  if (!path) return nullptr;
+  auto m = hyle::platform::MappedFile::open(
+      path, static_cast<hyle::platform::MappedFile::Mode>(mode), offset, length);
+  if (!m.valid()) return nullptr;
+  auto* o = new (std::nothrow) hyle_mapped_file_o{};
+  if (!o) return nullptr;
+  o->mf = std::move(m);
+  return o;
+}
+void hyle_mapped_file_destroy(hyle_mapped_file_o* m) { delete m; }
+int hyle_mapped_file_valid(const hyle_mapped_file_o* m) {
+  return m && m->mf.valid() ? 1 : 0;
+}
+void* hyle_mapped_file_data(hyle_mapped_file_o* m) {
+  return m ? m->mf.data() : nullptr;
+}
+size_t hyle_mapped_file_size(const hyle_mapped_file_o* m) {
+  return m ? m->mf.size() : 0;
+}
+int hyle_mapped_file_flush(hyle_mapped_file_o* m) {
+  return m && m->mf.flush() ? 1 : 0;
+}
+
 int hyle_platform_c_abi_version(void) { return HYLE_PLATFORM_C_ABI_VERSION; }
 
 int hyle_platform_api_get(hyle_platform_api* out, int expected_abi) {
@@ -561,6 +634,25 @@ int hyle_platform_api_get(hyle_platform_api* out, int expected_abi) {
   out->vm_bind_numa = &hyle_vm_bind_numa;
   out->vm_bind_numa_interleave = &hyle_vm_bind_numa_interleave;
   out->vm_reserve_numa = &hyle_vm_reserve_numa;
+
+  /* v4 appended */
+  out->fs_get_permissions = &hyle_fs_get_permissions;
+  out->fs_set_permissions = &hyle_fs_set_permissions;
+  out->fs_is_readonly = &hyle_fs_is_readonly;
+  out->fs_set_readonly = &hyle_fs_set_readonly;
+  out->fs_create_symlink = &hyle_fs_create_symlink;
+  out->fs_is_symlink = &hyle_fs_is_symlink;
+  out->fs_read_symlink = &hyle_fs_read_symlink;
+  out->fs_create_temp_file = &hyle_fs_create_temp_file;
+  out->fs_close_fd = &hyle_fs_close_fd;
+  out->fs_set_env_var = &hyle_fs_set_env_var;
+  out->fs_unset_env_var = &hyle_fs_unset_env_var;
+  out->mapped_file_open = &hyle_mapped_file_open;
+  out->mapped_file_destroy = &hyle_mapped_file_destroy;
+  out->mapped_file_valid = &hyle_mapped_file_valid;
+  out->mapped_file_data = &hyle_mapped_file_data;
+  out->mapped_file_size = &hyle_mapped_file_size;
+  out->mapped_file_flush = &hyle_mapped_file_flush;
   return 0;
 }
 

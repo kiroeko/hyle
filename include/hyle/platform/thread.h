@@ -15,10 +15,19 @@ namespace hyle::platform {
 // All fields are layout-stable (view + trivially-copyable optionals) so this
 // struct is ABI-clean across the DLL seam. `name` is a view: spawn() copies it
 // synchronously, the caller owns the backing buffer.
+// Portable 5-level priority. OS priority models diverge wildly (Windows discrete
+// levels vs POSIX nice vs SCHED_FIFO), so we expose a small portable ladder and
+// map it per-OS. Best-effort: a level the OS won't grant without privilege is a
+// soft no-op (the thread still runs at default), never a failure.
+enum class ThreadPriority : std::int8_t {
+  kLowest = -2, kLow = -1, kNormal = 0, kHigh = 1, kHighest = 2,
+};
+
 struct ThreadOpts {
   std::string_view name;                     // <=15 bytes effective on Linux
   std::optional<std::size_t> stack_size;     // bytes; honored via native attrs
   std::optional<unsigned> affinity_cpu;      // pin to logical CPU (best-effort on macOS)
+  std::optional<ThreadPriority> priority;    // scheduling priority (best-effort; needs privilege on POSIX)
 };
 
 // Owning thread handle. Move-only. Stores the raw OS handle (no std::thread in

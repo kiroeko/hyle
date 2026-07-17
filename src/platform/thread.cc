@@ -29,6 +29,8 @@ struct ThreadStart {
   bool has_name;
   bool has_affinity;
   unsigned cpu;
+  bool has_priority;
+  ThreadPriority priority;
 };
 
 ThreadStart* make_start(void (*entry)(void*), void* ctx, const ThreadOpts& o) {
@@ -44,6 +46,8 @@ ThreadStart* make_start(void (*entry)(void*), void* ctx, const ThreadOpts& o) {
   }
   s->has_affinity = o.affinity_cpu.has_value();
   s->cpu = o.affinity_cpu.value_or(0);
+  s->has_priority = o.priority.has_value();
+  s->priority = o.priority.value_or(ThreadPriority::kNormal);
   return s;
 }
 
@@ -69,6 +73,17 @@ DWORD WINAPI thread_trampoline(LPVOID arg) noexcept {
   if (s->has_affinity) {
     ::SetThreadAffinityMask(::GetCurrentThread(),
                             static_cast<DWORD_PTR>(1) << s->cpu);
+  }
+  if (s->has_priority) {
+    int p = THREAD_PRIORITY_NORMAL;
+    switch (s->priority) {
+      case ThreadPriority::kLowest:  p = THREAD_PRIORITY_LOWEST; break;
+      case ThreadPriority::kLow:     p = THREAD_PRIORITY_BELOW_NORMAL; break;
+      case ThreadPriority::kNormal:  p = THREAD_PRIORITY_NORMAL; break;
+      case ThreadPriority::kHigh:    p = THREAD_PRIORITY_ABOVE_NORMAL; break;
+      case ThreadPriority::kHighest: p = THREAD_PRIORITY_HIGHEST; break;
+    }
+    ::SetThreadPriority(::GetCurrentThread(), p);  // best-effort
   }
   void (*entry)(void*) = s->entry;
   void* ctx = s->ctx;
@@ -126,6 +141,7 @@ void set_name(std::string_view name) noexcept {
 #else  // ---- POSIX (Linux / macOS) -- written to spec, UNVERIFIED on this box -
 #  include <pthread.h>
 #  include <sched.h>
+#  include <sys/resource.h>  // setpriority (best-effort thread nice)
 #  include <unistd.h>
 #  if defined(HYLE_OS_LINUX)
 #    include <sys/syscall.h>
@@ -151,6 +167,21 @@ void* thread_trampoline(void* arg) noexcept {
     ::pthread_setaffinity_np(::pthread_self(), sizeof(set), &set);
   }
 #  endif  // macOS: no hard pinning; affinity is a best-effort no-op here.
+  if (s->has_priority) {
+    // Map the portable ladder to a nice value. Best-effort: RAISING priority
+    // (negative nice) needs CAP_SYS_NICE / root, so it silently no-ops without
+    // it -- the thread just stays at default. On Linux nice is per-thread (who=0
+    // acts on the calling thread); on macOS it is process-scoped (still safe).
+    int nice_val = 0;
+    switch (s->priority) {
+      case ThreadPriority::kLowest:  nice_val = 10; break;
+      case ThreadPriority::kLow:     nice_val = 5; break;
+      case ThreadPriority::kNormal:  nice_val = 0; break;
+      case ThreadPriority::kHigh:    nice_val = -5; break;
+      case ThreadPriority::kHighest: nice_val = -10; break;
+    }
+    (void)::setpriority(PRIO_PROCESS, 0, nice_val);  // best-effort; ignore EACCES
+  }
   void (*entry)(void*) = s->entry;
   void* ctx = s->ctx;
   delete s;

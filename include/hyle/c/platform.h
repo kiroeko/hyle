@@ -36,9 +36,11 @@ extern "C" {
 #endif
 
 /* Breaking change to hyle_platform_api layout bumps this. v3 appended NUMA +
- * hugepage/THP primitives (all new fields at the END of hyle_platform_api, so a
- * v2 caller's prefix reads are unchanged; only the version gate rejects v2). */
-#define HYLE_PLATFORM_C_ABI_VERSION 3
+ * hugepage/THP primitives; v4 appended fs permissions/symlink/tempfile/env-write,
+ * an OwnedFd close, thread priority, and MappedFile. All new fields go at the END
+ * of hyle_platform_api, so a v2/v3 caller's prefix reads are unchanged; only the
+ * version gate rejects older numbers. */
+#define HYLE_PLATFORM_C_ABI_VERSION 4
 
 /* ========================================================================== */
 /* wait / Parker                                                              */
@@ -71,17 +73,29 @@ HYLE_PLATFORM_C_API int hyle_parker_park_timeout(hyle_parker_o* p,
 typedef struct hyle_thread_o hyle_thread_o;
 typedef void (*hyle_thread_entry_fn)(void* ctx);
 
+/* Portable 5-level scheduling priority (v4). Maps per-OS; best-effort (raising
+ * priority may need privilege on POSIX -> soft no-op). Matches C++ ThreadPriority. */
+typedef enum hyle_thread_priority {
+  HYLE_THREAD_PRIORITY_LOWEST = -2,
+  HYLE_THREAD_PRIORITY_LOW = -1,
+  HYLE_THREAD_PRIORITY_NORMAL = 0,
+  HYLE_THREAD_PRIORITY_HIGH = 1,
+  HYLE_THREAD_PRIORITY_HIGHEST = 2
+} hyle_thread_priority;
+
 typedef struct hyle_thread_opts {
   const char* name;          /* optional; NULL = none; truncated to OS limit */
   int has_stack_size;        /* 0/1 */
   size_t stack_size;         /* bytes if has_stack_size */
   int has_affinity_cpu;      /* 0/1 */
   unsigned affinity_cpu;     /* logical CPU if has_affinity_cpu */
+  int has_priority;          /* 0/1 (v4) */
+  int priority;              /* hyle_thread_priority if has_priority */
 } hyle_thread_opts;
 
 /* Zero-init helper: hyle_thread_opts o = HYLE_THREAD_OPTS_INIT; */
 #define HYLE_THREAD_OPTS_INIT \
-  { NULL, 0, 0, 0, 0 }
+  { NULL, 0, 0, 0, 0, 0, 0 }
 
 static inline hyle_thread_opts hyle_thread_opts_default(void) {
   hyle_thread_opts o = HYLE_THREAD_OPTS_INIT;
@@ -102,6 +116,12 @@ static inline void hyle_thread_opts_set_affinity(hyle_thread_opts* o,
   if (!o) return;
   o->has_affinity_cpu = 1;
   o->affinity_cpu = cpu;
+}
+static inline void hyle_thread_opts_set_priority(hyle_thread_opts* o,
+                                                 hyle_thread_priority p) {
+  if (!o) return;
+  o->has_priority = 1;
+  o->priority = (int)p;
 }
 
 /* *out set on success. Returns hyle_status (free on error; OK has no heap). */
@@ -253,6 +273,7 @@ typedef struct hyle_file_info {
   int is_directory;
   uint64_t size;
   int64_t modified_time; /* seconds since epoch */
+  int is_symlink;        /* v4: path itself is a symbolic link (lstat semantics) */
 } hyle_file_info;
 
 HYLE_PLATFORM_C_API hyle_file_info hyle_fs_stat(const char* path);
@@ -285,6 +306,53 @@ typedef int (*hyle_fs_visit_fn)(const char* name, int is_dir, void* ctx);
 HYLE_PLATFORM_C_API int hyle_fs_directory_iterate(const char* path,
                                                   hyle_fs_visit_fn visit,
                                                   void* ctx);
+
+/* ---- fs permissions / symlink / tempfile / env-write (v4) ------------------ */
+/* Permission bits (low 9 of POSIX mode); Windows synthesizes from READONLY. */
+HYLE_PLATFORM_C_API uint32_t hyle_fs_get_permissions(const char* path);
+HYLE_PLATFORM_C_API int hyle_fs_set_permissions(const char* path, uint32_t mode);
+HYLE_PLATFORM_C_API int hyle_fs_is_readonly(const char* path);
+HYLE_PLATFORM_C_API int hyle_fs_set_readonly(const char* path, int readonly);
+/* Symlinks. create_symlink needs privilege on Windows (soft-fails -> 0). */
+HYLE_PLATFORM_C_API int hyle_fs_create_symlink(const char* target, const char* link);
+HYLE_PLATFORM_C_API int hyle_fs_is_symlink(const char* path);
+HYLE_PLATFORM_C_API size_t hyle_fs_read_symlink(const char* path, char* dst,
+                                                size_t cap);
+/* Atomically create a temp file; returns an OPEN read-write handle as intptr_t
+ * (-1 on failure, TOCTOU-safe idiom), path written to dst[cap]. Close it with
+ * hyle_fs_close_fd. dir==NULL => system temp dir. */
+HYLE_PLATFORM_C_API intptr_t hyle_fs_create_temp_file(const char* dir,
+                                                      const char* prefix,
+                                                      char* dst, size_t cap);
+/* Close a raw fd/HANDLE (from create_temp_file). Safe on -1. */
+HYLE_PLATFORM_C_API void hyle_fs_close_fd(intptr_t fd);
+/* Environment write / unset (process-wide; not thread-safe vs concurrent reads). */
+HYLE_PLATFORM_C_API int hyle_fs_set_env_var(const char* name, const char* value);
+HYLE_PLATFORM_C_API int hyle_fs_unset_env_var(const char* name);
+
+/* ========================================================================== */
+/* Memory-mapped file (v4)                                                    */
+/* ========================================================================== */
+
+typedef enum hyle_map_mode {
+  HYLE_MAP_READ_ONLY = 0,
+  HYLE_MAP_READ_WRITE = 1,
+  HYLE_MAP_COPY_ON_WRITE = 2
+} hyle_map_mode;
+
+/* Opaque mapping handle; destroy unmaps + closes. */
+typedef struct hyle_mapped_file_o hyle_mapped_file_o;
+/* Map [offset,offset+length) of `path` (length==0 => to EOF; offset page-aligned).
+ * NULL on failure (see hyle_vm_last_error). */
+HYLE_PLATFORM_C_API hyle_mapped_file_o* hyle_mapped_file_open(const char* path,
+                                                             hyle_map_mode mode,
+                                                             size_t offset,
+                                                             size_t length);
+HYLE_PLATFORM_C_API void hyle_mapped_file_destroy(hyle_mapped_file_o* m);
+HYLE_PLATFORM_C_API int hyle_mapped_file_valid(const hyle_mapped_file_o* m);
+HYLE_PLATFORM_C_API void* hyle_mapped_file_data(hyle_mapped_file_o* m);
+HYLE_PLATFORM_C_API size_t hyle_mapped_file_size(const hyle_mapped_file_o* m);
+HYLE_PLATFORM_C_API int hyle_mapped_file_flush(hyle_mapped_file_o* m);
 
 /* ========================================================================== */
 /* CPU features (1:1 with hyle::platform::CpuFeatures bools, as int 0/1)      */
@@ -427,6 +495,25 @@ typedef struct hyle_platform_api {
   int (*vm_bind_numa)(void*, size_t, int, hyle_numa_policy);
   int (*vm_bind_numa_interleave)(void*, size_t);
   void* (*vm_reserve_numa)(size_t, int);
+
+  /* ---- v4 appended: fs perms/symlink/tempfile/env-write + mapped file ----- */
+  uint32_t (*fs_get_permissions)(const char*);
+  int (*fs_set_permissions)(const char*, uint32_t);
+  int (*fs_is_readonly)(const char*);
+  int (*fs_set_readonly)(const char*, int);
+  int (*fs_create_symlink)(const char*, const char*);
+  int (*fs_is_symlink)(const char*);
+  size_t (*fs_read_symlink)(const char*, char*, size_t);
+  intptr_t (*fs_create_temp_file)(const char*, const char*, char*, size_t);
+  void (*fs_close_fd)(intptr_t);
+  int (*fs_set_env_var)(const char*, const char*);
+  int (*fs_unset_env_var)(const char*);
+  hyle_mapped_file_o* (*mapped_file_open)(const char*, hyle_map_mode, size_t, size_t);
+  void (*mapped_file_destroy)(hyle_mapped_file_o*);
+  int (*mapped_file_valid)(const hyle_mapped_file_o*);
+  void* (*mapped_file_data)(hyle_mapped_file_o*);
+  size_t (*mapped_file_size)(const hyle_mapped_file_o*);
+  int (*mapped_file_flush)(hyle_mapped_file_o*);
 } hyle_platform_api;
 
 HYLE_PLATFORM_C_API int hyle_platform_api_get(hyle_platform_api* out,

@@ -30,12 +30,50 @@
 
 namespace hyle::platform {
 
+// ---- OwnedFd ----------------------------------------------------------------
+// Zero-cost owning wrapper over a raw OS file descriptor / HANDLE (Rust OwnedFd /
+// seastar file_desc / folly File lineage). Move-only, closes on destruction. No
+// vtable, no heap, no refcount -- one word; the compiler lowers it to a bare fd.
+// The raw value is stored as intptr_t: a POSIX int fd or a Windows HANDLE both
+// fit. kInvalid (-1) is the empty state (matches POSIX -1 and is never a valid
+// Windows HANDLE returned by CreateFile, which yields INVALID_HANDLE_VALUE == -1).
+class OwnedFd {
+ public:
+  static constexpr std::intptr_t kInvalid = -1;
+
+  OwnedFd() noexcept = default;
+  explicit OwnedFd(std::intptr_t raw) noexcept : raw_(raw) {}
+  HYLE_PLATFORM_API ~OwnedFd();
+  OwnedFd(OwnedFd&& o) noexcept : raw_(o.raw_) { o.raw_ = kInvalid; }
+  HYLE_PLATFORM_API OwnedFd& operator=(OwnedFd&& o) noexcept;
+  HYLE_DISABLE_COPY(OwnedFd);
+
+  bool valid() const noexcept { return raw_ != kInvalid; }
+  explicit operator bool() const noexcept { return valid(); }
+
+  // Borrow the raw handle WITHOUT transferring ownership (still closed on ~).
+  std::intptr_t get() const noexcept { return raw_; }
+  // Transfer ownership out: returns the raw handle and leaves *this empty (the
+  // caller is now responsible for closing it).
+  std::intptr_t release() noexcept {
+    std::intptr_t r = raw_;
+    raw_ = kInvalid;
+    return r;
+  }
+  // Close early (also done by the destructor). Safe on an empty OwnedFd.
+  HYLE_PLATFORM_API void reset() noexcept;
+
+ private:
+  std::intptr_t raw_ = kInvalid;
+};
+
 // ---- query (stat) -----------------------------------------------------------
 // Result of stat(): a snapshot of one path. `exists` is false for anything that
 // is neither a regular file nor a directory (or on error).
 struct FileInfo {
   bool exists = false;
   bool is_directory = false;
+  bool is_symlink = false;           // path itself is a symbolic link (lstat semantics)
   std::uint64_t size = 0;            // bytes (regular files); 0 for directories
   std::int64_t modified_time = 0;    // seconds since the epoch (mtime)
 };
@@ -77,6 +115,53 @@ HYLE_PLATFORM_API bool copy_file(const char* from, const char* to) noexcept;
 // Create `path` empty if absent, or bump its mtime if present (unix `touch`).
 HYLE_PLATFORM_API bool touch(const char* path) noexcept;
 
+// ---- permissions ------------------------------------------------------------
+// POSIX permission bits (the low 9 of st_mode). Windows has no POSIX permission
+// model -- only a read-only attribute -- so on Windows get_permissions() SYNTHESIZES
+// a mode (0444 read-only, else 0666) and set_permissions() honors only the write
+// bits (any owner/group/other write bit clear => set READONLY). Use the portable
+// is_readonly()/set_readonly() subset when you only care about writability.
+enum Perms : std::uint32_t {
+  kPermOwnerRead = 0400, kPermOwnerWrite = 0200, kPermOwnerExec = 0100,
+  kPermGroupRead = 0040, kPermGroupWrite = 0020, kPermGroupExec = 0010,
+  kPermOtherRead = 0004, kPermOtherWrite = 0002, kPermOtherExec = 0001,
+  kPermAll = 0777,
+};
+
+// Permission bits of `path` (low 9), or 0 if absent / on error. On Windows a
+// synthesized mode (see above).
+HYLE_PLATFORM_API std::uint32_t get_permissions(const char* path) noexcept;
+// Set permission bits. POSIX: chmod(mode & 0777). Windows: only the write bits
+// are honored (mapped to the READONLY attribute). Returns true on success.
+HYLE_PLATFORM_API bool set_permissions(const char* path, std::uint32_t mode) noexcept;
+// Portable subset: is the file present and not writable by the owner?
+HYLE_PLATFORM_API bool is_readonly(const char* path) noexcept;
+// Portable subset: toggle owner write (POSIX: chmod +/-0200; Windows: READONLY).
+HYLE_PLATFORM_API bool set_readonly(const char* path, bool readonly) noexcept;
+
+// ---- symbolic links ---------------------------------------------------------
+// Create a symlink at `link` pointing to `target`. POSIX: symlink(2). Windows:
+// CreateSymbolicLinkW -- requires Developer Mode or admin (SeCreateSymboliclink
+// privilege); returns false without it (check the return, no trap).
+HYLE_PLATFORM_API bool create_symlink(const char* target, const char* link) noexcept;
+// True if `path` itself is a symbolic link (does not follow it).
+HYLE_PLATFORM_API bool is_symlink(const char* path) noexcept;
+// Read a symlink's target into dst[cap] (buffer-fill; returns full length, >=cap
+// truncated, 0 if `path` is not a symlink / on error).
+HYLE_PLATFORM_API std::size_t read_symlink(const char* path, char* dst,
+                                           std::size_t cap) noexcept;
+
+// ---- temporary files --------------------------------------------------------
+// Atomically create a uniquely-named file under `dir` (NULL => temp_directory())
+// with the given `prefix`, and return an OPEN read-write handle to it (POSIX
+// mkstemp / Windows GetTempFileName+CreateFile). Returning the open handle -- not
+// just a path -- is the TOCTOU-safe idiom (SEI CERT FIO21-C, Rust NamedTempFile):
+// nobody can swap the file between creation and use. The actual path is written
+// to dst[cap] (buffer-fill). On failure the returned OwnedFd is !valid().
+// The file is NOT auto-deleted: the caller unlinks it (or keeps it) via the path.
+HYLE_PLATFORM_API OwnedFd create_temp_file(const char* dir, const char* prefix,
+                                           char* dst, std::size_t cap) noexcept;
+
 // ---- working / special directories (buffer-fill) ----------------------------
 // Current working directory into dst[cap]. Returns the full length (>= cap =>
 // truncated; 0 on failure).
@@ -104,6 +189,13 @@ HYLE_PLATFORM_API std::size_t home_directory(char* dst,
 inline constexpr std::size_t kEnvNotSet = static_cast<std::size_t>(-1);
 HYLE_PLATFORM_API std::size_t get_env_var(const char* name, char* dst,
                                           std::size_t cap) noexcept;
+
+// Set / unset an environment variable in this process. POSIX setenv/unsetenv,
+// Windows _putenv_s. Returns true on success. NOT thread-safe against concurrent
+// get_env_var/getenv in other threads (same caveat as the C library) -- set env
+// during startup, before spawning threads that read it.
+HYLE_PLATFORM_API bool set_env_var(const char* name, const char* value) noexcept;
+HYLE_PLATFORM_API bool unset_env_var(const char* name) noexcept;
 
 // ---- directory iteration (visitor, no allocation) ---------------------------
 // Type-erased core: calls `visit(name, is_dir, ctx)` once per entry in `path`,

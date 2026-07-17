@@ -32,7 +32,7 @@ static int visit_cb(const char* name, int is_dir, void* ctx) {
 
 int main(void) {
   CHECK(hyle_platform_c_abi_version() == HYLE_PLATFORM_C_ABI_VERSION);
-  CHECK(HYLE_PLATFORM_C_ABI_VERSION == 3);
+  CHECK(HYLE_PLATFORM_C_ABI_VERSION == 4);
 
   hyle_platform_api api;
   CHECK(hyle_platform_api_get(&api, HYLE_PLATFORM_C_ABI_VERSION) == 0);
@@ -54,9 +54,18 @@ int main(void) {
   CHECK(api.vm_bind_numa != NULL);
   CHECK(api.vm_bind_numa_interleave != NULL);
   CHECK(api.vm_reserve_numa != NULL);
+  /* v4 appended fields present */
+  CHECK(api.fs_get_permissions != NULL);
+  CHECK(api.fs_create_symlink != NULL);
+  CHECK(api.fs_create_temp_file != NULL);
+  CHECK(api.fs_close_fd != NULL);
+  CHECK(api.fs_set_env_var != NULL);
+  CHECK(api.mapped_file_open != NULL);
+  CHECK(api.mapped_file_flush != NULL);
   CHECK(hyle_platform_api_get(NULL, HYLE_PLATFORM_C_ABI_VERSION) == -1);
   CHECK(hyle_platform_api_get(&api, 999) == -1);
   CHECK(hyle_platform_api_get(&api, 2) == -1); /* old ABI rejected */
+  CHECK(hyle_platform_api_get(&api, 3) == -1); /* v3 rejected too */
 
   /* Parker */
   hyle_parker_o* p = hyle_parker_create();
@@ -220,6 +229,35 @@ int main(void) {
     (void)hyle_vm_advise_hugepage(h, pg);
     (void)hyle_vm_advise_no_hugepage(h, pg);
     CHECK(hyle_vm_free_rw(h, pg));
+  }
+
+  /* v4: fs permissions + env write + temp file + mapped file */
+  {
+    /* env round trip */
+    CHECK(hyle_fs_set_env_var("HYLE_C_PLAT_V4", "yes"));
+    char eb[16];
+    CHECK(hyle_env_get("HYLE_C_PLAT_V4", eb, sizeof(eb)) != HYLE_ENV_NOT_SET);
+    CHECK(strcmp(eb, "yes") == 0);
+    CHECK(hyle_fs_unset_env_var("HYLE_C_PLAT_V4"));
+    CHECK(hyle_env_get("HYLE_C_PLAT_V4", eb, sizeof(eb)) == HYLE_ENV_NOT_SET);
+
+    /* temp file: open handle + real path */
+    char tpath[1024];
+    intptr_t fd = hyle_fs_create_temp_file(NULL, "hyle_c", tpath, sizeof(tpath));
+    CHECK(fd != -1);
+    CHECK(hyle_fs_exists(tpath));
+    /* permissions: the temp file exists -> nonzero perms; readonly round trip */
+    CHECK(hyle_fs_get_permissions(tpath) != 0u);
+    CHECK(hyle_fs_set_readonly(tpath, 1) == 1);
+    CHECK(hyle_fs_is_readonly(tpath) == 1);
+    CHECK(hyle_fs_set_readonly(tpath, 0) == 1);
+    hyle_fs_close_fd(fd);  /* void; closes the open temp handle */
+
+    /* mapped file: an empty temp file yields a NULL (zero-length) mapping -- fine;
+     * exercise open + destroy-null here. A non-empty map is covered by the C++ test. */
+    hyle_mapped_file_o* m = hyle_mapped_file_open(tpath, HYLE_MAP_READ_ONLY, 0, 0);
+    hyle_mapped_file_destroy(m);
+    hyle_fs_remove_file(tpath);
   }
 
   if (g_fails) {

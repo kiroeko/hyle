@@ -334,3 +334,106 @@ TEST(FsEnv, EnvVarTinyBufferTruncates) {
   EXPECT_EQ(std::strlen(tiny), 3u);
   EXPECT_GE(n, 3u);
 }
+
+// ---- v4: permissions --------------------------------------------------------
+
+TEST_F(FsTest, PermissionsReadWriteRoundTrip) {
+  ASSERT_TRUE(make_directory_recursive(root.c_str()));
+  std::string f = root + "/perm.txt";
+  ASSERT_TRUE(touch(f.c_str()));
+
+  // A fresh file is writable.
+  EXPECT_FALSE(is_readonly(f.c_str()));
+  EXPECT_TRUE(set_readonly(f.c_str(), true));
+  EXPECT_TRUE(is_readonly(f.c_str()));
+  EXPECT_TRUE(set_readonly(f.c_str(), false));
+  EXPECT_FALSE(is_readonly(f.c_str()));
+
+  // get/set_permissions round-trip (POSIX exact; Windows synthesizes RO/RW).
+  std::uint32_t p = get_permissions(f.c_str());
+  EXPECT_NE(p, 0u);  // file exists
+#if !defined(_WIN32)
+  EXPECT_TRUE(set_permissions(f.c_str(), 0640));
+  EXPECT_EQ(get_permissions(f.c_str()) & 0777u, 0640u);
+  set_permissions(f.c_str(), 0644);  // restore so cleanup can delete
+#endif
+}
+
+TEST_F(FsTest, PermissionsAbsentPathIsZero) {
+  std::string f = root + "/nope.txt";
+  EXPECT_EQ(get_permissions(f.c_str()), 0u);
+  EXPECT_FALSE(is_readonly(f.c_str()));
+}
+
+// ---- v4: symbolic links -----------------------------------------------------
+
+TEST_F(FsTest, SymlinkCreateReadAndDetect) {
+  ASSERT_TRUE(make_directory_recursive(root.c_str()));
+  std::string target = root + "/real.txt";
+  std::string link = root + "/link.txt";
+  ASSERT_TRUE(touch(target.c_str()));
+
+  // create_symlink needs privilege on Windows (Developer Mode/admin); if it
+  // fails there, skip the rest rather than fail the suite.
+  if (!create_symlink(target.c_str(), link.c_str())) {
+    GTEST_SKIP() << "create_symlink unavailable (needs privilege on this OS)";
+  }
+  EXPECT_TRUE(is_symlink(link.c_str()));
+  EXPECT_FALSE(is_symlink(target.c_str()));
+  EXPECT_TRUE(stat(link.c_str()).is_symlink);
+
+  char buf[4096];
+  std::size_t n = read_symlink(link.c_str(), buf, sizeof(buf));
+  EXPECT_GT(n, 0u);
+  EXPECT_LT(n, sizeof(buf));
+  // The link resolves to (something ending in) the target name.
+  EXPECT_NE(std::string(buf).find("real.txt"), std::string::npos);
+}
+
+// ---- v4: temp file + OwnedFd ------------------------------------------------
+
+TEST_F(FsTest, CreateTempFileIsUniqueAndOpen) {
+  ASSERT_TRUE(make_directory_recursive(root.c_str()));
+  char p1[4096], p2[4096];
+  OwnedFd a = create_temp_file(root.c_str(), "hyle", p1, sizeof(p1));
+  OwnedFd b = create_temp_file(root.c_str(), "hyle", p2, sizeof(p2));
+  ASSERT_TRUE(a.valid());
+  ASSERT_TRUE(b.valid());
+  EXPECT_STRNE(p1, p2);              // unique names
+  EXPECT_TRUE(exists(p1));          // the file really exists on disk
+  EXPECT_TRUE(exists(p2));
+  EXPECT_NE(a.get(), OwnedFd::kInvalid);
+}
+
+TEST(OwnedFd, MoveAndRelease) {
+  char path[4096];
+  OwnedFd a = create_temp_file(nullptr, "hyle_ofd", path, sizeof(path));
+  ASSERT_TRUE(a.valid());
+  std::intptr_t raw = a.get();
+
+  OwnedFd b = std::move(a);          // move transfers ownership
+  EXPECT_FALSE(a.valid());
+  EXPECT_TRUE(b.valid());
+  EXPECT_EQ(b.get(), raw);
+
+  std::intptr_t released = b.release();  // give up ownership without closing
+  EXPECT_FALSE(b.valid());
+  EXPECT_EQ(released, raw);
+  // We now own `released`; hand it to a fresh OwnedFd so it is closed + file removed.
+  OwnedFd c{released};
+  EXPECT_TRUE(c.valid());
+  remove_file(path);
+}
+
+// ---- v4: environment write --------------------------------------------------
+
+TEST(FsEnv, SetGetUnsetRoundTrip) {
+  const char* kName = "HYLE_FS_TEST_VAR";
+  EXPECT_TRUE(set_env_var(kName, "hello-42"));
+  char buf[64];
+  std::size_t n = get_env_var(kName, buf, sizeof(buf));
+  ASSERT_NE(n, kEnvNotSet);
+  EXPECT_STREQ(buf, "hello-42");
+  EXPECT_TRUE(unset_env_var(kName));
+  EXPECT_EQ(get_env_var(kName, buf, sizeof(buf)), kEnvNotSet);
+}
