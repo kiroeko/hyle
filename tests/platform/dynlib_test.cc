@@ -116,3 +116,18 @@ TEST(DynLib, GetEmptyPathFails) {
   EXPECT_FALSE(DynLib::get("").valid());
   EXPECT_FALSE(DynLib::get(nullptr).valid());
 }
+
+TEST(DynLib, DoubleCloseSafeAfterGet) {
+  DynLib lib = DynLib::get(kSysLib);
+  ASSERT_TRUE(lib.valid());
+  lib.close();
+  EXPECT_FALSE(lib.valid());
+  lib.close();
+}
+
+TEST(DynLib, CurrentCloseIsNoOp) {
+  DynLib self = DynLib::current();
+  ASSERT_TRUE(self.valid());
+  self.close();  // owns_=false
+  EXPECT_FALSE(self.valid());
+}

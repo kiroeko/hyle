@@ -290,3 +290,47 @@ TEST(FsEnv, BufferFillTruncates) {
   EXPECT_EQ(std::strlen(tiny), 3u);  // 3 chars + NUL
   EXPECT_GE(full, std::strlen(tiny));
 }
+
+TEST_F(FsTest, MissingPathDoesNotExist) {
+  std::string missing = root + "/no_such_file_xyz";
+  EXPECT_FALSE(exists(missing.c_str()));
+  FileInfo info = stat(missing.c_str());
+  EXPECT_FALSE(info.exists);
+}
+
+TEST_F(FsTest, TouchCreatesEmptyFile) {
+  std::string f = root + "/touched.txt";
+  ASSERT_TRUE(touch(f.c_str()));
+  EXPECT_TRUE(exists(f.c_str()));
+  EXPECT_EQ(file_size(f.c_str()), 0u);
+  // second touch is idempotent (updates mtime or no-op success)
+  EXPECT_TRUE(touch(f.c_str()));
+}
+
+TEST_F(FsTest, RemoveNonEmptyDirectoryFails) {
+  // Non-recursive remove_directory requires empty dir.
+  std::string sub = root + "/nonempty";
+  ASSERT_TRUE(make_directory(sub.c_str()));
+  ASSERT_TRUE(touch((sub + "/x").c_str()));
+  EXPECT_FALSE(remove_directory(sub.c_str()));
+  EXPECT_TRUE(exists(sub.c_str()));
+  EXPECT_TRUE(remove_directory_recursive(sub.c_str()));
+}
+
+TEST_F(FsTest, IsDirectoryDistinguishesFile) {
+  std::string f = root + "/plain.bin";
+  ASSERT_TRUE(touch(f.c_str()));
+  EXPECT_TRUE(exists(f.c_str()));
+  EXPECT_FALSE(is_directory(f.c_str()));
+  EXPECT_TRUE(is_directory(root.c_str()));
+}
+
+TEST(FsEnv, EnvVarTinyBufferTruncates) {
+  char tiny[4];
+  std::size_t n = get_env_var("PATH", tiny, sizeof(tiny));
+  if (n == kEnvNotSet) {
+    GTEST_SKIP() << "PATH unset in this environment";
+  }
+  EXPECT_EQ(std::strlen(tiny), 3u);
+  EXPECT_GE(n, 3u);
+}

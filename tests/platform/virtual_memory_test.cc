@@ -18,6 +18,8 @@ using hyle::platform::vm_release;
 using hyle::platform::vm_reserve;
 using hyle::platform::VmRegion;
 
+// cstring already included for memset in new tests
+
 TEST(VirtualMemory, PageSizeIsSane) {
   std::size_t p = page_size();
   EXPECT_GE(p, 4096u);
@@ -150,4 +152,73 @@ TEST(VirtualMemory, ReleaseNullIsOk) {
   VmRegion empty;
   EXPECT_FALSE(empty.valid());
   empty.release();  // no-op
+}
+
+TEST(VirtualMemory, ReserveZeroFails) {
+  void* p = vm_reserve(0);
+  EXPECT_EQ(p, nullptr);
+  EXPECT_STRNE(vm_last_error(), "");
+}
+
+TEST(VirtualMemory, CommitUsableOnPlainReserve) {
+  std::size_t p = page_size();
+  VmRegion r = VmRegion::reserve(p * 2);
+  ASSERT_TRUE(r.valid());
+  EXPECT_FALSE(r.has_guard());
+  ASSERT_TRUE(r.commit_usable()) << vm_last_error();
+  std::memset(r.data(), 0x3C, r.size());
+  EXPECT_EQ(static_cast<unsigned char*>(r.data())[0], 0x3C);
+}
+
+TEST(VirtualMemory, ProtectReadOnlyAllowsRead) {
+  std::size_t p = page_size();
+  void* base = vm_reserve(p);
+  ASSERT_NE(base, nullptr);
+  ASSERT_TRUE(vm_commit(base, p));
+  static_cast<unsigned char*>(base)[0] = 0x11;
+  ASSERT_TRUE(vm_protect(base, p, Protect::kRead)) << vm_last_error();
+  EXPECT_EQ(static_cast<unsigned char*>(base)[0], 0x11);  // readable
+  // restore before free
+  ASSERT_TRUE(vm_protect(base, p, Protect::kReadWrite));
+  ASSERT_TRUE(vm_release(base, p));
+}
+
+TEST(VirtualMemory, DecommitOutOfRangeFails) {
+  std::size_t p = page_size();
+  VmRegion r = VmRegion::reserve(p);
+  ASSERT_TRUE(r.valid());
+  EXPECT_FALSE(r.decommit(p, p));
+  EXPECT_FALSE(r.protect(p, p, Protect::kNone));
+}
+
+TEST(VirtualMemory, MoveAssignReleasesPrevious) {
+  std::size_t p = page_size();
+  VmRegion a = VmRegion::reserve(p);
+  VmRegion b = VmRegion::reserve(p * 2);
+  ASSERT_TRUE(a.valid());
+  ASSERT_TRUE(b.valid());
+  void* b_data = b.data();
+  a = std::move(b);
+  EXPECT_FALSE(b.valid());
+  EXPECT_TRUE(a.valid());
+  EXPECT_EQ(a.data(), b_data);
+  EXPECT_EQ(a.size(), p * 2);
+}
+
+TEST(VirtualMemory, GuardedCommitUsableIdempotent) {
+  VmRegion r = VmRegion::reserve_guarded(page_size());
+  ASSERT_TRUE(r.valid());
+  // usable already committed by reserve_guarded; commit_usable is a re-commit.
+  ASSERT_TRUE(r.commit_usable()) << vm_last_error();
+  auto* u = static_cast<unsigned char*>(r.usable());
+  u[0] = 0x55;
+  u[r.usable_size() - 1] = 0xAA;
+  EXPECT_EQ(u[0], 0x55);
+  EXPECT_EQ(u[r.usable_size() - 1], 0xAA);
+}
+
+TEST(VirtualMemory, FreeFunctionsNullNoOp) {
+  EXPECT_TRUE(vm_commit(nullptr, page_size()));
+  EXPECT_TRUE(vm_decommit(nullptr, page_size()));
+  EXPECT_TRUE(vm_protect(nullptr, page_size(), Protect::kNone));
 }

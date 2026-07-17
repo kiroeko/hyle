@@ -196,3 +196,75 @@ TEST(Parker, MultiWorkerHandoffNoLostWakeup) {
   for (auto& t : workers) t.join();
   for (int i = 0; i < kWorkers; ++i) EXPECT_EQ(observed[i].load(), kRounds);
 }
+
+// ---- low-level wait_on_address + Unparker -----------------------------------
+
+TEST(WaitOnAddress, ValueAlreadyChangedDoesNotBlock) {
+  // If *addr != expected, wait returns immediately (futex/WaitOnAddress contract).
+  std::atomic<std::uint32_t> word{1};
+  auto t0 = std::chrono::steady_clock::now();
+  hyle::platform::detail::wait_on_address(&word, /*expected=*/0);
+  auto elapsed = std::chrono::steady_clock::now() - t0;
+  EXPECT_LT(elapsed, std::chrono::milliseconds(200));
+}
+
+TEST(WaitOnAddress, TimedZeroIsPoll) {
+  std::atomic<std::uint32_t> word{0};
+  // value matches expected but timeout 0 -> poll, returns without long sleep.
+  // On timeout with value still matching, returns false.
+  bool r = hyle::platform::detail::wait_on_address_for(&word, 0, 0);
+  // Either timed out (false) or woke spuriously (true); must not hang.
+  (void)r;
+  SUCCEED();
+}
+
+TEST(WaitOnAddress, WakeOneUnblocksWaiter) {
+  std::atomic<std::uint32_t> word{0};
+  std::atomic<bool> done{false};
+  struct Args {
+    std::atomic<std::uint32_t>* word;
+    std::atomic<bool>* done;
+  } args{&word, &done};
+
+  auto r = Thread::spawn(
+      [](void* a) {
+        auto* x = static_cast<Args*>(a);
+        hyle::platform::detail::wait_on_address(x->word, 0);
+        x->done->store(true, std::memory_order_release);
+      },
+      &args);
+  ASSERT_TRUE(r.has_value());
+  Thread t = std::move(*r);
+  std::this_thread::sleep_for(std::chrono::milliseconds(20));
+  EXPECT_FALSE(done.load(std::memory_order_acquire));
+  word.store(1, std::memory_order_release);
+  hyle::platform::detail::wake_one(&word);
+  t.join();
+  EXPECT_TRUE(done.load(std::memory_order_acquire));
+}
+
+TEST(Unparker, UnparkThroughHandle) {
+  Parker p;
+  hyle::platform::Unparker u(&p);
+  u.unpark();
+  p.park();  // must not hang
+  EXPECT_EQ(u.get(), &p);
+}
+
+TEST(Parker, TimeoutThenNeedsFreshUnpark) {
+  // After a timed-out park_timeout the state is EMPTY; next park needs a token.
+  Parker p;
+  EXPECT_FALSE(p.park_timeout(5'000'000));  // 5ms, no unpark
+  p.unpark();
+  p.park();  // consumes the fresh token
+  SUCCEED();
+}
+
+TEST(Parker, SequentialParkUnparkRounds) {
+  Parker p;
+  for (int i = 0; i < 100; ++i) {
+    p.unpark();
+    p.park();
+  }
+  SUCCEED();
+}
