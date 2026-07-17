@@ -74,7 +74,7 @@ const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
     case Isa::kSve: {
       static const Runtime table = [] {
         Runtime r = kSveRuntime;
-        r.dtype.isa = r.math.isa = r.sort.isa = r.bitpack.isa = Isa::kNeon;
+        r.dtype.isa = r.sort.isa = r.bitpack.isa = Isa::kNeon;
         return r;
       }();
       return &table;
@@ -135,10 +135,11 @@ Runtime selected_runtime() noexcept {
 #endif
 
 #if defined(HYLE_ARCH_ARM64)
-  // Only ops/random/scan have scalable SVE kernels; algorithm modules retain their NEON cores.
+  // Math now has a length-agnostic SVE product TU. dtype/sort remain NEON; bitpack deliberately
+  // remains NEON until its packed format is independent of the calling thread's SVE VL.
   if (result.isa == Isa::kSve) {
     result.dtype.isa = Isa::kNeon;
-    result.math.isa = Isa::kNeon;
+    result.math.isa = Isa::kSve;
     result.sort.isa = Isa::kNeon;
     result.bitpack.isa = Isa::kNeon;
   }

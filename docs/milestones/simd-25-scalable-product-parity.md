@@ -1,6 +1,7 @@
 # simd-25：SVE/RVV 语义与产品层追平
 
-> 状态：🚧 进行中（阶段 0 分类账已建立）。依赖 simd-22 双轨与 simd-24 已有产品核。
+> 状态：🚧 进行中（分类账、基础闭包与首个 SVE math 产品核已落地）。依赖 simd-22 双轨与
+> simd-24 已有产品核。
 >
 > 本里程碑重新限定 simd-15~18 的“追平”：它们完成的是 scalable P0~P4 正确性与
 > generic 实例化，不代表后端本地名字、Runtime 产品 kernel 或真机性能证据已经和定宽同档。
@@ -62,6 +63,26 @@ Runtime / exact / native + QEMU + real-hardware parity
 实例化。机械差集从初始 80 降至 73：`fixed_model 28→24`、`portable_missing 26→23`；manifest
 只保存当前未完成项，初始数字保留在上表作为基线。
 
+### 首个产品层纵切：SVE math（2026-07-17）
+
+`transcendental_highway_sve.cc` 已把 HYLE D-tag math body 编成独立 `+sve` 产品 TU，保持
+pointer/count 接缝与 per-call `Lanes(d)`。baseline `math_dispatch.cc` 只在 Runtime 选中 SVE 时进入该
+TU；exact SVE 在编译期恒选该符号，不查询 Runtime/CPUID。已接入：
+
+- f32/f64 的 HYLE/Highway unary 集合；
+- `atan2/pow/hypot/sincos`；
+- f64 table `exp/log` 及 in-range 入口；完整入口遇到异常 lane 时按整个 vector chunk 回落 libm，
+  保持现有特殊值合同。
+
+这不是“整个 math 模块已纯 SVE”：gamma、complex、direct-form hypot 与 xsimd-only extras 仍使用原有
+NEON/scalar per-op fallback。`Runtime::math.isa == kSve` 表示主 HYLE/Highway math tier 已启用 SVE，
+不是声称每个冷门函数都有 SVE body。
+
+当前证据：Windows Clang AArch64+SVE 对产品 TU、dispatcher、Runtime 与测试完成交叉编译；Windows
+普通 x86 构建及 SSE4/AVX2/AES 回归通过。`sve-qemu-test.sh` 已纳入产品 TU、全 math compile probe、
+多 VL core/tail 测试；实际 QEMU 128/256/384/512 执行仍等待可用的 Linux AArch64 cross toolchain，
+因此此纵切尚未签为完成，亦无真机性能结论。
+
 ## 阶段 1：target/feature mechanization 与编译探针
 
 - 扩充 platform feature，而不是只保留 `sve/rvv` 两个粗粒度 bool：SVE2/BF16/I8MM/AES，
@@ -93,9 +114,9 @@ tail、跨页 canary、跨线程不同 VL 的 pack/unpack round-trip。不能把
 
 ## 阶段 3：math
 
-实例化已经摘除为 HYLE D-tag 的 `math_hyle-inl.h`、`math_xsimd_hyle-inl.h` 与 complex body。先补其
-传递闭包中的 `DemoteInRangeTo`、`GetBiasedExponent` 等真实缺口，再生成 SVE/RVV TU。验收沿用现有
-ULP 合同，并覆盖 NaN/Inf/subnormal/domain edge、tail 和跨 lane 混合输入。
+SVE 的 HYLE/Highway 主 body 已生成真实产品 TU 并接 Runtime；下一步是完成 QEMU/真机验收，并裁决
+gamma、complex、direct hypot 等 per-op fallback 是否值得新增 SVE 实现。RVV 仍需补传递闭包并生成
+对应 TU。验收沿用现有 ULP 合同，并覆盖 NaN/Inf/subnormal/domain edge、tail 和跨 lane 混合输入。
 
 Runtime 改为逐 op/feature 的 scalable 或已认证 fallback；不能仅修改 `runtime().math.isa` 元数据。
 

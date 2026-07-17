@@ -348,6 +348,50 @@ void atan2_f64_highway_neon(const double* a, const double* b, double* dst, std::
 void pow_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept;
 void sincos_f64_highway_neon(const double* src, double* s, double* c, std::size_t n) noexcept;
 void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::size_t n) noexcept;
+
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+// Length-agnostic SVE siblings of the HYLE/Highway math body. Optional xsimd-only kernels
+// (gamma, direct-form hypot, complex) intentionally retain their independently verified fallback.
+#define HYLE_DECLARE_SVE_UNARY(type, tag, name) \
+  void name##_##tag##_highway_sve(const type*, type*, std::size_t) noexcept;
+#define HYLE_DECLARE_SVE_UNARY_SET(type, tag) \
+  HYLE_DECLARE_SVE_UNARY(type, tag, exp)       \
+  HYLE_DECLARE_SVE_UNARY(type, tag, log)       \
+  HYLE_DECLARE_SVE_UNARY(type, tag, tanh)      \
+  HYLE_DECLARE_SVE_UNARY(type, tag, sin)       \
+  HYLE_DECLARE_SVE_UNARY(type, tag, cos)       \
+  HYLE_DECLARE_SVE_UNARY(type, tag, exp2)      \
+  HYLE_DECLARE_SVE_UNARY(type, tag, log2)      \
+  HYLE_DECLARE_SVE_UNARY(type, tag, erf)       \
+  HYLE_DECLARE_SVE_UNARY(type, tag, atan)      \
+  HYLE_DECLARE_SVE_UNARY(type, tag, cbrt)      \
+  HYLE_DECLARE_SVE_UNARY(type, tag, expm1)     \
+  HYLE_DECLARE_SVE_UNARY(type, tag, log1p)     \
+  HYLE_DECLARE_SVE_UNARY(type, tag, asinh)     \
+  HYLE_DECLARE_SVE_UNARY(type, tag, acosh)     \
+  HYLE_DECLARE_SVE_UNARY(type, tag, acos)      \
+  HYLE_DECLARE_SVE_UNARY(type, tag, asin)      \
+  HYLE_DECLARE_SVE_UNARY(type, tag, sinh)      \
+  HYLE_DECLARE_SVE_UNARY(type, tag, cosh)      \
+  HYLE_DECLARE_SVE_UNARY(type, tag, tan)       \
+  HYLE_DECLARE_SVE_UNARY(type, tag, atanh)     \
+  HYLE_DECLARE_SVE_UNARY(type, tag, log10)
+HYLE_DECLARE_SVE_UNARY_SET(float, f32)
+HYLE_DECLARE_SVE_UNARY_SET(double, f64)
+#undef HYLE_DECLARE_SVE_UNARY_SET
+#undef HYLE_DECLARE_SVE_UNARY
+
+void exp_in_range_f64_highway_sve(const double*, double*, std::size_t) noexcept;
+void log_in_range_f64_highway_sve(const double*, double*, std::size_t) noexcept;
+void hypot_f32_highway_sve(const float*, const float*, float*, std::size_t) noexcept;
+void atan2_f32_highway_sve(const float*, const float*, float*, std::size_t) noexcept;
+void pow_f32_highway_sve(const float*, const float*, float*, std::size_t) noexcept;
+void sincos_f32_highway_sve(const float*, float*, float*, std::size_t) noexcept;
+void hypot_f64_highway_sve(const double*, const double*, double*, std::size_t) noexcept;
+void atan2_f64_highway_sve(const double*, const double*, double*, std::size_t) noexcept;
+void pow_f64_highway_sve(const double*, const double*, double*, std::size_t) noexcept;
+void sincos_f64_highway_sve(const double*, double*, double*, std::size_t) noexcept;
+#endif
 #endif
 
 }  // namespace hyle::simd::detail

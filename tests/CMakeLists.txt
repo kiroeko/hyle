@@ -164,7 +164,8 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # build (would need +sve which some arm64 hosts lack), so it is opt-in.
   if(HYLE_SIMD_SVE)
     hyle_add_test(simd NAME sve SOURCES simd/sve_test.cc simd/native_test.cc
-                  simd/scalable_math_compile.cc DEFINES HYLE_SIMD_TARGET_SVE
+                  simd/scalable_math_compile.cc simd/sve_math_product_test.cc
+                  DEFINES HYLE_SIMD_TARGET_SVE HYLE_SIMD_HAS_SVE_VARIANT=1
                   OPTIONS -march=armv8-a+sve)
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")

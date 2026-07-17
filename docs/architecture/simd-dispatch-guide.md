@@ -195,9 +195,12 @@ native header 中的一份 D-tag body
 ## SVE 与 RVV
 
 Linux AArch64 通过 `AT_HWCAP.SVE`、Linux RISC-V 通过 `AT_HWCAP.V` 探测。预编译 runtime 为
-ops/random/scan 生成 SVE/RVV 变体；尚无可伸缩专用实现的 dtype/math/sort/bitpack 分别诚实保持
-NEON/scalar，并在各自 module metadata 中报告真实 tier。native scan/RNG 已在 128/256/512-bit VL 下
-验证；sizeless SVE/RVV vector 不能成为 `VectorXoshiro` 成员，所以使用 `native::random_fill`。
+ops/random/scan/search 生成 SVE/RVV 变体。SVE 的 HYLE/Highway math 主 op 已接入独立 `+sve`
+产品 TU，gamma/complex/xsimd-only 等少量 op 仍保留已验证 NEON/scalar fallback；SVE 的
+dtype/sort/bitpack 仍保持 NEON，RVV 的 dtype/math/sort/bitpack 仍主要保持 scalar。这些产品层
+缺口由 simd-25 逐模块消除，不用“后端头能编译”代替 Runtime 证据。native scan/RNG 已在
+128/256/512-bit VL 下验证；sizeless SVE/RVV vector 不能成为 `VectorXoshiro` 成员，所以使用
+`native::random_fill`。SVE math 仍需多 VL QEMU 与真机性能证书，不把交叉编译当成已性能收口。
 
 ## 与 Highway 的关系
 

@@ -56,6 +56,9 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     math/transcendental_xsimd_neon.cc
     sort/vqsort_hyle_neon.cc
     bitpack/bitpack_hyle_neon.cc)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    list(APPEND _simd_arch_sources math/transcendental_highway_sve.cc)
+  endif()
 endif()
 
 # X3: product simd no longer links third_party/highway (vqsort ported to HYLE D-tag).
@@ -146,6 +149,9 @@ elseif(HYLE_SIMD_ARM64)
   # Apple-Silicon build; this TU finally compiles it into the dispatched dot/saxpy path.
   # cvt_neon.cc adds fp16(native vcvt)/bf16(integer) batch conversions.
   hyle_set_isa(dtype/cvt_neon.cc NEON)
+  if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+    hyle_set_isa(math/transcendental_highway_sve.cc SVE)
+  endif()
 endif()
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:
