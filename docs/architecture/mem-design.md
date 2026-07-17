@@ -43,7 +43,7 @@ mem/
 ├─ fiber_stack.h   fiber 栈(定长 usable + guard + 分级 + FiberStackPool)→ sched::Fiber
 ├─ numa.h          NUMA 就近放置 hint(OS 分配层:mbind/numa_alloc / VirtualAllocExNuma)
 ├─ hugepage.h      大页(madvise(MADV_HUGEPAGE) / MEM_LARGE_PAGES / mimalloc THP）
-└─ stats.h         分配统计 + 泄漏追踪(修 32/64 下溢)
+└─ stats.h         分配统计 + 泄漏追踪(✅ mem-06a：opt-in StatsAllocator，修 clay 无符号下溢)
 ```
 
 （device/pinned/unified 内存归 compute/ 的 stream-bound buffer,不是 mem/ 的 space——见下「device 内存」节）
@@ -113,8 +113,8 @@ device/pinned/unified 内存归 compute/ 的 stream-bound buffer,**不经 mem/ �
 3. arena 继承 + 修 64 槽上限；pool/stack 推倒重写修 UB。
 4. fiber 栈（给 sched）✅ mem-08：guard + 分级 + 池；pinned 归 compute/。
 5. NUMA/大页/cache-line 对齐（mem-06 占位；cache-line 对齐已部分落地）。
-6. stats 修下溢 + 泄漏追踪（debug 构建，mem-06）。
-7. 单测：对齐保证、并发分配 TSan、泄漏检测、NUMA 就近性验证、benchmark 对标裸 mimalloc（专用分配器应更快）；fiber_stack 布局/池/Fiber 接线。
+6. stats 修下溢 + 泄漏追踪 ✅ mem-06a（`StatsAllocator`/`LeakTracker` opt-in；system 热路径无税）。NUMA/大页仍 mem-06 余下。
+7. 单测：对齐保证、并发分配 TSan、泄漏检测、NUMA 就近性验证、benchmark 对标裸 mimalloc（专用分配器应更快）；fiber_stack 布局/池/Fiber 接线；stats 下溢回归。
 
 ## 决策（已定）
 
