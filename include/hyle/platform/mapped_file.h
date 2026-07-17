@@ -38,10 +38,13 @@ class MappedFile {
                   // hit the file; the file may even be opened read-only (MmapCopy)
   };
 
-  // Map [offset, offset+length) of `path` (length==0 => to end of file). offset
-  // must be a multiple of page_size() (POSIX mmap contract). On failure the
-  // returned MappedFile is !valid() (see platform vm_last_error()). kReadWrite
-  // needs a writable file; kReadOnly / kCopyOnWrite need only read access.
+  // Map [offset, offset+length) of `path` (length==0 => to end of file). An
+  // explicit length must NOT extend past the file's end -- mapping past EOF is
+  // rejected (!valid()), so a read-write mapping never silently grows the file
+  // and no access ever faults past EOF. offset is aligned to the OS mapping
+  // granularity internally (any value works; data() points at the exact offset).
+  // On failure the returned MappedFile is !valid() (see platform vm_last_error()).
+  // kReadWrite needs a writable file; kReadOnly / kCopyOnWrite need only read.
   HYLE_PLATFORM_API static MappedFile open(const char* path,
                                            Mode mode = Mode::kReadOnly,
                                            std::size_t offset = 0,

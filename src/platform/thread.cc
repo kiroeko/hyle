@@ -168,10 +168,10 @@ void* thread_trampoline(void* arg) noexcept {
   }
 #  endif  // macOS: no hard pinning; affinity is a best-effort no-op here.
   if (s->has_priority) {
-    // Map the portable ladder to a nice value. Best-effort: RAISING priority
-    // (negative nice) needs CAP_SYS_NICE / root, so it silently no-ops without
-    // it -- the thread just stays at default. On Linux nice is per-thread (who=0
-    // acts on the calling thread); on macOS it is process-scoped (still safe).
+#  if defined(HYLE_OS_LINUX)
+    // Linux nice is PER-THREAD (setpriority PRIO_PROCESS/who=0 acts on the calling
+    // thread, not the whole process). Best-effort: RAISING priority (negative
+    // nice) needs CAP_SYS_NICE / root, so it silently no-ops without it.
     int nice_val = 0;
     switch (s->priority) {
       case ThreadPriority::kLowest:  nice_val = 10; break;
@@ -181,6 +181,27 @@ void* thread_trampoline(void* arg) noexcept {
       case ThreadPriority::kHighest: nice_val = -10; break;
     }
     (void)::setpriority(PRIO_PROCESS, 0, nice_val);  // best-effort; ignore EACCES
+#  else
+    // macOS/BSD: setpriority(PRIO_PROCESS) is PROCESS-scoped (a thread is not a
+    // PID), so it would drag the WHOLE process -- wrong for a per-thread request.
+    // Use pthread_setschedparam, which is genuinely per-thread. Map the ladder
+    // across the SCHED_OTHER priority range; best-effort (needs privilege to
+    // raise, no-ops otherwise).
+    int lo = ::sched_get_priority_min(SCHED_OTHER);
+    int hi = ::sched_get_priority_max(SCHED_OTHER);
+    int mid = (lo + hi) / 2;
+    int prio = mid;
+    switch (s->priority) {
+      case ThreadPriority::kLowest:  prio = lo; break;
+      case ThreadPriority::kLow:     prio = (lo + mid) / 2; break;
+      case ThreadPriority::kNormal:  prio = mid; break;
+      case ThreadPriority::kHigh:    prio = (mid + hi) / 2; break;
+      case ThreadPriority::kHighest: prio = hi; break;
+    }
+    sched_param param{};
+    param.sched_priority = prio;
+    (void)::pthread_setschedparam(::pthread_self(), SCHED_OTHER, &param);
+#  endif
   }
   void (*entry)(void*) = s->entry;
   void* ctx = s->ctx;

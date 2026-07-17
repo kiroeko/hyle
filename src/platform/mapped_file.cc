@@ -71,6 +71,15 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
     vm_set_last_error("MappedFile::open: offset past end of file");
     return m;
   }
+  // An explicit length must stay within the file: mapping past EOF would let a
+  // read-write mapping SILENTLY GROW the file on disk here (CreateFileMapping
+  // extends to max_size), and access to the past-EOF region faults on POSIX.
+  // Reject it so both platforms agree and there is no surprise file growth.
+  if (length != 0 && length > file_size - offset) {
+    ::CloseHandle(file);
+    vm_set_last_error("MappedFile::open: offset+length past end of file");
+    return m;
+  }
   std::size_t map_len = length != 0 ? length
                                     : static_cast<std::size_t>(file_size - offset);
   if (map_len == 0) {
@@ -175,6 +184,13 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
   if (offset > file_size) {
     ::close(fd);
     vm_set_last_error("MappedFile::open: offset past end of file");
+    return m;
+  }
+  // Reject an explicit length past EOF: accessing the past-EOF region SIGBUSes
+  // on POSIX (and would silently grow the file on Windows) -- keep both agreeing.
+  if (length != 0 && length > file_size - offset) {
+    ::close(fd);
+    vm_set_last_error("MappedFile::open: offset+length past end of file");
     return m;
   }
   std::size_t map_len = length != 0 ? length

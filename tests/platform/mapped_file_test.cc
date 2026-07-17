@@ -132,6 +132,21 @@ TEST_F(MapTest, InvalidPathIsInvalid) {
   EXPECT_EQ(m.data(), nullptr);
 }
 
+TEST_F(MapTest, LengthPastEofRejected) {
+  std::string init(64, 'A');
+  write_file(init.data(), init.size());
+  // An explicit length beyond the file must be refused (no silent file growth
+  // on RW, no past-EOF SIGBUS region). File is 64 bytes; ask for 4096.
+  MappedFile rw = MappedFile::open(path.c_str(), MappedFile::Mode::kReadWrite, 0,
+                                   4096);
+  EXPECT_FALSE(rw.valid());
+  // The file must NOT have been grown by the rejected request.
+  EXPECT_EQ(read_file().size(), 64u);
+  // offset past EOF is likewise rejected.
+  MappedFile ro = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly, 4096, 0);
+  EXPECT_FALSE(ro.valid());
+}
+
 TEST_F(MapTest, MoveTransfersMapping) {
   const char* msg = "movable";
   write_file(msg, std::strlen(msg));

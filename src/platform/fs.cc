@@ -9,6 +9,7 @@
 // portable, so opt out of the CRT deprecation nag (no global override exists).
 #if defined(_WIN32)
 #  define _CRT_SECURE_NO_WARNINGS 1
+#  define _CRT_RAND_S  // expose rand_s (RtlGenRandom-backed) for temp file names
 #endif
 
 #include "hyle/platform/fs.h"
@@ -446,6 +447,13 @@ std::size_t read_symlink(const char* path, char* dst, std::size_t cap) noexcept 
                                     : rep->SubstituteNameOffset;
   USHORT len = rep->PrintNameLength ? rep->PrintNameLength
                                     : rep->SubstituteNameLength;
+  // off/len come straight from the (kernel-supplied but still untrusted-shaped)
+  // reparse buffer. Bound them against the bytes DeviceIoControl actually wrote
+  // so a malformed record can't drive an OOB read past `raw`. PathBuffer starts
+  // at offsetof(PathBuffer); the name occupies [that+off, that+off+len).
+  const std::size_t name_base = offsetof(ReparseHeader, PathBuffer);
+  const std::size_t name_end = name_base + static_cast<std::size_t>(off) + len;
+  if (name_end > got || name_end > sizeof(raw)) return 0;  // malformed -> refuse
   const wchar_t* name =
       reinterpret_cast<const wchar_t*>(
           reinterpret_cast<const unsigned char*>(rep->PathBuffer) + off);
@@ -462,27 +470,54 @@ OwnedFd create_temp_file(const char* dir, const char* prefix, char* dst,
   }
   WidePath wd(dir);
   if (wd.w() == nullptr) return OwnedFd{};
+  std::size_t dl = std::wcslen(wd.w());
   wchar_t wpre[16];
   const char* p = prefix != nullptr ? prefix : "tmp";
   int pn = MultiByteToWideChar(CP_UTF8, 0, p, -1, wpre, 16);
   if (pn <= 0) { wpre[0] = L't'; wpre[1] = L'\0'; }
-  // GetTempFileNameW creates a unique 0-byte file and returns its path.
-  wchar_t wpath[MAX_PATH];
-  if (GetTempFileNameW(wd.w(), wpre, 0, wpath) == 0) return OwnedFd{};
-  // Reopen it for read/write, keeping the on-disk file (it already exists).
-  HANDLE h = CreateFileW(wpath, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
-                         OPEN_EXISTING, FILE_ATTRIBUTE_TEMPORARY, nullptr);
-  if (h == INVALID_HANDLE_VALUE) return OwnedFd{};
-  int un = WideCharToMultiByte(CP_UTF8, 0, wpath, -1, nullptr, 0, nullptr, nullptr);
-  if (un > 0) {
-    // reuse fill via a stack UTF-8 copy
-    char u8[MAX_PATH * 3];
-    if (WideCharToMultiByte(CP_UTF8, 0, wpath, -1, u8, sizeof(u8), nullptr,
-                            nullptr) > 0) {
-      fill(dst, cap, u8, std::strlen(u8));
+  std::size_t pl = std::wcslen(wpre);
+
+  // TRUE atomic create (mkstemp-equivalent): generate a high-entropy random name
+  // and CreateFileW with CREATE_NEW, which fails if the name already exists. On
+  // collision (ERROR_FILE_EXISTS) we retry a fresh name; any other error aborts.
+  // No GetTempFileName (which pre-creates the file with a predictable 16-bit
+  // counter, then needs a racy reopen and can leave an orphan). CREATE_NEW gives
+  // us the file exclusively in one syscall -> no TOCTOU window, no orphan on fail.
+  constexpr int kMaxTries = 128;
+  const wchar_t kHex[] = L"0123456789abcdef";
+  for (int attempt = 0; attempt < kMaxTries; ++attempt) {
+    // dir + '\' + prefix + 16 hex + ".tmp" + NUL
+    if (dl + 1 + pl + 16 + 4 + 1 > MAX_PATH) return OwnedFd{};
+    wchar_t wpath[MAX_PATH];
+    std::memcpy(wpath, wd.w(), dl * sizeof(wchar_t));
+    std::size_t w = dl;
+    if (w == 0 || (wpath[w - 1] != L'\\' && wpath[w - 1] != L'/')) wpath[w++] = L'\\';
+    std::memcpy(wpath + w, wpre, pl * sizeof(wchar_t));
+    w += pl;
+    // 64 random bits -> 16 hex chars (rand_s is RtlGenRandom-backed, unpredictable).
+    for (int word = 0; word < 2; ++word) {
+      unsigned r = 0;
+      if (rand_s(&r) != 0) r = static_cast<unsigned>(GetTickCount()) ^ (attempt << 16);
+      for (int i = 0; i < 8; ++i) { wpath[w++] = kHex[r & 0xF]; r >>= 4; }
     }
+    const wchar_t kExt[] = L".tmp";
+    std::memcpy(wpath + w, kExt, sizeof(kExt));  // includes NUL
+    w += 4;
+
+    HANDLE h = CreateFileW(wpath, GENERIC_READ | GENERIC_WRITE, 0, nullptr,
+                           CREATE_NEW, FILE_ATTRIBUTE_TEMPORARY, nullptr);
+    if (h != INVALID_HANDLE_VALUE) {
+      char u8[MAX_PATH * 3];
+      if (WideCharToMultiByte(CP_UTF8, 0, wpath, -1, u8, sizeof(u8), nullptr,
+                              nullptr) > 0) {
+        fill(dst, cap, u8, std::strlen(u8));
+      }
+      return OwnedFd{reinterpret_cast<std::intptr_t>(h)};
+    }
+    if (GetLastError() != ERROR_FILE_EXISTS) return OwnedFd{};  // real error, no orphan
+    // else: name collided -> loop and try a fresh random name.
   }
-  return OwnedFd{reinterpret_cast<std::intptr_t>(h)};
+  return OwnedFd{};  // exhausted retries (astronomically unlikely)
 }
 
 bool set_env_var(const char* name, const char* value) noexcept {
