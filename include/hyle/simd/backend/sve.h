@@ -416,9 +416,16 @@ template <class V> HYLE_FORCE_INLINE svbool_t MaskFromVec(V v) noexcept {
 template <class V> HYLE_FORCE_INLINE svbool_t MaskFromNormalizedVec(V v) noexcept {
   return MaskFromVec(v);
 }
-// VecFromMask(d, m): all-ones (T(-1)) where active, else 0.
+// VecFromMask(d, m): bitwise all-ones where active, else 0. For floating lanes, numeric -1.0
+// is not an all-ones bit pattern, so materialize through the same-width signed lane type.
 template <class D> HYLE_FORCE_INLINE VFromD<D> VecFromMask(D d, svbool_t m) noexcept {
   using T = TFromD<D>;
+  if constexpr (std::is_floating_point_v<T>) {
+    using DI = RebindToSigned<D>;
+    using TI = TFromD<DI>;
+    const DI di;
+    return BitCast(d, svsel(m, Set(di, static_cast<TI>(-1)), Zero(di)));
+  }
   return svsel(m, Set(d, static_cast<T>(-1)), Zero(d));
 }
 

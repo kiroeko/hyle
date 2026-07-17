@@ -132,7 +132,13 @@ TEST(Scan, ActiveVariantIsRealTier) {
   EXPECT_GE(static_cast<std::uint32_t>(a), static_cast<std::uint32_t>(Isa::kSse42));
   EXPECT_LE(static_cast<std::uint32_t>(a), static_cast<std::uint32_t>(best_isa()));
 #elif defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  EXPECT_EQ(a, best_isa() == Isa::kSve ? Isa::kSve : Isa::kNeon);
+#else
   EXPECT_EQ(a, Isa::kNeon);
+#endif
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  EXPECT_EQ(a, best_isa() == Isa::kRvv ? Isa::kRvv : Isa::kScalar);
 #else
   EXPECT_EQ(a, Isa::kScalar);
 #endif

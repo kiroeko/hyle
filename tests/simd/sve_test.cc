@@ -187,6 +187,29 @@ TEST(Sve, FloatArith) {
   for (std::size_t i = 0; i < n; ++i) EXPECT_NEAR(o[i], c[i] - a[i] * b[i], 1e-4f);
 }
 
+template <typename T>
+void CheckFloatVecFromMaskBits() {
+  using D = hs::ScalableTag<T>;
+  using DI = hs::RebindToSigned<D>;
+  using I = hs::TFromD<DI>;
+  const D d;
+  const DI di;
+  const std::size_t n = hs::Lanes(d);
+  alignas(64) T lanes[kBuf];
+  alignas(64) I bits[kBuf];
+  for (std::size_t i = 0; i < n; ++i) lanes[i] = (i & 1u) == 0 ? T{1} : T{-1};
+  const auto mask = hs::Gt(hs::Load(d, lanes), hs::Zero(d));
+  hs::Store(hs::BitCast(di, hs::VecFromMask(d, mask)), di, bits);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(bits[i], (i & 1u) == 0 ? I{-1} : I{0}) << "lane " << i;
+  }
+}
+
+TEST(Sve, FloatingVecFromMaskIsBitwiseCanonical) {
+  CheckFloatVecFromMaskBits<float>();
+  CheckFloatVecFromMaskBits<double>();
+}
+
 TEST(Sve, P4MulModMagnitude) {
   const hs::ScalableTag<float> df;
   const std::size_t nf = hs::Lanes(df);

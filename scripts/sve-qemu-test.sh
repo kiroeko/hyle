@@ -45,6 +45,10 @@ $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalab
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_bitpack_product_test.cc" -o "$OUT/scalable_bitpack_product_test.o"
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_sort_product_test.cc" -o "$OUT/scalable_sort_product_test.o"
 $CXX $COMMON_FLAGS -c "$REPO/tests/simd/dispatch_test.cc" -o "$OUT/dispatch_test.o"
+$CXX $COMMON_FLAGS -c "$REPO/tests/simd/runtime_test.cc" -o "$OUT/runtime_test.o"
+$CXX $COMMON_FLAGS -c "$REPO/tests/simd/ops_test.cc" -o "$OUT/ops_test.o"
+$CXX $COMMON_FLAGS -c "$REPO/tests/simd/search_test.cc" -o "$OUT/search_test.o"
+$CXX $COMMON_FLAGS -c "$REPO/tests/simd/scan_test.cc" -o "$OUT/scan_test.o"
 $CXX $COMMON_FLAGS -c "$REPO/tests/simd/fixed128_bitpack_reference.cc" -o "$OUT/fixed128_bitpack_reference.o"
 $CXX $FLAGS -c "$REPO/src/simd/math/transcendental_highway_scalable.cc" -o "$OUT/math_sve.o"
 $CXX $FLAGS -c "$REPO/src/simd/dtype/cvt_scalable.cc" -o "$OUT/dtype_sve.o"
@@ -63,12 +67,16 @@ $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_neon.cc" -o "$OUT/dtype_neon.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_dispatch.cc" -o "$OUT/bitpack_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_scalar.cc" -o "$OUT/bitpack_scalar.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_hyle_neon.cc" -o "$OUT/bitpack_neon.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/ops/dispatch_ops.cc" -o "$OUT/ops_dispatch.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/random/random_dispatch.cc" -o "$OUT/random_dispatch.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/search/search_dispatch.cc" -o "$OUT/search_dispatch.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/scan/scan_dispatch.cc" -o "$OUT/scan_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/sort_dispatch.cc" -o "$OUT/sort_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_scalar.cc" -o "$OUT/sort_scalar.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/vqsort_hyle_neon.cc" -o "$OUT/sort_neon.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/radix_sort.cc" -o "$OUT/radix_sort.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/sort/stream_topk.cc" -o "$OUT/stream_topk.o"
-for module in ops random search; do
+for module in ops random scan search; do
   printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
     $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar.o"
   printf '#define HYLE_SIMD_TARGET_NEON\n#define HYLE_SIMD_VARIANT_SUFFIX neon\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
@@ -82,16 +90,22 @@ $CXX $FLAGS "$OUT/sve_test.o" "$OUT/scalable_math_compile.o" \
   "$OUT/scalable_bitpack_product_test.o" \
   "$OUT/scalable_sort_product_test.o" \
   "$OUT/dispatch_test.o" \
+  "$OUT/runtime_test.o" \
+  "$OUT/ops_test.o" \
+  "$OUT/search_test.o" \
+  "$OUT/scan_test.o" \
   "$OUT/fixed128_bitpack_reference.o" \
   "$OUT/math_sve.o" "$OUT/math_neon.o" "$OUT/math_xsimd_neon.o" \
   "$OUT/math_scalar.o" "$OUT/math_dispatch.o" "$OUT/cpu.o" "$OUT/runtime.o" \
   "$OUT/dtype_sve.o" "$OUT/dtype_neon.o" "$OUT/dtype_scalar.o" "$OUT/dtype_dispatch.o" \
   "$OUT/bitpack_sve.o" "$OUT/bitpack_neon.o" "$OUT/bitpack_scalar.o" "$OUT/bitpack_dispatch.o" \
+  "$OUT/scan_scalar.o" "$OUT/scan_neon.o" "$OUT/scan_sve.o" "$OUT/scan_dispatch.o" \
   "$OUT/sort_sve.o" "$OUT/sort_neon.o" "$OUT/sort_scalar.o" "$OUT/sort_dispatch.o" \
   "$OUT/radix_sort.o" "$OUT/stream_topk.o" \
-  "$OUT/ops_scalar.o" "$OUT/ops_neon.o" "$OUT/ops_sve.o" \
-  "$OUT/random_scalar.o" "$OUT/random_neon.o" "$OUT/random_sve.o" \
-  "$OUT/search_scalar.o" "$OUT/search_neon.o" "$OUT/search_sve.o" "$OUT/gtest-all.o" \
+  "$OUT/ops_scalar.o" "$OUT/ops_neon.o" "$OUT/ops_sve.o" "$OUT/ops_dispatch.o" \
+  "$OUT/random_scalar.o" "$OUT/random_neon.o" "$OUT/random_sve.o" "$OUT/random_dispatch.o" \
+  "$OUT/search_scalar.o" "$OUT/search_neon.o" "$OUT/search_sve.o" "$OUT/search_dispatch.o" \
+  "$OUT/gtest-all.o" \
   "$OUT/gtest-main.o" -static -o "$OUT/sve_gtest" -pthread
 
 echo "[2/3] running under qemu at VL 128 / 256 / 384 / 512 / 2048 ..."

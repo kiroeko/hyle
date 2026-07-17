@@ -978,6 +978,12 @@ template <class V> HYLE_FORCE_INLINE auto MaskFromNormalizedVec(V v) noexcept {
 }
 template <class D, class M> HYLE_FORCE_INLINE VFromD<D> VecFromMask(D d, M m) noexcept {
   using T = TFromD<D>;
+  if constexpr (std::is_floating_point_v<T>) {
+    using DI = RebindToSigned<D>;
+    using TI = TFromD<DI>;
+    const DI di;
+    return BitCast(d, IfThenElse(m, Set(di, static_cast<TI>(-1)), Zero(di)));
+  }
   return IfThenElse(m, Set(d, static_cast<T>(-1)), Zero(d));
 }
 template <class M, class V> HYLE_FORCE_INLINE V IfThenElseZero(M m, V yes) noexcept {

@@ -18,6 +18,11 @@ int fat_scalar() noexcept { return 0; }
 int fat_sse4() noexcept { return 1; }
 int fat_avx2() noexcept { return 2; }
 int fat_avx512() noexcept { return 3; }
+#elif defined(HYLE_ARCH_ARM64)
+int fat_neon() noexcept { return 1; }
+int fat_sve() noexcept { return 2; }
+#elif defined(HYLE_ARCH_RISCV64)
+int fat_rvv() noexcept { return 1; }
 #endif
 }
 
@@ -63,9 +68,13 @@ TEST(SimdRuntime, PublicFatKernelSelectorMatchesRuntimeTier) {
                        : hs::runtime().isa == hs::Isa::kSse42 ? 1 : 0;
   EXPECT_EQ(fn(), expected);
 #elif defined(HYLE_ARCH_ARM64)
-  EXPECT_EQ(hs::select_fat_kernel(&fat_scalar, &fat_scalar)(), 0);
+  const auto fn = hs::select_fat_kernel(&fat_scalar, &fat_neon, &fat_sve);
+  const int expected = hs::runtime().isa == hs::Isa::kSve ? 2
+                       : hs::runtime().isa == hs::Isa::kNeon ? 1 : 0;
+  EXPECT_EQ(fn(), expected);
 #elif defined(HYLE_ARCH_RISCV64)
-  EXPECT_EQ(hs::select_fat_kernel(&fat_scalar, &fat_scalar)(), 0);
+  const auto fn = hs::select_fat_kernel(&fat_scalar, &fat_rvv);
+  EXPECT_EQ(fn(), hs::runtime().isa == hs::Isa::kRvv ? 1 : 0);
 #else
   EXPECT_EQ(hs::select_fat_kernel(&fat_scalar)(), 0);
 #endif

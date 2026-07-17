@@ -111,12 +111,13 @@ f32 lane。现在 math 只有 6 个有明确正确性裁决的 scalar-only API�
 f32/f64；这不是模块降级。`lgamma` 是已复现的 vendor lane-mixing bug，后两者要求精确 libm 语义。
 
 当前证据：两套脚本同时链接 CPU probe、真实 `Runtime`、baseline dispatcher、scalar 与 scalable
-variant 表，不再只直调内部 kernel。加入 platform dispatch 探针后，SVE 当前脚本为 **54 tests × VL
-128/256/384/512/2048**，RVV base 为 **50 tests × VLEN 128/256/512/1024**；公开
-math/dtype/bitpack/sort batch API、tail、对应 module tier 以及 extension/semantic 能力均在门内验证。
+variant 表，不再只直调内部 kernel。加入 platform dispatch 与 public product 探针后，SVE 当前脚本为
+**94 tests × VL 128/256/384/512/2048**，RVV base 为 **90 tests × VLEN
+128/256/512/1024**；公开 ops/random/search/scan/math/dtype/bitpack/sort batch API、tail、对应 module
+tier 以及 extension/semantic 能力均在门内验证。
 exact SVE/RVV dispatcher 的未定义符号检查也确认不引用 `runtime()`、`best_isa()` 或
 `cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。扩展构建也独立全绿：
-SVE2-AES 为 **54×5**，RVV Zvbb 与 Zvbc 各 **51×4**；因此 base fallback 与已有硬件扩展路径没有
+SVE2-AES 为 **94×5**，RVV Zvbb 与 Zvbc 各 **91×4**；因此 base fallback 与已有硬件扩展路径没有
 同名重定义或越级 codegen 冲突。
 
 ### 当前产品层矩阵
