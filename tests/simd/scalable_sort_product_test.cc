@@ -10,6 +10,7 @@
 
 #include "hyle/simd/runtime.h"
 #include "hyle/simd/sort.h"
+#include "hyle/simd/vec.h"
 #include "src/simd/sort/kernels.h"
 
 namespace hs = hyle::simd;
@@ -187,5 +188,15 @@ TEST(ScalableSortProduct, RuntimeAndPublicApiUseScalableTier) {
   hs::sort(kv.data(), kv.size(), hs::SortOrder::kDescending);
   for (std::size_t i = 1; i < kv.size(); ++i) EXPECT_GE(kv[i - 1].key, kv[i].key);
 }
+
+#if defined(HYLE_SIMD_TARGET_SVE)
+TEST(ScalableSortProduct, SvePartitionAcceptsEveryPhysicalLaneCount) {
+  const std::size_t full_lanes = hs::Lanes(hs::ScalableTag<std::uint32_t>{});
+  const std::size_t n = 8 * full_lanes + 17;
+  auto values = make_values<std::uint32_t>(n, 0);
+  direct_sort(values.data(), values.size(), true);
+  EXPECT_TRUE(std::is_sorted(values.begin(), values.end()));
+}
+#endif
 
 #undef HYLE_SCALABLE_SORT

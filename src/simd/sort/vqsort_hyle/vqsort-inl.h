@@ -508,7 +508,10 @@ HWY_INLINE size_t PartitionRightmost(D d, Traits st, T* const keys,
   {
     // The main Partition loop increments by kUnroll * N, so at least handle
     // the remainders here.
-    const size_t remainder = num & (kUnroll * N - 1);
+    // Fixed-width Highway can use a mask because N is a power of two. Legal SVE VLs include
+    // 384 bits, so the full-width partition path can have N=12 f32 lanes. Modulo preserves the
+    // same contract for both shapes (and constant-folds on fixed-width targets).
+    const size_t remainder = num % (kUnroll * N);
     // Ensure we handle at least one vector to prevent overruns (see below), but
     // still leave a multiple of kUnroll * N.
     const size_t min = remainder + (remainder < N ? kUnroll * N : 0);
@@ -724,7 +727,7 @@ HWY_INLINE size_t Partition(D d, Traits st, T* const keys, const size_t num,
   // Cannot load if there were fewer than 2 * kUnroll * N.
   if (HWY_LIKELY(num_main != 0)) {
     HWY_DASSERT(num_main >= 2 * kUnroll * N);
-    HWY_DASSERT((num_main & (kUnroll * N - 1)) == 0);
+    HWY_DASSERT((num_main % (kUnroll * N)) == 0);
 
     // Make space for writing in-place by reading from readL/readR.
     const V vL0 = LoadU(d, readL + 0 * N);
@@ -809,6 +812,30 @@ HWY_INLINE size_t Partition(D d, Traits st, T* const keys, const size_t num,
   CopyBytes(buf, keys + writeL, bufL * sizeof(T));
 
   return writeL + bufL;
+}
+
+// SVE sorting networks require a power-of-two logical lane count, but partition only needs
+// predication/compress and is valid for every architectural VL. Keep the capped tag for sampling
+// and base cases, then widen the O(n) partition hot path whenever the subproblem is large enough
+// for two full physical vectors. The pivot is one key broadcast across the capped vector, so
+// storing its first key and rebroadcasting preserves scalar and 128-bit KV semantics.
+template <class D, class Traits, typename T>
+HWY_INLINE size_t PartitionUsingFullScalable(D d, Traits st, T* const keys,
+                                             const size_t num,
+                                             const Vec<D> pivot,
+                                             T* HWY_RESTRICT buf) {
+#if defined(HYLE_SIMD_TARGET_SVE)
+  const ScalableTag<T> dfull;
+  const size_t full_lanes = Lanes(dfull);
+  if (full_lanes > Lanes(d) && num > 2 * full_lanes) {
+    constexpr size_t kLPK = st.LanesPerKey();
+    static_assert(kLPK <= 2);
+    alignas(16) T pivot_key[2] = {};
+    StoreN(pivot, d, pivot_key, kLPK);
+    return Partition(dfull, st, keys, num, st.SetKey(dfull, pivot_key), buf);
+  }
+#endif
+  return Partition(d, st, keys, num, pivot, buf);
 }
 
 // Returns true and partitions if [keys, keys + num) contains only {valueL,
@@ -1722,7 +1749,8 @@ HWY_NOINLINE void Recurse(D d, Traits st, T* HWY_RESTRICT keys,
     return;
   }
 
-  const size_t bound = Partition(d, st, keys, num, pivot, buf);
+  const size_t bound =
+      PartitionUsingFullScalable(d, st, keys, num, pivot, buf);
   if (kVqsortDiagnosticLevel >= 2) {
     fprintf(stderr, "bound %zu num %zu result %s\n", bound, num,
             PivotResultString(result));
@@ -1873,9 +1901,19 @@ HWY_INLINE size_t PartitionNaNToBack(D, Traits, T* HWY_RESTRICT, size_t) {
   return 0;
 }
 
-// Old interface with user-specified buffer, retained for compatibility. Called
-// by the newer overload below. `buf` must be vector-aligned and hold at least
-// SortConstants::BufBytes(HWY_MAX_BYTES, st.LanesPerKey()).
+// SVE keeps sorting networks capped at 32 bytes but may partition at the full architectural VL,
+// so its scratch capacity must follow the physical upper bound. Other targets use the same width
+// for both roles.
+static constexpr size_t kSortScratchVectorBytes =
+#if defined(HYLE_SIMD_TARGET_SVE)
+    kNativeVectorBytes;
+#else
+    HWY_MAX_BYTES;
+#endif
+
+// Old interface with user-specified buffer, retained for compatibility. Called by the newer
+// overload below. `buf` must be vector-aligned and hold at least
+// SortConstants::BufBytes(kSortScratchVectorBytes, st.LanesPerKey()).
 template <class D, class Traits, typename T>
 void Sort(D d, Traits st, T* HWY_RESTRICT keys, const size_t num,
           T* HWY_RESTRICT buf) {
@@ -1983,7 +2021,8 @@ void Select(D d, Traits st, T* HWY_RESTRICT keys, const size_t num,
 template <class D, class Traits, typename T>
 HWY_API void Sort(D d, Traits st, T* HWY_RESTRICT keys, const size_t num) {
   constexpr size_t kLPK = st.LanesPerKey();
-  HWY_ALIGN T buf[SortConstants::BufBytes<T, kLPK>(HWY_MAX_BYTES) / sizeof(T)];
+  HWY_ALIGN T buf[SortConstants::BufBytes<T, kLPK>(kSortScratchVectorBytes) /
+                   sizeof(T)];
   Sort(d, st, keys, num, buf);
 }
 
@@ -1994,7 +2033,8 @@ template <class D, class Traits, typename T>
 HWY_API void PartialSort(D d, Traits st, T* HWY_RESTRICT keys, const size_t num,
                          const size_t k) {
   constexpr size_t kLPK = st.LanesPerKey();
-  HWY_ALIGN T buf[SortConstants::BufBytes<T, kLPK>(HWY_MAX_BYTES) / sizeof(T)];
+  HWY_ALIGN T buf[SortConstants::BufBytes<T, kLPK>(kSortScratchVectorBytes) /
+                   sizeof(T)];
   PartialSort(d, st, keys, num, k, buf);
 }
 
@@ -2006,7 +2046,8 @@ template <class D, class Traits, typename T>
 HWY_API void Select(D d, Traits st, T* HWY_RESTRICT keys, const size_t num,
                     const size_t k) {
   constexpr size_t kLPK = st.LanesPerKey();
-  HWY_ALIGN T buf[SortConstants::BufBytes<T, kLPK>(HWY_MAX_BYTES) / sizeof(T)];
+  HWY_ALIGN T buf[SortConstants::BufBytes<T, kLPK>(kSortScratchVectorBytes) /
+                   sizeof(T)];
   Select(d, st, keys, num, k, buf);
 }
 

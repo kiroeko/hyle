@@ -1,6 +1,6 @@
 # simd-25：SVE/RVV 语义与产品层追平
 
-> 状态：🚧 进行中（分类账、寄存器语义闭包与 SVE/RVV math/dtype/bitpack/sort 产品核已落地；SVE 全 VL partition 与真机性能待完成）。依赖 simd-22 双轨与
+> 状态：🚧 进行中（分类账、寄存器语义闭包、SVE/RVV 四类产品核与 SVE 全 VL partition 已落地；真机性能待完成）。依赖 simd-22 双轨与
 > simd-24 已有产品核。
 >
 > 本里程碑重新限定 simd-15~18 的“追平”：它们完成的是 scalable P0~P4 正确性与
@@ -110,11 +110,11 @@ f32 lane。现在 math 只有 6 个有明确正确性裁决的 scalar-only API�
 f32/f64；这不是模块降级。`lgamma` 是已复现的 vendor lane-mixing bug，后两者要求精确 libm 语义。
 
 当前证据：两套脚本同时链接 CPU probe、真实 `Runtime`、baseline dispatcher、scalar 与 scalable
-variant 表，不再只直调内部 kernel。SVE 为 **47 tests × VL 128/256/384/512/2048** 全绿，RVV 为
+variant 表，不再只直调内部 kernel。SVE 为 **48 tests × VL 128/256/384/512/2048** 全绿，RVV 为
 **44 tests × VLEN 128/256/512/1024** 全绿；公开 math/dtype/bitpack/sort batch API、tail、对应 module tier
 以及 extension/semantic 能力均在门内验证。exact SVE/RVV dispatcher 的未定义符号检查也确认不引用
 `runtime()`、`best_isa()` 或 `cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。
-扩展构建也独立全绿：SVE2-AES 为 47×5，RVV Zvbb 与 Zvbc 各 45×4；因此 base fallback 与已有
+扩展构建也独立全绿：SVE2-AES 为 48×5，RVV Zvbb 与 Zvbc 各 45×4；因此 base fallback 与已有
 硬件扩展路径没有同名重定义或越级 codegen 冲突。
 
 ### 当前产品层矩阵
@@ -124,7 +124,7 @@ variant 表，不再只直调内部 kernel。SVE 为 **47 tests × VL 128/256/38
 | ops/random/scan/search | 真实 scalable variant | 真实 scalable variant | 真机性能证据 |
 | math | 主 HYLE/Highway + HYLE-owned xsimd-derived scalable TU；6 个正确性裁决 scalar op | 同左 | 真机性能与复杂特殊值扩大验收 |
 | dtype f16/bf16↔f32 | 真实 SVE 产品 TU | 真实 RVV 产品 TU | 真机性能；fp8 保持 scalar/可选硬件 |
-| sort/select | 真实 SVE-256 capped 产品 TU | 真实 RVV LMUL=1 产品 TU | SVE 全 VL partition；两端真机性能 |
+| sort/select | full-VL partition + 128/256-bit capped network | 真实 RVV LMUL=1 产品 TU | 两端真机性能 |
 | bitpack | 真实 SVE 产品 TU（固定 128-bit logical block） | 真实 RVV 产品 TU（固定 128-bit logical block） | 真机性能与多 logical-block 并行化 |
 
 ## 阶段 1：target/feature mechanization 与编译探针
@@ -189,14 +189,16 @@ fractional LMUL。未来只有在真机证明寄存器压力/吞吐收益后，�
 
 上游 Highway 会禁用真正 length-agnostic SVE VQSort，因此这不是机械移植任务。实测完整移植在
 VL=128/256/512 全绿，但 VL=384 的 12-lane u32 基础网络即段错误，坐实了“合法 VL 不保证 2 的幂
-lane 数”的模型墙。产品第一阶段采用 SVE-256 capped tier：TU-local
-`HYLE_SIMD_SVE_DFROMV_MAX_BYTES=32` 与 `CappedTag` 同时限制 D-aware 和 V-only swizzle；VL=128
-执行 128 bit，VL≥256 执行 256 bit。它全程生成 SVE 指令、没有 NEON/scalar fallback，并在五档 VL
-覆盖全部 sort/partial/select、六种 key、KV、NaN、canary、Runtime/public API，当前完整门禁共 47 tests 全绿。
+lane 数”的模型墙。最终产品采用 hybrid：TU-local `HYLE_SIMD_SVE_DFROMV_MAX_BYTES=32` 与
+`CappedTag` 只限制 sampling/base sorting network；递归的 O(n) partition 在子问题大于两个物理向量
+时用 `ScalableTag` 恢复完整 VL。partition 的块余数从 power-of-two bitmask 改为通用 modulo，scratch
+容量也与网络 cap 解耦、按 2048-bit 物理上界分配。VL=128 执行 128 bit；VL=256 时两层同为
+256 bit；VL=384/512/2048 的 partition 分别使用 384/512/2048 bit，基础网络保持 256 bit。
 
-这是产品可用性收口，不冒充“随 VL 扩展”：VL>256 的额外 lanes 当前闲置。下一性能阶段以全 VL
-predicate/compact 完成大数组 partition，保留 capped network 作为 base case；真机证明收益后再替换
-当前整核 capped 路径。
+它全程生成 SVE 指令、没有 NEON/scalar fallback，并在五档 VL 覆盖全部 sort/partial/select、六种
+key、KV、NaN、canary、Runtime/public API，以及按物理 lane 数构造的 full-partition 专项；当前完整
+门禁共 48 tests 全绿。SVE object 反汇编同时确认 `cntw/cntd` 与 `compact` 留在产品核中。基础网络
+继续 capped 是算法合同，不再意味着大数组整核闲置 VL>256 lanes。
 
 两者都覆盖 sort/partial/select、升降序、重复值、NaN total-order、KV、canary/ASan 和规模阶梯。
 

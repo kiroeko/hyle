@@ -270,9 +270,10 @@ struct SortConstants {
   }
 };
 
-// SortTag: RVV uses one full native vector. SVE caps at 256 logical bits because the imported
-// sorting networks require a power-of-two lane count, whereas legal SVE VL includes 384 etc.
-// The SVE TU applies the same cap to DFromV so V-only swizzles cannot silently recover full VL.
+// SortTag drives sampling and sorting networks. RVV uses one full native vector. SVE caps these
+// power-of-two-only stages at 256 logical bits because legal VL includes 384 etc.; vqsort-inl
+// separately widens its partition hot path to ScalableTag. The SVE TU applies the same cap to
+// DFromV so V-only network swizzles cannot silently recover full VL.
 template <typename T>
 using SortTag =
 #if defined(HYLE_SIMD_TARGET_SVE)
