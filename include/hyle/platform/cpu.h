@@ -59,8 +59,22 @@ struct CpuFeatures {
   // ---- arm (read false on non-ARM) ----
   bool neon = false;       // baseline on aarch64 (always true there)
   bool sve = false;        // scalable vectors (runtime-length; see vec.h Lanes())
+  bool sve2 = false;       // second-generation SVE instruction set
+  bool sve_aes = false;    // SVE2 AES round instructions
+  bool sve_pmull = false;  // SVE2 polynomial multiply
+  bool sve_i8mm = false;   // SVE int8 matrix multiply
+  bool sve_f32mm = false;  // SVE fp32 matrix multiply
+  bool sve_f64mm = false;  // SVE fp64 matrix multiply
+  bool sve_bf16 = false;   // SVE bf16 arithmetic / convert
+  bool arm_i8mm = false;   // non-SVE Arm int8 matrix multiply
+  bool arm_bf16 = false;   // non-SVE Arm bf16 arithmetic / convert
   // ---- RISC-V (read false on non-RISC-V) ----
-  bool rvv = false;        // V extension; runtime VLEN is queried by the backend
+  bool rvv = false;          // V extension; runtime VLEN is queried by the backend
+  bool rvv_zvbb = false;     // vector bit-manipulation
+  bool rvv_zvbc = false;     // vector carryless multiply
+  bool rvv_zvkned = false;   // vector AES block cipher
+  bool rvv_zvfh = false;     // full vector fp16
+  bool rvv_zvfhmin = false;  // minimum vector fp16 convert support
 };
 
 // Coarse ISA tiers, ORDERED so a larger value is a strictly more capable variant on

@@ -8,10 +8,16 @@
 // We compile it at the default baseline (no -mavx etc.), so the compiler cannot emit
 // anything beyond it here.
 
+#include <cstddef>
 #include <cstdint>
 
 #if defined(HYLE_OS_LINUX) && (defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64))
 #include <sys/auxv.h>
+#endif
+
+#if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_RISCV64)
+#include <sys/syscall.h>
+#include <unistd.h>
 #endif
 
 #if defined(HYLE_ARCH_X64)
@@ -158,6 +164,44 @@ CpuFeatures detect_x86() noexcept {
 
 #endif  // HYLE_ARCH_X64
 
+#if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_RISCV64)
+
+constexpr std::uint64_t kRiscvExtV = std::uint64_t{1} << 2;
+constexpr std::uint64_t kRiscvExtZvbb = std::uint64_t{1} << 17;
+constexpr std::uint64_t kRiscvExtZvbc = std::uint64_t{1} << 18;
+constexpr std::uint64_t kRiscvExtZvkned = std::uint64_t{1} << 21;
+constexpr std::uint64_t kRiscvExtZvfh = std::uint64_t{1} << 30;
+constexpr std::uint64_t kRiscvExtZvfhmin = std::uint64_t{1} << 31;
+
+constexpr void apply_riscv_hwprobe(std::uint64_t bits,
+                                   CpuFeatures& f) noexcept {
+  f.rvv = f.rvv || (bits & kRiscvExtV) != 0;
+  f.rvv_zvbb = f.rvv && (bits & kRiscvExtZvbb) != 0;
+  f.rvv_zvbc = f.rvv && (bits & kRiscvExtZvbc) != 0;
+  f.rvv_zvkned = f.rvv && (bits & kRiscvExtZvkned) != 0;
+  f.rvv_zvfh = f.rvv && (bits & kRiscvExtZvfh) != 0;
+  f.rvv_zvfhmin = f.rvv && (bits & kRiscvExtZvfhmin) != 0;
+}
+
+// Compile-time synthetic decoding keeps every stable Linux UABI bit covered
+// even when qemu-linux-user cannot emulate riscv_hwprobe optional extensions.
+static_assert([] {
+  CpuFeatures f;
+  apply_riscv_hwprobe(kRiscvExtV | kRiscvExtZvbb | kRiscvExtZvbc |
+                          kRiscvExtZvkned | kRiscvExtZvfh |
+                          kRiscvExtZvfhmin,
+                      f);
+  return f.rvv && f.rvv_zvbb && f.rvv_zvbc && f.rvv_zvkned &&
+         f.rvv_zvfh && f.rvv_zvfhmin;
+}());
+static_assert([] {
+  CpuFeatures f;
+  apply_riscv_hwprobe(kRiscvExtZvbb | kRiscvExtZvbc, f);
+  return !f.rvv && !f.rvv_zvbb && !f.rvv_zvbc;
+}());
+
+#endif
+
 CpuFeatures detect() noexcept {
 #if defined(HYLE_ARCH_X64)
   return detect_x86();
@@ -165,8 +209,35 @@ CpuFeatures detect() noexcept {
   CpuFeatures f;
   f.neon = true;  // mandatory on aarch64
 #if defined(HYLE_OS_LINUX)
+  // Keep the constants local instead of including asm/hwcap.h: old deployment
+  // sysroots may not name newer bits, but the stable Linux userspace ABI does.
   constexpr unsigned long kHwcapSve = 1ul << 22;
-  f.sve = (getauxval(AT_HWCAP) & kHwcapSve) != 0;
+  constexpr unsigned long kAtHwcap2 = 26;
+  constexpr unsigned long kHwcap2Sve2 = 1ul << 1;
+  constexpr unsigned long kHwcap2SveAes = 1ul << 2;
+  constexpr unsigned long kHwcap2SvePmull = 1ul << 3;
+  constexpr unsigned long kHwcap2SveI8mm = 1ul << 9;
+  constexpr unsigned long kHwcap2SveF32mm = 1ul << 10;
+  constexpr unsigned long kHwcap2SveF64mm = 1ul << 11;
+  constexpr unsigned long kHwcap2SveBf16 = 1ul << 12;
+  constexpr unsigned long kHwcap2I8mm = 1ul << 13;
+  constexpr unsigned long kHwcap2Bf16 = 1ul << 14;
+
+  const unsigned long caps = getauxval(AT_HWCAP);
+  const unsigned long caps2 = getauxval(kAtHwcap2);
+  f.sve = (caps & kHwcapSve) != 0;
+  f.sve2 = f.sve && (caps2 & kHwcap2Sve2) != 0;
+  // SVE AES/PMULL instructions are SVE2 subextensions. Requiring both bits makes
+  // the implication explicit and prevents a malformed auxv from selecting a
+  // +sve2-aes TU on an SVE1-only process.
+  f.sve_aes = f.sve2 && (caps2 & kHwcap2SveAes) != 0;
+  f.sve_pmull = f.sve2 && (caps2 & kHwcap2SvePmull) != 0;
+  f.sve_i8mm = f.sve && (caps2 & kHwcap2SveI8mm) != 0;
+  f.sve_f32mm = f.sve && (caps2 & kHwcap2SveF32mm) != 0;
+  f.sve_f64mm = f.sve && (caps2 & kHwcap2SveF64mm) != 0;
+  f.sve_bf16 = f.sve && (caps2 & kHwcap2SveBf16) != 0;
+  f.arm_i8mm = (caps2 & kHwcap2I8mm) != 0;
+  f.arm_bf16 = (caps2 & kHwcap2Bf16) != 0;
 #endif
   return f;
 #elif defined(HYLE_ARCH_RISCV64)
@@ -174,6 +245,29 @@ CpuFeatures detect() noexcept {
 #if defined(HYLE_OS_LINUX)
   constexpr unsigned long kHwcapIsaV = 1ul << ('V' - 'A');
   f.rvv = (getauxval(AT_HWCAP) & kHwcapIsaV) != 0;
+
+  // riscv_hwprobe (Linux 6.4+) is the architecture's precise extension ABI.
+  // Use a private copy of the stable two-word pair so this baseline detector
+  // still builds against older kernel headers. On an older kernel/QEMU the
+  // syscall returns ENOSYS and all optional bits safely remain false.
+  struct RiscvHwprobePair {
+    std::int64_t key;
+    std::uint64_t value;
+  };
+  constexpr std::int64_t kKeyImaExt0 = 4;
+
+  RiscvHwprobePair pair{kKeyImaExt0, 0};
+  long rc = -1;
+#  if defined(SYS_riscv_hwprobe)
+  rc = syscall(SYS_riscv_hwprobe, &pair, std::size_t{1}, std::size_t{0},
+               nullptr, 0ul);
+#  elif defined(__NR_riscv_hwprobe)
+  rc = syscall(__NR_riscv_hwprobe, &pair, std::size_t{1}, std::size_t{0},
+               nullptr, 0ul);
+#  endif
+  if (rc == 0 && pair.key == kKeyImaExt0) {
+    apply_riscv_hwprobe(pair.value, f);
+  }
 #endif
   return f;
 #else

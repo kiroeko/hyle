@@ -48,6 +48,7 @@ run_tier() {
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalable_dtype_product_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_bitpack_product_test.cc" -o "$OUT/scalable_bitpack_product_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_sort_product_test.cc" -o "$OUT/scalable_sort_product_test_${name}.o"
+  $CXX $COMMON_FLAGS -c "$REPO/tests/simd/dispatch_test.cc" -o "$OUT/dispatch_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/fixed128_bitpack_reference.cc" -o "$OUT/fixed128_bitpack_reference_${name}.o"
   $CXX $FLAGS -c "$REPO/src/simd/math/transcendental_highway_scalable.cc" -o "$OUT/math_rvv_${name}.o"
   $CXX $FLAGS -c "$REPO/src/simd/dtype/cvt_scalable.cc" -o "$OUT/dtype_rvv_${name}.o"
@@ -77,6 +78,7 @@ run_tier() {
     "$OUT/scalable_dtype_product_test_${name}.o" \
     "$OUT/scalable_bitpack_product_test_${name}.o" \
     "$OUT/scalable_sort_product_test_${name}.o" \
+    "$OUT/dispatch_test_${name}.o" \
     "$OUT/fixed128_bitpack_reference_${name}.o" \
     "$OUT/math_rvv_${name}.o" "$OUT/math_scalar_${name}.o" "$OUT/math_dispatch_${name}.o" \
     "$OUT/dtype_rvv_${name}.o" "$OUT/dtype_scalar_${name}.o" "$OUT/dtype_dispatch_${name}.o" \
@@ -91,9 +93,19 @@ run_tier() {
     -static -o "$bin" -pthread
 
   echo "[${name}] running under qemu-riscv64 at VLEN 128 / 256 / 512 / 1024 (cpu=${qemu_cpu}) ..."
+  local feature_env=(HYLE_EXPECT_RVV=1)
+  # qemu-linux-user 8.2 executes Zvbb/Zvbc instructions but does not emulate the
+  # riscv_hwprobe optional-extension result (the syscall safely reports no bit).
+  # A newer emulator or a full-system guest kernel may opt into the positive
+  # detector assertion; real Linux uses the same official hwprobe ABI.
+  if [ "${HYLE_QEMU_EXPECT_OPTIONAL_FEATURES:-0}" = "1" ]; then
+    if [ "$name" = "zvbb" ]; then feature_env+=(HYLE_EXPECT_RVV_ZVBB=1); fi
+    if [ "$name" = "zvbc" ]; then feature_env+=(HYLE_EXPECT_RVV_ZVBC=1); fi
+  fi
   for bits in 128 256 512 1024; do
     echo "----- RVV ${name} VLEN=${bits}-bit -----"
-    "$QEMU" -cpu "rv64,v=true,${qemu_cpu}vlen=${bits},elen=64" -L /usr/riscv64-linux-gnu \
+    env "${feature_env[@]}" "$QEMU" \
+      -cpu "rv64,v=true,${qemu_cpu}vlen=${bits},elen=64" -L /usr/riscv64-linux-gnu \
       "$bin" || rc=$?
   done
 }

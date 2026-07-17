@@ -1,6 +1,7 @@
 # simd-25：SVE/RVV 语义与产品层追平
 
-> 状态：🚧 进行中（分类账、寄存器语义闭包、SVE/RVV 四类产品核与 SVE 全 VL partition 已落地；真机性能待完成）。依赖 simd-22 双轨与
+> 状态：🚧 进行中（分类账、寄存器语义闭包、SVE/RVV 四类产品核、SVE 全 VL partition 与精细
+> CPU feature 探测已落地；真机性能待完成）。依赖 simd-22 双轨与
 > simd-24 已有产品核。
 >
 > 本里程碑重新限定 simd-15~18 的“追平”：它们完成的是 scalable P0~P4 正确性与
@@ -110,12 +111,13 @@ f32 lane。现在 math 只有 6 个有明确正确性裁决的 scalar-only API�
 f32/f64；这不是模块降级。`lgamma` 是已复现的 vendor lane-mixing bug，后两者要求精确 libm 语义。
 
 当前证据：两套脚本同时链接 CPU probe、真实 `Runtime`、baseline dispatcher、scalar 与 scalable
-variant 表，不再只直调内部 kernel。SVE 为 **48 tests × VL 128/256/384/512/2048** 全绿，RVV 为
-**44 tests × VLEN 128/256/512/1024** 全绿；公开 math/dtype/bitpack/sort batch API、tail、对应 module tier
-以及 extension/semantic 能力均在门内验证。exact SVE/RVV dispatcher 的未定义符号检查也确认不引用
-`runtime()`、`best_isa()` 或 `cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。
-扩展构建也独立全绿：SVE2-AES 为 48×5，RVV Zvbb 与 Zvbc 各 45×4；因此 base fallback 与已有
-硬件扩展路径没有同名重定义或越级 codegen 冲突。
+variant 表，不再只直调内部 kernel。加入 platform dispatch 探针后，SVE 当前脚本为 **54 tests × VL
+128/256/384/512/2048**，RVV base 为 **50 tests × VLEN 128/256/512/1024**；公开
+math/dtype/bitpack/sort batch API、tail、对应 module tier 以及 extension/semantic 能力均在门内验证。
+exact SVE/RVV dispatcher 的未定义符号检查也确认不引用 `runtime()`、`best_isa()` 或
+`cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。扩展构建也独立全绿：
+SVE2-AES 为 **54×5**，RVV Zvbb 与 Zvbc 各 **51×4**；因此 base fallback 与已有硬件扩展路径没有
+同名重定义或越级 codegen 冲突。
 
 ### 当前产品层矩阵
 
@@ -138,6 +140,22 @@ variant 表，不再只直调内部 kernel。SVE 为 **48 tests × VL 128/256/38
 
 SVE 的 VL 是线程属性；Runtime 只缓存 ISA/feature，具体 `Lanes(d)` 继续在 kernel 中求值，不能把某一
 线程的 VL 固化成进程全局结论。
+
+精细探测已落地：AArch64 baseline `cpu.cc` 用 `AT_HWCAP2` 分别报告
+SVE2/AES/PMULL/I8MM/F32MM/F64MM/BF16，并保留非 SVE 的 Arm I8MM/BF16；RISC-V baseline 用 Linux
+6.4+ 的 `riscv_hwprobe` 报告 Zvbb/Zvbc/Zvkned/Zvfh/Zvfhmin，旧内核或不支持该 syscall 的模拟器安全
+保持 false。探测 TU 仍以基线 ISA 编译且 LTO 关闭，高级 `-march` 没有污染 detector。
+
+QEMU 边界也已实测而非隐藏：qemu-aarch64 8.2 能通过 HWCAP2 正向报告 SVE2-AES/PMULL；同版本
+qemu-riscv64-user 能执行 Zvbb/Zvbc 指令，但不模拟 `riscv_hwprobe` 的 optional-extension 结果。
+因此 RVV 的 V 基础位在 QEMU 正向断言，optional 位用交叉编译期 synthetic bit-map `static_assert`
+覆盖；脚本保留 `HYLE_QEMU_EXPECT_OPTIONAL_FEATURES=1`，供新版 QEMU、full-system guest 或真机开启
+正向断言。不能用 `/proc/cpuinfo` 替代 hwprobe，因为异构 CPU 上它没有“所有可运行 CPU 的能力交集”
+契约，可能误选后 SIGILL。
+
+这些 bool 是 C++ 平台诊断 POD 的开发期扩展，不穿过 HYLE C ABI。现有 SVE2/Zvbb/Zvbc 能力仍属于
+静态 target-bound 寄存器 API；在出现真实 pointer/count 产品 kernel 之前，`Runtime::Module::features`
+不虚报“已选择该扩展核”。将来新增 optional 产品核时必须独立 TU，并由这些精细 feature 选择。
 
 ## 阶段 2：bitpack 与 dtype
 

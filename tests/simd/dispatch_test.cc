@@ -1,6 +1,8 @@
 #include <gtest/gtest.h>
 
+#include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 
 #include "hyle/platform.h"
 #include "hyle/simd/dispatch.h"
@@ -25,6 +27,43 @@ TEST(Dispatch, FeaturesAreCachedStableObject) {
   const CpuFeatures& a = cpu_features();
   const CpuFeatures& b = cpu_features();
   EXPECT_EQ(&a, &b);  // same instance -> detected once
+}
+
+namespace {
+
+void ExpectFeatureFromEnvironment(const char* name, bool actual) {
+#if defined(HYLE_COMPILER_MSVC)
+  char* expected = nullptr;
+  std::size_t length = 0;
+  ASSERT_EQ(_dupenv_s(&expected, &length, name), 0) << name;
+#else
+  const char* expected = std::getenv(name);
+#endif
+  if (expected == nullptr) return;
+  const bool valid = (expected[0] == '0' || expected[0] == '1') &&
+                     expected[1] == '\0';
+  EXPECT_TRUE(valid) << name;
+  if (valid) EXPECT_EQ(actual, expected[0] == '1') << name;
+#if defined(HYLE_COMPILER_MSVC)
+  std::free(expected);
+#endif
+}
+
+}  // namespace
+
+// Cross-architecture QEMU gates set only the variables relevant to the selected
+// virtual CPU. This turns feature probing into positive evidence: compiling an
+// extension TU is not enough; the baseline detector must observe the extension
+// without itself containing any advanced instruction.
+TEST(Dispatch, EnvironmentFeatureExpectations) {
+  const CpuFeatures& f = cpu_features();
+  ExpectFeatureFromEnvironment("HYLE_EXPECT_SVE", f.sve);
+  ExpectFeatureFromEnvironment("HYLE_EXPECT_SVE2", f.sve2);
+  ExpectFeatureFromEnvironment("HYLE_EXPECT_SVE_AES", f.sve_aes);
+  ExpectFeatureFromEnvironment("HYLE_EXPECT_SVE_PMULL", f.sve_pmull);
+  ExpectFeatureFromEnvironment("HYLE_EXPECT_RVV", f.rvv);
+  ExpectFeatureFromEnvironment("HYLE_EXPECT_RVV_ZVBB", f.rvv_zvbb);
+  ExpectFeatureFromEnvironment("HYLE_EXPECT_RVV_ZVBC", f.rvv_zvbc);
 }
 
 #if defined(HYLE_ARCH_X64)
@@ -80,6 +119,29 @@ TEST(Dispatch, Avx512ExtensionsImplyBase) {
   }
 }
 #endif  // HYLE_ARCH_X64
+
+#if defined(HYLE_ARCH_ARM64)
+TEST(Dispatch, ArmScalableExtensionsImplyBase) {
+  const CpuFeatures& f = cpu_features();
+  if (f.sve2 || f.sve_aes || f.sve_pmull || f.sve_i8mm || f.sve_f32mm ||
+      f.sve_f64mm || f.sve_bf16) {
+    EXPECT_TRUE(f.sve);
+  }
+  if (f.sve_aes || f.sve_pmull) {
+    EXPECT_TRUE(f.sve2);
+  }
+}
+#endif
+
+#if defined(HYLE_ARCH_RISCV64)
+TEST(Dispatch, RvvExtensionsImplyBase) {
+  const CpuFeatures& f = cpu_features();
+  if (f.rvv_zvbb || f.rvv_zvbc || f.rvv_zvkned || f.rvv_zvfh ||
+      f.rvv_zvfhmin) {
+    EXPECT_TRUE(f.rvv);
+  }
+}
+#endif
 
 // supports() is monotone with the tier order: best_isa() is supported, and every tier
 // strictly above it is not.

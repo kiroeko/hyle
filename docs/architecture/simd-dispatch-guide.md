@@ -194,22 +194,28 @@ native header 中的一份 D-tag body
 
 ## SVE 与 RVV
 
-Linux AArch64 通过 `AT_HWCAP.SVE`、Linux RISC-V 通过 `AT_HWCAP.V` 探测。预编译 runtime 为
-ops/random/scan/search 生成 SVE/RVV 变体；HYLE/Highway math 主 op 也由同一个 scalable body 分别编成
-独立 `+sve` / `+v` 产品 TU。常用 dtype f16/bf16↔f32 同样已有真实 SVE/RVV 产品 TU；fp8 因 base
-scalable ISA 没有已认证的通用转换收益而保留 scalar/可选硬件路径。gamma/complex/xsimd-only 等少量
-math op 仍保留已验证 NEON/scalar fallback。bitpack 已有真实 SVE/RVV 产品 TU；其物理指令使用
-scalable backend，但 logical D-tag 固定为 128-bit，因此格式不随线程 SVE VL / 机器 RVV VLEN 改变，
-并与 NEON block layout 相同。sort/partial/select 也已有 SVE/RVV 产品 TU，覆盖六种 scalar key 与
-KV32/KV64。RVV 使用诚实的 LMUL=1 全宽 tag，而不是用逻辑半宽伪装尚未实现的 fractional-LMUL
-native type。SVE 采用 SVE-256 capped tier：VL=128 时用 128 bit，VL≥256 时用 256 bit；这是为了让
-sorting network 始终保持 2 的幂 lane 数，真实执行 SVE 指令，但不声称随更宽 VL 扩展吞吐。
+Linux AArch64 以 `AT_HWCAP.SVE` 探测基础档，并从 `AT_HWCAP2` 分别探测
+SVE2/AES/PMULL/I8MM/F32MM/F64MM/BF16；Linux RISC-V 以 `AT_HWCAP.V` 探测基础档，并用
+`riscv_hwprobe` 探测 Zvbb/Zvbc/Zvkned/Zvfh/Zvfhmin。探测器是独立的 baseline、LTO-off TU，老内核
+不支持 `riscv_hwprobe` 时可选位保持 false，不会因编译机 feature 或 `/proc/cpuinfo` 误报而 SIGILL。
 
-当前 SVE 门为 42 tests × VL 128/256/384/512/2048，RVV 门为 39 tests × VLEN
-128/256/512/1024；门内包含真实 CPU probe、Runtime、公开 math/dtype/bitpack/sort batch API 与 tail。dtype 还
-穷举全部 f16/bf16 存储编码并覆盖全位域 f32 样本。sizeless SVE/RVV vector
-不能成为 `VectorXoshiro` 成员，所以固定目标代码使用 `native::random_fill`。这些 QEMU 结果是正确性与
-派发证据，真机性能证书仍待补齐。
+预编译 runtime 为 ops/random/scan/search 生成 SVE/RVV 变体；math 的主 HYLE/Highway op 与 HYLE-owned
+xsimd-derived op 也已有独立 scalable 产品 TU。只有 `lgamma/remainder/nextafter` 的 f32/f64 因明确
+正确性裁决保留 scalar。常用 dtype f16/bf16↔f32 已有真实 SVE/RVV 产品 TU；fp8 因 base scalable ISA
+没有已认证的通用转换收益而保留 scalar/可选硬件路径。
+
+bitpack 的物理指令使用 scalable backend，但 logical D-tag 固定为 128-bit，因此格式不随线程 SVE VL
+或机器 RVV VLEN 改变，并与 NEON block layout 相同。sort/partial/select 覆盖六种 scalar key 与
+KV32/KV64：RVV 使用诚实的 LMUL=1 全宽 tag；SVE 的递归 partition 使用完整物理 VL，只有需要 2 的幂
+lane 数的 sorting network 保持 128/256-bit cap。
+
+当前脚本门为 SVE **54 tests × VL 128/256/384/512/2048**，RVV base **50 tests × VLEN
+128/256/512/1024**；扩展门为 SVE2-AES **54×5**、RVV Zvbb/Zvbc 各 **51×4**。门内包含 CPU probe、
+Runtime、公开 math/dtype/bitpack/sort batch API、tail 和 feature 蕴含关系。qemu-aarch64 能正向验证
+HWCAP2 扩展位；qemu-riscv64-user 8.2 能执行 Zvbb/Zvbc，但不模拟 `riscv_hwprobe` 可选位，故 RVV
+可选位解码另有交叉编译期 synthetic bit-map 断言，真机仍须正向复验。dtype 还穷举全部 f16/bf16
+存储编码并覆盖全位域 f32 样本。sizeless SVE/RVV vector 不能成为 `VectorXoshiro` 成员，所以固定目标
+代码使用 `native::random_fill`。这些 QEMU 结果是正确性与派发证据，真机性能证书仍待补齐。
 
 ## 与 Highway 的关系
 

@@ -44,6 +44,7 @@ $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalabl
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalable_dtype_product_test.o"
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_bitpack_product_test.cc" -o "$OUT/scalable_bitpack_product_test.o"
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_sort_product_test.cc" -o "$OUT/scalable_sort_product_test.o"
+$CXX $COMMON_FLAGS -c "$REPO/tests/simd/dispatch_test.cc" -o "$OUT/dispatch_test.o"
 $CXX $COMMON_FLAGS -c "$REPO/tests/simd/fixed128_bitpack_reference.cc" -o "$OUT/fixed128_bitpack_reference.o"
 $CXX $FLAGS -c "$REPO/src/simd/math/transcendental_highway_scalable.cc" -o "$OUT/math_sve.o"
 $CXX $FLAGS -c "$REPO/src/simd/dtype/cvt_scalable.cc" -o "$OUT/dtype_sve.o"
@@ -80,6 +81,7 @@ $CXX $FLAGS "$OUT/sve_test.o" "$OUT/scalable_math_compile.o" \
   "$OUT/scalable_dtype_product_test.o" \
   "$OUT/scalable_bitpack_product_test.o" \
   "$OUT/scalable_sort_product_test.o" \
+  "$OUT/dispatch_test.o" \
   "$OUT/fixed128_bitpack_reference.o" \
   "$OUT/math_sve.o" "$OUT/math_neon.o" "$OUT/math_xsimd_neon.o" \
   "$OUT/math_scalar.o" "$OUT/math_dispatch.o" "$OUT/cpu.o" "$OUT/runtime.o" \
@@ -94,9 +96,14 @@ $CXX $FLAGS "$OUT/sve_test.o" "$OUT/scalable_math_compile.o" \
 
 echo "[2/3] running under qemu at VL 128 / 256 / 384 / 512 / 2048 ..."
 rc=0
+FEATURE_ENV=(HYLE_EXPECT_SVE=1)
+if [ "$TIER" = "crypto" ]; then
+  FEATURE_ENV+=(HYLE_EXPECT_SVE2=1 HYLE_EXPECT_SVE_AES=1 HYLE_EXPECT_SVE_PMULL=1)
+fi
 for bits in 128 256 384 512 2048; do
   echo "----- SVE VL=${bits}-bit -----"
-  HYLE_EXPECT_SVE_BITS="$bits" "$QEMU" -cpu "max,sve${bits}=on" -L /usr/aarch64-linux-gnu "$OUT/sve_gtest" || rc=$?
+  env "${FEATURE_ENV[@]}" HYLE_EXPECT_SVE_BITS="$bits" \
+    "$QEMU" -cpu "max,sve${bits}=on" -L /usr/aarch64-linux-gnu "$OUT/sve_gtest" || rc=$?
 done
 
 echo "[3/3] done (exit=$rc)"
