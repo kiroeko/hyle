@@ -18,65 +18,41 @@
 
 ## 预测 vs 真实 LOC（防玩具化）
 
-### 整体进度(诚实,2026-07-07 实测 compute-05 后复评)—— 三个分母别混
+### 整体进度与体量（诚实，2026-07-17 锚定）——分母别混
 
-> **实测生产代码 28,378 行**(cloc `include`+`src` 的 header+C++/CUDA/.inc,不含 CMake/测试/文档/vendored;17,404 header + 10,738 C++ 含 CUDA/.inc)。测试另计 ~14,009 行(cloc tests C++)。**本轮(2026-07-09)最大增量 = simd 支柱 simd-08/09**(op 面 ~90→~217 + 数学函数 best-of + 算法级 intdiv/cmp128/RNG/vqsort/bit_pack/KV top-k):simd 现 ~13.3k 生产(公开头 8,877 含五后端 scalar 1181/sse4 1566/avx2 1652/avx512 1591/neon 1879 + vec.h 483 + random/sort/bitpack/math 头 + src 1,471),把生产 LOC 从上版 22.1k 推到 28.4k(+6.3k 几乎全是 simd 广度)。**compute 支柱 01~05 已落地**(host/device 内存分层 + stream/event + completion→fiber + NVRTC kernel launch + ggml_bridge 借算子,含 567 CUDA)。三个"进度"说法分母不同,**混用会得出误导数字**:
->
-> | 口径 | 分母 | 当前 | 说明 |
-> |---|---|---|---|
-> | **里程碑计数** | 94 行 − 5 ⛔否决 = ~89 真里程碑 | **~91%(81 ✅)** | ⚠️**最误导的口径,勿用作"完成度"**:剩 8 个(compute-06/07/08 + graph-01/02 + close-01 等)含**最大最难的头牌**——Vulkan SPIR-V kernel、graph DAG 增量重算,每个 1-4k;计数把"44 行 util"和"未写的 3k Vulkan kernel"各记 1,严重高估 |
-> | **clay 吸纳权重** | 被重构的旧 clay 库 | ~33%(coverage-map) | 基础层已基本吸纳;**分母是旧库,不是新愿景** |
-> | **自有生产 LOC 比** | 投影完成时 ~40k 自有(band 34-46k) | **~66%**(band 62-83%) | 28.4k/(34-46k);投影上调因 simd op 面远超初估(~13.3k vs 初估 ~6k)。**但 LOC≠完成度**:本轮 +6.3k 几乎全是 simd 广度,填的是已算"完成"的支柱、**不是缺口的 compute06-08/graph**,故功能完成度只微升 |
-> | **对完整愿景的功能完成度** | 完整 HYLE 自有(全广度 + io/compute/graph,**不含借入的 ggml**) | **≈60%**(band 52-68%) | compute 主体已通(01~05)+ simd 支柱本轮全面收口(op面完备+四 ISA 含 AVX512-SDE 真跑),剩 Vulkan 自造 kernel(06)/CPU 算子(07)/HIP-Metal(08)+ graph 两大支柱未动工 |
->
-> **为什么"里程碑 91%"是高估、真实约 60%**:里程碑颗粒不等重——util-02(44 行)与未写的 compute-06(Vulkan kernel,~3k)在计数里各占 1。按**代码量** 28.4k ÷ ~40k ≈ **~66%**(注:simd 广度把分子分母同抬);按**差异化能力** ~60%,因剩余 **graph(2 里程碑)全 0 行 + compute 还缺 06/07/08**。**simd 广度增长不改这个判断**——它填的是已完成支柱的能力面,不是缺口支柱。**ggml ~100k 借核不造,不计入 HYLE 自有完成度**。
->
-> **一句话**:**里程碑计数 91% ✗(颗粒不等重的假象)→ 代码量 ~66% → 能力 ~60%**。三者递减,越往右越诚实。**本轮(2026-07-09)simd 支柱 simd-08/09 全面收口**(op 面 ~90→~217 + 数学函数 best-of + 算法级 6 件 + 四 ISA 含 AVX512-SDE/mac-NEON 真跑),生产 LOC 22.1k→28.4k;但这是**已完成支柱的能力面加宽**,功能完成度只从 ~58% 微升到 ~60%——缺口大头仍是 compute 自造 kernel(06/07/08)+ graph 支柱(01/02)整体未动工。已写部分质量高、SOTA 对标、三/四平台真机 + WSL TSan/ASan/SDE 验证(非 stub)。
+> **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当日生产已 **~53.3k**，单 **simd ~34.4k（≈64%）**。
+> 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
-> **真实LOC = 该里程碑自写代码的 cloc 实测（生产+测试，不含文档、不含 vendored 第三方）。**每步闭环后回填。
-> **预测/真实差距是"防玩具"信号**：差距大必须在该里程碑文档解释清楚——是"骨架版刻意精瘦、重活在后续里程碑"（合理），还是"偷懒 stub/空实现"（不可接受）。
-> 已完成几步真实普遍 < 预测，因走的是 **walking skeleton 路径**（每步只做最小纵切，模块重头留加厚里程碑）；非玩具的证据是每步的真测 + TSan + 对抗式自审，详见各文档。
+| 口径 | 当前（约） | 说明 |
+|---|---|---|
+| **生产 `src`+`include`** | **~53.3k** | 库本体硬锚 |
+| tests / bench / docs | ~22.4k / ~12.2k / ~14.2k | |
+| 自有工程（git 跟踪且排除 third_party） | **~105k** | |
+| git 全跟踪（含 in-tree third_party） | **~187k** | simdutf/mimalloc 等，**≠ 自写** |
+| **终态生产（纪律收口 A）** | **~65–80k** | 主预期 |
+| **终态生产（做满守界 B）** | **~80–100k** | compute/simd 收口更满 |
+| 失控上限 C | 120k+ 生产 | 应避免 |
 
-### 系统性 ~10x 高估的根因(2026-06-28 用户提出,数据调研)
+| 进度口径 | 怎么读 | 当前判断 |
+|---|---|---|
+| **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
+| **生产 LOC ÷ 终态 A 中值 ~72k** | 代码量进度 | **~74%**（53/72）；**≠ 能力完成度** |
+| **生产 LOC ÷ 终态 B 中值 ~90k** | 做满剧本 | **~59%** |
+| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | **约 55–70%** 主观带：sched/io/simd 主路径厚；**mem 尾、compute 仍简、graph 薄、close-01 未装门、simd 变宽真机/A1/C 尾未完** |
 
-观察:已完成里程碑真实 LOC 普遍是预测的 **1/5 ~ 1/20**(util/math 类小件最甚 ~10-18x)。**调研结论:主因是预测方法,非玩具**——三条证据:
+**模块生产粗表（2026-07-17）**：simd ~34.4k · io ~5.0k · compute ~3.8k · sched ~3.1k · container ~2.7k · platform ~1.4k · mem ~0.7k · graph ~0.6k · 其余基质 ~1.6k。
 
-1. **预测锚错基准**:roadmap "每里程碑 1-4k 行" 是按 **clay C++17 体量**估的。clay 满是 SFINAE/手写 Result/per-type allocator/C++17 polyfill;HYLE C++23 合法地更精简——`<bit>`/`<numbers>`/`std::expected`/concepts/`std::pmr` 把 clay 几百行样板**直接吃掉**(功能在 std 里,非没实现)。math-01 铁证:clay 458→28 行。
-2. **倍率 ∝ 可压缩性**:gap 最大的恰是样板最密的 util/math(std 吃得最多);gap 最小的是 error/platform/SwissTable 等**不可约**真逻辑(~3-7x)。**反向证明非均匀偷工**——若玩具,大件会同样缩水。
-3. **完整性标尺 = 能力覆盖(对照 coverage-map 查漏),非 LOC、非 API 签名**。每里程碑闭环对照 clay 同名文件查有没有漏掉仍需要的**能力**,缺的补或显式登记(container-04b/06b 即可见的登记延期)。**"吸纳 ≠ 追平 LOC,也 ≠ 追平接口"**——接口怎么好用/怎么 SOTA 怎么来。
+**一句话**：**代码量已过「小 clay 升级版」预期**；能力上是 **「中型混合计算底座 + 库中库级 SIMD」**，不是玩具，也还不是全愿景收口。ggml 等借入不计入自有完成度。
 
-**校准规则(此后预测按"可约性"分档,非一律 clay 体量):**
-- **std 现代化重的小件**(util/math/纯类型设施):预测 **0.03-0.2k**(真实多 30-200 行)。
-- **真算法/容器/平台原语**(hashmap/pool/parker/clock):预测 **0.1-0.5k**。
-- **不可约大件**(path/fs 字符串处理、SIMD kernel、sched asm/调度、io 后端、compute):预测**接近 clay 体量**(path clay 1372 行→HYLE 估 0.6-1k;simd/sched/io/compute 仍 2-10k 级)。**这些若也缩成 1/10 才是真玩具信号,届时必须补实现而非改预测。**
+> **真实LOC** = 该里程碑自写代码的 cloc 实测（生产+测试，不含文档、不含 vendored）。每步闭环后回填。
+> **预测/真实差距**是防玩具信号：骨架精瘦合理；stub 不可接受。
+> 早期「每里程碑 1–4k / 全库 22–40k」对 **std 可约小件系统性高估**，对 **simd 不可约大件系统性低估**——历史推演归档于 git，**以本节与 hyle-scope 规模节为当前真相**。
 
-### 完成时总量再投影 + "高估 vs 玩具"双向校准(2026-06-29,simd 支柱做完后)
-
-> simd 支柱 6 里程碑做完 = **实测 ~2.3k 生产**(旧表预测 10-16k)。用户质疑:"确定高估,不是玩具?" 实测核验后的诚实拆解(两半,别只甩一边):
->
-> 1. **不是玩具(铁证)**:simd 后端每个 **33 个真 op**(真 intrinsic)、**零 stub/TODO**、vec/dtype 测试断言 43/41 条 + 全 65536 fp16 模式硬件逐位对拍 + dot/saxpy 实测追平 Highway + 红队揪出真 ODR/SIGILL bug。玩具撑不住这些。
-> 2. **但"5-7x 纯高估"是误导**:simd 2.3k vs Highway 100k **非功能对等**——HYLE 现做 **4 lane 类型 + ~25 op + 2 ISA 实测**;Highway 是 **12 类型 + ~200 op(swizzle/gather/scatter/compress/table-lookup,HYLE 全无)+ 6+ ISA**。dot/saxpy 追平只证"**已做的 op 上**追平"。i8/u8/i16/u16/i64/u64 量化类型等是**登记延期的广度**,补齐后 simd 涨到 **~5-8k**(非停在 2.3k)。
->
-> **故 simd 真实高估约 2x(非 6x)**;foundation 的 5-6x 高估是真(std 取代)。校准规则 #3 对 simd "2-10k 级"基本对,只是要明确**2.3k 是"核心数值子集做好",非"全广度做完"**。
->
-> **完成时总量(实测密度再投影,含广度补全)**:HYLE 自有 **~22-30k 生产 / ~40-55k 含测试**(中值 ~26k 生产);第三方 vendored ~150-250k+(ggml 100k+ 主导);项目总足迹 ~200-300k+。详见 [`../architecture/hyle-scope.md` 规模节](../architecture/hyle-scope.md)。
-
-### 完成时总量第二轮下修(2026-07-02,io 破土后,分锚外推)
-
-> 上一版投影 30-45k(2026-06-29 simd 后)仍偏高。用**已完成模块的实测密度**分锚外推剩余(非用虚高的"1-4k/里程碑"),投影收窄下移到 **~22-30k**:
->
-> **实测锚**(已完成,可信):平台原语簇(platform 5 件)=1318 行 / 大容器簇(container)=2488 / sched 全支线(fiber+调度+同步+定时)=1055 / io 支柱(proactor 三后端 + net co_await + io_context + tcp + udp + shard-per-core)=1550。
->
-> **按锚外推剩余**(置信度递减):simd 广度(+2-3k,有 f32 核密度锚,中)/ sched 后段协程·取消·关闭(+1-1.5k,中)/ **io file·shmem(+1-2k,中——tcp+udp net 已落地=1.55k 实测锚)** / **compute 借 ggml 薄层(+3-5k,很低——0 行无锚)** / **graph(+2-3k,很低)** / close C-ABI·FFI·serialize(+2-3k,低)。
->
-> **→ 新投影 ≈22-30k 生产,中值 26k**;完成度 **11.28k ÷ 26k ≈ 43%**(band 22k→51% / 30k→38%)。**⚠️ 此值已被"审计上修"再被 2026-07-05 复评取代(现值 ~48% LOC / ~40% 能力,16.25k÷34k;分母 34k),本行保留为推导历史。**
->
-> **三条诚实标注(别把 43% 当"快到一半")**:
-> 1. **投影不确定性几乎全在两大支柱**(compute + graph)——0 行,外推置信度低;foundation+sched+simd+io 才是实测硬锚。若 compute/graph 比预想重(GPU 抽象、Vulkan kernel),分母会回涨。
-> 2. **LOC 43% ≠ 能力 43%**:compute/graph=0 行且是"异构混合极致性能"卖点本体;按差异化能力,主观更保守(头牌未动)。
-> 3. **这是第 3 轮修正**(76-120k → 30-45k → 22-30k),每轮下修都因"实测证明剩余也享 C++23 压缩"。**收敛趋势=早期系统性高估的证据**,但 compute/graph 未落地前不宜再激进下修——**22-30k 是当前最诚实区间,compute/graph 一落地就复核**。
->
-> **⤴ 审计上修(2026-07-03,参考库对照 + HTTP 定案)**:上面的 22-30k 是审计**之前**的投影。审计补登了一批真缺口机制(sched-09/10/11 并发原语·JoinHandle·阻塞卸载 + io-06/07/08/09 超时·multishot·TLS·DNS + io-10/11 HTTP serving/client + obs-02 埋点),这些是"漏了没抄/北极星必需"的真实新增工作量,**分母回涨到 ~28-40k**(见 roadmap 合计行)。故当时完成度按新分母 11.28k ÷ ~34k ≈ 33%。**⤴ 2026-07-05 复评**:分子随 io/sched 落地涨到 **16.25k**(cloc 实测,io-07b/07c/DEFER 等落地后),同分母 34k → **~48% LOC / ~40% 能力**(见顶部三口径表)。**分母未再涨、分子涨了 = 真实进展**,不是退步——早期"下修"是因剩余广度未列全,补全后回涨符合预期;此后分子稳步逼近 34k。
+**预测分档（仍有效）**
+- std 现代化小件：0.03–0.2k
+- 真算法/容器/平台原语：0.1–0.5k
+- 不可约大件（SIMD/sched/io/compute）：按能力面估，**勿再假设 simd「总共 5–8k」**
 
 ## 全部里程碑（阶段 × 模块）
 
@@ -149,7 +125,7 @@
 | [simd-22](./simd-22-dual-track.md) | P3 | simd | runtime/native/exact 双轨架构 | simd-21 | — | 见里程碑 | ✅ C++ 双轨完成；统一 Runtime、exact 整库、native 内联、自定义 fat-kernel、SVE/RVV；纯 C shim 按 close-01/02 收口 |
 | [simd-23](./simd-23-cxx-facade-and-perf-closure.md) | P3 | simd + bench | C++ span 易用性外观 + SIMD 原生 op / container hash 性能证据收口 | simd-22 | — | 计划中 | 📋 不把 381 op 逐个动态化；synthetic/alias 不进 op benchmark，约 14 个真原生缺口 + Stream 带宽；hash/hashmap 保持不依赖 simd，分别补 XXH3/wyhash 与 absl/F14 证据 |
 | [simd-24](./simd-24-foundation-completion.md) | P3 | simd | vqsort + search/reduction + mixed dot + mul_hi/hilo + sort types + complex 收口 | simd-22/23 | — | 见里程碑 | 🚧 vqsort partition 与 AVX2 u64 Compress 正确性/ASan 已收口；NEON KV64 性能继续狩猎，其余按六阶段实施 |
-| [simd-25](./simd-25-scalable-product-parity.md) | P3 | simd | SVE/RVV 语义、产品 kernel、派发与性能证据追平 | simd-22/24 | — | 见里程碑 | 🚧 阶段0已落：80 个 fixed-only 名字机械复现并全量分类为 generic 10 / selector 13 / fixed-model 28 / extension 3 / portable-missing 26；下一步 target/feature mechanization 与产品 compile probes |
+| [simd-25](./simd-25-scalable-product-parity.md) | P3 | simd | SVE/RVV 语义、产品 kernel、派发与性能证据追平 | simd-22/24 | — | 见里程碑 | 🚧 软件与 QEMU 收口：portable/fixed-model/extension 语义 backlog 均归零；math/dtype/bitpack/sort 真实产品 TU、SVE full-VL partition、HWCAP2/riscv_hwprobe 精细探测及公开 Runtime/exact 门已落。SVE 94×5，RVV base 90×4、Zvbb/Zvbc 91×4；仅余真机性能与 RVV optional probe 正向签字 |
 | [sched-01](./sched-01-fcontext-fiber.md) | P4 | sched | fcontext 6 平台 + 栈池(骨架:单 worker 单队列跑一 fiber) | container-01,mem-01,platform-01 | 2-3k | 226 (+737 vendored asm) | ✅ 完成(仅证切换,队列/worker 留 sched-02) |
 | [sched-02](./sched-02-runqueue-worker.md) | P4 | sched | per-core 有界 run-queue + LIFO slot | sched-01,container-01 | 2-3k | 205 | ✅ 完成(单worker驱动,steal留sched-03。**注:此 RunQueue 的 LIFO slot 当时未进多线程生产 scheduler——迁 WsFifoQueue 时丢了,2026-07-05 由 sched-03 复杂度优化加回**) |
 | [sched-03](./sched-03-work-stealing.md) | P4 | sched | work-stealing + spin-then-park + unpark 接力 | sched-02,container-08 | 2-3k | 340 (+195 三优化) | ✅ 完成(多worker偷取+park;§2.3②③防惊群当时诚实延迟,**后于 sched-05 以 conditional-notify 落地**)。**三复杂度优化(2026-07-05,借调研 tokio worker.rs/idle.rs)**:① **LIFO fast-slot**——同 worker 唤醒(reinject on worker)投本 worker 单槽 cache-hot 立即恢复,跳过 global CAS+notify futex,ping-pong Win −32%/Lin −35%(kMaxLifoPolls=3 反饥饿);② **remove_sleeper O(1)**——per-worker position 索引 swap-remove 消每次 park 退出的 O(worker数)扫描;③ **global-queue 周期检查**(tick%61)——修真饥饿 bug(探针实证本地 firehose 饿死全局注入,回归测试双向验证)。Win 103/103 + WSL setarch TSan 103/103 零 race。详见 benchmarks-sched LIFO 节 + sched-design §2.2/§2.3 |

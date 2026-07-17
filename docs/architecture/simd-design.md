@@ -1,6 +1,6 @@
 # HYLE simd/ 设计
 
-> SIMD 抽象层（Tier 1，性能焦点 #1）。clay 这块基本空白，HYLE 净新 ~5-8k 行（详见 hyle-scope.md 规模节）。上游约束见 [`hyle-scope.md`](./hyle-scope.md)、[`engineering-charter.md`](./engineering-charter.md)。
+> SIMD 抽象层（Tier 1，性能焦点 #1）。clay 这块基本空白。早期「净新 ~5–8k」已作废：2026-07-17 实测 **~34k 生产**（`src/simd`+`include/hyle/simd`），约占全库生产 **~64%**。体量与终态见 [`hyle-scope.md`](./hyle-scope.md) 规模节。上游约束见同文档与 [`engineering-charter.md`](./engineering-charter.md)。
 >
 > **2026-07-16 终态索引**：部署和维护以
 > [`simd-dispatch-guide.md`](./simd-dispatch-guide.md) 为准；vendor 边界以
@@ -143,7 +143,7 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 ## 落地清单
 
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
-2. ✅ SSE4.2 / AVX2 / AVX512 / NEON / SVE / RVV 后端 + 双轨部署。四定宽 ISA 均真跑；AVX512 由 Intel SDE 验证。SVE/RVV 用 sizeless traits + 运行期 `Lanes`；预编译 Runtime 的 scalable 变体已覆盖 ops/random/scan/search、math 主 HYLE/Highway op、dtype f16/bf16↔f32、bitpack 与 sort（少量 math optional op 与 fp8 仍逐项回落）。bitpack 用固定 128-bit logical block 保持跨 VL/VLEN 格式稳定；RVV sort 使用真实 LMUL=1 全宽，SVE sort 使用 128/256-bit capped SVE tier 保持 sorting network 为 2 的幂。partial tag 的 `Rebind+kPow2+cap` 在 vec.h 共享层表达，后端用 predicate/`vl` 执行；RVV 的 V-only op 无法从 LMUL=1 native type 恢复负 `kPow2`，要求这类产品核使用全宽 tag，不能伪称 fractional LMUL。定宽 partial 的物理形态按 ISA：NEON 用 D/Q，x86 用分层 XMM/YMM/ZMM（sub-XMM 仍是 XMM 低 lanes，但类型和消费者保留 N）。SVE/RVV math+dtype+bitpack+sort 已过多 VL/VLEN QEMU correctness/dispatch 门；SVE sort 的全 VL partition 与两者真机性能闸仍属 simd-25 未完成项。
+2. ✅ SSE4.2 / AVX2 / AVX512 / NEON / SVE / RVV 后端 + 双轨部署。四定宽 ISA 均真跑；AVX512 由 Intel SDE 验证。SVE/RVV 用 sizeless traits + 运行期 `Lanes`；预编译 Runtime 的 scalable 变体已覆盖 ops/random/scan/search、math、dtype f16/bf16↔f32、bitpack 与 sort（3 个精确 libm op 与 fp8 仍逐项回落）。bitpack 用固定 128-bit logical block 保持跨 VL/VLEN 格式稳定；RVV sort 使用真实 LMUL=1 全宽，SVE 的递归 partition 使用完整物理 VL，只有要求 2 的幂 lane 的基础 sorting network 保持 128/256-bit cap。partial tag 的 `Rebind+kPow2+cap` 在 vec.h 共享层表达，后端用 predicate/`vl` 执行；RVV 的 V-only op 无法从 LMUL=1 native type 恢复负 `kPow2`，要求这类产品核使用全宽 tag，不能伪称 fractional LMUL。定宽 partial 的物理形态按 ISA：NEON 用 D/Q，x86 用分层 XMM/YMM/ZMM（sub-XMM 仍是 XMM 低 lanes，但类型和消费者保留 N）。SVE/RVV 公开产品 API、Runtime 与 exact 路径已过多 VL/VLEN QEMU correctness/dispatch 门；剩余的是两者真机性能闸。
 3. ✅ dtype 转换（fp16/bf16 硬件路径）。**simd-05。** f32→bf16 的 **AVX-512-BF16 native `vcvtneps2bf16`** 档随 AVX512 变体 SDE 可真跑(此前仅 objdump 验)。
 4. ✅ 数学函数。simd-06/09 的 best-of 选择与 GELU/softmax 组合核均已落地；simd-20 将历史 Highway/xsimd 产品核摘为 HYLE 自有实现，外部库仅在 benchmark 中作对照。`hypot_f32_batch` 保留 overflow-safe 语义，`hypot_in_range_f32_batch` 显式采用 direct-formula 输入域契约。
 5. ✅ `ops/`：dot/saxpy/add 的 f32/f64 共享 native body 跨 scalar/SSE4/AVX2/AVX512/NEON/SVE/RVV；普通 API 走 Runtime，exact build 编译期直连，用户 TU 可走 `native::` 内联。
@@ -242,9 +242,9 @@ P4 新增12个公开名：四个 FMA 符号/交错变体、`MinMagnitude/MaxMagn
 3. store+reload 的 `T buf[kMaxLanes]` 是**标量数组**(T=float/int,合法);`kMaxLanes` 从"精确"变"上界"(kNativeVectorBytes=256=2048-bit 上界),循环边界用运行期 `Lanes(d)`。SVE 的 gather/compress/scatter/predicated-tail 走原生 `svld1_gather`/`svcompact`/`svst1_scatter`/`svwhilelt`。
 4. `Lanes(d)` 在 scalable target 运行期求值，并按 `kPow2` 缩放后受 `kMaxLanes` 截断；`Rebind<T,D>` 同步调整 `kPow2`，保证窄化后逻辑 lane 数不变。`FixedTag<T,N>` 因而仍是 `min(硬件 lanes,N)`；接受 D-tag 的 load/store、masked/gather/scatter、reduce、reverse、slide、whole-vector swizzle 与 widen/demote 只观察逻辑 active lanes。只接收 native `V` 的重载按 full-vector 契约运行，因为 sizeless `V` 本身不携带 partial tag。正 `kPow2` 只有在最小 128-bit 原生向量容不下目标 lane 数时才表示 grouped vector；SVE/RVV 当前单寄存器后端对此 fail-fast。
 
-**验证(qemu-aarch64,同一二进制强制 VL 128/256/384/512/2048)**：当前正式门为 **39 个 gtest × 5 VL 全绿**（21 backend、2 math product、2 math Runtime/public dispatch、3 dtype product/dispatch、2 bitpack product/dispatch、9 sort product/dispatch）；首项用 `PR_SVE_SET_VL` 设置并回读实际 VL，避免 CPU model 参数与进程当前 VL 脱节。覆盖十种 lane、P0 泛型消费者、P1 swizzle/分段 load-store、P2 widen/quantize/reduce、P4 FMA/magnitude/widen/bf16/mod、partial tag、128-bit block 与全部 sort 入口。2048 门揪出并修复了 u8 256-lane `SlideUpLanes` 依赖索引下溢越界的旧洞；384-bit 门覆盖非 2 次幂 lane 数。`scripts/sve-qemu-test.sh` 可复现正式五宽门。
+**验证(qemu-aarch64,同一二进制强制 VL 128/256/384/512/2048)**：当前正式门为 **94 个 gtest × 5 VL 全绿**；公开 ops/random/search/scan/math/dtype/bitpack/sort、真实 Runtime/CPU probe、exact 路径与 tail 都在门内。首项用 `PR_SVE_SET_VL` 设置并回读实际 VL，避免 CPU model 参数与进程当前 VL 脱节。覆盖十种 lane、全部 scalable 语义、partial tag、128-bit block、full-VL partition 与所有 sort 入口。2048 门揪出并修复了 u8 256-lane `SlideUpLanes` 依赖索引下溢越界的旧洞；384-bit 门覆盖非 2 次幂 lane 数。SVE2-AES 独立档也是 **94×5**。`scripts/sve-qemu-test.sh` 可复现正式五宽门。
 
-**scalable P0-P4 当前能力面**:SVE/RVV 已具备泛型 complex/128-cmp/Newton/rotate 所需原语、whole-vector swizzle/table/slide、原生 2/3/4 路分段 load-store，以及 PromoteEven/Odd、Truncate/U8FromU32、跨 signedness Demote2、widen-dot、SumsOf2/4/8、任意 lane 数 ReduceMul、Q15 与 saturated abs/neg。量化/点积与结构 op 已和 HYLE 定宽后端对称；P4新增的FMA/magnitude、even/odd widen、bf16 accumulate和i32/u32 Mod也由共享泛型层直接实例化。剩余软件项仅为 gap inventory 的 P5。硬边界仍是 SVE2 crypto、RVV Zvbb 与超过 `uint64_t` 容量的 mask-bits 位域接口。
+**scalable 当前能力面**:SVE/RVV 已具备泛型 complex/128-cmp/Newton/rotate 所需原语、whole-vector swizzle/table/slide、原生 2/3/4 路分段 load-store，以及 PromoteEven/Odd、Truncate/U8FromU32、跨 signedness Demote2、widen-dot、SumsOf2/4/8、任意 lane 数 ReduceMul、Q15 与 saturated abs/neg。量化/点积、P5 与结构 op 已和 HYLE 定宽后端对称；机械差集只剩共享 generic 10 与内部 selector 13，`portable_missing/fixed_model/extension_gated` 均为 0。可选硬件快路仍须按 SVE2/RVV extension 独立分档；超过 `uint64_t` 容量的 mask 使用 byte-buffer API。
 
 ### RVV scalable 后端(simd-09,第二个 scalable 后端,镜像 SVE)
 
@@ -252,18 +252,18 @@ P4 新增12个公开名：四个 FMA 符号/交错变体、`MinMagnitude/MaxMagn
 
 **RVV 独特处(vs SVE)**:① **每 intrinsic 显式 `vl`**(SVE 用隐式谓词)——从 `Lanes(d)` 算一次穿进每个 op;② **unsigned lane 用独立助记符**(`vminu/vmaxu/vmsltu/vmsgtu` 非 `vmin` 泛型),signed/unsigned `if constexpr` 分派(这是 RVV 铺量的主要 gotcha);③ mask 是 `vbool<ratio>_t`(ratio=SEW/LMUL)。
 
-**验证**：当前正式门为 **36 个 gtest × VLEN 128/256/512/1024 全绿**（18 backend、2 math product、2 math Runtime/public dispatch、3 dtype product/dispatch、2 bitpack product/dispatch、9 sort product/dispatch）；`P4MulModMagnitude`直接实例化共享FMA/magnitude/widen/bf16/mod层，`Block128Ops` 直接钉住 VQSort 新依赖的 load-dup/block shuffle，1024-bit 门同时覆盖 unsigned `ReduceMin/Max` 助记符分派、tail-zero、oversize StoreN 截断与 swizzle。`scripts/rvv-qemu-test.sh` 固化同一二进制四宽门。**边界**:QEMU 当前最高 1024-bit，代码对 2048-bit u8 的 FirstN/FindLastTrue 使用不截断的 unsigned 逻辑；更宽 RVV 由 2048-bit HYLE 上界 fail-fast。Zvbb 位计数仍按硬件 gate 登记。
+**验证**：当前正式 base 门为 **90 个 gtest × VLEN 128/256/512/1024 全绿**；公开 ops/random/search/scan/math/dtype/bitpack/sort、真实 Runtime/CPU probe、exact 路径与 tail 都在门内。Zvbb/Zvbc 独立档各 **91×4**，既验证扩展指令也验证不会污染 base。`P4MulModMagnitude`直接实例化共享FMA/magnitude/widen/bf16/mod层，`Block128Ops` 直接钉住 VQSort 新依赖的 load-dup/block shuffle，1024-bit 门同时覆盖 unsigned `ReduceMin/Max` 助记符分派、tail-zero、oversize StoreN 截断与 swizzle。`scripts/rvv-qemu-test.sh` 固化同一二进制四宽门。**边界**:QEMU 当前最高 1024-bit，代码对 2048-bit u8 的 FirstN/FindLastTrue 使用不截断的 unsigned 逻辑；更宽 RVV 由 2048-bit HYLE 上界 fail-fast。QEMU user-mode 8.2 不回报 `riscv_hwprobe` 可选位，真机仍须正向验证。
 
 ### scalable math/dtype/bitpack/sort 产品层（simd-25）
 
-`transcendental_highway_scalable.cc`、`cvt_scalable.cc` 与 `bitpack_hyle_scalable.cc` 是 SVE/RVV 共享的产品 body，但每个目标仍编译为隔离的 ISA TU 和稳定后缀符号。动态库由 baseline CPU probe 与各 module tier 选择；exact SVE/RVV 构建在编译期直连，目标对象不引用 Runtime/CPU probe。math 主 f32/f64 HYLE/Highway op 与 dtype f16/bf16↔f32 已在两后端上架。gamma、complex、direct-form hypot 与 fp8 等 optional op 仍按项回退，因此 module tier 表示主产品核，不声称每个 op 都有 scalable 版本。bitpack 用 `CappedTag<T, 16/sizeof(T)>` 固定 logical block；全 56 种 type/bit-width 组合逐字节对拍 scalar-128 D-tag 参考核。它解决产品可用性与格式稳定性，不代表已证明随 VL 线性扩展。RVV VQSort 以全宽 LMUL=1 tag 覆盖 sort/partial/select；SVE VQSort 用 TU-local DFromV + SortTag 共同 cap 到 256 bit，避免 VL=384 的 12-lane 非二次幂网络。两者均覆盖六种 key、KV、NaN/canary；SVE 五档 VL、RVV 四档 VLEN 全绿。SVE capped tier 仍待真机证明，以及升级为吃满 VL 的 partition 核。
+`transcendental_highway_scalable.cc`、`cvt_scalable.cc` 与 `bitpack_hyle_scalable.cc` 是 SVE/RVV 共享的产品 body，但每个目标仍编译为隔离的 ISA TU 和稳定后缀符号。动态库由 baseline CPU probe 与各 module tier 选择；exact SVE/RVV 构建在编译期直连，目标对象不引用 Runtime/CPU probe。math 的 tgamma、complex、direct-form hypot 与 extras 已 scalable；`lgamma/remainder/nextafter` 因正确性合同保留 scalar，fp8 仍按项回退。因此 module tier 表示主产品核，不声称每个 op 都有 scalable 版本。bitpack 用 `CappedTag<T, 16/sizeof(T)>` 固定 logical block；全 56 种 type/bit-width 组合逐字节对拍 scalar-128 D-tag 参考核。它解决产品可用性与格式稳定性，不代表已证明随 VL 线性扩展。RVV VQSort 以全宽 LMUL=1 tag 覆盖 sort/partial/select；SVE VQSort 的基础 sorting network cap 到 256 bit，递归 O(n) partition 对大子问题恢复完整物理 VL。两者均覆盖六种 key、KV、NaN/canary；SVE 五档 VL、RVV 四档 VLEN 全绿，仍待真机性能签字。
 
 ## 已定决策（1/2/3/4 均已落地）
 
 1. **vector 抽象用定宽 `vec<T,N>` 还是 scalable（length-agnostic）**？**scalable-friendly 接口 + 先实现定宽后端**——接口按 length-agnostic 设计（参考 Highway，将来加 SVE/RVV 不改 API），但首版只实现定宽后端（x86 SSE4.2/AVX2/AVX512 + ARM NEON，它们本就定宽）。对冲：不堵未来又不先背复杂度。
    > **深读 highway 落地约束**：照搬 highway 的 **D-tag 接口契约**——传零大小标签 `D=Simd<T,N,kPow2>`，op 形如 `VFromD<D> Set(D,T)`，`Lanes(d)` 取宽度。**关键：`Lanes(d)` 必须设计成可运行期求值**（定宽后端是 constexpr、SVE 后端是 `svcntw()` 运行期），否则将来加 SVE 要改 API。highway 已证同源码 x86/SVE 共存可行。**只照搬接口契约，不 vendor 整个 highway**（其 ops/ 全平台万行级、重宏元编程，违背"贴硬件/不过度抽象"）。给 `vec.h` 设行数警戒线（初版 ~2k/后端；随做全 op 面已增至 2-3k，见上节实测），逼近 Highway 每-target 量级就是丧失了不 vendor 的理由。
 2. **数学核 vendor 现成库还是自有实现**？阶段上先借 Highway/xsimd 建立 best-of 与精度基线，再由 simd-20 提取成 HYLE 自有实现。产品 `include/`/`src/` 零 Highway/xsimd 依赖；外部 pin checkout 只在 benchmark 中继续充当性能与精度对照。
-3. **要不要 SVE/RVV**？**两者均已落地并完成 scalable P0-P4 的共享泛型实例化**：SVE qemu-aarch64 VL 128/256/384/512/2048，RVV qemu-riscv64 VLEN 128/256/512/1024；同一二进制逐宽对拍 scalar。D-tag 的运行期 `Lanes(d)`、partial `kPow2`/cap、sizeless traits 与原生 predication/`vl` 共同维持公开 API 不变。定宽 P3 Masked* 与 P4 Mul/Mod/Magnitude 已完成；剩余软件项为 P5，硬件 gate 以 gap inventory 为准。
+3. **要不要 SVE/RVV**？**两者均已落地并完成寄存器语义闭包与主产品 Runtime**：SVE qemu-aarch64 VL 128/256/384/512/2048，RVV qemu-riscv64 VLEN 128/256/512/1024；同一二进制逐宽对拍 scalar。D-tag 的运行期 `Lanes(d)`、partial `kPow2`/cap、sizeless traits 与原生 predication/`vl` 共同维持公开 API 不变。剩余硬门是真机性能与可选 RVV feature probe 正向验证，不再有 portable register-op backlog。
 4. **dtype 层借谁**？**自造，但参照 highway 的 `PromoteTo/DemoteTo` intrinsic 用法**（F16C `_mm_cvtph_ps`、AVX512-BF16 `cvtne2ps`、NEON-BF16）——照抄 intrinsic 不照抄抽象。Highway/xsimd 数学核无 fp16/bf16，唯 highway 当原生 lane 类型且硬件路径全；但 dtype 逻辑不复杂（bf16=fp32 高 16 位移位），自造避开 vendor 整个 highway。
 
 ## 参考

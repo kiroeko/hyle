@@ -95,41 +95,78 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 ## 规模
 
-> HYLE 自有 **~28-40k 生产（中值 ~34k，2026-07-03 参考库审计 + HTTP 定案后上修;旧值 22-30k 是审计前投影）**;含第三方 vendored 项目总足迹 **~200-300k+**，由 ggml 主导。LOC 不是 SOTA 标尺——靠精简自有 + 借成熟件，不靠堆行数。实时进度以 milestones/README 为准。
+> **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
+> **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
+> **2026-07-17 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当日生产已 **~53k**，单 simd **~34k**。中期评估见 [`../milestones/midterm-report-2026-07-scale-positioning.md`](../milestones/midterm-report-2026-07-scale-positioning.md)。
 
-**完成时投影（已完成 = 9,932 生产 cloc 实测,其余按已完成模块的实测密度分锚外推）:**
+### 当前实测（2026-07-17）
 
-| 部分 | 生产 LOC | 依据 / 置信度 |
+| 口径 | code | 说明 |
+|---|---:|---|
+| **生产 `src`+`include`** | **~53.3k** | 库本体 |
+| tests | ~22.4k | |
+| bench | ~12.2k | |
+| docs | ~14.2k | |
+| 自有工程（`--vcs=git --exclude-dir=third_party,.deps`） | **~105k** | 含测/文档/脚本 |
+| git 全跟踪（含 in-tree third_party） | **~187k** | 含 simdutf/mimalloc/fcontext 等 |
+| 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
+
+**生产按模块（src+include，约）：**
+
+| 模块 | code | 占生产 |
+|---|---:|---:|
+| **simd** | **~34.4k** | **~64%** |
+| io | ~5.0k | ~9% |
+| compute | ~3.8k | ~7% |
+| sched | ~3.1k | ~6% |
+| container | ~2.7k | ~5% |
+| platform | ~1.4k | ~3% |
+| mem | ~0.7k | |
+| graph | ~0.6k | |
+| 其余基质（time/util/error/obs/…） | ~1.6k | |
+
+### 完成时投影（2026-07-17 重估，取代 28–40k）
+
+| 剧本 | 生产 code | 条件 |
+|---|---:|---|
+| **A 纪律收口（主预期）** | **~65–80k**（中值 **~70–75k**） | simd 按补缺清单收口不扩名；compute 借 ggml + 必要自造；mem/sched/io/graph 补完设计项 |
+| **B 能力做满仍守边界** | **~80–100k** | simd-25 真机+策略收口；compute Vulkan 欠账 + 若干自造 kernel；graph-02 完整 |
+| **C 失控上限（避免）** | **120k+** | 继续镜像 Highway contrib / 自研算子帝国 / 协议层吸入 infra |
+
+**含测试粗乘**：生产 ×1.4–1.6 → A 约 **95–125k**、B 约 **120–160k**（tests only）。
+**自有工程（+bench+docs）**：A 约 **130–160k**、B 约 **160–200k**。
+
+**剩余增量直觉（相对今日 ~53k 生产，非承诺）：**
+
+| 方向 | 再长（生产） |
+|---|---:|
+| simd 补缺（A1/C 尾/simd-25 收口） | +2～8k |
+| mem（NUMA/大页/专用分配器等） | +1～4k |
+| sched 边角（栈 guard 等） | +0.5～2k |
+| io 尾（shmem 等；HTTP2 另计） | +1～4k |
+| compute（薄适配↔认真自造） | +3～15k（主弹性） |
+| graph | +2～6k |
+| C-ABI/close-01 + 基质 | +1～4k |
+
+### 第三方（足迹，非自有生产 KPI）
+
+| 库 | 约行数 | 状态 |
 |---|---|---|
-| 已完成（foundation + simd f32 核 + sched 全支线 + io 收割层） | **~9.9k** | cloc 实测(硬锚) |
-| simd 广度补全（int 量化类型 + 更多 op + AVX512 启用） | +~2-3k | 有 f32 核密度锚,中 |
-| sched 后段（协程胶水/取消/优雅关闭/栈 guard page） | +~1-1.5k | 核心已 1k,后段更薄,中 |
-| io/ net·socket·file（proactor+双后端已 done,net/ 未做） | +~2-3.5k | 参照 platform 1.3k,低(net/ 未开工) |
-| compute/（device/stream + ggml bridge + Vulkan） | +~3-5k | 借 ggml 薄层,很低(0 行无锚) |
-| graph + mem-05/06 + C-ABI shim + T3（serialize/hash） | +~4-6k | 多借 simdjson/flatbuffers,低 |
-| **HYLE 自有 生产合计** | **~28-40k**(中值 ~34k) | 2026-07-03 审计上修取代旧"22-30k";上方分项是审计前的下修历史,io net/超时/TLS/HTTP 现已 done、compute/graph 仍 0 |
-| **HYLE 自有 含测试**（test/prod≈0.63 实测,16.25k 生产 / 10.29k 测试,2026-07-05） | **~46-66k** | — |
-| **当前实测(2026-07-05)** | **生产 16.25k / 测试 10.29k** | 进度 ~48% LOC / ~40% 能力(÷34k);里程碑计数 ~82% 系高估(compute/graph 头牌 0 行) |
+| mimalloc | ~15k | in-tree vendored |
+| simdutf | ~60k（整树 cloc） | 可选 UTF-8 薄借，门控宏 |
+| fcontext | ~0.8k + asm | vendored |
+| xxhash 等 | 小 | vendored / 薄封 |
+| highway/xsimd | 0 产品 | 仅 bench 外部 pin |
+| **ggml** | **100k+** | compute 算子供应商——单独可压过 HYLE 自有 |
+| **第三方合计（含 ggml）** | **~150–300k+** | 由 ggml 主导 |
 
-**第三方（vendored，计入项目足迹）——大头，由 ggml 主导：**
+### 读数纪律
 
-| 库 | 行数 | 状态 |
-|---|---|---|
-| mimalloc | ~15k | 已 vendored |
-| xxhash | ~6k | 已 vendored |
-| fcontext | ~0.8k | 已 vendored（仅 3 汇编） |
-| highway/xsimd | 0 产品 LOC | simd-20 已摘除；外部 pin checkout 只用于 benchmark 对照 |
-| simdutf | 可选外部依赖 | 仅 `HYLE_SIMD_SIMDUTF` 门控的 UTF-8 薄借，不属于 SIMD 核心产品面 |
-| liburing | ~12k | 将借（io） |
-| **ggml** | **100k+** | **将借（compute）——单独就压过 HYLE 自有全部** |
-| simdjson/flatbuffers/capnproto | tens of k | 将借（serialize） |
-| **第三方合计** | **~150-250k+** | 由 ggml 主导 |
-
-**当前 LOC 低 ≠ 玩具，也 ≠ 已精简到位**——两条都要看：
-- **非玩具**：已实现部分零 stub/TODO、测试密（simd 全 65536 fp16 硬件逐位对拍、红队揪真 bug），玩具撑不住。
-- **scope 仍会长回**：simd 实测 2.3k 是 Highway 数值子集（4 lane 类型 + ~25 op + 2 ISA），非功能对等（Highway 12 类型 + ~200 op + 6 ISA）。量化类型/更多 op 是显式延期，补齐后涨到 ~5-8k。**别把"广度未铺开"误读成"已精简完毕"。**
-
-**实现粒度**：上表是体量、**不是步骤**。落地为**约 58 个里程碑**（milestones/README 为准），每个 1-4k 行、可独立编/测/基准。6 个"阶段 P0-P6"是依赖层拓扑序，不是 6 步。先走 walking skeleton（纵切各层最小片）打通调度脊、验最高风险，再逐里程碑加厚。
+- **LOC 不是 SOTA 标尺**；完成度看能力清单 + 真测，不看是否碰到 70k/100k 整数。
+- **里程碑计数 ≠ 完成度**（颗粒不等重）。
+- **git 全跟踪 ~187k ≠ 自写 187k**（含 third_party）。
+- 早期「simd 完成 ~5–8k / 全库完成 ~34k」是 **广度未展开时的低估**，不是当前目标。
+- 实现粒度：里程碑表见 milestones/README；拓扑序见 roadmap。
 
 ## 边界外（明确不做）
 
