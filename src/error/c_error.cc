@@ -3,9 +3,9 @@
 
 #include "hyle/c/error.h"
 
-#include <atomic>
+#include <cstdarg>
+#include <cstdio>
 #include <cstring>
-#include <new>
 #include <string_view>
 
 #include "hyle/error/error_handler.h"
@@ -219,6 +219,25 @@ void hyle_error_report(hyle_severity severity, const char* file, uint32_t line,
   hyle::error_report(static_cast<hyle::Severity>(severity), f, line, "%s", msg);
 }
 
+void hyle_error_reportf(hyle_severity severity, const char* file, uint32_t line,
+                        const char* fmt, ...) {
+  const char* f = file != nullptr ? file : "";
+  char buf[1024];
+  buf[0] = '\0';
+  if (fmt != nullptr) {
+    va_list ap;
+    va_start(ap, fmt);
+    // vsnprintf is C++-safe here; cap leaves room for NUL.
+#if defined(_MSC_VER)
+    (void)_vsnprintf_s(buf, sizeof(buf), _TRUNCATE, fmt, ap);
+#else
+    (void)std::vsnprintf(buf, sizeof(buf), fmt, ap);
+#endif
+    va_end(ap);
+  }
+  hyle::error_report(static_cast<hyle::Severity>(severity), f, line, "%s", buf);
+}
+
 int hyle_error_c_abi_version(void) { return HYLE_ERROR_C_ABI_VERSION; }
 
 int hyle_error_api_get(hyle_error_api* out, int expected_abi) {
@@ -239,6 +258,8 @@ int hyle_error_api_get(hyle_error_api* out, int expected_abi) {
   out->status_to_string = &hyle_status_to_string;
   out->error_set_handler = &hyle_error_set_handler;
   out->error_report = &hyle_error_report;
+  out->error_reportf = &hyle_error_reportf;
+  out->c_abi_version = &hyle_error_c_abi_version;
   return 0;
 }
 

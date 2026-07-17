@@ -3,7 +3,7 @@
  * Pure C ABI for the HYLE platform module (close-01).
  *
  * Naming: every symbol is `hyle_*` / `HYLE_*`.
- * Do NOT include hyle/platform/*.h from C or cross-compiler FFI.
+ * Do NOT include hyle/platform/ headers from C or cross-compiler FFI.
  *
  * Subsystems: wait/Parker, Thread, DynLib, virtual memory, fs/env, cpu features.
  * Docs: docs/guide/c-platform.md
@@ -35,7 +35,8 @@ extern "C" {
 #  define HYLE_PLATFORM_C_API
 #endif
 
-#define HYLE_PLATFORM_C_ABI_VERSION 1
+/* Breaking change to hyle_platform_api layout bumps this. */
+#define HYLE_PLATFORM_C_ABI_VERSION 2
 
 /* ========================================================================== */
 /* wait / Parker                                                              */
@@ -76,6 +77,31 @@ typedef struct hyle_thread_opts {
   unsigned affinity_cpu;     /* logical CPU if has_affinity_cpu */
 } hyle_thread_opts;
 
+/* Zero-init helper: hyle_thread_opts o = HYLE_THREAD_OPTS_INIT; */
+#define HYLE_THREAD_OPTS_INIT \
+  { NULL, 0, 0, 0, 0 }
+
+static inline hyle_thread_opts hyle_thread_opts_default(void) {
+  hyle_thread_opts o = HYLE_THREAD_OPTS_INIT;
+  return o;
+}
+static inline void hyle_thread_opts_set_name(hyle_thread_opts* o,
+                                             const char* name) {
+  if (o) o->name = name;
+}
+static inline void hyle_thread_opts_set_stack_size(hyle_thread_opts* o,
+                                                   size_t bytes) {
+  if (!o) return;
+  o->has_stack_size = 1;
+  o->stack_size = bytes;
+}
+static inline void hyle_thread_opts_set_affinity(hyle_thread_opts* o,
+                                                 unsigned cpu) {
+  if (!o) return;
+  o->has_affinity_cpu = 1;
+  o->affinity_cpu = cpu;
+}
+
 /* *out set on success. Returns hyle_status (free on error; OK has no heap). */
 HYLE_PLATFORM_C_API hyle_status hyle_thread_spawn(hyle_thread_o** out,
                                                   hyle_thread_entry_fn entry,
@@ -106,6 +132,13 @@ HYLE_PLATFORM_C_API void* hyle_dynlib_symbol(hyle_dynlib_o* lib, const char* nam
 HYLE_PLATFORM_C_API const char* hyle_dynlib_last_error(void);
 HYLE_PLATFORM_C_API const char* hyle_dynlib_extension(void); /* "dll"/"so"/"dylib" */
 
+/* Open path and resolve symbol. On success *out_lib owns the library (caller
+ * must hyle_dynlib_close) and *out_sym is the address. Returns 1 on success. */
+HYLE_PLATFORM_C_API int hyle_dynlib_open_symbol(const char* path,
+                                                const char* name,
+                                                hyle_dynlib_o** out_lib,
+                                                void** out_sym);
+
 /* ========================================================================== */
 /* Virtual memory                                                             */
 /* ========================================================================== */
@@ -130,6 +163,14 @@ HYLE_PLATFORM_C_API int hyle_vm_decommit(void* ptr, size_t size);
 HYLE_PLATFORM_C_API int hyle_vm_release(void* base, size_t size);
 HYLE_PLATFORM_C_API int hyle_vm_protect(void* ptr, size_t size, hyle_protect prot);
 HYLE_PLATFORM_C_API const char* hyle_vm_last_error(void);
+
+/* Reserve+commit RW; size rounded up to page. Free with
+ * hyle_vm_release(p, hyle_page_align_up(size)). */
+HYLE_PLATFORM_C_API void* hyle_vm_alloc_rw(size_t size);
+/* Release a block from hyle_vm_alloc_rw (size is the original request). */
+static inline int hyle_vm_free_rw(void* p, size_t size) {
+  return hyle_vm_release(p, hyle_page_align_up(size));
+}
 
 /* RAII region (opaque). destroy releases the reservation. */
 typedef struct hyle_vm_region_o hyle_vm_region_o;
@@ -234,7 +275,7 @@ HYLE_PLATFORM_C_API int hyle_cpu_supports_isa(uint32_t isa);
 HYLE_PLATFORM_C_API const char* hyle_cpu_isa_name(uint32_t isa);
 
 /* ========================================================================== */
-/* Optional API table                                                         */
+/* API table — every DLL-exported function (header-only inlines omitted)      */
 /* ========================================================================== */
 
 typedef struct hyle_platform_api {
@@ -255,26 +296,74 @@ typedef struct hyle_platform_api {
   hyle_status (*thread_spawn)(hyle_thread_o**, hyle_thread_entry_fn, void*,
                               const hyle_thread_opts*);
   void (*thread_join)(hyle_thread_o*);
+  int (*thread_joinable)(const hyle_thread_o*);
   unsigned (*hardware_concurrency)(void);
+  uint64_t (*this_thread_id)(void);
+  void (*this_thread_yield)(void);
+  void (*this_thread_set_name)(const char*);
 
   /* dynlib */
   hyle_dynlib_o* (*dynlib_open)(const char*);
   hyle_dynlib_o* (*dynlib_get)(const char*);
+  hyle_dynlib_o* (*dynlib_current)(void);
   void (*dynlib_close)(hyle_dynlib_o*);
+  int (*dynlib_valid)(const hyle_dynlib_o*);
   void* (*dynlib_symbol)(hyle_dynlib_o*, const char*);
+  const char* (*dynlib_last_error)(void);
+  const char* (*dynlib_extension)(void);
+  int (*dynlib_open_symbol)(const char*, const char*, hyle_dynlib_o**, void**);
 
-  /* vm */
+  /* vm free functions */
   size_t (*page_size)(void);
   void* (*vm_reserve)(size_t);
   int (*vm_commit)(void*, size_t);
+  int (*vm_decommit)(void*, size_t);
   int (*vm_release)(void*, size_t);
+  int (*vm_protect)(void*, size_t, hyle_protect);
+  const char* (*vm_last_error)(void);
+  void* (*vm_alloc_rw)(size_t);
+
+  /* vm region */
+  hyle_vm_region_o* (*vm_region_reserve)(size_t);
   hyle_vm_region_o* (*vm_region_reserve_guarded)(size_t);
   void (*vm_region_destroy)(hyle_vm_region_o*);
+  int (*vm_region_valid)(const hyle_vm_region_o*);
+  void* (*vm_region_data)(hyle_vm_region_o*);
+  size_t (*vm_region_size)(const hyle_vm_region_o*);
+  void* (*vm_region_usable)(hyle_vm_region_o*);
+  size_t (*vm_region_usable_size)(const hyle_vm_region_o*);
+  int (*vm_region_has_guard)(const hyle_vm_region_o*);
+  int (*vm_region_commit)(hyle_vm_region_o*, size_t, size_t);
+  int (*vm_region_commit_usable)(hyle_vm_region_o*);
+  int (*vm_region_decommit)(hyle_vm_region_o*, size_t, size_t);
+  int (*vm_region_protect)(hyle_vm_region_o*, size_t, size_t, hyle_protect);
 
-  /* fs */
+  /* fs / env */
+  hyle_file_info (*fs_stat)(const char*);
   int (*fs_exists)(const char*);
+  int (*fs_is_directory)(const char*);
+  uint64_t (*fs_file_size)(const char*);
+  int (*fs_make_directory)(const char*);
   int (*fs_make_directory_recursive)(const char*);
+  int (*fs_remove_directory)(const char*);
+  int (*fs_remove_directory_recursive)(const char*);
+  int (*fs_remove_file)(const char*);
+  int (*fs_rename)(const char*, const char*);
+  int (*fs_copy_file)(const char*, const char*);
+  int (*fs_touch)(const char*);
+  size_t (*fs_current_directory)(char*, size_t);
+  int (*fs_change_directory)(const char*);
+  size_t (*fs_temp_directory)(char*, size_t);
+  size_t (*fs_home_directory)(char*, size_t);
   size_t (*env_get)(const char*, char*, size_t);
+  int (*fs_directory_iterate)(const char*, hyle_fs_visit_fn, void*);
+
+  /* cpu */
+  hyle_cpu_features (*cpu_features_get)(void);
+  int (*cpu_supports_isa)(uint32_t);
+  const char* (*cpu_isa_name)(uint32_t);
+
+  int (*c_abi_version)(void);
 } hyle_platform_api;
 
 HYLE_PLATFORM_C_API int hyle_platform_api_get(hyle_platform_api* out,

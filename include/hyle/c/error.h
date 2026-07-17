@@ -1,20 +1,8 @@
 /* SPDX: same as HYLE.
  *
  * Pure C ABI for the HYLE error module (close-01).
- *
- * Naming: every symbol is `hyle_*` / `HYLE_*` (no clay prefixes).
- * This is the only supported stable surface for FFI consumers of Status and
- * process-wide diagnostic reporting. Do NOT include hyle/error/*.h from C.
- *
- * Ownership (read carefully):
- *   - `hyle_status` is an 8-byte *owning* value (like a refcounted handle).
- *   - Create with hyle_status_ok / hyle_status_new / hyle_status_* factories.
- *   - Copy only with hyle_status_clone (never bare assignment of the struct for
- *     message-carrying statuses — that double-frees).
- *   - Transfer with hyle_status_move.
- *   - Always hyle_status_free when done (idempotent on OK / already-freed).
- *
- * Docs: docs/guide/c-error.md
+ * Naming: every symbol is `hyle_*` / `HYLE_*`.
+ * Docs (1:1 with this header): docs/guide/c-error.md
  */
 #ifndef HYLE_C_ERROR_H_
 #define HYLE_C_ERROR_H_
@@ -26,7 +14,6 @@
 extern "C" {
 #endif
 
-/* ---- export ---------------------------------------------------------------- */
 #if defined(HYLE_STATIC)
 #  define HYLE_ERROR_C_API
 #elif defined(_WIN32) || defined(__CYGWIN__)
@@ -41,10 +28,10 @@ extern "C" {
 #  define HYLE_ERROR_C_API
 #endif
 
-/* Bump on breaking C surface changes. */
-#define HYLE_ERROR_C_ABI_VERSION 1
+/* Breaking change to hyle_error_api layout bumps this. */
+#define HYLE_ERROR_C_ABI_VERSION 2
 
-/* ---- status codes (stable integers; match internal StatusCode) ------------- */
+/* ---- status codes ---------------------------------------------------------- */
 typedef enum hyle_status_code {
   HYLE_STATUS_OK = 0,
   HYLE_STATUS_CANCELLED = 1,
@@ -64,53 +51,30 @@ typedef enum hyle_status_code {
   HYLE_STATUS_DATA_LOSS = 15
 } hyle_status_code;
 
-/* Owning status. Treat `rep` as opaque — only the functions below may touch it. */
 typedef struct hyle_status {
-  uintptr_t rep;
+  uintptr_t rep; /* opaque owning handle */
 } hyle_status;
 
-/* ---- construct / destroy --------------------------------------------------- */
-
-/* OK (no resources). */
+/* construct / destroy */
 HYLE_ERROR_C_API hyle_status hyle_status_ok(void);
-
-/* New status. msg may be NULL/empty (message-less, no heap).
- * code == HYLE_STATUS_OK always yields OK (msg ignored).
- * Out-of-range codes become HYLE_STATUS_UNKNOWN. */
 HYLE_ERROR_C_API hyle_status hyle_status_new(hyle_status_code code,
                                              const char* msg);
-
-/* Release heap (if any) and set *s to OK. Safe on NULL / already OK. */
 HYLE_ERROR_C_API void hyle_status_free(hyle_status* s);
-
-/* Retain: deep logical copy (refcount++). Pair every clone with free. */
 HYLE_ERROR_C_API hyle_status hyle_status_clone(hyle_status s);
-
-/* Move: free *dst if needed, take ownership from *src, leave *src OK. */
 HYLE_ERROR_C_API void hyle_status_move(hyle_status* dst, hyle_status* src);
 
-/* ---- queries --------------------------------------------------------------- */
-
+/* queries */
 HYLE_ERROR_C_API int hyle_status_is_ok(hyle_status s);
 HYLE_ERROR_C_API hyle_status_code hyle_status_get_code(hyle_status s);
 HYLE_ERROR_C_API int hyle_status_has_message(hyle_status s);
-
-/* 1 if code+message equal. */
 HYLE_ERROR_C_API int hyle_status_equals(hyle_status a, hyle_status b);
-
-/* Stable English name: "NotFound", "OK", ... Never NULL. */
 HYLE_ERROR_C_API const char* hyle_status_code_name(hyle_status_code code);
-
-/* Message into buf (NUL-terminated if cap>0). snprintf length semantics. */
 HYLE_ERROR_C_API size_t hyle_status_message(hyle_status s, char* buf,
                                             size_t cap);
-
-/* "OK" | "CODE" | "CODE: message". snprintf length semantics. */
 HYLE_ERROR_C_API size_t hyle_status_to_string(hyle_status s, char* buf,
                                               size_t cap);
 
-/* ---- easy factories / predicates (header-inline, zero extra DLL symbols) --- */
-
+/* ---- factories (header-inline) --------------------------------------------- */
 static inline hyle_status hyle_status_cancelled(const char* msg) {
   return hyle_status_new(HYLE_STATUS_CANCELLED, msg);
 }
@@ -157,24 +121,57 @@ static inline hyle_status hyle_status_data_loss(const char* msg) {
   return hyle_status_new(HYLE_STATUS_DATA_LOSS, msg);
 }
 
+/* ---- predicates (header-inline; full code set) ----------------------------- */
 static inline int hyle_status_code_is(hyle_status s, hyle_status_code code) {
   return hyle_status_get_code(s) == code;
 }
-static inline int hyle_status_is_not_found(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_NOT_FOUND);
+static inline int hyle_status_is_cancelled(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_CANCELLED);
+}
+static inline int hyle_status_is_unknown(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_UNKNOWN);
 }
 static inline int hyle_status_is_invalid_argument(hyle_status s) {
   return hyle_status_code_is(s, HYLE_STATUS_INVALID_ARGUMENT);
 }
-static inline int hyle_status_is_internal(hyle_status s) {
-  return hyle_status_code_is(s, HYLE_STATUS_INTERNAL);
+static inline int hyle_status_is_deadline_exceeded(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_DEADLINE_EXCEEDED);
+}
+static inline int hyle_status_is_not_found(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_NOT_FOUND);
+}
+static inline int hyle_status_is_already_exists(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_ALREADY_EXISTS);
+}
+static inline int hyle_status_is_permission_denied(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_PERMISSION_DENIED);
+}
+static inline int hyle_status_is_resource_exhausted(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_RESOURCE_EXHAUSTED);
+}
+static inline int hyle_status_is_failed_precondition(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_FAILED_PRECONDITION);
+}
+static inline int hyle_status_is_aborted(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_ABORTED);
+}
+static inline int hyle_status_is_out_of_range(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_OUT_OF_RANGE);
 }
 static inline int hyle_status_is_unimplemented(hyle_status s) {
   return hyle_status_code_is(s, HYLE_STATUS_UNIMPLEMENTED);
 }
+static inline int hyle_status_is_internal(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_INTERNAL);
+}
+static inline int hyle_status_is_unavailable(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_UNAVAILABLE);
+}
+static inline int hyle_status_is_data_loss(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_DATA_LOSS);
+}
 
-/* ---- diagnostic sink (process-wide) ---------------------------------------- */
-
+/* ---- diagnostic sink ------------------------------------------------------- */
 typedef enum hyle_severity {
   HYLE_SEVERITY_WARNING = 0,
   HYLE_SEVERITY_ERROR = 1,
@@ -185,25 +182,52 @@ typedef void (*hyle_error_report_fn)(void* user, hyle_severity severity,
                                      const char* file, uint32_t line,
                                      const char* message);
 
-/* Install C callback as default sink. fn=NULL restores built-in stderr. */
 HYLE_ERROR_C_API void hyle_error_set_handler(hyle_error_report_fn fn,
                                              void* user);
-
-/* Already-formatted message. FATAL traps after the handler (never returns). */
+/* Pre-formatted message. FATAL traps after handler. */
 HYLE_ERROR_C_API void hyle_error_report(hyle_severity severity, const char* file,
                                         uint32_t line, const char* message);
+/* printf-style (formats into internal stack buffer, then report). */
+HYLE_ERROR_C_API void hyle_error_reportf(hyle_severity severity, const char* file,
+                                         uint32_t line, const char* fmt, ...)
+#if defined(__GNUC__) || defined(__clang__)
+    __attribute__((format(printf, 4, 5)))
+#endif
+    ;
 
-/* ---- optional vtable pack (FFI that prefers one struct of fn-ptrs) --------- */
+/* Source-location macros (literal message). */
+#define HYLE_C_WARN(msg) \
+  hyle_error_report(HYLE_SEVERITY_WARNING, __FILE__, (uint32_t)__LINE__, (msg))
+#define HYLE_C_ERROR(msg) \
+  hyle_error_report(HYLE_SEVERITY_ERROR, __FILE__, (uint32_t)__LINE__, (msg))
+#define HYLE_C_FATAL(msg) \
+  hyle_error_report(HYLE_SEVERITY_FATAL, __FILE__, (uint32_t)__LINE__, (msg))
+/* printf-style macros */
+#define HYLE_C_WARNF(...) \
+  hyle_error_reportf(HYLE_SEVERITY_WARNING, __FILE__, (uint32_t)__LINE__, \
+                     __VA_ARGS__)
+#define HYLE_C_ERRORF(...) \
+  hyle_error_reportf(HYLE_SEVERITY_ERROR, __FILE__, (uint32_t)__LINE__, \
+                     __VA_ARGS__)
+#define HYLE_C_FATALF(...) \
+  hyle_error_reportf(HYLE_SEVERITY_FATAL, __FILE__, (uint32_t)__LINE__, \
+                     __VA_ARGS__)
 
+/* Early-return helpers for functions returning hyle_status by value. */
+#define HYLE_C_RETURN_IF_ERROR(st) \
+  do {                             \
+    hyle_status _hyle_st_ = (st);  \
+    if (!hyle_status_is_ok(_hyle_st_)) return _hyle_st_; \
+  } while (0)
+
+/* ---- API table (DLL symbols only; inlines are not listed) ------------------ */
 typedef struct hyle_error_api {
-  int abi_version; /* must be HYLE_ERROR_C_ABI_VERSION */
-
+  int abi_version;
   hyle_status (*status_ok)(void);
   hyle_status (*status_new)(hyle_status_code code, const char* msg);
   void (*status_free)(hyle_status* s);
   hyle_status (*status_clone)(hyle_status s);
   void (*status_move)(hyle_status* dst, hyle_status* src);
-
   int (*status_is_ok)(hyle_status s);
   hyle_status_code (*status_get_code)(hyle_status s);
   int (*status_has_message)(hyle_status s);
@@ -211,20 +235,19 @@ typedef struct hyle_error_api {
   const char* (*status_code_name)(hyle_status_code code);
   size_t (*status_message)(hyle_status s, char* buf, size_t cap);
   size_t (*status_to_string)(hyle_status s, char* buf, size_t cap);
-
   void (*error_set_handler)(hyle_error_report_fn fn, void* user);
   void (*error_report)(hyle_severity severity, const char* file, uint32_t line,
                        const char* message);
+  void (*error_reportf)(hyle_severity severity, const char* file, uint32_t line,
+                        const char* fmt, ...);
+  int (*c_abi_version)(void);
 } hyle_error_api;
 
-/* Fill *out with the current API table. Returns 0 on success, -1 if out==NULL
- * or abi_version mismatch expectation (pass expected=HYLE_ERROR_C_ABI_VERSION). */
 HYLE_ERROR_C_API int hyle_error_api_get(hyle_error_api* out, int expected_abi);
-
 HYLE_ERROR_C_API int hyle_error_c_abi_version(void);
 
 #ifdef __cplusplus
-} /* extern "C" */
+}
 #endif
 
 #endif /* HYLE_C_ERROR_H_ */

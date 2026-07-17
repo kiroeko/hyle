@@ -197,6 +197,26 @@ const char* hyle_dynlib_extension(void) {
   return hyle::platform::dynlib_extension();
 }
 
+int hyle_dynlib_open_symbol(const char* path, const char* name,
+                            hyle_dynlib_o** out_lib, void** out_sym) {
+  if (out_lib) *out_lib = nullptr;
+  if (out_sym) *out_sym = nullptr;
+  if (!path || !name || !out_lib || !out_sym) return 0;
+  hyle_dynlib_o* lib = hyle_dynlib_open(path);
+  if (!hyle_dynlib_valid(lib)) {
+    hyle_dynlib_close(lib);
+    return 0;
+  }
+  void* sym = hyle_dynlib_symbol(lib, name);
+  if (sym == nullptr) {
+    hyle_dynlib_close(lib);
+    return 0;
+  }
+  *out_lib = lib;
+  *out_sym = sym;
+  return 1;
+}
+
 size_t hyle_page_size(void) { return hyle::platform::page_size(); }
 void* hyle_vm_reserve(size_t size) { return hyle::platform::vm_reserve(size); }
 int hyle_vm_commit(void* ptr, size_t size) {
@@ -212,6 +232,20 @@ int hyle_vm_protect(void* ptr, size_t size, hyle_protect prot) {
   return hyle::platform::vm_protect(ptr, size, to_cpp_protect(prot)) ? 1 : 0;
 }
 const char* hyle_vm_last_error(void) { return hyle::platform::vm_last_error(); }
+
+void* hyle_vm_alloc_rw(size_t size) {
+  if (size == 0) return nullptr;
+  size_t aligned = hyle_page_align_up(size);
+  if (aligned == 0) return nullptr;
+  void* base = hyle::platform::vm_reserve(aligned);
+  if (base == nullptr) return nullptr;
+  // vm_commit makes the range Protect::kReadWrite.
+  if (!hyle::platform::vm_commit(base, aligned)) {
+    (void)hyle::platform::vm_release(base, aligned);
+    return nullptr;
+  }
+  return base;
+}
 
 hyle_vm_region_o* hyle_vm_region_reserve(size_t size) {
   auto r = hyle::platform::VmRegion::reserve(size);
@@ -395,6 +429,7 @@ int hyle_platform_c_abi_version(void) { return HYLE_PLATFORM_C_ABI_VERSION; }
 int hyle_platform_api_get(hyle_platform_api* out, int expected_abi) {
   if (!out || expected_abi != HYLE_PLATFORM_C_ABI_VERSION) return -1;
   out->abi_version = HYLE_PLATFORM_C_ABI_VERSION;
+
   out->wait_on_address = &hyle_wait_on_address;
   out->wait_on_address_for = &hyle_wait_on_address_for;
   out->wake_one = &hyle_wake_one;
@@ -404,22 +439,72 @@ int hyle_platform_api_get(hyle_platform_api* out, int expected_abi) {
   out->parker_park = &hyle_parker_park;
   out->parker_unpark = &hyle_parker_unpark;
   out->parker_park_timeout = &hyle_parker_park_timeout;
+
   out->thread_spawn = &hyle_thread_spawn;
   out->thread_join = &hyle_thread_join;
+  out->thread_joinable = &hyle_thread_joinable;
   out->hardware_concurrency = &hyle_hardware_concurrency;
+  out->this_thread_id = &hyle_this_thread_id;
+  out->this_thread_yield = &hyle_this_thread_yield;
+  out->this_thread_set_name = &hyle_this_thread_set_name;
+
   out->dynlib_open = &hyle_dynlib_open;
   out->dynlib_get = &hyle_dynlib_get;
+  out->dynlib_current = &hyle_dynlib_current;
   out->dynlib_close = &hyle_dynlib_close;
+  out->dynlib_valid = &hyle_dynlib_valid;
   out->dynlib_symbol = &hyle_dynlib_symbol;
+  out->dynlib_last_error = &hyle_dynlib_last_error;
+  out->dynlib_extension = &hyle_dynlib_extension;
+  out->dynlib_open_symbol = &hyle_dynlib_open_symbol;
+
   out->page_size = &hyle_page_size;
   out->vm_reserve = &hyle_vm_reserve;
   out->vm_commit = &hyle_vm_commit;
+  out->vm_decommit = &hyle_vm_decommit;
   out->vm_release = &hyle_vm_release;
+  out->vm_protect = &hyle_vm_protect;
+  out->vm_last_error = &hyle_vm_last_error;
+  out->vm_alloc_rw = &hyle_vm_alloc_rw;
+
+  out->vm_region_reserve = &hyle_vm_region_reserve;
   out->vm_region_reserve_guarded = &hyle_vm_region_reserve_guarded;
   out->vm_region_destroy = &hyle_vm_region_destroy;
+  out->vm_region_valid = &hyle_vm_region_valid;
+  out->vm_region_data = &hyle_vm_region_data;
+  out->vm_region_size = &hyle_vm_region_size;
+  out->vm_region_usable = &hyle_vm_region_usable;
+  out->vm_region_usable_size = &hyle_vm_region_usable_size;
+  out->vm_region_has_guard = &hyle_vm_region_has_guard;
+  out->vm_region_commit = &hyle_vm_region_commit;
+  out->vm_region_commit_usable = &hyle_vm_region_commit_usable;
+  out->vm_region_decommit = &hyle_vm_region_decommit;
+  out->vm_region_protect = &hyle_vm_region_protect;
+
+  out->fs_stat = &hyle_fs_stat;
   out->fs_exists = &hyle_fs_exists;
+  out->fs_is_directory = &hyle_fs_is_directory;
+  out->fs_file_size = &hyle_fs_file_size;
+  out->fs_make_directory = &hyle_fs_make_directory;
   out->fs_make_directory_recursive = &hyle_fs_make_directory_recursive;
+  out->fs_remove_directory = &hyle_fs_remove_directory;
+  out->fs_remove_directory_recursive = &hyle_fs_remove_directory_recursive;
+  out->fs_remove_file = &hyle_fs_remove_file;
+  out->fs_rename = &hyle_fs_rename;
+  out->fs_copy_file = &hyle_fs_copy_file;
+  out->fs_touch = &hyle_fs_touch;
+  out->fs_current_directory = &hyle_fs_current_directory;
+  out->fs_change_directory = &hyle_fs_change_directory;
+  out->fs_temp_directory = &hyle_fs_temp_directory;
+  out->fs_home_directory = &hyle_fs_home_directory;
   out->env_get = &hyle_env_get;
+  out->fs_directory_iterate = &hyle_fs_directory_iterate;
+
+  out->cpu_features_get = &hyle_cpu_features_get;
+  out->cpu_supports_isa = &hyle_cpu_supports_isa;
+  out->cpu_isa_name = &hyle_cpu_isa_name;
+
+  out->c_abi_version = &hyle_platform_c_abi_version;
   return 0;
 }
 

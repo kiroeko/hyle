@@ -32,10 +32,20 @@ static int visit_cb(const char* name, int is_dir, void* ctx) {
 
 int main(void) {
   CHECK(hyle_platform_c_abi_version() == HYLE_PLATFORM_C_ABI_VERSION);
+  CHECK(HYLE_PLATFORM_C_ABI_VERSION == 2);
 
   hyle_platform_api api;
   CHECK(hyle_platform_api_get(&api, HYLE_PLATFORM_C_ABI_VERSION) == 0);
+  CHECK(api.abi_version == HYLE_PLATFORM_C_ABI_VERSION);
   CHECK(api.page_size() >= 4096u);
+  CHECK(api.thread_joinable != NULL);
+  CHECK(api.dynlib_open_symbol != NULL);
+  CHECK(api.vm_alloc_rw != NULL);
+  CHECK(api.cpu_features_get != NULL);
+  CHECK(api.c_abi_version != NULL);
+  CHECK(api.c_abi_version() == HYLE_PLATFORM_C_ABI_VERSION);
+  CHECK(hyle_platform_api_get(NULL, HYLE_PLATFORM_C_ABI_VERSION) == -1);
+  CHECK(hyle_platform_api_get(&api, 999) == -1);
 
   /* Parker */
   hyle_parker_o* p = hyle_parker_create();
@@ -45,10 +55,12 @@ int main(void) {
   CHECK(hyle_parker_park_timeout(p, 0) == 0);
   hyle_parker_destroy(p);
 
-  /* Thread */
+  /* Thread + opts sugar */
   int ran = 0;
   hyle_thread_o* t = NULL;
-  hyle_status st = hyle_thread_spawn(&t, thr_entry, &ran, NULL);
+  hyle_thread_opts opts = HYLE_THREAD_OPTS_INIT;
+  hyle_thread_opts_set_name(&opts, "c_plat_worker");
+  hyle_status st = hyle_thread_spawn(&t, thr_entry, &ran, &opts);
   CHECK(hyle_status_is_ok(st));
   hyle_status_free(&st);
   CHECK(t != NULL);
@@ -56,6 +68,7 @@ int main(void) {
   hyle_thread_join(t);
   CHECK(ran == 42);
   CHECK(hyle_hardware_concurrency() >= 1u);
+  CHECK(hyle_this_thread_id() != 0);
 
   /* DynLib */
 #if defined(_WIN32)
@@ -77,6 +90,17 @@ int main(void) {
   hyle_dynlib_close(lib);
   CHECK(strcmp(hyle_dynlib_extension(), ext) == 0);
 
+  /* open_symbol on already-loadable system lib path may fail if path needs
+   * absolute form; exercise API shape via get+symbol path above. Missing path: */
+  {
+    hyle_dynlib_o* miss = NULL;
+    void* miss_sym = NULL;
+    CHECK(hyle_dynlib_open_symbol("hyle_no_such_plugin_xyz.so", "entry", &miss,
+                                 &miss_sym) == 0);
+    CHECK(miss == NULL);
+    CHECK(miss_sym == NULL);
+  }
+
   /* VM guarded */
   hyle_vm_region_o* reg = hyle_vm_region_reserve_guarded(hyle_page_size());
   CHECK(hyle_vm_region_valid(reg));
@@ -89,13 +113,18 @@ int main(void) {
   }
   hyle_vm_region_destroy(reg);
 
-  /* free vm */
+  /* free vm + alloc_rw */
   {
     size_t pg = hyle_page_size();
     void* base = hyle_vm_reserve(pg);
     CHECK(base != NULL);
     CHECK(hyle_vm_commit(base, pg));
     CHECK(hyle_vm_release(base, pg));
+
+    void* rw = hyle_vm_alloc_rw(pg / 2 + 1);
+    CHECK(rw != NULL);
+    ((unsigned char*)rw)[0] = 1;
+    CHECK(hyle_vm_free_rw(rw, pg / 2 + 1));
   }
 
   /* fs */

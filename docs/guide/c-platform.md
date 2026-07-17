@@ -1,8 +1,8 @@
 # HYLE C ABI：platform
 
 > **发布面**：`include/hyle/c/platform.h`  
-> **实现**：`src/platform/c_platform.cc`（链 `hyle_platform`，spawn 失败依赖 `hyle_error`）  
-> **ABI 版本**：`HYLE_PLATFORM_C_ABI_VERSION`（当前 **1**）  
+> **实现**：`src/platform/c_platform.cc`（链 `hyle_platform`；spawn 失败依赖 `hyle_error`）  
+> **ABI 版本**：`HYLE_PLATFORM_C_ABI_VERSION`（当前 **2**）  
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言 / 跨编译器只许绑本头（及 `hyle/c/error.h`）。不要 include `hyle/platform/*.h`。
@@ -16,33 +16,152 @@
 // link: hyle_platform (+ hyle_error)
 ```
 
-纯 C 编译器可编：`hyle_platform_c_test`。
+纯 C 验收：`hyle_platform_c_test`。
 
 ---
 
-## 2. 子系统一览
+## 2. 子系统与所有权
 
-| 块 | 类型 / 入口 | 所有权 |
+| 块 | 入口 | 所有权 |
 |---|---|---|
-| **wait** | `hyle_wait_on_address*` / `hyle_wake_*` | 调用方提供 `uint32_t` 字 |
-| **Parker** | `hyle_parker_create` / `destroy` / `park` / `unpark` / `park_timeout` | create→destroy |
-| **Thread** | `hyle_thread_spawn` → `hyle_thread_join` | join **释放**句柄 |
-| **DynLib** | `open` / `get` / `current` / `close` / `symbol` | close 释放 |
-| **VM** | 自由函数 + `hyle_vm_region_*` | region destroy；reserve 配对 release |
-| **fs/env** | `hyle_fs_*` / `hyle_env_get` | buffer-fill，无堆句柄 |
-| **cpu** | `hyle_cpu_features_get` | 值返回 POD |
-| **表** | `hyle_platform_api_get` | 可选 FFI 函数指针包 |
+| wait | `hyle_wait_on_address*` / `hyle_wake_*` | 调用方提供 `uint32_t` 字 |
+| Parker | create / destroy / park / unpark / park_timeout | create→destroy |
+| Thread | spawn → join | join **释放**句柄 |
+| DynLib | open / get / current / close / symbol / open_symbol | close 释放 |
+| VM 自由函数 | reserve/commit/…/alloc_rw | reserve 配对 release |
+| VM region | `hyle_vm_region_*` | destroy 释放 |
+| fs/env | buffer-fill / visitor | 无堆句柄 |
+| cpu | `hyle_cpu_features_get` 等 | 值返回 POD |
+| 表 | `hyle_platform_api_get` | 可选 FFI 函数指针包 |
 
 ---
 
-## 3. 常用写法
+## 3. 导出符号 1:1
+
+与 `include/hyle/c/platform.h` **逐符号对齐**。改头必须同步改本节。
+
+### 3.1 wait / Parker（DLL）
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_wait_on_address(addr, expected)` | 地址等待；允许伪唤醒 |
+| `hyle_wait_on_address_for(addr, expected, timeout_ns)` | 0=超时，1=唤醒/变化/伪唤醒 |
+| `hyle_wake_one` / `hyle_wake_all` | 唤醒 |
+| `hyle_parker_create` / `destroy` | 不透明 Parker |
+| `hyle_parker_park` / `unpark` | token 模型（Rust std） |
+| `hyle_parker_park_timeout` | 1=消费 token，0=超时/无 token |
+
+### 3.2 Thread（DLL）
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_thread_spawn(out, entry, ctx, opts)` | 成功设 `*out`；失败返 `hyle_status`（调用方 free） |
+| `hyle_thread_join` | join + **destroy** 句柄 |
+| `hyle_thread_joinable` | 1/0 |
+| `hyle_hardware_concurrency` | 逻辑 CPU 数 ≥1 |
+| `hyle_this_thread_id` | 稳定线程 id |
+| `hyle_this_thread_yield` | |
+| `hyle_this_thread_set_name` | name 可 NULL→空串 |
+
+**头内 inline / 宏**（无 DLL）：
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_thread_opts` | `name` / `has_stack_size`+`stack_size` / `has_affinity_cpu`+`affinity_cpu` |
+| `HYLE_THREAD_OPTS_INIT` | 零初始化宏 |
+| `hyle_thread_opts_default` | 返回默认 opts |
+| `hyle_thread_opts_set_name` / `set_stack_size` / `set_affinity` | setter |
+
+### 3.3 DynLib（DLL）
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_dynlib_open(path)` | 加载；失败 NULL |
+| `hyle_dynlib_get(path)` | **仅**附着已加载，不加载缺失模块 |
+| `hyle_dynlib_current` | 当前映像 |
+| `hyle_dynlib_close` | 释放句柄 |
+| `hyle_dynlib_valid` | 1/0 |
+| `hyle_dynlib_symbol(lib, name)` | 符号地址或 NULL |
+| `hyle_dynlib_last_error` | 线程局部错误串 |
+| `hyle_dynlib_extension` | `"dll"` / `"so"` / `"dylib"` |
+| `hyle_dynlib_open_symbol(path, name, out_lib, out_sym)` | open+resolve；成功 1，`*out_lib` 由调用方 close |
+
+### 3.4 Virtual memory（DLL + inline）
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_protect` | `NONE` / `READ` / `READ_WRITE` |
+| `hyle_page_size` | 页大小 |
+| `hyle_page_align_up` | **inline**：上取整；0→0 |
+| `hyle_vm_reserve` / `commit` / `decommit` / `release` / `protect` | 原语；bool→int 1/0 |
+| `hyle_vm_last_error` | |
+| `hyle_vm_alloc_rw(size)` | reserve+commit RW（size 上取整） |
+| `hyle_vm_free_rw(p, size)` | **inline**：`release(p, page_align_up(size))` |
+| `hyle_vm_region_reserve` / `reserve_guarded` | 不透明 region；guarded 低 1 页 NOACCESS |
+| `hyle_vm_region_destroy` | |
+| `hyle_vm_region_valid` / `data` / `size` / `usable` / `usable_size` / `has_guard` | 查询 |
+| `hyle_vm_region_commit` / `commit_usable` / `decommit` / `protect` | 子区间 |
+
+### 3.5 fs / env（DLL）
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_file_info` | `exists` / `is_directory` / `size` / `modified_time` |
+| `hyle_fs_stat` | 整包 |
+| `hyle_fs_exists` / `is_directory` / `file_size` | |
+| `hyle_fs_make_directory` / `make_directory_recursive` | |
+| `hyle_fs_remove_directory` / `remove_directory_recursive` / `remove_file` | |
+| `hyle_fs_rename` / `copy_file` / `touch` | |
+| `hyle_fs_current_directory` / `temp_directory` / `home_directory` | buffer-fill：返回完整长，`>=cap` 截断 |
+| `hyle_fs_change_directory` | |
+| `HYLE_ENV_NOT_SET` | `(size_t)-1` |
+| `hyle_env_get(name, dst, cap)` | 未设置→`HYLE_ENV_NOT_SET` |
+| `hyle_fs_visit_fn` | `(name, is_dir, ctx)→int`；0 停止 |
+| `hyle_fs_directory_iterate` | 打开失败→0 |
+
+### 3.6 CPU（DLL + 常量）
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_cpu_features` | 与 C++ `CpuFeatures` **全 bool 字段 1:1**（C 用 int 0/1）+ `logical_cpus` + `best_isa` |
+| x86 字段 | `sse2`…`avx10_2`（见头） |
+| arm 字段 | `neon`…`arm_bf16` |
+| RISC-V 字段 | `rvv`…`rvv_zvfhmin` |
+| `HYLE_ISA_*` | `SCALAR`/`SSE2`/…/`RVV` 粗粒度档（与 `Isa` 数值一致） |
+| `hyle_cpu_features_get` | 值返回 |
+| `hyle_cpu_supports_isa(isa)` | 本进程能否跑该档（同架构比较） |
+| `hyle_cpu_isa_name(isa)` | 稳定英文名（日志） |
+
+### 3.7 版本 / API 表（DLL）
+
+| 符号 | 说明 |
+|---|---|
+| `hyle_platform_c_abi_version` | 等于宏 |
+| `hyle_platform_api_get(out, expected_abi)` | 0 成功；-1 失败 |
+
+`hyle_platform_api` 字段 = **全部 DLL 自由函数**（无 header-inline）：wait×4 + parker×5 + thread×7 + dynlib×9 + vm 自由×8 + region×13 + fs/env×18 + cpu×3 + `c_abi_version`，外加 `abi_version` 整型。
+
+**不进表**：`hyle_page_align_up`、`hyle_vm_free_rw`、thread opts helpers / `HYLE_THREAD_OPTS_INIT`。
+
+### 3.8 有意不导出
+
+| C++ | 原因 |
+|---|---|
+| `Unparker` 类型 | 用 `hyle_parker_unpark` 同一句柄 |
+| path 词法 / container 字符串 | 不在 platform C 面 |
+| 模板 `for_each_entry` | C 用 `hyle_fs_directory_iterate` |
+| 测试钩子 | 非发布面 |
+
+---
+
+## 4. 常用写法
 
 ### Parker
 
 ```c
 hyle_parker_o* p = hyle_parker_create();
 hyle_parker_unpark(p);
-hyle_parker_park(p);                 /* 立即返回（token 已在） */
+hyle_parker_park(p);
 hyle_parker_destroy(p);
 ```
 
@@ -50,44 +169,42 @@ hyle_parker_destroy(p);
 
 ```c
 void worker(void* ctx) { *(int*)ctx = 1; }
-
 int flag = 0;
 hyle_thread_o* t = NULL;
-hyle_thread_opts opts = {0};
-opts.name = "worker";
-opts.has_stack_size = 1;
-opts.stack_size = 2 * 1024 * 1024;
-
+hyle_thread_opts opts = HYLE_THREAD_OPTS_INIT;
+hyle_thread_opts_set_name(&opts, "worker");
+hyle_thread_opts_set_stack_size(&opts, 2u * 1024u * 1024u);
 hyle_status st = hyle_thread_spawn(&t, worker, &flag, &opts);
-if (!hyle_status_is_ok(st)) { /* ... */ hyle_status_free(&st); return; }
+if (!hyle_status_is_ok(st)) { hyle_status_free(&st); return; }
 hyle_status_free(&st);
-hyle_thread_join(t);   /* join + free */
+hyle_thread_join(t);
 ```
 
-### DynLib
+### DynLib / open_symbol
 
 ```c
-hyle_dynlib_o* lib = hyle_dynlib_open("plugin.so");
-if (!hyle_dynlib_valid(lib)) {
-  fprintf(stderr, "%s\n", hyle_dynlib_last_error());
-  return;
-}
-void* sym = hyle_dynlib_symbol(lib, "entry");
+hyle_dynlib_o* lib = hyle_dynlib_get("kernel32.dll"); /* or libm.so.6 */
+void* sym = hyle_dynlib_symbol(lib, "GetCurrentProcessId");
 hyle_dynlib_close(lib);
 
-/* 已加载、不加载： */
-hyle_dynlib_o* k = hyle_dynlib_get("kernel32.dll"); /* or libm.so.6 */
-hyle_dynlib_close(k);
+hyle_dynlib_o* plug = NULL;
+void* entry = NULL;
+if (hyle_dynlib_open_symbol("plugin.so", "entry", &plug, &entry)) {
+  /* use entry */
+  hyle_dynlib_close(plug);
+}
 ```
 
-### 带 guard 的栈区（fiber 友好）
+### VM
 
 ```c
+void* p = hyle_vm_alloc_rw(4096);
+/* ... */
+hyle_vm_free_rw(p, 4096);
+
 hyle_vm_region_o* r = hyle_vm_region_reserve_guarded(64 * 1024);
-/* usable 可写；低 1 页 guard */
-char* stack_lo = (char*)hyle_vm_region_usable(r);
-size_t usable = hyle_vm_region_usable_size(r);
-char* stack_hi = stack_lo + usable;  /* 栈向下增长时的 top */
+char* lo = (char*)hyle_vm_region_usable(r);
+size_t n = hyle_vm_region_usable_size(r);
 hyle_vm_region_destroy(r);
 ```
 
@@ -96,36 +213,13 @@ hyle_vm_region_destroy(r);
 ```c
 char tmp[512];
 hyle_fs_temp_directory(tmp, sizeof tmp);
-char dir[600];
-snprintf(dir, sizeof dir, "%s/myjob", tmp);
-hyle_fs_make_directory_recursive(dir);
-hyle_fs_directory_iterate(dir, my_visit, NULL);
 ```
-
----
-
-## 4. 导出是否齐全（对照 C++）
-
-| C++ | C |
-|---|---|
-| `detail::wait_on_address/for`, `wake_one/all` | ✅ `hyle_wait_*` / `hyle_wake_*` |
-| `Parker` / `park_timeout` | ✅ opaque create/destroy |
-| `Unparker` | 用 `hyle_parker_unpark`（同一句柄） |
-| `Thread::spawn/join`, opts | ✅ + `hyle_status` 错误 |
-| `this_thread::*`, `hardware_concurrency` | ✅ |
-| `DynLib::open/get/current/symbol` | ✅ |
-| `vm_*` + `VmRegion` + guarded | ✅ |
-| `fs` / env / iterate | ✅ 主表面 |
-| `CpuFeatures` 全 bool 字段 | ✅ 1:1（C 用 `int` 0/1）+ `logical_cpus` + `best_isa` + `supports`/`isa_name` |
-| path 字符串（container） | 不在 platform C 面 |
-
-有意不导出：C++ 模板 `for_each_entry`（C 用 `hyle_fs_directory_iterate`）、path 词法（container）、测试专用钩子。
 
 ---
 
 ## 5. 版本
 
-- `hyle_platform_c_abi_version()` / `hyle_platform_api_get(out, HYLE_PLATFORM_C_ABI_VERSION)`
+- v2：完整 `hyle_platform_api` 表、`open_symbol`、`vm_alloc_rw`、thread opts 糖、CPU 全字段（v1 已有）
 - 破坏性变更升 `HYLE_PLATFORM_C_ABI_VERSION`
 
 ---

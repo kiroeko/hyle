@@ -34,14 +34,27 @@ static void on_report(void* user, hyle_severity sev, const char* file,
   }
 }
 
+static hyle_status helper_fail(void) {
+  return hyle_status_not_found("gone");
+}
+
+static hyle_status helper_propagate(void) {
+  HYLE_C_RETURN_IF_ERROR(helper_fail());
+  return hyle_status_ok();
+}
+
 int main(void) {
   CHECK(hyle_error_c_abi_version() == HYLE_ERROR_C_ABI_VERSION);
+  CHECK(HYLE_ERROR_C_ABI_VERSION == 2);
 
-  /* API table */
+  /* API table — full DLL surface */
   hyle_error_api api;
   CHECK(hyle_error_api_get(&api, HYLE_ERROR_C_ABI_VERSION) == 0);
   CHECK(api.abi_version == HYLE_ERROR_C_ABI_VERSION);
   CHECK(api.status_ok != NULL);
+  CHECK(api.error_reportf != NULL);
+  CHECK(api.c_abi_version != NULL);
+  CHECK(api.c_abi_version() == HYLE_ERROR_C_ABI_VERSION);
   CHECK(hyle_error_api_get(NULL, HYLE_ERROR_C_ABI_VERSION) == -1);
   CHECK(hyle_error_api_get(&api, 999) == -1);
 
@@ -59,12 +72,49 @@ int main(void) {
   hyle_status_free(&ok);
   CHECK(hyle_status_is_ok(ok));
 
-  /* convenience factory */
+  /* convenience factory + full predicate set (sample) */
   hyle_status nf = hyle_status_not_found(NULL);
   CHECK(!hyle_status_is_ok(nf));
   CHECK(hyle_status_is_not_found(nf));
   CHECK(hyle_status_code_is(nf, HYLE_STATUS_NOT_FOUND));
   CHECK(strcmp(hyle_status_code_name(HYLE_STATUS_NOT_FOUND), "NotFound") == 0);
+
+  hyle_status ca = hyle_status_cancelled(NULL);
+  CHECK(hyle_status_is_cancelled(ca));
+  hyle_status_free(&ca);
+  hyle_status un = hyle_status_unknown(NULL);
+  CHECK(hyle_status_is_unknown(un));
+  hyle_status_free(&un);
+  hyle_status ia = hyle_status_invalid_argument(NULL);
+  CHECK(hyle_status_is_invalid_argument(ia));
+  hyle_status_free(&ia);
+  hyle_status de = hyle_status_deadline_exceeded(NULL);
+  CHECK(hyle_status_is_deadline_exceeded(de));
+  hyle_status_free(&de);
+  hyle_status ae = hyle_status_already_exists(NULL);
+  CHECK(hyle_status_is_already_exists(ae));
+  hyle_status_free(&ae);
+  hyle_status pd = hyle_status_permission_denied(NULL);
+  CHECK(hyle_status_is_permission_denied(pd));
+  hyle_status_free(&pd);
+  hyle_status re = hyle_status_resource_exhausted(NULL);
+  CHECK(hyle_status_is_resource_exhausted(re));
+  hyle_status_free(&re);
+  hyle_status fp = hyle_status_failed_precondition(NULL);
+  CHECK(hyle_status_is_failed_precondition(fp));
+  hyle_status_free(&fp);
+  hyle_status oor = hyle_status_out_of_range(NULL);
+  CHECK(hyle_status_is_out_of_range(oor));
+  hyle_status_free(&oor);
+  hyle_status ui = hyle_status_unimplemented(NULL);
+  CHECK(hyle_status_is_unimplemented(ui));
+  hyle_status_free(&ui);
+  hyle_status ua = hyle_status_unavailable(NULL);
+  CHECK(hyle_status_is_unavailable(ua));
+  hyle_status_free(&ua);
+  hyle_status dl = hyle_status_data_loss(NULL);
+  CHECK(hyle_status_is_data_loss(dl));
+  hyle_status_free(&dl);
 
   /* clone + free original */
   hyle_status nf2 = hyle_status_clone(nf);
@@ -100,18 +150,35 @@ int main(void) {
   hyle_status c = hyle_status_aborted("y");
   CHECK(hyle_status_equals(a, b));
   CHECK(!hyle_status_equals(a, c));
+  CHECK(hyle_status_is_aborted(a));
   hyle_status_free(&a);
   hyle_status_free(&b);
   hyle_status_free(&c);
 
-  /* diagnostic handler */
+  /* diagnostic handler + reportf + macros */
   g_handler_hits = 0;
   g_last_msg[0] = '\0';
   hyle_error_set_handler(on_report, NULL);
   hyle_error_report(HYLE_SEVERITY_ERROR, "c_error_test.c", 1, "hello-c");
   CHECK(g_handler_hits == 1);
   CHECK(strcmp(g_last_msg, "hello-c") == 0);
+  hyle_error_reportf(HYLE_SEVERITY_WARNING, "c_error_test.c", 2, "n=%d", 7);
+  CHECK(g_handler_hits == 2);
+  CHECK(strcmp(g_last_msg, "n=7") == 0);
+  HYLE_C_ERROR("macro-lit");
+  CHECK(g_handler_hits == 3);
+  CHECK(strcmp(g_last_msg, "macro-lit") == 0);
+  HYLE_C_WARNF("w=%s", "ok");
+  CHECK(g_handler_hits == 4);
+  CHECK(strcmp(g_last_msg, "w=ok") == 0);
   hyle_error_set_handler(NULL, NULL);
+
+  /* HYLE_C_RETURN_IF_ERROR */
+  {
+    hyle_status prop = helper_propagate();
+    CHECK(hyle_status_is_not_found(prop));
+    hyle_status_free(&prop);
+  }
 
   /* vtable path still works */
   hyle_status via = api.status_new(HYLE_STATUS_UNAVAILABLE, "down");
