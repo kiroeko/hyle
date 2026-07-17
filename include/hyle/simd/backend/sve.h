@@ -792,6 +792,12 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> DemoteTo(Simd<DstT, NDst, 0> dd, V
     return IfThenElse(FirstN(dd, half), na, SlideUpLanes(dd, nb, half));
   }
 }
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> OrderedDemote2To(
+    Simd<DstT, NDst, 0> dd, V a, V b) noexcept {
+  return DemoteTo(dd, a, b);
+}
+
 // WidenMulPairwiseAdd(d32, a_i16, b_i16): r[k] = a[2k]*b[2k] + a[2k+1]*b[2k+1] (the fixed-point dot
 // core, matches x86 madd_epi16). Base SVE has no madd; view each adjacent i16 pair as one i32 lane,
 // extract even (low 16, sign-extend via <<16 >>16) and odd (high 16, arith >>16), multiply as i32,
@@ -912,6 +918,45 @@ template <typename T> HYLE_FORCE_INLINE svbool_t even_lane_mask() noexcept {
 }  // namespace detail
 template <class V> HYLE_FORCE_INLINE V OddEven(V odd, V even) noexcept {
   return svsel(detail::even_lane_mask<TFromV<V>>(), even, odd);
+}
+
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> InterleaveWholeLower(D d, VFromD<D> a, VFromD<D> b) noexcept {
+  using T = TFromD<D>;
+  const auto pg = detail::ptrue<T>();
+  if constexpr (sizeof(T) == 1) {
+    const auto idx = svlsr_x(pg, svindex_u8(0, 1), 1);
+    return OddEven(svtbl(b, idx), svtbl(a, idx));
+  } else if constexpr (sizeof(T) == 2) {
+    const auto idx = svlsr_x(pg, svindex_u16(0, 1), 1);
+    return OddEven(svtbl(b, idx), svtbl(a, idx));
+  } else if constexpr (sizeof(T) == 4) {
+    const auto idx = svlsr_x(pg, svindex_u32(0, 1), 1);
+    return OddEven(svtbl(b, idx), svtbl(a, idx));
+  } else {
+    const auto idx = svlsr_x(pg, svindex_u64(0, 1), 1);
+    return OddEven(svtbl(b, idx), svtbl(a, idx));
+  }
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> InterleaveWholeUpper(D d, VFromD<D> a, VFromD<D> b) noexcept {
+  using T = TFromD<D>;
+  using U = MakeUnsigned<T>;
+  const auto pg = detail::ptrue<T>();
+  const U half = static_cast<U>(Lanes(d) / 2);
+  if constexpr (sizeof(T) == 1) {
+    const auto idx = svadd_x(pg, svlsr_x(pg, svindex_u8(0, 1), 1), half);
+    return OddEven(svtbl(b, idx), svtbl(a, idx));
+  } else if constexpr (sizeof(T) == 2) {
+    const auto idx = svadd_x(pg, svlsr_x(pg, svindex_u16(0, 1), 1), half);
+    return OddEven(svtbl(b, idx), svtbl(a, idx));
+  } else if constexpr (sizeof(T) == 4) {
+    const auto idx = svadd_x(pg, svlsr_x(pg, svindex_u32(0, 1), 1), half);
+    return OddEven(svtbl(b, idx), svtbl(a, idx));
+  } else {
+    const auto idx = svadd_x(pg, svlsr_x(pg, svindex_u64(0, 1), 1), half);
+    return OddEven(svtbl(b, idx), svtbl(a, idx));
+  }
 }
 
 // ---- 128-bit block operations -------------------------------------------------------
@@ -1045,6 +1090,14 @@ HYLE_FORCE_INLINE V Shuffle01(V v) noexcept {
 }
 template <class V> HYLE_FORCE_INLINE V DupEven(V v) noexcept { return svtrn1(v, v); }
 template <class V> HYLE_FORCE_INLINE V DupOdd(V v) noexcept { return svtrn2(v, v); }
+template <class V> HYLE_FORCE_INLINE V PairwiseAdd(V a, V b) noexcept {
+  const DFromV<V> d;
+  return ConcatEven(d, Add(DupEven(b), DupOdd(b)), Add(DupEven(a), DupOdd(a)));
+}
+template <class V> HYLE_FORCE_INLINE V PairwiseSub(V a, V b) noexcept {
+  const DFromV<V> d;
+  return ConcatEven(d, Sub(DupEven(b), DupOdd(b)), Sub(DupEven(a), DupOdd(a)));
+}
 template <class V> HYLE_FORCE_INLINE V InterleaveEven(V a, V b) noexcept { return svtrn1(a, b); }
 template <class V> HYLE_FORCE_INLINE V InterleaveOdd(V a, V b) noexcept { return svtrn2(a, b); }
 template <class D> HYLE_FORCE_INLINE VFromD<D> Reverse2(D, VFromD<D> v) noexcept {
@@ -1089,6 +1142,18 @@ HYLE_FORCE_INLINE VFromD<RebindToUnsigned<D>> IndicesFromVec(D, VI indices) noex
 }
 template <class V, class VI> HYLE_FORCE_INLINE V TableLookupLanes(V v, VI indices) noexcept {
   return svtbl(v, indices);
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> TwoTablesLookupLanes(
+    D d, VFromD<D> a, VFromD<D> b, VFromD<RebindToUnsigned<D>> idx) noexcept {
+  using U = TFromD<RebindToUnsigned<D>>;
+  const auto n = Set(RebindToUnsigned<D>(), static_cast<U>(Lanes(d)));
+  return IfThenElse(Lt(idx, n), svtbl(a, idx), svtbl(b, Sub(idx, n)));
+}
+template <class V>
+HYLE_FORCE_INLINE V TwoTablesLookupLanes(
+    V a, V b, VFromD<RebindToUnsigned<DFromV<V>>> idx) noexcept {
+  return TwoTablesLookupLanes(DFromV<V>(), a, b, idx);
 }
 template <class V, class VI> HYLE_FORCE_INLINE VI TableLookupBytes(V table, VI indices) noexcept {
   const svbool_t pg = svptrue_b8();
@@ -1350,6 +1415,64 @@ HYLE_FORCE_INLINE svuint64_t SumsOf8(svuint8_t v) noexcept {
   const auto s4 = SumsOf4(v);
   return Add(PromoteEvenTo(d, s4), PromoteOddTo(d, s4));
 }
+HYLE_FORCE_INLINE svuint64_t SumsOf8AbsDiff(svuint8_t a, svuint8_t b) noexcept {
+  return SumsOf8(AbsDiff(a, b));
+}
+HYLE_FORCE_INLINE svuint64_t SumsOf8AbsDiff(svuint8_t v) noexcept {
+  return SumsOf8(v);
+}
+
+namespace detail {
+template <int i3, int i2, int i1, int i0>
+HYLE_FORCE_INLINE svuint8_t ShuffleQuadsForSad(svuint8_t a) noexcept {
+  const auto pg = svptrue_b8();
+  const auto local = svand_x(pg, svindex_u8(0, 1), std::uint8_t{15});
+  const auto quad = svlsr_x(pg, local, 2);
+  auto selected = svdup_n_u8(static_cast<std::uint8_t>(i0));
+  selected = svsel(svcmpeq(pg, quad, std::uint8_t{1}), svdup_n_u8(static_cast<std::uint8_t>(i1)), selected);
+  selected = svsel(svcmpeq(pg, quad, std::uint8_t{2}), svdup_n_u8(static_cast<std::uint8_t>(i2)), selected);
+  selected = svsel(svcmpeq(pg, quad, std::uint8_t{3}), svdup_n_u8(static_cast<std::uint8_t>(i3)), selected);
+  const auto idx = svorr_x(pg, svlsl_x(pg, selected, 2), svand_x(pg, local, std::uint8_t{3}));
+  return TableLookupBytes(a, idx);
+}
+}  // namespace detail
+
+template <int kAOffset, int kBOffset>
+HYLE_FORCE_INLINE svuint16_t SumsOfAdjQuadAbsDiff(svuint8_t a, svuint8_t b) noexcept {
+  static_assert(kAOffset == 0 || kAOffset == 1, "kAOffset in {0,1}");
+  static_assert(kBOffset >= 0 && kBOffset <= 3, "kBOffset in {0..3}");
+  const auto pg = svptrue_b8();
+  const auto p = svand_x(pg, svindex_u8(0, 1), std::uint8_t{15});
+  const auto out = svlsr_x(pg, p, 1);
+  const auto j = svand_x(pg, p, std::uint8_t{1});
+  const auto a01i = svadd_x(pg, svadd_x(pg, out, j), std::uint8_t{kAOffset * 4});
+  const auto a23i = svadd_x(pg, a01i, std::uint8_t{2});
+  const auto b01i = svadd_x(pg, j, std::uint8_t{kBOffset * 4});
+  const auto b23i = svadd_x(pg, b01i, std::uint8_t{2});
+  return Add(SumsOf2(AbsDiff(TableLookupBytes(a, a01i), TableLookupBytes(b, b01i))),
+             SumsOf2(AbsDiff(TableLookupBytes(a, a23i), TableLookupBytes(b, b23i))));
+}
+
+template <int i3, int i2, int i1, int i0>
+HYLE_FORCE_INLINE svuint16_t SumsOfShuffledQuadAbsDiff(svuint8_t a, svuint8_t b) noexcept {
+  static_assert(i0 >= 0 && i0 <= 3 && i1 >= 0 && i1 <= 3 &&
+                i2 >= 0 && i2 <= 3 && i3 >= 0 && i3 <= 3, "quad indices in {0..3}");
+  const auto pg = svptrue_b8();
+  const auto p = svand_x(pg, svindex_u8(0, 1), std::uint8_t{15});
+  const auto output = svlsr_x(pg, p, 1);
+  const auto pair = svlsr_x(pg, output, 1);
+  const auto odd = svand_x(pg, output, std::uint8_t{1});
+  const auto j = svand_x(pg, p, std::uint8_t{1});
+  const auto start = svadd_x(pg, svlsl_x(pg, pair, 1),
+                             svlsl_x(pg, svand_x(pg, pair, std::uint8_t{2}), 1));
+  const auto a01i = svadd_x(pg, svadd_x(pg, start, odd), j);
+  const auto a23i = svadd_x(pg, a01i, std::uint8_t{2});
+  const auto b01i = svadd_x(pg, svlsl_x(pg, pair, 2), j);
+  const auto b23i = svadd_x(pg, b01i, std::uint8_t{2});
+  const auto shuffled = detail::ShuffleQuadsForSad<i3, i2, i1, i0>(a);
+  return Add(SumsOf2(AbsDiff(TableLookupBytes(shuffled, a01i), TableLookupBytes(b, b01i))),
+             SumsOf2(AbsDiff(TableLookupBytes(shuffled, a23i), TableLookupBytes(b, b23i))));
+}
 
 template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMul(D d, VFromD<D> v) noexcept {
   const std::size_t n = Lanes(d);
@@ -1478,6 +1601,11 @@ HYLE_FORCE_INLINE std::size_t FindKnownLastTrue(D d, svbool_t m) noexcept {
 template <class V, class VI> HYLE_FORCE_INLINE V MulByPow2(V a, VI b) noexcept {
   static_assert(std::is_floating_point_v<TFromV<V>>, "MulByPow2 is float only");
   return svscale_x(detail::ptrue<TFromV<V>>(), a, b);
+}
+template <class V> HYLE_FORCE_INLINE V MulByFloorPow2(V v, V exp) noexcept {
+  static_assert(std::is_floating_point_v<TFromV<V>>, "MulByFloorPow2 is float only");
+  const RebindToSigned<DFromV<V>> di;
+  return MulByPow2(v, ConvertTo(di, Floor(exp)));
 }
 // Expand(v, m): scatter v's low CountTrue(m) lanes out to the m-true positions, 0 elsewhere (the
 // inverse of Compress). SVE base has no native expand instruction (Highway builds an 8-lane block

@@ -887,6 +887,12 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> DemoteTo(Simd<DstT, NDst, 0> dd, V
     }
   }
 }
+template <typename DstT, std::size_t NDst, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, NDst, 0>> OrderedDemote2To(
+    Simd<DstT, NDst, 0> dd, V a, V b) noexcept {
+  return DemoteTo(dd, a, b);
+}
+
 // WidenMulPairwiseAdd(d32, a_i16, b_i16): r[k] = a[2k]*b[2k] + a[2k+1]*b[2k+1] (fixed-point dot
 // core). Same bit-slice trick as SVE: view each adjacent i16 pair as one i32 lane, extract even
 // (low 16, sign-ext via sll<<16 then sra>>16) and odd (sra>>16), multiply as i32, add. i16->i32.
@@ -1263,6 +1269,20 @@ template <class V, class VI> HYLE_FORCE_INLINE V TableLookupLanes(V v, VI indice
   const auto wrapped = __riscv_vand(indices, static_cast<U>(vl - 1), vl);
   return __riscv_vrgather(v, wrapped, vl);
 }
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> TwoTablesLookupLanes(
+    D d, VFromD<D> a, VFromD<D> b, VFromD<RebindToUnsigned<D>> idx) noexcept {
+  using U = TFromD<RebindToUnsigned<D>>;
+  const std::size_t vl = Lanes(d);
+  const auto n = Set(RebindToUnsigned<D>(), static_cast<U>(vl));
+  return IfThenElse(Lt(idx, n), __riscv_vrgather(a, idx, vl),
+                    __riscv_vrgather(b, Sub(idx, n), vl));
+}
+template <class V>
+HYLE_FORCE_INLINE V TwoTablesLookupLanes(
+    V a, V b, VFromD<RebindToUnsigned<DFromV<V>>> idx) noexcept {
+  return TwoTablesLookupLanes(DFromV<V>(), a, b, idx);
+}
 template <class V, class VI> HYLE_FORCE_INLINE VI TableLookupBytes(V table, VI indices) noexcept {
   const std::size_t vl = detail::vlmax<std::uint8_t>();
   const vuint8m1_t idx = detail::bits_u8_rvv(indices);
@@ -1373,10 +1393,36 @@ template <class D, class V> HYLE_FORCE_INLINE V ConcatOdd(D d, V hi, V lo) noexc
   const V hi_packed = __riscv_vcompress(hi, om, vl);
   return __riscv_vslideup(lo_packed, hi_packed, vl / 2, vl);
 }
+template <class V> HYLE_FORCE_INLINE V PairwiseAdd(V a, V b) noexcept {
+  const DFromV<V> d;
+  return ConcatEven(d, Add(DupEven(b), DupOdd(b)), Add(DupEven(a), DupOdd(a)));
+}
+template <class V> HYLE_FORCE_INLINE V PairwiseSub(V a, V b) noexcept {
+  const DFromV<V> d;
+  return ConcatEven(d, Sub(DupEven(b), DupOdd(b)), Sub(DupEven(a), DupOdd(a)));
+}
+
 // OddEven(odd, even): even-position lanes from `even`, odd-position lanes from `odd`.
 template <class V> HYLE_FORCE_INLINE V OddEven(V odd, V even) noexcept {
   const std::size_t vl = detail::vlmax<TFromV<V>>();
   return __riscv_vmerge(odd, even, detail::even_mask_rvv(DFromV<V>()), vl);  // even mask picks `even`
+}
+
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> InterleaveWholeLower(D d, VFromD<D> a, VFromD<D> b) noexcept {
+  using T = TFromD<D>;
+  const std::size_t vl = Lanes(d);
+  const auto idx = __riscv_vsrl(detail::iota_u_rvv<T>(vl), 1u, vl);
+  return OddEven(__riscv_vrgather(b, idx, vl), __riscv_vrgather(a, idx, vl));
+}
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> InterleaveWholeUpper(D d, VFromD<D> a, VFromD<D> b) noexcept {
+  using T = TFromD<D>;
+  using U = MakeUnsigned<T>;
+  const std::size_t vl = Lanes(d);
+  const auto idx = __riscv_vadd(__riscv_vsrl(detail::iota_u_rvv<T>(vl), 1u, vl),
+                                static_cast<U>(vl / 2), vl);
+  return OddEven(__riscv_vrgather(b, idx, vl), __riscv_vrgather(a, idx, vl));
 }
 
 // ---- 128-bit block operations -------------------------------------------------------
@@ -1609,6 +1655,68 @@ HYLE_FORCE_INLINE vuint64m1_t SumsOf8(vuint8m1_t v) noexcept {
   const auto s4 = SumsOf4(v);
   return Add(PromoteEvenTo(d, s4), PromoteOddTo(d, s4));
 }
+HYLE_FORCE_INLINE vuint64m1_t SumsOf8AbsDiff(vuint8m1_t a, vuint8m1_t b) noexcept {
+  return SumsOf8(AbsDiff(a, b));
+}
+HYLE_FORCE_INLINE vuint64m1_t SumsOf8AbsDiff(vuint8m1_t v) noexcept {
+  return SumsOf8(v);
+}
+
+namespace detail {
+template <int i3, int i2, int i1, int i0>
+HYLE_FORCE_INLINE vuint8m1_t ShuffleQuadsForSad(vuint8m1_t a) noexcept {
+  const std::size_t vl = vlmax<std::uint8_t>();
+  const auto local = __riscv_vand(__riscv_vid_v_u8m1(vl), std::uint8_t{15}, vl);
+  const auto quad = __riscv_vsrl(local, 2u, vl);
+  auto selected = __riscv_vmv_v_x_u8m1(static_cast<std::uint8_t>(i0), vl);
+  selected = __riscv_vmerge(selected, __riscv_vmv_v_x_u8m1(static_cast<std::uint8_t>(i1), vl),
+                            __riscv_vmseq(quad, std::uint8_t{1}, vl), vl);
+  selected = __riscv_vmerge(selected, __riscv_vmv_v_x_u8m1(static_cast<std::uint8_t>(i2), vl),
+                            __riscv_vmseq(quad, std::uint8_t{2}, vl), vl);
+  selected = __riscv_vmerge(selected, __riscv_vmv_v_x_u8m1(static_cast<std::uint8_t>(i3), vl),
+                            __riscv_vmseq(quad, std::uint8_t{3}, vl), vl);
+  const auto idx = __riscv_vor(__riscv_vsll(selected, 2u, vl),
+                               __riscv_vand(local, std::uint8_t{3}, vl), vl);
+  return TableLookupBytes(a, idx);
+}
+}  // namespace detail
+
+template <int kAOffset, int kBOffset>
+HYLE_FORCE_INLINE vuint16m1_t SumsOfAdjQuadAbsDiff(vuint8m1_t a, vuint8m1_t b) noexcept {
+  static_assert(kAOffset == 0 || kAOffset == 1, "kAOffset in {0,1}");
+  static_assert(kBOffset >= 0 && kBOffset <= 3, "kBOffset in {0..3}");
+  const std::size_t vl = detail::vlmax<std::uint8_t>();
+  const auto p = __riscv_vand(__riscv_vid_v_u8m1(vl), std::uint8_t{15}, vl);
+  const auto out = __riscv_vsrl(p, 1u, vl);
+  const auto j = __riscv_vand(p, std::uint8_t{1}, vl);
+  const auto a01i = __riscv_vadd(__riscv_vadd(out, j, vl), std::uint8_t{kAOffset * 4}, vl);
+  const auto a23i = __riscv_vadd(a01i, std::uint8_t{2}, vl);
+  const auto b01i = __riscv_vadd(j, std::uint8_t{kBOffset * 4}, vl);
+  const auto b23i = __riscv_vadd(b01i, std::uint8_t{2}, vl);
+  return Add(SumsOf2(AbsDiff(TableLookupBytes(a, a01i), TableLookupBytes(b, b01i))),
+             SumsOf2(AbsDiff(TableLookupBytes(a, a23i), TableLookupBytes(b, b23i))));
+}
+
+template <int i3, int i2, int i1, int i0>
+HYLE_FORCE_INLINE vuint16m1_t SumsOfShuffledQuadAbsDiff(vuint8m1_t a, vuint8m1_t b) noexcept {
+  static_assert(i0 >= 0 && i0 <= 3 && i1 >= 0 && i1 <= 3 &&
+                i2 >= 0 && i2 <= 3 && i3 >= 0 && i3 <= 3, "quad indices in {0..3}");
+  const std::size_t vl = detail::vlmax<std::uint8_t>();
+  const auto p = __riscv_vand(__riscv_vid_v_u8m1(vl), std::uint8_t{15}, vl);
+  const auto output = __riscv_vsrl(p, 1u, vl);
+  const auto pair = __riscv_vsrl(output, 1u, vl);
+  const auto odd = __riscv_vand(output, std::uint8_t{1}, vl);
+  const auto j = __riscv_vand(p, std::uint8_t{1}, vl);
+  const auto start = __riscv_vadd(__riscv_vsll(pair, 1u, vl),
+                                  __riscv_vsll(__riscv_vand(pair, std::uint8_t{2}, vl), 1u, vl), vl);
+  const auto a01i = __riscv_vadd(__riscv_vadd(start, odd, vl), j, vl);
+  const auto a23i = __riscv_vadd(a01i, std::uint8_t{2}, vl);
+  const auto b01i = __riscv_vadd(__riscv_vsll(pair, 2u, vl), j, vl);
+  const auto b23i = __riscv_vadd(b01i, std::uint8_t{2}, vl);
+  const auto shuffled = detail::ShuffleQuadsForSad<i3, i2, i1, i0>(a);
+  return Add(SumsOf2(AbsDiff(TableLookupBytes(shuffled, a01i), TableLookupBytes(b, b01i))),
+             SumsOf2(AbsDiff(TableLookupBytes(shuffled, a23i), TableLookupBytes(b, b23i))));
+}
 
 template <class D> HYLE_FORCE_INLINE TFromD<D> ReduceMul(D d, VFromD<D> v) noexcept {
   const std::size_t n = Lanes(d);
@@ -1813,6 +1921,11 @@ template <class V, class VI> HYLE_FORCE_INLINE V MulByPow2(V a, VI b) noexcept {
   const V f2 = BitCast(df, ShiftLeft<kMantBits>(Add(e2, biasv)));
   const V f3 = BitCast(df, ShiftLeft<kMantBits>(Add(e3, biasv)));
   return Mul(Mul(Mul(a, f1), f2), f3);
+}
+template <class V> HYLE_FORCE_INLINE V MulByFloorPow2(V v, V exp) noexcept {
+  static_assert(std::is_floating_point_v<TFromV<V>>, "MulByFloorPow2 is float only");
+  const RebindToSigned<DFromV<V>> di;
+  return MulByPow2(v, ConvertTo(di, Floor(exp)));
 }
 // Expand(v, m): scatter v's low CountTrue(m) lanes to the m-true positions, 0 elsewhere (inverse of
 // Compress). RVV is clean: viota(m) gives each lane the EXCLUSIVE prefix-count of active lanes below

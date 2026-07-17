@@ -81,18 +81,7 @@
     "portable_missing": {
       "rationale": "Portable semantic capability with no scalable backend-local definition and no shared generic definition detected by the mechanical audit. These are the primary register-layer implementation backlog.",
       "action": "implement_or_prove_equivalent",
-      "ops": [
-        "InterleaveWholeLower",
-        "InterleaveWholeUpper",
-        "MulByFloorPow2",
-        "OrderedDemote2To",
-        "PairwiseAdd",
-        "PairwiseSub",
-        "SumsOf8AbsDiff",
-        "SumsOfAdjQuadAbsDiff",
-        "SumsOfShuffledQuadAbsDiff",
-        "TwoTablesLookupLanes"
-      ]
+      "ops": []
     }
   },
   "product_dependencies": {
@@ -100,9 +89,7 @@
     "bitpack": [
       "Xor3"
     ],
-    "dtype": [
-      "OrderedDemote2To"
-    ],
+    "dtype": [],
     "sort": []
   }
 }

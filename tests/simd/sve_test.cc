@@ -1157,6 +1157,83 @@ TEST(Sve, Simd16Sve2Crypto) {
 }
 #endif  // __ARM_FEATURE_SVE2_AES
 
+TEST(Sve, ScalableSadFamilies) {
+  const hs::ScalableTag<std::uint8_t> d8;
+  const hs::ScalableTag<std::uint16_t> d16;
+  const hs::ScalableTag<std::uint64_t> d64;
+  const std::size_t n = hs::Lanes(d8);
+  alignas(64) std::uint8_t a[kBuf], b[kBuf];
+  alignas(64) std::uint16_t o16[kBuf];
+  alignas(64) std::uint64_t o64[kBuf];
+  for (std::size_t i = 0; i < n; ++i) { a[i] = static_cast<std::uint8_t>(i * 7u + 3u); b[i] = static_cast<std::uint8_t>(251u - i * 5u); }
+  hs::Store(hs::SumsOf8AbsDiff(hs::Load(d8, a), hs::Load(d8, b)), d64, o64);
+  for (std::size_t g = 0; g < n / 8; ++g) {
+    std::uint64_t expected = 0;
+    for (std::size_t j = 0; j < 8; ++j) expected += static_cast<std::uint64_t>(std::abs(static_cast<int>(a[8 * g + j]) - static_cast<int>(b[8 * g + j])));
+    EXPECT_EQ(o64[g], expected) << "sad8 group=" << g;
+  }
+  hs::Store(hs::SumsOfAdjQuadAbsDiff<1, 2>(hs::Load(d8, a), hs::Load(d8, b)), d16, o16);
+  for (std::size_t block = 0; block < n; block += 16) for (std::size_t i = 0; i < 8; ++i) {
+    unsigned expected = 0;
+    for (std::size_t j = 0; j < 4; ++j) expected += static_cast<unsigned>(std::abs(static_cast<int>(a[block + 4 + i + j]) - static_cast<int>(b[block + 8 + j])));
+    EXPECT_EQ(o16[block / 2 + i], expected) << "adj block=" << block << " i=" << i;
+  }
+  hs::Store(hs::SumsOfShuffledQuadAbsDiff<0, 3, 1, 2>(hs::Load(d8, a), hs::Load(d8, b)), d16, o16);
+  constexpr int sel[4] = {2, 1, 3, 0};
+  constexpr int start[4] = {0, 2, 8, 10};
+  for (std::size_t block = 0; block < n; block += 16) for (int pair = 0; pair < 4; ++pair) for (int odd = 0; odd < 2; ++odd) {
+    std::uint8_t shuffled[16];
+    for (int q = 0; q < 4; ++q) for (int j = 0; j < 4; ++j) shuffled[q * 4 + j] = a[block + sel[q] * 4 + j];
+    unsigned expected = 0;
+    for (int j = 0; j < 4; ++j) expected += static_cast<unsigned>(std::abs(static_cast<int>(shuffled[start[pair] + odd + j]) - static_cast<int>(b[block + pair * 4 + j])));
+    EXPECT_EQ(o16[block / 2 + pair * 2 + odd], expected) << "shuffle block=" << block << " pair=" << pair << " odd=" << odd;
+  }
+}
+
+TEST(Sve, WholeVectorPairwiseLookupDemoteAndScale) {
+  const hs::ScalableTag<std::int32_t> d;
+  const std::size_t n = hs::Lanes(d);
+  alignas(64) std::int32_t a[kBuf], b[kBuf], idx[kBuf], out[kBuf];
+  for (std::size_t i = 0; i < n; ++i) {
+    a[i] = static_cast<std::int32_t>(i + 1);
+    b[i] = static_cast<std::int32_t>(100 + i);
+    idx[i] = static_cast<std::int32_t>((i & 1u) == 0 ? i / 2 : n + i / 2);
+  }
+  const auto va = hs::Load(d, a), vb = hs::Load(d, b);
+  hs::Store(hs::PairwiseAdd(va, vb), d, out);
+  for (std::size_t i = 0; i < n / 2; ++i) {
+    EXPECT_EQ(out[i], a[2 * i] + a[2 * i + 1]);
+    EXPECT_EQ(out[n / 2 + i], b[2 * i] + b[2 * i + 1]);
+  }
+  hs::Store(hs::PairwiseSub(va, vb), d, out);
+  for (std::size_t i = 0; i < n / 2; ++i) {
+    EXPECT_EQ(out[i], a[2 * i] - a[2 * i + 1]);
+    EXPECT_EQ(out[n / 2 + i], b[2 * i] - b[2 * i + 1]);
+  }
+  hs::Store(hs::InterleaveWholeLower(d, va, vb), d, out);
+  for (std::size_t i = 0; i < n / 2; ++i) { EXPECT_EQ(out[2 * i], a[i]); EXPECT_EQ(out[2 * i + 1], b[i]); }
+  hs::Store(hs::InterleaveWholeUpper(d, va, vb), d, out);
+  for (std::size_t i = 0; i < n / 2; ++i) { EXPECT_EQ(out[2 * i], a[n / 2 + i]); EXPECT_EQ(out[2 * i + 1], b[n / 2 + i]); }
+  const auto indices = hs::IndicesFromVec(d, hs::Load(d, idx));
+  hs::Store(hs::TwoTablesLookupLanes(d, va, vb, indices), d, out);
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::size_t k = static_cast<std::size_t>(idx[i]);
+    EXPECT_EQ(out[i], k < n ? a[k] : b[k - n]);
+  }
+
+  const hs::ScalableTag<std::int16_t> d16;
+  alignas(64) std::int16_t narrow[kBuf];
+  hs::Store(hs::OrderedDemote2To(d16, va, vb), d16, narrow);
+  for (std::size_t i = 0; i < n; ++i) { EXPECT_EQ(narrow[i], a[i]); EXPECT_EQ(narrow[n + i], b[i]); }
+
+  const hs::ScalableTag<float> df;
+  const std::size_t nf = hs::Lanes(df);
+  alignas(64) float fv[kBuf], fe[kBuf], fo[kBuf];
+  for (std::size_t i = 0; i < nf; ++i) { fv[i] = static_cast<float>(i + 1); fe[i] = static_cast<float>(static_cast<int>(i % 5) - 2) + 0.75f; }
+  hs::Store(hs::MulByFloorPow2(hs::Load(df, fv), hs::Load(df, fe)), df, fo);
+  for (std::size_t i = 0; i < nf; ++i) EXPECT_EQ(fo[i], std::ldexp(fv[i], static_cast<int>(std::floor(fe[i]))));
+}
+
 TEST(Sve, RuntimeShiftsRoundedAverageAndBlockShuffles) {
   const hs::ScalableTag<std::int32_t> d;
   const std::size_t n = hs::Lanes(d);
