@@ -6,7 +6,9 @@
 > **但“寄存器 op 齐平”不等于“普通用户能力齐平”**：按 whole-buffer/C ABI 语义重新扫描
 > Highway contrib 与 xsimd 后，仍有 search/reduction、混合精度 dot、排序类型和少量数学能力候选。
 > 本文新增的 P0/P1 表是这些候选的唯一账本；不能再用 387-name 结论把它们误报为“没有 API 空洞”。
-> 变宽 SVE/RVV 追平定宽已在 simd-15~18 收口。经 op_parity 仪器重建(见
+> 变宽 SVE/RVV 的 **P0~P4 正确性与 generic 实例化**已在 simd-15~18 收口；这不代表后端本地
+> 名字、Runtime 产品 kernel 或真机性能证据与定宽同档。后续语义分类、`dtype/math/sort/bitpack`
+> scalable 产品核和性能证据由 [`simd-25`](./simd-25-scalable-product-parity.md) 收口。经 op_parity 仪器重建(见
 > [`../debug/op-parity-harness-artifacts-hunt.md`](../debug/op-parity-harness-artifacts-hunt.md)),
 > 每个已测 op 均有三平台校准 parity 数据背书——**覆盖率已过"广度"阶段,当前真正的资产是"每个数字可信"**。
 > 本文取代旧 gap-inventory(SVE/RVV 缺口版,已完成并吸收进 simd-15~18 文档)。
@@ -34,7 +36,7 @@ Native*/AVX2Shl* 等,HYLE 以 LoadInterleaved 等直接暴露等价能力);②HY
 | 维度 | 状态 |
 |---|---|
 | 非掩码 op 面(算术/swizzle/mask 域/widen/gather/interleave/crypto) | 齐平,零散缺口个位数(见 P2/P3) |
-| 变宽 SVE/RVV vs 定宽 | 已收口(simd-15~18;SVE 19 tests×4VL、RVV 18×4VLEN 全绿) |
+| 变宽 SVE/RVV vs 定宽 | 寄存器 P0~P4 正确性已收口；产品层/性能层由 simd-25 进行中 |
 | 数学函数面 vs xsimd/sleef | simd-09 已收(gamma/hypot best-of 等) |
 | 掩码 op 面 | 完整：基础算术/逻辑/比较/一元 + complex/FMA/reduce/gather/shift 均已有 |
 | 数字可信度 | op_parity 校准仪器 v2,三平台 CALIBRATION PASS,真输清单见 simd-orderswap-matrix.md |

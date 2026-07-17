@@ -1,0 +1,127 @@
+# simd-25：SVE/RVV 语义与产品层追平
+
+> 状态：🚧 进行中（阶段 0 分类账已建立）。依赖 simd-22 双轨与 simd-24 已有产品核。
+>
+> 本里程碑重新限定 simd-15~18 的“追平”：它们完成的是 scalable P0~P4 正确性与
+> generic 实例化，不代表后端本地名字、Runtime 产品 kernel 或真机性能证据已经和定宽同档。
+
+## 目标
+
+SVE/RVV 的完成标准不是复制 SSE4/AVX2/AVX512/NEON 的全部名字，而是同时闭合四层：
+
+1. 每个定宽/scalable 差异都有语义分类，不再把本地定义数当用户能力数；
+2. 可移植且有意义的寄存器语义能够在 SVE/RVV 实例化；
+3. `dtype/math/sort/bitpack` 有真实 scalable kernel，不再无条件钳制到 NEON/scalar；
+4. QEMU 多 VL/VLEN 正确性和真机 Highway 性能证据达到可签字水平。
+
+```text
+fixed-only 名字差集
+        |
+        v
+语义 manifest + compile probes
+        |
+        +-- generic / selector ----------> 验证，不复制
+        +-- fixed block/half model ------> 产品驱动实现或 N/A
+        +-- portable / extension-gated --> SVE/RVV 原语
+        |
+        v
+bitpack -> dtype -> math -> RVV sort -> SVE sort
+        |
+        v
+Runtime / exact / native + QEMU + real-hardware parity
+```
+
+## 阶段 0：可信缺口底账
+
+`scripts/simd-scalable-coverage.py` 机械复现四个定宽后端并集与 SVE/RVV 并集，并由
+`scripts/simd-scalable-op-manifest.json` 逐项分类。初始 80 个 fixed-only 名字分为：
+
+| 分类 | 数量 | 含义 |
+|---|---:|---|
+| `shared_generic` | 10 | 已在 `vec.h` 一次实现，只欠 scalable 实例化证明 |
+| `selector` | 13 | Native/Emulated 内部选择器，不是独立用户能力 |
+| `fixed_model` | 28 | half/128-bit block/固定寄存器拼装，按产品合同裁决 |
+| `extension_gated` | 3 | 依赖可选 ISA 或流式存储合同 |
+| `portable_missing` | 26 | 当前首要寄存器实现 backlog |
+
+脚本同时输出 backend-local 与 `backend | vec.h` 两种机械数；后者仍只是语法面，不冒充编译可实例化
+或产品能力。`--check` 要求全部 80 项恰好分类一次，任何新增、消失或重复都会失败。
+
+## 阶段 1：target/feature mechanization 与编译探针
+
+- 扩充 platform feature，而不是只保留 `sve/rvv` 两个粗粒度 bool：SVE2/BF16/I8MM/AES，
+  RVV Zvbb/Zvbc/向量 fp16 等分别探测；
+- optional feature kernel 独立 TU，baseline detector 不得被高级 `-march` 污染；
+- 用一份 target manifest 生成 source list、声明、Runtime 表和 exact binding，偿还 simd-24 已记录的
+  “exact 绑定正确但产物仍含 fat TU”欠账；
+- 为 `portable_missing`、`shared_generic` 和每个产品 body 建立 SVE/RVV compile-only probe。
+
+SVE 的 VL 是线程属性；Runtime 只缓存 ISA/feature，具体 `Lanes(d)` 继续在 kernel 中求值，不能把某一
+线程的 VL 固化成进程全局结论。
+
+## 阶段 2：bitpack 与 dtype
+
+### bitpack
+
+现有 `bitpack_body.inc` 已是一份 D-tag body。新增 SVE/RVV TU，从编译错误收敛最小原语闭包，再接
+Runtime/exact。覆盖所有类型、bits、非整 VL tail、跨页 canary 和 pack/unpack round-trip。
+
+### dtype
+
+依次实现 bf16↔f32、f16↔f32、经收益裁决的 fp8。基础位运算路径和 optional hardware path 分开；
+接口保持 pointer/count/POD，close-01 可直接包 C ABI。RVV 当前 scalar fallback 优先消除。
+
+## 阶段 3：math
+
+实例化已经摘除为 HYLE D-tag 的 `math_hyle-inl.h`、`math_xsimd_hyle-inl.h` 与 complex body。先补其
+传递闭包中的 `DemoteInRangeTo`、`GetBiasedExponent` 等真实缺口，再生成 SVE/RVV TU。验收沿用现有
+ULP 合同，并覆盖 NaN/Inf/subnormal/domain edge、tail 和跨 lane 混合输入。
+
+Runtime 改为逐 op/feature 的 scalable 或已认证 fallback；不能仅修改 `runtime().math.isa` 元数据。
+
+## 阶段 4：sort 分开处理
+
+### RVV
+
+Highway VQSort 有 RVV capped/fractional-LMUL 路径；先验证 HYLE LMUL=1 + 逻辑 `vl` 是否能维持网络
+合同，再决定是否引入 fractional LMUL。传递缺口包括 block shuffle、`LoadDup128`、
+`OddEvenBlocks`、`ReverseBlocks` 等。
+
+### SVE
+
+上游 Highway 会禁用真正 length-agnostic SVE VQSort，因此这不是机械移植任务。先以 SVE
+predicate/compact 完成大数组 partition，小 sorting network 可暂用 NEON 或 capped SVE。只有产品热核
+真实执行 SVE，模块才报告 `Isa::kSve`。
+
+两者都覆盖 sort/partial/select、升降序、重复值、NaN total-order、KV、canary/ASan 和规模阶梯。
+
+## 阶段 5：剩余原语
+
+产品传递闭包之外继续补 `AverageRound`、same-shift/rotate、rounding shift、pairwise、abs-diff、
+two-table lookup 等 portable 项。fixed-model 项遵守三选一：
+
+1. 产品依赖且合同明确：实现逐 128-bit block 语义；
+2. scalable 有更自然的等价语义：提供并记录映射；
+3. 只代表定宽寄存器拼装：manifest 记录 N/A，不制造 store/reload 假快路。
+
+## 阶段 6：验收与派发裁决
+
+- SVE：VL 128/256/384/512，另加 2048 边界；
+- RVV：VLEN 128/256/512/1024，工具链允许时加 2048；
+- base 与 SVE2/Zvbb/Zvbc 等扩展分别构建；
+- fat Runtime、exact、native 三条入口和实际 tier 探针；
+- 反汇编确认无越级 ISA、无意外 scalar 主循环；
+- 真机同编译器/同 ISA/同合同对拍 Highway，同时对比 SVE→NEON、RVV→scalar 的升级收益；
+- 继续使用 `simd-op-benchmark-methodology.md` 的双序、多轮和置信区间，稳定低于 0.98 的项逐个狩猎。
+
+若某 scalable kernel 经真机证据稳定不如 fallback，Runtime 可以选择后者，但 exact/native 实现仍应
+可用，且诊断必须报告真实选择；这叫 per-module best-of，不叫缺实现。
+
+## 完成闸门
+
+- manifest 零未分类、零陈旧项；
+- portable semantic gap 全部实现或有可审计的 ISA-gated 裁决；
+- `dtype/math/sort/bitpack` 不再存在无条件 hard clamp；
+- 所有 scalable 产品 kernel 通过多 VL/VLEN、tail、sanitizer/边界和 dispatch 探针；
+- 真机 scorecard 完成，稳定 LOSE 均已修复或归因到明确 ISA/算法墙；
+- 普通入口保持 pointer/count/POD，寄存器类型不穿过 Runtime/C ABI。

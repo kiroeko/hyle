@@ -1,0 +1,140 @@
+{
+  "version": 1,
+  "description": "Semantic classification of names defined by at least one fixed-width backend but not locally defined by either scalable backend. This is not a user-capability count: vec.h generic definitions and implementation selectors are classified separately.",
+  "classes": {
+    "shared_generic": {
+      "rationale": "Already implemented once in vec.h and intended to instantiate for SVE/RVV. Requires compile-instantiation coverage, not another backend-local definition.",
+      "action": "verify_instantiation",
+      "ops": [
+        "LoadNOr",
+        "MulAddSub",
+        "MulEven",
+        "MulHigh32",
+        "MulOdd",
+        "MulSub",
+        "MulSubAdd",
+        "NegMulSub",
+        "ShiftRightUniform",
+        "Xor3"
+      ]
+    },
+    "selector": {
+      "rationale": "Native/emulated implementation selector behind an umbrella operation. It is not an independent public semantic capability.",
+      "action": "do_not_mirror_for_parity",
+      "ops": [
+        "CompressEmulated",
+        "CompressNotNative",
+        "DemoteToNearestIntNative",
+        "GatherIndexEmulated",
+        "HighestSetBitIndexNative",
+        "MaxOfLanesNative",
+        "MinOfLanesNative",
+        "NativeGatherOffset32",
+        "NativeMaskedGatherOr32",
+        "ReciprocalNewtonNative",
+        "ReciprocalSqrtNewtonNative",
+        "SatWidenMulAccumFixedPointNative",
+        "SumOfLanesNative"
+      ]
+    },
+    "fixed_model": {
+      "rationale": "Expresses a fixed register half or 128-bit block construction. Add a scalable implementation only when a product kernel needs the precise block contract; otherwise document a scalable-native equivalent or N/A.",
+      "action": "consumer_or_contract_driven",
+      "ops": [
+        "BroadcastBlock",
+        "Combine",
+        "CombineShiftRightBytes",
+        "CombineShiftRightLanes",
+        "ExtractBlock",
+        "InsertBlock",
+        "InsertIntoUpper",
+        "InterleaveEvenBlocks",
+        "InterleaveLowerBlocks",
+        "InterleaveOddBlocks",
+        "InterleaveUpperBlocks",
+        "LoadDup128",
+        "LowerHalf",
+        "OddEvenBlocks",
+        "PairwiseAdd128",
+        "PairwiseSub128",
+        "Per4LaneBlockShuffle",
+        "ResizeBitCast",
+        "ReverseBlocks",
+        "ShiftLeftBytes",
+        "ShiftLeftLanes",
+        "ShiftRightBytes",
+        "ShiftRightLanes",
+        "SlideDownBlocks",
+        "SlideUpBlocks",
+        "SwapAdjacentBlocks",
+        "UpperHalf",
+        "ZeroExtendVector"
+      ]
+    },
+    "extension_gated": {
+      "rationale": "The semantic is useful, but an efficient implementation depends on an optional ISA facility or memory-ordering contract. Provide a separately compiled feature variant or an explicit fallback, never assume the extension from base SVE/RVV.",
+      "action": "feature_variant",
+      "ops": [
+        "BitShuffle",
+        "MultiRotateRight",
+        "Stream"
+      ]
+    },
+    "portable_missing": {
+      "rationale": "Portable semantic capability with no scalable backend-local definition and no shared generic definition detected by the mechanical audit. These are the primary register-layer implementation backlog.",
+      "action": "implement_or_prove_equivalent",
+      "ops": [
+        "AverageRound",
+        "ConvertInRangeTo",
+        "DemoteInRangeTo",
+        "GetBiasedExponent",
+        "InterleaveWholeLower",
+        "InterleaveWholeUpper",
+        "MulByFloorPow2",
+        "OrderedDemote2To",
+        "PairwiseAdd",
+        "PairwiseSub",
+        "RotateLeftSame",
+        "RotateRightSame",
+        "RoundingShiftRightSame",
+        "RoundingShr",
+        "ShiftLeftSame",
+        "ShiftRightSame",
+        "Shuffle01",
+        "Shuffle0123",
+        "Shuffle0321",
+        "Shuffle1032",
+        "Shuffle2103",
+        "Shuffle2301",
+        "SumsOf8AbsDiff",
+        "SumsOfAdjQuadAbsDiff",
+        "SumsOfShuffledQuadAbsDiff",
+        "TwoTablesLookupLanes"
+      ]
+    }
+  },
+  "product_dependencies": {
+    "math": [
+      "Combine",
+      "DemoteInRangeTo",
+      "GetBiasedExponent"
+    ],
+    "bitpack": [
+      "Combine",
+      "Xor3"
+    ],
+    "dtype": [
+      "ConvertInRangeTo",
+      "OrderedDemote2To"
+    ],
+    "sort": [
+      "LoadDup128",
+      "OddEvenBlocks",
+      "ReverseBlocks",
+      "ShiftLeftLanes",
+      "Shuffle1032",
+      "Shuffle2301",
+      "SwapAdjacentBlocks"
+    ]
+  }
+}
