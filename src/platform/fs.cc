@@ -407,6 +407,14 @@ bool create_symlink(const char* target, const char* link) noexcept {
   return CreateSymbolicLinkW(wl.w(), wt.w(), flags) != 0;
 }
 
+bool create_hard_link(const char* target, const char* link) noexcept {
+  WidePath wt(target), wl(link);
+  if (wt.w() == nullptr || wl.w() == nullptr) return false;
+  // Hard link: another directory entry for the SAME file data (same volume,
+  // files only -- no directory hard links). No special privilege needed.
+  return CreateHardLinkW(wl.w(), wt.w(), nullptr) != 0;
+}
+
 bool is_symlink(const char* path) noexcept { return stat(path).is_symlink; }
 
 std::size_t read_symlink(const char* path, char* dst, std::size_t cap) noexcept {
@@ -706,6 +714,10 @@ bool set_readonly(const char* path, bool readonly) noexcept {
 
 bool create_symlink(const char* target, const char* link) noexcept {
   return ::symlink(target, link) == 0;
+}
+
+bool create_hard_link(const char* target, const char* link) noexcept {
+  return ::link(target, link) == 0;
 }
 
 bool is_symlink(const char* path) noexcept {

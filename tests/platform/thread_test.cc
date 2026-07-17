@@ -1,6 +1,15 @@
+#if defined(__linux__) && !defined(_GNU_SOURCE)
+#  define _GNU_SOURCE 1  // cpu_set_t / CPU_ISSET / sched_getaffinity
+#endif
+
 #include <gtest/gtest.h>
 
 #include <atomic>
+
+#if !defined(_WIN32)
+#  include <pthread.h>  // pthread_getname_np (Linux + macOS)
+#  include <sched.h>    // sched_getaffinity + cpu_set_t (Linux)
+#endif
 
 #include "hyle/platform/thread.h"
 
@@ -36,6 +45,50 @@ TEST(Thread, SpawnWithNameAndAffinity) {
   std::move(*r).join();
   EXPECT_TRUE(ran.load());
 }
+
+#if !defined(_WIN32)
+// Verify name/affinity actually TAKE EFFECT (not just "spawn didn't crash"), by
+// reading them back from INSIDE the spawned thread. POSIX only: Linux + macOS
+// both have pthread_getname_np; affinity read-back is Linux-only (sched_getaffinity).
+namespace {
+struct ProbeResult {
+  char name[64] = {0};
+  int name_rc = -1;
+#if defined(__linux__)
+  int affinity_ok = -1;  // 1 if the pinned CPU is set in the running mask
+#endif
+};
+void probe_entry(void* arg) {
+  auto* r = static_cast<ProbeResult*>(arg);
+  r->name_rc = ::pthread_getname_np(::pthread_self(), r->name, sizeof(r->name));
+#if defined(__linux__)
+  cpu_set_t set;
+  CPU_ZERO(&set);
+  if (::sched_getaffinity(0, sizeof(set), &set) == 0) {
+    r->affinity_ok = CPU_ISSET(0, &set) ? 1 : 0;
+  }
+#endif
+}
+}  // namespace
+
+TEST(Thread, NameTakesEffect) {
+  ProbeResult res;
+  ThreadOpts opts;
+  opts.name = "hyle-probe";
+  opts.affinity_cpu = 0u;
+  auto r = Thread::spawn(&probe_entry, &res, opts);
+  ASSERT_TRUE(r.has_value());
+  std::move(*r).join();
+  ASSERT_EQ(res.name_rc, 0);
+  // Linux truncates thread names to 15 chars; "hyle-probe" (10) fits exactly.
+  EXPECT_STREQ(res.name, "hyle-probe");
+#if defined(__linux__)
+  // affinity_cpu=0 pinned the thread to CPU 0 -> it must be in the running mask.
+  // (Skip if the OS refused the pin, e.g. cgroup cpuset excludes CPU 0.)
+  if (res.affinity_ok != -1) { EXPECT_EQ(res.affinity_ok, 1); }
+#endif
+}
+#endif  // !_WIN32
 
 TEST(Thread, MoveTransfersOwnership) {
   std::atomic<int> ran{0};

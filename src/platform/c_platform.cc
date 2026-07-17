@@ -495,6 +495,9 @@ int hyle_fs_set_readonly(const char* path, int readonly) {
 int hyle_fs_create_symlink(const char* target, const char* link) {
   return target && link && hyle::platform::create_symlink(target, link) ? 1 : 0;
 }
+int hyle_fs_create_hard_link(const char* target, const char* link) {
+  return target && link && hyle::platform::create_hard_link(target, link) ? 1 : 0;
+}
 int hyle_fs_is_symlink(const char* path) {
   return path && hyle::platform::is_symlink(path) ? 1 : 0;
 }
@@ -641,6 +644,7 @@ int hyle_platform_api_get(hyle_platform_api* out, int expected_abi) {
   out->fs_is_readonly = &hyle_fs_is_readonly;
   out->fs_set_readonly = &hyle_fs_set_readonly;
   out->fs_create_symlink = &hyle_fs_create_symlink;
+  out->fs_create_hard_link = &hyle_fs_create_hard_link;
   out->fs_is_symlink = &hyle_fs_is_symlink;
   out->fs_read_symlink = &hyle_fs_read_symlink;
   out->fs_create_temp_file = &hyle_fs_create_temp_file;

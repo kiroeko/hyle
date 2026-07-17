@@ -315,6 +315,7 @@ HYLE_PLATFORM_C_API int hyle_fs_is_readonly(const char* path);
 HYLE_PLATFORM_C_API int hyle_fs_set_readonly(const char* path, int readonly);
 /* Symlinks. create_symlink needs privilege on Windows (soft-fails -> 0). */
 HYLE_PLATFORM_C_API int hyle_fs_create_symlink(const char* target, const char* link);
+HYLE_PLATFORM_C_API int hyle_fs_create_hard_link(const char* target, const char* link);
 HYLE_PLATFORM_C_API int hyle_fs_is_symlink(const char* path);
 HYLE_PLATFORM_C_API size_t hyle_fs_read_symlink(const char* path, char* dst,
                                                 size_t cap);
@@ -502,6 +503,7 @@ typedef struct hyle_platform_api {
   int (*fs_is_readonly)(const char*);
   int (*fs_set_readonly)(const char*, int);
   int (*fs_create_symlink)(const char*, const char*);
+  int (*fs_create_hard_link)(const char*, const char*);
   int (*fs_is_symlink)(const char*);
   size_t (*fs_read_symlink)(const char*, char*, size_t);
   intptr_t (*fs_create_temp_file)(const char*, const char*, char*, size_t);

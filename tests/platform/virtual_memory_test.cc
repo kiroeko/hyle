@@ -4,6 +4,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>  // std::abort in death tests
 #include <cstring>
 #include <utility>
 
@@ -258,4 +259,50 @@ TEST(VirtualMemory, FreeFunctionsNullNoOp) {
   EXPECT_TRUE(vm_commit(nullptr, page_size()));
   EXPECT_TRUE(vm_decommit(nullptr, page_size()));
   EXPECT_TRUE(vm_protect(nullptr, page_size(), Protect::kNone));
+}
+
+// ---- death tests: prove the PROTECTION actually faults (not just "set ok") --
+// These were the coverage gap: earlier tests set kNone / kRead / a guard page
+// and checked the call returned true, but never confirmed an illegal access
+// truly traps. Death tests run in a forked child, so the SIGSEGV/AV is captured
+// as expected death rather than crashing the suite. ".*" matcher: a hardware
+// fault produces no deterministic stderr.
+
+TEST(VirtualMemoryDeathTest, GuardPageWriteFaults) {
+  EXPECT_DEATH(
+      {
+        VmRegion r = VmRegion::reserve_guarded(page_size());
+        if (!r.valid()) std::abort();  // treat setup failure as "died" too
+        // data() is the permanent no-access guard page (below usable()).
+        volatile auto* g = static_cast<volatile unsigned char*>(r.data());
+        g[0] = 0x1;  // must trap
+      },
+      ".*");
+}
+
+TEST(VirtualMemoryDeathTest, ProtectNoneWriteFaults) {
+  EXPECT_DEATH(
+      {
+        std::size_t p = page_size();
+        void* base = vm_reserve(p);
+        if (base == nullptr || !vm_commit(base, p)) std::abort();
+        if (!vm_protect(base, p, Protect::kNone)) std::abort();
+        volatile auto* b = static_cast<volatile unsigned char*>(base);
+        b[0] = 0x1;  // committed then locked to no-access -> trap
+      },
+      ".*");
+}
+
+TEST(VirtualMemoryDeathTest, ProtectReadOnlyWriteFaults) {
+  EXPECT_DEATH(
+      {
+        std::size_t p = page_size();
+        void* base = vm_reserve(p);
+        if (base == nullptr || !vm_commit(base, p)) std::abort();
+        if (!vm_protect(base, p, Protect::kRead)) std::abort();
+        volatile auto* b = static_cast<volatile unsigned char*>(base);
+        (void)b[0];    // read is allowed
+        b[0] = 0x1;    // write to read-only page -> trap
+      },
+      ".*");
 }

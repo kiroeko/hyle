@@ -156,6 +156,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_fs_set_permissions(path, mode)` | POSIX chmod；Windows 只认写位→READONLY |
 | `hyle_fs_is_readonly(path)` / `set_readonly(path, ro)` | 跨平台可靠子集 |
 | `hyle_fs_create_symlink(target, link)` | Windows 需开发者模式/管理员，无则→0 |
+| `hyle_fs_create_hard_link(target, link)` | 硬链接（同卷、仅文件）；POSIX link / Win CreateHardLinkW |
 | `hyle_fs_is_symlink(path)` | 自身是否符号链接（不跟随） |
 | `hyle_fs_read_symlink(path, dst, cap)` | buffer-fill；非链接/失败→0 |
 | `hyle_fs_create_temp_file(dir, prefix, dst, cap)` | 原子创建；返回**打开的** fd（`intptr_t`，-1 失败，TOCTOU 安全）；路径写 dst |
@@ -192,7 +193,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_platform_c_abi_version` | 等于宏 |
 | `hyle_platform_api_get(out, expected_abi)` | 0 成功；-1 失败 |
 
-`hyle_platform_api` 字段 = **全部 DLL 自由函数**（无 header-inline）：wait×4 + parker×5 + thread×7 + dynlib×9 + vm 自由×8 + region×13 + fs/env×18 + cpu×3 + `c_abi_version`，外加 `abi_version` 整型。**v3 追加（列在表尾，保 v2 前缀布局不变）**：`vm_set_last_error` + hugepage×3（`large_page_size` / `vm_advise_hugepage` / `vm_advise_no_hugepage`）+ numa×5（`numa_node_count` / `numa_current_node` / `vm_bind_numa` / `vm_bind_numa_interleave` / `vm_reserve_numa`）= 9 个。**v4 追加（同样表尾）**：fs×11（`fs_get_permissions` / `set_permissions` / `is_readonly` / `set_readonly` / `create_symlink` / `is_symlink` / `read_symlink` / `create_temp_file` / `close_fd` / `set_env_var` / `unset_env_var`）+ mapped_file×6（`open` / `destroy` / `valid` / `data` / `size` / `flush`）= 17 个。
+`hyle_platform_api` 字段 = **全部 DLL 自由函数**（无 header-inline）：wait×4 + parker×5 + thread×7 + dynlib×9 + vm 自由×8 + region×13 + fs/env×18 + cpu×3 + `c_abi_version`，外加 `abi_version` 整型。**v3 追加（列在表尾，保 v2 前缀布局不变）**：`vm_set_last_error` + hugepage×3（`large_page_size` / `vm_advise_hugepage` / `vm_advise_no_hugepage`）+ numa×5（`numa_node_count` / `numa_current_node` / `vm_bind_numa` / `vm_bind_numa_interleave` / `vm_reserve_numa`）= 9 个。**v4 追加（同样表尾）**：fs×12（`fs_get_permissions` / `set_permissions` / `is_readonly` / `set_readonly` / `create_symlink` / `create_hard_link` / `is_symlink` / `read_symlink` / `create_temp_file` / `close_fd` / `set_env_var` / `unset_env_var`）+ mapped_file×6（`open` / `destroy` / `valid` / `data` / `size` / `flush`）= 18 个。
 
 **不进表**：`hyle_page_align_up`、`hyle_large_page_align_up`、`hyle_vm_free_rw`、thread opts helpers / `HYLE_THREAD_OPTS_INIT`。
 

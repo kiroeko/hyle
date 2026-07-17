@@ -8,6 +8,7 @@
 #include <gtest/gtest.h>
 
 #include <cstdio>
+#include <cstdlib>  // std::abort in the death test
 #include <cstring>
 #include <string>
 
@@ -159,4 +160,29 @@ TEST_F(MapTest, MoveTransfersMapping) {
   EXPECT_TRUE(b.valid());
   EXPECT_EQ(b.data(), addr);
   EXPECT_EQ(std::memcmp(b.data(), msg, std::strlen(msg)), 0);
+}
+
+// Prove a read-only mapping actually traps on write (not just "opened ok"). Runs
+// in a forked child so the fault is captured as expected death. Uses its own
+// scratch path (fixtures aren't shared into the death child cleanly).
+TEST(MapDeathTest, ReadOnlyWriteFaults) {
+  char tmp[4096];
+  std::size_t n = fs::temp_directory(tmp, sizeof(tmp));
+  ASSERT_GT(n, 0u);
+  std::string p = std::string(tmp, n) + "/hyle_map_death";
+  {
+    std::FILE* f = std::fopen(p.c_str(), "wb");
+    ASSERT_NE(f, nullptr);
+    std::fputs("readonly", f);
+    std::fclose(f);
+  }
+  EXPECT_DEATH(
+      {
+        MappedFile m = MappedFile::open(p.c_str(), MappedFile::Mode::kReadOnly);
+        if (!m.valid()) std::abort();
+        volatile auto* d = static_cast<volatile char*>(m.data());
+        d[0] = 'X';  // write to a PROT_READ / PAGE_READONLY mapping -> trap
+      },
+      ".*");
+  fs::remove_file(p.c_str());
 }

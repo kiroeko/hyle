@@ -144,6 +144,10 @@ HYLE_PLATFORM_API bool set_readonly(const char* path, bool readonly) noexcept;
 // CreateSymbolicLinkW -- requires Developer Mode or admin (SeCreateSymboliclink
 // privilege); returns false without it (check the return, no trap).
 HYLE_PLATFORM_API bool create_symlink(const char* target, const char* link) noexcept;
+// Create a HARD link at `link` to `target` (another name for the same file
+// data). POSIX link(2) / Windows CreateHardLinkW. Same-volume, regular files
+// only (no directory hard links); no special privilege. Returns true on success.
+HYLE_PLATFORM_API bool create_hard_link(const char* target, const char* link) noexcept;
 // True if `path` itself is a symbolic link (does not follow it).
 HYLE_PLATFORM_API bool is_symlink(const char* path) noexcept;
 // Read a symlink's target into dst[cap] (buffer-fill; returns full length, >=cap
@@ -194,6 +198,9 @@ HYLE_PLATFORM_API std::size_t get_env_var(const char* name, char* dst,
 // Windows _putenv_s. Returns true on success. NOT thread-safe against concurrent
 // get_env_var/getenv in other threads (same caveat as the C library) -- set env
 // during startup, before spawning threads that read it.
+// PLATFORM DIFFERENCE: set_env_var(name, "") keeps a zero-length value on POSIX
+// (distinct from unset) but DELETES the variable on Windows (_putenv_s treats an
+// empty value as removal -- Windows has no "present but empty" env var).
 HYLE_PLATFORM_API bool set_env_var(const char* name, const char* value) noexcept;
 HYLE_PLATFORM_API bool unset_env_var(const char* name) noexcept;
 

@@ -5,8 +5,9 @@
 
 #include "hyle/platform.h"
 
-// Only the Windows path is built and tested on this machine. The POSIX path is
-// written to spec but NOT yet verified on real hardware/CI.
+// Verified on three platforms: Windows MSVC, WSL Linux (GCC14), and macOS arm64
+// (Apple clang) -- spawn/join, name, affinity, stack size, and priority all
+// exercised by the real-machine test runs.
 
 namespace hyle::platform {
 namespace {
@@ -138,7 +139,7 @@ void set_name(std::string_view name) noexcept {
 
 }  // namespace hyle::platform
 
-#else  // ---- POSIX (Linux / macOS) -- written to spec, UNVERIFIED on this box -
+#else  // ---- POSIX (Linux / macOS) -- verified on WSL Linux + macOS arm64 ------
 #  include <pthread.h>
 #  include <sched.h>
 #  include <sys/resource.h>  // setpriority (best-effort thread nice)

@@ -13,11 +13,28 @@
 #include <string>
 #include <vector>
 
-#if !defined(_WIN32)
-#  include <unistd.h>  // symlink() for the recursive-delete safety test
+#if defined(_WIN32)
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>  // WriteFile to prove the temp-file handle is writable
+#else
+#  include <unistd.h>   // symlink() + write() to prove the temp-file fd is writable
 #endif
 
 using namespace hyle::platform;
+
+namespace {
+// Write `n` bytes through a raw OS fd/HANDLE (from create_temp_file). Returns
+// true if all bytes were written -- proves the handle is genuinely open for write.
+bool write_all_fd(std::intptr_t fd, const void* data, std::size_t n) {
+#if defined(_WIN32)
+  DWORD wrote = 0;
+  return WriteFile(reinterpret_cast<HANDLE>(fd), data, static_cast<DWORD>(n),
+                   &wrote, nullptr) && wrote == n;
+#else
+  return ::write(static_cast<int>(fd), data, n) == static_cast<ssize_t>(n);
+#endif
+}
+}  // namespace
 
 namespace {
 
@@ -388,6 +405,13 @@ TEST_F(FsTest, SymlinkCreateReadAndDetect) {
   EXPECT_LT(n, sizeof(buf));
   // The link resolves to (something ending in) the target name.
   EXPECT_NE(std::string(buf).find("real.txt"), std::string::npos);
+
+  // buffer-fill truncation contract: a tiny buffer still returns the FULL length
+  // (>= cap => truncated) and NUL-terminates what it did write.
+  char tiny[4];
+  std::size_t need = read_symlink(link.c_str(), tiny, sizeof(tiny));
+  EXPECT_EQ(need, n);                     // full length reported regardless of cap
+  EXPECT_EQ(std::strlen(tiny), 3u);       // 3 bytes + NUL
 }
 
 // ---- v4: temp file + OwnedFd ------------------------------------------------
@@ -403,6 +427,58 @@ TEST_F(FsTest, CreateTempFileIsUniqueAndOpen) {
   EXPECT_TRUE(exists(p1));          // the file really exists on disk
   EXPECT_TRUE(exists(p2));
   EXPECT_NE(a.get(), OwnedFd::kInvalid);
+  // Prove the returned handle is genuinely OPEN FOR WRITE (not just a path):
+  // write through it, then read the bytes back from the path.
+  const char msg[] = "hyle-temp";
+  ASSERT_TRUE(write_all_fd(a.get(), msg, sizeof(msg) - 1));
+  a.reset();  // close so the write is flushed/visible before we read the path
+  std::FILE* f = std::fopen(p1, "rb");
+  ASSERT_NE(f, nullptr);
+  char buf[16] = {0};
+  std::size_t got = std::fread(buf, 1, sizeof(buf) - 1, f);
+  std::fclose(f);
+  EXPECT_EQ(got, sizeof(msg) - 1);
+  EXPECT_STREQ(buf, "hyle-temp");
+}
+
+TEST_F(FsTest, HardLinkSharesData) {
+  ASSERT_TRUE(make_directory_recursive(root.c_str()));
+  std::string target = root + "/orig.txt";
+  std::string link = root + "/hardlink.txt";
+  {
+    std::FILE* f = std::fopen(target.c_str(), "wb");
+    ASSERT_NE(f, nullptr);
+    std::fputs("shared", f);
+    std::fclose(f);
+  }
+  ASSERT_TRUE(create_hard_link(target.c_str(), link.c_str()));
+  // The hard link is a second name for the SAME data: not a symlink, same size,
+  // and it survives deletion of the original.
+  EXPECT_TRUE(exists(link.c_str()));
+  EXPECT_FALSE(is_symlink(link.c_str()));
+  EXPECT_EQ(file_size(link.c_str()), 6u);
+  ASSERT_TRUE(remove_file(target.c_str()));
+  EXPECT_TRUE(exists(link.c_str()));            // data persists via the other name
+  EXPECT_EQ(file_size(link.c_str()), 6u);
+}
+
+TEST(FsEnv, SetEmptyValueSemantics) {
+  const char* kName = "HYLE_FS_EMPTY_VAR";
+  ASSERT_TRUE(set_env_var(kName, ""));
+  char buf[8];
+  std::size_t n = get_env_var(kName, buf, sizeof(buf));
+#if defined(_WIN32)
+  // PLATFORM DIFFERENCE: Windows _putenv_s(name,"") DELETES the variable (there
+  // is no "set to empty" -- an empty value IS removal), so a get reports unset.
+  EXPECT_EQ(n, kEnvNotSet);
+#else
+  // POSIX setenv(name,"",1) keeps the variable present with a zero-length value,
+  // distinct from unset. This is the "set-but-empty vs unset" distinction.
+  EXPECT_NE(n, kEnvNotSet);
+  EXPECT_EQ(n, 0u);
+#endif
+  EXPECT_TRUE(unset_env_var(kName));
+  EXPECT_EQ(get_env_var(kName, buf, sizeof(buf)), kEnvNotSet);  // truly unset
 }
 
 TEST(OwnedFd, MoveAndRelease) {

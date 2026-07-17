@@ -105,8 +105,11 @@ TEST(Parker, ParkTimeoutReturnsFalseOnTimeout) {
   bool got = p.park_timeout(20'000'000);  // 20ms, no unpark coming
   auto elapsed = std::chrono::steady_clock::now() - t0;
   EXPECT_FALSE(got);  // timed out, no token
-  // Slept roughly the requested time (allow generous slack for CI scheduling).
+  // Slept roughly the requested time (allow generous slack for CI scheduling)...
   EXPECT_GE(elapsed, std::chrono::milliseconds(10));
+  // ...but bounded above: a 20ms request must not block for seconds (catches a
+  // broken timeout that degrades to an ~infinite wait). Wide slack for CI.
+  EXPECT_LT(elapsed, std::chrono::seconds(5));
 }
 
 TEST(Parker, ParkTimeoutConsumesExistingToken) {
@@ -210,12 +213,13 @@ TEST(WaitOnAddress, ValueAlreadyChangedDoesNotBlock) {
 
 TEST(WaitOnAddress, TimedZeroIsPoll) {
   std::atomic<std::uint32_t> word{0};
-  // value matches expected but timeout 0 -> poll, returns without long sleep.
-  // On timeout with value still matching, returns false.
+  // value matches expected but timeout 0 -> poll: must return PROMPTLY, not sleep.
+  auto t0 = std::chrono::steady_clock::now();
   bool r = hyle::platform::detail::wait_on_address_for(&word, 0, 0);
-  // Either timed out (false) or woke spuriously (true); must not hang.
-  (void)r;
-  SUCCEED();
+  auto elapsed = std::chrono::steady_clock::now() - t0;
+  (void)r;  // timed out (false) or spurious wake (true) -- both fine
+  // The real assertion: a zero timeout does NOT block for any meaningful time.
+  EXPECT_LT(elapsed, std::chrono::milliseconds(200));
 }
 
 TEST(WaitOnAddress, WakeOneUnblocksWaiter) {
@@ -267,4 +271,39 @@ TEST(Parker, SequentialParkUnparkRounds) {
     p.park();
   }
   SUCCEED();
+}
+
+// wake_all must release EVERY waiter blocked on the address (not just one). N
+// threads wait on the same word; after they're parked we change the value and
+// wake_all -- all N must observe it and finish (a missed waiter would hang the
+// join and surface as a test timeout).
+TEST(WaitOnAddress, WakeAllReleasesAllWaiters) {
+  constexpr int kWaiters = 4;
+  std::atomic<std::uint32_t> word{0};
+  std::atomic<int> woke{0};
+  struct Args {
+    std::atomic<std::uint32_t>* word;
+    std::atomic<int>* woke;
+  } args{&word, &woke};
+
+  std::vector<Thread> threads;
+  for (int i = 0; i < kWaiters; ++i) {
+    auto r = Thread::spawn(
+        [](void* a) {
+          auto* x = static_cast<Args*>(a);
+          // Loop over spurious wakes: only exit once the value really changed.
+          while (x->word->load(std::memory_order_acquire) == 0)
+            hyle::platform::detail::wait_on_address(x->word, 0);
+          x->woke->fetch_add(1, std::memory_order_release);
+        },
+        &args);
+    ASSERT_TRUE(r.has_value());
+    threads.push_back(std::move(*r));
+  }
+  // Give them time to reach the wait, then release all at once.
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
+  word.store(1, std::memory_order_release);
+  hyle::platform::detail::wake_all(&word);
+  for (auto& t : threads) t.join();  // hangs (=> timeout) if any waiter was missed
+  EXPECT_EQ(woke.load(std::memory_order_acquire), kWaiters);
 }
