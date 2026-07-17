@@ -89,7 +89,7 @@ device/pinned/unified 内存归 compute/ 的 stream-bound buffer,**不经 mem/ �
 
 | 能力 | 做法 | 为什么 |
 |---|---|---|
-| **NUMA 感知** | ✅ mem-06c：`platform::numa_*` + `vm_reserve_numa`/`vm_bind_numa`(preferred) + `HugeRegion::allocate_local` + `enable_allocator_numa`；无 libnuma | 多路跨 node 访存慢 2-3×；大区就近 + mi 自动 |
+| **NUMA 感知** | ✅ mem-06c：Preferred/Bind/Interleave + `HugeRegion::{local,interleaved}` + `reserve_huge_1g_pages` + 大 MemoryArena 自动 HugeRegion；无 libnuma | 多路远程 2-3×；标准库能力面完整 |
 | **大页/THP** | ✅ mem-06b：`platform::vm_advise_hugepage` + `mem::HugeRegion`（2MiB 对齐+THP hint+可选 prefault）+ `enable_allocator_hugepages` 封 mimalloc；特权 1GB/hugetlb 后置 | 大张量/大 arena 减 TLB miss（访存 walk \(\sim N/\text{page}\)） |
 | **pinned（page-locked）** | `cudaHostAlloc` / `cudaHostRegister` | host↔device DMA 快得多；不锁页 GPU 拷贝走可分页内存慢 |
 | **cache-line 对齐 + 防伪共享** | `alignas(64)`，per-core 结构按 cache-line padding | 并发结构（run-queue、计数器）伪共享杀性能 |

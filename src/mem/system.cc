@@ -90,5 +90,22 @@ void enable_allocator_numa(unsigned max_nodes) noexcept {
   mi_option_set(mi_option_use_numa_nodes, static_cast<long>(max_nodes));
 }
 
+bool reserve_huge_1g_pages(std::size_t pages, int numa_node,
+                           unsigned timeout_ms) noexcept {
+  if (pages == 0) return true;
+  // mimalloc: 0 success, non-zero error. timeout 0 → use a short default so a
+  // fragmented box does not hang the process for minutes.
+  const std::size_t t =
+      timeout_ms == 0 ? static_cast<std::size_t>(100) : timeout_ms;
+  int rc;
+  if (numa_node == platform::kNumaAny) {
+    // Interleave 1GiB pages across nodes (0 = all nodes in mi API).
+    rc = mi_reserve_huge_os_pages_interleave(pages, /*numa_nodes=*/0, t);
+  } else {
+    rc = mi_reserve_huge_os_pages_at(pages, numa_node, t);
+  }
+  return rc == 0;
+}
+
 }  // namespace hyle::mem
 

@@ -14,19 +14,27 @@
 #  define HYLE_PLATFORM_API HYLE_IMPORT
 #endif
 
-// Host NUMA topology + soft placement (mem-06c).
+// Host NUMA topology + placement (mem-06c).
 //
-// Soft preferred placement only — never hard-bind by default. Single-node
-// machines report count==1 and current==0; all APIs succeed as no-ops where
-// binding is meaningless. No libnuma / hwloc dependency (syscalls + Win API).
+// Full placement modes for a standard-library surface (not "wait for a consumer"):
+//   Preferred — soft home node (default; never fails the process)
+//   Bind      — hard node (Linux MPOL_BIND; may fail if node is tight)
+//   Interleave— stripe across all nodes (shared large arenas)
 //
-// Not device/VRAM. Not a MemorySpace. Pair with worker CPU affinity (sched) so
-// large host buffers allocated on a pinned worker land on its home node.
+// Single-node machines: count==1, current==0; bind/interleave degrade to no-ops
+// that still return true. No libnuma / hwloc.
 
 namespace hyle::platform {
 
 // "No NUMA constraint" for reserve/bind APIs.
 inline constexpr int kNumaAny = -1;
+
+// Placement policy for vm_bind_numa / HugeRegion.
+enum class NumaPolicy : std::uint8_t {
+  kPreferred = 0,   // MPOL_PREFERRED (soft)
+  kBind = 1,        // MPOL_BIND (hard; Linux)
+  kInterleave = 2,  // MPOL_INTERLEAVE all nodes (Linux)
+};
 
 // Number of NUMA nodes with memory/CPUs, always >= 1.
 HYLE_PLATFORM_API unsigned numa_node_count() noexcept;
@@ -35,12 +43,16 @@ HYLE_PLATFORM_API unsigned numa_node_count() noexcept;
 // Always < numa_node_count().
 HYLE_PLATFORM_API unsigned numa_current_node() noexcept;
 
-// Soft-bind an existing page-aligned mapping to `node` (preferred).
-// node == kNumaAny -> no-op true. Invalid node (>= count) -> false.
-// Linux: mbind(MPOL_PREFERRED). Windows: best-effort (often true no-op after
-// plain VirtualAlloc — prefer vm_reserve_numa at allocate time on Win).
-// Soft: false on failure, never traps. Empty range -> true.
-HYLE_PLATFORM_API bool vm_bind_numa(void* ptr, std::size_t size, int node) noexcept;
+// Bind an existing page-aligned mapping.
+//   kPreferred + node: soft home (node==kNumaAny -> true no-op)
+//   kBind + node:      hard home; invalid node -> false
+//   kInterleave:       ignore node; stripe all nodes (Linux); soft true elsewhere
+// Empty range -> true. Soft errors never trap.
+HYLE_PLATFORM_API bool vm_bind_numa(void* ptr, std::size_t size, int node,
+                                    NumaPolicy policy = NumaPolicy::kPreferred) noexcept;
+
+// Stripe [ptr,ptr+size) across all NUMA nodes (alias for Interleave).
+HYLE_PLATFORM_API bool vm_bind_numa_interleave(void* ptr, std::size_t size) noexcept;
 
 // Reserve `size` bytes (page-rounded) preferring `node`. node == kNumaAny
 // equals vm_reserve. On failure nullptr (see vm_last_error). Caller commits /

@@ -16,46 +16,48 @@
 #  define HYLE_MEM_API HYLE_IMPORT
 #endif
 
-// Large-region hugepage + NUMA placement (mem-06b/06c).
+// Large-region hugepage + NUMA (mem-06b/06c) — complete standard-library surface.
 //
-// Goals:
-//   * TLB: access walk ~ N/page_size → N/large_page_size (THP / 2MiB align).
-//   * NUMA: keep multi-MB host buffers on the allocating thread's home node
-//     (preferred bind; soft). Pair with sched worker CPU affinity.
-// Allocation stays O(1). Fiber stacks / small objects must NOT use HugeRegion.
+//   * TLB: large-page align + THP hint (access walk ~ N/2MiB).
+//   * NUMA: preferred / bind / interleave on large spans.
+//   * 1GiB OS pages: process-start reserve via mimalloc (opt-in, may need privileges).
+// Fiber stacks / small objects must NOT use HugeRegion.
 
 namespace hyle::mem {
 
-// ---- process-wide mimalloc policy (L3) --------------------------------------
+// ---- process-wide mimalloc policy -------------------------------------------
 
 struct AllocatorHugepagePolicy {
-  // Allow transparent huge pages inside mimalloc's OS segments (Linux).
-  // Default true matches mimalloc's own default (except Android).
   bool allow_thp = true;
-  // Allow explicit large OS pages (2/4 MiB). Needs privileges on Windows
-  // (Lock Pages in Memory) and often hugetlb setup on Linux. Default false:
-  // failure must not break generic embeds.
   bool allow_large_os_pages = false;
 };
 
-// Apply policy to the process mimalloc instance. Safe to call once at startup
-// before heavy allocation. Idempotent. Never throws.
 HYLE_MEM_API void enable_allocator_hugepages(
     AllocatorHugepagePolicy policy = {}) noexcept;
 
-// Limit mimalloc OS arenas to at most `max_nodes` NUMA nodes (0 = all available).
-// Programmatic stand-in for MIMALLOC_USE_NUMA_NODES. Call early.
+// 0 = all NUMA nodes (mimalloc default).
 HYLE_MEM_API void enable_allocator_numa(unsigned max_nodes = 0) noexcept;
 
-// ---- HugeRegion (L2): explicit multi-MB span --------------------------------
+// Reserve `pages` contiguous 1GiB huge OS pages into mimalloc's arenas.
+//   numa_node == platform::kNumaAny → interleave across nodes
+//   otherwise → pin to that node
+// timeout_ms: 0 = mimalloc default wait. Returns true if reservation succeeded
+// (or pages==0). Soft failure (no privileges / fragmented RAM) → false; process
+// remains usable with normal pages.
+HYLE_MEM_API bool reserve_huge_1g_pages(std::size_t pages,
+                                        int numa_node = platform::kNumaAny,
+                                        unsigned timeout_ms = 0) noexcept;
+
+// ---- HugeRegion -------------------------------------------------------------
 
 enum class HugeFlags : std::uint8_t {
   kNone = 0,
-  // Call vm_advise_hugepage after commit (Linux THP). Soft; ignored if unsupported.
   kThpHint = 1u << 0,
-  // Touch every base page once so faults happen at allocate time (can block).
-  // Folly does this so later work is not stalled on THP collapse. Optional.
   kPrefault = 1u << 1,
+  // After place: hard-bind to node (Linux MPOL_BIND). Default is preferred.
+  kNumaBind = 1u << 2,
+  // Stripe across all nodes (ignores numa_node). Shared multi-MB arenas.
+  kNumaInterleave = 1u << 3,
   kDefault = kThpHint,
 };
 
@@ -71,36 +73,43 @@ HYLE_FORCE_INLINE bool any(HugeFlags f) noexcept {
   return static_cast<std::uint8_t>(f) != 0;
 }
 
-// Move-only RW region, size rounded up to large_page_size() (or page_size()).
-// Backed by platform::VmRegion (no mimalloc). Suitable for big arenas / tensors.
 class HugeRegion {
  public:
   HugeRegion() noexcept = default;
 
-  // Reserve+commit `bytes` (aligned up). Soft-prefer NUMA `node`
-  // (platform::kNumaAny = unconstrained). On failure: !valid().
+  // Reserve+commit `bytes` (large-page aligned). NUMA:
+  //   kNumaInterleave → stripe all nodes
+  //   else reserve_numa(node) + preferred or kNumaBind
   static HugeRegion allocate(std::size_t bytes,
                              HugeFlags flags = HugeFlags::kDefault,
                              int numa_node = platform::kNumaAny) noexcept {
     HugeRegion r;
     if (bytes == 0) return r;
     const std::size_t aligned = platform::large_page_align_up(bytes);
-    r.region_ = platform::VmRegion::reserve_numa(aligned, numa_node);
+    const bool interleave = any(flags & HugeFlags::kNumaInterleave);
+    if (interleave) {
+      r.region_ = platform::VmRegion::reserve(aligned);
+    } else {
+      r.region_ = platform::VmRegion::reserve_numa(aligned, numa_node);
+    }
     if (!r.region_.valid()) return HugeRegion{};
     if (!r.region_.commit(0, r.region_.size())) {
       r.region_.release();
       return HugeRegion{};
     }
-    // Preferred bind after commit (Linux mbind; no-op soft on Windows).
-    if (numa_node != platform::kNumaAny) {
-      (void)platform::vm_bind_numa(r.region_.data(), r.region_.size(), numa_node);
+    if (interleave) {
+      (void)platform::vm_bind_numa_interleave(r.region_.data(), r.region_.size());
+    } else if (numa_node != platform::kNumaAny) {
+      const auto pol = any(flags & HugeFlags::kNumaBind)
+                           ? platform::NumaPolicy::kBind
+                           : platform::NumaPolicy::kPreferred;
+      (void)platform::vm_bind_numa(r.region_.data(), r.region_.size(), numa_node,
+                                   pol);
     }
     if (any(flags & HugeFlags::kThpHint)) {
-      // Soft: ignore failure (Windows/macOS, or THP=never).
       (void)platform::vm_advise_hugepage(r.region_.data(), r.region_.size());
     }
     if (any(flags & HugeFlags::kPrefault)) {
-      // Touch one byte per base page — O(size/page_size) faults, intentional.
       auto* p = static_cast<volatile char*>(r.region_.data());
       const std::size_t step = platform::page_size();
       const std::size_t n = r.region_.size();
@@ -109,10 +118,15 @@ class HugeRegion {
     return r;
   }
 
-  // Allocate on the calling thread's home NUMA node (query + allocate).
   static HugeRegion allocate_local(
       std::size_t bytes, HugeFlags flags = HugeFlags::kDefault) noexcept {
     return allocate(bytes, flags, static_cast<int>(platform::numa_current_node()));
+  }
+
+  // Shared multi-MB arena: interleave + THP.
+  static HugeRegion allocate_interleaved(
+      std::size_t bytes, HugeFlags flags = HugeFlags::kThpHint) noexcept {
+    return allocate(bytes, flags | HugeFlags::kNumaInterleave, platform::kNumaAny);
   }
 
   HugeRegion(HugeRegion&& o) noexcept : region_(std::move(o.region_)) {}
@@ -130,7 +144,6 @@ class HugeRegion {
 
   void reset() noexcept { region_.release(); }
 
-  // Soft re-hint (e.g. after partial decommit/recommit). No-op if invalid.
   bool advise_hugepage() noexcept {
     if (!valid()) return false;
     return platform::vm_advise_hugepage(region_.data(), region_.size());
@@ -140,13 +153,11 @@ class HugeRegion {
   platform::VmRegion region_;
 };
 
-// Convenience: THP-hint an existing page-aligned range (e.g. mi slab). Soft.
 HYLE_FORCE_INLINE bool advise_hugepage_range(void* ptr,
                                              std::size_t size) noexcept {
   return platform::vm_advise_hugepage(ptr, size);
 }
 
-// Threshold: regions at least one large page are candidates for HugeRegion.
 HYLE_FORCE_INLINE std::size_t hugepage_region_threshold() noexcept {
   std::size_t lp = platform::large_page_size();
   return lp != 0 ? lp : (static_cast<std::size_t>(2u) * 1024u * 1024u);

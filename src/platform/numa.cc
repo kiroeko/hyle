@@ -20,23 +20,14 @@
 namespace hyle::platform {
 namespace {
 
-// Reuse virtual_memory's thread-local error channel via vm_last_error contract:
-// we set errors by calling through failing paths or a local buffer. Simpler:
-// numa failures call into the same style — use a thin local that mirrors vm.
-// Actually vm_last_error is in virtual_memory.cc as static TLS. We cannot set it
-// from here without exporting a setter. Keep numa soft-fail without shared error
-// text for bind; reserve_numa falls back to vm_reserve which sets errors.
-
 #if defined(HYLE_OS_WINDOWS)
 
 using PGetNumaHighestNodeNumber = BOOL(WINAPI*)(PULONG);
 using PGetCurrentProcessorNumberEx = void(WINAPI*)(PROCESSOR_NUMBER*);
 using PGetNumaProcessorNodeEx = BOOL(WINAPI*)(PPROCESSOR_NUMBER, PUSHORT);
 
-// VirtualAlloc2 + MEM_EXTENDED_PARAMETER (Win10+). Anonymous members so
-// MSVC accepts .Type / .ULong (same layout as SDK MEM_EXTENDED_PARAMETER).
 #pragma warning(push)
-#pragma warning(disable : 4201)  // nameless struct/union
+#pragma warning(disable : 4201)
 struct HyleMemExtendedParameter {
   struct {
     DWORD64 Type : 8;
@@ -62,7 +53,6 @@ struct WinNumaFns {
   PGetCurrentProcessorNumberEx get_cpu_ex = nullptr;
   PGetNumaProcessorNodeEx get_node_ex = nullptr;
   PVirtualAlloc2 virtual_alloc2 = nullptr;
-  bool inited = false;
 };
 
 WinNumaFns& win_fns() {
@@ -79,12 +69,10 @@ WinNumaFns& win_fns() {
       x.virtual_alloc2 = reinterpret_cast<PVirtualAlloc2>(
           reinterpret_cast<void*>(::GetProcAddress(k32, "VirtualAlloc2")));
       if (!x.virtual_alloc2) {
-        // Store apps variant.
         x.virtual_alloc2 = reinterpret_cast<PVirtualAlloc2>(
             reinterpret_cast<void*>(::GetProcAddress(k32, "VirtualAlloc2FromApp")));
       }
     }
-    x.inited = true;
     return x;
   }();
   return f;
@@ -92,9 +80,18 @@ WinNumaFns& win_fns() {
 
 #elif defined(HYLE_OS_LINUX)
 
-// mbind via syscall (no libnuma).
+// linux/mempolicy.h constants (avoid header dependency).
+#ifndef MPOL_DEFAULT
+#  define MPOL_DEFAULT 0
+#endif
 #ifndef MPOL_PREFERRED
 #  define MPOL_PREFERRED 1
+#endif
+#ifndef MPOL_BIND
+#  define MPOL_BIND 2
+#endif
+#ifndef MPOL_INTERLEAVE
+#  define MPOL_INTERLEAVE 3
 #endif
 
 long sys_mbind(void* start, unsigned long len, unsigned long mode,
@@ -114,8 +111,15 @@ long sys_mbind(void* start, unsigned long len, unsigned long mode,
 #endif
 }
 
-bool path_exists(const char* path) {
-  return ::access(path, R_OK) == 0;
+bool path_exists(const char* path) { return ::access(path, R_OK) == 0; }
+
+// Build a node mask for nodes [0, count). Caps at 64 bits (one ulong).
+unsigned long all_nodes_mask(unsigned count) {
+  if (count == 0) return 1UL;
+  if (count >= sizeof(unsigned long) * 8u) {
+    return ~0UL;
+  }
+  return (1UL << count) - 1UL;
 }
 
 #endif
@@ -127,23 +131,16 @@ unsigned numa_node_count() noexcept {
   ULONG highest = 0;
   auto& f = win_fns();
   if (f.get_highest && f.get_highest(&highest)) {
-    // highest is max index; count is highest+1 if that node exists. On most
-    // systems nodes are dense 0..highest.
     return static_cast<unsigned>(highest) + 1u;
   }
   return 1u;
 #elif defined(HYLE_OS_LINUX)
-  // Enumerate /sys/devices/system/node/nodeN (same approach as mimalloc).
   unsigned n = 0;
   char buf[64];
   for (; n < 256; ++n) {
-    // Check node{n} exists.
-    // snprintf-free small format:
-    // "/sys/devices/system/node/node" + decimal
     static const char kPrefix[] = "/sys/devices/system/node/node";
     char* w = buf;
     for (const char* p = kPrefix; *p; ++p) *w++ = *p;
-    // write n in decimal
     char digs[8];
     unsigned v = n;
     int nd = 0;
@@ -191,34 +188,47 @@ unsigned numa_current_node() noexcept {
 #endif
 }
 
-bool vm_bind_numa(void* ptr, std::size_t size, int node) noexcept {
-  if (ptr == nullptr || size == 0 || node == kNumaAny) return true;
-  if (node < 0 || static_cast<unsigned>(node) >= numa_node_count()) return false;
+bool vm_bind_numa(void* ptr, std::size_t size, int node,
+                  NumaPolicy policy) noexcept {
+  if (ptr == nullptr || size == 0) return true;
   size = page_align_up(size);
   if (size == 0) return true;
 
+  if (policy == NumaPolicy::kInterleave) {
 #if defined(HYLE_OS_LINUX)
-  // Prefer node `node` without failing if memory is tight (MPOL_PREFERRED).
-  unsigned long mask = 0;
-  if (static_cast<unsigned>(node) >= sizeof(mask) * 8u) {
-    // Node index beyond single-ulong mask — still try with truncated support.
-    // For >64 nodes we'd need a multi-word mask; rare for HYLE targets.
-    return false;
+    unsigned long mask = all_nodes_mask(numa_node_count());
+    long rc =
+        sys_mbind(ptr, size, MPOL_INTERLEAVE, &mask, sizeof(mask) * 8, 0);
+    return rc == 0;
+#else
+    (void)ptr;
+    return true;  // no portable interleave on Win/mac — soft success
+#endif
   }
-  mask = 1UL << static_cast<unsigned>(node);
-  // maxnode is bit count (Linux requires maxnode > highest bit index).
-  long rc = sys_mbind(ptr, size, MPOL_PREFERRED, &mask, sizeof(mask) * 8, 0);
+
+  if (node == kNumaAny) return true;
+  if (node < 0 || static_cast<unsigned>(node) >= numa_node_count()) return false;
+
+#if defined(HYLE_OS_LINUX)
+  if (static_cast<unsigned>(node) >= sizeof(unsigned long) * 8u) return false;
+  unsigned long mask = 1UL << static_cast<unsigned>(node);
+  const unsigned long mode =
+      (policy == NumaPolicy::kBind) ? MPOL_BIND : MPOL_PREFERRED;
+  long rc = sys_mbind(ptr, size, mode, &mask, sizeof(mask) * 8, 0);
   return rc == 0;
 #elif defined(HYLE_OS_WINDOWS)
-  // Post-hoc bind is not generally available for anonymous VirtualAlloc.
-  // Allocation-time placement is vm_reserve_numa. Treat as soft success so
-  // portable callers can always call bind after reserve_numa/reserve.
-  (void)ptr;
+  // Post-hoc hard bind is not generally available for anonymous VirtualAlloc.
+  // Allocation-time placement is vm_reserve_numa. Preferred/Bind both soft-ok.
+  (void)policy;
   return true;
 #else
-  (void)ptr;
+  (void)policy;
   return true;
 #endif
+}
+
+bool vm_bind_numa_interleave(void* ptr, std::size_t size) noexcept {
+  return vm_bind_numa(ptr, size, kNumaAny, NumaPolicy::kInterleave);
 }
 
 void* vm_reserve_numa(std::size_t size, int node) noexcept {
@@ -238,16 +248,12 @@ void* vm_reserve_numa(std::size_t size, int node) noexcept {
     void* p = f.virtual_alloc2(GetCurrentProcess(), nullptr, size, MEM_RESERVE,
                                PAGE_NOACCESS, &param, 1);
     if (p != nullptr) return p;
-    // Fall through to plain reserve.
   }
   return vm_reserve(size);
 #elif defined(HYLE_OS_LINUX)
   void* p = vm_reserve(size);
   if (p == nullptr) return nullptr;
-  if (!vm_bind_numa(p, size, node)) {
-    // Soft: keep the reservation unbound rather than failing the alloc.
-    // (mbind can fail on some kernels/configs; memory is still usable.)
-  }
+  (void)vm_bind_numa(p, size, node, NumaPolicy::kPreferred);
   return p;
 #else
   return vm_reserve(size);

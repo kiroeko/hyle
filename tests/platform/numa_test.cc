@@ -6,10 +6,12 @@
 #include "hyle/platform/virtual_memory.h"
 
 using hyle::platform::kNumaAny;
+using hyle::platform::NumaPolicy;
 using hyle::platform::numa_current_node;
 using hyle::platform::numa_node_count;
 using hyle::platform::page_size;
 using hyle::platform::vm_bind_numa;
+using hyle::platform::vm_bind_numa_interleave;
 using hyle::platform::vm_commit;
 using hyle::platform::vm_release;
 using hyle::platform::vm_reserve;
@@ -92,4 +94,17 @@ TEST(Numa, CurrentNodeLocalReserve) {
   ASSERT_TRUE(vm_commit(base, p));
   EXPECT_TRUE(vm_bind_numa(base, p, home));
   ASSERT_TRUE(vm_release(base, p));
+}
+
+TEST(Numa, BindHardAndInterleave) {
+  std::size_t p = page_size();
+  void* base = vm_reserve(p * 4);
+  ASSERT_NE(base, nullptr);
+  ASSERT_TRUE(vm_commit(base, p * 4));
+  // Soft success on single-node / Windows; may fail hard-bind on tight multi-node.
+  (void)vm_bind_numa(base, p * 4, 0, NumaPolicy::kBind);
+  EXPECT_TRUE(vm_bind_numa_interleave(base, p * 4));
+  std::memset(base, 0x5A, p);
+  EXPECT_EQ(static_cast<unsigned char*>(base)[0], 0x5A);
+  ASSERT_TRUE(vm_release(base, p * 4));
 }

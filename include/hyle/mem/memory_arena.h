@@ -8,6 +8,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/hugepage.h"
 #include "hyle/platform/thread.h"  // hardware_concurrency() -> shard count
 
 namespace hyle::mem {
@@ -44,7 +45,21 @@ class MemoryArena {
     HYLE_FATAL_ASSERT(block_size_ >= 1);
     HYLE_FATAL_ASSERT((alignment_ & (alignment_ - 1)) == 0);
     stride_ = (block_size_ + alignment_ - 1) & ~(alignment_ - 1);  // round up
-    slab_ = static_cast<std::byte*>(alloc_.allocate(stride_ * count_, alignment_));
+    // Large slabs: HugeRegion (2MiB align + THP + local NUMA). Completeness of
+    // the mem standard surface — not gated on a particular consumer.
+    const std::size_t slab_bytes = stride_ * static_cast<std::size_t>(count_);
+    if (slab_bytes >= hugepage_region_threshold()) {
+      huge_slab_ = HugeRegion::allocate_local(slab_bytes, HugeFlags::kThpHint);
+      if (huge_slab_.valid()) {
+        slab_ = static_cast<std::byte*>(huge_slab_.data());
+        // Page/large-page base is aligned to >> typical object alignments.
+        HYLE_FATAL_ASSERT((reinterpret_cast<std::uintptr_t>(slab_) % alignment_) ==
+                          0);
+      }
+    }
+    if (slab_ == nullptr) {
+      slab_ = static_cast<std::byte*>(alloc_.allocate(slab_bytes, alignment_));
+    }
     HYLE_FATAL_ASSERT(slab_ != nullptr);
     next_ = static_cast<std::atomic<std::uint32_t>*>(
         alloc_.allocate(sizeof(std::atomic<std::uint32_t>) * count_,
@@ -91,7 +106,12 @@ class MemoryArena {
     alloc_.deallocate(heads_, sizeof(ShardHead) * num_shards_, alignof(ShardHead));
     alloc_.deallocate(next_, sizeof(std::atomic<std::uint32_t>) * count_,
                       alignof(std::atomic<std::uint32_t>));
-    alloc_.deallocate(slab_, stride_ * count_, alignment_);
+    if (huge_slab_.valid()) {
+      huge_slab_.reset();
+      slab_ = nullptr;
+    } else {
+      alloc_.deallocate(slab_, stride_ * count_, alignment_);
+    }
   }
 
   HYLE_DISABLE_COPY_AND_MOVE(MemoryArena);
@@ -243,6 +263,7 @@ class MemoryArena {
 
   Allocator alloc_;
   std::byte* slab_ = nullptr;
+  HugeRegion huge_slab_;  // owns slab_ when large; empty → slab_ from alloc_
   std::atomic<std::uint32_t>* next_ = nullptr;  // parallel free-list links
   ShardHead* heads_ = nullptr;                  // num_shards_ cache-line-isolated heads
   std::size_t block_size_;
