@@ -31,8 +31,9 @@
 ## 具体事务（开工时细化，先占位）
 
 - [x] 每个对外模块封一层 `include/hyle/c/<mod>.h`（或等价单独命名空间），**纯 C、可被 C 编译器 include**，与内部 C++ 头物理隔离。**目录约定已坐实**：`include/hyle/c/` 起手。
-- [x] **第一块样板 = error**（2026-07-17）：`include/hyle/c/error.h`（**全符号 `hyle_*`**）+ `src/error/c_error.cc` + 纯 C `hyle_error_c_test`。面：`hyle_status` 拥有型句柄（ok/new/free/clone/**move**/equals）+ 全码表 inline 工厂/谓词 + message/to_string + handler + **`hyle_error_api` 函数指针表** + ABI 版本协商。用户文档：[`docs/guide/c-error.md`](../guide/c-error.md)。Win MSVC 真过。`mem`/simd 等后续 shim 仍待。
-- [ ] 其余模块继续封：`mem` 的 `Allocator` 已是 vtable + 不透明 state，最贴下一刀；或 `container` SwissTable 的 type-erased 核。
+- [x] **样板 error**（2026-07-17）：`include/hyle/c/error.h` + 文档 [`c-error.md`](../guide/c-error.md)。
+- [x] **样板 platform**（2026-07-17）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。面：wait/Parker、Thread（`hyle_status` 错误）、DynLib open/get/current、VM+guarded region、fs/env/iterate、cpu 子集、`hyle_platform_api` 表。文档：[`c-platform.md`](../guide/c-platform.md)。Win MSVC 真过。
+- [ ] 其余模块：`mem` Allocator / simd / …
 - [ ] SIMD 是首批语义样板之一：新增 `include/hyle/c/simd.h`；add/dot/math/scan/dtype/sort/
       bitpack 等无状态接口只用 pointer/count/POD，随机数状态使用
       `hyle_simd_random_o` make/destroy/fill，不冻结 C++ `RandomState` 布局。

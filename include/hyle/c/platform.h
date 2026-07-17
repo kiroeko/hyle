@@ -1,0 +1,263 @@
+/* SPDX: same as HYLE.
+ *
+ * Pure C ABI for the HYLE platform module (close-01).
+ *
+ * Naming: every symbol is `hyle_*` / `HYLE_*`.
+ * Do NOT include hyle/platform/*.h from C or cross-compiler FFI.
+ *
+ * Subsystems: wait/Parker, Thread, DynLib, virtual memory, fs/env, cpu features.
+ * Docs: docs/guide/c-platform.md
+ */
+#ifndef HYLE_C_PLATFORM_H_
+#define HYLE_C_PLATFORM_H_
+
+#include <stddef.h>
+#include <stdint.h>
+
+#include "hyle/c/error.h" /* hyle_status for Thread spawn failures */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+/* ---- export (same module as C++ platform: HYLE_PLATFORM_BUILD) ------------- */
+#if defined(HYLE_STATIC)
+#  define HYLE_PLATFORM_C_API
+#elif defined(_WIN32) || defined(__CYGWIN__)
+#  if defined(HYLE_PLATFORM_BUILD)
+#    define HYLE_PLATFORM_C_API __declspec(dllexport)
+#  else
+#    define HYLE_PLATFORM_C_API __declspec(dllimport)
+#  endif
+#elif defined(__GNUC__) || defined(__clang__)
+#  define HYLE_PLATFORM_C_API __attribute__((visibility("default")))
+#else
+#  define HYLE_PLATFORM_C_API
+#endif
+
+#define HYLE_PLATFORM_C_ABI_VERSION 1
+
+/* ========================================================================== */
+/* wait / Parker                                                              */
+/* ========================================================================== */
+
+/* Low-level address wait (futex / WaitOnAddress / os_sync). Spurious wakes OK. */
+HYLE_PLATFORM_C_API void hyle_wait_on_address(volatile uint32_t* addr,
+                                              uint32_t expected);
+/* Returns 0 on timeout, 1 otherwise (wake / value changed / spurious). */
+HYLE_PLATFORM_C_API int hyle_wait_on_address_for(volatile uint32_t* addr,
+                                                 uint32_t expected,
+                                                 uint64_t timeout_ns);
+HYLE_PLATFORM_C_API void hyle_wake_one(volatile uint32_t* addr);
+HYLE_PLATFORM_C_API void hyle_wake_all(volatile uint32_t* addr);
+
+/* Token-safe parker (Rust std model). Opaque; create/destroy pair. */
+typedef struct hyle_parker_o hyle_parker_o;
+HYLE_PLATFORM_C_API hyle_parker_o* hyle_parker_create(void);
+HYLE_PLATFORM_C_API void hyle_parker_destroy(hyle_parker_o* p);
+HYLE_PLATFORM_C_API void hyle_parker_park(hyle_parker_o* p);
+HYLE_PLATFORM_C_API void hyle_parker_unpark(hyle_parker_o* p);
+/* 1 = token consumed, 0 = timeout/spurious without token. */
+HYLE_PLATFORM_C_API int hyle_parker_park_timeout(hyle_parker_o* p,
+                                                 uint64_t timeout_ns);
+
+/* ========================================================================== */
+/* Thread                                                                     */
+/* ========================================================================== */
+
+typedef struct hyle_thread_o hyle_thread_o;
+typedef void (*hyle_thread_entry_fn)(void* ctx);
+
+typedef struct hyle_thread_opts {
+  const char* name;          /* optional; NULL = none; truncated to OS limit */
+  int has_stack_size;        /* 0/1 */
+  size_t stack_size;         /* bytes if has_stack_size */
+  int has_affinity_cpu;      /* 0/1 */
+  unsigned affinity_cpu;     /* logical CPU if has_affinity_cpu */
+} hyle_thread_opts;
+
+/* *out set on success. Returns hyle_status (free on error; OK has no heap). */
+HYLE_PLATFORM_C_API hyle_status hyle_thread_spawn(hyle_thread_o** out,
+                                                  hyle_thread_entry_fn entry,
+                                                  void* ctx,
+                                                  const hyle_thread_opts* opts);
+/* Join and destroy the handle (joinable only once). */
+HYLE_PLATFORM_C_API void hyle_thread_join(hyle_thread_o* t);
+HYLE_PLATFORM_C_API int hyle_thread_joinable(const hyle_thread_o* t);
+
+HYLE_PLATFORM_C_API unsigned hyle_hardware_concurrency(void);
+HYLE_PLATFORM_C_API uint64_t hyle_this_thread_id(void);
+HYLE_PLATFORM_C_API void hyle_this_thread_yield(void);
+HYLE_PLATFORM_C_API void hyle_this_thread_set_name(const char* name);
+
+/* ========================================================================== */
+/* DynLib                                                                     */
+/* ========================================================================== */
+
+typedef struct hyle_dynlib_o hyle_dynlib_o;
+
+HYLE_PLATFORM_C_API hyle_dynlib_o* hyle_dynlib_open(const char* path);
+/* Already-loaded only; does not load if missing. */
+HYLE_PLATFORM_C_API hyle_dynlib_o* hyle_dynlib_get(const char* path);
+HYLE_PLATFORM_C_API hyle_dynlib_o* hyle_dynlib_current(void);
+HYLE_PLATFORM_C_API void hyle_dynlib_close(hyle_dynlib_o* lib);
+HYLE_PLATFORM_C_API int hyle_dynlib_valid(const hyle_dynlib_o* lib);
+HYLE_PLATFORM_C_API void* hyle_dynlib_symbol(hyle_dynlib_o* lib, const char* name);
+HYLE_PLATFORM_C_API const char* hyle_dynlib_last_error(void);
+HYLE_PLATFORM_C_API const char* hyle_dynlib_extension(void); /* "dll"/"so"/"dylib" */
+
+/* ========================================================================== */
+/* Virtual memory                                                             */
+/* ========================================================================== */
+
+typedef enum hyle_protect {
+  HYLE_PROTECT_NONE = 0,
+  HYLE_PROTECT_READ = 1,
+  HYLE_PROTECT_READ_WRITE = 2
+} hyle_protect;
+
+HYLE_PLATFORM_C_API size_t hyle_page_size(void);
+/* Round up to page; 0 -> 0. */
+static inline size_t hyle_page_align_up(size_t n) {
+  size_t p = hyle_page_size();
+  if (p == 0 || n == 0) return 0;
+  return (n + (p - 1)) & ~(p - 1);
+}
+
+HYLE_PLATFORM_C_API void* hyle_vm_reserve(size_t size);
+HYLE_PLATFORM_C_API int hyle_vm_commit(void* ptr, size_t size);   /* 1 ok */
+HYLE_PLATFORM_C_API int hyle_vm_decommit(void* ptr, size_t size);
+HYLE_PLATFORM_C_API int hyle_vm_release(void* base, size_t size);
+HYLE_PLATFORM_C_API int hyle_vm_protect(void* ptr, size_t size, hyle_protect prot);
+HYLE_PLATFORM_C_API const char* hyle_vm_last_error(void);
+
+/* RAII region (opaque). destroy releases the reservation. */
+typedef struct hyle_vm_region_o hyle_vm_region_o;
+HYLE_PLATFORM_C_API hyle_vm_region_o* hyle_vm_region_reserve(size_t size);
+HYLE_PLATFORM_C_API hyle_vm_region_o* hyle_vm_region_reserve_guarded(
+    size_t usable);
+HYLE_PLATFORM_C_API void hyle_vm_region_destroy(hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API int hyle_vm_region_valid(const hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API void* hyle_vm_region_data(hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API size_t hyle_vm_region_size(const hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API void* hyle_vm_region_usable(hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API size_t hyle_vm_region_usable_size(const hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API int hyle_vm_region_has_guard(const hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API int hyle_vm_region_commit(hyle_vm_region_o* r, size_t off,
+                                              size_t len);
+HYLE_PLATFORM_C_API int hyle_vm_region_commit_usable(hyle_vm_region_o* r);
+HYLE_PLATFORM_C_API int hyle_vm_region_decommit(hyle_vm_region_o* r, size_t off,
+                                                size_t len);
+HYLE_PLATFORM_C_API int hyle_vm_region_protect(hyle_vm_region_o* r, size_t off,
+                                               size_t len, hyle_protect prot);
+
+/* ========================================================================== */
+/* Filesystem + environment (buffer-fill / visitor; no hidden alloc)          */
+/* ========================================================================== */
+
+typedef struct hyle_file_info {
+  int exists; /* 0/1 */
+  int is_directory;
+  uint64_t size;
+  int64_t modified_time; /* seconds since epoch */
+} hyle_file_info;
+
+HYLE_PLATFORM_C_API hyle_file_info hyle_fs_stat(const char* path);
+HYLE_PLATFORM_C_API int hyle_fs_exists(const char* path);
+HYLE_PLATFORM_C_API int hyle_fs_is_directory(const char* path);
+HYLE_PLATFORM_C_API uint64_t hyle_fs_file_size(const char* path);
+
+HYLE_PLATFORM_C_API int hyle_fs_make_directory(const char* path);
+HYLE_PLATFORM_C_API int hyle_fs_make_directory_recursive(const char* path);
+HYLE_PLATFORM_C_API int hyle_fs_remove_directory(const char* path);
+HYLE_PLATFORM_C_API int hyle_fs_remove_directory_recursive(const char* path);
+HYLE_PLATFORM_C_API int hyle_fs_remove_file(const char* path);
+HYLE_PLATFORM_C_API int hyle_fs_rename(const char* from, const char* to);
+HYLE_PLATFORM_C_API int hyle_fs_copy_file(const char* from, const char* to);
+HYLE_PLATFORM_C_API int hyle_fs_touch(const char* path);
+
+/* snprintf-style buffer fill: returns full length; >=cap means truncated. */
+HYLE_PLATFORM_C_API size_t hyle_fs_current_directory(char* dst, size_t cap);
+HYLE_PLATFORM_C_API int hyle_fs_change_directory(const char* path);
+HYLE_PLATFORM_C_API size_t hyle_fs_temp_directory(char* dst, size_t cap);
+HYLE_PLATFORM_C_API size_t hyle_fs_home_directory(char* dst, size_t cap);
+
+/* Env: kEnvNotSet == (size_t)-1 if unset. */
+#define HYLE_ENV_NOT_SET ((size_t)-1)
+HYLE_PLATFORM_C_API size_t hyle_env_get(const char* name, char* dst, size_t cap);
+
+/* Directory iterate: visit(name, is_dir, ctx) return 0 to stop. Returns 0 if
+ * path cannot be opened. */
+typedef int (*hyle_fs_visit_fn)(const char* name, int is_dir, void* ctx);
+HYLE_PLATFORM_C_API int hyle_fs_directory_iterate(const char* path,
+                                                  hyle_fs_visit_fn visit,
+                                                  void* ctx);
+
+/* ========================================================================== */
+/* CPU features (subset POD; full probe lives in platform/cpu)                */
+/* ========================================================================== */
+
+typedef struct hyle_cpu_features {
+  /* x86 (0 on non-x86) */
+  int sse2, ssse3, sse41, sse42, avx, avx2, avx512f, fma, f16c, bmi1, bmi2;
+  /* arm (0 on non-arm) */
+  int neon, sve;
+  /* logical processors (>=1) */
+  unsigned logical_cpus;
+} hyle_cpu_features;
+
+HYLE_PLATFORM_C_API hyle_cpu_features hyle_cpu_features_get(void);
+
+/* ========================================================================== */
+/* Optional API table                                                         */
+/* ========================================================================== */
+
+typedef struct hyle_platform_api {
+  int abi_version;
+
+  /* wait */
+  void (*wait_on_address)(volatile uint32_t*, uint32_t);
+  int (*wait_on_address_for)(volatile uint32_t*, uint32_t, uint64_t);
+  void (*wake_one)(volatile uint32_t*);
+  void (*wake_all)(volatile uint32_t*);
+  hyle_parker_o* (*parker_create)(void);
+  void (*parker_destroy)(hyle_parker_o*);
+  void (*parker_park)(hyle_parker_o*);
+  void (*parker_unpark)(hyle_parker_o*);
+  int (*parker_park_timeout)(hyle_parker_o*, uint64_t);
+
+  /* thread */
+  hyle_status (*thread_spawn)(hyle_thread_o**, hyle_thread_entry_fn, void*,
+                              const hyle_thread_opts*);
+  void (*thread_join)(hyle_thread_o*);
+  unsigned (*hardware_concurrency)(void);
+
+  /* dynlib */
+  hyle_dynlib_o* (*dynlib_open)(const char*);
+  hyle_dynlib_o* (*dynlib_get)(const char*);
+  void (*dynlib_close)(hyle_dynlib_o*);
+  void* (*dynlib_symbol)(hyle_dynlib_o*, const char*);
+
+  /* vm */
+  size_t (*page_size)(void);
+  void* (*vm_reserve)(size_t);
+  int (*vm_commit)(void*, size_t);
+  int (*vm_release)(void*, size_t);
+  hyle_vm_region_o* (*vm_region_reserve_guarded)(size_t);
+  void (*vm_region_destroy)(hyle_vm_region_o*);
+
+  /* fs */
+  int (*fs_exists)(const char*);
+  int (*fs_make_directory_recursive)(const char*);
+  size_t (*env_get)(const char*, char*, size_t);
+} hyle_platform_api;
+
+HYLE_PLATFORM_C_API int hyle_platform_api_get(hyle_platform_api* out,
+                                              int expected_abi);
+HYLE_PLATFORM_C_API int hyle_platform_c_abi_version(void);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
+
+#endif /* HYLE_C_PLATFORM_H_ */
