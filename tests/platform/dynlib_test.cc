@@ -14,7 +14,12 @@ static const char* kSysLib = "kernel32.dll";
 static const char* kSysSym = "GetCurrentProcessId";
 static const char* kExpectExt = "dll";
 #elif defined(__APPLE__)
-static const char* kSysLib = "libSystem.dylib";
+// Use the library's real INSTALL NAME, not the "libSystem.dylib" search alias:
+// macOS RTLD_NOLOAD (DynLib::get) matches already-loaded images by their
+// install-name / canonical path, and libSystem's install-name is libSystem.B.
+// The search alias resolves under a plain dlopen but is NOT what NOLOAD keys on
+// (verified on macOS 26: NOLOAD "libSystem.dylib" -> NULL, "libSystem.B.dylib" -> ok).
+static const char* kSysLib = "libSystem.B.dylib";
 static const char* kSysSym = "getpid";
 static const char* kExpectExt = "dylib";
 #else

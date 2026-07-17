@@ -40,6 +40,11 @@ class DynLib {
   // DLL and you only need a handle for symbol lookup.
   // Ownership: Windows handle is non-owning (GetModuleHandle does not pin);
   // POSIX NOLOAD bumps the dlopen refcount so the DynLib owns a close.
+  // NAME MATCHING: RTLD_NOLOAD matches an already-loaded image by its INSTALL
+  // NAME / canonical path, NOT by the search aliases a plain open() accepts. On
+  // macOS especially, pass the install-name (e.g. "libSystem.B.dylib", not
+  // "libSystem.dylib") -- the alias resolves under open() but NOLOAD returns
+  // invalid for it. Prefer the exact name/path the library was loaded under.
   HYLE_PLATFORM_API static DynLib get(const char* path) noexcept;
 
   // A handle to the current process image (POSIX dlopen(nullptr) / Win

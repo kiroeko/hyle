@@ -96,7 +96,9 @@ int main(void) {
   const char* sys_sym = "GetCurrentProcessId";
   const char* ext = "dll";
 #elif defined(__APPLE__)
-  const char* sys_lib = "libSystem.dylib";
+  /* install-name, not the search alias: hyle_dynlib_get uses RTLD_NOLOAD which
+   * keys on the loaded image's install-name (libSystem.B), not "libSystem.dylib". */
+  const char* sys_lib = "libSystem.B.dylib";
   const char* sys_sym = "getpid";
   const char* ext = "dylib";
 #else
