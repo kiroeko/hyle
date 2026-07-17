@@ -37,19 +37,19 @@ Runtime / exact / native + QEMU + real-hardware parity
 `scripts/simd-scalable-coverage.py` 机械复现四个定宽后端并集，并把 SVE、RVV **分别**与之比较，由
 `scripts/simd-scalable-op-manifest.json` 逐项分类。v1 曾使用 SVE∪RVV：某个 op 只要任一后端实现，
 另一后端的洞就会消失。RVV sort 补原语时该缺陷被 `--check` 暴露，v2 改为分类“至少一个 scalable
-后端仍缺”的名字，并同时输出两份 backend-local missing 集。当前 52 个名字分为：
+后端仍缺”的名字，并同时输出两份 backend-local missing 集。当前 43 个名字分为：
 
 | 分类 | 数量 | 含义 |
 |---|---:|---|
 | `shared_generic` | 10 | 已在 `vec.h` 一次实现，并由正式 SVE/RVV 多 VL/VLEN 门禁直接实例化验证 |
 | `selector` | 13 | Native/Emulated 内部选择器，不是独立用户能力 |
-| `fixed_model` | 20 | half/128-bit block/固定寄存器拼装，按产品合同裁决 |
+| `fixed_model` | 11 | half/128-bit block/固定寄存器拼装，按产品合同裁决；9 项明确的 per-128-block 语义已补齐 |
 | `extension_gated` | 9 | 依赖可选 ISA 或流式存储合同；含 RVV 仍缺的六个 AES 名 |
 | `portable_missing` | 0 | 22 项可移植 backlog 已全部补齐；same-shift/rotate/rounding/shuffle/average、whole/pairwise/demote/scale/lookup 与 SAD 家族均有 SVE/RVV 实现 |
 
 脚本同时输出 backend-local、`backend | vec.h`、scalable union/common 和 SVE/RVV 各自 missing 数；
-这些仍只是语法面，不冒充编译可实例化或产品能力。当前 SVE、RVV 分别缺定宽并集 46/52 个名字，
-两者共同实现 198 个、至少一端缺 52 个。`--check` 要求这 52 项恰好分类一次，任何新增、消失或重复都会失败。
+这些仍只是语法面，不冒充编译可实例化或产品能力。当前 SVE、RVV 分别缺定宽并集 37/43 个名字，
+两者共同实现 207 个、至少一端缺 43 个。`--check` 要求这 43 项恰好分类一次，任何新增、消失或重复都会失败。
 
 ### 阶段 1 首轮进展（2026-07-17）
 
@@ -64,8 +64,13 @@ Runtime / exact / native + QEMU + real-hardware parity
 
 修复后 SVE 的 f32/f64 全套 math（所有 unary、`atan2/pow/hypot`）可在 AArch64+SVE 目标完整
 实例化。旧 v1 并集口径曾从 80 降至 73；该数字不能再作为双后端完成度，因为会掩盖 asymmetric
-gap。v2 以逐后端口径重建时为 80 项；本轮补齐两端 sort 传递原语与 SVE `ReverseBits` 后降至
-上表当前 52 项，后续只按这一口径收口。
+gap。v2 以逐后端口径重建时为 80 项；补齐两端 sort 传递原语与 SVE `ReverseBits` 后曾降至
+52 项，后续只按这一口径收口。
+
+随后补齐两端 9 项有稳定跨平台合同的 fixed-model 操作：byte/lane 左右移、combine-shift、
+`PairwiseAdd128/PairwiseSub128` 与 `Per4LaneBlockShuffle`。实现均以 128-bit logical block 为边界，
+SVE 使用 predicate + `tbl`，RVV 使用 mask + `vrgather`，没有 store/reload 标量化。SVE 的 384-bit
+三块非二次幂 VL 也纳入门禁，证明 block 边界不串扰；缺口因此由 52 降至当前 43 项。
 
 ### 首个产品层纵切：SVE/RVV math（2026-07-17）
 

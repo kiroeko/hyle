@@ -1428,6 +1428,73 @@ HYLE_FORCE_INLINE VFromD<D> InterleaveWholeUpper(D d, VFromD<D> a, VFromD<D> b) 
 // ---- 128-bit block operations -------------------------------------------------------
 // RVV has no fixed physical 128-bit subregisters. Express the Highway block contract with
 // vrgather indices; this remains valid for every VLEN and for logical partial tags.
+namespace detail {
+template <class D>
+HYLE_FORCE_INLINE auto first_n_per_128_block(D d, std::size_t count) noexcept {
+  using T = TFromD<D>;
+  using U = MakeUnsigned<T>;
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  HYLE_FATAL_ASSERT(count <= kLanesPerBlock);
+  const std::size_t vl = Lanes(d);
+  const auto local = __riscv_vand(iota_u_rvv<T>(vl),
+                                  static_cast<U>(kLanesPerBlock - 1), vl);
+  return __riscv_vmsltu(local, static_cast<U>(count), vl);
+}
+}  // namespace detail
+
+template <int kLanes, class V>
+HYLE_FORCE_INLINE V ShiftLeftLanes(V v) noexcept {
+  using T = TFromV<V>;
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  static_assert(kLanes >= 0 && kLanes <= static_cast<int>(kLanesPerBlock),
+                "ShiftLeftLanes count must fit one 128-bit block");
+  const DFromV<V> d;
+  return IfThenElse(detail::first_n_per_128_block(d, kLanes), Zero(d),
+                    SlideUpLanes(d, v, kLanes));
+}
+template <int kLanes, class V>
+HYLE_FORCE_INLINE V ShiftRightLanes(V v) noexcept {
+  using T = TFromV<V>;
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  static_assert(kLanes >= 0 && kLanes <= static_cast<int>(kLanesPerBlock),
+                "ShiftRightLanes count must fit one 128-bit block");
+  const DFromV<V> d;
+  return IfThenElse(detail::first_n_per_128_block(d, kLanesPerBlock - kLanes),
+                    SlideDownLanes(d, v, kLanes), Zero(d));
+}
+template <int kLanes, class V>
+HYLE_FORCE_INLINE V CombineShiftRightLanes(V hi, V lo) noexcept {
+  using T = TFromV<V>;
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  static_assert(kLanes > 0 && kLanes < static_cast<int>(kLanesPerBlock),
+                "CombineShiftRightLanes count must be inside one 128-bit block");
+  const DFromV<V> d;
+  constexpr std::size_t kLoLanes = kLanesPerBlock - kLanes;
+  return IfThenElse(detail::first_n_per_128_block(d, kLoLanes),
+                    SlideDownLanes(d, lo, kLanes), SlideUpLanes(d, hi, kLoLanes));
+}
+template <int kBytes, class V>
+HYLE_FORCE_INLINE V ShiftLeftBytes(V v) noexcept {
+  static_assert(kBytes >= 0 && kBytes <= 16, "ShiftLeftBytes count in [0,16]");
+  const DFromV<V> d;
+  const Repartition<std::uint8_t, DFromV<V>> d8;
+  return BitCast(d, ShiftLeftLanes<kBytes>(BitCast(d8, v)));
+}
+template <int kBytes, class V>
+HYLE_FORCE_INLINE V ShiftRightBytes(V v) noexcept {
+  static_assert(kBytes >= 0 && kBytes <= 16, "ShiftRightBytes count in [0,16]");
+  const DFromV<V> d;
+  const Repartition<std::uint8_t, DFromV<V>> d8;
+  return BitCast(d, ShiftRightLanes<kBytes>(BitCast(d8, v)));
+}
+template <int kBytes, class V>
+HYLE_FORCE_INLINE V CombineShiftRightBytes(V hi, V lo) noexcept {
+  static_assert(kBytes > 0 && kBytes < 16, "CombineShiftRightBytes count in (0,16)");
+  const DFromV<V> d;
+  const Repartition<std::uint8_t, DFromV<V>> d8;
+  return BitCast(d, CombineShiftRightLanes<kBytes>(BitCast(d8, hi), BitCast(d8, lo)));
+}
+
 template <class D>
 HYLE_FORCE_INLINE VFromD<D> LoadDup128(D d, const TFromD<D>* p) noexcept {
   using T = TFromD<D>;
@@ -1483,6 +1550,74 @@ HYLE_FORCE_INLINE VFromD<D> ReverseBlocks(D d, VFromD<D> v) noexcept {
                                             static_cast<U>(vl - kLanesPerBlock), vl);
   const auto idx = __riscv_vor(reversed_start, within, vl);
   return __riscv_vrgather(v, idx, vl);
+}
+
+template <class V>
+HYLE_FORCE_INLINE V PairwiseAdd128(V a, V b) noexcept {
+  using T = TFromV<V>;
+  using U = MakeUnsigned<T>;
+  const DFromV<V> d;
+  const RebindToUnsigned<DFromV<V>> du;
+  const std::size_t vl = Lanes(d);
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  constexpr std::size_t kHalf = kLanesPerBlock / 2;
+  const auto id = detail::iota_u_rvv<T>(vl);
+  const auto local = And(id, Set(du, static_cast<U>(kLanesPerBlock - 1)));
+  const auto block = And(id, Set(du, static_cast<U>(~(kLanesPerBlock - 1))));
+  const auto pair = ShiftLeft<1>(And(local, Set(du, static_cast<U>(kHalf - 1))));
+  const auto idx = Or(block, pair);
+  const auto sum_a = Add(DupEven(a), DupOdd(a));
+  const auto sum_b = Add(DupEven(b), DupOdd(b));
+  return IfThenElse(Lt(local, Set(du, static_cast<U>(kHalf))),
+                    __riscv_vrgather(sum_a, idx, vl), __riscv_vrgather(sum_b, idx, vl));
+}
+template <class V>
+HYLE_FORCE_INLINE V PairwiseSub128(V a, V b) noexcept {
+  using T = TFromV<V>;
+  using U = MakeUnsigned<T>;
+  const DFromV<V> d;
+  const RebindToUnsigned<DFromV<V>> du;
+  const std::size_t vl = Lanes(d);
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  constexpr std::size_t kHalf = kLanesPerBlock / 2;
+  const auto id = detail::iota_u_rvv<T>(vl);
+  const auto local = And(id, Set(du, static_cast<U>(kLanesPerBlock - 1)));
+  const auto block = And(id, Set(du, static_cast<U>(~(kLanesPerBlock - 1))));
+  const auto pair = ShiftLeft<1>(And(local, Set(du, static_cast<U>(kHalf - 1))));
+  const auto idx = Or(block, pair);
+  const auto diff_a = Sub(DupEven(a), DupOdd(a));
+  const auto diff_b = Sub(DupEven(b), DupOdd(b));
+  return IfThenElse(Lt(local, Set(du, static_cast<U>(kHalf))),
+                    __riscv_vrgather(diff_a, idx, vl), __riscv_vrgather(diff_b, idx, vl));
+}
+template <int i3, int i2, int i1, int i0, class V>
+HYLE_FORCE_INLINE V Per4LaneBlockShuffle(V v) noexcept {
+  static_assert(i0 >= 0 && i0 < 4 && i1 >= 0 && i1 < 4 &&
+                i2 >= 0 && i2 < 4 && i3 >= 0 && i3 < 4,
+                "Per4LaneBlockShuffle indices must be in [0,4)");
+  if constexpr (i3 == 3 && i2 == 2 && i1 == 1 && i0 == 0) return v;
+  using T = TFromV<V>;
+  using U = MakeUnsigned<T>;
+  const DFromV<V> d;
+  const RebindToUnsigned<DFromV<V>> du;
+  const std::size_t vl = Lanes(d);
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  const auto id = detail::iota_u_rvv<T>(vl);
+  const auto local = And(id, Set(du, static_cast<U>(kLanesPerBlock - 1)));
+  const auto block = And(id, Set(du, static_cast<U>(~(kLanesPerBlock - 1))));
+  if constexpr (sizeof(T) == 8) {
+    const auto selected = IfThenElse(Eq(local, Zero(du)), Set(du, static_cast<U>(i0 & 1)),
+                                     Set(du, static_cast<U>(i1 & 1)));
+    return __riscv_vrgather(v, Or(block, selected), vl);
+  } else {
+    const auto lane4 = And(local, Set(du, U{3}));
+    auto selected = Set(du, static_cast<U>(i3));
+    selected = IfThenElse(Eq(lane4, Set(du, U{2})), Set(du, static_cast<U>(i2)), selected);
+    selected = IfThenElse(Eq(lane4, Set(du, U{1})), Set(du, static_cast<U>(i1)), selected);
+    selected = IfThenElse(Eq(lane4, Zero(du)), Set(du, static_cast<U>(i0)), selected);
+    const auto group = And(local, Set(du, static_cast<U>(~std::size_t{3})));
+    return __riscv_vrgather(v, Or(block, Add(group, selected)), vl);
+  }
 }
 
 template <class V>

@@ -1287,6 +1287,35 @@ TEST(Sve, RuntimeShiftsRoundedAverageAndBlockShuffles) {
   check32([](auto x) { return hs::Shuffle2103(x); }, [](std::size_t i) { return (i + 3u) & 3u; }, "2103");
   check32([](auto x) { return hs::Shuffle0123(x); }, [](std::size_t i) { return i ^ 3u; }, "0123");
 
+  hs::Store(hs::ShiftLeftLanes<1>(v), d, out);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out[i], (i & 3u) == 0 ? 0 : in[i - 1]) << "ShiftLeftLanes lane=" << i;
+  hs::Store(hs::ShiftRightLanes<1>(v), d, out);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(out[i], (i & 3u) == 3 ? 0 : in[i + 1]) << "ShiftRightLanes lane=" << i;
+  const auto vb32 = hs::Load(d, amounts);
+  hs::Store(hs::CombineShiftRightLanes<1>(vb32, v), d, out);
+  for (std::size_t i = 0; i < n; ++i) {
+    const std::size_t local = i & 3u;
+    EXPECT_EQ(out[i], local < 3 ? in[i + 1] : amounts[i - local]) << "Combine lane=" << i;
+  }
+  hs::Store(hs::PairwiseAdd128(v, vb32), d, out);
+  for (std::size_t base = 0; base < n; base += 4) {
+    EXPECT_EQ(out[base], in[base] + in[base + 1]);
+    EXPECT_EQ(out[base + 1], in[base + 2] + in[base + 3]);
+    EXPECT_EQ(out[base + 2], amounts[base] + amounts[base + 1]);
+    EXPECT_EQ(out[base + 3], amounts[base + 2] + amounts[base + 3]);
+  }
+  hs::Store(hs::PairwiseSub128(v, vb32), d, out);
+  for (std::size_t base = 0; base < n; base += 4) {
+    EXPECT_EQ(out[base], in[base] - in[base + 1]);
+    EXPECT_EQ(out[base + 1], in[base + 2] - in[base + 3]);
+    EXPECT_EQ(out[base + 2], amounts[base] - amounts[base + 1]);
+    EXPECT_EQ(out[base + 3], amounts[base + 2] - amounts[base + 3]);
+  }
+  hs::Store(hs::Per4LaneBlockShuffle<2, 3, 0, 1>(v), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], in[i ^ 1u]);
+
   const hs::ScalableTag<std::uint8_t> d8;
   const std::size_t n8 = hs::Lanes(d8);
   alignas(64) std::uint8_t a8[kBuf], b8[kBuf], o8[kBuf];
@@ -1294,6 +1323,22 @@ TEST(Sve, RuntimeShiftsRoundedAverageAndBlockShuffles) {
   hs::Store(hs::AverageRound(hs::Load(d8, a8), hs::Load(d8, b8)), d8, o8);
   for (std::size_t i = 0; i < n8; ++i)
     EXPECT_EQ(o8[i], static_cast<std::uint8_t>((static_cast<unsigned>(a8[i]) + b8[i] + 1u) >> 1));
+  const auto va8 = hs::Load(d8, a8), vb8 = hs::Load(d8, b8);
+  hs::Store(hs::ShiftLeftBytes<3>(va8), d8, o8);
+  for (std::size_t i = 0; i < n8; ++i) {
+    const std::size_t local = i & 15u;
+    EXPECT_EQ(o8[i], local < 3 ? 0 : a8[i - 3]);
+  }
+  hs::Store(hs::ShiftRightBytes<5>(va8), d8, o8);
+  for (std::size_t i = 0; i < n8; ++i) {
+    const std::size_t local = i & 15u;
+    EXPECT_EQ(o8[i], local + 5 < 16 ? a8[i + 5] : 0);
+  }
+  hs::Store(hs::CombineShiftRightBytes<4>(vb8, va8), d8, o8);
+  for (std::size_t i = 0; i < n8; ++i) {
+    const std::size_t local = i & 15u;
+    EXPECT_EQ(o8[i], local + 4 < 16 ? a8[i + 4] : b8[i - 12]);
+  }
 
   const hs::ScalableTag<std::uint64_t> d64;
   const std::size_t n64 = hs::Lanes(d64);

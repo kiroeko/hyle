@@ -42,8 +42,6 @@
       "action": "consumer_or_contract_driven",
       "ops": [
         "BroadcastBlock",
-        "CombineShiftRightBytes",
-        "CombineShiftRightLanes",
         "ExtractBlock",
         "InsertBlock",
         "InsertIntoUpper",
@@ -51,14 +49,7 @@
         "InterleaveLowerBlocks",
         "InterleaveOddBlocks",
         "InterleaveUpperBlocks",
-        "PairwiseAdd128",
-        "PairwiseSub128",
-        "Per4LaneBlockShuffle",
         "ResizeBitCast",
-        "ShiftLeftBytes",
-        "ShiftLeftLanes",
-        "ShiftRightBytes",
-        "ShiftRightLanes",
         "SlideDownBlocks",
         "SlideUpBlocks"
       ]
