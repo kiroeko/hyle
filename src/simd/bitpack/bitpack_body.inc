@@ -1,6 +1,9 @@
 // bitpack_body.inc -- shared HYLE SIMD bit-pack implementation. Each HYLE target TU defines
 // HYLE_SIMD_TARGET_* and HYLE_SIMD_VARIANT_SUFFIX before including this file. It is deliberately
 // multi-included, once per ISA tier, so ScalableTag selects that TU's native vector width.
+// Scalable product TUs define HYLE_BITPACK_FIXED_128_LAYOUT: their logical block is frozen at
+// 128 bits even when the physical SVE/RVV vector is wider. This makes the in-memory format
+// independent of SVE VL / RVV VLEN and compatible with the NEON layout.
 //
 // Full blocks contain B * Lanes(d) raw values (B = 8 * sizeof(T)) and are packed by the migrated
 // Pack8/Pack16/Pack32 specializations. The remaining sub-block tail uses the scalar bit stream;
@@ -85,7 +88,9 @@ HYLE_FORCE_INLINE void bitpack_unpack_blocks(unsigned bits, D d, std::size_t lan
   void HYLE_BITPACK_SYM(pack_##tag##_)(const T* raw, std::size_t count, T* packed,         \
                                        unsigned bits) noexcept {                            \
     constexpr std::size_t B = 8 * sizeof(T);                                               \
-    const ScalableTag<T> d;                                                                 \
+    /* Scalable vectors remain native sizeless values; only their active logical lanes */   \
+    /* are capped. Loads/stores and all D-tag operations therefore execute 128 bits. */     \
+    HYLE_BITPACK_TAG(T) d;                                                                  \
     const std::size_t lanes = Lanes(d);                                                     \
     const std::size_t block_size = lanes * B;                                               \
     const std::size_t nblocks = count / block_size;                                         \
@@ -97,7 +102,7 @@ HYLE_FORCE_INLINE void bitpack_unpack_blocks(unsigned bits, D d, std::size_t lan
   void HYLE_BITPACK_SYM(unpack_##tag##_)(const T* packed, std::size_t count, T* raw,       \
                                          unsigned bits) noexcept {                          \
     constexpr std::size_t B = 8 * sizeof(T);                                               \
-    const ScalableTag<T> d;                                                                 \
+    HYLE_BITPACK_TAG(T) d;                                                                  \
     const std::size_t lanes = Lanes(d);                                                     \
     const std::size_t block_size = lanes * B;                                               \
     const std::size_t nblocks = count / block_size;                                         \
@@ -107,8 +112,15 @@ HYLE_FORCE_INLINE void bitpack_unpack_blocks(unsigned bits, D d, std::size_t lan
     bitstream_unpack<T>(packed + block_packed, count - block_raw, raw + block_raw, bits);  \
   }
 
+#if defined(HYLE_BITPACK_FIXED_128_LAYOUT)
+#define HYLE_BITPACK_TAG(T) CappedTag<T, 16 / sizeof(T)>
+#else
+#define HYLE_BITPACK_TAG(T) ScalableTag<T>
+#endif
+
 HYLE_BITPACK_TYPES(HYLE_BITPACK_DEFINE)
 
+#undef HYLE_BITPACK_TAG
 #undef HYLE_BITPACK_DEFINE
 #undef HYLE_BITPACK_SYM
 #undef HYLE_BITPACK_PASTE

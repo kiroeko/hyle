@@ -10,8 +10,8 @@
 #include "src/simd/bitpack/kernels.h"
 
 // bitpack_dispatch.cc -- baseline dispatcher for HYLE SIMD bitpack. Mirrors sort_dispatch.cc:
-// per type it routes to the widest live tier -> x86 avx512 -> avx2 -> scalar; arm64 NEON
-// (unconditional -- ARMv8 baseline); everything else the scalar bit-stream floor. It enters a
+// per type it routes to the widest live tier -> x86 avx512 -> avx2 -> scalar; arm64 SVE -> NEON;
+// riscv64 RVV -> scalar; everything else the scalar bit-stream floor. It enters a
 // wide tier only when cpu_features() permits it, so an old CPU never executes a wide instruction.
 // The AVX-512 kernel uses integer shift/or/and SIMD rather than FP transcendentals, and is used on
 // all supported compilers.
@@ -69,8 +69,58 @@ bool have_avx512() noexcept {
     detail::unpack_##tag##_scalar(packed, count, raw, bits); \
   } while (0)
 #elif defined(HYLE_ARCH_ARM64)
-#define HYLE_BITPACK_TIER_PACK(tag)   detail::pack_##tag##_neon(raw, count, packed, bits)
+#if defined(HYLE_SIMD_HAS_SVE_VARIANT)
+#if defined(HYLE_SIMD_EXACT_TARGET_SVE)
+#define HYLE_BITPACK_USE_SVE() true
+#elif defined(HYLE_SIMD_EXACT)
+#define HYLE_BITPACK_USE_SVE() false
+#else
+#define HYLE_BITPACK_USE_SVE() (runtime().bitpack.isa == Isa::kSve)
+#endif
+#define HYLE_BITPACK_TIER_PACK(tag)                                                   \
+  do {                                                                                \
+    if (HYLE_BITPACK_USE_SVE()) {                                                      \
+      detail::pack_##tag##_sve(raw, count, packed, bits);                             \
+      return;                                                                         \
+    }                                                                                 \
+    detail::pack_##tag##_neon(raw, count, packed, bits);                              \
+  } while (0)
+#define HYLE_BITPACK_TIER_UNPACK(tag)                                                 \
+  do {                                                                                \
+    if (HYLE_BITPACK_USE_SVE()) {                                                      \
+      detail::unpack_##tag##_sve(packed, count, raw, bits);                           \
+      return;                                                                         \
+    }                                                                                 \
+    detail::unpack_##tag##_neon(packed, count, raw, bits);                            \
+  } while (0)
+#else
+#define HYLE_BITPACK_TIER_PACK(tag) detail::pack_##tag##_neon(raw, count, packed, bits)
 #define HYLE_BITPACK_TIER_UNPACK(tag) detail::unpack_##tag##_neon(packed, count, raw, bits)
+#endif
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#if defined(HYLE_SIMD_EXACT_TARGET_RVV)
+#define HYLE_BITPACK_USE_RVV() true
+#elif defined(HYLE_SIMD_EXACT)
+#define HYLE_BITPACK_USE_RVV() false
+#else
+#define HYLE_BITPACK_USE_RVV() (runtime().bitpack.isa == Isa::kRvv)
+#endif
+#define HYLE_BITPACK_TIER_PACK(tag)                                                   \
+  do {                                                                                \
+    if (HYLE_BITPACK_USE_RVV()) {                                                      \
+      detail::pack_##tag##_rvv(raw, count, packed, bits);                             \
+      return;                                                                         \
+    }                                                                                 \
+    detail::pack_##tag##_scalar(raw, count, packed, bits);                            \
+  } while (0)
+#define HYLE_BITPACK_TIER_UNPACK(tag)                                                 \
+  do {                                                                                \
+    if (HYLE_BITPACK_USE_RVV()) {                                                      \
+      detail::unpack_##tag##_rvv(packed, count, raw, bits);                           \
+      return;                                                                         \
+    }                                                                                 \
+    detail::unpack_##tag##_scalar(packed, count, raw, bits);                          \
+  } while (0)
 #else
 #define HYLE_BITPACK_TIER_PACK(tag)   detail::pack_##tag##_scalar(raw, count, packed, bits)
 #define HYLE_BITPACK_TIER_UNPACK(tag) detail::unpack_##tag##_scalar(packed, count, raw, bits)
@@ -100,5 +150,13 @@ bool have_avx512() noexcept {
 
 HYLE_BITPACK_TYPES(HYLE_BITPACK_DISPATCH)
 #undef HYLE_BITPACK_DISPATCH
+#undef HYLE_BITPACK_TIER_PACK
+#undef HYLE_BITPACK_TIER_UNPACK
+#if defined(HYLE_BITPACK_USE_SVE)
+#undef HYLE_BITPACK_USE_SVE
+#endif
+#if defined(HYLE_BITPACK_USE_RVV)
+#undef HYLE_BITPACK_USE_RVV
+#endif
 
 }  // namespace hyle::simd

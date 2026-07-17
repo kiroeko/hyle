@@ -1,6 +1,6 @@
 # simd-25：SVE/RVV 语义与产品层追平
 
-> 状态：🚧 进行中（分类账、基础闭包与 SVE/RVV math 主产品核已落地）。依赖 simd-22 双轨与
+> 状态：🚧 进行中（分类账、基础闭包与 SVE/RVV math/dtype/bitpack 产品核已落地；sort 待完成）。依赖 simd-22 双轨与
 > simd-24 已有产品核。
 >
 > 本里程碑重新限定 simd-15~18 的“追平”：它们完成的是 scalable P0~P4 正确性与
@@ -79,8 +79,8 @@ Runtime / exact / native + QEMU + real-hardware parity
 不是声称每个冷门函数都有 scalable body。
 
 当前证据：两套脚本同时链接 CPU probe、真实 `Runtime`、baseline dispatcher、scalar 与 scalable
-variant 表，不再只直调内部 kernel。SVE 为 **27 tests × VL 128/256/384/512** 全绿，RVV 为
-**24 tests × VLEN 128/256/512/1024** 全绿；公开 math/dtype batch API、tail 与对应 module tier
+variant 表，不再只直调内部 kernel。SVE 为 **29 tests × VL 128/256/384/512** 全绿，RVV 为
+**26 tests × VLEN 128/256/512/1024** 全绿；公开 math/dtype/bitpack batch API、tail 与对应 module tier
 均在门内验证。exact SVE/RVV dispatcher 的未定义符号检查也确认不引用
 `runtime()`、`best_isa()` 或 `cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。
 
@@ -92,7 +92,7 @@ variant 表，不再只直调内部 kernel。SVE 为 **27 tests × VL 128/256/38
 | math 主 HYLE/Highway op | 真实 SVE 产品 TU | 真实 RVV 产品 TU | optional per-op fallback 与真机性能 |
 | dtype f16/bf16↔f32 | 真实 SVE 产品 TU | 真实 RVV 产品 TU | 真机性能；fp8 保持 scalar/可选硬件 |
 | sort/select | NEON | scalar | 独立算法战役，不能只改元数据 |
-| bitpack | NEON | scalar | 先固定跨线程/VL 稳定格式合同 |
+| bitpack | 真实 SVE 产品 TU（固定 128-bit logical block） | 真实 RVV 产品 TU（固定 128-bit logical block） | 真机性能与多 logical-block 并行化 |
 
 ## 阶段 1：target/feature mechanization 与编译探针
 
@@ -110,13 +110,14 @@ SVE 的 VL 是线程属性；Runtime 只缓存 ISA/feature，具体 `Lanes(d)` �
 
 ### bitpack
 
-现有 `bitpack_body.inc` 已是一份 D-tag body；SVE 全 body 已能编译实例化，但**尚不能直接接 Runtime**：
-当前 packed layout 以 `Lanes(d)` 分块，SVE VL 又是线程属性。同进程中若 pack/unpack 发生在线程 VL
-不同的两个线程，格式会变化。现有 SVE→NEON 钳制因此同时承担了“固定 128-bit 格式”的职责。
+`bitpack_body.inc` 现由 scalable 产品 TU 以 `CappedTag<T, 16/sizeof(T)>` 实例化。物理寄存器仍是
+SVE/RVV sizeless native type，但 active lanes 固定为 16 bytes，packed block 因而不依赖线程 SVE VL 或
+机器 RVV VLEN，并与 NEON layout 一致。Runtime/exact/public API 已接入 SVE/RVV。
 
-先把 bitstream 合同改成与线程 VL 无关的稳定格式（固定 logical block，或显式 format/VL metadata，
-由最终跨线程与持久化合同裁决），再新增 SVE/RVV TU 与 Runtime/exact。覆盖所有类型、bits、非整 VL
-tail、跨页 canary、跨线程不同 VL 的 pack/unpack round-trip。不能把“body 能编译”等同于格式可发布。
+验收覆盖 u8/u16/u32 的全部 56 个合法 bit width、两个完整 logical block、direct kernel、真实 Runtime
+和 public API；每次输出逐字节对拍测试专用 scalar-128 D-tag 参考核，并在四档 VL/VLEN 下复验。
+11/13-bit u16 继续由独立手写布局 oracle 与全域测试钉住。当前实现每次只激活 128 bits；未来可在不改
+格式的前提下并行处理多个 logical block，但必须先有真机收益证据。
 
 ### dtype
 

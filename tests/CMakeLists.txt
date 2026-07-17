@@ -166,6 +166,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     hyle_add_test(simd NAME sve SOURCES simd/sve_test.cc simd/native_test.cc
                   simd/scalable_math_compile.cc simd/scalable_math_product_test.cc
                   simd/scalable_math_dispatch_test.cc simd/scalable_dtype_product_test.cc
+                  simd/scalable_bitpack_product_test.cc simd/fixed128_bitpack_reference.cc
                   DEFINES HYLE_SIMD_TARGET_SVE HYLE_SIMD_HAS_SVE_VARIANT=1
                   OPTIONS -march=armv8-a+sve)
   endif()
@@ -178,6 +179,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")
     hyle_add_test(simd NAME rvv SOURCES simd/rvv_test.cc simd/native_test.cc
                   simd/scalable_math_compile.cc simd/scalable_math_product_test.cc
                   simd/scalable_math_dispatch_test.cc simd/scalable_dtype_product_test.cc
+                  simd/scalable_bitpack_product_test.cc simd/fixed128_bitpack_reference.cc
                   DEFINES HYLE_SIMD_TARGET_RVV HYLE_SIMD_HAS_RVV_VARIANT=1
                   OPTIONS -march=rv64gcv)
   endif()

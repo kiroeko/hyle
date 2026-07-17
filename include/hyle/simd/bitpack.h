@@ -9,10 +9,9 @@
 // accelerated implementation is HYLE D-tag SIMD: Pack8<1..8>, Pack16<1..16>, and Pack32<1..32>
 // compile once for each target ISA and are selected by the baseline dispatcher.
 //
-// TIERS (bitpack_dispatch.cc): x86 avx512 -> avx2 -> scalar; arm64 NEON; else scalar. The scalar
-// floor is a pure contiguous bit-stream codec -- ALWAYS compiled, the non-x86 / old-CPU fallback
-// (never a SIGILL). The wide kernels use integer shift/or/and SIMD, and the AVX-512 target is
-// compiled on all supported compilers.
+// TIERS (bitpack_dispatch.cc): x86 avx512 -> avx2 -> scalar; arm64 SVE -> NEON; riscv64 RVV ->
+// scalar. The scalar floor is a pure contiguous bit-stream codec -- ALWAYS compiled (never a
+// SIGILL). The wide kernels use integer shift/or/and SIMD.
 //
 // This public header declares one overload per lane type: uint8/uint16/uint32.
 //
@@ -24,10 +23,11 @@
 //
 // LAYOUT / ROUND-TRIP CONTRACT: the packed byte layout is TIER-DEPENDENT (full blocks are
 // interleaved by the live vector width; the sub-block tail uses a scalar bit-stream). The only
-// guaranteed invariant is round-trip: unpack(pack(x)) == x when both run on the SAME host (hence
-// the same tier). Do NOT pack on one machine and unpack on another with a different ISA tier, and
-// do NOT interpret the packed bytes as a portable wire format -- it is an in-memory codec. Use
-// packed_size<T>(count, bits) to size the `packed` buffer.
+// guaranteed invariant is round-trip: unpack(pack(x)) == x when both run with the SAME tier.
+// SVE and RVV freeze their logical block at 128 bits, so their bytes are independent of the
+// calling thread's SVE VL / machine RVV VLEN and match the NEON block layout. Layouts can still
+// differ from x86 AVX2/AVX512 and the scalar floor. Do NOT interpret the bytes as a portable wire
+// format; use packed_size<T>(count, bits) to size the in-memory buffer.
 //
 // u16 widths 11 and 13 use corrected HYLE SIMD block layouts, including the 13-bit rawF scatter
 // mask and inverse vector selection; independent layout-oracle and full-domain tests pin them on

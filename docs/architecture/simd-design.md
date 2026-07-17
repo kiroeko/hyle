@@ -143,7 +143,7 @@ bf16 尤其重要（AI 训练/推理主力格式）；clay 完全没有。
 ## 落地清单
 
 1. ✅ `vec<T,N>` 抽象 + scalar fallback 后端（先能跑、再加速）。**simd-01。**
-2. ✅ SSE4.2 / AVX2 / AVX512 / NEON / SVE / RVV 后端 + 双轨部署。四定宽 ISA 均真跑；AVX512 由 Intel SDE 验证。SVE/RVV 用 sizeless traits + 运行期 `Lanes`；预编译 Runtime 的 scalable 变体已覆盖 ops/random/scan/search、math 主 HYLE/Highway op 和 dtype f16/bf16↔f32（少量 math optional op 与 fp8 仍逐项回落）。SVE sort/bitpack 仍保持 NEON，RVV sort/bitpack 仍保持 scalar。partial tag 的 `Rebind+kPow2+cap` 在 vec.h 共享层表达，后端用 predicate/`vl` 执行。定宽 partial 的物理形态按 ISA：NEON 用 D/Q，x86 用分层 XMM/YMM/ZMM（sub-XMM 仍是 XMM 低 lanes，但类型和消费者保留 N）。SVE/RVV math+dtype 已过多 VL/VLEN QEMU correctness/dispatch 门，真机性能闸仍属 simd-25 未完成项。
+2. ✅ SSE4.2 / AVX2 / AVX512 / NEON / SVE / RVV 后端 + 双轨部署。四定宽 ISA 均真跑；AVX512 由 Intel SDE 验证。SVE/RVV 用 sizeless traits + 运行期 `Lanes`；预编译 Runtime 的 scalable 变体已覆盖 ops/random/scan/search、math 主 HYLE/Highway op、dtype f16/bf16↔f32 与 bitpack（少量 math optional op 与 fp8 仍逐项回落）。bitpack 用固定 128-bit logical block 保持跨 VL/VLEN 格式稳定；SVE sort 仍保持 NEON，RVV sort 仍保持 scalar。partial tag 的 `Rebind+kPow2+cap` 在 vec.h 共享层表达，后端用 predicate/`vl` 执行。定宽 partial 的物理形态按 ISA：NEON 用 D/Q，x86 用分层 XMM/YMM/ZMM（sub-XMM 仍是 XMM 低 lanes，但类型和消费者保留 N）。SVE/RVV math+dtype+bitpack 已过多 VL/VLEN QEMU correctness/dispatch 门，真机性能闸仍属 simd-25 未完成项。
 3. ✅ dtype 转换（fp16/bf16 硬件路径）。**simd-05。** f32→bf16 的 **AVX-512-BF16 native `vcvtneps2bf16`** 档随 AVX512 变体 SDE 可真跑(此前仅 objdump 验)。
 4. ✅ 数学函数。simd-06/09 的 best-of 选择与 GELU/softmax 组合核均已落地；simd-20 将历史 Highway/xsimd 产品核摘为 HYLE 自有实现，外部库仅在 benchmark 中作对照。`hypot_f32_batch` 保留 overflow-safe 语义，`hypot_in_range_f32_batch` 显式采用 direct-formula 输入域契约。
 5. ✅ `ops/`：dot/saxpy/add 的 f32/f64 共享 native body 跨 scalar/SSE4/AVX2/AVX512/NEON/SVE/RVV；普通 API 走 Runtime，exact build 编译期直连，用户 TU 可走 `native::` 内联。
@@ -242,7 +242,7 @@ P4 新增12个公开名：四个 FMA 符号/交错变体、`MinMagnitude/MaxMagn
 3. store+reload 的 `T buf[kMaxLanes]` 是**标量数组**(T=float/int,合法);`kMaxLanes` 从"精确"变"上界"(kNativeVectorBytes=256=2048-bit 上界),循环边界用运行期 `Lanes(d)`。SVE 的 gather/compress/scatter/predicated-tail 走原生 `svld1_gather`/`svcompact`/`svst1_scatter`/`svwhilelt`。
 4. `Lanes(d)` 在 scalable target 运行期求值，并按 `kPow2` 缩放后受 `kMaxLanes` 截断；`Rebind<T,D>` 同步调整 `kPow2`，保证窄化后逻辑 lane 数不变。`FixedTag<T,N>` 因而仍是 `min(硬件 lanes,N)`；接受 D-tag 的 load/store、masked/gather/scatter、reduce、reverse、slide、whole-vector swizzle 与 widen/demote 只观察逻辑 active lanes。只接收 native `V` 的重载按 full-vector 契约运行，因为 sizeless `V` 本身不携带 partial tag。正 `kPow2` 只有在最小 128-bit 原生向量容不下目标 lane 数时才表示 grouped vector；SVE/RVV 当前单寄存器后端对此 fail-fast。
 
-**验证(qemu-aarch64,同一二进制强制 VL 128/256/384/512)**：当前正式门为 **27 个 gtest × 4 VL 全绿**（20 backend、2 math product、2 math Runtime/public dispatch、3 dtype product/dispatch）；首项用 `PR_SVE_SET_VL` 设置并回读实际 VL，避免 CPU model 参数与进程当前 VL 脱节。覆盖十种 lane、P0 泛型消费者、P1 swizzle/分段 load-store、P2 widen/quantize/reduce、P4 FMA/magnitude/widen/bf16/mod，以及 partial tag 的 masked/gather/scatter、widen/demote 与跨 signedness/Q15 极值。另在 VL 2048 真正设置后复验 P2/partial；384-bit 门覆盖非 2 次幂 lane 数。`scripts/sve-qemu-test.sh` 可复现正式四宽门。
+**验证(qemu-aarch64,同一二进制强制 VL 128/256/384/512)**：当前正式门为 **29 个 gtest × 4 VL 全绿**（20 backend、2 math product、2 math Runtime/public dispatch、3 dtype product/dispatch、2 bitpack product/dispatch）；首项用 `PR_SVE_SET_VL` 设置并回读实际 VL，避免 CPU model 参数与进程当前 VL 脱节。覆盖十种 lane、P0 泛型消费者、P1 swizzle/分段 load-store、P2 widen/quantize/reduce、P4 FMA/magnitude/widen/bf16/mod，以及 partial tag 的 masked/gather/scatter、widen/demote 与跨 signedness/Q15 极值。另在 VL 2048 真正设置后复验 P2/partial；384-bit 门覆盖非 2 次幂 lane 数。`scripts/sve-qemu-test.sh` 可复现正式四宽门。
 
 **scalable P0-P4 当前能力面**:SVE/RVV 已具备泛型 complex/128-cmp/Newton/rotate 所需原语、whole-vector swizzle/table/slide、原生 2/3/4 路分段 load-store，以及 PromoteEven/Odd、Truncate/U8FromU32、跨 signedness Demote2、widen-dot、SumsOf2/4/8、任意 lane 数 ReduceMul、Q15 与 saturated abs/neg。量化/点积与结构 op 已和 HYLE 定宽后端对称；P4新增的FMA/magnitude、even/odd widen、bf16 accumulate和i32/u32 Mod也由共享泛型层直接实例化。剩余软件项仅为 gap inventory 的 P5。硬边界仍是 SVE2 crypto、RVV Zvbb 与超过 `uint64_t` 容量的 mask-bits 位域接口。
 
@@ -252,11 +252,11 @@ P4 新增12个公开名：四个 FMA 符号/交错变体、`MinMagnitude/MaxMagn
 
 **RVV 独特处(vs SVE)**:① **每 intrinsic 显式 `vl`**(SVE 用隐式谓词)——从 `Lanes(d)` 算一次穿进每个 op;② **unsigned lane 用独立助记符**(`vminu/vmaxu/vmsltu/vmsgtu` 非 `vmin` 泛型),signed/unsigned `if constexpr` 分派(这是 RVV 铺量的主要 gotcha);③ mask 是 `vbool<ratio>_t`(ratio=SEW/LMUL)。
 
-**验证**：当前正式门为 **24 个 gtest × VLEN 128/256/512/1024 全绿**（17 backend、2 math product、2 math Runtime/public dispatch、3 dtype product/dispatch）；`P4MulModMagnitude`直接实例化共享FMA/magnitude/widen/bf16/mod层，1024-bit 门同时覆盖 unsigned `ReduceMin/Max` 助记符分派、tail-zero、oversize StoreN 截断与 swizzle。`scripts/rvv-qemu-test.sh` 固化同一二进制四宽门。**边界**:QEMU 当前最高 1024-bit，代码对 2048-bit u8 的 FirstN/FindLastTrue 使用不截断的 unsigned 逻辑；更宽 RVV 由 2048-bit HYLE 上界 fail-fast。Zvbb 位计数仍按硬件 gate 登记。
+**验证**：当前正式门为 **26 个 gtest × VLEN 128/256/512/1024 全绿**（17 backend、2 math product、2 math Runtime/public dispatch、3 dtype product/dispatch、2 bitpack product/dispatch）；`P4MulModMagnitude`直接实例化共享FMA/magnitude/widen/bf16/mod层，1024-bit 门同时覆盖 unsigned `ReduceMin/Max` 助记符分派、tail-zero、oversize StoreN 截断与 swizzle。`scripts/rvv-qemu-test.sh` 固化同一二进制四宽门。**边界**:QEMU 当前最高 1024-bit，代码对 2048-bit u8 的 FirstN/FindLastTrue 使用不截断的 unsigned 逻辑；更宽 RVV 由 2048-bit HYLE 上界 fail-fast。Zvbb 位计数仍按硬件 gate 登记。
 
-### scalable math/dtype 产品层（simd-25）
+### scalable math/dtype/bitpack 产品层（simd-25）
 
-`transcendental_highway_scalable.cc` 与 `cvt_scalable.cc` 是 SVE/RVV 共享的产品 body，但每个目标仍编译为隔离的 ISA TU 和稳定后缀符号。动态库由 baseline CPU probe 与各 module tier 选择；exact SVE/RVV 构建在编译期直连，目标对象不引用 Runtime/CPU probe。math 主 f32/f64 HYLE/Highway op 与 dtype f16/bf16↔f32 已在两后端上架。gamma、complex、direct-form hypot 与 fp8 等 optional op 仍按项回退，因此 module tier 表示主产品核，不声称每个 op 都有 scalable 版本。sort/bitpack 的降级状态仍未改变：SVE→NEON，RVV→scalar。
+`transcendental_highway_scalable.cc`、`cvt_scalable.cc` 与 `bitpack_hyle_scalable.cc` 是 SVE/RVV 共享的产品 body，但每个目标仍编译为隔离的 ISA TU 和稳定后缀符号。动态库由 baseline CPU probe 与各 module tier 选择；exact SVE/RVV 构建在编译期直连，目标对象不引用 Runtime/CPU probe。math 主 f32/f64 HYLE/Highway op 与 dtype f16/bf16↔f32 已在两后端上架。gamma、complex、direct-form hypot 与 fp8 等 optional op 仍按项回退，因此 module tier 表示主产品核，不声称每个 op 都有 scalable 版本。bitpack 用 `CappedTag<T, 16/sizeof(T)>` 固定 logical block；全 56 种 type/bit-width 组合逐字节对拍 scalar-128 D-tag 参考核。它解决产品可用性与格式稳定性，不代表已证明随 VL 线性扩展。剩余 hard fallback 只有 sort：SVE→NEON，RVV→scalar。
 
 ## 已定决策（1/2/3/4 均已落地）
 

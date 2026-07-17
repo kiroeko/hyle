@@ -74,7 +74,7 @@ const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
     case Isa::kSve: {
       static const Runtime table = [] {
         Runtime r = kSveRuntime;
-        r.sort.isa = r.bitpack.isa = Isa::kNeon;
+        r.sort.isa = Isa::kNeon;
         return r;
       }();
       return &table;
@@ -85,7 +85,7 @@ const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
     case Isa::kRvv: {
       static const Runtime table = [] {
         Runtime r = kRvvRuntime;
-        r.sort.isa = r.bitpack.isa = Isa::kScalar;
+        r.sort.isa = Isa::kScalar;
         return r;
       }();
       return &table;
@@ -135,20 +135,20 @@ Runtime selected_runtime() noexcept {
 #endif
 
 #if defined(HYLE_ARCH_ARM64)
-  // Math and common dtype conversions have length-agnostic SVE product TUs. Sort remains NEON;
-  // bitpack stays NEON until its format is independent of the calling thread's SVE VL.
+  // Math, common dtype conversions and bitpack have length-agnostic SVE product TUs. Sort remains
+  // NEON. Bitpack freezes a 128-bit logical block so its bytes do not depend on the thread's VL.
   if (result.isa == Isa::kSve) {
     result.dtype.isa = Isa::kSve;
     result.math.isa = Isa::kSve;
     result.sort.isa = Isa::kNeon;
-    result.bitpack.isa = Isa::kNeon;
+    result.bitpack.isa = Isa::kSve;
   }
 #elif defined(HYLE_ARCH_RISCV64)
-  // RVV math and common dtype conversions now have length-agnostic product TUs.
+  // RVV math, common dtype conversions and fixed-logical-block bitpack have product TUs.
   result.dtype.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.math.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.sort.isa = Isa::kScalar;
-  result.bitpack.isa = Isa::kScalar;
+  result.bitpack.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
 #endif
   return result;
 }

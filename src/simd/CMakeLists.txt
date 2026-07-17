@@ -58,12 +58,14 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
     bitpack/bitpack_hyle_neon.cc)
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     list(APPEND _simd_arch_sources
+      bitpack/bitpack_hyle_scalable.cc
       dtype/cvt_scalable.cc
       math/transcendental_highway_scalable.cc)
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
   set(HYLE_SIMD_RISCV64 TRUE)
   list(APPEND _simd_arch_sources
+    bitpack/bitpack_hyle_scalable.cc
     dtype/cvt_scalable.cc
     math/transcendental_highway_scalable.cc)
 endif()
@@ -159,10 +161,12 @@ elseif(HYLE_SIMD_ARM64)
   if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     hyle_set_isa(math/transcendental_highway_scalable.cc SVE)
     hyle_set_isa(dtype/cvt_scalable.cc SVE)
+    hyle_set_isa(bitpack/bitpack_hyle_scalable.cc SVE)
   endif()
 elseif(HYLE_SIMD_RISCV64)
   hyle_set_isa(math/transcendental_highway_scalable.cc RVV)
   hyle_set_isa(dtype/cvt_scalable.cc RVV)
+  hyle_set_isa(bitpack/bitpack_hyle_scalable.cc RVV)
 endif()
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:

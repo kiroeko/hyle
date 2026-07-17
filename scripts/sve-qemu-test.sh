@@ -42,8 +42,11 @@ $CXX $FLAGS -c "$REPO/tests/simd/sve_test.cc" -o "$OUT/sve_test.o"
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_compile.cc" -o "$OUT/scalable_math_compile.o"
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test.o"
 $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalable_dtype_product_test.o"
+$CXX $FLAGS -c "$REPO/tests/simd/scalable_bitpack_product_test.cc" -o "$OUT/scalable_bitpack_product_test.o"
+$CXX $COMMON_FLAGS -c "$REPO/tests/simd/fixed128_bitpack_reference.cc" -o "$OUT/fixed128_bitpack_reference.o"
 $CXX $FLAGS -c "$REPO/src/simd/math/transcendental_highway_scalable.cc" -o "$OUT/math_sve.o"
 $CXX $FLAGS -c "$REPO/src/simd/dtype/cvt_scalable.cc" -o "$OUT/dtype_sve.o"
+$CXX $FLAGS -c "$REPO/src/simd/bitpack/bitpack_hyle_scalable.cc" -o "$OUT/bitpack_sve.o"
 $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime.o"
@@ -54,6 +57,9 @@ $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_xsimd_neon.cc" -o "$OU
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/dtype_dispatch.cc" -o "$OUT/dtype_dispatch.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_scalar.cc" -o "$OUT/dtype_scalar.o"
 $CXX $COMMON_FLAGS -c "$REPO/src/simd/dtype/cvt_neon.cc" -o "$OUT/dtype_neon.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_dispatch.cc" -o "$OUT/bitpack_dispatch.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_scalar.cc" -o "$OUT/bitpack_scalar.o"
+$CXX $COMMON_FLAGS -c "$REPO/src/simd/bitpack/bitpack_hyle_neon.cc" -o "$OUT/bitpack_neon.o"
 for module in ops random search; do
   printf '#define HYLE_SIMD_VARIANT_SUFFIX scalar\n#include "src/simd/%s/kernel_impl.h"\n' "$module" |
     $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/${module}_scalar.o"
@@ -65,9 +71,12 @@ done
 $CXX $FLAGS "$OUT/sve_test.o" "$OUT/scalable_math_compile.o" \
   "$OUT/scalable_math_product_test.o" "$OUT/scalable_math_dispatch_test.o" \
   "$OUT/scalable_dtype_product_test.o" \
+  "$OUT/scalable_bitpack_product_test.o" \
+  "$OUT/fixed128_bitpack_reference.o" \
   "$OUT/math_sve.o" "$OUT/math_neon.o" "$OUT/math_xsimd_neon.o" \
   "$OUT/math_scalar.o" "$OUT/math_dispatch.o" "$OUT/cpu.o" "$OUT/runtime.o" \
   "$OUT/dtype_sve.o" "$OUT/dtype_neon.o" "$OUT/dtype_scalar.o" "$OUT/dtype_dispatch.o" \
+  "$OUT/bitpack_sve.o" "$OUT/bitpack_neon.o" "$OUT/bitpack_scalar.o" "$OUT/bitpack_dispatch.o" \
   "$OUT/ops_scalar.o" "$OUT/ops_neon.o" "$OUT/ops_sve.o" \
   "$OUT/random_scalar.o" "$OUT/random_neon.o" "$OUT/random_sve.o" \
   "$OUT/search_scalar.o" "$OUT/search_neon.o" "$OUT/search_sve.o" "$OUT/gtest-all.o" \
