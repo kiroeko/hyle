@@ -87,3 +87,32 @@ TEST(DynLib, CurrentProcessImage) {
   // on Windows GetModuleHandle(NULL) is the exe -- it may not export libc, so
   // only assert validity here, not a specific symbol.
 }
+
+// get(path): attach only if already mapped -- never load a missing library.
+TEST(DynLib, GetMissingDoesNotLoad) {
+  DynLib lib = DynLib::get("this_library_does_not_exist_zzz.xyz");
+  EXPECT_FALSE(lib.valid());
+  EXPECT_STRNE(dynlib_last_error(), "");
+}
+
+// System libs are almost always already mapped into the process.
+TEST(DynLib, GetAlreadyLoadedSystemLib) {
+  DynLib lib = DynLib::get(kSysLib);
+  ASSERT_TRUE(lib.valid()) << "get failed: " << dynlib_last_error();
+  void* sym = lib.symbol(kSysSym);
+  EXPECT_NE(sym, nullptr) << "symbol failed: " << dynlib_last_error();
+}
+
+// open then get: get attaches to the same already-resident image.
+TEST(DynLib, GetAfterOpen) {
+  DynLib loaded = DynLib::open(kSysLib);
+  ASSERT_TRUE(loaded.valid());
+  DynLib attached = DynLib::get(kSysLib);
+  ASSERT_TRUE(attached.valid()) << dynlib_last_error();
+  EXPECT_NE(attached.symbol(kSysSym), nullptr);
+}
+
+TEST(DynLib, GetEmptyPathFails) {
+  EXPECT_FALSE(DynLib::get("").valid());
+  EXPECT_FALSE(DynLib::get(nullptr).valid());
+}

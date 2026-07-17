@@ -16,14 +16,14 @@
 - **改进②(错误)**:clay error 走 `char*(Allocator*)`;HYLE thread-local 256B buffer + `dynlib_last_error()`——无分配,dlopen/GetLastError 失败信息直接拿。
 - **改进③(typed)**:`symbol_as<Fn>(name)` 类型化查符号(clay 只 void*)。
 - **POSIX 语义**:`RTLD_NOW|RTLD_LOCAL`——NOW 在 load 时解析全符号(缺符号当场失败,非调用时崩)、LOCAL 不把库符号泄进全局。
-- **gap 登记**:clay `dynlib_get(path)`(按 path 查**已加载**库)未做——HYLE `current()`(进程镜像)覆盖了"查自身/已链接符号"的主用途;按任意 path 查已加载库罕见,登记 platform-02b 补。
+- **gap 登记**:~~clay `dynlib_get(path)`~~ → ✅ **`DynLib::get(path)`**(2026-07-17):Win `GetModuleHandle`(非拥有)/POSIX `dlopen(RTLD_NOLOAD)`(拥有一次 close);未加载则失败不加载。
 
 ## 对抗式自审（六类）
 
 - **① 正确性**:owns_ 区分 open(拥有,close 时 free)vs current(进程镜像,不 free);move 转移后源 invalid;dlsym 前 `dlerror()` 清旧错误(区分 "符号值为 NULL 但存在" vs "不存在"——经典 dlsym 陷阱);double close 安全。
 - **② 性能**:加载期一次性操作,非热路径;symbol_as inline reinterpret_cast 零开销。
 - **③ 规范**:.cc 用 windows.h/dlfcn.h(内部不出头);公开头只宏 + 类声明;RAII;错误 thread-local 无分配。
-- **④ clay 覆盖**:open/sym/close/error/extension 全覆盖 + RAII/typed/无分配错误三改进;dynlib_get(path) gap 已登记。
+- **④ clay 覆盖**:open/**get**/sym/close/error/extension 全覆盖 + RAII/typed/无分配错误三改进。
 - **⑤ 残留脚手架**:无。
 - **⑥ 过度复杂**:RAII 类比 clay vtable+手动管理简洁。
 - **平台真相**:Win LoadLibrary + Linux dlopen **真编测**;mac 路径(dylib/dlopen 同 POSIX)**已写未验**(无机器),测试 lib 名按平台 #if。

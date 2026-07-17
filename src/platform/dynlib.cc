@@ -83,6 +83,37 @@ DynLib DynLib::open(const char* path) noexcept {
   return lib;
 }
 
+DynLib DynLib::get(const char* path) noexcept {
+  DynLib lib;
+  if (path == nullptr || path[0] == '\0') {
+    set_error("dynlib get: empty path");
+    return lib;
+  }
+#if defined(HYLE_OS_WINDOWS)
+  // Already-mapped modules only; does not load and does not bump the refcount.
+  HMODULE h = GetModuleHandleA(path);
+  if (h == nullptr) {
+    set_error_win();
+    return lib;
+  }
+  lib.handle_ = reinterpret_cast<void*>(h);
+  lib.owns_ = false;  // must not FreeLibrary a GetModuleHandle result
+#else
+  // RTLD_NOLOAD: succeed only if already loaded; never map a new image.
+  // A successful NOLOAD still increments the dlopen refcount -> we own a close.
+  void* h = dlopen(path, RTLD_NOW | RTLD_NOLOAD);
+  if (h == nullptr) {
+    const char* e = dlerror();
+    set_error(e != nullptr ? e : "library not loaded in this process");
+    return lib;
+  }
+  lib.handle_ = h;
+  lib.owns_ = true;
+#endif
+  set_error(nullptr);
+  return lib;
+}
+
 DynLib DynLib::current() noexcept {
   DynLib lib;
 #if defined(HYLE_OS_WINDOWS)

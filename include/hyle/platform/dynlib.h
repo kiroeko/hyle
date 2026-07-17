@@ -34,6 +34,14 @@ class DynLib {
   // == false); see dynlib_last_error() for why.
   HYLE_PLATFORM_API static DynLib open(const char* path) noexcept;
 
+  // Attach to a library ALREADY mapped into this process (clay dynlib_get).
+  // Does NOT load if absent -- returns invalid instead (Win GetModuleHandle /
+  // POSIX dlopen(RTLD_NOLOAD)). Use when another component already loaded the
+  // DLL and you only need a handle for symbol lookup.
+  // Ownership: Windows handle is non-owning (GetModuleHandle does not pin);
+  // POSIX NOLOAD bumps the dlopen refcount so the DynLib owns a close.
+  HYLE_PLATFORM_API static DynLib get(const char* path) noexcept;
+
   // A handle to the current process image (POSIX dlopen(nullptr) / Win
   // GetModuleHandle(nullptr)) for resolving already-loaded symbols. Does NOT own
   // a refcount to free -- its destructor is a no-op.
