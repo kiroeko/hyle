@@ -5,6 +5,14 @@
 #include "hyle/macros.h"
 #include "hyle/platform.h"
 
+// Linux THP advice flags live behind feature macros on some libcs.
+#if defined(HYLE_OS_LINUX) && !defined(MADV_HUGEPAGE)
+#  define MADV_HUGEPAGE 14
+#endif
+#if defined(HYLE_OS_LINUX) && !defined(MADV_NOHUGEPAGE)
+#  define MADV_NOHUGEPAGE 15
+#endif
+
 #if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
@@ -107,7 +115,73 @@ bool range_ok(void* base, std::size_t size, std::size_t offset,
 
 std::size_t page_size() noexcept { return page_size_cached(); }
 
+std::size_t large_page_size() noexcept {
+  static const std::size_t kLarge = []() noexcept -> std::size_t {
+#if defined(HYLE_OS_WINDOWS)
+    // GetLargePageMinimum is the hard large-page size (often 2 MiB). Requires
+    // SeLockMemoryPrivilege to actually allocate with MEM_LARGE_PAGES; the size
+    // query itself is fine without it.
+    using Fn = SIZE_T(WINAPI*)();
+    HMODULE k32 = ::GetModuleHandleW(L"kernel32.dll");
+    if (k32 == nullptr) return 0;
+    auto fn = reinterpret_cast<Fn>(
+        reinterpret_cast<void*>(::GetProcAddress(k32, "GetLargePageMinimum")));
+    if (fn == nullptr) return 0;
+    SIZE_T s = fn();
+    return s > 0 ? static_cast<std::size_t>(s) : 0;
+#elif defined(__x86_64__) || defined(_M_X64) || defined(__i386__) || \
+    defined(__aarch64__) || defined(_M_ARM64) || defined(__riscv)
+    // Architectural default huge/THP size used by seastar/linux x86&arm.
+    return static_cast<std::size_t>(2u) * 1024u * 1024u;
+#elif defined(__PPC__)
+    return static_cast<std::size_t>(16u) * 1024u * 1024u;
+#else
+    return 0;
+#endif
+  }();
+  return kLarge;
+}
+
 const char* vm_last_error() noexcept { return g_error; }
+
+bool vm_advise_hugepage(void* ptr, std::size_t size) noexcept {
+  clear_error();
+  if (ptr == nullptr || size == 0) return true;
+  require_page_aligned(ptr);
+  size = align_size(size);
+#if defined(HYLE_OS_LINUX) && defined(MADV_HUGEPAGE)
+  if (::madvise(ptr, size, MADV_HUGEPAGE) != 0) {
+    set_error_errno();
+    return false;
+  }
+  return true;
+#else
+  (void)ptr;
+  (void)size;
+  // No portable anonymous-THP madvise on Windows/macOS.
+  set_error("vm_advise_hugepage: not supported on this platform");
+  return false;
+#endif
+}
+
+bool vm_advise_no_hugepage(void* ptr, std::size_t size) noexcept {
+  clear_error();
+  if (ptr == nullptr || size == 0) return true;
+  require_page_aligned(ptr);
+  size = align_size(size);
+#if defined(HYLE_OS_LINUX) && defined(MADV_NOHUGEPAGE)
+  if (::madvise(ptr, size, MADV_NOHUGEPAGE) != 0) {
+    set_error_errno();
+    return false;
+  }
+  return true;
+#else
+  (void)ptr;
+  (void)size;
+  set_error("vm_advise_no_hugepage: not supported on this platform");
+  return false;
+#endif
+}
 
 void* vm_reserve(std::size_t size) noexcept {
   clear_error();

@@ -1,0 +1,35 @@
+# mem-06b：大页 / THP hint（大 arena · 张量 TLB）
+
+| 字段 | 值 |
+|---|---|
+| **阶段** | P2 / mem-06 切片 |
+| **模块** | platform/ + mem/ |
+| **状态** | ✅ 完成（Win MSVC + Linux WSL）|
+| **不含** | NUMA 绑 node、1GB 硬预留、hugetlbfs 特权路径（后置）|
+
+## 目标
+
+大工作集访问 TLB 项数 \(\sim N/\text{page}\) → 对齐 2MiB + THP hint 后 \(\sim N/2\text{MiB}\)。  
+分配仍 O(1)；**不**污染小对象 / fiber 栈热路径。
+
+## 分层
+
+1. **platform**：`large_page_size` / `large_page_align_up` / `vm_advise_hugepage` / `vm_advise_no_hugepage`  
+   - Linux：`madvise(MADV_HUGEPAGE|NOHUGEPAGE)`  
+   - Win/mac：诚实 `false`（无匿名 THP madvise）
+2. **mem::HugeRegion**：large-page 对齐 reserve+commit + 可选 THP + prefault  
+3. **`enable_allocator_hugepages`**：封 mimalloc `allow_thp` / `allow_large_os_pages`（不泄 mi_*）
+
+## 交付
+
+- `include/hyle/platform/virtual_memory.h` + `src/platform/virtual_memory.cc`
+- `include/hyle/mem/hugepage.h`（header HugeRegion）+ `system.cc` 策略
+- `tests/platform/virtual_memory_test.cc`（LargePage* / AdviseHugepage*）
+- `tests/mem/hugepage_test.cc`
+
+## 验收
+
+- large_page_size 为 0 或 ≥ page_size 的 2 幂  
+- HugeRegion ≥ threshold 可写；move/reset  
+- enable_allocator_hugepages 双调用不崩  
+- 双平台 mem + platform 相关测全绿  

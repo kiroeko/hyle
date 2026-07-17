@@ -1,4 +1,5 @@
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/hugepage.h"
 
 #include "hyle/macros.h"
 
@@ -66,6 +67,22 @@ void* system_realloc(void* /*state*/, void* ptr, std::size_t /*old_size*/,
 
 Allocator system_allocator() noexcept {
   return Allocator(&system_alloc, &system_free, &system_realloc, nullptr);
+}
+
+void enable_allocator_hugepages(AllocatorHugepagePolicy policy) noexcept {
+  // Programmatic stand-in for MIMALLOC_ALLOW_THP / MIMALLOC_ALLOW_LARGE_OS_PAGES.
+  // Call early; mimalloc reads options on first OS alloc. Safe if called later
+  // (affects subsequent segments).
+  if (policy.allow_thp) {
+    mi_option_enable(mi_option_allow_thp);
+  } else {
+    mi_option_disable(mi_option_allow_thp);
+  }
+  if (policy.allow_large_os_pages) {
+    mi_option_enable(mi_option_allow_large_os_pages);
+  } else {
+    mi_option_disable(mi_option_allow_large_os_pages);
+  }
 }
 
 }  // namespace hyle::mem

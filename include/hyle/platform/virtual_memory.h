@@ -29,9 +29,22 @@ namespace hyle::platform {
 // OS page size in bytes (typically 4096). All VM ranges are page-granular.
 HYLE_PLATFORM_API std::size_t page_size() noexcept;
 
+// Large (huge) page size in bytes when the platform exposes one (commonly 2 MiB
+// on x86_64/aarch64). 0 if unknown / unsupported. This is the *size unit* for
+// THP / large-page alignment -- not a guarantee that every allocation gets one.
+HYLE_PLATFORM_API std::size_t large_page_size() noexcept;
+
 // Smallest multiple of page_size() that is >= n. n==0 -> 0.
 HYLE_FORCE_INLINE std::size_t page_align_up(std::size_t n) noexcept {
   std::size_t p = page_size();
+  return (n + (p - 1)) & ~(p - 1);
+}
+
+// Align up to large_page_size() when known; otherwise to page_size(). n==0 -> 0.
+HYLE_FORCE_INLINE std::size_t large_page_align_up(std::size_t n) noexcept {
+  if (n == 0) return 0;
+  std::size_t lp = large_page_size();
+  std::size_t p = lp != 0 ? lp : page_size();
   return (n + (p - 1)) & ~(p - 1);
 }
 
@@ -74,6 +87,15 @@ HYLE_PLATFORM_API bool vm_protect(void* ptr, std::size_t size, Protect prot) noe
 // Last VM error on THIS thread, or "" if none. Valid until the next failing
 // vm_* call on the same thread (dynlib-style, no allocator).
 HYLE_PLATFORM_API const char* vm_last_error() noexcept;
+
+// ---- hugepage / THP hints ---------------------------------------------------
+// Soft advice only: never required for correctness. Linux uses madvise
+// (MADV_HUGEPAGE / MADV_NOHUGEPAGE). Windows/macOS have no portable equivalent
+// for anonymous ranges -- these return false without changing the mapping.
+// ptr must be page-aligned; size is rounded up. Empty range -> true no-op.
+// Failure does NOT set a fatal condition; check return + vm_last_error().
+HYLE_PLATFORM_API bool vm_advise_hugepage(void* ptr, std::size_t size) noexcept;
+HYLE_PLATFORM_API bool vm_advise_no_hugepage(void* ptr, std::size_t size) noexcept;
 
 // ---- RAII region ------------------------------------------------------------
 // Owns one reservation. Move-only; releases on destruction.

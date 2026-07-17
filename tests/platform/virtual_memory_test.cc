@@ -7,9 +7,13 @@
 #include <cstring>
 #include <utility>
 
+using hyle::platform::large_page_align_up;
+using hyle::platform::large_page_size;
 using hyle::platform::page_align_up;
 using hyle::platform::page_size;
 using hyle::platform::Protect;
+using hyle::platform::vm_advise_hugepage;
+using hyle::platform::vm_advise_no_hugepage;
 using hyle::platform::vm_commit;
 using hyle::platform::vm_decommit;
 using hyle::platform::vm_last_error;
@@ -181,6 +185,39 @@ TEST(VirtualMemory, ProtectReadOnlyAllowsRead) {
   // restore before free
   ASSERT_TRUE(vm_protect(base, p, Protect::kReadWrite));
   ASSERT_TRUE(vm_release(base, p));
+}
+
+TEST(VirtualMemory, LargePageSizeIsSaneOrZero) {
+  std::size_t lp = large_page_size();
+  // 0 = unknown platform; else power-of-two and >> base page.
+  if (lp != 0) {
+    EXPECT_EQ(lp & (lp - 1), 0u);
+    EXPECT_GE(lp, page_size());
+    EXPECT_EQ(large_page_align_up(0), 0u);
+    EXPECT_EQ(large_page_align_up(1), lp);
+    EXPECT_EQ(large_page_align_up(lp), lp);
+    EXPECT_EQ(large_page_align_up(lp + 1), 2 * lp);
+  } else {
+    // Fallback align uses base page.
+    EXPECT_EQ(large_page_align_up(1), page_size());
+  }
+}
+
+TEST(VirtualMemory, AdviseHugepageSoft) {
+  std::size_t p = page_size();
+  std::size_t n = p * 16;  // a few pages; THP may or may not promote
+  void* base = vm_reserve(n);
+  ASSERT_NE(base, nullptr) << vm_last_error();
+  ASSERT_TRUE(vm_commit(base, n)) << vm_last_error();
+  // Soft contract: true on Linux (even if THP=never, madvise may still succeed),
+  // false on Windows/macOS. Must not crash either way; range stays writable.
+  (void)vm_advise_hugepage(base, n);
+  (void)vm_advise_no_hugepage(base, n);
+  static_cast<unsigned char*>(base)[0] = 0x42;
+  EXPECT_EQ(static_cast<unsigned char*>(base)[0], 0x42);
+  EXPECT_TRUE(vm_advise_hugepage(nullptr, 0));
+  EXPECT_TRUE(vm_advise_no_hugepage(nullptr, 0));
+  ASSERT_TRUE(vm_release(base, n));
 }
 
 TEST(VirtualMemory, DecommitOutOfRangeFails) {
