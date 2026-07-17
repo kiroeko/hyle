@@ -1205,6 +1205,71 @@ TEST(Rvv, ConcatHalves) {
   }
 }
 
+TEST(Rvv, CryptoCapabilityFloor) {
+  const hs::ScalableTag<std::uint8_t> d;
+  const std::size_t n = hs::Lanes(d);
+  ASSERT_EQ(n % 16u, 0u);
+  alignas(64) std::uint8_t st[kBuf], key[kBuf], out[kBuf], ref[kBuf];
+  for (std::size_t i = 0; i < n; ++i) {
+    st[i] = static_cast<std::uint8_t>(i * 7 + 1);
+    key[i] = static_cast<std::uint8_t>(i * 3 + 5);
+  }
+  const auto vs = hs::Load(d, st), vk = hs::Load(d, key), z = hs::Zero(d);
+  hs::Store(hs::AESLastRound(z, z), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], 0x63) << "anchor i=" << i;
+  hs::Store(hs::AESLastRoundInv(hs::AESLastRound(vs, z), z), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], st[i]) << "roundtrip i=" << i;
+  hs::Store(hs::AESInvMixColumns(hs::AESRound(vs, z)), d, out);
+  hs::Store(hs::AESLastRound(vs, z), d, ref);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], ref[i]) << "invmix i=" << i;
+  hs::Store(hs::AESRound(vs, vk), d, out);
+  hs::Store(hs::AESRound(vs, z), d, ref);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], ref[i] ^ key[i]) << "roundkey i=" << i;
+  hs::Store(hs::AESRoundInv(z, z), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], 0x52) << "inv anchor i=" << i;
+  hs::Store(hs::AESKeyGenAssist<0x01>(z), d, out);
+  for (std::size_t b = 0; b < n; b += 16)
+    for (std::size_t i = 0; i < 16; ++i)
+      EXPECT_EQ(out[b + i], (i == 4 || i == 12) ? 0x62 : 0x63) << "keygen i=" << b + i;
+}
+
+TEST(Rvv, BitShuffleMultiRotateAndStream) {
+  const hs::ScalableTag<std::uint64_t> d64;
+  const hs::ScalableTag<std::uint8_t> d8;
+  const std::size_t n64 = hs::Lanes(d64);
+  const std::size_t n8 = hs::Lanes(d8);
+  ASSERT_EQ(n8, n64 * 8);
+  alignas(64) std::uint64_t data[kBuf / 8], out[kBuf / 8];
+  alignas(64) std::uint8_t idx[kBuf];
+  for (std::size_t q = 0; q < n64; ++q) {
+    data[q] = 0x0123456789ABCDEFULL ^ (0x1111111111111111ULL * q);
+    for (std::size_t j = 0; j < 8; ++j)
+      idx[q * 8 + j] = static_cast<std::uint8_t>((q * 29 + j * 37 + 192) & 255);
+  }
+  const auto values = hs::Load(d64, data);
+  const auto indices = hs::Load(d8, idx);
+  hs::Store(hs::BitShuffle(values, indices), d64, out);
+  for (std::size_t q = 0; q < n64; ++q) {
+    std::uint64_t expected = 0;
+    for (std::size_t j = 0; j < 8; ++j)
+      expected |= ((data[q] >> (idx[q * 8 + j] & 63)) & 1u) << j;
+    EXPECT_EQ(out[q], expected) << "bitshuffle q=" << q;
+  }
+  hs::Store(hs::MultiRotateRight(values, indices), d64, out);
+  for (std::size_t q = 0; q < n64; ++q) {
+    std::uint64_t expected = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned s = idx[q * 8 + j] & 63;
+      const std::uint64_t rotated = s == 0 ? data[q] : (data[q] >> s) | (data[q] << (64 - s));
+      expected |= (rotated & 0xFFu) << (8 * j);
+    }
+    EXPECT_EQ(out[q], expected) << "multirotate q=" << q;
+  }
+  for (std::size_t q = 0; q < n64; ++q) out[q] = 0;
+  hs::Stream(values, d64, out);
+  for (std::size_t q = 0; q < n64; ++q) EXPECT_EQ(out[q], data[q]) << "stream q=" << q;
+}
+
 TEST(Rvv, ScalableSadFamilies) {
   const hs::ScalableTag<std::uint8_t> d8;
   const hs::ScalableTag<std::uint16_t> d16;

@@ -202,6 +202,12 @@ template <class D>
 HYLE_FORCE_INLINE void Store(VFromD<D> v, D d, TFromD<D>* p) noexcept {
   StoreU(v, d, p);
 }
+// SVE has an architectural non-temporal store. Unlike RVV's semantic fallback, this preserves
+// Stream's cache-bypassing intent for every base-SVE lane type without requiring SVE2.
+template <class D>
+HYLE_FORCE_INLINE void Stream(VFromD<D> v, D d, TFromD<D>* aligned) noexcept {
+  svstnt1(detail::active(d), aligned, v);
+}
 
 // ---- interleaved load / store (native SVE ld2/3/4 + st2/3/4) ------------------------
 template <class D>
@@ -1655,6 +1661,47 @@ HYLE_FORCE_INLINE svuint64_t SumsOf8(svuint8_t v) noexcept {
   const DFromV<svuint64_t> d;
   const auto s4 = SumsOf4(v);
   return Add(PromoteEvenTo(d, s4), PromoteOddTo(d, s4));
+}
+// BitShuffle and MultiRotateRight are portable vector semantics, not SVE2 feature ops. The
+// byte-table forms below mirror Highway's generic construction while avoiding scalar spills.
+// Each table index remains inside its 128-bit block, and the low bit/byte result is assembled with
+// per-byte variable shifts available in base SVE.
+template <class V, class VI>
+HYLE_FORCE_INLINE V BitShuffle(V v, VI idx) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>> && sizeof(TFromV<V>) == 8,
+                "BitShuffle data lanes are 64-bit integers");
+  static_assert(std::is_integral_v<TFromV<VI>> && sizeof(TFromV<VI>) == 1,
+                "BitShuffle index lanes are bytes");
+  const DFromV<svuint8_t> d8;
+  const auto id = detail::lane_iota<std::uint8_t>();
+  const auto idx8 = BitCast(d8, idx);
+  const auto bit = And(idx8, Set(d8, std::uint8_t{7}));
+  const auto qword = And(id, Set(d8, std::uint8_t{8}));
+  const auto source = Or(qword, And(ShiftRight<3>(idx8), Set(d8, std::uint8_t{7})));
+  const auto bytes = BitCast(d8, TableLookupBytes(v, source));
+  const auto selected = And(Shr(bytes, bit), Set(d8, std::uint8_t{1}));
+  const auto positioned = Shl(selected, And(id, Set(d8, std::uint8_t{7})));
+  return BitCast(DFromV<V>(), SumsOf8(positioned));
+}
+template <class V, class VI>
+HYLE_FORCE_INLINE V MultiRotateRight(V v, VI idx) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>> && sizeof(TFromV<V>) == 8,
+                "MultiRotateRight data lanes are 64-bit integers");
+  static_assert(std::is_integral_v<TFromV<VI>> && sizeof(TFromV<VI>) == 1,
+                "MultiRotateRight index lanes are bytes");
+  const DFromV<svuint8_t> d8;
+  const auto id = detail::lane_iota<std::uint8_t>();
+  const auto idx8 = And(BitCast(d8, idx), Set(d8, std::uint8_t{63}));
+  const auto bit = And(idx8, Set(d8, std::uint8_t{7}));
+  const auto qword = And(id, Set(d8, std::uint8_t{8}));
+  const auto byte = ShiftRight<3>(idx8);
+  const auto lo = BitCast(d8, TableLookupBytes(v, Or(qword, byte)));
+  const auto hi_byte = And(Add(byte, Set(d8, std::uint8_t{1})), Set(d8, std::uint8_t{7}));
+  const auto hi = BitCast(d8, TableLookupBytes(v, Or(qword, hi_byte)));
+  const auto right = Shr(lo, bit);
+  const auto left_count = And(Sub(Set(d8, std::uint8_t{8}), bit), Set(d8, std::uint8_t{7}));
+  const auto left = IfThenElse(Eq(bit, Zero(d8)), Zero(d8), Shl(hi, left_count));
+  return BitCast(DFromV<V>(), Or(right, left));
 }
 HYLE_FORCE_INLINE svuint64_t SumsOf8AbsDiff(svuint8_t a, svuint8_t b) noexcept {
   return SumsOf8(AbsDiff(a, b));

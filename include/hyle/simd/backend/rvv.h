@@ -27,6 +27,7 @@
 #include <type_traits>
 
 #include "hyle/macros.h"
+#include "hyle/simd/backend/crypto_soft.h"  // base-RVV AES software capability floor
 
 namespace hyle::simd {
 
@@ -188,6 +189,12 @@ HYLE_FORCE_INLINE void StoreU(VFromD<D> v, D d, TFromD<D>* p) noexcept {
 }
 template <class D>
 HYLE_FORCE_INLINE void Store(VFromD<D> v, D d, TFromD<D>* p) noexcept { StoreU(v, d, p); }
+// RVV 1.0 has no portable non-temporal vector-store contract. Match Highway: Stream remains a
+// semantically correct store on base RVV; callers must not infer cache bypass from this backend.
+template <class D>
+HYLE_FORCE_INLINE void Stream(VFromD<D> v, D d, TFromD<D>* aligned) noexcept {
+  Store(v, d, aligned);
+}
 
 // ---- interleaved load / store (native RVV segmented instructions) -------------------
 namespace detail {
@@ -1899,6 +1906,47 @@ HYLE_FORCE_INLINE vuint64m1_t SumsOf8(vuint8m1_t v) noexcept {
   const auto s4 = SumsOf4(v);
   return Add(PromoteEvenTo(d, s4), PromoteOddTo(d, s4));
 }
+// Portable base-V vector implementations; no Zvbb/Zvbc dependency. Byte gathers are local to
+// each 128-bit block and RVV variable shifts assemble the requested bits/rotated bytes in-register.
+template <class V, class VI>
+HYLE_FORCE_INLINE V BitShuffle(V v, VI idx) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>> && sizeof(TFromV<V>) == 8,
+                "BitShuffle data lanes are 64-bit integers");
+  static_assert(std::is_integral_v<TFromV<VI>> && sizeof(TFromV<VI>) == 1,
+                "BitShuffle index lanes are bytes");
+  const DFromV<vuint8m1_t> d8;
+  const std::size_t vl = Lanes(d8);
+  const auto id = __riscv_vid_v_u8m1(vl);
+  const auto idx8 = BitCast(d8, idx);
+  const auto bit = And(idx8, Set(d8, std::uint8_t{7}));
+  const auto qword = And(id, Set(d8, std::uint8_t{8}));
+  const auto source = Or(qword, And(ShiftRight<3>(idx8), Set(d8, std::uint8_t{7})));
+  const auto bytes = BitCast(d8, TableLookupBytes(v, source));
+  const auto selected = And(Shr(bytes, bit), Set(d8, std::uint8_t{1}));
+  const auto positioned = Shl(selected, And(id, Set(d8, std::uint8_t{7})));
+  return BitCast(DFromV<V>(), SumsOf8(positioned));
+}
+template <class V, class VI>
+HYLE_FORCE_INLINE V MultiRotateRight(V v, VI idx) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>> && sizeof(TFromV<V>) == 8,
+                "MultiRotateRight data lanes are 64-bit integers");
+  static_assert(std::is_integral_v<TFromV<VI>> && sizeof(TFromV<VI>) == 1,
+                "MultiRotateRight index lanes are bytes");
+  const DFromV<vuint8m1_t> d8;
+  const std::size_t vl = Lanes(d8);
+  const auto id = __riscv_vid_v_u8m1(vl);
+  const auto idx8 = And(BitCast(d8, idx), Set(d8, std::uint8_t{63}));
+  const auto bit = And(idx8, Set(d8, std::uint8_t{7}));
+  const auto qword = And(id, Set(d8, std::uint8_t{8}));
+  const auto byte = ShiftRight<3>(idx8);
+  const auto lo = BitCast(d8, TableLookupBytes(v, Or(qword, byte)));
+  const auto hi_byte = And(Add(byte, Set(d8, std::uint8_t{1})), Set(d8, std::uint8_t{7}));
+  const auto hi = BitCast(d8, TableLookupBytes(v, Or(qword, hi_byte)));
+  const auto right = Shr(lo, bit);
+  const auto left_count = And(Sub(Set(d8, std::uint8_t{8}), bit), Set(d8, std::uint8_t{7}));
+  const auto left = IfThenElse(Eq(bit, Zero(d8)), Zero(d8), Shl(hi, left_count));
+  return BitCast(DFromV<V>(), Or(right, left));
+}
 HYLE_FORCE_INLINE vuint64m1_t SumsOf8AbsDiff(vuint8m1_t a, vuint8m1_t b) noexcept {
   return SumsOf8(AbsDiff(a, b));
 }
@@ -2193,6 +2241,65 @@ template <class V, class M> HYLE_FORCE_INLINE V Expand(V v, M m) noexcept {
     const auto idx = __riscv_viota_m_u64m1(m, vl);
     return __riscv_vmerge(z, __riscv_vrgather(v, idx, vl), m, vl);
   }
+}
+
+// ---- crypto capability floor + Zvbc carryless multiply (simd-16 reclaim) ------------
+// Base RVV cannot assume the optional vector-crypto AES extension. Keep the same public face as
+// every other backend by applying HYLE's shared AES-NI-byte-order oracle independently to each
+// 128-bit block. A future Zvkned TU can replace these wrappers without changing the contract.
+namespace detail {
+template <class V, class Fn>
+HYLE_FORCE_INLINE V rvv_crypto_soft_blocks(V state, V key, Fn per_block) noexcept {
+  using T = TFromV<V>;
+  const DFromV<V> d;
+  constexpr std::size_t kMaxBytes = DFromV<V>::kMaxLanes * sizeof(T);
+  alignas(64) std::uint8_t s[kMaxBytes], k[kMaxBytes];
+  Store(state, d, reinterpret_cast<T*>(s));
+  Store(key, d, reinterpret_cast<T*>(k));
+  const std::size_t bytes = Lanes(d) * sizeof(T);
+  for (std::size_t b = 0; b + 16 <= bytes; b += 16) per_block(s + b, k + b);
+  return Load(d, reinterpret_cast<T*>(s));
+}
+}  // namespace detail
+
+template <class V> HYLE_FORCE_INLINE V AESRound(V state, V key) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+  return detail::rvv_crypto_soft_blocks(state, key, detail::aes_round_soft);
+}
+template <class V> HYLE_FORCE_INLINE V AESLastRound(V state, V key) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+  return detail::rvv_crypto_soft_blocks(state, key, detail::aes_last_round_soft);
+}
+template <class V> HYLE_FORCE_INLINE V AESRoundInv(V state, V key) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+  return detail::rvv_crypto_soft_blocks(state, key, detail::aes_round_inv_soft);
+}
+template <class V> HYLE_FORCE_INLINE V AESLastRoundInv(V state, V key) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+  return detail::rvv_crypto_soft_blocks(state, key, detail::aes_last_round_inv_soft);
+}
+template <class V> HYLE_FORCE_INLINE V AESInvMixColumns(V state) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+  using T = TFromV<V>;
+  const DFromV<V> d;
+  constexpr std::size_t kMaxBytes = DFromV<V>::kMaxLanes * sizeof(T);
+  alignas(64) std::uint8_t s[kMaxBytes];
+  Store(state, d, reinterpret_cast<T*>(s));
+  const std::size_t bytes = Lanes(d) * sizeof(T);
+  for (std::size_t b = 0; b + 16 <= bytes; b += 16) detail::aes_inv_mix_columns(s + b);
+  return Load(d, reinterpret_cast<T*>(s));
+}
+template <std::uint8_t kRcon, class V> HYLE_FORCE_INLINE V AESKeyGenAssist(V v) noexcept {
+  static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+  using T = TFromV<V>;
+  const DFromV<V> d;
+  constexpr std::size_t kMaxBytes = DFromV<V>::kMaxLanes * sizeof(T);
+  alignas(64) std::uint8_t s[kMaxBytes];
+  Store(v, d, reinterpret_cast<T*>(s));
+  const std::size_t bytes = Lanes(d) * sizeof(T);
+  for (std::size_t b = 0; b + 16 <= bytes; b += 16)
+    detail::aes_keygen_assist_soft(s + b, kRcon);
+  return Load(d, reinterpret_cast<T*>(s));
 }
 
 // ---- Zvbc carryless multiply (simd-16 reclaim) --------------------------------------

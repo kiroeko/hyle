@@ -1114,10 +1114,9 @@ TEST(Sve, ConcatHalves) {
   }
 }
 
-#if defined(__ARM_FEATURE_SVE2_AES)
-// SVE2 crypto (simd-16 reclaim). Whole-vector = per-128-block AES/CLMul. Uses FIPS-197 anchors +
-// enc/dec round-trip identities (self-contained, no external oracle). Requires qemu -cpu max.
-TEST(Sve, Simd16Sve2Crypto) {
+// Crypto capability is present on base SVE via the shared software floor and upgrades to SVE2 AES
+// instructions when the feature TU enables them. Whole-vector semantics remain per 128-bit block.
+TEST(Sve, Simd16Crypto) {
   const hs::ScalableTag<std::uint8_t> d;
   const std::size_t n = hs::Lanes(d);
   ASSERT_EQ(n % 16u, 0u);  // VL is a whole number of 128-bit blocks
@@ -1146,6 +1145,17 @@ TEST(Sve, Simd16Sve2Crypto) {
   hs::Store(hs::AESRound(vs, z), d, ref);
   for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], ref[i] ^ key[i]) << "roundkey i=" << i;
 
+  // AESDEC zero anchor: InvSBox[0] is 0x52 and InvMixColumns preserves a uniform column.
+  hs::Store(hs::AESRoundInv(z, z), d, out);
+  for (std::size_t i = 0; i < n; ++i) EXPECT_EQ(out[i], 0x52) << "inv anchor i=" << i;
+
+  // AESKEYGENASSIST(0,1): SubWord is 0x63; the rotated word's first byte is xor'd with rcon.
+  hs::Store(hs::AESKeyGenAssist<0x01>(z), d, out);
+  for (std::size_t b = 0; b < n; b += 16) {
+    for (std::size_t i = 0; i < 16; ++i)
+      EXPECT_EQ(out[b + i], (i == 4 || i == 12) ? 0x62 : 0x63) << "keygen i=" << b + i;
+  }
+
   // CLMul known-answer: (x+1)*(x+1) = x^2+1 in GF(2)[x] -> 0x3 clmul 0x3 = 0x5, per 128-block low.
   alignas(64) std::uint64_t a64[kBuf / 8], b64[kBuf / 8], o64[kBuf / 8];
   const hs::ScalableTag<std::uint64_t> d64;
@@ -1155,7 +1165,43 @@ TEST(Sve, Simd16Sve2Crypto) {
   // low 64 of each 128-block holds the product; block low element is even index.
   for (std::size_t i = 0; i < n64; i += 2) EXPECT_EQ(o64[i], 0x5u) << "clmul lo blk i=" << i;
 }
-#endif  // __ARM_FEATURE_SVE2_AES
+
+TEST(Sve, BitShuffleMultiRotateAndStream) {
+  const hs::ScalableTag<std::uint64_t> d64;
+  const hs::ScalableTag<std::uint8_t> d8;
+  const std::size_t n64 = hs::Lanes(d64);
+  const std::size_t n8 = hs::Lanes(d8);
+  ASSERT_EQ(n8, n64 * 8);
+  alignas(64) std::uint64_t data[kBuf / 8], out[kBuf / 8];
+  alignas(64) std::uint8_t idx[kBuf];
+  for (std::size_t q = 0; q < n64; ++q) {
+    data[q] = 0x0123456789ABCDEFULL ^ (0x1111111111111111ULL * q);
+    for (std::size_t j = 0; j < 8; ++j)
+      idx[q * 8 + j] = static_cast<std::uint8_t>((q * 29 + j * 37 + 192) & 255);
+  }
+  const auto values = hs::Load(d64, data);
+  const auto indices = hs::Load(d8, idx);
+  hs::Store(hs::BitShuffle(values, indices), d64, out);
+  for (std::size_t q = 0; q < n64; ++q) {
+    std::uint64_t expected = 0;
+    for (std::size_t j = 0; j < 8; ++j)
+      expected |= ((data[q] >> (idx[q * 8 + j] & 63)) & 1u) << j;
+    EXPECT_EQ(out[q], expected) << "bitshuffle q=" << q;
+  }
+  hs::Store(hs::MultiRotateRight(values, indices), d64, out);
+  for (std::size_t q = 0; q < n64; ++q) {
+    std::uint64_t expected = 0;
+    for (std::size_t j = 0; j < 8; ++j) {
+      const unsigned s = idx[q * 8 + j] & 63;
+      const std::uint64_t rotated = s == 0 ? data[q] : (data[q] >> s) | (data[q] << (64 - s));
+      expected |= (rotated & 0xFFu) << (8 * j);
+    }
+    EXPECT_EQ(out[q], expected) << "multirotate q=" << q;
+  }
+  for (std::size_t q = 0; q < n64; ++q) out[q] = 0;
+  hs::Stream(values, d64, out);
+  for (std::size_t q = 0; q < n64; ++q) EXPECT_EQ(out[q], data[q]) << "stream q=" << q;
+}
 
 TEST(Sve, ScalableSadFamilies) {
   const hs::ScalableTag<std::uint8_t> d8;
