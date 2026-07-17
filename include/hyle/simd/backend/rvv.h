@@ -13,9 +13,10 @@
 //      element-count argument `vl`. We compute vl once from the runtime Lanes(d) and thread it
 //      through each op. Masks are vbool<RATIO>_t where RATIO = SEW/LMUL (f32,LMUL1 -> vbool32_t).
 //
-// FIRST-VERSION SCOPE: LMUL=1 only (kPow2=0). Fractional/grouped LMUL (m2/mf2...) is deferred (the
-// same fractional-N encoding vec.h dropped for v1). This covers the load-bearing op face; matches
-// the SVE landing.
+// PHYSICAL TYPE SCOPE: LMUL=1 only. Negative-kPow2 tags reduce the active vl, but V-only
+// operations recover a full-width DFromV because an LMUL=1 native type cannot encode that logical
+// fraction. Product kernels that require V-only swizzles therefore use the full-width tag. True
+// fractional/grouped LMUL native types remain future work.
 
 #include <riscv_vector.h>
 
@@ -1327,6 +1328,76 @@ template <class D, class V> HYLE_FORCE_INLINE V ConcatOdd(D d, V hi, V lo) noexc
 template <class V> HYLE_FORCE_INLINE V OddEven(V odd, V even) noexcept {
   const std::size_t vl = detail::vlmax<TFromV<V>>();
   return __riscv_vmerge(odd, even, detail::even_mask_rvv(DFromV<V>()), vl);  // even mask picks `even`
+}
+
+// ---- 128-bit block operations -------------------------------------------------------
+// RVV has no fixed physical 128-bit subregisters. Express the Highway block contract with
+// vrgather indices; this remains valid for every VLEN and for logical partial tags.
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> LoadDup128(D d, const TFromD<D>* p) noexcept {
+  using T = TFromD<D>;
+  using U = MakeUnsigned<T>;
+  const std::size_t vl = Lanes(d);
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  const std::size_t load_n = vl < kLanesPerBlock ? vl : kLanesPerBlock;
+  const auto loaded = LoadN(d, p, load_n);
+  const auto idx = __riscv_vand(detail::iota_u_rvv<T>(vl),
+                                static_cast<U>(kLanesPerBlock - 1), vl);
+  return __riscv_vrgather(loaded, idx, vl);
+}
+
+template <class V>
+HYLE_FORCE_INLINE V OddEvenBlocks(V odd, V even) noexcept {
+  using T = TFromV<V>;
+  using U = MakeUnsigned<T>;
+  const std::size_t vl = detail::vlmax<T>();
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  constexpr unsigned kShift = sizeof(T) == 1 ? 4 : sizeof(T) == 2 ? 3 :
+                              sizeof(T) == 4 ? 2 : 1;
+  const auto block = __riscv_vsrl(detail::iota_u_rvv<T>(vl), kShift, vl);
+  const auto even_block = __riscv_vmseq(__riscv_vand(block, U{1}, vl), U{0}, vl);
+  return __riscv_vmerge(odd, even, even_block, vl);
+}
+
+template <class V>
+HYLE_FORCE_INLINE V SwapAdjacentBlocks(V v) noexcept {
+  using T = TFromV<V>;
+  using U = MakeUnsigned<T>;
+  const std::size_t vl = detail::vlmax<T>();
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  // A single block has no adjacent partner. vrgather returns zero for the otherwise
+  // out-of-range XOR indices, whereas the block contract requires identity here.
+  if (vl <= kLanesPerBlock) return v;
+  const auto idx = __riscv_vxor(detail::iota_u_rvv<T>(vl),
+                               static_cast<U>(kLanesPerBlock), vl);
+  return __riscv_vrgather(v, idx, vl);
+}
+
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> ReverseBlocks(D d, VFromD<D> v) noexcept {
+  using T = TFromD<D>;
+  using U = MakeUnsigned<T>;
+  const std::size_t vl = Lanes(d);
+  constexpr std::size_t kLanesPerBlock = 16 / sizeof(T);
+  if (vl <= kLanesPerBlock) return v;
+  const U within_mask = static_cast<U>(kLanesPerBlock - 1);
+  const auto id = detail::iota_u_rvv<T>(vl);
+  const auto within = __riscv_vand(id, within_mask, vl);
+  const auto block_start = __riscv_vand(id, static_cast<U>(~within_mask), vl);
+  const auto reversed_start = __riscv_vrsub(block_start,
+                                            static_cast<U>(vl - kLanesPerBlock), vl);
+  const auto idx = __riscv_vor(reversed_start, within, vl);
+  return __riscv_vrgather(v, idx, vl);
+}
+
+template <class V>
+HYLE_FORCE_INLINE V Shuffle1032(V v) noexcept {
+  using T = TFromV<V>;
+  using U = MakeUnsigned<T>;
+  static_assert(sizeof(T) == 4, "Shuffle1032 needs 32-bit lanes");
+  const std::size_t vl = detail::vlmax<T>();
+  const auto idx = __riscv_vxor(detail::iota_u_rvv<T>(vl), U{2}, vl);
+  return __riscv_vrgather(v, idx, vl);
 }
 // Broadcast<kLane>(v): splat lane kLane across all lanes (vrgather by a constant index).
 template <int kLane, class V> HYLE_FORCE_INLINE V Broadcast(V v) noexcept {

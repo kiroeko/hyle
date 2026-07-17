@@ -98,6 +98,23 @@ bool try_radix_sort(T* keys, std::size_t n, SortOrder order) noexcept {
 #define HYLE_SORT_TIER_SORT(tag)   detail::sort_##tag##_neon(keys, n, asc)
 #define HYLE_SORT_TIER_PSORT(tag)  detail::psort_##tag##_neon(keys, n, k, asc)
 #define HYLE_SORT_TIER_SELECT(tag) detail::select_##tag##_neon(keys, n, k, asc)
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#if defined(HYLE_SIMD_EXACT_TARGET_RVV)
+#define HYLE_SORT_USE_RVV() true
+#elif defined(HYLE_SIMD_EXACT)
+#define HYLE_SORT_USE_RVV() false
+#else
+#define HYLE_SORT_USE_RVV() (runtime().sort.isa == Isa::kRvv)
+#endif
+#define HYLE_SORT_TIER_SORT(tag) do { if (HYLE_SORT_USE_RVV()) {                    \
+  detail::sort_##tag##_rvv(keys, n, asc); return; }                                 \
+  detail::sort_##tag##_scalar(keys, n, asc); } while (0)
+#define HYLE_SORT_TIER_PSORT(tag) do { if (HYLE_SORT_USE_RVV()) {                   \
+  detail::psort_##tag##_rvv(keys, n, k, asc); return; }                             \
+  detail::psort_##tag##_scalar(keys, n, k, asc); } while (0)
+#define HYLE_SORT_TIER_SELECT(tag) do { if (HYLE_SORT_USE_RVV()) {                  \
+  detail::select_##tag##_rvv(keys, n, k, asc); return; }                            \
+  detail::select_##tag##_scalar(keys, n, k, asc); } while (0)
 #else
 #define HYLE_SORT_TIER_SORT(tag)   detail::sort_##tag##_scalar(keys, n, asc)
 #define HYLE_SORT_TIER_PSORT(tag)  detail::psort_##tag##_scalar(keys, n, k, asc)
@@ -162,6 +179,16 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
 #define HYLE_SORT_KV_LADDER_SORT(kvtag, h)   detail::sort_##kvtag##_neon(h, n, asc)
 #define HYLE_SORT_KV_LADDER_PSORT(kvtag, h)  detail::psort_##kvtag##_neon(h, n, k, asc)
 #define HYLE_SORT_KV_LADDER_SELECT(kvtag, h) detail::select_##kvtag##_neon(h, n, k, asc)
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#define HYLE_SORT_KV_LADDER_SORT(kvtag, h) do { if (HYLE_SORT_USE_RVV()) {          \
+  detail::sort_##kvtag##_rvv(h, n, asc); return; }                                  \
+  detail::sort_##kvtag##_scalar(h, n, asc); } while (0)
+#define HYLE_SORT_KV_LADDER_PSORT(kvtag, h) do { if (HYLE_SORT_USE_RVV()) {         \
+  detail::psort_##kvtag##_rvv(h, n, k, asc); return; }                              \
+  detail::psort_##kvtag##_scalar(h, n, k, asc); } while (0)
+#define HYLE_SORT_KV_LADDER_SELECT(kvtag, h) do { if (HYLE_SORT_USE_RVV()) {        \
+  detail::select_##kvtag##_rvv(h, n, k, asc); return; }                             \
+  detail::select_##kvtag##_scalar(h, n, k, asc); } while (0)
 #else
 #define HYLE_SORT_KV_LADDER_SORT(kvtag, h)   detail::sort_##kvtag##_scalar(h, n, asc)
 #define HYLE_SORT_KV_LADDER_PSORT(kvtag, h)  detail::psort_##kvtag##_scalar(h, n, k, asc)
@@ -193,5 +220,14 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DISPATCH)
 HYLE_SORT_KV_DISPATCH(KeyValue32, KV32Bits, kv32)
 HYLE_SORT_KV_DISPATCH(KeyValue64, KV64Bits, kv64)
 #undef HYLE_SORT_KV_DISPATCH
+#undef HYLE_SORT_TIER_SORT
+#undef HYLE_SORT_TIER_PSORT
+#undef HYLE_SORT_TIER_SELECT
+#undef HYLE_SORT_KV_LADDER_SORT
+#undef HYLE_SORT_KV_LADDER_PSORT
+#undef HYLE_SORT_KV_LADDER_SELECT
+#if defined(HYLE_SORT_USE_RVV)
+#undef HYLE_SORT_USE_RVV
+#endif
 
 }  // namespace hyle::simd

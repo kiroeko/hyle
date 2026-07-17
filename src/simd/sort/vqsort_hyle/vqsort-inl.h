@@ -847,7 +847,7 @@ HWY_NOINLINE bool MaybePartitionTwoValue(D d, Traits st, T* HWY_RESTRICT keys,
         // eqR cannot be true at the same time. Can we elide the additional Not?
         // FindFirstFalse instructions are generally unavailable, but we can
         // fuse Not and Xor/Or into one ExclusiveNeither.
-        const size_t lane = FindKnownFirstTrue(d, ExclusiveNeither(eqL, eqR));
+        const size_t lane = FindKnownFirstTrue(d, VqExclusiveNeither(d, eqL, eqR));
         third = st.SetKey(d, keys + i + lane);
         if (kVqsortDiagnosticLevel >= 2) {
           fprintf(stderr, "found 3rd value at vec %zu; writeL %zu\n", i,
@@ -937,7 +937,7 @@ HWY_INLINE bool MaybePartitionTwoValueR(D d, Traits st, T* HWY_RESTRICT keys,
     // Or + AllTrue are folded into a single kortest, but only if we are
     // careful with the FindKnownFirstTrue argument - see prior comment on that.
     if (HWY_UNLIKELY(!AllTrue(d, Or(eqL, eqR)))) {
-      const size_t lane = FindKnownFirstTrue(d, ExclusiveNeither(eqL, eqR));
+      const size_t lane = FindKnownFirstTrue(d, VqExclusiveNeither(d, eqL, eqR));
       third = st.SetKey(d, keys + pos + lane);
       if (kVqsortDiagnosticLevel >= 2) {
         fprintf(stderr, "found 3rd value at vec %zu; countR %zu\n", pos,

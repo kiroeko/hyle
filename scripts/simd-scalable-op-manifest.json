@@ -1,6 +1,6 @@
 {
-  "version": 1,
-  "description": "Semantic classification of names defined by at least one fixed-width backend but not locally defined by either scalable backend. This is not a user-capability count: vec.h generic definitions and implementation selectors are classified separately.",
+  "version": 2,
+  "description": "Semantic classification of names defined by at least one fixed-width backend but missing from at least one of SVE or RVV. Each scalable backend is audited separately so their union cannot hide an asymmetric hole. This is not a user-capability count: vec.h generic definitions and implementation selectors are classified separately.",
   "classes": {
     "shared_generic": {
       "rationale": "Already implemented once in vec.h and intended to instantiate for SVE/RVV. Requires compile-instantiation coverage, not another backend-local definition.",
@@ -71,6 +71,12 @@
       "rationale": "The semantic is useful, but an efficient implementation depends on an optional ISA facility or memory-ordering contract. Provide a separately compiled feature variant or an explicit fallback, never assume the extension from base SVE/RVV.",
       "action": "feature_variant",
       "ops": [
+        "AESInvMixColumns",
+        "AESKeyGenAssist",
+        "AESLastRound",
+        "AESLastRoundInv",
+        "AESRound",
+        "AESRoundInv",
         "BitShuffle",
         "MultiRotateRight",
         "Stream"
@@ -91,6 +97,7 @@
         "RotateRightSame",
         "RoundingShiftRightSame",
         "RoundingShr",
+        "ReverseBits",
         "ShiftLeftSame",
         "ShiftRightSame",
         "Shuffle01",

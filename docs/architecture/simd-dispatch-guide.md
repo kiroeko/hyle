@@ -200,10 +200,12 @@ ops/random/scan/search 生成 SVE/RVV 变体；HYLE/Highway math 主 op 也由�
 scalable ISA 没有已认证的通用转换收益而保留 scalar/可选硬件路径。gamma/complex/xsimd-only 等少量
 math op 仍保留已验证 NEON/scalar fallback。bitpack 已有真实 SVE/RVV 产品 TU；其物理指令使用
 scalable backend，但 logical D-tag 固定为 128-bit，因此格式不随线程 SVE VL / 机器 RVV VLEN 改变，
-并与 NEON block layout 相同。sort 是剩余 hard fallback：SVE 保持 NEON，RVV 保持 scalar。
+并与 NEON block layout 相同。RVV sort/partial/select 已由 HYLE VQSort body 编成真实 `+v` 产品 TU，
+覆盖六种 scalar key 与 KV32/KV64；剩余 hard fallback 只有 SVE sort（仍保持 NEON）。RVV 当前使用
+诚实的 LMUL=1 全宽 tag，而不是用逻辑半宽伪装尚未实现的 fractional-LMUL native type。
 
-当前 SVE 门为 29 tests × VL 128/256/384/512，RVV 门为 26 tests × VLEN
-128/256/512/1024；门内包含真实 CPU probe、Runtime、公开 math/dtype/bitpack batch API 与 tail。dtype 还
+当前 SVE 门为 29 tests × VL 128/256/384/512，RVV 门为 31 tests × VLEN
+128/256/512/1024；门内包含真实 CPU probe、Runtime、公开 math/dtype/bitpack/sort batch API 与 tail。dtype 还
 穷举全部 f16/bf16 存储编码并覆盖全位域 f32 样本。sizeless SVE/RVV vector
 不能成为 `VectorXoshiro` 成员，所以固定目标代码使用 `native::random_fill`。这些 QEMU 结果是正确性与
 派发证据，真机性能证书仍待补齐。

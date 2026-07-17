@@ -180,6 +180,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")
                   simd/scalable_math_compile.cc simd/scalable_math_product_test.cc
                   simd/scalable_math_dispatch_test.cc simd/scalable_dtype_product_test.cc
                   simd/scalable_bitpack_product_test.cc simd/fixed128_bitpack_reference.cc
+                  simd/scalable_sort_product_test.cc
                   DEFINES HYLE_SIMD_TARGET_RVV HYLE_SIMD_HAS_RVV_VARIANT=1
                   OPTIONS -march=rv64gcv)
   endif()

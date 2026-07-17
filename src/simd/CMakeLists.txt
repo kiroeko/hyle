@@ -68,6 +68,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
     bitpack/bitpack_hyle_scalable.cc
     dtype/cvt_scalable.cc
     math/transcendental_highway_scalable.cc)
+  list(APPEND _simd_arch_sources sort/vqsort_hyle_rvv.cc)
 endif()
 
 # X3: product simd no longer links third_party/highway (vqsort ported to HYLE D-tag).
@@ -167,6 +168,7 @@ elseif(HYLE_SIMD_RISCV64)
   hyle_set_isa(math/transcendental_highway_scalable.cc RVV)
   hyle_set_isa(dtype/cvt_scalable.cc RVV)
   hyle_set_isa(bitpack/bitpack_hyle_scalable.cc RVV)
+  hyle_set_isa(sort/vqsort_hyle_rvv.cc RVV)
 endif()
 
 # Defensive: force IPO/LTO off even if a future build enables it globally. Critical here:

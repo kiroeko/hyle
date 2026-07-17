@@ -83,12 +83,7 @@ const Runtime* runtime_for_supported_isa(Isa isa) noexcept {
 #elif defined(HYLE_ARCH_RISCV64)
 #if defined(HYLE_SIMD_HAS_RVV_VARIANT)
     case Isa::kRvv: {
-      static const Runtime table = [] {
-        Runtime r = kRvvRuntime;
-        r.sort.isa = Isa::kScalar;
-        return r;
-      }();
-      return &table;
+      return &kRvvRuntime;
     }
 #endif
 #endif
@@ -147,7 +142,7 @@ Runtime selected_runtime() noexcept {
   // RVV math, common dtype conversions and fixed-logical-block bitpack have product TUs.
   result.dtype.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.math.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
-  result.sort.isa = Isa::kScalar;
+  result.sort.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
   result.bitpack.isa = result.isa == Isa::kRvv ? Isa::kRvv : Isa::kScalar;
 #endif
   return result;

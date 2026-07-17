@@ -24,8 +24,8 @@
 
 // Must be included only from a TU that already defined HYLE_SIMD_TARGET_*.
 #if !defined(HYLE_SIMD_TARGET_AVX2) && !defined(HYLE_SIMD_TARGET_AVX512) && \
-    !defined(HYLE_SIMD_TARGET_NEON)
-#error "vqsort_ops.h requires HYLE_SIMD_TARGET_AVX2 / AVX512 / NEON"
+    !defined(HYLE_SIMD_TARGET_NEON) && !defined(HYLE_SIMD_TARGET_RVV)
+#error "vqsort_ops.h requires a supported HYLE SIMD target"
 #endif
 
 namespace hyle::simd {
@@ -135,7 +135,8 @@ HYLE_FORCE_INLINE void Fill(D d, T value, size_t count, T* ptr) noexcept {
   for (; i < count; ++i) ptr[i] = value;
 }
 
-// ---- Highway 3-arg Concat* (D, hi, lo) -> HYLE 2-arg (hi, lo) -------------------
+// ---- Highway 3-arg Concat* (D, hi, lo) -> fixed-width HYLE 2-arg (hi, lo) -------
+#if !defined(HYLE_SIMD_TARGET_RVV) && !defined(HYLE_SIMD_TARGET_SVE)
 template <class D, class V>
 HYLE_FORCE_INLINE V ConcatUpperLower(D, V hi, V lo) noexcept {
   return hyle::simd::ConcatUpperLower(hi, lo);
@@ -151,6 +152,17 @@ HYLE_FORCE_INLINE V ConcatLowerLower(D, V hi, V lo) noexcept {
 template <class D, class V>
 HYLE_FORCE_INLINE V ConcatUpperUpper(D, V hi, V lo) noexcept {
   return hyle::simd::ConcatUpperUpper(hi, lo);
+}
+#endif
+
+template <class D, class M>
+HYLE_FORCE_INLINE M VqExclusiveNeither(D d, M a, M b) noexcept {
+#if defined(HYLE_SIMD_TARGET_RVV) || defined(HYLE_SIMD_TARGET_SVE)
+  return hyle::simd::ExclusiveNeither(d, a, b);
+#else
+  (void)d;
+  return hyle::simd::ExclusiveNeither(a, b);
+#endif
 }
 
 // ---- Entropy for pivot sampling -------------------------------------------------
@@ -257,7 +269,10 @@ struct SortConstants {
   }
 };
 
-// SortTag: full native vector (Highway ScalableTag on fixed targets).
+// SortTag: one full native vector. Upstream Highway uses RVV LMUL=1/2 to increase the available
+// register groups. HYLE's RVV backend currently has LMUL=1 native types only; spelling kPow2=-1
+// would reduce D-aware operations while V-only sorting swizzles recover a full-width DFromV. Use
+// the honest LMUL=1 shape until fractional native types exist.
 template <typename T>
 using SortTag = ScalableTag<T>;
 
@@ -425,6 +440,7 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
 #define HWY_SCALAR (1LL << 62)
 #define HWY_SVE_256 (1LL << 22)
 #define HWY_ALL_SVE 0
+#define HWY_RVV (1LL << 37)
 #endif
 
 #if defined(HYLE_SIMD_TARGET_AVX512)
@@ -436,6 +452,9 @@ HYLE_FORCE_INLINE VFromD<D> SortPoisonNaN(D d) noexcept {
 #elif defined(HYLE_SIMD_TARGET_NEON)
 #define HWY_TARGET HWY_NEON
 #define HWY_MAX_BYTES 16
+#elif defined(HYLE_SIMD_TARGET_RVV)
+#define HWY_TARGET HWY_RVV
+#define HWY_MAX_BYTES 256
 #else
 #define HWY_TARGET HWY_SCALAR
 #define HWY_MAX_BYTES 16

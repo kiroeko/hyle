@@ -1,6 +1,6 @@
 # simd-25：SVE/RVV 语义与产品层追平
 
-> 状态：🚧 进行中（分类账、基础闭包与 SVE/RVV math/dtype/bitpack 产品核已落地；sort 待完成）。依赖 simd-22 双轨与
+> 状态：🚧 进行中（分类账、基础闭包、SVE/RVV math/dtype/bitpack 与 RVV sort 产品核已落地；SVE sort 待完成）。依赖 simd-22 双轨与
 > simd-24 已有产品核。
 >
 > 本里程碑重新限定 simd-15~18 的“追平”：它们完成的是 scalable P0~P4 正确性与
@@ -34,19 +34,22 @@ Runtime / exact / native + QEMU + real-hardware parity
 
 ## 阶段 0：可信缺口底账
 
-`scripts/simd-scalable-coverage.py` 机械复现四个定宽后端并集与 SVE/RVV 并集，并由
-`scripts/simd-scalable-op-manifest.json` 逐项分类。初始 80 个 fixed-only 名字分为：
+`scripts/simd-scalable-coverage.py` 机械复现四个定宽后端并集，并把 SVE、RVV **分别**与之比较，由
+`scripts/simd-scalable-op-manifest.json` 逐项分类。v1 曾使用 SVE∪RVV：某个 op 只要任一后端实现，
+另一后端的洞就会消失。RVV sort 补原语时该缺陷被 `--check` 暴露，v2 改为分类“至少一个 scalable
+后端仍缺”的名字，并同时输出两份 backend-local missing 集。当前 80 个名字分为：
 
 | 分类 | 数量 | 含义 |
 |---|---:|---|
 | `shared_generic` | 10 | 已在 `vec.h` 一次实现，只欠 scalable 实例化证明 |
 | `selector` | 13 | Native/Emulated 内部选择器，不是独立用户能力 |
-| `fixed_model` | 28 | half/128-bit block/固定寄存器拼装，按产品合同裁决 |
-| `extension_gated` | 3 | 依赖可选 ISA 或流式存储合同 |
-| `portable_missing` | 26 | 当前首要寄存器实现 backlog |
+| `fixed_model` | 24 | half/128-bit block/固定寄存器拼装，按产品合同裁决 |
+| `extension_gated` | 9 | 依赖可选 ISA 或流式存储合同；含 RVV 仍缺的六个 AES 名 |
+| `portable_missing` | 24 | 当前首要寄存器实现 backlog；含 SVE `ReverseBits` |
 
-脚本同时输出 backend-local 与 `backend | vec.h` 两种机械数；后者仍只是语法面，不冒充编译可实例化
-或产品能力。`--check` 要求全部 80 项恰好分类一次，任何新增、消失或重复都会失败。
+脚本同时输出 backend-local、`backend | vec.h`、scalable union/common 和 SVE/RVV 各自 missing 数；
+这些仍只是语法面，不冒充编译可实例化或产品能力。当前 SVE、RVV 各缺定宽并集 74 个名字，两者
+共同实现 170 个、至少一端缺 80 个。`--check` 要求这 80 项恰好分类一次，任何新增、消失或重复都会失败。
 
 ### 阶段 1 首轮进展（2026-07-17）
 
@@ -60,8 +63,8 @@ Runtime / exact / native + QEMU + real-hardware parity
   `ConvertInRangeTo/DemoteInRangeTo/GetBiasedExponent`。
 
 修复后 SVE 的 f32/f64 全套 math（所有 unary、`atan2/pow/hypot`）可在 AArch64+SVE 目标完整
-实例化。机械差集从初始 80 降至 73：`fixed_model 28→24`、`portable_missing 26→23`；manifest
-只保存当前未完成项，初始数字保留在上表作为基线。
+实例化。旧 v1 并集口径曾从 80 降至 73；该数字不能再作为双后端完成度，因为会掩盖 asymmetric
+gap。v2 以逐后端口径重建为上面的当前 80 项，后续只按这一口径收口。
 
 ### 首个产品层纵切：SVE/RVV math（2026-07-17）
 
@@ -80,7 +83,7 @@ Runtime / exact / native + QEMU + real-hardware parity
 
 当前证据：两套脚本同时链接 CPU probe、真实 `Runtime`、baseline dispatcher、scalar 与 scalable
 variant 表，不再只直调内部 kernel。SVE 为 **29 tests × VL 128/256/384/512** 全绿，RVV 为
-**26 tests × VLEN 128/256/512/1024** 全绿；公开 math/dtype/bitpack batch API、tail 与对应 module tier
+**31 tests × VLEN 128/256/512/1024** 全绿；公开 math/dtype/bitpack/sort batch API、tail 与对应 module tier
 均在门内验证。exact SVE/RVV dispatcher 的未定义符号检查也确认不引用
 `runtime()`、`best_isa()` 或 `cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。
 
@@ -91,7 +94,7 @@ variant 表，不再只直调内部 kernel。SVE 为 **29 tests × VL 128/256/38
 | ops/random/scan/search | 真实 scalable variant | 真实 scalable variant | 真机性能证据 |
 | math 主 HYLE/Highway op | 真实 SVE 产品 TU | 真实 RVV 产品 TU | optional per-op fallback 与真机性能 |
 | dtype f16/bf16↔f32 | 真实 SVE 产品 TU | 真实 RVV 产品 TU | 真机性能；fp8 保持 scalar/可选硬件 |
-| sort/select | NEON | scalar | 独立算法战役，不能只改元数据 |
+| sort/select | NEON | 真实 RVV LMUL=1 产品 TU | SVE 独立算法战役；RVV 真机性能/fractional LMUL |
 | bitpack | 真实 SVE 产品 TU（固定 128-bit logical block） | 真实 RVV 产品 TU（固定 128-bit logical block） | 真机性能与多 logical-block 并行化 |
 
 ## 阶段 1：target/feature mechanization 与编译探针
@@ -142,9 +145,15 @@ Runtime 改为逐 op/feature 的 scalable 或已认证 fallback；不能仅修�
 
 ### RVV
 
-Highway VQSort 有 RVV capped/fractional-LMUL 路径；先验证 HYLE LMUL=1 + 逻辑 `vl` 是否能维持网络
-合同，再决定是否引入 fractional LMUL。传递缺口包括 block shuffle、`LoadDup128`、
-`OddEvenBlocks`、`ReverseBlocks` 等。
+HYLE VQSort 已完成 RVV 产品纵切。后端新增原生 gather/index 形式的 `LoadDup128`、
+`OddEvenBlocks`、`SwapAdjacentBlocks`、`ReverseBlocks`、`Shuffle1032`，并用专门 backend test 钉住
+VLEN=128 单 block 边界。产品核使用全宽 LMUL=1：负 `kPow2` 虽可缩短 D-aware op 的 `vl`，但
+LMUL=1 native type 无法让 V-only swizzle 的 `DFromV` 恢复逻辑半宽，因此不能把它冒充 Highway 的
+fractional LMUL。未来只有在真机证明寄存器压力/吞吐收益后，才扩展真正的 `mf2` native type。
+
+验收覆盖六种 scalar key 与 KV32/KV64 的 sort/partial/select、升降序、随机/少值/有序/逆序、NaN
+始终末尾、payload multiset、左右 canary、Runtime 和 public API。31 tests 在 VLEN
+128/256/512/1024 全绿；exact RVV dispatcher 对 `runtime/best_isa/cpu_features` 的未定义符号检查为空。
 
 ### SVE
 

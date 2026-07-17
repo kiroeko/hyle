@@ -61,6 +61,12 @@ HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_NEON)
 #undef HYLE_SORT_DECL_NEON
 #endif  // HYLE_ARCH_ARM64
 
+#if defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+#define HYLE_SORT_DECL_RVV(T, tag) HYLE_SORT_DECL_TRIO(T, tag, rvv)
+HYLE_SORT_KEY_TYPES(HYLE_SORT_DECL_RVV)
+#undef HYLE_SORT_DECL_RVV
+#endif
+
 #undef HYLE_SORT_DECL_TRIO
 
 // --- key-value (top-k) symbols -----------------------------------------------------------
@@ -84,6 +90,9 @@ HYLE_SORT_KV_TYPES(HYLE_SORT_DECL_KV_TRIO, avx512)
 #endif
 #if defined(HYLE_ARCH_ARM64)
 HYLE_SORT_KV_TYPES(HYLE_SORT_DECL_KV_TRIO, neon)
+#endif
+#if defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+HYLE_SORT_KV_TYPES(HYLE_SORT_DECL_KV_TRIO, rvv)
 #endif
 #undef HYLE_SORT_DECL_KV_TRIO
 

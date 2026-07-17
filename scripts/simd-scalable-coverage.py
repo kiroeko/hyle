@@ -79,7 +79,12 @@ def build_report() -> tuple[dict, list[str]]:
     }
     fixed_union = set().union(*(local[name] for name in FIXED))
     scalable_union = set().union(*(local[name] for name in SCALABLE))
-    fixed_only = fixed_union - scalable_union
+    scalable_intersection = set.intersection(*(local[name] for name in SCALABLE))
+    # A union-only audit hides asymmetric holes as soon as either scalable backend implements an
+    # operation. Parity means each backend can instantiate the fixed semantic surface, so classify
+    # every fixed op missing from at least one scalable backend.
+    missing_by_backend = {name: fixed_union - local[name] for name in SCALABLE}
+    missing_any = set().union(*missing_by_backend.values())
 
     manifest = load_manifest()
     errors: list[str] = []
@@ -102,10 +107,16 @@ def build_report() -> tuple[dict, list[str]]:
         errors.append(f"ops classified more than once: {sorted(set(duplicates))}")
 
     manifest_ops = set(classified)
-    if fixed_only - manifest_ops:
-        errors.append(f"unclassified fixed-only ops: {sorted(fixed_only - manifest_ops)}")
-    if manifest_ops - fixed_only:
-        errors.append(f"stale manifest ops no longer fixed-only: {sorted(manifest_ops - fixed_only)}")
+    if missing_any - manifest_ops:
+        errors.append(
+            "unclassified ops missing from a scalable backend: "
+            f"{sorted(missing_any - manifest_ops)}"
+        )
+    if manifest_ops - missing_any:
+        errors.append(
+            "stale manifest ops present in both scalable backends: "
+            f"{sorted(manifest_ops - missing_any)}"
+        )
 
     generic_class = {
         op for op, class_name in classified.items() if class_name == "shared_generic"
@@ -138,7 +149,14 @@ def build_report() -> tuple[dict, list[str]]:
         },
         "fixed_union_count": len(fixed_union),
         "scalable_union_count": len(scalable_union),
-        "fixed_only_count": len(fixed_only),
+        "scalable_intersection_count": len(scalable_intersection),
+        "missing_from_scalable_count": {
+            name: len(missing_by_backend[name]) for name in SCALABLE
+        },
+        "missing_from_scalable": {
+            name: sorted(missing_by_backend[name]) for name in SCALABLE
+        },
+        "missing_from_any_scalable_count": len(missing_any),
         "class_counts": {
             name: len(entry.get("ops", [])) for name, entry in classes.items()
         },
@@ -159,8 +177,11 @@ def print_report(report: dict) -> None:
         print(f"  {backend:8s} local={count:3d}  local|vec.h={effective:3d}")
     print(f"\nfixed union:       {report['fixed_union_count']}")
     print(f"scalable union:    {report['scalable_union_count']}")
-    print(f"raw fixed-only:    {report['fixed_only_count']}")
-    print("\nSemantic classification of raw fixed-only names:")
+    print(f"scalable common:   {report['scalable_intersection_count']}")
+    for backend, count in report["missing_from_scalable_count"].items():
+        print(f"fixed missing {backend:3s}: {count}")
+    print(f"missing from any:  {report['missing_from_any_scalable_count']}")
+    print("\nSemantic classification of names missing from at least one scalable backend:")
     for class_name, count in report["class_counts"].items():
         print(f"  {class_name:18s} {count:3d}")
     print(
