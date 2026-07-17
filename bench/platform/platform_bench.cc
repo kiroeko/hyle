@@ -35,11 +35,22 @@
 
 #include "hyle/platform/fs.h"
 #include "hyle/platform/thread.h"
+#include "hyle/platform/virtual_memory.h"
 #include "hyle/platform/wait.h"
+
+#if defined(_WIN32)
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
+#else
+#  include <sys/mman.h>
+#endif
 
 using hyle::platform::Parker;
 using hyle::platform::Thread;
 using hyle::platform::ThreadOpts;
+using hyle::platform::vm_commit;
+using hyle::platform::vm_release;
+using hyle::platform::vm_reserve;
 
 namespace {
 namespace nb = ankerl::nanobench;
@@ -181,6 +192,120 @@ int main() {
         n += is_dir ? 2 : 1;
       });
       nb::doNotOptimizeAway(n);
+    });
+  }
+
+  // ---- 5. VM reserve+commit+release cycle: HYLE vm_* vs the raw OS syscalls ---
+  // vm_reserve/commit/release are thin wrappers over mmap/mprotect (POSIX) or
+  // VirtualAlloc (Windows). The SOTA floor IS the raw syscall (same kernel work);
+  // this proves the wrapper adds no measurable overhead. One page per iteration
+  // (reserve address space, commit RW, release) -- syscall-dominated cold path.
+  {
+    constexpr int kIters = 20000;
+    const std::size_t pg = hyle::platform::page_size();
+    nb::Bench b;
+    b.title("VM reserve+commit+release (1 page)")
+        .relative(true)
+        .batch(kIters)
+        .minEpochIterations(50);
+    b.run("raw OS (mmap+munmap / VirtualAlloc+Free)", [&] {
+      for (int i = 0; i < kIters; ++i) {
+#if defined(_WIN32)
+        void* p = ::VirtualAlloc(nullptr, pg, MEM_RESERVE | MEM_COMMIT,
+                                 PAGE_READWRITE);
+        if (p) ::VirtualFree(p, 0, MEM_RELEASE);
+#else
+        void* p = ::mmap(nullptr, pg, PROT_READ | PROT_WRITE,
+                         MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+        if (p != MAP_FAILED) ::munmap(p, pg);
+#endif
+        nb::doNotOptimizeAway(p);
+      }
+    });
+    b.run("HYLE vm_reserve+commit+release", [&] {
+      for (int i = 0; i < kIters; ++i) {
+        void* p = vm_reserve(pg);
+        if (p) {
+          vm_commit(p, pg);
+          vm_release(p, pg);
+        }
+        nb::doNotOptimizeAway(p);
+      }
+    });
+  }
+
+  // ---- 6. Large-region commit throughput: reserve once, commit a big span ----
+  // The mem/fiber-stack pattern: reserve a large arena, then commit it. Measures
+  // the page-fault / mprotect cost over a multi-MiB span (not per-page syscall).
+  {
+    constexpr std::size_t kSpan = 16u * 1024u * 1024u;  // 16 MiB
+    constexpr int kIters = 200;
+    nb::Bench b;
+    b.title("VM commit 16MiB region (reserve+commit+release)")
+        .relative(true)
+        .batch(kIters)
+        .minEpochIterations(3);
+    b.run("HYLE vm_reserve+commit(16MiB)+release", [&] {
+      for (int i = 0; i < kIters; ++i) {
+        void* p = vm_reserve(kSpan);
+        if (p) {
+          vm_commit(p, kSpan);
+          vm_release(p, kSpan);
+        }
+        nb::doNotOptimizeAway(p);
+      }
+    });
+  }
+
+  // ---- 7. Parker round-trip vs the RAW futex/WaitOnAddress floor -------------
+  // Section 2 raced std::condition_variable (the std "block until told"). This
+  // adds the true SOTA FLOOR: a ping-pong on the raw OS wait primitive HYLE wraps
+  // (futex / WaitOnAddress via wait_on_address + wake_one). Parker layers a
+  // token-safe 3-state machine on top; the gap here is exactly that safety's cost,
+  // measured against the bare syscall (an honest floor, like section 1's flag).
+  {
+    constexpr int kRounds = 20000;
+    nb::Bench b;
+    b.title("blocking ping-pong vs raw wait primitive (2 threads)")
+        .relative(true)
+        .batch(kRounds)
+        .minEpochIterations(30);
+    b.run("raw wait_on_address+wake floor", [&] {
+      // One word: turn==0 => A runs, ==1 => B runs. Each side waits while the
+      // value is NOT its turn and flips + wakes the other. This is the bare
+      // primitive with NO token safety (a wake before the wait is re-checked via
+      // the value). detail::wait_on_address is the OS futex/WaitOnAddress wrapper.
+      namespace pd = hyle::platform::detail;
+      std::atomic<uint32_t> turn{0};
+      std::thread bthread([&] {
+        for (int i = 0; i < kRounds; ++i) {
+          while (turn.load(std::memory_order_acquire) != 1)
+            pd::wait_on_address(&turn, 0);  // sleep while value==0 (not our turn)
+          turn.store(0, std::memory_order_release);
+          pd::wake_one(&turn);
+        }
+      });
+      for (int i = 0; i < kRounds; ++i) {
+        turn.store(1, std::memory_order_release);
+        pd::wake_one(&turn);
+        while (turn.load(std::memory_order_acquire) != 0)
+          pd::wait_on_address(&turn, 1);  // sleep while value==1 (not our turn)
+      }
+      bthread.join();
+    });
+    b.run("HYLE Parker ping-pong", [&] {
+      Parker pa, pb;
+      std::thread bthread([&] {
+        for (int i = 0; i < kRounds; ++i) {
+          pb.park();
+          pa.unpark();
+        }
+      });
+      for (int i = 0; i < kRounds; ++i) {
+        pb.unpark();
+        pa.park();
+      }
+      bthread.join();
     });
   }
 
