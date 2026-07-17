@@ -25,8 +25,10 @@
 // ONE backend per TU (variant-DLL model): pulled in by vec.h only when the TU is built
 // with -DHYLE_SIMD_TARGET_AVX2 (+ -mavx2 -mfma -mf16c on GCC/Clang; /arch:AVX2 on MSVC).
 // Same op contract as scalar.h / sse4.h, so the unified test/kernel source compiles
-// unchanged. Lane types f32/f64/i32/u32; NATIVE FULL WIDTH only: one __m256-family
-// register == 32 bytes == 8 f32 / 4 f64 / 8 i32.
+// unchanged. Lane types f32/f64 + all integer widths. One __m256-family register is
+// 32 bytes; partial tags at 16 bytes and below resolve through the layered SSE4
+// backend to Vec128<T,N>, so AVX2 half vectors are physical XMM values rather than
+// padded YMM values.
 //
 // Differences from sse4.h (verified against Highway x86_256-inl.h):
 //  - float compares use _mm256_cmp_ps/pd with a _CMP_*_OQ predicate (no _mm256_cmpgt_ps).

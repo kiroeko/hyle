@@ -22,15 +22,16 @@
 //
 // ONE backend per TU: pulled in by vec.h only when -DHYLE_SIMD_TARGET_AVX512. Same op
 // contract as scalar/sse4/avx2/neon, so the unified test/kernel source compiles unchanged.
-// Lane types f32/f64 + i8/u8/i16/u16/i32/u32/i64/u64; NATIVE FULL WIDTH (512-bit = 64 bytes =
-// 64 i8 / 32 i16 / 16 i32 / 8 i64 / 16 f32 / 8 f64). Tier = AVX-512 F+BW+VL+DQ, so BW gives
-// 8/16-bit ops, DQ gives mullo_epi64 + 64-bit min/max, F gives abs_epi64 + reduce_*.
+// Lane types f32/f64 + i8/u8/i16/u16/i32/u32/i64/u64; native width is 512-bit = 64 bytes =
+// 64 i8 / 32 i16 / 16 i32 / 8 i64 / 16 f32 / 8 f64. Layered AVX2/SSE4 backends represent
+// 32-byte and <=16-byte partials as physical YMM/XMM values while retaining logical N.
+// Tier = AVX-512 F+BW+VL+DQ, so BW gives 8/16-bit ops, DQ gives mullo_epi64 + 64-bit min/max,
+// F gives abs_epi64 + reduce_*.
 //
-// STATUS (honest, per user directive "没机器也要做,写完存疑"): written + NATIVELY compiled
-// (-mavx512f -mavx512bw -mavx512vl -mavx512dq) + objdump-verified to emit real zmm/k-reg
-// instructions, but NOT executed (no AVX-512 hardware / no Intel SDE here). Any x86-64 can
-// COMPILE this; correctness-by-execution is PENDING (an AVX-512 machine or SDE). Marked
-// 存疑 until run. Implementing it now validates the DESIGN -- see the mask note below.
+// STATUS: natively compiled (-mavx512f -mavx512bw -mavx512vl -mavx512dq), objdump-verified
+// to emit real zmm/k-reg instructions, and correctness-executed under Intel SDE `-future`
+// (including the fixed-width partial boundary/oracle matrix). SDE is not performance evidence;
+// AVX-512 throughput claims still require real hardware.
 //
 // THE MASK-MODEL POINT (this is why writing it matters): AVX-512 masks are __mmask8/16/32/64
 // "k registers" (1 bit per lane, width == lane count), NOT the all-1s/all-0s vector that SSE/AVX2/NEON use. This

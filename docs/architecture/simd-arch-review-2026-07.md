@@ -1,8 +1,8 @@
 # HYLE SIMD 架构评审(2026-07)
 
-> **结论先行**:架构没有系统性问题;有**两处真实的架构级债**——①定宽后端表示层丢 N(= simd-19,
-> **2026-07-15 NEON 侧已根治**;x86 残部=脆弱 TIE,见路线 3)、
-> ②手写 op 面的横切成本(simd-19 是它第一次真正收费)。两处都有不推倒重来的改善路径。**不需要推倒重来,
+> **结论先行**:架构没有系统性问题;评审识别出**两处真实的架构级债**——①定宽后端表示层丢 N
+> （NEON 2026-07-15 根治，x86 2026-07-17 以分层 XMM/YMM/ZMM + N-aware 低半消费闭环）、
+> ②手写 op 面的横切成本(simd-19 是它第一次真正收费)。债①已还清，债②有不推倒重来的改善路径。**不需要推倒重来,
 > 也不该走向 vendor Highway。**
 > 背景:一个月 HYLE-vs-Highway 性能对齐(见 `docs/milestones/simd-orderswap-matrix.md`)后的架构侧复盘。
 
@@ -11,6 +11,13 @@
 > 缺少统一模型——已由 [`simd-dispatch-guide.md`](./simd-dispatch-guide.md) 的 Runtime/native/exact 双轨
 > 解决。产品也已零 Highway/xsimd，外部库只保留为 benchmark 对照。这是增量重构，不推翻本文对 D-tag/
 > backend 地基的判断。
+
+> **2026-07-17 补充（x86 partial 收口）**：把原先仅挂 NEON 的 exact-byte boundary 与 exhaustive
+> half/combine oracle 架构中立化后，首次在 x86 暴露 13 个 sub-XMM N-blind 形状；根因是 SSE4
+> `UpperHalf/ZeroExtendVector/InsertIntoUpper` 固定按 64-bit half 操作。现已改为按逻辑
+> `N*sizeof(T)/2` 生成 shift/mask/splice。Windows 真跑 SSE4 294/294、AVX2 325/325；WSL GCC14
+> partial 专项 SSE4 69/69、AVX2 99/99，AVX512 129/129 由 Intel SDE `-future` 真跑全绿。该门永久
+> 接入基础 ISA targets。
 
 ## 一、判断依据(架构质量怎么测,不靠感觉)
 
@@ -23,7 +30,7 @@
 
 ## 二、两处架构级债
 
-### 债① 表示层丢 N(simd-19;**NEON 侧已根治,2026-07-15 收口**)
+### 债① 表示层丢 N(simd-19;**NEON 与 x86 均已收口**)
 
 类型系统携带 N(`Rebind`/`Repartition` 产生 partial tag),scalable 后端(SVE/RVV)用 `kPow2`+`vl` 正确
 执行了它,但**定宽后端的物理表示曾不携带 N**——修复前 `VecNeon<int16_t,4>` 物理上仍是 `int16x8_t`,
@@ -33,9 +40,11 @@ op 被迫满宽做再掰回。这是设计时漏掉的一个维度,是缺陷不�
   热点 native-D;PromoteMaskTo 0.575→TIE(C12 单 op 双序 + C18 全量双证,反汇编与 Highway 同形),
   全量复跑零回归,顺带修复两个既有 bug 家族(partial LoadU/StoreU OOB、子满宽 half/pad N-盲语义)。
   全记录:`docs/milestones/simd-19-partial-vector-repr.md` §八、`simd-19-ledger.md`。
-- **x86**:同样丢 N,但 x86 没有比 xmm 更窄的寄存器,所以那边的正确形态**不是"D 表示"而是"partial 时选
-  消费低半的指令"**(`cvtepi16_epi32` 天然只吃低半)。当前 x86 partial 路径的 TIE 很多是编译器碰巧优化出来
-  的——属**脆弱 TIE 而非健康 TIE**,编译器升级可能悄悄回归。处置见 §四-3。
+- **x86:已根治**(2026-07-17)。x86 没有比 XMM 更窄且值得使用的 SIMD 寄存器，正确形态不是复制 NEON
+  D 表示，而是：`Vec128/256/512<T,N>` 与 `DFromV` 保留逻辑 N；AVX512 half 真降 YMM、AVX2 half
+  真降 XMM；sub-XMM 保留物理 XMM，但 exact-byte Load/Store 与 half/combine 消费者按逻辑 byte count
+  操作。架构中立回归门覆盖所有 power-of-two partial LoadU/StoreU 边界和所有 half-able 形状；它实际抓出
+  并修复了 13 个 sub-XMM N-blind case，而不是只给既有实现补绿灯。
 
 ### 债② 手写 op 面的横切成本
 
@@ -79,21 +88,21 @@ helper 层 + 校准闸门。持续风险有界、可检测、有着力点。
   等)证明能在镜像之上有节制地做得更好。代价是继承了 Highway 的 op 面设计决策(如 mask 宽度桥接族的存在),
   可接受。
 
-## 四、改善路线(按 ROI 排;状态更新 2026-07-15 收口)
+## 四、改善路线(按 ROI 排;状态更新 2026-07-17 收口)
 
 1. **simd-19 常绿落地** ✅ **完成**。表示层补 N 维(`RawNeonNT<T,N>` D 档),常绿垫片迁移全程兑现
    (W0a/b/c 每步绿,~17 热点 native-D);PromoteMaskTo 0.575→TIE(C12+C18 双证),全量复跑无回归,
-   neon.h +21%(Highway 的 36%,警戒线未触发)。**债①在 NEON 侧根治**;x86 侧的对应形态(脆弱 TIE)
-   见路线 3,不变。
+   neon.h +21%(Highway 的 36%,警戒线未触发)。NEON 物理 D/Q 形态与 x86 分层宽度形态均已闭环；
+   x86 见路线 3。
 2. **宽度分发 helper 层——被实践修正,未建且暂不建**。simd-19 实际用"垫片(to_q/from_q)兜底 + 热点
    op 内联 `if constexpr (kIsDBand)`"替代了设想中的 `neon_bin<QFn,DFn>` 层:宽度轴上两形指令仅差 q
    后缀,内联分支更贴文件风格、无额外抽象。**修正后的判断**:垫片只解宽度轴;未来的**类型轴**
    (f16/bf16——全新指令,垫片无从兜底)才是债②的真考验,收敛层在那时按量化需要再建,现在建属
    过度抽象。simd-19 留下的真资产是**已实证的横切迁移方法**(脚本包裹 + 常绿三步 + 工单制:270 op
    规模一天完成)——债②本金未还,利率大降。
-3. **x86 partial 健康化(审计 + canary,不做表示改造)**。把 Rebind 产物路径上靠编译器运气的脆弱 TIE 找出
-   来,显式改为低半消费指令,并加 bench canary 防编译器升级回归。成本远低于表示改造,收益是消掉"未量化的
-   同类雷"。
+3. **✅ x86 partial 健康化完成(语义审计 + correctness canary，不造 MMX 表示)**。分层
+   `Vec128/256/512<T,N>` 保留 N；SSE4 exact-byte I/O 与按逻辑宽度的 half/splice 消除脆弱路径；
+   boundary + scalar oracle 永久挂入 SSE4/AVX2/AVX512。Windows 全套与 AVX512 SDE 门均通过。
 4. **✅ gap-inventory 复核完成**：补 4 个 upper-only 128-bit key 接口；拒绝复制 Highway internal
    widen helper；新增 op 同提交进 manifest/oracle。
 5. **把测量体系当架构质量的常设准绳**。锚点校准、双序判定、三平台 gtest、复合上下文 canary——这套仪器是

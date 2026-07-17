@@ -61,19 +61,21 @@ void OracleInsertUpper(const T* hi, const T* v, T* out) {
   for (std::size_t i = 0; i < NH; ++i) out[NH + i] = hi[i];
 }
 
-// Any legal half-able shape: N power-of-two >=2, N*sizeof(T)<=16.
+// Any legal half-able fixed-width shape: N power-of-two >=2 and no wider than
+// this target's native register. This includes sub-XMM logical vectors on SSE4,
+// XMM partials on AVX2, and XMM/YMM partials on AVX-512.
 template <typename T, std::size_t N>
 void CheckHalfCombineFamily() {
   static_assert(N >= 2 && (N & (N - 1)) == 0, "N power of two >=2");
-  static_assert(N * sizeof(T) <= 16, "fits NEON register");
+  static_assert(N * sizeof(T) <= hs::kNativeVectorBytes, "fits native register");
   constexpr std::size_t NH = N / 2;
 
-  alignas(16) T in[N];
-  alignas(16) T lo_ref[NH], hi_ref[NH];
-  alignas(16) T comb_ref[N], zext_ref[N], ins_ref[N];
-  alignas(16) T base[N];
-  alignas(16) T got[N];
-  alignas(16) T half_got[NH];
+  alignas(64) T in[N];
+  alignas(64) T lo_ref[NH], hi_ref[NH];
+  alignas(64) T comb_ref[N], zext_ref[N], ins_ref[N];
+  alignas(64) T base[N];
+  alignas(64) T got[N];
+  alignas(64) T half_got[NH];
 
   for (std::size_t i = 0; i < N; ++i) {
     in[i] = LanePattern<T>(i);
@@ -140,7 +142,7 @@ void CheckHalfCombineFamily() {
 
 }  // namespace
 
-// ---- Green baseline: full register (N * sizeof(T) == 16) ----------------------------
+// ---- 128-bit and sub-128-bit shapes -------------------------------------------------
 
 #define HYLE_SIMD_TEST_INSTANTIATE_FULL_HALF_COMBINE(T, N, Name) \
   TEST(HalfCombineOracle, Name) { CheckHalfCombineFamily<T, N>(); }
@@ -180,3 +182,47 @@ HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(std::uint32_t, 2, u32x2)
 HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE(float, 2, f32x2)
 
 #undef HYLE_SIMD_TEST_INSTANTIATE_PARTIAL_HALF_COMBINE
+
+#if defined(HYLE_SIMD_TARGET_AVX2) || defined(HYLE_SIMD_TARGET_AVX512)
+
+// ---- 256-bit shapes (native on AVX2, partial on AVX-512) ----------------------------
+
+#define HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(T, N, Name) \
+  TEST(HalfCombineOracle, Name) { CheckHalfCombineFamily<T, N>(); }
+
+HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(std::int8_t, 32, i8x32)
+HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(std::uint8_t, 32, u8x32)
+HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(std::int16_t, 16, i16x16)
+HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(std::uint16_t, 16, u16x16)
+HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(std::int32_t, 8, i32x8)
+HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(std::uint32_t, 8, u32x8)
+HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(float, 8, f32x8)
+HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(std::int64_t, 4, i64x4)
+HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(std::uint64_t, 4, u64x4)
+HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE(double, 4, f64x4)
+
+#undef HYLE_SIMD_TEST_INSTANTIATE_256_HALF_COMBINE
+
+#endif
+
+#if defined(HYLE_SIMD_TARGET_AVX512)
+
+// ---- 512-bit native shapes ----------------------------------------------------------
+
+#define HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(T, N, Name) \
+  TEST(HalfCombineOracle, Name) { CheckHalfCombineFamily<T, N>(); }
+
+HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(std::int8_t, 64, i8x64)
+HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(std::uint8_t, 64, u8x64)
+HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(std::int16_t, 32, i16x32)
+HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(std::uint16_t, 32, u16x32)
+HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(std::int32_t, 16, i32x16)
+HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(std::uint32_t, 16, u32x16)
+HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(float, 16, f32x16)
+HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(std::int64_t, 8, i64x8)
+HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(std::uint64_t, 8, u64x8)
+HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE(double, 8, f64x8)
+
+#undef HYLE_SIMD_TEST_INSTANTIATE_512_HALF_COMBINE
+
+#endif

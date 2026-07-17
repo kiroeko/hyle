@@ -108,8 +108,14 @@ hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/native_te
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   hyle_isa_flags(_sse4_flags SSE42)
   hyle_isa_flags(_avx2_flags AVX2)
-  hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_flags})
-  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
+  # Fixed-width partial-vector proof: every logical width below the target native
+  # width gets exact-byte LoadU/StoreU guards; every half-able width gets the scalar
+  # half/combine oracle. Windows uses VirtualProtect guard pages, Unix uses mprotect.
+  set(_fixed_partial_tests simd/vec_partial_boundary_test.cc simd/vec_half_combine_oracle_test.cc)
+  hyle_add_test(simd NAME sse4 SOURCES simd/vec_test.cc simd/native_test.cc ${_fixed_partial_tests}
+                DEFINES HYLE_SIMD_TARGET_SSE4 OPTIONS ${_sse4_flags})
+  hyle_add_test(simd NAME avx2 SOURCES simd/vec_test.cc simd/native_test.cc ${_fixed_partial_tests}
+                DEFINES HYLE_SIMD_TARGET_AVX2 OPTIONS ${_avx2_flags})
   # simd-08 档C crypto: the base sse4/avx2 variants above compile WITHOUT -maes/-mpclmul, so on
   # GCC/Clang the AES/CLMul op face takes the SOFTWARE fallback. This extra variant adds those
   # flags (SSE42_AES tier) so the AES-NI / PCLMULQDQ HARDWARE path is actually compiled + run
@@ -127,7 +133,8 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # auto-run ctest -- it is built for compile validation + manual SDE execution. The optional
   # HYLE_SIMD_AVX512_RUNNABLE gate marks the host as真 AVX-512 (or SDE-wrapped) to auto-run.
   hyle_isa_flags(_avx512_flags AVX512)
-  hyle_add_test(simd NAME avx512 SOURCES simd/vec_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags})
+  hyle_add_test(simd NAME avx512 SOURCES simd/vec_test.cc simd/native_test.cc ${_fixed_partial_tests}
+                DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags})
   # AVX512_DL variant: same avx512.h backend, compiled with GFNI/VBMI/BITALG so the NATIVE
   # BitShuffle (VPSHUFBITQMB) / MultiRotateRight (VPMULTISHIFTQB) paths are taken instead of the
   # store+reload fallback. Built for compile validation + SDE execution (Ice Lake ISA); NOT
@@ -142,9 +149,8 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)
-  # Partial LoadU/StoreU page-boundary guardrails and the exhaustive half/combine
-  # scalar oracle are NEON D/Q representation tests, so they belong only to this
-  # architecture-specific target. All cases are permanent default-on regressions.
+  # The same fixed-width partial proof covers NEON's physical D/Q split. All cases
+  # are permanent default-on regressions.
   hyle_add_test(simd NAME neon SOURCES simd/vec_test.cc simd/native_test.cc simd/vec_partial_boundary_test.cc
                 simd/vec_half_combine_oracle_test.cc
                 DEFINES HYLE_SIMD_TARGET_NEON OPTIONS ${_neon_flags})

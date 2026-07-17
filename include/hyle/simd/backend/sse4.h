@@ -24,9 +24,11 @@
 // contract compiles unchanged against scalar OR this backend -- the whole point of the
 // abstraction.
 //
-// Lane types f32/f64 + all integer widths i8/u8/i16/u16/i32/u32/i64/u64. NATIVE FULL
-// WIDTH only: one __m128-family register == 16 bytes == 4 f32 / 2 f64 / 16 i8 / 8 i16 /
-// 4 i32 / 2 i64. Partial/Half-width vectors deferred.
+// Lane types f32/f64 + all integer widths i8/u8/i16/u16/i32/u32/i64/u64. One
+// __m128-family register == 16 bytes == 4 f32 / 2 f64 / 16 i8 / 8 i16 / 4 i32 / 2 i64.
+// Sub-128 partials remain physically XMM (x86 has no useful D-register equivalent),
+// while Vec128<T,N>, masks, exact-byte LoadU/StoreU and N-aware half/combine preserve
+// their logical lane count.
 //
 // Intrinsic choices follow Google Highway's x86_128-inl.h (verified, not from memory):
 // per-width add/sub (epi8/16/32/64), mullo_epi16/epi32 (i8 via widen-to-epi16, i64 via
@@ -2700,9 +2702,10 @@ HYLE_FORCE_INLINE Vec128<T, N> MulByFloorPow2(Vec128<T, N> v, Vec128<T, N> exp) 
   return IfThenElse(is_nan_result, NaN(df), MulByPow2(v, ie));
 }
 
-// ---- simd-17 batch4: half-vector family (128 -> 64 logical half) --------------------
-// Half of Vec128 is Vec128<T,N/2> (same __m128 raw; low 64 bits hold the N/2 lanes).
-// UpperHalf shifts the high 64 into the low; Combine/ZeroExtend/Insert use unpack/move.
+// ---- simd-17 batch4: half-vector family (128 -> logical half) -----------------------
+// Half of Vec128 is Vec128<T,N/2> in the same __m128 raw. For a full XMM, the split is
+// 64 bits; for sub-XMM fixed tags it is N*sizeof(T)/2 bytes. Every consumer below uses
+// that logical split and clears padding instead of assuming a physical 64-bit half.
 // Parameter order: Combine(d, hi, lo) = [lo low-half, hi low-half].
 template <typename T, std::size_t NH, int kPow2, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, NH> LowerHalf(Simd<T, NH, kPow2>, Vec128<T, N> v) noexcept {
@@ -2717,13 +2720,10 @@ template <typename T, std::size_t NH, int kPow2, std::size_t N>
 HYLE_FORCE_INLINE Vec128<T, NH> UpperHalf(Simd<T, NH, kPow2>, Vec128<T, N> v) noexcept {
   static_assert(NH == N / 2, "UpperHalf: NH must be N/2");
   Vec128<T, NH> r;
-  // Move high 64 bits into low 64 (high becomes undefined/zeroed by srli).
-  if constexpr (std::is_same_v<T, float>)
-    r.raw = _mm_castsi128_ps(_mm_srli_si128(_mm_castps_si128(v.raw), 8));
-  else if constexpr (std::is_same_v<T, double>)
-    r.raw = _mm_castsi128_pd(_mm_srli_si128(_mm_castpd_si128(v.raw), 8));
-  else
-    r.raw = _mm_srli_si128(v.raw, 8);
+  constexpr int kHalfBytes = static_cast<int>(NH * sizeof(T));
+  static_assert(kHalfBytes > 0 && kHalfBytes <= 8, "UpperHalf shift in [1,8]");
+  r.raw = detail::mask_from_i<T>(
+      _mm_srli_si128(detail::mask_to_i<T>(v.raw), kHalfBytes));
   return r;
 }
 template <typename T, std::size_t N>
@@ -2737,14 +2737,21 @@ HYLE_FORCE_INLINE detail::V128<D> Combine(D /*d*/,
     Vec128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> lo) noexcept {
   using T = TFromD<D>;
   static_assert(HYLE_SIMD_MAX_LANES_D(D) >= 2, "Combine needs N>=2");
+  constexpr int kBytes = static_cast<int>(HYLE_SIMD_BYTES_D(D));
+  constexpr int kHalfBytes = kBytes / 2;
   detail::V128<D> r;
-  // unpacklo_epi64: [lo[63:0], hi[63:0]]
-  if constexpr (std::is_same_v<T, float>)
-    r.raw = _mm_castsi128_ps(_mm_unpacklo_epi64(_mm_castps_si128(lo.raw), _mm_castps_si128(hi.raw)));
-  else if constexpr (std::is_same_v<T, double>)
-    r.raw = _mm_castsi128_pd(_mm_unpacklo_epi64(_mm_castpd_si128(lo.raw), _mm_castpd_si128(hi.raw)));
-  else
-    r.raw = _mm_unpacklo_epi64(lo.raw, hi.raw);
+  if constexpr (kBytes == 16) {
+    r.raw = detail::mask_from_i<T>(_mm_unpacklo_epi64(
+        detail::mask_to_i<T>(lo.raw), detail::mask_to_i<T>(hi.raw)));
+  } else {
+    const __m128i lo_clean = _mm_srli_si128(
+        _mm_slli_si128(detail::mask_to_i<T>(lo.raw), 16 - kHalfBytes),
+        16 - kHalfBytes);
+    const __m128i joined = _mm_or_si128(
+        lo_clean, _mm_slli_si128(detail::mask_to_i<T>(hi.raw), kHalfBytes));
+    r.raw = detail::mask_from_i<T>(
+        _mm_srli_si128(_mm_slli_si128(joined, 16 - kBytes), 16 - kBytes));
+  }
   return r;
 }
 template <class D> requires HYLE_SIMD_W(D, 0, 16)
@@ -2752,14 +2759,13 @@ HYLE_FORCE_INLINE detail::V128<D> ZeroExtendVector(
     D /*d*/, Vec128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> lo) noexcept {
   using T = TFromD<D>;
   static_assert(HYLE_SIMD_MAX_LANES_D(D) >= 2, "ZeroExtendVector needs N>=2");
+  constexpr int kBytes = static_cast<int>(HYLE_SIMD_BYTES_D(D));
+  constexpr int kHalfBytes = kBytes / 2;
   detail::V128<D> r;
-  // _mm_move_epi64: low 64 kept, high 64 zeroed.
-  if constexpr (std::is_same_v<T, float>)
-    r.raw = _mm_castsi128_ps(_mm_move_epi64(_mm_castps_si128(lo.raw)));
-  else if constexpr (std::is_same_v<T, double>)
-    r.raw = _mm_castsi128_pd(_mm_move_epi64(_mm_castpd_si128(lo.raw)));
-  else
-    r.raw = _mm_move_epi64(lo.raw);
+  const __m128i lo_clean = _mm_srli_si128(
+      _mm_slli_si128(detail::mask_to_i<T>(lo.raw), 16 - kHalfBytes),
+      16 - kHalfBytes);
+  r.raw = detail::mask_from_i<T>(lo_clean);
   return r;
 }
 template <class D> requires HYLE_SIMD_W(D, 0, 16)
@@ -2767,14 +2773,21 @@ HYLE_FORCE_INLINE detail::V128<D> InsertIntoUpper(
     D /*d*/, Vec128<TFromD<D>, HYLE_SIMD_MAX_LANES_D(D) / 2> hi, detail::V128<D> v) noexcept {
   using T = TFromD<D>;
   static_assert(HYLE_SIMD_MAX_LANES_D(D) >= 2, "InsertIntoUpper needs N>=2");
+  constexpr int kBytes = static_cast<int>(HYLE_SIMD_BYTES_D(D));
+  constexpr int kHalfBytes = kBytes / 2;
   detail::V128<D> r;
-  // Keep v's low 64, replace high 64 with hi's low 64.
-  if constexpr (std::is_same_v<T, float>)
-    r.raw = _mm_castsi128_ps(_mm_unpacklo_epi64(_mm_castps_si128(v.raw), _mm_castps_si128(hi.raw)));
-  else if constexpr (std::is_same_v<T, double>)
-    r.raw = _mm_castsi128_pd(_mm_unpacklo_epi64(_mm_castpd_si128(v.raw), _mm_castpd_si128(hi.raw)));
-  else
-    r.raw = _mm_unpacklo_epi64(v.raw, hi.raw);
+  if constexpr (kBytes == 16) {
+    r.raw = detail::mask_from_i<T>(_mm_unpacklo_epi64(
+        detail::mask_to_i<T>(v.raw), detail::mask_to_i<T>(hi.raw)));
+  } else {
+    const __m128i lo_clean = _mm_srli_si128(
+        _mm_slli_si128(detail::mask_to_i<T>(v.raw), 16 - kHalfBytes),
+        16 - kHalfBytes);
+    const __m128i joined = _mm_or_si128(
+        lo_clean, _mm_slli_si128(detail::mask_to_i<T>(hi.raw), kHalfBytes));
+    r.raw = detail::mask_from_i<T>(
+        _mm_srli_si128(_mm_slli_si128(joined, 16 - kBytes), 16 - kBytes));
+  }
   return r;
 }
 // ResizeBitCast within the sse4 band: min-bytes copy, excess zeroed.
