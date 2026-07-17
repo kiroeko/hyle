@@ -4,6 +4,7 @@
 
 #include "hyle/macros.h"
 #include "hyle/platform.h"
+#include "hyle/platform/numa.h"
 
 // Linux THP advice flags live behind feature macros on some libcs.
 #if defined(HYLE_OS_LINUX) && !defined(MADV_HUGEPAGE)
@@ -325,6 +326,25 @@ VmRegion VmRegion::reserve(std::size_t size) noexcept {
   void* p = vm_reserve(size);
   if (p == nullptr) return r;
   r.base_ = p;
+  r.size_ = page_align_up(size);
+  r.guarded_ = false;
+  return r;
+}
+
+VmRegion VmRegion::reserve_numa(std::size_t size, int node) noexcept {
+  VmRegion r;
+  void* p = vm_reserve_numa(size, node);
+  if (p == nullptr) return r;
+  r.base_ = p;
+  r.size_ = page_align_up(size);
+  r.guarded_ = false;
+  return r;
+}
+
+VmRegion VmRegion::adopt(void* base, std::size_t size) noexcept {
+  VmRegion r;
+  if (base == nullptr || size == 0) return r;
+  r.base_ = base;
   r.size_ = page_align_up(size);
   r.guarded_ = false;
   return r;

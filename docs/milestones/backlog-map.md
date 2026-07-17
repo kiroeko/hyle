@@ -25,7 +25,8 @@
 | ~~mem-08~~ | ~~fiber_stack guard+分级+池~~ | ✅ **完成(2026-07-17)** | 见 [mem-08-fiber-stack.md](./mem-08-fiber-stack.md)。`Fiber` 默认 guarded |
 | ~~mem-06a~~ | ~~stats 下溢 + 泄漏追踪~~ | ✅ **完成(2026-07-17)** | 见 [mem-06a-stats.md](./mem-06a-stats.md) |
 | ~~mem-06b~~ | ~~大页/THP hint + HugeRegion~~ | ✅ **完成(2026-07-17)** | 见 [mem-06b-hugepage.md](./mem-06b-hugepage.md) |
-| mem-06 | NUMA 就近（stats/hugepage 已拆）| 🟢 就绪 | 多路服务器才痛；可与 VirtualAllocExNuma/mbind 后做 |
+| ~~mem-06c~~ | ~~NUMA preferred + HugeRegion node~~ | ✅ **完成(2026-07-17)** | 见 [mem-06c-numa.md](./mem-06c-numa.md) |
+| ~~mem-06~~ | ~~NUMA+大页+stats~~ | ✅ **切片全收(06a/b/c)** | hard-bind/hwloc/1GB 交错仍按需后置 |
 | ~~simd-03 尾 NEON/AVX512 真机跑~~ | ~~缺硬件~~ | ✅ **已解(2026-07-09)** | NEON=mac 真机(simd-07 起);AVX512=simd-09 用 **Intel SDE 9.48.0**(WSL /root,`sde64 -future`)真跑——vec_test avx512 变体 173/173 全 op 对拍 + math/sort/bitpack tier 探针确认 dispatch 真选 kAvx512。四 ISA 全真跑,不再硬阻塞。**教训:"无硬件→理由化不验"是陷阱,SDE 是 AVX-512 无机时的真验闸门** |
 | bench-02 | 对标 SOTA 套(absl/F14/moody/oneTBB/highway/marl) | 🟢 就绪 | 分散已做(各模块审查时对标过);整合成套可缓 |
 | [simd-19](./simd-19-partial-vector-repr.md) | 定宽后端 partial-vector 表示(部分标签用窄 D 寄存器) | 🟢 就绪(有设计) | NEON perf 收口留的唯一"可修"真输 `PromoteMaskTo i16→i32` 0.575:定宽后端把每个 `Vec<T,N>` 当满宽寄存器,partial tag 满宽物化再掰回;scalable 已用 `kPow2`+`vl` 解,定宽待跟上。方案 A 根治(翻倍实现面)/ B 热点窄手术/ C 不做,建议 B。**COLD op(~0.5ns 绝对),不阻塞北极星**,按"只能平不能输"排期 |

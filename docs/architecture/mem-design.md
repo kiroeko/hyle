@@ -89,7 +89,7 @@ device/pinned/unified 内存归 compute/ 的 stream-bound buffer,**不经 mem/ �
 
 | 能力 | 做法 | 为什么 |
 |---|---|---|
-| **NUMA 感知** | 按 node 分配（Linux `mbind`/`numa_alloc_onnode`，Win `VirtualAllocExNuma`）| 多路服务器跨 node 访存慢 2-3×；worker 线程的内存就近分配 |
+| **NUMA 感知** | ✅ mem-06c：`platform::numa_*` + `vm_reserve_numa`/`vm_bind_numa`(preferred) + `HugeRegion::allocate_local` + `enable_allocator_numa`；无 libnuma | 多路跨 node 访存慢 2-3×；大区就近 + mi 自动 |
 | **大页/THP** | ✅ mem-06b：`platform::vm_advise_hugepage` + `mem::HugeRegion`（2MiB 对齐+THP hint+可选 prefault）+ `enable_allocator_hugepages` 封 mimalloc；特权 1GB/hugetlb 后置 | 大张量/大 arena 减 TLB miss（访存 walk \(\sim N/\text{page}\)） |
 | **pinned（page-locked）** | `cudaHostAlloc` / `cudaHostRegister` | host↔device DMA 快得多；不锁页 GPU 拷贝走可分页内存慢 |
 | **cache-line 对齐 + 防伪共享** | `alignas(64)`，per-core 结构按 cache-line padding | 并发结构（run-queue、计数器）伪共享杀性能 |
@@ -112,7 +112,7 @@ device/pinned/unified 内存归 compute/ 的 stream-bound buffer,**不经 mem/ �
 2. system allocator 换 mimalloc backing（封在 vtable 后，不外露 mimalloc 类型——同 ggml 解耦）。
 3. arena 继承 + 修 64 槽上限；pool/stack 推倒重写修 UB。
 4. fiber 栈（给 sched）✅ mem-08：guard + 分级 + 池；pinned 归 compute/。
-5. 大页/THP ✅ mem-06b；cache-line 对齐已部分落地；**NUMA 仍 mem-06 余下**。
+5. 大页/THP ✅ mem-06b；NUMA ✅ mem-06c；cache-line 对齐已部分落地。**mem-06 主轴收口**。
 6. stats 修下溢 + 泄漏追踪 ✅ mem-06a（`StatsAllocator`/`LeakTracker` opt-in；system 热路径无税）。
 7. 单测：对齐保证、并发分配 TSan、泄漏检测、NUMA 就近性验证、benchmark 对标裸 mimalloc（专用分配器应更快）；fiber_stack 布局/池/Fiber 接线；stats 下溢回归。
 

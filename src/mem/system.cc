@@ -85,5 +85,10 @@ void enable_allocator_hugepages(AllocatorHugepagePolicy policy) noexcept {
   }
 }
 
+void enable_allocator_numa(unsigned max_nodes) noexcept {
+  // 0 = use all NUMA nodes (mimalloc default meaning).
+  mi_option_set(mi_option_use_numa_nodes, static_cast<long>(max_nodes));
+}
+
 }  // namespace hyle::mem
 

@@ -4,6 +4,7 @@
 #include <cstdint>
 
 #include "hyle/macros.h"
+#include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
 #include "hyle/visibility.h"
 
@@ -15,18 +16,13 @@
 #  define HYLE_MEM_API HYLE_IMPORT
 #endif
 
-// Large-region hugepage support (mem-06b).
+// Large-region hugepage + NUMA placement (mem-06b/06c).
 //
-// Goal: cut TLB pressure on multi-megabyte arenas / host tensors
-// (access walk ~ N/page_size → N/large_page_size). Allocation stays O(1);
-// the win is fewer page-table entries on sequential/random scans of big spans.
-//
-// Layers:
-//   1) platform::vm_advise_hugepage — soft THP hint (Linux).
-//   2) HugeRegion —  large-page-aligned reserve+commit + optional THP + prefault.
-//   3) enable_allocator_hugepages — process policy for mimalloc (no mi_* leak).
-//
-// Fiber stacks and small objects must NOT use HugeRegion (size << 2 MiB).
+// Goals:
+//   * TLB: access walk ~ N/page_size → N/large_page_size (THP / 2MiB align).
+//   * NUMA: keep multi-MB host buffers on the allocating thread's home node
+//     (preferred bind; soft). Pair with sched worker CPU affinity.
+// Allocation stays O(1). Fiber stacks / small objects must NOT use HugeRegion.
 
 namespace hyle::mem {
 
@@ -46,6 +42,10 @@ struct AllocatorHugepagePolicy {
 // before heavy allocation. Idempotent. Never throws.
 HYLE_MEM_API void enable_allocator_hugepages(
     AllocatorHugepagePolicy policy = {}) noexcept;
+
+// Limit mimalloc OS arenas to at most `max_nodes` NUMA nodes (0 = all available).
+// Programmatic stand-in for MIMALLOC_USE_NUMA_NODES. Call early.
+HYLE_MEM_API void enable_allocator_numa(unsigned max_nodes = 0) noexcept;
 
 // ---- HugeRegion (L2): explicit multi-MB span --------------------------------
 
@@ -77,17 +77,23 @@ class HugeRegion {
  public:
   HugeRegion() noexcept = default;
 
-  // Reserve+commit `bytes` (aligned up). On failure: !valid().
+  // Reserve+commit `bytes` (aligned up). Soft-prefer NUMA `node`
+  // (platform::kNumaAny = unconstrained). On failure: !valid().
   static HugeRegion allocate(std::size_t bytes,
-                             HugeFlags flags = HugeFlags::kDefault) noexcept {
+                             HugeFlags flags = HugeFlags::kDefault,
+                             int numa_node = platform::kNumaAny) noexcept {
     HugeRegion r;
     if (bytes == 0) return r;
     const std::size_t aligned = platform::large_page_align_up(bytes);
-    r.region_ = platform::VmRegion::reserve(aligned);
+    r.region_ = platform::VmRegion::reserve_numa(aligned, numa_node);
     if (!r.region_.valid()) return HugeRegion{};
     if (!r.region_.commit(0, r.region_.size())) {
       r.region_.release();
       return HugeRegion{};
+    }
+    // Preferred bind after commit (Linux mbind; no-op soft on Windows).
+    if (numa_node != platform::kNumaAny) {
+      (void)platform::vm_bind_numa(r.region_.data(), r.region_.size(), numa_node);
     }
     if (any(flags & HugeFlags::kThpHint)) {
       // Soft: ignore failure (Windows/macOS, or THP=never).
@@ -101,6 +107,12 @@ class HugeRegion {
       for (std::size_t off = 0; off < n; off += step) p[off] = p[off];
     }
     return r;
+  }
+
+  // Allocate on the calling thread's home NUMA node (query + allocate).
+  static HugeRegion allocate_local(
+      std::size_t bytes, HugeFlags flags = HugeFlags::kDefault) noexcept {
+    return allocate(bytes, flags, static_cast<int>(platform::numa_current_node()));
   }
 
   HugeRegion(HugeRegion&& o) noexcept : region_(std::move(o.region_)) {}

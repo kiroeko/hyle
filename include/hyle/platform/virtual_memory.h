@@ -105,6 +105,13 @@ class VmRegion {
   // Reserve `size` bytes (rounded up). On failure: !valid(), see vm_last_error().
   HYLE_PLATFORM_API static VmRegion reserve(std::size_t size) noexcept;
 
+  // Like reserve(), but soft-prefer NUMA `node` (see numa.h; kNumaAny = plain).
+  HYLE_PLATFORM_API static VmRegion reserve_numa(std::size_t size, int node) noexcept;
+
+  // Take ownership of an existing page-aligned reservation from vm_reserve*.
+  // `size` must be the rounded size used with release. On nullptr: !valid().
+  HYLE_PLATFORM_API static VmRegion adopt(void* base, std::size_t size) noexcept;
+
   // Reserve usable+1 guard page, commit the usable range as RW, leave the LOW
   // page as Protect::kNone. Stack-grows-down friendly: put the stack top at
   // usable() + usable_size() and grow toward usable() / the guard.
