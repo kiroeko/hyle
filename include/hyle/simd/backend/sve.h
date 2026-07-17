@@ -275,21 +275,71 @@ template <class V> HYLE_FORCE_INLINE V ApproximateReciprocalSqrt(V v) noexcept {
   return svrsqrte(v);
 }
 
-// ---- bitwise (integer lanes) --------------------------------------------------------
+// ---- bitwise ------------------------------------------------------------------------
+// SVE only exposes integer bitwise intrinsics. Floating vectors use the exact same register bits,
+// so reinterpret to the same-width unsigned type and back (matching Highway's SVE backend).
 template <class V> HYLE_FORCE_INLINE V And(V a, V b) noexcept {
-  return svand_x(detail::ptrue<TFromV<V>>(), a, b);
+  if constexpr (std::is_floating_point_v<TFromV<V>>) {
+    const DFromV<V> d;
+    const RebindToUnsigned<decltype(d)> du;
+    return BitCast(d, And(BitCast(du, a), BitCast(du, b)));
+  } else {
+    return svand_x(detail::ptrue<TFromV<V>>(), a, b);
+  }
 }
 template <class V> HYLE_FORCE_INLINE V Or(V a, V b) noexcept {
-  return svorr_x(detail::ptrue<TFromV<V>>(), a, b);
+  if constexpr (std::is_floating_point_v<TFromV<V>>) {
+    const DFromV<V> d;
+    const RebindToUnsigned<decltype(d)> du;
+    return BitCast(d, Or(BitCast(du, a), BitCast(du, b)));
+  } else {
+    return svorr_x(detail::ptrue<TFromV<V>>(), a, b);
+  }
 }
 template <class V> HYLE_FORCE_INLINE V Xor(V a, V b) noexcept {
-  return sveor_x(detail::ptrue<TFromV<V>>(), a, b);
+  if constexpr (std::is_floating_point_v<TFromV<V>>) {
+    const DFromV<V> d;
+    const RebindToUnsigned<decltype(d)> du;
+    return BitCast(d, Xor(BitCast(du, a), BitCast(du, b)));
+  } else {
+    return sveor_x(detail::ptrue<TFromV<V>>(), a, b);
+  }
 }
 template <class V> HYLE_FORCE_INLINE V AndNot(V a, V b) noexcept {  // ~a & b (Highway order)
-  return svbic_x(detail::ptrue<TFromV<V>>(), b, a);                 // svbic(p, x, y) = x & ~y
+  if constexpr (std::is_floating_point_v<TFromV<V>>) {
+    const DFromV<V> d;
+    const RebindToUnsigned<decltype(d)> du;
+    return BitCast(d, AndNot(BitCast(du, a), BitCast(du, b)));
+  } else {
+    return svbic_x(detail::ptrue<TFromV<V>>(), b, a);  // svbic(p, x, y) = x & ~y
+  }
 }
 template <class V> HYLE_FORCE_INLINE V Not(V a) noexcept {
-  return svnot_x(detail::ptrue<TFromV<V>>(), a);
+  if constexpr (std::is_floating_point_v<TFromV<V>>) {
+    const DFromV<V> d;
+    const RebindToUnsigned<decltype(d)> du;
+    return BitCast(d, Not(BitCast(du, a)));
+  } else {
+    return svnot_x(detail::ptrue<TFromV<V>>(), a);
+  }
+}
+
+// Predicate logical operations. Lane width is intentionally unknown here; SVE ignores
+// de-canonicalized predicate bits for wider element operations (the same rule Highway relies on).
+HYLE_FORCE_INLINE svbool_t Not(svbool_t m) noexcept {
+  return svnot_b_z(svptrue_b8(), m);
+}
+HYLE_FORCE_INLINE svbool_t And(svbool_t a, svbool_t b) noexcept {
+  return svand_b_z(b, b, a);
+}
+HYLE_FORCE_INLINE svbool_t AndNot(svbool_t a, svbool_t b) noexcept {
+  return svbic_b_z(b, b, a);
+}
+HYLE_FORCE_INLINE svbool_t Or(svbool_t a, svbool_t b) noexcept {
+  return svsel_b(a, a, b);
+}
+HYLE_FORCE_INLINE svbool_t Xor(svbool_t a, svbool_t b) noexcept {
+  return svsel_b(a, svnand_b_z(a, a, b), b);
 }
 
 // ---- comparisons -> svbool_t predicate mask -----------------------------------------
@@ -563,6 +613,19 @@ HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> ConvertTo(Simd<DstT, N, 0>, V v) noex
   else
     return svcvt_f64_x(pg, v);  // remaining f64<->u64 etc. (kept minimal for the quantize core)
 }
+template <typename DstT, std::size_t N, class V>
+HYLE_FORCE_INLINE VFromD<Simd<DstT, N, 0>> ConvertInRangeTo(Simd<DstT, N, 0> d,
+                                                            V v) noexcept {
+  return ConvertTo(d, v);
+}
+// svcvt_s32_f64 writes converted values into the even 32-bit positions of the result. uzp1 packs
+// those positions into the low logical half, preserving the same-lane-count f64 -> i32 contract.
+template <std::size_t N>
+HYLE_FORCE_INLINE svint32_t DemoteInRangeTo(Simd<std::int32_t, N, 0>,
+                                             svfloat64_t v) noexcept {
+  const svint32_t in_even = svcvt_s32_f64_x(detail::ptrue<double>(), v);
+  return svuzp1(in_even, in_even);
+}
 // RoundToInt: round-to-nearest-even THEN convert (svrintn rounds, svcvt truncates the now-integral
 // value). float->int only.
 template <typename DstT, std::size_t N, class V>
@@ -738,6 +801,26 @@ template <class D, class V>
 HYLE_FORCE_INLINE V ConcatUpperLower(D d, V hi, V lo) noexcept {
   const std::size_t h = Lanes(d) / 2;
   return IfThenElse(FirstN(d, h), lo, hi);
+}
+
+// Logical half-register operations for sizeless vectors. The native SVE type does not change;
+// the tag carries the active lane count. This mirrors Highway's scalable SVE representation.
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> Combine(D d, V hi, V lo) noexcept {
+  return ConcatLowerLower(d, hi, lo);
+}
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> ZeroExtendVector(D d, V lo) noexcept {
+  return Combine(d, Zero(typename D::Half{}), lo);
+}
+template <class DH, class V>
+HYLE_FORCE_INLINE V LowerHalf(DH, V v) noexcept {
+  return v;
+}
+template <class DH, class V>
+HYLE_FORCE_INLINE V UpperHalf(DH dh, V v) noexcept {
+  const typename DH::Twice d;
+  return SlideDownLanes(d, v, Lanes(dh));
 }
 
 // ConcatEven/Odd: gather the even/odd lanes of the logical concatenation [lo, hi]. For capped tags,
@@ -1134,6 +1217,16 @@ template <class V> HYLE_FORCE_INLINE V GetExponent(V v) noexcept {
     const auto unbiased = Sub(biased, Set(du, std::uint64_t{1023}));
     return ConvertTo(d, BitCast(di, unbiased));
   }
+}
+template <class V> HYLE_FORCE_INLINE auto GetBiasedExponent(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_floating_point_v<T>, "GetBiasedExponent is float only");
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto bits = BitCast(du, v);
+  if constexpr (std::is_same_v<T, float>)
+    return And(ShiftRight<23>(bits), Set(du, std::uint32_t{0xFFu}));
+  else
+    return And(ShiftRight<52>(bits), Set(du, std::uint64_t{0x7FFull}));
 }
 template <int kLane, class V> HYLE_FORCE_INLINE V BroadcastLane(V v) noexcept {
   return Broadcast<kLane>(v);

@@ -42,7 +42,6 @@
       "action": "consumer_or_contract_driven",
       "ops": [
         "BroadcastBlock",
-        "Combine",
         "CombineShiftRightBytes",
         "CombineShiftRightLanes",
         "ExtractBlock",
@@ -53,7 +52,6 @@
         "InterleaveOddBlocks",
         "InterleaveUpperBlocks",
         "LoadDup128",
-        "LowerHalf",
         "OddEvenBlocks",
         "PairwiseAdd128",
         "PairwiseSub128",
@@ -66,9 +64,7 @@
         "ShiftRightLanes",
         "SlideDownBlocks",
         "SlideUpBlocks",
-        "SwapAdjacentBlocks",
-        "UpperHalf",
-        "ZeroExtendVector"
+        "SwapAdjacentBlocks"
       ]
     },
     "extension_gated": {
@@ -85,9 +81,6 @@
       "action": "implement_or_prove_equivalent",
       "ops": [
         "AverageRound",
-        "ConvertInRangeTo",
-        "DemoteInRangeTo",
-        "GetBiasedExponent",
         "InterleaveWholeLower",
         "InterleaveWholeUpper",
         "MulByFloorPow2",
@@ -114,17 +107,11 @@
     }
   },
   "product_dependencies": {
-    "math": [
-      "Combine",
-      "DemoteInRangeTo",
-      "GetBiasedExponent"
-    ],
+    "math": [],
     "bitpack": [
-      "Combine",
       "Xor3"
     ],
     "dtype": [
-      "ConvertInRangeTo",
       "OrderedDemote2To"
     ],
     "sort": [

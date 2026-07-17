@@ -1391,6 +1391,12 @@ HYLE_FORCE_INLINE V Max128Upper(D d, V a, V b) noexcept {
 // only re-types it. Building block for the widen/narrow-mask ops below and cross-type predication.
 template <class DTo, class MFrom>
 HYLE_FORCE_INLINE MFromD<DTo> RebindMask(DTo d_to, MFrom m) noexcept {
+#if defined(HYLE_SIMD_TARGET_SVE) || defined(HYLE_SIMD_TARGET_RVV)
+  // Scalable predicate types have no PrivateT/PrivateN members. Rebinding is a type-level no-op:
+  // SVE uses svbool_t for every width; RVV uses the same vbool ratio for same-width lane types.
+  (void)d_to;
+  return m;
+#else
   // Source tag must match m's lane type (e.g. f32 mask -> float D). Deriving DFrom from DTo was
   // wrong when rebinding across same-width types (f32 mask -> i32 mask): VecFromMask then expected
   // an i32 mask and MSVC rejected the f32 mask. PrivateT/kPrivateN recover m's native tag.
@@ -1403,6 +1409,7 @@ HYLE_FORCE_INLINE MFromD<DTo> RebindMask(DTo d_to, MFrom m) noexcept {
   static_assert(sizeof(TFromD<DTo>) == sizeof(typename MFrom::PrivateT),
                 "RebindMask: same lane width required");
   return MaskFromNormalizedVec(BitCast(d_to, VecFromMask(d_from, m)));
+#endif
 }
 
 // MaskFalse(d): all-false mask. MaskFromVec(Zero) -- no lane's MSB set.

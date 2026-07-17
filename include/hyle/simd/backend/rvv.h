@@ -360,15 +360,79 @@ template <class V> HYLE_FORCE_INLINE V ApproximateReciprocalSqrt(V v) noexcept {
   return __riscv_vfrsqrt7(v, detail::vlmax<TFromV<V>>());
 }
 
-// ---- bitwise (integer) --------------------------------------------------------------
-template <class V> HYLE_FORCE_INLINE V And(V a, V b) noexcept { return __riscv_vand(a, b, detail::vlmax<TFromV<V>>()); }
-template <class V> HYLE_FORCE_INLINE V Or(V a, V b) noexcept { return __riscv_vor(a, b, detail::vlmax<TFromV<V>>()); }
-template <class V> HYLE_FORCE_INLINE V Xor(V a, V b) noexcept { return __riscv_vxor(a, b, detail::vlmax<TFromV<V>>()); }
-template <class V> HYLE_FORCE_INLINE V Not(V a) noexcept { return __riscv_vnot(a, detail::vlmax<TFromV<V>>()); }
-template <class V> HYLE_FORCE_INLINE V AndNot(V a, V b) noexcept {  // ~a & b (Highway order)
-  const std::size_t vl = detail::vlmax<TFromV<V>>();
-  return __riscv_vand(__riscv_vnot(a, vl), b, vl);
+// ---- bitwise ------------------------------------------------------------------------
+// RVV bitwise instructions are integer-only; float overloads preserve bits via unsigned vectors.
+template <class V> HYLE_FORCE_INLINE V And(V a, V b) noexcept {
+  if constexpr (std::is_floating_point_v<TFromV<V>>) {
+    const DFromV<V> d;
+    const RebindToUnsigned<decltype(d)> du;
+    return BitCast(d, And(BitCast(du, a), BitCast(du, b)));
+  } else {
+    return __riscv_vand(a, b, detail::vlmax<TFromV<V>>());
+  }
 }
+template <class V> HYLE_FORCE_INLINE V Or(V a, V b) noexcept {
+  if constexpr (std::is_floating_point_v<TFromV<V>>) {
+    const DFromV<V> d;
+    const RebindToUnsigned<decltype(d)> du;
+    return BitCast(d, Or(BitCast(du, a), BitCast(du, b)));
+  } else {
+    return __riscv_vor(a, b, detail::vlmax<TFromV<V>>());
+  }
+}
+template <class V> HYLE_FORCE_INLINE V Xor(V a, V b) noexcept {
+  if constexpr (std::is_floating_point_v<TFromV<V>>) {
+    const DFromV<V> d;
+    const RebindToUnsigned<decltype(d)> du;
+    return BitCast(d, Xor(BitCast(du, a), BitCast(du, b)));
+  } else {
+    return __riscv_vxor(a, b, detail::vlmax<TFromV<V>>());
+  }
+}
+template <class V> HYLE_FORCE_INLINE V Not(V a) noexcept {
+  if constexpr (std::is_floating_point_v<TFromV<V>>) {
+    const DFromV<V> d;
+    const RebindToUnsigned<decltype(d)> du;
+    return BitCast(d, Not(BitCast(du, a)));
+  } else {
+    return __riscv_vnot(a, detail::vlmax<TFromV<V>>());
+  }
+}
+template <class V> HYLE_FORCE_INLINE V AndNot(V a, V b) noexcept {  // ~a & b (Highway order)
+  if constexpr (std::is_floating_point_v<TFromV<V>>) {
+    const DFromV<V> d;
+    const RebindToUnsigned<decltype(d)> du;
+    return BitCast(d, AndNot(BitCast(du, a), BitCast(du, b)));
+  } else {
+    const std::size_t vl = detail::vlmax<TFromV<V>>();
+    return __riscv_vand(__riscv_vnot(a, vl), b, vl);
+  }
+}
+
+// LMUL=1 mask types by element width. Exact overloads keep predicate logic out of the vector
+// TFromV path (mask types are sizeless and deliberately have no DFromV mapping).
+#define HYLE_RVV_MASK_LOGICAL(M, T)                                                \
+  HYLE_FORCE_INLINE M And(M a, M b) noexcept {                                    \
+    return __riscv_vmand(a, b, detail::vlmax<T>());                               \
+  }                                                                                \
+  HYLE_FORCE_INLINE M Or(M a, M b) noexcept {                                     \
+    return __riscv_vmor(a, b, detail::vlmax<T>());                                \
+  }                                                                                \
+  HYLE_FORCE_INLINE M Xor(M a, M b) noexcept {                                    \
+    return __riscv_vmxor(a, b, detail::vlmax<T>());                               \
+  }                                                                                \
+  HYLE_FORCE_INLINE M Not(M a) noexcept {                                         \
+    return __riscv_vmnot(a, detail::vlmax<T>());                                  \
+  }                                                                                \
+  HYLE_FORCE_INLINE M AndNot(M a, M b) noexcept {                                 \
+    return __riscv_vmand(__riscv_vmnot(a, detail::vlmax<T>()), b,                 \
+                         detail::vlmax<T>());                                      \
+  }
+HYLE_RVV_MASK_LOGICAL(vbool8_t, std::uint8_t)
+HYLE_RVV_MASK_LOGICAL(vbool16_t, std::uint16_t)
+HYLE_RVV_MASK_LOGICAL(vbool32_t, std::uint32_t)
+HYLE_RVV_MASK_LOGICAL(vbool64_t, std::uint64_t)
+#undef HYLE_RVV_MASK_LOGICAL
 
 // ---- comparisons -> vbool mask ------------------------------------------------------
 // RVV masks are vbool<ratio>_t. The type-generic vmseq/vmslt/... deduce the mask type from the
@@ -1191,6 +1255,25 @@ HYLE_FORCE_INLINE V ConcatUpperLower(D d, V hi, V lo) noexcept {
   return IfThenElse(FirstN(d, h), lo, hi);
 }
 
+// LMUL=1 sizeless vectors keep the same native type for logical halves; D controls active lanes.
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> Combine(D d, V hi, V lo) noexcept {
+  return ConcatLowerLower(d, hi, lo);
+}
+template <class D, class V>
+HYLE_FORCE_INLINE VFromD<D> ZeroExtendVector(D d, V lo) noexcept {
+  return Combine(d, Zero(typename D::Half{}), lo);
+}
+template <class DH, class V>
+HYLE_FORCE_INLINE V LowerHalf(DH, V v) noexcept {
+  return v;
+}
+template <class DH, class V>
+HYLE_FORCE_INLINE V UpperHalf(DH dh, V v) noexcept {
+  const typename DH::Twice d;
+  return SlideDownLanes(d, v, Lanes(dh));
+}
+
 // ConcatEven(hi,lo) = [lo even lanes, hi even lanes]; ConcatOdd = odd lanes. Build by compressing
 // each source with the even/odd mask (packs active lanes to front), then splice hi's packed half in
 // after lo's (vl/2 each). Use a slideup to place hi's compressed result at offset vl/2.
@@ -1401,6 +1484,16 @@ template <class V> HYLE_FORCE_INLINE V GetExponent(V v) noexcept {
     const auto unbiased = Sub(biased, Set(du, std::uint64_t{1023}));
     return ConvertTo(d, BitCast(di, unbiased));
   }
+}
+template <class V> HYLE_FORCE_INLINE auto GetBiasedExponent(V v) noexcept {
+  using T = TFromV<V>;
+  static_assert(std::is_floating_point_v<T>, "GetBiasedExponent is float only");
+  const RebindToUnsigned<DFromV<V>> du;
+  const auto bits = BitCast(du, v);
+  if constexpr (std::is_same_v<T, float>)
+    return And(ShiftRight<23>(bits), Set(du, std::uint32_t{0xFFu}));
+  else
+    return And(ShiftRight<52>(bits), Set(du, std::uint64_t{0x7FFull}));
 }
 template <int kLane, class V> HYLE_FORCE_INLINE V BroadcastLane(V v) noexcept {
   return Broadcast<kLane>(v);

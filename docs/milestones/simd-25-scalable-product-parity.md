@@ -47,6 +47,21 @@ Runtime / exact / native + QEMU + real-hardware parity
 脚本同时输出 backend-local 与 `backend | vec.h` 两种机械数；后者仍只是语法面，不冒充编译可实例化
 或产品能力。`--check` 要求全部 80 项恰好分类一次，任何新增、消失或重复都会失败。
 
+### 阶段 1 首轮进展（2026-07-17）
+
+真实 SVE math 全函数实例化探针补出了并已修复两组隐藏洞：
+
+- 浮点 `And/Or/Xor/AndNot/Not` 必须先 bitcast 到同宽 unsigned；原实现把浮点向量直接喂给
+  整数 intrinsic；
+- scalable mask 不是带 `PrivateT/PrivateN` 的固定宽向量，现有 mask logical 与
+  `RebindMask` 必须有 predicate-native 路径；
+- 补齐 `Combine/LowerHalf/UpperHalf/ZeroExtendVector` 的 sizeless 逻辑半向量语义，以及
+  `ConvertInRangeTo/DemoteInRangeTo/GetBiasedExponent`。
+
+修复后 SVE 的 f32/f64 全套 math（所有 unary、`atan2/pow/hypot`）可在 AArch64+SVE 目标完整
+实例化。机械差集从初始 80 降至 73：`fixed_model 28→24`、`portable_missing 26→23`；manifest
+只保存当前未完成项，初始数字保留在上表作为基线。
+
 ## 阶段 1：target/feature mechanization 与编译探针
 
 - 扩充 platform feature，而不是只保留 `sve/rvv` 两个粗粒度 bool：SVE2/BF16/I8MM/AES，
@@ -63,8 +78,13 @@ SVE 的 VL 是线程属性；Runtime 只缓存 ISA/feature，具体 `Lanes(d)` �
 
 ### bitpack
 
-现有 `bitpack_body.inc` 已是一份 D-tag body。新增 SVE/RVV TU，从编译错误收敛最小原语闭包，再接
-Runtime/exact。覆盖所有类型、bits、非整 VL tail、跨页 canary 和 pack/unpack round-trip。
+现有 `bitpack_body.inc` 已是一份 D-tag body；SVE 全 body 已能编译实例化，但**尚不能直接接 Runtime**：
+当前 packed layout 以 `Lanes(d)` 分块，SVE VL 又是线程属性。同进程中若 pack/unpack 发生在线程 VL
+不同的两个线程，格式会变化。现有 SVE→NEON 钳制因此同时承担了“固定 128-bit 格式”的职责。
+
+先把 bitstream 合同改成与线程 VL 无关的稳定格式（固定 logical block，或显式 format/VL metadata，
+由最终跨线程与持久化合同裁决），再新增 SVE/RVV TU 与 Runtime/exact。覆盖所有类型、bits、非整 VL
+tail、跨页 canary、跨线程不同 VL 的 pack/unpack round-trip。不能把“body 能编译”等同于格式可发布。
 
 ### dtype
 

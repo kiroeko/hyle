@@ -163,7 +163,9 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   # docs/architecture/simd-design.md (SVE section) / scripts. NOT auto-built on a plain aarch64
   # build (would need +sve which some arm64 hosts lack), so it is opt-in.
   if(HYLE_SIMD_SVE)
-    hyle_add_test(simd NAME sve SOURCES simd/sve_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_SVE OPTIONS -march=armv8-a+sve)
+    hyle_add_test(simd NAME sve SOURCES simd/sve_test.cc simd/native_test.cc
+                  simd/scalable_math_compile.cc DEFINES HYLE_SIMD_TARGET_SVE
+                  OPTIONS -march=armv8-a+sve)
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")
   # RVV variant (backend/rvv.h), the SECOND scalable backend. Same gating rationale as SVE:
@@ -171,7 +173,9 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")
   # it; on a non-RVV box it is cross-compiled (riscv64-linux-gnu-g++ -march=rv64gcv) and run under
   # qemu-riscv64-static (scripts/rvv-qemu-test.sh). Gated by HYLE_SIMD_RVV.
   if(HYLE_SIMD_RVV)
-    hyle_add_test(simd NAME rvv SOURCES simd/rvv_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_RVV OPTIONS -march=rv64gcv)
+    hyle_add_test(simd NAME rvv SOURCES simd/rvv_test.cc simd/native_test.cc
+                  simd/scalable_math_compile.cc DEFINES HYLE_SIMD_TARGET_RVV
+                  OPTIONS -march=rv64gcv)
   endif()
 endif()
 if(HYLE_HAS_FCONTEXT)
