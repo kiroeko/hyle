@@ -49,8 +49,9 @@ struct error_handler_t {
                  std::uint32_t line, const char* message);
 };
 
-// The process-wide default sink (a stderr logger until replaced). Reads/writes
-// are atomic in the .cc; safe to swap at runtime (e.g. tests install a recorder).
+// The process-wide default sink (a stderr logger until replaced). Dispatch and
+// replacement are serialized in the .cc, so after set/restore returns the
+// displaced handler is no longer executing and may be destroyed safely.
 HYLE_ERROR_API const error_handler_t* error_default_handler() noexcept;
 // Install `h` as the default; returns the previous one (restore it to undo).
 // Passing nullptr resets to the built-in stderr handler.

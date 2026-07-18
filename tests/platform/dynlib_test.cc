@@ -130,9 +130,9 @@ TEST(DynLib, DoubleCloseSafeAfterGet) {
   lib.close();
 }
 
-TEST(DynLib, CurrentCloseIsNoOp) {
+TEST(DynLib, CurrentCanBeClosed) {
   DynLib self = DynLib::current();
   ASSERT_TRUE(self.valid());
-  self.close();  // owns_=false
+  self.close();  // POSIX balances dlopen(nullptr); Windows drops its view only.
   EXPECT_FALSE(self.valid());
 }

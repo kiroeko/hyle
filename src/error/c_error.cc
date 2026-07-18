@@ -6,6 +6,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <mutex>
 #include <new>  // std::nothrow for the push/pop handler token
 #include <string_view>
 
@@ -49,6 +50,7 @@ hyle::Status adopt_from_c(hyle_status s) noexcept {
 
 // ---- C diagnostic handler (process-wide, single slot) -----------------------
 struct CHandlerState {
+  std::recursive_mutex mutex;
   hyle_error_report_fn fn = nullptr;
   void* user = nullptr;
   hyle::error_handler_t vtable{};
@@ -61,13 +63,24 @@ CHandlerState& c_handler_state() noexcept {
   return st;
 }
 
+std::recursive_mutex& c_handler_set_mutex() noexcept {
+  // A C callback may replace/uninstall itself while error_report holds the
+  // recursive C++ dispatch lock. Preserve that supported reentrant shape here.
+  static std::recursive_mutex mu;
+  return mu;
+}
+
 void c_handler_on_report(hyle::error_handler_o* inst, hyle::Severity sev,
                          const char* file, std::uint32_t line,
                          const char* message) {
   auto* st = reinterpret_cast<CHandlerState*>(inst);
-  if (st == nullptr || st->fn == nullptr) return;
-  st->fn(st->user, static_cast<hyle_severity>(static_cast<std::uint8_t>(sev)),
-         file, line, message);
+  if (st == nullptr) return;
+  std::lock_guard<std::recursive_mutex> lock(st->mutex);
+  if (st->fn != nullptr) {
+    st->fn(st->user,
+           static_cast<hyle_severity>(static_cast<std::uint8_t>(sev)), file,
+           line, message);
+  }
 }
 
 
@@ -187,10 +200,21 @@ const char* hyle_status_message_cstr(hyle_status s) {
 }
 
 void hyle_error_set_handler(hyle_error_report_fn fn, void* user) {
+  // Serialize the simple single-slot API itself. Do not hold state.mutex while
+  // calling error_set_default_handler(): reporters take the dispatch lock first
+  // and then state.mutex, so doing the inverse here would deadlock.
+  std::lock_guard<std::recursive_mutex> set_lock(c_handler_set_mutex());
   CHandlerState& st = c_handler_state();
   if (fn == nullptr) {
-    if (st.installed) {
-      hyle::error_set_default_handler(st.prev);
+    const hyle::error_handler_t* prev = nullptr;
+    {
+      std::lock_guard<std::recursive_mutex> lock(st.mutex);
+      if (!st.installed) return;
+      prev = st.prev;
+    }
+    hyle::error_set_default_handler(prev);
+    {
+      std::lock_guard<std::recursive_mutex> lock(st.mutex);
       st.installed = false;
       st.prev = nullptr;
       st.fn = nullptr;
@@ -198,16 +222,21 @@ void hyle_error_set_handler(hyle_error_report_fn fn, void* user) {
     }
     return;
   }
-  st.fn = fn;
-  st.user = user;
-  st.vtable.inst = reinterpret_cast<hyle::error_handler_o*>(&st);
-  st.vtable.report = &c_handler_on_report;
-  if (!st.installed) {
-    st.prev = hyle::error_set_default_handler(&st.vtable);
+  bool was_installed = false;
+  {
+    std::lock_guard<std::recursive_mutex> lock(st.mutex);
+    st.fn = fn;
+    st.user = user;
+    st.vtable.inst = reinterpret_cast<hyle::error_handler_o*>(&st);
+    st.vtable.report = &c_handler_on_report;
+    was_installed = st.installed;
+  }
+  const hyle::error_handler_t* displaced =
+      hyle::error_set_default_handler(&st.vtable);
+  if (!was_installed) {
+    std::lock_guard<std::recursive_mutex> lock(st.mutex);
+    st.prev = displaced;
     st.installed = true;
-  } else {
-    // Already installed: vtable pointer is stable; just update fn/user.
-    (void)hyle::error_set_default_handler(&st.vtable);
   }
 }
 

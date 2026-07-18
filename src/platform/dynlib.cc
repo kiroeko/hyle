@@ -136,10 +136,22 @@ DynLib DynLib::current() noexcept {
   DynLib lib;
 #if defined(HYLE_OS_WINDOWS)
   lib.handle_ = reinterpret_cast<void*>(GetModuleHandleW(nullptr));
+  if (lib.handle_ == nullptr) {
+    set_error_win();
+    return lib;
+  }
+  lib.owns_ = false;  // GetModuleHandle does not increment the refcount
 #else
   lib.handle_ = dlopen(nullptr, RTLD_NOW | RTLD_LOCAL);
+  if (lib.handle_ == nullptr) {
+    set_error(dlerror());
+    return lib;
+  }
+  // dlopen(nullptr) returns a closeable handle and increments the loader's
+  // reference count just like other successful dlopen calls.
+  lib.owns_ = true;
 #endif
-  lib.owns_ = false;  // process image: not ours to free
+  set_error(nullptr);
   return lib;
 }
 

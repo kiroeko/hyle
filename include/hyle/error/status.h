@@ -143,6 +143,7 @@ class [[nodiscard]] Status {
 
   // Format into a caller buffer (snprintf-style): writes up to cap-1 bytes + a
   // NUL, returns the total length needed (so the caller can detect truncation).
+  // A null buffer is treated as cap=0, allowing a size-only query.
   // No allocation, no std owning type across the seam. "OK" | "CODE" |
   // "CODE: message". Compose from code_name()/message() if you want the pieces.
   HYLE_ERROR_API std::size_t ToString(char* buf, std::size_t cap) const noexcept;

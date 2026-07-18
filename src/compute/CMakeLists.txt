@@ -49,6 +49,13 @@ endif()
 
 hyle_add_module(compute SOURCES ${_compute_sources} PUBLIC_DEPS ${_compute_public_deps})
 
+if(HYLE_HAS_FCONTEXT)
+  # compute.cc uses Fiber::current() to keep heavyweight CUDA/Vulkan first-use
+  # probing off a 64 KiB fiber stack. This is an implementation detail, so keep
+  # the capability marker private to the module.
+  target_compile_definitions(hyle_compute PRIVATE HYLE_HAS_FCONTEXT)
+endif()
+
 # compute-07: the CPU operator backend (host_ops.cc) calls hyle simd numeric cores. PRIVATE:
 # simd is used only inside host_ops.cc, never named in a public compute header (host_ops.h
 # only declares HostFn signatures). This is simd's first compute consumer.

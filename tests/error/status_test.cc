@@ -1,10 +1,12 @@
 #include <gtest/gtest.h>
 
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
 #include <string>
 #include <string_view>
 #include <type_traits>
 #include <utility>
-#include <cstring>
 
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
@@ -127,6 +129,20 @@ TEST(Status, ToStringTruncates) {
   // zero-capacity must not write and must still report the needed length.
   EXPECT_EQ(s.ToString(nullptr, 0), 14u);
 }
+
+TEST(Status, ToStringNullBufferWithCapacityIsSizeQuery) {
+  Status s = Status::InvalidArgument("bad");
+  EXPECT_EQ(s.ToString(nullptr, 128), 20u);
+}
+
+#if SIZE_MAX > UINT32_MAX
+TEST(Status, OversizedHeapMessageIsRejectedBeforeAllocation) {
+  const std::size_t too_large =
+      static_cast<std::size_t>(UINT32_MAX) + std::size_t{1};
+  EXPECT_EQ(hyle::detail::status_make_heap(StatusCode::Internal, "", too_large),
+            0u);
+}
+#endif
 
 // ---- Result<T> --------------------------------------------------------------
 

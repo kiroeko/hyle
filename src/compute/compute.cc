@@ -12,6 +12,10 @@
 #include "hyle/error/result.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#if defined(HYLE_HAS_FCONTEXT)
+#  include "hyle/platform/thread.h"
+#  include "hyle/sched/fiber.h"
+#endif
 
 // compute-01 dispatch layer: the public Device/Stream/Event API forwarding through
 // the manual backend vtable (backend.h). Pure C++, no CUDA -- the CUDA calls live
@@ -35,7 +39,7 @@ struct DeviceTable {
   DeviceEntry entries[kMax];
   std::size_t count = 0;
 
-  DeviceTable() noexcept {
+  void probe() noexcept {
     // GPUs first (CUDA backend), if compiled in and any device is present.
 #if defined(HYLE_COMPUTE_CUDA)
     add_backend(cuda_vtable());
@@ -59,8 +63,36 @@ struct DeviceTable {
   }
 };
 
+#if defined(HYLE_HAS_FCONTEXT)
+void probe_device_table(void* arg) noexcept {
+  static_cast<DeviceTable*>(arg)->probe();
+}
+#endif
+
+DeviceTable build_device_table() noexcept {
+  DeviceTable result;
+#if defined(HYLE_HAS_FCONTEXT)
+  // CUDA/Vulkan's first process-wide initialization is third-party runtime code
+  // with a substantially larger stack appetite than HYLE's 64 KiB default fiber
+  // (CUDA 13.3 on Windows faults during cudaGetDeviceCount from that stack).
+  // Preserve the cheap default fiber tier: only when the first compute call
+  // happens inside a fiber, perform the one-time cold probe on a normal OS thread.
+  // Later calls only read the immutable table and pay no thread/branch overhead.
+  if (sched::Fiber::current() != nullptr) {
+    platform::ThreadOpts opts;
+    opts.name = "hyle.gpu-init";
+    auto thread = platform::Thread::spawn(&probe_device_table, &result, opts);
+    HYLE_FATAL_ASSERT(thread.has_value());
+    thread->join();
+    return result;
+  }
+#endif
+  result.probe();
+  return result;
+}
+
 const DeviceTable& table() noexcept {
-  static const DeviceTable t;
+  static const DeviceTable t = build_device_table();
   return t;
 }
 

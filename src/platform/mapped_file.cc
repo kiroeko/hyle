@@ -138,8 +138,14 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
 
 bool MappedFile::flush() noexcept {
   if (!valid() || mode_ != Mode::kReadWrite) return true;
-  if (::FlushViewOfFile(addr_, size_) == 0) return false;
-  ::FlushFileBuffers(reinterpret_cast<HANDLE>(h0_));
+  if (::FlushViewOfFile(addr_, size_) == 0) {
+    vm_set_last_error("MappedFile::flush: FlushViewOfFile failed");
+    return false;
+  }
+  if (::FlushFileBuffers(reinterpret_cast<HANDLE>(h0_)) == 0) {
+    vm_set_last_error("MappedFile::flush: FlushFileBuffers failed");
+    return false;
+  }
   return true;
 }
 
@@ -229,7 +235,11 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
 bool MappedFile::flush() noexcept {
   if (!valid() || mode_ != Mode::kReadWrite) return true;
   // msync needs a page-aligned address -> sync the whole underlying mapping.
-  return ::msync(map_base_, map_len_, MS_SYNC) == 0;
+  if (::msync(map_base_, map_len_, MS_SYNC) != 0) {
+    vm_set_last_error("MappedFile::flush: msync failed");
+    return false;
+  }
+  return true;
 }
 
 void MappedFile::reset() noexcept {

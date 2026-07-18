@@ -136,6 +136,27 @@ TEST_F(FsTest, CopyFile) {
   EXPECT_STREQ(got, "hello");
 }
 
+#if !defined(_WIN32)
+TEST_F(FsTest, CopyFileHardLinkAliasIsNoOp) {
+  std::string a = path("hardlink_src.txt"), b = path("hardlink_dst.txt");
+  std::FILE* fp = std::fopen(a.c_str(), "wb");
+  ASSERT_NE(fp, nullptr);
+  ASSERT_EQ(std::fwrite("keep me", 1, 7, fp), 7u);
+  std::fclose(fp);
+  ASSERT_EQ(::link(a.c_str(), b.c_str()), 0);
+
+  ASSERT_TRUE(copy_file(a.c_str(), b.c_str()));
+  EXPECT_EQ(file_size(a.c_str()), 7u);
+  EXPECT_EQ(file_size(b.c_str()), 7u);
+  char got[8] = {};
+  fp = std::fopen(a.c_str(), "rb");
+  ASSERT_NE(fp, nullptr);
+  EXPECT_EQ(std::fread(got, 1, 7, fp), 7u);
+  std::fclose(fp);
+  EXPECT_STREQ(got, "keep me");
+}
+#endif
+
 // Larger-than-one-chunk copy: exercises the Linux copy_file_range loop (and the
 // userspace 64 KiB-buffer loop elsewhere) over a multi-block, byte-patterned
 // file, then verifies the bytes survive intact.

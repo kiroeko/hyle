@@ -26,7 +26,9 @@ enum class ThreadPriority : std::int8_t {
 struct ThreadOpts {
   std::string_view name;                     // <=15 bytes effective on Linux
   std::optional<std::size_t> stack_size;     // bytes; honored via native attrs
-  std::optional<unsigned> affinity_cpu;      // pin to logical CPU (best-effort on macOS)
+  // Flattened logical CPU id in [0, hardware_concurrency()); Windows processor
+  // groups are hidden from callers. Best-effort on macOS.
+  std::optional<unsigned> affinity_cpu;
   std::optional<ThreadPriority> priority;    // scheduling priority (best-effort; needs privilege on POSIX)
 };
 

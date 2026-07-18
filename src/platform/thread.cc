@@ -73,13 +73,26 @@ DWORD WINAPI thread_trampoline(LPVOID arg) noexcept {
                                    kThreadNameCap);
     if (wn > 0) ::SetThreadDescription(::GetCurrentThread(), wname);
   }
-  // cpu < 64: a single-group affinity mask. cpu >= 64 would be a shift-count
-  // overflow (1 << 64 is UB, x86 masks it to bit 0 -> silently pins CPU 0) and
-  // anyway needs SetThreadGroupAffinity across a processor group (>64-core box) --
-  // not wired here, so an out-of-range pin is a best-effort no-op.
-  if (s->has_affinity && s->cpu < 64) {
-    ::SetThreadAffinityMask(::GetCurrentThread(),
-                            static_cast<DWORD_PTR>(1) << s->cpu);
+  if (s->has_affinity) {
+    // HYLE logical CPU ids flatten all active processor groups. Walk their
+    // actual sizes rather than assuming every group except the last has 64
+    // processors; SetThreadAffinityMask only addresses the current group.
+    unsigned cpu = s->cpu;
+    const WORD groups = ::GetActiveProcessorGroupCount();
+    for (WORD group = 0; group < groups; ++group) {
+      const DWORD count = ::GetActiveProcessorCount(group);
+      if (cpu < count) {
+        if (cpu < sizeof(KAFFINITY) * 8u) {
+          GROUP_AFFINITY affinity{};
+          affinity.Group = group;
+          affinity.Mask = static_cast<KAFFINITY>(1) << cpu;
+          (void)::SetThreadGroupAffinity(::GetCurrentThread(), &affinity,
+                                         nullptr);
+        }
+        break;
+      }
+      cpu -= count;
+    }
   }
   if (s->has_priority) {
     int p = THREAD_PRIORITY_NORMAL;
@@ -126,12 +139,14 @@ Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
 void Thread::join() {
   HYLE_FATAL_ASSERT(joinable());  // join on a non-joinable Thread is a contract bug
   HANDLE h = reinterpret_cast<HANDLE>(handle_);
-  ::WaitForSingleObject(h, INFINITE);
-  ::CloseHandle(h);
+  HYLE_FATAL_ASSERT(::WaitForSingleObject(h, INFINITE) == WAIT_OBJECT_0);
+  HYLE_FATAL_ASSERT(::CloseHandle(h) != 0);
   handle_ = 0;
 }
 
 unsigned hardware_concurrency() noexcept {
+  const DWORD all = ::GetActiveProcessorCount(ALL_PROCESSOR_GROUPS);
+  if (all != 0) return static_cast<unsigned>(all);
   SYSTEM_INFO si;
   ::GetSystemInfo(&si);
   return si.dwNumberOfProcessors ? si.dwNumberOfProcessors : 1u;
@@ -273,7 +288,7 @@ void Thread::join() {
   HYLE_FATAL_ASSERT(joinable());  // join on a non-joinable Thread is a contract bug
   pthread_t tid{};
   std::memcpy(&tid, &handle_, sizeof(tid));
-  ::pthread_join(tid, nullptr);
+  HYLE_FATAL_ASSERT(::pthread_join(tid, nullptr) == 0);
   handle_ = 0;
 }
 

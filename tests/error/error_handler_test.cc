@@ -175,6 +175,25 @@ void concurrent_report(hyle::error_handler_o*, Severity, const char*,
 }
 }  // namespace
 
+namespace {
+std::atomic<int> g_reentrant_hits{0};
+void reentrant_report(hyle::error_handler_o*, Severity, const char*,
+                      std::uint32_t, const char*) {
+  const int hit = g_reentrant_hits.fetch_add(1, std::memory_order_relaxed);
+  if (hit == 0) HYLE_WARN("nested diagnostic");
+}
+}  // namespace
+
+TEST(ErrorHandler, HandlerMayReportRecursively) {
+  g_reentrant_hits.store(0, std::memory_order_relaxed);
+  hyle::error_handler_t custom{nullptr, &reentrant_report};
+  const hyle::error_handler_t* prev =
+      hyle::error_set_default_handler(&custom);
+  HYLE_ERROR("outer diagnostic");
+  hyle::error_set_default_handler(prev);
+  EXPECT_EQ(g_reentrant_hits.load(std::memory_order_relaxed), 2);
+}
+
 TEST(ErrorHandler, ConcurrentReportsAreCounted) {
   // ErrorRecord counts are not atomic; use a custom handler with atomic hits.
   g_concurrent_hits.store(0);

@@ -631,20 +631,39 @@ bool rename_path(const char* from, const char* to) noexcept {
 }
 
 bool copy_file(const char* from, const char* to) noexcept {
-  // Self-copy would truncate the file to empty (O_TRUNC on `to` opens the same
-  // inode `from` reads from). Guard the identical-path case; distinct paths to
-  // the same inode (hard link) are rare and left to the caller.
+  // Self-copy is a successful no-op. This string check is only a fast path:
+  // distinct names may still be hard links to the same inode.
   if (from != nullptr && to != nullptr && std::strcmp(from, to) == 0) return true;
   int in = ::open(from, O_RDONLY | O_CLOEXEC);
   if (in < 0) return false;
-  struct ::stat s;
-  if (::fstat(in, &s) != 0) {
+  struct ::stat in_stat;
+  if (::fstat(in, &in_stat) != 0) {
     ::close(in);
     return false;
   }
-  int out = ::open(to, O_WRONLY | O_CREAT | O_TRUNC | O_CLOEXEC, s.st_mode & 0777);
+  // Open without O_TRUNC, then compare the opened descriptors. Checking paths
+  // before open has a TOCTOU race and misses hard-link aliases; truncating first
+  // would destroy the source before we discover that both fds name one inode.
+  int out =
+      ::open(to, O_WRONLY | O_CREAT | O_CLOEXEC, in_stat.st_mode & 0777);
   if (out < 0) {
     ::close(in);
+    return false;
+  }
+  struct ::stat out_stat;
+  if (::fstat(out, &out_stat) != 0) {
+    ::close(in);
+    ::close(out);
+    return false;
+  }
+  if (in_stat.st_dev == out_stat.st_dev &&
+      in_stat.st_ino == out_stat.st_ino) {
+    ::close(in);
+    return ::close(out) == 0;
+  }
+  if (::ftruncate(out, 0) != 0) {
+    ::close(in);
+    ::close(out);
     return false;
   }
 
@@ -655,7 +674,7 @@ bool copy_file(const char* from, const char* to) noexcept {
   // on the FIRST call (EXDEV cross-fs / ENOSYS old kernel / EINVAL), i.e. before
   // any bytes are written, so the fallback can't double-copy.
   bool use_userspace = false;
-  off_t remaining = s.st_size;
+  off_t remaining = in_stat.st_size;
   bool any_copied = false;
   while (remaining > 0) {
     ssize_t n = ::copy_file_range(in, nullptr, out, nullptr,
@@ -697,14 +716,18 @@ bool copy_file(const char* from, const char* to) noexcept {
           ok = false;
           break;
         }
+        if (wrote == 0) {
+          ok = false;  // no forward progress; avoid an infinite loop
+          break;
+        }
         left -= wrote;
         p += wrote;
       }
       if (!ok) break;
     }
   }
-  ::close(in);
-  ::close(out);
+  if (::close(in) != 0) ok = false;
+  if (::close(out) != 0) ok = false;
   return ok;
 }
 

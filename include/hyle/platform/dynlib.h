@@ -55,8 +55,9 @@ class DynLib {
   HYLE_PLATFORM_API static DynLib get(const char* path) noexcept;
 
   // A handle to the current process image (POSIX dlopen(nullptr) / Win
-  // GetModuleHandle(nullptr)) for resolving already-loaded symbols. Does NOT own
-  // a refcount to free -- its destructor is a no-op.
+  // GetModuleHandle(nullptr)) for resolving already-loaded symbols. Windows is
+  // non-owning; POSIX dlopen increments a refcount, so the destructor balances
+  // it with dlclose.
   HYLE_PLATFORM_API static DynLib current() noexcept;
 
   DynLib() noexcept = default;

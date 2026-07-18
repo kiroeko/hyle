@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <limits>
 #include <new>
 
 #include "hyle/error/result.h"
@@ -66,6 +67,10 @@ std::uintptr_t status_make_heap(StatusCode code, const char* msg,
     return 0;
   }
 #endif
+  if (len > std::numeric_limits<std::uint32_t>::max() ||
+      len > std::numeric_limits<std::size_t>::max() - sizeof(StatusRep) - 1) {
+    return 0;
+  }
   void* mem = std::malloc(sizeof(StatusRep) + len + 1);
   // OOM while building an error message is operational, not a bug: return 0 so
   // the caller degrades to the message-less inline encoding (charter: OOM -> a
@@ -109,6 +114,7 @@ std::string_view status_heap_message(std::uintptr_t rep) noexcept {
 }  // namespace detail
 
 std::size_t Status::ToString(char* buf, std::size_t cap) const noexcept {
+  if (buf == nullptr) cap = 0;
   // Build "OK" | "CODE" | "CODE: message" by appending pieces, tracking the
   // total length needed regardless of cap (snprintf contract). A local appender
   // copies only what fits; `need` keeps counting past the buffer end.

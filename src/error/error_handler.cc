@@ -4,6 +4,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <mutex>
 
 namespace hyle {
 
@@ -27,6 +28,13 @@ constexpr error_handler_t kStderrHandler{nullptr, stderr_report};
 // Atomic so a handler swap (e.g. a test recorder) races cleanly with reporters.
 std::atomic<const error_handler_t*> g_default{&kStderrHandler};
 
+// A handler pointer is non-owning, so atomic publication alone is insufficient:
+// a reporter could load a stack-backed handler just before another thread
+// restores and destroys it. Serialize replacement with callback execution. A
+// recursive mutex intentionally permits a handler to report again or replace
+// itself from inside its callback.
+std::recursive_mutex g_dispatch_mutex;
+
 }  // namespace
 
 const error_handler_t* error_default_handler() noexcept {
@@ -35,6 +43,7 @@ const error_handler_t* error_default_handler() noexcept {
 
 const error_handler_t* error_set_default_handler(
     const error_handler_t* h) noexcept {
+  std::lock_guard<std::recursive_mutex> lock(g_dispatch_mutex);
   if (h == nullptr) h = &kStderrHandler;
   return g_default.exchange(h, std::memory_order_acq_rel);
 }
@@ -47,8 +56,11 @@ void error_report(Severity sev, const char* file, std::uint32_t line,
   std::vsnprintf(buf, sizeof(buf), format, args);
   va_end(args);
 
-  const error_handler_t* h = g_default.load(std::memory_order_acquire);
-  h->report(h->inst, sev, file, line, buf);
+  {
+    std::lock_guard<std::recursive_mutex> lock(g_dispatch_mutex);
+    const error_handler_t* h = g_default.load(std::memory_order_acquire);
+    h->report(h->inst, sev, file, line, buf);
+  }
 
   // Fatal always crashes, regardless of handler -- the handler logged/dialoged,
   // now honor fail-fast. (clay tripped a null write; HYLE_TRAP is the clean form.)

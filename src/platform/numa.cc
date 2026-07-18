@@ -195,9 +195,23 @@ unsigned numa_node_of_cpu(unsigned cpu) noexcept {
 #if defined(HYLE_OS_WINDOWS)
   auto& f = win_fns();
   if (f.get_node_ex) {
+    WORD target_group = 0;
+    unsigned number_in_group = cpu;
+    const WORD groups = ::GetActiveProcessorGroupCount();
+    bool found = false;
+    for (WORD group = 0; group < groups; ++group) {
+      const DWORD active = ::GetActiveProcessorCount(group);
+      if (number_in_group < active) {
+        target_group = group;
+        found = true;
+        break;
+      }
+      number_in_group -= active;
+    }
+    if (!found || number_in_group > 0xFFu) return 0u;
     PROCESSOR_NUMBER pnum{};
-    pnum.Group = static_cast<WORD>(cpu / 64u);   // >64-core boxes span groups
-    pnum.Number = static_cast<BYTE>(cpu % 64u);
+    pnum.Group = target_group;
+    pnum.Number = static_cast<BYTE>(number_in_group);
     USHORT node = 0;
     if (f.get_node_ex(&pnum, &node)) {
       const unsigned n = static_cast<unsigned>(node);  // 0xFFFF (no node) -> 0 below

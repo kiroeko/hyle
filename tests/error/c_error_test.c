@@ -45,6 +45,19 @@ static void on_report2(void* user, hyle_severity sev, const char* file,
   ++g_handler2_hits;
 }
 
+static int g_self_uninstall_hits = 0;
+static void on_report_and_uninstall(void* user, hyle_severity sev,
+                                    const char* file, uint32_t line,
+                                    const char* message) {
+  (void)user;
+  (void)sev;
+  (void)file;
+  (void)line;
+  (void)message;
+  ++g_self_uninstall_hits;
+  hyle_error_set_handler(NULL, NULL);
+}
+
 static hyle_status helper_fail(void) {
   return hyle_status_not_found("gone");
 }
@@ -223,6 +236,14 @@ int main(void) {
   }
 
   hyle_error_set_handler(NULL, NULL);
+
+  /* Handler replacement is reentrant: a callback may uninstall itself. */
+  g_self_uninstall_hits = 0;
+  hyle_error_set_handler(on_report_and_uninstall, NULL);
+  hyle_error_report(HYLE_SEVERITY_ERROR, "c_error_test.c", 5,
+                    "self-uninstall");
+  CHECK(g_self_uninstall_hits == 1);
+  hyle_error_set_handler(NULL, NULL);  /* already uninstalled: safe no-op */
 
   /* HYLE_C_RETURN_IF_ERROR */
   {
