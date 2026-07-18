@@ -71,7 +71,11 @@ DWORD WINAPI thread_trampoline(LPVOID arg) noexcept {
                                    kThreadNameCap);
     if (wn > 0) ::SetThreadDescription(::GetCurrentThread(), wname);
   }
-  if (s->has_affinity) {
+  // cpu < 64: a single-group affinity mask. cpu >= 64 would be a shift-count
+  // overflow (1 << 64 is UB, x86 masks it to bit 0 -> silently pins CPU 0) and
+  // anyway needs SetThreadGroupAffinity across a processor group (>64-core box) --
+  // not wired here, so an out-of-range pin is a best-effort no-op.
+  if (s->has_affinity && s->cpu < 64) {
     ::SetThreadAffinityMask(::GetCurrentThread(),
                             static_cast<DWORD_PTR>(1) << s->cpu);
   }
@@ -111,6 +115,7 @@ Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
 }
 
 void Thread::join() {
+  HYLE_FATAL_ASSERT(joinable());  // join on a non-joinable Thread is a contract bug
   HANDLE h = reinterpret_cast<HANDLE>(handle_);
   ::WaitForSingleObject(h, INFINITE);
   ::CloseHandle(h);
@@ -161,7 +166,10 @@ void* thread_trampoline(void* arg) noexcept {
 #  endif
   }
 #  if defined(HYLE_OS_LINUX)
-  if (s->has_affinity) {
+  // cpu < CPU_SETSIZE (1024): fits a fixed cpu_set_t. Beyond it CPU_SET would
+  // write out of bounds, so an out-of-range pin is a best-effort no-op (a
+  // >1024-core box needs a CPU_ALLOC-sized dynamic set -- not wired here).
+  if (s->has_affinity && s->cpu < CPU_SETSIZE) {
     cpu_set_t set;
     CPU_ZERO(&set);
     CPU_SET(s->cpu, &set);
@@ -237,6 +245,7 @@ Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
 }
 
 void Thread::join() {
+  HYLE_FATAL_ASSERT(joinable());  // join on a non-joinable Thread is a contract bug
   pthread_t tid{};
   std::memcpy(&tid, &handle_, sizeof(tid));
   ::pthread_join(tid, nullptr);
