@@ -19,7 +19,7 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 - 无效对齐从"静默野指针"→ clean trap(abort)。`MemoryArena` ctor 本就 clamp alignment 到 16,不受影响。
 - **状态**:代码改完,Windows mem 测试全绿。**待**:WSL/mac 三平台复验(和后续改动一起做)。
 
-### #2 池耗尽/OOM graceful + last-error 字符串 [未做;档 A/B 决策待用户拍板]
+### #2 池耗尽/OOM graceful + last-error 字符串 [档 A 已做 d1f7930 + 测试已补;档 B 未做,待用户拍板]
 依据:c-abi-authoring-guide §3 铁律 3 明文"真边界故障(`new` OOM / base==NULL / backing 缺指针)→ **返 NULL**;契约违反 → abort"。当前 slab-OOM / 池耗尽走 abort,**违反了本库自己的铁律**。用户诉求:"保证 C ABI 也能拿到失败的字符串"(类似 error 模块的 `hyle_status_message_cstr`)。
 - **档 A(安全,建议先做)**:
   - `Arena` 借块耗尽(memory_arena.h:317 `HYLE_FATAL_ASSERT(block_ != nullptr)`)改可失败:ctor early-return 置 invalid + 加 `valid()`。
@@ -35,15 +35,16 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 - 重构 `GrowablePool` 为"非模板运行时核心(slot_size / slot_align / initial_cap)+ `GrowablePool<T>` 薄包装",对齐 `MemoryArena`(非模板)↔ `ObjectPool<T>`(包装)架构。stride 用 `align_up(max(sizeof(void*), slot_size), max(alignof(void*), slot_align))` 运行时算。
 - C ABI 六件套:`hyle_growable_pool_o` + `hyle_growable_pool_create(backing, slot_size, slot_align, initial_cap)` / `acquire` / `release` / `reset` / `capacity` + `HYLE_GROWABLE_POOL_CREATE(backing, T, cap)` typed 宏(套 `HYLE_OBJECT_POOL_CREATE`)。
 
-### #4 测试补齐 [未做]
-- **mock 失败分配器**(backing alloc 返 nullptr):验 #2 的 last-error/NULL 路径。全仓 tests/mem **目前无任何失败分配器**,OOM 路径零覆盖。
+### #4 测试补齐 [部分:arena 耗尽 C 测试已补;其余未做]
+- **[已补]** `hyle_arena_create` 池耗尽 → NULL + 非空 last-error 的 C 测试(c_mem_test.c,配合 #2 档 A)。用真实单块 pool 借空触发,非 mock 分配器。
+- **mock 失败分配器**(backing alloc 返 nullptr):验 #2 **档 B** 的 slab-OOM last-error/NULL 路径。全仓 tests/mem **目前无任何失败分配器**,OOM 路径零覆盖。
 - `alignment==0` 的 death test(`EXPECT_DEATH`):锁死 #1 修复。
 - GrowablePool 的 C 测试(配合 #3)。
 - (增强,非缺陷)线程扩展曲线 bench(现 bench 写死 8 线程)、耗尽×并发紧张池。
 
-### #5 hardening [未做,低危]
-- `MemoryArena` 的 `block_size` 上界校验,防 `stride * count` 溢出(64位不实际/32位可能)。
-- `Allocator::valid()`(allocator.h:58)查全三指针(现只查 `alloc_fn`,null free/realloc 会 deref)。
+### #5 hardening [#5a 已做 d1f7930;#5b 未做,低危]
+- **[#5b 未做]** `MemoryArena` 的 `block_size` 上界校验,防 `stride * count` 溢出(64位不实际/32位可能)。
+- **[#5a 已做 d1f7930]** `Allocator::valid()`(allocator.h:58-63)查全三指针(原只查 `alloc_fn`,null free/realloc 会 deref)。
 
 ### 文档同步 [未做]
 - **c-abi-design.md**:§1 类型擦除表加 GrowablePool 行(和 ObjectPool 并列);§5 补 mem 分配器层错误策略(资源失败 nullptr + last-error / 契约违反 abort,明确区别于 error 模块的 Status——mem 刻意不依赖 error 模块是对的)。

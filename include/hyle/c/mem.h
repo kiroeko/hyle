@@ -191,9 +191,11 @@ hyle_stack_allocator_as_allocator(hyle_stack_allocator_o* s);
 
 typedef struct hyle_arena_o hyle_arena_o;
 
-/* Borrows one block from `pool` (which must outlive the arena). NULL if pool is
- * NULL or the wrapper allocation fails. A pool with no free block fail-fasts
- * (abort) in the C++ Arena ctor -- borrowing is a contract, same as C++. */
+/* Borrows one block from `pool` (which must outlive the arena). Returns NULL if
+ * `pool` is NULL, the wrapper allocation fails, or the pool has no free block
+ * (exhausted) -- the exhausted case sets hyle_mem_last_error("...pool
+ * exhausted..."). Pool exhaustion is a graceful resource failure (NULL), not a
+ * contract violation: the C++ Arena ctor does NOT abort on it. */
 HYLE_MEM_C_API hyle_arena_o* hyle_arena_create(hyle_memory_arena_o* pool);
 HYLE_MEM_C_API void hyle_arena_destroy(hyle_arena_o* a); /* returns block to pool */
 HYLE_MEM_C_API void* hyle_arena_allocate(hyle_arena_o* a, size_t bytes,

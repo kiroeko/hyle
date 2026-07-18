@@ -160,6 +160,24 @@ int main(void) {
     hyle_memory_arena_destroy(pool);
   }
 
+  /* ---- Arena: pool exhaustion is graceful -- NULL + last-error, not abort
+   * (followup #2 arch A: hyle_arena_create no longer aborts when the backing
+   * pool has no free block; it returns NULL and sets hyle_mem_last_error) ---- */
+  {
+    hyle_memory_arena_o* pool = hyle_memory_arena_create(sys, 4096, 1, 0);
+    CHECK(pool != NULL);
+    hyle_arena_o* a1 = hyle_arena_create(pool);  /* borrows the only block */
+    CHECK(a1 != NULL);
+    hyle_arena_o* a2 = hyle_arena_create(pool);  /* pool exhausted */
+    CHECK(a2 == NULL);                           /* graceful NULL, not abort */
+    CHECK(hyle_mem_last_error()[0] != '\0');     /* a non-empty reason string */
+    hyle_arena_destroy(a1);                      /* returns the only block */
+    hyle_arena_o* a3 = hyle_arena_create(pool);  /* borrowable again */
+    CHECK(a3 != NULL);
+    hyle_arena_destroy(a3);
+    hyle_memory_arena_destroy(pool);
+  }
+
   /* ---- HugeRegion: open / write / destroy (THP hint) ---- */
   {
     /* 4 MiB span; THP hint is soft, so open must still succeed everywhere. */
