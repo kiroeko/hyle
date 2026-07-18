@@ -17,30 +17,35 @@
 namespace hyle {
 
 // ---- status code table (single source of truth) ----------------------------
-// X-macro: add a code by adding ONE line here; the enum, the name table, the
-// factory functions and the Is<Code>() predicates are all generated from it.
-// Code set follows the well-understood abseil/gRPC canonical taxonomy.
-//   X(Name, value)
+// X-macro: each row is X(PascalName, SCREAMING_NAME, value). The C++ StatusCode
+// enum, name table, factories and Is<Code>() predicates are generated from it.
+// The C ABI enum hyle_status_code (hyle/c/error.h) is hand-written for a clean
+// FFI header, but c_error.cc static_asserts every row against it -- a value
+// drift or a missing/renamed C code fails to compile. Adding a code = one row
+// here + one line in hyle/c/error.h (enum value + inline factory/predicate).
+// Code set follows the abseil/gRPC canonical taxonomy.
+//   X(PascalName, SCREAMING_NAME, value)
 #define HYLE_FOREACH_STATUS_CODE(X)                                            \
-  X(Ok, 0)                                                                     \
-  X(Cancelled, 1)                                                              \
-  X(Unknown, 2)                                                                \
-  X(InvalidArgument, 3)                                                        \
-  X(DeadlineExceeded, 4)                                                       \
-  X(NotFound, 5)                                                               \
-  X(AlreadyExists, 6)                                                          \
-  X(PermissionDenied, 7)                                                       \
-  X(ResourceExhausted, 8)                                                      \
-  X(FailedPrecondition, 9)                                                     \
-  X(Aborted, 10)                                                               \
-  X(OutOfRange, 11)                                                            \
-  X(Unimplemented, 12)                                                         \
-  X(Internal, 13)                                                              \
-  X(Unavailable, 14)                                                           \
-  X(DataLoss, 15)
+  X(Ok, OK, 0)                                                                 \
+  X(Cancelled, CANCELLED, 1)                                                   \
+  X(Unknown, UNKNOWN, 2)                                                       \
+  X(InvalidArgument, INVALID_ARGUMENT, 3)                                      \
+  X(DeadlineExceeded, DEADLINE_EXCEEDED, 4)                                    \
+  X(NotFound, NOT_FOUND, 5)                                                    \
+  X(AlreadyExists, ALREADY_EXISTS, 6)                                          \
+  X(PermissionDenied, PERMISSION_DENIED, 7)                                    \
+  X(ResourceExhausted, RESOURCE_EXHAUSTED, 8)                                  \
+  X(FailedPrecondition, FAILED_PRECONDITION, 9)                                \
+  X(Aborted, ABORTED, 10)                                                      \
+  X(OutOfRange, OUT_OF_RANGE, 11)                                              \
+  X(Unimplemented, UNIMPLEMENTED, 12)                                          \
+  X(Internal, INTERNAL, 13)                                                    \
+  X(Unavailable, UNAVAILABLE, 14)                                              \
+  X(DataLoss, DATA_LOSS, 15)                                                   \
+  X(Unauthenticated, UNAUTHENTICATED, 16)
 
 enum class StatusCode : std::uint16_t {
-#define HYLE_STATUS_ENUMERATOR(name, value) name = value,
+#define HYLE_STATUS_ENUMERATOR(name, screaming, value) name = value,
   HYLE_FOREACH_STATUS_CODE(HYLE_STATUS_ENUMERATOR)
 #undef HYLE_STATUS_ENUMERATOR
 };
@@ -143,13 +148,13 @@ class [[nodiscard]] Status {
   HYLE_ERROR_API std::size_t ToString(char* buf, std::size_t cap) const noexcept;
 
   // Per-code predicates: IsNotFound(), IsCancelled(), ... (Ok included).
-#define HYLE_STATUS_PREDICATE(name, value)                                     \
+#define HYLE_STATUS_PREDICATE(name, screaming, value)                          \
   bool Is##name() const noexcept { return code() == StatusCode::name; }
   HYLE_FOREACH_STATUS_CODE(HYLE_STATUS_PREDICATE)
 #undef HYLE_STATUS_PREDICATE
 
   // Per-code factories: Status::NotFound("msg"), Status::Internal("msg"), ...
-#define HYLE_STATUS_FACTORY(name, value)                                       \
+#define HYLE_STATUS_FACTORY(name, screaming, value)                            \
   static Status name(std::string_view message = {}) {                          \
     return Status(StatusCode::name, message);                                  \
   }

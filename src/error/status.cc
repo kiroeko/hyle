@@ -14,7 +14,7 @@ namespace hyle {
 
 std::string_view status_code_name(StatusCode code) noexcept {
   switch (code) {
-#define HYLE_STATUS_NAME_CASE(name, value) \
+#define HYLE_STATUS_NAME_CASE(name, screaming, value) \
   case StatusCode::name:                   \
     return #name;
     HYLE_FOREACH_STATUS_CODE(HYLE_STATUS_NAME_CASE)

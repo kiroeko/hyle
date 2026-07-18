@@ -24,7 +24,7 @@
 
 | 类型 | 含义 |
 |---|---|
-| `hyle_status_code` | 稳定整型码：`HYLE_STATUS_OK`…`HYLE_STATUS_DATA_LOSS`（0…15） |
+| `hyle_status_code` | 稳定整型码：`HYLE_STATUS_OK`…`HYLE_STATUS_UNAUTHENTICATED`（0…16，abseil/gRPC canonical；值与 C++ `StatusCode` 恒等，`c_error.cc` static_assert 锁死） |
 | `hyle_status` | **拥有型** 8B 句柄（`uintptr_t rep`）；禁止手改 / 禁止 `t=s` 当拷贝 |
 | `hyle_severity` | `HYLE_SEVERITY_WARNING` / `ERROR` / `FATAL` |
 | `hyle_error_report_fn` | 诊断回调：`(user, severity, file, line, message)` |
@@ -65,6 +65,7 @@
 | `hyle_status_code_name` | `(code) → const char*` | 静态字面量，如 `"NotFound"` |
 | `hyle_status_message` | `(s, buf, cap) → size_t` | 仅消息；返回完整长度，`>=cap` 截断 |
 | `hyle_status_to_string` | `(s, buf, cap) → size_t` | 如 `"Internal: boom"` |
+| `hyle_status_message_cstr` | `(s) → const char*` | 借用指针（NUL 终止），随 handle 存活到 free/move；无消息→`""`；零拷贝，FFI 友好 |
 | `hyle_error_set_handler` | `(fn, user)` | 简单单槽：`fn==NULL` 恢复默认 stderr；二次调用覆盖前一个（被替换的丢失）|
 | `hyle_error_push_handler` | `(fn, user) → hyle_error_saved_handler_o*` | 嵌套安全：装 `fn` 并返回 opaque token（捕获被替换的 handler）；分配失败→NULL（handler 仍已装）|
 | `hyle_error_pop_handler` | `(saved)` | 重装 token 记录的 handler 并释放 token；严格 LIFO（配对 push）；`saved==NULL` no-op |
@@ -92,13 +93,14 @@
 | `hyle_status_internal` | `INTERNAL` |
 | `hyle_status_unavailable` | `UNAVAILABLE` |
 | `hyle_status_data_loss` | `DATA_LOSS` |
+| `hyle_status_unauthenticated` | `UNAUTHENTICATED` |
 
 ### 4.3 头内 inline 谓词
 
 | 符号 | 说明 |
 |---|---|
 | `hyle_status_code_is(s, code)` | 通用 |
-| `hyle_status_is_cancelled` … `hyle_status_is_data_loss` | 与上表全码 1:1（**不含** `is_ok`，ok 走 DLL） |
+| `hyle_status_is_cancelled` … `hyle_status_is_unauthenticated` | 与上表全码 1:1（**不含** `is_ok`，ok 走 DLL） |
 
 ### 4.4 源码位宏（展开为 report / reportf）
 

@@ -15,47 +15,27 @@
 namespace {
 
 hyle::StatusCode to_cpp_code(hyle_status_code c) noexcept {
-  using hyle::StatusCode;
-  switch (c) {
-    case HYLE_STATUS_OK:
-      return StatusCode::Ok;
-    case HYLE_STATUS_CANCELLED:
-      return StatusCode::Cancelled;
-    case HYLE_STATUS_UNKNOWN:
-      return StatusCode::Unknown;
-    case HYLE_STATUS_INVALID_ARGUMENT:
-      return StatusCode::InvalidArgument;
-    case HYLE_STATUS_DEADLINE_EXCEEDED:
-      return StatusCode::DeadlineExceeded;
-    case HYLE_STATUS_NOT_FOUND:
-      return StatusCode::NotFound;
-    case HYLE_STATUS_ALREADY_EXISTS:
-      return StatusCode::AlreadyExists;
-    case HYLE_STATUS_PERMISSION_DENIED:
-      return StatusCode::PermissionDenied;
-    case HYLE_STATUS_RESOURCE_EXHAUSTED:
-      return StatusCode::ResourceExhausted;
-    case HYLE_STATUS_FAILED_PRECONDITION:
-      return StatusCode::FailedPrecondition;
-    case HYLE_STATUS_ABORTED:
-      return StatusCode::Aborted;
-    case HYLE_STATUS_OUT_OF_RANGE:
-      return StatusCode::OutOfRange;
-    case HYLE_STATUS_UNIMPLEMENTED:
-      return StatusCode::Unimplemented;
-    case HYLE_STATUS_INTERNAL:
-      return StatusCode::Internal;
-    case HYLE_STATUS_UNAVAILABLE:
-      return StatusCode::Unavailable;
-    case HYLE_STATUS_DATA_LOSS:
-      return StatusCode::DataLoss;
-  }
-  return StatusCode::Unknown;
+  // Values are identical to StatusCode by construction (static_assert'd below),
+  // so this is a plain cast -- no switch to keep in sync. An out-of-range FFI
+  // input is a contract violation, deliberately not clamped to Unknown here
+  // (status_code_name still maps unknown values to "Unknown").
+  return static_cast<hyle::StatusCode>(static_cast<std::uint16_t>(c));
 }
 
 hyle_status_code to_c_code(hyle::StatusCode c) noexcept {
   return static_cast<hyle_status_code>(static_cast<std::uint16_t>(c));
 }
+
+// Single-source-of-truth guard: the hand-written C enum (hyle/c/error.h) and the
+// X-macro-generated C++ StatusCode must agree value-for-value, since both casts
+// above depend on it. Every row of the shared list is checked here -- add or
+// renumber a code on one side without the other and this fails to compile.
+#define HYLE_STATUS_ABI_MATCH(name, screaming, value)                          \
+  static_assert(static_cast<std::uint16_t>(hyle::StatusCode::name) ==          \
+                    static_cast<std::uint16_t>(HYLE_STATUS_##screaming),       \
+                "C hyle_status_code drifted from C++ StatusCode: " #screaming);
+HYLE_FOREACH_STATUS_CODE(HYLE_STATUS_ABI_MATCH)
+#undef HYLE_STATUS_ABI_MATCH
 
 hyle_status steal_to_c(hyle::Status&& s) noexcept {
   hyle_status out;
@@ -194,6 +174,16 @@ size_t hyle_status_to_string(hyle_status s, char* buf, size_t cap) {
   size_t n = tmp.ToString(buf, cap);
   (void)tmp.release_rep();
   return n;
+}
+
+const char* hyle_status_message_cstr(hyle_status s) {
+  hyle::Status tmp = adopt_from_c(s);
+  std::string_view m = tmp.message();
+  (void)tmp.release_rep();
+  // Heap message bytes are NUL-terminated and owned by the caller's handle, so
+  // the pointer stays valid until it is freed/moved; OK/inline codes carry no
+  // message -> return the empty string rather than a NULL data() pointer.
+  return m.empty() ? "" : m.data();
 }
 
 void hyle_error_set_handler(hyle_error_report_fn fn, void* user) {

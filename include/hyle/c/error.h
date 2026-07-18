@@ -45,7 +45,8 @@ typedef enum hyle_status_code {
   HYLE_STATUS_UNIMPLEMENTED = 12,
   HYLE_STATUS_INTERNAL = 13,
   HYLE_STATUS_UNAVAILABLE = 14,
-  HYLE_STATUS_DATA_LOSS = 15
+  HYLE_STATUS_DATA_LOSS = 15,
+  HYLE_STATUS_UNAUTHENTICATED = 16
 } hyle_status_code;
 
 typedef struct hyle_status {
@@ -70,6 +71,12 @@ HYLE_ERROR_C_API size_t hyle_status_message(hyle_status s, char* buf,
                                             size_t cap);
 HYLE_ERROR_C_API size_t hyle_status_to_string(hyle_status s, char* buf,
                                               size_t cap);
+
+/* Borrowed, NUL-terminated pointer to the message bytes, valid until this
+ * status is freed/moved/cloned-over. Returns "" when there is no message (OK or
+ * a message-less code). Zero-copy, no sizing round-trip -- the FFI-friendly
+ * counterpart to the buffer-fill hyle_status_message above. */
+HYLE_ERROR_C_API const char* hyle_status_message_cstr(hyle_status s);
 
 /* ---- factories (header-inline) --------------------------------------------- */
 static inline hyle_status hyle_status_cancelled(const char* msg) {
@@ -116,6 +123,9 @@ static inline hyle_status hyle_status_unavailable(const char* msg) {
 }
 static inline hyle_status hyle_status_data_loss(const char* msg) {
   return hyle_status_new(HYLE_STATUS_DATA_LOSS, msg);
+}
+static inline hyle_status hyle_status_unauthenticated(const char* msg) {
+  return hyle_status_new(HYLE_STATUS_UNAUTHENTICATED, msg);
 }
 
 /* ---- predicates (header-inline; full code set) ----------------------------- */
@@ -166,6 +176,9 @@ static inline int hyle_status_is_unavailable(hyle_status s) {
 }
 static inline int hyle_status_is_data_loss(hyle_status s) {
   return hyle_status_code_is(s, HYLE_STATUS_DATA_LOSS);
+}
+static inline int hyle_status_is_unauthenticated(hyle_status s) {
+  return hyle_status_code_is(s, HYLE_STATUS_UNAUTHENTICATED);
 }
 
 /* ---- diagnostic sink ------------------------------------------------------- */

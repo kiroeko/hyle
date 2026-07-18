@@ -60,6 +60,7 @@ int main(void) {
   CHECK(hyle_status_is_ok(ok));
   CHECK(hyle_status_get_code(ok) == HYLE_STATUS_OK);
   CHECK(!hyle_status_has_message(ok));
+  CHECK(strcmp(hyle_status_message_cstr(ok), "") == 0);  /* OK -> "" */
   {
     char buf[32];
     size_t n = hyle_status_to_string(ok, buf, sizeof(buf));
@@ -75,6 +76,7 @@ int main(void) {
   CHECK(hyle_status_is_not_found(nf));
   CHECK(hyle_status_code_is(nf, HYLE_STATUS_NOT_FOUND));
   CHECK(strcmp(hyle_status_code_name(HYLE_STATUS_NOT_FOUND), "NotFound") == 0);
+  CHECK(hyle_status_message_cstr(nf)[0] == '\0');  /* inline code, no message */
 
   hyle_status ca = hyle_status_cancelled(NULL);
   CHECK(hyle_status_is_cancelled(ca));
@@ -112,6 +114,11 @@ int main(void) {
   hyle_status dl = hyle_status_data_loss(NULL);
   CHECK(hyle_status_is_data_loss(dl));
   hyle_status_free(&dl);
+  hyle_status au = hyle_status_unauthenticated(NULL);
+  CHECK(hyle_status_is_unauthenticated(au));
+  CHECK(strcmp(hyle_status_code_name(HYLE_STATUS_UNAUTHENTICATED),
+               "Unauthenticated") == 0);
+  hyle_status_free(&au);
 
   /* clone + free original */
   hyle_status nf2 = hyle_status_clone(nf);
@@ -163,6 +170,8 @@ int main(void) {
     char full[64];
     hyle_status_to_string(boom, full, sizeof(full));
     CHECK(strcmp(full, "Internal: boom") == 0);
+    const char* cm = hyle_status_message_cstr(boom);  /* zero-copy borrow */
+    CHECK(cm != NULL && strcmp(cm, "boom") == 0);
   }
   hyle_status_free(&boom);
 

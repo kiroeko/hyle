@@ -90,7 +90,7 @@ TEST(Status, MoveLeavesUsableSource) {
 // ---- exhaustive code-name table (every X-macro row) -------------------------
 
 TEST(Status, EveryCodeNameRoundTrips) {
-#define HYLE_CHECK_NAME(name, value) \
+#define HYLE_CHECK_NAME(name, screaming, value) \
   EXPECT_EQ(status_code_name(StatusCode::name), #name);
   HYLE_FOREACH_STATUS_CODE(HYLE_CHECK_NAME)
 #undef HYLE_CHECK_NAME
@@ -99,7 +99,7 @@ TEST(Status, EveryCodeNameRoundTrips) {
 TEST(Status, EveryFactoryAndPredicateAgree) {
   // For each code, the factory must produce a status whose matching predicate
   // is true and whose code/name line up.
-#define HYLE_CHECK_FACTORY(name, value)                       \
+#define HYLE_CHECK_FACTORY(name, screaming, value)            \
   {                                                           \
     Status s = Status::name();                                \
     EXPECT_EQ(s.code(), StatusCode::name);                    \
