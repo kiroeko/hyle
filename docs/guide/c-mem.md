@@ -78,6 +78,17 @@ typedef struct hyle_allocator {
 | `hyle_memory_arena_block_size(a)` / `capacity(a)` | 查询 |
 | `hyle_memory_arena_as_allocator(a)` | vtable 视图（alloc=pop 定长块，free=push，realloc=NULL）；句柄归 a，activ至 destroy |
 
+**typed 对象池便利宏**（header-inline，无 DLL 符号）：`block_size == sizeof(T)` 的 MemoryArena 就是 T 的定长对象池，这几个宏只是替你填 `sizeof`/`alignof` 并 cast。
+
+| 宏 | 说明 |
+|---|---|
+| `HYLE_OBJECT_POOL_CREATE(backing, T, count)` | = `hyle_memory_arena_create(backing, sizeof(T), count, alignof(T))` |
+| `HYLE_OBJECT_POOL_ACQUIRE(pool, T)` | 取一个 `T*` 裸槽（耗尽→NULL） |
+| `HYLE_OBJECT_POOL_RELEASE(pool, p)` | 归还槽 |
+| `HYLE_ALIGNOF(T)` | 内部用：C++/C23 `alignof`、C11 `_Alignof`、否则 0（create 归一到默认对齐） |
+
+**裸槽 + O(1)，构造留调用方**（对齐 ggml：分配器只给内存，`allocate` 热路径无构造回调——跨 DLL 的间接 `init()` 调用会给每次 pop 加分派开销，正是三函数指针 vtable 要避开的）。C 无 ctor/dtor，自己初始化返回的槽、release 前自己清理。**要真 construct/destroy 语义（create 跑 ctor、destroy 跑 ~T）用 C++ `hyle::mem::ObjectPool<T>`**——那是 C++ 专有便利，不是本 C ABI 的缺口。
+
 ### 3.3 StackAllocator —— LIFO bump
 
 | 符号 | 说明 |
@@ -139,9 +150,10 @@ soft 提示，绝不影响正确性。flags 用 `HYLE_HUGE_*` 位。
 
 | C++ | 原因 |
 |---|---|
-| `ObjectPool<T>` / `GrowablePool<T>` / `pmr::*` | 模板，C 无泛型。C 侧用 `MemoryArena`（定长）+ 自己的 typed 包装 |
+| `ObjectPool<T>` | **泛型语法**过不了 C ABI（`<T>` 无法表达），非能力缺失。**能力已可达**：C 侧用 `HYLE_OBJECT_POOL_CREATE/ACQUIRE/RELEASE` 宏（§3.2）在 `MemoryArena` 上得到定长对象池，裸槽自 init。需 create 跑 ctor / destroy 跑 ~T 才用 C++ `ObjectPool<T>` |
+| `GrowablePool<T>` / `pmr::*` | 模板，C 无泛型。`pmr` 专为桥接 `std::pmr` 容器，纯 C++ 语境 |
 | `Allocator` typed 层（`allocate_n` / `construct` / `make_unique`） | C++ 模板便利，C 侧用裸 `alloc` + 手动 size |
-| `AllocStats` / `LeakTracker` / `StatsAllocator` | 有状态调试类，C ABI 化成本高且无 FFI 需求（同 error 的 `ErrorRecord`） |
+| `AllocStats` / `LeakTracker` / `StatsAllocator` | 有状态调试/内省类，是 debug/test 工具，跨语言消费者自带（ASan/valgrind/各 runtime profiler），无 FFI 需求（同 error 的 `ErrorRecord`）。对照 ggml：它只把「用了多少内存」降维成标量查询 `ggml_used_mem`，也不导出统计器类 |
 
 ---
 
@@ -163,6 +175,18 @@ hyle_allocator sys = hyle_system_allocator();
 hyle_memory_arena_o* pool = hyle_memory_arena_create(sys, 256, 1024, 0);
 void* blk = hyle_memory_arena_allocate(pool);   /* NULL = 耗尽 */
 hyle_memory_arena_deallocate(pool, blk);
+hyle_memory_arena_destroy(pool);
+```
+
+### typed 对象池（宏，裸槽自 init）
+
+```c
+typedef struct { int a; double b; } Node;
+hyle_memory_arena_o* pool = HYLE_OBJECT_POOL_CREATE(sys, Node, 1024);
+Node* n = HYLE_OBJECT_POOL_ACQUIRE(pool, Node);  /* 类型化，无需 cast；NULL=耗尽 */
+n->a = 7; n->b = 1.5;                            /* C 无 ctor，自己初始化 */
+/* ... 用完，release 前自己清理 ... */
+HYLE_OBJECT_POOL_RELEASE(pool, n);
 hyle_memory_arena_destroy(pool);
 ```
 
@@ -201,7 +225,7 @@ hyle_memory_arena_o* pool = hyle_memory_arena_create(mine, 512, 64, 0);
 
 ## 5. 版本
 
-- v1：allocator vtable（`hyle_allocator` + system + usable/good size）、MemoryArena / StackAllocator / Arena / HugeRegion 不透明句柄、进程级 hugepage/NUMA 策略、`hyle_mem_api` 表 + 版本门。
+- v1：allocator vtable（`hyle_allocator` + system + usable/good size）、MemoryArena / StackAllocator / Arena / HugeRegion 不透明句柄、进程级 hugepage/NUMA 策略、`hyle_mem_api` 表 + 版本门；typed 对象池便利宏（`HYLE_OBJECT_POOL_*`，header-inline 无 DLL 符号，不影响 ABI）。
 - 破坏性变更升 `HYLE_MEM_C_ABI_VERSION`；新字段追加 `hyle_mem_api` 表尾，旧调用方前缀读取不受影响。
 
 ---

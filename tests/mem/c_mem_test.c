@@ -150,6 +150,22 @@ int main(void) {
     CHECK(hyle_memory_arena_create(bad, 64, 4, 0) == NULL);
   }
 
+  /* ---- typed object-pool convenience macros (raw slot, user-init) ---- */
+  {
+    typedef struct { int a; double b; } Node;
+    hyle_memory_arena_o* pool = HYLE_OBJECT_POOL_CREATE(sys, Node, 8);
+    CHECK(pool != NULL);
+    CHECK(hyle_memory_arena_block_size(pool) == sizeof(Node));
+    CHECK(hyle_memory_arena_capacity(pool) == 8u);
+    Node* n = HYLE_OBJECT_POOL_ACQUIRE(pool, Node);  /* typed, no cast at call site */
+    CHECK(n != NULL);
+    n->a = 7;
+    n->b = 1.5;                                       /* user-initialized slot */
+    CHECK(n->a == 7 && n->b == 1.5);
+    HYLE_OBJECT_POOL_RELEASE(pool, n);
+    hyle_memory_arena_destroy(pool);
+  }
+
   /* ---- StackAllocator: bump / mark / rewind / reset ---- */
   {
     hyle_stack_allocator_o* sa = hyle_stack_allocator_create(sys, 4096);

@@ -41,6 +41,17 @@ extern "C" {
  * gate rejects older numbers. */
 #define HYLE_MEM_C_ABI_VERSION 1
 
+/* alignof spelling for the typed-pool macros below: C++ / C23 keyword, C11
+ * `_Alignof`, else pass 0 (hyle_memory_arena_create normalizes 0 to the default
+ * alignment -- always safe, never under-aligns). */
+#if defined(__cplusplus)
+#  define HYLE_ALIGNOF(T) alignof(T)
+#elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
+#  define HYLE_ALIGNOF(T) _Alignof(T)
+#else
+#  define HYLE_ALIGNOF(T) 0
+#endif
+
 /* ========================================================================== */
 /* Allocator vtable — the injectable {alloc, free, realloc, state} handle.     */
 /*                                                                            */
@@ -131,6 +142,25 @@ HYLE_MEM_C_API uint32_t hyle_memory_arena_capacity(const hyle_memory_arena_o* a)
  * The handle stays owned by the arena; valid until destroy. */
 HYLE_MEM_C_API hyle_allocator hyle_memory_arena_as_allocator(
     hyle_memory_arena_o* a);
+
+/* ---- typed object-pool convenience (header-inline; zero new ABI) ------------
+ * A MemoryArena with block_size == sizeof(T) IS a fixed-capacity object pool of
+ * T -- these macros just fill sizeof/alignof and cast, so C code stops hand-
+ * writing them. This mirrors ggml's model (and HYLE's own C++ ObjectPool<T>):
+ * the allocator hands out RAW O(1) slots; there is no constructor callback on
+ * the allocate hot path (a cross-DLL indirect init() call would tax every pop
+ * -- exactly the dispatch cost the split alloc/free/realloc vtable avoids). C
+ * has no ctor/dtor, so initialize the returned slot yourself and clean it up
+ * before release. If you need real construct/destroy semantics (ctor runs on
+ * create, ~T on destroy), use the C++ hyle::mem::ObjectPool<T> instead -- that
+ * is a C++-only convenience, not a gap in this C ABI. */
+#define HYLE_OBJECT_POOL_CREATE(backing, T, count) \
+  hyle_memory_arena_create((backing), sizeof(T), (count), HYLE_ALIGNOF(T))
+/* Acquire a raw T* slot (NULL when the pool is exhausted); release returns it. */
+#define HYLE_OBJECT_POOL_ACQUIRE(pool, T) \
+  ((T*)hyle_memory_arena_allocate(pool))
+#define HYLE_OBJECT_POOL_RELEASE(pool, p) \
+  hyle_memory_arena_deallocate((pool), (p))
 
 /* ========================================================================== */
 /* StackAllocator — LIFO bump over one owned slab                              */
