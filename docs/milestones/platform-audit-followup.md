@@ -6,6 +6,15 @@
 
 platform **功能完整、C ABI 接近满分**:8 子系统(wait/cpu/numa/virtual_memory/thread/mapped_file/dynlib/fs)能力全有 C 通路、命名/句柄/错误/named-enum/FFI 友好度全面对齐 mem/error 规范、桥接层基本零 reinterpret、close-01 合规。**问题集中在红队实现维**——尤其 1 个 HIGH 级数据丢失。红队 5 条真 bug **零误报**(比 mem 那次干净,mem 有 3 误报)。**收口硬卡点 = #1**。
 
+## 处置进度(2026-07-18 本轮 — 三平台复验已过)
+- **[✓ 三平台绿] P0 #1/#2** 递归删除跟随 junction/symlink 数据丢失(4b2e69c):remove_symlink primitive + rm_visit/根 is_symlink 防护 + `RemoveRecursiveDoesNotFollowDirLink` 回归测试。
+- **[✓ 三平台绿] P1 #3/#4**(c51b514):join joinable 守卫 + affinity 越界 guard + `JoinNonJoinableAborts` death test。
+- **[✓ 三平台绿] P2 #5/copy_file/getpwuid_r**(743b085):dynlib 宽字符(+ 顺带 open(nullptr) 防护) + 自拷贝守卫 + 线程安全。
+- **[✓] P3 文档**(e23a06a):api 表 stale / alloc_rw / §3.8 补全。
+- **[✓ 三平台绿] P4 核心**(0bb8cd8):#3 join death test;覆盖增强降后续。
+- **三平台复验**:Windows MSVC 121 / mac clang 124 / WSL GCC-14 124 全绿 + 三平台 c 测试通过。
+- **后续(非本轮,已登记于下)**:P4 覆盖增强(park_timeout 竞态 / C ABI 薄转发 / mapped_file / bench)、边际 LOW(wrapper OOM last-error 等,见 P2)、**P5 下游错配(sched 不绑核 / dynlib 动机)**、真缺口(fs read-write / numa CPU→node / cpu cache 拓扑)。
+
 ## 红队核实结果(主进程逐行复核,非盲信子代理)
 
 真 bug 5 个全部坐实;明确无 bug 项也已复核:
