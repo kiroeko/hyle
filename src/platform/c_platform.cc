@@ -63,6 +63,21 @@ hyle::platform::ThreadOpts to_cpp_opts(const hyle_thread_opts* opts) {
   return o;
 }
 
+bool valid_priority(int p) noexcept {
+  return p >= HYLE_THREAD_PRIORITY_LOWEST &&
+         p <= HYLE_THREAD_PRIORITY_HIGHEST;
+}
+
+bool valid_protect(hyle_protect p) noexcept {
+  return p == HYLE_PROTECT_NONE || p == HYLE_PROTECT_READ ||
+         p == HYLE_PROTECT_READ_WRITE;
+}
+
+bool valid_numa_policy(hyle_numa_policy p) noexcept {
+  return p == HYLE_NUMA_PREFERRED || p == HYLE_NUMA_BIND ||
+         p == HYLE_NUMA_INTERLEAVE;
+}
+
 struct DirVisitPack {
   hyle_fs_visit_fn fn;
   void* user;
@@ -137,6 +152,11 @@ hyle_status hyle_thread_spawn(hyle_thread_o** out, hyle_thread_entry_fn entry,
     return steal_status(hyle::Status::InvalidArgument("thread spawn args"));
   }
   *out = nullptr;
+  if (opts != nullptr && opts->has_priority &&
+      !valid_priority(opts->priority)) {
+    return steal_status(
+        hyle::Status::InvalidArgument("thread priority out of range"));
+  }
   auto r = hyle::platform::Thread::spawn(entry, ctx, to_cpp_opts(opts));
   if (!r.has_value()) return steal_status(std::move(r).error());
   auto* o = new (std::nothrow) hyle_thread_o{};
@@ -265,6 +285,7 @@ int hyle_vm_release(void* base, size_t size) {
   return hyle::platform::vm_release(base, size) ? 1 : 0;
 }
 int hyle_vm_protect(void* ptr, size_t size, hyle_protect prot) {
+  if (!valid_protect(prot)) return 0;
   return hyle::platform::vm_protect(ptr, size, to_cpp_protect(prot)) ? 1 : 0;
 }
 const char* hyle_vm_last_error(void) { return hyle::platform::vm_last_error(); }
@@ -325,14 +346,19 @@ hyle_vm_region_o* hyle_vm_region_reserve_numa(size_t size, int node) {
 }
 
 hyle_vm_region_o* hyle_vm_region_adopt(void* base, size_t size) {
-  auto r = hyle::platform::VmRegion::adopt(base, size);
-  if (!r.valid()) return nullptr;  // base==NULL -> !valid(); no ownership taken
+  if (base == nullptr || size == 0) return nullptr;
+  // Allocate the wrapper before taking ownership. On wrapper OOM the caller
+  // still owns `base`; an adopt API must transfer ownership only on success.
   auto* o = new (std::nothrow) hyle_vm_region_o{};
   if (!o) {
     hyle::platform::vm_set_last_error("vm_region create: wrapper allocation failed (out of memory)");
     return nullptr;
   }
-  o->region = std::move(r);
+  o->region = hyle::platform::VmRegion::adopt(base, size);
+  if (!o->region.valid()) {
+    delete o;
+    return nullptr;
+  }
   return o;
 }
 
@@ -366,6 +392,7 @@ int hyle_vm_region_decommit(hyle_vm_region_o* r, size_t off, size_t len) {
 }
 int hyle_vm_region_protect(hyle_vm_region_o* r, size_t off, size_t len,
                            hyle_protect prot) {
+  if (!valid_protect(prot)) return 0;
   return r && r->region.protect(off, len, to_cpp_protect(prot)) ? 1 : 0;
 }
 
@@ -527,6 +554,7 @@ unsigned hyle_numa_node_of_cpu(unsigned cpu) {
 }
 
 int hyle_vm_bind_numa(void* ptr, size_t size, int node, hyle_numa_policy policy) {
+  if (!valid_numa_policy(policy)) return 0;
   return hyle::platform::vm_bind_numa(ptr, size, node,
                                       to_cpp_numa_policy(policy))
              ? 1
@@ -600,7 +628,11 @@ int hyle_fs_unset_env_var(const char* name) {
 
 hyle_mapped_file_o* hyle_mapped_file_open(const char* path, hyle_map_mode mode,
                                           size_t offset, size_t length) {
-  if (!path) return nullptr;
+  if (!path || (mode != HYLE_MAP_READ_ONLY &&
+                mode != HYLE_MAP_READ_WRITE &&
+                mode != HYLE_MAP_COPY_ON_WRITE)) {
+    return nullptr;
+  }
   auto m = hyle::platform::MappedFile::open(
       path, static_cast<hyle::platform::MappedFile::Mode>(mode), offset, length);
   if (!m.valid()) return nullptr;

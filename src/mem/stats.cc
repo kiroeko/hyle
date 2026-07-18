@@ -1,5 +1,6 @@
 #include "hyle/mem/stats.h"
 
+#include <mutex>
 #include <unordered_map>
 #include <utility>
 
@@ -92,36 +93,35 @@ LeakTracker& LeakTracker::operator=(LeakTracker&& o) noexcept {
 
 void LeakTracker::track_alloc(void* p, std::size_t size) noexcept {
   if (impl_ == nullptr || p == nullptr || size == 0) return;
-  impl_->lock.lock();
-  impl_->live[p] = size;
-  impl_->lock.unlock();
+  std::lock_guard<util::SpinLock> lock(impl_->lock);
+  // Leak tracking is diagnostic and runs inside Allocator's noexcept vtable.
+  // Hash-table growth may throw on OOM; losing one debug record is preferable
+  // to terminating an otherwise successful allocation.
+  try {
+    impl_->live[p] = size;
+  } catch (...) {
+  }
 }
 
 bool LeakTracker::track_free(void* p, std::size_t* out_size) noexcept {
   if (impl_ == nullptr || p == nullptr) return false;
-  impl_->lock.lock();
+  std::lock_guard<util::SpinLock> lock(impl_->lock);
   auto it = impl_->live.find(p);
-  if (it == impl_->live.end()) {
-    impl_->lock.unlock();
-    return false;
-  }
+  if (it == impl_->live.end()) return false;
   if (out_size != nullptr) *out_size = it->second;
   impl_->live.erase(it);
-  impl_->lock.unlock();
   return true;
 }
 
 std::size_t LeakTracker::outstanding() const noexcept {
   if (impl_ == nullptr) return 0;
-  impl_->lock.lock();
-  std::size_t n = impl_->live.size();
-  impl_->lock.unlock();
-  return n;
+  std::lock_guard<util::SpinLock> lock(impl_->lock);
+  return impl_->live.size();
 }
 
 std::size_t LeakTracker::copy_leaks(LeakEntry* out, std::size_t cap) const noexcept {
   if (impl_ == nullptr) return 0;
-  impl_->lock.lock();
+  std::lock_guard<util::SpinLock> lock(impl_->lock);
   const std::size_t total = impl_->live.size();
   std::size_t i = 0;
   if (out != nullptr && cap > 0) {
@@ -132,15 +132,13 @@ std::size_t LeakTracker::copy_leaks(LeakEntry* out, std::size_t cap) const noexc
       ++i;
     }
   }
-  impl_->lock.unlock();
   return total;
 }
 
 void LeakTracker::clear() noexcept {
   if (impl_ == nullptr) return;
-  impl_->lock.lock();
+  std::lock_guard<util::SpinLock> lock(impl_->lock);
   impl_->live.clear();
-  impl_->lock.unlock();
 }
 
 // ---- StatsAllocator ---------------------------------------------------------

@@ -5,6 +5,14 @@
 
 #include <mimalloc.h>  // PRIVATE include -- mi_* types never leak to a header
 
+#if defined(_ADDRESS_SANITIZER) || defined(__SANITIZE_ADDRESS__)
+#  define HYLE_MEM_ASAN 1
+#elif defined(__has_feature)
+#  if __has_feature(address_sanitizer)
+#    define HYLE_MEM_ASAN 1
+#  endif
+#endif
+
 namespace hyle::mem {
 namespace {
 
@@ -74,7 +82,15 @@ std::size_t system_usable_size(const void* ptr) noexcept {
 }
 
 std::size_t system_good_size(std::size_t size) noexcept {
+#if defined(HYLE_MEM_ASAN)
+  // ASan deliberately reports the requested payload size from mi_usable_size
+  // (redzones are not caller-usable), whereas mi_good_size still exposes
+  // mimalloc's uninstrumented size class. Keep the public preview==actual
+  // contract under instrumentation by previewing the usable payload.
+  return size;
+#else
   return size != 0 ? mi_good_size(size) : 0;
+#endif
 }
 
 void enable_allocator_hugepages(AllocatorHugepagePolicy policy) noexcept {
@@ -116,4 +132,3 @@ bool reserve_huge_1g_pages(std::size_t pages, int numa_node,
 }
 
 }  // namespace hyle::mem
-

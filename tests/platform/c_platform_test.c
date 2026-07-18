@@ -1,6 +1,8 @@
 /* Pure C consumer of include/hyle/c/platform.h */
 #if defined(_WIN32)
 #  define _CRT_SECURE_NO_WARNINGS 1
+#  define WIN32_LEAN_AND_MEAN
+#  include <windows.h>
 #endif
 #include "hyle/c/platform.h"
 
@@ -33,16 +35,31 @@ static int visit_cb(const char* name, int is_dir, void* ctx) {
 /* Low-level wait/wake worker: block until the shared word turns non-zero, then
  * record that we woke. The value-recheck loop makes the wake race-free (an early
  * store+wake before we park is simply observed by the loop condition) and absorbs
- * spurious wakes. The word is the futex/WaitOnAddress target; the wait/wake calls
- * carry the cross-thread ordering (the documented volatile-word C usage). */
+ * spurious wakes. The word is the futex/WaitOnAddress target; C11 atomic
+ * load/store carry the cross-thread ordering, while wait/wake only block and
+ * notify on its address. */
 typedef struct {
-  uint32_t* word;
+  volatile uint32_t* word;
   int* woke;
 } wait_ctx;
+static uint32_t atomic_load_word(volatile uint32_t* word) {
+#if defined(_WIN32)
+  return (uint32_t)InterlockedCompareExchange((volatile LONG*)word, 0, 0);
+#else
+  return __atomic_load_n(word, __ATOMIC_ACQUIRE);
+#endif
+}
+static void atomic_store_word(volatile uint32_t* word, uint32_t value) {
+#if defined(_WIN32)
+  (void)InterlockedExchange((volatile LONG*)word, (LONG)value);
+#else
+  __atomic_store_n(word, value, __ATOMIC_RELEASE);
+#endif
+}
 static void wait_entry(void* ctx) {
   wait_ctx* x = (wait_ctx*)ctx;
-  while (*(volatile uint32_t*)x->word == 0u) {
-    hyle_wait_on_address(x->word, 0u);  /* sleeps while *word == 0 */
+  while (atomic_load_word(x->word) == 0u) {
+    hyle_wait_on_address(x->word, 0u);
   }
   *x->woke = 1;
 }
@@ -74,7 +91,7 @@ int main(void) {
   /* Real cross-thread wake_one: one waiter blocks on the word, main flips it and
    * wakes exactly one. Proves the addr forward + wake path end to end. */
   {
-    uint32_t word = 0u;
+    volatile uint32_t word = 0u;
     int woke = 0;
     wait_ctx c = {&word, &woke};
     hyle_thread_o* wt = NULL;
@@ -84,8 +101,8 @@ int main(void) {
     hyle_status_free(&ws);
     CHECK(wt != NULL);
     if (wt != NULL) {
-      word = 1u;             /* publish */
-      hyle_wake_one(&word);  /* wake the (possibly already-progressed) waiter */
+      atomic_store_word(&word, 1u);
+      hyle_wake_one(&word);
       hyle_thread_join(wt);  /* hangs only if the wake never lands (broken fwd) */
       CHECK(woke == 1);
     }
@@ -93,7 +110,7 @@ int main(void) {
 
   /* Real cross-thread wake_all: two waiters on one word, released together. */
   {
-    uint32_t word = 0u;
+    volatile uint32_t word = 0u;
     int woke_a = 0, woke_b = 0;
     wait_ctx ca = {&word, &woke_a};
     wait_ctx cb = {&word, &woke_b};
@@ -107,8 +124,8 @@ int main(void) {
     hyle_status_free(&sa);
     hyle_status_free(&sb);
     if (ta != NULL && tb != NULL) {
-      word = 1u;
-      hyle_wake_all(&word);  /* must release BOTH waiters */
+      atomic_store_word(&word, 1u);
+      hyle_wake_all(&word);
       hyle_thread_join(ta);
       hyle_thread_join(tb);
       CHECK(woke_a == 1);
@@ -141,6 +158,17 @@ int main(void) {
     CHECK(t2 != NULL);
     hyle_thread_join(t2);
     CHECK(ran2 == 42);
+  }
+
+  /* Invalid enum values are rejected at the C boundary, never silently
+   * reinterpreted as a valid scheduling policy. */
+  {
+    hyle_thread_o* bad = NULL;
+    hyle_status bad_st =
+        hyle_thread_spawn_opts(&bad, thr_entry, &ran, "bad_priority", 0, -1, 99);
+    CHECK(hyle_status_is_invalid_argument(bad_st));
+    CHECK(bad == NULL);
+    hyle_status_free(&bad_st);
   }
 
   CHECK(hyle_hardware_concurrency() >= 1u);
@@ -241,6 +269,7 @@ int main(void) {
     CHECK(hyle_vm_protect(base, pg, HYLE_PROTECT_READ) == 1);
     CHECK(((unsigned char*)base)[0] == 0x10);
     CHECK(hyle_vm_protect(base, pg, HYLE_PROTECT_READ_WRITE) == 1);
+    CHECK(hyle_vm_protect(base, pg, (hyle_protect)99) == 0);
     ((unsigned char*)base)[0] = 0x20;
     CHECK(((unsigned char*)base)[0] == 0x20);
 
@@ -343,6 +372,7 @@ int main(void) {
     CHECK(((unsigned char*)rn)[0] == 0x5A);
     /* Empty range bind is always a no-op success. */
     CHECK(hyle_vm_bind_numa(NULL, 0, 0, HYLE_NUMA_PREFERRED) == 1);
+    CHECK(hyle_vm_bind_numa(NULL, 0, 0, (hyle_numa_policy)99) == 0);
     /* Preferred to a valid node: soft, always OK. */
     CHECK(hyle_vm_bind_numa(rn, pg * 2, 0, HYLE_NUMA_PREFERRED) == 1);
     /* Single-node box: hard bind / interleave degrade to no-op success. */
@@ -414,6 +444,7 @@ int main(void) {
      * exercise open + destroy-null here. A non-empty map is covered by the C++ test. */
     hyle_mapped_file_o* m = hyle_mapped_file_open(tpath, HYLE_MAP_READ_ONLY, 0, 0);
     hyle_mapped_file_destroy(m);
+    CHECK(hyle_mapped_file_open(tpath, (hyle_map_mode)99, 0, 0) == NULL);
 
     /* hard link: a second name for the same file (same volume). */
     char hpath[1040];

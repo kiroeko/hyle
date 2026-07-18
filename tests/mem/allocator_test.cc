@@ -3,15 +3,18 @@
 #include <atomic>
 #include <cstdint>
 #include <cstring>
+#include <stdexcept>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/stats.h"
 
 using hyle::mem::Allocator;
 using hyle::mem::kDefaultAlignment;
 using hyle::mem::system_allocator;
 using hyle::mem::system_good_size;
 using hyle::mem::system_usable_size;
+using hyle::mem::StatsAllocator;
 
 namespace {
 bool is_aligned(const void* p, std::size_t a) {
@@ -129,6 +132,28 @@ TEST(AllocatorTyped, AllocateZeroedZeroes) {
   ASSERT_NE(p, nullptr);
   for (int i = 0; i < 8; ++i) EXPECT_EQ(p[i], 0);
   a.deallocate_n(p, 8);
+}
+
+TEST(AllocatorTyped, CountOverflowReturnsNull) {
+  Allocator a = system_allocator();
+  constexpr std::size_t too_many = SIZE_MAX / sizeof(std::uint64_t) + 1;
+  EXPECT_EQ(a.allocate_n<std::uint64_t>(too_many), nullptr);
+  EXPECT_EQ(a.allocate_zeroed<std::uint64_t>(too_many), nullptr);
+}
+
+namespace {
+struct ThrowsInCtor {
+  ThrowsInCtor() { throw std::runtime_error("ctor failure"); }
+};
+}  // namespace
+
+TEST(AllocatorTyped, ConstructorFailureReleasesStorage) {
+  StatsAllocator tracked(system_allocator());
+  Allocator a = tracked.get();
+  EXPECT_THROW((void)a.construct<ThrowsInCtor>(), std::runtime_error);
+  EXPECT_TRUE(tracked.balanced());
+  EXPECT_EQ(tracked.snapshot().total_allocs, 1u);
+  EXPECT_EQ(tracked.snapshot().total_frees, 1u);
 }
 
 TEST(AllocatorTyped, ConstructRunsCtorDestroyRunsDtor) {

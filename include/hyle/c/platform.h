@@ -39,7 +39,10 @@ extern "C" {
 /* wait / Parker                                                              */
 /* ========================================================================== */
 
-/* Low-level address wait (futex / WaitOnAddress / os_sync). Spurious wakes OK. */
+/* Low-level address wait (futex / WaitOnAddress / os_sync). Spurious wakes OK.
+ * `addr` must be naturally aligned and every concurrent read/write of that word
+ * must use atomic operations (C11 _Atomic, Interlocked, or an FFI equivalent);
+ * volatile alone does not make a shared word race-free. */
 HYLE_PLATFORM_C_API void hyle_wait_on_address(volatile uint32_t* addr,
                                               uint32_t expected);
 /* Returns 0 on timeout, 1 otherwise (wake / value changed / spurious). */

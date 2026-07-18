@@ -95,6 +95,7 @@ class Allocator {
   // Raw storage for `numel` T's, aligned for T. No construction.
   template <class T>
   T* allocate_n(std::size_t numel = 1, std::size_t alignment = alignof(T)) const noexcept {
+    if (numel > SIZE_MAX / sizeof(T)) return nullptr;
     return static_cast<T*>(allocate(sizeof(T) * numel, alignment));
   }
 
@@ -103,6 +104,7 @@ class Allocator {
   T* allocate_zeroed(std::size_t numel = 1) const noexcept {
     static_assert(std::is_trivially_constructible_v<T>,
                   "allocate_zeroed requires trivially-constructible T");
+    if (numel > SIZE_MAX / sizeof(T)) return nullptr;
     std::size_t sz = sizeof(T) * numel;
     void* p = allocate(sz, alignof(T));
     if (p != nullptr) std::memset(p, 0, sz);
@@ -112,6 +114,7 @@ class Allocator {
   // Free typed storage from allocate_n/allocate_zeroed (no destructor call).
   template <class T>
   void deallocate_n(T* ptr, std::size_t numel = 1) const noexcept {
+    HYLE_FATAL_ASSERT(numel <= SIZE_MAX / sizeof(T));
     deallocate(ptr, sizeof(T) * numel, alignof(T));
   }
 
@@ -120,7 +123,12 @@ class Allocator {
   T* construct(Args&&... args) const {
     void* p = allocate(sizeof(T), alignof(T));
     if (p == nullptr) return nullptr;
-    return ::new (p) T(std::forward<Args>(args)...);
+    try {
+      return ::new (p) T(std::forward<Args>(args)...);
+    } catch (...) {
+      deallocate(p, sizeof(T), alignof(T));
+      throw;
+    }
   }
 
   // ~T() then free through THIS allocator (never global delete).
