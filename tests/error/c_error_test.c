@@ -34,6 +34,17 @@ static void on_report(void* user, hyle_severity sev, const char* file,
   }
 }
 
+static int g_handler2_hits = 0;
+static void on_report2(void* user, hyle_severity sev, const char* file,
+                       uint32_t line, const char* message) {
+  (void)user;
+  (void)sev;
+  (void)file;
+  (void)line;
+  (void)message;
+  ++g_handler2_hits;
+}
+
 static hyle_status helper_fail(void) {
   return hyle_status_not_found("gone");
 }
@@ -45,7 +56,7 @@ static hyle_status helper_propagate(void) {
 
 int main(void) {
   CHECK(hyle_error_c_abi_version() == HYLE_ERROR_C_ABI_VERSION);
-  CHECK(HYLE_ERROR_C_ABI_VERSION == 2);
+  CHECK(HYLE_ERROR_C_ABI_VERSION == 3);
 
   /* API table — full DLL surface */
   hyle_error_api api;
@@ -55,8 +66,12 @@ int main(void) {
   CHECK(api.error_reportf != NULL);
   CHECK(api.c_abi_version != NULL);
   CHECK(api.c_abi_version() == HYLE_ERROR_C_ABI_VERSION);
+  /* v3 appended fields present */
+  CHECK(api.error_push_handler != NULL);
+  CHECK(api.error_pop_handler != NULL);
   CHECK(hyle_error_api_get(NULL, HYLE_ERROR_C_ABI_VERSION) == -1);
   CHECK(hyle_error_api_get(&api, 999) == -1);
+  CHECK(hyle_error_api_get(&api, 2) == -1);  /* old ABI rejected */
 
   /* OK */
   hyle_status ok = hyle_status_ok();
@@ -196,6 +211,26 @@ int main(void) {
   HYLE_C_WARNF("w=%s", "ok");
   CHECK(g_handler_hits == 4);
   CHECK(strcmp(g_last_msg, "w=ok") == 0);
+
+  /* v3: nesting-safe push/pop. Outer handler = on_report (counts g_handler_hits);
+   * push a second handler, verify reports route to it, pop, verify the OUTER one
+   * is restored exactly (LIFO). */
+  {
+    int outer_before = g_handler_hits;
+    hyle_error_saved_handler_o* tok =
+        hyle_error_push_handler(on_report2, NULL);
+    CHECK(tok != NULL);
+    g_handler2_hits = 0;
+    hyle_error_report(HYLE_SEVERITY_ERROR, "c_error_test.c", 3, "inner");
+    CHECK(g_handler2_hits == 1);            /* inner handler saw it */
+    CHECK(g_handler_hits == outer_before);  /* outer did NOT */
+    hyle_error_pop_handler(tok);            /* restore outer */
+    hyle_error_report(HYLE_SEVERITY_ERROR, "c_error_test.c", 4, "back");
+    CHECK(g_handler_hits == outer_before + 1);  /* outer restored */
+    CHECK(strcmp(g_last_msg, "back") == 0);
+    hyle_error_pop_handler(NULL);           /* NULL is a safe no-op */
+  }
+
   hyle_error_set_handler(NULL, NULL);
 
   /* HYLE_C_RETURN_IF_ERROR */

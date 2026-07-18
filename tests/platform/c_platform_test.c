@@ -32,7 +32,7 @@ static int visit_cb(const char* name, int is_dir, void* ctx) {
 
 int main(void) {
   CHECK(hyle_platform_c_abi_version() == HYLE_PLATFORM_C_ABI_VERSION);
-  CHECK(HYLE_PLATFORM_C_ABI_VERSION == 4);
+  CHECK(HYLE_PLATFORM_C_ABI_VERSION == 5);
 
   hyle_platform_api api;
   CHECK(hyle_platform_api_get(&api, HYLE_PLATFORM_C_ABI_VERSION) == 0);
@@ -63,10 +63,14 @@ int main(void) {
   CHECK(api.fs_set_env_var != NULL);
   CHECK(api.mapped_file_open != NULL);
   CHECK(api.mapped_file_flush != NULL);
+  /* v5 appended fields present */
+  CHECK(api.vm_region_reserve_numa != NULL);
+  CHECK(api.vm_region_adopt != NULL);
   CHECK(hyle_platform_api_get(NULL, HYLE_PLATFORM_C_ABI_VERSION) == -1);
   CHECK(hyle_platform_api_get(&api, 999) == -1);
   CHECK(hyle_platform_api_get(&api, 2) == -1); /* old ABI rejected */
   CHECK(hyle_platform_api_get(&api, 3) == -1); /* v3 rejected too */
+  CHECK(hyle_platform_api_get(&api, 4) == -1); /* v4 rejected too */
 
   /* Parker */
   hyle_parker_o* p = hyle_parker_create();
@@ -135,6 +139,28 @@ int main(void) {
     CHECK(u[0] == 0xAB);
   }
   hyle_vm_region_destroy(reg);
+
+  /* v5: region reserve_numa (ANY == plain) + adopt an existing raw reservation */
+  {
+    size_t pg = hyle_page_size();
+    hyle_vm_region_o* rn = hyle_vm_region_reserve_numa(pg * 2, HYLE_NUMA_ANY);
+    CHECK(hyle_vm_region_valid(rn));
+    CHECK(hyle_vm_region_commit(rn, 0, pg * 2));
+    ((unsigned char*)hyle_vm_region_data(rn))[0] = 0x5A;
+    CHECK(((unsigned char*)hyle_vm_region_data(rn))[0] == 0x5A);
+    hyle_vm_region_destroy(rn);
+
+    /* adopt: raw reserve -> hand ownership to a region handle (destroy releases) */
+    void* raw = hyle_vm_reserve(pg);
+    CHECK(raw != NULL);
+    hyle_vm_region_o* ad = hyle_vm_region_adopt(raw, pg);
+    CHECK(hyle_vm_region_valid(ad));
+    CHECK(hyle_vm_region_data(ad) == raw);
+    CHECK(hyle_vm_region_size(ad) == pg);
+    hyle_vm_region_destroy(ad);  /* releases the adopted reservation */
+    /* adopt(NULL) -> NULL (nothing adopted) */
+    CHECK(hyle_vm_region_adopt(NULL, pg) == NULL);
+  }
 
   /* free vm + alloc_rw */
   {

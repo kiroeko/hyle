@@ -6,6 +6,7 @@
 #include <cstdarg>
 #include <cstdio>
 #include <cstring>
+#include <new>  // std::nothrow for the push/pop handler token
 #include <string_view>
 
 #include "hyle/error/error_handler.h"
@@ -89,6 +90,7 @@ void c_handler_on_report(hyle::error_handler_o* inst, hyle::Severity sev,
          file, line, message);
 }
 
+
 size_t copy_sv(std::string_view sv, char* buf, size_t cap) noexcept {
   if (buf == nullptr || cap == 0) return sv.size();
   size_t n = sv.size();
@@ -99,6 +101,14 @@ size_t copy_sv(std::string_view sv, char* buf, size_t cap) noexcept {
 }
 
 }  // namespace
+
+// Nesting-safe push/pop token (v3). Unlike the single static c_handler_state(),
+// each push OWNS its own state + vtable on the heap, so overrides nest (LIFO):
+// the token records the exact handler it displaced and reinstates it on pop.
+struct hyle_error_saved_handler_o {
+  CHandlerState state;                               // this override's fn/user + vtable
+  const hyle::error_handler_t* displaced = nullptr;  // reinstated on pop
+};
 
 extern "C" {
 
@@ -211,6 +221,33 @@ void hyle_error_set_handler(hyle_error_report_fn fn, void* user) {
   }
 }
 
+hyle_error_saved_handler_o* hyle_error_push_handler(hyle_error_report_fn fn,
+                                                    void* user) {
+  auto* tok = new (std::nothrow) hyle_error_saved_handler_o{};
+  if (tok == nullptr) return nullptr;  // still-installed handler unchanged
+  tok->state.fn = fn;
+  tok->state.user = user;
+  if (fn != nullptr) {
+    tok->state.vtable.inst =
+        reinterpret_cast<hyle::error_handler_o*>(&tok->state);
+    tok->state.vtable.report = &c_handler_on_report;
+    // Install this token's own vtable; capture whatever it displaced.
+    tok->displaced = hyle::error_set_default_handler(&tok->state.vtable);
+  } else {
+    // Push a "reset to built-in" scope: install default, remember the previous.
+    tok->displaced = hyle::error_set_default_handler(nullptr);
+  }
+  tok->state.installed = true;
+  return tok;
+}
+
+void hyle_error_pop_handler(hyle_error_saved_handler_o* saved) {
+  if (saved == nullptr) return;
+  // Reinstate exactly the handler this push displaced (LIFO restore).
+  hyle::error_set_default_handler(saved->displaced);
+  delete saved;
+}
+
 void hyle_error_report(hyle_severity severity, const char* file, uint32_t line,
                        const char* message) {
   const char* msg = message != nullptr ? message : "";
@@ -260,6 +297,10 @@ int hyle_error_api_get(hyle_error_api* out, int expected_abi) {
   out->error_report = &hyle_error_report;
   out->error_reportf = &hyle_error_reportf;
   out->c_abi_version = &hyle_error_c_abi_version;
+
+  /* v3 appended */
+  out->error_push_handler = &hyle_error_push_handler;
+  out->error_pop_handler = &hyle_error_pop_handler;
   return 0;
 }
 

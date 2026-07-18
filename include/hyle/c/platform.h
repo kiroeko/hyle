@@ -37,10 +37,11 @@ extern "C" {
 
 /* Breaking change to hyle_platform_api layout bumps this. v3 appended NUMA +
  * hugepage/THP primitives; v4 appended fs permissions/symlink/tempfile/env-write,
- * an OwnedFd close, thread priority, and MappedFile. All new fields go at the END
- * of hyle_platform_api, so a v2/v3 caller's prefix reads are unchanged; only the
- * version gate rejects older numbers. */
-#define HYLE_PLATFORM_C_ABI_VERSION 4
+ * an OwnedFd close, thread priority, and MappedFile; v5 appended two VmRegion
+ * factories (NUMA-preferred reserve + adopt an existing raw reservation). All new
+ * fields go at the END of hyle_platform_api, so an older caller's prefix reads are
+ * unchanged; only the version gate rejects older numbers. */
+#define HYLE_PLATFORM_C_ABI_VERSION 5
 
 /* ========================================================================== */
 /* wait / Parker                                                              */
@@ -249,6 +250,16 @@ typedef struct hyle_vm_region_o hyle_vm_region_o;
 HYLE_PLATFORM_C_API hyle_vm_region_o* hyle_vm_region_reserve(size_t size);
 HYLE_PLATFORM_C_API hyle_vm_region_o* hyle_vm_region_reserve_guarded(
     size_t usable);
+/* Reserve preferring NUMA `node` (HYLE_NUMA_ANY == plain reserve), as a managed
+ * region handle. NULL on failure. (v5) */
+HYLE_PLATFORM_C_API hyle_vm_region_o* hyle_vm_region_reserve_numa(size_t size,
+                                                                 int node);
+/* Adopt an existing page-aligned reservation from hyle_vm_reserve* into a region
+ * handle (destroy releases it). `size` must be the rounded size that pairs with
+ * release. NULL on failure (e.g. base==NULL). Ownership transfers to the region.
+ * (v5) */
+HYLE_PLATFORM_C_API hyle_vm_region_o* hyle_vm_region_adopt(void* base,
+                                                          size_t size);
 HYLE_PLATFORM_C_API void hyle_vm_region_destroy(hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API int hyle_vm_region_valid(const hyle_vm_region_o* r);
 HYLE_PLATFORM_C_API void* hyle_vm_region_data(hyle_vm_region_o* r);
@@ -516,6 +527,10 @@ typedef struct hyle_platform_api {
   void* (*mapped_file_data)(hyle_mapped_file_o*);
   size_t (*mapped_file_size)(const hyle_mapped_file_o*);
   int (*mapped_file_flush)(hyle_mapped_file_o*);
+
+  /* ---- v5 appended: VmRegion NUMA-reserve + adopt (kept LAST) ------------- */
+  hyle_vm_region_o* (*vm_region_reserve_numa)(size_t, int);
+  hyle_vm_region_o* (*vm_region_adopt)(void*, size_t);
 } hyle_platform_api;
 
 HYLE_PLATFORM_C_API int hyle_platform_api_get(hyle_platform_api* out,

@@ -31,8 +31,8 @@
 ## 具体事务（开工时细化，先占位）
 
 - [x] 每个对外模块封一层 `include/hyle/c/<mod>.h`（或等价单独命名空间），**纯 C、可被 C 编译器 include**，与内部 C++ 头物理隔离。**目录约定已坐实**：`include/hyle/c/` 起手。
-- [x] **样板 error**（2026-07-17）：`include/hyle/c/error.h` + 文档 [`c-error.md`](../guide/c-error.md)。
-- [x] **样板 platform**（2026-07-17）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。面：wait/Parker、Thread（`hyle_status` 错误）、DynLib open/get/current、VM+guarded region、fs/env/iterate、cpu 子集、`hyle_platform_api` 表。文档：[`c-platform.md`](../guide/c-platform.md)。Win MSVC 真过。
+- [x] **样板 error**（2026-07-17）：`include/hyle/c/error.h` + 文档 [`c-error.md`](../guide/c-error.md)。v3（2026-07-18）补跨语言用户缺口：嵌套安全的诊断 handler `push`/`pop`（opaque saved-handler token，LIFO 恢复，对标 signal old-handler）。
+- [x] **样板 platform**（2026-07-17）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。面：wait/Parker、Thread（`hyle_status` 错误）、DynLib open/get/current、VM+guarded region、fs/env/iterate、cpu 子集、`hyle_platform_api` 表。文档：[`c-platform.md`](../guide/c-platform.md)。Win MSVC 真过。v5（2026-07-18）补跨语言用户缺口：`vm_region_reserve_numa`（NUMA 偏好 reserve 出托管 region 句柄）+ `vm_region_adopt`（裸预留收编进 region 句柄）。
 - [x] **样板 mem**（2026-07-17）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C `hyle_mem_c_test`。面：`hyle_allocator` vtable（3 fn + state，桥接显式构造 `mem::Allocator` 不 reinterpret）、`hyle_system_allocator` + usable/good size、MemoryArena / StackAllocator / Arena / HugeRegion 不透明句柄、进程级 hugepage/NUMA 策略、`hyle_mem_api` 表 + 版本门。**有意仅 C++**：模板池（ObjectPool/GrowablePool/pmr）、有状态调试类（AllocStats/LeakTracker/StatsAllocator）、Allocator typed 层。文档：[`c-mem.md`](../guide/c-mem.md)。Win MSVC + WSL GCC-14 + mac arm64 三平台真过（C 测 all passed + C++ mem 94/94 无回归）。
 - [ ] 其余模块：`simd` / …
 - [ ] SIMD 是首批语义样板之一：新增 `include/hyle/c/simd.h`；add/dot/math/scan/dtype/sort/

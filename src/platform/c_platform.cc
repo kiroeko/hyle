@@ -281,6 +281,24 @@ hyle_vm_region_o* hyle_vm_region_reserve_guarded(size_t usable) {
   return o;
 }
 
+hyle_vm_region_o* hyle_vm_region_reserve_numa(size_t size, int node) {
+  auto r = hyle::platform::VmRegion::reserve_numa(size, node);
+  if (!r.valid()) return nullptr;
+  auto* o = new (std::nothrow) hyle_vm_region_o{};
+  if (!o) return nullptr;
+  o->region = std::move(r);
+  return o;
+}
+
+hyle_vm_region_o* hyle_vm_region_adopt(void* base, size_t size) {
+  auto r = hyle::platform::VmRegion::adopt(base, size);
+  if (!r.valid()) return nullptr;  // base==NULL -> !valid(); no ownership taken
+  auto* o = new (std::nothrow) hyle_vm_region_o{};
+  if (!o) return nullptr;
+  o->region = std::move(r);
+  return o;
+}
+
 void hyle_vm_region_destroy(hyle_vm_region_o* r) { delete r; }
 int hyle_vm_region_valid(const hyle_vm_region_o* r) {
   return r && r->region.valid() ? 1 : 0;
@@ -657,6 +675,10 @@ int hyle_platform_api_get(hyle_platform_api* out, int expected_abi) {
   out->mapped_file_data = &hyle_mapped_file_data;
   out->mapped_file_size = &hyle_mapped_file_size;
   out->mapped_file_flush = &hyle_mapped_file_flush;
+
+  /* v5 appended */
+  out->vm_region_reserve_numa = &hyle_vm_region_reserve_numa;
+  out->vm_region_adopt = &hyle_vm_region_adopt;
   return 0;
 }
 

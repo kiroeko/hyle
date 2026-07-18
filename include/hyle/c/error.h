@@ -28,8 +28,11 @@ extern "C" {
 #  define HYLE_ERROR_C_API
 #endif
 
-/* Breaking change to hyle_error_api layout bumps this. */
-#define HYLE_ERROR_C_ABI_VERSION 2
+/* Breaking change to hyle_error_api layout bumps this. v3 appended a nesting-safe
+ * push/pop handler pair (opaque saved-handler token), all at the END of
+ * hyle_error_api, so a v2 caller's prefix reads are unchanged; only the version
+ * gate rejects older numbers. */
+#define HYLE_ERROR_C_ABI_VERSION 3
 
 /* ---- status codes ---------------------------------------------------------- */
 typedef enum hyle_status_code {
@@ -182,8 +185,24 @@ typedef void (*hyle_error_report_fn)(void* user, hyle_severity severity,
                                      const char* file, uint32_t line,
                                      const char* message);
 
+/* Install `fn` as the process-wide diagnostic sink. fn==NULL resets to the
+ * built-in stderr handler. This is the SIMPLE, non-nesting entry: a second call
+ * overwrites the first (the displaced handler is lost). For scoped/nested
+ * override that restores exactly what was there before, use push/pop below. */
 HYLE_ERROR_C_API void hyle_error_set_handler(hyle_error_report_fn fn,
                                              void* user);
+
+/* Nesting-safe handler override (v3). push installs `fn`/`user` and returns an
+ * opaque token capturing whatever handler it displaced; pop reinstalls that
+ * saved handler and frees the token. Strict LIFO, like signal()/sigaction's
+ * old-handler idiom or a scope guard -- each push must be matched by a pop in
+ * reverse order. Returns NULL only on allocation failure (handler still
+ * installed; nothing to restore). pop(NULL) is a no-op. */
+typedef struct hyle_error_saved_handler_o hyle_error_saved_handler_o;
+HYLE_ERROR_C_API hyle_error_saved_handler_o* hyle_error_push_handler(
+    hyle_error_report_fn fn, void* user);
+HYLE_ERROR_C_API void hyle_error_pop_handler(hyle_error_saved_handler_o* saved);
+
 /* Pre-formatted message. FATAL traps after handler. */
 HYLE_ERROR_C_API void hyle_error_report(hyle_severity severity, const char* file,
                                         uint32_t line, const char* message);
@@ -241,6 +260,11 @@ typedef struct hyle_error_api {
   void (*error_reportf)(hyle_severity severity, const char* file, uint32_t line,
                         const char* fmt, ...);
   int (*c_abi_version)(void);
+
+  /* ---- v3 appended: nesting-safe handler push/pop (kept LAST) ------------- */
+  hyle_error_saved_handler_o* (*error_push_handler)(hyle_error_report_fn fn,
+                                                    void* user);
+  void (*error_pop_handler)(hyle_error_saved_handler_o* saved);
 } hyle_error_api;
 
 HYLE_ERROR_C_API int hyle_error_api_get(hyle_error_api* out, int expected_abi);
