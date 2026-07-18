@@ -86,7 +86,7 @@ tests 常随生产 ×1.4–1.6；自有工程（+bench+docs）A 约 130–160k�
 - compute 相对愿景简陋
 - graph 编排未厚
 - close-01 C 发布面
-- simd：NEON KV64 性能、变宽真机、mul_hilo/sort key/complex 等
+- simd：能力面与 NEON KV64 性能已收口；仍缺 SVE/RVV 真机性能签证
 
 **主观功能完成度**约 **55–70%**（视是否把「SIMD 对标 Highway 产品层」算进必达）。
 **生产 LOC ÷ 终态 A 中值**约 **~74%**——数字好看于能力，因 simd 已超买。

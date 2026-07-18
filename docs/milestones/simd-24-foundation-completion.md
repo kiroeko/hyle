@@ -1,6 +1,6 @@
 # simd-24：基础 SIMD 能力补全
 
-> 状态：能力/机制施工已完成；剩余硬件签证为 NEON KV64 与 SVE/RVV 真机性能。依赖 simd-22/23。
+> 状态：能力/机制施工已完成；NEON KV64 已于 2026-07-19 在 Apple 真机追平 Highway；剩余硬件签证为 SVE/RVV 真机性能。依赖 simd-22/23。
 > 本阶段不再以“等待消费者”为缺口延期理由：HYLE 是基础库，已确认有通用价值的能力按顺序补齐。
 
 ## 目标与边界
@@ -108,6 +108,28 @@ NEON u64x2 `LoadN/StoreN` lane 路径消除了栈临时数组和 stack-canary，
 `Lt128/Lt128Upper/CountTrue/IfThenElse` 基本持平，因此当前证据只把问题缩小到 128-bit key sorting
 network/组合 codegen，不能武断归因给某一个 primitive。该项继续作为性能狩猎任务，不以阶段正确性
 完成或统计口径掩盖。
+
+#### KV64 性能收口（2026-07-19）
+
+重新从 `ffd6310` 权威树同步并重编 Mac 后，旧差距仍稳定复现：同一
+`n=65536,k=32768,random,asc` 形状的 5 轮中，HYLE core 27.15–28.58、Highway
+22.02–23.39 ns/key，public 与 core 重合，确认不是派发或测量口径。
+
+单独的 `Lt128Upper` 对拍仍持平，但递归机器码暴露了组合上下文缺口：`Lt128Upper` 用
+`InterleaveUpper(x,x)` 广播高 lane；HYLE NEON 的该通用实现经栈数组表达，AppleClang 在 vqsort
+热循环把它 scalarize 为 `xtn.2s → mov GPR → dup.2d`，而 Highway 是一条 `dup.2d`。改为语义更直接、
+且所有后端已有原生实现的 `DupOdd` 后：
+
+| Apple M 系列，ns/key | HYLE core/public | Highway | 结论 |
+|---|---:|---:|---|
+| KV64 partial random/asc，5 轮范围 | 22.46–23.45 | 22.46–23.57 | 持平 |
+| KV64 partial random/desc，3 轮范围 | 22.35–23.38 | 22.29–23.26 | 持平 |
+| KV64 partial few，asc/desc | 5.65–6.28 | 5.81–6.22 | 持平 |
+| KV64 full sort random/asc，3 轮范围 | 39.97–40.02 | 39.33–40.45 | 持平 |
+
+Mac NEON 304/304、Windows SSE4/AVX2 专用测试全绿；MSVC AVX2 `Lt128Upper` 四副本 HYLE/Highway
+中心约 0.15 ns/op，未牺牲 x86。A1 因此按真实消费者形状收口。这个案例也说明：单 op 持平不能免除
+组合消费者审计；通用 store/reload 表达即使被编译器消掉，也可能留下跨寄存器域的依赖链。
 
 ## 临时/测试宏审计
 

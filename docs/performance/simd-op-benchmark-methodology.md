@@ -258,6 +258,10 @@ op  ratio_paired  ci95_lo  ci95_hi  ratio_med  spreadH  spreadG  place_u  verdic
      负 s 收窄为 unspecified 与 Highway 对齐);
    - **intrinsic 写法敏感**:同语义不同写法,编译器待遇天壤之别(MSVC 折叠 peephole 认
      `inserti128(v,low128(v),1)` 自 dup、不认 `broadcastsi128(cast)`,后者栈 spill 0.47)。
+   - **单 op TIE、组合消费者仍可 LOSE**：NEON `Lt128Upper` 独立对拍持平，但 KV64 vqsort 稳定慢
+     Highway 约 25%；反汇编发现其 `InterleaveUpper(x,x)` 数组表达在递归热循环被 scalarize 为
+     `xtn→GPR→dup`。换成同语义、已有原生路径的 `DupOdd` 后 partial/full sort 均追平。必须检查真实
+     消费者中的内联后机器码，不能拿 L1 单 op TIE 当作组合路径的免责证据。
 5. **GCC 反赢陷阱 → 编译器分叉,不要统一**:一侧输时另一侧常在反赢(BroadcastLane GCC vpermd
    1.13W / SetBeforeFirst GCC scalar-bits 1.30W / reduce256 GCC 128-domain 1.17W)。正确处置是
    `#if defined(_MSC_VER) && !defined(__clang__)` 分叉,让 MSVC 追平**且不牺牲** GCC 的反赢;

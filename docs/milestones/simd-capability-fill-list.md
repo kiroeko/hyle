@@ -1,6 +1,6 @@
 # SIMD 能力补缺清单（只补能力/性能）
 
-> **状态**：当前真相账本（2026-07-17 晚间回填，对齐 simd-25 + `simd-scalable-coverage.py`）。
+> **状态**：当前真相账本（2026-07-19 回填，对齐 simd-25 + `simd-scalable-coverage.py`）。
 > **范围**：寄存器/算法/产品核/性能洞与相对 Highway 的能力差。
 > **不在本文**：close-01 C ABI、推广合同文案、用法包装（另线）。
 > **姊妹文档**：
@@ -10,7 +10,7 @@
 > - 变宽底账：`scripts/simd-scalable-coverage.py` + `scripts/simd-scalable-op-manifest.json`
 > - 覆盖率：`scripts/simd-op-coverage.py`
 
-**一句话**：定宽面与主 whole-buffer 核已立；**SVE/RVV 主产品核（math/dtype/bitpack/sort）已有真实 TU + QEMU 门，SVE partition 已吃满物理 VL，精细 feature probe 已落地**，不再是「整模块 hard clamp」。simd-24 的 C1–C3 能力面已补完，D1/D2/D5/D6/D7 机制收口也已完成；还缺的是 **NEON KV64 性能**、**变宽真机签字**，以及有消费者/硬件后才启动的 VNNI/GFNI/类型 helper。不要再为齐 387 名字抠常数。
+**一句话**：定宽面与主 whole-buffer 核已立；**SVE/RVV 主产品核（math/dtype/bitpack/sort）已有真实 TU + QEMU 门，SVE partition 已吃满物理 VL，精细 feature probe 已落地**，不再是「整模块 hard clamp」。simd-24 的 C1–C3 能力面已补完，D1/D2/D5/D6/D7 机制收口也已完成；**NEON KV64 已在 Apple 真机追平 Highway**。还缺的是 **变宽真机签字**，以及有消费者/硬件后才启动的 VNNI/GFNI/类型 helper。不要再为齐 387 名字抠常数。
 
 ---
 
@@ -21,7 +21,7 @@
 | 七后端 + D-tag 寄存器 DSL（~387 公开/selector 名） | ✅ |
 | 产品零 Highway/xsimd；bench 外部 pin 对拍 | ✅ |
 | Runtime / exact / `native::` 双轨（ops/random/scan/search 等） | ✅ |
-| vqsort 向量 partition（删 HeapSort 保险丝；AVX2 u64 Compress 真 partition） | ✅ 正确性；性能见 A1 |
+| vqsort 向量 partition（删 HeapSort 保险丝；AVX2 u64 Compress 真 partition） | ✅ 正确性与定宽性能；NEON KV64 见 A1 |
 | search/reduction whole-buffer | ✅ |
 | mixed-precision dots | ✅ |
 | NEON mask 查询 primitive（nibble 路径） | ✅ |
@@ -42,7 +42,7 @@
 
 | # | 项 | 现状 | 做什么 | 验收 |
 |---|---|---|---|---|
-| **A1** | **NEON KV64 sort/partial** | 正确；Apple 上约 **慢 Highway 27%**；非派发问题 | 对拍 Highway 同路径 network/组合 codegen；禁止改合同凑数 | Mac 同 ISA 认证 bench ≥~0.98，或书面 ISA/算法墙 |
+| **A1** | **NEON KV64 sort/partial** | ✅ **已收口（2026-07-19）**。根因是 upper-128 compare 用 `InterleaveUpper`，NEON 的通用数组实现被 scalarize，在每 key 热循环形成 `xtn→GPR→dup`；改用已有单指令 `DupOdd` | Apple 同 ISA 5 轮 random/asc partial：HYLE core 22.46–23.28、Highway 22.46–23.57 ns/key；desc/few 与 full sort 交叉验证均持平 | ✅ 达到 ≥~0.98；Windows AVX2 `Lt128Upper` 四副本持平，SSE4/AVX2 正确性全绿 |
 | **A2** | （观察）**AVX2 f32×bf16 dot** | 诊断 ~0.98–0.99×，误差带重叠 | 多轮符号检验；稳定 LOSE 再动 | 非稳定输可不动 |
 | **A3** | **变宽真机 scorecard** | 仅有 QEMU 正确性 | 有硅时 vs Highway + vs 旧 NEON/scalar fallback | 方法论双序/多轮；稳定 &lt;0.98 逐项狩猎或 best-of |
 
@@ -167,7 +167,7 @@
 ## F. 建议施工顺序（更新后）
 
 ```text
-1.  A1    NEON KV64 性能狩猎
+1.  A1    NEON KV64 性能狩猎  ✅
 2.  A3/B5 变宽真机 scorecard（有硅时）
 3.  C1    mul_hi / mul_hilo  ✅
 4.  C2    sort key i16/u16/u128（✅）
@@ -180,7 +180,7 @@
 // D8 仅 f16/bf16 类型轴启动时评估
 ```
 
-算法补缺线 C1–C3 与当前应做的机制线 D1/D2/D5/D6/D7 均已收口。A1、A3/B5 与 B7 性能决策挂起到取得对应硅；D3/D4/D8 只在出现消费或类型轴时启动。
+算法补缺线 C1–C3、机制线 D1/D2/D5/D6/D7 与 A1 均已收口。A3/B5 与 B7 性能决策挂起到取得对应硅；D3/D4/D8 只在出现消费或类型轴时启动。
 
 ---
 
@@ -192,7 +192,7 @@
 |---|---|
 | 定宽寄存器广度 | 主力齐平；扩名 ROI 低（除 C1/D4） |
 | 同 ISA op 常数 | 主体已对齐 |
-| whole-buffer 主核（dot/search/bitpack/random/vqsort 主路径） | 已有；A1 为性能洞 |
+| whole-buffer 主核（dot/search/bitpack/random/vqsort 主路径） | 已有；A1 的 NEON KV64 性能洞已收口 |
 | **SVE/RVV 主产品部署路径** | **主路径已有真实 TU**（正确性 QEMU），SVE partition 已 full-VL；差在真机性能 |
 | 派发模型 | 与 Highway dynamic 同档 |
 | AI 激活 / dtype 产品 | HYLE 优势面，保持 |
@@ -201,7 +201,7 @@
 
 | 优先级 | 能力 | 建议 |
 |---|---|---|
-| P0 | NEON KV64 性能 | **A1** |
+| ✅ | NEON KV64 性能 | **A1 已收口** |
 | P0 | 变宽真机证据 | **A3** |
 | P1 | sort key 面 / mul_hilo / complex | **C2 / C1 / C3** |
 | P2 | VNNI runtime / GFNI / 可选扩展产品 TU | **D3 / D4 / B9** |
@@ -217,11 +217,11 @@ thread_pool → sched；matvec → compute；hash → container；image / 万能
 ### G.5 相对 Highway 优先级（更新）
 
 ```text
-1. NEON KV64（A1）              — 同 ISA 真 LOSE
-2. 变宽真机（A3/B5）          — 部署差从「无核」变为「有核欠证」
-3. C1/C2/C3                    — 类型/积木/数学完整度
-4. D3/D4 / B9                  — 指令类与扩展产品核，有消费再上
-5. 不再镜像 contrib 其余目录
+1. 变宽真机（A3/B5）          — 部署差从「无核」变为「有核欠证」
+2. D3/D4 / B9                  — 指令类与扩展产品核，有消费再上
+3. 不再镜像 contrib 其余目录
+
+已收口：NEON KV64（A1）、类型/积木/数学完整度（C1/C2/C3）。
 ```
 
 ### G.6 判定口诀
