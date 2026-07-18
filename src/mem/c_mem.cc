@@ -17,6 +17,7 @@
 #include <utility>
 
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/growable_pool.h"
 #include "hyle/mem/hugepage.h"
 #include "hyle/mem/memory_arena.h"
 #include "hyle/mem/stack_allocator.h"
@@ -107,6 +108,15 @@ struct hyle_stack_allocator_o {
 struct hyle_arena_o {
   hyle::mem::Arena arena;  // borrows a block from a pool (no owned backing)
   explicit hyle_arena_o(hyle::mem::MemoryArena* pool) : arena(pool) {}
+};
+
+struct hyle_growable_pool_o {
+  hyle_allocator backing;
+  hyle::mem::detail::GrowablePoolCore core;
+  hyle_growable_pool_o(hyle_allocator b, std::size_t slot_size,
+                       std::size_t slot_align, std::uint32_t initial_slots)
+      : backing(b),
+        core(to_cpp(&backing), slot_size, slot_align, initial_slots) {}
 };
 
 struct hyle_huge_region_o {
@@ -281,6 +291,47 @@ size_t hyle_arena_block_size(const hyle_arena_o* a) {
 hyle_allocator hyle_arena_as_allocator(hyle_arena_o* a) {
   if (!a) return hyle_allocator{nullptr, nullptr, nullptr, nullptr};
   return from_cpp(a->arena.as_allocator());
+}
+
+/* ---- GrowablePool ---------------------------------------------------------- */
+
+hyle_growable_pool_o* hyle_growable_pool_create(hyle_allocator backing,
+                                                size_t slot_size,
+                                                size_t slot_align,
+                                                uint32_t initial_slots) {
+  if (!valid_backing(backing)) {
+    hyle::platform::vm_set_last_error(
+        "hyle_growable_pool_create: invalid backing (a fn pointer is null)");
+    return nullptr;
+  }
+  auto* p = new (std::nothrow) hyle_growable_pool_o(
+      backing, slot_size, norm_align(slot_align), initial_slots);
+  if (p == nullptr)
+    hyle::platform::vm_set_last_error(
+        "hyle_growable_pool_create: wrapper allocation failed (out of memory)");
+  return p;
+}
+
+void hyle_growable_pool_destroy(hyle_growable_pool_o* p) { delete p; }
+
+void* hyle_growable_pool_acquire(hyle_growable_pool_o* p) {
+  return p ? p->core.acquire() : nullptr;
+}
+
+void hyle_growable_pool_release(hyle_growable_pool_o* p, void* slot) {
+  if (p) p->core.release(slot);
+}
+
+void hyle_growable_pool_reset(hyle_growable_pool_o* p) {
+  if (p) p->core.clear();
+}
+
+size_t hyle_growable_pool_capacity(const hyle_growable_pool_o* p) {
+  return p ? p->core.capacity() : 0;
+}
+
+size_t hyle_growable_pool_live(const hyle_growable_pool_o* p) {
+  return p ? p->core.live() : 0;
 }
 
 /* ---- HugeRegion ------------------------------------------------------------ */

@@ -211,6 +211,53 @@ HYLE_MEM_C_API size_t hyle_arena_block_size(const hyle_arena_o* a);
 HYLE_MEM_C_API hyle_allocator hyle_arena_as_allocator(hyle_arena_o* a);
 
 /* ========================================================================== */
+/* GrowablePool — single-threaded, unbounded object pool of raw slots          */
+/* ========================================================================== */
+
+typedef struct hyle_growable_pool_o hyle_growable_pool_o;
+
+/* A pool of raw `slot_size`-byte slots (each aligned to `slot_align`, 0 => the
+ * default alignment) that GROWS on demand -- unlike hyle_memory_arena_* it is
+ * never "full" until the backing itself OOMs. Single-threaded (no atomics, so
+ * faster when uncontended; do NOT share across threads). `initial_slots` is the
+ * first block's slot count (0 => 1); blocks then double geometrically. Blocks
+ * come from `backing`. Returns NULL (and sets hyle_mem_last_error) on invalid
+ * backing or wrapper-alloc failure; slot_size==0 fail-fasts (abort) in the C++
+ * core, and a grow that hits backing OOM aborts too (same as the other pools).
+ *
+ * Like the arena object pool (HYLE_OBJECT_POOL_CREATE), acquire() hands out RAW
+ * uninitialized storage and release() runs NO destructor: the C caller inits the
+ * slot and cleans it up before releasing. (The ctor/dtor-running C++
+ * hyle::mem::GrowablePool<T> is a C++-only convenience, not a gap here.) */
+HYLE_MEM_C_API hyle_growable_pool_o* hyle_growable_pool_create(
+    hyle_allocator backing, size_t slot_size, size_t slot_align,
+    uint32_t initial_slots);
+HYLE_MEM_C_API void hyle_growable_pool_destroy(hyle_growable_pool_o* p);
+/* Acquire a raw uninitialized slot (a freed one is reused, else the pool grows). */
+HYLE_MEM_C_API void* hyle_growable_pool_acquire(hyle_growable_pool_o* p);
+/* Return a slot from acquire() to the free-list; runs no destructor. NULL no-op. */
+HYLE_MEM_C_API void hyle_growable_pool_release(hyle_growable_pool_o* p, void* slot);
+/* Hand every block back to the backing (trim). Contract: NO slot may be live. */
+HYLE_MEM_C_API void hyle_growable_pool_reset(hyle_growable_pool_o* p);
+/* Total slots across all blocks currently held (grows geometrically). */
+HYLE_MEM_C_API size_t hyle_growable_pool_capacity(const hyle_growable_pool_o* p);
+/* Live (acquired, not yet released) slot count. */
+HYLE_MEM_C_API size_t hyle_growable_pool_live(const hyle_growable_pool_o* p);
+
+/* ---- typed convenience (header-inline; zero new ABI) ------------------------
+ * A GrowablePool with slot_size == sizeof(T) is a growable raw-slot pool of T.
+ * Same raw-slot model as HYLE_OBJECT_POOL_*: no ctor on acquire, no dtor on
+ * release -- initialize the returned slot and clean it up yourself. For real
+ * construct/destroy semantics, use the C++ hyle::mem::GrowablePool<T>. */
+#define HYLE_GROWABLE_POOL_CREATE(backing, T, initial_slots) \
+  hyle_growable_pool_create((backing), sizeof(T), HYLE_ALIGNOF(T), (initial_slots))
+/* Acquire a raw T* slot (uninitialized); release returns it. */
+#define HYLE_GROWABLE_POOL_ACQUIRE(pool, T) \
+  ((T*)hyle_growable_pool_acquire(pool))
+#define HYLE_GROWABLE_POOL_RELEASE(pool, p) \
+  hyle_growable_pool_release((pool), (p))
+
+/* ========================================================================== */
 /* HugeRegion — huge-page / NUMA-placed span                                   */
 /* ========================================================================== */
 

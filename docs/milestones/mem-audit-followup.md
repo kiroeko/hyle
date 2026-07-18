@@ -33,10 +33,12 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 - **[last-error 覆盖收尾,已做]** 三个 create 的 wrapper OOM(`new(nothrow)` 失败)原先返 NULL 但**没设 last-error**(C 用户会读到上一次的过时串)。已补 `hyle_memory_arena_create`/`hyle_stack_allocator_create`/`hyle_arena_create` 的 wrapper OOM + `arena_create` 的 `pool==NULL`,都设 last-error;mem.h 对应注释同步。现三个 create 的每条 NULL 返回都有原因串。(档 B slab-OOM graceful 落地时再补 "slab allocation failed" 串。)
 - **[可选增强,未做]** `MemoryArena::free_count()`/`has_free()` + `hyle_memory_arena_free_count()` C 导出。上个会话 C 子代理指出 C ABI 无空闲块数查询、无 try_create,FFI 借前无法预检容量。`valid()`+NULL 已够防御,此为额外可观测性 API,非必须。
 
-### #3 GrowablePool 类型擦除导出 C ABI [未做]
-`GrowablePool<T>` 的 `<T>` 只用于 `sizeof`/`alignof` + 裸槽(`acquire()` 返回未构造 storage,`release()` 不调 `~T`),和 `ObjectPool` 同构 → **能类型擦除**。c-mem.md §3.8 把它归"泛型不可达"是**错误归因**(同样论点对 ObjectPool 也成立,而 ObjectPool 明明擦除导出了)。
-- 重构 `GrowablePool` 为"非模板运行时核心(slot_size / slot_align / initial_cap)+ `GrowablePool<T>` 薄包装",对齐 `MemoryArena`(非模板)↔ `ObjectPool<T>`(包装)架构。stride 用 `align_up(max(sizeof(void*), slot_size), max(alignof(void*), slot_align))` 运行时算。
-- C ABI 六件套:`hyle_growable_pool_o` + `hyle_growable_pool_create(backing, slot_size, slot_align, initial_cap)` / `acquire` / `release` / `reset` / `capacity` + `HYLE_GROWABLE_POOL_CREATE(backing, T, cap)` typed 宏(套 `HYLE_OBJECT_POOL_CREATE`)。
+### #3 GrowablePool 类型擦除导出 C ABI [已做]
+**认知修正**:旧描述"`GrowablePool<T>` 裸槽、acquire 返回未构造 storage、release 不调 ~T"**不准确**——实际 `GrowablePool<T>` 是 `create()`(跑 `::new T`)/`destroy()`(跑 `~T`),和 `ObjectPool<T>` 同语义。裸槽是**擦除后 C 核心**的行为,不是 C++ 模板的。擦除依然成立(同 `ObjectPool<T>`↔`MemoryArena` 架构)。
+- **[已做]** `detail::GrowablePoolCore`(非模板:slot_size/slot_align/initial_slots,裸槽 acquire/release/clear,几何增长 + intrusive free-list,stride=`align_up(max(sizeof(void*),slot_size), max(alignof(void*),slot_align))`)+ `GrowablePool<T>` 薄包装(create/destroy 跑 ctor/dtor)。C++ 7 测试行为不变。
+- **[已做]** C ABI:`hyle_growable_pool_create(backing,slot_size,slot_align,initial_slots)` / `destroy` / `acquire`(裸槽) / `release` / `reset`(trim) / `capacity` / `live` + `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE` 宏。裸槽模型,C 用户自 init/cleanup(同 object pool)。
+- **[已做]** C 测试(c_mem_test.c):grow/指针稳定/free-list 复用/reset trim/invalid backing+last-error/typed 宏。
+- 注:grow OOM 仍 abort(留 #2 档 B 统一 graceful);**c-mem.md §3.8 "泛型不可达"误述 → ⑤文档同步修**。
 
 ### #4 测试补齐 [部分:arena 耗尽 C 测试已补;其余未做]
 - **[已补]** `hyle_arena_create` 池耗尽 → NULL + 非空 last-error 的 C 测试(c_mem_test.c,配合 #2 档 A)。用真实单块 pool 借空触发,非 mock 分配器。

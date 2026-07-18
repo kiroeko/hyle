@@ -178,6 +178,58 @@ int main(void) {
     hyle_memory_arena_destroy(pool);
   }
 
+  /* ---- GrowablePool: growable raw-slot pool (grow / reuse / reset / macros) ---- */
+  {
+    /* tiny initial count forces geometric growth across several blocks */
+    hyle_growable_pool_o* gp = hyle_growable_pool_create(sys, sizeof(long), 0, 2);
+    CHECK(gp != NULL);
+    CHECK(hyle_growable_pool_live(gp) == 0u);
+    long* slots[100];
+    for (int i = 0; i < 100; ++i) {
+      slots[i] = (long*)hyle_growable_pool_acquire(gp);
+      CHECK(slots[i] != NULL);
+      *slots[i] = i;                                  /* raw slot, user-init */
+    }
+    CHECK(hyle_growable_pool_live(gp) == 100u);
+    CHECK(hyle_growable_pool_capacity(gp) >= 100u);   /* grew to hold them */
+    for (int i = 0; i < 100; ++i) CHECK(*slots[i] == i);  /* growth moved nothing */
+
+    /* a freed slot is recycled by the next acquire (free-list) */
+    hyle_growable_pool_release(gp, slots[50]);
+    CHECK(hyle_growable_pool_live(gp) == 99u);
+    long* reuse = (long*)hyle_growable_pool_acquire(gp);
+    CHECK(reuse == slots[50]);
+    slots[50] = reuse;
+
+    /* release all, reset -> blocks handed back; still usable afterwards */
+    for (int i = 0; i < 100; ++i) hyle_growable_pool_release(gp, slots[i]);
+    CHECK(hyle_growable_pool_live(gp) == 0u);
+    hyle_growable_pool_reset(gp);
+    CHECK(hyle_growable_pool_capacity(gp) == 0u);     /* trimmed to nothing */
+    void* again = hyle_growable_pool_acquire(gp);     /* regrows from initial */
+    CHECK(again != NULL);
+    hyle_growable_pool_release(gp, again);
+    hyle_growable_pool_destroy(gp);
+
+    /* invalid backing -> NULL + non-empty last-error */
+    hyle_allocator bad;
+    memset(&bad, 0, sizeof bad);
+    CHECK(hyle_growable_pool_create(bad, 8, 0, 4) == NULL);
+    CHECK(hyle_mem_last_error()[0] != '\0');
+
+    /* typed convenience macros (raw slot, user-init) */
+    typedef struct { int x; int y; } Pt;
+    hyle_growable_pool_o* tp = HYLE_GROWABLE_POOL_CREATE(sys, Pt, 8);
+    CHECK(tp != NULL);
+    Pt* pt = HYLE_GROWABLE_POOL_ACQUIRE(tp, Pt);      /* typed, no cast at call site */
+    CHECK(pt != NULL);
+    pt->x = 3;
+    pt->y = 4;
+    CHECK(pt->x == 3 && pt->y == 4);
+    HYLE_GROWABLE_POOL_RELEASE(tp, pt);
+    hyle_growable_pool_destroy(tp);
+  }
+
   /* ---- HugeRegion: open / write / destroy (THP hint) ---- */
   {
     /* 4 MiB span; THP hint is soft, so open must still succeed everywhere. */
