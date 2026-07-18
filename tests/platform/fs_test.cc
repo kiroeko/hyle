@@ -248,6 +248,33 @@ TEST_F(FsTest, RemoveDirectoryRecursiveDoesNotFollowSymlink) {
 }
 #endif
 
+// Recursive delete must not follow a symlink/junction-to-directory -- at the ROOT
+// or as a child -- and wipe its target (data-loss guard; platform-audit #1: the
+// Windows junction path was untested since the case above is POSIX-only; #2: root
+// symlink). Cross-platform via create_symlink, which needs privilege on Windows
+// (Developer Mode/admin) -> SKIP if unavailable.
+TEST_F(FsTest, RemoveRecursiveDoesNotFollowDirLink) {
+  ASSERT_TRUE(make_directory(path("keep").c_str()));
+  ASSERT_TRUE(touch(path("keep/data.txt").c_str()));
+
+  std::string rootlink = path("rootlink");
+  if (!create_symlink(path("keep").c_str(), rootlink.c_str())) {
+    GTEST_SKIP() << "create_symlink unavailable (needs privilege on this OS)";
+  }
+  ASSERT_TRUE(is_symlink(rootlink.c_str()));
+  // (a) ROOT is a dir-link: remove the LINK itself, keep the target (audit #2).
+  EXPECT_TRUE(remove_directory_recursive(rootlink.c_str()));
+  EXPECT_FALSE(exists(rootlink.c_str()));
+  EXPECT_TRUE(exists(path("keep/data.txt").c_str()));  // target survived
+
+  // (b) CHILD dir-link inside a tree: recurse must not follow it (audit #1).
+  ASSERT_TRUE(make_directory(path("tree").c_str()));
+  ASSERT_TRUE(create_symlink(path("keep").c_str(), path("tree/link").c_str()));
+  EXPECT_TRUE(remove_directory_recursive(path("tree").c_str()));
+  EXPECT_FALSE(exists(path("tree").c_str()));
+  EXPECT_TRUE(exists(path("keep/data.txt").c_str()));  // still there
+}
+
 TEST_F(FsTest, SpecialDirectoriesNonEmpty) {
   char buf[4096];
   EXPECT_GT(current_directory(buf, sizeof(buf)), 0u);

@@ -237,6 +237,19 @@ bool remove_file(const char* path) noexcept {
   return wp.w() != nullptr && DeleteFileW(wp.w()) != 0;
 }
 
+// Remove a symlink/junction ITSELF, never its target. A directory reparse
+// (junction / dir symlink) needs RemoveDirectoryW; a file symlink needs
+// DeleteFileW. Used by the recursive delete so it never follows a link out of
+// the tree (platform-audit #1 data-loss guard).
+bool remove_symlink(const char* path) noexcept {
+  WidePath wp(path);
+  if (wp.w() == nullptr) return false;
+  DWORD a = GetFileAttributesW(wp.w());
+  if (a == INVALID_FILE_ATTRIBUTES) return false;
+  return (a & FILE_ATTRIBUTE_DIRECTORY) ? (RemoveDirectoryW(wp.w()) != 0)
+                                        : (DeleteFileW(wp.w()) != 0);
+}
+
 bool rename_path(const char* from, const char* to) noexcept {
   WidePath wf(from), wt(to);
   if (wf.w() == nullptr || wt.w() == nullptr) return false;
@@ -568,6 +581,11 @@ bool remove_directory(const char* path) noexcept {
 
 bool remove_file(const char* path) noexcept { return ::unlink(path) == 0; }
 
+// Remove a symlink ITSELF, never its target: unlink works on any symlink,
+// including a symlink-to-directory (rmdir would fail with ENOTDIR). Used by the
+// recursive delete so it never follows a link out of the tree (platform-audit #1/#2).
+bool remove_symlink(const char* path) noexcept { return ::unlink(path) == 0; }
+
 bool rename_path(const char* from, const char* to) noexcept {
   return ::rename(from, to) == 0;
 }
@@ -891,13 +909,24 @@ bool rm_visit(const char* name, bool is_dir, void* vctx) noexcept {
     c->ok = false;
     return true;
   }
-  bool r = is_dir ? remove_directory_recursive(child) : remove_file(child);
+  // A symlink/junction child: delete the LINK, never recurse into its target
+  // (which may live outside the tree). is_symlink tests the entry ITSELF (lstat
+  // on POSIX / reparse bit on Windows), so this guards the Windows case where
+  // directory_iterate reports a directory junction as is_dir=true (platform-audit #1).
+  bool r;
+  if (is_symlink(child)) r = remove_symlink(child);
+  else if (is_dir) r = remove_directory_recursive(child);
+  else r = remove_file(child);
   if (!r) c->ok = false;
   return true;  // keep going; report failure via ok
 }
 }  // namespace
 
 bool remove_directory_recursive(const char* path) noexcept {
+  // A symlink/junction at the ROOT: remove the LINK itself, never follow it into
+  // a target outside the tree (platform-audit #1/#2 data-loss guard). is_symlink
+  // tests the path itself (lstat / reparse bit), before is_directory (follows).
+  if (is_symlink(path)) return remove_symlink(path);
   if (!is_directory(path)) return remove_file(path);  // a plain file: just unlink
   RmCtx c{path, true};
   if (!directory_iterate(path, rm_visit, &c)) return false;
