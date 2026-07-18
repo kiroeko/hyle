@@ -591,6 +591,10 @@ bool rename_path(const char* from, const char* to) noexcept {
 }
 
 bool copy_file(const char* from, const char* to) noexcept {
+  // Self-copy would truncate the file to empty (O_TRUNC on `to` opens the same
+  // inode `from` reads from). Guard the identical-path case; distinct paths to
+  // the same inode (hard link) are rare and left to the caller.
+  if (from != nullptr && to != nullptr && std::strcmp(from, to) == 0) return true;
   int in = ::open(from, O_RDONLY | O_CLOEXEC);
   if (in < 0) return false;
   struct ::stat s;
@@ -686,12 +690,17 @@ std::size_t temp_directory(char* dst, std::size_t cap) noexcept {
 
 std::size_t home_directory(char* dst, std::size_t cap) noexcept {
   const char* h = std::getenv("HOME");
-  if (h == nullptr || h[0] == '\0') {
-    struct passwd* pw = ::getpwuid(::getuid());
-    h = (pw != nullptr) ? pw->pw_dir : nullptr;
+  if (h != nullptr && h[0] != '\0') return fill(dst, cap, h, std::strlen(h));
+  // getpwuid returns a pointer into shared static storage (not thread-safe);
+  // getpwuid_r fills caller buffers instead.
+  struct passwd pw;
+  struct passwd* result = nullptr;
+  char buf[1024];
+  if (::getpwuid_r(::getuid(), &pw, buf, sizeof(buf), &result) == 0 &&
+      result != nullptr && result->pw_dir != nullptr) {
+    return fill(dst, cap, result->pw_dir, std::strlen(result->pw_dir));
   }
-  if (h == nullptr) return fill(dst, cap, "", 0);
-  return fill(dst, cap, h, std::strlen(h));
+  return fill(dst, cap, "", 0);
 }
 
 std::size_t get_env_var(const char* name, char* dst, std::size_t cap) noexcept {

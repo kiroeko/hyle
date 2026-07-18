@@ -44,6 +44,14 @@ void set_error_win() noexcept {
     set_error(buf);
   }
 }
+
+// UTF-8 -> UTF-16 into a stack buffer for the ...W load APIs. dynlib used ...A,
+// which mis-decodes non-ASCII UTF-8 paths (fs/mapped_file already use wide).
+// Returns false on null path or conversion failure (won't fit) -- this also
+// guards the previously-unhandled open(nullptr) case.
+bool to_wide(const char* path, wchar_t* w, int cap) noexcept {
+  return path != nullptr && ::MultiByteToWideChar(CP_UTF8, 0, path, -1, w, cap) > 0;
+}
 #endif
 }  // namespace
 
@@ -62,7 +70,12 @@ const char* dynlib_last_error() noexcept { return g_error; }
 DynLib DynLib::open(const char* path) noexcept {
   DynLib lib;
 #if defined(HYLE_OS_WINDOWS)
-  HMODULE h = LoadLibraryA(path);
+  wchar_t w[1024];
+  if (!to_wide(path, w, 1024)) {
+    set_error("dynlib open: null or too-long path");
+    return lib;
+  }
+  HMODULE h = LoadLibraryW(w);
   if (h == nullptr) {
     set_error_win();
     return lib;
@@ -91,7 +104,12 @@ DynLib DynLib::get(const char* path) noexcept {
   }
 #if defined(HYLE_OS_WINDOWS)
   // Already-mapped modules only; does not load and does not bump the refcount.
-  HMODULE h = GetModuleHandleA(path);
+  wchar_t w[1024];
+  if (!to_wide(path, w, 1024)) {
+    set_error("dynlib get: null or too-long path");
+    return lib;
+  }
+  HMODULE h = GetModuleHandleW(w);
   if (h == nullptr) {
     set_error_win();
     return lib;
@@ -117,7 +135,7 @@ DynLib DynLib::get(const char* path) noexcept {
 DynLib DynLib::current() noexcept {
   DynLib lib;
 #if defined(HYLE_OS_WINDOWS)
-  lib.handle_ = reinterpret_cast<void*>(GetModuleHandleA(nullptr));
+  lib.handle_ = reinterpret_cast<void*>(GetModuleHandleW(nullptr));
 #else
   lib.handle_ = dlopen(nullptr, RTLD_NOW | RTLD_LOCAL);
 #endif

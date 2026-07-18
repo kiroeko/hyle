@@ -24,10 +24,15 @@ platform **功能完整、C ABI 接近满分**:8 子系统(wait/cpu/numa/virtual
 - **#3 `Thread::join()` 无 `joinable()` 守卫**(thread.cc:114-117 Win / :241-242 POSIX):对 non-joinable 线程 join,POSIX `pthread_join(0)` 退化 UB、Win 静默语义错。同文件 dtor(:306)/move(:296)都有 `HYLE_FATAL_ASSERT(!joinable())`,join 漏了。**修法**:join 开头加 `HYLE_FATAL_ASSERT(joinable())`(C 桥 hyle_thread_join 已有守卫,仅裸 C++ API 暴露)。
 - **#4 亲和性越界**:Windows(thread.cc:76)`DWORD_PTR(1) << s->cpu`,cpu≥64 移位 UB(x86 掩码→静默绑 CPU 0),且 >64 核需 processor group 寻址;Linux(:167)`CPU_SET(cpu)` cpu≥1024 越界写。**修法**:边界检查 + Windows processor group(或至少 reject/文档化 ≥64)。
 
-### P2 一致性/轻微 [LOW]
-- **#5 dynlib 非 UTF-8**:open(dynlib.cc:65 `LoadLibraryA`)/get(:94 `GetModuleHandleA`)走 ANSI,与 fs/mapped_file 的宽字符不一致。**修法**:`LoadLibraryW`/`GetModuleHandleW` + `MultiByteToWideChar`。
-- **wrapper OOM 未设 last-error**:hyle_dynlib_open/vm_region_reserve/mapped_file_open 等的 `new(std::nothrow)` 失败路径未设 last-error(和 mem 收口补的**同类缺口**)。对齐 mem:每条 NULL 返回设串。
-- **风险点(选择性处置)**:page_align_up 整数溢出无 guard(virtual_memory.h:38-49)、home_directory `getpwuid`→`getpwuid_r`(fs.cc:672 线程安全)、copy_file(x,x) 自拷贝截断守卫、remove_directory_recursive 深递归无深度上限、get_env_var Windows 探长度竞态(fs.cc:286-300)。
+### P2 一致性/轻微 [LOW — #5/copy_file/getpwuid_r 已做;其余边际记录]
+- **#5 dynlib 非 UTF-8 [已做]**:open/get 转 `LoadLibraryW`/`GetModuleHandleW` + `to_wide`(MultiByteToWideChar),current 转 `GetModuleHandleW(nullptr)`;顺带修 open(nullptr) 未防护(to_wide null 检查)。Windows DynLib 14 测试绿。
+- **copy_file(x,x) 自拷贝截断 [已做]**:POSIX copy_file 开头 `strcmp(from,to)==0` 守卫(避免 O_TRUNC 截空);Windows CopyFileW 本就失败安全。POSIX 段待三平台复验。
+- **getpwuid→getpwuid_r [已做]**:home_directory 改线程安全的 getpwuid_r。POSIX 段待三平台复验。
+- **[边际 LOW,本轮未做,低优先]**(已核实真,但价值/成本比低):
+  - wrapper OOM 未设 last-error:实害极小(wrapper 结构体极小、OOM 罕见)+ 各模块 last-error 机制不一(dynlib g_error 内部无公开 set / vm 有 vm_set_last_error / parker 无)——补全需先统一机制。
+  - page_align_up 溢出(vm.h:38-49):触发需 ~16 EiB,不现实。
+  - get_env_var Windows 探长度竞态(fs.cc:286-300):需并发改同一 env 变量,罕见。
+  - 深递归无深度上限:需重构递归加深度参数;深目录树(Windows ~170 层)才触发。
 
 ### P3 文档 stale
 - milestone platform-03b:83 还写"导出到 `hyle_platform_api` 表"(design §3 已删表、实物无表)。
