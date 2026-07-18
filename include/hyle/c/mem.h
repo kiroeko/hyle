@@ -36,11 +36,6 @@ extern "C" {
 #  define HYLE_MEM_C_API
 #endif
 
-/* Breaking change to hyle_mem_api layout bumps this. New fields append at the END
- * of hyle_mem_api so an older caller's prefix reads stay valid; only the version
- * gate rejects older numbers. */
-#define HYLE_MEM_C_ABI_VERSION 1
-
 /* alignof spelling for the typed-pool macros below: C++ / C23 keyword, C11
  * `_Alignof`, else pass 0 (hyle_memory_arena_create normalizes 0 to the default
  * alignment -- always safe, never under-aligns). */
@@ -258,72 +253,6 @@ HYLE_MEM_C_API void hyle_enable_allocator_numa(unsigned max_nodes);
  * Returns 1 on success (or pages==0); soft-fails to 0 (no privilege / no RAM). */
 HYLE_MEM_C_API int hyle_reserve_huge_1g_pages(size_t pages, int numa_node,
                                               unsigned timeout_ms);
-
-/* ========================================================================== */
-/* API table — every DLL-exported function (header-only inlines omitted)      */
-/* ========================================================================== */
-
-typedef struct hyle_mem_api {
-  int abi_version;
-
-  /* allocator */
-  size_t (*default_alignment)(void);
-  hyle_allocator (*system_allocator)(void);
-  size_t (*system_usable_size)(const void*);
-  size_t (*system_good_size)(size_t);
-
-  /* memory arena */
-  hyle_memory_arena_o* (*memory_arena_create)(hyle_allocator, size_t, uint32_t,
-                                              size_t);
-  void (*memory_arena_destroy)(hyle_memory_arena_o*);
-  void* (*memory_arena_allocate)(hyle_memory_arena_o*);
-  void (*memory_arena_deallocate)(hyle_memory_arena_o*, void*);
-  void (*memory_arena_reset)(hyle_memory_arena_o*);
-  size_t (*memory_arena_block_size)(const hyle_memory_arena_o*);
-  uint32_t (*memory_arena_capacity)(const hyle_memory_arena_o*);
-  hyle_allocator (*memory_arena_as_allocator)(hyle_memory_arena_o*);
-
-  /* stack allocator */
-  hyle_stack_allocator_o* (*stack_allocator_create)(hyle_allocator, size_t);
-  void (*stack_allocator_destroy)(hyle_stack_allocator_o*);
-  void* (*stack_allocator_allocate)(hyle_stack_allocator_o*, size_t, size_t);
-  void (*stack_allocator_reset)(hyle_stack_allocator_o*);
-  void* (*stack_allocator_mark)(const hyle_stack_allocator_o*);
-  void (*stack_allocator_rewind)(hyle_stack_allocator_o*, void*);
-  size_t (*stack_allocator_used)(const hyle_stack_allocator_o*);
-  size_t (*stack_allocator_capacity)(const hyle_stack_allocator_o*);
-  size_t (*stack_allocator_remaining)(const hyle_stack_allocator_o*);
-  hyle_allocator (*stack_allocator_as_allocator)(hyle_stack_allocator_o*);
-
-  /* arena */
-  hyle_arena_o* (*arena_create)(hyle_memory_arena_o*);
-  void (*arena_destroy)(hyle_arena_o*);
-  void* (*arena_allocate)(hyle_arena_o*, size_t, size_t);
-  void (*arena_reset)(hyle_arena_o*);
-  size_t (*arena_used)(const hyle_arena_o*);
-  size_t (*arena_remaining)(const hyle_arena_o*);
-  size_t (*arena_block_size)(const hyle_arena_o*);
-  hyle_allocator (*arena_as_allocator)(hyle_arena_o*);
-
-  /* huge region */
-  hyle_huge_region_o* (*huge_region_open)(size_t, uint32_t, int);
-  hyle_huge_region_o* (*huge_region_open_local)(size_t, uint32_t);
-  hyle_huge_region_o* (*huge_region_open_interleaved)(size_t);
-  void (*huge_region_destroy)(hyle_huge_region_o*);
-  int (*huge_region_valid)(const hyle_huge_region_o*);
-  void* (*huge_region_data)(hyle_huge_region_o*);
-  size_t (*huge_region_size)(const hyle_huge_region_o*);
-
-  /* process-wide policy */
-  void (*enable_allocator_hugepages)(int, int);
-  void (*enable_allocator_numa)(unsigned);
-  int (*reserve_huge_1g_pages)(size_t, int, unsigned);
-
-  int (*c_abi_version)(void);
-} hyle_mem_api;
-
-HYLE_MEM_C_API int hyle_mem_api_get(hyle_mem_api* out, int expected_abi);
-HYLE_MEM_C_API int hyle_mem_c_abi_version(void);
 
 #ifdef __cplusplus
 } /* extern "C" */

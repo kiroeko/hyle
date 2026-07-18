@@ -2,7 +2,7 @@
 
 > **发布面**：`include/hyle/c/error.h`  
 > **实现**：`src/error/c_error.cc`（链 `hyle_error`）  
-> **ABI 版本**：`HYLE_ERROR_C_ABI_VERSION`（当前 **3**）  
+> **稳定性**：未发布，无 ABI 版本门（纯 `extern "C"` 自由函数导出）  
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言 / 跨编译器 / FFI **只许绑本头**。不要 include `hyle/error/*.h`。
@@ -28,7 +28,7 @@
 | `hyle_status` | **拥有型** 8B 句柄（`uintptr_t rep`）；禁止手改 / 禁止 `t=s` 当拷贝 |
 | `hyle_severity` | `HYLE_SEVERITY_WARNING` / `ERROR` / `FATAL` |
 | `hyle_error_report_fn` | 诊断回调：`(user, severity, file, line, message)` |
-| `hyle_error_api` | 动态 FFI 函数指针表（DLL 符号；不含 header-inline） |
+| `hyle_error_saved_handler_o` | opaque saved-handler token（`push` 返回，`pop` 释放） |
 
 ---
 
@@ -66,12 +66,10 @@
 | `hyle_status_message` | `(s, buf, cap) → size_t` | 仅消息；返回完整长度，`>=cap` 截断 |
 | `hyle_status_to_string` | `(s, buf, cap) → size_t` | 如 `"Internal: boom"` |
 | `hyle_error_set_handler` | `(fn, user)` | 简单单槽：`fn==NULL` 恢复默认 stderr；二次调用覆盖前一个（被替换的丢失）|
-| `hyle_error_push_handler`（v3） | `(fn, user) → hyle_error_saved_handler_o*` | 嵌套安全：装 `fn` 并返回 opaque token（捕获被替换的 handler）；分配失败→NULL（handler 仍已装）|
-| `hyle_error_pop_handler`（v3） | `(saved)` | 重装 token 记录的 handler 并释放 token；严格 LIFO（配对 push）；`saved==NULL` no-op |
+| `hyle_error_push_handler` | `(fn, user) → hyle_error_saved_handler_o*` | 嵌套安全：装 `fn` 并返回 opaque token（捕获被替换的 handler）；分配失败→NULL（handler 仍已装）|
+| `hyle_error_pop_handler` | `(saved)` | 重装 token 记录的 handler 并释放 token；严格 LIFO（配对 push）；`saved==NULL` no-op |
 | `hyle_error_report` | `(sev, file, line, message)` | 已成型字符串；FATAL trap |
 | `hyle_error_reportf` | `(sev, file, line, fmt, ...)` | printf 风格（内部栈缓冲） |
-| `hyle_error_api_get` | `(out*, expected_abi) → int` | 0 成功；不匹配/`out==NULL` → -1 |
-| `hyle_error_c_abi_version` | `() → int` | 等于宏 |
 
 ### 4.2 头内 inline 工厂（无 DLL 符号）
 
@@ -112,11 +110,9 @@
 | `HYLE_C_WARNF(...)` / `ERRORF` / `FATALF` | `hyle_error_reportf` |
 | `HYLE_C_RETURN_IF_ERROR(st)` | 非 OK 则 `return st`（按值转移） |
 
-### 4.5 `hyle_error_api` 字段（与 4.1 DLL 一一对应）
+### 4.5 导出形态
 
-`abi_version`，`status_ok`，`status_new`，`status_free`，`status_clone`，`status_move`，`status_is_ok`，`status_get_code`，`status_has_message`，`status_equals`，`status_code_name`，`status_message`，`status_to_string`，`error_set_handler`，`error_report`，`error_reportf`，`c_abi_version`。**v3 表尾追加**：`error_push_handler`，`error_pop_handler`（保 v2 前缀布局不变）。
-
-**不进表**：4.2–4.4 的 inline / 宏。
+纯 `extern "C"` 自由函数 + opaque `hyle_status` / `hyle_error_saved_handler_o` 句柄，FFI 直接绑符号。**无 `hyle_error_api` 函数指针表、无 `api_get` 版本协商**（版本协商是分发独立编译插件才需要的件；HYLE 单一 `.so`、未发布，不背此负担）。设计推理见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。header-inline（4.2–4.4 的工厂/谓词/宏）无 DLL 符号。
 
 ### 4.6 有意不导出
 
@@ -142,18 +138,19 @@ hyle_error_set_handler(my_log, NULL);
 HYLE_C_ERRORF("code=%d", 42);
 hyle_error_set_handler(NULL, NULL);
 
-hyle_error_api api;
-if (hyle_error_api_get(&api, HYLE_ERROR_C_ABI_VERSION) != 0) { /* ABI */ }
+/* 嵌套安全：作用域内临时接管诊断，pop 精确还原前一个 handler */
+hyle_error_saved_handler_o* tok = hyle_error_push_handler(my_scoped_log, ctx);
+/* ... 作用域内的 report 走 my_scoped_log ... */
+hyle_error_pop_handler(tok);
 ```
 
 ---
 
-## 6. 版本
+## 6. 稳定性
 
-- `hyle_error_c_abi_version()` / `hyle_error_api_get(out, HYLE_ERROR_C_ABI_VERSION)`
-- 破坏性变更（表字段删改、句柄布局）升 `HYLE_ERROR_C_ABI_VERSION`
-- v2：全码谓词、`reportf`、C 宏、api 表加 `error_reportf`/`c_abi_version`
-- v3：嵌套安全的诊断 handler `push`/`pop`（opaque saved-handler token，LIFO 恢复被替换的 handler，对标 signal/sigaction old-handler 惯用法）。新字段追加 api 表尾，v2 前缀布局不变；仅版本门拒绝旧号。
+HYLE 未发布，C ABI 面无版本门/协商——发布前按需自由演进，追求干净正确。发布后如何冻结 ABI 见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
+
+诊断 handler 有两条路：`set_handler`（简单单槽）与 `push`/`pop`（嵌套安全，opaque saved-handler token，LIFO 恢复，对标 signal/sigaction old-handler 惯用法）。
 
 ---
 

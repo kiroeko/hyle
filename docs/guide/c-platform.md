@@ -2,7 +2,7 @@
 
 > **发布面**：`include/hyle/c/platform.h`  
 > **实现**：`src/platform/c_platform.cc`（链 `hyle_platform`；spawn 失败依赖 `hyle_error`）  
-> **ABI 版本**：`HYLE_PLATFORM_C_ABI_VERSION`（当前 **5**）  
+> **稳定性**：未发布，无 ABI 版本门（纯 `extern "C"` 自由函数导出）  
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言 / 跨编译器只许绑本头（及 `hyle/c/error.h`）。不要 include `hyle/platform/*.h`。
@@ -36,7 +36,6 @@
 | fs 权限/链接/临时文件/env 写 | `hyle_fs_get_permissions` / `hyle_fs_*_symlink` / `hyle_fs_create_temp_file` / `hyle_fs_set_env_var` | temp file 返回 fd（`hyle_fs_close_fd` 释放） |
 | MappedFile | `hyle_mapped_file_*` | destroy 释放 |
 | cpu | `hyle_cpu_features_get` 等 | 值返回 POD |
-| 表 | `hyle_platform_api_get` | 可选 FFI 函数指针包 |
 
 ---
 
@@ -188,16 +187,11 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_cpu_supports_isa(isa)` | 本进程能否跑该档（同架构比较） |
 | `hyle_cpu_isa_name(isa)` | 稳定英文名（日志） |
 
-### 3.7 版本 / API 表（DLL）
+### 3.7 导出形态
 
-| 符号 | 说明 |
-|---|---|
-| `hyle_platform_c_abi_version` | 等于宏 |
-| `hyle_platform_api_get(out, expected_abi)` | 0 成功；-1 失败 |
+纯 `extern "C"` 自由函数 + opaque 句柄（Parker/Thread/DynLib/VmRegion/MappedFile），FFI 直接绑符号。**无 `hyle_platform_api` 函数指针表、无 `api_get` 版本协商**（版本协商是分发独立编译插件才需要的件；HYLE 单一 `.so`、未发布，不背此负担）。设计推理见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
 
-`hyle_platform_api` 字段 = **全部 DLL 自由函数**（无 header-inline）：wait×4 + parker×5 + thread×7 + dynlib×9 + vm 自由×8 + region×13 + fs/env×18 + cpu×3 + `c_abi_version`，外加 `abi_version` 整型。**v3 追加（列在表尾，保 v2 前缀布局不变）**：`vm_set_last_error` + hugepage×3（`large_page_size` / `vm_advise_hugepage` / `vm_advise_no_hugepage`）+ numa×5（`numa_node_count` / `numa_current_node` / `vm_bind_numa` / `vm_bind_numa_interleave` / `vm_reserve_numa`）= 9 个。**v4 追加（同样表尾）**：fs×12（`fs_get_permissions` / `set_permissions` / `is_readonly` / `set_readonly` / `create_symlink` / `create_hard_link` / `is_symlink` / `read_symlink` / `create_temp_file` / `close_fd` / `set_env_var` / `unset_env_var`）+ mapped_file×6（`open` / `destroy` / `valid` / `data` / `size` / `flush`）= 18 个。**v5 追加（同样表尾）**：region×2（`vm_region_reserve_numa` / `vm_region_adopt`）。
-
-**不进表**：`hyle_page_align_up`、`hyle_large_page_align_up`、`hyle_vm_free_rw`、thread opts helpers / `HYLE_THREAD_OPTS_INIT`。
+**header-inline（无 DLL 符号）**：`hyle_page_align_up`、`hyle_large_page_align_up`、`hyle_vm_free_rw`、thread opts helpers / `HYLE_THREAD_OPTS_INIT`。
 
 ### 3.8 有意不导出
 
@@ -273,15 +267,13 @@ hyle_fs_temp_directory(tmp, sizeof tmp);
 
 ---
 
-## 5. 版本
+## 5. 稳定性
 
-- v2：完整 `hyle_platform_api` 表、`open_symbol`、`vm_alloc_rw`、thread opts 糖、CPU 全字段（v1 已有）
-- v3：NUMA（node 查询 / preferred·bind·interleave / `reserve_numa`）+ hugepage·THP hint + `vm_set_last_error`。新字段一律追加在 `hyle_platform_api` 表尾，v2 调用方的前缀读取不受影响；仅版本门 `hyle_platform_api_get` 拒绝旧号。
-- v4：fs 权限（get/set + is/set_readonly）、符号链接（create/is/read）、原子临时文件（`create_temp_file` 返回打开的 fd，TOCTOU 安全）+ `close_fd`、env 写（set/unset）；`hyle_file_info` 加 `is_symlink`；thread `priority`（5 档）；MappedFile（RO/RW/COW 文件内存映射）。同样表尾追加，v2/v3 前缀布局不变。
-- v5：VmRegion 两个工厂——`vm_region_reserve_numa`（NUMA 偏好 reserve 出托管 region 句柄，此前 C 侧只有返裸 `void*` 的 `vm_reserve_numa`）+ `vm_region_adopt`（把裸预留收编进 region 句柄）。同样表尾追加，v2–v4 前缀布局不变。
-- 破坏性变更升 `HYLE_PLATFORM_C_ABI_VERSION`
+HYLE 未发布，C ABI 面无版本门/协商——发布前按需自由演进，追求干净正确。发布后如何冻结 ABI 见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
 
-> **有意不导出**：mem 的 `StatsAllocator` / `LeakTracker`（AllocStats 计数 + 泄漏追踪）是**有状态 C++ 类**，属 mem 模块而非 platform；C ABI 化成本高且无 FFI 需求 → 仅 C++。NUMA/hugepage 是 platform 层自由函数原语，故进本表。
+导出面覆盖：wait/Parker、Thread（priority 5 档）、DynLib、VM 自由函数 + VmRegion（含 `reserve_numa`/`adopt`）、hugepage·THP、NUMA（node 查询 + preferred/bind/interleave + `reserve_numa`）、fs/env（权限/符号链接/硬链接/原子临时文件/env 写）、MappedFile（RO/RW/COW）、cpu 全字段。
+
+> **有意不导出**：mem 的 `StatsAllocator` / `LeakTracker`（AllocStats 计数 + 泄漏追踪）是**有状态 C++ 类**，属 mem 模块而非 platform；是 debug 工具、无 FFI 需求 → 仅 C++。NUMA/hugepage 是 platform 层自由函数原语，故导出。
 
 ---
 

@@ -55,24 +55,6 @@ static hyle_status helper_propagate(void) {
 }
 
 int main(void) {
-  CHECK(hyle_error_c_abi_version() == HYLE_ERROR_C_ABI_VERSION);
-  CHECK(HYLE_ERROR_C_ABI_VERSION == 3);
-
-  /* API table — full DLL surface */
-  hyle_error_api api;
-  CHECK(hyle_error_api_get(&api, HYLE_ERROR_C_ABI_VERSION) == 0);
-  CHECK(api.abi_version == HYLE_ERROR_C_ABI_VERSION);
-  CHECK(api.status_ok != NULL);
-  CHECK(api.error_reportf != NULL);
-  CHECK(api.c_abi_version != NULL);
-  CHECK(api.c_abi_version() == HYLE_ERROR_C_ABI_VERSION);
-  /* v3 appended fields present */
-  CHECK(api.error_push_handler != NULL);
-  CHECK(api.error_pop_handler != NULL);
-  CHECK(hyle_error_api_get(NULL, HYLE_ERROR_C_ABI_VERSION) == -1);
-  CHECK(hyle_error_api_get(&api, 999) == -1);
-  CHECK(hyle_error_api_get(&api, 2) == -1);  /* old ABI rejected */
-
   /* OK */
   hyle_status ok = hyle_status_ok();
   CHECK(hyle_status_is_ok(ok));
@@ -239,11 +221,6 @@ int main(void) {
     CHECK(hyle_status_is_not_found(prop));
     hyle_status_free(&prop);
   }
-
-  /* vtable path still works */
-  hyle_status via = api.status_new(HYLE_STATUS_UNAVAILABLE, "down");
-  CHECK(api.status_get_code(via) == HYLE_STATUS_UNAVAILABLE);
-  api.status_free(&via);
 
   if (g_fails != 0) {
     fprintf(stderr, "c_error_test: %d check(s) failed\n", g_fails);

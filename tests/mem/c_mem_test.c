@@ -17,61 +17,6 @@ static int g_fails = 0;
   } while (0)
 
 int main(void) {
-  /* ---- version gate ---- */
-  CHECK(hyle_mem_c_abi_version() == HYLE_MEM_C_ABI_VERSION);
-  CHECK(HYLE_MEM_C_ABI_VERSION == 1);
-
-  hyle_mem_api api;
-  CHECK(hyle_mem_api_get(&api, HYLE_MEM_C_ABI_VERSION) == 0);
-  CHECK(api.abi_version == HYLE_MEM_C_ABI_VERSION);
-  CHECK(hyle_mem_api_get(NULL, HYLE_MEM_C_ABI_VERSION) == -1);
-  CHECK(hyle_mem_api_get(&api, 999) == -1);
-  CHECK(hyle_mem_api_get(&api, 0) == -1);
-
-  /* every DLL slot in the table must be populated */
-  CHECK(api.default_alignment != NULL);
-  CHECK(api.system_allocator != NULL);
-  CHECK(api.system_usable_size != NULL);
-  CHECK(api.system_good_size != NULL);
-  CHECK(api.memory_arena_create != NULL);
-  CHECK(api.memory_arena_destroy != NULL);
-  CHECK(api.memory_arena_allocate != NULL);
-  CHECK(api.memory_arena_deallocate != NULL);
-  CHECK(api.memory_arena_reset != NULL);
-  CHECK(api.memory_arena_block_size != NULL);
-  CHECK(api.memory_arena_capacity != NULL);
-  CHECK(api.memory_arena_as_allocator != NULL);
-  CHECK(api.stack_allocator_create != NULL);
-  CHECK(api.stack_allocator_destroy != NULL);
-  CHECK(api.stack_allocator_allocate != NULL);
-  CHECK(api.stack_allocator_reset != NULL);
-  CHECK(api.stack_allocator_mark != NULL);
-  CHECK(api.stack_allocator_rewind != NULL);
-  CHECK(api.stack_allocator_used != NULL);
-  CHECK(api.stack_allocator_capacity != NULL);
-  CHECK(api.stack_allocator_remaining != NULL);
-  CHECK(api.stack_allocator_as_allocator != NULL);
-  CHECK(api.arena_create != NULL);
-  CHECK(api.arena_destroy != NULL);
-  CHECK(api.arena_allocate != NULL);
-  CHECK(api.arena_reset != NULL);
-  CHECK(api.arena_used != NULL);
-  CHECK(api.arena_remaining != NULL);
-  CHECK(api.arena_block_size != NULL);
-  CHECK(api.arena_as_allocator != NULL);
-  CHECK(api.huge_region_open != NULL);
-  CHECK(api.huge_region_open_local != NULL);
-  CHECK(api.huge_region_open_interleaved != NULL);
-  CHECK(api.huge_region_destroy != NULL);
-  CHECK(api.huge_region_valid != NULL);
-  CHECK(api.huge_region_data != NULL);
-  CHECK(api.huge_region_size != NULL);
-  CHECK(api.enable_allocator_hugepages != NULL);
-  CHECK(api.enable_allocator_numa != NULL);
-  CHECK(api.reserve_huge_1g_pages != NULL);
-  CHECK(api.c_abi_version != NULL);
-  CHECK(api.c_abi_version() == HYLE_MEM_C_ABI_VERSION);
-
   CHECK(hyle_default_alignment() >= sizeof(void*));
 
   /* ---- system allocator: alloc / write / realloc / free ---- */

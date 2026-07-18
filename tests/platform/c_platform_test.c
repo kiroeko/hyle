@@ -31,46 +31,7 @@ static int visit_cb(const char* name, int is_dir, void* ctx) {
 }
 
 int main(void) {
-  CHECK(hyle_platform_c_abi_version() == HYLE_PLATFORM_C_ABI_VERSION);
-  CHECK(HYLE_PLATFORM_C_ABI_VERSION == 5);
-
-  hyle_platform_api api;
-  CHECK(hyle_platform_api_get(&api, HYLE_PLATFORM_C_ABI_VERSION) == 0);
-  CHECK(api.abi_version == HYLE_PLATFORM_C_ABI_VERSION);
-  CHECK(api.page_size() >= 4096u);
-  CHECK(api.thread_joinable != NULL);
-  CHECK(api.dynlib_open_symbol != NULL);
-  CHECK(api.vm_alloc_rw != NULL);
-  CHECK(api.cpu_features_get != NULL);
-  CHECK(api.c_abi_version != NULL);
-  CHECK(api.c_abi_version() == HYLE_PLATFORM_C_ABI_VERSION);
-  /* v3 appended fields present */
-  CHECK(api.vm_set_last_error != NULL);
-  CHECK(api.large_page_size != NULL);
-  CHECK(api.vm_advise_hugepage != NULL);
-  CHECK(api.vm_advise_no_hugepage != NULL);
-  CHECK(api.numa_node_count != NULL);
-  CHECK(api.numa_current_node != NULL);
-  CHECK(api.vm_bind_numa != NULL);
-  CHECK(api.vm_bind_numa_interleave != NULL);
-  CHECK(api.vm_reserve_numa != NULL);
-  /* v4 appended fields present */
-  CHECK(api.fs_get_permissions != NULL);
-  CHECK(api.fs_create_symlink != NULL);
-  CHECK(api.fs_create_hard_link != NULL);
-  CHECK(api.fs_create_temp_file != NULL);
-  CHECK(api.fs_close_fd != NULL);
-  CHECK(api.fs_set_env_var != NULL);
-  CHECK(api.mapped_file_open != NULL);
-  CHECK(api.mapped_file_flush != NULL);
-  /* v5 appended fields present */
-  CHECK(api.vm_region_reserve_numa != NULL);
-  CHECK(api.vm_region_adopt != NULL);
-  CHECK(hyle_platform_api_get(NULL, HYLE_PLATFORM_C_ABI_VERSION) == -1);
-  CHECK(hyle_platform_api_get(&api, 999) == -1);
-  CHECK(hyle_platform_api_get(&api, 2) == -1); /* old ABI rejected */
-  CHECK(hyle_platform_api_get(&api, 3) == -1); /* v3 rejected too */
-  CHECK(hyle_platform_api_get(&api, 4) == -1); /* v4 rejected too */
+  CHECK(hyle_page_size() >= 4096u);
 
   /* Parker */
   hyle_parker_o* p = hyle_parker_create();

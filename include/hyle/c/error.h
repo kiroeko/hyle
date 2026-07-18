@@ -28,12 +28,6 @@ extern "C" {
 #  define HYLE_ERROR_C_API
 #endif
 
-/* Breaking change to hyle_error_api layout bumps this. v3 appended a nesting-safe
- * push/pop handler pair (opaque saved-handler token), all at the END of
- * hyle_error_api, so a v2 caller's prefix reads are unchanged; only the version
- * gate rejects older numbers. */
-#define HYLE_ERROR_C_ABI_VERSION 3
-
 /* ---- status codes ---------------------------------------------------------- */
 typedef enum hyle_status_code {
   HYLE_STATUS_OK = 0,
@@ -238,37 +232,6 @@ HYLE_ERROR_C_API void hyle_error_reportf(hyle_severity severity, const char* fil
     hyle_status _hyle_st_ = (st);  \
     if (!hyle_status_is_ok(_hyle_st_)) return _hyle_st_; \
   } while (0)
-
-/* ---- API table (DLL symbols only; inlines are not listed) ------------------ */
-typedef struct hyle_error_api {
-  int abi_version;
-  hyle_status (*status_ok)(void);
-  hyle_status (*status_new)(hyle_status_code code, const char* msg);
-  void (*status_free)(hyle_status* s);
-  hyle_status (*status_clone)(hyle_status s);
-  void (*status_move)(hyle_status* dst, hyle_status* src);
-  int (*status_is_ok)(hyle_status s);
-  hyle_status_code (*status_get_code)(hyle_status s);
-  int (*status_has_message)(hyle_status s);
-  int (*status_equals)(hyle_status a, hyle_status b);
-  const char* (*status_code_name)(hyle_status_code code);
-  size_t (*status_message)(hyle_status s, char* buf, size_t cap);
-  size_t (*status_to_string)(hyle_status s, char* buf, size_t cap);
-  void (*error_set_handler)(hyle_error_report_fn fn, void* user);
-  void (*error_report)(hyle_severity severity, const char* file, uint32_t line,
-                       const char* message);
-  void (*error_reportf)(hyle_severity severity, const char* file, uint32_t line,
-                        const char* fmt, ...);
-  int (*c_abi_version)(void);
-
-  /* ---- v3 appended: nesting-safe handler push/pop (kept LAST) ------------- */
-  hyle_error_saved_handler_o* (*error_push_handler)(hyle_error_report_fn fn,
-                                                    void* user);
-  void (*error_pop_handler)(hyle_error_saved_handler_o* saved);
-} hyle_error_api;
-
-HYLE_ERROR_C_API int hyle_error_api_get(hyle_error_api* out, int expected_abi);
-HYLE_ERROR_C_API int hyle_error_c_abi_version(void);
 
 #ifdef __cplusplus
 }

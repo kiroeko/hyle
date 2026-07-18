@@ -2,7 +2,7 @@
 
 > **发布面**：`include/hyle/c/mem.h`  
 > **实现**：`src/mem/c_mem.cc`（链 `hyle_mem`）  
-> **ABI 版本**：`HYLE_MEM_C_ABI_VERSION`（当前 **1**）  
+> **稳定性**：未发布，无 ABI 版本门（见 §3.7）  
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言 / 跨编译器只许绑本头。不要 include `hyle/mem/*.h`。
@@ -31,7 +31,6 @@
 | Arena | `hyle_arena_create(pool)` → `destroy` | create→destroy；借 pool 的块，pool 必须更久活 |
 | HugeRegion | `hyle_huge_region_open*` → `destroy` | open→destroy |
 | 进程级策略 | `hyle_enable_allocator_hugepages` / `numa` / `reserve_huge_1g_pages` | 无句柄，全局软策略 |
-| 表 | `hyle_mem_api_get` | 可选 FFI 函数指针包 |
 
 **sized-free 合同**：`free` / `deallocate` **携带 size 与 alignment**（对标 Rust `GlobalAlloc` / C++17 sized delete / jemalloc `sdallocx`）。传入的 size 必须等于分配时的请求——arena/pool/stack **不存每指针 size**，传错即 UB。唯一的物理容量查询是 `hyle_system_usable_size`（仅 system 分配器有，mimalloc 知道 size-class）。
 
@@ -135,16 +134,11 @@ soft 提示，绝不影响正确性。flags 用 `HYLE_HUGE_*` 位。
 | `hyle_enable_allocator_numa(max_nodes)` | max_nodes==0→全节点 |
 | `hyle_reserve_huge_1g_pages(pages, numa_node, timeout_ms)` | 预留 1GiB 大页；ANY→交错；成功/`pages==0`→1；软失败（无权限/无连续 RAM）→0 |
 
-### 3.7 版本 / API 表
+### 3.7 导出形态
 
-| 符号 | 说明 |
-|---|---|
-| `hyle_mem_c_abi_version()` | 等于宏 |
-| `hyle_mem_api_get(out, expected_abi)` | 0 成功；-1 失败（NULL 或版本不符） |
+纯 `extern "C"` 自由函数 + opaque 句柄，FFI 直接绑符号（`dlsym`/bindgen/ctypes 都认）。**无 `hyle_mem_api` 函数指针表、无 `api_get` 版本协商**——版本协商是"分发独立编译插件"才需要的件，HYLE 单一 `.so` 一起编译、未发布，不背这个负担。设计推理见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
 
-`hyle_mem_api` 字段 = **全部 DLL 自由函数**：allocator×4 + memory_arena×8 + stack×10 + arena×8 + huge×7 + policy×3 + `c_abi_version`，外加 `abi_version` 整型。破坏性变更升版本、新字段追加表尾（保前缀布局）。
-
-**不进表**：inline 便利 `hyle_alloc` / `hyle_free` / `hyle_realloc`（无 DLL 符号）。
+**header-inline（无 DLL 符号）**：便利转发 `hyle_alloc` / `hyle_free` / `hyle_realloc`；typed 对象池宏 `HYLE_OBJECT_POOL_CREATE/ACQUIRE/RELEASE` + `HYLE_ALIGNOF`。
 
 ### 3.8 有意不导出（仅 C++）
 
@@ -223,10 +217,11 @@ hyle_memory_arena_o* pool = hyle_memory_arena_create(mine, 512, 64, 0);
 
 ---
 
-## 5. 版本
+## 5. 稳定性
 
-- v1：allocator vtable（`hyle_allocator` + system + usable/good size）、MemoryArena / StackAllocator / Arena / HugeRegion 不透明句柄、进程级 hugepage/NUMA 策略、`hyle_mem_api` 表 + 版本门；typed 对象池便利宏（`HYLE_OBJECT_POOL_*`，header-inline 无 DLL 符号，不影响 ABI）。
-- 破坏性变更升 `HYLE_MEM_C_ABI_VERSION`；新字段追加 `hyle_mem_api` 表尾，旧调用方前缀读取不受影响。
+HYLE 未发布，无版本门/协商机制（见 §3.7）。发布前 C ABI 面按需自由演进——追求干净正确，不背向后兼容包袱。发布后如何冻结 ABI 见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
+
+导出面：`hyle_allocator` vtable（+ system + usable/good size）、MemoryArena / StackAllocator / Arena / HugeRegion 不透明句柄、进程级 hugepage/NUMA 策略；typed 对象池便利宏（`HYLE_OBJECT_POOL_*`，header-inline）。
 
 ---
 

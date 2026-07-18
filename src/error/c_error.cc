@@ -275,33 +275,4 @@ void hyle_error_reportf(hyle_severity severity, const char* file, uint32_t line,
   hyle::error_report(static_cast<hyle::Severity>(severity), f, line, "%s", buf);
 }
 
-int hyle_error_c_abi_version(void) { return HYLE_ERROR_C_ABI_VERSION; }
-
-int hyle_error_api_get(hyle_error_api* out, int expected_abi) {
-  if (out == nullptr) return -1;
-  if (expected_abi != HYLE_ERROR_C_ABI_VERSION) return -1;
-  out->abi_version = HYLE_ERROR_C_ABI_VERSION;
-  out->status_ok = &hyle_status_ok;
-  out->status_new = &hyle_status_new;
-  out->status_free = &hyle_status_free;
-  out->status_clone = &hyle_status_clone;
-  out->status_move = &hyle_status_move;
-  out->status_is_ok = &hyle_status_is_ok;
-  out->status_get_code = &hyle_status_get_code;
-  out->status_has_message = &hyle_status_has_message;
-  out->status_equals = &hyle_status_equals;
-  out->status_code_name = &hyle_status_code_name;
-  out->status_message = &hyle_status_message;
-  out->status_to_string = &hyle_status_to_string;
-  out->error_set_handler = &hyle_error_set_handler;
-  out->error_report = &hyle_error_report;
-  out->error_reportf = &hyle_error_reportf;
-  out->c_abi_version = &hyle_error_c_abi_version;
-
-  /* v3 appended */
-  out->error_push_handler = &hyle_error_push_handler;
-  out->error_pop_handler = &hyle_error_pop_handler;
-  return 0;
-}
-
 }  // extern "C"
