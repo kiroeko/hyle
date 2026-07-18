@@ -12,8 +12,14 @@ platform **功能完整、C ABI 接近满分**:8 子系统(wait/cpu/numa/virtual
 - **[✓ 三平台绿] P2 #5/copy_file/getpwuid_r**(743b085):dynlib 宽字符(+ 顺带 open(nullptr) 防护) + 自拷贝守卫 + 线程安全。
 - **[✓] P3 文档**(e23a06a):api 表 stale / alloc_rw / §3.8 补全。
 - **[✓ 三平台绿] P4 核心**(0bb8cd8):#3 join death test;覆盖增强降后续。
-- **三平台复验**:Windows MSVC 121 / mac clang 124 / WSL GCC-14 124 全绿 + 三平台 c 测试通过。
-- **后续(非本轮,已登记于下)**:P4 覆盖增强(park_timeout 竞态 / C ABI 薄转发 / mapped_file / bench)、边际 LOW(wrapper OOM last-error 等,见 P2)、**P5 下游错配(sched 不绑核 / dynlib 动机)**、真缺口(fs read-write / numa CPU→node / cpu cache 拓扑)。
+- **[P0–P4] 三平台复验**:Windows MSVC 121 / mac clang 124 / WSL GCC-14 124 全绿 + 三平台 c 测试通过。
+
+## 处置进度(2026-07-18 续 — 后续批次 #16/#17/#18 三平台已过)
+- **[✓ 三平台绿] #16 边际 LOW guard**(6bd0ed7):page_align_up/large_page_align_up 溢出 / get_env_var Windows 探长度竞态 / rm 深递归上限(kRmMaxDepth=512)/ vm_region 4 个 create wrapper OOM last-error。dynlib/mapped_file/parker wrapper OOM 无公开 set 通路,接受。
+- **[✓ 三平台绿] #17 P4 覆盖增强**(234d0a1,子代理补):park_timeout timeout-vs-unpark 竞态压测 / C ABI 薄转发(wait 四导出、vm_protect/decommit、VmRegion decommit-protect、mapped_file 数据路径)/ mapped_file 非对齐 offset+move / VmRegion::adopt 单测 / bench 三热路径。
+- **[✓ 三平台绿] #18 fs 通用文件读写**(600ea1d,真缺口):open_file(path,OpenFlags)->OwnedFd + OwnedFd::read/write + read_raw/write_raw 三平台 + C ABI hyle_fs_open/read/write(HYLE_OPEN_* enum)+ 测试 + guide。
+- **三平台复验**:Windows MSVC 132 / mac clang 134 / WSL GCC-14 134 全绿 + 三平台 c 测试通过。(WSL 复验坑:`wsl bash -lc '内联'` 会吞 shell 变量致 rsync 退化 `// /`,改用脚本文件;裸 `/mnt/...` 参数被 Git Bash MSYS 转换,改用 PowerShell 调 wsl。)
+- **后续(handoff — 本 session 续做)**:**P5 下游错配(sched 不绑核 / dynlib 动机)**、真缺口(numa CPU→node / cpu cache 拓扑)。
 
 ## 红队核实结果(主进程逐行复核,非盲信子代理)
 
