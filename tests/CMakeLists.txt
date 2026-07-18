@@ -14,6 +14,13 @@ set(gtest_force_shared_crt ON CACHE BOOL "" FORCE)
 FetchContent_MakeAvailable(googletest)
 
 hyle_add_test(core SOURCES core/scaffolding_test.cc)
+# close-01 sample: pure C TU (C compiler) linking only the core C ABI header.
+add_executable(hyle_core_c_test core/c_core_test.c)
+target_link_libraries(hyle_core_c_test PRIVATE hyle_core)
+set_source_files_properties(core/c_core_test.c PROPERTIES LANGUAGE C)
+hyle_apply_warnings(hyle_core_c_test)
+hyle_apply_sanitizer(hyle_core_c_test)
+add_test(NAME hyle_core_c_test COMMAND hyle_core_c_test)
 hyle_add_test(error SOURCES error/status_test.cc error/error_handler_test.cc)
 # close-01 sample: pure C TU (C compiler) linking only the C ABI header.
 add_executable(hyle_error_c_test error/c_error_test.c)
@@ -158,9 +165,19 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # auto-run ctest -- it is built for compile validation + manual SDE execution. The optional
   # HYLE_SIMD_AVX512_RUNNABLE gate marks the host as真 AVX-512 (or SDE-wrapped) to auto-run.
   hyle_isa_flags(_avx512_flags AVX512)
+  # Default: build for compile-validation only, do NOT auto-run (bare metal
+  # SIGILLs on a non-AVX512 host, e.g. WSL2/Hyper-V hides AVX-512). Set
+  # HYLE_SIMD_AVX512_RUNNABLE (a真 AVX-512 host, or ctest wrapped in `sde64
+  # -future`) to register avx512/avx512_dl as auto-run ctests.
+  if(HYLE_SIMD_AVX512_RUNNABLE)
+    set(_avx512_autorun "")
+  else()
+    set(_avx512_autorun NO_AUTORUN)
+  endif()
   hyle_add_test(simd NAME avx512 SOURCES simd/vec_test.cc simd/native_test.cc
                 simd/sort_kernel_test.cc ${_fixed_partial_tests}
-                DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags})
+                DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512_flags}
+                ${_avx512_autorun})
   target_include_directories(hyle_simd_avx512_test PRIVATE "${PROJECT_SOURCE_DIR}")
   # AVX512_DL variant: same avx512.h backend, compiled with GFNI/VBMI/BITALG so the NATIVE
   # BitShuffle (VPSHUFBITQMB) / MultiRotateRight (VPMULTISHIFTQB) paths are taken instead of the
@@ -172,7 +189,7 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   # variant there a pointless duplicate.
   if(NOT MSVC)
     hyle_isa_flags(_avx512dl_flags AVX512_DL)
-    hyle_add_test(simd NAME avx512_dl SOURCES simd/vec_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512dl_flags})
+    hyle_add_test(simd NAME avx512_dl SOURCES simd/vec_test.cc simd/native_test.cc DEFINES HYLE_SIMD_TARGET_AVX512 OPTIONS ${_avx512dl_flags} ${_avx512_autorun})
   endif()
 elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   hyle_isa_flags(_neon_flags NEON)

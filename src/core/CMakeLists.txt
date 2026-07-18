@@ -1,1 +1,1 @@
-hyle_add_module(core SOURCES version.cc)
+hyle_add_module(core SOURCES version.cc c_core.cc)

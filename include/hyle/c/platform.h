@@ -122,6 +122,15 @@ HYLE_PLATFORM_C_API hyle_status hyle_thread_spawn(hyle_thread_o** out,
                                                   hyle_thread_entry_fn entry,
                                                   void* ctx,
                                                   const hyle_thread_opts* opts);
+/* Convenience spawn without filling hyle_thread_opts + its has_* flags: options
+ * pass directly, sentinels instead of flags -- name==NULL => none; stack_size==0
+ * => OS default; affinity_cpu<0 => no affinity; priority is a hyle_thread_priority
+ * (HYLE_THREAD_PRIORITY_NORMAL==0 is the default). FFI-friendly: nothing to
+ * zero-init, no has_* flag to remember. */
+HYLE_PLATFORM_C_API hyle_status hyle_thread_spawn_opts(
+    hyle_thread_o** out, hyle_thread_entry_fn entry, void* ctx, const char* name,
+    size_t stack_size, int affinity_cpu, int priority);
+
 /* Join and destroy the handle (joinable only once). */
 HYLE_PLATFORM_C_API void hyle_thread_join(hyle_thread_o* t);
 HYLE_PLATFORM_C_API int hyle_thread_joinable(const hyle_thread_o* t);

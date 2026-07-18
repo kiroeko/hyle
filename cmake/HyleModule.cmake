@@ -228,7 +228,7 @@ endfunction()
 # module can have several test exes (e.g. simd compiles the SAME source per ISA variant
 # with different DEFINES/OPTIONS -- HYLE_SIMD_TARGET_AVX2 + -mavx2 etc.).
 function(hyle_add_test module)
-  cmake_parse_arguments(ARG "" "NAME" "SOURCES;DEPS;DEFINES;OPTIONS" ${ARGN})
+  cmake_parse_arguments(ARG "NO_AUTORUN" "NAME" "SOURCES;DEPS;DEFINES;OPTIONS" ${ARGN})
   if(ARG_NAME)
     set(target "hyle_${module}_${ARG_NAME}_test")
   else()
@@ -244,7 +244,12 @@ function(hyle_add_test module)
   endif()
   hyle_apply_warnings(${target})
   hyle_apply_sanitizer(${target})
-  add_test(NAME ${target} COMMAND ${target})
+  # NO_AUTORUN: build the target but don't register it as a ctest. For ISA
+  # variants (avx512) that SIGILL on a host lacking the instruction set -- built
+  # for compile validation + manual SDE runs, not bare-metal auto-run.
+  if(NOT ARG_NO_AUTORUN)
+    add_test(NAME ${target} COMMAND ${target})
+  endif()
 endfunction()
 
 # hyle_add_bench(<module> SOURCES ...) -> bench exe linked to hyle_<module> + nanobench

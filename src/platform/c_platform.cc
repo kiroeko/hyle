@@ -149,6 +149,26 @@ hyle_status hyle_thread_spawn(hyle_thread_o** out, hyle_thread_entry_fn entry,
   return steal_status(hyle::Status());
 }
 
+hyle_status hyle_thread_spawn_opts(hyle_thread_o** out, hyle_thread_entry_fn entry,
+                                   void* ctx, const char* name, size_t stack_size,
+                                   int affinity_cpu, int priority) {
+  // Translate sentinels into the has_* struct so an FFI caller never touches
+  // the flags. name==NULL stays NULL (spawn treats it as "no name").
+  hyle_thread_opts o = HYLE_THREAD_OPTS_INIT;
+  o.name = name;
+  if (stack_size != 0) {
+    o.has_stack_size = 1;
+    o.stack_size = stack_size;
+  }
+  if (affinity_cpu >= 0) {
+    o.has_affinity_cpu = 1;
+    o.affinity_cpu = static_cast<unsigned>(affinity_cpu);
+  }
+  o.has_priority = 1;  // always set; HYLE_THREAD_PRIORITY_NORMAL==0 = default
+  o.priority = priority;
+  return hyle_thread_spawn(out, entry, ctx, &o);
+}
+
 void hyle_thread_join(hyle_thread_o* t) {
   if (t == nullptr) return;
   if (t->t.joinable()) t->t.join();

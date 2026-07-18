@@ -12,6 +12,7 @@
 | [`c-error.md`](./c-error.md) | **error 纯 C ABI**：`hyle_status` 所有权、工厂/查询、诊断 handler、`hyle_error_api` 表、导出清单与版本。**FFI / 跨编译器第一站。** |
 | [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/fs/cpu、`hyle_platform_api` 表、所有权与易用示例。 |
 | [`c-mem.md`](./c-mem.md) | **mem 纯 C ABI**：`hyle_allocator` vtable、system 分配器、MemoryArena/StackAllocator/Arena/HugeRegion 不透明句柄、进程级大页/NUMA 策略、`hyle_mem_api` 表。 |
+| [`c-core.md`](./c-core.md) | **core 纯 C ABI**：`hyle_version`（packed）+ `hyle_version_string`，跨语言诊断版本查询；纯 `extern "C"`，无 api 表/版本协商。 |
 | [`simd-usage.md`](./simd-usage.md) | **SIMD 怎么选和怎么调**：普通动态派发、整库固定 ISA、固定 kernel、常用 batch 能力与调用合同；并标明 close-01 C ABI 迁移边界。 |
 | [`usage-contract.md`](./usage-contract.md) | **怎么调才不出 UB**：为 SOTA 性能保留的调用安全红线（fiber 勿跨 `yield()` 持有 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离）。每条带机制+安全模式+后果。**热路径集成前必读。** |
 

@@ -53,6 +53,21 @@ int main(void) {
   CHECK(hyle_thread_joinable(t));
   hyle_thread_join(t);
   CHECK(ran == 42);
+
+  /* FFI-friendly spawn_opts: no struct/has_ flags, sentinels for defaults
+   * (stack_size 0 => default, affinity_cpu -1 => none). */
+  {
+    int ran2 = 0;
+    hyle_thread_o* t2 = NULL;
+    hyle_status st2 = hyle_thread_spawn_opts(&t2, thr_entry, &ran2, "c_plat_opts",
+                                             0, -1, HYLE_THREAD_PRIORITY_NORMAL);
+    CHECK(hyle_status_is_ok(st2));
+    hyle_status_free(&st2);
+    CHECK(t2 != NULL);
+    hyle_thread_join(t2);
+    CHECK(ran2 == 42);
+  }
+
   CHECK(hyle_hardware_concurrency() >= 1u);
   CHECK(hyle_this_thread_id() != 0);
 
