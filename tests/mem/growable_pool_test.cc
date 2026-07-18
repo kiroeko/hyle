@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <stdexcept>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -59,6 +60,21 @@ TEST(GrowablePool, DestructorRunsOnDestroy) {
   EXPECT_EQ(live.load(), 20);
   for (auto* o : objs) pool.destroy(o);
   EXPECT_EQ(live.load(), 0);
+}
+
+TEST(GrowablePool, ConstructorThrowReturnsSlotToPool) {
+  struct ThrowsOnce {
+    explicit ThrowsOnce(bool fail) {
+      if (fail) throw std::runtime_error("ctor");
+    }
+  };
+  GrowablePool<ThrowsOnce> pool(system_allocator(), 1);
+  EXPECT_THROW((void)pool.create(true), std::runtime_error);
+  EXPECT_EQ(pool.live(), 0u);
+  auto* value = pool.create(false);
+  ASSERT_NE(value, nullptr);
+  EXPECT_EQ(pool.live(), 1u);
+  pool.destroy(value);
 }
 
 // Move transfers ownership (and the allocator -- clay's move-assign bug). The

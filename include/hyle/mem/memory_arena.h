@@ -157,7 +157,11 @@ class MemoryArena {
   // range -- no cross-shard next_ aliasing, per-shard ABA version stays sound.
   void deallocate(void* p) noexcept {
     if (p == nullptr || !valid_) return;
-    auto off = static_cast<std::size_t>(static_cast<std::byte*>(p) - slab_);
+    const auto addr = reinterpret_cast<std::uintptr_t>(p);
+    const auto begin = reinterpret_cast<std::uintptr_t>(slab_);
+    const std::size_t slab_bytes = stride_ * static_cast<std::size_t>(count_);
+    HYLE_FATAL_ASSERT(addr >= begin && addr - begin < slab_bytes);
+    const auto off = static_cast<std::size_t>(addr - begin);
     std::uint32_t idx = static_cast<std::uint32_t>(off / stride_);
     // Belongs to this pool: idx in range AND p is block-aligned. The alignment check
     // is `idx*stride_ == off` (one multiply) rather than a second `off % stride_`
@@ -336,9 +340,10 @@ class MemoryArena {
 class Arena {
  public:
   explicit Arena(MemoryArena* pool)
-      : pool_(pool),
-        block_(static_cast<std::byte*>(pool->allocate())),
-        block_size_(pool->block_size()) {
+      : pool_(pool) {
+    HYLE_FATAL_ASSERT(pool != nullptr);
+    block_ = static_cast<std::byte*>(pool_->allocate());
+    block_size_ = pool_->block_size();
     // Pool exhausted -> invalid (block_ == nullptr); caller must check valid().
     // Per c-abi-authoring-guide 铁律 3, a resource failure (no free block) returns
     // gracefully -- it is not a contract violation, so no fatal assert here. The
@@ -374,10 +379,12 @@ class Arena {
   void reset() noexcept { cur_ = block_; }
 
   std::size_t block_size() const noexcept { return block_size_; }
-  std::size_t used() const noexcept { return static_cast<std::size_t>(cur_ - block_); }
+  std::size_t used() const noexcept {
+    return valid() ? static_cast<std::size_t>(cur_ - block_) : 0;
+  }
   // Bytes left before the block is full (a max-aligned request up to this fits).
   std::size_t remaining() const noexcept {
-    return static_cast<std::size_t>(end_ - cur_);
+    return valid() ? static_cast<std::size_t>(end_ - cur_) : 0;
   }
 
   // Adapt this Arena to the Allocator vtable (split): allocate -> bump, deallocate ->

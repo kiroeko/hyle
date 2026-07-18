@@ -10,7 +10,17 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstdio>
+#include <limits>
+#include <new>
 
+#include "hyle/platform/thread.h"
+
+#if defined(HYLE_OS_WINDOWS)
+#  define WIN32_LEAN_AND_MEAN
+#  define NOMINMAX
+#  include <windows.h>
+#endif
 #if defined(HYLE_OS_LINUX) && (defined(HYLE_ARCH_ARM64) || defined(HYLE_ARCH_RISCV64))
 #include <sys/auxv.h>
 #endif
@@ -341,6 +351,197 @@ unsigned detect_cache_line() noexcept {
 #endif
 }
 
+CacheInfo detect_cache_info() noexcept {
+  CacheInfo out;
+#if defined(HYLE_ARCH_X64)
+  std::uint32_t abcd[4];
+  cpuid(0, 0, abcd);
+  const std::uint32_t max_basic = abcd[0];
+  auto enumerate = [&](std::uint32_t leaf) noexcept {
+    for (std::uint32_t subleaf = 0; subleaf != 64; ++subleaf) {
+      cpuid(leaf, subleaf, abcd);
+      const unsigned type = abcd[0] & 0x1fu;
+      if (type == 0) break;
+      const unsigned level = (abcd[0] >> 5) & 0x7u;
+      std::uint64_t size = ((abcd[1] >> 22) & 0x3ffu) + 1u;
+      const std::uint64_t factors[] = {
+          ((abcd[1] >> 12) & 0x3ffu) + 1u,
+          (abcd[1] & 0xfffu) + 1u,
+          static_cast<std::uint64_t>(abcd[2]) + 1u};
+      for (const std::uint64_t factor : factors) {
+        if (size > std::numeric_limits<std::uint64_t>::max() / factor) {
+          size = 0;
+          break;
+        }
+        size *= factor;
+      }
+      if (level == 1 && (type == 1 || type == 3) && size > out.l1d)
+        out.l1d = size;
+      if (level == 1 && (type == 2 || type == 3) && size > out.l1i)
+        out.l1i = size;
+      if (level == 2 && size > out.l2) out.l2 = size;
+      if (level == 3 && size > out.l3) out.l3 = size;
+    }
+  };
+  if (max_basic >= 4) enumerate(4);
+  if (out.l1d == 0 && out.l1i == 0 && out.l2 == 0) {
+    cpuid(0x80000000u, 0, abcd);
+    if (abcd[0] >= 0x8000001du) enumerate(0x8000001du);
+  }
+#elif defined(HYLE_OS_MACOS)
+  auto get = [](const char* name) noexcept {
+    std::uint64_t value = 0;
+    std::size_t size = sizeof(value);
+    return ::sysctlbyname(name, &value, &size, nullptr, 0) == 0 ? value : 0;
+  };
+  out.l1d = get("hw.l1dcachesize");
+  out.l1i = get("hw.l1icachesize");
+  out.l2 = get("hw.l2cachesize");
+  out.l3 = get("hw.l3cachesize");
+#elif defined(HYLE_OS_LINUX)
+  auto get = [](int name) noexcept {
+    const long value = ::sysconf(name);
+    return value > 0 ? static_cast<std::uint64_t>(value) : 0;
+  };
+#  ifdef _SC_LEVEL1_DCACHE_SIZE
+  out.l1d = get(_SC_LEVEL1_DCACHE_SIZE);
+#  endif
+#  ifdef _SC_LEVEL1_ICACHE_SIZE
+  out.l1i = get(_SC_LEVEL1_ICACHE_SIZE);
+#  endif
+#  ifdef _SC_LEVEL2_CACHE_SIZE
+  out.l2 = get(_SC_LEVEL2_CACHE_SIZE);
+#  endif
+#  ifdef _SC_LEVEL3_CACHE_SIZE
+  out.l3 = get(_SC_LEVEL3_CACHE_SIZE);
+#  endif
+#endif
+  return out;
+}
+
+#if defined(HYLE_OS_LINUX)
+bool read_sysfs_unsigned(const char* path, unsigned& value) noexcept {
+  std::FILE* file = std::fopen(path, "r");
+  if (!file) return false;
+  const bool ok = std::fscanf(file, "%u", &value) == 1;
+  std::fclose(file);
+  return ok;
+}
+#endif
+
+CpuTopology detect_topology() noexcept {
+  CpuTopology out;
+  out.logical_cpus = hardware_concurrency();
+  if (out.logical_cpus == 0) out.logical_cpus = 1;
+  out.performance_cpus = out.logical_cpus;
+
+#if defined(HYLE_OS_WINDOWS)
+  DWORD bytes = 0;
+  (void)::GetSystemCpuSetInformation(nullptr, 0, &bytes,
+                                     ::GetCurrentProcess(), 0);
+  auto* storage = new (std::nothrow) unsigned char[bytes];
+  if (!storage || bytes == 0) {
+    delete[] storage;
+    return out;
+  }
+  if (!::GetSystemCpuSetInformation(
+          reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage), bytes,
+          &bytes, ::GetCurrentProcess(), 0)) {
+    delete[] storage;
+    return out;
+  }
+  unsigned min_class = 255, max_class = 0, count = 0;
+  for (DWORD offset = 0; offset < bytes;) {
+    auto* info =
+        reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage + offset);
+    if (info->Size == 0 || info->Size > bytes - offset) break;
+    if (info->Type == CpuSetInformation) {
+      const unsigned cls = info->CpuSet.EfficiencyClass;
+      if (cls < min_class) min_class = cls;
+      if (cls > max_class) max_class = cls;
+      ++count;
+    }
+    offset += info->Size;
+  }
+  if (count == out.logical_cpus && min_class < max_class) {
+    unsigned performance = 0;
+    for (DWORD offset = 0; offset < bytes;) {
+      auto* info =
+          reinterpret_cast<PSYSTEM_CPU_SET_INFORMATION>(storage + offset);
+      if (info->Size == 0 || info->Size > bytes - offset) break;
+      if (info->Type == CpuSetInformation &&
+          info->CpuSet.EfficiencyClass == max_class) {
+        ++performance;
+      }
+      offset += info->Size;
+    }
+    if (performance != 0 && performance != count) {
+      out.performance_cpus = performance;
+      out.efficiency_cpus = count - performance;
+      out.hybrid = true;
+    }
+  }
+  delete[] storage;
+#elif defined(HYLE_OS_MACOS)
+  int levels = 0;
+  std::size_t levels_size = sizeof(levels);
+  if (::sysctlbyname("hw.nperflevels", &levels, &levels_size, nullptr, 0) ==
+          0 &&
+      levels > 1) {
+    unsigned performance = 0, efficiency = 0;
+    for (int level = 0; level < levels; ++level) {
+      char name[48];
+      std::snprintf(name, sizeof(name), "hw.perflevel%d.logicalcpu", level);
+      unsigned count = 0;
+      std::size_t size = sizeof(count);
+      if (::sysctlbyname(name, &count, &size, nullptr, 0) != 0) {
+        performance = efficiency = 0;
+        break;
+      }
+      if (level == 0) performance += count;
+      else efficiency += count;
+    }
+    if (performance != 0 && efficiency != 0 &&
+        performance + efficiency == out.logical_cpus) {
+      out.performance_cpus = performance;
+      out.efficiency_cpus = efficiency;
+      out.hybrid = true;
+    }
+  }
+#elif defined(HYLE_OS_LINUX)
+  // Linux exposes scheduler capacity on heterogeneous ARM systems. Only trust
+  // it when every process-visible logical CPU has a value and capacities differ.
+  unsigned capacities[4096];
+  unsigned found = 0, min_capacity = ~0u, max_capacity = 0;
+  for (unsigned cpu = 0; cpu < 4096 && found < out.logical_cpus; ++cpu) {
+    char path[96];
+    std::snprintf(path, sizeof(path),
+                  "/sys/devices/system/cpu/cpu%u/online", cpu);
+    unsigned online = 1;
+    if (read_sysfs_unsigned(path, online) && online == 0) continue;
+    std::snprintf(path, sizeof(path),
+                  "/sys/devices/system/cpu/cpu%u/cpu_capacity", cpu);
+    unsigned capacity = 0;
+    if (!read_sysfs_unsigned(path, capacity)) continue;
+    capacities[found++] = capacity;
+    if (capacity < min_capacity) min_capacity = capacity;
+    if (capacity > max_capacity) max_capacity = capacity;
+  }
+  if (found == out.logical_cpus && min_capacity < max_capacity) {
+    unsigned performance = 0;
+    for (unsigned i = 0; i < found; ++i) {
+      if (capacities[i] == max_capacity) ++performance;
+    }
+    if (performance != 0 && performance != found) {
+      out.performance_cpus = performance;
+      out.efficiency_cpus = found - performance;
+      out.hybrid = true;
+    }
+  }
+#endif
+  return out;
+}
+
 }  // namespace
 
 const CpuFeatures& cpu_features() noexcept {
@@ -351,6 +552,16 @@ const CpuFeatures& cpu_features() noexcept {
 unsigned cache_line_size() noexcept {
   static const unsigned v = detect_cache_line();  // Meyers: probe once, cache
   return v;
+}
+
+const CacheInfo& cache_info() noexcept {
+  static const CacheInfo info = detect_cache_info();
+  return info;
+}
+
+const CpuTopology& cpu_topology() noexcept {
+  static const CpuTopology topology = detect_topology();
+  return topology;
 }
 
 Isa best_isa() noexcept {

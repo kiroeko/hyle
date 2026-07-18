@@ -15,6 +15,8 @@
 
 namespace {
 
+thread_local const char* g_c_error = "";
+
 hyle::StatusCode to_cpp_code(hyle_status_code c) noexcept {
   // Values are identical to StatusCode by construction (static_assert'd below),
   // so this is a plain cast -- no switch to keep in sync. An out-of-range FFI
@@ -243,7 +245,11 @@ void hyle_error_set_handler(hyle_error_report_fn fn, void* user) {
 hyle_error_saved_handler_o* hyle_error_push_handler(hyle_error_report_fn fn,
                                                     void* user) {
   auto* tok = new (std::nothrow) hyle_error_saved_handler_o{};
-  if (tok == nullptr) return nullptr;  // still-installed handler unchanged
+  if (tok == nullptr) {
+    g_c_error = "hyle_error_push_handler: token allocation failed (out of memory)";
+    return nullptr;  // still-installed handler unchanged
+  }
+  g_c_error = "";
   tok->state.fn = fn;
   tok->state.user = user;
   if (fn != nullptr) {
@@ -266,6 +272,8 @@ void hyle_error_pop_handler(hyle_error_saved_handler_o* saved) {
   hyle::error_set_default_handler(saved->displaced);
   delete saved;
 }
+
+const char* hyle_error_last_error(void) { return g_c_error; }
 
 void hyle_error_report(hyle_severity severity, const char* file, uint32_t line,
                        const char* message) {

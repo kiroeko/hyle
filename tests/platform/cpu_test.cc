@@ -10,6 +10,8 @@
 
 using hyle::platform::best_isa;
 using hyle::platform::cache_line_size;
+using hyle::platform::cache_info;
+using hyle::platform::cpu_topology;
 using hyle::platform::cpu_features;
 using hyle::platform::CpuFeatures;
 using hyle::platform::Isa;
@@ -33,6 +35,22 @@ TEST(Cpu, CacheLineSizeSane) {
   EXPECT_LE(c, 256u);
   EXPECT_EQ(c & (c - 1u), 0u);      // power of two
   EXPECT_EQ(c, cache_line_size());  // stable / cached
+}
+
+TEST(Cpu, CacheCapacityIsCachedAndHierarchicalWhenKnown) {
+  const auto& a = cache_info();
+  const auto& b = cache_info();
+  EXPECT_EQ(&a, &b);
+  if (a.l1d && a.l2) { EXPECT_LE(a.l1d, a.l2); }
+  if (a.l1i && a.l2) { EXPECT_LE(a.l1i, a.l2); }
+  if (a.l2 && a.l3) { EXPECT_LE(a.l2, a.l3); }
+}
+
+TEST(Cpu, TopologyHasConsistentLogicalCounts) {
+  const auto& t = cpu_topology();
+  EXPECT_GE(t.logical_cpus, 1u);
+  EXPECT_EQ(t.performance_cpus + t.efficiency_cpus, t.logical_cpus);
+  EXPECT_EQ(t.hybrid, t.efficiency_cpus != 0 && t.performance_cpus != 0);
 }
 
 // scalar is the portable floor: always supported, on every arch.

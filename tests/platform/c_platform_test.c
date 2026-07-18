@@ -339,6 +339,18 @@ int main(void) {
     CHECK(cl >= 16u && cl <= 256u && (cl & (cl - 1u)) == 0u); /* sane power of two */
   }
   {
+    hyle_cache_info cache = hyle_cpu_cache_info();
+    hyle_cpu_topology topo = hyle_cpu_topology_get();
+    if (cache.l1d && cache.l2) CHECK(cache.l1d <= cache.l2);
+    if (cache.l1i && cache.l2) CHECK(cache.l1i <= cache.l2);
+    if (cache.l2 && cache.l3) CHECK(cache.l2 <= cache.l3);
+    CHECK(topo.logical_cpus >= 1u);
+    CHECK(topo.performance_cpus + topo.efficiency_cpus ==
+          topo.logical_cpus);
+    CHECK((topo.is_hybrid != 0) ==
+          (topo.performance_cpus != 0 && topo.efficiency_cpus != 0));
+  }
+  {
     hyle_isa isa = HYLE_ISA_SCALAR;      /* named enums usable as types */
     hyle_numa_node nany = HYLE_NUMA_ANY;
     CHECK(hyle_cpu_supports_isa((uint32_t)isa) == 1);

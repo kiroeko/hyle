@@ -481,9 +481,11 @@ auto t = Thread::spawn(&entry, ctx, opts);
 #include "hyle/platform/cpu.h"
 DynLib lib = DynLib::open("plugin.so");  auto fn = lib.symbol_as<int(*)()>("entry");
 if (cpu_features().avx2) { /* 运行期安全走 AVX2 */ }  // best_isa() 是 simd dispatch 的依据
+const auto& cache = cache_info();        // L1D/L1I/L2/L3 bytes；未知级为 0
+const auto& topo = cpu_topology();       // 逻辑 CPU 与可信的 P/E 分类
 ```
 
-**跨平台语义提醒**：`create_symlink` 在 Windows 需开发者模式/管理员（无则软失败）；`set_env_var(name,"")` 在 Windows 删除变量、POSIX 保留空值；thread priority/affinity 是 best-effort（无权限软降级）。纯 C / FFI 消费者用 `hyle/c/platform.h`（见 [`c-platform.md`](./c-platform.md)）。
+**跨平台语义提醒**：`create_symlink` 在 Windows 需开发者模式/管理员（无则软失败）；`set_env_var(name,"")` 在 Windows 删除变量、POSIX 保留空值；thread priority/affinity 是 best-effort（无权限软降级）。`cpu_topology()` 只报告系统明确提供的 P/E 分类；信息不足时把全部逻辑 CPU 归入 performance 并令 `hybrid=false`，不做频率启发式猜测。纯 C / FFI 消费者用 `hyle/c/platform.h`（见 [`c-platform.md`](./c-platform.md)）。
 
 本指南讲"正常用法"。**为 SOTA 性能保留的调用约束**（违反 = UB，非 HYLE bug）单独列在 [`usage-contract.md`](./usage-contract.md)（同目录）：fiber 跨 yield 的 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离等。集成前过一遍。
 

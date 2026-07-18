@@ -114,15 +114,6 @@ long sys_mbind(void* start, unsigned long len, unsigned long mode,
 
 bool path_exists(const char* path) { return ::access(path, R_OK) == 0; }
 
-// Build a node mask for nodes [0, count). Caps at 64 bits (one ulong).
-unsigned long all_nodes_mask(unsigned count) {
-  if (count == 0) return 1UL;
-  if (count >= sizeof(unsigned long) * 8u) {
-    return ~0UL;
-  }
-  return (1UL << count) - 1UL;
-}
-
 #endif
 
 }  // namespace
@@ -237,17 +228,34 @@ unsigned numa_node_of_cpu(unsigned cpu) noexcept {
 
 bool vm_bind_numa(void* ptr, std::size_t size, int node,
                   NumaPolicy policy) noexcept {
-  if (ptr == nullptr || size == 0) return true;
-  size = page_align_up(size);
   if (size == 0) return true;
+  if (ptr == nullptr) {
+    vm_set_last_error("vm_bind_numa: null pointer for nonempty range");
+    return false;
+  }
+  size = page_align_up(size);
+  if (size == 0) {
+    vm_set_last_error("vm_bind_numa: size overflow");
+    return false;
+  }
 
   const unsigned nodes = numa_node_count();
 
   if (policy == NumaPolicy::kInterleave) {
+    // Interleave is a genuine no-op on a single-node machine. Linux rejects
+    // MPOL_INTERLEAVE with a one-bit nodemask on some kernels.
+    if (nodes <= 1u) return true;
 #if defined(HYLE_OS_LINUX)
-    unsigned long mask = all_nodes_mask(nodes);
-    long rc =
-        sys_mbind(ptr, size, MPOL_INTERLEAVE, &mask, sizeof(mask) * 8, 0);
+    constexpr unsigned kBits = sizeof(unsigned long) * 8u;
+    unsigned long mask[4]{};
+    if (nodes > kBits * 4u) {
+      vm_set_last_error("vm_bind_numa: too many nodes for policy mask");
+      return false;
+    }
+    for (unsigned nd = 0; nd < nodes; ++nd) {
+      mask[nd / kBits] |= 1UL << (nd % kBits);
+    }
+    long rc = sys_mbind(ptr, size, MPOL_INTERLEAVE, mask, kBits * 4u, 0);
     if (rc != 0) {
       vm_set_last_error("vm_bind_numa: mbind(MPOL_INTERLEAVE) failed");
       return false;
@@ -256,7 +264,6 @@ bool vm_bind_numa(void* ptr, std::size_t size, int node,
 #else
     // Striping across nodes is a genuine no-op on a single-node box (true);
     // on a real multi-node box we have no portable API -> honest false.
-    if (nodes <= 1) return true;
     vm_set_last_error("vm_bind_numa: interleave unsupported on this platform");
     return false;
 #endif
@@ -268,18 +275,18 @@ bool vm_bind_numa(void* ptr, std::size_t size, int node,
     return false;
   }
 
-  // Single-node machine: any per-node policy is a genuine no-op.
-  if (nodes <= 1) return true;
+  // A valid per-node policy is a genuine no-op on a single-node machine.
+  if (nodes <= 1u) return true;
 
 #if defined(HYLE_OS_LINUX)
-  if (static_cast<unsigned>(node) >= sizeof(unsigned long) * 8u) {
-    vm_set_last_error("vm_bind_numa: node index exceeds mask width");
-    return false;
-  }
-  unsigned long mask = 1UL << static_cast<unsigned>(node);
+  constexpr unsigned kBits = sizeof(unsigned long) * 8u;
+  unsigned long mask[4]{};
+  const unsigned nd = static_cast<unsigned>(node);
+  if (nd >= kBits * 4u) return false;  // numa_node_count is currently capped at 256
+  mask[nd / kBits] = 1UL << (nd % kBits);
   const unsigned long mode =
       (policy == NumaPolicy::kBind) ? MPOL_BIND : MPOL_PREFERRED;
-  long rc = sys_mbind(ptr, size, mode, &mask, sizeof(mask) * 8, 0);
+  long rc = sys_mbind(ptr, size, mode, mask, kBits * 4u, 0);
   if (rc != 0) {
     vm_set_last_error(policy == NumaPolicy::kBind
                           ? "vm_bind_numa: mbind(MPOL_BIND) failed"
@@ -315,12 +322,18 @@ bool vm_bind_numa_interleave(void* ptr, std::size_t size) noexcept {
 }
 
 void* vm_reserve_numa(std::size_t size, int node) noexcept {
-  if (node == kNumaAny || node < 0 ||
-      static_cast<unsigned>(node) >= numa_node_count()) {
+  if (node == kNumaAny) {
     return vm_reserve(size);
   }
+  if (node < 0 || static_cast<unsigned>(node) >= numa_node_count()) {
+    vm_set_last_error("vm_reserve_numa: node index out of range");
+    return nullptr;
+  }
   size = page_align_up(size);
-  if (size == 0) return nullptr;
+  if (size == 0) {
+    vm_set_last_error("vm_reserve_numa: zero or overflowing size");
+    return nullptr;
+  }
 
 #if defined(HYLE_OS_WINDOWS)
   auto& f = win_fns();

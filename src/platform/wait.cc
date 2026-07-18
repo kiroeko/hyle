@@ -36,7 +36,9 @@ bool wait_on_address_for(const std::atomic<std::uint32_t>* addr,
   if (timeout_ns == 0) {
     ms = 0;  // non-blocking poll
   } else {
-    std::uint64_t rounded = (timeout_ns + 999'999ull) / 1'000'000ull;
+    const std::uint64_t rounded =
+        timeout_ns / 1'000'000ull +
+        (timeout_ns % 1'000'000ull != 0 ? 1ull : 0ull);
     ms = rounded >= INFINITE ? (INFINITE - 1) : static_cast<DWORD>(rounded);
   }
   BOOL ok = ::WaitOnAddress(

@@ -133,7 +133,13 @@ void hyle_wake_all(volatile uint32_t* addr) {
 }
 
 hyle_parker_o* hyle_parker_create(void) {
-  return new (std::nothrow) hyle_parker_o{};
+  hyle::platform::vm_set_last_error(nullptr);
+  auto* p = new (std::nothrow) hyle_parker_o{};
+  if (p == nullptr) {
+    hyle::platform::vm_set_last_error(
+        "hyle_parker_create: wrapper allocation failed (out of memory)");
+  }
+  return p;
 }
 void hyle_parker_destroy(hyle_parker_o* p) { delete p; }
 void hyle_parker_park(hyle_parker_o* p) {
@@ -211,11 +217,18 @@ void hyle_this_thread_set_name(const char* name) {
 }
 
 hyle_dynlib_o* hyle_dynlib_open(const char* path) {
-  if (path == nullptr) return nullptr;
+  if (path == nullptr) {
+    hyle::platform::dynlib_set_last_error("hyle_dynlib_open: path is NULL");
+    return nullptr;
+  }
   auto lib = hyle::platform::DynLib::open(path);
   if (!lib.valid()) return nullptr;
   auto* o = new (std::nothrow) hyle_dynlib_o{};
-  if (!o) return nullptr;
+  if (!o) {
+    hyle::platform::dynlib_set_last_error(
+        "hyle_dynlib_open: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
   o->lib = std::move(lib);
   return o;
 }
@@ -224,7 +237,11 @@ hyle_dynlib_o* hyle_dynlib_get(const char* path) {
   auto lib = hyle::platform::DynLib::get(path);
   if (!lib.valid()) return nullptr;
   auto* o = new (std::nothrow) hyle_dynlib_o{};
-  if (!o) return nullptr;
+  if (!o) {
+    hyle::platform::dynlib_set_last_error(
+        "hyle_dynlib_get: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
   o->lib = std::move(lib);
   return o;
 }
@@ -233,7 +250,11 @@ hyle_dynlib_o* hyle_dynlib_current(void) {
   auto lib = hyle::platform::DynLib::current();
   if (!lib.valid()) return nullptr;
   auto* o = new (std::nothrow) hyle_dynlib_o{};
-  if (!o) return nullptr;
+  if (!o) {
+    hyle::platform::dynlib_set_last_error(
+        "hyle_dynlib_current: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
   o->lib = std::move(lib);
   return o;
 }
@@ -243,7 +264,11 @@ int hyle_dynlib_valid(const hyle_dynlib_o* lib) {
   return lib != nullptr && lib->lib.valid() ? 1 : 0;
 }
 void* hyle_dynlib_symbol(hyle_dynlib_o* lib, const char* name) {
-  if (!lib || !name) return nullptr;
+  if (!lib || !name) {
+    hyle::platform::dynlib_set_last_error(
+        "hyle_dynlib_symbol: library or name is NULL");
+    return nullptr;
+  }
   return lib->lib.symbol(name);
 }
 const char* hyle_dynlib_last_error(void) {
@@ -285,15 +310,24 @@ int hyle_vm_release(void* base, size_t size) {
   return hyle::platform::vm_release(base, size) ? 1 : 0;
 }
 int hyle_vm_protect(void* ptr, size_t size, hyle_protect prot) {
-  if (!valid_protect(prot)) return 0;
+  if (!valid_protect(prot)) {
+    hyle::platform::vm_set_last_error("hyle_vm_protect: invalid protection");
+    return 0;
+  }
   return hyle::platform::vm_protect(ptr, size, to_cpp_protect(prot)) ? 1 : 0;
 }
 const char* hyle_vm_last_error(void) { return hyle::platform::vm_last_error(); }
 
 void* hyle_vm_alloc_rw(size_t size) {
-  if (size == 0) return nullptr;
+  if (size == 0) {
+    hyle::platform::vm_set_last_error("hyle_vm_alloc_rw: size is zero");
+    return nullptr;
+  }
   size_t aligned = hyle_page_align_up(size);
-  if (aligned == 0) return nullptr;
+  if (aligned == 0) {
+    hyle::platform::vm_set_last_error("hyle_vm_alloc_rw: size overflow");
+    return nullptr;
+  }
   void* base = hyle::platform::vm_reserve(aligned);
   if (base == nullptr) return nullptr;
   // vm_commit makes the range Protect::kReadWrite.
@@ -306,7 +340,13 @@ void* hyle_vm_alloc_rw(size_t size) {
 
 int hyle_vm_free_rw(void* p, size_t size) {
   // Same page rounding as alloc_rw's reserve, so the released span matches.
-  return hyle::platform::vm_release(p, hyle_page_align_up(size)) ? 1 : 0;
+  const size_t aligned = hyle_page_align_up(size);
+  if (p != nullptr && aligned == 0) {
+    hyle::platform::vm_set_last_error(
+        "hyle_vm_free_rw: zero or overflowing size");
+    return 0;
+  }
+  return hyle::platform::vm_release(p, aligned) ? 1 : 0;
 }
 
 hyle_vm_region_o* hyle_vm_region_reserve(size_t size) {
@@ -392,7 +432,11 @@ int hyle_vm_region_decommit(hyle_vm_region_o* r, size_t off, size_t len) {
 }
 int hyle_vm_region_protect(hyle_vm_region_o* r, size_t off, size_t len,
                            hyle_protect prot) {
-  if (!valid_protect(prot)) return 0;
+  if (!valid_protect(prot)) {
+    hyle::platform::vm_set_last_error(
+        "hyle_vm_region_protect: invalid protection");
+    return 0;
+  }
   return r && r->region.protect(off, len, to_cpp_protect(prot)) ? 1 : 0;
 }
 
@@ -527,6 +571,17 @@ unsigned hyle_cpu_cache_line_size(void) {
   return hyle::platform::cache_line_size();
 }
 
+hyle_cache_info hyle_cpu_cache_info(void) {
+  const auto& in = hyle::platform::cache_info();
+  return {in.l1d, in.l1i, in.l2, in.l3};
+}
+
+hyle_cpu_topology hyle_cpu_topology_get(void) {
+  const auto& in = hyle::platform::cpu_topology();
+  return {in.logical_cpus, in.performance_cpus, in.efficiency_cpus,
+          in.hybrid ? 1 : 0};
+}
+
 /* ---- v3: hugepage/THP + NUMA ------------------------------------------------ */
 
 void hyle_vm_set_last_error(const char* msg) {
@@ -554,7 +609,10 @@ unsigned hyle_numa_node_of_cpu(unsigned cpu) {
 }
 
 int hyle_vm_bind_numa(void* ptr, size_t size, int node, hyle_numa_policy policy) {
-  if (!valid_numa_policy(policy)) return 0;
+  if (!valid_numa_policy(policy)) {
+    hyle::platform::vm_set_last_error("hyle_vm_bind_numa: invalid policy");
+    return 0;
+  }
   return hyle::platform::vm_bind_numa(ptr, size, node,
                                       to_cpp_numa_policy(policy))
              ? 1
@@ -631,13 +689,19 @@ hyle_mapped_file_o* hyle_mapped_file_open(const char* path, hyle_map_mode mode,
   if (!path || (mode != HYLE_MAP_READ_ONLY &&
                 mode != HYLE_MAP_READ_WRITE &&
                 mode != HYLE_MAP_COPY_ON_WRITE)) {
+    hyle::platform::vm_set_last_error(
+        "hyle_mapped_file_open: null path or invalid mode");
     return nullptr;
   }
   auto m = hyle::platform::MappedFile::open(
       path, static_cast<hyle::platform::MappedFile::Mode>(mode), offset, length);
   if (!m.valid()) return nullptr;
   auto* o = new (std::nothrow) hyle_mapped_file_o{};
-  if (!o) return nullptr;
+  if (!o) {
+    hyle::platform::vm_set_last_error(
+        "hyle_mapped_file_open: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
   o->mf = std::move(m);
   return o;
 }

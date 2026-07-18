@@ -122,4 +122,26 @@ HYLE_PLATFORM_API const char* isa_name(Isa isa) noexcept;
 // macOS, sysconf on Linux), cached; falls back to 64 when the query is unavailable.
 HYLE_PLATFORM_API unsigned cache_line_size() noexcept;
 
+// Cache capacity visible to a logical processor, in bytes. Zero means unknown.
+struct CacheInfo {
+  std::uint64_t l1d = 0;
+  std::uint64_t l1i = 0;
+  std::uint64_t l2 = 0;
+  std::uint64_t l3 = 0;
+};
+
+HYLE_PLATFORM_API const CacheInfo& cache_info() noexcept;
+
+// OS-online logical CPU topology. If a platform cannot report a
+// trustworthy P/E distinction, all CPUs are conservatively classified as
+// performance; frequency-based guessing is deliberately avoided.
+struct CpuTopology {
+  unsigned logical_cpus = 1;
+  unsigned performance_cpus = 1;
+  unsigned efficiency_cpus = 0;
+  bool hybrid = false;
+};
+
+HYLE_PLATFORM_API const CpuTopology& cpu_topology() noexcept;
+
 }  // namespace hyle::platform

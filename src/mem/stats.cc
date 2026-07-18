@@ -61,11 +61,17 @@ void* stats_realloc(void* st, void* ptr, std::size_t old_size,
   // OOM on grow: original block intact, no accounting change.
   if (new_size > 0 && p == nullptr) return nullptr;
 
+  std::size_t accounted_old_size = old_size;
   if (s->leaks) {
-    if (ptr != nullptr) (void)s->leaks->track_free(ptr);
+    if (ptr != nullptr) {
+      std::size_t recorded = 0;
+      if (s->leaks->track_free(ptr, &recorded)) {
+        accounted_old_size = recorded;
+      }
+    }
     if (p != nullptr && new_size > 0) s->leaks->track_alloc(p, new_size);
   }
-  s->stats.record_realloc(old_size, new_size);
+  s->stats.record_realloc(accounted_old_size, new_size);
   return p;
 }
 
@@ -145,6 +151,7 @@ void LeakTracker::clear() noexcept {
 
 // State_ pointer stores StatsState*.
 StatsAllocator::StatsAllocator(Allocator backing, bool track_leaks) {
+  HYLE_FATAL_ASSERT(backing.valid());
   auto* s = new StatsState;
   s->backing = backing;
   if (track_leaks) {

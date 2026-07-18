@@ -52,6 +52,17 @@ TEST(DynLib, MissingSymbolReturnsNull) {
   EXPECT_EQ(lib.symbol("definitely_not_a_real_symbol_zzz"), nullptr);
 }
 
+TEST(DynLib, SuccessfulLookupClearsStaleErrorAndNullNameFails) {
+  DynLib lib = DynLib::open(kSysLib);
+  ASSERT_TRUE(lib.valid());
+  EXPECT_EQ(lib.symbol("definitely_not_a_real_symbol_zzz"), nullptr);
+  EXPECT_STRNE(dynlib_last_error(), "");
+  EXPECT_NE(lib.symbol(kSysSym), nullptr);
+  EXPECT_STREQ(dynlib_last_error(), "");
+  EXPECT_EQ(lib.symbol(nullptr), nullptr);
+  EXPECT_STRNE(dynlib_last_error(), "");
+}
+
 TEST(DynLib, TypedSymbolCallable) {
   DynLib lib = DynLib::open(kSysLib);
   ASSERT_TRUE(lib.valid());

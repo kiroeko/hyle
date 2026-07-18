@@ -366,19 +366,34 @@ hyle_huge_region_o* hyle_huge_region_open(size_t bytes, uint32_t flags,
                                           int numa_node) {
   auto r = hyle::mem::HugeRegion::allocate(bytes, to_huge_flags(flags), numa_node);
   if (!r.valid()) return nullptr;
-  return new (std::nothrow) hyle_huge_region_o(std::move(r));
+  auto* out = new (std::nothrow) hyle_huge_region_o(std::move(r));
+  if (out == nullptr) {
+    hyle::platform::vm_set_last_error(
+        "hyle_huge_region_open: wrapper allocation failed (out of memory)");
+  }
+  return out;
 }
 
 hyle_huge_region_o* hyle_huge_region_open_local(size_t bytes, uint32_t flags) {
   auto r = hyle::mem::HugeRegion::allocate_local(bytes, to_huge_flags(flags));
   if (!r.valid()) return nullptr;
-  return new (std::nothrow) hyle_huge_region_o(std::move(r));
+  auto* out = new (std::nothrow) hyle_huge_region_o(std::move(r));
+  if (out == nullptr) {
+    hyle::platform::vm_set_last_error(
+        "hyle_huge_region_open_local: wrapper allocation failed (out of memory)");
+  }
+  return out;
 }
 
 hyle_huge_region_o* hyle_huge_region_open_interleaved(size_t bytes) {
   auto r = hyle::mem::HugeRegion::allocate_interleaved(bytes);
   if (!r.valid()) return nullptr;
-  return new (std::nothrow) hyle_huge_region_o(std::move(r));
+  auto* out = new (std::nothrow) hyle_huge_region_o(std::move(r));
+  if (out == nullptr) {
+    hyle::platform::vm_set_last_error(
+        "hyle_huge_region_open_interleaved: wrapper allocation failed (out of memory)");
+  }
+  return out;
 }
 
 void hyle_huge_region_destroy(hyle_huge_region_o* r) { delete r; }

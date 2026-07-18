@@ -105,10 +105,20 @@ int protect_to_posix(Protect prot) noexcept {
 #endif
 
 bool range_ok(void* base, std::size_t size, std::size_t offset,
-              std::size_t len) noexcept {
+               std::size_t len) noexcept {
   if (base == nullptr || size == 0) return false;
-  if (len == 0) return true;
-  if (offset > size || len > size - offset) return false;
+  if (offset > size) return false;
+  if (len > size - offset) return false;
+  return true;
+}
+
+bool align_nonempty_size(std::size_t requested, std::size_t& aligned,
+                         const char* what) noexcept {
+  aligned = align_size(requested);
+  if (requested != 0 && aligned == 0) {
+    set_error(what);
+    return false;
+  }
   return true;
 }
 
@@ -155,9 +165,15 @@ void vm_set_last_error(const char* msg) noexcept {
 
 bool vm_advise_hugepage(void* ptr, std::size_t size) noexcept {
   clear_error();
-  if (ptr == nullptr || size == 0) return true;
+  if (size == 0) return true;
+  if (ptr == nullptr) {
+    set_error("vm_advise_hugepage: null pointer for non-empty range");
+    return false;
+  }
   require_page_aligned(ptr);
-  size = align_size(size);
+  if (!align_nonempty_size(size, size,
+                           "vm_advise_hugepage: size overflow"))
+    return false;
 #if defined(HYLE_OS_LINUX) && defined(MADV_HUGEPAGE)
   if (::madvise(ptr, size, MADV_HUGEPAGE) != 0) {
     set_error_errno();
@@ -175,9 +191,15 @@ bool vm_advise_hugepage(void* ptr, std::size_t size) noexcept {
 
 bool vm_advise_no_hugepage(void* ptr, std::size_t size) noexcept {
   clear_error();
-  if (ptr == nullptr || size == 0) return true;
+  if (size == 0) return true;
+  if (ptr == nullptr) {
+    set_error("vm_advise_no_hugepage: null pointer for non-empty range");
+    return false;
+  }
   require_page_aligned(ptr);
-  size = align_size(size);
+  if (!align_nonempty_size(size, size,
+                           "vm_advise_no_hugepage: size overflow"))
+    return false;
 #if defined(HYLE_OS_LINUX) && defined(MADV_NOHUGEPAGE)
   if (::madvise(ptr, size, MADV_NOHUGEPAGE) != 0) {
     set_error_errno();
@@ -220,9 +242,13 @@ void* vm_reserve(std::size_t size) noexcept {
 
 bool vm_commit(void* ptr, std::size_t size) noexcept {
   clear_error();
-  if (ptr == nullptr || size == 0) return true;
+  if (size == 0) return true;
+  if (ptr == nullptr) {
+    set_error("vm_commit: null pointer for non-empty range");
+    return false;
+  }
   require_page_aligned(ptr);
-  size = align_size(size);
+  if (!align_nonempty_size(size, size, "vm_commit: size overflow")) return false;
 #if defined(HYLE_OS_WINDOWS)
   void* p = ::VirtualAlloc(ptr, size, MEM_COMMIT, PAGE_READWRITE);
   if (p == nullptr) {
@@ -241,9 +267,14 @@ bool vm_commit(void* ptr, std::size_t size) noexcept {
 
 bool vm_decommit(void* ptr, std::size_t size) noexcept {
   clear_error();
-  if (ptr == nullptr || size == 0) return true;
+  if (size == 0) return true;
+  if (ptr == nullptr) {
+    set_error("vm_decommit: null pointer for non-empty range");
+    return false;
+  }
   require_page_aligned(ptr);
-  size = align_size(size);
+  if (!align_nonempty_size(size, size, "vm_decommit: size overflow"))
+    return false;
 #if defined(HYLE_OS_WINDOWS)
   if (::VirtualFree(ptr, size, MEM_DECOMMIT) == 0) {
     set_error_win();
@@ -292,9 +323,14 @@ bool vm_release(void* base, std::size_t size) noexcept {
 
 bool vm_protect(void* ptr, std::size_t size, Protect prot) noexcept {
   clear_error();
-  if (ptr == nullptr || size == 0) return true;
+  if (size == 0) return true;
+  if (ptr == nullptr) {
+    set_error("vm_protect: null pointer for non-empty range");
+    return false;
+  }
   require_page_aligned(ptr);
-  size = align_size(size);
+  if (!align_nonempty_size(size, size, "vm_protect: size overflow"))
+    return false;
 #if defined(HYLE_OS_WINDOWS)
   // Windows: VirtualProtect needs the pages to be committed for non-NOACCESS
   // changes in some cases; for PAGE_NOACCESS on committed pages it works.
@@ -351,9 +387,22 @@ VmRegion VmRegion::reserve_numa(std::size_t size, int node) noexcept {
 
 VmRegion VmRegion::adopt(void* base, std::size_t size) noexcept {
   VmRegion r;
-  if (base == nullptr || size == 0) return r;
+  clear_error();
+  if (base == nullptr || size == 0) {
+    set_error("VmRegion::adopt: null base or zero size");
+    return r;
+  }
+  if ((reinterpret_cast<std::uintptr_t>(base) % page_size()) != 0) {
+    set_error("VmRegion::adopt: base is not page-aligned");
+    return r;
+  }
+  const std::size_t aligned = page_align_up(size);
+  if (aligned == 0) {
+    set_error("VmRegion::adopt: size overflow");
+    return r;
+  }
   r.base_ = base;
-  r.size_ = page_align_up(size);
+  r.size_ = aligned;
   r.guarded_ = false;
   return r;
 }
@@ -362,6 +411,10 @@ VmRegion VmRegion::reserve_guarded(std::size_t usable) noexcept {
   VmRegion r;
   std::size_t page = page_size();
   std::size_t usable_aligned = page_align_up(usable == 0 ? 1 : usable);
+  if (usable_aligned == 0 || usable_aligned > SIZE_MAX - page) {
+    set_error("VmRegion::reserve_guarded: size overflow");
+    return r;
+  }
   std::size_t total = page + usable_aligned;
   void* p = vm_reserve(total);
   if (p == nullptr) return r;

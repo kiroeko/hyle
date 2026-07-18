@@ -326,6 +326,7 @@ std::size_t get_env_var(const char* name, char* dst, std::size_t cap) noexcept {
 bool directory_iterate(const char* path,
                        bool (*visit)(const char*, bool, void*),
                        void* ctx) noexcept {
+  if (path == nullptr || visit == nullptr) return false;
   // Build the UTF-16 search pattern "<path>\*". Heap-size it off the path length
   // so long paths aren't capped at MAX_PATH.
   WidePath wp(path);
@@ -358,6 +359,7 @@ bool directory_iterate(const char* path,
                               nullptr, FIND_FIRST_EX_LARGE_FETCH);
   std::free(heapp);
   if (h == INVALID_HANDLE_VALUE) return false;
+  bool stopped = false;
   do {
     const wchar_t* wname = fd.cFileName;
     if (wname[0] == L'.' &&
@@ -374,10 +376,14 @@ bool directory_iterate(const char* path,
                                   static_cast<int>(sizeof(name)), nullptr, nullptr);
     if (got <= 0) fill_w(name, sizeof(name), wname, -1);  // defensive, never hit here
     bool dir = (fd.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) != 0;
-    if (!visit(name, dir, ctx)) break;
+    if (!visit(name, dir, ctx)) {
+      stopped = true;
+      break;
+    }
   } while (FindNextFileW(h, &fd));
+  const DWORD end_error = stopped ? ERROR_NO_MORE_FILES : GetLastError();
   FindClose(h);
-  return true;
+  return stopped || end_error == ERROR_NO_MORE_FILES;
 }
 
 namespace {
@@ -405,7 +411,9 @@ OwnedFd open_file(const char* path, unsigned flags) noexcept {
   if (wp.w() == nullptr) return OwnedFd{};
   DWORD access = 0;
   if (flags & kOpenRead) access |= GENERIC_READ;
-  if (flags & kOpenWrite) access |= GENERIC_WRITE;
+  if (flags & kOpenWrite) {
+    access |= (flags & kOpenAppend) ? FILE_APPEND_DATA : GENERIC_WRITE;
+  }
   DWORD creation;
   if (flags & kOpenTruncate)
     creation = (flags & kOpenCreate) ? CREATE_ALWAYS : TRUNCATE_EXISTING;
@@ -414,7 +422,6 @@ OwnedFd open_file(const char* path, unsigned flags) noexcept {
   HANDLE h = CreateFileW(wp.w(), access, FILE_SHARE_READ | FILE_SHARE_WRITE,
                          nullptr, creation, FILE_ATTRIBUTE_NORMAL, nullptr);
   if (h == INVALID_HANDLE_VALUE) return OwnedFd{};
-  if (flags & kOpenAppend) SetFilePointer(h, 0, nullptr, FILE_END);
   return OwnedFd{reinterpret_cast<std::intptr_t>(h)};
 }
 
@@ -884,11 +891,18 @@ bool unset_env_var(const char* name) noexcept {
 bool directory_iterate(const char* path,
                        bool (*visit)(const char*, bool, void*),
                        void* ctx) noexcept {
+  if (path == nullptr || visit == nullptr) return false;
   DIR* d = ::opendir(path);
   if (d == nullptr) return false;
+  bool stopped = false;
+  bool ok = true;
   for (;;) {
+    errno = 0;
     struct dirent* de = ::readdir(d);
-    if (de == nullptr) break;
+    if (de == nullptr) {
+      ok = errno == 0;
+      break;
+    }
     const char* name = de->d_name;
     if (name[0] == '.' &&
         (name[1] == '\0' || (name[1] == '.' && name[2] == '\0')))
@@ -908,10 +922,13 @@ bool directory_iterate(const char* path,
     } else {
       dir = false;
     }
-    if (!visit(name, dir, ctx)) break;
+    if (!visit(name, dir, ctx)) {
+      stopped = true;
+      break;
+    }
   }
-  ::closedir(d);
-  return true;
+  if (::closedir(d) != 0 && !stopped) ok = false;
+  return stopped || ok;
 }
 
 #endif

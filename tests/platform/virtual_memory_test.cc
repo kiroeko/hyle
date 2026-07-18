@@ -6,6 +6,7 @@
 #include <cstdint>
 #include <cstdlib>  // std::abort in death tests
 #include <cstring>
+#include <limits>
 #include <utility>
 
 using hyle::platform::large_page_align_up;
@@ -255,10 +256,22 @@ TEST(VirtualMemory, GuardedCommitUsableIdempotent) {
   EXPECT_EQ(u[r.usable_size() - 1], 0xAA);
 }
 
-TEST(VirtualMemory, FreeFunctionsNullNoOp) {
-  EXPECT_TRUE(vm_commit(nullptr, page_size()));
-  EXPECT_TRUE(vm_decommit(nullptr, page_size()));
-  EXPECT_TRUE(vm_protect(nullptr, page_size(), Protect::kNone));
+TEST(VirtualMemory, EmptyRangeIsNoOpButNullNonemptyFails) {
+  EXPECT_TRUE(vm_commit(nullptr, 0));
+  EXPECT_TRUE(vm_decommit(nullptr, 0));
+  EXPECT_TRUE(vm_protect(nullptr, 0, Protect::kNone));
+  EXPECT_FALSE(vm_commit(nullptr, page_size()));
+  EXPECT_FALSE(vm_decommit(nullptr, page_size()));
+  EXPECT_FALSE(vm_protect(nullptr, page_size(), Protect::kNone));
+  EXPECT_STRNE(vm_last_error(), "");
+}
+
+TEST(VirtualMemory, SizeRoundingOverflowFails) {
+  void* raw = vm_reserve(page_size());
+  ASSERT_NE(raw, nullptr) << vm_last_error();
+  EXPECT_FALSE(vm_commit(raw, std::numeric_limits<std::size_t>::max()));
+  EXPECT_STRNE(vm_last_error(), "");
+  EXPECT_TRUE(vm_release(raw, page_size()));
 }
 
 // ---- VmRegion::adopt (C++ side) --------------------------------------------
@@ -288,6 +301,17 @@ TEST(VirtualMemory, AdoptNullIsInvalid) {
   VmRegion r = VmRegion::adopt(nullptr, page_size());
   EXPECT_FALSE(r.valid());  // nothing adopted -> no ownership taken
   EXPECT_EQ(r.data(), nullptr);
+}
+
+TEST(VirtualMemory, AdoptRejectsMisalignedBaseWithoutTakingOwnership) {
+  const std::size_t p = page_size();
+  void* raw = vm_reserve(p * 2);
+  ASSERT_NE(raw, nullptr) << vm_last_error();
+  auto* misaligned = static_cast<unsigned char*>(raw) + 1;
+  VmRegion r = VmRegion::adopt(misaligned, p);
+  EXPECT_FALSE(r.valid());
+  EXPECT_STRNE(vm_last_error(), "");
+  EXPECT_TRUE(vm_release(raw, p * 2));  // caller still owns a rejected adoption
 }
 
 TEST(VirtualMemory, AdoptMoveTransfersOwnership) {

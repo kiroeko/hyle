@@ -69,6 +69,12 @@ TEST(Numa, BindInvalidNodeFails) {
   ASSERT_TRUE(vm_release(base, p));
 }
 
+TEST(Numa, InvalidRangesAndReserveNodeFailHonestly) {
+  EXPECT_FALSE(vm_bind_numa(nullptr, page_size(), 0));
+  const int bad = static_cast<int>(numa_node_count()) + 10;
+  EXPECT_EQ(vm_reserve_numa(page_size(), bad), nullptr);
+}
+
 TEST(Numa, ReserveNumaWritable) {
   std::size_t p = page_size();
   void* base = vm_reserve_numa(p * 2, 0);

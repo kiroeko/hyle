@@ -68,6 +68,8 @@ static hyle_status helper_propagate(void) {
 }
 
 int main(void) {
+  CHECK(hyle_error_last_error() != NULL);
+
   /* OK */
   hyle_status ok = hyle_status_ok();
   CHECK(hyle_status_is_ok(ok));

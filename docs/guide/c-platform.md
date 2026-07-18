@@ -50,7 +50,7 @@
 | `hyle_wait_on_address(addr, expected)` | 地址等待；允许伪唤醒 |
 | `hyle_wait_on_address_for(addr, expected, timeout_ns)` | 0=超时，1=唤醒/变化/伪唤醒 |
 | `hyle_wake_one` / `hyle_wake_all` | 唤醒 |
-| `hyle_parker_create` / `destroy` | 不透明 Parker |
+| `hyle_parker_create` / `destroy` | 不透明 Parker；wrapper OOM 返回 NULL 并写 `hyle_vm_last_error` |
 | `hyle_parker_park` / `unpark` | token 模型（Rust std） |
 | `hyle_parker_park_timeout` | 1=消费 token，0=超时/无 token |
 
@@ -190,6 +190,13 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_cpu_supports_isa(isa)` | 本进程能否跑该档（同架构比较） |
 | `hyle_cpu_isa_name(isa)` | 稳定英文名（日志） |
 | `hyle_cpu_cache_line_size` | L1 数据缓存行字节数（主流 64；对齐/填充用；探测失败回退 64） |
+| `hyle_cpu_cache_info` | 值返回 `hyle_cache_info`：L1D/L1I/L2/L3 容量（字节；未知级为 0） |
+| `hyle_cpu_topology_get` | 值返回逻辑 CPU、performance/efficiency CPU 数与 `is_hybrid` |
+
+拓扑只采用 OS/CPU 的明确分类（Windows `EfficiencyClass`、macOS
+`hw.perflevelN`、Linux `cpu_capacity`）。若平台没有可靠信息，会保守返回
+`performance_cpus == logical_cpus`、`efficiency_cpus == 0`、`is_hybrid == 0`；
+这表示“未确认异构”，不会根据最高频率猜核型。
 
 ### 3.7 导出形态
 

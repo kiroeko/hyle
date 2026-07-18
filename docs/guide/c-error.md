@@ -67,8 +67,9 @@
 | `hyle_status_to_string` | `(s, buf, cap) → size_t` | 如 `"Internal: boom"` |
 | `hyle_status_message_cstr` | `(s) → const char*` | 借用指针（NUL 终止），随 handle 存活到 free/move；无消息→`""`；零拷贝，FFI 友好 |
 | `hyle_error_set_handler` | `(fn, user)` | 简单单槽：`fn==NULL` 恢复默认 stderr；二次调用覆盖前一个（被替换的丢失）|
-| `hyle_error_push_handler` | `(fn, user) → hyle_error_saved_handler_o*` | 嵌套安全：装 `fn` 并返回 opaque token（捕获被替换的 handler）；分配失败→NULL（handler 仍已装）|
+| `hyle_error_push_handler` | `(fn, user) → hyle_error_saved_handler_o*` | 嵌套安全：装 `fn` 并返回 opaque token（捕获被替换的 handler）；分配失败→NULL，原 handler 不变 |
 | `hyle_error_pop_handler` | `(saved)` | 重装 token 记录的 handler 并释放 token；严格 LIFO（配对 push）；`saved==NULL` no-op |
+| `hyle_error_last_error` | `() → const char*` | 当前线程 push-token OOM 错误；成功 push 清空 |
 | `hyle_error_report` | `(sev, file, line, message)` | 已成型字符串；FATAL trap |
 | `hyle_error_reportf` | `(sev, file, line, fmt, ...)` | printf 风格（内部栈缓冲） |
 

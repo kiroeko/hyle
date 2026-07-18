@@ -1,6 +1,7 @@
 #include "hyle/platform/mapped_file.h"
 
 #include <cstdint>
+#include <new>
 #include <utility>
 
 #include "hyle/platform.h"
@@ -22,15 +23,32 @@ namespace hyle::platform {
 
 // ---- Windows ----------------------------------------------------------------
 namespace {
-// UTF-8 -> UTF-16 for CreateFileW (short paths only; mapped files rarely hit the
-// MAX_PATH edge and fs.cc already owns the long-path machinery). nullptr on fail.
+// UTF-8 -> UTF-16 for CreateFileW. Dynamically sized so conversion itself does
+// not impose an artificial path limit. nullptr on invalid UTF-8 / OOM.
 struct WBuf {
-  wchar_t buf[1024];
-  bool ok = false;
+  wchar_t stack[512];
+  wchar_t* ptr = nullptr;
+  wchar_t* heap = nullptr;
   explicit WBuf(const char* utf8) noexcept {
-    int n = MultiByteToWideChar(CP_UTF8, 0, utf8, -1, buf, 1024);
-    ok = n > 0;
+    if (utf8 == nullptr) return;
+    const int need = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8,
+                                         -1, nullptr, 0);
+    if (need <= 0) return;
+    ptr = stack;
+    if (need > static_cast<int>(sizeof(stack) / sizeof(stack[0]))) {
+      heap = new (std::nothrow) wchar_t[static_cast<std::size_t>(need)];
+      ptr = heap;
+    }
+    if (ptr == nullptr ||
+        MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, ptr,
+                            need) != need) {
+      delete[] heap;
+      heap = ptr = nullptr;
+    }
   }
+  ~WBuf() { delete[] heap; }
+  WBuf(const WBuf&) = delete;
+  WBuf& operator=(const WBuf&) = delete;
 };
 }  // namespace
 
@@ -43,7 +61,7 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
     return m;
   }
   WBuf w(path);
-  if (!w.ok) {
+  if (!w.ptr) {
     vm_set_last_error("MappedFile::open: path conversion failed");
     return m;
   }
@@ -51,7 +69,7 @@ MappedFile MappedFile::open(const char* path, Mode mode, std::size_t offset,
   const DWORD access = (mode == Mode::kReadWrite)
                            ? (GENERIC_READ | GENERIC_WRITE)
                            : GENERIC_READ;
-  HANDLE file = ::CreateFileW(w.buf, access, FILE_SHARE_READ | FILE_SHARE_WRITE,
+  HANDLE file = ::CreateFileW(w.ptr, access, FILE_SHARE_READ | FILE_SHARE_WRITE,
                               nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
                               nullptr);
   if (file == INVALID_HANDLE_VALUE) {

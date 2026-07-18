@@ -108,6 +108,35 @@ TEST(ErrorHandler, HandlersNestAndRestore) {
   EXPECT_EQ(a.count(Severity::Error), 1u);  // only the post-restore one
 }
 
+TEST(ErrorHandler, RecordInstallIsIdempotentAndDestructorRestores) {
+  ErrorRecord outer;
+  outer.install();
+  {
+    ErrorRecord inner;
+    inner.install();
+    inner.install();  // must not save itself as the previous handler
+    HYLE_ERROR("inner");
+    EXPECT_EQ(inner.count(Severity::Error), 1u);
+  }  // restores outer even when restore() was not called explicitly
+  HYLE_ERROR("outer");
+  outer.restore();
+  EXPECT_EQ(outer.count(Severity::Error), 1u);
+}
+
+TEST(ErrorHandler, NullFormatAndInvalidHandlerAreSafe) {
+  ErrorRecord rec;
+  rec.install();
+  hyle::error_report(Severity::Error, nullptr, 0, nullptr);
+  rec.restore();
+  EXPECT_EQ(rec.count(Severity::Error), 1u);
+  EXPECT_STREQ(rec.last_message(), "");
+
+  hyle::error_handler_t invalid{};
+  const auto* previous = hyle::error_set_default_handler(&invalid);
+  EXPECT_NE(hyle::error_default_handler()->report, nullptr);
+  hyle::error_set_default_handler(previous);
+}
+
 // A recorder can forward to a backing handler (count AND keep logging).
 TEST(ErrorHandler, BackingForward) {
   ErrorRecord sink;       // plays the role of the "backing" target

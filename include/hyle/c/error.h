@@ -209,6 +209,9 @@ typedef struct hyle_error_saved_handler_o hyle_error_saved_handler_o;
 HYLE_ERROR_C_API hyle_error_saved_handler_o* hyle_error_push_handler(
     hyle_error_report_fn fn, void* user);
 HYLE_ERROR_C_API void hyle_error_pop_handler(hyle_error_saved_handler_o* saved);
+/* Last recoverable error from this module on the calling thread. Currently
+ * reports push-handler token allocation failure; otherwise "". */
+HYLE_ERROR_C_API const char* hyle_error_last_error(void);
 
 /* Pre-formatted message. FATAL traps after handler. */
 HYLE_ERROR_C_API void hyle_error_report(hyle_severity severity, const char* file,

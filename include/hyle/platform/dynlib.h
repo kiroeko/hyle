@@ -33,6 +33,9 @@ HYLE_PLATFORM_API const char* dynlib_extension() noexcept;
 // The last dynlib error on THIS thread (open/symbol failure), or "" if none.
 // Valid until the next failing dynlib call on the same thread.
 HYLE_PLATFORM_API const char* dynlib_last_error() noexcept;
+// Set/clear the thread-local dynlib error. Primarily for C-ABI wrapper failures
+// that occur after the OS library handle was acquired (e.g. wrapper OOM).
+HYLE_PLATFORM_API void dynlib_set_last_error(const char* msg) noexcept;
 
 // An owned handle to a loaded shared library. Move-only; closes on destruction.
 class DynLib {

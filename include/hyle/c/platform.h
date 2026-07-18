@@ -438,6 +438,20 @@ HYLE_PLATFORM_C_API const char* hyle_cpu_isa_name(uint32_t isa);
 /* L1 data cache line size in bytes (64 on mainstream CPUs; for alignment/padding). */
 HYLE_PLATFORM_C_API unsigned hyle_cpu_cache_line_size(void);
 
+typedef struct hyle_cache_info {
+  uint64_t l1d, l1i, l2, l3; /* bytes; 0 means unavailable */
+} hyle_cache_info;
+
+typedef struct hyle_cpu_topology {
+  unsigned logical_cpus;
+  unsigned performance_cpus;
+  unsigned efficiency_cpus;
+  int is_hybrid;
+} hyle_cpu_topology;
+
+HYLE_PLATFORM_C_API hyle_cache_info hyle_cpu_cache_info(void);
+HYLE_PLATFORM_C_API hyle_cpu_topology hyle_cpu_topology_get(void);
+
 #ifdef __cplusplus
 } /* extern "C" */
 #endif

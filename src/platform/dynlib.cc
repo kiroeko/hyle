@@ -1,6 +1,7 @@
 #include "hyle/platform/dynlib.h"
 
 #include <cstring>
+#include <new>
 
 #include "hyle/platform.h"  // HYLE_OS_* (project convention over raw _WIN32/__APPLE__)
 
@@ -45,13 +46,32 @@ void set_error_win() noexcept {
   }
 }
 
-// UTF-8 -> UTF-16 into a stack buffer for the ...W load APIs. dynlib used ...A,
-// which mis-decodes non-ASCII UTF-8 paths (fs/mapped_file already use wide).
-// Returns false on null path or conversion failure (won't fit) -- this also
-// guards the previously-unhandled open(nullptr) case.
-bool to_wide(const char* path, wchar_t* w, int cap) noexcept {
-  return path != nullptr && ::MultiByteToWideChar(CP_UTF8, 0, path, -1, w, cap) > 0;
-}
+struct WideString {
+  wchar_t stack[512];
+  wchar_t* ptr = nullptr;
+  wchar_t* heap = nullptr;
+
+  explicit WideString(const char* utf8) noexcept {
+    if (utf8 == nullptr) return;
+    const int need = ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8,
+                                           -1, nullptr, 0);
+    if (need <= 0) return;
+    ptr = stack;
+    if (need > static_cast<int>(sizeof(stack) / sizeof(stack[0]))) {
+      heap = new (std::nothrow) wchar_t[static_cast<std::size_t>(need)];
+      ptr = heap;
+    }
+    if (ptr == nullptr ||
+        ::MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, utf8, -1, ptr,
+                              need) != need) {
+      delete[] heap;
+      heap = ptr = nullptr;
+    }
+  }
+  ~WideString() { delete[] heap; }
+  WideString(const WideString&) = delete;
+  WideString& operator=(const WideString&) = delete;
+};
 #endif
 }  // namespace
 
@@ -66,16 +86,17 @@ const char* dynlib_extension() noexcept {
 }
 
 const char* dynlib_last_error() noexcept { return g_error; }
+void dynlib_set_last_error(const char* msg) noexcept { set_error(msg); }
 
 DynLib DynLib::open(const char* path) noexcept {
   DynLib lib;
 #if defined(HYLE_OS_WINDOWS)
-  wchar_t w[1024];
-  if (!to_wide(path, w, 1024)) {
-    set_error("dynlib open: null or too-long path");
+  WideString w(path);
+  if (!w.ptr) {
+    set_error("dynlib open: null path, invalid UTF-8, or out of memory");
     return lib;
   }
-  HMODULE h = LoadLibraryW(w);
+  HMODULE h = LoadLibraryW(w.ptr);
   if (h == nullptr) {
     set_error_win();
     return lib;
@@ -104,12 +125,12 @@ DynLib DynLib::get(const char* path) noexcept {
   }
 #if defined(HYLE_OS_WINDOWS)
   // Already-mapped modules only; does not load and does not bump the refcount.
-  wchar_t w[1024];
-  if (!to_wide(path, w, 1024)) {
-    set_error("dynlib get: null or too-long path");
+  WideString w(path);
+  if (!w.ptr) {
+    set_error("dynlib get: invalid UTF-8 or out of memory");
     return lib;
   }
-  HMODULE h = GetModuleHandleW(w);
+  HMODULE h = GetModuleHandleW(w.ptr);
   if (h == nullptr) {
     set_error_win();
     return lib;
@@ -160,17 +181,27 @@ void* DynLib::symbol(const char* name) const noexcept {
     set_error("symbol() on an invalid library");
     return nullptr;
   }
+  if (name == nullptr || name[0] == '\0') {
+    set_error("symbol(): empty name");
+    return nullptr;
+  }
 #if defined(HYLE_OS_WINDOWS)
   FARPROC p = GetProcAddress(reinterpret_cast<HMODULE>(handle_), name);
-  if (p == nullptr) set_error_win();
+  if (p == nullptr) {
+    set_error_win();
+  } else {
+    set_error(nullptr);
+  }
   return reinterpret_cast<void*>(p);
 #else
   dlerror();  // clear stale error so a NULL-but-valid symbol is distinguishable
   void* p = dlsym(handle_, name);
-  if (p == nullptr) {
-    const char* e = dlerror();
-    if (e != nullptr) set_error(e);
+  const char* e = dlerror();
+  if (e != nullptr) {
+    set_error(e);
+    return nullptr;
   }
+  set_error(nullptr);
   return p;
 #endif
 }

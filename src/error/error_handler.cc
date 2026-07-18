@@ -44,13 +44,14 @@ const error_handler_t* error_default_handler() noexcept {
 const error_handler_t* error_set_default_handler(
     const error_handler_t* h) noexcept {
   std::lock_guard<std::recursive_mutex> lock(g_dispatch_mutex);
-  if (h == nullptr) h = &kStderrHandler;
+  if (h == nullptr || h->report == nullptr) h = &kStderrHandler;
   return g_default.exchange(h, std::memory_order_acq_rel);
 }
 
 void error_report(Severity sev, const char* file, std::uint32_t line,
                   const char* format, ...) {
   char buf[1024];
+  if (format == nullptr) format = "";
   va_list args;
   va_start(args, format);
   std::vsnprintf(buf, sizeof(buf), format, args);
@@ -76,6 +77,7 @@ void ErrorRecord::on_report(error_handler_o* inst, Severity sev,
   unsigned idx = static_cast<unsigned>(sev);
   if (idx < 3) ++self->counts_[idx];
 
+  if (message == nullptr) message = "";
   std::size_t n = std::strlen(message);
   if (n >= kMsgCap) n = kMsgCap - 1;
   std::memcpy(self->last_, message, n);
@@ -87,12 +89,21 @@ void ErrorRecord::on_report(error_handler_o* inst, Severity sev,
 }
 
 void ErrorRecord::install() {
+  if (installed_) return;
   self_.inst = reinterpret_cast<error_handler_o*>(this);
   self_.report = &ErrorRecord::on_report;
   prev_ = error_set_default_handler(&self_);
+  installed_ = true;
 }
 
-void ErrorRecord::restore() noexcept { error_set_default_handler(prev_); }
+ErrorRecord::~ErrorRecord() { restore(); }
+
+void ErrorRecord::restore() noexcept {
+  if (!installed_) return;
+  error_set_default_handler(prev_);
+  prev_ = nullptr;
+  installed_ = false;
+}
 
 std::uint32_t ErrorRecord::count(Severity sev) const noexcept {
   unsigned idx = static_cast<unsigned>(sev);

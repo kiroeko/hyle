@@ -250,7 +250,12 @@ class GrowablePool {
   T* create(Args&&... args) {
     void* slot = core_.acquire();
     if (slot == nullptr) return nullptr;  // pool grow hit OOM -> nullptr (like ObjectPool)
-    return ::new (slot) T(std::forward<Args>(args)...);
+    try {
+      return ::new (slot) T(std::forward<Args>(args)...);
+    } catch (...) {
+      core_.release(slot);
+      throw;
+    }
   }
 
   // Destroy a T from create() and return its slot to the free-list.

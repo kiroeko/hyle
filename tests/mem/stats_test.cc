@@ -99,6 +99,21 @@ TEST(StatsAllocator, ReallocPreservesAccounting) {
   EXPECT_TRUE(sa.balanced());
 }
 
+TEST(StatsAllocator, ReallocUsesRecordedOldSizeWhenTrackingLeaks) {
+  StatsAllocator sa(system_allocator(), /*track_leaks=*/true);
+  auto a = sa.get();
+  void* p = a.allocate(64);
+  ASSERT_NE(p, nullptr);
+  // The backing allocator owns the real size metadata. The diagnostic wrapper
+  // must not corrupt its counters merely because a caller supplied a bad hint.
+  void* q = a.reallocate(p, 999, 128);
+  ASSERT_NE(q, nullptr);
+  EXPECT_EQ(sa.snapshot().live_count, 1u);
+  EXPECT_EQ(sa.snapshot().live_bytes, 128u);
+  a.deallocate(q, 128);
+  EXPECT_TRUE(sa.balanced());
+}
+
 TEST(StatsAllocator, ReallocToZeroIsFree) {
   StatsAllocator sa(system_allocator());
   auto a = sa.get();

@@ -76,6 +76,10 @@ HYLE_ERROR_API void error_report(Severity sev, const char* file,
 struct HYLE_ERROR_API ErrorRecord {
   static constexpr std::size_t kMsgCap = 256;
 
+  ErrorRecord() noexcept = default;
+  ~ErrorRecord();
+  HYLE_DISABLE_COPY_AND_MOVE(ErrorRecord);
+
   void install();                 // set as default, remembering the previous
   void restore() noexcept;        // reinstate the previous default
   std::uint32_t count(Severity sev) const noexcept;
@@ -91,6 +95,7 @@ struct HYLE_ERROR_API ErrorRecord {
   char last_[kMsgCap] = {0};
   error_handler_t self_{};                 // vtable bound to this
   const error_handler_t* prev_ = nullptr;  // default to restore
+  bool installed_ = false;
 };
 
 }  // namespace hyle

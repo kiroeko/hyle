@@ -69,19 +69,24 @@ class StackAllocator {
 
   // Release everything allocated since `m` (LIFO). Must be within [base_, cur_].
   void rewind(Marker m) noexcept {
-    HYLE_FATAL_ASSERT(m >= base_ && m <= cur_);
+    const auto addr = reinterpret_cast<std::uintptr_t>(m);
+    const auto begin = reinterpret_cast<std::uintptr_t>(base_);
+    const auto current = reinterpret_cast<std::uintptr_t>(cur_);
+    HYLE_FATAL_ASSERT(valid() && addr >= begin && addr <= current);
     cur_ = m;
   }
 
   // Release everything.
   void reset() noexcept { cur_ = base_; }
 
-  std::size_t used() const noexcept { return static_cast<std::size_t>(cur_ - base_); }
+  std::size_t used() const noexcept {
+    return valid() ? static_cast<std::size_t>(cur_ - base_) : 0;
+  }
   std::size_t capacity() const noexcept { return size_; }
   // Bytes still available from the current cursor (a max-aligned request of this
   // size or less is guaranteed to fit; a stronger alignment may consume padding).
   std::size_t remaining() const noexcept {
-    return static_cast<std::size_t>(end_ - cur_);
+    return valid() ? static_cast<std::size_t>(end_ - cur_) : 0;
   }
 
   // Adapt to the Allocator vtable so a StackAllocator can be injected downstream
