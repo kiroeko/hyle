@@ -35,6 +35,16 @@ int main(void) {
   hyle_allocator sys = hyle_system_allocator();
   CHECK(sys.alloc != NULL && sys.free != NULL && sys.realloc != NULL);
   {
+    hyle_allocator bad = {0};
+    CHECK(hyle_memory_arena_create(bad, 16, 1, 0) == NULL);
+    CHECK(hyle_mem_last_error()[0] != '\0');
+    hyle_memory_arena_o* good =
+        hyle_memory_arena_create(sys, 16, 1, 0);
+    CHECK(good != NULL);
+    CHECK(hyle_mem_last_error()[0] == '\0');
+    hyle_memory_arena_destroy(good);
+  }
+  {
     /* direct vtable call */
     unsigned char* p = (unsigned char*)sys.alloc(sys.state, 128, 64);
     CHECK(p != NULL);
@@ -166,6 +176,12 @@ int main(void) {
     CHECK(p != NULL);
     CHECK(((size_t)p % 16u) == 0u);
     CHECK(hyle_arena_used(ar) >= 100u);
+    {
+      hyle_allocator av = hyle_arena_as_allocator(ar);
+      void* q = hyle_alloc(&av, 32, 8);
+      CHECK(q != NULL);
+      hyle_free(&av, q, 32, 8); /* bump allocator free is a no-op */
+    }
     hyle_arena_reset(ar);
     CHECK(hyle_arena_used(ar) == 0u);
     hyle_arena_destroy(ar);                   /* returns the block to the pool */
@@ -297,6 +313,13 @@ int main(void) {
     CHECK(hi != NULL);
     hyle_huge_region_destroy(hi);
 
+    CHECK(hyle_huge_region_open(
+              bytes, HYLE_HUGE_NUMA_BIND | HYLE_HUGE_NUMA_INTERLEAVE,
+              HYLE_MEM_NUMA_ANY) == NULL);
+    CHECK(hyle_mem_last_error()[0] != '\0');
+    CHECK(hyle_huge_region_open(bytes, 1u << 31, HYLE_MEM_NUMA_ANY) == NULL);
+    CHECK(hyle_mem_last_error()[0] != '\0');
+
     hyle_huge_region_destroy(NULL);  /* NULL-safe */
   }
 
@@ -313,6 +336,7 @@ int main(void) {
   }
 
   /* ---- process-wide policy: callable, no crash (effect is global/soft) ---- */
+  hyle_enable_allocator_hugepages(0, 0);
   hyle_enable_allocator_numa(0);
   CHECK(hyle_reserve_huge_1g_pages(0, HYLE_MEM_NUMA_ANY, 0) == 1);  /* pages==0 ok */
 

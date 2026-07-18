@@ -45,6 +45,7 @@ namespace {
 // truncation when the return is >= cap).
 std::size_t fill(char* dst, std::size_t cap, const char* src,
                  std::size_t len) noexcept {
+  if (dst == nullptr) cap = 0;
   if (cap == 0) return len;
   std::size_t n = len < cap - 1 ? len : cap - 1;
   if (n) std::memcpy(dst, src, n);
@@ -179,24 +180,42 @@ class WidePath {
 // `wlen` is the UTF-16 length excluding any terminator (-1 lets it scan).
 std::size_t fill_w(char* dst, std::size_t cap, const wchar_t* src,
                    int wlen) noexcept {
+  if (dst == nullptr) cap = 0;
   int need = WideCharToMultiByte(CP_UTF8, 0, src, wlen, nullptr, 0, nullptr,
                                  nullptr);
   if (need <= 0) return fill(dst, cap, "", 0);
-  if (static_cast<std::size_t>(need) < cap) {
-    int got = WideCharToMultiByte(CP_UTF8, 0, src, wlen, dst,
-                                  static_cast<int>(cap - 1), nullptr, nullptr);
-    if (got < 0) got = 0;
-    dst[got] = '\0';
-    return static_cast<std::size_t>(got);
+  const std::size_t full =
+      static_cast<std::size_t>(need - (wlen == -1 ? 1 : 0));
+  if (cap == 0) return full;
+  if (full < cap) {
+    int got =
+        WideCharToMultiByte(CP_UTF8, 0, src, wlen, dst, need, nullptr, nullptr);
+    if (got <= 0) {
+      dst[0] = '\0';
+      return full;
+    }
+    const std::size_t written =
+        static_cast<std::size_t>(got - (wlen == -1 ? 1 : 0));
+    dst[written] = '\0';
+    return full;
   }
   // Won't fit: convert into a heap scratch, then buffer-fill (truncates).
   char* tmp = static_cast<char*>(std::malloc(need + 1));
-  if (tmp == nullptr) return fill(dst, cap, "", 0);
+  if (tmp == nullptr) {
+    dst[0] = '\0';
+    return full;
+  }
   int got = WideCharToMultiByte(CP_UTF8, 0, src, wlen, tmp, need, nullptr,
                                 nullptr);
-  if (got < 0) got = 0;
-  tmp[got] = '\0';
-  std::size_t r = fill(dst, cap, tmp, static_cast<std::size_t>(got));
+  if (got <= 0) {
+    std::free(tmp);
+    dst[0] = '\0';
+    return full;
+  }
+  const std::size_t converted =
+      static_cast<std::size_t>(got - (wlen == -1 ? 1 : 0));
+  tmp[converted] = '\0';
+  std::size_t r = fill(dst, cap, tmp, converted);
   std::free(tmp);
   return r;
 }
@@ -268,12 +287,27 @@ bool copy_file(const char* from, const char* to) noexcept {
 }
 
 std::size_t current_directory(char* dst, std::size_t cap) noexcept {
-  wchar_t buf[MAX_PATH];
-  // On overflow GetCurrentDirectoryW returns the REQUIRED length (> buf) without
-  // filling buf -- guard against converting uninitialized bytes.
-  DWORD n = GetCurrentDirectoryW(MAX_PATH, buf);
-  if (n == 0 || n > MAX_PATH) return fill(dst, cap, "", 0);
-  return fill_w(dst, cap, buf, static_cast<int>(n));
+  wchar_t stack[512];
+  wchar_t* buf = stack;
+  wchar_t* heap = nullptr;
+  DWORD buf_cap = static_cast<DWORD>(sizeof(stack) / sizeof(stack[0]));
+  DWORD n = GetCurrentDirectoryW(buf_cap, buf);
+  if (n >= buf_cap) {
+    // The too-small result includes the terminator. CWD can exceed MAX_PATH
+    // after SetCurrentDirectoryW on an extended path, so size dynamically.
+    buf_cap = n;
+    heap = static_cast<wchar_t*>(
+        std::malloc(static_cast<std::size_t>(buf_cap) * sizeof(wchar_t)));
+    if (heap == nullptr) return fill(dst, cap, "", 0);
+    buf = heap;
+    n = GetCurrentDirectoryW(buf_cap, buf);
+  }
+  std::size_t out =
+      (n == 0 || n >= buf_cap)
+          ? fill(dst, cap, "", 0)
+          : fill_w(dst, cap, buf, static_cast<int>(n));
+  std::free(heap);
+  return out;
 }
 
 bool change_directory(const char* path) noexcept {
@@ -282,21 +316,53 @@ bool change_directory(const char* path) noexcept {
 }
 
 std::size_t temp_directory(char* dst, std::size_t cap) noexcept {
-  wchar_t buf[MAX_PATH + 1];
-  DWORD n = GetTempPathW(MAX_PATH + 1, buf);  // already honors TMP/TEMP
-  if (n == 0 || n > MAX_PATH + 1) return fill(dst, cap, "", 0);
+  wchar_t stack[512];
+  wchar_t* buf = stack;
+  wchar_t* heap = nullptr;
+  DWORD buf_cap = static_cast<DWORD>(sizeof(stack) / sizeof(stack[0]));
+  DWORD n = GetTempPathW(buf_cap, buf);  // already honors TMP/TEMP
+  if (n >= buf_cap) {
+    buf_cap = n + 1;
+    heap = static_cast<wchar_t*>(
+        std::malloc(static_cast<std::size_t>(buf_cap) * sizeof(wchar_t)));
+    if (heap == nullptr) return fill(dst, cap, "", 0);
+    buf = heap;
+    n = GetTempPathW(buf_cap, buf);
+  }
+  if (n == 0 || n >= buf_cap) {
+    std::free(heap);
+    return fill(dst, cap, "", 0);
+  }
   while (n > 1 && (buf[n - 1] == L'\\' || buf[n - 1] == L'/')) --n;  // trim sep
-  return fill_w(dst, cap, buf, static_cast<int>(n));
+  std::size_t out = fill_w(dst, cap, buf, static_cast<int>(n));
+  std::free(heap);
+  return out;
 }
 
 std::size_t home_directory(char* dst, std::size_t cap) noexcept {
-  wchar_t buf[MAX_PATH];
-  DWORD n = GetEnvironmentVariableW(L"USERPROFILE", buf, MAX_PATH);
-  if (n == 0 || n >= MAX_PATH) return fill(dst, cap, "", 0);
-  return fill_w(dst, cap, buf, static_cast<int>(n));
+  wchar_t stack[512];
+  wchar_t* buf = stack;
+  wchar_t* heap = nullptr;
+  DWORD buf_cap = static_cast<DWORD>(sizeof(stack) / sizeof(stack[0]));
+  DWORD n = GetEnvironmentVariableW(L"USERPROFILE", buf, buf_cap);
+  if (n >= buf_cap) {
+    buf_cap = n;
+    heap = static_cast<wchar_t*>(
+        std::malloc(static_cast<std::size_t>(buf_cap) * sizeof(wchar_t)));
+    if (heap == nullptr) return fill(dst, cap, "", 0);
+    buf = heap;
+    n = GetEnvironmentVariableW(L"USERPROFILE", buf, buf_cap);
+  }
+  std::size_t out =
+      (n == 0 || n >= buf_cap)
+          ? fill(dst, cap, "", 0)
+          : fill_w(dst, cap, buf, static_cast<int>(n));
+  std::free(heap);
+  return out;
 }
 
 std::size_t get_env_var(const char* name, char* dst, std::size_t cap) noexcept {
+  if (name == nullptr) return kEnvNotSet;
   WidePath wn(name);
   if (wn.w() == nullptr) return kEnvNotSet;
   // Query length first. 0 with ERROR_ENVVAR_NOT_FOUND => unset (vs set-empty).
@@ -407,6 +473,13 @@ std::int64_t write_raw(std::intptr_t raw, const void* buf, std::size_t n) noexce
 }  // namespace
 
 OwnedFd open_file(const char* path, unsigned flags) noexcept {
+  constexpr unsigned kKnown = kOpenRead | kOpenWrite | kOpenCreate |
+                              kOpenTruncate | kOpenAppend;
+  if (path == nullptr || (flags & ~kKnown) != 0 ||
+      ((flags & (kOpenCreate | kOpenTruncate | kOpenAppend)) != 0 &&
+       (flags & kOpenWrite) == 0)) {
+    return OwnedFd{};
+  }
   WidePath wp(path);
   if (wp.w() == nullptr) return OwnedFd{};
   DWORD access = 0;
@@ -774,6 +847,7 @@ std::size_t home_directory(char* dst, std::size_t cap) noexcept {
 }
 
 std::size_t get_env_var(const char* name, char* dst, std::size_t cap) noexcept {
+  if (name == nullptr) return kEnvNotSet;
   const char* v = std::getenv(name);
   if (v == nullptr) return kEnvNotSet;
   return fill(dst, cap, v, std::strlen(v));
@@ -794,6 +868,13 @@ std::int64_t write_raw(std::intptr_t raw, const void* buf, std::size_t n) noexce
 }  // namespace
 
 OwnedFd open_file(const char* path, unsigned flags) noexcept {
+  constexpr unsigned kKnown = kOpenRead | kOpenWrite | kOpenCreate |
+                              kOpenTruncate | kOpenAppend;
+  if (path == nullptr || (flags & ~kKnown) != 0 ||
+      ((flags & (kOpenCreate | kOpenTruncate | kOpenAppend)) != 0 &&
+       (flags & kOpenWrite) == 0)) {
+    return OwnedFd{};
+  }
   int f;
   const bool rd = (flags & kOpenRead) != 0, wr = (flags & kOpenWrite) != 0;
   if (rd && wr) f = O_RDWR;
@@ -965,6 +1046,7 @@ bool is_directory(const char* path) noexcept { return stat(path).is_directory; }
 std::uint64_t file_size(const char* path) noexcept { return stat(path).size; }
 
 bool touch(const char* path) noexcept {
+  if (path == nullptr) return false;
 #if defined(HYLE_OS_WINDOWS)
   // CreateFileW with OPEN_ALWAYS creates the file if absent, opens it if present
   // -- no std::fopen (which is ANSI on Windows and would mis-decode a UTF-8
@@ -976,20 +1058,20 @@ bool touch(const char* path) noexcept {
   if (h == INVALID_HANDLE_VALUE) return false;
   FILETIME now;
   GetSystemTimeAsFileTime(&now);
-  SetFileTime(h, nullptr, nullptr, &now);
-  CloseHandle(h);
-  return true;
+  const bool stamped = SetFileTime(h, nullptr, nullptr, &now) != 0;
+  const bool closed = CloseHandle(h) != 0;
+  return stamped && closed;
 #else
   std::FILE* f = std::fopen(path, "ab");  // append: create if absent, no truncate
   if (f == nullptr) return false;
-  std::fclose(f);
+  if (std::fclose(f) != 0) return false;
   // Bump mtime to now even when the file already existed and append wrote 0 bytes.
-  ::utimensat(AT_FDCWD, path, nullptr, 0);  // nullptr times => now
-  return true;
+  return ::utimensat(AT_FDCWD, path, nullptr, 0) == 0;  // nullptr times => now
 #endif
 }
 
 bool make_directory_recursive(const char* path) noexcept {
+  if (path == nullptr || path[0] == '\0') return false;
   if (is_directory(path)) return true;
   char buf[4096];
   std::size_t n = std::strlen(path);
@@ -1062,6 +1144,7 @@ bool rm_recursive_depth(const char* path, unsigned depth) noexcept {
 }  // namespace
 
 bool remove_directory_recursive(const char* path) noexcept {
+  if (path == nullptr || path[0] == '\0') return false;
   return rm_recursive_depth(path, 0);
 }
 

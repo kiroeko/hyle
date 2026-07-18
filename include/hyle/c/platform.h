@@ -35,6 +35,12 @@ extern "C" {
 #  define HYLE_PLATFORM_C_API
 #endif
 
+/* Last recoverable error from C-shim facilities that do not return hyle_status
+ * and do not have a more specific channel (currently Parker wrapper creation
+ * and filesystem/fd operations). Thread-local; "" means none. VM/mapped/NUMA
+ * use hyle_vm_last_error; DynLib uses hyle_dynlib_last_error. */
+HYLE_PLATFORM_C_API const char* hyle_platform_last_error(void);
+
 /* ========================================================================== */
 /* wait / Parker                                                              */
 /* ========================================================================== */
@@ -80,6 +86,10 @@ typedef enum hyle_thread_priority {
 } hyle_thread_priority;
 
 typedef struct hyle_thread_opts {
+  /* Set by HYLE_THREAD_OPTS_INIT/default(). Values smaller than the current
+   * readable prefix (including zero) are rejected, preventing a newer library
+   * from reading past an older FFI struct. */
+  uint32_t struct_size;
   const char* name;          /* optional; NULL = none; truncated to OS limit */
   int has_stack_size;        /* 0/1 */
   size_t stack_size;         /* bytes if has_stack_size */
@@ -89,9 +99,9 @@ typedef struct hyle_thread_opts {
   int priority;              /* hyle_thread_priority if has_priority */
 } hyle_thread_opts;
 
-/* Zero-init helper: hyle_thread_opts o = HYLE_THREAD_OPTS_INIT; */
+/* Default-init helper: hyle_thread_opts o = HYLE_THREAD_OPTS_INIT; */
 #define HYLE_THREAD_OPTS_INIT \
-  { NULL, 0, 0, 0, 0, 0, 0 }
+  { (uint32_t)sizeof(hyle_thread_opts), NULL, 0, 0, 0, 0, 0, 0 }
 
 static inline hyle_thread_opts hyle_thread_opts_default(void) {
   hyle_thread_opts o = HYLE_THREAD_OPTS_INIT;
@@ -181,6 +191,7 @@ HYLE_PLATFORM_C_API size_t hyle_page_size(void);
 static inline size_t hyle_page_align_up(size_t n) {
   size_t p = hyle_page_size();
   if (p == 0 || n == 0) return 0;
+  if (n > SIZE_MAX - (p - 1)) return 0;
   return (n + (p - 1)) & ~(p - 1);
 }
 
@@ -215,6 +226,7 @@ static inline size_t hyle_large_page_align_up(size_t n) {
   size_t lp = hyle_large_page_size();
   size_t p = lp != 0 ? lp : hyle_page_size();
   if (p == 0) return 0;
+  if (n > SIZE_MAX - (p - 1)) return 0;
   return (n + (p - 1)) & ~(p - 1);
 }
 /* MADV_HUGEPAGE / MADV_NOHUGEPAGE on Linux; false + vm_last_error elsewhere.
@@ -333,6 +345,18 @@ HYLE_PLATFORM_C_API int hyle_fs_directory_iterate(const char* path,
 
 /* ---- fs permissions / symlink / tempfile / env-write (v4) ------------------ */
 /* Permission bits (low 9 of POSIX mode); Windows synthesizes from READONLY. */
+typedef enum hyle_file_perms {
+  HYLE_PERM_OWNER_READ = 0400,
+  HYLE_PERM_OWNER_WRITE = 0200,
+  HYLE_PERM_OWNER_EXEC = 0100,
+  HYLE_PERM_GROUP_READ = 0040,
+  HYLE_PERM_GROUP_WRITE = 0020,
+  HYLE_PERM_GROUP_EXEC = 0010,
+  HYLE_PERM_OTHER_READ = 0004,
+  HYLE_PERM_OTHER_WRITE = 0002,
+  HYLE_PERM_OTHER_EXEC = 0001,
+  HYLE_PERM_ALL = 0777
+} hyle_file_perms;
 HYLE_PLATFORM_C_API uint32_t hyle_fs_get_permissions(const char* path);
 HYLE_PLATFORM_C_API int hyle_fs_set_permissions(const char* path, uint32_t mode);
 HYLE_PLATFORM_C_API int hyle_fs_is_readonly(const char* path);
@@ -353,13 +377,13 @@ HYLE_PLATFORM_C_API intptr_t hyle_fs_create_temp_file(const char* dir,
 HYLE_PLATFORM_C_API void hyle_fs_close_fd(intptr_t fd);
 /* open_file flags (OR them): READ/WRITE pick access; CREATE makes a missing file;
  * TRUNCATE empties it; APPEND puts writes at EOF. */
-enum {
+typedef enum hyle_file_open_flags {
   HYLE_OPEN_READ = 1u << 0,
   HYLE_OPEN_WRITE = 1u << 1,
   HYLE_OPEN_CREATE = 1u << 2,
   HYLE_OPEN_TRUNCATE = 1u << 3,
   HYLE_OPEN_APPEND = 1u << 4
-};
+} hyle_file_open_flags;
 /* Open `path` with `flags` (HYLE_OPEN_* OR'd); returns an OS fd/HANDLE as intptr_t,
  * or -1 on failure. Close via hyle_fs_close_fd. UTF-8 path (wide APIs on Windows). */
 HYLE_PLATFORM_C_API intptr_t hyle_fs_open(const char* path, unsigned flags);
@@ -383,8 +407,9 @@ typedef enum hyle_map_mode {
 
 /* Opaque mapping handle; destroy unmaps + closes. */
 typedef struct hyle_mapped_file_o hyle_mapped_file_o;
-/* Map [offset,offset+length) of `path` (length==0 => to EOF; offset page-aligned).
- * NULL on failure (see hyle_vm_last_error). */
+/* Map [offset,offset+length) of `path` (length==0 => to EOF). Unaligned offsets
+ * are supported; the implementation aligns the OS view internally. NULL on
+ * failure (see hyle_vm_last_error). */
 HYLE_PLATFORM_C_API hyle_mapped_file_o* hyle_mapped_file_open(const char* path,
                                                              hyle_map_mode mode,
                                                              size_t offset,

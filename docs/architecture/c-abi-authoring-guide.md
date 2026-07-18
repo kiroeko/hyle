@@ -90,6 +90,18 @@ extern "C" {
    - **句柄返回型 API 返 NULL 时，配一条 thread-local last-error 串**（如 mem 的 `hyle_mem_last_error`，转发 platform 的 `vm_set_last_error`）：NULL 只说"失败了"，C 用户还需知道"为什么失败"（invalid backing？OOM？池耗尽？）——与 error 模块的 `hyle_status_message_cstr` 呼应，跨 C 边界的失败都要能取到人可读原因。**每条** NULL 返回路径都要设串，别让 C 用户读到上一次的过时串。
    - 系统边界输入才校验（FFI 调用方可能传零值结构体）；内部/框架保证不重复校验。
 
+4. **跨 ABI POD 要钉布局，输入 options 要能演进**：
+   - 桥接 `.cc` 对公开 POD 至少
+     `static_assert(std::is_standard_layout_v<T>)` 与
+     `std::is_trivially_copyable_v<T>`；关键首字段/固定大小再 assert。
+   - 可能追加字段的输入 options 以 `uint32_t struct_size` 为首字段，初始化
+     宏/helper 写 `sizeof(T)`；库在读字段前先验证可读范围。不要把“全零
+     内存”误写成可长期演进的 ABI 协议。
+   - 小型输出 snapshot 可以值返回 POD，但发布后字段和布局即冻结；预期
+     高频扩展的输出改为 `struct_size + out*`，或新增独立查询函数。
+   - C enum 与 C++ enum/位值在桥接 `.cc` 用 `static_assert` 锁定，不能靠
+     两份手抄表默契一致。
+
 ## 4. 易用性：两条线，各自做到位
 
 **C ABI 用户（跨语言/FFI）的易用性靠 header-inline 便利层**——零新导出符号、不进 ABI、纯语法糖。这是必做的一个维度，不是可选。mem/error/platform 已立的模式，照抄：
@@ -97,7 +109,9 @@ extern "C" {
 - **便利转发**：`hyle_alloc/free/realloc`（经句柄调，省手解 fn 指针；NULL 句柄安全）。
 - **typed 宏**（类型擦除的用户侧糖）：`HYLE_OBJECT_POOL_CREATE(backing,T,n)` 替用户填 `sizeof(T)`/`HYLE_ALIGNOF(T)`；`HYLE_ALIGNOF` 是跨 C/C++ 的 alignof shim（C++/C23 `alignof`、C11 `_Alignof`、否则 0→默认对齐）。
 - **工厂 + 谓词**（error 模式）：`hyle_status_not_found()` 等全码工厂 + `hyle_status_is_*()` 谓词 + `HYLE_C_RETURN_IF_ERROR`。
-- **opts 建造 + 零初始化宏**（platform 模式）：`HYLE_THREAD_OPTS_INIT` + `hyle_thread_opts_set_*`。
+- **opts 建造 + 尺寸初始化宏**（platform 模式）：`HYLE_THREAD_OPTS_INIT`
+  + `hyle_thread_opts_set_*`；宏写 `struct_size`，因此应称“默认初始化”，
+  不应承诺其字节全零。
 - **buffer-fill / visitor**（避免返回拥有型内存）：`size_t f(char* dst, size_t cap)` 返完整长（`>=cap` 表截断）；迭代用 `int (*visit)(..., void* ctx)` 返 0 停。
 
 原则：inline 糖给 C 用户便利、但不污染稳定导出面（不进 DLL 符号，零 ABI 风险）。**C++ 用户不管这层**——他们直接用原生 `include/hyle/<mod>/*.h`（RAII/模板本就好用），HYLE 不做"包 C 句柄的 C++ 壳"（design §2：只有对外主接口是 C 的库如 ggml/oneDNN 才需要那层）。
@@ -122,9 +136,11 @@ extern "C" {
 - [ ] 每个 C++ 公开面按 §0 表归类，缺口补或显式登记"有意仅 C++"（附理由：泛型不可达 vs 无 FFI 需求，别混）。
 - [ ] 六件套齐（§1）；导出宏三态；`extern "C"` 包全。
 - [ ] 桥接三铁律（§3）：opaque 句柄 anon-ns 外定义 + 零 reinterpret + fail-fast/边界二分。
+- [ ] C POD 有 layout/trivial/关键 offset assert；可扩展输入 options 首字段为 `struct_size`；C/C++ enum 值有编译期锁。
 - [ ] 易用性 header-inline 层（§4）：便利转发 + typed 宏 + 工厂/谓词按模块需要补。
 - [ ] **无** api 表 / api_get / 版本宏（design §3）。
 - [ ] 纯 C smoke test 覆盖句柄生命周期 + 便利 + NULL 安全 + 边界校验。
+- [ ] 机械核对 C 头每个 `hyle_*` 入口在纯 C smoke 与 guide 中至少出现一次；聚合写法不能掩盖漏测符号。
 - [ ] 三平台真编真测 all passed + C++ 无回归 + `-Werror` 干净。
 - [ ] `docs/guide/c-<mod>.md` 逐符号 1:1 + README 索引；close-01 里程碑登记该模块 C ABI 落地。
 - [ ] `docs/guide/c-<mod>.md` 的"有意不导出"表说清每个仅-C++ 项的理由。

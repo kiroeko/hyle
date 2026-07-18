@@ -14,6 +14,7 @@
 
 #include <cstddef>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/mem/allocator.h"
@@ -26,6 +27,10 @@
 namespace {
 
 using hyle::mem::Allocator;
+
+static_assert(std::is_standard_layout_v<hyle_allocator>);
+static_assert(std::is_trivially_copyable_v<hyle_allocator>);
+static_assert(sizeof(hyle_allocator) == sizeof(void*) * 4);
 
 // ---- C hyle_allocator -> C++ mem::Allocator (via noexcept trampolines) -------
 // `state` points at a live hyle_allocator (stored inside the owning wrapper, so it
@@ -149,6 +154,7 @@ hyle_memory_arena_o* hyle_memory_arena_create(hyle_allocator backing,
                                               size_t block_size,
                                               uint32_t block_count,
                                               size_t alignment) {
+  hyle::platform::vm_set_last_error(nullptr);
   if (!valid_backing(backing)) {
     hyle::platform::vm_set_last_error(
         "hyle_memory_arena_create: invalid backing (a fn pointer is null)");
@@ -169,6 +175,7 @@ hyle_memory_arena_o* hyle_memory_arena_create(hyle_allocator backing,
         "hyle_memory_arena_create: slab allocation failed (out of memory)");
     return nullptr;
   }
+  hyle::platform::vm_set_last_error(nullptr);
   return a;
 }
 
@@ -203,6 +210,7 @@ hyle_allocator hyle_memory_arena_as_allocator(hyle_memory_arena_o* a) {
 
 hyle_stack_allocator_o* hyle_stack_allocator_create(hyle_allocator backing,
                                                     size_t size) {
+  hyle::platform::vm_set_last_error(nullptr);
   // valid_backing guards a null fn pointer (a raw segfault in the trampoline, no
   // clean assert). size==0 is a caller-contract violation -> the C++ ctor's
   // HYLE_FATAL_ASSERT fires (fail-fast, same as a C++ caller); not masked here.
@@ -224,6 +232,7 @@ hyle_stack_allocator_o* hyle_stack_allocator_create(hyle_allocator backing,
         "hyle_stack_allocator_create: slab allocation failed (out of memory)");
     return nullptr;
   }
+  hyle::platform::vm_set_last_error(nullptr);
   return s;
 }
 
@@ -266,6 +275,7 @@ hyle_allocator hyle_stack_allocator_as_allocator(hyle_stack_allocator_o* s) {
 /* ---- Arena ----------------------------------------------------------------- */
 
 hyle_arena_o* hyle_arena_create(hyle_memory_arena_o* pool) {
+  hyle::platform::vm_set_last_error(nullptr);
   if (!pool) {
     hyle::platform::vm_set_last_error("hyle_arena_create: pool is NULL");
     return nullptr;
@@ -284,6 +294,7 @@ hyle_arena_o* hyle_arena_create(hyle_memory_arena_o* pool) {
     hyle::platform::vm_set_last_error("hyle_arena_create: pool exhausted (no free block)");
     return nullptr;
   }
+  hyle::platform::vm_set_last_error(nullptr);
   return a;
 }
 
@@ -318,6 +329,7 @@ hyle_growable_pool_o* hyle_growable_pool_create(hyle_allocator backing,
                                                 size_t slot_size,
                                                 size_t slot_align,
                                                 uint32_t initial_slots) {
+  hyle::platform::vm_set_last_error(nullptr);
   if (!valid_backing(backing)) {
     hyle::platform::vm_set_last_error(
         "hyle_growable_pool_create: invalid backing (a fn pointer is null)");
@@ -335,13 +347,25 @@ hyle_growable_pool_o* hyle_growable_pool_create(hyle_allocator backing,
   if (p == nullptr)
     hyle::platform::vm_set_last_error(
         "hyle_growable_pool_create: wrapper allocation failed (out of memory)");
+  else
+    hyle::platform::vm_set_last_error(nullptr);
   return p;
 }
 
 void hyle_growable_pool_destroy(hyle_growable_pool_o* p) { delete p; }
 
 void* hyle_growable_pool_acquire(hyle_growable_pool_o* p) {
-  return p ? p->core.acquire() : nullptr;
+  if (p == nullptr) {
+    hyle::platform::vm_set_last_error(
+        "hyle_growable_pool_acquire: pool is NULL");
+    return nullptr;
+  }
+  void* slot = p->core.acquire();
+  hyle::platform::vm_set_last_error(
+      slot == nullptr
+          ? "hyle_growable_pool_acquire: growth allocation failed (out of memory)"
+          : nullptr);
+  return slot;
 }
 
 void hyle_growable_pool_release(hyle_growable_pool_o* p, void* slot) {
@@ -364,34 +388,63 @@ size_t hyle_growable_pool_live(const hyle_growable_pool_o* p) {
 
 hyle_huge_region_o* hyle_huge_region_open(size_t bytes, uint32_t flags,
                                           int numa_node) {
+  constexpr uint32_t kKnownFlags =
+      HYLE_HUGE_THP_HINT | HYLE_HUGE_PREFAULT | HYLE_HUGE_NUMA_BIND |
+      HYLE_HUGE_NUMA_INTERLEAVE;
+  hyle::platform::vm_set_last_error(nullptr);
+  if ((flags & ~kKnownFlags) != 0 ||
+      ((flags & HYLE_HUGE_NUMA_BIND) != 0 &&
+       (flags & HYLE_HUGE_NUMA_INTERLEAVE) != 0)) {
+    hyle::platform::vm_set_last_error(
+        "hyle_huge_region_open: invalid flag combination");
+    return nullptr;
+  }
   auto r = hyle::mem::HugeRegion::allocate(bytes, to_huge_flags(flags), numa_node);
   if (!r.valid()) return nullptr;
   auto* out = new (std::nothrow) hyle_huge_region_o(std::move(r));
   if (out == nullptr) {
     hyle::platform::vm_set_last_error(
         "hyle_huge_region_open: wrapper allocation failed (out of memory)");
+  } else {
+    hyle::platform::vm_set_last_error(nullptr);
   }
   return out;
 }
 
 hyle_huge_region_o* hyle_huge_region_open_local(size_t bytes, uint32_t flags) {
+  constexpr uint32_t kKnownFlags =
+      HYLE_HUGE_THP_HINT | HYLE_HUGE_PREFAULT | HYLE_HUGE_NUMA_BIND |
+      HYLE_HUGE_NUMA_INTERLEAVE;
+  hyle::platform::vm_set_last_error(nullptr);
+  if ((flags & ~kKnownFlags) != 0 ||
+      ((flags & HYLE_HUGE_NUMA_BIND) != 0 &&
+       (flags & HYLE_HUGE_NUMA_INTERLEAVE) != 0)) {
+    hyle::platform::vm_set_last_error(
+        "hyle_huge_region_open_local: invalid flag combination");
+    return nullptr;
+  }
   auto r = hyle::mem::HugeRegion::allocate_local(bytes, to_huge_flags(flags));
   if (!r.valid()) return nullptr;
   auto* out = new (std::nothrow) hyle_huge_region_o(std::move(r));
   if (out == nullptr) {
     hyle::platform::vm_set_last_error(
         "hyle_huge_region_open_local: wrapper allocation failed (out of memory)");
+  } else {
+    hyle::platform::vm_set_last_error(nullptr);
   }
   return out;
 }
 
 hyle_huge_region_o* hyle_huge_region_open_interleaved(size_t bytes) {
+  hyle::platform::vm_set_last_error(nullptr);
   auto r = hyle::mem::HugeRegion::allocate_interleaved(bytes);
   if (!r.valid()) return nullptr;
   auto* out = new (std::nothrow) hyle_huge_region_o(std::move(r));
   if (out == nullptr) {
     hyle::platform::vm_set_last_error(
         "hyle_huge_region_open_interleaved: wrapper allocation failed (out of memory)");
+  } else {
+    hyle::platform::vm_set_last_error(nullptr);
   }
   return out;
 }

@@ -85,6 +85,11 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 - **诊断通道**：`hyle_error_report` + 可换 handler（`hyle_error_set_handler` 简单单槽 / `hyle_error_push_handler`+`pop` 嵌套安全，对标 signal old-handler）。
 - **绝不让 C++ 异常跨 C 边界**（UB）。catch 只在 adapter 边界做"外来异常→Status"。
 - **分配器层不走 `hyle_status`**（mem 的刻意分层）：句柄工厂 `hyle_*_create` **资源失败返 NULL + 设 `hyle_mem_last_error` 字符串**（invalid backing / wrapper·slab OOM / 池耗尽）；**契约违反仍 fail-fast abort**（ctor 的 `block_size==0`、`block_size*block_count` 溢出 `size_t`；`allocate` 收到非 2 的幂对齐）。分配器是**最底层基元**，让它依赖上层 error 模块的 `Status` 会**倒置依赖**；故 mem 自足用"NULL + thread-local last-error 串"通道（与 ggml 分配器返 NULL / 返回码同理），不引入 `hyle_status`。
+- **platform 按失败形状分通道**：Thread 构造返回 `hyle_status`；VM/NUMA/
+  MappedFile 用 `hyle_vm_last_error`；DynLib 用 `hyle_dynlib_last_error`；
+  Parker wrapper 与 fs/fd 用 `hyle_platform_last_error`。所有字符串均线程
+  局部，成功清空 stale 值。这样不把 100+ 个布尔/指针原语机械改成
+  Status，同时保证每条资源失败路径可诊断。
 - 对照：ggml 用 `ggml_status` 返回码 + `ggml_abort` 回调；oneDNN 用 `dnnl_status_t` + C++ 层 `wrap_c_api` 转异常。HYLE 与 ggml 同构（返回码 + fail-fast）。
 
 ## 6. C++ API 易用性（第 1 层，给 C++ 用户）
@@ -104,6 +109,9 @@ C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零�
 ## 7. 落地纪律
 
 - 每个对外模块一层 `include/hyle/c/<mod>.h`：纯 C 可编译、`extern "C"`、opaque `_o` 句柄、create/destroy 配对、POD 值类型、显式 allocator 注入。
+- 可扩展输入 POD 以 `struct_size` 开头；值返回 snapshot POD 只用于小而
+  稳定的输出。桥接编译单元用 standard-layout/trivially-copyable/offset
+  与 enum-value `static_assert` 把 C/C++ 两面锁在一起。
 - 分平台导出宏三态（`HYLE_<MOD>_C_API`：dllexport/dllimport/visibility）。
 - 桥接实现 `src/<mod>/c_<mod>.cc` 编进对应 `hyle_<mod>`，**显式构造** C++ 对象，不 reinterpret 布局。
 - 纯 C smoke test `tests/<mod>/c_<mod>_test.c`（C 编译器编，只 include C 头）证明无 mangling/模板/STL 泄漏。

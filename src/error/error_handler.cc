@@ -48,6 +48,17 @@ const error_handler_t* error_set_default_handler(
   return g_default.exchange(h, std::memory_order_acq_rel);
 }
 
+void detail::error_restore_default_handler(
+    const error_handler_t* installed,
+    const error_handler_t* previous) noexcept {
+  std::lock_guard<std::recursive_mutex> lock(g_dispatch_mutex);
+  HYLE_FATAL_ASSERT(g_default.load(std::memory_order_acquire) == installed);
+  if (previous == nullptr || previous->report == nullptr) {
+    previous = &kStderrHandler;
+  }
+  g_default.store(previous, std::memory_order_release);
+}
+
 void error_report(Severity sev, const char* file, std::uint32_t line,
                   const char* format, ...) {
   char buf[1024];
@@ -100,7 +111,7 @@ ErrorRecord::~ErrorRecord() { restore(); }
 
 void ErrorRecord::restore() noexcept {
   if (!installed_) return;
-  error_set_default_handler(prev_);
+  detail::error_restore_default_handler(&self_, prev_);
   prev_ = nullptr;
   installed_ = false;
 }

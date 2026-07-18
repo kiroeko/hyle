@@ -203,8 +203,11 @@ HYLE_ERROR_C_API void hyle_error_set_handler(hyle_error_report_fn fn,
  * opaque token capturing whatever handler it displaced; pop reinstalls that
  * saved handler and frees the token. Strict LIFO, like signal()/sigaction's
  * old-handler idiom or a scope guard -- each push must be matched by a pop in
- * reverse order. Returns NULL only on allocation failure (handler still
- * installed; nothing to restore). pop(NULL) is a no-op. */
+ * reverse order. A mismatched/out-of-order pop is a contract violation and
+ * fails fast instead of leaving a dangling handler. Do not interleave the
+ * simple set_handler API while a pushed scope is active. Returns NULL only on
+ * allocation failure; in that case the current handler is left unchanged.
+ * pop(NULL) is a no-op. */
 typedef struct hyle_error_saved_handler_o hyle_error_saved_handler_o;
 HYLE_ERROR_C_API hyle_error_saved_handler_o* hyle_error_push_handler(
     hyle_error_report_fn fn, void* user);

@@ -1,5 +1,7 @@
 #include "hyle/platform/thread.h"
 
+#include <cerrno>
+#include <cstdio>
 #include <cstring>
 #include <new>
 #include <type_traits>
@@ -65,6 +67,19 @@ ThreadStart* make_start(void (*entry)(void*), void* ctx, const ThreadOpts& o) {
 namespace hyle::platform {
 namespace {
 
+Status thread_os_error(const char* operation, unsigned long code) {
+  char message[96];
+  std::snprintf(message, sizeof(message), "%s failed (OS error %lu)", operation,
+                code);
+  if (code == ERROR_NOT_ENOUGH_MEMORY || code == ERROR_OUTOFMEMORY ||
+      code == ERROR_MAX_THRDS_REACHED) {
+    return Status::ResourceExhausted(message);
+  }
+  if (code == ERROR_ACCESS_DENIED) return Status::PermissionDenied(message);
+  if (code == ERROR_INVALID_PARAMETER) return Status::InvalidArgument(message);
+  return Status::Internal(message);
+}
+
 DWORD WINAPI thread_trampoline(LPVOID arg) noexcept {
   auto* s = static_cast<ThreadStart*>(arg);
   if (s->has_name) {
@@ -128,8 +143,9 @@ Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
                             stack ? STACK_SIZE_PARAM_IS_A_RESERVATION : 0,
                             nullptr);
   if (h == nullptr) {
+    const DWORD code = ::GetLastError();
     delete s;
-    return std::unexpected(Status::Internal("CreateThread failed"));
+    return std::unexpected(thread_os_error("CreateThread", code));
   }
   Thread t;
   t.handle_ = reinterpret_cast<std::uintptr_t>(h);
@@ -179,6 +195,20 @@ void set_name(std::string_view name) noexcept {
 
 namespace hyle::platform {
 namespace {
+
+Status thread_os_error(const char* operation, int code) {
+  char message[96];
+  std::snprintf(message, sizeof(message), "%s failed (error %d)", operation,
+                code);
+  if (code == EAGAIN || code == ENOMEM) {
+    return Status::ResourceExhausted(message);
+  }
+  if (code == EINVAL) return Status::InvalidArgument(message);
+  if (code == EPERM || code == EACCES) {
+    return Status::PermissionDenied(message);
+  }
+  return Status::Internal(message);
+}
 
 void* thread_trampoline(void* arg) noexcept {
   auto* s = static_cast<ThreadStart*>(arg);
@@ -258,20 +288,23 @@ Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
   int rc = ::pthread_attr_init(&attr);
   if (rc != 0) {
     delete s;
-    return std::unexpected(Status::ResourceExhausted("pthread_attr_init failed"));
+    return std::unexpected(thread_os_error("pthread_attr_init", rc));
   }
-  if (opts.stack_size &&
-      ::pthread_attr_setstacksize(&attr, *opts.stack_size) != 0) {
-    ::pthread_attr_destroy(&attr);
-    delete s;
-    return std::unexpected(Status::InvalidArgument("invalid thread stack size"));
+  if (opts.stack_size) {
+    rc = ::pthread_attr_setstacksize(&attr, *opts.stack_size);
+    if (rc != 0) {
+      ::pthread_attr_destroy(&attr);
+      delete s;
+      return std::unexpected(
+          thread_os_error("pthread_attr_setstacksize", rc));
+    }
   }
   pthread_t tid;
   rc = ::pthread_create(&tid, &attr, &thread_trampoline, s);
   ::pthread_attr_destroy(&attr);
   if (rc != 0) {
     delete s;
-    return std::unexpected(Status::Internal("pthread_create failed"));
+    return std::unexpected(thread_os_error("pthread_create", rc));
   }
   Thread t;
   // pthread_t is an integer on glibc but an opaque pointer on macOS/BSD, so no single

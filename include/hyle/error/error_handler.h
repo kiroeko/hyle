@@ -58,6 +58,15 @@ HYLE_ERROR_API const error_handler_t* error_default_handler() noexcept;
 HYLE_ERROR_API const error_handler_t* error_set_default_handler(
     const error_handler_t* h) noexcept;
 
+namespace detail {
+// Restore a scoped override only if it is still current. ErrorRecord and the
+// pure-C push/pop shim share this strict-LIFO gate so a lifetime mistake traps
+// instead of publishing a dangling handler pointer.
+HYLE_ERROR_API void error_restore_default_handler(
+    const error_handler_t* installed,
+    const error_handler_t* previous) noexcept;
+}  // namespace detail
+
 // Format (printf-style) and dispatch to the current default handler. Severity
 // Fatal additionally traps after the handler returns (never returns). Used by
 // the macros below; call directly for a runtime Severity.
@@ -81,7 +90,7 @@ struct HYLE_ERROR_API ErrorRecord {
   HYLE_DISABLE_COPY_AND_MOVE(ErrorRecord);
 
   void install();                 // set as default, remembering the previous
-  void restore() noexcept;        // reinstate the previous default
+  void restore() noexcept;        // strict-LIFO; reinstate the previous default
   std::uint32_t count(Severity sev) const noexcept;
   std::uint32_t total() const noexcept;
   const char* last_message() const noexcept { return last_; }

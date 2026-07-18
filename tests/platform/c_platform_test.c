@@ -66,6 +66,9 @@ static void wait_entry(void* ctx) {
 
 int main(void) {
   CHECK(hyle_page_size() >= 4096u);
+  CHECK(hyle_page_align_up(SIZE_MAX) == 0u);
+  CHECK(hyle_large_page_align_up(SIZE_MAX) == 0u);
+  CHECK(hyle_platform_last_error() != NULL);
 
   /* Parker */
   hyle_parker_o* p = hyle_parker_create();
@@ -136,8 +139,17 @@ int main(void) {
   /* Thread + opts sugar */
   int ran = 0;
   hyle_thread_o* t = NULL;
-  hyle_thread_opts opts = HYLE_THREAD_OPTS_INIT;
+  hyle_thread_opts opts = hyle_thread_opts_default();
+  CHECK(opts.struct_size == sizeof(opts));
   hyle_thread_opts_set_name(&opts, "c_plat_worker");
+  hyle_thread_opts_set_stack_size(&opts, 2u * 1024u * 1024u);
+  CHECK(opts.has_stack_size && opts.stack_size == 2u * 1024u * 1024u);
+  opts.has_stack_size = 0; /* spawn with the OS default after testing the helper */
+  hyle_thread_opts_set_affinity(&opts, 0);
+  CHECK(opts.has_affinity_cpu && opts.affinity_cpu == 0u);
+  opts.has_affinity_cpu = 0; /* do not constrain heterogeneous CI hosts */
+  hyle_thread_opts_set_priority(&opts, HYLE_THREAD_PRIORITY_NORMAL);
+  CHECK(opts.has_priority && opts.priority == HYLE_THREAD_PRIORITY_NORMAL);
   hyle_status st = hyle_thread_spawn(&t, thr_entry, &ran, &opts);
   CHECK(hyle_status_is_ok(st));
   hyle_status_free(&st);
@@ -145,6 +157,23 @@ int main(void) {
   CHECK(hyle_thread_joinable(t));
   hyle_thread_join(t);
   CHECK(ran == 42);
+
+  {
+    hyle_thread_opts too_small = HYLE_THREAD_OPTS_INIT;
+    hyle_thread_o* bad = NULL;
+    too_small.struct_size = 1;
+    hyle_status small =
+        hyle_thread_spawn(&bad, thr_entry, &ran, &too_small);
+    CHECK(hyle_status_is_invalid_argument(small));
+    CHECK(bad == NULL);
+    hyle_status_free(&small);
+
+    too_small.struct_size = 0;
+    small = hyle_thread_spawn(&bad, thr_entry, &ran, &too_small);
+    CHECK(hyle_status_is_invalid_argument(small));
+    CHECK(bad == NULL);
+    hyle_status_free(&small);
+  }
 
   /* FFI-friendly spawn_opts: no struct/has_ flags, sentinels for defaults
    * (stack_size 0 => default, affinity_cpu -1 => none). */
@@ -173,6 +202,8 @@ int main(void) {
 
   CHECK(hyle_hardware_concurrency() >= 1u);
   CHECK(hyle_this_thread_id() != 0);
+  hyle_this_thread_yield();
+  hyle_this_thread_set_name("hyle_c_main");
 
   /* DynLib */
 #if defined(_WIN32)
@@ -194,6 +225,12 @@ int main(void) {
   CHECK(hyle_dynlib_valid(lib));
   CHECK(hyle_dynlib_symbol(lib, sys_sym) != NULL);
   hyle_dynlib_close(lib);
+  {
+    hyle_dynlib_o* current = hyle_dynlib_current();
+    CHECK(hyle_dynlib_valid(current));
+    hyle_dynlib_close(current);
+    CHECK(hyle_dynlib_last_error() != NULL);
+  }
   CHECK(strcmp(hyle_dynlib_extension(), ext) == 0);
 
   /* open_symbol on already-loadable system lib path may fail if path needs
@@ -211,6 +248,7 @@ int main(void) {
   hyle_vm_region_o* reg = hyle_vm_region_reserve_guarded(hyle_page_size());
   CHECK(hyle_vm_region_valid(reg));
   CHECK(hyle_vm_region_has_guard(reg));
+  CHECK(hyle_vm_region_usable_size(reg) == hyle_page_size());
   {
     unsigned char* u = (unsigned char*)hyle_vm_region_usable(reg);
     CHECK(u != NULL);
@@ -312,15 +350,60 @@ int main(void) {
   size_t n = hyle_fs_temp_directory(tmp, sizeof(tmp));
   CHECK(n > 0 && n < sizeof(tmp));
   CHECK(hyle_fs_exists(tmp));
+  CHECK(hyle_fs_is_directory(tmp));
+  {
+    char cwd[1024];
+    char home[1024];
+    CHECK(hyle_fs_current_directory(cwd, sizeof(cwd)) > 0u);
+    CHECK(hyle_fs_home_directory(home, sizeof(home)) > 0u);
+  }
   char path[640];
   snprintf(path, sizeof(path), "%s/hyle_c_plat_test_dir", tmp);
   CHECK(hyle_fs_make_directory_recursive(path));
+  {
+    hyle_file_info di = hyle_fs_stat(path);
+    CHECK(di.exists && di.is_directory);
+  }
   visit_count = 0;
   CHECK(hyle_fs_directory_iterate(path, visit_cb, NULL));
   char file[700];
   snprintf(file, sizeof(file), "%s/f.txt", path);
   CHECK(hyle_fs_touch(file));
   CHECK(hyle_fs_exists(file));
+  CHECK(hyle_fs_file_size(file) == 0u);
+  {
+    uint32_t mode = hyle_fs_get_permissions(file);
+    CHECK(mode != 0u);
+    CHECK(hyle_fs_set_permissions(file, mode));
+  }
+  {
+    char copy[720];
+    char renamed[720];
+    snprintf(copy, sizeof(copy), "%s/f-copy.txt", path);
+    snprintf(renamed, sizeof(renamed), "%s/f-renamed.txt", path);
+    CHECK(hyle_fs_copy_file(file, copy));
+    CHECK(hyle_fs_rename(copy, renamed));
+    CHECK(hyle_fs_exists(renamed));
+  }
+  {
+    char cwd[1024];
+    CHECK(hyle_fs_current_directory(cwd, sizeof(cwd)) > 0u);
+    CHECK(hyle_fs_change_directory(path));
+    CHECK(hyle_fs_change_directory(cwd));
+  }
+  {
+    char link[720];
+    snprintf(link, sizeof(link), "%s/f-link", path);
+    /* Symlink creation may require a host privilege (notably on Windows). */
+    if (hyle_fs_create_symlink(file, link)) {
+      char target[1024];
+      size_t need = hyle_fs_read_symlink(link, NULL, 0);
+      CHECK(need > 0u);
+      CHECK(hyle_fs_read_symlink(link, target, sizeof(target)) == need);
+      CHECK(strcmp(target, file) == 0);
+      CHECK(hyle_fs_is_symlink(link));
+    }
+  }
   visit_count = 0;
   CHECK(hyle_fs_directory_iterate(path, visit_cb, NULL));
   CHECK(visit_count >= 1);
@@ -451,6 +534,19 @@ int main(void) {
     CHECK(hyle_fs_read(rfd, rbuf, sizeof(rbuf)) == 11 && memcmp(rbuf, payload, 11) == 0);
     hyle_fs_close_fd(rfd);
     CHECK(hyle_fs_open("/no/such/hyle/path", HYLE_OPEN_READ) == -1);  /* missing -> -1 */
+    CHECK(hyle_platform_last_error()[0] != '\0');
+    CHECK(hyle_fs_open(tpath, HYLE_OPEN_CREATE) == -1); /* create needs write */
+    CHECK(hyle_platform_last_error()[0] != '\0');
+    CHECK(hyle_fs_temp_directory(NULL, 32) > 0u); /* NULL = size query */
+    CHECK(hyle_platform_last_error()[0] == '\0');
+    CHECK(hyle_fs_read(-1, NULL, 1) == -1);
+    CHECK(hyle_platform_last_error()[0] != '\0');
+    {
+      hyle_file_open_flags typed_flags = HYLE_OPEN_READ;
+      hyle_file_perms typed_perms = HYLE_PERM_OWNER_READ;
+      CHECK((unsigned)typed_flags == HYLE_OPEN_READ);
+      CHECK((unsigned)typed_perms == HYLE_PERM_OWNER_READ);
+    }
 
     /* mapped file: an empty temp file yields a NULL (zero-length) mapping -- fine;
      * exercise open + destroy-null here. A non-empty map is covered by the C++ test. */

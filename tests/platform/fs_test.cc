@@ -64,6 +64,20 @@ class FsTest : public ::testing::Test {
 
 }  // namespace
 
+TEST(FsBoundary, NullInputsAndInvalidOpenFlagsFailSafely) {
+  EXPECT_FALSE(make_directory_recursive(nullptr));
+  EXPECT_FALSE(remove_directory_recursive(nullptr));
+  EXPECT_FALSE(touch(nullptr));
+  EXPECT_EQ(get_env_var(nullptr, nullptr, 0), kEnvNotSet);
+  EXPECT_FALSE(open_file(nullptr, kOpenRead).valid());
+  EXPECT_FALSE(open_file("unused",
+                         kOpenCreate | kOpenTruncate).valid());
+
+  char tmp[4] = {'x', 'x', 'x', '\0'};
+  const std::size_t need = temp_directory(nullptr, sizeof(tmp));
+  EXPECT_GT(need, 0u);
+}
+
 TEST_F(FsTest, StatExistsDirectoryFile) {
   EXPECT_TRUE(exists(root.c_str()));
   EXPECT_TRUE(is_directory(root.c_str()));
@@ -301,6 +315,24 @@ TEST_F(FsTest, SpecialDirectoriesNonEmpty) {
   EXPECT_GT(current_directory(buf, sizeof(buf)), 0u);
   EXPECT_GT(temp_directory(buf, sizeof(buf)), 0u);
   EXPECT_GT(home_directory(buf, sizeof(buf)), 0u);
+}
+
+TEST(FsEnv, HomeDirectorySupportsLongEnvironmentValue) {
+#if defined(_WIN32)
+  const char* name = "USERPROFILE";
+#else
+  const char* name = "HOME";
+#endif
+  char old[4096];
+  const std::size_t old_len = get_env_var(name, old, sizeof(old));
+  ASSERT_NE(old_len, kEnvNotSet);
+  ASSERT_LT(old_len, sizeof(old));
+  std::string value(700, 'h');
+  ASSERT_TRUE(set_env_var(name, value.c_str()));
+  char got[1024];
+  EXPECT_EQ(home_directory(got, sizeof(got)), value.size());
+  EXPECT_STREQ(got, value.c_str());
+  EXPECT_TRUE(set_env_var(name, old));
 }
 
 // Non-ASCII UTF-8 path round-trips through every fs op. POSIX is byte-

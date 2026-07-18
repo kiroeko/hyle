@@ -59,5 +59,8 @@ macOS 真机通过，确认 `os_sync_wait_on_address_with_timeout` 当前参数�
   只需要容量、false-sharing line 与聚合 worker 计数。
 - Linux 不依据 cpufreq 猜 P/E；若内核不导出 scheduler capacity，则保持
   unknown/homogeneous fallback。
-- 更大范围 C ABI（其余 fs/mapped/NUMA 便利封装）按 close-01/02 的统一
-  ABI 收口推进，不在 platform 单模块超前造第二套对象模型。
+- platform C ABI 已覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、
+  hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology。2026-07-19
+  复审又补了统一的 `hyle_platform_last_error`、thread opts `struct_size`、
+  具名权限/open flags 与逐符号纯 C 验收；不再有“其余
+  fs/mapped/NUMA 待更大范围 ABI”的缺口。

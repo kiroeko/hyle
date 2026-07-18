@@ -24,23 +24,27 @@
 
 ## 设计（charter §6 / conventions §4，已定）
 
-- **对外契约**：不透明句柄（opaque `_o`）+ `make_X()/destroy_X()` 配对 + 值类型 POD 结构体 + 显式 `Allocator*` 注入 + 函数指针 vtable `xxx_api_t`（designated-init 填表）。
+- **对外契约**：纯 `extern "C"` 自由函数 + 不透明句柄（opaque `_o`）
+  create/destroy 配对 + 小型 POD/显式 allocator 注入。函数指针只在能力本身
+  是回调/vtable 时出现；没有模块级 `xxx_api_t`/`api_get` 表。
 - **零异常跨边界**：错误经 `Status` 值返回，绝不让 C++ 异常跨 C 接缝（UB）。
 - **分配责任锁在 DLL 内**（防 CRT 堆不匹配），禁客户端 `new/delete` HYLE 对象。
 
 ## 具体事务（开工时细化，先占位）
 
 - [x] 每个对外模块封一层 `include/hyle/c/<mod>.h`（或等价单独命名空间），**纯 C、可被 C 编译器 include**，与内部 C++ 头物理隔离。**目录约定已坐实**：`include/hyle/c/` 起手。
-- [x] **样板 error**（2026-07-17）：`include/hyle/c/error.h` + 文档 [`c-error.md`](../guide/c-error.md)。v3（2026-07-18）补跨语言用户缺口：嵌套安全的诊断 handler `push`/`pop`（opaque saved-handler token，LIFO 恢复，对标 signal old-handler）。
-- [x] **样板 platform**（2026-07-17）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。面：wait/Parker、Thread（`hyle_status` 错误）、DynLib open/get/current、VM+guarded region（含 `vm_region_reserve_numa`/`adopt`）、fs/env/iterate（权限/符号链接/硬链接/原子临时文件/env 写）、MappedFile、cpu 全字段。文档：[`c-platform.md`](../guide/c-platform.md)。Win MSVC 真过。
-- [x] **样板 mem**（2026-07-17）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C `hyle_mem_c_test`。面：`hyle_allocator` vtable（3 fn + state，桥接显式构造 `mem::Allocator` 不 reinterpret）、`hyle_system_allocator` + usable/good size、MemoryArena / StackAllocator / Arena / HugeRegion 不透明句柄、进程级 hugepage/NUMA 策略、typed 对象池宏。**有意仅 C++**：模板池（ObjectPool/GrowablePool/pmr）、有状态调试类（AllocStats/LeakTracker/StatsAllocator）、Allocator typed 层。文档：[`c-mem.md`](../guide/c-mem.md)。Win MSVC + WSL GCC-14 + mac arm64 三平台真过（C 测 all passed + C++ mem 94/94 无回归）。
+- [x] **样板 error**（2026-07-17，2026-07-19 复审）：`include/hyle/c/error.h` + 文档 [`c-error.md`](../guide/c-error.md)。Status 全码/所有权/格式化与诊断 handler 均可达；C/C++ scoped handler 共用严格 LIFO 还原门，乱序不再可能重发悬空回调。
+- [x] **样板 platform**（2026-07-17，2026-07-19 扩面复审）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology；补 `hyle_platform_last_error`、thread opts `struct_size`、具名 flags/perms。纯 C 机械覆盖 114/114 入口。文档：[`c-platform.md`](../guide/c-platform.md)。
+- [x] **样板 mem**（2026-07-17，2026-07-19 复审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C `hyle_mem_c_test`。面：`hyle_allocator` vtable、system allocator、MemoryArena / StackAllocator / Arena / GrowablePool / HugeRegion、进程级 hugepage/NUMA、typed 池宏；资源失败均有 last-error，成功清 stale。**有意仅 C++**：模板构造层（ObjectPool/GrowablePool/pmr）、有状态调试类（AllocStats/LeakTracker/StatsAllocator）、Allocator typed 层。纯 C 机械覆盖 51/51 入口。文档：[`c-mem.md`](../guide/c-mem.md)。
+- 三模块五维复审（功能/下游利用、红队实现、测试/性能、ABI 覆盖、用户文档）见 [`core-foundation-c-abi-audit.md`](./core-foundation-c-abi-audit.md)。
 - **架构定调（2026-07-18）**：删除三模块的 `hyle_*_api` 函数指针表 + `api_get` + 版本门/版本宏——纯 `extern "C"` 自由函数导出（对齐 ggml 核心）。版本协商是"分发独立编译插件"才需要的件（clay 零、ggml 仅 backend 插件处），HYLE 单一 `.so`、未发布不背此负担。C++→C ABI 的类型擦除手法、三层架构、有状态调试类留 C++ 等决策见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)。
 - [ ] 其余模块：`simd` / …
 - [ ] SIMD 是首批语义样板之一：新增 `include/hyle/c/simd.h`；add/dot/math/scan/dtype/sort/
       bitpack 等无状态接口只用 pointer/count/POD，随机数状态使用
       `hyle_simd_random_o` make/destroy/fill，不冻结 C++ `RandomState` 布局。
-- [ ] SIMD C 头提供固定宽度 enum/POD、尺寸与对齐断言，以及可版本协商的 `hyle_simd_api_t`；
-      具体函数名和版本号在 close-01 实现时冻结，C shim 只转发现有 dispatcher/kernel。
+- [ ] SIMD C 头提供固定宽度 enum/POD、尺寸与对齐断言；按架构决策直接
+      导出自由函数，不重新引入 `hyle_simd_api_t`/版本门，C shim 只转发现有
+      dispatcher/kernel。
 - [ ] `samples/` 加一个 **纯 C consumer**（用 C 编译器编，只 include C shim），证明跨语言可绑。
 - [ ] 目录约定坐实：`include/hyle/c/` = 稳定且受支持的发布面；`include/hyle/<mod>/` = 内部/
       同工具链 source surface，不作为发布契约宣传。
@@ -70,4 +74,3 @@
   - [ ] **静态 vs 动态的分发抉择**：动态=依赖用户机有库但制品小、安全库可独立更新；静态=单一制品无依赖但 CVE 要重编 + 体积 + 静态链 OpenSSL 的符号/初始化坑。默认动态；提供 `HYLE_STATIC` 全静态构建选项时，第三方也尽量静态链成单一制品。
   - [ ] 每个可选依赖（OpenSSL/将来的 ggml 等）都遵循"不开该能力=零依赖"（io-08 已立此范式：TLS 独立目标，不要 TLS 就不背 OpenSSL）。
 - **为什么归 close 而非 io-08**：install/export/依赖分发是**一次性统一做**的收口件（对所有模块 + 所有第三方依赖），塞进单个功能里程碑会把它撑成打包里程碑，且要等对外 C-ABI 面（本文档主体）定型后才有意义。io-08 只需保证"TLS 可选 + 动态链干净 + 给 install 留好接口"。
-

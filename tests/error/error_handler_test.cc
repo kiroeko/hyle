@@ -8,6 +8,7 @@
 #include <thread>
 #include <vector>
 
+#include "hyle/c/error.h"
 #include "hyle/error/result.h"
 #include "hyle/error/status.h"
 #include "hyle/macros.h"
@@ -282,4 +283,50 @@ TEST(ErrorHandler, NotImplementedDiagnosticFormat) {
 TEST(ErrorHandlerDeathTest, FatalTrapsAfterHandler) {
   // Install a no-op-ish path: default stderr is fine; FATAL always HYLE_TRAP().
   EXPECT_DEATH({ HYLE_FATAL("must-die %d", 1); }, ".*");
+}
+
+namespace {
+void c_noop_handler(void*, hyle_severity, const char*, std::uint32_t,
+                    const char*) {}
+}  // namespace
+
+TEST(ErrorHandlerDeathTest, ScopedHandlerRejectsOutOfOrderPop) {
+  hyle_error_saved_handler_o* outer =
+      hyle_error_push_handler(&c_noop_handler, nullptr);
+  hyle_error_saved_handler_o* inner =
+      hyle_error_push_handler(&c_noop_handler, nullptr);
+  ASSERT_NE(outer, nullptr);
+  ASSERT_NE(inner, nullptr);
+  EXPECT_DEATH({ hyle_error_pop_handler(outer); }, ".*");
+  hyle_error_pop_handler(inner);
+  hyle_error_pop_handler(outer);
+}
+
+TEST(ErrorHandlerDeathTest, SimpleHandlerCannotInterleaveScopedOverride) {
+  hyle_error_saved_handler_o* scoped =
+      hyle_error_push_handler(&c_noop_handler, nullptr);
+  ASSERT_NE(scoped, nullptr);
+  EXPECT_DEATH({ hyle_error_set_handler(&c_noop_handler, nullptr); }, ".*");
+  hyle_error_pop_handler(scoped);
+}
+
+TEST(ErrorHandlerDeathTest, ErrorRecordRejectsOutOfOrderRestore) {
+  ErrorRecord outer;
+  ErrorRecord inner;
+  outer.install();
+  inner.install();
+  EXPECT_DEATH({ outer.restore(); }, ".*");
+  inner.restore();
+  outer.restore();
+}
+
+TEST(ErrorHandlerDeathTest, CAndCxxScopedHandlersShareLifoGate) {
+  ErrorRecord record;
+  record.install();
+  hyle_error_saved_handler_o* scoped =
+      hyle_error_push_handler(&c_noop_handler, nullptr);
+  ASSERT_NE(scoped, nullptr);
+  EXPECT_DEATH({ record.restore(); }, ".*");
+  hyle_error_pop_handler(scoped);
+  record.restore();
 }

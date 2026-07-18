@@ -16,11 +16,12 @@ static int g_fails = 0;
 
 static int g_handler_hits = 0;
 static char g_last_msg[128];
+static hyle_severity g_last_severity = HYLE_SEVERITY_WARNING;
 
 static void on_report(void* user, hyle_severity sev, const char* file,
                       uint32_t line, const char* message) {
   (void)user;
-  (void)sev;
+  g_last_severity = sev;
   (void)file;
   (void)line;
   ++g_handler_hits;
@@ -76,6 +77,13 @@ int main(void) {
   CHECK(hyle_status_get_code(ok) == HYLE_STATUS_OK);
   CHECK(!hyle_status_has_message(ok));
   CHECK(strcmp(hyle_status_message_cstr(ok), "") == 0);  /* OK -> "" */
+  {
+    hyle_status generic =
+        hyle_status_new(HYLE_STATUS_INVALID_ARGUMENT, "generic");
+    CHECK(hyle_status_is_invalid_argument(generic));
+    CHECK(strcmp(hyle_status_message_cstr(generic), "generic") == 0);
+    hyle_status_free(&generic);
+  }
   {
     char buf[32];
     size_t n = hyle_status_to_string(ok, buf, sizeof(buf));
@@ -211,11 +219,15 @@ int main(void) {
   hyle_error_reportf(HYLE_SEVERITY_WARNING, "c_error_test.c", 2, "n=%d", 7);
   CHECK(g_handler_hits == 2);
   CHECK(strcmp(g_last_msg, "n=7") == 0);
-  HYLE_C_ERROR("macro-lit");
+  CHECK(g_last_severity == HYLE_SEVERITY_WARNING);
+  hyle_error_report((hyle_severity)99, NULL, 0, "invalid-severity");
   CHECK(g_handler_hits == 3);
+  CHECK(g_last_severity == HYLE_SEVERITY_ERROR);
+  HYLE_C_ERROR("macro-lit");
+  CHECK(g_handler_hits == 4);
   CHECK(strcmp(g_last_msg, "macro-lit") == 0);
   HYLE_C_WARNF("w=%s", "ok");
-  CHECK(g_handler_hits == 4);
+  CHECK(g_handler_hits == 5);
   CHECK(strcmp(g_last_msg, "w=ok") == 0);
 
   /* v3: nesting-safe push/pop. Outer handler = on_report (counts g_handler_hits);

@@ -74,7 +74,7 @@ typedef struct hyle_allocator {
 | `hyle_memory_arena_allocate(a)` | pop 一块；**整池**耗尽→NULL |
 | `hyle_memory_arena_deallocate(a, p)` | 归还；p==NULL no-op |
 | `hyle_memory_arena_reset(a)` | 全部块归还。合同：**无块存活**时才可调 |
-| `hyle_memory_arena_block_size(a)` / `capacity(a)` | 查询 |
+| `hyle_memory_arena_block_size(a)` / `hyle_memory_arena_capacity(a)` | 查询 |
 | `hyle_memory_arena_as_allocator(a)` | vtable 视图（alloc=pop 定长块，free=push，realloc=NULL）；句柄归 a，activ至 destroy |
 
 **typed 对象池便利宏**（header-inline，无 DLL 符号）：`block_size == sizeof(T)` 的 MemoryArena 就是 T 的定长对象池，这几个宏只是替你填 `sizeof`/`alignof` 并 cast。
@@ -98,7 +98,7 @@ typedef struct hyle_allocator {
 | `hyle_stack_allocator_reset(s)` | 全部释放 |
 | `hyle_stack_allocator_mark(s)` | 存游标 |
 | `hyle_stack_allocator_rewind(s, marker)` | LIFO 回退到 mark |
-| `hyle_stack_allocator_used` / `capacity` / `remaining` | 查询 |
+| `hyle_stack_allocator_used` / `hyle_stack_allocator_capacity` / `hyle_stack_allocator_remaining` | 查询 |
 | `hyle_stack_allocator_as_allocator(s)` | vtable 视图（alloc=bump，free=no-op，realloc=bump+copy） |
 
 ### 3.4 Arena —— 借一块 MemoryArena 块做 bump
@@ -109,7 +109,7 @@ typedef struct hyle_allocator {
 | `hyle_arena_destroy(a)` | 把块还给池 |
 | `hyle_arena_allocate(a, bytes, alignment)` | bump；放不下→NULL |
 | `hyle_arena_reset(a)` | 从块头重用 |
-| `hyle_arena_used` / `remaining` / `block_size` | 查询 |
+| `hyle_arena_used` / `hyle_arena_remaining` / `hyle_arena_block_size` | 查询 |
 | `hyle_arena_as_allocator(a)` | vtable 视图（alloc=bump，free=no-op，realloc=bump+copy） |
 
 ### 3.5 GrowablePool —— 单线程可增长裸槽池
@@ -120,7 +120,7 @@ C++ `GrowablePool<T>` **类型擦除导出**（与 `ObjectPool<T>`↔`MemoryAren
 |---|---|
 | `hyle_growable_pool_create(backing, slot_size, slot_align, initial_slots)` | slot_align==0→默认；`initial_slots` 首块槽数（0→1），之后块几何翻倍；**资源失败**（backing 无效 / wrapper OOM）→NULL + 设 `hyle_mem_last_error`；`slot_size`==0→C++ 核心 fail-fast abort（契约违反）。首块 backing 分配是懒的（首次 acquire 才取），故 create 无 slab-OOM 分支 |
 | `hyle_growable_pool_destroy(p)` | |
-| `hyle_growable_pool_acquire(p)` | 取一个**裸未初始化**槽（复用 free-list，否则块内 bump，否则增长）；增长时 backing OOM→NULL（graceful，同 `ObjectPool`；acquire 不设 last-error） |
+| `hyle_growable_pool_acquire(p)` | 取一个**裸未初始化**槽（复用 free-list，否则块内 bump，否则增长）；NULL pool / 增长 OOM→NULL 并写 `hyle_mem_last_error`；成功清空旧错误 |
 | `hyle_growable_pool_release(p, slot)` | 归还槽到 free-list，**不跑析构**；slot==NULL no-op |
 | `hyle_growable_pool_reset(p)` | 把所有块还给 backing（trim）。合同：**无槽存活**时才可调 |
 | `hyle_growable_pool_capacity(p)` | 当前所有块的总槽数（几何增长） |
@@ -148,8 +148,8 @@ soft 提示，绝不影响正确性。flags 用 `HYLE_HUGE_*` 位。
 | `hyle_huge_region_open_local(bytes, flags)` | 偏好调用线程 home 节点 |
 | `hyle_huge_region_open_interleaved(bytes)` | 全节点条带 + THP |
 | `hyle_huge_region_destroy(r)` | NULL 安全 |
-| `hyle_huge_region_valid` / `data` / `size` | 查询 |
-| `hyle_mem_last_error()` | 线程局部：最近一次失败原因串，`""`=无。覆盖 HugeRegion open 的 VM 失败**与所有 create 的资源失败**（`memory_arena`/`stack`/`arena`/`growable` create 的 invalid backing·wrapper OOM·slab OOM、`arena_create` 池耗尽）；转发 platform 的 `vm_last_error`，只绑 `mem.h` 也能读失败原因 |
+| `hyle_huge_region_valid` / `hyle_huge_region_data` / `hyle_huge_region_size` | 查询 |
+| `hyle_mem_last_error()` | 线程局部：最近一次失败原因串，`""`=无。覆盖 HugeRegion open、所有 create 的资源失败及 GrowablePool acquire 增长失败；成功的工厂/acquire 会清空旧错误，避免 stale 诊断。转发 platform 的 `vm_last_error`，只绑 `mem.h` 也能读失败原因 |
 
 ### 3.7 进程级 mimalloc 策略（自由函数）
 

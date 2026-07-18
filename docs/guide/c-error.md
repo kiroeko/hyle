@@ -68,7 +68,7 @@
 | `hyle_status_message_cstr` | `(s) → const char*` | 借用指针（NUL 终止），随 handle 存活到 free/move；无消息→`""`；零拷贝，FFI 友好 |
 | `hyle_error_set_handler` | `(fn, user)` | 简单单槽：`fn==NULL` 恢复默认 stderr；二次调用覆盖前一个（被替换的丢失）|
 | `hyle_error_push_handler` | `(fn, user) → hyle_error_saved_handler_o*` | 嵌套安全：装 `fn` 并返回 opaque token（捕获被替换的 handler）；分配失败→NULL，原 handler 不变 |
-| `hyle_error_pop_handler` | `(saved)` | 重装 token 记录的 handler 并释放 token；严格 LIFO（配对 push）；`saved==NULL` no-op |
+| `hyle_error_pop_handler` | `(saved)` | 重装 token 记录的 handler 并释放 token；进程级严格 LIFO（配对 push）；乱序或与另一作用域交错会 fail-fast，避免恢复悬空 handler；`saved==NULL` no-op |
 | `hyle_error_last_error` | `() → const char*` | 当前线程 push-token OOM 错误；成功 push 清空 |
 | `hyle_error_report` | `(sev, file, line, message)` | 已成型字符串；FATAL trap |
 | `hyle_error_reportf` | `(sev, file, line, fmt, ...)` | printf 风格（内部栈缓冲） |
@@ -101,7 +101,10 @@
 | 符号 | 说明 |
 |---|---|
 | `hyle_status_code_is(s, code)` | 通用 |
-| `hyle_status_is_cancelled` … `hyle_status_is_unauthenticated` | 与上表全码 1:1（**不含** `is_ok`，ok 走 DLL） |
+| `hyle_status_is_cancelled` / `hyle_status_is_unknown` / `hyle_status_is_invalid_argument` / `hyle_status_is_deadline_exceeded` | 对应状态码谓词 |
+| `hyle_status_is_not_found` / `hyle_status_is_already_exists` / `hyle_status_is_permission_denied` / `hyle_status_is_resource_exhausted` | 对应状态码谓词 |
+| `hyle_status_is_failed_precondition` / `hyle_status_is_aborted` / `hyle_status_is_out_of_range` / `hyle_status_is_unimplemented` | 对应状态码谓词 |
+| `hyle_status_is_internal` / `hyle_status_is_unavailable` / `hyle_status_is_data_loss` / `hyle_status_is_unauthenticated` | 对应状态码谓词（`is_ok` 单独是 DLL 符号） |
 
 ### 4.4 源码位宏（展开为 report / reportf）
 
@@ -147,13 +150,18 @@ hyle_error_saved_handler_o* tok = hyle_error_push_handler(my_scoped_log, ctx);
 hyle_error_pop_handler(tok);
 ```
 
+`set_handler` 是单槽便利 API；`push`/`pop` 是作用域 API。一个 pushed
+作用域存活时不要调用 `set_handler`，也不要从另一线程交叉 pop。C 与 C++
+`ErrorRecord` 共用同一个严格 LIFO 还原门，生命周期次序错误会立即 trap，
+不会把已释放的回调重新发布。
+
 ---
 
 ## 6. 稳定性
 
 HYLE 未发布，C ABI 面无版本门/协商——发布前按需自由演进，追求干净正确。发布后如何冻结 ABI 见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
 
-诊断 handler 有两条路：`set_handler`（简单单槽）与 `push`/`pop`（嵌套安全，opaque saved-handler token，LIFO 恢复，对标 signal/sigaction old-handler 惯用法）。
+诊断 handler 有两条路：`set_handler`（简单单槽）与 `push`/`pop`（嵌套安全，opaque saved-handler token，严格 LIFO 恢复，对标 signal/sigaction old-handler 惯用法）。非法 C severity 会归一为 `ERROR`；只有显式 `FATAL` 才触发 trap。
 
 ---
 

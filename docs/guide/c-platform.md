@@ -7,6 +7,17 @@
 
 跨语言 / 跨编译器只许绑本头（及 `hyle/c/error.h`）。不要 include `hyle/platform/*.h`。
 
+失败诊断按子系统分三条线程局部通道：
+
+| 返回面 | 诊断 |
+|---|---|
+| Thread spawn | 返回 `hyle_status`，用 `hyle_status_message_cstr` |
+| VM / NUMA / MappedFile | `hyle_vm_last_error()` |
+| DynLib | `hyle_dynlib_last_error()` |
+| Parker create / fs / fd | `hyle_platform_last_error()` |
+
+last-error 指针借用到同线程下一次相关调用；成功会清空旧错误。
+
 ---
 
 ## 1. 链什么
@@ -47,10 +58,11 @@
 
 | 符号 | 说明 |
 |---|---|
+| `hyle_platform_last_error` | Parker create、fs/fd 的线程局部失败串；`""`=无 |
 | `hyle_wait_on_address(addr, expected)` | 地址等待；允许伪唤醒 |
 | `hyle_wait_on_address_for(addr, expected, timeout_ns)` | 0=超时，1=唤醒/变化/伪唤醒 |
 | `hyle_wake_one` / `hyle_wake_all` | 唤醒 |
-| `hyle_parker_create` / `destroy` | 不透明 Parker；wrapper OOM 返回 NULL 并写 `hyle_vm_last_error` |
+| `hyle_parker_create` / `hyle_parker_destroy` | 不透明 Parker；wrapper OOM 返回 NULL 并写 `hyle_platform_last_error` |
 | `hyle_parker_park` / `unpark` | token 模型（Rust std） |
 | `hyle_parker_park_timeout` | 1=消费 token，0=超时/无 token |
 
@@ -59,6 +71,7 @@
 | 符号 | 说明 |
 |---|---|
 | `hyle_thread_spawn(out, entry, ctx, opts)` | 成功设 `*out`；失败返 `hyle_status`（调用方 free） |
+| `hyle_thread_spawn_opts(out, entry, ctx, name, stack, affinity, priority)` | FFI 便利入口；不用构造 opts/has 字段，0/-1 是默认 sentinel |
 | `hyle_thread_join` | join + **destroy** 句柄 |
 | `hyle_thread_joinable` | 1/0 |
 | `hyle_hardware_concurrency` | 逻辑 CPU 数 ≥1 |
@@ -70,11 +83,11 @@
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_thread_opts` | `name` / `has_stack_size`+`stack_size` / `has_affinity_cpu`+`affinity_cpu` / `has_priority`+`priority`（v4） |
+| `hyle_thread_opts` | 首字段 `struct_size`，其后为 `name` / `has_stack_size`+`stack_size` / `has_affinity_cpu`+`affinity_cpu` / `has_priority`+`priority` |
 | `hyle_thread_priority`（v4） | `LOWEST`/`LOW`/`NORMAL`/`HIGH`/`HIGHEST`（-2..2）；best-effort，POSIX 提权需权限 |
-| `HYLE_THREAD_OPTS_INIT` | 零初始化宏 |
+| `HYLE_THREAD_OPTS_INIT` | 默认初始化宏；会写 `struct_size`，不是全零字节 |
 | `hyle_thread_opts_default` | 返回默认 opts |
-| `hyle_thread_opts_set_name` / `set_stack_size` / `set_affinity` / `set_priority`（v4） | setter |
+| `hyle_thread_opts_set_name` / `hyle_thread_opts_set_stack_size` / `hyle_thread_opts_set_affinity` / `hyle_thread_opts_set_priority` | setter |
 
 ### 3.3 DynLib（DLL）
 
@@ -97,7 +110,7 @@
 | `hyle_protect` | `NONE` / `READ` / `READ_WRITE` |
 | `hyle_page_size` | 页大小 |
 | `hyle_page_align_up` | **inline**：上取整；0→0 |
-| `hyle_vm_reserve` / `commit` / `decommit` / `release` / `protect` | 原语；bool→int 1/0 |
+| `hyle_vm_reserve` / `hyle_vm_commit` / `hyle_vm_decommit` / `hyle_vm_release` / `hyle_vm_protect` | 原语；bool→int 1/0 |
 | `hyle_vm_last_error` | |
 | `hyle_vm_set_last_error(msg)` | 设线程局部错误串；NULL 清空（v3） |
 | `hyle_vm_alloc_rw(size)` | reserve+commit RW（size 上取整） |
@@ -106,8 +119,8 @@
 | `hyle_vm_region_reserve_numa(size, node)`（v5） | 偏好 NUMA `node`（`HYLE_NUMA_ANY`==普通 reserve）的托管 region；失败 NULL |
 | `hyle_vm_region_adopt(base, size)`（v5） | 把 `hyle_vm_reserve*` 的裸预留收编进 region 句柄（destroy 释放）；`size` 须为配对 release 的取整值；`base==NULL`→NULL；所有权转移给 region |
 | `hyle_vm_region_destroy` | |
-| `hyle_vm_region_valid` / `data` / `size` / `usable` / `usable_size` / `has_guard` | 查询 |
-| `hyle_vm_region_commit` / `commit_usable` / `decommit` / `protect` | 子区间 |
+| `hyle_vm_region_valid` / `hyle_vm_region_data` / `hyle_vm_region_size` / `hyle_vm_region_usable` / `hyle_vm_region_usable_size` / `hyle_vm_region_has_guard` | 查询 |
+| `hyle_vm_region_commit` / `hyle_vm_region_commit_usable` / `hyle_vm_region_decommit` / `hyle_vm_region_protect` | 子区间 |
 
 ### 3.4b Hugepage / THP（DLL + inline，v3）
 
@@ -139,11 +152,11 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 |---|---|
 | `hyle_file_info` | `exists` / `is_directory` / `size` / `modified_time` / `is_symlink`（v4） |
 | `hyle_fs_stat` | 整包 |
-| `hyle_fs_exists` / `is_directory` / `file_size` | |
-| `hyle_fs_make_directory` / `make_directory_recursive` | |
-| `hyle_fs_remove_directory` / `remove_directory_recursive` / `remove_file` | |
-| `hyle_fs_rename` / `copy_file` / `touch` | |
-| `hyle_fs_current_directory` / `temp_directory` / `home_directory` | buffer-fill：返回完整长，`>=cap` 截断 |
+| `hyle_fs_exists` / `hyle_fs_is_directory` / `hyle_fs_file_size` | |
+| `hyle_fs_make_directory` / `hyle_fs_make_directory_recursive` | |
+| `hyle_fs_remove_directory` / `hyle_fs_remove_directory_recursive` / `hyle_fs_remove_file` | |
+| `hyle_fs_rename` / `hyle_fs_copy_file` / `hyle_fs_touch` | |
+| `hyle_fs_current_directory` / `hyle_fs_temp_directory` / `hyle_fs_home_directory` | buffer-fill：返回完整长，`>=cap` 截断；`dst==NULL` 可只查长度 |
 | `hyle_fs_change_directory` | |
 | `HYLE_ENV_NOT_SET` | `(size_t)-1`；size_t sentinel，保留 `#define`（enum 成员在 C23 前装不下 size_t 值） |
 | `hyle_env_get(name, dst, cap)` | 未设置→`HYLE_ENV_NOT_SET` |
@@ -154,9 +167,9 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_fs_get_permissions(path)` | 低 9 位权限；Windows 由 READONLY 合成（0444/0666）；0=失败 |
+| `hyle_fs_get_permissions(path)` | 低 9 位权限；Windows 由 READONLY 合成（0444/0666）；0 也可能是合法的 POSIX mode，先用 `hyle_fs_stat` 区分不存在 |
 | `hyle_fs_set_permissions(path, mode)` | POSIX chmod；Windows 只认写位→READONLY |
-| `hyle_fs_is_readonly(path)` / `set_readonly(path, ro)` | 跨平台可靠子集 |
+| `hyle_fs_is_readonly(path)` / `hyle_fs_set_readonly(path, ro)` | 跨平台可靠子集 |
 | `hyle_fs_create_symlink(target, link)` | Windows 需开发者模式/管理员，无则→0 |
 | `hyle_fs_create_hard_link(target, link)` | 硬链接（同卷、仅文件）；POSIX link / Win CreateHardLinkW |
 | `hyle_fs_is_symlink(path)` | 自身是否符号链接（不跟随） |
@@ -165,16 +178,16 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_fs_open(path, flags)` | 打开文件→fd（`intptr_t`，-1 失败）；`flags`=`HYLE_OPEN_READ/WRITE/CREATE/TRUNCATE/APPEND` OR；宽字符路径；通用文件 I/O（无需 mmap） |
 | `hyle_fs_read(fd, buf, n)` / `hyle_fs_write(fd, buf, n)` | 在 fd 上读/写；返回字节数（读 0=EOF，短读正常），-1 失败 |
 | `hyle_fs_close_fd(fd)` | 关闭 create_temp_file / open 返回的 fd；-1 安全 |
-| `hyle_fs_set_env_var(name, value)` / `unset_env_var(name)` | 进程级；与并发读非线程安全 |
+| `hyle_fs_set_env_var(name, value)` / `hyle_fs_unset_env_var(name)` | 进程级；与并发读非线程安全 |
 
 ### 3.5c MappedFile —— 文件内存映射（DLL，v4）
 
 | 符号 | 说明 |
 |---|---|
 | `hyle_map_mode` | `READ_ONLY` / `READ_WRITE` / `COPY_ON_WRITE`（对标 memmap2） |
-| `hyle_mapped_file_open(path, mode, offset, length)` | length=0→到 EOF；offset 页对齐；失败 NULL（见 `hyle_vm_last_error`） |
+| `hyle_mapped_file_open(path, mode, offset, length)` | length=0→到 EOF；支持非页对齐 offset（内部扩大/对齐 OS view）；失败 NULL（见 `hyle_vm_last_error`） |
 | `hyle_mapped_file_destroy(m)` | unmap + 关句柄 |
-| `hyle_mapped_file_valid/data/size(m)` | 查询 |
+| `hyle_mapped_file_valid` / `hyle_mapped_file_data` / `hyle_mapped_file_size` | 查询 |
 | `hyle_mapped_file_flush(m)` | 回写脏页（RW；RO/COW 为 no-op 返 1） |
 
 ### 3.6 CPU（DLL + 常量）
@@ -244,6 +257,13 @@ hyle_status_free(&st);
 hyle_thread_join(t);
 ```
 
+FFI 不方便构造结构体时可直接：
+
+```c
+hyle_status st = hyle_thread_spawn_opts(
+    &t, worker, &flag, "worker", 0, -1, HYLE_THREAD_PRIORITY_NORMAL);
+```
+
 ### DynLib / open_symbol
 
 ```c
@@ -276,7 +296,9 @@ hyle_vm_region_destroy(r);
 
 ```c
 char tmp[512];
-hyle_fs_temp_directory(tmp, sizeof tmp);
+if (hyle_fs_temp_directory(tmp, sizeof tmp) == 0) {
+  fprintf(stderr, "platform: %s\n", hyle_platform_last_error());
+}
 ```
 
 ---

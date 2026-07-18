@@ -5,6 +5,7 @@
 #include <atomic>
 #include <cstring>
 #include <new>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/error/status.h"
@@ -18,6 +19,56 @@
 #include "hyle/platform/wait.h"
 
 namespace {
+
+static_assert(std::is_standard_layout_v<hyle_thread_opts>);
+static_assert(std::is_trivially_copyable_v<hyle_thread_opts>);
+static_assert(offsetof(hyle_thread_opts, struct_size) == 0);
+static_assert(std::is_standard_layout_v<hyle_file_info>);
+static_assert(std::is_trivially_copyable_v<hyle_file_info>);
+static_assert(std::is_standard_layout_v<hyle_cpu_features>);
+static_assert(std::is_trivially_copyable_v<hyle_cpu_features>);
+static_assert(std::is_standard_layout_v<hyle_cache_info>);
+static_assert(std::is_trivially_copyable_v<hyle_cache_info>);
+static_assert(std::is_standard_layout_v<hyle_cpu_topology>);
+static_assert(std::is_trivially_copyable_v<hyle_cpu_topology>);
+static_assert(HYLE_THREAD_PRIORITY_LOWEST ==
+              static_cast<int>(hyle::platform::ThreadPriority::kLowest));
+static_assert(HYLE_THREAD_PRIORITY_HIGHEST ==
+              static_cast<int>(hyle::platform::ThreadPriority::kHighest));
+static_assert(HYLE_PROTECT_NONE ==
+              static_cast<int>(hyle::platform::Protect::kNone));
+static_assert(HYLE_PROTECT_READ_WRITE ==
+              static_cast<int>(hyle::platform::Protect::kReadWrite));
+static_assert(HYLE_NUMA_PREFERRED ==
+              static_cast<int>(hyle::platform::NumaPolicy::kPreferred));
+static_assert(HYLE_NUMA_INTERLEAVE ==
+              static_cast<int>(hyle::platform::NumaPolicy::kInterleave));
+static_assert(HYLE_MAP_READ_ONLY ==
+              static_cast<int>(hyle::platform::MappedFile::Mode::kReadOnly));
+static_assert(HYLE_MAP_COPY_ON_WRITE ==
+              static_cast<int>(
+                  hyle::platform::MappedFile::Mode::kCopyOnWrite));
+static_assert(HYLE_ISA_SCALAR ==
+              static_cast<int>(hyle::platform::Isa::kScalar));
+static_assert(HYLE_ISA_RVV == static_cast<int>(hyle::platform::Isa::kRvv));
+
+thread_local char g_platform_error[256] = {0};
+
+void set_platform_error(const char* message) noexcept {
+  if (message == nullptr) {
+    g_platform_error[0] = '\0';
+    return;
+  }
+  std::size_t n = std::strlen(message);
+  if (n >= sizeof(g_platform_error)) n = sizeof(g_platform_error) - 1;
+  std::memcpy(g_platform_error, message, n);
+  g_platform_error[n] = '\0';
+}
+
+int fs_result(bool ok, const char* failure) noexcept {
+  set_platform_error(ok ? nullptr : failure);
+  return ok ? 1 : 0;
+}
 
 hyle_status steal_status(hyle::Status&& s) noexcept {
   hyle_status out;
@@ -108,6 +159,8 @@ struct hyle_mapped_file_o {
 
 extern "C" {
 
+const char* hyle_platform_last_error(void) { return g_platform_error; }
+
 void hyle_wait_on_address(volatile uint32_t* addr, uint32_t expected) {
   if (addr == nullptr) return;
   hyle::platform::detail::wait_on_address(as_atomic(addr), expected);
@@ -133,10 +186,10 @@ void hyle_wake_all(volatile uint32_t* addr) {
 }
 
 hyle_parker_o* hyle_parker_create(void) {
-  hyle::platform::vm_set_last_error(nullptr);
+  set_platform_error(nullptr);
   auto* p = new (std::nothrow) hyle_parker_o{};
   if (p == nullptr) {
-    hyle::platform::vm_set_last_error(
+    set_platform_error(
         "hyle_parker_create: wrapper allocation failed (out of memory)");
   }
   return p;
@@ -158,17 +211,23 @@ hyle_status hyle_thread_spawn(hyle_thread_o** out, hyle_thread_entry_fn entry,
     return steal_status(hyle::Status::InvalidArgument("thread spawn args"));
   }
   *out = nullptr;
+  if (opts != nullptr && opts->struct_size < sizeof(hyle_thread_opts)) {
+    return steal_status(
+        hyle::Status::InvalidArgument("thread opts struct is too small"));
+  }
   if (opts != nullptr && opts->has_priority &&
       !valid_priority(opts->priority)) {
     return steal_status(
         hyle::Status::InvalidArgument("thread priority out of range"));
   }
-  auto r = hyle::platform::Thread::spawn(entry, ctx, to_cpp_opts(opts));
-  if (!r.has_value()) return steal_status(std::move(r).error());
   auto* o = new (std::nothrow) hyle_thread_o{};
   if (o == nullptr) {
-    r->join();
     return steal_status(hyle::Status::ResourceExhausted("thread object OOM"));
+  }
+  auto r = hyle::platform::Thread::spawn(entry, ctx, to_cpp_opts(opts));
+  if (!r.has_value()) {
+    delete o;
+    return steal_status(std::move(r).error());
   }
   o->t = std::move(*r);
   *out = o;
@@ -282,7 +341,11 @@ int hyle_dynlib_open_symbol(const char* path, const char* name,
                             hyle_dynlib_o** out_lib, void** out_sym) {
   if (out_lib) *out_lib = nullptr;
   if (out_sym) *out_sym = nullptr;
-  if (!path || !name || !out_lib || !out_sym) return 0;
+  if (!path || !name || !out_lib || !out_sym) {
+    hyle::platform::dynlib_set_last_error(
+        "hyle_dynlib_open_symbol: invalid argument");
+    return 0;
+  }
   hyle_dynlib_o* lib = hyle_dynlib_open(path);
   if (!hyle_dynlib_valid(lib)) {
     hyle_dynlib_close(lib);
@@ -386,7 +449,11 @@ hyle_vm_region_o* hyle_vm_region_reserve_numa(size_t size, int node) {
 }
 
 hyle_vm_region_o* hyle_vm_region_adopt(void* base, size_t size) {
-  if (base == nullptr || size == 0) return nullptr;
+  if (base == nullptr || size == 0) {
+    hyle::platform::vm_set_last_error(
+        "hyle_vm_region_adopt: null base or zero size");
+    return nullptr;
+  }
   // Allocate the wrapper before taking ownership. On wrapper OOM the caller
   // still owns `base`; an adopt API must transfer ownership only on success.
   auto* o = new (std::nothrow) hyle_vm_region_o{};
@@ -422,12 +489,26 @@ int hyle_vm_region_has_guard(const hyle_vm_region_o* r) {
   return r && r->region.has_guard() ? 1 : 0;
 }
 int hyle_vm_region_commit(hyle_vm_region_o* r, size_t off, size_t len) {
+  if (r == nullptr) {
+    hyle::platform::vm_set_last_error("hyle_vm_region_commit: region is NULL");
+    return 0;
+  }
   return r && r->region.commit(off, len) ? 1 : 0;
 }
 int hyle_vm_region_commit_usable(hyle_vm_region_o* r) {
+  if (r == nullptr) {
+    hyle::platform::vm_set_last_error(
+        "hyle_vm_region_commit_usable: region is NULL");
+    return 0;
+  }
   return r && r->region.commit_usable() ? 1 : 0;
 }
 int hyle_vm_region_decommit(hyle_vm_region_o* r, size_t off, size_t len) {
+  if (r == nullptr) {
+    hyle::platform::vm_set_last_error(
+        "hyle_vm_region_decommit: region is NULL");
+    return 0;
+  }
   return r && r->region.decommit(off, len) ? 1 : 0;
 }
 int hyle_vm_region_protect(hyle_vm_region_o* r, size_t off, size_t len,
@@ -437,12 +518,20 @@ int hyle_vm_region_protect(hyle_vm_region_o* r, size_t off, size_t len,
         "hyle_vm_region_protect: invalid protection");
     return 0;
   }
+  if (r == nullptr) {
+    hyle::platform::vm_set_last_error("hyle_vm_region_protect: region is NULL");
+    return 0;
+  }
   return r && r->region.protect(off, len, to_cpp_protect(prot)) ? 1 : 0;
 }
 
 hyle_file_info hyle_fs_stat(const char* path) {
   hyle_file_info out{};
-  if (!path) return out;
+  if (!path) {
+    set_platform_error("hyle_fs_stat: path is NULL");
+    return out;
+  }
+  set_platform_error(nullptr);
   auto i = hyle::platform::stat(path);
   out.exists = i.exists ? 1 : 0;
   out.is_directory = i.is_directory ? 1 : 0;
@@ -452,62 +541,98 @@ hyle_file_info hyle_fs_stat(const char* path) {
   return out;
 }
 int hyle_fs_exists(const char* path) {
-  return path && hyle::platform::exists(path) ? 1 : 0;
+  if (path == nullptr) {
+    set_platform_error("hyle_fs_exists: path is NULL");
+    return 0;
+  }
+  set_platform_error(nullptr);
+  return hyle::platform::exists(path) ? 1 : 0;
 }
 int hyle_fs_is_directory(const char* path) {
-  return path && hyle::platform::is_directory(path) ? 1 : 0;
+  if (path == nullptr) {
+    set_platform_error("hyle_fs_is_directory: path is NULL");
+    return 0;
+  }
+  set_platform_error(nullptr);
+  return hyle::platform::is_directory(path) ? 1 : 0;
 }
 uint64_t hyle_fs_file_size(const char* path) {
-  return path ? hyle::platform::file_size(path) : 0;
+  if (path == nullptr) {
+    set_platform_error("hyle_fs_file_size: path is NULL");
+    return 0;
+  }
+  set_platform_error(nullptr);
+  return hyle::platform::file_size(path);
 }
 int hyle_fs_make_directory(const char* path) {
-  return path && hyle::platform::make_directory(path) ? 1 : 0;
+  return fs_result(path && hyle::platform::make_directory(path),
+                   "hyle_fs_make_directory failed");
 }
 int hyle_fs_make_directory_recursive(const char* path) {
-  return path && hyle::platform::make_directory_recursive(path) ? 1 : 0;
+  return fs_result(path && hyle::platform::make_directory_recursive(path),
+                   "hyle_fs_make_directory_recursive failed");
 }
 int hyle_fs_remove_directory(const char* path) {
-  return path && hyle::platform::remove_directory(path) ? 1 : 0;
+  return fs_result(path && hyle::platform::remove_directory(path),
+                   "hyle_fs_remove_directory failed");
 }
 int hyle_fs_remove_directory_recursive(const char* path) {
-  return path && hyle::platform::remove_directory_recursive(path) ? 1 : 0;
+  return fs_result(path && hyle::platform::remove_directory_recursive(path),
+                   "hyle_fs_remove_directory_recursive failed");
 }
 int hyle_fs_remove_file(const char* path) {
-  return path && hyle::platform::remove_file(path) ? 1 : 0;
+  return fs_result(path && hyle::platform::remove_file(path),
+                   "hyle_fs_remove_file failed");
 }
 int hyle_fs_rename(const char* from, const char* to) {
-  return from && to && hyle::platform::rename_path(from, to) ? 1 : 0;
+  return fs_result(from && to && hyle::platform::rename_path(from, to),
+                   "hyle_fs_rename failed");
 }
 int hyle_fs_copy_file(const char* from, const char* to) {
-  return from && to && hyle::platform::copy_file(from, to) ? 1 : 0;
+  return fs_result(from && to && hyle::platform::copy_file(from, to),
+                   "hyle_fs_copy_file failed");
 }
 int hyle_fs_touch(const char* path) {
-  return path && hyle::platform::touch(path) ? 1 : 0;
+  return fs_result(path && hyle::platform::touch(path), "hyle_fs_touch failed");
 }
 size_t hyle_fs_current_directory(char* dst, size_t cap) {
-  return hyle::platform::current_directory(dst, cap);
+  const size_t n = hyle::platform::current_directory(dst, cap);
+  set_platform_error(n == 0 ? "hyle_fs_current_directory failed" : nullptr);
+  return n;
 }
 int hyle_fs_change_directory(const char* path) {
-  return path && hyle::platform::change_directory(path) ? 1 : 0;
+  return fs_result(path && hyle::platform::change_directory(path),
+                   "hyle_fs_change_directory failed");
 }
 size_t hyle_fs_temp_directory(char* dst, size_t cap) {
-  return hyle::platform::temp_directory(dst, cap);
+  const size_t n = hyle::platform::temp_directory(dst, cap);
+  set_platform_error(n == 0 ? "hyle_fs_temp_directory failed" : nullptr);
+  return n;
 }
 size_t hyle_fs_home_directory(char* dst, size_t cap) {
-  return hyle::platform::home_directory(dst, cap);
+  const size_t n = hyle::platform::home_directory(dst, cap);
+  set_platform_error(n == 0 ? "hyle_fs_home_directory failed" : nullptr);
+  return n;
 }
 size_t hyle_env_get(const char* name, char* dst, size_t cap) {
-  if (!name) return HYLE_ENV_NOT_SET;
+  if (!name) {
+    set_platform_error("hyle_env_get: name is NULL");
+    return HYLE_ENV_NOT_SET;
+  }
+  set_platform_error(nullptr);
   return hyle::platform::get_env_var(name, dst, cap);
 }
 
 int hyle_fs_directory_iterate(const char* path, hyle_fs_visit_fn visit,
                               void* ctx) {
-  if (!path || !visit) return 0;
+  if (!path || !visit) {
+    set_platform_error("hyle_fs_directory_iterate: invalid argument");
+    return 0;
+  }
   DirVisitPack pack{visit, ctx};
-  return hyle::platform::directory_iterate(path, &dir_visit_trampoline, &pack)
-             ? 1
-             : 0;
+  return fs_result(
+      hyle::platform::directory_iterate(path, &dir_visit_trampoline, &pack),
+      "hyle_fs_directory_iterate failed");
 }
 
 hyle_cpu_features hyle_cpu_features_get(void) {
@@ -630,58 +755,118 @@ void* hyle_vm_reserve_numa(size_t size, int node) {
 /* ---- v4: fs perms/symlink/tempfile/env-write + mapped file ----------------- */
 
 uint32_t hyle_fs_get_permissions(const char* path) {
-  return path ? hyle::platform::get_permissions(path) : 0;
+  if (path == nullptr) {
+    set_platform_error("hyle_fs_get_permissions: path is NULL");
+    return 0;
+  }
+  set_platform_error(nullptr);
+  return hyle::platform::get_permissions(path);
 }
 int hyle_fs_set_permissions(const char* path, uint32_t mode) {
-  return path && hyle::platform::set_permissions(path, mode) ? 1 : 0;
+  return fs_result(path && hyle::platform::set_permissions(path, mode),
+                   "hyle_fs_set_permissions failed");
 }
 int hyle_fs_is_readonly(const char* path) {
-  return path && hyle::platform::is_readonly(path) ? 1 : 0;
+  if (path == nullptr) {
+    set_platform_error("hyle_fs_is_readonly: path is NULL");
+    return 0;
+  }
+  set_platform_error(nullptr);
+  return hyle::platform::is_readonly(path) ? 1 : 0;
 }
 int hyle_fs_set_readonly(const char* path, int readonly) {
-  return path && hyle::platform::set_readonly(path, readonly != 0) ? 1 : 0;
+  return fs_result(path && hyle::platform::set_readonly(path, readonly != 0),
+                   "hyle_fs_set_readonly failed");
 }
 int hyle_fs_create_symlink(const char* target, const char* link) {
-  return target && link && hyle::platform::create_symlink(target, link) ? 1 : 0;
+  return fs_result(
+      target && link && hyle::platform::create_symlink(target, link),
+      "hyle_fs_create_symlink failed");
 }
 int hyle_fs_create_hard_link(const char* target, const char* link) {
-  return target && link && hyle::platform::create_hard_link(target, link) ? 1 : 0;
+  return fs_result(
+      target && link && hyle::platform::create_hard_link(target, link),
+      "hyle_fs_create_hard_link failed");
 }
 int hyle_fs_is_symlink(const char* path) {
-  return path && hyle::platform::is_symlink(path) ? 1 : 0;
+  if (path == nullptr) {
+    set_platform_error("hyle_fs_is_symlink: path is NULL");
+    return 0;
+  }
+  set_platform_error(nullptr);
+  return hyle::platform::is_symlink(path) ? 1 : 0;
 }
 size_t hyle_fs_read_symlink(const char* path, char* dst, size_t cap) {
-  return path ? hyle::platform::read_symlink(path, dst, cap) : 0;
+  if (path == nullptr) {
+    set_platform_error("hyle_fs_read_symlink: path is NULL");
+    return 0;
+  }
+  const size_t n = hyle::platform::read_symlink(path, dst, cap);
+  set_platform_error(n == 0 ? "hyle_fs_read_symlink failed" : nullptr);
+  return n;
 }
 intptr_t hyle_fs_create_temp_file(const char* dir, const char* prefix, char* dst,
                                   size_t cap) {
   hyle::platform::OwnedFd fd = hyle::platform::create_temp_file(dir, prefix, dst, cap);
-  return fd.release();  // transfer ownership to the C caller (close via close_fd)
+  const intptr_t raw = fd.release();
+  set_platform_error(raw == hyle::platform::OwnedFd::kInvalid
+                         ? "hyle_fs_create_temp_file failed"
+                         : nullptr);
+  return raw;  // transfer ownership to the C caller (close via close_fd)
 }
 void hyle_fs_close_fd(intptr_t fd) {
+  set_platform_error(nullptr);
   hyle::platform::OwnedFd owned{fd};  // adopts and closes on scope exit
   (void)owned;
 }
 intptr_t hyle_fs_open(const char* path, unsigned flags) {
-  return hyle::platform::open_file(path, flags).release();  // -1 if open failed
+  if (path == nullptr) {
+    set_platform_error("hyle_fs_open: path is NULL");
+    return hyle::platform::OwnedFd::kInvalid;
+  }
+  const unsigned known = HYLE_OPEN_READ | HYLE_OPEN_WRITE | HYLE_OPEN_CREATE |
+                         HYLE_OPEN_TRUNCATE | HYLE_OPEN_APPEND;
+  if ((flags & ~known) != 0 ||
+      ((flags & (HYLE_OPEN_CREATE | HYLE_OPEN_TRUNCATE | HYLE_OPEN_APPEND)) != 0 &&
+       (flags & HYLE_OPEN_WRITE) == 0)) {
+    set_platform_error("hyle_fs_open: invalid flag combination");
+    return hyle::platform::OwnedFd::kInvalid;
+  }
+  const intptr_t raw = hyle::platform::open_file(path, flags).release();
+  set_platform_error(raw == hyle::platform::OwnedFd::kInvalid
+                         ? "hyle_fs_open failed"
+                         : nullptr);
+  return raw;
 }
 int64_t hyle_fs_read(intptr_t fd, void* buf, size_t n) {
+  if (n != 0 && buf == nullptr) {
+    set_platform_error("hyle_fs_read: buffer is NULL for nonzero length");
+    return -1;
+  }
   hyle::platform::OwnedFd tmp{fd};       // borrow (don't close: caller owns fd)
   int64_t r = tmp.read(buf, n);
   tmp.release();
+  set_platform_error(r < 0 ? "hyle_fs_read failed" : nullptr);
   return r;
 }
 int64_t hyle_fs_write(intptr_t fd, const void* buf, size_t n) {
+  if (n != 0 && buf == nullptr) {
+    set_platform_error("hyle_fs_write: buffer is NULL for nonzero length");
+    return -1;
+  }
   hyle::platform::OwnedFd tmp{fd};
   int64_t r = tmp.write(buf, n);
   tmp.release();
+  set_platform_error(r < 0 ? "hyle_fs_write failed" : nullptr);
   return r;
 }
 int hyle_fs_set_env_var(const char* name, const char* value) {
-  return name && hyle::platform::set_env_var(name, value) ? 1 : 0;
+  return fs_result(name && hyle::platform::set_env_var(name, value),
+                   "hyle_fs_set_env_var failed");
 }
 int hyle_fs_unset_env_var(const char* name) {
-  return name && hyle::platform::unset_env_var(name) ? 1 : 0;
+  return fs_result(name && hyle::platform::unset_env_var(name),
+                   "hyle_fs_unset_env_var failed");
 }
 
 hyle_mapped_file_o* hyle_mapped_file_open(const char* path, hyle_map_mode mode,

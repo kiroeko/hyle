@@ -9,11 +9,19 @@
 #include <mutex>
 #include <new>  // std::nothrow for the push/pop handler token
 #include <string_view>
+#include <type_traits>
 
 #include "hyle/error/error_handler.h"
 #include "hyle/error/status.h"
 
+struct hyle_error_saved_handler_o;
+
 namespace {
+
+static_assert(sizeof(hyle_status) == sizeof(std::uintptr_t));
+static_assert(alignof(hyle_status) == alignof(std::uintptr_t));
+static_assert(std::is_standard_layout_v<hyle_status>);
+static_assert(std::is_trivially_copyable_v<hyle_status>);
 
 thread_local const char* g_c_error = "";
 
@@ -65,6 +73,11 @@ CHandlerState& c_handler_state() noexcept {
   return st;
 }
 
+hyle_error_saved_handler_o*& c_handler_push_top() noexcept {
+  static hyle_error_saved_handler_o* top = nullptr;
+  return top;
+}
+
 std::recursive_mutex& c_handler_set_mutex() noexcept {
   // A C callback may replace/uninstall itself while error_report holds the
   // recursive C++ dispatch lock. Preserve that supported reentrant shape here.
@@ -103,6 +116,8 @@ size_t copy_sv(std::string_view sv, char* buf, size_t cap) noexcept {
 struct hyle_error_saved_handler_o {
   CHandlerState state;                               // this override's fn/user + vtable
   const hyle::error_handler_t* displaced = nullptr;  // reinstated on pop
+  const hyle::error_handler_t* installed = nullptr;  // must be current on pop
+  hyle_error_saved_handler_o* previous = nullptr;     // strict-LIFO validation
 };
 
 extern "C" {
@@ -206,6 +221,7 @@ void hyle_error_set_handler(hyle_error_report_fn fn, void* user) {
   // calling error_set_default_handler(): reporters take the dispatch lock first
   // and then state.mutex, so doing the inverse here would deadlock.
   std::lock_guard<std::recursive_mutex> set_lock(c_handler_set_mutex());
+  HYLE_FATAL_ASSERT(c_handler_push_top() == nullptr);
   CHandlerState& st = c_handler_state();
   if (fn == nullptr) {
     const hyle::error_handler_t* prev = nullptr;
@@ -214,7 +230,7 @@ void hyle_error_set_handler(hyle_error_report_fn fn, void* user) {
       if (!st.installed) return;
       prev = st.prev;
     }
-    hyle::error_set_default_handler(prev);
+    hyle::detail::error_restore_default_handler(&st.vtable, prev);
     {
       std::lock_guard<std::recursive_mutex> lock(st.mutex);
       st.installed = false;
@@ -244,12 +260,14 @@ void hyle_error_set_handler(hyle_error_report_fn fn, void* user) {
 
 hyle_error_saved_handler_o* hyle_error_push_handler(hyle_error_report_fn fn,
                                                     void* user) {
+  std::lock_guard<std::recursive_mutex> set_lock(c_handler_set_mutex());
   auto* tok = new (std::nothrow) hyle_error_saved_handler_o{};
   if (tok == nullptr) {
     g_c_error = "hyle_error_push_handler: token allocation failed (out of memory)";
     return nullptr;  // still-installed handler unchanged
   }
   g_c_error = "";
+  tok->previous = c_handler_push_top();
   tok->state.fn = fn;
   tok->state.user = user;
   if (fn != nullptr) {
@@ -258,18 +276,25 @@ hyle_error_saved_handler_o* hyle_error_push_handler(hyle_error_report_fn fn,
     tok->state.vtable.report = &c_handler_on_report;
     // Install this token's own vtable; capture whatever it displaced.
     tok->displaced = hyle::error_set_default_handler(&tok->state.vtable);
+    tok->installed = &tok->state.vtable;
   } else {
     // Push a "reset to built-in" scope: install default, remember the previous.
     tok->displaced = hyle::error_set_default_handler(nullptr);
+    tok->installed = hyle::error_default_handler();
   }
   tok->state.installed = true;
+  c_handler_push_top() = tok;
   return tok;
 }
 
 void hyle_error_pop_handler(hyle_error_saved_handler_o* saved) {
   if (saved == nullptr) return;
+  std::lock_guard<std::recursive_mutex> set_lock(c_handler_set_mutex());
+  HYLE_FATAL_ASSERT(c_handler_push_top() == saved);
   // Reinstate exactly the handler this push displaced (LIFO restore).
-  hyle::error_set_default_handler(saved->displaced);
+  hyle::detail::error_restore_default_handler(saved->installed,
+                                              saved->displaced);
+  c_handler_push_top() = saved->previous;
   delete saved;
 }
 
@@ -280,7 +305,10 @@ void hyle_error_report(hyle_severity severity, const char* file, uint32_t line,
   const char* msg = message != nullptr ? message : "";
   const char* f = file != nullptr ? file : "";
   // error_report is printf-style; pass message as %s data.
-  hyle::error_report(static_cast<hyle::Severity>(severity), f, line, "%s", msg);
+  hyle::Severity sev = hyle::Severity::Error;
+  if (severity == HYLE_SEVERITY_WARNING) sev = hyle::Severity::Warning;
+  if (severity == HYLE_SEVERITY_FATAL) sev = hyle::Severity::Fatal;
+  hyle::error_report(sev, f, line, "%s", msg);
 }
 
 void hyle_error_reportf(hyle_severity severity, const char* file, uint32_t line,
@@ -299,7 +327,10 @@ void hyle_error_reportf(hyle_severity severity, const char* file, uint32_t line,
 #endif
     va_end(ap);
   }
-  hyle::error_report(static_cast<hyle::Severity>(severity), f, line, "%s", buf);
+  hyle::Severity sev = hyle::Severity::Error;
+  if (severity == HYLE_SEVERITY_WARNING) sev = hyle::Severity::Warning;
+  if (severity == HYLE_SEVERITY_FATAL) sev = hyle::Severity::Fatal;
+  hyle::error_report(sev, f, line, "%s", buf);
 }
 
 }  // extern "C"
