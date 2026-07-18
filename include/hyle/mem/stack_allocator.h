@@ -5,6 +5,7 @@
 #include <cstring>  // std::memcpy for as_allocator()'s realloc
 
 #include "hyle/macros.h"
+#include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 
 namespace hyle::mem {
@@ -45,7 +46,7 @@ class StackAllocator {
   // (no heap fallback -- give a bigger slab instead).
   void* allocate(std::size_t bytes,
                  std::size_t alignment = alignof(std::max_align_t)) noexcept {
-    HYLE_FATAL_ASSERT((alignment & (alignment - 1)) == 0);
+    HYLE_FATAL_ASSERT(is_pow2(alignment));  // rejects 0 too (a&(a-1) alone lets 0 slip through)
     // Pointer-style bump: align cur_ directly (the live address), no +base/-base
     // round-trip through an offset. base_ is max_align_t-aligned so aligning the
     // real cursor is what guarantees the returned pointer's alignment.

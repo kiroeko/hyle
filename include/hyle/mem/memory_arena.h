@@ -7,6 +7,7 @@
 #include <new>
 
 #include "hyle/macros.h"
+#include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/hugepage.h"
 #include "hyle/platform/thread.h"  // hardware_concurrency() -> shard count
@@ -327,6 +328,7 @@ class Arena {
   // threaded: a plain pointer bump (no atomic). One Arena is owned by one thread.
   void* allocate(std::size_t bytes,
                  std::size_t alignment = alignof(std::max_align_t)) noexcept {
+    HYLE_FATAL_ASSERT(is_pow2(alignment));  // Arena had NO guard: 0/non-pow2 -> wild ptr
     // Pointer-style bump: align cur_ directly, no +base/-base offset round-trip.
     auto cur = reinterpret_cast<std::uintptr_t>(cur_);
     std::uintptr_t aligned = (cur + alignment - 1) & ~(alignment - 1);
