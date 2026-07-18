@@ -37,8 +37,9 @@ platform **功能完整、C ABI 接近满分**:8 子系统(wait/cpu/numa/virtual
 ### P3 文档 stale
 - milestone platform-03b:83 还写"导出到 `hyle_platform_api` 表"(design §3 已删表、实物无表)。
 - README.md:13 **c-platform 索引行**仍写"`hyle_platform_api` 表"(platform 无此表,与 milestone:83 同一处 stale)。〔扫描核实:子代理原报"README:16 mem 串 platform.h"是**误报**——:16 是 simd-usage 行、:14 mem 行已正确;真 stale 在 :13〕
-- c-platform.md:31 把 `alloc_rw` 列作"VM 自由函数"(实际只 C ABI `hyle_vm_alloc_rw`,C++ header 无此自由函数)。
-- c-platform.md 缺"有意不导出"表(authoring §7 要求登记 Unparker/symbol_as/OwnedFd/VmRegion::release 等仅-C++ 项)。
+- **[已做]** c-platform.md:31 `alloc_rw` 从"VM 自由函数"移除(它只是 C ABI 便利 `hyle_vm_alloc_rw`,C++ header 无此自由函数)。
+- **[已做,子代理误报修正]** c-platform.md §3.8"有意不导出"表**本就存在**(子代理"缺表"是误报——表里已有 Unparker/path/模板/测试钩子);已补全遗漏项:`symbol_as` / `OwnedFd` / `VmRegion::release`·`MappedFile::reset`。
+- 〔以上 milestone:83 / README:13 亦已做:分别加勘误注、去 `hyle_platform_api` 表〕
 
 ### P4 测试/性能补齐
 - **错误/失败路径**:thread spawn 失败(EINVAL)+ 析构/move joinable 的 death test、fs copy_file/rename/change_directory 失败、dynlib open(nullptr)(实现未防护)、VmRegion::adopt 的 C++ 单测、mapped_file 非页对齐 offset + move-assign。〔核实修正:thread 的 affinity 读回(Linux)/stack_size/affinity_cpu=4096 边界**已有测**(thread_test.cc:50-88/137/168),子代理"affinity/stack 完全未覆盖"**不准**〕

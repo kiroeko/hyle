@@ -28,7 +28,7 @@
 | Parker | create / destroy / park / unpark / park_timeout | create→destroy |
 | Thread | spawn → join | join **释放**句柄 |
 | DynLib | open / get / current / close / symbol / open_symbol | close 释放 |
-| VM 自由函数 | reserve/commit/…/alloc_rw | reserve 配对 release |
+| VM 自由函数 | reserve/commit/decommit/release/protect | reserve 配对 release |
 | VM region | `hyle_vm_region_*` | destroy 释放 |
 | hugepage/THP | `hyle_vm_advise_hugepage` 等 | soft 建议，无句柄 |
 | NUMA | `hyle_numa_*` / `hyle_vm_reserve_numa` / `hyle_vm_bind_numa*` | reserve 配对 release |
@@ -198,6 +198,9 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | C++ | 原因 |
 |---|---|
 | `Unparker` 类型 | 用 `hyle_parker_unpark` 同一句柄 |
+| `DynLib::symbol_as<Fn>`（模板） | 用 `hyle_dynlib_symbol` + 调用方 cast |
+| `OwnedFd`（RAII） | temp file 走 `intptr_t` fd + `hyle_fs_close_fd` |
+| `VmRegion::release` / `MappedFile::reset`（提前释放） | 用 `hyle_vm_region_destroy` / `hyle_mapped_file_destroy` |
 | path 词法 / container 字符串 | 不在 platform C 面 |
 | 模板 `for_each_entry` | C 用 `hyle_fs_directory_iterate` |
 | 测试钩子 | 非发布面 |

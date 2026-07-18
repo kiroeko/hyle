@@ -82,6 +82,8 @@ clay fs 每个返回路径的 API 都走 `Allocator*` + `const char*`,目录列�
 
 **C ABI v4**：以上全部导出到 `hyle_platform_api` 表尾（保 v2/v3 前缀布局），`hyle_file_info` 加 `is_symlink`，thread opts 加 priority，MappedFile 走 opaque handle，temp file 走 `intptr_t` fd + `hyle_fs_close_fd`。文档 `docs/guide/c-platform.md` 1:1。
 
+> **勘误（2026-07-18）**：`hyle_platform_api` 表 + 版本门已按 [c-abi-design](../architecture/c-abi-design.md) §3 全线删除；platform 实际导出为自由函数 + 不透明句柄，**无 api 表**。上文"导出到表尾"是删表前的旧记述。
+
 **三平台真验（含测试硬化后终值）**：Win MSVC platform 120/120、WSL Linux 122/122、macOS arm64 122/122，C ABI v4 三平台 passed（Win 少 2 = symlink 需特权时 SKIP）。
 
 **对抗式审查连打出的真 bug / 平台语义（均改实现或分平台，非掩盖）**：
