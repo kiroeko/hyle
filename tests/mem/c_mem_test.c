@@ -16,6 +16,18 @@ static int g_fails = 0;
     }                                                                         \
   } while (0)
 
+/* A backing allocator whose alloc/realloc always fail -- simulates slab OOM so the
+ * graceful create paths (NULL + last-error, followup #2 arch B) can be exercised. */
+static void* oom_alloc(void* st, size_t sz, size_t al) {
+  (void)st; (void)sz; (void)al; return NULL;
+}
+static void oom_free(void* st, void* p, size_t sz, size_t al) {
+  (void)st; (void)p; (void)sz; (void)al;
+}
+static void* oom_realloc(void* st, void* p, size_t os, size_t ns, size_t al) {
+  (void)st; (void)p; (void)os; (void)ns; (void)al; return NULL;
+}
+
 int main(void) {
   CHECK(hyle_default_alignment() >= sizeof(void*));
 
@@ -228,6 +240,30 @@ int main(void) {
     CHECK(pt->x == 3 && pt->y == 4);
     HYLE_GROWABLE_POOL_RELEASE(tp, pt);
     hyle_growable_pool_destroy(tp);
+  }
+
+  /* ---- mock OOM backing: create is graceful (NULL + last-error, not abort) ---- */
+  {
+    hyle_allocator oom;
+    oom.alloc = oom_alloc;
+    oom.free = oom_free;
+    oom.realloc = oom_realloc;
+    oom.state = NULL;
+
+    /* MemoryArena slab OOM -> NULL + last-error (was a fatal abort before #2 B) */
+    CHECK(hyle_memory_arena_create(oom, 64, 4, 0) == NULL);
+    CHECK(hyle_mem_last_error()[0] != '\0');
+
+    /* StackAllocator slab OOM -> NULL + last-error */
+    CHECK(hyle_stack_allocator_create(oom, 4096) == NULL);
+    CHECK(hyle_mem_last_error()[0] != '\0');
+
+    /* GrowablePool ctor is lazy (allocates nothing) -> create succeeds; the OOM
+       surfaces at the first acquire (grow fails -> NULL), never as an abort. */
+    hyle_growable_pool_o* gp = hyle_growable_pool_create(oom, 32, 0, 4);
+    CHECK(gp != NULL);
+    CHECK(hyle_growable_pool_acquire(gp) == NULL);
+    hyle_growable_pool_destroy(gp);
   }
 
   /* ---- HugeRegion: open / write / destroy (THP hint) ---- */

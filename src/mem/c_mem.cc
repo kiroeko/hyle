@@ -156,9 +156,19 @@ hyle_memory_arena_o* hyle_memory_arena_create(hyle_allocator backing,
   }
   auto* a = new (std::nothrow)
       hyle_memory_arena_o(backing, block_size, block_count, norm_align(alignment));
-  if (a == nullptr)
+  if (a == nullptr) {
     hyle::platform::vm_set_last_error(
         "hyle_memory_arena_create: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
+  // slab / link array / heads OOM in the C++ ctor -> invalid arena (graceful, not
+  // abort; mem-audit-followup #2 arch B). Don't expose a dead handle: free + report.
+  if (!a->arena.valid()) {
+    delete a;
+    hyle::platform::vm_set_last_error(
+        "hyle_memory_arena_create: slab allocation failed (out of memory)");
+    return nullptr;
+  }
   return a;
 }
 
@@ -202,9 +212,18 @@ hyle_stack_allocator_o* hyle_stack_allocator_create(hyle_allocator backing,
     return nullptr;
   }
   auto* s = new (std::nothrow) hyle_stack_allocator_o(backing, size);
-  if (s == nullptr)
+  if (s == nullptr) {
     hyle::platform::vm_set_last_error(
         "hyle_stack_allocator_create: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
+  // slab-OOM in the C++ ctor -> invalid (graceful, not abort; followup #2 arch B).
+  if (!s->stack.valid()) {
+    delete s;
+    hyle::platform::vm_set_last_error(
+        "hyle_stack_allocator_create: slab allocation failed (out of memory)");
+    return nullptr;
+  }
   return s;
 }
 

@@ -118,10 +118,11 @@ typedef struct hyle_memory_arena_o hyle_memory_arena_o;
 
 /* `block_count` blocks of `block_size` bytes each, aligned to `alignment`
  * (0 => default). Slab + link arrays come from `backing`. Returns NULL (and sets
- * hyle_mem_last_error) if the backing is missing a fn pointer or the wrapper
- * allocation fails. Contract violations (block_size/block_count == 0, or
- * block_size*block_count overflowing size_t) and slab OOM fail-fast (abort) in
- * the C++ ctor, same as a C++ caller -- not masked to a NULL here. */
+ * hyle_mem_last_error) on a resource failure: invalid backing, wrapper-alloc
+ * failure, or slab/link/heads OOM in the ctor (followup #2 arch B -- no longer
+ * aborts). Contract violations (block_size/block_count == 0, or
+ * block_size*block_count overflowing size_t) still fail-fast (abort) in the C++
+ * ctor, same as a C++ caller. */
 HYLE_MEM_C_API hyle_memory_arena_o* hyle_memory_arena_create(
     hyle_allocator backing, size_t block_size, uint32_t block_count,
     size_t alignment);
@@ -165,8 +166,8 @@ HYLE_MEM_C_API hyle_allocator hyle_memory_arena_as_allocator(
 typedef struct hyle_stack_allocator_o hyle_stack_allocator_o;
 
 /* Owns a `size`-byte slab from `backing`. Returns NULL (and sets
- * hyle_mem_last_error) on invalid backing or wrapper-alloc failure; size==0 or
- * slab OOM fail-fast (abort) in the C++ ctor. */
+ * hyle_mem_last_error) on invalid backing, wrapper-alloc failure, or slab OOM
+ * (followup #2 arch B -- no longer aborts); size==0 still fail-fasts (abort). */
 HYLE_MEM_C_API hyle_stack_allocator_o* hyle_stack_allocator_create(
     hyle_allocator backing, size_t size);
 HYLE_MEM_C_API void hyle_stack_allocator_destroy(hyle_stack_allocator_o* s);

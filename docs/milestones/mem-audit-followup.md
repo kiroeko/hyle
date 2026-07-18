@@ -19,7 +19,7 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 - 无效对齐从"静默野指针"→ clean trap(abort)。`MemoryArena` ctor 本就 clamp alignment 到 16,不受影响。
 - **状态**:代码改完,Windows mem 测试全绿。**待**:WSL/mac 三平台复验(和后续改动一起做)。
 
-### #2 池耗尽/OOM graceful + last-error 字符串 [档 A 已做 d1f7930 + 测试已补;档 B 未做,待用户拍板]
+### #2 池耗尽/OOM graceful + last-error 字符串 [档 A + 档 B 均已做]
 依据:c-abi-authoring-guide §3 铁律 3 明文"真边界故障(`new` OOM / base==NULL / backing 缺指针)→ **返 NULL**;契约违反 → abort"。当前 slab-OOM / 池耗尽走 abort,**违反了本库自己的铁律**。用户诉求:"保证 C ABI 也能拿到失败的字符串"(类似 error 模块的 `hyle_status_message_cstr`)。
 - **档 A(安全,建议先做)**:
   - `Arena` 借块耗尽(memory_arena.h:317 `HYLE_FATAL_ASSERT(block_ != nullptr)`)改可失败:ctor early-return 置 invalid + 加 `valid()`。
@@ -28,7 +28,13 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
   - `MemoryArena::allocate` 池满**已返 NULL**(:131),无需动。
   - `Arena` dtor 是 `pool_->deallocate(block_)`,`deallocate(nullptr)` 是 no-op → null-safe 几乎免费。
   - last-error 复用 platform `vm_set_last_error`(`hyle_mem_last_error` 已转发 `vm_last_error`)。
-- **档 B(高风险,建议隔离 worktree 子代理做,或 fresh session)**:`MemoryArena`/`StackAllocator` 构造时 slab-OOM graceful。难点:`MemoryArena` 三次 alloc(slab memory_arena.h:64 / heads :68 / next :71),placement-new 在分配**之后**(:75 heads、:83 next),而 dtor(:103-115)当前**无条件析构 + 零 null-check**。改可失败要重构成三态(未分配 / 已分配未构造 / 已构造)逆序 null-safe 清理——改错即崩溃/UAF/泄漏。场景罕见(slab 通常几KB–MB,真 OOM=进程内存耗尽)。
+- **档 B [已做]**:`MemoryArena`/`StackAllocator` 构造 slab-OOM + `GrowablePool` grow-OOM 全部 graceful(不再 abort):
+  - `MemoryArena` ctor 三次 alloc(slab/next/heads)任一失败 → 提前 return 置 invalid;加 `valid_`/`valid()`;dtor 三态 null-safe(按 `valid_` 判元素析构、按指针 null 判 deallocate);allocate/deallocate/reset 加 `valid_` 检查(invalid arena 安全返 null/no-op)。
+  - `StackAllocator` ctor slab-OOM → invalid + `valid()`;dtor null-safe(allocate 天然返 null,end_==null)。
+  - `GrowablePoolCore::grow()` 改返 bool,OOM → `acquire()` 返 null → `GrowablePool<T>::create()` 返 null(同 `ObjectPool`)。
+  - `c_mem.cc`:`hyle_memory_arena_create`/`hyle_stack_allocator_create` 检查 `valid()`,invalid → delete + last-error "slab allocation failed" + NULL;mem.h 注释同步(slab OOM 不再 abort)。
+  - 测试:c_mem_test.c mock OOM backing 段(三分配器 create/acquire graceful NULL + 非空 last-error),已验 Windows 绿。保留契约违反(block_size==0 等)fail-fast abort。
+  - (可选增强,未做)C++ 层单元 mock 测试直接验 `MemoryArena::valid()==false`/`GrowablePool::create()==null`——C 测试已端到端覆盖 graceful,此为补充。
 
 - **[last-error 覆盖收尾,已做]** 三个 create 的 wrapper OOM(`new(nothrow)` 失败)原先返 NULL 但**没设 last-error**(C 用户会读到上一次的过时串)。已补 `hyle_memory_arena_create`/`hyle_stack_allocator_create`/`hyle_arena_create` 的 wrapper OOM + `arena_create` 的 `pool==NULL`,都设 last-error;mem.h 对应注释同步。现三个 create 的每条 NULL 返回都有原因串。(档 B slab-OOM graceful 落地时再补 "slab allocation failed" 串。)
 - **[可选增强,未做]** `MemoryArena::free_count()`/`has_free()` + `hyle_memory_arena_free_count()` C 导出。上个会话 C 子代理指出 C ABI 无空闲块数查询、无 try_create,FFI 借前无法预检容量。`valid()`+NULL 已够防御,此为额外可观测性 API,非必须。

@@ -82,15 +82,15 @@ class GrowablePoolCore {
   }
 
   // Raw uninitialized slot: reuse a freed one, else bump within the current block,
-  // else grow. `stride_` bytes, `slot_align_`-aligned. Aborts on grow OOM (a
-  // resource failure that mem-audit-followup #2 arch B makes graceful pool-wide).
+  // else grow. `stride_` bytes, `slot_align_`-aligned. Returns nullptr if a needed
+  // grow hits backing OOM (graceful, per mem-audit-followup #2 arch B).
   void* acquire() noexcept {
     void* s;
     if (free_ != nullptr) {
       s = free_;
       free_ = *static_cast<void**>(free_);  // next-free link stored at slot start
     } else {
-      if (cur_ == end_) grow();
+      if (cur_ == end_ && !grow()) return nullptr;  // grow OOM -> graceful nullptr
       s = cur_;
       cur_ += stride_;
     }
@@ -138,11 +138,11 @@ class GrowablePoolCore {
     return align_up(sizeof(Block), slot_align_);
   }
 
-  void grow() noexcept {
+  bool grow() noexcept {
     std::uint32_t n = next_block_slots_;
     std::size_t bytes = header_bytes() + static_cast<std::size_t>(n) * stride_;
     void* chunk = alloc_.allocate(bytes, block_align());
-    HYLE_FATAL_ASSERT(chunk != nullptr);  // grow OOM -> abort (see #2 arch B)
+    if (chunk == nullptr) return false;  // grow OOM -> acquire returns nullptr (#2 B)
     Block* b = static_cast<Block*>(chunk);
     b->next = blocks_;
     b->bytes = bytes;
@@ -152,6 +152,7 @@ class GrowablePoolCore {
     capacity_ += n;
     // Geometric growth, guarding against overflow of the slot count.
     if (next_block_slots_ <= 0x7FFFFFFFu) next_block_slots_ = n * 2;
+    return true;
   }
 
   void free_blocks() noexcept {
@@ -228,7 +229,9 @@ class GrowablePool {
   // Construct a T in a pooled slot (reused if one is free, else bump/grow).
   template <class... Args>
   T* create(Args&&... args) {
-    return ::new (core_.acquire()) T(std::forward<Args>(args)...);
+    void* slot = core_.acquire();
+    if (slot == nullptr) return nullptr;  // pool grow hit OOM -> nullptr (like ObjectPool)
+    return ::new (slot) T(std::forward<Args>(args)...);
   }
 
   // Destroy a T from create() and return its slot to the free-list.

@@ -31,13 +31,19 @@ class StackAllocator {
     HYLE_FATAL_ASSERT(size_ >= 1);
     base_ = static_cast<std::byte*>(
         alloc_.allocate(size_, alignof(std::max_align_t)));
-    HYLE_FATAL_ASSERT(base_ != nullptr);
+    // slab-OOM -> invalid (base_==nullptr); the caller checks valid(). Not abort,
+    // per mem-audit-followup #2 arch B. allocate() naturally returns nullptr while
+    // invalid (end_==nullptr, so nothing fits).
     cur_ = base_;
-    end_ = base_ + size_;
+    end_ = base_ != nullptr ? base_ + size_ : nullptr;
   }
 
+  // False iff the ctor's slab allocation hit OOM. An invalid StackAllocator hands
+  // out nothing (allocate -> nullptr); the C ABI checks this and returns NULL.
+  bool valid() const noexcept { return base_ != nullptr; }
+
   ~StackAllocator() {
-    alloc_.deallocate(base_, size_, alignof(std::max_align_t));
+    if (base_ != nullptr) alloc_.deallocate(base_, size_, alignof(std::max_align_t));
   }
 
   HYLE_DISABLE_COPY_AND_MOVE(StackAllocator);

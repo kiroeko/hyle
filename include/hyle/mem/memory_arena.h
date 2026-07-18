@@ -67,11 +67,14 @@ class MemoryArena {
     if (slab_ == nullptr) {
       slab_ = static_cast<std::byte*>(alloc_.allocate(slab_bytes, alignment_));
     }
-    HYLE_FATAL_ASSERT(slab_ != nullptr);
+    // slab-OOM is a resource failure -> invalid (valid()==false), not abort
+    // (mem-audit-followup #2 arch B): the C ABI checks valid() and returns NULL +
+    // last-error; a C++ caller can check valid() too. The dtor is null-safe.
+    if (slab_ == nullptr) return;
     next_ = static_cast<std::atomic<std::uint32_t>*>(
         alloc_.allocate(sizeof(std::atomic<std::uint32_t>) * count_,
                         alignof(std::atomic<std::uint32_t>)));
-    HYLE_FATAL_ASSERT(next_ != nullptr);
+    if (next_ == nullptr) return;  // link-array OOM -> invalid (dtor frees slab_)
     // Shard count = the host's core count rounded up to a power of two (capped), but never
     // more than blocks (each shard needs >=1). Scaling to cores keeps it O(1) up to the
     // real concurrency level: a FIXED count (e.g. 16) would re-introduce O(ceil(T/16))
@@ -92,7 +95,7 @@ class MemoryArena {
     per_ = count_ / num_shards_;  // >=1; the last shard absorbs the remainder
     heads_ = static_cast<ShardHead*>(
         alloc_.allocate(sizeof(ShardHead) * num_shards_, alignof(ShardHead)));
-    HYLE_FATAL_ASSERT(heads_ != nullptr);
+    if (heads_ == nullptr) return;  // heads OOM -> invalid (dtor frees slab_/next_)
     for (std::uint32_t s = 0; s < num_shards_; ++s) new (&heads_[s]) ShardHead();
     // Build each shard's free list over its own contiguous index range [lo,hi): link
     // lo -> lo+1 -> ... -> hi-1 -> null, head = lo. So a block's free links live only
@@ -105,18 +108,26 @@ class MemoryArena {
       }
       heads_[s].h.store(pack(lo, 0), std::memory_order_relaxed);
     }
+    valid_ = true;  // all three allocations succeeded + elements constructed
   }
 
   ~MemoryArena() {
-    for (std::uint32_t i = 0; i < count_; ++i) next_[i].~atomic();
-    for (std::uint32_t s = 0; s < num_shards_; ++s) heads_[s].~ShardHead();
-    alloc_.deallocate(heads_, sizeof(ShardHead) * num_shards_, alignof(ShardHead));
-    alloc_.deallocate(next_, sizeof(std::atomic<std::uint32_t>) * count_,
-                      alignof(std::atomic<std::uint32_t>));
+    // Elements are placement-new'd only after all three allocations succeed
+    // (valid_); a partially-constructed (OOM'd) arena skips element teardown and
+    // frees only what was allocated (null-safe). See mem-audit-followup #2 arch B.
+    if (valid_) {
+      for (std::uint32_t i = 0; i < count_; ++i) next_[i].~atomic();
+      for (std::uint32_t s = 0; s < num_shards_; ++s) heads_[s].~ShardHead();
+    }
+    if (heads_ != nullptr)
+      alloc_.deallocate(heads_, sizeof(ShardHead) * num_shards_, alignof(ShardHead));
+    if (next_ != nullptr)
+      alloc_.deallocate(next_, sizeof(std::atomic<std::uint32_t>) * count_,
+                        alignof(std::atomic<std::uint32_t>));
     if (huge_slab_.valid()) {
       huge_slab_.reset();
       slab_ = nullptr;
-    } else {
+    } else if (slab_ != nullptr) {
       alloc_.deallocate(slab_, stride_ * count_, alignment_);
     }
   }
@@ -128,6 +139,7 @@ class MemoryArena {
   // block is handed out as long as ANY shard has one (preserves the single-pool "not
   // exhausted until truly empty" contract).
   void* allocate() noexcept {
+    if (!valid_) return nullptr;  // OOM'd arena has no slab/shards to hand out
     const std::uint32_t home = tls_thread_seq() & shard_mask_;  // num_shards_ is pow2
     std::uint32_t idx = pop_shard(home);
     if (idx == kNull) {
@@ -144,7 +156,7 @@ class MemoryArena {
   // OWNING shard (by address), so each shard's free list only ever holds its own index
   // range -- no cross-shard next_ aliasing, per-shard ABA version stays sound.
   void deallocate(void* p) noexcept {
-    if (p == nullptr) return;
+    if (p == nullptr || !valid_) return;
     auto off = static_cast<std::size_t>(static_cast<std::byte*>(p) - slab_);
     std::uint32_t idx = static_cast<std::uint32_t>(off / stride_);
     // Belongs to this pool: idx in range AND p is block-aligned. The alignment check
@@ -161,6 +173,7 @@ class MemoryArena {
   // happen (same rule as Arena::reset). Single-threaded w.r.t. allocate/deallocate:
   // callers must quiesce concurrent access first (it stores relaxed, no CAS).
   void reset() noexcept {
+    if (!valid_) return;
     for (std::uint32_t s = 0; s < num_shards_; ++s) {
       std::uint32_t lo = s * per_;
       std::uint32_t hi = (s + 1 == num_shards_) ? count_ : lo + per_;
@@ -176,6 +189,10 @@ class MemoryArena {
 
   std::size_t block_size() const noexcept { return block_size_; }
   std::uint32_t capacity() const noexcept { return count_; }
+  // False iff a construction-time allocation (slab / link array / heads) hit OOM.
+  // An invalid arena hands out nothing (allocate() -> nullptr); the C ABI checks
+  // this and returns NULL + last-error instead of exposing a dead handle.
+  bool valid() const noexcept { return valid_; }
 
   // Adapt this pool to the Allocator vtable (split alloc/free/realloc): allocate -> pop a
   // fixed block (the request must fit block_size_; the pool serves one size class),
@@ -296,9 +313,10 @@ class MemoryArena {
   std::size_t stride_;
   std::uint32_t count_;
   std::size_t alignment_;
-  std::uint32_t num_shards_;
-  std::uint32_t shard_mask_;  // num_shards_ - 1 (pow2), so home = seq & shard_mask_
-  std::uint32_t per_;  // blocks per shard (last shard takes the remainder)
+  std::uint32_t num_shards_ = 0;
+  std::uint32_t shard_mask_ = 0;  // num_shards_ - 1 (pow2), so home = seq & shard_mask_
+  std::uint32_t per_ = 0;  // blocks per shard (last shard takes the remainder)
+  bool valid_ = false;  // set true once the ctor fully built the arena (else OOM'd)
 };
 
 // Bump (region) allocator over ONE MemoryArena block (clay's Arena). Borrows a
