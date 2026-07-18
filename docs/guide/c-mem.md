@@ -118,13 +118,14 @@ soft 提示，绝不影响正确性。flags 用 `HYLE_HUGE_*` 位。
 
 | 符号 | 说明 |
 |---|---|
-| `HYLE_HUGE_NONE` / `THP_HINT` / `PREFAULT` / `NUMA_BIND` / `NUMA_INTERLEAVE` | flags 位 |
-| `HYLE_MEM_NUMA_ANY` | `(-1)`：无 NUMA 约束 |
-| `hyle_huge_region_open(bytes, flags, numa_node)` | reserve+commit（大页对齐）按 flags/node 放置；失败→NULL（见 `hyle_vm_last_error`） |
+| `hyle_huge_flags`：`HYLE_HUGE_NONE` / `THP_HINT` / `PREFAULT` / `NUMA_BIND` / `NUMA_INTERLEAVE` | 具名 enum；flags 位 |
+| `hyle_mem_numa_node`：`HYLE_MEM_NUMA_ANY` | 具名 enum；`(-1)` 无 NUMA 约束 |
+| `hyle_huge_region_open(bytes, flags, numa_node)` | reserve+commit（大页对齐）按 flags/node 放置；失败→NULL（见 `hyle_mem_last_error`） |
 | `hyle_huge_region_open_local(bytes, flags)` | 偏好调用线程 home 节点 |
 | `hyle_huge_region_open_interleaved(bytes)` | 全节点条带 + THP |
 | `hyle_huge_region_destroy(r)` | NULL 安全 |
 | `hyle_huge_region_valid` / `data` / `size` | 查询 |
+| `hyle_mem_last_error()` | 线程局部：最近一次 mem VM 操作（HugeRegion open）的错误串，`""`=无；转发 platform 的 `vm_last_error`，只绑 `mem.h` 也能读失败原因 |
 
 ### 3.6 进程级 mimalloc 策略（自由函数）
 

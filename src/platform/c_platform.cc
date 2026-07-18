@@ -263,6 +263,11 @@ void* hyle_vm_alloc_rw(size_t size) {
   return base;
 }
 
+int hyle_vm_free_rw(void* p, size_t size) {
+  // Same page rounding as alloc_rw's reserve, so the released span matches.
+  return hyle::platform::vm_release(p, hyle_page_align_up(size)) ? 1 : 0;
+}
+
 hyle_vm_region_o* hyle_vm_region_reserve(size_t size) {
   auto r = hyle::platform::VmRegion::reserve(size);
   if (!r.valid()) return nullptr;

@@ -179,13 +179,13 @@ HYLE_PLATFORM_C_API int hyle_vm_release(void* base, size_t size);
 HYLE_PLATFORM_C_API int hyle_vm_protect(void* ptr, size_t size, hyle_protect prot);
 HYLE_PLATFORM_C_API const char* hyle_vm_last_error(void);
 
-/* Reserve+commit RW; size rounded up to page. Free with
- * hyle_vm_release(p, hyle_page_align_up(size)). */
+/* Reserve+commit RW; size rounded up to page. Pair with hyle_vm_free_rw,
+ * passing the original request size. */
 HYLE_PLATFORM_C_API void* hyle_vm_alloc_rw(size_t size);
-/* Release a block from hyle_vm_alloc_rw (size is the original request). */
-static inline int hyle_vm_free_rw(void* p, size_t size) {
-  return hyle_vm_release(p, hyle_page_align_up(size));
-}
+/* Release a block from hyle_vm_alloc_rw (size is the original request; rounded
+ * up to page internally). Exported (not inline) so cross-language FFI callers
+ * release without reconstructing the page rounding themselves. Returns 1 ok. */
+HYLE_PLATFORM_C_API int hyle_vm_free_rw(void* p, size_t size);
 
 /* Set the thread-local vm error string (NULL clears). Mirrors the C++
  * vm_set_last_error; lets an FFI soft-fail path leave a breadcrumb. */
@@ -214,7 +214,11 @@ HYLE_PLATFORM_C_API int hyle_vm_advise_no_hugepage(void* ptr, size_t size);
 /* NUMA topology + placement (v3)                                             */
 /* ========================================================================== */
 
-#define HYLE_NUMA_ANY (-1) /* "no NUMA constraint" for reserve/bind */
+/* Sentinel node value: "no NUMA constraint" for reserve/bind. A named enum (not
+ * a bare #define) so cross-language FFI tools surface it as a real constant. */
+typedef enum hyle_numa_node {
+  HYLE_NUMA_ANY = -1
+} hyle_numa_node;
 
 typedef enum hyle_numa_policy {
   HYLE_NUMA_PREFERRED = 0, /* soft home node (never fails the process) */
@@ -299,7 +303,9 @@ HYLE_PLATFORM_C_API int hyle_fs_change_directory(const char* path);
 HYLE_PLATFORM_C_API size_t hyle_fs_temp_directory(char* dst, size_t cap);
 HYLE_PLATFORM_C_API size_t hyle_fs_home_directory(char* dst, size_t cap);
 
-/* Env: kEnvNotSet == (size_t)-1 if unset. */
+/* Env sentinel: hyle_env_get returns this (== (size_t)-1 / SIZE_MAX) when the
+ * variable is unset. Stays a #define rather than an enum: a size_t-valued
+ * sentinel does not fit C's int-typed enumerators before C23. */
 #define HYLE_ENV_NOT_SET ((size_t)-1)
 HYLE_PLATFORM_C_API size_t hyle_env_get(const char* name, char* dst, size_t cap);
 
@@ -378,8 +384,9 @@ typedef struct hyle_cpu_features {
   uint32_t best_isa;     /* hyle::platform::Isa numeric value */
 } hyle_cpu_features;
 
-/* Coarse ISA tier values (match hyle::platform::Isa). */
-enum {
+/* Coarse ISA tier values (match hyle::platform::Isa). Named enum (not an
+ * anonymous one) so cross-language FFI tools surface it as a typed constant. */
+typedef enum hyle_isa {
   HYLE_ISA_SCALAR = 0,
   HYLE_ISA_SSE2 = 10,
   HYLE_ISA_SSSE3 = 11,
@@ -390,7 +397,7 @@ enum {
   HYLE_ISA_NEON = 110,
   HYLE_ISA_SVE = 120,
   HYLE_ISA_RVV = 210
-};
+} hyle_isa;
 
 HYLE_PLATFORM_C_API hyle_cpu_features hyle_cpu_features_get(void);
 /* 1 if this process can run the given HYLE_ISA_* tier (same-arch compare). */

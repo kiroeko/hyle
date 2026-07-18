@@ -101,7 +101,7 @@
 | `hyle_vm_last_error` | |
 | `hyle_vm_set_last_error(msg)` | 设线程局部错误串；NULL 清空（v3） |
 | `hyle_vm_alloc_rw(size)` | reserve+commit RW（size 上取整） |
-| `hyle_vm_free_rw(p, size)` | **inline**：`release(p, page_align_up(size))` |
+| `hyle_vm_free_rw(p, size)` | 释放 `alloc_rw` 的块（size 为原始请求，内部按页上取整）；导出符号，1=成功 |
 | `hyle_vm_region_reserve` / `reserve_guarded` | 不透明 region；guarded 低 1 页 NOACCESS |
 | `hyle_vm_region_reserve_numa(size, node)`（v5） | 偏好 NUMA `node`（`HYLE_NUMA_ANY`==普通 reserve）的托管 region；失败 NULL |
 | `hyle_vm_region_adopt(base, size)`（v5） | 把 `hyle_vm_reserve*` 的裸预留收编进 region 句柄（destroy 释放）；`size` 须为配对 release 的取整值；`base==NULL`→NULL；所有权转移给 region |
@@ -124,7 +124,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 
 | 符号 | 说明 |
 |---|---|
-| `HYLE_NUMA_ANY` | `(-1)`：无 NUMA 约束 |
+| `hyle_numa_node`：`HYLE_NUMA_ANY` | 具名 enum；`(-1)` 无 NUMA 约束 |
 | `hyle_numa_policy` | `PREFERRED`(软) / `BIND`(硬,Linux) / `INTERLEAVE`(全节点条带) |
 | `hyle_numa_node_count` | 节点数 ≥1 |
 | `hyle_numa_current_node` | 调用线程 home 节点（< count） |
@@ -144,7 +144,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_fs_rename` / `copy_file` / `touch` | |
 | `hyle_fs_current_directory` / `temp_directory` / `home_directory` | buffer-fill：返回完整长，`>=cap` 截断 |
 | `hyle_fs_change_directory` | |
-| `HYLE_ENV_NOT_SET` | `(size_t)-1` |
+| `HYLE_ENV_NOT_SET` | `(size_t)-1`；size_t sentinel，保留 `#define`（enum 成员在 C23 前装不下 size_t 值） |
 | `hyle_env_get(name, dst, cap)` | 未设置→`HYLE_ENV_NOT_SET` |
 | `hyle_fs_visit_fn` | `(name, is_dir, ctx)→int`；0 停止 |
 | `hyle_fs_directory_iterate` | 打开失败→0 |
@@ -182,7 +182,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | x86 字段 | `sse2`…`avx10_2`（见头） |
 | arm 字段 | `neon`…`arm_bf16` |
 | RISC-V 字段 | `rvv`…`rvv_zvfhmin` |
-| `HYLE_ISA_*` | `SCALAR`/`SSE2`/…/`RVV` 粗粒度档（与 `Isa` 数值一致） |
+| `hyle_isa`：`HYLE_ISA_*` | 具名 enum；`SCALAR`/`SSE2`/…/`RVV` 粗粒度档（与 `Isa` 数值一致） |
 | `hyle_cpu_features_get` | 值返回 |
 | `hyle_cpu_supports_isa(isa)` | 本进程能否跑该档（同架构比较） |
 | `hyle_cpu_isa_name(isa)` | 稳定英文名（日志） |
@@ -191,7 +191,7 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 
 纯 `extern "C"` 自由函数 + opaque 句柄（Parker/Thread/DynLib/VmRegion/MappedFile），FFI 直接绑符号。**无 `hyle_platform_api` 函数指针表、无 `api_get` 版本协商**（版本协商是分发独立编译插件才需要的件；HYLE 单一 `.so`、未发布，不背此负担）。设计推理见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
 
-**header-inline（无 DLL 符号）**：`hyle_page_align_up`、`hyle_large_page_align_up`、`hyle_vm_free_rw`、thread opts helpers / `HYLE_THREAD_OPTS_INIT`。
+**header-inline（无 DLL 符号）**：`hyle_page_align_up`、`hyle_large_page_align_up`、thread opts helpers / `HYLE_THREAD_OPTS_INIT`。
 
 ### 3.8 有意不导出
 

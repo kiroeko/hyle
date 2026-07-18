@@ -164,6 +164,12 @@ int main(void) {
   CHECK(cpu.logical_cpus >= 1u);
   CHECK(hyle_cpu_isa_name(cpu.best_isa) != NULL);
   CHECK(hyle_cpu_supports_isa(HYLE_ISA_SCALAR) == 1);
+  {
+    hyle_isa isa = HYLE_ISA_SCALAR;      /* named enums usable as types */
+    hyle_numa_node nany = HYLE_NUMA_ANY;
+    CHECK(hyle_cpu_supports_isa((uint32_t)isa) == 1);
+    CHECK((int)nany == -1);
+  }
 #if defined(_WIN32) || defined(__x86_64__) || defined(_M_X64)
   CHECK(cpu.sse2 == 1);
   CHECK(hyle_cpu_supports_isa(HYLE_ISA_SSE2) == 1);

@@ -190,6 +190,18 @@ int main(void) {
     hyle_huge_region_destroy(NULL);  /* NULL-safe */
   }
 
+  /* ---- diagnostics + named-enum types (FFI discoverability) ---- */
+  {
+    hyle_huge_flags one_flag = HYLE_HUGE_THP_HINT;   /* named enum as a type */
+    hyle_mem_numa_node any = HYLE_MEM_NUMA_ANY;
+    uint32_t flags = (uint32_t)one_flag | (uint32_t)HYLE_HUGE_PREFAULT;
+    hyle_huge_region_o* hr =
+        hyle_huge_region_open(2u * 1024u * 1024u, flags, (int)any);
+    CHECK(hr != NULL);
+    hyle_huge_region_destroy(hr);
+    CHECK(hyle_mem_last_error() != NULL);  /* always a valid C string ("") */
+  }
+
   /* ---- process-wide policy: callable, no crash (effect is global/soft) ---- */
   hyle_enable_allocator_numa(0);
   CHECK(hyle_reserve_huge_1g_pages(0, HYLE_MEM_NUMA_ANY, 0) == 1);  /* pages==0 ok */

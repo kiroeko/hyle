@@ -209,17 +209,21 @@ HYLE_MEM_C_API hyle_allocator hyle_arena_as_allocator(hyle_arena_o* a);
 /* HugeRegion — huge-page / NUMA-placed span                                   */
 /* ========================================================================== */
 
-/* HugeFlags bits (soft hints; correctness never depends on them). */
-enum {
+/* HugeFlags bits (soft hints; correctness never depends on them). Named enum so
+ * cross-language FFI tools surface the flags as typed constants. */
+typedef enum hyle_huge_flags {
   HYLE_HUGE_NONE = 0,
   HYLE_HUGE_THP_HINT = 1u << 0,       /* MADV_HUGEPAGE hint (Linux) */
   HYLE_HUGE_PREFAULT = 1u << 1,       /* touch every page up front */
   HYLE_HUGE_NUMA_BIND = 1u << 2,      /* hard-bind to node (else preferred) */
   HYLE_HUGE_NUMA_INTERLEAVE = 1u << 3 /* stripe across all nodes (ignores node) */
-};
+} hyle_huge_flags;
 
-/* No NUMA constraint (matches HYLE_NUMA_ANY in c/platform.h). */
-#define HYLE_MEM_NUMA_ANY (-1)
+/* No NUMA constraint (matches HYLE_NUMA_ANY in c/platform.h). Named enum for the
+ * same FFI discoverability reason. */
+typedef enum hyle_mem_numa_node {
+  HYLE_MEM_NUMA_ANY = -1
+} hyle_mem_numa_node;
 
 typedef struct hyle_huge_region_o hyle_huge_region_o;
 
@@ -238,6 +242,17 @@ HYLE_MEM_C_API void hyle_huge_region_destroy(hyle_huge_region_o* r);
 HYLE_MEM_C_API int hyle_huge_region_valid(const hyle_huge_region_o* r);
 HYLE_MEM_C_API void* hyle_huge_region_data(hyle_huge_region_o* r);
 HYLE_MEM_C_API size_t hyle_huge_region_size(const hyle_huge_region_o* r);
+
+/* ========================================================================== */
+/* Diagnostics                                                                 */
+/* ========================================================================== */
+
+/* Last error from a mem VM-backed op (HugeRegion open / huge-page reservation)
+ * on THIS thread, or "" if none. Forwards platform's thread-local vm_last_error
+ * so a caller binding only hyle/c/mem.h can read why a hyle_huge_region_open*
+ * returned NULL without also binding hyle/c/platform.h. Valid until the next
+ * failing VM call on the same thread. */
+HYLE_MEM_C_API const char* hyle_mem_last_error(void);
 
 /* ========================================================================== */
 /* Process-wide mimalloc policy (free functions)                               */

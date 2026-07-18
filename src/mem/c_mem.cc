@@ -20,6 +20,7 @@
 #include "hyle/mem/hugepage.h"
 #include "hyle/mem/memory_arena.h"
 #include "hyle/mem/stack_allocator.h"
+#include "hyle/platform/virtual_memory.h"  // vm_last_error() for hyle_mem_last_error
 
 namespace {
 
@@ -283,6 +284,10 @@ void* hyle_huge_region_data(hyle_huge_region_o* r) {
 size_t hyle_huge_region_size(const hyle_huge_region_o* r) {
   return r ? r->region.size() : 0;
 }
+
+/* ---- diagnostics ----------------------------------------------------------- */
+
+const char* hyle_mem_last_error(void) { return hyle::platform::vm_last_error(); }
 
 /* ---- process-wide policy --------------------------------------------------- */
 
