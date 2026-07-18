@@ -265,3 +265,16 @@ TEST(Arena, PerThreadArenasNoOverlap) {
   for (auto& x : args) for (void* q : x.got) { uniq.insert(q); ++total; }
   EXPECT_EQ(uniq.size(), total) << "per-thread arenas overlapped";
 }
+
+// Arena::allocate had NO alignment guard before #1 (alignment 0 or a non-power-of-2
+// -> wild pointer / silent misalignment). #1 added is_pow2(), which fail-fast traps
+// alignment 0. Locks in #1 for Arena::allocate.
+TEST(ArenaDeathTest, ZeroAlignmentTraps) {
+  EXPECT_DEATH(
+      {
+        MemoryArena pool(system_allocator(), 4096, 2);
+        Arena a(&pool);
+        (void)a.allocate(16, 0);
+      },
+      ".*");
+}

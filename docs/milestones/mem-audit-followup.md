@@ -40,12 +40,12 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 - **[已做]** C 测试(c_mem_test.c):grow/指针稳定/free-list 复用/reset trim/invalid backing+last-error/typed 宏。
 - 注:grow OOM 仍 abort(留 #2 档 B 统一 graceful);**c-mem.md §3.8 "泛型不可达"误述 → ⑤文档同步修**。
 
-### #4 测试补齐 [部分:arena 耗尽 C 测试已补;其余未做]
-- **[已补]** `hyle_arena_create` 池耗尽 → NULL + 非空 last-error 的 C 测试(c_mem_test.c,配合 #2 档 A)。用真实单块 pool 借空触发,非 mock 分配器。
-- **mock 失败分配器**(backing alloc 返 nullptr):验 #2 **档 B** 的 slab-OOM last-error/NULL 路径。全仓 tests/mem **目前无任何失败分配器**,OOM 路径零覆盖。
-- `alignment==0` 的 death test(`EXPECT_DEATH`):锁死 #1 修复。
-- GrowablePool 的 C 测试(配合 #3)。
-- (增强,非缺陷)线程扩展曲线 bench(现 bench 写死 8 线程)、耗尽×并发紧张池。
+### #4 测试补齐 [alignment death + GrowablePool C 测试 + arena 耗尽已补;mock 失败分配器归档 B]
+- **[已补]** `hyle_arena_create` 池耗尽 → NULL + 非空 last-error 的 C 测试(c_mem_test.c,配合 #2 档 A)。
+- **[已补]** `alignment==0` death test:`StackAllocatorDeathTest.ZeroAlignmentTraps` + `ArenaDeathTest.ZeroAlignmentTraps`(EXPECT_DEATH),锁死 #1。**已验 Release 下 HYLE_FATAL_ASSERT 确实 trap**(96 测试含 2 death 全绿)。
+- **[已补]** GrowablePool 的 C 测试(配合 #3):grow/指针稳定/free-list 复用/reset trim/invalid backing last-error/typed 宏。
+- **[归档 B]** **mock 失败分配器**(backing alloc 返 nullptr)验 slab-OOM NULL+last-error——依赖档 B 的 graceful(现 slab-OOM 仍 abort),和档 B 一起做。tests/mem 目前无失败分配器。
+- (增强,非缺陷)线程扩展曲线 bench(现写死 8 线程)、耗尽×并发紧张池。
 
 ### #5 hardening [全部已做]
 - **[#5b 已做]** `MemoryArena` ctor(memory_arena.h:48-54)加溢出 guard:round-up `block_size_ + (alignment_-1)` 不 wrap + slab `stride_ * count_` 不超 size_t;超大 block_size/count 从"静默 under-alloc"→ fail-fast(契约违反)。

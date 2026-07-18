@@ -157,3 +157,15 @@ TEST(StackAllocator, AsAllocatorInjectsAndReallocCopies) {
   for (int i = 0; i < 32; ++i) EXPECT_EQ(q[i], static_cast<unsigned char>(i));
   a.deallocate(q, 64, 8);  // no-op (bulk free via reset); must not crash
 }
+
+// alignment 0 slipped the old `(a & (a-1)) == 0` guard (0 & SIZE_MAX == 0 passed)
+// and yielded a wild pointer; #1 switched to is_pow2(), which fail-fast traps it.
+// Locks in #1 for StackAllocator::allocate.
+TEST(StackAllocatorDeathTest, ZeroAlignmentTraps) {
+  EXPECT_DEATH(
+      {
+        StackAllocator sa(system_allocator(), 4096);
+        (void)sa.allocate(16, 0);
+      },
+      ".*");
+}
