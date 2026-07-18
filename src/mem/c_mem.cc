@@ -139,7 +139,11 @@ hyle_memory_arena_o* hyle_memory_arena_create(hyle_allocator backing,
                                               size_t block_size,
                                               uint32_t block_count,
                                               size_t alignment) {
-  if (!valid_backing(backing)) return nullptr;
+  if (!valid_backing(backing)) {
+    hyle::platform::vm_set_last_error(
+        "hyle_memory_arena_create: invalid backing (a fn pointer is null)");
+    return nullptr;
+  }
   return new (std::nothrow)
       hyle_memory_arena_o(backing, block_size, block_count, norm_align(alignment));
 }
@@ -178,7 +182,11 @@ hyle_stack_allocator_o* hyle_stack_allocator_create(hyle_allocator backing,
   // valid_backing guards a null fn pointer (a raw segfault in the trampoline, no
   // clean assert). size==0 is a caller-contract violation -> the C++ ctor's
   // HYLE_FATAL_ASSERT fires (fail-fast, same as a C++ caller); not masked here.
-  if (!valid_backing(backing)) return nullptr;
+  if (!valid_backing(backing)) {
+    hyle::platform::vm_set_last_error(
+        "hyle_stack_allocator_create: invalid backing (a fn pointer is null)");
+    return nullptr;
+  }
   return new (std::nothrow) hyle_stack_allocator_o(backing, size);
 }
 
@@ -222,7 +230,17 @@ hyle_allocator hyle_stack_allocator_as_allocator(hyle_stack_allocator_o* s) {
 
 hyle_arena_o* hyle_arena_create(hyle_memory_arena_o* pool) {
   if (!pool) return nullptr;
-  return new (std::nothrow) hyle_arena_o(&pool->arena);
+  auto* a = new (std::nothrow) hyle_arena_o(&pool->arena);
+  if (a == nullptr) return nullptr;  // wrapper OOM
+  // Pool exhausted (no free block) is a graceful resource failure, not a contract
+  // violation: return NULL + set last-error so an FFI caller has a defensive path
+  // (was a fatal abort in the C++ Arena ctor; see mem-audit-followup #2).
+  if (!a->arena.valid()) {
+    delete a;
+    hyle::platform::vm_set_last_error("hyle_arena_create: pool exhausted (no free block)");
+    return nullptr;
+  }
+  return a;
 }
 
 void hyle_arena_destroy(hyle_arena_o* a) { delete a; }

@@ -315,10 +315,17 @@ class Arena {
       : pool_(pool),
         block_(static_cast<std::byte*>(pool->allocate())),
         block_size_(pool->block_size()) {
-    HYLE_FATAL_ASSERT(block_ != nullptr);  // pool exhausted
+    // Pool exhausted -> invalid (block_ == nullptr); caller must check valid().
+    // Per c-abi-authoring-guide 铁律 3, a resource failure (no free block) returns
+    // gracefully -- it is not a contract violation, so no fatal assert here. The
+    // dtor's pool_->deallocate(nullptr) is a documented no-op, so invalid is safe.
     cur_ = block_;
-    end_ = block_ + block_size_;
+    end_ = block_ != nullptr ? block_ + block_size_ : nullptr;
   }
+
+  // False iff the pool was exhausted at construction. An invalid Arena must not
+  // be used (allocate/reset are UB on it); the C ABI checks this and returns NULL.
+  bool valid() const noexcept { return block_ != nullptr; }
 
   ~Arena() { pool_->deallocate(block_); }
 

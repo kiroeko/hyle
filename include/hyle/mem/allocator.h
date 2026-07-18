@@ -55,7 +55,12 @@ class Allocator {
   Allocator(AllocFn alloc, FreeFn free, ReallocFn realloc, void* state) noexcept
       : alloc_fn_(alloc), free_fn_(free), realloc_fn_(realloc), state_(state) {}
 
-  bool valid() const noexcept { return alloc_fn_ != nullptr; }
+  // Complete vtable only (all three fn pointers). A partial/default-constructed
+  // Allocator is invalid -- checking all three (not just alloc) avoids a null
+  // deref in deallocate/reallocate on a hand-built partial vtable (followup #5).
+  bool valid() const noexcept {
+    return alloc_fn_ != nullptr && free_fn_ != nullptr && realloc_fn_ != nullptr;
+  }
 
   // These are logically const: they dispatch through the fn pointers without mutating the
   // handle itself (so allocating from a `const Allocator&` is valid). Each forwards to the
