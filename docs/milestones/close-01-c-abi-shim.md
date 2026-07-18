@@ -7,7 +7,7 @@
 | **Tier** | 边界 |
 | **LOC 估** | 2-3k |
 | **骨架?** | 否 |
-| **状态** | 🔶 **部分落地**：error C-ABI 样板 ✅（2026-07-17）；全模块 shim / 跨编译器 / FFI 冒烟仍待 |
+| **状态** | 🔶 **部分落地**：error + platform + mem C-ABI ✅（2026-07-17）；simd shim / 跨编译器 / FFI 冒烟仍待 |
 
 > **本文件的目的**：把"发布后用户必须用稳定 C ABI"这件事**白纸黑字钉死**，避免后面忘了或被"反正 C++ 头能用"糊弄过去。实现细节临到开工再细化，但**产品铁律 + 验收门槛现在就定**。
 
@@ -33,7 +33,8 @@
 - [x] 每个对外模块封一层 `include/hyle/c/<mod>.h`（或等价单独命名空间），**纯 C、可被 C 编译器 include**，与内部 C++ 头物理隔离。**目录约定已坐实**：`include/hyle/c/` 起手。
 - [x] **样板 error**（2026-07-17）：`include/hyle/c/error.h` + 文档 [`c-error.md`](../guide/c-error.md)。
 - [x] **样板 platform**（2026-07-17）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。面：wait/Parker、Thread（`hyle_status` 错误）、DynLib open/get/current、VM+guarded region、fs/env/iterate、cpu 子集、`hyle_platform_api` 表。文档：[`c-platform.md`](../guide/c-platform.md)。Win MSVC 真过。
-- [ ] 其余模块：`mem` Allocator / simd / …
+- [x] **样板 mem**（2026-07-17）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C `hyle_mem_c_test`。面：`hyle_allocator` vtable（3 fn + state，桥接显式构造 `mem::Allocator` 不 reinterpret）、`hyle_system_allocator` + usable/good size、MemoryArena / StackAllocator / Arena / HugeRegion 不透明句柄、进程级 hugepage/NUMA 策略、`hyle_mem_api` 表 + 版本门。**有意仅 C++**：模板池（ObjectPool/GrowablePool/pmr）、有状态调试类（AllocStats/LeakTracker/StatsAllocator）、Allocator typed 层。文档：[`c-mem.md`](../guide/c-mem.md)。Win MSVC + WSL GCC-14 + mac arm64 三平台真过（C 测 all passed + C++ mem 94/94 无回归）。
+- [ ] 其余模块：`simd` / …
 - [ ] SIMD 是首批语义样板之一：新增 `include/hyle/c/simd.h`；add/dot/math/scan/dtype/sort/
       bitpack 等无状态接口只用 pointer/count/POD，随机数状态使用
       `hyle_simd_random_o` make/destroy/fill，不冻结 C++ `RandomState` 布局。
