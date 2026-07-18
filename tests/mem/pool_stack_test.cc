@@ -134,3 +134,26 @@ TEST(StackAllocator, OverflowReturnsNull) {
   EXPECT_EQ(sa.allocate(100, 1), nullptr);  // won't fit -> null, no heap fallback
   EXPECT_NE(sa.allocate(28, 1), nullptr);   // exact remainder still usable
 }
+
+TEST(StackAllocator, RemainingTracksCursor) {
+  StackAllocator sa(system_allocator(), 256);
+  EXPECT_EQ(sa.remaining(), 256u);
+  (void)sa.allocate(64, 1);
+  EXPECT_EQ(sa.remaining(), 192u);
+  sa.reset();
+  EXPECT_EQ(sa.remaining(), 256u);
+}
+
+TEST(StackAllocator, AsAllocatorInjectsAndReallocCopies) {
+  StackAllocator sa(system_allocator(), 4096);
+  hyle::mem::Allocator a = sa.as_allocator();
+  ASSERT_TRUE(a.valid());
+  auto* p = static_cast<unsigned char*>(a.allocate(32, 8));  // bump from the slab
+  ASSERT_NE(p, nullptr);
+  for (int i = 0; i < 32; ++i) p[i] = static_cast<unsigned char>(i);
+  // realloc bumps a fresh slice + copies old bytes (a stack can't grow in place)
+  auto* q = static_cast<unsigned char*>(a.reallocate(p, 32, 64, 8));
+  ASSERT_NE(q, nullptr);
+  for (int i = 0; i < 32; ++i) EXPECT_EQ(q[i], static_cast<unsigned char>(i));
+  a.deallocate(q, 64, 8);  // no-op (bulk free via reset); must not crash
+}

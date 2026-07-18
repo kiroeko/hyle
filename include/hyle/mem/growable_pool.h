@@ -40,7 +40,9 @@ template <class T>
 class GrowablePool {
  public:
   explicit GrowablePool(Allocator alloc, std::uint32_t initial_slots = 64) noexcept
-      : alloc_(alloc), next_block_slots_(initial_slots < 1 ? 1 : initial_slots) {
+      : alloc_(alloc),
+        next_block_slots_(initial_slots < 1 ? 1 : initial_slots),
+        initial_slots_(initial_slots < 1 ? 1 : initial_slots) {
     HYLE_FATAL_ASSERT(alloc_.valid());
   }
 
@@ -83,6 +85,30 @@ class GrowablePool {
 
   // Number of live (created, not yet destroyed) objects.
   std::size_t live() const noexcept { return live_; }
+
+  // Return ALL pooled memory to the allocator (the pool's trim/shrink). Contract:
+  // nothing may be live (live()==0) -- freed slots don't record which block they
+  // came from (the free-list is intrusive and block-agnostic), so a partial trim
+  // can't tell which blocks are fully idle. The clean, cheap point to reclaim is
+  // "everything returned": a long-lived pool that finished a batch calls clear()
+  // to hand memory back instead of holding it until destruction. After clear() the
+  // pool is empty and grows again from the initial block size on the next create().
+  // (mimalloc/jemalloc trim/purge do incremental page return; here the per-block
+  // liveness needed for that isn't tracked -- clear() is the whole-pool equivalent.)
+  void clear() noexcept {
+    HYLE_FATAL_ASSERT(live_ == 0);  // trimming with live objects would UAF them
+    Block* b = blocks_;
+    while (b != nullptr) {
+      Block* next = b->next;
+      alloc_.deallocate(b, b->bytes, kAlign);
+      b = next;
+    }
+    blocks_ = nullptr;
+    free_ = nullptr;
+    cur_ = end_ = nullptr;
+    // Next growth restarts from the initial size (bytes were handed back).
+    next_block_slots_ = initial_slots_;
+  }
 
  private:
   // A slot is EITHER a free-list link OR (when live) holds a T. alignas(T) keeps
@@ -145,6 +171,7 @@ class GrowablePool {
     cur_ = o.cur_;
     end_ = o.end_;
     next_block_slots_ = o.next_block_slots_;
+    initial_slots_ = o.initial_slots_;
     live_ = o.live_;
     o.blocks_ = nullptr;
     o.free_ = nullptr;
@@ -158,6 +185,7 @@ class GrowablePool {
   Slot* cur_ = nullptr;      // bump cursor within the current block
   Slot* end_ = nullptr;      // end of the current block's slots
   std::uint32_t next_block_slots_;  // slots for the next block (doubles)
+  std::uint32_t initial_slots_;     // first-block size, restored by clear()
   std::size_t live_ = 0;
 };
 

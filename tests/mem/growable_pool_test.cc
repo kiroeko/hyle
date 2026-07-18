@@ -5,10 +5,13 @@
 #include <atomic>
 #include <unordered_set>
 #include <utility>
+#include <vector>
 
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/stats.h"
 
 using hyle::mem::GrowablePool;
+using hyle::mem::StatsAllocator;
 using hyle::mem::system_allocator;
 
 TEST(GrowablePool, CreateDestroyRoundTrip) {
@@ -96,4 +99,25 @@ TEST(GrowablePool, InterleavedChurn) {
   }
   for (auto* p : live) pool.destroy(p);
   EXPECT_EQ(pool.live(), 0u);
+}
+
+TEST(GrowablePool, ClearReclaimsAndReusable) {
+  StatsAllocator sa(system_allocator());
+  auto backing = sa.get();
+  // create N (forces geometric growth), destroy all, clear -> blocks handed back.
+  GrowablePool<std::uint64_t> pool(backing, 16);
+  std::vector<std::uint64_t*> ps;
+  for (int i = 0; i < 500; ++i) ps.push_back(pool.create(i));
+  const auto after_grow = sa.snapshot().live_bytes;
+  EXPECT_GT(after_grow, 0u);              // blocks are held
+  for (auto* p : ps) pool.destroy(p);
+  EXPECT_EQ(pool.live(), 0u);
+  pool.clear();                            // hand every block back to the allocator
+  EXPECT_EQ(sa.snapshot().live_bytes, 0u); // pool holds nothing now
+  // Still usable after clear (grows again from the initial size).
+  auto* q = pool.create(42);
+  ASSERT_NE(q, nullptr);
+  EXPECT_EQ(*q, 42u);
+  EXPECT_EQ(pool.live(), 1u);
+  pool.destroy(q);
 }

@@ -69,6 +69,14 @@ Allocator system_allocator() noexcept {
   return Allocator(&system_alloc, &system_free, &system_realloc, nullptr);
 }
 
+std::size_t system_usable_size(const void* ptr) noexcept {
+  return ptr != nullptr ? mi_usable_size(ptr) : 0;
+}
+
+std::size_t system_good_size(std::size_t size) noexcept {
+  return size != 0 ? mi_good_size(size) : 0;
+}
+
 void enable_allocator_hugepages(AllocatorHugepagePolicy policy) noexcept {
   // Programmatic stand-in for MIMALLOC_ALLOW_THP / MIMALLOC_ALLOW_LARGE_OS_PAGES.
   // Call early; mimalloc reads options on first OS alloc. Safe if called later

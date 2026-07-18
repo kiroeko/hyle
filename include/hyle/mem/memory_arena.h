@@ -148,6 +148,25 @@ class MemoryArena {
     push_shard(shard_of(idx), idx);
   }
 
+  // Return EVERY block to the free pool in one shot (rebuild each shard's free
+  // list to its full contiguous range). O(count). Contract: NO block may be live
+  // -- reset() while allocations are outstanding is a use-after-free waiting to
+  // happen (same rule as Arena::reset). Single-threaded w.r.t. allocate/deallocate:
+  // callers must quiesce concurrent access first (it stores relaxed, no CAS).
+  void reset() noexcept {
+    for (std::uint32_t s = 0; s < num_shards_; ++s) {
+      std::uint32_t lo = s * per_;
+      std::uint32_t hi = (s + 1 == num_shards_) ? count_ : lo + per_;
+      for (std::uint32_t i = lo; i < hi; ++i) {
+        next_[i].store(i + 1 < hi ? i + 1 : kNull, std::memory_order_relaxed);
+      }
+      // Bump the version so any stale packed head observed by a racing thread
+      // (there must be none per the contract, but stay ABA-sound) can't succeed.
+      std::uint32_t ver = ver_of(heads_[s].h.load(std::memory_order_relaxed)) + 1;
+      heads_[s].h.store(pack(lo, ver), std::memory_order_release);
+    }
+  }
+
   std::size_t block_size() const noexcept { return block_size_; }
   std::uint32_t capacity() const noexcept { return count_; }
 
@@ -323,6 +342,10 @@ class Arena {
 
   std::size_t block_size() const noexcept { return block_size_; }
   std::size_t used() const noexcept { return static_cast<std::size_t>(cur_ - block_); }
+  // Bytes left before the block is full (a max-aligned request up to this fits).
+  std::size_t remaining() const noexcept {
+    return static_cast<std::size_t>(end_ - cur_);
+  }
 
   // Adapt this Arena to the Allocator vtable (split): allocate -> bump, deallocate ->
   // no-op (the arena frees in bulk on destruction), realloc -> bump a fresh slice + copy

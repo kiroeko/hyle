@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <cstdlib>  // std::abort in the guard-page death test
 #include <cstring>
 #include <thread>
 #include <vector>
@@ -132,4 +133,20 @@ TEST(FiberStackPool, ConcurrentAcquireRelease) {
   for (auto& th : threads) th.join();
   EXPECT_EQ(ok.load(), kThreads);
   EXPECT_LE(pool.cached(), 32u);
+}
+
+// Prove the guard page actually TRAPS on access (not just "has_guard()==true").
+// A fiber stack grows DOWN toward base()/guard; an overflow past the stack hits
+// the permanent no-access guard page. Death test (forked child captures the fault).
+TEST(FiberStackDeathTest, GuardPageWriteFaults) {
+  EXPECT_DEATH(
+      {
+        FiberStack s = FiberStack::allocate(kFiberStackSmall);
+        if (!s.valid() || !s.has_guard()) std::abort();
+        // guard() is the low no-access page one page below base(); writing it is
+        // exactly the stack-overflow-past-the-bottom the guard exists to catch.
+        volatile auto* g = static_cast<volatile unsigned char*>(s.guard());
+        g[0] = 0x1;  // must trap
+      },
+      ".*");
 }

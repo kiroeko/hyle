@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>  // std::memcpy for as_allocator()'s realloc
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
@@ -70,8 +71,40 @@ class StackAllocator {
 
   std::size_t used() const noexcept { return static_cast<std::size_t>(cur_ - base_); }
   std::size_t capacity() const noexcept { return size_; }
+  // Bytes still available from the current cursor (a max-aligned request of this
+  // size or less is guaranteed to fit; a stronger alignment may consume padding).
+  std::size_t remaining() const noexcept {
+    return static_cast<std::size_t>(end_ - cur_);
+  }
+
+  // Adapt to the Allocator vtable so a StackAllocator can be injected downstream
+  // (like Arena/MemoryArena): allocate -> bump, deallocate -> no-op (LIFO frees in
+  // bulk via reset()/rewind()), realloc -> bump a fresh slice + copy (can't grow in
+  // place). One StackAllocator is single-owner, so the vtable is single-threaded too.
+  Allocator as_allocator() noexcept {
+    return Allocator(&stack_alloc, &stack_free, &stack_realloc, this);
+  }
 
  private:
+  static void* stack_alloc(void* state, std::size_t size,
+                           std::size_t alignment) noexcept {
+    return static_cast<StackAllocator*>(state)->allocate(size, alignment);
+  }
+  static void stack_free(void* /*state*/, void* /*ptr*/, std::size_t /*size*/,
+                         std::size_t /*alignment*/) noexcept {
+    // no-op: a stack allocator frees in bulk via reset()/rewind().
+  }
+  static void* stack_realloc(void* state, void* ptr, std::size_t old_size,
+                             std::size_t new_size, std::size_t alignment) noexcept {
+    auto* self = static_cast<StackAllocator*>(state);
+    if (new_size == 0) return nullptr;
+    void* p = self->allocate(new_size, alignment);
+    if (ptr != nullptr && p != nullptr && old_size != 0) {
+      std::memcpy(p, ptr, old_size < new_size ? old_size : new_size);
+    }
+    return p;
+  }
+
   Allocator alloc_;
   std::byte* base_ = nullptr;
   std::size_t size_;

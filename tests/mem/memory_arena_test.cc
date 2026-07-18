@@ -137,6 +137,54 @@ TEST(MemoryArena, ConcurrentAllocFreeNoOverlap) {
   for (void* p : all) pool.deallocate(p);
 }
 
+// reset() returns every block at once: exhaust the pool, reset (no live blocks),
+// then the full capacity must be allocatable again.
+TEST(MemoryArena, ResetReturnsAllBlocks) {
+  MemoryArena pool(system_allocator(), 64, 16);
+  std::vector<void*> first;
+  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate())
+    first.push_back(p);
+  EXPECT_EQ(first.size(), 16u);      // drained the whole pool
+  // DON'T deallocate -- reset() reclaims everything in one shot (contract: no
+  // live block still in USE; the memory itself is reclaimed wholesale).
+  pool.reset();
+  std::size_t again = 0;
+  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++again;
+  EXPECT_EQ(again, 16u);             // full capacity available after reset
+}
+
+// A block allocated on one thread and freed on ANOTHER must route back to its
+// owning shard (free is address-routed, not home-shard) and stay reusable. This
+// is the work-stealing pattern (fiber stack allocated on core A, freed on core B).
+TEST(MemoryArena, CrossThreadFreeRoutesBack) {
+  MemoryArena pool(system_allocator(), 128, 64);
+  constexpr int kN = 64;
+  std::vector<void*> ptrs(kN, nullptr);
+  struct Ctx { MemoryArena* pool; std::vector<void*>* ptrs; };
+  Ctx c{&pool, &ptrs};
+  // Thread A allocates all blocks.
+  auto alloc_t = hyle::platform::Thread::spawn(
+      [](void* p) {
+        auto* x = static_cast<Ctx*>(p);
+        for (auto& s : *x->ptrs) s = x->pool->allocate();
+      }, &c);
+  ASSERT_TRUE(alloc_t.has_value());
+  std::move(*alloc_t).join();
+  for (void* q : ptrs) ASSERT_NE(q, nullptr);
+  // Thread B frees them all (cross-thread, address-routed back to owning shards).
+  auto free_t = hyle::platform::Thread::spawn(
+      [](void* p) {
+        auto* x = static_cast<Ctx*>(p);
+        for (void* q : *x->ptrs) x->pool->deallocate(q);
+      }, &c);
+  ASSERT_TRUE(free_t.has_value());
+  std::move(*free_t).join();
+  // Everything freed -> full capacity allocatable again (no leak, no double-count).
+  std::size_t again = 0;
+  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++again;
+  EXPECT_EQ(again, static_cast<std::size_t>(kN));
+}
+
 // ---- Arena (bump region over one pool block) --------------------------------
 using hyle::mem::Arena;
 

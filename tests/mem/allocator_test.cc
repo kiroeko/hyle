@@ -10,6 +10,8 @@
 using hyle::mem::Allocator;
 using hyle::mem::kDefaultAlignment;
 using hyle::mem::system_allocator;
+using hyle::mem::system_good_size;
+using hyle::mem::system_usable_size;
 
 namespace {
 bool is_aligned(const void* p, std::size_t a) {
@@ -150,4 +152,32 @@ TEST(AllocatorTyped, MakeUniqueAutoDestroys) {
     EXPECT_EQ(g_typed_live.load(), 1);
   }  // unique_ptr deleter destroys through the allocator
   EXPECT_EQ(g_typed_live.load(), 0);
+}
+
+// ---- usable_size / good_size (SystemAllocator only) -------------------------
+
+TEST(SystemSize, UsableSizeAtLeastRequested) {
+  auto a = system_allocator();
+  void* p = a.allocate(100);
+  ASSERT_NE(p, nullptr);
+  std::size_t u = system_usable_size(p);
+  EXPECT_GE(u, 100u);  // usable is never less than requested
+  // The whole usable range is writable (mimalloc rounded up to a size class).
+  std::memset(p, 0xAB, u);
+  EXPECT_EQ(static_cast<unsigned char*>(p)[u - 1], 0xAB);
+  a.deallocate(p, 100);
+  EXPECT_EQ(system_usable_size(nullptr), 0u);  // null -> 0
+}
+
+TEST(SystemSize, GoodSizePreviewMatchesUsable) {
+  // good_size previews the class rounding WITHOUT allocating; it must agree with
+  // the actual usable size of a real allocation of that request.
+  std::size_t g = system_good_size(100);
+  EXPECT_GE(g, 100u);
+  auto a = system_allocator();
+  void* p = a.allocate(100);
+  ASSERT_NE(p, nullptr);
+  EXPECT_EQ(g, system_usable_size(p));  // preview == reality
+  a.deallocate(p, 100);
+  EXPECT_EQ(system_good_size(0), 0u);   // 0 -> 0
 }

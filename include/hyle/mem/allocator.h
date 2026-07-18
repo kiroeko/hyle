@@ -159,4 +159,22 @@ class Allocator {
 // swaps mimalloc in behind this same handle with zero caller changes.
 HYLE_MEM_API Allocator system_allocator() noexcept;
 
+// ---- usable-size queries (SystemAllocator only) -----------------------------
+// HYLE's Allocator is a SIZED-FREE model (deallocate carries the size, like Rust
+// GlobalAlloc / C++17 sized delete / jemalloc sdallocx) -- faster, no per-block
+// metadata forced on every backing. So there is no vtable usable_size(): most
+// backings (arena/pool/stack) don't store per-pointer size. These two queries are
+// SPECIFIC to the mimalloc-backed system_allocator(), where the backing DOES know
+// the true physical block size (mimalloc rounds a request up to a size class).
+
+// Actual usable bytes of a block from system_allocator() (>= the requested size;
+// the extra is free to use, e.g. grow-in-place). ptr must be a live system_
+// allocator block. mimalloc mi_usable_size.
+HYLE_MEM_API std::size_t system_usable_size(const void* ptr) noexcept;
+
+// The usable size system_allocator() WOULD return for a request of `size`, WITHOUT
+// allocating (size-class rounding preview -- jemalloc nallocx). Lets a caller size
+// a buffer to the class boundary up front and avoid a near-immediate realloc.
+HYLE_MEM_API std::size_t system_good_size(std::size_t size) noexcept;
+
 }  // namespace hyle::mem
