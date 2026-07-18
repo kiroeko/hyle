@@ -133,6 +133,12 @@ TEST(Thread, DefaultConstructedNotJoinable) {
   EXPECT_FALSE(t.joinable());
 }
 
+TEST(Thread, NullEntryIsRejected) {
+  auto r = Thread::spawn(nullptr, nullptr);
+  ASSERT_FALSE(r.has_value());
+  EXPECT_TRUE(r.error().IsInvalidArgument());
+}
+
 TEST(Thread, SpawnWithStackSizeRuns) {
   // Contract: stack_size is honored by the OS attrs path and does not prevent
   // the thread from running. We do not probe the actual stack limit.

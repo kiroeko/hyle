@@ -1,6 +1,7 @@
 #include "hyle/platform/thread.h"
 
 #include <cstring>
+#include <new>
 #include <type_traits>
 
 #include "hyle/platform.h"
@@ -35,7 +36,8 @@ struct ThreadStart {
 };
 
 ThreadStart* make_start(void (*entry)(void*), void* ctx, const ThreadOpts& o) {
-  auto* s = new ThreadStart{};
+  auto* s = new (std::nothrow) ThreadStart{};
+  if (s == nullptr) return nullptr;
   s->entry = entry;
   s->ctx = ctx;
   s->has_name = !o.name.empty();
@@ -100,7 +102,14 @@ DWORD WINAPI thread_trampoline(LPVOID arg) noexcept {
 }  // namespace
 
 Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
+  if (entry == nullptr) {
+    return std::unexpected(Status::InvalidArgument("thread entry is null"));
+  }
   ThreadStart* s = make_start(entry, ctx, opts);
+  if (s == nullptr) {
+    return std::unexpected(
+        Status::ResourceExhausted("thread start allocation failed"));
+  }
   SIZE_T stack = static_cast<SIZE_T>(opts.stack_size.value_or(0));
   HANDLE h = ::CreateThread(nullptr, stack, &thread_trampoline, s,
                             stack ? STACK_SIZE_PARAM_IS_A_RESERVATION : 0,
@@ -222,12 +231,28 @@ void* thread_trampoline(void* arg) noexcept {
 }  // namespace
 
 Result<Thread> Thread::spawn(void (*entry)(void*), void* ctx, ThreadOpts opts) {
+  if (entry == nullptr) {
+    return std::unexpected(Status::InvalidArgument("thread entry is null"));
+  }
   ThreadStart* s = make_start(entry, ctx, opts);
+  if (s == nullptr) {
+    return std::unexpected(
+        Status::ResourceExhausted("thread start allocation failed"));
+  }
   pthread_attr_t attr;
-  ::pthread_attr_init(&attr);
-  if (opts.stack_size) ::pthread_attr_setstacksize(&attr, *opts.stack_size);
+  int rc = ::pthread_attr_init(&attr);
+  if (rc != 0) {
+    delete s;
+    return std::unexpected(Status::ResourceExhausted("pthread_attr_init failed"));
+  }
+  if (opts.stack_size &&
+      ::pthread_attr_setstacksize(&attr, *opts.stack_size) != 0) {
+    ::pthread_attr_destroy(&attr);
+    delete s;
+    return std::unexpected(Status::InvalidArgument("invalid thread stack size"));
+  }
   pthread_t tid;
-  int rc = ::pthread_create(&tid, &attr, &thread_trampoline, s);
+  rc = ::pthread_create(&tid, &attr, &thread_trampoline, s);
   ::pthread_attr_destroy(&attr);
   if (rc != 0) {
     delete s;

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <new>
 #include <type_traits>
 #include <utility>
@@ -52,6 +53,21 @@ namespace detail {
 // GrowablePool<T> wraps this to run ctor/dtor; the C ABI uses it directly.
 class GrowablePoolCore {
  public:
+  // Validate the runtime shape before entering the fail-fast C++ constructor.
+  // The typed C++ wrapper always supplies sizeof/alignof(T), but the C ABI takes
+  // caller-controlled values and must reject shapes whose stride calculation
+  // would wrap to zero (otherwise grow() could return a one-past-block pointer).
+  static constexpr bool valid_layout(std::size_t slot_size,
+                                     std::size_t slot_align) noexcept {
+    if (slot_size == 0) return false;
+    const std::size_t align =
+        slot_align < alignof(void*) ? alignof(void*) : slot_align;
+    if (!is_pow2(align)) return false;
+    const std::size_t usable =
+        slot_size < sizeof(void*) ? sizeof(void*) : slot_size;
+    return usable <= std::numeric_limits<std::size_t>::max() - (align - 1);
+  }
+
   // `slot_size`/`slot_align` describe one raw slot. The stride is rounded up so a
   // slot can hold EITHER the user object OR the intrusive free-list link (a
   // void*), aligned to at least alignof(void*).
@@ -62,8 +78,7 @@ class GrowablePoolCore {
         next_block_slots_(initial_slots < 1 ? 1 : initial_slots),
         initial_slots_(initial_slots < 1 ? 1 : initial_slots) {
     HYLE_FATAL_ASSERT(alloc_.valid());
-    HYLE_FATAL_ASSERT(slot_size >= 1);
-    HYLE_FATAL_ASSERT(is_pow2(slot_align_));
+    HYLE_FATAL_ASSERT(valid_layout(slot_size, slot_align));
     const std::size_t usable =
         slot_size < sizeof(void*) ? sizeof(void*) : slot_size;
     stride_ = align_up(usable, slot_align_);
@@ -140,7 +155,11 @@ class GrowablePoolCore {
 
   bool grow() noexcept {
     std::uint32_t n = next_block_slots_;
-    std::size_t bytes = header_bytes() + static_cast<std::size_t>(n) * stride_;
+    const std::size_t header = header_bytes();
+    const std::size_t max = std::numeric_limits<std::size_t>::max();
+    if (capacity_ > max - n) return false;
+    if (stride_ > (max - header) / static_cast<std::size_t>(n)) return false;
+    std::size_t bytes = header + static_cast<std::size_t>(n) * stride_;
     void* chunk = alloc_.allocate(bytes, block_align());
     if (chunk == nullptr) return false;  // grow OOM -> acquire returns nullptr (#2 B)
     Block* b = static_cast<Block*>(chunk);

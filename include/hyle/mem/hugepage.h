@@ -87,6 +87,11 @@ class HugeRegion {
     if (bytes == 0) return r;
     const std::size_t aligned = platform::large_page_align_up(bytes);
     const bool interleave = any(flags & HugeFlags::kNumaInterleave);
+    if (!interleave && numa_node != platform::kNumaAny &&
+        (numa_node < 0 ||
+         static_cast<unsigned>(numa_node) >= platform::numa_node_count())) {
+      return r;
+    }
     if (interleave) {
       r.region_ = platform::VmRegion::reserve(aligned);
     } else {
@@ -98,13 +103,23 @@ class HugeRegion {
       return HugeRegion{};
     }
     if (interleave) {
-      (void)platform::vm_bind_numa_interleave(r.region_.data(), r.region_.size());
+      // Interleave and hard bind are requested guarantees, unlike preferred
+      // placement. Do not return a valid region while silently violating them.
+      if (!platform::vm_bind_numa_interleave(r.region_.data(),
+                                             r.region_.size())) {
+        r.region_.release();
+        return HugeRegion{};
+      }
     } else if (numa_node != platform::kNumaAny) {
       const auto pol = any(flags & HugeFlags::kNumaBind)
                            ? platform::NumaPolicy::kBind
                            : platform::NumaPolicy::kPreferred;
-      (void)platform::vm_bind_numa(r.region_.data(), r.region_.size(), numa_node,
-                                   pol);
+      const bool placed = platform::vm_bind_numa(
+          r.region_.data(), r.region_.size(), numa_node, pol);
+      if (!placed && pol == platform::NumaPolicy::kBind) {
+        r.region_.release();
+        return HugeRegion{};
+      }
     }
     if (any(flags & HugeFlags::kThpHint)) {
       (void)platform::vm_advise_hugepage(r.region_.data(), r.region_.size());

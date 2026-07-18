@@ -323,8 +323,15 @@ hyle_growable_pool_o* hyle_growable_pool_create(hyle_allocator backing,
         "hyle_growable_pool_create: invalid backing (a fn pointer is null)");
     return nullptr;
   }
+  const size_t normalized_align = norm_align(slot_align);
+  if (!hyle::mem::detail::GrowablePoolCore::valid_layout(slot_size,
+                                                         normalized_align)) {
+    hyle::platform::vm_set_last_error(
+        "hyle_growable_pool_create: invalid or overflowing slot layout");
+    return nullptr;
+  }
   auto* p = new (std::nothrow) hyle_growable_pool_o(
-      backing, slot_size, norm_align(slot_align), initial_slots);
+      backing, slot_size, normalized_align, initial_slots);
   if (p == nullptr)
     hyle::platform::vm_set_last_error(
         "hyle_growable_pool_create: wrapper allocation failed (out of memory)");

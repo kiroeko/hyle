@@ -229,6 +229,10 @@ int main(void) {
     CHECK(hyle_growable_pool_create(bad, 8, 0, 4) == NULL);
     CHECK(hyle_mem_last_error()[0] != '\0');
 
+    /* Runtime C layout is untrusted: a stride that would wrap must fail at
+       create, not under-allocate and hand out a one-past-block pointer. */
+    CHECK(hyle_growable_pool_create(sys, SIZE_MAX, 16, 1) == NULL);
+    CHECK(hyle_mem_last_error()[0] != '\0');
     /* typed convenience macros (raw slot, user-init) */
     typedef struct { int x; int y; } Pt;
     hyle_growable_pool_o* tp = HYLE_GROWABLE_POOL_CREATE(sys, Pt, 8);

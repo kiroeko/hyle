@@ -1,8 +1,10 @@
 #include <gtest/gtest.h>
 
+#include <climits>
 #include <cstring>
 
 #include "hyle/mem/hugepage.h"
+#include "hyle/platform/numa.h"
 #include "hyle/platform/virtual_memory.h"
 
 using hyle::mem::advise_hugepage_range;
@@ -53,6 +55,17 @@ TEST(HugeRegion, MoveAndReset) {
 
 TEST(HugeRegion, ZeroBytesInvalid) {
   HugeRegion r = HugeRegion::allocate(0);
+  EXPECT_FALSE(r.valid());
+}
+
+TEST(HugeRegion, HardBindRejectsInvalidNode) {
+  const unsigned count = hyle::platform::numa_node_count();
+  ASSERT_LE(count, static_cast<unsigned>(INT_MAX - 100));
+  const int invalid = static_cast<int>(count) + 100;
+  ASSERT_NE(invalid, hyle::platform::kNumaAny);
+  ASSERT_GE(static_cast<unsigned>(invalid), count);
+  HugeRegion r = HugeRegion::allocate(page_size(), HugeFlags::kNumaBind,
+                                      invalid);
   EXPECT_FALSE(r.valid());
 }
 
