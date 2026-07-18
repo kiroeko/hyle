@@ -69,6 +69,10 @@ bool join_path(char* dst, std::size_t cap, const char* a,
 // Close a raw fd/HANDLE. DEFINED in each platform section below (close() vs
 // CloseHandle); DECLARED here so the platform-agnostic OwnedFd tail can call it.
 void close_raw(std::intptr_t raw) noexcept;
+// Raw read/write on an fd/HANDLE (per-OS defs below), declared for the
+// platform-agnostic OwnedFd::read/write tail. Bytes moved, or -1 on error.
+std::int64_t read_raw(std::intptr_t raw, void* buf, std::size_t n) noexcept;
+std::int64_t write_raw(std::intptr_t raw, const void* buf, std::size_t n) noexcept;
 
 }  // namespace
 
@@ -380,7 +384,39 @@ namespace {
 void close_raw(std::intptr_t raw) noexcept {
   if (raw != OwnedFd::kInvalid) CloseHandle(reinterpret_cast<HANDLE>(raw));
 }
+std::int64_t read_raw(std::intptr_t raw, void* buf, std::size_t n) noexcept {
+  if (raw == OwnedFd::kInvalid) return -1;
+  DWORD want = n > 0xFFFFFFFFull ? 0xFFFFFFFFu : static_cast<DWORD>(n);
+  DWORD got = 0;
+  if (!ReadFile(reinterpret_cast<HANDLE>(raw), buf, want, &got, nullptr)) return -1;
+  return static_cast<std::int64_t>(got);
+}
+std::int64_t write_raw(std::intptr_t raw, const void* buf, std::size_t n) noexcept {
+  if (raw == OwnedFd::kInvalid) return -1;
+  DWORD want = n > 0xFFFFFFFFull ? 0xFFFFFFFFu : static_cast<DWORD>(n);
+  DWORD put = 0;
+  if (!WriteFile(reinterpret_cast<HANDLE>(raw), buf, want, &put, nullptr)) return -1;
+  return static_cast<std::int64_t>(put);
+}
 }  // namespace
+
+OwnedFd open_file(const char* path, unsigned flags) noexcept {
+  WidePath wp(path);
+  if (wp.w() == nullptr) return OwnedFd{};
+  DWORD access = 0;
+  if (flags & kOpenRead) access |= GENERIC_READ;
+  if (flags & kOpenWrite) access |= GENERIC_WRITE;
+  DWORD creation;
+  if (flags & kOpenTruncate)
+    creation = (flags & kOpenCreate) ? CREATE_ALWAYS : TRUNCATE_EXISTING;
+  else
+    creation = (flags & kOpenCreate) ? OPEN_ALWAYS : OPEN_EXISTING;
+  HANDLE h = CreateFileW(wp.w(), access, FILE_SHARE_READ | FILE_SHARE_WRITE,
+                         nullptr, creation, FILE_ATTRIBUTE_NORMAL, nullptr);
+  if (h == INVALID_HANDLE_VALUE) return OwnedFd{};
+  if (flags & kOpenAppend) SetFilePointer(h, 0, nullptr, FILE_END);
+  return OwnedFd{reinterpret_cast<std::intptr_t>(h)};
+}
 
 std::uint32_t get_permissions(const char* path) noexcept {
   WidePath wp(path);
@@ -717,7 +753,30 @@ namespace {
 void close_raw(std::intptr_t raw) noexcept {
   if (raw != OwnedFd::kInvalid) ::close(static_cast<int>(raw));
 }
+std::int64_t read_raw(std::intptr_t raw, void* buf, std::size_t n) noexcept {
+  if (raw == OwnedFd::kInvalid) return -1;
+  return static_cast<std::int64_t>(::read(static_cast<int>(raw), buf, n));
+}
+std::int64_t write_raw(std::intptr_t raw, const void* buf, std::size_t n) noexcept {
+  if (raw == OwnedFd::kInvalid) return -1;
+  return static_cast<std::int64_t>(::write(static_cast<int>(raw), buf, n));
+}
 }  // namespace
+
+OwnedFd open_file(const char* path, unsigned flags) noexcept {
+  int f;
+  const bool rd = (flags & kOpenRead) != 0, wr = (flags & kOpenWrite) != 0;
+  if (rd && wr) f = O_RDWR;
+  else if (wr) f = O_WRONLY;
+  else f = O_RDONLY;
+  if (flags & kOpenCreate) f |= O_CREAT;
+  if (flags & kOpenTruncate) f |= O_TRUNC;
+  if (flags & kOpenAppend) f |= O_APPEND;
+  f |= O_CLOEXEC;
+  int fd = (flags & kOpenCreate) ? ::open(path, f, 0644) : ::open(path, f);
+  if (fd < 0) return OwnedFd{};
+  return OwnedFd{static_cast<std::intptr_t>(fd)};
+}
 
 std::uint32_t get_permissions(const char* path) noexcept {
   struct ::stat s;
@@ -852,6 +911,13 @@ OwnedFd& OwnedFd::operator=(OwnedFd&& o) noexcept {
 void OwnedFd::reset() noexcept {
   close_raw(raw_);
   raw_ = kInvalid;
+}
+
+std::int64_t OwnedFd::read(void* buf, std::size_t n) noexcept {
+  return read_raw(raw_, buf, n);
+}
+std::int64_t OwnedFd::write(const void* buf, std::size_t n) noexcept {
+  return write_raw(raw_, buf, n);
 }
 
 bool exists(const char* path) noexcept { return stat(path).exists; }

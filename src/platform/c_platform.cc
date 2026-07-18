@@ -568,6 +568,21 @@ void hyle_fs_close_fd(intptr_t fd) {
   hyle::platform::OwnedFd owned{fd};  // adopts and closes on scope exit
   (void)owned;
 }
+intptr_t hyle_fs_open(const char* path, unsigned flags) {
+  return hyle::platform::open_file(path, flags).release();  // -1 if open failed
+}
+int64_t hyle_fs_read(intptr_t fd, void* buf, size_t n) {
+  hyle::platform::OwnedFd tmp{fd};       // borrow (don't close: caller owns fd)
+  int64_t r = tmp.read(buf, n);
+  tmp.release();
+  return r;
+}
+int64_t hyle_fs_write(intptr_t fd, const void* buf, size_t n) {
+  hyle::platform::OwnedFd tmp{fd};
+  int64_t r = tmp.write(buf, n);
+  tmp.release();
+  return r;
+}
 int hyle_fs_set_env_var(const char* name, const char* value) {
   return name && hyle::platform::set_env_var(name, value) ? 1 : 0;
 }

@@ -63,6 +63,13 @@ class OwnedFd {
   // Close early (also done by the destructor). Safe on an empty OwnedFd.
   HYLE_PLATFORM_API void reset() noexcept;
 
+  // Read up to `n` bytes into `buf`; returns bytes read (0 == EOF), or -1 on
+  // error. A short read is normal, not an error. Invalid fd -> -1.
+  HYLE_PLATFORM_API std::int64_t read(void* buf, std::size_t n) noexcept;
+  // Write `n` bytes from `buf`; returns bytes written (may be short on a full
+  // disk / pipe), or -1 on error. Invalid fd -> -1.
+  HYLE_PLATFORM_API std::int64_t write(const void* buf, std::size_t n) noexcept;
+
  private:
   std::intptr_t raw_ = kInvalid;
 };
@@ -154,6 +161,22 @@ HYLE_PLATFORM_API bool is_symlink(const char* path) noexcept;
 // truncated, 0 if `path` is not a symlink / on error).
 HYLE_PLATFORM_API std::size_t read_symlink(const char* path, char* dst,
                                            std::size_t cap) noexcept;
+
+// ---- open / read / write ----------------------------------------------------
+// Flags for open_file (OR them). kRead/kWrite pick access; kCreate makes a
+// missing file; kTruncate empties an existing one; kAppend puts writes at EOF.
+enum OpenFlags {
+  kOpenRead = 1u << 0,
+  kOpenWrite = 1u << 1,
+  kOpenCreate = 1u << 2,    // create if absent (needs kOpenWrite)
+  kOpenTruncate = 1u << 3,  // truncate to empty on open (needs kOpenWrite)
+  kOpenAppend = 1u << 4,    // writes go to end-of-file
+};
+
+// Open `path` with `flags` (OpenFlags OR'd). Returns an OwnedFd; !valid() on
+// failure. Wide APIs on Windows (UTF-8 path, no ANSI mis-decode). The general
+// file-I/O primitive the module was missing (read a config without mmap, etc).
+HYLE_PLATFORM_API OwnedFd open_file(const char* path, unsigned flags) noexcept;
 
 // ---- temporary files --------------------------------------------------------
 // Atomically create a uniquely-named file under `dir` (NULL => temp_directory())

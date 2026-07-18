@@ -390,6 +390,20 @@ int main(void) {
     CHECK(hyle_fs_set_readonly(tpath, 0) == 1);
     hyle_fs_close_fd(fd);  /* void; closes the open temp handle */
 
+    /* open_file + fd read/write: write bytes, then read them back via the C fd API. */
+    intptr_t wfd =
+        hyle_fs_open(tpath, HYLE_OPEN_WRITE | HYLE_OPEN_CREATE | HYLE_OPEN_TRUNCATE);
+    CHECK(wfd != -1);
+    const char* payload = "c-abi fd io";
+    CHECK(hyle_fs_write(wfd, payload, 11) == 11);
+    hyle_fs_close_fd(wfd);
+    intptr_t rfd = hyle_fs_open(tpath, HYLE_OPEN_READ);
+    CHECK(rfd != -1);
+    char rbuf[32] = {0};
+    CHECK(hyle_fs_read(rfd, rbuf, sizeof(rbuf)) == 11 && memcmp(rbuf, payload, 11) == 0);
+    hyle_fs_close_fd(rfd);
+    CHECK(hyle_fs_open("/no/such/hyle/path", HYLE_OPEN_READ) == -1);  /* missing -> -1 */
+
     /* mapped file: an empty temp file yields a NULL (zero-length) mapping -- fine;
      * exercise open + destroy-null here. A non-empty map is covered by the C++ test. */
     hyle_mapped_file_o* m = hyle_mapped_file_open(tpath, HYLE_MAP_READ_ONLY, 0, 0);

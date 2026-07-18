@@ -528,6 +528,36 @@ TEST(OwnedFd, MoveAndRelease) {
   remove_file(path);
 }
 
+TEST(OwnedFd, OpenFileWriteThenReadRoundTrip) {
+  char dir[4096];
+  ASSERT_NE(temp_directory(dir, sizeof(dir)), 0u);
+  std::string p = std::string(dir) + "/hyle_openfile_test.txt";
+  const char msg[] = "hello platform io";
+  const std::size_t len = sizeof(msg) - 1;  // exclude NUL
+  {
+    OwnedFd fd = open_file(p.c_str(), kOpenWrite | kOpenCreate | kOpenTruncate);
+    ASSERT_TRUE(fd.valid());
+    EXPECT_EQ(fd.write(msg, len), static_cast<std::int64_t>(len));
+  }
+  {
+    OwnedFd fd = open_file(p.c_str(), kOpenRead);
+    ASSERT_TRUE(fd.valid());
+    char buf[64] = {0};
+    std::int64_t got = fd.read(buf, sizeof(buf));
+    EXPECT_EQ(got, static_cast<std::int64_t>(len));
+    EXPECT_EQ(std::string(buf, got > 0 ? static_cast<std::size_t>(got) : 0),
+              "hello platform io");
+  }
+  // Missing file for read -> invalid; read/write on an empty fd -> -1.
+  EXPECT_FALSE(
+      open_file((std::string(dir) + "/hyle_no_such.txt").c_str(), kOpenRead).valid());
+  OwnedFd empty;
+  char b[4];
+  EXPECT_EQ(empty.read(b, sizeof(b)), static_cast<std::int64_t>(-1));
+  EXPECT_EQ(empty.write(b, sizeof(b)), static_cast<std::int64_t>(-1));
+  remove_file(p.c_str());
+}
+
 // ---- v4: environment write --------------------------------------------------
 
 TEST(FsEnv, SetGetUnsetRoundTrip) {

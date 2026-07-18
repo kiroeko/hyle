@@ -161,7 +161,9 @@ soft 建议，绝不影响正确性。Linux 用 madvise；Windows/macOS 匿名�
 | `hyle_fs_is_symlink(path)` | 自身是否符号链接（不跟随） |
 | `hyle_fs_read_symlink(path, dst, cap)` | buffer-fill；非链接/失败→0 |
 | `hyle_fs_create_temp_file(dir, prefix, dst, cap)` | 原子创建；返回**打开的** fd（`intptr_t`，-1 失败，TOCTOU 安全）；路径写 dst |
-| `hyle_fs_close_fd(fd)` | 关闭 create_temp_file 返回的 fd；-1 安全 |
+| `hyle_fs_open(path, flags)` | 打开文件→fd（`intptr_t`，-1 失败）；`flags`=`HYLE_OPEN_READ/WRITE/CREATE/TRUNCATE/APPEND` OR；宽字符路径；通用文件 I/O（无需 mmap） |
+| `hyle_fs_read(fd, buf, n)` / `hyle_fs_write(fd, buf, n)` | 在 fd 上读/写；返回字节数（读 0=EOF，短读正常），-1 失败 |
+| `hyle_fs_close_fd(fd)` | 关闭 create_temp_file / open 返回的 fd；-1 安全 |
 | `hyle_fs_set_env_var(name, value)` / `unset_env_var(name)` | 进程级；与并发读非线程安全 |
 
 ### 3.5c MappedFile —— 文件内存映射（DLL，v4）

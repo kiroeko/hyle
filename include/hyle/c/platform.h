@@ -343,8 +343,24 @@ HYLE_PLATFORM_C_API size_t hyle_fs_read_symlink(const char* path, char* dst,
 HYLE_PLATFORM_C_API intptr_t hyle_fs_create_temp_file(const char* dir,
                                                       const char* prefix,
                                                       char* dst, size_t cap);
-/* Close a raw fd/HANDLE (from create_temp_file). Safe on -1. */
+/* Close a raw fd/HANDLE (from create_temp_file or open_file). Safe on -1. */
 HYLE_PLATFORM_C_API void hyle_fs_close_fd(intptr_t fd);
+/* open_file flags (OR them): READ/WRITE pick access; CREATE makes a missing file;
+ * TRUNCATE empties it; APPEND puts writes at EOF. */
+enum {
+  HYLE_OPEN_READ = 1u << 0,
+  HYLE_OPEN_WRITE = 1u << 1,
+  HYLE_OPEN_CREATE = 1u << 2,
+  HYLE_OPEN_TRUNCATE = 1u << 3,
+  HYLE_OPEN_APPEND = 1u << 4
+};
+/* Open `path` with `flags` (HYLE_OPEN_* OR'd); returns an OS fd/HANDLE as intptr_t,
+ * or -1 on failure. Close via hyle_fs_close_fd. UTF-8 path (wide APIs on Windows). */
+HYLE_PLATFORM_C_API intptr_t hyle_fs_open(const char* path, unsigned flags);
+/* Read/write on an fd from hyle_fs_open or hyle_fs_create_temp_file. Returns bytes
+ * moved (0 == EOF on read; a short count is normal), or -1 on error. */
+HYLE_PLATFORM_C_API int64_t hyle_fs_read(intptr_t fd, void* buf, size_t n);
+HYLE_PLATFORM_C_API int64_t hyle_fs_write(intptr_t fd, const void* buf, size_t n);
 /* Environment write / unset (process-wide; not thread-safe vs concurrent reads). */
 HYLE_PLATFORM_C_API int hyle_fs_set_env_var(const char* name, const char* value);
 HYLE_PLATFORM_C_API int hyle_fs_unset_env_var(const char* name);
