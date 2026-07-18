@@ -11,12 +11,19 @@
 #  define HYLE_PLATFORM_API HYLE_IMPORT
 #endif
 
-// Dynamic library loading (clay dynlib). Cross-platform dlopen/LoadLibrary, used
-// to load backend/variant DLLs at runtime (conventions §10: one variant = one
-// loadable unit; the CPUID-scored best backend is dlopen'd). RAII over clay's
-// manual open/close: a DynLib closes on destruction, so a forgotten close can't
-// leak the OS handle. Error detail is a thread-local string (no allocator, unlike
-// clay's char*(Allocator*)).
+// Dynamic library loading (clay dynlib). Cross-platform dlopen/LoadLibrary. RAII
+// over clay's manual open/close: a DynLib closes on destruction, so a forgotten
+// close can't leak the OS handle. Error detail is a thread-local string (no
+// allocator, unlike clay's char*(Allocator*)).
+//
+// STATUS (platform-audit followup #21): the original motivation — dlopen the
+// CPUID-scored best SIMD backend as a separate loadable unit (conventions §10) —
+// did NOT materialize. SIMD dispatch is in-process: compile-time variant TUs
+// selected by the cpu_features() runtime table (simd/runtime.cc), no dlopen. So
+// dynlib now stands as (1) a general FFI-embedder primitive — load a host plugin
+// or user-supplied backend at runtime — and (2) groundwork for any future
+// out-of-process backend. Kept because it's a clean, tested platform capability
+// with real FFI use, not because SIMD needs it.
 
 namespace hyle::platform {
 

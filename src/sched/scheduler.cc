@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdio>
 #include <memory>
 #include <mutex>
 #include <vector>
@@ -229,7 +230,16 @@ struct Scheduler::Impl {
       ctxs.push_back(Ctx{this, i});
     }
     for (unsigned i = 0; i < num_workers; ++i) {
-      auto r = platform::Thread::spawn(&Impl::worker_main, &ctxs[i]);
+      // Pin worker i to logical core i (one-to-one when workers <= cores; the
+      // platform layer best-effort-skips an out-of-range pin) and name it for
+      // observability (top/htop, perf). affinity_cpu is honored only at spawn —
+      // there is no post-hoc rebind API. platform-01 D3: sched per-core pinning.
+      platform::ThreadOpts opts;
+      opts.affinity_cpu = i;
+      char wname[16];
+      std::snprintf(wname, sizeof(wname), "hyle-wkr-%u", i);
+      opts.name = wname;  // string_view; spawn() copies it synchronously (make_start)
+      auto r = platform::Thread::spawn(&Impl::worker_main, &ctxs[i], opts);
       HYLE_FATAL_ASSERT(r.has_value());
       threads.push_back(std::move(*r));
     }
