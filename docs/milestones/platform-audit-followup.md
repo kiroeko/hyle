@@ -64,15 +64,15 @@ platform **功能完整、C ABI 接近满分**:8 子系统(wait/cpu/numa/virtual
   - mapped_file 非页对齐 offset + move-assign;thread spawn 失败(EINVAL);VmRegion::adopt C++ 单测;fs copy/rename/change_dir 失败路径。
   - bench:park_timeout / vm_protect / mapped_file 三热路径无 bench。
 
-### P5 下游利用错配 [跟进 — 非 platform 缺陷,是"造了没接上"]
-- **调度器 worker 不绑核/命名**:scheduler.cc:232 `Thread::spawn(&worker_main, &ctxs[i])` 用默认 `ThreadOpts{}`,未设 affinity_cpu/name;而 affinity_cpu(thread.cc:48 接线完好)按 platform-01 D3 是"sched per-core pinning 刚需"。**platform 侧功能就绪,需 sched 侧接上**(spawn 传 affinity_cpu + name);注意当前无"当前线程重绑"API,只能 spawn 时设。
-- **dynlib 动机落空**:设计为 dlopen CPUID 选中的 SIMD 后端(dynlib.h:14-18),但实际派发是进程内 TU + cpu_features 运行时表(runtime.cc),无任何 dlopen。接上或登记为 FFI-only 铺垫。
+### P5 下游利用错配 [✓ 已接上 — #21 fd9ea83]
+- **[✓ 已做] 调度器 worker 绑核/命名**:scheduler.cc worker spawn 传 `affinity_cpu=i`(每 worker 绑一核)+ `name="hyle-wkr-N"`(top/htop/perf 可见)。platform guard 越界 best-effort 跳过;当前无"当前线程重绑"API,只 spawn 时设(足够——worker 生命周期固定)。
+- **[✓ 已登记] dynlib 动机落空**:dynlib.h 头注登记为 FFI-only 铺垫(SIMD 实为进程内 TU + cpu_features 表派发,非 dlopen)。保留因其为干净、已测、有真实 FFI 用途的 platform 能力。
 - 其余仅-C ABI 暴露(thread stack/priority、numa bind/interleave、mapped_file/fs 整套、vm_free_rw)多为面向 FFI 嵌入者的合理超前铺垫,非错配。
 
-### 真缺口 [功能增强 — 非收口必须]
-- fs 无通用文件读写(OwnedFd 无 read/write;读文件只能 mmap)。
-- numa 无"逻辑 CPU→节点"查询(旧 `numa_node_of_cpu` 已删)。
-- cpu 无运行时 cache-line/cache-size、无 P/E 核区分。
+### 真缺口 [✓ 全部补齐]
+- **[✓ 已做 #18 600ea1d]** fs 通用文件读写:open_file + OwnedFd::read/write + C ABI。
+- **[✓ 已做 #19 473053a]** numa 逻辑 CPU→节点查询:numa_node_of_cpu + C ABI。
+- **[✓ 已做 #20 8822a3e]** cpu 运行时 cache-line:cache_line_size + C ABI。〔cache-size L1/L2/L3 分级、P/E 核区分**未做**——边际价值,未纳入本轮;cache-line 是 false-sharing padding 的核心需求,已满足。〕
 
 ### close-02 [搁置]
 用户澄清 close-02 = "继续做 C ABI",暂不作为独立验收门(close-01 已合规,验收 = c-abi-authoring-guide §7 checklist)。
