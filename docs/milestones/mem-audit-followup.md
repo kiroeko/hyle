@@ -30,6 +30,9 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
   - last-error 复用 platform `vm_set_last_error`(`hyle_mem_last_error` 已转发 `vm_last_error`)。
 - **档 B(高风险,建议隔离 worktree 子代理做,或 fresh session)**:`MemoryArena`/`StackAllocator` 构造时 slab-OOM graceful。难点:`MemoryArena` 三次 alloc(slab memory_arena.h:64 / heads :68 / next :71),placement-new 在分配**之后**(:75 heads、:83 next),而 dtor(:103-115)当前**无条件析构 + 零 null-check**。改可失败要重构成三态(未分配 / 已分配未构造 / 已构造)逆序 null-safe 清理——改错即崩溃/UAF/泄漏。场景罕见(slab 通常几KB–MB,真 OOM=进程内存耗尽)。
 
+- **[last-error 覆盖收尾,已做]** 三个 create 的 wrapper OOM(`new(nothrow)` 失败)原先返 NULL 但**没设 last-error**(C 用户会读到上一次的过时串)。已补 `hyle_memory_arena_create`/`hyle_stack_allocator_create`/`hyle_arena_create` 的 wrapper OOM + `arena_create` 的 `pool==NULL`,都设 last-error;mem.h 对应注释同步。现三个 create 的每条 NULL 返回都有原因串。(档 B slab-OOM graceful 落地时再补 "slab allocation failed" 串。)
+- **[可选增强,未做]** `MemoryArena::free_count()`/`has_free()` + `hyle_memory_arena_free_count()` C 导出。上个会话 C 子代理指出 C ABI 无空闲块数查询、无 try_create,FFI 借前无法预检容量。`valid()`+NULL 已够防御,此为额外可观测性 API,非必须。
+
 ### #3 GrowablePool 类型擦除导出 C ABI [未做]
 `GrowablePool<T>` 的 `<T>` 只用于 `sizeof`/`alignof` + 裸槽(`acquire()` 返回未构造 storage,`release()` 不调 `~T`),和 `ObjectPool` 同构 → **能类型擦除**。c-mem.md §3.8 把它归"泛型不可达"是**错误归因**(同样论点对 ObjectPool 也成立,而 ObjectPool 明明擦除导出了)。
 - 重构 `GrowablePool` 为"非模板运行时核心(slot_size / slot_align / initial_cap)+ `GrowablePool<T>` 薄包装",对齐 `MemoryArena`(非模板)↔ `ObjectPool<T>`(包装)架构。stride 用 `align_up(max(sizeof(void*), slot_size), max(alignof(void*), slot_align))` 运行时算。
@@ -42,8 +45,8 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 - GrowablePool 的 C 测试(配合 #3)。
 - (增强,非缺陷)线程扩展曲线 bench(现 bench 写死 8 线程)、耗尽×并发紧张池。
 
-### #5 hardening [#5a 已做 d1f7930;#5b 未做,低危]
-- **[#5b 未做]** `MemoryArena` 的 `block_size` 上界校验,防 `stride * count` 溢出(64位不实际/32位可能)。
+### #5 hardening [全部已做]
+- **[#5b 已做]** `MemoryArena` ctor(memory_arena.h:48-54)加溢出 guard:round-up `block_size_ + (alignment_-1)` 不 wrap + slab `stride_ * count_` 不超 size_t;超大 block_size/count 从"静默 under-alloc"→ fail-fast(契约违反)。
 - **[#5a 已做 d1f7930]** `Allocator::valid()`(allocator.h:58-63)查全三指针(原只查 `alloc_fn`,null free/realloc 会 deref)。
 
 ### 文档同步 [未做]
@@ -59,6 +62,6 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 
 ## 给下个 context 的提示
 - **工具在长 session 偶发污染**(幻觉 Read / Grep 返 "Prj0" 乱码 / TaskUpdate "not found"):改代码前**重读核实**,别信单次可疑输出。
-- **#2 的档 A/B 决策待用户拍板**(上一轮问了,未答)。
+- **用户已拍板"收口 mem = 全做"(2026-07-18)**。批次顺序:①#5b + last-error 覆盖(**已做**,本 session) → ②#3 GrowablePool 擦除 → ③#4 测试补齐 → ④#2 档 B slab-OOM(高风险,隔离 worktree 子代理) → ⑤文档同步 + 三平台复验。纪律:每档编译验证 + 提交,不攒大摊子。
 - 之前已落库:`ad2a05f`(档 B 错误码单一真相源 + UNAUTHENTICATED)、`dec5b36`(thread_spawn_opts + hyle_version + dns/avx512 修复)。
 - 三平台环境细节在 .axiomate memory:`reference_wsl_linux_tsan` / `reference_mac_ssh` / `reference_windows_msvc_build`。

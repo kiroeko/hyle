@@ -45,7 +45,13 @@ class MemoryArena {
     HYLE_FATAL_ASSERT(block_count >= 1 && block_count < kNull);
     HYLE_FATAL_ASSERT(block_size_ >= 1);
     HYLE_FATAL_ASSERT((alignment_ & (alignment_ - 1)) == 0);
+    // Overflow guards (a contract violation -> fail-fast, like block_size==0):
+    // the round-up `block_size_ + (alignment_-1)` must not wrap, and the slab
+    // size `stride_ * count_` must fit in size_t. Real only on 32-bit size_t;
+    // unreachable on 64-bit, but cheap insurance against a silent under-alloc.
+    HYLE_FATAL_ASSERT(block_size_ <= SIZE_MAX - (alignment_ - 1));
     stride_ = (block_size_ + alignment_ - 1) & ~(alignment_ - 1);  // round up
+    HYLE_FATAL_ASSERT(static_cast<std::size_t>(count_) <= SIZE_MAX / stride_);
     // Large slabs: HugeRegion (2MiB align + THP + local NUMA). Completeness of
     // the mem standard surface — not gated on a particular consumer.
     const std::size_t slab_bytes = stride_ * static_cast<std::size_t>(count_);

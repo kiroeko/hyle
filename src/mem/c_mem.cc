@@ -144,8 +144,12 @@ hyle_memory_arena_o* hyle_memory_arena_create(hyle_allocator backing,
         "hyle_memory_arena_create: invalid backing (a fn pointer is null)");
     return nullptr;
   }
-  return new (std::nothrow)
+  auto* a = new (std::nothrow)
       hyle_memory_arena_o(backing, block_size, block_count, norm_align(alignment));
+  if (a == nullptr)
+    hyle::platform::vm_set_last_error(
+        "hyle_memory_arena_create: wrapper allocation failed (out of memory)");
+  return a;
 }
 
 void hyle_memory_arena_destroy(hyle_memory_arena_o* a) { delete a; }
@@ -187,7 +191,11 @@ hyle_stack_allocator_o* hyle_stack_allocator_create(hyle_allocator backing,
         "hyle_stack_allocator_create: invalid backing (a fn pointer is null)");
     return nullptr;
   }
-  return new (std::nothrow) hyle_stack_allocator_o(backing, size);
+  auto* s = new (std::nothrow) hyle_stack_allocator_o(backing, size);
+  if (s == nullptr)
+    hyle::platform::vm_set_last_error(
+        "hyle_stack_allocator_create: wrapper allocation failed (out of memory)");
+  return s;
 }
 
 void hyle_stack_allocator_destroy(hyle_stack_allocator_o* s) { delete s; }
@@ -229,9 +237,16 @@ hyle_allocator hyle_stack_allocator_as_allocator(hyle_stack_allocator_o* s) {
 /* ---- Arena ----------------------------------------------------------------- */
 
 hyle_arena_o* hyle_arena_create(hyle_memory_arena_o* pool) {
-  if (!pool) return nullptr;
+  if (!pool) {
+    hyle::platform::vm_set_last_error("hyle_arena_create: pool is NULL");
+    return nullptr;
+  }
   auto* a = new (std::nothrow) hyle_arena_o(&pool->arena);
-  if (a == nullptr) return nullptr;  // wrapper OOM
+  if (a == nullptr) {  // wrapper OOM
+    hyle::platform::vm_set_last_error(
+        "hyle_arena_create: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
   // Pool exhausted (no free block) is a graceful resource failure, not a contract
   // violation: return NULL + set last-error so an FFI caller has a defensive path
   // (was a fatal abort in the C++ Arena ctor; see mem-audit-followup #2).
