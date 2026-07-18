@@ -432,6 +432,8 @@ HYLE_PLATFORM_C_API hyle_cpu_features hyle_cpu_features_get(void);
 HYLE_PLATFORM_C_API int hyle_cpu_supports_isa(uint32_t isa);
 /* "scalar", "avx2", ... — stable English name for logging. */
 HYLE_PLATFORM_C_API const char* hyle_cpu_isa_name(uint32_t isa);
+/* L1 data cache line size in bytes (64 on mainstream CPUs; for alignment/padding). */
+HYLE_PLATFORM_C_API unsigned hyle_cpu_cache_line_size(void);
 
 #ifdef __cplusplus
 } /* extern "C" */

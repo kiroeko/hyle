@@ -496,6 +496,10 @@ const char* hyle_cpu_isa_name(uint32_t isa) {
   return hyle::platform::isa_name(static_cast<hyle::platform::Isa>(isa));
 }
 
+unsigned hyle_cpu_cache_line_size(void) {
+  return hyle::platform::cache_line_size();
+}
+
 /* ---- v3: hugepage/THP + NUMA ------------------------------------------------ */
 
 void hyle_vm_set_last_error(const char* msg) {

@@ -306,6 +306,10 @@ int main(void) {
   CHECK(hyle_cpu_isa_name(cpu.best_isa) != NULL);
   CHECK(hyle_cpu_supports_isa(HYLE_ISA_SCALAR) == 1);
   {
+    unsigned cl = hyle_cpu_cache_line_size();
+    CHECK(cl >= 16u && cl <= 256u && (cl & (cl - 1u)) == 0u); /* sane power of two */
+  }
+  {
     hyle_isa isa = HYLE_ISA_SCALAR;      /* named enums usable as types */
     hyle_numa_node nany = HYLE_NUMA_ANY;
     CHECK(hyle_cpu_supports_isa((uint32_t)isa) == 1);

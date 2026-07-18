@@ -9,6 +9,7 @@
 #include <cstring>
 
 using hyle::platform::best_isa;
+using hyle::platform::cache_line_size;
 using hyle::platform::cpu_features;
 using hyle::platform::CpuFeatures;
 using hyle::platform::Isa;
@@ -22,6 +23,16 @@ TEST(Cpu, FeaturesCachedIdempotent) {
   const CpuFeatures& b = cpu_features();
   EXPECT_EQ(&a, &b);  // same cached instance
   EXPECT_EQ(std::memcmp(&a, &b, sizeof(CpuFeatures)), 0);
+}
+
+// cache_line_size(): a sane power-of-two in [16, 256] (64 on all mainstream CPUs),
+// stable across calls (cached). An invariant, not a specific-box assertion.
+TEST(Cpu, CacheLineSizeSane) {
+  const unsigned c = cache_line_size();
+  EXPECT_GE(c, 16u);
+  EXPECT_LE(c, 256u);
+  EXPECT_EQ(c & (c - 1u), 0u);      // power of two
+  EXPECT_EQ(c, cache_line_size());  // stable / cached
 }
 
 // scalar is the portable floor: always supported, on every arch.

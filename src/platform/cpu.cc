@@ -15,6 +15,13 @@
 #include <sys/auxv.h>
 #endif
 
+#if defined(HYLE_OS_MACOS)
+#include <sys/sysctl.h>  // sysctlbyname("hw.cachelinesize")
+#endif
+#if defined(HYLE_OS_LINUX)
+#include <unistd.h>  // sysconf(_SC_LEVEL1_DCACHE_LINESIZE)
+#endif
+
 #if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_RISCV64)
 #include <sys/syscall.h>
 #include <unistd.h>
@@ -310,11 +317,40 @@ Isa compute_best(const CpuFeatures& f) noexcept {
 #endif
 }
 
+// L1 data cache line size in bytes. x86: CPUID leaf 1 EBX[15:8] (CLFLUSH line size
+// in 8-byte units). macOS ARM: sysctl hw.cachelinesize. Linux: sysconf. 64 fallback.
+// Compiled in this LTO-off baseline TU so the x86 CPUID path is SIGILL-safe.
+unsigned detect_cache_line() noexcept {
+#if defined(HYLE_ARCH_X64)
+  std::uint32_t abcd[4];
+  cpuid(1, 0, abcd);
+  const unsigned line = ((abcd[1] >> 8) & 0xffu) * 8u;
+  return line ? line : 64u;
+#elif defined(HYLE_OS_MACOS)
+  std::size_t v = 0;
+  std::size_t sz = sizeof(v);
+  if (::sysctlbyname("hw.cachelinesize", &v, &sz, nullptr, 0) == 0 && v != 0) {
+    return static_cast<unsigned>(v);
+  }
+  return 64u;
+#elif defined(HYLE_OS_LINUX)
+  const long v = ::sysconf(_SC_LEVEL1_DCACHE_LINESIZE);
+  return v > 0 ? static_cast<unsigned>(v) : 64u;
+#else
+  return 64u;
+#endif
+}
+
 }  // namespace
 
 const CpuFeatures& cpu_features() noexcept {
   static const CpuFeatures f = detect();  // Meyers: thread-safe init-once (C++11+)
   return f;
+}
+
+unsigned cache_line_size() noexcept {
+  static const unsigned v = detect_cache_line();  // Meyers: probe once, cache
+  return v;
 }
 
 Isa best_isa() noexcept {
