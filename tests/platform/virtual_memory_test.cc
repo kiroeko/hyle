@@ -261,6 +261,63 @@ TEST(VirtualMemory, FreeFunctionsNullNoOp) {
   EXPECT_TRUE(vm_protect(nullptr, page_size(), Protect::kNone));
 }
 
+// ---- VmRegion::adopt (C++ side) --------------------------------------------
+// adopt() wraps an existing raw vm_reserve* reservation in a managed region that
+// releases it on destruction. Only the C ABI exercised this before; these cover
+// the C++ handle directly: take-ownership + use, the NULL guard, move transfer,
+// and that release()/destruction free the adopted block exactly once.
+
+TEST(VirtualMemory, AdoptTakesOwnershipAndReleasesOnDtor) {
+  std::size_t p = page_size();
+  void* raw = vm_reserve(p * 2);
+  ASSERT_NE(raw, nullptr) << vm_last_error();
+  {
+    VmRegion r = VmRegion::adopt(raw, p * 2);
+    ASSERT_TRUE(r.valid());
+    EXPECT_EQ(r.data(), raw);   // wraps the exact reservation, no copy/move of pages
+    EXPECT_EQ(r.size(), p * 2);
+    EXPECT_FALSE(r.has_guard());
+    // Behaves like any region: commit + write through it.
+    ASSERT_TRUE(r.commit_usable()) << vm_last_error();
+    std::memset(r.data(), 0x77, r.size());
+    EXPECT_EQ(static_cast<unsigned char*>(r.data())[0], 0x77);
+  }  // r's dtor releases the adopted reservation (no manual vm_release needed)
+}
+
+TEST(VirtualMemory, AdoptNullIsInvalid) {
+  VmRegion r = VmRegion::adopt(nullptr, page_size());
+  EXPECT_FALSE(r.valid());  // nothing adopted -> no ownership taken
+  EXPECT_EQ(r.data(), nullptr);
+}
+
+TEST(VirtualMemory, AdoptMoveTransfersOwnership) {
+  std::size_t p = page_size();
+  void* raw = vm_reserve(p);
+  ASSERT_NE(raw, nullptr) << vm_last_error();
+  VmRegion a = VmRegion::adopt(raw, p);
+  ASSERT_TRUE(a.valid());
+  VmRegion b = std::move(a);
+  EXPECT_FALSE(a.valid());       // moved-from is empty; its dtor is a no-op
+  EXPECT_EQ(a.data(), nullptr);
+  ASSERT_TRUE(b.valid());
+  EXPECT_EQ(b.data(), raw);
+  EXPECT_EQ(b.size(), p);
+  // Only b owns the reservation now -- exactly one release happens (b's dtor).
+}
+
+TEST(VirtualMemory, AdoptReleaseThenDoubleReleaseIsSafe) {
+  std::size_t p = page_size();
+  void* raw = vm_reserve(p);
+  ASSERT_NE(raw, nullptr) << vm_last_error();
+  VmRegion r = VmRegion::adopt(raw, p);
+  ASSERT_TRUE(r.valid());
+  r.release();               // frees the adopted reservation
+  EXPECT_FALSE(r.valid());   // now empty
+  r.release();               // second release is a safe no-op (no double-free)
+  EXPECT_FALSE(r.valid());
+  // r's dtor is also a no-op now (state is already empty).
+}
+
 // ---- death tests: prove the PROTECTION actually faults (not just "set ok") --
 // These were the coverage gap: earlier tests set kNone / kRead / a guard page
 // and checked the call returned true, but never confirmed an illegal access

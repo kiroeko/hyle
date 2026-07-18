@@ -30,10 +30,14 @@
 #include <condition_variable>
 #include <cstdint>
 #include <filesystem>
+#include <fstream>
 #include <mutex>
+#include <string>
 #include <thread>
+#include <vector>
 
 #include "hyle/platform/fs.h"
+#include "hyle/platform/mapped_file.h"
 #include "hyle/platform/thread.h"
 #include "hyle/platform/virtual_memory.h"
 #include "hyle/platform/wait.h"
@@ -42,13 +46,19 @@
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #else
+#  include <fcntl.h>
 #  include <sys/mman.h>
+#  include <unistd.h>
 #endif
 
+using hyle::platform::MappedFile;
 using hyle::platform::Parker;
+using hyle::platform::page_size;
+using hyle::platform::Protect;
 using hyle::platform::Thread;
 using hyle::platform::ThreadOpts;
 using hyle::platform::vm_commit;
+using hyle::platform::vm_protect;
 using hyle::platform::vm_release;
 using hyle::platform::vm_reserve;
 
@@ -307,6 +317,154 @@ int main() {
       }
       bthread.join();
     });
+  }
+
+  // ---- 8. park_timeout: fast path (token present) vs zero-timeout poll -------
+  // park_timeout has two hot regimes. FAST PATH: a token is already available
+  // (unpark ran first), so the fetch_sub sees NOTIFIED and returns true with NO
+  // syscall -- the same ~10ns/no-syscall floor as park()'s fast path (section 1).
+  // ZERO-TIMEOUT POLL: no token + timeout_ns==0, so it takes the timed wait and
+  // returns false at once; that still ENTERS the OS wait (WaitOnAddress ms=0 /
+  // FUTEX_WAIT {0,0}), so this row is the syscall-entry cost of the timed path
+  // with no real sleep (a genuine expiry just adds the deadline's wall time on
+  // top). The gap between the two rows is exactly that syscall's price.
+  {
+    constexpr int kIters = 100000;
+    Parker parker;
+    nb::Bench b;
+    b.title("Parker park_timeout: fast path vs zero-timeout poll")
+        .relative(true)
+        .batch(kIters)
+        .minEpochIterations(20);
+    b.run("park_timeout fast path (token present, no syscall)", [&] {
+      for (int i = 0; i < kIters; ++i) {
+        parker.unpark();  // make a token available
+        nb::doNotOptimizeAway(
+            parker.park_timeout(1'000'000'000ull));  // consumes it, no sleep
+      }
+    });
+    b.run("park_timeout zero-timeout poll (no token, syscall)", [&] {
+      for (int i = 0; i < kIters; ++i) {
+        nb::doNotOptimizeAway(parker.park_timeout(0));  // no token -> false at once
+      }
+    });
+  }
+
+  // ---- 9. vm_protect toggle: HYLE vs raw mprotect / VirtualProtect -----------
+  // Flipping page protection is the guard-page / W^X hot op (fiber stacks, JIT).
+  // vm_protect is a thin wrapper over mprotect (POSIX) / VirtualProtect (Windows),
+  // so the raw syscall IS the floor (same kernel work). Reserve+commit one page
+  // once, then time a RW->RO->RW toggle PAIR per iteration (leaves the page RW so
+  // the run repeats cleanly). Proves the wrapper + enum mapping cost nothing.
+  {
+    constexpr int kIters = 50000;
+    const std::size_t pg = page_size();
+    void* base = vm_reserve(pg);
+    if (base) vm_commit(base, pg);
+    nb::Bench b;
+    b.title("VM protect toggle (1 page RW<->RO pair)")
+        .relative(true)
+        .batch(kIters)
+        .minEpochIterations(20);
+    b.run("raw mprotect / VirtualProtect", [&] {
+      for (int i = 0; i < kIters; ++i) {
+#if defined(_WIN32)
+        DWORD old_prot;
+        ::VirtualProtect(base, pg, PAGE_READONLY, &old_prot);
+        ::VirtualProtect(base, pg, PAGE_READWRITE, &old_prot);
+#else
+        ::mprotect(base, pg, PROT_READ);
+        ::mprotect(base, pg, PROT_READ | PROT_WRITE);
+#endif
+      }
+      nb::doNotOptimizeAway(base);
+    });
+    b.run("HYLE vm_protect", [&] {
+      for (int i = 0; i < kIters; ++i) {
+        vm_protect(base, pg, Protect::kRead);
+        vm_protect(base, pg, Protect::kReadWrite);
+      }
+      nb::doNotOptimizeAway(base);
+    });
+    if (base) vm_release(base, pg);
+  }
+
+  // ---- 10. mapped_file open+read: HYLE vs std::ifstream vs raw mmap ----------
+  // Zero-copy file load (weights/datasets): MappedFile maps the bytes and the OS
+  // pages them in on touch -- no user-space copy. std::ifstream is the std "read a
+  // file" rival: it COPIES every byte into a buffer. The raw mmap / MapViewOfFile
+  // path is the zero-copy FLOOR (the same syscalls HYLE wraps). Each row opens,
+  // sums every byte (forces the reads / page faults), and closes. 64 KiB scratch.
+  {
+    namespace sfs = std::filesystem;
+    constexpr std::size_t kBytes = 64u * 1024u;
+    const std::string path =
+        (sfs::temp_directory_path() / "hyle_platform_bench_map.bin").string();
+    {
+      std::ofstream f(path, std::ios::binary | std::ios::trunc);
+      std::vector<char> seed(kBytes);
+      for (std::size_t i = 0; i < kBytes; ++i)
+        seed[i] = static_cast<char>(i & 0x7F);
+      f.write(seed.data(), static_cast<std::streamsize>(kBytes));
+    }
+    nb::Bench b;
+    b.title("mapped_file open+read 64KiB (vs ifstream / raw mmap)")
+        .relative(true)
+        .minEpochIterations(50);
+    b.run("std::ifstream read+sum (copies)", [&] {
+      std::ifstream f(path, std::ios::binary);
+      std::vector<char> buf(kBytes);
+      f.read(buf.data(), static_cast<std::streamsize>(kBytes));
+      std::uint64_t s = 0;
+      for (std::size_t i = 0; i < kBytes; ++i)
+        s += static_cast<unsigned char>(buf[i]);
+      nb::doNotOptimizeAway(s);
+    });
+    b.run("raw mmap+sum floor", [&] {
+      std::uint64_t s = 0;
+#if defined(_WIN32)
+      HANDLE fh = ::CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ,
+                                nullptr, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL,
+                                nullptr);
+      if (fh != INVALID_HANDLE_VALUE) {
+        HANDLE mh =
+            ::CreateFileMappingA(fh, nullptr, PAGE_READONLY, 0, 0, nullptr);
+        if (mh) {
+          const unsigned char* d = static_cast<const unsigned char*>(
+              ::MapViewOfFile(mh, FILE_MAP_READ, 0, 0, 0));
+          if (d) {
+            for (std::size_t i = 0; i < kBytes; ++i) s += d[i];
+            ::UnmapViewOfFile(d);
+          }
+          ::CloseHandle(mh);
+        }
+        ::CloseHandle(fh);
+      }
+#else
+      int fd = ::open(path.c_str(), O_RDONLY);
+      if (fd >= 0) {
+        void* pv = ::mmap(nullptr, kBytes, PROT_READ, MAP_PRIVATE, fd, 0);
+        if (pv != MAP_FAILED) {
+          const unsigned char* d = static_cast<const unsigned char*>(pv);
+          for (std::size_t i = 0; i < kBytes; ++i) s += d[i];
+          ::munmap(pv, kBytes);
+        }
+        ::close(fd);
+      }
+#endif
+      nb::doNotOptimizeAway(s);
+    });
+    b.run("HYLE MappedFile open+sum (zero-copy)", [&] {
+      std::uint64_t s = 0;
+      MappedFile m = MappedFile::open(path.c_str());
+      if (m.valid()) {
+        const unsigned char* d = static_cast<const unsigned char*>(m.data());
+        for (std::size_t i = 0; i < m.size(); ++i) s += d[i];
+      }
+      nb::doNotOptimizeAway(s);
+    });
+    std::error_code ec;
+    sfs::remove(path, ec);
   }
 
   return 0;

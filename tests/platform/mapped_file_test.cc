@@ -127,6 +127,46 @@ TEST_F(MapTest, OffsetMapping) {
   EXPECT_EQ(static_cast<char*>(m.data())[0], 'M');
 }
 
+// A NON-page-aligned offset must still work: the header rounds the offset down to
+// the mapping granularity internally, but data() has to point at the EXACT byte
+// the caller asked for -- not the rounded base. Seed a positional pattern so a
+// stray granularity offset in data() would show up as wrong content.
+TEST_F(MapTest, UnalignedOffsetToEnd) {
+  const std::size_t pg = page_size();
+  const std::size_t n = pg * 2;
+  std::string init(n, '\0');
+  for (std::size_t i = 0; i < n; ++i) init[i] = static_cast<char>(i & 0x7F);
+  write_file(init.data(), n);
+
+  const std::size_t off = 100;  // deliberately unaligned (not a page/granularity)
+  MappedFile m = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly, off, 0);
+  ASSERT_TRUE(m.valid()) << "unaligned offset must map (rounded internally)";
+  EXPECT_EQ(m.size(), n - off);  // length 0 => exactly [off, EOF)
+  auto* p = static_cast<const unsigned char*>(m.data());
+  // data()[0] is the byte AT the requested offset, not the rounded-down base.
+  EXPECT_EQ(p[0], static_cast<unsigned char>(off & 0x7F));
+  EXPECT_EQ(p[m.size() - 1], static_cast<unsigned char>((n - 1) & 0x7F));
+  EXPECT_EQ(std::memcmp(m.data(), init.data() + off, m.size()), 0);
+}
+
+// Unaligned offset AND an explicit bounded length that crosses a page boundary:
+// the window [pg+50, pg+50+200) starts unaligned and past the first page. data()
+// must land exactly on pg+50 and size() must be the requested 200.
+TEST_F(MapTest, UnalignedOffsetExplicitLength) {
+  const std::size_t pg = page_size();
+  const std::size_t n = pg * 2;
+  std::string init(n, '\0');
+  for (std::size_t i = 0; i < n; ++i) init[i] = static_cast<char>(i & 0x7F);
+  write_file(init.data(), n);
+
+  const std::size_t off = pg + 50;  // unaligned, and past the first page
+  const std::size_t len = 200;      // within EOF (pg+250 < 2*pg)
+  MappedFile m = MappedFile::open(path.c_str(), MappedFile::Mode::kReadOnly, off, len);
+  ASSERT_TRUE(m.valid());
+  EXPECT_EQ(m.size(), len);
+  EXPECT_EQ(std::memcmp(m.data(), init.data() + off, len), 0);
+}
+
 TEST_F(MapTest, InvalidPathIsInvalid) {
   MappedFile m = MappedFile::open((path + "_nope").c_str());
   EXPECT_FALSE(m.valid());
@@ -160,6 +200,42 @@ TEST_F(MapTest, MoveTransfersMapping) {
   EXPECT_TRUE(b.valid());
   EXPECT_EQ(b.data(), addr);
   EXPECT_EQ(std::memcmp(b.data(), msg, std::strlen(msg)), 0);
+}
+
+// Move-ASSIGN (operator=(MappedFile&&)) onto an already-live mapping: the target
+// must drop its previous mapping and take over the source's. Two distinct files
+// so the transfer of content is observable; the source is left !valid().
+TEST_F(MapTest, MoveAssignReleasesPrevious) {
+  const char* src_msg = "source-mapping-content";
+  write_file(src_msg, std::strlen(src_msg));  // `path` holds the SOURCE content
+
+  // A second scratch file for the assign target's initial (to-be-dropped) mapping.
+  std::string dst_path = path + "_dst";
+  const char* dst_msg = "destination-initial";
+  {
+    std::FILE* f = std::fopen(dst_path.c_str(), "wb");
+    ASSERT_NE(f, nullptr);
+    ASSERT_EQ(std::fwrite(dst_msg, 1, std::strlen(dst_msg), f), std::strlen(dst_msg));
+    std::fclose(f);
+  }
+
+  MappedFile src = MappedFile::open(path.c_str());
+  MappedFile dst = MappedFile::open(dst_path.c_str());
+  ASSERT_TRUE(src.valid());
+  ASSERT_TRUE(dst.valid());
+  void* src_addr = src.data();
+  std::size_t src_size = src.size();
+
+  dst = std::move(src);  // drops dst's old mapping, adopts src's
+
+  EXPECT_FALSE(src.valid());
+  EXPECT_EQ(src.data(), nullptr);
+  ASSERT_TRUE(dst.valid());
+  EXPECT_EQ(dst.data(), src_addr);
+  EXPECT_EQ(dst.size(), src_size);
+  EXPECT_EQ(std::memcmp(dst.data(), src_msg, std::strlen(src_msg)), 0);
+
+  fs::remove_file(dst_path.c_str());
 }
 
 // Prove a read-only mapping actually traps on write (not just "opened ok"). Runs

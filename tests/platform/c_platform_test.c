@@ -30,6 +30,23 @@ static int visit_cb(const char* name, int is_dir, void* ctx) {
   return 1;
 }
 
+/* Low-level wait/wake worker: block until the shared word turns non-zero, then
+ * record that we woke. The value-recheck loop makes the wake race-free (an early
+ * store+wake before we park is simply observed by the loop condition) and absorbs
+ * spurious wakes. The word is the futex/WaitOnAddress target; the wait/wake calls
+ * carry the cross-thread ordering (the documented volatile-word C usage). */
+typedef struct {
+  uint32_t* word;
+  int* woke;
+} wait_ctx;
+static void wait_entry(void* ctx) {
+  wait_ctx* x = (wait_ctx*)ctx;
+  while (*(volatile uint32_t*)x->word == 0u) {
+    hyle_wait_on_address(x->word, 0u);  /* sleeps while *word == 0 */
+  }
+  *x->woke = 1;
+}
+
 int main(void) {
   CHECK(hyle_page_size() >= 4096u);
 
@@ -40,6 +57,64 @@ int main(void) {
   hyle_parker_park(p);
   CHECK(hyle_parker_park_timeout(p, 0) == 0);
   hyle_parker_destroy(p);
+
+  /* Low-level wait/wake (futex / WaitOnAddress thin forwards). First the
+   * non-blocking contracts (no thread needed): a value MISMATCH never blocks and
+   * reports "not a timeout" (1); a zero timeout on a matching value is a poll;
+   * waking an address with no waiter is a no-op. */
+  {
+    uint32_t w = 5u;
+    CHECK(hyle_wait_on_address_for(&w, 7u, 0) == 1); /* 5 != 7 -> immediate, 1 */
+    (void)hyle_wait_on_address_for(&w, 5u, 0);       /* poll: 0 (or spurious 1) */
+    hyle_wait_on_address(&w, 7u);                    /* 5 != 7 -> returns at once */
+    hyle_wake_one(&w);                               /* no waiter -> no-op */
+    hyle_wake_all(&w);                               /* no waiter -> no-op */
+  }
+
+  /* Real cross-thread wake_one: one waiter blocks on the word, main flips it and
+   * wakes exactly one. Proves the addr forward + wake path end to end. */
+  {
+    uint32_t word = 0u;
+    int woke = 0;
+    wait_ctx c = {&word, &woke};
+    hyle_thread_o* wt = NULL;
+    hyle_status ws = hyle_thread_spawn_opts(&wt, wait_entry, &c, "c_wait1", 0, -1,
+                                            HYLE_THREAD_PRIORITY_NORMAL);
+    CHECK(hyle_status_is_ok(ws));
+    hyle_status_free(&ws);
+    CHECK(wt != NULL);
+    if (wt != NULL) {
+      word = 1u;             /* publish */
+      hyle_wake_one(&word);  /* wake the (possibly already-progressed) waiter */
+      hyle_thread_join(wt);  /* hangs only if the wake never lands (broken fwd) */
+      CHECK(woke == 1);
+    }
+  }
+
+  /* Real cross-thread wake_all: two waiters on one word, released together. */
+  {
+    uint32_t word = 0u;
+    int woke_a = 0, woke_b = 0;
+    wait_ctx ca = {&word, &woke_a};
+    wait_ctx cb = {&word, &woke_b};
+    hyle_thread_o *ta = NULL, *tb = NULL;
+    hyle_status sa = hyle_thread_spawn_opts(&ta, wait_entry, &ca, "c_waitA", 0, -1,
+                                            HYLE_THREAD_PRIORITY_NORMAL);
+    hyle_status sb = hyle_thread_spawn_opts(&tb, wait_entry, &cb, "c_waitB", 0, -1,
+                                            HYLE_THREAD_PRIORITY_NORMAL);
+    CHECK(hyle_status_is_ok(sa));
+    CHECK(hyle_status_is_ok(sb));
+    hyle_status_free(&sa);
+    hyle_status_free(&sb);
+    if (ta != NULL && tb != NULL) {
+      word = 1u;
+      hyle_wake_all(&word);  /* must release BOTH waiters */
+      hyle_thread_join(ta);
+      hyle_thread_join(tb);
+      CHECK(woke_a == 1);
+      CHECK(woke_b == 1);
+    }
+  }
 
   /* Thread + opts sugar */
   int ran = 0;
@@ -150,6 +225,57 @@ int main(void) {
     CHECK(rw != NULL);
     ((unsigned char*)rw)[0] = 1;
     CHECK(hyle_vm_free_rw(rw, pg / 2 + 1));
+  }
+
+  /* free-function vm_protect / vm_decommit thin forwards. Two pages so we can
+   * lock/decommit one while keeping the other usable. (The C++ death tests prove
+   * a locked page actually faults; here we just cover the C forward + recovery.) */
+  {
+    size_t pg = hyle_page_size();
+    void* base = hyle_vm_reserve(pg * 2);
+    CHECK(base != NULL);
+    CHECK(hyle_vm_commit(base, pg * 2));
+    ((unsigned char*)base)[0] = 0x10;
+
+    /* protect the low page read-only: still readable, restore RW and rewrite. */
+    CHECK(hyle_vm_protect(base, pg, HYLE_PROTECT_READ) == 1);
+    CHECK(((unsigned char*)base)[0] == 0x10);
+    CHECK(hyle_vm_protect(base, pg, HYLE_PROTECT_READ_WRITE) == 1);
+    ((unsigned char*)base)[0] = 0x20;
+    CHECK(((unsigned char*)base)[0] == 0x20);
+
+    /* decommit the high page, then recommit and use it (contents undefined). */
+    CHECK(hyle_vm_decommit((unsigned char*)base + pg, pg) == 1);
+    CHECK(hyle_vm_commit((unsigned char*)base + pg, pg) == 1);
+    ((unsigned char*)base)[pg] = 0x30;
+    CHECK(((unsigned char*)base)[pg] == 0x30);
+
+    CHECK(hyle_vm_release(base, pg * 2) == 1);
+  }
+
+  /* managed region: commit_usable / protect / decommit thin forwards. */
+  {
+    size_t pg = hyle_page_size();
+    hyle_vm_region_o* r = hyle_vm_region_reserve(pg * 2);
+    CHECK(hyle_vm_region_valid(r));
+    /* commit_usable: whole reservation RW (no guard on a plain reserve). */
+    CHECK(hyle_vm_region_commit_usable(r) == 1);
+    unsigned char* d = (unsigned char*)hyle_vm_region_data(r);
+    CHECK(d != NULL);
+    if (d != NULL) {
+      d[0] = 0x41;
+      CHECK(d[0] == 0x41);
+      /* protect page 0 read-only then restore. */
+      CHECK(hyle_vm_region_protect(r, 0, pg, HYLE_PROTECT_READ) == 1);
+      CHECK(d[0] == 0x41); /* read still allowed */
+      CHECK(hyle_vm_region_protect(r, 0, pg, HYLE_PROTECT_READ_WRITE) == 1);
+      /* decommit page 1 then recommit via region commit and use it. */
+      CHECK(hyle_vm_region_decommit(r, pg, pg) == 1);
+      CHECK(hyle_vm_region_commit(r, pg, pg) == 1);
+      d[pg] = 0x42;
+      CHECK(d[pg] == 0x42);
+    }
+    hyle_vm_region_destroy(r);
   }
 
   /* fs */
@@ -278,6 +404,49 @@ int main(void) {
       hyle_fs_remove_file(hpath);
     }
     hyle_fs_remove_file(tpath);
+  }
+
+  /* mapped_file DATA path over the C ABI: valid / data / size / flush on a
+   * mapping that actually has content (the empty-file map above only exercised
+   * open+destroy). Seed a file, map it read-write, verify size + bytes, dirty a
+   * byte + flush, then re-open read-only to confirm the flush hit the file. */
+  {
+    char mpath[1024];
+    intptr_t fd = hyle_fs_create_temp_file(NULL, "hyle_c_map", mpath, sizeof(mpath));
+    CHECK(fd != -1);
+    hyle_fs_close_fd(fd);  /* drop the mkstemp handle; we rewrite via stdio */
+
+    const char* seed = "hyle mapped C-ABI payload 0123456789";
+    size_t seed_len = strlen(seed);
+    FILE* sf = fopen(mpath, "wb");
+    CHECK(sf != NULL);
+    if (sf != NULL) {
+      CHECK(fwrite(seed, 1, seed_len, sf) == seed_len);
+      fclose(sf);
+
+      hyle_mapped_file_o* m = hyle_mapped_file_open(mpath, HYLE_MAP_READ_WRITE, 0, 0);
+      CHECK(m != NULL);
+      CHECK(hyle_mapped_file_valid(m) == 1);
+      CHECK(hyle_mapped_file_size(m) == seed_len);
+      unsigned char* d = (unsigned char*)hyle_mapped_file_data(m);
+      CHECK(d != NULL);
+      if (d != NULL) {
+        CHECK(memcmp(d, seed, seed_len) == 0);
+        d[0] = (unsigned char)'Z';             /* dirty the first byte */
+        CHECK(hyle_mapped_file_flush(m) == 1);  /* RW flush persists to file */
+      }
+      hyle_mapped_file_destroy(m);
+
+      /* re-open read-only: the flushed write must be visible on disk. */
+      hyle_mapped_file_o* m2 = hyle_mapped_file_open(mpath, HYLE_MAP_READ_ONLY, 0, 0);
+      CHECK(m2 != NULL);
+      CHECK(hyle_mapped_file_valid(m2) == 1);
+      if (hyle_mapped_file_valid(m2)) {
+        CHECK(((unsigned char*)hyle_mapped_file_data(m2))[0] == (unsigned char)'Z');
+      }
+      hyle_mapped_file_destroy(m2);
+    }
+    hyle_fs_remove_file(mpath);
   }
 
   if (g_fails) {

@@ -307,3 +307,113 @@ TEST(WaitOnAddress, WakeAllReleasesAllWaiters) {
   for (auto& t : threads) t.join();  // hangs (=> timeout) if any waiter was missed
   EXPECT_EQ(woke.load(std::memory_order_acquire), kWaiters);
 }
+
+// ---- park_timeout under concurrency: the timeout-vs-unpark race -------------
+// The functional park_timeout tests above cover the sequential contracts
+// (immediate token, zero-poll, woken-by-unpark, timeout-then-fresh-unpark). The
+// remaining gap is CONCURRENT: park_timeout is single-shot and resets the state
+// word with exchange(kEmpty) after its timed wait, so an unpark landing right at
+// that reset boundary must still not lose the token -- it is either consumed by
+// this call (returns true) or left as NOTIFIED for the next call, never dropped.
+// Both stressors below reuse HandoffStressNoLostWakeup's handshake: main unparks
+// every worker each round and waits for each to consume before the next round,
+// so at most one token is ever outstanding per worker. A lost wakeup would stall
+// a worker forever (join hangs -> test timeout); a double-count is impossible.
+// The worker rides park_timeout in a re-check loop (single-shot: a false return
+// is a spurious/expired wake, so it just re-parks) and only a real token, i.e. a
+// true return, advances its counter -- which must end at exactly kRounds.
+
+// Long deadline (10s, never fires here): isolates the unpark-vs-timed-reset race.
+// The wake always comes from unpark, exercised through the TIMED wait path rather
+// than park(), proving the single-shot reset never drops a concurrent token.
+TEST(Parker, ParkTimeoutHandoffStressNoLostWakeup) {
+  constexpr int kWorkers = 4;
+  constexpr int kRounds = 500;
+  constexpr std::uint64_t kLongNs = 10'000'000'000ull;  // 10s: must NOT expire
+  std::array<Parker, kWorkers> parkers;  // non-movable: in place
+  std::array<std::atomic<int>, kWorkers> observed{};
+
+  struct Args {
+    Parker* p;
+    std::atomic<int>* obs;
+  };
+  std::array<Args, kWorkers> args;
+  std::vector<Thread> workers;
+  for (int i = 0; i < kWorkers; ++i) {
+    args[i] = Args{&parkers[i], &observed[i]};
+    auto r = Thread::spawn(
+        [](void* a) {
+          auto* x = static_cast<Args*>(a);
+          int consumed = 0;
+          while (consumed < kRounds) {
+            if (x->p->park_timeout(kLongNs)) {  // only a real token counts
+              ++consumed;
+              x->obs->fetch_add(1, std::memory_order_acq_rel);
+            }
+            // false == spurious low-level wake (deadline is far off): re-park.
+          }
+        },
+        &args[i]);
+    ASSERT_TRUE(r.has_value());
+    workers.push_back(std::move(*r));
+  }
+
+  for (int k = 0; k < kRounds; ++k) {
+    for (int i = 0; i < kWorkers; ++i) parkers[i].unpark();
+    for (int i = 0; i < kWorkers; ++i) {
+      while (observed[i].load(std::memory_order_acquire) <= k) {
+        hyle::platform::this_thread::yield();
+      }
+    }
+  }
+  for (auto& t : workers) t.join();
+  for (int i = 0; i < kWorkers; ++i) EXPECT_EQ(observed[i].load(), kRounds);
+}
+
+// Tiny deadline (200us, fires constantly): the worker is perpetually cycling
+// through the timeout -> exchange(kEmpty) reset window, so main's unpark lands on
+// that exact boundary far more often -- the interleave the three-state machine
+// must get right. Same invariant: every per-worker counter still reaches EXACTLY
+// kRounds, because a token racing the expiry is consumed-or-left, never lost.
+TEST(Parker, ParkTimeoutExpiryVsUnparkRace) {
+  constexpr int kWorkers = 4;
+  constexpr int kRounds = 500;
+  constexpr std::uint64_t kShortNs = 200'000ull;  // 200us: expires constantly
+  std::array<Parker, kWorkers> parkers;
+  std::array<std::atomic<int>, kWorkers> observed{};
+
+  struct Args {
+    Parker* p;
+    std::atomic<int>* obs;
+  };
+  std::array<Args, kWorkers> args;
+  std::vector<Thread> workers;
+  for (int i = 0; i < kWorkers; ++i) {
+    args[i] = Args{&parkers[i], &observed[i]};
+    auto r = Thread::spawn(
+        [](void* a) {
+          auto* x = static_cast<Args*>(a);
+          int consumed = 0;
+          while (consumed < kRounds) {
+            if (x->p->park_timeout(kShortNs)) {  // times out often -> re-park
+              ++consumed;
+              x->obs->fetch_add(1, std::memory_order_acq_rel);
+            }
+          }
+        },
+        &args[i]);
+    ASSERT_TRUE(r.has_value());
+    workers.push_back(std::move(*r));
+  }
+
+  for (int k = 0; k < kRounds; ++k) {
+    for (int i = 0; i < kWorkers; ++i) parkers[i].unpark();
+    for (int i = 0; i < kWorkers; ++i) {
+      while (observed[i].load(std::memory_order_acquire) <= k) {
+        hyle::platform::this_thread::yield();
+      }
+    }
+  }
+  for (auto& t : workers) t.join();
+  for (int i = 0; i < kWorkers; ++i) EXPECT_EQ(observed[i].load(), kRounds);
+}
