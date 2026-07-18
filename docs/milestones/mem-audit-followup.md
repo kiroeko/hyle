@@ -14,10 +14,10 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 
 ## 处置清单
 
-### #1 alignment==0 野指针 [代码完成 + Windows 验证过;三平台待补]
+### #1 alignment==0 野指针 [已做 + 三平台验证 + death test 锁死]
 - `StackAllocator::allocate`(stack_allocator.h:48)、`Arena::allocate`(memory_arena.h:328)的对齐 guard 从 `(a & (a-1)) == 0`(**漏判 0**:`0 & SIZE_MAX == 0` 通过 → 后续野指针)换成 `is_pow2(a)`(alignment.h:22,正确 reject 0 和非2幂)。两文件已加 `#include "hyle/mem/alignment.h"`。
 - 无效对齐从"静默野指针"→ clean trap(abort)。`MemoryArena` ctor 本就 clamp alignment 到 16,不受影响。
-- **状态**:代码改完,Windows mem 测试全绿。**待**:WSL/mac 三平台复验(和后续改动一起做)。
+- **状态**:代码改完 + `alignment==0` death test 锁死(见 #4);**三平台全绿**(Windows MSVC / mac clang / WSL GCC-14)。
 
 ### #2 池耗尽/OOM graceful + last-error 字符串 [档 A + 档 B 均已做]
 依据:c-abi-authoring-guide §3 铁律 3 明文"真边界故障(`new` OOM / base==NULL / backing 缺指针)→ **返 NULL**;契约违反 → abort"。当前 slab-OOM / 池耗尽走 abort,**违反了本库自己的铁律**。用户诉求:"保证 C ABI 也能拿到失败的字符串"(类似 error 模块的 `hyle_status_message_cstr`)。
@@ -64,11 +64,12 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 - **[附带,已做]** mem.h growable grow-OOM 注释修正(档 B 遗漏:原说 abort,实际 acquire 返 NULL graceful);README.md 索引修正(补 GrowablePool 句柄 + 去 stale "hyle_mem_api 表"——mem 无 api 表)。
 - (可选后续,未做) c-mem.md §4 未加 GrowablePool 代码示例(其他池都有,一致性 nice-to-have);guide/README 其他潜在 stale 未逐一核查。
 
-### 三平台验证 + commit [未做]
-所有代码改动收尾必须三平台真编真测:
-- Windows MSVC:`build/`,vcvars + `cmake --build`。
-- WSL GCC-14:github 不通,用 **copy 源码方案**(`FETCHCONTENT_SOURCE_DIR_*` 喂 Windows `.deps` 源码)+ `CUDAToolkit_ROOT=/usr/local/cuda`;详见 .axiomate 的 `reference_wsl_linux_tsan`。
-- mac clang:git 同步(`ssh kiro@172.22.10.198`,`git fetch + reset --hard origin/main`),**脚本别用裸 `===`**(zsh EQUALS 展开报错);详见 `reference_mac_ssh`。
+### 三平台验证 [已做——三平台全绿]
+mem 收口(#1/#2A/#2档B/#3/#4/#5b + 文档)三平台真编真测,`hyle_mem_test` 96 + `hyle_mem_c_test` 全绿:
+- **[✓] Windows MSVC**:`build/`(Ninja + cl.exe 14.50),vcvars64 + `cmake --build`。主力开发环境。
+- **[✓] mac clang**:git 同步(`ssh kiro@172.22.10.198`,`cd ~/hyle && git fetch + reset --hard origin/main`,tracked clean),cmake 在 `/opt/homebrew/bin`,generator = Unix Makefiles。
+- **[✓] WSL GCC-14**:**WSL 的 SSH 连 github 认证失败**(fetch 报 access rights —— 这才是"github 不通"的真相),改用 **rsync 增量**从 `/mnt/c/public/project-hyle/hyle/` 同步源码到 `/root/hyle`(exclude .git/build/.deps),复用其 Ninja build(.deps 在 /mnt/c);**坑**:rsync 保留 Windows 旧 mtime → ninja "no work to do" 假象,需 `touch` mem 源刷新才重编。
+- 注:WSL `/root/hyle` 的 git HEAD 停在 `74be0ae`(main 老 commit,simd 早期阶段),工作区靠 rsync 更新;`git status` 大量 M 是 rsync 痕迹(工作区新/HEAD 旧),**非开发工作**。
 
 ## 给下个 context 的提示
 - **工具在长 session 偶发污染**(幻觉 Read / Grep 返 "Prj0" 乱码 / TaskUpdate "not found"):改代码前**重读核实**,别信单次可疑输出。
