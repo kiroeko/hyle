@@ -518,6 +518,10 @@ unsigned hyle_numa_current_node(void) {
   return hyle::platform::numa_current_node();
 }
 
+unsigned hyle_numa_node_of_cpu(unsigned cpu) {
+  return hyle::platform::numa_node_of_cpu(cpu);
+}
+
 int hyle_vm_bind_numa(void* ptr, size_t size, int node, hyle_numa_policy policy) {
   return hyle::platform::vm_bind_numa(ptr, size, node,
                                       to_cpp_numa_policy(policy))

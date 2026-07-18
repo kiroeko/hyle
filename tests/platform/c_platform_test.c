@@ -321,6 +321,8 @@ int main(void) {
     unsigned nc = hyle_numa_node_count();
     CHECK(nc >= 1u);
     CHECK(hyle_numa_current_node() < nc);
+    CHECK(hyle_numa_node_of_cpu(0) < nc);         /* CPU 0 -> a valid node */
+    CHECK(hyle_numa_node_of_cpu(1u << 20) < nc);  /* out-of-range CPU: 0 fallback */
 
     /* set/clear last-error round trip */
     hyle_vm_set_last_error("c_plat_probe");

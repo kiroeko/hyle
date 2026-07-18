@@ -9,6 +9,7 @@ using hyle::platform::kNumaAny;
 using hyle::platform::NumaPolicy;
 using hyle::platform::numa_current_node;
 using hyle::platform::numa_node_count;
+using hyle::platform::numa_node_of_cpu;
 using hyle::platform::page_size;
 using hyle::platform::vm_bind_numa;
 using hyle::platform::vm_bind_numa_interleave;
@@ -27,6 +28,14 @@ TEST(Numa, NodeCountAtLeastOne) {
 TEST(Numa, CurrentNodeInRange) {
   unsigned cur = numa_current_node();
   EXPECT_LT(cur, numa_node_count());
+}
+
+TEST(Numa, NodeOfCpuInRange) {
+  const unsigned count = numa_node_count();
+  EXPECT_LT(numa_node_of_cpu(0), count);         // CPU 0 always maps to a valid node
+  EXPECT_LT(numa_node_of_cpu(1u << 20), count);  // out-of-range CPU: 0 fallback, no crash
+  // On a single-node box every CPU is node 0.
+  if (count == 1u) EXPECT_EQ(numa_node_of_cpu(0), 0u);
 }
 
 TEST(Numa, BindAnyIsNoOp) {

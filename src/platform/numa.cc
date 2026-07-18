@@ -1,5 +1,6 @@
 #include "hyle/platform/numa.h"
 
+#include <cstdio>
 #include <cstring>
 
 #include "hyle/macros.h"
@@ -184,6 +185,38 @@ unsigned numa_current_node() noexcept {
   return 0u;
 #else
   (void)count;
+  return 0u;
+#endif
+}
+
+unsigned numa_node_of_cpu(unsigned cpu) noexcept {
+  const unsigned count = numa_node_count();
+  if (count <= 1u) return 0u;  // single-node / unsupported: everything is node 0
+#if defined(HYLE_OS_WINDOWS)
+  auto& f = win_fns();
+  if (f.get_node_ex) {
+    PROCESSOR_NUMBER pnum{};
+    pnum.Group = static_cast<WORD>(cpu / 64u);   // >64-core boxes span groups
+    pnum.Number = static_cast<BYTE>(cpu % 64u);
+    USHORT node = 0;
+    if (f.get_node_ex(&pnum, &node)) {
+      const unsigned n = static_cast<unsigned>(node);  // 0xFFFF (no node) -> 0 below
+      return n < count ? n : 0u;
+    }
+  }
+  return 0u;
+#elif defined(HYLE_OS_LINUX)
+  // sysfs exposes one symlink /sys/devices/system/node/nodeN/cpuM per (node,cpu)
+  // membership; find the node whose directory contains this cpu.
+  for (unsigned nd = 0; nd < count; ++nd) {
+    char buf[96];
+    std::snprintf(buf, sizeof(buf), "/sys/devices/system/node/node%u/cpu%u", nd,
+                  cpu);
+    if (path_exists(buf)) return nd;
+  }
+  return 0u;
+#else
+  (void)cpu;
   return 0u;
 #endif
 }

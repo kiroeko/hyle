@@ -239,6 +239,9 @@ typedef enum hyle_numa_policy {
 HYLE_PLATFORM_C_API unsigned hyle_numa_node_count(void);
 HYLE_PLATFORM_C_API unsigned hyle_numa_current_node(void);
 
+/* NUMA node owning logical CPU `cpu` (0 on failure / single-node / out-of-range). */
+HYLE_PLATFORM_C_API unsigned hyle_numa_node_of_cpu(unsigned cpu);
+
 /* Bind an existing page-aligned mapping. Empty range -> 1. Honest contract:
  * single-node box -> 1 (no-op); multi-node hard bind / interleave without an OS
  * API -> 0 (+ vm_last_error). See hyle::platform::vm_bind_numa. */
