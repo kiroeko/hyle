@@ -20,6 +20,7 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 | 编译期（C++，过不了 C） | 运行时擦除（C ABI 通路） |
 |---|---|
 | `ObjectPool<T>` | `hyle_memory_arena_create(sizeof(T), count, alignof(T))` —— `<T>` 降解成 `size_t block_size`/`alignment` |
+| `GrowablePool<T>` | `hyle_growable_pool_create(slot_size, slot_align, initial_slots)` —— 与 `ObjectPool<T>`↔`MemoryArena` 同构：非模板运行时核心（`detail::GrowablePoolCore`）承载擦除后的裸槽逻辑，`<T>` 模板只是跑 ctor/dtor 的薄包装 |
 | `Allocator::construct<T>()` | 裸 `alloc` 返回内存，构造由调用方语言做 |
 | `Tensor<float, N>`（ggml 的对照） | `ggml_tensor { enum type; void* data; int64_t ne[]; }` —— 类型降成 `enum` 标签 |
 
@@ -83,6 +84,7 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 - **返回值通道**：`hyle_status`（opaque owning handle，`uintptr_t rep`）值返回 + 分支；`HYLE_C_RETURN_IF_ERROR` 传播。`Result<T>`（`std::expected`）是模板，C 侧用 `hyle_status` + 出参表达。
 - **诊断通道**：`hyle_error_report` + 可换 handler（`hyle_error_set_handler` 简单单槽 / `hyle_error_push_handler`+`pop` 嵌套安全，对标 signal old-handler）。
 - **绝不让 C++ 异常跨 C 边界**（UB）。catch 只在 adapter 边界做"外来异常→Status"。
+- **分配器层不走 `hyle_status`**（mem 的刻意分层）：句柄工厂 `hyle_*_create` **资源失败返 NULL + 设 `hyle_mem_last_error` 字符串**（invalid backing / wrapper·slab OOM / 池耗尽）；**契约违反仍 fail-fast abort**（ctor 的 `block_size==0`、`block_size*block_count` 溢出 `size_t`；`allocate` 收到非 2 的幂对齐）。分配器是**最底层基元**，让它依赖上层 error 模块的 `Status` 会**倒置依赖**；故 mem 自足用"NULL + thread-local last-error 串"通道（与 ggml 分配器返 NULL / 返回码同理），不引入 `hyle_status`。
 - 对照：ggml 用 `ggml_status` 返回码 + `ggml_abort` 回调；oneDNN 用 `dnnl_status_t` + C++ 层 `wrap_c_api` 转异常。HYLE 与 ggml 同构（返回码 + fail-fast）。
 
 ## 6. C++ API 易用性（第 1 层，给 C++ 用户）

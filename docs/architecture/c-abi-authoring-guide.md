@@ -86,7 +86,8 @@ extern "C" {
 
 3. **契约违反 fail-fast，边界故障返 NULL/错误码**（区分二者）：
    - 调用方契约违反（如 StackAllocator size==0）→ 让 C++ ctor 的 `HYLE_FATAL_ASSERT` 触发 abort，**不要**在 C 层静默返 NULL 掩盖（对齐 charter fail-fast）。
-   - 真边界故障（backing 缺 fn 指针、`new` OOM、`base==NULL`）→ 返 NULL。
+   - 真边界故障（backing 缺 fn 指针、`new` OOM、`base==NULL`、池耗尽）→ 返 NULL。
+   - **句柄返回型 API 返 NULL 时，配一条 thread-local last-error 串**（如 mem 的 `hyle_mem_last_error`，转发 platform 的 `vm_set_last_error`）：NULL 只说"失败了"，C 用户还需知道"为什么失败"（invalid backing？OOM？池耗尽？）——与 error 模块的 `hyle_status_message_cstr` 呼应，跨 C 边界的失败都要能取到人可读原因。**每条** NULL 返回路径都要设串，别让 C 用户读到上一次的过时串。
    - 系统边界输入才校验（FFI 调用方可能传零值结构体）；内部/框架保证不重复校验。
 
 ## 4. 易用性：两条线，各自做到位

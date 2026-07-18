@@ -224,7 +224,8 @@ typedef struct hyle_growable_pool_o hyle_growable_pool_o;
  * first block's slot count (0 => 1); blocks then double geometrically. Blocks
  * come from `backing`. Returns NULL (and sets hyle_mem_last_error) on invalid
  * backing or wrapper-alloc failure; slot_size==0 fail-fasts (abort) in the C++
- * core, and a grow that hits backing OOM aborts too (same as the other pools).
+ * core. A grow that later hits backing OOM is graceful -- acquire() returns
+ * NULL (mem-audit-followup #2 arch B), not an abort.
  *
  * Like the arena object pool (HYLE_OBJECT_POOL_CREATE), acquire() hands out RAW
  * uninitialized storage and release() runs NO destructor: the C caller inits the

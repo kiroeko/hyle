@@ -57,10 +57,12 @@ mem 实现**根本可靠**:最高风险的无锁分片 `MemoryArena`(ABA / 内�
 - **[#5b 已做]** `MemoryArena` ctor(memory_arena.h:48-54)加溢出 guard:round-up `block_size_ + (alignment_-1)` 不 wrap + slab `stride_ * count_` 不超 size_t;超大 block_size/count 从"静默 under-alloc"→ fail-fast(契约违反)。
 - **[#5a 已做 d1f7930]** `Allocator::valid()`(allocator.h:58-63)查全三指针(原只查 `alloc_fn`,null free/realloc 会 deref)。
 
-### 文档同步 [未做]
-- **c-abi-design.md**:§1 类型擦除表加 GrowablePool 行(和 ObjectPool 并列);§5 补 mem 分配器层错误策略(资源失败 nullptr + last-error / 契约违反 abort,明确区别于 error 模块的 Status——mem 刻意不依赖 error 模块是对的)。
-- **c-abi-authoring-guide.md**:§3/§4 补 "资源失败返 NULL 时设 last-error 字符串让 C 用户查因" 的模式。
-- **c-mem.md**:GrowablePool 导出、error last-error 通路、arena 不再 abort、纠正 §3.8 "泛型不可达" 误述。
+### 文档同步 [已做]
+- **[已做] c-abi-design.md**:§1 类型擦除表加 GrowablePool 行(和 ObjectPool 并列);§5 补 mem 分配器层错误策略(资源失败 nullptr + last-error / 契约违反 abort;mem 刻意不依赖 error 模块 Status——最底层基元,依赖会倒置)。
+- **[已做] c-abi-authoring-guide.md**:§3 铁律 3 补"池耗尽"+ "句柄返回型 API 返 NULL 时配 thread-local last-error 串"模式(呼应 hyle_status_message_cstr)。
+- **[已做] c-mem.md**:新增 §3.5 GrowablePool 章节(七件套 + 宏 + 裸槽模型,同 object pool);§3.9 纠正"泛型不可达"误述(→泛型语法过不了 C ABI 但能力经宏可达,同 ObjectPool<T>);3 处 create 资源失败改 graceful;last-error 覆盖扩面;章节顺延 §3.5-3.8→3.6-3.9(引用同步)。
+- **[附带,已做]** mem.h growable grow-OOM 注释修正(档 B 遗漏:原说 abort,实际 acquire 返 NULL graceful);README.md 索引修正(补 GrowablePool 句柄 + 去 stale "hyle_mem_api 表"——mem 无 api 表)。
+- (可选后续,未做) c-mem.md §4 未加 GrowablePool 代码示例(其他池都有,一致性 nice-to-have);guide/README 其他潜在 stale 未逐一核查。
 
 ### 三平台验证 + commit [未做]
 所有代码改动收尾必须三平台真编真测:
