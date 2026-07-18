@@ -41,12 +41,13 @@ platform **功能完整、C ABI 接近满分**:8 子系统(wait/cpu/numa/virtual
 - **[已做,子代理误报修正]** c-platform.md §3.8"有意不导出"表**本就存在**(子代理"缺表"是误报——表里已有 Unparker/path/模板/测试钩子);已补全遗漏项:`symbol_as` / `OwnedFd` / `VmRegion::release`·`MappedFile::reset`。
 - 〔以上 milestone:83 / README:13 亦已做:分别加勘误注、去 `hyle_platform_api` 表〕
 
-### P4 测试/性能补齐
-- **错误/失败路径**:thread spawn 失败(EINVAL)+ 析构/move joinable 的 death test、fs copy_file/rename/change_directory 失败、dynlib open(nullptr)(实现未防护)、VmRegion::adopt 的 C++ 单测、mapped_file 非页对齐 offset + move-assign。〔核实修正:thread 的 affinity 读回(Linux)/stack_size/affinity_cpu=4096 边界**已有测**(thread_test.cc:50-88/137/168),子代理"affinity/stack 完全未覆盖"**不准**〕
-- **并发竞态**:park_timeout 的 **timeout-vs-unpark 并发压测**缺。〔核实修正:park_timeout **功能测试其实有 6 个**(wait_test.cc:102-132/259),子代理"仅单次"**不准**;真缺的只是并发竞态一项〕
-- **C ABI 薄转发**:低层 wait 四导出(wait_on_address/_for/wake_one/wake_all,含 as_atomic reinterpret)、mapped_file 数据路径(valid/data/size/flush)、VmRegion decommit/protect/commit_usable、vm_decommit/vm_protect 零覆盖。
-- **bench 缺口**:park_timeout、vm_protect、mapped_file 三个热路径无 bench。
-- (可选)Thread 析构/move fail-fast death test、alignment guard 等。
+### P4 测试/性能补齐 [#3 join death test 已做;其余覆盖增强记后续]
+- **[已做]** #3 join-non-joinable death test(`ThreadDeathTest.JoinNonJoinableAborts`)锁死 P1 join 守卫。**本轮所有修复均有测试覆盖/锁死**:#1/#2=`RemoveRecursiveDoesNotFollowDirLink`(P0)、#3=此 death test、#4=现有 `AffinityOutOfRangeDoesNotCrash`、#5=DynLib 测试。
+- **[后续覆盖增强,非 bug]**(原有代码覆盖不足,与本轮修复无关;核心修复已验证故降后续):
+  - park_timeout timeout-vs-unpark 并发压测(功能测试已有 6 个,仅缺并发竞态一项)。
+  - C ABI 薄转发零覆盖:低层 wait 四导出、vm_protect/vm_decommit、VmRegion decommit/protect、mapped_file 数据路径(valid/data/size/flush)。
+  - mapped_file 非页对齐 offset + move-assign;thread spawn 失败(EINVAL);VmRegion::adopt C++ 单测;fs copy/rename/change_dir 失败路径。
+  - bench:park_timeout / vm_protect / mapped_file 三热路径无 bench。
 
 ### P5 下游利用错配 [跟进 — 非 platform 缺陷,是"造了没接上"]
 - **调度器 worker 不绑核/命名**:scheduler.cc:232 `Thread::spawn(&worker_main, &ctxs[i])` 用默认 `ThreadOpts{}`,未设 affinity_cpu/name;而 affinity_cpu(thread.cc:48 接线完好)按 platform-01 D3 是"sched per-core pinning 刚需"。**platform 侧功能就绪,需 sched 侧接上**(spawn 传 affinity_cpu + name);注意当前无"当前线程重绑"API,只能 spawn 时设。

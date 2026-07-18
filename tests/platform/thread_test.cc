@@ -221,3 +221,14 @@ TEST(Thread, MoveAssignIntoEmpty) {
   empty.join();
   EXPECT_EQ(ran.load(), 1);
 }
+
+// join() on a non-joinable Thread is a contract bug -> fail-fast. Locks in the
+// joinable() guard added to Thread::join() (platform-audit #3).
+TEST(ThreadDeathTest, JoinNonJoinableAborts) {
+  EXPECT_DEATH(
+      {
+        Thread t;   // default-constructed: not joinable (handle_ == 0)
+        t.join();   // HYLE_FATAL_ASSERT(joinable()) fires
+      },
+      ".*");
+}
