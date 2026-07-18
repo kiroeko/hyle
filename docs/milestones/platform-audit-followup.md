@@ -37,11 +37,11 @@ platform **功能完整、C ABI 接近满分**:8 子系统(wait/cpu/numa/virtual
 - **#5 dynlib 非 UTF-8 [已做]**:open/get 转 `LoadLibraryW`/`GetModuleHandleW` + `to_wide`(MultiByteToWideChar),current 转 `GetModuleHandleW(nullptr)`;顺带修 open(nullptr) 未防护(to_wide null 检查)。Windows DynLib 14 测试绿。
 - **copy_file(x,x) 自拷贝截断 [已做]**:POSIX copy_file 开头 `strcmp(from,to)==0` 守卫(避免 O_TRUNC 截空);Windows CopyFileW 本就失败安全。POSIX 段待三平台复验。
 - **getpwuid→getpwuid_r [已做]**:home_directory 改线程安全的 getpwuid_r。POSIX 段待三平台复验。
-- **[边际 LOW,本轮未做,低优先]**(已核实真,但价值/成本比低):
-  - wrapper OOM 未设 last-error:实害极小(wrapper 结构体极小、OOM 罕见)+ 各模块 last-error 机制不一(dynlib g_error 内部无公开 set / vm 有 vm_set_last_error / parker 无)——补全需先统一机制。
-  - page_align_up 溢出(vm.h:38-49):触发需 ~16 EiB,不现实。
-  - get_env_var Windows 探长度竞态(fs.cc:286-300):需并发改同一 env 变量,罕见。
-  - 深递归无深度上限:需重构递归加深度参数;深目录树(Windows ~170 层)才触发。
+- **[边际 LOW — 已处置(后续批次)]**:
+  - **[已做]** page_align_up/large_page_align_up 溢出 guard(vm.h:`n > SIZE_MAX-(p-1)` → 0)。
+  - **[已做]** get_env_var Windows 探长度竞态守卫(`got >= need` 即并发变长 → 返空,不越界读)。
+  - **[已做]** remove_directory_recursive 深递归上限(`rm_recursive_depth` + `kRmMaxDepth=512`,栈溢出防护)。
+  - **[部分已做]** wrapper OOM last-error:vm_region 4 个 create 已设(vm_set_last_error);dynlib(内部 g_error 无公开 set)/mapped_file(无独立 last-error)/parker(无 error 通道)的 wrapper OOM 无 set 通路,wrapper 极小、OOM 罕见,**接受现状**。
 
 ### P3 文档 stale
 - milestone platform-03b:83 还写"导出到 `hyle_platform_api` 表"(design §3 已删表、实物无表)。

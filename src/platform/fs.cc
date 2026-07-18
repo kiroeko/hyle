@@ -310,7 +310,11 @@ std::size_t get_env_var(const char* name, char* dst, std::size_t cap) noexcept {
     wbuf = heapw;
   }
   DWORD got = GetEnvironmentVariableW(wn.w(), wbuf, need);
-  std::size_t r = fill_w(dst, cap, wbuf, static_cast<int>(got));
+  // Race guard: if another thread grew the var between the size probe and here,
+  // got >= need and wbuf is NOT filled -> return empty rather than read past need.
+  std::size_t r = (got != 0 && got < need)
+                      ? fill_w(dst, cap, wbuf, static_cast<int>(got))
+                      : fill(dst, cap, "", 0);
   std::free(heapw);
   return r;
 }
@@ -909,7 +913,13 @@ namespace {
 struct RmCtx {
   const char* dir;
   bool ok;
+  unsigned depth;
 };
+
+// Recursion depth cap: a pathological deep tree would blow the stack
+// (~several KB/frame). 512 is far past any real nesting. Fwd-decl for rm_visit.
+constexpr unsigned kRmMaxDepth = 512;
+bool rm_recursive_depth(const char* path, unsigned depth) noexcept;
 
 bool rm_visit(const char* name, bool is_dir, void* vctx) noexcept {
   auto* c = static_cast<RmCtx*>(vctx);
@@ -924,23 +934,29 @@ bool rm_visit(const char* name, bool is_dir, void* vctx) noexcept {
   // directory_iterate reports a directory junction as is_dir=true (platform-audit #1).
   bool r;
   if (is_symlink(child)) r = remove_symlink(child);
-  else if (is_dir) r = remove_directory_recursive(child);
+  else if (is_dir) r = rm_recursive_depth(child, c->depth + 1);
   else r = remove_file(child);
   if (!r) c->ok = false;
   return true;  // keep going; report failure via ok
 }
-}  // namespace
 
-bool remove_directory_recursive(const char* path) noexcept {
-  // A symlink/junction at the ROOT: remove the LINK itself, never follow it into
+// Depth-capped recursive core; both the public entry and rm_visit route here.
+bool rm_recursive_depth(const char* path, unsigned depth) noexcept {
+  if (depth > kRmMaxDepth) return false;  // too deep -> fail (stack-overflow guard)
+  // A symlink/junction at this level: remove the LINK itself, never follow it into
   // a target outside the tree (platform-audit #1/#2 data-loss guard). is_symlink
   // tests the path itself (lstat / reparse bit), before is_directory (follows).
   if (is_symlink(path)) return remove_symlink(path);
   if (!is_directory(path)) return remove_file(path);  // a plain file: just unlink
-  RmCtx c{path, true};
+  RmCtx c{path, true, depth};
   if (!directory_iterate(path, rm_visit, &c)) return false;
   if (!c.ok) return false;
   return remove_directory(path);
+}
+}  // namespace
+
+bool remove_directory_recursive(const char* path) noexcept {
+  return rm_recursive_depth(path, 0);
 }
 
 }  // namespace hyle::platform

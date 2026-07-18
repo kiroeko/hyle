@@ -292,7 +292,10 @@ hyle_vm_region_o* hyle_vm_region_reserve(size_t size) {
   auto r = hyle::platform::VmRegion::reserve(size);
   if (!r.valid()) return nullptr;
   auto* o = new (std::nothrow) hyle_vm_region_o{};
-  if (!o) return nullptr;
+  if (!o) {
+    hyle::platform::vm_set_last_error("vm_region create: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
   o->region = std::move(r);
   return o;
 }
@@ -301,7 +304,10 @@ hyle_vm_region_o* hyle_vm_region_reserve_guarded(size_t usable) {
   auto r = hyle::platform::VmRegion::reserve_guarded(usable);
   if (!r.valid()) return nullptr;
   auto* o = new (std::nothrow) hyle_vm_region_o{};
-  if (!o) return nullptr;
+  if (!o) {
+    hyle::platform::vm_set_last_error("vm_region create: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
   o->region = std::move(r);
   return o;
 }
@@ -310,7 +316,10 @@ hyle_vm_region_o* hyle_vm_region_reserve_numa(size_t size, int node) {
   auto r = hyle::platform::VmRegion::reserve_numa(size, node);
   if (!r.valid()) return nullptr;
   auto* o = new (std::nothrow) hyle_vm_region_o{};
-  if (!o) return nullptr;
+  if (!o) {
+    hyle::platform::vm_set_last_error("vm_region create: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
   o->region = std::move(r);
   return o;
 }
@@ -319,7 +328,10 @@ hyle_vm_region_o* hyle_vm_region_adopt(void* base, size_t size) {
   auto r = hyle::platform::VmRegion::adopt(base, size);
   if (!r.valid()) return nullptr;  // base==NULL -> !valid(); no ownership taken
   auto* o = new (std::nothrow) hyle_vm_region_o{};
-  if (!o) return nullptr;
+  if (!o) {
+    hyle::platform::vm_set_last_error("vm_region create: wrapper allocation failed (out of memory)");
+    return nullptr;
+  }
   o->region = std::move(r);
   return o;
 }

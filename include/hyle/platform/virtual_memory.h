@@ -37,6 +37,7 @@ HYLE_PLATFORM_API std::size_t large_page_size() noexcept;
 // Smallest multiple of page_size() that is >= n. n==0 -> 0.
 HYLE_FORCE_INLINE std::size_t page_align_up(std::size_t n) noexcept {
   std::size_t p = page_size();
+  if (n > SIZE_MAX - (p - 1)) return 0;  // round-up would overflow -> 0 (caller treats as fail)
   return (n + (p - 1)) & ~(p - 1);
 }
 
@@ -45,6 +46,7 @@ HYLE_FORCE_INLINE std::size_t large_page_align_up(std::size_t n) noexcept {
   if (n == 0) return 0;
   std::size_t lp = large_page_size();
   std::size_t p = lp != 0 ? lp : page_size();
+  if (n > SIZE_MAX - (p - 1)) return 0;  // round-up would overflow -> 0
   return (n + (p - 1)) & ~(p - 1);
 }
 
