@@ -68,6 +68,23 @@ class SmallVector {
     o.size_ = 0;
     o.cap_ = N;
   }
+  SmallVector& operator=(SmallVector&& o) noexcept {
+    if (this == &o) return *this;
+    free_heap();
+    alloc_ = o.alloc_;
+    size_ = o.size_;
+    cap_ = o.cap_;
+    if (o.inline_storage()) {
+      data_ = inline_ptr();
+      std::memcpy(data_, o.data_, size_ * sizeof(T));
+    } else {
+      data_ = o.data_;
+      o.data_ = o.inline_ptr();
+    }
+    o.size_ = 0;
+    o.cap_ = N;
+    return *this;
+  }
   HYLE_DISABLE_COPY(SmallVector);
 
   std::size_t size() const noexcept { return size_; }
@@ -90,8 +107,14 @@ class SmallVector {
     if (n > cap_) grow_to(n);
   }
   void push_back(const T& v) {
-    if (size_ == cap_) grow_to(cap_ * 2);
-    data_[size_++] = v;
+    if (size_ == cap_) {
+      const T copy = v;  // preserve a possibly self-referential argument
+      HYLE_FATAL_ASSERT(cap_ <= static_cast<std::size_t>(-1) / 2);
+      grow_to(cap_ * 2);
+      data_[size_++] = copy;
+    } else {
+      data_[size_++] = v;
+    }
   }
   void pop_back() noexcept {
     HYLE_FATAL_ASSERT(size_ > 0);
@@ -106,6 +129,8 @@ class SmallVector {
   }
 
   void grow_to(std::size_t n) {
+    HYLE_FATAL_ASSERT(n >= size_ &&
+                      n <= static_cast<std::size_t>(-1) / sizeof(T));
     T* nb = static_cast<T*>(alloc_.allocate(n * sizeof(T), alignof(T)));
     HYLE_FATAL_ASSERT(nb != nullptr);
     std::memcpy(nb, data_, size_ * sizeof(T));

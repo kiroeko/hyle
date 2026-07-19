@@ -24,6 +24,8 @@
 #define HYLE_STRSEARCH_CAT(a, b) HYLE_STRSEARCH_CAT_(a, b)
 #define STR_COUNT_FN HYLE_STRSEARCH_CAT(str_count_, HYLE_STRSEARCH_SUFFIX)
 #define STR_RFIND_FN HYLE_STRSEARCH_CAT(str_rfind_char_, HYLE_STRSEARCH_SUFFIX)
+#define STR_LOWER_FN HYLE_STRSEARCH_CAT(str_ascii_lower_, HYLE_STRSEARCH_SUFFIX)
+#define STR_UPPER_FN HYLE_STRSEARCH_CAT(str_ascii_upper_, HYLE_STRSEARCH_SUFFIX)
 
 namespace hyle::container::detail {
 
@@ -77,6 +79,60 @@ std::uint32_t STR_RFIND_FN(const char* data, std::uint32_t size, char c) noexcep
   for (std::uint32_t j = static_cast<std::uint32_t>(i); j-- > 0;)  // scalar head (< w bytes)
     if (data[j] == c) return j;
   return kNpos;
+}
+
+std::uint32_t STR_LOWER_FN(const char* data, std::uint32_t size, char* out,
+                           std::uint32_t cap) noexcept {
+  const std::uint32_t n =
+      cap == 0 ? 0 : (size < cap - 1 ? size : cap - 1);
+  const hs::ScalableTag<std::uint8_t> d;
+  const std::size_t width = hs::Lanes(d);
+  const auto lower_a = hs::Set(d, static_cast<std::uint8_t>('A'));
+  const auto upper_z = hs::Set(d, static_cast<std::uint8_t>('Z'));
+  const auto delta = hs::Set(d, static_cast<std::uint8_t>('a' - 'A'));
+  const auto* input = reinterpret_cast<const std::uint8_t*>(data);
+  auto* output = reinterpret_cast<std::uint8_t*>(out);
+  std::size_t i = 0;
+  for (; i + width <= n; i += width) {
+    const auto value = hs::LoadU(d, input + i);
+    const auto ascii_upper =
+        hs::And(hs::Ge(value, lower_a), hs::Le(value, upper_z));
+    hs::StoreU(hs::Add(value, hs::IfThenElseZero(ascii_upper, delta)), d,
+               output + i);
+  }
+  for (; i < n; ++i) {
+    const char c = data[i];
+    out[i] = c >= 'A' && c <= 'Z' ? static_cast<char>(c + ('a' - 'A')) : c;
+  }
+  if (cap != 0) out[n] = '\0';
+  return size;
+}
+
+std::uint32_t STR_UPPER_FN(const char* data, std::uint32_t size, char* out,
+                           std::uint32_t cap) noexcept {
+  const std::uint32_t n =
+      cap == 0 ? 0 : (size < cap - 1 ? size : cap - 1);
+  const hs::ScalableTag<std::uint8_t> d;
+  const std::size_t width = hs::Lanes(d);
+  const auto lower_a = hs::Set(d, static_cast<std::uint8_t>('a'));
+  const auto lower_z = hs::Set(d, static_cast<std::uint8_t>('z'));
+  const auto delta = hs::Set(d, static_cast<std::uint8_t>('a' - 'A'));
+  const auto* input = reinterpret_cast<const std::uint8_t*>(data);
+  auto* output = reinterpret_cast<std::uint8_t*>(out);
+  std::size_t i = 0;
+  for (; i + width <= n; i += width) {
+    const auto value = hs::LoadU(d, input + i);
+    const auto ascii_lower =
+        hs::And(hs::Ge(value, lower_a), hs::Le(value, lower_z));
+    hs::StoreU(hs::Sub(value, hs::IfThenElseZero(ascii_lower, delta)), d,
+               output + i);
+  }
+  for (; i < n; ++i) {
+    const char c = data[i];
+    out[i] = c >= 'a' && c <= 'z' ? static_cast<char>(c - ('a' - 'A')) : c;
+  }
+  if (cap != 0) out[n] = '\0';
+  return size;
 }
 
 }  // namespace hyle::container::detail

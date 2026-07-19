@@ -18,7 +18,7 @@ struct BufWriter {
 
   void put(char c) noexcept {
     if (w + 1 < cap) dst[w++] = c;
-    ++need;
+    if (need != static_cast<std::size_t>(-1)) ++need;
   }
   void put(const char* p, std::size_t n) noexcept {
     for (std::size_t i = 0; i < n; ++i) put(p[i]);
@@ -85,7 +85,8 @@ string_ref join(string_ref a, string_ref b, mem::Allocator alloc) {
   std::size_t need = static_cast<std::size_t>(a.size) + 1 + b.size;
   if (need > string_ref::npos) return string_ref{};  // result would not fit a view
   const std::uint32_t n = static_cast<std::uint32_t>(need);
-  char* s = static_cast<char*>(alloc.allocate(n + 1));
+  char* s = static_cast<char*>(
+      alloc.allocate(static_cast<std::size_t>(n) + 1));
   if (s == nullptr) return string_ref{};
   if (a.size) std::memcpy(s, a.data, a.size);
   s[a.size] = '/';

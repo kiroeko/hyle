@@ -114,14 +114,30 @@ class CArray {
   const_iterator end() const noexcept { return data_ ? data_ + size() : nullptr; }
 
   void reserve(std::uint64_t n) {
-    if (n > capacity()) grow_to(n);
+    HYLE_FATAL_ASSERT(try_reserve(n));
+  }
+  bool try_reserve(std::uint64_t n) noexcept {
+    return n <= capacity() || grow_to(n);
   }
 
   void push_back(const T& v) {
+    HYLE_FATAL_ASSERT(try_push_back(v));
+  }
+  bool try_push_back(const T& v) noexcept {
     std::uint64_t s = size();
-    if (s == capacity()) grow_to(s == 0 ? 4 : s * 2);
-    data_[s] = v;
+    if (s == capacity()) {
+      // `v` may alias an element in this array. reallocate is allowed to move
+      // the backing block, so preserve it before growth (std::vector supports
+      // the same push_back(v[0]) shape).
+      const T copy = v;
+      if (s > UINT64_MAX / 2) return false;
+      if (!grow_to(s == 0 ? 4 : s * 2)) return false;
+      data_[s] = copy;
+    } else {
+      data_[s] = v;
+    }
     carray_header(data_)->size = s + 1;
+    return true;
   }
 
   void pop_back() noexcept {
@@ -134,10 +150,12 @@ class CArray {
   }
 
  private:
-  void grow_to(std::uint64_t cap) {
-    data_ = static_cast<T*>(detail::carray_set_capacity_internal(
-        data_, cap, sizeof(T), alignof(T), alloc_));
-    HYLE_FATAL_ASSERT(data_ != nullptr);
+  bool grow_to(std::uint64_t cap) noexcept {
+    void* replacement = detail::carray_set_capacity_internal(
+        data_, cap, sizeof(T), alignof(T), alloc_);
+    if (replacement == nullptr) return false;
+    data_ = static_cast<T*>(replacement);
+    return true;
   }
 
   T* data_ = nullptr;

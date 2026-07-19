@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <array>
 #include <cstring>
 
 #include "hyle/container/string_ref.h"
@@ -47,6 +48,28 @@ TEST(StringAlgo, CaseConvertTruncates) {
   EXPECT_STREQ(buf, "abc");
 }
 
+TEST(StringAlgo, CaseConvertLongAndInPlace) {
+  constexpr std::size_t kSize = 257;
+  std::array<char, kSize + 1> input{};
+  std::array<char, kSize + 1> output{};
+  for (std::size_t i = 0; i < kSize; ++i)
+    input[i] = (i % 3 == 0) ? 'A' : ((i % 3 == 1) ? 'z' : '-');
+
+  EXPECT_EQ(to_lower({input.data(), kSize}, output.data(),
+                     static_cast<std::uint32_t>(output.size())),
+            kSize);
+  for (std::size_t i = 0; i < kSize; ++i)
+    EXPECT_EQ(output[i], (i % 3 == 0) ? 'a' : ((i % 3 == 1) ? 'z' : '-'));
+  EXPECT_EQ(output[kSize], '\0');
+
+  EXPECT_EQ(to_upper({output.data(), kSize}, output.data(),
+                     static_cast<std::uint32_t>(output.size())),
+            kSize);
+  for (std::size_t i = 0; i < kSize; ++i)
+    EXPECT_EQ(output[i], (i % 3 == 0) ? 'A' : ((i % 3 == 1) ? 'Z' : '-'));
+  EXPECT_EQ(output[kSize], '\0');
+}
+
 TEST(StringAlgo, Capitalize) {
   char a[] = "rect_width";
   capitalize(a);
@@ -66,6 +89,17 @@ TEST(StringAlgo, HexEncode) {
   const unsigned char bytes[] = {0x00, 0xAB, 0xFF, 0x10};
   EXPECT_EQ(hex_encode(bytes, 4, buf, sizeof(buf)), 8u);
   EXPECT_STREQ(buf, "00abff10");
+}
+
+TEST(StringAlgo, HexDecodeAndValidation) {
+  unsigned char bytes[4] = {};
+  EXPECT_EQ(hex_decode("00aBff10"_sr, bytes, sizeof(bytes)), 4u);
+  EXPECT_EQ(bytes[0], 0x00);
+  EXPECT_EQ(bytes[1], 0xAB);
+  EXPECT_EQ(bytes[2], 0xFF);
+  EXPECT_EQ(bytes[3], 0x10);
+  EXPECT_EQ(hex_decode("abc"_sr, bytes, sizeof(bytes)), SIZE_MAX);
+  EXPECT_EQ(hex_decode("zz"_sr, bytes, sizeof(bytes)), SIZE_MAX);
 }
 
 TEST(StringAlgo, Escape) {
@@ -107,6 +141,33 @@ TEST(StringAlgo, Utf8LengthInvalid) {
   // Truncated 2-byte sequence (0xC3 with no continuation).
   string_ref truncated("\xC3");
   EXPECT_EQ(utf8_length(truncated), -1);
+  const char overlong[] = {static_cast<char>(0xC0), static_cast<char>(0xAF)};
+  EXPECT_EQ(utf8_length(string_ref{overlong, 2}), -1);
+  const char surrogate[] = {static_cast<char>(0xED), static_cast<char>(0xA0),
+                            static_cast<char>(0x80)};
+  EXPECT_EQ(utf8_length(string_ref{surrogate, 3}), -1);
+  const char too_large[] = {static_cast<char>(0xF4), static_cast<char>(0x90),
+                            static_cast<char>(0x80), static_cast<char>(0x80)};
+  EXPECT_EQ(utf8_length(string_ref{too_large, 4}), -1);
+}
+
+TEST(StringAlgo, ScalarUtf8DecoderRejectsNonUnicodeSequences) {
+  const char overlong[] = {static_cast<char>(0xC0), static_cast<char>(0xAF)};
+  Utf8Decoder a(string_ref{overlong, 2});
+  EXPECT_EQ(a.next(), 0);
+  EXPECT_FALSE(a.valid());
+
+  const char surrogate[] = {static_cast<char>(0xED), static_cast<char>(0xA0),
+                            static_cast<char>(0x80)};
+  Utf8Decoder b(string_ref{surrogate, 3});
+  EXPECT_EQ(b.next(), 0);
+  EXPECT_FALSE(b.valid());
+
+  const char maximum[] = {static_cast<char>(0xF4), static_cast<char>(0x8F),
+                          static_cast<char>(0xBF), static_cast<char>(0xBF)};
+  Utf8Decoder c(string_ref{maximum, 4});
+  EXPECT_EQ(c.next(), 0x10FFFF);
+  EXPECT_TRUE(c.valid());
 }
 
 TEST(StringAlgo, Utf8IcmpCaseFold) {

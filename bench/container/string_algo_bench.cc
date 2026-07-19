@@ -1,11 +1,8 @@
-// string_algo utf8/hex bench (re-audit gap-fill #52). string_algo's UTF-8 ops
-// (utf8_length / utf8_icmp / Utf8Decoder) are SCALAR byte loops -- the same shape
-// that lost to SIMD in string_ref::find. The SOTA for UTF-8 counting/validation
-// is simdutf (the SIMD library used by Node/Bun). This bench races HYLE's scalar
-// utf8_length against simdutf::count_utf8 + validate_utf8 (gated -DHYLE_BENCH_
-// SIMDUTF, since simdutf is an external clone) so the scalar-vs-SIMD gap is
-// MEASURED, not assumed. hex_encode races a naive scalar reference (no single
-// SOTA hex lib worth cloning; the point is to have a number). Win or lose, printed.
+// string_algo UTF-8/ASCII/hex bench. utf8_length is the product's dispatched
+// validate+count path (simdutf when built in, strict scalar fallback otherwise).
+// ASCII case conversion and hex encode/decode are included specifically to decide
+// whether another runtime SIMD kernel is justified; matched scalar references
+// make that decision evidence-based.
 
 #include <nanobench.h>
 
@@ -21,7 +18,9 @@
 #endif
 
 using hyle::container::hex_encode;
+using hyle::container::hex_decode;
 using hyle::container::string_ref;
+using hyle::container::to_lower;
 using hyle::container::utf8_icmp;
 using hyle::container::utf8_length;
 
@@ -135,6 +134,66 @@ int bench_string_algo() {
     });
     b.run("HYLE hex_encode", [&] {
       hex_encode(bytes.data(), bytes.size(), out.data(), out.size());
+      nb::doNotOptimizeAway(out.data());
+    });
+  }
+
+  // ---- hex_decode: 2 KB hex -> 1 KB bytes, including validation -------------
+  {
+    std::string bytes(1024, '\0');
+    for (std::size_t i = 0; i < bytes.size(); ++i)
+      bytes[i] = static_cast<char>(i * 31 + 7);
+    std::string hex(bytes.size() * 2 + 1, '\0');
+    std::string out(bytes.size(), '\0');
+    hex_encode(bytes.data(), bytes.size(), hex.data(), hex.size());
+    const string_ref input{
+        hex.data(), static_cast<std::uint32_t>(bytes.size() * 2)};
+    nb::Bench b;
+    b.title("hex_decode 2KB->1KB (validated)")
+        .relative(true)
+        .batch(bytes.size())
+        .minEpochIterations(20000);
+    b.run("naive validated hex (reference)", [&] {
+      bool valid = true;
+      for (std::size_t i = 0; i < bytes.size(); ++i) {
+        const int high = hyle::container::hex_value(hex[i * 2]);
+        const int low = hyle::container::hex_value(hex[i * 2 + 1]);
+        valid &= high >= 0 && low >= 0;
+        out[i] = static_cast<char>((high << 4) | low);
+      }
+      nb::doNotOptimizeAway(valid);
+      nb::doNotOptimizeAway(out.data());
+    });
+    b.run("HYLE hex_decode", [&] {
+      hex_decode(input, out.data(), out.size());
+      nb::doNotOptimizeAway(out.data());
+    });
+  }
+
+  // ---- ASCII lower: compiler auto-vectorization ceiling vs HYLE API --------
+  {
+    std::string input(4096, '\0');
+    for (std::size_t i = 0; i < input.size(); ++i)
+      input[i] = static_cast<char>('A' + (i % 26));
+    std::string out(input.size() + 1, '\0');
+    const string_ref text{input.data(),
+                          static_cast<std::uint32_t>(input.size())};
+    nb::Bench b;
+    b.title("ASCII lowercase 4KB")
+        .relative(true)
+        .batch(input.size())
+        .minEpochIterations(20000);
+    b.run("scalar branch lower (reference)", [&] {
+      for (std::size_t i = 0; i < input.size(); ++i) {
+        const char c = input[i];
+        out[i] = (c >= 'A' && c <= 'Z')
+                     ? static_cast<char>(c + ('a' - 'A'))
+                     : c;
+      }
+      nb::doNotOptimizeAway(out.data());
+    });
+    b.run("HYLE to_lower", [&] {
+      to_lower(text, out.data(), static_cast<std::uint32_t>(out.size()));
       nb::doNotOptimizeAway(out.data());
     });
   }

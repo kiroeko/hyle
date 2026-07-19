@@ -53,6 +53,21 @@ TEST(ShardedQueue, PopScansAllShards) {
   EXPECT_TRUE(got.count(100) && got.count(101) && got.count(102) && got.count(103));
 }
 
+TEST(ShardedQueue, SuccessfulPopAdvancesPastBusyShard) {
+  ShardedQueue<int> q(2, 8);
+  EXPECT_TRUE(q.try_push(0, 10));
+  EXPECT_TRUE(q.try_push(0, 11));
+  EXPECT_TRUE(q.try_push(1, 20));
+  std::size_t cursor = 0;
+  int value = 0;
+  ASSERT_TRUE(q.try_pop(cursor, value));
+  EXPECT_EQ(value, 10);
+  EXPECT_EQ(cursor, 1u);
+  ASSERT_TRUE(q.try_pop(cursor, value));
+  EXPECT_EQ(value, 20);  // shard 1 is not starved by continuously busy shard 0
+  EXPECT_EQ(cursor, 0u);
+}
+
 TEST(ShardedQueue, ShardFullRejectsButOthersHaveRoom) {
   ShardedQueue<int> q(2, 2);  // 2 shards, cap 2 each
   // Fill shard chosen by hint 0 (=shard 0).

@@ -25,6 +25,15 @@ TEST(StringRef, DefaultIsEmpty) {
   EXPECT_EQ(s.data, nullptr);
 }
 
+TEST(StringRef, DefaultRangeAndSubstrStayNullSafe) {
+  string_ref s;
+  EXPECT_EQ(s.begin(), nullptr);
+  EXPECT_EQ(s.end(), nullptr);
+  string_ref tail = s.substr(0);
+  EXPECT_EQ(tail.data, nullptr);
+  EXPECT_EQ(tail.size, 0u);
+}
+
 TEST(StringRef, FromCStringIsNullTerminated) {
   string_ref s = "hello";
   EXPECT_EQ(s.size, 5u);

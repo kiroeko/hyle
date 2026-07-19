@@ -68,12 +68,17 @@ class ShardedQueue {
   }
 
   ~ShardedQueue() {
+    if (shards_ == nullptr) return;
     for (std::size_t i = 0; i < num_shards_; ++i) shards_[i].~BoundedQueue<T, Alloc>();
     alloc_.deallocate(shards_, sizeof(BoundedQueue<T, Alloc>) * num_shards_,
                       alignof(BoundedQueue<T, Alloc>));
   }
 
   HYLE_DISABLE_COPY_AND_MOVE(ShardedQueue);
+
+  // Allocation failure leaves an invalid object; check once after construction.
+  // Push/pop assume valid() so the hot path has no resource-state branch.
+  bool valid() const noexcept { return shards_ != nullptr; }
 
   // Push `item` onto the shard chosen by `producer_hint`. Returns false if THAT
   // shard is full (a bounded-queue semantic: under skew one shard may fill while
@@ -83,14 +88,14 @@ class ShardedQueue {
   }
 
   // Pop the next item, scanning shards round-robin from `cursor`. On success
-  // `cursor` is left AT the shard that yielded (so the next call re-checks it
-  // first -- a producer feeding that shard keeps a consumer warm). Returns false
-  // only if EVERY shard was empty at its check.
+  // `cursor` advances PAST the shard that yielded, preserving round-robin
+  // fairness even when one shard is continuously fed. Returns false only if
+  // EVERY shard was empty at its check.
   bool try_pop(std::size_t& cursor, T& out) noexcept {
     for (std::size_t i = 0; i < num_shards_; ++i) {
       std::size_t s = (cursor + i) % num_shards_;
       if (shards_[s].try_pop(out)) {
-        cursor = s;
+        cursor = (s + 1) % num_shards_;
         return true;
       }
     }
@@ -101,6 +106,7 @@ class ShardedQueue {
 
   // Total capacity across all shards (sum of per-shard ring capacities).
   std::size_t capacity() const noexcept {
+    if (shards_ == nullptr) return 0;
     std::size_t c = 0;
     for (std::size_t i = 0; i < num_shards_; ++i) c += shards_[i].capacity();
     return c;
@@ -109,15 +115,29 @@ class ShardedQueue {
  private:
   void init(std::size_t cap_per_shard) {
     HYLE_FATAL_ASSERT(num_shards_ >= 1);
+    HYLE_FATAL_ASSERT(
+        num_shards_ <= static_cast<std::size_t>(-1) /
+                           sizeof(BoundedQueue<T, Alloc>) &&
+        cap_per_shard <= static_cast<std::size_t>(-1) / num_shards_);
     // Allocator-backed array of ring objects (NOT std::vector -- charter §1 forbids std
     // owning types in a header that may cross the ABI boundary). BoundedQueue is
     // non-movable, so placement-new each shard in situ (sharing this queue's Alloc).
     void* mem = alloc_.allocate(sizeof(BoundedQueue<T, Alloc>) * num_shards_,
                                 alignof(BoundedQueue<T, Alloc>));
-    HYLE_FATAL_ASSERT(mem != nullptr);
+    if (mem == nullptr) return;
     shards_ = static_cast<BoundedQueue<T, Alloc>*>(mem);
-    for (std::size_t i = 0; i < num_shards_; ++i)
+    for (std::size_t i = 0; i < num_shards_; ++i) {
       new (&shards_[i]) BoundedQueue<T, Alloc>(alloc_, cap_per_shard);
+      if (!shards_[i].valid()) {
+        for (std::size_t j = 0; j <= i; ++j)
+          shards_[j].~BoundedQueue<T, Alloc>();
+        alloc_.deallocate(shards_,
+                          sizeof(BoundedQueue<T, Alloc>) * num_shards_,
+                          alignof(BoundedQueue<T, Alloc>));
+        shards_ = nullptr;
+        return;
+      }
+    }
   }
 
   HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};

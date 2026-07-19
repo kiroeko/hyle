@@ -76,7 +76,25 @@
 
 ## container·str —— string_ref / StringBuf / string_algo（`string_ref_bench.cc` / `string_buf_bench.cc` / `string_algo_bench.cc`）
 
-> 环境:Win MSVC19.50 Release,nanobench,~4KB 文本(L1 常驻),15 遍统计(`bench-stat.py`)。**标尺 = `std::string_view`**(string_ref 是其 drop-in 替代,conventions §7:同 16 字节 POD + null_terminated 位,同契约对照公平)+ `std::count` / simdutf。**至此 container·str 无真输项——全线追平或反超。** 分两条腿走(2026-07 定策):HYLE **自研**那些它能追平/反超的(find(char)/rfind(char)/count 走 SSE2+AVX2 运行期 dispatch、starts_with 走 memcmp、split/trim 零分配子视图);对 MSVC STL 手写向量化汇编(vector_algorithms.cpp:two-way 子串搜索 + PCMPESTRI 字符集扫描)**实测更强、自研 PCMPESTRI 只到 0.76x 追不动**的子串/成员族,**转发 `std::string_view`**——转发只在 `string_ref.cc` 内(include `<string_view>`),公开头不引任何 std string 头、不进 DLL 导出符号、不破 C-ABI seam。即"自研赢得过的留自研,std 更强的就借,不为纯粹性硬造打不过的轮子"。
+> 环境:Win MSVC19.50 Release,nanobench,~4KB 文本(L1 常驻),历史 15 遍统计(`bench-stat.py`)；2026-07-19 container 收口又跑一遍完整当前二进制。**标尺 = `std::string_view`**(string_ref 是其 drop-in 替代,conventions §7:同 16 字节 POD + null_terminated 位,同契约对照公平)+ `std::count` / simdutf。旧标题“container·str 无真输、全线追平或反超”已经撤回：当前 4KB 点值里 split/rfind/count 有 **0.83–0.96x**，而 64KB/1MB 回到约 1.0–1.14x；短输入的 DLL/dispatcher seam 是真实产品边界，方差只能解释一部分。分两条腿走(2026-07 定策):HYLE **自研** find(char)/rfind(char)/count 和 ASCII lower/upper 的 scalar/SSE4/AVX2/AVX512/NEON 运行期 kernel；对 MSVC STL 手写向量化汇编实测更强的 substring/成员族，**转发 `std::string_view`**。公开头不引 std string 头。
+
+### 2026-07-19 收口复测（当前接口形状）
+
+| 场景 | HYLE / 对手 | 判定 |
+|---|---:|---|
+| StringBuf 单次 intern vs thread-safe std peer | **0.91x** | ❌ 小输；每次锁 + DLL seam |
+| StringBuf `intern_many` vs unlocked std floor | **1.075x** | ✅ batch 吞吐赢 |
+| add/retain/remove vs direct-ID+mutex 同契约 peer | **0.75x** | ❌ 生命周期单调用小输 |
+| find(char), substring, set-search, starts_with | 0.93–1.00x | 统计近似平；不宣传赢 |
+| split / rfind(char) / count，4KB | 0.83–0.96x | 短输入 seam 可见 |
+| count / rfind(char)，64KB–1MB | 0.995–1.14x | 长输入摊平，平或赢 |
+| UTF-8 validate+count vs simdutf | **1.004x** | 平 |
+| ASCII lower vs scalar branch | **1.52x** | 赢 scalar reference |
+
+旧表保留为历史优化证据，不再作为当前无条件证书。StringBuf 的 peer 已升级为
+generation-tagged direct-ID+mutex，不再用按 key re-find 的较弱形状；因此旧的
+“churn 赢同契约 peer 1.24x”也撤回。正确产品建议是：驻留吞吐使用
+`intern_many`；高频可回收生命周期若成为瓶颈，再补 batch add/remove。
 
 | op | HYLE | std::string_view | vs SOTA | 结论 |
 |---|---|---|---|---|
@@ -94,7 +112,7 @@
 | **StringBuf intern**(100k/2k 唯一) | 24.0 | map+mutex(同契约 thread-safe peer)28.1 | 1.17x | ✅赢同契约 peer(SwissTable 核) |
 | **StringBuf add/retain/remove churn** | 17.9 | thread-safe map+mutex 22.3 / 无锁 floor 7.5 | 1.24x / 0.41x | ✅赢同契约 thread-safe peer 1.24x(min 1.17 保底,25 遍);对无锁裸 map 是 apples-to-oranges(见结论) |
 
-**诚实结论(全线追平的路径)**:
+**历史优化路径（当前结论以上述收口复测为准）**:
 - **自研追平的项(HYLE 自己的 SIMD)**:`find(char)`/`starts_with` 早已切 memchr/memcmp;`rfind(char)`/`count` 走运行期 ISA dispatch。**2026-07 统一到 `simd/vec.h`**:count/rfind 的核从手写裸 intrinsic(`string_ref_avx2.cc` 256b + inline SSE2,**x86-only**)改写为 `str_search_{scalar,sse4,avx2,avx512,neon}.cc`(共享体 `str_search_impl.h`,写在 D-tag 抽象上),`string_ref.cc` 按 `best_isa()` 经缓存 fn 指针选最宽核——与 `simd/ops` 同变体-TU 派发模型。收益:**一份源码覆盖全 ISA,arm64 NEON + AVX-512 白得**(此前 arm 落 scalar)。为保住手写版的 psadbw 4 累加器计数技巧,给 vec.h 补了三原语 `SumsOf8`(SAD)/`VecFromMask`/`FindLastTrue`。**回归实测(WSL,apples-to-apples 两边都过 .so)**:新 vec.h 核 vs 旧手写 AVX2 核 **打平**(count 96-101%、rfind 99-100%,gap«spread;早先看到的 3-11% 是"手写核可内联进 bench TU、.so 调用不可内联"的测量不对称,非真回退——`__attribute__((noinline))` 对同一份核复现出同样 gap 坐实)。**arm 真机(Apple Silicon,vs 重构前 arm 落的 scalar 字节循环)**:count **3.7x**、rfind **8.0x**(4KB/64KB/1MB 全稳)。`split`/`trim` 靠零分配子视图**反超** std。
 - **转发 std 的项(借 SOTA,不硬造)**:`find(needle)`/`rfind(needle)`/`find_first_of`/`find_first_not_of`/`find_last_of`/`find_last_not_of`——MSVC STL 的 two-way 向量化子串搜索 + PCMPESTRI 字符集扫描是实测 SOTA,**自研 PCMPESTRI 尝试只到 0.76-0.78x 追不动**(PCMPESTRI 延迟高),遂转发 `std::string_view`。转发局限在 `string_ref.cc`(公开头不引 `<string_view>`),不破 C-ABI。**代价**:string_ref 在这些项上不是"纯自研替代",而是"借 std 的最优实现"——这是刻意取舍(不为纯粹性造打不过微软手写汇编的轮子),非缺陷。**结果:5 项从输 2.5–4.5x 全部统计平局(ratio 0.98–1.02,gap«spread)。**
 - **前身 clay 的做法参照**:clay 的 `string_ref` 搜索族**全部**转发 `std::string_view`(且其头 `#include <iostream>`/`<string>`/`<functional>`)。HYLE 只转发 std 真正更强的几项、且只从 .cc 转发、公开头零 std string 头——比 clay 更克制。

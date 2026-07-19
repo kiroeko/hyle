@@ -144,7 +144,7 @@ target_link_libraries(app PRIVATE "${HYLE_SIMD_LIB}")
 ```
 - **静态消费**：HYLE 用 `-DHYLE_STATIC=ON` 编的话，下游也要 `target_compile_definitions(app PRIVATE HYLE_STATIC)`，让 `HYLE_<MOD>_API` 同样退化为空（对上库的编译方式）。**注意传递依赖**：静态链 `hyle_mem` 还需链 `mimalloc_static`（mem 的私有后端）；多模块静态消费要按依赖序把各模块 + 其依赖都列上——这类自动化是未来 `install()`+`find_package(hyle)`（P6 打包）要做的。`hyle_simd` 无此传递依赖，最干净。
 - **动态消费运行期**：Linux 让 loader 找到 `.so`（`RPATH` 指向 `<hyle-build>/bin` 或装进系统库路径）；Windows 把 `hyle_*.dll` 放在 exe 同目录或 `PATH`。
-- **当前边界（诚实）**：error/platform/mem/time/obs/simd/util 已有纯 `extern "C"` C ABI；其他模块仍在
+- **当前边界（诚实）**：error/platform/mem/time/obs/simd/util/container 已有纯 `extern "C"` C ABI；其他模块仍在
   close-01 队列。SIMD 外部调用必须用 `hyle/c/simd.h`，不能把 C++ mangled symbol 当 FFI。
 
 ## 2. SIMD 的编译变体模型（`HYLE_SIMD_TARGET_*` 是什么）

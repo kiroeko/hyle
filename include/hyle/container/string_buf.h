@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 
 #include "hyle/container/hash.h"  // HYLE_CONTAINER_API
@@ -27,12 +28,10 @@ namespace hyle::container {
 // whole would trip MSVC C4251. Methods that cross the DLL carry the macro; the
 // layout is instantiated client-side (conventions §3.5).
 // Opaque handle to an interned string, returned by StringBuf::add and consumed by
-// retain/remove/lookup. It IS the content hash internally, but the strong type
-// stops a caller from passing a hand-computed hash (or any random uint64) where a
-// handle is expected -- add() is the only sanctioned way to mint one. Trivially
-// copyable (fits registers / SwissTable slots). Default / kEmpty == the empty
-// string (never stored). (Was a raw uint64_t = clay's "hash is the id"; the strong
-// type is a HYLE type-safety upgrade, zero runtime cost -- it compiles away.)
+// retain/remove/lookup. It is a pool-local generation-tagged slot id, not a
+// content hash: hash values are not identities and may collide. A removed
+// handle never aliases a later string even when its slot is reused. add() is the
+// only sanctioned way to mint one. Trivially copyable; zero is the empty string.
 struct InternId {
   std::uint64_t value = 0;
   friend bool operator==(InternId, InternId) noexcept = default;
@@ -53,21 +52,30 @@ class StringBuf {
 
   // Bumps the refcount of an already-interned string by its handle (== add of the
   // same content, without needing the bytes again).
-  HYLE_CONTAINER_API void retain(InternId id) noexcept;
+  HYLE_CONTAINER_API bool retain(InternId id) noexcept;
 
   // Drops one reference. When the count reaches the number of add()s, the
   // string's storage is reclaimed and its pointer becomes invalid.
-  HYLE_CONTAINER_API void remove(InternId id) noexcept;
+  HYLE_CONTAINER_API bool remove(InternId id) noexcept;
 
   // String for `id`, or empty if absent. The result is always null-terminated.
   HYLE_CONTAINER_API string_ref lookup(InternId id) noexcept;
 
-  // Interns `s` to a stable, null-terminated pointer (== lookup(add(s))). All
-  // equal-content strings intern to the same pointer.
+  // Permanently interns `s` until pool destruction and returns its stable,
+  // null-terminated view. Repeated calls do not grow a hidden refcount. Use
+  // add()/remove() instead when individual lifetime reclamation is required.
   HYLE_CONTAINER_API string_ref intern(string_ref s) noexcept;
+
+  // Permanently intern a batch under one lock. `output` may be null when the
+  // caller only wants to prewarm the pool. Returns the processed count; a short
+  // result reports allocation failure after preserving the completed prefix.
+  HYLE_CONTAINER_API std::size_t intern_many(const string_ref* input,
+                                             string_ref* output,
+                                             std::size_t count) noexcept;
 
   // Number of distinct strings currently held (excludes the implicit empty).
   HYLE_CONTAINER_API std::uint32_t size() const noexcept;
+  bool valid() const noexcept { return impl_ != nullptr; }
 
   // The injected allocator (also used to free interned strings and the pool).
   // Inline (no DLL hop), so destroy_string_buf reaches it without a friend.

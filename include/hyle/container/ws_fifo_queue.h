@@ -55,12 +55,17 @@ class WsFifoQueue {
   }
 
   ~WsFifoQueue() {
+    if (buf_ == nullptr) return;
     std::size_t capacity = mask_ + 1;
     for (std::size_t i = 0; i < capacity; ++i) buf_[i].~Slot();
     alloc_.deallocate(buf_, sizeof(Slot) * capacity, alignof(Slot));
   }
 
   HYLE_DISABLE_COPY_AND_MOVE(WsFifoQueue);
+
+  // Allocation failure leaves an invalid object; check once after construction.
+  // Owner/thief hot paths assume valid() and pay no repeated branch.
+  bool valid() const noexcept { return buf_ != nullptr; }
 
   // OWNER ONLY. Append at the tail. Returns false if full (caller spills to the
   // global queue). No CAS on the hot path -- just a release store of the tail.
@@ -100,6 +105,10 @@ class WsFifoQueue {
   // queue), returning one task to run now. {false,_} if nothing stolen (empty,
   // another thief is mid-steal, or dst lacks room). `dst` is owned by the caller.
   PopResult steal_into(WsFifoQueue& dst) noexcept {
+    // Tokio local queues are identically sized. Supporting unlike capacities
+    // requires a different reservation bound; reject that accidental shape
+    // loudly instead of indexing dst with a source-sized batch.
+    HYLE_FATAL_ASSERT(mask_ == dst.mask_ && this != &dst);
     std::uint32_t dst_tail = dst.tail_.load(std::memory_order_relaxed);  // thief owns dst
     // dst must have room for up to half a queue; if a concurrent steal already
     // reserved space in dst, bail (faithful to tokio's capacity guard).
@@ -118,7 +127,7 @@ class WsFifoQueue {
     return {true, ret};
   }
 
-  std::size_t capacity() const noexcept { return mask_ + 1; }
+  std::size_t capacity() const noexcept { return valid() ? mask_ + 1 : 0; }
 
  private:
   // Reserve ~half, copy into dst, commit. Returns count stolen (incl. the one
@@ -185,8 +194,9 @@ class WsFifoQueue {
   void init(std::size_t capacity) {
     HYLE_FATAL_ASSERT(capacity >= 2 && capacity <= (1u << 31) &&
                       (capacity & (capacity - 1)) == 0);
+    HYLE_FATAL_ASSERT(capacity <= static_cast<std::size_t>(-1) / sizeof(Slot));
     void* mem = alloc_.allocate(sizeof(Slot) * capacity, alignof(Slot));
-    HYLE_FATAL_ASSERT(mem != nullptr);
+    if (mem == nullptr) return;
     buf_ = static_cast<Slot*>(mem);
     for (std::size_t i = 0; i < capacity; ++i) new (&buf_[i]) Slot();
     head_.store(0, std::memory_order_relaxed);

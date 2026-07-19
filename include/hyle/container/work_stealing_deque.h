@@ -68,12 +68,17 @@ class WorkStealingDeque {
   }
 
   ~WorkStealingDeque() {
+    if (buf_ == nullptr) return;
     std::size_t capacity = mask_ + 1;
     for (std::size_t i = 0; i < capacity; ++i) buf_[i].~Slot();
     alloc_.deallocate(buf_, sizeof(Slot) * capacity, alignof(Slot));
   }
 
   HYLE_DISABLE_COPY_AND_MOVE(WorkStealingDeque);
+
+  // Allocation failure leaves an invalid object; check once after construction.
+  // Owner/thief hot paths assume valid() and pay no repeated branch.
+  bool valid() const noexcept { return buf_ != nullptr; }
 
   // OWNER ONLY. Push onto the bottom. Returns false if the deque is full.
   bool push_bottom(T x) noexcept {
@@ -141,7 +146,7 @@ class WorkStealingDeque {
     return {StealStatus::kOk, x};
   }
 
-  std::size_t capacity() const noexcept { return mask_ + 1; }
+  std::size_t capacity() const noexcept { return valid() ? mask_ + 1 : 0; }
 
  private:
   // Atomic slots: owner writes and thieves read the same slot; making the slot
@@ -153,8 +158,9 @@ class WorkStealingDeque {
 
   void init(std::size_t capacity) {
     HYLE_FATAL_ASSERT(capacity >= 2 && (capacity & (capacity - 1)) == 0);
+    HYLE_FATAL_ASSERT(capacity <= static_cast<std::size_t>(-1) / sizeof(Slot));
     void* mem = alloc_.allocate(sizeof(Slot) * capacity, alignof(Slot));
-    HYLE_FATAL_ASSERT(mem != nullptr);
+    if (mem == nullptr) return;
     buf_ = static_cast<Slot*>(mem);
     for (std::size_t i = 0; i < capacity; ++i) new (&buf_[i]) Slot();
     top_.store(0, std::memory_order_relaxed);

@@ -34,7 +34,7 @@ TEST(StringBuf, EmptyStringIsImplicitZero) {
   EXPECT_TRUE(buf.lookup(InternId{0}).null_terminated);
 }
 
-TEST(StringBuf, MissingHashLookupIsEmpty) {
+TEST(StringBuf, MissingIdLookupIsEmpty) {
   StringBuf buf(system_allocator());
   EXPECT_TRUE(buf.lookup(InternId{0xDEADBEEF}).empty());
 }
@@ -96,10 +96,50 @@ TEST(StringBuf, AddSameContentBumpsRefcountNotSize) {
 
 TEST(StringBuf, RemoveUnknownOrZeroIsNoop) {
   StringBuf buf(system_allocator());
-  buf.remove(InternId{0});       // no-op (empty string)
-  buf.remove(InternId{0xABCD});  // no-op (never added)
-  buf.retain(InternId{0xABCD});  // no-op
+  EXPECT_TRUE(buf.remove(InternId{0}));        // empty string is always valid
+  EXPECT_FALSE(buf.remove(InternId{0xABCD}));  // never added
+  EXPECT_FALSE(buf.retain(InternId{0xABCD}));
   EXPECT_EQ(buf.size(), 0u);
+}
+
+TEST(StringBuf, PermanentInternDoesNotAccumulateHiddenReferences) {
+  StringBuf buf(system_allocator());
+  string_ref first = buf.intern("permanent");
+  for (int i = 0; i < 100; ++i)
+    EXPECT_EQ(buf.intern("permanent").data, first.data);
+  InternId id = buf.add("permanent");
+  EXPECT_TRUE(buf.remove(id));
+  EXPECT_TRUE(buf.lookup(id) == string_ref{"permanent"});
+  EXPECT_FALSE(buf.remove(id));  // no releasable reference remains
+  EXPECT_EQ(buf.size(), 1u);     // permanent until pool destruction
+}
+
+TEST(StringBuf, ReusedSlotRejectsStaleGeneration) {
+  StringBuf buf(system_allocator());
+  const InternId old = buf.add(string_ref{"first"});
+  ASSERT_FALSE(old.empty());
+  ASSERT_TRUE(buf.remove(old));
+
+  const InternId current = buf.add(string_ref{"second"});
+  ASSERT_FALSE(current.empty());
+  EXPECT_NE(old.value, current.value);
+  EXPECT_EQ(buf.lookup(old).data, nullptr);
+  EXPECT_FALSE(buf.retain(old));
+  EXPECT_FALSE(buf.remove(old));
+  EXPECT_TRUE(buf.lookup(current) == string_ref{"second"});
+}
+
+TEST(StringBuf, InternManyReturnsStableViewsAndCanPrewarm) {
+  StringBuf buf(system_allocator());
+  const string_ref input[] = {string_ref{"alpha"}, string_ref{"beta"},
+                              string_ref{"alpha"}};
+  string_ref output[3];
+  EXPECT_EQ(buf.intern_many(input, output, 3), 3u);
+  EXPECT_EQ(output[0].data, output[2].data);
+  EXPECT_TRUE(output[1] == string_ref{"beta"});
+  EXPECT_EQ(buf.size(), 2u);
+  EXPECT_EQ(buf.intern_many(input, nullptr, 3), 3u);
+  EXPECT_EQ(buf.size(), 2u);
 }
 
 TEST(StringBuf, ManyDistinctStrings) {

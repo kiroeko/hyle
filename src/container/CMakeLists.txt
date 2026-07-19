@@ -4,7 +4,7 @@
 # long); those include dirs are PRIVATE so neither leaks to consumers. string_algo.cc
 # is the dispatched utf8_length entry, which BORROWS simdutf's verified SIMD core.
 # string_ref.cc holds the std forwards (substring find/rfind + char-set find_*_of, where
-# MSVC STL's vectorized asm wins) + the count/rfind DISPATCHER. count/rfind are unified onto
+# MSVC STL's vectorized asm wins) + count/rfind/ASCII-case DISPATCHERS. These kernels use
 # simd/vec.h (2026-07): kernels live in str_search_{scalar,sse4,avx2,avx512,neon}.cc (shared
 # body str_search_impl.h, written against the D-tag abstraction), and string_ref.cc picks the
 # widest by best_isa() through a cached fn ptr -- same variant-TU + runtime-dispatch model as
@@ -25,7 +25,7 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
   set(HYLE_CONTAINER_ARM64 TRUE)
   list(APPEND _container_arch_sources str_search_neon.cc)
 endif()
-hyle_add_module(container SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc string_ref.cc str_search_scalar.cc ${_container_arch_sources} PUBLIC_DEPS hyle_mem hyle_platform)
+hyle_add_module(container SOURCES hash.cc carray.cc string_buf.cc path.cc swiss_table.cc string_algo.cc string_ref.cc c_container.cc str_search_scalar.cc ${_container_arch_sources} PUBLIC_DEPS hyle_mem hyle_platform)
 target_include_directories(hyle_container PRIVATE
   "${PROJECT_SOURCE_DIR}/third_party/xxhash"
   "${PROJECT_SOURCE_DIR}/third_party/wyhash"

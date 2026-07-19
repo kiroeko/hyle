@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <utility>  // std::swap (find_path_matches heap)
 
 #include "hyle/container/string_ref.h"
@@ -59,19 +60,19 @@ HYLE_FORCE_INLINE constexpr char to_ascii_upper(char c) noexcept {
 // ---- case conversion (buffer-fill, snprintf semantics) ----------------------
 // Write the lower/upper-cased `s` into out[cap], always NUL-terminating when
 // cap>0. Returns the full source length (>= cap signals truncation). No alloc.
+namespace detail {
+HYLE_CONTAINER_API std::uint32_t str_ascii_lower(
+    const char*, std::uint32_t, char*, std::uint32_t) noexcept;
+HYLE_CONTAINER_API std::uint32_t str_ascii_upper(
+    const char*, std::uint32_t, char*, std::uint32_t) noexcept;
+}
 inline std::uint32_t to_lower(string_ref s, char* out,
                               std::uint32_t cap) noexcept {
-  std::uint32_t n = cap == 0 ? 0 : (s.size < cap - 1 ? s.size : cap - 1);
-  for (std::uint32_t i = 0; i < n; ++i) out[i] = to_ascii_lower(s.data[i]);
-  if (cap > 0) out[n] = '\0';
-  return s.size;
+  return detail::str_ascii_lower(s.data, s.size, out, cap);
 }
 inline std::uint32_t to_upper(string_ref s, char* out,
                               std::uint32_t cap) noexcept {
-  std::uint32_t n = cap == 0 ? 0 : (s.size < cap - 1 ? s.size : cap - 1);
-  for (std::uint32_t i = 0; i < n; ++i) out[i] = to_ascii_upper(s.data[i]);
-  if (cap > 0) out[n] = '\0';
-  return s.size;
+  return detail::str_ascii_upper(s.data, s.size, out, cap);
 }
 
 // ---- capitalize (clay cstring.cc capitalize, in-place) ----------------------
@@ -103,13 +104,40 @@ inline std::size_t hex_encode(const void* data, std::size_t len, char* out,
                               std::size_t cap) noexcept {
   static constexpr char kHex[] = "0123456789abcdef";
   const auto* b = static_cast<const unsigned char*>(data);
-  std::size_t need = len * 2;
+  const std::size_t need =
+      len > std::numeric_limits<std::size_t>::max() / 2
+          ? std::numeric_limits<std::size_t>::max()
+          : len * 2;
   std::size_t w = 0;
   for (std::size_t i = 0; i < len && w + 2 < cap; ++i) {
     out[w++] = kHex[b[i] >> 4];
     out[w++] = kHex[b[i] & 0xF];
   }
   if (cap > 0) out[w] = '\0';
+  return need;
+}
+
+// Decode an even-length hexadecimal string. Returns the full decoded byte
+// count, SIZE_MAX on malformed/odd input. Writes at most `cap` bytes; size-only
+// calls may pass out==nullptr with cap==0.
+inline std::size_t hex_decode(string_ref hex, void* out,
+                              std::size_t cap) noexcept {
+  if ((hex.size & 1u) != 0) return std::numeric_limits<std::size_t>::max();
+  const std::size_t need = hex.size / 2;
+  auto* bytes = static_cast<unsigned char*>(out);
+  const std::size_t write_count = cap < need ? cap : need;
+  for (std::size_t i = 0; i < write_count; ++i) {
+    const int high = hex_value(hex.data[i * 2]);
+    const int low = hex_value(hex.data[i * 2 + 1]);
+    if (high < 0 || low < 0) return std::numeric_limits<std::size_t>::max();
+    bytes[i] = static_cast<unsigned char>((high << 4) | low);
+  }
+  // A truncated output buffer must not weaken validation of the suffix.
+  for (std::size_t i = write_count; i < need; ++i) {
+    if (hex_value(hex.data[i * 2]) < 0 ||
+        hex_value(hex.data[i * 2 + 1]) < 0)
+      return std::numeric_limits<std::size_t>::max();
+  }
   return need;
 }
 
@@ -144,7 +172,9 @@ inline std::size_t escape(string_ref s, char* out, std::size_t cap) noexcept {
         out[w++] = s.data[i];
       }
     }
-    need += add;
+    need = need > std::numeric_limits<std::size_t>::max() - add
+               ? std::numeric_limits<std::size_t>::max()
+               : need + add;
   }
   if (cap > 0) out[w] = '\0';
   return need;
@@ -156,39 +186,54 @@ inline std::size_t escape(string_ref s, char* out, std::size_t cap) noexcept {
 // string_ref instead of std::string::const_iterator).
 class Utf8Decoder {
  public:
-  explicit Utf8Decoder(string_ref s) noexcept : p_(s.data), end_(s.data + s.size) {}
+  explicit Utf8Decoder(string_ref s) noexcept
+      : p_(s.data), end_(s.data == nullptr ? nullptr : s.data + s.size) {}
 
   bool is_end() const noexcept { return p_ == end_; }
   bool valid() const noexcept { return valid_; }
 
   int next() noexcept {
     if (p_ == end_) return 0;
-    int c = static_cast<unsigned char>(*p_++);
-    if (c & 0x80) {
-      int n = 0, f = 0x40;
-      while (c & f) {
-        ++n;
-        f >>= 1;
-      }
-      if (n == 0) {  // a lone continuation byte 0b10xxxxxx
+    const unsigned first = static_cast<unsigned char>(*p_++);
+    if (first <= 0x7F) return static_cast<int>(first);
+
+    unsigned value;
+    unsigned continuation;
+    unsigned minimum;
+    if (first >= 0xC2 && first <= 0xDF) {
+      value = first & 0x1F;
+      continuation = 1;
+      minimum = 0x80;
+    } else if (first >= 0xE0 && first <= 0xEF) {
+      value = first & 0x0F;
+      continuation = 2;
+      minimum = 0x800;
+    } else if (first >= 0xF0 && first <= 0xF4) {
+      value = first & 0x07;
+      continuation = 3;
+      minimum = 0x10000;
+    } else {
+      valid_ = false;  // continuation, overlong lead, or > U+10FFFF lead
+      return 0;
+    }
+    while (continuation-- != 0) {
+      if (p_ == end_) {
         valid_ = false;
         return 0;
       }
-      c &= (0x1F >> (n - 1));
-      while (n--) {
-        if (p_ == end_) {
-          valid_ = false;
-          return 0;
-        }
-        int chr = static_cast<unsigned char>(*p_++);
-        if ((chr & 0xC0) != 0x80) {  // not a continuation byte
-          valid_ = false;
-          return 0;
-        }
-        c = (c << 6) | (chr & 0x3F);
+      const unsigned next = static_cast<unsigned char>(*p_++);
+      if ((next & 0xC0) != 0x80) {
+        valid_ = false;
+        return 0;
       }
+      value = (value << 6) | (next & 0x3F);
     }
-    return c;
+    if (value < minimum || value > 0x10FFFF ||
+        (value >= 0xD800 && value <= 0xDFFF)) {
+      valid_ = false;
+      return 0;
+    }
+    return static_cast<int>(value);
   }
 
  private:
@@ -203,9 +248,9 @@ class Utf8Decoder {
 // verified SIMD validate+count cores (借核不手搓, same as simd/math borrows
 // Highway/xsimd). The runtime entry lives in string_algo.cc; this is a thin delegate.
 namespace detail {
-HYLE_CONTAINER_API std::int32_t utf8_length_runtime(string_ref s) noexcept;
+HYLE_CONTAINER_API std::int64_t utf8_length_runtime(string_ref s) noexcept;
 }
-inline std::int32_t utf8_length(string_ref s) noexcept {
+inline std::int64_t utf8_length(string_ref s) noexcept {
   return detail::utf8_length_runtime(s);
 }
 
@@ -344,7 +389,7 @@ inline int fuzzy_score_impl(string_ref cand, string_ref pat,
   }
   // Pass 3: score over the tightened window [sidx, eidx). Every pattern char lies in
   // it, in order; walk it charging match+bonus, gaps, and consecutive runs.
-  int score = 0;
+  std::int64_t score = 0;
   std::uint32_t ci = sidx;
   bool first_match = true;
   for (std::uint32_t pi = 0; pi < pat.size; ++pi) {
@@ -370,7 +415,8 @@ inline int fuzzy_score_impl(string_ref cand, string_ref pat,
       score += b + (bonus > kFuzzyConsecutive ? bonus : kFuzzyConsecutive);
     } else {
       // A gap preceded this match: charge the gap, then the plain match + bonus.
-      score += kFuzzyGapStart + kFuzzyGapExt * static_cast<int>(gap - 1);
+      score += static_cast<std::int64_t>(kFuzzyGapStart) +
+               static_cast<std::int64_t>(kFuzzyGapExt) * (gap - 1);
       score += b + bonus;
     }
     ++ci;  // consume the matched char
@@ -379,8 +425,13 @@ inline int fuzzy_score_impl(string_ref cand, string_ref pat,
   // score): a complete "abc" beats "abcXYZ", and "src/config.h" (12) beats
   // "config/main.cpp" (15) when their bonuses tie. Weight 1/char so it only
   // separates otherwise-equal scores, never reorders a real bonus difference.
-  score -= static_cast<int>(cand.size);
-  return score;
+  const std::int64_t adjusted = score - static_cast<std::int64_t>(cand.size);
+  // Zero is reserved for "not a subsequence". Very long but valid candidates
+  // must remain matches even when the length tie-break exceeds all bonuses.
+  if (adjusted <= 0) return 1;
+  if (adjusted > std::numeric_limits<int>::max())
+    return std::numeric_limits<int>::max();
+  return static_cast<int>(adjusted);
 }
 
 }  // namespace detail
@@ -418,6 +469,8 @@ inline std::uint32_t find_path_matches(const string_ref* candidates, std::uint32
                                        int* out_score, std::uint32_t k,
                                        bool path_aware = true) noexcept {
   if (k == 0 || n == 0) return 0;
+  HYLE_FATAL_ASSERT(candidates != nullptr && out_idx != nullptr &&
+                    out_score != nullptr);
   // (score, index) live in parallel caller buffers; [0..count) is a MIN-heap keyed on
   // score (ties: larger index is "smaller", so equal scores evict the higher index and
   // the lower index wins -- matching the tie-break). "worse" = lower score, or equal
@@ -452,10 +505,15 @@ inline std::uint32_t find_path_matches(const string_ref* candidates, std::uint32
       out_score[0] = s;
       std::uint32_t c = 0;
       for (;;) {
-        std::uint32_t l = 2 * c + 1, r = 2 * c + 2, m = c;
-        if (l < count && worse(out_score[l], out_idx[l], out_score[m], out_idx[m])) m = l;
-        if (r < count && worse(out_score[r], out_idx[r], out_score[m], out_idx[m])) m = r;
-        if (m == c) break;
+        const std::uint64_t left = static_cast<std::uint64_t>(c) * 2 + 1;
+        if (left >= count) break;
+        const std::uint32_t l = static_cast<std::uint32_t>(left);
+        std::uint32_t m = l;
+        if (left + 1 < count) {
+          const std::uint32_t r = static_cast<std::uint32_t>(left + 1);
+          if (worse(out_score[r], out_idx[r], out_score[l], out_idx[l])) m = r;
+        }
+        if (!worse(out_score[m], out_idx[m], out_score[c], out_idx[c])) break;
         std::swap(out_score[c], out_score[m]);
         std::swap(out_idx[c], out_idx[m]);
         c = m;
@@ -471,10 +529,15 @@ inline std::uint32_t find_path_matches(const string_ref* candidates, std::uint32
     std::swap(out_idx[0], out_idx[size]);
     std::uint32_t c = 0;
     for (;;) {
-      std::uint32_t l = 2 * c + 1, r = 2 * c + 2, m = c;
-      if (l < size && worse(out_score[l], out_idx[l], out_score[m], out_idx[m])) m = l;
-      if (r < size && worse(out_score[r], out_idx[r], out_score[m], out_idx[m])) m = r;
-      if (m == c) break;
+      const std::uint64_t left = static_cast<std::uint64_t>(c) * 2 + 1;
+      if (left >= size) break;
+      const std::uint32_t l = static_cast<std::uint32_t>(left);
+      std::uint32_t m = l;
+      if (left + 1 < size) {
+        const std::uint32_t r = static_cast<std::uint32_t>(left + 1);
+        if (worse(out_score[r], out_idx[r], out_score[l], out_idx[l])) m = r;
+      }
+      if (!worse(out_score[m], out_idx[m], out_score[c], out_idx[c])) break;
       std::swap(out_score[c], out_score[m]);
       std::swap(out_idx[c], out_idx[m]);
       c = m;

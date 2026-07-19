@@ -215,3 +215,62 @@ TEST(SwissTable, ForEachVisitsExactlyLiveSet) {
     EXPECT_EQ(it->second, kv.second) << "wrong value for key " << kv.first;
   }
 }
+
+TEST(SwissTable, InsertValueMayAliasSlotAcrossGrowth) {
+  SwissTable<std::uint64_t, std::uint64_t> table(system_allocator());
+  for (std::uint64_t i = 0; i < 14; ++i) table.insert(i, 1000 + i);
+  const std::uint64_t* aliased = table.find(3);
+  ASSERT_NE(aliased, nullptr);
+  ASSERT_TRUE(table.insert(99, *aliased));  // triggers the 16 -> 32 grow
+  ASSERT_NE(table.find(99), nullptr);
+  EXPECT_EQ(*table.find(99), 1003u);
+}
+
+TEST(SwissTable, MoveConstructionPreservesProbeMask) {
+  SwissTable<std::uint64_t, std::uint64_t> source(system_allocator());
+  for (std::uint64_t i = 0; i < 1000; ++i) source.insert(i, i * 3);
+  const std::size_t capacity = source.capacity();
+  SwissTable<std::uint64_t, std::uint64_t> moved(std::move(source));
+  EXPECT_EQ(moved.capacity(), capacity);
+  EXPECT_EQ(source.size(), 0u);
+  for (std::uint64_t i = 0; i < 1000; ++i) {
+    ASSERT_NE(moved.find(i), nullptr);
+    EXPECT_EQ(*moved.find(i), i * 3);
+  }
+}
+
+TEST(SwissTable, ReserveClearMoveAssignAndConstTraversal) {
+  SwissTable<int, int> source(system_allocator());
+  ASSERT_TRUE(source.reserve(1000));
+  EXPECT_GE(source.capacity() - source.capacity() / 8, 1000u);
+  for (int i = 0; i < 100; ++i) source.insert(i, i + 1);
+
+  SwissTable<int, int> target(system_allocator());
+  target.insert(-1, -1);
+  target = std::move(source);
+  const SwissTable<int, int>& view = target;
+  std::size_t visits = 0;
+  view.for_each([&](const int& key, const int& value) {
+    EXPECT_EQ(value, key + 1);
+    ++visits;
+  });
+  EXPECT_EQ(visits, 100u);
+  EXPECT_TRUE(view.contains(42));
+
+  target.clear();
+  EXPECT_TRUE(target.empty());
+  EXPECT_EQ(target.capacity(), view.capacity());
+  EXPECT_EQ(target.find(42), nullptr);
+  EXPECT_TRUE(target.insert(7, 9));
+  EXPECT_EQ(*target.find(7), 9);
+}
+
+TEST(SwissTable, FallibleReserveRejectsOverflowWithoutChangingState) {
+  SwissTable<int, int> table(system_allocator());
+  ASSERT_TRUE(table.insert(7, 9));
+  const std::size_t old_capacity = table.capacity();
+  EXPECT_FALSE(table.reserve(static_cast<std::size_t>(-1)));
+  EXPECT_EQ(table.capacity(), old_capacity);
+  ASSERT_NE(table.find(7), nullptr);
+  EXPECT_EQ(*table.find(7), 9);
+}

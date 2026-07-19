@@ -47,6 +47,7 @@ class BoundedQueue {
   }
 
   ~BoundedQueue() {
+    if (buffer_ == nullptr) return;
     std::size_t capacity = mask_ + 1;
     for (std::size_t i = 0; i < capacity; ++i) buffer_[i].~Cell();
     alloc_.deallocate(buffer_, sizeof(Cell) * capacity, alignof(Cell));
@@ -54,7 +55,12 @@ class BoundedQueue {
 
   HYLE_DISABLE_COPY_AND_MOVE(BoundedQueue);
 
-  // Enqueue. Returns false if the queue is full. Wait-free per attempt.
+  // Allocation failure leaves an invalid object; check once after construction.
+  // Hot queue operations deliberately do not repeat this cold-path check.
+  bool valid() const noexcept { return buffer_ != nullptr; }
+
+  // Enqueue. Returns false if the queue is full. Lock-free; a contended caller
+  // may retry the CAS, so this is not a wait-free operation.
   bool try_push(T item) noexcept {
     Cell* cell;
     std::uint64_t pos = enqueue_pos_.load(std::memory_order_relaxed);
@@ -110,7 +116,7 @@ class BoundedQueue {
     return true;
   }
 
-  std::size_t capacity() const noexcept { return mask_ + 1; }
+  std::size_t capacity() const noexcept { return valid() ? mask_ + 1 : 0; }
 
  private:
   // Each cell on its OWN cache line. The canonical Vyukov/rigtorp layout pads slots
@@ -127,9 +133,10 @@ class BoundedQueue {
 
   void init(std::size_t capacity) {
     HYLE_FATAL_ASSERT(capacity >= 2 && (capacity & (capacity - 1)) == 0);
+    HYLE_FATAL_ASSERT(capacity <= static_cast<std::size_t>(-1) / sizeof(Cell));
     buffer_ = static_cast<Cell*>(
         alloc_.allocate(sizeof(Cell) * capacity, alignof(Cell)));
-    HYLE_FATAL_ASSERT(buffer_ != nullptr);
+    if (buffer_ == nullptr) return;
     for (std::size_t i = 0; i < capacity; ++i) {
       new (&buffer_[i]) Cell;
       buffer_[i].seq.store(i, std::memory_order_relaxed);

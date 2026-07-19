@@ -2,6 +2,7 @@
 
 #include <string_view>  // membership/substring family forwards to std's SOTA (see below)
 
+#include "hyle/container/string_algo.h"
 #include "hyle/macros.h"
 #include "hyle/platform.h"
 #include "hyle/platform/cpu.h"  // best_isa() -> pick the widest compiled count/rfind kernel
@@ -31,6 +32,8 @@ namespace hyle::container::detail {
 namespace {
 using CountFn = std::uint32_t (*)(const char*, std::uint32_t, char) noexcept;
 using RfindFn = std::uint32_t (*)(const char*, std::uint32_t, char) noexcept;
+using TransformFn = std::uint32_t (*)(const char*, std::uint32_t, char*,
+                                      std::uint32_t) noexcept;
 
 CountFn resolve_count() noexcept {
 #if defined(HYLE_ARCH_X64)
@@ -64,6 +67,25 @@ RfindFn resolve_rfind() noexcept {
   return &str_rfind_char_scalar;
 #endif
 }
+TransformFn resolve_transform(bool lower) noexcept {
+#if defined(HYLE_ARCH_X64)
+  const auto v = static_cast<std::uint32_t>(::hyle::platform::best_isa());
+  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx512))
+    return lower ? &str_ascii_lower_avx512 : &str_ascii_upper_avx512;
+  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kAvx2))
+    return lower ? &str_ascii_lower_avx2 : &str_ascii_upper_avx2;
+  if (v >= static_cast<std::uint32_t>(::hyle::platform::Isa::kSse42))
+    return lower ? &str_ascii_lower_sse4 : &str_ascii_upper_sse4;
+  return lower ? &str_ascii_lower_scalar : &str_ascii_upper_scalar;
+#elif defined(HYLE_ARCH_ARM64)
+  if (static_cast<std::uint32_t>(::hyle::platform::best_isa()) >=
+      static_cast<std::uint32_t>(::hyle::platform::Isa::kNeon))
+    return lower ? &str_ascii_lower_neon : &str_ascii_upper_neon;
+  return lower ? &str_ascii_lower_scalar : &str_ascii_upper_scalar;
+#else
+  return lower ? &str_ascii_lower_scalar : &str_ascii_upper_scalar;
+#endif
+}
 }  // namespace
 
 // Meyers-cached fn ptr (thread-safe init-once); after the first call it's a predictable load
@@ -76,6 +98,16 @@ std::uint32_t str_count(const char* data, std::uint32_t size, char c) noexcept {
 std::uint32_t str_rfind_char(const char* data, std::uint32_t size, char c) noexcept {
   static const RfindFn fn = resolve_rfind();
   return fn(data, size, c);
+}
+std::uint32_t str_ascii_lower(const char* data, std::uint32_t size, char* out,
+                              std::uint32_t cap) noexcept {
+  static const TransformFn fn = resolve_transform(true);
+  return fn(data, size, out, cap);
+}
+std::uint32_t str_ascii_upper(const char* data, std::uint32_t size, char* out,
+                              std::uint32_t cap) noexcept {
+  static const TransformFn fn = resolve_transform(false);
+  return fn(data, size, out, cap);
 }
 
 // Forward char-set scan. `want`=true: first index IN set (find_first_of); false:

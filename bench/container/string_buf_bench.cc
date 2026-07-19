@@ -38,6 +38,10 @@ std::vector<std::string> gen_stream() {
 
 int bench_string_buf() {
   const std::vector<std::string> stream = gen_stream();
+  std::vector<string_ref> stream_views;
+  stream_views.reserve(stream.size());
+  for (const auto& s : stream)
+    stream_views.emplace_back(s.data(), static_cast<std::uint32_t>(s.size()));
 
   ankerl::nanobench::Bench b;
   b.title("intern 100k-stream / 2k-unique").relative(true).batch(kStream);
@@ -51,7 +55,6 @@ int bench_string_buf() {
     const char* last = nullptr;
     for (const auto& s : stream) {
       auto [it, ins] = pool.try_emplace(s, 0);
-      ++it->second;
       last = it->first.c_str();
     }
     ankerl::nanobench::doNotOptimizeAway(last);
@@ -69,7 +72,6 @@ int bench_string_buf() {
     for (const auto& s : stream) {
       std::lock_guard<std::mutex> lk(mu);
       auto [it, ins] = pool.try_emplace(s, 0);
-      ++it->second;
       last = it->first.c_str();
     }
     ankerl::nanobench::doNotOptimizeAway(last);
@@ -85,6 +87,14 @@ int bench_string_buf() {
       last = r.data;
     }
     ankerl::nanobench::doNotOptimizeAway(last);
+    ankerl::nanobench::doNotOptimizeAway(buf.size());
+  });
+
+  b.run("HYLE StringBuf intern_many (one lock / batch)", [&] {
+    StringBuf buf(system_allocator());
+    const std::size_t done =
+        buf.intern_many(stream_views.data(), nullptr, stream_views.size());
+    ankerl::nanobench::doNotOptimizeAway(done);
     ankerl::nanobench::doNotOptimizeAway(buf.size());
   });
 
@@ -120,35 +130,47 @@ int bench_string_buf() {
       ankerl::nanobench::doNotOptimizeAway(pool.size());
     });
 
-    // Apples-to-apples peer: THREAD-SAFE (unordered_map + mutex) AND matching
-    // StringBuf's HANDLE contract. StringBuf's handle is a 64-bit hash (stable,
-    // cross-thread-passable), NOT an iterator -- so retain()/remove() re-find by
-    // hash rather than reusing an iterator. To compare cores fairly (not reward
-    // the no-lock rival for skipping both the lock AND the re-find), this peer
-    // takes a lock per op and re-looks-up by key each retain/remove, exactly like
-    // StringBuf. Now the honest question is whose map core is faster under the
-    // SAME work (lock + hash + find + erase/free), which is SwissTable vs
-    // unordered_map -- the naive no-lock/iterator-reuse floor above is NOT that.
-    b2.run("std::unordered_map + mutex, re-find per op (thread-safe peer)", [&] {
-      std::unordered_map<std::string, int> pool;
+    // Same handle contract: add resolves bytes -> id, while retain/remove use
+    // the id directly. The map owns the string exactly once and its node address
+    // stays stable across unordered_map rehashes; the slot vector is the std
+    // Same generation-tagged direct-index shape as StringBuf, so this peer does
+    // not pay a second key hash merely because its public handle is opaque.
+    b2.run("std::unordered_map + direct-id slots + mutex (same contract)", [&] {
+      struct Slot {
+        const std::string* key;
+        int refs;
+      };
+      std::unordered_map<std::string, std::uint32_t> pool;
+      std::vector<Slot> slots;
+      slots.reserve(uniques.size());
       std::mutex mu;
       for (const auto& s : uniques) {
-        {  // add: intern + bump
+        std::uint32_t id;
+        {
           std::lock_guard<std::mutex> lk(mu);
-          ++pool[s];
+          auto [it, inserted] =
+              pool.try_emplace(s, static_cast<std::uint32_t>(slots.size()));
+          if (inserted)
+            slots.push_back(Slot{&it->first, 1});
+          else
+            ++slots[it->second].refs;
+          id = it->second;
         }
-        {  // retain: re-find by key + bump
+        {
           std::lock_guard<std::mutex> lk(mu);
-          ++pool[s];
+          ++slots[id].refs;
         }
-        {  // remove (1): re-find + drop
+        {
           std::lock_guard<std::mutex> lk(mu);
-          --pool[s];
+          --slots[id].refs;
         }
-        {  // remove (2): re-find + drop -> zero -> erase (reclaim)
+        {
           std::lock_guard<std::mutex> lk(mu);
-          auto it = pool.find(s);
-          if (it != pool.end() && --it->second == 0) pool.erase(it);
+          Slot& slot = slots[id];
+          if (--slot.refs == 0) {
+            pool.erase(*slot.key);
+            slot.key = nullptr;
+          }
         }
       }
       ankerl::nanobench::doNotOptimizeAway(pool.size());

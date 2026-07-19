@@ -11,6 +11,15 @@ using hyle::container::CArray;
 using hyle::container::carray_header;
 using hyle::mem::system_allocator;
 
+namespace {
+void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
+void fail_free(void*, void*, std::size_t, std::size_t) noexcept {}
+void* fail_realloc(void*, void*, std::size_t, std::size_t,
+                   std::size_t) noexcept {
+  return nullptr;
+}
+}  // namespace
+
 TEST(CArray, EmptyState) {
   CArray<int> a(system_allocator());
   EXPECT_EQ(a.size(), 0u);
@@ -88,4 +97,41 @@ TEST(CArray, MoveTransfers) {
   EXPECT_EQ(a.data(), nullptr);
   EXPECT_EQ(b.data(), p);  // no realloc, just handle transfer
   EXPECT_EQ(b.size(), 2u);
+}
+
+TEST(CArray, PushBackMayAliasElementAcrossGrowth) {
+  CArray<int> a(system_allocator());
+  for (int i = 0; i < 4; ++i) a.push_back(10 + i);
+  ASSERT_EQ(a.size(), a.capacity());
+  a.push_back(a[1]);
+  EXPECT_EQ(a.back(), 11);
+}
+
+TEST(CArray, ExistingStorageKeepsRecordedAlignmentOnTypeErasedGrow) {
+  void* data = hyle::container::detail::carray_set_capacity_internal(
+      nullptr, 4, sizeof(int), 64, system_allocator());
+  ASSERT_NE(data, nullptr);
+  ASSERT_EQ(reinterpret_cast<std::uintptr_t>(data) % 64, 0u);
+  data = hyle::container::detail::carray_set_capacity_internal(
+      data, 16, sizeof(int), alignof(int), system_allocator());
+  ASSERT_NE(data, nullptr);
+  EXPECT_EQ(reinterpret_cast<std::uintptr_t>(data) % 64, 0u);
+  EXPECT_EQ(carray_header(data)->align, 64u);
+  hyle::container::detail::carray_free_internal(data, sizeof(int));
+}
+
+TEST(CArray, FallibleGrowthPreservesStateOnFailure) {
+  hyle::mem::Allocator failing{&fail_alloc, &fail_free, &fail_realloc, nullptr};
+  CArray<int> a(failing);
+  EXPECT_FALSE(a.try_reserve(4));
+  EXPECT_FALSE(a.try_push_back(7));
+  EXPECT_EQ(a.data(), nullptr);
+  EXPECT_EQ(a.size(), 0u);
+  EXPECT_EQ(a.capacity(), 0u);
+}
+
+TEST(CArray, FallibleReserveRejectsAddressSpaceOverflow) {
+  CArray<std::uint64_t> a(system_allocator());
+  EXPECT_FALSE(a.try_reserve(UINT64_MAX));
+  EXPECT_EQ(a.data(), nullptr);
 }

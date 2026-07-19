@@ -19,16 +19,17 @@
 
 namespace hyle::container::detail {
 
-std::int32_t utf8_length_runtime(string_ref s) noexcept {
+std::int64_t utf8_length_runtime(string_ref s) noexcept {
 #if defined(HYLE_SIMD_SIMDUTF)
   // Borrowed SIMD core: validate then count (matches utf8_length's validate+count
   // contract). simdutf runs its own internal runtime ISA dispatch.
-  if (!simdutf::validate_utf8(s.data, s.size)) return -1;
-  return static_cast<std::int32_t>(simdutf::count_utf8(s.data, s.size));
+  const char* data = s.data == nullptr ? "" : s.data;
+  if (!simdutf::validate_utf8(data, s.size)) return -1;
+  return static_cast<std::int64_t>(simdutf::count_utf8(data, s.size));
 #else
   // Scalar fallback: identical to the header's compile-time path.
   Utf8Decoder d(s);
-  std::int32_t n = 0;
+  std::int64_t n = 0;
   while (!d.is_end()) {
     d.next();
     if (!d.valid()) return -1;

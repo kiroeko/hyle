@@ -67,6 +67,35 @@ TEST(SmallVector, MoveInlineCopies) {
   EXPECT_EQ(b[1], 8);
 }
 
+TEST(SmallVector, MoveAssignmentHandlesInlineAndHeap) {
+  SmallVector<int, 2> heap;
+  heap.push_back(1);
+  heap.push_back(2);
+  heap.push_back(3);
+  SmallVector<int, 2> inline_values;
+  inline_values.push_back(9);
+
+  inline_values = std::move(heap);
+  ASSERT_EQ(inline_values.size(), 3u);
+  EXPECT_EQ(inline_values[2], 3);
+  EXPECT_TRUE(heap.empty());
+
+  SmallVector<int, 2> other;
+  other.push_back(7);
+  inline_values = std::move(other);
+  ASSERT_EQ(inline_values.size(), 1u);
+  EXPECT_EQ(inline_values[0], 7);
+}
+
+TEST(SmallVector, PushBackMayAliasElementAcrossSpill) {
+  SmallVector<int, 2> v;
+  v.push_back(4);
+  v.push_back(5);
+  v.push_back(v[0]);
+  ASSERT_EQ(v.size(), 3u);
+  EXPECT_EQ(v[2], 4);
+}
+
 // ---- IntrusiveList ----------------------------------------------------------
 
 namespace {

@@ -139,7 +139,13 @@ if(HYLE_COMPUTE_VULKAN_ENABLED)
                        ENVIRONMENT "HYLE_VK_PIPELINE_CACHE=${CMAKE_CURRENT_BINARY_DIR}/hyle_vk_pipe_cache.bin"
                        FIXTURES_REQUIRED VK_PIPE_CACHE)
 endif()
-hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
+hyle_add_test(container SOURCES container/bounded_queue_test.cc container/sharded_queue_test.cc container/work_stealing_deque_test.cc container/ws_fifo_queue_test.cc container/hash_test.cc container/carray_test.cc container/c_container_concurrency_test.cc container/small_vector_test.cc container/probe_test.cc container/swiss_table_test.cc container/string_ref_test.cc container/string_buf_test.cc container/concurrent_vector_test.cc container/string_algo_test.cc container/path_test.cc DEPS hyle_platform mimalloc_static)
+add_executable(hyle_container_c_test container/c_container_test.c)
+target_link_libraries(hyle_container_c_test PRIVATE hyle_container)
+set_source_files_properties(container/c_container_test.c PROPERTIES LANGUAGE C)
+hyle_apply_warnings(hyle_container_c_test)
+hyle_apply_sanitizer(hyle_container_c_test)
+add_test(NAME hyle_container_c_test COMMAND hyle_container_c_test)
 # graph-01 (step-1): task-dependency DAG incremental recompute. Pure CPU, serial evaluate
 # -- no sched dep yet (parallel node execution is step-2).
 hyle_add_test(graph SOURCES graph/taskgraph_test.cc DEPS hyle_graph)

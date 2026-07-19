@@ -54,11 +54,15 @@ class ConcurrentVector {
   // opt into injection.
   explicit ConcurrentVector(std::size_t initial_capacity = 16) noexcept
       requires std::is_default_constructible_v<Alloc> {
+    HYLE_FATAL_ASSERT(initial_capacity <=
+                      (std::size_t{1} << (sizeof(std::size_t) * 8 - 1)));
     std::size_t first = std::bit_ceil(initial_capacity < 1 ? 1 : initial_capacity);
     first_shift_ = static_cast<std::uint32_t>(std::countr_zero(first));
   }
   explicit ConcurrentVector(Alloc alloc, std::size_t initial_capacity = 16) noexcept
       : alloc_(alloc) {
+    HYLE_FATAL_ASSERT(initial_capacity <=
+                      (std::size_t{1} << (sizeof(std::size_t) * 8 - 1)));
     std::size_t first = std::bit_ceil(initial_capacity < 1 ? 1 : initial_capacity);
     first_shift_ = static_cast<std::uint32_t>(std::countr_zero(first));
   }
@@ -84,9 +88,11 @@ class ConcurrentVector {
     std::lock_guard<util::SpinLock> guard(write_lock_);
     std::size_t i = size_.load(std::memory_order_relaxed);  // sole writer region
     auto [k, off] = locate(i);
+    if (k >= max_segments()) return static_cast<std::size_t>(-1);
     if (k >= num_segments_) {
       // New segment. Allocate before publishing any size that reaches into it.
       segments_[k] = alloc_.template allocate_n<T>(seg_capacity(k));
+      if (segments_[k] == nullptr) return static_cast<std::size_t>(-1);
       num_segments_ = k + 1;
     }
     ::new (static_cast<void*>(segments_[k] + off)) T(std::forward<Args>(args)...);
@@ -127,15 +133,25 @@ class ConcurrentVector {
 
   // Total allocated element capacity across segments.
   std::size_t capacity() const noexcept {
-    std::size_t cap = 0;
-    for (std::uint32_t k = 0; k < num_segments_; ++k) cap += seg_capacity(k);
-    return cap;
+    const std::size_t n = size();  // acquire publishes every segment <= n
+    if (n == 0) return 0;
+    const auto [last, ignored] = locate(n - 1);
+    (void)ignored;
+    return (std::size_t{1} << first_shift_) *
+           ((std::size_t{1} << (last + 1)) - 1);
   }
 
  private:
   // Up to 48 doubling segments from a >=1-element base spans >1e15 elements --
   // far beyond any real use, while keeping the pointer array tiny (48*8 B).
   static constexpr std::uint32_t kMaxSegments = 48;
+
+  std::uint32_t max_segments() const noexcept {
+    constexpr auto kSizeBits =
+        static_cast<std::uint32_t>(sizeof(std::size_t) * 8);
+    const std::uint32_t addressable = kSizeBits - first_shift_;
+    return addressable < kMaxSegments ? addressable : kMaxSegments;
+  }
 
   std::size_t seg_capacity(std::uint32_t k) const noexcept {
     return (std::size_t{1} << first_shift_) << k;  // base<<k

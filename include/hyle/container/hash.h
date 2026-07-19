@@ -139,6 +139,7 @@ HYLE_FORCE_INLINE std::uint64_t hash_small(const void* p, std::size_t n) noexcep
 // persists a hash across builds, so this is safe. >16B is unchanged (real XXH3).
 HYLE_FORCE_INLINE std::uint64_t hash_bytes(const void* data, std::size_t len,
                                            std::uint64_t seed = 0) noexcept {
+  HYLE_FATAL_ASSERT(data != nullptr || len == 0);
   if (len <= 16) {
     // Fold seed + len so different seeds AND different lengths diverge (XXH3 does
     // both). One mix for <=8B, a second folded mix for 9..16B. Avalanche and

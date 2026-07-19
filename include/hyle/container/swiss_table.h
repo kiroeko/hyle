@@ -31,7 +31,7 @@ struct SwissStorage {
 // Allocate new_cap slots, memset ctrl to empty, reinsert every full old slot,
 // free the old storage. `hash_slot(slot, hash_state)` recomputes a slot's hash
 // without knowing K (the key sits at slot offset 0). Updates `s` in place.
-HYLE_CONTAINER_API void swiss_resize(SwissStorage& s, std::size_t new_cap,
+HYLE_CONTAINER_API bool swiss_resize(SwissStorage& s, std::size_t new_cap,
                                      std::size_t slot_size,
                                      std::size_t slot_align, mem::Allocator alloc,
                                      std::uint64_t (*hash_slot)(const void*,
@@ -81,18 +81,68 @@ class SwissTable {
   HYLE_DISABLE_COPY(SwissTable);
   SwissTable(SwissTable&& o) noexcept
       : alloc_(o.alloc_), hash_(o.hash_), eq_(o.eq_), ctrl_(o.ctrl_),
-        slots_(o.slots_), cap_(o.cap_), size_(o.size_),
+        slots_(o.slots_), cap_(o.cap_), mask_(o.mask_), size_(o.size_),
         growth_left_(o.growth_left_) {
     o.ctrl_ = nullptr;
     o.slots_ = nullptr;
     o.cap_ = 0;
+    o.mask_ = 0;
     o.size_ = 0;
     o.growth_left_ = 0;
+  }
+  SwissTable& operator=(SwissTable&& o) noexcept {
+    if (this == &o) return *this;
+    free_storage();
+    alloc_ = o.alloc_;
+    hash_ = o.hash_;
+    eq_ = o.eq_;
+    ctrl_ = o.ctrl_;
+    slots_ = o.slots_;
+    cap_ = o.cap_;
+    mask_ = o.mask_;
+    size_ = o.size_;
+    growth_left_ = o.growth_left_;
+    o.ctrl_ = nullptr;
+    o.slots_ = nullptr;
+    o.cap_ = 0;
+    o.mask_ = 0;
+    o.size_ = 0;
+    o.growth_left_ = 0;
+    return *this;
   }
 
   std::size_t size() const noexcept { return size_; }
   std::size_t capacity() const noexcept { return cap_; }
   bool empty() const noexcept { return size_ == 0; }
+
+  bool reserve(std::size_t count) {
+    if (count <= cap_ - cap_ / 8) return true;
+    if (count > static_cast<std::size_t>(-1) / 8) return false;
+    const std::size_t required = (count * 8 + 6) / 7;
+    std::size_t new_cap = kMinCap;
+    while (new_cap < required) {
+      if (new_cap > static_cast<std::size_t>(-1) / 2) return false;
+      new_cap *= 2;
+    }
+    detail::SwissStorage s{ctrl_, slots_, cap_, mask_, size_, growth_left_};
+    if (!detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot), alloc_,
+                              &hash_slot_thunk, &hash_))
+      return false;
+    ctrl_ = s.ctrl;
+    slots_ = static_cast<Slot*>(s.slots);
+    cap_ = s.cap;
+    mask_ = s.mask;
+    size_ = s.size;
+    growth_left_ = s.growth_left;
+    return true;
+  }
+
+  void clear() noexcept {
+    if (ctrl_ == nullptr) return;
+    std::memset(ctrl_, static_cast<int>(detail::kEmpty), cap_ + kGroup);
+    size_ = 0;
+    growth_left_ = cap_ - cap_ / 8;
+  }
 
   // Returns pointer to the value for `key`, or nullptr if absent.
   V* find(const K& key) noexcept {
@@ -114,7 +164,11 @@ class SwissTable {
     }
   }
 
-  bool contains(const K& key) noexcept { return find(key) != nullptr; }
+  const V* find(const K& key) const noexcept {
+    return const_cast<SwissTable*>(this)->find(key);
+  }
+
+  bool contains(const K& key) const noexcept { return find(key) != nullptr; }
 
   // Insert or assign. Returns true if a new key was inserted, false if updated.
   // ONE hash + ONE probe walk in the common case (clay/abseil's fused
@@ -122,7 +176,10 @@ class SwissTable {
   // first empty/deleted slot to insert into. A second walk happens only when a
   // grow is actually triggered (amortized rare).
   bool insert(const K& key, const V& value) {
-    if (cap_ == 0) grow();  // fresh table: give the probe walk real storage
+    if (cap_ == 0) {
+      const bool grown = grow();  // give the probe walk real storage
+      HYLE_FATAL_ASSERT(grown);
+    }
     std::uint64_t h = hash_(key);
     bool found = false;
     std::size_t idx = find_or_prepare(key, h, &found);
@@ -135,8 +192,19 @@ class SwissTable {
     // (it was already counted against the load factor when erase made it). Grow
     // only when we'd take an empty slot and none is budgeted.
     if (growth_left_ == 0 && ctrl_[idx] == detail::kEmpty) {
-      grow();
+      // key/value are allowed to refer into this table. Rehash invalidates such
+      // references, so preserve both before entering the cold grow path.
+      const K key_copy = key;
+      const V value_copy = value;
+      const bool grown = grow();
+      HYLE_FATAL_ASSERT(grown);
       idx = find_insert_slot(h);  // cold path: rehash invalidated idx
+      set_ctrl(idx, detail::h2(h));
+      slots_[idx].key = key_copy;
+      slots_[idx].value = value_copy;
+      ++size_;
+      --growth_left_;  // find_insert_slot after a rehash always selects empty
+      return true;
     }
     bool was_empty = ctrl_[idx] == detail::kEmpty;
     set_ctrl(idx, detail::h2(h));
@@ -186,6 +254,16 @@ class SwissTable {
     // iterator ~1.2x on iterate; this matches absl's group-scan shape. cap_ is a
     // pow2 >= kGroup, so groups tile [0,cap_) exactly (no partial tail; the ctrl
     // tail-mirror is never entered).
+    if (cap_ == 0) return;
+    for (std::size_t g = 0; g < cap_; g += kGroup) {
+      for (std::uint32_t lane : detail::Group(ctrl_ + g).match_full()) {
+        const std::size_t i = g + lane;
+        fn(slots_[i].key, slots_[i].value);
+      }
+    }
+  }
+  template <class Fn>
+  void for_each(Fn&& fn) const {
     if (cap_ == 0) return;
     for (std::size_t g = 0; g < cap_; g += kGroup) {
       for (std::uint32_t lane : detail::Group(ctrl_ + g).match_full()) {
@@ -281,22 +359,25 @@ class SwissTable {
     if (i < kGroup) ctrl_[cap_ + i] = c;
   }
 
-  void grow() {
+  bool grow() {
     // Double only when genuinely full; if growth_left hit 0 mostly from
     // tombstones (real size sparse), rehash SAME size to reclaim instead. The
     // alloc + reinsert loop itself lives in the type-erased core (one DLL copy).
-    std::size_t new_cap = cap_ == 0          ? kMinCap
-                          : size_ >= cap_ * 7 / 8 ? cap_ * 2
-                                                  : cap_;
+    HYLE_FATAL_ASSERT(cap_ == 0 || cap_ <= static_cast<std::size_t>(-1) / 2);
+    std::size_t new_cap = cap_ == 0 ? kMinCap
+                          : size_ >= cap_ - cap_ / 8 ? cap_ * 2
+                                                    : cap_;
     detail::SwissStorage s{ctrl_, slots_, cap_, mask_, size_, growth_left_};
-    detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot), alloc_,
-                         &hash_slot_thunk, &hash_);
+    if (!detail::swiss_resize(s, new_cap, sizeof(Slot), alignof(Slot), alloc_,
+                              &hash_slot_thunk, &hash_))
+      return false;
     ctrl_ = s.ctrl;
     slots_ = static_cast<Slot*>(s.slots);
     cap_ = s.cap;
     mask_ = s.mask;
     size_ = s.size;
     growth_left_ = s.growth_left;
+    return true;
   }
 
   void free_storage() noexcept {

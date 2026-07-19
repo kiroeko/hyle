@@ -1,115 +1,178 @@
-# HYLE container/ 设计
+# HYLE container 架构
 
-> 超越 std 的高性能容器（Tier 0，焦点 #5）。继承 clay flat hashmap/carray/string_ref，补 SwissTable SIMD 探测，加 SmallVector/intrusive/lock-free 队列。上游见 [`hyle-scope.md`](./hyle-scope.md)、[`coding-conventions.md`](./coding-conventions.md)。
+container 是 Tier 0 数据结构层：提供平坦 hash、连续数组、字符串/路径、驻留池和
+调度器所需并发容器。其性能核心自行维护；abseil、boost、TBB、rigtorp 和
+`std::*` 只作为 benchmark/oracle，不进入产品依赖。
 
-## clay 现状：真地基，成色好
+## 分层与依赖
 
-| 资产 | 行数 | 性质 | 处置 |
-|---|---|---|---|
-| flat `hashmap`（C 宏泛型 open-addressing）| 715 | power-of-two 位与取模、线性探测+tombstone、keys/values 连续。clay **规划了 SwissTable SIMD 探测但未实现**（`hashmap.h:109-131`）| ✅ 继承 + **补全 SwissTable**（concept 模板重写，对标 absl 平或反超）|
-| `carray`（header-before-data 侵入式数组）| 423 | 指针即数据、cache 友好、可传 C API | 改后继承 + RAII 壳 |
-| `cstring`/`string_ref` | 1003 | ptr+len+null_terminated 位、零拷贝、interning | 直接继承 |
-| `string_buf`（引用计数驻留池）| — | murmur hash + make/destroy 跨 DLL | 直接继承 |
-| `concurrent_vector` | — | 读优化、写加锁 | ✅ lock-free 化（读 lock-free/写 SpinLock，赢 tbb 并发读 2.2x）|
-
-## 核心决策：唯一真"造不借"的 Tier 0
-
-mem/simd/io/compute 都借一个通用 substrate（mimalloc/Highway+xsimd/liburing/ggml）。**container/ 不借——自己造**。三条理由：
-
-1. **clay 有真地基**：flat hashmap + carray + string_ref 已是 absl/folly 雏形，改造成本 < 引入外部依赖。
-2. **C-ABI 边界过不去**：abseil `flat_hash_map`、folly F14 是 C++ 类型、带 C++ ABI，**跨 DLL/FFI 过不去**——这正是 clay 当年造 carray/c-hash 的原因（也是 mem-design 里 mimalloc 要封在 vtable 后的同款约束）。
-3. **是差异焦点 #5**："超越 std 的容器"是卖点，外包卖点说不过去。
-
-所以 container/ = **继承 clay + 补 clay 规划未做的 + 填缺的类型**，不引入外部容器库。
-
-## 2026 格局（指导 SwissTable 实现）
-
-- **SwissTable（abseil）**：密集 metadata 数组，每槽 1 控制字节 = 7 位 hash 片段 + 空/删标志；查找时 SIMD 一次比 16 个控制字节（`_mm_cmpeq_epi8`+movemask）定位候选，再比 key。cache 友好 + 并行探测。
-- **F14（folly）**：分 chunk，同样 SIMD。
-- clay 的 hashmap 已是 open-addressing flat，**补上 control-byte + SIMD 探测就到 SwissTable 水平**——不是推倒，是完成。
-
-## 分层结构
-
-```
-container/                  (实际文件名,扁平布局)
-├─ swiss_table.h   flat hashmap(SwissTable:concept 模板 + 控制字节 + SIMD 探测)
-├─ carray.h        侵入式动态数组(header-before-data)+ RAII/迭代器薄壳
-├─ small_vector.h  inline storage(小 N 不堆分配)—— clay 没有,新增
-├─ string_ref.h    string_ref(null_terminated 位)+ string_algo
-├─ string_buf.h    string_buf 驻留池(C-ABI 字符串载体)
-├─ intrusive_list.h 侵入式 list(节点内嵌 hook)—— 给 sched run-queue/waiter
-├─ bounded_queue.h / sharded_queue.h / ws_fifo_queue.h / work_stealing_deque.h / concurrent_vector.h
-│                   无锁队列簇 —— 给 sched global/per-core queue + work-stealing
-└─ probe.h         SwissTable 的 16 路 SIMD 探测片段(自包含 SSE2/SSSE3/NEON,见 tier 澄清)
+```text
+稳定发布面
+  include/hyle/c/container.h
+    POD + pointer/count + buffer-fill + opaque handles
+                      |
+                      v
+C ABI 类型擦除层
+  src/container/c_container.cc
+    vector/map erased metadata, allocator-preserving handles,
+    pointer-payload concurrent facades, TLS last_error
+                      |
+          +-----------+-----------+
+          |                       |
+          v                       v
+C++ typed / source surface      compiled cold cores
+  CArray<T> / SmallVector       hash_bytes, carray grow,
+  SwissTable<K,V>               Swiss resize/free,
+  string_ref / StringBuf        StringBuf/path/string algorithms
+  typed queues                  runtime ISA dispatcher
+          |                       |
+          +-----------+-----------+
+                      |
+                      v
+Tier 0 dependencies: mem allocator + platform CPU discovery
 ```
 
-## SwissTable SIMD 探测（探测层重写，非"补字节"）
+- `container -> mem -> platform` 是允许的基础依赖。
+- container 不链接 `hyle_simd` 模块，避免 Tier 0→Tier 1 倒挂。
+- 字符串批处理的每 ISA TU 复用 `hyle/simd/vec.h` 的 header-only 寄存器 DSL；
+  这不会调用 SIMD runtime，也不会把 SIMD 公共 ABI带入 container。
+- Swiss control group 仍在 `probe.h` 自包含实现：x86 16-byte group、NEON/portable
+  8-byte group。它必须可被 typed `SwissTable` hot path 内联。
 
-> **深读 abseil 校正**：clay 是**线性探测**，SwissTable 是**三角数二次探测的 group 跳跃 + 控制字节 + 特定 tombstone 降级逻辑**——这不是"补 control-byte 就完成"，是**换探测算法 + 重写 resize/erase**。工作量接近"从零造探测核"，落地清单须单列。
+## 数据结构面
 
-- **控制字节数组**：与 slot 平行的 `int8_t ctrl[]`，每字节四种值（照 abseil `hashtable_control_bytes.h:184-219`，**这些值是为 SIMD 精选的，别自改**）：`0x80`(-128)=空、`0xFE`(-2)=删、`0xFF`(-1)=哨兵（kSentinel，`pcmpeqd` 免加载）、`0hhhhhhh`(MSB=0)=full 槽存 hash 高 7 位(H2)。H1=全宽做 group 索引，H2=hash>>57 取高 7 位。
-- **探测**：三角数二次探测 `offset += (index += Width)`（**非线性探测**）。每 group：SIMD 加载 16 控制字节，`_mm_set1_epi8(h2)` 广播 + `_mm_cmpeq_epi8` + `movemask` → 16 位候选位图，逐候选比 key。空槽终止探测；erase 时能证明不在任何探测链的删除位可降级为 empty（避墓碑堆积）。
-- **三套 group 实现（probe.h 必须全带）**：x86 SSE2 group 宽 16；**ARM NEON group 宽 8**（无 movemask，用 `vceq_u8` + 64 位 mask 方案，复杂度比 x86 高）；**标量 SWAR 兜底**（abseil `GroupPortableImpl`，非 x86/ARM 平台必需，否则编不过）。
-- **可借鉴 F14 的溢出计数**（folly）替代裸 tombstone——稳态 insert/erase 自动回收墓碑、免周期 rehash 抖动，对长生命周期 agent 表友好。主体抄 abseil 平坦布局 + 借 F14 溢出计数思想。
-- **tier 倒置澄清（重申 simd-design）**：探测片段自包含（三套 group 直接写 intrinsic）、**内联在 `probe.h`、不依赖整个 simd/（Tier 1）**。保持 container（T0）不依赖 simd（T1）。
-
-## 新增类型（clay 缺、HYLE 焦点要的）
-
-| 类型 | 用途 | 谁要 | 参考/来源 |
+| 能力 | C++ 源码面 | 稳定 C ABI | 关键合同 |
 |---|---|---|---|
-| **SmallVector<T,N>** | inline storage，小集合零堆分配 | 通用热路径（参数列表、临时集合）| 抄 **folly `small_vector`** 设计（MaxInline 策略 + size 压进 inline buffer 省头部，比 absl::InlinedVector 更抠字节），不抄代码 |
-| **intrusive list/slist** | 节点内嵌 hook，零额外分配、O(1) 摘除 | **sched 的 waiter 链、run-queue** | 参考 **folly `IntrusiveList`**（boost-free，比 boost.intrusive 轻）|
-| **lock-free bounded ring（MPMC）** | 有界无锁环 | **sched 的 per-core run-queue + global 注入** | **移植 Vyukov bounded MPMC 算法**（数组+每槽 seq；算法非自创、代码自写移植），**不 vendor 现成库**——见下张力 |
+| flat map | `SwissTable<K,V>` | erased POD hash map | trivially-copyable key/value；ctrl+连续 slots；SIMD group probe |
+| dynamic array | `CArray<T>` | erased POD vector | header-before-data；allocator/alignment 随 allocation 记录 |
+| inline array | `SmallVector<T,N>` | 不单独导出 | N 是编译期类型；C 动态需求由 erased vector 覆盖 |
+| string view | `string_ref` | `hyle_container_string_view` | ptr+u32 length+NUL bit；借用、不拥有 |
+| interner | `StringBuf` | opaque StringBuf | generation-tagged direct ID；内容相等才同一条目 |
+| path/text algorithms | typed view/buffer-fill | pointer/count/buffer-fill | 无 STL 所有权跨边界 |
+| bounded/sharded queues | typed payload | `void*` payload opaque handle | HYLE 不拥有 payload |
+| work steal/share | typed payload | `void*` payload opaque handle | owner/thief 契约不同，不能混用 |
+| concurrent vector | typed append-only | `void*` append-only | 发布后地址稳定 |
 
-> **lock-free 队列造借结构（按实现校正）**：全部**自写移植**，无 vendor 单头。**基础有界 ring（`BoundedQueue`）移植 Vyukov bounded MPMC 算法**——算法出名难写对（ABA、memory order、TSan），故忠实移植经典算法而非自创（头注释明确 `NOT a HYLE invention`），但**代码在 HYLE 仓库、自己维护 + 调优**：cache-line pad 每槽独占 line、`pos & mask` 位与寻址（rigtorp 用运行期 `% capacity` 的 idiv）、relaxed CAS——单线程实测**赢同契约 SOTA rigtorp 1.5x**、多线程统计平局（见 performance.md queue 节；rigtorp 是 **bench 对照**，不是被 vendor 进来的依赖）。**work-stealing 变体同样自写移植**——sched/graph 要的 owner-LIFO + steal-half + packed-head CAS 语义现成件不提供，故 container-07（Chase-Lev deque，供 graph fork-join）、container-08（tokio 式 FIFO ring，供 sched 本地队列）移植自写。**`ShardedQueue`（container-10）是 HYLE 组合创新**——N 个 Vyukov 子环分片消单点 CAS 争用，反超 rigtorp 2-5x（生产 sched global 注入走这条）。即 container 的 lock-free 簇全自写（移植经典算法或组合创新），无 vendor 单头。
+IntrusiveList 已下沉 core，因为 error/time/sched 都需要它；它不再属于 container
+库或 container C ABI。
 
-## 与其他模块的耦合（container 是 sched 的原语供应商）
+## SwissTable
 
-- **→ sched/（关键）**：sched 第二节的 per-core 有界 ring、global MPMC 注入队列、fiber waiter 链，**全是 container 提供的数据结构原语**。依赖故事干净：**container（T0）提供原语 → sched（T0）组合成调度器**。
-- **→ mem/**：所有容器显式注入 `Allocator*`（继承 clay 铁律），分配走 mem/。
-- **→ simd/**：**不依赖 simd 模块**。SwissTable 探测用自包含 SSE2 片段（probe.h，见 tier 澄清）；string_ref char 族的 AVX2 变体查 `platform::cpu_features()`（CPUID 探测 2026-07 下沉 platform，container 经 mem→platform 白拿），也不碰 simd。
-- **string_buf 跨 DLL**：make/destroy + 引用计数，是 C-ABI 边界的字符串载体。
+SwissTable 不是 clay 线性探测 map 的换名版，而是完整的 flat Swiss 形状：
 
-## 落地状态(已实现)
+```text
+ctrl:  [H2][H2][EMPTY][DELETED]...
+slots: [K,V][K,V][-----][-----]...
 
-1. **hashmap**:`SwissTable`(concept 模板 + 控制字节 + SIMD 探测,去 clay 的 `temp`/哨兵)——✅ 对拍 std + 对标 absl(find/insert/erase 平或反超)。
-2. **carray**:`CArray<T>` RAII 壳(header-before-data 布局保留)——✅(迭代器 begin/end 已具)。
-3. **SmallVector**(inline→heap 切换)、**intrusive list**、**lock-free 队列**(`BoundedQueue` Vyukov MPMC / `ShardedQueue` / `WsFifoQueue` / `WorkStealingDeque` / `ConcurrentVector`)——✅ 全部实现 + WSL TSan 零 race。
-4. **string_ref/string_buf**——✅ 继承实现（搜索族策略见下「string_ref 搜索族」）。
-5. **单测**:hashmap 对拍 std + 对标 absl bench;lock-free 队列 TSan;SmallVector inline→heap 切换——✅ 均已覆盖。
+hash -> H1 起始 group + H2 七位指纹
+     -> SIMD 一次比较整个 ctrl group
+     -> 只对候选 lane 执行 key equality
+     -> triangular group probing
+```
 
-### string_ref 搜索族：自研赢得过的自研，std 更强的借（2026-07 定策）
+erase 在安全时把 tombstone 恢复成 empty，否则保留 deleted。resize/free 是
+type-erased cold core；typed find/insert/erase 保持 header-inline，避免廉价 key
+每 probe 一次函数指针。C map 使用同一 ctrl/group/resize 机制，但 slot layout
+运行时计算为 `[stored hash][aligned key][aligned value]`；不是每元素分配的链表。
 
-`string_ref` 是 HYLE 自己的 16 字节 POD（`{const char* data; uint32 size; uint32 null_terminated;}`），**公开头 `string_ref.h` 不 include 任何 std string 头**（`<string>`/`<string_view>`/`<iostream>` 一个不拉）。但它的搜索族**逐函数**在实现层挑最优后端——这是"用着标准库最强的部分，同时用自研超过它的部分"的落地：
+边界原则：
 
-**三层结构**：
-- **类型层**：`string_ref` 始终是自定义 POD，从不是 `std::string_view` 的皮。
-- **分发层（header）**：每个方法 `if consteval` 走编译期 scalar，运行期委托到一个 `detail::str_*` 导出函数。自研的和借 std 的**在 header 里长得完全一样**，调用方看不出区别。
-- **实现层（`string_ref.cc`）**：`.cc` 可以 include `<string_view>`（不泄漏给调用方），每个 `detail::str_*` 函数体逐个选：自研的写 SIMD，借的临时包一个 `std::string_view(data, size)`（零拷贝，只包 ptr+len）转发。
+- 所有容量乘法、对齐和 power-of-two 扩张先做 overflow 检查。
+- 增长失败保留旧状态并返回失败。
+- insert 输入若别名当前 slots，增长前复制到 allocator-backed scratch。
+- C callback 不得抛异常或在遍历中修改同一 map。
 
-**逐项划分（按实测战绩）**：
+## StringBuf 身份与生命周期
 
-| 组 | 项 | 后端 | 为什么 |
-|---|---|---|---|
-| **自研** | find(char)/rfind(char)/count | 我们的 SSE2 + AVX2 变体（运行期 CPUID dispatch，见下）| 追平/反超 std；char 族 SIMD 我们写得动 |
-| **自研** | starts_with/ends_with | memcmp | 平 std |
-| **自研（反超）** | split/trim | 零分配子视图 | 结构性优势，std 必构造/取子串 |
-| **借 std** | find(needle)/rfind(needle) | 转发 `std::string_view` | MSVC STL 的 two-way 向量化子串搜索是实测 SOTA，自研 memchr 候选输 2.5–4x |
-| **借 std** | find_first_of/not_of、find_last_of/not_of | 转发 `std::string_view` | MSVC PCMPESTRI 字符集扫描是 SOTA，自研 PCMPESTRI 只到 0.76x 追不动 |
+StringBuf 有两个正交用法：
 
-**AVX2 变体的运行期 dispatch**：char 族的 AVX2 核在独立 `-mavx2` TU（`string_ref_avx2.cc`），只在 `platform::cpu_features().avx2 && size>=32` 时进入（老 CPU 走 SSE2/scalar，无 SIGILL）。CPUID 探测下沉到 `platform/cpu.{h,cc}`（原在 simd/dispatch），container 经 `container→mem→platform` 白拿，不依赖 simd 模块。
+```text
+add -> InternId(generation, slot) -> retain/remove -> refs=0 时释放
+intern / intern_many             -> permanent until pool destruction
+```
 
-**与前身 clay 的对比**：clay 的 `string_ref` 搜索族**全部**转发 `std::string_view`，且其 `cstring.h` 直接 `#include <iostream>`/`<string>`/`<functional>`。HYLE 更克制——只借 std 真正更强的几项、且只从 `.cc` 借、公开头零 std string 头。结果：container·str 全线追平或反超 `std::string_view`，无真输项（见 performance.md container·str 节）。
+内容 hash 只负责定位，不是身份。`by_string` 必须继续做完整内容 equality；ID 通过
+`by_id` 直接索引，generation 防止 slot 重用后 stale ID 命中新字符串。每个 Entry
+与字符数据在一个 allocator allocation 中，地址稳定。pool、索引、entry、C handle
+都使用注入的同一个 allocator。
 
-## 已定决策（均已落地）
+单次 API 为线程安全每次取锁；吞吐用户应使用 `intern_many`。单次生命周期 churn
+不是该模块的 SOTA 宣传点，性能结论见
+[`benchmarks-mem-container.md`](../performance/benchmarks-mem-container.md)。
 
-1. **hashmap 保持 C 宏泛型还是 C++23 concept 模板重写**？**concept 模板写内部实现 + 需过边界的特定类型封薄 C-ABI shim**——去掉 C 宏的 temp/哨兵/sizeof 校验包袱，干净类型安全；hashmap 绝大多数是内部 C++ 用，过边界的少数（如 string 映射）再封 shim。即 charter「内部 C++23 / 外部 C-ABI」在容器上的落地。
-2. **SwissTable 自实现还是抄 abseil 内部**？**自实现**（C-ABI 边界 + 差异焦点 + clay 已规划）——这是唯一不外包的 Tier 0，参考 abseil 设计笔记但代码自写。已落地并对标 absl（find/insert/erase 平或反超，见 performance.md）。
-3. **lock-free 队列放 container/ 还是 sched/**？放 **container/**（它是通用数据结构，sched 是消费者），保持"container 供原语、sched 做组合"的干净分层。
+## 字符串 SIMD 策略
+
+动态调用链如下：
+
+```text
+string_ref/string_algo public call
+          |
+          v
+baseline dispatcher (cached platform::best_isa())
+          |
+   +------+------+------+-------+
+   | scalar | SSE4 | AVX2 | AVX512 | NEON
+   +------+------+------+-------+
+        independently compiled target TUs
+```
+
+`count`、`rfind(char)`、ASCII lower/upper 走上述变体。调用方不需要 CPU 宏，也不会
+在旧 CPU 执行宽指令。substring 与 character-set 搜索在 `.cc` 内转发
+`std::string_view`，因为当前 MSVC 标准库实现实测更强；公开头不会因此暴露 STL。
+短路径组件继续用内联标量反向扫描，避免 dispatcher seam。
+
+UTF-8 validate/count 使用内化的 simdutf source，并由 simdutf 自己派发；这不是
+container 对外依赖。hex encode/decode 当前是无查表分支的标量/编译器向量化实现，
+只证明胜过等契约 scalar reference，未宣称战胜专门 SIMD codec。
+
+## C ABI 边界
+
+`include/hyle/c/container.h` 遵守 close-01：
+
+- 106 个 `extern "C"` 动态符号；15 个 header-inline 便利入口。
+- options 带 `struct_size`；allocator 按值捕获但 state 生命周期由调用方保证。
+- 对象只经 create/destroy；不导出 C++ 类布局、STL、模板或异常。
+- String/path 产出使用借用 view 或 buffer-fill。
+- CArray/SwissTable 通过运行时 item size/alignment/hash/equal 类型擦除。
+- 并发容器的稳定最小共同面使用 pointer payload。
+
+完整使用和失效规则见 [`c-container.md`](../guide/c-container.md)；收口证据见
+[`container-module-closure.md`](../milestones/container-module-closure.md)。
+
+## 下游利用
+
+- sched 使用 ShardedQueue、WsFifoQueue、WorkStealingDeque 等调度原语。
+- graph/sched 使用 ConcurrentVector 类 append-only 发布结构。
+- error/time 等共享 intrusive 基础设施已归 core，不制造反向 container 依赖。
+- 其他模块可使用 `hash_bytes`，但 hash 模块不依赖 SIMD runtime；≤16B typed key
+  走 inline mix，热短字节串可显式选择 `hash_inline.h` 消掉 DLL seam。
+
+## 性能验收边界
+
+“SOTA”必须逐契约、逐操作成立，不能写成整个 container 的无条件标签：
+
+- flat Swiss map 对 std 和 absl 的已测核心操作成立；
+- CArray/SmallVector/队列按各自对等形状判断；
+- 路径的大倍数主要来自零分配结构，对同形 string-view 扫描通常是平局；
+- StringBuf batch throughput 强，单调用/生命周期 churn 有锁和 DLL seam 成本；
+- 4KB 字符扫描的 0.8x–0.95x 点值应结合 64KB/1MB、方差和调用形状，不包装成赢。
+
+测试矩阵包括 typed 单测、纯 C 121/121 调用覆盖、C++ C-ABI 并发测试、allocator
+故障注入、三平台构建/运行、ASan/UBSan/TSan，以及独立 SOTA benchmark。
+
+## 维护红线
+
+1. 新分配路径必须保存并使用原 allocator/alignment，且有 OOM 状态保持测试。
+2. 新 C API 必须进入纯 C test、指南和动态导出机械核对。
+3. 修改共享 per-ISA header 后，所有 variant TU 都必须重编译；Windows 还要验证
+   import library，而不只运行库内部测试。
+4. 不为复用 `hyle_simd` runtime 制造 Tier 倒挂；批量 kernel 可复用 header DSL，
+   但 dispatcher 属 container 自己。
+5. 任何性能结论注明对手合同、平台、输入形状和不成立的边界。
 
 ## 参考
 
-- [abseil Swiss Tables 设计笔记](https://abseil.io/about/design/swisstables)
-- [abseil flat_hash_map 实现](https://github.com/abseil/abseil-cpp/blob/master/absl/container/flat_hash_map.h)
-- [folly F14 vs absl flat_hash_set 基准](https://groups.google.com/g/hashtable-benchmarks/c/-nT-3fESXq8)
-- [SwissTable 快速描述（控制字节 + SIMD 探测）](https://faultlore.com/blah/hashbrown-tldr)
+- [abseil Swiss Tables design](https://abseil.io/about/design/swisstables)
+- [SwissTable control-byte overview](https://faultlore.com/blah/hashbrown-tldr)
+- [C ABI design](./c-abi-design.md)
+- [C ABI authoring guide](./c-abi-authoring-guide.md)

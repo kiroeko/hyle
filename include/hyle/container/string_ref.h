@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <string_view>
 
 #include "hyle/container/hash.h"  // Hash<> primary template (+ HYLE_CONTAINER_API)
 #include "hyle/macros.h"
@@ -59,7 +60,9 @@ HYLE_CONTAINER_API std::uint32_t str_find_substr(const char* data,
 // C string with zero copy. clay's cstring.h ABI (16 bytes, C layout) is kept so
 // the struct passes a C-ABI seam unchanged; the algorithms are reimplemented in
 // C++23 instead of delegating to std::string_view -- string_ref IS the std
-// replacement, so this header pulls in no <string>/<string_view>/<iostream>.
+// replacement. It uses only the non-owning <string_view> algorithms where the
+// platform STL provides a measured faster primitive; no owning string or stream
+// type crosses the interface.
 //
 // `size` is uint32_t (clay parity): a string_ref addresses <= 4 GiB. The two
 // uint32_t fields pack against the 8-byte pointer for a tight 16-byte POD.
@@ -81,7 +84,10 @@ struct string_ref {
   constexpr string_ref(const char* s) noexcept : data(s) {  // NOLINT(*-explicit)
     if (s != nullptr) {
       std::uint32_t n = 0;
-      while (s[n] != '\0') ++n;
+      while (s[n] != '\0') {
+        HYLE_FATAL_ASSERT(n != npos);
+        ++n;
+      }
       size = n;
     }
     null_terminated = 1;
@@ -99,13 +105,18 @@ struct string_ref {
                { r.size() } -> std::convertible_to<std::size_t>;
              })
   string_ref(const R& r) noexcept  // NOLINT(*-explicit)
-      : data(r.data()), size(static_cast<std::uint32_t>(r.size())) {}
+      : data(r.data()) {
+    HYLE_FATAL_ASSERT(r.size() <= npos);
+    size = static_cast<std::uint32_t>(r.size());
+  }
 
   constexpr char operator[](std::uint32_t i) const noexcept { return data[i]; }
   constexpr char front() const noexcept { return data[0]; }
   constexpr char back() const noexcept { return data[size - 1]; }
   constexpr const char* begin() const noexcept { return data; }
-  constexpr const char* end() const noexcept { return data + size; }
+  constexpr const char* end() const noexcept {
+    return data == nullptr ? nullptr : data + size;
+  }
   constexpr bool empty() const noexcept { return size == 0; }
 
   // Returns data only if it is safe as a C string; fail-fast otherwise (a bug:
@@ -123,7 +134,8 @@ struct string_ref {
     std::uint32_t avail = size - start;
     if (len > avail) len = avail;
     bool nt = null_terminated && (start + len == size);
-    return string_ref{data + start, len, nt};
+    return data == nullptr ? string_ref{}
+                           : string_ref{data + start, len, nt};
   }
 
   constexpr std::uint32_t find(char c, std::uint32_t pos = 0) const noexcept {
@@ -133,14 +145,13 @@ struct string_ref {
         if (data[i] == c) return i;
       return npos;
     }
-    // RUNTIME: memchr lowers to SIMD in libc (~20x a scalar byte loop on long
-    // scans). The consteval branch above is discarded here (not unreachable).
-    const void* hit =
-        std::memchr(data + pos, static_cast<unsigned char>(c), size - pos);
-    return hit == nullptr
+    // The standard library's char finder is a tuned runtime-dispatched helper
+    // on MSVC and maps to the platform memchr machinery elsewhere. Keep this
+    // header-inline: an extra HYLE DLL hop nearly doubled a 4 KiB miss scan.
+    const std::size_t result = std::string_view(data, size).find(c, pos);
+    return result == std::string_view::npos
                ? npos
-               : static_cast<std::uint32_t>(static_cast<const char*>(hit) -
-                                            data);
+               : static_cast<std::uint32_t>(result);
   }
   // constexpr: naive O(n*m) window walk. RUNTIME: forwards to std::string_view's
   // two-way vectorized substring search (the measured SOTA; see string_ref.cc).
@@ -294,7 +305,7 @@ struct string_ref {
   std::uint32_t copy_to(char* dst, std::uint32_t cap) const noexcept {
     if (cap == 0) return 0;
     std::uint32_t n = size < (cap - 1) ? size : (cap - 1);
-    std::memcpy(dst, data, n);
+    if (n != 0) std::memcpy(dst, data, n);
     dst[n] = '\0';
     return n;
   }
@@ -310,7 +321,8 @@ struct string_ref {
         if (data[at + i] != other.data[i]) return false;
       return true;
     }
-    return std::memcmp(data + at, other.data, other.size) == 0;
+    return other.size == 0 ||
+           std::memcmp(data + at, other.data, other.size) == 0;
   }
 };
 
@@ -347,9 +359,10 @@ inline bool equal_ignore_case(string_ref a, string_ref b) noexcept {
 // otherwise allocates a NUL-terminated copy via `alloc` (caller owns it).
 inline const char* c_str(string_ref s, mem::Allocator alloc) {
   if (s.null_terminated) return s.data;
-  char* p = static_cast<char*>(alloc.allocate(s.size + 1));
+  const std::size_t bytes = static_cast<std::size_t>(s.size) + 1;
+  char* p = static_cast<char*>(alloc.allocate(bytes));
   if (p == nullptr) return nullptr;
-  std::memcpy(p, s.data, s.size);
+  if (s.size != 0) std::memcpy(p, s.data, s.size);
   p[s.size] = '\0';
   return p;
 }
@@ -357,7 +370,8 @@ inline const char* c_str(string_ref s, mem::Allocator alloc) {
 // Owning, NUL-terminated copy via `alloc`. Free with the same allocator and
 // size+1 (the result's null_terminated bit is set).
 inline string_ref dup(string_ref s, mem::Allocator alloc) {
-  char* p = static_cast<char*>(alloc.allocate(s.size + 1));
+  const std::size_t bytes = static_cast<std::size_t>(s.size) + 1;
+  char* p = static_cast<char*>(alloc.allocate(bytes));
   if (p == nullptr) return string_ref{};
   if (s.size) std::memcpy(p, s.data, s.size);
   p[s.size] = '\0';
@@ -373,7 +387,8 @@ inline string_ref concat(string_ref a, string_ref b, mem::Allocator alloc) {
   // The u64 sum exists solely to feed the assert without itself wrapping.
   HYLE_FATAL_ASSERT(static_cast<std::uint64_t>(a.size) + b.size <= 0xFFFFFFFFull);
   std::uint32_t n = a.size + b.size;
-  char* p = static_cast<char*>(alloc.allocate(n + 1));
+  const std::size_t bytes = static_cast<std::size_t>(n) + 1;
+  char* p = static_cast<char*>(alloc.allocate(bytes));
   if (p == nullptr) return string_ref{};
   if (a.size) std::memcpy(p, a.data, a.size);
   if (b.size) std::memcpy(p + a.size, b.data, b.size);

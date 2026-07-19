@@ -40,20 +40,27 @@ void core_set_ctrl(ctrl_t* ctrl, std::size_t cap, std::size_t i,
 
 }  // namespace
 
-void swiss_resize(SwissStorage& s, std::size_t new_cap, std::size_t slot_size,
+bool swiss_resize(SwissStorage& s, std::size_t new_cap, std::size_t slot_size,
                   std::size_t slot_align, mem::Allocator alloc,
                   std::uint64_t (*hash_slot)(const void*, const void*),
                   const void* hash_state) {
+  if (new_cap > static_cast<std::size_t>(-1) - kGroupWidth ||
+      slot_size == 0 ||
+      new_cap > static_cast<std::size_t>(-1) / slot_size)
+    return false;
   ctrl_t* old_ctrl = s.ctrl;
   auto* old_slots = static_cast<std::byte*>(s.slots);
   std::size_t old_cap = s.cap;
 
   auto* new_ctrl = static_cast<ctrl_t*>(
       alloc.allocate(new_cap + kGroupWidth, alignof(ctrl_t)));
-  HYLE_FATAL_ASSERT(new_ctrl != nullptr);
+  if (new_ctrl == nullptr) return false;
   auto* new_slots =
       static_cast<std::byte*>(alloc.allocate(new_cap * slot_size, slot_align));
-  HYLE_FATAL_ASSERT(new_slots != nullptr);
+  if (new_slots == nullptr) {
+    alloc.deallocate(new_ctrl, new_cap + kGroupWidth, alignof(ctrl_t));
+    return false;
+  }
   std::memset(new_ctrl, static_cast<int>(kEmpty), new_cap + kGroupWidth);
 
   std::size_t new_mask = new_cap - 1;
@@ -79,7 +86,8 @@ void swiss_resize(SwissStorage& s, std::size_t new_cap, std::size_t slot_size,
   s.cap = new_cap;
   s.mask = new_mask;
   s.size = new_size;
-  s.growth_left = new_cap * 7 / 8 - new_size;
+  s.growth_left = new_cap - new_cap / 8 - new_size;
+  return true;
 }
 
 void swiss_free(SwissStorage& s, std::size_t slot_size, std::size_t slot_align,

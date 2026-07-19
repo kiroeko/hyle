@@ -55,7 +55,7 @@ HYLE_FORCE_INLINE constexpr bool is_separator(char c) noexcept {
 // non-separator char precedes it in the same component:
 //   "test.jpg" -> ".jpg"   "a.tar.gz" -> ".gz"   "test" -> {}
 //   ".bashrc"  -> {}       "a.b/c"    -> {}       "" -> {}
-constexpr string_ref extension(string_ref path) noexcept {
+HYLE_FORCE_INLINE constexpr string_ref extension(string_ref path) noexcept {
   // Scan the LAST component only, back-to-front (like base()/directory()): stop
   // at the first separator, so a deep path touches ~one filename's worth of bytes
   // instead of the whole string. `ext` latches the LAST dot (first one seen going
@@ -69,7 +69,8 @@ constexpr string_ref extension(string_ref path) noexcept {
     if (c == '.') {
       if (ext == string_ref::npos) ext = i;           // latch the last dot
     } else if (ext != string_ref::npos) {
-      return path.substr(ext);  // view from the dot to the end (keeps nt bit)
+      return string_ref{path.data + ext, path.size - ext,
+                        path.null_terminated != 0};
     }
   }
   return string_ref{};
@@ -77,7 +78,8 @@ constexpr string_ref extension(string_ref path) noexcept {
 
 // `path` with its extension() removed. Pairs with extension(): for a name with
 // no extension this returns the whole path unchanged (never an empty string).
-constexpr string_ref strip_extension(string_ref path) noexcept {
+HYLE_FORCE_INLINE constexpr string_ref strip_extension(
+    string_ref path) noexcept {
   string_ref e = extension(path);
   if (e.size == 0) return path;
   return path.substr(0, path.size - e.size);
@@ -86,25 +88,29 @@ constexpr string_ref strip_extension(string_ref path) noexcept {
 // ---- base / directory (basename / dirname) ----------------------------------
 // Last element of `path`. Trailing separators are stripped first. "" -> ".",
 // a path of only separators -> "/". (clay base)
-constexpr string_ref base(string_ref path) noexcept {
+HYLE_FORCE_INLINE constexpr string_ref base(string_ref path) noexcept {
   if (path.size == 0) return string_ref{".", 1, true};
   bool found = false;
   std::uint32_t end = path.size;
   for (std::uint32_t i = path.size - 1; i < path.size; --i) {  // wraps below 0
     if (is_separator(path.data[i])) {
-      if (found) return path.substr(i + 1, end - (i + 1));
+      if (found)
+        return string_ref{path.data + i + 1, end - i - 1,
+                          path.null_terminated != 0 && end == path.size};
       end = i;  // trailing separator: shrink the window
     } else {
       found = true;
     }
   }
-  if (found) return path.substr(0, end);
+  if (found)
+    return string_ref{path.data, end,
+                      path.null_terminated != 0 && end == path.size};
   return string_ref{"/", 1, true};
 }
 
 // "Directory" of `path`: everything before base(). Trailing separators removed
 // unless it is the root. No directory / empty path -> ".". (clay directory)
-constexpr string_ref directory(string_ref path) noexcept {
+HYLE_FORCE_INLINE constexpr string_ref directory(string_ref path) noexcept {
   if (path.size == 0) return string_ref{".", 1, true};
   bool found = false;
   for (std::uint32_t i = path.size - 1; i < path.size; --i) {  // wraps below 0
@@ -116,7 +122,10 @@ constexpr string_ref directory(string_ref path) noexcept {
         // on an all-separator prefix like "//x").
         std::uint32_t j = i;
         while (j < path.size && is_separator(path.data[j])) --j;
-        if (j < path.size) return path.substr(0, j + 1);
+        if (j < path.size)
+          return string_ref{path.data, j + 1,
+                            path.null_terminated != 0 &&
+                                j + 1 == path.size};
         return string_ref{"/", 1, true};
       }
     } else {
