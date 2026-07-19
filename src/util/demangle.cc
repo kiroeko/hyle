@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "hyle/macros.h"
+
 #if defined(__GNUC__) || defined(__clang__)
 #  if __has_include(<cxxabi.h>)
 #    include <cxxabi.h>
@@ -22,6 +24,7 @@ namespace {
 // Copy a NUL-terminated source into out[cap], snprintf-style: always terminate
 // when cap > 0, return the full source length so the caller can detect overflow.
 std::size_t fill(const char* src, char* out, std::size_t cap) noexcept {
+  HYLE_FATAL_ASSERT(out != nullptr || cap == 0);
   std::size_t n = std::strlen(src);
   if (cap > 0) {
     std::size_t copy = (n < cap - 1) ? n : cap - 1;
@@ -62,6 +65,25 @@ std::size_t demangle(const char* mangled, char* out, std::size_t cap) noexcept {
   // (e.g. from a backtrace). Returns 0 on failure.
   DWORD n = UnDecorateSymbolName(mangled, buf, sizeof(buf), UNDNAME_COMPLETE);
   if (n != 0) return fill(buf, out, cap);
+  // A valid decorated name can exceed the small stack buffer. DbgHelp does not
+  // report the required length, so retry only the '?' form used by MSVC linker
+  // symbols, growing a temporary buffer to a defensive 1 MiB ceiling.
+  if (mangled[0] == '?') {
+    for (std::size_t capacity = 2048; capacity <= 1024 * 1024;
+         capacity *= 2) {
+      auto* dynamic = static_cast<char*>(std::malloc(capacity));
+      if (dynamic == nullptr) break;
+      n = UnDecorateSymbolName(mangled, dynamic,
+                               static_cast<DWORD>(capacity),
+                               UNDNAME_COMPLETE);
+      if (n != 0) {
+        const std::size_t result = fill(dynamic, out, cap);
+        std::free(dynamic);
+        return result;
+      }
+      std::free(dynamic);
+    }
+  }
   return fill(mangled, out, cap);
 
 #else

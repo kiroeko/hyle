@@ -1,6 +1,9 @@
 #pragma once
 
+#include <atomic>
+#include <cmath>
 #include <cstdint>
+#include <limits>
 
 #include "hyle/macros.h"
 
@@ -23,6 +26,10 @@
 //    sched worker its own).
 
 namespace hyle::util {
+
+struct RngState {
+  std::uint64_t words[4];
+};
 
 namespace detail {
 HYLE_FORCE_INLINE constexpr std::uint64_t rotl(std::uint64_t x, int k) noexcept {
@@ -53,26 +60,67 @@ HYLE_FORCE_INLINE std::uint64_t mul128_hi_lo(std::uint64_t a, std::uint64_t b,
   return static_cast<std::uint64_t>(p >> 64);
 #endif
 }
+
+inline std::atomic<std::uint64_t> g_thread_seed_sequence{
+    0xA0761D6478BD642Full};
+
+// One relaxed RMW per thread, only at its first thread_rng() call. Addition of
+// one process-ASLR-dependent salt preserves uniqueness even if OS thread stacks
+// are later reused (the old stack-address-only scheme repeated in that case).
+inline std::uint64_t next_thread_seed() noexcept {
+  constexpr std::uint64_t kStep = 0x9E3779B97F4A7C15ull;
+  const std::uint64_t sequence =
+      g_thread_seed_sequence.fetch_add(kStep, std::memory_order_relaxed);
+  return sequence +
+         static_cast<std::uint64_t>(
+             reinterpret_cast<std::uintptr_t>(&g_thread_seed_sequence));
+}
 }  // namespace detail
 
 class Rng {
  public:
   // Seed from a single u64 (SplitMix64-expanded into the 256-bit state).
-  explicit constexpr Rng(std::uint64_t seed = 0xD1B54A32D192ED03ull) noexcept {
-    for (std::uint64_t& w : s_) w = detail::splitmix64(seed);
+  explicit constexpr Rng(
+      std::uint64_t seed = 0xD1B54A32D192ED03ull) noexcept {
+    reseed(seed);
+  }
+
+  constexpr void reseed(std::uint64_t seed) noexcept {
+    for (std::uint64_t& word : state_.words) {
+      word = detail::splitmix64(seed);
+    }
+  }
+
+  static constexpr bool valid_state(const RngState& state) noexcept {
+    return (state.words[0] | state.words[1] | state.words[2] |
+            state.words[3]) != 0;
+  }
+
+  RngState state() const noexcept { return state_; }
+
+  void set_state(const RngState& state) noexcept {
+    HYLE_FATAL_ASSERT(valid_state(state));
+    state_ = state;
+  }
+
+  static Rng from_state(const RngState& state) noexcept {
+    Rng rng;
+    rng.set_state(state);
+    return rng;
   }
 
   // Next 64-bit value. xoshiro256++: the "++" output scrambler (rotl(s0+s3,23)
   // + s0) gives good high AND low bits.
   HYLE_FORCE_INLINE std::uint64_t next_u64() noexcept {
-    const std::uint64_t result = detail::rotl(s_[0] + s_[3], 23) + s_[0];
-    const std::uint64_t t = s_[1] << 17;
-    s_[2] ^= s_[0];
-    s_[3] ^= s_[1];
-    s_[1] ^= s_[2];
-    s_[0] ^= s_[3];
-    s_[2] ^= t;
-    s_[3] = detail::rotl(s_[3], 45);
+    auto& s = state_.words;
+    const std::uint64_t result = detail::rotl(s[0] + s[3], 23) + s[0];
+    const std::uint64_t t = s[1] << 17;
+    s[2] ^= s[0];
+    s[3] ^= s[1];
+    s[1] ^= s[2];
+    s[0] ^= s[3];
+    s[2] ^= t;
+    s[3] = detail::rotl(s[3], 45);
     return result;
   }
 
@@ -114,11 +162,32 @@ class Rng {
     return lo + m;  // hi(x*n) is uniform in [0, n)
   }
   std::uint32_t range_u32(std::uint32_t lo, std::uint32_t hi) noexcept {
-    return static_cast<std::uint32_t>(range_u64(lo, hi));
+    HYLE_FATAL_ASSERT(lo <= hi);
+    const std::uint32_t span = hi - lo;
+    if (span == UINT32_MAX) return next_u32();
+    const std::uint32_t n = span + 1;
+    std::uint64_t product =
+        static_cast<std::uint64_t>(next_u32()) * n;
+    std::uint32_t low = static_cast<std::uint32_t>(product);
+    if (low < n) {
+      const std::uint32_t threshold =
+          static_cast<std::uint32_t>(0u - n) % n;
+      while (low < threshold) {
+        product = static_cast<std::uint64_t>(next_u32()) * n;
+        low = static_cast<std::uint32_t>(product);
+      }
+    }
+    return lo + static_cast<std::uint32_t>(product >> 32);
   }
   // Double in [lo, hi).
   double range_double(double lo, double hi) noexcept {
-    return lo + (hi - lo) * next_double();
+    HYLE_FATAL_ASSERT(std::isfinite(lo));
+    HYLE_FATAL_ASSERT(std::isfinite(hi));
+    HYLE_FATAL_ASSERT(lo <= hi);
+    if (lo == hi) return lo;
+    const double value = std::lerp(lo, hi, next_double());
+    // Floating rounding may otherwise produce the exclusive upper endpoint.
+    return value < hi ? value : std::nextafter(hi, lo);
   }
 
   // Unbiased Fisher-Yates shuffle of n elements via a swap callback.
@@ -141,33 +210,51 @@ class Rng {
     for (std::uint64_t jw : kJump) {
       for (int b = 0; b < 64; ++b) {
         if (jw & (std::uint64_t{1} << b)) {
-          s0 ^= s_[0];
-          s1 ^= s_[1];
-          s2 ^= s_[2];
-          s3 ^= s_[3];
+          s0 ^= state_.words[0];
+          s1 ^= state_.words[1];
+          s2 ^= state_.words[2];
+          s3 ^= state_.words[3];
         }
         next_u64();
       }
     }
-    s_[0] = s0;
-    s_[1] = s1;
-    s_[2] = s2;
-    s_[3] = s3;
+    state_.words[0] = s0;
+    state_.words[1] = s1;
+    state_.words[2] = s2;
+    state_.words[3] = s3;
+  }
+
+  // Advance 2^192 steps. Use this to split a seed into large groups, then
+  // jump() within each group for per-worker 2^128 substreams.
+  void long_jump() noexcept {
+    static constexpr std::uint64_t kLongJump[4] = {
+        0x76e15d3efefdcbbfull, 0xc5004e441c522fb3ull,
+        0x77710069854ee241ull, 0x39109bb02acbe635ull};
+    std::uint64_t next[4] = {};
+    for (std::uint64_t jump_word : kLongJump) {
+      for (int bit = 0; bit < 64; ++bit) {
+        if (jump_word & (std::uint64_t{1} << bit)) {
+          for (int lane = 0; lane < 4; ++lane) {
+            next[lane] ^= state_.words[lane];
+          }
+        }
+        next_u64();
+      }
+    }
+    for (int lane = 0; lane < 4; ++lane) {
+      state_.words[lane] = next[lane];
+    }
   }
 
  private:
-  std::uint64_t s_[4];
+  RngState state_;
 };
 
 // Thread-local default generator: a per-thread Rng so the common case needs no
-// instance and no locking. Seeded from the address of a stack local captured at
-// first use -- distinct per thread (different stacks), no extra includes.
+// instance and no steady-state locking. A process-wide sequence makes new
+// thread streams distinct even when the OS reuses a departed thread's stack.
 inline Rng& thread_rng() noexcept {
-  static thread_local Rng rng = [] {
-    std::uint64_t marker;  // its address differs per thread's stack
-    return Rng(reinterpret_cast<std::uint64_t>(&marker) ^
-               0x2545F4914F6CDD1Dull);
-  }();
+  static thread_local Rng rng{detail::next_thread_seed()};
   return rng;
 }
 

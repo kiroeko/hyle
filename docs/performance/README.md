@@ -53,13 +53,13 @@
 | **time** timer wheel churn(arm+70%cancel+expire) | 12.87/13.63/7.62 | (std 无定时器结构) | n/a | n/a | indexed eager-erase heap(libevent/libuv 核心形状) | 20.85/16.01/11.03 | 1.62x/1.17x/1.45x | ✅**三平台赢**；对手按真实 keyed erase 建模、无墓碑 |
 | **time** timer wheel arm+cancel / arm+expire | 6.86·21.34/5.95·22.05/4.91·11.83 | (std 无) | n/a | n/a | indexed eager-erase heap | 10.42·49.80/6.73·40.64/8.36·23.74 | 1.52·2.33x/1.13·1.84x/1.70·2.01x | ✅三种工作量三平台同向；8×64 覆盖完整 uint64 ns 域 |
 | **time** CommonTimeoutQueue(固定时长)arm+expire/cancel | 3.28·2.70/3.14·1.99/3.52·3.06 | (std 无定时器结构) | n/a | n/a | 裸 TAILQ / checked TAILQ | 4.22·3.13/3.95·2.59/2.73·3.06；checked expire 3.61/3.21/4.21 | 裸 1.29·1.14x/1.29·1.30x/**0.77·平**；checked expire 1.10x/平/**1.16x** | ✅同语义三平台不输；⚠️ M4 对无检查裸下界仍输 |
-| **util** Rng next_u64(xoshiro256++) | 1.56 | std::mt19937_64 | 2.41 | 1.54x | (std 即标尺) | 同std | 1.54x | ✅赢 std PRNG |
-| **util** Rng range_u64(真 Lemire 无除法) | 1.46(microbench)/shuffle见下 | std::uniform_int_distribution | 2.75 | — | absl/numpy/rust rand(真 Lemire) | 同法 | ~1.0x | ✅改真 Lemire(128 位乘替 2 idiv);常量界 microbench 编译折除法故 1.46ns 平,**真实运行时界见 shuffle 3.2x** |
-| **util** Rng next_double [0,1) | 1.65 | std::uniform_real_distribution | 2.64 | 1.60x | (std 即标尺) | 同std | 1.60x | ✅赢(53 位缩放) |
-| **util** Rng next_float [0,1) | 1.63 | std::uniform_real_distribution | 2.66 | 1.63x | (std 即标尺) | 同std | 1.63x | ✅赢(独立 24 位路径) |
-| **util** Rng shuffle 1000(Fisher-Yates+Lemire) | 1.18(Lin)/1.17(Win) | std::shuffle(mt19937_64) | 1.21(Lin)/6.42(Win) | Lin平/Win 5.5x | (std 即标尺) | 同std | — | ✅**改 Lemire 后 3.82→1.18ns(3.2x)**:运行时变界暴露旧 modulo 的 2 idiv,真 Lemire 消除;Win 赢 std 5.5x/Lin 平(GCC std::shuffle 比 MSVC 强) |
-| **util** SpinLock lock/unlock(无争用) | 4.03 | std::mutex | 12.03 | 3.0x | folly MicroSpinLock | ~同 | ~1.0x | ✅赢 std 3x(TTAS+pause+cache-pad);**无争用快路径已核对 = folly 形状**(单原子 RMW + release store),⏳结案;有争用无 sleep-fallback 是刻意设计(短临界区专用) |
-| **util** Ref copy+destroy(fan-out 64,实战) | 8.15 | std::shared_ptr | 8.10 | ~1.0x | (shared_ptr 即标尺) | 8.10 | ~1.0x | ➖平(算法同工:各 2 locked RMW;实战传 ref,incref/decref 突发分离)。注:紧循环背靠背 copy+destroy 的 microbench(HYLE 10.4 vs std 8.2)是**不公平对照已下表**——同 cache line 两原子串行化放大、无法与实际工作重叠,asm 证同工;真实用法即本行。引导见 usage-guide §3.7 |
+| **util** Rng next_u64(xoshiro256++) | 1.59/1.38/2.26 (Win/Lin/M4) | std::mt19937_64 | 2.32/1.44/3.47* | 1.46x/平/1.53x | std 即算法类标尺 | 同左 | 同左 | ✅ Win/M4 赢；GCC 标准库很强而平（M4 std 行方差高） |
+| **util** Rng varying range_u64 | 2.09/1.47/2.17 | std::uniform_int_distribution | 2.86/2.08/7.68 | 1.37/1.41/3.54x | Lemire 同法实现 | 同档 | — | ✅ 三平台赢；运行时 bound 避开常量除数折叠伪影 |
+| **util** Rng shuffle 1000 | 2.05/1.21/0.81 | std::shuffle | 6.71/1.19/7.35 | 3.28x/平/9.07x | std 即组合标尺 | 同左 | 同左 | ✅ Win/M4 赢、GCC 平；平台实现差异显著 |
+| **util** C ABI RNG fill / C++ fill | 4.99/0.67/0.65 | 原生 C++ batch | 5.16/0.68/0.65 | 全部平 | 原生 C++ | 同左 | ~1.0x | ➖ batch 摊薄 ABI seam；单值 C 调用仍多约 0.09–0.95ns |
+| **util** SpinLock lock/unlock(无争用) | 3.71/4.79/1.01 | std::mutex | 10.94/2.48/4.19 | 2.95x/**0.52x**/4.15x | OS mutex | 同左 | 平台翻转 | ⚠️ 仅短低争用；不能从 Windows 外推到 Linux |
+| **util** SpinLock 8-thread contention | 50.17/60.44/271.88 | std::mutex | 50.59/39.08/20.98 | 平/**0.65x**/**0.08x** | OS mutex | 同左 | 同左 | ❌ 高争用应选 mutex；M4 自旋尤其差 |
+| **util** Ref copy+destroy fan-out | 10.13/8.33/3.19 | std::shared_ptr | 8.09/11.12/3.22 | 0.80x/1.34x/平 | shared_ptr | 同左 | 平台翻转 | ⚠️ 价值是侵入式所有权/省控制块，不承诺每平台拷贝更快 |
 | **obs** log gate / preformatted / formatted | 0.91–2.11 / 8.85–22.48 / 50.9–84.6（三平台） | (无 std log) | n/a | n/a | 同步 sink 产出原语 | n/a | ➖ | ✅ gated 极轻；preformatted 含 quiescent-unregister active ref；C ABI 仅多 1.5–3.0ns；formatted 由 `std::format` 主导。详见 obs closure |
 | **mem** SystemAllocator churn(默认) | 7.91 | std::malloc(OS) | ~25 | ~3x | 裸 mimalloc | 7.79 | 0.99x | ➖平 SOTA(编译期内联,零接缝税) |
 | **mem** Allocator vtable churn(opt-in) | 8.61 | std::malloc(OS) | ~25 | ~3x | std::pmr / 裸 mi | 8.70/7.79 | 1.01x/0.90x | ✅赢同类 std::pmr(对裸 mi -10% 是多态物理税,pmr 同付) |

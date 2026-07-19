@@ -1,5 +1,10 @@
 # util-01：ref_counted (Ref<T>) + scope_guard (HYLE_DEFER)
 
+> **2026-07-19 收口复审**：本文件保留首次里程碑的实现史；当前合同与验证以
+> [`util-module-closure.md`](./util-module-closure.md) 为准。复审新增批量计数
+> 零/溢出/下溢 fail-fast、危险 CRTP 析构形状的编译期拒绝，以及 Ref/ScopeGuard
+> 类型擦除 C ABI。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P3（util 簇，无 OS 依赖，可早做）|
@@ -29,7 +34,8 @@
 ## 对抗式自审（六类）
 
 - **① 正确性**：incref relaxed（新引用只能从已有引用形成）/ decref release+末次 acquire fence（教科书+优化版,TSan 验）；`~RefCounted` protected 非虚（禁基类指针 delete）；CRTP destroy 分发正确。
-- **② 性能**：decref 省每次 acquire（见改进2）；incref 无 `count>0` 分支（clay 有,n=0 无意义调用不值得防）；Ref 一指针、无控制块。
+- **② 性能**：decref 省每次 acquire（见改进2）；正常 incref 仍是一条 relaxed
+  RMW，零/溢出检查是不可预测误用的 fail-fast 护栏；Ref 一指针、无控制块。
 - **③ 规范**：符合 conventions §6（intrusive Ref + relaxed/acq_rel + explicit 转换）、§8（ScopeGuard CTAD + DEFER）；无 std 拥有型出头。
 - **④ clay 覆盖**：见上 diff，全覆盖 + 5 项改进。**简化登记**：ScopeGuard 只单向 `dismiss()`，未做 clay 的 `enable()` 重启用（defer 场景不需要,标注非缺口）。
 - **⑤ 残留脚手架**：无。

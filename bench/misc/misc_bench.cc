@@ -19,11 +19,15 @@
 #include <chrono>
 #include <cstddef>
 #include <cstdint>
+#include <cstdlib>
 #include <memory>
 #include <mutex>
 #include <random>
+#include <string>
+#include <thread>
 #include <vector>
 
+#include "hyle/c/util.h"
 #include "hyle/obs/log.h"
 #include "hyle/time/clock.h"
 #include "hyle/util/random.h"
@@ -50,6 +54,25 @@ void c_counting_write(void* /*state*/,
 struct Widget : hyle::util::RefCounted<Widget> {
   int v = 0;
 };
+
+template <class Lock>
+std::uint64_t contended_increment(std::size_t threads,
+                                  std::size_t iterations) {
+  Lock lock;
+  std::uint64_t value = 0;
+  std::vector<std::thread> workers;
+  workers.reserve(threads);
+  for (std::size_t thread = 0; thread < threads; ++thread) {
+    workers.emplace_back([&] {
+      for (std::size_t i = 0; i < iterations; ++i) {
+        std::lock_guard<Lock> guard(lock);
+        ++value;
+      }
+    });
+  }
+  for (auto& worker : workers) worker.join();
+  return value;
+}
 }  // namespace
 
 int main() {
@@ -66,6 +89,44 @@ int main() {
       nb::doNotOptimizeAway(rng.next_u64());
     });
   }
+  // A C/FFI scalar call crosses the stable DLL seam; batch fill below shows how
+  // callers amortize that tax when producing more than one value.
+  {
+    hyle_util_rng c_rng{};
+    if (!hyle_util_rng_seed(&c_rng, 12345)) return 1;
+    nb::Bench b;
+    b.title("PRNG C ABI scalar next_u64")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(1000000);
+    b.run("C++ Rng::next_u64", [&] {
+      static hyle::util::Rng rng(12345);
+      nb::doNotOptimizeAway(rng.next_u64());
+    });
+    b.run("C ABI hyle_util_rng_next_u64", [&] {
+      nb::doNotOptimizeAway(hyle_util_rng_next_u64(&c_rng));
+    });
+  }
+  {
+    constexpr std::size_t kBatch = 256;
+    std::uint64_t values[kBatch];
+    hyle_util_rng c_rng{};
+    if (!hyle_util_rng_seed(&c_rng, 12345)) return 1;
+    nb::Bench b;
+    b.title("PRNG fill 256 u64")
+        .relative(true)
+        .batch(kBatch)
+        .minEpochIterations(5000);
+    b.run("C++ inline loop", [&] {
+      static hyle::util::Rng rng(12345);
+      for (std::uint64_t& value : values) value = rng.next_u64();
+      nb::doNotOptimizeAway(values);
+    });
+    b.run("C ABI fill_u64", [&] {
+      if (!hyle_util_rng_fill_u64(&c_rng, values, kBatch)) std::abort();
+      nb::doNotOptimizeAway(values);
+    });
+  }
   // bounded range: HYLE Lemire unbiased vs std::uniform_int_distribution
   {
     nb::Bench b;
@@ -78,6 +139,47 @@ int main() {
     b.run("HYLE Rng::range_u64 (Lemire)", [&] {
       static hyle::util::Rng rng(7);
       nb::doNotOptimizeAway(rng.range_u64(0, 999));
+    });
+  }
+  // Runtime-varying bounds prevent constant-divisor folding from hiding the
+  // actual bounded-generation path.
+  {
+    std::uint64_t bounds[256];
+    for (std::size_t i = 0; i < 256; ++i) bounds[i] = 17 + i * 7919;
+    std::size_t index = 0;
+    nb::Bench b;
+    b.title("PRNG bounded runtime-varying upper bound")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(1000000);
+    b.run("std::uniform_int_distribution", [&] {
+      static std::mt19937_64 rng(7);
+      static std::uniform_int_distribution<std::uint64_t> dist;
+      const std::uint64_t hi = bounds[index++ & 255];
+      nb::doNotOptimizeAway(
+          dist(rng, decltype(dist)::param_type(0, hi)));
+    });
+    index = 0;
+    b.run("HYLE Rng::range_u64", [&] {
+      static hyle::util::Rng rng(7);
+      const std::uint64_t hi = bounds[index++ & 255];
+      nb::doNotOptimizeAway(rng.range_u64(0, hi));
+    });
+  }
+  {
+    nb::Bench b;
+    b.title("PRNG bounded u32 [0,1000)")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(1000000);
+    b.run("std::uniform_int_distribution<u32>", [&] {
+      static std::mt19937 rng(7);
+      static std::uniform_int_distribution<std::uint32_t> dist(0, 999);
+      nb::doNotOptimizeAway(dist(rng));
+    });
+    b.run("HYLE Rng::range_u32", [&] {
+      static hyle::util::Rng rng(7);
+      nb::doNotOptimizeAway(rng.range_u32(0, 999));
     });
   }
   // next_double [0,1): HYLE 53-bit scale vs std::generate_canonical / uniform_real
@@ -195,6 +297,25 @@ int main() {
       nb::doNotOptimizeAway(&s);
       s.unlock();
     });
+  }
+  {
+    constexpr std::size_t kIterations = 100000;
+    for (std::size_t threads : {std::size_t{2}, std::size_t{8}}) {
+      nb::Bench b;
+      b.title("contended increment, " + std::to_string(threads) + " threads")
+          .relative(true)
+          .batch(threads * kIterations)
+          .minEpochIterations(1)
+          .epochs(7);
+      b.run("std::mutex", [&] {
+        nb::doNotOptimizeAway(
+            contended_increment<std::mutex>(threads, kIterations));
+      });
+      b.run("HYLE SpinLock", [&] {
+        nb::doNotOptimizeAway(
+            contended_increment<hyle::util::SpinLock>(threads, kIterations));
+      });
+    }
   }
 
   // ---- util/ref_counted: Ref vs std::shared_ptr ----

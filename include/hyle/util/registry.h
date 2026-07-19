@@ -2,11 +2,14 @@
 
 #include <cstdio>
 #include <mutex>
+#include <type_traits>
+#include <utility>
 
 #include "hyle/container/string_ref.h"
 #include "hyle/container/swiss_table.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
+#include "hyle/util/ref_counted.h"
 #include "hyle/util/type_name.h"
 
 // Self-registration registry (clay registry.h): map a name -> a factory, so
@@ -30,9 +33,11 @@
 // string literal with static lifetime -- safe to store as a view. A dynamic key
 // must outlive the registry (contract).
 //
-// Threading: Register() takes a lock. The pattern is "all Register() during
-// static init, Create()/Has() after" -- reads are lock-free and assume
-// registration has quiesced (matches clay). Concurrent Register+Create is UB.
+// Threading: every table access is synchronized. create() copies the selected
+// function pointer under the lock and invokes it after unlocking, so a creator
+// may safely re-enter this registry. for_each_key() deliberately invokes the
+// visitor under the lock to avoid allocating a snapshot; its visitor therefore
+// must not call back into this registry.
 
 namespace hyle::util {
 
@@ -58,6 +63,11 @@ class Registry {
                         RegistryPriority priority = RegistryPriority::kDefault,
                         container::string_ref help = {}) {
     std::lock_guard<std::mutex> lock(mu_);
+    HYLE_FATAL_ASSERT(key.data != nullptr || key.size == 0);
+    HYLE_FATAL_ASSERT(help.data != nullptr || help.size == 0);
+    HYLE_FATAL_ASSERT(creator != nullptr);
+    HYLE_FATAL_ASSERT(priority >= RegistryPriority::kFallback &&
+                      priority <= RegistryPriority::kPreferred);
     if (Entry* e = entries_.find(key)) {
       if (priority > e->priority) {
         *e = Entry{creator, priority, help};  // higher priority overrides
@@ -73,28 +83,41 @@ class Registry {
     }
   }
 
-  bool has(container::string_ref key) noexcept {
+  bool has(container::string_ref key) const noexcept {
+    std::lock_guard<std::mutex> lock(mu_);
     return entries_.find(key) != nullptr;
   }
 
   // Create the object registered under `key`, or a default-constructed Ptr
   // (e.g. nullptr) if `key` is absent.
   Ptr create(container::string_ref key, Args... args) {
-    if (Entry* e = entries_.find(key)) return e->creator(args...);
+    Creator creator = nullptr;
+    {
+      std::lock_guard<std::mutex> lock(mu_);
+      if (Entry* e = entries_.find(key)) creator = e->creator;
+    }
+    if (creator != nullptr) {
+      return creator(std::forward<Args>(args)...);
+    }
     return Ptr{};
   }
 
   // Help text for `key` (empty if absent or none given).
-  container::string_ref help(container::string_ref key) noexcept {
+  container::string_ref help(container::string_ref key) const noexcept {
+    std::lock_guard<std::mutex> lock(mu_);
     if (Entry* e = entries_.find(key)) return e->help;
     return {};
   }
 
-  std::size_t size() const noexcept { return entries_.size(); }
+  std::size_t size() const noexcept {
+    std::lock_guard<std::mutex> lock(mu_);
+    return entries_.size();
+  }
 
   // Visit every (key, creator-entry). Order unspecified.
   template <class Fn>
   void for_each_key(Fn&& fn) {
+    std::lock_guard<std::mutex> lock(mu_);
     entries_.for_each(
         [&](container::string_ref k, Entry&) { fn(k); });
   }
@@ -106,8 +129,8 @@ class Registry {
     container::string_ref help;
   };
 
-  std::mutex mu_;
-  container::SwissTable<container::string_ref, Entry> entries_;
+  mutable std::mutex mu_;
+  mutable container::SwissTable<container::string_ref, Entry> entries_;
 };
 
 // Helper whose constructor registers a creator -- the static-init hook the
@@ -123,7 +146,18 @@ struct Registerer {
 
   template <class Derived>
   static Ptr default_creator(Args... args) {
-    return Ptr{new Derived(args...)};
+    if constexpr (std::is_pointer_v<Ptr>) {
+      return new Derived(std::forward<Args>(args)...);
+    } else if constexpr (requires {
+                           Ptr{new Derived(std::forward<Args>(args)...)};
+                         }) {
+      return Ptr{new Derived(std::forward<Args>(args)...)};
+    } else {
+      static_assert(
+          std::convertible_to<Ref<Derived>, Ptr>,
+          "Registry Ptr must own a Derived* or accept Ref<Derived>");
+      return make_ref<Derived>(std::forward<Args>(args)...);
+    }
   }
 };
 
@@ -136,15 +170,17 @@ struct Registerer {
 // across downstream shared libs -- same rationale as clay.
 
 #define HYLE_DECLARE_REGISTRY(ExportAPI, RegistryName, Ptr, ...)              \
-  ExportAPI ::hyle::util::Registry<Ptr, ##__VA_ARGS__>* RegistryName();       \
-  using Registerer##RegistryName = ::hyle::util::Registerer<Ptr, ##__VA_ARGS__>
+  ExportAPI ::hyle::util::Registry<Ptr __VA_OPT__(,) __VA_ARGS__>*            \
+  RegistryName();                                                              \
+  using Registerer##RegistryName =                                             \
+      ::hyle::util::Registerer<Ptr __VA_OPT__(,) __VA_ARGS__>
 
 // Meyers function-local static (conventions §6: drop clay's leaky `new`). Thread-
 // safe init since C++11; destroyed at exit (frees the SwissTable; entries are
 // trivially copyable so nothing per-entry to clean up).
 #define HYLE_DEFINE_REGISTRY(RegistryName, Ptr, ...)                          \
-  ::hyle::util::Registry<Ptr, ##__VA_ARGS__>* RegistryName() {                \
-    static ::hyle::util::Registry<Ptr, ##__VA_ARGS__> instance;               \
+  ::hyle::util::Registry<Ptr __VA_OPT__(,) __VA_ARGS__>* RegistryName() {      \
+    static ::hyle::util::Registry<Ptr __VA_OPT__(,) __VA_ARGS__> instance;     \
     return &instance;                                                         \
   }
 

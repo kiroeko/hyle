@@ -34,7 +34,8 @@ namespace hyle::util {
 // so a return >= cap signals truncation (snprintf semantics). If demangling fails
 // (e.g. "main", or a name not in the platform's mangling scheme) the original
 // `mangled` is copied through -- a sane default, never an error. A null `mangled`
-// yields an empty string. No allocation is observable to the caller.
+// yields an empty string. `out` may be null only when cap == 0; violating that
+// buffer contract fails fast. No allocation is observable to the caller.
 HYLE_UTIL_API std::size_t demangle(const char* mangled, char* out,
                                    std::size_t cap) noexcept;
 

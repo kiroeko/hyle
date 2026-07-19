@@ -1,5 +1,9 @@
 # util-06：demangle 运行期符号反修饰
 
+> **2026-07-19 收口复审**：Windows 对超过 1 KiB 的合法 `?` decorated symbol
+> 现会有界扩容重试到 1 MiB；buffer 合同统一 fail-fast，并提供纯 C buffer-fill
+> 入口。完整归档见 [`util-module-closure.md`](./util-module-closure.md)。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P3 |
@@ -19,7 +23,7 @@
 ## 对抗式自审（六类）
 
 - **① 正确性**：`fill` cap>0 复制 min(n,cap-1)+NUL；cap==0 不写只回长度（snprintf 语义真测）；`__cxa_demangle` status==0&&非空才用、否则 `free(null)` 安全回退原名；空串/"main"/截断/null/零容量五边界全测，双平台往返 `typeid` 名含简名。
-- **② 性能**：非热路径(诊断/backtrace)。`__cxa_demangle` 的 malloc 是 Itanium ABI 强制(无 in-place 变体)；MSVC mutex 是 DbgHelp 要求。栈 1KB buffer。无可省开销。
+- **② 性能**：非热路径(诊断/backtrace)。`__cxa_demangle` 的 malloc 是 Itanium ABI 强制(无 in-place 变体)；MSVC mutex 是 DbgHelp 要求。常见路径用栈 1KB buffer，超长 MSVC symbol 才有界分配重试。
 - **③ 规范**：公开头只 `<cstddef>`+visibility；无 std 拥有型出签名；buffer-fill；导出宏在函数上；无 iostream/std 垃圾容器。`.cc` 内部用 `std::mutex`/`std::lock_guard`(MSVC 路径，不出头)合规。
 - **④ clay 覆盖**：demangle 主体✅ + 无分配/MSVC 真做两改进；demangle_type gap 已登记为更优替代。
 - **⑤ 残留脚手架**：无新增。

@@ -20,7 +20,6 @@ class ScopeGuard {
   static_assert(!std::is_reference_v<Fn>,
                 "ScopeGuard owns its callable by value (use CTAD on a temporary "
                 "lambda, not an lvalue reference)");
-
  public:
   template <class F>
   explicit ScopeGuard(F&& fn) noexcept(
@@ -32,7 +31,7 @@ class ScopeGuard {
     o.active_ = false;
   }
 
-  ~ScopeGuard() {
+  ~ScopeGuard() noexcept {
     if (active_) fn_();
   }
 

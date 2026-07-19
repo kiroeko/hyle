@@ -1,5 +1,10 @@
 # util-03：registry 自注册 + DECLARE/DEFINE 宏
 
+> **2026-07-19 收口复审**：本文件保留首次实现史；当前合同见
+> [`util-module-closure.md`](./util-module-closure.md)。复审把所有表访问改为
+> 同步，creator 在锁内复制、锁外调用而可重入；修复 move-only 参数转发和
+> `Ref<T>` 默认 creator；并新增类型擦除 C ABI。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P3（util 簇，完成 util 簇）|
@@ -17,7 +22,10 @@
 - **改进③(§0 fail-fast + §5 no-throw)**:同 key 同优先级冲突(接线 bug)→ `HYLE_FATAL_ASSERT` 响亮 abort,替 clay 的 `std::exit(1)`/`throw`。death test 验证。
 - **改进④(§6)**:DEFINE 宏用 **Meyers function-local static**,替 clay 的 leaky `new` 单例。
 - **改进⑤**:help 文本用 `type_name<T>()`(util-02),替 clay 的 demangle。
-- **泛型化**:clay 有 REGISTRY/REGISTRY_REF/SHARED_REGISTRY 三套(unique_ptr/Ref/shared_ptr);HYLE 一个 `Registry<Ptr, Args...>`——调用方传 `Shape*`/`Ref<T>`/`unique_ptr` 皆可(`Ptr{new D}` 通用)。三套收一套。
+- **泛型化**:clay 有 REGISTRY/REGISTRY_REF/SHARED_REGISTRY 三套
+  (unique_ptr/Ref/shared_ptr)；HYLE 一个 `Registry<Ptr, Args...>`。默认 creator
+  按 raw pointer、拥有型指针、侵入式 `Ref` 分形状构造，不再假设
+  `Ptr{new D}` 对所有智能指针都成立。
 
 ## 对抗式自审（六类）
 
@@ -28,7 +36,9 @@
 - **⑤ 残留脚手架**:无。
 - **⑥ 过度复杂**:比 clay 341 行精简到 94,三套宏/三 map 收敛。
 - **键生命周期契约**:key 是 string_ref;REGISTER 宏 stringize(`#key`)= 字符串字面量(静态生命周期),安全;动态 key 须比 registry 长寿(已注释)。
-- **线程契约**:register_creator 持锁;create/has 无锁(Register 限 static-init、Create 在后),与 clay 同——并发 Register+Create 是 UB,已注释。
+- **线程契约**：register/create/has/help/遍历均同步；create 只在锁内复制
+  creator，真正构造在锁外，允许 factory 重入。`for_each_key` 的 visitor 在锁内，
+  因而不得重入同一个 registry。
 
 ## 交付物
 

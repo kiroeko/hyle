@@ -4,6 +4,10 @@
 
 #include "hyle/macros.h"
 
+#if defined(_MSC_VER)
+#  include <intrin.h>
+#endif
+
 // Thread-level spinlock (clay spin_mutex_t). Satisfies the C++ *Lockable* named
 // requirement (lock/try_lock/unlock) so it composes with std::lock_guard /
 // std::scoped_lock -- no custom RAII wrapper needed (clay had spin_lock_t).
@@ -26,8 +30,10 @@ namespace hyle::util {
 
 // Spin-loop hint: pause/yield so a busy-wait doesn't saturate the pipeline.
 HYLE_FORCE_INLINE void cpu_relax() noexcept {
-#if defined(_MSC_VER)
+#if defined(_MSC_VER) && (defined(_M_X64) || defined(_M_IX86))
   _mm_pause();
+#elif defined(_MSC_VER) && (defined(_M_ARM64) || defined(_M_ARM))
+  __yield();
 #elif defined(__x86_64__) || defined(__i386__)
   __builtin_ia32_pause();
 #elif defined(__aarch64__) || defined(__arm__)

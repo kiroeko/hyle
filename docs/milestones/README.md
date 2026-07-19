@@ -99,12 +99,12 @@
 | container-08 | P3 | container | 有界 work-stealing FIFO ring(tokio queue.rs:owner push免同步/pop+thief CAS packed-head/偷半) | mem-01 | 1-2k | 279 | ✅ 完成(sched-03 真前置) |
 | container-09 | P3 | container | ConcurrentVector 读优化并发向量(分段/读 lock-free/写 SpinLock) | mem-01,util-05 | 1-2k | 87 (+98 测试) | ✅ 完成(吸纳 clay parallel/concurrent_vector;修五问题:零拷贝1x内存/move-only/结构性不变量;WSL TSan 零 race) |
 | [container-10](./container-10-sharded-queue.md) | P3 | container | ShardedQueue 分片有界 MPMC(N 个 Vyukov 子环,生产者 hash 分片消单点争用) | container-01 | 0.5-1k | 58 (+171 测试) | ✅ 完成(bench-02b 揪出单环 4P 输 moody 1.7x=单点 CAS 争用→分片根治;**双平台15遍反超 rigtorp Win3.27x/Lin5.3x**;复用 BoundedQueue placement-new 避 std 拥有型成员;保留有界弃全局 FIFO;双平台+WSL TSan 零 race。**已接入 sched global 注入**) |
-| util-01 | P3 | util | ref_counted(Ref<T> CRTP) + scope_guard(HYLE_DEFER) | 00 | 1k | 168 (+186 测试) | ✅ 完成(修 clay destroy CRTP bug;decref release+fence;concepts 替 SFINAE) |
+| util-01 | P3 | util | ref_counted(Ref<T> CRTP) + scope_guard(HYLE_DEFER) | 00 | 1k | 见 closure | ✅ **2026-07-19 复审收口**：修 clay destroy CRTP bug；release+末次 acquire fence；批量计数零/溢出/下溢 fail-fast；`RefCompatible` 拒绝非虚基类错误析构；C ABI 为 type-erased strong handle / scope cleanup |
 | util-02 | P3 | util | 编译期 type_name<T> + type_hash<T> | 00 | 0.5k | 44 (+50 测试) | ✅ 完成(probe 派生偏移>clay 硬编码;FNV-1a constexpr) |
-| util-03 | P3 | util | registry 自注册 + DECLARE/DEFINE 宏 | util-02,container-04 | 1k | 94 (+92 测试) | ✅ 完成(SwissTable 替3map;函数指针 Entry 内联;fail-fast 替 exit;三套收一套) |
-| util-04 | P3 | util | random(xoshiro256++ PRNG) | 00 | 0.5k | 99 (+103 测试) | ✅ 完成(升级 clay xoroshiro128+;Lemire 无偏 range 修 clay `%` 偏差;jump 并行流) |
-| util-05 | P3 | util | spin_lock(TTAS+pause+padding) | 00 | 0.5k | 36 (+69 测试) | ✅ 完成(升级 clay 裸 TAS;满足 Lockable;TSan 互斥验证) |
-| util-06 | P3 | util | demangle 运行期符号反修饰(`__cxa_demangle`/`UnDecorateSymbolName`) | util-02 | 0.5k | 65 (+46 测试) | ✅ 完成(buffer-fill 无分配 vs clay Allocator+std::function;MSVC 真反修饰;type_name 运行期补集) |
+| util-03 | P3 | util | registry 自注册 + DECLARE/DEFINE 宏 | util-02,container-04 | 1k | 见 closure | ✅ **复审收口**：SwissTable；全部访问同步；creator 锁外调用可重入；move-only 参数和 `Ref` creator 修正；C ABI runtime registry |
+| util-04 | P3 | util | random(xoshiro256++ PRNG) | 00 | 0.5k | 见 closure | ✅ **复审收口**：原生 u32 Lemire、状态恢复、`long_jump`、极端 double range、TLS 唯一 seed；POD + batch C ABI |
+| util-05 | P3 | util | spin_lock(TTAS+pause+padding) | 00 | 0.5k | 见 closure | ✅ **复审收口**：x86 pause / ARM yield 三平台；TSan；高争用边界明确；opaque C ABI + inline relax |
+| util-06 | P3 | util | demangle 运行期符号反修饰(`__cxa_demangle`/`UnDecorateSymbolName`) | util-02 | 0.5k | 见 closure | ✅ **复审收口**：buffer-fill；MSVC 超长 decorated symbol 有界扩容；C ABI；三平台验证。总审计见 [`util-module-closure.md`](./util-module-closure.md) |
 | math-01 | P3 | math | scalar 标量助手(div_ceil/round_up_to_multiple/sgn/approx_eq) | 00 | 0.5k | 28 (+51 测试) | ✅ 完成(clay consts/utils 458 行绝大多数♻️ C++20/23 `<bit>`/`<numbers>`/`<cmath>`;只自写 std 真缺的4个;div_ceil 改溢出安全) |
 | bench-01 | P3 | bench | nanobench 设施 + SwissTable/StringBuf 对标 std | container-04/06 | — | bench设施 | ✅ 完成(SwissTable find2.7x/insert6.1x/erase4.1x>std;intern基准驱动优化0.94→1.31x;absl/F14对标→bench-02) |
 | bench-02 | P3+ | bench | 对标 SOTA(absl/F14/moodycamel/oneTBB/highway/marl,不止 std) | 各模块 | — | — | 📋 规划(用户提:对比 project-hyle 高性能库;拆 02a hashmap/02b 队列/02c hash+wyhash/02d simd-sched) |

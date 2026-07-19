@@ -1,7 +1,9 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <limits>
 #include <thread>
+#include <type_traits>
 #include <vector>
 
 #include "hyle/util/ref_counted.h"
@@ -9,6 +11,7 @@
 using hyle::util::adopt_ref;
 using hyle::util::make_ref;
 using hyle::util::Ref;
+using hyle::util::RefCompatible;
 using hyle::util::RefCounted;
 using hyle::util::retain_ref;
 
@@ -130,6 +133,10 @@ struct Base : RefCounted<Base> {
 struct Derived : Base {
   int kind() const override { return 1; }
 };
+struct NonVirtualBase : RefCounted<NonVirtualBase> {};
+struct UnsafeDerived : NonVirtualBase {};
+static_assert(!RefCompatible<UnsafeDerived>);
+static_assert(RefCompatible<Derived>);
 }  // namespace
 
 TEST(RefCounted, UpcastDerivedToBase) {
@@ -163,4 +170,43 @@ TEST(RefCounted, ConcurrentIncrefDecref) {
   for (auto& th : ts) th.join();
   EXPECT_EQ(w->use_count(), 1u);   // all transient refs balanced out
   EXPECT_EQ(Widget::live.load(), 1);
+}
+
+TEST(RefCounted, BatchedReferenceChanges) {
+  Widget::live = 0;
+  Widget* widget = new Widget(9);
+  widget->incref(7);
+  EXPECT_EQ(widget->use_count(), 8u);
+  widget->decref(7);
+  EXPECT_EQ(widget->use_count(), 1u);
+  widget->decref();
+  EXPECT_EQ(Widget::live.load(), 0);
+}
+
+TEST(RefCountedDeathTest, RejectsZeroOverflowAndUnderflow) {
+  EXPECT_DEATH(
+      ([] {
+        auto* widget = new Widget(1);
+        widget->incref(0);
+      }()),
+      "");
+  EXPECT_DEATH(
+      ([] {
+        auto* widget = new Widget(1);
+        widget->decref(0);
+      }()),
+      "");
+  EXPECT_DEATH(
+      ([] {
+        auto* widget = new Widget(1);
+        widget->incref(std::numeric_limits<std::uint32_t>::max() - 1);
+        widget->incref();
+      }()),
+      "");
+  EXPECT_DEATH(
+      ([] {
+        auto* widget = new Widget(1);
+        widget->decref(2);
+      }()),
+      "");
 }

@@ -54,6 +54,10 @@ TEST(Demangle, ZeroCapWritesNothing) {
   EXPECT_EQ(sentinel[0], 'X');  // untouched
 }
 
+TEST(DemangleDeathTest, NonZeroCapacityRequiresOutputBuffer) {
+  EXPECT_DEATH((void)demangle("main", nullptr, 1), "");
+}
+
 // Distinct types demangle to distinct names.
 TEST(Demangle, DistinctTypes) {
   char a[128], b[128];

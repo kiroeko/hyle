@@ -144,7 +144,7 @@ target_link_libraries(app PRIVATE "${HYLE_SIMD_LIB}")
 ```
 - **静态消费**：HYLE 用 `-DHYLE_STATIC=ON` 编的话，下游也要 `target_compile_definitions(app PRIVATE HYLE_STATIC)`，让 `HYLE_<MOD>_API` 同样退化为空（对上库的编译方式）。**注意传递依赖**：静态链 `hyle_mem` 还需链 `mimalloc_static`（mem 的私有后端）；多模块静态消费要按依赖序把各模块 + 其依赖都列上——这类自动化是未来 `install()`+`find_package(hyle)`（P6 打包）要做的。`hyle_simd` 无此传递依赖，最干净。
 - **动态消费运行期**：Linux 让 loader 找到 `.so`（`RPATH` 指向 `<hyle-build>/bin` 或装进系统库路径）；Windows 把 `hyle_*.dll` 放在 exe 同目录或 `PATH`。
-- **当前边界（诚实）**：error/platform/mem/time/simd 已有纯 `extern "C"` C ABI；其他模块仍在
+- **当前边界（诚实）**：error/platform/mem/time/obs/simd/util 已有纯 `extern "C"` C ABI；其他模块仍在
   close-01 队列。SIMD 外部调用必须用 `hyle/c/simd.h`，不能把 C++ mangled symbol 当 FFI。
 
 ## 2. SIMD 的编译变体模型（`HYLE_SIMD_TARGET_*` 是什么）
@@ -457,11 +457,16 @@ while (auto* entry = fired.pop_front()) {
 纯 C、FFI 或跨编译器消费者使用 opaque handle、visitor 和 pointer/POD 接口，见
 [`c-time.md`](./c-time.md)；不要把上述 C++ 类布局当作稳定 ABI。
 
-### 3.7 util —— Ref<T> 侵入式引用计数 + DEFER
+### 3.7 util —— Rng / Ref / Registry / DEFER
 ```cpp
+#include "hyle/util/random.h"
 #include "hyle/util/ref_counted.h"
+#include "hyle/util/registry.h"
 #include "hyle/util/scope_guard.h"
 using hyle::util::RefCounted; using hyle::util::Ref; using hyle::util::make_ref;
+
+hyle::util::Rng rng{12345};
+auto id = rng.range_u64(0, 99);      // 无偏闭区间；PRNG，不可用于 token/key/nonce
 
 struct Node : RefCounted<Node> {     // CRTP：计数内嵌对象，Ref<T> 就一个指针、无控制块
   int v; explicit Node(int v) : v(v) {}
@@ -473,11 +478,20 @@ FILE* fp = std::fopen("x", "r");
 HYLE_DEFER(std::fclose(fp));         // 作用域退出时执行（C++23 仍无 std defer）
 ```
 `make_ref` 收下初始 +1（adopt 语义）；要"保留已有裸指针"用 `retain_ref`，二者在调用点显式区分。
+可复现并行随机流用一个确定 seed，然后每个 worker 取一份状态并调用一次
+`jump()`；无需可复现时用 `thread_rng()`。Registry 适合按名字注册 factory，所有
+表访问线程安全，factory 在锁外调用而可重入；遍历 visitor 在锁内，不能重入。
+
+纯 C、FFI 或跨编译器消费者不要绑模板/类布局，改用
+[`hyle/c/util.h`](../../include/hyle/c/util.h) 的 RNG POD 和
+Ref/ScopeGuard/Registry/SpinLock opaque handle；46 个可调用入口、生命周期和
+callback 合同见 [`c-util.md`](./c-util.md)。`type_name<T>`/`type_hash<T>` 依赖
+C++ 静态类型，是唯一有意不做运行时擦除的 util 能力。
 
 **性能须知（何时 Ref 划算、何处别用）**：`Ref` 拷贝 = 1 次 incref（原子加），析构 = 1 次 decref（原子减），与 `std::shared_ptr` 算法同工（各 2 个 locked RMW）。原子 RMW 不是免费的（~几 ns，且跨核共享时更贵）。据此：
 - **传参优先 `const Ref<T>&` 或裸 `T*`（借用），别按值传** —— 每次按值传拷贝都是一对 incref/decref。函数只是"看一眼"对象时收借用引用，只有真正要"延长生命周期/存起来"时才按值收 `Ref<T>`。这和 `shared_ptr` 的最佳实践一致。
 - **别在紧循环里反复拷贝+析构同一个 `Ref`** —— 背靠背的两个原子(同 cache line)会串行化(第二个卡在第一个排空 store buffer 之后)，把原子延迟暴露到极致。需要在循环内多次访问同一对象时，循环外持一个 `Ref`、循环内用 `.get()` 或 `const&`。（性能文档那条 microbench 正是这个反模式，不代表真实开销。）
-- **单线程、生命周期明确**时，直接裸指针 / 值语义 / `unique_ptr` 往往比任何引用计数都快 —— 引用计数是为"共享所有权 + 不确定谁最后释放"付的税。`Ref` 的价值在跨 DLL ABI 稳定（无控制块）和侵入式省一次分配，不在让引用计数本身变快。
+- **单线程、生命周期明确**时，直接裸指针 / 值语义 / `unique_ptr` 往往比任何引用计数都快 —— 引用计数是为"共享所有权 + 不确定谁最后释放"付的税。`Ref` 的价值在侵入式对象模型和省一次控制块分配，不在让引用计数本身变快；跨 ABI 使用的是独立的 type-erased `hyle_util_ref`，不是冻结 `Ref<T>` 布局。
 
 ### 3.8 io —— proactor 完成式 IO（🔶 co_await + shard-per-core + TcpListener/Stream）
 

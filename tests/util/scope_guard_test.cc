@@ -1,8 +1,13 @@
 #include <gtest/gtest.h>
 
+#include <type_traits>
+
 #include "hyle/util/scope_guard.h"
 
 using hyle::util::ScopeGuard;
+
+static_assert(std::is_nothrow_destructible_v<
+              ScopeGuard<decltype([]() noexcept {})>>);
 
 TEST(ScopeGuard, RunsOnScopeExit) {
   int ran = 0;

@@ -185,18 +185,26 @@ CancelToken 树是 shard-local、(几乎)无锁结构——唯一原子是 per-n
 
 | 项 | HYLE(Win/Lin) | 基线 | 判定(15 遍,双平台) |
 |---|---|---|---|
-| **work-stealing 扩展 2 worker** | 1.88x / 1.91x | 1 worker 为 100% | ✅ **双平台 WIN**(gap 88/91% » spread 12/8%) |
-| **work-stealing 扩展 4 worker** | 3.30x / 3.49x | 1 worker | ✅ **双平台 WIN**(gap 230/249% » spread 15/8%) |
-| **work-stealing 扩展 8 worker** | 5.07x / 5.52x | 1 worker | ✅ **双平台 WIN**(gap 407/452% » spread 27/16%;超物理核后边际递减) |
+| **work-stealing 扩展 2 worker** | 1.78x / 1.66x / 1.74x (Win/Lin/M4) | 1 worker 为 100% | ✅ 三平台同向 |
+| **work-stealing 扩展 4 worker** | 2.85x / 2.47x / 2.95x | 1 worker | ✅ 三平台同向 |
+| **work-stealing 扩展 8 worker** | 3.95x / 3.11x / 4.34x | 1 worker | ✅ 三平台同向，硬件拓扑决定边际 |
 | **spawn_on 亲和 vs spawn** | 平局 / **1.33x** | 普通 spawn(全局注入) | **Win ➖平局**(gap27%«spread50%)/ **Lin ✅WIN**(gap33%>spread31%) |
 | **协程胶水 co_await vs 裸 fiber** | 平局 0.99 / 1.007 | 裸 suspend()/Waker::wake() | **双平台➖平局**(gap 1.0/0.7% « spread 57/23%)=零开销铁证 |
 | **fiber sleep 1 vs 64 并发 sleeper** | 平局 0.998 / 0.995 | 1 sleeper vs 64(同单 worker) | **双平台➖平局**(gap 0.2/0.5% « spread 9/3%)=不串行化铁证 |
 
-- **work-stealing 扩展双平台 WIN——sched-03 核心引擎兑现**:单个非 worker 线程点注入 512 个 compute fiber(各 ~几 μs 自旋活),全落 global 注入队列;N worker 靠 pop 自己分片 + 随机 victim steal 并行跑。**近线性到 4 核**(3.3-3.5x),8 worker 5.1-5.5x(超物理核后边际递减,exact 倍数受本机核数约束,**形状=steal 真的把点注入负载铺开了**才是结论)。这是此前完全没 bench 的调度脊主干,现补上。
+- **work-stealing 扩展三平台 WIN——sched-03 核心引擎兑现**：单个非
+  worker 线程点注入 512 个 compute fiber，全落 global 注入队列；N worker 靠
+  pop 自己分片 + 随机 victim steal 并行跑。2026-07-19 util 收口重建仪器时发现
+  benchmark 仍调用已删除的旧 Fiber 构造器，且原 2,000-round 计算被每个 guarded
+  stack 的 VM 构造淹没，曲线只剩约 1.45x；修构造器并提高到 20,000 rounds 后，
+  Win/Lin/M4 的 8-worker 分别恢复 3.95/3.11/4.34x。A/B 把 victim hint 从
+  xorshift 换成用户级 Rng 未改变曲线，证明瓶颈是负载形状，不是随机数质量。
 - **spawn_on 亲和 = 又一"单平台数陷阱"**:pinned 路由(私有 per-worker 队列 + `unpark_specific` 无条件唤醒,**绕过** `notify()` 的 `num_searching_` anti-herd gate,且永不被偷)对比普通 spawn(全局注入 + 条件 notify)。**Linux 真赢 1.33x**(261 vs 355ns,直达目标 worker 省掉 anti-herd 判断 + steal 竞争),**Windows 判平局**(spawn_on 中位仍偏快 26%,但 spread 50% 吞掉 gap)。只报单平台会误判——同 dtype/time/path/queue 的老陷阱。**注:spawn_on 的正职是 io shard-per-core(连接 fiber 钉在拥有其 io ring 的核),此 bench 顺带证它的派发路径不比普通 spawn 贵、Linux 还更省。**
 - **协程胶水零开销——"糖 vs 自家裸原语"**:`co_await SuspendFiber{}`/`CaptureWaker{}` ping-pong 对比**形状完全相同**的裸 `suspend()`/`current_waker()`/`Waker::wake()` ping-pong(即 scheduler_bench 的 PingPong)。**双平台统计平局**(ratio 0.99-1.007):协程帧冻结在 fiber 栈上,一次 fiber suspend 覆盖整个 co_await(await_suspend 返回 false 让协程在再注入后原地续跑,不二次挂起),所以协程语法层**没在裸 fiber spine 上加可测开销**。无外部对手(tokio/folly 是别的 runtime),标尺是自家裸原语。
 - **fiber sleep 不串行化——sched-04b 时间轮脊**:1 个 vs 64 个并发 sleeper **睡同样 2ms、都在单 worker 上**。若 sleep 烧 worker(像 `std::this_thread::sleep_for` 阻塞整条 OS 线程),64 个就得 64×2ms 串行;实测 **1 与 64 几乎相等**(ratio 0.998/0.995)=一个 worker 扛住 64 个并发 sleep 不串行(定时轮 arm O(1) + 一次 park 到最近 deadline,tick 到期批量 re-inject)。绝对值被 OS 定时器地板主导(Win ~15.6ms/Lin ~3.3ms,2ms 请求被抬到粒度整数倍),故**看两行相等这个对比,不看绝对值**。
-- **方法学**:亚 μs + fork-join 数受 OS 跨线程唤醒抖动主导(spread 8-57%),四项全 15 遍双平台复核。scaling/coro 用批量摊销(512 fiber/5000 cycle),sleep 用 batch=1(每 epoch 是真睡眠)。
+- **方法学**：亚 μs + fork-join 数受 OS 跨线程唤醒抖动主导。scaling 必须让
+  fiber 内计算显著超过 guarded-stack 建立成本；当前为 512 fiber × 20,000 rounds，
+  三平台 fresh build 复核。coro 用批量摊销，sleep 用 batch=1（每 epoch 是真睡眠）。
 
 > 环境:Win MSVC19.50 Release + Linux x86_64 GCC14.2 Release(原生 ext4),nanobench。cap=1024、50000 item/生产者。**SOTA 标尺**:moodycamel ConcurrentQueue(单头,gated `-DHYLE_BENCH_MOODYCAMEL`)、oneTBB concurrent_bounded_queue/concurrent_vector(gated `-DHYLE_BENCH_TBB`,apples-to-apples 有界)、crossbeam-deque(Rust,work-stealing 同族,`bench/rust/`)。**此前这簇零对标("覆盖低就默认 SOTA"),本节是真对标揪出的结果——赢/平/输都登记。**
 >

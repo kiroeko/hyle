@@ -1,5 +1,9 @@
 # util-02：编译期 type_name + 类型哈希
 
+> **2026-07-19 收口复审**：实现仍成立。它是 util 唯一有意不做运行时 C ABI
+> 的能力：`T` 来自编译器静态模板替换，`void*` 无法恢复。完整归类见
+> [`util-module-closure.md`](./util-module-closure.md)。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P3（util 簇）|

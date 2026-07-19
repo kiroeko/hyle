@@ -43,7 +43,7 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 - **ggml**：21 个 C 头 `extern "C"` + **唯一 1 个** C++ only 头 `ggml-cpp.h`（`#ifndef __cplusplus #error`，仅 `unique_ptr`+deleter 包 C 句柄，deleter 调 `ggml_free`）。内部实现是 C++（8 `.cpp` vs 3 `.c`，`ggml-impl.h` 有 template/std::），但**对外零 C++ 泄漏**。ggml 不是"避免了模板"，是**领域决定其公开数据模型天然是 C 形状**（`ggml_tensor` = 运行时 `enum type` 标签，非模板）——类型多态放运行时，C ABI 自然一等公民。
 - **oneDNN**：26 C 头 + 16 C++ 头；`dnnl.hpp` `#include "dnnl.h"`，用 `handle<T, traits>` 模板（`shared_ptr` + `handle_traits<T>::destructor` 调 C 的 `dnnl_*_destroy`）包 opaque C 句柄，`error::wrap_c_api` 把 C 返回码转 C++ 异常。**重量级 C++ 便利层，但仍在 C ABI 之上**。
 
-**HYLE 现状**：第 1、2 层齐全（error/platform/mem）。**第 3 层（对标 ggml-cpp.h/dnnl.hpp 的 C++ 便利包装）目前不做**——因为 HYLE 的 C++ 用户直接用原生第一等的 `include/hyle/<mod>/*.h`（本就是 RAII/模板），比"包 C 句柄的壳"更好；只有当对外主接口是 C（ggml/oneDNN 那样）才需要那层壳补 C++ RAII。**HYLE 不是那种库，故不需要。**
+**HYLE 现状**：第 1、2 层已在 error/platform/mem/time/obs/simd/util 等模块落地。**第 3 层（对标 ggml-cpp.h/dnnl.hpp 的 C++ 便利包装）目前不做**——因为 HYLE 的 C++ 用户直接用原生第一等的 `include/hyle/<mod>/*.h`（本就是 RAII/模板），比"包 C 句柄的壳"更好；只有当对外主接口是 C（ggml/oneDNN 那样）才需要那层壳补 C++ RAII。**HYLE 不是那种库，故不需要。**
 
 ## 3. 版本协商：删除（场景驱动，非默认标配）
 

@@ -4,16 +4,18 @@
 #include <compare>
 #include <concepts>
 #include <cstdint>
+#include <limits>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/macros.h"
 
 // Intrusive reference counting (clay ref_counted). The count lives INSIDE the
-// object (CRTP base), so a Ref<T> is one pointer with no separate control block
-// -- cheaper than std::shared_ptr and ABI-stable across the DLL seam (a control
-// block's layout is not). incref is relaxed; decref is acq_rel (textbook
-// correct: a new ref can only form from an existing one, so only the final
-// release must synchronize-with the destroying thread).
+// object (CRTP base), so a Ref<T> is one pointer with no separate control block.
+// This is the native same-toolchain C++ surface; the stable cross-DLL/FFI seam
+// is the type-erased hyle_util_ref in hyle/c/util.h, not the template layout.
+// incref is relaxed; decref is release plus an acquire fence only on the final
+// drop (a new ref can only form from an existing one).
 //
 // Divergences from clay (deliberate):
 //  - clay's decref calls unqualified `destroy()`, which name-resolves to the
@@ -34,13 +36,23 @@ namespace hyle::util {
 template <class Sub>
 class RefCounted {
  public:
+  // Lets Ref<T> detect the otherwise-dangerous shape
+  // `Derived : RefCounted<Base>` when Base is not polymorphically destructible.
+  // In that shape Base::decref() necessarily destroys through Base.
+  using hyle_refcounted_subtype = Sub;
+
   RefCounted() noexcept : refcount_(1) {}
   HYLE_DISABLE_COPY_AND_MOVE(RefCounted);
 
   // New reference. relaxed: forming a ref requires already holding one, and
   // handing a ref across threads carries its own synchronization.
   void incref(std::uint32_t n = 1) noexcept {
-    refcount_.fetch_add(n, std::memory_order_relaxed);
+    HYLE_FATAL_ASSERT(n != 0);
+    const std::uint32_t old =
+        refcount_.fetch_add(n, std::memory_order_relaxed);
+    HYLE_FATAL_ASSERT(old != 0);
+    HYLE_FATAL_ASSERT(old <=
+                      std::numeric_limits<std::uint32_t>::max() - n);
   }
 
   // Drop a reference; destroy on the last one. release on the decrement so a
@@ -49,7 +61,11 @@ class RefCounted {
   // releases before running destroy(). This is the Boost/libc++ shared_ptr
   // ordering: non-final decrefs pay only release, not a full acq_rel.
   void decref(std::uint32_t n = 1) noexcept {
-    if (refcount_.fetch_sub(n, std::memory_order_release) == n) {
+    HYLE_FATAL_ASSERT(n != 0);
+    const std::uint32_t old =
+        refcount_.fetch_sub(n, std::memory_order_release);
+    HYLE_FATAL_ASSERT(old >= n);
+    if (old == n) {
       std::atomic_thread_fence(std::memory_order_acquire);
       static_cast<Sub*>(this)->destroy();  // CRTP dispatch (clay bug fixed)
     }
@@ -80,12 +96,34 @@ concept Refable = requires(T* p) {
   p->decref();
 };
 
+namespace detail {
+
+template <class T, class = void>
+struct ref_destruction_is_safe : std::true_type {};
+
+// RefCounted<Base>'s last release dispatches to Base::destroy(). A further
+// Derived is safe only when Base has a virtual destructor; otherwise even a
+// Ref<Derived> would eventually execute `delete Base*`.
+template <class T>
+struct ref_destruction_is_safe<
+    T, std::void_t<typename T::hyle_refcounted_subtype>>
+    : std::bool_constant<
+          std::same_as<T, typename T::hyle_refcounted_subtype> ||
+          std::has_virtual_destructor_v<
+              typename T::hyle_refcounted_subtype>> {};
+
+}  // namespace detail
+
+template <class T>
+concept RefCompatible =
+    Refable<T> && detail::ref_destruction_is_safe<T>::value;
+
 // Intrusive owning smart pointer. Copy = share (incref); move = steal. Holds a
 // strong reference for its lifetime. Construct via make_ref<T>()/adopt_ref()/
 // retain_ref() -- the raw-pointer constructor is intentionally absent to keep
 // "adopt vs retain" explicit at the call site (clay's implicit Ref(T*) adopted
 // silently, a known footgun its own comments warned about).
-template <Refable T>
+template <RefCompatible T>
 class Ref {
  public:
   Ref() noexcept = default;
@@ -165,9 +203,9 @@ class Ref {
   }
 
  private:
-  template <Refable U>
+  template <RefCompatible U>
   friend class Ref;
-  template <Refable U>
+  template <RefCompatible U>
   friend Ref<U> adopt_ref(U*) noexcept;
 
   explicit Ref(T* p) noexcept : ptr_(p) {}  // adopt; used by factories
@@ -176,27 +214,27 @@ class Ref {
 
 // Construct a T and adopt its initial +1 (RefCounted starts at 1, so NO extra
 // incref). The common way to mint a reference-counted object.
-template <class T, class... Args>
+template <RefCompatible T, class... Args>
 HYLE_FORCE_INLINE Ref<T> make_ref(Args&&... args) {
   return adopt_ref(new T(std::forward<Args>(args)...));
 }
 
 // Adopt an existing +1 reference (no incref): for a raw pointer that already
 // carries a reference you own (e.g. returned across an API that did the incref).
-template <Refable T>
+template <RefCompatible T>
 HYLE_FORCE_INLINE Ref<T> adopt_ref(T* p) noexcept {
   return Ref<T>(p);
 }
 
 // Add a NEW reference to a borrowed pointer (incref): you do not own `p`'s
 // count and want to keep it alive.
-template <Refable T>
+template <RefCompatible T>
 HYLE_FORCE_INLINE Ref<T> retain_ref(T* p) noexcept {
   if (p) p->incref();
   return adopt_ref(p);
 }
 
-template <Refable T>
+template <RefCompatible T>
 HYLE_FORCE_INLINE void swap(Ref<T>& a, Ref<T>& b) noexcept {
   a.swap(b);
 }

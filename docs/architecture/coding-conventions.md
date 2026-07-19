@@ -77,7 +77,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 ## 6. 内存与对象生命周期
 
-- **侵入式 `RefCounted` + `Ref<T>`**（CRTP 内嵌 `atomic refcount`）：跨边界比 `shared_ptr` 省控制块、可定制 `destroy()`。`incref` 用 `relaxed`、`decref` 用 `acq_rel`（教科书级正确，照搬）。**改进**：转换运算符设 `explicit`，避免隐式误用。
+- **侵入式 `RefCounted` + `Ref<T>`**（CRTP 内嵌 `atomic refcount`）：跨边界比 `shared_ptr` 省控制块、可定制 `destroy()`。`incref` 用 `relaxed`；`decref` 用 release，只有末次释放补 acquire fence。批量计数拒绝零、溢出和下溢；`RefCompatible` 拒绝会经非虚基类错误析构的形状。转换运算符显式，避免隐式误用。
 - **默认编译期 `SystemAllocator`,注入 opt-in**（见 §4）。
 - **单例默认 Meyers**（`static T inst` C++11 起线程安全），leaky 仅按需——丢掉 clay 的 leaky 默认。
 
@@ -99,7 +99,7 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 ## 9. 自注册 / 插件
 
-- **Registry + `HYLE_DECLARE/DEFINE` 宏对**：静态初始化期自注册、跨库 dllimport/export、优先级覆盖（插件体系刚需）。**改进**：内部 `std::unordered_map` 换 HYLE flat hashmap（与"回到底层"一致）；禁 `std::exit`，走错误返回。
+- **Registry + `HYLE_DECLARE/DEFINE` 宏对**：静态初始化期自注册、跨库 dllimport/export、优先级覆盖。内部用 HYLE SwissTable；所有表访问同步，creator 在锁外调用以允许重入；同优先级接线冲突 fail-fast，不用 `std::exit`。
 
 ## 10. 能力 dispatch（编译期消变体，运行期最多冷跳一次）
 

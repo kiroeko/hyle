@@ -1,5 +1,10 @@
 # util-04：random（xoshiro256++ PRNG）
 
+> **2026-07-19 收口复审**：当前能力已扩为 state snapshot/restore、原生 u32
+> Lemire、`long_jump`、极端有限 double range、进程唯一 TLS seed，并提供 POD
+> + batch 的纯 C ABI。当前真相见
+> [`util-module-closure.md`](./util-module-closure.md)。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P3（util 簇）|
@@ -15,13 +20,15 @@
 - **无偏 range(真 bug 修复)**:clay `random_range = min + r % (max+1-min)`——**统计有偏**(除非范围整除 2^64)。HYLE 用 **Lemire 拒绝采样**(threshold = 2^64 % n,拒绝采样区),无偏。160 万抽样均匀性测试验证(16 桶各 ±5%)。
 - **SplitMix64 seeding**:单 u64 种子扩散填 256 位状态,避免 xoshiro 的全零禁态(seed 0 也安全,测试 NotStuckOrZero 验);clay 把 seeding 丢给调用方。
 - **jump()**:前进 2^128 步,给并行 worker 各一条不重叠流(sched 每 worker 一个)——测试验发散。
-- **thread_rng()**:每线程一个 Rng(无锁、无实例),栈地址播种区分线程。
+- **thread_rng()**：每线程一个 Rng、无锁；默认 seed 来自进程唯一原子序列和
+  进程 salt，不再依赖可被 OS 复用的线程栈地址。
 
 ## clay API diff + 决策
 
 - 覆盖:next(→next_u64)/bool/u32/double/float/range_*/shuffle/seed/jump。
 - **shuffle 改进**:clay `shuffle(void*, element_size, n)`;HYLE `shuffle(n, swap_callback)`——调用方拥有存储,更灵活,无 void* memcpy。
-- **简化登记**:clay `next_n(批量填数组)` 未单列——调用方循环 `next_u64()`(FORCE_INLINE 无开销)等价。
+- **批量能力**：原生 C++ 热循环可直接内联；C/FFI 面另提供 fill_u64/float/double，
+  避免每个元素一次 ABI 调用。
 
 ## 对抗式自审（六类）
 
@@ -32,7 +39,8 @@
 - **⑤ 残留脚手架**:无。
 - **⑥ 过度复杂**:无,单类封装。
 - **非加密**:已注释——xoshiro 不抗预测,不可用于密钥/token(那是将来 crypto 模块的事)。
-- **thread_rng 播种**:栈地址低位可能相近,靠 SplitMix64 扩散放大差异;真要强独立性用显式 seed 或 jump()。已注释。
+- **thread_rng 播种**：默认流保证同进程各次线程初始化不因栈复用而重复；需要
+  可复现、可证明不重叠的并行流时仍应显式 seed，并按 worker `jump()`。
 
 ## 交付物
 

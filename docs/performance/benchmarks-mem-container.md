@@ -122,12 +122,19 @@
 
 ## 次要模块（util/random、time/clock、obs/log、SwissTable iterate，`misc_bench.cc` + `swiss_table_bench.cc`）
 
-> 环境:Win MSVC19.50 + Linux GCC14.2；time/clock 与 obs 在 2026-07-19 收口时另补 Apple M4 AppleClang。nanobench。标尺 = std 等价物(同 OS 原语/同算法类),或 HYLE 自有(无 std 对等物时诚实标注)。**time 项平台差异大,见结论③。**(util/Rng、SwissTable iterate 仍 Win 单平台,待补 Linux；obs 已三平台。)
+> 环境:Win MSVC19.50 + Linux GCC14.2 + Apple M4 AppleClang（2026-07-19
+> util/time/obs 收口复测）。nanobench。标尺 = std 等价物(同 OS 原语/同算法类),
+> 或 HYLE 自有(无 std 对等物时诚实标注)。三平台数字按 Win/Linux/M4 排列；
+> 高争用行只判断适用边界，不把高方差点值宣传成 SOTA。
 
 | 场景 | HYLE | 标尺 | vs 标尺 | 结论 |
 |---|---|---|---|---|
-| **Rng next_u64**(xoshiro256++) | **1.56 ns** | std::mt19937_64 2.41 | **1.54x** | ✅ 赢(同质量,256-bit state) |
-| **Rng range_u64**(Lemire 无偏) | **1.75 ns** | std::uniform_int_distribution 2.75 | **1.57x** | ✅ 赢且**无偏**(std 也无偏,HYLE 更快) |
+| **Rng next_u64**(xoshiro256++) | 1.59/1.38/2.26 ns | std::mt19937_64 2.32/1.44/3.47* | 1.46x/平/1.53x | Win/M4 赢，Linux 平；M4 std 行方差高 |
+| **Rng runtime-varying range_u64** | 2.09/1.47/2.17 | std distribution 2.86/2.08/7.68 | 1.37/1.41/3.54x | ✅ 三平台赢且无偏 |
+| **Rng C batch fill** | 4.99/0.67/0.65 | native C++ 5.16/0.68/0.65 | 全部平 | 类型擦除 ABI 被 batch 摊薄 |
+| **SpinLock 无争用** | 3.71/4.79/1.01 | mutex 10.94/2.48/4.19 | 2.95x/0.52x/4.15x | 平台翻转，只限短低争用 |
+| **SpinLock 8 threads** | 50.17/60.44/271.88 | mutex 50.59/39.08/20.98 | 平/0.65x/0.08x | ❌ 高争用选 mutex |
+| **Ref fan-out** | 10.13/8.33/3.19 | shared_ptr 8.09/11.12/3.22 | 0.80x/1.34x/平 | 平台翻转；所有权形状而非普遍提速 |
 | **SwissTable iterate**(for_each) | **2.48 ns** | std::unordered_map 8.73 | **3.5x** | ✅ 赢(扁平 ctrl 扫 vs 节点指针链) |
 | **realtime_ns** | 15.0(Win)/12.5(Lin) | system_clock 14.4/12.8 | **0.96x/1.02x** | ➖ 平双平台(同 OS 原语) |
 | **monotonic_ns** | 12.4(Win)/12.6(Lin) | steady_clock 12.7/12.9 | **Win 1.03x/Lin 1.0x** | ➖平双平台(Win 曾输 1.48x,补频率特判后追平;见结论③) |
@@ -137,7 +144,21 @@
 | **log preformatted C ABI**(1 C sink,无 I/O) | 23.93/16.03/10.68 ns | native C++ 上行 | +1.45/+2.96/+1.83 ns | POD bridge + opaque trampoline 的真实 ABI 成本很小 |
 | **log formatted emit**(1 sink,无 I/O) | 81.9–84.6/69.5–71.4/50.9–53.5 ns | (无 std 对照) | — | `std::format_to_n` + safe fan-out；真实 I/O sink 通常远大于此 |
 
-**诚实结论**:① **Rng 赢 std PRNG 1.54x**(xoshiro256++ vs mt19937_64,同统计质量,HYLE header-inline 无 DLL hop);**range_u64 改真 Lemire 无除法映射(2026-07 红队 util)**——原实现注释称 "Lemire's nearly-divisionless" 但实为经典 modulo-rejection(每次调用恒两次 64 位 idiv:`(MAX-n+1)%n` + `r%n`),名不副实。真 Lemire(absl/numpy/rust rand)用一次 128 位乘 `hi(x*n)` + 极罕见除法:常见路径拿 `n` 当 threshold 高估(`lo(x*n)<n` 检查,零除法),仅罕见时才算精确 `2^64%n`。改用 `detail::mul128_hi_lo`(MSVC `_umul128`/GCC `__uint128_t`),热路径 1 mul 替 2 idiv,无偏性不变(chi-square + 边界测试过)。**实测 shuffle 1000 ints 3.82→1.18ns = 3.2x(双平台一致)**——这是运行时变界的真实路径,idiv 真花。**教训(重要)**:`range_u64(0,999)` 直接微基准反而几乎没变(1.55→1.46ns)——**常量界 999 让编译器把旧 `%n` 折成魔数乘法,微基准从不暴露 idiv 成本**;只有 shuffle 那种运行时变界(`range_u64(0,i-1)`)才暴露真 idiv。同 monotonic_ns 那次"常量除数被折叠"的对偶——**测有除法的原语必须用运行时变量的除数,否则编译期折叠掩盖真成本**。Win 上 shuffle 赢 std::shuffle 5.5x(6.42→1.17)、Linux 平(GCC 的 std::shuffle 比 MSVC 强)。② **SwissTable iterate 赢 std::unordered_map 3.5x**——扁平 ctrl 字节扫 + 连续 slot(cache 友好)碾压节点指针链;`for_each` 是函数模板(内联、零分配)。③ **time 时钟收口（2026-07-19，三平台）**：`monotonic_ns`/`realtime_ns` 的 C++ 面改为 header-inline `std::chrono`，与相同转换工作的标准钟在 Win/WSL/M4 统计同档（monotonic 13.22/13.07/12.93ns vs std 13.30/13.07/12.88ns）。x86 opt-in `fast_monotonic_ns` 为 7.37/7.13ns，约 1.79x/1.84x；M4 无 TSC 正常回退。`fast_realtime_ns` 在 Win/Linux 为 3.20/3.90ns，对 15.77/13.09ns 快 4.94x/3.36x；macOS 无 coarse 原语而回退。TSC leaf 0x15 只优化首次校准与乘子精度；是否可用按 CPUID capability 判定，不按 Intel/AMD vendor 名硬编码。deadline/sleep 算术统一饱和，完整审计见 time-module-closure。④ **obs 收口后三层性能**：宏 gate 在格式化前，三平台仅 0.91–2.11ns；preformatted native fan-out 为 8.85–22.48ns，包含保证安全摘除所需的 slot active references；C ABI trampoline 只再增加 1.45–2.96ns。formatted 路径为 50.9–84.6ns，主要由标准库格式化和工具链差异决定。旧版 54.7ns Linux 数来自**不保证 remove 后 state 安全**的 registry，不能拿它要求新实现抹掉生命周期成本。真实同步 sink 的文件/终端/队列开销通常更大；若 profile 证明 preformatted fan-out 本身是瓶颈，再评估 epoch/RCU，而不是先撤掉 quiescent 合同。异步聚合仍属 sink/运维层，不与不同架构的 async logger 混比。完整红队与三平台证据见 [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。
+**诚实结论**:① Rng 的 runtime-varying range 三平台赢；`next_u64` 在
+MSVC/AppleClang 赢而 GCC 平，不能再写成无条件 1.54x。真 Lemire 用一次 128 位乘
+和罕见 threshold 修正；基准必须让 bound 在运行时变化，避免编译器把常量除数折成
+魔数。C ABI 单值调用有 0.09–0.95ns seam，但 fill batch 三平台与 C++ 平。
+② SpinLock 的结果按平台甚至反向，高争用时 Linux/M4 均输 mutex；它是低争用
+短临界区工具，不是通用锁。Ref 也随工具链翻转，其价值是侵入式共享所有权和省控制
+块，而非原子 RMW 必然更快。完整 util 红队、ABI 和 sanitizer 证据见
+[`../milestones/util-module-closure.md`](../milestones/util-module-closure.md)。
+③ **SwissTable iterate 赢 std::unordered_map 3.5x**——扁平 ctrl 字节扫 +
+连续 slot(cache 友好)碾压节点指针链；`for_each` 是函数模板(内联、零分配)。
+④ **time 时钟收口（2026-07-19，三平台）**：`monotonic_ns`/`realtime_ns`
+与相同转换工作的标准钟同档；x86 opt-in fast clock 获益，M4 正常回退。完整审计见
+time-module-closure。⑤ **obs 收口后三层性能**：宏 gate 0.91–2.11ns；
+preformatted native 8.85–22.48ns；C ABI trampoline 再加 1.45–2.96ns。
+完整红队见 [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。
 
 ## 模糊路径匹配（container-06c，`fuzzy_bench.cc`）
 

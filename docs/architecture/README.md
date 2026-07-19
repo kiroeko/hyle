@@ -45,6 +45,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`coding-conventions.md`](./coding-conventions.md) | **编码规范**：每一行怎么写才不破范式——std 分层/include/宏纪律、C-ABI 范式、错误处理、能力 dispatch 三层模型、clay 独特写法三张表 |
 | [`c-abi-design.md`](./c-abi-design.md) | **C++ 库如何全面导出 C ABI（why）**：类型擦除（编译期 `<T>`→运行时 size/enum）、三层架构（实现/C ABI/可选 C++ 便利层，ggml/oneDNN 实证）、版本协商删除决策（场景驱动非标配，clay 零/ggml 仅插件）、有状态调试类留 C++、错误跨边界、两条消费者线路的易用性 |
 | [`c-abi-authoring-guide.md`](./c-abi-authoring-guide.md) | **给 HYLE 开发者的 C ABI 施工参考（how）**：收口某模块做 C ABI 照这走——导出面归类判据、六件套文件与接线、头/桥接骨架、桥接三铁律（opaque 句柄/零 reinterpret/fail-fast）、易用性 header-inline 层、纯 C smoke、三平台真测、收口 checklist。样板=mem |
+| [`util-design.md`](./util-design.md) | **util 架构与维护边界**：七个能力族、原生 C++/类型擦除 C ABI 双面、依赖/性能边界和机械维护闸门。 |
 | [`clay-asset-liability.md`](./clay-asset-liability.md) | clay 资产负债表：六子系统逐个盘点（内存/DataModel/SIMD/容器/并发/taskgraph），含 5 个 bug、空位 grep 证据、继承/重写判断 |
 | [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、两条主轴、7 模块划分、规模（生产已 ~53k / 终态纪律 ~65–80k / 足迹含 ggml ~200–350k+）、边界外明确不做的东西 |
 | [`io-design.md`](./io-design.md) | 网络库选型：proactor 模型 + io_uring/IOCP/kqueue/epoll 四后端 + 只借 syscall 封装、调度绑 fiber |

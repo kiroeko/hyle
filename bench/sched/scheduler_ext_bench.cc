@@ -167,14 +167,16 @@ int main() {
   // workers pop their shard + steal from each other to run them in parallel.
   // relative(true) with the 1-worker row as the 100% baseline, so the 2/4/8 rows
   // print the scaling factor. batch(kTasks) => ns/op is per task. Each fiber does
-  // `kRounds` xorshift rounds (~a couple us) so the number reflects parallel
-  // COMPUTE spread, not the ~sub-us dispatch cost (which would hide scaling).
+  // `kRounds` xorshift rounds (~tens of us) so the number reflects parallel
+  // COMPUTE spread, not guarded-stack construction. The older 2,000-round
+  // shape became invalid when Fiber switched to VM stacks with guard pages:
+  // serial stack setup dominated and flattened the 1/2/4/8 curve.
   // NOTE: scaling is capped by physical cores -- on a box with <8 cores the 8-
   // worker row won't be 8x. The shape (does stealing spread the load at all?) is
   // the result; the exact factor is machine-bound.
   {
     constexpr int kTasks = 512;
-    constexpr int kRounds = 2000;  // ~a few us of work per fiber
+    constexpr int kRounds = 20000;
     ankerl::nanobench::Bench b;
     b.title("work-stealing scaling (512 compute fibers, 1 injector)")
         .relative(true)
@@ -190,7 +192,7 @@ int main() {
         for (int i = 0; i < kTasks; ++i) {
           args[i].rounds = kRounds;
           fibers.push_back(std::make_unique<Fiber>(
-              system_allocator(), kDefaultStackSize, &work_body, &args[i]));
+              kDefaultStackSize, &work_body, &args[i]));
         }
         for (auto& f : fibers) sched.spawn(f.get());
         sched.drain();
@@ -226,7 +228,7 @@ int main() {
       fibers.reserve(kTasks);
       for (int i = 0; i < kTasks; ++i)
         fibers.push_back(std::make_unique<Fiber>(
-            system_allocator(), kDefaultStackSize, &noop_body, nullptr));
+            kDefaultStackSize, &noop_body, nullptr));
       for (auto& f : fibers) sched_spawn.spawn(f.get());
       sched_spawn.drain();
     });
@@ -238,7 +240,7 @@ int main() {
       fibers.reserve(kTasks);
       for (int i = 0; i < kTasks; ++i)
         fibers.push_back(std::make_unique<Fiber>(
-            system_allocator(), kDefaultStackSize, &noop_body, nullptr));
+            kDefaultStackSize, &noop_body, nullptr));
       for (int i = 0; i < kTasks; ++i)
         sched_on.spawn_on(static_cast<unsigned>(i) % kW, fibers[i].get());
       sched_on.drain();
@@ -263,8 +265,8 @@ int main() {
     b.run("raw suspend()+Waker::wake()", [&] {
       PingPong s;
       s.cycles = kCycles;
-      Fiber fa(system_allocator(), kDefaultStackSize, &raw_a, &s);
-      Fiber fb(system_allocator(), kDefaultStackSize, &raw_b, &s);
+      Fiber fa(kDefaultStackSize, &raw_a, &s);
+      Fiber fb(kDefaultStackSize, &raw_b, &s);
       Scheduler sched(1, system_allocator(), 256);
       sched.spawn(&fa);
       sched.spawn(&fb);
@@ -280,8 +282,8 @@ int main() {
       auto db = std::make_unique<CoroDrive>();
       da->task = coro_a(a, &s);
       db->task = coro_b(a, &s);
-      Fiber fa(a, kDefaultStackSize, &coro_drive, da.get());
-      Fiber fb(a, kDefaultStackSize, &coro_drive, db.get());
+      Fiber fa(kDefaultStackSize, &coro_drive, da.get());
+      Fiber fb(kDefaultStackSize, &coro_drive, db.get());
       Scheduler sched(1, system_allocator(), 256);
       sched.spawn(&fa);
       sched.spawn(&fb);
@@ -313,7 +315,7 @@ int main() {
 
     b.run("1 fiber sleep 2ms", [&] {
       SleepArg arg{kSleepNs};
-      Fiber f(system_allocator(), kDefaultStackSize, &sleep_body, &arg);
+      Fiber f(kDefaultStackSize, &sleep_body, &arg);
       Scheduler sched(1, system_allocator(), 256);
       sched.spawn(&f);
       sched.drain();
@@ -325,7 +327,7 @@ int main() {
       fibers.reserve(kN);
       for (int i = 0; i < kN; ++i)
         fibers.push_back(std::make_unique<Fiber>(
-            system_allocator(), kDefaultStackSize, &sleep_body, &arg));
+            kDefaultStackSize, &sleep_body, &arg));
       Scheduler sched(1, system_allocator(), 256);
       for (auto& f : fibers) sched.spawn(f.get());
       sched.drain();  // all 64 must wake before this returns

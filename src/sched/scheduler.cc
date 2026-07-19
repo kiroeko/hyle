@@ -43,7 +43,9 @@ thread_local time::TimerWheel* tls_wheel = nullptr;
 // this worker's per-core proactor for submit, so submit + reap share a thread.
 thread_local int tls_worker_idx = -1;
 
-// Per-worker xorshift64 for cheap random victim selection.
+// Per-worker xorshift64 for cheap random victim selection. It deliberately
+// remains a scheduler-internal hint rather than consumer-visible randomness.
+// The idle steal hot path benefits from its one-word state.
 std::uint64_t xorshift(std::uint64_t& s) noexcept {
   s ^= s << 13;
   s ^= s >> 7;
