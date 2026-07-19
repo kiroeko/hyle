@@ -4,6 +4,7 @@
 #include "hyle/io/net_multishot.h"  // io-07b: complete_multishot + multishot-token routing
 #include "hyle/io/net_timeout.h"  // io-06: complete_timed + timed-token routing
 #include "hyle/macros.h"
+#include "hyle/obs/trace.h"
 #include "hyle/sched/waker.h"  // current_worker_index()
 
 // io-04 integration (plan A). One proactor per worker; the poll hook reaps the
@@ -103,6 +104,7 @@ void IoContext::wake_trampoline(void* ctx, unsigned worker_idx) noexcept {
 
 bool IoContext::poll(unsigned worker_idx,
                      unsigned long long timeout_ns) noexcept {
+  HYLE_TRACE_ZONE_NAMED("hyle.io.reap");
   // Reap THIS worker's own ring only (per-core: submit + reap share this thread,
   // no lock). A batch amortizes the reap syscall. Every completion here is an io
   // op whose user_data is an IoOperation*, so net::complete() casts it back,
@@ -119,6 +121,11 @@ bool IoContext::poll(unsigned worker_idx,
   bool had_io = p.in_flight();
   Completion batch[64];
   std::size_t n = p.reap(batch, 64, had_io ? timeout_ns : 0);
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+  static thread_local unsigned long long trace_completions = 0;
+  trace_completions += n;
+  HYLE_TRACE_COUNTER("hyle.io.completions", trace_completions);
+#endif
   for (std::size_t i = 0; i < n; ++i) {
     // Skip the cross-thread wake token: it carries no IoOperation* (it only broke
     // the block). io_uring/epoll drop it inside reap, but IOCP's wake posts it as a

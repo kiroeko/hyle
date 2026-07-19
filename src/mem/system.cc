@@ -2,6 +2,7 @@
 #include "hyle/mem/hugepage.h"
 
 #include "hyle/macros.h"
+#include "hyle/obs/trace.h"
 
 #include <mimalloc.h>  // PRIVATE include -- mi_* types never leak to a header
 
@@ -45,30 +46,49 @@ void* system_alloc(void* /*state*/, std::size_t size, std::size_t alignment) noe
   // Common-case fast path: default (or weaker) alignment needs no normalization at all --
   // mi_malloc already guarantees >= 16-byte. Skip normalize_alignment (its assert + bit
   // test) for the hot path; only over-aligned requests pay it.
-  if (alignment <= kDefaultAlignment) return mi_malloc(size);
-  return mi_malloc_aligned(size, normalize_alignment(alignment));
+  void* pointer =
+      alignment <= kDefaultAlignment
+          ? mi_malloc(size)
+          : mi_malloc_aligned(size, normalize_alignment(alignment));
+  if (pointer != nullptr) {
+    HYLE_TRACE_ALLOC_NAMED(pointer, size, "hyle.system");
+  }
+  return pointer;
 }
 
 void system_free(void* /*state*/, void* ptr, std::size_t /*size*/,
                  std::size_t /*alignment*/) noexcept {
-  if (ptr != nullptr) mi_free(ptr);  // mi_free recovers size/alignment from the block
+  if (ptr != nullptr) {
+    HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
+    mi_free(ptr);  // mi_free recovers size/alignment from the block
+  }
 }
 
 void* system_realloc(void* /*state*/, void* ptr, std::size_t /*old_size*/,
                      std::size_t new_size, std::size_t alignment) noexcept {
   if (new_size == 0) {  // realloc-to-0 == free
-    if (ptr != nullptr) mi_free(ptr);
+    if (ptr != nullptr) {
+      HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
+      mi_free(ptr);
+    }
     return nullptr;
   }
   std::size_t align = normalize_alignment(alignment);
   // mi_realloc_aligned preserves alignment and returns nullptr on OOM with the
   // original block left intact (C realloc contract) -- matches our vtable.
+  void* result;
   if (align <= kDefaultAlignment) {
-    if (ptr == nullptr) return mi_malloc(new_size);
-    return mi_realloc(ptr, new_size);
+    result = ptr == nullptr ? mi_malloc(new_size)
+                            : mi_realloc(ptr, new_size);
+  } else {
+    result = ptr == nullptr ? mi_malloc_aligned(new_size, align)
+                            : mi_realloc_aligned(ptr, new_size, align);
   }
-  if (ptr == nullptr) return mi_malloc_aligned(new_size, align);
-  return mi_realloc_aligned(ptr, new_size, align);
+  if (result != nullptr) {
+    if (ptr != nullptr) HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
+    HYLE_TRACE_ALLOC_NAMED(result, new_size, "hyle.system");
+  }
+  return result;
 }
 
 }  // namespace

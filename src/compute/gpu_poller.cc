@@ -9,6 +9,7 @@
 
 #include "hyle/compute/stream.h"
 #include "hyle/macros.h"
+#include "hyle/obs/trace.h"
 #include "hyle/sched/waker.h"
 
 // compute-03: the GPU completion poller (plan A). A single dedicated thread holds the
@@ -64,6 +65,7 @@ class GpuPoller {
 
  private:
   void run() noexcept {
+    HYLE_TRACE_THREAD_NAME("hyle.gpu-poller");
     std::vector<GpuOp*> ready;  // reused scratch: ops observed done this sweep
     for (;;) {
       {
@@ -79,6 +81,7 @@ class GpuPoller {
       // (it reaches into the scheduler; keep our critical section tight + deadlock-free).
       ready.clear();
       {
+        HYLE_TRACE_ZONE_NAMED("hyle.compute.gpu_reap");
         std::unique_lock<std::mutex> lk(mu_);
         for (std::size_t i = 0; i < inflight_.size();) {
           GpuOp* op = inflight_[i];
@@ -97,6 +100,11 @@ class GpuPoller {
           }
         }
       }
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+      static thread_local unsigned long long trace_completions = 0;
+      trace_completions += ready.size();
+      HYLE_TRACE_COUNTER("hyle.compute.gpu_completions", trace_completions);
+#endif
       // Wake outside the lock.
       for (GpuOp* op : ready) op->waker.wake();
 

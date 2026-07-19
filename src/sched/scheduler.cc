@@ -12,6 +12,7 @@
 #include "hyle/container/ws_fifo_queue.h"
 #include "hyle/macros.h"
 #include "hyle/mem/fiber_stack.h"
+#include "hyle/obs/trace.h"
 #include "hyle/platform/thread.h"
 #include "hyle/platform/wait.h"
 #include "hyle/sched/fiber.h"
@@ -514,6 +515,11 @@ struct Scheduler::Impl {
       }
       ++n_fired;
     });
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+    static thread_local std::uint64_t trace_timers_fired = 0;
+    trace_timers_fired += n_fired;
+    HYLE_TRACE_COUNTER("hyle.sched.timers_fired", trace_timers_fired);
+#endif
     return n_fired;
   }
 
@@ -528,6 +534,12 @@ struct Scheduler::Impl {
   }
 
   void run_worker(unsigned idx) noexcept {
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+    char trace_thread_name[24];
+    std::snprintf(trace_thread_name, sizeof(trace_thread_name),
+                  "hyle.worker.%u", idx);
+    HYLE_TRACE_THREAD_NAME(trace_thread_name);
+#endif
     t_current = this;
     t_worker_idx = static_cast<int>(idx);
     tls_owner = owner;

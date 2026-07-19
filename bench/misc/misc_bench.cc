@@ -4,9 +4,9 @@
 //     baseline; xoshiro256++ is the modern recommended general-purpose PRNG).
 //   * time/clock    -- monotonic_ns()/realtime_ns() read latency vs std::chrono
 //     steady_clock/system_clock now() (same OS primitive; measures wrapper cost).
-//   * obs/log       -- the PRODUCE path: gated-out (should_log false) cost, and a
-//     counting-sink emit (format + fan-out, NO stderr I/O) so the number is the
-//     library overhead, not the terminal.
+//   * obs/log       -- gated-out cost, safe preformatted fan-out through both
+//     native C++ and stable C ABI, plus caller formatting + fan-out. All use
+//     counting sinks (NO stderr I/O).
 //   * util/spin_lock -- SpinLock lock/unlock uncontended vs std::mutex (the TTAS
 //     spinlock claim; for short critical sections a spinlock should beat a mutex's
 //     syscall-capable lock).
@@ -35,7 +35,12 @@ namespace nb = ankerl::nanobench;
 
 // Counting sink: records calls, does NO I/O -> isolates format+fanout overhead.
 std::uint64_t g_log_calls = 0;
-void counting_write(void* /*state*/, hyle::obs::LogLevel, const char*) noexcept {
+void counting_write(void* /*state*/,
+                    const hyle::obs::LogRecord& /*record*/) noexcept {
+  ++g_log_calls;
+}
+void c_counting_write(void* /*state*/,
+                      const hyle_obs_log_record* /*record*/) {
   ++g_log_calls;
 }
 
@@ -253,6 +258,28 @@ int main() {
       HYLE_LOG_INFO("value={}", x);  // should_log false -> no format, no fanout
       nb::doNotOptimizeAway(x);
     });
+  }
+  {
+    hyle::obs::LogSink sink{nullptr, &counting_write};
+    hyle::obs::add_sink(sink);
+    hyle::obs::set_level(hyle::obs::LogLevel::Info);
+    nb::Bench b;
+    b.title("log preformatted emit to 1 sink (no I/O)")
+        .relative(true)
+        .batch(1)
+        .minEpochIterations(1000000);
+    b.run("C++ log_message", [&] {
+      nb::doNotOptimizeAway(
+          hyle::obs::log_message(hyle::obs::LogLevel::Info, "ready"));
+    });
+    hyle::obs::remove_sink(sink);
+
+    hyle_obs_sink* c_sink = hyle_obs_sink_create(&c_counting_write, nullptr);
+    if (c_sink == nullptr) return 1;
+    b.run("C ABI hyle_obs_log", [&] {
+      nb::doNotOptimizeAway(hyle_obs_log(HYLE_OBS_LOG_INFO, "ready"));
+    });
+    if (!hyle_obs_sink_destroy(c_sink)) return 1;
   }
   {
     hyle::obs::LogSink sink{nullptr, &counting_write};

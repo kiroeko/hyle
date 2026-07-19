@@ -60,7 +60,7 @@
 | **util** Rng shuffle 1000(Fisher-Yates+Lemire) | 1.18(Lin)/1.17(Win) | std::shuffle(mt19937_64) | 1.21(Lin)/6.42(Win) | Lin平/Win 5.5x | (std 即标尺) | 同std | — | ✅**改 Lemire 后 3.82→1.18ns(3.2x)**:运行时变界暴露旧 modulo 的 2 idiv,真 Lemire 消除;Win 赢 std 5.5x/Lin 平(GCC std::shuffle 比 MSVC 强) |
 | **util** SpinLock lock/unlock(无争用) | 4.03 | std::mutex | 12.03 | 3.0x | folly MicroSpinLock | ~同 | ~1.0x | ✅赢 std 3x(TTAS+pause+cache-pad);**无争用快路径已核对 = folly 形状**(单原子 RMW + release store),⏳结案;有争用无 sleep-fallback 是刻意设计(短临界区专用) |
 | **util** Ref copy+destroy(fan-out 64,实战) | 8.15 | std::shared_ptr | 8.10 | ~1.0x | (shared_ptr 即标尺) | 8.10 | ~1.0x | ➖平(算法同工:各 2 locked RMW;实战传 ref,incref/decref 突发分离)。注:紧循环背靠背 copy+destroy 的 microbench(HYLE 10.4 vs std 8.2)是**不公平对照已下表**——同 cache line 两原子串行化放大、无法与实际工作重叠,asm 证同工;真实用法即本行。引导见 usage-guide §3.7 |
-| **obs** log gated-out / emit | 1.4–2.0 / 54.7(Lin)/78–85(Win) | (无 std log) | n/a | n/a | spdlog 同步(未 clone,量级参考) | ~同档 | ➖ | ➖HYLE 自有;**emit ~90% 是 std::format(裸 52ns),锁+fanout 仅 Lin 6/Win 13ns**——produce 路径已贴 std::format 下限,SOTA 对标本质=同步 format 成本,无结构劣势(详节) |
+| **obs** log gate / preformatted / formatted | 0.91–2.11 / 8.85–22.48 / 50.9–84.6（三平台） | (无 std log) | n/a | n/a | 同步 sink 产出原语 | n/a | ➖ | ✅ gated 极轻；preformatted 含 quiescent-unregister active ref；C ABI 仅多 1.5–3.0ns；formatted 由 `std::format` 主导。详见 obs closure |
 | **mem** SystemAllocator churn(默认) | 7.91 | std::malloc(OS) | ~25 | ~3x | 裸 mimalloc | 7.79 | 0.99x | ➖平 SOTA(编译期内联,零接缝税) |
 | **mem** Allocator vtable churn(opt-in) | 8.61 | std::malloc(OS) | ~25 | ~3x | std::pmr / 裸 mi | 8.70/7.79 | 1.01x/0.90x | ✅赢同类 std::pmr(对裸 mi -10% 是多态物理税,pmr 同付) |
 | **mem** 8 线程通用 | 2.07 | std::malloc(OS) | ~30 | (大赢) | 裸 mimalloc | 2.14 | 1.03x | ➖平 SOTA |

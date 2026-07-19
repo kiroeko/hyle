@@ -7,7 +7,7 @@
 | **Tier** | 边界 |
 | **LOC 估** | 2-3k |
 | **骨架?** | 否 |
-| **状态** | 🔶 **部分落地**：error + platform + mem + time + simd C-ABI ✅（time/SIMD 2026-07-19）；全库跨编译器 / FFI 冒烟仍待 |
+| **状态** | 🔶 **部分落地**：error + platform + mem + time + obs + simd C-ABI ✅（time/obs/SIMD 2026-07-19）；全库跨编译器 / FFI 冒烟仍待 |
 
 > **本文件的目的**：把"发布后用户必须用稳定 C ABI"这件事**白纸黑字钉死**，避免后面忘了或被"反正 C++ 头能用"糊弄过去。实现细节临到开工再细化，但**产品铁律 + 验收门槛现在就定**。
 
@@ -42,6 +42,13 @@
       recoverable last-error；34 个动态符号 + 4 个 header-inline 便利入口，不冻结
       C++ 类布局，不导出 STL/模板。文档：
       [`c-time.md`](../guide/c-time.md)。
+- [x] **obs**（2026-07-19 收口）：`include/hyle/c/obs.h` + `c_obs.cc` + 纯 C
+      `hyle_obs_c_test`。覆盖结构化 record、level、quiescent opaque sink、默认 sink，
+      以及 OFF 时稳定 no-op / ON 时接单一 Tracy client 的 runtime trace；12 个日志
+      动态入口 + 11 个 trace 动态入口 + 5 个 header-inline level 便利入口。C++ 原生
+      trace 宏仍保留编译期零成本能力。文档：
+      [`c-obs.md`](../guide/c-obs.md)，复审：
+      [`obs-module-closure.md`](./obs-module-closure.md)。
 - error/platform/mem 五维复审（功能/下游利用、红队实现、测试/性能、ABI 覆盖、用户文档）见 [`core-foundation-c-abi-audit.md`](./core-foundation-c-abi-audit.md)；time 见 [`time-module-closure.md`](./time-module-closure.md)。
 - **架构定调（2026-07-18）**：删除三模块的 `hyle_*_api` 函数指针表 + `api_get` + 版本门/版本宏——纯 `extern "C"` 自由函数导出（对齐 ggml 核心）。版本协商是"分发独立编译插件"才需要的件（clay 零、ggml 仅 backend 插件处），HYLE 单一 `.so`、未发布不背此负担。C++→C ABI 的类型擦除手法、三层架构、有状态调试类留 C++ 等决策见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)。
 - [x] **SIMD**：`include/hyle/c/simd.h` + `c_simd.cc` + [`c-simd.md`](../guide/c-simd.md)；

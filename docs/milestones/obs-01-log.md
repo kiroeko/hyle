@@ -1,62 +1,55 @@
-# obs-01：结构化日志产出（log sink registry）
+# obs-01：结构化日志产出
 
 | 字段 | 值 |
 |---|---|
-| **阶段** | P0（obs 模块首步） |
-| **模块** | obs/（**本里程碑新建模块**） |
-| **状态** | ✅ 完成（Win x64 MSVC 19.50 + Linux x64 GCC14.2 双平台 12/12）|
+| **阶段** | P0 |
+| **模块** | obs |
+| **状态** | ✅ 2026-07-19 全面复审收口；三平台 + ASan/UBSan/TSan + C ABI |
 
-> **范围**：吸纳 clay `sys/log.h`+`.cc`——level 门控 + sink 注册表 + 默认 stderr 彩色 sink。这是 obs/ 的"**日志产出**"半边(hyle-scope：obs 产结构化日志,聚合/采集是运维栈,不在此)。instrumentation hook(计数器/trace point)是 obs 后续步。
-> **cloc**：**生产 133 行**(log.h 47 + log.cc 86) + **测试 143 行**。
+obs-01 从 clay `sys/log` 起步，但当前实现已经不是“level + 字符串 callback”的薄
+移植。完整现状与维护规则见
+[`../architecture/obs-design.md`](../architecture/obs-design.md)，本轮验收见
+[`obs-module-closure.md`](./obs-module-closure.md)。
 
-## 模块定位（obs-01 = log，不是 instrumentation hook）
+## 最终能力
 
-scaffolding 占位把 obs-01 写成"instrumentation hook(编译期 no-op)"，coverage-map 把 `sys/log` 映射到 "obs-01/platform"。二者是 obs/ 的两件事：**hook(计数器/trace)** 与 **log 产出**。clay 只有 log（无 instrumentation 框架），所以 **obs-01 吸纳 = log 产出**;hook 是 obs 后续净新增步（hyle-scope：T2 第一天嵌热路径）。本里程碑**新建 `src/obs` 模块**（P0 层，error 之后），落 log。
+- `LogRecord`：level、message、key/value fields、source file/function/line、可选
+  Unix timestamp；
+- `HYLE_LOG_*`：调用方 `std::format_to_n` 固定栈缓冲，gate 失败不求值参数并捕获
+  caller source location；
+- 64 槽固定 registry；callback 在 logger 线程同步执行，registry 锁外 fan-out；
+- quiescent remove：成功返回后其他线程无旧 callback，state 可释放；
+- callback 自摘安全；跨摘其他 sink 明确拒绝，避免同一 snapshot 自等待死锁；
+- 默认 stderr sink：线程内 record 不穿插，只在 TTY 着色，Windows 同步 debugger
+  output；
+- 稳定纯 C ABI：POD record + opaque sink + last-error + 五个 level 便利函数。
 
-## clay `logger_api_t` → HYLE diff
+## 相对 clay 的关键修正
 
-| clay | HYLE | 备注 |
-|---|---|---|
-| `log_level_e`(TRACE/DEBUG/INFO/WARN/ERROR) | ✅ `enum class LogLevel`(+`Off` 静默) | enum class 强类型 |
-| `logger_t{inst, log(inst,level,msg)}` | ✅ `LogSink{state, write(state,level,msg)}` | vtable sink,**非变参** |
-| `add_logger`/`remove_logger` | ✅ `add_sink`/`remove_sink` | 身份去重 + swap-remove |
-| `print(level,msg)` | ✅ `log_message(level,msg)` | |
-| `printf(level,fmt,...)` **变参 fn-ptr** | ✅ `log_fmt<>()` 模板(头内,`std::format`) | **见下:去变参** |
-| `set_level` | ✅ `set_level` + `level()`/`should_log()` | atomic 无锁门 |
-| `default_logger`(printf ANSI) | ✅ `default_sink()`(fprintf(stderr) ANSI + Win OutputDebugString) | |
-| `CLAY_LOG/INFO/WARN/...` 宏 | ✅ `HYLE_LOG_TRACE/DEBUG/INFO/WARN/ERROR` | should_log 短路 |
+| clay | HYLE |
+|---|---|
+| variadic logger function pointer | 完成字符串/record 的非变参 callback |
+| 全局裸数组，多线程 add/log data race | mutex snapshot + per-slot active reference |
+| remove 后旧 snapshot 仍可能碰已释放 state | quiescent unregister |
+| printf ANSI 到所有 stderr | 仅 TTY 着色 |
+| 字符串消息 | 可扩展结构化 POD record |
+| 无稳定 C 发布面 | `include/hyle/c/obs.h` + 纯 C consumer |
 
-**clay log.cc 全 177 行已读 → 真实现**（64-slot sink 数组、va_list+SYS_vsnprintf、ANSI 彩色 default）。无美化空函数。
+## 边界
 
-## 三处设计决策（对抗 clay 的 ABI/规范坑）
+obs 是“产出”原语，不是日志服务。异步缓冲、文件轮转、网络传输、聚合、检索和告警
+由 sink/运维层实现。HYLE 内部原语不主动输出日常日志；error/status 是机器可读失败
+通道，应用决定何时把诊断变成 record。
 
-1. **sink 写函数非变参**（error-02 同款教训）：clay vtable 是 `printf(level, fmt, ...)`——**变参函数指针跨 C 接缝是 ABI 隐患**（调用约定/栈布局不跨编译器稳定）。HYLE sink 是 `write(state, level, const char* msg)` 收**已格式化的串**。
-2. **格式化 caller-side `std::format`**（conventions §8）：头内 `log_fmt<>` 模板用 `std::format_to_n` 在调用方栈缓冲(1024B,无分配)格式化,**只 `const char*` 过 seam**。编译期 `{}` 查错替 clay 运行期 va_list。`<format>` 是值语义非流,合规。
-3. **诊断走 fprintf(stderr) 非 std 流**（§1 铁律）：default sink 用 `std::fprintf(stderr,...)`,绝不 `<iostream>`。
+trace/counter 属于 obs-02，当前也已收口并接入 mem/sched/io/compute；两条通路的
+统一架构见 obs-design。
 
-## 并发模型（clay 是全局裸数组,无同步）
+## 验收
 
-- **level 门 lock-free**：`std::atomic<LogLevel>` relaxed load,`should_log` 热路径零锁。
-- **sink 注册表**：`std::mutex` 仅护 add/remove 与 log_message 里的**快照**;sink 的实际 `write()` I/O 在**锁外**跑（绝不持锁做可能阻塞的 I/O,也防 sink 重入死锁）。clay 全局裸数组多线程 add/log 是 data race;HYLE 修。
-- default sink 首次触碰注册表时装一次（`g_initialized` 标记）;`remove_sink(default_sink())` 后不再自动重装（clay "auto-added,可显式移除" 契约）。
-
-## 对抗式自审（六类）
-
-- **① 正确性**:12 测——到达 sink/level 门丢弃/should_log/Off 全静默/log_fmt caller-side 格式化/门控时跳过格式化/宏路由 level/多 sink 广播/add 幂等/remove 停投递/默认 level=Info/并发 log-vs-churn 压测(过 WSL TSan)。双平台 12/12。
-- **② 性能**:热路径 should_log 是 relaxed atomic 单 load(无锁);门控时 log_fmt 直接 return 不格式化;快照后锁外 I/O。
-- **③ 规范**:非变参 vtable(§4 ABI)、std::format(§8)、fprintf 非流(§1)、HYLE_OBS_API 三态;头只 include format/macros/visibility。
-- **④ clay 覆盖**:logger_api_t 逐项 diff(上表);变参 printf 显式降级为非变参+caller format(登记原因);instrumentation hook 标 obs 后续。
-- **⑤ 残留脚手架**:无。
-- **⑥ 过度复杂**:64-slot 定长数组(同 clay,无动态分配);swap-remove;无投机的异步/ring buffer(hyle-scope:异步刷盘"借设计不借库",留后续按需)。
-- **跨平台**:fprintf+ANSI 双平台;OutputDebugStringA 仅 Win 分支;atomic/mutex 是 std。
-
-## 交付物
-
-- `include/hyle/obs/log.h`(LogLevel + LogSink + add/remove_sink/set_level/level/should_log/log_message/default_sink + log_fmt 模板 + HYLE_LOG_* 宏)
-- `src/obs/log.cc`(atomic level + mutex-snapshot 注册表 + default stderr ANSI sink)
-- `src/obs/CMakeLists.txt`(新模块) + 根 CMakeLists 接线(P0,error 后)
-- `tests/obs/log_test.cc`(11)
-
-## 参考
-
-- clay `sys/log.h`+`log.cc`(vtable logger registry)。conventions §1(禁 std 流/用 fprintf)、§4(非变参 vtable ABI)、§8(std::format)。error-02(同款去变参 fn-ptr 教训)。hyle-scope(obs 产日志,聚合是运维)。
+- C++ 测试覆盖 level、格式化、结构化字段、容量、并发 churn、remove 等待、自摘、
+  跨摘拒绝、默认 sink 状态；
+- 纯 C 测试覆盖完整日志/C ABI 生命周期和错误面；
+- Windows MSVC、WSL GCC14、Apple M4 AppleClang 通过；
+- WSL ASan、UBSan、TSan 通过；
+- gated/preformatted/formatted 三层基准进入 `hyle_misc_bench`，结果见
+  [`../performance/benchmarks-mem-container.md`](../performance/benchmarks-mem-container.md)。

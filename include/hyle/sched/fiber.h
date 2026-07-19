@@ -2,6 +2,9 @@
 
 #include <atomic>
 #include <cstddef>
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+#  include <memory>
+#endif
 
 #include "hyle/macros.h"
 #include "hyle/mem/fiber_stack.h"
@@ -113,7 +116,8 @@ class Fiber {
   // Optional label for the profiler's fiber track (HYLE_TRACE_FIBER_ENTER). Must be
   // a STABLE, long-lived pointer (a string literal or a buffer outliving the fiber)
   // -- tracy keys a fiber by pointer identity, so the same fiber must always present
-  // the same pointer. Null (default) => resume() uses a generic "hyle.fiber" label.
+  // the same pointer. Null uses a per-fiber unique name owned by a trace build;
+  // anonymous fibers must not collapse onto one shared "hyle.fiber" track.
   // Read ONLY when HYLE_TRACE is enabled; the OFF build never touches it, so setting
   // it costs a single non-hot-path pointer store and the switch path stays zero-cost.
   const char* trace_name() const noexcept { return name_; }
@@ -183,6 +187,11 @@ class Fiber {
   void* on_finish_ctx_ = nullptr;     // ctx for on_finish_ (e.g. the TaskDriver)
   void* cancel_flag_ = nullptr;       // sched-10: task's cancel_req, travels w/ fiber
   const char* name_ = nullptr;        // obs-02: trace label (stable ptr), OFF-build unused
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+  // Trace-only heap storage keeps the default name pointer stable across Fiber
+  // moves. It is absent from normal builds, preserving the zero-cost law.
+  std::unique_ptr<char[]> default_trace_name_;
+#endif
   std::atomic<int> wake_state_{0};    // wake/suspend rendezvous (see wake_rendezvous)
   // ThreadSanitizer fiber handles (null/unused unless built with TSan). fcontext
   // swaps stacks behind TSan's back; without telling TSan which fiber is now

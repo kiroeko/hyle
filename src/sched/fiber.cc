@@ -1,5 +1,7 @@
 #include "hyle/sched/fiber.h"
 
+#include <cstdio>
+#include <new>
 #include <utility>
 
 #include "fcontext.h"
@@ -48,6 +50,10 @@ thread_local Fiber* t_current = nullptr;
 // Usable stack must be at least one OS page (guard is extra below).
 constexpr std::size_t kMinStackSize = 4096;
 
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+std::atomic<unsigned long long> g_trace_fiber_id{0};
+#endif
+
 }  // namespace
 
 // Bridges the C-ABI trampoline (which speaks transfer_t) to Fiber's private
@@ -91,6 +97,14 @@ Fiber::Fiber(mem::FiberStack stack, EntryFn entry, void* arg,
   // Stack grows down: make_fcontext wants the TOP (highest address).
   fctx_ = make_fcontext(stack_.top(), stack_.size(), &FiberLaunch::trampoline);
   tsan_fiber_ = HYLE_TSAN_CREATE_FIBER();  // null in non-TSan builds
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+  default_trace_name_.reset(new (std::nothrow) char[48]);
+  if (default_trace_name_ != nullptr) {
+    const unsigned long long id =
+        g_trace_fiber_id.fetch_add(1, std::memory_order_relaxed) + 1;
+    std::snprintf(default_trace_name_.get(), 48, "hyle.fiber.%llu", id);
+  }
+#endif
 }
 
 Fiber::~Fiber() {
@@ -112,6 +126,9 @@ Fiber::Fiber(Fiber&& o) noexcept
       on_finish_ctx_(o.on_finish_ctx_),
       cancel_flag_(o.cancel_flag_),
       name_(o.name_),
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+      default_trace_name_(std::move(o.default_trace_name_)),
+#endif
       tsan_fiber_(std::exchange(o.tsan_fiber_, nullptr)) {
   // wake_state_ starts fresh on the moved-to object (rendezvous is per-episode).
 }
@@ -135,6 +152,9 @@ Fiber& Fiber::operator=(Fiber&& o) noexcept {
     on_finish_ctx_ = o.on_finish_ctx_;
     cancel_flag_ = o.cancel_flag_;
     name_ = o.name_;
+#if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
+    default_trace_name_ = std::move(o.default_trace_name_);
+#endif
     tsan_fiber_ = std::exchange(o.tsan_fiber_, nullptr);
   }
   return *this;
@@ -153,9 +173,13 @@ void Fiber::resume() {
   // obs-02: mark that this OS thread is now running THIS fiber, so the profiler
   // attributes the work to the fiber track rather than the worker thread (an M:N
   // scheduler needs this). Compile-time gated -- expands to nothing (no read of
-  // name_, no call) unless built with HYLE_TRACE. `name_` must be a stable pointer;
-  // absent one, a shared literal groups anonymous fibers under one track.
-  HYLE_TRACE_FIBER_ENTER(name_ != nullptr ? name_ : "hyle.fiber");
+  // name_, no call) unless built with HYLE_TRACE. `name_` must be a stable
+  // pointer; absent one, the trace-only unique owned name keeps fibers separate.
+  HYLE_TRACE_FIBER_ENTER(
+      name_ != nullptr
+          ? name_
+          : (default_trace_name_ != nullptr ? default_trace_name_.get()
+                                            : "hyle.fiber.oom"));
   // Switch into the fiber, handing it `this`. We come back here when it yields
   // (or finishes); t.fctx is the fiber's freshly-suspended context. yield()/the
   // trampoline switch TSan back to tsan_return_ before jumping here, so TSan is

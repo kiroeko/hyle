@@ -44,6 +44,8 @@
 #  ifndef TRACY_FIBERS
 #    define TRACY_FIBERS
 #  endif
+#  include <cstdint>
+#  include <cstring>
 #  include <tracy/Tracy.hpp>
 
 // Zone timing (RAII: times the enclosing scope). tracy caches a static constexpr
@@ -57,7 +59,8 @@
 #  define HYLE_TRACE_PLOT(name, value) TracyPlot(name, value)
 // tracy has no discrete incremental counter; a counter IS a plot of its running
 // value. Callers that want an increment maintain the sum and plot it (documented).
-#  define HYLE_TRACE_COUNTER(name, value) TracyPlot(name, value)
+#  define HYLE_TRACE_COUNTER(name, value) \
+    TracyPlot(name, static_cast<std::int64_t>(value))
 
 // Fiber tracking: mark which fiber the current OS thread is running, so zones/plots
 // attribute to the FIBER track rather than the physical worker thread -- exactly
@@ -73,8 +76,23 @@
 #  define HYLE_TRACE_FRAME() FrameMark
 #  define HYLE_TRACE_FRAME_NAMED(name) FrameMarkNamed(name)
 
-// A transient message on the timeline.
-#  define HYLE_TRACE_MESSAGE(msg) TracyMessageL(msg)
+// Dynamic messages are copied by Tracy before this call returns. The literal
+// form avoids that copy and therefore requires static storage.
+#  define HYLE_TRACE_MESSAGE(msg)                                           \
+    do {                                                                    \
+      const char* const hyle_trace_message_ = (msg);                        \
+      TracyMessage(hyle_trace_message_, std::strlen(hyle_trace_message_));  \
+    } while (false)
+#  define HYLE_TRACE_MESSAGE_LITERAL(msg) TracyMessageL(msg)
+
+// Memory attribution. A named pool string must have static/stable storage.
+#  define HYLE_TRACE_ALLOC(ptr, size) TracyAlloc(ptr, size)
+#  define HYLE_TRACE_FREE(ptr) TracyFree(ptr)
+#  define HYLE_TRACE_ALLOC_NAMED(ptr, size, name) TracyAllocN(ptr, size, name)
+#  define HYLE_TRACE_FREE_NAMED(ptr, name) TracyFreeN(ptr, name)
+
+// Name the current OS thread in the trace backend.
+#  define HYLE_TRACE_THREAD_NAME(name) ::tracy::SetThreadName(name)
 
 #else  // ---- OFF (default) or a gate with no backend: every hook vanishes -------
 
@@ -90,5 +108,11 @@
 #  define HYLE_TRACE_FRAME() ((void)0)
 #  define HYLE_TRACE_FRAME_NAMED(name) ((void)0)
 #  define HYLE_TRACE_MESSAGE(msg) ((void)0)
+#  define HYLE_TRACE_MESSAGE_LITERAL(msg) ((void)0)
+#  define HYLE_TRACE_ALLOC(ptr, size) ((void)0)
+#  define HYLE_TRACE_FREE(ptr) ((void)0)
+#  define HYLE_TRACE_ALLOC_NAMED(ptr, size, name) ((void)0)
+#  define HYLE_TRACE_FREE_NAMED(ptr, name) ((void)0)
+#  define HYLE_TRACE_THREAD_NAME(name) ((void)0)
 
 #endif

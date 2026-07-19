@@ -1,8 +1,12 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
 #include <format>
+#include <source_location>
+#include <utility>
 
+#include "hyle/c/obs.h"
 #include "hyle/macros.h"
 #include "hyle/visibility.h"
 
@@ -14,21 +18,8 @@
 #  define HYLE_OBS_API HYLE_IMPORT
 #endif
 
-// Structured log production (clay sys/log.h). A level-gated message fans out to a
-// registry of sinks; each sink is a {state, write-fn} vtable so a backend can be
-// added across a DLL seam (console, file, ring buffer...). This is the "produce"
-// half of obs/ -- aggregation/collection is an ops concern (hyle-scope), not here.
-//
-// Two deliberate departures from clay:
-//   1. The sink fn is NON-VARIADIC: write(state, level, msg) takes a finished
-//      string. clay's vtable had `printf(level, fmt, ...)` -- a variadic function
-//      pointer, which is an ABI hazard across a C seam (the same trap error-02
-//      removed from clay's error vtable). Formatting happens caller-side.
-//   2. Formatting is std::format, not stb vsnprintf: the log_fmt<> template below
-//      builds the string with compile-time-checked {} and hands only a const char*
-//      to the seam (conventions §8). The default sink writes to stderr via
-//      std::fprintf, never std streams (§1).
-
+// Synchronous structured-log production. Aggregation, storage and alerting stay
+// outside HYLE; this module owns the low-level record + fan-out seam.
 namespace hyle::obs {
 
 enum class LogLevel : int {
@@ -37,70 +28,117 @@ enum class LogLevel : int {
   Info = 2,
   Warn = 3,
   Error = 4,
-  Off = 5,  // set_level(Off) silences everything
+  Off = 5,  // threshold-only sentinel; never a record level
 };
 
-// A log backend. `write` receives the level and an already-formatted, NUL-
-// terminated message (no trailing newline required; sinks add their own). It is
-// called from whatever thread logged, possibly concurrently -- a sink that
-// touches shared state guards it itself.
-//
-// LIFETIME (hard contract): `state` must outlive every concurrent log call.
-// log_message snapshots the sink list under a lock and then calls write()
-// OUTSIDE the lock, so a sink removed on thread A can still be mid-call on
-// thread B. Therefore: remove a sink only after all logging threads are
-// quiescent, or never free its state before process exit. Removing + freeing a
-// sink while another thread may be logging is a use-after-free.
+using LogField = hyle_obs_log_field;
+
+// Borrowed for the synchronous duration of log_record(). Strings are UTF-8,
+// NUL-terminated and may be null only where explicitly marked optional.
+struct LogRecord {
+  LogLevel level = LogLevel::Info;
+  const char* message = "";
+  const LogField* fields = nullptr;
+  std::size_t field_count = 0;
+  const char* file = nullptr;      // optional source path
+  const char* function = nullptr;  // optional source function
+  std::uint32_t line = 0;
+  std::uint64_t timestamp_ns = 0;  // optional Unix ns; 0 = not supplied
+};
+
+// A backend may be called concurrently. It must not throw. remove_sink() is a
+// quiescent unregister: once it returns, no OTHER thread can still be inside
+// this callback. A callback may remove itself without deadlocking; naturally,
+// its state must remain alive until that callback returns. Removing a different
+// sink from a callback is rejected because it may still be pending in the same
+// dispatch snapshot; perform cross-removal outside all sink callbacks.
 struct LogSink {
   void* state;
-  void (*write)(void* state, LogLevel level, const char* msg);
+  void (*write)(void* state, const LogRecord& record) noexcept;
 };
 
-// ---- registry (compiled in log.cc) ------------------------------------------
-// Register/unregister a sink. Identity is the {state, write} pair. Adding the
-// same sink twice is a no-op; removing an absent one is a no-op. Sinks are a
-// startup-time concern; these take an internal lock and are not hot-path.
-HYLE_OBS_API void add_sink(LogSink sink) noexcept;
-HYLE_OBS_API void remove_sink(LogSink sink) noexcept;
+// Identity is {state, write}. add returns false for a null callback, duplicate,
+// retiring duplicate or a full registry. remove returns false when absent or
+// when a callback attempts to remove a different sink.
+HYLE_OBS_API bool add_sink(LogSink sink) noexcept;
+HYLE_OBS_API bool remove_sink(LogSink sink) noexcept;
+HYLE_OBS_API std::size_t sink_count() noexcept;
+HYLE_OBS_API std::size_t sink_capacity() noexcept;
 
-// The global threshold: messages with level < the set level are dropped before
-// any sink runs. Default Info. The check is a relaxed atomic load (lock-free).
+// Global threshold. Off is valid as a threshold and silences all records.
 HYLE_OBS_API void set_level(LogLevel level) noexcept;
 HYLE_OBS_API LogLevel level() noexcept;
-
-// True if a message at `level` would be emitted (lets callers skip building a
-// message that would be dropped).
 HYLE_OBS_API bool should_log(LogLevel level) noexcept;
 
-// Fan out an already-formatted message to every sink (if level passes the gate).
-HYLE_OBS_API void log_message(LogLevel level, const char* msg) noexcept;
+// Fan out synchronously. Returns true when at least one sink received the
+// record. Contract violations (null message/field strings) fail fast.
+HYLE_OBS_API bool log_record(const LogRecord& record) noexcept;
+HYLE_OBS_API bool log_message(LogLevel level, const char* message) noexcept;
 
-// ---- default console sink ---------------------------------------------------
-// The stderr sink (ANSI color by level; also OutputDebugString on Windows). It
-// is installed automatically on first use; call remove_sink(default_sink()) to
-// silence it. Returned by value -- the same {state,write} compares equal.
+// Default stderr sink (colored only when stderr is a TTY). It is installed on
+// first registry use and can be removed/re-added explicitly. Returned by value;
+// identity remains stable.
 HYLE_OBS_API LogSink default_sink() noexcept;
+HYLE_OBS_API bool default_sink_enabled() noexcept;
+// Idempotently reach the requested state. Returns false only when the registry
+// cannot be changed (full, retiring duplicate, or cross-removal from a callback).
+HYLE_OBS_API bool set_default_sink_enabled(bool enabled) noexcept;
 
-// ---- caller-side formatting (header template, no DLL hop for the format) -----
-// Build the message with std::format into a stack buffer, then hand the finished
-// C string to log_message. Formats into a fixed 1 KiB stack buffer (no allocation
-// on the log path); a longer message is silently truncated at the buffer edge.
+// Caller-side format convenience. The fixed 1 KiB buffer avoids allocation;
+// oversized messages are truncated. The source location is attached as
+// structured metadata and macros below capture the caller, not this template.
+namespace detail {
+
 template <class... Args>
-void log_fmt(LogLevel level, std::format_string<Args...> fmt, Args&&... args) {
-  if (!should_log(level)) return;  // skip formatting entirely when gated out
-  char buf[1024];
-  auto r = std::format_to_n(buf, sizeof(buf) - 1, fmt,
-                            std::forward<Args>(args)...);
-  *r.out = '\0';
-  log_message(level, buf);
+void log_fmt_unchecked_at(LogLevel log_level, std::source_location source,
+                          std::format_string<Args...> fmt, Args&&... args) {
+  char buffer[1024];
+  auto result = std::format_to_n(buffer, sizeof(buffer) - 1, fmt,
+                                 std::forward<Args>(args)...);
+  *result.out = '\0';
+  LogRecord record{
+      .level = log_level,
+      .message = buffer,
+      .file = source.file_name(),
+      .function = source.function_name(),
+      .line = source.line(),
+  };
+  (void)log_record(record);
+}
+
+}  // namespace detail
+
+template <class... Args>
+void log_fmt_at(LogLevel log_level, std::source_location source,
+                std::format_string<Args...> fmt, Args&&... args) {
+  if (!should_log(log_level)) return;
+  detail::log_fmt_unchecked_at(log_level, source, fmt,
+                               std::forward<Args>(args)...);
+}
+
+template <class... Args>
+void log_fmt(LogLevel log_level, std::format_string<Args...> fmt,
+             Args&&... args) {
+  log_fmt_at(log_level, std::source_location{}, fmt,
+             std::forward<Args>(args)...);
 }
 
 }  // namespace hyle::obs
 
-// Convenience macros. Args are evaluated only if the level passes (the wrapper
-// short-circuits via should_log). Use like: HYLE_LOG_INFO("x={}", x).
-#define HYLE_LOG_TRACE(...) ::hyle::obs::log_fmt(::hyle::obs::LogLevel::Trace, __VA_ARGS__)
-#define HYLE_LOG_DEBUG(...) ::hyle::obs::log_fmt(::hyle::obs::LogLevel::Debug, __VA_ARGS__)
-#define HYLE_LOG_INFO(...)  ::hyle::obs::log_fmt(::hyle::obs::LogLevel::Info, __VA_ARGS__)
-#define HYLE_LOG_WARN(...)  ::hyle::obs::log_fmt(::hyle::obs::LogLevel::Warn, __VA_ARGS__)
-#define HYLE_LOG_ERROR(...) ::hyle::obs::log_fmt(::hyle::obs::LogLevel::Error, __VA_ARGS__)
+#define HYLE_LOG_AT_(level, ...)                                               \
+  do {                                                                         \
+    if (::hyle::obs::should_log(level)) {                                       \
+      ::hyle::obs::detail::log_fmt_unchecked_at(                               \
+          level, std::source_location::current(), __VA_ARGS__);                \
+    }                                                                          \
+  } while (false)
+#define HYLE_LOG_TRACE(...) \
+  HYLE_LOG_AT_(::hyle::obs::LogLevel::Trace, __VA_ARGS__)
+#define HYLE_LOG_DEBUG(...) \
+  HYLE_LOG_AT_(::hyle::obs::LogLevel::Debug, __VA_ARGS__)
+#define HYLE_LOG_INFO(...) \
+  HYLE_LOG_AT_(::hyle::obs::LogLevel::Info, __VA_ARGS__)
+#define HYLE_LOG_WARN(...) \
+  HYLE_LOG_AT_(::hyle::obs::LogLevel::Warn, __VA_ARGS__)
+#define HYLE_LOG_ERROR(...) \
+  HYLE_LOG_AT_(::hyle::obs::LogLevel::Error, __VA_ARGS__)

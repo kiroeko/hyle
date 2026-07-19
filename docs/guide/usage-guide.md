@@ -16,7 +16,7 @@
 | `container/` | `hyle/container/{swiss_table,carray,small_vector,string_ref,...}.h` | ✅ | SwissTable、CArray、SmallVector、lock-free 队列、string_ref |
 | `time/` | `hyle/time/clock.h` | ✅ | 单调钟/墙钟/sleep（ns） |
 | `util/` | `hyle/util/{ref_counted,registry,scope_guard,...}.h` | ✅ | `Ref<T>`、Registry、`DEFER`、type_name |
-| `obs/` | `hyle/obs/log.h` | ✅ | level 门控 + sink 注册表日志 |
+| `obs/` | `hyle/obs/log.h` / `trace.h` | ✅ | 结构化同步日志 + quiescent sink；默认零成本、可选 Tracy trace |
 | `sched/` | `hyle/sched/{scheduler,fiber,coro}.h` | 🔶 | fcontext 纤程 + work-stealing 调度 + fiber-aware 同步 + fiber sleep + 协程胶水(`Task<T>`/co_await 让出 fiber);取消/优雅关闭 待 |
 | `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测（含纯 AVX 档 kAvx）+ 可移植 `vec<T,N>`；scalar/SSE4.2/AVX2/AVX512/NEON 定宽后端与 SVE/RVV scalable 后端均已执行对拍，AVX512 由 Intel SDE 验证正确性和 kAvx512 派发，性能结论仍只接受真机 benchmark |
 | `io/` | `hyle/io/{proactor,net,io_context,tcp,udp}.h` | ✅ | proactor 三后端 + read/write/socket/datagram 真 op(**无 stub**);co_await socket 层 + **shard-per-core**(每 worker 一 ring + fiber 亲和 spawn_on 绑核,share-nothing)+ **TcpListener/TcpStream + UdpSocket** RAII 封装;真 loopback TCP/UDP echo 三后端真测+TSan;echo+pipelined benchmark;park 合并(空闲真睡眠、eventfd 唤醒)。待 file/shmem(io-05)|
@@ -350,10 +350,38 @@ sched.shutdown();   // 排空（等所有 fiber 完成）再 join worker
 ⚠️ 见 `usage-contract.md`：fiber 体勿跨 `yield()` 持有 thread_local 派生值（work-stealing 会迁移线程）。
 
 ### 3.5 obs —— 日志
+
 ```cpp
 #include "hyle/obs/log.h"
 HYLE_LOG_INFO("loaded {} items", count);   // caller-side std::format，非流
+
+hyle::obs::LogField fields[] = {{"request_id", "a7f2"}};
+hyle::obs::LogRecord record{
+    .level = hyle::obs::LogLevel::Warn,
+    .message = "slow request",
+    .fields = fields,
+    .field_count = 1,
+};
+hyle::obs::log_record(record);             // 同步结构化 fan-out
 ```
+
+`HYLE_LOG_*` 自动附带调用点 file/function/line；门控失败时参数不格式化。sink
+callback 可能并发执行且不得抛异常。`remove_sink` 是 quiescent unregister：
+返回后其他线程已不再使用 sink state，因此可以安全释放；callback 自摘除也不会
+死锁，但 state 仍须活到当前 callback 返回。
+
+trace 是另一条编译期面：
+
+```cpp
+#include "hyle/obs/trace.h"
+HYLE_TRACE_ZONE_NAMED("parse");
+HYLE_TRACE_COUNTER("requests", total);
+HYLE_TRACE_ALLOC_NAMED(ptr, bytes, "arena");
+```
+
+默认 `HYLE_TRACE=OFF` 时宏参数不求值、生成零指令；`-DHYLE_TRACE=ON
+-DHYLE_TRACY_DIR=...` 接 Tracy。纯 C/FFI 使用稳定 runtime trace 函数及
+opaque sink，见 [`c-obs.md`](./c-obs.md)，不要直接绑定 C++ `LogSink` 或 Tracy 类型。
 
 ### 3.6 time —— 时钟、deadline 与定时器
 

@@ -1,4 +1,3 @@
-# obs-01: structured log production (clay sys/log). Level-gated fan-out to a sink
-# registry; default stderr sink. Instrumentation hooks (counters/trace points)
-# are a later obs step.
-hyle_add_module(obs SOURCES log.cc)
+# obs-01/02 closure: structured logging + stable C ABI. The trace macro seam is
+# header-only and its optional Tracy backend is wired once by HyleTrace.cmake.
+hyle_add_module(obs SOURCES log.cc c_obs.cc)

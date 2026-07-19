@@ -11,10 +11,9 @@
 # is a cache path -- absent, we hard-fail with a clear message rather than compile
 # half a profiler.
 #
-# The gate defines are GLOBAL (add_compile_definitions), exactly like the -mssse3
-# baseline: trace.h is included across many modules and inlined (the RAII zone
-# object crosses TU boundaries), so every TU MUST agree on whether the hooks are
-# real or empty -- a per-module define would be an ODR hazard.
+# The gate defines propagate through the PUBLIC hyle_trace INTERFACE target:
+# trace.h is included across modules and in consumers, so every linked TU sees
+# one consistent on/off/backend choice without polluting unrelated targets.
 
 option(HYLE_TRACE "enable compile-time trace/instrumentation hooks (obs-02)" OFF)
 set(HYLE_TRACE_BACKEND "tracy" CACHE STRING "trace backend: tracy")
@@ -39,12 +38,21 @@ if(HYLE_TRACE)
         "Refusing to build a half-wired profiler.")
     endif()
     # The tracy client: ONE TU (TracyClient.cpp) compiled with TRACY_ENABLE. tracy
-    # is a global singleton and its docs require the client TU be built exactly once
-    # (in the main module on multi-DLL projects); we build it as one static lib and
-    # let modules link it. Suppress warnings on third-party code (SYSTEM include).
-    add_library(hyle_tracy_client STATIC "${HYLE_TRACY_DIR}/public/TracyClient.cpp")
+    # is a global singleton and its docs require the client TU be built exactly
+    # once. HYLE is a multi-DLL build by default, so this target MUST follow
+    # BUILD_SHARED_LIBS: a STATIC archive linked into every hyle_*.dll creates one
+    # profiler singleton per module. Shared HYLE gets one shared Tracy client;
+    # static HYLE gets one archive resolved once by the final executable.
+    add_library(hyle_tracy_client "${HYLE_TRACY_DIR}/public/TracyClient.cpp")
     target_include_directories(hyle_tracy_client SYSTEM PUBLIC "${HYLE_TRACY_DIR}/public")
-    target_compile_definitions(hyle_tracy_client PUBLIC TRACY_ENABLE TRACY_FIBERS)
+    target_compile_definitions(hyle_tracy_client
+      PRIVATE TRACY_ENABLE TRACY_FIBERS
+      INTERFACE TRACY_ENABLE TRACY_FIBERS)
+    if(BUILD_SHARED_LIBS)
+      target_compile_definitions(hyle_tracy_client
+        PRIVATE TRACY_EXPORTS
+        INTERFACE TRACY_IMPORTS)
+    endif()
     # position-independent so it can link into HYLE's shared libs.
     set_target_properties(hyle_tracy_client PROPERTIES POSITION_INDEPENDENT_CODE ON)
 

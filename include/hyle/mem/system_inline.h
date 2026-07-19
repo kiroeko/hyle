@@ -5,6 +5,7 @@
 #include <type_traits>
 
 #include "hyle/macros.h"
+#include "hyle/obs/trace.h"
 
 // system_inline.h -- the COMPILE-TIME-bound default allocator. The whole point: a caller
 // that uses SystemAllocator (the container default) gets allocate() INLINED to a direct
@@ -45,24 +46,43 @@ struct SystemAllocator {
   static void* allocate(std::size_t size,
                         std::size_t alignment = kSystemDefaultAlignment) noexcept {
     if (size == 0) return nullptr;
-    if (alignment <= kSystemDefaultAlignment) return mi_malloc(size);
-    return mi_malloc_aligned(size, alignment);
+    void* pointer = alignment <= kSystemDefaultAlignment
+                        ? mi_malloc(size)
+                        : mi_malloc_aligned(size, alignment);
+    if (pointer != nullptr) {
+      HYLE_TRACE_ALLOC_NAMED(pointer, size, "hyle.system");
+    }
+    return pointer;
   }
   static void deallocate(void* ptr, std::size_t /*size*/ = 0,
                          std::size_t /*alignment*/ = kSystemDefaultAlignment) noexcept {
-    if (ptr != nullptr) mi_free(ptr);
+    if (ptr != nullptr) {
+      HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
+      mi_free(ptr);
+    }
   }
   static void* reallocate(void* ptr, std::size_t /*old_size*/, std::size_t new_size,
                           std::size_t alignment = kSystemDefaultAlignment) noexcept {
     if (new_size == 0) {
-      if (ptr != nullptr) mi_free(ptr);
+      if (ptr != nullptr) {
+        HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
+        mi_free(ptr);
+      }
       return nullptr;
     }
+    void* result;
     if (alignment <= kSystemDefaultAlignment) {
-      return ptr == nullptr ? mi_malloc(new_size) : mi_realloc(ptr, new_size);
+      result = ptr == nullptr ? mi_malloc(new_size)
+                              : mi_realloc(ptr, new_size);
+    } else {
+      result = ptr == nullptr ? mi_malloc_aligned(new_size, alignment)
+                              : mi_realloc_aligned(ptr, new_size, alignment);
     }
-    return ptr == nullptr ? mi_malloc_aligned(new_size, alignment)
-                          : mi_realloc_aligned(ptr, new_size, alignment);
+    if (result != nullptr) {
+      if (ptr != nullptr) HYLE_TRACE_FREE_NAMED(ptr, "hyle.system");
+      HYLE_TRACE_ALLOC_NAMED(result, new_size, "hyle.system");
+    }
+    return result;
   }
 
   // ---- typed convenience layer (mirrors mem::Allocator's, so containers that call
