@@ -4,12 +4,12 @@
 #include <numeric>
 #include <vector>
 
-#include "hyle/container/intrusive_list.h"
+#include "hyle/core/intrusive_list.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/mem/allocator.h"
 
-using hyle::container::IntrusiveList;
-using hyle::container::IntrusiveListHook;
+using hyle::core::IntrusiveList;
+using hyle::core::IntrusiveListHook;
 using hyle::container::SmallVector;
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
@@ -121,7 +121,66 @@ TEST(IntrusiveList, NoAllocationRecoversNode) {
   NodeList list;
   Node n(42);
   list.push_back(&n);
+  EXPECT_TRUE(n.hook.linked());  // singleton membership must be observable
   EXPECT_EQ(list.front(), &n);
   EXPECT_EQ(list.front()->v, 42);
   list.remove(&n);
+  EXPECT_FALSE(n.hook.linked());
+}
+
+TEST(IntrusiveList, MoveFrontTransfersWithoutUnlinking) {
+  NodeList src;
+  NodeList dst;
+  Node a(1), b(2), c(3);
+  src.push_back(&a);
+  src.push_back(&b);
+  dst.push_back(&c);
+
+  EXPECT_EQ(src.move_front_to(dst), &a);
+  EXPECT_EQ(src.front(), &b);
+  EXPECT_EQ(dst.pop_front(), &c);
+  EXPECT_EQ(dst.pop_front(), &a);
+  EXPECT_FALSE(a.hook.linked());
+  EXPECT_EQ(src.pop_front(), &b);
+}
+
+TEST(IntrusiveList, MovePrefixSplicesOnlyMatchingNodes) {
+  NodeList src;
+  NodeList dst;
+  Node a(1), b(2), c(3), d(4);
+  src.push_back(&a);
+  src.push_back(&b);
+  src.push_back(&c);
+  dst.push_back(&d);
+  int visited = 0;
+
+  EXPECT_EQ(src.move_prefix_to(
+                dst, [](const Node* n) { return n->v <= 2; },
+                [&visited](Node*) { ++visited; }),
+            2u);
+  EXPECT_EQ(visited, 2);
+  EXPECT_EQ(src.front(), &c);
+  EXPECT_EQ(dst.pop_front(), &d);
+  EXPECT_EQ(dst.pop_front(), &a);
+  EXPECT_EQ(dst.pop_front(), &b);
+  EXPECT_EQ(src.pop_front(), &c);
+}
+
+TEST(IntrusiveList, RejectsDoubleLinkAndSelfTransfer) {
+  EXPECT_DEATH(
+      {
+        NodeList list;
+        Node a(1);
+        list.push_back(&a);
+        list.push_back(&a);
+      },
+      "");
+  EXPECT_DEATH(
+      {
+        NodeList list;
+        Node a(1);
+        list.push_back(&a);
+        (void)list.move_front_to(list);
+      },
+      "");
 }

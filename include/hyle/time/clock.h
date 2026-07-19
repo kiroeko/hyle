@@ -1,5 +1,6 @@
 #pragma once
 
+#include <chrono>
 #include <cstdint>
 
 #include "hyle/macros.h"
@@ -24,13 +25,16 @@
 
 namespace hyle::time {
 
-// Steady monotonic counter in ns from an unspecified zero. Non-decreasing across
-// calls on the same machine. Linux/mac: clock_gettime(CLOCK_MONOTONIC); Windows:
-// QueryPerformanceCounter scaled by the (fixed) frequency.
-//
-// This is the DEFAULT clock: correct everywhere, safe across sleep/suspend, and
-// the only one valid for deadlines/timeouts (sched keys its timers on it). ~12ns.
-HYLE_TIME_API std::uint64_t monotonic_ns() noexcept;
+// Steady monotonic counter in ns from an unspecified zero. The native C++ path
+// is header-inline over std::chrono, avoiding an extra hyle_time shared-library
+// hop before the standard library reaches CLOCK_MONOTONIC/QPC. The stable C ABI
+// remains an exported wrapper. This is the only clock for deadlines/timeouts.
+HYLE_FORCE_INLINE std::uint64_t monotonic_ns() noexcept {
+  const auto value = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::steady_clock::now().time_since_epoch())
+                         .count();
+  return value > 0 ? static_cast<std::uint64_t>(value) : 0;
+}
 
 // Fast monotonic counter in ns, read straight from the CPU timestamp counter
 // (rdtsc) instead of going through the OS primitive -- about 2x faster (~6ns vs
@@ -69,14 +73,21 @@ HYLE_TIME_API std::uint64_t fast_monotonic_ns() noexcept;
 HYLE_TIME_API bool fast_monotonic_available() noexcept;
 
 // Wall-clock ns since 1970-01-01T00:00:00Z (UTC), not counting leap seconds.
-// May jump if the system clock is adjusted -- never use for elapsed/deadlines.
-HYLE_TIME_API std::uint64_t realtime_ns() noexcept;
+// Header-inline for the same one-hop reason as monotonic_ns(). May jump if the
+// system clock is adjusted -- never use for elapsed/deadlines.
+HYLE_FORCE_INLINE std::uint64_t realtime_ns() noexcept {
+  const auto value = std::chrono::duration_cast<std::chrono::nanoseconds>(
+                         std::chrono::system_clock::now().time_since_epoch())
+                         .count();
+  return value > 0 ? static_cast<std::uint64_t>(value) : 0;
+}
 
 // Fast wall-clock ns -- the realtime counterpart of fast_monotonic_ns(). Reads the
 // OS's COARSE time source (Windows GetSystemTimeAsFileTime = KUSER_SHARED_DATA
 // read; Linux CLOCK_REALTIME_COARSE = vDSO), skipping the high-precision path
-// realtime_ns() uses. Measured ~7.6x faster on Windows (1.8 vs 13.5 ns) and ~4.2x
-// on Linux (3.1 vs 13.0 ns).
+// realtime_ns() uses. It is materially cheaper on systems where that coarse
+// source exists; exact ratios are platform/build dependent and live in the
+// benchmark ledger rather than the API contract.
 //
 // TRADEOFF (why it is NOT the default, and unconditionally "available" unlike the
 // TSC path): the coarse clock's RESOLUTION is the OS timer tick, ~1-15 ms (measured
@@ -93,11 +104,36 @@ HYLE_TIME_API std::uint64_t fast_realtime_ns() noexcept;
 // Sleep at least `ns` (the OS may round up / wake late). 0 yields.
 HYLE_TIME_API void sleep_for_ns(std::uint64_t ns) noexcept;
 
+// Sleep until an absolute monotonic deadline. A deadline at/in the past returns
+// immediately. This is the overflow-safe primitive for callers that already
+// carry an absolute deadline.
+HYLE_TIME_API void sleep_until_ns(std::uint64_t deadline_ns) noexcept;
+
+// Saturating deadline arithmetic shared by sched/io and FFI consumers. Keeping
+// this here avoids every timeout caller open-coding `monotonic_ns() + timeout`
+// and accidentally wrapping a very large duration into the past.
+constexpr std::uint64_t saturating_add_ns(std::uint64_t base,
+                                          std::uint64_t delta) noexcept {
+  return delta > UINT64_MAX - base ? UINT64_MAX : base + delta;
+}
+
+inline std::uint64_t deadline_after_ns(std::uint64_t timeout_ns) noexcept {
+  return saturating_add_ns(monotonic_ns(), timeout_ns);
+}
+
+inline std::uint64_t remaining_ns(std::uint64_t deadline_ns) noexcept {
+  const std::uint64_t now = monotonic_ns();
+  return deadline_ns > now ? deadline_ns - now : 0;
+}
+
 inline void sleep_for_us(std::uint64_t us) noexcept {
-  sleep_for_ns(us * 1'000ull);
+  sleep_for_ns(
+      us > UINT64_MAX / 1'000ull ? UINT64_MAX : us * 1'000ull);
 }
 inline void sleep_for_ms(std::uint64_t ms) noexcept {
-  sleep_for_ns(ms * 1'000'000ull);
+  sleep_for_ns(ms > UINT64_MAX / 1'000'000ull
+                   ? UINT64_MAX
+                   : ms * 1'000'000ull);
 }
 
 // A captured monotonic instant; the ergonomic way to measure elapsed time
@@ -106,7 +142,10 @@ struct Instant {
   std::uint64_t ns = 0;
 
   static Instant now() noexcept { return Instant{monotonic_ns()}; }
-  std::uint64_t elapsed_ns() const noexcept { return monotonic_ns() - ns; }
+  std::uint64_t elapsed_ns() const noexcept {
+    const std::uint64_t now_ns = monotonic_ns();
+    return now_ns > ns ? now_ns - ns : 0;
+  }
   // ns from this instant to `later` (0 if later is actually earlier).
   std::uint64_t until_ns(Instant later) const noexcept {
     return later.ns > ns ? later.ns - ns : 0;

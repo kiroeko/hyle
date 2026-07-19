@@ -178,15 +178,12 @@ void ConditionVariable::notify_all() noexcept {
 
 std::uint64_t ConditionVariable::deadline_from_now_(
     std::uint64_t timeout_ns) noexcept {
-  std::uint64_t now = time::monotonic_ns();
-  std::uint64_t d = now + timeout_ns;
-  return d < now ? UINT64_MAX : d;  // saturate on overflow
+  return time::deadline_after_ns(timeout_ns);
 }
 
 std::uint64_t ConditionVariable::remaining_ns_(
     std::uint64_t deadline_ns) noexcept {
-  std::uint64_t now = time::monotonic_ns();
-  return deadline_ns > now ? deadline_ns - now : 0;
+  return time::remaining_ns(deadline_ns);
 }
 
 ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(

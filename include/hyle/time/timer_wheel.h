@@ -4,7 +4,7 @@
 #include <cstddef>
 #include <cstdint>
 
-#include "hyle/container/intrusive_list.h"
+#include "hyle/time/clock.h"
 #include "hyle/time/timer_source.h"
 
 // Hierarchical timing wheel: the data structure behind "millions of agents each
@@ -14,8 +14,9 @@
 //
 // SOTA lineage (ported, not invented -- the timing-wheel family is classic):
 //   - tokio runtime/time/wheel: 6 levels x 64 slots, 1ms base, computes the
-//     exact next wakeup instead of ticking. This is the PRIMARY port -- the
+//     exact next wakeup instead of ticking. This is the PRIMARY lineage -- the
 //     level_for/slot_for bit math and the `occupied` bitmap scan are tokio's.
+//     HYLE extends the hierarchy to 8 levels to cover every uint64-ns deadline.
 //   - folly HHWheelTimer: 4 levels x 256 slots, also deadline-driven ("does
 //     *not* tick constantly"). We took the "no busy tick" idea; chose 64-slot
 //     levels (tokio) over 256 (folly) so `occupied` is a single u64 per level
@@ -23,12 +24,12 @@
 //   - seastar timer_set: one bucket per (timestamp ^ last) leading-bit class,
 //     defers sorting to expiry. Confirmed the "sort at expiry, not insert"
 //     principle; its log(range) buckets are a coarser wheel -- we keep the
-//     fixed 6x64 hierarchy for O(1) slotting.
+//     fixed 8x64 hierarchy for O(1) slotting.
 //
-// vs a min-heap (Go/libev): heap add/cancel are O(log n) and lazy-cancel bloats
-// the heap under add-then-cancel churn -- exactly our workload's worst case.
-// The wheel gives O(1) add (amortised), O(1) cancel (unlink an intrusive node,
-// NEVER a tombstone), O(fired) expiry.
+// vs an indexed min-heap (libevent/libuv): heap add/cancel are O(log n), with
+// eager keyed erase and no need for tombstones. The wheel gives O(1) add
+// (amortised), O(1) cancel (unlink an intrusive node), O(fired) expiry. Benchmarks
+// use that real eager-erase rival shape rather than weakening it with lazy cancel.
 //
 // NOT a scheduler and NOT thread-safe by itself: one wheel is owned by one
 // worker (per-runqueue). Cross-core arm/cancel is delivered as a command over
@@ -45,16 +46,17 @@ class TimerWheel {
  public:
   using EntryList = TimerList;  // shared FIFO list type (timer_source.h)
 
-  // 6 levels x 64 slots, 1ms base. 6 bits index a level's 64 slots; 6 levels
-  // cover 2^(6*6) ticks ~= 2.18 years at 1ms granularity -- past any real fiber
-  // timeout. These are the tokio parameters.
+  // Tokio uses 6 x 64 slots. HYLE extends the same hierarchy to 8 levels so
+  // every representable uint64 nanosecond deadline fits; silently firing a
+  // larger caller deadline at the old ~2.18-year horizon violated TimerSource's
+  // "never early" contract. The extra two sentinel grids cost 2 KiB per worker
+  // and add at most two cold-path bitmap probes.
   static constexpr std::uint64_t kBitsPerLevel = 6;
   static constexpr std::uint64_t kSlotsPerLevel = 1ull << kBitsPerLevel;  // 64
   static constexpr std::uint64_t kSlotMask = kSlotsPerLevel - 1;          // 63
-  static constexpr std::uint64_t kNumLevels = 6;
+  static constexpr std::uint64_t kNumLevels = 8;
   static constexpr std::uint64_t kTickNs = 1'000'000;  // 1ms per L0 slot
-  // The largest schedulable horizon in ticks. Anything past this is fudged onto
-  // the top level's pseudo-ring (see next_expiration wrap handling).
+  // 2^48 milliseconds exceeds the complete uint64 nanosecond domain.
   static constexpr std::uint64_t kMaxDurationTicks =
       1ull << (kBitsPerLevel * kNumLevels);
 
@@ -62,6 +64,7 @@ class TimerWheel {
   // deadlines are measured from it; the wheel never reads a clock itself so it
   // stays a pure, testable data structure (the caller drives `now`).
   explicit TimerWheel(std::uint64_t start_ns) noexcept : start_ns_(start_ns) {}
+  ~TimerWheel() { HYLE_FATAL_ASSERT(empty()); }
   TimerWheel(const TimerWheel&) = delete;
   TimerWheel& operator=(const TimerWheel&) = delete;
 
@@ -70,47 +73,56 @@ class TimerWheel {
   // scheduleTimeout. A deadline at/behind the wheel's current time is pinned to
   // the next tick so it fires on the following advance() (never dropped).
   void schedule(TimerEntry* e, std::uint64_t deadline_ns) noexcept {
-    if (e->scheduled) cancel(e);
+    HYLE_FATAL_ASSERT(e != nullptr);
+    if (e->scheduled()) {
+      HYLE_FATAL_ASSERT(e->owned_by(this));
+      cancel(e);
+    }
 
     std::uint64_t rel_ns =
         deadline_ns > start_ns_ ? deadline_ns - start_ns_ : 0;
     // Round the deadline UP to a whole tick so we never fire EARLY (advance()
     // rounds `now` down; the pair guarantees "at least the requested wait",
     // late by <=1ms -- the documented wheel contract). Guard the round-up add
-    // against u64 overflow for an absurd deadline within ~1ms of 2^64 (a caller
-    // value, i.e. a system boundary): saturate to the horizon instead of
-    // wrapping small and mis-slotting early.
-    std::uint64_t tick;
-    if (rel_ns > UINT64_MAX - (kTickNs - 1)) {
-      tick = elapsed_ + kMaxDurationTicks;
-    } else {
-      tick = (rel_ns + kTickNs - 1) / kTickNs;
-    }
+    // without `(rel + tick-1)` so a deadline near UINT64_MAX cannot wrap.
+    std::uint64_t tick =
+        rel_ns / kTickNs + (rel_ns % kTickNs != 0 ? 1ull : 0ull);
     if (tick <= elapsed_) {
       tick = elapsed_ + 1;  // due now/past -> nearest future slot
     }
-    if (tick > elapsed_ + kMaxDurationTicks) {
-      tick = elapsed_ + kMaxDurationTicks;  // clamp to the horizon
-    }
+    HYLE_FATAL_ASSERT(tick - elapsed_ < kMaxDurationTicks);
 
     e->deadline_ns = deadline_ns;   // canonical (shared field)
     e->source_state = tick;         // wheel's armed-tick cache (for O(1) cancel)
     add_entry(level_for(elapsed_, tick), e);
-    e->scheduled = true;
+    e->set_owner(this);
+  }
+
+  // Convenience for normal timeout use. `now_ns` is injectable for deterministic
+  // tests; callers normally omit it. Addition saturates instead of wrapping.
+  void schedule_after(
+      TimerEntry* e, std::uint64_t timeout_ns,
+      std::uint64_t now_ns = monotonic_ns()) noexcept {
+    schedule(e, saturating_add_ns(now_ns, timeout_ns));
   }
 
   // O(1) cancel: recover (level, slot) from the stored deadline and unlink the
   // node. No tombstone, no scan -- this is the whole point of the wheel for the
   // arm-then-cancel-heavy workload. No-op if `e` is not scheduled.
   void cancel(TimerEntry* e) noexcept {
-    if (!e->scheduled) return;
+    HYLE_FATAL_ASSERT(e != nullptr);
+    if (!e->scheduled()) {
+      HYLE_FATAL_ASSERT(!e->hook.linked());
+      return;
+    }
+    HYLE_FATAL_ASSERT(e->owned_by(this));
     std::uint64_t level = level_for(elapsed_, e->source_state);
     std::uint64_t slot = slot_for(e->source_state, level);
     slots_[level][slot].remove(e);
     if (slots_[level][slot].empty()) {
       occupied_[level] &= ~slot_bit(slot);
     }
-    e->scheduled = false;
+    e->set_owner(nullptr);
     --count_;
   }
 
@@ -121,6 +133,12 @@ class TimerWheel {
   void advance(std::uint64_t now_ns, EntryList& out) noexcept {
     std::uint64_t now_tick =
         now_ns > start_ns_ ? (now_ns - start_ns_) / kTickNs : 0;
+    // A rounded-up deadline in the final partial uint64 tick must still be
+    // reachable when the caller advances to the largest representable instant.
+    if (now_ns == UINT64_MAX &&
+        (UINT64_MAX - start_ns_) % kTickNs != 0) {
+      ++now_tick;
+    }
 
     // Process each expiring slot in deadline order until the earliest pending
     // slot is still in the future, then jump elapsed_ to now.
@@ -143,6 +161,9 @@ class TimerWheel {
   std::uint64_t next_deadline_ns() const noexcept {
     Expiration exp;
     if (!next_expiration(exp)) return UINT64_MAX;
+    if (exp.deadline > (UINT64_MAX - start_ns_) / kTickNs) {
+      return UINT64_MAX;
+    }
     return start_ns_ + exp.deadline * kTickNs;
   }
 
@@ -170,7 +191,8 @@ class TimerWheel {
   // Which level an entry belongs in, given the current `elapsed`: the position
   // of the highest bit in which `elapsed` and `when` differ, divided by the
   // bits-per-level. (tokio level_for.) The `| kSlotMask` floors the search at
-  // level 0; the clamp forces anything past the horizon onto the top level.
+  // level 0. kMaxDurationTicks exceeds the complete uint64-ns deadline domain,
+  // but the clamp keeps the helper total for synthetic tick inputs.
   static std::uint64_t level_for(std::uint64_t elapsed,
                                  std::uint64_t when) noexcept {
     std::uint64_t masked = (elapsed ^ when) | kSlotMask;
@@ -216,8 +238,7 @@ class TimerWheel {
   }
 
   // The absolute tick a (level, slot) represents relative to elapsed_. If it
-  // computes to <= elapsed_ we are on the top level's pseudo-ring (an entry
-  // scheduled > MAX_DURATION out wrapped around), so it is really one full level
+  // computes to <= elapsed_ the level's ring wrapped, so it is one full level
   // range in the future.
   std::uint64_t slot_deadline(std::uint64_t level,
                               std::uint64_t slot) const noexcept {
@@ -247,7 +268,7 @@ class TimerWheel {
       if (exp.level == 0 || e->source_state <= exp.deadline) {
         // Reached 1ms granularity (or already due): fire. Hand ownership back;
         // the caller may now relink `hook` onto its own run-queue list.
-        e->scheduled = false;
+        e->set_owner(nullptr);
         --count_;
         out.push_back(e);
       } else {

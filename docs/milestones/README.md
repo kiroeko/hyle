@@ -83,8 +83,8 @@
 | [mem-06c](./mem-06c-numa.md) | P2 | mem | NUMA：query + preferred bind + HugeRegion node + mi use_numa | platform-02b,mem-02 | 0.4-0.8k | numa.h/cc | ✅ 完成(2026-07-17)。soft preferred；单 node 平凡正确；无 libnuma |
 | mem-07 | P2 | mem | GrowablePool(growable/单线程池) + PmrResource(std::pmr 适配) | mem-03 | 1-2k | 145 (+116 测试) | ✅ 完成(吸纳 clay memory_pool/stl_allocator/generic_allocator;修 clay move-assign bug;generic_allocator⛔=Allocator 已是它) |
 | [mem-08](./mem-08-fiber-stack.md) | P2 | mem | fiber_stack：guard + 分级 + FiberStackPool + Fiber 接线 | platform-02b,sched-01 | 0.5-1k | ~518 code(头+接线+测) | ✅ 完成(2026-07-17)。`FiberStack`=`reserve_guarded`;Small/Default/Large;池回收;`Fiber` 默认 guarded。Win+WSL mem 56/56、sched 108/108 |
-| time-01 | P2 | time | 单调钟(CLOCK_MONOTONIC/QPC) | platform-01 | 1k | 103 (+62 测试) | ✅ 完成(加 clay 缺的单调钟;ns精度;Instant) |
-| [time-02](./time-02-timer-wheel.md) | P2 | time | 分层时间轮 | time-01 | 1-1.5k | 167 轮 + 90 platform timeout (+213 测试 +115 bench) | ✅ 完成(6层×64槽 tokio 移植:occupied 位图不空转 + O(1) 摘链 cancel 无墓碑 + cascade 降级;platform 加 park_timeout 执行底座;clay 无时间轮=net-new;双平台 15+9 测试绿 + TSan 净;churn 负载对 min-heap 双平台赢 2.1x/3.3x。**解锁 sched-04b**) |
+| [time-01](./time-01-clock.md) | P2 | time | 单调/墙钟、deadline、sleep | core | — | 见里程碑 | ✅ **2026-07-19 收口**：标准钟 header-inline；TSC/coarse opt-in；饱和 deadline 与绝对 sleep；C ABI；三平台 16 clock 测试 + ASan/UBSan |
+| [time-02](./time-02-timer-wheel.md) | P2 | time | TimerWheel + CommonTimeoutQueue | time-01,core | — | 见里程碑 | ✅ **2026-07-19 收口**：8×64 覆盖完整 uint64-ns；精确 owner/lifecycle；indexed eager heap 与直接 TAILQ 真实基线；wheel 三平台三负载全赢。Common 在 M4 expire 仅 0.57x，诚实保留；C ABI + 33 timer 测试。**解锁 sched-04b/io-06** |
 | container-01 | P3 | container | vendor 有界 ring(Vyukov/rigtorp,骨架用) | mem-01 | 1-2k | 220 | ✅ 完成 |
 | container-02 | P3 | container | XXH3 接入(默认 hasher) | 00 | 1k | 133 | ✅ 完成(XXH3 封 .cc 不泄;小键内联) |
 | container-03 | P3 | container | carray header-before-data + RAII 壳 | mem-02 | 1-2k | 224 | ✅ 完成(type-erased核;修over-align) |

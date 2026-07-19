@@ -129,7 +129,12 @@ int main() {
     nb::Bench b;
     b.title("monotonic clock read").relative(true).batch(1).minEpochIterations(500000);
     b.run("std::chrono::steady_clock::now", [&] {
-      auto t = std::chrono::steady_clock::now().time_since_epoch().count();
+      const auto value =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+              std::chrono::steady_clock::now().time_since_epoch())
+              .count();
+      const std::uint64_t t =
+          value > 0 ? static_cast<std::uint64_t>(value) : 0;
       nb::doNotOptimizeAway(t);
     });
     b.run("HYLE monotonic_ns", [&] {
@@ -146,11 +151,21 @@ int main() {
     nb::Bench b;
     b.title("realtime clock read").relative(true).batch(1).minEpochIterations(500000);
     b.run("std::chrono::system_clock::now", [&] {
-      auto t = std::chrono::system_clock::now().time_since_epoch().count();
+      // Match HYLE's published job exactly: Unix-epoch nanoseconds as uint64,
+      // including the 100ns->ns conversion MSVC's system_clock otherwise omits.
+      const auto value =
+          std::chrono::duration_cast<std::chrono::nanoseconds>(
+              std::chrono::system_clock::now().time_since_epoch())
+              .count();
+      const std::uint64_t t =
+          value > 0 ? static_cast<std::uint64_t>(value) : 0;
       nb::doNotOptimizeAway(t);
     });
     b.run("HYLE realtime_ns", [&] {
       nb::doNotOptimizeAway(hyle::time::realtime_ns());
+    });
+    b.run("HYLE fast_realtime_ns (coarse)", [&] {
+      nb::doNotOptimizeAway(hyle::time::fast_realtime_ns());
     });
   }
 

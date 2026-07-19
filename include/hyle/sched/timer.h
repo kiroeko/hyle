@@ -13,7 +13,7 @@
 #endif
 
 namespace hyle::time {
-struct TimerEntry;  // fwd: defined in time/timer_source.h (opaque here)
+class TimerEntry;  // fwd: defined in time/timer_source.h (opaque here)
 }
 
 // Fiber sleep (sched-04b): a fiber suspends for a duration WITHOUT burning its
@@ -27,7 +27,7 @@ struct TimerEntry;  // fwd: defined in time/timer_source.h (opaque here)
 // COST MODEL (SOTA discipline): timers are touched ONLY on the park cold path.
 // A worker with runnable fibers never reads the wheel or a clock -- a workload
 // with no sleeping fibers pays nothing for this feature's existence. Arm is O(1),
-// the pre-park advance is O(#due) + O(6 levels) for the next-deadline scan.
+// the pre-park advance is O(#due) + O(8 levels) for the next-deadline scan.
 //
 // NOT here: wait_for/wait_until (timed CV waits). Those add a timeout-vs-notify
 // race whose loser must CANCEL the other across workers (the fiber may resume on

@@ -12,12 +12,12 @@
 
 ## 为什么是它（脊的第一个真实定时消费者）
 
-sched-04a 只做了 Waker 接缝本体，deadline 半边被显式拆出等 time-02。time-02 落地后（6 层×64 槽 tokio 移植，churn 负载对 min-heap 双平台赢 2-3x），本步把两者接起来：**每个 worker 持一个 `TimerWheel`**，一个要睡的 fiber 在**本 worker** 的轮上 arm 一个 entry（O(1) 无分配）+ `suspend()`；worker 在它本会 park 的时机推进自己的轮、fire 到期项 → `Waker::wake()` 重新注入那个 fiber。deadline 永远 key 在 `monotonic_ns`（绝不用墙钟——墙钟跳变会毁掉 deadline 语义，sched-design §2.1）。
+sched-04a 只做了 Waker 接缝本体，deadline 半边被显式拆出等 time-02。time-02 落地后（tokio 位图层级扩为 8 层×64 槽，完整覆盖 `uint64_t` ns deadline），本步把两者接起来：**每个 worker 持一个 `TimerWheel`**，一个要睡的 fiber 在**本 worker** 的轮上 arm 一个 entry（O(1) 无分配）+ `suspend()`；worker 在它本会 park 的时机推进自己的轮、fire 到期项 → `Waker::wake()` 重新注入那个 fiber。deadline 永远 key 在 `monotonic_ns`（绝不用墙钟——墙钟跳变会毁掉 deadline 语义，sched-design §2.1）。
 
 ## 核心决策：per-worker 轮 + 冷路径才碰时钟
 
 - **per-worker TimerWheel**（非全局）：sleeping fiber arm 在**本 worker** 的轮，唤醒也走本 worker 的 Waker reinject——与 run-queue 的 per-core 哲学一致，无跨核同步。
-- **成本模型（SOTA 纪律）**：timer 只在 park 冷路径被触碰。有可运行 fiber 的 worker **从不读轮、从不读时钟**——一个没有 sleeping fiber 的 workload 为这个 feature 的存在付出**零**。arm 是 O(1)；pre-park advance 是 O(#到期) + O(6 层) 的 next-deadline 扫描。
+- **成本模型（SOTA 纪律）**：timer 只在 park 冷路径被触碰。有可运行 fiber 的 worker **从不读轮、从不读时钟**——一个没有 sleeping fiber 的 workload 为这个 feature 的存在付出**零**。arm 是 O(1)；pre-park advance 是 O(#到期) + O(8 层) 的 next-deadline 扫描。
 - **`wheel.empty()` 门**：worker 循环顶的 `fire_due_timers` 先查空——无 timer 直接跳过，不读时钟。
 - **park 用 next_deadline 喂 park_timeout**：worker 要 park 时用轮的 `next_deadline_ns` 喂 `Parker::park_timeout`，**不空转**（不做 1ms 轮询）。
 

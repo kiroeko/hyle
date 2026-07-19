@@ -12,6 +12,7 @@
 | [`c-error.md`](./c-error.md) | **error 纯 C ABI**：`hyle_status` 所有权、工厂/查询、诊断 handler、自由函数导出清单。**FFI / 跨编译器第一站。** |
 | [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/mapped_file/fs/cpu/numa 不透明句柄与自由函数、named enum、所有权与易用示例。 |
 | [`c-mem.md`](./c-mem.md) | **mem 纯 C ABI**：`hyle_allocator` vtable、system 分配器、MemoryArena/StackAllocator/Arena/GrowablePool/HugeRegion 不透明句柄、typed 池便利宏、进程级大页/NUMA 策略。 |
+| [`c-time.md`](./c-time.md) | **time 纯 C ABI**：单调/墙钟、饱和 deadline、sleep、TimerWheel/CommonTimeoutQueue opaque handle、visitor 与生命周期合同。 |
 | [`c-simd.md`](./c-simd.md) | **SIMD 纯 C ABI**：247 个 whole-buffer 入口、低精度/排序 POD、RNG opaque handle、运行时 ISA 诊断、调用合同和 FFI 绑定方式。 |
 | [`c-core.md`](./c-core.md) | **core 纯 C ABI**：`hyle_version`（packed）+ `hyle_version_string`，跨语言诊断版本查询；纯 `extern "C"`，无 api 表/版本协商。 |
 | [`simd-usage.md`](./simd-usage.md) | **SIMD 怎么选和怎么调**：普通动态派发、整库固定 ISA、固定 kernel、常用 batch 能力与调用合同；并标明 close-01 C ABI 迁移边界。 |

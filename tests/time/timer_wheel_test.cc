@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <random>
+#include <type_traits>
 #include <vector>
 
 #include "hyle/time/timer_wheel.h"
@@ -12,6 +13,11 @@ using hyle::time::TimerWheel;
 namespace {
 
 constexpr std::uint64_t kMs = TimerWheel::kTickNs;  // 1ms in ns
+
+static_assert(!std::is_copy_constructible_v<TimerEntry>);
+static_assert(!std::is_copy_assignable_v<TimerEntry>);
+static_assert(!std::is_move_constructible_v<TimerEntry>);
+static_assert(!std::is_move_assignable_v<TimerEntry>);
 
 // Drain the wheel to `now_ns` and return the fired payloads in fire order.
 std::vector<int> advance_collect(TimerWheel& w, std::uint64_t now_ns) {
@@ -25,9 +31,8 @@ std::vector<int> advance_collect(TimerWheel& w, std::uint64_t now_ns) {
 }
 
 TimerEntry make_entry(int id) {
-  TimerEntry e;
-  e.data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(id));
-  return e;
+  return TimerEntry{
+      reinterpret_cast<void*>(static_cast<std::uintptr_t>(id))};
 }
 
 }  // namespace
@@ -134,9 +139,11 @@ TEST(TimerWheel, CascadeFiresAtExactTickNotEarly) {
 // everything that came due (cascade loop drains all intermediate slots).
 TEST(TimerWheel, SingleBigAdvanceFiresAllDue) {
   TimerWheel w(0);
-  std::vector<TimerEntry> entries;
-  entries.reserve(200);
-  for (int i = 1; i <= 200; ++i) entries.push_back(make_entry(i));
+  std::vector<TimerEntry> entries(200);
+  for (int i = 1; i <= 200; ++i) {
+    entries[static_cast<std::size_t>(i - 1)].data =
+        reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+  }
   for (int i = 0; i < 200; ++i) {
     w.schedule(&entries[i], static_cast<std::uint64_t>(i + 1) * kMs);
   }
@@ -161,7 +168,7 @@ TEST(TimerWheel, CancelRemovesAndDoesNotFire) {
 
   w.cancel(&b);
   EXPECT_EQ(w.size(), 2u);
-  EXPECT_FALSE(b.scheduled);
+  EXPECT_FALSE(b.scheduled());
 
   auto fired = advance_collect(w, 100 * kMs);
   ASSERT_EQ(fired.size(), 2u);
@@ -216,7 +223,7 @@ TEST(TimerWheel, CancelAfterCascade) {
   // Now cancel from its cascaded position.
   w.cancel(&e);
   EXPECT_EQ(w.size(), 0u);
-  EXPECT_FALSE(e.scheduled);
+  EXPECT_FALSE(e.scheduled());
   // Advancing past the original deadline must fire nothing.
   EXPECT_TRUE(advance_collect(w, 6000 * kMs).empty());
 }
@@ -238,19 +245,32 @@ TEST(TimerWheel, ScheduleOnScheduledReschedules) {
   EXPECT_TRUE(w.empty());
 }
 
-// ---- wrap-around: deadline beyond MAX_DURATION -------------------------------
-
-TEST(TimerWheel, BeyondHorizonClampsAndStillFires) {
+TEST(TimerWheel, ScheduleAfterUsesSaturatingDeadlineArithmetic) {
   TimerWheel w(0);
   TimerEntry e = make_entry(1);
-  // Way past the ~2yr horizon: clamped to the max, must still eventually fire
-  // and never fire early / get lost.
-  std::uint64_t far = TimerWheel::kMaxDurationTicks + 1000;
+  w.schedule_after(&e, 50, 100);
+  EXPECT_EQ(e.deadline_ns, 150u);
+  w.cancel(&e);
+
+  w.schedule_after(&e, 100, UINT64_MAX - 10);
+  EXPECT_EQ(e.deadline_ns, UINT64_MAX);
+  w.cancel(&e);
+}
+
+// ---- complete uint64 deadline domain -----------------------------------------
+
+TEST(TimerWheel, FormerHorizonNoLongerFiresEarly) {
+  TimerWheel w(0);
+  TimerEntry e = make_entry(1);
+  // The old six-level wheel clamped this to ~2.18 years and fired early.
+  // kMaxDurationTicks is now beyond the uint64-ns domain, so use the former
+  // six-level horizon explicitly.
+  const std::uint64_t far = (1ull << 36) + 1000;
   w.schedule(&e, far * kMs);
   EXPECT_EQ(w.size(), 1u);
 
-  // Advance to the clamp point; it should fire at/by MAX_DURATION, not vanish.
-  auto fired = advance_collect(w, TimerWheel::kMaxDurationTicks * kMs);
+  EXPECT_TRUE(advance_collect(w, (far - 1) * kMs).empty());
+  auto fired = advance_collect(w, far * kMs);
   ASSERT_EQ(fired.size(), 1u);
   EXPECT_EQ(fired[0], 1);
   EXPECT_TRUE(w.empty());
@@ -285,6 +305,7 @@ TEST(TimerWheel, NextDeadlineTopLevelAndOverflowSaturates) {
   std::uint64_t nd = w.next_deadline_ns();
   EXPECT_NE(nd, UINT64_MAX);
   EXPECT_LE(nd, 100'000 * kMs);  // reported no later than the deadline
+  w.cancel(&e);
 
   // An absurd deadline near u64 max must saturate to the horizon (not wrap to a
   // tiny tick and fire early). It should land, and NOT fire before the horizon.
@@ -292,9 +313,62 @@ TEST(TimerWheel, NextDeadlineTopLevelAndOverflowSaturates) {
   TimerEntry big = make_entry(2);
   w2.schedule(&big, UINT64_MAX - 100);  // within ~1ms of u64 max
   EXPECT_EQ(w2.size(), 1u);
+  // next_deadline reports the next cascade boundary, not necessarily the final
+  // caller deadline for a high-level entry.
+  EXPECT_LE(w2.next_deadline_ns(), UINT64_MAX - 100);
   // Far below the horizon: must not have fired (no early fire from overflow).
   EXPECT_TRUE(advance_collect(w2, 1000 * kMs).empty());
   EXPECT_EQ(w2.size(), 1u);
+  TimerWheel::EntryList final;
+  w2.advance(UINT64_MAX, final);
+  EXPECT_TRUE(w2.empty());
+  TimerEntry* fired = final.pop_front();
+  ASSERT_EQ(fired, &big);
+  EXPECT_EQ(final.pop_front(), nullptr);
+}
+
+TEST(TimerWheel, RejectsWrongOwnerAndLinkedOutputReuse) {
+  TimerWheel first(0);
+  TimerWheel second(0);
+  TimerEntry e = make_entry(1);
+  first.schedule(&e, 10 * kMs);
+
+  EXPECT_DEATH_IF_SUPPORTED(second.cancel(&e), "");
+  EXPECT_DEATH_IF_SUPPORTED(second.schedule(&e, 20 * kMs), "");
+  first.cancel(&e);
+
+  TimerEntry linked = make_entry(2);
+  first.schedule(&linked, 20 * kMs);
+  TimerWheel::EntryList out;
+  first.advance(20 * kMs, out);
+  EXPECT_DEATH_IF_SUPPORTED(first.schedule(&linked, 30 * kMs), "");
+  EXPECT_EQ(out.pop_front(), &linked);
+}
+
+TEST(TimerWheel, DestroyingNonEmptySourceFailsFast) {
+  EXPECT_DEATH_IF_SUPPORTED(
+      {
+        TimerEntry e;
+        TimerWheel w(0);
+        w.schedule(&e, 10 * kMs);
+      },
+      "");
+}
+
+TEST(TimerWheel, DestroyingEntryStillLinkedToFiredListFailsFast) {
+  EXPECT_DEATH_IF_SUPPORTED(
+      {
+        TimerEntry e;
+        TimerWheel::EntryList fired;
+        {
+          TimerWheel w(0);
+          w.schedule(&e, kMs);
+          w.advance(kMs, fired);
+        }
+        // fired is destroyed before e, but intrusive lists do not own or
+        // silently unlink nodes. TimerEntry catches the dangling membership.
+      },
+      "");
 }
 
 // ---- scale: a million arm/cancel churn, oracle-checked -----------------------
@@ -344,6 +418,7 @@ TEST(TimerWheel, MillionArmCancelChurnMatchesOracle) {
       int id = static_cast<int>(reinterpret_cast<std::uintptr_t>(e->data));
       EXPECT_FALSE(cancelled[id]) << "cancelled timer fired: " << id;
       EXPECT_FALSE(fired_seen[id]) << "double fire: " << id;
+      EXPECT_GE(now, e->deadline_ns) << "early fire: " << id;
       fired_seen[id] = 1;
       ++fired_count;
     }

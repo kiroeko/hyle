@@ -323,10 +323,9 @@ add_executable(hyle_misc_bench misc/misc_bench.cc)
 target_link_libraries(hyle_misc_bench PRIVATE hyle_time hyle_obs hyle_util nanobench)
 hyle_apply_warnings(hyle_misc_bench)
 
-# time-02 timer wheel bench: the hierarchical wheel vs a min-heap (Go/libev-style,
-# lazy cancel) across the agent workload (arm+cancel / arm+expire / churn). The
-# heap is the honest same-job ALGORITHM rival (folly HHWheelTimer is welded to an
-# EventBase loop -> not an apples-to-apples data-structure race). Own exe.
+# time-02 timer wheel bench: the wheel vs an indexed eager-erase min-heap (the
+# actual libevent/libuv shape), plus CommonTimeoutQueue vs an embedded intrusive
+# TAILQ (libevent common-timeout shape). Own exe.
 add_executable(hyle_timer_wheel_bench time/timer_wheel_bench.cc)
 target_link_libraries(hyle_timer_wheel_bench PRIVATE hyle_time nanobench)
 hyle_apply_warnings(hyle_timer_wheel_bench)

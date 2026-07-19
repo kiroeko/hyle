@@ -121,7 +121,7 @@ Task<int> timeout_client(Allocator alloc, IoContext* io, TimeoutResult* r,
   r->connected.store(true, std::memory_order_release);
   char buf[64] = {};
   // Deadline 50ms out; server never sends, so the timer must win.
-  std::uint64_t deadline = hyle::time::monotonic_ns() + 50'000'000ull;
+  std::uint64_t deadline = hyle::time::deadline_after_ns(50'000'000ull);
   std::int64_t rc = co_await TimedRecvOp{&io->proactor_for_current(), s.fd(),
                                          buf, sizeof(buf), alloc, deadline};
   r->recv_rc.store(rc, std::memory_order_release);
@@ -154,7 +154,7 @@ Task<int> iowin_client(Allocator alloc, IoContext* io, IoWinResult* r,
     co_return 0;
   }
   // Generous 5s deadline; the server sends at once, so io must win well within it.
-  std::uint64_t deadline = hyle::time::monotonic_ns() + 5'000'000'000ull;
+  std::uint64_t deadline = hyle::time::deadline_after_ns(5'000'000'000ull);
   std::int64_t rc = co_await TimedRecvOp{&io->proactor_for_current(), s.fd(),
                                          r->got, sizeof(r->got), alloc, deadline};
   r->recv_rc.store(rc, std::memory_order_release);
@@ -224,7 +224,7 @@ struct AcceptResult {
 
 Task<int> accept_timeout_client(Allocator alloc, IoContext* io, TcpListener* ls,
                                 AcceptResult* r) {
-  std::uint64_t deadline = hyle::time::monotonic_ns() + 50'000'000ull;
+  std::uint64_t deadline = hyle::time::deadline_after_ns(50'000'000ull);
   // No one connects; the timed accept must return -ETIMEDOUT.
   std::int64_t rc = co_await hyle::io::TimedAcceptOp{
       &io->proactor_for_current(), ls->fd(), alloc, deadline};
@@ -349,4 +349,3 @@ TEST(IoTimeout, BaseOpCompletionRoutingIntact) {
   EXPECT_EQ(st->rc.load(), static_cast<std::int64_t>(sizeof("base-recv-ok")));
   EXPECT_STREQ(st->buf, "base-recv-ok");
 }
-

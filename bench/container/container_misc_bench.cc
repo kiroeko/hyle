@@ -15,7 +15,7 @@
 #include <vector>
 
 #include "hyle/container/carray.h"
-#include "hyle/container/intrusive_list.h"
+#include "hyle/core/intrusive_list.h"
 #include "hyle/container/small_vector.h"
 #include "hyle/mem/allocator.h"
 
@@ -27,8 +27,8 @@
 #endif
 
 using hyle::container::CArray;
-using hyle::container::IntrusiveList;
-using hyle::container::IntrusiveListHook;
+using hyle::core::IntrusiveList;
+using hyle::core::IntrusiveListHook;
 using hyle::container::SmallVector;
 using hyle::mem::system_allocator;
 

@@ -714,7 +714,7 @@ struct Scheduler::Impl {
       drain();
       return true;
     }
-    std::uint64_t deadline = time::monotonic_ns() + timeout_ns;
+    const std::uint64_t deadline = time::deadline_after_ns(timeout_ns);
     while (outstanding.load(std::memory_order_acquire) != 0) {
       if (time::monotonic_ns() >= deadline) return false;
       platform::this_thread::yield();
@@ -839,7 +839,7 @@ void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
 }
 
 void sleep_for_ns(std::uint64_t ns) noexcept {
-  sleep_until_ns(time::monotonic_ns() + ns);
+  sleep_until_ns(time::deadline_after_ns(ns));
 }
 
 // ---- timed-io building blocks (io-06) ---------------------------------------

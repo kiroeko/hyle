@@ -206,7 +206,8 @@ inline void on_submit_failed(TimedSlot* s) noexcept {
 }  // namespace detail
 
 // co_await TimedRecvOp -> bytes read (>=0), negative errno, or -ETIMEDOUT (-110).
-// `deadline_ns` is absolute monotonic (time::monotonic_ns() + budget). `alloc`
+// `deadline_ns` is absolute monotonic (prefer
+// time::deadline_after_ns(budget), which saturates). `alloc`
 // backs the heap slot (use the same allocator the connection uses).
 struct TimedRecvOp {
   Proactor* p;

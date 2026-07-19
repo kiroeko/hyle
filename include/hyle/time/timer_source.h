@@ -1,8 +1,11 @@
 #pragma once
 
+#include <concepts>
+#include <cstddef>
 #include <cstdint>
 
-#include "hyle/container/intrusive_list.h"
+#include "hyle/core/intrusive_list.h"
+#include "hyle/macros.h"
 
 // Timer data-structure abstraction (time-02 / io serving). HYLE ships MORE than
 // one timer structure because the SOTA references do: libevent keeps a min-heap
@@ -34,8 +37,43 @@ namespace hyle::time {
 // whatever the caller wants woken; the source treats `data` as opaque and never
 // dereferences it. The intrusive hook means arming/cancelling allocates nothing.
 // A given TimerEntry belongs to at most one TimerSource at a time.
-struct TimerEntry {
-  container::IntrusiveListHook hook;
+class TimerEntry {
+ private:
+  // Keep every TimerEntry data member under one access control so the type
+  // remains standard-layout (IntrusiveList's container_of requirement), while
+  // still preventing callers from forging the source identity.
+  struct OwnerIdentity {
+    OwnerIdentity() noexcept = default;
+    OwnerIdentity(const OwnerIdentity&) = delete;
+    OwnerIdentity& operator=(const OwnerIdentity&) = delete;
+    OwnerIdentity(OwnerIdentity&&) = delete;
+    OwnerIdentity& operator=(OwnerIdentity&&) = delete;
+
+   private:
+    friend class TimerEntry;
+    const void* value = nullptr;
+  };
+
+ public:
+  TimerEntry() noexcept = default;
+  explicit TimerEntry(
+      void* payload,
+      void (*fire)(TimerEntry*) noexcept = nullptr) noexcept
+      : data(payload), on_fire(fire) {}
+  TimerEntry(const TimerEntry&) = delete;
+  TimerEntry& operator=(const TimerEntry&) = delete;
+  TimerEntry(TimerEntry&&) = delete;
+  TimerEntry& operator=(TimerEntry&&) = delete;
+
+  ~TimerEntry() {
+    // Destroying an armed entry leaves a dangling pointer in its source. An
+    // expired entry also remains linked to the caller's output list until it is
+    // popped. Both are contract violations and must fail at the fault site.
+    HYLE_FATAL_ASSERT(owner_.value == nullptr);
+    HYLE_FATAL_ASSERT(!hook.linked());
+  }
+
+  core::IntrusiveListHook hook;
   // Absolute expiry in monotonic ns (from time::monotonic_ns()). The canonical
   // field every source keys on; set by schedule(), read by cancel().
   std::uint64_t deadline_ns = 0;
@@ -55,14 +93,30 @@ struct TimerEntry {
   // stays a pure data structure that hands back expired entries); the callback runs
   // in the consumer layer, consistent with "sources don't run callbacks".
   void (*on_fire)(TimerEntry*) noexcept = nullptr;
-  // True iff currently held by a source (armed, not yet fired or cancelled).
-  // Distinguishes "in the source" from "handed back on the expired list" so the
-  // caller may reuse `hook` on its own list after firing.
-  bool scheduled = false;
+
+  // Storage is public only so all direct data members have one access control
+  // and TimerEntry stays standard-layout. OwnerIdentity's value and assignment
+  // are private, so callers cannot forge/reset source ownership.
+  OwnerIdentity owner_;
+
+  // True iff currently held by a TimerSource. An expired entry is no longer
+  // scheduled but remains linked to the caller's output list until popped.
+  bool scheduled() const noexcept { return owner_.value != nullptr; }
+
+ private:
+  friend class TimerWheel;
+  friend class CommonTimeoutQueue;
+
+  bool owned_by(const void* source) const noexcept {
+    return owner_.value == source;
+  }
+  void set_owner(const void* source) noexcept { owner_.value = source; }
 };
 
+static_assert(std::is_standard_layout_v<TimerEntry>);
+
 // The shared expired/fired list type (FIFO of TimerEntry via its hook).
-using TimerList = container::IntrusiveList<TimerEntry, &TimerEntry::hook>;
+using TimerList = core::IntrusiveList<TimerEntry, &TimerEntry::hook>;
 
 // A timer data structure. Any type modelling this can back a sched worker's
 // timers or an io reactor's timeouts; the consumer templates on it so the call

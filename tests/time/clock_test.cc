@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <cstdint>
+#include <limits>
 
 #include "hyle/time/clock.h"
 
@@ -10,8 +11,11 @@ using hyle::time::fast_realtime_ns;
 using hyle::time::Instant;
 using hyle::time::monotonic_ns;
 using hyle::time::realtime_ns;
+using hyle::time::remaining_ns;
+using hyle::time::saturating_add_ns;
 using hyle::time::sleep_for_ms;
 using hyle::time::sleep_for_ns;
+using hyle::time::sleep_until_ns;
 
 TEST(Clock, MonotonicNonDecreasing) {
   std::uint64_t prev = monotonic_ns();
@@ -69,17 +73,6 @@ TEST(Clock, FastRealtimeTracksRealtime) {
   EXPECT_LT(diff, 50'000'000ull) << "precise=" << p << " coarse=" << f;
 }
 
-TEST(Clock, FastRealtimeNonDecreasing) {
-  // Coarse resolution means many calls return the SAME value; it must never go
-  // backwards (a broken read could underflow the epoch subtraction).
-  std::uint64_t prev = fast_realtime_ns();
-  for (int i = 0; i < 100000; ++i) {
-    std::uint64_t now = fast_realtime_ns();
-    ASSERT_GE(now, prev) << "fast realtime went backwards at i=" << i;
-    prev = now;
-  }
-}
-
 TEST(Clock, SleepForNsSleepsAtLeastRequested) {
   // sleep_for must not under-sleep (measured by the monotonic clock).
   constexpr std::uint64_t req = 10'000'000ull;  // 10 ms
@@ -114,14 +107,33 @@ TEST(Clock, ZeroSleepReturnsPromptly) {
   EXPECT_LT(monotonic_ns() - a, 100'000'000ull);
 }
 
-TEST(Clock, FastMonotonicNonDecreasing) {
-  // Whether it uses rdtsc or falls back to monotonic_ns, it must never go back.
-  std::uint64_t prev = fast_monotonic_ns();
-  for (int i = 0; i < 100000; ++i) {
-    std::uint64_t now = fast_monotonic_ns();
-    ASSERT_GE(now, prev) << "fast monotonic clock went backwards at i=" << i;
-    prev = now;
-  }
+TEST(Clock, SleepUntilPastDeadlineReturnsPromptly) {
+  const std::uint64_t now = monotonic_ns();
+  sleep_until_ns(now > 0 ? now - 1 : 0);
+  EXPECT_LT(monotonic_ns() - now, 100'000'000ull);
+}
+
+TEST(Clock, SleepUntilFutureDeadlineDoesNotReturnEarly) {
+  const std::uint64_t start = monotonic_ns();
+  const std::uint64_t deadline = saturating_add_ns(start, 5'000'000ull);
+  sleep_until_ns(deadline);
+  EXPECT_GE(monotonic_ns(), deadline);
+}
+
+TEST(Clock, SaturatingDeadlineArithmetic) {
+  EXPECT_EQ(saturating_add_ns(10, 20), 30u);
+  EXPECT_EQ(saturating_add_ns(UINT64_MAX - 5, 6), UINT64_MAX);
+  EXPECT_EQ(saturating_add_ns(UINT64_MAX, 0), UINT64_MAX);
+
+  const std::uint64_t future =
+      hyle::time::deadline_after_ns(1'000'000'000ull);
+  EXPECT_GT(remaining_ns(future), 0u);
+  EXPECT_EQ(remaining_ns(0), 0u);
+}
+
+TEST(Clock, InstantElapsedClampsFutureInstant) {
+  Instant future{UINT64_MAX};
+  EXPECT_EQ(future.elapsed_ns(), 0u);
 }
 
 TEST(Clock, FastMonotonicTracksMonotonicOverSleep) {

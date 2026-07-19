@@ -24,9 +24,8 @@ std::vector<int> advance_collect(CommonTimeoutQueue& q, std::uint64_t now_ns) {
 }
 
 TimerEntry make_entry(int id) {
-  TimerEntry e;
-  e.data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(id));
-  return e;
+  return TimerEntry{
+      reinterpret_cast<void*>(static_cast<std::uintptr_t>(id))};
 }
 
 }  // namespace
@@ -75,7 +74,7 @@ TEST(CommonTimeoutQueue, CancelRemovesAndDoesNotFire) {
   q.schedule(&c, 30);
   q.cancel(&b);
   EXPECT_EQ(q.size(), 2u);
-  EXPECT_FALSE(b.scheduled);
+  EXPECT_FALSE(b.scheduled());
   auto f = advance_collect(q, 100);
   ASSERT_EQ(f.size(), 2u);
   EXPECT_EQ(f[0], 1);
@@ -126,6 +125,76 @@ TEST(CommonTimeoutQueue, Reschedule) {
   EXPECT_EQ(f[1], 1);
 }
 
+TEST(CommonTimeoutQueue, TryScheduleRejectsOutOfOrderWithoutCorruption) {
+  CommonTimeoutQueue q(0, 100);
+  TimerEntry a = make_entry(1), b = make_entry(2);
+  ASSERT_TRUE(q.try_schedule(&a, 20));
+  EXPECT_FALSE(q.try_schedule(&b, 10));
+  EXPECT_FALSE(b.scheduled());
+  EXPECT_EQ(q.size(), 1u);
+  q.cancel(&a);
+}
+
+TEST(CommonTimeoutQueue, RejectedReschedulePreservesExistingArm) {
+  CommonTimeoutQueue q(0, 100);
+  auto a = make_entry(1);
+  auto b = make_entry(2);
+  q.schedule(&a, 100);
+  q.schedule(&b, 200);
+
+  EXPECT_FALSE(q.try_schedule(&b, 50));
+  EXPECT_TRUE(b.scheduled());
+  EXPECT_EQ(b.deadline_ns, 200u);
+  EXPECT_EQ(q.size(), 2u);
+
+  EXPECT_FALSE(q.try_schedule(&a, 50));
+  EXPECT_TRUE(a.scheduled());
+  EXPECT_EQ(a.deadline_ns, 100u);
+  EXPECT_EQ(q.size(), 2u);
+
+  EXPECT_EQ(advance_collect(q, 200), (std::vector<int>{1, 2}));
+}
+
+TEST(CommonTimeoutQueue, ScheduleAfterUsesDeclaredDurationAndSaturates) {
+  CommonTimeoutQueue q(0, 30);
+  TimerEntry a = make_entry(1), b = make_entry(2);
+  ASSERT_TRUE(q.try_schedule_after(&a, 100));
+  EXPECT_EQ(a.deadline_ns, 130u);
+  ASSERT_TRUE(q.try_schedule_after(&b, UINT64_MAX - 10));
+  EXPECT_EQ(b.deadline_ns, UINT64_MAX);
+  q.cancel(&a);
+  q.cancel(&b);
+}
+
+TEST(CommonTimeoutQueue, ScheduleNowUsesMonotonicClock) {
+  CommonTimeoutQueue q(0, 1'000'000);
+  TimerEntry e = make_entry(1);
+  const std::uint64_t before = hyle::time::monotonic_ns();
+  ASSERT_TRUE(q.try_schedule_now(&e));
+  const std::uint64_t after = hyle::time::monotonic_ns();
+  EXPECT_GE(e.deadline_ns, before + 1'000'000);
+  EXPECT_LE(e.deadline_ns, after + 1'000'000);
+  q.cancel(&e);
+}
+
+TEST(CommonTimeoutQueue, RejectsWrongOwnerAndNonEmptyDestruction) {
+  CommonTimeoutQueue first(0, 100);
+  CommonTimeoutQueue second(0, 100);
+  TimerEntry e = make_entry(1);
+  first.schedule(&e, 100);
+  EXPECT_DEATH_IF_SUPPORTED(second.cancel(&e), "");
+  EXPECT_DEATH_IF_SUPPORTED(second.schedule(&e, 200), "");
+  first.cancel(&e);
+
+  EXPECT_DEATH_IF_SUPPORTED(
+      {
+        TimerEntry armed;
+        CommonTimeoutQueue queue(0, 100);
+        queue.schedule(&armed, 100);
+      },
+      "");
+}
+
 TEST(CommonTimeoutQueue, NextDeadline) {
   CommonTimeoutQueue q(0, 100);
   EXPECT_EQ(q.next_deadline_ns(), UINT64_MAX);
@@ -135,6 +204,7 @@ TEST(CommonTimeoutQueue, NextDeadline) {
   EXPECT_EQ(q.next_deadline_ns(), 100u);  // front
   advance_collect(q, 100);                // fire a
   EXPECT_EQ(q.next_deadline_ns(), 200u);  // now b
+  q.cancel(&b);
 }
 
 // Scale: a million arms (monotonic deadlines) with random cancels, oracle-checked.
@@ -173,7 +243,9 @@ TEST(CommonTimeoutQueue, MillionArmCancelChurnMatchesOracle) {
     int id = static_cast<int>(reinterpret_cast<std::uintptr_t>(e->data));
     EXPECT_FALSE(cancelled[id]) << "cancelled fired: " << id;
     // ids are the deadlines-1, so a sorted list fires in ascending id order.
-    if (!first) EXPECT_GT(static_cast<std::uint64_t>(id), last_id);
+    if (!first) {
+      EXPECT_GT(static_cast<std::uint64_t>(id), last_id);
+    }
     last_id = static_cast<std::uint64_t>(id);
     first = false;
     ++fired;

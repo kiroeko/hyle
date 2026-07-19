@@ -12,7 +12,7 @@
 > **注**:spawn 的权威数字在下方 sched 同步节(对标 marl,非 std::async)。此处保留 std::async 行仅作"赢最低门槛"的历史参照。
 
 > sched bench(`bench/sched/scheduler_bench.cc`)**现已编入默认 build**(提交后解封)。
-> 它曾被认为触发一个 P0 崩溃,但一轮穷尽调查(见 [`../architecture/debug/ki-1-crash-hunt.md`](../architecture/debug/ki-1-crash-hunt.md)
+> 它曾被认为触发一个 P0 崩溃,但一轮穷尽调查(见 [`../debug/ki-1-crash-hunt.md`](../debug/ki-1-crash-hunt.md)
 > + [`../architecture/known-issues.md`](../architecture/known-issues.md) KI-1)**排除了 HYLE 逻辑缺陷**:TSan 无源码级
 > race、MI_DEBUG=3 全量堆校验无损坏、原始崩溃器本体在 Linux 原生 + Windows MSVC 本机
 > 重负载下 + 强制迁移 687 万次跨线程 free 均**不复现**。证据(SIGILL = 代码页问题 +
@@ -225,48 +225,56 @@ CancelToken 树是 shard-local、(几乎)无锁结构——唯一原子是 per-n
 
 ## 分层时间轮 vs min-heap（`bench/time/timer_wheel_bench.cc`，time-02）
 
-> HYLE `TimerWheel`(6 层 × 64 槽 tokio 移植)对标 **min-heap**(Go/libev/libuv 的定时器选择)=同职算法对照。folly HHWheelTimer 焊死在 EventBase/libevent + glog + boost 上,链进 microbench 测的是事件循环不是轮,故对标算法本身(设计文档争论的正是"轮 vs 堆")。堆按真实行为建模:无 O(1) keyed 删除 → **惰性 cancel(墓碑标记)** + expire 跳墓碑。N=4096 timer/op,双平台各 15 遍 `bench-stat.py`(gap > 两变体 spread 之和才判赢/输)。
+旧基线把 heap 的取消实现成 `vector<bool>` 墓碑、把 common-timeout 实现成
+`std::list + unordered_map`；这分别少算了真实 heap 的 keyed erase 能力，又给链表基线
+人为加了节点分配和 hash，不能用于 SOTA 结论。2026-07-19 收口时已按本地
+libevent `min_heap_erase_` 和 libuv `heap_remove` 重写为**预分配 indexed
+eager-erase binary heap**：节点保存 heap index，取消立即 sift/remove，不留墓碑。
+N=4096 timer/op，Windows / WSL / Apple M4 各 15 个独立进程。节点在 epoch
+外预分配并跨 epoch 复用，arm 与 consume 之间有 compiler memory barrier；因此
+数字不包含节点生命周期分配，也不能被编译器把整轮 arm+consume 融合删除。
 
-| 工作负载 | HYLE 轮(Win/Lin ns/op) | min-heap(Win/Lin) | 判定(15 遍,双平台) |
-|---|---|---|---|
-| **churn(arm N + 取消 70% + expire)= 真实 agent 画像** | 12.60/11.83 | 26.28/38.66 | ✅ **双平台铁赢 2.09x/3.27x**(gap 108/226%»spread 10.5/27%) |
-| arm+expire(全触发) | 23.09/16.97 | 25.51/38.73 | Win 统计平局(1.09,gap9%«spread12%)/ Lin **赢 2.25x**(gap125%»spread16%) |
-| arm+cancel(纯取消,无 expire) | 7.39/5.57 | 7.42/2.94 | Win 统计平局(1.00)/ Lin **输 0.53x**(gap47%»spread30%) |
+| 工作负载 | Windows：HYLE / heap | WSL：HYLE / heap | M4：HYLE / heap |
+|---|---:|---:|---:|
+| arm + cancel | 7.24 / 16.04 ns（**2.23x**） | 5.81 / 6.72 ns（**1.14x**） | 4.92 / 8.13 ns（**1.65x**） |
+| arm + expire | 15.37 / 48.27 ns（**3.16x**） | 23.37 / 41.36 ns（**1.76x**） | 13.54 / 22.51 ns（**1.66x**） |
+| churn（arm + 70% cancel + expire） | 11.44 / 20.16 ns（**1.75x**） | 14.74 / 15.34 ns（**1.05x**） | 8.02 / 10.57 ns（**1.31x**） |
 
 **核心诚实结论**:
 
-1. **真实负载(churn)双平台铁赢 2-3x**。这是北极星画像——百万 agent"arm 超时 → 响应先到 → 取消 timeout → 少数真到期"。堆的惰性墓碑要活着穿过 expire(文档预言的 add-then-cancel churn 堆膨胀),轮在 cancel 时 O(1) 摘链已清走。
+1. 三种形状在三个平台同向，时间轮的领先不依赖对手墓碑；对 eager-erase heap
+   仍成立。cancel 领先来自 O(1) 已知槽摘链对 O(log n) heap 修复，expire 领先来自
+   分槽批量转移。WSL churn 的绝对差只有 4.7%，但 14/15 配对同向，
+   sign-test `p=9.8e-4`；这里只判“小幅真赢”，不把 1.05x 写成结构性大胜。
+2. 收口后的 wheel 是 **8×64**，覆盖完整 `uint64_t` 纳秒域；旧 6 层轮在约 2.18
+   年外会丢失高位并可能提前触发，这是正确性修复，不应用旧 6 KB footprint 解释新数据。
+3. 这仍是数据结构 microbenchmark，不代表所有 timer workload。timer 很少、heap 已嵌入
+   event loop，或需要其它 heap 操作时，整体系统成本可能不同。
 
-2. **`arm+cancel` 纯取消 Linux 输 0.53x 的三选一诊断(objdump 实证,非"切片假象"含糊结论)**:按方法论逐指令查清了到底是"没抄全/换性能/有更好方法"——
-   - **没抄全?否**。objdump 实证:`level_for` 编成 `lzcnt/bsr`(硬件位扫)、**零 idiv**、bit math 与 tokio 一致,cache-line pad 都在。codegen 无缺陷。
-   - **换了什么?这是刻意取舍的核心**。堆 `cancel` = `vector<bool>` **一个 bit 写**(便宜);轮 `cancel` = level_for+slot_for+摘链(4 指针写)。但堆的 bit 是**惰性墓碑**——死节点留在堆里,债留到 expire 时 pop+跳过(churn 双平台就这么输 2-3x)。轮当场摘链**真清空间**。此微基准每 op **在 expire 前就丢弃膨胀堆**,只测到 cancel 即时成本、测不到墓碑后续代价,故堆显便宜。
-   - **内存足迹实测(根因量化)**:`sizeof(TimerWheel)=6216B`(`slots_[6][64]`=6144B 槽头数组),arm 4096 timer 散写这 6KB 数组 + 40B/entry;堆 = 连续 `vector<Node>`(顺序 sift)+ `vector<bool>` 位图。Linux/GCC 下堆的连续访问 + 平凡位取消胜出;这是**用"即时 cancel 成本 + 6KB 固定槽开销"换"无墓碑膨胀 + 有界内存 + churn 2-3x 赢 + O(1) 最坏 cancel"**。tokio/folly 付同样固定开销,是分层轮固有取舍。
-   - **有更好方法?一个真实微优化,但不改结论**:`TimerEntry` 40B 可把 `scheduled` bool 塞进指针低位省 8B;但主因是散写 6KB 槽数组,压缩 entry 救不了。孤立"少量 timer 纯取消"场景堆确实更省——但那不是 timer wheel 的设计目标负载(海量 arm/cancel + 少量 expire 才是,churn 行已证)。**故不改设计,如实记账。**
-
-3. **平台分歧(又一"单平台数陷阱"印证)**:arm+expire 与 arm+cancel Win/Lin 判定不同(Win 更平、Lin 分化更大),MSVC 与 GCC 对 `std::priority_queue`/`countl_zero`/`rotr` codegen 差异所致——**单平台数搬总账会误判**(同 dtype/time/path/queue)。churn 方向双平台一致(轮赢),是稳健结论。
-
-> **诚实边界**:① 时间轮**单线程数据结构**(per-worker,无锁),非 lock-free——无 TSan 闸门需求;新增的并发面是 `Parker::park_timeout`(见 platform 节,TSan 5×净)。② 未对 folly HHWheelTimer 实测(EventBase 耦合,非同职对照;算法层已对 min-heap)。③ tokio 是 Rust,未跨语言实测,取其算法参数(6×64/1ms)移植 + 对 min-heap 验证同族优势。④ arm+cancel 微基准的堆"赢"是采样切片,churn 才是负载真相——ledger 不把纯取消孤立数当"堆更优"结论。⑤ **churn 的 70% 取消率是 benchmark 假设值(`i%10<7` 硬编码),非实测负载画像**——它只用来构造"cancel 占多数"的场景暴露墓碑污染;结论方向(cancel 占多数则轮赢)对 60/70/80% 都成立,但不应把 70% 当实测口径引用。
+> **诚实边界**：① 时间轮是 per-worker 单线程结构，不是 lock-free；跨线程唤醒由 sched
+> completion spine 负责。② 没有把 folly EventBase 或完整 libevent event loop 链进来，
+> 对比的是其核心 heap 形状。③ 70% cancel 是合成压力参数，不是生产观测值。④
+> `TimerEntry` 现在记录精确 owner 并执行链接状态检查；这些安全合同已包含在 HYLE 数字中。
 
 ## 两种定时器结构:TimerWheel vs CommonTimeoutQueue(`timer_wheel_bench.cc` 块 4/5)
 
-HYLE 的 `time/` 提供**两种** TimerSource,按负载选(同 libevent 的 min-heap + common_timeout 两套并存)。上面 wheel-vs-heap 证"海量任意时长选轮";这里证"海量**相同**时长选 CommonTimeoutQueue"。固定时长负载(N=4096 同超时,io serving 连接超时画像),双平台各 15 遍 `bench-stat.py`,HYLE-vs-HYLE(无 std codegen 方差):
+同一时长的 deadline 随单调钟天然有序，`CommonTimeoutQueue` 可以只做尾插、头摘和
+O(1) unlink。收口基线直接复刻 libevent `struct event` 内嵌 TAILQ link 的形状：
+预分配节点、零 hash、零每次分配，并把到期节点先 splice 到 ready 链再 drain，工作量与
+HYLE 对称。
 
-| 固定时长负载 | TimerWheel(Win/Lin) | CommonTimeoutQueue(Win/Lin) | 判定(15 遍,双平台) |
-|---|---|---|---|
-| **arm+expire(全触发)** | 22.7 / ~ ns | 7.5 / ~ ns | ✅ **queue 赢 3.04x / 3.72x**(gap 204/272%»spread 25/29%) |
-| **arm+cancel(全取消)** | 7.1 / ~ ns | 4.4 / ~ ns | ✅ **queue 赢 1.60x / 1.75x**(gap 60/75%»spread 33/22%) |
+| 固定时长负载 | Windows：HYLE / TAILQ | WSL：HYLE / TAILQ | M4：HYLE / TAILQ |
+|---|---:|---:|---:|
+| arm + expire | 3.60 / 4.25 ns（**1.18x**） | 3.13 / 3.94 ns（**1.25x**） | 4.86 / 2.76 ns（**0.57x LOSE**） |
+| arm + cancel | 2.88 / 3.14 ns（**1.10x**） | 1.90 / 2.59 ns（**1.34x**） | 3.17 / 3.09 ns（**0.98x，小幅 LOSE**） |
 
-**同职 SOTA 对照(queue 该比的是 libevent common_timeout,不是自家 wheel)**:libevent common_timeout 焊在 event_base+epoll 里孤立不出来(同 folly HHWheelTimer),故对标它的**同算法基线**——`std::list<deadline,id>` 有序链 + `unordered_map` 存 iterator 做 O(1) keyed erase(不拿 `std::find` 坑它,给它和 HYLE 同样的 O(1) cancel)。这与 libevent 的 `insert_common_timeout_inorder`(有序双向链 + O(1) 摘)**同算法**,唯一差别 = std::list 每节点堆分配 vs HYLE 侵入式零分配:
-
-| vs std::list 同算法基线(Win,15 遍) | HYLE CommonTimeoutQueue | std::list(libevent 算法) | 判定 |
-|---|---|---|---|
-| arm+expire | 7.1 ns | 70.6 ns | ✅ **赢 9.6x**(gap860%»spread9%) |
-| arm+cancel | 4.5 ns | 70.5 ns | ✅ **赢 15.7x**(gap1471%»spread11%) |
-
-- **诚实定性(关键)**:这 9-15x 是**结构差(零分配侵入式 vs 每节点堆分配 + map),不是算法优势**——算法是同一个(libevent 的有序链)。等同于 `path` 对 `std::filesystem` 的"零分配 vs 构造对象"。但这是**你用 std 会真实付出的代价**(std::list 就是标准库给的现成有序链),所以是合法的"HYLE vs 现实替代"数字,只是归因要说清:赢在侵入式零分配的实现质量,不在更巧的算法。libevent 本体因内嵌 `struct event`+event_base 反指,也带自己的对象开销,量级上更接近 std::list 侧而非 HYLE 侧。
-
-- **双平台方向一致(不同于 wheel-vs-heap 的单平台分歧)**:因为这是 HYLE-vs-HYLE,无 `std::priority_queue`/`vector<bool>` 的 MSVC-vs-GCC codegen 方差。queue 的赢是结构性的,双平台稳。
-- **赢在哪**:相同时长 → deadline 天然递增 → queue 就一条有序链,arm=尾插 O(1)、只碰尾+新节点两条 cache line;wheel 每次 arm 付 level_for/slot_for 数学 + 散写 6KB 槽数组。**expire 差距(3x)大于 arm+cancel(1.6x)**:expire 时 wheel 要遍历 cascade/多层槽,queue 顺序弹头。
-- **何时仍用 wheel**:时长**任意/混合**时 queue 用不了(它要求单一时长、deadline 单调),wheel 是通用解。这不是"queue 全面更好",是**各吃各的负载**——fiber sleep(任意时长)用 wheel,连接同超时用 queue。
-- **诚实状态**:CommonTimeoutQueue 已实现 + 双平台 8 测试(含百万 arm/cancel oracle)+ 本 benchmark,**但真实消费者(io reactor 连接超时)未落地**——已验证、就位、待接入,非在役。多时长路由(几种超时→几条队列)是消费者(io)的职责,不在结构内(同 libevent `common_timeout_queues[]` 在 event_base 而非链表里)。
-
+- Common queue 没有“9–15x 超越 libevent”的证据；旧数字测的是不同分配模型，已废止。
+- Windows/WSL 在两个形状均胜；M4 cancel 是小幅真输（1/15 胜，`p=9.8e-4`），
+  expire 是明确 42.9% 吞吐损失（0/15 胜）。尝试把圆形 sentinel 改成低位标记
+  null-ended TAILQ 后，M4 expire 无改善、cancel 反而退化，故已撤回。当前不能把
+  common queue 宣传为跨架构 SOTA；owner identity、链接/析构合同保留，不为一个
+  microbenchmark 删除防跨-source 腐化的安全性。
+- 混合时长不满足 append-order 前提，必须用 `TimerWheel`。拒绝型
+  `try_schedule` 是事务性的：失败不会丢掉旧 arm。
+- `CommonTimeoutQueue` 结构已完成并验证，但 io reactor 尚未以它路由固定时长连接超时；
+  当前在役 timed I/O 仍由每 worker `TimerWheel` 承担。

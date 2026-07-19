@@ -1,11 +1,13 @@
 #include "hyle/time/clock.h"
 
+#include "hyle/macros.h"
 #include "hyle/platform.h"  // HYLE_OS_* (project convention over raw _WIN32)
 
 #if defined(HYLE_OS_WINDOWS)
 #  define WIN32_LEAN_AND_MEAN
 #  include <windows.h>
 #else
+#  include <cerrno>
 #  include <time.h>
 
 #  include <thread>
@@ -28,64 +30,18 @@
 
 namespace hyle::time {
 
-#if defined(HYLE_OS_WINDOWS)
-
 namespace {
-// QPC frequency is fixed after boot; query once. Counts/sec -> ns scaling.
-std::int64_t qpc_freq() noexcept {
-  static const std::int64_t f = [] {
-    LARGE_INTEGER li;
-    QueryPerformanceFrequency(&li);  // never fails on Win XP+
-    return li.QuadPart;
-  }();
-  return f;
+
+constexpr std::uint64_t scale_add_saturated(std::uint64_t whole,
+                                             std::uint64_t scale,
+                                             std::uint64_t frac) noexcept {
+  if (whole > (UINT64_MAX - frac) / scale) return UINT64_MAX;
+  return whole * scale + frac;
 }
+
 }  // namespace
 
-std::uint64_t monotonic_ns() noexcept {
-  LARGE_INTEGER c;
-  QueryPerformanceCounter(&c);
-  std::int64_t t = c.QuadPart;
-  std::int64_t f = qpc_freq();
-  // The frequency is a runtime value, so a plain (t/f) is a 64-bit idiv (~20-40
-  // cyc) on the hot read path -- and the split below pays it twice. Special-case
-  // the frequencies hardware actually reports so the divisor is a compile-time
-  // constant the compiler folds into a magic-number multiply (no idiv). This is
-  // exactly what MSVC's steady_clock::now() does; matching it closes the Win gap.
-  constexpr std::int64_t kTenMHz = 10'000'000;          // ubiquitous on x86/x64
-  constexpr std::int64_t kTwentyFourMHz = 24'000'000;   // common on ARM64 / emulated x86
-  if (f == kTenMHz) {
-    // 1e9 / 1e7 == 100 exactly; t*100 can't overflow u64 until ~585 yr of uptime.
-    return static_cast<std::uint64_t>(t) * 100ull;
-  }
-  // Split to avoid overflow: (t/f)*1e9 + (t%f)*1e9/f. t*1e9 alone overflows
-  // 64-bit after ~9 seconds at a 1 GHz freq. With a constant divisor the
-  // compiler emits the magic-number multiply instead of idiv.
-  if (f == kTwentyFourMHz) {
-    std::uint64_t whole =
-        static_cast<std::uint64_t>(t / kTwentyFourMHz) * 1'000'000'000ull;
-    std::uint64_t frac =
-        (static_cast<std::uint64_t>(t % kTwentyFourMHz) * 1'000'000'000ull) /
-        static_cast<std::uint64_t>(kTwentyFourMHz);
-    return whole + frac;
-  }
-  // Uncommon frequency: runtime-divisor split (the two idivs we can't fold away).
-  std::uint64_t whole = static_cast<std::uint64_t>(t / f) * 1'000'000'000ull;
-  std::uint64_t frac =
-      (static_cast<std::uint64_t>(t % f) * 1'000'000'000ull) /
-      static_cast<std::uint64_t>(f);
-  return whole + frac;
-}
-
-std::uint64_t realtime_ns() noexcept {
-  FILETIME ft;
-  GetSystemTimePreciseAsFileTime(&ft);  // 100-ns ticks since 1601-01-01 UTC
-  std::uint64_t ticks =
-      (static_cast<std::uint64_t>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
-  // 1601->1970 offset in 100-ns ticks.
-  constexpr std::uint64_t kEpochDiff = 116444736000000000ull;
-  return (ticks - kEpochDiff) * 100ull;
-}
+#if defined(HYLE_OS_WINDOWS)
 
 std::uint64_t fast_realtime_ns() noexcept {
   // Coarse: reads KUSER_SHARED_DATA (no syscall), ~1.8 ns vs ~13.5 for the Precise
@@ -95,7 +51,9 @@ std::uint64_t fast_realtime_ns() noexcept {
   std::uint64_t ticks =
       (static_cast<std::uint64_t>(ft.dwHighDateTime) << 32) | ft.dwLowDateTime;
   constexpr std::uint64_t kEpochDiff = 116444736000000000ull;
-  return (ticks - kEpochDiff) * 100ull;
+  if (ticks <= kEpochDiff) return 0;
+  const std::uint64_t unix_ticks = ticks - kEpochDiff;
+  return scale_add_saturated(unix_ticks, 100ull, 0);
 }
 
 void sleep_for_ns(std::uint64_t ns) noexcept {
@@ -104,26 +62,22 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
     return;
   }
   // Sleep takes ms (coarse, ~15ms granularity by default). Round up so we never
-  // under-sleep. Sub-ms precision waiting is a sched concern, not this floor.
-  DWORD ms = static_cast<DWORD>((ns + 999'999ull) / 1'000'000ull);
+  // under-sleep. DWORD_MAX is INFINITE, so cap each finite chunk one below it.
+  // Looping also avoids truncating durations longer than ~49.7 days.
+  constexpr std::uint64_t kNsPerMs = 1'000'000ull;
+  constexpr DWORD kMaxFiniteMs = INFINITE - 1;
+  constexpr std::uint64_t kMaxChunkNs =
+      static_cast<std::uint64_t>(kMaxFiniteMs) * kNsPerMs;
+  while (ns > kMaxChunkNs) {
+    Sleep(kMaxFiniteMs);
+    ns -= kMaxChunkNs;
+  }
+  const DWORD ms = static_cast<DWORD>(
+      ns / kNsPerMs + (ns % kNsPerMs != 0 ? 1ull : 0ull));
   Sleep(ms);
 }
 
 #else  // POSIX (Linux / macOS)
-
-std::uint64_t monotonic_ns() noexcept {
-  struct timespec ts;
-  clock_gettime(CLOCK_MONOTONIC, &ts);
-  return static_cast<std::uint64_t>(ts.tv_sec) * 1'000'000'000ull +
-         static_cast<std::uint64_t>(ts.tv_nsec);
-}
-
-std::uint64_t realtime_ns() noexcept {
-  struct timespec ts;
-  clock_gettime(CLOCK_REALTIME, &ts);
-  return static_cast<std::uint64_t>(ts.tv_sec) * 1'000'000'000ull +
-         static_cast<std::uint64_t>(ts.tv_nsec);
-}
 
 std::uint64_t fast_realtime_ns() noexcept {
   // Linux CLOCK_REALTIME_COARSE is a vDSO read (~3 ns vs ~13 for CLOCK_REALTIME),
@@ -131,12 +85,14 @@ std::uint64_t fast_realtime_ns() noexcept {
   // to CLOCK_REALTIME (still correct, just not faster there).
   struct timespec ts;
 #if defined(CLOCK_REALTIME_COARSE)
-  clock_gettime(CLOCK_REALTIME_COARSE, &ts);
+  HYLE_FATAL_ASSERT(clock_gettime(CLOCK_REALTIME_COARSE, &ts) == 0);
 #else
-  clock_gettime(CLOCK_REALTIME, &ts);
+  HYLE_FATAL_ASSERT(clock_gettime(CLOCK_REALTIME, &ts) == 0);
 #endif
-  return static_cast<std::uint64_t>(ts.tv_sec) * 1'000'000'000ull +
-         static_cast<std::uint64_t>(ts.tv_nsec);
+  if (ts.tv_sec < 0) return 0;
+  return scale_add_saturated(static_cast<std::uint64_t>(ts.tv_sec),
+                             1'000'000'000ull,
+                             static_cast<std::uint64_t>(ts.tv_nsec));
 }
 
 void sleep_for_ns(std::uint64_t ns) noexcept {
@@ -149,10 +105,21 @@ void sleep_for_ns(std::uint64_t ns) noexcept {
   req.tv_nsec = static_cast<long>(ns % 1'000'000'000ull);
   // Resume after EINTR so a signal can't cut the sleep short.
   struct timespec rem;
-  while (nanosleep(&req, &rem) != 0) req = rem;
+  while (nanosleep(&req, &rem) != 0) {
+    HYLE_FATAL_ASSERT(errno == EINTR);
+    req = rem;
+  }
 }
 
 #endif
+
+void sleep_until_ns(std::uint64_t deadline_ns) noexcept {
+  for (;;) {
+    const std::uint64_t now = monotonic_ns();
+    if (deadline_ns <= now) return;
+    sleep_for_ns(deadline_ns - now);
+  }
+}
 
 // ---------------------------------------------------------------------------
 // fast_monotonic_ns: TSC-backed fast path (x86-64), shared by Windows + POSIX.
@@ -226,8 +193,9 @@ struct TimeTscPair {
 //      = 2.9952 GHz exactly.
 //   2. Older Intel (pre-Skylake ~2015): invariant TSC present but leaf 0x15 not
 //      enumerated -> timing path.
-//   3. AMD: has NO leaf 0x15 at all (it's an Intel-specific leaf) -> ALWAYS the
-//      timing path. Not a missed optimization -- the leaf simply doesn't exist there.
+//   3. CPUs whose firmware/virtualization does not enumerate a usable ratio,
+//      including many AMD generations, take the timing path. Capability probing
+//      is authoritative; vendor-name guesses are not.
 // When EBX/EAX are present but ECX (crystal) is 0, Intel's SDM says derive the
 // crystal from leaf 0x16 (CPU base freq, MHz): a documented approximation for
 // client parts that omit the crystal. Zero everywhere -> 0 (timing fallback).

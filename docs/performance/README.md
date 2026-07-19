@@ -47,12 +47,12 @@
 | **platform** directory_iterate visitor | — | std::filesystem::directory_iterator | — | — | filesystem | — | — | ➖平(Win 0.98x)/**✅Linux 赢 1.81x**(免 stat 的 d_type + 无分配 visitor;详节见 sched) |
 | **platform** Parker park_timeout(sched-04b 底座) | ~底座 | (无语义对等 std) | n/a | n/a | (Rust std park_timeout 概念对照) | n/a | n/a | ➖时间轮执行底座(futex 相对 timeout;TSan 5×净) |
 | **time** realtime_ns | 14.68 | std::chrono::system_clock | 14.76 | 1.0x | std::chrono(即标尺,同 OS 原语) | 14.76 | 1.0x | ➖平 |
-| **time** monotonic_ns | 12.4(Win)/12.6(Lin) | std::chrono::steady_clock | 12.7/12.9 | Win 1.03x/Lin 平 | std::chrono(即标尺,同 OS 原语) | 12.7/12.9 | Win 1.03x/Lin 1.0x | ➖平双平台(Win 曾输 1.48x,补常见频率特判后追平;详节③) |
-| **time** fast_monotonic_ns(opt-in rdtsc) | 7.4(Win)/6.8(Lin) | HYLE monotonic_ns | 12.4/12.6 | 1.67x/2.0x | (std 无 opt-in TSC 钟) | n/a | n/a | ✅快 1.7-2.0x(跳过 OS 调用壳;非默认,可能跳变;leaf 0x15 只优化启动校准+乘子精度,**不改读延迟**,详节③) |
-| **time** fast_realtime_ns(opt-in coarse) | 1.8(Win)/3.1(Lin) | HYLE realtime_ns | 13.5/13.0 | 7.6x/4.2x | (std 无 opt-in coarse 钟) | n/a | n/a | ✅快 4-7.6x(coarse 时间源,~1-15ms 分辨率;日志时间戳用,详节③) |
-| **time** timer wheel churn(arm+70%cancel+expire) | 12.6/11.8 | (std 无定时器结构) | n/a | n/a | min-heap(Go/libev,惰性 cancel) | 26.3/38.7 | 2.09x/3.27x | ✅**双平台赢**(真实 agent 画像;堆墓碑穿 expire,轮 O(1) 摘链已清;time-02) |
-| **time** timer wheel arm+cancel / arm+expire | 7.4·23/5.6·17 | (std 无) | n/a | n/a | min-heap | 7.4·25.5/2.9·38.7 | 平·平/输0.53·赢2.25 | ➖平台分歧:arm+cancel Lin 输 0.53x=**刻意取舍**(O(1)摘链清空间 vs 堆惰性墓碑1bit,objdump 证我方代码正常编译无降级;churn 才是设计负载,见 sched 详节三选一诊断) |
-| **time** CommonTimeoutQueue(固定时长,io serving)arm+expire/cancel | 7.1·4.5(Win) | (std 无定时器结构) | n/a | n/a | std::list 有序链(libevent common_timeout 同算法) | 70.6·70.5 | 9.6x·15.7x | ✅赢同算法 SOTA 基线(**结构差=零分配侵入式 vs 每节点堆分配+map,非算法优势**);对自家 wheel 固定时长赢 3.0-3.7x/1.6-1.75x 双平台。**消费者(io)未落地,已验证就位** |
+| **time** monotonic_ns | 13.22/13.07/12.93(Win/Lin/M4) | std::chrono::steady_clock | 13.30/13.07/12.88 | 全部统计平 | std::chrono(即标尺,同 OS 原语) | 同左 | 1.0x | ➖header-inline 后三平台与 std 同档 |
+| **time** fast_monotonic_ns(opt-in rdtsc) | 7.37/7.13/12.93 | HYLE monotonic_ns | 13.22/13.07/12.93 | 1.79x/1.84x/1.0x | (std 无 opt-in TSC 钟) | n/a | n/a | ✅x86 快约1.8x；M4 透明回退(非默认,可能跳变) |
+| **time** fast_realtime_ns(opt-in coarse) | 3.20/3.90/13.64 | HYLE realtime_ns | 15.77/13.09/13.70 | 4.94x/3.36x/1.0x | (std 无 opt-in coarse 钟) | n/a | n/a | ✅Win/Linux 真赢；macOS 无 coarse 原语而回退 |
+| **time** timer wheel churn(arm+70%cancel+expire) | 11.44/14.74/8.02 | (std 无定时器结构) | n/a | n/a | indexed eager-erase heap(libevent/libuv 核心形状) | 20.16/15.34/10.57 | 1.75x/1.05x/1.31x | ✅**三平台赢**；对手按真实 keyed erase 建模、无墓碑 |
+| **time** timer wheel arm+cancel / arm+expire | 7.24·15.37/5.81·23.37/4.92·13.54 | (std 无) | n/a | n/a | indexed eager-erase heap | 16.04·48.27/6.72·41.36/8.13·22.51 | 2.23·3.16x/1.14·1.76x/1.65·1.66x | ✅三种工作量三平台同向；8×64 覆盖完整 uint64 ns 域 |
+| **time** CommonTimeoutQueue(固定时长)arm+expire/cancel | 3.60·2.88/3.13·1.90/4.86·3.17 | (std 无定时器结构) | n/a | n/a | libevent-shape 预分配侵入 TAILQ | 4.25·3.14/3.94·2.59/2.76·3.09 | 1.18·1.10x/1.25·1.34x/**0.57·0.98x** | ⚠️ Win/Linux 赢；M4 expire 明确 lose，不能宣称跨架构 SOTA |
 | **util** Rng next_u64(xoshiro256++) | 1.56 | std::mt19937_64 | 2.41 | 1.54x | (std 即标尺) | 同std | 1.54x | ✅赢 std PRNG |
 | **util** Rng range_u64(真 Lemire 无除法) | 1.46(microbench)/shuffle见下 | std::uniform_int_distribution | 2.75 | — | absl/numpy/rust rand(真 Lemire) | 同法 | ~1.0x | ✅改真 Lemire(128 位乘替 2 idiv);常量界 microbench 编译折除法故 1.46ns 平,**真实运行时界见 shuffle 3.2x** |
 | **util** Rng next_double [0,1) | 1.65 | std::uniform_real_distribution | 2.64 | 1.60x | (std 即标尺) | 同std | 1.60x | ✅赢(53 位缩放) |
