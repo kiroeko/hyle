@@ -1,8 +1,9 @@
 # HYLE 实现路线图
 
-> 动手前的收口：把设计里散落的硬依赖收成一张无环图，分解为**依赖层（阶段）× 里程碑（约 58 个，每个 1-4k 行可独立编/测）**两个轴，给每阶段定验收门槛，并汇总全部决策（已决 + 待决）。这既是施工计划，也是对全部设计的最后一次端到端校验。
+> 动手前的收口：把设计里散落的硬依赖收成一张无环图，分解为**依赖层（阶段）× 里程碑（当前约 89 个，每个可独立编/测）**两个轴，给每阶段定验收门槛，并汇总全部决策（已决 + 待决）。这既是施工计划，也是对全部设计的最后一次端到端校验。
 >
-> **注意区分**：依赖层（P0-P6）是"谁先能编译"的拓扑序、6 层；里程碑才是真正的实现步骤、约 58 个（milestones/README 为准）。别把 6 层当 6 步。
+> **注意区分**：依赖层（P0-P6）是“谁先能编译”的拓扑序；里程碑才是真正的
+> 实现步骤（当前约 89 个，以 milestones/README 为准）。别把依赖层当施工步数。
 
 ## 一、模块依赖图（验证无环）
 
@@ -97,18 +98,21 @@ container/       │               │ compute   │  container 自带内联 SSE
 
 | 阶段 | 模块 | 里程碑（每个可独立编/测）| 旧预测 | 再投影(实测口径) |
 |---|---|---|---|---|
-| **P0** | error / obs-hook | Status+expected+ASSIGN_OR_RAISE / obs 埋点 | 3-5k | ~0.8k ✅ |
-| **P1** | platform | thread+park / vm+dynlib / path+fs+env | 5-8k | ~1.2k ✅(vm 待) |
-| **P2** | mem | Allocator+alignment / mimalloc / arena / pool+stack / NUMA | 6-10k | ~0.9k ✅主力(arena/pool/stack/growable 净新) |
-| **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | ~0.3k 🔶(时间轮待) |
-| **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | ~2k ✅主力 |
+| **P0** | error / obs-hook | Status+expected+ASSIGN_OR_RAISE / obs 埋点 | 3-5k | error ~0.7k + obs ~0.8k，✅ 预发布冻结 |
+| **P1** | platform | thread+park / vm+dynlib / path+fs+env | 5-8k | **~4.4k**，✅ 预发布冻结 |
+| **P2** | mem | Allocator+alignment / mimalloc / arena / pool+stack / NUMA | 6-10k | **~1.8k**，✅ 预发布冻结 |
+| **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | **~0.9k**，✅ 预发布冻结 |
+| **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | **~4.9k**，✅ StringBuf 复杂度/三平台强 peer 收口后预发布冻结 |
 | **P3** | simd | 七后端 + 双轨 + dtype/math/sort/bitpack/search… | 10-16k | **已 ~34k 生产**（远超「~5–8k」旧投影）；补缺见 simd-capability-fill-list / simd-25，冻结无谓扩名 |
 | **P4** | sched | fcontext+栈池 / run-queue / work-stealing / Waker / CV+同步 / 协程胶水 | 10-15k | **已 ~3.1k** 主干收口；残余栈 guard 等边角 |
 | **P5** | io | proactor / 多后端 / net / file+shmem / HTTP | 9-14k | **已 ~5.0k** 大面；shmem/HTTP2 等尾 |
 | **P5** | compute | device/stream / buffer / completion / kernel / ggml_bridge / Vulkan | 10-16k | **已 ~3.8k**（仍简）；终态弹性 **+3～15k** 视自造深度 |
-| **P6** | graph + 收口 | 增量重算 / 数据并行 / C-ABI / T3 | 11-17k | graph **已 ~0.6k**（薄）；close-01 等待做 |
+| **P6** | graph + 收口 | 增量重算 / 数据并行 / C-ABI / T3 | 11-17k | graph **已 ~0.6k**（graph-01 完整、graph-02 部分，薄但非 stub）；close-01 八模块完成、上层/发布门待做 |
 
-**HYLE 自有合计（2026-07-17）**：生产 **已 ~53k**；终态纪律 **~65–80k** / 做满守界 **~80–100k**（旧 28–40k 作废）。含测试约生产×1.4–1.6。里程碑数以 milestones/README 为准。详见 [`hyle-scope.md`](./hyle-scope.md) 与 [`../milestones/midterm-report-2026-07-scale-positioning.md`](../milestones/midterm-report-2026-07-scale-positioning.md)。
+**HYLE 自有合计（2026-07-19）**：生产 **~67.2k**；终态纪律现重估
+**~75–90k** / 做满守界 **~85–105k**（旧 28–40k 作废）。当前分层判断与
+冻结规则见
+[`pre-release-readiness.md`](../milestones/pre-release-readiness.md)。
 
 > **⚠️ scope 负空间待复核（2026-07-03）**：审计里被判"有意不做(L1/运维栈 out-of-scope)"的项(如 TLS 一度、log 聚合、序列化边界、数据并行归属等)——其中**部分可能判错了**,`hyle-scope.md` 的负空间是项目早期写的,本身可能"漏点"。这些**不当已决**,留作后续讨论;TLS 已从"排除"改判为 C9 真能力就是一例修正。序列化 IN/OUT 边界、数据并行层归属尤其待拍。
 
@@ -123,7 +127,11 @@ container/       │               │ compute   │  container 自带内联 SSE
 > 一句话现状（粗粒度，细节看 milestones）：**地基层（error/platform/mem/container/time/util/obs）基本立住；
 > sched 核心 + fiber 同步原语 done（work-stealing + Waker 脊 + conditional-notify 防惊群 + CV/Mutex/WaitGroup/Latch/Channel,对标 marl 全线追平/反超）+ 协程胶水（Task + co_await→fiber 让出）+ fiber 亲和（spawn_on 绑核，shard-per-core 基座），后段（取消 sched-07/优雅关闭 sched-08/fiber-mode 定时 04d）**待其轴 C 能力驱动**（见轴 C：04d←C2 带超时 io、07←C3 结构化取消、08←C4 优雅关闭——孤立做=投机）；**simd 支柱基本完成**（dispatch + vec 抽象 +
 > scalar/SSE4.2/AVX2/AVX512/NEON 定宽后端 + SVE/RVV scalable 后端实跑 + Runtime/native/exact 双轨 + fp16/bf16/fp8 dtype + HYLE 自有数学/排序/bitpack/RNG 核，产品零 Highway/xsimd、外部对照追平；AVX512 由 Intel SDE 验正确性，SVE/RVV 多 VL 由 QEMU 验证）；**io 支柱破土并接线到 sched**（proactor 三后端 io_uring/IOCP/epoll 全真 op 无 stub + co_await socket 层 + shard-per-core 集成 + TcpListener/Stream + UdpSocket(recvfrom/sendto 三后端)，真 loopback TCP/UDP echo 三后端+TSan；echo+pipelined benchmark 已补，worker 空闲已阻塞 GETEVENTS reap=修了 pipelined 揪出的 P0 hang；**io-04 net 完成 ✅**（含 park 合并：空闲 worker真睡眠、eventfd 唤醒，空闲 syscall 421→3）+ **io-07a/b multishot accept/recv + provided buffer ring ✅**（补完 kMore/kBuffer 两半成品 flag）；file/shmem io-05 + 带超时/TLS/DNS/HTTP 待）；**compute/graph 两支柱未开工**（异构混合极致性能的头牌本体）。**
-> 体量/进度（2026-07-17）：生产 **~53k**；÷终态纪律中值 ~72k ≈ **~74% LOC**；功能完成度主观 **~55–70%**（compute 仍简、graph 薄、close-01 未装、simd 变宽真机/A1 等未完）。**勿用里程碑计数当完成度**。权威：milestones/README + hyle-scope 规模节 + midterm-report。
+> 体量/进度（2026-07-19）：生产 **~67.2k**；÷终态纪律中值
+> ~82.5k ≈ **~81% LOC**，但 SIMD 体量会放大这个比例；完整愿景的功能判断带为
+> **约 70–80%**。八个底层模块已经预发布冻结，sched/io 待同等级收口，
+> compute/graph 有真实主干但仍有能力尾，close-01 的上层 C ABI/install/FFI 门未完。
+> **勿用里程碑计数当完成度**。
 
 
 

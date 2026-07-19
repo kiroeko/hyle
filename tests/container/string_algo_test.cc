@@ -255,12 +255,17 @@ TEST(FuzzyMatch, FindPathMatchesTopK) {
 TEST(FuzzyMatch, FindPathMatchesCap) {
   const string_ref cands[] = {"aXbc"_sr, "abXc"_sr, "abcX"_sr, "Xabc"_sr, "abc"_sr};
   constexpr std::uint32_t n = sizeof(cands) / sizeof(cands[0]);
-  std::uint32_t idx[2];
-  int score[2];
+  // A canary slot after the advertised capacity proves the implementation
+  // writes only k results without provoking GCC's interprocedural
+  // false-positive for a physically two-element object.
+  std::uint32_t idx[3] = {UINT32_MAX, UINT32_MAX, UINT32_MAX};
+  int score[3] = {INT32_MIN, INT32_MIN, INT32_MIN};
   std::uint32_t m = find_path_matches(cands, n, "abc"_sr, idx, score, 2, /*path_aware=*/false);
   EXPECT_EQ(m, 2u);  // capped at k=2 though all 5 match
   EXPECT_GE(score[0], score[1]);
   EXPECT_EQ(idx[0], 4u);  // "abc" (pure consecutive from start) is the best
+  EXPECT_EQ(idx[2], UINT32_MAX);
+  EXPECT_EQ(score[2], INT32_MIN);
 }
 
 // Ties break toward the lower index (stable ordering).

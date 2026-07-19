@@ -12,6 +12,17 @@
 using hyle::container::SwissTable;
 using hyle::mem::system_allocator;
 
+namespace {
+
+void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
+void fail_free(void*, void*, std::size_t, std::size_t) noexcept {}
+void* fail_realloc(void*, void*, std::size_t, std::size_t,
+                   std::size_t) noexcept {
+  return nullptr;
+}
+
+}  // namespace
+
 TEST(SwissTable, EmptyFindMisses) {
   SwissTable<int, int> t(system_allocator());
   EXPECT_EQ(t.size(), 0u);
@@ -273,4 +284,19 @@ TEST(SwissTable, FallibleReserveRejectsOverflowWithoutChangingState) {
   EXPECT_EQ(table.capacity(), old_capacity);
   ASSERT_NE(table.find(7), nullptr);
   EXPECT_EQ(*table.find(7), 9);
+}
+
+TEST(SwissTable, PrepareInsertIsFallibleAndMakesInsertAllocationFree) {
+  hyle::mem::Allocator failing{fail_alloc, fail_free, fail_realloc, nullptr};
+  SwissTable<int, int> table(failing);
+  EXPECT_FALSE(table.try_prepare_insert());
+  EXPECT_TRUE(table.empty());
+
+  SwissTable<int, int> ready(system_allocator());
+  ASSERT_TRUE(ready.try_prepare_insert());
+  const std::size_t capacity = ready.capacity();
+  EXPECT_TRUE(ready.insert(7, 9));
+  EXPECT_EQ(ready.capacity(), capacity);
+  ASSERT_NE(ready.find(7), nullptr);
+  EXPECT_EQ(*ready.find(7), 9);
 }

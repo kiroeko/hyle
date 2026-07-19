@@ -91,11 +91,17 @@
 
 | 里程碑 | 状态 | 待决 |
 |---|---|---|
-| close-01 C-ABI shim | 📋 承诺锁定待排期 | 各模块稳定后做;发布给 FFI 的唯一稳定面 |
+| close-01 C-ABI shim | 🔶 八底层模块完成 | error/platform/mem/time/simd/util/obs/container 已完成；sched/io/compute/graph + install/export/跨编译器/FFI 待做 |
 | close-02 serialize | ❓ scope 待澄清 | 借 flatbuffers/capnproto builder+reader 当原语 vs 全推 L1?JSON 借 simdjson 已定 |
 | close-03 FFI 绑定 | 占位 | 依赖 close-01 |
 | graph-02 数据并行层 | ✅ **归属已定(2026-07-10)** | **归 graph**(graph-design.md §2):compute 铁律把铺多核推给 graph-02 fork-join,归 compute 会破其"不起线程池"边界;消费者与 graph-01 同源。序列化(close-02)仍待 scope 复核 |
 
 ## 六、一句话排期建议
 
-**北极星① 服务器骨架已完整(2026-07-05)**:C1 并发 io / C2 超时 / C4 优雅关闭 / C9 TLS / C10 DNS·signal / **C11 HTTP/1.1 全部落地**,sched 支柱收口(01~11 全 ✅ + 三复杂度优化)。**serving 侧基本齐了**——从 socket 到 HTTP 请求/响应、超时、TLS、优雅关闭、请求 fan-out 取消,一条 co_await 链跑通,三后端(io_uring/IOCP/epoll)+ TSan 全绿。**下一大块 = compute 支柱**(0 行、前置 sched-04 就绪、北极星① 算力本体):device/stream 薄包 ggml-backend → device buffer → GPU completion→fiber → kernel 启动 → ggml_bridge → Vulkan,借 ggml 不自造算子。推理引擎 = serving(✅ io/HTTP)+ 算力(compute,待做),两条线合起来才是完整北极星①。**io-05 shmem / io-11 HTTP/2 / A 类广度**按需穿插,simd-03 硬件阻塞除外。
+**2026-07-19 当前顺序**：八个底层模块按
+[`pre-release-readiness.md`](./pre-release-readiness.md) 进入预发布冻结，不再无限
+复审；先完成 container/StringBuf 本轮 SOTA 例外，再对 **sched → io** 做同等级六面
+收口并补 C ABI。container/StringBuf 例外已经完成。compute 已有
+CPU/CUDA/Vulkan/ggml 主干，graph 已有完整 graph-01
+和 graph-02 step-1，二者都不是“0 行待开工”；随后按北极星补其能力尾。最终统一做
+上层 C ABI、install/export、跨编译器和 FFI 冒烟。

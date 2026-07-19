@@ -87,17 +87,39 @@ type-erased cold core；typed find/insert/erase 保持 header-inline，避免廉
 StringBuf 有两个正交用法：
 
 ```text
-add -> InternId(generation, slot) -> retain/remove -> refs=0 时释放
+add/add_many -> InternId(generation, shard, slot) -> retain/remove -> refs=0 时释放
 intern / intern_many             -> permanent until pool destruction
 ```
 
-内容 hash 只负责定位，不是身份。`by_string` 必须继续做完整内容 equality；ID 通过
-`by_id` 直接索引，generation 防止 slot 重用后 stale ID 命中新字符串。每个 Entry
-与字符数据在一个 allocator allocation 中，地址稳定。pool、索引、entry、C handle
-都使用注入的同一个 allocator。
+内容 hash 只负责定位，不是身份。`by_string` 继续做完整内容 equality；ID 编码
+`generation + shard + slot`，generation 防止 slot 重用后 stale ID 命中新字符串。
+构造时按硬件并行度一次选择 16/32/64 shard，单次调用只锁内容或 ID 对应的 shard。
+shard 取 hash 中间位，SwissTable 仍直接使用原 hash 的低位 H1 与高位 H2，避免
+固定 index/tag 熵或每次 lookup 再做一次 remix。永久 `intern` 默认不创建外部不可见
+的 ID slot；第一次 `add` 同内容时才 lazy materialize。
 
-单次 API 为线程安全每次取锁；吞吐用户应使用 `intern_many`。单次生命周期 churn
-不是该模块的 SOTA 宣传点，性能结论见
+Entry 缓存 table hash：新输入不可避免地是 Ω(L) 读字节，但 Swiss 扩容只移动
+定长 key、删除按缓存 hash 定位，不再反复扫描已驻留长串。≤256B 的 Entry+字符使用
+每 shard 小块 slab，remove 后回到池内复用；大字符串立即归还注入 allocator，全部
+slab 在 StringBuf 销毁时归还。地址在有效生命周期内稳定。
+
+SwissTable 的 `try_prepare_insert()` 同时处理正常 grow 与 tombstone rehash，先把
+可能失败的 allocation 做完，随后 `insert()` 才是 allocation-free；StringBuf 因而
+能在 noexcept/batch API 中返回短前缀，而不是让冷路径 OOM 落进 fatal assert。
+
+| 操作 | 当前预期复杂度 | 下界/相对旧形状 |
+|---|---:|---|
+| 新内容 `intern/add` | O(L) amortized | 必须读输入，达到 Ω(L) 下界 |
+| 已驻留内容命中 | O(L) expected | 必须确认调用方字节；hash 只算一次 |
+| `lookup/retain/remove(id)` | O(1) expected | direct generation slot，达到 Ω(1) 下界 |
+| table rehash | O(N) | 只搬定宽 slot；旧形状会重扫 resident bytes，最坏 O(ΣL) |
+| 最后一份 ID 删除 | O(1) expected | cached hash + pointer-equality erase，不重扫字符串 |
+| batch | O(ΣL + N + S) expected | S 为构造期 shard 数且 `S <= 64` |
+| `size()` | O(S)，硬上界 O(1) | 不扫描条目 |
+| 短串重复 churn | O(N) | 达到高水位后 slab/ID slot 复用，无逐条 allocator 调用 |
+
+吞吐/生命周期用户应使用 `intern_many`、`add_many`、`retain_many`、
+`remove_many`，它们只获取一次 shard lock set。性能结论见
 [`benchmarks-mem-container.md`](../performance/benchmarks-mem-container.md)。
 
 ## 字符串 SIMD 策略
@@ -129,7 +151,7 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 
 `include/hyle/c/container.h` 遵守 close-01：
 
-- 106 个 `extern "C"` 动态符号；15 个 header-inline 便利入口。
+- 109 个 `extern "C"` 动态符号；15 个 header-inline 便利入口。
 - options 带 `struct_size`；allocator 按值捕获但 state 生命周期由调用方保证。
 - 对象只经 create/destroy；不导出 C++ 类布局、STL、模板或异常。
 - String/path 产出使用借用 view 或 buffer-fill。
@@ -154,10 +176,10 @@ container 对外依赖。hex encode/decode 当前是无查表分支的标量/编
 - flat Swiss map 对 std 和 absl 的已测核心操作成立；
 - CArray/SmallVector/队列按各自对等形状判断；
 - 路径的大倍数主要来自零分配结构，对同形 string-view 扫描通常是平局；
-- StringBuf batch throughput 强，单调用/生命周期 churn 有锁和 DLL seam 成本；
+- StringBuf 长串增长、重复 churn、并发分片和 batch 分别验收；单调用仍有 DLL seam；
 - 4KB 字符扫描的 0.8x–0.95x 点值应结合 64KB/1MB、方差和调用形状，不包装成赢。
 
-测试矩阵包括 typed 单测、纯 C 121/121 调用覆盖、C++ C-ABI 并发测试、allocator
+测试矩阵包括 typed 单测、纯 C 124/124 调用覆盖、C++ C-ABI 并发测试、allocator
 故障注入、三平台构建/运行、ASan/UBSan/TSan，以及独立 SOTA benchmark。
 
 ## 维护红线

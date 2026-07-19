@@ -18,30 +18,35 @@
 
 ## 预测 vs 真实 LOC（防玩具化）
 
-### 整体进度与体量（诚实，2026-07-17 锚定）——分母别混
+### 整体进度与体量（诚实，2026-07-19 锚定）——分母别混
 
 > **生产 = `cloc src include` 的 code 列**（header+C++/CUDA 等，不含 tests/bench/docs/third_party）。
-> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当日生产已 **~53.3k**，单 **simd ~34.4k（≈64%）**。
+> **旧投影「完成时生产 ~28–40k / 中值 34k」已作废**：当前生产已 **~67.2k**，单 **simd ~37.7k**。
 > 权威规模节：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。中期报告：[`midterm-report-2026-07-scale-positioning.md`](./midterm-report-2026-07-scale-positioning.md)。SIMD 当前补缺账本：[`simd-capability-fill-list.md`](./simd-capability-fill-list.md)。
 
 | 口径 | 当前（约） | 说明 |
 |---|---|---|
-| **生产 `src`+`include`** | **~53.3k** | 库本体硬锚 |
-| tests / bench / docs | ~22.4k / ~12.2k / ~14.2k | |
+| **生产 `src`+`include`** | **~67.2k** | 库本体硬锚 |
+| tests / bench / docs | ~29.9k / ~13.2k / ~17.5k | |
 | 自有工程（git 跟踪且排除 third_party） | **~105k** | |
 | git 全跟踪（含 in-tree third_party） | **~187k** | simdutf/mimalloc 等，**≠ 自写** |
-| **终态生产（纪律收口 A）** | **~65–80k** | 主预期 |
-| **终态生产（做满守界 B）** | **~80–100k** | compute/simd 收口更满 |
+| **终态生产（纪律收口 A）** | **~75–90k** | 主预期 |
+| **终态生产（做满守界 B）** | **~85–105k** | compute/graph/发布面收口更满 |
 | 失控上限 C | 120k+ 生产 | 应避免 |
 
 | 进度口径 | 怎么读 | 当前判断 |
 |---|---|---|
 | **里程碑计数** | 颗粒不等重 | **勿当完成度**（小 util 与大 compute 各记 1） |
-| **生产 LOC ÷ 终态 A 中值 ~72k** | 代码量进度 | **~74%**（53/72）；**≠ 能力完成度** |
-| **生产 LOC ÷ 终态 B 中值 ~90k** | 做满剧本 | **~59%** |
-| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | **约 55–70%** 主观带：sched/io/simd 主路径厚；**mem 尾、compute 仍简、graph 薄、close-01 未装门、simd 变宽真机/A1/C 尾未完** |
+| **生产 LOC ÷ 终态 A 中值 ~82.5k** | 代码量进度 | **~81%**；SIMD 体量放大该数，**≠ 能力完成度** |
+| **生产 LOC ÷ 终态 B 中值 ~95k** | 做满剧本 | **~71%** |
+| **对完整愿景的功能完成度** | 能力清单 + 头牌缺口 | **约 70–80%** 判断带：八底层模块冻结；sched/io 待强收口；compute/graph 有主干但有能力尾；上层 C ABI/install/FFI 未完 |
 
-**模块生产粗表（2026-07-17）**：simd ~34.4k · io ~5.0k · compute ~3.8k · sched ~3.1k · container ~2.7k · platform ~1.4k · mem ~0.7k · graph ~0.6k · 其余基质 ~1.6k。
+**模块生产粗表（2026-07-19）**：simd ~37.7k · io ~5.0k · container
+~4.9k · platform ~4.4k · compute ~3.8k · sched ~3.2k · mem ~1.8k ·
+util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
+
+预发布冻结门、重开触发器和下一步顺序见
+[`pre-release-readiness.md`](./pre-release-readiness.md)。冻结模块不再因猜测做无限轮全审。
 
 **一句话**：**代码量已过「小 clay 升级版」预期**；能力上是 **「中型混合计算底座 + 库中库级 SIMD」**，不是玩具，也还不是全愿景收口。ggml 等借入不计入自有完成度。
 
@@ -172,11 +177,13 @@
 | [compute-09](./compute-09-op-face.md) | P5 | compute | ggml_bridge 算子面扩展:通用图执行器 + elementwise/norm(step-1)+ FFN block 权重常驻(step-2)| compute-05 | ~220 code + ~200 test | ✅ **step-1+2 完成(2026-07-09/07-10)**。**step-1**:抽通用图执行器 `elementwise_blocking`(matmul 那套 ctx→gallocr→H2D→compute→D2H→free 样板写一次),铺 rms_norm/silu/add/mul 各只一句建图——纠正"消费者驱动才加算子"误用(推理链本身就是消费者,只暴露 matmul 让 HYLE 像玩具)。**step-2**:`FfnBlock` 完整 LLaMA 式 FFN 子块,**权重常驻显存**(`ggml_backend_alloc_ctx_tensors_from_buft` 构造拷入一次,每次 forward 只喂激活;两条独立 device 路:常驻 weight buffer vs gallocr 激活)——matmul 缺的真推理机制。GPU fp32 matmul 降精度→后端感知容差(CPU 严格闸)。红队闭环(step-1 4 项/step-2 3 项)。WSL GPU RTX4070+CPU 21/21 + MSVC GPU+CPU 9/9。**step-3 attention(rope/softmax/permute)→ backlog #102** |
 | [graph-01](./graph-01-incremental-recompute.md) | P6 | graph | taskgraph 剥特化 + 绑 sched:脏标记增量重算 + 拓扑并行 + 结果缓存(== TBB flow_graph 类 DAG 编排)| sched-03 | ~765 code | ✅ **step-1+2+3(demand)完成(2026-07-10,支柱破土)**。**step-1**(WSL+MSVC 13/13):`TaskGraph` 脏标记增量重算核心——节点=fn-ptr+ctx 闭包、边逆创建序→插入序天然拓扑序(无排序/环检测)、脏传播 eager/重算 lazy、SoA+CSR;改一输入只重算下游脏、干净复用缓存(clay 零增量资产从零造);串行纯 CPU。**step-2**(WSL+ASan+TSan+MSVC 各 7/7):`evaluate_parallel` 同层独立脏节点并行跑 sched work-stealing、逐层 fork-join;sched 隔离 gated(核心处处编)。**step-3 demand**(19/19+ASan):`evaluate_node(target)` 只重算依赖锥(Salsa/Adapton)。**step-3 wavefront**(WSL+ASan+TSan+MSVC 各 14/14):`evaluate_parallel_wavefront` 节点在自己脏 deps 完成即起(不等整层),长短腿图缩短关键路径(标准 DAG 执行器能力,通用库须做全非"预设消费者够用")。**四轮红队闭环**(move OOB / Status-in-JoinState UAF / demand 锥闭包 / wavefront 栈 Channel send-after-free UAF)。graph-01 三步全落地 |
 | [graph-02](./graph-02-data-parallel.md) | P6 | graph | **数据并行层**:parallel_for/reduce/scan/sort over range(+ blocked_range/partitioner)| sched, simd | ~400 code(step-1) | 🟡 **step-1 完成(2026-07-10)**。`BlockedRange` + `parallel_for`(递归二分 split+grainsize+auto 档)+ `parallel_reduce`(fast 档,左→右 fixed-tree fold),递归 fork-join 跑 HYLE sched(借 oneTBB 设计不借运行时)。Body 收 subrange 接 simd。WSL+ASan+TSan+MSVC 各 14/14 + 红队闭环(揪修 kAutoGrain sentinel 被 ctor 销毁致大 range hang + auto-grain floor + deterministic 注释误述)。**step-2 = reduce_deterministic + scan(两趟)/ step-3 = parallel_sort(借 simd vqsort)未做**。归 graph(compute 铁律把铺多核推给 graph-02) |
-| [close-01](./close-01-c-abi-shim.md) | P6 | 收口 | C-ABI shim(对外纯 C 头) | 各模块稳定 | 2-3k | error 样板 ~250 | 🔶 **error 样板已落地(2026-07-17)**：`include/hyle/c/error.h` + `c_error.cc` + 纯 C `hyle_error_c_test`（C 编译器编过）。Status 拥有型句柄/handler/版本号。全模块 shim、跨编译器、TS/Python FFI 冒烟仍待。产品铁律不变：唯一稳定发布面=纯 C |
+| [close-01](./close-01-c-abi-shim.md) | P6 | 收口 | C-ABI shim(对外纯 C 头) | 各模块稳定 | 2-3k | 见专文 | 🔶 **八模块已落地(2026-07-19)**：error/platform/mem/time/simd/util/obs/container 具有纯 C 头、实现、测试和指南；sched/io/compute/graph、install/export、跨编译器与 TS/Python FFI 冒烟仍待。唯一稳定发布面仍是纯 C |
 | close-02 | P6 | 收口 | serialize(simdjson/flatbuffers) + hash + T3 便利 | container | 4-6k | — | ❓ **占位 + scope 待澄清(审计发现)**。现把"serialize/hash/T3"糊成一个占位、点名 flatbuffers/simdjson 却**无设计、无接口形状**。`hyle-scope` 内部打架:"二进制序列化原语"算 IN、"IDL/schema 编译器·RPC"算 OUT。**待你拍**:① 借 flatbuffers/capnproto 的 builder+reader **当序列化原语**(不含 schema 编译器),还是 ② 把 wire-format 全推 L1。JSON 借 simdjson 已明确(scope 一致)。现状是"看着像计划的占位",需决策 |
 | close-03 | P6 | 收口 | FFI 绑定(TS N-API / Python ctypes) | close-01 | 2-3k | — | 占位 |
 
-~84 个真里程碑(86 行 − 2 ⛔;72 ✅ 完成 ≈ 84% 计数,但**计数高估**见顶部三口径表——真实 ~45% 能力 / ~50% LOC)。状态：✅ 完成 / 🔶 部分 / ⏸️ 占位(等轴 C 能力驱动) / 📋 规划 / ❓ 待 scope 澄清 / ⛔ 否决。真实LOC 闭环后回填，差距大见对应文档解释。
+里程碑颗粒不等重，不再发布“完成行数/总行数”百分比；当前功能和 LOC 的分层
+口径见顶部表。状态：✅ 完成 / 🔶 部分 / ⏸️ 占位(等轴 C 能力驱动) /
+📋 规划 / ❓ 待 scope 澄清 / ⛔ 否决。
 
 > **compute 支柱里程碑清单(2026-07-06 补齐缺口)**：01 device/stream/event ✅ → 02 device buffer ✅ → **02b pinned pool + host 数据准备区(合批)✅** → **02c VRAM sub-allocator(VMM+leg 抄全 ggml)✅** → **03 GPU completion→fiber(co_await stream)✅** → **04 kernel launch(NVRTC 运行时编译 + driver launch)✅** → 05 ggml_bridge → 06 Vulkan compute → 07 CPU 算子后端(接 simd) → 08 HIP/Metal。主干进度:01/02/03/04 已通(device/内存/completion/kernel 全链路——NVRTC 源码→PTX→launch→co_await 完成端到端真跑)；02b/02c 抄全 ggml 分配器 SOTA；剩 05 ggml_bridge(借算子) → 06 Vulkan；07 CPU 后端；08 AMD/Apple。数据并行 parallel_for 见 graph-02。
 

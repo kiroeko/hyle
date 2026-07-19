@@ -16,10 +16,12 @@ namespace hyle::container {
 // downstream code can compare interned strings by pointer identity and a hashmap
 // keyed on them needs no per-lookup string hashing.
 //
-// Interned strings never move (each unique string gets its own allocation), so a
-// pointer cached from intern()/lookup() stays valid for the string's lifetime.
-// Thread-safe: all four mutators take an internal lock (interning is not a hot
-// path; one lock keeps it simple and correct).
+// Interned strings never move (short entries occupy stable slab blocks; long
+// entries use direct allocations), so a pointer cached from intern()/lookup()
+// stays valid for the string's lifetime.
+// Thread-safe: construction selects 16/32/64 content shards once from the host's
+// hardware parallelism, so unrelated strings and IDs do not serialize on one
+// process-wide pool lock and the hot path does no repeated topology detection.
 //
 // The SwissTable reverse index + the lock live in the .cc via a pimpl, so this
 // header stays ABI-clean (no std::mutex / SwissTable in the layout) and pulls in
@@ -50,13 +52,28 @@ class StringBuf {
   // empty InternId (value 0) and is never stored.
   HYLE_CONTAINER_API InternId add(string_ref s) noexcept;
 
+  // Batch add. `output` must have `count` slots. Returns the completed prefix;
+  // a short result reports allocation failure. The implementation acquires the
+  // shard locks once, amortizing synchronization for lifecycle-heavy callers.
+  HYLE_CONTAINER_API std::size_t add_many(const string_ref* input,
+                                          InternId* output,
+                                          std::size_t count) noexcept;
+
   // Bumps the refcount of an already-interned string by its handle (== add of the
   // same content, without needing the bytes again).
   HYLE_CONTAINER_API bool retain(InternId id) noexcept;
 
-  // Drops one reference. When the count reaches the number of add()s, the
-  // string's storage is reclaimed and its pointer becomes invalid.
+  // Batch retain/remove return the completed prefix. A short result means the
+  // next handle was stale, absent, or could not be retained.
+  HYLE_CONTAINER_API std::size_t retain_many(const InternId* ids,
+                                             std::size_t count) noexcept;
+
+  // Drops one reference. When the count reaches zero, the string's storage is
+  // reclaimed and its pointer becomes invalid unless it was permanently
+  // interned.
   HYLE_CONTAINER_API bool remove(InternId id) noexcept;
+  HYLE_CONTAINER_API std::size_t remove_many(const InternId* ids,
+                                             std::size_t count) noexcept;
 
   // String for `id`, or empty if absent. The result is always null-terminated.
   HYLE_CONTAINER_API string_ref lookup(InternId id) noexcept;
@@ -66,9 +83,10 @@ class StringBuf {
   // add()/remove() instead when individual lifetime reclamation is required.
   HYLE_CONTAINER_API string_ref intern(string_ref s) noexcept;
 
-  // Permanently intern a batch under one lock. `output` may be null when the
-  // caller only wants to prewarm the pool. Returns the processed count; a short
-  // result reports allocation failure after preserving the completed prefix.
+  // Permanently intern a batch while acquiring each shard lock once. `output`
+  // may be null when the caller only wants to prewarm the pool. Returns the
+  // processed count; a short result reports allocation failure after preserving
+  // the completed prefix.
   HYLE_CONTAINER_API std::size_t intern_many(const string_ref* input,
                                              string_ref* output,
                                              std::size_t count) noexcept;

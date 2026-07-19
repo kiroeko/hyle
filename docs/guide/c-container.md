@@ -92,9 +92,13 @@ ASCII 单字节便利函数全部 header-inline：
   的 `hyle_container_intern_id`；用 `hyle_container_string_buf_retain`、
   `hyle_container_string_buf_remove`、`hyle_container_string_buf_lookup` 管理。
   删除后的旧 ID 永远不会指向后来复用该 slot 的字符串。
+- 批量生命周期：`hyle_container_string_buf_add_many`、
+  `hyle_container_string_buf_retain_many`、
+  `hyle_container_string_buf_remove_many` 返回已完成的前缀长度。C shim 以最多
+  64 项为一块，把 shard 锁和动态 ABI 接缝摊薄；非零 count 要求输入/输出数组有效。
 - 永久驻留：`hyle_container_string_buf_intern` 和
   `hyle_container_string_buf_intern_many` 返回稳定、带尾零的借用视图，存活到池
-  销毁。吞吐场景优先 batch，它只取一次锁。
+  销毁。吞吐场景优先 batch，它只获取一次 shard lock set。
 - `hyle_container_string_buf_size` 返回当前不同字符串数。所有返回视图都由池拥有，
   不得释放。
 

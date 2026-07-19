@@ -40,7 +40,7 @@
 - [x] **container**（2026-07-19 收口）：`include/hyle/c/container.h` +
       `c_container.cc`，覆盖字符串/路径、StringBuf、runtime-erased POD
       vector/flat Swiss map、四类 pointer-payload queue 和 append-only vector。
-      纯 C 测试引用 121/121 callable names；106/106 动态符号，另 15 个
+      纯 C 测试引用 124/124 callable names；109/109 动态符号，另 15 个
       header-inline 便利入口。allocator/OOM/alias/collision/并发均有红队。文档：
       [`c-container.md`](../guide/c-container.md)，复审：
       [`container-module-closure.md`](./container-module-closure.md)。

@@ -80,21 +80,30 @@
 
 ### 2026-07-19 收口复测（当前接口形状）
 
-| 场景 | HYLE / 对手 | 判定 |
-|---|---:|---|
-| StringBuf 单次 intern vs thread-safe std peer | **0.91x** | ❌ 小输；每次锁 + DLL seam |
-| StringBuf `intern_many` vs unlocked std floor | **1.075x** | ✅ batch 吞吐赢 |
-| add/retain/remove vs direct-ID+mutex 同契约 peer | **0.75x** | ❌ 生命周期单调用小输 |
-| find(char), substring, set-search, starts_with | 0.93–1.00x | 统计近似平；不宣传赢 |
-| split / rfind(char) / count，4KB | 0.83–0.96x | 短输入 seam 可见 |
-| count / rfind(char)，64KB–1MB | 0.995–1.14x | 长输入摊平，平或赢 |
-| UTF-8 validate+count vs simdutf | **1.004x** | 平 |
-| ASCII lower vs scalar branch | **1.52x** | 赢 scalar reference |
+比值大于 1 表示 HYLE 更快。三平台均为 Release、nanobench 3 repetitions
+aggregate；macOS 未装 Abseil 的行使用同分片 std peer。
 
-旧表保留为历史优化证据，不再作为当前无条件证书。StringBuf 的 peer 已升级为
-generation-tagged direct-ID+mutex，不再用按 key re-find 的较弱形状；因此旧的
-“churn 赢同契约 peer 1.24x”也撤回。正确产品建议是：驻留吞吐使用
-`intern_many`；高频可回收生命周期若成为瓶颈，再补 batch add/remove。
+| 场景 | Windows | WSL GCC 14 | Apple M4 | 判定 |
+|---|---:|---:|---:|---|
+| 单次 intern / thread-safe std peer | **0.994x** | **0.772x** | **0.934x** | Win 平；WSL/M4 明确输 |
+| `intern_many` / unlocked std floor | **0.990x** | **0.732x** | **1.045x** | Win 平、M4 小赢；WSL 输 |
+| 1KiB unique growth / flat-set floor | **5.36x Absl** | **1.71x Absl** | **1.67x std** | cached hash 的复杂度优势三平台兑现 |
+| 8-thread adaptive shards / strongest peer | **0.948x Absl** | **0.958x Absl** | **0.956x std** | 距强 peer 约 4–5%，不是无条件赢 |
+| add/retain/remove / direct-ID+mutex peer | **0.990x** | **0.813x** | **0.785x** | Windows 平；Linux/M4 generation+slab 常数可见 |
+| 16-cycle churn / retained peer | **0.998x** | **0.861x** | **0.808x** | 高水位复用成立，但非三平台常数 SOTA |
+| find/substring/set-search/starts_with，4KB | 0.93–1.00x | ≈1.0x | ≈1.0x | 统计近似平；不宣传赢 |
+| split/rfind/count，4KB | 0.83–0.96x | ≈1.0x | ≈1.0x | 短输入 DLL/dispatcher seam 可见 |
+| count/rfind，64KB–1MB | 0.995–1.14x | ≈1.0x | ≈1.0x | 长输入摊平 |
+| UTF-8 validate+count / simdutf | **1.004x** | — | — | 平 |
+| ASCII lower / scalar branch | **1.52x** | — | — | 赢 scalar reference |
+
+这轮不是只换报告口径：StringBuf 改成 16/32/64 自适应 shard、cached resident
+hash、generation+shard+slot ID、短 entry slab、永久 intern 的 lazy ID、四类 batch
+API；hash 用中间位选 shard，保留 Swiss H1/H2 熵且省掉第二次 avalanche。
+`intern/add` 为预期 O(|input|)，growth/erase 不重扫 resident string；handle
+lookup/retain/remove 为预期 O(1)，`size()` 只扫硬上限 64 shard。旧表保留为历史
+优化证据，不再作为当前无条件证书；Linux/M4 lifecycle 的 14–22% 落后是已知冻结
+边界，只有同契约真实 workload 再次证明它是瓶颈才重开。
 
 | op | HYLE | std::string_view | vs SOTA | 结论 |
 |---|---|---|---|---|
@@ -109,14 +118,19 @@ generation-tagged direct-ID+mutex，不再用按 key re-find 的较弱形状；�
 | **find_first_of(4 字符集)** | 0.05/B | 0.05 | ~1.0x | ➖平(转发 std;自研 memchr-min 曾 0.62x、PCMPESTRI 0.76x) |
 | **find_first_not_of 全字母** | 0.06/B | 0.06 | ~1.0x | ➖平(转发 std;自研 bool 表曾输 4.5x) |
 | **find_last_of(digits)** | 0.06/B | 0.06 | ~1.0x | ➖平(转发 std;自研曾输 4.4x) |
-| **StringBuf intern**(100k/2k 唯一) | 24.0 | map+mutex(同契约 thread-safe peer)28.1 | 1.17x | ✅赢同契约 peer(SwissTable 核) |
-| **StringBuf add/retain/remove churn** | 17.9 | thread-safe map+mutex 22.3 / 无锁 floor 7.5 | 1.24x / 0.41x | ✅赢同契约 thread-safe peer 1.24x(min 1.17 保底,25 遍);对无锁裸 map 是 apples-to-oranges(见结论) |
+| **StringBuf intern**(100k/2k 唯一) | 28.86(Win) | map+mutex 同契约 peer 28.70 | 0.994x | ➖Win 平；WSL 0.772x、M4 0.934x，见上方当前三平台表 |
+| **StringBuf add/retain/remove churn** | 18.62(Win) | direct-ID+mutex 同契约 peer 18.44 | 0.990x | ➖Win 平；WSL 0.813x、M4 0.785x，旧 1.24x 证书撤回 |
 
 **历史优化路径（当前结论以上述收口复测为准）**:
 - **自研追平的项(HYLE 自己的 SIMD)**:`find(char)`/`starts_with` 早已切 memchr/memcmp;`rfind(char)`/`count` 走运行期 ISA dispatch。**2026-07 统一到 `simd/vec.h`**:count/rfind 的核从手写裸 intrinsic(`string_ref_avx2.cc` 256b + inline SSE2,**x86-only**)改写为 `str_search_{scalar,sse4,avx2,avx512,neon}.cc`(共享体 `str_search_impl.h`,写在 D-tag 抽象上),`string_ref.cc` 按 `best_isa()` 经缓存 fn 指针选最宽核——与 `simd/ops` 同变体-TU 派发模型。收益:**一份源码覆盖全 ISA,arm64 NEON + AVX-512 白得**(此前 arm 落 scalar)。为保住手写版的 psadbw 4 累加器计数技巧,给 vec.h 补了三原语 `SumsOf8`(SAD)/`VecFromMask`/`FindLastTrue`。**回归实测(WSL,apples-to-apples 两边都过 .so)**:新 vec.h 核 vs 旧手写 AVX2 核 **打平**(count 96-101%、rfind 99-100%,gap«spread;早先看到的 3-11% 是"手写核可内联进 bench TU、.so 调用不可内联"的测量不对称,非真回退——`__attribute__((noinline))` 对同一份核复现出同样 gap 坐实)。**arm 真机(Apple Silicon,vs 重构前 arm 落的 scalar 字节循环)**:count **3.7x**、rfind **8.0x**(4KB/64KB/1MB 全稳)。`split`/`trim` 靠零分配子视图**反超** std。
 - **转发 std 的项(借 SOTA,不硬造)**:`find(needle)`/`rfind(needle)`/`find_first_of`/`find_first_not_of`/`find_last_of`/`find_last_not_of`——MSVC STL 的 two-way 向量化子串搜索 + PCMPESTRI 字符集扫描是实测 SOTA,**自研 PCMPESTRI 尝试只到 0.76-0.78x 追不动**(PCMPESTRI 延迟高),遂转发 `std::string_view`。转发局限在 `string_ref.cc`(公开头不引 `<string_view>`),不破 C-ABI。**代价**:string_ref 在这些项上不是"纯自研替代",而是"借 std 的最优实现"——这是刻意取舍(不为纯粹性造打不过微软手写汇编的轮子),非缺陷。**结果:5 项从输 2.5–4.5x 全部统计平局(ratio 0.98–1.02,gap«spread)。**
 - **前身 clay 的做法参照**:clay 的 `string_ref` 搜索族**全部**转发 `std::string_view`(且其头 `#include <iostream>`/`<string>`/`<functional>`)。HYLE 只转发 std 真正更强的几项、且只从 .cc 转发、公开头零 std string 头——比 clay 更克制。
-- **StringBuf churn 换上同契约对手后 ✅赢 1.24x(红队待办已结)**:此前只有**无锁裸 map**(7.5ns)作对手,而 StringBuf 是 thread-safe(每 op 一把锁 + handle 是稳定 hash 非 iterator)——apples-to-oranges。2026-07 补上**同契约 thread-safe peer**(unordered_map + mutex,且每 op 按 key re-find,匹配 StringBuf 的 hash-handle 契约,不让对手靠复用 iterator + 免锁占便宜):HYLE 17.9ns vs peer 22.3ns = **赢 1.24x**(25 遍统计,ratio min 1.17 保底,从不 <1;判定卡在 TIE 仅因 unordered_map 的 add/erase churn rehash 抖动使 peer spread 65%,而 HYLE SwissTable 平坦槽+mimalloc free 稳定在 8%——又快又可预测)。对无锁 floor 的 0.41x 是选错对手,非真输。
+- **StringBuf 的旧 1.24x churn 证书已撤回**：旧 peer 每次按 key re-find，
+  仍弱于当前 generation-tagged direct-ID+mutex 对手。新形状下 Windows 0.990x
+  统计平，WSL 0.813x、M4 0.785x 明确输；另一方面 cached hash 的 1KiB growth
+  三平台赢 strongest available floor（Win/WSL 对 Absl 5.36/1.71x，M4 对 std
+  1.67x），8-thread 距 Absl 约 4–5%。因此产品价值落在复杂度、稳定 identity、
+  并发接近强 peer 和 batch，而不是虚构“所有 lifecycle 常数都赢”。
 
 ## container·path —— 纯词法路径操作（`path_bench.cc`）
 

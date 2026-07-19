@@ -97,16 +97,16 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 > **信源**：体量以 `cloc` 实测为准；能力进度以 [`../milestones/README.md`](../milestones/README.md) 为准。
 > **口径**：生产 = `src` + `include` 的 code 列（不含 tests/bench/docs、不含 third_party）。
-> **2026-07-17 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当日生产已 **~53k**，单 simd **~34k**。中期评估见 [`../milestones/midterm-report-2026-07-scale-positioning.md`](../milestones/midterm-report-2026-07-scale-positioning.md)。
+> **2026-07-19 锚定**：旧投影「完成时生产 ~28–40k / 中值 34k」**已作废**——当前生产已 **~67.2k**，单 simd **~37.7k**。当前判断见 [`../milestones/pre-release-readiness.md`](../milestones/pre-release-readiness.md)；7 月 17 日中期报告保留为历史快照。
 
-### 当前实测（2026-07-17）
+### 当前实测（2026-07-19）
 
 | 口径 | code | 说明 |
 |---|---:|---|
-| **生产 `src`+`include`** | **~53.3k** | 库本体 |
-| tests | ~22.4k | |
-| bench | ~12.2k | |
-| docs | ~14.2k | |
+| **生产 `src`+`include`** | **~67.2k** | 库本体 |
+| tests | ~29.9k | |
+| bench | ~13.2k | |
+| docs | ~17.5k | |
 | 自有工程（`--vcs=git --exclude-dir=third_party,.deps`） | **~105k** | 含测/文档/脚本 |
 | git 全跟踪（含 in-tree third_party） | **~187k** | 含 simdutf/mimalloc/fcontext 等 |
 | 再加 ggml 等大依赖足迹 | **~200–350k+** | 由 ggml 主导，不计入「自有生产」 |
@@ -115,38 +115,36 @@ HYLE infra（通用、不特化、贴硬件）         [Tier：0=核心 1=兑现
 
 | 模块 | code | 占生产 |
 |---|---:|---:|
-| **simd** | **~34.4k** | **~64%** |
-| io | ~5.0k | ~9% |
-| compute | ~3.8k | ~7% |
-| sched | ~3.1k | ~6% |
-| container | ~2.7k | ~5% |
-| platform | ~1.4k | ~3% |
-| mem | ~0.7k | |
+| **simd** | **~37.7k** | **~56%** |
+| io | ~5.0k | ~7% |
+| compute | ~3.8k | ~6% |
+| sched | ~3.2k | ~5% |
+| container | ~4.9k | ~7% |
+| platform | ~4.4k | ~7% |
+| mem | ~1.8k | ~3% |
 | graph | ~0.6k | |
-| 其余基质（time/util/error/obs/…） | ~1.6k | |
+| 其余基质（time/util/error/obs/…） | ~3.6k | ~5% |
 
-### 完成时投影（2026-07-17 重估，取代 28–40k）
+### 完成时投影（2026-07-19 重估，取代 28–40k）
 
 | 剧本 | 生产 code | 条件 |
 |---|---:|---|
-| **A 纪律收口（主预期）** | **~65–80k**（中值 **~70–75k**） | simd 按补缺清单收口不扩名；compute 借 ggml + 必要自造；mem/sched/io/graph 补完设计项 |
-| **B 能力做满仍守边界** | **~80–100k** | simd-25 真机+策略收口；compute Vulkan 欠账 + 若干自造 kernel；graph-02 完整 |
+| **A 纪律收口（主预期）** | **~75–90k**（中值 **~82.5k**） | 八底层模块冻结；sched/io 收口；上层 C ABI/install；compute/graph 必要能力尾 |
+| **B 能力做满仍守边界** | **~85–105k** | compute 后端/算子尾更满；graph-02 完整；发布工具链完整 |
 | **C 失控上限（避免）** | **120k+** | 继续镜像 Highway contrib / 自研算子帝国 / 协议层吸入 infra |
 
 **含测试粗乘**：生产 ×1.4–1.6 → A 约 **95–125k**、B 约 **120–160k**（tests only）。
 **自有工程（+bench+docs）**：A 约 **130–160k**、B 约 **160–200k**。
 
-**剩余增量直觉（相对今日 ~53k 生产，非承诺）：**
+**剩余增量直觉（相对今日 ~67k 生产，非承诺）：**
 
 | 方向 | 再长（生产） |
 |---|---:|
-| simd 补缺（A1/C 尾/simd-25 收口） | +2～8k |
-| mem（NUMA/大页/专用分配器等） | +1～4k |
-| sched 边角（栈 guard 等） | +0.5～2k |
-| io 尾（shmem 等；HTTP2 另计） | +1～4k |
-| compute（薄适配↔认真自造） | +3～15k（主弹性） |
-| graph | +2～6k |
-| C-ABI/close-01 + 基质 | +1～4k |
+| 已冻结八模块 | 原则上 +0；只按冻结触发器重开 |
+| sched/io 强收口 + C ABI | +1～4k |
+| compute 能力尾 | +2～10k（主弹性） |
+| graph-02 后两步/后续真实消费者 | +1～5k |
+| close-01 install/export/FFI | +1～4k |
 
 ### 第三方（足迹，非自有生产 KPI）
 
@@ -279,4 +277,7 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 
 ## 进度
 
-路线图见 [`roadmap.md`](./roadmap.md);逐里程碑实时状态见 [`milestones/README.md`](../milestones/README.md)。当前:mem/container/sched/simd/platform/time/util/error/obs 主体已落地,io/compute/graph 三大净新增支柱未开工。
+路线图见 [`roadmap.md`](./roadmap.md);逐里程碑实时状态见
+[`milestones/README.md`](../milestones/README.md)。当前：八个底层模块完成强收口；
+sched/io 主体成熟但待同等级模块审计；compute 的 CPU/CUDA/Vulkan/ggml 主干和
+graph-01/graph-02 step-1 已实现，二者都不是 stub，但仍有产品能力尾。

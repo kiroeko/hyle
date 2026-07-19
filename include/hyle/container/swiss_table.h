@@ -137,6 +137,19 @@ class SwissTable {
     return true;
   }
 
+  // Ensure the next absent-key insert cannot allocate. Unlike reserve(size+1),
+  // this also rehashes a table whose growth budget was consumed by tombstones.
+  // Callers that promise noexcept/OOM recovery can perform this cold step first,
+  // then use insert() while excluding concurrent mutation.
+  bool needs_prepare_insert() const noexcept {
+    return cap_ == 0 || growth_left_ == 0;
+  }
+
+  bool try_prepare_insert() {
+    if (!needs_prepare_insert()) return true;
+    return grow();
+  }
+
   void clear() noexcept {
     if (ctrl_ == nullptr) return;
     std::memset(ctrl_, static_cast<int>(detail::kEmpty), cap_ + kGroup);

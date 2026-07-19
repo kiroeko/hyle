@@ -1,5 +1,10 @@
 # 中期报告：体量、进度与定位（2026-07-17）
 
+> **历史快照**：本文数字停在 2026-07-17，不再作为当前进度信源。2026-07-19
+> 的 67.2k 生产体量、70–80% 功能判断带和模块冻结规则见
+> [`pre-release-readiness.md`](./pre-release-readiness.md) 与
+> [`../architecture/hyle-scope.md`](../architecture/hyle-scope.md)。
+
 > **结论先行**：HYLE 已不是「clay 体型的几万行小加速库」。自有生产 **~53k**（simd 独占 **~34k / ~64%**）。旧完成投影 **~28–40k 作废**。纪律收口终态 **~65–80k 生产**；做满守界 **~80–100k**。若做到 **~100k 生产**，定位是 **中型、多支柱混合计算底座**（附带产品级 SIMD 子系统），不是小型「基础加速胶水库」，也还没到 Seastar/全栈运行时帝国。
 
 权威数字与终态表：[`../architecture/hyle-scope.md`](../architecture/hyle-scope.md) 规模节。

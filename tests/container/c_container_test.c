@@ -255,6 +255,15 @@ static void test_string_buf(void) {
     CHECK(output[0].data == output[2].data);
     CHECK(hyle_container_string_buf_intern_many(buffer, input, NULL, 3) == 3);
   }
+  {
+    hyle_container_string_view input[] = {sv("batch-a"), sv("batch-b")};
+    hyle_container_intern_id ids[2];
+    CHECK(hyle_container_string_buf_add_many(buffer, input, ids, 2) == 2);
+    CHECK(ids[0] != 0 && ids[1] != 0);
+    CHECK(hyle_container_string_buf_retain_many(buffer, ids, 2) == 2);
+    CHECK(hyle_container_string_buf_remove_many(buffer, ids, 2) == 2);
+    CHECK(hyle_container_string_buf_remove_many(buffer, ids, 2) == 2);
+  }
   hyle_container_string_buf_destroy(buffer);
 }
 

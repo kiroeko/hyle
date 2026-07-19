@@ -61,7 +61,7 @@ TEST(StringBuf, InternedAddressSurvivesMoreInterns) {
     buf.intern(std::string("filler_") + std::to_string(i));
   }
   // The reverse index (SwissTable) rehashed many times; the string storage must
-  // not have moved (each unique string has its own allocation).
+  // not have moved (short strings occupy stable slab blocks).
   string_ref again = buf.lookup(buf.add("keep_me"));
   EXPECT_EQ(again.data, addr);
   buf.remove(buf.add("keep_me"));  // undo the extra add above
@@ -140,6 +140,52 @@ TEST(StringBuf, InternManyReturnsStableViewsAndCanPrewarm) {
   EXPECT_EQ(buf.size(), 2u);
   EXPECT_EQ(buf.intern_many(input, nullptr, 3), 3u);
   EXPECT_EQ(buf.size(), 2u);
+}
+
+TEST(StringBuf, BatchLifecyclePreservesOrderAndReclaims) {
+  StringBuf buf(system_allocator());
+  const string_ref input[] = {string_ref{"alpha"}, string_ref{"beta"},
+                              string_ref{"alpha"}, string_ref{""}};
+  InternId ids[4];
+  EXPECT_EQ(buf.add_many(input, ids, 4), 4u);
+  EXPECT_EQ(ids[0], ids[2]);
+  EXPECT_TRUE(ids[3].empty());
+  EXPECT_EQ(buf.size(), 2u);
+
+  EXPECT_EQ(buf.retain_many(ids, 4), 4u);
+  EXPECT_EQ(buf.remove_many(ids, 4), 4u);
+  EXPECT_EQ(buf.size(), 2u);
+  EXPECT_EQ(buf.remove_many(ids, 3), 3u);
+  EXPECT_EQ(buf.size(), 0u);
+  EXPECT_TRUE(buf.lookup(ids[0]).empty());
+}
+
+TEST(StringBuf, BatchLifecycleStopsAtStaleHandle) {
+  StringBuf buf(system_allocator());
+  InternId ids[] = {buf.add("one"), buf.add("two")};
+  ASSERT_TRUE(buf.remove(ids[0]));
+  const InternId sequence[] = {ids[1], ids[0], ids[1]};
+  EXPECT_EQ(buf.retain_many(sequence, 3), 1u);
+  EXPECT_EQ(buf.remove_many(sequence, 3), 1u);
+  EXPECT_TRUE(buf.lookup(ids[1]) == string_ref{"two"});
+}
+
+TEST(StringBuf, LongStringsSurviveGrowthAndEraseWithoutIdentityLoss) {
+  StringBuf buf(system_allocator());
+  std::vector<std::string> storage;
+  std::vector<InternId> ids;
+  storage.reserve(2048);
+  ids.reserve(2048);
+  for (int i = 0; i < 2048; ++i) {
+    storage.push_back(std::string(1024, static_cast<char>('a' + i % 26)) +
+                      std::to_string(i));
+    ids.push_back(buf.add(storage.back()));
+  }
+  EXPECT_EQ(buf.size(), ids.size());
+  for (std::size_t i = 0; i < ids.size(); ++i)
+    EXPECT_TRUE(buf.lookup(ids[i]) == string_ref{storage[i]});
+  EXPECT_EQ(buf.remove_many(ids.data(), ids.size()), ids.size());
+  EXPECT_EQ(buf.size(), 0u);
 }
 
 TEST(StringBuf, ManyDistinctStrings) {

@@ -505,12 +505,11 @@ inline std::uint32_t find_path_matches(const string_ref* candidates, std::uint32
       out_score[0] = s;
       std::uint32_t c = 0;
       for (;;) {
-        const std::uint64_t left = static_cast<std::uint64_t>(c) * 2 + 1;
-        if (left >= count) break;
-        const std::uint32_t l = static_cast<std::uint32_t>(left);
+        if (c >= count / 2) break;
+        const std::uint32_t l = c * 2 + 1;
         std::uint32_t m = l;
-        if (left + 1 < count) {
-          const std::uint32_t r = static_cast<std::uint32_t>(left + 1);
+        if (l + 1 < count) {
+          const std::uint32_t r = l + 1;
           if (worse(out_score[r], out_idx[r], out_score[l], out_idx[l])) m = r;
         }
         if (!worse(out_score[m], out_idx[m], out_score[c], out_idx[c])) break;
@@ -529,12 +528,11 @@ inline std::uint32_t find_path_matches(const string_ref* candidates, std::uint32
     std::swap(out_idx[0], out_idx[size]);
     std::uint32_t c = 0;
     for (;;) {
-      const std::uint64_t left = static_cast<std::uint64_t>(c) * 2 + 1;
-      if (left >= size) break;
-      const std::uint32_t l = static_cast<std::uint32_t>(left);
+      if (c >= size / 2) break;
+      const std::uint32_t l = c * 2 + 1;
       std::uint32_t m = l;
-      if (left + 1 < size) {
-        const std::uint32_t r = static_cast<std::uint32_t>(left + 1);
+      if (l + 1 < size) {
+        const std::uint32_t r = l + 1;
         if (worse(out_score[r], out_idx[r], out_score[l], out_idx[l])) m = r;
       }
       if (!worse(out_score[m], out_idx[m], out_score[c], out_idx[c])) break;

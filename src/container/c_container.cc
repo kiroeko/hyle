@@ -903,6 +903,41 @@ hyle_container_intern_id hyle_container_string_buf_add(
     clear_error();
   return id;
 }
+size_t hyle_container_string_buf_add_many(
+    hyle_container_string_buf* buffer,
+    const hyle_container_string_view* input,
+    hyle_container_intern_id* output, size_t count) {
+  if (buffer == nullptr ||
+      !valid_range(input, count, "non-zero count requires input") ||
+      !valid_range(output, count, "non-zero count requires output")) {
+    if (buffer == nullptr) set_error("string buffer is NULL");
+    return 0;
+  }
+  for (size_t i = 0; i < count; ++i)
+    if (!valid_range(input[i].data, input[i].size, "invalid text view"))
+      return 0;
+
+  constexpr size_t kChunk = 64;
+  hc::string_ref cpp_input[kChunk];
+  hc::InternId cpp_output[kChunk];
+  size_t completed = 0;
+  while (completed < count) {
+    const size_t chunk = std::min(kChunk, count - completed);
+    for (size_t i = 0; i < chunk; ++i)
+      cpp_input[i] = to_cpp(input[completed + i]);
+    const size_t done =
+        buffer->value.add_many(cpp_input, cpp_output, chunk);
+    for (size_t i = 0; i < done; ++i)
+      output[completed + i] = cpp_output[i].value;
+    completed += done;
+    if (done != chunk) {
+      set_error("string buffer allocation failed");
+      return completed;
+    }
+  }
+  clear_error();
+  return completed;
+}
 int hyle_container_string_buf_retain(hyle_container_string_buf* buffer,
                                      hyle_container_intern_id id) {
   if (buffer == nullptr) {
@@ -913,6 +948,31 @@ int hyle_container_string_buf_retain(hyle_container_string_buf* buffer,
   clear_error();
   return retained;
 }
+size_t hyle_container_string_buf_retain_many(
+    hyle_container_string_buf* buffer,
+    const hyle_container_intern_id* ids, size_t count) {
+  if (buffer == nullptr ||
+      !valid_range(ids, count, "non-zero count requires ids")) {
+    if (buffer == nullptr) set_error("string buffer is NULL");
+    return 0;
+  }
+  constexpr size_t kChunk = 64;
+  hc::InternId cpp_ids[kChunk];
+  size_t completed = 0;
+  while (completed < count) {
+    const size_t chunk = std::min(kChunk, count - completed);
+    for (size_t i = 0; i < chunk; ++i)
+      cpp_ids[i] = hc::InternId{ids[completed + i]};
+    const size_t done = buffer->value.retain_many(cpp_ids, chunk);
+    completed += done;
+    if (done != chunk) {
+      clear_error();
+      return completed;
+    }
+  }
+  clear_error();
+  return completed;
+}
 int hyle_container_string_buf_remove(hyle_container_string_buf* buffer,
                                      hyle_container_intern_id id) {
   if (buffer == nullptr) {
@@ -922,6 +982,31 @@ int hyle_container_string_buf_remove(hyle_container_string_buf* buffer,
   const bool removed = buffer->value.remove(hc::InternId{id});
   clear_error();
   return removed;
+}
+size_t hyle_container_string_buf_remove_many(
+    hyle_container_string_buf* buffer,
+    const hyle_container_intern_id* ids, size_t count) {
+  if (buffer == nullptr ||
+      !valid_range(ids, count, "non-zero count requires ids")) {
+    if (buffer == nullptr) set_error("string buffer is NULL");
+    return 0;
+  }
+  constexpr size_t kChunk = 64;
+  hc::InternId cpp_ids[kChunk];
+  size_t completed = 0;
+  while (completed < count) {
+    const size_t chunk = std::min(kChunk, count - completed);
+    for (size_t i = 0; i < chunk; ++i)
+      cpp_ids[i] = hc::InternId{ids[completed + i]};
+    const size_t done = buffer->value.remove_many(cpp_ids, chunk);
+    completed += done;
+    if (done != chunk) {
+      clear_error();
+      return completed;
+    }
+  }
+  clear_error();
+  return completed;
 }
 hyle_container_string_view hyle_container_string_buf_lookup(
     hyle_container_string_buf* buffer, hyle_container_intern_id id) {
