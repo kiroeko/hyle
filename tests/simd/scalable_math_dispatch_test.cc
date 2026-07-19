@@ -4,9 +4,11 @@
 #include "hyle/simd/runtime.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <complex>
 #include <cstddef>
+#include <cstdint>
 
 namespace hs = hyle::simd;
 
@@ -112,5 +114,25 @@ TEST(ScalableMathDispatch, PublicBatchApiIncludesHyleDerivedTier) {
         std::pow(std::complex<double>(x[i], y[i]), std::complex<double>(y[i], x[i]));
     ExpectNearRelative(out64[i], expected.real(), 6e-11);
     ExpectNearRelative(out64_im[i], expected.imag(), 6e-11);
+  }
+}
+
+TEST(ScalableMathDispatch, PublicNextAfterKeepsExactBits) {
+  constexpr std::size_t n = 37;
+  alignas(64) float a[n], b[n], out[n];
+  alignas(64) double x[n], y[n], out64[n];
+  for (std::size_t i = 0; i < n; ++i) {
+    a[i] = (i & 1) ? -1.25f - float(i) / 17.0f : 0.75f + float(i) / 19.0f;
+    b[i] = (i % 3) ? a[i] + 4.0f : a[i] - 4.0f;
+    x[i] = (i & 1) ? -1.25 - double(i) / 17.0 : 0.75 + double(i) / 19.0;
+    y[i] = (i % 3) ? x[i] + 4.0 : x[i] - 4.0;
+  }
+  hs::nextafter_f32_batch(a, b, out, n);
+  hs::nextafter_f64_batch(x, y, out64, n);
+  for (std::size_t i = 0; i < n; ++i) {
+    EXPECT_EQ(std::bit_cast<std::uint32_t>(out[i]),
+              std::bit_cast<std::uint32_t>(std::nextafter(a[i], b[i])));
+    EXPECT_EQ(std::bit_cast<std::uint64_t>(out64[i]),
+              std::bit_cast<std::uint64_t>(std::nextafter(x[i], y[i])));
   }
 }

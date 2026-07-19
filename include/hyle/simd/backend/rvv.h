@@ -2249,10 +2249,12 @@ template <class V, class M> HYLE_FORCE_INLINE V Expand(V v, M m) noexcept {
   }
 }
 
-// ---- crypto capability floor + Zvbc carryless multiply (simd-16 reclaim) ------------
+// ---- crypto capability floor + Zvkned AES / Zvbc carryless multiply -----------------
 // Base RVV cannot assume the optional vector-crypto AES extension. Keep the same public face as
 // every other backend by applying HYLE's shared AES-NI-byte-order oracle independently to each
-// 128-bit block. A future Zvkned TU can replace these wrappers without changing the contract.
+// 128-bit block. When this TU is explicitly compiled with Zvkned, the four round operations map
+// directly to the ratified 128-bit element-group instructions. This is compile-time specialization:
+// the ordinary rv64gcv TU remains free of optional instructions and is safe on base-V machines.
 namespace detail {
 template <class V, class Fn>
 HYLE_FORCE_INLINE V rvv_crypto_soft_blocks(V state, V key, Fn per_block) noexcept {
@@ -2270,19 +2272,47 @@ HYLE_FORCE_INLINE V rvv_crypto_soft_blocks(V state, V key, Fn per_block) noexcep
 
 template <class V> HYLE_FORCE_INLINE V AESRound(V state, V key) noexcept {
   static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+#if defined(__riscv_zvkned)
+  const std::size_t vl = detail::vlmax<std::uint32_t>();
+  return BitCast(DFromV<V>(),
+                 __riscv_vaesem_vv_u32m1(detail::bits_u32_rvv(state),
+                                         detail::bits_u32_rvv(key), vl));
+#else
   return detail::rvv_crypto_soft_blocks(state, key, detail::aes_round_soft);
+#endif
 }
 template <class V> HYLE_FORCE_INLINE V AESLastRound(V state, V key) noexcept {
   static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+#if defined(__riscv_zvkned)
+  const std::size_t vl = detail::vlmax<std::uint32_t>();
+  return BitCast(DFromV<V>(),
+                 __riscv_vaesef_vv_u32m1(detail::bits_u32_rvv(state),
+                                         detail::bits_u32_rvv(key), vl));
+#else
   return detail::rvv_crypto_soft_blocks(state, key, detail::aes_last_round_soft);
+#endif
 }
 template <class V> HYLE_FORCE_INLINE V AESRoundInv(V state, V key) noexcept {
   static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+#if defined(__riscv_zvkned)
+  const std::size_t vl = detail::vlmax<std::uint32_t>();
+  return BitCast(DFromV<V>(),
+                 __riscv_vaesdm_vv_u32m1(detail::bits_u32_rvv(state),
+                                         detail::bits_u32_rvv(key), vl));
+#else
   return detail::rvv_crypto_soft_blocks(state, key, detail::aes_round_inv_soft);
+#endif
 }
 template <class V> HYLE_FORCE_INLINE V AESLastRoundInv(V state, V key) noexcept {
   static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");
+#if defined(__riscv_zvkned)
+  const std::size_t vl = detail::vlmax<std::uint32_t>();
+  return BitCast(DFromV<V>(),
+                 __riscv_vaesdf_vv_u32m1(detail::bits_u32_rvv(state),
+                                         detail::bits_u32_rvv(key), vl));
+#else
   return detail::rvv_crypto_soft_blocks(state, key, detail::aes_last_round_inv_soft);
+#endif
 }
 template <class V> HYLE_FORCE_INLINE V AESInvMixColumns(V state) noexcept {
   static_assert(std::is_integral_v<TFromV<V>>, "AES op is integer-lane only");

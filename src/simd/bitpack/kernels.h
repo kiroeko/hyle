@@ -60,6 +60,14 @@ HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_NEON)
 #define HYLE_BITPACK_DECL_SVE(T, tag) HYLE_BITPACK_DECL_PAIR(T, tag, sve)
 HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_SVE)
 #undef HYLE_BITPACK_DECL_SVE
+// Full-VL candidate: transposes several stable 128-value logical blocks into one scalable
+// register matrix, then restores the frozen wire layout. Kept internal until real-hardware
+// throughput proves that the two transposes beat the capped production path.
+#define HYLE_BITPACK_DECL_SVE_MULTIBLOCK(T, tag)                                      \
+  void pack_##tag##_multiblock_sve(const T*, std::size_t, T*, unsigned) noexcept;     \
+  void unpack_##tag##_multiblock_sve(const T*, std::size_t, T*, unsigned) noexcept;
+HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_SVE_MULTIBLOCK)
+#undef HYLE_BITPACK_DECL_SVE_MULTIBLOCK
 #endif
 #endif  // HYLE_ARCH_ARM64
 
@@ -67,6 +75,11 @@ HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_SVE)
 #define HYLE_BITPACK_DECL_RVV(T, tag) HYLE_BITPACK_DECL_PAIR(T, tag, rvv)
 HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_RVV)
 #undef HYLE_BITPACK_DECL_RVV
+#define HYLE_BITPACK_DECL_RVV_MULTIBLOCK(T, tag)                                      \
+  void pack_##tag##_multiblock_rvv(const T*, std::size_t, T*, unsigned) noexcept;     \
+  void unpack_##tag##_multiblock_rvv(const T*, std::size_t, T*, unsigned) noexcept;
+HYLE_BITPACK_TYPES(HYLE_BITPACK_DECL_RVV_MULTIBLOCK)
+#undef HYLE_BITPACK_DECL_RVV_MULTIBLOCK
 #endif
 
 #undef HYLE_BITPACK_DECL_PAIR

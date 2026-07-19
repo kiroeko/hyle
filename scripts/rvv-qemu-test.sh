@@ -6,12 +6,14 @@
 #   base  (default) : -march=rv64gcv            (existing P0-P5 surface)
 #   zvbb            : -march=rv64gcv_zvbb       (simd-16 LeadingZero/TrailingZero/ReverseBits/Rotate)
 #   zvbc            : -march=rv64gcv_zvbc       (simd-16 CLMulLower/Upper)
-#   all             : run base + zvbb + zvbc
+#   zvkned          : -march=rv64gcv_zvkned     (native AES round operations)
+#   all             : run base + zvbb + zvbc + zvkned
 #
 # Usage:
 #   bash scripts/rvv-qemu-test.sh            # base only
 #   bash scripts/rvv-qemu-test.sh zvbb
 #   bash scripts/rvv-qemu-test.sh zvbc
+#   bash scripts/rvv-qemu-test.sh zvkned
 #   bash scripts/rvv-qemu-test.sh all
 set -e
 
@@ -23,6 +25,7 @@ fi
 
 CXX=${CXX_RISCV64:-riscv64-linux-gnu-g++-14}
 QEMU=${QEMU_RISCV64:-qemu-riscv64-static}
+OBJDUMP=${OBJDUMP_RISCV64:-riscv64-linux-gnu-objdump}
 OUT=${OUT_DIR:-/tmp/hyle-rvv}
 mkdir -p "$OUT"
 
@@ -43,6 +46,16 @@ run_tier() {
   $CXX $FLAGS -c "$GT/src/gtest-all.cc"  -o "$OUT/gtest-all_${name}.o"
   $CXX $FLAGS -c "$GT/src/gtest_main.cc" -o "$OUT/gtest-main_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/rvv_test.cc" -o "$OUT/rvv_test_${name}.o"
+  $OBJDUMP -d "$OUT/rvv_test_${name}.o" > "$OUT/rvv_test_${name}.dis"
+  if [ "$name" = "zvkned" ]; then
+    for op in vaesem vaesef vaesdm vaesdf; do
+      if ! grep -q "${op}\\.vv" "$OUT/rvv_test_${name}.dis"; then
+        echo "ERROR: Zvkned object did not emit ${op}.vv"; exit 1
+      fi
+    done
+  elif grep -Eq 'vaes(em|ef|dm|df)\.vv' "$OUT/rvv_test_${name}.dis"; then
+    echo "ERROR: optional Zvkned instruction leaked into ${name} object"; exit 1
+  fi
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_compile.cc" -o "$OUT/scalable_math_compile_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_math_product_test.cc" -o "$OUT/scalable_math_product_test_${name}.o"
   $CXX $FLAGS -c "$REPO/tests/simd/scalable_dtype_product_test.cc" -o "$OUT/scalable_dtype_product_test_${name}.o"
@@ -116,6 +129,7 @@ run_tier() {
   if [ "${HYLE_QEMU_EXPECT_OPTIONAL_FEATURES:-0}" = "1" ]; then
     if [ "$name" = "zvbb" ]; then feature_env+=(HYLE_EXPECT_RVV_ZVBB=1); fi
     if [ "$name" = "zvbc" ]; then feature_env+=(HYLE_EXPECT_RVV_ZVBC=1); fi
+    if [ "$name" = "zvkned" ]; then feature_env+=(HYLE_EXPECT_RVV_ZVKNED=1); fi
   fi
   for bits in 128 256 512 1024; do
     echo "----- RVV ${name} VLEN=${bits}-bit -----"
@@ -135,13 +149,17 @@ case "$TIER" in
   zvbc)
     run_tier zvbc rv64gcv_zvbc "zvbc=true,"
     ;;
+  zvkned)
+    run_tier zvkned rv64gcv_zvkned "zvkned=true,"
+    ;;
   all)
     run_tier base rv64gcv ""
     run_tier zvbb rv64gcv_zvbb "zvbb=true,"
     run_tier zvbc rv64gcv_zvbc "zvbc=true,"
+    run_tier zvkned rv64gcv_zvkned "zvkned=true,"
     ;;
   *)
-    echo "Usage: $0 [base|zvbb|zvbc|all]"; exit 2
+    echo "Usage: $0 [base|zvbb|zvbc|zvkned|all]"; exit 2
     ;;
 esac
 

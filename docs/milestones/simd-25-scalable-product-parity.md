@@ -38,21 +38,21 @@ Runtime / exact / native + QEMU + real-hardware parity
 `scripts/simd-scalable-coverage.py` 机械复现四个定宽后端并集，并把 SVE、RVV **分别**与之比较，由
 `scripts/simd-scalable-op-manifest.json` 逐项分类。v1 曾使用 SVE∪RVV：某个 op 只要任一后端实现，
 另一后端的洞就会消失。RVV sort 补原语时该缺陷被 `--check` 暴露，v2 改为分类“至少一个 scalable
-后端仍缺”的名字，并同时输出两份 backend-local missing 集。当前 23 个名字分为：
+后端仍缺”的名字，并同时输出两份 backend-local missing 集。当前 22 个名字分为：
 
 | 分类 | 数量 | 含义 |
 |---|---:|---|
-| `shared_generic` | 10 | 已在 `vec.h` 一次实现，并由正式 SVE/RVV 多 VL/VLEN 门禁直接实例化验证 |
+| `shared_generic` | 9 | 已在 `vec.h` 一次实现，并由正式 SVE/RVV 多 VL/VLEN 门禁直接实例化验证 |
 | `selector` | 13 | Native/Emulated 内部选择器，不是独立用户能力 |
 | `fixed_model` | 0 | 原 20 项 half/128-bit block/固定寄存器拼装均已按 scalable 合同补齐 |
 | `extension_gated` | 0 | 当前固定宽 public union 中没有仍缺的扩展语义；硬件快路仍按 feature tier 独立演进 |
 | `portable_missing` | 0 | 22 项可移植 backlog 已全部补齐；same-shift/rotate/rounding/shuffle/average、whole/pairwise/demote/scale/lookup 与 SAD 家族均有 SVE/RVV 实现 |
 
 脚本同时输出 backend-local、`backend | vec.h`、scalable union/common 和 SVE/RVV 各自 missing 数；
-这些仍只是语法面，不冒充编译可实例化或产品能力。当前 SVE、RVV 都只缺定宽并集 23 个名字，
-两者共同实现 227 个、至少一端缺 23 个。它们恰好是 10 个已实例化的 `vec.h` shared generic 与
+这些仍只是语法面，不冒充编译可实例化或产品能力。当前 SVE、RVV 都只缺定宽并集 22 个名字，
+两者共同实现 227 个、至少一端缺 22 个。它们恰好是 9 个已实例化的 `vec.h` shared generic 与
 13 个非独立能力 selector；backend-local 的 portable/fixed/extension semantic gap 已归零。`--check`
-要求这 23 项恰好分类一次，任何新增、消失或重复都会失败。
+要求这 22 项恰好分类一次，任何新增、消失或重复都会失败。
 
 ### 阶段 1 首轮进展（2026-07-17）
 
@@ -82,16 +82,18 @@ SVE 使用 predicate + `tbl`，RVV 使用 mask + `vrgather`，没有 store/reloa
 sizeless 值本身不编码 capped source 宽度，因此跨逻辑宽度 resize 使用精确形状
 `ResizeBitCast(to, from, v)`；它在 widening 时按 source tag 补零。两参数形状仅表示 full-register view，
 不能用来猜测一个已经擦除的 capped source 宽度。
-机械差集由 43 降至 32；随后 scalable extension/semantic 收口将其降至 23，剩余仅为已验证的
+机械差集由 43 降至 32；随后 scalable extension/semantic 收口将其降至 22，剩余仅为已验证的
 shared generic 与非独立能力 selector。
 
 第三批裁决了原 `extension_gated` 的 9 项。`BitShuffle`/`MultiRotateRight` 参照 Highway generic
 算法改为 SVE/RVV 纯向量 byte-table + variable-shift 实现，不依赖 SVE2/Zvbb；反汇编分别确认
 SVE `tbl/lsr/lsl` 与 RVV `vrgather/vsrl/vsll`。`Stream` 在 SVE 使用架构级 `stnt1`，RVV 1.0
 没有可移植 non-temporal store，按 Highway 合同退化为普通 `Store`，API 可用但不谎报 cache bypass。
-SVE 六个 AES op 原已具备 SVE2-AES 快路和软件保底；RVV 现在补齐同一份 per-128-bit-block 软件能力
-底座，base `rv64gcv` 不假定 Zvkned。它关闭的是能力洞，不是 RVV AES 性能证书；未来硬件快路必须
-进独立 feature TU 并由 probe/dispatcher 选择。
+SVE 六个 AES op 原已具备 SVE2-AES 快路和软件保底；RVV 先补齐同一份 per-128-bit-block 软件能力
+底座，随后增加 `__riscv_zvkned` 静态 target 快路：四种 round 分别直接发射
+`vaesem/vaesef/vaesdm/vaesdf`，base `rv64gcv` object 反汇编保持无 `vaes*`。这关闭的是静态
+register API 的硬件路径，不是 RVV AES 性能证书，也不虚构尚不存在的 pointer/count AES 产品核；
+将来产品核仍须独立 feature TU 并由 probe/dispatcher 选择。
 
 ### 首个产品层纵切：SVE/RVV math（2026-07-17）
 
@@ -108,18 +110,21 @@ SVE 六个 AES op 原已具备 SVE2-AES 快路和软件保底；RVV 现在补齐
 f32/f64、`tgamma` 的 f32/f64、`hypot_in_range` f32，以及完整 SoA complex 集合
 `cexp/clog/csqrt/csin/ccos/ctan/csinh/ccosh/ctanh/cpow` 的 f32/f64。复数 typed D-tag body
 在 AVX2、NEON、SVE、RVV 共用；regular chunk 保持向量计算，特殊值、分支切线、极端幅度或 pole
-风险 chunk 在写输出前回落 `std::complex`，因此 exact in-place 仍成立。现在 math 只有 6 个有明确
-正确性裁决的 scalar-only API：`lgamma/remainder/nextafter` 的
-f32/f64；这不是模块降级。`lgamma` 是已复现的 vendor lane-mixing bug，后两者要求精确 libm 语义。
+风险 chunk 在写输出前回落 `std::complex`，因此 exact in-place 仍成立。`nextafter` 的 scalable
+产品核现对普通 finite-normal chunk 执行精确一次整数 bit step；NaN、signed zero、subnormal 与
+overflow/underflow 边界按整个 chunk 回到 libm，保留位型、浮点异常和 errno 合同。因而 scalable math
+只剩 `lgamma/remainder` 的 f32/f64 四个有明确证据的 scalar-only API；`lgamma` 是已复现的 vendor
+lane-mixing bug，`remainder` 的 tie-to-even 与 vendor 公式不同。这是逐 op 裁决，不是模块降级。
 
 当前证据：两套脚本同时链接 CPU probe、真实 `Runtime`、baseline dispatcher、scalar 与 scalable
 variant 表，不再只直调内部 kernel。加入 platform dispatch 与 public product 探针后，SVE 当前脚本为
-**98 tests × VL 128/256/384/512/2048**（其中 1 项直调 NEON typed complex 产品核），RVV base 为 **93 tests × VLEN
+**102 tests × VL 128/256/384/512/2048**（其中 1 项直调 NEON typed complex 产品核），RVV base 为 **97 tests × VLEN
 128/256/512/1024**；公开 ops/random/search/scan/math/dtype/bitpack/sort batch API、tail、对应 module
 tier 以及 extension/semantic 能力均在门内验证。
 exact SVE/RVV dispatcher 的未定义符号检查也确认不引用 `runtime()`、`best_isa()` 或
 `cpu_features()`。QEMU 证明正确性与派发，不构成真机性能结论。扩展构建也独立全绿：
-SVE2-AES 的历史门为 **94×5**，当前 RVV Zvbb/Zvbc 各为 **94×4**；因此 base fallback 与已有硬件扩展路径没有
+SVE2-AES 门与 base 共用同一 102-test 集；RVV Zvbb/Zvbc/Zvkned 使用同一 97-test 集 × 4 VLEN；
+因此 base fallback 与已有硬件扩展路径没有
 同名重定义或越级 codegen 冲突。
 
 ### 当前产品层矩阵
@@ -127,10 +132,10 @@ SVE2-AES 的历史门为 **94×5**，当前 RVV Zvbb/Zvbc 各为 **94×4**；因
 | 模块 | SVE | RVV | 下一缺口 |
 |---|---|---|---|
 | ops/random/scan/search | 真实 scalable variant | 真实 scalable variant | 真机性能证据 |
-| math | 主 HYLE/Highway + HYLE-owned xsimd-derived scalable TU；6 个正确性裁决 scalar op | 同左 | 真机性能与复杂特殊值扩大验收 |
+| math | 主 HYLE/Highway + HYLE-owned xsimd-derived scalable TU；exact `nextafter`；4 个正确性裁决 scalar op | 同左 | 真机性能与复杂特殊值扩大验收 |
 | dtype f16/bf16↔f32 | 真实 SVE 产品 TU | 真实 RVV 产品 TU | 真机性能；fp8 保持 scalar/可选硬件 |
 | sort/select | full-VL partition + 128/256-bit capped network | 真实 RVV LMUL=1 产品 TU | 两端真机性能 |
-| bitpack | 真实 SVE 产品 TU（固定 128-bit logical block） | 真实 RVV 产品 TU（固定 128-bit logical block） | 真机性能与多 logical-block 并行化 |
+| bitpack | fixed-128 生产 TU + 保格式 full-VL 多块候选 | 同左 | 真机决定候选是否替换 capped 生产路径 |
 
 ## 阶段 1：target/feature mechanization 与编译探针
 
@@ -168,10 +173,12 @@ qemu-riscv64-user 能执行 Zvbb/Zvbc 指令，但不模拟 `riscv_hwprobe` 的 
 SVE/RVV sizeless native type，但 active lanes 固定为 16 bytes，packed block 因而不依赖线程 SVE VL 或
 机器 RVV VLEN，并与 NEON layout 一致。Runtime/exact/public API 已接入 SVE/RVV。
 
-验收覆盖 u8/u16/u32 的全部 56 个合法 bit width、两个完整 logical block、direct kernel、真实 Runtime
-和 public API；每次输出逐字节对拍测试专用 scalar-128 D-tag 参考核，并在 SVE 五档/RVV 四档下复验。
-11/13-bit u16 继续由独立手写布局 oracle 与全域测试钉住。当前实现每次只激活 128 bits；未来可在不改
-格式的前提下并行处理多个 logical block，但必须先有真机收益证据。
+验收覆盖 u8/u16/u32 的全部 56 个合法 bit width、direct kernel、真实 Runtime 和 public API；
+每次输出逐字节对拍测试专用 scalar-128 D-tag 参考核，并在 SVE 五档/RVV 四档下复验。11/13-bit u16
+继续由独立手写布局 oracle 与全域测试钉住。另有 full-VL 候选把若干连续 128-value block 从
+block-major 转成 PackN 所需的 row-major，一次使用完整物理寄存器，之后逆转置回完全相同的 wire
+layout；测试规模覆盖 2048-bit 上界下的多个 full group、固定块余数和 scalar tail。候选已经解决
+正确性与格式问题，但两次转置是否比 capped path 快只能由真机决定，因此 dispatcher 暂不默认启用。
 
 ### dtype
 
@@ -186,8 +193,9 @@ SVE/RVV fp8 convert，不因 dtype module tier 已升级就把它伪装成 scala
 ## 阶段 3：math（产品 tier 已完成，性能验收继续）
 
 SVE/RVV 的 HYLE/Highway 主 body 与 HYLE-owned xsimd-derived body 已生成真实产品 TU 并接 Runtime，
-QEMU 多 VL/VLEN 的 direct、Runtime 和公开 API 门均完成。`tgamma`、f32/f64 complex、direct hypot 与 extras
-已经 scalable；`lgamma/remainder/nextafter` 的 scalar 裁决有正确性证据。下一步是真机性能验收。
+QEMU 多 VL/VLEN 的 direct、Runtime 和公开 API 门均完成。`tgamma`、f32/f64 complex、direct hypot、
+extras 与 exact `nextafter` 已经 scalable；`lgamma/remainder` 的 scalar 裁决有正确性证据。
+下一步是真机性能验收。
 验收沿用现有 ULP 合同，继续扩大 NaN/Inf/subnormal/domain edge、tail 和跨 lane 混合输入。
 
 Runtime 改为逐 op/feature 的 scalable 或已认证 fallback；不能仅修改 `runtime().math.isa` 元数据。
@@ -233,14 +241,14 @@ two-table lookup 等 portable 项。fixed-model 项遵守三选一：
 3. 只代表定宽寄存器拼装：manifest 记录 N/A，不制造 store/reload 假快路。
 
 上述 portable 与 fixed-model 项已全部完成；最后 9 项的裁决和实现见阶段 1 第三批。现在 manifest
-中的 23 个差集名不要求 backend 复制：shared generic 已由两端多 VL/VLEN 直接实例化，selector
+中的 22 个差集名不要求 backend 复制：shared generic 已由两端多 VL/VLEN 直接实例化，selector
 只是实现选择钩子。后续新增固定宽 op 时，审计脚本会重新打开未分类缺口，不能靠更新数字掩盖。
 
 ## 阶段 6：验收与派发裁决
 
 - SVE：VL 128/256/384/512/2048；
 - RVV：VLEN 128/256/512/1024，工具链允许时加 2048；
-- base 与 SVE2/Zvbb/Zvbc 等扩展分别构建；
+- base 与 SVE2/Zvbb/Zvbc/Zvkned 等扩展分别构建；
 - fat Runtime、exact、native 三条入口和实际 tier 探针；
 - 反汇编确认无越级 ISA、无意外 scalar 主循环；
 - 真机同编译器/同 ISA/同合同对拍 Highway，同时对比 SVE→NEON、RVV→scalar 的升级收益；

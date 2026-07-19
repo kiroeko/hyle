@@ -74,7 +74,7 @@ bool have_avx512() noexcept {
 }
 #endif
 
-#if defined(HYLE_ARCH_ARM64)
+#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
 bool have_sve_math() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_SVE)
   return true;
@@ -88,7 +88,7 @@ bool have_sve_math() noexcept {
 }
 #endif
 
-#if defined(HYLE_ARCH_RISCV64)
+#if defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
 bool have_rvv_math() noexcept {
 #if defined(HYLE_SIMD_EXACT_TARGET_RVV)
   return true;
@@ -815,13 +815,36 @@ void remainder_f32_batch(const float* a, const float* b, float* d, std::size_t n
 void remainder_f64_batch(const double* a, const double* b, double* d, std::size_t n) noexcept {
   detail::remainder_f64_scalar(a, b, d, n);
 }
-// nextafter: xsimd's vectorized nextafter diverges from libm (2-ULP step vs libm's exact 1-ULP,
-// verified vs std::nextafter) -- this is a bit-exact op, so correctness beats vectorization here.
-// Route to the scalar libm reference on all targets. (The other 5 xsimd extras match libm.)
+// nextafter: xsimd's vectorized formula diverges from libm (2-ULP step). HYLE's scalable kernel
+// instead performs one integer-pattern step for ordinary finite-normal chunks and sends IEEE
+// boundaries to libm, preserving exact results and exception behavior. Fixed-width tiers keep the
+// scalar reference until their own product kernel has the same proof.
 void nextafter_f32_batch(const float* a, const float* b, float* d, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (have_sve_math()) {
+    HYLE_HYLE_NAME_II(nextafter, f32, sve)(a, b, d, n);
+    return;
+  }
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) {
+    HYLE_HYLE_NAME_II(nextafter, f32, rvv)(a, b, d, n);
+    return;
+  }
+#endif
   detail::nextafter_f32_scalar(a, b, d, n);
 }
 void nextafter_f64_batch(const double* a, const double* b, double* d, std::size_t n) noexcept {
+#if defined(HYLE_ARCH_ARM64) && defined(HYLE_SIMD_HAS_SVE_VARIANT)
+  if (have_sve_math()) {
+    HYLE_HYLE_NAME_II(nextafter, f64, sve)(a, b, d, n);
+    return;
+  }
+#elif defined(HYLE_ARCH_RISCV64) && defined(HYLE_SIMD_HAS_RVV_VARIANT)
+  if (have_rvv_math()) {
+    HYLE_HYLE_NAME_II(nextafter, f64, rvv)(a, b, d, n);
+    return;
+  }
+#endif
   detail::nextafter_f64_scalar(a, b, d, n);
 }
 HYLE_XSIMD_BINARY(fdim)

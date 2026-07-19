@@ -64,6 +64,7 @@ TEST(Dispatch, EnvironmentFeatureExpectations) {
   ExpectFeatureFromEnvironment("HYLE_EXPECT_RVV", f.rvv);
   ExpectFeatureFromEnvironment("HYLE_EXPECT_RVV_ZVBB", f.rvv_zvbb);
   ExpectFeatureFromEnvironment("HYLE_EXPECT_RVV_ZVBC", f.rvv_zvbc);
+  ExpectFeatureFromEnvironment("HYLE_EXPECT_RVV_ZVKNED", f.rvv_zvkned);
 }
 
 #if defined(HYLE_ARCH_X64)

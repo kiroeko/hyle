@@ -84,6 +84,45 @@ void binary_loop(const T* a, const T* b, T* dst, std::size_t n, VecFn vec_fn,
   for (; i < n; ++i) dst[i] = scalar_fn(a[i], b[i]);
 }
 
+// Exact one-ULP nextafter for the common finite-normal case. Boundary chunks remain on libm so
+// NaN payload/quieting, signed zero, overflow/underflow exceptions and errno retain the platform
+// contract. Unlike the old xsimd formula, the integer bit pattern moves exactly once.
+template <class D>
+HYLE_FORCE_INLINE VFromD<D> nextafter_normal(D d, VFromD<D> x,
+                                             VFromD<D> y) noexcept {
+  const RebindToUnsigned<D> du;
+  const auto bits = BitCast(du, x);
+  const auto one = Set(du, 1);
+  const auto z = Zero(d);
+  const auto toward_larger_bits =
+      Or(And(Lt(x, y), Gt(x, z)), And(Gt(x, y), Lt(x, z)));
+  return BitCast(d, IfThenElse(toward_larger_bits, Add(bits, one), Sub(bits, one)));
+}
+
+template <class T>
+void nextafter_exact_loop(const T* a, const T* b, T* dst, std::size_t n) noexcept {
+  const ScalableTag<T> d;
+  const std::size_t w = Lanes(d);
+  const auto min_normal = Set(d, std::numeric_limits<T>::min());
+  const auto max_finite = Set(d, std::numeric_limits<T>::max());
+  std::size_t i = 0;
+  for (; i + w <= n; i += w) {
+    const auto x = LoadU(d, a + i);
+    const auto y = LoadU(d, b + i);
+    const auto ax = Abs(x);
+    const auto exceptional =
+        Or(Or(Or(IsNaN(x), IsNaN(y)), IsInf(x)),
+           Or(Or(Eq(x, y), Le(ax, min_normal)), Eq(ax, max_finite)));
+    if (!AllFalse(d, exceptional)) {
+      for (std::size_t lane = 0; lane < w; ++lane)
+        dst[i + lane] = std::nextafter(a[i + lane], b[i + lane]);
+    } else {
+      StoreU(nextafter_normal(d, x, y), d, dst + i);
+    }
+  }
+  for (; i < n; ++i) dst[i] = std::nextafter(a[i], b[i]);
+}
+
 }  // namespace
 
 #define HYLE_SCALABLE_UNARY(type, tag, name, vec_fn, scalar_fn)                  \
@@ -136,6 +175,15 @@ HYLE_SCALABLE_UNARY(double, f64, tan, Tan, std::tan)
 HYLE_SCALABLE_UNARY(double, f64, atanh, Atanh, std::atanh)
 HYLE_SCALABLE_UNARY(double, f64, log10, Log10, std::log10)
 #undef HYLE_SCALABLE_UNARY
+
+void HYLE_SCALABLE_HYLE_TYPED(nextafter, f32)(const float* a, const float* b,
+                                              float* dst, std::size_t n) noexcept {
+  nextafter_exact_loop(a, b, dst, n);
+}
+void HYLE_SCALABLE_HYLE_TYPED(nextafter, f64)(const double* a, const double* b,
+                                              double* dst, std::size_t n) noexcept {
+  nextafter_exact_loop(a, b, dst, n);
+}
 
 void HYLE_SCALABLE_MATH_NAME(exp_f64_highway_)(const double* src, double* dst,
                                                 std::size_t n) noexcept {

@@ -12,9 +12,11 @@ namespace hs = hyle::simd;
 
 #if defined(HYLE_SIMD_TARGET_SVE)
 #define HYLE_SCALABLE_BITPACK(name) hs::detail::name##_sve
+#define HYLE_SCALABLE_BITPACK_MULTIBLOCK(name) hs::detail::name##_multiblock_sve
 constexpr hs::Isa kExpectedBitpackIsa = hs::Isa::kSve;
 #elif defined(HYLE_SIMD_TARGET_RVV)
 #define HYLE_SCALABLE_BITPACK(name) hs::detail::name##_rvv
+#define HYLE_SCALABLE_BITPACK_MULTIBLOCK(name) hs::detail::name##_multiblock_rvv
 constexpr hs::Isa kExpectedBitpackIsa = hs::Isa::kRvv;
 #endif
 
@@ -63,6 +65,42 @@ void direct_unpack<std::uint32_t>(const std::uint32_t* packed, std::size_t count
 }
 
 template <typename T>
+void multiblock_pack(const T* raw, std::size_t count, T* packed, unsigned bits);
+template <>
+void multiblock_pack<std::uint8_t>(const std::uint8_t* raw, std::size_t count,
+                                   std::uint8_t* packed, unsigned bits) {
+  HYLE_SCALABLE_BITPACK_MULTIBLOCK(pack_u8)(raw, count, packed, bits);
+}
+template <>
+void multiblock_pack<std::uint16_t>(const std::uint16_t* raw, std::size_t count,
+                                    std::uint16_t* packed, unsigned bits) {
+  HYLE_SCALABLE_BITPACK_MULTIBLOCK(pack_u16)(raw, count, packed, bits);
+}
+template <>
+void multiblock_pack<std::uint32_t>(const std::uint32_t* raw, std::size_t count,
+                                    std::uint32_t* packed, unsigned bits) {
+  HYLE_SCALABLE_BITPACK_MULTIBLOCK(pack_u32)(raw, count, packed, bits);
+}
+
+template <typename T>
+void multiblock_unpack(const T* packed, std::size_t count, T* raw, unsigned bits);
+template <>
+void multiblock_unpack<std::uint8_t>(const std::uint8_t* packed, std::size_t count,
+                                     std::uint8_t* raw, unsigned bits) {
+  HYLE_SCALABLE_BITPACK_MULTIBLOCK(unpack_u8)(packed, count, raw, bits);
+}
+template <>
+void multiblock_unpack<std::uint16_t>(const std::uint16_t* packed, std::size_t count,
+                                      std::uint16_t* raw, unsigned bits) {
+  HYLE_SCALABLE_BITPACK_MULTIBLOCK(unpack_u16)(packed, count, raw, bits);
+}
+template <>
+void multiblock_unpack<std::uint32_t>(const std::uint32_t* packed, std::size_t count,
+                                      std::uint32_t* raw, unsigned bits) {
+  HYLE_SCALABLE_BITPACK_MULTIBLOCK(unpack_u32)(packed, count, raw, bits);
+}
+
+template <typename T>
 void reference_pack(const T* raw, std::size_t count, T* packed, unsigned bits);
 template <>
 void reference_pack<std::uint8_t>(const std::uint8_t* raw, std::size_t count,
@@ -106,6 +144,29 @@ void check_all_widths(unsigned max_bits, bool public_api) {
   }
 }
 
+template <typename T>
+void check_multiblock_all_widths(unsigned max_bits) {
+  // At the architectural 2048-bit ceiling this is two full physical vectors plus a fixed block
+  // and a scalar tail. At every smaller VL/VLEN it necessarily exercises the full-register path.
+  constexpr std::size_t kCount = 4096 + 73;
+  for (unsigned bits = 1; bits <= max_bits; ++bits) {
+    const std::uint64_t mask = bits == 8 * sizeof(T)
+                                   ? static_cast<std::uint64_t>(~T{0})
+                                   : (std::uint64_t{1} << bits) - 1;
+    std::vector<T> raw(kCount);
+    for (std::size_t i = 0; i < raw.size(); ++i)
+      raw[i] = static_cast<T>((i * 0xD1B54A35u + bits * 0x94D049BBu + (i >> 5)) & mask);
+    std::vector<T> expected(hs::packed_size<T>(raw.size(), bits));
+    reference_pack(raw.data(), raw.size(), expected.data(), bits);
+    std::vector<T> packed(expected.size());
+    std::vector<T> decoded(raw.size());
+    multiblock_pack(raw.data(), raw.size(), packed.data(), bits);
+    multiblock_unpack(packed.data(), raw.size(), decoded.data(), bits);
+    ASSERT_EQ(packed, expected) << "lane bits=" << 8 * sizeof(T) << " bits=" << bits;
+    ASSERT_EQ(decoded, raw) << "lane bits=" << 8 * sizeof(T) << " bits=" << bits;
+  }
+}
+
 }  // namespace
 
 TEST(ScalableBitpackProduct, DirectKernelsUseFixed128Layout) {
@@ -124,4 +185,11 @@ TEST(ScalableBitpackProduct, RuntimeAndPublicApiUseScalableTier) {
   check_all_widths<std::uint32_t>(32, true);
 }
 
+TEST(ScalableBitpackProduct, FullVectorMultiLogicalBlockCandidatePreservesLayout) {
+  check_multiblock_all_widths<std::uint8_t>(8);
+  check_multiblock_all_widths<std::uint16_t>(16);
+  check_multiblock_all_widths<std::uint32_t>(32);
+}
+
+#undef HYLE_SCALABLE_BITPACK_MULTIBLOCK
 #undef HYLE_SCALABLE_BITPACK

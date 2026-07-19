@@ -442,6 +442,8 @@ void hypot_f64_highway_neon(const double* a, const double* b, double* dst, std::
   void fmod_f64_hyle_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
   void fdim_f32_hyle_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
   void fdim_f64_hyle_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
+  void nextafter_f32_hyle_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
+  void nextafter_f64_hyle_##suffix(const double*, const double*, double*, std::size_t) noexcept; \
   void hypot_in_range_f32_hyle_##suffix(const float*, const float*, float*, std::size_t) noexcept; \
   void cexp_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \
   void clog_f32_hyle_##suffix(const float*, const float*, float*, float*, std::size_t) noexcept; \

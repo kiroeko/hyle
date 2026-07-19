@@ -27,13 +27,13 @@
 | NEON mask 查询 primitive（nibble 路径） | ✅ |
 | SVE/RVV 寄存器正确性 + 多 VL/VLEN QEMU | ✅ |
 | **portable_missing 可移植原语 backlog** | ✅ **0 项**（原 ~22 已全部补齐；见 simd-25 §阶段 0） |
-| **SVE/RVV math 主 HYLE/Highway 产品 TU + Runtime** | ✅ QEMU 多 VL；复数 f32/f64 走真实 scalable body，仅 6 个精确实数 op 保留 scalar |
+| **SVE/RVV math 主 HYLE/Highway 产品 TU + Runtime** | ✅ QEMU 多 VL；复数 f32/f64 与 exact `nextafter` 走真实 scalable body，仅 `lgamma/remainder` 的 f32/f64 四项保留 scalar |
 | **SVE/RVV dtype f16/bf16↔f32 产品 TU + Runtime** | ✅；fp8 故意保持 scalar/可选硬件 |
 | **SVE/RVV bitpack 产品 TU + Runtime** | ✅（固定 128-bit logical block，与 NEON layout 一致） |
 | **RVV sort 产品 TU（LMUL=1）+ Runtime** | ✅ |
 | **SVE sort 产品 TU + Runtime** | ✅ full-VL partition；只有要求 2 的幂 lane 的基础 network 保持 128/256-bit cap |
 | **SVE/RVV 精细 feature probe** | ✅ HWCAP2 / riscv_hwprobe；baseline、LTO-off detector |
-| **公开 scalable 产品派发门** | ✅ SVE 99×5；RVV base 94×4，Zvbb/Zvbc 各 95×4 |
+| **公开 scalable 产品派发门** | ✅ SVE/SVE2-AES 102×5；RVV base/Zvkned 97×4（Zvbb/Zvbc 共用同一测试集） |
 | 定宽 op 常数因子对齐战（历史矩阵主体） | ✅ 无新 LOSE 证据时不再全表重抠 |
 
 ---
@@ -62,15 +62,15 @@
 | **B3** | RVV sort LMUL=1；SVE full-VL partition + capped base network | ✅ |
 | **B4** | SVE2/BF16/I8MM/AES、Zvbb/Zvbc/Zvkned/Zvfh 等精细探测 | ✅ |
 
-### B 未完成
+### B 软件收口与硬件待签字
 
 | # | 项 | 现状 | 做什么 | 别做什么 |
 |---|---|---|---|---|
 | **B5** | 真机性能（= A3） | 未签字 | 同 A3 | 无硅宣称 SVE SOTA |
-| **B6** | math 精确标量 per-op | `lgamma/remainder/nextafter` 因正确性合同保留 scalar | 只有 scalable 实现能保持精确合同且有收益时再换 | 为齐 tier 元数据牺牲语义 |
-| **B7** | bitpack 多 logical-block 并行 | 每次 128b active | 真机收益证据后再做 | 无证据改格式 |
-| **B8** | shared_generic / fixed_model 长尾 | **9 + 0**；shared 已由产品/QEMU 实例化，fixed_model 已清零 | 维持机械闸；出现新消费者再分类 | 为齐名抄 128-block 全家桶 |
-| **B9** | extension_gated（含 RVV AES 等） | 语义缺口 **0**；可选扩展只剩产品机会项 | 有扩展、产品合同与收益证据再做独立 feature TU | 无硬件装假快路 |
+| **B6** | math 精确标量 per-op | ✅ `nextafter` 的 SVE/RVV 普通 finite-normal chunk 已改为精确 1-ULP bit step；NaN/零/上下溢边界回 libm。`lgamma/remainder` 仍是有证据的逐项 scalar 裁决 | 真机只验证收益；正确性由多 VL/VLEN bit-exact 门维持 | 把有语义问题的 vendor 近似式复活 |
+| **B7** | bitpack 多 logical-block 并行 | ✅ full-VL 候选已实现：block-major↔row-major 两次转置，在不改 fixed-128 wire layout 下并行多个 logical block；全部 56 width 多 VL/VLEN 对拍 | **生产切换仍归 B5**：真机证明转置成本值得后再替换 capped path | 为“吃满 VL”改格式或无证据默认启用 |
+| **B8** | shared_generic / fixed_model 长尾 | ✅ **维护闸，不是实现 backlog**。shared 已由产品/QEMU 实例化，fixed_model 已清零 | 维持机械闸；新增 op 时重新分类 | 为齐名抄 128-block 全家桶 |
+| **B9** | extension_gated（含 RVV AES 等） | ✅ 语义缺口 **0**；SVE2-AES 与 RVV Zvkned 静态 target 快路均存在，base TU 仍保持软件底座且反汇编无越级指令 | 出现 pointer/count AES 产品时，再由 probe 接独立 Runtime feature TU；真机签字归 B5 | 把 register-only 静态能力伪报成已选择的 Runtime 产品核 |
 
 ### 机械参考（语法面，≠ 用户能力）
 
@@ -133,7 +133,7 @@
 | **D4** | （可选）**GFNI** | 机会型 | 有 Ice Lake+/SDE 再上；可反哺 ReverseBits 等 | 非硬缺 |
 | **D5** | **模块 isa 元数据合同** | ✅ `Module::isa` 明确表示主产品 tier；feature bits 标出 AVX-VNNI/AVX512-VNNI、exact-libm scalar、fp8 scalar、per-op lower tier、SVE capped network、bitpack logical-128 | `Runtime` C++ 诊断表 v6；C ABI 提供只读 snapshot | 不为元数据齐平强行实现全部冷门 scalable |
 | **D6** | **dispatcher 生成统一** | ✅ generated 模块由 manifest 过滤；math/dtype/sort/bitpack 的 exact 分支统一用 manifest suffix，fat 分支保留各自必要的 feature/per-op 策略 | 新的机械同构模块继续用 `hyle_add_dispatched_kernel` | 不把不同算法策略强塞成同一阶梯 |
-| **D7** | **双轨测试矩阵** | ✅ Windows/WSL fat 367（366 pass + 1 无 BF16 硬件 skip）；exact AVX2 同套 367；x86 scalar/SSE4/AVX2/AVX512 artifact 闸；SVE exact 44×5、RVV exact 44×4；fat scalable 为 SVE 99×5、RVV 94×4 / 扩展 95×4 | 真机到位后补执行/性能，不改正确性结论 | 不为每个 op 造动态函数指针 |
+| **D7** | **双轨测试矩阵** | ✅ Windows/WSL fat 367（366 pass + 1 无 BF16 硬件 skip）；exact AVX2 同套 367；x86 scalar/SSE4/AVX2/AVX512 artifact 闸；SVE exact 44×5、RVV exact 44×4；fat scalable 为 SVE/SVE2-AES 102×5、RVV base/Zvkned 97×4 | 真机到位后补执行/性能，不改正确性结论 | 不为每个 op 造动态函数指针 |
 | **D8** | **垫片/helper 层后续** | simd-19 **未建** `neon_bin<QFn,DFn>` 式宽度 helper（实践用垫片+热点分支）；**类型轴**（f16/bf16 lane 指令）到来时垫片兜不住 | 仅当 f16/bf16 后端横切收费时再建类型→intrinsic 收敛层；沿用已实证的工单迁移法 | 现在为空建 helper = 过度抽象；**不要**为「消灭垫片痕迹」重写 270 op |
 
 ### D.9 宏：不是「重构做到一半」
@@ -172,7 +172,7 @@
 3.  C1    mul_hi / mul_hilo  ✅
 4.  C2    sort key i16/u16/u128（✅）
 5.  C3    complex + f64  ✅
-6.  B6/B7/B8  按消费与证据穿插
+6.  B6/B7/B8/B9 软件施工  ✅（B7 默认启用与 B9 产品 Runtime 仍服从消费/真机证据）
 7.  D1+D6 exact 单腿 + dispatcher 生成收敛  ✅
 8.  D5+D7 模块 isa 合同与 exact/native 测试闸  ✅
 9.  D2    x86 partial 健康化 + canary  ✅（真机性能随常规 scorecard）
@@ -181,8 +181,8 @@
 // D8 仅 f16/bf16 类型轴启动时评估
 ```
 
-算法补缺线 C1–C3、机制线 D1/D2/D3/D5/D6/D7 与 A1 均已收口。A3/B5 与 B7
-性能决策挂起到取得对应硅；D4/D8 只在出现产品消费或类型轴时启动。
+算法补缺线 C1–C3、机制线 D1/D2/D3/D5/D6/D7、A1 与 B6–B9 的无硅施工均已收口。
+A3/B5 与 B7 的生产切换决策挂起到取得对应硅；D4/D8 只在出现产品消费或类型轴时启动。
 
 ---
 

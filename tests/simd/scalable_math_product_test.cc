@@ -4,9 +4,12 @@
 #include "src/simd/math/kernels.h"
 
 #include <algorithm>
+#include <bit>
 #include <cmath>
 #include <complex>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 
 namespace hs = hyle::simd;
 
@@ -122,6 +125,48 @@ TEST(ScalableMathProduct, HyleDerivedRealKernelsAndTail) {
   HYLE_SCALABLE_PRODUCT(fdim_f64_hyle)(x64, y64, out64, n64);
   for (std::size_t i = 0; i < n64; ++i)
     ExpectNearRelative(out64[i], std::fdim(x64[i], y64[i]), 2e-12);
+}
+
+template <class T>
+using UIntBits =
+    std::conditional_t<sizeof(T) == 4, std::uint32_t, std::uint64_t>;
+
+template <class T>
+void CheckNextAfterExact(auto fn) {
+  const std::size_t w = hs::Lanes(hs::ScalableTag<T>{});
+  const std::size_t n = 2 * w + 3;
+  ASSERT_LE(n, kMaxLanes);
+  alignas(64) T a[kMaxLanes], b[kMaxLanes], out[kMaxLanes];
+  for (std::size_t i = 0; i < n; ++i) {
+    a[i] = (i & 1) ? T(-1.25) - T(i) / T(17) : T(0.75) + T(i) / T(19);
+    b[i] = (i % 3) ? a[i] + T(4) : a[i] - T(4);
+  }
+  fn(a, b, out, n);
+  for (std::size_t i = 0; i < n; ++i)
+    EXPECT_EQ(std::bit_cast<UIntBits<T>>(out[i]),
+              std::bit_cast<UIntBits<T>>(std::nextafter(a[i], b[i])))
+        << "normal i=" << i;
+
+  const T denorm = std::numeric_limits<T>::denorm_min();
+  const T min = std::numeric_limits<T>::min();
+  const T max = std::numeric_limits<T>::max();
+  const T inf = std::numeric_limits<T>::infinity();
+  const T nan = std::numeric_limits<T>::quiet_NaN();
+  const T edge_a[] = {T(0), -T(0), denorm, -denorm, min, -min, max, -max,
+                      inf, -inf, T(1), T(-1), nan};
+  const T edge_b[] = {-T(0), T(0), T(0), T(0), T(0), T(0), inf, -inf,
+                      T(0), T(0), T(1), T(-1), T(2)};
+  constexpr std::size_t edge_n = sizeof(edge_a) / sizeof(edge_a[0]);
+  fn(edge_a, edge_b, out, edge_n);
+  for (std::size_t i = 0; i < edge_n; ++i)
+    EXPECT_EQ(std::bit_cast<UIntBits<T>>(out[i]),
+              std::bit_cast<UIntBits<T>>(std::nextafter(edge_a[i], edge_b[i])))
+        << "edge i=" << i;
+}
+
+TEST(ScalableMathProduct, NextAfterIsExactlyOneUlpIncludingBoundaries) {
+  CheckNextAfterExact<float>(HYLE_SCALABLE_PRODUCT(nextafter_f32_hyle));
+  CheckNextAfterExact<double>(HYLE_SCALABLE_PRODUCT(nextafter_f64_hyle));
 }
 
 TEST(ScalableMathProduct, HyleDerivedComplexKernelsCoverWideExceptionalLanes) {
