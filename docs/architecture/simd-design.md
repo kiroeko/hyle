@@ -45,7 +45,7 @@ simd/
 │  ├─ neon.h   sve.h                 (arm64)
 │  ├─ rvv.h                          (riscv64)
 │  └─ scalar.h                       (portable fallback)
-├─ native/        ops/random/scan 的唯一 D-tag kernel body（固定目标、可内联）
+├─ native/        ops/random/scan/search 的唯一 D-tag kernel body（固定目标、可内联）
 ├─ runtime.h      版本/大小/ISA + ops/random 函数表 + module ISA/features
 ├─ target.h       当前 exact target 常量
 ├─ fat_kernel.h   用户 whole-buffer kernel 的稳定入口选择器
@@ -65,7 +65,7 @@ simd/
 | 未知客户 CPU / 预编译库 | 普通 batch API | `runtime()` 首次初始化时由 CPUID+XGETBV/HWCAP 选不可变表 | ops/random 每 batch 一次函数指针；其余模块读统一 ISA/features |
 | 整个 HYLE 固定 ISA | 同一普通 batch API | target manifest 只生成一张 canonical table/source set，dispatcher 直连目标符号 | 无 CPUID、无函数表选择；仍保留稳定库入口与单表诊断 |
 | 用户源码 TU 固定 ISA | `native::` + `vec.h` | `hyle_target_simd` 同时施加 target 宏和 codegen flag | 共享 D-tag body 在用户 TU 内实例化/内联 |
-| 用户自定义多版本 kernel | pointer/POD entry | `hyle_add_fat_kernel` 生成变体，`select_fat_kernel` 动态选一次或 exact 选定 | vector/mask 不得穿过 entry |
+| 用户自定义多版本 kernel | pointer/POD entry | `hyle_add_fat_kernel` 生成变体，`HYLE_SIMD_SELECT_FAT_KERNEL` 动态选一次或 exact 选定 | vector/mask 不得穿过 entry |
 
 CMake 为 ops/random/scan/search 从同一 `kernel_impl.h` 生成 scalar/SSE4/AVX2/AVX512/NEON/SVE/RVV
 薄 TU；wrapper 只增加稳定符号，算法唯一来源是 `native/`。dtype/math/sort/bitpack 保留模块手写 dispatcher，

@@ -12,6 +12,27 @@
 
 namespace hs = hyle::simd;
 
+using FatAddOneFn =
+    void (*)(const float*, float*, std::size_t, std::uint32_t*) noexcept;
+void hyle_test_fat_add_one_scalar(const float*, float*, std::size_t,
+                                  std::uint32_t*) noexcept;
+#if defined(HYLE_ARCH_X64)
+void hyle_test_fat_add_one_sse4(const float*, float*, std::size_t,
+                                std::uint32_t*) noexcept;
+void hyle_test_fat_add_one_avx2(const float*, float*, std::size_t,
+                                std::uint32_t*) noexcept;
+void hyle_test_fat_add_one_avx512(const float*, float*, std::size_t,
+                                  std::uint32_t*) noexcept;
+#elif defined(HYLE_ARCH_ARM64)
+void hyle_test_fat_add_one_neon(const float*, float*, std::size_t,
+                                std::uint32_t*) noexcept;
+void hyle_test_fat_add_one_sve(const float*, float*, std::size_t,
+                               std::uint32_t*) noexcept;
+#elif defined(HYLE_ARCH_RISCV64)
+void hyle_test_fat_add_one_rvv(const float*, float*, std::size_t,
+                               std::uint32_t*) noexcept;
+#endif
+
 namespace {
 int fat_scalar() noexcept { return 0; }
 #if defined(HYLE_ARCH_X64)
@@ -108,6 +129,48 @@ TEST(SimdRuntime, PublicFatKernelSelectorMatchesRuntimeTier) {
   EXPECT_EQ(hs::select_fat_kernel(&fat_scalar)(), 0);
 #endif
 }
+
+TEST(SimdRuntime, GeneratedPublicFatKernelMatchesRuntimeTier) {
+  FatAddOneFn fn = nullptr;
+#if defined(HYLE_ARCH_X64)
+  fn = HYLE_SIMD_SELECT_FAT_KERNEL(
+      &hyle_test_fat_add_one_scalar, &hyle_test_fat_add_one_sse4,
+      &hyle_test_fat_add_one_avx2, &hyle_test_fat_add_one_avx512);
+#elif defined(HYLE_ARCH_ARM64)
+  fn = HYLE_SIMD_SELECT_FAT_KERNEL(
+      &hyle_test_fat_add_one_scalar, &hyle_test_fat_add_one_neon,
+      &hyle_test_fat_add_one_sve);
+#elif defined(HYLE_ARCH_RISCV64)
+  fn = HYLE_SIMD_SELECT_FAT_KERNEL(
+      &hyle_test_fat_add_one_scalar, &hyle_test_fat_add_one_rvv);
+#else
+  fn = HYLE_SIMD_SELECT_FAT_KERNEL(&hyle_test_fat_add_one_scalar);
+#endif
+  ASSERT_NE(fn, nullptr);
+
+  std::array<float, 37> src{};
+  std::array<float, 37> dst{};
+  for (std::size_t i = 0; i < src.size(); ++i)
+    src[i] = static_cast<float>(i) - 3.25f;
+  std::uint32_t selected = ~std::uint32_t{0};
+  fn(src.data(), dst.data(), src.size(), &selected);
+  for (std::size_t i = 0; i < src.size(); ++i)
+    EXPECT_FLOAT_EQ(dst[i], src[i] + 1.0f);
+  EXPECT_EQ(selected, static_cast<std::uint32_t>(hs::runtime().isa));
+}
+
+#if defined(HYLE_ARCH_X64)
+TEST(SimdRuntime, DetectionOnlyAvxTierUsesSse4FatKernel) {
+  EXPECT_EQ(hs::detail::select_x86_fat_kernel_for_isa(
+                hs::Isa::kAvx, &fat_scalar, &fat_sse4, &fat_avx2,
+                &fat_avx512)(),
+            1);
+  EXPECT_EQ(hs::detail::select_x86_fat_kernel_for_isa(
+                hs::Isa::kSsse3, &fat_scalar, &fat_sse4, &fat_avx2,
+                &fat_avx512)(),
+            0);
+}
+#endif
 
 TEST(SimdRuntime, RandomSequenceIgnoresIsaWidth) {
   constexpr std::size_t kCount = 257;

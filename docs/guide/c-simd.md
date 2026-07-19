@@ -29,6 +29,14 @@ if (!hyle_simd_runtime_info_get(&info))
 产品 tier 和精细 feature bits，不承诺模块内每个冷门 op 都使用该 ISA。输入结构必须用
 `HYLE_SIMD_RUNTIME_INFO_INIT` 初始化，不能把全零结构当作可演进协议。
 
+`hyle_simd_module_info.reserved` 固定写零；`features` 用
+`HYLE_SIMD_FEATURE_*` 具名位解释，包括 F16C/BF16/VNNI 等硬件选择和
+exact-libm scalar、fp8 scalar、lower-tier winner、SVE capped network、logical-128 bitpack
+等产品合同。绑定不要手抄位值。
+
+`HYLE_SIMD_RUNTIME_INFO_V1_SIZE` 钉住首版可读前缀。库接受 `struct_size` 不小于该值的结构，
+只写自己认识的字段；未来在尾部追加字段时，旧调用方仍可继续传 V1 尺寸。
+
 ## 类型、所有权和绑定
 
 - `hyle_simd_f16`、`hyle_simd_bf16`、`hyle_simd_f8e4m3`、`hyle_simd_f8e5m2`
@@ -79,6 +87,8 @@ if (!hyle_simd_runtime_info_get(&info))
 ## 合同
 
 - `n > 0` 时所有必需指针必须有效并覆盖相应范围；`n == 0` 通常为 no-op。
+- `hyle_simd_supports_isa` 只接受本头列出的 canonical ISA 常量；未知数值返回 0。它回答
+  CPU/OS 是否支持该档，不是让普通调用方自行挑 kernel。
 - 除明确支持 exact in-place 的接口外，输入输出不得重叠；带偏移 overlap 不受支持。
 - `select` 要求 `k < n`，`partial_sort` 要求 `k <= n`；非法 sort enum fail-fast。
 - bitpack 的 `bits` 必须在元素位宽内，packed bytes 是同一 tier 的内存格式，不是长期 wire format。

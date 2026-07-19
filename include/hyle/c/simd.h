@@ -45,8 +45,21 @@ enum {
 
 typedef struct hyle_simd_module_info {
   hyle_simd_isa isa;
+  uint32_t reserved;
   uint64_t features;
 } hyle_simd_module_info;
+
+/* hyle_simd_module_info.features bits. */
+#define HYLE_SIMD_FEATURE_F16C                  (UINT64_C(1) << 0)
+#define HYLE_SIMD_FEATURE_AVX512_BF16           (UINT64_C(1) << 1)
+#define HYLE_SIMD_FEATURE_AVX10_2               (UINT64_C(1) << 2)
+#define HYLE_SIMD_FEATURE_AVX_VNNI              (UINT64_C(1) << 3)
+#define HYLE_SIMD_FEATURE_AVX512_VNNI           (UINT64_C(1) << 4)
+#define HYLE_SIMD_FEATURE_MATH_EXACT_LIBM_SCALAR (UINT64_C(1) << 16)
+#define HYLE_SIMD_FEATURE_DTYPE_FP8_SCALAR       (UINT64_C(1) << 17)
+#define HYLE_SIMD_FEATURE_PER_OP_LOWER_TIER      (UINT64_C(1) << 18)
+#define HYLE_SIMD_FEATURE_SORT_CAPPED_NETWORK    (UINT64_C(1) << 19)
+#define HYLE_SIMD_FEATURE_BITPACK_LOGICAL128     (UINT64_C(1) << 20)
 
 typedef struct hyle_simd_runtime_info {
   uint32_t struct_size;
@@ -59,11 +72,17 @@ typedef struct hyle_simd_runtime_info {
   hyle_simd_module_info bitpack;
 } hyle_simd_runtime_info;
 
+/* Frozen readable prefix of the first runtime-info layout. Future fields append
+ * after this prefix; old callers remain valid when they pass this size. */
+#define HYLE_SIMD_RUNTIME_INFO_V1_SIZE \
+  ((uint32_t)(offsetof(hyle_simd_runtime_info, bitpack) + \
+              sizeof(hyle_simd_module_info)))
+
 #define HYLE_SIMD_RUNTIME_INFO_INIT \
   { (uint32_t)sizeof(hyle_simd_runtime_info), HYLE_SIMD_ISA_SCALAR, \
-    {HYLE_SIMD_ISA_SCALAR, 0}, {HYLE_SIMD_ISA_SCALAR, 0}, \
-    {HYLE_SIMD_ISA_SCALAR, 0}, {HYLE_SIMD_ISA_SCALAR, 0}, \
-    {HYLE_SIMD_ISA_SCALAR, 0}, {HYLE_SIMD_ISA_SCALAR, 0} }
+    {HYLE_SIMD_ISA_SCALAR, 0, 0}, {HYLE_SIMD_ISA_SCALAR, 0, 0}, \
+    {HYLE_SIMD_ISA_SCALAR, 0, 0}, {HYLE_SIMD_ISA_SCALAR, 0, 0}, \
+    {HYLE_SIMD_ISA_SCALAR, 0, 0}, {HYLE_SIMD_ISA_SCALAR, 0, 0} }
 
 HYLE_SIMD_C_API hyle_simd_isa hyle_simd_active_isa(void);
 HYLE_SIMD_C_API int hyle_simd_supports_isa(hyle_simd_isa isa);

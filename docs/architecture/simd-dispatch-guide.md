@@ -31,7 +31,7 @@ target-dependent vector/mask 类型穿过边界，就只能在编译期确定 ta
                          compile-time selected backend
              scalar / SSE4 / AVX2 / AVX512 / NEON / SVE / RVV
 
-     custom kernel: hyle_add_fat_kernel -> per-ISA entries -> select_fat_kernel
+     custom kernel: hyle_add_fat_kernel -> per-ISA entries -> HYLE_SIMD_SELECT_FAT_KERNEL
      stable C ABI: free C functions + POD + opaque RNG -> ordinary batch API only
 ```
 
@@ -47,7 +47,7 @@ fat 与 exact 的 generated TU、手写产品 TU、Runtime table 和 exact suffi
 |---|---:|---|---|
 | 稳定 C ABI | 247 个入口（244 导出 + 3 个 typed header-inline） | 普通应用、FFI、跨编译器 | pointer/count、共享 POD、opaque RNG |
 | C++ batch core（开发期） | 公开 whole-buffer overload | HYLE 内部/同工具链测试 | 进入同一 dispatcher；不是发布 ABI |
-| `native::` whole-buffer kernel | ops/random/scan | 固定 ISA、需要跨调用内联的源码用户 | target-bound C++，不承诺跨 ISA 类型稳定 |
+| `native::` whole-buffer kernel | ops/random/scan/search | 固定 ISA、需要跨调用内联的源码用户 | target-bound C++，不承诺跨 ISA 类型稳定 |
 | `vec.h` 寄存器 DSL | 387 个去重公开/selector 名 | 编写自定义 SIMD kernel 的高级用户 | target-bound vector/mask；只在 TU 内编译期实例化 |
 | `detail::*_{isa}` | 每 ISA 稳定符号薄包装 | HYLE dispatcher/测试 | internal，不是用户 API |
 
@@ -174,7 +174,8 @@ hyle::simd::native::add(x, y, out, count);
 hyle::simd::native::random_fill(state, random, count);
 ```
 
-`hyle_target_simd` 同时设置 target 宏和编译器 flag。当前 `native` 完整 kernel 面为 ops、RNG 和 scan；
+`hyle_target_simd` 同时设置 target 宏和编译器 flag。当前 `native` 完整 kernel 面为
+ops、RNG、scan 和 search；
 函数具有 TU-local linkage 并直接使用当前
 backend，允许完全内联；它不调用 `runtime()`、不探测 CPUID、也不经过函数指针。生成的二进制要求部署
 CPU 真正支持所选 ISA。
@@ -186,8 +187,28 @@ CPU 真正支持所选 ISA。
 ## 自定义 fat kernel
 
 源码用户用 `hyle_add_fat_kernel` 将同一 impl header 机械编成各 ISA 的稳定 pointer/POD entry，baseline
-TU 用 `select_fat_kernel(...)` 选择并缓存函数指针。精确目标 TU 中选择在编译期完成；未知 CPU 中只在
-缓存前探测一次。该机制禁止 vector/mask 类型跨 entry，variant header 必须只维护一份算法 body。
+TU 用 `HYLE_SIMD_SELECT_FAT_KERNEL(...)` 选择并缓存函数指针。该宏在 fat 构建中调用
+`select_fat_kernel`，在 exact 构建中会在预处理阶段只保留 manifest 生成的那个 symbol，因而不会
+odr-use 未生成的其余变体。未知 CPU 中只在缓存前探测一次。该机制禁止 vector/mask 类型跨 entry，
+variant header 必须只维护一份算法 body。
+
+fat 构建的 `TARGETS` 必须包含当前平台的完整 canonical tier（x86 四档、Linux ARM64
+scalar/NEON/SVE、macOS ARM64 scalar/NEON、RISC-V scalar/RVV）；exact 构建至少必须包含所选 tier。
+CMake 在配置期拒绝缺档清单。调用代码仍可写跨平台的完整参数列表：macOS 会在预处理阶段丢弃不存在的
+SVE symbol。
+
+以 x86 四档为例，调用拼写在 fat/exact 构建中不变：
+
+```cpp
+using Fn = void (*)(const float*, float*, std::size_t) noexcept;
+static const Fn fn = HYLE_SIMD_SELECT_FAT_KERNEL(
+    &transform_scalar, &transform_sse4, &transform_avx2, &transform_avx512);
+fn(src, dst, count);
+```
+
+`select_fat_kernel` 仍是所有变体都真实存在时可直接使用的低层函数。公开 CMake helper 与 exact
+manifest 配套时应使用大写选择宏；`tests/simd/fat_kernel_fixture.h` 是一份真实 pointer/count
+纵切回归，不再只测试四个手写空函数。
 
 ## 一份实现，两个入口
 
@@ -221,8 +242,9 @@ SVE2/AES/PMULL/I8MM/F32MM/F64MM/BF16；Linux RISC-V 以 `AT_HWCAP.V` 探测基�
 不支持 `riscv_hwprobe` 时可选位保持 false，不会因编译机 feature 或 `/proc/cpuinfo` 误报而 SIGILL。
 
 预编译 runtime 为 ops/random/scan/search 生成 SVE/RVV 变体；math 的主 HYLE/Highway op 与 HYLE-owned
-xsimd-derived op 也已有独立 scalable 产品 TU。只有 `lgamma/remainder/nextafter` 的 f32/f64 因明确
-正确性裁决保留 scalar。常用 dtype f16/bf16↔f32 已有真实 SVE/RVV 产品 TU；fp8 因 base scalable ISA
+xsimd-derived op 也已有独立 scalable 产品 TU。只有 `lgamma/remainder` 的 f32/f64 因明确
+正确性裁决保留 scalar；`nextafter` 的普通 finite-normal chunk 已是精确 1-ULP scalable body，
+边界逐 lane 回 libm。常用 dtype f16/bf16↔f32 已有真实 SVE/RVV 产品 TU；fp8 因 base scalable ISA
 没有已认证的通用转换收益而保留 scalar/可选硬件路径。
 
 bitpack 的物理指令使用 scalable backend，但 logical D-tag 固定为 128-bit，因此格式不随线程 SVE VL
@@ -230,8 +252,8 @@ bitpack 的物理指令使用 scalable backend，但 logical D-tag 固定为 128
 KV32/KV64：RVV 使用诚实的 LMUL=1 全宽 tag；SVE 的递归 partition 使用完整物理 VL，只有需要 2 的幂
 lane 数的 sorting network 保持 128/256-bit cap。
 
-当前 fat 脚本门为 SVE **99 tests × VL 128/256/384/512/2048**，RVV base **94 tests × VLEN
-128/256/512/1024**，RVV Zvbb/Zvbc 各 **95×4**；exact 门另为 SVE **44×5**、RVV **44×4**。门内包含 CPU probe、
+当前 fat 脚本门为 SVE/SVE2-AES **102 tests × VL 128/256/384/512/2048**，RVV
+base/Zvkned **97 tests × VLEN 128/256/512/1024**；exact 门另为 SVE **44×5**、RVV **44×4**。门内包含 CPU probe、
 Runtime、公开 ops/random/search/scan/math/dtype/bitpack/sort batch API、tail 和 feature 蕴含关系。
 qemu-aarch64 能正向验证 HWCAP2 扩展位；qemu-riscv64-user 8.2 能执行 Zvbb/Zvbc，但不模拟
 `riscv_hwprobe` 可选位，故 RVV

@@ -16,6 +16,7 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 | 当前参与 HYLE 开发、同一工具链调用 | `hyle/simd/{ops,math,...}.h` | 是 | 开发期 C++ core，不承诺 ABI |
 | 整个 HYLE 只在一种已知 ISA 上运行 | `HYLE_SIMD_EXACT_TARGET` | 否，直接绑定目标实现 | 构建配置 |
 | 自己写一个固定 ISA 的 kernel TU | `hyle/simd/native.h` / `native/*.h` | 否 | expert source surface |
+| 自己写一个 kernel，仍要发布给未知 CPU | `hyle_add_fat_kernel` + `HYLE_SIMD_SELECT_FAT_KERNEL` | 是，每个完整 kernel 选一次 | source integration |
 | 实现或移植寄存器级 kernel | `hyle/simd/vec.h` | 否 | 内部 DSL，类型随 ISA 变化 |
 
 ```text
@@ -46,6 +47,7 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 | `ops.h` | `add`、同精度/混合精度 `dot`、`saxpy` | 连续数组的基础 BLAS-like 操作与量化存储 dot |
 | `random.h` | `RandomState`、`random_fill` | 可复现、跨 ISA 位一致的批量随机数；非加密 |
 | `scan.h` | `inclusive_scan`、`exclusive_scan` | 原地前缀和，支持 u/i32、u/i64、f32、f64 |
+| `search.h` | count/find/min/max/minmax/is_sorted | 连续数组查找、归约和有序性检查 |
 | `dtype_ops.h` | f16/bf16/fp8 与 f32 批量转换 | 模型权重、激活、KV cache 和混合精度数据搬运 |
 | `math.h` | 实数/复数数学、激活函数、softmax | 数值计算、统计和 AI 热路径 |
 | `sort.h` | sort、partial sort、select、radix、argsort | 排序、top-k、nth element、稳定整数/浮点 radix |
@@ -169,6 +171,20 @@ AVX2 symbol。未知客户 CPU 的发布包应使用默认 fat build。
 并调用 `hyle::simd::native`。`native` 返回的向量类型和 lane 数依赖目标；不能把它暴露到普通 TU、
 动态库 ABI 或持久化格式中。直接使用 `vec.h` 也遵循同样边界，它是写 kernel 的 DSL，不是 387 个
 普通用户 API 的集合。
+
+要把自己的 pointer/count kernel 随 HYLE 一起多版本编译，则让 impl header 根据
+`HYLE_SIMD_VARIANT_SUFFIX` 导出 suffixed entry，再用：
+
+```cmake
+hyle_add_fat_kernel(
+  TARGET my_app NAME my_transform IMPL "src/my_transform-inl.h"
+  TARGETS scalar sse4 avx2 avx512 neon sve rvv)
+```
+
+baseline 调用点用 `HYLE_SIMD_SELECT_FAT_KERNEL(...)` 选择并缓存入口。不要直接手写 CPUID，也不要让
+vector/mask 出现在 entry 签名中。这个选择宏在默认 fat 构建中走一次平台探测，在
+`HYLE_SIMD_EXACT_TARGET` 构建中只引用唯一生成的 exact symbol；在 macOS ARM64 上也不会引用未生成的
+SVE symbol。fat `TARGETS` 必须列出本平台完整 canonical tier，CMake 会在配置期检查。
 
 ## C++ source surface
 

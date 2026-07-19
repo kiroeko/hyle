@@ -1,6 +1,8 @@
 # simd-22：native/runtime 双轨重构
 
-> 状态：C++ 双轨重构完成（2026-07-16）。纯 C ABI shim 仍按 close-01/02 独立收口。
+> 状态：C++ 双轨重构与 close-01 纯 C ABI shim 均已完成；2026-07-19 模块收口复审补上
+> 自定义 fat kernel 的 exact 贯穿门、macOS 无 SVE symbol 的平台裁剪、AVX detection-tier 降级和
+> C runtime snapshot 演进合同。
 
 ## 目标
 
@@ -50,7 +52,7 @@
                           +----------------------+----------------------+
                                                  |
                                   one shared native D-tag body
-                                  native/ops.h · random.h · scan.h
+                                  native/ops.h · random.h · scan.h · search.h
                                                  |
                                                vec.h
                                       target-neutral register ops
@@ -62,11 +64,12 @@
               |
      hyle_add_fat_kernel  --generate--> per-ISA stable entries
               |
-     select_fat_kernel    --dynamic: select/cache once
-                           --exact: compile-time select
+     HYLE_SIMD_SELECT_FAT_KERNEL
+                           --dynamic: select/cache once
+                           --exact/platform-trimmed: preprocess to existing symbol(s)
 
-     close-01/02 C ABI
-     opaque handle + POD + version/size vtable  ---> wraps only ordinary batch API
+     close-01 C ABI
+     free functions + POD/struct_size + opaque RNG  ---> wraps only ordinary batch API
 ```
 
 图里只有三种合法边界：
@@ -169,7 +172,7 @@ hyle_target_simd(TARGET my_kernel ISA AVX2)
 | D4 | scan 迁移共享 native body；移除全部独立 active-tier API，统一 module metadata | 已完成 |
 | D5 | dtype/math 的特殊 feature 与 per-op winner 纳入共享 Runtime；exact build 编译期直连 | 已完成 |
 | D6 | sort/bitpack 保留算法分流，runtime 诊断统一；exact build 编译期直连 | 已完成 |
-| D7 | 公共 `hyle_add_fat_kernel` + `select_fat_kernel`，稳定 entry contract | 已完成 |
+| D7 | 公共 `hyle_add_fat_kernel` + `HYLE_SIMD_SELECT_FAT_KERNEL`，稳定 entry contract；fat/exact 同一调用拼写 | 已完成 |
 | D8 | Linux SVE/RVV HWCAP、Isa、构建和 ops/random/scan runtime 变体 | 已完成 |
 | D8.1 | exact target manifest：source/table/suffix 同源；四档 x86 artifact 闸 + SVE/RVV exact 多宽门 | 已完成（2026-07-17） |
 | D9 | close-01 纯 C 自由函数/共享 POD/opaque RNG 薄封装 | ✅ `hyle/c/simd.h`，247 个入口；无 api table |

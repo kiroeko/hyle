@@ -36,7 +36,7 @@ hyle::simd::Isa cpp_isa(hyle_simd_isa isa) noexcept {
 
 hyle_simd_module_info c_module(hyle::simd::Runtime::Module module) noexcept {
   return {static_cast<hyle_simd_isa>(static_cast<std::uint32_t>(module.isa)),
-          module.features};
+          0, module.features};
 }
 
 static_assert(std::is_same_v<hyle::simd::float16_t, hyle_simd_f16>);
@@ -48,6 +48,13 @@ static_assert(std::is_same_v<hyle::simd::KeyValue32, hyle_simd_kv32>);
 static_assert(std::is_same_v<hyle::simd::KeyValue64, hyle_simd_kv64>);
 static_assert(std::is_standard_layout_v<hyle_simd_runtime_info>);
 static_assert(std::is_trivially_copyable_v<hyle_simd_runtime_info>);
+static_assert(std::is_standard_layout_v<hyle_simd_module_info>);
+static_assert(std::is_trivially_copyable_v<hyle_simd_module_info>);
+static_assert(sizeof(hyle_simd_module_info) == 16);
+static_assert(offsetof(hyle_simd_module_info, isa) == 0);
+static_assert(offsetof(hyle_simd_module_info, reserved) == 4);
+static_assert(offsetof(hyle_simd_module_info, features) == 8);
+static_assert(HYLE_SIMD_RUNTIME_INFO_V1_SIZE == sizeof(hyle_simd_runtime_info));
 static_assert(sizeof(hyle_simd_u128) == 16 && alignof(hyle_simd_u128) == 16);
 static_assert(sizeof(hyle_simd_kv32) == 8 && alignof(hyle_simd_kv32) == 8);
 static_assert(sizeof(hyle_simd_kv64) == 16 && alignof(hyle_simd_kv64) == 16);
@@ -69,6 +76,24 @@ static_assert(static_cast<unsigned>(hyle::simd::SortOrder::kAscending) ==
               HYLE_SIMD_SORT_ASCENDING);
 static_assert(static_cast<unsigned>(hyle::simd::SortOrder::kDescending) ==
               HYLE_SIMD_SORT_DESCENDING);
+static_assert(hyle::simd::Runtime::kFeatureF16c == HYLE_SIMD_FEATURE_F16C);
+static_assert(hyle::simd::Runtime::kFeatureAvx512Bf16 ==
+              HYLE_SIMD_FEATURE_AVX512_BF16);
+static_assert(hyle::simd::Runtime::kFeatureAvx10_2 == HYLE_SIMD_FEATURE_AVX10_2);
+static_assert(hyle::simd::Runtime::kFeatureAvxVnni ==
+              HYLE_SIMD_FEATURE_AVX_VNNI);
+static_assert(hyle::simd::Runtime::kFeatureAvx512Vnni ==
+              HYLE_SIMD_FEATURE_AVX512_VNNI);
+static_assert(hyle::simd::Runtime::kFeatureMathExactLibmScalar ==
+              HYLE_SIMD_FEATURE_MATH_EXACT_LIBM_SCALAR);
+static_assert(hyle::simd::Runtime::kFeatureDtypeFp8Scalar ==
+              HYLE_SIMD_FEATURE_DTYPE_FP8_SCALAR);
+static_assert(hyle::simd::Runtime::kFeaturePerOpLowerTier ==
+              HYLE_SIMD_FEATURE_PER_OP_LOWER_TIER);
+static_assert(hyle::simd::Runtime::kFeatureSortCappedNetwork ==
+              HYLE_SIMD_FEATURE_SORT_CAPPED_NETWORK);
+static_assert(hyle::simd::Runtime::kFeatureBitpackLogical128 ==
+              HYLE_SIMD_FEATURE_BITPACK_LOGICAL128);
 }  // namespace
 
 extern "C" {
@@ -79,11 +104,23 @@ hyle_simd_isa hyle_simd_active_isa(void) {
 }
 
 int hyle_simd_supports_isa(hyle_simd_isa isa) {
+  switch (isa) {
+    case HYLE_SIMD_ISA_SCALAR:
+    case HYLE_SIMD_ISA_SSE42:
+    case HYLE_SIMD_ISA_AVX2:
+    case HYLE_SIMD_ISA_AVX512:
+    case HYLE_SIMD_ISA_NEON:
+    case HYLE_SIMD_ISA_SVE:
+    case HYLE_SIMD_ISA_RVV:
+      break;
+    default:
+      return 0;
+  }
   return hyle::simd::supports(cpp_isa(isa)) ? 1 : 0;
 }
 
 int hyle_simd_runtime_info_get(hyle_simd_runtime_info* out) {
-  if (out == nullptr || out->struct_size < sizeof(*out)) {
+  if (out == nullptr || out->struct_size < HYLE_SIMD_RUNTIME_INFO_V1_SIZE) {
     g_last_error = "runtime info is null or struct_size is too small";
     return 0;
   }

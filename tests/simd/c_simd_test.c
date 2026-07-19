@@ -63,6 +63,12 @@ int main(void) {
   CHECK(hyle_simd_runtime_info_get(&info));
   CHECK(info.isa == hyle_simd_active_isa());
   CHECK(hyle_simd_supports_isa(HYLE_SIMD_ISA_SCALAR));
+  CHECK(!hyle_simd_supports_isa(13));
+  CHECK(info.math.reserved == 0);
+  CHECK((info.math.features & HYLE_SIMD_FEATURE_MATH_EXACT_LIBM_SCALAR) != 0);
+  CHECK((info.dtype.features & HYLE_SIMD_FEATURE_DTYPE_FP8_SCALAR) != 0);
+  info.struct_size = HYLE_SIMD_RUNTIME_INFO_V1_SIZE;
+  CHECK(hyle_simd_runtime_info_get(&info));
   info.struct_size = 0;
   CHECK(!hyle_simd_runtime_info_get(&info));
   CHECK(strlen(hyle_simd_last_error()) != 0);

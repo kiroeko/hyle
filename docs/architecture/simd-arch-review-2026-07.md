@@ -19,6 +19,16 @@
 > partial 专项 SSE4 69/69、AVX2 99/99，AVX512 129/129 由 Intel SDE `-future` 真跑全绿。该门永久
 > 接入基础 ISA targets。
 
+> **2026-07-19 模块收口复审（非性能面）**：性能矩阵不重跑，本轮专查 Runtime/exact/native 三腿、
+> 构建机械化和稳定 C ABI。发现并修复 5 个接缝问题：① detection-only `kAvx` 在公开 fat selector
+> 错降 scalar（现与 Runtime 一样降 SSE4）；② `hyle_add_fat_kernel` 从未有真实消费者纵切，exact
+> 只生成一个 symbol 时调用点仍会引用其余 symbol（现由同一选择宏在预处理阶段消除，fat/exact 都有
+> pointer/count kernel 回归）；③ macOS 不生成 SVE TU，ARM64 调用点却仍 odr-use SVE symbol（现由
+> 平台可用性宏预处理消除，并由 CMake 拒绝缺少本平台必要 tier 的 fat 清单）；④ C runtime snapshot
+> 把“当前完整 sizeof”误当最低版本，未来追加字段会拒绝旧客户端（现钉 `V1_SIZE` 可读前缀）；
+> ⑤ C module metadata 暴露裸 feature 数字和隐式 padding（现有具名位、显式零 reserved 与布局断言）。
+> 结论仍是不推倒寄存器 DSL，但“公开双轨已完成”现在有端到端证据，不再只靠内部 ops 推断。
+
 ## 一、判断依据(架构质量怎么测,不靠感觉)
 
 在校准仪器(锚点校准 + 双序判定 + 三平台,见 `docs/performance/simd-op-benchmark-methodology.md`)下:
@@ -115,7 +125,57 @@ simd-19 已落完(helper 层按路线 2 的修正暂不建,类型轴到来时再
 新增 op 有方法论文档护航,新增维度有 helper 层着力,性能回归有仪器兜底。推倒重来没有依据;vendor Highway
 只在触发 §5.2 退出条件时才重新讨论。
 
-## 六、参考
+## 六、模块收口复审：便利 kernel 与 C ABI 是否够用（2026-07-19）
+
+### 双腿与非算子架构
+
+- 内建 ops/random/scan/search 的 variant 仍只是一层稳定 symbol，唯一算法 body 在 `native/`；
+  exact dispatcher 直接引用 manifest suffix，fat Runtime 只在 whole-buffer 边界间接一次。
+- math/dtype/sort/bitpack 保留手写策略是必要差异：它们有 per-op winner、可选 feature 和阈值，
+  不应为了“生成统一”抹掉真实策略；Runtime v6 的 module isa/features 已把降级事实显式化。
+- 自定义 fat kernel 现在由 `tests/simd/fat_kernel_fixture.h` 真正编成各 ISA 并执行，不再把
+  `select_fat_kernel` 对几个返回常数的测试冒充构建机械化验收。
+- exact 构建只链接 manifest 的唯一 symbol；macOS fat 构建只链接 scalar/NEON，不再虚假引用 SVE。
+  CMake 同时拒绝缺失本平台必要 tier 的 fat 清单，配置与调用点不能静默漂移。
+- `vec.h` 仍是 target-bound DSL；387 个寄存器名不跨 Runtime/C ABI。这个边界正确，无须扩大。
+
+### 便利 kernel 面
+
+对照 Highway `contrib`，HYLE 已覆盖适合 SIMD 模块且能形成稳定 pointer/count 产品的主体：
+
+| Highway/HYLE 语义 | HYLE 产品入口 | 结论 |
+|---|---|---|
+| count/find/minmax/is_sorted | search | 已覆盖，且有 runtime/native 双腿 |
+| dot | 同/混合精度 dot、i8/i16 dot | 已覆盖 |
+| random | opaque RNG + u64/f32/f64 fill | 已覆盖 |
+| bit_pack | u8/u16/u32 pack/unpack/size | 已覆盖 |
+| sort | sort/partial/select/radix/argsort/KV/u128 | HYLE 面更宽 |
+| math | 实数、复数、激活、softmax | HYLE 产品面明显更宽 |
+| scan/dtype | prefix scan、f16/bf16/fp8 转换 | HYLE 自有产品面 |
+
+不纳入 SIMD 的 `hash/matvec/thread_pool/image` 分别属于 container/compute/sched/上层领域；`copy` 没有
+超越 libc/编译器的独立语义，回调式 `transform` 又不能形成跨 C ABI 可内联的通用 kernel。基础库无需
+为目录齐平复制它们。普通数组工作流已经能完成“算术/查找/归约/随机/转换/数学/排序/压缩”，因此
+便利 kernel 数量足够模块收口；后续新增应由新的用户语义或稳定 Highway LOSE 驱动，不再按 387 名扩面。
+
+### C ABI 易用性
+
+稳定 C 面覆盖全部上述 whole-buffer 能力：244 个导出符号 + 3 个 header-inline packed-size helper，
+数组由调用方拥有，窄类型/KV/u128 用固定 POD，RNG 用 opaque handle，诊断用 `struct_size` snapshot。
+本轮补上 feature 常量和 snapshot 前向演进后，没有要求 C#/Java/Rust 理解 C++ Runtime、STL 或
+target vector。语言绑定只需把本语言数组 pin/borrow 成 pointer/count；容器 facade 应留在绑定层，
+不在核心库再造一套 `std::vector` 产品 ABI。
+
+### 本轮验收证据
+
+- Windows MSVC fat 与 exact-AVX2：各 369 项，368 通过、1 个宿主无 AVX512-BF16 的预期跳过；
+  两种构建都执行真实自定义 pointer/count kernel，exact artifact 门确认只含 AVX2。
+- WSL `/root/hyle-simd-review` GCC 14：369 项同结果；纯 C 用例通过；机械覆盖
+  247/247，ELF 导出 244/244。
+- Apple Silicon AppleClang fat 与 exact-NEON：各 366 项，365 通过、1 个非 x86 预期跳过；
+  exact artifact 门确认只含 NEON。fat 首轮真实抓出并修复“未生成 SVE symbol 仍被引用”的漏洞。
+
+## 七、参考
 
 - 对齐战全记录与真输清单:`docs/milestones/simd-orderswap-matrix.md`
 - 债①修复里程碑:`docs/milestones/simd-19-partial-vector-repr.md`

@@ -138,6 +138,12 @@ target_include_directories(hyle_container_test SYSTEM PRIVATE
 hyle_add_test(simd SOURCES simd/dispatch_test.cc simd/vec_test.cc simd/native_test.cc
               simd/runtime_test.cc simd/ops_test.cc simd/search_test.cc simd/scan_test.cc simd/dtype_test.cc
               simd/math_test.cc simd/sort_test.cc simd/radix_sort_test.cc simd/bitpack_test.cc)
+target_include_directories(hyle_simd_test PRIVATE "${PROJECT_SOURCE_DIR}")
+hyle_add_fat_kernel(
+  TARGET hyle_simd_test
+  NAME public_fat_fixture
+  IMPL "tests/simd/fat_kernel_fixture.h"
+  TARGETS scalar sse4 avx2 avx512 neon sve rvv)
 # vec_test compiled per ISA variant: same source, different HYLE_SIMD_TARGET_* + the
 # matching codegen flags from the single-source hyle_isa_flags (no MSVC/else drift here).
 # Arch-gated (mirrors src/simd's CMAKE_SYSTEM_PROCESSOR split): x86 builds the sse4/avx2

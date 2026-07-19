@@ -362,7 +362,46 @@ function(hyle_add_dispatched_kernel)
 endfunction()
 
 # Public spelling for source consumers. IMPL defines suffixed pointer/POD entry points using
-# HYLE_SIMD_VARIANT_SUFFIX; pair it with hyle::simd::select_fat_kernel in the baseline TU.
+# HYLE_SIMD_VARIANT_SUFFIX; pair it with HYLE_SIMD_SELECT_FAT_KERNEL in the baseline TU.
+# In an exact build the manifest emits only one variant. Mark the consumer target so the
+# selection macro preprocesses away references to variants that intentionally do not exist.
 function(hyle_add_fat_kernel)
+  cmake_parse_arguments(ARG "" "TARGET;NAME;IMPL" "TARGETS" ${ARGN})
+  if(HYLE_SIMD_EXACT_TARGET)
+    string(TOLOWER "${HYLE_SIMD_EXACT_TARGET}" _exact_lower)
+    list(FIND ARG_TARGETS "${_exact_lower}" _exact_index)
+    if(_exact_index EQUAL -1)
+      message(FATAL_ERROR
+        "hyle_add_fat_kernel: exact target '${_exact_lower}' is absent from TARGETS")
+    endif()
+  else()
+    set(_required scalar)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
+      list(APPEND _required sse4 avx2 avx512)
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "arm64|aarch64|ARM64")
+      list(APPEND _required neon)
+      if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+        list(APPEND _required sve)
+      endif()
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|RISCV64")
+      list(APPEND _required rvv)
+    endif()
+    foreach(_variant IN LISTS _required)
+      list(FIND ARG_TARGETS "${_variant}" _variant_index)
+      if(_variant_index EQUAL -1)
+        message(FATAL_ERROR
+          "hyle_add_fat_kernel: fat ${CMAKE_SYSTEM_NAME}/${CMAKE_SYSTEM_PROCESSOR} "
+          "build requires '${_variant}' in TARGETS")
+      endif()
+    endforeach()
+  endif()
+
   hyle_add_dispatched_kernel(${ARGN})
+  if(HYLE_SIMD_EXACT_TARGET AND ARG_TARGET)
+    string(TOUPPER "${HYLE_SIMD_EXACT_TARGET}" _exact)
+    target_compile_definitions(${ARG_TARGET} PRIVATE
+      HYLE_SIMD_FAT_EXACT_VARIANT_${_exact}=1
+      HYLE_SIMD_EXACT=1
+      HYLE_SIMD_EXACT_TARGET_${_exact}=1)
+  endif()
 endfunction()
