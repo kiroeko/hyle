@@ -236,16 +236,16 @@ N=4096 timer/op，Windows / WSL / Apple M4 各 15 个独立进程。节点在 ep
 
 | 工作负载 | Windows：HYLE / heap | WSL：HYLE / heap | M4：HYLE / heap |
 |---|---:|---:|---:|
-| arm + cancel | 7.24 / 16.04 ns（**2.23x**） | 5.81 / 6.72 ns（**1.14x**） | 4.92 / 8.13 ns（**1.65x**） |
-| arm + expire | 15.37 / 48.27 ns（**3.16x**） | 23.37 / 41.36 ns（**1.76x**） | 13.54 / 22.51 ns（**1.66x**） |
-| churn（arm + 70% cancel + expire） | 11.44 / 20.16 ns（**1.75x**） | 14.74 / 15.34 ns（**1.05x**） | 8.02 / 10.57 ns（**1.31x**） |
+| arm + cancel | 6.86 / 10.42 ns（**1.52x**） | 5.95 / 6.73 ns（**1.13x**） | 4.91 / 8.36 ns（**1.70x**） |
+| arm + expire | 21.34 / 49.80 ns（**2.33x**） | 22.05 / 40.64 ns（**1.84x**） | 11.83 / 23.74 ns（**2.01x**） |
+| churn（arm + 70% cancel + expire） | 12.87 / 20.85 ns（**1.62x**） | 13.63 / 16.01 ns（**1.17x**） | 7.62 / 11.03 ns（**1.45x**） |
 
 **核心诚实结论**:
 
 1. 三种形状在三个平台同向，时间轮的领先不依赖对手墓碑；对 eager-erase heap
    仍成立。cancel 领先来自 O(1) 已知槽摘链对 O(log n) heap 修复，expire 领先来自
-   分槽批量转移。WSL churn 的绝对差只有 4.7%，但 14/15 配对同向，
-   sign-test `p=9.8e-4`；这里只判“小幅真赢”，不把 1.05x 写成结构性大胜。
+   分槽批量转移。最新 WSL churn 为约 1.17x，仍是三平台中最窄的一档，不把它
+   外推成所有 Linux/所有负载的结构性大胜。
 2. 收口后的 wheel 是 **8×64**，覆盖完整 `uint64_t` 纳秒域；旧 6 层轮在约 2.18
    年外会丢失高位并可能提前触发，这是正确性修复，不应用旧 6 KB footprint 解释新数据。
 3. 这仍是数据结构 microbenchmark，不代表所有 timer workload。timer 很少、heap 已嵌入
@@ -259,21 +259,25 @@ N=4096 timer/op，Windows / WSL / Apple M4 各 15 个独立进程。节点在 ep
 ## 两种定时器结构:TimerWheel vs CommonTimeoutQueue(`timer_wheel_bench.cc` 块 4/5)
 
 同一时长的 deadline 随单调钟天然有序，`CommonTimeoutQueue` 可以只做尾插、头摘和
-O(1) unlink。收口基线直接复刻 libevent `struct event` 内嵌 TAILQ link 的形状：
-预分配节点、零 hash、零每次分配，并把到期节点先 splice 到 ready 链再 drain，工作量与
-HYLE 对称。
+O(1) unlink。基线直接复刻 libevent `struct event` 内嵌 TAILQ link 的形状：
+预分配节点、零 hash、零每次分配。现在同时报告两条线：完全不检查的裸 TAILQ
+是理论常数下界；checked TAILQ 加入与 HYLE 相同的 reschedule、exact-owner、
+unlinked-node、deadline-order 合同，是实现质量的同语义标尺。
 
-| 固定时长负载 | Windows：HYLE / TAILQ | WSL：HYLE / TAILQ | M4：HYLE / TAILQ |
+| 固定时长负载 | Windows：HYLE / rival | WSL：HYLE / rival | M4：HYLE / rival |
 |---|---:|---:|---:|
-| arm + expire | 3.60 / 4.25 ns（**1.18x**） | 3.13 / 3.94 ns（**1.25x**） | 4.86 / 2.76 ns（**0.57x LOSE**） |
-| arm + cancel | 2.88 / 3.14 ns（**1.10x**） | 1.90 / 2.59 ns（**1.34x**） | 3.17 / 3.09 ns（**0.98x，小幅 LOSE**） |
+| arm + expire / 裸 TAILQ | 3.28 / 4.22 ns（**1.29x**） | 3.14 / 3.95 ns（**1.29x**） | 3.52 / 2.73 ns（**0.77x LOSE**） |
+| arm + cancel / 裸 TAILQ | 2.70 / 3.13 ns（**1.14x**） | 1.99 / 2.59 ns（**1.30x**） | 3.06 / 3.06 ns（**统计平局**） |
+| arm + expire / checked TAILQ | 3.28 / 3.61 ns（**1.10x**） | 3.14 / 3.21 ns（统计平局） | 3.52 / 4.21 ns（**1.16x WIN**） |
 
 - Common queue 没有“9–15x 超越 libevent”的证据；旧数字测的是不同分配模型，已废止。
-- Windows/WSL 在两个形状均胜；M4 cancel 是小幅真输（1/15 胜，`p=9.8e-4`），
-  expire 是明确 42.9% 吞吐损失（0/15 胜）。尝试把圆形 sentinel 改成低位标记
-  null-ended TAILQ 后，M4 expire 无改善、cancel 反而退化，故已撤回。当前不能把
-  common queue 宣传为跨架构 SOTA；owner identity、链接/析构合同保留，不为一个
-  microbenchmark 删除防跨-source 腐化的安全性。
+- 二轮 M4 狩猎把 HYLE 从 4.86 降到 3.52ns（约 -28%）：`pop_front` 利用已知
+  sentinel、`consume_all` 一次 detach 后寄存器遍历、free-entry 先看 hook 再在
+  uncommon path 读取 owner。order-swap 把 TAILQ 放前仍为 2.75/3.62ns，
+  排除固定顺序与睿频解释；background QoS 也不改变输赢方向。
+- M4 对 checked TAILQ 是 14/15 同向胜（paired ratio 1.16，`p=9.8e-4`），说明
+  链表实现损耗已修平；对裸 TAILQ 仍 0/15 胜（0.77x），剩余是生产安全合同成本。
+  两条都报告：不拿不同语义冒充实现胜利，也不删除防跨-source 腐化的合同换数字。
 - 混合时长不满足 append-order 前提，必须用 `TimerWheel`。拒绝型
   `try_schedule` 是事务性的：失败不会丢掉旧 arm。
 - `CommonTimeoutQueue` 结构已完成并验证，但 io reactor 尚未以它路由固定时长连接超时；

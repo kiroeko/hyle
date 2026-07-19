@@ -498,7 +498,7 @@ struct Scheduler::Impl {
     time::TimerWheel::EntryList due;
     w.wheel.advance(time::monotonic_ns(), due);
     std::size_t n_fired = 0;
-    while (time::TimerEntry* e = due.pop_front()) {
+    due.consume_all([&](time::TimerEntry* e) noexcept {
       // io-06: a timed-io entry carries an on_fire callback that ARBITRATES against
       // a racing io completion (it may decline to wake if io already won) -- so the
       // timer side never blindly calls wake_rendezvous when io has already fired,
@@ -513,7 +513,7 @@ struct Scheduler::Impl {
         if (f->wake_rendezvous()) reinject(f);
       }
       ++n_fired;
-    }
+    });
     return n_fired;
   }
 

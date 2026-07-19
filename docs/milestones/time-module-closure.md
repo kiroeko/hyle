@@ -3,9 +3,10 @@
 ## 结论
 
 time 的功能、红队正确性、下游接入、测试、性能仪器、纯 C ABI 与用户文档已经
-收口。已知未解决项不是功能洞：`CommonTimeoutQueue` 在 Apple M4 的同形
-TAILQ 对拍中 arm+expire 只有约 0.57x；该项保留为明确平台限制，接入 io 前需用
-真实 fixed-timeout workload 再验。
+收口。`CommonTimeoutQueue` 的 M4 实现损耗已完成二轮狩猎：对相同
+owner/order/link 合同的 TAILQ 为约 1.16x；对不做这些检查的裸 TAILQ 下界仍
+约 0.77x。后者是明确的安全语义成本，接入 io 前仍需用真实 fixed-timeout
+workload 再验。
 
 ## 1. 功能与下游利用
 
@@ -34,10 +35,13 @@ TAILQ 对拍中 arm+expire 只有约 0.57x；该项保留为明确平台限制�
 | time → container 假依赖 | intrusion primitive 下沉 `core/` |
 | benchmark 用 lazy heap、list+hash 假对手 | indexed eager heap、直接节点 TAILQ |
 | benchmark 反复构造节点/可能融合阶段 | epoch 外预分配复用 + compiler memory barrier |
+| M4 固定顺序可能把 DVFS/核心类别误写成实现差 | 永久加入 TAILQ-first order-swap；background QoS 判别仍同向 |
+| 通用 `unlink`/逐节点 sentinel 维护拖慢 ready drain | 专用 front/back pop + `consume_all` 一次 detach |
 
 曾实验 null-ended、低位 membership tag 的链表以处理 M4 common expire lose。
 三平台正确性虽绿，但 M4 expire 无改善、cancel 从约 1.10x 退到约 0.94x，故撤回；
-最终保留简单圆形 sentinel，不把无收益复杂度带进 core。
+最终保留简单圆形 sentinel。后续通过不改变结构语义的专用摘链、批量消费和
+hook-first 状态判别取得收益，不把无收益复杂度带进 core。
 
 ## 3. C ABI
 
@@ -78,14 +82,15 @@ N=4096、每平台 15 个独立进程；括号是 HYLE throughput / rival：
 
 | 负载 | Windows | WSL | Apple M4 |
 |---|---:|---:|---:|
-| wheel arm+cancel | 7.24 vs 16.04 ns（2.23x） | 5.81 vs 6.72（1.14x） | 4.92 vs 8.13（1.65x） |
-| wheel arm+expire | 15.37 vs 48.27（3.16x） | 23.37 vs 41.36（1.76x） | 13.54 vs 22.51（1.66x） |
-| wheel 70% cancel churn | 11.44 vs 20.16（1.75x） | 14.74 vs 15.34（1.05x） | 8.02 vs 10.57（1.31x） |
-| common arm+expire | 3.60 vs 4.25（1.18x） | 3.13 vs 3.94（1.25x） | 4.86 vs 2.76（**0.57x**） |
-| common arm+cancel | 2.88 vs 3.14（1.10x） | 1.90 vs 2.59（1.34x） | 3.17 vs 3.09（**0.98x**） |
+| wheel arm+cancel | 6.86 vs 10.42 ns（1.52x） | 5.95 vs 6.73（1.13x） | 4.91 vs 8.36（1.70x） |
+| wheel arm+expire | 21.34 vs 49.80（2.33x） | 22.05 vs 40.64（1.84x） | 11.83 vs 23.74（2.01x） |
+| wheel 70% cancel churn | 12.87 vs 20.85（1.62x） | 13.63 vs 16.01（1.17x） | 7.62 vs 11.03（1.45x） |
+| common arm+expire / 裸 TAILQ | 3.28 vs 4.22（1.29x） | 3.14 vs 3.95（1.29x） | 3.52 vs 2.73（**0.77x**） |
+| common arm+cancel / 裸 TAILQ | 2.70 vs 3.13（1.14x） | 1.99 vs 2.59（1.30x） | 3.06 vs 3.06（统计平局） |
+| common arm+expire / checked TAILQ | 3.28 vs 3.61（1.10x） | 3.14 vs 3.21（统计平局） | 3.52 vs 4.21（**1.16x**） |
 
-TimerWheel 三平台三形状全赢真实 indexed eager-erase heap。Common queue 的
-M4 lose 不能被 Windows/Linux 结果抵消，也不能用复杂度符号掩盖。
+TimerWheel 三平台三形状全赢真实 indexed eager-erase heap。Common queue
+三平台均不输合同匹配基线；M4 对裸无检查下界仍输，不能被同语义胜利掩盖。
 
 clock 的标准路径与相同工作量 `std::chrono` 三平台统计同档。x86 opt-in
 fast monotonic 约 1.8x；M4 无 TSC 正常回退。fast realtime 在 Windows/Linux
@@ -100,6 +105,6 @@ fast monotonic 约 1.8x；M4 无 TSC 正常回退。fast realtime 在 Windows/Li
 - wheel 公开 ns，执行粒度 1ms；保证不早触发，不保证亚毫秒唤醒。
 - fast monotonic 只用于 profiling。
 - Common queue 只接收单一 duration 形成的非递减 deadline；混合时长用 wheel。
-- Common queue 尚未接入 io，且 M4 expire 有明确 lose。
+- Common queue 尚未接入 io；M4 对裸无检查 TAILQ 仍有约 23% 吞吐差。
 - 全库 `-Werror` 仍会被既有 SIMD/IO 警告阻塞；本轮 Apple 编译发现并修正
   `TimerEntry` 的 struct/class 前向声明不一致，time 自身没有新增 warning。

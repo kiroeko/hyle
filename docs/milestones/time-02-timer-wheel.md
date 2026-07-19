@@ -38,8 +38,9 @@ wheel 将 deadline 向上取整到 1ms tick，advance 将 now 向下取整，所
 - source 析构必须为空；entry 析构必须既未调度也未挂在 fired list。
 - `schedule_after` 与 common queue 的 duration 算术均饱和。
 - `CommonTimeoutQueue::try_schedule` 是事务性的：顺序拒绝不会丢掉旧 arm。
-- common expire 使用 core intrusive list 的 prefix bulk splice；扫描仍为
-  O(fired)，整个区间只做一次链表接合。
+- common expire 使用 core intrusive list 的 prefix bulk splice；ready list
+  通过 `consume_all` 一次 detach 后寄存器遍历，节点在 callback 前完成摘链，
+  避免每个节点重复维护 sentinel。
 
 ## 真实性能基线
 
@@ -52,22 +53,26 @@ wheel 将 deadline 向上取整到 1ms tick，advance 将 now 向下取整，所
 
 新基线预分配所有节点，并让两边都把 expired 节点先转到 ready intrusive
 list 再 drain，工作形状一致。节点在 epoch 外预分配并复用，arm/consume 之间
-有 compiler memory barrier。2026-07-19、N=4096、每平台 15 个独立进程：
+有 compiler memory barrier。common 另有相反注册顺序的 M4 order-swap，以及
+带 owner/order/link 检查的合同匹配 TAILQ。2026-07-19、N=4096、每平台
+15 个独立进程：
 
 | 负载 | Windows MSVC | WSL GCC14 | Apple M4 Clang |
 |---|---:|---:|---:|
-| wheel arm+cancel / indexed heap | 7.24 / 16.04 ns（2.23x） | 5.81 / 6.72 ns（1.14x） | 4.92 / 8.13 ns（1.65x） |
-| wheel arm+expire / indexed heap | 15.37 / 48.27 ns（3.16x） | 23.37 / 41.36 ns（1.76x） | 13.54 / 22.51 ns（1.66x） |
-| wheel 70% cancel churn / indexed heap | 11.44 / 20.16 ns（1.75x） | 14.74 / 15.34 ns（1.05x） | 8.02 / 10.57 ns（1.31x） |
-| common arm+expire / intrusive TAILQ | 3.60 / 4.25 ns（1.18x） | 3.13 / 3.94 ns（1.25x） | 4.86 / 2.76 ns（**0.57x**） |
-| common arm+cancel / intrusive TAILQ | 2.88 / 3.14 ns（1.10x） | 1.90 / 2.59 ns（1.34x） | 3.17 / 3.09 ns（**0.98x**） |
+| wheel arm+cancel / indexed heap | 6.86 / 10.42 ns（1.52x） | 5.95 / 6.73 ns（1.13x） | 4.91 / 8.36 ns（1.70x） |
+| wheel arm+expire / indexed heap | 21.34 / 49.80 ns（2.33x） | 22.05 / 40.64 ns（1.84x） | 11.83 / 23.74 ns（2.01x） |
+| wheel 70% cancel churn / indexed heap | 12.87 / 20.85 ns（1.62x） | 13.63 / 16.01 ns（1.17x） | 7.62 / 11.03 ns（1.45x） |
+| common arm+expire / 裸 TAILQ | 3.28 / 4.22 ns（1.29x） | 3.14 / 3.95 ns（1.29x） | 3.52 / 2.73 ns（**0.77x**） |
+| common arm+cancel / 裸 TAILQ | 2.70 / 3.13 ns（1.14x） | 1.99 / 2.59 ns（1.30x） | 3.06 / 3.06 ns（**统计平局**） |
+| common arm+expire / checked TAILQ | 3.28 / 3.61 ns（1.10x） | 3.14 / 3.21 ns（统计平局） | 3.52 / 4.21 ns（**1.16x**） |
 
 > 表中括号是 HYLE throughput / rival throughput，即 `rival ns / HYLE ns`。
 
-TimerWheel 三平台三负载全赢。Common 在 Windows/WSL 赢，但 Apple M4 的
-expire 明确慢 42.9%，cancel 小幅慢 2.5%；因此它是语义完整的固定时长
-specialization，不是跨架构 SOTA 证书。低位标记 null-ended TAILQ 实验没有改善
-expire 且伤害 cancel，已撤回；不删除 owner/link/order 安全合同换数字。
+TimerWheel 三平台三负载全赢。Common 的 M4 arm+expire 从 4.86ns 优化到
+3.52ns：专用 front-pop、一次 detach 的 `consume_all`、hook-first 状态判别
+去掉了实现浪费。相反顺序仍为 3.62/2.75ns，排除“后测者睿频获益”。对完整
+owner/order/link 合同，M4 14/15 同向赢 checked TAILQ；对完全不检查的裸
+TAILQ 下界仍输约 23%，这是公开安全语义成本，不能宣传成裸操作跨架构 SOTA。
 
 这些数字只比较数据结构核心，不等同于完整 libevent/libuv event loop 吞吐。
 

@@ -44,12 +44,19 @@ class IntrusiveList {
   void push_back(T* node) noexcept {
     HYLE_FATAL_ASSERT(node != nullptr);
     HYLE_FATAL_ASSERT(!hook_of(node)->linked());
-    insert_before(&sentinel_, hook_of(node));
+    push_back_unchecked(node);
   }
   void push_front(T* node) noexcept {
     HYLE_FATAL_ASSERT(node != nullptr);
     HYLE_FATAL_ASSERT(!hook_of(node)->linked());
     insert_before(sentinel_.next_, hook_of(node));
+  }
+
+  // Low-level companion for an owner that has already checked both preconditions
+  // as part of a larger invariant. Keeping the link-only core separate avoids
+  // repeating branches on production hot paths without weakening their checks.
+  void push_back_unchecked(T* node) noexcept {
+    insert_before(&sentinel_, hook_of(node));
   }
 
   T* front() noexcept { return empty() ? nullptr : node_of(sentinel_.next_); }
@@ -64,14 +71,46 @@ class IntrusiveList {
   T* pop_front() noexcept {
     if (empty()) return nullptr;
     IntrusiveListHook* h = sentinel_.next_;
-    unlink(h);
+    // The predecessor is known to be sentinel_. Avoid the generic unlink()
+    // load of h->prev_; this is the dominant drain path for timer ready lists.
+    IntrusiveListHook* next = h->next_;
+    sentinel_.next_ = next;
+    next->prev_ = &sentinel_;
+    h->prev_ = nullptr;
+    h->next_ = nullptr;
     return node_of(h);
   }
   T* pop_back() noexcept {
     if (empty()) return nullptr;
     IntrusiveListHook* h = sentinel_.prev_;
-    unlink(h);
+    IntrusiveListHook* prev = h->prev_;
+    sentinel_.prev_ = prev;
+    prev->next_ = &sentinel_;
+    h->prev_ = nullptr;
+    h->next_ = nullptr;
     return node_of(h);
+  }
+
+  // Detach and consume the complete list without updating the sentinel for
+  // every node. The current node is fully unlinked before fn runs, so fn may
+  // destroy or relink it. This is the preferred ready-list drain path.
+  template <class Fn>
+  std::size_t consume_all(Fn&& fn) noexcept {
+    IntrusiveListHook* current = sentinel_.next_;
+    if (current == &sentinel_) return 0;
+
+    sentinel_.prev_ = &sentinel_;
+    sentinel_.next_ = &sentinel_;
+    std::size_t count = 0;
+    while (current != &sentinel_) {
+      IntrusiveListHook* next = current->next_;
+      current->prev_ = nullptr;
+      current->next_ = nullptr;
+      fn(node_of(current));
+      current = next;
+      ++count;
+    }
+    return count;
   }
 
   // Transfer one node without clearing and rebuilding its links.

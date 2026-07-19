@@ -51,11 +51,15 @@ struct IntrusiveTimeoutQueue {
   Node* tail = nullptr;
   std::size_t count = 0;
 
-  explicit IntrusiveTimeoutQueue(std::size_t cap) : nodes(cap) {}
+  explicit IntrusiveTimeoutQueue(std::size_t cap) : nodes(cap) {
+    for (std::size_t i = 0; i < nodes.size(); ++i) {
+      nodes[i].data =
+          reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
+    }
+  }
   void schedule(std::uint64_t id, std::uint64_t deadline) {
     Node& n = nodes[static_cast<std::size_t>(id)];
     n.deadline = deadline;
-    n.data = reinterpret_cast<void*>(static_cast<std::uintptr_t>(id));
     n.prev = tail;
     n.next = nullptr;
     n.owner = this;
@@ -63,6 +67,20 @@ struct IntrusiveTimeoutQueue {
     else head = &n;
     tail = &n;
     ++count;
+  }
+  // Contract-matched diagnostic: mirror the production queue's reschedule,
+  // exact-owner, unlinked-node and monotonic-deadline checks before using the
+  // same raw TAILQ link operation. The unchecked schedule() remains the
+  // libevent-shaped lower bound.
+  void schedule_checked(std::uint64_t id, std::uint64_t deadline) {
+    Node& n = nodes[static_cast<std::size_t>(id)];
+    if (n.owner != nullptr) {
+      HYLE_FATAL_ASSERT(n.owner == this);
+      cancel(id);
+    }
+    HYLE_FATAL_ASSERT(n.prev == nullptr && n.next == nullptr);
+    HYLE_FATAL_ASSERT(tail == nullptr || tail->deadline <= deadline);
+    schedule(id, deadline);
   }
   void cancel(std::uint64_t id) {
     Node& n = nodes[static_cast<std::size_t>(id)];
@@ -278,7 +296,7 @@ int main() {
       w.advance(wheel_base + 1001 * kMs, out);
       wheel_base += 1001 * kMs;
       std::uint64_t fired = 0;
-      while (out.pop_front()) ++fired;
+      out.consume_all([&](TimerEntry*) noexcept { ++fired; });
       nb::doNotOptimizeAway(fired);
     });
   }
@@ -319,7 +337,7 @@ int main() {
       w.advance(wheel_base + 1001 * kMs, out);
       wheel_base += 1001 * kMs;
       std::uint64_t fired = 0;
-      while (out.pop_front()) ++fired;
+      out.consume_all([&](TimerEntry*) noexcept { ++fired; });
       nb::doNotOptimizeAway(fired);
     });
   }
@@ -345,6 +363,7 @@ int main() {
     CommonTimeoutQueue q(0, kMs);
     std::vector<TimerEntry> common_entries(kN);
     IntrusiveTimeoutQueue tailq(kN);
+    IntrusiveTimeoutQueue checked_tailq(kN);
     for (std::uint64_t i = 0; i < kN; ++i) {
       wheel_entries[i].data =
           reinterpret_cast<void*>(static_cast<std::uintptr_t>(i));
@@ -362,7 +381,7 @@ int main() {
       w.advance(wheel_base + (kN + 1) * kMs, out);
       wheel_base += (kN + 1) * kMs;
       std::uint64_t fired = 0;
-      while (out.pop_front()) ++fired;
+      out.consume_all([&](TimerEntry*) noexcept { ++fired; });
       nb::doNotOptimizeAway(fired);
     });
     b.run("HYLE CommonTimeoutQueue", [&] {
@@ -374,7 +393,7 @@ int main() {
       CommonTimeoutQueue::EntryList out;
       q.advance((kN + 1) * kMs, out);
       std::uint64_t fired = 0;
-      while (out.pop_front()) ++fired;
+      out.consume_all([&](TimerEntry*) noexcept { ++fired; });
       nb::doNotOptimizeAway(fired);
     });
     // SOTA same-algorithm baseline: libevent embeds the intrusive TAILQ hook.
@@ -383,6 +402,49 @@ int main() {
       nb::doNotOptimizeAway(tailq.count);
       std::uint64_t fired = 0;
       tailq.expire((kN + 1) * kMs, fired);
+      nb::doNotOptimizeAway(fired);
+    });
+    b.run("checked intrusive TAILQ (HYLE contracts)", [&] {
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        checked_tailq.schedule_checked(i, (i + 1) * kMs);
+      }
+      nb::doNotOptimizeAway(checked_tailq.count);
+      std::uint64_t fired = 0;
+      checked_tailq.expire((kN + 1) * kMs, fired);
+      nb::doNotOptimizeAway(fired);
+    });
+  }
+
+  // Same two implementations in the opposite registration order. Apple
+  // silicon changes frequency/QoS aggressively; a fixed "HYLE then rival"
+  // sequence can otherwise reward the later variant. Keep this as a permanent
+  // instrument guard, not a one-off investigation.
+  {
+    nb::Bench b;
+    b.title("fixed-duration arm+expire ORDER-SWAP (N=4096)")
+        .relative(true)
+        .batch(kN)
+        .minEpochIterations(200);
+    CommonTimeoutQueue q(0, kMs);
+    std::vector<TimerEntry> common_entries(kN);
+    IntrusiveTimeoutQueue tailq(kN);
+
+    b.run("intrusive TAILQ first", [&] {
+      for (std::uint64_t i = 0; i < kN; ++i) tailq.schedule(i, (i + 1) * kMs);
+      nb::doNotOptimizeAway(tailq.count);
+      std::uint64_t fired = 0;
+      tailq.expire((kN + 1) * kMs, fired);
+      nb::doNotOptimizeAway(fired);
+    });
+    b.run("HYLE CommonTimeoutQueue second", [&] {
+      for (std::uint64_t i = 0; i < kN; ++i) {
+        q.schedule(&common_entries[i], (i + 1) * kMs);
+      }
+      nb::doNotOptimizeAway(q.size());
+      CommonTimeoutQueue::EntryList out;
+      q.advance((kN + 1) * kMs, out);
+      std::uint64_t fired = 0;
+      out.consume_all([&](TimerEntry*) noexcept { ++fired; });
       nb::doNotOptimizeAway(fired);
     });
   }

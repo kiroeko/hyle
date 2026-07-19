@@ -96,8 +96,9 @@ exactly one TimerSource owns it
 advance 的 now 向下取整，最多晚 1ms。
 
 `CommonTimeoutQueue` 只适用于 append-order 成立的负载。显式 deadline 用
-`try_schedule`，拒绝时必须保留旧 arm。它在 Apple M4 对裸 TAILQ 的 expire
-仍有明确性能落后，不能把 O(1) 复杂度等同于跨架构常数领先。
+`try_schedule`，拒绝时必须保留旧 arm。Apple M4 上，完整安全 API 对不检查
+owner/order/link 的裸 TAILQ 下界仍为约 0.77x，但对相同合同的 checked TAILQ
+为约 1.16x；维护时必须同时报告“裸下界”和“同语义实现”，不能删合同换数字。
 
 ## 6. 修改时的硬门
 
@@ -107,5 +108,6 @@ advance 的 now 向下取整，最多晚 1ms。
 - 改链表/entry：跑 time + container + sched + io timeout，并跑 ASan/UBSan。
 - 改 C ABI：纯 C 编译测试；机械核对头/实现/测试/guide；核对动态导出符号。
 - 改 benchmark：节点预分配、两侧同生命周期、arm/consume 之间保留 compiler
-  barrier；heap 必须是 indexed eager erase，common 对手必须是直接节点 TAILQ。
+  barrier；heap 必须是 indexed eager erase；common 同时保留裸 TAILQ 下界、
+  checked TAILQ 同语义线和 M4 order-swap。
 - 性能结论逐平台写。一个 ISA 赢不能外推到另一个 ISA。

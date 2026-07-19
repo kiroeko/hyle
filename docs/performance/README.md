@@ -50,9 +50,9 @@
 | **time** monotonic_ns | 13.22/13.07/12.93(Win/Lin/M4) | std::chrono::steady_clock | 13.30/13.07/12.88 | 全部统计平 | std::chrono(即标尺,同 OS 原语) | 同左 | 1.0x | ➖header-inline 后三平台与 std 同档 |
 | **time** fast_monotonic_ns(opt-in rdtsc) | 7.37/7.13/12.93 | HYLE monotonic_ns | 13.22/13.07/12.93 | 1.79x/1.84x/1.0x | (std 无 opt-in TSC 钟) | n/a | n/a | ✅x86 快约1.8x；M4 透明回退(非默认,可能跳变) |
 | **time** fast_realtime_ns(opt-in coarse) | 3.20/3.90/13.64 | HYLE realtime_ns | 15.77/13.09/13.70 | 4.94x/3.36x/1.0x | (std 无 opt-in coarse 钟) | n/a | n/a | ✅Win/Linux 真赢；macOS 无 coarse 原语而回退 |
-| **time** timer wheel churn(arm+70%cancel+expire) | 11.44/14.74/8.02 | (std 无定时器结构) | n/a | n/a | indexed eager-erase heap(libevent/libuv 核心形状) | 20.16/15.34/10.57 | 1.75x/1.05x/1.31x | ✅**三平台赢**；对手按真实 keyed erase 建模、无墓碑 |
-| **time** timer wheel arm+cancel / arm+expire | 7.24·15.37/5.81·23.37/4.92·13.54 | (std 无) | n/a | n/a | indexed eager-erase heap | 16.04·48.27/6.72·41.36/8.13·22.51 | 2.23·3.16x/1.14·1.76x/1.65·1.66x | ✅三种工作量三平台同向；8×64 覆盖完整 uint64 ns 域 |
-| **time** CommonTimeoutQueue(固定时长)arm+expire/cancel | 3.60·2.88/3.13·1.90/4.86·3.17 | (std 无定时器结构) | n/a | n/a | libevent-shape 预分配侵入 TAILQ | 4.25·3.14/3.94·2.59/2.76·3.09 | 1.18·1.10x/1.25·1.34x/**0.57·0.98x** | ⚠️ Win/Linux 赢；M4 expire 明确 lose，不能宣称跨架构 SOTA |
+| **time** timer wheel churn(arm+70%cancel+expire) | 12.87/13.63/7.62 | (std 无定时器结构) | n/a | n/a | indexed eager-erase heap(libevent/libuv 核心形状) | 20.85/16.01/11.03 | 1.62x/1.17x/1.45x | ✅**三平台赢**；对手按真实 keyed erase 建模、无墓碑 |
+| **time** timer wheel arm+cancel / arm+expire | 6.86·21.34/5.95·22.05/4.91·11.83 | (std 无) | n/a | n/a | indexed eager-erase heap | 10.42·49.80/6.73·40.64/8.36·23.74 | 1.52·2.33x/1.13·1.84x/1.70·2.01x | ✅三种工作量三平台同向；8×64 覆盖完整 uint64 ns 域 |
+| **time** CommonTimeoutQueue(固定时长)arm+expire/cancel | 3.28·2.70/3.14·1.99/3.52·3.06 | (std 无定时器结构) | n/a | n/a | 裸 TAILQ / checked TAILQ | 4.22·3.13/3.95·2.59/2.73·3.06；checked expire 3.61/3.21/4.21 | 裸 1.29·1.14x/1.29·1.30x/**0.77·平**；checked expire 1.10x/平/**1.16x** | ✅同语义三平台不输；⚠️ M4 对无检查裸下界仍输 |
 | **util** Rng next_u64(xoshiro256++) | 1.56 | std::mt19937_64 | 2.41 | 1.54x | (std 即标尺) | 同std | 1.54x | ✅赢 std PRNG |
 | **util** Rng range_u64(真 Lemire 无除法) | 1.46(microbench)/shuffle见下 | std::uniform_int_distribution | 2.75 | — | absl/numpy/rust rand(真 Lemire) | 同法 | ~1.0x | ✅改真 Lemire(128 位乘替 2 idiv);常量界 microbench 编译折除法故 1.46ns 平,**真实运行时界见 shuffle 3.2x** |
 | **util** Rng next_double [0,1) | 1.65 | std::uniform_real_distribution | 2.64 | 1.60x | (std 即标尺) | 同std | 1.60x | ✅赢(53 位缩放) |

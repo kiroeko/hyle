@@ -52,13 +52,13 @@ size_t advance_and_visit(Source& source, uint64_t now_ns,
   hyle::time::TimerList fired;
   source.advance(now_ns, fired);
   size_t count = 0;
-  while (hyle::time::TimerEntry* entry = fired.pop_front()) {
+  fired.consume_all([&](hyle::time::TimerEntry* entry) noexcept {
     auto* timer = static_cast<hyle_time_timer*>(entry->data);
     HYLE_FATAL_ASSERT(timer != nullptr);
     timer->c_owner = nullptr;
     ++count;
     if (visit != nullptr) visit(timer, ctx);
-  }
+  });
   return count;
 }
 

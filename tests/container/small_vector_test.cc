@@ -166,6 +166,29 @@ TEST(IntrusiveList, MovePrefixSplicesOnlyMatchingNodes) {
   EXPECT_EQ(src.pop_front(), &c);
 }
 
+TEST(IntrusiveList, ConsumeAllUnlinksBeforeCallbackAndAllowsRelink) {
+  NodeList src;
+  NodeList dst;
+  Node a(1), b(2), c(3);
+  src.push_back(&a);
+  src.push_back(&b);
+  src.push_back(&c);
+
+  int sum = 0;
+  EXPECT_EQ(src.consume_all([&](Node* n) {
+              EXPECT_FALSE(n->hook.linked());
+              sum += n->v;
+              dst.push_back(n);
+            }),
+            3u);
+  EXPECT_TRUE(src.empty());
+  EXPECT_EQ(sum, 6);
+  EXPECT_EQ(dst.pop_front(), &a);
+  EXPECT_EQ(dst.pop_front(), &b);
+  EXPECT_EQ(dst.pop_front(), &c);
+  EXPECT_EQ(src.consume_all([](Node*) {}), 0u);
+}
+
 TEST(IntrusiveList, RejectsDoubleLinkAndSelfTransfer) {
   EXPECT_DEATH(
       {

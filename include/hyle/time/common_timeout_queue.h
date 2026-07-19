@@ -59,14 +59,17 @@ class CommonTimeoutQueue {
   // already-armed entry is supported (cancel + re-append).
   void schedule(TimerEntry* e, std::uint64_t deadline_ns) noexcept {
     HYLE_FATAL_ASSERT(e != nullptr);
-    if (e->scheduled()) {
+    // hook is the cheapest complete state discriminator: every source-owned
+    // entry is linked, and a fired-list entry is linked with owner == nullptr.
+    // Only the uncommon linked case needs the exact-owner load.
+    if (e->hook.linked()) {
       HYLE_FATAL_ASSERT(e->owned_by(this));
       cancel(e);
     }
     HYLE_FATAL_ASSERT(list_.empty() ||
                       list_.back()->deadline_ns <= deadline_ns);
     e->deadline_ns = deadline_ns;
-    list_.push_back(e);
+    list_.push_back_unchecked(e);
     e->set_owner(this);
     ++count_;
   }
@@ -76,7 +79,7 @@ class CommonTimeoutQueue {
   // Use TimerWheel for mixed/non-monotonic deadlines.
   bool try_schedule(TimerEntry* e, std::uint64_t deadline_ns) noexcept {
     HYLE_FATAL_ASSERT(e != nullptr);
-    if (e->scheduled()) {
+    if (e->hook.linked()) {
       HYLE_FATAL_ASSERT(e->owned_by(this));
       // Preserve the old arm on rejection. If e is not the tail, the current
       // tail remains the ordering bound. If e is the tail, temporarily unlink
@@ -97,7 +100,6 @@ class CommonTimeoutQueue {
         }
       }
     } else {
-      HYLE_FATAL_ASSERT(!e->hook.linked());
       // Monotonic-arrival invariant: the current tail (latest armed) must not
       // be later than this new deadline. Equal is fine and remains FIFO.
       if (!list_.empty() && list_.back()->deadline_ns > deadline_ns) {
@@ -126,10 +128,7 @@ class CommonTimeoutQueue {
   // O(1) unlink. No tombstone. No-op if not scheduled.
   void cancel(TimerEntry* e) noexcept {
     HYLE_FATAL_ASSERT(e != nullptr);
-    if (!e->scheduled()) {
-      HYLE_FATAL_ASSERT(!e->hook.linked());
-      return;
-    }
+    if (!e->hook.linked()) return;
     HYLE_FATAL_ASSERT(e->owned_by(this));
     list_.remove(e);
     e->set_owner(nullptr);
