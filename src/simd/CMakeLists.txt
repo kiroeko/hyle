@@ -37,6 +37,8 @@ if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|AMD64|amd64")
   if(HYLE_SIMD_BUILD_FAT)
     list(APPEND _simd_arch_sources
       ops/dot_f16c.cc
+      ops/dot_avx_vnni.cc
+      ops/dot_avx512_vnni.cc
       ops/dot_avx512bf16.cc
       dtype/cvt_avx512bf16.cc)
   endif()
@@ -108,6 +110,7 @@ endif()
 # X3: product simd no longer links third_party/highway (vqsort ported to HYLE D-tag).
 hyle_add_module(simd SOURCES
   runtime.cc
+  c_simd.cc
   ops/dispatch_ops.cc
   random/random_dispatch.cc
   search/search_dispatch.cc
@@ -192,6 +195,8 @@ if(HYLE_SIMD_X64)
   # F16C remains usable on pre-AVX2 Ivy Bridge; AVX512-BF16 is runtime-gated.
   if(HYLE_SIMD_BUILD_FAT)
     hyle_set_isa(ops/dot_f16c.cc AVX_F16C)
+    hyle_set_isa(ops/dot_avx_vnni.cc AVX2_VNNI)
+    hyle_set_isa(ops/dot_avx512_vnni.cc AVX512_VNNI)
     hyle_set_isa(ops/dot_avx512bf16.cc AVX512_BF16)
     hyle_set_isa(dtype/cvt_avx512bf16.cc AVX512_BF16)
   endif()

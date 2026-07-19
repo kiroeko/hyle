@@ -1,9 +1,8 @@
 # SIMD 使用指南
 
-> **当前状态（2026-07-17）**：本文先固定 SIMD 的用户语义、选择方法和调用合同。示例所用
-> `hyle/simd/*.h` 是开发期 C++ pointer/count core，便于当前仓库测试，**不是发布 ABI**。
-> close-01 落地后，外部用户的唯一稳定入口将改为纯 C 的 `include/hyle/c/simd.h`；届时本文会把
-> 示例替换成正式 C 名称和 opaque handle，但下面的能力分类、数据布局和前置条件继续成立。
+> **当前状态（2026-07-19）**：SIMD close-01 已落地。外部用户的稳定入口是纯 C
+> `include/hyle/c/simd.h`；完整 C 符号、POD 和 FFI 说明见 [`c-simd.md`](./c-simd.md)。
+> `hyle/simd/*.h` 继续服务内部/同工具链 C++ 与 expert source kernel，不承诺跨编译器 ABI。
 
 HYLE SIMD 不要求普通用户认识 300 多个寄存器原语。那些原语主要用于实现 kernel、移植 ISA 和做
 Highway parity。应用通常只应调用处理整段连续数据的语义接口，让预编译库在运行时选择当前 CPU
@@ -13,7 +12,7 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 
 | 需求 | 应选层 | 是否运行时选 ISA | 稳定性 |
 |---|---|---:|---|
-| 发布一个二进制给未知 CPU | whole-buffer C ABI（close-01） | 是，每个模块缓存选择结果 | 未来唯一稳定发布面 |
+| 发布一个二进制给未知 CPU | `hyle/c/simd.h` whole-buffer C ABI | 是，每个模块缓存选择结果 | 唯一稳定发布面 |
 | 当前参与 HYLE 开发、同一工具链调用 | `hyle/simd/{ops,math,...}.h` | 是 | 开发期 C++ core，不承诺 ABI |
 | 整个 HYLE 只在一种已知 ISA 上运行 | `HYLE_SIMD_EXACT_TARGET` | 否，直接绑定目标实现 | 构建配置 |
 | 自己写一个固定 ISA 的 kernel TU | `hyle/simd/native.h` / `native/*.h` | 否 | expert source surface |
@@ -22,7 +21,7 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
 ```text
                          普通应用 / 任意语言
                                   |
-                    close-01: hyle/c/simd.h
+                         hyle/c/simd.h
                       pointer + count + POD
                                   |
               +-------------------+-------------------+
@@ -64,79 +63,66 @@ Highway parity。应用通常只应调用处理整段连续数据的语义接口
   固化到边界上。命名形如 `ctan_f32_batch` / `ctan_f64_batch`，输入输出可完全同址。
 - `*_in_range_*` 是调用者承诺输入范围的快速合同，不是自动检查后回退的安全版本。
 
-## 当前开发期调用示例
+## 稳定 C ABI 调用示例
 
-下面用 `std::vector` 只是展示 C++ 调用者如何提供内存。vector 不进入 HYLE 的函数签名或 ABI；换成
-C 数组、C# `Span<T>` pin 后的地址、Rust slice 的 `as_ptr()/len()`，传入的仍是同一组
-pointer/count 参数。
+```c
+#include "hyle/c/simd.h"
 
-```cpp
-#include "hyle/simd/ops.h"
-
-std::vector<float> x(4096), y(4096), out(4096);
-hyle::simd::add(x.data(), y.data(), out.data(), x.size());
-const float inner = hyle::simd::dot(x.data(), y.data(), x.size());
-hyle::simd::saxpy(0.25f, x.data(), y.data(), x.size());
+float x[4096], y[4096], out[4096];
+hyle_simd_add_f32(x, y, out, 4096);
+float inner = hyle_simd_dot_f32(x, y, 4096);
+hyle_simd_saxpy_f32(0.25f, x, y, 4096);
 ```
 
 模型权重或激活以窄类型存储时，不要先扩成一个临时 f32 数组；同一个入口会在寄存器中 widening：
 
-```cpp
-#include "hyle/simd/ops.h"
+```c
+hyle_simd_bf16 weights[4096];
+hyle_simd_f16 left[4096], right[4096];
+float activations[4096];
 
-std::vector<hyle::simd::bfloat16_t> weights(n);
-std::vector<hyle::simd::float16_t> left(n), right(n);
-std::vector<float> activations(n);
-
-const float score = hyle::simd::dot(activations.data(), weights.data(), n);
-const float half_dot = hyle::simd::dot(left.data(), right.data(), n);
+float score = hyle_simd_dot_f32_bf16(activations, weights, 4096);
+float half_dot = hyle_simd_dot_f16(left, right, 4096);
 ```
 
 `bf16×bf16`、`f32×bf16` 和 `f16×f16` 都累加到 f32；`f32×bf16` 不会把 f32 输入降精度。
-`i16×i16` 的乘积精确，以模 `2^64` 的二补码合同返回 i64，因此溢出行为不依赖 C++ UB。
+`i8×i8` 与 `i16×i16` 的乘积精确，以模 `2^64` 的二补码合同返回 i64，因此溢出行为
+不依赖 C++ UB。i8 路径会在可用时自动采用 AVX-VNNI、AVX512-VNNI、NEON dotprod
+或 SVE dot；默认 AVX2/AVX512 基线本身不要求这些可选扩展。
 
-```cpp
-#include "hyle/simd/random.h"
-
-hyle::simd::RandomState state{12345};
-std::vector<float> unit(4096);
-hyle::simd::random_fill(state, unit.data(), unit.size());  // [0, 1)
+```c
+hyle_simd_random_o* state = hyle_simd_random_create(12345);
+float unit[4096];
+hyle_simd_random_fill_f32(state, unit, 4096);  // [0, 1)
+hyle_simd_random_destroy(state);
 ```
 
 相同 seed 和相同的 fill 调用序列在不同 ISA 上位一致。它使用 xoshiro256++，不能生成 token、密钥、
 nonce 或其他安全材料。单个普通随机数优先使用 `hyle/util/random.h` 的标量 `Rng`；批量填充才使用这里。
 
-```cpp
-#include "hyle/simd/scan.h"
-
-std::vector<std::uint32_t> offsets = {3, 1, 4, 1, 5};
-hyle::simd::exclusive_scan(offsets.data(), offsets.size());
+```c
+uint32_t offsets[] = {3, 1, 4, 1, 5};
+hyle_simd_exclusive_scan_u32(offsets, 5);
 // offsets == {0, 3, 4, 8, 9}
 ```
 
-```cpp
-#include "hyle/simd/dtype_ops.h"
-
-std::vector<hyle::simd::float16_t> packed(n);
-std::vector<float> values(n);
-hyle::simd::f32_to_f16_batch(values.data(), packed.data(), n);
-hyle::simd::f16_to_f32_batch(packed.data(), values.data(), n);
+```c
+hyle_simd_f16 packed[4096];
+float values[4096];
+hyle_simd_f32_to_f16(values, packed, 4096);
+hyle_simd_f16_to_f32(packed, values, 4096);
 ```
 
-```cpp
-#include "hyle/simd/math.h"
-
-hyle::simd::exp_f32_batch(src, dst, n);
-hyle::simd::gelu_f32_batch(src, dst, n);
-hyle::simd::softmax_f32(dst, n);  // 原地
+```c
+hyle_simd_exp_f32_batch(src, dst, n);
+hyle_simd_gelu_f32_batch(src, dst, n);
+hyle_simd_softmax_f32(dst, n);  // 原地
 ```
 
-```cpp
-#include "hyle/simd/sort.h"
-
-hyle::simd::sort(keys, n);
-hyle::simd::partial_sort(keys, n, 10);  // [0, 10) 是排好序的最小 10 个
-hyle::simd::select(keys, n, k);         // keys[k] 到达完全排序后的位置
+```c
+hyle_simd_sort_f32(keys, n, HYLE_SIMD_SORT_ASCENDING);
+hyle_simd_partial_sort_f32(keys, n, 10, HYLE_SIMD_SORT_ASCENDING);
+hyle_simd_select_f32(keys, n, k, HYLE_SIMD_SORT_ASCENDING);
 ```
 
 普通 key 支持 i/u16、i/u32、i/u64、f32/f64。没有可移植 `uint128_t` ABI 时使用
@@ -144,18 +130,17 @@ hyle::simd::select(keys, n, k);         // keys[k] 到达完全排序后的位�
 `KeyValue32/64`；需要稳定排序时显式用 `radix_sort` 或 `argsort`，不要假设普通 `sort`
 对相等 key 稳定。
 
-```cpp
-#include "hyle/simd/bitpack.h"
-
+```c
 const unsigned bits = 11;
-std::vector<std::uint16_t> packed(
-    hyle::simd::packed_size<std::uint16_t>(raw.size(), bits));
-hyle::simd::pack(raw.data(), raw.size(), packed.data(), bits);
-hyle::simd::unpack(packed.data(), raw.size(), decoded.data(), bits);
+size_t packed_count = hyle_simd_packed_size_u16(raw_count, bits);
+uint16_t* packed = allocate_u16(packed_count);
+hyle_simd_pack_u16(raw, raw_count, packed, bits);
+hyle_simd_unpack_u16(packed, raw_count, decoded, bits);
 ```
 
-bitpack 使用固定 128-bit logical block，跨 ISA/VL 保持同一块布局；格式仍应通过正式格式版本
-管理，而不是把未版本化的内存缓冲直接当长期文件或网络 wire format。
+`packed_size` 与 tier 无关，但 packed bytes 只保证由同一 tier 解码；x86、NEON 与 scalar
+布局可能不同。SVE/RVV 把 logical block 固定为 128 bit，因此其字节不随 VL/VLEN 改变并与
+NEON 布局一致。当前内存编码不是跨 tier 的长期文件或网络 wire format。
 
 ## 必须遵守的调用合同
 
@@ -185,18 +170,8 @@ AVX2 symbol。未知客户 CPU 的发布包应使用默认 fat build。
 动态库 ABI 或持久化格式中。直接使用 `vec.h` 也遵循同样边界，它是写 kernel 的 DSL，不是 387 个
 普通用户 API 的集合。
 
-## close-01 的迁移方式
+## C++ source surface
 
-正式 C ABI 的名字尚未冻结，概念映射预计如下：
-
-| 当前开发期概念 | close-01 后的稳定形状 |
-|---|---|
-| `add(x, y, out, n)` 等无状态 batch | `hyle_simd_*` 纯 C 函数，pointer + count + POD enum |
-| `RandomState` | `hyle_simd_random_o*` opaque handle + create/destroy/fill |
-| `SortOrder` | 固定宽度 C enum/value |
-| `float16_t`、`UInt128`、`KeyValue32/64` | 有尺寸、对齐和版本断言的 C POD |
-| 模块批量入口 | 可选的 versioned `hyle_simd_api_t` 函数表 |
-
-close-01 完成时，本文必须同步完成四件事：改用可被 C 编译器包含的正式头；增加纯 C 示例；写明
-版本协商和 allocator/opaque 生命周期；删除“开发期 C++ core 可供外部集成”的过渡表述。C++、C#、
-Java、Rust 的便利包装可由消费方或独立绑定项目提供，但不会成为 HYLE 核心的第二套发布契约。
+同工具链源码用户仍可直接调用 `hyle::simd::dot/sort/...`；它们与 C shim 进入同一 dispatcher，
+但不是跨编译器稳定 ABI。HYLE 没有 `hyle_simd_api_t`、`api_get` 或版本函数表：核心发布面直接导出
+自由 C 符号。C++、C#、Java、Rust 的容器包装由消费方或独立 binding 项目提供。

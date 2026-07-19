@@ -31,6 +31,8 @@ HYLE_SIMD_API float dot(const float16_t* x, const float16_t* y,
 // bit pattern is returned as a two's-complement int64_t, so overflow is defined.
 HYLE_SIMD_API std::int64_t dot(const std::int16_t* x, const std::int16_t* y,
                                std::size_t n) noexcept;
+HYLE_SIMD_API std::int64_t dot(const std::int8_t* x, const std::int8_t* y,
+                               std::size_t n) noexcept;
 
 HYLE_SIMD_API void saxpy(float a, const float* x, float* y,
                          std::size_t n) noexcept;

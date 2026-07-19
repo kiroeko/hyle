@@ -162,8 +162,9 @@ Runtime table 与 exact suffix；exact `runtime_for` 只暴露所选表且不做
 AVX512 中逐-op 选择的 AVX2 winner 可作为显式依赖，但不再携带其它 canonical dispatch table。
 
 `hyle_simd_exact_artifact_check` 已在 Windows scalar/SSE4/AVX2/AVX512 上检查 manifest、build graph、
-CPU-probe import 和 x86 对象越级指令；exact AVX2 还通过 366 项公共合同测试。SVE/RVV 由
-`simd-scalable-exact-qemu-test.sh` 分别通过 43×5 和 43×4，并检查 exact dispatch object 不引用
+CPU-probe import 和 x86 对象越级指令；exact AVX2 还通过当前 367 项公共合同测试（366 pass +
+1 无 BF16 硬件 skip）。SVE/RVV 由 `simd-scalable-exact-qemu-test.sh` 分别通过 44×5 和
+44×4，并检查 exact dispatch object 不引用
 `cpu_features/best_isa/supports`。因此本节保留为历史根因记录，不再是欠账。
 
 ## 后续实施顺序

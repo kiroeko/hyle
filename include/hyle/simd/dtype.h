@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "hyle/c/simd_types.h"
 #include "hyle/macros.h"
 
 // dtype.h -- AI numeric storage types fp16 (IEEE-754 binary16) and bf16 (bfloat16) +
@@ -21,14 +22,6 @@ namespace hyle::simd {
 
 // ---- storage types: uint16 bit-carriers (Highway's portable wrapper, sans the C++23
 // std::float16_t native path). Trivially copyable, 2-byte, ABI-clean. ----------------
-struct float16_t {
-  std::uint16_t bits;
-  static constexpr float16_t from_bits(std::uint16_t b) noexcept { return float16_t{b}; }
-};
-struct bfloat16_t {
-  std::uint16_t bits;
-  static constexpr bfloat16_t from_bits(std::uint16_t b) noexcept { return bfloat16_t{b}; }
-};
 
 // fp8 storage types (OCP 8-bit float, the low-precision inference/training formats). Two layouts,
 // both 1-byte bit-carriers:
@@ -41,14 +34,6 @@ struct bfloat16_t {
 // "OCP 8-bit Floating Point" spec). NOT borrowed at runtime (no host fp8 lib to vendor; ggml/
 // Highway have none, CUDA's is device-oriented) -- the scalar bit-math here IS the reference, same
 // as fp16/bf16 are transcribed from Highway. See dtype_ops.h for the batch conversions.
-struct float8_e4m3_t {
-  std::uint8_t bits;
-  static constexpr float8_e4m3_t from_bits(std::uint8_t b) noexcept { return float8_e4m3_t{b}; }
-};
-struct float8_e5m2_t {
-  std::uint8_t bits;
-  static constexpr float8_e5m2_t from_bits(std::uint8_t b) noexcept { return float8_e5m2_t{b}; }
-};
 
 namespace detail {
 HYLE_FORCE_INLINE float bits_to_f32(std::uint32_t b) noexcept {

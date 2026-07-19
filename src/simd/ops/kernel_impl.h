@@ -42,6 +42,11 @@ std::int64_t HYLE_SIMD_OPS_FN(dot_i16_i16_)(const std::int16_t* x,
                                             std::size_t n) noexcept {
   return native::dot(x, y, n);
 }
+std::int64_t HYLE_SIMD_OPS_FN(dot_i8_i8_)(const std::int8_t* x,
+                                          const std::int8_t* y,
+                                          std::size_t n) noexcept {
+  return native::dot(x, y, n);
+}
 void HYLE_SIMD_OPS_FN(saxpy_f32_)(float a, const float* x, float* y,
                                   std::size_t n) noexcept {
   native::saxpy(a, x, y, n);

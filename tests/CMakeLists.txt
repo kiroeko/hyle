@@ -45,6 +45,15 @@ set_source_files_properties(mem/c_mem_test.c PROPERTIES LANGUAGE C)
 hyle_apply_warnings(hyle_mem_c_test)
 hyle_apply_sanitizer(hyle_mem_c_test)
 add_test(NAME hyle_mem_c_test COMMAND hyle_mem_c_test)
+
+# close-01: pure C whole-buffer SIMD consumer. Register/native C++ types never cross this edge.
+add_executable(hyle_simd_c_test simd/c_simd_test.c)
+target_link_libraries(hyle_simd_c_test PRIVATE hyle_simd)
+set_source_files_properties(simd/c_simd_test.c PROPERTIES LANGUAGE C)
+hyle_apply_warnings(hyle_simd_c_test)
+hyle_apply_sanitizer(hyle_simd_c_test)
+add_test(NAME hyle_simd_c_test COMMAND hyle_simd_c_test)
+
 hyle_add_test(obs SOURCES obs/log_test.cc)
 hyle_add_test(platform SOURCES platform/wait_test.cc platform/thread_test.cc platform/dynlib_test.cc platform/fs_test.cc platform/virtual_memory_test.cc platform/numa_test.cc platform/mapped_file_test.cc platform/cpu_test.cc)
 hyle_add_test(mem SOURCES mem/allocator_test.cc mem/memory_arena_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc mem/fiber_stack_test.cc mem/stats_test.cc mem/hugepage_test.cc mem/numa_test.cc DEPS hyle_platform)

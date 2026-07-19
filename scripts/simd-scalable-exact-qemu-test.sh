@@ -68,6 +68,11 @@ done
 
 "$CXX" "${COMMON[@]}" -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime.o"
 "$CXX" "${COMMON[@]}" -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu_test_only.o"
+# cpu.cc's topology diagnostics use this platform entry, while exact dispatch
+# itself never probes it. Keep this standalone artifact focused on SIMD instead
+# of pulling thread.cc and the whole error/platform dependency graph.
+printf '#include "hyle/platform/thread.h"\nnamespace hyle::platform { unsigned hardware_concurrency() noexcept { return 1; } }\n' |
+  "$CXX" "${COMMON[@]}" -x c++ -c - -o "$OUT/thread_test_stub.o"
 for product in math/math_dispatch dtype/dtype_dispatch sort/sort_dispatch \
                bitpack/bitpack_dispatch; do
   "$CXX" "${COMMON[@]}" -c "$REPO/src/simd/$product.cc" \
@@ -108,7 +113,7 @@ fi
 "$CXX" "${TARGET[@]}" "$OUT/gtest-all.o" "$OUT/gtest-main.o" \
   "$OUT/runtime_test.o" "$OUT/ops_test.o" "$OUT/search_test.o" \
   "$OUT/scan_test.o" "$OUT/native_test.o" "$OUT/runtime.o" \
-  "$OUT/cpu_test_only.o" \
+  "$OUT/cpu_test_only.o" "$OUT/thread_test_stub.o" \
   "$OUT/ops_dispatch.o" "$OUT/random_dispatch.o" \
   "$OUT/search_dispatch.o" "$OUT/scan_dispatch.o" \
   "$OUT/ops_${SUFFIX}.o" "$OUT/random_${SUFFIX}.o" \

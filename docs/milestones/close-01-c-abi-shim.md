@@ -7,7 +7,7 @@
 | **Tier** | 边界 |
 | **LOC 估** | 2-3k |
 | **骨架?** | 否 |
-| **状态** | 🔶 **部分落地**：error + platform + mem C-ABI ✅（2026-07-17）；simd shim / 跨编译器 / FFI 冒烟仍待 |
+| **状态** | 🔶 **部分落地**：error + platform + mem + simd C-ABI ✅（SIMD 2026-07-19）；全库跨编译器 / FFI 冒烟仍待 |
 
 > **本文件的目的**：把"发布后用户必须用稳定 C ABI"这件事**白纸黑字钉死**，避免后面忘了或被"反正 C++ 头能用"糊弄过去。实现细节临到开工再细化，但**产品铁律 + 验收门槛现在就定**。
 
@@ -38,19 +38,22 @@
 - [x] **样板 mem**（2026-07-17，2026-07-19 复审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C `hyle_mem_c_test`。面：`hyle_allocator` vtable、system allocator、MemoryArena / StackAllocator / Arena / GrowablePool / HugeRegion、进程级 hugepage/NUMA、typed 池宏；资源失败均有 last-error，成功清 stale。**有意仅 C++**：模板构造层（ObjectPool/GrowablePool/pmr）、有状态调试类（AllocStats/LeakTracker/StatsAllocator）、Allocator typed 层。纯 C 机械覆盖 51/51 入口。文档：[`c-mem.md`](../guide/c-mem.md)。
 - 三模块五维复审（功能/下游利用、红队实现、测试/性能、ABI 覆盖、用户文档）见 [`core-foundation-c-abi-audit.md`](./core-foundation-c-abi-audit.md)。
 - **架构定调（2026-07-18）**：删除三模块的 `hyle_*_api` 函数指针表 + `api_get` + 版本门/版本宏——纯 `extern "C"` 自由函数导出（对齐 ggml 核心）。版本协商是"分发独立编译插件"才需要的件（clay 零、ggml 仅 backend 插件处），HYLE 单一 `.so`、未发布不背此负担。C++→C ABI 的类型擦除手法、三层架构、有状态调试类留 C++ 等决策见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)。
-- [ ] 其余模块：`simd` / …
-- [ ] SIMD 是首批语义样板之一：新增 `include/hyle/c/simd.h`；add/dot/math/scan/dtype/sort/
+- [x] **SIMD**：`include/hyle/c/simd.h` + `c_simd.cc` + [`c-simd.md`](../guide/c-simd.md)；
+      纯 C 预处理入口 **247/247** 被测试引用，动态库导出 **244/244**（另 3 个 typed header-inline）。
+- [x] SIMD 是首批语义样板之一：新增 `include/hyle/c/simd.h`；add/dot/math/scan/dtype/sort/
       bitpack 等无状态接口只用 pointer/count/POD，随机数状态使用
       `hyle_simd_random_o` make/destroy/fill，不冻结 C++ `RandomState` 布局。
-- [ ] SIMD C 头提供固定宽度 enum/POD、尺寸与对齐断言；按架构决策直接
+- [x] SIMD C 头提供固定宽度 enum/POD、尺寸与对齐断言；按架构决策直接
       导出自由函数，不重新引入 `hyle_simd_api_t`/版本门，C shim 只转发现有
       dispatcher/kernel。
-- [ ] `samples/` 加一个 **纯 C consumer**（用 C 编译器编，只 include C shim），证明跨语言可绑。
+- [x] `samples/02_simd/main.c` + `hyle_simd_c_test` 是 **纯 C consumer**（C 编译器，
+      只 include C shim），证明无 mangling/STL/template 泄漏。
 - [ ] 目录约定坐实：`include/hyle/c/` = 稳定且受支持的发布面；`include/hyle/<mod>/` = 内部/
       同工具链 source surface，不作为发布契约宣传。
 - [ ] conventions §2 的 `decls.h`（前向声明 + 导出宏）一并落地，卡住"公开头不泄漏内部类型"。
-- [ ] close-01 完成 SIMD shim 时同步更新 `docs/guide/simd-usage.md`：把开发期 C++ 示例换成纯 C，
-      补 version/allocator/opaque 生命周期，并保留普通动态、exact library、fixed TU 三层选择说明。
+- [x] close-01 完成 SIMD shim 时同步更新 `docs/guide/simd-usage.md`：把普通示例换成纯 C，
+      补 `struct_size`、调用方数组所有权与 opaque 生命周期，并保留普通动态、exact library、
+      fixed TU 三层选择说明。
 
 ## 验收标准（"算完成"的硬指标）
 

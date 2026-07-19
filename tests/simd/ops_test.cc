@@ -84,6 +84,16 @@ std::int64_t ref_dot_i16(const std::vector<std::int16_t>& x,
   }
   return std::bit_cast<std::int64_t>(sum);
 }
+
+std::int64_t ref_dot_i8(const std::vector<std::int8_t>& x,
+                        const std::vector<std::int8_t>& y) {
+  std::uint64_t sum = 0;
+  for (std::size_t i = 0; i < x.size(); ++i) {
+    const std::int64_t product = static_cast<std::int64_t>(x[i]) * y[i];
+    sum += static_cast<std::uint64_t>(product);
+  }
+  return std::bit_cast<std::int64_t>(sum);
+}
 }  // namespace
 
 // dot result matches a DOUBLE-precision reference across sizes that exercise full vectors
@@ -210,6 +220,25 @@ TEST(Ops, I16DotIsExactAndModuloDefinedOnEveryRuntimeTier) {
 
   EXPECT_EQ(dot(static_cast<const std::int16_t*>(nullptr),
                 static_cast<const std::int16_t*>(nullptr), 0), 0);
+}
+
+TEST(Ops, I8DotIsExactAndModuloDefinedOnEveryRuntimeTier) {
+  constexpr std::size_t kCount = 262147;  // crosses the x86 i32 accumulator flush boundary
+  std::vector<std::int8_t> x(kCount), y(kCount);
+  for (std::size_t i = 0; i < kCount; ++i) {
+    x[i] = (i % 5 == 0) ? std::int8_t{-128}
+                        : static_cast<std::int8_t>(static_cast<int>(i % 255) - 127);
+    y[i] = (i % 7 == 0) ? std::int8_t{-128}
+                        : static_cast<std::int8_t>(127 - static_cast<int>((i * 13) % 255));
+  }
+  const std::int64_t expected = ref_dot_i8(x, y);
+  EXPECT_EQ(dot(x.data(), y.data(), x.size()), expected);
+  for (const auto* table : available_runtimes())
+    EXPECT_EQ(table->ops.dot_i8_i8(x.data(), y.data(), x.size()), expected)
+        << "tier=" << static_cast<int>(table->isa);
+
+  EXPECT_EQ(dot(static_cast<const std::int8_t*>(nullptr),
+                static_cast<const std::int8_t*>(nullptr), 0), 0);
 }
 
 // saxpy result matches naive reference; tail handled.

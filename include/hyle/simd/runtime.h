@@ -12,7 +12,7 @@ class RandomState;
 
 struct Runtime {
   // Version of this C++ convenience table, not the stable C ABI from include/hyle/c/.
-  static constexpr std::uint32_t kTableVersion = 5;
+  static constexpr std::uint32_t kTableVersion = 6;
 
   struct Ops {
     float (*dot_f32)(const float*, const float*, std::size_t) noexcept;
@@ -24,6 +24,8 @@ struct Runtime {
                          std::size_t) noexcept;
     std::int64_t (*dot_i16_i16)(const std::int16_t*, const std::int16_t*,
                                 std::size_t) noexcept;
+    std::int64_t (*dot_i8_i8)(const std::int8_t*, const std::int8_t*,
+                              std::size_t) noexcept;
     void (*saxpy_f32)(float, const float*, float*, std::size_t) noexcept;
     void (*saxpy_f64)(double, const double*, double*, std::size_t) noexcept;
     void (*add_f32)(const float*, const float*, float*, std::size_t) noexcept;
@@ -72,6 +74,8 @@ struct Runtime {
     kFeatureF16c = 1ull << 0,
     kFeatureAvx512Bf16 = 1ull << 1,
     kFeatureAvx10_2 = 1ull << 2,
+    kFeatureAvxVnni = 1ull << 3,
+    kFeatureAvx512Vnni = 1ull << 4,
     // Module contract/diagnostic flags. `Module::isa` is the broad product tier; these bits make
     // intentional per-op fallbacks and scalable-model constraints observable.
     kFeatureMathExactLibmScalar = 1ull << 16,
@@ -87,6 +91,7 @@ struct Runtime {
   Ops ops;
   Random random;
   Search search;
+  Module ops_module;
   Module scan;
   Module dtype;
   Module math;

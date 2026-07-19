@@ -851,7 +851,7 @@ HYLE_FORCE_INLINE Vec512<std::int32_t, NDst> SumOfMulQuadAccumulate(
     Simd<std::int32_t, NDst, 0> di32, Vec512<std::int8_t, NSrc> a, Vec512<std::int8_t, NSrc> b,
     Vec512<std::int32_t, NDst> sum) noexcept {
   static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
-#if defined(__AVX512VNNI__)
+#if defined(__AVX512VNNI__) || defined(HYLE_SIMD_FORCE_AVX512_VNNI)
   (void)di32;
   // a_top = 1 per byte where bit7 set (signed a < 0). Avoid relying on maskz_set1 alone.
   const __m512i a_top =

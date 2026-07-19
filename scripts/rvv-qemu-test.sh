@@ -60,6 +60,8 @@ run_tier() {
   $CXX $FLAGS -c "$REPO/src/simd/sort/vqsort_hyle_rvv.cc" -o "$OUT/sort_rvv_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/tests/simd/scalable_math_dispatch_test.cc" -o "$OUT/scalable_math_dispatch_test_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/platform/cpu.cc" -o "$OUT/cpu_${name}.o"
+  printf '#include "hyle/platform/thread.h"\nnamespace hyle::platform { unsigned hardware_concurrency() noexcept { return 1; } }\n' |
+    $CXX $COMMON_FLAGS -x c++ -c - -o "$OUT/thread_test_stub_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/runtime.cc" -o "$OUT/runtime_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/math_dispatch.cc" -o "$OUT/math_dispatch_${name}.o"
   $CXX $COMMON_FLAGS -c "$REPO/src/simd/math/transcendental_scalar.cc" -o "$OUT/math_scalar_${name}.o"
@@ -98,7 +100,7 @@ run_tier() {
     "$OUT/scan_rvv_${name}.o" "$OUT/scan_scalar_${name}.o" "$OUT/scan_dispatch_${name}.o" \
     "$OUT/sort_rvv_${name}.o" "$OUT/sort_scalar_${name}.o" "$OUT/sort_dispatch_${name}.o" \
     "$OUT/radix_sort_${name}.o" "$OUT/stream_topk_${name}.o" \
-    "$OUT/cpu_${name}.o" "$OUT/runtime_${name}.o" \
+    "$OUT/cpu_${name}.o" "$OUT/thread_test_stub_${name}.o" "$OUT/runtime_${name}.o" \
     "$OUT/ops_scalar_${name}.o" "$OUT/ops_rvv_${name}.o" "$OUT/ops_dispatch_${name}.o" \
     "$OUT/random_scalar_${name}.o" "$OUT/random_rvv_${name}.o" "$OUT/random_dispatch_${name}.o" \
     "$OUT/search_scalar_${name}.o" "$OUT/search_rvv_${name}.o" "$OUT/search_dispatch_${name}.o" \

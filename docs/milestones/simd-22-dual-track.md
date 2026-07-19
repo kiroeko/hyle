@@ -172,7 +172,7 @@ hyle_target_simd(TARGET my_kernel ISA AVX2)
 | D7 | 公共 `hyle_add_fat_kernel` + `select_fat_kernel`，稳定 entry contract | 已完成 |
 | D8 | Linux SVE/RVV HWCAP、Isa、构建和 ops/random/scan runtime 变体 | 已完成 |
 | D8.1 | exact target manifest：source/table/suffix 同源；四档 x86 artifact 闸 + SVE/RVV exact 多宽门 | 已完成（2026-07-17） |
-| D9 | close-01 纯 C `hyle_simd_api_t`/opaque state 薄封装 | 等 close-01 |
+| D9 | close-01 纯 C 自由函数/共享 POD/opaque RNG 薄封装 | ✅ `hyle/c/simd.h`，247 个入口；无 api table |
 
 ## 首个纵切验收
 

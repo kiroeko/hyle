@@ -10,7 +10,7 @@
 > - 变宽底账：`scripts/simd-scalable-coverage.py` + `scripts/simd-scalable-op-manifest.json`
 > - 覆盖率：`scripts/simd-op-coverage.py`
 
-**一句话**：定宽面与主 whole-buffer 核已立；**SVE/RVV 主产品核（math/dtype/bitpack/sort）已有真实 TU + QEMU 门，SVE partition 已吃满物理 VL，精细 feature probe 已落地**，不再是「整模块 hard clamp」。simd-24 的 C1–C3 能力面已补完，D1/D2/D5/D6/D7 机制收口也已完成；**NEON KV64 已在 Apple 真机追平 Highway**。还缺的是 **变宽真机签字**，以及有消费者/硬件后才启动的 VNNI/GFNI/类型 helper。不要再为齐 387 名字抠常数。
+**一句话**：定宽面与主 whole-buffer 核已立；**SVE/RVV 主产品核（math/dtype/bitpack/sort）已有真实 TU + QEMU 门，SVE partition 已吃满物理 VL，精细 feature probe 已落地**，不再是「整模块 hard clamp」。simd-24 的 C1–C3 能力面已补完，D1/D2/D3/D5/D6/D7 机制收口也已完成；**NEON KV64 已在 Apple 真机追平 Highway**。还缺的是 **变宽真机签字**；GFNI/类型 helper 仍须有产品消费或类型轴才成立。不要再为齐 387 名字抠常数。
 
 ---
 
@@ -33,7 +33,7 @@
 | **RVV sort 产品 TU（LMUL=1）+ Runtime** | ✅ |
 | **SVE sort 产品 TU + Runtime** | ✅ full-VL partition；只有要求 2 的幂 lane 的基础 network 保持 128/256-bit cap |
 | **SVE/RVV 精细 feature probe** | ✅ HWCAP2 / riscv_hwprobe；baseline、LTO-off detector |
-| **公开 scalable 产品派发门** | ✅ SVE 98×5；RVV base 93×4，Zvbb/Zvbc 各 94×4 |
+| **公开 scalable 产品派发门** | ✅ SVE 99×5；RVV base 94×4，Zvbb/Zvbc 各 95×4 |
 | 定宽 op 常数因子对齐战（历史矩阵主体） | ✅ 无新 LOSE 证据时不再全表重抠 |
 
 ---
@@ -43,7 +43,7 @@
 | # | 项 | 现状 | 做什么 | 验收 |
 |---|---|---|---|---|
 | **A1** | **NEON KV64 sort/partial** | ✅ **已收口（2026-07-19）**。根因是 upper-128 compare 用 `InterleaveUpper`，NEON 的通用数组实现被 scalarize，在每 key 热循环形成 `xtn→GPR→dup`；改用已有单指令 `DupOdd` | Apple 同 ISA 5 轮 random/asc partial：HYLE core 22.46–23.28、Highway 22.46–23.57 ns/key；desc/few 与 full sort 交叉验证均持平 | ✅ 达到 ≥~0.98；Windows AVX2 `Lt128Upper` 四副本持平，SSE4/AVX2 正确性全绿 |
-| **A2** | （观察）**AVX2 f32×bf16 dot** | 诊断 ~0.98–0.99×，误差带重叠 | 多轮符号检验；稳定 LOSE 再动 | 非稳定输可不动 |
+| **A2** | （观察）**AVX2 f32×bf16 dot** | 2026-07-19 重构后 WSL 1M 元素四次独立 scorecard：native/Highway **0.974–0.993×**，单行误差约 1–3%，public 行跨 **0.936–1.039×**；仍是误差带/频率敏感的边界项，不构成真 LOSE | 若要重开，只按主 methodology 做 AB/BA、多 replica 符号检验；稳定 <0.98 再动 | 用单遍 nanobench 排名下结论 |
 | **A3** | **变宽真机 scorecard** | 仅有 QEMU 正确性 | 有硅时 vs Highway + vs 旧 NEON/scalar fallback | 方法论双序/多轮；稳定 &lt;0.98 逐项狩猎或 best-of |
 
 ---
@@ -129,11 +129,11 @@
 |---|---|---|---|---|
 | **D1** | **exact 单腿产物机械化** | ✅ `hyle_simd_target_manifest` 同时控制 generated TU、手写产品 TU、Runtime table 与 exact symbol；exact 只含一个 canonical table，不做 CPUID | `hyle_simd_exact_artifact_check` 检查 manifest、build graph、CPU-probe import 和 x86 对象越级指令 | scalar/per-op lower-tier 核可作为所选产品 target 的诚实依赖，不伪称 optional BF16/AVX10.2 |
 | **D2** | **x86 partial 健康化 + canary** | ✅ AVX2 widen 显式 XMM half，SSE4 truncate/promote 为寄存器路径；exact-byte/guard-page、half/combine oracle 与 `op_parity_widen_bench` canary 在位 | 编译器升级继续跑 SSE4/AVX2 专项和 widen benchmark；出现稳定 <0.98 再狩猎 | x86 sub-XMM 仍物理占 XMM，这是 ISA 模型，不造假窄类型 |
-| **D3** | **AVX-VNNI runtime 档** | 有 `cpu_features().avx_vnni` + 编译期 `#if`；默认 avx2 TU **不**带 `-mavxvnni` | 独立 `AVX2_VNNI`（或等价）TU + Runtime/表选择；禁止编进无 VNNI 的 baseline | 无消费可继续挂起 |
+| **D3** | **AVX-VNNI runtime 档** | ✅ 新增有用户语义的 `i8×i8→i64` batch dot；独立 `AVX2_VNNI`（VEX）与 `AVX512_VNNI`（EVEX）TU，CPUID 后只覆盖该 op，默认/exact AVX2/AVX512 仍不要求 VNNI | `Runtime` v6 的 `ops_module.features` 暴露 `kFeatureAvxVnni` / `kFeatureAvx512Vnni`；fallback、两档 VNNI、NEON dotprod、SVE dot 共用模 2^64 合同；MSVC 明确使用 `_avx_` intrinsic，避免在 Raptor Lake 上误发 EVEX；13900K 真跑，Sapphire Rapids SDE 跑 EVEX 档；WSL 1M 元素单次 VEX/public 对 AVX2 baseline 约 **1.38×**（性能只作 smoke） | 不把 VNNI 升成伪 broad ISA，不污染 baseline |
 | **D4** | （可选）**GFNI** | 机会型 | 有 Ice Lake+/SDE 再上；可反哺 ReverseBits 等 | 非硬缺 |
-| **D5** | **模块 isa 元数据合同** | ✅ `Module::isa` 明确表示主产品 tier；feature bits 标出 exact-libm scalar、fp8 scalar、per-op lower tier、SVE capped network、bitpack logical-128 | `Runtime` C++ 诊断表 v5；架构文档列出含义 | 不为元数据齐平强行实现全部冷门 scalable |
+| **D5** | **模块 isa 元数据合同** | ✅ `Module::isa` 明确表示主产品 tier；feature bits 标出 AVX-VNNI/AVX512-VNNI、exact-libm scalar、fp8 scalar、per-op lower tier、SVE capped network、bitpack logical-128 | `Runtime` C++ 诊断表 v6；C ABI 提供只读 snapshot | 不为元数据齐平强行实现全部冷门 scalable |
 | **D6** | **dispatcher 生成统一** | ✅ generated 模块由 manifest 过滤；math/dtype/sort/bitpack 的 exact 分支统一用 manifest suffix，fat 分支保留各自必要的 feature/per-op 策略 | 新的机械同构模块继续用 `hyle_add_dispatched_kernel` | 不把不同算法策略强塞成同一阶梯 |
-| **D7** | **双轨测试矩阵** | ✅ Windows fat 366；exact AVX2 366；x86 scalar/SSE4/AVX2/AVX512 artifact 闸；SVE exact 43×5、RVV exact 43×4；fat scalable 继续跑全产品矩阵 | 真机到位后补执行/性能，不改正确性结论 | 不为每个 op 造动态函数指针 |
+| **D7** | **双轨测试矩阵** | ✅ Windows/WSL fat 367（366 pass + 1 无 BF16 硬件 skip）；exact AVX2 同套 367；x86 scalar/SSE4/AVX2/AVX512 artifact 闸；SVE exact 44×5、RVV exact 44×4；fat scalable 为 SVE 99×5、RVV 94×4 / 扩展 95×4 | 真机到位后补执行/性能，不改正确性结论 | 不为每个 op 造动态函数指针 |
 | **D8** | **垫片/helper 层后续** | simd-19 **未建** `neon_bin<QFn,DFn>` 式宽度 helper（实践用垫片+热点分支）；**类型轴**（f16/bf16 lane 指令）到来时垫片兜不住 | 仅当 f16/bf16 后端横切收费时再建类型→intrinsic 收敛层；沿用已实证的工单迁移法 | 现在为空建 helper = 过度抽象；**不要**为「消灭垫片痕迹」重写 270 op |
 
 ### D.9 宏：不是「重构做到一半」
@@ -176,11 +176,13 @@
 7.  D1+D6 exact 单腿 + dispatcher 生成收敛  ✅
 8.  D5+D7 模块 isa 合同与 exact/native 测试闸  ✅
 9.  D2    x86 partial 健康化 + canary  ✅（真机性能随常规 scorecard）
-10. D3/D4 有消费再上
+10. D3    AVX-VNNI + i8 dot  ✅
+11. D4    有产品消费再上
 // D8 仅 f16/bf16 类型轴启动时评估
 ```
 
-算法补缺线 C1–C3、机制线 D1/D2/D5/D6/D7 与 A1 均已收口。A3/B5 与 B7 性能决策挂起到取得对应硅；D3/D4/D8 只在出现消费或类型轴时启动。
+算法补缺线 C1–C3、机制线 D1/D2/D3/D5/D6/D7 与 A1 均已收口。A3/B5 与 B7
+性能决策挂起到取得对应硅；D4/D8 只在出现产品消费或类型轴时启动。
 
 ---
 
@@ -204,7 +206,7 @@
 | ✅ | NEON KV64 性能 | **A1 已收口** |
 | P0 | 变宽真机证据 | **A3** |
 | P1 | sort key 面 / mul_hilo / complex | **C2 / C1 / C3** |
-| P2 | VNNI runtime / GFNI / 可选扩展产品 TU | **D3 / D4 / B9** |
+| P2 | GFNI / 可选扩展产品 TU | **D4 / B9**（VNNI D3 已完成） |
 
 ### G.3 刻意不在 simd 补
 
@@ -218,10 +220,10 @@ thread_pool → sched；matvec → compute；hash → container；image / 万能
 
 ```text
 1. 变宽真机（A3/B5）          — 部署差从「无核」变为「有核欠证」
-2. D3/D4 / B9                  — 指令类与扩展产品核，有消费再上
+2. D4 / B9                     — 指令类与扩展产品核，有消费再上
 3. 不再镜像 contrib 其余目录
 
-已收口：NEON KV64（A1）、类型/积木/数学完整度（C1/C2/C3）。
+已收口：NEON KV64（A1）、类型/积木/数学完整度（C1/C2/C3）、AVX-VNNI i8 dot（D3）。
 ```
 
 ### G.6 判定口诀

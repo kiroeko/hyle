@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hyle/c/simd_types.h"
 #include "hyle/simd/dispatch.h"  // Isa, HYLE_SIMD_API
 
 // sort.h -- in-place vectorized sort / partial_sort / select (simd-09 line②, "算法级能力").
@@ -98,10 +99,6 @@ HYLE_SIMD_API void select(double* keys, std::size_t n, std::size_t k,
 // --- unsigned 128-bit keys ---------------------------------------------------------------
 // Numeric order is lexicographic by (hi, lo). The explicit POD keeps the ABI independent of
 // compiler-specific __int128 support and is byte-identical to the internal vqsort key.
-struct alignas(16) UInt128 {
-  std::uint64_t lo;
-  std::uint64_t hi;
-};
 inline constexpr bool operator==(UInt128 a, UInt128 b) noexcept {
   return a.lo == b.lo && a.hi == b.hi;
 }
@@ -128,14 +125,6 @@ HYLE_SIMD_API void select(UInt128* keys, std::size_t n, std::size_t k,
 // the port's K32V32/K64V64 for zero-copy reinterpret_cast; construct with the designated fields,
 // don't assume field order. Sorts by `key` only; equal keys' value order is unspecified (vqsort
 // is not stable), same as the scalar-T ops.
-struct alignas(8) KeyValue32 {
-  std::uint32_t value;  // payload (e.g. original index)
-  std::uint32_t key;    // sort key (e.g. score)
-};
-struct alignas(16) KeyValue64 {
-  std::uint64_t value;
-  std::uint64_t key;
-};
 
 HYLE_SIMD_API void sort(KeyValue32* kv, std::size_t n, SortOrder order = SortOrder::kAscending) noexcept;
 HYLE_SIMD_API void sort(KeyValue64* kv, std::size_t n, SortOrder order = SortOrder::kAscending) noexcept;

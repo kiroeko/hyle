@@ -45,7 +45,9 @@ namespace hyle::simd {
 template <typename T>
 constexpr std::size_t packed_size(std::size_t count, unsigned bits) noexcept {
   constexpr std::size_t W = 8 * sizeof(T);
-  return (count * bits + (W - 1)) / W;
+  // Keep the usual ceil(count * bits / W) result without overflowing the
+  // intermediate product for valid bits (1..W).
+  return (count / W) * bits + ((count % W) * bits + (W - 1)) / W;
 }
 
 // --- pack: count raw values (each `bits` significant) -> dense `packed` ---

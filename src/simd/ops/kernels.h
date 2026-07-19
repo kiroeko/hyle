@@ -46,7 +46,9 @@ double dot_f64_rvv(const double* x, const double* y, std::size_t n) noexcept;
   float dot_f16_f16_##suffix(const float16_t*, const float16_t*,                  \
                               std::size_t) noexcept;                               \
   std::int64_t dot_i16_i16_##suffix(const std::int16_t*, const std::int16_t*,     \
-                                     std::size_t) noexcept;
+                                     std::size_t) noexcept;                       \
+  std::int64_t dot_i8_i8_##suffix(const std::int8_t*, const std::int8_t*,         \
+                                   std::size_t) noexcept;
 
 HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(scalar)
 HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(sse4)
@@ -63,6 +65,10 @@ HYLE_SIMD_OPS_DECLARE_MIXED_DOTS(rvv)
 float dot_f16_f16_f16c(const float16_t*, const float16_t*, std::size_t) noexcept;
 float dot_bf16_bf16_avx512bf16(const bfloat16_t*, const bfloat16_t*,
                                std::size_t) noexcept;
+std::int64_t dot_i8_i8_avx_vnni(const std::int8_t*, const std::int8_t*,
+                                std::size_t) noexcept;
+std::int64_t dot_i8_i8_avx512_vnni(const std::int8_t*, const std::int8_t*,
+                                   std::size_t) noexcept;
 
 void saxpy_f64_scalar(double a, const double* x, double* y, std::size_t n) noexcept;
 void saxpy_f64_sse4(double a, const double* x, double* y, std::size_t n) noexcept;

@@ -52,6 +52,14 @@ std::int64_t dot(const std::int16_t* x, const std::int16_t* y,
   return runtime().ops.dot_i16_i16(x, y, n);
 #endif
 }
+std::int64_t dot(const std::int8_t* x, const std::int8_t* y,
+                 std::size_t n) noexcept {
+#if defined(HYLE_SIMD_EXACT)
+  return HYLE_SIMD_EXACT_SYMBOL(dot_i8_i8)(x, y, n);
+#else
+  return runtime().ops.dot_i8_i8(x, y, n);
+#endif
+}
 void saxpy(float a, const float* x, float* y, std::size_t n) noexcept {
 #if defined(HYLE_SIMD_EXACT)
   HYLE_SIMD_EXACT_SYMBOL(saxpy_f32)(a, x, y, n);

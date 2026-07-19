@@ -35,6 +35,7 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   EXPECT_NE(active.ops.dot_f32_bf16, nullptr);
   EXPECT_NE(active.ops.dot_f16_f16, nullptr);
   EXPECT_NE(active.ops.dot_i16_i16, nullptr);
+  EXPECT_NE(active.ops.dot_i8_i8, nullptr);
   EXPECT_NE(active.random.fill_u64, nullptr);
   EXPECT_NE(active.math.features & hs::Runtime::kFeatureMathExactLibmScalar, 0u);
   EXPECT_NE(active.dtype.features & hs::Runtime::kFeatureDtypeFp8Scalar, 0u);
@@ -45,6 +46,12 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
   const hs::Runtime* exact = hs::runtime_for(active.isa);
   ASSERT_NE(exact, nullptr);
   EXPECT_EQ(active.ops.dot_f32, exact->ops.dot_f32);
+  if ((active.ops_module.features &
+       (hs::Runtime::kFeatureAvxVnni | hs::Runtime::kFeatureAvx512Vnni)) != 0) {
+    EXPECT_NE(active.ops.dot_i8_i8, exact->ops.dot_i8_i8);
+  } else {
+    EXPECT_EQ(active.ops.dot_i8_i8, exact->ops.dot_i8_i8);
+  }
   EXPECT_EQ(active.random.fill_u64, exact->random.fill_u64);
   const hs::Runtime* scalar = hs::runtime_for(hs::Isa::kScalar);
   if (scalar == nullptr) {
@@ -53,6 +60,16 @@ TEST(SimdRuntime, TableMetadataAndExactTierLookup) {
     EXPECT_EQ(active.scan.isa, active.isa);
   } else {
     EXPECT_EQ(scalar->isa, hs::Isa::kScalar);
+#if defined(HYLE_ARCH_X64)
+    const auto& cpu = hyle::platform::cpu_features();
+    if (cpu.avx512vnni) {
+      EXPECT_NE(active.ops_module.features & hs::Runtime::kFeatureAvx512Vnni, 0u);
+      EXPECT_EQ(active.ops_module.features & hs::Runtime::kFeatureAvxVnni, 0u);
+    } else if (cpu.avx_vnni) {
+      EXPECT_NE(active.ops_module.features & hs::Runtime::kFeatureAvxVnni, 0u);
+      EXPECT_EQ(active.ops_module.features & hs::Runtime::kFeatureAvx512Vnni, 0u);
+    }
+#endif
 #if defined(HYLE_OS_LINUX) && defined(HYLE_ARCH_X64)
     EXPECT_EQ(active.scan.isa, hs::Isa::kScalar);
 #else

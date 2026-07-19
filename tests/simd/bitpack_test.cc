@@ -100,6 +100,10 @@ TEST(BitPack, PackedSizeFormula) {
   EXPECT_EQ(packed_size<std::uint16_t>(16, 5), 5u);  // 80 bits / 16
   EXPECT_EQ(packed_size<std::uint32_t>(32, 1), 1u);  // 32 bits / 32
   EXPECT_EQ(packed_size<std::uint32_t>(10, 32), 10u);
+  const auto max = std::numeric_limits<std::size_t>::max();
+  EXPECT_EQ(packed_size<std::uint8_t>(max, 8), max);
+  EXPECT_EQ(packed_size<std::uint16_t>(max, 16), max);
+  EXPECT_EQ(packed_size<std::uint32_t>(max, 32), max);
 }
 
 std::vector<std::uint16_t> pack_lane_oracle(const std::uint16_t* raw, unsigned bits) {

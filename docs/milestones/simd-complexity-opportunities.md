@@ -42,7 +42,7 @@
 
 **机会残留**:正式 scaling bench(n=1e3..1e8 斜率写入 matrix/bench 文档);sum 累加可再向量化。
 
-### P0-2. AVX-VNNI 通道 + 修 avx512 SumOfMulQuadAccumulate 的标量洞 — **正确性/洞已落地(2026-07-15)**
+### P0-2. AVX-VNNI 通道 + 修 avx512 SumOfMulQuadAccumulate 的标量洞 — **已收口(2026-07-19)**
 
 **原状,两处铁证**:
 - avx2 注释称 "No AVX2 VNNI" 过时——Alder Lake+ 有 VEX **AVX-VNNI**(`vpdpbusd`);本机 13900K
@@ -57,17 +57,19 @@
    - avx512:`#if __AVX512VNNI__`
    - avx2:`#if __AVX_VNNI__ || __AVXVNNI__`(默认 avx2 tier **不**带 `-mavxvnni`,仍走 madd 链)
 3. **`cpu_features().avx_vnni`**:CPUID leaf 7,1 EAX bit 4 + OS YMM 门控(`cpu.h`/`cpu.cc`)。
+4. **产品 runtime 覆盖**：新增稳定语义的 `i8×i8→i64` whole-buffer dot；独立
+   `AVX2_VNNI`（VEX）与 `AVX512_VNNI`（EVEX）TU，分别由 `avx_vnni` /
+   `avx512vnni` 精确门控，仅替换这一项函数指针。默认与 exact AVX2/AVX512
+   继续使用无 VNNI 基线。MSVC 必须用 `_mm256_dpbusd_avx_epi32`，不能用会发
+   EVEX 的无后缀 intrinsic；13900K 实机已抓到并关闭该 SIGILL 风险。
 
 **正确性**(2026-07-15):
 - Win MSVC `hyle_simd_avx2_test` 全量 221 + SumOfMulQuad/Promote* **PASSED**
 - WSL GCC `hyle_simd_avx2_test` 全量 221 **PASSED**;`avx_vnni` 位在 cpuinfo 可见
 - SDE `-skx` 跑 `hyle_simd_avx512_test` 的 SumOfMulQuad + Promote* **PASSED**(非 VNNI 向量路径)
 
-**机会残留**(未做,避免把 VNNI 指令编进无 VNNI 的 SKX 产品核):
-- **runtime AVX-VNNI tier / 函数内分支**仍未做——现在只有 compile-time `#if` + 探测位;
-  要 1-op native 吞吐需:独立 `AVX2_VNNI` 核 TU(`-mavxvnni`)或 ifunc/指针,再按 `avx_vnni` 选。
-- 默认 `AVX512` 旗标仍无 `-mavx512vnni`(SKX 安全);VNNI 512 路径只在带该宏的 TU 生效。
-- 正式 op_parity `-n15` 重测 SumOfMulQuad(历史账已记 ~10×→追平;本轮是正确性闭环)。
+**剩余证据项**：正式 op_parity `-n15` 重测 SumOfMulQuad（历史账已记
+~10×→追平）。两档 VNNI 已是 per-op 产品核，不再是机制缺口。
 
 ### P0-3. 大 n 归约的误差档 — **调研后不做(2026-07-15 退回)**
 

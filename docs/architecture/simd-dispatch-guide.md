@@ -32,7 +32,7 @@ target-dependent vector/mask 类型穿过边界，就只能在编译期确定 ta
              scalar / SSE4 / AVX2 / AVX512 / NEON / SVE / RVV
 
      custom kernel: hyle_add_fat_kernel -> per-ISA entries -> select_fat_kernel
-     future C ABI: opaque handle + POD + version/size vtable -> ordinary batch API only
+     stable C ABI: free C functions + POD + opaque RNG -> ordinary batch API only
 ```
 
 fat 与 exact 的 generated TU、手写产品 TU、Runtime table 和 exact suffix 都由
@@ -45,7 +45,8 @@ fat 与 exact 的 generated TU、手写产品 TU、Runtime table 和 exact suffi
 
 | 层 | 当前规模（2026-07-16） | 面向谁 | 稳定边界 |
 |---|---:|---|---|
-| C++ batch core（开发期） | 107 个不同函数名、153 个导出 overload | HYLE 内部/同工具链测试 | pointer/POD/opaque state；不是发布 ABI |
+| 稳定 C ABI | 247 个入口（244 导出 + 3 个 typed header-inline） | 普通应用、FFI、跨编译器 | pointer/count、共享 POD、opaque RNG |
+| C++ batch core（开发期） | 公开 whole-buffer overload | HYLE 内部/同工具链测试 | 进入同一 dispatcher；不是发布 ABI |
 | `native::` whole-buffer kernel | ops/random/scan | 固定 ISA、需要跨调用内联的源码用户 | target-bound C++，不承诺跨 ISA 类型稳定 |
 | `vec.h` 寄存器 DSL | 387 个去重公开/selector 名 | 编写自定义 SIMD kernel 的高级用户 | target-bound vector/mask；只在 TU 内编译期实例化 |
 | `detail::*_{isa}` | 每 ISA 稳定符号薄包装 | HYLE dispatcher/测试 | internal，不是用户 API |
@@ -59,8 +60,8 @@ target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch 
 
 普通应用的发布外观不归 SIMD C++ 头所有：
 
-1. `include/hyle/c/simd.h` 将由 close-01 提供唯一稳定入口，只含 pointer/count、POD、opaque handle
-   和版本化函数表；C、C++、C#、Java、Rust 等消费方在各自工程里适配本语言容器。
+1. `include/hyle/c/simd.h` 已由 close-01 提供唯一稳定入口，只含 pointer/count、POD、opaque handle
+   和自由 C 函数；C、C++、C#、Java、Rust 等消费方在各自工程里适配本语言容器。
 2. HYLE 不提供 `std::span`/`std::vector` 伞头，也不在核心仓库维护某一种语言的容器便利层；这避免
    “C ABI 是发布契约，但文档却把 C++ facade 当普通用户入口”的双重产品面。
 3. 是否补 `algo`、hash、image、matvec 等高层能力按 HYLE 模块边界和真实消费者决定，不为了镜像 Highway
@@ -95,22 +96,21 @@ target function 再 `HWY_EXPORT/HWY_DYNAMIC_DISPATCH`；HYLE 的预编译 batch 
 
 ## 普通用户：不知道目标 CPU
 
-发布完成后，普通用户只调用 close-01 的 C ABI，例如：
+普通用户调用 close-01 的 C ABI，例如：
 
 ```c
 #include "hyle/c/simd.h"
 
 hyle_simd_add_f32(x, y, out, count);
-hyle_simd_exp_f32(x, out, count);
+hyle_simd_exp_f32_batch(x, out, count);
 hyle_simd_inclusive_scan_f32(out, count);
 ```
 
-上面的确切命名和版本化函数表在 close-01 开工时冻结；这里钉的是边界形状，不提前伪造已实现 API。
 预编译库内含各 ISA kernel，C shim 转发到内部 batch core，由 Runtime 根据 platform 探测选择最佳实现。
 用户不自行调用 CPUID，也不需要知道 HYLE 内部的 C++ `Runtime`、D-tag 或 STL。
 
-在 close-01 完成前，现有 `include/hyle/simd/*.h` 仅供仓库开发、测试和同工具链源码集成；它们不是
-可发布承诺。消费方需要容器便利时，在自己的边界上用 `.data()/size()`、slice、Span 或 MemorySegment
+现有 `include/hyle/simd/*.h` 仅供仓库开发、测试和同工具链源码集成；它们不是可发布承诺。
+消费方需要容器便利时，在自己的边界上用 `.data()/size()`、slice、Span 或 MemorySegment
 包装 C ABI，HYLE 核心不替任一语言选择容器模型。
 
 HYLE 内部诊断或同工具链开发需要把选择提升到更外层时，可以保存 C++ 表引用：
@@ -134,9 +134,9 @@ canonical table：请求该 tier 返回它，其余一律 `nullptr`，并且不�
 | `kFeatureDtypeFp8Scalar` | fp8 基础路径仍是 scalar/可选硬件档 |
 | `kFeaturePerOpLowerTier` | 至少一个已认证 winner 有意使用较低 canonical tier |
 | `kFeatureSortCappedNetwork` | SVE partition 吃满 VL，但基础 network 有 128/256-bit cap |
-| `kFeatureBitpackLogical128` | 指令可 scalable，外部 bitstream 仍按固定 128-bit logical block |
+| `kFeatureBitpackLogical128` | SVE/RVV 指令可 scalable，但 logical block 固定 128 bit，字节不随 VL/VLEN 改变；不承诺跨 tier wire format |
 
-该表是版本化的 C++ 诊断便利面（当前 `kTableVersion=5`），不是 close-01 的稳定 C ABI。
+该表是版本化的 C++ 诊断便利面（当前 `kTableVersion=6`），不是 close-01 的稳定 C ABI。
 
 ## 已知目标用户：两种精确目标模式
 
@@ -230,8 +230,8 @@ bitpack 的物理指令使用 scalable backend，但 logical D-tag 固定为 128
 KV32/KV64：RVV 使用诚实的 LMUL=1 全宽 tag；SVE 的递归 partition 使用完整物理 VL，只有需要 2 的幂
 lane 数的 sorting network 保持 128/256-bit cap。
 
-当前 fat 脚本门为 SVE **98 tests × VL 128/256/384/512/2048**，RVV base **93 tests × VLEN
-128/256/512/1024**，RVV Zvbb/Zvbc 各 **94×4**；exact 门另为 SVE **43×5**、RVV **43×4**。门内包含 CPU probe、
+当前 fat 脚本门为 SVE **99 tests × VL 128/256/384/512/2048**，RVV base **94 tests × VLEN
+128/256/512/1024**，RVV Zvbb/Zvbc 各 **95×4**；exact 门另为 SVE **44×5**、RVV **44×4**。门内包含 CPU probe、
 Runtime、公开 ops/random/search/scan/math/dtype/bitpack/sort batch API、tail 和 feature 蕴含关系。
 qemu-aarch64 能正向验证 HWCAP2 扩展位；qemu-riscv64-user 8.2 能执行 Zvbb/Zvbc，但不模拟
 `riscv_hwprobe` 可选位，故 RVV
@@ -247,9 +247,10 @@ Highway 通过 `foreach_target.h` 重包含 TU、target namespace 与 `HWY_EXPOR
 
 ## C ABI 边界
 
-本页描述的是 C++ 便利面，不改变 `close-01`：发布时唯一承诺稳定 ABI 的接缝仍是
-`include/hyle/c/*` 的纯 `extern "C"` shim。C shim 将使用 opaque handle、POD、显式版本/大小和函数
-指针 vtable；不会把 `Runtime` C++ 类型、`RandomState` 类布局、模板或 STL 类型直接冻结为 C ABI。
+本页描述的 expert C++ 面不改变 `close-01`：唯一承诺稳定 ABI 的接缝是
+`include/hyle/c/*` 的纯 `extern "C"` shim。SIMD C shim 使用自由函数、共享固定布局 POD、
+带 `struct_size` 的 runtime snapshot 和 opaque RNG；没有模块 api 表/版本门，也不会把
+`Runtime` C++ 类型、`RandomState` 类布局、模板或 STL 类型冻结为 C ABI。
 
 ## 变体安全合同
 

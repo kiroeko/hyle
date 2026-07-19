@@ -1016,14 +1016,25 @@ HYLE_FORCE_INLINE Vec256<std::int32_t, NDst> SumOfMulQuadAccumulate(
     Simd<std::int32_t, NDst, 0> di32, Vec256<std::int8_t, NSrc> a, Vec256<std::int8_t, NSrc> b,
     Vec256<std::int32_t, NDst> sum) noexcept {
   static_assert(NSrc == 4 * NDst, "SumOfMulQuadAccumulate: i8 -> i32 (dst quarter lanes)");
-#if defined(__AVX_VNNI__) || defined(__AVXVNNI__)
+#if defined(__AVX_VNNI__) || defined(__AVXVNNI__) || \
+    defined(HYLE_SIMD_FORCE_AVX_VNNI)
   (void)di32;
   // Signed i8×i8 via u8×i8 VPDPBUSD + Highway sign correction (see x86_128-inl.h:11160).
   // a_top = 1 where a's bit7 set (no AVX512 mask ops — pure AVX2 compares).
   const __m256i a_top =
       _mm256_and_si256(_mm256_cmpgt_epi8(_mm256_setzero_si256(), a.raw), _mm256_set1_epi8(1));
+#if defined(_MSC_VER) && !defined(__clang__)
+  // MSVC exposes separate spellings for the VEX AVX-VNNI and EVEX
+  // AVX512-VNNI+VL encodings. The unsuffixed intrinsic is EVEX and would
+  // SIGILL on AVX-VNNI-only CPUs such as Raptor Lake.
+  const __m256i r0 = _mm256_dpbusd_avx_epi32(sum.raw, a.raw, b.raw);
+  const __m256i r1 = _mm256_slli_epi32(
+      _mm256_dpbusd_avx_epi32(_mm256_setzero_si256(), a_top, b.raw), 8);
+#else
   const __m256i r0 = _mm256_dpbusd_epi32(sum.raw, a.raw, b.raw);
-  const __m256i r1 = _mm256_slli_epi32(_mm256_dpbusd_epi32(_mm256_setzero_si256(), a_top, b.raw), 8);
+  const __m256i r1 = _mm256_slli_epi32(
+      _mm256_dpbusd_epi32(_mm256_setzero_si256(), a_top, b.raw), 8);
+#endif
   Vec256<std::int32_t, NDst> r;
   r.raw = _mm256_sub_epi32(r0, r1);
   return r;

@@ -35,11 +35,13 @@ namespace {
         {&detail::dot_f32_##suffix, &detail::dot_f64_##suffix,                      \
          &detail::dot_bf16_bf16_##suffix, &detail::dot_f32_bf16_##suffix,           \
          &detail::dot_f16_f16_##suffix, &detail::dot_i16_i16_##suffix,              \
+         &detail::dot_i8_i8_##suffix,                                                \
          &detail::saxpy_f32_##suffix, &detail::saxpy_f64_##suffix,                  \
          &detail::add_f32_##suffix, &detail::add_f64_##suffix},                     \
         {&detail::random_fill_u64_##suffix, &detail::random_fill_f32_##suffix,      \
          &detail::random_fill_f64_##suffix},                                        \
         HYLE_SEARCH_RUNTIME(suffix),                                                \
+        {tier, 0},                                                                  \
         {tier, 0},                                                                  \
         {tier, Runtime::kFeatureDtypeFp8Scalar},                                    \
         {tier, Runtime::kFeatureMathExactLibmScalar},                               \
@@ -114,6 +116,13 @@ Runtime selected_runtime() noexcept {
   if (f.f16c && f.avx) result.ops.dot_f16_f16 = &detail::dot_f16_f16_f16c;
   if (f.avx512bf16)
     result.ops.dot_bf16_bf16 = &detail::dot_bf16_bf16_avx512bf16;
+  if (f.avx512vnni) {
+    result.ops.dot_i8_i8 = &detail::dot_i8_i8_avx512_vnni;
+    result.ops_module.features |= Runtime::kFeatureAvx512Vnni;
+  } else if (f.avx_vnni) {
+    result.ops.dot_i8_i8 = &detail::dot_i8_i8_avx_vnni;
+    result.ops_module.features |= Runtime::kFeatureAvxVnni;
+  }
   result.dtype.isa = f.avx2 ? Isa::kAvx2 : Isa::kScalar;
   if (f.f16c && f.avx) result.dtype.features |= Runtime::kFeatureF16c;
   if (f.avx512bf16) {

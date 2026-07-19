@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.25)
-project(hyle_sample_simd LANGUAGES CXX)
+project(hyle_sample_simd LANGUAGES C CXX)
 
 set(HYLE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
 set(HYLE_BUILD_BENCH OFF CACHE BOOL "" FORCE)
@@ -7,6 +7,9 @@ add_subdirectory(../.. hyle_build)
 
 add_executable(simd_sample main.cc)
 target_link_libraries(simd_sample PRIVATE hyle::simd)
+
+add_executable(simd_c_sample main.c)
+target_link_libraries(simd_c_sample PRIVATE hyle::simd)
 
 # OPTIONAL exact target for this consumer TU. Native calls then have no CPUID or function pointer.
 # To bind all ordinary HYLE batch APIs too, also configure HYLE_SIMD_EXACT_TARGET=AVX2.

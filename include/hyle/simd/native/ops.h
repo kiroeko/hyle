@@ -122,7 +122,7 @@ static HYLE_FORCE_INLINE float dot_f32_bf16_impl(const float* x,
     auto sum3 = Zero(df);
     std::size_t i = 0;
     const std::size_t width4 = width * 4;
-    for (; i + width4 <= n; i += width4) {
+    for (; width4 <= n - i; i += width4) {
       sum0 = MulAdd(LoadU(df, x + i), load_bf16_as_f32(df, y + i), sum0);
       sum1 = MulAdd(LoadU(df, x + i + width),
                     load_bf16_as_f32(df, y + i + width), sum1);
@@ -131,7 +131,7 @@ static HYLE_FORCE_INLINE float dot_f32_bf16_impl(const float* x,
       sum3 = MulAdd(LoadU(df, x + i + width * 3),
                     load_bf16_as_f32(df, y + i + width * 3), sum3);
     }
-    for (; i + width <= n; i += width)
+    for (; width <= n - i; i += width)
       sum0 = MulAdd(LoadU(df, x + i), load_bf16_as_f32(df, y + i), sum0);
     float sum = ReduceSum(df, Add(Add(sum0, sum1), Add(sum2, sum3)));
     for (; i < n; ++i) sum += x[i] * bf16_to_f32(y[i]);
@@ -281,6 +281,73 @@ static HYLE_FORCE_INLINE std::int64_t dot_i16_impl(const std::int16_t* x,
   }
 }
 
+static HYLE_FORCE_INLINE std::int64_t dot_i8_impl(const std::int8_t* x,
+                                                   const std::int8_t* y,
+                                                   std::size_t n) noexcept {
+  using D8 = ScalableTag<std::int8_t>;
+  if constexpr (D8::kMaxLanes < 4) {
+    std::uint64_t sum = 0;
+    for (std::size_t i = 0; i < n; ++i) {
+      const std::int64_t product = static_cast<std::int64_t>(x[i]) * y[i];
+      sum += static_cast<std::uint64_t>(product);
+    }
+    return std::bit_cast<std::int64_t>(sum);
+  } else {
+    using D32 = Repartition<std::int32_t, D8>;
+    const D8 d8;
+    const D32 d32;
+    const std::size_t width = Lanes(d8);
+    const std::size_t width4 = width * 4;
+    auto sum0 = Zero(d32);
+    auto sum1 = Zero(d32);
+    auto sum2 = Zero(d32);
+    auto sum3 = Zero(d32);
+    std::uint64_t sum = 0;
+    std::size_t i = 0;
+    std::size_t blocks = 0;
+
+    // SumOfMulQuadAccumulate keeps i32 lanes so VNNI/SDOT can be used directly.
+    // Flush before an i32 lane could overflow, then continue the public modulo-2^64
+    // accumulation in scalar u64. One block contributes four vectors; even the
+    // worst signed i8 products remain well below INT32_MAX at this cadence.
+    constexpr std::size_t kBlocksPerFlush = 1024;
+    alignas(64) std::int32_t lanes[D32::kMaxLanes];
+    for (; width4 <= n - i; i += width4) {
+      sum0 = SumOfMulQuadAccumulate(
+          d32, LoadU(d8, x + i), LoadU(d8, y + i), sum0);
+      sum1 = SumOfMulQuadAccumulate(
+          d32, LoadU(d8, x + i + width), LoadU(d8, y + i + width), sum1);
+      sum2 = SumOfMulQuadAccumulate(
+          d32, LoadU(d8, x + i + width * 2),
+          LoadU(d8, y + i + width * 2), sum2);
+      sum3 = SumOfMulQuadAccumulate(
+          d32, LoadU(d8, x + i + width * 3),
+          LoadU(d8, y + i + width * 3), sum3);
+      if (++blocks == kBlocksPerFlush) {
+        StoreU(Add(Add(sum0, sum1), Add(sum2, sum3)), d32, lanes);
+        for (std::size_t lane = 0; lane < Lanes(d32); ++lane)
+          sum += static_cast<std::uint64_t>(
+              static_cast<std::int64_t>(lanes[lane]));
+        sum0 = sum1 = sum2 = sum3 = Zero(d32);
+        blocks = 0;
+      }
+    }
+    for (; width <= n - i; i += width)
+      sum0 = SumOfMulQuadAccumulate(
+          d32, LoadU(d8, x + i), LoadU(d8, y + i), sum0);
+
+    StoreU(Add(Add(sum0, sum1), Add(sum2, sum3)), d32, lanes);
+    for (std::size_t lane = 0; lane < Lanes(d32); ++lane)
+      sum += static_cast<std::uint64_t>(
+          static_cast<std::int64_t>(lanes[lane]));
+    for (; i < n; ++i) {
+      const std::int64_t product = static_cast<std::int64_t>(x[i]) * y[i];
+      sum += static_cast<std::uint64_t>(product);
+    }
+    return std::bit_cast<std::int64_t>(sum);
+  }
+}
+
 template <typename T>
 static HYLE_FORCE_INLINE void saxpy_impl(T a, const T* x, T* y,
                                          std::size_t n) noexcept {
@@ -335,6 +402,11 @@ static HYLE_FORCE_INLINE std::int64_t dot(const std::int16_t* x,
                                           const std::int16_t* y,
                                           std::size_t n) noexcept {
   return detail::dot_i16_impl(x, y, n);
+}
+static HYLE_FORCE_INLINE std::int64_t dot(const std::int8_t* x,
+                                          const std::int8_t* y,
+                                          std::size_t n) noexcept {
+  return detail::dot_i8_impl(x, y, n);
 }
 static HYLE_FORCE_INLINE void saxpy(float a, const float* x, float* y,
                                     std::size_t n) noexcept {

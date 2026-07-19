@@ -35,6 +35,7 @@ void run_size(std::size_t n) {
   std::vector<hs::bfloat16_t> bf0(n), bf1(n);
   std::vector<hs::float16_t> f16a(n), f16b(n);
   std::vector<std::int16_t> i16a(n), i16b(n);
+  std::vector<std::int8_t> i8a(n), i8b(n);
   for (std::size_t i = 0; i < n; ++i) {
     const float a = (static_cast<int>(i % 251) - 125) * (1.0f / 128.0f);
     const float b = (static_cast<int>((i * 17) % 241) - 120) * (1.0f / 128.0f);
@@ -45,6 +46,8 @@ void run_size(std::size_t n) {
     f16b[i] = hs::f32_to_f16(b);
     i16a[i] = static_cast<std::int16_t>(static_cast<int>(i % 32749) - 16374);
     i16b[i] = static_cast<std::int16_t>(16373 - static_cast<int>((i * 7) % 32747));
+    i8a[i] = static_cast<std::int8_t>(static_cast<int>(i % 255) - 127);
+    i8b[i] = static_cast<std::int8_t>(127 - static_cast<int>((i * 7) % 255));
   }
   const auto* hbf0 = reinterpret_cast<const hwy::bfloat16_t*>(bf0.data());
   const auto* hbf1 = reinterpret_cast<const hwy::bfloat16_t*>(bf1.data());
@@ -117,6 +120,22 @@ void run_size(std::size_t n) {
     });
     b.run("i16-i64 HYLE public", [&] {
       nb::doNotOptimizeAway(hs::dot(i16a.data(), i16b.data(), n));
+    });
+    b.run("i8-i64 scalar contract", [&] {
+      std::uint64_t sum = 0;
+      for (std::size_t i = 0; i < n; ++i)
+        sum += static_cast<std::uint64_t>(
+            static_cast<std::int64_t>(i8a[i]) * i8b[i]);
+      nb::doNotOptimizeAway(sum);
+    });
+    b.run("i8-i64 HYLE native", [&] {
+      nb::doNotOptimizeAway(hs::native::dot(i8a.data(), i8b.data(), n));
+    });
+    b.run("i8-i64 HYLE runtime fixed", [&] {
+      nb::doNotOptimizeAway(fixed.ops.dot_i8_i8(i8a.data(), i8b.data(), n));
+    });
+    b.run("i8-i64 HYLE public", [&] {
+      nb::doNotOptimizeAway(hs::dot(i8a.data(), i8b.data(), n));
     });
   }
 }

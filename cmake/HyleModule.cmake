@@ -33,12 +33,15 @@ function(hyle_isa_flags out_var tier)
       set(${out_var} "" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX_F16C")
       set(${out_var} "/arch:AVX" PARENT_SCOPE)
-    elseif(tier STREQUAL "AVX2" OR tier STREQUAL "AVX2_INT")
+    elseif(tier STREQUAL "AVX2" OR tier STREQUAL "AVX2_INT" OR
+           tier STREQUAL "AVX2_VNNI")
       set(${out_var} "/arch:AVX2" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512")
       set(${out_var} "/arch:AVX512" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512_BF16")
       set(${out_var} "/arch:AVX512" PARENT_SCOPE)  # MSVC /arch:AVX512 already covers bf16 intrinsics
+    elseif(tier STREQUAL "AVX512_VNNI")
+      set(${out_var} "/arch:AVX512" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512_DL")
       # MSVC's /arch:AVX512 does NOT define __AVX512VBMI__/__AVX512BITALG__ (probe-verified: only
       # AVX512F+BW), so the native VPSHUFBITQMB/VPMULTISHIFTQB path is #if-compiled OUT and the
@@ -66,10 +69,14 @@ function(hyle_isa_flags out_var tier)
       set(${out_var} "-mavx2;-mfma;-mf16c" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX2_INT")
       set(${out_var} "-mavx2" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX2_VNNI")
+      set(${out_var} "-mavx2;-mavxvnni" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512")
       set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512_BF16")
       set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512bf16" PARENT_SCOPE)
+    elseif(tier STREQUAL "AVX512_VNNI")
+      set(${out_var} "-mavx512f;-mavx512bw;-mavx512vl;-mavx512dq;-mavx512vnni" PARENT_SCOPE)
     elseif(tier STREQUAL "AVX512_DL")
       # AVX3_DL (Ice Lake+): adds GFNI / VBMI / BITALG on top of the AVX512 four. Gates the
       # native VPSHUFBITQMB (BitShuffle) / VPMULTISHIFTQB (MultiRotateRight) paths. The base
