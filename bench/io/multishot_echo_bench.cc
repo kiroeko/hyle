@@ -114,8 +114,9 @@ Task<int> client(Allocator, Shared* s) {
 // buffer -- correct ordering: the send has completed, so the kernel is done reading
 // the buffer before we hand it back).
 Task<int> srv_multishot(Allocator alloc, Shared* s) {
-  auto stream = MultishotRecvStream{&s->io->proactor_for_current(), s->srv_fd,
-                                    kBgid, alloc};
+  auto stream = MultishotRecvStream{
+      s->io->proactor_for_current().io_uring_extension(), s->srv_fd, kBgid,
+      alloc};
   while (s->echoed < kMsgs) {
     RecvBuf b = co_await stream.next();
     if (b.size() == 0 || !b.more()) { if (!b.more()) break; else continue; }
@@ -150,7 +151,8 @@ int run(bool use_multishot) {
   io.bind_fd(0, p.a);
   io.bind_fd(0, p.b);
   if (use_multishot) {
-    if (!io.proactor(0).register_buf_ring(kBgid, 1024, kMsgLen)) {
+    auto uring = io.proactor(0).io_uring_extension();
+    if (!uring || !uring.register_buffer_ring(kBgid, 1024, kMsgLen)) {
       close_pair(p); sched.shutdown(); return -1;  // non-uring: skip
     }
   }

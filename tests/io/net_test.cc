@@ -380,10 +380,9 @@ struct MultishotState {
   std::atomic<bool> saw_terminal{false};
 };
 Task<int> multishot_recv_coro(Allocator alloc, MultishotState* st) {
-  auto stream = st->io->proactor_for_current().valid()
-                    ? MultishotRecvStream{&st->io->proactor_for_current(),
-                                          st->recv_fd, st->bgid, alloc}
-                    : MultishotRecvStream{};
+  auto uring = st->io->proactor_for_current().io_uring_extension();
+  auto stream = uring ? MultishotRecvStream{uring, st->recv_fd, st->bgid, alloc}
+                      : MultishotRecvStream{};
   for (;;) {
     RecvBuf b = co_await stream.next();
     if (!b.more() && b.size() == 0) {  // terminal chunk
@@ -414,7 +413,9 @@ TEST(IoNet, MultishotRecvAwaitable) {
   IoContext io(sched, kWorkers);
   ASSERT_TRUE(io.valid());
   // Register the provided-buffer ring on the OWNER worker's proactor (io_uring only).
-  if (!io.proactor(kOwner).register_buf_ring(kBgid, /*nentries=*/8, /*buf_size=*/128))
+  auto uring = io.proactor(kOwner).io_uring_extension();
+  if (!uring ||
+      !uring.register_buffer_ring(kBgid, /*entries=*/8, /*buffer_size=*/128))
     GTEST_SKIP() << "provided buffer ring unsupported (non-uring backend/old kernel)";
 
   // STREAM pair: peer close delivers a terminal (result 0, kMore clear) completion --
@@ -490,7 +491,6 @@ TEST(IoNet, MultishotTerminalBalancesLifetimeAfterEarlyDrop) {
     if (s == nullptr) return s;
     new (s) hyle::io::MultishotSlot{};
     s->alloc = a;
-    s->p = &p;
     s->armed = true;
     return s;
   };
@@ -499,7 +499,7 @@ TEST(IoNet, MultishotTerminalBalancesLifetimeAfterEarlyDrop) {
   {
     auto* s = make_slot();
     ASSERT_NE(s, nullptr);
-    hyle::io::MultishotRecvStream stream{&p, -1, 1, a};
+    hyle::io::MultishotRecvStream stream{p.io_uring_extension(), -1, 1, a};
     stream.slot_ = s;
     hyle::io::complete_multishot(
         hyle::io::Completion{hyle::io::to_multishot_token(s), 0, 0, 0});
@@ -512,7 +512,7 @@ TEST(IoNet, MultishotTerminalBalancesLifetimeAfterEarlyDrop) {
   auto* late = make_slot();
   ASSERT_NE(late, nullptr);
   {
-    hyle::io::MultishotRecvStream stream{&p, -1, 1, a};
+    hyle::io::MultishotRecvStream stream{p.io_uring_extension(), -1, 1, a};
     stream.slot_ = late;
   }
   EXPECT_EQ(state.live.load(), 1);

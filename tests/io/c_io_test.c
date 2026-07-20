@@ -11,6 +11,7 @@ static int reference_entire_surface(void) {
   (void)&hyle_io_proactor_valid;
   (void)&hyle_io_proactor_in_flight;
   (void)&hyle_io_proactor_backend;
+  (void)&hyle_io_proactor_capabilities;
   (void)&hyle_io_backend_name;
   (void)&hyle_io_has_async_file_data;
   (void)&hyle_io_has_async_file_metadata;
@@ -30,17 +31,18 @@ static int reference_entire_surface(void) {
   (void)&hyle_io_submit_sync;
   (void)&hyle_io_submit_allocate;
   (void)&hyle_io_submit_cancel;
-  (void)&hyle_io_register_buffer_ring;
-  (void)&hyle_io_register_file_table;
-  (void)&hyle_io_assign_fixed_file;
-  (void)&hyle_io_release_fixed_file;
-  (void)&hyle_io_submit_recv_fixed;
-  (void)&hyle_io_submit_send_fixed;
-  (void)&hyle_io_submit_accept_direct;
-  (void)&hyle_io_submit_close_direct;
-  (void)&hyle_io_submit_recv_multishot;
-  (void)&hyle_io_buffer_address;
-  (void)&hyle_io_buffer_return;
+  (void)&hyle_io_uring_extension_get;
+  (void)&hyle_io_uring_register_buffer_ring;
+  (void)&hyle_io_uring_register_file_table;
+  (void)&hyle_io_uring_assign_fixed_file;
+  (void)&hyle_io_uring_release_fixed_file;
+  (void)&hyle_io_uring_submit_recv_fixed;
+  (void)&hyle_io_uring_submit_send_fixed;
+  (void)&hyle_io_uring_submit_accept_direct;
+  (void)&hyle_io_uring_submit_close_direct;
+  (void)&hyle_io_uring_submit_recv_multishot;
+  (void)&hyle_io_uring_buffer_address;
+  (void)&hyle_io_uring_buffer_return;
   (void)&hyle_io_reap;
   (void)&hyle_io_post;
   (void)&hyle_io_wake;
@@ -98,6 +100,38 @@ int main(void) {
     hyle_io_proactor_destroy(p);
     return 6;
   }
+  {
+    hyle_io_capabilities caps = hyle_io_proactor_capabilities(p);
+    if (caps.struct_size != sizeof(caps) ||
+        caps.backend != hyle_io_proactor_backend(p) ||
+        (!!(caps.bits & HYLE_IO_CAP_ASYNC_FILE_METADATA) !=
+         !!hyle_io_has_async_file_metadata(p)) ||
+        (caps.bits & (HYLE_IO_CAP_NATIVE_MULTISHOT_ACCEPT |
+                      HYLE_IO_CAP_EMULATED_MULTISHOT_ACCEPT)) == 0) {
+      hyle_io_proactor_destroy(p);
+      return 18;
+    }
+  }
+  {
+    hyle_io_uring_extension uring = HYLE_IO_URING_EXTENSION_INIT;
+    hyle_status status = hyle_io_uring_extension_get(p, &uring);
+    if (hyle_io_proactor_backend(p) == HYLE_IO_BACKEND_IO_URING) {
+      if (!hyle_status_is_ok(status) || uring.proactor == NULL) {
+        hyle_status_free(&status);
+        hyle_io_proactor_destroy(p);
+        return 19;
+      }
+    } else {
+      if (hyle_status_get_code(status) != HYLE_STATUS_UNIMPLEMENTED ||
+          uring.proactor != NULL ||
+          hyle_io_uring_release_fixed_file(uring, 0) != 0) {
+        hyle_status_free(&status);
+        hyle_io_proactor_destroy(p);
+        return 19;
+      }
+    }
+    hyle_status_free(&status);
+  }
   if (hyle_io_post(p, 0x1234u, 77) != 1) {
     fprintf(stderr, "post: %s\n", hyle_io_last_error());
     hyle_io_proactor_destroy(p);
@@ -134,7 +168,8 @@ int main(void) {
     const char* name = "hyle_io_c_smoke_20260720";
     hyle_io_shared_memory* owner;
     hyle_io_shared_memory* peer;
-    (void)hyle_io_shared_memory_unlink(name);
+    hyle_status cleanup = hyle_io_shared_memory_unlink(name);
+    hyle_status_free(&cleanup);
     hyle_allocator backing = {0};
     owner =
         hyle_io_shared_memory_create_with_allocator(name, 4096, backing);
@@ -148,7 +183,21 @@ int main(void) {
     }
     hyle_io_shared_memory_destroy(peer);
     hyle_io_shared_memory_destroy(owner);
-    if (!hyle_io_shared_memory_unlink(name)) return 9;
+    {
+      hyle_status unlink_status = hyle_io_shared_memory_unlink(name);
+#if defined(_WIN32)
+      if (hyle_status_get_code(unlink_status) != HYLE_STATUS_UNIMPLEMENTED) {
+        hyle_status_free(&unlink_status);
+        return 9;
+      }
+#else
+      if (!hyle_status_is_ok(unlink_status)) {
+        hyle_status_free(&unlink_status);
+        return 9;
+      }
+#endif
+      hyle_status_free(&unlink_status);
+    }
   }
 #if defined(HYLE_IO_HTTP2)
   {

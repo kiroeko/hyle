@@ -119,17 +119,14 @@ inline std::uint64_t to_token(IoOperation* op) noexcept {
 // resolving the ring there picks the right one.
 
 // co_await RecvOp{p, fd, buf, len} -> bytes read (>=0) or negative errno.
-// For a DIRECT (registered-file) stream set fixed_slot >= 0: the op then references
-// the io_uring file-table SLOT via IOSQE_FIXED_FILE (submit_recv_fixed) instead of a
-// raw fd -- the accepted-direct path (no process fd ever existed). fixed_slot < 0
-// (default) = the ordinary raw-fd recv.
+// Registered-file operations intentionally live on IoUringExtension instead of
+// hiding a Linux-only mode switch in this portable awaitable.
 struct RecvOp {
   Proactor* p;
   std::intptr_t fd;
   void* buf;
   std::uint32_t len;
   std::uint32_t flags = 0;
-  int fixed_slot = -1;
 
   IoOperation op_{};
   bool submitted_ = false;
@@ -137,9 +134,7 @@ struct RecvOp {
   bool await_ready() noexcept { return false; }
   bool await_suspend(std::coroutine_handle<>) noexcept {
     op_.waker = sched::current_waker();
-    submitted_ = fixed_slot >= 0
-                     ? p->submit_recv_fixed(fixed_slot, buf, len, flags, to_token(&op_))
-                     : p->submit_recv(fd, buf, len, flags, to_token(&op_));
+    submitted_ = p->submit_recv(fd, buf, len, flags, to_token(&op_));
     if (!submitted_) {
       op_.result = kSubmitFailed;  // submit failed: no completion coming, resume at once
       return false;
@@ -157,7 +152,6 @@ struct SendOp {
   const void* buf;
   std::uint32_t len;
   std::uint32_t flags = 0;
-  int fixed_slot = -1;  // >=0 => direct (registered-file) send via IOSQE_FIXED_FILE
 
   IoOperation op_{};
   bool submitted_ = false;
@@ -165,9 +159,7 @@ struct SendOp {
   bool await_ready() noexcept { return false; }
   bool await_suspend(std::coroutine_handle<>) noexcept {
     op_.waker = sched::current_waker();
-    submitted_ = fixed_slot >= 0
-                     ? p->submit_send_fixed(fixed_slot, buf, len, flags, to_token(&op_))
-                     : p->submit_send(fd, buf, len, flags, to_token(&op_));
+    submitted_ = p->submit_send(fd, buf, len, flags, to_token(&op_));
     if (!submitted_) {
       op_.result = kSubmitFailed;
       return false;

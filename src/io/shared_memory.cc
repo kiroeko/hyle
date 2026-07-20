@@ -171,13 +171,19 @@ SharedMemory SharedMemory::open(const char* name) noexcept {
   return out;
 }
 
-bool SharedMemory::unlink(const char* name) noexcept {
+Status SharedMemory::unlink(const char* name) noexcept {
 #if defined(HYLE_OS_WINDOWS)
-  return name != nullptr && *name != '\0';
+  if (name == nullptr || *name == '\0')
+    return Status::InvalidArgument("shared memory name is empty");
+  return Status::Unimplemented(
+      "Windows named mappings cannot be unlinked; the name disappears after "
+      "the final handle closes");
 #else
   char normalized[256];
-  if (!normalize_name(name, normalized, sizeof(normalized))) return false;
-  return ::shm_unlink(normalized) == 0 || errno == ENOENT;
+  if (!normalize_name(name, normalized, sizeof(normalized)))
+    return Status::InvalidArgument("shared memory name is invalid");
+  if (::shm_unlink(normalized) == 0 || errno == ENOENT) return Status();
+  return Status::Unavailable("shm_unlink failed");
 #endif
 }
 

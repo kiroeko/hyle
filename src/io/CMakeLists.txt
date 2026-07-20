@@ -10,7 +10,7 @@
 # only there -- proactor.cc itself never depends on sched, keeping the proactor
 # usable on any platform.
 set(_io_sources proactor.cc c_io.cc shared_memory.cc)
-set(_io_deps hyle_platform hyle_mem hyle_container)
+set(_io_deps hyle_error hyle_platform hyle_mem hyle_container)
 if(HYLE_HAS_FCONTEXT)
   # The co_await layers (net/tcp/udp/file/signal) and the DNS offload need sched
   # (the scheduler drives the reap; dns uses spawn_blocking). Only buildable where

@@ -99,19 +99,17 @@ class TcpStream {
     return CancelSendOp{&io_->proactor_for_current(), fd_, buf, len, token};
   }
 
-  // Zero-copy multishot receive (io_uring only): drive with `co_await
-  // stream.read_multishot(bgid, alloc).next()`. The kernel picks buffers from group
-  // `bgid`'s provided-buffer ring (register it once via the proactor's
-  // register_buf_ring before calling). One arm delivers a stream of RecvBuf until the
-  // peer closes. `alloc` backs the stream's heap slot (use the connection's
-  // allocator). Awaited from the fiber pinned to owner_worker(). NOT on IOCP/epoll
-  // (no provided-buffer ring there) -- register_buf_ring returns false, so the arm
-  // fails and next() yields an error chunk; callers targeting those backends use
-  // read() instead.
-  MultishotRecvStream read_multishot(int bgid, mem::Allocator alloc) noexcept {
+  // Explicit io_uring zero-copy multishot receive track. The caller must first
+  // acquire `io.proactor(owner).io_uring_extension()` and register `bgid` on it;
+  // requiring that handle prevents a non-Linux caller from entering an API that
+  // cannot honor its zero-copy provided-buffer contract.
+  MultishotRecvStream read_multishot(IoUringExtension uring, int bgid,
+                                     mem::Allocator alloc) noexcept {
     HYLE_FATAL_ASSERT(valid() &&
-                      sched::current_worker_index() == static_cast<int>(owner_));
-    return MultishotRecvStream{&io_->proactor_for_current(), fd_, bgid, alloc};
+                      sched::current_worker_index() == static_cast<int>(owner_) &&
+                      uring.valid() &&
+                      uring.proactor() == &io_->proactor_for_current());
+    return MultishotRecvStream{uring, fd_, bgid, alloc};
   }
 
   // co_await stream.connect(&ss, len) -> 0 on success or negative errno, where

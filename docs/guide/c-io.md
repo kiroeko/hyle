@@ -14,7 +14,9 @@ C++ coroutine、`TcpStream`、OpenSSL 对象或 STL 类型放进 ABI。
 
 每个成功的 `hyle_io_submit_*` 最终产生一个带原 `user_data` 的
 `hyle_io_completion`。buffer、路径、sockaddr、scratch 和 stat 出参必须活到
-对应 completion 被 reap。`UINT64_MAX` 是内部 wake token，应用不能使用。
+对应 completion 被 reap。同一时刻的在途操作必须使用唯一 `user_data`；
+multishot 是一个操作用同一 token 产生多个 completion 的特例。`UINT64_MAX`
+是内部 wake token，应用不能使用。
 
 ```c
 hyle_io_proactor_options opts = hyle_io_proactor_options_default();
@@ -42,8 +44,16 @@ proactor 是单 owner 线程对象；只有 `hyle_io_wake` 可从其他线程调
 `hyle_io_proactor_backend` / `hyle_io_backend_name` 返回实际选中的
 IOCP、io_uring、epoll 或 kqueue。Linux 可能因内核、seccomp 或 sysctl 从
 io_uring 降为 epoll，benchmark 和依赖特定能力的程序必须查询，不能靠平台名
-猜测。`hyle_io_has_async_file_data/metadata` 进一步报告 regular-file 路径是否
-真正由 OS 异步完成。
+猜测。`hyle_io_proactor_capabilities()` 一次返回 backend + bitset；
+`hyle_io_has_async_file_data/metadata` 是相同信息的便利查询。当前 io_uring
+的 data 与 STATX metadata 都是真异步；IOCP 只有 data read/write 是
+overlapped，epoll/kqueue 的文件 facade 走 blocking pool。
+
+capability bit 表示已选 backend 暴露相应机制，不是对任意内核版本、容器
+策略和当前资源的“调用必成功”保证。例如拿到 io_uring extension 后，旧内核
+仍可能拒绝 provided-buffer 或 direct accept；调用方必须检查注册/提交结果及
+completion。它与 stub 的区别是：非 io_uring 在扩展获取阶段就返回 typed
+Unimplemented，而不是把“不支持”伪装成一次普通资源失败。
 
 ## 3. 网络
 
@@ -69,16 +79,41 @@ io_uring 对主要文件操作是真异步；IOCP 的 data read/write 是 overla
 延迟不可控的文件工作应先查 capability，必要时经
 `hyle_sched_blocking_submit` 卸载，不能堵住 scheduler worker。
 
-## 5. multishot / fixed file
+## 5. 显式 io_uring 扩展
 
-以下是 io_uring 加速腿；不支持的后端返回 0/-1，portable one-shot 路径不受
-影响：
+provided-buffer multishot、fixed file 和 direct accept 是 Linux 内核机制，
+不属于 portable `Proactor`。必须先取得借用扩展句柄：
 
-- buffer ring：`register_buffer_ring` → `submit_recv_multishot` →
-  `buffer_address` → 处理 → `buffer_return`；
-- fixed file：`register_file_table` → `assign_fixed_file` →
-  `submit_recv_fixed/submit_send_fixed` → `release_fixed_file`；
-- direct accept/close：`submit_accept_direct/submit_close_direct`。
+```c
+hyle_io_uring_extension uring = HYLE_IO_URING_EXTENSION_INIT;
+hyle_status status = hyle_io_uring_extension_get(p, &uring);
+if (!hyle_status_is_ok(status)) {
+  /* IOCP/epoll/kqueue: HYLE_STATUS_UNIMPLEMENTED，继续用普通 submit_recv/send。 */
+  hyle_status_free(&status);
+  use_portable_path();
+} else {
+  hyle_status_free(&status);
+  if (!hyle_io_uring_register_buffer_ring(uring, 7, 256, 4096))
+    fail(hyle_io_last_error());
+}
+```
+
+成功取得句柄后才可使用：
+
+- buffer ring：`hyle_io_uring_register_buffer_ring` →
+  `hyle_io_uring_submit_recv_multishot` →
+  `hyle_io_uring_buffer_address` → 处理 →
+  `hyle_io_uring_buffer_return`；
+- fixed file：`hyle_io_uring_register_file_table` →
+  `hyle_io_uring_assign_fixed_file` →
+  `hyle_io_uring_submit_recv_fixed/submit_send_fixed` →
+  `hyle_io_uring_release_fixed_file`；
+- direct accept/close：`hyle_io_uring_submit_accept_direct/close_direct`。
+
+扩展不拥有 proactor，`hyle_io_proactor_destroy()` 后立即失效。普通连续接收
+就是重复提交 portable `hyle_io_submit_recv`；这已具有完整 backpressure 和
+EOF/error 语义。io_uring multishot 的额外价值是“一次 submit 多次完成 +
+内核从 registered ring 选 buffer”，不在其他后端伪造一个同名慢路径。
 
 带 `HYLE_IO_COMPLETION_MORE` 的 token 不能回收；直到收到 MORE 清零的终止
 completion。带 `HYLE_IO_COMPLETION_BUFFER` 时 `buffer_id` 有效，每个取得的
@@ -97,13 +132,19 @@ hyle_io_shared_memory_flush(owner);
 
 hyle_io_shared_memory_destroy(peer);
 hyle_io_shared_memory_destroy(owner);
-hyle_io_shared_memory_unlink(name);
+hyle_status unlink_status = hyle_io_shared_memory_unlink(name);
+if (!hyle_status_is_ok(unlink_status)) {
+    /* Windows: HYLE_STATUS_UNIMPLEMENTED; see lifecycle note below. */
+}
+hyle_status_free(&unlink_status);
 ```
 
 create 是排他的；open 映射完整对象。POSIX 的 unlink 删除名字但不破坏已有
-mapping；Windows 对象在最后一个 handle 关闭后自动消失。当前 Windows
-`unlink` 是成功 no-op，不能提供 POSIX“立即移除名字”的后置条件；这是已登记的
-P0 契约缺口，修复前不要依赖其返回值判断名字已经消失，见
+mapping；Windows 没有同等的“立即移除名字”操作，对象在最后一个 handle
+关闭后自动消失。因此 `hyle_io_shared_memory_unlink()` 返回 owning
+`hyle_status`：POSIX 成功为 OK，Windows 稳定返回
+`HYLE_STATUS_UNIMPLEMENTED`，不再以成功 no-op 误导调用方。所有返回的 status
+都要调用 `hyle_status_free()`（OK 不分配，但统一释放最省心）。能力边界见
 [`io-capability-fill-list.md`](../milestones/io-capability-fill-list.md)。
 指针只在本进程有效，跨进程协议必须存 offset/POD，不能存裸指针。
 默认工厂用 `hyle_system_allocator()` 保存 opaque handle；需要由宿主 allocator

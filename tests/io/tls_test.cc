@@ -10,7 +10,9 @@
 #include <openssl/ssl.h>  // SSL_CTX_set_verify (client skips verify for self-signed)
 
 #include "hyle/io/http.h"
-#include "hyle/io/http2.h"
+#if defined(HYLE_IO_HTTP2)
+#  include "hyle/io/http2.h"
+#endif
 #include "hyle/io/io_context.h"
 #include "hyle/io/tcp.h"
 #include "hyle/io/tls.h"
@@ -27,8 +29,10 @@
 
 using hyle::io::IoContext;
 using hyle::io::HttpClientConn;
+#if defined(HYLE_IO_HTTP2)
 using hyle::io::Http2ClientConn;
 using hyle::io::Http2ServerConn;
+#endif
 using hyle::io::HttpResponse;
 using hyle::io::HttpServerConn;
 using hyle::io::resolve_addr;
@@ -324,6 +328,7 @@ TEST(IoTls, HttpRunsOverTlsTransport) {
   EXPECT_STREQ(result->body, "https-ok");
 }
 
+#if defined(HYLE_IO_HTTP2)
 namespace {
 Task<int> h2_tls_server(Allocator alloc, TcpListener* listener,
                         TlsContext* context, HttpsResult* result) {
@@ -421,3 +426,4 @@ TEST(IoTls, Http2RunsOverNegotiatedTlsTransport) {
   EXPECT_EQ(result->status.load(), 207);
   EXPECT_STREQ(result->body, "h2-tls-ok");
 }
+#endif

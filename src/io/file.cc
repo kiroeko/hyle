@@ -126,9 +126,11 @@ std::int64_t file_sync_sync(std::intptr_t fd, bool) noexcept {
   return ::FlushFileBuffers(reinterpret_cast<HANDLE>(fd)) ? 0 : os_error();
 }
 
-std::int64_t file_allocate_sync(std::intptr_t fd, std::uint32_t,
+std::int64_t file_allocate_sync(std::intptr_t fd, std::uint32_t mode,
                                 std::uint64_t offset,
                                 std::uint64_t len) noexcept {
+  if (mode != 0)
+    return -static_cast<std::int64_t>(ERROR_NOT_SUPPORTED);
   constexpr auto kMaxOffset =
       static_cast<std::uint64_t>((std::numeric_limits<LONGLONG>::max)());
   if (len > kMaxOffset || offset > kMaxOffset - len) {
@@ -224,9 +226,10 @@ std::int64_t file_sync_sync(std::intptr_t fd, bool datasync) noexcept {
   return result == 0 ? 0 : os_error();
 }
 
-std::int64_t file_allocate_sync(std::intptr_t fd, std::uint32_t,
+std::int64_t file_allocate_sync(std::intptr_t fd, std::uint32_t mode,
                                 std::uint64_t offset,
                                 std::uint64_t len) noexcept {
+  if (mode != 0) return -ENOTSUP;
   if (len > static_cast<std::uint64_t>((std::numeric_limits<off_t>::max)()) ||
       offset >
           static_cast<std::uint64_t>((std::numeric_limits<off_t>::max)()) -

@@ -84,6 +84,12 @@ static_assert(static_cast<unsigned>(HYLE_IO_OPEN_APPEND) ==
 static_assert(HYLE_IO_WAKE_TOKEN == hyle::io::Proactor::kWakeToken);
 static_assert(HYLE_IO_DATAGRAM_SCRATCH_SIZE ==
               hyle::io::Proactor::kDatagramScratch);
+static_assert(std::is_standard_layout_v<hyle_io_capabilities>);
+static_assert(std::is_trivially_copyable_v<hyle_io_capabilities>);
+static_assert(offsetof(hyle_io_capabilities, struct_size) == 0);
+static_assert(std::is_standard_layout_v<hyle_io_uring_extension>);
+static_assert(std::is_trivially_copyable_v<hyle_io_uring_extension>);
+static_assert(sizeof(hyle_io_uring_extension) == sizeof(void*));
 static_assert(std::is_same_v<hyle_io_file_stat,
                              hyle::io::Proactor::FileStat>);
 
@@ -108,6 +114,34 @@ int submit(hyle_io_proactor* p, std::uint64_t token, Fn&& fn) noexcept {
   if (!valid_token(token)) return 0;
   if (!fn(p->value)) {
     set_error("operation could not be submitted");
+    return 0;
+  }
+  clear_error();
+  return 1;
+}
+
+hyle::io::IoUringExtension checked_uring(
+    hyle_io_uring_extension extension) noexcept {
+  auto* p = static_cast<hyle_io_proactor*>(extension.proactor);
+  if (p == nullptr || !p->value.valid()) {
+    set_error("io_uring extension is null or its proactor is invalid");
+    return {};
+  }
+  auto uring = p->value.io_uring_extension();
+  if (!uring) {
+    set_error("proactor is not using the io_uring backend");
+    return {};
+  }
+  return uring;
+}
+
+template <class Fn>
+int submit_uring(hyle_io_uring_extension extension, std::uint64_t token,
+                 Fn&& fn) noexcept {
+  auto uring = checked_uring(extension);
+  if (!uring || !valid_token(token)) return 0;
+  if (!fn(uring)) {
+    set_error("io_uring operation could not be submitted");
     return 0;
   }
   clear_error();
@@ -182,6 +216,13 @@ int hyle_io_proactor_in_flight(const hyle_io_proactor* p) {
 
 hyle_io_backend hyle_io_proactor_backend(const hyle_io_proactor* p) {
   return p != nullptr ? p->value.backend_kind() : HYLE_IO_BACKEND_NONE;
+}
+
+hyle_io_capabilities hyle_io_proactor_capabilities(
+    const hyle_io_proactor* p) {
+  if (p != nullptr) return p->value.capabilities();
+  return hyle_io_capabilities{sizeof(hyle_io_capabilities),
+                              HYLE_IO_BACKEND_NONE, 0};
 }
 
 const char* hyle_io_backend_name(hyle_io_backend backend) {
@@ -379,106 +420,126 @@ int hyle_io_submit_cancel(hyle_io_proactor* p, uint64_t target,
   });
 }
 
-int hyle_io_register_buffer_ring(hyle_io_proactor* p, int group_id,
-                                 uint32_t entries, uint32_t buffer_size) {
-  if (p == nullptr || !p->value.valid()) {
-    set_error("proactor is null or invalid");
-    return 0;
+hyle_status hyle_io_uring_extension_get(
+    hyle_io_proactor* p, hyle_io_uring_extension* output) {
+  if (output == nullptr) {
+    return hyle_status_invalid_argument("io_uring extension output is null");
   }
-  const bool ok = p->value.register_buf_ring(group_id, entries, buffer_size);
+  output->proactor = nullptr;
+  if (p == nullptr || !p->value.valid()) {
+    return hyle_status_invalid_argument("proactor is null or invalid");
+  }
+  if (!p->value.io_uring_extension()) {
+    return hyle_status_unimplemented(
+        "the selected I/O backend is not io_uring");
+  }
+  output->proactor = p;
+  clear_error();
+  return hyle_status_ok();
+}
+
+int hyle_io_uring_register_buffer_ring(hyle_io_uring_extension extension,
+                                       int group_id, uint32_t entries,
+                                       uint32_t buffer_size) {
+  auto uring = checked_uring(extension);
+  if (!uring) return 0;
+  const bool ok =
+      uring.register_buffer_ring(group_id, entries, buffer_size);
   if (ok) clear_error();
-  else set_error("buffer ring is unsupported or registration failed");
+  else set_error("io_uring buffer-ring registration failed");
   return ok;
 }
 
-int hyle_io_register_file_table(hyle_io_proactor* p, uint32_t entries) {
-  if (p == nullptr || !p->value.valid()) {
-    set_error("proactor is null or invalid");
-    return 0;
-  }
-  const bool ok = p->value.register_file_table(entries);
+int hyle_io_uring_register_file_table(hyle_io_uring_extension extension,
+                                      uint32_t entries) {
+  auto uring = checked_uring(extension);
+  if (!uring) return 0;
+  const bool ok = uring.register_file_table(entries);
   if (ok) clear_error();
-  else set_error("fixed-file table is unsupported or registration failed");
+  else set_error("io_uring fixed-file table registration failed");
   return ok;
 }
 
-int hyle_io_assign_fixed_file(hyle_io_proactor* p, intptr_t fd) {
-  if (p == nullptr || !p->value.valid()) {
-    set_error("proactor is null or invalid");
-    return -1;
-  }
-  const int slot = p->value.assign_fixed_slot(fd);
+int hyle_io_uring_assign_fixed_file(hyle_io_uring_extension extension,
+                                    intptr_t fd) {
+  auto uring = checked_uring(extension);
+  if (!uring) return -1;
+  const int slot = uring.assign_fixed_file(fd);
   if (slot >= 0) clear_error();
-  else set_error("fixed-file assignment is unsupported or the table is full");
+  else set_error("io_uring fixed-file table is full or not registered");
   return slot;
 }
 
-void hyle_io_release_fixed_file(hyle_io_proactor* p, int slot) {
-  if (p != nullptr && p->value.valid()) p->value.release_fixed_slot(slot);
+int hyle_io_uring_release_fixed_file(hyle_io_uring_extension extension,
+                                     int slot) {
+  auto uring = checked_uring(extension);
+  if (!uring) return 0;
+  const bool ok = uring.release_fixed_file(slot);
+  if (ok) clear_error();
+  else set_error("io_uring fixed-file slot is invalid or release failed");
+  return ok;
 }
 
-int hyle_io_submit_recv_fixed(hyle_io_proactor* p, int slot, void* buffer,
-                              uint32_t length, uint32_t flags,
-                              uint64_t token) {
+int hyle_io_uring_submit_recv_fixed(hyle_io_uring_extension extension,
+                                    int slot, void* buffer, uint32_t length,
+                                    uint32_t flags, uint64_t token) {
   if (length != 0 && buffer == nullptr) {
     set_error("receive buffer is null");
     return 0;
   }
-  return submit(p, token, [&](auto& x) {
+  return submit_uring(extension, token, [&](auto& x) {
     return x.submit_recv_fixed(slot, buffer, length, flags, token);
   });
 }
 
-int hyle_io_submit_send_fixed(hyle_io_proactor* p, int slot,
-                              const void* buffer, uint32_t length,
-                              uint32_t flags, uint64_t token) {
+int hyle_io_uring_submit_send_fixed(hyle_io_uring_extension extension,
+                                    int slot, const void* buffer,
+                                    uint32_t length, uint32_t flags,
+                                    uint64_t token) {
   if (length != 0 && buffer == nullptr) {
     set_error("send buffer is null");
     return 0;
   }
-  return submit(p, token, [&](auto& x) {
+  return submit_uring(extension, token, [&](auto& x) {
     return x.submit_send_fixed(slot, buffer, length, flags, token);
   });
 }
 
-int hyle_io_submit_accept_direct(hyle_io_proactor* p, intptr_t fd,
-                                 uint64_t token) {
-  return submit(p, token,
+int hyle_io_uring_submit_accept_direct(hyle_io_uring_extension extension,
+                                       intptr_t fd, uint64_t token) {
+  return submit_uring(extension, token,
                 [&](auto& x) { return x.submit_accept_direct(fd, token); });
 }
 
-int hyle_io_submit_close_direct(hyle_io_proactor* p, int slot,
-                                uint64_t token) {
-  return submit(p, token,
+int hyle_io_uring_submit_close_direct(hyle_io_uring_extension extension,
+                                      int slot, uint64_t token) {
+  return submit_uring(extension, token,
                 [&](auto& x) { return x.submit_close_direct(slot, token); });
 }
 
-int hyle_io_submit_recv_multishot(hyle_io_proactor* p, intptr_t fd,
-                                  int group_id, uint64_t token) {
-  return submit(p, token, [&](auto& x) {
+int hyle_io_uring_submit_recv_multishot(hyle_io_uring_extension extension,
+                                        intptr_t fd, int group_id,
+                                        uint64_t token) {
+  return submit_uring(extension, token, [&](auto& x) {
     return x.submit_recv_multishot(fd, group_id, token);
   });
 }
 
-void* hyle_io_buffer_address(hyle_io_proactor* p, int group_id,
-                             uint32_t buffer_id) {
-  if (p == nullptr || !p->value.valid()) {
-    set_error("proactor is null or invalid");
-    return nullptr;
-  }
-  void* address = p->value.buf_ring_addr(group_id, buffer_id);
+void* hyle_io_uring_buffer_address(hyle_io_uring_extension extension,
+                                   int group_id, uint32_t buffer_id) {
+  auto uring = checked_uring(extension);
+  if (!uring) return nullptr;
+  void* address = uring.buffer_address(group_id, buffer_id);
   if (address != nullptr) clear_error();
   else set_error("buffer ring or buffer id is invalid");
   return address;
 }
 
-int hyle_io_buffer_return(hyle_io_proactor* p, int group_id,
-                          uint32_t buffer_id) {
-  if (p == nullptr || !p->value.valid()) {
-    set_error("proactor is null or invalid");
-    return 0;
-  }
-  const bool ok = p->value.buf_ring_return(group_id, buffer_id);
+int hyle_io_uring_buffer_return(hyle_io_uring_extension extension,
+                                int group_id, uint32_t buffer_id) {
+  auto uring = checked_uring(extension);
+  if (!uring) return 0;
+  const bool ok = uring.return_buffer(group_id, buffer_id);
   if (ok) clear_error();
   else set_error("buffer ring or buffer id is invalid");
   return ok;
@@ -607,13 +668,13 @@ int hyle_io_shared_memory_flush(hyle_io_shared_memory* memory) {
   return 1;
 }
 
-int hyle_io_shared_memory_unlink(const char* name) {
-  if (!hyle::io::SharedMemory::unlink(name)) {
+hyle_status hyle_io_shared_memory_unlink(const char* name) {
+  hyle::Status status = hyle::io::SharedMemory::unlink(name);
+  if (status.ok())
+    clear_error();
+  else
     set_error("shared memory unlink failed");
-    return 0;
-  }
-  clear_error();
-  return 1;
+  return hyle_status{status.release_rep()};
 }
 
 }  // extern "C"

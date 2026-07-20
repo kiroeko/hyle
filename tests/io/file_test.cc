@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -99,7 +100,7 @@ Task<int> open_missing_coro(Allocator, IoContext* io, FileResult* r) {
 
 // Preallocate 4096 bytes, then stat must report the file is at least that big.
 Task<int> fallocate_coro(Allocator, IoContext* io, const char* path,
-                         FileResult* r) {
+                         FileResult* r, std::uint32_t mode) {
   File f = co_await open_file(*io, kOwner, path,
                               Proactor::kRead | Proactor::kWrite |
                                   Proactor::kCreate | Proactor::kTruncate);
@@ -108,7 +109,7 @@ Task<int> fallocate_coro(Allocator, IoContext* io, const char* path,
     co_return 0;
   }
   r->opened.store(true, std::memory_order_release);
-  std::int64_t alloc_rc = co_await f.allocate(0, 4096);
+  std::int64_t alloc_rc = co_await f.allocate(0, 4096, mode);
   r->wrote.store(alloc_rc, std::memory_order_release);  // reuse: alloc rc
   Proactor::FileStat st;
   r->stat_rc.store(co_await f.stat(&st), std::memory_order_release);
@@ -180,7 +181,8 @@ TEST(IoFile, FallocateExtends) {
   std::string path = temp_path();
   auto r = std::make_unique<FileResult>();
   auto d = std::make_unique<Drive>();
-  d->task = fallocate_coro(system_allocator(), &io, path.c_str(), r.get());
+  d->task =
+      fallocate_coro(system_allocator(), &io, path.c_str(), r.get(), 0);
   Fiber f(kDefaultStackSize, &drive_entry, d.get());
   sched.spawn_on(kOwner, &f);
   sched.drain();
@@ -193,4 +195,35 @@ TEST(IoFile, FallocateExtends) {
   EXPECT_EQ(r->wrote.load(), 0);  // fallocate succeeded
   EXPECT_EQ(r->stat_rc.load(), 0);
   EXPECT_GE(r->stat_size.load(), static_cast<std::uint64_t>(4096));
+}
+
+// Linux-specific fallocate flags are not part of the portable facade. Native
+// io_uring may expose them through its extension leg, but IOCP/epoll/kqueue must
+// reject rather than silently execute mode=0 and report success.
+TEST(IoFile, NonzeroAllocationModeIsNotSilentlyIgnored) {
+#if defined(__linux__)
+  ::setenv("HYLE_IO_FORCE_EPOLL", "1", 1);
+#endif
+  constexpr unsigned kWorkers = 1;
+  Scheduler sched(kWorkers, system_allocator(), 256);
+  IoContext io(sched, kWorkers);
+#if defined(__linux__)
+  ::unsetenv("HYLE_IO_FORCE_EPOLL");
+#endif
+  ASSERT_TRUE(io.valid());
+
+  std::string path = temp_path();
+  auto r = std::make_unique<FileResult>();
+  auto d = std::make_unique<Drive>();
+  d->task =
+      fallocate_coro(system_allocator(), &io, path.c_str(), r.get(), 1);
+  Fiber f(kDefaultStackSize, &drive_entry, d.get());
+  sched.spawn_on(kOwner, &f);
+  sched.drain();
+  sched.shutdown();
+
+  std::remove(path.c_str());
+  EXPECT_TRUE(r->done.load());
+  EXPECT_TRUE(r->opened.load());
+  EXPECT_LT(r->wrote.load(), 0);
 }

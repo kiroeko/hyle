@@ -15,7 +15,7 @@
 
 ## 核心决策
 - **对上一套统一 co_await 契约，三后端差异藏在 proactor**：
-  - **io_uring**：`openat/close/fsync/fallocate` 真异步 SQE（`submit_one` 通用填 opcode/fd/addr/len/off/flags）。**fallocate 字段映射反直觉**——addr=len·len=mode·off=offset，照 liburing `io_uring_prep_fallocate` 核对。`statx` 走同步 fstat + posted 合成（元数据查询不碰磁盘，不烧 SQE；in_flight 兼查 posted 防 hang）。
+  - **io_uring**：`openat/close/fsync/fallocate` 真异步 SQE（`submit_one` 通用填 opcode/fd/addr/len/off/flags）。**fallocate 字段映射反直觉**——addr=len·len=mode·off=offset，照 liburing `io_uring_prep_fallocate` 核对。初版 `statx` 曾走同步 fstat + posted；2026-07-20 已改成真实 `IORING_OP_STATX`，稳定 native storage 在 CQE 时转换为公共 POD。
   - **IOCP**：全同步执行 + `iocp_post_meta` 合成（`kFileMeta` IoOp 带 64 位 `syn_result`——open 返 HANDLE 不被 post 的 DWORD 截断；FILETIME→ns epoch 换算；reap 认 kind 跳过 `GetOverlappedResult`）。
   - **epoll**：全同步 + posted；regular-file 的 `submit_read/write` 因 `epoll_ctl` 返 EPERM 回退**同步 pwrite/pread（尊重 offset）** + posted（epoll 不能异步 regular file，tokio 同理线程池卸载）。
 - **中性 `FileStat`**：size/mtime_ns/mode/is_dir——跨平台交集，两后端都填得出的 statx 子集（一个文件服务器需要的）。

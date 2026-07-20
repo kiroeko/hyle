@@ -5,6 +5,7 @@
 
 #include "hyle/c/io.h"
 #include "hyle/macros.h"
+#include "hyle/platform.h"
 #include "hyle/visibility.h"
 
 #if defined(HYLE_STATIC)
@@ -35,6 +36,9 @@
 namespace hyle::io {
 
 using BackendKind = hyle_io_backend;
+using ProactorCapabilities = hyle_io_capabilities;
+
+class IoUringExtension;
 
 // A finished operation handed back by the proactor. `user_data` is the exact
 // 64-bit value the submitter attached (typically a Waker pointer / id, cast to
@@ -53,6 +57,8 @@ using BackendKind = hyle_io_backend;
 //     recv); IORING_CQE_F_BUFFER, id in the high bits. Surfaced so net/ can
 //     recover which buffer without a side table.
 // Backends that lack a notion (IOCP) just leave flags 0 / buffer_id 0.
+// user_data must identify one concurrently in-flight operation; multishot is the
+// deliberate exception where one operation emits multiple CQEs with its token.
 struct Completion {
   std::uint64_t user_data = 0;
   std::int64_t result = 0;
@@ -95,8 +101,17 @@ class Proactor {
                         bool defer_worker_thread = false) noexcept;
   HYLE_IO_API BackendKind backend_kind() const noexcept;
   HYLE_IO_API const char* backend_name() const noexcept;
+  // Bits describe the selected backend/extension surface, not a guarantee that
+  // the running kernel will accept every optional registration or operation.
+  HYLE_IO_API ProactorCapabilities capabilities() const noexcept;
   HYLE_IO_API bool has_async_file_data() const noexcept;
   HYLE_IO_API bool has_async_file_metadata() const noexcept;
+  // Borrow the Linux io_uring acceleration surface. The returned handle is
+  // invalid when this proactor selected IOCP/epoll/kqueue (or is uninitialized);
+  // portable code should use capabilities() and the ordinary methods above.
+  // Unlike the old public methods, an unsupported platform cannot accidentally
+  // call an io_uring-only operation and mistake a sentinel/no-op for support.
+  IoUringExtension io_uring_extension() noexcept;
 
   // ---- submit real IO ops (io-02) -------------------------------------------
   // Queue a read/write of `len` bytes on `fd` at file `offset` (offset ignored
@@ -222,12 +237,11 @@ class Proactor {
   HYLE_IO_API bool submit_close(std::intptr_t fd,
                                 std::uint64_t user_data) noexcept;
   // Stat `fd` into `*out` (caller-owned; MUST outlive the completion). Result 0 or
-  // negative errno. The current low-level implementation performs the metadata
-  // query synchronously and synthesizes a completion on every backend (Linux uses
-  // fstat today; it does NOT yet issue IORING_OP_STATX). The ordinary File facade
-  // offloads this work to its blocking pool so a scheduler worker is not blocked;
-  // raw Proactor/C callers must inspect has_async_file_metadata(), which currently
-  // returns false on every backend.
+  // negative errno. io_uring issues a real IORING_OP_STATX and converts its native
+  // result to this POD before delivery. IOCP/epoll/kqueue synthesize a completion
+  // from a synchronous metadata query; the ordinary File facade offloads those
+  // paths so a scheduler worker is not blocked. Raw Proactor/C callers can inspect
+  // has_async_file_metadata() or the capability bit.
   HYLE_IO_API bool submit_statx(std::intptr_t fd, FileStat* out,
                                 std::uint64_t user_data) noexcept;
   // Flush `fd`'s data to disk. `datasync` = fdatasync (data only, skip metadata) vs
@@ -265,84 +279,6 @@ class Proactor {
   // (e.g. it already completed) -- a false is benign (nothing to cancel).
   HYLE_IO_API bool submit_cancel(std::uint64_t target_user_data,
                                  std::uint64_t cancel_user_data) noexcept;
-
-  // ---- provided buffer ring + multishot recv (io-07b, kBuffer half) ---------
-  // Register a kernel-shared buffer ring of `nentries` (rounded up to a power of
-  // two) buffers of `buf_size` bytes each, under group id `bgid`. The proactor
-  // owns the backing pool; the kernel picks a buffer per multishot-recv arrival
-  // and reports its id in the completion (Completion::kBuffer + buffer_id). io_uring
-  // only (returns false on IOCP/epoll -- no equivalent; net/ falls back to a
-  // pre-posted-buffer recv there). Call once before submit_recv_multishot. Returns
-  // false if unsupported or the register/mmap failed.
-  HYLE_IO_API bool register_buf_ring(int bgid, unsigned nentries,
-                                     unsigned buf_size) noexcept;
-
-  // ---- registered (fixed) files (io-07c) ------------------------------------
-  // Register a SPARSE fixed-file table of `nr` slots (all initially empty). A socket
-  // placed in a slot can then be referenced by its SLOT INDEX in submit_recv_fixed/
-  // submit_send_fixed with IOSQE_FIXED_FILE, which skips the kernel's per-op fd
-  // refcount+lookup (fget/fput) -- a small per-op saving that matters at high op
-  // rates / many concurrent sockets. io_uring only (IORING_REGISTER_FILES2 sparse);
-  // returns false on IOCP/epoll or old kernels. Call once before assign_fixed_slot.
-  HYLE_IO_API bool register_file_table(unsigned nr) noexcept;
-
-  // Place `fd` into a free slot of the registered table; returns the slot index
-  // (>=0) or -1 if the table is full / not registered / unsupported. The caller
-  // passes that index to submit_recv_fixed/send_fixed. The RAW fd stays owned by the
-  // caller (this does NOT take ownership -- it only maps a table entry to it);
-  // release_fixed_slot frees the entry when the socket closes.
-  HYLE_IO_API int assign_fixed_slot(std::intptr_t fd) noexcept;
-
-  // Free slot `index` (clears the table entry so a future assign can reuse it). The
-  // caller must ensure no in-flight fixed op still references it (same drain-to-
-  // completion contract as a raw fd close). No-op on non-uring backends.
-  HYLE_IO_API void release_fixed_slot(int index) noexcept;
-
-  // recv/send on a REGISTERED file: `slot` is the index from assign_fixed_slot (NOT a
-  // raw fd). Sets IOSQE_FIXED_FILE so the kernel resolves the fd from its table. Same
-  // completion contract as submit_recv/submit_send. io_uring only; the raw-fd
-  // submit_recv/submit_send remain the portable path (net/ chooses per socket).
-  HYLE_IO_API bool submit_recv_fixed(int slot, void* buf, std::uint32_t len,
-                                     std::uint32_t flags,
-                                     std::uint64_t user_data) noexcept;
-  HYLE_IO_API bool submit_send_fixed(int slot, const void* buf, std::uint32_t len,
-                                     std::uint32_t flags,
-                                     std::uint64_t user_data) noexcept;
-
-  // Direct accept (io-07c step 2): accept a connection on listening `fd` and place it
-  // DIRECTLY into a free registered-file slot (IORING_FILE_INDEX_ALLOC) -- the accepted
-  // connection is an io_uring "direct descriptor", NEVER a process fd. The completion
-  // result is the ALLOCATED SLOT INDEX (>=0) or a negative errno. Subsequent recv/send
-  // use submit_recv_fixed/send_fixed with that slot; teardown is submit_close_direct
-  // (NOT ::close). Requires a registered file table. io_uring only (returns false on
-  // IOCP/epoll -- callers fall back to submit_accept + a raw-fd TcpStream there).
-  HYLE_IO_API bool submit_accept_direct(std::intptr_t fd,
-                                        std::uint64_t user_data) noexcept;
-
-  // Close a DIRECT descriptor by slot index (IORING_OP_CLOSE with file_index). The
-  // completion result is 0 or negative errno. Frees the kernel table entry; the caller
-  // still calls release_fixed_slot to reclaim the local slot bookkeeping. io_uring only.
-  HYLE_IO_API bool submit_close_direct(int slot, std::uint64_t user_data) noexcept;
-
-  // Multishot recv on `fd`, drawing buffers from group `bgid`'s ring: ONE submit
-  // yields a completion per datagram/segment received (kMore SET while armed),
-  // each carrying the kernel-selected buffer via Completion::kBuffer + buffer_id
-  // and `result` bytes. NO caller buffer is passed -- the kernel picks one. Read
-  // the bytes at buf_ring_addr(buffer_id), then RETURN it with buf_ring_return so
-  // the ring doesn't starve. A completion with kMore CLEAR is terminal (recv ended
-  // -- peer closed, error, or buffers exhausted with IORING_CQE_F_BUF_MORE clear).
-  // io_uring only. `user_data` returns verbatim on every completion.
-  HYLE_IO_API bool submit_recv_multishot(std::intptr_t fd, int bgid,
-                                         std::uint64_t user_data) noexcept;
-
-  // Base address of buffer `buffer_id` in group `bgid`'s pool (where a kBuffer
-  // completion's bytes live). Valid until buf_ring_return recycles it.
-  HYLE_IO_API void* buf_ring_addr(int bgid, std::uint32_t buffer_id) noexcept;
-
-  // Hand buffer `buffer_id` back to group `bgid`'s ring after consuming its bytes,
-  // so the kernel can reuse it for a future recv. Must be called for every kBuffer
-  // completion or the ring runs dry and multishot recv stops delivering.
-  HYLE_IO_API bool buf_ring_return(int bgid, std::uint32_t buffer_id) noexcept;
 
   // Reap up to `max` finished operations into `out` (caller-provided array),
   // returning how many were written. `timeout_ns` bounds the wait: 0 = poll and
@@ -392,6 +328,34 @@ class Proactor {
   bool valid() const noexcept { return impl_ != nullptr; }
 
  private:
+  friend class IoUringExtension;
+
+  // Backend primitives used only through IoUringExtension. Keeping them private
+  // prevents the portable surface from advertising Linux-only facilities.
+#if defined(HYLE_OS_LINUX)
+  HYLE_IO_API bool register_buf_ring(int bgid, unsigned nentries,
+                                     unsigned buf_size) noexcept;
+  HYLE_IO_API bool register_file_table(unsigned nr) noexcept;
+  HYLE_IO_API int assign_fixed_slot(std::intptr_t fd) noexcept;
+  HYLE_IO_API bool release_fixed_slot(int index) noexcept;
+  HYLE_IO_API bool submit_recv_fixed(int slot, void* buf, std::uint32_t len,
+                                     std::uint32_t flags,
+                                     std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_send_fixed(int slot, const void* buf, std::uint32_t len,
+                                     std::uint32_t flags,
+                                     std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_accept_direct(std::intptr_t fd,
+                                        std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_close_direct(int slot,
+                                       std::uint64_t user_data) noexcept;
+  HYLE_IO_API bool submit_recv_multishot(std::intptr_t fd, int bgid,
+                                         std::uint64_t user_data) noexcept;
+  HYLE_IO_API void* buf_ring_addr(int bgid,
+                                  std::uint32_t buffer_id) noexcept;
+  HYLE_IO_API bool buf_ring_return(int bgid,
+                                   std::uint32_t buffer_id) noexcept;
+#endif
+
   struct Impl;
   // Backend init + epoll-arm helpers need to touch the private Impl, so they are
   // private statics (defined per-OS in proactor.cc) rather than free functions
@@ -407,7 +371,8 @@ class Proactor {
   // offset for the regular-file synchronous-fallback path (EPERM); 0 for sockets.
   static bool epoll_arm_dgram(Impl* impl, int fd, unsigned events,
                               unsigned char opcode, void* buf, unsigned len,
-                              void* addr, unsigned addr_cap,
+                              void* addr, unsigned addr_cap, void* addrlen,
+                              unsigned flags,
                               std::uint64_t user_data,
                               std::uint64_t offset = 0) noexcept;
   // IOCP only: arm one AcceptEx on listener `fd` (shared by submit_accept, its
@@ -415,6 +380,7 @@ class Proactor {
   // names the private Impl. `multishot` is stamped on the IoOp so reap re-arms +
   // stamps kMore. Defined only in the Windows branch of proactor.cc.
   static bool iocp_arm_accept(Impl* impl, std::intptr_t fd,
+                              void* addr, void* addrlen,
                               std::uint64_t user_data, bool multishot) noexcept;
   // IOCP only (io-05): synthesize a completion carrying an already-computed 64-bit
   // result for a file metadata op run synchronously (open/close/statx/fsync/
@@ -425,5 +391,133 @@ class Proactor {
 
   Impl* impl_ = nullptr;  // backend state (IOCP port / io_uring ring), pimpl
 };
+
+// Explicit Linux io_uring acceleration track. This is a borrowed, non-owning
+// view: it is valid only while its Proactor is alive. Its presence proves that
+// the runtime actually selected io_uring; failures from these methods therefore
+// mean invalid arguments/resource/kernel-version limits, never "wrong platform".
+class IoUringExtension {
+ public:
+  IoUringExtension() noexcept = default;
+
+  bool valid() const noexcept { return proactor_ != nullptr; }
+  explicit operator bool() const noexcept { return valid(); }
+  Proactor* proactor() const noexcept { return proactor_; }
+
+  bool register_buffer_ring(int group_id, unsigned entries,
+                            unsigned buffer_size) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() &&
+           proactor_->register_buf_ring(group_id, entries, buffer_size);
+#else
+    (void)group_id; (void)entries; (void)buffer_size;
+    return false;
+#endif
+  }
+  bool register_file_table(unsigned entries) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() && proactor_->register_file_table(entries);
+#else
+    (void)entries;
+    return false;
+#endif
+  }
+  int assign_fixed_file(std::intptr_t fd) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() ? proactor_->assign_fixed_slot(fd) : -1;
+#else
+    (void)fd;
+    return -1;
+#endif
+  }
+  bool release_fixed_file(int slot) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() && proactor_->release_fixed_slot(slot);
+#else
+    (void)slot;
+    return false;
+#endif
+  }
+  bool submit_recv_fixed(int slot, void* buffer, std::uint32_t length,
+                         std::uint32_t flags,
+                         std::uint64_t user_data) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() && proactor_->submit_recv_fixed(
+                          slot, buffer, length, flags, user_data);
+#else
+    (void)slot; (void)buffer; (void)length; (void)flags; (void)user_data;
+    return false;
+#endif
+  }
+  bool submit_send_fixed(int slot, const void* buffer, std::uint32_t length,
+                         std::uint32_t flags,
+                         std::uint64_t user_data) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() && proactor_->submit_send_fixed(
+                          slot, buffer, length, flags, user_data);
+#else
+    (void)slot; (void)buffer; (void)length; (void)flags; (void)user_data;
+    return false;
+#endif
+  }
+  bool submit_accept_direct(std::intptr_t fd,
+                            std::uint64_t user_data) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() && proactor_->submit_accept_direct(fd, user_data);
+#else
+    (void)fd; (void)user_data;
+    return false;
+#endif
+  }
+  bool submit_close_direct(int slot,
+                           std::uint64_t user_data) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() && proactor_->submit_close_direct(slot, user_data);
+#else
+    (void)slot; (void)user_data;
+    return false;
+#endif
+  }
+  bool submit_recv_multishot(std::intptr_t fd, int group_id,
+                             std::uint64_t user_data) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() &&
+           proactor_->submit_recv_multishot(fd, group_id, user_data);
+#else
+    (void)fd; (void)group_id; (void)user_data;
+    return false;
+#endif
+  }
+  void* buffer_address(int group_id,
+                       std::uint32_t buffer_id) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() ? proactor_->buf_ring_addr(group_id, buffer_id) : nullptr;
+#else
+    (void)group_id; (void)buffer_id;
+    return nullptr;
+#endif
+  }
+  bool return_buffer(int group_id, std::uint32_t buffer_id) const noexcept {
+#if defined(HYLE_OS_LINUX)
+    return valid() && proactor_->buf_ring_return(group_id, buffer_id);
+#else
+    (void)group_id; (void)buffer_id;
+    return false;
+#endif
+  }
+
+ private:
+  friend class Proactor;
+  explicit IoUringExtension(Proactor* proactor) noexcept
+      : proactor_(proactor) {}
+
+  Proactor* proactor_ = nullptr;
+};
+
+inline IoUringExtension Proactor::io_uring_extension() noexcept {
+  return backend_kind() == HYLE_IO_BACKEND_IO_URING
+             ? IoUringExtension(this)
+             : IoUringExtension();
+}
 
 }  // namespace hyle::io

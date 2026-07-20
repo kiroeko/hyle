@@ -5,18 +5,18 @@
 IO 已完成本轮实现与红队收口：后端、普通 C++ 产品腿、低层 C ABI、协议安全和
 benchmark 计量正确性均已补齐。Windows IOCP、Linux io_uring+forced epoll、
 macOS kqueue 各 14/14 IO test 全绿；当前不再有已知 P0 内存安全/挂死阻断，
-但 portable 契约仍有下述 capability P0。尚不能宣称
+2026-07-20 的 stub/capability P0 也已收口。尚不能宣称
 “跨平台 SOTA”：新 harness 的三平台证书已经完成，但证实 M4 TLS/kqueue
 多 worker、三平台 TLS handshake 仍有性能尾，而且 file/UDP/DNS/cancel/timeout
 尚缺专项 peer benchmark。
 HTTP/TLS 高层 C facade 与 whole-request deadline 属于已明确登记的产品尾项，
 不影响低层机制完整，但发布承诺必须继续诚实标注。
 
-进一步的 stub/no-op 审计发现 portable Proactor 仍有静默忽略项，而且 11 个
-io_uring 专属机制被放在通用接口后由其他后端恒定失败。逐项证据、合法的
-`StatusCode::Unimplemented` error 腿和补全顺序见
-[`io-capability-fill-list.md`](./io-capability-fill-list.md)。因此这里的状态应
-读作“主干正确性收口、capability closure 继续”，不是没有行为缺口的冻结。
+后续 stub/no-op 审计发现的问题已经修复：socket flags、accept peer address、
+allocation mode、Windows shmem unlink 均不再静默改变语义；11 个 io_uring
+机制已移到显式 extension，Linux STATX 也已成为真实异步 SQE。逐项证据和仍
+允许保留的显式 error 腿见
+[`io-capability-fill-list.md`](./io-capability-fill-list.md)。
 
 ## 本轮已修
 

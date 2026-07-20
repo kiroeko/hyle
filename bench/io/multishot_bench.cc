@@ -127,8 +127,9 @@ Task<int> sender(Allocator, Shared* s) {
 
 // ---- receiver: multishot ----
 Task<int> recv_multishot(Allocator alloc, Shared* s) {
-  auto stream = MultishotRecvStream{&s->io->proactor_for_current(), s->recv_fd,
-                                    kBgid, alloc};
+  auto stream = MultishotRecvStream{
+      s->io->proactor_for_current().io_uring_extension(), s->recv_fd, kBgid,
+      alloc};
   while (s->received < kMsgs) {
     RecvBuf b = co_await stream.next();
     if (b.size() > 0) ++s->received;
@@ -160,7 +161,8 @@ int run(bool use_multishot) {
   if (use_multishot) {
     // ONE ring shared by the single receiver. Enough buffers for a full window in
     // flight + headroom.
-    if (!io.proactor(0).register_buf_ring(kBgid, 1024, kMsgLen)) {
+    auto uring = io.proactor(0).io_uring_extension();
+    if (!uring || !uring.register_buffer_ring(kBgid, 1024, kMsgLen)) {
       close_pair(p);
       sched.shutdown();
       return -1;  // non-uring backend / old kernel: skip

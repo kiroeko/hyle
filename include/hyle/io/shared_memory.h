@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hyle/error/status.h"
 #include "hyle/macros.h"
 #include "hyle/visibility.h"
 
@@ -31,9 +32,9 @@ class SharedMemory {
                                          std::size_t size) noexcept;
   HYLE_IO_API static SharedMemory open(const char* name) noexcept;
   // POSIX removes the name while existing mappings remain alive. Windows named
-  // mappings disappear automatically after the final handle closes, so unlink
-  // is a successful no-op there.
-  HYLE_IO_API static bool unlink(const char* name) noexcept;
+  // mappings have no equivalent unlink operation: their names disappear only
+  // after the final handle closes, so this returns Unimplemented there.
+  HYLE_IO_API static Status unlink(const char* name) noexcept;
 
   bool valid() const noexcept { return data_ != nullptr; }
   void* data() noexcept { return data_; }

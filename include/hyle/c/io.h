@@ -12,6 +12,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "hyle/c/error.h"
 #include "hyle/c/mem.h"
 
 #ifdef __cplusplus
@@ -43,6 +44,37 @@ typedef enum hyle_io_backend {
   HYLE_IO_BACKEND_EPOLL = 3,
   HYLE_IO_BACKEND_KQUEUE = 4
 } hyle_io_backend;
+
+/* Capability bits describe the selected backend/extension surface. They do not
+ * promise that every operation will succeed on the running kernel: registration
+ * can still fail for kernel-version, policy or resource reasons, reported by the
+ * operation's result/last_error. */
+enum {
+  HYLE_IO_CAP_NATIVE_MULTISHOT_ACCEPT = UINT64_C(1) << 0,
+  HYLE_IO_CAP_EMULATED_MULTISHOT_ACCEPT = UINT64_C(1) << 1,
+  HYLE_IO_CAP_PROVIDED_BUFFER_RING = UINT64_C(1) << 2,
+  HYLE_IO_CAP_FIXED_FILES = UINT64_C(1) << 3,
+  HYLE_IO_CAP_DIRECT_ACCEPT = UINT64_C(1) << 4,
+  HYLE_IO_CAP_ASYNC_FILE_DATA = UINT64_C(1) << 5,
+  HYLE_IO_CAP_ASYNC_FILE_METADATA = UINT64_C(1) << 6,
+  HYLE_IO_CAP_TLS = UINT64_C(1) << 7,
+  HYLE_IO_CAP_HTTP2 = UINT64_C(1) << 8
+};
+
+typedef struct hyle_io_capabilities {
+  uint32_t struct_size;
+  hyle_io_backend backend;
+  uint64_t bits;
+} hyle_io_capabilities;
+
+/* Borrowed io_uring-only acceleration handle. Obtain it with
+ * hyle_io_uring_extension_get; it becomes invalid when its proactor is
+ * destroyed. A zero value is invalid and safe to pass (operations fail). */
+typedef struct hyle_io_uring_extension {
+  void* proactor;
+} hyle_io_uring_extension;
+
+#define HYLE_IO_URING_EXTENSION_INIT {NULL}
 
 typedef struct hyle_io_proactor_options {
   uint32_t struct_size;
@@ -98,6 +130,8 @@ HYLE_IO_C_API int hyle_io_proactor_in_flight(
     const hyle_io_proactor* proactor);
 HYLE_IO_C_API hyle_io_backend hyle_io_proactor_backend(
     const hyle_io_proactor* proactor);
+HYLE_IO_C_API hyle_io_capabilities hyle_io_proactor_capabilities(
+    const hyle_io_proactor* proactor);
 HYLE_IO_C_API const char* hyle_io_backend_name(hyle_io_backend backend);
 HYLE_IO_C_API int hyle_io_has_async_file_data(
     const hyle_io_proactor* proactor);
@@ -105,8 +139,10 @@ HYLE_IO_C_API int hyle_io_has_async_file_metadata(
     const hyle_io_proactor* proactor);
 
 /* Generic descriptor/socket operations. Every successful submit produces a
- * completion with the same user_data. Buffers, paths, addresses, scratch and
- * metadata outputs must remain alive until that completion is reaped. */
+ * completion with the same user_data. user_data must be unique among concurrent
+ * operations (a multishot operation intentionally reuses its one token).
+ * Buffers, paths, addresses, scratch and metadata outputs must remain alive
+ * until that completion is reaped. */
 HYLE_IO_C_API int hyle_io_submit_read(hyle_io_proactor* proactor, intptr_t fd,
                                       void* buffer, uint32_t length,
                                       uint64_t offset, uint64_t user_data);
@@ -159,38 +195,38 @@ HYLE_IO_C_API int hyle_io_submit_cancel(hyle_io_proactor* proactor,
                                         uint64_t target_user_data,
                                         uint64_t cancel_user_data);
 
-/* Linux io_uring acceleration. Unsupported backends return 0/-1 without
- * changing the portable one-shot path. */
-HYLE_IO_C_API int hyle_io_register_buffer_ring(hyle_io_proactor* proactor,
-                                               int group_id,
-                                               uint32_t entries,
-                                               uint32_t buffer_size);
-HYLE_IO_C_API int hyle_io_register_file_table(hyle_io_proactor* proactor,
-                                              uint32_t entries);
-HYLE_IO_C_API int hyle_io_assign_fixed_file(hyle_io_proactor* proactor,
-                                            intptr_t fd);
-HYLE_IO_C_API void hyle_io_release_fixed_file(hyle_io_proactor* proactor,
-                                              int slot);
-HYLE_IO_C_API int hyle_io_submit_recv_fixed(
-    hyle_io_proactor* proactor, int slot, void* buffer, uint32_t length,
-    uint32_t flags, uint64_t user_data);
-HYLE_IO_C_API int hyle_io_submit_send_fixed(
-    hyle_io_proactor* proactor, int slot, const void* buffer, uint32_t length,
-    uint32_t flags, uint64_t user_data);
-HYLE_IO_C_API int hyle_io_submit_accept_direct(hyle_io_proactor* proactor,
-                                               intptr_t fd,
-                                               uint64_t user_data);
-HYLE_IO_C_API int hyle_io_submit_close_direct(hyle_io_proactor* proactor,
-                                              int slot,
-                                              uint64_t user_data);
-HYLE_IO_C_API int hyle_io_submit_recv_multishot(
-    hyle_io_proactor* proactor, intptr_t fd, int group_id,
+/* Explicit Linux io_uring acceleration track. Acquisition returns
+ * HYLE_STATUS_UNIMPLEMENTED when the selected runtime backend is not io_uring;
+ * callers must free a non-OK status. Once acquired, 0/-1 means an actual
+ * argument/resource/kernel-version failure, never a silent platform fallback. */
+HYLE_IO_C_API hyle_status hyle_io_uring_extension_get(
+    hyle_io_proactor* proactor, hyle_io_uring_extension* output);
+HYLE_IO_C_API int hyle_io_uring_register_buffer_ring(
+    hyle_io_uring_extension extension, int group_id, uint32_t entries,
+    uint32_t buffer_size);
+HYLE_IO_C_API int hyle_io_uring_register_file_table(
+    hyle_io_uring_extension extension, uint32_t entries);
+HYLE_IO_C_API int hyle_io_uring_assign_fixed_file(
+    hyle_io_uring_extension extension, intptr_t fd);
+HYLE_IO_C_API int hyle_io_uring_release_fixed_file(
+    hyle_io_uring_extension extension, int slot);
+HYLE_IO_C_API int hyle_io_uring_submit_recv_fixed(
+    hyle_io_uring_extension extension, int slot, void* buffer,
+    uint32_t length, uint32_t flags, uint64_t user_data);
+HYLE_IO_C_API int hyle_io_uring_submit_send_fixed(
+    hyle_io_uring_extension extension, int slot, const void* buffer,
+    uint32_t length, uint32_t flags, uint64_t user_data);
+HYLE_IO_C_API int hyle_io_uring_submit_accept_direct(
+    hyle_io_uring_extension extension, intptr_t fd, uint64_t user_data);
+HYLE_IO_C_API int hyle_io_uring_submit_close_direct(
+    hyle_io_uring_extension extension, int slot, uint64_t user_data);
+HYLE_IO_C_API int hyle_io_uring_submit_recv_multishot(
+    hyle_io_uring_extension extension, intptr_t fd, int group_id,
     uint64_t user_data);
-HYLE_IO_C_API void* hyle_io_buffer_address(hyle_io_proactor* proactor,
-                                           int group_id,
-                                           uint32_t buffer_id);
-HYLE_IO_C_API int hyle_io_buffer_return(hyle_io_proactor* proactor,
-                                        int group_id, uint32_t buffer_id);
+HYLE_IO_C_API void* hyle_io_uring_buffer_address(
+    hyle_io_uring_extension extension, int group_id, uint32_t buffer_id);
+HYLE_IO_C_API int hyle_io_uring_buffer_return(
+    hyle_io_uring_extension extension, int group_id, uint32_t buffer_id);
 
 /* Completion loop. timeout_ns: 0=poll, UINT64_MAX=wait indefinitely.
  * hyle_io_post is owner-thread-only; hyle_io_wake is cross-thread safe. */
@@ -217,7 +253,9 @@ HYLE_IO_C_API void* hyle_io_shared_memory_data(hyle_io_shared_memory* memory);
 HYLE_IO_C_API size_t hyle_io_shared_memory_size(
     const hyle_io_shared_memory* memory);
 HYLE_IO_C_API int hyle_io_shared_memory_flush(hyle_io_shared_memory* memory);
-HYLE_IO_C_API int hyle_io_shared_memory_unlink(const char* name);
+/* POSIX removes the name immediately while existing mappings survive. Windows
+ * has no equivalent operation and returns HYLE_STATUS_UNIMPLEMENTED. */
+HYLE_IO_C_API hyle_status hyle_io_shared_memory_unlink(const char* name);
 
 /* HTTP/2 protocol session (io-11).
  *

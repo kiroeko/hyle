@@ -24,7 +24,9 @@
 ## 对抗式自审（正确性 / 平台 / 残留）
 - **① 正确性**：WSL 强制 epoll 真测 pipe write/read 往返 + post 唤醒；双平台 8/8 + TSan 净。
 - **平台真机**：kqueue 在 M4 Air 真机跑 io/net/tcp/udp/file/signal/timeout/http 全绿，Linux 零回归。
-- **⑤ 残留**：io_uring 专属能力（buf_ring / fixed-files / direct-accept，见 io-07b/c）在 kqueue 上**诚实 stub false**，不假装支持。
+- **⑤ 后续收口（2026-07-20）**：io_uring 专属能力（buf_ring /
+  fixed-files / direct-accept，见 io-07b/c）已移入显式
+  `IoUringExtension`；kqueue 不再编译恒定失败的 `Proactor` stub。
 
 ## 交付物
 - `include/hyle/io/proactor.h`（后端无关签名不变；`try_init_uring`/`try_init_epoll` 私有静态）

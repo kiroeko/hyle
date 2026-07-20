@@ -81,6 +81,31 @@ TEST(Proactor, ReapEmptyIsNonBlockingWithZeroTimeout) {
   EXPECT_LT(elapsed, std::chrono::milliseconds(100));  // did not block
 }
 
+TEST(Proactor, CapabilitiesMatchSelectedBackend) {
+  Proactor p;
+  ASSERT_TRUE(p.init());
+  const auto caps = p.capabilities();
+  EXPECT_EQ(caps.struct_size, sizeof(caps));
+  EXPECT_EQ(caps.backend, p.backend_kind());
+  const auto uring = p.io_uring_extension();
+  EXPECT_EQ(uring.valid(), caps.backend == HYLE_IO_BACKEND_IO_URING);
+  if (caps.backend == HYLE_IO_BACKEND_IO_URING) {
+    EXPECT_NE(caps.bits & HYLE_IO_CAP_NATIVE_MULTISHOT_ACCEPT, 0u);
+    EXPECT_NE(caps.bits & HYLE_IO_CAP_PROVIDED_BUFFER_RING, 0u);
+    EXPECT_NE(caps.bits & HYLE_IO_CAP_FIXED_FILES, 0u);
+    EXPECT_NE(caps.bits & HYLE_IO_CAP_ASYNC_FILE_METADATA, 0u);
+    EXPECT_TRUE(p.has_async_file_metadata());
+  } else {
+    EXPECT_NE(caps.bits & HYLE_IO_CAP_EMULATED_MULTISHOT_ACCEPT, 0u);
+    EXPECT_EQ(caps.bits & HYLE_IO_CAP_PROVIDED_BUFFER_RING, 0u);
+    EXPECT_EQ(caps.bits & HYLE_IO_CAP_FIXED_FILES, 0u);
+    EXPECT_EQ(caps.bits & HYLE_IO_CAP_ASYNC_FILE_METADATA, 0u);
+    EXPECT_FALSE(p.has_async_file_metadata());
+    EXPECT_FALSE(uring.register_file_table(1));
+    EXPECT_FALSE(uring.release_fixed_file(0));
+  }
+}
+
 #if defined(__linux__) || defined(__APPLE__)
 TEST(Proactor, ReadinessBackendRejectsSecondSameDirectionOp) {
 #  if defined(__linux__)
@@ -118,6 +143,36 @@ TEST(Proactor, ReadinessBackendRejectsSecondSameDirectionOp) {
   ::close(sv[0]);
   ::close(sv[1]);
 }
+
+#if defined(__linux__)
+TEST(Proactor, NativeStatxCompletesAsynchronously) {
+  Proactor p;
+  ASSERT_TRUE(p.init());
+  if (p.backend_kind() != HYLE_IO_BACKEND_IO_URING)
+    GTEST_SKIP() << "native STATX requires io_uring";
+
+  char path[] = "/tmp/hyle-statx-XXXXXX";
+  int fd = ::mkstemp(path);
+  ASSERT_GE(fd, 0);
+  ASSERT_EQ(::unlink(path), 0);
+  constexpr char kBytes[] = "statx-native";
+  ASSERT_EQ(::write(fd, kBytes, sizeof(kBytes)),
+            static_cast<ssize_t>(sizeof(kBytes)));
+
+  Proactor::FileStat stat{};
+  stat.size = UINT64_MAX;
+  ASSERT_TRUE(p.submit_statx(fd, &stat, 0x57A7));
+  EXPECT_EQ(stat.size, UINT64_MAX)
+      << "native statx must not execute synchronously in submit";
+  Completion completion{};
+  ASSERT_EQ(p.reap(&completion, 1, 1'000'000'000ull), 1u);
+  EXPECT_EQ(completion.user_data, 0x57A7u);
+  EXPECT_EQ(completion.result, 0);
+  EXPECT_EQ(stat.size, sizeof(kBytes));
+  EXPECT_FALSE(stat.is_dir);
+  ::close(fd);
+}
+#endif
 #endif
 
 // post() injects a completion carrying a token that reap() returns. On io_uring
@@ -345,7 +400,9 @@ static void RunTcpAcceptConnectRoundTrip(Proactor& p) {
   int fl = ::fcntl(cl, F_GETFL, 0);
   ::fcntl(cl, F_SETFL, fl | O_NONBLOCK);
 
-  ASSERT_TRUE(p.submit_accept(ls, nullptr, nullptr, /*user_data=*/0xACCE));
+  sockaddr_storage peer{};
+  socklen_t peer_len = sizeof(peer);
+  ASSERT_TRUE(p.submit_accept(ls, &peer, &peer_len, /*user_data=*/0xACCE));
   ASSERT_TRUE(
       p.submit_connect(cl, &sa, sizeof(sa), /*user_data=*/0xC0DE));
 
@@ -370,6 +427,15 @@ static void RunTcpAcceptConnectRoundTrip(Proactor& p) {
   ASSERT_TRUE(got_accept);
   ASSERT_TRUE(got_connect);
   ASSERT_GE(accepted, 0);
+  ASSERT_EQ(peer.ss_family, AF_INET);
+  ASSERT_GE(peer_len, sizeof(sockaddr_in));
+  sockaddr_in client_local{};
+  socklen_t client_local_len = sizeof(client_local);
+  ASSERT_EQ(::getsockname(cl, reinterpret_cast<sockaddr*>(&client_local),
+                         &client_local_len),
+            0);
+  EXPECT_EQ(reinterpret_cast<const sockaddr_in*>(&peer)->sin_port,
+            client_local.sin_port);
 
   // The accepted fd is a real, usable connection: send on the client, recv on
   // the accepted end (via the proactor, exercising submit_send/submit_recv too).
@@ -388,6 +454,27 @@ static void RunTcpAcceptConnectRoundTrip(Proactor& p) {
   EXPECT_EQ(cr.user_data, 0x8EC0u);
   EXPECT_EQ(cr.result, static_cast<std::int64_t>(len));
   EXPECT_STREQ(buf, msg);
+
+  // Non-zero socket flags are part of the portable contract. Prove send and
+  // recv independently with TCP urgent data; a readiness backend that silently
+  // substituted read/write(flags=0) would fail one of these checks.
+  const char urgent_out = '!';
+  ASSERT_TRUE(p.submit_send(cl, &urgent_out, 1, MSG_OOB, 0x50B));
+  Completion urgent_send{};
+  ASSERT_EQ(p.reap(&urgent_send, 1, 1'000'000'000ull), 1u);
+  ASSERT_EQ(urgent_send.result, 1);
+  char urgent_seen = 0;
+  ASSERT_EQ(::recv(accepted, &urgent_seen, 1, MSG_OOB), 1);
+  EXPECT_EQ(urgent_seen, urgent_out);
+
+  const char urgent_in = '?';
+  ASSERT_EQ(::send(cl, &urgent_in, 1, MSG_OOB), 1);
+  char urgent_recv = 0;
+  ASSERT_TRUE(p.submit_recv(accepted, &urgent_recv, 1, MSG_OOB, 0xB05));
+  Completion urgent_completion{};
+  ASSERT_EQ(p.reap(&urgent_completion, 1, 1'000'000'000ull), 1u);
+  ASSERT_EQ(urgent_completion.result, 1);
+  EXPECT_EQ(urgent_recv, urgent_in);
 
   ::close(accepted);
   ::close(cl);
@@ -490,11 +577,13 @@ TEST(Proactor, MultishotAcceptEpoll) {
 TEST(Proactor, ProvidedBufRingMultishotRecv) {
   Proactor p;
   if (!p.init()) GTEST_SKIP() << "no io_uring backend";
+  auto uring = p.io_uring_extension();
+  ASSERT_TRUE(uring);
 
   constexpr int kBgid = 7;
   constexpr unsigned kEntries = 8;
   constexpr unsigned kBufSize = 128;
-  if (!p.register_buf_ring(kBgid, kEntries, kBufSize))
+  if (!uring.register_buffer_ring(kBgid, kEntries, kBufSize))
     GTEST_SKIP() << "provided buffer ring unsupported on this kernel";
 
   // DGRAM pair: message boundaries preserved, so N sends == N recv completions
@@ -510,7 +599,8 @@ TEST(Proactor, ProvidedBufRingMultishotRecv) {
     ASSERT_GT(::write(sv[1], msgs[i], std::strlen(msgs[i]) + 1), 0);
 
   // ONE multishot recv arm on sv[0], drawing from the ring.
-  ASSERT_TRUE(p.submit_recv_multishot(sv[0], kBgid, /*user_data=*/0xBEEF));
+  ASSERT_TRUE(
+      uring.submit_recv_multishot(sv[0], kBgid, /*user_data=*/0xBEEF));
 
   int got = 0;
   int kbuf_set = 0;
@@ -525,12 +615,12 @@ TEST(Proactor, ProvidedBufRingMultishotRecv) {
       ASSERT_TRUE(c[i].flags & Completion::kBuffer)
           << "multishot recv completion must carry a kernel-selected buffer";
       ++kbuf_set;
-      void* addr = p.buf_ring_addr(kBgid, c[i].buffer_id);
+      void* addr = uring.buffer_address(kBgid, c[i].buffer_id);
       ASSERT_NE(addr, nullptr);
       // The bytes the kernel wrote into the selected buffer must match a message.
       EXPECT_STREQ(static_cast<const char*>(addr), msgs[got]);
       // Return the buffer so the ring doesn't run dry.
-      EXPECT_TRUE(p.buf_ring_return(kBgid, c[i].buffer_id));
+      EXPECT_TRUE(uring.return_buffer(kBgid, c[i].buffer_id));
       ++got;
     }
   }
@@ -547,20 +637,23 @@ TEST(Proactor, ProvidedBufRingMultishotRecv) {
 TEST(Proactor, RegisteredFixedFiles) {
   Proactor p;
   if (!p.init()) GTEST_SKIP() << "no io_uring backend";
-  if (!p.register_file_table(8))
+  auto uring = p.io_uring_extension();
+  ASSERT_TRUE(uring);
+  if (!uring.register_file_table(8))
     GTEST_SKIP() << "registered files unsupported on this kernel";
 
   int sv[2];
   ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
   // Place the RECEIVE end (sv[0]) into a fixed-file slot; sv[1] is the raw sender.
-  int slot = p.assign_fixed_slot(sv[0]);
+  int slot = uring.assign_fixed_file(sv[0]);
   ASSERT_GE(slot, 0) << "assign_fixed_slot must return a valid slot index";
 
   // Send from the raw peer, then recv via the FIXED slot (not sv[0]).
   const char* msg = "fixed-file-recv";
   ASSERT_GT(::write(sv[1], msg, std::strlen(msg) + 1), 0);
   char buf[64] = {};
-  ASSERT_TRUE(p.submit_recv_fixed(slot, buf, sizeof(buf), 0, /*user_data=*/0xF1));
+  ASSERT_TRUE(
+      uring.submit_recv_fixed(slot, buf, sizeof(buf), 0, /*user_data=*/0xF1));
 
   bool got = false;
   for (int spins = 0; spins < 100 && !got; ++spins) {
@@ -577,8 +670,8 @@ TEST(Proactor, RegisteredFixedFiles) {
 
   // Also exercise submit_send_fixed: send via the slot back to the peer, verify it.
   const char* reply = "fixed-file-send";
-  ASSERT_TRUE(p.submit_send_fixed(slot, reply, std::strlen(reply) + 1, 0,
-                                  /*user_data=*/0xF2));
+  ASSERT_TRUE(uring.submit_send_fixed(slot, reply, std::strlen(reply) + 1, 0,
+                                      /*user_data=*/0xF2));
   bool sent = false;
   for (int spins = 0; spins < 100 && !sent; ++spins) {
     Completion c[4];
@@ -591,7 +684,54 @@ TEST(Proactor, RegisteredFixedFiles) {
   EXPECT_GT(::read(sv[1], rbuf, sizeof(rbuf)), 0);
   EXPECT_STREQ(rbuf, reply) << "peer received the fixed-file send bytes";
 
-  p.release_fixed_slot(slot);
+  EXPECT_TRUE(uring.release_fixed_file(slot));
+  ::close(sv[0]);
+  ::close(sv[1]);
+}
+
+TEST(Proactor, FixedFileSubmissionFlushesAtRingDepth) {
+  // The fixed-file SQEs have fields submit_one cannot express. They still must
+  // share its "pending batch reached SQ depth -> flush before reuse" invariant.
+  Proactor p;
+  if (!p.init(8)) GTEST_SKIP() << "no io_uring backend";
+  auto uring = p.io_uring_extension();
+  ASSERT_TRUE(uring);
+  if (!uring.register_file_table(4))
+    GTEST_SKIP() << "registered files unsupported on this kernel";
+
+  int sv[2];
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+  const int slot = uring.assign_fixed_file(sv[0]);
+  ASSERT_GE(slot, 0);
+
+  constexpr std::size_t kOps = 32;
+  char sent[kOps];
+  char received[kOps] = {};
+  for (std::size_t i = 0; i < kOps; ++i)
+    sent[i] = static_cast<char>('A' + (i % 26));
+  ASSERT_EQ(::write(sv[1], sent, sizeof(sent)),
+            static_cast<ssize_t>(sizeof(sent)));
+  for (std::size_t i = 0; i < kOps; ++i) {
+    ASSERT_TRUE(uring.submit_recv_fixed(
+        slot, &received[i], 1, 0, 0xF100u + i));
+  }
+
+  std::size_t completed = 0;
+  while (completed < kOps) {
+    Completion completions[16];
+    const std::size_t n =
+        p.reap(completions, 16, 1'000'000'000ull);
+    ASSERT_GT(n, 0u);
+    for (std::size_t i = 0; i < n; ++i) {
+      ASSERT_GE(completions[i].user_data, 0xF100u);
+      ASSERT_LT(completions[i].user_data, 0xF100u + kOps);
+      EXPECT_EQ(completions[i].result, 1);
+      ++completed;
+    }
+  }
+  EXPECT_EQ(std::memcmp(sent, received, sizeof(sent)), 0);
+
+  EXPECT_TRUE(uring.release_fixed_file(slot));
   ::close(sv[0]);
   ::close(sv[1]);
 }
@@ -603,7 +743,9 @@ TEST(Proactor, RegisteredFixedFiles) {
 TEST(Proactor, DirectAccept) {
   Proactor p;
   if (!p.init()) GTEST_SKIP() << "no io_uring backend";
-  if (!p.register_file_table(8))
+  auto uring = p.io_uring_extension();
+  ASSERT_TRUE(uring);
+  if (!uring.register_file_table(8))
     GTEST_SKIP() << "registered files unsupported on this kernel";
 
   int ls = ::socket(AF_INET, SOCK_STREAM, 0);
@@ -620,7 +762,7 @@ TEST(Proactor, DirectAccept) {
   ASSERT_EQ(::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen), 0);
 
   // Direct accept armed BEFORE the client connects (accept waits for it).
-  ASSERT_TRUE(p.submit_accept_direct(ls, /*user_data=*/0xDA));
+  ASSERT_TRUE(uring.submit_accept_direct(ls, /*user_data=*/0xDA));
 
   // Client connects + sends on a separate thread (blocking connect to loopback).
   sockaddr_in ca = sa;
@@ -661,7 +803,8 @@ TEST(Proactor, DirectAccept) {
 
   // recv on the DIRECT descriptor by slot (IOSQE_FIXED_FILE) -- it was never a raw fd.
   char buf[64] = {};
-  ASSERT_TRUE(p.submit_recv_fixed(slot, buf, sizeof(buf), 0, /*user_data=*/0xDB));
+  ASSERT_TRUE(
+      uring.submit_recv_fixed(slot, buf, sizeof(buf), 0, /*user_data=*/0xDB));
   bool got = false;
   for (int spins = 0; spins < 200 && !got; ++spins) {
     Completion c[4];
@@ -675,7 +818,7 @@ TEST(Proactor, DirectAccept) {
   EXPECT_TRUE(got) << "recv on the direct-accepted descriptor never delivered";
 
   // close_direct the slot (IORING_OP_CLOSE with file_index).
-  ASSERT_TRUE(p.submit_close_direct(slot, /*user_data=*/0xDC));
+  ASSERT_TRUE(uring.submit_close_direct(slot, /*user_data=*/0xDC));
   bool closed = false;
   for (int spins = 0; spins < 100 && !closed; ++spins) {
     Completion c[4];
@@ -684,7 +827,6 @@ TEST(Proactor, DirectAccept) {
       if (c[i].user_data == 0xDC) { EXPECT_EQ(c[i].result, 0); closed = true; }
   }
   EXPECT_TRUE(closed) << "close_direct never completed";
-  p.release_fixed_slot(slot);
   ::close(ls);
 }
 #endif  // __linux__
@@ -767,7 +909,9 @@ TEST(Proactor, TcpAcceptConnectRoundTripIocp) {
   ASSERT_NE(cl, INVALID_SOCKET);
   ASSERT_TRUE(p.register_handle(static_cast<std::intptr_t>(cl)));
 
-  ASSERT_TRUE(p.submit_accept(static_cast<std::intptr_t>(ls), nullptr, nullptr,
+  sockaddr_storage peer{};
+  int peer_len = sizeof(peer);
+  ASSERT_TRUE(p.submit_accept(static_cast<std::intptr_t>(ls), &peer, &peer_len,
                               0xACCE));
   ASSERT_TRUE(p.submit_connect(static_cast<std::intptr_t>(cl), &sa, sizeof(sa),
                                0xC0DE));
@@ -791,6 +935,15 @@ TEST(Proactor, TcpAcceptConnectRoundTripIocp) {
   ASSERT_TRUE(got_accept);
   ASSERT_TRUE(got_connect);
   ASSERT_NE(accepted, INVALID_SOCKET);
+  ASSERT_EQ(peer.ss_family, AF_INET);
+  ASSERT_GE(peer_len, static_cast<int>(sizeof(sockaddr_in)));
+  sockaddr_in client_local{};
+  int client_local_len = sizeof(client_local);
+  ASSERT_EQ(::getsockname(cl, reinterpret_cast<sockaddr*>(&client_local),
+                         &client_local_len),
+            0);
+  EXPECT_EQ(reinterpret_cast<const sockaddr_in*>(&peer)->sin_port,
+            client_local.sin_port);
   ASSERT_TRUE(p.register_handle(static_cast<std::intptr_t>(accepted)));
 
   const char msg[] = "iocp-accept-connect";
@@ -809,6 +962,26 @@ TEST(Proactor, TcpAcceptConnectRoundTripIocp) {
   EXPECT_EQ(cr.user_data, 0x8EC0u);
   EXPECT_EQ(cr.result, static_cast<std::int64_t>(len));
   EXPECT_STREQ(buf, msg);
+
+  const char urgent_out = '!';
+  ASSERT_TRUE(p.submit_send(static_cast<std::intptr_t>(cl), &urgent_out, 1,
+                            MSG_OOB, 0x50B));
+  Completion urgent_send{};
+  ASSERT_EQ(p.reap(&urgent_send, 1, 1'000'000'000ull), 1u);
+  ASSERT_EQ(urgent_send.result, 1);
+  char urgent_seen = 0;
+  ASSERT_EQ(::recv(accepted, &urgent_seen, 1, MSG_OOB), 1);
+  EXPECT_EQ(urgent_seen, urgent_out);
+
+  const char urgent_in = '?';
+  ASSERT_EQ(::send(cl, &urgent_in, 1, MSG_OOB), 1);
+  char urgent_recv = 0;
+  ASSERT_TRUE(p.submit_recv(static_cast<std::intptr_t>(accepted), &urgent_recv,
+                            1, MSG_OOB, 0xB05));
+  Completion urgent_completion{};
+  ASSERT_EQ(p.reap(&urgent_completion, 1, 1'000'000'000ull), 1u);
+  ASSERT_EQ(urgent_completion.result, 1);
+  EXPECT_EQ(urgent_recv, urgent_in);
 
   ::closesocket(accepted);
   ::closesocket(cl);

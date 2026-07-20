@@ -59,25 +59,25 @@ namespace hyle::io {
 class RecvBuf {
  public:
   RecvBuf() noexcept = default;
-  RecvBuf(Proactor* p, int bgid, const void* data, std::uint32_t len,
+  RecvBuf(IoUringExtension uring, int bgid, const void* data, std::uint32_t len,
           std::uint32_t buffer_id, bool has_buf, bool more) noexcept
-      : p_(p), bgid_(bgid), data_(data), len_(len), buffer_id_(buffer_id),
+      : uring_(uring), bgid_(bgid), data_(data), len_(len), buffer_id_(buffer_id),
         has_buf_(has_buf), more_(more) {}
   ~RecvBuf() {
-    if (has_buf_ && p_ != nullptr) p_->buf_ring_return(bgid_, buffer_id_);
+    if (has_buf_) uring_.return_buffer(bgid_, buffer_id_);
   }
   RecvBuf(RecvBuf&& o) noexcept
-      : p_(o.p_), bgid_(o.bgid_), data_(o.data_), len_(o.len_),
+      : uring_(o.uring_), bgid_(o.bgid_), data_(o.data_), len_(o.len_),
         buffer_id_(o.buffer_id_), has_buf_(o.has_buf_), more_(o.more_) {
     o.has_buf_ = false;  // moved-from returns nothing
-    o.p_ = nullptr;
+    o.uring_ = {};
   }
   RecvBuf& operator=(RecvBuf&& o) noexcept {
     if (this != &o) {
-      if (has_buf_ && p_ != nullptr) p_->buf_ring_return(bgid_, buffer_id_);
-      p_ = o.p_; bgid_ = o.bgid_; data_ = o.data_; len_ = o.len_;
+      if (has_buf_) uring_.return_buffer(bgid_, buffer_id_);
+      uring_ = o.uring_; bgid_ = o.bgid_; data_ = o.data_; len_ = o.len_;
       buffer_id_ = o.buffer_id_; has_buf_ = o.has_buf_; more_ = o.more_;
-      o.has_buf_ = false; o.p_ = nullptr;
+      o.has_buf_ = false; o.uring_ = {};
     }
     return *this;
   }
@@ -95,7 +95,7 @@ class RecvBuf {
   bool empty() const noexcept { return len_ == 0; }
 
  private:
-  Proactor* p_ = nullptr;
+  IoUringExtension uring_{};
   int bgid_ = -1;
   const void* data_ = nullptr;
   std::uint32_t len_ = 0;
@@ -119,7 +119,7 @@ class RecvBuf {
 struct MultishotSlot {
   IoOperation io{};          // landing pad: waker (result/flags used transiently)
   mem::Allocator alloc;      // frees the slot at refcount 0
-  Proactor* p = nullptr;
+  IoUringExtension uring{};
   int bgid = -1;
   int refcount = 2;          // {kernel op, fiber}
   bool armed = false;        // submit_recv_multishot issued
@@ -162,8 +162,8 @@ struct MultishotSlot {
     while (!q_empty()) {
       Pending pd = q_pop();
       if ((pd.flags & Completion::kBuffer) != 0 && pd.result > 0 &&
-          p != nullptr) {
-        p->buf_ring_return(bgid, pd.buffer_id);
+          uring.valid()) {
+        uring.return_buffer(bgid, pd.buffer_id);
       }
     }
   }
@@ -203,8 +203,8 @@ inline void complete_multishot(const Completion& c) noexcept {
   // Return any delivered provided buffer immediately and retain the kernel ref
   // until the terminal CQE proves the multishot is really over.
   if (s->abandoned) {
-    if ((c.flags & Completion::kBuffer) != 0 && c.result > 0 && s->p != nullptr)
-      s->p->buf_ring_return(s->bgid, c.buffer_id);
+    if ((c.flags & Completion::kBuffer) != 0 && c.result > 0)
+      s->uring.return_buffer(s->bgid, c.buffer_id);
     if (terminal) {
       s->kernel_done = true;
       s->release();  // terminal CQE spends the kernel ref
@@ -217,11 +217,12 @@ inline void complete_multishot(const Completion& c) noexcept {
     // Never leak a provided buffer on overload. A queue overflow should be
     // unreachable with the runtime's 64-CQE reap batch, but it is a recoverable
     // resource-pressure condition, not permission to silently starve the ring.
-    if ((c.flags & Completion::kBuffer) != 0 && c.result > 0 && s->p != nullptr)
-      s->p->buf_ring_return(s->bgid, c.buffer_id);
+    if ((c.flags & Completion::kBuffer) != 0 && c.result > 0)
+      s->uring.return_buffer(s->bgid, c.buffer_id);
     if (!s->overflowed && !terminal) {
       s->overflowed = true;
-      s->p->submit_cancel(to_multishot_token(s), kCancelToken);
+      if (s->uring.proactor() != nullptr)
+        s->uring.proactor()->submit_cancel(to_multishot_token(s), kCancelToken);
     }
   }
   // kMore CLEAR => the multishot is finished; this is the last completion for the
@@ -244,7 +245,7 @@ inline void complete_multishot(const Completion& c) noexcept {
 // each subsequent one waits for the next kernel-delivered segment. A RecvBuf with
 // more()==false is terminal.
 struct MultishotRecvStream {
-  Proactor* p = nullptr;
+  IoUringExtension uring{};
   std::intptr_t fd = -1;
   int bgid = -1;
   mem::Allocator alloc{};
@@ -252,14 +253,15 @@ struct MultishotRecvStream {
   bool ended_ = false;  // a terminal chunk was already returned
 
   MultishotRecvStream() noexcept = default;
-  MultishotRecvStream(Proactor* p, std::intptr_t fd, int bgid,
+  MultishotRecvStream(IoUringExtension uring, std::intptr_t fd, int bgid,
                       mem::Allocator alloc) noexcept
-      : p(p), fd(fd), bgid(bgid), alloc(alloc) {}
+      : uring(uring), fd(fd), bgid(bgid), alloc(alloc) {}
   HYLE_DISABLE_COPY(MultishotRecvStream);
   MultishotRecvStream(MultishotRecvStream&& o) noexcept
-      : p(o.p), fd(o.fd), bgid(o.bgid), alloc(o.alloc),
+      : uring(o.uring), fd(o.fd), bgid(o.bgid), alloc(o.alloc),
         slot_(o.slot_), ended_(o.ended_) {
     o.slot_ = nullptr;
+    o.uring = {};
   }
   // Dtor: if the stream is dropped while the multishot may still be armed (fiber
   // abandons it early), cancel the kernel op and drop the fiber ref. The kernel ref
@@ -273,7 +275,8 @@ struct MultishotRecvStream {
     slot_->return_pending_buffers();
     if (slot_->armed && !slot_->kernel_done) {
       // Still armed: async-cancel it. The late terminal CQE drops the kernel ref.
-      p->submit_cancel(to_multishot_token(slot_), kCancelToken);
+      if (uring.proactor() != nullptr)
+        uring.proactor()->submit_cancel(to_multishot_token(slot_), kCancelToken);
     }
     slot_->release();  // fiber ref
   }
@@ -301,11 +304,12 @@ struct MultishotRecvStream {
         if (sl == nullptr) return false;  // OOM -> await_resume returns error chunk
         new (sl) MultishotSlot{};
         sl->alloc = s->alloc;
-        sl->p = s->p;
+        sl->uring = s->uring;
         sl->bgid = s->bgid;
         s->slot_ = sl;
         sl->io.waker = sched::current_waker();
-        if (!s->p->submit_recv_multishot(s->fd, s->bgid, to_multishot_token(sl))) {
+        if (!s->uring.submit_recv_multishot(
+                s->fd, s->bgid, to_multishot_token(sl))) {
           // submit failed: kernel never took it -> drop the kernel ref now (mirrors
           // net_timeout on_submit_failed). Fiber ref dropped in the stream dtor.
           sl->kernel_done = true;  // no completion coming
@@ -341,13 +345,14 @@ struct MultishotRecvStream {
         // Error / peer close / -ECANCELED: terminal (a res<=0 completion always has
         // kMore clear). No buffer to return.
         s->ended_ = true;
-        RecvBuf b(s->p, s->bgid, nullptr, 0, 0, false, false);
+        RecvBuf b(s->uring, s->bgid, nullptr, 0, 0, false, false);
         b.set_err(res);
         return b;
       }
-      const void* data = has_buf ? s->p->buf_ring_addr(s->bgid, pd.buffer_id) : nullptr;
+      const void* data =
+          has_buf ? s->uring.buffer_address(s->bgid, pd.buffer_id) : nullptr;
       if (!more) s->ended_ = true;
-      return RecvBuf(s->p, s->bgid, data, static_cast<std::uint32_t>(res),
+      return RecvBuf(s->uring, s->bgid, data, static_cast<std::uint32_t>(res),
                      pd.buffer_id, has_buf, more);
     }
   };

@@ -8,6 +8,11 @@
 | **状态** | ✅ kBuffer 半成品补完（io_uring only）。真测 ProvidedBufRingMultishotRecv io_uring + TSan 净 |
 
 > **范围**：补完 io-01 在 `Completion.kBuffer` 上预留的另一半——`register_buf_ring` + `submit_recv_multishot` + `buf_ring_addr`/`buf_ring_return`，内核选 buffer 免预投递 = 零拷贝 recv。**至此 multishot 全家（accept + recv）+ kMore/kBuffer 两 flag 全补完**。再上一层 `net_multishot.h` 的 co_await 流式 API。
+>
+> **2026-07-20 API 收口**：这些原语现为 `IoUringExtension` 的
+> `register_buffer_ring/submit_recv_multishot/buffer_address/return_buffer`；
+> `MultishotRecvStream` 也必须显式持有该扩展。非 io_uring 后端不再暴露
+> 恒定失败的同名 `Proactor` 方法。
 > **cloc**：+130 proactor + `net_multishot.h` 304（+ bench）。
 
 ## 为什么是它

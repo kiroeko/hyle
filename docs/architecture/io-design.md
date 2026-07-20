@@ -19,6 +19,11 @@ IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
        ├─ Linux epoll：readiness→completion；HYLE SwissTable<fd, PendingOp>
        └─ macOS kqueue：readiness→completion；HYLE SwissTable<fd, PendingOp>
 
+       Linux runtime 选中 io_uring 时
+       └─ io_uring_extension() / hyle_io_uring_extension_get()
+          └─ provided buffer · recv multishot · fixed file · direct accept
+             （显式快腿；不进入 portable Proactor）
+
 纯 C / FFI 用户
   hyle/c/io.h：opaque proactor/shmem/HTTP2 codec + POD completion + native handle
        └─ 自己组合 event loop / scheduler；不把 coroutine/STL/OpenSSL 类型过 ABI
@@ -35,8 +40,8 @@ IoContext（每 Scheduler worker 一个 Proactor + 文件 blocking pool）
   驱动 `HttpTransport`，C ABI 暴露 transport-neutral feed/next-output codec。
 - TCP read/write/connect/accept 和 UDP recv/send 均有 base、deadline、
   CancelToken 腿；base 腿只用于确定能完成的受控路径。
-- Linux-only multishot/provided-buffer/fixed-file 是可观察、可失败的快腿；
-  portable one-shot 永远保留。
+- Linux-only recv-multishot/provided-buffer/fixed-file/direct-accept 只能经成功
+  取得的 `IoUringExtension` 调用；portable one-shot 永远保留。
 - epoll/kqueue pending 表使用 container/ 的 flat SwissTable。IOCP/io_uring
   不需要 fd readiness 映射，因此不会为统一外观平白引入 hash lookup。
 
@@ -126,19 +131,25 @@ src/io/
 
 **当时后端进度（2026-07-03 历史快照）**:io-01 **收割接缝**在 IOCP(Windows)+ io_uring(Linux)双后端均 ✅ 真测。io-02 **read/write 真 op 两后端全通 ✅**:io_uring 填 SQE(WSL 真测 write→read + bad-fd 负 errno;TSan 净);IOCP 用 `ReadFile/WriteFile` + per-op OVERLAPPED——proactor 侵入式在途链表**自持** OVERLAPPED 生命周期(OVERLAPPED 是 IoOp 首成员;reap cast `lpOverlapped` 回 IoOp;`post()` 保持 nullptr 以区分合成唤醒;dtor 先 CancelIoEx 再排空端口回收防关机 UAF)。**先前"IOCP 真 op 需随 net/ 定形"是过度谨慎——OVERLAPPED 纯 IOCP 内部细节 proactor 自持,net/ 不可见,故此处已落地。** io-03 **epoll 降级 + SOTA-first 后端选择 ✅**:`init()` 总先试 io_uring,仅真不可用(老内核/`io_uring_disabled` sysctl/容器 seccomp)才退 epoll——生产走 io_uring,epoll 保 io_uring 被禁环境仍可跑;epoll reactor→completion 模拟(记 pending op、就绪时内联 IO;**红队 L3 修 2026-07-05:pending 拆 in/out 双槽,同 fd 全双工 recv+send 并发不再互相覆盖孤儿**)。后续 kqueue、UDP 与 park 合并均已完成，见本页顶部当前架构。
 
-## 已落地 + 剩余缺口(2026-07-05 更新)
+## 2026-07-05 历史缺口快照
 
-> proactor 收割接缝 + socket op + co_await 层 + shard-per-core(per-worker ring)+ 阻塞 GETEVENTS reap + TcpListener/Stream + UdpSocket + park 合并 **均已落地**。下面是**剩余缺口**,分两类:①JIT 延后的次要项;②参考库审计(liburing/asio/libevent 对照)揪出的真缺口,已登记为能力驱动的里程碑。
+> 本节保留当时的施工判断；其中 io-07b/c 所述 portable/stub 债已在
+> 2026-07-20 通过 `IoUringExtension` 收口，STATX 也已改为原生 SQE。
+> 当前维护者应以本文顶部架构和 capability fill list 为准。
 
 **① JIT 延后(次要):**
-- **reactor 后端(mac kqueue)✅ 已落地(2026-07-05,Apple Silicon 真机)**:`#elif HYLE_OS_MACOS` 块镜像 epoll reactor 把"就绪"合成"完成"——EVFILT_READ/WRITE+EV_ONESHOT 替 EPOLLIN/OUT+ONESHOT、EVFILT_USER+NOTE_TRIGGER 替 wake eventfd(无需 self-pipe)、dual-slot pending_in/out(L3)、spurious-EAGAIN re-arm(L4)、multishot-accept 模拟、submit_cancel 合成 -ECANCELED、常规文件 S_ISREG 检测走同步 pread/pwrite(kqueue 无 EPERM 信号)。macOS 差异:st_mtimespec/fsync(无 fdatasync)/F_PREALLOCATE(无 posix_fallocate)。io_uring 专属(buf_ring/fixed-files/direct-accept)目前仍以通用方法恒定失败，属于 extension 分层债，不再称为“已完成 stub”；见 capability fill list。真机 io/net/tcp/udp/file/signal/timeout/http 全绿,Linux 零回归。
+- **reactor 后端(mac kqueue)✅ 已落地(2026-07-05,Apple Silicon 真机)**：kqueue 镜像 epoll reactor 把 readiness 合成为 completion。2026-07-20 已把 io_uring 专属 buf-ring/fixed-files/direct-accept 从通用面移入显式 extension，kqueue 不再编译恒定失败的后端方法。真机 io/net/tcp/udp/file/signal/timeout/http 全绿。
 - **park 合并 ✅ 已落地**(2026-07-03):worker 空闲以完整 timeout(timer deadline/INFINITE)阻塞 GETEVENTS reap,不再 1ms 轮询;跨线程唤醒经 `Proactor::wake()`(io_uring 专用 eventfd 上常驻 `IORING_OP_READ`,`write` 打断 reap,不碰单生产者 SQ;IOCP `PostQueuedCompletionStatus`;epoll level-triggered eventfd)。实测空闲 500ms 的 `io_uring_enter` 从 421→3(~140x),吞吐无变化。
 
 **② 参考库审计真缺口(能力驱动,见 roadmap 轴 C / milestones):**
 - **io-06 带超时 io(C2)✅**:TCP read/write/connect/accept 与 UDP recv/send 的 deadline/cancel 腿已完成；取消在途内核 op 用 io_uring `ASYNC_CANCEL`、IOCP `CancelIoEx`、epoll/kqueue 删除 readiness watch 并合成最终 completion。
 - **io-07a multishot accept ✅(kMore 半成品补完)**:`submit_accept_multishot` 三后端(io_uring `IORING_ACCEPT_MULTISHOT` 原生;IOCP AcceptEx 循环 + epoll 重 arm 两路 emulation,对上同一 kMore 流)。一次 arm 持续吐连接,补完 `Completion.kMore` 当初留的接口。双平台 + TSan 净。
-- **io-07b provided buffer ring + multishot recv ✅(io_uring 原生腿完成，portable 腿待补)**:`register_buf_ring`(IOU_PBUF_RING_MMAP,内核选 buffer 免预投递=零拷贝 recv)+ `submit_recv_multishot`(RECV_MULTISHOT + BUFFER_SELECT)+ `buf_ring_addr`/`buf_ring_return` 归还协议。io_uring + TSan 已验证；IOCP/epoll/kqueue 当前恒定失败，旧文档所称“net 回退预投递 recv”并未实现，已登记为 capability P1。**co_await 层(2026-07-05,net_multishot.h)**:`MultishotRecvStream` + `co_await stream.next()` → RAII `RecvBuf`(析构自动 buf_ring_return),`TcpStream::read_multishot(bgid,alloc)` 暴露——但这个名字目前看似 portable，非 io_uring 首次 `next()` 实际失败，必须补三后端模拟或移入明确的 IoUringExtension。关键正确性:单 token 多完成用 slot 内完成队列(单槽会被后续完成 clobber)+ 只在 empty→non-empty 转移 wake(恰一次 wake_rendezvous)+ 堆槽 refcount{kernel,fiber} kernel-ref 撑到 kMore-clear 终止(取消安全,同 net_timeout 族)。原生腿正确性/不回归已验(vs one-shot 同核对称负载统计平局,见 performance/benchmarks-io.md)，portable 产品能力尚未收口。
+- **io-07b provided buffer ring + multishot recv ✅(io_uring 显式快腿)**：`IoUringExtension::register_buffer_ring` + `submit_recv_multishot` + `buffer_address/return_buffer`。`MultishotRecvStream` 和 `TcpStream::read_multishot` 都必须拿到有效 extension；非 io_uring 后端不再暴露首次 `next()` 才失败的伪 portable 入口。普通跨平台连续接收就是循环 `read()`。
 - **io-07c registered/fixed files ✅第一步(2026-07-05)**:`register_file_table`(sparse `IORING_REGISTER_FILES2`)+ `assign_fixed_slot`/`release_fixed_slot`(线性找空槽 + `FILES_UPDATE` 填/清)+ `submit_recv_fixed`/`submit_send_fixed`(`IOSQE_FIXED_FILE` + 槽索引,内核免每 op fget/fput)。io_uring 原生实现已验证；IOCP/epoll 使用普通 fd 产品腿，但这些扩展方法本身仍需移出 portable Proactor，不能把恒定失败叫“透明 fallback”。**性能实测边际(fixed vs raw fd loopback ping-pong 0.8-3.3% 更快,一致为正但小)**。**io-07c 第二步 direct-accept ✅原语已做+实测无收益,TcpStream 主动不改**:`submit_accept_direct`(accept 直落 registered-file 槽、CQE res=槽索引、连接从不是进程 fd)+ `submit_close_direct` + RecvOp/SendOp 加 fixed_slot。proactor_test.DirectAccept 验证全路径。**但 proactor 层(零 fiber)合并计时 direct 稳定慢 ~1%(6 跑,非噪声)——拆相追根后是 teardown 伪影,非 accept 回退**:预建连接分相计时显示 **accept 原语本身 direct 反而快 ~10-30ns/conn**(省内核 fget/fput,合理),那 ~1% 全来自 microbench 即建即关的 teardown 不对称(direct 的 `close_direct`+reap+`FILES_UPDATE` 2 syscall 其一冗余 vs normal `::close` 1 syscall),生产不 accept-完-立刻-close 故不出现。故**停在原语层,不做 TcpStream 拥有语义改造**(accept 机制赢面 ~10-30ns 被 TCP 握手 ~330µs 淹没,为它改核心 RAII = 纯风险);原语留供未来高建连速率/多核争 fd 表场景。详见 performance/benchmarks-io.md direct-accept 拆相节。
+- **io-07c 2026-07-20 收口补记**：register/assign/release、fixed
+  recv/send、direct accept/close 全部位于 `IoUringExtension`；普通
+  `RecvOp/SendOp` 的 `fixed_slot` 暗门已删除，IOCP/kqueue 不再有 stub
+  定义。`release_fixed_file` 现在检查内核 `FILES_UPDATE` 结果。
 - **io-08 TLS(C9)✅**:OpenSSL 加密 socket over co_await stream，包含 SNI、DNS/IP identity verification、有界 shutdown；HTTP transport 已可持有已握手 TLS，真实 HTTPS loopback 覆盖。
 - **io-09 异步 DNS + signal ✅(C10)**:`resolve_addr`(tcp.h)只 `inet_pton` 解析 IPv4 字面量(连 getaddrinfo 都没有)——`dns.h/cc` 加 `resolve()` **经 sched-11 spawn_blocking 卸载 getaddrinfo**(抄 tokio 路线,不自造 DNS 协议),内部值拷贝 sockaddr + freeaddrinfo 不泄 addrinfo*,`JoinHandle<ResolveResult>` 回传;字面量 IP 走 getaddrinfo 同步快路径。**signal_set**(`signal.h/cc`)co_await `wait()`:POSIX self-pipe + sigaction(进程全局单例 + 引用计数;handler 只 async-signal-safe 写 pipe,免 signalfd 全线程 mask),Windows SetConsoleCtrlHandler(handler 独立线程 post 到 ring;CTRL_CLOSE/LOGOFF/SHUTDOWN handler 阻塞防提前杀,tokio 同款救命坑)。**单 waiter 模型**(优雅关闭单 fiber 用例,同 tokio Signal)。三后端真测(Win/io_uring/epoll)+ WSL TSan 净。signal 是 C4 优雅关闭的触发器。
 - **io-05 文件/shmem(C5)✅**:`proactor` 覆盖 open/close/stat/fsync/fallocate，`File` 按 capability 自动把非原生异步操作卸载到 `IoContext` blocking pool；命名 `SharedMemory` 已有 Windows file mapping / POSIX `shm_open` 的 C++ RAII 与 C opaque ABI。
