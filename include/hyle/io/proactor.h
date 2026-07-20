@@ -222,8 +222,12 @@ class Proactor {
   HYLE_IO_API bool submit_close(std::intptr_t fd,
                                 std::uint64_t user_data) noexcept;
   // Stat `fd` into `*out` (caller-owned; MUST outlive the completion). Result 0 or
-  // negative errno. io_uring uses IORING_OP_STATX (empty path + AT_EMPTY_PATH);
-  // IOCP GetFileInformationByHandle / epoll fstat, synchronous + synthesized.
+  // negative errno. The current low-level implementation performs the metadata
+  // query synchronously and synthesizes a completion on every backend (Linux uses
+  // fstat today; it does NOT yet issue IORING_OP_STATX). The ordinary File facade
+  // offloads this work to its blocking pool so a scheduler worker is not blocked;
+  // raw Proactor/C callers must inspect has_async_file_metadata(), which currently
+  // returns false on every backend.
   HYLE_IO_API bool submit_statx(std::intptr_t fd, FileStat* out,
                                 std::uint64_t user_data) noexcept;
   // Flush `fd`'s data to disk. `datasync` = fdatasync (data only, skip metadata) vs

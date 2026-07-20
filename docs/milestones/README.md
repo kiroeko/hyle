@@ -67,7 +67,9 @@ util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
 > 1.53×/1.48× 明确赢，M4 1.007× 统计平局。IO 的最终状态见
 > [`io-module-closure.md`](./io-module-closure.md)：后续收口已完成 named
 > shared memory 与 io-11 HTTP/2，所以表内 io-05 的 “shmem 待” 是历史快照，
-> 不再是当前状态。
+> 不再是当前状态。portable 契约中的 stub/no-op 与后端扩展分层仍在
+> [`io-capability-fill-list.md`](./io-capability-fill-list.md) 跟踪，不能把
+> “主干可用”误读成 capability closure 已清零。
 
 | ID | 阶段 | 模块 | 目的(一行) | 前置 | 预测LOC | 真实LOC | 状态 |
 |---|---|---|---|---|---|---|---|

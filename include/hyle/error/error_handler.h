@@ -131,10 +131,13 @@ struct HYLE_ERROR_API ErrorRecord {
                                "assertion failed: %s", #cond),               \
           false))
 
-// ---- stub / deprecation convenience (HYLE names; not clay identifiers) ------
-// Temporary unfinished API body: log which function is missing, then mark the
-// path unreachable. NOT a recoverable error -- for that return
-// Status(StatusCode::Unimplemented, ...).
+// ---- diagnostic / deprecation convenience (HYLE names; not clay identifiers) -
+// Fatal developer tripwire: report that an impossible unfinished branch was
+// reached, then mark it unreachable. This macro is NOT an implementation, must
+// never be used as a shipped platform/capability fallback, and is not recoverable.
+// A platform that cannot perform an explicitly selected operation returns
+// Status(StatusCode::Unimplemented, ...); a promised product capability must be
+// implemented rather than routed here.
 #define HYLE_NOT_IMPLEMENTED()                                                 \
   do {                                                                         \
     ::hyle::error_report(::hyle::Severity::Error, __FILE__, __LINE__,          \

@@ -101,7 +101,10 @@ hyle_io_shared_memory_unlink(name);
 ```
 
 create 是排他的；open 映射完整对象。POSIX 的 unlink 删除名字但不破坏已有
-mapping；Windows 对象在最后一个 handle 关闭后自动消失，unlink 是对称 no-op。
+mapping；Windows 对象在最后一个 handle 关闭后自动消失。当前 Windows
+`unlink` 是成功 no-op，不能提供 POSIX“立即移除名字”的后置条件；这是已登记的
+P0 契约缺口，修复前不要依赖其返回值判断名字已经消失，见
+[`io-capability-fill-list.md`](../milestones/io-capability-fill-list.md)。
 指针只在本进程有效，跨进程协议必须存 offset/POD，不能存裸指针。
 默认工厂用 `hyle_system_allocator()` 保存 opaque handle；需要由宿主 allocator
 统一记账时使用 `hyle_io_shared_memory_create_with_allocator` /

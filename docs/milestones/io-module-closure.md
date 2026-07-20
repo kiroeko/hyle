@@ -4,12 +4,19 @@
 
 IO 已完成本轮实现与红队收口：后端、普通 C++ 产品腿、低层 C ABI、协议安全和
 benchmark 计量正确性均已补齐。Windows IOCP、Linux io_uring+forced epoll、
-macOS kqueue 各 14/14 IO test 全绿；当前不再有已知 P0 正确性阻断。尚不能宣称
+macOS kqueue 各 14/14 IO test 全绿；当前不再有已知 P0 内存安全/挂死阻断，
+但 portable 契约仍有下述 capability P0。尚不能宣称
 “跨平台 SOTA”：新 harness 的三平台证书已经完成，但证实 M4 TLS/kqueue
 多 worker、三平台 TLS handshake 仍有性能尾，而且 file/UDP/DNS/cancel/timeout
 尚缺专项 peer benchmark。
 HTTP/TLS 高层 C facade 与 whole-request deadline 属于已明确登记的产品尾项，
 不影响低层机制完整，但发布承诺必须继续诚实标注。
+
+进一步的 stub/no-op 审计发现 portable Proactor 仍有静默忽略项，而且 11 个
+io_uring 专属机制被放在通用接口后由其他后端恒定失败。逐项证据、合法的
+`StatusCode::Unimplemented` error 腿和补全顺序见
+[`io-capability-fill-list.md`](./io-capability-fill-list.md)。因此这里的状态应
+读作“主干正确性收口、capability closure 继续”，不是没有行为缺口的冻结。
 
 ## 本轮已修
 
@@ -91,6 +98,7 @@ SIMD 不适合 syscall、socket/file copy、TLS crypto、DNS 或短 header compa
   后端目前按 token 扫 pending table（O(n)，取消为冷路径），若 cancel storm
   证实成瓶颈再加 token→fd 第二索引。
 
-当前实现、C ABI、红队正确性已经收口；三平台证书也已完成。IO 可进入
-“预发布冻结（带公开性能尾）”，产品/能力尾项须保留在公开 guide 与 roadmap，
-不能用“模块已收口”掩掉。
+当前主干实现、C ABI 红队正确性与三平台证书已经完成，但
+`io-capability-fill-list.md` 的 P0/P1 尚未清零。IO 暂不进入“无行为缺口”的
+预发布冻结；产品/能力尾项须保留在公开 guide 与 roadmap，不能用“模块已收口”
+掩掉。
