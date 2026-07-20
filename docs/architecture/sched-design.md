@@ -172,7 +172,7 @@ loop:
 > **深读 marl 的收敛方案（采纳,sched-05 已落地+实测纠错）**：fiber-awareness 按**等待时长**分工,不是一刀切——
 > - **长等待 → fiber-aware**:`ConditionVariable` 是唯一 fiber-aware 地基(FIFO waiter 链表 + SpinLock),`WaitGroup`/`Latch`/`Channel` 全建其上。**双模**:waiter 是 fiber 则 `suspend()` 让出+重入 run-queue(复用第三节 Waker rendezvous,`current_waker()` 判定);是裸线程则回退 `platform::Parker`(跨进程联邦/外部线程提交,**非** `std::condition_variable`,HYLE 自有 Parker 无 std 依赖)。
 > - **短等待(mutex)→ 不 fiber-aware,用 futex**:`Mutex` 是建在 `platform::wait_on_address` 上的 Drepper 3 态 futex(无争用单 CAS、争用 park worker),**不**让出 fiber。**实测纠错**:初版把 Mutex 也做成 fiber-aware(争用让出),benchmark 慢 marl **5.8x**——短临界区让出 fiber(~100ns)远贵于就地 park 几 ns。改 futex 后**打平 marl**(marl 同理:其 mutex 就是 std::mutex=futex,只 CV 才 fiber-aware)。契约:**别跨 fiber 让出/阻塞调用持 Mutex,那种场景用 CV**。
-> - `wait_for`/`wait_until` 定时变体依赖 time-02 时间轮(→ sched-04b),登记延后,不阻塞无定时主体。**spawn 重负载(fork-join)与 spawn-2000 对标 marl 均为双平台统计平局**(15 遍 bench-stat 复核;此前"反超 1.49x/2.17x"是单遍噪声,已纠正)——靠 §2.3 ②③ 的 **conditional-notify**(`num_searching_` 计数门:有 worker 在搜就不 unpark,从源头消除 spawn burst 的 futex 唤醒风暴;lost-wakeup 安全=seq_cst StoreLoad Dekker 握手,TSan + 100× 压测验证)把原本慢 marl **17x** 修到平级。**双份实测纠错**:① 此前误把 fork-join 慢 17x 归因到"无栈池",诊断证明真因是急泊车 futex 风暴(conditional-notify 根治,spin-then-park 只是缓解);② 修好后又把单遍的 1.49x/2.17x 当反超,15 遍统计法证明是平局(fork-join spread 29-37%,单遍不可信)。详见 performance.md。
+> - `wait_for`/`wait_until` 定时变体已接 time-02 时间轮。2026-07 收口把任务入口拆成**同合同的两条腿**：不可挂起的 `schedule(fn,ctx)` 直接在 worker 栈运行；可 yield/sleep/wait 的 `spawn_detached`/`spawn_task` 使用池化有栈 fiber。最终同形状 15 遍中，2000 noop 的 HYLE/marl 配对吞吐比为 **Windows 1.534×、Linux 1.480×、M4 1.007×（统计平局）**。M4 原先 0.904× 的真输已定位并修复为全局完成计数 cache-line 争用，不归咎异构核心或噪声。有栈腿承担 marl 该 benchmark 没承担的可挂起合同，单列绝对成本而不冒充同形状输赢。callback 的 `{fn,ctx}` payload 按值入队，去掉每任务 malloc/free；per-worker 完成计数、最多 8 个 inline batch 与 ShardedQueue 除法消除补平 ARM；conditional-notify 仍是把初版 17× 唤醒风暴根治到 SOTA 档的关键。
 >
 > **同步/结构化并发缺口补记(2026-07-03 参考库审计——tokio/seastar/folly 对照)**:sched-05 补齐了 CV/Mutex/WaitGroup/Latch/Channel,但对照 SOTA 仍缺几件真原语,登记为 sched-09/10(能力 C7 驱动,未排期前不做):
 > - **Semaphore(计数信号量)**:异步限流标准件(限在途连接/请求、buffer 池)。tokio/seastar/folly 全有,HYLE 无。建在 CV 地基上成本低。
@@ -254,7 +254,7 @@ worker 调度循环（2.2）的第 0 步插入"收割 completion"：
 - 协程的 `promise_type` 用 HYLE 的 `mem/` 分配 frame（不走默认 `operator new`，贯彻显式 allocator）。
 - 不强迫所有异步都用协程：底层热路径可直接用 fiber + Waker 裸接口，协程是上层人体工学糖。
 
-> **已落地（sched-06,`include/hyle/sched/coro.h` header-only）**:`Task<T>`(frame 走 mem::Allocator 首参惯用法)+ `SuspendFiber`(co_await 让出 fiber:await_suspend 调 suspend() fiber-yield,**返 false** 使 wake 后协程续跑而非二次挂起——这是 §4.1 "co_await 落 fiber 让出" 的正确实现关键)+ `CaptureWaker`(两步 register-then-suspend)。协程帧活在 fiber 栈,一次 fiber 挂起覆盖整条 await 链。双平台 + WSL TSan(协程帧跨 worker 迁移)净。`co_await` 的三源(io/gpu/timer)统一走 Waker,与裸 fiber 路径共存。
+> **已落地（sched-06,`include/hyle/sched/coro.h` header-only）**:`Task<T>`(coroutine frame 走 mem::Allocator 首参惯用法)+ `SuspendFiber`(co_await 让出 fiber:await_suspend 调 suspend() fiber-yield,**返 false** 使 wake 后协程续跑而非二次挂起——这是 §4.1 "co_await 落 fiber 让出" 的正确实现关键)+ `CaptureWaker`(两步 register-then-suspend)。frame 由显式 allocator 背书，执行它的 fiber 栈在挂起期间冻结；fiber 恢复后继续 drive frame。双平台 + WSL TSan(协程帧随 fiber 跨 worker 续跑)净。`co_await` 的三源(io/gpu/timer)统一走 Waker,与裸 fiber 路径共存。
 
 ---
 
@@ -265,7 +265,7 @@ worker 调度循环（2.2）的第 0 步插入"收割 completion"：
 | 块 | 决策 | 关键依据 |
 |---|---|---|
 | ① fiber 上下文切换 | **boost.context fcontext 裸原语**（不要 boost.fiber），ucontext 出局 | 比 ucontext 快两个数量级；ucontext macOS 已弃用、非 FFI-safe |
-| ② run-queue | per-core 有界 ring（owner LIFO/thief FIFO 偷一半）+ LIFO slot + global 兜底 | Tokio/Go 实证；LIFO slot = completion 接入点 |
+| ② run-queue | per-core 有界 FIFO ring（thief 偷一半）+ 独立 LIFO fast slot + global/overflow 兜底 | Tokio/Go 实证；LIFO slot = completion 接入点 |
 | ② work-stealing | spin-then-park + 限制 thief 数 + unpark 接力 | 防惊群、防 N² 偷窃风暴 |
 | ② 四类统一 | fiber=调度单元、thread=执行引擎、coroutine=fiber 内挂起点、process=联邦边界 | 进程不共享 run-queue（地址空间不同），靠 io+shmem 联邦 |
 | ③ completion | 统一 `Waker{fiber, origin_core}`；per-core io_uring / IOCP / GPU 回调或轮询 | user_data 关联 fiber；唤回 origin_core 的 LIFO slot 保 cache 局部性 |
@@ -274,6 +274,105 @@ worker 调度循环（2.2）的第 0 步插入"收割 completion"：
 **全部基于 clay catomics 无锁重写，丢弃 clay 单全局锁 thread_pool。** time/ 提供单调钟+时间轮（deadline 不用墙钟），platform/ 提供 park 原语（futex/WaitOnAddress），二者是 sched 的 T2 仆从。
 
 **曾"待实现期定"、现多数已落地**（非设计悬念,是落地选择）：阻塞 syscall 的 blocking 池 ✅ sched-11（懒创建池；sysmon 明确不做，卸载显式）；LIFO slot 轮询预算上限 ✅ 已落地 `kMaxLifoPolls=3`（反饥饿）；GPU completion ✅ 定为**轮询**（`cudaEventQuery` 走 worker reap 模型，同 io，见 compute-design 开工前研究结论）；steal 的 backoff 曲线仍按需微调。
+
+## 2026-07 收口后的维护架构
+
+早期章节保留了设计演进。维护生产代码时以本节为当前真相：
+
+```text
+ C++ typed surface                           pure C / FFI surface
+ ┌─────────────────────────────┐            ┌─────────────────────────────┐
+ │ schedule(fn,ctx)            │            │ hyle_sched_schedule         │
+ │ spawn_detached[_on]         │            │ hyle_sched_spawn[_on]       │
+ │ spawn_task<T> / JoinHandle  │            │ opaque handles + callbacks  │
+ │ sync / channel / cancel     │            │ hyle/c/sched.h (114 funcs)  │
+ └──────────────┬──────────────┘            └──────────────┬──────────────┘
+                └────────────────────┬──────────────────────┘
+                                     v
+               ┌──────────────── admission + lifecycle ────────────────┐
+               │ Fiber: closed + count combined CAS state              │
+               │ InlineJob: open -> per-worker count++ -> recheck      │
+               │ drain scans fiber state + per-worker inline counters  │
+               │ ordinary shutdown admits descendants                  │
+               │ begin_shutdown -> drain[_for] -> stop -> join          │
+               └────────────────────┬───────────────────────────────────┘
+                                     v
+ ┌──────────────────────────── worker i ────────────────────────────────┐
+ │ pinned overflow -> pinned bounded queue                              │
+ │ periodic global -> LIFO fast slot -> local WsFifoQueue -> steal      │
+ │ timer wheel / io poll -> Waker rendezvous -> ready enqueue           │
+ │ <=8 by-value InlineJobs, then stackful Fiber/timer/io fairness poll   │
+ └──────────────────────┬────────────────────────────────────────────────┘
+                        │ queue saturation (cold path, no allocation)
+                        v
+          ┌─────────────────────────────────────────────┐
+          │ intrusive ReadyOverflow FIFO                │
+          │ global unpinned + one pinned FIFO / worker  │
+          │ mutex only when bounded queues are full     │
+          └─────────────────────────────────────────────┘
+
+ blocking syscall / CPU closure
+          |
+          v
+ ┌──────────────── BlockingPool ────────────────────────┐
+ │ lazy OS threads + intrusive FIFO + predicate CV      │
+ │ idle retirement/reaping; shutdown completion barrier │
+ └──────────────────────────────────────────────────────┘
+```
+
+### 两条任务腿
+
+- `schedule` 是**固定式轻任务腿**：worker-stack callback，无 fiber 分配/切栈，
+  callback 的 `{fn,ctx}` payload 直接按值进入分片队列，不分配 owning record；
+  内部完成计数按 worker 分片并独占 cache line，不让 producer 与所有 consumer
+  抢一个全局计数；不可挂起或阻塞。它不是“少做 CPUID 的静态腿”那类 SIMD
+  概念，而是调度合同选择。
+- `spawn_detached`/`spawn_task` 是**完整有栈腿**：可 yield、timer、Waker、同步等待
+  和 coroutine drive；代价包含 guarded stack 池和 fcontext。
+- 调度循环每次最多消费 8 个短 callback 后必查另一条腿，避免 firehose 饿死 fiber；
+  ready bounded
+  queue 满时进入 allocation-free intrusive overflow，生产者尤其是本 worker 不自旋
+  等待自己来清空队列。
+
+### 完成脊和下游
+
+`Waker` 的 wake-before-suspend rendezvous 是唯一恢复脊。time 的 TimerWheel、
+io 的 IOCP/io_uring/epoll completion、compute 的 GPU poller、graph 的
+parallel evaluation 和 compute/io 的 BlockingPool 都已直接消费 sched；不是孤立
+模块。取消状态随 Fiber 迁移，不使用 thread-local scope。
+
+### Highway thread_pool 与 SIMD 的边界
+
+Highway `hwy/contrib/thread_pool` 是高效的 bulk parallel-for：任务集合预先已知、
+worker task 不递归提交、caller 参与 barrier、可利用更丰富的 cache/topology
+映射。HYLE sched 是通用异步 M:N runtime：任务可派生、fiber 可挂起、Waker 接
+timer/io/gpu、支持取消/优雅关闭/blocking offload。拿 Highway 一次 `Run()` 与
+HYLE stackful spawn 逐项比，是不同合同。
+
+可吸收的 Highway 思想中，worker-stack 快任务已落到 `schedule`；caller 参与的
+bulk fork-join 和 cluster-aware partition 属于 `graph::parallel_for`/topology
+层，而不应污染通用 scheduler。未来只有真实 graph benchmark 显示 barrier 或
+NUMA/cache-cluster 落后时才扩这一层。
+
+SIMD 对 scheduler 控制面没有合理收益：队列元素是指针，瓶颈是原子所有权、
+cache-line、park/unpark 和 fcontext；批量 SIMD 扫队列既改变并发语义又增加
+依赖。SIMD 应在被调度的数据 kernel 内使用，sched 本身保持不依赖 `hyle::simd`。
+
+### 红队维护红线
+
+1. stackful `spawn` 的 admission 和 outstanding 必须保持同一个线性化 CAS
+   状态。InlineJob 例外采用已证明的
+   `open -> per-worker count++ -> recheck`：close 后竞态提交要么回滚，要么已被
+   drain 扫描计入；删掉第二次检查、合并/移动计数 shard 或取消其独占 cache line
+   都会分别重新引入 shutdown 漏单或 ARM cache-line 回归。
+2. worker 不能在满 ready queue 上自旋等自己消费；所有 reschedule/reinject/
+   pinned 路径都必须有 overflow 兜底。
+3. shutdown 是完成屏障；并发调用只能有一个 join owner，其余调用等完成。
+4. timer/CV 的 waiter 数据必须先完整发布再 arm，notify-vs-timeout 只有一个
+   胜者负责 unlink/wake。
+5. `Waker` 每 episode 恰消费一次；外部完成源先发布 Waker，再允许 completion。
+6. C ABI 只能输出 POD/opaque/callback；外部计数/容量错误必须可恢复，不把恶意
+   FFI 输入升级成进程 abort。
 
 ## 参考
 

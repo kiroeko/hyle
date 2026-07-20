@@ -38,19 +38,21 @@ TEST(ShardedQueue, PerShardFifoSameHint) {
 }
 
 TEST(ShardedQueue, PopScansAllShards) {
-  ShardedQueue<int> q(4, 8);
+  // Three shards exercises the non-power-of-two modulo fallback; an arbitrary
+  // large cursor proves try_pop normalizes caller-owned cursors before its
+  // division-free increment/wrap scan.
+  ShardedQueue<int> q(3, 8);
   // Push to distinct shards via distinct hints; a single cursor must still find
   // them all (round-robin scan), regardless of where it starts.
   EXPECT_TRUE(q.try_push(0, 100));
   EXPECT_TRUE(q.try_push(1, 101));
   EXPECT_TRUE(q.try_push(2, 102));
-  EXPECT_TRUE(q.try_push(3, 103));
-  std::size_t cur = 2;  // start mid-way
+  std::size_t cur = 1024;
   std::unordered_set<int> got;
   int v = 0;
   while (q.try_pop(cur, v)) got.insert(v);
-  EXPECT_EQ(got.size(), 4u);
-  EXPECT_TRUE(got.count(100) && got.count(101) && got.count(102) && got.count(103));
+  EXPECT_EQ(got.size(), 3u);
+  EXPECT_TRUE(got.count(100) && got.count(101) && got.count(102));
 }
 
 TEST(ShardedQueue, SuccessfulPopAdvancesPastBusyShard) {

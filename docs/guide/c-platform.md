@@ -309,7 +309,9 @@ HYLE 未发布，C ABI 面无版本门/协商——发布前按需自由演进�
 
 导出面覆盖：wait/Parker、Thread（priority 5 档）、DynLib、VM 自由函数 + VmRegion（含 `reserve_numa`/`adopt`）、hugepage·THP、NUMA（node 查询 + preferred/bind/interleave + `reserve_numa`）、fs/env（权限/符号链接/硬链接/原子临时文件/env 写）、MappedFile（RO/RW/COW）、cpu 全字段。
 
-> **有意不导出**：mem 的 `StatsAllocator` / `LeakTracker`（AllocStats 计数 + 泄漏追踪）是**有状态 C++ 类**，属 mem 模块而非 platform；是 debug 工具、无 FFI 需求 → 仅 C++。NUMA/hugepage 是 platform 层自由函数原语，故导出。
+> mem 的 `StatsAllocator` / `LeakTracker` 不属于 platform 导出面；其当前
+> 产品边界与 C 用户替代路径见 [`c-mem.md`](./c-mem.md) §3.9。
+> NUMA/hugepage 是 platform 用户能力，故在本模块直接导出。
 
 ---
 

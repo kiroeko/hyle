@@ -145,7 +145,7 @@ int main() {
         m.unlock();
       }
     });
-    b.run("HYLE Mutex (futex)", [&] {
+    b.run("HYLE Mutex (platform fast lock)", [&] {
       Mutex m;
       for (int i = 0; i < kIters; ++i) {
         m.lock();
@@ -178,7 +178,7 @@ int main() {
         m.unlock();
       }
     });
-    b.run("HYLE Mutex (futex, MT)", [&] {
+    b.run("HYLE Mutex (platform fast lock, MT)", [&] {
       Mutex m;
       for (int i = 0; i < kIters; ++i) {
         m.lock();
@@ -196,15 +196,14 @@ int main() {
     constexpr int kIters = 2000;  // per fiber
     ankerl::nanobench::Bench b;
     b.title("contended Mutex (8 fibers/4 workers)").relative(true).batch(static_cast<std::uint64_t>(kFibers) * kIters).minEpochIterations(20);
-    b.run("HYLE Mutex (futex) lock/inc/unlock", [&] {
+    b.run("HYLE Mutex (platform fast lock) lock/inc/unlock", [&] {
       MutexHammer h;
       h.iters = kIters;
       std::vector<std::unique_ptr<Fiber>> fibers;
       fibers.reserve(kFibers);
       for (int i = 0; i < kFibers; ++i)
-        fibers.push_back(std::make_unique<Fiber>(system_allocator(),
-                                                 kDefaultStackSize,
-                                                 &mutex_hammer_body, &h));
+        fibers.push_back(std::make_unique<Fiber>(
+            kDefaultStackSize, &mutex_hammer_body, &h));
       Scheduler sched(4, system_allocator(), 1024);
       for (auto& f : fibers) sched.spawn(f.get());
       sched.drain();
@@ -220,10 +219,10 @@ int main() {
     b.run("HYLE Channel<int> 1p1c", [&] {
       Channel<int> ch(system_allocator(), 16);
       ChanPair a{&ch, kN};
-      auto prod = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                          &chan_prod, &a);
-      auto cons = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                          &chan_cons, &a);
+      auto prod =
+          std::make_unique<Fiber>(kDefaultStackSize, &chan_prod, &a);
+      auto cons =
+          std::make_unique<Fiber>(kDefaultStackSize, &chan_cons, &a);
       Scheduler sched(2, system_allocator(), 256);
       sched.spawn(prod.get());
       sched.spawn(cons.get());
@@ -242,13 +241,11 @@ int main() {
       WgFork f{&wg};
       std::vector<std::unique_ptr<Fiber>> fibers;
       fibers.reserve(kWorkers + 1);
-      fibers.push_back(std::make_unique<Fiber>(system_allocator(),
-                                               kDefaultStackSize, &wg_wait_body,
-                                               &f));
+      fibers.push_back(std::make_unique<Fiber>(
+          kDefaultStackSize, &wg_wait_body, &f));
       for (int i = 0; i < kWorkers; ++i)
-        fibers.push_back(std::make_unique<Fiber>(system_allocator(),
-                                                 kDefaultStackSize,
-                                                 &wg_done_body, &f));
+        fibers.push_back(std::make_unique<Fiber>(
+            kDefaultStackSize, &wg_done_body, &f));
       Scheduler sched(4, system_allocator(), 1024);
       for (auto& fb : fibers) sched.spawn(fb.get());
       sched.drain();
@@ -278,13 +275,11 @@ int main() {
       LatchFork f{&latch};
       std::vector<std::unique_ptr<Fiber>> fibers;
       fibers.reserve(kWorkers + 1);
-      fibers.push_back(std::make_unique<Fiber>(system_allocator(),
-                                               kDefaultStackSize,
-                                               &latch_wait_body, &f));
+      fibers.push_back(std::make_unique<Fiber>(
+          kDefaultStackSize, &latch_wait_body, &f));
       for (int i = 0; i < kWorkers; ++i)
-        fibers.push_back(std::make_unique<Fiber>(system_allocator(),
-                                                 kDefaultStackSize,
-                                                 &latch_down_body, &f));
+        fibers.push_back(std::make_unique<Fiber>(
+            kDefaultStackSize, &latch_down_body, &f));
       Scheduler sched(4, system_allocator(), 1024);
       for (auto& fb : fibers) sched.spawn(fb.get());
       sched.drain();
@@ -331,10 +326,10 @@ int main() {
     b.run("HYLE ConditionVariable wait/notify ping-pong", [&] {
       CvPair s;
       s.rounds = kRounds;
-      auto cons = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                          &cv_consumer, &s);
-      auto prod = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                          &cv_producer, &s);
+      auto cons =
+          std::make_unique<Fiber>(kDefaultStackSize, &cv_consumer, &s);
+      auto prod =
+          std::make_unique<Fiber>(kDefaultStackSize, &cv_producer, &s);
       Scheduler sched(1, system_allocator(), 256);  // 1 worker: real block/handoff
       sched.spawn(cons.get());
       sched.spawn(prod.get());

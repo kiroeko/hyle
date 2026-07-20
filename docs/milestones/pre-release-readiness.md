@@ -45,7 +45,8 @@ docs **17.5k**。LOC 只说明资产体量，不作为功能或 SOTA 的替代�
 |---|---|---|
 | error/platform/mem/time/simd/util/obs | **预发布冻结** | 只按上述触发器重开；SVE/RVV 真机证据仍是平台到位后的专项补证 |
 | container | **预发布冻结** | StringBuf 复杂度/争用/batch/三平台强 peer 已收口；已知 Linux/M4 lifecycle 常数边界写入证书 |
-| sched/io | **下一批强收口** | 功能/下游/红队/测试性能/C ABI/指南六项一次完成 |
+| sched | **预发布冻结** | 双任务腿、饱和/关闭红队、114 入口 C ABI 与 guide 已收口；marl 15 遍三平台为 Win/Lin 明确赢、M4 统计平局；只按触发器重开 |
+| io | **下一批强收口** | 功能/下游/红队/测试性能/C ABI/指南六项一次完成 |
 | compute/graph | **机制成立、产品能力未封口** | 按北极星补能力，不能称“只有架子”，也不能提前冻结 |
 | close-01/发布 | **部分** | 八个底层模块完成；上层四模块、install/export、跨编译器和 FFI 冒烟待做 |
 
@@ -57,6 +58,7 @@ docs **17.5k**。LOC 只说明资产体量，不作为功能或 SOTA 的替代�
   [`obs-module-closure.md`](./obs-module-closure.md)、
   [`util-module-closure.md`](./util-module-closure.md)、
   [`container-module-closure.md`](./container-module-closure.md)；
+- sched：[`sched-module-closure.md`](./sched-module-closure.md)；
 - SIMD：[`simd-24-foundation-completion.md`](./simd-24-foundation-completion.md)、
   [`simd-capability-fill-list.md`](./simd-capability-fill-list.md) 和
   [`simd-23-cxx-facade-and-perf-closure.md`](./simd-23-cxx-facade-and-perf-closure.md)；
@@ -66,7 +68,7 @@ docs **17.5k**。LOC 只说明资产体量，不作为功能或 SOTA 的替代�
 
 ## 预期施工顺序
 
-1. sched、io 依次做同等级模块收口，同时补稳定 C ABI 与指南；
+1. sched 已完成；下一步对 io 做同等级模块收口，同时补稳定 C ABI 与指南；
 2. compute/graph 以北极星缺口为分母补能力，不按 LOC 或里程碑数量凑完成度；
 3. 完成 close-01 的 install/export、跨编译器和最小 FFI 冒烟，才进入候选发布版。
 

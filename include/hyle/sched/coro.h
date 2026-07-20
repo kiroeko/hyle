@@ -3,6 +3,9 @@
 #include <coroutine>
 #include <cstddef>
 #include <exception>
+#include <limits>
+#include <optional>
+#include <type_traits>
 #include <utility>
 
 #include "hyle/macros.h"
@@ -12,8 +15,8 @@
 // sched-06: the coroutine <-> fiber glue (sched-design §4). A `co_await` inside a
 // fiber suspends the FIBER (fcontext stack switch), not just the coroutine, so a
 // deep call chain can await without every frame being a coroutine. The coroutine
-// frame lives on the fiber's stack, so fiber suspend/resume naturally freezes/
-// thaws the coroutine with it.
+// frame lives in the supplied Allocator; the fiber owns the execution stack, so
+// fiber suspend/resume naturally freezes/thaws the calling stack around it.
 //
 // Two pieces:
 //   - Task<T>: a coroutine whose frame is allocated through a HYLE mem::Allocator
@@ -22,6 +25,10 @@
 //     await_suspend captures current_waker() (so the awaiter can hand it to an
 //     io/gpu/timer source) and suspend()s the fiber; the source's wake() re-injects
 //     the fiber, fiber resume returns from suspend(), and co_await continues.
+//
+// Coroutine frames are allocator-backed; execution is driven by a stackful
+// fiber. Suspending that fiber freezes the caller stack while the coroutine
+// frame remains stable in allocator storage.
 //
 // This is the ergonomic shell over the sched-04a Waker spine; the raw fiber +
 // Waker interface stays available for hot paths that don't want a coroutine
@@ -63,6 +70,9 @@ struct PromiseAllocBase {
   // Task coroutine that forgets the allocator param fails to compile.
   static void* operator new(std::size_t n, mem::Allocator alloc,
                             auto&&...) noexcept {
+    if (!alloc.valid() ||
+        n > std::numeric_limits<std::size_t>::max() - kPrefix)
+      return nullptr;
     void* base = alloc.allocate(n + kPrefix, alignof(std::max_align_t));
     if (base == nullptr) return nullptr;
     *static_cast<mem::Allocator*>(base) = alloc;
@@ -80,13 +90,23 @@ struct PromiseAllocBase {
 template <class T>
 class Task {
  public:
+  static_assert(std::is_nothrow_move_constructible_v<T>,
+                "Task<T> requires a noexcept move-constructible result");
+  static_assert(alignof(T) <= alignof(std::max_align_t),
+                "Task<T> does not support over-aligned result types");
+
   struct promise_type : detail::PromiseAllocBase {
-    T value_{};
+    // Optional storage avoids imposing default-construction and move-assignment
+    // on every task result. A coroutine result only needs to be move-constructible.
+    std::optional<T> value_;
     std::exception_ptr exc_;
     std::coroutine_handle<> continuation_;  // who to resume on completion (unused in minimal)
 
     Task get_return_object() noexcept {
       return Task{std::coroutine_handle<promise_type>::from_promise(*this)};
+    }
+    static Task get_return_object_on_allocation_failure() noexcept {
+      return Task{};
     }
     // Lazy start: the coroutine is suspended at its open brace; the driver calls
     // start() to run it (so the caller controls when it begins on a fiber).
@@ -94,7 +114,7 @@ class Task {
     // Keep the frame alive at completion so the driver can read result(); the
     // Task destructor destroys it. final_suspend never resumes.
     std::suspend_always final_suspend() noexcept { return {}; }
-    void return_value(T v) noexcept { value_ = std::move(v); }
+    void return_value(T v) noexcept { value_.emplace(std::move(v)); }
     void unhandled_exception() noexcept { exc_ = std::current_exception(); }
   };
 
@@ -121,9 +141,12 @@ class Task {
     if (h_ && !h_.done()) h_.resume();
   }
   bool done() const noexcept { return !h_ || h_.done(); }
+  bool valid() const noexcept { return static_cast<bool>(h_); }
   T result() {
+    HYLE_FATAL_ASSERT(h_);
     if (h_.promise().exc_) std::rethrow_exception(h_.promise().exc_);
-    return std::move(h_.promise().value_);
+    HYLE_FATAL_ASSERT(h_.promise().value_.has_value());
+    return std::move(*h_.promise().value_);
   }
 
   // ---- awaiter: co_await a sub-Task from within another Task ----------------
@@ -157,6 +180,9 @@ class Task<void> {
     Task get_return_object() noexcept {
       return Task{std::coroutine_handle<promise_type>::from_promise(*this)};
     }
+    static Task get_return_object_on_allocation_failure() noexcept {
+      return Task{};
+    }
     std::suspend_always initial_suspend() noexcept { return {}; }
     std::suspend_always final_suspend() noexcept { return {}; }
     void return_void() noexcept {}
@@ -182,8 +208,10 @@ class Task<void> {
     if (h_ && !h_.done()) h_.resume();
   }
   bool done() const noexcept { return !h_ || h_.done(); }
+  bool valid() const noexcept { return static_cast<bool>(h_); }
   void result() {
-    if (h_ && h_.promise().exc_) std::rethrow_exception(h_.promise().exc_);
+    HYLE_FATAL_ASSERT(h_);
+    if (h_.promise().exc_) std::rethrow_exception(h_.promise().exc_);
   }
 
   // awaiter: co_await a sub-Task<void> (see Task<T>::await_* for the stackful

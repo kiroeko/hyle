@@ -173,7 +173,15 @@ soft 提示，绝不影响正确性。flags 用 `HYLE_HUGE_*` 位。
 | `GrowablePool<T>` | 同 `ObjectPool<T>`：**泛型语法**过不了 C ABI，非能力缺失。**能力已可达**：C 侧用 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE` 宏（§3.5）在类型擦除的核心上得到可增长裸槽池，裸槽自 init。需 create 跑 ctor / destroy 跑 ~T 才用 C++ `GrowablePool<T>` |
 | `pmr::*` | 模板，C 无泛型。专为桥接 `std::pmr` 容器，纯 C++ 语境 |
 | `Allocator` typed 层（`allocate_n` / `construct` / `make_unique`） | C++ 模板便利，C 侧用裸 `alloc` + 手动 size |
-| `AllocStats` / `LeakTracker` / `StatsAllocator` | 有状态调试/内省类，是 debug/test 工具，跨语言消费者自带（ASan/valgrind/各 runtime profiler），无 FFI 需求（同 error 的 `ErrorRecord`）。对照 ggml：它只把「用了多少内存」降维成标量查询 `ggml_used_mem`，也不导出统计器类 |
+| `AllocStats` / `LeakTracker` / `StatsAllocator` | 当前是内部 debug/test 设施，不是承诺的稳定产品对象；这不是因为“C 无法表达类”。业务级计数可按下文包装公开 allocator；逐地址泄漏归因用 ASan/Valgrind/目标语言 profiler。若提升为用户能力，必须补 opaque tracker + POD snapshot/visitor |
+
+纯 C 程序若只需要业务级分配计数，可以用公开的 `hyle_allocator` vtable 包一层：
+wrapper state 保存 backing allocator 与计数，三个 callback 先转发 backing，再更新
+调用方自己的计数。这些 state 必须活到所有借出的 allocator/内存释放之后；多线程
+使用时计数也必须由调用方原子化。逐地址泄漏归因不建议在绑定层重新造 hash map，
+使用 ASan/Valgrind/目标语言 profiler。若 HYLE 未来把 stats/leak tracker 从内部
+debug 工具提升为稳定用户能力，本表必须改为 opaque tracker + POD snapshot/visitor，
+不能继续以“C 没有类”为理由省略。
 
 ---
 

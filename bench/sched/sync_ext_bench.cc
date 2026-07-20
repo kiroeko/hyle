@@ -121,8 +121,8 @@ int main() {
       std::vector<std::unique_ptr<Fiber>> fibers;
       fibers.reserve(kFibers);
       for (int i = 0; i < kFibers; ++i)
-        fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                                 &sem_hammer_body, &h));
+        fibers.push_back(std::make_unique<Fiber>(
+            kDefaultStackSize, &sem_hammer_body, &h));
       Scheduler sched(4, system_allocator(), 1024);
       for (auto& f : fibers) sched.spawn(f.get());
       sched.drain();
@@ -166,8 +166,8 @@ int main() {
       std::vector<std::unique_ptr<Fiber>> fibers;
       fibers.reserve(kFibers);
       for (int i = 0; i < kFibers; ++i)
-        fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                                 &rw_read_body, &h));
+        fibers.push_back(std::make_unique<Fiber>(
+            kDefaultStackSize, &rw_read_body, &h));
       Scheduler sched(4, system_allocator(), 1024);
       for (auto& f : fibers) sched.spawn(f.get());
       sched.drain();
@@ -199,7 +199,7 @@ int main() {
         }
         nb::doNotOptimizeAway(sink);
       };
-      auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, body, &s);
+      auto f = std::make_unique<Fiber>(kDefaultStackSize, body, &s);
       sched.spawn(f.get());
       sched.drain();
     });
@@ -224,7 +224,7 @@ int main() {
         }
         nb::doNotOptimizeAway(sink);
       };
-      auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize, body, &s);
+      auto f = std::make_unique<Fiber>(kDefaultStackSize, body, &s);
       sched.spawn(f.get());
       sched.drain();
     });
@@ -275,11 +275,11 @@ int main() {
         };
         for (int i = 0; i < nrecv; ++i) {
           rxargs.push_back(std::make_unique<RxArg>(RxArg{ctx.get(), i}));
-          fibers.push_back(std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                                   rx_body, rxargs.back().get()));
+          fibers.push_back(std::make_unique<Fiber>(
+              kDefaultStackSize, rx_body, rxargs.back().get()));
         }
-        auto txf = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                           tx_body, ctx.get());
+        auto txf = std::make_unique<Fiber>(
+            kDefaultStackSize, tx_body, ctx.get());
         for (auto& f : fibers) sched.spawn(f.get());
         sched.spawn(txf.get());
         sched.drain();

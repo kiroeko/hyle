@@ -84,7 +84,7 @@ class ShardedQueue {
   // shard is full (a bounded-queue semantic: under skew one shard may fill while
   // others have room -- the caller retries / spills, same as the single ring).
   bool try_push(std::size_t producer_hint, T item) noexcept {
-    return shards_[producer_hint % num_shards_].try_push(item);
+    return shards_[shard_index(producer_hint)].try_push(item);
   }
 
   // Pop the next item, scanning shards round-robin from `cursor`. On success
@@ -92,12 +92,14 @@ class ShardedQueue {
   // fairness even when one shard is continuously fed. Returns false only if
   // EVERY shard was empty at its check.
   bool try_pop(std::size_t& cursor, T& out) noexcept {
+    std::size_t s = shard_index(cursor);
     for (std::size_t i = 0; i < num_shards_; ++i) {
-      std::size_t s = (cursor + i) % num_shards_;
       if (shards_[s].try_pop(out)) {
-        cursor = (s + 1) % num_shards_;
+        cursor = s + 1;
+        if (cursor == num_shards_) cursor = 0;
         return true;
       }
+      if (++s == num_shards_) s = 0;
     }
     return false;
   }
@@ -119,6 +121,9 @@ class ShardedQueue {
         num_shards_ <= static_cast<std::size_t>(-1) /
                            sizeof(BoundedQueue<T, Alloc>) &&
         cap_per_shard <= static_cast<std::size_t>(-1) / num_shards_);
+    shard_mask_ = (num_shards_ & (num_shards_ - 1)) == 0
+                      ? num_shards_ - 1
+                      : static_cast<std::size_t>(-1);
     // Allocator-backed array of ring objects (NOT std::vector -- charter §1 forbids std
     // owning types in a header that may cross the ABI boundary). BoundedQueue is
     // non-movable, so placement-new each shard in situ (sharing this queue's Alloc).
@@ -140,9 +145,16 @@ class ShardedQueue {
     }
   }
 
+  std::size_t shard_index(std::size_t hint) const noexcept {
+    return shard_mask_ != static_cast<std::size_t>(-1)
+               ? hint & shard_mask_
+               : hint % num_shards_;
+  }
+
   HYLE_NO_UNIQUE_ADDRESS Alloc alloc_{};
   BoundedQueue<T, Alloc>* shards_ = nullptr;  // allocator-backed array (placement-new'd)
   std::size_t num_shards_;
+  std::size_t shard_mask_ = static_cast<std::size_t>(-1);
 };
 
 }  // namespace hyle::container

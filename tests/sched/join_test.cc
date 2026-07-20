@@ -59,6 +59,15 @@ void* tsan_mr(void*, void* p, std::size_t, std::size_t nn, std::size_t) noexcept
 Allocator tsan_visible_allocator() noexcept {
   return Allocator(&tsan_ma, &tsan_mf, &tsan_mr, nullptr);
 }
+void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
+void fail_free(void*, void*, std::size_t, std::size_t) noexcept {}
+void* fail_realloc(void*, void*, std::size_t, std::size_t,
+                   std::size_t) noexcept {
+  return nullptr;
+}
+Allocator failing_allocator() noexcept {
+  return Allocator(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+}
 }  // namespace
 
 namespace {
@@ -68,6 +77,28 @@ Task<int> add_coro(Allocator, int a, int b) { co_return a + b; }
 Task<void> bump_coro(Allocator, std::atomic<int>* c) {
   c->fetch_add(1, std::memory_order_relaxed);
   co_return;
+}
+
+struct MoveOnlyResult {
+  explicit MoveOnlyResult(std::atomic<int>* destroyed) noexcept
+      : destroyed(destroyed) {}
+  MoveOnlyResult(MoveOnlyResult&& other) noexcept
+      : destroyed(std::exchange(other.destroyed, nullptr)) {}
+  MoveOnlyResult& operator=(MoveOnlyResult&&) = delete;
+  HYLE_DISABLE_COPY(MoveOnlyResult);
+  ~MoveOnlyResult() {
+    if (destroyed != nullptr) destroyed->fetch_add(1, std::memory_order_relaxed);
+  }
+  std::atomic<int>* destroyed;
+};
+
+Task<MoveOnlyResult> move_only_coro(Allocator, std::atomic<int>* destroyed) {
+  co_return MoveOnlyResult(destroyed);
+}
+
+Task<int> throwing_coro(Allocator) {
+  throw 42;
+  co_return 0;
 }
 
 // A coroutine that suspends until woken, publishing its Waker for a foreign wake.
@@ -94,6 +125,49 @@ TEST(Join, SpawnTaskJoinReturnsValue) {
   sched.shutdown();
 }
 
+TEST(Join, UserExceptionBecomesInternalStatus) {
+  Scheduler sched(1, system_allocator(), 64);
+  auto h = spawn_task(sched, system_allocator(),
+                      throwing_coro(system_allocator()));
+  auto r = h.join();
+  ASSERT_FALSE(r.has_value());
+  EXPECT_TRUE(r.error().IsInternal());
+  sched.shutdown();
+}
+
+TEST(Join, AllocationFailuresBecomeResourceExhausted) {
+  Scheduler sched(1, system_allocator(), 64);
+
+  // Coroutine-frame OOM is reported by the compiler's allocation-failure hook.
+  auto no_frame = spawn_task(
+      sched, system_allocator(), add_coro(failing_allocator(), 1, 2));
+  ASSERT_TRUE(no_frame.valid());
+  auto frame_result = no_frame.join();
+  ASSERT_FALSE(frame_result.has_value());
+  EXPECT_TRUE(frame_result.error().IsResourceExhausted());
+
+  // Join-state OOM is an immediate completed error handle and participates in
+  // grouping like any other already-completed task.
+  auto no_state = spawn_task(
+      sched, failing_allocator(), add_coro(system_allocator(), 1, 2));
+  ASSERT_TRUE(no_state.valid());
+  EXPECT_TRUE(no_state.is_finished());
+  auto normal = spawn_task(
+      sched, system_allocator(), add_coro(system_allocator(), 3, 4));
+  EXPECT_EQ(when_any(no_state, normal), 0);
+  auto state_result = no_state.join();
+  ASSERT_FALSE(state_result.has_value());
+  EXPECT_TRUE(state_result.error().IsResourceExhausted());
+  EXPECT_EQ(*normal.join(), 7);
+
+  auto unsafe_stack = spawn_task(
+      sched, system_allocator(), add_coro(system_allocator(), 1, 2), 4096);
+  auto stack_result = unsafe_stack.join();
+  ASSERT_FALSE(stack_result.has_value());
+  EXPECT_TRUE(stack_result.error().IsInvalidArgument());
+  sched.shutdown();
+}
+
 // A void task joins to a valid empty Result.
 TEST(Join, VoidTaskJoins) {
   std::atomic<int> c{0};
@@ -102,6 +176,33 @@ TEST(Join, VoidTaskJoins) {
   auto r = h.join();
   EXPECT_TRUE(r.has_value());
   EXPECT_EQ(c.load(), 1);
+  sched.shutdown();
+}
+
+// Regression: join used to require default construction + move assignment and
+// then destroy the result slot twice (once in take, once in release).
+TEST(Join, MoveOnlyResultIsDestroyedExactlyOnce) {
+  std::atomic<int> destroyed{0};
+  Scheduler sched(1, system_allocator(), 64);
+  {
+    auto h = spawn_task(
+        sched, system_allocator(), move_only_coro(system_allocator(), &destroyed));
+    auto r = h.join();
+    ASSERT_TRUE(r.has_value());
+    EXPECT_EQ(destroyed.load(std::memory_order_relaxed), 0);
+  }
+  EXPECT_EQ(destroyed.load(std::memory_order_relaxed), 1);
+  sched.shutdown();
+}
+
+TEST(Join, SpawnAfterAdmissionClosedReturnsCancelled) {
+  Scheduler sched(1, system_allocator(), 64);
+  sched.begin_shutdown();
+  auto h = spawn_task(sched, system_allocator(),
+                      add_coro(system_allocator(), 20, 22));
+  auto r = h.join();
+  ASSERT_FALSE(r.has_value());
+  EXPECT_TRUE(r.error().IsCancelled());
   sched.shutdown();
 }
 

@@ -20,6 +20,10 @@
 
 namespace hyle::sched {
 
+namespace detail {
+struct FiberReadyAccess;
+}  // namespace detail
+
 // Tiered fiber stack sizes (usable bytes; a guard page is added below).
 // Prefer these over raw literals so io / default / compute stay consistent.
 inline constexpr std::size_t kSmallStackSize = mem::kFiberStackSmall;
@@ -171,6 +175,7 @@ class Fiber {
   // friend so the file-local fcontext trampoline can drive private state without
   // exposing transfer_t/fcontext_t in this public header.
   friend struct FiberLaunch;
+  friend struct detail::FiberReadyAccess;
 
   void release_stack_() noexcept;
 
@@ -186,6 +191,7 @@ class Fiber {
   FinishFn on_finish_ = nullptr;      // sched-10: run by dispatch after done()
   void* on_finish_ctx_ = nullptr;     // ctx for on_finish_ (e.g. the TaskDriver)
   void* cancel_flag_ = nullptr;       // sched-10: task's cancel_req, travels w/ fiber
+  Fiber* ready_next_ = nullptr;       // scheduler cold overflow intrusive link
   const char* name_ = nullptr;        // obs-02: trace label (stable ptr), OFF-build unused
 #if defined(HYLE_TRACE) && defined(HYLE_TRACE_TRACY)
   // Trace-only heap storage keeps the default name pointer stable across Fiber

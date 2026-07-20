@@ -2,17 +2,20 @@
 // converged from). Built only with -DHYLE_BENCH_MARL=ON.
 //
 // Two head-to-head workloads, same shape on both schedulers (4 workers):
-//  1. CONTENDED Mutex: 8 tasks x K (lock / ++counter / unlock). HYLE's Mutex is
-//     a futex (Drepper 3-state, parks the worker on contention); marl::mutex IS
-//     std::mutex (also futex-backed). Same family -> expect parity.
+//  1. CONTENDED Mutex: 8 tasks x K (lock / ++counter / unlock). HYLE uses the
+//     platform fast lock (SRWLOCK on Windows; compact address-wait lock on
+//     POSIX); marl::mutex IS std::mutex. Same short-critical-section contract.
 //  2. WaitGroup fork-join: N tasks each done(), one waiter. Both have a near-
 //     identical WaitGroup API.
 //
-// HONEST framing: marl::mutex == std::mutex; HYLE's Mutex is its own futex over
-// platform::wait_on_address. Both park the worker (not the fiber) on contention
-// -- a mutex guards short sections, where parking beats yielding. #1 checks
-// futex-vs-futex parity; #2 is dominated by HYLE's per-fiber 64KB stack alloc
-// (no fiber-stack pool yet) vs marl's pooled fibers, NOT by the WaitGroup sync.
+// HONEST framing: marl::mutex == std::mutex; both park the worker (not the fiber)
+// on contention -- a mutex guards short sections, where parking beats yielding.
+// #2 and #3 call marl::Scheduler::enqueue directly, deliberately leaving the
+// benchmark caller unbound: marl::bind would turn the caller into an additional
+// executable fiber worker and make a configured "4 workers" a 5-vs-4 shape.
+// They compare marl's fire-and-forget schedule with
+// HYLE's equal-semantics spawn_detached; an extra HYLE spawn_task row prices the
+// richer coroutine + JoinHandle structured-concurrency layer separately.
 
 #include <nanobench.h>
 
@@ -22,17 +25,21 @@
 
 #include "marl/mutex.h"
 #include "marl/scheduler.h"
+#include "marl/task.h"
 #include "marl/waitgroup.h"
 
 #include "hyle/mem/allocator.h"
-#include "hyle/mem/memory_arena.h"
+#include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
+#include "hyle/sched/join.h"
 #include "hyle/sched/scheduler.h"
 #include "hyle/sched/sync.h"
 
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
+using hyle::sched::JoinHandle;
 using hyle::sched::kDefaultStackSize;
+using hyle::sched::Task;
 
 namespace {
 constexpr int kWorkers = 4;
@@ -45,6 +52,7 @@ struct HyleHammer {
   hyle::sched::Mutex m;
   std::uint64_t counter = 0;
   int iters;
+  hyle::sched::WaitGroup* done = nullptr;
 };
 void hyle_hammer_body(void* p) {
   auto* h = static_cast<HyleHammer*>(p);
@@ -53,13 +61,17 @@ void hyle_hammer_body(void* p) {
     ++h->counter;
     h->m.unlock();
   }
+  if (h->done != nullptr) h->done->done();
 }
-struct HyleWg {
-  hyle::sched::WaitGroup* wg;
-};
-void hyle_wg_done(void* p) { static_cast<HyleWg*>(p)->wg->done(); }
-void hyle_wg_wait(void* p) { static_cast<HyleWg*>(p)->wg->wait(); }
-void hyle_noop(void*) {}  // pure spawn/dispatch cost, no per-task work
+Task<void> hyle_wg_task(hyle::mem::Allocator, hyle::sched::WaitGroup* wg) {
+  wg->done();
+  co_return;
+}
+Task<void> hyle_noop_task(hyle::mem::Allocator) { co_return; }
+void hyle_wg_done(void* p) {
+  static_cast<hyle::sched::WaitGroup*>(p)->done();
+}
+void hyle_noop(void*) {}
 }  // namespace
 
 int main() {
@@ -78,40 +90,40 @@ int main() {
       marl::Scheduler::Config cfg;
       cfg.setWorkerThreadCount(kWorkers);
       marl::Scheduler sched(cfg);
-      sched.bind();
       b.run("marl mutex (=std::mutex)", [&] {
         marl::mutex m;
         std::uint64_t counter = 0;
         marl::WaitGroup wg(kMutexTasks);
         for (int t = 0; t < kMutexTasks; ++t) {
-          marl::schedule([&m, &counter, &wg] {
+          sched.enqueue(marl::Task([&m, &counter, &wg] {
             for (int i = 0; i < kMutexIters; ++i) {
               m.lock();
               ++counter;
               m.unlock();
             }
             wg.done();
-          });
+          }));
         }
         wg.wait();
         ankerl::nanobench::doNotOptimizeAway(counter);
       });
-      marl::Scheduler::unbind();
     }
 
-    // HYLE: persistent scheduler, per-epoch spawn 8 fibers + drain.
+    // HYLE: persistent scheduler, same worker-stack callback shape as marl.
+    // Mutex protects a short critical section and may briefly park a worker;
+    // no fiber-only wait/yield/sleep API is used here.
     {
       hyle::sched::Scheduler sched(kWorkers, system_allocator(), 1024);
-      b.run("HYLE Mutex (futex)", [&] {
+      b.run("HYLE Mutex (platform fast lock)", [&] {
         HyleHammer h;
         h.iters = kMutexIters;
-        std::vector<std::unique_ptr<Fiber>> fibers;
-        fibers.reserve(kMutexTasks);
-        for (int t = 0; t < kMutexTasks; ++t)
-          fibers.push_back(std::make_unique<Fiber>(
-              system_allocator(), kDefaultStackSize, &hyle_hammer_body, &h));
-        for (auto& f : fibers) sched.spawn(f.get());
-        sched.drain();
+        hyle::sched::WaitGroup done(kMutexTasks);
+        h.done = &done;
+        for (int t = 0; t < kMutexTasks; ++t) {
+          const auto status = sched.schedule(&hyle_hammer_body, &h);
+          ankerl::nanobench::doNotOptimizeAway(status.ok());
+        }
+        done.wait();
         ankerl::nanobench::doNotOptimizeAway(h.counter);
       });
       sched.shutdown();
@@ -130,55 +142,60 @@ int main() {
       marl::Scheduler::Config cfg;
       cfg.setWorkerThreadCount(kWorkers);
       marl::Scheduler sched(cfg);
-      sched.bind();
       b.run("marl WaitGroup", [&] {
         marl::WaitGroup wg(kWgTasks);
         for (int i = 0; i < kWgTasks; ++i)
-          marl::schedule([wg] { wg.done(); });
+          sched.enqueue(marl::Task([wg] { wg.done(); }));
         wg.wait();
       });
-      marl::Scheduler::unbind();
     }
 
     {
       hyle::sched::Scheduler sched(kWorkers, system_allocator(), 2048);
-      b.run("HYLE WaitGroup (malloc stacks)", [&] {
+      b.run("HYLE WaitGroup + schedule (worker-stack)", [&] {
         hyle::sched::WaitGroup wg;
         wg.add(kWgTasks);
-        HyleWg arg{&wg};
-        std::vector<std::unique_ptr<Fiber>> fibers;
-        fibers.reserve(kWgTasks + 1);
-        fibers.push_back(std::make_unique<Fiber>(
-            system_allocator(), kDefaultStackSize, &hyle_wg_wait, &arg));
-        for (int i = 0; i < kWgTasks; ++i)
-          fibers.push_back(std::make_unique<Fiber>(
-              system_allocator(), kDefaultStackSize, &hyle_wg_done, &arg));
-        for (auto& f : fibers) sched.spawn(f.get());
-        sched.drain();
+        for (int i = 0; i < kWgTasks; ++i) {
+          const auto status = sched.schedule(&hyle_wg_done, &wg);
+          ankerl::nanobench::doNotOptimizeAway(status.ok());
+        }
+        wg.wait();
       });
       sched.shutdown();
     }
 
-    // Same workload, but fiber stacks come from a lock-free MemoryArena pool
-    // (recycled across epochs) instead of malloc -- isolates the stack-alloc cost.
     {
       hyle::sched::Scheduler sched(kWorkers, system_allocator(), 2048);
-      hyle::mem::MemoryArena stack_pool(system_allocator(), kDefaultStackSize,
-                                        kWgTasks + 8, kDefaultStackSize);
-      hyle::mem::Allocator pool = stack_pool.as_allocator();
-      b.run("HYLE WaitGroup (pooled stacks)", [&] {
+      b.run("HYLE WaitGroup + spawn_detached (pooled stacks)", [&] {
         hyle::sched::WaitGroup wg;
         wg.add(kWgTasks);
-        HyleWg arg{&wg};
-        std::vector<std::unique_ptr<Fiber>> fibers;
-        fibers.reserve(kWgTasks + 1);
-        fibers.push_back(std::make_unique<Fiber>(pool, kDefaultStackSize,
-                                                 &hyle_wg_wait, &arg));
-        for (int i = 0; i < kWgTasks; ++i)
-          fibers.push_back(std::make_unique<Fiber>(pool, kDefaultStackSize,
-                                                   &hyle_wg_done, &arg));
-        for (auto& f : fibers) sched.spawn(f.get());
-        sched.drain();
+        for (int i = 0; i < kWgTasks; ++i) {
+          const auto status = sched.spawn_detached(
+              &hyle_wg_done, &wg, kDefaultStackSize);
+          ankerl::nanobench::doNotOptimizeAway(status.ok());
+        }
+        wg.wait();
+      });
+      sched.shutdown();
+    }
+
+    {
+      hyle::sched::Scheduler sched(kWorkers, system_allocator(), 2048);
+      const auto alloc = system_allocator();
+      b.run("HYLE WaitGroup + spawn_task (pooled stacks)", [&] {
+        hyle::sched::WaitGroup wg;
+        wg.add(kWgTasks);
+        std::vector<JoinHandle<void>> tasks;
+        tasks.reserve(kWgTasks);
+        for (int i = 0; i < kWgTasks; ++i) {
+          tasks.push_back(hyle::sched::spawn_task(
+              sched, alloc, hyle_wg_task(alloc, &wg)));
+        }
+        wg.wait();
+        for (auto& task : tasks) {
+          auto result = task.join();
+          ankerl::nanobench::doNotOptimizeAway(result.has_value());
+        }
       });
       sched.shutdown();
     }
@@ -196,28 +213,70 @@ int main() {
       marl::Scheduler::Config cfg;
       cfg.setWorkerThreadCount(kWorkers);
       marl::Scheduler sched(cfg);
-      sched.bind();
       b.run("marl schedule 2000 noop", [&] {
         marl::WaitGroup wg(kNoop);
-        for (int i = 0; i < kNoop; ++i) marl::schedule([wg] { wg.done(); });
+        for (int i = 0; i < kNoop; ++i)
+          sched.enqueue(marl::Task([wg] { wg.done(); }));
         wg.wait();
       });
-      marl::Scheduler::unbind();
     }
 
     {
       hyle::sched::Scheduler sched(kWorkers, system_allocator(), 4096);
-      hyle::mem::MemoryArena stack_pool(system_allocator(), kDefaultStackSize,
-                                        kNoop + 8, kDefaultStackSize);
-      hyle::mem::Allocator pool = stack_pool.as_allocator();
-      b.run("HYLE spawn 2000 noop (pooled)", [&] {
-        std::vector<std::unique_ptr<Fiber>> fibers;
-        fibers.reserve(kNoop);
-        for (int i = 0; i < kNoop; ++i)
-          fibers.push_back(std::make_unique<Fiber>(pool, kDefaultStackSize,
-                                                   &hyle_noop, nullptr));
-        for (auto& f : fibers) sched.spawn(f.get());
+      b.run("HYLE schedule 2000 noop (worker-stack)", [&] {
+        hyle::sched::WaitGroup wg(kNoop);
+        for (int i = 0; i < kNoop; ++i) {
+          const auto status = sched.schedule(&hyle_wg_done, &wg);
+          ankerl::nanobench::doNotOptimizeAway(status.ok());
+        }
+        wg.wait();
+      });
+      sched.shutdown();
+    }
+
+    // Same HYLE submit path with Scheduler's native completion barrier. Kept
+    // separate because marl exposes no equivalent drain() primitive; the
+    // WaitGroup row above is the strict equal-shape comparison.
+    {
+      hyle::sched::Scheduler sched(kWorkers, system_allocator(), 4096);
+      b.run("HYLE schedule 2000 noop + drain", [&] {
+        for (int i = 0; i < kNoop; ++i) {
+          const auto status = sched.schedule(&hyle_noop, nullptr);
+          ankerl::nanobench::doNotOptimizeAway(status.ok());
+        }
         sched.drain();
+      });
+      sched.shutdown();
+    }
+
+    {
+      hyle::sched::Scheduler sched(kWorkers, system_allocator(), 4096);
+      b.run("HYLE spawn_detached 2000 noop (pooled)", [&] {
+        hyle::sched::WaitGroup wg(kNoop);
+        for (int i = 0; i < kNoop; ++i) {
+          const auto status =
+              sched.spawn_detached(&hyle_wg_done, &wg, kDefaultStackSize);
+          ankerl::nanobench::doNotOptimizeAway(status.ok());
+        }
+        wg.wait();
+      });
+      sched.shutdown();
+    }
+
+    {
+      hyle::sched::Scheduler sched(kWorkers, system_allocator(), 4096);
+      const auto alloc = system_allocator();
+      b.run("HYLE spawn_task 2000 noop (pooled)", [&] {
+        std::vector<JoinHandle<void>> tasks;
+        tasks.reserve(kNoop);
+        for (int i = 0; i < kNoop; ++i) {
+          tasks.push_back(hyle::sched::spawn_task(
+              sched, alloc, hyle_noop_task(alloc)));
+        }
+        for (auto& task : tasks) {
+          auto result = task.join();
+          ankerl::nanobench::doNotOptimizeAway(result.has_value());
+        }
       });
       sched.shutdown();
     }

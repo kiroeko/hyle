@@ -185,9 +185,18 @@ consumer cursor 应由各 consumer 私有并在多次 pop 间保留。
 `hyle_container_concurrent_vector_at` 是 append-only `void*` vector。成功 push 返回
 索引，失败返回 `SIZE_MAX`。已经发布的元素地址不移动；调用者仍负责 payload 生命周期。
 
-## C++ 专属能力
+## C++ 形状在 C 中怎么取得
 
-`SmallVector<T,N>` 的 inline N、typed `SwissTable<K,V>` 的 inline hash/eq、
-非指针 payload 队列和编译期 `hash_inline` 都依赖 C++ 静态类型，保留在同工具链
-C++ 面。C ABI 已用类型擦除覆盖其可稳定表达的动态能力，不导出模板实例或
-`std::vector`，也不冻结内部类布局。
+不导出模板实例或 `std::vector`，也不冻结内部类布局；按能力使用下列动态形状：
+
+| C++ 形状 | C/FFI 通路 |
+|---|---|
+| `SmallVector<T,N>` / `CArray<T>` | `hyle_container_vector_*`：options 传 `element_size`/`alignment`，按值存储 trivially-copyable 元素。inline `N` 是 C++ 对象布局便利，不是稳定跨 ABI 属性 |
+| `SwissTable<K,V>` | `hyle_container_hash_map_*`：key/value 按 options 中的 size/alignment 擦除，hash/equality 由 callback+ctx 注入 |
+| `BoundedQueue<T>` / `ShardedQueue<T>` / `WorkStealingDeque<T>` / `WsFifoQueue<T>` | 对应 `hyle_container_*queue*` / `*_deque_*` opaque 句柄接受 `void*` payload；payload 生命周期归调用方 |
+| `ConcurrentVector<T>` | `hyle_container_concurrent_vector_*` append `void*`；调用方保存 typed payload |
+| `hash_inline<T>` | 编译期 trivial-object 便利；C 侧对实际字节调用公开 hash C ABI，或向 swiss map 注入业务 hash callback |
+
+这张表表达的是“C++ 静态形状不跨 ABI、运行时能力仍可达”。如果未来需要
+按值 POD queue，应该新增 `element_size`/`alignment` 的类型擦除接口，而不是
+导出某个模板实例；按值 vector 已由 `hyle_container_vector_*` 覆盖。

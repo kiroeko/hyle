@@ -48,6 +48,7 @@ hyle_add_module(sched
     join.cc
     blocking.cc
     cancel.cc
+    c_sched.cc
     ${_fctx_asm}
   DEPS hyle_platform hyle_time
   PUBLIC_DEPS hyle_mem hyle_container)

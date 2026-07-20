@@ -274,6 +274,12 @@ elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "riscv64|riscv")
 endif()
 if(HYLE_HAS_FCONTEXT)
   hyle_add_test(sched SOURCES sched/fiber_test.cc sched/fiber_stack_guard_test.cc sched/run_queue_test.cc sched/scheduler_test.cc sched/waker_test.cc sched/sync_test.cc sched/timer_test.cc sched/coro_test.cc sched/affinity_test.cc sched/join_test.cc sched/blocking_test.cc sched/shutdown_test.cc sched/cancel_test.cc DEPS hyle_time)
+  add_executable(hyle_sched_c_test sched/c_sched_test.c)
+  target_link_libraries(hyle_sched_c_test PRIVATE hyle_sched)
+  set_source_files_properties(sched/c_sched_test.c PROPERTIES LANGUAGE C)
+  hyle_apply_warnings(hyle_sched_c_test)
+  hyle_apply_sanitizer(hyle_sched_c_test)
+  add_test(NAME hyle_sched_c_test COMMAND hyle_sched_c_test)
   # graph-01 step-2: parallel evaluate over the sched work-stealing pool (level-by-level
   # fork-join). Needs sched (spawn_task/when_all/fiber). Same gate as sched itself.
   hyle_add_test(graph NAME parallel SOURCES graph/parallel_test.cc DEPS hyle_sched)

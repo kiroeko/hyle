@@ -138,7 +138,7 @@
 | type_traits/concepts/func_traits/singleton | **零运行时** | 纯编译期/init-once,无热路径开销。 |
 | `result.h` → `std::expected` | **零开销设计** | value/error union 无分配;charter 错误模型。比手写 Result 不慢。 |
 | stoi/stod → `std::from_chars` | **已知赢** | from_chars 无 locale/无分配,普遍快于 stoi/strtod。 |
-| `thread_pool`+`worker` → sched work-stealing | **实测与 SOTA 平级** | sched bench:spawn vs **marl(真 SOTA 调度器)双平台统计平局**(15 遍复核;旧"2.17x"是单遍噪声已纠正);work-stealing 重写取代 clay 单全局锁池(单全局锁长不出统一调度器)。详见 performance.md。 |
+| `thread_pool`+`worker` → sched work-stealing | **同合同实测达 SOTA 档** | `schedule` vs marl enqueue（严格 4 worker、15 遍三平台）：Win/Lin 明确赢 1.53×/1.48×，M4 1.007× 统计平局；stackful 腿单列丰富合同成本。work-stealing 重写取代 clay 单全局锁池。详见 benchmarks-sched。 |
 | `num_logical_processors` → `hardware_concurrency` | **冷(启动一次)** | 启动期调一次,零热路径。 |
 | sprintf → `std::format`/`snprintf`;to_string → format | **冷路径** | 唯一理论风险(某些 libstdc++ 版 format 慢于 printf),但格式化是**冷路径**(日志/错误/调试),clay sprintf 同样冷用途——即便略慢也不碰 hashmap/alloc/fiber 热循环。**已留实测口子**:若 profile 发现 format 上热路径,vendor stb_sprintf(覆盖图 sys/sprintf 行已记)。 |
 

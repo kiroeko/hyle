@@ -29,11 +29,11 @@ class TimerEntry;  // fwd: defined in time/timer_source.h (opaque here)
 // with no sleeping fibers pays nothing for this feature's existence. Arm is O(1),
 // the pre-park advance is O(#due) + O(8 levels) for the next-deadline scan.
 //
-// NOT here: wait_for/wait_until (timed CV waits). Those add a timeout-vs-notify
-// race whose loser must CANCEL the other across workers (the fiber may resume on
-// a different worker than the one holding its timer) -- that needs the per-worker
-// cross-core cancel command queue (the time-02 headline divergence point), split
-// out as sched-04d. Plain sleep has a single waker (the timer), so no such race.
+// ConditionVariable::wait_for/wait_until also use this wheel. Their notify-vs-
+// timer race is atomic-arbitrated and the waiting fiber is temporarily pinned to
+// the wheel owner for that episode, so a notify winner cancels the loser timer on
+// the correct worker without cross-thread wheel mutation. Plain sleep is simpler:
+// the timer is its sole waker.
 
 namespace hyle::sched {
 
@@ -59,9 +59,11 @@ HYLE_SCHED_API void sleep_until_ns(std::uint64_t deadline_ns) noexcept;
 // pinned, so arm/fire/cancel all happen single-threaded on one worker -- no
 // cross-core cancel queue needed, which is why this can ship without sched-04d).
 //
-// arm_timeout: schedule `entry` to fire at `deadline_ns`, waking THIS fiber (the
-// same reinject path as sleep -- entry.data is set to this fiber). The entry MUST
-// outlive the wait (put it on the coroutine/awaitable frame). Does NOT suspend.
+// arm_timeout: schedule `entry` to fire at `deadline_ns`. With no on_fire
+// callback it wakes THIS fiber (entry.data is filled automatically, same as
+// sleep). With on_fire set, the caller must initialize entry.data BEFORE this
+// call; the callback owns wake arbitration. The entry MUST outlive the wait
+// (put it on the coroutine/awaitable frame). Does NOT suspend.
 HYLE_SCHED_API void arm_timeout(time::TimerEntry* entry,
                                 std::uint64_t deadline_ns) noexcept;
 // cancel_timeout: remove `entry` from this worker's wheel if still armed (O(1),

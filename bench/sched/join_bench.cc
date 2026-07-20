@@ -94,7 +94,8 @@ int main() {
       fs.reserve(kB);
       for (int i = 0; i < kB; ++i) {
         rts.push_back(std::make_unique<RawTask>());
-        fs.push_back(std::make_unique<Fiber>(a, kDefaultStackSize, &raw_entry, rts[i].get()));
+        fs.push_back(std::make_unique<Fiber>(
+            kDefaultStackSize, &raw_entry, rts[i].get()));
         sched.spawn(fs[i].get());
       }
       std::uint64_t sink = 0;

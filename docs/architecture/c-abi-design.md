@@ -12,6 +12,9 @@
   - **C++ 用户**：直接用 `include/hyle/<mod>/*.h` 的原生 C++ API（模板、RAII、`Allocator`/`VmRegion`/`ObjectPool<T>`）。不关心跨语言。**这条线的"完整"独立评估**——C++ 面本身完整即可。
   - **跨语言用户**：只绑 `include/hyle/c/*.h`。**这条线的"完整"也独立评估**——每个能力有没有 C ABI 通路。
   - 两条线互不牵扯：C++ 有模板 ≠ C ABI 缺能力；C ABI 没导出某类 ≠ C++ 用户拿不到。
+  - 但“符号不必 1:1”不等于“能力可以消失”：不能直接导出的模板、RAII、
+    协程或回调组合，必须在对应 `docs/guide/c-*.md` 给出可执行的 C 组合
+    路径。既没有直接接口、也没有组合路径，才是需要补的 C ABI 能力缺口。
 
 ## 1. 核心手法：类型擦除（C++ → C ABI 的关键结论）
 
@@ -63,21 +66,29 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 
 > **函数指针表本身**也一并删了：它是为"运行时动态发现/版本谈判"设计的，与版本门同源。纯 `extern "C"` 导出 + 头文件声明已足够 FFI 直接绑（`dlsym`/bindgen/ctypes 都认符号），不需要把所有函数塞进一个结构体再 `api_get` 填表。
 
-## 4. 有状态调试类：留 C++（无 FFI 需求）
+## 4. 有状态诊断：先判断是不是产品能力
 
-有状态的调试/内省类**故意只在 C++**，不 C ABI 化：
+“有状态”不是免除 C ABI 的理由。先按用户场景分类：
 
-| 类 | 模块 | 为什么留 C++ |
+| 类 | 模块 | 当前判定与 C 用户路径 |
 |---|---|---|
-| `StatsAllocator` / `LeakTracker` / `AllocStats` | mem | 内存记账 + 泄漏追踪。debug/test 工具，跨语言用户自带（ASan/valgrind/各 runtime profiler），无 FFI 需求 |
-| `ErrorRecord` | error | 诊断记录器（per-severity 计数 + last message）。同上，测试设施 |
+| `StatsAllocator` / `LeakTracker` / `AllocStats` | mem | 当前是内部 debug/test 设施，不承诺为稳定产品能力。C 用户可包装公开的 `hyle_allocator` vtable 做业务计数，逐地址泄漏归因用 ASan/Valgrind/语言 profiler；完整 recipe 见 `c-mem.md` |
+| `ErrorRecord` | error | 当前是错误处理器的测试记录器，不是产品对象。C 用户能力由 `hyle_error_set_handler` / `push_handler` / `pop_handler` 覆盖，可在自己的 callback state 中累计同样的信息 |
 
-**对照 ggml**：ggml 也**不导出统计器类**——它只把"用了多少内存"降维成**标量查询** `ggml_used_mem(ctx)`/`ggml_backend_buffer_get_usage`。即"可观测性经标量查询，不经有状态对象"。HYLE 若将来要给 FFI 用户内存可观测性，也应走标量查询而非导出 `StatsAllocator` 句柄。
+**升级规则**：只要上述统计/诊断被提升为面向用户的产品能力，就必须导出；
+典型形态是 opaque handle + POD snapshot/visitor，或者在所属资源句柄上提供标量
+查询。不能继续以“C 没有类”或“它是诊断功能”为由省略。
+
+**对照 ggml**：ggml 没有导出统计器类，而是把产品需要的“用了多少内存”
+降维成 `ggml_used_mem(ctx)` / `ggml_backend_buffer_get_usage` 标量查询。要点是
+**用户能力可达**，不是必须照搬 C++ 对象形状。
 
 **注意区分**（措辞要精确）：
 - `ObjectPool<T>`：**泛型语法不可达，但能力可达**（经 arena + 宏）——不是"不需要"。
-- `StatsAllocator`：**能力也可 C ABI 化（opaque 句柄 + snapshot POD），但无 FFI 需求**——是"不需要"。
-两者都留 C++，但理由不同，别混。
+- `StatsAllocator`：当前只把它当内部测试设施；业务计数有公开 allocator
+  wrapper 路径。若将来承诺完整 allocator 统计/泄漏追踪，它就必须有正式 C ABI。
+两者目前都没有同名 C 对象，但前者是直接类型擦除，后者是明确的产品边界判定；
+都必须在用户 guide 中交代可达路径，不能只写“C++ only”。
 
 ## 5. 错误跨 C 边界
 
@@ -115,5 +126,7 @@ C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零�
 - 分平台导出宏三态（`HYLE_<MOD>_C_API`：dllexport/dllimport/visibility）。
 - 桥接实现 `src/<mod>/c_<mod>.cc` 编进对应 `hyle_<mod>`，**显式构造** C++ 对象，不 reinterpret 布局。
 - 纯 C smoke test `tests/<mod>/c_<mod>_test.c`（C 编译器编，只 include C 头）证明无 mangling/模板/STL 泄漏。
-- 文档 `docs/guide/c-<mod>.md` 逐符号 1:1。
+- 文档 `docs/guide/c-<mod>.md` 逐符号 1:1；对模板/RAII/协程等非
+  1:1 形状，另给“C++ 能力 → C 组合”表和可复制 recipe。不得只列
+  “C++ 专属”而不说明 C 用户如何取得等价能力或为什么它明确不是产品能力。
 - 三平台真编真测（Win MSVC + WSL GCC + mac clang），mac 的严格 clang 常揪出隐式 include 依赖（如 `std::nothrow` 需 `<new>`）。

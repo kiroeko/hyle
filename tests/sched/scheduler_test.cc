@@ -9,13 +9,22 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
+#include "hyle/sched/waker.h"
 
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
 using hyle::sched::kDefaultStackSize;
 using hyle::sched::Scheduler;
+using hyle::sched::Waker;
 
 namespace {
+void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
+void fail_free(void*, void*, std::size_t, std::size_t) noexcept {}
+void* fail_realloc(void*, void*, std::size_t, std::size_t,
+                   std::size_t) noexcept {
+  return nullptr;
+}
+
 // A fiber body that yields `yields` times, bumping a shared atomic each segment.
 struct Body {
   int yields;
@@ -31,6 +40,236 @@ void body_entry(void* p) {
   b->completed->fetch_add(1, std::memory_order_acq_rel);
 }
 }  // namespace
+
+TEST(Scheduler, RecoverableConstructionReportsQueueOom) {
+  hyle::Status status;
+  hyle::mem::Allocator failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+  Scheduler sched(2, failing, 64, &status);
+  EXPECT_FALSE(status.ok());
+  EXPECT_TRUE(status.IsResourceExhausted());
+  EXPECT_FALSE(sched.valid());
+}
+
+TEST(Scheduler, RecoverableConstructionRejectsInvalidShape) {
+  hyle::Status status;
+  Scheduler no_allocator(2, hyle::mem::Allocator{}, 64, &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(no_allocator.valid());
+
+  Scheduler no_workers(0, system_allocator(), 64, &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(no_workers.valid());
+
+  Scheduler non_power_of_two(2, system_allocator(), 63, &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(non_power_of_two.valid());
+
+  Scheduler too_small(2, system_allocator(), 1, &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(too_small.valid());
+
+  Scheduler too_many_workers(1025, system_allocator(), 64, &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(too_many_workers.valid());
+
+  Scheduler too_large_queue(
+      2, system_allocator(), std::size_t{1} << 32, &status);
+  EXPECT_TRUE(status.IsInvalidArgument());
+  EXPECT_FALSE(too_large_queue.valid());
+}
+
+TEST(Scheduler, DetachedCallbacksOwnTheirLifetimeAndReportAdmission) {
+  std::atomic<int> ran{0};
+  auto callback = +[](void* raw) {
+    static_cast<std::atomic<int>*>(raw)->fetch_add(
+        1, std::memory_order_relaxed);
+  };
+
+  Scheduler sched(2, system_allocator(), 64);
+  EXPECT_TRUE(
+      sched.spawn_detached(callback, &ran, kDefaultStackSize).ok());
+  EXPECT_TRUE(
+      sched.spawn_detached_on(1, callback, &ran, kDefaultStackSize).ok());
+  for (int i = 0; i < 100; ++i)
+    EXPECT_TRUE(sched.schedule(callback, &ran).ok());
+  sched.drain();
+  EXPECT_EQ(ran.load(std::memory_order_relaxed), 102);
+
+  EXPECT_TRUE(sched.schedule(nullptr, nullptr).IsInvalidArgument());
+  EXPECT_TRUE(
+      sched.spawn_detached(nullptr, nullptr, kDefaultStackSize)
+          .IsInvalidArgument());
+  EXPECT_TRUE(
+      sched.spawn_detached_on(2, callback, &ran, kDefaultStackSize)
+          .IsInvalidArgument());
+  sched.begin_shutdown();
+  EXPECT_TRUE(
+      sched.spawn_detached(callback, &ran, kDefaultStackSize).IsCancelled());
+  EXPECT_TRUE(sched.schedule(callback, &ran).IsCancelled());
+  sched.shutdown();
+}
+
+TEST(Scheduler, InlineScheduleMultiProducerConservesEveryTask) {
+  constexpr int kProducers = 8;
+  constexpr int kPerProducer = 1000;
+  std::atomic<int> ran{0};
+  auto callback = +[](void* raw) {
+    static_cast<std::atomic<int>*>(raw)->fetch_add(
+        1, std::memory_order_relaxed);
+  };
+
+  Scheduler sched(4, system_allocator(), 64);
+  std::vector<std::thread> producers;
+  producers.reserve(kProducers);
+  for (int p = 0; p < kProducers; ++p) {
+    producers.emplace_back([&] {
+      for (int i = 0; i < kPerProducer; ++i)
+        ASSERT_TRUE(sched.schedule(callback, &ran).ok());
+    });
+  }
+  for (auto& producer : producers) producer.join();
+  sched.drain();
+  EXPECT_EQ(ran.load(std::memory_order_relaxed), kProducers * kPerProducer);
+}
+
+TEST(Scheduler, RecursiveInlineSaturationReturnsInsteadOfSelfDeadlocking) {
+  struct Context {
+    Scheduler* scheduler;
+    std::atomic<int> ran{0};
+    std::atomic<int> accepted{0};
+    std::atomic<int> full{0};
+  };
+  auto parent = +[](void* raw) {
+    auto* context = static_cast<Context*>(raw);
+    context->ran.fetch_add(1, std::memory_order_relaxed);
+    for (int i = 0; i < 8; ++i) {
+      const hyle::Status status = context->scheduler->schedule(
+          +[](void* leaf_raw) {
+            static_cast<Context*>(leaf_raw)->ran.fetch_add(
+                1, std::memory_order_relaxed);
+          },
+          context);
+      if (status.ok())
+        context->accepted.fetch_add(1, std::memory_order_relaxed);
+      else if (status.IsResourceExhausted())
+        context->full.fetch_add(1, std::memory_order_relaxed);
+    }
+  };
+
+  Scheduler sched(1, system_allocator(), 2);
+  Context context{&sched};
+  ASSERT_TRUE(sched.schedule(parent, &context).ok());
+  sched.drain();
+  EXPECT_EQ(context.ran.load(std::memory_order_relaxed),
+            1 + context.accepted.load(std::memory_order_relaxed));
+  EXPECT_EQ(context.accepted.load(std::memory_order_relaxed), 2);
+  EXPECT_EQ(context.full.load(std::memory_order_relaxed), 6);
+}
+
+TEST(Scheduler, RecursiveFiberSaturationReturnsInsteadOfSelfDeadlocking) {
+  struct Context {
+    Scheduler* scheduler;
+    std::atomic<int> ran{0};
+    std::atomic<int> accepted{0};
+    std::atomic<int> full{0};
+    bool pinned = false;
+  };
+  auto parent = +[](void* raw) {
+    auto* context = static_cast<Context*>(raw);
+    context->ran.fetch_add(1, std::memory_order_relaxed);
+    for (int i = 0; i < 8; ++i) {
+      const hyle::Status status =
+          context->pinned
+              ? context->scheduler->spawn_detached_on(
+                    0,
+                    +[](void* leaf_raw) {
+                      static_cast<Context*>(leaf_raw)->ran.fetch_add(
+                          1, std::memory_order_relaxed);
+                    },
+                    context, kDefaultStackSize)
+              : context->scheduler->spawn_detached(
+                    +[](void* leaf_raw) {
+                      static_cast<Context*>(leaf_raw)->ran.fetch_add(
+                          1, std::memory_order_relaxed);
+                    },
+                    context, kDefaultStackSize);
+      if (status.ok())
+        context->accepted.fetch_add(1, std::memory_order_relaxed);
+      else if (status.IsResourceExhausted())
+        context->full.fetch_add(1, std::memory_order_relaxed);
+    }
+  };
+
+  {
+    Scheduler sched(1, system_allocator(), 2);
+    Context context{&sched};
+    ASSERT_TRUE(
+        sched.spawn_detached(parent, &context, kDefaultStackSize).ok());
+    sched.drain();
+    EXPECT_EQ(context.ran.load(std::memory_order_relaxed),
+              1 + context.accepted.load(std::memory_order_relaxed));
+    EXPECT_EQ(context.accepted.load(std::memory_order_relaxed), 4);
+    EXPECT_EQ(context.full.load(std::memory_order_relaxed), 4);
+  }
+  {
+    Scheduler sched(1, system_allocator(), 2);
+    Context context{&sched};
+    context.pinned = true;
+    ASSERT_TRUE(
+        sched.spawn_detached_on(0, parent, &context, kDefaultStackSize).ok());
+    sched.drain();
+    EXPECT_EQ(context.ran.load(std::memory_order_relaxed),
+              1 + context.accepted.load(std::memory_order_relaxed));
+    EXPECT_EQ(context.accepted.load(std::memory_order_relaxed), 2);
+    EXPECT_EQ(context.full.load(std::memory_order_relaxed), 6);
+  }
+}
+
+TEST(Scheduler, WakeFloodUsesOverflowInsteadOfDeadlockingConsumer) {
+  constexpr int kWaiters = 24;
+  struct Context {
+    std::vector<Waker> wakers;
+    std::atomic<int> next_slot{0};
+    std::atomic<int> ready{0};
+    std::atomic<int> completed{0};
+  };
+  auto waiter = +[](void* raw) {
+    auto* context = static_cast<Context*>(raw);
+    const int slot =
+        context->next_slot.fetch_add(1, std::memory_order_relaxed);
+    context->wakers[slot] = hyle::sched::current_waker();
+    context->ready.fetch_add(1, std::memory_order_release);
+    hyle::sched::suspend();
+    context->completed.fetch_add(1, std::memory_order_release);
+  };
+  auto notifier = +[](void* raw) {
+    auto* context = static_cast<Context*>(raw);
+    for (const Waker& waker : context->wakers) waker.wake();
+  };
+
+  for (bool pinned : {false, true}) {
+    Scheduler sched(1, system_allocator(), 2);
+    Context context;
+    context.wakers.resize(kWaiters);
+    std::vector<std::unique_ptr<Fiber>> fibers;
+    fibers.reserve(kWaiters);
+    for (int i = 0; i < kWaiters; ++i) {
+      fibers.push_back(
+          std::make_unique<Fiber>(kDefaultStackSize, waiter, &context));
+      ASSERT_TRUE(pinned ? sched.spawn_on(0, fibers.back().get())
+                         : sched.spawn(fibers.back().get()));
+    }
+    while (context.ready.load(std::memory_order_acquire) != kWaiters)
+      std::this_thread::yield();
+    ASSERT_TRUE((pinned ? sched.spawn_detached_on(
+                              0, notifier, &context, kDefaultStackSize)
+                        : sched.spawn_detached(
+                              notifier, &context, kDefaultStackSize))
+                    .ok());
+    sched.drain();
+    EXPECT_EQ(context.completed.load(std::memory_order_acquire), kWaiters);
+  }
+}
 
 TEST(Scheduler, ManyFibersAllComplete) {
   constexpr int kFibers = 1000;
@@ -100,6 +339,10 @@ TEST(Scheduler, StealingDistributesLocalWork) {
     SeedArgs sa{&sched, kChildren, &pool, &bodies, &ran, &completed};
     Fiber seed(kDefaultStackSize, &seed_entry, &sa);
     sched.spawn(&seed);
+    // Keep admission open while the seed fans out its children. Direct
+    // shutdown() closes admission first; drain() is the "finish this generation,
+    // including descendants it admits" boundary.
+    sched.drain();
     sched.shutdown();
   }
 

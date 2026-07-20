@@ -83,7 +83,8 @@ class HYLE_SCHED_API BlockingPool {
  public:
   // `max_threads` caps concurrently-live pool threads (default 512, tokio's
   // default). `keep_alive_ns` is how long an idle thread waits for work before
-  // retiring (default 10s, tokio's default). alloc backs pool threads' bookkeeping.
+  // retiring (default 10s, tokio's default). `alloc` is retained as the runtime
+  // allocator identity; submitted jobs choose their own allocator explicitly.
   explicit BlockingPool(mem::Allocator alloc, unsigned max_threads = 512,
                         unsigned long long keep_alive_ns = 10ull * 1000 * 1000 * 1000);
   ~BlockingPool();
@@ -91,11 +92,16 @@ class HYLE_SCHED_API BlockingPool {
 
   // Stop accepting work, wake all threads, and join them. Jobs still RUNNING
   // finish; jobs still QUEUED (not yet started) are dropped -- their JoinHandle
-  // resolves to Cancelled. Idempotent; also called by the destructor.
+  // resolves to Cancelled. Concurrent calls wait for the same completed join
+  // barrier; idempotent and also called by the destructor. Must not be called
+  // from a task running in this same pool (an OS thread cannot join itself).
   void shutdown();
 
   // Diagnostics (racy snapshots).
   unsigned live_threads() const noexcept;
+  // OS thread handles retained for joining. Idle-retired handles are reaped on
+  // the next submission, so repeated burst/idle cycles stay bounded.
+  std::size_t retained_thread_handles() const noexcept;
 
   // Submit a pre-built job (internal seam for spawn_blocking). Returns false if
   // the pool is shutting down (the caller must resolve the handle as Cancelled).
@@ -119,6 +125,10 @@ struct BlockingJobImpl {
 
   BlockingJobImpl(mem::Allocator a, F&& f, JoinState<R>* s) noexcept
       : alloc(a), fn(std::move(f)), state(s) {
+    static_assert(std::is_nothrow_move_constructible_v<F>,
+                  "spawn_blocking requires a noexcept-movable closure");
+    static_assert(std::is_nothrow_move_constructible_v<R>,
+                  "spawn_blocking requires a noexcept-movable result");
     hdr.ctx = this;
     hdr.run_fn = &run_impl;
     hdr.cancel_fn = &cancel_impl;
@@ -127,8 +137,17 @@ struct BlockingJobImpl {
 
   static void run_impl(void* p) noexcept {
     auto* self = static_cast<BlockingJobImpl*>(p);
-    R value = self->fn();                      // the blocking work (pool thread)
-    self->state->set_value(std::move(value));  // publish + wake the joiner (CV)
+    if (self->state->cancel_req.load(std::memory_order_acquire)) {
+      self->state->set_error(Status::Cancelled("blocking task aborted before start"));
+    } else {
+      try {
+        R value = self->fn();                    // blocking work (pool thread)
+        self->state->set_value(std::move(value));
+      } catch (...) {
+        self->state->set_error(
+            Status::Internal("blocking task threw an exception"));
+      }
+    }
   }
   static void cancel_impl(void* p) noexcept {
     static_cast<BlockingJobImpl*>(p)->state->set_error(
@@ -154,6 +173,8 @@ struct BlockingJobImpl<F, void> {
 
   BlockingJobImpl(mem::Allocator a, F&& f, JoinState<void>* s) noexcept
       : alloc(a), fn(std::move(f)), state(s) {
+    static_assert(std::is_nothrow_move_constructible_v<F>,
+                  "spawn_blocking requires a noexcept-movable closure");
     hdr.ctx = this;
     hdr.run_fn = &run_impl;
     hdr.cancel_fn = &cancel_impl;
@@ -162,8 +183,17 @@ struct BlockingJobImpl<F, void> {
 
   static void run_impl(void* p) noexcept {
     auto* self = static_cast<BlockingJobImpl*>(p);
-    self->fn();
-    self->state->set_done();
+    if (self->state->cancel_req.load(std::memory_order_acquire)) {
+      self->state->set_error(Status::Cancelled("blocking task aborted before start"));
+    } else {
+      try {
+        self->fn();
+        self->state->set_done();
+      } catch (...) {
+        self->state->set_error(
+            Status::Internal("blocking task threw an exception"));
+      }
+    }
   }
   static void cancel_impl(void* p) noexcept {
     static_cast<BlockingJobImpl*>(p)->state->set_error(
@@ -194,15 +224,27 @@ JoinHandle<R> spawn_blocking(BlockingPool& pool, mem::Allocator alloc,
   using detail::BlockingJobImpl;
   using detail::JoinState;
 
+  if (!alloc.valid()) {
+    return JoinHandle<R>(
+        Status::InvalidArgument("spawn_blocking requires a complete allocator"));
+  }
   auto* st = static_cast<JoinState<R>*>(
       alloc.allocate(sizeof(JoinState<R>), alignof(JoinState<R>)));
-  HYLE_FATAL_ASSERT(st != nullptr);
+  if (st == nullptr) {
+    return JoinHandle<R>(
+        Status::ResourceExhausted("blocking join state allocation failed"));
+  }
   new (st) JoinState<R>{};
   st->alloc = alloc;
 
   auto* job = static_cast<BlockingJobImpl<F, R>*>(
       alloc.allocate(sizeof(BlockingJobImpl<F, R>), alignof(BlockingJobImpl<F, R>)));
-  HYLE_FATAL_ASSERT(job != nullptr);
+  if (job == nullptr) {
+    st->set_error(
+        Status::ResourceExhausted("blocking job allocation failed"));
+    st->release();  // no job exists: drop its reserved pool-side reference
+    return JoinHandle<R>(st);
+  }
   new (job) BlockingJobImpl<F, R>(alloc, std::move(fn), st);
 
   if (!pool.submit(&job->hdr)) {

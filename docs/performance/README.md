@@ -119,8 +119,8 @@
 | **queue** ConcurrentVector 并发读(4读1写) | 0.37 | (std 无) | n/a | n/a | oneTBB | 0.82 | 2.2x | ✅赢(删冗余 acquire) |
 | **sched** 争用 Mutex(15遍双平台) | 15.4(Win)/31.3(Lin) | marl=std::mutex | 19.0/31.2 | — | marl | 19.0/31.2 | Win1.23x/Lin平 | ✅**Win 反超**(SRWLOCK 修,gap22%>spread18%)/➖Lin 平 |
 | **sched** 无争用 Mutex(MT) | 6.5(Lin) | std::mutex | 9.1 | 1.40x | marl(=std::mutex) | 9.1 | 1.40x | ✅赢(**单平台单遍,待双平台统计**) |
-| **sched** spawn 2000 noop(15遍双平台) | 347(Win)/317(Lin) | marl | 302/309 | — | marl | 302/309 | 0.83/0.98 | ➖**双平台统计平局**(旧"2.17x"是单遍噪声,gap«spread) |
-| **sched** WaitGroup fork-join(15遍双平台) | 341(Win)/305(Lin) | marl | 299/317 | — | marl | 299/317 | 0.87/1.05 | ➖**双平台统计平局**(旧"1.49x 反超"是单遍;conditional-notify 把 17x 落后修到平级) |
+| **sched** schedule 2000 noop（worker-stack，15遍三平台） | 192.60(Win)/218.44(Lin)/252.12(M4) | marl enqueue（严格4 worker） | 297.53/327.03/252.72 | 1.53/1.48/1.007x | marl | 同左 | 同左 | ✅ Win/Lin 明确赢；M4 统计平局。旧 stackful 混比与 marl caller bind 形状已作废；ARM 全局完成计数争用已修 |
+| **sched** WaitGroup fork-join（worker-stack，15遍三平台） | 192.51(Win)/220.77(Lin)/253.98(M4) | marl | 297.79/337.42/252.75 | 1.55/1.51/1.003x | marl | 同左 | 同左 | ✅ Win/Lin 明确赢；M4 统计平局；conditional-notify + per-worker completion accounting |
 | **sched** Latch fork-join(64) | 5059(fiber) | std::latch(64线程) | 21975 | 4.3x | marl(无 latch) | n/a | n/a | ✅赢 std(fiber 不阻塞 worker) |
 | **sched** CV notify_one 快路径 | 1.70 | std::condition_variable | 2.59 | 1.52x | marl(无独立 CV) | n/a | n/a | ✅赢 std |
 | **sched** CV wait+notify handoff | 280 | (无 std fiber 等价) | n/a | n/a | (HYLE 自有) | n/a | n/a | ➖HYLE 自有(阻塞 handoff,TSan 零race) |

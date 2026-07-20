@@ -148,9 +148,8 @@ inline TimedSlot* make_timed_slot(mem::Allocator alloc, Proactor* p,
   s->p = p;
   s->io.waker = sched::current_waker();
   s->timer.on_fire = &timed_on_fire;  // route timer fire through the arbiter
+  s->timer.data = s;  // publish complete callback context before the live arm
   sched::arm_timeout(&s->timer, deadline_ns);
-  s->timer.data = s;  // arbiter reads slot back via data (arm_timeout set it to the
-                      // fiber for sleep semantics; a timed entry overrides to slot)
   return s;
 }
 

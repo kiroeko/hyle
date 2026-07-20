@@ -104,8 +104,8 @@ int main() {
       BlockingPool pool(system_allocator());
       Scheduler sched(2, system_allocator(), 256);
       HyleBlockingArg a{&pool, kRounds, 0};
-      auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                       &hyle_blocking_body, &a);
+      auto f = std::make_unique<Fiber>(
+          kDefaultStackSize, &hyle_blocking_body, &a);
       sched.spawn(f.get());
       sched.drain();
       nb::doNotOptimizeAway(a.sink);
@@ -125,8 +125,8 @@ int main() {
         BlockingPool pool(system_allocator());
         Scheduler sched(4, system_allocator(), 1024);
         HyleFanoutArg a{&pool, n, 0};
-        auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                         &hyle_fanout_body, &a);
+        auto f = std::make_unique<Fiber>(
+            kDefaultStackSize, &hyle_fanout_body, &a);
         sched.spawn(f.get());
         sched.drain();
         nb::doNotOptimizeAway(a.sink);
@@ -151,8 +151,8 @@ int main() {
       BlockingPool pool(system_allocator());
       Scheduler sched(4, system_allocator(), 1024);
       HyleBlockingArg a{&pool, kRounds, 0};
-      auto f = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                       &hyle_blocking_body, &a);
+      auto f = std::make_unique<Fiber>(
+          kDefaultStackSize, &hyle_blocking_body, &a);
       sched.spawn(f.get());
       sched.drain();
       nb::doNotOptimizeAway(a.sink);

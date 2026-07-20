@@ -1,13 +1,26 @@
 #include "hyle/sched/blocking.h"
 
 #include <condition_variable>
+#include <limits>
+#include <memory>
 #include <mutex>
+#include <new>
 #include <vector>
 
 #include "hyle/macros.h"
 #include "hyle/platform/thread.h"
 
 namespace hyle::sched {
+
+namespace {
+
+// A blocking job may call arbitrary user code. If that code tries to shut down
+// the pool currently executing it, joining the current OS thread is impossible
+// and would otherwise surface as a platform-dependent deadlock/system_error.
+// Keep this as a contract check instead of silently leaving a half-shut pool.
+thread_local const void* tls_blocking_pool = nullptr;
+
+}  // namespace
 
 // The pool's own thread management uses std::mutex/condition_variable ON PURPOSE:
 // pool threads are meant to BLOCK (that is their whole job), so there is no fiber
@@ -29,21 +42,30 @@ struct BlockingPool::Impl {
 
   unsigned num_threads = 0;   // live pool threads
   unsigned num_idle = 0;      // threads currently waiting on cv (no job in hand)
-  unsigned num_notify = 0;    // pending notifications, paired against spurious wakeups
   bool shutting_down = false;
+  bool shutdown_complete = false;
 
-  // Live thread handles, joined at shutdown. A retired-on-keep-alive thread leaves
-  // its handle here for shutdown to join (it has already exited, so join returns
-  // at once); this keeps handle ownership simple (one joiner: shutdown).
-  std::vector<platform::Thread> threads;
+  struct ThreadRecord {
+    Impl* owner = nullptr;
+    platform::Thread thread;
+    bool retired = false;  // guarded by mu
+  };
+  // Stable records let a worker publish its own retirement. The next submission
+  // extracts and joins retired handles before growing the pool, preventing
+  // unbounded handle retention across repeated burst/idle cycles.
+  std::vector<std::unique_ptr<ThreadRecord>> threads;
 
   Impl(mem::Allocator a, unsigned max_t, unsigned long long keep_ns)
       : alloc(a), max_threads(max_t), keep_alive_ns(keep_ns) {
     HYLE_FATAL_ASSERT(max_t >= 1);
+    // submit() is noexcept. Reserve the bounded handle set here, where a
+    // construction failure may propagate to the owning factory/constructor.
+    threads.reserve(max_threads);
   }
 
   static void thread_main(void* p) noexcept {
-    static_cast<Impl*>(p)->run_worker();
+    auto* rec = static_cast<ThreadRecord*>(p);
+    rec->owner->run_worker(rec);
   }
 
   // Pop the next job under the lock (caller holds `lk`). Returns nullptr if empty.
@@ -57,7 +79,9 @@ struct BlockingPool::Impl {
     return j;
   }
 
-  void run_worker() noexcept {
+  void run_worker(ThreadRecord* record) noexcept {
+    HYLE_FATAL_ASSERT(tls_blocking_pool == nullptr);
+    tls_blocking_pool = this;
     std::unique_lock<std::mutex> lk(mu);
     for (;;) {
       // Drain available jobs first (before considering idle/exit).
@@ -73,30 +97,58 @@ struct BlockingPool::Impl {
       // No work: wait as an idle thread, bounded by keep_alive so a burst doesn't
       // pin threads forever. num_notify pairs a real wake against a spurious one.
       ++num_idle;
-      const auto timeout = std::chrono::nanoseconds(keep_alive_ns);
-      const std::cv_status st = cv.wait_for(lk, timeout);
-      // Consume a pending notification if one was aimed at us.
-      bool got_notify = false;
-      if (num_notify > 0) {
-        --num_notify;
-        got_notify = true;
-      }
+      using Rep = std::chrono::nanoseconds::rep;
+      const auto bounded_ns = static_cast<Rep>(
+          keep_alive_ns > static_cast<unsigned long long>(
+                              std::numeric_limits<Rep>::max())
+              ? std::numeric_limits<Rep>::max()
+              : keep_alive_ns);
+      const bool ready = cv.wait_for(
+          lk, std::chrono::nanoseconds(bounded_ns),
+          [&] { return shutting_down || head != nullptr; });
       --num_idle;
 
       if (shutting_down) break;  // shutdown takes priority over a timeout exit
-      if (!got_notify && st == std::cv_status::timeout) {
-        // Idle past keep-alive with no work aimed at us: retire. Our handle stays
-        // in `threads` for shutdown to join (we've exited, join is immediate).
-        --num_threads;
+      if (!ready) {
+        // Idle past keep-alive with no work aimed at us: retire. A later submit
+        // reaps the exited handle before it creates a replacement.
         break;
       }
-      // Woken with intent (or spurious but a job may be present): loop to re-check.
+      // Predicate says a job is present: loop to pop it.
+    }
+    --num_threads;
+    record->retired = true;
+    lk.unlock();
+    tls_blocking_pool = nullptr;
+  }
+
+  void reap_retired() noexcept {
+    // Extract and join one at a time: no temporary vector allocation in this
+    // noexcept path. A retired worker published the flag under `mu` immediately
+    // before returning, so after we acquire/release `mu` its handle is joinable.
+    for (;;) {
+      std::unique_ptr<ThreadRecord> retired;
+      {
+        std::lock_guard<std::mutex> lk(mu);
+        std::size_t found = threads.size();
+        for (std::size_t i = 0; i < threads.size(); ++i) {
+          if (!threads[i]->retired) continue;
+          found = i;
+          break;
+        }
+        if (found == threads.size()) return;
+        retired = std::move(threads[found]);
+        threads[found] = std::move(threads.back());
+        threads.pop_back();
+      }
+      if (retired->thread.joinable()) retired->thread.join();
     }
   }
 
   // Submit under the lock: enqueue, then either wake an idle thread or spawn a new
   // one (up to the cap). Returns false if shutting down.
   bool submit(detail::BlockingJob* job) noexcept {
+    reap_retired();
     std::unique_lock<std::mutex> lk(mu);
     if (shutting_down) return false;
     // Enqueue at the tail.
@@ -110,7 +162,6 @@ struct BlockingPool::Impl {
 
     if (num_idle > 0) {
       // Wake one idle thread to take it.
-      ++num_notify;
       cv.notify_one();
       return true;
     }
@@ -119,13 +170,28 @@ struct BlockingPool::Impl {
       // already have >=1 thread, the job simply waits for a busy thread to free up.
       platform::ThreadOpts opts;
       opts.name = "hyle-blocking";
-      auto r = platform::Thread::spawn(&Impl::thread_main, this, opts);
+      std::unique_ptr<ThreadRecord> record(
+          new (std::nothrow) ThreadRecord());
+      if (!record) {
+        if (num_threads == 0) {
+          HYLE_FATAL_ASSERT(head == job && tail == job);
+          head = tail = nullptr;
+          return false;
+        }
+        return true;  // an existing busy worker will eventually take the job
+      }
+      record->owner = this;
+      auto r = platform::Thread::spawn(&Impl::thread_main, record.get(), opts);
       if (r.has_value()) {
-        threads.push_back(std::move(*r));
+        record->thread = std::move(*r);
+        threads.push_back(std::move(record));
         ++num_threads;
-      } else {
-        HYLE_FATAL_ASSERT(num_threads >= 1 &&
-                          "blocking pool: OS refused first thread");
+      } else if (num_threads == 0) {
+        // No worker exists to drain the just-enqueued task. Retract it and let
+        // submit's caller publish a normal Cancelled/resource failure.
+        HYLE_FATAL_ASSERT(head == job && tail == job);
+        head = tail = nullptr;
+        return false;
       }
       return true;
     }
@@ -135,12 +201,19 @@ struct BlockingPool::Impl {
   }
 
   void shutdown() {
-    std::vector<platform::Thread> to_join;
+    // A pool worker cannot join itself. Calling shutdown from a blocking task is
+    // a programming error; request shutdown from its owner/scheduler instead.
+    HYLE_FATAL_ASSERT(tls_blocking_pool != this);
+
+    std::vector<std::unique_ptr<ThreadRecord>> to_join;
     detail::BlockingJob* leftover = nullptr;
     {
       std::unique_lock<std::mutex> lk(mu);
       if (shutting_down) {
-        // Already shut down; nothing to join again (threads moved out last time).
+        // Another caller may still be cancelling queued jobs and joining live
+        // workers outside `mu`. Idempotent shutdown is a completion barrier, not
+        // merely a request edge: do not let a concurrent destructor race ahead.
+        cv.wait(lk, [&] { return shutdown_complete; });
         return;
       }
       shutting_down = true;
@@ -148,7 +221,6 @@ struct BlockingPool::Impl {
       leftover = head;
       head = tail = nullptr;
       // Wake every idle thread so they observe shutting_down and exit.
-      num_notify += num_idle;
       cv.notify_all();
       to_join.swap(threads);
     }
@@ -162,14 +234,24 @@ struct BlockingPool::Impl {
       leftover = next;
     }
     // Join all threads (running jobs finish first; retired threads join instantly).
-    for (auto& t : to_join) {
-      if (t.joinable()) t.join();
+    for (auto& record : to_join) {
+      if (record->thread.joinable()) record->thread.join();
     }
+    {
+      std::lock_guard<std::mutex> lk(mu);
+      shutdown_complete = true;
+    }
+    cv.notify_all();
   }
 
   unsigned live_threads() noexcept {
     std::lock_guard<std::mutex> lk(mu);
     return num_threads;
+  }
+
+  std::size_t retained_thread_handles() noexcept {
+    std::lock_guard<std::mutex> lk(mu);
+    return threads.size();
   }
 };
 
@@ -188,6 +270,10 @@ void BlockingPool::shutdown() { impl_->shutdown(); }
 
 unsigned BlockingPool::live_threads() const noexcept {
   return impl_->live_threads();
+}
+
+std::size_t BlockingPool::retained_thread_handles() const noexcept {
+  return impl_->retained_thread_handles();
 }
 
 bool BlockingPool::submit(detail::BlockingJob* job) noexcept {

@@ -17,7 +17,7 @@
 | `time/` | `hyle/time/clock.h` | ✅ | 单调钟/墙钟/sleep（ns） |
 | `util/` | `hyle/util/{ref_counted,registry,scope_guard,...}.h` | ✅ | `Ref<T>`、Registry、`DEFER`、type_name |
 | `obs/` | `hyle/obs/log.h` / `trace.h` | ✅ | 结构化同步日志 + quiescent sink；默认零成本、可选 Tracy trace |
-| `sched/` | `hyle/sched/{scheduler,fiber,coro}.h` | 🔶 | fcontext 纤程 + work-stealing 调度 + fiber-aware 同步 + fiber sleep + 协程胶水(`Task<T>`/co_await 让出 fiber);取消/优雅关闭 待 |
+| `sched/` | `hyle/sched/{scheduler,fiber,coro,sync}.h` | ✅ | fcontext M:N + work-stealing、worker-stack/fiber 双任务腿、Waker/timer、同步与消息、取消/Join、优雅关闭、blocking offload；纯 C ABI |
 | `simd/` | `hyle/simd/{dispatch,vec,dtype,math}.h` | 🔶 | 运行期 ISA 探测（含纯 AVX 档 kAvx）+ 可移植 `vec<T,N>`；scalar/SSE4.2/AVX2/AVX512/NEON 定宽后端与 SVE/RVV scalable 后端均已执行对拍，AVX512 由 Intel SDE 验证正确性和 kAvx512 派发，性能结论仍只接受真机 benchmark |
 | `io/` | `hyle/io/{proactor,net,io_context,tcp,udp}.h` | ✅ | proactor 三后端 + read/write/socket/datagram 真 op(**无 stub**);co_await socket 层 + **shard-per-core**(每 worker 一 ring + fiber 亲和 spawn_on 绑核,share-nothing)+ **TcpListener/TcpStream + UdpSocket** RAII 封装;真 loopback TCP/UDP echo 三后端真测+TSan;echo+pipelined benchmark;park 合并(空闲真睡眠、eventfd 唤醒)。待 file/shmem(io-05)|
 | `compute/` `graph/` | — | 📋 | 尚未开工 |
@@ -338,15 +338,20 @@ rec.restore();
 ### 3.4 sched —— 纤程 + 调度器
 ```cpp
 #include "hyle/sched/scheduler.h"
-#include "hyle/sched/fiber.h"
+#include "hyle/sched/join.h"
 using namespace hyle::sched;
-void task(void* arg) { /* ... */ Fiber::yield(); /* ... */ }
 
 Scheduler sched(8, system_allocator(), /*queue_capacity=*/1024);   // 8 worker, 队列容量须 2 的幂
-auto f = std::make_unique<Fiber>(kDefaultStackSize, &task, arg);  // 栈=guarded FiberStack
-sched.spawn(f.get());
-sched.shutdown();   // 排空（等所有 fiber 完成）再 join worker
+auto fast = sched.schedule(fn, arg);   // worker 栈：不可 yield/sleep/wait/block
+auto full = sched.spawn_detached(fn, arg);  // 自持 guarded fiber：可 yield/sleep/wait
+sched.shutdown();                       // 排空后 join worker
 ```
+需要返回值/结构化组合时用
+`spawn_task(sched, alloc, Task<T>) -> JoinHandle<T>`；阻塞 syscall 用
+`spawn_blocking`，不要占住 worker。`shutdown()` 允许已接纳任务派生后代并排空；
+服务关闭先 `begin_shutdown()` + `drain_for()`。完整选择、生命周期和纯 C/FFI
+用法见 [`c-sched.md`](./c-sched.md)。
+
 ⚠️ 见 `usage-contract.md`：fiber 体勿跨 `yield()` 持有 thread_local 派生值（work-stealing 会迁移线程）。
 
 ### 3.5 obs —— 日志
@@ -512,7 +517,12 @@ C++ 静态类型，是唯一有意不做运行时擦除的 util 能力。
 
 ## 4. C-ABI 边界（跨 DLL / FFI）
 
-HYLE 内部 C++23，对外稳定边界走 **vtable 结构体 `xxx_api_t` + 不透明实例 + `make_X()/destroy_X()` 工厂**（分配责任锁在 DLL 内，禁客户端 `new/delete` HYLE 对象）。若你跨 DLL 边界用 HYLE 类型或做 FFI 绑定，遵此范式；纯 `extern "C"` C 头 shim 正在逐模块封（P6）。细节见 [`architecture/coding-conventions.md` §4](../architecture/coding-conventions.md)。
+HYLE 内部 C++23；稳定边界是 `include/hyle/c/*.h` 的纯 `extern "C"` **命名自由
+函数 + POD/vtable 回调 + 不透明句柄**，不使用模块级 API 函数表，也不把 STL、
+模板或异常跨 DLL。error/platform/mem/time/obs/simd/util/container/sched 已落地；
+上层 io/compute/graph 和统一 install/export 仍在 close-01 收口。sched 的完整 FFI
+合同见 [`c-sched.md`](./c-sched.md)，总规范见
+[`c-abi-design.md`](../architecture/c-abi-design.md)。
 
 ## 5. 安全边界（必读补充）
 

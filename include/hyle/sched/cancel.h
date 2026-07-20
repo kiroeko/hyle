@@ -129,6 +129,7 @@ class CancelToken {
 
   // A root token owns a fresh tree. Returns an invalid token on OOM (valid()==false).
   static CancelToken root(mem::Allocator alloc) noexcept {
+    if (!alloc.valid()) return CancelToken{};
     auto* n = static_cast<detail::CancelNode*>(
         alloc.allocate(sizeof(detail::CancelNode), alignof(detail::CancelNode)));
     if (n == nullptr) return CancelToken{};
@@ -224,18 +225,24 @@ class CancelToken {
 class CancelScope {
  public:
   explicit CancelScope(const CancelToken& tok) noexcept {
-    if (Fiber* f = Fiber::current(); f != nullptr) {
+    std::atomic<bool>* flag = tok.flag();
+    if (Fiber* f = Fiber::current(); f != nullptr && flag != nullptr) {
       prev_ = f->cancel_flag();
-      f->set_cancel_flag(tok.flag());
+      f->set_cancel_flag(flag);
+      active_ = true;
     }
   }
   ~CancelScope() {
-    if (Fiber* f = Fiber::current(); f != nullptr) f->set_cancel_flag(prev_);
+    if (!active_) return;
+    Fiber* f = Fiber::current();
+    HYLE_FATAL_ASSERT(f != nullptr);
+    f->set_cancel_flag(prev_);
   }
   HYLE_DISABLE_COPY_AND_MOVE(CancelScope);
 
  private:
   void* prev_ = nullptr;
+  bool active_ = false;
 };
 
 // ---- CancelCallback ---------------------------------------------------------
@@ -253,6 +260,7 @@ class CancelCallback {
   using Fn = detail::CancelNode::Callback::Fn;
 
   CancelCallback(const CancelToken& tok, Fn fn, void* ctx) noexcept {
+    HYLE_FATAL_ASSERT(fn != nullptr);
     detail::CancelNode* n = tok.node_for_scope_();
     if (n == nullptr) return;
     if (n->cancelled.load(std::memory_order_acquire)) {

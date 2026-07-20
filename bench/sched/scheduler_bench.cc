@@ -90,7 +90,7 @@ int main() {
     b.title("fiber context switch (resume/yield pair)").batch(kY).minEpochIterations(200);
     b.run("Fiber::yield", [&] {
       int n = kY;
-      Fiber f(system_allocator(), kDefaultStackSize, &yield_body, &n);
+      Fiber f(kDefaultStackSize, &yield_body, &n);
       while (!f.done()) f.resume();
     });
   }
@@ -115,9 +115,8 @@ int main() {
       std::vector<std::unique_ptr<Fiber>> fibers;
       fibers.reserve(kTasks);
       for (int i = 0; i < kTasks; ++i)
-        fibers.push_back(std::make_unique<Fiber>(system_allocator(),
-                                                 kDefaultStackSize, &noop_body,
-                                                 nullptr));
+        fibers.push_back(std::make_unique<Fiber>(
+            kDefaultStackSize, &noop_body, nullptr));
       for (auto& f : fibers) sched.spawn(f.get());
       sched.drain();  // all fibers retired before `fibers` frees them
     });
@@ -174,8 +173,8 @@ int main() {
     b.run("HYLE suspend()+Waker::wake() ping-pong", [&] {
       PingPong s;
       s.cycles = kCycles;
-      Fiber fa(system_allocator(), kDefaultStackSize, &pingpong_a, &s);
-      Fiber fb(system_allocator(), kDefaultStackSize, &pingpong_b, &s);
+      Fiber fa(kDefaultStackSize, &pingpong_a, &s);
+      Fiber fb(kDefaultStackSize, &pingpong_b, &s);
       Scheduler sched(1, system_allocator(), 256);  // 1 worker: true hand-off
       sched.spawn(&fa);
       sched.spawn(&fb);

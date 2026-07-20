@@ -71,7 +71,10 @@ IoContext::~IoContext() {
         // else: base op late completion -> DROP (its stack slot/fiber are gone; see
         // the L5 note above). Reaped off the ring already, so nothing more to do.
       }
-      if (n == 0) break;  // nothing came back within the wait -> stop (don't hang)
+      // A cancel completion is asynchronous. A single 1 ms timeout is not proof
+      // that the ring is permanently wedged (and was observed to leak TimedSlot
+      // on Linux under ordinary scheduler teardown). Keep polling while the
+      // backend still reports in-flight work; the guard remains the hard bound.
     }
   }
 }

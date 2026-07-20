@@ -29,6 +29,25 @@ using hyle::sched::WaitGroup;
 using hyle::util::SpinLock;
 
 namespace {
+void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
+void fail_free(void*, void*, std::size_t, std::size_t) noexcept {}
+void* fail_realloc(void*, void*, std::size_t, std::size_t,
+                   std::size_t) noexcept {
+  return nullptr;
+}
+
+TEST(Sync, AllocationFailuresAreRecoverable) {
+  hyle::mem::Allocator failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+  Channel<int> channel(failing, 4);
+  EXPECT_FALSE(channel.valid());
+  EXPECT_FALSE(channel.send(1));
+  int out = 0;
+  EXPECT_FALSE(channel.recv(out));
+  EXPECT_FALSE(hyle::sched::try_make_oneshot<int>(failing).has_value());
+  EXPECT_FALSE(hyle::sched::try_make_watch<int>(failing, 1).has_value());
+  EXPECT_FALSE(
+      hyle::sched::try_make_broadcast<int>(failing, 4).has_value());
+}
 
 // Spawn `bodies.size()` fibers on a `workers`-wide scheduler and block until all
 // of them finish. Fibers outlive the scheduler (drain() returns only once every
@@ -194,6 +213,22 @@ TEST(Sync, ChannelProducerConsumer) {
   sched.drain();
   EXPECT_EQ(a.count.load(), kN);
   EXPECT_EQ(a.sum.load(), static_cast<long>(kN) * (kN - 1) / 2);
+}
+
+TEST(Sync, ChannelTryAndTimedPathsDistinguishFullEmptyAndClosed) {
+  using Ch = Channel<int>;
+  Ch ch(system_allocator(), 1);
+  int out = -1;
+  EXPECT_EQ(ch.try_recv(out), Ch::RecvStatus::kEmptyOrTimeout);
+  EXPECT_EQ(ch.recv_for(out, 1'000'000), Ch::RecvStatus::kEmptyOrTimeout);
+  EXPECT_EQ(ch.try_send(7), Ch::SendStatus::kSent);
+  EXPECT_EQ(ch.try_send(8), Ch::SendStatus::kFullOrTimeout);
+  EXPECT_EQ(ch.send_for(8, 1'000'000), Ch::SendStatus::kFullOrTimeout);
+  EXPECT_EQ(ch.try_recv(out), Ch::RecvStatus::kValue);
+  EXPECT_EQ(out, 7);
+  ch.close();
+  EXPECT_EQ(ch.try_send(9), Ch::SendStatus::kClosed);
+  EXPECT_EQ(ch.try_recv(out), Ch::RecvStatus::kClosed);
 }
 
 namespace {
@@ -363,9 +398,7 @@ TEST(Sync, CvFiberWaiterWokenByThread) {
   EXPECT_TRUE(a.resumed.load());
 }
 
-// ---- timed wait (sched-04c, thread-mode) ------------------------------------
-// These use BARE std::thread waiters (thread-mode: no scheduler/fiber), which is
-// the shipped path for sched-04c. A fiber-mode timed wait is not yet supported.
+// ---- timed wait (thread + fiber modes) --------------------------------------
 
 using hyle::sched::ConditionVariable;
 using CvStatus = ConditionVariable::CvStatus;
@@ -474,6 +507,88 @@ TEST(SyncTimed, WaitUntilPastDeadline) {
   std::lock_guard<SpinLock> lk(mu);
   CvStatus st = cv.wait_until(mu, 1);  // deadline ns=1, long in the past
   EXPECT_EQ(st, CvStatus::kTimeout);
+}
+
+namespace {
+struct FiberTimedArg {
+  SpinLock mu;
+  ConditionVariable cv;
+  std::atomic<bool> entered{false};
+  std::atomic<bool> returned{false};
+  CvStatus status = CvStatus::kNoTimeout;
+  std::uint64_t timeout_ns = 0;
+};
+void fiber_timed_waiter(void* p) {
+  auto* a = static_cast<FiberTimedArg*>(p);
+  a->mu.lock();
+  a->entered.store(true, std::memory_order_release);
+  a->status = a->cv.wait_for(a->mu, a->timeout_ns);
+  a->mu.unlock();
+  a->returned.store(true, std::memory_order_release);
+}
+}  // namespace
+
+TEST(SyncTimed, FiberWaitTimesOutWithoutBlockingWorker) {
+  FiberTimedArg arg;
+  arg.timeout_ns = 15'000'000;
+  Fiber f(kDefaultStackSize, &fiber_timed_waiter, &arg);
+  Scheduler sched(1, system_allocator(), 64);
+  EXPECT_TRUE(sched.spawn(&f));
+  EXPECT_TRUE(sched.drain_for(2'000'000'000));
+  EXPECT_TRUE(arg.returned.load(std::memory_order_acquire));
+  EXPECT_EQ(arg.status, CvStatus::kTimeout);
+  sched.shutdown();
+}
+
+TEST(SyncTimed, FiberImmediateDeadlineIsSafe) {
+  Scheduler sched(2, system_allocator(), 256);
+  for (int round = 0; round < 200; ++round) {
+    FiberTimedArg arg;
+    arg.timeout_ns = 0;
+    Fiber f(kDefaultStackSize, &fiber_timed_waiter, &arg);
+    EXPECT_TRUE(sched.spawn(&f));
+    EXPECT_TRUE(sched.drain_for(1'000'000'000));
+    EXPECT_TRUE(arg.returned.load(std::memory_order_acquire));
+    EXPECT_EQ(arg.status, CvStatus::kTimeout);
+  }
+  sched.shutdown();
+}
+
+TEST(SyncTimed, FiberNotifyWinsAndCancelsTimer) {
+  FiberTimedArg arg;
+  arg.timeout_ns = 2'000'000'000;
+  Fiber f(kDefaultStackSize, &fiber_timed_waiter, &arg);
+  Scheduler sched(2, system_allocator(), 64);
+  EXPECT_TRUE(sched.spawn(&f));
+  while (!arg.entered.load(std::memory_order_acquire))
+    std::this_thread::yield();
+  arg.mu.lock();
+  arg.mu.unlock();
+  arg.cv.notify_one();
+  EXPECT_TRUE(sched.drain_for(2'000'000'000));
+  EXPECT_TRUE(arg.returned.load(std::memory_order_acquire));
+  EXPECT_EQ(arg.status, CvStatus::kNoTimeout);
+  sched.shutdown();
+}
+
+TEST(SyncTimed, FiberNotifyVsTimeoutRaceDoesNotDoubleWake) {
+  Scheduler sched(4, system_allocator(), 256);
+  for (int round = 0; round < 200; ++round) {
+    FiberTimedArg arg;
+    arg.timeout_ns = 1'000'000;
+    Fiber f(kDefaultStackSize, &fiber_timed_waiter, &arg);
+    EXPECT_TRUE(sched.spawn(&f));
+    while (!arg.entered.load(std::memory_order_acquire))
+      std::this_thread::yield();
+    if ((round & 1) == 0) {
+      arg.mu.lock();
+      arg.mu.unlock();
+      arg.cv.notify_one();
+    }
+    EXPECT_TRUE(sched.drain_for(1'000'000'000));
+    EXPECT_TRUE(arg.returned.load(std::memory_order_acquire));
+  }
+  sched.shutdown();
 }
 
 // ---- Semaphore --------------------------------------------------------------
@@ -760,6 +875,17 @@ TEST(Sync, OneshotReceiverDropRejectsSend) {
   EXPECT_FALSE(r.has_value());  // nobody home
 }
 
+TEST(Sync, OneshotTryRecvAfterValueReportsClosedInsteadOfHanging) {
+  auto [tx, rx] = hyle::sched::make_oneshot<int>(system_allocator());
+  ASSERT_TRUE(tx.send(42).has_value());
+  auto first = rx.try_recv();
+  ASSERT_TRUE(first.has_value());
+  EXPECT_EQ(*first, 42);
+  auto second = rx.try_recv();
+  ASSERT_FALSE(second.has_value());
+  EXPECT_TRUE(second.error().IsCancelled());
+}
+
 // ---- watch ------------------------------------------------------------------
 
 // borrow() returns the seeded value immediately; after a send, a receiver's
@@ -798,6 +924,19 @@ TEST(Sync, WatchSenderDropCloses) {
   auto r = rx.changed();
   EXPECT_FALSE(r.has_value());
   EXPECT_TRUE(r.error().IsCancelled());
+}
+
+TEST(Sync, WatchStaysOpenUntilLastClonedSenderDrops) {
+  auto [tx, rx] = make_watch<int>(system_allocator(), 5);
+  auto tx2 = tx;
+  tx = {};
+  ASSERT_TRUE(tx2.send(9).has_value());
+  ASSERT_TRUE(rx.changed().has_value());
+  EXPECT_EQ(rx.borrow(), 9);
+  tx2 = {};
+  auto closed = rx.changed();
+  ASSERT_FALSE(closed.has_value());
+  EXPECT_TRUE(closed.error().IsCancelled());
 }
 
 // ---- broadcast --------------------------------------------------------------
@@ -864,6 +1003,25 @@ TEST(Sync, BroadcastLaggedOnOverflow) {
   auto r2 = rx.recv();
   EXPECT_TRUE(r2.has_value());
   EXPECT_EQ(*r2, 6);  // oldest retained = write_pos(10) - cap(4)
+}
+
+TEST(Sync, BroadcastTryRecvReportsEmptyLagAndClose) {
+  auto [tx, rx] = make_broadcast<int>(system_allocator(), 2);
+  auto empty = rx.try_recv();
+  ASSERT_FALSE(empty.has_value());
+  EXPECT_TRUE(empty.error().IsNotFound());
+  tx.send(1);
+  tx.send(2);
+  tx.send(3);
+  auto lagged = rx.try_recv();
+  ASSERT_FALSE(lagged.has_value());
+  EXPECT_TRUE(lagged.error().IsUnavailable());
+  ASSERT_EQ(*rx.try_recv(), 2);
+  ASSERT_EQ(*rx.try_recv(), 3);
+  tx = {};
+  auto closed = rx.try_recv();
+  ASSERT_FALSE(closed.has_value());
+  EXPECT_TRUE(closed.error().IsCancelled());
 }
 
 // ---- completeness: newly-added responsibilities -----------------------------

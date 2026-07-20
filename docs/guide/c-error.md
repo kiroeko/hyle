@@ -126,7 +126,7 @@
 |---|---|
 | `Result<T>` / `ASSIGN_OR_RAISE` | 模板；C 用 `hyle_status` + 分支 / `HYLE_C_RETURN_IF_ERROR` |
 | `HYLE_ASSERT` / `HYLE_FATAL` | C++ 源码面；C 用 `HYLE_C_*` |
-| `ErrorRecord` | 测试设施 |
+| `ErrorRecord` | 当前是 handler 测试记录器，不是产品对象；C 用户把计数/last-message state 放进自己的 handler `ctx`，由 `set_handler` 或 `push_handler` 接入同一诊断通路 |
 | `Status::release_rep` / `adopt_rep` | 内部桥接 |
 
 ---

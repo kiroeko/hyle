@@ -3,6 +3,7 @@
 #include <atomic>
 #include <cstddef>
 #include <cstdint>
+#include <limits>
 #include <new>
 #include <utility>
 
@@ -41,21 +42,22 @@
 // threads that are NOT fibers; assuming "all waiters are fibers" would deadlock
 // them. The CV picks the mode per-wait from whether it runs inside a worker fiber.
 //
-// TIMED WAITS (wait_for/wait_until, sched-04c): THREAD-MODE ships here. A bare
+// TIMED WAITS (wait_for/wait_until): a bare
 // (non-fiber) waiter parks with a bounded platform::Parker::park_timeout and
 // retracts its own node on the deadline; the notify-vs-timeout race is arbitrated
 // under the CV monitor lock via the node's `linked` flag (whoever acts first
 // wins, the loser reports the other's outcome so no wake is lost). This covers
 // external submitters and cross-process federation threads.
 //
-// FIBER-MODE timed wait is a separate milestone (sched-04d): a fiber waiter would
-// arm a time-02 wheel timer whose fire races the notify, and the loser must
-// CANCEL the other -- but the woken fiber may resume on a different worker than
-// the one holding its timer, so that needs the per-worker cross-worker
-// timer-cancel command queue (the time-02 headline divergence point, truly
-// load-bearing for io-timeout). Until sched-04d lands, a timed wait from a worker
-// fiber asserts. The design mirrors folly fibers Baton (atomic-arbitrated
-// timeout-vs-post, same-thread timer to dodge cross-core cancel).
+// Fiber mode uses the per-worker time wheel plus a per-episode temporary pin:
+// notify and timer arbitrate through one atomic winner byte; the winning wake
+// returns to the wheel owner, where a still-armed loser timer is cancelled O(1).
+// This mirrors folly fibers Baton (atomic timeout-vs-post arbitration) without a
+// cross-worker timer mutation.
+
+namespace hyle::time {
+class TimerEntry;
+}
 
 namespace hyle::sched {
 
@@ -96,21 +98,19 @@ class ConditionVariable {
   // OR `timeout_ns` elapses, then re-acquire `lock`. Returns whether it returned
   // because of the timeout. Deadline keys on time::monotonic_ns().
   //
-  // THREAD-MODE ONLY for now: a bare (non-fiber) waiter parks with a bounded
-  // Parker::park_timeout -- no timer wheel, no cross-worker cancel, so it is
-  // simple and correct. A FIBER waiter would need to arm a wheel timer whose
-  // fire races the notify and whose loser must cancel across workers (the
-  // per-worker cancel command queue -- still sched-04d-pending); until that
-  // lands, calling this from a worker fiber asserts. Bare-thread timed waits
-  // (external submitters, cross-process federation) ship now.
+  // Bare threads use Parker::park_timeout. Fibers arm their current worker's
+  // timer wheel and are temporarily pinned to that worker for this wait episode,
+  // so the notify winner resumes on the wheel owner and cancels in O(1). An
+  // atomic winner state prevents timer+notify from waking the same episode twice.
   enum class CvStatus { kNoTimeout, kTimeout };
 
   template <class Lock>
   CvStatus wait_for(Lock& lock, std::uint64_t timeout_ns) {
     Waiter node;
-    prepare_wait_(&node);  // (asserts thread-mode; sets up token)
+    const bool fiber = prepare_wait_(&node);
     lock.unlock();
-    const CvStatus st = finish_wait_timed_(&node, timeout_ns);
+    const CvStatus st = fiber ? finish_wait_timed_fiber_(&node, timeout_ns)
+                              : finish_wait_timed_(&node, timeout_ns);
     lock.lock();
     return st;
   }
@@ -166,6 +166,13 @@ class ConditionVariable {
     Waker waker;
     void* token;
     bool linked;  // true while in the list; guarded by mu_
+    // 0 waiting, 1 notify won, 2 timeout won. Used only by fiber timed waits.
+    std::atomic<unsigned char> timed_state{0};
+    bool fiber_timed = false;
+  };
+  struct TimedContext {
+    ConditionVariable* cv;
+    Waiter* node;
   };
 
   // Capture mode (fiber vs thread), set up `node`, and link it onto the FIFO tail
@@ -184,6 +191,10 @@ class ConditionVariable {
   // platform futex, kept out of this header.)
   HYLE_SCHED_API CvStatus finish_wait_timed_(Waiter* node,
                                              std::uint64_t timeout_ns) noexcept;
+  HYLE_SCHED_API CvStatus finish_wait_timed_fiber_(
+      Waiter* node, std::uint64_t timeout_ns) noexcept;
+  HYLE_SCHED_API static void timed_fiber_fire_(
+      hyle::time::TimerEntry* entry) noexcept;
 
   // Unlink `node` from the list if still linked (idempotent). Caller must hold
   // mu_. Used by a timed waiter that woke on its deadline before a notify reached
@@ -279,9 +290,10 @@ class Mutex {
   }
 
   void unlock() noexcept {
-    // Drepper: decrement; if the previous value was not 1 (i.e. was 2, waiters),
-    // there is someone to wake.
-    if (state_.fetch_sub(1, std::memory_order_release) != 1) {
+    // Publish unlocked in one RMW.  The old Drepper fetch_sub(2 -> 1) followed
+    // by unlock_slow's store(0) performed two writes on every contended handoff;
+    // exchange keeps the same 0/1/2 protocol with one cache-line transition.
+    if (state_.exchange(0, std::memory_order_release) == 2) {
       unlock_slow();
     }
   }
@@ -302,34 +314,59 @@ class Mutex {
 class WaitGroup {
  public:
   WaitGroup() noexcept = default;
-  explicit WaitGroup(long initial) noexcept : count_(initial) {}
+  explicit WaitGroup(long initial) noexcept : count_(initial) {
+    HYLE_FATAL_ASSERT(initial >= 0);
+  }
   HYLE_DISABLE_COPY_AND_MOVE(WaitGroup);
 
-  void add(long n = 1) noexcept {
+  bool try_add(long n = 1) noexcept {
+    // add is the uncommon control-plane operation and remains serialized with
+    // wait's predicate check. done() is the data-plane operation: all non-final
+    // completions avoid this lock.
     mu_.lock();
-    count_ += n;
-    HYLE_FATAL_ASSERT(count_ >= 0);  // more done() than add() is a logic bug
+    const long count = count_.load(std::memory_order_relaxed);
+    if (n < 0 || count > std::numeric_limits<long>::max() - n) {
+      mu_.unlock();
+      return false;
+    }
+    count_.store(count + n, std::memory_order_release);
     mu_.unlock();
+    return true;
   }
 
-  void done() noexcept {
-    mu_.lock();
-    HYLE_FATAL_ASSERT(count_ > 0);
-    const bool drained = (--count_ == 0);
-    mu_.unlock();
-    if (drained) cv_.notify_all();  // release everyone parked in wait()
+  void add(long n = 1) noexcept { HYLE_FATAL_ASSERT(try_add(n)); }
+
+  bool try_done() noexcept {
+    long count = count_.load(std::memory_order_acquire);
+    do {
+      if (count <= 0) return false;
+    } while (!count_.compare_exchange_weak(
+        count, count - 1, std::memory_order_acq_rel,
+        std::memory_order_acquire));
+    if (count == 1) {
+      // Pair with wait's predicate-check + waiter publication under mu_. Taking
+      // the lock only on 1 -> 0 prevents a final completion from notifying in
+      // the gap between the waiter's check and ConditionVariable::wait linking
+      // its node, without charging every preceding done() for that lock.
+      mu_.lock();
+      mu_.unlock();
+      cv_.notify_all();
+    }
+    return true;
   }
+
+  void done() noexcept { HYLE_FATAL_ASSERT(try_done()); }
 
   void wait() noexcept {
     mu_.lock();
-    while (count_ > 0) cv_.wait(mu_);
+    while (count_.load(std::memory_order_acquire) > 0) cv_.wait(mu_);
     mu_.unlock();
   }
 
  private:
   util::SpinLock mu_;
   ConditionVariable cv_;
-  long count_ = 0;
+  std::atomic<long> count_{0};
 };
 
 // ---- Latch ------------------------------------------------------------------
@@ -343,31 +380,39 @@ class Latch {
   }
   HYLE_DISABLE_COPY_AND_MOVE(Latch);
 
+  bool try_count_down(long n = 1) noexcept {
+    long count = count_.load(std::memory_order_acquire);
+    do {
+      if (n < 0 || count < n) return false;
+    } while (!count_.compare_exchange_weak(
+        count, count - n, std::memory_order_acq_rel,
+        std::memory_order_acquire));
+    if (count == n) {
+      mu_.lock();
+      mu_.unlock();
+      cv_.notify_all();
+    }
+    return true;
+  }
+
   void count_down(long n = 1) noexcept {
-    mu_.lock();
-    HYLE_FATAL_ASSERT(count_ >= n);  // counting past zero is a logic bug
-    const bool opened = ((count_ -= n) == 0);
-    mu_.unlock();
-    if (opened) cv_.notify_all();
+    HYLE_FATAL_ASSERT(try_count_down(n));
   }
 
   bool try_wait() const noexcept {
-    mu_.lock();
-    const bool open = (count_ == 0);
-    mu_.unlock();
-    return open;
+    return count_.load(std::memory_order_acquire) == 0;
   }
 
   void wait() noexcept {
     mu_.lock();
-    while (count_ > 0) cv_.wait(mu_);
+    while (count_.load(std::memory_order_acquire) > 0) cv_.wait(mu_);
     mu_.unlock();
   }
 
  private:
   mutable util::SpinLock mu_;
   ConditionVariable cv_;
-  long count_;
+  std::atomic<long> count_;
 };
 
 // ---- Channel ----------------------------------------------------------------
@@ -380,15 +425,20 @@ class Latch {
 template <class T>
 class Channel {
  public:
+  enum class SendStatus { kSent, kFullOrTimeout, kClosed };
+  enum class RecvStatus { kValue, kEmptyOrTimeout, kClosed };
+
   Channel(mem::Allocator alloc, std::size_t capacity)
       : alloc_(alloc), cap_(capacity) {
     HYLE_FATAL_ASSERT(alloc_.valid());
     HYLE_FATAL_ASSERT(capacity >= 1);
+    HYLE_FATAL_ASSERT(capacity <=
+                      std::numeric_limits<std::size_t>::max() / sizeof(T));
     buf_ = static_cast<T*>(alloc_.allocate(sizeof(T) * cap_, alignof(T)));
-    HYLE_FATAL_ASSERT(buf_ != nullptr);
   }
 
   ~Channel() {
+    if (buf_ == nullptr) return;
     while (size_ > 0) {  // destroy anything still buffered
       buf_[head_].~T();
       head_ = (head_ + 1) % cap_;
@@ -399,9 +449,15 @@ class Channel {
 
   HYLE_DISABLE_COPY_AND_MOVE(Channel);
 
+  // Allocation failure leaves a closed/empty invalid channel. Check this once
+  // after construction; send/recv also fail safely so FFI factories can convert
+  // OOM into their normal NULL + last-error channel.
+  bool valid() const noexcept { return buf_ != nullptr; }
+
   // Enqueue `v`, blocking the fiber while the buffer is full. Returns false if
   // the channel is closed (the value is dropped).
   bool send(T v) {
+    if (buf_ == nullptr) return false;
     mu_.lock();
     while (size_ == cap_ && !closed_) not_full_.wait(mu_);
     if (closed_) {
@@ -416,9 +472,50 @@ class Channel {
     return true;
   }
 
+  SendStatus try_send(T v) {
+    if (buf_ == nullptr) return SendStatus::kClosed;
+    mu_.lock();
+    if (closed_) {
+      mu_.unlock();
+      return SendStatus::kClosed;
+    }
+    if (size_ == cap_) {
+      mu_.unlock();
+      return SendStatus::kFullOrTimeout;
+    }
+    new (&buf_[tail_]) T(std::move(v));
+    tail_ = (tail_ + 1) % cap_;
+    ++size_;
+    mu_.unlock();
+    not_empty_.notify_one();
+    return SendStatus::kSent;
+  }
+
+  SendStatus send_for(T v, std::uint64_t timeout_ns) {
+    if (buf_ == nullptr) return SendStatus::kClosed;
+    mu_.lock();
+    const bool ready = not_full_.wait_for(
+        mu_, timeout_ns, [&] { return size_ != cap_ || closed_; });
+    if (closed_) {
+      mu_.unlock();
+      return SendStatus::kClosed;
+    }
+    if (!ready) {
+      mu_.unlock();
+      return SendStatus::kFullOrTimeout;
+    }
+    new (&buf_[tail_]) T(std::move(v));
+    tail_ = (tail_ + 1) % cap_;
+    ++size_;
+    mu_.unlock();
+    not_empty_.notify_one();
+    return SendStatus::kSent;
+  }
+
   // Dequeue into `out`, blocking the fiber while empty. Returns false once the
   // channel is closed AND drained (no value written).
   bool recv(T& out) {
+    if (buf_ == nullptr) return false;
     mu_.lock();
     while (size_ == 0 && !closed_) not_empty_.wait(mu_);
     if (size_ == 0) {  // closed and drained
@@ -434,8 +531,48 @@ class Channel {
     return true;
   }
 
+  RecvStatus try_recv(T& out) {
+    if (buf_ == nullptr) return RecvStatus::kClosed;
+    mu_.lock();
+    if (size_ == 0) {
+      const RecvStatus status =
+          closed_ ? RecvStatus::kClosed : RecvStatus::kEmptyOrTimeout;
+      mu_.unlock();
+      return status;
+    }
+    out = std::move(buf_[head_]);
+    buf_[head_].~T();
+    head_ = (head_ + 1) % cap_;
+    --size_;
+    mu_.unlock();
+    not_full_.notify_one();
+    return RecvStatus::kValue;
+  }
+
+  RecvStatus recv_for(T& out, std::uint64_t timeout_ns) {
+    if (buf_ == nullptr) return RecvStatus::kClosed;
+    mu_.lock();
+    const bool ready = not_empty_.wait_for(
+        mu_, timeout_ns, [&] { return size_ != 0 || closed_; });
+    if (size_ == 0) {
+      const RecvStatus status =
+          closed_ ? RecvStatus::kClosed : RecvStatus::kEmptyOrTimeout;
+      mu_.unlock();
+      return status;
+    }
+    HYLE_FATAL_ASSERT(ready);
+    out = std::move(buf_[head_]);
+    buf_[head_].~T();
+    head_ = (head_ + 1) % cap_;
+    --size_;
+    mu_.unlock();
+    not_full_.notify_one();
+    return RecvStatus::kValue;
+  }
+
   // Close the channel: wakes all blocked senders/receivers. Idempotent.
   void close() {
+    if (buf_ == nullptr) return;
     mu_.lock();
     closed_ = true;
     mu_.unlock();
@@ -491,7 +628,10 @@ class Semaphore {
 
   // Return `n` permits to the pool, waking FIFO-front waiters whose full request
   // is thereby satisfied. Wakes are delivered after the internal lock is dropped.
-  HYLE_SCHED_API void release(std::size_t n = 1) noexcept;
+  HYLE_SCHED_API bool try_release(std::size_t n = 1) noexcept;
+  void release(std::size_t n = 1) noexcept {
+    HYLE_FATAL_ASSERT(try_release(n));
+  }
 
   // Close: wake every waiter (their acquire() returns false). Post-close acquire/
   // try_acquire return false. Idempotent. Permits already in the pool stay.
@@ -646,11 +786,11 @@ class RwLock {
 
   // Block (fiber-aware) until the lock is held; return an RAII guard.
   ReadGuard read() noexcept {
-    sem_.acquire(1);
+    lock_read();
     return ReadGuard(this);
   }
   WriteGuard write() noexcept {
-    sem_.acquire(kMaxReaders);
+    lock_write();
     return WriteGuard(this);
   }
 
@@ -661,6 +801,14 @@ class RwLock {
   WriteGuard try_write() noexcept {
     return sem_.try_acquire(kMaxReaders) ? WriteGuard(this) : WriteGuard();
   }
+
+  // Raw lock/unlock pairs for C ABI and foreign-language RAII equivalents.
+  void lock_read() noexcept { (void)sem_.acquire(1); }
+  bool try_lock_read() noexcept { return sem_.try_acquire(1); }
+  void unlock_read() noexcept { sem_.release(1); }
+  void lock_write() noexcept { (void)sem_.acquire(kMaxReaders); }
+  bool try_lock_write() noexcept { return sem_.try_acquire(kMaxReaders); }
+  void unlock_write() noexcept { sem_.release(kMaxReaders); }
 
  private:
   // Max concurrent readers. Matches tokio's u32::MAX>>3 headroom idea, sized to
@@ -749,6 +897,7 @@ class OneshotSender {
     }
     new (s->storage) T(std::move(v));
     s->value_set = true;
+    s->tx_alive = false;  // the send capability is consumed successfully
     s->mu.unlock();
     s->cv.notify_one();  // wake a blocked receiver
     s->release();
@@ -865,15 +1014,29 @@ class OneshotReceiver {
 
 // Create a linked oneshot Sender/Receiver pair over allocator-backed shared state.
 template <class T>
-std::pair<OneshotSender<T>, OneshotReceiver<T>> make_oneshot(
+Result<std::pair<OneshotSender<T>, OneshotReceiver<T>>> try_make_oneshot(
     mem::Allocator alloc) noexcept {
   using detail::OneshotState;
+  if (!alloc.valid())
+    return std::unexpected(
+        Status::InvalidArgument("oneshot requires a complete allocator"));
   auto* s = static_cast<OneshotState<T>*>(
       alloc.allocate(sizeof(OneshotState<T>), alignof(OneshotState<T>)));
-  HYLE_FATAL_ASSERT(s != nullptr);
+  if (s == nullptr)
+    return std::unexpected(
+        Status::ResourceExhausted("oneshot state allocation failed"));
   new (s) OneshotState<T>{};
   s->alloc = alloc;
-  return {OneshotSender<T>(s), OneshotReceiver<T>(s)};
+  return std::pair<OneshotSender<T>, OneshotReceiver<T>>{
+      OneshotSender<T>(s), OneshotReceiver<T>(s)};
+}
+
+template <class T>
+std::pair<OneshotSender<T>, OneshotReceiver<T>> make_oneshot(
+    mem::Allocator alloc) noexcept {
+  auto result = try_make_oneshot<T>(alloc);
+  HYLE_FATAL_ASSERT(result.has_value());
+  return std::move(*result);
 }
 
 // ---- watch ------------------------------------------------------------------
@@ -1028,6 +1191,23 @@ class WatchSender {
  public:
   WatchSender() noexcept = default;
   explicit WatchSender(detail::WatchState<T>* s) noexcept : state_(s) {}
+  WatchSender(const WatchSender& o) noexcept : state_(o.state_) {
+    if (state_) {
+      state_->add_ref();
+      state_->senders.fetch_add(1, std::memory_order_relaxed);
+    }
+  }
+  WatchSender& operator=(const WatchSender& o) noexcept {
+    if (this != &o) {
+      reset_();
+      state_ = o.state_;
+      if (state_) {
+        state_->add_ref();
+        state_->senders.fetch_add(1, std::memory_order_relaxed);
+      }
+    }
+    return *this;
+  }
   WatchSender(WatchSender&& o) noexcept : state_(std::exchange(o.state_, nullptr)) {}
   WatchSender& operator=(WatchSender&& o) noexcept {
     if (this != &o) {
@@ -1036,7 +1216,6 @@ class WatchSender {
     }
     return *this;
   }
-  HYLE_DISABLE_COPY(WatchSender);
   ~WatchSender() { reset_(); }
 
   // Publish a new value TO CONSUMERS: replace the cell, bump the version, wake
@@ -1137,19 +1316,33 @@ class WatchSender {
 // borrow() returns `initial` immediately -- so a late subscriber / shutdown flag
 // reads the current state without waiting.
 template <class T>
-std::pair<WatchSender<T>, WatchReceiver<T>> make_watch(mem::Allocator alloc,
-                                                       T initial) noexcept {
+Result<std::pair<WatchSender<T>, WatchReceiver<T>>> try_make_watch(
+    mem::Allocator alloc, T initial) noexcept {
   using detail::WatchState;
+  if (!alloc.valid())
+    return std::unexpected(
+        Status::InvalidArgument("watch requires a complete allocator"));
   auto* s = static_cast<WatchState<T>*>(
       alloc.allocate(sizeof(WatchState<T>), alignof(WatchState<T>)));
-  HYLE_FATAL_ASSERT(s != nullptr);
+  if (s == nullptr)
+    return std::unexpected(
+        Status::ResourceExhausted("watch state allocation failed"));
   new (s) WatchState<T>{};
   s->alloc = alloc;
   new (s->storage) T(std::move(initial));
   s->refcount.store(2, std::memory_order_relaxed);   // 1 sender + 1 receiver
   s->senders.store(1, std::memory_order_relaxed);
   s->receivers.store(1, std::memory_order_relaxed);  // the returned Receiver
-  return {WatchSender<T>(s), WatchReceiver<T>(s, /*seen=*/0)};
+  return std::pair<WatchSender<T>, WatchReceiver<T>>{
+      WatchSender<T>(s), WatchReceiver<T>(s, /*seen=*/0)};
+}
+
+template <class T>
+std::pair<WatchSender<T>, WatchReceiver<T>> make_watch(mem::Allocator alloc,
+                                                       T initial) noexcept {
+  auto result = try_make_watch<T>(alloc, std::move(initial));
+  HYLE_FATAL_ASSERT(result.has_value());
+  return std::move(*result);
 }
 
 // ---- broadcast --------------------------------------------------------------
@@ -1276,6 +1469,32 @@ class BroadcastReceiver {
     return out;
   }
 
+  // Non-blocking counterpart to recv(): NotFound means no new value yet,
+  // Unavailable means lagged (cursor fast-forwards), and Cancelled means closed
+  // and drained.
+  Result<T> try_recv() noexcept {
+    auto* s = state_;
+    s->mu.lock();
+    if (cursor_ >= s->write_pos) {
+      const bool closed = s->closed;
+      s->mu.unlock();
+      return std::unexpected(
+          closed ? Status::Cancelled("broadcast closed")
+                 : Status::NotFound("broadcast empty"));
+    }
+    const std::uint64_t oldest =
+        s->write_pos > s->cap ? s->write_pos - s->cap : 0;
+    if (cursor_ < oldest) {
+      cursor_ = oldest;
+      s->mu.unlock();
+      return std::unexpected(Status::Unavailable("broadcast lagged"));
+    }
+    T out = s->buf[cursor_ % s->cap];
+    ++cursor_;
+    s->mu.unlock();
+    return out;
+  }
+
  private:
   void reset_() noexcept {
     if (state_ != nullptr) {
@@ -1377,25 +1596,52 @@ class BroadcastSender {
 // Create a broadcast channel retaining the last `capacity` values. Returns a
 // Sender + one Receiver (subscribe() more from the Sender). capacity >= 1.
 template <class T>
-std::pair<BroadcastSender<T>, BroadcastReceiver<T>> make_broadcast(
+Result<std::pair<BroadcastSender<T>, BroadcastReceiver<T>>> try_make_broadcast(
     mem::Allocator alloc, std::size_t capacity) noexcept {
   using detail::BroadcastState;
-  HYLE_FATAL_ASSERT(capacity >= 1);
+  if (!alloc.valid())
+    return std::unexpected(
+        Status::InvalidArgument("broadcast requires a complete allocator"));
+  if (capacity == 0 ||
+      capacity > std::numeric_limits<std::size_t>::max() / sizeof(T))
+    return std::unexpected(
+        Status::InvalidArgument("invalid broadcast capacity"));
   auto* s = static_cast<BroadcastState<T>*>(
       alloc.allocate(sizeof(BroadcastState<T>), alignof(BroadcastState<T>)));
-  HYLE_FATAL_ASSERT(s != nullptr);
+  if (s == nullptr)
+    return std::unexpected(
+        Status::ResourceExhausted("broadcast state allocation failed"));
   new (s) BroadcastState<T>{};
   s->alloc = alloc;
   s->cap = capacity;
   s->buf = static_cast<T*>(alloc.allocate(sizeof(T) * capacity, alignof(T)));
   s->occupied = static_cast<bool*>(
       alloc.allocate(sizeof(bool) * capacity, alignof(bool)));
-  HYLE_FATAL_ASSERT(s->buf != nullptr && s->occupied != nullptr);
+  if (s->buf == nullptr || s->occupied == nullptr) {
+    if (s->buf != nullptr)
+      alloc.deallocate(s->buf, sizeof(T) * capacity, alignof(T));
+    if (s->occupied != nullptr)
+      alloc.deallocate(s->occupied, sizeof(bool) * capacity, alignof(bool));
+    s->~BroadcastState<T>();
+    alloc.deallocate(s, sizeof(BroadcastState<T>),
+                     alignof(BroadcastState<T>));
+    return std::unexpected(
+        Status::ResourceExhausted("broadcast ring allocation failed"));
+  }
   for (std::size_t i = 0; i < capacity; ++i) s->occupied[i] = false;
   s->refcount.store(2, std::memory_order_relaxed);   // 1 sender + 1 receiver
   s->senders.store(1, std::memory_order_relaxed);
   s->receivers.store(1, std::memory_order_relaxed);  // the returned Receiver
-  return {BroadcastSender<T>(s), BroadcastReceiver<T>(s, /*cursor=*/0)};
+  return std::pair<BroadcastSender<T>, BroadcastReceiver<T>>{
+      BroadcastSender<T>(s), BroadcastReceiver<T>(s, /*cursor=*/0)};
+}
+
+template <class T>
+std::pair<BroadcastSender<T>, BroadcastReceiver<T>> make_broadcast(
+    mem::Allocator alloc, std::size_t capacity) noexcept {
+  auto result = try_make_broadcast<T>(alloc, capacity);
+  HYLE_FATAL_ASSERT(result.has_value());
+  return std::move(*result);
 }
 
 }  // namespace hyle::sched

@@ -14,7 +14,7 @@
 | RAII 类（`VmRegion`/`MappedFile`/`StackAllocator`） | **导出为 opaque 句柄** | `_o` 句柄 + create/destroy + 方法转发 |
 | 值语义 vtable（`Allocator`） | **导出为 POD struct** | 天然 C 形状（fn 指针 + state），显式桥接 |
 | 模板 `Foo<T>` | **不导出类型；导出能力** | 类型擦除：`<T>`→运行时 `size/align/enum`（见 design §1）；typed 便利用 header-inline 宏 |
-| 有状态调试/内省类（`StatsAllocator`/`ErrorRecord`） | **不导出** | 仅 C++；无 FFI 需求（可观测性走标量查询，学 ggml `ggml_used_mem`） |
+| 有状态调试/内省类（`StatsAllocator`/`ErrorRecord`） | **先判断是否是用户能力** | 用户需要的统计/诊断导出 opaque handle + POD snapshot/visitor；仅测试注入、内部 record 才可不导出 |
 | 用 `std::` 拥有型 / `std::function` / `std::span` 的签名 | **改形态再导出** | 换成 ptr+len、fn 指针+ctx、buffer-fill/visitor |
 
 **判据不是"每个 C++ 符号都要有 C 对应"，是"能力有没有 C ABI 通路"**（design §1）。模板不可达≠能力缺失。
@@ -116,6 +116,21 @@ extern "C" {
 
 原则：inline 糖给 C 用户便利、但不污染稳定导出面（不进 DLL 符号，零 ABI 风险）。**C++ 用户不管这层**——他们直接用原生 `include/hyle/<mod>/*.h`（RAII/模板本就好用），HYLE 不做"包 C 句柄的 C++ 壳"（design §2：只有对外主接口是 C 的库如 ggml/oneDNN 才需要那层）。
 
+### 4.1 不直接导出的 C++ 形状必须给 recipe
+
+“模板/RAII 不能直接跨 C ABI”只解释为什么没有同名符号，不等于 C/FFI 用户可以
+缺少对应能力。guide 的“有意不导出”表必须继续回答：
+
+1. C 用户用哪些稳定原语获得等价行为；
+2. ownership、完成时序和错误如何表达；
+3. 给出一段可复制的纯 C recipe，而不是只写“可由调用方组合”。
+
+例如 sched 的 `Task<T>` 用 result context + oneshot，join/when_all 用
+oneshot/WaitGroup，when_any 用 atomic winner + oneshot + cancel；mem 的
+`ObjectPool<T>` 用 runtime size/align arena + typed 宏。若找不到等价通路，该项
+就是 C ABI 覆盖缺口，必须补 POD/opaque/callback 接口，不能归为“C 没模板”。
+只有纯语法便利、内部 debug 设施或明确无 FFI 价值的实现细节可以只解释不提供。
+
 ## 5. 纯 C smoke test（tests/c_<mod>_test.c）
 
 - **纯 C 编译**（`LANGUAGE C`），只 include `hyle/c/<mod>.h`——证明无 mangling/模板/STL 泄漏。
@@ -133,7 +148,9 @@ extern "C" {
 
 ## 7. 收口 checklist（机械跑一遍）
 
-- [ ] 每个 C++ 公开面按 §0 表归类，缺口补或显式登记"有意仅 C++"（附理由：泛型不可达 vs 无 FFI 需求，别混）。
+- [ ] 每个 C++ 公开面按 §0 表归类：能擦除的直接导出；非 1:1
+  形状给 C 组合 recipe；仅内部测试设施或编译期反射才可登记“不属于 C
+  运行时产品能力”，并写清边界。不得用“有状态/模板/C 没有类”单独免责。
 - [ ] 六件套齐（§1）；导出宏三态；`extern "C"` 包全。
 - [ ] 桥接三铁律（§3）：opaque 句柄 anon-ns 外定义 + 零 reinterpret + fail-fast/边界二分。
 - [ ] C POD 有 layout/trivial/关键 offset assert；可扩展输入 options 首字段为 `struct_size`；C/C++ enum 值有编译期锁。
@@ -142,5 +159,8 @@ extern "C" {
 - [ ] 纯 C smoke test 覆盖句柄生命周期 + 便利 + NULL 安全 + 边界校验。
 - [ ] 机械核对 C 头每个 `hyle_*` 入口在纯 C smoke 与 guide 中至少出现一次；聚合写法不能掩盖漏测符号。
 - [ ] 三平台真编真测 all passed + C++ 无回归 + `-Werror` 干净。
-- [ ] `docs/guide/c-<mod>.md` 逐符号 1:1 + README 索引；close-01 里程碑登记该模块 C ABI 落地。
-- [ ] `docs/guide/c-<mod>.md` 的"有意不导出"表说清每个仅-C++ 项的理由。
+- [ ] `docs/guide/c-<mod>.md` 逐符号 1:1 + “C++ 能力 → C
+  直接接口/组合 recipe/非产品边界”审计 + README 索引；close-01
+  里程碑登记该模块 C ABI 落地。
+- [ ] `docs/guide/c-<mod>.md` 的"有意不导出"表说清每个仅-C++ 项的理由；对仍有
+      用户价值的能力给出稳定原语映射、ownership/完成时序和可复制纯 C recipe。

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 
+#include "hyle/error/status.h"
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/visibility.h"
@@ -22,6 +23,7 @@ namespace hyle::sched {
 
 class Fiber;
 class Waker;  // sched-04: re-injects a suspended fiber (needs impl_ via friend)
+HYLE_SCHED_API void wait_for_shutdown() noexcept;
 
 // M:N work-stealing scheduler: N OS-thread workers, each with its own FIFO local
 // run-queue (container WsFifoQueue), a shared global injection queue (Vyukov
@@ -40,23 +42,56 @@ class HYLE_SCHED_API Scheduler {
   // local queue and the global injection queue (power of two).
   Scheduler(unsigned num_workers, mem::Allocator alloc,
             std::size_t queue_capacity);
+  // Recoverable construction path for C/FFI and runtimes that treat allocation
+  // or OS-thread creation failure as an operational error. On failure `status`
+  // is non-OK and valid()==false; the object remains destructible but no other
+  // operation may be called. The three-argument convenience constructor keeps
+  // the native fail-fast contract and asserts construction succeeded.
+  Scheduler(unsigned num_workers, mem::Allocator alloc,
+            std::size_t queue_capacity, Status* status) noexcept;
   ~Scheduler();
   HYLE_DISABLE_COPY_AND_MOVE(Scheduler);
 
   // Submit a runnable fiber. Lands on the caller's local queue if called from a
   // worker, else on the global queue. The scheduler does NOT own the Fiber; the
-  // caller must keep it alive until it has finished running.
-  void spawn(Fiber* fiber);
+  // caller must keep it alive until it has finished running. Returns false when
+  // graceful shutdown has closed admission, or when a worker recursively
+  // submits after every bounded queue is full (returning avoids self-deadlock).
+  // In either case the fiber was not queued/count-retained and remains entirely
+  // owned by the caller. External producers apply backpressure instead.
+  bool spawn(Fiber* fiber);
+
+  // Submit a self-owned fire-and-forget callback. Unlike spawn(Fiber*), the
+  // scheduler allocates the driver, obtains a guarded stack from its recycle
+  // pool, and destroys both after the callback returns. This is the lightweight
+  // product path for callbacks that do not need a result/JoinHandle; use
+  // spawn_task for structured result and cancellation semantics.
+  using DetachedFn = void (*)(void* ctx);
+  Status spawn_detached(DetachedFn fn, void* ctx,
+                        std::size_t stack_size) noexcept;
+
+  // Queue a small non-suspending callback that runs directly on a worker stack.
+  // This avoids allocating/switching a Fiber and is the scheduler counterpart
+  // to Highway/marl lightweight work items. The callback MUST NOT call
+  // yield/suspend/sleep, throw, or perform a blocking fiber wait; use
+  // spawn_detached when it may suspend, and spawn_task when it also needs a
+  // result/cancellation. Foreign producers apply bounded backpressure. A worker
+  // recursively submitting after every inline shard is full receives
+  // ResourceExhausted instead of spinning and deadlocking its own consumer.
+  Status schedule(DetachedFn fn, void* ctx) noexcept;
 
   // Submit a fiber PINNED to worker `worker_idx`: it runs only on that worker and
   // is never stolen, on spawn and on every wake (shard-per-core, io-04). Use this
   // to keep a connection's fiber on the core that owns its io ring so submit +
   // reap + resume stay single-threaded. `worker_idx` must be < num_workers().
-  void spawn_on(unsigned worker_idx, Fiber* fiber);
+  bool spawn_on(unsigned worker_idx, Fiber* fiber);
+  Status spawn_detached_on(unsigned worker_idx, DetachedFn fn, void* ctx,
+                           std::size_t stack_size) noexcept;
 
   // The number of worker threads (for choosing a spawn_on target / sizing an
   // IoContext's per-worker rings).
   unsigned num_workers() const noexcept;
+  bool valid() const noexcept { return impl_ != nullptr; }
 
   // Shared fiber-stack recycle pool for a given USABLE size (sched-10 spawn_task).
   // Returns a pool whose tier matches `usable_bytes` when it equals one of the
@@ -70,7 +105,13 @@ class HYLE_SCHED_API Scheduler {
   // Block the calling thread until every spawned fiber has finished.
   void drain();
 
-  // drain(), then stop the workers and join them. Idempotent-safe to call once.
+  // Drain finite work (admission stays open so running tasks may spawn
+  // descendants), atomically close admission when the count reaches zero, then
+  // stop and join workers. A concurrent external spawn is linearized at that
+  // zero/close boundary: it is either counted and drained or rejected.
+  // Long-lived/server work must call begin_shutdown() first so its fibers receive
+  // shutdown_requested() and admission closes immediately. Concurrent calls
+  // share one completion barrier and all return only after workers have joined.
   void shutdown();
 
   // ---- graceful shutdown (sched-08, capability C4) --------------------------
@@ -91,10 +132,10 @@ class HYLE_SCHED_API Scheduler {
   // PHASE 2: drain_for(timeout_ns) waits for the in-flight fibers to finish (the
   // count to reach zero). Returns true if drained, false on timeout. A stackful
   // fiber CANNOT be preempted, so on timeout the caller's recourse is cooperative:
-  // request cancellation and hope fibers exit at their next yield point; a fiber
-  // that still won't exit is left to the final shutdown() (its stack leaks, which
-  // is acceptable at process exit -- tokio likewise abandons blocking threads on
-  // timeout rather than force-killing). Then call shutdown() to stop+join workers.
+  // request cancellation / close its I/O and call drain_for again. shutdown() never
+  // abandons or force-kills a live stack: it will continue waiting for that fiber.
+  // A process that cannot obtain cooperative completion must choose process-level
+  // termination instead of calling shutdown() and expecting a bounded return.
   //
   // Whether a NEW spawn is accepted. False after begin_shutdown(). Lets a producer
   // (e.g. the accept loop) check before creating more work.
@@ -102,6 +143,8 @@ class HYLE_SCHED_API Scheduler {
   // Enter phase 1: stop accepting new work + broadcast the shutdown signal so
   // long-lived fibers can wind down. Idempotent.
   void begin_shutdown() noexcept;
+  // Suspend the current fiber owned by this scheduler until begin_shutdown().
+  void wait_for_shutdown() noexcept;
   // Wait up to `timeout_ns` for all in-flight fibers to finish (0 == wait forever,
   // same as drain()). Returns true if the count reached zero, false on timeout.
   bool drain_for(unsigned long long timeout_ns) noexcept;
@@ -145,6 +188,10 @@ class HYLE_SCHED_API Scheduler {
   friend class Waker;  // Waker::wake() re-injects via impl_ (completion spine)
   struct Impl;
   Impl* impl_;
+  void init_(unsigned num_workers, mem::Allocator alloc,
+             std::size_t queue_capacity, Status* status) noexcept;
+  Status spawn_detached_(unsigned worker_idx, bool pinned, DetachedFn fn,
+                         void* ctx, std::size_t stack_size) noexcept;
 };
 
 // True if the scheduler running the CURRENT fiber has begun shutting down (phase 1
@@ -154,5 +201,12 @@ class HYLE_SCHED_API Scheduler {
 // Reads a scheduler-wide flat flag via the worker's thread-local owner; returns
 // false if not called from a scheduler worker fiber. Cheap (one relaxed load).
 HYLE_SCHED_API bool shutdown_requested() noexcept;
+
+// Suspend the current scheduler fiber until begin_shutdown() is called. Unlike
+// polling shutdown_requested() between yields, this consumes no worker time and
+// cannot miss the close edge. It is one arm for structured select patterns such
+// as "accept/receive OR shutdown"; cancelling the other arm remains the caller's
+// responsibility. Returns immediately if shutdown has already begun.
+HYLE_SCHED_API void wait_for_shutdown() noexcept;
 
 }  // namespace hyle::sched

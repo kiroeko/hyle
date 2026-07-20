@@ -7,7 +7,7 @@
 | **Tier** | 边界 |
 | **LOC 估** | 2-3k |
 | **骨架?** | 否 |
-| **状态** | 🔶 **部分落地**：error + platform + mem + time + obs + util + simd + container C-ABI ✅（2026-07-19）；全库跨编译器 / FFI 冒烟仍待 |
+| **状态** | 🔶 **部分落地**：error + platform + mem + time + obs + util + simd + container + sched C-ABI ✅（2026-07-20）；全库跨编译器 / FFI 冒烟仍待 |
 
 > **本文件的目的**：把"发布后用户必须用稳定 C ABI"这件事**白纸黑字钉死**，避免后面忘了或被"反正 C++ 头能用"糊弄过去。实现细节临到开工再细化，但**产品铁律 + 验收门槛现在就定**。
 
@@ -32,10 +32,12 @@
 
 ## 具体事务（开工时细化，先占位）
 
-- [x] 每个对外模块封一层 `include/hyle/c/<mod>.h`（或等价单独命名空间），**纯 C、可被 C 编译器 include**，与内部 C++ 头物理隔离。**目录约定已坐实**：`include/hyle/c/` 起手。
+- [x] error/platform/mem/time/simd/util/obs/container/**sched** 已封
+  `include/hyle/c/<mod>.h`，纯 C 编译器可 include，与内部 C++ 头物理隔离；
+  io/compute/graph 仍待各自模块收口。
 - [x] **样板 error**（2026-07-17，2026-07-19 复审）：`include/hyle/c/error.h` + 文档 [`c-error.md`](../guide/c-error.md)。Status 全码/所有权/格式化与诊断 handler 均可达；C/C++ scoped handler 共用严格 LIFO 还原门，乱序不再可能重发悬空回调。
 - [x] **样板 platform**（2026-07-17，2026-07-19 扩面复审）：`include/hyle/c/platform.h` + `c_platform.cc` + 纯 C `hyle_platform_c_test`。覆盖 wait/Parker、Thread、DynLib、VM/VmRegion、hugepage/NUMA、完整 fs/env/fd、MappedFile、CPU/cache/topology；补 `hyle_platform_last_error`、thread opts `struct_size`、具名 flags/perms。纯 C 机械覆盖 114/114 入口。文档：[`c-platform.md`](../guide/c-platform.md)。
-- [x] **样板 mem**（2026-07-17，2026-07-19 复审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C `hyle_mem_c_test`。面：`hyle_allocator` vtable、system allocator、MemoryArena / StackAllocator / Arena / GrowablePool / HugeRegion、进程级 hugepage/NUMA、typed 池宏；资源失败均有 last-error，成功清 stale。**有意仅 C++**：模板构造层（ObjectPool/GrowablePool/pmr）、有状态调试类（AllocStats/LeakTracker/StatsAllocator）、Allocator typed 层。纯 C 机械覆盖 51/51 入口。文档：[`c-mem.md`](../guide/c-mem.md)。
+- [x] **样板 mem**（2026-07-17，2026-07-20 复审）：`include/hyle/c/mem.h` + `c_mem.cc` + 纯 C `hyle_mem_c_test`。面：`hyle_allocator` vtable、system allocator、MemoryArena / StackAllocator / Arena / GrowablePool / HugeRegion、进程级 hugepage/NUMA、typed 池宏；资源失败均有 last-error，成功清 stale。模板构造层由 runtime size/align + typed 宏覆盖；Allocator typed 层由裸 alloc/free 覆盖。AllocStats/LeakTracker/StatsAllocator 当前明确为内部 debug/test 边界，C 业务计数可包装公开 allocator；若提升为产品能力必须补 opaque + snapshot/visitor。纯 C 机械覆盖 51/51 入口。文档：[`c-mem.md`](../guide/c-mem.md)。
 - [x] **util**（2026-07-19 全面复审）：`include/hyle/c/util.h` + `c_util.cc` + 纯 C smoke。RNG 用稳定 POD；Ref/ScopeGuard/Registry/SpinLock 用 opaque handle + callback/ctx 类型擦除；demangle/help 用 buffer-fill。机械覆盖 46/46 可调用入口，其中动态导出 44 个、header-inline 2 个；三平台导出及 C/C++ 测试通过。仅 `type_name<T>`/`type_hash<T>` 因依赖编译器静态类型而有意留 C++。文档：[`c-util.md`](../guide/c-util.md)，复审：[`util-module-closure.md`](./util-module-closure.md)。
 - [x] **container**（2026-07-19 收口）：`include/hyle/c/container.h` +
       `c_container.cc`，覆盖字符串/路径、StringBuf、runtime-erased POD
@@ -75,6 +77,29 @@
 - [x] close-01 完成 SIMD shim 时同步更新 `docs/guide/simd-usage.md`：把普通示例换成纯 C，
       补 `struct_size`、调用方数组所有权与 opaque 生命周期，并保留普通动态、exact library、
       fixed TU 三层选择说明。
+
+## C++ 形状到 C 能力的用户通路复核
+
+“头里有多少函数”只证明符号覆盖，不证明 C/FFI 用户能完成同一件事。2026-07-20
+按 authoring guide §4.1 重新检查已收口模块：每个不能直接导出的模板、RAII 或
+源码宏，guide 必须给出稳定原语映射、所有权/完成时序，并在非平凡组合处给可复制
+recipe。当前入口如下：
+
+| 模块 | C++ 形状的 C/FFI 通路 | 用户文档 | 判定 |
+|---|---|---|---|
+| error | `Result<T>`→`hyle_status` + 分支/return-if-error；作用域 handler→push/pop token | `c-error` §4.6/§5 | 完整 |
+| platform | RAII resource→opaque create/destroy；typed symbol→`void*` + caller cast；遍历模板→visitor | `c-platform` §3.8/§4 | 完整 |
+| mem | typed pool→runtime size/align + typed 宏；RAII allocator→vtable + 显式 free；debug-only tracker 不作为稳定产品能力 | `c-mem` §3.9/§4 | 完整；若将 stats/leak tracker 升为用户产品能力必须另导出 POD snapshot/visitor |
+| time | `Instant`→`uint64_t`；侵入节点/source concept→opaque timer/source + visitor | `c-time` §2–§6 | 完整 |
+| simd | ISA-dependent vector/D-tag 不冻结；普通用户能力由 whole-buffer pointer/count API 动态派发 | `c-simd` 全文 + `simd-usage` | 完整 |
+| util | `Ref<T>`/scope RAII→type-erased ref/guard；静态 type metadata 无运行时等价物 | `c-util` 对应各节 | 完整 |
+| obs | format/RAII trace→调用方格式化 + record/runtime zone begin/end；sink→opaque handle | `c-obs` §1–§5 | 完整 |
+| container | typed vector/map→runtime-erased POD 容器；拥有型结果→caller buffer；payload 生命周期显式 | `c-container` 全文 | 完整 |
+| sched | `Task<T>`/Join→result context + oneshot；when_all→WaitGroup；when_any→winner + oneshot + cancel | `c-sched` §9（可复制 recipe） | 完整 |
+
+复核的红线是：未来任何 guide 若只能写“C 没模板，所以不提供”，且又没有上述
+稳定组合通路，就必须把模块从“C ABI 完整”退回“有覆盖缺口”，直到补
+POD/opaque/callback 接口。
 
 ## 验收标准（"算完成"的硬指标）
 

@@ -82,16 +82,20 @@ struct JoinState {
   util::SpinLock mu;              // guards done/status/storage/group
   ConditionVariable cv;          // a direct joiner waits here
   bool done = false;
+  bool value_present = false;
   std::atomic<bool> cancel_req{false};
   Status status;                 // OK on success, error/Cancelled otherwise
   GroupSignal* group = nullptr;  // set by when_all/when_any while grouped
   int group_idx = -1;
-  alignas(T) unsigned char storage[sizeof(T)];  // result, live iff done&&status.ok()
+  alignas(T) unsigned char storage[sizeof(T)];  // result, live iff value_present
 
   void complete_(Status s, T* val) noexcept {
     mu.lock();
     status = std::move(s);
-    if (status.ok() && val != nullptr) new (storage) T(std::move(*val));
+    if (status.ok() && val != nullptr) {
+      new (storage) T(std::move(*val));
+      value_present = true;
+    }
     done = true;
     // Signal the group (if any) WHILE STILL HOLDING mu. Doing this after unlock
     // was a UAF: a loser could read `group`, unlock, then be delayed; meanwhile the
@@ -109,17 +113,21 @@ struct JoinState {
   void set_value(T&& v) noexcept { complete_(Status(), &v); }
   void set_error(Status s) noexcept { complete_(std::move(s), nullptr); }
 
-  Status take(T& out) noexcept {
+  Result<T> take() noexcept {
     mu.lock();
     cv.wait(mu, [&] { return done; });
     Status s = status;
-    if (s.ok()) {
-      T* p = reinterpret_cast<T*>(storage);
-      out = std::move(*p);
-      p->~T();
+    if (!s.ok()) {
+      mu.unlock();
+      return std::unexpected(std::move(s));
     }
+    HYLE_FATAL_ASSERT(value_present);
+    T* p = reinterpret_cast<T*>(storage);
+    T out(std::move(*p));
+    p->~T();
+    value_present = false;
     mu.unlock();
-    return s;
+    return out;
   }
   bool is_done() noexcept {
     mu.lock();
@@ -149,7 +157,7 @@ struct JoinState {
   void add_ref() noexcept { refcount.fetch_add(1, std::memory_order_relaxed); }
   void release() noexcept {
     if (refcount.fetch_sub(1, std::memory_order_acq_rel) == 1) {
-      if (done && status.ok()) reinterpret_cast<T*>(storage)->~T();  // detached value
+      if (value_present) reinterpret_cast<T*>(storage)->~T();  // detached value
       mem::Allocator a = alloc;
       this->~JoinState();
       a.deallocate(this, sizeof(JoinState), alignof(JoinState));
@@ -221,7 +229,7 @@ struct JoinState<void> {
   }
 };
 
-// The task's cooperative-cancel flag is published thread-locally while a task
+// The task's cooperative-cancel flag is published on the running Fiber while a task
 // runs, so is_cancel_requested() (called from anywhere down the task's stack)
 // can find it without threading a handle through every frame.
 HYLE_SCHED_API void push_cancel_scope(std::atomic<bool>* flag) noexcept;
@@ -242,11 +250,16 @@ class JoinHandle {
  public:
   JoinHandle() noexcept = default;
   explicit JoinHandle(detail::JoinState<T>* s) noexcept : state_(s) {}
-  JoinHandle(JoinHandle&& o) noexcept : state_(std::exchange(o.state_, nullptr)) {}
+  explicit JoinHandle(Status immediate) noexcept
+      : immediate_(std::move(immediate)) {}
+  JoinHandle(JoinHandle&& o) noexcept
+      : state_(std::exchange(o.state_, nullptr)),
+        immediate_(std::move(o.immediate_)) {}
   JoinHandle& operator=(JoinHandle&& o) noexcept {
     if (this != &o) {
       if (state_) state_->release();
       state_ = std::exchange(o.state_, nullptr);
+      immediate_ = std::move(o.immediate_);
     }
     return *this;
   }
@@ -256,31 +269,45 @@ class JoinHandle {
   }
 
   Result<T> join() noexcept {
-    T out{};
-    Status s = state_->take(out);
+    if (state_ == nullptr) {
+      HYLE_FATAL_ASSERT(!immediate_.ok());
+      Status error = std::move(immediate_);
+      immediate_ = Status{};
+      return std::unexpected(std::move(error));
+    }
+    Result<T> result = state_->take();
     state_->release();
     state_ = nullptr;
-    if (!s.ok()) return std::unexpected(std::move(s));
-    return out;
+    return result;
   }
 
   void abort() noexcept {
     if (state_) state_->cancel_req.store(true, std::memory_order_release);
   }
-  bool is_finished() const noexcept { return state_ && state_->is_done(); }
+  bool is_finished() const noexcept {
+    return state_ != nullptr ? state_->is_done() : !immediate_.ok();
+  }
   void detach() noexcept {
     if (state_) {
       state_->release();
       state_ = nullptr;
     }
+    immediate_ = Status{};
   }
-  bool valid() const noexcept { return state_ != nullptr; }
+  bool valid() const noexcept { return state_ != nullptr || !immediate_.ok(); }
 
   // Internal: when_all/when_any reach the shared state without consuming.
-  detail::JoinState<T>* state_for_group_() const noexcept { return state_; }
+  detail::JoinState<T>* state_for_group_() const noexcept {
+    // A null state is meaningful only for an immediate construction failure.
+    // Default-constructed, detached, or already-joined handles are programmer
+    // errors and must not be silently counted as completed by when_all/when_any.
+    HYLE_FATAL_ASSERT(state_ != nullptr || !immediate_.ok());
+    return state_;
+  }
 
  private:
   detail::JoinState<T>* state_ = nullptr;
+  Status immediate_;
 };
 
 template <>
@@ -288,11 +315,16 @@ class JoinHandle<void> {
  public:
   JoinHandle() noexcept = default;
   explicit JoinHandle(detail::JoinState<void>* s) noexcept : state_(s) {}
-  JoinHandle(JoinHandle&& o) noexcept : state_(std::exchange(o.state_, nullptr)) {}
+  explicit JoinHandle(Status immediate) noexcept
+      : immediate_(std::move(immediate)) {}
+  JoinHandle(JoinHandle&& o) noexcept
+      : state_(std::exchange(o.state_, nullptr)),
+        immediate_(std::move(o.immediate_)) {}
   JoinHandle& operator=(JoinHandle&& o) noexcept {
     if (this != &o) {
       if (state_) state_->release();
       state_ = std::exchange(o.state_, nullptr);
+      immediate_ = std::move(o.immediate_);
     }
     return *this;
   }
@@ -302,6 +334,12 @@ class JoinHandle<void> {
   }
 
   Result<void> join() noexcept {
+    if (state_ == nullptr) {
+      HYLE_FATAL_ASSERT(!immediate_.ok());
+      Status error = std::move(immediate_);
+      immediate_ = Status{};
+      return std::unexpected(std::move(error));
+    }
     Status s = state_->take();
     state_->release();
     state_ = nullptr;
@@ -311,18 +349,25 @@ class JoinHandle<void> {
   void abort() noexcept {
     if (state_) state_->cancel_req.store(true, std::memory_order_release);
   }
-  bool is_finished() const noexcept { return state_ && state_->is_done(); }
+  bool is_finished() const noexcept {
+    return state_ != nullptr ? state_->is_done() : !immediate_.ok();
+  }
   void detach() noexcept {
     if (state_) {
       state_->release();
       state_ = nullptr;
     }
+    immediate_ = Status{};
   }
-  bool valid() const noexcept { return state_ != nullptr; }
-  detail::JoinState<void>* state_for_group_() const noexcept { return state_; }
+  bool valid() const noexcept { return state_ != nullptr || !immediate_.ok(); }
+  detail::JoinState<void>* state_for_group_() const noexcept {
+    HYLE_FATAL_ASSERT(state_ != nullptr || !immediate_.ok());
+    return state_;
+  }
 
  private:
   detail::JoinState<void>* state_ = nullptr;
+  Status immediate_;
 };
 
 // ---- spawn_task: spawn a Task<T>, get a JoinHandle<T> -----------------------
@@ -349,7 +394,13 @@ struct TaskDriver {
     if (st->cancel_req.load(std::memory_order_acquire) && !d->task.done()) {
       st->set_error(Status::Cancelled("task aborted"));
     } else {
-      st->set_value(d->task.result());
+      try {
+        st->set_value(d->task.result());
+      } catch (...) {
+        // The coroutine promise captures user exceptions. Never let its
+        // result() rethrow escape this noexcept fiber trampoline.
+        st->set_error(Status::Internal("task threw an exception"));
+      }
     }
     // Do NOT free here -- entry runs ON the fiber's stack; the trampoline still
     // uses the Fiber after we return. dispatch() runs destroy() post-return.
@@ -384,8 +435,12 @@ struct TaskDriver<void> {
     if (st->cancel_req.load(std::memory_order_acquire) && !d->task.done()) {
       st->set_error(Status::Cancelled("task aborted"));
     } else {
-      d->task.result();  // propagate exception path (no-op under no-except)
-      st->set_done();
+      try {
+        d->task.result();
+        st->set_done();
+      } catch (...) {
+        st->set_error(Status::Internal("task threw an exception"));
+      }
     }
   }
 
@@ -406,15 +461,34 @@ JoinHandle<T> spawn_task(Scheduler& sched, mem::Allocator alloc, Task<T> task,
                          std::size_t stack_size = kDefaultStackSize) noexcept {
   using detail::JoinState;
   using detail::TaskDriver;
+  if (!alloc.valid()) {
+    return JoinHandle<T>(
+        Status::InvalidArgument("spawn_task requires a complete allocator"));
+  }
+  if (stack_size < mem::kFiberStackSmall) {
+    return JoinHandle<T>(
+        Status::InvalidArgument("fiber stack is smaller than the safe tier"));
+  }
+  if (!task.valid()) {
+    return JoinHandle<T>(
+        Status::ResourceExhausted("coroutine frame allocation failed"));
+  }
   auto* st = static_cast<JoinState<T>*>(
       alloc.allocate(sizeof(JoinState<T>), alignof(JoinState<T>)));
-  HYLE_FATAL_ASSERT(st != nullptr);
+  if (st == nullptr) {
+    return JoinHandle<T>(
+        Status::ResourceExhausted("join state allocation failed"));
+  }
   new (st) JoinState<T>{};
   st->alloc = alloc;
 
   auto* d = static_cast<TaskDriver<T>*>(
       alloc.allocate(sizeof(TaskDriver<T>), alignof(TaskDriver<T>)));
-  HYLE_FATAL_ASSERT(d != nullptr);
+  if (d == nullptr) {
+    st->set_error(Status::ResourceExhausted("task driver allocation failed"));
+    st->release();  // no driver exists: drop its reserved task-side reference
+    return JoinHandle<T>(st);
+  }
   // Recycle the fiber stack through the scheduler's shared per-tier pool when the
   // size is a standard tier (the common case: kDefaultStackSize) -- a hot
   // spawn/join loop then reuses stacks instead of reserve_guarded'ing every time.
@@ -422,13 +496,29 @@ JoinHandle<T> spawn_task(Scheduler& sched, mem::Allocator alloc, Task<T> task,
   mem::FiberStackPool* pool = sched.fiber_stack_pool(stack_size);
   mem::FiberStack stack =
       pool != nullptr ? pool->acquire() : mem::FiberStack::allocate(stack_size);
+  if (!stack.valid()) {
+    alloc.deallocate(d, sizeof(TaskDriver<T>), alignof(TaskDriver<T>));
+    st->set_error(Status::ResourceExhausted("fiber stack allocation failed"));
+    st->release();
+    return JoinHandle<T>(st);
+  }
   new (d) TaskDriver<T>{alloc, std::move(task), st,
                         Fiber(std::move(stack), &TaskDriver<T>::entry, d, pool)};
   // dispatch() frees the driver via this hook AFTER the fiber finishes and is off
   // its stack (a fiber must never free its own stack from within entry). The
   // Fiber dtor returns the stack to `pool` (if any) at that safe point.
   d->fiber.set_on_finish(&TaskDriver<T>::destroy, d);
-  sched.spawn(&d->fiber);
+  if (!sched.spawn(&d->fiber)) {
+    // Admission closed or a recursively-submitting worker saturated every
+    // bounded runnable queue. Resolve the handle instead of leaking the
+    // self-owned driver and leaving join() blocked forever.
+    st->set_error(
+        sched.accepting()
+            ? Status::ResourceExhausted(
+                  "scheduler runnable queues are full on a worker")
+            : Status::Cancelled("scheduler is shutting down"));
+    TaskDriver<T>::destroy(d);
+  }
   return JoinHandle<T>(st);
 }
 
@@ -452,7 +542,9 @@ int group_wait(GroupSignal& g, long target, States*... states) noexcept {
   int idx = 0;
   bool already[kN == 0 ? 1 : kN] = {};
   (void)std::initializer_list<int>{
-      (already[idx] = states->install_group(&g, idx), ++idx, 0)...};
+      (already[idx] =
+           (states == nullptr || states->install_group(&g, idx)),
+       ++idx, 0)...};
   // Pre-account completions that happened before/at install (their on_complete
   // won't fire for us since group wasn't set at their completion).
   for (int i = 0; i < kN; ++i) {
@@ -471,7 +563,8 @@ int group_wait(GroupSignal& g, long target, States*... states) noexcept {
   g.mu.unlock();
   // Uninstall from every state BEFORE g dies (critical: a not-yet-fired loser
   // would otherwise call on_complete on a dead stack object).
-  (void)std::initializer_list<int>{(states->clear_group(), 0)...};
+  (void)std::initializer_list<int>{
+      (states != nullptr ? (states->clear_group(), 0) : 0)...};
   return winner;
 }
 

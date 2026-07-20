@@ -102,7 +102,7 @@ TEST(Coro, CoAwaitSuspendsFiberResumedByForeignWake) {
 }
 
 // Nested co_await: an outer coroutine awaits by calling a helper that itself
-// suspends the fiber. Proves the frame-on-fiber-stack model composes (one fiber
+// suspends the fiber. Proves the allocator-backed coroutine-frame model composes (one fiber
 // suspend covers the whole await chain).
 namespace {
 Task<int> inner_coro(Allocator, WaitBox* box) {

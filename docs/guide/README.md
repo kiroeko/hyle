@@ -17,9 +17,14 @@
 | [`c-util.md`](./c-util.md) | **util 纯 C ABI**：RNG POD、Ref/ScopeGuard/Registry/SpinLock 类型擦除句柄、demangle buffer-fill、所有权和并发合同。 |
 | [`c-container.md`](./c-container.md) | **container 纯 C ABI**：字符串/路径、StringBuf、运行时擦除 flat Swiss map/vector、四类队列与 append-only vector；所有权、失效和并发合同。 |
 | [`c-simd.md`](./c-simd.md) | **SIMD 纯 C ABI**：247 个 whole-buffer 入口、低精度/排序 POD、RNG opaque handle、运行时 ISA 诊断、调用合同和 FFI 绑定方式。 |
+| [`c-sched.md`](./c-sched.md) | **sched 纯 C ABI**：worker-stack/fiber 双腿、Waker、优雅关闭、同步/消息/取消/blocking pool 的类型擦除入口、生命周期和外语绑定合同。 |
 | [`c-core.md`](./c-core.md) | **core 纯 C ABI**：`hyle_version`（packed）+ `hyle_version_string`，跨语言诊断版本查询；纯 `extern "C"`，无 api 表/版本协商。 |
 | [`simd-usage.md`](./simd-usage.md) | **SIMD 怎么选和怎么调**：普通动态派发、整库固定 ISA、固定 kernel、常用 batch 能力与调用合同；并标明 close-01 C ABI 迁移边界。 |
 | [`usage-contract.md`](./usage-contract.md) | **怎么调才不出 UB**：为 SOTA 性能保留的调用安全红线（fiber 勿跨 `yield()` 持有 thread_local、分配器跨线程 free、CPUID 探测的 LTO 隔离）。每条带机制+安全模式+后果。**热路径集成前必读。** |
+
+各 `c-*.md` 不只列导出符号，也必须解释原生 C++ 的模板/RAII/协程形状在 C/FFI
+里怎样组合出来。找不到稳定组合通路就是 C ABI 缺口，不能用“C 没有模板”略过；
+`c-sched` §9 是非平凡组合 recipe 的样板。
 
 ## 三份文档的分工（别混）
 

@@ -6,8 +6,10 @@
 #include "hyle/platform.h"  // HYLE_OS_WINDOWS (Mutex backend split)
 #include "hyle/platform/wait.h"
 #include "hyle/sched/fiber.h"
+#include "hyle/sched/timer.h"
 #include "hyle/sched/waker.h"
 #include "hyle/time/clock.h"
+#include "hyle/time/timer_source.h"
 
 namespace hyle::sched {
 namespace {
@@ -38,9 +40,15 @@ bool ConditionVariable::prepare_wait_(Waiter* node) noexcept {
   node->next = nullptr;
   node->prev = nullptr;
   node->linked = true;
+  node->timed_state.store(0, std::memory_order_relaxed);
+  node->fiber_timed = false;
   if (fiber) {
     node->waker = w;
     node->token = nullptr;
+    // Mark before publication. Untimed fiber waits also use the one-shot notify
+    // state harmlessly; timed waits need a notify racing finish_wait_timed_fiber_
+    // to record that it won before the timer is armed.
+    node->fiber_timed = true;
   } else {
     // Arm this thread's token BEFORE the node is published, so a notify that
     // pops it sees notified==false and flips it to true (under our list lock).
@@ -137,11 +145,17 @@ void ConditionVariable::notify_one() noexcept {
       }
       node->linked = false;  // popped: a timed waiter's remove_waiter_ is now a no-op
       waiters_.fetch_sub(1, std::memory_order_relaxed);
+      bool won = true;
+      if (node->fiber_timed) {
+        unsigned char expected = 0;
+        won = node->timed_state.compare_exchange_strong(
+            expected, 1, std::memory_order_acq_rel);
+      }
       // Copy out everything we need BEFORE releasing the lock / waking: the node
       // may be destroyed the instant its owner resumes.
       waker = node->waker;
       token = node->token;
-      have = true;
+      have = won;
     }
     mu_.unlock();
   }
@@ -158,7 +172,14 @@ void ConditionVariable::notify_all() noexcept {
     node = head_;
     // Mark every node unlinked so a concurrent timed-out waiter's remove_waiter_
     // becomes a no-op (we own them all now). Done under mu_.
-    for (Waiter* p = node; p != nullptr; p = p->next) p->linked = false;
+    for (Waiter* p = node; p != nullptr; p = p->next) {
+      p->linked = false;
+      if (p->fiber_timed) {
+        unsigned char expected = 0;
+        (void)p->timed_state.compare_exchange_strong(
+            expected, 1, std::memory_order_acq_rel);
+      }
+    }
     head_ = nullptr;
     tail_ = nullptr;
     waiters_.store(0, std::memory_order_relaxed);  // detached the whole list
@@ -169,7 +190,9 @@ void ConditionVariable::notify_all() noexcept {
     Waiter* next = node->next;
     const Waker waker = node->waker;
     void* token = node->token;
-    wake_one(waker, token);
+    if (!node->fiber_timed ||
+        node->timed_state.load(std::memory_order_acquire) == 1)
+      wake_one(waker, token);
     node = next;
   }
 }
@@ -188,11 +211,9 @@ std::uint64_t ConditionVariable::remaining_ns_(
 
 ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(
     Waiter* node, std::uint64_t timeout_ns) noexcept {
-  // Thread-mode only (fiber-mode timed wait = sched-04d-pending: needs a wheel
-  // timer whose fire races notify + a cross-worker cancel). prepare_wait_ set
-  // token to this thread's ThreadToken; a fiber node would have token==nullptr.
-  HYLE_FATAL_ASSERT(node->token != nullptr &&
-                    "fiber-mode CV timed wait not yet supported (sched-04d)");
+  // Thread-mode only. prepare_wait_ set token to this thread's ThreadToken; a
+  // fiber node has token==nullptr and is routed to finish_wait_timed_fiber_.
+  HYLE_FATAL_ASSERT(node->token != nullptr);
   auto* tok = static_cast<ThreadToken*>(node->token);
 
   // Absolute deadline so spurious/early park returns don't extend the wait.
@@ -225,6 +246,81 @@ ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_(
   // next episode. It set notified under mu_ before unparking, so this is bounded.
   while (!tok->notified.load(std::memory_order_acquire)) tok->parker.park();
   return CvStatus::kNoTimeout;
+}
+
+void ConditionVariable::timed_fiber_fire_(
+    time::TimerEntry* entry) noexcept {
+  auto* ctx = static_cast<TimedContext*>(entry->data);
+  ConditionVariable* cv = ctx->cv;
+  Waiter* node = ctx->node;
+  bool wake = false;
+  cv->mu_.lock();
+  unsigned char expected = 0;
+  if (node->linked &&
+      node->timed_state.compare_exchange_strong(
+          expected, 2, std::memory_order_acq_rel)) {
+    cv->remove_waiter_(node);
+    wake = true;
+  }
+  cv->mu_.unlock();
+  if (wake) node->waker.wake();
+}
+
+ConditionVariable::CvStatus ConditionVariable::finish_wait_timed_fiber_(
+    Waiter* node, std::uint64_t timeout_ns) noexcept {
+  Fiber* self = Fiber::current();
+  HYLE_FATAL_ASSERT(self != nullptr && node->waker.valid());
+  // prepare_wait_ marked every fiber waiter before publishing its stack node.
+  // Do not write that mode flag here: a notifier may already have popped and
+  // inspected the node after enqueue but before this function starts.
+
+  // An immediate deadline still has to arbitrate with a notify that may have
+  // popped us after the monitor lock was released.
+  if (timeout_ns == 0) {
+    bool timed_out = false;
+    mu_.lock();
+    unsigned char expected = 0;
+    if (node->linked &&
+        node->timed_state.compare_exchange_strong(
+            expected, 2, std::memory_order_acq_rel)) {
+      remove_waiter_(node);
+      timed_out = true;
+    }
+    mu_.unlock();
+    if (timed_out) return CvStatus::kTimeout;
+    suspend();  // notify owns the rendezvous; consume its pending wake
+    return CvStatus::kNoTimeout;
+  }
+
+  // If notify already won before we could arm, only complete its rendezvous.
+  if (node->timed_state.load(std::memory_order_acquire) == 1) {
+    suspend();
+    return CvStatus::kNoTimeout;
+  }
+
+  const int previous_owner = self->owner_worker();
+  if (previous_owner < 0) {
+    const int current = current_worker_index();
+    HYLE_FATAL_ASSERT(current >= 0);
+    self->set_owner_worker(current);
+  }
+
+  time::TimerEntry timer;
+  TimedContext ctx{this, node};
+  timer.on_fire = &ConditionVariable::timed_fiber_fire_;
+  timer.data = &ctx;  // callback context; callback path does not need Fiber* data
+  // Publish the complete callback record before inserting it into the live
+  // wheel. A sub-tick deadline may fire as soon as arm_timeout returns.
+  arm_timeout(&timer, deadline_from_now_(timeout_ns));
+  suspend();
+
+  // We resume on the temporary owner worker. If notify won before expiry, remove
+  // its still-live timer from this worker's wheel before the stack entry dies.
+  if (timer.scheduled()) cancel_timeout(&timer);
+  if (previous_owner < 0) self->set_owner_worker(-1);
+  return node->timed_state.load(std::memory_order_acquire) == 2
+             ? CvStatus::kTimeout
+             : CvStatus::kNoTimeout;
 }
 
 
@@ -278,7 +374,7 @@ bool Semaphore::acquire(std::size_t n) noexcept {
   return ok;
 }
 
-void Semaphore::release(std::size_t n) noexcept {
+bool Semaphore::try_release(std::size_t n) noexcept {
   // Collect the CVs to notify AFTER dropping mu_ (waking can run scheduler code;
   // don't do it under the tiny spinlock). Each satisfied waiter is unlinked here.
   // We notify by pointer into each woken node's own CV -- valid because the waiter
@@ -286,6 +382,10 @@ void Semaphore::release(std::size_t n) noexcept {
   Waiter* woken_head = nullptr;
   Waiter* woken_tail = nullptr;  // build a temporary "to notify" list via `next`
   mu_.lock();
+  if (n > std::numeric_limits<std::size_t>::max() - permits_) {
+    mu_.unlock();
+    return false;
+  }
   permits_ += n;
   // FIFO: satisfy the front waiter fully before moving on; STOP at the first
   // waiter we cannot fully satisfy (no skip-ahead -> no large-request starvation).
@@ -316,6 +416,7 @@ void Semaphore::release(std::size_t n) noexcept {
     w->cv.notify_one();
     w = next;
   }
+  return true;
 }
 
 void Semaphore::close() noexcept {
@@ -373,10 +474,8 @@ void Mutex::lock_slow(std::uint32_t c) noexcept {
 }
 
 void Mutex::unlock_slow() noexcept {
-  // We already fetch_sub'd 2->1 (release) on the hot path; there were waiters.
-  // Drop to 0 and wake one. The woken waiter re-exchanges to 2, so a still-
-  // contended lock keeps its "waiters" flag (no lost wakeup).
-  state_.store(0, std::memory_order_release);
+  // unlock() has already published state 0. The woken waiter re-exchanges to 2,
+  // so a still-contended lock keeps its "waiters" flag (no lost wakeup).
   platform::detail::wake_one(&state_);
 }
 #endif  // !HYLE_OS_WINDOWS

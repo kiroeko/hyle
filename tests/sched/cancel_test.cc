@@ -26,6 +26,15 @@ using hyle::sched::CaptureWaker;
 using hyle::sched::Task;
 using hyle::sched::Waker;
 
+namespace {
+void* fail_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
+void fail_free(void*, void*, std::size_t, std::size_t) noexcept {}
+void* fail_realloc(void*, void*, std::size_t, std::size_t,
+                   std::size_t) noexcept {
+  return nullptr;
+}
+}  // namespace
+
 // sched-07 cancellation-tree tests. The tree ops (derive/cancel/propagate/re-parent/
 // callback) are owner-worker-only pure logic -- most can be exercised directly on the
 // test thread (no fiber needed). Only the CancelScope <-> is_cancel_requested()
@@ -40,6 +49,14 @@ TEST(Cancel, RootCancelSetsFlag) {
   EXPECT_FALSE(root.is_cancelled());
   root.cancel();
   EXPECT_TRUE(root.is_cancelled());
+}
+
+TEST(Cancel, InvalidAndExhaustedAllocatorsAreRecoverable) {
+  EXPECT_FALSE(CancelToken::root(Allocator{}).valid());
+  Allocator failing(&fail_alloc, &fail_free, &fail_realloc, nullptr);
+  EXPECT_FALSE(CancelToken::root(failing).valid());
+  CancelScope no_op{CancelToken{}};
+  EXPECT_FALSE(is_cancel_requested());
 }
 
 // Cancelling a parent cascades to a derived child.

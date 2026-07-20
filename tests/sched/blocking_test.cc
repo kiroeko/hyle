@@ -74,6 +74,34 @@ TEST(Blocking, VoidClosureRuns) {
   EXPECT_TRUE(ran.load());
 }
 
+TEST(Blocking, UserExceptionBecomesInternalStatus) {
+  BlockingPool pool(system_allocator(), 1);
+  auto h = spawn_blocking(pool, system_allocator(), []() -> int {
+    throw 42;
+  });
+  auto r = h.join();
+  ASSERT_FALSE(r.has_value());
+  EXPECT_TRUE(r.error().IsInternal());
+  pool.shutdown();
+}
+
+TEST(Blocking, AllocationFailureBecomesResourceExhausted) {
+  BlockingPool pool(system_allocator(), 1);
+  auto fail = hyle::mem::Allocator(
+      [](void*, std::size_t, std::size_t) noexcept -> void* { return nullptr; },
+      [](void*, void*, std::size_t, std::size_t) noexcept {},
+      [](void*, void*, std::size_t, std::size_t,
+         std::size_t) noexcept -> void* { return nullptr; },
+      nullptr);
+  auto h = spawn_blocking(pool, fail, [] { return 7; });
+  ASSERT_TRUE(h.valid());
+  EXPECT_TRUE(h.is_finished());
+  auto r = h.join();
+  ASSERT_FALSE(r.has_value());
+  EXPECT_TRUE(r.error().IsResourceExhausted());
+  pool.shutdown();
+}
+
 // THE core value: a fiber offloads a BLOCKING call and the worker stays free. One
 // worker, two fibers: fiber A spawn_blocking a closure that sleeps 100ms then
 // join()s it (fiber-aware -- yields the worker while blocked); fiber B just runs
@@ -192,6 +220,71 @@ TEST(Blocking, ShutdownCancelsQueued) {
     if (!r.has_value() && r.error().IsCancelled()) ++cancelled;
   }
   EXPECT_GT(cancelled, 0);  // at least some queued tasks were cancelled
+}
+
+TEST(Blocking, ConcurrentShutdownCallsAreCompletionBarriers) {
+  BlockingPool pool(system_allocator(), /*max_threads=*/1);
+  std::atomic<bool> started{false};
+  std::atomic<bool> release{false};
+  std::atomic<int> returned{0};
+  auto busy = spawn_blocking(pool, system_allocator(), [&] {
+    started.store(true, std::memory_order_release);
+    while (!release.load(std::memory_order_acquire))
+      std::this_thread::yield();
+  });
+  while (!started.load(std::memory_order_acquire))
+    std::this_thread::yield();
+
+  std::thread first([&] {
+    pool.shutdown();
+    returned.fetch_add(1, std::memory_order_release);
+  });
+  std::thread second([&] {
+    pool.shutdown();
+    returned.fetch_add(1, std::memory_order_release);
+  });
+  std::this_thread::sleep_for(std::chrono::milliseconds(10));
+  EXPECT_EQ(returned.load(std::memory_order_acquire), 0);
+  release.store(true, std::memory_order_release);
+  first.join();
+  second.join();
+  EXPECT_EQ(returned.load(std::memory_order_acquire), 2);
+  EXPECT_TRUE(busy.join().has_value());
+}
+
+TEST(Blocking, AbortSkipsQueuedClosureBeforeItStarts) {
+  BlockingPool pool(system_allocator(), /*max_threads=*/1);
+  std::atomic<bool> busy_started{false};
+  std::atomic<bool> release_busy{false};
+  std::atomic<bool> queued_ran{false};
+  auto busy = spawn_blocking(pool, system_allocator(), [&] {
+    busy_started.store(true, std::memory_order_release);
+    while (!release_busy.load(std::memory_order_acquire))
+      std::this_thread::yield();
+  });
+  while (!busy_started.load(std::memory_order_acquire))
+    std::this_thread::yield();
+  auto queued = spawn_blocking(pool, system_allocator(), [&] {
+    queued_ran.store(true, std::memory_order_release);
+  });
+  queued.abort();
+  release_busy.store(true, std::memory_order_release);
+  EXPECT_TRUE(busy.join().has_value());
+  auto result = queued.join();
+  ASSERT_FALSE(result.has_value());
+  EXPECT_TRUE(result.error().IsCancelled());
+  EXPECT_FALSE(queued_ran.load(std::memory_order_acquire));
+}
+
+TEST(Blocking, RetiredThreadHandlesStayBoundedAcrossBursts) {
+  BlockingPool pool(system_allocator(), /*max_threads=*/1,
+                    /*keep_alive_ns=*/1'000'000);
+  for (int i = 0; i < 20; ++i) {
+    auto h = spawn_blocking(pool, system_allocator(), [i] { return i; });
+    ASSERT_EQ(*h.join(), i);
+    EXPECT_LE(pool.retained_thread_handles(), 1u);
+    std::this_thread::sleep_for(std::chrono::milliseconds(4));
+  }
 }
 
 // Concurrency stress (TSan gate): many spawn_blocking + join from the main thread,
