@@ -16,13 +16,13 @@
 |---|---:|---:|---:|---:|---:|---:|
 | Windows / IOCP | 8,811 ns | **2.24x** | 10,828 ns | **1.24x** | **1.04x，平** | **0.78x，输** |
 | WSL / io_uring | 1,515 ns | **1.34x** | 2,497 ns | **1.66x** | **1.78x，赢** | **0.44x，输** |
-| M4 / kqueue | 3,044 ns | **0.48x** | 3,884 ns | **1.23x** | **0.68x，输** | **0.85x，输** |
+| M4 / kqueue | 3,082 ns | **0.50x** | 3,902 ns | **1.22x** | **0.64x，输** | **0.85x，输** |
 
 关键判读：
 
 - Windows IOCP 和 Linux io_uring 的 sharding 仍有真实收益；Linux pipelined
   4w/1w 为 **2.06x**。M4 kqueue 只有 2w/1w 的 **1.08x** 小收益，4/8 worker
-  分别退到 6,348/13,707 ns，属于已确认的多 worker 性能尾，不能用 P/E 核或
+  分别退到 6,151/13,396 ns，属于已确认的多 worker 性能尾，不能用 P/E 核或
   睿频一句带过。
 - Linux 单 worker echo 比同形 raw epoll 慢约 10%（raw/HYLE **1.11x**），是
   当前可疑零抽象差距；旧文档“平 raw epoll”不能作为本轮结论。
@@ -36,9 +36,9 @@
 
 | 平台 | 64 / 256 / 1024 连接 ns/round-trip | 64 KiB payload |
 |---|---|---:|
-| Windows IOCP | 9,047 / 9,837 / 10,952 | 2.53 GiB/s |
-| WSL io_uring | 1,490 / 1,532 / 3,303 | 4.54 GiB/s |
-| M4 kqueue | 3,876 / 3,104 / 3,301 | 2.18 GiB/s |
+| Windows IOCP | 9,047 / 9,837 / 10,952 | 2.53 GB/s |
+| WSL io_uring | 1,490 / 1,532 / 3,303 | 4.54 GB/s |
+| M4 kqueue | 4,118 / 3,210 / 3,405 | 2.07 GB/s |
 
 本轮 harness 本身抓到并修复了三类会制造假结论的问题：Windows benchmark
 socket 的 TIME_WAIT/重复 close；macOS blocking socketpair 令 worker 卡在
