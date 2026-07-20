@@ -235,6 +235,35 @@ struct TimedRecvOp {
   }
 };
 
+// Timed counterpart of SendOp. Useful for bounded backpressure when a peer stops
+// draining its receive window.
+struct TimedSendOp {
+  Proactor* p;
+  std::intptr_t fd;
+  const void* buf;
+  std::uint32_t len;
+  mem::Allocator alloc;
+  std::uint64_t deadline_ns;
+  std::uint32_t flags = 0;
+
+  TimedSlot* slot_ = nullptr;
+
+  bool await_ready() noexcept { return false; }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    if (slot_ == nullptr) return false;
+    if (!p->submit_send(fd, buf, len, flags, to_timed_token(slot_))) {
+      detail::on_submit_failed(slot_);
+      return false;
+    }
+    sched::suspend();
+    return false;
+  }
+  std::int64_t await_resume() noexcept {
+    return slot_ == nullptr ? kSubmitFailed : detail::resume_timed(slot_);
+  }
+};
+
 // co_await TimedAcceptOp -> accepted fd (>=0), negative errno, or -ETIMEDOUT.
 // The listener's accept is raced against the deadline (a server that wants to stop
 // accepting after a quiet period, or bound its accept latency).
@@ -290,6 +319,66 @@ struct TimedConnectOp {
   std::int64_t await_resume() noexcept {
     if (slot_ == nullptr) return kSubmitFailed;
     return detail::resume_timed(slot_);
+  }
+};
+
+struct TimedRecvFromOp {
+  Proactor* p;
+  std::intptr_t fd;
+  void* buf;
+  std::uint32_t len;
+  void* addr;
+  std::uint32_t addr_cap;
+  mem::Allocator alloc;
+  std::uint64_t deadline_ns;
+
+  TimedSlot* slot_ = nullptr;
+  alignas(16) unsigned char scratch_[Proactor::kDatagramScratch]{};
+
+  bool await_ready() noexcept { return false; }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    if (slot_ == nullptr) return false;
+    if (!p->submit_recvfrom(fd, buf, len, addr, addr_cap, scratch_,
+                            to_timed_token(slot_))) {
+      detail::on_submit_failed(slot_);
+      return false;
+    }
+    sched::suspend();
+    return false;
+  }
+  std::int64_t await_resume() noexcept {
+    return slot_ == nullptr ? kSubmitFailed : detail::resume_timed(slot_);
+  }
+};
+
+struct TimedSendToOp {
+  Proactor* p;
+  std::intptr_t fd;
+  const void* buf;
+  std::uint32_t len;
+  const void* addr;
+  std::uint32_t addrlen;
+  mem::Allocator alloc;
+  std::uint64_t deadline_ns;
+
+  TimedSlot* slot_ = nullptr;
+  alignas(16) unsigned char scratch_[Proactor::kDatagramScratch]{};
+
+  bool await_ready() noexcept { return false; }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    slot_ = detail::make_timed_slot(alloc, p, deadline_ns);
+    if (slot_ == nullptr) return false;
+    if (!p->submit_sendto(fd, buf, len, addr, addrlen, scratch_,
+                          to_timed_token(slot_))) {
+      detail::on_submit_failed(slot_);
+      return false;
+    }
+    sched::suspend();
+    return false;
+  }
+  std::int64_t await_resume() noexcept {
+    return slot_ == nullptr ? kSubmitFailed : detail::resume_timed(slot_);
   }
 };
 

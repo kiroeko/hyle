@@ -325,7 +325,7 @@ class WaitGroup {
     // completions avoid this lock.
     mu_.lock();
     const long count = count_.load(std::memory_order_relaxed);
-    if (n < 0 || count > std::numeric_limits<long>::max() - n) {
+    if (n < 0 || count > (std::numeric_limits<long>::max)() - n) {
       mu_.unlock();
       return false;
     }
@@ -432,8 +432,8 @@ class Channel {
       : alloc_(alloc), cap_(capacity) {
     HYLE_FATAL_ASSERT(alloc_.valid());
     HYLE_FATAL_ASSERT(capacity >= 1);
-    HYLE_FATAL_ASSERT(capacity <=
-                      std::numeric_limits<std::size_t>::max() / sizeof(T));
+    HYLE_FATAL_ASSERT(
+        capacity <= (std::numeric_limits<std::size_t>::max)() / sizeof(T));
     buf_ = static_cast<T*>(alloc_.allocate(sizeof(T) * cap_, alignof(T)));
   }
 
@@ -1603,7 +1603,7 @@ Result<std::pair<BroadcastSender<T>, BroadcastReceiver<T>>> try_make_broadcast(
     return std::unexpected(
         Status::InvalidArgument("broadcast requires a complete allocator"));
   if (capacity == 0 ||
-      capacity > std::numeric_limits<std::size_t>::max() / sizeof(T))
+      capacity > (std::numeric_limits<std::size_t>::max)() / sizeof(T))
     return std::unexpected(
         Status::InvalidArgument("invalid broadcast capacity"));
   auto* s = static_cast<BroadcastState<T>*>(

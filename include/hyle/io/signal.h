@@ -53,13 +53,12 @@ enum SignalBits : unsigned {
 // destructor deregisters + closes the pipe. Awaits MUST run on the fiber pinned to
 // `owner_worker` (its ring reaps the pipe read / receives the posted completion).
 //
-// ONE-WAITER MODEL: a SignalSet services ONE outstanding co_await wait() at a time
-// (co_await it again after it resolves to catch the next signal). This matches the
-// canonical use -- a single graceful-shutdown fiber awaiting SIGINT/SIGTERM (tokio's
-// Signal is likewise a single stream). Two fibers awaiting the SAME SignalSet
-// concurrently is unsupported (on epoll the second would overwrite the first's
-// armed read; on Windows the single global token slot would be clobbered). If you
-// need fan-out to many waiters, await once and broadcast via a sched watch/channel.
+// ONE-PROCESS-WAITER MODEL: at most one valid SignalSet, with one outstanding
+// co_await wait(), exists per process. A second construction stays invalid and a
+// concurrent second wait resolves with an error. The POSIX self-pipe and Windows
+// console token are process-global single-consumer channels; pretending separate
+// sets were independent lets one consume another's signal. This matches the
+// canonical graceful-shutdown fiber. Fan out after one wait via a sched channel.
 class SignalSet {
  public:
   SignalSet() noexcept = default;
@@ -95,6 +94,8 @@ class SignalSet {
   WaitAwaitable wait() noexcept { return WaitAwaitable{this}; }
 
  private:
+  void reset() noexcept;
+
   IoContext* io_ = nullptr;
   unsigned owner_ = 0;
   unsigned signals_ = 0;

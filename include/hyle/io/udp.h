@@ -4,6 +4,8 @@
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/net.h"
+#include "hyle/io/net_cancel.h"
+#include "hyle/io/net_timeout.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -47,8 +49,28 @@ class UdpSocket {
   // buffer). Both `buf` and `peer` must outlive the co_await (put them on the
   // coroutine frame). Read the peer length from peer->ss_family after resume.
   RecvFromOp recv_from(void* buf, std::uint32_t len, void* peer) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
     return RecvFromOp{&io_->proactor_for_current(), fd_, buf, len, peer,
                       kSockaddrCap};
+  }
+  TimedRecvFromOp recv_from_until(void* buf, std::uint32_t len, void* peer,
+                                  mem::Allocator alloc,
+                                  std::uint64_t deadline_ns) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    HYLE_FATAL_ASSERT((buf != nullptr || len == 0) && peer != nullptr);
+    return TimedRecvFromOp{&io_->proactor_for_current(), fd_, buf, len, peer,
+                           kSockaddrCap, alloc, deadline_ns};
+  }
+  CancelRecvFromOp recv_from_cancel(
+      void* buf, std::uint32_t len, void* peer,
+      const sched::CancelToken* token) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    HYLE_FATAL_ASSERT((buf != nullptr || len == 0) && peer != nullptr);
+    return CancelRecvFromOp{&io_->proactor_for_current(), fd_, buf, len, peer,
+                            kSockaddrCap, token};
   }
 
   // co_await sock.send_to(buf, len, &ss, sslen) -> bytes sent (>=0) or negative
@@ -56,7 +78,30 @@ class UdpSocket {
   // must outlive the co_await.
   SendToOp send_to(const void* buf, std::uint32_t len, const void* dest,
                    std::uint32_t destlen) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
     return SendToOp{&io_->proactor_for_current(), fd_, buf, len, dest, destlen};
+  }
+  TimedSendToOp send_to_until(const void* buf, std::uint32_t len,
+                              const void* dest, std::uint32_t destlen,
+                              mem::Allocator alloc,
+                              std::uint64_t deadline_ns) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    HYLE_FATAL_ASSERT((buf != nullptr || len == 0) && dest != nullptr &&
+                      destlen != 0);
+    return TimedSendToOp{&io_->proactor_for_current(), fd_, buf, len, dest,
+                         destlen, alloc, deadline_ns};
+  }
+  CancelSendToOp send_to_cancel(
+      const void* buf, std::uint32_t len, const void* dest,
+      std::uint32_t destlen, const sched::CancelToken* token) noexcept {
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    HYLE_FATAL_ASSERT((buf != nullptr || len == 0) && dest != nullptr &&
+                      destlen != 0);
+    return CancelSendToOp{&io_->proactor_for_current(), fd_, buf, len, dest,
+                          destlen, token};
   }
 
   // Size a caller sockaddr buffer to this so recv_from can hold any address it
@@ -79,6 +124,9 @@ HYLE_IO_API UdpSocket udp_bind(IoContext& io, unsigned owner_worker,
 // Create an unbound UDP socket associated with `owner_worker`'s ring (the OS
 // assigns an ephemeral local port on first send). Use for a client that only
 // send_to()s and recv_from()s replies. Returns invalid on failure.
-HYLE_IO_API UdpSocket udp_socket(IoContext& io, unsigned owner_worker) noexcept;
+HYLE_IO_API UdpSocket udp_socket(IoContext& io,
+                                 unsigned owner_worker) noexcept;
+HYLE_IO_API UdpSocket udp_socket(IoContext& io, unsigned owner_worker,
+                                 AddressFamily family) noexcept;
 
 }  // namespace hyle::io

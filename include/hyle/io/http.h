@@ -2,10 +2,12 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <utility>
 
 #include "hyle/container/string_ref.h"
 #include "hyle/io/io_context.h"
 #include "hyle/io/tcp.h"
+#include "hyle/io/tls.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 
@@ -63,12 +65,66 @@ class HttpClientConn;
 class HttpRequest;
 class HttpResponse;
 class HttpResponseView;
+class HttpTransport;
+sched::Task<std::int64_t> http_transport_read(mem::Allocator,
+                                              HttpTransport&, void*,
+                                              std::uint32_t) noexcept;
+sched::Task<std::int64_t> http_transport_write(mem::Allocator,
+                                               HttpTransport&, const void*,
+                                               std::uint32_t) noexcept;
+sched::Task<int> http_transport_shutdown(mem::Allocator,
+                                         HttpTransport&) noexcept;
 sched::Task<HttpRequest*> http_server_next(mem::Allocator, HttpServerConn&) noexcept;
 sched::Task<bool> http_server_send(mem::Allocator, HttpServerConn&,
                                    const HttpResponse&) noexcept;
 sched::Task<HttpResponseView*> http_client_request(mem::Allocator, HttpClientConn&,
                                                    string_ref, string_ref,
                                                    string_ref, string_ref) noexcept;
+
+// A connected byte transport for HTTP. Plain TCP is always available; TLS is an
+// additional leg when HYLE was built with OpenSSL. A TLS stream must already
+// have completed tls_handshake() before it is handed to HTTP.
+class HttpTransport {
+ public:
+  HttpTransport() noexcept = default;
+  explicit HttpTransport(TcpStream stream) noexcept
+      : tcp_(std::move(stream)) {}
+#if defined(HYLE_IO_TLS)
+  explicit HttpTransport(TlsStream stream) noexcept
+      : tls_(std::move(stream)), is_tls_(true) {}
+#endif
+  HttpTransport(HttpTransport&&) noexcept = default;
+  HttpTransport& operator=(HttpTransport&&) noexcept = default;
+  HYLE_DISABLE_COPY(HttpTransport);
+
+  bool valid() const noexcept {
+#if defined(HYLE_IO_TLS)
+    return is_tls_ ? tls_.valid() : tcp_.valid();
+#else
+    return tcp_.valid();
+#endif
+  }
+  bool encrypted() const noexcept {
+#if defined(HYLE_IO_TLS)
+    return is_tls_;
+#else
+    return false;
+#endif
+  }
+
+ private:
+  friend sched::Task<std::int64_t> http_transport_read(
+      mem::Allocator, HttpTransport&, void*, std::uint32_t) noexcept;
+  friend sched::Task<std::int64_t> http_transport_write(
+      mem::Allocator, HttpTransport&, const void*, std::uint32_t) noexcept;
+  friend sched::Task<int> http_transport_shutdown(mem::Allocator,
+                                                   HttpTransport&) noexcept;
+  TcpStream tcp_{};
+#if defined(HYLE_IO_TLS)
+  TlsStream tls_{};
+  bool is_tls_ = false;
+#endif
+};
 
 // ---- HttpRequest -----------------------------------------------------------
 // A parsed request. method/path/header views point INTO the connection's read
@@ -139,7 +195,7 @@ class HttpResponse {
     reason_ = reason;
   }
   // Append a header. name/value views must outlive the send.
-  HYLE_IO_API void add_header(string_ref name, string_ref value) noexcept;
+  HYLE_IO_API bool add_header(string_ref name, string_ref value) noexcept;
   // Whole in-memory body (sets Content-Length). Mutually exclusive with set_stream.
   void set_body(string_ref body) noexcept {
     body_ = body;
@@ -189,13 +245,16 @@ class HttpResponse {
 class HttpServerConn {
  public:
   HYLE_IO_API HttpServerConn(mem::Allocator alloc, TcpStream stream) noexcept;
+#if defined(HYLE_IO_TLS)
+  HYLE_IO_API HttpServerConn(mem::Allocator alloc, TlsStream stream) noexcept;
+#endif
   HYLE_IO_API ~HttpServerConn();
   HttpServerConn(HttpServerConn&&) noexcept;
   HttpServerConn& operator=(HttpServerConn&&) noexcept;
   HYLE_DISABLE_COPY(HttpServerConn);
 
-  bool valid() const noexcept { return impl_ != nullptr && stream_.valid(); }
-  TcpStream& stream() noexcept { return stream_; }
+  bool valid() const noexcept { return impl_ != nullptr && transport_.valid(); }
+  HttpTransport& transport() noexcept { return transport_; }
 
   // co_await conn.next_request() reads + parses the next request. Yields
   // HttpRequest* (points into internal state, valid until the next call) or nullptr
@@ -215,7 +274,7 @@ class HttpServerConn {
                                             const HttpResponse&) noexcept;
   struct Impl;
   Impl* impl_ = nullptr;   // read buffer + parser scratch (heap, via Allocator)
-  TcpStream stream_;
+  HttpTransport transport_;
   mem::Allocator alloc_{};
 };
 
@@ -235,6 +294,11 @@ using HttpHandlerFn = sched::Task<HttpResponse> (*)(mem::Allocator alloc, void* 
 
 HYLE_IO_API sched::Task<void> http_serve(mem::Allocator alloc, TcpStream stream,
                                          HttpHandlerFn handler, void* ctx) noexcept;
+#if defined(HYLE_IO_TLS)
+HYLE_IO_API sched::Task<void> http_serve(mem::Allocator alloc, TlsStream stream,
+                                         HttpHandlerFn handler,
+                                         void* ctx) noexcept;
+#endif
 
 // ---- HttpClientConn --------------------------------------------------------
 // Client side over a connected TcpStream. send_request writes a request; then
@@ -265,12 +329,15 @@ class HttpResponseView {
 class HttpClientConn {
  public:
   HYLE_IO_API HttpClientConn(mem::Allocator alloc, TcpStream stream) noexcept;
+#if defined(HYLE_IO_TLS)
+  HYLE_IO_API HttpClientConn(mem::Allocator alloc, TlsStream stream) noexcept;
+#endif
   HYLE_IO_API ~HttpClientConn();
   HttpClientConn(HttpClientConn&&) noexcept;
   HttpClientConn& operator=(HttpClientConn&&) noexcept;
   HYLE_DISABLE_COPY(HttpClientConn);
 
-  bool valid() const noexcept { return impl_ != nullptr && stream_.valid(); }
+  bool valid() const noexcept { return impl_ != nullptr && transport_.valid(); }
 
   // co_await conn.request(method, path, host, body) -> HttpResponseView* (valid
   // until the next request) or nullptr on error. Writes "METHOD path HTTP/1.1\r\n
@@ -286,7 +353,7 @@ class HttpClientConn {
       string_ref) noexcept;
   struct Impl;
   Impl* impl_ = nullptr;
-  TcpStream stream_;
+  HttpTransport transport_;
   mem::Allocator alloc_{};
 };
 

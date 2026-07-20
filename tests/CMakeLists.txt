@@ -79,6 +79,12 @@ hyle_apply_warnings(hyle_time_c_test)
 hyle_apply_sanitizer(hyle_time_c_test)
 add_test(NAME hyle_time_c_test COMMAND hyle_time_c_test)
 hyle_add_test(io SOURCES io/proactor_test.cc)
+add_executable(hyle_io_c_test io/c_io_test.c)
+target_link_libraries(hyle_io_c_test PRIVATE hyle_io hyle_mem)
+set_source_files_properties(io/c_io_test.c PROPERTIES LANGUAGE C)
+hyle_apply_warnings(hyle_io_c_test)
+hyle_apply_sanitizer(hyle_io_c_test)
+add_test(NAME hyle_io_c_test COMMAND hyle_io_c_test)
 if(WIN32)
   # The io test itself calls Winsock directly (WSASocketW/bind/getsockname/... in
   # the IOCP TCP round-trip test), so it needs ws2_32 linked into the test exe.
@@ -308,6 +314,11 @@ if(HYLE_HAS_FCONTEXT)
   hyle_add_test(io NAME timeout SOURCES io/timeout_test.cc DEPS hyle_sched hyle_time)
   # io-10 HTTP/1.1: server+client integration over loopback TCP (borrowed parser).
   hyle_add_test(io NAME http SOURCES io/http_test.cc DEPS hyle_sched)
+  if(HYLE_IO_HTTP2)
+    # io-11: real h2c loopback with two interleaved streams and reverse-order
+    # responses (HPACK + multiplex + flow-control session path).
+    hyle_add_test(io NAME http2 SOURCES io/http2_test.cc DEPS hyle_sched)
+  endif()
   # sched-07 cancellable io: token-bound recv/accept, submit_cancel on cancel.
   hyle_add_test(io NAME net_cancel SOURCES io/net_cancel_test.cc DEPS hyle_sched hyle_time)
   # sched-07 consumer: HTTP request fan-out connected-cancel (request -> subtask tree).
@@ -329,5 +340,8 @@ if(HYLE_HAS_FCONTEXT)
     target_link_libraries(hyle_io_udp_test PRIVATE ws2_32)  # sockaddr / winsock types
     target_link_libraries(hyle_io_dns_test PRIVATE ws2_32)  # getaddrinfo + WSAStartup
     target_link_libraries(hyle_io_timeout_test PRIVATE ws2_32)  # loopback TCP pair
+    if(HYLE_IO_HTTP2)
+      target_link_libraries(hyle_io_http2_test PRIVATE ws2_32)
+    endif()
   endif()
 endif()

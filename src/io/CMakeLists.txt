@@ -9,8 +9,8 @@
 # fcontext does (HYLE_HAS_FCONTEXT), so io_context.cc is compiled into the module
 # only there -- proactor.cc itself never depends on sched, keeping the proactor
 # usable on any platform.
-set(_io_sources proactor.cc)
-set(_io_deps hyle_platform)
+set(_io_sources proactor.cc c_io.cc shared_memory.cc)
+set(_io_deps hyle_platform hyle_mem hyle_container)
 if(HYLE_HAS_FCONTEXT)
   # The co_await layers (net/tcp/udp/file/signal) and the DNS offload need sched
   # (the scheduler drives the reap; dns uses spawn_blocking). Only buildable where
@@ -22,12 +22,29 @@ if(HYLE_HAS_FCONTEXT)
   # borrowed from vendored picohttpparser (pure state machine, zero IO/threads) --
   # HYLE only writes the integration. See docs scope "HTTP 最终结论".
   list(APPEND _io_sources http.cc "${PROJECT_SOURCE_DIR}/third_party/picohttpparser/picohttpparser.c")
+  # io-11 HTTP/2: nghttp2 supplies framing/HPACK/stream+flow-control state only;
+  # http2.cc supplies HYLE's TcpStream/TlsStream coroutine transport.
+  if(HYLE_IO_HTTP2)
+    list(APPEND _io_sources http2.cc)
+  else()
+    # Keep the public C ABI link-stable when the optional protocol core is
+    # disabled.  The stub reports availability=0 and fails every operation;
+    # consumers can ship one binary against HTTP/2-enabled and minimal HYLE
+    # builds without conditional symbol lookup.
+    list(APPEND _io_sources http2_stub.cc)
+  endif()
   # io-08 TLS: only when OpenSSL is available (optional capability). TlsStream is a
   # co_await layer over TcpStream, so it also needs sched. Guarded by HYLE_IO_TLS so
   # tls.h is inert without OpenSSL and a TLS-free build carries no OpenSSL dep.
   if(OpenSSL_FOUND)
     list(APPEND _io_sources tls.cc)
   endif()
+endif()
+
+# Platforms without fcontext do not build the coroutine transport or the real
+# HTTP/2 session. They still export the feature-probe/stub C ABI.
+if(NOT HYLE_HAS_FCONTEXT)
+  list(APPEND _io_sources http2_stub.cc)
 endif()
 hyle_add_module(io SOURCES ${_io_sources} DEPS ${_io_deps})
 
@@ -44,6 +61,16 @@ if(HYLE_HAS_FCONTEXT)
   else()
     set_source_files_properties("${PROJECT_SOURCE_DIR}/third_party/picohttpparser/picohttpparser.c"
       PROPERTIES COMPILE_OPTIONS "-w")
+  endif()
+endif()
+
+if(HYLE_HAS_FCONTEXT AND HYLE_IO_HTTP2)
+  target_link_libraries(hyle_io PRIVATE nghttp2)
+  target_compile_definitions(hyle_io PUBLIC HYLE_IO_HTTP2)
+  # MSVC has no POSIX ssize_t. nghttp2's modern `nghttp2_ssize` API remains
+  # available; this only hides its deprecated ssize_t overloads.
+  if(WIN32)
+    target_compile_definitions(hyle_io PRIVATE NGHTTP2_NO_SSIZE_T)
   endif()
 endif()
 

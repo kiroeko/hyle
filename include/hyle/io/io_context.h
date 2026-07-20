@@ -6,6 +6,7 @@
 
 #include "hyle/io/net.h"
 #include "hyle/io/proactor.h"
+#include "hyle/sched/blocking.h"
 #include "hyle/sched/scheduler.h"
 
 #if defined(HYLE_STATIC)
@@ -31,17 +32,17 @@
 // loop reaps it. A fiber may migrate between awaits, but each op is wholly owned
 // (submit + reap) by one ring/thread for its lifetime. No ring lock needed.
 //
-// Park (plan A-2, not yet done): a parked worker still uses the plan-B 1ms
-// re-poll cap (scheduler kIoPollNs) rather than blocking in reap() and being
-// woken by post(); merging park into reap is the follow-up that touches the
-// anti-herd Dekker path.
+// Worker parking is merged with the backend wait: the scheduler passes its
+// deadline to reap(), and cross-thread work interrupts the backend through
+// Proactor::wake(). There is no 1 ms polling loop.
 
 namespace hyle::io {
 
 class IoContext {
  public:
   // Stands up one proactor per worker and registers the poll hook on `sched`.
-  // `num_workers` MUST match the scheduler's worker count. `sched` must outlive
+  // `num_workers` MUST exactly match the scheduler's worker count; violating
+  // this ownership invariant is a fatal programming error. `sched` must outlive
   // this IoContext. valid() reports whether every ring came up.
   //
   // `defer_taskrun`: opt into io_uring DEFER_TASKRUN+SINGLE_ISSUER (via the R_DISABLED
@@ -81,6 +82,11 @@ class IoContext {
     return static_cast<unsigned>(rings_.size());
   }
 
+  // Portable file operations use this pool whenever the selected backend cannot
+  // complete a regular-file operation asynchronously. Network operations never
+  // use it. The pool belongs to the context and is drained on destruction.
+  sched::BlockingPool& blocking_pool() noexcept { return blocking_; }
+
  private:
   static bool poll_trampoline(void* ctx, unsigned worker_idx,
                               unsigned long long timeout_ns) noexcept;
@@ -89,6 +95,7 @@ class IoContext {
 
   sched::Scheduler& sched_;
   std::vector<std::unique_ptr<Proactor>> rings_;  // one per worker (non-movable)
+  sched::BlockingPool blocking_;
   bool valid_ = false;
 };
 

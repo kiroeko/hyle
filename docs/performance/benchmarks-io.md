@@ -1,5 +1,56 @@
 # io 实测铁证
 
+> **2026-07-20 收口证书（本节优先于下文历史记录）。** SIMD/sched/IO
+> 重构后，现有 8 个 IO benchmark 已在 Windows IOCP、WSL 原生 ext4
+> io_uring 和 M4 kqueue 重建、运行。所有 workload 现在校验实际完成量；
+> unsupported multishot 显式 `SKIP`；统计脚本也能读取 nanobench 的 unstable
+> 行。下文较早数字保留用于解释优化历史，不再代表当前发布结论。
+
+## 2026-07-20 三平台收口证书
+
+主表采用 `scripts/bench-stat.py` 的 15 次进程级 paired 结果。比值均按
+“分子每秒操作数 / 分母每秒操作数”；`raw` 是零抽象下界，不等同于功能完整的
+异步框架。
+
+| 平台 / 后端 | echo 1w | echo 4w / 1w | HTTP HYLE 1w | raw TCP / HTTP | TLS steady HYLE / raw | TLS handshake HYLE / raw |
+|---|---:|---:|---:|---:|---:|---:|
+| Windows / IOCP | 8,811 ns | **2.24x** | 10,828 ns | **1.24x** | **1.04x，平** | **0.78x，输** |
+| WSL / io_uring | 1,515 ns | **1.34x** | 2,497 ns | **1.66x** | **1.78x，赢** | **0.44x，输** |
+| M4 / kqueue | 3,044 ns | **0.48x** | 3,884 ns | **1.23x** | **0.68x，输** | **0.85x，输** |
+
+关键判读：
+
+- Windows IOCP 和 Linux io_uring 的 sharding 仍有真实收益；Linux pipelined
+  4w/1w 为 **2.06x**。M4 kqueue 只有 2w/1w 的 **1.08x** 小收益，4/8 worker
+  分别退到 6,348/13,707 ns，属于已确认的多 worker 性能尾，不能用 P/E 核或
+  睿频一句带过。
+- Linux 单 worker echo 比同形 raw epoll 慢约 10%（raw/HYLE **1.11x**），是
+  当前可疑零抽象差距；旧文档“平 raw epoll”不能作为本轮结论。
+- HTTP 列测的是协议层成本：Windows/WSL/M4 分别比 raw TCP 多
+  **1.24x/1.66x/1.23x** 延迟，不是 HTTP 与 TCP 的同功能竞赛。
+- TLS steady 在 Windows 统计平、Linux 赢；M4 steady 和 handshake 都真输。
+  三个平台的 HYLE handshake 都落后 raw OpenSSL。memory-BIO + fiber 路径是
+  可组合异步层，但性能尾仍需单独狩猎。
+
+复杂度/承重 smoke（每项已校验实际完成数）：
+
+| 平台 | 64 / 256 / 1024 连接 ns/round-trip | 64 KiB payload |
+|---|---|---:|
+| Windows IOCP | 9,047 / 9,837 / 10,952 | 2.53 GiB/s |
+| WSL io_uring | 1,490 / 1,532 / 3,303 | 4.54 GiB/s |
+| M4 kqueue | 3,876 / 3,104 / 3,301 | 2.18 GiB/s |
+
+本轮 harness 本身抓到并修复了三类会制造假结论的问题：Windows benchmark
+socket 的 TIME_WAIT/重复 close；macOS blocking socketpair 令 worker 卡在
+`write`；macOS 默认 256 fd limit 令 accept/scaling 少完成或挂起。TLS listener
+端口也移出 ephemeral range。修复后 8 个可执行 workload 全部完成；非 Linux
+两条 multishot benchmark 明确 `SKIP`。
+
+**发布结论边界**：IO 的实现/正确性证书成立，但“整个 IO SOTA”仍不成立。
+现有证书没有重跑 asio/libuv 同功能 peer，也缺 file、UDP、DNS、cancel、
+timeout 的专项性能负载；M4 TLS/kqueue 多 worker 与三平台 handshake 是公开
+性能尾。
+
 > 本页是 [performance 总账](./README.md) 的 io 详节:proactor 三后端机制 + echo 吞吐/扩展性对标。环境:Linux GCC14.2 Release(原生 ext4,32 核 i9-13900K)+ Win MSVC19.50 Release,nanobench + `scripts/bench-stat.py` n=15 统计口径。bench 源:`bench/io/echo_bench.cc`(吞吐+worker 扩展)、`bench/io/io_scaling_bench.cc`(连接数 + payload 两条复杂度曲线)、`bench/io/accept_bench.cc`(建连速率 O(1)/accept)。
 
 ## 为什么 io 的对标要等到有真实并发连接负载

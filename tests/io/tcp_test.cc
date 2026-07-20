@@ -16,6 +16,8 @@
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <winsock2.h>
+#else
+#  include <fcntl.h>
 #endif
 
 // io-04 net convenience layer test: a real TCP echo over loopback using the RAII
@@ -29,7 +31,9 @@ using hyle::io::resolve_addr;
 using hyle::io::TcpListener;
 using hyle::io::TcpStream;
 using hyle::io::tcp_listen;
+using hyle::io::tcp_read_exact;
 using hyle::io::tcp_socket;
+using hyle::io::tcp_write_all;
 using hyle::mem::Allocator;
 using hyle::mem::system_allocator;
 using hyle::sched::Fiber;
@@ -49,6 +53,10 @@ struct EchoResult {
   char client_got[64] = {};
   std::atomic<std::int64_t> client_recv{0};
   std::atomic<bool> connected{false};
+  std::atomic<bool> accepted_nonblocking{true};
+  std::atomic<bool> client_nonblocking{true};
+  std::atomic<bool> socket_options{false};
+  std::atomic<bool> half_closed{false};
 };
 
 // Server: accept one connection, read a message, echo it back, close.
@@ -58,10 +66,17 @@ Task<int> server_coro(Allocator, IoContext* io, TcpListener* ls, EchoResult* r) 
     r->server_done.store(true, std::memory_order_release);
     co_return 0;
   }
+#if !defined(_WIN32)
+  r->accepted_nonblocking.store(
+      (::fcntl(static_cast<int>(conn.fd()), F_GETFL, 0) & O_NONBLOCK) != 0,
+      std::memory_order_release);
+#endif
   char buf[64] = {};
-  std::int64_t n = co_await conn.read(buf, sizeof(buf));
+  std::int64_t n = co_await tcp_read_exact(
+      system_allocator(), conn, buf, sizeof("tcp-wrapper-echo"));
   if (n > 0) {
-    std::int64_t w = co_await conn.write(buf, static_cast<std::uint32_t>(n));
+    std::int64_t w = co_await tcp_write_all(
+        system_allocator(), conn, buf, static_cast<std::uint32_t>(n));
     r->server_echoed.store(w, std::memory_order_release);
   }
   r->server_done.store(true, std::memory_order_release);
@@ -75,6 +90,11 @@ Task<int> client_coro(Allocator, IoContext* io, EchoResult* r) {
     r->client_done.store(true, std::memory_order_release);
     co_return 0;
   }
+#if !defined(_WIN32)
+  r->client_nonblocking.store(
+      (::fcntl(static_cast<int>(s.fd()), F_GETFL, 0) & O_NONBLOCK) != 0,
+      std::memory_order_release);
+#endif
   // A sockaddr_storage-sized, suitably-aligned buffer; resolve_addr fills a
   // sockaddr_in into it. Lives on the coroutine frame so it outlives the connect.
   alignas(16) unsigned char ss[128];
@@ -89,10 +109,15 @@ Task<int> client_coro(Allocator, IoContext* io, EchoResult* r) {
     co_return 0;
   }
   r->connected.store(true, std::memory_order_release);
+  r->socket_options.store(s.set_nodelay() && s.set_keepalive(),
+                          std::memory_order_release);
   static const char kMsg[] = "tcp-wrapper-echo";
-  co_await s.write(kMsg, sizeof(kMsg));
+  co_await tcp_write_all(system_allocator(), s, kMsg, sizeof(kMsg));
+  r->half_closed.store(s.shutdown_write(), std::memory_order_release);
   r->client_recv.store(
-      co_await s.read(r->client_got, sizeof(kMsg)), std::memory_order_release);
+      co_await tcp_read_exact(system_allocator(), s, r->client_got,
+                              sizeof(kMsg)),
+      std::memory_order_release);
   r->client_done.store(true, std::memory_order_release);
   co_return 0;
 }
@@ -103,6 +128,17 @@ struct Drive {
 void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 
 }  // namespace
+
+TEST(IoTcp, ResolvesIpv4AndIpv6Literals) {
+  alignas(16) unsigned char storage[128]{};
+  std::uint32_t len = 0;
+  EXPECT_TRUE(resolve_addr("127.0.0.1", 80, storage, &len));
+  EXPECT_GT(len, 0u);
+  EXPECT_TRUE(resolve_addr("::1", 443, storage, &len));
+  EXPECT_GT(len, 0u);
+  EXPECT_FALSE(resolve_addr("localhost", 80, storage, &len));
+  EXPECT_EQ(len, 0u);
+}
 
 TEST(IoTcp, ListenerAcceptEchoRoundTrip) {
   constexpr unsigned kWorkers = 2;
@@ -130,6 +166,10 @@ TEST(IoTcp, ListenerAcceptEchoRoundTrip) {
   EXPECT_TRUE(r->server_done.load());
   EXPECT_TRUE(r->client_done.load());
   EXPECT_TRUE(r->connected.load());
+  EXPECT_TRUE(r->accepted_nonblocking.load());
+  EXPECT_TRUE(r->client_nonblocking.load());
+  EXPECT_TRUE(r->socket_options.load());
+  EXPECT_TRUE(r->half_closed.load());
   EXPECT_EQ(r->server_echoed.load(), static_cast<std::int64_t>(sizeof("tcp-wrapper-echo")));
   EXPECT_EQ(r->client_recv.load(), static_cast<std::int64_t>(sizeof("tcp-wrapper-echo")));
   EXPECT_STREQ(r->client_got, "tcp-wrapper-echo");

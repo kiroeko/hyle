@@ -18,11 +18,11 @@
 // co_await style like TcpStream. On io_uring these are REAL async ops (openat /
 // read / write / fsync / fallocate use their native SQE; regular-file read/write is
 // the one place io_uring genuinely beats epoll, which cannot async a regular file);
-// on IOCP read/write are real (OVERLAPPED) and the metadata ops run synchronously +
-// synthesize a completion; on epoll everything regular-file is synchronous +
-// synthesized (a reactor cannot async a regular file -- tokio offloads to a thread
-// pool for the same reason, we synthesize in the proactor). The caller sees ONE
-// uniform co_await contract on every backend.
+// on IOCP read/write are real OVERLAPPED operations; epoll/kqueue cannot async a
+// regular file. The high-level File API therefore chooses per operation: native
+// proactor when the backend supports it, otherwise IoContext's blocking pool. No
+// synchronous disk syscall runs on a scheduler worker. The low-level Proactor
+// remains available for users who deliberately want exact backend mechanics.
 //
 // Shard-per-core like the socket wrappers: a File is bound to an owner worker's
 // ring, and its co_await ops MUST run on the fiber pinned there (Scheduler::
@@ -48,7 +48,7 @@ namespace hyle::io {
 // co_await FileReadOp -> bytes read (>=0, 0 = EOF) or negative errno. Reads at
 // file `offset` (byte position), unlike a stream recv.
 struct FileReadOp {
-  Proactor* p;
+  IoContext* io;
   std::intptr_t fd;
   void* buf;
   std::uint32_t len;
@@ -58,22 +58,13 @@ struct FileReadOp {
   bool submitted_ = false;
 
   bool await_ready() noexcept { return false; }
-  bool await_suspend(std::coroutine_handle<>) noexcept {
-    op_.waker = sched::current_waker();
-    submitted_ = p->submit_read(fd, buf, len, offset, to_token(&op_));
-    if (!submitted_) {
-      op_.result = -1;
-      return false;
-    }
-    sched::suspend();
-    return false;
-  }
+  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
   std::int64_t await_resume() noexcept { return op_.result; }
 };
 
 // co_await FileWriteOp -> bytes written (>=0) or negative errno, at file `offset`.
 struct FileWriteOp {
-  Proactor* p;
+  IoContext* io;
   std::intptr_t fd;
   const void* buf;
   std::uint32_t len;
@@ -83,22 +74,13 @@ struct FileWriteOp {
   bool submitted_ = false;
 
   bool await_ready() noexcept { return false; }
-  bool await_suspend(std::coroutine_handle<>) noexcept {
-    op_.waker = sched::current_waker();
-    submitted_ = p->submit_write(fd, buf, len, offset, to_token(&op_));
-    if (!submitted_) {
-      op_.result = -1;
-      return false;
-    }
-    sched::suspend();
-    return false;
-  }
+  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
   std::int64_t await_resume() noexcept { return op_.result; }
 };
 
 // co_await FileStatOp -> 0 on success (fills *out) or negative errno.
 struct FileStatOp {
-  Proactor* p;
+  IoContext* io;
   std::intptr_t fd;
   Proactor::FileStat* out;
 
@@ -106,22 +88,13 @@ struct FileStatOp {
   bool submitted_ = false;
 
   bool await_ready() noexcept { return false; }
-  bool await_suspend(std::coroutine_handle<>) noexcept {
-    op_.waker = sched::current_waker();
-    submitted_ = p->submit_statx(fd, out, to_token(&op_));
-    if (!submitted_) {
-      op_.result = -1;
-      return false;
-    }
-    sched::suspend();
-    return false;
-  }
+  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
   std::int64_t await_resume() noexcept { return op_.result; }
 };
 
 // co_await FileSyncOp -> 0 on success or negative errno. datasync = fdatasync.
 struct FileSyncOp {
-  Proactor* p;
+  IoContext* io;
   std::intptr_t fd;
   bool datasync;
 
@@ -129,22 +102,13 @@ struct FileSyncOp {
   bool submitted_ = false;
 
   bool await_ready() noexcept { return false; }
-  bool await_suspend(std::coroutine_handle<>) noexcept {
-    op_.waker = sched::current_waker();
-    submitted_ = p->submit_fsync(fd, datasync, to_token(&op_));
-    if (!submitted_) {
-      op_.result = -1;
-      return false;
-    }
-    sched::suspend();
-    return false;
-  }
+  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
   std::int64_t await_resume() noexcept { return op_.result; }
 };
 
 // co_await FileAllocOp -> 0 on success or negative errno (preallocate/extend).
 struct FileAllocOp {
-  Proactor* p;
+  IoContext* io;
   std::intptr_t fd;
   std::uint32_t mode;
   std::uint64_t offset;
@@ -154,16 +118,7 @@ struct FileAllocOp {
   bool submitted_ = false;
 
   bool await_ready() noexcept { return false; }
-  bool await_suspend(std::coroutine_handle<>) noexcept {
-    op_.waker = sched::current_waker();
-    submitted_ = p->submit_fallocate(fd, mode, offset, len, to_token(&op_));
-    if (!submitted_) {
-      op_.result = -1;
-      return false;
-    }
-    sched::suspend();
-    return false;
-  }
+  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
   std::int64_t await_resume() noexcept { return op_.result; }
 };
 
@@ -186,21 +141,34 @@ class File {
   unsigned owner_worker() const noexcept { return owner_; }
 
   FileReadOp read(void* buf, std::uint32_t len, std::uint64_t offset) noexcept {
-    return FileReadOp{&io_->proactor_for_current(), fd_, buf, len, offset};
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
+    return FileReadOp{io_, fd_, buf, len, offset};
   }
   FileWriteOp write(const void* buf, std::uint32_t len,
                     std::uint64_t offset) noexcept {
-    return FileWriteOp{&io_->proactor_for_current(), fd_, buf, len, offset};
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    HYLE_FATAL_ASSERT(buf != nullptr || len == 0);
+    return FileWriteOp{io_, fd_, buf, len, offset};
   }
   FileStatOp stat(Proactor::FileStat* out) noexcept {
-    return FileStatOp{&io_->proactor_for_current(), fd_, out};
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    HYLE_FATAL_ASSERT(out != nullptr);
+    return FileStatOp{io_, fd_, out};
   }
   FileSyncOp sync(bool datasync = false) noexcept {
-    return FileSyncOp{&io_->proactor_for_current(), fd_, datasync};
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    return FileSyncOp{io_, fd_, datasync};
   }
   FileAllocOp allocate(std::uint64_t offset, std::uint64_t len,
                        std::uint32_t mode = 0) noexcept {
-    return FileAllocOp{&io_->proactor_for_current(), fd_, mode, offset, len};
+    HYLE_FATAL_ASSERT(valid() &&
+                      sched::current_worker_index() == static_cast<int>(owner_));
+    return FileAllocOp{io_, fd_, mode, offset, len};
   }
 
   // co_await file.close() -> 0 or negative errno. Releases the fd (async on
@@ -210,23 +178,7 @@ class File {
     IoOperation op_{};
     bool submitted_ = false;
     bool await_ready() noexcept { return false; }
-    bool await_suspend(std::coroutine_handle<>) noexcept {
-      op_.waker = sched::current_waker();
-      submitted_ = self->io_->proactor_for_current().submit_close(
-          self->fd_, to_token(&op_));
-      // submit_close TAKES OWNERSHIP of the fd: io_uring closes it via the async
-      // SQE; IOCP/epoll already ran ::CloseHandle/::close inside submit_close. So
-      // clear fd_ unconditionally -- the destructor must not double-close. (The only
-      // false return is an uninitialized proactor, impl==nullptr, i.e. an invalid
-      // IoContext the caller shouldn't be using; a leaked fd there is acceptable.)
-      self->fd_ = -1;
-      if (!submitted_) {
-        op_.result = -1;
-        return false;
-      }
-      sched::suspend();
-      return false;
-    }
+    HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
     std::int64_t await_resume() noexcept { return op_.result; }
   };
   CloseAwaitable close() noexcept { return CloseAwaitable{this}; }
@@ -254,17 +206,7 @@ struct OpenAwaitable {
   bool submitted_ = false;
 
   bool await_ready() noexcept { return false; }
-  bool await_suspend(std::coroutine_handle<>) noexcept {
-    op_.waker = sched::current_waker();
-    submitted_ =
-        io->proactor(owner).submit_open(path, flags, mode, to_token(&op_));
-    if (!submitted_) {
-      op_.result = -1;
-      return false;
-    }
-    sched::suspend();
-    return false;
-  }
+  HYLE_IO_API bool await_suspend(std::coroutine_handle<>) noexcept;
   File await_resume() noexcept {
     if (op_.result < 0) return File{};
     return File{*io, static_cast<std::intptr_t>(op_.result), owner};

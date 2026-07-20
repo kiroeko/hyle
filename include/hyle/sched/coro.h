@@ -71,7 +71,7 @@ struct PromiseAllocBase {
   static void* operator new(std::size_t n, mem::Allocator alloc,
                             auto&&...) noexcept {
     if (!alloc.valid() ||
-        n > std::numeric_limits<std::size_t>::max() - kPrefix)
+        n > (std::numeric_limits<std::size_t>::max)() - kPrefix)
       return nullptr;
     void* base = alloc.allocate(n + kPrefix, alignof(std::max_align_t));
     if (base == nullptr) return nullptr;

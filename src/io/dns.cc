@@ -63,7 +63,9 @@ void resolve_blocking(const char* host, std::uint16_t port,
     std::memcpy(out->addrs[n].storage, ai->ai_addr,
                 static_cast<std::size_t>(ai->ai_addrlen));
     out->addrs[n].len = static_cast<std::uint32_t>(ai->ai_addrlen);
-    out->addrs[n].family = ai->ai_family;
+    out->addrs[n].family = ai->ai_family == AF_INET6
+                               ? AddressFamily::kIpv6
+                               : AddressFamily::kIpv4;
     ++n;
   }
   out->count = n;

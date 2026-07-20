@@ -68,8 +68,18 @@ def parse_run(text):
         if cols[1] == "relative":          # header row: title is in the last col
             title = last
             continue
-        if title and last.startswith(BT):  # data row: `variant name`
-            variant = last.strip(BT)
+        # nanobench appends an extra warning cell after an unstable row:
+        #   ... | :wavy_dash: `variant` | (Unstable with ...)
+        # The old parser required the LAST cell to start with a backtick, silently
+        # dropping exactly the noisy rows for which cross-process aggregation is
+        # most valuable. Find the quoted variant cell instead.
+        variant_cell = next((c for c in cols[5:] if BT in c), None)
+        if title and variant_cell is not None:
+            begin = variant_cell.find(BT)
+            end = variant_cell.find(BT, begin + 1)
+            if end < 0:
+                continue
+            variant = variant_cell[begin + 1:end]
             try:
                 ops = float(cols[3].replace(",", ""))
             except ValueError:

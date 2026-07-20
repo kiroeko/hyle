@@ -32,6 +32,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -48,6 +49,8 @@
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <winsock2.h>
+#else
+#  include <sys/resource.h>
 #endif
 
 using hyle::io::IoContext;
@@ -81,18 +84,25 @@ void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 // parameter inert (fd_ = -1) so its later frame-teardown destruction closes nothing.
 Task<int> serve_conn(Allocator, TcpStream conn, int rounds,
                      std::atomic<int>* served) {
+  bool complete = true;
   {
     TcpStream s = std::move(conn);
     char buf[kMsgLen];
     for (int r = 0; r < rounds; ++r) {
       std::int64_t got = co_await s.read(buf, kMsgLen);
-      if (got <= 0) break;  // client hung up
+      if (got <= 0) {
+        complete = false;
+        break;
+      }
       std::int64_t put = co_await s.write(buf, static_cast<std::uint32_t>(got));
-      if (put != got) break;
+      if (put != got) {
+        complete = false;
+        break;
+      }
     }
     // s destroyed here (block exit) -> connection fd closed deterministically.
   }
-  served->fetch_add(1, std::memory_order_relaxed);
+  if (complete) served->fetch_add(1, std::memory_order_relaxed);
   co_return 0;
 }
 
@@ -112,8 +122,8 @@ Task<int> accept_dispatch_loop(Allocator, Scheduler* sched, TcpListener* ls, int
     if (!conn.valid()) continue;
     auto dh = std::make_unique<Drive>();
     dh->task = serve_conn(system_allocator(), std::move(conn), rounds, served);
-    auto fh = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, dh.get());
+    auto fh =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, dh.get());
     sched->spawn_on(owner, fh.get());  // hand off -> parallel service on `owner`
     hdrives->push_back(std::move(dh));
     hfibers->push_back(std::move(fh));
@@ -145,7 +155,7 @@ Task<int> client_lifecycle(Allocator, IoContext* io, unsigned owner,
 // the accept-dispatch loop on worker 0 hands each connection to a per-conn handler fiber
 // on its core; N client fibers round-robin across workers. Fresh port per call dodges
 // the previous epoch's TIME_WAIT sockets.
-void run_lifecycle(unsigned workers, int conns, int rounds, std::uint16_t port) {
+int run_lifecycle(unsigned workers, int conns, int rounds, std::uint16_t port) {
   Scheduler sched(workers, system_allocator(), 8192);
   IoContext io(sched, workers);
 
@@ -155,7 +165,7 @@ void run_lifecycle(unsigned workers, int conns, int rounds, std::uint16_t port) 
   TcpListener ls = tcp_listen(io, 0, "127.0.0.1", port, conns);
   if (!ls.valid()) {  // port still in TIME_WAIT etc -> skip this iteration cleanly
     sched.shutdown();
-    return;
+    return -1;
   }
 
   std::atomic<int> served{0};
@@ -167,8 +177,7 @@ void run_lifecycle(unsigned workers, int conns, int rounds, std::uint16_t port) 
   auto da = std::make_unique<Drive>();
   da->task = accept_dispatch_loop(system_allocator(), &sched, &ls, conns, rounds,
                                   workers, &served, &hdrives, &hfibers);
-  auto fa = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                    &drive_entry, da.get());
+  auto fa = std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, da.get());
   sched.spawn_on(0, fa.get());
 
   std::vector<std::unique_ptr<Drive>> cdrives;
@@ -179,8 +188,8 @@ void run_lifecycle(unsigned workers, int conns, int rounds, std::uint16_t port) 
     unsigned owner = static_cast<unsigned>(i) % workers;
     auto dc = std::make_unique<Drive>();
     dc->task = client_lifecycle(system_allocator(), &io, owner, port, rounds);
-    auto fc = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, dc.get());
+    auto fc =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, dc.get());
     sched.spawn_on(owner, fc.get());
     cdrives.push_back(std::move(dc));
     cfibers.push_back(std::move(fc));
@@ -188,6 +197,7 @@ void run_lifecycle(unsigned workers, int conns, int rounds, std::uint16_t port) 
 
   sched.drain();  // returns when accept loop + all handlers + all clients are done
   sched.shutdown();
+  return served.load(std::memory_order_relaxed);
 }
 
 }  // namespace
@@ -196,6 +206,12 @@ int main() {
 #if defined(_WIN32)
   WSADATA wsa;
   ::WSAStartup(MAKEWORD(2, 2), &wsa);
+#else
+  rlimit rl;
+  if (::getrlimit(RLIMIT_NOFILE, &rl) == 0 && rl.rlim_cur < rl.rlim_max) {
+    rl.rlim_cur = rl.rlim_max;
+    ::setrlimit(RLIMIT_NOFILE, &rl);
+  }
 #endif
 
   // ---- connection lifecycle: conns/s vs round-trips-per-connection ----
@@ -213,9 +229,13 @@ int main() {
     for (int rounds : {1, 4, 16}) {
       char name[64];
       std::snprintf(name, sizeof(name), "conns=%d rounds=%d", kConns, rounds);
-      b.batch(static_cast<std::uint64_t>(kConns)).minEpochIterations(2).run(name, [&] {
-        run_lifecycle(kWorkers, kConns, rounds, port++);  // ++ -> fresh port each epoch
-      });
+      b.batch(static_cast<std::uint64_t>(kConns))
+          .minEpochIterations(1)
+          .epochs(5)
+          .run(name, [&] {
+            if (run_lifecycle(kWorkers, kConns, rounds, port++) != kConns)
+              std::abort();
+          });
     }
   }
 

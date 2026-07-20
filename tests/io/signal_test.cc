@@ -2,6 +2,7 @@
 
 #include <atomic>
 #include <memory>
+#include <utility>
 
 #include "hyle/io/io_context.h"
 #include "hyle/io/signal.h"
@@ -57,6 +58,7 @@ Task<int> raise_coro(Allocator) {
   ::raise(SIGTERM);
   co_return 0;
 }
+void prior_sigint_handler(int) {}
 #endif
 }  // namespace
 
@@ -93,9 +95,8 @@ TEST(IoSignal, WaitReturnsRaisedSignal) {
   EXPECT_EQ(r->got.load(), static_cast<int>(kSigTerm));
 }
 
-// Registering SIGINT + SIGTERM then destroying restores default disposition
-// without leaving a dangling handler (a subsequent default-terminate SIGINT would
-// otherwise be swallowed). Smoke: build/destroy several sets, no crash/hang.
+// The signal transport is process-global and single-consumer. A second set must
+// fail cleanly instead of stealing bytes from the first set's wait.
 TEST(IoSignal, RegisterUnregisterIsClean) {
   constexpr unsigned kWorkers = 1;
   Scheduler sched(kWorkers, system_allocator(), 256);
@@ -104,11 +105,40 @@ TEST(IoSignal, RegisterUnregisterIsClean) {
   {
     SignalSet a(io, kOwner, kSigInt | kSigTerm);
     EXPECT_TRUE(a.valid());
-    SignalSet b(io, kOwner, kSigInt);  // overlapping registration (refcounted)
-    EXPECT_TRUE(b.valid());
+    SignalSet b(io, kOwner, kSigInt);
+    EXPECT_FALSE(b.valid());
+    SignalSet moved;
+    moved = std::move(a);  // regression: move assignment must not end `moved`'s lifetime
+    EXPECT_TRUE(moved.valid());
   }
-  // Both dropped -> handlers restored. Nothing to assert beyond "no crash".
-  SUCCEED();
+
+  // Invalid masks/owners are rejected before touching process handlers.
+  EXPECT_FALSE(SignalSet(io, kOwner, 0).valid());
+  EXPECT_FALSE(SignalSet(io, io.num_workers(), kSigInt).valid());
+}
+
+// Embedders may already own SIGINT. HYLE must restore that exact disposition,
+// not overwrite it with SIG_DFL when the last SignalSet is destroyed.
+TEST(IoSignal, RestoresPriorHandler) {
+  constexpr unsigned kWorkers = 1;
+  Scheduler sched(kWorkers, system_allocator(), 256);
+  IoContext io(sched, kWorkers);
+  ASSERT_TRUE(io.valid());
+
+  struct sigaction original {};
+  struct sigaction custom {};
+  struct sigaction observed {};
+  ASSERT_EQ(::sigaction(SIGINT, nullptr, &original), 0);
+  custom.sa_handler = &prior_sigint_handler;
+  sigemptyset(&custom.sa_mask);
+  ASSERT_EQ(::sigaction(SIGINT, &custom, nullptr), 0);
+  {
+    SignalSet s(io, kOwner, kSigInt);
+    ASSERT_TRUE(s.valid());
+  }
+  ASSERT_EQ(::sigaction(SIGINT, nullptr, &observed), 0);
+  EXPECT_EQ(observed.sa_handler, &prior_sigint_handler);
+  ASSERT_EQ(::sigaction(SIGINT, &original, nullptr), 0);
 }
 
 #else  // Windows
@@ -124,7 +154,10 @@ TEST(IoSignal, RegisterUnregisterIsCleanWindows) {
     SignalSet a(io, kOwner, kSigInt | kSigTerm);
     EXPECT_TRUE(a.valid());
     SignalSet b(io, kOwner, kSigTerm);
-    EXPECT_TRUE(b.valid());
+    EXPECT_FALSE(b.valid());
+    SignalSet moved;
+    moved = std::move(a);
+    EXPECT_TRUE(moved.valid());
   }
   SUCCEED();
 }

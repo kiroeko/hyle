@@ -32,6 +32,11 @@
 
 namespace hyle::io {
 
+enum class AddressFamily : std::uint8_t {
+  kIpv4 = 4,
+  kIpv6 = 6,
+};
+
 // Result sentinel for "the op was never submitted" (ring/backend rejected the
 // submit, or the timed-op heap slot OOM'd) -- distinct from any real negative
 // errno. The base ops previously used -1, which COLLIDES with -EPERM (errno 1):
@@ -237,6 +242,16 @@ struct RecvFromOp {
   alignas(16) unsigned char scratch_[Proactor::kDatagramScratch];
   bool submitted_ = false;
 
+  RecvFromOp(Proactor* proactor, std::intptr_t socket, void* data,
+             std::uint32_t size, void* peer,
+             std::uint32_t peer_capacity) noexcept
+      : p(proactor),
+        fd(socket),
+        buf(data),
+        len(size),
+        addr(peer),
+        addr_cap(peer_capacity) {}
+
   bool await_ready() noexcept { return false; }
   bool await_suspend(std::coroutine_handle<>) noexcept {
     op_.waker = sched::current_waker();
@@ -266,6 +281,16 @@ struct SendToOp {
   IoOperation op_{};
   alignas(16) unsigned char scratch_[Proactor::kDatagramScratch];
   bool submitted_ = false;
+
+  SendToOp(Proactor* proactor, std::intptr_t socket, const void* data,
+           std::uint32_t size, const void* destination,
+           std::uint32_t destination_size) noexcept
+      : p(proactor),
+        fd(socket),
+        buf(data),
+        len(size),
+        addr(destination),
+        addrlen(destination_size) {}
 
   bool await_ready() noexcept { return false; }
   bool await_suspend(std::coroutine_handle<>) noexcept {

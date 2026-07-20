@@ -43,6 +43,12 @@ struct SigGlobal {
   int pipe_wr = -1;
   int refcount_int = 0;   // SIGINT installs
   int refcount_term = 0;  // SIGTERM installs
+  struct sigaction old_int {};
+  struct sigaction old_term {};
+  bool have_old_int = false;
+  bool have_old_term = false;
+  std::atomic<bool> waiter{false};  // process pipe has one consumer at a time
+  bool active_set = false;
   bool pipe_made = false;
 };
 SigGlobal& sig_global() noexcept {
@@ -91,11 +97,6 @@ bool ensure_pipe(SigGlobal& g) noexcept {
   return true;
 }
 
-int bit_to_signo(unsigned bit) noexcept {
-  if (bit == kSigInt) return SIGINT;
-  if (bit == kSigTerm) return SIGTERM;
-  return 0;
-}
 unsigned signo_to_bit(int signo) noexcept {
   if (signo == SIGINT) return kSigInt;
   if (signo == SIGTERM) return kSigTerm;
@@ -103,27 +104,29 @@ unsigned signo_to_bit(int signo) noexcept {
 }
 
 // Install/uninstall our handler for one signal, refcounted so the last SignalSet
-// to drop it restores SIG_DFL. `install`=true adds a ref; false drops one.
-void set_signal(SigGlobal& g, int signo, bool install) noexcept {
+// restores the disposition that was present before HYLE (embedding-safe).
+bool set_signal(SigGlobal& g, int signo, bool install) noexcept {
   int* rc = (signo == SIGINT) ? &g.refcount_int : &g.refcount_term;
+  struct sigaction* old = (signo == SIGINT) ? &g.old_int : &g.old_term;
+  bool* have_old = (signo == SIGINT) ? &g.have_old_int : &g.have_old_term;
   if (install) {
-    if ((*rc)++ == 0) {
+    if (*rc == 0) {
       struct sigaction sa;
       std::memset(&sa, 0, sizeof(sa));
       sa.sa_handler = &hyle_signal_handler;
       sa.sa_flags = SA_RESTART;  // don't abort restartable syscalls elsewhere
       sigemptyset(&sa.sa_mask);  // sigemptyset is a MACRO on macOS/BSD -- no :: qualifier.
-      ::sigaction(signo, &sa, nullptr);
+      if (::sigaction(signo, &sa, old) != 0) return false;
+      *have_old = true;
     }
+    ++*rc;
   } else {
     if (*rc > 0 && --(*rc) == 0) {
-      struct sigaction sa;
-      std::memset(&sa, 0, sizeof(sa));
-      sa.sa_handler = SIG_DFL;
-      sigemptyset(&sa.sa_mask);  // sigemptyset is a MACRO on macOS/BSD -- no :: qualifier.
-      ::sigaction(signo, &sa, nullptr);
+      if (*have_old) ::sigaction(signo, old, nullptr);
+      *have_old = false;
     }
   }
+  return true;
 }
 
 }  // namespace
@@ -131,29 +134,43 @@ void set_signal(SigGlobal& g, int signo, bool install) noexcept {
 SignalSet::SignalSet(IoContext& io, unsigned owner_worker,
                      unsigned signals) noexcept
     : io_(&io), owner_(owner_worker), signals_(signals) {
+  constexpr unsigned kSupported = kSigInt | kSigTerm;
+  if (owner_worker >= io.num_workers() || signals == 0 ||
+      (signals & ~kSupported) != 0)
+    return;
   SigGlobal& g = sig_global();
   std::lock_guard<std::mutex> lk(g.mu);
+  if (g.active_set) return;
   if (!ensure_pipe(g)) return;
   pipe_rd_ = static_cast<std::intptr_t>(g.pipe_rd);
   pipe_wr_ = static_cast<std::intptr_t>(g.pipe_wr);
-  if (signals_ & kSigInt) set_signal(g, SIGINT, /*install=*/true);
-  if (signals_ & kSigTerm) set_signal(g, SIGTERM, /*install=*/true);
+  if ((signals_ & kSigInt) &&
+      !set_signal(g, SIGINT, /*install=*/true))
+    return;
+  if ((signals_ & kSigTerm) &&
+      !set_signal(g, SIGTERM, /*install=*/true)) {
+    if (signals_ & kSigInt) set_signal(g, SIGINT, /*install=*/false);
+    return;
+  }
+  g.active_set = true;
   valid_ = true;
 }
 
-SignalSet::~SignalSet() {
-  if (!valid_) return;
-  SigGlobal& g = sig_global();
-  std::lock_guard<std::mutex> lk(g.mu);
-  if (signals_ & kSigInt) set_signal(g, SIGINT, /*install=*/false);
-  if (signals_ & kSigTerm) set_signal(g, SIGTERM, /*install=*/false);
-  // The pipe stays open for the process lifetime (tokio pattern); nothing to close.
-}
+SignalSet::~SignalSet() { reset(); }
 
 bool SignalSet::WaitAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   if (!self->valid_) {
     op_.result = -1;
     return false;  // invalid set: resume at once with an error
+  }
+  HYLE_FATAL_ASSERT(sched::current_worker_index() ==
+                    static_cast<int>(self->owner_));
+  SigGlobal& g = sig_global();
+  bool expected = false;
+  if (!g.waiter.compare_exchange_strong(expected, true,
+                                        std::memory_order_acq_rel)) {
+    op_.result = -1;  // another SignalSet already owns the process-wide pipe read
+    return false;
   }
   op_.waker = sched::current_waker();
   // Arm a 1-byte read on the global self-pipe via the owner worker's ring. The
@@ -162,6 +179,7 @@ bool SignalSet::WaitAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   submitted_ = p.submit_read(self->pipe_rd_, &byte_, 1, 0, to_token(&op_));
   if (!submitted_) {
     op_.result = -1;
+    g.waiter.store(false, std::memory_order_release);
     return false;
   }
   sched::suspend();
@@ -169,6 +187,7 @@ bool SignalSet::WaitAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
 }
 
 int SignalSet::WaitAwaitable::await_resume() noexcept {
+  sig_global().waiter.store(false, std::memory_order_release);
   if (op_.result < 1) return -1;  // error / EOF -> no signal
   unsigned bit = signo_to_bit(static_cast<int>(byte_));
   return bit != 0 ? static_cast<int>(bit) : -1;
@@ -188,8 +207,10 @@ struct WinSigGlobal {
   std::atomic<Proactor*> ring{nullptr};
   std::atomic<std::uint64_t> token{0};
   std::atomic<unsigned> want{0};  // which SignalBits are being awaited
+  std::atomic<bool> waiter{false};
   int refcount = 0;
   bool installed = false;
+  bool active_set = false;
 };
 WinSigGlobal& win_sig_global() noexcept {
   static WinSigGlobal g;
@@ -233,48 +254,51 @@ BOOL WINAPI hyle_console_handler(DWORD ctrl_type) noexcept {
   return TRUE;  // handled -> don't run the default (terminate) handler
 }
 
-unsigned all_supported() noexcept { return kSigInt | kSigTerm; }
-
 }  // namespace
 
 SignalSet::SignalSet(IoContext& io, unsigned owner_worker,
                      unsigned signals) noexcept
     : io_(&io), owner_(owner_worker), signals_(signals) {
+  constexpr unsigned kSupported = kSigInt | kSigTerm;
+  if (owner_worker >= io.num_workers() || signals == 0 ||
+      (signals & ~kSupported) != 0)
+    return;
   WinSigGlobal& g = win_sig_global();
   std::lock_guard<std::mutex> lk(g.mu);
-  if (g.refcount++ == 0) {
-    if (::SetConsoleCtrlHandler(&hyle_console_handler, TRUE)) g.installed = true;
+  if (g.active_set) return;
+  if (g.refcount == 0) {
+    if (!::SetConsoleCtrlHandler(&hyle_console_handler, TRUE)) return;
+    g.installed = true;
   }
-  (void)all_supported();
+  ++g.refcount;
+  g.active_set = true;
   valid_ = true;
 }
 
-SignalSet::~SignalSet() {
-  if (!valid_) return;
-  WinSigGlobal& g = win_sig_global();
-  std::lock_guard<std::mutex> lk(g.mu);
-  if (g.refcount > 0 && --g.refcount == 0 && g.installed) {
-    ::SetConsoleCtrlHandler(&hyle_console_handler, FALSE);
-    g.installed = false;
-  }
-}
+SignalSet::~SignalSet() { reset(); }
 
 bool SignalSet::WaitAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
   if (!self->valid_) {
     op_.result = -1;
     return false;
   }
+  HYLE_FATAL_ASSERT(sched::current_worker_index() ==
+                    static_cast<int>(self->owner_));
   op_.waker = sched::current_waker();
   WinSigGlobal& g = win_sig_global();
+  bool expected = false;
+  if (!g.waiter.compare_exchange_strong(expected, true,
+                                        std::memory_order_acq_rel)) {
+    op_.result = -1;
+    return false;
+  }
   // Publish the target BEFORE arming so a signal racing in is delivered: set ring +
   // wanted bits, then the token last (release) -- the handler reads token last.
-  // want is OR-ed (accumulate), not stored, so a second SignalSet awaiting a
-  // different signal doesn't erase the first's interest. token/ring are a SINGLE
-  // slot, though: this is a ONE-WAITER model (see signal.h) -- concurrent waits on
-  // separate SignalSets would clobber each other. The graceful-shutdown use case
-  // (one fiber awaits SIGINT/SIGTERM) is single-waiter, which is what this serves.
+  // The process-wide waiter gate above makes this a single slot, so STORE the
+  // current set. Accumulating with fetch_or leaked a previous wait's interests:
+  // after waiting for INT, a later TERM-only wait could incorrectly consume INT.
   g.ring.store(&self->io_->proactor(self->owner_), std::memory_order_release);
-  g.want.fetch_or(self->signals_, std::memory_order_release);
+  g.want.store(self->signals_, std::memory_order_release);
   g.token.store(to_token(&op_), std::memory_order_release);
   submitted_ = true;
   sched::suspend();  // resumed by the console handler's post() -> net::complete
@@ -283,7 +307,11 @@ bool SignalSet::WaitAwaitable::await_suspend(std::coroutine_handle<>) noexcept {
 
 int SignalSet::WaitAwaitable::await_resume() noexcept {
   // Windows carries the SignalBit directly in the posted result (see the handler).
-  win_sig_global().token.store(0, std::memory_order_release);  // disarm if woken otherwise
+  WinSigGlobal& g = win_sig_global();
+  g.token.store(0, std::memory_order_release);  // disarm if woken otherwise
+  g.want.store(0, std::memory_order_release);
+  g.ring.store(nullptr, std::memory_order_release);
+  g.waiter.store(false, std::memory_order_release);
   if (op_.result <= 0) return -1;
   return static_cast<int>(op_.result);
 }
@@ -302,8 +330,9 @@ SignalSet::SignalSet(SignalSet&& o) noexcept
 
 SignalSet& SignalSet::operator=(SignalSet&& o) noexcept {
   if (this != &o) {
-    // Release our own registration first (dtor logic), then steal o's.
-    this->~SignalSet();
+    // Release our own registration without ending `*this`'s object lifetime.
+    // Explicitly invoking the destructor and then assigning fields was UB.
+    reset();
     io_ = o.io_;
     owner_ = o.owner_;
     signals_ = std::exchange(o.signals_, 0);
@@ -312,6 +341,28 @@ SignalSet& SignalSet::operator=(SignalSet&& o) noexcept {
     valid_ = std::exchange(o.valid_, false);
   }
   return *this;
+}
+
+void SignalSet::reset() noexcept {
+  if (!valid_) return;
+#if defined(HYLE_OS_WINDOWS)
+  WinSigGlobal& g = win_sig_global();
+  std::lock_guard<std::mutex> lk(g.mu);
+  if (g.refcount > 0 && --g.refcount == 0 && g.installed) {
+    ::SetConsoleCtrlHandler(&hyle_console_handler, FALSE);
+    g.installed = false;
+  }
+  g.active_set = false;
+#else
+  SigGlobal& g = sig_global();
+  std::lock_guard<std::mutex> lk(g.mu);
+  if (signals_ & kSigInt) set_signal(g, SIGINT, /*install=*/false);
+  if (signals_ & kSigTerm) set_signal(g, SIGTERM, /*install=*/false);
+  g.active_set = false;
+  // The self-pipe deliberately stays open for process lifetime.
+#endif
+  valid_ = false;
+  signals_ = 0;
 }
 
 }  // namespace hyle::io

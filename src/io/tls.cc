@@ -17,6 +17,25 @@ namespace hyle::io {
 namespace {
 
 constexpr int kBufSize = 16 * 1024;  // ciphertext pump chunk
+constexpr unsigned char kAlpnH2[] = {2, 'h', '2'};
+constexpr unsigned char kAlpnH2Http1[] = {
+    2, 'h', '2', 8, 'h', 't', 't', 'p', '/', '1', '.', '1'};
+int kAllowHttp1Token;
+
+int select_alpn(SSL*, const unsigned char** out, unsigned char* out_len,
+                const unsigned char* client, unsigned int client_len,
+                void* arg) noexcept {
+  const bool allow_http1 = arg != nullptr;
+  const unsigned char* offered =
+      allow_http1 ? kAlpnH2Http1 : kAlpnH2;
+  const unsigned int offered_len =
+      allow_http1 ? sizeof(kAlpnH2Http1) : sizeof(kAlpnH2);
+  return SSL_select_next_proto(
+             const_cast<unsigned char**>(out), out_len, offered, offered_len,
+             client, client_len) == OPENSSL_NPN_NEGOTIATED
+             ? SSL_TLSEXT_ERR_OK
+             : SSL_TLSEXT_ERR_NOACK;
+}
 
 // Map the current SSL op's non-positive return to what the pump must do next. We
 // call SSL_get_error IMMEDIATELY after the SSL_* call (nothing between), per
@@ -67,12 +86,16 @@ TlsContext TlsContext::client() noexcept {
   // Verify the peer against the default trust store. A caller that wants to skip
   // verification (self-signed test certs) can adjust the returned ctx's native().
   SSL_CTX_set_verify(ctx, SSL_VERIFY_PEER, nullptr);
-  SSL_CTX_set_default_verify_paths(ctx);
+  if (SSL_CTX_set_default_verify_paths(ctx) != 1) {
+    SSL_CTX_free(ctx);
+    return TlsContext{};
+  }
   return TlsContext{ctx};
 }
 
 TlsContext TlsContext::server(const char* cert_pem_path,
                               const char* key_pem_path) noexcept {
+  if (cert_pem_path == nullptr || key_pem_path == nullptr) return TlsContext{};
   SSL_CTX* ctx = SSL_CTX_new(TLS_server_method());
   if (ctx == nullptr) return TlsContext{};
   SSL_CTX_set_min_proto_version(ctx, TLS1_2_VERSION);
@@ -85,10 +108,22 @@ TlsContext TlsContext::server(const char* cert_pem_path,
   return TlsContext{ctx};
 }
 
+bool TlsContext::enable_http2(bool allow_http1) noexcept {
+  if (ctx_ == nullptr) return false;
+  const unsigned char* protocols =
+      allow_http1 ? kAlpnH2Http1 : kAlpnH2;
+  const unsigned int length =
+      allow_http1 ? sizeof(kAlpnH2Http1) : sizeof(kAlpnH2);
+  if (SSL_CTX_set_alpn_protos(ctx_, protocols, length) != 0) return false;
+  SSL_CTX_set_alpn_select_cb(ctx_, select_alpn,
+                             allow_http1 ? &kAllowHttp1Token : nullptr);
+  return true;
+}
+
 // ---- TlsStream lifetime ----------------------------------------------------
 
-TlsStream::TlsStream(TcpStream sock, const TlsContext& ctx,
-                     bool is_server) noexcept
+TlsStream::TlsStream(TcpStream sock, const TlsContext& ctx, bool is_server,
+                     const char* server_name) noexcept
     : sock_(std::move(sock)) {
   if (!ctx.valid()) return;
   ssl_ = SSL_new(ctx.native());
@@ -112,6 +147,34 @@ TlsStream::TlsStream(TcpStream sock, const TlsContext& ctx,
   if (is_server) {
     SSL_set_accept_state(ssl_);
   } else {
+    if ((SSL_CTX_get_verify_mode(ctx.native()) & SSL_VERIFY_PEER) != 0) {
+      if (server_name == nullptr || *server_name == '\0') {
+        SSL_free(ssl_);
+        ssl_ = nullptr;
+        rbio_ = wbio_ = nullptr;
+        return;
+      }
+      bool looks_like_ip = false;
+      bool only_digits_dots = true;
+      for (const char* p = server_name; *p != '\0'; ++p) {
+        if (*p == ':') looks_like_ip = true;  // IPv6 literal
+        if ((*p < '0' || *p > '9') && *p != '.') only_digits_dots = false;
+      }
+      looks_like_ip = looks_like_ip || only_digits_dots;
+      int ok;
+      if (looks_like_ip) {
+        ok = X509_VERIFY_PARAM_set1_ip_asc(SSL_get0_param(ssl_), server_name);
+      } else {
+        ok = SSL_set1_host(ssl_, server_name);
+        if (ok == 1) ok = SSL_set_tlsext_host_name(ssl_, server_name);
+      }
+      if (ok != 1) {
+        SSL_free(ssl_);
+        ssl_ = nullptr;
+        rbio_ = wbio_ = nullptr;
+        return;
+      }
+    }
     SSL_set_connect_state(ssl_);
   }
 }
@@ -143,6 +206,15 @@ TlsStream& TlsStream::operator=(TlsStream&& o) noexcept {
     scratch_alloc_ = o.scratch_alloc_;
   }
   return *this;
+}
+
+container::string_ref TlsStream::negotiated_protocol() const noexcept {
+  if (ssl_ == nullptr) return {};
+  const unsigned char* data = nullptr;
+  unsigned int length = 0;
+  SSL_get0_alpn_selected(ssl_, &data, &length);
+  return container::string_ref{reinterpret_cast<const char*>(data),
+                               static_cast<std::uint32_t>(length)};
 }
 
 // Lazily allocate (once) the shared 16KB ciphertext pump scratch. Reused for the
@@ -284,21 +356,19 @@ sched::Task<int> tls_shutdown(mem::Allocator alloc, TlsStream& s) noexcept {
   if (s.ssl_ == nullptr) co_return 0;
   char* scratch = s.ensure_scratch(alloc);
   if (scratch == nullptr) co_return 0;  // OOM at teardown -> dirty shutdown, fine
-  // Best-effort duplex close: send our close_notify, then flush. SSL_shutdown()==1
-  // means the peer's close_notify was also received (full duplex done); ==0 means
-  // ours is sent and we could wait for the peer's -- we do a bounded number of read
-  // attempts but don't hang forever on a peer that never replies (dirty shutdown is
-  // acceptable at teardown). WANT_* pumps the BIOs.
+  // Send our close_notify and flush it, but do not wait for the peer's reply. A
+  // fixed attempt count did not make the old code bounded: its first feed_rbio()
+  // was an untimed socket read and could park forever on a silent peer.
   for (int attempt = 0; attempt < 4; ++attempt) {
     ERR_clear_error();
     int r = SSL_shutdown(s.ssl_);
     if ((co_await flush_wbio(alloc, s.sock_, s.wbio_, scratch)) != 0) co_return -1;
     if (r == 1) co_return 0;  // full duplex close_notify exchange complete
+    if (r == 0) co_return 0;  // our close_notify is sent; do not await the peer
     Want w = classify(s.ssl_, r);
     if (w == Want::kError || w == Want::kEof) co_return 0;  // give up cleanly
     if (w == Want::kReadMore) {
-      int f = co_await feed_rbio(alloc, s.sock_, s.rbio_, scratch);
-      if (f <= 0) co_return 0;  // peer gone -> dirty shutdown, acceptable
+      co_return 0;  // peer reply would require an unbounded transport read
     }
   }
   co_return 0;

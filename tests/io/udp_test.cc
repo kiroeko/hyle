@@ -17,6 +17,8 @@
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <winsock2.h>
+#else
+#  include <fcntl.h>
 #endif
 
 // io-04 net datagram test: a real UDP echo over loopback using the RAII UdpSocket
@@ -53,11 +55,18 @@ struct UdpResult {
   std::atomic<std::int64_t> server_recv{0};   // bytes the server received
   std::atomic<std::int64_t> server_sent{0};   // bytes the server echoed
   std::atomic<std::int64_t> client_recv{0};   // bytes the client got back
+  std::atomic<bool> server_nonblocking{true};
+  std::atomic<bool> client_nonblocking{true};
   char client_got[64] = {};
 };
 
 // Server: recv one datagram (learn sender addr), echo it back to that addr.
 Task<int> server_coro(Allocator, UdpSocket* sock, UdpResult* r) {
+#if !defined(_WIN32)
+  r->server_nonblocking.store(
+      (::fcntl(static_cast<int>(sock->fd()), F_GETFL, 0) & O_NONBLOCK) != 0,
+      std::memory_order_release);
+#endif
   char buf[64] = {};
   alignas(16) unsigned char peer[UdpSocket::kSockaddrCap];
   std::int64_t n = co_await sock->recv_from(buf, sizeof(buf), &peer);
@@ -74,6 +83,11 @@ Task<int> server_coro(Allocator, UdpSocket* sock, UdpResult* r) {
 
 // Client: send a datagram to the server, then recv the echo and verify.
 Task<int> client_coro(Allocator, UdpSocket* sock, UdpResult* r) {
+#if !defined(_WIN32)
+  r->client_nonblocking.store(
+      (::fcntl(static_cast<int>(sock->fd()), F_GETFL, 0) & O_NONBLOCK) != 0,
+      std::memory_order_release);
+#endif
   alignas(16) unsigned char dest[128];
   std::uint32_t dlen = 0;
   if (!resolve_addr("127.0.0.1", kPort, &dest, &dlen)) {
@@ -125,6 +139,8 @@ TEST(IoUdp, RecvFromSendToEchoRoundTrip) {
 
   EXPECT_TRUE(r->server_done.load());
   EXPECT_TRUE(r->client_done.load());
+  EXPECT_TRUE(r->server_nonblocking.load());
+  EXPECT_TRUE(r->client_nonblocking.load());
   constexpr std::int64_t kLen = static_cast<std::int64_t>(sizeof("udp-wrapper-echo"));
   EXPECT_EQ(r->server_recv.load(), kLen);
   EXPECT_EQ(r->server_sent.load(), kLen);

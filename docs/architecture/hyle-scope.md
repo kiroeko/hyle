@@ -217,7 +217,7 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 | **② 加密/TLS**(借 BoringSSL)| 🔄 **BORROW→已登记** | 原判"借不造"对,但**漏了登记**——公网 agent/服务必需。已改判 C9/io-08(借 shim,不自 roll)。 |
 | **② GPU 算子/压缩/JSON**(借 ggml/lz4/simdjson)| ✅ **BORROW**(判对)| 成熟库解决,自造=浪费/危险。北极星需要但"借"就够。JSON 借 simdjson 已明确。 |
 | **③ HTTP/1.1 协议层(client+server 骨架)** | 🔄 **改判 PULL IN(有条件)** | **北极星重排后此条翻案**:类 llama.cpp 推理引擎**必然要 RESTful serving**(llama.cpp 自己 vendor cpp-httplib)——AI 服务器不可能不提供 REST。故 HTTP over fiber/proactor 是底座一等能力,不是 L1。**但成本大、且不能抄 asio**→见下"HTTP 专项:成本与借-造抉择",借-造未定前不动手。 |
-| **③ HTTP/2·gRPC·WebSocket** | 🟡 **KEEP OUT(暂,随 HTTP/1.1 复看)** | HTTP/2(HPACK/多路复用)、gRPC(protobuf 绑定)、WebSocket 更重更偏框架。先看 HTTP/1.1 借-造结论,再定是否有必要。gRPC 依赖 protobuf 编译器=更靠 L1。 |
+| **③ HTTP/2·gRPC·WebSocket** | 🔄 **HTTP/2 PULL IN；gRPC/WebSocket KEEP OUT** | **io-11 已落地**：借固定版本 nghttp2 的 HPACK/frame/stream/flow-control 核，自写 allocator/caps、HYLE coroutine transport 与 transport-neutral C codec；不引入第二 event loop。gRPC 的 protobuf/IDL 与 WebSocket 应用协议仍更靠 L1，继续留给消费方。 |
 | **③ 路由/中间件/handler DSL/业务端点** | ✅ **KEEP OUT** | 这才是 HTTP 框架/应用(L1/L2)。llama.cpp 的 `/v1/chat` 端点是 L2;它底下的 httplib 那层才是 HYLE 该给的。**线画在"协议骨架 vs 路由业务"之间**。 |
 | **③ IDL/schema 编译器** | ✅ **KEEP OUT** | 编译器是工具链;但**序列化运行时原语**(builder/reader)是另一回事→ DISCUSS-2。 |
 | **③ RPC 框架/服务网格/服务发现** | ✅ **KEEP OUT** | 真框架(L1)。agent 用得上但那是消费方拼。 |
@@ -266,7 +266,9 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 
 **性能怎么保证(为什么这条路能快)**:性能不来自"用了某个快库",来自**网络字节全程待在 HYLE 自己的 io_uring/shard-per-core 上,不引入第二套运行时**——① 无双重 poll(fd 只被 HYLE proactor 管);② 无阻塞线程池(连接跑 fiber,10-20ns 切换,百万连接是设计目标);③ parser 是纯用户态状态机,零 syscall,且是被千锤百炼的借来件;④ 集成层就是 `co_await stream.read/write` + 喂 parser,和 echo bench 跑出 shard-per-core 扩展性的同一条路径。**即 HTTP 性能 = HYLE 自有 io_uring/fiber 性能 + 一个借来的解析器,无额外运行时税。**
 
-**成本**:HTTP/1.1 server+client ≈ 借 parser(0 自研) + ~1-2k 自有集成层。中等可控,不是"从零一堆协议"。HTTP/2(借 nghttp2)、WebSocket、gRPC(依赖 protobuf,更靠 L1)后置增量加。
+**成本/现状**:HTTP/1.1 server+client 已借 picohttpparser + 自有集成层完成；
+HTTP/2 已按相同边界借 nghttp2 协议核完成 h2c/TLS、C++ connection 与 C codec。
+WebSocket、gRPC（依赖 protobuf/IDL，更靠 L1）仍后置于范围外。
 
 **vs nginx 的诚实标尺**(避免跑偏,详见 motivation):
 - **纯静态文件伺服** PK nginx:能打平、极难超过(nginx 20 年 sendfile/内存池调优贴内核天花板),**且是伪目标**——那不是 HYLE 的战场,赢了没意义。
@@ -279,5 +281,5 @@ clay 从未把光追逻辑、USD/Hydra 协议、service 端点吸进 `infra/`—
 
 路线图见 [`roadmap.md`](./roadmap.md);逐里程碑实时状态见
 [`milestones/README.md`](../milestones/README.md)。当前：八个底层模块完成强收口；
-sched/io 主体成熟但待同等级模块审计；compute 的 CPU/CUDA/Vulkan/ggml 主干和
+sched/io 已完成同等级模块审计并带公开性能尾进入预发布冻结；compute 的 CPU/CUDA/Vulkan/ggml 主干和
 graph-01/graph-02 step-1 已实现，二者都不是 stub，但仍有产品能力尾。

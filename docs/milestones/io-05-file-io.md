@@ -5,7 +5,7 @@
 | **阶段** | P5 |
 | **模块** | io/ |
 | **前置** | io-02（真 op）|
-| **状态** | 🔶 文件 io ✅ / shmem 待（能力 C5）。三后端真测 + WSL TSan 净 |
+| **状态** | ✅ 文件 io + named shmem（能力 C5）。Windows/WSL/macOS 真测 |
 
 > **范围**：给 proactor 补文件元数据 op（`submit_open/close/statx/fsync/fallocate`，三后端）+ `file.h/cc` 的 `File` RAII + co_await read/write/stat/sync/allocate/close/open_file，shard-per-core 绑核。co_await 契约与 socket 完全一致。**shmem（mmap 跨进程）未做**，留 io-05 后续。
 > **cloc**：文件 op 三后端 +~250 / `file.h`+`cc` 264（+ `file_test` 190）。

@@ -15,8 +15,9 @@ namespace hyle::io {
 
 IoContext::IoContext(sched::Scheduler& sched, unsigned num_workers,
                      bool defer_taskrun) noexcept
-    : sched_(sched) {
+    : sched_(sched), blocking_(mem::system_allocator()) {
   HYLE_FATAL_ASSERT(num_workers >= 1);
+  HYLE_FATAL_ASSERT(num_workers == sched.num_workers());
   rings_.reserve(num_workers);
   valid_ = true;
   for (unsigned i = 0; i < num_workers; ++i) {
@@ -67,7 +68,11 @@ IoContext::~IoContext() {
       std::size_t n = ring->reap(batch, 64, 1'000'000ull);  // up to 1ms per wait
       for (std::size_t i = 0; i < n; ++i) {
         if (batch[i].user_data == Proactor::kWakeToken) continue;
-        if (is_timed_token(batch[i].user_data)) complete_timed(batch[i]);
+        if (is_multishot_token(batch[i].user_data)) {
+          complete_multishot(batch[i]);
+        } else if (is_timed_token(batch[i].user_data)) {
+          complete_timed(batch[i]);
+        }
         // else: base op late completion -> DROP (its stack slot/fiber are gone; see
         // the L5 note above). Reaped off the ring already, so nothing more to do.
       }
@@ -82,6 +87,7 @@ IoContext::~IoContext() {
 Proactor& IoContext::proactor_for_current() noexcept {
   int idx = sched::current_worker_index();
   HYLE_FATAL_ASSERT(idx >= 0);  // must be called from a worker fiber
+  HYLE_FATAL_ASSERT(static_cast<unsigned>(idx) < rings_.size());
   return *rings_[static_cast<unsigned>(idx)];
 }
 
@@ -90,6 +96,7 @@ bool IoContext::bind_fd(unsigned worker_idx, std::intptr_t fd) noexcept {
   // CreateIoCompletionPort association; on io_uring/epoll register_handle is a
   // no-op returning true. After this, the fd's ops must run on worker_idx (pin
   // the connection fiber there with Scheduler::spawn_on).
+  if (worker_idx >= rings_.size() || fd < 0) return false;
   return rings_[worker_idx]->register_handle(fd);
 }
 
@@ -102,11 +109,14 @@ void IoContext::wake_trampoline(void* ctx, unsigned worker_idx) noexcept {
   // Break worker_idx's blocking reap by waking ITS ring (park merge). Writes the
   // ring's wake eventfd (io_uring) / posts its port (IOCP) -- thread-safe, no SQ
   // race. The woken reap returns and the worker re-checks its run queue.
-  static_cast<IoContext*>(ctx)->rings_[worker_idx]->wake();
+  auto* self = static_cast<IoContext*>(ctx);
+  HYLE_FATAL_ASSERT(worker_idx < self->rings_.size());
+  self->rings_[worker_idx]->wake();
 }
 
 bool IoContext::poll(unsigned worker_idx,
                      unsigned long long timeout_ns) noexcept {
+  HYLE_FATAL_ASSERT(worker_idx < rings_.size());
   HYLE_TRACE_ZONE_NAMED("hyle.io.reap");
   // Reap THIS worker's own ring only (per-core: submit + reap share this thread,
   // no lock). A batch amortizes the reap syscall. Every completion here is an io

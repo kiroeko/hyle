@@ -10,6 +10,7 @@
 #include "hyle/io/net.h"
 #include "hyle/io/net_timeout.h"
 #include "hyle/io/tcp.h"
+#include "hyle/io/udp.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
 #include "hyle/sched/fiber.h"
@@ -122,8 +123,8 @@ Task<int> timeout_client(Allocator alloc, IoContext* io, TimeoutResult* r,
   char buf[64] = {};
   // Deadline 50ms out; server never sends, so the timer must win.
   std::uint64_t deadline = hyle::time::deadline_after_ns(50'000'000ull);
-  std::int64_t rc = co_await TimedRecvOp{&io->proactor_for_current(), s.fd(),
-                                         buf, sizeof(buf), alloc, deadline};
+  std::int64_t rc =
+      co_await s.read_until(buf, sizeof(buf), alloc, deadline);
   r->recv_rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
@@ -155,8 +156,8 @@ Task<int> iowin_client(Allocator alloc, IoContext* io, IoWinResult* r,
   }
   // Generous 5s deadline; the server sends at once, so io must win well within it.
   std::uint64_t deadline = hyle::time::deadline_after_ns(5'000'000'000ull);
-  std::int64_t rc = co_await TimedRecvOp{&io->proactor_for_current(), s.fd(),
-                                         r->got, sizeof(r->got), alloc, deadline};
+  std::int64_t rc =
+      co_await s.read_until(r->got, sizeof(r->got), alloc, deadline);
   r->recv_rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
@@ -252,6 +253,43 @@ TEST(IoTimeout, AcceptTimesOut) {
 
   EXPECT_TRUE(r->done.load());
   EXPECT_EQ(r->rc.load(), -110);  // accept timed out
+}
+
+namespace {
+Task<int> udp_timeout_recv(Allocator alloc, hyle::io::UdpSocket* socket,
+                           AcceptResult* result) {
+  char buffer[32] = {};
+  alignas(16) unsigned char peer[hyle::io::UdpSocket::kSockaddrCap]{};
+  const auto deadline = hyle::time::deadline_after_ns(50'000'000ull);
+  result->rc.store(
+      co_await socket->recv_from_until(buffer, sizeof(buffer), peer, alloc,
+                                       deadline),
+      std::memory_order_release);
+  result->done.store(true, std::memory_order_release);
+  co_return 0;
+}
+}  // namespace
+
+TEST(IoTimeout, UdpReceiveTimesOut) {
+  constexpr unsigned kWorkers = 1;
+  constexpr std::uint16_t kPort = 54394;
+  Scheduler sched(kWorkers, system_allocator(), 256);
+  IoContext io(sched, kWorkers);
+  ASSERT_TRUE(io.valid());
+  auto socket = hyle::io::udp_bind(io, kOwner, "127.0.0.1", kPort);
+  ASSERT_TRUE(socket.valid());
+
+  auto result = std::make_unique<AcceptResult>();
+  auto drive = std::make_unique<Drive>();
+  drive->task =
+      udp_timeout_recv(system_allocator(), &socket, result.get());
+  Fiber fiber(kDefaultStackSize, &drive_entry, drive.get());
+  sched.spawn_on(kOwner, &fiber);
+  sched.drain();
+  sched.shutdown();
+
+  EXPECT_TRUE(result->done.load());
+  EXPECT_EQ(result->rc.load(), -110);
 }
 
 TEST(IoTimeout, TimeoutPathDoesNotLeakSlot) {

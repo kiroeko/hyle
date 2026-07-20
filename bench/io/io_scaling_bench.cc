@@ -28,7 +28,9 @@
 
 #include <nanobench.h>
 
+#include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <memory>
 #include <vector>
@@ -40,8 +42,11 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 
-#if defined(__linux__)
+#if !defined(_WIN32)
 #  include <sys/resource.h>
+#endif
+#if !defined(_WIN32)
+#  include <fcntl.h>
 #  include <sys/socket.h>
 #  include <unistd.h>
 #endif
@@ -70,11 +75,20 @@ struct Pair {
   std::intptr_t b = -1;
 };
 
-#if defined(__linux__)
+#if !defined(_WIN32)
 Pair make_pair() {
   int sv[2];
   Pair p;
   if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0) {
+    for (int fd : sv) {
+      const int flags = ::fcntl(fd, F_GETFL, 0);
+      if (flags < 0 || ::fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+        ::close(sv[0]);
+        ::close(sv[1]);
+        return p;
+      }
+      ::fcntl(fd, F_SETFD, FD_CLOEXEC);
+    }
     p.a = sv[0];
     p.b = sv[1];
   }
@@ -94,21 +108,43 @@ Pair make_pair() {
   sa.sin_family = AF_INET;
   sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
   sa.sin_port = 0;
-  ::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa));
-  ::listen(ls, 128);
+  if (::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) == SOCKET_ERROR ||
+      ::listen(ls, 128) == SOCKET_ERROR) {
+    ::closesocket(ls);
+    return p;
+  }
   int slen = sizeof(sa);
-  ::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen);
+  if (::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen) ==
+      SOCKET_ERROR) {
+    ::closesocket(ls);
+    return p;
+  }
   SOCKET c = ::WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
-  ::connect(c, reinterpret_cast<sockaddr*>(&sa), sizeof(sa));
+  if (c == INVALID_SOCKET ||
+      ::connect(c, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) ==
+          SOCKET_ERROR) {
+    if (c != INVALID_SOCKET) ::closesocket(c);
+    ::closesocket(ls);
+    return p;
+  }
   SOCKET s = ::accept(ls, nullptr, nullptr);
   ::closesocket(ls);
+  if (s == INVALID_SOCKET) {
+    ::closesocket(c);
+    return p;
+  }
   p.a = static_cast<std::intptr_t>(c);
   p.b = static_cast<std::intptr_t>(s);
   return p;
 }
 void close_pair(const Pair& p) {
-  if (p.a != -1) ::closesocket(static_cast<SOCKET>(p.a));
-  if (p.b != -1) ::closesocket(static_cast<SOCKET>(p.b));
+  linger reset{1, 0};
+  for (std::intptr_t fd : {p.a, p.b}) {
+    if (fd == -1) continue;
+    ::setsockopt(static_cast<SOCKET>(fd), SOL_SOCKET, SO_LINGER,
+                 reinterpret_cast<const char*>(&reset), sizeof(reset));
+    ::closesocket(static_cast<SOCKET>(fd));
+  }
 }
 #endif
 
@@ -122,13 +158,19 @@ struct Conn {
   std::uint32_t msg_len;
   std::vector<char> cbuf;
   std::vector<char> sbuf;
+  std::atomic<std::uint64_t>* completed;
 };
 
 Task<int> client_task(Allocator, Conn* c) {
   for (int i = 0; i < c->round_trips; ++i) {
-    std::int64_t w = co_await SendOp{&c->io->proactor_for_current(), c->client_fd,
-                                     c->cbuf.data(), c->msg_len};
-    if (w != static_cast<std::int64_t>(c->msg_len)) break;
+    std::uint32_t sent = 0;
+    while (sent < c->msg_len) {
+      std::int64_t w = co_await SendOp{
+          &c->io->proactor_for_current(), c->client_fd,
+          c->cbuf.data() + sent, c->msg_len - sent};
+      if (w <= 0) co_return 0;
+      sent += static_cast<std::uint32_t>(w);
+    }
     std::uint32_t got = 0;
     while (got < c->msg_len) {  // a large payload may arrive over several reads
       std::int64_t r = co_await RecvOp{&c->io->proactor_for_current(), c->client_fd,
@@ -136,6 +178,7 @@ Task<int> client_task(Allocator, Conn* c) {
       if (r <= 0) co_return 0;
       got += static_cast<std::uint32_t>(r);
     }
+    c->completed->fetch_add(1, std::memory_order_relaxed);
   }
   co_return 0;
 }
@@ -167,10 +210,12 @@ void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 
 // Run `conns` connections x `round_trips` echoes of `msg_len` bytes on `workers`
 // cores. Connections shard round-robin across workers. Returns after all complete.
-void run_echo(unsigned workers, int conns, int round_trips, std::uint32_t msg_len) {
+std::uint64_t run_echo(unsigned workers, int conns, int round_trips,
+                       std::uint32_t msg_len) {
   Scheduler sched(workers, system_allocator(), 8192);
   IoContext io(sched, workers);
 
+  std::atomic<std::uint64_t> completed{0};
   std::vector<Pair> pairs(conns);
   std::vector<std::unique_ptr<Conn>> cs;
   std::vector<std::unique_ptr<Drive>> drives;
@@ -188,14 +233,15 @@ void run_echo(unsigned workers, int conns, int round_trips, std::uint32_t msg_le
     c->msg_len = msg_len;
     c->cbuf.assign(msg_len, 'x');
     c->sbuf.assign(msg_len, 0);
+    c->completed = &completed;
     auto dc = std::make_unique<Drive>();
     auto ds = std::make_unique<Drive>();
     dc->task = client_task(system_allocator(), c.get());
     ds->task = server_task(system_allocator(), c.get());
-    auto fc = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, dc.get());
-    auto fs = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, ds.get());
+    auto fc =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, dc.get());
+    auto fs =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, ds.get());
     sched.spawn_on(owner, fs.get());
     sched.spawn_on(owner, fc.get());
     cs.push_back(std::move(c));
@@ -207,6 +253,7 @@ void run_echo(unsigned workers, int conns, int round_trips, std::uint32_t msg_le
   sched.drain();
   sched.shutdown();
   for (auto& p : pairs) close_pair(p);
+  return completed.load(std::memory_order_relaxed);
 }
 
 }  // namespace
@@ -216,7 +263,7 @@ int main() {
   WSADATA wsa;
   ::WSAStartup(MAKEWORD(2, 2), &wsa);
 #endif
-#if defined(__linux__)
+#if !defined(_WIN32)
   // The conn sweep needs up to 1024 conns = 2048 fds; the default soft RLIMIT_NOFILE
   // (often 1024) would silently make make_pair() fail past ~500 conns, and the failed
   // fds (-1) would run zero round-trips while still counting in the batch -> fabricated
@@ -245,12 +292,16 @@ int main() {
     constexpr int kRt = 64;  // round-trips PER connection, held constant across N
     nb::Bench b;
     b.title("io conn scaling: ns/round-trip vs #conns (proactor side O(1)/op)")
-        .unit("round-trip");
+        .unit("round-trip")
+        .minEpochIterations(1)
+        .epochs(5);
     for (int conns : {64, 256, 1024}) {
       char name[64];
       std::snprintf(name, sizeof(name), "conns=%d (rt/conn=%d)", conns, kRt);
       b.batch(static_cast<std::uint64_t>(conns) * kRt).run(name, [&] {
-        run_echo(1, conns, kRt, 64);
+        if (run_echo(1, conns, kRt, 64) !=
+            static_cast<std::uint64_t>(conns) * kRt)
+          std::abort();
       });
     }
   }
@@ -274,8 +325,13 @@ int main() {
       std::snprintf(name, sizeof(name), "payload=%uB", sz);
       // batch = total bytes moved (conns * rt * size) so nanobench reports bytes/s.
       b.batch(static_cast<std::uint64_t>(kConns) * kRt * sz)
-          .minEpochIterations(4)
-          .run(name, [&] { run_echo(1, kConns, kRt, sz); });
+          .minEpochIterations(1)
+          .epochs(5)
+          .run(name, [&] {
+            if (run_echo(1, kConns, kRt, sz) !=
+                static_cast<std::uint64_t>(kConns) * kRt)
+              std::abort();
+          });
     }
   }
 

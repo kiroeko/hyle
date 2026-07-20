@@ -29,6 +29,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <memory>
 #include <vector>
@@ -44,6 +45,8 @@
 #  define WIN32_LEAN_AND_MEAN
 #  define NOMINMAX
 #  include <winsock2.h>
+#else
+#  include <sys/resource.h>
 #endif
 
 using hyle::io::IoContext;
@@ -97,7 +100,7 @@ void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 // loop on worker 0, `conns` client fibers round-robin across workers. Returns after
 // all have connected + been accepted. Each call uses a fresh port to avoid colliding
 // with the still-draining TIME_WAIT sockets of the previous nanobench iteration.
-void run_accept(unsigned workers, int conns, std::uint16_t port) {
+int run_accept(unsigned workers, int conns, std::uint16_t port) {
   Scheduler sched(workers, system_allocator(), 8192);
   IoContext io(sched, workers);
 
@@ -109,14 +112,13 @@ void run_accept(unsigned workers, int conns, std::uint16_t port) {
   TcpListener ls = tcp_listen(io, 0, "127.0.0.1", port, conns);
   if (!ls.valid()) {  // port still in TIME_WAIT etc -> skip this iteration cleanly
     sched.shutdown();
-    return;
+    return -1;
   }
 
   std::atomic<int> accepted{0};
   auto da = std::make_unique<Drive>();
   da->task = accept_loop(system_allocator(), &ls, conns, workers, &accepted);
-  auto fa = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                    &drive_entry, da.get());
+  auto fa = std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, da.get());
   sched.spawn_on(0, fa.get());
 
   std::vector<std::unique_ptr<Drive>> cdrives;
@@ -127,8 +129,8 @@ void run_accept(unsigned workers, int conns, std::uint16_t port) {
     unsigned owner = static_cast<unsigned>(i) % workers;
     auto dc = std::make_unique<Drive>();
     dc->task = client_connect(system_allocator(), &io, owner, port);
-    auto fc = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, dc.get());
+    auto fc =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, dc.get());
     sched.spawn_on(owner, fc.get());
     cdrives.push_back(std::move(dc));
     cfibers.push_back(std::move(fc));
@@ -136,6 +138,7 @@ void run_accept(unsigned workers, int conns, std::uint16_t port) {
 
   sched.drain();
   sched.shutdown();
+  return accepted.load(std::memory_order_relaxed);
 }
 
 }  // namespace
@@ -144,6 +147,16 @@ int main() {
 #if defined(_WIN32)
   WSADATA wsa;
   ::WSAStartup(MAKEWORD(2, 2), &wsa);
+#else
+  // 1024 simultaneous clients + accepted peers need over 2048 descriptors.
+  // macOS commonly starts at a 256 soft limit; without lifting it, client
+  // creation fails while the server keeps awaiting connections that can never
+  // arrive, which looks like a kqueue hang.
+  rlimit rl;
+  if (::getrlimit(RLIMIT_NOFILE, &rl) == 0 && rl.rlim_cur < rl.rlim_max) {
+    rl.rlim_cur = rl.rlim_max;
+    ::setrlimit(RLIMIT_NOFILE, &rl);
+  }
 #endif
 
   // ---- accept scaling: accepts/s vs #conns (flat => O(1)/accept) ----
@@ -160,9 +173,12 @@ int main() {
     for (int conns : {64, 256, 1024}) {
       char name[64];
       std::snprintf(name, sizeof(name), "conns=%d", conns);
-      b.batch(static_cast<std::uint64_t>(conns)).minEpochIterations(3).run(name, [&] {
-        run_accept(kWorkers, conns, port++);  // ++ -> a new port each iteration
-      });
+      b.batch(static_cast<std::uint64_t>(conns))
+          .minEpochIterations(1)
+          .epochs(5)
+          .run(name, [&] {
+            if (run_accept(kWorkers, conns, port++) != conns) std::abort();
+          });
     }
   }
 

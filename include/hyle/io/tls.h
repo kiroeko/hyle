@@ -28,6 +28,7 @@
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/coro.h"
+#include "hyle/container/string_ref.h"
 
 #if defined(HYLE_STATIC)
 #  define HYLE_IO_API
@@ -66,6 +67,10 @@ class TlsContext {
   static HYLE_IO_API TlsContext server(const char* cert_pem_path,
                                        const char* key_pem_path) noexcept;
 
+  // Advertise/select HTTP/2 through TLS ALPN. With allow_http1=true the list is
+  // "h2, http/1.1" (h2 preferred); false makes the context HTTP/2-only.
+  HYLE_IO_API bool enable_http2(bool allow_http1 = true) noexcept;
+
  private:
   explicit TlsContext(ssl_ctx_st* ctx) noexcept : ctx_(ctx) {}
   ssl_ctx_st* ctx_ = nullptr;
@@ -84,8 +89,11 @@ class TlsStream {
   // Wraps `sock` (ownership moved in) with a new SSL from `ctx`. `is_server`
   // selects accept vs connect state. Invalid (valid()==false) on allocation
   // failure. Does NOT handshake yet -- co_await handshake() does that.
-  HYLE_IO_API TlsStream(TcpStream sock, const TlsContext& ctx,
-                        bool is_server) noexcept;
+  // A verifying client MUST provide `server_name`: it is used for both SNI and
+  // certificate hostname/IP matching. It may be null only for a server stream or
+  // a client context explicitly configured with SSL_VERIFY_NONE.
+  HYLE_IO_API TlsStream(TcpStream sock, const TlsContext& ctx, bool is_server,
+                        const char* server_name = nullptr) noexcept;
   HYLE_IO_API ~TlsStream();
   HYLE_IO_API TlsStream(TlsStream&& o) noexcept;
   HYLE_IO_API TlsStream& operator=(TlsStream&& o) noexcept;
@@ -93,6 +101,9 @@ class TlsStream {
 
   bool valid() const noexcept { return ssl_ != nullptr; }
   unsigned owner_worker() const noexcept { return sock_.owner_worker(); }
+  // Borrowed view into SSL state, valid for this stream's lifetime. Empty before
+  // a successful handshake or when the peer did not negotiate ALPN.
+  HYLE_IO_API container::string_ref negotiated_protocol() const noexcept;
 
   // The co_await operations are FREE FUNCTIONS taking (mem::Allocator, TlsStream&),
   // not member coroutines. A coroutine's frame is allocated by its promise's

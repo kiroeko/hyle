@@ -8,6 +8,7 @@
 #include "hyle/io/io_context.h"
 #include "hyle/io/net_cancel.h"
 #include "hyle/io/tcp.h"
+#include "hyle/io/udp.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/cancel.h"
 #include "hyle/sched/coro.h"
@@ -84,8 +85,8 @@ Task<int> cancel_client(Allocator alloc, IoContext* io, CancelResult* r,
   char buf[64] = {};
   // A cancellable recv bound to the request token. The server never sends, so only
   // a token cancel can unblock it (-ECANCELED).
-  std::int64_t rc = co_await CancelRecvOp{&io->proactor_for_current(), s.fd(), buf,
-                                          sizeof(buf), r->tok};
+  std::int64_t rc =
+      co_await s.read_cancel(buf, sizeof(buf), r->tok);
   r->recv_rc.store(rc, std::memory_order_release);
   r->done.store(true, std::memory_order_release);
   co_return 0;
@@ -190,4 +191,42 @@ TEST(NetCancel, AlreadyCancelledRecvReturnsCancelledImmediately) {
 
   EXPECT_TRUE(r->done.load());
   EXPECT_EQ(r->rc.load(), hyle::io::kCancelled);  // short-circuited, no ring op
+}
+
+namespace {
+Task<int> precancel_udp_send(Allocator, hyle::io::UdpSocket* socket,
+                             PrecancelResult* result, CancelToken* token) {
+  alignas(16) unsigned char address[128]{};
+  std::uint32_t address_length = 0;
+  resolve_addr("127.0.0.1", 54482, address, &address_length);
+  static const char message[] = "cancelled";
+  result->rc.store(
+      co_await socket->send_to_cancel(message, sizeof(message), address,
+                                      address_length, token),
+      std::memory_order_release);
+  result->done.store(true, std::memory_order_release);
+  co_return 0;
+}
+}  // namespace
+
+TEST(NetCancel, AlreadyCancelledUdpSendReturnsCancelledImmediately) {
+  Scheduler sched(1, system_allocator(), 256);
+  IoContext io(sched, 1);
+  ASSERT_TRUE(io.valid());
+  auto socket = hyle::io::udp_socket(io, kOwner);
+  ASSERT_TRUE(socket.valid());
+  CancelToken token = CancelToken::root(system_allocator());
+  token.cancel();
+
+  auto result = std::make_unique<PrecancelResult>();
+  auto drive = std::make_unique<Drive>();
+  drive->task = precancel_udp_send(system_allocator(), &socket, result.get(),
+                                   &token);
+  Fiber fiber(kDefaultStackSize, &drive_entry, drive.get());
+  sched.spawn_on(kOwner, &fiber);
+  sched.drain();
+  sched.shutdown();
+
+  EXPECT_TRUE(result->done.load());
+  EXPECT_EQ(result->rc.load(), hyle::io::kCancelled);
 }

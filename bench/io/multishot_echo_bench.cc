@@ -34,6 +34,7 @@
 #include <nanobench.h>
 
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -159,8 +160,8 @@ int run(bool use_multishot) {
   dsrv->task = use_multishot ? srv_multishot(system_allocator(), &sh)
                              : srv_oneshot(system_allocator(), &sh);
   dcli->task = client(system_allocator(), &sh);
-  Fiber fsrv(system_allocator(), kDefaultStackSize, &drive_entry, dsrv.get());
-  Fiber fcli(system_allocator(), kDefaultStackSize, &drive_entry, dcli.get());
+  Fiber fsrv(kDefaultStackSize, &drive_entry, dsrv.get());
+  Fiber fcli(kDefaultStackSize, &drive_entry, dcli.get());
   sched.spawn_on(0, &fsrv);  // server armed first
   sched.spawn_on(0, &fcli);
   sched.drain();
@@ -175,15 +176,32 @@ int main() {
   int ms = run(true), os = run(false);
   std::fprintf(stderr, "[smoke] multishot echoed=%d  one-shot echoed=%d (expect %d; -1=skip)\n",
                ms, os, kMsgs);
+  if (ms == -1) {
+    std::fprintf(stderr,
+                 "[skip] active backend lacks provided-buffer multishot recv\n");
+    return 0;
+  }
+  if (ms != kMsgs || os != kMsgs) {
+    std::fprintf(stderr, "[fail] smoke completed unequal work\n");
+    return 1;
+  }
   const std::uint64_t batch = static_cast<std::uint64_t>(kMsgs);
   ankerl::nanobench::Bench b;
   b.title("io zero-copy echo: 2000 datagrams x 64B (multishot ring-send vs one-shot copy)")
-      .relative(true).batch(batch).unit("echo").minEpochIterations(3);
-  b.run("HYLE multishot zero-copy (send from ring buffer)", [&]{ run(true); });
-  b.run("HYLE one-shot copy (recv into buffer, send from it)", [&]{ run(false); });
+      .relative(true)
+      .batch(batch)
+      .unit("echo")
+      .minEpochIterations(1)
+      .epochs(5);
+  b.run("HYLE multishot zero-copy (send from ring buffer)",
+        [&] { if (run(true) != kMsgs) std::abort(); });
+  b.run("HYLE one-shot copy (recv into buffer, send from it)",
+        [&] { if (run(false) != kMsgs) std::abort(); });
   return 0;
 }
 #else
+}  // namespace
+
 int main() {
   std::fprintf(stderr, "multishot echo bench: Linux/io_uring only -- skipped\n");
   return 0;

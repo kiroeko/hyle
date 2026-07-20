@@ -1,8 +1,10 @@
 #include "hyle/io/proactor.h"
 
+#include <limits>
 #include <new>
 #include <vector>
 
+#include "hyle/container/swiss_table.h"
 #include "hyle/macros.h"
 #include "hyle/platform.h"
 
@@ -91,6 +93,28 @@ struct Proactor::Impl {
     alignas(16) char addr_buf[2 * (sizeof(SOCKADDR_STORAGE) + 16)] = {};
   };
   IoOp* inflight = nullptr;  // intrusive doubly-linked list of in-flight ops
+  IoOp* free_ops = nullptr;  // owner-thread cache: no per-I/O heap churn
+
+  IoOp* acquire() noexcept {
+    if (free_ops != nullptr) {
+      IoOp* op = free_ops;
+      free_ops = free_ops->next;
+      *op = IoOp{};
+      return op;
+    }
+    return new (std::nothrow) IoOp{};
+  }
+  void recycle(IoOp* op) noexcept {
+    op->next = free_ops;
+    free_ops = op;
+  }
+  void release_cache() noexcept {
+    while (free_ops != nullptr) {
+      IoOp* op = free_ops;
+      free_ops = free_ops->next;
+      delete op;
+    }
+  }
 
   void link(IoOp* op) noexcept {
     op->prev = nullptr;
@@ -124,28 +148,24 @@ Proactor::~Proactor() {
   while (impl_->inflight != nullptr) {
     ULONG removed = 0;
     BOOL ok = ::GetQueuedCompletionStatusEx(impl_->port, ents, 64, &removed,
-                                            1000, FALSE);
-    if (!ok || removed == 0) break;  // timed out -> stop (don't hang teardown)
+                                            INFINITE, FALSE);
+    if (!ok) break;  // broken/closed port: preserve residual IoOps below
     for (ULONG i = 0; i < removed; ++i) {
       if (ents[i].lpOverlapped == nullptr) continue;  // a stray post(), ignore
       auto* op = reinterpret_cast<Impl::IoOp*>(ents[i].lpOverlapped);
       impl_->unlink(op);
       if (op->accept_sock != INVALID_SOCKET) ::closesocket(op->accept_sock);
-      delete op;
+      impl_->recycle(op);
     }
   }
-  // Free the port FIRST to sever the kernel's path to any residual OVERLAPPED,
-  // then free any op that never came back (unreachable in practice: a cancelled
-  // op's completion is always posted -- this only guards a wedged kernel so
-  // teardown can't hang or leak).
+  // A successfully-cancelled OVERLAPPED operation is guaranteed to enqueue its
+  // final completion, so the normal path reaches an empty list. Closing an IOCP
+  // does NOT make it safe to free an OVERLAPPED still owned by a device. If the
+  // port itself failed, leak those impossible-to-prove-retired IoOps rather than
+  // manufacture a teardown UAF.
   if (impl_->port != nullptr) ::CloseHandle(impl_->port);
-  for (Impl::IoOp* op = impl_->inflight; op != nullptr;) {
-    Impl::IoOp* nx = op->next;
-    if (op->accept_sock != INVALID_SOCKET) ::closesocket(op->accept_sock);
-    delete op;
-    op = nx;
-  }
   if (impl_->wsa_started) ::WSACleanup();
+  impl_->release_cache();
   delete impl_;
   impl_ = nullptr;
 }
@@ -169,6 +189,19 @@ bool Proactor::init(unsigned /*entries*/, bool /*defer_worker_thread*/) noexcept
   WSADATA wsa;
   if (::WSAStartup(MAKEWORD(2, 2), &wsa) == 0) impl_->wsa_started = true;
   return true;
+}
+
+BackendKind Proactor::backend_kind() const noexcept {
+  return impl_ != nullptr ? HYLE_IO_BACKEND_IOCP : HYLE_IO_BACKEND_NONE;
+}
+const char* Proactor::backend_name() const noexcept {
+  return impl_ != nullptr ? "iocp" : "none";
+}
+bool Proactor::has_async_file_data() const noexcept {
+  return impl_ != nullptr;
+}
+bool Proactor::has_async_file_metadata() const noexcept {
+  return false;
 }
 
 std::size_t Proactor::reap(Completion* out, std::size_t max,
@@ -226,7 +259,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       // result (fd/0/-errno) untouched -- no GetOverlappedResult (there was no
       // real overlapped IO). This is the open/close/statx/fsync/fallocate path.
       out[i].result = op->syn_result;
-      delete op;
+      impl_->recycle(op);
       continue;
     }
     DWORD xfer = 0;
@@ -274,7 +307,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
                           op->user_data, /*multishot=*/true))
         out[i].flags |= Completion::kMore;
     }
-    delete op;
+    impl_->recycle(op);
   }
   return static_cast<std::size_t>(removed);
 }
@@ -292,9 +325,9 @@ bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   // byte count); anything needing a negative/64-bit outcome must NOT go through
   // post() -- a real op carries its int64 result via GetOverlappedResult/neg_err,
   // and the io-05 file path uses a 64-bit syn_result IoOp instead. Assert the
-  // contract so a future negative-post caller is caught at once rather than
-  // silently mangled (post is a wake/synthetic path, not a per-op hot path).
-  HYLE_FATAL_ASSERT(result >= 0 && result <= 0xFFFFFFFFll);
+  // contract at runtime so an untrusted C caller cannot turn a range mistake
+  // into process termination or silent truncation.
+  if (result < 0 || result > 0xFFFFFFFFll) return false;
   return ::PostQueuedCompletionStatus(
              impl_->port,
              static_cast<DWORD>(static_cast<std::uint64_t>(result)),
@@ -326,7 +359,7 @@ bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
                            std::uint64_t offset,
                            std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
-  auto* op = new (std::nothrow) Impl::IoOp{};
+  auto* op = impl_->acquire();
   if (op == nullptr) return false;
   op->user_data = user_data;
   op->handle = reinterpret_cast<HANDLE>(fd);
@@ -339,7 +372,7 @@ bool Proactor::submit_read(std::intptr_t fd, void* buf, std::uint32_t len,
   // a synchronous failure that ISN'T "pending" means the op won't complete.
   if (ok || ::GetLastError() == ERROR_IO_PENDING) return true;
   impl_->unlink(op);
-  delete op;
+  impl_->recycle(op);
   return false;
 }
 
@@ -347,7 +380,7 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf,
                             std::uint32_t len, std::uint64_t offset,
                             std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
-  auto* op = new (std::nothrow) Impl::IoOp{};
+  auto* op = impl_->acquire();
   if (op == nullptr) return false;
   op->user_data = user_data;
   op->handle = reinterpret_cast<HANDLE>(fd);
@@ -358,7 +391,7 @@ bool Proactor::submit_write(std::intptr_t fd, const void* buf,
   BOOL ok = ::WriteFile(op->handle, buf, len, nullptr, &op->ov);
   if (ok || ::GetLastError() == ERROR_IO_PENDING) return true;
   impl_->unlink(op);
-  delete op;
+  impl_->recycle(op);
   return false;
 }
 
@@ -366,7 +399,7 @@ bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
                            std::uint32_t flags,
                            std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
-  auto* op = new (std::nothrow) Impl::IoOp{};
+  auto* op = impl_->acquire();
   if (op == nullptr) return false;
   op->user_data = user_data;
   op->handle = reinterpret_cast<HANDLE>(fd);
@@ -379,7 +412,7 @@ bool Proactor::submit_recv(std::intptr_t fd, void* buf, std::uint32_t len,
                     &op->ov, nullptr);
   if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
   impl_->unlink(op);
-  delete op;
+  impl_->recycle(op);
   return false;
 }
 
@@ -387,7 +420,7 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
                            std::uint32_t flags,
                            std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
-  auto* op = new (std::nothrow) Impl::IoOp{};
+  auto* op = impl_->acquire();
   if (op == nullptr) return false;
   op->user_data = user_data;
   op->handle = reinterpret_cast<HANDLE>(fd);
@@ -399,7 +432,7 @@ bool Proactor::submit_send(std::intptr_t fd, const void* buf, std::uint32_t len,
                     &op->ov, nullptr);
   if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
   impl_->unlink(op);
-  delete op;
+  impl_->recycle(op);
   return false;
 }
 
@@ -423,7 +456,7 @@ bool Proactor::iocp_arm_accept(Impl* impl, std::intptr_t fd,
     fam = ss.ss_family;
   SOCKET as = ::WSASocketW(fam, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
   if (as == INVALID_SOCKET) return false;
-  auto* op = new (std::nothrow) Proactor::Impl::IoOp{};
+  auto* op = impl->acquire();
   if (op == nullptr) {
     ::closesocket(as);
     return false;
@@ -440,7 +473,7 @@ bool Proactor::iocp_arm_accept(Impl* impl, std::intptr_t fd,
   if (ok || ::WSAGetLastError() == WSA_IO_PENDING) return true;
   impl->unlink(op);
   ::closesocket(as);
-  delete op;
+  impl->recycle(op);
   return false;
 }
 
@@ -478,7 +511,7 @@ bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
     any.sin_family = AF_INET;
     ::bind(s, reinterpret_cast<sockaddr*>(&any), sizeof(any));
   }
-  auto* op = new (std::nothrow) Impl::IoOp{};
+  auto* op = impl_->acquire();
   if (op == nullptr) return false;
   op->user_data = user_data;
   op->handle = reinterpret_cast<HANDLE>(fd);
@@ -489,7 +522,7 @@ bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
                              &op->ov);
   if (ok || ::WSAGetLastError() == WSA_IO_PENDING) return true;
   impl_->unlink(op);
-  delete op;
+  impl_->recycle(op);
   return false;
 }
 
@@ -498,7 +531,7 @@ bool Proactor::submit_recvfrom(std::intptr_t fd, void* buf, std::uint32_t len,
                                void* /*scratch*/,
                                std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
-  auto* op = new (std::nothrow) Impl::IoOp{};
+  auto* op = impl_->acquire();
   if (op == nullptr) return false;
   op->user_data = user_data;
   op->handle = reinterpret_cast<HANDLE>(fd);
@@ -516,7 +549,7 @@ bool Proactor::submit_recvfrom(std::intptr_t fd, void* buf, std::uint32_t len,
                         addr ? &op->fromlen : nullptr, &op->ov, nullptr);
   if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
   impl_->unlink(op);
-  delete op;
+  impl_->recycle(op);
   return false;
 }
 
@@ -525,7 +558,7 @@ bool Proactor::submit_sendto(std::intptr_t fd, const void* buf, std::uint32_t le
                              void* /*scratch*/,
                              std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
-  auto* op = new (std::nothrow) Impl::IoOp{};
+  auto* op = impl_->acquire();
   if (op == nullptr) return false;
   op->user_data = user_data;
   op->handle = reinterpret_cast<HANDLE>(fd);
@@ -538,7 +571,7 @@ bool Proactor::submit_sendto(std::intptr_t fd, const void* buf, std::uint32_t le
                       static_cast<int>(addrlen), &op->ov, nullptr);
   if (r == 0 || ::WSAGetLastError() == WSA_IO_PENDING) return true;
   impl_->unlink(op);
-  delete op;
+  impl_->recycle(op);
   return false;
 }
 
@@ -559,7 +592,7 @@ bool Proactor::register_handle(std::intptr_t fd) noexcept {
 // the same reactor->completion synthesis epoll uses for accept/connect.
 bool Proactor::iocp_post_meta(Impl* impl, std::int64_t result,
                               std::uint64_t user_data) noexcept {
-  auto* op = new (std::nothrow) Impl::IoOp{};
+  auto* op = impl->acquire();
   if (op == nullptr) return false;
   op->user_data = user_data;
   op->kind = Impl::kFileMeta;
@@ -569,7 +602,7 @@ bool Proactor::iocp_post_meta(Impl* impl, std::int64_t result,
   // (a null OVERLAPPED is a bare wake/post). Zero bytes / key -- reap uses kind.
   if (::PostQueuedCompletionStatus(impl->port, 0, 0, &op->ov) != 0) return true;
   impl->unlink(op);
-  delete op;
+  impl->recycle(op);
   return false;
 }
 
@@ -648,6 +681,12 @@ bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t /*mode*/,
                                 std::uint64_t offset, std::uint64_t len,
                                 std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  constexpr auto kMaxOffset =
+      static_cast<std::uint64_t>((std::numeric_limits<LONGLONG>::max)());
+  if (len > kMaxOffset || offset > kMaxOffset - len)
+    return iocp_post_meta(
+        impl_, -static_cast<std::int64_t>(ERROR_ARITHMETIC_OVERFLOW),
+        user_data);
   // Windows equivalent: seek to offset+len and SetEndOfFile to extend/allocate.
   // (No sparse/keep-size mode distinction -- mode is ignored, as documented.)
   HANDLE h = reinterpret_cast<HANDLE>(fd);
@@ -686,6 +725,9 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 }
 
 
+bool Proactor::register_buf_ring(int, unsigned, unsigned) noexcept {
+  return false;
+}
 bool Proactor::submit_recv_multishot(std::intptr_t, int,
                                      std::uint64_t) noexcept {
   return false;
@@ -735,7 +777,6 @@ bool Proactor::submit_close_direct(int, std::uint64_t) noexcept { return false; 
 #  include <cstdio>
 #  include <cstdlib>
 #  include <cstring>
-#  include <unordered_map>
 #  include <vector>
 
 namespace hyle::io {
@@ -893,8 +934,10 @@ struct Proactor::Impl {
   // Split by direction so read+write on ONE fd coexist. A fd may appear in both.
   // The registered epoll event mask for an fd is the UNION of whichever sides are
   // armed (EPOLLIN|EPOLLOUT when both), all under EPOLLONESHOT.
-  std::unordered_map<int, PendingOp> pending_in;   // EPOLLIN side (recv/accept/recvfrom)
-  std::unordered_map<int, PendingOp> pending_out;  // EPOLLOUT side (send/connect/sendto)
+  // Flat HYLE SwissTables keep the readiness hot path allocation-free between
+  // growths and make io/ a real consumer of container/'s SIMD control-byte probe.
+  container::SwissTable<int, PendingOp> pending_in{mem::system_allocator()};
+  container::SwissTable<int, PendingOp> pending_out{mem::system_allocator()};
   // post() has no fd (a bare wake token) and epoll has no
   // PostQueuedCompletionStatus, so injected wakes queue here; reap drains them
   // first. std in the .cc impl is allowed (conventions §1: internal, non-hot).
@@ -1126,7 +1169,7 @@ Proactor::Impl* Proactor::try_init_uring(unsigned entries,
 }
 
 // Stand up the epoll fallback backend (reactor). Returns nullptr on failure.
-Proactor::Impl* Proactor::try_init_epoll() noexcept {
+Proactor::Impl* Proactor::try_init_epoll(unsigned entries) noexcept {
   int ep = ::epoll_create1(EPOLL_CLOEXEC);
   if (ep < 0) return nullptr;
   auto* impl = new (std::nothrow) Proactor::Impl{};
@@ -1136,6 +1179,12 @@ Proactor::Impl* Proactor::try_init_epoll() noexcept {
   }
   impl->backend = Proactor::Impl::kEpoll;
   impl->epfd = ep;
+  if (!impl->pending_in.reserve(entries) ||
+      !impl->pending_out.reserve(entries)) {
+    delete impl;
+    ::close(ep);
+    return nullptr;
+  }
   // Cross-thread wake channel (park merge), epoll flavour: a persistent (level-
   // triggered, NO EPOLLONESHOT) eventfd in the watch set. wake() writes it; the
   // blocking epoll_wait returns; reap drains it (re-reads to reset the counter,
@@ -1169,10 +1218,29 @@ bool Proactor::init(unsigned entries, bool defer_worker_thread) noexcept {
     }
     // io_uring unavailable -> fall through to epoll (the whole point of io-03).
   }
-  Impl* e = try_init_epoll();
+  Impl* e = try_init_epoll(entries);
   if (e == nullptr) return false;
   impl_ = e;
   return true;
+}
+
+BackendKind Proactor::backend_kind() const noexcept {
+  if (impl_ == nullptr) return HYLE_IO_BACKEND_NONE;
+  return impl_->backend == Impl::kUring ? HYLE_IO_BACKEND_IO_URING
+                                        : HYLE_IO_BACKEND_EPOLL;
+}
+const char* Proactor::backend_name() const noexcept {
+  if (impl_ == nullptr) return "none";
+  return impl_->backend == Impl::kUring ? "io_uring" : "epoll";
+}
+bool Proactor::has_async_file_data() const noexcept {
+  return impl_ != nullptr && impl_->backend == Impl::kUring;
+}
+bool Proactor::has_async_file_metadata() const noexcept {
+  // open/close/fsync/fallocate are native SQEs, but stat currently uses fstat +
+  // a synthesized completion, so the metadata surface as a whole is not fully
+  // asynchronous yet.
+  return false;
 }
 
 std::size_t Proactor::reap(Completion* out, std::size_t max,
@@ -1216,7 +1284,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
         ssize_t w = ::write(fd, op.buf, op.len);
         return (w < 0) ? -errno : static_cast<std::int64_t>(w);
       } else if (op.opcode == IORING_OP_ACCEPT) {
-        int as = ::accept(fd, nullptr, nullptr);
+        int as = ::accept4(fd, nullptr, nullptr, SOCK_NONBLOCK | SOCK_CLOEXEC);
         return (as < 0) ? -errno : static_cast<std::int64_t>(as);
       } else if (op.opcode == IORING_OP_CONNECT) {
         int soerr = 0;
@@ -1274,13 +1342,12 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
 
       // ---- read-side (recv/accept/recvfrom) ----
       if (rd_ready && n < max) {
-        auto it = impl_->pending_in.find(fd);
-        if (it != impl_->pending_in.end()) {
-          Impl::PendingOp op = it->second;
-          impl_->pending_in.erase(it);
+        if (Impl::PendingOp* pending = impl_->pending_in.find(fd)) {
+          Impl::PendingOp op = *pending;
+          impl_->pending_in.erase(fd);
           std::int64_t res = perform(fd, op);
           if (is_spurious(res)) {
-            impl_->pending_in[fd] = op;  // false alarm: re-watch, deliver nothing
+            impl_->pending_in.insert(fd, op);  // false alarm: re-watch, deliver nothing
           } else {
             out[n].user_data = op.user_data;
             out[n].result = res;
@@ -1291,7 +1358,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
             // caller waiting for a stream that ended; matches IOCP). We re-insert into
             // pending_in and let the unified re-arm below register the fd's watch.
             if (op.multishot && res >= 0) {
-              impl_->pending_in[fd] = op;  // keep multishot for the next delivery
+              impl_->pending_in.insert(fd, op);  // keep multishot for next delivery
               out[n].flags |= Completion::kMore;
               multishot_rearmed = true;
             }
@@ -1301,13 +1368,12 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       }
       // ---- write-side (send/connect/sendto) ----
       if (wr_ready && n < max) {
-        auto it = impl_->pending_out.find(fd);
-        if (it != impl_->pending_out.end()) {
-          Impl::PendingOp op = it->second;
-          impl_->pending_out.erase(it);
+        if (Impl::PendingOp* pending = impl_->pending_out.find(fd)) {
+          Impl::PendingOp op = *pending;
+          impl_->pending_out.erase(fd);
           std::int64_t res = perform(fd, op);
           if (is_spurious(res)) {
-            impl_->pending_out[fd] = op;  // false alarm: re-watch, deliver nothing
+            impl_->pending_out.insert(fd, op);  // false alarm: re-watch, deliver nothing
           } else {
             out[n].user_data = op.user_data;
             out[n].result = res;
@@ -1322,8 +1388,8 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       // fd. If the re-arm MOD fails, the stranded side's fiber would hang -- but a
       // MOD on a live epfd+fd effectively never fails; DEL-on-empty is the norm.
       unsigned mask = 0;
-      if (impl_->pending_in.count(fd) != 0) mask |= EPOLLIN;
-      if (impl_->pending_out.count(fd) != 0) mask |= EPOLLOUT;
+      if (impl_->pending_in.contains(fd)) mask |= EPOLLIN;
+      if (impl_->pending_out.contains(fd)) mask |= EPOLLOUT;
       if (mask != 0) {
         epoll_event rev{};
         rev.events = mask | EPOLLONESHOT;
@@ -1600,23 +1666,12 @@ bool submit_one(int ring_fd, unsigned sq_entries, unsigned* sq_pending,
 
 bool Proactor::post(std::uint64_t user_data, std::int64_t result) noexcept {
   if (impl_ == nullptr) return false;
-  if (impl_->backend == Impl::kEpoll) {
-    // epoll has no PostQueuedCompletionStatus: queue a software completion that
-    // reap() drains first. (Single-threaded per-worker use; cross-thread post to
-    // an epoll proactor is not the model -- io_uring/IOCP are the MT-wake paths.)
-    impl_->posted.push_back({user_data, result});
-    return true;
-  }
-  // NOP SQE carrying user_data: the cross-thread wake / inject hook. Unlike the
-  // batched submit_* ops (flushed by the worker's drain reap), post MUST enter
-  // NOW: it wakes a reap() blocked on ANOTHER thread, which cannot flush this
-  // SQE for us. Enter submits all pending SQEs (this NOP + any batched).
-  (void)result;
-  submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
-             impl_->sq_array, impl_->sqes, IORING_OP_NOP, -1, 0, 0, 0, user_data);
-  int r = sys_io_uring_enter(impl_->fd, impl_->sq_pending, 0, 0, nullptr, 0);
-  impl_->sq_pending = 0;
-  return r >= 0;
+  // post() is owner-thread-only; wake() is the cross-thread primitive. Keep the
+  // synthetic completion in user space for BOTH io_uring and epoll so its signed
+  // 64-bit result is preserved. An io_uring NOP CQE always reports res=0, which
+  // previously discarded `result` and made the Linux C ABI differ from IOCP.
+  impl_->posted.push_back({user_data, result});
+  return true;
 }
 
 bool Proactor::wake() noexcept {
@@ -1653,14 +1708,20 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
   auto& side = is_read ? impl->pending_in : impl->pending_out;
   auto& other = is_read ? impl->pending_out : impl->pending_in;
   // Was this fd already registered with epoll (either side armed) before us?
-  const bool fd_already_watched =
-      impl->pending_in.count(fd) != 0 || impl->pending_out.count(fd) != 0;
-  side[fd] = Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap};
+  const bool side_pending = side.contains(fd);
+  const bool other_pending = other.contains(fd);
+  const bool fd_already_watched = side_pending || other_pending;
+  // A readiness backend can keep exactly one operation per fd+direction.
+  // Replacing it would orphan the first awaiter forever. Make possible table
+  // growth explicit as well, so OOM returns submit=false instead of reaching
+  // SwissTable's infallible-insert assertion inside this noexcept API.
+  if (side_pending || !side.try_prepare_insert()) return false;
+  side.insert(fd, Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap});
 
   epoll_event ev{};
   // Union of armed directions: our side + whatever the other side already has.
   ev.events = events | EPOLLONESHOT;
-  if (other.count(fd) != 0) ev.events |= is_read ? EPOLLOUT : EPOLLIN;
+  if (other_pending) ev.events |= is_read ? EPOLLOUT : EPOLLIN;
   ev.data.u64 = static_cast<std::uint64_t>(fd);
   const int op_ctl = fd_already_watched ? EPOLL_CTL_MOD : EPOLL_CTL_ADD;
   if (::epoll_ctl(impl->epfd, op_ctl, fd, &ev) < 0) {
@@ -1980,6 +2041,7 @@ bool Proactor::submit_accept_direct(std::intptr_t fd,
   std::memset(&s, 0, sizeof(s));
   s.opcode = IORING_OP_ACCEPT;
   s.fd = static_cast<std::int32_t>(fd);
+  s.accept_flags = SOCK_NONBLOCK | SOCK_CLOEXEC;
   s.file_index = IORING_FILE_INDEX_ALLOC;  // kernel picks a free slot
   s.user_data = user_data;
   impl_->sq_array[index] = index;
@@ -2066,7 +2128,8 @@ bool Proactor::submit_accept(std::intptr_t fd, void* addr, void* addrlen,
                     impl_->sq_array, impl_->sqes, IORING_OP_ACCEPT,
                     static_cast<std::int32_t>(fd),
                     reinterpret_cast<std::uint64_t>(addr), 0,
-                    reinterpret_cast<std::uint64_t>(addrlen), user_data);
+                    reinterpret_cast<std::uint64_t>(addrlen), user_data,
+                    /*op_flags=*/SOCK_NONBLOCK | SOCK_CLOEXEC);
 }
 
 bool Proactor::submit_accept_multishot(std::intptr_t fd,
@@ -2080,7 +2143,7 @@ bool Proactor::submit_accept_multishot(std::intptr_t fd,
     if (!epoll_arm(impl_, static_cast<int>(fd), EPOLLIN, IORING_OP_ACCEPT,
                    nullptr, 0, user_data))
       return false;
-    impl_->pending_in[static_cast<int>(fd)].multishot = true;  // accept = read-side
+    impl_->pending_in.find(static_cast<int>(fd))->multishot = true;  // read-side
     return true;
   }
   // io_uring native: IORING_OP_ACCEPT with IORING_ACCEPT_MULTISHOT in ioprio.
@@ -2090,7 +2153,8 @@ bool Proactor::submit_accept_multishot(std::intptr_t fd,
   return submit_one(impl_->fd, impl_->sq_entries, &impl_->sq_pending, &impl_->inflight, impl_->sq_tail, *impl_->sq_ring_mask,
                     impl_->sq_array, impl_->sqes, IORING_OP_ACCEPT,
                     static_cast<std::int32_t>(fd), 0, 0, 0, user_data,
-                    /*op_flags=*/0, /*ioprio=*/IORING_ACCEPT_MULTISHOT);
+                    /*op_flags=*/SOCK_NONBLOCK | SOCK_CLOEXEC,
+                    /*ioprio=*/IORING_ACCEPT_MULTISHOT);
 }
 
 bool Proactor::submit_connect(std::intptr_t fd, const void* addr,
@@ -2187,7 +2251,7 @@ bool Proactor::register_handle(std::intptr_t /*fd*/) noexcept {
 // Map neutral OpenFlags onto POSIX O_* for openat.
 namespace {
 int open_flags_to_posix(std::uint32_t flags) noexcept {
-  int f = 0;
+  int f = O_CLOEXEC;
   const bool rd = (flags & Proactor::kRead) != 0;
   const bool wr = (flags & Proactor::kWrite) != 0;
   if (rd && wr) f = O_RDWR;
@@ -2284,6 +2348,12 @@ bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t mode,
                                 std::uint64_t offset, std::uint64_t len,
                                 std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  const auto max_offset =
+      static_cast<std::uint64_t>((std::numeric_limits<off_t>::max)());
+  if (len > max_offset || offset > max_offset - len) {
+    impl_->posted.push_back({user_data, -EOVERFLOW});
+    return true;
+  }
   if (impl_->backend == Impl::kEpoll) {
     int r = ::posix_fallocate(static_cast<int>(fd),
                               static_cast<off_t>(offset),
@@ -2317,15 +2387,17 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
     // Find the armed op carrying target_user_data in either direction, drop it, and
     // re-arm the fd for the OTHER side if it is still pending (full-duplex, L3) --
     // else DEL the fd. Then synthesize a -ECANCELED completion (see below).
-    auto try_cancel = [&](std::unordered_map<int, Impl::PendingOp>& side) -> bool {
-      for (auto it = side.begin(); it != side.end(); ++it) {
-        if (it->second.user_data != target_user_data) continue;
-        int fd = it->first;
-        side.erase(it);
+    auto try_cancel = [&](auto& side) -> bool {
+      int fd = -1;
+      side.for_each([&](const int& candidate, const Impl::PendingOp& op) {
+        if (fd < 0 && op.user_data == target_user_data) fd = candidate;
+      });
+      if (fd >= 0) {
+        side.erase(fd);
         // Re-arm for whatever remains on this fd (the other direction), else DEL.
         unsigned mask = 0;
-        if (impl_->pending_in.count(fd) != 0) mask |= EPOLLIN;
-        if (impl_->pending_out.count(fd) != 0) mask |= EPOLLOUT;
+        if (impl_->pending_in.contains(fd)) mask |= EPOLLIN;
+        if (impl_->pending_out.contains(fd)) mask |= EPOLLOUT;
         if (mask != 0) {
           epoll_event rev{};
           rev.events = mask | EPOLLONESHOT;
@@ -2398,7 +2470,6 @@ bool Proactor::submit_cancel(std::uint64_t target_user_data,
 #  include <cstdint>
 #  include <cstring>
 #  include <ctime>
-#  include <unordered_map>
 #  include <vector>
 
 namespace hyle::io {
@@ -2468,8 +2539,8 @@ struct Proactor::Impl {
   };
   // Split by direction so read+write on ONE fd coexist as INDEPENDENT kqueue filters
   // (unlike epoll's single union registration -- see the block header note).
-  std::unordered_map<int, PendingOp> pending_in;   // EVFILT_READ side
-  std::unordered_map<int, PendingOp> pending_out;  // EVFILT_WRITE side
+  container::SwissTable<int, PendingOp> pending_in{mem::system_allocator()};
+  container::SwissTable<int, PendingOp> pending_out{mem::system_allocator()};
   // post() has no fd (a bare wake token) and there is no kqueue "inject completion",
   // so injected wakes + synchronously-synthesized file-op results queue here; reap
   // drains them first. std in the .cc impl is allowed (conventions §1: non-hot).
@@ -2490,7 +2561,7 @@ Proactor::~Proactor() {
 // Stand up the kqueue backend (reactor). Named try_init_epoll to reuse the header's
 // private-static declaration (it names the private Impl, which a free function can't).
 // Returns nullptr on failure. Mirror of the Linux try_init_epoll.
-Proactor::Impl* Proactor::try_init_epoll() noexcept {
+Proactor::Impl* Proactor::try_init_epoll(unsigned entries) noexcept {
   int kq = ::kqueue();
   if (kq < 0) return nullptr;
   ::fcntl(kq, F_SETFD, FD_CLOEXEC);  // kqueue() has no CLOEXEC flag; set it explicitly
@@ -2500,6 +2571,12 @@ Proactor::Impl* Proactor::try_init_epoll() noexcept {
     return nullptr;
   }
   impl->kq = kq;
+  if (!impl->pending_in.reserve(entries) ||
+      !impl->pending_out.reserve(entries)) {
+    delete impl;
+    ::close(kq);
+    return nullptr;
+  }
   // Cross-thread wake channel (park merge), kqueue flavour: a persistent EVFILT_USER
   // registered once. wake() fires it with NOTE_TRIGGER; the blocking kevent returns;
   // reap detects filter==EVFILT_USER and emits NO user completion (it only breaks the
@@ -2511,14 +2588,27 @@ Proactor::Impl* Proactor::try_init_epoll() noexcept {
   return impl;
 }
 
-bool Proactor::init(unsigned /*entries*/, bool /*defer_worker_thread*/) noexcept {
+bool Proactor::init(unsigned entries, bool /*defer_worker_thread*/) noexcept {
   if (impl_ != nullptr) return true;  // idempotent
   // No io_uring on macOS: kqueue is the only backend. (entries/defer are io_uring
   // ring-lifecycle knobs with no kqueue analogue -- ignored, like IOCP ignores them.)
-  Impl* k = try_init_epoll();
+  Impl* k = try_init_epoll(entries);
   if (k == nullptr) return false;
   impl_ = k;
   return true;
+}
+
+BackendKind Proactor::backend_kind() const noexcept {
+  return impl_ != nullptr ? HYLE_IO_BACKEND_KQUEUE : HYLE_IO_BACKEND_NONE;
+}
+const char* Proactor::backend_name() const noexcept {
+  return impl_ != nullptr ? "kqueue" : "none";
+}
+bool Proactor::has_async_file_data() const noexcept {
+  return false;
+}
+bool Proactor::has_async_file_metadata() const noexcept {
+  return false;
 }
 
 std::size_t Proactor::reap(Completion* out, std::size_t max,
@@ -2563,6 +2653,14 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       return (w < 0) ? -errno : static_cast<std::int64_t>(w);
     } else if (op.opcode == IORING_OP_ACCEPT) {
       int as = ::accept(fd, nullptr, nullptr);
+      if (as >= 0) {
+        const int flags = ::fcntl(as, F_GETFL, 0);
+        if (flags < 0 || ::fcntl(as, F_SETFL, flags | O_NONBLOCK) != 0) {
+          const int e = errno;
+          ::close(as);
+          return -e;
+        }
+      }
       return (as < 0) ? -errno : static_cast<std::int64_t>(as);
     } else if (op.opcode == IORING_OP_CONNECT) {
       int soerr = 0;
@@ -2623,15 +2721,14 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
 
     if (is_read_ev) {
       // ---- read-side (recv/accept/recvfrom) ----
-      auto it = impl_->pending_in.find(fd);
-      if (it != impl_->pending_in.end()) {
-        Impl::PendingOp op = it->second;
-        impl_->pending_in.erase(it);
+      if (Impl::PendingOp* pending = impl_->pending_in.find(fd)) {
+        Impl::PendingOp op = *pending;
+        impl_->pending_in.erase(fd);
         std::int64_t res = perform(fd, op);
         if (is_spurious(res)) {
           // False alarm: re-watch the read filter, deliver nothing. If the re-arm
           // fails (essentially never on a live kq+fd) the op is dropped, not leaked.
-          if (rearm(fd, EVFILT_READ)) impl_->pending_in[fd] = op;
+          if (rearm(fd, EVFILT_READ)) impl_->pending_in.insert(fd, op);
         } else {
           out[n].user_data = op.user_data;
           out[n].result = res;
@@ -2641,7 +2738,7 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
           // succeeded and the re-arm succeeds (a failed re-arm is terminal -- stamping
           // kMore would hang the caller waiting for a stream that ended; matches IOCP).
           if (op.multishot && res >= 0 && rearm(fd, EVFILT_READ)) {
-            impl_->pending_in[fd] = op;  // keep multishot for the next delivery
+            impl_->pending_in.insert(fd, op);  // keep multishot for next delivery
             out[n].flags |= Completion::kMore;
           }
           ++n;
@@ -2649,13 +2746,12 @@ std::size_t Proactor::reap(Completion* out, std::size_t max,
       }
     } else {
       // ---- write-side (send/connect/sendto) ---- (EVFILT_WRITE; no multishot)
-      auto it = impl_->pending_out.find(fd);
-      if (it != impl_->pending_out.end()) {
-        Impl::PendingOp op = it->second;
-        impl_->pending_out.erase(it);
+      if (Impl::PendingOp* pending = impl_->pending_out.find(fd)) {
+        Impl::PendingOp op = *pending;
+        impl_->pending_out.erase(fd);
         std::int64_t res = perform(fd, op);
         if (is_spurious(res)) {
-          if (rearm(fd, EVFILT_WRITE)) impl_->pending_out[fd] = op;
+          if (rearm(fd, EVFILT_WRITE)) impl_->pending_out.insert(fd, op);
         } else {
           out[n].user_data = op.user_data;
           out[n].result = res;
@@ -2742,7 +2838,8 @@ bool Proactor::epoll_arm_dgram(Impl* impl, int fd, unsigned events,
     }
   }
   auto& side = is_read ? impl->pending_in : impl->pending_out;
-  side[fd] = Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap};
+  if (side.contains(fd) || !side.try_prepare_insert()) return false;
+  side.insert(fd, Impl::PendingOp{opcode, buf, len, user_data, addr, addr_cap});
   struct kevent kev;
   const short filter = is_read ? EVFILT_READ : EVFILT_WRITE;
   EV_SET(&kev, static_cast<std::uintptr_t>(fd), filter, EV_ADD | EV_ONESHOT, 0, 0,
@@ -2814,7 +2911,7 @@ bool Proactor::submit_accept_multishot(std::intptr_t fd,
   if (!epoll_arm(impl_, static_cast<int>(fd), EVFILT_READ, IORING_OP_ACCEPT, nullptr,
                  0, user_data))
     return false;
-  impl_->pending_in[static_cast<int>(fd)].multishot = true;  // accept = read-side
+  impl_->pending_in.find(static_cast<int>(fd))->multishot = true;  // read-side
   return true;
 }
 
@@ -2915,6 +3012,12 @@ bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t /*mode*/,
                                 std::uint64_t offset, std::uint64_t len,
                                 std::uint64_t user_data) noexcept {
   if (impl_ == nullptr) return false;
+  const auto max_offset =
+      static_cast<std::uint64_t>((std::numeric_limits<off_t>::max)());
+  if (len > max_offset || offset > max_offset - len) {
+    impl_->posted.push_back({user_data, -EOVERFLOW});
+    return true;
+  }
   // macOS has no posix_fallocate (Linux/glibc): the documented equivalent is
   // fcntl(F_PREALLOCATE) to reserve space (contiguous, falling back to any), then
   // ftruncate to actually grow the file to offset+len. Synchronous + synthesized,
@@ -2952,12 +3055,13 @@ bool Proactor::submit_fallocate(std::intptr_t fd, std::uint32_t /*mode*/,
 bool Proactor::submit_cancel(std::uint64_t target_user_data,
                              std::uint64_t /*cancel_user_data*/) noexcept {
   if (impl_ == nullptr) return false;
-  auto try_cancel = [&](std::unordered_map<int, Impl::PendingOp>& side,
-                        short filter) -> bool {
-    for (auto it = side.begin(); it != side.end(); ++it) {
-      if (it->second.user_data != target_user_data) continue;
-      int fd = it->first;
-      side.erase(it);
+  auto try_cancel = [&](auto& side, short filter) -> bool {
+    int fd = -1;
+    side.for_each([&](const int& candidate, const Impl::PendingOp& op) {
+      if (fd < 0 && op.user_data == target_user_data) fd = candidate;
+    });
+    if (fd >= 0) {
+      side.erase(fd);
       // Delete ONLY this direction's still-armed filter (EV_ONESHOT hasn't fired, so
       // it is registered). The other direction, if pending, stays independently armed.
       struct kevent dk;

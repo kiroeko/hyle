@@ -112,6 +112,49 @@ else()
   message(STATUS "HYLE: OpenSSL not found -- io-08 TLS disabled (set OPENSSL_ROOT_DIR to enable)")
 endif()
 
+# ---- HTTP/2 protocol core (io-11) ------------------------------------------
+# nghttp2 owns RFC 9113 framing, HPACK, stream state and flow control. HYLE owns
+# the coroutine transport over TcpStream/TlsStream and never imports nghttp2's
+# event loop, threads, applications or examples. Keep the protocol dependency
+# pinned: HTTP/2 parsers are security-sensitive and an uncontrolled system
+# version would make identical HYLE builds behave differently.
+option(HYLE_IO_HTTP2 "io-11: HTTP/2 via nghttp2 protocol core" ON)
+if(HYLE_IO_HTTP2)
+  set(FETCHCONTENT_BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}/.deps"
+      CACHE PATH "Persistent FetchContent cache (survives build/ wipes; per-machine tree)")
+  include(FetchContent)
+  set(NGHTTP2_PIN_COMMIT "68cb6900fde14c77f0cd7add0e094a862960eb99") # v1.69.0
+  set(ENABLE_LIB_ONLY ON CACHE BOOL "" FORCE)
+  set(ENABLE_APP OFF CACHE BOOL "" FORCE)
+  set(ENABLE_EXAMPLES OFF CACHE BOOL "" FORCE)
+  set(ENABLE_HPACK_TOOLS OFF CACHE BOOL "" FORCE)
+  set(ENABLE_DOC OFF CACHE BOOL "" FORCE)
+  set(ENABLE_HTTP3 OFF CACHE BOOL "" FORCE)
+  # nghttp2's generic BUILD_STATIC_LIBS knob must not leak into an embedding
+  # application's cache. Give only the dependency subdirectory a normal-variable
+  # override, then restore the caller's value after FetchContent returns.
+  set(_hyle_had_build_static_libs FALSE)
+  if(DEFINED BUILD_STATIC_LIBS)
+    set(_hyle_had_build_static_libs TRUE)
+    set(_hyle_saved_build_static_libs "${BUILD_STATIC_LIBS}")
+  endif()
+  set(BUILD_STATIC_LIBS ${HYLE_STATIC})
+  FetchContent_Declare(nghttp2
+    GIT_REPOSITORY https://github.com/nghttp2/nghttp2.git
+    GIT_TAG        ${NGHTTP2_PIN_COMMIT}
+    GIT_SHALLOW    TRUE)
+  FetchContent_MakeAvailable(nghttp2)
+  if(_hyle_had_build_static_libs)
+    set(BUILD_STATIC_LIBS "${_hyle_saved_build_static_libs}")
+  else()
+    unset(BUILD_STATIC_LIBS)
+  endif()
+  unset(_hyle_had_build_static_libs)
+  unset(_hyle_saved_build_static_libs)
+  message(STATUS
+    "HYLE: nghttp2 v1.69.0 (${NGHTTP2_PIN_COMMIT}) -- io-11 HTTP/2 enabled")
+endif()
+
 # ---- optional CUDA (compute-01 CUDA backend) --------------------------------
 # The compute pillar's CUDA backend is an OPTIONAL capability, same "opt-in
 # capability = opt-in dependency" rule as OpenSSL/tracy: if the CUDA Toolkit is

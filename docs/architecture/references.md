@@ -80,7 +80,7 @@
 | **liburing** | **参考(不链)** | io_uring 机制权威:barrier/SQE 布局/多 op(multishot accept/recv、provided buf_ring、ASYNC_CANCEL)。**HYLE 用裸 syscall 自写,不链 liburing**——精确复刻其 v2.15 fast-path barrier + buf_ring 协议(io-01/02/07 已落地) |
 | **tokio-uring** | 参考 | 见 sched/ 段:submit/flush 节奏 + msghdr 生命周期(io-04 udp) |
 | **libevent** | 参考 | reactor 级:common_timeout 有序链算法(time CommonTimeoutQueue 同款基线)、evdns 异步 DNS(io-09 待)、bufferevent 水位(应用层不做);对 HYLE proactor 价值小于以上 |
-| **nghttp2** | **借核(io-11 HTTP/2)** | HTTP/2 帧/HPACK/流状态机的权威纯协议实现;io-11 定案借其 parser 核(同 io-10 借 picohttpparser 的模式),自写 over co_await 集成层,不取其 event loop。等 io-11 开工 |
+| **nghttp2** | **借核(io-11 HTTP/2，已落地)** | 固定 v1.69.0 commit；借 HTTP/2 frame/HPACK/stream/flow-control core，自写 allocator、caps、over-co_await transport 与 C codec，不取其 event loop/应用层 |
 
 ### graph/（Tier 6，北极星② 编排 + 数据并行）
 | 库 | 角色 | 说明 |

@@ -20,6 +20,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -32,10 +33,13 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 
-#if defined(__linux__)
-#  include <sys/epoll.h>
+#if !defined(_WIN32)
+#  include <fcntl.h>
 #  include <sys/socket.h>
 #  include <unistd.h>
+#endif
+#if defined(__linux__)
+#  include <sys/epoll.h>
 #endif
 #if defined(__linux__) && defined(HYLE_BENCH_LIBURING)
 #  include <liburing.h>
@@ -79,8 +83,10 @@ constexpr int kConns = 64;       // concurrent connections
 // up before the next reap. THIS is the many-in-flight load that fills the SQ and
 // lets submit-batching matter (the plain 64-conn ping-pong above keeps ~1 op in
 // flight per stream at a time, so the SQ never fills -- batching can't help it).
+#if defined(__linux__)
 constexpr int kPipeConns = 512;       // concurrent streams (high fan-out, >> ring depth 256 -> forces the worker's blocking GETEVENTS reap path)
 constexpr int kPipeRoundTrips = 16;   // round-trips per stream per epoch
+#endif
 
 // A connected fd pair.
 struct Pair {
@@ -88,11 +94,20 @@ struct Pair {
   std::intptr_t b = -1;
 };
 
-#if defined(__linux__)
+#if !defined(_WIN32)
 Pair make_pair() {
   int sv[2];
   Pair p;
   if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0) {
+    for (int fd : sv) {
+      const int flags = ::fcntl(fd, F_GETFL, 0);
+      if (flags < 0 || ::fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+        ::close(sv[0]);
+        ::close(sv[1]);
+        return p;
+      }
+      ::fcntl(fd, F_SETFD, FD_CLOEXEC);
+    }
     p.a = sv[0];
     p.b = sv[1];
   }
@@ -112,21 +127,48 @@ Pair make_pair() {
   sa.sin_family = AF_INET;
   sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
   sa.sin_port = 0;
-  ::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa));
-  ::listen(ls, 1);
+  if (::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) == SOCKET_ERROR ||
+      ::listen(ls, 1) == SOCKET_ERROR) {
+    ::closesocket(ls);
+    return p;
+  }
   int slen = sizeof(sa);
-  ::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen);
+  if (::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen) ==
+      SOCKET_ERROR) {
+    ::closesocket(ls);
+    return p;
+  }
   SOCKET c = ::WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
-  ::connect(c, reinterpret_cast<sockaddr*>(&sa), sizeof(sa));
+  if (c == INVALID_SOCKET ||
+      ::connect(c, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) ==
+          SOCKET_ERROR) {
+    if (c != INVALID_SOCKET) ::closesocket(c);
+    ::closesocket(ls);
+    return p;
+  }
   SOCKET s = ::accept(ls, nullptr, nullptr);
   ::closesocket(ls);
+  if (s == INVALID_SOCKET) {
+    ::closesocket(c);
+    return p;
+  }
   p.a = static_cast<std::intptr_t>(c);
   p.b = static_cast<std::intptr_t>(s);
   return p;
 }
 void close_pair(const Pair& p) {
-  if (p.a != -1) ::closesocket(static_cast<SOCKET>(p.a));
-  if (p.b != -1) ::closesocket(static_cast<SOCKET>(p.b));
+  // These are socketpair emulation endpoints, not a connection-lifecycle
+  // workload. Abortive close keeps repeated process-level sampling from
+  // exhausting Windows' ~16K ephemeral-port range with TIME_WAIT sockets.
+  // Teardown is outside the measured echo work conceptually and both compared
+  // variants use the identical helper.
+  linger reset{1, 0};
+  for (std::intptr_t fd : {p.a, p.b}) {
+    if (fd == -1) continue;
+    ::setsockopt(static_cast<SOCKET>(fd), SOL_SOCKET, SO_LINGER,
+                 reinterpret_cast<const char*>(&reset), sizeof(reset));
+    ::closesocket(static_cast<SOCKET>(fd));
+  }
 }
 #endif
 
@@ -138,6 +180,7 @@ struct Conn {
   std::intptr_t client_fd;
   std::intptr_t server_fd;
   int round_trips;
+  std::atomic<int>* completed;
   char cbuf[kMsgLen];
   char sbuf[kMsgLen];
 };
@@ -151,6 +194,7 @@ Task<int> client_task(Allocator, Conn* c) {
     std::int64_t r = co_await RecvOp{&c->io->proactor_for_current(), c->client_fd,
                                      c->cbuf, kMsgLen};
     if (r != kMsgLen) break;
+    c->completed->fetch_add(1, std::memory_order_relaxed);
   }
   co_return 0;
 }
@@ -174,7 +218,7 @@ void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 
 // Run kConns connections x kRoundTrips echo round-trips on `workers` cores,
 // connections sharded round-robin across the cores. Returns after all complete.
-void run_hyle_echo(unsigned workers) {
+int run_hyle_echo(unsigned workers) {
   Scheduler sched(workers, system_allocator(), 4096);
   IoContext io(sched, workers);
 
@@ -182,6 +226,7 @@ void run_hyle_echo(unsigned workers) {
   std::vector<std::unique_ptr<Conn>> conns;
   std::vector<std::unique_ptr<Drive>> drives;
   std::vector<std::unique_ptr<Fiber>> fibers;
+  std::atomic<int> completed{0};
   for (int i = 0; i < kConns; ++i) {
     pairs[i] = make_pair();
     unsigned owner = static_cast<unsigned>(i) % workers;
@@ -192,14 +237,15 @@ void run_hyle_echo(unsigned workers) {
     c->client_fd = pairs[i].a;
     c->server_fd = pairs[i].b;
     c->round_trips = kRoundTrips;
+    c->completed = &completed;
     auto dc = std::make_unique<Drive>();
     auto ds = std::make_unique<Drive>();
     dc->task = client_task(system_allocator(), c.get());
     ds->task = server_task(system_allocator(), c.get());
-    auto fc = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, dc.get());
-    auto fs = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, ds.get());
+    auto fc =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, dc.get());
+    auto fs =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, ds.get());
     sched.spawn_on(owner, fs.get());
     sched.spawn_on(owner, fc.get());
     conns.push_back(std::move(c));
@@ -211,6 +257,7 @@ void run_hyle_echo(unsigned workers) {
   sched.drain();
   sched.shutdown();
   for (auto& p : pairs) close_pair(p);
+  return completed.load(std::memory_order_relaxed);
 }
 
 // Pipelined / high-fan-out variant: kPipeConns streams x kPipeRoundTrips on
@@ -218,7 +265,8 @@ void run_hyle_echo(unsigned workers) {
 // fibers that each submit -- so many SQEs accumulate between reaps (the SQ can
 // fill). This is the load where submit-batching (one io_uring_enter for many
 // SQEs) can pay off; the plain ping-pong bench cannot exercise it.
-void run_hyle_pipelined(unsigned workers) {
+#if defined(__linux__)
+int run_hyle_pipelined(unsigned workers) {
   Scheduler sched(workers, system_allocator(), 8192);
   IoContext io(sched, workers);
 
@@ -226,6 +274,7 @@ void run_hyle_pipelined(unsigned workers) {
   std::vector<std::unique_ptr<Conn>> conns;
   std::vector<std::unique_ptr<Drive>> drives;
   std::vector<std::unique_ptr<Fiber>> fibers;
+  std::atomic<int> completed{0};
   for (int i = 0; i < kPipeConns; ++i) {
     pairs[i] = make_pair();
     unsigned owner = static_cast<unsigned>(i) % workers;
@@ -236,14 +285,15 @@ void run_hyle_pipelined(unsigned workers) {
     c->client_fd = pairs[i].a;
     c->server_fd = pairs[i].b;
     c->round_trips = kPipeRoundTrips;
+    c->completed = &completed;
     auto dc = std::make_unique<Drive>();
     auto ds = std::make_unique<Drive>();
     dc->task = client_task(system_allocator(), c.get());
     ds->task = server_task(system_allocator(), c.get());
-    auto fc = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, dc.get());
-    auto fs = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, ds.get());
+    auto fc =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, dc.get());
+    auto fs =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, ds.get());
     sched.spawn_on(owner, fs.get());
     sched.spawn_on(owner, fc.get());
     conns.push_back(std::move(c));
@@ -255,7 +305,9 @@ void run_hyle_pipelined(unsigned workers) {
   sched.drain();
   sched.shutdown();
   for (auto& p : pairs) close_pair(p);
+  return completed.load(std::memory_order_relaxed);
 }
+#endif
 
 #if defined(__linux__)
 // Raw epoll echo baseline: a single thread runs a classic readiness loop over
@@ -603,11 +655,19 @@ int main() {
         .relative(true)
         .batch(batch)
         .unit("echo")
-        .minEpochIterations(20);
+        // One invocation already completes 4096 real round-trips and creates a
+        // fresh scheduler/socket set. Repeating it 20x per epoch made the
+        // Windows harness take minutes before printing a row; five one-or-more
+        // invocation epochs keep the sample bounded while cross-process
+        // bench-stat supplies the release-level repetition.
+        .minEpochIterations(1)
+        .epochs(5);
     for (unsigned w : {1u, 2u, 4u, 8u}) {
       char name[64];
       std::snprintf(name, sizeof(name), "HYLE shard-per-core (%u workers)", w);
-      b.run(name, [&] { run_hyle_echo(w); });
+      b.run(name, [&] {
+        if (run_hyle_echo(w) != kConns * kRoundTrips) std::abort();
+      });
     }
 #if defined(__linux__)
     b.run("raw epoll (1 thread, readiness loop)", [&] { run_raw_epoll_echo(); });
@@ -638,7 +698,10 @@ int main() {
   // ---- pipelined / high-fan-out: many streams per core (SQ can fill) ----
   // This is the load that can exercise submit-batching -- hundreds of streams on
   // one core means a reap wakes many fibers that each submit before the next
-  // reap. Reported separately from the ping-pong bench above.
+  // reap. It is specifically an io_uring SQ/GETEVENTS probe; IOCP has no submit
+  // queue and kqueue is a readiness backend, so running 512 loopback TCP pairs
+  // there measures pair construction rather than the mechanism under test.
+#if defined(__linux__)
   {
     const std::uint64_t pbatch =
         static_cast<std::uint64_t>(kPipeConns) * kPipeRoundTrips;
@@ -647,13 +710,18 @@ int main() {
         .relative(true)
         .batch(pbatch)
         .unit("echo")
-        .minEpochIterations(10);
+        .minEpochIterations(1)
+        .epochs(5);
     for (unsigned w : {1u, 2u, 4u, 8u}) {
       char name[64];
       std::snprintf(name, sizeof(name), "HYLE pipelined (%u workers)", w);
-      b.run(name, [&] { run_hyle_pipelined(w); });
+      b.run(name, [&] {
+        if (run_hyle_pipelined(w) != kPipeConns * kPipeRoundTrips)
+          std::abort();
+      });
     }
   }
+#endif
 
 #if defined(_WIN32)
   ::WSACleanup();

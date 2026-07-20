@@ -81,6 +81,45 @@ TEST(Proactor, ReapEmptyIsNonBlockingWithZeroTimeout) {
   EXPECT_LT(elapsed, std::chrono::milliseconds(100));  // did not block
 }
 
+#if defined(__linux__) || defined(__APPLE__)
+TEST(Proactor, ReadinessBackendRejectsSecondSameDirectionOp) {
+#  if defined(__linux__)
+  ::setenv("HYLE_IO_FORCE_EPOLL", "1", 1);
+#  endif
+  Proactor p;
+  const bool initialized = p.init();
+#  if defined(__linux__)
+  ::unsetenv("HYLE_IO_FORCE_EPOLL");
+#  endif
+  ASSERT_TRUE(initialized);
+
+  int sv[2] = {-1, -1};
+  ASSERT_EQ(::socketpair(AF_UNIX, SOCK_STREAM, 0, sv), 0);
+  for (int fd : sv) {
+    const int flags = ::fcntl(fd, F_GETFL, 0);
+    ASSERT_GE(flags, 0);
+    ASSERT_EQ(::fcntl(fd, F_SETFL, flags | O_NONBLOCK), 0);
+  }
+
+  char first[8] = {};
+  char second[8] = {};
+  ASSERT_TRUE(p.submit_recv(sv[0], first, sizeof(first), 0, 0x101));
+  // epoll/kqueue have one pending slot per fd+direction. Replacing the first
+  // operation would orphan its caller, so the second submit must fail cleanly.
+  EXPECT_FALSE(p.submit_recv(sv[0], second, sizeof(second), 0, 0x102));
+
+  ASSERT_EQ(::write(sv[1], "x", 1), 1);
+  Completion out[2];
+  ASSERT_EQ(p.reap(out, 2, 1'000'000'000ull), 1u);
+  EXPECT_EQ(out[0].user_data, 0x101u);
+  EXPECT_EQ(out[0].result, 1);
+  EXPECT_EQ(first[0], 'x');
+
+  ::close(sv[0]);
+  ::close(sv[1]);
+}
+#endif
+
 // post() injects a completion carrying a token that reap() returns. On io_uring
 // post fills a NOP SQE on the SUBMITTING thread -- the submission queue is
 // single-producer, so post is a SAME-THREAD hook (the header documents this).
@@ -597,16 +636,27 @@ TEST(Proactor, DirectAccept) {
 
   // Reap the accept -> res is the ALLOCATED SLOT INDEX (>=0).
   int slot = -1;
+  int direct_error = 0;
   for (int spins = 0; spins < 500 && slot < 0; ++spins) {
     Completion c[8];
     std::size_t n = p.reap(c, 8, 1'000'000'000ull);
     for (std::size_t i = 0; i < n; ++i)
       if (c[i].user_data == 0xDA) {
-        ASSERT_GE(c[i].result, 0) << "direct accept must return a slot index";
-        slot = static_cast<int>(c[i].result);
+        if (c[i].result < 0)
+          direct_error = static_cast<int>(c[i].result);
+        else
+          slot = static_cast<int>(c[i].result);
       }
+    if (direct_error != 0) break;
   }
   cli.join();
+  if (direct_error == -EINVAL || direct_error == -ENOSYS ||
+      direct_error == -EOPNOTSUPP) {
+    ::close(ls);
+    GTEST_SKIP() << "kernel accepts registered files but not accept_direct: "
+                 << direct_error;
+  }
+  ASSERT_EQ(direct_error, 0) << "direct accept failed";
   ASSERT_GE(slot, 0) << "direct accept never produced a slot";
 
   // recv on the DIRECT descriptor by slot (IOSQE_FIXED_FILE) -- it was never a raw fd.

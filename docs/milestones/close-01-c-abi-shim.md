@@ -96,6 +96,7 @@ recipe。当前入口如下：
 | obs | format/RAII trace→调用方格式化 + record/runtime zone begin/end；sink→opaque handle | `c-obs` §1–§5 | 完整 |
 | container | typed vector/map→runtime-erased POD 容器；拥有型结果→caller buffer；payload 生命周期显式 | `c-container` 全文 | 完整 |
 | sched | `Task<T>`/Join→result context + oneshot；when_all→WaitGroup；when_any→winner + oneshot + cancel | `c-sched` §9（可复制 recipe） | 完整 |
+| io | proactor/coroutine→token+completion；RAII handle→调用方 native handle；multishot→flags+显式归还；shmem→opaque handle | `c-io` | 底层机制完整；HTTP/TLS 高层 callback/state-machine facade 待补 |
 
 复核的红线是：未来任何 guide 若只能写“C 没模板，所以不提供”，且又没有上述
 稳定组合通路，就必须把模块从“C ABI 完整”退回“有覆盖缺口”，直到补

@@ -21,6 +21,7 @@
 
 #include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -39,7 +40,7 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 
-#if defined(__linux__)
+#if !defined(_WIN32)
 #  include <sys/socket.h>
 #  include <netinet/in.h>
 #  include <arpa/inet.h>
@@ -141,13 +142,15 @@ struct HyleTls {
   bool do_echo;          // false = handshake-only (then close); true = handshake + N echoes
   TlsContext* sctx;
   TlsContext* cctx;
+  std::atomic<int> client_units{0};
 };
 
-Task<int> hyle_server(Allocator alloc, IoContext* io, TcpListener* ls, HyleTls* h) {
+Task<int> hyle_server(Allocator alloc, TcpListener* ls, HyleTls* h) {
   TcpStream conn = co_await ls->accept(kOwner);
   if (!conn.valid()) co_return 0;
   TlsStream tls(std::move(conn), *h->sctx, /*is_server=*/true);
   if (co_await tls_handshake(alloc, tls) != 0) co_return 0;
+  if (!h->do_echo) h->client_units.store(1, std::memory_order_relaxed);
   if (h->do_echo) {
     char buf[kMsgLen];
     for (int i = 0; i < kEchoRoundTrips; ++i) {
@@ -173,6 +176,7 @@ Task<int> hyle_client(Allocator alloc, IoContext* io, HyleTls* h) {
     for (int i = 0; i < kEchoRoundTrips; ++i) {
       if (co_await tls_write(alloc, tls, kMsg, kMsgLen) != kMsgLen) break;
       if (co_await tls_read(alloc, tls, buf, kMsgLen) <= 0) break;
+      h->client_units.fetch_add(1, std::memory_order_relaxed);
     }
   }
   co_return 0;
@@ -183,22 +187,24 @@ void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
 
 // One HYLE TLS connection: handshake (+ optional N echoes), both fibers pinned to
 // one worker. `port` is bumped per call to dodge TIME_WAIT.
-void run_hyle_tls(std::uint16_t port, bool do_echo, TlsContext* sctx, TlsContext* cctx) {
+int run_hyle_tls(std::uint16_t port, bool do_echo, TlsContext* sctx,
+                 TlsContext* cctx) {
   Scheduler sched(1, system_allocator(), 1024);
   IoContext io(sched, 1);
   TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", port);
-  if (!ls.valid()) return;
+  if (!ls.valid()) return -1;
   HyleTls h{port, do_echo, sctx, cctx};
   auto ds = std::make_unique<Drive>();
   auto dc = std::make_unique<Drive>();
-  ds->task = hyle_server(system_allocator(), &io, &ls, &h);
+  ds->task = hyle_server(system_allocator(), &ls, &h);
   dc->task = hyle_client(system_allocator(), &io, &h);
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
-  Fiber fc(system_allocator(), kDefaultStackSize, &drive_entry, dc.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
   sched.spawn_on(kOwner, &fs);
   sched.spawn_on(kOwner, &fc);
   sched.drain();
   sched.shutdown();
+  return h.client_units.load(std::memory_order_relaxed);
 }
 
 // ---- raw OpenSSL over a blocking socket (SOTA baseline, no HYLE) ------------
@@ -206,17 +212,24 @@ void run_hyle_tls(std::uint16_t port, bool do_echo, TlsContext* sctx, TlsContext
 // std::thread; client on the main thread. Plain blocking SSL_read/SSL_write over a
 // connected loopback TCP socket -- the crypto floor + a bare blocking loop. HYLE's
 // number vs this = the co_await pump + fiber scheduling overhead over bare OpenSSL.
-#if defined(__linux__) || defined(_WIN32)
+#if defined(__linux__) || defined(__APPLE__) || defined(_WIN32)
 int make_listener(std::uint16_t port) {
   int ls = static_cast<int>(::socket(AF_INET, SOCK_STREAM, 0));
   int one = 1;
   ::setsockopt(ls, SOL_SOCKET, SO_REUSEADDR, reinterpret_cast<const char*>(&one), sizeof(one));
   sockaddr_in sa{};
   sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
-  sa.sin_port = ::htons(port);
-  if (::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) != 0) return -1;
-  ::listen(ls, 8);
+  sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  sa.sin_port = htons(port);
+  if (::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) != 0 ||
+      ::listen(ls, 8) != 0) {
+#if defined(_WIN32)
+    ::closesocket(ls);
+#else
+    ::close(ls);
+#endif
+    return -1;
+  }
   return ls;
 }
 
@@ -242,25 +255,31 @@ void raw_openssl_server(int ls, SSL_CTX* sctx, bool do_echo) {
 #endif
 }
 
-void run_raw_openssl_tls(std::uint16_t port, bool do_echo, SSL_CTX* sctx, SSL_CTX* cctx) {
+int run_raw_openssl_tls(std::uint16_t port, bool do_echo, SSL_CTX* sctx,
+                        SSL_CTX* cctx) {
   int ls = make_listener(port);
-  if (ls < 0) return;
+  if (ls < 0) return -1;
   std::thread srv(raw_openssl_server, ls, sctx, do_echo);
 
   int c = static_cast<int>(::socket(AF_INET, SOCK_STREAM, 0));
   sockaddr_in sa{};
   sa.sin_family = AF_INET;
-  sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
-  sa.sin_port = ::htons(port);
+  sa.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+  sa.sin_port = htons(port);
+  int units = 0;
   if (::connect(c, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) == 0) {
     SSL* ssl = SSL_new(cctx);
     SSL_set_fd(ssl, c);
-    if (SSL_connect(ssl) == 1 && do_echo) {
+    if (SSL_connect(ssl) == 1) {
+      if (!do_echo) units = 1;
+    }
+    if (SSL_is_init_finished(ssl) && do_echo) {
       static const char kMsg[kMsgLen] = "hyle-tls-bench-payload";
       char buf[kMsgLen];
       for (int i = 0; i < kEchoRoundTrips; ++i) {
         if (SSL_write(ssl, kMsg, kMsgLen) != kMsgLen) break;
         if (SSL_read(ssl, buf, kMsgLen) <= 0) break;
+        ++units;
       }
     }
     SSL_shutdown(ssl);
@@ -277,13 +296,14 @@ void run_raw_openssl_tls(std::uint16_t port, bool do_echo, SSL_CTX* sctx, SSL_CT
 #else
   ::close(ls);
 #endif
+  return units;
 }
-#endif  // linux || win
+#endif  // POSIX || Windows
 
 }  // namespace
 
 int main() {
-#if defined(__linux__)
+#if !defined(_WIN32)
   // A blocking SSL_write to a socket the peer already closed raises SIGPIPE, which
   // is fatal by default -- ignore it so the raw-OpenSSL baseline's teardown races
   // don't kill the bench (the write just returns EPIPE, which we don't act on here).
@@ -310,18 +330,27 @@ int main() {
   SSL_CTX* rcctx = SSL_CTX_new(TLS_client_method());
   SSL_CTX_set_verify(rcctx, SSL_VERIFY_NONE, nullptr);
 
-  std::uint16_t port = 54460;
+  // Stay below the OS ephemeral-client ranges (Linux commonly starts at 32768,
+  // Windows at 49152). The old 54460 base could be selected as the previous
+  // connection's client port, so the next sequential server bind intermittently
+  // failed with EADDRINUSE and fabricated a benchmark abort.
+  std::uint16_t port = 18460;
 
   // ---- 1. handshake/s: full connect + TLS handshake + close --------------------
   {
     ankerl::nanobench::Bench b;
     b.title("TLS handshake (connect + handshake + close)")
-        .relative(true).unit("handshake").minEpochIterations(20);
+        .relative(true)
+        .unit("handshake")
+        .minEpochIterations(1)
+        .epochs(5);
     b.run("HYLE TLS (memory-BIO pump over co_await)", [&] {
-      run_hyle_tls(port++, /*do_echo=*/false, &hsctx, &hcctx);
+      if (run_hyle_tls(port++, /*do_echo=*/false, &hsctx, &hcctx) != 1)
+        std::abort();
     });
     b.run("raw OpenSSL (blocking socket, no HYLE)", [&] {
-      run_raw_openssl_tls(port++, /*do_echo=*/false, rsctx, rcctx);
+      if (run_raw_openssl_tls(port++, /*do_echo=*/false, rsctx, rcctx) != 1)
+        std::abort();
     });
   }
 
@@ -329,12 +358,20 @@ int main() {
   {
     ankerl::nanobench::Bench b;
     b.title("TLS encrypted echo (64 round-trips x 256B, post-handshake)")
-        .relative(true).batch(kEchoRoundTrips).unit("round-trip").minEpochIterations(20);
+        .relative(true)
+        .batch(kEchoRoundTrips)
+        .unit("round-trip")
+        .minEpochIterations(1)
+        .epochs(5);
     b.run("HYLE TLS (memory-BIO pump over co_await)", [&] {
-      run_hyle_tls(port++, /*do_echo=*/true, &hsctx, &hcctx);
+      if (run_hyle_tls(port++, /*do_echo=*/true, &hsctx, &hcctx) !=
+          kEchoRoundTrips)
+        std::abort();
     });
     b.run("raw OpenSSL (blocking socket, no HYLE)", [&] {
-      run_raw_openssl_tls(port++, /*do_echo=*/true, rsctx, rcctx);
+      if (run_raw_openssl_tls(port++, /*do_echo=*/true, rsctx, rcctx) !=
+          kEchoRoundTrips)
+        std::abort();
     });
   }
 

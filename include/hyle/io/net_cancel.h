@@ -124,8 +124,15 @@ struct CancelRecvOp {
     // resume). If the token is cancelled between now and suspend -- or is already
     // cancelled -- the callback fires here and submit_cancel runs at once, queuing
     // the -ECANCELED that will wake us. Lives on this (frozen) await_suspend frame.
-    sched::CancelCallback cb{*token, &detail::CancelOpCtx::on_cancel, &cctx_};
-    sched::suspend();  // fiber yields; returns when the (single) completion wakes it
+    if (token != nullptr) {
+      sched::CancelCallback cb{*token, &detail::CancelOpCtx::on_cancel, &cctx_};
+      sched::suspend();  // cb remains registered across the fiber suspension
+    } else {
+      // A null token means "no cancellation" and behaves like the base op. The
+      // await_ready/await_resume null checks already promised this; dereferencing
+      // it here made that apparent contract crash.
+      sched::suspend();
+    }
     return false;      // fiber is back -> continue the coroutine (cb unregisters)
   }
   std::int64_t await_resume() noexcept {
@@ -133,6 +140,50 @@ struct CancelRecvOp {
     // with a (backend-specific) negative code, report the canonical kCancelled so the
     // caller need not know -ECANCELED vs -ERROR_OPERATION_ABORTED.
     if (op_.result < 0 && token != nullptr && token->is_cancelled()) return kCancelled;
+    return op_.result;
+  }
+};
+
+struct CancelSendOp {
+  Proactor* p;
+  std::intptr_t fd;
+  const void* buf;
+  std::uint32_t len;
+  const sched::CancelToken* token;
+  std::uint32_t flags = 0;
+
+  IoOperation op_{};
+  detail::CancelOpCtx cctx_{};
+  bool submitted_ = false;
+
+  bool await_ready() noexcept {
+    if (token != nullptr && token->is_cancelled()) {
+      op_.result = kCancelled;
+      return true;
+    }
+    return false;
+  }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    op_.waker = sched::current_waker();
+    cctx_.p = p;
+    cctx_.token = to_token(&op_);
+    submitted_ = p->submit_send(fd, buf, len, flags, to_token(&op_));
+    if (!submitted_) {
+      op_.result = kSubmitFailed;
+      return false;
+    }
+    if (token != nullptr) {
+      sched::CancelCallback callback{
+          *token, &detail::CancelOpCtx::on_cancel, &cctx_};
+      sched::suspend();
+    } else {
+      sched::suspend();
+    }
+    return false;
+  }
+  std::int64_t await_resume() noexcept {
+    if (op_.result < 0 && token != nullptr && token->is_cancelled())
+      return kCancelled;
     return op_.result;
   }
 };
@@ -165,12 +216,153 @@ struct CancelAcceptOp {
       op_.result = kSubmitFailed;
       return false;
     }
-    sched::CancelCallback cb{*token, &detail::CancelOpCtx::on_cancel, &cctx_};
-    sched::suspend();
+    if (token != nullptr) {
+      sched::CancelCallback cb{*token, &detail::CancelOpCtx::on_cancel, &cctx_};
+      sched::suspend();
+    } else {
+      sched::suspend();
+    }
     return false;
   }
   std::int64_t await_resume() noexcept {
     if (op_.result < 0 && token != nullptr && token->is_cancelled()) return kCancelled;
+    return op_.result;
+  }
+};
+
+struct CancelConnectOp {
+  Proactor* p;
+  std::intptr_t fd;
+  const void* addr;
+  std::uint32_t addrlen;
+  const sched::CancelToken* token;
+
+  IoOperation op_{};
+  detail::CancelOpCtx cctx_{};
+  bool submitted_ = false;
+
+  bool await_ready() noexcept {
+    if (token != nullptr && token->is_cancelled()) {
+      op_.result = kCancelled;
+      return true;
+    }
+    return false;
+  }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    op_.waker = sched::current_waker();
+    cctx_.p = p;
+    cctx_.token = to_token(&op_);
+    submitted_ = p->submit_connect(fd, addr, addrlen, to_token(&op_));
+    if (!submitted_) {
+      op_.result = kSubmitFailed;
+      return false;
+    }
+    if (token != nullptr) {
+      sched::CancelCallback callback{
+          *token, &detail::CancelOpCtx::on_cancel, &cctx_};
+      sched::suspend();
+    } else {
+      sched::suspend();
+    }
+    return false;
+  }
+  std::int64_t await_resume() noexcept {
+    if (op_.result < 0 && token != nullptr && token->is_cancelled())
+      return kCancelled;
+    return op_.result;
+  }
+};
+
+struct CancelRecvFromOp {
+  Proactor* p;
+  std::intptr_t fd;
+  void* buf;
+  std::uint32_t len;
+  void* addr;
+  std::uint32_t addr_cap;
+  const sched::CancelToken* token;
+
+  IoOperation op_{};
+  detail::CancelOpCtx cctx_{};
+  alignas(16) unsigned char scratch_[Proactor::kDatagramScratch]{};
+  bool submitted_ = false;
+
+  bool await_ready() noexcept {
+    if (token != nullptr && token->is_cancelled()) {
+      op_.result = kCancelled;
+      return true;
+    }
+    return false;
+  }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    op_.waker = sched::current_waker();
+    cctx_.p = p;
+    cctx_.token = to_token(&op_);
+    submitted_ = p->submit_recvfrom(fd, buf, len, addr, addr_cap, scratch_,
+                                    to_token(&op_));
+    if (!submitted_) {
+      op_.result = kSubmitFailed;
+      return false;
+    }
+    if (token != nullptr) {
+      sched::CancelCallback callback{
+          *token, &detail::CancelOpCtx::on_cancel, &cctx_};
+      sched::suspend();
+    } else {
+      sched::suspend();
+    }
+    return false;
+  }
+  std::int64_t await_resume() noexcept {
+    if (op_.result < 0 && token != nullptr && token->is_cancelled())
+      return kCancelled;
+    return op_.result;
+  }
+};
+
+struct CancelSendToOp {
+  Proactor* p;
+  std::intptr_t fd;
+  const void* buf;
+  std::uint32_t len;
+  const void* addr;
+  std::uint32_t addrlen;
+  const sched::CancelToken* token;
+
+  IoOperation op_{};
+  detail::CancelOpCtx cctx_{};
+  alignas(16) unsigned char scratch_[Proactor::kDatagramScratch]{};
+  bool submitted_ = false;
+
+  bool await_ready() noexcept {
+    if (token != nullptr && token->is_cancelled()) {
+      op_.result = kCancelled;
+      return true;
+    }
+    return false;
+  }
+  bool await_suspend(std::coroutine_handle<>) noexcept {
+    op_.waker = sched::current_waker();
+    cctx_.p = p;
+    cctx_.token = to_token(&op_);
+    submitted_ = p->submit_sendto(fd, buf, len, addr, addrlen, scratch_,
+                                  to_token(&op_));
+    if (!submitted_) {
+      op_.result = kSubmitFailed;
+      return false;
+    }
+    if (token != nullptr) {
+      sched::CancelCallback callback{
+          *token, &detail::CancelOpCtx::on_cancel, &cctx_};
+      sched::suspend();
+    } else {
+      sched::suspend();
+    }
+    return false;
+  }
+  std::int64_t await_resume() noexcept {
+    if (op_.result < 0 && token != nullptr && token->is_cancelled())
+      return kCancelled;
     return op_.result;
   }
 };

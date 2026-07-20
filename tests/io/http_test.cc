@@ -236,6 +236,58 @@ int smuggle_served(const char* raw, std::uint16_t port) {
   return r.reqs_served.load();
 }
 
+// Raw-response counterpart: prove the client applies the same framing policy and
+// does not keep an ambiguously framed connection in its pool.
+struct ResponseProbeResult {
+  std::atomic<bool> accepted{false};
+};
+Task<int> raw_response_server(Allocator, TcpListener* ls, const char* raw) {
+  TcpStream conn = co_await ls->accept(kOwner);
+  if (!conn.valid()) co_return 0;
+  char request[1024];
+  (void)(co_await conn.read(request, sizeof(request)));
+  std::uint32_t off = 0;
+  const std::uint32_t len = static_cast<std::uint32_t>(std::strlen(raw));
+  while (off < len) {
+    std::int64_t n = co_await conn.write(raw + off, len - off);
+    if (n <= 0) break;
+    off += static_cast<std::uint32_t>(n);
+  }
+  co_return 0;
+}
+Task<int> raw_response_client(Allocator alloc, IoContext* io,
+                              ResponseProbeResult* r, std::uint16_t port) {
+  TcpStream s = tcp_socket(*io, kOwner);
+  alignas(16) unsigned char ss[128];
+  std::uint32_t len = 0;
+  resolve_addr("127.0.0.1", port, &ss, &len);
+  if (co_await s.connect(&ss, len) != 0) co_return 0;
+  HttpClientConn conn{alloc, std::move(s)};
+  r->accepted.store(
+      (co_await conn.request("GET", "/", "127.0.0.1")) != nullptr,
+      std::memory_order_release);
+  co_return 0;
+}
+bool response_accepted(const char* raw, std::uint16_t port) {
+  Scheduler sched(2, system_allocator(), 256);
+  IoContext io(sched, 2);
+  if (!io.valid()) return false;
+  TcpListener ls = tcp_listen(io, kOwner, "127.0.0.1", port);
+  if (!ls.valid()) return false;
+  ResponseProbeResult r;
+  auto ds = std::make_unique<Drive>();
+  auto dc = std::make_unique<Drive>();
+  ds->task = raw_response_server(system_allocator(), &ls, raw);
+  dc->task = raw_response_client(system_allocator(), &io, &r, port);
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fc(kDefaultStackSize, &drive_entry, dc.get());
+  sched.spawn_on(kOwner, &fs);
+  sched.spawn_on(kOwner, &fc);
+  sched.drain();
+  sched.shutdown();
+  return r.accepted.load(std::memory_order_acquire);
+}
+
 // ---- close-delimited response body harness (red-team U3 regression) -----------
 // A raw server that sends the HEAD alone (no Content-Length / no chunked), PAUSES
 // (so the client's first read gets only the head), then sends a body and closes.
@@ -345,6 +397,20 @@ TEST(IoHttp, RejectsSmuggling) {
   // A single valid chunked request is still served (no false positive).
   EXPECT_GE(smuggle_served("POST / HTTP/1.1\r\nHost: x\r\nTransfer-Encoding: chunked"
                            "\r\n\r\n5\r\nhello\r\n0\r\n\r\n", 54434), 1);
+}
+
+TEST(IoHttp, ClientRejectsAmbiguousResponseFraming) {
+  EXPECT_TRUE(response_accepted(
+      "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n\r\nok", 54435));
+  EXPECT_FALSE(response_accepted(
+      "HTTP/1.1 200 OK\r\nContent-Length: 5\r\n"
+      "Transfer-Encoding: chunked\r\n\r\n0\r\n\r\n", 54436));
+  EXPECT_FALSE(response_accepted(
+      "HTTP/1.1 200 OK\r\nTransfer-Encoding: gzip, chunked\r\n\r\n"
+      "0\r\n\r\n", 54437));
+  EXPECT_FALSE(response_accepted(
+      "HTTP/1.1 200 OK\r\nContent-Length: 2\r\n"
+      "Content-Length: 3\r\n\r\nok!", 54438));
 }
 
 // Close-delimited response body (RFC 7230 §3.3.3 rule 7, red-team U3 regression):

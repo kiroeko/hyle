@@ -124,6 +124,9 @@ struct MultishotSlot {
   int refcount = 2;          // {kernel op, fiber}
   bool armed = false;        // submit_recv_multishot issued
   bool kernel_done = false;  // terminal (kMore-clear) completion arrived -> kernel ref spent
+  bool waiting = false;      // a next() call is currently suspended on io.waker
+  bool abandoned = false;    // stream dtor ran: never wake its stale fiber again
+  bool overflowed = false;   // pending queue filled; cancellation has been requested
 
   // Pending-completion ring (one producer = the reaper, one consumer = the fiber, same
   // thread -> no atomics). Each entry captures a delivered completion verbatim.
@@ -139,15 +142,30 @@ struct MultishotSlot {
 
   bool q_empty() const noexcept { return head == tail; }
   bool q_full() const noexcept { return tail - head >= kMaxPending; }
-  void q_push(std::int64_t r, std::uint32_t f, std::uint32_t bid) noexcept {
-    if (q_full()) return;  // cannot happen with a sane ring size; drop rather than OOB
+  bool q_push(std::int64_t r, std::uint32_t f, std::uint32_t bid) noexcept {
+    if (q_full()) return false;
     q[tail % kMaxPending] = Pending{r, f, bid};
     ++tail;
+    return true;
   }
   Pending q_pop() noexcept {
     Pending pd = q[head % kMaxPending];
     ++head;
     return pd;
+  }
+
+  // Return every kernel-selected buffer that the consumer never reached. This is
+  // needed when a stream is dropped with completions already queued: those CQEs
+  // transferred buffer ownership to userspace, so cancelling the arm does not put
+  // them back into the provided-buffer ring.
+  void return_pending_buffers() noexcept {
+    while (!q_empty()) {
+      Pending pd = q_pop();
+      if ((pd.flags & Completion::kBuffer) != 0 && pd.result > 0 &&
+          p != nullptr) {
+        p->buf_ring_return(bgid, pd.buffer_id);
+      }
+    }
   }
 
   void release() noexcept {
@@ -178,18 +196,48 @@ inline MultishotSlot* from_multishot_token(std::uint64_t ud) noexcept {
 // the queue via next().
 inline void complete_multishot(const Completion& c) noexcept {
   MultishotSlot* s = from_multishot_token(c.user_data);
+  const bool terminal = (c.flags & Completion::kMore) == 0;
+
+  // Once the stream object is gone, its saved Waker refers to a fiber that has
+  // already continued (and may have been destroyed). Do not queue or wake it.
+  // Return any delivered provided buffer immediately and retain the kernel ref
+  // until the terminal CQE proves the multishot is really over.
+  if (s->abandoned) {
+    if ((c.flags & Completion::kBuffer) != 0 && c.result > 0 && s->p != nullptr)
+      s->p->buf_ring_return(s->bgid, c.buffer_id);
+    if (terminal) {
+      s->kernel_done = true;
+      s->release();  // terminal CQE spends the kernel ref
+    }
+    return;
+  }
+
   bool was_empty = s->q_empty();
-  s->q_push(c.result, c.flags, c.buffer_id);
+  if (!s->q_push(c.result, c.flags, c.buffer_id)) {
+    // Never leak a provided buffer on overload. A queue overflow should be
+    // unreachable with the runtime's 64-CQE reap batch, but it is a recoverable
+    // resource-pressure condition, not permission to silently starve the ring.
+    if ((c.flags & Completion::kBuffer) != 0 && c.result > 0 && s->p != nullptr)
+      s->p->buf_ring_return(s->bgid, c.buffer_id);
+    if (!s->overflowed && !terminal) {
+      s->overflowed = true;
+      s->p->submit_cancel(to_multishot_token(s), kCancelToken);
+    }
+  }
   // kMore CLEAR => the multishot is finished; this is the last completion for the
   // token, so the kernel ref is now spent. Mark it so resume can drop that ref.
-  if ((c.flags & Completion::kMore) == 0) s->kernel_done = true;
+  if (terminal) s->kernel_done = true;
   // Wake ONLY on the empty->non-empty transition: the fiber, once woken, drains the
   // WHOLE queue (await_ready stays true while non-empty, so it never re-suspends until
   // empty). If several completions land in one reap batch, only the first wakes; the
   // rest just enqueue. This gives EXACTLY ONE wake_rendezvous per suspend episode --
   // the same single-wake discipline net_timeout.h needs (a second wake on an already-
   // runnable fiber would leak wake_state_ into its next suspend).
-  if (was_empty) s->io.waker.wake();
+  if (was_empty && s->waiting) {
+    s->waiting = false;
+    s->io.waker.wake();
+  }
+  if (terminal) s->release();  // terminal CQE spends the kernel ref
 }
 
 // co_await stream.next() -> RecvBuf. Drive a multishot recv: first next() arms it,
@@ -220,6 +268,9 @@ struct MultishotRecvStream {
   // its terminal chunk (kernel_done), the kernel ref is gone; just drop the fiber ref.
   ~MultishotRecvStream() {
     if (slot_ == nullptr) return;
+    slot_->abandoned = true;
+    slot_->waiting = false;
+    slot_->return_pending_buffers();
     if (slot_->armed && !slot_->kernel_done) {
       // Still armed: async-cancel it. The late terminal CQE drops the kernel ref.
       p->submit_cancel(to_multishot_token(slot_), kCancelToken);
@@ -237,7 +288,9 @@ struct MultishotRecvStream {
     // suspend the first time since nothing is queued yet).
     bool await_ready() noexcept {
       MultishotSlot* sl = self->slot_;
-      return sl != nullptr && !sl->q_empty();  // drain queued completions first
+      // kernel_done + empty covers the defensive queue-overflow case: report a
+      // terminal error instead of suspending for a CQE that can never arrive.
+      return sl != nullptr && (!sl->q_empty() || sl->kernel_done);
     }
     bool await_suspend(std::coroutine_handle<>) noexcept {
       MultishotRecvStream* s = self;
@@ -256,7 +309,7 @@ struct MultishotRecvStream {
           // submit failed: kernel never took it -> drop the kernel ref now (mirrors
           // net_timeout on_submit_failed). Fiber ref dropped in the stream dtor.
           sl->kernel_done = true;  // no completion coming
-          sl->q_push(kSubmitFailed, 0, 0);  // synthesize an error chunk for next()
+          (void)sl->q_push(kSubmitFailed, 0, 0);  // synthesize an error chunk for next()
           sl->release();           // kernel ref (never materialized)
           return false;            // resume immediately -> error chunk
         }
@@ -267,14 +320,18 @@ struct MultishotRecvStream {
         // NOT re-submit.
         s->slot_->io.waker = sched::current_waker();
       }
+      s->slot_->waiting = true;
       sched::suspend();
       return false;
     }
     RecvBuf await_resume() noexcept {
       MultishotRecvStream* s = self;
       MultishotSlot* sl = s->slot_;
-      if (sl == nullptr || sl->q_empty()) {  // OOM at arm, or spurious wake
-        RecvBuf b; b.set_err(kSubmitFailed); s->ended_ = true; return b;
+      if (sl == nullptr || sl->q_empty()) {  // OOM, queue overflow, or spurious wake
+        RecvBuf b;
+        b.set_err(sl != nullptr && sl->overflowed ? -105 : kSubmitFailed);
+        s->ended_ = true;
+        return b;
       }
       MultishotSlot::Pending pd = sl->q_pop();
       std::int64_t res = pd.result;

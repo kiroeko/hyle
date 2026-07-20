@@ -1,7 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <cstring>
 
+#include "hyle/io/net.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/sched/blocking.h"  // BlockingPool, spawn_blocking, JoinHandle
 
@@ -40,7 +42,7 @@ namespace hyle::io {
 struct ResolvedAddr {
   alignas(16) unsigned char storage[128] = {};  // a sockaddr_storage-sized copy
   std::uint32_t len = 0;                         // valid bytes (the sockaddr size)
-  int family = 0;                                // AF_INET / AF_INET6
+  AddressFamily family = AddressFamily::kIpv4;
 };
 
 // The result of a resolve(): up to kMax addresses (a host may have several A/AAAA
@@ -50,6 +52,7 @@ struct ResolvedAddr {
 // transient failure. A JoinHandle<ResolveResult> from resolve() delivers this.
 struct ResolveResult {
   static constexpr int kMax = 8;
+  static constexpr int kInvalidHost = -10'001;
   ResolvedAddr addrs[kMax];
   int count = 0;
   int error = 0;
@@ -79,16 +82,31 @@ inline sched::JoinHandle<ResolveResult> resolve(sched::BlockingPool& pool,
   struct Job {
     char host[256] = {};
     std::uint16_t port = 0;
+    bool invalid_host = false;
     ResolveResult operator()() const noexcept {
       ResolveResult r;
+      if (invalid_host) {
+        r.error = ResolveResult::kInvalidHost;
+        return r;
+      }
       detail::resolve_blocking(host, port, &r);
       return r;
     }
   };
   Job job;
-  int i = 0;
-  for (; i < 255 && host[i] != '\0'; ++i) job.host[i] = host[i];
-  job.host[i] = '\0';
+  if (host == nullptr) {
+    job.invalid_host = true;
+    return sched::spawn_blocking(pool, alloc, job);
+  }
+  // `host` is a C string by contract. Determine its length first so an inlined
+  // short string literal never produces a speculative host[255] access (GCC
+  // correctly diagnosed the old bounded-copy loop as potentially out of bounds).
+  const std::size_t len = std::strlen(host);
+  if (len >= sizeof(job.host)) {
+    job.invalid_host = true;
+  } else {
+    std::memcpy(job.host, host, len + 1);
+  }
   job.port = port;
   return sched::spawn_blocking(pool, alloc, job);
 }

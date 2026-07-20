@@ -37,6 +37,7 @@
 #include <nanobench.h>
 
 #include <cstdint>
+#include <cstdlib>
 #include <cstdio>
 #include <cstring>
 #include <memory>
@@ -176,8 +177,8 @@ int run(bool use_multishot) {
   dr->task = use_multishot ? recv_multishot(system_allocator(), &sh)
                            : recv_oneshot(system_allocator(), &sh);
   // Spawn the receiver FIRST (armed to consume), then the sender.
-  Fiber fr(system_allocator(), kDefaultStackSize, &drive_entry, dr.get());
-  Fiber fs(system_allocator(), kDefaultStackSize, &drive_entry, ds.get());
+  Fiber fr(kDefaultStackSize, &drive_entry, dr.get());
+  Fiber fs(kDefaultStackSize, &drive_entry, ds.get());
   sched.spawn_on(0, &fr);
   sched.spawn_on(0, &fs);
   sched.drain();
@@ -194,15 +195,32 @@ int main() {
   int os_got = run(/*use_multishot=*/false);
   std::fprintf(stderr, "[smoke] multishot received=%d  one-shot received=%d  (expect %d each; -1=skip)\n",
                ms_got, os_got, kMsgs);
+  if (ms_got == -1) {
+    std::fprintf(stderr,
+                 "[skip] active backend lacks provided-buffer multishot recv\n");
+    return 0;
+  }
+  if (ms_got != kMsgs || os_got != kMsgs) {
+    std::fprintf(stderr, "[fail] smoke completed unequal work\n");
+    return 1;
+  }
 
   const std::uint64_t batch = static_cast<std::uint64_t>(kMsgs);
   ankerl::nanobench::Bench b;
   b.title("io recv: 2000 datagrams x 64B (same-worker sender+receiver, DGRAM)")
-      .relative(true).batch(batch).unit("datagram").minEpochIterations(3);
+      .relative(true)
+      .batch(batch)
+      .unit("datagram")
+      .minEpochIterations(1)
+      .epochs(5);
   b.run("HYLE multishot (1 arm, ring buffers, no per-recv submit)",
-        [&] { run(/*use_multishot=*/true); });
+        [&] {
+          if (run(/*use_multishot=*/true) != kMsgs) std::abort();
+        });
   b.run("HYLE one-shot RecvOp (submit per datagram)",
-        [&] { run(/*use_multishot=*/false); });
+        [&] {
+          if (run(/*use_multishot=*/false) != kMsgs) std::abort();
+        });
   return 0;
 }
 #else   // !__linux__

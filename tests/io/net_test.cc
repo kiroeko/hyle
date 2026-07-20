@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <atomic>
+#include <cstdlib>
 #include <cstdint>
 #include <cstring>
 #include <memory>
@@ -448,3 +449,74 @@ TEST(IoNet, MultishotRecvAwaitable) {
   ::close(sv[0]);
 }
 #endif  // __linux__
+
+namespace {
+struct MultishotAllocState {
+  Allocator backing = system_allocator();
+  std::atomic<int> live{0};
+  static void* alloc(void* p, std::size_t n, std::size_t a) noexcept {
+    auto* s = static_cast<MultishotAllocState*>(p);
+    void* out = s->backing.allocate(n, a);
+    if (out != nullptr) s->live.fetch_add(1, std::memory_order_relaxed);
+    return out;
+  }
+  static void free(void* p, void* q, std::size_t n, std::size_t a) noexcept {
+    if (q == nullptr) return;
+    auto* s = static_cast<MultishotAllocState*>(p);
+    s->backing.deallocate(q, n, a);
+    s->live.fetch_sub(1, std::memory_order_relaxed);
+  }
+  static void* realloc(void* p, void* q, std::size_t old_n, std::size_t new_n,
+                       std::size_t a) noexcept {
+    return static_cast<MultishotAllocState*>(p)->backing.reallocate(
+        q, old_n, new_n, a);
+  }
+  Allocator handle() noexcept { return Allocator(&alloc, &free, &realloc, this); }
+};
+}  // namespace
+
+// The terminal CQE owns and spends the multishot's kernel ref. Dropping a stream
+// before that CQE must neither wake its stale Waker nor leak the heap slot.
+TEST(IoNet, MultishotTerminalBalancesLifetimeAfterEarlyDrop) {
+  MultishotAllocState state;
+  Allocator a = state.handle();
+  hyle::io::Proactor p;  // uninitialized is enough: early-drop cancel returns false
+
+  auto make_slot = [&]() {
+    auto* s = static_cast<hyle::io::MultishotSlot*>(
+        a.allocate(sizeof(hyle::io::MultishotSlot),
+                   alignof(hyle::io::MultishotSlot)));
+    EXPECT_NE(s, nullptr);
+    if (s == nullptr) return s;
+    new (s) hyle::io::MultishotSlot{};
+    s->alloc = a;
+    s->p = &p;
+    s->armed = true;
+    return s;
+  };
+
+  // Normal terminal: completion spends kernel ref, stream dtor spends fiber ref.
+  {
+    auto* s = make_slot();
+    ASSERT_NE(s, nullptr);
+    hyle::io::MultishotRecvStream stream{&p, -1, 1, a};
+    stream.slot_ = s;
+    hyle::io::complete_multishot(
+        hyle::io::Completion{hyle::io::to_multishot_token(s), 0, 0, 0});
+    EXPECT_EQ(state.live.load(), 1);
+  }
+  EXPECT_EQ(state.live.load(), 0);
+
+  // Early drop: stream marks the slot abandoned and drops only its own ref.
+  // The late terminal CQE must free the remaining kernel ref without a wake.
+  auto* late = make_slot();
+  ASSERT_NE(late, nullptr);
+  {
+    hyle::io::MultishotRecvStream stream{&p, -1, 1, a};
+    stream.slot_ = late;
+  }
+  EXPECT_EQ(state.live.load(), 1);
+  hyle::io::complete_multishot(
+      hyle::io::Completion{hyle::io::to_multishot_token(late), -125, 0, 0});
+  EXPECT_EQ(state.live.load(), 0);
+}

@@ -16,6 +16,44 @@
 // tls.cc/dns.cc/file.cc all hit). The public members forward to them.
 
 namespace hyle::io {
+
+sched::Task<std::int64_t> http_transport_read(mem::Allocator alloc,
+                                              HttpTransport& transport,
+                                              void* buffer,
+                                              std::uint32_t length) noexcept {
+#if defined(HYLE_IO_TLS)
+  if (transport.is_tls_)
+    co_return co_await tls_read(alloc, transport.tls_, buffer, length);
+#else
+  (void)alloc;
+#endif
+  co_return co_await transport.tcp_.read(buffer, length);
+}
+
+sched::Task<std::int64_t> http_transport_write(mem::Allocator alloc,
+                                               HttpTransport& transport,
+                                               const void* buffer,
+                                               std::uint32_t length) noexcept {
+#if defined(HYLE_IO_TLS)
+  if (transport.is_tls_)
+    co_return co_await tls_write(alloc, transport.tls_, buffer, length);
+#else
+  (void)alloc;
+#endif
+  co_return co_await transport.tcp_.write(buffer, length);
+}
+
+sched::Task<int> http_transport_shutdown(mem::Allocator alloc,
+                                         HttpTransport& transport) noexcept {
+#if defined(HYLE_IO_TLS)
+  if (transport.is_tls_)
+    co_return co_await tls_shutdown(alloc, transport.tls_);
+#else
+  (void)alloc;
+#endif
+  co_return transport.tcp_.shutdown_write() ? 0 : -1;
+}
+
 namespace {
 
 // ASCII case-insensitive byte compare (HTTP header names are case-insensitive).
@@ -26,6 +64,25 @@ bool iequal(string_ref a, string_ref b) noexcept {
     if (ca >= 'A' && ca <= 'Z') ca = static_cast<char>(ca - 'A' + 'a');
     if (cb >= 'A' && cb <= 'Z') cb = static_cast<char>(cb - 'A' + 'a');
     if (ca != cb) return false;
+  }
+  return true;
+}
+
+bool contains_crlf(string_ref s) noexcept {
+  for (std::uint32_t i = 0; i < s.size; ++i)
+    if (s.data[i] == '\r' || s.data[i] == '\n') return true;
+  return false;
+}
+
+bool valid_header_name(string_ref s) noexcept {
+  if (s.size == 0) return false;
+  // RFC token: reject controls, separators, space and non-ASCII. This is stricter
+  // than merely blocking CRLF and keeps emitted framing unambiguous.
+  static constexpr const char* kSeparators = "()<>@,;:\\\"/[]?={} \t";
+  for (std::uint32_t i = 0; i < s.size; ++i) {
+    unsigned char c = static_cast<unsigned char>(s.data[i]);
+    if (c <= 0x20 || c >= 0x7f || std::strchr(kSeparators, c) != nullptr)
+      return false;
   }
   return true;
 }
@@ -129,11 +186,12 @@ string_ref HttpRequest::header(string_ref name) const noexcept {
 
 // ---- HttpResponse ----------------------------------------------------------
 
-void HttpResponse::add_header(string_ref name, string_ref value) noexcept {
-  if (h_count_ >= kMaxRespHeaders) return;  // silently cap (skeleton; headers are few)
+bool HttpResponse::add_header(string_ref name, string_ref value) noexcept {
+  if (h_count_ >= kMaxRespHeaders) return false;
   h_names_[h_count_] = name;
   h_vals_[h_count_] = value;
   ++h_count_;
+  return true;
 }
 
 // ---- HttpResponseView accessors --------------------------------------------
@@ -160,10 +218,11 @@ namespace {
 
 // co_await one read into buf's tail; grow first. Returns bytes read (0 = peer
 // closed, <0 = error). Appends to buf.size on success.
-sched::Task<std::int64_t> read_more(mem::Allocator, GrowBuf& buf,
-                                    TcpStream& s) noexcept {
+sched::Task<std::int64_t> read_more(mem::Allocator alloc, GrowBuf& buf,
+                                    HttpTransport& transport) noexcept {
   if (!buf.reserve(buf.size + 4096)) co_return -1;
-  std::int64_t n = co_await s.read(buf.data + buf.size, buf.cap - buf.size);
+  std::int64_t n = co_await http_transport_read(
+      alloc, transport, buf.data + buf.size, buf.cap - buf.size);
   if (n > 0) buf.size += static_cast<std::uint32_t>(n);
   co_return n;
 }
@@ -179,10 +238,11 @@ sched::Task<std::int64_t> read_more(mem::Allocator, GrowBuf& buf,
 
 // Read exactly `need` total body bytes (already have `have`) appended after the
 // head. Returns false on eof/err.
-sched::Task<bool> fill_body(mem::Allocator alloc, GrowBuf& buf, TcpStream& s,
+sched::Task<bool> fill_body(mem::Allocator alloc, GrowBuf& buf,
+                            HttpTransport& transport,
                             std::uint32_t body_off, std::uint64_t need) noexcept {
   while (buf.size - body_off < need) {
-    std::int64_t n = co_await read_more(alloc, buf, s);
+    std::int64_t n = co_await read_more(alloc, buf, transport);
     if (n <= 0) co_return false;
   }
   co_return true;
@@ -202,7 +262,8 @@ sched::Task<bool> fill_body(mem::Allocator alloc, GrowBuf& buf, TcpStream& s,
 // Returns decoded byte count on success (leaving trailing pipelined bytes at the
 // front of buf), or UINT64_MAX on error.
 sched::Task<std::uint64_t> decode_chunked(mem::Allocator alloc, GrowBuf& buf,
-                                          GrowBuf& out, TcpStream& s) noexcept {
+                                          GrowBuf& out,
+                                          HttpTransport& transport) noexcept {
   phr_chunked_decoder dec;
   std::memset(&dec, 0, sizeof(dec));
   // Consume the trailer-part + the terminating CRLF of the chunked body. WITHOUT
@@ -222,6 +283,12 @@ sched::Task<std::uint64_t> decode_chunked(mem::Allocator alloc, GrowBuf& buf,
       ssize_t rv = phr_decode_chunked(&dec, buf.data, &rsz);
       // buf.data[0..rsz) is now decoded data; append it to out.
       if (rsz > 0) {
+        // Apply the body cap BEFORE narrowing/adding. In particular, a complete
+        // final chunk returns rv>=0 below, so a check only on the "need more"
+        // branch lets an oversized body bypass the cap in one packet.
+        if (rsz > kHttpMaxBodyBytes - out.size ||
+            rsz > UINT32_MAX - out.size)
+          co_return UINT64_MAX;
         if (!out.reserve(out.size + static_cast<std::uint32_t>(rsz)))
           co_return UINT64_MAX;
         std::memcpy(out.data + out.size, buf.data, rsz);
@@ -239,7 +306,7 @@ sched::Task<std::uint64_t> decode_chunked(mem::Allocator alloc, GrowBuf& buf,
       buf.size = 0;
       if (out.size > kHttpMaxBodyBytes) co_return UINT64_MAX;
     }
-    std::int64_t n = co_await read_more(alloc, buf, s);
+    std::int64_t n = co_await read_more(alloc, buf, transport);
     if (n <= 0) co_return UINT64_MAX;  // eof mid-body
   }
 }
@@ -249,10 +316,17 @@ sched::Task<std::uint64_t> decode_chunked(mem::Allocator alloc, GrowBuf& buf,
 // ---- HttpServerConn lifetime -----------------------------------------------
 
 HttpServerConn::HttpServerConn(mem::Allocator alloc, TcpStream stream) noexcept
-    : stream_(std::move(stream)), alloc_(alloc) {
+    : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
   impl_ = alloc.allocate_n<Impl>(1);
   if (impl_ != nullptr) new (impl_) Impl(alloc);
 }
+#if defined(HYLE_IO_TLS)
+HttpServerConn::HttpServerConn(mem::Allocator alloc, TlsStream stream) noexcept
+    : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
+  impl_ = alloc.allocate_n<Impl>(1);
+  if (impl_ != nullptr) new (impl_) Impl(alloc);
+}
+#endif
 HttpServerConn::~HttpServerConn() {
   if (impl_ != nullptr) {
     impl_->~Impl();
@@ -261,7 +335,7 @@ HttpServerConn::~HttpServerConn() {
 }
 HttpServerConn::HttpServerConn(HttpServerConn&& o) noexcept
     : impl_(std::exchange(o.impl_, nullptr)),
-      stream_(std::move(o.stream_)),
+      transport_(std::move(o.transport_)),
       alloc_(o.alloc_) {}
 HttpServerConn& HttpServerConn::operator=(HttpServerConn&& o) noexcept {
   if (this != &o) {
@@ -270,7 +344,7 @@ HttpServerConn& HttpServerConn::operator=(HttpServerConn&& o) noexcept {
       alloc_.deallocate_n(impl_, 1);
     }
     impl_ = std::exchange(o.impl_, nullptr);
-    stream_ = std::move(o.stream_);
+    transport_ = std::move(o.transport_);
     alloc_ = o.alloc_;
   }
   return *this;
@@ -301,23 +375,25 @@ sched::Task<HttpRequest*> http_server_next(mem::Allocator alloc,
       last_len = buf.size;                // pret == -2: incomplete
       if (buf.size >= kHttpMaxHeaderBytes) co_return nullptr;  // DoS guard
     }
-    std::int64_t n = co_await read_more(alloc, buf, c.stream_);
+    std::int64_t n = co_await read_more(alloc, buf, c.transport_);
     if (n <= 0) co_return nullptr;  // clean close or error before a full request
   }
   const std::uint32_t head_len = static_cast<std::uint32_t>(pret);
 
-  // Copy the head bytes into a STABLE buffer, then RE-PARSE against that copy so all
-  // views (method/path/header) point into memory that won't move or be overwritten
-  // while the handler runs -- fixes the realloc-dangle + consume-overwrite bugs the
-  // red-team found (buf gets consumed/realloc'd during body handling below).
+  // Copy the head bytes into stable storage, then relocate parser views by offset.
+  // Re-parsing the same head here used to double the parser cost on every message.
   im.head.size = 0;
   if (!im.head.reserve(head_len)) co_return nullptr;
   std::memcpy(im.head.data, buf.data, head_len);
   im.head.size = head_len;
-  num_headers = kHttpMaxHeaders;
-  pret = phr_parse_request(im.head.data, head_len, &method, &method_len, &path,
-                           &path_len, &minor_version, im.headers, &num_headers, 0);
-  if (pret <= 0) co_return nullptr;  // should not happen (parsed once already)
+  method = im.head.data + (method - buf.data);
+  path = im.head.data + (path - buf.data);
+  for (std::size_t i = 0; i < num_headers; ++i) {
+    im.headers[i].name =
+        im.head.data + (im.headers[i].name - buf.data);
+    im.headers[i].value =
+        im.head.data + (im.headers[i].value - buf.data);
+  }
 
   HttpRequest& r = im.req;
   r = HttpRequest{};
@@ -374,7 +450,8 @@ sched::Task<HttpRequest*> http_server_next(mem::Allocator alloc,
   buf.consume(head_len);  // head is safely copied; drop it from the read buffer
   im.body.size = 0;
   if (te.size > 0) {  // == chunked (guarded above)
-    std::uint64_t dn = co_await decode_chunked(alloc, buf, im.body, c.stream_);
+    std::uint64_t dn =
+        co_await decode_chunked(alloc, buf, im.body, c.transport_);
     if (dn == UINT64_MAX) co_return nullptr;
     r.body_ = string_ref{im.body.data, static_cast<std::uint32_t>(dn)};
   } else if (cl.size > 0) {
@@ -383,7 +460,8 @@ sched::Task<HttpRequest*> http_server_next(mem::Allocator alloc,
     if (body_len > kHttpMaxBodyBytes) co_return nullptr;
     // Pull the body into buf (from index 0 now), then copy it into im.body so the
     // view survives the next request's buf reuse.
-    if (!(co_await fill_body(alloc, buf, c.stream_, 0, body_len))) co_return nullptr;
+    if (!(co_await fill_body(alloc, buf, c.transport_, 0, body_len)))
+      co_return nullptr;
     if (!im.body.reserve(static_cast<std::uint32_t>(body_len))) co_return nullptr;
     std::memcpy(im.body.data, buf.data, body_len);
     im.body.size = static_cast<std::uint32_t>(body_len);
@@ -454,11 +532,13 @@ bool put_hex(GrowBuf& b, std::uint64_t v) noexcept {
 }
 
 // co_await-write the whole [p, p+n) to the stream (loop over partial writes).
-sched::Task<bool> write_all(mem::Allocator, TcpStream& s, const char* p,
+sched::Task<bool> write_all(mem::Allocator alloc, HttpTransport& transport,
+                            const char* p,
                             std::uint32_t n) noexcept {
   std::uint32_t off = 0;
   while (off < n) {
-    std::int64_t w = co_await s.write(p + off, n - off);
+    std::int64_t w =
+        co_await http_transport_write(alloc, transport, p + off, n - off);
     if (w <= 0) co_return false;
     off += static_cast<std::uint32_t>(w);
   }
@@ -469,6 +549,20 @@ sched::Task<bool> write_all(mem::Allocator, TcpStream& s, const char* p,
 
 sched::Task<bool> http_server_send(mem::Allocator alloc, HttpServerConn& c,
                                    const HttpResponse& resp) noexcept {
+  if (resp.status() < 100 || resp.status() > 999 ||
+      contains_crlf(resp.reason_))
+    co_return false;
+  if (resp.streaming() && resp.next_ == nullptr) co_return false;
+  for (std::size_t i = 0; i < resp.h_count_; ++i) {
+    if (!valid_header_name(resp.h_names_[i]) ||
+        contains_crlf(resp.h_vals_[i]))
+      co_return false;
+    // Framing is owned by this function. Accepting caller-supplied framing and
+    // then appending our own CL/TE creates ambiguous duplicate headers.
+    if (iequal(resp.h_names_[i], "content-length") ||
+        iequal(resp.h_names_[i], "transfer-encoding"))
+      co_return false;
+  }
   GrowBuf out(alloc);
   // Status line.
   if (!put_cstr(out, "HTTP/1.1 ")) co_return false;
@@ -502,7 +596,7 @@ sched::Task<bool> http_server_send(mem::Allocator alloc, HttpServerConn& c,
     if (resp.body_.size > 0) {
       if (!put(out, resp.body_)) co_return false;
     }
-    co_return co_await write_all(alloc, c.stream_, out.data, out.size);
+    co_return co_await write_all(alloc, c.transport_, out.data, out.size);
   }
 
   // Streaming: send the head, then pump chunks until more==false. Reuse `out`
@@ -510,7 +604,8 @@ sched::Task<bool> http_server_send(mem::Allocator alloc, HttpServerConn& c,
   // size=0 each iteration so the capacity grown for the head/first chunk is kept
   // and reused -- no per-chunk allocation (was `GrowBuf frame(alloc)` inside the
   // loop = one alloc+free every chunk, hot for token-stream/SSE responses).
-  if (!(co_await write_all(alloc, c.stream_, out.data, out.size))) co_return false;
+  if (!(co_await write_all(alloc, c.transport_, out.data, out.size)))
+    co_return false;
   for (;;) {
     StreamChunk ch = resp.next_(resp.stream_ctx_);
     if (ch.len > 0) {
@@ -520,13 +615,13 @@ sched::Task<bool> http_server_send(mem::Allocator alloc, HttpServerConn& c,
           !put(out, static_cast<const char*>(ch.data), ch.len) ||
           !put_cstr(out, "\r\n"))
         co_return false;
-      if (!(co_await write_all(alloc, c.stream_, out.data, out.size)))
+      if (!(co_await write_all(alloc, c.transport_, out.data, out.size)))
         co_return false;
     }
     if (!ch.more) break;
   }
   // Terminating zero-length chunk.
-  co_return co_await write_all(alloc, c.stream_, "0\r\n\r\n", 5);
+  co_return co_await write_all(alloc, c.transport_, "0\r\n\r\n", 5);
 }
 
 sched::Task<bool> HttpServerConn::send_response(const HttpResponse& resp) noexcept {
@@ -551,6 +646,23 @@ sched::Task<void> http_serve(mem::Allocator alloc, TcpStream stream,
   co_return;
 }
 
+#if defined(HYLE_IO_TLS)
+sched::Task<void> http_serve(mem::Allocator alloc, TlsStream stream,
+                             HttpHandlerFn handler, void* ctx) noexcept {
+  HttpServerConn conn{alloc, std::move(stream)};
+  if (!conn.valid()) co_return;
+  for (;;) {
+    HttpRequest* req = co_await conn.next_request();
+    if (req == nullptr) break;
+    const bool keep = req->keep_alive();
+    sched::Task<HttpResponse> task = handler(alloc, ctx, *req);
+    HttpResponse response = co_await task;
+    if (!(co_await conn.send_response(response)) || !keep) break;
+  }
+  co_return;
+}
+#endif
+
 // ---- HttpClientConn --------------------------------------------------------
 
 struct HttpClientConn::Impl {
@@ -563,10 +675,17 @@ struct HttpClientConn::Impl {
 };
 
 HttpClientConn::HttpClientConn(mem::Allocator alloc, TcpStream stream) noexcept
-    : stream_(std::move(stream)), alloc_(alloc) {
+    : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
   impl_ = alloc.allocate_n<Impl>(1);
   if (impl_ != nullptr) new (impl_) Impl(alloc);
 }
+#if defined(HYLE_IO_TLS)
+HttpClientConn::HttpClientConn(mem::Allocator alloc, TlsStream stream) noexcept
+    : transport_(HttpTransport{std::move(stream)}), alloc_(alloc) {
+  impl_ = alloc.allocate_n<Impl>(1);
+  if (impl_ != nullptr) new (impl_) Impl(alloc);
+}
+#endif
 HttpClientConn::~HttpClientConn() {
   if (impl_ != nullptr) {
     impl_->~Impl();
@@ -575,7 +694,7 @@ HttpClientConn::~HttpClientConn() {
 }
 HttpClientConn::HttpClientConn(HttpClientConn&& o) noexcept
     : impl_(std::exchange(o.impl_, nullptr)),
-      stream_(std::move(o.stream_)),
+      transport_(std::move(o.transport_)),
       alloc_(o.alloc_) {}
 HttpClientConn& HttpClientConn::operator=(HttpClientConn&& o) noexcept {
   if (this != &o) {
@@ -584,7 +703,7 @@ HttpClientConn& HttpClientConn::operator=(HttpClientConn&& o) noexcept {
       alloc_.deallocate_n(impl_, 1);
     }
     impl_ = std::exchange(o.impl_, nullptr);
-    stream_ = std::move(o.stream_);
+    transport_ = std::move(o.transport_);
     alloc_ = o.alloc_;
   }
   return *this;
@@ -595,6 +714,22 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
                                                    string_ref method,
                                                    string_ref path, string_ref host,
                                                    string_ref body) noexcept {
+  // These fields are serialized directly into the request line/Host header.
+  // Reject delimiter injection instead of emitting a second attacker-controlled
+  // header or request on the keep-alive connection.
+  if (method.size == 0 || path.size == 0 || host.size == 0 ||
+      contains_crlf(method) || contains_crlf(path) || contains_crlf(host)) {
+    co_return nullptr;
+  }
+  if (!valid_header_name(method)) co_return nullptr;
+  for (std::uint32_t i = 0; i < path.size; ++i) {
+    const unsigned char ch = static_cast<unsigned char>(path.data[i]);
+    if (ch <= 0x20 || ch == 0x7f) co_return nullptr;
+  }
+  for (std::uint32_t i = 0; i < host.size; ++i) {
+    const unsigned char ch = static_cast<unsigned char>(host.data[i]);
+    if (ch <= 0x20 || ch == 0x7f) co_return nullptr;
+  }
   HttpClientConn::Impl& im = *c.impl_;
   // Build + send the request. "METHOD path HTTP/1.1\r\nHost: host\r\n
   // Content-Length: N\r\n\r\n" + body.
@@ -611,7 +746,7 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
     }
     if (!put_cstr(out, "\r\n")) co_return nullptr;
     if (body.size > 0 && !put(out, body)) co_return nullptr;
-    if (!(co_await write_all(alloc, c.stream_, out.data, out.size)))
+    if (!(co_await write_all(alloc, c.transport_, out.data, out.size)))
       co_return nullptr;
   }
 
@@ -632,21 +767,24 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
       last_len = buf.size;
       if (buf.size >= kHttpMaxHeaderBytes) co_return nullptr;
     }
-    std::int64_t n = co_await read_more(alloc, buf, c.stream_);
+    std::int64_t n = co_await read_more(alloc, buf, c.transport_);
     if (n <= 0) co_return nullptr;
   }
 
   const std::uint32_t head_len = static_cast<std::uint32_t>(pret);
-  // Copy the head into a stable buffer and re-parse, so the response views survive
-  // the buf realloc/consume during body handling (same fix as the server path).
+  // Copy the head into stable storage and relocate parser views. This preserves
+  // response views across buf reuse without a second parse.
   im.head.size = 0;
   if (!im.head.reserve(head_len)) co_return nullptr;
   std::memcpy(im.head.data, buf.data, head_len);
   im.head.size = head_len;
-  num_headers = kHttpMaxHeaders;
-  pret = phr_parse_response(im.head.data, head_len, &minor_version, &status, &msg,
-                            &msg_len, im.headers, &num_headers, 0);
-  if (pret <= 0) co_return nullptr;
+  msg = im.head.data + (msg - buf.data);
+  for (std::size_t i = 0; i < num_headers; ++i) {
+    im.headers[i].name =
+        im.head.data + (im.headers[i].name - buf.data);
+    im.headers[i].value =
+        im.head.data + (im.headers[i].value - buf.data);
+  }
 
   HttpResponseView& r = im.resp;
   r = HttpResponseView{};
@@ -674,17 +812,35 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
   // Body framing (same rules as the server request path).
   string_ref te = r.header("transfer-encoding");
   string_ref cl = r.header("content-length");
+  // Apply the same anti-smuggling framing policy on responses as requests.
+  // A client that accepts TE+CL, an unsupported transfer coding, or conflicting
+  // duplicate Content-Length values can desynchronize its keep-alive stream from
+  // an intermediary that resolves the ambiguity differently.
+  if (te.size > 0) {
+    if (cl.size > 0) co_return nullptr;
+    if (!iequal(te, "chunked")) co_return nullptr;
+  } else {
+    string_ref seen_cl{};
+    for (std::size_t i = 0; i < r.header_count_; ++i) {
+      if (!iequal(r.header_name(i), "content-length")) continue;
+      string_ref v = r.header_value(i);
+      if (seen_cl.size > 0 && !(seen_cl == v)) co_return nullptr;
+      seen_cl = v;
+    }
+  }
   buf.consume(head_len);
   im.body.size = 0;
-  if (iequal(te, "chunked")) {
-    std::uint64_t dn = co_await decode_chunked(alloc, buf, im.body, c.stream_);
+  if (te.size > 0) {  // exactly bare "chunked" (validated above)
+    std::uint64_t dn =
+        co_await decode_chunked(alloc, buf, im.body, c.transport_);
     if (dn == UINT64_MAX) co_return nullptr;
     r.body_ = string_ref{im.body.data, static_cast<std::uint32_t>(dn)};
   } else if (cl.size > 0) {
     std::uint64_t body_len = 0;
     if (!parse_u64(cl, body_len)) co_return nullptr;
     if (body_len > kHttpMaxBodyBytes) co_return nullptr;
-    if (!(co_await fill_body(alloc, buf, c.stream_, 0, body_len))) co_return nullptr;
+    if (!(co_await fill_body(alloc, buf, c.transport_, 0, body_len)))
+      co_return nullptr;
     if (!im.body.reserve(static_cast<std::uint32_t>(body_len))) co_return nullptr;
     std::memcpy(im.body.data, buf.data, body_len);
     im.body.size = static_cast<std::uint32_t>(body_len);
@@ -701,7 +857,7 @@ sched::Task<HttpResponseView*> http_client_request(mem::Allocator alloc,
     // of any close-delimited body larger than the header packet; red-team U3.)
     for (;;) {
       if (buf.size > kHttpMaxBodyBytes) co_return nullptr;  // DoS guard
-      std::int64_t n = co_await read_more(alloc, buf, c.stream_);
+      std::int64_t n = co_await read_more(alloc, buf, c.transport_);
       if (n == 0) break;             // clean close = end of body
       if (n < 0) co_return nullptr;  // read error before close
     }

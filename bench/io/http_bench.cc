@@ -23,7 +23,9 @@
 
 #include <nanobench.h>
 
+#include <atomic>
 #include <cstdint>
+#include <cstdlib>
 #include <cstring>
 #include <memory>
 #include <vector>
@@ -36,7 +38,8 @@
 #include "hyle/sched/fiber.h"
 #include "hyle/sched/scheduler.h"
 
-#if defined(__linux__)
+#if !defined(_WIN32)
+#  include <fcntl.h>
 #  include <sys/socket.h>
 #  include <unistd.h>
 #endif
@@ -86,19 +89,24 @@ struct Pair {
   std::intptr_t b = -1;  // server end
 };
 
-#if defined(__linux__)
+#if !defined(_WIN32)
 Pair make_pair() {
   int sv[2];
   Pair p;
   if (::socketpair(AF_UNIX, SOCK_STREAM, 0, sv) == 0) {
+    for (int fd : sv) {
+      const int flags = ::fcntl(fd, F_GETFL, 0);
+      if (flags < 0 || ::fcntl(fd, F_SETFL, flags | O_NONBLOCK) != 0) {
+        ::close(sv[0]);
+        ::close(sv[1]);
+        return p;
+      }
+      ::fcntl(fd, F_SETFD, FD_CLOEXEC);
+    }
     p.a = sv[0];
     p.b = sv[1];
   }
   return p;
-}
-void close_pair(const Pair& p) {
-  if (p.a >= 0) ::close(static_cast<int>(p.a));
-  if (p.b >= 0) ::close(static_cast<int>(p.b));
 }
 #endif
 #if defined(_WIN32)
@@ -110,21 +118,42 @@ Pair make_pair() {
   sa.sin_family = AF_INET;
   sa.sin_addr.s_addr = ::htonl(INADDR_LOOPBACK);
   sa.sin_port = 0;
-  ::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa));
-  ::listen(ls, 1);
+  if (::bind(ls, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) == SOCKET_ERROR ||
+      ::listen(ls, 1) == SOCKET_ERROR) {
+    ::closesocket(ls);
+    return p;
+  }
   int slen = sizeof(sa);
-  ::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen);
+  if (::getsockname(ls, reinterpret_cast<sockaddr*>(&sa), &slen) ==
+      SOCKET_ERROR) {
+    ::closesocket(ls);
+    return p;
+  }
   SOCKET c = ::WSASocketW(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
-  ::connect(c, reinterpret_cast<sockaddr*>(&sa), sizeof(sa));
+  if (c == INVALID_SOCKET ||
+      ::connect(c, reinterpret_cast<sockaddr*>(&sa), sizeof(sa)) ==
+          SOCKET_ERROR) {
+    if (c != INVALID_SOCKET) ::closesocket(c);
+    ::closesocket(ls);
+    return p;
+  }
   SOCKET s = ::accept(ls, nullptr, nullptr);
   ::closesocket(ls);
+  if (s == INVALID_SOCKET) {
+    ::closesocket(c);
+    return p;
+  }
+  // TcpStream owns and closes both endpoints. Mark this benchmark-only pair
+  // abortive up front so process-level repetition does not fill Windows'
+  // ephemeral range with TIME_WAIT sockets after ~10 runs.
+  linger reset{1, 0};
+  ::setsockopt(c, SOL_SOCKET, SO_LINGER,
+               reinterpret_cast<const char*>(&reset), sizeof(reset));
+  ::setsockopt(s, SOL_SOCKET, SO_LINGER,
+               reinterpret_cast<const char*>(&reset), sizeof(reset));
   p.a = static_cast<std::intptr_t>(c);
   p.b = static_cast<std::intptr_t>(s);
   return p;
-}
-void close_pair(const Pair& p) {
-  if (p.a != -1) ::closesocket(static_cast<SOCKET>(p.a));
-  if (p.b != -1) ::closesocket(static_cast<SOCKET>(p.b));
 }
 #endif
 
@@ -132,6 +161,10 @@ struct Drive {
   Task<int> task;
 };
 void drive_entry(void* p) { static_cast<Drive*>(p)->task.resume(); }
+
+struct BenchState {
+  std::atomic<int> completed{0};
+};
 
 // ---- HYLE HTTP path --------------------------------------------------------
 // Server handler: GET / -> a small fixed "hello-hyle" body (the response whose
@@ -153,11 +186,13 @@ Task<int> http_server(Allocator alloc, TcpStream server_end) {
 
 // Client side: kReqRoundTrips GET / requests on ONE keep-alive connection, then drop
 // (closing the socket, which ends the server's serve loop).
-Task<int> http_client(Allocator alloc, TcpStream client_end) {
+Task<int> http_client(Allocator alloc, TcpStream client_end,
+                      BenchState* state) {
   HttpClientConn conn{alloc, std::move(client_end)};
   for (int i = 0; i < kReqRoundTrips; ++i) {
     HttpResponseView* resp = co_await conn.request("GET", "/", "127.0.0.1");
     if (resp == nullptr) break;
+    state->completed.fetch_add(1, std::memory_order_relaxed);
   }
   co_return 0;  // conn drops here -> client fd closed -> server sees EOF
 }
@@ -177,26 +212,28 @@ Task<int> raw_server(Allocator, TcpStream server_end) {
   }
   co_return 0;
 }
-Task<int> raw_client(Allocator, TcpStream client_end) {
+Task<int> raw_client(Allocator, TcpStream client_end, BenchState* state) {
   char buf[256];
   for (int i = 0; i < kReqRoundTrips; ++i) {
     std::int64_t w = co_await client_end.write(kRawReq, kRawReqLen);
     if (w != static_cast<std::int64_t>(kRawReqLen)) break;
     std::int64_t r = co_await client_end.read(buf, sizeof(buf));
     if (r <= 0) break;
+    state->completed.fetch_add(1, std::memory_order_relaxed);
   }
   co_return 0;
 }
 
 // Build kConns connections on `workers` cores, sharded round-robin, and drive them
 // to completion. `use_http` selects the HYLE HTTP path vs the raw-TCP baseline.
-void run(unsigned workers, bool use_http) {
+int run(unsigned workers, bool use_http) {
   Scheduler sched(workers, system_allocator(), 4096);
   IoContext io(sched, workers);
 
   std::vector<Pair> pairs(kConns);
   std::vector<std::unique_ptr<Drive>> drives;
   std::vector<std::unique_ptr<Fiber>> fibers;
+  BenchState state;
   drives.reserve(static_cast<std::size_t>(kConns) * 2);
   fibers.reserve(static_cast<std::size_t>(kConns) * 2);
 
@@ -213,15 +250,17 @@ void run(unsigned workers, bool use_http) {
     auto dc = std::make_unique<Drive>();
     if (use_http) {
       ds->task = http_server(system_allocator(), std::move(server_end));
-      dc->task = http_client(system_allocator(), std::move(client_end));
+      dc->task =
+          http_client(system_allocator(), std::move(client_end), &state);
     } else {
       ds->task = raw_server(system_allocator(), std::move(server_end));
-      dc->task = raw_client(system_allocator(), std::move(client_end));
+      dc->task =
+          raw_client(system_allocator(), std::move(client_end), &state);
     }
-    auto fs = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, ds.get());
-    auto fc = std::make_unique<Fiber>(system_allocator(), kDefaultStackSize,
-                                      &drive_entry, dc.get());
+    auto fs =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, ds.get());
+    auto fc =
+        std::make_unique<Fiber>(kDefaultStackSize, &drive_entry, dc.get());
     sched.spawn_on(owner, fs.get());
     sched.spawn_on(owner, fc.get());
     drives.push_back(std::move(ds));
@@ -231,7 +270,7 @@ void run(unsigned workers, bool use_http) {
   }
   sched.drain();
   sched.shutdown();
-  for (auto& p : pairs) close_pair(p);
+  return state.completed.load(std::memory_order_relaxed);
 }
 
 }  // namespace
@@ -254,16 +293,23 @@ int main() {
         .relative(true)
         .batch(batch)
         .unit("req")
-        .minEpochIterations(30);
+        .minEpochIterations(1)
+        .epochs(5);
     for (unsigned w : {1u, 2u, 4u, 8u}) {
       char name[64];
       std::snprintf(name, sizeof(name), "HYLE HTTP (%u workers)", w);
-      b.run(name, [&] { run(w, /*use_http=*/true); });
+      b.run(name, [&] {
+        if (run(w, /*use_http=*/true) != kConns * kReqRoundTrips)
+          std::abort();
+      });
     }
     // Transport floor: raw TCP echo over the SAME co_await TcpStream (1 worker),
     // moving the identical request+response bytes with zero HTTP work.
     b.run("raw TCP echo (1 worker, same bytes, no HTTP)",
-          [&] { run(1u, /*use_http=*/false); });
+          [&] {
+            if (run(1u, /*use_http=*/false) != kConns * kReqRoundTrips)
+              std::abort();
+          });
   }
 
 #if defined(_WIN32)

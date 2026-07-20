@@ -26,6 +26,7 @@
 
 using hyle::io::ResolvedAddr;
 using hyle::io::ResolveResult;
+using hyle::io::AddressFamily;
 using hyle::io::resolve;
 using hyle::mem::system_allocator;
 using hyle::sched::BlockingPool;
@@ -61,7 +62,7 @@ TEST(IoDns, ResolvesIpv4Literal) {
   bool found_v4_loopback = false;
   for (int i = 0; i < r->count; ++i) {
     const ResolvedAddr& a = r->addrs[i];
-    if (a.family != AF_INET) continue;
+    if (a.family != AddressFamily::kIpv4) continue;
     const auto* sin = reinterpret_cast<const sockaddr_in*>(a.storage);
     if (ntohs(sin->sin_port) != 8080) continue;
     if (ntohl(sin->sin_addr.s_addr) == INADDR_LOOPBACK) found_v4_loopback = true;
@@ -82,9 +83,29 @@ TEST(IoDns, ResolvesLocalhost) {
   // Every returned address must carry the requested port and a known family.
   for (int i = 0; i < r->count; ++i) {
     const ResolvedAddr& a = r->addrs[i];
-    EXPECT_TRUE(a.family == AF_INET || a.family == AF_INET6);
+    EXPECT_TRUE(a.family == AddressFamily::kIpv4 ||
+                a.family == AddressFamily::kIpv6);
     EXPECT_GT(a.len, 0u);
   }
+}
+
+TEST(IoDns, RejectsNullAndOverlongHostWithoutTruncation) {
+  WsaGuard wsa;
+  BlockingPool pool(system_allocator());
+  auto null_h = resolve(pool, system_allocator(), nullptr, 80);
+  auto null_r = null_h.join();
+  ASSERT_TRUE(null_r.has_value());
+  EXPECT_EQ(null_r->error, ResolveResult::kInvalidHost);
+  EXPECT_EQ(null_r->count, 0);
+
+  char host[300];
+  std::memset(host, 'a', sizeof(host));
+  host[sizeof(host) - 1] = '\0';
+  auto long_h = resolve(pool, system_allocator(), host, 80);
+  auto long_r = long_h.join();
+  ASSERT_TRUE(long_r.has_value());
+  EXPECT_EQ(long_r->error, ResolveResult::kInvalidHost);
+  EXPECT_EQ(long_r->count, 0);
 }
 
 // A name that cannot resolve returns a non-zero error and zero addresses, WITHOUT

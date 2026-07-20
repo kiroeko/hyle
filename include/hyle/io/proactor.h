@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hyle/c/io.h"
 #include "hyle/macros.h"
 #include "hyle/visibility.h"
 
@@ -32,6 +33,8 @@
 // they all present upward; the consumer (a sched worker) is backend-agnostic.
 
 namespace hyle::io {
+
+using BackendKind = hyle_io_backend;
 
 // A finished operation handed back by the proactor. `user_data` is the exact
 // 64-bit value the submitter attached (typically a Waker pointer / id, cast to
@@ -90,6 +93,10 @@ class Proactor {
   // thread needs no deferral and keeps the plain setup. io_uring only; no-op elsewhere.
   HYLE_IO_API bool init(unsigned entries = 256,
                         bool defer_worker_thread = false) noexcept;
+  HYLE_IO_API BackendKind backend_kind() const noexcept;
+  HYLE_IO_API const char* backend_name() const noexcept;
+  HYLE_IO_API bool has_async_file_data() const noexcept;
+  HYLE_IO_API bool has_async_file_metadata() const noexcept;
 
   // ---- submit real IO ops (io-02) -------------------------------------------
   // Queue a read/write of `len` bytes on `fd` at file `offset` (offset ignored
@@ -188,12 +195,7 @@ class Proactor {
   // Neutral, backend-filled file metadata (the statx subset a file server needs).
   // Bytes/times are the cross-platform intersection; `mode` is the POSIX st_mode
   // (0 on Windows -- use is_dir). One struct both backends fill on a stat op.
-  struct FileStat {
-    std::uint64_t size = 0;        // file size in bytes
-    std::uint64_t mtime_ns = 0;    // last-modification time, ns since epoch
-    std::uint32_t mode = 0;        // POSIX st_mode (0 on Windows)
-    bool is_dir = false;           // directory?
-  };
+  using FileStat = hyle_io_file_stat;
 
   // Neutral open flags (mapped to O_* on POSIX, to CreateFileW's disposition/access
   // on Windows). A file server needs read, write, create, truncate, append. `mode`
@@ -392,7 +394,7 @@ class Proactor {
   // in the .cc anonymous namespace (which cannot name a private nested type --
   // GCC rightly rejects that; only some compilers let it slide).
   static Impl* try_init_uring(unsigned entries, bool defer_worker_thread) noexcept;
-  static Impl* try_init_epoll() noexcept;
+  static Impl* try_init_epoll(unsigned entries) noexcept;
   static bool epoll_arm(Impl* impl, int fd, unsigned events, unsigned char opcode,
                         void* buf, unsigned len, std::uint64_t user_data,
                         std::uint64_t offset = 0) noexcept;
