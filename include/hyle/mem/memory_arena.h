@@ -21,6 +21,21 @@ namespace hyle::mem {
 // Ideal for same-size churn (fiber stacks, pooled nodes) where a general malloc
 // is overkill.
 //
+// Architecture (composition of two paths — different scenarios, one type):
+//  1. Per-thread TLS freelist cache (tbb/mimalloc tcache shape): same-thread
+//     free→alloc is a plain index stack with NO atomics (owner-only). This is
+//     the steady-state hot path that closes the always-CAS tax vs oneTBB.
+//  2. Sharded Treiber stacks (shared backend): TLS miss / overflow /
+//     publish_thread_cache() / thread-exit / dtor flush land here. Free is
+//     address-routed to the owning shard (ABA-sound).
+//
+// Soft capacity (red-team R1, intentional — same class as tbb/jemalloc tcache):
+// free blocks parked in another live thread's TLS are not visible to allocate()
+// until that thread flushes (publish_thread_cache / overflow / exit / dtor).
+// Window ≤ kTlsCacheCap per live thread. After join/publish, hard capacity is
+// restored. Making remote TLS steal-safe requires a lock on the hot path and
+// measured ~2× regression (parity tbb instead of beating it) — rejected.
+//
 // Two deliberate changes from clay (see mem-design.md):
 //  1. Free-list head is ONE 64-bit atomic packing (index<<32 | version) -- pure
 //     64-bit CAS, lock-free everywhere. clay used a 16-byte atomic<{ptr,tag}>
@@ -30,6 +45,8 @@ namespace hyle::mem {
 //
 // The free-list `next` links live in a PARALLEL index array, not intrusively in
 // the block bytes: no aliasing of user storage, clean lifetimes, TSan-clean.
+// TLS caches store block indices in a small per-thread array (do not borrow
+// next_[] while a block sits in TLS — next_[] is only for shard stacks).
 class MemoryArena {
  public:
   // `block_size` bytes per block, `block_count` blocks, each aligned to
@@ -112,6 +129,10 @@ class MemoryArena {
   }
 
   ~MemoryArena() {
+    // Quiesce TLS caches first: flush free indices back onto shards (so we don't
+    // leak blocks conceptually), then detach so thread_local dtors see arena==null
+    // and only free the ThreadCache node (no UAF into a dead arena).
+    if (valid_) detach_all_caches();
     // Elements are placement-new'd only after all three allocations succeed
     // (valid_); a partially-constructed (OOM'd) arena skips element teardown and
     // frees only what was allocated (null-safe). See mem-audit-followup #2 arch B.
@@ -134,12 +155,18 @@ class MemoryArena {
 
   HYLE_DISABLE_COPY_AND_MOVE(MemoryArena);
 
-  // Pop a free block. nullptr if the WHOLE pool is exhausted. Tries this thread's home
-  // shard first (uncontended in the common per-thread case), then scans the others so a
-  // block is handed out as long as ANY shard has one (preserves the single-pool "not
-  // exhausted until truly empty" contract).
+  // Pop a free block. nullptr if local TLS empty AND every shard empty. Free blocks
+  // still sitting only in OTHER live threads' TLS are invisible (soft capacity;
+  // call their publish_thread_cache or join them to restore hard capacity).
   void* allocate() noexcept {
     if (!valid_) return nullptr;  // OOM'd arena has no slab/shards to hand out
+    if (ThreadCache* tc = tls_cache(/*create=*/true)) {
+      if (tc->count > 0) {
+        const std::uint32_t idx = tc->idxs[--tc->count];
+        return slab_ + static_cast<std::size_t>(idx) * stride_;
+      }
+    }
+    // TLS miss: pop from shared shards (Treiber CAS path).
     const std::uint32_t home = tls_thread_seq() & shard_mask_;  // num_shards_ is pow2
     std::uint32_t idx = pop_shard(home);
     if (idx == kNull) {
@@ -147,14 +174,14 @@ class MemoryArena {
         idx = pop_shard((home + k) & shard_mask_);
         if (idx != kNull) break;
       }
-      if (idx == kNull) return nullptr;  // every shard empty
+      if (idx == kNull) return nullptr;
     }
     return slab_ + static_cast<std::size_t>(idx) * stride_;
   }
 
-  // Return a block previously obtained from allocate(). Routes back to the block's
-  // OWNING shard (by address), so each shard's free list only ever holds its own index
-  // range -- no cross-shard next_ aliasing, per-shard ABA version stays sound.
+  // Return a block previously obtained from allocate(). Same-thread steady state
+  // lands in the TLS freelist (owner-only, no atomics). Overflow flushes a batch
+  // back to the address-routed owning shards. null is a no-op.
   void deallocate(void* p) noexcept {
     if (p == nullptr || !valid_) return;
     const auto addr = reinterpret_cast<std::uintptr_t>(p);
@@ -168,16 +195,41 @@ class MemoryArena {
     // division -- same guarantee, one idiv instead of two on the free hot path.
     HYLE_FATAL_ASSERT(idx < count_ &&
                       static_cast<std::size_t>(idx) * stride_ == off);
+    if (ThreadCache* tc = tls_cache(/*create=*/true)) {
+      if (tc->count < kTlsCacheCap) {
+        tc->idxs[tc->count++] = idx;
+        return;
+      }
+      // Cache full: flush half to shards, keep half warm, then push this idx.
+      flush_cache_half(tc);
+      if (tc->count < kTlsCacheCap) {
+        tc->idxs[tc->count++] = idx;
+        return;
+      }
+    }
+    // No TLS (OOM creating cache) or still full: direct shared push.
     push_shard(shard_of(idx), idx);
+  }
+
+  // Flush THIS thread's TLS freelist onto address-routed shards. Explicit barrier
+  // when another thread must observe the free blocks without waiting for this
+  // thread to exit (soft-capacity handoff). Owner-only; no cross-thread use.
+  void publish_thread_cache() noexcept {
+    if (!valid_) return;
+    if (ThreadCache* tc = tls_cache(/*create=*/false)) {
+      flush_cache_to_shards(tc);
+    }
   }
 
   // Return EVERY block to the free pool in one shot (rebuild each shard's free
   // list to its full contiguous range). O(count). Contract: NO block may be live
   // -- reset() while allocations are outstanding is a use-after-free waiting to
   // happen (same rule as Arena::reset). Single-threaded w.r.t. allocate/deallocate:
-  // callers must quiesce concurrent access first (it stores relaxed, no CAS).
+  // callers must quiesce concurrent access first. Also drains every registered TLS
+  // cache (quiesced threads may still hold free indices in TLS).
   void reset() noexcept {
     if (!valid_) return;
+    flush_all_caches_keep_registered();
     for (std::uint32_t s = 0; s < num_shards_; ++s) {
       std::uint32_t lo = s * per_;
       std::uint32_t hi = (s + 1 == num_shards_) ? count_ : lo + per_;
@@ -226,6 +278,10 @@ class MemoryArena {
   }
 
   static constexpr std::uint32_t kNull = 0xFFFFFFFFu;
+  // TLS freelist depth: bounds soft-capacity (free blocks parked off-shard) per
+  // live thread. 32 is enough to absorb same-thread churn without thrashing the
+  // shared CAS path; overflow flushes half so the cache stays warm.
+  static constexpr std::uint32_t kTlsCacheCap = 32;
   // Shard the free list into independent Treiber stacks, one per cache-line-isolated head.
   // clay inherited a SINGLE head -> every thread CAS'd the same cache line, serializing
   // (O(threads), measured 278x slower than mimalloc's per-thread heaps under 8-way churn).
@@ -265,6 +321,155 @@ class MemoryArena {
     static std::atomic<std::uint32_t> g{0};
     thread_local std::uint32_t id = g.fetch_add(1, std::memory_order_relaxed);
     return id;
+  }
+
+  // ---- TLS freelist cache (tbb-style same-thread fast path) --------------------
+  // One ThreadCache node per (thread, arena). Thread owns the node lifetime
+  // (thread_local list + dtor). Arena owns a registry for reset()/~MemoryArena
+  // so free indices never die with a destroyed pool and never UAF after it.
+  //
+  // count/idxs are owner-only on the hot path (no atomics). reset/detach may
+  // touch them only after concurrent allocate/deallocate is quiesced (same
+  // contract as reset() itself). Remote steal was measured and rejected: a
+  // correct steal needs a lock on every TLS op and drops the tbb win to TIE.
+  struct ThreadCache {
+    MemoryArena* arena = nullptr;
+    Allocator alloc{};  // copy: free the node if arena already destroyed
+    std::uint32_t count = 0;
+    std::uint32_t idxs[kTlsCacheCap]{};
+    ThreadCache* next_in_thread = nullptr;
+    ThreadCache* next_in_arena = nullptr;
+  };
+
+  struct TlsCacheList {
+    ThreadCache* head = nullptr;
+    ~TlsCacheList() {
+      while (head != nullptr) {
+        ThreadCache* c = head;
+        head = c->next_in_thread;
+        c->next_in_thread = nullptr;
+        MemoryArena* a = c->arena;
+        if (a != nullptr) a->detach_cache(c);  // flush + unregister + null arena
+        free_thread_cache_node(c);
+      }
+    }
+  };
+
+  static TlsCacheList& tls_list() noexcept {
+    thread_local TlsCacheList list;
+    return list;
+  }
+
+  // Rare-path registry lock (attach/detach/reset/dtor). Hot path never takes it.
+  void lock_reg() const noexcept {
+    while (reg_lock_.test_and_set(std::memory_order_acquire)) {
+    }
+  }
+  void unlock_reg() const noexcept { reg_lock_.clear(std::memory_order_release); }
+
+  static void free_thread_cache_node(ThreadCache* c) noexcept {
+    Allocator al = c->alloc;
+    c->~ThreadCache();
+    if (al.valid())
+      al.deallocate(c, sizeof(ThreadCache), alignof(ThreadCache));
+  }
+
+  ThreadCache* tls_cache(bool create) noexcept {
+    TlsCacheList& list = tls_list();
+    // Walk + reclaim zombies (arena destroyed, node left with arena==nullptr).
+    // Without this, long-lived threads that churn many MemoryArenas leak one
+    // ThreadCache node per destroyed arena until thread exit (red-team R2).
+    ThreadCache* prev = nullptr;
+    ThreadCache* c = list.head;
+    while (c != nullptr) {
+      ThreadCache* next = c->next_in_thread;
+      if (c->arena == this) return c;
+      if (c->arena == nullptr) {
+        if (prev != nullptr)
+          prev->next_in_thread = next;
+        else
+          list.head = next;
+        free_thread_cache_node(c);
+        c = next;
+        continue;
+      }
+      prev = c;
+      c = next;
+    }
+    if (!create || !valid_) return nullptr;
+    void* mem = alloc_.allocate(sizeof(ThreadCache), alignof(ThreadCache));
+    if (mem == nullptr) return nullptr;  // fall back to pure shard CAS path
+    auto* fresh = new (mem) ThreadCache();
+    fresh->arena = this;
+    fresh->alloc = alloc_;
+    fresh->next_in_thread = list.head;
+    list.head = fresh;
+    lock_reg();
+    fresh->next_in_arena = cache_list_;
+    cache_list_ = fresh;
+    unlock_reg();
+    return fresh;
+  }
+
+  void flush_cache_to_shards(ThreadCache* tc) noexcept {
+    while (tc->count > 0) {
+      const std::uint32_t idx = tc->idxs[--tc->count];
+      push_shard(shard_of(idx), idx);
+    }
+  }
+
+  void flush_cache_half(ThreadCache* tc) noexcept {
+    const std::uint32_t n = tc->count / 2;
+    for (std::uint32_t i = 0; i < n; ++i) {
+      const std::uint32_t idx = tc->idxs[--tc->count];
+      push_shard(shard_of(idx), idx);
+    }
+  }
+
+  // Called from thread_local dtor OR arena dtor path: flush free blocks, unlink
+  // from arena registry, null arena so the thread dtor only frees the node.
+  void detach_cache(ThreadCache* tc) noexcept {
+    lock_reg();
+    if (tc->arena == this) {
+      flush_cache_to_shards(tc);
+      ThreadCache** pp = &cache_list_;
+      while (*pp != nullptr) {
+        if (*pp == tc) {
+          *pp = tc->next_in_arena;
+          break;
+        }
+        pp = &(*pp)->next_in_arena;
+      }
+      tc->next_in_arena = nullptr;
+      tc->arena = nullptr;
+    }
+    unlock_reg();
+  }
+
+  void detach_all_caches() noexcept {
+    lock_reg();
+    ThreadCache* c = cache_list_;
+    cache_list_ = nullptr;
+    while (c != nullptr) {
+      ThreadCache* next = c->next_in_arena;
+      flush_cache_to_shards(c);
+      c->next_in_arena = nullptr;
+      c->arena = nullptr;
+      c = next;
+    }
+    unlock_reg();
+  }
+
+  // reset(): drop every TLS freelist. Do NOT push to shards — rebuild below
+  // reclaims the full index range (contract: no live blocks; TLS-held free
+  // indices are not live). Keeps cache nodes registered for subsequent use.
+  // Contract: callers quiesce concurrent allocate/deallocate first.
+  void flush_all_caches_keep_registered() noexcept {
+    lock_reg();
+    for (ThreadCache* c = cache_list_; c != nullptr; c = c->next_in_arena) {
+      c->count = 0;
+    }
+    unlock_reg();
   }
 
   // Pop a free block index from shard s's Treiber stack. kNull if that shard is empty.
@@ -321,6 +526,8 @@ class MemoryArena {
   std::uint32_t shard_mask_ = 0;  // num_shards_ - 1 (pow2), so home = seq & shard_mask_
   std::uint32_t per_ = 0;  // blocks per shard (last shard takes the remainder)
   bool valid_ = false;  // set true once the ctor fully built the arena (else OOM'd)
+  ThreadCache* cache_list_ = nullptr;  // registry of live TLS caches (under reg_lock_)
+  mutable std::atomic_flag reg_lock_ = ATOMIC_FLAG_INIT;
 };
 
 // Bump (region) allocator over ONE MemoryArena block (clay's Arena). Borrows a

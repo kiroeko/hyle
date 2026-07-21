@@ -185,6 +185,125 @@ TEST(MemoryArena, CrossThreadFreeRoutesBack) {
   EXPECT_EQ(again, static_cast<std::size_t>(kN));
 }
 
+// Same-thread free→alloc must reuse via TLS freelist (non-atomic path). After a
+// free the next allocate returns the same pointer — proves the cache is live and
+// not losing blocks to a second CAS round-trip identity.
+TEST(MemoryArena, SameThreadTlsCacheReusesPointer) {
+  MemoryArena pool(system_allocator(), 64, 8);
+  void* a = pool.allocate();
+  ASSERT_NE(a, nullptr);
+  pool.deallocate(a);
+  void* b = pool.allocate();
+  EXPECT_EQ(a, b);  // TLS LIFO reuse
+  pool.deallocate(b);
+}
+
+// Fill past kTlsCacheCap (32): overflow must flush to shards without leak or
+// double-free; full capacity still reclaimable afterwards.
+TEST(MemoryArena, TlsCacheOverflowStillReclaimsAll) {
+  constexpr std::uint32_t kN = 64;  // > 32 TLS cap
+  MemoryArena pool(system_allocator(), 32, kN);
+  std::vector<void*> ps;
+  for (std::uint32_t i = 0; i < kN; ++i) {
+    void* p = pool.allocate();
+    ASSERT_NE(p, nullptr);
+    ps.push_back(p);
+  }
+  EXPECT_EQ(pool.allocate(), nullptr);
+  for (void* p : ps) pool.deallocate(p);  // 32 stay in TLS, rest flush to shards
+  std::size_t again = 0;
+  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++again;
+  EXPECT_EQ(again, static_cast<std::size_t>(kN));
+}
+
+// reset() must clear TLS-held free indices so the rebuilt shard freelist is the
+// sole source of truth (no double-handout of a TLS-cached index).
+TEST(MemoryArena, ResetClearsTlsCache) {
+  MemoryArena pool(system_allocator(), 64, 8);
+  void* a = pool.allocate();
+  void* b = pool.allocate();
+  ASSERT_NE(a, nullptr);
+  ASSERT_NE(b, nullptr);
+  pool.deallocate(a);  // lands in TLS
+  pool.deallocate(b);
+  pool.reset();  // must drop TLS, rebuild full freelist
+  std::size_t n = 0;
+  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++n;
+  EXPECT_EQ(n, 8u);
+}
+
+// Soft capacity (red-team R1): free-to-TLS on a live thread parks blocks off-shard.
+// Without publish/join, another thread can see nullptr while free blocks exist.
+// publish_thread_cache() is the explicit handoff barrier (steal-with-lock was
+// measured: restores hard capacity but drops the tbb win to TIE — rejected).
+TEST(MemoryArena, RemoteTlsSoftThenPublishRestoresHardCapacity) {
+  constexpr std::uint32_t kN = 32;
+  MemoryArena pool(system_allocator(), 64, kN);
+  std::vector<void*> ptrs(kN, nullptr);
+  struct Ctx {
+    MemoryArena* pool;
+    std::vector<void*>* ptrs;
+    std::atomic<int>* phase;
+  };
+  std::atomic<int> phase{0};
+  Ctx c{&pool, &ptrs, &phase};
+  auto free_t = hyle::platform::Thread::spawn(
+      [](void* p) {
+        auto* x = static_cast<Ctx*>(p);
+        while (x->phase->load(std::memory_order_acquire) < 1)
+          hyle::platform::this_thread::yield();
+        for (void* q : *x->ptrs) x->pool->deallocate(q);
+        // Phase 2: frees parked in TLS, not yet published.
+        x->phase->store(2, std::memory_order_release);
+        while (x->phase->load(std::memory_order_acquire) < 3)
+          hyle::platform::this_thread::yield();
+        x->pool->publish_thread_cache();  // handoff barrier
+        x->phase->store(4, std::memory_order_release);
+        while (x->phase->load(std::memory_order_acquire) < 5)
+          hyle::platform::this_thread::yield();
+      },
+      &c);
+  ASSERT_TRUE(free_t.has_value());
+  for (std::uint32_t i = 0; i < kN; ++i) {
+    ptrs[i] = pool.allocate();
+    ASSERT_NE(ptrs[i], nullptr);
+  }
+  phase.store(1, std::memory_order_release);
+  while (phase.load(std::memory_order_acquire) < 2)
+    hyle::platform::this_thread::yield();
+  // Soft window: free thread still live, TLS not published → main may exhaust.
+  EXPECT_EQ(pool.allocate(), nullptr);
+  phase.store(3, std::memory_order_release);
+  while (phase.load(std::memory_order_acquire) < 4)
+    hyle::platform::this_thread::yield();
+  // After publish: full capacity visible on shards.
+  std::vector<void*> held;
+  for (std::uint32_t i = 0; i < kN; ++i) {
+    void* p = pool.allocate();
+    ASSERT_NE(p, nullptr) << "post-publish at " << i;
+    held.push_back(p);
+  }
+  EXPECT_EQ(pool.allocate(), nullptr);
+  for (void* p : held) pool.deallocate(p);
+  phase.store(5, std::memory_order_release);
+  std::move(*free_t).join();
+}
+
+// Churn many arena lifetimes on one thread: ThreadCache zombies (arena==nullptr)
+// must be reclaimed so we do not grow an unbounded TLS list (red-team R2).
+TEST(MemoryArena, ManyArenaLifetimesDoNotBreakTls) {
+  for (int i = 0; i < 64; ++i) {
+    MemoryArena pool(system_allocator(), 32, 8);
+    void* p = pool.allocate();
+    ASSERT_NE(p, nullptr);
+    pool.deallocate(p);
+  }
+  MemoryArena live(system_allocator(), 32, 4);
+  std::size_t n = 0;
+  for (void* p = live.allocate(); p != nullptr; p = live.allocate()) ++n;
+  EXPECT_EQ(n, 4u);
+}
+
 // ---- Arena (bump region over one pool block) --------------------------------
 using hyle::mem::Arena;
 

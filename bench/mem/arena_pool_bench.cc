@@ -6,12 +6,13 @@
 // plus raw mi_malloc/mi_free (the general malloc = what `new/delete` resolve to,
 // since HYLE's global backing is mimalloc) as the "5-10x" target baseline.
 //
-// TWO workload families:
-//  A. BUMP (alloc N, no per-object free, bulk release): HYLE Arena + StackAllocator
-//     vs std::pmr::monotonic_buffer_resource vs raw mi (alloc-all then free-all).
-//  B. POOL CHURN (alloc/free same size class, reuse): HYLE MemoryArena (lock-free)
-//     + GrowablePool (single-thread) vs std::pmr::unsynchronized_pool_resource vs
-//     raw mi (malloc/free churn).
+// Workload families (fair contracts only — no "wrong tool" rows in SOTA tables):
+//  A. BUMP: Arena + StackAllocator vs pmr::monotonic vs raw mi.
+//  B. SINGLE-THREAD pool churn: GrowablePool ONLY vs pmr::unsynchronized_pool vs
+//     raw mi. MemoryArena/ObjectPool are multi-thread shared tools — they must NOT
+//     appear here (no fair ST baseline; atomic CAS tax is misuse, not a rival).
+//  C. 8-thread: GrowablePool-per-thread vs mi; MemoryArena shared vs pmr sync +
+//     optional oneTBB scalable (gated HYLE_BENCH_TBB).
 
 #include <mimalloc.h>
 #include <nanobench.h>
@@ -29,14 +30,12 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/growable_pool.h"
 #include "hyle/mem/memory_arena.h"
-#include "hyle/mem/object_pool.h"
 #include "hyle/mem/stack_allocator.h"
 
 using hyle::mem::Allocator;
 using hyle::mem::Arena;
 using hyle::mem::GrowablePool;
 using hyle::mem::MemoryArena;
-using hyle::mem::ObjectPool;
 using hyle::mem::StackAllocator;
 using hyle::mem::system_allocator;
 
@@ -140,26 +139,21 @@ int main() {
     });
   }
 
-  // ---- B. POOL CHURN: alloc/free same size class, slot reuse ----
+  // ---- B. SINGLE-THREAD pool churn (fair tools only) ----
+  // GrowablePool is the ST same-size free-list tool. Rivals: pmr unsync pool (std
+  // ST pool SOTA) + raw mi (general baseline). MemoryArena/ObjectPool intentionally
+  // omitted: they pay atomics for multi-thread sharing — putting them here invents
+  // a "loss" with no fair ST SOTA denominator (see multi-thread section C).
   {
     nb::Bench b;
-    b.title("pool churn: 8192x alloc/free same 64B class")
+    b.title("single-thread pool churn: 8192x alloc/free 64B")
         .relative(true)
         .batch(kN)
         .minEpochIterations(50);
 
-    // HYLE MemoryArena (lock-free fixed pool).
-    MemoryArena mpool(sys, kObj, kN);
-    b.run("HYLE MemoryArena (lock-free pool)", [&] {
-      for (int i = 0; i < kN; ++i) {
-        void* p = mpool.allocate();
-        nb::doNotOptimizeAway(p);
-        mpool.deallocate(p);
-      }
-    });
-
-    // HYLE GrowablePool (single-threaded, no atomics).
-    struct Obj { std::byte b[kObj]; };
+    struct Obj {
+      std::byte b[kObj];
+    };
     GrowablePool<Obj> gpool(sys, 64);
     b.run("HYLE GrowablePool (single-thread)", [&] {
       for (int i = 0; i < kN; ++i) {
@@ -169,21 +163,6 @@ int main() {
       }
     });
 
-    // HYLE ObjectPool<T> (typed create/destroy over the lock-free MemoryArena).
-    // Measures the typed shell's overhead atop the arena: it adds placement-new
-    // + ~T over MemoryArena's raw alloc/free, so it should track MemoryArena (NOT
-    // GrowablePool -- ObjectPool is the lock-free/shared-capable one, the same
-    // atomic-CAS class). Was a DEAD include (object_pool.h:28) until this row.
-    ObjectPool<Obj> opool(sys, kN);
-    b.run("HYLE ObjectPool (typed, lock-free arena)", [&] {
-      for (int i = 0; i < kN; ++i) {
-        Obj* p = opool.create();
-        nb::doNotOptimizeAway(p);
-        opool.destroy(p);
-      }
-    });
-
-    // std::pmr::unsynchronized_pool_resource (SOTA: std's pool).
     b.run("std::pmr::unsynchronized_pool_resource (SOTA)", [&] {
       std::pmr::unsynchronized_pool_resource upr;
       for (int i = 0; i < kN; ++i) {
@@ -193,7 +172,6 @@ int main() {
       }
     });
 
-    // raw mi_malloc/free churn (general malloc baseline).
     b.run("raw mi_malloc/free (general)", [&] {
       for (int i = 0; i < kN; ++i) {
         void* p = mi_malloc(kObj);
