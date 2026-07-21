@@ -97,7 +97,7 @@ fast monotonic 约 1.8x；M4 无 TSC 正常回退。fast realtime 在 Windows/Li
 约 4.94x/3.36x，macOS 无 coarse 原语而同档回退。
 
 完整命令、仪器判定和局限见
-[`benchmarks-sched.md`](../performance/benchmarks-sched.md)。
+[`benchmarks-time.md`](../performance/benchmarks-time.md)。
 
 ## 6. 保留边界
 

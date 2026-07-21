@@ -1,6 +1,21 @@
-# simd 实测铁证
+# simd 产品 kernel 实测
 
-> 本页是 [performance 总账](./README.md) 的 simd 详节:dot/saxpy、exp/log/tanh 数学核、fp16/bf16 dtype、reduce_max/scale。环境:WSL Ubuntu24.04 原生 ext4 GCC14.2 + Win MSVC19.50 Release,nanobench,4096 f32(L1 常驻)。`bench/simd/`。
+> 本页是 [performance 总账](./README.md) 的 **simd 产品路径** 详节：  
+> dot/saxpy、数学核、dtype、gather/compress、vendor 竞争、activation/sort 等。  
+> 环境：WSL Ubuntu24.04 原生 ext4 GCC14 + Win MSVC19.50 Release；部分段含 Apple NEON。  
+> `bench/simd/`。
+>
+> ## 导航（数据散时只信这一层）
+>
+> | 口径 | 文档 | 权威？ |
+> |---|---|---|
+> | **逐 op vs Highway 全量** | [benchmarks-simd-ops.md](./benchmarks-simd-ops.md) → 全表 [../milestones/simd-orderswap-matrix.md](../milestones/simd-orderswap-matrix.md) | **op SOTA 最新最全**（LOSE 列） |
+> | **产品 kernel / math / dtype** | **本页** | 公开 batch / best-of-breed / 契约 API |
+> | **对拍怎么跑、怎么定罪** | [simd-op-benchmark-methodology.md](./simd-op-benchmark-methodology.md) | 规程 |
+> | **覆盖计数** | `python scripts/simd-op-coverage.py` | 机械；禁手加历史数字 |
+>
+> 本页后半「op-parity 旧扫表 / 该抄清单」是 **历史狩猎留档**（曾驱动 store+reload 清零）。  
+> **当前是否还 LOSE Highway：以 ops 页 + orderswap 矩阵为准，不以本页旧表覆盖。**
 
 ## simd dot / saxpy（vs 标量 auto-vec + 同 ISA SOTA Highway，`simd_bench.cc`）
 

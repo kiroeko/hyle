@@ -1,65 +1,47 @@
-# mem / container 实测铁证
+# container 实测详表（+ 历史夹带）
 
-> 本页是 [performance 总账](./README.md) 的 mem + container(vec/list/str/path) + 次要模块详节。环境:Win MSVC19.50 + Linux GCC14.2 Release(原生 ext4),nanobench,`scripts/bench-stat.py` 15 遍统计。
+> **导航 / 新鲜度 / 非 SOTA 清单 / 选型** → **[benchmarks-container.md](./benchmarks-container.md)**（performance 入口）。  
+> **mem 分配器** → [benchmarks-mem.md](./benchmarks-mem.md)。  
+> 本页保留 **分面详表 + 优化史**；与入口摘要冲突时：新鲜度以入口 §0 为准，数字以更新的实测为准。  
+> runtime hasher 在 `hyle/container/hash.h`（不在 util）。
 
-## mem 分配器（`Allocator` vtable vs 裸 mimalloc vs std::malloc，`allocator_bench.cc`）
+## container·hash —— `hash_bytes` / `mix64` / `Hash&lt;T&gt;`（`hash_bench.cc`）
 
-> 环境:**双平台**——Win MSVC19.50 + **Linux GCC14.2 原生 ext4 15 遍中位数+spread**(`scripts/bench-stat.py`),nanobench,200k/50k 小块(16..511B)。**两个标尺**:① 裸 `mi_malloc`(设为相对基线)——但它**非多态、全内联**,对它的差读的是"多态 vs 无多态"的物理代价,非接缝缺陷;② **同类 SOTA = `std::pmr::polymorphic_allocator` over mimalloc**——和 HYLE 运行时 vtable 同为"同一 backing 上的运行时多态"(各付一次 dispatch),这才是 apples-to-apples"我们的运行时路径是否 SOTA"。`std::malloc` = 弱基线。
+> 归属：`include/hyle/container/hash.h` + `src/container/hash.cc`。  
+> 环境:Win MSVC19.50 Release,nanobench,15 遍中位数（**⏳ 非 2026-07-20 三平台口径，待本轮 container 刷新**）。三组:HYLE / 裸 XXH3+wyhash(SOTA) / std::hash。XXH3 vendored 无条件,wyhash gated `-DHYLE_BENCH_WYHASH`。
 
-| 场景 | 裸 mi(无多态) | HYLE vtable(运行时) | std::pmr(同类 SOTA) | HYLE SystemAllocator(编译期) | 结论(Linux 15 遍) |
+> **⚠️ bench 公平性更正(2026-07,红队 hash)**:旧 bench/ledger 有三处误导,已修:① **≤16B 行标签 "XXH3 wrapper" 错**——`hash_bytes(len≤16)` 是 `HYLE_FORCE_INLINE` 且短路走 **inline mix(mix64 折叠)根本不调 XXH3、不跨导出 seam**;所以 8B/16B 是 HYLE-inline-mix vs **完整 XXH3**(两个不同算法),旧结论"输裸 XXH3 0.86x/0.67x"是拿 inline-mix 比 XXH3-small,非真输。**真正的 seam/wrapper 税只在 64B/256B**(那里才是同算法 XXH3 vs XXH3)。② 旧 bench **单固定串重复 hash 百万次**→数据常驻 L1、长度分派分支完美预测,小串读出亚周期(0.03ns 假地板);已改**每长度轮转 256 个随机串**(smhasher 式),8B 从假地板 0.03→真实 0.23ns。③ `batch(len)`=ns/byte,小串固定开销主导,per-byte 低≠算法快。
+
+| 字节哈希(ns/op per byte,15 遍) | HYLE | 裸 XXH3 | wyhash | std | 结论(算法归属) |
 |---|---|---|---|---|---|
-| **churn 空循环**(alloc+free) | 7.65 ns | 8.14 ns(0.935x) | 9.87 ns(0.78x) | **7.84 ns(0.975x)** | **vtable 统计平局裸 mi**(gap 6.5%«spread 23%);赢同类 std::pmr 1.21x;编译期路径≈裸 mi |
-| **alloc+touch+free**(真实) | 7.41 ns | 8.24 ns(0.906x) | — | — | 统计平局(gap 9.4%«spread 23%) |
-| **alloc-all/free-all**(批) | 9.38 ns | 9.70 ns(0.970x) | — | — | 统计平局 |
-| **8 线程并发** | 1.65 ns/op | 1.73 ns/op(0.954x) | — | — | 统计平局(per-thread heap) |
-| **realloc grow chain** | 72 ns | 76 ns(0.946x) | — | — | 统计平局(gap 5.4%«spread 21%) |
+| 8B | 0.23 | 0.21 | 0.30 | 0.29 | **inline mix**(非 XXH3):赢 wyhash-small、近平 XXH3-small |
+| 16B | 0.15 | 0.12 | 0.15 | 0.35 | **inline mix**(非 XXH3):平 wyhash、近平 XXH3-small |
+| 64B | 0.055 | 0.043 | 0.052 | 0.45 | **真 XXH3 wrapper**:同算法 vs 裸 XXH3 ~1.28x 接缝税(出线核不可内联) |
+| 256B | 0.082 | 0.075 | **0.029** | 0.63 | 平裸 XXH3(接缝);**wyhash 碾 XXH3 2.6x=SOTA 观察** |
 
-**诚实结论(统计法修正:vtable 封装税在噪声内,不是"慢 10%")**:
-- **运行时 `Allocator` vtable**(opt-in 路径,给 arena/mock/跨 DLL):**Linux 统计法下与裸 mi 全部统计平局**(5 个 workload 的 gap 3-9% 全小于 ~22% 的 run-to-run spread)——此前 Win 单遍读出的"慢 8-12%"在多遍统计下站不住,vtable 的一次间接调用在真实分配开销面前测不出来。**对同类 SOTA `std::pmr::polymorphic_allocator`(也一次虚调用、同 mimalloc backing)反超 1.21x**(HYLE 8.14 vs pmr 9.87ns)。即:在"运行时多态分配器"这个类里 HYLE 是 SOTA,且封装税相对裸 mi 在测量精度内为零。原 +21% 才是真缺陷(已修)——① 单 5 参 `ReallocFn` 在 Win64 压第 5 参 + 派发分支 → 拆 3 函数指针;② `normalize_alignment` 常开 FATAL_ASSERT → 默认对齐短路。
-- **编译期 `SystemAllocator`**(默认路径,host RAM):`allocate` 内联直调 `mi_malloc`,**实测 0.975x 裸 mi(统计平局)**。前向声明 5 个 mi_* 不暴露 mimalloc.h(用户点破"内联≠暴露头"假两难)。**默认场景零接缝税,与裸 mimalloc 持平**——这就是"C-ABI 也能最强":默认编译期绑定 0 税,运行时注入是显式 opt-in,实测那一档也统计平局裸 mi、且反超 std::pmr。
-- **结论:vtable 对裸 mi 统计平局(非"慢 10%"),且在多态这一类里反超 std::pmr 1.21x**;默认编译期路径同样平裸 mimalloc。**头内联容器簇已全量迁移**(SmallVector/BoundedQueue/ShardedQueue/WsFifoQueue/WorkStealingDeque/ConcurrentVector):默认参 `SystemAllocator`,`[[no_unique_address]]` 去掉每实例 32 字节运行时句柄(空间复杂度↓),运行时 `mem::Allocator` 降 opt-in(sched 等需注入者显式用)。type-erased 核容器(CArray/SwissTable/string_buf)保持运行时句柄(出线核服务所有 T,不内联,这是正确模型非缺口)。双平台 + WSL TSan 验证。
+| 整数哈希(4096 key) | HYLE mix64 | wyhash64 | std::hash | 结论 |
+|---|---|---|---|---|
+| ns/op | **0.44** | 0.57(赢 1.27x) | 1.50(赢 3.4x) | ✅ mix64 已 SOTA(= abseil 同款单 128 位乘折叠) |
 
-## mem 专用分配器簇（arena/pool/stack vs `std::pmr` + 裸 mimalloc，`arena_pool_bench.cc`）
-
-> 环境:**双平台**——Win MSVC19.50 + **Linux GCC14.2 原生 ext4 15 遍中位数+spread**(`scripts/bench-stat.py`),nanobench,8192×64B。**SOTA 标尺 = `std::pmr`**(标准库自带:bump arena=`monotonic_buffer_resource`、单线程 pool=`unsynchronized_pool_resource`、**多线程共享 pool=`synchronized_pool_resource`**,完美 drop-in,无需 clone)+ 裸 `mi_malloc`(=`new/delete` 的实际 backing)。**此前这簇零对标——本节真测揪出无锁变体的单点 CAS 争用(已分别根治:MemoryArena 分片 278x、Arena 去原子),并把每个工具放到正确的同契约对手上**:bump→monotonic、单线程池→GrowablePool vs unsync_pool、**多线程共享池→MemoryArena vs synchronized_pool(赢 44x)**。`MemoryArena` 单线程是选错工具(已下 ledger,见下警示)。
-
-| bump 场景(alloc N + 批量释放) | ns/op(Linux) | vs 裸 mi | 结论 |
+| 小 POD key(16B 结构,4096,真热路径) | HYLE Hash&lt;T&gt; | wyhash | 结论 |
 |---|---|---|---|
-| **HYLE Arena**(单线程 bump,池块) | **0.34** | **~12x** | ✅ pointer-style bump 后 0.74→0.34;赢 std::pmr monotonic 2.2x(见下) |
-| **HYLE StackAllocator**(单线程自有 slab) | **0.34** | **~12x** | ✅ pointer-style bump 后 0.68→0.34,平 Arena |
-| std::pmr::monotonic_buffer(SOTA) | 0.74(Lin)/1.49(Win) | — | **pointer-bump 后 HYLE(0.34)双平台赢**:Linux 赢 2.2x(pmr 0.74)、Win 赢(pmr 1.49)。此前 offset 版 HYLE 0.74ns 与 Linux pmr 打平/略输,改 pointer-style bump 后拉开——原"Linux pmr 反略快"结论已被 ④ 优化推翻 |
-| 裸 mi_malloc(general,无批量) | 3.98 | 1.0x | — |
+| ns/op(改 mix64_2 前→后) | 0.595 **→ 0.43** | 0.94 | ✅ **改 abseil 单乘后 1.38x,vs wyhash 从 1.6x→2.2x** |
 
-| pool churn 场景(**单线程**同尺寸 alloc/free) | ns/op(Linux) | vs 裸 mi | 结论 |
+**结论(历史快照摘要)**:① 9-16B 改 abseil 单乘 `mix64_2` 热路径 1.38x；② ≤16B “输 XXH3”是伪命题；真 seam 税在 &gt;16B 出线核，opt-in `hash_inline.h` 可消；③ mix64 整数哈希已 SOTA；④ best-of-breed 按长度 XXH3/wyhash。完整推演见 git 历史中旧 `benchmarks-error-hash.md` 长注；**刷新时以三平台 bench-stat 重写本表**。
+
+## container·map —— SwissTable（`swiss_table_bench.cc` / `swiss_vs_absl_bench.cc`）
+
+> 归属：`include/hyle/container/swiss_table.h`。对标 `absl::flat_hash_map`（`-DHYLE_BENCH_ABSL`）。**⏳ 下表多为 2026-07 前后 Win/WSL 快照，非本轮三平台证书。**
+
+| 操作 | vs `std::unordered_map` | vs `absl::flat_hash_map`(**SOTA 标尺**) | 结论 |
 |---|---|---|---|
-| **HYLE GrowablePool**(单线程对象池) | **1.28** | **3.5x** | ✅ 单线程对象池的对工具(gap 252%»spread 23%) |
-| 裸 mi_malloc/free(general) | 4.51 | 1.0x | — |
-| std::pmr::unsync_pool(std 单线程池) | 11.61 | 0.39x | — |
-| ⚠️ MemoryArena/ObjectPool(单线程) | 13.97/13.98 | 0.32x | **选错工具,非对标项**:无锁共享池单线程白付每 op 原子 CAS(详见下)——已下 ledger |
+| find-hit | **2.42x** 赢 | **~1.10x 赢**(12 遍 avg 110.1%;prefetch+mix64+H1,曾 0.76x) | **反超 SOTA** |
+| find-miss | **2.26x** 赢 | **≈1.0x 平/微胜**(最新 15 遍 4.41 vs 4.86,1.12x,gap«spread) | **追平 SOTA** |
+| insert | **5.3x** 赢 | **~1.40x 赢** | **超 SOTA** |
+| erase | **3.5x** 赢 | **~1.39x 赢** | **超 SOTA** |
+| iterate(for_each) | **8.7x** 赢 | **2.0x 赢**(0.96 vs 1.94) | **反超 SOTA(2026-07 组扫)** |
 
-> **⚠️ "选错工具"明示**:`MemoryArena`/`ObjectPool` 是**为多线程共享有界池**设计的(无锁分片 Treiber 栈)。**单线程**同尺寸 churn 用它们是误用——每次 alloc+free 各付一次原子 CAS(两条 `lock cmpxchg`)+ tls homing + 地址路由,实测 13.97ns 慢裸 mi 3.1x、连 std 单线程池(`unsynchronized_pool` 11.6ns)都不如。这不是 HYLE 的缺陷,是拿错了工具——**单线程对象池请用 `GrowablePool`**(同 workload 1.28ns,3.5x 赢裸 mi)。故此误用对比**已从对标 ledger 移除**(留此行仅作选型警示),`MemoryArena` 的真实对标是多线程共享场景(见下,赢 std 共享池 44x)。usage 选型见 [`../guide/usage-guide.md` §3.1.1](../guide/usage-guide.md)。
-
-**8 线程 pool churn——两个诚实问题分开:① 共享池 vs 共享池 SOTA(公平对标)② per-thread 模式参照:**
-
-| 8 线程同尺寸 churn | ns/op(Linux) | 结论 |
-|---|---|---|
-| **HYLE MemoryArena**(共享固定池) | **2.5–2.7** | ✅ **赢真强 SOTA oneTBB scalable_allocator ~3x**(tbb ~7–9ns,per-thread cache+共享后备;HYLE 无锁分片) |
-| oneTBB scalable_allocator(真强共享 SOTA) | ~7–9 | 真正的 MT-scaling 共享分配器——**这才是共享池天花板对手**(2026-07 补;tbb warm-up 敏感,单进程内 warm 值,cross-process 更高) |
-| std::pmr::synchronized_pool(std 弱共享池) | 66–113 | std 唯一同契约但**实现弱**(一把 shared_mutex 串行)——HYLE 赢它 25–44x,但**这不是 SOTA 天花板**,tbb 才是 |
-| **HYLE GrowablePool**(每线程一个池) | **0.63** | ✅ per-thread 模式赢裸 mi per-thread heap 2.04x(min 1.89x) |
-| 裸 mi(per-thread heap) | 1.26 | per-thread 模式参照(**不同契约**,非共享池对手) |
-
-**核心诚实结论(单点原子两处已修;并把每个工具放到正确的同契约对手上——红队纠错)**:
-
-1. **"专用分配器 5-10x vs new/delete"全部坐实**:`StackAllocator`(pointer-style bump,0.34ns)+ `Arena`(0.34ns)**~12x 赢裸 mi**;`GrowablePool`(单线程 free-list,1.28ns)**3.5x 赢裸 mi、3.0x 赢 std::pmr pool**(gap 252%»spread 23%,铁证)。**vs std::pmr arena 由"平台相关"转"双平台赢"**:pointer-style bump(遗留优化④,offset→cur_/end_)把 HYLE 从 0.74→0.34ns,现赢 Linux monotonic(0.74)2.2x、赢 Win monotonic(1.49);此前 offset 版 0.74ns 与 Linux pmr 打平的结论已被 ④ 推翻。
-
-2. **`MemoryArena` 曾是全场最慢——单点 CAS 争用,已分片根治,对真强 SOTA 反超 ~3x**:原 clay 继承的单 `head_` 让 8 线程 CAS 同一 cache line,O(threads) 串行化(8 线程慢 **278x**)。**修复**(`memory_arena.h`):内部分 N 片(片数=核数向上取 2 的幂,上限 128),每片独立 Treiber 头占独立 cache line,线程按 tls 序号 homing 到自己片(同线程 alloc/free 无争用),free 按地址 O(1) 路由回属主片。**复杂度落后(O(N)争用→O(1) per-shard)消除**,双平台 10/10 + WSL TSan 零 race。这同时补上了 mem-design 列为"硬约束"却从未实现的 per-core 池。**公平对标(2026-07 补强对手,回答"44x 是否虚高")**:对 **oneTBB scalable_allocator**(真正的 MT-scaling 共享分配器,per-thread cache+共享后备)8 线程 HYLE 2.5–2.7ns vs tbb ~7–9ns = **赢 ~3x**;对 `std::pmr::synchronized_pool`(std 唯一同契约但一把 shared_mutex 串行的**弱**池)是 25–44x。**44x 曾被当"共享池 SOTA 胜利"是虚高**——那只是碾 std 的弱实现,真正的天花板对手是 tbb,对它 HYLE 赢 ~3x(仍是真胜,但不是 44x)。**单线程用它是选错工具**(慢裸 mi 3.1x,该用 `GrowablePool`),那不是缺陷而是误用。
-
-3. **`Arena` 无锁 bump 同源病已修(去原子化)+ pointer-style bump(④)**:`Arena` 的单 `offset_` 原子曾是单点病——单线程付每 alloc 一次 CAS(6.79ns vs 纯指针 bump,10x 税)。bump cursor 本质单游标无法分片,SOTA 模式是 **per-thread(各自一个 Arena,零原子)**。**修复**:`offset_` 改 plain,纯指针 bump(6.79→0.74ns);测试改 `PerThreadArenasNoOverlap`。**再经遗留优化④**(offset→cur_/end_ pointer-style bump)砍到 **0.34ns**——objdump 证 offset 版每 alloc 多一次 base load + base±offset 往返两遍,pointer 版省 ~5 指令。平 StackAllocator、赢裸 mi ~12x、双平台赢 std::pmr monotonic(见结论 1)。
-
-4. **共享池对标的两次纠错——先纠"错比 per-thread heap",再纠"只比 std 弱池虚高 44x"**:第一次(此前):把"8 线程**共享一个**固定池"对"mimalloc 的 **8 个 per-thread heap**"比(0.51x)并写成"无法优化的诚实标价"——错在契约不同(共享有界池 vs 各线程私有堆),补同契约的 `std::pmr::synchronized_pool` 后 HYLE 反超。**第二次(2026-07,回应"44x 可疑")**:synchronized_pool 虽同契约但**是 std 里最弱的实现**(一把 shared_mutex 串行,66–113ns),44x 因此虚高、被当"共享池 SOTA 胜利"不诚实。**补真强对手 oneTBB scalable_allocator**(production MT-scaling 分配器):HYLE 2.5–2.7 vs tbb ~7–9ns = **赢 ~3x**——这才是共享池天花板对标。**教训(红队精神再进一步)**:"找到同契约对手"还不够,还要问"这个对手是不是该类的**强**实现"——synchronized_pool 同契约但弱,拿它得 44x 等于第一次错误的镜像(这次是对照太弱而非契约不符)。HYLE 赢 tbb ~3x 是真胜,但 44x 是虚高数,已改。mimalloc per-thread heap(1.26ns)仍仅作 per-thread 模式参照(那模式的对等答案是 `GrowablePool`,赢 mi 2.04x)。
-
-5. **进一步逼近 mimalloc per-thread heap 的绝对延迟需 seastar 模型**:若拿共享池硬比 mimalloc 的 per-thread heap 绝对值(1.26ns),HYLE 共享池 2.51ns 的差距是"一块固定 slab 跨线程共享"的物理协调代价(每 op 一次原子 CAS,分片已消除 O(threads) 争用)。要把这个常数也逼到 per-thread heap 水平需 seastar 模型(线程钉死 per-core 终生、池生命周期长于线程),`MemoryArena` 的通用生命周期给不出该契约。但这**不是对标失分**——共享池的 SOTA 对手是 synchronized_pool(已赢 44x),per-thread heap 是另一契约(其对手是 GrowablePool,已赢 2.04x)。两个契约 HYLE 各自的对等答案都赢。
+> 优化史要点：probe 预取、mix64 单乘折叠、H1=identity、SSSE3 match_empty、for_each 组扫、NEON pack 向量化。find-miss 旧 “~10% 待 profile” 已关。hash 层按 key 类型反哺 map（整数 key 本就 SOTA；复合/长串 key 吃 mix64_2 / wyhash）。
 
 ## container·vec / ·list —— SmallVector / IntrusiveList / CArray（vs std + 真 SOTA，`container_misc_bench.cc`）
 
@@ -168,9 +150,7 @@ lookup/retain/remove 为预期 O(1)，`size()` 只扫硬上限 64 shard。旧表
 | **SpinLock 8 threads** | 50.17/60.44/271.88 | mutex 50.59/39.08/20.98 | 平/0.65x/0.08x | ❌ 高争用选 mutex |
 | **Ref fan-out** | 10.13/8.33/3.19 | shared_ptr 8.09/11.12/3.22 | 0.80x/1.34x/平 | 平台翻转；所有权形状而非普遍提速 |
 | **SwissTable iterate**(for_each) | **2.48 ns** | std::unordered_map 8.73 | **3.5x** | ✅ 赢(扁平 ctrl 扫 vs 节点指针链) |
-| **realtime_ns** | 15.0(Win)/12.5(Lin) | system_clock 14.4/12.8 | **0.96x/1.02x** | ➖ 平双平台(同 OS 原语) |
-| **monotonic_ns** | 12.4(Win)/12.6(Lin) | steady_clock 12.7/12.9 | **Win 1.03x/Lin 1.0x** | ➖平双平台(Win 曾输 1.48x,补频率特判后追平;见结论③) |
-| **fast_monotonic_ns**(opt-in rdtsc) | 7.4(Win)/6.8(Lin) | HYLE monotonic_ns 12.4/12.6 | **1.67x/2.0x** | ✅快 1.7-2.0x(rdtsc 跳过 OS 调用壳;非默认,可能跳变;见结论③) |
+| **time clock / wheel / common** | → | → | → | **已迁出** [benchmarks-time.md](./benchmarks-time.md)（2026-07-19 三平台；勿用本表旧双平台 clock 行） |
 | **log gated-out** | 2.03–2.11(Win)/1.05–1.09(WSL)/0.91–0.92(M4) | (无 std 对照) | — | relaxed level gate + branch；参数不求值、不格式化 |
 | **log preformatted C++**(1 sink,无 I/O) | 22.48/13.07/8.85 ns | (无 std 对照) | — | mutex snapshot + per-slot active refs + callback；换取 quiescent unregister |
 | **log preformatted C ABI**(1 C sink,无 I/O) | 23.93/16.03/10.68 ns | native C++ 上行 | +1.45/+2.96/+1.83 ns | POD bridge + opaque trampoline 的真实 ABI 成本很小 |
@@ -186,9 +166,8 @@ MSVC/AppleClang 赢而 GCC 平，不能再写成无条件 1.54x。真 Lemire 用
 [`../milestones/util-module-closure.md`](../milestones/util-module-closure.md)。
 ③ **SwissTable iterate 赢 std::unordered_map 3.5x**——扁平 ctrl 字节扫 +
 连续 slot(cache 友好)碾压节点指针链；`for_each` 是函数模板(内联、零分配)。
-④ **time 时钟收口（2026-07-19，三平台）**：`monotonic_ns`/`realtime_ns`
-与相同转换工作的标准钟同档；x86 opt-in fast clock 获益，M4 正常回退。完整审计见
-time-module-closure。⑤ **obs 收口后三层性能**：宏 gate 0.91–2.11ns；
+④ **time** 见 [benchmarks-time.md](./benchmarks-time.md) + time-module-closure。  
+⑤ **obs 收口后三层性能**：宏 gate 0.91–2.11ns；
 preformatted native 8.85–22.48ns；C ABI trampoline 再加 1.45–2.96ns。
 完整红队见 [`../milestones/obs-module-closure.md`](../milestones/obs-module-closure.md)。
 

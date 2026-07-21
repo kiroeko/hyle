@@ -1,5 +1,9 @@
 # SIMD op parity 三平台矩阵（2026-07-16 校准仪器 v4；明确 LOSE：MSVC 0 / GCC 0 / NEON 0）
 
+> **performance 导航（整理入口）**：[../performance/benchmarks-simd-ops.md](../performance/benchmarks-simd-ops.md)  
+> （摘要 + 覆盖树 + 读法；**本文件仍是全量 case 表 / 修史 / ratio 全扫的权威正文**。）  
+> 产品 kernel 不在此 → [../performance/benchmarks-simd.md](../performance/benchmarks-simd.md)。
+
 > **simd-22 后再认证完成（2026-07-16）**：Windows/WSL/macOS 三个 TU 均以当前双轨源码、双序
 > 各两份、4 replicas、layout bank 与执行审计重新出数；九份 report union 为 303/303、缺失 0。
 > 旧表已由下方 320-case 新矩阵取代。所有 ratio `<0.98` 的行均完成源码/形状检查；真实回归逐项

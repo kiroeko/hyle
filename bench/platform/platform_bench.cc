@@ -276,10 +276,13 @@ int main() {
   {
     constexpr int kRounds = 20000;
     nb::Bench b;
+    // minEpochIterations kept modest: each epoch is 2*kRounds real futex wakes.
+    // WSL/Linux ~20µs/round makes minEpoch=30 alone multi-minute; multi-run
+    // (bench-stat -n15) then burns hours without tighter error bars.
     b.title("blocking ping-pong vs raw wait primitive (2 threads)")
         .relative(true)
         .batch(kRounds)
-        .minEpochIterations(30);
+        .minEpochIterations(5);
     b.run("raw wait_on_address+wake floor", [&] {
       // One word: turn==0 => A runs, ==1 => B runs. Each side waits while the
       // value is NOT its turn and flips + wakes the other. This is the bare
@@ -328,14 +331,19 @@ int main() {
   // FUTEX_WAIT {0,0}), so this row is the syscall-entry cost of the timed path
   // with no real sleep (a genuine expiry just adds the deadline's wall time on
   // top). The gap between the two rows is exactly that syscall's price.
+  //
+  // kIters intentionally tiny for the zero-timeout arm: each call is a real
+  // kernel entry (Win ~µs, Linux futex ETIMEDOUT ~tens of µs). Old 100k made
+  // bench-stat -n15 multi-hour on WSL. Ratio vs fast path only needs order-of-
+  // magnitude, not 1% precision.
   {
-    constexpr int kIters = 100000;
+    constexpr int kIters = 500;
     Parker parker;
     nb::Bench b;
     b.title("Parker park_timeout: fast path vs zero-timeout poll")
         .relative(true)
         .batch(kIters)
-        .minEpochIterations(20);
+        .minEpochIterations(30);
     b.run("park_timeout fast path (token present, no syscall)", [&] {
       for (int i = 0; i < kIters; ++i) {
         parker.unpark();  // make a token available

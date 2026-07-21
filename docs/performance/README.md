@@ -9,27 +9,34 @@
 | 文档 | 内容 |
 |---|---|
 | 本页（对标总账） | 全模块 win/loss ledger 一览 + 总账小结（最常看的一张表） |
-| [error / hash 实测](./benchmarks-error-hash.md) | error Status/Result（对标 absl）、hash 哈希（XXH3/wyhash/mix64）、SwissTable hashmap |
-| [simd 实测](./benchmarks-simd.md) | dot/saxpy、exp/log/tanh 数学核、fp16/bf16 dtype、reduce_max/scale |
-| [simd op 对拍方法论](./simd-op-benchmark-methodology.md) | **给 op_parity 新增条目/跑数/判真输的操作规程**:kernel 强制形状、逐平台跑法、校准闸门读法、LOSE 定罪证据阶梯、修复模式库、症状速查 |
-| [sched 实测](./benchmarks-sched.md) | fiber 切换、platform 原语（Parker/Thread/dir_iterate）、sched 同步（marl 对标）、调度器层（work-stealing 扩展/spawn_on 亲和/协程胶水/fiber sleep）、lock-free 队列簇 |
+| [error 实测](./benchmarks-error.md) | **error 2026-07-20 三平台证书**（Status/Result vs absl + std::expected） |
+| [platform 实测](./benchmarks-platform.md) | **platform 2026-07-20 证书**（Parker/Thread/dir/vm/MappedFile；OS 段 n=15 Win/M4、WSL n=5） |
+| [time 实测](./benchmarks-time.md) | **time 2026-07-19 三平台证书**（clock / TimerWheel / CommonTimeoutQueue） |
+| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-20 三平台**（TLS freelist 后 **MemoryArena 赢 tbb**；SystemAllocator 平 mi） |
+| [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
+| [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/list/str/path/fuzzy 长表 + 史；**入口见上** |
+| [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
+| [simd op 对拍证书](./benchmarks-simd-ops.md) | **逐 op vs Highway**：三平台 LOSE=0 摘要 + 覆盖树；全表 → [orderswap 矩阵](../milestones/simd-orderswap-matrix.md)（最新最全） |
+| [simd op 对拍方法论](./simd-op-benchmark-methodology.md) | op_parity 规程：形状、双序、锚点闸门、LOSE 证据阶梯 |
+| [sched 实测](./benchmarks-sched.md) | fiber 切换、sched 同步（marl 对标）、调度器层；**platform 原语已拆出** → [benchmarks-platform.md](./benchmarks-platform.md) |
 | [io 实测](./benchmarks-io.md) | echo 吞吐 + shard-per-core 扩展 + vs 裸 epoll/liburing/asio/libuv + 连接生命周期 + TLS/HTTP + multishot/DEFER/fixed-files/direct-accept 机制项 |
-| [mem / container 实测](./benchmarks-mem-container.md) | mem 分配器 vtable + 专用分配器簇、SmallVector/IntrusiveList/CArray、string_ref/StringBuf、path、次要模块 |
 | [预期与边界](./expectations.md) | AVX-512 上架状态、主表（时间/空间分列）、Amdahl 整体观、诚实边界、验证 gate |
 
 ## 对标总账（win/loss ledger，全部实测 vs 真 SOTA，非 std）
 
-> **一眼看尽输赢**。**两把标尺各拆成「组件名 + ns」两列**:`std组件`/`std ns`(基线下界——赢它是最低门槛)和 `SOTA组件`/`SOTA ns`(真门槛:absl/F14、mimalloc、moodycamel/tokio/rigtorp、Highway/xsimd、marl、boost、simdutf)。`比std`/`比SOTA`:>1=HYLE 快几倍。**判定**针对 SOTA:✅赢 / ➖平(噪声内) / ❌输(均附根因:by-design 接缝 / 约束选择 / 选错工具 / scalar 待优化,无一为未处理的真缺陷) / ⏳待补。`n/a`=该层无对等物(非未测:如 bounded-MPMC 队列无 std 等价物);`同std`=该项 std 本身即领域 SOTA,无独立第三方更快。所有数字真跑(Win MSVC,2026-06-30 全套重跑),非推算。
+> **一眼看尽输赢**。**两把标尺各拆成「组件名 + ns」两列**:`std组件`/`std ns`(基线下界——赢它是最低门槛)和 `SOTA组件`/`SOTA ns`(真门槛:absl/F14、mimalloc、moodycamel/tokio/rigtorp、Highway/xsimd、marl、boost、simdutf)。`比std`/`比SOTA`:>1=HYLE 快几倍。**判定**针对 SOTA:✅赢 / ➖平(噪声内) / ❌输(均附根因:by-design 接缝 / 约束选择 / 选错工具 / scalar 待优化,无一为未处理的真缺陷) / ⚠️平台翻转 / ⏳待补。`n/a`=该层无对等物(非未测:如 bounded-MPMC 队列无 std 等价物);`同std`=该项 std 本身即领域 SOTA,无独立第三方更快。**error 行 = 2026-07-20 三平台 bench-stat n=15**；其余模块日期不一，未刷新前勿当当前证书。
 
 | 模块 · 操作 | HYLE ns | std 组件 | std ns | 比std | SOTA 组件 | SOTA ns | 比SOTA | 判定 |
 |---|---|---|---|---|---|---|---|---|
-| **error** Status::Ok 构造+ok() | 0.37 | std::expected&lt;int,ec&gt; | 0.56 | 1.51x | absl::OkStatus | 0.37 | 1.0x | ✅赢 std、平 absl |
-| **error** Status(code) inline 无消息 | 0.37 | std::unexpected&lt;ec&gt; | 0.55 | 1.49x | absl 错误(code-only 仍堆) | 1.64 | 4.6x | ✅赢 absl(HYLE inline 零堆) |
-| **error** Status(msg) 带消息→堆 | 28.2 | (无 std 等价) | n/a | n/a | absl::NotFoundError | 54.3 | 1.92x | ✅赢 absl(单 malloc header+data) |
-| **error** Status 拷贝(heap,retain/release) | 9.4 | (无 std 等价) | n/a | n/a | absl::Status copy | 10.6 | 1.13x | ✅赢 absl |
-| **error** Result&lt;int&gt; 传播 OK(解包消费) | 1.42 | std::expected unwrap | 1.40 | ~1.0x | absl::StatusOr | ~1.4 | ~1.0x | ➖平(真实用法;裸构造-析构 microbench 假象见 error 节) |
-| **error** Result&lt;int&gt; 传播 ERROR 上抛 | 10.2 | (errc 无堆消息不可比) | n/a | n/a | absl::StatusOr | 21.5 | 2.11x | ✅赢 absl |
-| **simd** dot product(4096 f32) | 0.024 | scalar autovec | 0.37 | 15x | Highway contrib/dot(真 SOTA 4-acc) | 0.024 | 1.00x | ✅**4 累加器展开后 0.079→0.024(3.3x)平真 SOTA**;旧"平 Highway 0.079"是两个都单累加器的假平局(对照用了 Highway 教学 kernel 非 contrib/dot),见 simd 详节 |
+| **error** Status::Ok 构造+ok() | 0.55/0.05/0.23(Win/Lin/M4) | std::expected&lt;int,ec&gt; | 0.56/0.18/1.07 | 平/3.4x/4.7x | absl::OkStatus | 0.55/0.05/0.23 | ~1.0x 三平台 | ➖平 absl；Lin/M4 赢 std |
+| **error** Status(code) inline 无消息 | 0.55/0.05/0.22 | std::unexpected&lt;ec&gt; | 0.37/0.05/0.22 | 三平台平 | absl code-only(仍堆) | 1.88/1.01/1.19 | **3.4/19.8/5.3x** | ✅三平台赢 absl(inline 零堆) |
+| **error** Status(msg) 带消息→堆 | 26.1/8.9/16.4 | (无 std 等价) | n/a | n/a | absl::NotFoundError | 54.8/22.2/32.4 | **2.1/2.5/1.9x** | ✅三平台赢 absl |
+| **error** Status 拷贝(OK) | 0.59/0.24/0.36 | n/a | n/a | n/a | absl::Status copy OK | 0.56/0.28/0.26 | 0.95/1.26/0.72x | ⚠️**平台翻转**(Win/M4 sign 输，Lin 赢) |
+| **error** Status 拷贝(heap,retain/release) | 9.40/10.34/3.17 | n/a | n/a | n/a | absl::Status copy | 10.70/9.32/4.15 | 1.14/0.90/1.31x | ⚠️**平台翻转**(Lin sign 输 0.90x；Win/M4 赢) |
+| **error** Result&lt;int&gt; 传播 OK(解包消费) | 1.45/0.33/1.59 | std::expected unwrap | 1.42/0.33/1.59 | ~1.0x 三平台 | (消费变体未对 absl) | n/a | n/a | ➖真实用法平 std |
+| **error** Result&lt;int&gt; 传播 ERROR 上抛 | 10.2/9.4/3.2 | (errc 无堆消息不可比) | n/a | n/a | absl::StatusOr | 22.0/22.2/6.8 | **2.1/2.4/2.1x** | ✅三平台赢 absl |
+| **simd·ops** 可对拍 op 全量(矩阵 v4) | — | (无 std) | n/a | n/a | Highway 同 ISA 同 op | — | **LOSE=0** | ✅**Win/WSL/NEON 明确 LOSE 均为 0**(320/320/308 case)；?≠TIE；全表 [benchmarks-simd-ops.md](./benchmarks-simd-ops.md)→[orderswap-matrix](../milestones/simd-orderswap-matrix.md) |
+| **simd** dot product(4096 f32) | 0.024 | scalar autovec | 0.37 | 15x | Highway contrib/dot(真 SOTA 4-acc) | 0.024 | 1.00x | ✅**4 累加器展开后 0.079→0.024(3.3x)平真 SOTA**;旧"平 Highway 0.079"是两个都单累加器的假平局(对照用了 Highway 教学 kernel 非 contrib/dot),见 [benchmarks-simd.md](./benchmarks-simd.md) |
 | **simd** saxpy(4096 f32) | 0.026 | scalar autovec | 0.057 | 2.2x | Highway avx2 | 0.025 | 1.01x | ✅赢 std、平 Highway(element-wise 带宽受限,多累加器无益,未改) |
 | **simd** reduce_max(4096 f32) | 0.077 | scalar autovec | 0.73 | 9.5x | Highway avx2 | 0.077 | 1.00x | ➖平 Highway(bench-only,非公开 op;单累加器,若上架公开 op 可同 dot 展开) |
 | **simd** scale(4096 f32) | 0.025 | scalar autovec | 0.044 | 1.8x | Highway avx2 | 0.025 | 1.01x | ➖平 Highway(bench-only 非公开 op;带宽受限) |
@@ -42,10 +49,13 @@
 | **math** exp(best-of-breed→xsimd) | 0.23 | libm scalar | 2.06 | 9x | Highway / xsimd | 0.30/0.22 | 1.30x/1.0x | ✅平 xsimd 最快、反超 Highway(双平台一致) |
 | **math** log(best-of-breed→Highway) | 0.27 | libm scalar | 2.0–2.6 | 4–8x | Highway / xsimd | 0.27/0.37 | 1.0x/1.45x | ✅平 Highway、反超 xsimd(修产品核 128b bug 后 Linux 同样成立) |
 | **math** tanh(best-of-breed→xsimd) | 0.44 | libm scalar | 6.3–8.7 | 14–20x | Highway / xsimd | 0.54/0.45 | 1.22x/1.0x | ✅平 xsimd、反超 Highway(双平台一致) |
-| **platform** Parker ping-pong(真阻塞) | 317(Win) | std::condition_variable ping-pong | 927(Win) | 2.99x | Rust std park(概念对照) | n/a | n/a | ✅赢 std(Win 2.99x;**Linux 统计平局**,平台差异见 sched 详节) |
-| **platform** Thread spawn+join | 40.4µs(Win) | std::thread | 40.1µs | 1.01x | std::thread(即 SOTA,同 syscall) | 40.1µs | 1.01x | ➖平(双平台一致;OS 主导,证 handle 零开销) |
-| **platform** directory_iterate visitor | — | std::filesystem::directory_iterator | — | — | filesystem | — | — | ➖平(Win 0.98x)/**✅Linux 赢 1.81x**(免 stat 的 d_type + 无分配 visitor;详节见 sched) |
-| **platform** Parker park_timeout(sched-04b 底座) | ~底座 | (无语义对等 std) | n/a | n/a | (Rust std park_timeout 概念对照) | n/a | n/a | ➖时间轮执行底座(futex 相对 timeout;TSan 5×净) |
+| **platform** Parker ping-pong(真阻塞) | 341/22.5k/2053(Win/Lin/M4) | std::condition_variable | 638/23.5k/2130 | **1.75x/1.05x/1.05x** | (std CV 即实用标尺) | 同左 | 同左 | ⚠️**平台翻转**(Win 大赢;Lin/M4 平或微赢)。旧 2.99x 作废。见 [platform](./benchmarks-platform.md) |
+| **platform** Thread spawn+join | 43.4k/33.6k/10.6k | std::thread | 44.4k/33.6k/10.7k | ~1.0x 三平台 | std::thread(即 SOTA) | 同左 | ~1.0x | ➖平(OS 主导,证零封装税) |
+| **platform** directory_iterate visitor | 40.5k/6.5k/16.5k | std::filesystem | 32.0k/13.7k/18.4k | **0.93/2.15/1.12x** | filesystem | 同左 | 同左 | ⚠️**平台翻转**(Win sign 输;Lin/M4 赢 d_type+visitor) |
+| **platform** vm_reserve+commit vs raw 一步 | 1144/1075/846 | raw 一步分配 | 877/848/332 | **0.77/0.78/0.39x** | raw 一步 | 同左 | 同左 | ❌**by-design 两步**输一步 raw;非漏优化 |
+| **platform** MappedFile vs ifstream | 43.7k/12.7k/14.1k | ifstream 拷贝 | 62.3k/**8.7k**/21.7k | **1.39/0.68/1.53x** | — | — | — | ⚠️**平台翻转**(Win/M4 赢;Linux 64KiB ifstream 更快) |
+| **platform** MappedFile vs raw mmap | 43.7k/12.7k/14.1k | raw mmap | 42.0k/12.2k/13.7k | **0.96/0.96/0.97x** | raw 地板 | 同左 | ~平 | ➖近地板(~3–4% 封装税) |
+| **platform** Parker 快路径 / park_timeout(0) | 9.7·3740 / 10.6·59k / 2.0·3.7 ns | (无公平对手) | n/a | n/a | atomic floor 非对等 | n/a | n/a | ➖快路径绝对值;0-timeout **平台极差** |
 | **time** realtime_ns | 14.68 | std::chrono::system_clock | 14.76 | 1.0x | std::chrono(即标尺,同 OS 原语) | 14.76 | 1.0x | ➖平 |
 | **time** monotonic_ns | 13.22/13.07/12.93(Win/Lin/M4) | std::chrono::steady_clock | 13.30/13.07/12.88 | 全部统计平 | std::chrono(即标尺,同 OS 原语) | 同左 | 1.0x | ➖header-inline 后三平台与 std 同档 |
 | **time** fast_monotonic_ns(opt-in rdtsc) | 7.37/7.13/12.93 | HYLE monotonic_ns | 13.22/13.07/12.93 | 1.79x/1.84x/1.0x | (std 无 opt-in TSC 钟) | n/a | n/a | ✅x86 快约1.8x；M4 透明回退(非默认,可能跳变) |
@@ -61,16 +71,13 @@
 | **util** SpinLock 8-thread contention | 50.17/60.44/271.88 | std::mutex | 50.59/39.08/20.98 | 平/**0.65x**/**0.08x** | OS mutex | 同左 | 同左 | ❌ 高争用应选 mutex；M4 自旋尤其差 |
 | **util** Ref copy+destroy fan-out | 10.13/8.33/3.19 | std::shared_ptr | 8.09/11.12/3.22 | 0.80x/1.34x/平 | shared_ptr | 同左 | 平台翻转 | ⚠️ 价值是侵入式所有权/省控制块，不承诺每平台拷贝更快 |
 | **obs** log gate / preformatted / formatted | 0.91–2.11 / 8.85–22.48 / 50.9–84.6（三平台） | (无 std log) | n/a | n/a | 同步 sink 产出原语 | n/a | ➖ | ✅ gated 极轻；preformatted 含 quiescent-unregister active ref；C ABI 仅多 1.5–3.0ns；formatted 由 `std::format` 主导。详见 obs closure |
-| **mem** SystemAllocator churn(默认) | 7.91 | std::malloc(OS) | ~25 | ~3x | 裸 mimalloc | 7.79 | 0.99x | ➖平 SOTA(编译期内联,零接缝税) |
-| **mem** Allocator vtable churn(opt-in) | 8.61 | std::malloc(OS) | ~25 | ~3x | std::pmr / 裸 mi | 8.70/7.79 | 1.01x/0.90x | ✅赢同类 std::pmr(对裸 mi -10% 是多态物理税,pmr 同付) |
-| **mem** 8 线程通用 | 2.07 | std::malloc(OS) | ~30 | (大赢) | 裸 mimalloc | 2.14 | 1.03x | ➖平 SOTA |
-| **mem** Arena bump | 0.34 | new/delete | ~15 | ~44x | std::pmr monotonic | 0.74 | 2.2x | ✅赢(pointer-style bump 后 0.67→0.34,vs 裸 mi 4.0ns~12x;见 expectations AVX-512 表④) |
-| **mem** StackAllocator | 0.34 | new/delete | ~15 | ~44x | std::pmr monotonic | 0.74 | 2.2x | ✅赢(pointer-style bump 后 0.65→0.34) |
-| **mem** StackAllocator mark/rewind | 0.43 | (无 std partial rewind) | n/a | n/a | std::pmr(无 partial rewind) | n/a | n/a | ➖HYLE 自有(LIFO 部分回退;pointer-bump 后 1.31→0.43) |
-| **mem** GrowablePool(单线程) | 1.92 | new/delete | ~15 | ~8x | std::pmr unsync_pool | 6.72 | 3.5x | ✅赢 |
-| **mem** GrowablePool(8 线程 per-thread) | 0.72 | std::malloc | ~30 | (大赢) | 裸 mi per-thread heap | 1.28 | 1.78x | ✅赢 |
-| **mem** MemoryArena(多线程共享池) | 2.5–2.7 | std::malloc | ~30 | (赢) | oneTBB scalable_allocator(真强 SOTA) | ~7–9 | ~3x | ✅赢 tbb 真 scalable ~3x(无锁分片 vs tbb per-thread cache+共享后备);对 std::pmr::synchronized_pool(66–113ns mutex 串行弱池)25–44x——**后者非天花板,tbb 才是**(2026-07 补强对手,详节) |
-| **mem** Allocator::reallocate grow chain | 76 | std::realloc | 166 | 2.2x | 裸 mi_realloc | 72 | 0.95x | ➖平裸 mi(Linux 统计平局,gap 5.4%«spread 21%);赢 std::realloc 2.2x |
+| **mem** SystemAllocator churn(默认) | 7.93/8.04/7.77 | malloc OS | 25/4.7/20 | 大赢 OS | 裸 mimalloc | 7.86/8.04/7.91 | **~1.00x 三平台** | ➖**平 mi SOTA**(2026-07-20 n=15) |
+| **mem** Allocator vtable churn | 8.67/8.67/7.93 | pmr over mi | 8.67/10.3/9.98 | 平/1.22/1.26 | 裸 mi | 7.86/8.04/7.91 | **0.91/0.94/1.00** | ⚠️对 mi Win/Lin **sign 输~6–9%**；✅对 pmr 平/赢 |
+| **mem** Arena/Stack bump | 0.57·0.55/0.36·0.36/2.23 | pmr monotonic | 1.46/0.62/**1.24** | **2.65/1.70/0.56x** | 裸 mi | 3.9/3.9/4.8 | 7–11x/2x | ⚠️**平台翻转**(Win/Lin 赢 pmr；**M4 输 0.56x**) |
+| **mem** GrowablePool 单线程 | 2.76/1.38/2.46 | pmr unsync | 5.57/11.3/3.47 | **2.0/8.3/1.4x** | 裸 mi | 4.75/4.31/5.80 | **1.7/3.1/2.4x** | ✅三平台赢公平 ST 标尺(bench 已删误用 MemoryArena 行) |
+| **mem** GrowablePool 8t per-thread | 0.93/0.61/0.60 | mi 8t | 1.35/1.28/1.42 | **1.49/2.07/2.38x** | mi per-thread | 同左 | 同左 | ✅三平台 sign 赢 |
+| **mem** MemoryArena 8t shared | **1.19/1.28/1.21** | pmr sync | 116/102/69 | **~96/77/57x** | **oneTBB scalable** | **2.17/1.80/1.97** | **1.74/1.41/1.62x** | ✅**owner-only TLS 三平台 sign 赢 tbb**；软容量+publish；steal+锁红队试后 TIE 故弃 |
+| **mem** reallocate grow chain | 80/83/82 | std::realloc | 200/176/204 | ~2.5x | mi_realloc | 67/77/83 | **0.83/0.92/1.01** | ⚠️Win/Lin 输裸 mi；M4 平 |
 | **container·hash** Hash&lt;T&gt; 16B POD 内联 | 0.43 | std::hash | ~0.9 | ~2x | wyhash | 0.94 | 2.2x | ✅赢(2026-07 改 abseil 单 128 位乘 mix64_2:0.59→0.43,vs wyhash 1.6x→2.2x) |
 | **container·hash** mix64 整数 | 0.44 | std::hash | 1.50 | 3.4x | wyhash64 | 0.57 | 1.27x | ✅赢(已 SOTA=abseil 同款单乘折叠) |
 | **container·hash** hash_bytes 8B(inline mix,非 XXH3) | 0.23/B | std::hash&lt;string&gt; | 0.29 | 1.3x | 裸 XXH3-small / wyhash | 0.21/0.30 | ~平/赢 wyhash | ➖**≤16B 走 inline mix 非 XXH3**(两算法比,非"输 XXH3");赢 wyhash-small、近平 XXH3-small |

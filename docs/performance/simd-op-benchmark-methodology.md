@@ -2,7 +2,8 @@
 
 > 面向后续给 op_parity 新增测试条目、复跑数据、或判定"某 op 是否真慢"的贡献者。本文是**操作规程**;
 > 每条规则背后的实验证据链在 [`../debug/op-parity-harness-artifacts-hunt.md`](../debug/op-parity-harness-artifacts-hunt.md)(三层测量伪影的定位与仪器重建全史),
-> 当前权威数字在 [`../milestones/simd-orderswap-matrix.md`](../milestones/simd-orderswap-matrix.md)。
+> 当前权威数字：全量矩阵 [`../milestones/simd-orderswap-matrix.md`](../milestones/simd-orderswap-matrix.md)；  
+> performance 摘要入口 [`./benchmarks-simd-ops.md`](./benchmarks-simd-ops.md)。
 > 基础设施:`bench/simd/op_parity_engine.h`(测量引擎)、`bench/simd/op_parity{,_full,_widen}_bench.cc`(三个对拍 TU)、`scripts/op-parity-report.py`(聚合+校准闸门)。
 >
 > **一句话版本:亚 ns 级 SIMD 循环的单次读数不是数据;只有"锚点校准通过 + 执行核审计 + 双
