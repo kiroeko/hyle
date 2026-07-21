@@ -43,16 +43,18 @@ g_ctx.use();               // ✓ 在当前线程(B)重新解析
 
 **无 off-switch**：`HYLE_USE_MIMALLOC` 开关与 OS 分配器后备**已移除**（提交 92f8ec8）。理由:后备是陷阱——会让构建静默绕过 mimalloc 依赖问题、被误判为"无事"。mimalloc 是出厂分配器,出问题就正面查。
 
-### 2.1 `MemoryArena` 软容量：跨线程 free 的块不立即对其他线程可见
+### 2.1 共享固定池：硬容量与软容量必须按合同选
 
-**契约**：`MemoryArena`/`ObjectPool<T>` 的 `deallocate()` 默认把块放进**本线程的 TLS 缓存**（owner-only、零原子的快路，深度 `kTlsCacheCap`=32）。因此 **A 线程 free 的块，在 A 显式回流或退出之前，B 线程 `allocate()` 可能看不到它**——即使池"逻辑上"未耗尽。这是"软容量"：可分配容量在并发窗口内可能短暂低于真实空闲块数，窗口 ≤ `32 ×` 活跃线程数。
+**硬容量默认**：`SharedPool` / `ObjectPool<T>` 不把块藏在 TLS。一次 `deallocate()` 完成后，该块立即对所有线程可见；`allocate()` 通过稳定双快照排除分片扫描期间的假耗尽。容量紧贴工作集、跨线程 handoff 或固定 quota 必须用这组。
 
-**这不是 bug，是有意取舍**（与 tbb/jemalloc tcache 同类）：换来的是同线程 free→alloc 的零原子快路。恢复"硬容量"（每个已 free 块立即可被任意线程分配）的三种方式：
-- free 方调 `publish_thread_cache()` —— 显式把本线程 TLS 缓存回流到分片（handoff barrier）；
-- join 掉 free 线程 —— 线程退出时其 TLS 缓存自动回流；
-- 溢出自然回流 —— TLS 缓存满会批量 flush 一半到分片。
+**软容量 opt-in**：`SharedPoolCached` / `ObjectPoolCached<T>` 使用每线程 **128-slot TLS cache**，并以 **32-block magazine** 与 shared core 批量交换。同线程 free→alloc 是零原子快路，但 A 线程 TLS 中已 free 的块，在 A 调 `publish_thread_cache()`、cache overflow 或线程退出前，B 看不到。因此软容量窗口最多为 `128 ×` 活跃线程数，B 可以在 shared core 真空时拿到 `nullptr`。
 
-**何时必须关心**：仅当①池容量**紧贴**工作集（几乎没有余量），**且**②跨线程借还（A 分配、B 分配同一池）。此时若不 publish，B 可能拿到 `nullptr` 而池并非真空。绝大多数池化场景（块数 ≫ 32×线程数，如 fiber 栈池）**无感**，无需任何额外调用。`reset()` 会清空所有已注册线程的 TLS 缓存后重建，但**要求调用方先静默并发**（与 `Arena::reset` 同规则：reset 时不得有其他线程在 alloc/free）。
+**怎么调**：
+- 要 completed free 立即共享：直接用 `SharedPool` / `ObjectPool<T>`，无需 publish；
+- 明确选择 cached 版本后要跨线程交接容量：由 free 方调用 `publish_thread_cache()`，或 join free 线程；
+- `reset()` 要求无 live block，并先静默所有并发 alloc/free。cached 版本会清注册 cache 再重建 shard。
+
+两组池共用 sharded core；正常走 32-bit tagged CAS，tag 饱和的 shard 永久切入 serialized fallback，绝不回绕。不要把 cached 池的吞吐数据或软容量语义写成硬池合同。
 
 ## 3. SIMD：CPUID 探测器 TU 必须 LTO-free（分发型构建）
 

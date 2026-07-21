@@ -255,17 +255,14 @@ mem/ 提供一组**专用分配器**,各自为一种分配模式设计。**选�
 | 你的场景 | 用 | 为什么 / 别用啥 |
 |---|---|---|
 | **通用大小、单纯想要快 malloc** | `system_allocator()`(SystemAllocator) | 内联直调 mimalloc,零接缝。不确定用啥就用它。 |
-| **一个阶段内分配很多、整批一次性释放**(一次 taskgraph pass、一个请求的临时对象) | `StackAllocator` / `Arena` | 纯指针 bump,**无 per-object free**,reset()/析构整体释放。**单线程**(一个 bump 游标天生串行)。`StackAllocator` 自有 slab + `mark/rewind`(LIFO 嵌套作用域回滚);`Arena` 借 `MemoryArena` 的一块池块。 |
-| **单线程、同一种固定大小对象反复 alloc/free**(对象池) | `GrowablePool<T>` | 单线程 free-list,无原子,~2-4x 赢裸 mi(三平台)。**这是单线程对象池的正解**。 |
-| **多线程共享一个有界固定池**(每线程都从同一池借/还,如 fiber 栈池) | `MemoryArena` / `ObjectPool<T>` | 无锁分片 Treiber 栈 + 每线程 TLS 缓存 + magazine 批量转移,跨线程安全。**⚠️ 只在真需要跨线程共享时用**——它每次跌出 TLS 缓存要付原子 CAS,**单线程用它就是选错工具**(该换 `GrowablePool`)。`ObjectPool<T>` = `MemoryArena` + typed placement-new/dtor。 |
+| **一个阶段内分配很多、整批一次性释放**(一次 taskgraph pass、一个请求的临时对象) | `StackAllocator` / `Arena` | 纯指针 bump，**无 per-object free**，reset()/析构整体释放。两者都单线程；`StackAllocator` 自有 slab + `mark/rewind`，`Arena` 只借 `SharedPool` 的一个硬容量块。 |
+| **单线程、同一种固定大小对象反复 alloc/free**(对象池) | `GrowablePool<T>` | 单线程 free-list、无原子、按需增长。这是单线程对象池的正解。 |
+| **多线程共享有界固定池，容量必须准确** | `SharedPool` / `ObjectPool<T>` | **硬容量默认**：无 TLS 隐藏，completed free 立即共享；稳定双快照避免分片扫描假耗尽。正常 32-bit tagged CAS，tag 饱和的 shard 永久切入 serialized fallback，绝不回绕。 |
+| **同线程复用热点，池有充足余量** | `SharedPoolCached` / `ObjectPoolCached<T>` | **软容量 opt-in**：每线程 TLS 128 slots，32-block magazine；同线程 free→alloc 零原子。跨线程 handoff 前由 free 方 `publish_thread_cache()`。 |
 
-**一句话决策树**:单纯 malloc→`SystemAllocator`;批量分配整批丢→`Arena`/`StackAllocator`;单线程对象池→`GrowablePool`;**多线程共享**有界池→`MemoryArena`/`ObjectPool`。无锁池的原子开销只有在真跨线程共享时才划算,单线程场景务必用 `GrowablePool` 或 bump 分配器。
+**一句话决策树**：单纯 malloc→`SystemAllocator`；批量分配整批丢→`Arena`/`StackAllocator`；单线程对象池→`GrowablePool`；多线程共享且 quota 必须准确→`SharedPool`/`ObjectPool`；测得同线程 churn 热点且能接受软容量→cached 版本。
 
-**`MemoryArena` 性能预期（诚实,别高估）**:它对同契约的 std 共享池 `pmr::synchronized_pool` **16-27x sign 稳赢**(Win+WSL 实测);跨线程 handoff 与 oneTBB `scalable_allocator` **打平**;但工作集持续超过每线程 TLS 缓存深度(`kTlsCacheCap`=32)的 BURST churn 仍**输 oneTBB ~2.3x**——因为 tbb/mimalloc 的 per-thread heap 同线程 free 是非原子本地链,而 `MemoryArena` 是**真共享 slab**,每 `kRefillBatch`=16 块付一次 CAS refill/flush。**选型含义**:要"共享有界定长池、对手是标准库或自己手搓的加锁池"→ `MemoryArena` 是明确赢家;要"极致 MT 通用 malloc 吞吐、不在乎是否共享固定容量"→ 直接上 mimalloc/tbb,别硬套固定 slab。
-
-**软容量注意**(跨线程释放的调用方必读):`MemoryArena` 的 free 默认落**本线程 TLS 缓存**(零原子快路),这意味着 **A 线程 free 的块,在 A 显式 `publish_thread_cache()` 或退出前,B 线程 `allocate()` 看不到**(软容量窗口 ≤ 32×活跃线程)。绝大多数池化场景(块量 ≫ 32×线程数)无感;但若你的池容量紧贴工作集、且跨线程借还,要么 free 方调 `publish_thread_cache()` 显式回流,要么 join 掉 free 线程。这是与 tbb/jemalloc tcache 同类的有意取舍(换同线程零原子快路)。详见 [`usage-contract.md`](./usage-contract.md) 分配器跨线程 free 节。
-
-详细性能数据(section D:BURST + 跨线程 handoff,配对符号检验)见 [`performance/benchmarks-mem.md`](../performance/benchmarks-mem.md) §2b。
+硬池与 cached 池共用 sharded core，但合同不同：`SharedPool` 不会因 cache 隐藏 block；`SharedPoolCached` 可以在其他线程 TLS 仍有 free block 时返回 `nullptr`。不要把 cached 池的性能数字冒充硬池性能。最新数字与对手形状见 [`performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)；调用红线见 [`usage-contract.md`](./usage-contract.md) §2.1。
 
 ### 3.2 container —— SwissTable（对标 absl 追平/超，快 std 2.4-5.3x）
 ```cpp

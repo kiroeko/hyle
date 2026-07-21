@@ -14,8 +14,8 @@
 // Growable single-threaded object pool (clay utils/memory_pool). Fast
 // create/destroy of many objects with slot reuse, growing on demand. The niche
 // it fills versus the other HYLE pools:
-//   * mem::ObjectPool : FIXED capacity, LOCK-FREE (atomics). Use when the max is
-//     known and threads share the pool.
+//   * mem::ObjectPool : FIXED capacity, LOCK-FREE (over SharedPool). Use when the
+//     max is known and threads share the pool.
 //   * mem::GrowablePool : UNBOUNDED, SINGLE-THREADED (no atomics -> faster when
 //     uncontended). Use for per-thread / per-fiber churn of unknown size.
 //   * mem::Arena : bump, bulk free, no per-object reuse.
@@ -26,12 +26,12 @@
 // teardown reclaims them; each remembers its byte size (blocks differ in size
 // under geometric growth).
 //
-// Two layers (mirrors MemoryArena <-> ObjectPool<T>):
+// Two layers (mirrors SharedPool <-> ObjectPool<T>):
 //   * GrowablePoolCore : NON-TEMPLATE runtime core. Hands out RAW uninitialized
 //     slots (acquire/release), no ctor/dtor. This is what the C ABI exports
 //     (hyle_growable_pool_*): C has no ctor/dtor, so the C user placement-inits
 //     the returned slot and cleans it up before release -- exactly the model of
-//     the arena-backed object pool (HYLE_OBJECT_POOL_CREATE).
+//     the pool-backed object pool (HYLE_OBJECT_POOL_CREATE).
 //   * GrowablePool<T> : thin TYPED wrapper. create()/destroy() run the ctor/dtor
 //     around the core's raw slots. A C++-only convenience, not a C ABI gap.
 //

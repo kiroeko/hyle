@@ -167,7 +167,7 @@ compute/
 
 1. **kernel 表示的统一**——device/stream/kernel 接口怎么同时容纳"原生 CUDA kernel"(`cuLaunchKernel` + PTX/cubin)和"SPIR-V compute shader"两种 kernel 表示(compute-04/06;compute-01 只做 stream/completion 脊,先不碰 launch 抽象)。
 2. ~~**GPU completion 接 sched**~~ **✅ 决策已定**（见上"compute-03 GPU completion 接 sched"节：方案 A 零改 sched 复用 Waker/IoOperation/net_timeout；方案 B seastar veto 协议为后续）+ compute-01 已把 event-poll 原语落地。
-3. **buffer 与 mem/ 的边界**——host/device 传输、pinned、unified memory;§2 已定"device 内存归 compute/ 走显式 copy、不进 mem/ allocator",compute-02 落具体 buffer_type 实例形状。**注**：compute-01 的 `Stream::device_alloc`/`memcpy_async` 是脊验证的**最小**辅助（host 用 `std::malloc`、CUDA 用 `cudaMalloc`），compute-02 的 buffer 抽象取代它——届时 pinned **host staging**（`cudaMallocHost` 分配的是 host RAM）可包成 `mem::Allocator` 复用（`mem::MemoryArena` over `cudaMallocHost` 的 slab = pinned 块池，agent 调研已确认机制就位）；显存 `cudaMalloc` 仍 compute 自有、**不**走 mem。
+3. **buffer 与 mem/ 的边界**——host/device 传输、pinned、unified memory;§2 已定"device 内存归 compute/ 走显式 copy、不进 mem/ allocator",compute-02 落具体 buffer_type 实例形状。**注**：compute-01 的 `Stream::device_alloc`/`memcpy_async` 是脊验证的**最小**辅助（host 用 `std::malloc`、CUDA 用 `cudaMalloc`），compute-02 的 buffer 抽象取代它——pinned **host staging**（`cudaMallocHost` 分配的是 host RAM）已包成 `mem::Allocator`（`pinned_allocator`）+ 单块 bump `PinnedStaging`；多块 pinned 池（`mem::SharedPool` over `cudaMallocHost`）是可用组合但**暂无消费者**（等 pooled staging ring 落地）；显存 `cudaMalloc` 仍 compute 自有、**不**走 mem。
 4. **Vulkan compute 自定义 kernel 的工程链**——GLSL/`.comp` → SPIR-V 编译、运行时加载、与 CUDA kernel 的统一启动 API(compute-06)。**参考库 = kompute**(`C:\public\project-hyle\kompute`,见下"compute-06 kompute 映射"节已定该抄什么)。
 
 ## compute-05 借 ggml 算力：调研发现汇总（2026-07-06 深调研 ggml/llama.cpp/iron/CCCL 定案）

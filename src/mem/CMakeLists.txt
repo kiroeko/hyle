@@ -6,7 +6,7 @@
 # trap -- if a mimalloc-dependent problem ever recurs, a fallback path lets a build
 # silently dodge it and be MIS-judged as "fine", hiding the real defect. mimalloc is
 # the shipping allocator; if something breaks with it on, we investigate it head-on.
-hyle_add_module(mem SOURCES system.cc stats.cc c_mem.cc memory_arena.cc)
+hyle_add_module(mem SOURCES system.cc stats.cc c_mem.cc shared_pool.cc)
 
 set(_mi "${PROJECT_SOURCE_DIR}/third_party/mimalloc")
 # Whole library in one TU (mimalloc src/static.c #includes the rest). Static so
@@ -38,8 +38,8 @@ if(HYLE_SANITIZER STREQUAL "tsan")
   hyle_apply_sanitizer(mimalloc_static)
 endif()
 target_link_libraries(hyle_mem PRIVATE mimalloc_static)
-# memory_arena.h (public header) calls platform::hardware_concurrency() to size its shard
-# count -> PUBLIC so every consumer of MemoryArena links hyle_platform transitively.
+# shared_pool.h (public header) calls platform::hardware_concurrency() to size its shard
+# count -> PUBLIC so every consumer of SharedPool links hyle_platform transitively.
 target_link_libraries(hyle_mem PUBLIC hyle_platform)
 target_include_directories(hyle_mem PRIVATE "${_mi}/include")
 target_compile_definitions(hyle_mem PRIVATE HYLE_USE_MIMALLOC)

@@ -9,35 +9,40 @@
 // Workload families (fair contracts only — no "wrong tool" rows in SOTA tables):
 //  A. BUMP: Arena + StackAllocator vs pmr::monotonic vs raw mi.
 //  B. SINGLE-THREAD pool churn: GrowablePool ONLY vs pmr::unsynchronized_pool vs
-//     raw mi. MemoryArena/ObjectPool are multi-thread shared tools — they must NOT
-//     appear here (no fair ST baseline; atomic CAS tax is misuse, not a rival).
-//  C. 8-thread: GrowablePool-per-thread vs mi; MemoryArena shared vs pmr sync +
-//     optional oneTBB scalable (gated HYLE_BENCH_TBB).
+//     raw mi. SharedPool/SharedPoolCached belong to cross-thread sharing scenarios.
+//  C. 8-thread tight churn: hard pool vs cached pool vs pmr/tbb/mimalloc.
+//  D. Shared-path burst and cross-thread handoff: the same full comparison.
 
 #include <mimalloc.h>
 #include <nanobench.h>
 
 #if defined(HYLE_BENCH_TBB)
-#  include <tbb/scalable_allocator.h>  // scalable_malloc/free: tbb's MT-scaling allocator
+#  include <tbb/memory_pool.h>         // fixed_pool: fixed-buffer direct rival
+#  include <tbb/scalable_allocator.h>  // growable MT throughput reference
 #endif
 
 #include <barrier>
+#include <chrono>
 #include <cstddef>
+#include <cstdio>
 #include <cstdint>
 #include <cstdlib>
+#include <memory>
 #include <memory_resource>
+#include <string>
 #include <thread>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/growable_pool.h"
-#include "hyle/mem/memory_arena.h"
+#include "hyle/mem/shared_pool.h"
 #include "hyle/mem/stack_allocator.h"
 
 using hyle::mem::Allocator;
 using hyle::mem::Arena;
 using hyle::mem::GrowablePool;
-using hyle::mem::MemoryArena;
+using hyle::mem::SharedPool;
+using hyle::mem::SharedPoolCached;
 using hyle::mem::StackAllocator;
 using hyle::mem::system_allocator;
 
@@ -45,6 +50,9 @@ namespace {
 constexpr std::size_t kObj = 64;       // one small same-size object
 constexpr int kN = 8192;               // allocations per round
 constexpr std::size_t kRegion = kN * kObj + 4096;  // bump region (+slack)
+// oneTBB's own fixed-pool tests budget 1 MiB beyond payload for bootstrap metadata.
+// Match HYLE payload capacity; this allowance is not extra user-visible capacity.
+constexpr std::size_t kTbbFixedBootstrapBytes = 1u << 20;
 namespace nb = ankerl::nanobench;
 
 // Section filter: HYLE_BENCH_SECTIONS="D" runs only section D, "AD" runs A+D, etc.
@@ -57,6 +65,101 @@ bool want_section(char id) {
   for (const char* p = env; *p; ++p)
     if (*p == id) return true;
   return false;
+}
+
+int env_int(const char* name, int fallback) {
+  const char* value = std::getenv(name);
+  if (value == nullptr || value[0] == '\0') return fallback;
+  char* end = nullptr;
+  const long parsed = std::strtol(value, &end, 10);
+  return end != value && *end == '\0' && parsed > 0
+             ? static_cast<int>(parsed)
+             : fallback;
+}
+
+inline void* require_allocation(void* p) noexcept {
+  if (p == nullptr) {
+    std::fputs("arena_pool_bench: unexpected allocation failure\n", stderr);
+    std::abort();
+  }
+  return p;
+}
+
+struct QuotaResult {
+  std::size_t attempted;
+  std::size_t initial_success;
+  std::size_t recovered_before_publish;
+  std::size_t recovered_after_publish;
+  double initial_ns_per_attempt;
+};
+
+template <class Pool>
+QuotaResult run_quota_scenario(Pool& pool, int threads, std::size_t capacity,
+                               int request_pct) {
+  const std::size_t requested =
+      (capacity * static_cast<std::size_t>(request_pct) + 99) / 100;
+  const std::size_t per_thread = (requested + threads - 1) / threads;
+  const std::size_t attempted = per_thread * threads;
+  std::vector<std::vector<void*>> held(
+      threads, std::vector<void*>(per_thread, nullptr));
+  std::vector<std::size_t> successes(threads, 0);
+  std::barrier start(threads + 1);
+  std::barrier allocated(threads + 1);
+  std::barrier release(threads + 1);
+  std::barrier freed(threads + 1);
+  std::barrier publish(threads + 1);
+  std::barrier published(threads + 1);
+  std::vector<std::thread> workers;
+  workers.reserve(threads);
+  for (int t = 0; t < threads; ++t) {
+    workers.emplace_back([&, t] {
+      start.arrive_and_wait();
+      for (std::size_t i = 0; i < per_thread; ++i) {
+        held[t][i] = pool.allocate();
+        if (held[t][i] != nullptr) ++successes[t];
+      }
+      allocated.arrive_and_wait();
+      release.arrive_and_wait();
+      for (void* p : held[t]) pool.deallocate(p);
+      freed.arrive_and_wait();
+      publish.arrive_and_wait();
+      if constexpr (requires { pool.publish_thread_cache(); })
+        pool.publish_thread_cache();
+      published.arrive_and_wait();
+    });
+  }
+
+  const auto begin = std::chrono::steady_clock::now();
+  start.arrive_and_wait();
+  allocated.arrive_and_wait();
+  const auto end = std::chrono::steady_clock::now();
+  std::size_t initial_success = 0;
+  for (std::size_t n : successes) initial_success += n;
+
+  release.arrive_and_wait();
+  freed.arrive_and_wait();
+  auto drain = [&] {
+    std::vector<void*> blocks;
+    blocks.reserve(capacity);
+    while (void* p = pool.allocate()) blocks.push_back(p);
+    return blocks;
+  };
+  std::vector<void*> before = drain();
+  for (void* p : before) pool.deallocate(p);
+  if constexpr (requires { pool.publish_thread_cache(); })
+    pool.publish_thread_cache();
+
+  publish.arrive_and_wait();
+  published.arrive_and_wait();
+  std::vector<void*> after = drain();
+  for (void* p : after) pool.deallocate(p);
+  if constexpr (requires { pool.publish_thread_cache(); })
+    pool.publish_thread_cache();
+  for (auto& worker : workers) worker.join();
+
+  const double ns = std::chrono::duration<double, std::nano>(end - begin).count();
+  return QuotaResult{attempted, initial_success, before.size(), after.size(),
+                     ns / static_cast<double>(attempted)};
 }
 }  // namespace
 
@@ -72,12 +175,12 @@ int main() {
         .minEpochIterations(50);
 
     // HYLE Arena (borrows ONE pooled block; reset() reuses it per round).
-    MemoryArena pool(sys, kRegion, 1);  // 1 block of kRegion bytes
+    SharedPool pool(sys, kRegion, 1);  // one hard-pool block of kRegion bytes
     Arena arena(&pool);
     b.run("HYLE Arena (bump, pooled block)", [&] {
       arena.reset();
       for (int i = 0; i < kN; ++i) {
-        void* p = arena.allocate(kObj);
+        void* p = require_allocation(arena.allocate(kObj));
         nb::doNotOptimizeAway(p);
       }
     });
@@ -87,26 +190,27 @@ int main() {
     b.run("HYLE StackAllocator (bump, own slab)", [&] {
       stack.reset();
       for (int i = 0; i < kN; ++i) {
-        void* p = stack.allocate(kObj);
+        void* p = require_allocation(stack.allocate(kObj));
         nb::doNotOptimizeAway(p);
       }
     });
 
-    // std::pmr::monotonic_buffer_resource (SOTA: std's arena).
+    // std::pmr::monotonic_buffer_resource (SOTA: std's arena). Keep the resource
+    // persistent like Arena/StackAllocator and time release(), the matching bulk reset.
     std::vector<std::byte> buf(kRegion);
+    std::pmr::monotonic_buffer_resource mbr(buf.data(), buf.size());
     b.run("std::pmr::monotonic_buffer_resource (SOTA)", [&] {
-      std::pmr::monotonic_buffer_resource mbr(buf.data(), buf.size());
+      mbr.release();
       for (int i = 0; i < kN; ++i) {
         void* p = mbr.allocate(kObj, alignof(std::max_align_t));
         nb::doNotOptimizeAway(p);
       }
-      // dtor releases all (no per-object free) -- the bump lifecycle.
     });
 
     // raw mi_malloc: general malloc has NO bulk free -> alloc-all then free-all.
     b.run("raw mi_malloc/free (general, no bulk)", [&] {
       std::vector<void*> ps(kN);
-      for (int i = 0; i < kN; ++i) ps[i] = mi_malloc(kObj);
+      for (int i = 0; i < kN; ++i) ps[i] = require_allocation(mi_malloc(kObj));
       for (int i = 0; i < kN; ++i) mi_free(ps[i]);
       nb::doNotOptimizeAway(ps.data());
     });
@@ -134,10 +238,12 @@ int main() {
         .minEpochIterations(200);
     b.run("HYLE StackAllocator mark/rewind (LIFO scratch)", [&] {
       stack.reset();
-      for (int i = 0; i < kBase; ++i) nb::doNotOptimizeAway(stack.allocate(kObj));
+      for (int i = 0; i < kBase; ++i)
+        nb::doNotOptimizeAway(require_allocation(stack.allocate(kObj)));
       for (int c = 0; c < kCycles; ++c) {
         auto m = stack.mark();
-        for (int i = 0; i < kInner; ++i) nb::doNotOptimizeAway(stack.allocate(kObj));
+        for (int i = 0; i < kInner; ++i)
+          nb::doNotOptimizeAway(require_allocation(stack.allocate(kObj)));
         stack.rewind(m);  // free exactly this cycle's temps, keep the base batch
       }
     });
@@ -148,16 +254,16 @@ int main() {
     b.run("HYLE StackAllocator reset re-bump (baseline)", [&] {
       for (int c = 0; c < kCycles; ++c) {
         stack2.reset();
-        for (int i = 0; i < kInner; ++i) nb::doNotOptimizeAway(stack2.allocate(kObj));
+        for (int i = 0; i < kInner; ++i)
+          nb::doNotOptimizeAway(require_allocation(stack2.allocate(kObj)));
       }
     });
   }
 
   // ---- B. SINGLE-THREAD pool churn (fair tools only) ----
   // GrowablePool is the ST same-size free-list tool. Rivals: pmr unsync pool (std
-  // ST pool SOTA) + raw mi (general baseline). MemoryArena/ObjectPool intentionally
-  // omitted: they pay atomics for multi-thread sharing — putting them here invents
-  // a "loss" with no fair ST SOTA denominator (see multi-thread section C).
+  // ST pool SOTA) + raw mi (general baseline). SharedPool/SharedPoolCached are omitted:
+  // a single-thread-only owner should use the simpler GrowablePool.
   if (want_section('B')) {
     nb::Bench b;
     b.title("single-thread pool churn: 8192x alloc/free 64B")
@@ -171,14 +277,14 @@ int main() {
     GrowablePool<Obj> gpool(sys, 64);
     b.run("HYLE GrowablePool (single-thread)", [&] {
       for (int i = 0; i < kN; ++i) {
-        Obj* p = gpool.create();
+        Obj* p = static_cast<Obj*>(require_allocation(gpool.create()));
         nb::doNotOptimizeAway(p);
         gpool.destroy(p);
       }
     });
 
+    std::pmr::unsynchronized_pool_resource upr;
     b.run("std::pmr::unsynchronized_pool_resource (SOTA)", [&] {
-      std::pmr::unsynchronized_pool_resource upr;
       for (int i = 0; i < kN; ++i) {
         void* p = upr.allocate(kObj, alignof(std::max_align_t));
         nb::doNotOptimizeAway(p);
@@ -188,7 +294,7 @@ int main() {
 
     b.run("raw mi_malloc/free (general)", [&] {
       for (int i = 0; i < kN; ++i) {
-        void* p = mi_malloc(kObj);
+        void* p = require_allocation(mi_malloc(kObj));
         nb::doNotOptimizeAway(p);
         mi_free(p);
       }
@@ -196,30 +302,17 @@ int main() {
   }
 
   // ---- C. CONCURRENT pool churn: APPLES-TO-APPLES, not apples-to-oranges ----
-  // The headline "8-thread mimalloc beats shared MemoryArena 1.95x" is NOT a fair
-  // fight, and saying otherwise would be a self-deception. mimalloc's 8-thread
-  // number is EIGHT PER-THREAD HEAPS: every alloc/free here is SAME-THREAD, which
-  // mimalloc serves with a NON-ATOMIC thread-local free list. A single SHARED
-  // fixed-slab pool can't do that -- coordinating one slab across threads costs an
-  // atomic CAS per op (even sharded + uncontended, the `lock` prefix isn't free).
-  // So the rows below separate the two honest questions:
-  //
-  //   (1) "I want per-thread same-size churn" -> the SOTA pattern is a pool PER
-  //       THREAD (that IS what mimalloc does internally). HYLE's matching answer
-  //       is GrowablePool-per-thread: no atomics, no sharing -> parity/beat mi.
-  //   (2) "I genuinely need ONE shared fixed pool" (a bounded resource every
-  //       thread draws from) -> MemoryArena. The APPLES-TO-APPLES rival is std::
-  //       pmr::synchronized_pool_resource (the std thread-safe SHARED pool, same
-  //       contract), NOT per-thread-heap mimalloc. HYLE's lock-free sharded pool
-  //       vs std's mutex-serialized pool -> THAT is the honest ledger row. The
-  //       mimalloc per-thread-heap number is kept only as context (a different
-  //       contract), explicitly NOT the win/loss denominator.
-  // (std::pmr::unsynchronized_pool_resource is NOT thread-safe -> not a rival;
-  //  synchronized_pool_resource IS, and is the fair shared-pool SOTA below.)
+  // This section separates three contracts instead of declaring a pooled fixed slab
+  // faster/slower from one misleading denominator:
+  //   (1) per-thread ownership -> GrowablePool per thread vs mimalloc's local heaps;
+  //   (2) shared HARD capacity -> SharedPool, with immediate post-free visibility;
+  //   (3) shared SOFT capacity -> SharedPoolCached, whose steady state is TLS-local.
+  // oneTBB fixed_pool is the direct fixed-buffer rival. pmr, scalable_allocator,
+  // mimalloc, and per-worker GrowablePool are growable throughput references only.
   if (want_section('C')) {
-    constexpr int kThreads = 8;
+    const int kThreads = env_int("HYLE_BENCH_THREADS", 8);
     constexpr int kPer = 50000;
-    auto run_threads = [](auto&& body) {
+    auto run_threads = [&](auto&& body) {
       std::vector<std::thread> ts;
       ts.reserve(kThreads);
       for (int t = 0; t < kThreads; ++t) ts.emplace_back(body);
@@ -227,7 +320,8 @@ int main() {
     };
     struct Obj { std::byte b[kObj]; };
     nb::Bench b;
-    b.title("8-thread pool churn: per-thread (fair) vs shared (coordination cost)")
+    b.title(std::to_string(kThreads) +
+            "-thread worker object reuse (batch=1)")
         .relative(true)
         .batch(kThreads * kPer)
         .minEpochIterations(10);
@@ -235,44 +329,64 @@ int main() {
     // (1) APPLES-TO-APPLES: a GrowablePool PER THREAD (no sharing, no atomics) --
     // HYLE's SOTA-parity answer for per-thread same-size churn, the SAME shape as
     // mimalloc's per-thread heaps.
-    b.run("HYLE GrowablePool (8 threads, 1 pool EACH = fair vs mi)", [&] {
+    b.run("HYLE GrowablePool (one pool per worker)", [&] {
       run_threads([&] {
         GrowablePool<Obj> local(sys, 256);
         for (int i = 0; i < kPer; ++i) {
-          Obj* p = local.create();
+          Obj* p = static_cast<Obj*>(require_allocation(local.create()));
           nb::doNotOptimizeAway(p);
           local.destroy(p);
         }
       });
     });
 
-    // (2) ONE MemoryArena shared by all 8 threads. NOTE (2026-07-21 audit): this
-    // tight alloc->dealloc shape is a SAME-BLOCK TLS ping-pong -- after the first
-    // shard pop, every op hits this thread's TLS freelist (depth 1) and NEVER
-    // touches the shared shards again. It measures the TLS fast-path constant only,
-    // NOT the shared-backend coordination it claims to. The honest shared-path
-    // stress (TLS overflow-flush + shard refill, and real cross-thread routing) is
-    // section D below; keep this row as the steady-state hot-path number.
-    MemoryArena shared(sys, kObj, kThreads * 256);  // small pool -> real reuse churn
-    b.run("HYLE MemoryArena (8 threads, SHARED, TLS ping-pong hot path)", [&] {
+    // One shared soft-capacity pool, but each worker reuses its own object. This is
+    // Folly CompressionContextPool's get/use/return shape and the intended TLS case.
+    SharedPoolCached shared_cached(sys, kObj, kThreads * 256);
+    b.run("HYLE SharedPoolCached (soft, worker-local reuse)", [&] {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
-          void* p = shared.allocate();
+          void* p = require_allocation(shared_cached.allocate());
           nb::doNotOptimizeAway(p);
-          shared.deallocate(p);
+          shared_cached.deallocate(p);
         }
       });
     });
 
-    // (2-FAIR) The APPLES-TO-APPLES rival for row (2): std::pmr::synchronized_
-    // pool_resource is the STANDARD LIBRARY's thread-safe SHARED pool -- same
-    // contract as MemoryArena (one pool every thread draws from), so this is the
-    // honest "is our shared pool SOTA for its class?" check (vs the apples-to-
-    // oranges per-thread-heap mimalloc baseline). std's shared pool serializes on
-    // an internal mutex; HYLE's is lock-free sharded -> HYLE should win here, and
-    // THIS comparison (not the mimalloc one) is what belongs in the ledger.
-    b.run("std::pmr::synchronized_pool_resource (8 threads, SHARED SOTA)", [&] {
-      std::pmr::synchronized_pool_resource spr;
+    // Hard-capacity counterpart: every operation publishes through a shared home list,
+    // isolating deterministic visibility from the cached worker-local fast path.
+    SharedPool shared_hard(sys, kObj, kThreads * 256);
+    b.run("HYLE SharedPool (hard capacity)", [&] {
+      run_threads([&] {
+        for (int i = 0; i < kPer; ++i) {
+          void* p = require_allocation(shared_hard.allocate());
+          nb::doNotOptimizeAway(p);
+          shared_hard.deallocate(p);
+        }
+      });
+    });
+
+#if defined(HYLE_BENCH_TBB)
+    // Direct contract rival: one fixed caller-owned buffer, shared by all workers.
+    std::vector<std::byte> tbb_fixed_storage(
+        static_cast<std::size_t>(kThreads) * 256 * kObj + kTbbFixedBootstrapBytes);
+    tbb::fixed_pool tbb_fixed(tbb_fixed_storage.data(), tbb_fixed_storage.size());
+    b.run("oneTBB fixed_pool (fixed-buffer shared)", [&] {
+      run_threads([&] {
+        for (int i = 0; i < kPer; ++i) {
+          void* p = require_allocation(tbb_fixed.malloc(kObj));
+          nb::doNotOptimizeAway(p);
+          tbb_fixed.free(p);
+        }
+      });
+    });
+#endif
+
+    // Standard-library shared-pool reference. It is growable rather than bounded,
+    // but exercises the same one-instance/many-thread allocation topology. Construct
+    // outside the timed lambda, matching every other persistent pool in this section.
+    std::pmr::synchronized_pool_resource spr;
+    b.run("std::pmr::synchronized_pool_resource (growable shared)", [&] {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
           void* p = spr.allocate(kObj, alignof(std::max_align_t));
@@ -282,18 +396,14 @@ int main() {
       });
     });
 
-    // (2-STRONG) The STRONG same-contract rival: oneTBB's scalable_allocator is a
-    // thread-safe SHARED allocator engineered for MT scaling (per-thread caches +
-    // shared backing), unlike std's mutex-serialized synchronized_pool. This is the
-    // honest "is our shared pool SOTA vs a REAL scalable allocator, not just the weak
-    // std one?" check -- synchronized_pool (44x) flatters us because std's impl is a
-    // single mutex; tbb is what a production shared allocator actually costs. Gated
-    // on -DHYLE_BENCH_TBB (needs the cloned oneTBB + tbbmalloc).
+    // Strong production reference: oneTBB scalable_allocator uses per-thread caches
+    // plus shared backing. It is growable, so compare throughput rather than capacity
+    // semantics. Gated on HYLE_BENCH_TBB.
 #if defined(HYLE_BENCH_TBB)
-    b.run("oneTBB scalable_allocator (8 threads, SHARED SOTA)", [&] {
+    b.run("oneTBB scalable_allocator (growable shared)", [&] {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
-          void* p = scalable_malloc(kObj);
+          void* p = require_allocation(scalable_malloc(kObj));
           nb::doNotOptimizeAway(p);
           scalable_free(p);
         }
@@ -304,10 +414,10 @@ int main() {
     // raw mi_malloc/free, 8 threads -- mimalloc's per-thread heaps (non-atomic
     // same-thread free). The fair rival to row (1), the apples-to-oranges baseline
     // for row (2).
-    b.run("raw mi_malloc/free (8 threads, per-thread heaps)", [&] {
+    b.run("raw mi_malloc/free (per-thread heaps)", [&] {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
-          void* p = mi_malloc(kObj);
+          void* p = require_allocation(mi_malloc(kObj));
           nb::doNotOptimizeAway(p);
           mi_free(p);
         }
@@ -315,55 +425,85 @@ int main() {
     });
   }
 
-  // ---- D. SHARED-PATH stress: the shapes section C's ping-pong CANNOT reach ----
-  // Audit (2026-07-21): section C row (2) is a depth-1 TLS ping-pong -- it never
-  // spills to the shared shards, so it does NOT measure the lock-free backend that
-  // is MemoryArena's reason to exist. These two rows exercise the real machinery a
-  // shared bounded pool is chosen for, against the same-contract SOTA rivals.
+  // ---- D. USER WORKLOADS: request batches + producer/consumer handoff ----------
+  // Derived from oneTBB pool tests and mimalloc's threadtest/Larson/xmalloc shapes.
+  // Environment knobs sweep scaling instead of certifying one hand-picked point.
   if (want_section('D')) {
-    constexpr int kThreads = 8;
-    struct Obj { std::byte b[kObj]; };
-    auto run_threads = [](auto&& body) {
+    const int kThreads = env_int("HYLE_BENCH_THREADS", 8);
+    const std::size_t block_size =
+        static_cast<std::size_t>(env_int("HYLE_BENCH_BLOCK_SIZE", 64));
+    auto run_threads = [&](auto&& body) {
       std::vector<std::thread> ts;
       ts.reserve(kThreads);
       for (int t = 0; t < kThreads; ++t) ts.emplace_back(body, t);
       for (auto& th : ts) th.join();
     };
 
-    // ---- D1. BURST churn: working set > TLS cap (32) ----
-    // Each round holds kHold live blocks then frees them all. kHold=64 > kTlsCacheCap
-    // (32) so every round forces the TLS cache to OVERFLOW-FLUSH half to the shards on
-    // the way up and REFILL from the shards on the way down -- i.e. it actually drives
-    // the Treiber-stack push/pop path, not just the owner-only TLS stack. This is the
-    // pooled-fixed-object working-set pattern (e.g. N in-flight fiber stacks / pooled
-    // nodes), the realistic shape section C skips.
-    constexpr int kHold = 64;         // > kTlsCacheCap (32): forces flush + refill
-    constexpr int kRounds = 500;
-    MemoryArena burst(sys, kObj, kThreads * (kHold + 16));  // room for all threads
+    // ---- D1. Request batch lifecycle -----------------------------------------
+    // Each worker acquires a request-local batch, keeps the objects live together,
+    // then releases the batch. Sweep batch, threads, and working-set/capacity ratio
+    // from the environment; the workload is user behavior, not a TLS-threshold probe.
+    const int kHold = env_int("HYLE_BENCH_BATCH", 64);
+    const int kRounds = env_int("HYLE_BENCH_ROUNDS", 500);
+    const int capacity_pct = env_int("HYLE_BENCH_CAPACITY_PCT", 75);
+    const std::uint32_t pool_capacity = static_cast<std::uint32_t>(
+        (static_cast<std::uint64_t>(kThreads) * kHold * 100 + capacity_pct - 1) /
+        capacity_pct);
+    SharedPoolCached burst_cached(sys, block_size, pool_capacity);
+    SharedPool burst_hard(sys, block_size, pool_capacity);
     {
       nb::Bench b;
-      b.title("8-thread BURST churn: hold 64 (>TLS cap) then free all")
+      b.title(std::to_string(kThreads) + " workers: request batch=" +
+              std::to_string(kHold) + ", block=" +
+              std::to_string(block_size) + "B, working-set=" +
+              std::to_string(capacity_pct) + "% capacity")
           .relative(true)
           .batch(static_cast<std::uint64_t>(kThreads) * kRounds * kHold)
           .minEpochIterations(3);
-      b.run("HYLE MemoryArena (burst, TLS overflow+shard refill)", [&] {
+      b.run("HYLE SharedPoolCached (soft capacity)", [&] {
         run_threads([&](int) {
           std::vector<void*> held(kHold);
           for (int r = 0; r < kRounds; ++r) {
-            for (int i = 0; i < kHold; ++i) held[i] = burst.allocate();
-            for (int i = 0; i < kHold; ++i) burst.deallocate(held[i]);
+            for (int i = 0; i < kHold; ++i)
+              held[i] = require_allocation(burst_cached.allocate());
+            for (int i = 0; i < kHold; ++i) burst_cached.deallocate(held[i]);
           }
         });
       });
-      b.run("std::pmr::synchronized_pool_resource (burst)", [&] {
-        std::pmr::synchronized_pool_resource spr;
+      b.run("HYLE SharedPool (hard capacity)", [&] {
         run_threads([&](int) {
           std::vector<void*> held(kHold);
           for (int r = 0; r < kRounds; ++r) {
             for (int i = 0; i < kHold; ++i)
-              held[i] = spr.allocate(kObj, alignof(std::max_align_t));
+              held[i] = require_allocation(burst_hard.allocate());
+            for (int i = 0; i < kHold; ++i) burst_hard.deallocate(held[i]);
+          }
+        });
+      });
+#if defined(HYLE_BENCH_TBB)
+      std::vector<std::byte> tbb_fixed_storage(
+          static_cast<std::size_t>(pool_capacity) * block_size + kTbbFixedBootstrapBytes);
+      tbb::fixed_pool tbb_fixed(tbb_fixed_storage.data(), tbb_fixed_storage.size());
+      b.run("oneTBB fixed_pool (fixed-buffer shared)", [&] {
+        run_threads([&](int) {
+          std::vector<void*> held(kHold);
+          for (int r = 0; r < kRounds; ++r) {
             for (int i = 0; i < kHold; ++i)
-              spr.deallocate(held[i], kObj, alignof(std::max_align_t));
+              held[i] = require_allocation(tbb_fixed.malloc(block_size));
+            for (int i = 0; i < kHold; ++i) tbb_fixed.free(held[i]);
+          }
+        });
+      });
+#endif
+      std::pmr::synchronized_pool_resource spr;
+      b.run("std::pmr::synchronized_pool_resource (growable shared)", [&] {
+        run_threads([&](int) {
+          std::vector<void*> held(kHold);
+          for (int r = 0; r < kRounds; ++r) {
+            for (int i = 0; i < kHold; ++i)
+              held[i] = spr.allocate(block_size, alignof(std::max_align_t));
+            for (int i = 0; i < kHold; ++i)
+              spr.deallocate(held[i], block_size, alignof(std::max_align_t));
           }
         });
       });
@@ -372,7 +512,8 @@ int main() {
         run_threads([&](int) {
           std::vector<void*> held(kHold);
           for (int r = 0; r < kRounds; ++r) {
-            for (int i = 0; i < kHold; ++i) held[i] = scalable_malloc(kObj);
+            for (int i = 0; i < kHold; ++i)
+              held[i] = require_allocation(scalable_malloc(block_size));
             for (int i = 0; i < kHold; ++i) scalable_free(held[i]);
           }
         });
@@ -382,85 +523,126 @@ int main() {
         run_threads([&](int) {
           std::vector<void*> held(kHold);
           for (int r = 0; r < kRounds; ++r) {
-            for (int i = 0; i < kHold; ++i) held[i] = mi_malloc(kObj);
+            for (int i = 0; i < kHold; ++i)
+              held[i] = require_allocation(mi_malloc(block_size));
             for (int i = 0; i < kHold; ++i) mi_free(held[i]);
           }
         });
       });
     }
 
-    // ---- D2. CROSS-THREAD handoff: allocate on thread t, free on thread t+1 ----
-    // The work-stealing / producer-consumer pattern MemoryArena's address-routed free
-    // is built for (design: "fiber stack allocated on core A, freed on core B"). Each
-    // thread allocates a batch, a barrier rotates ownership, then each thread frees the
-    // NEIGHBOR's batch -- so deallocate() cannot hit the freeing thread's TLS (foreign
-    // blocks) and must route by address to the owning shard's Treiber stack. This is
-    // the genuine shared-backend contention section C's same-thread ping-pong hides.
-    // (mimalloc is shown as the apples-to-oranges baseline: its cross-thread free is a
-    // deferred atomic push to the owning heap -- a different contract, context only.)
-    // kBatch is large so the two per-round barrier syncs amortize over 256 alloc + 256
-    // free ops -- otherwise the barrier latency (not the allocator) dominates ns/op.
-    constexpr int kBatch = 256;
-    constexpr int kHandoffRounds = 250;
-    MemoryArena handoff(sys, kObj, kThreads * kBatch * 2);
+    // ---- D2. Producer/consumer handoff ---------------------------------------
+    // Each worker produces one batch and consumes its neighbor's batch, matching
+    // oneTBB's cross-thread-free test and allocator Larson-style migration. Blocks
+    // may migrate between HYLE shared home lists; Cached may park up to its bounded
+    // TLS window. Sweep handoff batch independently to expose barrier amortization.
+    const int kBatch = env_int("HYLE_BENCH_HANDOFF_BATCH", 256);
+    const int kHandoffRounds = env_int("HYLE_BENCH_HANDOFF_ROUNDS", 250);
+    const std::uint32_t handoff_capacity =
+        static_cast<std::uint32_t>(kThreads * kBatch * 2);
+    SharedPoolCached handoff_cached(sys, block_size, handoff_capacity);
+    SharedPool handoff_hard(sys, block_size, handoff_capacity);
+    struct alignas(64) HandoffState {
+      std::atomic<int> produced{0};
+      std::atomic<int> consumed{0};
+    };
+    auto run_handoff = [&](auto&& allocate, auto&& deallocate) {
+      std::vector<std::vector<void*>> slots(kThreads,
+                                            std::vector<void*>(kBatch));
+      auto states = std::make_unique<HandoffState[]>(kThreads);
+      run_threads([&](int t) {
+        const int nbr = (t + 1) % kThreads;
+        for (int r = 0; r < kHandoffRounds; ++r) {
+          while (states[t].consumed.load(std::memory_order_acquire) < r)
+            std::this_thread::yield();
+          for (int i = 0; i < kBatch; ++i)
+            slots[t][i] = require_allocation(allocate());
+          states[t].produced.store(r + 1, std::memory_order_release);
+          while (states[nbr].produced.load(std::memory_order_acquire) < r + 1)
+            std::this_thread::yield();
+          for (int i = 0; i < kBatch; ++i) deallocate(slots[nbr][i]);
+          states[nbr].consumed.store(r + 1, std::memory_order_release);
+        }
+      });
+    };
     {
-      std::barrier sync(kThreads);
-      std::vector<std::vector<void*>> slots(kThreads, std::vector<void*>(kBatch));
       nb::Bench b;
-      b.title("8-thread CROSS-THREAD handoff: alloc on t, free on t+1")
+      b.title(std::to_string(kThreads) +
+              " workers: producer allocates, neighbor consumer frees; batch=" +
+              std::to_string(kBatch) + ", block=" +
+              std::to_string(block_size) + "B")
           .relative(true)
           .batch(static_cast<std::uint64_t>(kThreads) * kHandoffRounds * kBatch)
           .minEpochIterations(3);
-      b.run("HYLE MemoryArena (cross-thread, address-routed shard free)", [&] {
-        run_threads([&](int t) {
-          const int nbr = (t + 1) % kThreads;
-          for (int r = 0; r < kHandoffRounds; ++r) {
-            for (int i = 0; i < kBatch; ++i) slots[t][i] = handoff.allocate();
-            sync.arrive_and_wait();                 // publish my batch
-            for (int i = 0; i < kBatch; ++i) handoff.deallocate(slots[nbr][i]);
-            sync.arrive_and_wait();                 // all frees done before next round
-          }
-        });
+      b.run("HYLE SharedPoolCached (soft capacity)", [&] {
+        run_handoff([&] { return handoff_cached.allocate(); },
+                    [&](void* p) { handoff_cached.deallocate(p); });
       });
-      b.run("std::pmr::synchronized_pool_resource (cross-thread)", [&] {
-        std::pmr::synchronized_pool_resource spr;
-        run_threads([&](int t) {
-          const int nbr = (t + 1) % kThreads;
-          for (int r = 0; r < kHandoffRounds; ++r) {
-            for (int i = 0; i < kBatch; ++i)
-              slots[t][i] = spr.allocate(kObj, alignof(std::max_align_t));
-            sync.arrive_and_wait();
-            for (int i = 0; i < kBatch; ++i)
-              spr.deallocate(slots[nbr][i], kObj, alignof(std::max_align_t));
-            sync.arrive_and_wait();
-          }
-        });
+      b.run("HYLE SharedPool (hard capacity)", [&] {
+        run_handoff([&] { return handoff_hard.allocate(); },
+                    [&](void* p) { handoff_hard.deallocate(p); });
+      });
+#if defined(HYLE_BENCH_TBB)
+      std::vector<std::byte> tbb_fixed_storage(
+          static_cast<std::size_t>(handoff_capacity) * block_size + kTbbFixedBootstrapBytes);
+      tbb::fixed_pool tbb_fixed(tbb_fixed_storage.data(), tbb_fixed_storage.size());
+      b.run("oneTBB fixed_pool (fixed-buffer shared)", [&] {
+        run_handoff([&] { return tbb_fixed.malloc(block_size); },
+                    [&](void* p) { tbb_fixed.free(p); });
+      });
+#endif
+      std::pmr::synchronized_pool_resource spr;
+      b.run("std::pmr::synchronized_pool_resource (growable shared)", [&] {
+        run_handoff(
+            [&] { return spr.allocate(block_size, alignof(std::max_align_t)); },
+            [&](void* p) {
+              spr.deallocate(p, block_size, alignof(std::max_align_t));
+            });
       });
 #if defined(HYLE_BENCH_TBB)
       b.run("oneTBB scalable_allocator (cross-thread)", [&] {
-        run_threads([&](int t) {
-          const int nbr = (t + 1) % kThreads;
-          for (int r = 0; r < kHandoffRounds; ++r) {
-            for (int i = 0; i < kBatch; ++i) slots[t][i] = scalable_malloc(kObj);
-            sync.arrive_and_wait();
-            for (int i = 0; i < kBatch; ++i) scalable_free(slots[nbr][i]);
-            sync.arrive_and_wait();
-          }
-        });
+        run_handoff([&] { return scalable_malloc(block_size); },
+                    [&](void* p) { scalable_free(p); });
       });
 #endif
       b.run("raw mi_malloc/free (cross-thread, deferred atomic push)", [&] {
-        run_threads([&](int t) {
-          const int nbr = (t + 1) % kThreads;
-          for (int r = 0; r < kHandoffRounds; ++r) {
-            for (int i = 0; i < kBatch; ++i) slots[t][i] = mi_malloc(kObj);
-            sync.arrive_and_wait();
-            for (int i = 0; i < kBatch; ++i) mi_free(slots[nbr][i]);
-            sync.arrive_and_wait();
-          }
-        });
+        run_handoff([&] { return mi_malloc(block_size); },
+                    [&](void* p) { mi_free(p); });
       });
     }
+  }
+
+  // ---- E. SERVICE QUOTA: capacity pressure + recovery ------------------------
+  // Fixed-capacity-only contract test/measurement. Growable allocators are excluded:
+  // they cannot answer whether a bounded service admits exactly N concurrent objects.
+  if (want_section('E')) {
+    const int threads = env_int("HYLE_BENCH_THREADS", 8);
+    const std::size_t block_size =
+        static_cast<std::size_t>(env_int("HYLE_BENCH_BLOCK_SIZE", 64));
+    const std::size_t capacity =
+        static_cast<std::size_t>(env_int("HYLE_BENCH_QUOTA", 1024));
+    const int request_pct = env_int("HYLE_BENCH_REQUEST_PCT", 110);
+    SharedPool hard(sys, block_size, static_cast<std::uint32_t>(capacity));
+    SharedPoolCached cached(sys, block_size,
+                            static_cast<std::uint32_t>(capacity));
+    const QuotaResult hard_result =
+        run_quota_scenario(hard, threads, capacity, request_pct);
+    const QuotaResult cached_result =
+        run_quota_scenario(cached, threads, capacity, request_pct);
+
+    std::printf("\nservice quota: threads=%d, block=%zuB, capacity=%zu, request=%d%%\n",
+                threads, block_size, capacity, request_pct);
+    std::printf("\n| pool | attempted | admitted | failed | recovered before publish | recovered after publish | ns/attempt |\n");
+    std::printf("|:--|--:|--:|--:|--:|--:|--:|\n");
+    auto print = [](const char* name, const QuotaResult& r) {
+      std::printf("| %s | %zu | %zu | %zu | %zu | %zu | %.2f |\n", name,
+                  r.attempted, r.initial_success,
+                  r.attempted - r.initial_success,
+                  r.recovered_before_publish, r.recovered_after_publish,
+                  r.initial_ns_per_attempt);
+    };
+    print("HYLE SharedPool (hard)", hard_result);
+    print("HYLE SharedPoolCached (soft)", cached_result);
   }
 
   return 0;

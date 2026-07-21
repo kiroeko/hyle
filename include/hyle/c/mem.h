@@ -6,9 +6,9 @@
  * Do NOT include hyle/mem/ headers from C or cross-compiler FFI.
  *
  * Surface: the injectable Allocator vtable (system_allocator + usable/good size),
- * plus opaque handles for MemoryArena (sharded lock-free block pool), StackAllocator
- * (LIFO bump), Arena (bump over one pooled block), and HugeRegion (huge-page / NUMA
- * span), and the process-wide mimalloc hugepage/NUMA policy knobs.
+ * plus opaque handles for SharedPool / SharedPoolCached (hard/soft-capacity sharded
+ * fixed-block pools), StackAllocator (LIFO bump), Arena (bump over one pooled block),
+ * HugeRegion (huge-page / NUMA span), and the process-wide mimalloc policy knobs.
  * Docs (1:1 with this header): docs/guide/c-mem.md
  */
 #ifndef HYLE_C_MEM_H_
@@ -37,8 +37,8 @@ extern "C" {
 #endif
 
 /* alignof spelling for the typed-pool macros below: C++ / C23 keyword, C11
- * `_Alignof`, else pass 0 (hyle_memory_arena_create normalizes 0 to the default
- * alignment -- always safe, never under-aligns). */
+ * `_Alignof`, else pass 0 (hyle_shared_pool_create normalizes it to the default
+ * alignment). */
 #if defined(__cplusplus)
 #  define HYLE_ALIGNOF(T) alignof(T)
 #elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 201112L
@@ -111,10 +111,16 @@ HYLE_MEM_C_API size_t hyle_system_usable_size(const void* ptr);
 HYLE_MEM_C_API size_t hyle_system_good_size(size_t size);
 
 /* ========================================================================== */
-/* MemoryArena — sharded lock-free fixed-size block pool                       */
+/* SharedPool — sharded fixed-size block pool (HARD capacity)                   */
 /* ========================================================================== */
+/* In normal tagged mode, the successful home-shard path and each deallocate use one
+ * CAS; allocate scans other shards when needed. A saturated tag safely falls back to
+ * a per-shard serialized path rather than wrapping. No block is parked in TLS, so a
+ * immediately visible (no cache-induced false exhaustion). The safe default for a
+ * bounded cross-thread quota. For a same-thread-churn hot spot with an
+ * over-provisioned pool, see the *_cached family below (soft capacity, faster). */
 
-typedef struct hyle_memory_arena_o hyle_memory_arena_o;
+typedef struct hyle_shared_pool_o hyle_shared_pool_o;
 
 /* `block_count` blocks of `block_size` bytes each, aligned to `alignment`
  * (0 => default). Slab + link arrays come from `backing`. Returns NULL (and sets
@@ -123,41 +129,89 @@ typedef struct hyle_memory_arena_o hyle_memory_arena_o;
  * aborts). Contract violations (block_size/block_count == 0, or
  * block_size*block_count overflowing size_t) still fail-fast (abort) in the C++
  * ctor, same as a C++ caller. */
-HYLE_MEM_C_API hyle_memory_arena_o* hyle_memory_arena_create(
+HYLE_MEM_C_API hyle_shared_pool_o* hyle_shared_pool_create(
     hyle_allocator backing, size_t block_size, uint32_t block_count,
     size_t alignment);
-HYLE_MEM_C_API void hyle_memory_arena_destroy(hyle_memory_arena_o* a);
-/* Pop a free block; NULL when the whole pool is exhausted. */
-HYLE_MEM_C_API void* hyle_memory_arena_allocate(hyle_memory_arena_o* a);
-/* Return a block from allocate(); NULL is a no-op. */
-HYLE_MEM_C_API void hyle_memory_arena_deallocate(hyle_memory_arena_o* a, void* p);
+/* Contract: no live block and all concurrent pool access is quiesced. */
+HYLE_MEM_C_API void hyle_shared_pool_destroy(hyle_shared_pool_o* p);
+/* Pop a block; NULL after this call observes every shard empty (none hide in TLS). */
+HYLE_MEM_C_API void* hyle_shared_pool_allocate(hyle_shared_pool_o* p);
+/* Return a block from allocate(); NULL is a no-op. Immediately visible to all. */
+HYLE_MEM_C_API void hyle_shared_pool_deallocate(hyle_shared_pool_o* p, void* ptr);
 /* Return EVERY block to the free pool. Contract: NO block may be live. */
-HYLE_MEM_C_API void hyle_memory_arena_reset(hyle_memory_arena_o* a);
-HYLE_MEM_C_API size_t hyle_memory_arena_block_size(const hyle_memory_arena_o* a);
-HYLE_MEM_C_API uint32_t hyle_memory_arena_capacity(const hyle_memory_arena_o* a);
+HYLE_MEM_C_API void hyle_shared_pool_reset(hyle_shared_pool_o* p);
+HYLE_MEM_C_API size_t hyle_shared_pool_block_size(const hyle_shared_pool_o* p);
+HYLE_MEM_C_API uint32_t hyle_shared_pool_capacity(const hyle_shared_pool_o* p);
 /* A vtable view of the pool (alloc=pop fixed block, free=push, realloc=NULL).
- * The handle stays owned by the arena; valid until destroy. */
-HYLE_MEM_C_API hyle_allocator hyle_memory_arena_as_allocator(
-    hyle_memory_arena_o* a);
+ * The handle stays owned by the pool; valid until destroy. */
+HYLE_MEM_C_API hyle_allocator hyle_shared_pool_as_allocator(hyle_shared_pool_o* p);
+
+/* ========================================================================== */
+/* SharedPoolCached — SharedPool + per-thread TLS fast path (SOFT capacity)     */
+/* ========================================================================== */
+/* Adds a per-thread TLS freelist so a same-thread free->alloc is ZERO atomics, with
+ * magazine batch transfer to the shards -- max throughput when a thread reuses its
+ * own blocks and the pool is provisioned above the concurrent working set. TRADE-OFF
+ * (soft capacity): a block freed on a live thread is parked in that thread's TLS and
+ * is NOT visible to allocate() on other threads until it flushes -- call
+ * hyle_shared_pool_cached_publish() on the freeing thread, or join it, to restore
+ * hard capacity. Wrong tool for a capacity-tight cross-thread quota (use SharedPool).
+ * Same create/OOM contract as SharedPool. */
+
+typedef struct hyle_shared_pool_cached_o hyle_shared_pool_cached_o;
+
+HYLE_MEM_C_API hyle_shared_pool_cached_o* hyle_shared_pool_cached_create(
+    hyle_allocator backing, size_t block_size, uint32_t block_count,
+    size_t alignment);
+/* Contract: no live block and all concurrent pool access is quiesced. Worker threads
+ * may remain alive after external synchronization; their detached TLS nodes are safe. */
+HYLE_MEM_C_API void hyle_shared_pool_cached_destroy(hyle_shared_pool_cached_o* p);
+/* Pop a free block; NULL if the local TLS AND every shard is empty (blocks parked in
+ * OTHER live threads' TLS are invisible -- soft capacity). */
+HYLE_MEM_C_API void* hyle_shared_pool_cached_allocate(hyle_shared_pool_cached_o* p);
+/* Return a block; lands in THIS thread's TLS (zero atomics), overflow flushes. */
+HYLE_MEM_C_API void hyle_shared_pool_cached_deallocate(hyle_shared_pool_cached_o* p,
+                                                       void* ptr);
+/* Flush THIS thread's TLS freelist to the shards so other threads can see the freed
+ * blocks without waiting for this thread to exit (soft-capacity handoff barrier). */
+HYLE_MEM_C_API void hyle_shared_pool_cached_publish(hyle_shared_pool_cached_o* p);
+/* Return EVERY block. Contract: NO block live; quiesce concurrent access first. */
+HYLE_MEM_C_API void hyle_shared_pool_cached_reset(hyle_shared_pool_cached_o* p);
+HYLE_MEM_C_API size_t
+hyle_shared_pool_cached_block_size(const hyle_shared_pool_cached_o* p);
+HYLE_MEM_C_API uint32_t
+hyle_shared_pool_cached_capacity(const hyle_shared_pool_cached_o* p);
+HYLE_MEM_C_API hyle_allocator
+hyle_shared_pool_cached_as_allocator(hyle_shared_pool_cached_o* p);
 
 /* ---- typed object-pool convenience (header-inline; zero new ABI) ------------
- * A MemoryArena with block_size == sizeof(T) IS a fixed-capacity object pool of
- * T -- these macros just fill sizeof/alignof and cast, so C code stops hand-
- * writing them. This mirrors ggml's model (and HYLE's own C++ ObjectPool<T>):
- * the allocator hands out RAW O(1) slots; there is no constructor callback on
- * the allocate hot path (a cross-DLL indirect init() call would tax every pop
- * -- exactly the dispatch cost the split alloc/free/realloc vtable avoids). C
- * has no ctor/dtor, so initialize the returned slot yourself and clean it up
- * before release. If you need real construct/destroy semantics (ctor runs on
- * create, ~T on destroy), use the C++ hyle::mem::ObjectPool<T> instead -- that
- * is a C++-only convenience, not a gap in this C ABI. */
+ * A SharedPool with block_size == sizeof(T) IS a fixed-capacity object pool of T --
+ * these macros just fill sizeof/alignof and cast, so C code stops hand-writing them.
+ * This mirrors ggml's model (and HYLE's own C++ ObjectPool<T>): the allocator hands
+ * out RAW O(1) slots; there is no constructor callback on the allocate hot path (a
+ * cross-DLL indirect init() call would tax every pop). C has no ctor/dtor, so
+ * initialize the returned slot yourself and clean it up before release. For real
+ * construct/destroy semantics use the C++ hyle::mem::ObjectPool<T>. The unqualified
+ * macros bind to the HARD SharedPool (safe default); the *_CACHED_* macros below bind
+ * to SharedPoolCached and expose its publish barrier. */
 #define HYLE_OBJECT_POOL_CREATE(backing, T, count) \
-  hyle_memory_arena_create((backing), sizeof(T), (count), HYLE_ALIGNOF(T))
+  hyle_shared_pool_create((backing), sizeof(T), (count), HYLE_ALIGNOF(T))
 /* Acquire a raw T* slot (NULL when the pool is exhausted); release returns it. */
 #define HYLE_OBJECT_POOL_ACQUIRE(pool, T) \
-  ((T*)hyle_memory_arena_allocate(pool))
+  ((T*)hyle_shared_pool_allocate(pool))
 #define HYLE_OBJECT_POOL_RELEASE(pool, p) \
-  hyle_memory_arena_deallocate((pool), (p))
+  hyle_shared_pool_deallocate((pool), (p))
+
+/* Cached typed raw-slot counterpart. Same C lifetime model; publish before a
+ * cross-thread capacity handoff when the freeing thread remains alive. */
+#define HYLE_OBJECT_POOL_CACHED_CREATE(backing, T, count) \
+  hyle_shared_pool_cached_create((backing), sizeof(T), (count), HYLE_ALIGNOF(T))
+#define HYLE_OBJECT_POOL_CACHED_ACQUIRE(pool, T) \
+  ((T*)hyle_shared_pool_cached_allocate(pool))
+#define HYLE_OBJECT_POOL_CACHED_RELEASE(pool, p) \
+  hyle_shared_pool_cached_deallocate((pool), (p))
+#define HYLE_OBJECT_POOL_CACHED_PUBLISH(pool) \
+  hyle_shared_pool_cached_publish((pool))
 
 /* ========================================================================== */
 /* StackAllocator — LIFO bump over one owned slab                              */
@@ -190,17 +244,17 @@ HYLE_MEM_C_API hyle_allocator
 hyle_stack_allocator_as_allocator(hyle_stack_allocator_o* s);
 
 /* ========================================================================== */
-/* Arena — bump over ONE borrowed MemoryArena block                            */
+/* Arena — bump over ONE borrowed SharedPool block                             */
 /* ========================================================================== */
 
 typedef struct hyle_arena_o hyle_arena_o;
 
-/* Borrows one block from `pool` (which must outlive the arena). Returns NULL if
- * `pool` is NULL, the wrapper allocation fails, or the pool has no free block
- * (exhausted) -- the exhausted case sets hyle_mem_last_error("...pool
+/* Borrows one block from `pool` (a SharedPool, which must outlive the arena).
+ * Returns NULL if `pool` is NULL, the wrapper allocation fails, or the pool has no
+ * free block (exhausted) -- the exhausted case sets hyle_mem_last_error("...pool
  * exhausted..."). Pool exhaustion is a graceful resource failure (NULL), not a
  * contract violation: the C++ Arena ctor does NOT abort on it. */
-HYLE_MEM_C_API hyle_arena_o* hyle_arena_create(hyle_memory_arena_o* pool);
+HYLE_MEM_C_API hyle_arena_o* hyle_arena_create(hyle_shared_pool_o* pool);
 HYLE_MEM_C_API void hyle_arena_destroy(hyle_arena_o* a); /* returns block to pool */
 HYLE_MEM_C_API void* hyle_arena_allocate(hyle_arena_o* a, size_t bytes,
                                          size_t alignment);
@@ -218,7 +272,7 @@ HYLE_MEM_C_API hyle_allocator hyle_arena_as_allocator(hyle_arena_o* a);
 typedef struct hyle_growable_pool_o hyle_growable_pool_o;
 
 /* A pool of raw `slot_size`-byte slots (each aligned to `slot_align`, 0 => the
- * default alignment) that GROWS on demand -- unlike hyle_memory_arena_* it is
+ * default alignment) that GROWS on demand -- unlike hyle_shared_pool_* it is
  * never "full" until the backing itself OOMs. Single-threaded (no atomics, so
  * faster when uncontended; do NOT share across threads). `initial_slots` is the
  * first block's slot count (0 => 1); blocks then double geometrically. Blocks

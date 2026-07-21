@@ -11,7 +11,7 @@
 | [`usage-guide.md`](./usage-guide.md) | **怎么用**：模块就绪度、构建选项全集、SIMD 编译变体模型、各模块最小用法、C-ABI 边界。**集成第一站。** |
 | [`c-error.md`](./c-error.md) | **error 纯 C ABI**：`hyle_status` 所有权、工厂/查询、诊断 handler、自由函数导出清单。**FFI / 跨编译器第一站。** |
 | [`c-platform.md`](./c-platform.md) | **platform 纯 C ABI**：Parker/Thread/DynLib/VM/mapped_file/fs/cpu/numa 不透明句柄与自由函数、named enum、所有权与易用示例。 |
-| [`c-mem.md`](./c-mem.md) | **mem 纯 C ABI**：`hyle_allocator` vtable、system 分配器、MemoryArena/StackAllocator/Arena/GrowablePool/HugeRegion 不透明句柄、typed 池便利宏、进程级大页/NUMA 策略。 |
+| [`c-mem.md`](./c-mem.md) | **mem 纯 C ABI**：`hyle_allocator` vtable、system 分配器、硬容量 SharedPool、软容量 SharedPoolCached、StackAllocator/Arena/GrowablePool/HugeRegion 不透明句柄、hard/cached typed 池宏、进程级大页/NUMA 策略。 |
 | [`c-time.md`](./c-time.md) | **time 纯 C ABI**：单调/墙钟、饱和 deadline、sleep、TimerWheel/CommonTimeoutQueue opaque handle、visitor 与生命周期合同。 |
 | [`c-obs.md`](./c-obs.md) | **obs 纯 C ABI**：结构化 record、quiescent sink 生命周期、默认 sink，以及 C/FFI runtime trace 与原生零成本 trace 的边界。 |
 | [`c-util.md`](./c-util.md) | **util 纯 C ABI**：RNG POD、Ref/ScopeGuard/Registry/SpinLock 类型擦除句柄、demangle buffer-fill、所有权和并发合同。 |

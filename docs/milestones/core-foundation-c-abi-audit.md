@@ -1,5 +1,7 @@
 # error / platform / mem 功能与 C ABI 复审
 
+> **当前名称边界：**mem 固定块池现为 `SharedPool` / `SharedPoolCached` 及对应 `hyle_shared_pool_*` C ABI；旧 `MemoryArena` 头与 C ABI 已删除。后文旧称和入口计数仅记录当时审计。
+
 > 2026-07-19。依据
 > [`c-abi-design.md`](../architecture/c-abi-design.md)、
 > [`c-abi-authoring-guide.md`](../architecture/c-abi-authoring-guide.md) 与

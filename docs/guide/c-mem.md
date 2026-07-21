@@ -2,266 +2,204 @@
 
 > **发布面**：`include/hyle/c/mem.h`  
 > **实现**：`src/mem/c_mem.cc`（链 `hyle_mem`）  
-> **稳定性**：未发布，无 ABI 版本门（见 §3.8）  
+> **稳定性**：未发布，无 ABI 版本门
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
-跨语言 / 跨编译器只许绑本头。不要 include `hyle/mem/*.h`。
+跨语言 / 跨编译器只许绑定本头，不要 include `hyle/mem/*.h`。固定块池只有 `SharedPool` 与 `SharedPoolCached` 两套现行 API；没有兼容别名。
 
----
+## 1. 链接与所有权
 
-## 1. 链什么
-
-```text
+```c
 #include "hyle/c/mem.h"
 // link: hyle_mem
 ```
 
-纯 C 验收：`hyle_mem_c_test`。
+纯 C 验收目标：`hyle_mem_c_test`。
 
----
-
-## 2. 子系统与所有权
-
-| 块 | 入口 | 所有权 |
+| 块 | 入口 | 所有权 / 容量合同 |
 |---|---|---|
-| Allocator 句柄 | `hyle_allocator`（`{alloc, free, realloc, state}`） | 值类型 POD；随处按值传 |
-| system 分配器 | `hyle_system_allocator` / `hyle_system_usable_size` / `hyle_system_good_size` | 进程级；`alloc` 配对 `free`（**带 size**） |
-| MemoryArena | `hyle_memory_arena_create` → `destroy` | create→destroy |
-| StackAllocator | `hyle_stack_allocator_create` → `destroy` | create→destroy |
-| Arena | `hyle_arena_create(pool)` → `destroy` | create→destroy；借 pool 的块，pool 必须更久活 |
-| HugeRegion | `hyle_huge_region_open*` → `destroy` | open→destroy |
-| 进程级策略 | `hyle_enable_allocator_hugepages` / `numa` / `reserve_huge_1g_pages` | 无句柄，全局软策略 |
+| Allocator 句柄 | `hyle_allocator` | POD 值类型；按值传 |
+| system 分配器 | `hyle_system_allocator` | 进程级；alloc/free 携带相同 size/alignment |
+| SharedPool | `hyle_shared_pool_create` → `destroy` | **硬容量**；completed free 立即对所有线程可见 |
+| SharedPoolCached | `hyle_shared_pool_cached_create` → `destroy` | **软容量**；每线程 TLS cache，跨线程交接前 publish |
+| StackAllocator | `hyle_stack_allocator_create` → `destroy` | 自有 slab，单线程 LIFO bump |
+| Arena | `hyle_arena_create(pool)` → `destroy` | 借 `SharedPool` 的一个块；pool 必须更久活 |
+| GrowablePool | `hyle_growable_pool_create` → `destroy` | 单线程、按需增长的裸槽池 |
+| HugeRegion | `hyle_huge_region_open*` → `destroy` | 大页 / NUMA host RAM 区 |
+| 进程策略 | `hyle_enable_allocator_*` / `hyle_reserve_huge_1g_pages` | 无句柄，全局软策略 |
 
-**sized-free 合同**：`free` / `deallocate` **携带 size 与 alignment**（对标 Rust `GlobalAlloc` / C++17 sized delete / jemalloc `sdallocx`）。传入的 size 必须等于分配时的请求——arena/pool/stack **不存每指针 size**，传错即 UB。唯一的物理容量查询是 `hyle_system_usable_size`（仅 system 分配器有，mimalloc 知道 size-class）。
+**sized-free 合同**：`free` / `deallocate` 必须带回分配请求时相同的 size 与 alignment。pool/arena/stack 不保存每指针尺寸；传错是调用方契约违反。只有 system 分配器提供物理容量查询 `hyle_system_usable_size`。
 
----
-
-## 3. 导出符号 1:1
-
-与 `include/hyle/c/mem.h` **逐符号对齐**。改头必须同步改本节。
-
-### 3.1 Allocator vtable
-
-`hyle_allocator` 是**天然 C ABI 形状**（3 个 C 函数指针 + `state`），可直接调，也可交给本模块的句柄工厂当 backing。
+## 2. Allocator vtable
 
 ```c
 typedef struct hyle_allocator {
   void* (*alloc)(void* state, size_t size, size_t alignment);
   void  (*free)(void* state, void* ptr, size_t size, size_t alignment);
-  void* (*realloc)(void* state, void* ptr, size_t old_size, size_t new_size, size_t alignment);
+  void* (*realloc)(void* state, void* ptr, size_t old_size,
+                   size_t new_size, size_t alignment);
   void* state;
 } hyle_allocator;
 ```
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_default_alignment()` | 默认对齐（`alignof(max_align_t)`）；便利 helper 传 0 时用它 |
-| `hyle_system_allocator()` | mimalloc-backed 进程级句柄（同 C++ `system_allocator()`） |
-| `hyle_system_usable_size(ptr)` | system 块的真实可用字节（≥ 请求）；NULL→0 |
-| `hyle_system_good_size(size)` | 不分配预览 size-class 取整（nallocx）；0→0 |
-| `hyle_alloc(a, sz, align)` | **inline**：经句柄调；`a`/`a->alloc` 为空→NULL；align==0→默认 |
-| `hyle_free(a, p, sz, align)` | **inline**：经句柄调；空句柄安全 no-op |
-| `hyle_realloc(a, p, osz, nsz, align)` | **inline**：经句柄调 |
+| `hyle_default_alignment()` | `alignof(max_align_t)` |
+| `hyle_system_allocator()` | mimalloc-backed 进程级句柄 |
+| `hyle_system_usable_size(ptr)` | system 块真实可用字节；NULL→0 |
+| `hyle_system_good_size(size)` | 不分配地预览 size class；0→0 |
+| `hyle_alloc` / `hyle_free` / `hyle_realloc` | header-inline vtable 转发；alignment==0 使用默认对齐 |
 
-> 桥接**从不 reinterpret**：C→C++ 经 noexcept trampoline 转发到调用方存下的句柄；C++→C 逐字段填（noexcept 函数指针隐式转普通指针）。`hyle_allocator` 与 C++ `mem::Allocator` 恰好同形是设计使然，但代码走安全构造。
+C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
 
-### 3.2 MemoryArena —— 分片无锁定长块池
+## 3. SharedPool：硬容量共享定长块池
+
+`SharedPool` 没有 TLS 隐藏。`deallocate()` 完成后，块立即进入共享 shard；`allocate()` 在返回 NULL 前用稳定双快照确认所有 shard 在同一公共区间内都为空，避免块跨 shard 移动造成分片假耗尽。
+
+正常路径使用 32-bit tag 的 64-bit CAS。tag 到饱和值的 shard 会**永久**切换到 serialized fallback，并用独立 64-bit change counter 参与空快照校验；tag 绝不回绕，因此长寿命池不会重新接受陈旧 CAS。
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_memory_arena_create(backing, block_size, block_count, alignment)` | alignment==0→默认；**资源失败**（backing 三指针缺一 / wrapper OOM / slab·link·heads OOM）→NULL + 设 `hyle_mem_last_error`（followup #2 档 B，不再 abort）；**契约违反**（`block_size`/`block_count` 为 0，或 `block_size`×`block_count` 溢出 `size_t`）→C++ ctor fail-fast abort（同 C++） |
-| `hyle_memory_arena_destroy(a)` | |
-| `hyle_memory_arena_allocate(a)` | pop 一块；**整池**耗尽→NULL |
-| `hyle_memory_arena_deallocate(a, p)` | 归还；p==NULL no-op |
-| `hyle_memory_arena_reset(a)` | 全部块归还。合同：**无块存活**时才可调 |
-| `hyle_memory_arena_block_size(a)` / `hyle_memory_arena_capacity(a)` | 查询 |
-| `hyle_memory_arena_as_allocator(a)` | vtable 视图（alloc=pop 定长块，free=push，realloc=NULL）；句柄归 a，activ至 destroy |
+| `hyle_shared_pool_create(backing, block_size, block_count, alignment)` | 建硬容量池；alignment==0→默认；资源失败→NULL + `hyle_mem_last_error`；零尺寸、计数非法或乘法溢出为契约违反并 fail-fast |
+| `hyle_shared_pool_destroy(p)` | 销毁池；调用方保证无块存活、无并发访问 |
+| `hyle_shared_pool_allocate(p)` | 取一块；稳定观察整池为空才返 NULL |
+| `hyle_shared_pool_deallocate(p, ptr)` | 立即发布到共享 core；NULL no-op |
+| `hyle_shared_pool_reset(p)` | 重建所有 shard；要求无活块且并发已静默 |
+| `hyle_shared_pool_block_size` / `capacity` | 查询 |
+| `hyle_shared_pool_as_allocator(p)` | alloc=定长 pop、free=push、realloc=NULL；句柄借用 pool |
 
-**typed 对象池便利宏**（header-inline，无 DLL 符号）：`block_size == sizeof(T)` 的 MemoryArena 就是 T 的定长对象池，这几个宏只是替你填 `sizeof`/`alignof` 并 cast。
+### 3.1 typed 裸槽宏（默认硬容量）
 
 | 宏 | 说明 |
 |---|---|
-| `HYLE_OBJECT_POOL_CREATE(backing, T, count)` | = `hyle_memory_arena_create(backing, sizeof(T), count, alignof(T))` |
-| `HYLE_OBJECT_POOL_ACQUIRE(pool, T)` | 取一个 `T*` 裸槽（耗尽→NULL） |
-| `HYLE_OBJECT_POOL_RELEASE(pool, p)` | 归还槽 |
-| `HYLE_ALIGNOF(T)` | 内部用：C++/C23 `alignof`、C11 `_Alignof`、否则 0（create 归一到默认对齐） |
+| `HYLE_OBJECT_POOL_CREATE(backing, T, count)` | 用 `sizeof(T)` / `alignof(T)` 创建 `SharedPool` |
+| `HYLE_OBJECT_POOL_ACQUIRE(pool, T)` | 返回裸、未初始化的 `T*` 槽；耗尽→NULL |
+| `HYLE_OBJECT_POOL_RELEASE(pool, p)` | 调用方先清理对象，再归还槽 |
+| `HYLE_ALIGNOF(T)` | C++/C23 `alignof`、C11 `_Alignof`，旧 C 则为 0 |
 
-**裸槽 + O(1)，构造留调用方**（对齐 ggml：分配器只给内存，`allocate` 热路径无构造回调——跨 DLL 的间接 `init()` 调用会给每次 pop 加分派开销，正是三函数指针 vtable 要避开的）。C 无 ctor/dtor，自己初始化返回的槽、release 前自己清理。**要真 construct/destroy 语义（create 跑 ctor、destroy 跑 ~T）用 C++ `hyle::mem::ObjectPool<T>`**——那是 C++ 专有便利，不是本 C ABI 的缺口。
+C 宏不运行 ctor/dtor。需要构造/析构语义时用 C++ `hyle::mem::ObjectPool<T>`；它默认同样是硬容量。
 
-### 3.3 StackAllocator —— LIFO bump
+## 4. SharedPoolCached：软容量 TLS 快路
 
-| 符号 | 说明 |
-|---|---|
-| `hyle_stack_allocator_create(backing, size)` | 自持 size 字节 slab；**资源失败**（backing 无效 / wrapper OOM / slab OOM）→NULL + 设 `hyle_mem_last_error`（followup #2 档 B，不再 abort）；size==0→C++ 侧 fail-fast 断言（契约违反） |
-| `hyle_stack_allocator_destroy(s)` | |
-| `hyle_stack_allocator_allocate(s, bytes, alignment)` | bump；alignment==0→默认；放不下→NULL（无堆回退） |
-| `hyle_stack_allocator_reset(s)` | 全部释放 |
-| `hyle_stack_allocator_mark(s)` | 存游标 |
-| `hyle_stack_allocator_rewind(s, marker)` | LIFO 回退到 mark |
-| `hyle_stack_allocator_used` / `hyle_stack_allocator_capacity` / `hyle_stack_allocator_remaining` | 查询 |
-| `hyle_stack_allocator_as_allocator(s)` | vtable 视图（alloc=bump，free=no-op，realloc=bump+copy） |
+`SharedPoolCached` 与 `SharedPool` 共用同一个 sharded core，但增加每 `(thread,pool)` 的 TLS freelist：每线程最多 **128 slots**，shared core 与 TLS 之间按 **32-block magazine** 批量转移。同线程 free→alloc 热路零原子。
 
-### 3.4 Arena —— 借一块 MemoryArena 块做 bump
+代价是软容量：A 线程 TLS 中已 free 的块，在 A publish、cache overflow 或线程退出前，B 看不到。容量紧贴工作集、或跨线程 free 后必须立即复用时，应直接使用 `SharedPool`。
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_arena_create(pool)` | 借 pool 一块；pool 须更久活；**资源失败**（pool==NULL / wrapper OOM / **池耗尽借不到块**）→NULL + 设 `hyle_mem_last_error`（followup #2：池耗尽是资源失败非契约违反，C++ ctor 不再 abort） |
-| `hyle_arena_destroy(a)` | 把块还给池 |
-| `hyle_arena_allocate(a, bytes, alignment)` | bump；放不下→NULL |
-| `hyle_arena_reset(a)` | 从块头重用 |
-| `hyle_arena_used` / `hyle_arena_remaining` / `hyle_arena_block_size` | 查询 |
-| `hyle_arena_as_allocator(a)` | vtable 视图（alloc=bump，free=no-op，realloc=bump+copy） |
+| `hyle_shared_pool_cached_create` / `destroy` | 建/销软容量池；资源与契约错误模型同 `SharedPool` |
+| `hyle_shared_pool_cached_allocate` / `deallocate` | TLS 快路 + 32-block magazine；其他线程 TLS 中的 free 块不可见 |
+| `hyle_shared_pool_cached_publish(p)` | 把**当前线程**的 TLS cache 发布到 shared core |
+| `hyle_shared_pool_cached_reset(p)` | 清所有注册 cache 并重建 shard；要求无活块且并发静默 |
+| `hyle_shared_pool_cached_block_size` / `capacity` | 查询 |
+| `hyle_shared_pool_cached_as_allocator(p)` | 借用型 allocator 视图 |
 
-### 3.5 GrowablePool —— 单线程可增长裸槽池
+对应 typed 裸槽宏：
 
-C++ `GrowablePool<T>` **类型擦除导出**（与 `ObjectPool<T>`↔`MemoryArena` 同构：非模板运行时核心 `detail::GrowablePoolCore` + 模板薄包装；C ABI 导出的是**核心**——裸槽 acquire/release，无 ctor/dtor）。不同于 `hyle_memory_arena_*` 定长，它**按需几何增长**——不"满"，除非 backing 自己 OOM。**单线程**（无原子，uncontended 更快；勿跨线程共享）。
+- `HYLE_OBJECT_POOL_CACHED_CREATE`
+- `HYLE_OBJECT_POOL_CACHED_ACQUIRE`
+- `HYLE_OBJECT_POOL_CACHED_RELEASE`
+- `HYLE_OBJECT_POOL_CACHED_PUBLISH`
 
-| 符号 | 说明 |
-|---|---|
-| `hyle_growable_pool_create(backing, slot_size, slot_align, initial_slots)` | slot_align==0→默认；`initial_slots` 首块槽数（0→1），之后块几何翻倍；**资源失败**（backing 无效 / wrapper OOM）→NULL + 设 `hyle_mem_last_error`；`slot_size`==0→C++ 核心 fail-fast abort（契约违反）。首块 backing 分配是懒的（首次 acquire 才取），故 create 无 slab-OOM 分支 |
-| `hyle_growable_pool_destroy(p)` | |
-| `hyle_growable_pool_acquire(p)` | 取一个**裸未初始化**槽（复用 free-list，否则块内 bump，否则增长）；NULL pool / 增长 OOM→NULL 并写 `hyle_mem_last_error`；成功清空旧错误 |
-| `hyle_growable_pool_release(p, slot)` | 归还槽到 free-list，**不跑析构**；slot==NULL no-op |
-| `hyle_growable_pool_reset(p)` | 把所有块还给 backing（trim）。合同：**无槽存活**时才可调 |
-| `hyle_growable_pool_capacity(p)` | 当前所有块的总槽数（几何增长） |
-| `hyle_growable_pool_live(p)` | 已取未还的槽数 |
+C++ 对应类型是 `ObjectPoolCached<T>`；它是软容量，不是默认对象池。
 
-**typed 便利宏**（header-inline，无 DLL 符号）：`slot_size == sizeof(T)` 的 GrowablePool 就是 T 的可增长裸槽池。
+## 5. Arena 与 StackAllocator
 
-| 宏 | 说明 |
-|---|---|
-| `HYLE_GROWABLE_POOL_CREATE(backing, T, initial_slots)` | = `hyle_growable_pool_create(backing, sizeof(T), alignof(T), initial_slots)` |
-| `HYLE_GROWABLE_POOL_ACQUIRE(pool, T)` | 取一个裸 `T*` 槽（未初始化） |
-| `HYLE_GROWABLE_POOL_RELEASE(pool, p)` | 归还槽 |
-
-**裸槽模型，同 object pool**（`HYLE_OBJECT_POOL_*`，§3.2）：acquire 给未构造 storage、release 不跑析构，C 用户自己 placement-init 返回的槽、release 前自己清理。**要 create 跑 ctor / destroy 跑 ~T 用 C++ `hyle::mem::GrowablePool<T>`**——那是 C++ 专有便利，不是本 C ABI 的缺口。
-
-### 3.6 HugeRegion —— 大页 / NUMA 区
-
-soft 提示，绝不影响正确性。flags 用 `HYLE_HUGE_*` 位。
+### 5.1 Arena：借一个硬池块做 bump
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_huge_flags`：`HYLE_HUGE_NONE` / `THP_HINT` / `PREFAULT` / `NUMA_BIND` / `NUMA_INTERLEAVE` | 具名 enum；flags 位 |
-| `hyle_mem_numa_node`：`HYLE_MEM_NUMA_ANY` | 具名 enum；`(-1)` 无 NUMA 约束 |
-| `hyle_huge_region_open(bytes, flags, numa_node)` | reserve+commit（大页对齐）按 flags/node 放置；失败→NULL（见 `hyle_mem_last_error`） |
-| `hyle_huge_region_open_local(bytes, flags)` | 偏好调用线程 home 节点 |
-| `hyle_huge_region_open_interleaved(bytes)` | 全节点条带 + THP |
-| `hyle_huge_region_destroy(r)` | NULL 安全 |
-| `hyle_huge_region_valid` / `hyle_huge_region_data` / `hyle_huge_region_size` | 查询 |
-| `hyle_mem_last_error()` | 线程局部：最近一次失败原因串，`""`=无。覆盖 HugeRegion open、所有 create 的资源失败及 GrowablePool acquire 增长失败；成功的工厂/acquire 会清空旧错误，避免 stale 诊断。转发 platform 的 `vm_last_error`，只绑 `mem.h` 也能读失败原因 |
+| `hyle_arena_create(hyle_shared_pool_o* pool)` | 从硬容量 `SharedPool` 借一块；pool 为空、wrapper OOM 或池耗尽→NULL + last-error |
+| `hyle_arena_destroy(a)` | 把整块还给 pool |
+| `hyle_arena_allocate(a, bytes, alignment)` | 单线程 pointer bump；放不下→NULL |
+| `hyle_arena_reset(a)` | 游标回块头；要求此前切片不再使用 |
+| `hyle_arena_used` / `remaining` / `block_size` | 查询 |
+| `hyle_arena_as_allocator(a)` | alloc=bump、free=no-op、realloc=bump+copy |
 
-### 3.7 进程级 mimalloc 策略（自由函数）
+Arena 只借 `SharedPool`。单块 borrow 不从 TLS cache 获益，硬池的立即可见容量使生命周期更直接。
+
+### 5.2 StackAllocator：自有 slab 的 LIFO bump
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_enable_allocator_hugepages(allow_thp, allow_large_os_pages)` | 进程启动期调；THP + 大 OS 页 |
-| `hyle_enable_allocator_numa(max_nodes)` | max_nodes==0→全节点 |
-| `hyle_reserve_huge_1g_pages(pages, numa_node, timeout_ms)` | 预留 1GiB 大页；ANY→交错；成功/`pages==0`→1；软失败（无权限/无连续 RAM）→0 |
+| `hyle_stack_allocator_create(backing, size)` / `destroy` | 自持 slab；资源失败→NULL + last-error；size==0 fail-fast |
+| `hyle_stack_allocator_allocate(s, bytes, alignment)` | 单线程 pointer bump；放不下→NULL |
+| `hyle_stack_allocator_mark` / `rewind` | 保存并恢复 LIFO 游标 |
+| `hyle_stack_allocator_reset` | 整体复用 |
+| `hyle_stack_allocator_used` / `capacity` / `remaining` | 查询 |
+| `hyle_stack_allocator_as_allocator` | alloc=bump、free=no-op、realloc=bump+copy |
 
-### 3.8 导出形态
+## 6. GrowablePool：单线程可增长裸槽池
 
-纯 `extern "C"` 自由函数 + opaque 句柄，FFI 直接绑符号（`dlsym`/bindgen/ctypes 都认）。**无 `hyle_mem_api` 函数指针表、无 `api_get` 版本协商**——版本协商是"分发独立编译插件"才需要的件，HYLE 单一 `.so` 一起编译、未发布，不背这个负担。设计推理见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
-
-**header-inline（无 DLL 符号）**：便利转发 `hyle_alloc` / `hyle_free` / `hyle_realloc`；typed 池宏 `HYLE_OBJECT_POOL_CREATE/ACQUIRE/RELEASE`、`HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE` + `HYLE_ALIGNOF`。
-
-### 3.9 有意不导出（仅 C++）
-
-| C++ | 原因 |
+| 符号 | 说明 |
 |---|---|
-| `ObjectPool<T>` | **泛型语法**过不了 C ABI（`<T>` 无法表达），非能力缺失。**能力已可达**：C 侧用 `HYLE_OBJECT_POOL_CREATE/ACQUIRE/RELEASE` 宏（§3.2）在 `MemoryArena` 上得到定长对象池，裸槽自 init。需 create 跑 ctor / destroy 跑 ~T 才用 C++ `ObjectPool<T>` |
-| `GrowablePool<T>` | 同 `ObjectPool<T>`：**泛型语法**过不了 C ABI，非能力缺失。**能力已可达**：C 侧用 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE` 宏（§3.5）在类型擦除的核心上得到可增长裸槽池，裸槽自 init。需 create 跑 ctor / destroy 跑 ~T 才用 C++ `GrowablePool<T>` |
-| `pmr::*` | 模板，C 无泛型。专为桥接 `std::pmr` 容器，纯 C++ 语境 |
-| `Allocator` typed 层（`allocate_n` / `construct` / `make_unique`） | C++ 模板便利，C 侧用裸 `alloc` + 手动 size |
-| `AllocStats` / `LeakTracker` / `StatsAllocator` | 当前是内部 debug/test 设施，不是承诺的稳定产品对象；这不是因为“C 无法表达类”。业务级计数可按下文包装公开 allocator；逐地址泄漏归因用 ASan/Valgrind/目标语言 profiler。若提升为用户能力，必须补 opaque tracker + POD snapshot/visitor |
+| `hyle_growable_pool_create(backing, slot_size, slot_align, initial_slots)` | 首块惰性分配，此后几何增长；资源失败→NULL + last-error |
+| `hyle_growable_pool_destroy` | 释放全部块 |
+| `hyle_growable_pool_acquire` / `release` | 取/还裸槽，不运行 ctor/dtor |
+| `hyle_growable_pool_reset` | trim 全部块；要求无活槽 |
+| `hyle_growable_pool_capacity` / `live` | 查询 |
 
-纯 C 程序若只需要业务级分配计数，可以用公开的 `hyle_allocator` vtable 包一层：
-wrapper state 保存 backing allocator 与计数，三个 callback 先转发 backing，再更新
-调用方自己的计数。这些 state 必须活到所有借出的 allocator/内存释放之后；多线程
-使用时计数也必须由调用方原子化。逐地址泄漏归因不建议在绑定层重新造 hash map，
-使用 ASan/Valgrind/目标语言 profiler。若 HYLE 未来把 stats/leak tracker 从内部
-debug 工具提升为稳定用户能力，本表必须改为 opaque tracker + POD snapshot/visitor，
-不能继续以“C 没有类”为理由省略。
+typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 C++ 用户使用 `GrowablePool<T>`。
 
----
+## 7. HugeRegion、诊断与进程策略
 
-## 4. 常用写法
+| 符号 | 说明 |
+|---|---|
+| `hyle_huge_region_open(bytes, flags, numa_node)` | reserve+commit，按 flags/node 放置；失败→NULL |
+| `hyle_huge_region_open_local` | 偏好调用线程 home node |
+| `hyle_huge_region_open_interleaved` | 跨节点条带 + THP |
+| `hyle_huge_region_destroy` / `valid` / `data` / `size` | 生命周期与查询 |
+| `hyle_mem_last_error()` | 当前线程最近一次 mem 资源失败原因；成功工厂/acquire 清旧错误 |
+| `hyle_enable_allocator_hugepages` | 启用 mimalloc THP / large OS page 策略 |
+| `hyle_enable_allocator_numa` | 配置 mimalloc NUMA node 数 |
+| `hyle_reserve_huge_1g_pages` | 预留 1GiB 大页；无权限/连续 host RAM 时软失败返 0 |
 
-### 直接用 system 分配器
+flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`HYLE_HUGE_NUMA_INTERLEAVE`；无 NUMA 约束用 `HYLE_MEM_NUMA_ANY`。
 
-```c
-hyle_allocator a = hyle_system_allocator();
-void* p = hyle_alloc(&a, 1024, 64);   /* 64 对齐 */
-/* ... */
-hyle_free(&a, p, 1024, 64);           /* 带回同样的 size / align */
-```
+## 8. 常用写法
 
-### 定长块池
+### 硬容量共享池
 
 ```c
 hyle_allocator sys = hyle_system_allocator();
-hyle_memory_arena_o* pool = hyle_memory_arena_create(sys, 256, 1024, 0);
-void* blk = hyle_memory_arena_allocate(pool);   /* NULL = 耗尽 */
-hyle_memory_arena_deallocate(pool, blk);
-hyle_memory_arena_destroy(pool);
+hyle_shared_pool_o* pool = hyle_shared_pool_create(sys, 256, 1024, 0);
+void* block = hyle_shared_pool_allocate(pool);
+if (block != NULL) hyle_shared_pool_deallocate(pool, block);
+hyle_shared_pool_destroy(pool);
 ```
 
-### typed 对象池（宏，裸槽自 init）
+### 软容量 cached 池的跨线程交接
+
+```c
+hyle_shared_pool_cached_o* pool =
+    hyle_shared_pool_cached_create(sys, 256, 4096, 0);
+void* block = hyle_shared_pool_cached_allocate(pool);
+hyle_shared_pool_cached_deallocate(pool, block);
+hyle_shared_pool_cached_publish(pool); /* 当前线程已 free 的块现在对其他线程可见 */
+hyle_shared_pool_cached_destroy(pool);
+```
+
+### typed 默认硬池
 
 ```c
 typedef struct { int a; double b; } Node;
-hyle_memory_arena_o* pool = HYLE_OBJECT_POOL_CREATE(sys, Node, 1024);
-Node* n = HYLE_OBJECT_POOL_ACQUIRE(pool, Node);  /* 类型化，无需 cast；NULL=耗尽 */
-n->a = 7; n->b = 1.5;                            /* C 无 ctor，自己初始化 */
-/* ... 用完，release 前自己清理 ... */
-HYLE_OBJECT_POOL_RELEASE(pool, n);
-hyle_memory_arena_destroy(pool);
+hyle_shared_pool_o* pool = HYLE_OBJECT_POOL_CREATE(sys, Node, 1024);
+Node* n = HYLE_OBJECT_POOL_ACQUIRE(pool, Node);
+if (n != NULL) {
+  n->a = 7;
+  n->b = 1.5;
+  HYLE_OBJECT_POOL_RELEASE(pool, n);
+}
+hyle_shared_pool_destroy(pool);
 ```
 
-### 帧 bump（LIFO）
+## 9. 导出边界
 
-```c
-hyle_stack_allocator_o* sa = hyle_stack_allocator_create(sys, 1 << 20);
-void* m = hyle_stack_allocator_mark(sa);
-void* scratch = hyle_stack_allocator_allocate(sa, 4096, 16);
-/* ... 用完一帧 ... */
-hyle_stack_allocator_rewind(sa, m);
-hyle_stack_allocator_destroy(sa);
-```
+mem C ABI 是纯 `extern "C"` 自由函数 + opaque 句柄，没有模块 API 表或版本协商。模板、RAII 与 `std::pmr` 不跨边界：
 
-### 大页区
+- `ObjectPool<T>` → 默认硬容量 typed 宏；`ObjectPoolCached<T>` → cached typed 宏 + publish；
+- `GrowablePool<T>` → runtime size/align + typed 宏；
+- `Allocator` typed helpers → 裸 `hyle_alloc/free`；
+- `StatsAllocator` / `LeakTracker` 当前是内部 debug/test 设施，不是已承诺产品对象。
 
-```c
-hyle_huge_region_o* r =
-    hyle_huge_region_open(64u << 20, HYLE_HUGE_THP_HINT, HYLE_MEM_NUMA_ANY);
-void* d = hyle_huge_region_data(r);
-hyle_huge_region_destroy(r);
-```
-
-### 用自己的 C 分配器当 backing
-
-```c
-static void* my_alloc(void* st, size_t n, size_t a) { /* ... */ }
-static void  my_free(void* st, void* p, size_t n, size_t a) { /* ... */ }
-static void* my_realloc(void* st, void* p, size_t o, size_t n, size_t a) { /* ... */ }
-
-hyle_allocator mine = { my_alloc, my_free, my_realloc, my_state };
-hyle_memory_arena_o* pool = hyle_memory_arena_create(mine, 512, 64, 0);
-```
-
----
-
-## 5. 稳定性
-
-HYLE 未发布，无版本门/协商机制（见 §3.8）。发布前 C ABI 面按需自由演进——追求干净正确，不背向后兼容包袱。发布后如何冻结 ABI 见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md) §3。
-
-导出面：`hyle_allocator` vtable（+ system + usable/good size）、MemoryArena / StackAllocator / Arena / GrowablePool / HugeRegion 不透明句柄、进程级 hugepage/NUMA 策略；typed 池便利宏（`HYLE_OBJECT_POOL_*` / `HYLE_GROWABLE_POOL_*`，header-inline）。
-
----
-
-## 6. 验收
-
-```bash
-cmake --build <build> --target hyle_mem_c_test
-./hyle_mem_c_test   # all checks passed
-```
+发布前 C ABI 可自由演进；发布后的冻结策略见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)。

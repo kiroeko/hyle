@@ -1,5 +1,7 @@
 # compute-05：ggml_bridge —— 借 ggml 算子（不借运行时）
 
+> **当前名称边界：**本文中的 host `MemoryArena` 旧称现对应 `SharedPool` / `SharedPoolCached`；旧头与旧 C ABI 已删除。当前 `PinnedStaging` 直接拥有一个 pinned host block 并 bump，不经 mem 池。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P5 |

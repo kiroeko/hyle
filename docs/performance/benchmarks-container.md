@@ -75,7 +75,7 @@ MPMC / stealing 队列       → bounded / sharded / WS deque（见 queue 文档
 ## 4. 与 mem 的边界
 
 - 容器**默认** `SystemAllocator`（平 mi）；注入 vtable 付多态税 → [benchmarks-mem.md](./benchmarks-mem.md)。  
-- Swiss / StringBuf 内部用自有表与 slab，**不要**拿 MemoryArena 当通用 map 分配器。
+- Swiss / StringBuf 内部用自有表与 slab，**不要**拿 `SharedPool` / `SharedPoolCached` 当通用 map 分配器。
 
 ## 5. 复跑（刷新 ⏳ 项时）
 

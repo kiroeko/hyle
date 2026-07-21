@@ -10,6 +10,7 @@
 #include "hyle/platform/thread.h"
 
 using hyle::mem::ObjectPool;
+using hyle::mem::ObjectPoolCached;
 using hyle::mem::StackAllocator;
 using hyle::mem::system_allocator;
 
@@ -22,7 +23,31 @@ struct Counted {
   explicit Counted(int x) : v(x) { g_live.fetch_add(1, std::memory_order_relaxed); }
   ~Counted() { g_live.fetch_sub(1, std::memory_order_relaxed); }
 };
+bool g_throw_next = false;
+struct ThrowsOnce {
+  ThrowsOnce() {
+    if (g_throw_next) {
+      g_throw_next = false;
+      throw 7;
+    }
+  }
+};
+void* oom_alloc(void*, std::size_t, std::size_t) noexcept { return nullptr; }
+void oom_free(void*, void*, std::size_t, std::size_t) noexcept {}
+void* oom_realloc(void*, void*, std::size_t, std::size_t, std::size_t) noexcept {
+  return nullptr;
+}
 }  // namespace
+
+TEST(ObjectPool, ConstructionOomIsObservable) {
+  hyle::mem::Allocator oom(&oom_alloc, &oom_free, &oom_realloc, nullptr);
+  ObjectPool<int> hard(oom, 8);
+  ObjectPoolCached<int> cached(oom, 8);
+  EXPECT_FALSE(hard.valid());
+  EXPECT_FALSE(cached.valid());
+  EXPECT_EQ(hard.create(1), nullptr);
+  EXPECT_EQ(cached.create(1), nullptr);
+}
 
 TEST(ObjectPool, CreateRunsCtorDestroyRunsDtor) {
   g_live.store(0);
@@ -32,7 +57,7 @@ TEST(ObjectPool, CreateRunsCtorDestroyRunsDtor) {
   EXPECT_EQ(a->v, 42);
   EXPECT_EQ(g_live.load(), 1);
   pool.destroy(a);
-  EXPECT_EQ(g_live.load(), 0);  // dtor ran (and slot freed via the arena)
+  EXPECT_EQ(g_live.load(), 0);  // dtor ran and the slot returned to the pool
 }
 
 TEST(ObjectPool, CtorDtorBalanceAcrossManyAndReuse) {
@@ -59,6 +84,28 @@ TEST(ObjectPool, SlotReused) {
   int* b = pool.create(2);
   EXPECT_EQ(a, b);  // freed slot comes back
   pool.destroy(b);
+}
+
+TEST(ObjectPool, ThrowingConstructorReturnsSlot) {
+  ObjectPool<ThrowsOnce> pool(system_allocator(), 2);
+  g_throw_next = true;
+  EXPECT_THROW((void)pool.create(), int);
+  ThrowsOnce* a = pool.create();
+  ThrowsOnce* b = pool.create();
+  ASSERT_NE(a, nullptr);
+  ASSERT_NE(b, nullptr);
+  EXPECT_EQ(pool.create(), nullptr);  // failed construction did not leak a slot
+  pool.destroy(a);
+  pool.destroy(b);
+}
+
+TEST(ObjectPoolCached, TypedCachedShellPublishes) {
+  ObjectPoolCached<int> pool(system_allocator(), 4);
+  int* p = pool.create(7);
+  ASSERT_NE(p, nullptr);
+  EXPECT_EQ(*p, 7);
+  pool.destroy(p);
+  pool.publish_thread_cache();
 }
 
 TEST(ObjectPool, ConcurrentCreateDestroyBalances) {

@@ -235,7 +235,7 @@ Status cuda_event_elapsed_ns(void* start_native, void* stop_native,
 // The stream-bound async variants are compute-03.
 //
 // pinned is NOT pooled here: buffer_alloc is a general arbitrary-size allocation,
-// while a fixed-block pool (mem::MemoryArena) fits a FIXED-size staging ring -- which
+// while a fixed-block pool (mem::SharedPool) fits a FIXED-size staging ring -- which
 // is an L1 strategy (llama.cpp's 4x64MB ring lives in its model loader, not in the
 // ggml buffer layer). compute-02 gives the raw pinned alloc primitive; a pooled
 // staging ring is the caller's to build on top.

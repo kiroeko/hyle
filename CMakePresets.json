@@ -50,6 +50,7 @@
       "binaryDir": "${sourceDir}/build-bench",
       "cacheVariables": {
         "CMAKE_BUILD_TYPE": "Release",
+        "HYLE_BUILD_TESTS": "OFF",
         "HYLE_BUILD_BENCH": "ON"
       }
     },

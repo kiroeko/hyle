@@ -1,5 +1,7 @@
 # compute-02：device buffer —— 显存所有权 + host↔device 传输原语
 
+> **历史误判边界：**本文施工期设想的“pinned `MemoryArena` 池”并非当前实现。当前 `PinnedStaging` 直接拥有一个 pinned host block 并在其中 bump，不经过任何 mem 池；`pinned_allocator` 可选组合 `SharedPool`，但目前没有生产消费者。旧 `memory_arena.h` / `hyle_memory_arena_*` 已删除。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P5 |

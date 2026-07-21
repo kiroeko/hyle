@@ -1,141 +1,147 @@
 # mem 实测铁证
 
-> 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。  
-> 源：`bench/mem/allocator_bench.cc` + `bench/mem/arena_pool_bench.cc`（`-DHYLE_BENCH_TBB`）。  
-> **2026-07-20 三平台**：Win MSVC 19.50 / WSL GCC 14.2 / Apple M4 AppleClang 21，`bench-stat -n15`，信任 **[sign]**。  
-> **同日加固**：`MemoryArena` 加 **TLS freelist 缓存**（同线程 free→alloc 非原子）；8 线程 shared 对 oneTBB 从 sign 输翻为 **三平台 sign 赢**。
+> 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
+> 源：`bench/mem/allocator_bench.cc`、`bench/mem/arena_pool_bench.cc`。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`，性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
-| 场景 | Win | Lin | M4 | 判定 |
+| 场景 | Win | WSL | M4 | 判定 |
 |---|---|---|---|---|
-| **SystemAllocator 内联** vs 裸 mi churn | 7.93 / 7.86 → **0.996 TIE** | 8.04 / 8.04 → **0.99 TIE** | 7.77 / 7.91 → **1.00 TIE** | ➖ **三平台平 mimalloc SOTA** |
-| **vtable** vs 裸 mi churn | 8.67 / 7.86 → **0.91 LOSE sign** | 8.67 / 8.04 → **0.94 LOSE sign** | 7.93 / 7.91 → **1.00 TIE** | ⚠️ Win/Lin 固定 ~6–9% 多态税；M4 平 |
-| **vtable** vs pmr(over mi) churn | 8.67 / 8.67 → **TIE** | 8.67 / 10.27 → **1.22 WIN sign** | 7.93 / 9.98 → **1.26 WIN** | ✅ 同类多态：平或赢 pmr |
-| **vtable** touch / 8-thread vs mi | 多行 sign 略输 ~0.89–0.97 | 同左 | touch 平；8t 0.94 LOSE | ⚠️ 对裸 mi 常有个位数 % 税 |
-| **reallocate** vs mi_realloc | 80 / 67 → **0.83 LOSE sign** | 83 / 77 → **0.92 LOSE sign** | 82 / 83 → **1.01 TIE** | ⚠️ Win/Lin 输裸 mi；仍远赢 std::realloc |
+| **SystemAllocator 内联** vs 裸 mi churn | 7.93 / 7.86 → **0.996 TIE** | 8.04 / 8.04 → **0.99 TIE** | 7.77 / 7.91 → **1.00 TIE** | ➖ 三平台平 mimalloc |
+| **vtable** vs 裸 mi churn | 8.67 / 7.86 → **0.91 LOSE sign** | 8.67 / 8.04 → **0.94 LOSE sign** | 7.93 / 7.91 → **1.00 TIE** | Win/WSL 有约 6–9% 多态税 |
+| **vtable** vs pmr(over mi) churn | 8.67 / 8.67 → **TIE** | 8.67 / 10.27 → **1.22 WIN sign** | 7.93 / 9.98 → **1.26 WIN** | 同类多态对照平或赢 pmr |
+| **reallocate** vs `mi_realloc` | 80 / 67 → **0.83 LOSE sign** | 83 / 77 → **0.92 LOSE sign** | 82 / 83 → **1.01 TIE** | Win/WSL 输裸 mi |
 
-**结论**：默认内联路径 = **平 SOTA**。vtable 对 **裸 mi** 不是“统计全平”——Win/Lin churn **sign 稳输 ~9%**；对 **pmr** 仍赢/平。
+默认内联路径平 mimalloc；需要运行时注入的 vtable 路径对裸 mi 有可测税，但仍平或赢同为多态封装的 pmr。
 
-## 2. 专用分配器（`hyle_arena_pool_bench`）
+## 2. Bump 与单线程定长对象
 
-### Bump
+### Arena / StackAllocator
 
-| | Win | Lin | M4 |
-|---|---|---|---|
+| | Win | WSL | M4 |
+|---|---:|---:|---:|
 | Arena ns | 0.55 | 0.37 | 2.23 |
-| Stack ns | 0.55 | 0.37 | 2.23 |
-| pmr monotonic | 1.46 | 0.62 | **1.49** |
-| vs pmr | **~2.6x WIN** | **~1.7x WIN** | **~0.67x**（仍可输 pmr；赢裸 mi） |
-| vs 裸 mi | **~7x WIN** | **~11x WIN** | **~2.1x WIN** |
+| StackAllocator ns | 0.55 | 0.37 | 2.23 |
+| pmr monotonic ns | 1.46 | 0.62 | **1.49** |
+| vs pmr | **约 2.6x WIN** | **约 1.7x WIN** | **约 0.67x LOSE** |
+| vs 裸 mi | **约 7x WIN** | **约 11x WIN** | **约 2.1x WIN** |
 
-⚠️ **平台翻转**：Win/Lin 大赢 pmr；**M4 上 pmr monotonic 仍可能更快**（仍赢裸 mi）。
+M4 上 pmr monotonic 更快，不能把 x86 结论外推到 ARM。
 
-### 单线程 pool（仅 GrowablePool）
+### GrowablePool
 
-| | Win | Lin | M4 |
-|---|---|---|---|
+| | Win | WSL | M4 |
+|---|---:|---:|---:|
 | GrowablePool ns | 2.74 | 1.13 | 2.46 |
-| pmr unsync | 5.81 | 11.93 | 3.74 |
-| 裸 mi | 4.87 | 4.45 | 5.80 |
-| vs pmr | **~2.1x WIN** | **~10x WIN** | **~1.5x WIN** |
-| vs mi | **~1.8x WIN** | **~3.9x WIN** | **~2.4x WIN** |
+| pmr unsync ns | 5.81 | 11.93 | 3.74 |
+| 裸 mi ns | 4.87 | 4.45 | 5.80 |
+| vs pmr | **约 2.1x WIN** | **约 10x WIN** | **约 1.5x WIN** |
+| vs mi | **约 1.8x WIN** | **约 3.9x WIN** | **约 2.4x WIN** |
 
-✅ **三平台赢公平 ST 标尺**。
+单线程定长对象场景三平台都赢公平标尺；多线程独享池用 `GrowablePool × N`，不要把单个非线程安全实例共享。
 
-### 8 线程（TLS 后重测，`bench-stat -n15` + pair sign）
+## 3. 两种共享固定块池
 
-| | Win | Lin | M4 |
+| API | 容量契约 | 回收可见性 | 适用场景 |
 |---|---|---|---|
-| GrowablePool×8 vs mi×8 | **~1.41x WIN sign** | **~2.0x WIN** | **~2.3x WIN** |
-| MemoryArena shared vs pmr sync | **~106x WIN sign** | **~77x WIN sign** | **~57x WIN sign** |
-| MemoryArena vs **oneTBB scalable** | 1.19 / 2.17 → **1.74x WIN sign** (15/15) | 1.28 / 1.80 → **1.41x WIN sign** (15/15) | 1.21 / 1.97 → **1.62x WIN sign** (15/15) |
+| `SharedPool` / `ObjectPool<T>` | **硬容量** | `deallocate()` 后立即可被任意线程复用 | 服务配额、严格并发上限、容量紧张的跨线程共享 |
+| `SharedPoolCached` / `ObjectPoolCached<T>` | **软容量** | 释放块可暂存在线程 TLS；`publish_thread_cache()` 或线程退出后公开 | 有容量余量的 request/context 批次、高频同线程复用 |
 
-✅ **三平台对 tbb 均 sign 赢**（owner-only TLS，零原子）。旧 always-CAS 0.72–0.91 **作废**。红队：热路径加锁做 remote-steal → Win 退成 **~0.98 TIE**，拒绝。
+`SharedPoolCached` 的 TLS 上限为 128 块、refill magazine 为 32 块。这个窗口是明确的吞吐/容量交换，不是 `SharedPool` 的实现细节。
 
-> ⚠️ **审计更正（2026-07-21）**：上面这组"8 线程 shared"数字的 workload（紧 `allocate→deallocate`）是**深度 1 的 TLS ping-pong**——首次 shard pop 后每 op 都命中本线程 TLS freelist，**从不回落共享 shard**。它只测 TLS 快路常数，**不测**它宣称的共享后备协调成本。故"赢 tbb 1.74x"= TLS 快路 vs tbb 的 tcache，不是共享 slab 竞争胜利。真正压到共享路径的数据见下 §2b（section D）。此外本机 Windows/WSL 当前**未构建 oneTBB**（缺 `tbbmalloc.dll`），上表 tbb 列无法在本机复现，留待重建 TBB 后重测。
+### 3.1 Workload 来自实际用户形状
 
-### 2b. 共享后备路径实测（section D，2026-07-21 审计新增）
+基准先对齐成熟库和消费者，再扫描参数，不以某个内部阈值反推 workload：
 
-section C row(2) 的 ping-pong 测不到 lock-free 后备——MemoryArena 的存在理由。section D 两个 workload 真正驱动 TLS↔shard 机制，对同契约 SOTA（`pmr::synchronized_pool`，唯一同契约的"共享有界池"）：
+- **request batch lifecycle**：worker 一次申请一批 request/context 对象，处理后整批释放；对应 Folly `IndexedMemPool` / Compression context cache 和 oneTBB fixed-pool 本地批次。
+- **producer → neighbor consumer handoff**：生产者申请，邻居消费者释放；对应 oneTBB cross-thread-free、mimalloc Larson/xmalloc migration。轮次用 producer/consumer sequence 串成流水线，没有每轮全局 barrier。
+- **service quota**：所有 worker 同时申请超过固定容量的对象；对应 bounded service/marl borrow 配额，验证的是准入和回收语义，不拿启动时间宣称吞吐。
 
-- **D1 BURST**（每轮持有 64 块 > `kTlsCacheCap`=32 再全放 → 强制 TLS overflow-flush + shard refill，即真跑 Treiber push/pop）
-- **D2 CROSS-THREAD handoff**（线程 t 分配、屏障轮转、线程 t 释放邻居 t+1 的批 → free 无法命中本线程 TLS，必须按地址路由回属主 shard 的 Treiber stack；即设计的"fiber 栈 core A 分配 / core B 释放"）
+直接对手是 oneTBB `fixed_pool`：双方都由调用者提供固定 buffer。fixed_pool 的 buffer 是与 HYLE 相同的 payload capacity，加 oneTBB 自己 fixed-pool 测试采用的 1 MiB bootstrap metadata allowance；不再额外给 2 倍 payload。每次 fixed-pool/HYLE/mimalloc/TBB 分配都检查非 NULL，任何少做工作会使基准直接失败。pmr resource 与其他池一样在计时 lambda 外构造。`scalable_allocator`、mimalloc 和 pmr 是 growable 参考，不能证明硬容量语义。
 
-`bench-stat -n9` + 配对符号检验（section 过滤 `HYLE_BENCH_SECTIONS=D`，Win 与 WSL 错开跑）。**下表是 magazine 批量转移落地后（`kRefillBatch=16`，一次 CAS 搬 K 块）的数字**：
+### 3.2 三平台基线
 
-| workload | 对手 | Win MSVC | WSL GCC14 | 判定 |
-|---|---|---:|---:|---|
-| **D1 BURST** | `pmr::synchronized_pool`（同契约 std 池） | **27.0x** | **24.5x** | **WIN sign**（9/9，p=3.9e-3）|
-| **D2 CROSS-THREAD** | `pmr::synchronized_pool` | **16.2x** | **7.9x** | **WIN sign**（9/9，p=3.9e-3）|
-| **D1 BURST** | **oneTBB scalable** | **0.44x** | （本轮 WSL 未建 TBB）| **LOSE sign**（0/9）— TBB **2.3x 更快** |
-| **D2 CROSS-THREAD** | **oneTBB scalable** | **0.90x** | — | **TIE sign**（1/9，p=3.9e-2）|
-| **D2 CROSS-THREAD** | mimalloc（异契约：延迟原子 push） | ~1.0（≈tbb）| 1.008x TIE | 两平台打平 |
+配置：8 workers、64B block、request batch=64、working set=容量的 75%；handoff batch=256。表内 ratio 是每轮配对的 **HYLE / oneTBB fixed_pool op/s** 中位数，不是两个绝对中位数相除。
 
-绝对值（magazine 后）：D1 MemoryArena Win ~5.0ns / WSL ~4.8ns（改前 ~21ns，**~4.4x 加速**）；D2 Win ~10ns（改前 ~22ns）/ WSL ~52ns。
+#### Request batch lifecycle
 
-**magazine 前后对比（Win MSVC，同一 bench）**：
+| 池 | Win MSVC | WSL GCC 14 | Apple M4 | 判定 |
+|---|---:|---:|---:|---|
+| `SharedPool` | 8.315 / 4.200 ns，**0.515x** | 6.609 / 2.280 ns，**0.338x** | 11.881 / 2.024 ns，**0.170x** | 三平台 **LOSE sign** |
+| `SharedPoolCached` | 3.540 / 4.200 ns，**1.171x** | 1.754 / 2.280 ns，**1.285x** | 1.537 / 2.024 ns，**1.316x** | Win/WSL **WIN sign**；M4 **TIE sign**（8/9 同侧） |
 
-| workload / 对手 | 逐块 CAS（改前） | magazine（改后） |
-|---|---:|---:|
-| D1 BURST 绝对 | 21.3 ns | **5.0 ns** |
-| D1 BURST vs oneTBB | 0.106x（输 9.4x） | **0.44x（输 2.3x）** |
-| D1 BURST vs pmr | 5.8x 赢 | **27x 赢** |
-| D2 CROSS vs oneTBB | 0.363x（输 2.75x） | **0.90x（TIE）** |
-| D2 CROSS vs pmr | 7.2x 赢 | **16x 赢** |
+硬池为立即可见性付出共享原子与稳定空快照成本，不是本地 request churn 的吞吐选择。缓存池在 Win/WSL 稳赢；M4 中位数更快但有一次反转，按配对闸门只能判平。
 
-**诚实结论**：
-1. 对**同契约** std 共享池（`pmr::synchronized_pool`）：**16–27x sign 稳赢**（两平台一致）。共享有界定长池对 std 同类的可靠 SOTA 优势。
-2. 对 **oneTBB scalable**：**CROSS-THREAD 打平**（0.90x TIE，从改前输 2.75x 追平）；**BURST 仍输 2.3x**（从改前输 9.4x 大幅缩小）。BURST 残差是契约差价：tbb/mi 的 per-thread heap 同线程 free 是**非原子本地链**，HYLE 是真共享 slab，每 `kRefillBatch`=16 块仍付 1 次 CAS refill/flush。同契约下这是合理位置。
-3. 平台翻转（历史）：改前 mi/tbb 跨线程 free 在 Win 比 HYLE 快 ~2.7x、WSL 打平；magazine 后 Win 也追平。单平台数不能当无条件结论。
+#### Pipelined producer/consumer handoff
 
-**旧账更正**：旧文档"赢 tbb 1.74x"是 **ping-pong 假象**（测 TLS 快路 vs tbb tcache，非共享后备竞争）。真压共享路径：magazine 前对 tbb 完输，magazine 后 CROSS-THREAD 追平、BURST 缩到 2.3x。⚠️ Mac M4 待补。
+| 池 | Win MSVC | WSL GCC 14 | Apple M4 | 判定 |
+|---|---:|---:|---:|---|
+| `SharedPool` | 5.304 / 10.433 ns，**1.976x** | 3.807 / 9.239 ns，**2.380x** | 12.931 / 4.871 ns，**0.372x** | Win/WSL **WIN sign**；M4 **LOSE sign** |
+| `SharedPoolCached` | 4.062 / 10.433 ns，**2.627x** | 2.414 / 9.239 ns，**3.807x** | 3.072 / 4.871 ns，**1.586x** | 三平台 **WIN sign** |
 
-## 3. MemoryArena vs tbb：输因、修法、红队
+这里存在真实平台翻转：硬池在 x86 handoff 赢 fixed_pool，在 Apple M4 输约 2.69x。缓存池三平台都赢，但它仍不提供硬容量。
 
-| 项 | always-CAS | TLS owner-only（现） | TLS+锁+steal（红队试，弃） |
+### 3.3 Windows 参数扫描
+
+以下均为 `bench-stat.py -n 9`；扫描线程数、块大小和请求批次，避免用一个点代表整个能力面。
+
+| 维度 | `SharedPoolCached` vs fixed_pool | `SharedPool` vs fixed_pool | 结论 |
 |---|---|---|---|
-| 同线程 free→alloc | 每次共享 CAS | **零原子** TLS | 本地 spinlock |
-| 硬容量（他线程 TLS 有 free） | 是 | **软**：需 publish/join | 是（steal） |
-| vs tbb 8t（Win） | 0.91 LOSE | **~1.7–2.0 WIN** | **~0.98 TIE** |
+| request，T=1/8/16，64B，batch=64 | **1.232/1.171/1.108 WIN** | **0.720/0.515/0.541 LOSE** | cached 随并发增加优势收窄但仍过 sign 闸门；hard 不适合本地批次 |
+| request，T=8，block=32/64/4096B | **1.636/1.171/1.098 WIN** | **0.669/0.515/0.479 LOSE** | 三个数量级内均保持硬/软分工 |
+| request，T=8，batch=8/64/128 | **0.993 TIE / 1.171 WIN / 0.898 TIE** | **0.969 TIE / 0.515 LOSE / 0.359 LOSE** | cached 只在中批次明确赢；不能把 batch=64 外推成无条件 SOTA |
+| handoff，T=1/8/16，64B | **1.134/2.627/2.003 WIN** | **0.691 LOSE / 1.976 WIN / 1.677 WIN** | T=1 退化成同线程；真并发 x86 handoff 两者都强，M4 见上表 |
+| handoff，T=8，block=32/64/4096B | **2.626/2.627/2.029 WIN** | **1.927/1.976/1.506 WIN** | x86 上跨线程迁移对块大小稳定 |
 
-## 4. bench 单线程段形状
+### 3.4 硬容量证据
 
-| 旧 | 问题 | 新 |
-|---|---|---|
-| ST 段含 MemoryArena + ObjectPool | 多线程工具；付 CAS；无公平 ST SOTA 分母 | **删除** |
-| ST 表只留 GrowablePool + pmr + mi | — | 保留 |
-| MemoryArena | — | **仅** 8 线程 shared 段，对 pmr sync + tbb |
+配置：8 workers、64B block、capacity=1024、请求 110%（1128 次）。三平台得到相同计数：
 
-## 5. 非 SOTA / 边界（2026-07-20 末）
+| 池 | admitted | failed | publish 前可立即重获 | publish 后可重获 |
+|---|---:|---:|---:|---:|
+| `SharedPool` | **1024** | **104** | **1024** | **1024** |
+| `SharedPoolCached` | 910 | 218 | 384 | **1024** |
 
-1. ~~MemoryArena vs oneTBB 输~~ → **已翻为三平台 WIN**（TLS）。  
-2. **Arena/Stack vs pmr @ M4**：仍可能输 pmr monotonic —— 平台翻转。  
-3. **vtable vs 裸 mi**：Win/Lin 常 **~5–10% sign 输**（对 pmr 仍好）。  
-4. **reallocate vs mi**：Win/Lin sign 输。  
-5. 默认 SystemAllocator：三平台 **平 mi** ✅。  
-6. GrowablePool ST + 8t per-thread：三平台 **赢** ✅。  
-7. MemoryArena 并发软耗尽：他线程 TLS 内 free 不可见（≤32×T）；join 后全回收。
+硬池精确准入 capacity，释放后立即恢复完整容量。缓存池有 640 块暂存于 8 个活线程的 TLS，导致假耗尽；显式 publish 后才恢复 1024。因此容量紧张的 quota 场景必须选硬池，不能用缓存池的更快吞吐替代契约。
 
-## 6. 选型（不同场景不同 mem 组成）
+## 4. 选型
 
 ```text
-默认小对象     → SystemAllocator（平 mi）
-注入/mock      → vtable Allocator（接受对裸 mi 个位数 %）
-ST bump        → Arena/Stack（M4 上 pmr 可能更快，需本机验）
-ST 同尺寸无界  → GrowablePool
-MT per-thread  → GrowablePool×N（赢 mi）
-MT 共享有界定长 → MemoryArena（TLS + 分片；赢 tbb + 碾 pmr sync）
-通用 MT malloc → mi / tbb，别硬套固定 slab
+默认小对象             → SystemAllocator
+运行时注入/mock         → vtable Allocator（接受对裸 mi 的个位数 % 税）
+单线程 bump             → Arena / StackAllocator（M4 上 pmr 可能更快）
+单线程同尺寸可增长       → GrowablePool
+多线程、每线程独享       → GrowablePool × N
+共享固定块、严格配额     → SharedPool / ObjectPool<T>
+共享固定块、吞吐优先且有余量 → SharedPoolCached / ObjectPoolCached<T>
+通用多线程 malloc       → mimalloc / oneTBB；不要硬套固定 slab
 ```
 
-## 7. 复跑
+## 5. 复跑
 
 ```bash
-# Win: PATH 含 build-bench/bin + tbbmalloc 所在 msvc_*_release
-scripts/bench-stat.py build-bench/bin/hyle_mem_bench -n 15
-scripts/bench-stat.py build-bench/bin/hyle_arena_pool_bench -n 15 \
-  --pair "oneTBB scalable_allocator (8 threads, SHARED SOTA)" \
-         "HYLE MemoryArena (8 threads, 1 SHARED pool)"
-# -DHYLE_BENCH_TBB=ON -DHYLE_TBB_DIR=.../oneTBB
+# shipping-like bench；oneTBB clone 默认位于仓库同级 ../oneTBB
+cmake --preset bench -DHYLE_BENCH_TBB=ON
+cmake --build --preset bench --target hyle_arena_pool_bench
+
+export HYLE_BENCH_SECTIONS=DE
+export HYLE_BENCH_THREADS=8
+export HYLE_BENCH_BLOCK_SIZE=64
+export HYLE_BENCH_BATCH=64
+export HYLE_BENCH_CAPACITY_PCT=75
+export HYLE_BENCH_HANDOFF_BATCH=256
+export HYLE_BENCH_QUOTA=1024
+export HYLE_BENCH_REQUEST_PCT=110
+
+scripts/bench-stat.py build-bench/bin/hyle_arena_pool_bench -n 9 \
+  --pair "oneTBB fixed_pool (fixed-buffer shared)" \
+         "HYLE SharedPool (hard capacity)" \
+  --pair "oneTBB fixed_pool (fixed-buffer shared)" \
+         "HYLE SharedPoolCached (soft capacity)"
+
+# quota 计数是单次语义证据；不把其中线程启动时间当吞吐比较
+HYLE_BENCH_SECTIONS=E build-bench/bin/hyle_arena_pool_bench
 ```
+
+Linux/WSL 必须从 ext4 clone 运行；Win、WSL 同机时必须错开，不得并发采样。Apple M4 使用本地 APFS clone。

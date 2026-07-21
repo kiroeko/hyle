@@ -36,13 +36,13 @@ int main(void) {
   CHECK(sys.alloc != NULL && sys.free != NULL && sys.realloc != NULL);
   {
     hyle_allocator bad = {0};
-    CHECK(hyle_memory_arena_create(bad, 16, 1, 0) == NULL);
+    CHECK(hyle_shared_pool_create(bad, 16, 1, 0) == NULL);
     CHECK(hyle_mem_last_error()[0] != '\0');
-    hyle_memory_arena_o* good =
-        hyle_memory_arena_create(sys, 16, 1, 0);
+    hyle_shared_pool_o* good =
+        hyle_shared_pool_create(sys, 16, 1, 0);
     CHECK(good != NULL);
     CHECK(hyle_mem_last_error()[0] == '\0');
-    hyle_memory_arena_destroy(good);
+    hyle_shared_pool_destroy(good);
   }
   {
     /* direct vtable call */
@@ -80,57 +80,82 @@ int main(void) {
     CHECK(hyle_system_good_size(0) == 0u);
   }
 
-  /* ---- MemoryArena: allocate to exhaustion / deallocate / reset ---- */
+  /* ---- SharedPool: allocate to exhaustion / deallocate / reset ---- */
   {
-    hyle_memory_arena_o* pool =
-        hyle_memory_arena_create(sys, 256, 4, 0);
+    hyle_shared_pool_o* pool =
+        hyle_shared_pool_create(sys, 256, 4, 0);
     CHECK(pool != NULL);
-    CHECK(hyle_memory_arena_block_size(pool) == 256u);
-    CHECK(hyle_memory_arena_capacity(pool) == 4u);
+    CHECK(hyle_shared_pool_block_size(pool) == 256u);
+    CHECK(hyle_shared_pool_capacity(pool) == 4u);
     void* b[4];
     for (int i = 0; i < 4; ++i) {
-      b[i] = hyle_memory_arena_allocate(pool);
+      b[i] = hyle_shared_pool_allocate(pool);
       CHECK(b[i] != NULL);
       memset(b[i], i, 256);  /* fully writable */
     }
-    CHECK(hyle_memory_arena_allocate(pool) == NULL);  /* exhausted */
-    hyle_memory_arena_deallocate(pool, b[0]);
-    void* reuse = hyle_memory_arena_allocate(pool);   /* freed slot returns */
+    CHECK(hyle_shared_pool_allocate(pool) == NULL);  /* exhausted */
+    hyle_shared_pool_deallocate(pool, b[0]);
+    void* reuse = hyle_shared_pool_allocate(pool);   /* freed slot returns */
     CHECK(reuse != NULL);
-    for (int i = 1; i < 4; ++i) hyle_memory_arena_deallocate(pool, b[i]);
-    hyle_memory_arena_deallocate(pool, reuse);
-    hyle_memory_arena_reset(pool);                    /* all blocks free again */
-    CHECK(hyle_memory_arena_allocate(pool) != NULL);
+    for (int i = 1; i < 4; ++i) hyle_shared_pool_deallocate(pool, b[i]);
+    hyle_shared_pool_deallocate(pool, reuse);
+    hyle_shared_pool_reset(pool);                    /* all blocks free again */
+    CHECK(hyle_shared_pool_allocate(pool) != NULL);
 
     /* as_allocator view: pop a fixed block through the vtable */
-    hyle_allocator pv = hyle_memory_arena_as_allocator(pool);
+    hyle_allocator pv = hyle_shared_pool_as_allocator(pool);
     CHECK(pv.alloc != NULL);
     void* v = pv.alloc(pv.state, 200, 0);  /* must fit block_size */
     CHECK(v != NULL);
     pv.free(pv.state, v, 200, 0);
 
-    hyle_memory_arena_destroy(pool);
+    hyle_shared_pool_destroy(pool);
 
     /* invalid backing -> NULL (system-boundary validation) */
     hyle_allocator bad;
     memset(&bad, 0, sizeof bad);
-    CHECK(hyle_memory_arena_create(bad, 64, 4, 0) == NULL);
+    CHECK(hyle_shared_pool_create(bad, 64, 4, 0) == NULL);
+  }
+
+  /* ---- SharedPoolCached: cached API family / publish / allocator view ---- */
+  {
+    typedef struct { unsigned char bytes[128]; } CachedNode;
+    hyle_shared_pool_cached_o* pool =
+        HYLE_OBJECT_POOL_CACHED_CREATE(sys, CachedNode, 8);
+    CHECK(pool != NULL);
+    CHECK(hyle_shared_pool_cached_block_size(pool) == sizeof(CachedNode));
+    CHECK(hyle_shared_pool_cached_capacity(pool) == 8u);
+    CachedNode* a = HYLE_OBJECT_POOL_CACHED_ACQUIRE(pool, CachedNode);
+    CHECK(a != NULL);
+    a->bytes[0] = 0x5A;
+    CHECK(a->bytes[0] == 0x5A);
+    HYLE_OBJECT_POOL_CACHED_RELEASE(pool, a);
+    HYLE_OBJECT_POOL_CACHED_PUBLISH(pool);
+
+    hyle_allocator pv = hyle_shared_pool_cached_as_allocator(pool);
+    CHECK(pv.alloc != NULL && pv.free != NULL && pv.realloc != NULL);
+    void* b = pv.alloc(pv.state, 64, HYLE_ALIGNOF(CachedNode));
+    CHECK(b != NULL);
+    pv.free(pv.state, b, 64, HYLE_ALIGNOF(CachedNode));
+    hyle_shared_pool_cached_publish(pool);
+    hyle_shared_pool_cached_reset(pool);
+    hyle_shared_pool_cached_destroy(pool);
   }
 
   /* ---- typed object-pool convenience macros (raw slot, user-init) ---- */
   {
     typedef struct { int a; double b; } Node;
-    hyle_memory_arena_o* pool = HYLE_OBJECT_POOL_CREATE(sys, Node, 8);
+    hyle_shared_pool_o* pool = HYLE_OBJECT_POOL_CREATE(sys, Node, 8);
     CHECK(pool != NULL);
-    CHECK(hyle_memory_arena_block_size(pool) == sizeof(Node));
-    CHECK(hyle_memory_arena_capacity(pool) == 8u);
+    CHECK(hyle_shared_pool_block_size(pool) == sizeof(Node));
+    CHECK(hyle_shared_pool_capacity(pool) == 8u);
     Node* n = HYLE_OBJECT_POOL_ACQUIRE(pool, Node);  /* typed, no cast at call site */
     CHECK(n != NULL);
     n->a = 7;
     n->b = 1.5;                                       /* user-initialized slot */
     CHECK(n->a == 7 && n->b == 1.5);
     HYLE_OBJECT_POOL_RELEASE(pool, n);
-    hyle_memory_arena_destroy(pool);
+    hyle_shared_pool_destroy(pool);
   }
 
   /* ---- StackAllocator: bump / mark / rewind / reset ---- */
@@ -166,7 +191,7 @@ int main(void) {
 
   /* ---- Arena: bump over one pooled block ---- */
   {
-    hyle_memory_arena_o* pool = hyle_memory_arena_create(sys, 4096, 2, 0);
+    hyle_shared_pool_o* pool = hyle_shared_pool_create(sys, 4096, 2, 0);
     CHECK(pool != NULL);
     hyle_arena_o* ar = hyle_arena_create(pool);
     CHECK(ar != NULL);
@@ -185,14 +210,14 @@ int main(void) {
     hyle_arena_reset(ar);
     CHECK(hyle_arena_used(ar) == 0u);
     hyle_arena_destroy(ar);                   /* returns the block to the pool */
-    hyle_memory_arena_destroy(pool);
+    hyle_shared_pool_destroy(pool);
   }
 
   /* ---- Arena: pool exhaustion is graceful -- NULL + last-error, not abort
    * (followup #2 arch A: hyle_arena_create no longer aborts when the backing
    * pool has no free block; it returns NULL and sets hyle_mem_last_error) ---- */
   {
-    hyle_memory_arena_o* pool = hyle_memory_arena_create(sys, 4096, 1, 0);
+    hyle_shared_pool_o* pool = hyle_shared_pool_create(sys, 4096, 1, 0);
     CHECK(pool != NULL);
     hyle_arena_o* a1 = hyle_arena_create(pool);  /* borrows the only block */
     CHECK(a1 != NULL);
@@ -203,7 +228,7 @@ int main(void) {
     hyle_arena_o* a3 = hyle_arena_create(pool);  /* borrowable again */
     CHECK(a3 != NULL);
     hyle_arena_destroy(a3);
-    hyle_memory_arena_destroy(pool);
+    hyle_shared_pool_destroy(pool);
   }
 
   /* ---- GrowablePool: growable raw-slot pool (grow / reuse / reset / macros) ---- */
@@ -270,8 +295,10 @@ int main(void) {
     oom.realloc = oom_realloc;
     oom.state = NULL;
 
-    /* MemoryArena slab OOM -> NULL + last-error (was a fatal abort before #2 B) */
-    CHECK(hyle_memory_arena_create(oom, 64, 4, 0) == NULL);
+    /* SharedPool slab OOM -> NULL + last-error (was a fatal abort before #2 B) */
+    CHECK(hyle_shared_pool_create(oom, 64, 4, 0) == NULL);
+    CHECK(hyle_mem_last_error()[0] != '\0');
+    CHECK(hyle_shared_pool_cached_create(oom, 64, 4, 0) == NULL);
     CHECK(hyle_mem_last_error()[0] != '\0');
 
     /* StackAllocator slab OOM -> NULL + last-error */

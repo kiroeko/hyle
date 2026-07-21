@@ -27,7 +27,7 @@
 |---|---|---|---|
 | Allocator 接口 + SYS_* 家族 | `sys/allocator.h` | ✅ 直接继承 | C-ABI 友好，接口层留用 |
 | SystemAllocator / AlignedAllocator | `sys/allocator.cc` | 🔧 改后继承 | 含计数 bug |
-| MemoryArena（分片无锁定长块池）| `sys/memory_arena.cc` | 🔧 改后继承 | lock-free ABA 安全;clay 单 head_ 8 线程慢 mi 278x(单点 CAS),**已分片根治→1.94x**(片数=核数取 2 的幂,各占 cache line,见 performance.md);残留 1.94x 是"共享固定池 vs per-thread heap"apples-to-oranges,非真落后(per-thread 池 0.72ns 反超 mi 1.78x;xcpu_freelist 评估后否决,理由见 mem-design) |
+| MemoryArena（clay 原名：无锁定长块池）| `sys/memory_arena.cc` | 🔧 改后继承 | HYLE 当前由同一 sharded core 上的 `SharedPool`（硬容量、completed free 立即共享、稳定双快照）与 `SharedPoolCached`（软容量、TLS 128 + magazine 32 + publish）覆盖；正常 32-bit tagged CAS，tag 饱和永久切 serialized shard，绝不回绕 |
 | Arena（bump 分配器）| `sys/memory_arena.cc:76` | ✅ 直接继承 | 无锁 bump |
 | MemoryPool（STL 兼容）| `utils/memory_pool.h` | ✅ 继承 | 经典第三方实现 |
 | generic_allocator / alignment | `utils/generic_allocator.h`、`sys/alignment.h` | ✅ 继承 | 薄封装，正确 |
@@ -42,7 +42,7 @@
 4. **StackAllocator 拷贝构造丢 allocator_**（`utils/stack_allocator.h:28,30`，字段 `:108`）：拷贝只初始化 `pointer_(0)`，`allocator_` 无默认初值，拷贝后是不定值；溢出走堆回退路径时解引用野指针。STL 容器拷贝 allocator 是常规操作，必中。
 5. **arena allocator 静态 64 槽上限**（`sys/memory_arena.cc:211-218`）：`make_arena_allocator` 从两个固定 64 槽 static 池取对象，最多 64 个并发 arena allocator，超了返回 null。
 
-> 附注：`std::atomic<Head>`（16 字节，`memory_arena.cc:64`、`object_pool.h:155`）依赖 cmpxchg16b，需 `-mcx16`，否则退化加锁——「无锁」前提要在 HYLE 构建配置里坐实。
+> 附注：clay 的 `std::atomic<Head>`（16 字节，`memory_arena.cc:64`、`object_pool.h:155`）依赖 cmpxchg16b，缺少对应 ISA/ABI 支持会退化加锁。HYLE 未继承这项前提：真机探针确认 128-bit atomic 在 Win/WSL 非 lock-free，当前 shared core 使用 64-bit packed head，并在 32-bit version 饱和后永久切到该 shard 的 serialized fallback，version 不回绕。
 
 ---
 
@@ -133,7 +133,7 @@
 
 ## 总账
 
-**继承面（约占 HYLE 1/3，16-18k 行可留用）**：catomics 原子层、flat hashmap + carray + cstring + string_buf 容器、内存分配器家族 + MemoryArena、math/utils + consts + host_device 宏、thread_pool（长任务池）、async_value（补 waiter）、taskgraph（剥离特化）。
+**继承面（约占 HYLE 1/3，16-18k 行可留用）**：catomics 原子层、flat hashmap + carray + cstring + string_buf 容器、内存分配器家族（clay MemoryArena 能力现由 HYLE `SharedPool` / `SharedPoolCached` 覆盖）、math/utils + consts + host_device 宏、thread_pool（长任务池）、async_value（补 waiter）、taskgraph（剥离特化）。
 
 **负债面 / 从零造（HYLE 真正"加的东西"，30-50k 行级）**：
 

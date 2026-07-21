@@ -19,43 +19,41 @@
 
 // compute-02b: pinned host staging built by REUSING mem/, not reinventing it.
 //
-// THE INSIGHT (user, 2026-07-06): prepare upload data CONTIGUOUSLY in host memory
-// (a bump arena), then submit the whole contiguous run to the device in ONE copy --
-// the arena's contiguity IS the batching ("合批 for perf"). And the pinned block
-// itself is pooled (预分配大块换性能), amortizing cudaMallocHost (a heavy
-// page-locking call) + reusing blocks. ggml does NOT pool pinned host memory
-// (cudaMallocHost every time, ggml-cuda.cu:1503) -- this is where HYLE beats it.
+// THE INSIGHT (user, 2026-07-06): prepare upload data CONTIGUOUSLY in page-locked
+// host memory (a bump arena), then submit the whole contiguous run to the device in
+// ONE H2D copy -- the arena's contiguity IS the batching ("合批 for perf"). pinned
+// (cudaMallocHost) host RAM makes that copy a fast DMA and lets it overlap async.
 //
-// KEY: mem/ ALREADY provides the pool + the bump arena. compute only needs to hand
-// mem a PINNED backing allocator; then a pinned block pool is just
-//   mem::MemoryArena(pinned_allocator(dev), block_size, block_count)   // pooled 64MB blocks
-// and a contiguous staging region is just
-//   mem::Arena staging(&pool);  staging.allocate(...);  // bump, contiguous
-// then ONE batched submit:
-//   dev_buffer.set(dst_off, staging_base, staging.used());
-// So compute-02b is ~one adapter (pinned_allocator) + a thin PinnedStaging helper --
-// NOT a reimplemented pool. This is the correct "结合 mem 加速" (pinned = host RAM,
-// fits mem; device VRAM does NOT go through mem -- see mem-design "device 内存").
+// WHAT THIS FILE SHIPS: two pieces, both single-block.
+//   1. pinned_allocator(device) -- a mem::Allocator whose backing is cudaMallocHost/
+//      cudaFreeHost. The one adapter compute must provide.
+//   2. PinnedStaging -- a bump arena over ONE pinned block + a batched commit_to().
+//      Single-owner (one per fiber/thread), not a pool.
+//
+// NOT SHIPPED (available composition, no consumer yet): a MULTI-block pinned pool.
+// Because pinned_allocator is just a mem::Allocator, you *can* feed it to a
+// mem::SharedPool(pinned_allocator(dev), block_size, block_count) to amortize the
+// heavy cudaMallocHost across a fixed set of reused blocks (ggml re-calls
+// cudaMallocHost every time, ggml-cuda.cu:1503 -- so this would beat it). That is a
+// real, correct use of mem/, but it is a composition the caller wires when a pooled
+// staging ring actually lands (the event-driven ring is L1 / post-compute-03). The
+// shipped path here is the single-block PinnedStaging; no production code pools
+// pinned blocks today.
 
 namespace hyle::compute {
 
 // A mem::Allocator whose backing is PINNED host memory (cudaMallocHost/cudaFreeHost
-// on the CUDA backend; plain malloc on the host fallback). Feed it to a
-// mem::MemoryArena to get a pooled fixed-block pinned staging pool, or use it
-// anywhere a mem::Allocator is taken. `alignment` requests are honored by the
-// backend (pinned host is max_align-capable). The Device must outlive any pool
-// built on the returned allocator (the allocator captures the backend + ordinal).
-//
-// This is the ONE piece compute must provide; everything else (pooling, bump,
-// block reuse) is mem/ reused verbatim.
+// on the CUDA backend; plain malloc on the host fallback). Use it directly, or feed
+// it to a mem::SharedPool for a fixed-block pinned pool if/when a pooled staging ring
+// is built. `alignment` requests are honored by the backend (pinned host is
+// max_align-capable). The Device must outlive any pool built on the returned
+// allocator (the allocator captures the backend + ordinal).
 HYLE_COMPUTE_API mem::Allocator pinned_allocator(const Device& device) noexcept;
 
-// Thin convenience over "borrow a pinned block + bump-prepare contiguous data +
-// submit it in one copy". Holds a mem::Arena over one pooled pinned block and
-// remembers the block base so a whole contiguous run commits in a single H2D set().
-// For callers who don't want to wire mem::Arena + Buffer::set by hand; the manual
-// path (pinned_allocator + mem::MemoryArena + mem::Arena + Buffer::set) is equally
-// valid and gives full control.
+// Thin convenience over "one pinned block + bump-prepare contiguous data + submit it
+// in one copy". Owns a single pinned block (via pinned_allocator's backend) and bumps
+// from it, so a whole contiguous run commits in a single H2D set(). For callers who
+// don't want to wire the bump + Buffer::set by hand.
 //
 // Not thread-safe (a bump arena is single-owner -- one PinnedStaging per fiber/
 // thread, mirroring mem::Arena's per-core-scratch model). Move-only.
@@ -68,8 +66,8 @@ class PinnedStaging {
   HYLE_COMPUTE_API ~PinnedStaging();
 
   // Allocate a standalone pinned staging region of `bytes` (its own pinned block,
-  // not from a shared pool -- for a one-off; use a mem::MemoryArena + acquire()
-  // pattern for a reused pool). bump from it with allocate(), then commit_to().
+  // not from a shared pool). For a reusable multi-block ring, compose
+  // mem::SharedPool with pinned_allocator(). Bump here, then commit_to().
   HYLE_COMPUTE_API static Result<PinnedStaging> create(const Device& device,
                                                        std::size_t bytes) noexcept;
 

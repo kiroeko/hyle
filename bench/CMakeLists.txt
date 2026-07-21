@@ -482,11 +482,11 @@ if(HYLE_BENCH_TBB)
   add_subdirectory("${HYLE_TBB_DIR}" "${CMAKE_BINARY_DIR}/onetbb" EXCLUDE_FROM_ALL)
   target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_TBB)
   target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
-  # arena_pool_bench: add tbb's scalable_allocator as the STRONG shared-pool rival
-  # (std::pmr::synchronized_pool is mutex-serialized/weak; tbb is a real MT allocator).
-  # Link BOTH tbbmalloc (scalable_malloc/free) and tbb (its transitive tbb12 dep, so the
-  # linker finds tbb12.lib's dir -- tbbmalloc's INTERFACE pulls tbb12 in bare otherwise).
-  target_compile_definitions(hyle_arena_pool_bench PRIVATE HYLE_BENCH_TBB)
+  # arena_pool_bench: oneTBB fixed_pool is the direct fixed-buffer rival;
+  # scalable_allocator remains a growable throughput reference. memory_pool.h is a
+  # oneTBB preview header and requires TBB_PREVIEW_MEMORY_POOL=1.
+  target_compile_definitions(hyle_arena_pool_bench PRIVATE
+                             HYLE_BENCH_TBB TBB_PREVIEW_MEMORY_POOL=1)
   target_link_libraries(hyle_arena_pool_bench PRIVATE TBB::tbbmalloc TBB::tbb)
 endif()
 

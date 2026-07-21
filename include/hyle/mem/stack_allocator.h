@@ -90,7 +90,7 @@ class StackAllocator {
   }
 
   // Adapt to the Allocator vtable so a StackAllocator can be injected downstream
-  // (like Arena/MemoryArena): allocate -> bump, deallocate -> no-op (LIFO frees in
+  // (like Arena/SharedPool): allocate -> bump, deallocate -> no-op (LIFO frees in
   // bulk via reset()/rewind()), realloc -> bump a fresh slice + copy (can't grow in
   // place). One StackAllocator is single-owner, so the vtable is single-threaded too.
   Allocator as_allocator() noexcept {

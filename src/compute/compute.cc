@@ -412,8 +412,9 @@ Status Buffer::clear(std::size_t offset, std::uint8_t value,
 
 // ---- pinned staging (compute-02b): REUSE mem/, don't reinvent ----------------
 // pinned_allocator wraps the backend's pinned (cudaMallocHost) alloc/free as a
-// mem::Allocator, so a pooled pinned block pool is just mem::MemoryArena over it and
-// a contiguous staging region is just mem::Arena -- all mem/ reused. state = the
+// mem::Allocator. The shipped staging path is single-block (PinnedStaging bumps one
+// pinned block); a multi-block pinned pool via mem::SharedPool is an available
+// composition with no consumer yet (see pinned_pool.h). state = the
 // backend vtable (pinned host RAM is NOT device-bound -- cudaMallocHost is process-
 // wide host memory usable by any GPU -- so no ordinal is needed; ordinal 0 is passed
 // to the kind-tagged buffer_alloc). alignment is ignored: cudaMallocHost returns
@@ -435,7 +436,7 @@ void pinned_free_fn(void* state, void* ptr, std::size_t /*size*/,
 }
 void* pinned_realloc_fn(void* /*state*/, void* /*ptr*/, std::size_t /*old*/,
                         std::size_t /*new_size*/, std::size_t /*align*/) noexcept {
-  // Pinned staging is bump/pool use (mem::Arena/MemoryArena never realloc a backing
+  // Pinned staging is bump/pool use (mem::Arena/SharedPool never realloc a backing
   // slab); a realloc on pinned memory is not a supported path -- return nullptr.
   return nullptr;
 }

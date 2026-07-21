@@ -1,5 +1,7 @@
 # mem-06c：NUMA 就近放置
 
+> **历史名称边界：**本文中的“大 `MemoryArena` slab”现指 `SharedPool` / `SharedPoolCached` 共用的 sharded core slab；旧 `memory_arena.h` 与 `hyle_memory_arena_*` 已删除。
+
 | 字段 | 值 |
 |---|---|
 | **阶段** | P2 / mem-06 收口 |

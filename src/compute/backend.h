@@ -65,8 +65,8 @@ struct ComputeBackend {
   // A Buffer owns one block of memory of a given BufferKind on `ordinal`. The
   // public Buffer stores {vt, ptr, size, ordinal, kind, is_host}; these fn-ptrs do
   // the backend work. kDevice = cudaMalloc (VRAM, not host-deref); kHostPinned =
-  // cudaMallocHost (page-locked host RAM, from a mem::MemoryArena pool on the CUDA
-  // backend; the host backend just uses plain RAM for both kinds).
+  // cudaMallocHost (page-locked host RAM; callers may compose mem::SharedPool for a
+  // fixed-size ring). The host backend uses plain RAM for both kinds.
   //
   // buffer_type trait queries (per kind, cheap constants): alignment / max single-
   // allocation size / whether the memory is host-dereferenceable. Mirror ggml

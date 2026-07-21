@@ -7,28 +7,27 @@
 
 #include "hyle/compute/buffer.h"
 #include "hyle/compute/device.h"
-#include "hyle/mem/memory_arena.h"
+#include "hyle/mem/shared_pool.h"
 
-// compute-02b: pinned staging built on mem/ (pinned_allocator + mem::MemoryArena +
-// mem::Arena) + the batched-submit helper PinnedStaging. Runs on any platform (host
-// fallback = plain RAM; a real GPU exercises cudaMallocHost + H2D). The point is to
-// prove the "prepare contiguous in pinned host, submit in one copy" pattern (合批)
-// and that pinned pooling reuses mem/ verbatim (no reinvented pool).
+// compute-02b: PinnedStaging directly owns one pinned block and bump-allocates within
+// it. Separately, pinned_allocator can back mem::SharedPool when a consumer needs a
+// reusable multi-block ring. Runs everywhere (host fallback = plain RAM; a GPU uses
+// pinned host RAM + H2D).
 
 using namespace hyle;
 using namespace hyle::compute;
 
 // ---- pinned_allocator feeds mem/ directly (the whole point: reuse mem) -------
 
-TEST(PinnedPool, AllocatorBacksMemArena) {
+TEST(PinnedPool, AllocatorBacksSharedPool) {
   Device d = default_device();
   mem::Allocator pinned = pinned_allocator(d);
   ASSERT_TRUE(pinned.valid());
 
-  // A pinned FIXED-BLOCK pool is just mem::MemoryArena over the pinned allocator --
-  // mem/ reused verbatim, no compute-side pool. 4 blocks of 64 KiB (scaled-down ring).
+  // Optional composition: a pinned fixed-block ring is SharedPool over the pinned
+  // allocator. PinnedStaging itself does not use this pool.
   constexpr std::size_t kBlock = 64 * 1024;
-  mem::MemoryArena pool(pinned, kBlock, 4);
+  mem::SharedPool pool(pinned, kBlock, 4);
 
   // Acquire/release blocks from the pool (the reuse that amortizes cudaMallocHost).
   void* b0 = pool.allocate();
@@ -52,7 +51,7 @@ TEST(PinnedPool, ArenaContiguousInPinnedBlock) {
   Device d = default_device();
   mem::Allocator pinned = pinned_allocator(d);
   constexpr std::size_t kBlock = 1 << 20;  // 1 MiB
-  mem::MemoryArena pool(pinned, kBlock, 2);
+  mem::SharedPool pool(pinned, kBlock, 2);
 
   mem::Arena staging(&pool);  // borrow one pinned block, bump from it
   // Prepare two arrays back-to-back -> they are CONTIGUOUS in pinned memory.

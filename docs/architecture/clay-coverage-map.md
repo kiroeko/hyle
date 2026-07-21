@@ -23,7 +23,7 @@
 | clay 文件 | 行 | HYLE 目标 | 状态 | 备注 |
 |---|---|---|---|---|
 | `sys/allocator.h` + `.cc` | 485+375 | mem-01 + mem-01b + mem-02 | ✅ | vtable+裸 allocate + typed 层(mem-01b) + **backing 换 mimalloc(mem-02,封 vtable 后不外露,Win 默认堆 2.5–12x 随负载/Linux 真实模式 5.2x)**;CUSTOM_MEMORY_FUNCTIONS 故意不做(mimalloc 无 off-switch,用户指令非漏,见上) |
-| `sys/memory_arena.h` + `.cc` | 65+258 | mem-03 + mem-03b | ✅ | `MemoryArena` 分片无锁定长块池(N 头各占 cache line,地址路由 free,修单 head_ 的 O(threads) 争用 278x→1.94x) + **`Arena` bump 区域分配器(去原子) + as_allocator() 适配(mem-03b)**;`make_arena_allocator` 等价为 `Arena::as_allocator()` |
+| `sys/memory_arena.h` + `.cc` | 65+258 | mem-03 + mem-03b | ✅ | clay `MemoryArena` 能力现由 HYLE 共用 sharded core 上的 **硬容量 `SharedPool`**（completed free 立即共享、稳定双快照、tag 饱和永久 serialized）与**软容量 `SharedPoolCached`**（TLS 128 + magazine 32 + publish）覆盖；`Arena` 只借硬池的一块做无原子 bump，并提供 `as_allocator()` |
 | `sys/carray.h` + `.cc` | 436+65 | container-03 | ✅ | header-before-data 侵入数组 + type-erased 核 + RAII 壳 CArray<T>;**改进:over-align 元素(clay 固定 max_align_t 会错位)** |
 | `sys/cstring.h` + `.cc` | 1033+374 | container-06 | ✅ | string_ref(ptr+len+null 位)+零拷贝算法(find/rfind/find_first/last_of/not_of/substr/trim/starts/ends_with/contains/count/split/rsplit/slice/concat/dup/c_str/equal_ignore_case)+ operator<=> + Hash<string_ref> + `_sr` 字面量。**类型核心 API diff 过 clay**;clay `capitalize`/UTF-8/hex/escape 真实现归 `string_algo.h`(container-06b✅);`score_similarity`/`format_si` 等 **clay 只声明无实现**→container-06c(净新) |
 | `sys/string_buf.h` + `.cc` | 141+363 | container-06 | ✅ | 引用计数驻留池 `StringBuf`(pimpl 藏 SwissTable 内容索引+mutex)+ make/destroy 工厂；每唯一串单独分配(地址稳定)。**改进**：内容 equality 是最终身份；对外 ID 是 generation-tagged direct slot，hash collision 不别名、stale ID 不命中新串；永久 `intern/intern_many` 与可回收 `add/retain/remove` 分离。全局可变单例有意不做。 |
@@ -50,7 +50,7 @@
 |---|---|---|---|---|
 | `utils/status.h` + `.cc` | 299+182 | error-01 | ✅ | Status(8B 指针标签,已现代化) |
 | `utils/result.h` + `.cc` | 470+18 | error-01 | ♻️ | `std::expected` 取代手写 Result(charter 定) |
-| `utils/object_pool.h` | 205 | mem-04 | ✅ | 修 bug#3(坐 MemoryArena) |
+| `utils/object_pool.h` | 205 | mem-04 | ✅ | 修 bug#3；HYLE `ObjectPool<T>` 默认坐硬容量 `SharedPool`，软容量另名 `ObjectPoolCached<T>` |
 | `utils/stack_allocator.h` | 122 | mem-04 | ✅ | 修 bug#4(禁拷贝、无堆回退) |
 | `utils/memory_pool.h` | 170 | mem-07 | ✅ | **`GrowablePool<T>`**:growable+single-threaded 池(无原子,填 ObjectPool 固定+lock-free 之外的空位)。几何块+侵入 free-list。**修 clay move-assign bug**(从不转移 allocator_) |
 | `utils/ref_counted.h` | 317 | util-01 | ✅ | 侵入式 `RefCounted<Sub>` CRTP + `Ref<T>` + make/adopt/retain_ref。**改进**:修 clay destroy() CRTP bug、release+末次 acquire fence、批量计数 fail-fast、危险非虚基类析构形状编译期拒绝；另有 type-erased C strong handle |
@@ -156,13 +156,13 @@
 
 ### ③ 升级（同一组件,HYLE 比 clay 更强——LOC 可能持平或更多）
 - `hashmap`:clay 线性探测 → HYLE 补 SwissTable SIMD 三角探测(更复杂)。
-- `MemoryArena`:clay 16字节 atomic+cmcx16 → HYLE packed 64位 CAS(更稳)。
+- 固定块池：clay 16字节 atomic+cmcx16 → HYLE `SharedPool` / `SharedPoolCached` 共用 64-bit packed head；正常 32-bit tagged CAS，tag 饱和前永久切 serialized shard，绝不回绕。
 - device 内存:clay 无 → HYLE **compute/ 自有 stream-bound buffer**(ggml buffer_type 式,所有权+stream 绑定在 compute/;不走 mem/ allocator 抽象,见 mem-design「device 内存」节)。
 
 ### 结论：正确的"吸纳完整性"判据
 - **不是** "HYLE 总 LOC ≥ clay 19k"，**也不是** "HYLE API 和 clay 同名/同签名"。
 - **而是** 对每个 ✅/🔶 组件，HYLE **覆盖了 clay 同名文件该有的能力**(对照查漏,不是匹配签名)且**性能 ≥ clay**;接口按 HYLE 自己怎么好用/怎么 SOTA 定,可自由背离 clay。clay 中 ♻️/⛔/🔻 的部分按计划替换/不吸纳并登记在本表。
-- **吸纳完成** = 本表 sys/utils/parallel/(math 按需) 中**所有非 ♻️/⛔ 行的能力都被 HYLE 覆盖(变 ✅)**——判据是能力齐 + 性能 ≥ clay + (发布时)C-ABI 可导出,**不是 API 表面追平**。当前:`status/object_pool/stack_allocator/carray ✅`、`allocator/memory_arena ✅(补漏后)`、`murmur 🔶(运行期 XXH3 已接)`,其余 📋。
+- **吸纳完成** = 本表 sys/utils/parallel/(math 按需) 中**所有非 ♻️/⛔ 行的能力都被 HYLE 覆盖(变 ✅)**——判据是能力齐 + 性能 ≥ clay + (发布时)C-ABI 可导出,**不是 API 表面追平**。当前固定池能力由 `SharedPool` / `SharedPoolCached` 与 hard/cached C ABI 完整覆盖；`ObjectPool<T>` 默认硬、`ObjectPoolCached<T>` 软。
 - **P3 = 真·吸纳,不是"略过缺的就算实现"（用户 2026-06 铁律）**：到 P3 末必须是"**该实现的都实现了 + 该替换的脚手架都换了 + 比较完整**",而**不是把缺的部分都略过就宣布完成**。每个标 ✅ 的组件,缺的子功能要么真做、要么显式登记为补漏里程碑(如 mem-03b/04b),**绝不默默略过当完成**(mem-03 曾犯,已纠)。残留脚手架(std::string_view 顶 string 等)在等价物落地后必须替换,红队每里程碑扫一遍。
 
 ## "clay 完全吸纳"在 P 几（结论）
@@ -172,7 +172,7 @@ clay 各组件落到 HYLE 依赖层(P0-P6):
 | clay 模块 | HYLE 的 P 层 | 吸纳完点 |
 |---|---|---|
 | `utils/status`+`result`+`sys/error` | P0 (error-01✅ / error-02) | **P0 收尾** |
-| `sys/allocator`+`memory_arena`+`utils/object_pool`+`stack_allocator`+`memory_pool` | P2 (mem-01..06 + 01b/03b) | **P2 末** |
+| `sys/allocator`+`memory_arena`+`utils/object_pool`+`stack_allocator`+`memory_pool` | P2 (现由 SharedPool/SharedPoolCached、Arena、ObjectPool/ObjectPoolCached 等覆盖) | **P2 末** |
 | `sys/os`+`path`+`time`+`log`+`random` | P1/P2 (platform-02/03, time-01) | **P2 末** |
 | `sys/carray`+`cstring`+`string_buf`+`hashmap`+`murmur`、`utils/string_utils`+`ref_counted`+`registry`+`type_name` | P3 (container-02..06 + util) | **P3 末** |
 | `parallel/thread_pool`+`worker_thread` | P4 (sched,**重写取代**) | 已取代(sched-03✅) |

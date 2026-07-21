@@ -8,7 +8,7 @@
 
 | 数据 | 归谁管 | 怎么做 |
 |---|---|---|
-| **喂给 ggml 算子的 host 输入**（权重加载源、激活输入） | **HYLE mem** | `mem::Allocator` / `PinnedStaging` 分配 → `ggml_backend_tensor_set(tensor, hyle_host_ptr, …)` 拷入 |
+| **喂给 ggml 算子的 host 输入**（权重加载源、激活输入） | **HYLE host RAM** | `mem::Allocator` 分配，或 `PinnedStaging` 在其直接拥有的 pinned host block 中 bump → `ggml_backend_tensor_set(tensor, hyle_host_ptr, …)` 拷入 |
 | **ggml 算子计算用的 device 显存**（输入/中间/结果 tensor 的 buffer） | **ggml**（`ggml_gallocr` / backend buffer） | ggml 自己 cudaMalloc + 图内复用；HYLE 不碰 |
 | **ggml 算子的 host 输出** | **HYLE mem** | `ggml_backend_tensor_get(tensor, hyle_host_ptr, …)` 拷出 |
 | **HYLE 自造 kernel（compute-04 NVRTC / 06 SPIR-V）的显存** | **HYLE**（compute-02 Buffer / DevicePool / VMM） | HYLE cudaMalloc，kernel 直接在 HYLE 显存上算——**真零拷贝**（已三平台验证） |
@@ -45,7 +45,7 @@ static void ggml_backend_cuda_buffer_set_tensor(..., const void * data, ...) {
     cudaMemcpyAsync((char*)tensor->data + offset, data, size, cudaMemcpyHostToDevice, ...);
 }
 ```
-那个 `data`（host 源）**不要求 pinned、不要求 ggml 分配、不要求任何特殊来源**——任意 host 指针都行。**所以它完全可以是 HYLE mem（`mem::Allocator` / `MemoryArena` / `PinnedStaging`）分配的内存。** `tensor_get`（取出）同理。
+那个 `data`（host 源）**不要求 pinned、不要求 ggml 分配、不要求任何特殊来源**——任意 host 指针都行。所以它可以来自 HYLE `mem::Allocator`，也可以来自 `PinnedStaging` 直接拥有并 bump 的 pinned host block。`tensor_get`（取出）同理。
 
 **数据流（每段谁管，清清楚楚）**：
 ```
@@ -62,7 +62,7 @@ ggml 结果显存
 HYLE mem 管的 host 结果                     ← 回到 HYLE mem 抽象
 ```
 
-**性能接口点**：`tensor_set` 的 host 源若是 **pinned 内存**（compute-02b 的 `pinned_allocator` / `PinnedStaging`），H2D 走 DMA 更快、可 async 重叠。所以借 ggml 的正确数据入口是 **HYLE PinnedStaging(host, mem 管) → tensor_set → ggml 显存**——既用 HYLE mem，又拿 pinned 性能。这正是 compute-02b 的消费者。
+**性能接口点**：`tensor_set` 的 host 源若是 **pinned host RAM**，H2D 可走更适合 DMA/异步重叠的路径。当前 `PinnedStaging` 直接拥有一个 pinned host block 并在其中 bump，不经过 mem 池；它可把连续准备区交给 `tensor_set`。`pinned_allocator` 也可选择与 `SharedPool` 组合，但目前没有生产消费者，不能写成现役数据路径。
 
 ## 3. 边界不模糊——两种 kernel 来路对应两种显存归属
 

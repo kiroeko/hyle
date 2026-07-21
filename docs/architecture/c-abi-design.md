@@ -22,13 +22,13 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 
 | 编译期（C++，过不了 C） | 运行时擦除（C ABI 通路） |
 |---|---|
-| `ObjectPool<T>` | `hyle_memory_arena_create(sizeof(T), count, alignof(T))` —— `<T>` 降解成 `size_t block_size`/`alignment` |
-| `GrowablePool<T>` | `hyle_growable_pool_create(slot_size, slot_align, initial_slots)` —— 与 `ObjectPool<T>`↔`MemoryArena` 同构：非模板运行时核心（`detail::GrowablePoolCore`）承载擦除后的裸槽逻辑，`<T>` 模板只是跑 ctor/dtor 的薄包装 |
+| `ObjectPool<T>` / `ObjectPoolCached<T>` | 默认硬容量 `hyle_shared_pool_create(sizeof(T), count, alignof(T))`，或显式软容量 `hyle_shared_pool_cached_create(...)`；`<T>` 降为 runtime size/alignment，cached 版本另有 publish barrier |
+| `GrowablePool<T>` | `hyle_growable_pool_create(slot_size, slot_align, initial_slots)` —— 非模板运行时核心（`detail::GrowablePoolCore`）承载擦除后的裸槽逻辑，`<T>` 模板只是跑 ctor/dtor 的薄包装 |
 | `Allocator::construct<T>()` | 裸 `alloc` 返回内存，构造由调用方语言做 |
 | `Tensor<float, N>`（ggml 的对照） | `ggml_tensor { enum type; void* data; int64_t ne[]; }` —— 类型降成 `enum` 标签 |
 
 **判据**：C ABI 用户"不缺能力" ≠ "每个 C++ 符号都有 C 对应"。判据是**能力有没有 C ABI 通路**：
-- `ObjectPool<T>` 不导出，但定长对象池能力经 `hyle_memory_arena_*` + `HYLE_OBJECT_POOL_*` 宏可达 → **不缺**。
+- `ObjectPool<T>` / `ObjectPoolCached<T>` 不直接导出模板，但定长对象池能力分别经 `hyle_shared_pool_*` / `hyle_shared_pool_cached_*` + hard/cached typed 宏可达 → **不缺**。
 - 泛型语法不可达（`<T>`），但能力经 size 擦除全部可达。
 
 ## 2. 三层架构（业界通用解，ggml/oneDNN 实证）
@@ -107,13 +107,13 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 
 C++ 用户拿原生 API，易用性靠 C++ 语言特性本身：
 - **RAII**：`VmRegion`/`MappedFile`/`OwnedFd`/`StackAllocator` 析构自动释放，move-only。
-- **模板便利**：`Allocator::allocate_n<T>`/`construct<T>`/`make_unique<T>`、`ObjectPool<T>`/`GrowablePool<T>`。
+- **模板便利**：`Allocator::allocate_n<T>`/`construct<T>`/`make_unique<T>`、硬容量 `ObjectPool<T>`、软容量 `ObjectPoolCached<T>`、`GrowablePool<T>`。
 - **类型安全**：强类型句柄、`Status::Is##Code()` 谓词、`Result<T>` 单子式传播（`HYLE_ASSIGN_OR_RAISE`）。
 
 C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零新导出符号，不进 ABI）：
 - error：全码工厂 `hyle_status_not_found()` 等 + 谓词 `hyle_status_is_*()` + `HYLE_C_RETURN_IF_ERROR`。
 - platform：`hyle_thread_opts_set_*` + `HYLE_THREAD_OPTS_INIT` + `hyle_page_align_up` inline。
-- mem：`hyle_alloc`/`free`/`realloc` 便利转发 + `HYLE_OBJECT_POOL_CREATE/ACQUIRE/RELEASE` typed 宏（`HYLE_ALIGNOF` 跨 C/C++ shim）。
+- mem：`hyle_alloc`/`free`/`realloc` 便利转发 + 默认硬容量 `HYLE_OBJECT_POOL_*`、显式软容量 `HYLE_OBJECT_POOL_CACHED_*` typed 宏（`HYLE_ALIGNOF` 跨 C/C++ shim）。
 
 **原则**：两条线各自把易用性做到位——C++ 靠语言特性，C 靠 header-inline 糖 + opaque 句柄。inline 糖不进 DLL 导出、零 ABI 风险，是"给 C 用户便利但不污染稳定面"的标准手法（HYLE 与 ggml/oneDNN 一致）。
 
