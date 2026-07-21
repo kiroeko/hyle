@@ -29,10 +29,10 @@
 2. **分片 Treiber（共享后备）**  
    - 与改前相同：pow2 shard、地址路由 free、ABA version pack  
 
-3. **生命周期**  
-   - `ThreadCache` 节点由 **thread_local 链表**拥有  
-   - arena 持注册表；`~MemoryArena` / thread 退出 → flush + `arena=nullptr`  
-   - **僵尸回收**：`tls_cache()` 遍历时释放 `arena==nullptr` 节点（防长寿命线程 churn 多 arena 泄漏）  
+3. **生命周期（2026-07-21 审计加固）**  
+   - `ThreadCache` 节点由 **thread_local 链表**拥有；节点内存由 **`system_allocator()`** 分配/释放（**非** arena 注入 backing——节点可比 arena+backing 长寿）  
+   - 进程级全局锁 `detail::tls_registry_lock`（`memory_arena.cc` 单定义，跨 DLL 唯一）管 attach/detach/reset/dtor；`~MemoryArena` / thread 退出 → 全局锁下 flush + `arena.store(nullptr, release)`  
+   - **僵尸回收**：`tls_cache()` 遍历时 acquire-load `arena`，`==nullptr` 即释放节点（防长寿命线程 churn 多 arena 泄漏）  
 
 4. **显式 handoff**  
    - `publish_thread_cache()`：本线程 TLS → 属主 shard（跨线程要用 free 块时）  
@@ -54,6 +54,7 @@
 | **R2 僵尸泄漏** | 池析构后 TLS 节点 `arena=null` 直到线程退出 | **已修**（遍历回收） |
 | **R3 reset/dtor 碰 TLS** | 与并发 alloc/free 无锁同步 | **契约**：同 `reset()` 须 quiesce（与改前一致） |
 | **R4 free 语义** | 不再总是立刻地址路由 CAS | overflow/publish/exit 才回流；`CrossThreadFree` 测 join→TLS dtor flush |
+| **R5 节点生命周期（2026-07-21 审计新增，2 个真缺陷已修）** | ① C ABI：节点复制注入 backing `Allocator` 自释放，但 backing 随 wrapper 先死 → 线程退出 flush **确定性 UAF**（ASan 坐实）。② dtor vs 线程退出：per-arena `atomic_flag` 随 arena 先死，输方锁/读已释放对象 → **data race**（TSan 坐实 4 条） | **已修**：① 节点改 `system_allocator()` 分配/释放（与注入 backing 解耦）；② 换进程级全局锁 + `arena` 字段 atomic。回归 `InjectedBackingFreedBeforeWorkerExitNoUaf`；Win ASan + WSL TSan 双绿 |
 
 ## 4. 性能（审核用数字）
 

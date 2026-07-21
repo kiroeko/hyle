@@ -14,6 +14,23 @@
 
 namespace hyle::mem {
 
+namespace detail {
+// Process-global (cross-DLL) lock guarding the per-arena TLS-cache registry. One
+// definition lives in hyle_mem (memory_arena.cc) so every header-inlined consumer
+// serializes on the SAME mutex -- a per-DLL header static would let two parties
+// race on one node through different locks. COLD path only (attach / detach /
+// reset / dtor / thread-exit); the alloc/free hot path never touches it.
+HYLE_MEM_API void tls_registry_lock() noexcept;
+HYLE_MEM_API void tls_registry_unlock() noexcept;
+
+struct TlsRegistryGuard {
+  TlsRegistryGuard() noexcept { tls_registry_lock(); }
+  ~TlsRegistryGuard() noexcept { tls_registry_unlock(); }
+  TlsRegistryGuard(const TlsRegistryGuard&) = delete;
+  TlsRegistryGuard& operator=(const TlsRegistryGuard&) = delete;
+};
+}  // namespace detail
+
 // Lock-free fixed-size block pool (clay's MemoryArena, modernized).
 //
 // A slab of `block_count` equal-size blocks; allocate()/deallocate() pop/push a
@@ -332,13 +349,24 @@ class MemoryArena {
   // touch them only after concurrent allocate/deallocate is quiesced (same
   // contract as reset() itself). Remote steal was measured and rejected: a
   // correct steal needs a lock on every TLS op and drops the tbb win to TIE.
+  //
+  // `arena` is ATOMIC: the hot path loads it lockless to match the node to its
+  // pool, while the cold teardown paths (detach on thread-exit, detach_all on
+  // arena dtor) write it under the process-global registry lock. This closes the
+  // dtor/thread-exit race where one party read `arena` while the other nulled it.
+  //
+  // The node itself is allocated from system_allocator(), NOT the arena's injected
+  // backing: a node can outlive the arena (a live thread's cache is freed only when
+  // THAT thread exits), and the injected backing may be gone by then (a C-ABI
+  // wrapper frees its backing when the arena is destroyed). A node is internal
+  // bookkeeping (like the registry lock), so a process-stable allocator is correct
+  // and decouples node lifetime from the pool's injected allocator.
   struct ThreadCache {
-    MemoryArena* arena = nullptr;
-    Allocator alloc{};  // copy: free the node if arena already destroyed
+    std::atomic<MemoryArena*> arena{nullptr};
     std::uint32_t count = 0;
     std::uint32_t idxs[kTlsCacheCap]{};
-    ThreadCache* next_in_thread = nullptr;
-    ThreadCache* next_in_arena = nullptr;
+    ThreadCache* next_in_thread = nullptr;  // owner-thread-only
+    ThreadCache* next_in_arena = nullptr;   // registry-lock-only
   };
 
   struct TlsCacheList {
@@ -348,8 +376,14 @@ class MemoryArena {
         ThreadCache* c = head;
         head = c->next_in_thread;
         c->next_in_thread = nullptr;
-        MemoryArena* a = c->arena;
-        if (a != nullptr) a->detach_cache(c);  // flush + unregister + null arena
+        // Decide + act under the global registry lock so the arena cannot be torn
+        // down between reading c->arena and using it (detach_all_caches nulls it
+        // under the same lock). If arena is already null, it detached us first.
+        {
+          detail::TlsRegistryGuard g;
+          MemoryArena* a = c->arena.load(std::memory_order_relaxed);
+          if (a != nullptr) a->detach_cache_locked(c);  // flush + unregister + null
+        }
         free_thread_cache_node(c);
       }
     }
@@ -360,31 +394,25 @@ class MemoryArena {
     return list;
   }
 
-  // Rare-path registry lock (attach/detach/reset/dtor). Hot path never takes it.
-  void lock_reg() const noexcept {
-    while (reg_lock_.test_and_set(std::memory_order_acquire)) {
-    }
-  }
-  void unlock_reg() const noexcept { reg_lock_.clear(std::memory_order_release); }
-
   static void free_thread_cache_node(ThreadCache* c) noexcept {
-    Allocator al = c->alloc;
     c->~ThreadCache();
-    if (al.valid())
-      al.deallocate(c, sizeof(ThreadCache), alignof(ThreadCache));
+    system_allocator().deallocate(c, sizeof(ThreadCache), alignof(ThreadCache));
   }
 
   ThreadCache* tls_cache(bool create) noexcept {
     TlsCacheList& list = tls_list();
     // Walk + reclaim zombies (arena destroyed, node left with arena==nullptr).
     // Without this, long-lived threads that churn many MemoryArenas leak one
-    // ThreadCache node per destroyed arena until thread exit (red-team R2).
+    // ThreadCache node per destroyed arena until thread exit (red-team R2). The
+    // walk reads `arena` with acquire so that observing null means detach already
+    // finished flushing the node -> safe to unlink (owner-only) and free.
     ThreadCache* prev = nullptr;
     ThreadCache* c = list.head;
     while (c != nullptr) {
       ThreadCache* next = c->next_in_thread;
-      if (c->arena == this) return c;
-      if (c->arena == nullptr) {
+      MemoryArena* a = c->arena.load(std::memory_order_acquire);
+      if (a == this) return c;
+      if (a == nullptr) {
         if (prev != nullptr)
           prev->next_in_thread = next;
         else
@@ -397,17 +425,17 @@ class MemoryArena {
       c = next;
     }
     if (!create || !valid_) return nullptr;
-    void* mem = alloc_.allocate(sizeof(ThreadCache), alignof(ThreadCache));
+    void* mem = system_allocator().allocate(sizeof(ThreadCache), alignof(ThreadCache));
     if (mem == nullptr) return nullptr;  // fall back to pure shard CAS path
     auto* fresh = new (mem) ThreadCache();
-    fresh->arena = this;
-    fresh->alloc = alloc_;
-    fresh->next_in_thread = list.head;
+    fresh->arena.store(this, std::memory_order_relaxed);
+    fresh->next_in_thread = list.head;  // owner-only
     list.head = fresh;
-    lock_reg();
-    fresh->next_in_arena = cache_list_;
-    cache_list_ = fresh;
-    unlock_reg();
+    {
+      detail::TlsRegistryGuard g;
+      fresh->next_in_arena = cache_list_;
+      cache_list_ = fresh;
+    }
     return fresh;
   }
 
@@ -426,38 +454,38 @@ class MemoryArena {
     }
   }
 
-  // Called from thread_local dtor OR arena dtor path: flush free blocks, unlink
-  // from arena registry, null arena so the thread dtor only frees the node.
-  void detach_cache(ThreadCache* tc) noexcept {
-    lock_reg();
-    if (tc->arena == this) {
-      flush_cache_to_shards(tc);
-      ThreadCache** pp = &cache_list_;
-      while (*pp != nullptr) {
-        if (*pp == tc) {
-          *pp = tc->next_in_arena;
-          break;
-        }
-        pp = &(*pp)->next_in_arena;
+  // Called from the thread_local dtor with the process-global registry lock ALREADY
+  // held: flush this node's free blocks back to shards, unlink it from the arena
+  // registry, and null its arena (release) so a concurrent tls_cache() walk that
+  // observes null knows the flush is done. Caller frees the node after this returns.
+  void detach_cache_locked(ThreadCache* tc) noexcept {
+    flush_cache_to_shards(tc);
+    ThreadCache** pp = &cache_list_;
+    while (*pp != nullptr) {
+      if (*pp == tc) {
+        *pp = tc->next_in_arena;
+        break;
       }
-      tc->next_in_arena = nullptr;
-      tc->arena = nullptr;
+      pp = &(*pp)->next_in_arena;
     }
-    unlock_reg();
+    tc->next_in_arena = nullptr;
+    tc->arena.store(nullptr, std::memory_order_release);
   }
 
   void detach_all_caches() noexcept {
-    lock_reg();
+    detail::TlsRegistryGuard g;
     ThreadCache* c = cache_list_;
     cache_list_ = nullptr;
     while (c != nullptr) {
       ThreadCache* next = c->next_in_arena;
       flush_cache_to_shards(c);
       c->next_in_arena = nullptr;
-      c->arena = nullptr;
+      // Release: a thread exiting concurrently reads arena under the SAME lock, but
+      // a lock-free tls_cache() zombie-walk reads it with acquire -- pair them so the
+      // flush above happens-before that thread frees the node.
+      c->arena.store(nullptr, std::memory_order_release);
       c = next;
     }
-    unlock_reg();
   }
 
   // reset(): drop every TLS freelist. Do NOT push to shards — rebuild below
@@ -465,11 +493,10 @@ class MemoryArena {
   // indices are not live). Keeps cache nodes registered for subsequent use.
   // Contract: callers quiesce concurrent allocate/deallocate first.
   void flush_all_caches_keep_registered() noexcept {
-    lock_reg();
+    detail::TlsRegistryGuard g;
     for (ThreadCache* c = cache_list_; c != nullptr; c = c->next_in_arena) {
       c->count = 0;
     }
-    unlock_reg();
   }
 
   // Pop a free block index from shard s's Treiber stack. kNull if that shard is empty.
@@ -526,8 +553,11 @@ class MemoryArena {
   std::uint32_t shard_mask_ = 0;  // num_shards_ - 1 (pow2), so home = seq & shard_mask_
   std::uint32_t per_ = 0;  // blocks per shard (last shard takes the remainder)
   bool valid_ = false;  // set true once the ctor fully built the arena (else OOM'd)
-  ThreadCache* cache_list_ = nullptr;  // registry of live TLS caches (under reg_lock_)
-  mutable std::atomic_flag reg_lock_ = ATOMIC_FLAG_INIT;
+  // Registry of this arena's live TLS caches; mutated only under the process-global
+  // detail::tls_registry_lock (attach / detach / reset / dtor). Read on the hot path
+  // is NOT via this list -- allocate/deallocate reach the node through the per-thread
+  // list and validate ownership with the node's atomic `arena`.
+  ThreadCache* cache_list_ = nullptr;
 };
 
 // Bump (region) allocator over ONE MemoryArena block (clay's Arena). Borrows a

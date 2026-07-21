@@ -5,7 +5,7 @@
 ## clay 现状：好地基 + 5 个确认 bug
 
 - **`Allocator` 注入 vtable**（`allocator.h`）：clay 原是**单**函数指针 `realloc_func(inst,ptr,old,new)`(挤 alloc/free/realloc 进一个、丢弃 alignment)。**HYLE 已纠正**:拆成 3 个 C 函数指针 `{alloc,free,realloc}`(各自寄存器友好、带 alignment、无派发分支,仍 C-ABI 跨 DLL 稳),且**降为 opt-in**——默认走编译期 `SystemAllocator`(内联 mimalloc,零接缝税),运行时注入只给真要多态的场景(arena/mock/跨 DLL)。
-- **`MemoryArena` 分片无锁定长块池 + TLS freelist**（`memory_arena.h`）：tagged-pointer CAS 防 ABA，lock-free、ABA 安全。clay 原版是**单** `head_`——8 线程 CAS 同一 cache line,O(threads) 串行化,实测慢 mimalloc 278x。**两层组成（不同场景不同路径）**:① **TLS freelist 缓存**（tbb/mimalloc 形，同线程 free→alloc 纯指针栈、无原子）= 同线程 churn 热路径；② **分片 Treiber 共享后备**（片数=核数向上取 2 幂≤128，free 按地址路由属主片）= TLS miss/溢出/跨线程回流。旧“永远 CAS”在 2026-07-20 对 tbb 三平台 sign 输 0.72–0.91x 后已纠；加 TLS 后同 workload **三平台 sign 赢 tbb ~1.4–1.7x+**（Win ~1.74 / Lin 1.41 / M4 1.62，`bench-stat -n15`；红队后 owner-only 口径）。对 pmr sync 仍 50–100x+。**选型**：单线程/per-thread 无界 → `GrowablePool`；真共享有界定长 → `MemoryArena`（现含 TLS）；通用 malloc → `SystemAllocator`/mi。
+- **`MemoryArena` 分片无锁定长块池 + TLS freelist**（`memory_arena.h`）：tagged-pointer CAS 防 ABA，lock-free、ABA 安全。clay 原版是**单** `head_`——8 线程 CAS 同一 cache line,O(threads) 串行化,实测慢 mimalloc 278x。**两层组成（不同场景不同路径）**:① **TLS freelist 缓存**（tbb/mimalloc 形，同线程 free→alloc 纯指针栈、无原子）= 同线程 churn 热路径；② **分片 Treiber 共享后备**（片数=核数向上取 2 幂≤128，free 按地址路由属主片）= TLS miss/溢出/跨线程回流。**性能定位（2026-07-21 审计更正，见 `docs/performance/benchmarks-mem.md` §2b）**：加 TLS 后**同线程 ping-pong**（深度 1，从不回落 shard）对 tbb sign 赢 ~1.4–1.7x——但那只测 **TLS 快路 vs tbb tcache**，非共享后备竞争，是被误当成共享池胜利的**虚高**。真正压到共享路径的 section D（工作集>TLS cap 的 BURST + 跨线程 handoff）：对**同契约** `pmr::synchronized_pool` **5–7x sign 稳赢**（Win/WSL 一致），但对 **oneTBB scalable 真输**（BURST 9.4x、跨线程 2.75x，Win 9/9）——根因 HYLE 逐块 CAS flush/refill vs tbb magazine 批量转移（优化方向已登记）。**选型**：单线程/per-thread 无界 → `GrowablePool`；真共享有界定长、对手是 std 池 → `MemoryArena`（现含 TLS，稳赢 pmr）；要极致 MT 通用 malloc → mi/tbb。
 - **无隐藏全局堆**:分配显式可控。默认走编译期 `SystemAllocator`(零开销);需要自定义分配器(arena/mock/跨 DLL)时**显式 opt-in 注入** `Allocator` 句柄。注入是**能力,不是强制默认**——曾把"注入贯穿"当铁律,导致每个容器都吃运行时间接调用税(实测 8%),按性能优先纠正:默认零开销,注入按需。
 - **5 个 bug**（资产负债表已定位，重写依据）：
   1. `allocate(size, alignment)` **静默丢弃 alignment**（`allocator.h:37-40`）——**对 simd/ 是硬伤**（AVX512 要 64B 对齐），必修。
@@ -94,12 +94,12 @@ device/pinned/unified 内存归 compute/ 的 stream-bound buffer,**不经 mem/ �
 | **pinned（page-locked）** | `cudaHostAlloc` / `cudaHostRegister` | host↔device DMA 快得多；不锁页 GPU 拷贝走可分页内存慢 |
 | **cache-line 对齐 + 防伪共享** | `alignas(64)`，per-core 结构按 cache-line padding | 并发结构（run-queue、计数器）伪共享杀性能 |
 | **64B 对齐契约** | `allocate` 真正传递 alignment 到 backing | simd/ AVX512 load/store 要求；修 clay 的 alignment 丢弃 bug |
-| **跨核 free + 同线程 TLS 快路** | free 默认进 **本线程 TLS freelist**（owner-only 零原子）；溢出/`publish_thread_cache`/线程退出/`~MemoryArena` 按地址 **flush 回属主片 CAS**。注册表 + `atomic_flag` 管 attach/detach；池析构 detach；TLS 链表回收 `arena==nullptr` 僵尸节点 | 同线程 churn 赢 tbb；**软容量**（他线程 TLS 内 free 不可见）是有意 trade-off |
+| **跨核 free + 同线程 TLS 快路** | free 默认进 **本线程 TLS freelist**（owner-only 零原子）；溢出/`publish_thread_cache`/线程退出/`~MemoryArena` 按地址 **flush 回属主片 CAS**。**进程级全局锁**（`detail::tls_registry_lock`，`memory_arena.cc` 单一定义，跨 DLL 唯一）管 attach/detach/reset/dtor；节点 `arena` 字段 `atomic`（热路 acquire-load 匹配，冷路 release-store 置空）；节点由 **`system_allocator()`** 分配（与注入 backing 解耦，backing 先死不 UAF）；TLS 链表回收 `arena==nullptr` 僵尸节点 | 同线程 churn 赢 tbb；**软容量**（他线程 TLS 内 free 不可见）是有意 trade-off |
 
 > **TLS freelist（2026-07-20 落地 + 红队）**：always-CAS 对 tbb 三平台 sign 输 0.72–0.91x 的根因是同线程仍付 `lock` CAS。现实现与红队结论：
 > 1. **热路径**：TLS push/pop **零原子**（owner-only）→ Win 对 tbb **~1.7–2.0x sign 赢**。
 > 2. **冷路径**：TLS 空 → 分片 Treiber；满 → flush 半量；`publish_thread_cache()` 显式回流；exit/dtor flush。
-> 3. **生命周期**：thread 拥有节点；arena 注册表；dtor detach 防 UAF；**僵尸回收**（长寿命线程 churn 多 arena 不泄漏 ThreadCache）。
+> 3. **生命周期（2026-07-21 审计加固，ASan+TSan 坐实）**：节点由进程稳定的 `system_allocator()` 分配/释放（**不**走 arena 注入 backing——节点可比 arena/backing 长寿，尤其 C ABI wrapper 析构即释放 backing，否则线程退出 flush 时 UAF）；attach/detach/reset/dtor 全在**进程级全局锁**下（原 per-arena `atomic_flag` 随 arena 先死会让线程退出方锁/读已释放对象——dtor vs 线程退出 data race，已改）；节点 `arena` 字段 `atomic`，冷路 release-store 置空、热路+僵尸回收 acquire-load 匹配；dtor detach + **僵尸回收**（长寿命线程 churn 多 arena 不泄漏 ThreadCache）。回归测试 `InjectedBackingFreedBeforeWorkerExitNoUaf`（注入 backing 先死 + 线程后退出）。
 > 4. **软容量（R1，保留）**：他线程 TLS 内 free 对 `allocate` 不可见，窗口 ≤32×活线程。`publish_thread_cache` / join / overflow 恢复硬容量。红队试过 **steal + 热路径锁** → 硬容量回来但 vs tbb 退成 **TIE**（~0.98x），拒绝。与 tbb/jemalloc tcache 同类。
 > 5. **组成选型**：`GrowablePool` = ST/per-thread 无界；`MemoryArena` = MT 共享有界 + TLS（接受软窗口或显式 publish）；通用 → `SystemAllocator`。
 

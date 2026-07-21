@@ -53,6 +53,32 @@
 
 ✅ **三平台对 tbb 均 sign 赢**（owner-only TLS，零原子）。旧 always-CAS 0.72–0.91 **作废**。红队：热路径加锁做 remote-steal → Win 退成 **~0.98 TIE**，拒绝。
 
+> ⚠️ **审计更正（2026-07-21）**：上面这组"8 线程 shared"数字的 workload（紧 `allocate→deallocate`）是**深度 1 的 TLS ping-pong**——首次 shard pop 后每 op 都命中本线程 TLS freelist，**从不回落共享 shard**。它只测 TLS 快路常数，**不测**它宣称的共享后备协调成本。故"赢 tbb 1.74x"= TLS 快路 vs tbb 的 tcache，不是共享 slab 竞争胜利。真正压到共享路径的数据见下 §2b（section D）。此外本机 Windows/WSL 当前**未构建 oneTBB**（缺 `tbbmalloc.dll`），上表 tbb 列无法在本机复现，留待重建 TBB 后重测。
+
+### 2b. 共享后备路径实测（section D，2026-07-21 审计新增）
+
+section C row(2) 的 ping-pong 测不到 lock-free 后备——MemoryArena 的存在理由。section D 两个 workload 真正驱动 TLS↔shard 机制，对同契约 SOTA（`pmr::synchronized_pool`，唯一同契约的"共享有界池"）：
+
+- **D1 BURST**（每轮持有 64 块 > `kTlsCacheCap`=32 再全放 → 强制 TLS overflow-flush + shard refill，即真跑 Treiber push/pop）
+- **D2 CROSS-THREAD handoff**（线程 t 分配、屏障轮转、线程 t 释放邻居 t+1 的批 → free 无法命中本线程 TLS，必须按地址路由回属主 shard 的 Treiber stack；即设计的"fiber 栈 core A 分配 / core B 释放"）
+
+`bench-stat -n9` + 配对符号检验（section 过滤 `HYLE_BENCH_SECTIONS=D`，Win 与 WSL 错开跑）：
+
+| workload | 对手 | Win MSVC | WSL GCC14 | 判定 |
+|---|---|---:|---:|---|
+| **D1 BURST** | `pmr::synchronized_pool`（同契约 std 池） | **5.82x** | **4.40x** | **WIN sign**（9/9，p=3.9e-3）|
+| **D2 CROSS-THREAD** | `pmr::synchronized_pool` | **7.18x** | **7.65x** | **WIN sign**（9/9，p=3.9e-3）|
+| **D1 BURST** | **oneTBB scalable** | **0.106x** | （本轮 WSL 未建 TBB）| **LOSE sign**（0/9）— TBB **9.4x 更快** |
+| **D2 CROSS-THREAD** | **oneTBB scalable** | **0.363x** | — | **LOSE sign**（0/9）— TBB **2.75x 更快** |
+| **D2 CROSS-THREAD** | mimalloc（异契约：延迟原子 push） | 0.36x（≈tbb）| 1.008x TIE | 平台翻转，见下 |
+
+**诚实结论（更正旧账）**：
+1. 对**同契约** std 共享池（`pmr::synchronized_pool`）：真共享路径下 **5–7x sign 稳赢**（两平台一致）。这是"共享有界定长池对 std 同类"的可靠 SOTA 优势。
+2. 对 **oneTBB scalable**：**真输**——BURST 输 9.4x、CROSS-THREAD 输 2.75x（Win 9/9）。**旧文档"赢 tbb 1.74x"是 ping-pong 假象**（那测的是 TLS 快路 vs tbb tcache，非共享后备竞争）；真压共享路径 tbb 完胜。
+3. 平台翻转：mimalloc/tbb 的跨线程 free 在 **Win 比 HYLE 快 ~2.7x**，但在 **WSL 与 HYLE 打平**（glibc/Linux 下 mi remote-free 路径更贵）。单平台数不能当无条件结论。
+
+**根因（对 tbb 真输）**：D1 工作集 64 > `kTlsCacheCap`(32)，每轮强制半量 flush 到 shard + refill —— HYLE 是**逐块 CAS**（`flush_cache_half`/`push_shard` 一块一次 `lock cmpxchg`），而 tbb 的 magazine 是**批量**转移（一次 CAS 搬一整个 magazine）。这是已登记的优化方向（magazine 批量 refill/flush，摊销 ~1/K CAS），非本次修复范围。⚠️ Mac M4 待补。
+
 ## 3. MemoryArena vs tbb：输因、修法、红队
 
 | 项 | always-CAS | TLS owner-only（现） | TLS+锁+steal（红队试，弃） |

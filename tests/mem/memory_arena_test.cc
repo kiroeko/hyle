@@ -304,6 +304,73 @@ TEST(MemoryArena, ManyArenaLifetimesDoNotBreakTls) {
   EXPECT_EQ(n, 4u);
 }
 
+// A wrapping Allocator whose backing state lives in a heap block the TEST frees
+// on demand -- mirrors the C-ABI wrapper (hyle_memory_arena_o stores the backing
+// by value and frees it in destroy()). If a ThreadCache node ever freed itself
+// through the arena's injected allocator, it would touch this freed state. A
+// process-stable node allocator must make that impossible.
+struct BackingBox {
+  std::atomic<int> live_allocs{0};
+  bool freed = false;
+};
+namespace {
+void* box_alloc(void* s, std::size_t n, std::size_t a) noexcept {
+  auto* box = static_cast<BackingBox*>(s);
+  box->live_allocs.fetch_add(1, std::memory_order_relaxed);
+  return system_allocator().allocate(n, a);
+}
+void box_free(void* s, void* p, std::size_t n, std::size_t a) noexcept {
+  auto* box = static_cast<BackingBox*>(s);
+  box->live_allocs.fetch_sub(1, std::memory_order_relaxed);
+  system_allocator().deallocate(p, n, a);
+}
+void* box_realloc(void* s, void* p, std::size_t o, std::size_t n,
+                  std::size_t a) noexcept {
+  (void)s;
+  return system_allocator().reallocate(p, o, n, a);
+}
+}  // namespace
+
+// Regression (审计缺陷 1): a MemoryArena built on an INJECTED backing whose state
+// is freed at arena destruction. A worker builds a TLS node bound to the arena,
+// the arena (and its backing box) are destroyed while the worker is still alive,
+// then the worker exits and runs its thread_local TLS-cache dtor. The node must
+// NOT free itself through the (now-dead) injected backing. Under ASan this is a
+// deterministic UAF if the node lifetime is coupled to the injected allocator.
+TEST(MemoryArena, InjectedBackingFreedBeforeWorkerExitNoUaf) {
+  struct Ctx {
+    std::atomic<int> phase{0};
+  };
+  Ctx ctx;
+  // Backing box + arena live on the heap so we can destroy them mid-flight.
+  auto* box = new BackingBox();
+  hyle::mem::Allocator backing(&box_alloc, &box_free, &box_realloc, box);
+  auto* pool = new MemoryArena(backing, 64, 8);
+
+  struct Args { MemoryArena* pool; Ctx* ctx; };
+  Args a{pool, &ctx};
+  auto worker = hyle::platform::Thread::spawn(
+      [](void* p) {
+        auto* x = static_cast<Args*>(p);
+        void* blk = x->pool->allocate();  // builds this thread's TLS node
+        x->pool->deallocate(blk);         // parks the index in the TLS node
+        x->ctx->phase.store(1, std::memory_order_release);  // "node built"
+        while (x->ctx->phase.load(std::memory_order_acquire) < 2)
+          hyle::platform::this_thread::yield();
+        // return -> thread_local TLS-cache dtor runs AFTER the arena is gone.
+      },
+      &a);
+  ASSERT_TRUE(worker.has_value());
+
+  while (ctx.phase.load(std::memory_order_acquire) < 1)
+    hyle::platform::this_thread::yield();
+  // Tear down the arena AND its injected backing while the worker is still alive.
+  delete pool;
+  delete box;  // the injected backing state is now freed
+  ctx.phase.store(2, std::memory_order_release);  // let the worker exit
+  std::move(*worker).join();  // node's TLS dtor must not touch the freed backing
+}
+
 // ---- Arena (bump region over one pool block) --------------------------------
 using hyle::mem::Arena;
 
