@@ -304,6 +304,59 @@ TEST(MemoryArena, ManyArenaLifetimesDoNotBreakTls) {
   EXPECT_EQ(n, 4u);
 }
 
+// Batched (magazine) shard refill/flush correctness gate (WSL TSan). Each thread
+// holds a working set FAR past kTlsCacheCap (100 > 32), so every round drives the
+// batch overflow-flush (push_shard_batch) on the way up and the batch refill
+// (pop_shard_batch) on the way down -- the paths the tight ping-pong never touches.
+// Marker-verify catches any block handed to two threads (a batch pop/push that
+// corrupts the next_[] chain); the final full drain catches any leaked or double-
+// counted block (a batch transfer that lost or duplicated an index).
+TEST(MemoryArena, ConcurrentBatchedRefillFlushNoLossNoOverlap) {
+  constexpr int kThreads = 8;
+  constexpr int kHold = 100;  // >> kTlsCacheCap (32): forces batch flush + refill
+  constexpr int kRounds = 4000;
+  constexpr std::uint32_t kBlocks = kThreads * (kHold + 8);
+  MemoryArena pool(system_allocator(), 64, kBlocks);
+  std::atomic<bool> corrupt{false};
+
+  struct Args { MemoryArena* pool; int tid; std::atomic<bool>* corrupt; };
+  std::vector<Args> args(kThreads);
+  std::vector<hyle::platform::Thread> threads;
+  for (int t = 0; t < kThreads; ++t) {
+    args[t] = Args{&pool, t, &corrupt};
+    auto r = hyle::platform::Thread::spawn(
+        [](void* a) {
+          auto* x = static_cast<Args*>(a);
+          const unsigned char mark = static_cast<unsigned char>(0x40 + x->tid);
+          std::vector<void*> held(kHold);
+          for (int r2 = 0; r2 < kRounds; ++r2) {
+            for (int i = 0; i < kHold; ++i) {
+              void* p = x->pool->allocate();
+              held[i] = p;
+              if (p != nullptr) std::memset(p, mark, 64);
+            }
+            for (int i = 0; i < kHold; ++i) {
+              if (held[i] == nullptr) continue;
+              auto* b = static_cast<unsigned char*>(held[i]);
+              for (int k = 0; k < 64; ++k)
+                if (b[k] != mark) { x->corrupt->store(true, std::memory_order_relaxed); break; }
+              x->pool->deallocate(held[i]);
+            }
+          }
+        },
+        &args[t]);
+    ASSERT_TRUE(r.has_value());
+    threads.push_back(std::move(*r));
+  }
+  for (auto& th : threads) th.join();
+
+  EXPECT_FALSE(corrupt.load()) << "two threads held the same block (batch chain corruption)";
+  // Every block reclaimable exactly once -> batch pop/push preserved the free list.
+  std::size_t drained = 0;
+  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++drained;
+  EXPECT_EQ(drained, static_cast<std::size_t>(kBlocks)) << "leak or double-count in batch transfer";
+}
+
 // A wrapping Allocator whose backing state lives in a heap block the TEST frees
 // on demand -- mirrors the C-ABI wrapper (hyle_memory_arena_o stores the backing
 // by value and frees it in destroy()). If a ThreadCache node ever freed itself

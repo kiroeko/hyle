@@ -62,22 +62,34 @@ section C row(2) 的 ping-pong 测不到 lock-free 后备——MemoryArena 的�
 - **D1 BURST**（每轮持有 64 块 > `kTlsCacheCap`=32 再全放 → 强制 TLS overflow-flush + shard refill，即真跑 Treiber push/pop）
 - **D2 CROSS-THREAD handoff**（线程 t 分配、屏障轮转、线程 t 释放邻居 t+1 的批 → free 无法命中本线程 TLS，必须按地址路由回属主 shard 的 Treiber stack；即设计的"fiber 栈 core A 分配 / core B 释放"）
 
-`bench-stat -n9` + 配对符号检验（section 过滤 `HYLE_BENCH_SECTIONS=D`，Win 与 WSL 错开跑）：
+`bench-stat -n9` + 配对符号检验（section 过滤 `HYLE_BENCH_SECTIONS=D`，Win 与 WSL 错开跑）。**下表是 magazine 批量转移落地后（`kRefillBatch=16`，一次 CAS 搬 K 块）的数字**：
 
 | workload | 对手 | Win MSVC | WSL GCC14 | 判定 |
 |---|---|---:|---:|---|
-| **D1 BURST** | `pmr::synchronized_pool`（同契约 std 池） | **5.82x** | **4.40x** | **WIN sign**（9/9，p=3.9e-3）|
-| **D2 CROSS-THREAD** | `pmr::synchronized_pool` | **7.18x** | **7.65x** | **WIN sign**（9/9，p=3.9e-3）|
-| **D1 BURST** | **oneTBB scalable** | **0.106x** | （本轮 WSL 未建 TBB）| **LOSE sign**（0/9）— TBB **9.4x 更快** |
-| **D2 CROSS-THREAD** | **oneTBB scalable** | **0.363x** | — | **LOSE sign**（0/9）— TBB **2.75x 更快** |
-| **D2 CROSS-THREAD** | mimalloc（异契约：延迟原子 push） | 0.36x（≈tbb）| 1.008x TIE | 平台翻转，见下 |
+| **D1 BURST** | `pmr::synchronized_pool`（同契约 std 池） | **27.0x** | **24.5x** | **WIN sign**（9/9，p=3.9e-3）|
+| **D2 CROSS-THREAD** | `pmr::synchronized_pool` | **16.2x** | **7.9x** | **WIN sign**（9/9，p=3.9e-3）|
+| **D1 BURST** | **oneTBB scalable** | **0.44x** | （本轮 WSL 未建 TBB）| **LOSE sign**（0/9）— TBB **2.3x 更快** |
+| **D2 CROSS-THREAD** | **oneTBB scalable** | **0.90x** | — | **TIE sign**（1/9，p=3.9e-2）|
+| **D2 CROSS-THREAD** | mimalloc（异契约：延迟原子 push） | ~1.0（≈tbb）| 1.008x TIE | 两平台打平 |
 
-**诚实结论（更正旧账）**：
-1. 对**同契约** std 共享池（`pmr::synchronized_pool`）：真共享路径下 **5–7x sign 稳赢**（两平台一致）。这是"共享有界定长池对 std 同类"的可靠 SOTA 优势。
-2. 对 **oneTBB scalable**：**真输**——BURST 输 9.4x、CROSS-THREAD 输 2.75x（Win 9/9）。**旧文档"赢 tbb 1.74x"是 ping-pong 假象**（那测的是 TLS 快路 vs tbb tcache，非共享后备竞争）；真压共享路径 tbb 完胜。
-3. 平台翻转：mimalloc/tbb 的跨线程 free 在 **Win 比 HYLE 快 ~2.7x**，但在 **WSL 与 HYLE 打平**（glibc/Linux 下 mi remote-free 路径更贵）。单平台数不能当无条件结论。
+绝对值（magazine 后）：D1 MemoryArena Win ~5.0ns / WSL ~4.8ns（改前 ~21ns，**~4.4x 加速**）；D2 Win ~10ns（改前 ~22ns）/ WSL ~52ns。
 
-**根因（对 tbb 真输）**：D1 工作集 64 > `kTlsCacheCap`(32)，每轮强制半量 flush 到 shard + refill —— HYLE 是**逐块 CAS**（`flush_cache_half`/`push_shard` 一块一次 `lock cmpxchg`），而 tbb 的 magazine 是**批量**转移（一次 CAS 搬一整个 magazine）。这是已登记的优化方向（magazine 批量 refill/flush，摊销 ~1/K CAS），非本次修复范围。⚠️ Mac M4 待补。
+**magazine 前后对比（Win MSVC，同一 bench）**：
+
+| workload / 对手 | 逐块 CAS（改前） | magazine（改后） |
+|---|---:|---:|
+| D1 BURST 绝对 | 21.3 ns | **5.0 ns** |
+| D1 BURST vs oneTBB | 0.106x（输 9.4x） | **0.44x（输 2.3x）** |
+| D1 BURST vs pmr | 5.8x 赢 | **27x 赢** |
+| D2 CROSS vs oneTBB | 0.363x（输 2.75x） | **0.90x（TIE）** |
+| D2 CROSS vs pmr | 7.2x 赢 | **16x 赢** |
+
+**诚实结论**：
+1. 对**同契约** std 共享池（`pmr::synchronized_pool`）：**16–27x sign 稳赢**（两平台一致）。共享有界定长池对 std 同类的可靠 SOTA 优势。
+2. 对 **oneTBB scalable**：**CROSS-THREAD 打平**（0.90x TIE，从改前输 2.75x 追平）；**BURST 仍输 2.3x**（从改前输 9.4x 大幅缩小）。BURST 残差是契约差价：tbb/mi 的 per-thread heap 同线程 free 是**非原子本地链**，HYLE 是真共享 slab，每 `kRefillBatch`=16 块仍付 1 次 CAS refill/flush。同契约下这是合理位置。
+3. 平台翻转（历史）：改前 mi/tbb 跨线程 free 在 Win 比 HYLE 快 ~2.7x、WSL 打平；magazine 后 Win 也追平。单平台数不能当无条件结论。
+
+**旧账更正**：旧文档"赢 tbb 1.74x"是 **ping-pong 假象**（测 TLS 快路 vs tbb tcache，非共享后备竞争）。真压共享路径：magazine 前对 tbb 完输，magazine 后 CROSS-THREAD 追平、BURST 缩到 2.3x。⚠️ Mac M4 待补。
 
 ## 3. MemoryArena vs tbb：输因、修法、红队
 

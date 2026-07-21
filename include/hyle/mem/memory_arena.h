@@ -44,7 +44,11 @@ struct TlsRegistryGuard {
 //     the steady-state hot path that closes the always-CAS tax vs oneTBB.
 //  2. Sharded Treiber stacks (shared backend): TLS miss / overflow /
 //     publish_thread_cache() / thread-exit / dtor flush land here. Free is
-//     address-routed to the owning shard (ABA-sound).
+//     address-routed to the owning shard (ABA-sound). Transfers between TLS and
+//     shards are BATCHED (magazine model, kRefillBatch): a miss refills up to K
+//     indices in one CAS (bounded-walk pop), an overflow flushes a per-shard run
+//     in one CAS (chain-prepend push) -- so a working set larger than the TLS cap
+//     pays ~1/K CAS per block instead of one each (the tbb/mimalloc amortization).
 //
 // Soft capacity (red-team R1, intentional — same class as tbb/jemalloc tcache):
 // free blocks parked in another live thread's TLS are not visible to allocate()
@@ -177,14 +181,29 @@ class MemoryArena {
   // call their publish_thread_cache or join them to restore hard capacity).
   void* allocate() noexcept {
     if (!valid_) return nullptr;  // OOM'd arena has no slab/shards to hand out
+    const std::uint32_t home = tls_thread_seq() & shard_mask_;  // num_shards_ is pow2
     if (ThreadCache* tc = tls_cache(/*create=*/true)) {
-      if (tc->count > 0) {
+      if (tc->count > 0) {  // TLS hit: owner-only pop, zero atomics (steady state)
         const std::uint32_t idx = tc->idxs[--tc->count];
         return slab_ + static_cast<std::size_t>(idx) * stride_;
       }
+      // TLS miss: refill a BATCH from the shared shards in ONE CAS (magazine), keep the
+      // surplus warm in TLS, hand back one. This amortization closes the per-block-CAS
+      // tax vs tbb once the working set exceeds kTlsCacheCap. tc->count is 0 here, so
+      // the batch lands at tc->idxs[0..got).
+      std::uint32_t got = pop_shard_batch(home, kRefillBatch, tc->idxs);
+      if (got == 0) {
+        for (std::uint32_t k = 1; k < num_shards_; ++k) {
+          got = pop_shard_batch((home + k) & shard_mask_, kRefillBatch, tc->idxs);
+          if (got != 0) break;
+        }
+        if (got == 0) return nullptr;  // every shard empty
+      }
+      tc->count = got;
+      const std::uint32_t idx = tc->idxs[--tc->count];
+      return slab_ + static_cast<std::size_t>(idx) * stride_;
     }
-    // TLS miss: pop from shared shards (Treiber CAS path).
-    const std::uint32_t home = tls_thread_seq() & shard_mask_;  // num_shards_ is pow2
+    // No TLS cache (OOM'd node): single-block pop, returned directly (no surplus to park).
     std::uint32_t idx = pop_shard(home);
     if (idx == kNull) {
       for (std::uint32_t k = 1; k < num_shards_; ++k) {
@@ -299,6 +318,13 @@ class MemoryArena {
   // live thread. 32 is enough to absorb same-thread churn without thrashing the
   // shared CAS path; overflow flushes half so the cache stays warm.
   static constexpr std::uint32_t kTlsCacheCap = 32;
+  // Batch size for the shard<->TLS transfer (magazine model). A TLS miss refills up
+  // to this many indices in ONE CAS (bounded-walk pop), and an overflow flush returns
+  // a run in ONE CAS per shard bucket (chain-prepend push) -- so a working set larger
+  // than kTlsCacheCap pays ~1/kRefillBatch CAS per block instead of one CAS each. This
+  // is the tbb/mimalloc magazine amortization; kept below kTlsCacheCap so a refill
+  // still leaves headroom and a half-flush moves a meaningful run.
+  static constexpr std::uint32_t kRefillBatch = 16;
   // Shard the free list into independent Treiber stacks, one per cache-line-isolated head.
   // clay inherited a SINGLE head -> every thread CAS'd the same cache line, serializing
   // (O(threads), measured 278x slower than mimalloc's per-thread heaps under 8-way churn).
@@ -439,19 +465,43 @@ class MemoryArena {
     return fresh;
   }
 
-  void flush_cache_to_shards(ThreadCache* tc) noexcept {
-    while (tc->count > 0) {
-      const std::uint32_t idx = tc->idxs[--tc->count];
-      push_shard(shard_of(idx), idx);
+  // Flush tc->idxs[base .. base+n) back to the shards, batched: bucket the run by
+  // owning shard and push each bucket in ONE CAS (push_shard_batch). Same-thread churn
+  // is single-shard (a thread frees its own home-shard blocks) -> one bucket, one CAS;
+  // cross-thread handoff (foreign blocks) fans out to a few buckets. `scratch` holds
+  // one bucket's indices (<= n <= kTlsCacheCap). Leaves tc->count = base.
+  void flush_range_batched(ThreadCache* tc, std::uint32_t base,
+                           std::uint32_t n) noexcept {
+    std::uint32_t scratch[kTlsCacheCap];
+    // Selection by shard: for each not-yet-flushed index, gather all indices sharing
+    // its shard into scratch, batch-push them, and mark them consumed (kNull). O(n)
+    // per distinct shard; distinct shards are few (1 for same-thread, a handful else).
+    for (std::uint32_t i = 0; i < n; ++i) {
+      const std::uint32_t idx = tc->idxs[base + i];
+      if (idx == kNull) continue;  // already flushed as part of an earlier bucket
+      const std::uint32_t s = shard_of(idx);
+      std::uint32_t m = 0;
+      scratch[m++] = idx;
+      tc->idxs[base + i] = kNull;
+      for (std::uint32_t j = i + 1; j < n; ++j) {
+        const std::uint32_t o = tc->idxs[base + j];
+        if (o != kNull && shard_of(o) == s) {
+          scratch[m++] = o;
+          tc->idxs[base + j] = kNull;
+        }
+      }
+      push_shard_batch(s, scratch, m);
     }
+    tc->count = base;
+  }
+
+  void flush_cache_to_shards(ThreadCache* tc) noexcept {
+    flush_range_batched(tc, 0, tc->count);
   }
 
   void flush_cache_half(ThreadCache* tc) noexcept {
-    const std::uint32_t n = tc->count / 2;
-    for (std::uint32_t i = 0; i < n; ++i) {
-      const std::uint32_t idx = tc->idxs[--tc->count];
-      push_shard(shard_of(idx), idx);
-    }
+    const std::uint32_t keep = tc->count - tc->count / 2;  // keep the warm lower half
+    flush_range_batched(tc, keep, tc->count - keep);
   }
 
   // Called from the thread_local dtor with the process-global registry lock ALREADY
@@ -520,6 +570,69 @@ class MemoryArena {
     for (;;) {
       next_[idx].store(idx_of(old), std::memory_order_relaxed);
       std::uint64_t desired = pack(idx, ver_of(old) + 1);
+      if (heads_[s].h.compare_exchange_weak(old, desired, std::memory_order_acq_rel,
+                                            std::memory_order_acquire)) {
+        return;
+      }
+    }
+  }
+
+  // Pop up to `want` indices from shard s in ONE CAS (magazine refill). Writes the
+  // taken indices into out[] and returns the count (0 if the shard was empty). The
+  // walk reads next_[] of nodes STILL on the shard, but nothing commits until the CAS
+  // gates on the full packed `old` (idx AND version): any concurrent pop/push on this
+  // shard bumps the version (see pop_shard/push_shard/push_shard_batch), so a CAS that
+  // still sees `old` proves the top-K chain was untouched since the load -> the walked
+  // `new_top` is valid. Otherwise retry. ABA is the same 32-bit version guard the
+  // single-block pop already relies on. O(want) walk + 1 CAS.
+  std::uint32_t pop_shard_batch(std::uint32_t s, std::uint32_t want,
+                                std::uint32_t* out) noexcept {
+    std::uint64_t old = heads_[s].h.load(std::memory_order_acquire);
+    for (;;) {
+      std::uint32_t first = idx_of(old);
+      if (first == kNull) return 0;  // shard empty
+      // Walk up to `want` nodes; `last` is the deepest taken, `new_top` its successor.
+      std::uint32_t n = 1;
+      std::uint32_t last = first;
+      std::uint32_t nxt = next_[last].load(std::memory_order_relaxed);
+      while (n < want && nxt != kNull) {
+        last = nxt;
+        nxt = next_[last].load(std::memory_order_relaxed);
+        ++n;
+      }
+      std::uint64_t desired = pack(nxt, ver_of(old) + 1);  // nxt == new top (or kNull)
+      if (heads_[s].h.compare_exchange_weak(old, desired, std::memory_order_acq_rel,
+                                            std::memory_order_acquire)) {
+        // Won the chain [first .. last]; materialize its indices for the caller.
+        std::uint32_t cur = first;
+        for (std::uint32_t i = 0; i < n; ++i) {
+          out[i] = cur;
+          cur = next_[cur].load(std::memory_order_relaxed);
+        }
+        return n;
+      }
+      // CAS failed -> `old` reloaded; retry from the new head.
+    }
+  }
+
+  // Push a run of `n` indices (all owned by shard s) in ONE CAS (magazine flush).
+  // Links them into a private chain in next_[] (idxs[0] becomes the deepest, idxs[n-1]
+  // the new head), then CAS-prepends the whole chain. The blocks are private (parked in
+  // TLS, on no shard) until the CAS lands, so linking is race-free; the version bump
+  // keeps it ABA-sound exactly like the single-block push. O(n) private links + 1 CAS.
+  void push_shard_batch(std::uint32_t s, const std::uint32_t* idxs,
+                        std::uint32_t n) noexcept {
+    if (n == 0) return;
+    // Chain idxs[n-1] -> idxs[n-2] -> ... -> idxs[0]; idxs[0] is the tail whose next
+    // must point at the existing shard head (set inside the CAS loop).
+    for (std::uint32_t i = n - 1; i > 0; --i)
+      next_[idxs[i]].store(idxs[i - 1], std::memory_order_relaxed);
+    const std::uint32_t chain_head = idxs[n - 1];
+    const std::uint32_t chain_tail = idxs[0];
+    std::uint64_t old = heads_[s].h.load(std::memory_order_acquire);
+    for (;;) {
+      next_[chain_tail].store(idx_of(old), std::memory_order_relaxed);
+      std::uint64_t desired = pack(chain_head, ver_of(old) + 1);
       if (heads_[s].h.compare_exchange_weak(old, desired, std::memory_order_acq_rel,
                                             std::memory_order_acquire)) {
         return;

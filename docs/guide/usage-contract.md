@@ -43,6 +43,17 @@ g_ctx.use();               // ✓ 在当前线程(B)重新解析
 
 **无 off-switch**：`HYLE_USE_MIMALLOC` 开关与 OS 分配器后备**已移除**（提交 92f8ec8）。理由:后备是陷阱——会让构建静默绕过 mimalloc 依赖问题、被误判为"无事"。mimalloc 是出厂分配器,出问题就正面查。
 
+### 2.1 `MemoryArena` 软容量：跨线程 free 的块不立即对其他线程可见
+
+**契约**：`MemoryArena`/`ObjectPool<T>` 的 `deallocate()` 默认把块放进**本线程的 TLS 缓存**（owner-only、零原子的快路，深度 `kTlsCacheCap`=32）。因此 **A 线程 free 的块，在 A 显式回流或退出之前，B 线程 `allocate()` 可能看不到它**——即使池"逻辑上"未耗尽。这是"软容量"：可分配容量在并发窗口内可能短暂低于真实空闲块数，窗口 ≤ `32 ×` 活跃线程数。
+
+**这不是 bug，是有意取舍**（与 tbb/jemalloc tcache 同类）：换来的是同线程 free→alloc 的零原子快路。恢复"硬容量"（每个已 free 块立即可被任意线程分配）的三种方式：
+- free 方调 `publish_thread_cache()` —— 显式把本线程 TLS 缓存回流到分片（handoff barrier）；
+- join 掉 free 线程 —— 线程退出时其 TLS 缓存自动回流；
+- 溢出自然回流 —— TLS 缓存满会批量 flush 一半到分片。
+
+**何时必须关心**：仅当①池容量**紧贴**工作集（几乎没有余量），**且**②跨线程借还（A 分配、B 分配同一池）。此时若不 publish，B 可能拿到 `nullptr` 而池并非真空。绝大多数池化场景（块数 ≫ 32×线程数，如 fiber 栈池）**无感**，无需任何额外调用。`reset()` 会清空所有已注册线程的 TLS 缓存后重建，但**要求调用方先静默并发**（与 `Arena::reset` 同规则：reset 时不得有其他线程在 alloc/free）。
+
 ## 3. SIMD：CPUID 探测器 TU 必须 LTO-free（分发型构建）
 
 **契约**：分发给未知 CPU 的二进制（非 `-march=native` 自用），**不要对 `simd/` 模块开全局 LTO/IPO**。
