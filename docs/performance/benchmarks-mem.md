@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。whole-request tail certificate 绑定 clean commit `4490c40`，FixedPool hot-path 实现为其父提交 `871d9e8`；request footprint 与 FixedPool fragmentation 分别绑定 clean commit `a90326f` / `f0485c2`。性能判定信任配对 **[sign]**。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。whole-request latency 与 request footprint 均重签 clean commit `02ec81e`，FixedPool hot-path 实现为其祖先提交 `871d9e8`；FixedPool fragmentation 绑定 `f0485c2`。性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -236,24 +236,24 @@ section G 与 section F 使用相同的 4096 次 mixed-size request，但每次�
 allocation 插时钟，也不是把 nanobench epoch 当用户延迟。每个样本内 HYLE/对照交替先后顺序，
 降低固定执行顺序与温漂偏差；正式证书至少 4096 samples、15 个独立进程，M4 延续 QoS 审计。
 
-2026-07-22 clean commit `4490c40` 正式证书如下。数字均为
+2026-07-22 最新 clean commit `02ec81e` 正式证书如下。数字均为
 `HYLE / reference` 的 p50/p95/p99，单位 **µs/request**；ratio 是逐进程配对
 `reference/HYLE` 的中位数，三项依次对应 p50/p95/p99：
 
 | 平台 / QoS | request shape | HYLE p50/p95/p99 | reference p50/p95/p99 | paired ratio | 判定 |
 |---|---|---:|---:|---:|---|
-| Win / MSVC 19.50 | external `FixedRegion` / PMR reconstruct | 4.900 / 4.900 / 7.000 | 8.200 / 8.300 / 11.900 | 1.673 / 1.694 / 1.694 | **WIN / WIN / WIN** |
-| Win / MSVC 19.50 | owned `Region` / PMR release | 6.800 / 6.800 / 9.100 | 8.300 / 8.400 / 11.700 | 1.221 / 1.235 / 1.316 | **WIN / WIN / WIN** |
-| Win / MSVC 19.50 | `FixedPool` / oneTBB fixed_pool | 31.800 / 36.600 / 60.800 | 37.300 / 41.600 / 66.500 | 1.171 / 1.121 / 1.103 | **WIN / WIN / WIN** |
-| Linux / Clang 20.1 CPU 2 | external `FixedRegion` / PMR reconstruct | 4.142 / 4.164 / 5.751 | 7.700 / 7.816 / 12.711 | 1.860 / 1.878 / 2.365 | **WIN / WIN / WIN** |
-| Linux / Clang 20.1 CPU 2 | owned `Region` / PMR release | 5.408 / 5.435 / 8.568 | 8.188 / 8.907 / 14.505 | 1.514 / 1.633 / 1.864 | **WIN / WIN / WIN** |
-| Linux / Clang 20.1 CPU 2 | `FixedPool` / oneTBB fixed_pool | 30.201 / 35.406 / 57.118 | 38.170 / 44.483 / 71.844 | 1.277 / 1.270 / 1.194 | **WIN / WIN / WIN** |
-| Apple M4 / interactive | external `FixedRegion` / PMR reconstruct | 3.666 / 3.708 / 3.750 | 6.375 / 6.459 / 6.541 | 1.739 / 1.742 / 1.733 | **WIN / WIN / WIN** |
-| Apple M4 / interactive | owned `Region` / PMR release | 5.667 / 5.791 / 5.833 | 9.959 / 10.084 / 10.167 | 1.757 / 1.741 / 1.750 | **WIN / WIN / WIN** |
-| Apple M4 / interactive | `FixedPool` / oneTBB fixed_pool | 31.250 / 31.666 / 33.917 | 38.042 / 38.916 / 41.375 | 1.219 / 1.228 / 1.222 | **WIN / WIN / WIN** |
-| Apple M4 / utility | external `FixedRegion` / PMR reconstruct | 3.666 / 3.708 / 3.750 | 6.375 / 6.458 / 6.500 | 1.739 / 1.742 / 1.733 | **WIN / WIN / WIN** |
-| Apple M4 / utility | owned `Region` / PMR release | 5.667 / 5.791 / 5.833 | 9.958 / 10.084 / 10.208 | 1.757 / 1.741 / 1.750 | **WIN / WIN / WIN** |
-| Apple M4 / utility | `FixedPool` / oneTBB fixed_pool | 31.167 / 31.583 / 35.625 | 38.167 / 39.041 / 42.917 | 1.224 / 1.236 / 1.207 | **WIN / WIN / WIN** |
+| Win / MSVC 19.50 | external `FixedRegion` / PMR reconstruct | 4.900 / 5.000 / 7.800 | 8.200 / 8.400 / 14.900 | 1.673 / 1.694 / 1.831 | **WIN / WIN / WIN** |
+| Win / MSVC 19.50 | owned `Region` / PMR release | 6.800 / 7.000 / 15.800 | 7.600 / 9.300 / 17.700 | 1.118 / 1.246 / 1.114 | **WIN / WIN / WIN** |
+| Win / MSVC 19.50 | `FixedPool` / oneTBB fixed_pool | 32.800 / 46.200 / 73.600 | 32.600 / 42.300 / 65.500 | 1.000 / 0.916 / 0.920 | **TIE / LOSE / LOSE** |
+| Linux / Clang 20.1 CPU 2 | external `FixedRegion` / PMR reconstruct | 4.110 / 4.138 / 10.516 | 7.637 / 7.771 / 19.013 | 1.858 / 1.879 / 1.988 | **WIN / WIN / WIN** |
+| Linux / Clang 20.1 CPU 2 | owned `Region` / PMR release | 5.372 / 5.591 / 11.677 | 8.131 / 9.040 / 18.661 | 1.514 / 1.629 / 1.807 | **WIN / WIN / WIN** |
+| Linux / Clang 20.1 CPU 2 | `FixedPool` / oneTBB fixed_pool | 29.575 / 41.755 / 65.950 | 37.956 / 51.263 / 78.461 | 1.284 / 1.230 / 1.141 | **WIN / WIN / WIN** |
+| Apple M4 / interactive | external `FixedRegion` / PMR reconstruct | 3.666 / 3.708 / 3.750 | 6.375 / 6.459 / 6.500 | 1.739 / 1.742 / 1.733 | **WIN / WIN / WIN** |
+| Apple M4 / interactive | owned `Region` / PMR release | 5.666 / 5.750 / 5.792 | 9.917 / 10.042 / 10.125 | 1.750 / 1.746 / 1.748 | **WIN / WIN / WIN** |
+| Apple M4 / interactive | `FixedPool` / oneTBB fixed_pool | 30.917 / 31.375 / 32.792 | 37.958 / 39.125 / 41.625 | 1.228 / 1.249 / 1.278 | **WIN / WIN / WIN** |
+| Apple M4 / utility | external `FixedRegion` / PMR reconstruct | 3.666 / 3.708 / 3.750 | 6.334 / 6.458 / 6.500 | 1.728 / 1.742 / 1.733 | **WIN / WIN / WIN** |
+| Apple M4 / utility | owned `Region` / PMR release | 5.667 / 5.750 / 5.833 | 9.917 / 10.041 / 10.125 | 1.750 / 1.746 / 1.741 | **WIN / WIN / WIN** |
+| Apple M4 / utility | `FixedPool` / oneTBB fixed_pool | 31.083 / 31.500 / 33.958 | 38.250 / 39.584 / 42.375 | 1.231 / 1.257 / 1.244 | **WIN / WIN / WIN** |
 
 原始逐进程 percentile：
 [Windows CSV](./mem-request-latency-win.csv)、
@@ -286,8 +286,10 @@ python scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench.exe \
 脚本保存每个 process/variant 的原始 percentile、HEAD 与 dirty 标记，并对每个 percentile 做
 paired reference/HYLE ratio 与 sign test。dirty run 只允许调试 harness，不进入正式表。
 pre-fix 诊断曾暴露 `FixedPool` 平台翻转；A/B 定位为编译器没有稳定展开 header-only
-allocation/free 的嵌套 bin hot path。完整 hot graph 强制内联后，上述 clean 证书三平台、两种
-M4 QoS 的 p50/p95/p99 已全部胜 oneTBB。
+allocation/free 的嵌套 bin hot path。完整 hot graph 强制内联后 Linux/M4 仍全部胜 oneTBB，
+但最新 Windows clean run 的 p50 为 TIE、p95/p99 为 LOSE；第二组独立 `n=15` 复核仍是
+p50 TIE、p95 LOSE，p99 在 TIE/LOSE 间波动。该差距不是本轮 Region 改动引入（FixedPool 产品
+代码未变），但旧证书的 Windows tail WIN 不再作为当前结论，登记为下一项性能工作。
 
 ## 9. Request footprint / fragmentation 证书
 
@@ -303,6 +305,12 @@ bench-local mimalloc vtable backing，排除不同 system heap 的影响。
 只再省约 2 MiB RSS，却把精确 reservation 推到 1.062。Windows 4 MiB 的 live RSS 约 136 MiB，
 PMR 约 135 MiB。因此产品默认上限改为 4 MiB；`--block-mib` 保留作诊断参数，正式证书只签
 当前默认。以上 dirty A/B 是设计依据，不是发布表。
+
+随后对 Linux 剩余 RSS 差距做 backing usable-size 分解：旧实现把 `max_block_size` 当 user payload，
+实际向 backing 请求 `4 MiB + Region header/alignment`，在当前 mimalloc 上因此跨入更大的 size
+class。commit `02ec81e` 把 ordinary block size 明确定义成包含内部元数据的 total backing-byte
+target；单个 user allocation 放不下时才突破。4 MiB target 现在真正请求 4 MiB，没有改变
+`clear()` retention、dedicated-large 释放或 hard `size_limit` 合同。
 
 证书把两个概念分开：
 
@@ -320,23 +328,24 @@ PMR 约 135 MiB。因此产品默认上限改为 4 MiB；`--block-mib` 保留作
 页和 allocator cache 污染第二个实现。脚本绑定 HEAD/dirty、compiler/platform、Linux CPU 与
 Apple QoS，并把每个 child 的原始字段写入本目录 CSV。
 
-2026-07-22 clean commit `a90326f` 正式证书如下。reservation ratio 和 retained 是 allocator
+2026-07-22 clean commit `02ec81e` 正式证书如下。reservation ratio 和 retained 是 allocator
 精确字节；RSS 列为相对该 child baseline 的中位数，单位 MiB：
 
 | 平台 / QoS | variant | reserved / payload | clear 后精确保留 | live RSS Δ | clear RSS Δ | full-release RSS Δ | full-release backing |
 |---|---|---:|---:|---:|---:|---:|---:|
-| Windows / MSVC 19.50 | HYLE Region | **1.031** | 107.940 | 129.949 | 105.203 | 0.039 | **0** |
-| Windows / MSVC 19.50 | PMR monotonic | 1.443 | **0** | **128.594** | **0.035** | **0.035** | **0** |
-| Linux / Clang 20.1 CPU 2 | HYLE Region | **1.031** | 107.940 | 152.047 | 120.922 | **0.047** | **0** |
-| Linux / Clang 20.1 CPU 2 | PMR monotonic | 1.302 | **0** | **144.094** | **0.094** | 0.094 | **0** |
-| Apple M4 / interactive | HYLE Region | **1.031** | 107.940 | 128.875 | 128.875 | 132.734 | **0** |
-| Apple M4 / interactive | PMR monotonic | 2.000 | **0** | **128.719** | **128.719** | **128.750** | **0** |
-| Apple M4 / utility | HYLE Region | **1.031** | 107.940 | 128.875 | 128.875 | 132.734 | **0** |
-| Apple M4 / utility | PMR monotonic | 2.000 | **0** | **128.719** | **128.719** | **128.750** | **0** |
+| Windows / MSVC 19.50 | HYLE Region | **1.031** | 107.938 | 129.109 | 104.363 | 0.035 | **0** |
+| Windows / MSVC 19.50 | PMR monotonic | 1.443 | **0** | **128.590** | **0.031** | **0.031** | **0** |
+| Linux / Clang 20.1 CPU 2 | HYLE Region | **1.031** | 107.938 | **138.047** | 106.672 | **0.047** | **0** |
+| Linux / Clang 20.1 CPU 2 | PMR monotonic | 1.302 | **0** | 144.094 | **0.094** | 0.094 | **0** |
+| Apple M4 / interactive | HYLE Region | **1.031** | 107.938 | **128.672** | 128.672 | 132.500 | **0** |
+| Apple M4 / interactive | PMR monotonic | 2.000 | **0** | 128.719 | **128.719** | **128.750** | **0** |
+| Apple M4 / utility | HYLE Region | **1.031** | 107.938 | **128.672** | 128.672 | 132.500 | **0** |
+| Apple M4 / utility | PMR monotonic | 2.000 | **0** | 128.719 | **128.719** | **128.750** | **0** |
 
 结论分三层：HYLE 的 allocator-visible live fragmentation 明确更低，且三套标准库实现都如此；
-Windows live RSS 只比 PMR 高约 1.1%，M4 高约 0.1%，但 Linux 仍高约 5.5%，所以不能写成 RSS
-全平台胜。`clear()` 后 HYLE 精确保留 107.94 MiB ordinary blocks 是跨 request 复用策略，PMR
+修正 size-class crossing 后，Linux live RSS 从比 PMR 高约 5.5% 变成低约 4.2%，M4 低约
+0.04%，Windows 仍高约 0.4%，因此写成“三平台同档、Linux 缺口已关闭”，不夸成 RSS 全平台胜。
+`clear()` 后 HYLE 精确保留 107.938 MiB ordinary blocks 是跨 request 复用策略，PMR
 `release()` 则归零，两者不是同一个 retention policy。最终两者 backing 都精确归零；Win/Linux
 RSS 回到 baseline 附近，Darwin 的 resident accounting 没有随 purge 同步下降，不能把该列误读
 成泄漏。interactive/utility 完全一致，也没有证据表明 M4 QoS 改变空间行为。

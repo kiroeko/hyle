@@ -225,22 +225,27 @@ AppleClang 21 非 death 156/156。
 
 Request latency harness 已落地 section G：每个样本计时整个 4096-operation request，两个实现
 交替先后；`mem-cert-stat.py` 跨进程聚合 percentile、paired ratio、commit/dirty 和 raw CSV。
-三平台正式 whole-request 证书已绑定 clean commit `4490c40`：Win/Linux 各 `n=15`，M4
-interactive/utility 各 `n=31`，4096 samples/process；FixedRegion、Region、FixedPool 的
-p50/p95/p99 全部胜对照。原始 CSV 统一在 `docs/performance`。
+最新 whole-request 证书绑定 clean commit `02ec81e`：Win/Linux 各 `n=15`，M4
+interactive/utility 各 `n=31`，4096 samples/process。FixedRegion、Region 三平台 p50/p95/p99
+全部胜对照；FixedPool 在 Linux/M4 全胜，但 Windows 为 p50 TIE、p95/p99 LOSE，独立 `n=15`
+复核仍为 p50 TIE、p95 LOSE，p99 在 TIE/LOSE 间波动，已登记为下一性能缺口。原始 CSV 统一在
+`docs/performance`。
 
 Request footprint harness 已接入 section H：HYLE/PMR 使用相同 bench-local mimalloc backing，
 按独立子进程交替执行，记录 payload、upstream reservation、clear retention、full release 与各阶段
-RSS。128 MiB 正式证书绑定 clean commit `a90326f`：Win/Linux 各 `n=15`，M4 interactive / utility
+RSS。128 MiB 最新正式证书绑定 clean commit `02ec81e`：Win/Linux 各 `n=15`，M4 interactive / utility
 各 `n=31`；所有 child 的 full-release backing 都归零，raw CSV 集中在 `docs/performance`。
 
 128 MiB dirty footprint A/B 还捕获了旧 `Region` 默认 1 MiB block 在 Linux 的 mimalloc
 page/segment 驻留放大；2/4/16 MiB 扫描后选择 4 MiB 默认，在大部分 RSS 收益与 retained tail
 slack 之间取拐点。C++ 默认、C draft 初始化宏与用户指南已同步；自定义上限合同不变。
 
-正式结果中 Region 的 exact reservation/payload 三平台均为 1.031，PMR 分别为
-1.443/1.302/2.000；但 Linux live RSS 仍比 PMR 高约 5.5%，已登记为剩余性能差距。Darwin RSS
-在 full release 后不随 purge 同步下降，只以 backing 精确归零证明释放，不误报为泄漏。
+旧实现把 ordinary `max_block_size` 当 payload，向 backing 实际请求 `target + header/alignment`，
+在 Linux mimalloc 上跨过大块 size class。现在 block size 是 total backing-byte target，4 MiB 就
+真正请求 4 MiB；单个请求放不下时才突破。正式结果中 Region exact reservation/payload 三平台
+仍均为 1.031，PMR 分别为 1.443/1.302/2.000；Linux live RSS 从高约 5.5% 变成低约 4.2%，
+Windows 高约 0.4%，M4 低约 0.04%，归类为同档而非宣称 RSS 全平台胜。Darwin RSS 在 full
+release 后不随 purge 同步下降，只以 backing 精确归零证明释放，不误报为泄漏。
 
 FixedPool 外部碎片 section I 已落地：按各实现 empty-largest 归一化 75% mixed fill、间隔释放后的
 largest satisfiable object，并验证全释放容量恢复。正式证书绑定 clean commit `f0485c2`：
