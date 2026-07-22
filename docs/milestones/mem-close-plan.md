@@ -220,9 +220,7 @@ AppleClang 21 非 death 156/156。
 1. 独立 Linux host 上运行 TSan；WSL 的启动前 mapping 失败不计通过也不计产品失败。
 2. 裁决 allocation/free poison 的形状：优先 sanitizer/debug hook，不复制一套会进入 shipping
    热路径的 per-type memset；failpoint 与 pool foreign/double/outstanding diagnostics 已完成。
-3. section H footprint/fragmentation harness 已落地并通过 Win/Linux dirty smoke；待签三平台
-   128 MiB clean 原始结果。p50/p95/p99 已由 section G clean 证书完成。
-4. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
+3. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
    该设计已经收口。
 
 Request latency harness 已落地 section G：每个样本计时整个 4096-operation request，两个实现
@@ -233,12 +231,16 @@ p50/p95/p99 全部胜对照。原始 CSV 统一在 `docs/performance`。
 
 Request footprint harness 已接入 section H：HYLE/PMR 使用相同 bench-local mimalloc backing，
 按独立子进程交替执行，记录 payload、upstream reservation、clear retention、full release 与各阶段
-RSS；Win/Linux 8 MiB dirty smoke 均验证 full release backing 归零。正式 128 MiB 三平台 clean
-CSV 尚未签入，不能把 smoke 写成发布结论。
+RSS。128 MiB 正式证书绑定 clean commit `a90326f`：Win/Linux 各 `n=15`，M4 interactive / utility
+各 `n=31`；所有 child 的 full-release backing 都归零，raw CSV 集中在 `docs/performance`。
 
 128 MiB dirty footprint A/B 还捕获了旧 `Region` 默认 1 MiB block 在 Linux 的 mimalloc
 page/segment 驻留放大；2/4/16 MiB 扫描后选择 4 MiB 默认，在大部分 RSS 收益与 retained tail
 slack 之间取拐点。C++ 默认、C draft 初始化宏与用户指南已同步；自定义上限合同不变。
+
+正式结果中 Region 的 exact reservation/payload 三平台均为 1.031，PMR 分别为
+1.443/1.302/2.000；但 Linux live RSS 仍比 PMR 高约 5.5%，已登记为剩余性能差距。Darwin RSS
+在 full release 后不随 purge 同步下降，只以 backing 精确归零证明释放，不误报为泄漏。
 
 ## 6. 收口退出门槛
 

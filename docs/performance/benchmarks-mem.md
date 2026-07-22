@@ -318,9 +318,35 @@ PMR 约 135 MiB。因此产品默认上限改为 4 MiB；`--block-mib` 保留作
 
 每个子进程只运行一个 allocator variant，脚本逐轮反转 HYLE/PMR 子进程顺序，避免第一个实现的
 页和 allocator cache 污染第二个实现。脚本绑定 HEAD/dirty、compiler/platform、Linux CPU 与
-Apple QoS，并可把每个 child 的原始字段写入本目录 CSV。dirty 的 Win/Linux 8 MiB smoke 已验证
-编译、解析、`released_bytes=0` 和 RSS 路径；正式三平台 128 MiB clean 数据尚未签入，因此这里
-暂不发布比较表。
+Apple QoS，并把每个 child 的原始字段写入本目录 CSV。
+
+2026-07-22 clean commit `a90326f` 正式证书如下。reservation ratio 和 retained 是 allocator
+精确字节；RSS 列为相对该 child baseline 的中位数，单位 MiB：
+
+| 平台 / QoS | variant | reserved / payload | clear 后精确保留 | live RSS Δ | clear RSS Δ | full-release RSS Δ | full-release backing |
+|---|---|---:|---:|---:|---:|---:|---:|
+| Windows / MSVC 19.50 | HYLE Region | **1.031** | 107.940 | 129.949 | 105.203 | 0.039 | **0** |
+| Windows / MSVC 19.50 | PMR monotonic | 1.443 | **0** | **128.594** | **0.035** | **0.035** | **0** |
+| Linux / Clang 20.1 CPU 2 | HYLE Region | **1.031** | 107.940 | 152.047 | 120.922 | **0.047** | **0** |
+| Linux / Clang 20.1 CPU 2 | PMR monotonic | 1.302 | **0** | **144.094** | **0.094** | 0.094 | **0** |
+| Apple M4 / interactive | HYLE Region | **1.031** | 107.940 | 128.875 | 128.875 | 132.734 | **0** |
+| Apple M4 / interactive | PMR monotonic | 2.000 | **0** | **128.719** | **128.719** | **128.750** | **0** |
+| Apple M4 / utility | HYLE Region | **1.031** | 107.940 | 128.875 | 128.875 | 132.734 | **0** |
+| Apple M4 / utility | PMR monotonic | 2.000 | **0** | **128.719** | **128.719** | **128.750** | **0** |
+
+结论分三层：HYLE 的 allocator-visible live fragmentation 明确更低，且三套标准库实现都如此；
+Windows live RSS 只比 PMR 高约 1.1%，M4 高约 0.1%，但 Linux 仍高约 5.5%，所以不能写成 RSS
+全平台胜。`clear()` 后 HYLE 精确保留 107.94 MiB ordinary blocks 是跨 request 复用策略，PMR
+`release()` 则归零，两者不是同一个 retention policy。最终两者 backing 都精确归零；Win/Linux
+RSS 回到 baseline 附近，Darwin 的 resident accounting 没有随 purge 同步下降，不能把该列误读
+成泄漏。interactive/utility 完全一致，也没有证据表明 M4 QoS 改变空间行为。
+
+原始逐进程字段：
+[Windows CSV](./mem-request-footprint-win.csv)、
+[Linux CSV](./mem-request-footprint-linux.csv)、
+[M4 interactive CSV](./mem-request-footprint-m4.csv)、
+[M4 utility CSV](./mem-request-footprint-m4-utility.csv)。全部为 `dirty=0`、`released_bytes=0`、
+`qos_ok=1`；Win/Linux 各 15 对 fresh process，M4 每种 QoS 各 31 对。
 
 ```bash
 # Linux：每个 variant 是独立进程，并固定同一 guest CPU
