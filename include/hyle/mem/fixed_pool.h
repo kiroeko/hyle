@@ -18,11 +18,12 @@ namespace hyle::mem {
 // All per-block/allocation metadata lives inside that buffer; the control
 // object owns only indexes and counters. Construction and every operation
 // perform no hidden heap allocation and there is no fallback. Free
-// blocks are indexed by logarithmic size bins; a one-entry recent-free cache
-// avoids an immediate bin round trip on common free-then-allocate churn, while
-// boundary metadata still gives O(1) adjacent coalescing. Allocation normally
-// visits one matching size class instead of scanning every physical block. The
-// storage must outlive the pool and every live allocation.
+// blocks are indexed by logarithmic size bins; a one-entry free cursor keeps a
+// recent return or split remainder out of the index while it remains on the
+// active allocation path. Boundary metadata still gives O(1) adjacent
+// coalescing. Allocation normally visits one matching size class instead of
+// scanning every physical block. The storage must outlive the pool and every
+// live allocation.
 class FixedPool {
 public:
   FixedPool() noexcept = default;
@@ -86,12 +87,29 @@ public:
 #if defined(HYLE_TESTING)
     validate(b);
 #endif
-    publish_recent();
     HYLE_FATAL_ASSERT(!b->free);
     HYLE_FATAL_ASSERT(used_ >= a->requested);
     used_ -= a->requested;
     a->magic = 0;
     b->free = true;
+
+    // A split remainder is commonly adjacent to the next block returned by a
+    // request window. Merge it directly instead of indexing the remainder only
+    // to remove it again here. A non-adjacent cursor remains fully discoverable
+    // by publishing it before the ordinary boundary-tag coalescing pass.
+    if (recent_free_ != nullptr) {
+      Block *recent = recent_free_;
+      if (next(b) == recent) {
+        recent_free_ = nullptr;
+        b->span += recent->span;
+      } else if (next(recent) == b) {
+        recent_free_ = nullptr;
+        recent->span += b->span;
+        b = recent;
+      } else {
+        publish_recent();
+      }
+    }
     recent_free_ = coalesce(b);
   }
 
@@ -256,7 +274,8 @@ private:
       b->span = consumed;
       if (Block *after = next(tail); after != nullptr)
         after->previous_span = tail->span;
-      insert_free(tail);
+      HYLE_FATAL_ASSERT(recent_free_ == nullptr);
+      recent_free_ = tail;
     }
 
     b->free = false;

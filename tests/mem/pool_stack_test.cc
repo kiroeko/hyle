@@ -690,7 +690,7 @@ TEST(FixedPool, RecentFreeMissPublishesBlockAndResetReclaimsEverything) {
   ASSERT_NE(small, nullptr);
   ASSERT_NE(barrier, nullptr);
 
-  pool.deallocate(small); // retained as the one-entry recent free block
+  pool.deallocate(small); // retained as the one-entry free cursor
   void *large = pool.allocate(1024, 64); // miss recent, use the large tail
   ASSERT_NE(large, nullptr);
   EXPECT_EQ(pool.used(), 1088u);
@@ -698,6 +698,27 @@ TEST(FixedPool, RecentFreeMissPublishesBlockAndResetReclaimsEverything) {
   pool.deallocate(barrier);
   pool.deallocate(large);
   pool.reset();
+  EXPECT_EQ(pool.used(), 0u);
+  EXPECT_NE(pool.allocate(3000, 64), nullptr);
+}
+
+TEST(FixedPool, SplitRemainderCursorCoalescesAcrossAdjacentReturns) {
+  alignas(64) std::byte storage[4096];
+  FixedPool pool(storage, sizeof(storage));
+  void *first = pool.allocate(256, 16);
+  void *second = pool.allocate(64, 16);
+  void *third = pool.allocate(64, 16);
+  ASSERT_NE(first, nullptr);
+  ASSERT_NE(second, nullptr);
+  ASSERT_NE(third, nullptr);
+
+  pool.deallocate(first);
+  first = pool.allocate(64, 16); // leaves a cursor immediately before second
+  ASSERT_NE(first, nullptr);
+  pool.deallocate(second);       // merges the preceding cursor directly
+  pool.deallocate(first);        // merges the following cursor directly
+  pool.deallocate(third);
+
   EXPECT_EQ(pool.used(), 0u);
   EXPECT_NE(pool.allocate(3000, 64), nullptr);
 }
