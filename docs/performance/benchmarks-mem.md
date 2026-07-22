@@ -228,3 +228,36 @@ HYLE_BENCH_SECTIONS=E build-bench/bin/hyle_mem_scenarios_bench
 ```
 
 Linux/WSL 必须从 ext4 工作副本运行；Win、WSL 同机时必须错开，不得并发采样。Apple M4 使用本地 APFS 工作副本。
+
+## 8. Request 尾延迟证书
+
+section G 与 section F 使用相同的 4096 次 mixed-size request，但每次只在整个 request
+边界读取一次 `steady_clock`。报告的是 **ns/request** 的 nearest-rank p50/p95/p99，不是给每次
+allocation 插时钟，也不是把 nanobench epoch 当用户延迟。每个样本内 HYLE/对照交替先后顺序，
+降低固定执行顺序与温漂偏差；正式证书至少 4096 samples、15 个独立进程，M4 延续 QoS 审计。
+
+```bash
+# Linux：固定同一逻辑 CPU
+scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
+  -n 15 --samples 4096 --cpu 2 \
+  --raw docs/performance/mem-request-latency.csv
+
+# macOS：无受支持的硬亲和 API，延续 USER_INTERACTIVE / UTILITY 两组 QoS 审计
+scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
+  -n 31 --samples 4096 --raw docs/performance/mem-request-latency-m4.csv
+HYLE_BENCH_APPLE_QOS=utility \
+  scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
+  -n 31 --samples 4096 --raw docs/performance/mem-request-latency-m4-utility.csv
+
+# Windows：oneTBB 的运行时 DLL 在 build tree 的配置目录中
+python scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench.exe \
+  -n 15 --samples 4096 \
+  --dll-dir build-bench/msvc_19.50_cxx23_64_md_release \
+  --raw docs/performance/mem-request-latency-win.csv
+```
+
+脚本保存每个 process/variant 的原始 percentile、HEAD 与 dirty 标记，并对每个 percentile 做
+paired reference/HYLE ratio 与 sign test。dirty run 只允许调试 harness，不进入正式表。当前
+512-sample 可移植性探针已在 MSVC、Clang 20 和 AppleClang 21 跑通。后续 dirty full-size
+诊断已经暴露 `FixedPool` 平台翻转：Windows/M4 暂时落后、Linux 暂时领先；dirty run 不进入
+正式性能表，须在提交后的 clean commit 上复跑并定位 Windows 差距，暂不写成产品性能结论。

@@ -224,6 +224,10 @@ AppleClang 21 非 death 156/156。
 4. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
    该设计已经收口。
 
+Request latency harness 已落地 section G：每个样本计时整个 4096-operation request，两个实现
+交替先后；`mem-cert-stat.py` 跨进程聚合 percentile、paired ratio、commit/dirty 和 raw CSV。
+三平台 512-sample 只完成可移植性探针，不计正式证书；RSS/fragmentation 尚未接入。
+
 ## 6. 收口退出门槛
 
 - [ ] 能力矩阵每项已实现，或明确归属其他模块。

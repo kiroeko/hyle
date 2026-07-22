@@ -153,3 +153,12 @@ cargo run --release --config \
   `CXX=g++-14 CC=gcc-14`. Lock-free code MUST pass TSan
   (`-DHYLE_SANITIZER=tsan -DCMAKE_BUILD_TYPE=RelWithDebInfo`, run under
   `setarch -R`). Never reuse the Windows `build/` dir (CMakeCache conflicts).
+
+## `mem-cert-stat.py` — whole-request mem latency
+
+Runs section G of `hyle_mem_scenarios_bench` in independent processes and
+aggregates p50/p95/p99 for complete 4096-operation requests. It preserves
+paired reference/HYLE ratios, records the Git commit and dirty state, and can
+write every raw row with `--raw`. Use at least `-n 15 --samples 4096` for a
+certificate; short runs are harness smoke tests only. See
+`docs/performance/benchmarks-mem.md` §8 for commands and interpretation.

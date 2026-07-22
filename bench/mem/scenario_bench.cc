@@ -20,6 +20,8 @@
 //  E. Hard service admission and post-free visibility.
 //  F. Closure shapes: request scratch, external workspace, mixed fixed-buffer
 //     churn, quota decoration, and expensive-context preservation.
+//  G. Request-level latency certification: p50/p95/p99 of whole requests, not
+//     clock-instrumented individual allocations or nanobench epochs.
 
 #include <mimalloc.h>
 #include <nanobench.h>
@@ -29,6 +31,7 @@
 #include <tbb/scalable_allocator.h> // growable MT throughput reference
 #endif
 
+#include <algorithm>
 #include <array>
 #include <barrier>
 #include <chrono>
@@ -142,6 +145,95 @@ int env_int(const char *name, int fallback) {
   const long parsed = std::strtol(value, &end, 10);
   return end != value && *end == '\0' && parsed > 0 ? static_cast<int>(parsed)
                                                     : fallback;
+}
+
+constexpr std::size_t scratch_size(int i) noexcept {
+  constexpr std::size_t sizes[] = {24, 40, 72, 128, 192, 320};
+  return sizes[static_cast<unsigned>(i) % std::size(sizes)];
+}
+
+struct RequestLatency {
+  std::uint64_t p50_ns;
+  std::uint64_t p95_ns;
+  std::uint64_t p99_ns;
+};
+
+RequestLatency summarize_latency(std::vector<std::uint64_t> samples) {
+  std::sort(samples.begin(), samples.end());
+  auto nearest_rank = [&](std::size_t percentile) {
+    const std::size_t rank =
+        (percentile * samples.size() + 99) / 100; // ceil(p*N)
+    return samples[rank == 0 ? 0 : rank - 1];
+  };
+  return {nearest_rank(50), nearest_rank(95), nearest_rank(99)};
+}
+
+void print_certificate_metadata() {
+#if defined(_MSC_VER)
+  std::printf("HYLE_MEM_CERT meta format=1 compiler=msvc-%d platform=windows\n",
+              _MSC_VER);
+#elif defined(__apple_build_version__)
+  std::printf("HYLE_MEM_CERT meta format=1 "
+              "compiler=appleclang-%d.%d.%d-%d platform=macos\n",
+              __clang_major__, __clang_minor__, __clang_patchlevel__,
+              __apple_build_version__);
+#elif defined(__clang__)
+  std::printf("HYLE_MEM_CERT meta format=1 compiler=clang-%d.%d.%d "
+              "platform=linux\n",
+              __clang_major__, __clang_minor__, __clang_patchlevel__);
+#elif defined(__GNUC__)
+  std::printf("HYLE_MEM_CERT meta format=1 compiler=gcc-%d.%d.%d "
+              "platform=linux\n",
+              __GNUC__, __GNUC_MINOR__, __GNUC_PATCHLEVEL__);
+#else
+  std::printf("HYLE_MEM_CERT meta format=1 compiler=unknown platform=unknown\n");
+#endif
+}
+
+template <class First, class Second>
+void report_request_latency_pair(const char *scenario, const char *first_name,
+                                 const char *second_name, int operations,
+                                 int samples, First &&first, Second &&second) {
+  using Clock = std::chrono::steady_clock;
+  auto measure = [](auto &fn) {
+    const auto begin = Clock::now();
+    fn();
+    const auto end = Clock::now();
+    return static_cast<std::uint64_t>(
+        std::chrono::duration_cast<std::chrono::nanoseconds>(end - begin)
+            .count());
+  };
+
+  for (int i = 0; i != 64; ++i) {
+    first();
+    second();
+  }
+  std::vector<std::uint64_t> first_samples;
+  std::vector<std::uint64_t> second_samples;
+  first_samples.reserve(static_cast<std::size_t>(samples));
+  second_samples.reserve(static_cast<std::size_t>(samples));
+  for (int i = 0; i != samples; ++i) {
+    if ((i & 1) == 0) {
+      first_samples.push_back(measure(first));
+      second_samples.push_back(measure(second));
+    } else {
+      second_samples.push_back(measure(second));
+      first_samples.push_back(measure(first));
+    }
+  }
+  const RequestLatency first_result = summarize_latency(std::move(first_samples));
+  const RequestLatency second_result =
+      summarize_latency(std::move(second_samples));
+  auto print = [&](const char *variant, const RequestLatency &result) {
+    std::printf("HYLE_MEM_CERT latency scenario=%s variant=%s samples=%d "
+                "operations=%d p50_ns=%llu p95_ns=%llu p99_ns=%llu\n",
+                scenario, variant, samples, operations,
+                static_cast<unsigned long long>(result.p50_ns),
+                static_cast<unsigned long long>(result.p95_ns),
+                static_cast<unsigned long long>(result.p99_ns));
+  };
+  print(first_name, first_result);
+  print(second_name, second_result);
 }
 
 inline void *require_allocation(void *p) noexcept {
@@ -761,10 +853,6 @@ int main() {
   if (want_section('F')) {
     constexpr int kScratchAllocations = 4096;
     constexpr std::size_t kScratchBytes = 1024 * 1024;
-    auto scratch_size = [](int i) -> std::size_t {
-      constexpr std::size_t sizes[] = {24, 40, 72, 128, 192, 320};
-      return sizes[static_cast<unsigned>(i) % std::size(sizes)];
-    };
 
     // External parser/codec workspace: exactly the same caller-owned byte
     // buffer, no fallback, all temporaries die together at the end of one
@@ -955,6 +1043,104 @@ int main() {
         }
       });
     }
+  }
+
+  // ---- G. REQUEST-LEVEL LATENCY CERTIFICATE --------------------------------
+  if (want_section('G')) {
+    constexpr int kOperations = 4096;
+    constexpr std::size_t kStorageBytes = 1024 * 1024;
+    const int samples = env_int("HYLE_MEM_CERT_SAMPLES", 4096);
+    print_certificate_metadata();
+
+    {
+      std::vector<std::byte> hyle_storage(kStorageBytes);
+      std::vector<std::byte> pmr_storage(kStorageBytes);
+      FixedRegion fixed(hyle_storage.data(), hyle_storage.size());
+      report_request_latency_pair(
+          "external_region", "hyle_fixed_region", "pmr_reconstruct",
+          kOperations, samples,
+          [&] {
+            fixed.clear();
+            for (int i = 0; i != kOperations; ++i) {
+              void *p = require_allocation(fixed.allocate(scratch_size(i), 16));
+              nb::doNotOptimizeAway(std::as_const(p));
+            }
+          },
+          [&] {
+            std::pmr::monotonic_buffer_resource pmr(
+                pmr_storage.data(), pmr_storage.size(),
+                std::pmr::null_memory_resource());
+            for (int i = 0; i != kOperations; ++i) {
+              void *p = pmr.allocate(scratch_size(i), 16);
+              nb::doNotOptimizeAway(std::as_const(p));
+            }
+          });
+    }
+
+    {
+      hyle::mem::RegionOptions options;
+      options.initial_block_size = 64 * 1024;
+      options.max_block_size = 256 * 1024;
+      options.large_allocation_threshold = 128 * 1024;
+      Region region(sys, options);
+      std::pmr::monotonic_buffer_resource pmr;
+      report_request_latency_pair(
+          "owned_region", "hyle_region", "pmr_release", kOperations,
+          samples,
+          [&] {
+            region.clear();
+            for (int i = 0; i != kOperations; ++i) {
+              void *p = require_allocation(region.allocate(scratch_size(i), 16));
+              nb::doNotOptimizeAway(std::as_const(p));
+            }
+          },
+          [&] {
+            pmr.release();
+            for (int i = 0; i != kOperations; ++i) {
+              void *p = pmr.allocate(scratch_size(i), 16);
+              nb::doNotOptimizeAway(std::as_const(p));
+            }
+          });
+    }
+
+#if defined(HYLE_BENCH_TBB)
+    {
+      constexpr int kWindow = 128;
+      std::vector<std::byte> hyle_storage(kStorageBytes);
+      std::vector<std::byte> tbb_storage(kStorageBytes +
+                                         kTbbFixedBootstrapBytes);
+      FixedPool pool(hyle_storage.data(), hyle_storage.size());
+      tbb::fixed_pool tbb_pool(tbb_storage.data(), tbb_storage.size());
+      report_request_latency_pair(
+          "fixed_pool_window", "hyle_fixed_pool", "onetbb_fixed_pool",
+          kOperations, samples,
+          [&] {
+            std::array<void *, kWindow> live{};
+            for (int i = 0; i != kOperations; ++i) {
+              const int slot = i % kWindow;
+              pool.deallocate(live[slot]);
+              live[slot] =
+                  require_allocation(pool.allocate(scratch_size(i), 16));
+              nb::doNotOptimizeAway(std::as_const(live[slot]));
+            }
+            for (void *p : live)
+              pool.deallocate(p);
+          },
+          [&] {
+            std::array<void *, kWindow> live{};
+            for (int i = 0; i != kOperations; ++i) {
+              const int slot = i % kWindow;
+              if (live[slot] != nullptr)
+                tbb_pool.free(live[slot]);
+              live[slot] =
+                  require_allocation(tbb_pool.malloc(scratch_size(i)));
+              nb::doNotOptimizeAway(std::as_const(live[slot]));
+            }
+            for (void *p : live)
+              tbb_pool.free(p);
+          });
+    }
+#endif
   }
 
   return 0;
