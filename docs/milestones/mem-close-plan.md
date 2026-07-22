@@ -242,6 +242,10 @@ slack 之间取拐点。C++ 默认、C draft 初始化宏与用户指南已同�
 1.443/1.302/2.000；但 Linux live RSS 仍比 PMR 高约 5.5%，已登记为剩余性能差距。Darwin RSS
 在 full release 后不随 purge 同步下降，只以 backing 精确归零证明释放，不误报为泄漏。
 
+FixedPool 外部碎片 section I 已落地：按各实现 empty-largest 归一化 75% mixed fill、间隔释放后的
+largest satisfiable object，并验证全释放容量恢复。Win/Linux dirty smoke 为 HYLE availability
+0.687、oneTBB 0.482–0.484，recovery 均为 1.000；正式三平台 clean CSV 待签。
+
 ## 6. 收口退出门槛
 
 - [ ] 能力矩阵每项已实现，或明确归属其他模块。

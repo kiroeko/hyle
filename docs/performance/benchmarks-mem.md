@@ -365,3 +365,33 @@ python scripts/mem-footprint-stat.py \
   --dll-dir build-bench/msvc_19.50_cxx23_64_md_release \
   --raw docs/performance/mem-request-footprint-win.csv
 ```
+
+## 10. FixedPool 外部碎片证书
+
+section I 采用 oneTBB `test_malloc_pools` 相同的核心问题：池经历分配与释放后，最大还能满足多大
+的连续对象，以及全部释放后能否恢复空池容量。HYLE 使用 8 MiB external buffer；oneTBB 使用
+8 MiB payload budget + 其测试所需的 1 MiB bootstrap allowance。证书先二分探测各自
+`empty_largest`，后续指标都按这个 user-visible limit 归一化，因此 bootstrap 不会成为容量优势。
+
+workload 以 64B–64KiB mixed-size 对象填到 empty user capacity 的 75%，再释放每三个物理槽中的
+一个，形成真实的 non-adjacent holes。报告：
+
+- `fragmented_largest / (empty_largest - live_requested)`：理论剩余 user capacity 中，当前能作为
+  一个连续对象满足的比例；越高说明外部碎片越低。
+- `recovered_largest / empty_largest`：全部 live allocation 释放后的容量恢复率；应为 1。
+
+Win/Linux dirty smoke 中，两者 empty largest 都约 8 MiB；HYLE fragmented availability 为
+0.687，oneTBB 为 0.482–0.484，HYLE 约 1.42x；两者 recovery 都为 1.000。该结果只用于验证
+harness 与 workload，没有写成正式性能结论。clean 三平台 raw CSV 待下一提交签入。
+
+```bash
+# Linux；Windows 使用与 footprint 证书相同的 --dll-dir
+python3 scripts/mem-fragmentation-stat.py \
+  build-bench/bin/hyle_mem_scenarios_bench -n 15 --mib 8 --cpu 2 \
+  --raw docs/performance/mem-fixed-pool-fragmentation-linux.csv
+
+# macOS 延续 interactive / utility 两组 QoS 审计
+python3 scripts/mem-fragmentation-stat.py \
+  build-bench/bin/hyle_mem_scenarios_bench -n 31 --mib 8 \
+  --raw docs/performance/mem-fixed-pool-fragmentation-m4.csv
+```

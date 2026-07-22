@@ -24,6 +24,8 @@
 //     clock-instrumented individual allocations or nanobench epochs.
 //  H. Request-scratch footprint certification: payload, backing reservation,
 //     clear/release retention, and process RSS in isolated processes.
+//  I. Fixed-buffer fragmentation certification: largest satisfiable object
+//     after mixed fill/selective free, normalized to each pool's empty limit.
 
 #include <mimalloc.h>
 #include <nanobench.h>
@@ -287,6 +289,91 @@ void print_footprint_row(
       retained_after_clear, reuse_reserved, released, baseline.current_rss,
       live.current_rss, cleared.current_rss, reuse.current_rss,
       released_memory.current_rss, released_memory.peak_rss);
+}
+
+template <class Allocate, class Free>
+std::size_t largest_satisfiable(std::size_t upper, Allocate &&allocate,
+                                Free &&free) {
+  std::size_t low = 0;
+  std::size_t high = upper + 1;
+  while (low + 1 < high) {
+    const std::size_t middle = low + (high - low) / 2;
+    if (void *p = allocate(middle); p != nullptr) {
+      free(p);
+      low = middle;
+    } else {
+      high = middle;
+    }
+  }
+  return low;
+}
+
+template <class Allocate, class Free>
+void run_fragmentation_scenario(const char *variant,
+                                std::size_t payload_budget,
+                                std::size_t backing_storage,
+                                Allocate &&allocate, Free &&free) {
+  constexpr std::size_t sizes[] = {64,    256,   1024, 4096,  16384,
+                                   65536, 128,   2048, 8192,  32768,
+                                   512,   24576, 96,   12288, 49152};
+  struct Live {
+    void *pointer;
+    std::size_t requested;
+  };
+
+  const std::size_t empty_largest =
+      largest_satisfiable(backing_storage, allocate, free);
+  if (empty_largest == 0) {
+    std::fputs("mem_scenarios_bench: fixed pool has no usable capacity\n",
+               stderr);
+    std::abort();
+  }
+  const std::size_t fill_target = empty_largest * 3 / 4;
+  std::vector<Live> allocations;
+  allocations.reserve(fill_target / 4096);
+  std::size_t fill_requested = 0;
+  for (std::size_t index = 0; fill_requested < fill_target; ++index) {
+    std::size_t bytes = sizes[index % std::size(sizes)];
+    if (bytes > fill_target - fill_requested)
+      bytes = fill_target - fill_requested;
+    void *p = allocate(bytes);
+    if (p == nullptr) {
+      std::fputs("mem_scenarios_bench: mixed fill failed before 75% of empty "
+                 "user capacity\n",
+                 stderr);
+      std::abort();
+    }
+    touch_all_pages(p, bytes);
+    allocations.push_back({p, bytes});
+    fill_requested += bytes;
+  }
+
+  std::size_t freed_requested = 0;
+  std::size_t live_requested = fill_requested;
+  for (std::size_t index = 1; index < allocations.size(); index += 3) {
+    free(allocations[index].pointer);
+    freed_requested += allocations[index].requested;
+    live_requested -= allocations[index].requested;
+    allocations[index].pointer = nullptr;
+  }
+  const std::size_t fragmented_largest =
+      largest_satisfiable(backing_storage, allocate, free);
+  for (const Live &allocation : allocations) {
+    if (allocation.pointer != nullptr)
+      free(allocation.pointer);
+  }
+  const std::size_t recovered_largest =
+      largest_satisfiable(backing_storage, allocate, free);
+
+  std::printf(
+      "HYLE_MEM_CERT fragmentation scenario=fixed_pool_mixed_holes "
+      "variant=%s payload_budget_bytes=%zu backing_storage_bytes=%zu "
+      "allocations=%zu empty_largest_bytes=%zu fill_requested_bytes=%zu "
+      "live_requested_bytes=%zu freed_requested_bytes=%zu "
+      "fragmented_largest_bytes=%zu recovered_largest_bytes=%zu\n",
+      variant, payload_budget, backing_storage, allocations.size(),
+      empty_largest, fill_requested, live_requested, freed_requested,
+      fragmented_largest, recovered_largest);
 }
 
 constexpr std::size_t scratch_size(int i) noexcept {
@@ -1394,6 +1481,57 @@ int main() {
       } else {
         std::fprintf(stderr,
                      "mem_scenarios_bench: unknown footprint variant %s\n",
+                     variant);
+        return 2;
+      }
+    }
+  }
+
+  // ---- I. ISOLATED FIXED-POOL FRAGMENTATION CERTIFICATE -------------------
+  if (want_section('I')) {
+    const char *variant = std::getenv("HYLE_MEM_FRAGMENTATION_VARIANT");
+    if (variant == nullptr || variant[0] == '\0') {
+      std::puts("# HYLE_MEM_CERT fragmentation skipped: set "
+                "HYLE_MEM_FRAGMENTATION_VARIANT=hyle_fixed_pool or "
+                "onetbb_fixed_pool");
+    } else {
+      const int payload_mib = env_int("HYLE_MEM_FRAGMENTATION_MIB", 8);
+      constexpr std::size_t kMiB = 1024u * 1024u;
+      if (static_cast<std::size_t>(payload_mib) >
+          (std::numeric_limits<std::size_t>::max() -
+           kTbbFixedBootstrapBytes) /
+              kMiB) {
+        std::fputs(
+            "mem_scenarios_bench: fragmentation buffer overflows size_t\n",
+            stderr);
+        return 2;
+      }
+      const std::size_t payload_budget =
+          static_cast<std::size_t>(payload_mib) * kMiB;
+      print_certificate_metadata();
+
+      if (std::strcmp(variant, "hyle_fixed_pool") == 0) {
+        std::vector<std::byte> storage(payload_budget);
+        FixedPool pool(storage.data(), storage.size());
+        if (!pool.valid())
+          return 2;
+        run_fragmentation_scenario(
+            variant, payload_budget, storage.size(),
+            [&](std::size_t bytes) { return pool.allocate(bytes, 16); },
+            [&](void *p) { pool.deallocate(p); });
+#if defined(HYLE_BENCH_TBB)
+      } else if (std::strcmp(variant, "onetbb_fixed_pool") == 0) {
+        std::vector<std::byte> storage(payload_budget +
+                                       kTbbFixedBootstrapBytes);
+        tbb::fixed_pool pool(storage.data(), storage.size());
+        run_fragmentation_scenario(
+            variant, payload_budget, storage.size(),
+            [&](std::size_t bytes) { return pool.malloc(bytes); },
+            [&](void *p) { pool.free(p); });
+#endif
+      } else {
+        std::fprintf(stderr,
+                     "mem_scenarios_bench: unknown fragmentation variant %s\n",
                      variant);
         return 2;
       }
