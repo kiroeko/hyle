@@ -212,8 +212,8 @@ no-heap，`create` 继续作为易用工厂。StatsAllocator/LeakTracker 没有�
 SharedPoolCached 的 slab/link/head 三点，StackAllocator 的 slab，GrowablePool 连续五次几何
 增长，以及 PreservingObjectPool 的三点 pool control + object index table；Region 与 Quota 的
 逐点回滚同时覆盖 allocate/reallocate failure，FixedRegion/FixedPool 不拥有 backing
-allocation。PoolLoan 在底层 OOM 时保持 empty。Windows mem 174/174；Linux Clang 20 与
-AppleClang 21 非 death 156/156。
+allocation。PoolLoan 在底层 OOM 时保持 empty。Windows/Linux mem 176/176；
+AppleClang 21 非 death 158/158。
 
 仍未完成：
 
@@ -225,10 +225,11 @@ AppleClang 21 非 death 156/156。
 
 Request latency harness 已落地 section G：每个样本计时整个 4096-operation request，两个实现
 交替先后；`mem-cert-stat.py` 跨进程聚合 percentile、paired ratio、commit/dirty 和 raw CSV。
-最新 whole-request 证书绑定 clean commit `02ec81e`：Win/Linux 各 `n=15`，M4
+最新 whole-request 证书绑定 clean commit `d3e4214`：Win/Linux 各 `n=15`，M4
 interactive/utility 各 `n=31`，4096 samples/process。FixedRegion、Region 三平台 p50/p95/p99
-全部胜对照；FixedPool 在 Linux/M4 全胜，但 Windows 为 p50 TIE、p95/p99 LOSE，独立 `n=15`
-复核仍为 p50 TIE、p95 LOSE，p99 在 TIE/LOSE 间波动，已登记为下一性能缺口。原始 CSV 统一在
+全部胜对照；FixedPool 的 split remainder 改由 free cursor 保留并与相邻释放直接合并后，
+Windows 缺口关闭，Win/Linux/M4 的 p50/p95/p99 全部通过 paired sign 闸门。section F 同时在
+MSVC、GCC、Clang、M4 interactive/utility 上通过 spread/sign 双闸门；原始 CSV 统一在
 `docs/performance`。
 
 Request footprint harness 已接入 section H：HYLE/PMR 使用相同 bench-local mimalloc backing，
@@ -248,7 +249,7 @@ Windows 高约 0.4%，M4 低约 0.04%，归类为同档而非宣称 RSS 全平�
 release 后不随 purge 同步下降，只以 backing 精确归零证明释放，不误报为泄漏。
 
 FixedPool 外部碎片 section I 已落地：按各实现 empty-largest 归一化 75% mixed fill、间隔释放后的
-largest satisfiable object，并验证全释放容量恢复。正式证书绑定 clean commit `f0485c2`：
+largest satisfiable object，并验证全释放容量恢复。正式证书绑定 clean commit `d3e4214`：
 Win/Linux 各 `n=15`，M4 interactive / utility 各 `n=31`；HYLE availability 为 0.6874，oneTBB
 为 0.4816–0.4843，HYLE/oneTBB 为 1.419–1.427x，recovery 均为 1.000。该结论只覆盖此
 mixed-fill / selective-free workload，不外推为任意 allocation distribution 的普遍保证；raw CSV
