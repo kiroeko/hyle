@@ -1,6 +1,6 @@
 # mem 全面收口计划
 
-> 状态：执行中（能力族已落地；公开形状、C draft surface、TSan 与 macOS 尚未签字）
+> 状态：执行中（能力族与 C++ 公开形状已落地；C draft surface、Linux Clang 与独立主机 TSan 尚未签字）
 > 建立日期：2026-07-22
 > 设计源：[`../architecture/mem-design.md`](../architecture/mem-design.md)
 
@@ -170,14 +170,15 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
 
 | 环境 | 结果 |
 |---|---|
-| Windows/MSVC Release（当前 delta） | mem 165/165；纯 C 通过；C surface 93/93；全仓 CTest 50/50 |
-| Windows/MSVC ASan（当前 delta） | 非 death mem 147/147；纯 C 通过；C surface 93/93 |
-| Ubuntu 24.04 / GCC 14.2 Debug（当前 delta） | 非 death 147/147；FixedPool 7/7（含 2 death）；纯 C 通过 |
-| Ubuntu 24.04 / GCC 14.2 UBSan（当前 delta） | 非 death mem 147/147；纯 C 通过；C surface/纯 C 引用/ELF 导出均 93/93 |
+| Windows/MSVC Release（`7f270bb`） | mem 167/167；纯 C 通过；C surface 93/93；全仓 CTest 50/50 |
+| Windows/MSVC ASan（`7f270bb`） | 非 death mem 149/149；纯 C 通过；C surface 93/93 |
+| Ubuntu 24.04 / GCC 14.2 UBSan（`7f270bb`） | mem 167/167（含 death）；纯 C 通过；C surface/纯 C 引用/ELF 导出均 93/93 |
+| Apple M4 / AppleClang 21 Release（`7f270bb`） | mem 167/167；纯 C 与 C surface 通过 |
+| Apple M4 / AppleClang 21 ASan（`7f270bb`） | 非 death mem 149/149；纯 C 通过 |
 | Ubuntu 24.04 / GCC 14.2 TSan（前一基线） | 编译通过；WSL 启动前因 `unexpected memory mapping` 无法运行，不计通过 |
 | compute/Vulkan 隔离观察 | compute 78 pass/2 skip；Vulkan 14 pass/2 skip；GPU await 2/2 |
 
-本机 F workload 结果与解读写在 [`../guide/mem.md`](../guide/mem.md)。FixedPool 的首轮
+F workload 的正式结果与解读集中写在 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)。FixedPool 的首轮
 20.45 ns/op 对 oneTBB 8.66 ns/op 暴露了真实差距；更窄 bins、lazy coalescing 和 metadata
 overlay 候选均未改善并已撤回。路径分解定位到 mixed-size free 后的 coalesce→bin→下一次
 allocate→split→bin 重复维护，最终加入立即合并后的 one-entry recent-free cache，并把 alignment
@@ -185,12 +186,15 @@ allocate→split→bin 重复维护，最终加入立即合并后的 one-entry r
 oneTBB 10.094 ns/op，HYLE/oneTBB throughput ratio 中位数 0.983、范围 0.912–1.023，spread/sign
 均判 TIE。Linux/GCC 14.2 为 HYLE 7.555、oneTBB 7.774 ns/op，ratio 1.027、范围
 0.948–1.088，spread TIE / sign WIN（13/15，p=7.4e-3）。两平台在同机错开运行。FixedPool
-已通过 Windows/Linux 性能闸；owned Region 与 macOS 性能尚未签字。
+已通过 Windows/Linux 性能闸。Apple M4 / AppleClang 21 发现 4P+6E 调度审计缺口后，harness
+显式请求 `USER_INTERACTIVE`，并以 `UTILITY` 复核；两组各 `n=31`，FixedRegion、owned Region、
+FixedPool 均通过 sign 闸门。Darwin 无受支持的硬亲和/实际 core-class 证明，因此 M4 只签
+application QoS 边界，不写成所有 P/E 核组合均已认证。
 
 仍未完成：
 
-1. 在 Linux Clang 与 macOS arm64 重跑同一 F workload；GCC 14.2 已补。
-2. 独立 Linux host 上运行 TSan，补 macOS arm64 与 Linux Clang。
+1. 在 Linux Clang 重跑正确性与同一 F workload；GCC 14.2、AppleClang 21 已补。
+2. 独立 Linux host 上运行 TSan；WSL 的启动前 mapping 失败不计通过也不计产品失败。
 3. 完成 C surface 产品审查：独立 mem error channel、strict no-heap C 是否需要 in-place control、
    Stats/Leak 是否有真实 C 消费者；manifest 在此之前不冻结。allocation/free poison 与新增类型的完整 failpoint matrix；pool foreign/double/outstanding
    diagnostics 已完成。

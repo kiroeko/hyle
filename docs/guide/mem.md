@@ -145,8 +145,10 @@ loan 等调用合同错误允许 fail-fast。`StatsAllocator`/`LeakTracker` 可�
 benchmark 以场景和合同分组，入口是 `hyle_mem_scenarios_bench`；用
 `HYLE_BENCH_SECTIONS=F` 跑收口 workload。正式性能表只维护在
 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，本指南不复制数据。
-当前 Win/WSL 的 15 次配对结果中，`Region`/`FixedRegion` 都赢相同 request-shape 的
-PMR 对照；`FixedPool` 与 oneTBB fixed_pool 在 Windows 平、Linux sign 胜，macOS 仍待复测。
+当前三平台配对结果中，`Region`/`FixedRegion` 都赢相同 request-shape 的 PMR 对照；
+`FixedPool` 与 oneTBB fixed_pool 在 Windows 平、Linux/M4 sign 胜。M4 分别以 interactive 与
+utility QoS 做 31 次进程复测；Darwin 无硬核心亲和，因此结论不外推到所有 QoS/P-E 核组合。
+其余两平台使用 15 次。
 
 `Region` 的 ordinary-block 热路径缓存当前 cursor/end，把 block 搜索、增长和 backing
 分配隔离到 slow path；`clear()` 仍复用所有 ordinary block，dedicated large block 仍归还

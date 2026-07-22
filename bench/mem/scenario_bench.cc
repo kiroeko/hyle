@@ -36,12 +36,17 @@
 #include <cstdint>
 #include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <memory>
 #include <memory_resource>
 #include <string>
 #include <thread>
 #include <utility>
 #include <vector>
+
+#if defined(__APPLE__)
+#include <pthread.h>
+#endif
 
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/fixed_pool.h"
@@ -75,6 +80,44 @@ constexpr std::size_t kRegion = kN * kObj + 4096; // bump region (+slack)
 // user-visible capacity.
 constexpr std::size_t kTbbFixedBootstrapBytes = 1u << 20;
 namespace nb = ankerl::nanobench;
+
+// Apple Silicon has heterogeneous performance/efficiency cores but no public
+// CPU-affinity API. An unqualified SSH process may migrate between both core
+// classes, preserving fixed-order bias in otherwise repeatable nanosecond rows.
+// Default certification runs request the same USER_INTERACTIVE QoS as the SIMD
+// harness. UTILITY is an explicit lower-priority scheduling audit; neither is
+// a hard pin or proof of core class because Darwin exposes only a preference.
+void configure_main_benchmark_thread() {
+#if defined(__APPLE__)
+  const char *requested = std::getenv("HYLE_BENCH_APPLE_QOS");
+  qos_class_t qos = QOS_CLASS_USER_INTERACTIVE;
+  const char *name = "user-interactive";
+  if (requested != nullptr && std::strcmp(requested, "utility") == 0) {
+    qos = QOS_CLASS_UTILITY;
+    name = "utility";
+  } else if (requested != nullptr &&
+             std::strcmp(requested, "background") == 0) {
+    qos = QOS_CLASS_BACKGROUND;
+    name = "background";
+  } else if (requested != nullptr &&
+             std::strcmp(requested, "interactive") != 0) {
+    std::fprintf(stderr,
+                 "mem_scenarios_bench: HYLE_BENCH_APPLE_QOS must be "
+                 "interactive, utility, or background (got %s)\n",
+                 requested);
+    std::abort();
+  }
+  const int rc = pthread_set_qos_class_self_np(qos, 0);
+  std::printf(
+      "# HYLE_MEM_BENCH apple_main_qos=%s qos_ok=%d affinity=unsupported\n",
+      name, rc == 0 ? 1 : 0);
+  if (rc != 0) {
+    std::fprintf(stderr,
+                 "mem_scenarios_bench: failed to set Apple QoS (%d)\n", rc);
+    std::abort();
+  }
+#endif
+}
 
 // Section filter: HYLE_BENCH_SECTIONS="D" runs only section D, "AD" runs A+D,
 // etc. Unset/empty runs everything. The full sweep is minutes-per-run (the
@@ -196,6 +239,7 @@ QuotaResult run_quota_scenario(Pool &pool, int threads, std::size_t capacity,
 } // namespace
 
 int main() {
+  configure_main_benchmark_thread();
   Allocator sys = system_allocator(); // mimalloc backing
 
   // ---- A. BUMP: alloc N small, no per-object free, bulk release ----

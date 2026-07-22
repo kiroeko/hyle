@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win/WSL `bench-stat.py -n 15`。性能判定信任配对 **[sign]**。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win/WSL `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`。性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -32,19 +32,28 @@ M4 上 pmr monotonic 更快，不能把 x86 结论外推到 ARM。
 ### Region / FixedRegion request scratch
 
 section F 的同一 request workload 每轮执行 4096 次 mixed-size（24–320B）、16B 对齐分配，
-然后 bulk clear/release。Win 与 WSL 同机错开运行；数字是 15 个独立进程的中位 ns/op。
+然后 bulk clear/release。Win 与 WSL 同机错开运行；M4 为 macOS 26.5.2 / AppleClang 21，
+分别显式请求 `USER_INTERACTIVE` 与 `UTILITY` QoS。数字是独立进程的中位 ns/op，表内 ratio
+是逐进程配对 throughput ratio 的中位数。
 
-| workload | Windows/MSVC Release | Ubuntu 24.04/GCC 14.2 Release | 判定 |
-|---|---:|---:|---|
-| external caller-owned storage：`FixedRegion` / PMR reconstruct | 1.210 / 2.072，ratio **1.682** | 0.839 / 1.199，ratio **1.432** | 双平台 **spread/sign WIN** |
-| owned retained blocks：`Region` / PMR release | 1.674 / 1.923，ratio **1.126** | 1.137 / 2.033，ratio **1.779** | Win **sign WIN**；Linux **spread/sign WIN**；均 15/15 同侧 |
+| workload | Windows/MSVC，n=15 | Ubuntu/GCC 14.2，n=15 | Apple M4 interactive / utility，各 n=31 | 判定 |
+|---|---:|---:|---:|---|
+| external caller-owned storage：`FixedRegion` / PMR reconstruct | 1.210 / 2.072，**1.682x** | 0.839 / 1.199，**1.432x** | 1.010 / 1.551，**1.537x**（30/31）；1.007 / 1.552，**1.540x**（31/31） | 三平台 **sign WIN**；Win/Linux spread WIN |
+| owned retained blocks：`Region` / PMR release | 1.674 / 1.923，**1.126x** | 1.137 / 2.033，**1.779x** | 2.282 / 2.444，**1.073x**；2.270 / 2.450，**1.083x**（均 31/31） | 三平台 **sign WIN**；Linux spread WIN |
 
 `Region` 现在缓存当前 ordinary block 的 cursor/end；block 搜索、增长、backing allocation
 隔离在 noinline slow path。相同校正 harness 下，Windows 旧实现为 2.196 ns/op、相对 PMR
 ratio 0.949（sign LOSE）；新路径降至 1.674 ns/op。`clear()` 仍复用全部 ordinary blocks，
 dedicated large block 仍归还 backing；优化没有删除逐次 alignment、hard reserved-byte limit
 或 requested-byte accounting。benchmark 对 HYLE/PMR 都以只读指针左值做观测，避免纳秒路径
-被 prvalue 临时对象或 GCC read-write asm operand 污染。Apple M4 未复测前不外推 x86 结论。
+被 prvalue 临时对象或 GCC read-write asm operand 污染。
+
+M4 是 4 个 Performance + 6 个 Efficiency core，Darwin 没有受支持的硬亲和 API，也不能从
+benchmark 内证明实际 core class。harness 因此默认请求 `USER_INTERACTIVE`，并用
+`HYLE_BENCH_APPLE_QOS=utility` 复核较低优先级调度；两组相对结论一致。额外的
+`taskpolicy -b` background 审计出现 100% 以上绝对 spread，`FixedRegion` 仅 23/31 同侧，
+不满足闸门。故这里签的是前台/application QoS 下的 M4 结论，不外推为所有 QoS 或硬绑定
+P/E 核的结论。
 
 ### GrowablePool
 
@@ -124,12 +133,14 @@ dedicated large block 仍归还 backing；优化没有删除逐次 alignment、h
 
 ## 4. 外部固定 buffer 的变长分配
 
-2026-07-22 section F，Win/WSL 在同机上错开运行，`bench-stat.py -n 15`：
+2026-07-22 section F；Win/WSL 在同机上错开运行、`n=15`，M4 显式 QoS、各 `n=31`：
 
 | 平台 | HYLE FixedPool | oneTBB fixed_pool | HYLE/oneTBB throughput | 判定 |
 |---|---:|---:|---:|---|
 | Windows/MSVC Release | 10.314 ns/op | 10.094 ns/op | median 0.983，range 0.912–1.023 | **TIE spread / TIE sign** |
 | Ubuntu 24.04/GCC 14.2 Release | 7.555 ns/op | 7.774 ns/op | median 1.027，range 0.948–1.088 | **TIE spread / WIN sign**（13/15，p=7.4e-3） |
+| Apple M4 / AppleClang 21，interactive | 8.619 ns/op | 9.319 ns/op | median 1.083，range 1.046–1.339 | **TIE spread / WIN sign**（31/31） |
+| Apple M4 / AppleClang 21，utility | 8.566 ns/op | 9.316 ns/op | median 1.095，range 1.057–1.185 | **TIE spread / WIN sign**（31/31） |
 
 首轮 HYLE 20.45 ns/op 对 oneTBB 8.66 ns/op 的差距没有通过换 workload 掩盖。路径分解显示
 同尺寸稳定复用并非瓶颈，主要成本是 mixed-size free→coalesce→bin 后紧接着
@@ -137,17 +148,17 @@ allocate→split→bin 的重复索引维护。实现现在保留立即邻块合
 但用 one-entry recent-free cache 消除紧邻往返；recent block 不匹配时会先发布回普通 size bin。
 alignment/overflow 也改为相对已验证 block end 的 checked arithmetic。benchmark 中 alloc 后还要
 free 的指针以 `std::as_const` 作为只读左值观测：GCC 不再把指针变量当 read-write asm operand，
-MSVC 也不为 const-pointer prvalue 增加临时对象。Windows 平局、Linux sign 胜；macOS 未复测前
-不宣称三平台 SOTA。
+MSVC 也不为 const-pointer prvalue 增加临时对象。Windows 平局，Linux 与 M4 两种显式 QoS
+均 sign 胜；M4 的结论边界同上，不冒充硬 P/E 核证书。
 
 ## 5. 装饰器与昂贵上下文复用
 
-同一 section F、Windows/MSVC Release、`bench-stat.py -n 15`：
+同一 section F；Windows 为 `n=15`，M4 为 interactive QoS `n=31`：
 
-| workload | HYLE | 对照 | 结论 |
+| workload | Windows/MSVC | Apple M4/AppleClang 21 | 结论 |
 |---|---:|---:|---|
-| strict requested-byte admission | `QuotaAllocator` 22.181 ns/op | direct system 9.144 ns/op | 约 13.0 ns/op 原子 admission 成本 |
-| expensive reusable context loan | `PreservingObjectPool` 20.894 ns/op | reconstruct 266.230 ns/op | HYLE 约 12.7× throughput |
+| strict requested-byte admission：`QuotaAllocator` / direct system | 22.181 / 9.144 ns/op | 9.498 / 7.680 ns/op | 可组合 hard admission 有明确原子 accounting 成本；不替代裸 allocator |
+| expensive reusable context loan：`PreservingObjectPool` / reconstruct | 20.894 / 266.230 ns/op，**12.7x** | 8.900 / 70.247 ns/op，**7.9x** | 构造昂贵、归还后保留状态的 context 值得复用 |
 
 quota 行体现的是可组合 hard admission 的价格，不应拿来替代裸 allocator；Preserve 行对应
 codec/session 等昂贵对象“构造一次、借还保留状态”的真实生命周期。
@@ -187,12 +198,25 @@ scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 9 \
   --pair "oneTBB fixed_pool (fixed-buffer shared)" \
          "HYLE SharedPoolCached (soft capacity)"
 
+# Win/Linux 使用 n=15；M4 默认 USER_INTERACTIVE，正式复跑把这里改为 n=31
 HYLE_BENCH_SECTIONS=F \
 scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 15 \
   --pair "std::pmr::monotonic_buffer_resource (external, reconstruct)" \
          "HYLE FixedRegion (external, no fallback)" \
   --pair "std::pmr::monotonic_buffer_resource (release upstream blocks)" \
-         "HYLE Region (retained ordinary blocks)"
+         "HYLE Region (retained ordinary blocks)" \
+  --pair "oneTBB fixed_pool (thread-safe, hard buffer)" \
+         "HYLE FixedPool (single-thread, hard buffer)"
+
+# Apple M4：默认 USER_INTERACTIVE；再以 UTILITY 做较低优先级调度复核
+HYLE_BENCH_SECTIONS=F HYLE_BENCH_APPLE_QOS=utility \
+scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 31 \
+  --pair "std::pmr::monotonic_buffer_resource (external, reconstruct)" \
+         "HYLE FixedRegion (external, no fallback)" \
+  --pair "std::pmr::monotonic_buffer_resource (release upstream blocks)" \
+         "HYLE Region (retained ordinary blocks)" \
+  --pair "oneTBB fixed_pool (thread-safe, hard buffer)" \
+         "HYLE FixedPool (single-thread, hard buffer)"
 
 # quota 计数是单次语义证据；不把其中线程启动时间当吞吐比较
 HYLE_BENCH_SECTIONS=E build-bench/bin/hyle_mem_scenarios_bench
