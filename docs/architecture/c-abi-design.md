@@ -95,7 +95,7 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 - **返回值通道**：`hyle_status`（opaque owning handle，`uintptr_t rep`）值返回 + 分支；`HYLE_C_RETURN_IF_ERROR` 传播。`Result<T>`（`std::expected`）是模板，C 侧用 `hyle_status` + 出参表达。
 - **诊断通道**：`hyle_error_report` + 可换 handler（`hyle_error_set_handler` 简单单槽 / `hyle_error_push_handler`+`pop` 嵌套安全，对标 signal old-handler）。
 - **绝不让 C++ 异常跨 C 边界**（UB）。catch 只在 adapter 边界做"外来异常→Status"。
-- **分配器层不走 `hyle_status`**（mem 的刻意分层）：句柄工厂 `hyle_*_create` **资源失败返 NULL + 设 `hyle_mem_last_error` 字符串**（invalid backing / wrapper·slab OOM / 池耗尽）；**契约违反仍 fail-fast abort**（ctor 的 `block_size==0`、`block_size*block_count` 溢出 `size_t`；`allocate` 收到非 2 的幂对齐）。分配器是**最底层基元**，让它依赖上层 error 模块的 `Status` 会**倒置依赖**；故 mem 自足用"NULL + thread-local last-error 串"通道（与 ggml 分配器返 NULL / 返回码同理），不引入 `hyle_status`。
+- **分配器层不走 `hyle_status`**（mem 的刻意分层）：C 句柄工厂的资源失败和可由 FFI 数据表达的非法值/溢出 layout，均**返 NULL + 设 `hyle_mem_last_error` 字符串**；生命周期、并发静默、foreign/double free 等时序契约违反仍 fail-fast。分配器是**最底层基元**，让它依赖上层 error 模块的 `Status` 会**倒置依赖**；故 mem 当前 draft surface 自足用“NULL + thread-local last-error 串”通道，不引入 `hyle_status`。该 error 串目前复用 platform VM 的 TLS 槽，是否拆出 mem 专用通道仍须在首次发布前审定。
 - **platform 按失败形状分通道**：Thread 构造返回 `hyle_status`；VM/NUMA/
   MappedFile 用 `hyle_vm_last_error`；DynLib 用 `hyle_dynlib_last_error`；
   Parker wrapper 与 fs/fd 用 `hyle_platform_last_error`。所有字符串均线程

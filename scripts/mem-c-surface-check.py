@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Freeze the declared, exercised, and exported mem C ABI symbol set."""
+"""Keep the draft mem C declarations, pure-C use, and exports in sync."""
 
 from __future__ import annotations
 
@@ -81,7 +81,7 @@ def main() -> int:
     root = Path(__file__).resolve().parents[1]
     header = root / "include/hyle/c/mem.h"
     test = root / "tests/mem/c_mem_test.c"
-    baseline_path = root / "tests/mem/c_abi_symbols.txt"
+    manifest_path = root / "tests/mem/c_surface_symbols.txt"
 
     header_text = strip_comments(header.read_text(encoding="utf-8"))
     declared = set(EXPORT_DECL.findall(header_text))
@@ -89,12 +89,12 @@ def main() -> int:
         print(*sorted(declared), sep="\n")
         return 0
 
-    baseline = {
+    manifest = {
         line.strip()
-        for line in baseline_path.read_text(encoding="utf-8").splitlines()
+        for line in manifest_path.read_text(encoding="utf-8").splitlines()
         if line.strip() and not line.startswith("#")
     }
-    ok = report_set("mem C ABI baseline declarations", baseline, declared)
+    ok = report_set("mem C surface declarations", manifest, declared)
 
     test_text = strip_comments(test.read_text(encoding="utf-8"))
     marker = test_text.find(TEST_BODY_MARKER)
@@ -102,8 +102,8 @@ def main() -> int:
         print(f"Coverage marker missing from {test}", file=sys.stderr)
         return 1
     exercised = set(SYMBOL.findall(test_text[marker:]))
-    missing_test = sorted(baseline - exercised)
-    print(f"mem C ABI pure-C references: {len(baseline) - len(missing_test)}/{len(baseline)}")
+    missing_test = sorted(manifest - exercised)
+    print(f"mem C pure-C references: {len(manifest) - len(missing_test)}/{len(manifest)}")
     if missing_test:
         print("Missing from pure-C test:", *missing_test, sep="\n  ")
         ok = False
@@ -114,7 +114,7 @@ def main() -> int:
             for name in exported_symbols(args.library, args.symbol_tool)
             if name.startswith("hyle_")
         }
-        ok = report_set("mem C ABI binary exports", baseline, actual_exports) and ok
+        ok = report_set("mem C binary exports", manifest, actual_exports) and ok
 
     return 0 if ok else 1
 

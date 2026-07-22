@@ -1,6 +1,7 @@
 /* SPDX: same as HYLE.
  *
- * Pure C ABI for the HYLE mem module (close-01).
+ * Draft pure-C surface for the HYLE mem module. Before the first release,
+ * names and signatures may change when product review finds a better shape.
  *
  * Naming: every symbol is `hyle_*` / `HYLE_*`.
  * Do NOT include hyle/mem/ headers from C or cross-compiler FFI.
@@ -8,7 +9,8 @@
  * Surface: the injectable Allocator vtable (system_allocator + usable/good
  * size), plus opaque handles for SharedPool / SharedPoolCached
  * (hard/soft-capacity sharded fixed-block pools), StackAllocator (LIFO bump),
- * Arena (bump over one pooled block), HugeRegion (huge-page / NUMA span), and
+ * PooledRegion (bump over one pooled block), HugeRegion (huge-page / NUMA
+ * span), and
  * the process-wide mimalloc policy knobs. Docs (1:1 with this header):
  * docs/guide/c-mem.md
  */
@@ -129,14 +131,14 @@ HYLE_MEM_C_API size_t hyle_system_good_size(size_t size);
 
 typedef struct hyle_quota_allocator_o hyle_quota_allocator_o;
 
-/* Thread-safe strict byte budget over `backing`. The opaque wrapper and the
+/* Thread-safe strict byte budget over `backing`. The opaque control and the
  * returned allocator borrow `backing`; all must be quiesced and all allocations
  * freed before destroy. */
 HYLE_MEM_C_API hyle_quota_allocator_o *
 hyle_quota_allocator_create(hyle_allocator backing, size_t limit);
 HYLE_MEM_C_API void hyle_quota_allocator_destroy(hyle_quota_allocator_o *q);
 HYLE_MEM_C_API hyle_allocator
-hyle_quota_allocator_get(hyle_quota_allocator_o *q);
+hyle_quota_allocator_as_allocator(hyle_quota_allocator_o *q);
 HYLE_MEM_C_API size_t
 hyle_quota_allocator_used(const hyle_quota_allocator_o *q);
 HYLE_MEM_C_API size_t
@@ -186,8 +188,8 @@ HYLE_MEM_C_API hyle_allocator hyle_region_as_allocator(hyle_region_o *r);
 typedef struct hyle_fixed_region_o hyle_fixed_region_o;
 
 /* Payload allocation never falls back or allocates. create() allocates only the
- * small opaque C control wrapper; `storage` remains caller-owned and must
- * outlive the wrapper/results. */
+ * small opaque C control; `storage` remains caller-owned and must outlive the
+ * control/results. */
 HYLE_MEM_C_API hyle_fixed_region_o *hyle_fixed_region_create(void *storage,
                                                              size_t size);
 HYLE_MEM_C_API void hyle_fixed_region_destroy(hyle_fixed_region_o *r);
@@ -206,7 +208,7 @@ hyle_fixed_region_as_allocator(hyle_fixed_region_o *r);
 typedef struct hyle_fixed_pool_o hyle_fixed_pool_o;
 
 /* Single-threaded. Allocation metadata lives inside storage; no payload
- * fallback. create() allocates only the opaque C control wrapper. Individual
+ * fallback. create() allocates only the opaque C control. Individual
  * allocations can be freed. */
 HYLE_MEM_C_API hyle_fixed_pool_o *hyle_fixed_pool_create(void *storage,
                                                          size_t size);
@@ -238,12 +240,10 @@ hyle_fixed_pool_as_allocator(hyle_fixed_pool_o *p);
 typedef struct hyle_shared_pool_o hyle_shared_pool_o;
 
 /* `block_count` blocks of `block_size` bytes each, aligned to `alignment`
- * (0 => default). Slab + link arrays come from `backing`. Returns NULL (and
- * sets hyle_mem_last_error) on a resource failure: invalid backing,
- * wrapper-alloc failure, or slab/link/heads OOM in the ctor (followup #2 arch B
- * -- no longer aborts). Contract violations (block_size/block_count == 0, or
- * block_size*block_count overflowing size_t) still fail-fast (abort) in the C++
- * ctor, same as a C++ caller. */
+ * (0 => default). The opaque control, slab and link arrays all come from
+ * `backing`. Invalid/overflowing layout or a resource failure returns NULL and
+ * sets hyle_mem_last_error; C input validation does not expose C++ constructor
+ * assertions. */
 HYLE_MEM_C_API hyle_shared_pool_o *
 hyle_shared_pool_create(hyle_allocator backing, size_t block_size,
                         uint32_t block_count, size_t alignment);
@@ -348,9 +348,9 @@ hyle_shared_pool_cached_as_allocator(hyle_shared_pool_cached_o *p);
 
 typedef struct hyle_stack_allocator_o hyle_stack_allocator_o;
 
-/* Owns a `size`-byte slab from `backing`. Returns NULL (and sets
- * hyle_mem_last_error) on invalid backing, wrapper-alloc failure, or slab OOM
- * (followup #2 arch B -- no longer aborts); size==0 still fail-fasts (abort).
+/* Owns a `size`-byte slab from `backing`; the opaque control uses the same
+ * backing. Invalid backing, zero size, control allocation failure, or slab OOM
+ * returns NULL and sets hyle_mem_last_error.
  */
 HYLE_MEM_C_API hyle_stack_allocator_o *
 hyle_stack_allocator_create(hyle_allocator backing, size_t size);
@@ -375,28 +375,32 @@ HYLE_MEM_C_API hyle_allocator
 hyle_stack_allocator_as_allocator(hyle_stack_allocator_o *s);
 
 /* ========================================================================== */
-/* Arena — bump over ONE borrowed SharedPool block */
+/* PooledRegion — bump over ONE borrowed SharedPool block */
 /* ========================================================================== */
 
-typedef struct hyle_arena_o hyle_arena_o;
+typedef struct hyle_pooled_region_o hyle_pooled_region_o;
 
-/* Borrows one block from `pool` (a SharedPool, which must outlive the arena).
- * Returns NULL if `pool` is NULL, the wrapper allocation fails, or the pool has
+/* Borrows one block from `pool` (a SharedPool, which must outlive the region).
+ * Returns NULL if `pool` is NULL, the control allocation fails, or the pool has
  * no free block (exhausted) -- the exhausted case sets
  * hyle_mem_last_error("...pool exhausted..."). Pool exhaustion is a graceful
- * resource failure (NULL), not a contract violation: the C++ Arena ctor does
- * NOT abort on it. */
-HYLE_MEM_C_API hyle_arena_o *hyle_arena_create(hyle_shared_pool_o *pool);
+ * resource failure (NULL), not a contract violation. */
+HYLE_MEM_C_API hyle_pooled_region_o *
+hyle_pooled_region_create(hyle_shared_pool_o *pool);
 HYLE_MEM_C_API void
-hyle_arena_destroy(hyle_arena_o *a); /* returns block to pool */
-HYLE_MEM_C_API void *hyle_arena_allocate(hyle_arena_o *a, size_t bytes,
-                                         size_t alignment);
-HYLE_MEM_C_API void hyle_arena_reset(hyle_arena_o *a);
-HYLE_MEM_C_API size_t hyle_arena_used(const hyle_arena_o *a);
-HYLE_MEM_C_API size_t hyle_arena_remaining(const hyle_arena_o *a);
-HYLE_MEM_C_API size_t hyle_arena_block_size(const hyle_arena_o *a);
-/* Vtable view (alloc=bump, free=no-op, realloc=bump+copy). Owned by a. */
-HYLE_MEM_C_API hyle_allocator hyle_arena_as_allocator(hyle_arena_o *a);
+hyle_pooled_region_destroy(hyle_pooled_region_o *r); /* returns block to pool */
+HYLE_MEM_C_API void *hyle_pooled_region_allocate(hyle_pooled_region_o *r,
+                                                 size_t bytes,
+                                                 size_t alignment);
+HYLE_MEM_C_API void hyle_pooled_region_clear(hyle_pooled_region_o *r);
+HYLE_MEM_C_API size_t hyle_pooled_region_used(const hyle_pooled_region_o *r);
+HYLE_MEM_C_API size_t
+hyle_pooled_region_remaining(const hyle_pooled_region_o *r);
+HYLE_MEM_C_API size_t
+hyle_pooled_region_block_size(const hyle_pooled_region_o *r);
+/* Vtable view (alloc=bump, free=no-op, realloc=bump+copy). Owned by r. */
+HYLE_MEM_C_API hyle_allocator
+hyle_pooled_region_as_allocator(hyle_pooled_region_o *r);
 
 /* ========================================================================== */
 /* GrowablePool — single-threaded, unbounded object pool of raw slots */
@@ -409,14 +413,13 @@ typedef struct hyle_growable_pool_o hyle_growable_pool_o;
  * never "full" until the backing itself OOMs. Single-threaded (no atomics, so
  * faster when uncontended; do NOT share across threads). `initial_slots` is the
  * first block's slot count (0 => 1); blocks then double geometrically. Blocks
- * come from `backing`. Returns NULL (and sets hyle_mem_last_error) on invalid
- * backing or wrapper-alloc failure; slot_size==0 fail-fasts (abort) in the C++
- * core. A grow that later hits backing OOM is graceful -- acquire() returns
- * NULL (mem-audit-followup #2 arch B), not an abort.
+ * come from `backing`. Invalid/overflowing layout, invalid backing, or control
+ * allocation failure returns NULL and sets hyle_mem_last_error. A grow that
+ * later hits backing OOM is likewise graceful -- acquire() returns NULL.
  *
- * Like the arena object pool (HYLE_OBJECT_POOL_CREATE), acquire() hands out RAW
- * uninitialized storage and release() runs NO destructor: the C caller inits
- * the slot and cleans it up before releasing. (The ctor/dtor-running C++
+ * Like the fixed object-pool macro (HYLE_OBJECT_POOL_CREATE), acquire() hands
+ * out RAW uninitialized storage and release() runs NO destructor: the C caller
+ * inits the slot and cleans it up before releasing. (The ctor/dtor-running C++
  * hyle::mem::GrowablePool<T> is a C++-only convenience, not a gap here.) */
 HYLE_MEM_C_API hyle_growable_pool_o *
 hyle_growable_pool_create(hyle_allocator backing, size_t slot_size,

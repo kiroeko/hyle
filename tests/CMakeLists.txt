@@ -46,8 +46,8 @@ hyle_apply_warnings(hyle_mem_c_test)
 hyle_apply_sanitizer(hyle_mem_c_test)
 add_test(NAME hyle_mem_c_test COMMAND hyle_mem_c_test)
 
-# Freeze the public mem C symbol set against a checked-in manifest, require the
-# pure-C consumer to reference every entry, and compare the built DLL/.so exports.
+# Keep the draft mem C manifest, pure-C consumer, and DLL/.so exports in sync.
+# Before first release this is drift detection, not a compatibility promise.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 if(WIN32)
   get_filename_component(_hyle_linker_dir "${CMAKE_LINKER}" DIRECTORY)
@@ -57,9 +57,9 @@ elseif(CMAKE_NM)
 else()
   find_program(_hyle_mem_symbol_tool NAMES nm REQUIRED)
 endif()
-add_test(NAME hyle_mem_c_abi_baseline_test
+add_test(NAME hyle_mem_c_surface_test
          COMMAND "${Python3_EXECUTABLE}"
-                 "${PROJECT_SOURCE_DIR}/scripts/mem-c-abi-baseline.py"
+                 "${PROJECT_SOURCE_DIR}/scripts/mem-c-surface-check.py"
                  --library "$<TARGET_FILE:hyle_mem>"
                  --symbol-tool "${_hyle_mem_symbol_tool}")
 
@@ -79,7 +79,7 @@ hyle_apply_warnings(hyle_obs_c_test)
 hyle_apply_sanitizer(hyle_obs_c_test)
 add_test(NAME hyle_obs_c_test COMMAND hyle_obs_c_test)
 hyle_add_test(platform SOURCES platform/wait_test.cc platform/thread_test.cc platform/dynlib_test.cc platform/fs_test.cc platform/virtual_memory_test.cc platform/numa_test.cc platform/mapped_file_test.cc platform/cpu_test.cc)
-hyle_add_test(mem SOURCES mem/api_baseline_test.cc mem/allocator_test.cc mem/shared_pool_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc mem/fiber_stack_test.cc mem/stats_test.cc mem/hugepage_test.cc mem/numa_test.cc DEPS hyle_platform mimalloc_static)
+hyle_add_test(mem SOURCES mem/api_surface_test.cc mem/allocator_test.cc mem/shared_pool_test.cc mem/pool_stack_test.cc mem/alignment_test.cc mem/pmr_test.cc mem/growable_pool_test.cc mem/fiber_stack_test.cc mem/stats_test.cc mem/hugepage_test.cc mem/numa_test.cc DEPS hyle_platform mimalloc_static)
 hyle_add_test(util SOURCES util/ref_counted_test.cc util/scope_guard_test.cc util/type_name_test.cc util/registry_test.cc util/random_test.cc util/spin_lock_test.cc util/demangle_test.cc util/c_util_concurrency_test.cc DEPS hyle_container)
 add_executable(hyle_util_c_test util/c_util_test.c)
 target_link_libraries(hyle_util_c_test PRIVATE hyle_util)

@@ -1,4 +1,4 @@
-// HYLE specialized-allocator cluster vs SOTA. performance.md:127 claims
+// HYLE mem user scenarios vs same-contract mature implementations.
 // arena/bump allocators are "5-10x+ vs new/delete" -- never benchmarked until
 // now. The honest SOTA references are in the STANDARD LIBRARY (no external
 // clone):
@@ -10,7 +10,7 @@
 //
 // Workload families (fair contracts only — no "wrong tool" rows in SOTA
 // tables):
-//  A. BUMP: Arena + StackAllocator vs pmr::monotonic vs raw mi.
+//  A. BUMP: PooledRegion + StackAllocator vs pmr::monotonic vs raw mi.
 //  B. SINGLE-THREAD pool churn: GrowablePool ONLY vs pmr::unsynchronized_pool
 //  vs
 //     raw mi. SharedPool/SharedPoolCached belong to cross-thread sharing
@@ -40,6 +40,7 @@
 #include <memory_resource>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "hyle/mem/allocator.h"
@@ -102,7 +103,7 @@ int env_int(const char *name, int fallback) {
 
 inline void *require_allocation(void *p) noexcept {
   if (p == nullptr) {
-    std::fputs("arena_pool_bench: unexpected allocation failure\n", stderr);
+    std::fputs("mem_scenarios_bench: unexpected allocation failure\n", stderr);
     std::abort();
   }
   return p;
@@ -205,15 +206,15 @@ int main() {
         .batch(kN)
         .minEpochIterations(50);
 
-    // HYLE PooledRegion (borrows ONE pooled block; reset() reuses it per
+    // HYLE PooledRegion (borrows ONE pooled block; clear() reuses it per
     // round).
     SharedPool pool(sys, kRegion, 1); // one hard-pool block of kRegion bytes
     PooledRegion arena(&pool);
     b.run("HYLE PooledRegion (bump, pooled block)", [&] {
-      arena.reset();
+      arena.clear();
       for (int i = 0; i < kN; ++i) {
         void *p = require_allocation(arena.allocate(kObj));
-        nb::doNotOptimizeAway(p);
+        nb::doNotOptimizeAway(std::as_const(p));
       }
     });
 
@@ -223,7 +224,7 @@ int main() {
       stack.reset();
       for (int i = 0; i < kN; ++i) {
         void *p = require_allocation(stack.allocate(kObj));
-        nb::doNotOptimizeAway(p);
+        nb::doNotOptimizeAway(std::as_const(p));
       }
     });
 
@@ -237,7 +238,7 @@ int main() {
                                               std::pmr::null_memory_resource());
       for (int i = 0; i < kN; ++i) {
         void *p = mbr.allocate(kObj, alignof(std::max_align_t));
-        nb::doNotOptimizeAway(p);
+        nb::doNotOptimizeAway(std::as_const(p));
       }
     });
 
@@ -317,7 +318,7 @@ int main() {
     b.run("HYLE GrowablePool (single-thread)", [&] {
       for (int i = 0; i < kN; ++i) {
         Obj *p = static_cast<Obj *>(require_allocation(gpool.create()));
-        nb::doNotOptimizeAway(p);
+        nb::doNotOptimizeAway(std::as_const(p));
         gpool.destroy(p);
       }
     });
@@ -326,7 +327,7 @@ int main() {
     b.run("std::pmr::unsynchronized_pool_resource (SOTA)", [&] {
       for (int i = 0; i < kN; ++i) {
         void *p = upr.allocate(kObj, alignof(std::max_align_t));
-        nb::doNotOptimizeAway(p);
+        nb::doNotOptimizeAway(std::as_const(p));
         upr.deallocate(p, kObj, alignof(std::max_align_t));
       }
     });
@@ -334,7 +335,7 @@ int main() {
     b.run("raw mi_malloc/free (general)", [&] {
       for (int i = 0; i < kN; ++i) {
         void *p = require_allocation(mi_malloc(kObj));
-        nb::doNotOptimizeAway(p);
+        nb::doNotOptimizeAway(std::as_const(p));
         mi_free(p);
       }
     });
@@ -378,7 +379,7 @@ int main() {
         GrowablePool<Obj> local(sys, 256);
         for (int i = 0; i < kPer; ++i) {
           Obj *p = static_cast<Obj *>(require_allocation(local.create()));
-          nb::doNotOptimizeAway(p);
+          nb::doNotOptimizeAway(std::as_const(p));
           local.destroy(p);
         }
       });
@@ -392,7 +393,7 @@ int main() {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
           void *p = require_allocation(shared_cached.allocate());
-          nb::doNotOptimizeAway(p);
+          nb::doNotOptimizeAway(std::as_const(p));
           shared_cached.deallocate(p);
         }
       });
@@ -406,7 +407,7 @@ int main() {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
           void *p = require_allocation(shared_hard.allocate());
-          nb::doNotOptimizeAway(p);
+          nb::doNotOptimizeAway(std::as_const(p));
           shared_hard.deallocate(p);
         }
       });
@@ -424,7 +425,7 @@ int main() {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
           void *p = require_allocation(tbb_fixed.malloc(kObj));
-          nb::doNotOptimizeAway(p);
+          nb::doNotOptimizeAway(std::as_const(p));
           tbb_fixed.free(p);
         }
       });
@@ -440,7 +441,7 @@ int main() {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
           void *p = spr.allocate(kObj, alignof(std::max_align_t));
-          nb::doNotOptimizeAway(p);
+          nb::doNotOptimizeAway(std::as_const(p));
           spr.deallocate(p, kObj, alignof(std::max_align_t));
         }
       });
@@ -454,7 +455,7 @@ int main() {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
           void *p = require_allocation(scalable_malloc(kObj));
-          nb::doNotOptimizeAway(p);
+          nb::doNotOptimizeAway(std::as_const(p));
           scalable_free(p);
         }
       });
@@ -468,7 +469,7 @@ int main() {
       run_threads([&] {
         for (int i = 0; i < kPer; ++i) {
           void *p = require_allocation(mi_malloc(kObj));
-          nb::doNotOptimizeAway(p);
+          nb::doNotOptimizeAway(std::as_const(p));
           mi_free(p);
         }
       });
@@ -796,11 +797,24 @@ int main() {
         for (int i = 0; i < kOperations; ++i) {
           const int slot = i % kWindow;
           pool.deallocate(live[slot]);
-          live[slot] = require_allocation(pool.allocate(scratch_size(i), 16));
-          nb::doNotOptimizeAway(live[slot]);
+          live[slot] = pool.allocate(scratch_size(i), 16);
+          if (live[slot] == nullptr) {
+            std::fprintf(stderr,
+                         "FixedPool benchmark failure: operation=%d used=%zu "
+                         "capacity=%zu\n",
+                         i, pool.used(), pool.capacity());
+            std::abort();
+          }
+          nb::doNotOptimizeAway(std::as_const(live[slot]));
         }
         for (void *p : live)
           pool.deallocate(p);
+        if (pool.used() != 0) {
+          std::fprintf(stderr,
+                       "FixedPool benchmark leak: used=%zu capacity=%zu\n",
+                       pool.used(), pool.capacity());
+          std::abort();
+        }
       });
 #if defined(HYLE_BENCH_TBB)
       std::vector<std::byte> tbb_storage(kStorageBytes +
@@ -813,7 +827,7 @@ int main() {
           if (live[slot] != nullptr)
             tbb_pool.free(live[slot]);
           live[slot] = require_allocation(tbb_pool.malloc(scratch_size(i)));
-          nb::doNotOptimizeAway(live[slot]);
+          nb::doNotOptimizeAway(std::as_const(live[slot]));
         }
         for (void *p : live)
           tbb_pool.free(p);
@@ -835,14 +849,14 @@ int main() {
       b.run("HYLE system allocator (direct)", [&] {
         for (int i = 0; i < kOperations; ++i) {
           void *p = require_allocation(sys.allocate(64, 16));
-          nb::doNotOptimizeAway(p);
+          nb::doNotOptimizeAway(std::as_const(p));
           sys.deallocate(p, 64, 16);
         }
       });
       b.run("HYLE QuotaAllocator -> system allocator", [&] {
         for (int i = 0; i < kOperations; ++i) {
           void *p = require_allocation(bounded.allocate(64, 16));
-          nb::doNotOptimizeAway(p);
+          nb::doNotOptimizeAway(std::as_const(p));
           bounded.deallocate(p, 64, 16);
         }
       });
@@ -863,7 +877,7 @@ int main() {
       ObjectPool<Context> reconstruct(sys, 8);
       PreservingObjectPool<Context> preserve(sys, 8);
       if (!reconstruct.valid() || !preserve.valid()) {
-        std::fputs("arena_pool_bench: context pool construction failed\n",
+        std::fputs("mem_scenarios_bench: context pool construction failed\n",
                    stderr);
         return 2;
       }

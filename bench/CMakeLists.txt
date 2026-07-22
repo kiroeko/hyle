@@ -109,9 +109,10 @@ hyle_add_bench(mem SOURCES mem/allocator_bench.cc DEPS mimalloc_static)
 
 # arena/pool/stack specialized-allocator cluster vs std::pmr (std's arena/pool, no
 # external clone) + raw mimalloc. Own exe (allocator_bench.cc already owns main()).
-add_executable(hyle_arena_pool_bench mem/arena_pool_bench.cc)
-target_link_libraries(hyle_arena_pool_bench PRIVATE hyle_mem nanobench mimalloc_static)
-hyle_apply_warnings(hyle_arena_pool_bench)
+add_executable(hyle_mem_scenarios_bench mem/scenario_bench.cc)
+target_link_libraries(hyle_mem_scenarios_bench PRIVATE hyle_mem nanobench
+                                                       mimalloc_static)
+hyle_apply_warnings(hyle_mem_scenarios_bench)
 
 # platform primitive bench (red-team gap-fill): Parker park/unpark (futex/
 # WaitOnAddress) + Thread spawn/join. Links hyle_platform (Parker/Thread live there).
@@ -468,11 +469,13 @@ endif()
 
 # Optional: oneTBB concurrent_bounded_queue + concurrent_vector (the apples-to-
 # apples bounded-MPMC and concurrent-vector rivals; same try_push/try_pop/push_back
-# API). Heavy external build -> add_subdirectory the cloned oneTBB. Enable with
-# -DHYLE_BENCH_TBB=ON; point HYLE_TBB_DIR at the clone (sibling by default).
+# API). Heavy external build -> add_subdirectory the local oneTBB source snapshot.
+# Enable with -DHYLE_BENCH_TBB=ON; point HYLE_TBB_DIR at that snapshot (sibling
+# by default).
 option(HYLE_BENCH_TBB "build queue/vector bench vs oneTBB" OFF)
 if(HYLE_BENCH_TBB)
-  set(HYLE_TBB_DIR "${PROJECT_SOURCE_DIR}/../oneTBB" CACHE PATH "cloned oneTBB")
+  set(HYLE_TBB_DIR "${PROJECT_SOURCE_DIR}/../oneTBB" CACHE PATH
+      "local oneTBB source snapshot")
   if(NOT EXISTS "${HYLE_TBB_DIR}/CMakeLists.txt")
     message(FATAL_ERROR "HYLE_BENCH_TBB=ON but no oneTBB at ${HYLE_TBB_DIR}")
   endif()
@@ -482,12 +485,12 @@ if(HYLE_BENCH_TBB)
   add_subdirectory("${HYLE_TBB_DIR}" "${CMAKE_BINARY_DIR}/onetbb" EXCLUDE_FROM_ALL)
   target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_TBB)
   target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
-  # arena_pool_bench: oneTBB fixed_pool is the direct fixed-buffer rival;
+  # mem_scenarios_bench: oneTBB fixed_pool is the direct fixed-buffer rival;
   # scalable_allocator remains a growable throughput reference. memory_pool.h is a
   # oneTBB preview header and requires TBB_PREVIEW_MEMORY_POOL=1.
-  target_compile_definitions(hyle_arena_pool_bench PRIVATE
+  target_compile_definitions(hyle_mem_scenarios_bench PRIVATE
                              HYLE_BENCH_TBB TBB_PREVIEW_MEMORY_POOL=1)
-  target_link_libraries(hyle_arena_pool_bench PRIVATE TBB::tbbmalloc TBB::tbb)
+  target_link_libraries(hyle_mem_scenarios_bench PRIVATE TBB::tbbmalloc TBB::tbb)
 endif()
 
 # Optional: rigtorp::mpmc::Queue -- the SAME-CONTRACT rival to BoundedQueue (strict-

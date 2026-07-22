@@ -1,6 +1,6 @@
 # mem 模块审查处置清单 (followup)
 
-> **历史名称边界：**本文保留审计当时的 `MemoryArena` 名称与数字；当前固定块池 API 是硬容量 `SharedPool` 和软容量 `SharedPoolCached`，旧 `memory_arena.h` / `hyle_memory_arena_*` 已删除并由现 API 取代。
+> **历史名称边界：**本文保留审计当时的 `MemoryArena`、`Arena` 与 `hyle_arena_*` 名称和数字；当前固定块池 API 是硬容量 `SharedPool` 和软容量 `SharedPoolCached`，旧 `memory_arena.h` / `hyle_memory_arena_*` 已删除，旧 `Arena` / `hyle_arena_*` 已统一为 `PooledRegion` / `hyle_pooled_region_*`。
 
 > 2026-07-18 对 mem 做了一次全面体检(5 维度:红队实现 / C ABI 完整性+易用 / error 使用 / 功能完善 / 测试覆盖+性能,含三平台)。4 个红队子代理 + 主进程核实。本文件是处置清单 + handoff,给接续的 context。
 

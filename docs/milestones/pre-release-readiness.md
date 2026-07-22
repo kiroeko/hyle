@@ -9,7 +9,7 @@ HYLE 当前不是“功能只完成一半”的骨架，也还不是可直接发
 |---|---|---|
 | 基础模块机制 | **高完成度** | error/platform/mem/time/simd/util/obs/container 已多轮强收口 |
 | sched/io/compute/graph 机制 | **主体存在，不是 stub** | sched/io 尚需同等级模块收口；compute/graph 仍有能力尾 |
-| 稳定外部产品面 | **部分完成** | 上述八模块已有纯 C ABI；sched/io/compute/graph、install/export、跨编译器和 FFI 门未完 |
+| 稳定外部产品面 | **部分完成** | 多个模块已有纯 C surface；mem 仍在发布前形状审查，另有 install/export、跨编译器和 FFI 门未完 |
 | 完整北极星能力 | **约 70–80% 判断带** | graph-02 后两步、compute 后端/算子尾、统一发布验收 |
 
 `cloc src include` 当前约 **67.2k**；tests **29.9k**；bench **13.2k**；
@@ -43,12 +43,13 @@ docs **17.5k**。LOC 只说明资产体量，不作为功能或 SOTA 的替代�
 
 | 模块 | 判定 | 后续方式 |
 |---|---|---|
-| error/platform/mem/time/simd/util/obs | **预发布冻结** | 只按上述触发器重开；SVE/RVV 真机证据仍是平台到位后的专项补证 |
+| error/platform/time/simd/util/obs | **预发布冻结** | 只按上述触发器重开；SVE/RVV 真机证据仍是平台到位后的专项补证 |
+| mem | **主动重开收口复审** | 以真实 workload 和本地 oneTBB/mimalloc/Folly/marl 快照复核公共形状；C surface 在首次发布前不承诺兼容，M4/TSan 与若干 C 产品决策仍待签字 |
 | container | **预发布冻结** | StringBuf 复杂度/争用/batch/三平台强 peer 已收口；已知 Linux/M4 lifecycle 常数边界写入证书 |
 | sched | **预发布冻结** | 双任务腿、饱和/关闭红队、114 入口 C ABI 与 guide 已收口；marl 15 遍三平台为 Win/Lin 明确赢、M4 统计平局；只按触发器重开 |
 | io | **下一批强收口** | 功能/下游/红队/测试性能/C ABI/指南六项一次完成 |
 | compute/graph | **机制成立、产品能力未封口** | 按北极星补能力，不能称“只有架子”，也不能提前冻结 |
-| close-01/发布 | **部分** | 八个底层模块完成；上层四模块、install/export、跨编译器和 FFI 冒烟待做 |
+| close-01/发布 | **部分** | mem 复审、上层模块、install/export、跨编译器和 FFI 冒烟待做 |
 
 ## 冻结证据入口
 

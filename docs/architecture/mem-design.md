@@ -26,7 +26,7 @@ mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 
 | `FiberStackPool` | sched worker/fiber | guarded stack、三档尺寸、跨 worker release、Scheduler 覆盖全部 fiber 生命周期 |
 | `HugeRegion` | 显式大块内存调用方 | THP/NUMA 是显式策略，不由 pool 根据 allocator identity 偷换 backing |
 | graph evaluation 临时区 | `parallel_eval` 的 level/handle/outcome 与 wavefront CSR/state | 明确的 phase lifetime，是通用 owned Region 的内部 workload；graph-aware liveness/reserve 仍归 graph |
-| `Arena` / `StackAllocator` / `GrowablePool` | 无生产调用 | 当前仅公开能力、C ABI、测试与 benchmark |
+| `PooledRegion` / `StackAllocator` / `GrowablePool` | 无生产调用 | 当前仅公开能力、C draft surface、测试与 benchmark |
 | `SharedPool` / `SharedPoolCached` | 无生产实例 | 当前仅公开能力、测试与 benchmark |
 | `ObjectPool<T>` / `ObjectPoolCached<T>` | 无生产实例 | 已实现并测试，不是占位符 |
 | compute `Buffer` / `DevicePool` | 当前无生产创建点 | 不归 mem；Buffer 已显式分开 native handle、host mapping 与 coherence 操作 |
@@ -72,6 +72,28 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 
 通用 malloc 借 mimalloc，不自造任意大小通用堆。sized-free 必须带回原请求的 size/alignment；backing identity 与 ownership 不能丢失。
 
+### 4.1 C surface 处置（发布前草案）
+
+现有 `include/hyle/c/mem.h` 是早期实现，尚未形成兼容承诺。审查直接读取工作区中固定的
+oneTBB、mimalloc、Folly 与 marl 源码快照，不自行下载或更新参考库。当前结论是：
+
+1. `hyle_allocator` 的 POD vtable 保留；它是 C/FFI 的注入脊，不要求 C++ object layout。
+2. 有独立 runtime state 的能力使用 opaque handle；C 不机械镜像模板对象和 C++ policy 类型。
+3. 构造函数收到 `backing` 时，control handle 与内部 storage 都必须服从该 backing，不能绕到
+   global `new`。FixedRegion/FixedPool/HugeRegion 没有 control-backing 参数，当前明确使用 HYLE
+   system allocator 分配小控制对象；external payload 仍绝不 fallback。
+4. C 传入的 size/layout/alignment 是可校验数据：非法构造参数返回 NULL + last-error，不让
+   C++ contract assert 穿过 ABI。foreign/double return、错误 marker 和 live object 下销毁仍是
+   已建立的调用合同违反，可 fail-fast。
+5. `PooledRegion` 在 C/C++ 使用同一名字与 `clear()`；未发布阶段不保留 `Arena/reset` 兼容壳。
+   adapter 统一用 `*_as_allocator`，不混用 `get`。
+6. `c_surface_symbols.txt` 只保证声明、纯 C 消费和实际导出同步；有意的产品改形必须更新它，
+   它不是 ABI freeze。
+
+发布前仍须做三项决策：mem last-error 是否脱离 platform VM 的共享通道；FixedRegion/FixedPool
+是否需要 caller-owned in-place control 以覆盖严格 no-heap C 场景；Stats/Leak 的 C 面是否有真实
+消费者。没有场景证明前不靠“C++ 有这个类”自动扩符号。
+
 ## 5. 固定块池
 
 `SharedPool` 与 `SharedPoolCached` 共用 `detail::ShardedSlab`，但公开合同不同。
@@ -111,9 +133,9 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 
 ## 7. region、stack 与增长池
 
-### 7.1 `PooledRegion` 与兼容名 `Arena`
+### 7.1 `PooledRegion`
 
-`PooledRegion` 只借 `SharedPool` 的一个 hard block，固定容量、单线程、bulk `clear()`；旧 `reset()` 与 `Arena` 保留为 source-compatible 兼容面，新增代码使用 Region 家族的统一命名。
+`PooledRegion` 只借 `SharedPool` 的一个 hard block，固定容量、单线程、bulk `clear()`。库尚未发布，旧 `Arena/reset` 双命名已删除，Region 家族只保留一套公开说法。
 
 ### 7.2 owned `Region` 与 external `FixedRegion`
 
@@ -165,7 +187,7 @@ external 能力按 allocation model 分成两个类型：
 | `PreservingObjectPool` | 已实现独立 Preserve lifetime | 昂贵对象只构析一次，不与 TLS Cached 混淆 |
 | `StackAllocator` | 保留；alignment 加法回绕已修 | 常见 LIFO scratch |
 | `GrowablePool` | 保留；diagnostics 已实现 | 常见 single-thread typed reuse；当前无生产消费者 |
-| `PooledRegion` / `Arena` alias | 精确命名已完成 | borrowed single hard-pool block |
+| `PooledRegion` | 精确命名已完成，旧兼容名已删除 | borrowed single hard-pool block |
 | owned `Region(size_limit)` | 已实现 | request/frame/graph phase 的 growable bulk lifetime |
 | `FixedRegion` / `FixedPool` | 已实现为两个正交 external 类型 | bump bulk reset 与 variable individual free 不混合 |
 | `QuotaAllocator` | 已实现 | 任意 sized-free backing 的严格 live-byte budget |
@@ -177,7 +199,7 @@ external 能力按 allocation model 分成两个类型：
 2026-07-22 收口执行新增的是成熟、正交的基础形状，不以 benchmark 参数命名：
 
 1. `SystemAllocator` typed count 防回绕；`PmrResource` 构造验证完整 vtable，equality 比较三函数 + state。
-2. `StackAllocator` / 当前 `Arena` 通过可合成地址测试的 checked-align helper 防 `uintptr_t` 回绕。
+2. `StackAllocator` / `PooledRegion` 通过可合成地址测试的 checked-align helper 防 `uintptr_t` 回绕。
 3. `SharedPool` 不再根据 system allocator identity 隐式进入 HugeRegion；THP/NUMA 由显式 backing/provider 表达。
 4. compute Buffer 分开 native handle / mapped host pointer；范围 flush/invalidate 按 Vulkan `nonCoherentAtomSize` 扩边；零长度公共 no-op；async Kernel/Buffer 存活和 producer completion 责任显式。错误 pinned allocator 与单块 staging API 已删除。
 5. `Region`/`FixedRegion`、`FixedPool`、`QuotaAllocator`、`PoolLoan` 与 Preserve 类型均有独立 ownership/capacity/lifetime 合同，并已接入 C ABI（模板对象 policy 除外）。

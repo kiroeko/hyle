@@ -40,6 +40,38 @@ static void *oom_realloc(void *st, void *p, size_t os, size_t ns, size_t al) {
   return NULL;
 }
 
+typedef struct counting_backing_state {
+  hyle_allocator upstream;
+  size_t live_allocations;
+} counting_backing_state;
+
+static void *counting_alloc(void *st, size_t size, size_t alignment) {
+  counting_backing_state *state = (counting_backing_state *)st;
+  void *p = state->upstream.alloc(state->upstream.state, size, alignment);
+  if (p != NULL)
+    ++state->live_allocations;
+  return p;
+}
+
+static void counting_free(void *st, void *p, size_t size, size_t alignment) {
+  counting_backing_state *state = (counting_backing_state *)st;
+  if (p != NULL)
+    --state->live_allocations;
+  state->upstream.free(state->upstream.state, p, size, alignment);
+}
+
+static void *counting_realloc(void *st, void *p, size_t old_size,
+                              size_t new_size, size_t alignment) {
+  counting_backing_state *state = (counting_backing_state *)st;
+  void *out = state->upstream.realloc(state->upstream.state, p, old_size,
+                                      new_size, alignment);
+  if (p == NULL && out != NULL)
+    ++state->live_allocations;
+  else if (p != NULL && new_size == 0)
+    --state->live_allocations;
+  return out;
+}
+
 int main(void) {
   /* The mechanical ABI audit counts only references below this marker, excluding
      declarations pulled from the header. Keep it as code so comment stripping
@@ -51,6 +83,17 @@ int main(void) {
   hyle_allocator sys = hyle_system_allocator();
   CHECK(sys.alloc != NULL && sys.free != NULL && sys.realloc != NULL);
   {
+    counting_backing_state state = {sys, 0};
+    hyle_allocator counting = {counting_alloc, counting_free,
+                               counting_realloc, &state};
+    hyle_shared_pool_o *pool =
+        hyle_shared_pool_create(counting, 64, 8, 0);
+    CHECK(pool != NULL);
+    CHECK(state.live_allocations >= 4u); /* control + slab + links + heads */
+    hyle_shared_pool_destroy(pool);
+    CHECK(state.live_allocations == 0u);
+  }
+  {
     hyle_allocator bad = {0};
     CHECK(hyle_shared_pool_create(bad, 16, 1, 0) == NULL);
     CHECK(hyle_mem_last_error()[0] != '\0');
@@ -58,6 +101,13 @@ int main(void) {
     CHECK(good != NULL);
     CHECK(hyle_mem_last_error()[0] == '\0');
     hyle_shared_pool_destroy(good);
+
+    /* C inputs are data, not C++ contracts: invalid layouts fail gracefully. */
+    CHECK(hyle_shared_pool_create(sys, 0, 1, 0) == NULL);
+    CHECK(hyle_shared_pool_create(sys, 16, 1, 3) == NULL);
+    CHECK(hyle_shared_pool_cached_create(sys, 16, 0, 0) == NULL);
+    CHECK(hyle_stack_allocator_create(sys, 0) == NULL);
+    CHECK(hyle_mem_last_error()[0] != '\0');
   }
   {
     /* direct vtable call */
@@ -101,7 +151,7 @@ int main(void) {
   {
     hyle_quota_allocator_o *quota = hyle_quota_allocator_create(sys, 128);
     CHECK(quota != NULL);
-    hyle_allocator a = hyle_quota_allocator_get(quota);
+    hyle_allocator a = hyle_quota_allocator_as_allocator(quota);
     void *p = hyle_alloc(&a, 96, 16);
     CHECK(p != NULL);
     CHECK(hyle_quota_allocator_used(quota) == 96u);
@@ -310,48 +360,47 @@ int main(void) {
     hyle_stack_allocator_destroy(sa);
   }
 
-  /* ---- Arena: bump over one pooled block ---- */
+  /* ---- PooledRegion: bump over one pooled block ---- */
   {
     hyle_shared_pool_o *pool = hyle_shared_pool_create(sys, 4096, 2, 0);
     CHECK(pool != NULL);
-    hyle_arena_o *ar = hyle_arena_create(pool);
-    CHECK(ar != NULL);
-    CHECK(hyle_arena_block_size(ar) == 4096u);
-    CHECK(hyle_arena_remaining(ar) == 4096u);
-    CHECK(hyle_arena_allocate(ar, 0, 16) == NULL);
-    CHECK(hyle_arena_used(ar) == 0u);
-    void *p = hyle_arena_allocate(ar, 100, 16);
+    hyle_pooled_region_o *region = hyle_pooled_region_create(pool);
+    CHECK(region != NULL);
+    CHECK(hyle_pooled_region_block_size(region) == 4096u);
+    CHECK(hyle_pooled_region_remaining(region) == 4096u);
+    CHECK(hyle_pooled_region_allocate(region, 0, 16) == NULL);
+    CHECK(hyle_pooled_region_used(region) == 0u);
+    void *p = hyle_pooled_region_allocate(region, 100, 16);
     CHECK(p != NULL);
     CHECK(((size_t)p % 16u) == 0u);
-    CHECK(hyle_arena_used(ar) >= 100u);
+    CHECK(hyle_pooled_region_used(region) >= 100u);
     {
-      hyle_allocator av = hyle_arena_as_allocator(ar);
+      hyle_allocator av = hyle_pooled_region_as_allocator(region);
       void *q = hyle_alloc(&av, 32, 8);
       CHECK(q != NULL);
       hyle_free(&av, q, 32, 8); /* bump allocator free is a no-op */
     }
-    hyle_arena_reset(ar);
-    CHECK(hyle_arena_used(ar) == 0u);
-    hyle_arena_destroy(ar); /* returns the block to the pool */
+    hyle_pooled_region_clear(region);
+    CHECK(hyle_pooled_region_used(region) == 0u);
+    hyle_pooled_region_destroy(region); /* returns the block to the pool */
     hyle_shared_pool_destroy(pool);
   }
 
-  /* ---- Arena: pool exhaustion is graceful -- NULL + last-error, not abort
-   * (followup #2 arch A: hyle_arena_create no longer aborts when the backing
-   * pool has no free block; it returns NULL and sets hyle_mem_last_error) ----
+  /* ---- PooledRegion: pool exhaustion is graceful -- NULL + last-error ----
    */
   {
     hyle_shared_pool_o *pool = hyle_shared_pool_create(sys, 4096, 1, 0);
     CHECK(pool != NULL);
-    hyle_arena_o *a1 = hyle_arena_create(pool); /* borrows the only block */
+    hyle_pooled_region_o *a1 =
+        hyle_pooled_region_create(pool); /* borrows the only block */
     CHECK(a1 != NULL);
-    hyle_arena_o *a2 = hyle_arena_create(pool); /* pool exhausted */
+    hyle_pooled_region_o *a2 = hyle_pooled_region_create(pool);
     CHECK(a2 == NULL);                          /* graceful NULL, not abort */
     CHECK(hyle_mem_last_error()[0] != '\0');    /* a non-empty reason string */
-    hyle_arena_destroy(a1);                     /* returns the only block */
-    hyle_arena_o *a3 = hyle_arena_create(pool); /* borrowable again */
+    hyle_pooled_region_destroy(a1); /* returns the only block */
+    hyle_pooled_region_o *a3 = hyle_pooled_region_create(pool);
     CHECK(a3 != NULL);
-    hyle_arena_destroy(a3);
+    hyle_pooled_region_destroy(a3);
     hyle_shared_pool_destroy(pool);
   }
 
@@ -439,12 +488,11 @@ int main(void) {
     CHECK(hyle_stack_allocator_create(oom, 4096) == NULL);
     CHECK(hyle_mem_last_error()[0] != '\0');
 
-    /* GrowablePool ctor is lazy (allocates nothing) -> create succeeds; the OOM
-       surfaces at the first acquire (grow fails -> NULL), never as an abort. */
+    /* The injected backing owns the opaque control object too. An always-OOM
+       backing therefore fails create without falling through to global new. */
     hyle_growable_pool_o *gp = hyle_growable_pool_create(oom, 32, 0, 4);
-    CHECK(gp != NULL);
-    CHECK(hyle_growable_pool_acquire(gp) == NULL);
-    hyle_growable_pool_destroy(gp);
+    CHECK(gp == NULL);
+    CHECK(hyle_mem_last_error()[0] != '\0');
   }
 
   /* ---- HugeRegion: open / write / destroy (THP hint) ---- */

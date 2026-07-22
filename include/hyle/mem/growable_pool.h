@@ -20,7 +20,7 @@
 //     max is known and threads share the pool.
 //   * mem::GrowablePool : UNBOUNDED, SINGLE-THREADED (no atomics -> faster when
 //     uncontended). Use for per-thread / per-fiber churn of unknown size.
-//   * mem::Arena : bump, bulk free, no per-object reuse.
+//   * mem::PooledRegion : bump, bulk free, no per-object reuse.
 //
 // Design: blocks of slots (geometric growth -> O(log n) allocations), an
 // intrusive free-list threads recycled slots (a freed slot stores the next-free

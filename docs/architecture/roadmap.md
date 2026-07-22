@@ -100,7 +100,7 @@ container/       │               │ compute   │  container 自带内联 SSE
 |---|---|---|---|---|
 | **P0** | error / obs-hook | Status+expected+ASSIGN_OR_RAISE / obs 埋点 | 3-5k | error ~0.7k + obs ~0.8k，✅ 预发布冻结 |
 | **P1** | platform | thread+park / vm+dynlib / path+fs+env | 5-8k | **~4.4k**，✅ 预发布冻结 |
-| **P2** | mem | Allocator+alignment / mimalloc / arena / pool+stack / NUMA | 6-10k | **~1.8k**，✅ 预发布冻结 |
+| **P2** | mem | Allocator+alignment / mimalloc / region / pool+stack / NUMA | 6-10k | **~1.8k**，实现主干稳定；公共形状/C surface 与跨平台性能尾仍在收口复审 |
 | **P2** | time | 单调钟 / 分层时间轮 | 1.5-2.5k | **~0.9k**，✅ 预发布冻结 |
 | **P3** | container | ring/MPMC / XXH3 / carray / SwissTable / SmallVector / string | 7-11k | **~4.9k**，✅ StringBuf 复杂度/三平台强 peer 收口后预发布冻结 |
 | **P3** | simd | 七后端 + 双轨 + dtype/math/sort/bitpack/search… | 10-16k | **已 ~34k 生产**（远超「~5–8k」旧投影）；补缺见 simd-capability-fill-list / simd-25，冻结无谓扩名 |
@@ -130,8 +130,8 @@ container/       │               │ compute   │  container 自带内联 SSE
 > scalar/SSE4.2/AVX2/AVX512/NEON 定宽后端 + SVE/RVV scalable 后端实跑 + Runtime/native/exact 双轨 + fp16/bf16/fp8 dtype + HYLE 自有数学/排序/bitpack/RNG 核，产品零 Highway/xsimd、外部对照追平；AVX512 由 Intel SDE 验正确性，SVE/RVV 多 VL 由 QEMU 验证）；**io 支柱已完成实现、C ABI、红队与三平台证书收口**（IOCP/io_uring/epoll/kqueue、shard-per-core、TCP/UDP、file 自动卸载、shmem、timeout/cancel、DNS/signal、TLS、HTTP/1.1+2、multishot/fixed-file）。当前不可声称整个 IO SOTA：M4 TLS/kqueue 多 worker、TLS handshake、专项 peer benchmark 与 HTTP whole-request cancel/C 高层 HTTP/TLS facade 是公开尾项；**compute/graph 有真实主干但能力面仍薄**。**
 > 体量/进度（2026-07-19）：生产 **~67.2k**；÷终态纪律中值
 > ~82.5k ≈ **~81% LOC**，但 SIMD 体量会放大这个比例；完整愿景的功能判断带为
-> **约 75–85%**。十个底层模块（含 sched/io）已经完成同等级收口并进入预发布冻结，
-> compute/graph 有真实主干但仍有能力尾，close-01 的上层 C ABI/install/FFI 门未完。
+> **约 75–85%**。多数底层模块已完成同等级收口；mem 因公共形状与 draft C surface
+> 主动重开复审，compute/graph 有真实主干但仍有能力尾，close-01 的上层 C ABI/install/FFI 门未完。
 > **勿用里程碑计数当完成度**。
 
 

@@ -1,8 +1,8 @@
 # C ABI 施工参考（给 HYLE 开发者：如何为一个模块导出 C ABI）
 
-> **读者**：HYLE 开发者。收口某个模块（container / simd / sched / io / compute / graph）需要给它做 C ABI 导出时，照这份走——就像 mem/error/platform 已经做的那样。
+> **读者**：HYLE 开发者。收口某个模块（container / simd / sched / io / compute / graph）需要给它做 C ABI 导出时，照这份走。
 > **配套**：本文件是 **how（照着做的步骤 + 模式 + checklist）**；**why（类型擦除、三层架构、为什么删版本协商）** 见 [`c-abi-design.md`](./c-abi-design.md)。上位依据 [`engineering-charter.md`](./engineering-charter.md) §6、[`coding-conventions.md`](./coding-conventions.md) §4。
-> **样板**：`include/hyle/c/mem.h` + `src/mem/c_mem.cc` + `tests/mem/c_mem_test.c` + `docs/guide/c-mem.md` 是**最完整的活样板**，遇到本文没覆盖的情况以它为准。
+> **样板**：`include/hyle/c/mem.h` + `src/mem/c_mem.cc` + `tests/mem/c_mem_test.c` + `docs/guide/c-mem.md` 是当前最完整的机械实现样板；mem surface 仍是发布前 draft，能力取舍和命名不能未经产品审查直接照搬。
 
 ## 0. 先判断：这个模块要导出什么
 
@@ -71,24 +71,25 @@ extern "C" {
 
 ## 3. 桥接实现的三条铁律（src/c_<mod>.cc）
 
-1. **opaque 句柄 = wrapper struct 内嵌 C++ 对象**，`_o` 类型**在 anon namespace 之外**定义（同 `hyle_vm_region_o`）：
+1. **opaque 句柄 = control struct 内嵌 C++ 对象**，`_o` 类型**在 anon namespace 之外**定义（同 `hyle_vm_region_o`）：
    ```cpp
    struct hyle_foo_o { hyle::mod::Foo obj; /* ...ctor... */ };
    hyle_foo_o* hyle_foo_create(...) { return new (std::nothrow) hyle_foo_o{...}; }
    void hyle_foo_destroy(hyle_foo_o* f) { delete f; }  // delete on nullptr is safe
    ```
-   句柄方法一律 `return f ? f->obj.method() : <默认>`（NULL 句柄安全）。
+   句柄方法一律 `return f ? f->obj.method() : <默认>`（NULL 句柄安全）。若工厂接收用户注入的 allocator/backing，control 与其拥有的存储都必须由该 backing 分配和释放；不能悄悄回退全局 `new/delete`。无异常构造路径用 backing 分配 + placement new，并以 `noexcept`/编译期约束锁住。
 
 2. **绝不 reinterpret_cast 跨 ABI 布局**。C↔C++ 转换走**显式构造**或**逐字段拷贝**：
    - C→C++（把 C 回调交给 C++）：C 的 fn 指针是普通 `void*(*)(...)`，C++ 侧要 `noexcept` fn 类型——普通指针**不能隐式转 noexcept**，所以要 **noexcept trampoline** 转发（`c_backing_alloc` 那样），不是 cast。
    - C++→C（把 C++ vtable 交给 C）：`noexcept` fn 指针**能隐式转**普通 C 字段，逐字段填即可（`from_cpp` 那样）。
-   - wrapper 若存了调用方的 C 回调结构体，**存在前、C++ 对象在后**（析构逆序，C++ dtor 可能回调 backing）。
+   - control 若存了调用方的 C 回调结构体，**存在前、C++ 对象在后**（析构逆序，C++ dtor 可能回调 backing）。
 
-3. **契约违反 fail-fast，边界故障返 NULL/错误码**（区分二者）：
-   - 调用方契约违反（如 StackAllocator size==0）→ 让 C++ ctor 的 `HYLE_FATAL_ASSERT` 触发 abort，**不要**在 C 层静默返 NULL 掩盖（对齐 charter fail-fast）。
-   - 真边界故障（backing 缺 fn 指针、`new` OOM、`base==NULL`、池耗尽）→ 返 NULL。
+3. **数据错误可恢复，时序契约违反 fail-fast**（区分二者）：
+   - C/FFI 参数表达的非法值或溢出（零尺寸、非 2 幂 alignment、layout 乘加溢出、backing 缺 fn 指针）在桥接层验证，返 NULL/错误码并给出原因；不要把不可信 C 数据送进 C++ ctor 的 assert。
+   - 资源故障（control/slab OOM、池耗尽）同样返 NULL/错误码。
+   - 已有对象的生命周期、并发静默、foreign/double free 等程序错误仍 fail-fast；这些不是普通资源不足。
    - **句柄返回型 API 返 NULL 时，配一条 thread-local last-error 串**（如 mem 的 `hyle_mem_last_error`，转发 platform 的 `vm_set_last_error`）：NULL 只说"失败了"，C 用户还需知道"为什么失败"（invalid backing？OOM？池耗尽？）——与 error 模块的 `hyle_status_message_cstr` 呼应，跨 C 边界的失败都要能取到人可读原因。**每条** NULL 返回路径都要设串，别让 C 用户读到上一次的过时串。
-   - 系统边界输入才校验（FFI 调用方可能传零值结构体）；内部/框架保证不重复校验。
+   - 只在系统边界校验一次；内部/框架保证不重复校验。
 
 4. **跨 ABI POD 要钉布局，输入 options 要能演进**：
    - 桥接 `.cc` 对公开 POD 至少

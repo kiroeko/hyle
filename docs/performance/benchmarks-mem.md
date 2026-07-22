@@ -1,7 +1,7 @@
 # mem 实测铁证
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
-> 源：`bench/mem/allocator_bench.cc`、`bench/mem/arena_pool_bench.cc`。
+> 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
 > 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`，性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
@@ -17,11 +17,11 @@
 
 ## 2. Bump 与单线程定长对象
 
-### Arena / StackAllocator
+### PooledRegion / StackAllocator
 
 | | Win | WSL | M4 |
 |---|---:|---:|---:|
-| Arena ns | 0.55 | 0.37 | 2.23 |
+| PooledRegion ns | 0.55 | 0.37 | 2.23 |
 | StackAllocator ns | 0.55 | 0.37 | 2.23 |
 | pmr monotonic ns | 1.46 | 0.62 | **1.49** |
 | vs pmr | **约 2.6x WIN** | **约 1.7x WIN** | **约 0.67x LOSE** |
@@ -107,25 +107,28 @@ M4 上 pmr monotonic 更快，不能把 x86 结论外推到 ARM。
 
 ## 4. 外部固定 buffer 的变长分配
 
-2026-07-22 Windows/MSVC Release，section F，`bench-stat.py -n 15`：
+2026-07-22 section F，Win/WSL 在同机上错开运行，`bench-stat.py -n 15`：
 
-| workload | HYLE FixedPool | oneTBB fixed_pool | HYLE/oneTBB throughput | 判定 |
+| 平台 | HYLE FixedPool | oneTBB fixed_pool | HYLE/oneTBB throughput | 判定 |
 |---|---:|---:|---:|---|
-| mixed-size sliding live window | 10.528 ns/op | 10.345 ns/op | median 0.985，range 0.946–1.044 | **TIE spread / TIE sign** |
+| Windows/MSVC Release | 10.314 ns/op | 10.094 ns/op | median 0.983，range 0.912–1.023 | **TIE spread / TIE sign** |
+| Ubuntu 24.04/GCC 14.2 Release | 7.555 ns/op | 7.774 ns/op | median 1.027，range 0.948–1.088 | **TIE spread / WIN sign**（13/15，p=7.4e-3） |
 
 首轮 HYLE 20.45 ns/op 对 oneTBB 8.66 ns/op 的差距没有通过换 workload 掩盖。路径分解显示
 同尺寸稳定复用并非瓶颈，主要成本是 mixed-size free→coalesce→bin 后紧接着
 allocate→split→bin 的重复索引维护。实现现在保留立即邻块合并和精确 requested-byte 统计，
 但用 one-entry recent-free cache 消除紧邻往返；recent block 不匹配时会先发布回普通 size bin。
-alignment/overflow 也改为相对已验证 block end 的 checked arithmetic。Windows 已统计平局，
-Linux/macOS 未复测前不宣称三平台 SOTA。
+alignment/overflow 也改为相对已验证 block end 的 checked arithmetic。benchmark 中 alloc 后还要
+free 的指针以 `std::as_const` 作为只读左值观测：GCC 不再把指针变量当 read-write asm operand，
+MSVC 也不为 const-pointer prvalue 增加临时对象。Windows 平局、Linux sign 胜；macOS 未复测前
+不宣称三平台 SOTA。
 
 ## 5. 选型
 
 ```text
 默认小对象             → SystemAllocator
 运行时注入/mock         → vtable Allocator（接受对裸 mi 的个位数 % 税）
-单线程 bump             → Arena / StackAllocator（M4 上 pmr 可能更快）
+单线程 borrowed/owned bump → PooledRegion / StackAllocator（M4 上 pmr 可能更快）
 单线程同尺寸可增长       → GrowablePool
 多线程、每线程独享       → GrowablePool × N
 共享固定块、严格配额     → SharedPool / ObjectPool<T>
@@ -136,9 +139,9 @@ Linux/macOS 未复测前不宣称三平台 SOTA。
 ## 6. 复跑
 
 ```bash
-# shipping-like bench；oneTBB clone 默认位于仓库同级 ../oneTBB
+# shipping-like bench；使用仓库同级 ../oneTBB 本地源码快照
 cmake --preset bench -DHYLE_BENCH_TBB=ON
-cmake --build --preset bench --target hyle_arena_pool_bench
+cmake --build --preset bench --target hyle_mem_scenarios_bench
 
 export HYLE_BENCH_SECTIONS=DE
 export HYLE_BENCH_THREADS=8
@@ -149,14 +152,14 @@ export HYLE_BENCH_HANDOFF_BATCH=256
 export HYLE_BENCH_QUOTA=1024
 export HYLE_BENCH_REQUEST_PCT=110
 
-scripts/bench-stat.py build-bench/bin/hyle_arena_pool_bench -n 9 \
+scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 9 \
   --pair "oneTBB fixed_pool (fixed-buffer shared)" \
          "HYLE SharedPool (hard capacity)" \
   --pair "oneTBB fixed_pool (fixed-buffer shared)" \
          "HYLE SharedPoolCached (soft capacity)"
 
 # quota 计数是单次语义证据；不把其中线程启动时间当吞吐比较
-HYLE_BENCH_SECTIONS=E build-bench/bin/hyle_arena_pool_bench
+HYLE_BENCH_SECTIONS=E build-bench/bin/hyle_mem_scenarios_bench
 ```
 
-Linux/WSL 必须从 ext4 clone 运行；Win、WSL 同机时必须错开，不得并发采样。Apple M4 使用本地 APFS clone。
+Linux/WSL 必须从 ext4 工作副本运行；Win、WSL 同机时必须错开，不得并发采样。Apple M4 使用本地 APFS 工作副本。

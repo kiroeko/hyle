@@ -44,7 +44,7 @@
 // churn. The `next` links live in a PARALLEL index array, never intrusively in
 // user bytes.
 //
-// Arena (bottom of file) is the single-threaded bump allocator over ONE
+// PooledRegion (bottom of file) is the single-threaded bump allocator over ONE
 // borrowed pool block -- a different tool (bulk release, no per-object free),
 // kept here because it borrows from a pool.
 
@@ -1157,8 +1157,7 @@ private:
 // pointer). Concurrency = one PooledRegion PER THREAD/fiber (each over its own
 // pooled block), the per-core scratch model, not a contended shared cursor.
 // Explicitly named PooledRegion because it is neither owned nor growable: it
-// borrows exactly one block from a hard SharedPool. `Arena` remains a
-// source-compatible alias below.
+// borrows exactly one block from a hard SharedPool.
 class PooledRegion {
 public:
   explicit PooledRegion(SharedPool *pool) : pool_(pool) {
@@ -1196,10 +1195,8 @@ public:
   }
 
   // Release everything (reuse the block from the start); only safe when no
-  // allocations are live. clear() is the Region-family spelling; reset() is
-  // retained for source compatibility with the original Arena API.
+  // allocations are live. clear() is the common Region-family spelling.
   void clear() noexcept { cur_ = block_; }
-  void reset() noexcept { clear(); }
 
   std::size_t block_size() const noexcept { return block_size_; }
   std::size_t used() const noexcept {
@@ -1210,22 +1207,22 @@ public:
   }
 
   // Adapt to the Allocator vtable: allocate -> bump, deallocate -> no-op (bulk
-  // release on destruction), realloc -> bump a fresh slice + copy (arenas can't
+  // release on destruction), realloc -> bump a fresh slice + copy (regions can't
   // grow in place).
   Allocator as_allocator() noexcept {
-    return Allocator(&arena_alloc, &arena_free, &arena_realloc, this);
+    return Allocator(&region_alloc, &region_free, &region_realloc, this);
   }
 
 private:
-  static void *arena_alloc(void *state, std::size_t size,
-                           std::size_t alignment) noexcept {
+  static void *region_alloc(void *state, std::size_t size,
+                            std::size_t alignment) noexcept {
     return static_cast<PooledRegion *>(state)->allocate(size, alignment);
   }
-  static void arena_free(void *, void *, std::size_t, std::size_t) noexcept {
+  static void region_free(void *, void *, std::size_t, std::size_t) noexcept {
   } // bulk release
-  static void *arena_realloc(void *state, void *ptr, std::size_t old_size,
-                             std::size_t new_size,
-                             std::size_t alignment) noexcept {
+  static void *region_realloc(void *state, void *ptr, std::size_t old_size,
+                              std::size_t new_size,
+                              std::size_t alignment) noexcept {
     auto *self = static_cast<PooledRegion *>(state);
     if (new_size == 0)
       return nullptr;
@@ -1241,9 +1238,5 @@ private:
   std::byte *cur_ = nullptr;
   std::byte *end_ = nullptr;
 };
-
-// Compatibility spelling for the original public API. New code should use
-// PooledRegion; Region (include/hyle/mem/region.h) is the owned growable shape.
-using Arena = PooledRegion;
 
 } // namespace hyle::mem

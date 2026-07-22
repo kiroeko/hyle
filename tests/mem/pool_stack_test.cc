@@ -466,13 +466,13 @@ TEST(Region, EveryBackingAllocationFailureIsRecoverableAndLeakFree) {
   }
 }
 
-TEST(PooledRegion, ExplicitNameAndArenaAliasShareSingleBlockContract) {
+TEST(PooledRegion, ExhaustionLeavesSecondRegionInvalid) {
   hyle::mem::SharedPool pool(system_allocator(), 256, 1, 64);
   hyle::mem::PooledRegion region(&pool);
   ASSERT_TRUE(region.valid());
   EXPECT_NE(region.allocate(64, 64), nullptr);
-  hyle::mem::Arena exhausted_alias(&pool);
-  EXPECT_FALSE(exhausted_alias.valid());
+  hyle::mem::PooledRegion exhausted(&pool);
+  EXPECT_FALSE(exhausted.valid());
 }
 
 TEST(PooledRegion, ClearUsesRegionFamilySpellingAndReusesBlock) {

@@ -44,7 +44,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`engineering-charter.md`](./engineering-charter.md) | **工程章程**：动手前最终依据——C++23 标准/错误模型/命名宏、开发范式、测试方案、边界、对外 FFI 决策 |
 | [`coding-conventions.md`](./coding-conventions.md) | **编码规范**：每一行怎么写才不破范式——std 分层/include/宏纪律、C-ABI 范式、错误处理、能力 dispatch 三层模型、clay 独特写法三张表 |
 | [`c-abi-design.md`](./c-abi-design.md) | **C++ 库如何全面导出 C ABI（why）**：类型擦除（编译期 `<T>`→运行时 size/enum）、三层架构（实现/C ABI/可选 C++ 便利层，ggml/oneDNN 实证）、版本协商删除决策（场景驱动非标配，clay 零/ggml 仅插件）、有状态调试类留 C++、错误跨边界、两条消费者线路的易用性 |
-| [`c-abi-authoring-guide.md`](./c-abi-authoring-guide.md) | **给 HYLE 开发者的 C ABI 施工参考（how）**：收口某模块做 C ABI 照这走——导出面归类判据、六件套文件与接线、头/桥接骨架、桥接三铁律（opaque 句柄/零 reinterpret/fail-fast）、易用性 header-inline 层、纯 C smoke、三平台真测、收口 checklist。样板=mem |
+| [`c-abi-authoring-guide.md`](./c-abi-authoring-guide.md) | **给 HYLE 开发者的 C ABI 施工参考（how）**：导出面归类判据、文件与接线、opaque control、零 reinterpret、FFI 数据校验、时序误用 fail-fast、纯 C smoke 与跨平台验证。mem 是机械实现样板，但其产品 surface 仍是发布前 draft。 |
 | [`util-design.md`](./util-design.md) | **util 架构与维护边界**：七个能力族、原生 C++/类型擦除 C ABI 双面、依赖/性能边界和机械维护闸门。 |
 | [`clay-asset-liability.md`](./clay-asset-liability.md) | clay 资产负债表：六子系统逐个盘点（内存/DataModel/SIMD/容器/并发/taskgraph），含 5 个 bug、空位 grep 证据、继承/重写判断 |
 | [`hyle-scope.md`](./hyle-scope.md) | scope 定义：定位、两条主轴、7 模块划分、规模（生产已 ~53k / 终态纪律 ~65–80k / 足迹含 ggml ~200–350k+）、边界外明确不做的东西 |
@@ -58,7 +58,7 @@ HYLE infra（通用、不特化、贴硬件）
 | [`time-design.md`](./time-design.md) | time 依赖位置、时钟分层、双 timer source、所有权数据流、C++/C ABI 双面与维护硬门 |
 | [`obs-design.md`](./obs-design.md) | obs 双通路：同步结构化日志的 quiescent sink 生命周期、C ABI trampoline，以及默认零成本/开启时单 Tracy client 的 trace 架构 |
 | [`simd-vendor-surface.md`](./simd-vendor-surface.md) | 产品零 Highway/xsimd 的边界、外部 benchmark 对照和可选 simdutf 薄借 |
-| [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 自造专用分配器（arena/pool/stack/fiber栈/pinned）+ 修 5 bug + NUMA/大页/64B 对齐契约 |
+| [`mem-design.md`](./mem-design.md) | 内存设计：通用 malloc 借 mimalloc + 模块化专用分配器（region/pool/stack/fiber 栈）+ NUMA/大页/对齐与失败合同；公共形状和 C draft surface 的当前审查结论 |
 | [`container-design.md`](./container-design.md) | 容器设计：唯一"造不借"的 T0 + 补 SwissTable SIMD 探测 + SmallVector/intrusive/lock-free 队列（供 sched）|
 | [`graph-design.md`](./graph-design.md) | **graph 支柱选型**：北极星② CAD/BIM/CAE 编排——依赖 DAG 增量重算(graph-01,clay taskgraph 零增量资产、从零造脏标记/缓存)+ 数据并行层(graph-02 parallel_for/reduce,归属拍板归 graph)；clay 继承面 ~800-1.5k 骨架 vs 从零 3-4k 增量引擎；纯编排层零自有执行资源(跑 sched+compute 之上)|
 | [`graph-02-design.md`](./graph-02-design.md) | **graph-02 数据并行层设计**：parallel_for/reduce/scan/sort over range，跑 HYLE sched(不借 oneTBB 运行时,只借其设计)。五决策：分块=递归 split+grainsize(work-stealing 友好非静态均分)/reduce=fast+deterministic 双档(浮点结合性)/kernel=Body 收 subrange(接 simd 紧循环)/scan v1 就做/复用 graph-01 sched 基建。分块靠 graph-02、块内靠 simd 的零阻抗接缝 |

@@ -26,16 +26,15 @@ namespace {
 
 using namespace hyle::mem;
 
-// This is the C++ source-compatibility side of the freeze baseline. C++ object
-// layout is intentionally not an ABI promise; the stable binary boundary is the
-// C manifest checked by mem-c-abi-baseline.py.
+// Compile-time inventory for the current public C++ surface. It catches
+// accidental drift; before the first release, an intentional product-shape
+// change updates this inventory and is not a compatibility promise.
 static_assert(std::is_trivially_copyable_v<Allocator>);
 static_assert(sizeof(Allocator) == sizeof(void*) * 4);
 static_assert(std::is_empty_v<SystemAllocator>);
 static_assert(std::is_standard_layout_v<RegionOptions>);
 static_assert(std::is_standard_layout_v<AllocStatsSnapshot>);
 static_assert(std::derived_from<PmrResource, std::pmr::memory_resource>);
-static_assert(std::same_as<Arena, PooledRegion>);
 
 template <class A>
 concept AllocatorSurface = requires(A a, void* p, std::size_t n) {
@@ -106,7 +105,7 @@ static_assert(!std::is_move_constructible_v<FixedPool>);
 static_assert(!std::is_move_constructible_v<SharedPool>);
 static_assert(std::is_move_constructible_v<FiberStack>);
 
-TEST(MemApiBaseline, PublicCapabilityFamiliesCompileTogether) {
+TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {
   EXPECT_EQ(kFiberStackSmall, 16u * 1024u);
   EXPECT_EQ(kFiberStackDefault, 64u * 1024u);
   EXPECT_EQ(kFiberStackLarge, 256u * 1024u);

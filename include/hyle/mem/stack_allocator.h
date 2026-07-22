@@ -80,7 +80,7 @@ public:
   std::size_t remaining() const noexcept { return cursor_.remaining(); }
 
   // Adapt to the Allocator vtable so a StackAllocator can be injected
-  // downstream (like Arena/SharedPool): allocate -> bump, deallocate -> no-op
+  // downstream (like PooledRegion): allocate -> bump, deallocate -> no-op
   // (LIFO frees in bulk via reset()/rewind()), realloc -> bump a fresh slice +
   // copy (can't grow in place). One StackAllocator is single-owner, so the
   // vtable is single-threaded too.

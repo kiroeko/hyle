@@ -737,12 +737,12 @@ TEST(SharedPoolCached, InjectedBackingFreedBeforeWorkerExitNoUaf) {
   std::move(*worker).join();  // node's TLS dtor must not touch the freed backing
 }
 
-// ---- Arena (bump region over one pool block) --------------------------------
-using hyle::mem::Arena;
+// ---- PooledRegion (bump region over one pool block) -------------------------
+using hyle::mem::PooledRegion;
 
-TEST(Arena, BumpAlignmentAndFull) {
+TEST(PooledRegion, BumpAlignmentAndFull) {
   SharedPool pool(system_allocator(), 256, 4);  // 256-byte blocks
-  Arena a(&pool);
+  PooledRegion a(&pool);
   EXPECT_EQ(a.block_size(), 256u);
   void* p = a.allocate(16, 16);
   void* q = a.allocate(16, 16);
@@ -753,57 +753,55 @@ TEST(Arena, BumpAlignmentAndFull) {
   EXPECT_EQ(a.allocate(1000, 1), nullptr);  // won't fit the 256 block
 }
 
-TEST(Arena, UnrepresentableAlignmentReturnsNull) {
+TEST(PooledRegion, UnrepresentableAlignmentReturnsNull) {
   SharedPool pool(system_allocator(), 256, 1);
-  Arena arena(&pool);
+  PooledRegion region(&pool);
   constexpr std::size_t kHugeAlignment =
       std::size_t{1} << (sizeof(std::size_t) * 8 - 1);
-  EXPECT_EQ(arena.allocate(1, kHugeAlignment), nullptr);
-  EXPECT_EQ(arena.used(), 0u);
+  EXPECT_EQ(region.allocate(1, kHugeAlignment), nullptr);
+  EXPECT_EQ(region.used(), 0u);
 }
 
-TEST(Arena, ZeroSizeReturnsNullWithoutAdvancing) {
+TEST(PooledRegion, ZeroSizeReturnsNullWithoutAdvancing) {
   SharedPool pool(system_allocator(), 256, 1);
-  Arena arena(&pool);
-  ASSERT_TRUE(arena.valid());
-  EXPECT_EQ(arena.allocate(0), nullptr);
-  EXPECT_EQ(arena.used(), 0u);
+  PooledRegion region(&pool);
+  ASSERT_TRUE(region.valid());
+  EXPECT_EQ(region.allocate(0), nullptr);
+  EXPECT_EQ(region.used(), 0u);
 }
 
-TEST(Arena, ResetReuses) {
+TEST(PooledRegion, ClearReuses) {
   SharedPool pool(system_allocator(), 128, 2);
-  Arena a(&pool);
+  PooledRegion a(&pool);
   void* p = a.allocate(64);
   ASSERT_NE(p, nullptr);
-  a.reset();
+  a.clear();
   void* q = a.allocate(64);
   EXPECT_EQ(p, q);  // same region after reset
 }
 
-TEST(Arena, ReturnsBlockToPoolOnDestruction) {
+TEST(PooledRegion, ReturnsBlockToPoolOnDestruction) {
   SharedPool pool(system_allocator(), 64, 1);  // single block
-  { Arena a(&pool); EXPECT_NE(a.allocate(8), nullptr); }
-  // block returned -> a second Arena can take it
-  { Arena b(&pool); EXPECT_NE(b.allocate(8), nullptr); }
+  { PooledRegion a(&pool); EXPECT_NE(a.allocate(8), nullptr); }
+  // block returned -> a second PooledRegion can take it
+  { PooledRegion b(&pool); EXPECT_NE(b.allocate(8), nullptr); }
 }
 
-TEST(Arena, AsAllocatorBumpsDeallocNoop) {
+TEST(PooledRegion, AsAllocatorBumpsDeallocNoop) {
   SharedPool pool(system_allocator(), 256, 1);
-  Arena a(&pool);
+  PooledRegion a(&pool);
   auto alloc = a.as_allocator();
   void* p = alloc.allocate(32, 16);
   ASSERT_NE(p, nullptr);
   EXPECT_EQ(reinterpret_cast<std::uintptr_t>(p) % 16, 0u);
-  alloc.deallocate(p, 32);  // no-op for an arena; must not crash or reuse
+  alloc.deallocate(p, 32);  // no-op for a region; must not crash or reuse
   void* q = alloc.allocate(32, 16);
   EXPECT_NE(p, q);  // deallocate did NOT free -> q is a fresh bump
 }
 
-// Arena is single-threaded by design; concurrency = one Arena PER THREAD (the SOTA
-// per-core scratch model). Each thread owns its own Arena over its own pool block and
-// bumps it independently -- no shared cursor, no contention. Verifies the per-thread
-// arenas hand out disjoint memory (own block each) with zero atomics.
-TEST(Arena, PerThreadArenasNoOverlap) {
+// PooledRegion is single-threaded by design; concurrency = one region PER
+// THREAD. Each thread owns a distinct borrowed pool block and bump cursor.
+TEST(PooledRegion, PerThreadRegionsNoOverlap) {
   constexpr int kThreads = 8;
   constexpr int kPerThread = 200;
   constexpr std::size_t kBytes = 16;
@@ -817,7 +815,7 @@ TEST(Arena, PerThreadArenasNoOverlap) {
     auto r = hyle::platform::Thread::spawn(
         [](void* p) {
           auto* x = static_cast<Args*>(p);
-          Arena a(x->pool);  // this thread's OWN arena over its OWN pooled block
+          PooledRegion a(x->pool);
           for (int i = 0; i < kPerThread; ++i) {
             void* q = a.allocate(kBytes, 16);
             if (q) x->got.push_back(q);
@@ -828,21 +826,21 @@ TEST(Arena, PerThreadArenasNoOverlap) {
     ts.push_back(std::move(*r));
   }
   for (auto& th : ts) th.join();
-  // All returned pointers across all per-thread arenas must be distinct.
+  // All returned pointers across all per-thread regions must be distinct.
   std::unordered_set<void*> uniq;
   std::size_t total = 0;
   for (auto& x : args) for (void* q : x.got) { uniq.insert(q); ++total; }
-  EXPECT_EQ(uniq.size(), total) << "per-thread arenas overlapped";
+  EXPECT_EQ(uniq.size(), total) << "per-thread regions overlapped";
 }
 
-// Arena::allocate had NO alignment guard before #1 (alignment 0 or a non-power-of-2
+// PooledRegion::allocate rejects alignment 0 or a non-power-of-2
 // -> wild pointer / silent misalignment). #1 added is_pow2(), which fail-fast traps
-// alignment 0. Locks in #1 for Arena::allocate.
-TEST(ArenaDeathTest, ZeroAlignmentTraps) {
+// alignment 0.
+TEST(PooledRegionDeathTest, ZeroAlignmentTraps) {
   EXPECT_DEATH(
       {
         SharedPool pool(system_allocator(), 4096, 2);
-        Arena a(&pool);
+        PooledRegion a(&pool);
         (void)a.allocate(16, 0);
       },
       ".*");

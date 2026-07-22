@@ -89,7 +89,7 @@ util ~1.3k · time ~0.9k · obs/error/graph 各 ~0.6–0.8k。
 | mem-01b | P2 | mem | allocator typed 便利层(allocate<T>/construct/make_unique/destroy) | mem-01 | 1k | 并入allocator.h | ✅ 完成(补漏:clay allocator.h typed层) |
 | mem-02 | P2 | mem | mimalloc backing 完整接入(封 vtable 后) | mem-01 | 1-2k | vendored(system.cc+~30) | ✅ 完成(透明替换31测试不变;Win 4-12x>默认堆/Linux真实模式5.2x;快路径修复) |
 | mem-03 | P2 | mem | SharedPool 硬容量 + SharedPoolCached 软容量，共用 sharded core | mem-01 | 2-3k | 双池 core 758 生产 + 1122 测试/bench；相关 8 文件 bundle 2834（较旧实现 +766） | ✅ completed free 立即共享、稳定双快照；cached TLS 128 + magazine 32 + publish；tag 饱和永久 serialized、绝不回绕；三平台 fixed_pool 场景证书完成 |
-| mem-03b | P2 | mem | Arena bump 分配器 + Allocator 适配 | mem-03 | 1k | 并入 `shared_pool.h` | ✅ Arena 只借 `SharedPool` 的一个硬容量块 |
+| mem-03b | P2 | mem | PooledRegion bump 分配器 + Allocator 适配 | mem-03 | 1k | 并入 `shared_pool.h` | ✅ `PooledRegion` 只借 `SharedPool` 的一个硬容量块；未发布的 `Arena/reset` 旧名已删除 |
 | mem-04 | P2 | mem | ObjectPool/ObjectPoolCached + StackAllocator | mem-02 | 2-3k | 见当前实现 | ✅ `ObjectPool<T>` 默认硬容量，`ObjectPoolCached<T>` 显式软容量；StackAllocator 修 bug#4 |
 | mem-05 | P2 | mem | ~~MemorySpace 组合抽象 + xcpu_freelist~~ | mem-03 | — | — | ⛔ 双双否决:MemorySpace=异构内存过度设计(device 边界=显式 copy,统一内存无互传,见 mem-design);xcpu_freelist=同线程常数优化,与固定 slab"不假性耗尽"硬冲突+生命周期耦合,评估后不采用(跨核 free 正确性已由地址路由原子 push 给,理由见 mem-design) |
 | mem-06 | P2 | mem | NUMA + 大页 + stats(修下溢) | mem-05 | 2-3k | — | ✅ 切片全收：06a stats / 06b hugepage / [06c](./mem-06c-numa.md) NUMA |

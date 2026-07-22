@@ -2,7 +2,7 @@
 //
 // Two directions, both WITHOUT reinterpret_cast on the vtable:
 //   C -> C++ : a caller's hyle_allocator is stored by value in the opaque
-//   wrapper;
+//   control handle;
 //              the C++ object gets a mem::Allocator whose state points at that
 //              stored struct and whose fn pointers are noexcept trampolines
 //              forwarding to it. (The C fn pointers are plain `void*(*)(...)`;
@@ -41,7 +41,7 @@ static_assert(sizeof(hyle_allocator) == sizeof(void *) * 4);
 
 // ---- C hyle_allocator -> C++ mem::Allocator (via noexcept trampolines)
 // ------- `state` points at a live hyle_allocator (stored inside the owning
-// wrapper, so it outlives every C++ object built from it).
+// control handle, so it outlives every C++ object built from it).
 void *c_backing_alloc(void *state, std::size_t size,
                       std::size_t align) noexcept {
   auto *a = static_cast<const hyle_allocator *>(state);
@@ -95,6 +95,51 @@ std::size_t norm_align(std::size_t a) noexcept {
   return a != 0 ? a : alignof(std::max_align_t);
 }
 
+bool normalize_alignment(std::size_t input, std::size_t *out) noexcept {
+  const std::size_t alignment = norm_align(input);
+  if ((alignment & (alignment - 1)) != 0) {
+    hyle::platform::vm_set_last_error(
+        "mem: alignment must be zero or a power of two");
+    return false;
+  }
+  *out = alignment;
+  return true;
+}
+
+bool valid_shared_pool_layout(std::size_t block_size,
+                              std::uint32_t block_count,
+                              std::size_t alignment) noexcept {
+  if (block_size == 0 || block_count == 0 || block_count == UINT32_MAX)
+    return false;
+  if (block_size > SIZE_MAX - (alignment - 1))
+    return false;
+  const std::size_t stride =
+      (block_size + alignment - 1) & ~(alignment - 1);
+  return static_cast<std::size_t>(block_count) <= SIZE_MAX / stride;
+}
+
+hyle_allocator system_backing() noexcept {
+  return from_cpp(hyle::mem::system_allocator());
+}
+
+template <class T, class... Args>
+T *allocate_handle(hyle_allocator backing, Args &&...args) noexcept {
+  static_assert(std::is_nothrow_constructible_v<T, hyle_allocator, Args...>);
+  void *memory = backing.alloc(backing.state, sizeof(T), alignof(T));
+  if (memory == nullptr)
+    return nullptr;
+  return ::new (memory) T(backing, std::forward<Args>(args)...);
+}
+
+template <class T>
+void free_handle(T *handle) noexcept {
+  if (handle == nullptr)
+    return;
+  const hyle_allocator backing = handle->backing;
+  handle->~T();
+  backing.free(backing.state, handle, sizeof(T), alignof(T));
+}
+
 hyle::mem::HugeFlags to_huge_flags(std::uint32_t f) noexcept {
   using hyle::mem::HugeFlags;
   auto out = HugeFlags::kNone;
@@ -111,7 +156,7 @@ hyle::mem::HugeFlags to_huge_flags(std::uint32_t f) noexcept {
 
 } // namespace
 
-// ---- opaque wrappers --------------------------------------------------------
+// ---- opaque control handles ------------------------------------------------
 // Each stores the caller's hyle_allocator FIRST (so it is destroyed LAST) and
 // the C++ object SECOND (destroyed first -- it may free through `backing` in
 // its dtor).
@@ -120,7 +165,8 @@ struct hyle_shared_pool_o {
   hyle_allocator backing;
   hyle::mem::SharedPool pool;
   hyle_shared_pool_o(hyle_allocator b, std::size_t block_size,
-                     std::uint32_t block_count, std::size_t alignment)
+                     std::uint32_t block_count,
+                     std::size_t alignment) noexcept
       : backing(b), pool(to_cpp(&backing), block_size, block_count, alignment) {
   }
 };
@@ -128,33 +174,39 @@ struct hyle_shared_pool_o {
 struct hyle_quota_allocator_o {
   hyle_allocator backing;
   hyle::mem::QuotaAllocator quota;
-  hyle_quota_allocator_o(hyle_allocator b, std::size_t limit)
+  hyle_quota_allocator_o(hyle_allocator b, std::size_t limit) noexcept
       : backing(b), quota(to_cpp(&backing), limit) {}
 };
 
 struct hyle_region_o {
   hyle_allocator backing;
   hyle::mem::Region region;
-  hyle_region_o(hyle_allocator b, hyle::mem::RegionOptions options)
+  hyle_region_o(hyle_allocator b, hyle::mem::RegionOptions options) noexcept
       : backing(b), region(to_cpp(&backing), options) {}
 };
 
 struct hyle_fixed_region_o {
+  hyle_allocator backing;
   hyle::mem::FixedRegion region;
-  hyle_fixed_region_o(void *storage, std::size_t size)
-      : region(storage, size) {}
+  hyle_fixed_region_o(hyle_allocator b, void *storage,
+                      std::size_t size) noexcept
+      : backing(b), region(storage, size) {}
 };
 
 struct hyle_fixed_pool_o {
+  hyle_allocator backing;
   hyle::mem::FixedPool pool;
-  hyle_fixed_pool_o(void *storage, std::size_t size) : pool(storage, size) {}
+  hyle_fixed_pool_o(hyle_allocator b, void *storage,
+                    std::size_t size) noexcept
+      : backing(b), pool(storage, size) {}
 };
 
 struct hyle_shared_pool_cached_o {
   hyle_allocator backing;
   hyle::mem::SharedPoolCached pool;
   hyle_shared_pool_cached_o(hyle_allocator b, std::size_t block_size,
-                            std::uint32_t block_count, std::size_t alignment)
+                            std::uint32_t block_count,
+                            std::size_t alignment) noexcept
       : backing(b), pool(to_cpp(&backing), block_size, block_count, alignment) {
   }
 };
@@ -162,28 +214,33 @@ struct hyle_shared_pool_cached_o {
 struct hyle_stack_allocator_o {
   hyle_allocator backing;
   hyle::mem::StackAllocator stack;
-  hyle_stack_allocator_o(hyle_allocator b, std::size_t size)
+  hyle_stack_allocator_o(hyle_allocator b, std::size_t size) noexcept
       : backing(b), stack(to_cpp(&backing), size) {}
 };
 
-struct hyle_arena_o {
-  hyle::mem::Arena arena; // borrows a block from a pool (no owned backing)
-  explicit hyle_arena_o(hyle::mem::SharedPool *pool) : arena(pool) {}
+struct hyle_pooled_region_o {
+  hyle_allocator backing;
+  hyle::mem::PooledRegion region; // borrows one block; owns no backing
+  hyle_pooled_region_o(hyle_allocator b,
+                       hyle::mem::SharedPool *pool) noexcept
+      : backing(b), region(pool) {}
 };
 
 struct hyle_growable_pool_o {
   hyle_allocator backing;
   hyle::mem::detail::GrowablePoolCore core;
   hyle_growable_pool_o(hyle_allocator b, std::size_t slot_size,
-                       std::size_t slot_align, std::uint32_t initial_slots)
+                       std::size_t slot_align,
+                       std::uint32_t initial_slots) noexcept
       : backing(b),
         core(to_cpp(&backing), slot_size, slot_align, initial_slots) {}
 };
 
 struct hyle_huge_region_o {
+  hyle_allocator backing;
   hyle::mem::HugeRegion region;
-  explicit hyle_huge_region_o(hyle::mem::HugeRegion &&r)
-      : region(std::move(r)) {}
+  hyle_huge_region_o(hyle_allocator b, hyle::mem::HugeRegion &&r) noexcept
+      : backing(b), region(std::move(r)) {}
 };
 
 extern "C" {
@@ -216,15 +273,15 @@ hyle_quota_allocator_o *hyle_quota_allocator_create(hyle_allocator backing,
         "hyle_quota_allocator_create: invalid backing");
     return nullptr;
   }
-  auto *q = new (std::nothrow) hyle_quota_allocator_o(backing, limit);
+  auto *q = allocate_handle<hyle_quota_allocator_o>(backing, limit);
   if (q == nullptr)
     hyle::platform::vm_set_last_error(
-        "hyle_quota_allocator_create: wrapper allocation failed");
+        "hyle_quota_allocator_create: control allocation failed");
   return q;
 }
 
-void hyle_quota_allocator_destroy(hyle_quota_allocator_o *q) { delete q; }
-hyle_allocator hyle_quota_allocator_get(hyle_quota_allocator_o *q) {
+void hyle_quota_allocator_destroy(hyle_quota_allocator_o *q) { free_handle(q); }
+hyle_allocator hyle_quota_allocator_as_allocator(hyle_quota_allocator_o *q) {
   return q ? from_cpp(q->quota.get())
            : hyle_allocator{nullptr, nullptr, nullptr, nullptr};
 }
@@ -262,16 +319,19 @@ hyle_region_o *hyle_region_create(hyle_allocator backing,
   cpp.max_block_size = in->max_block_size;
   cpp.large_allocation_threshold = in->large_allocation_threshold;
   cpp.size_limit = in->size_limit;
-  auto *r = new (std::nothrow) hyle_region_o(backing, cpp);
+  auto *r = allocate_handle<hyle_region_o>(backing, cpp);
   if (r == nullptr)
     hyle::platform::vm_set_last_error(
-        "hyle_region_create: wrapper allocation failed");
+        "hyle_region_create: control allocation failed");
   return r;
 }
 
-void hyle_region_destroy(hyle_region_o *r) { delete r; }
+void hyle_region_destroy(hyle_region_o *r) { free_handle(r); }
 void *hyle_region_allocate(hyle_region_o *r, size_t bytes, size_t alignment) {
-  return r ? r->region.allocate(bytes, norm_align(alignment)) : nullptr;
+  std::size_t normalized = 0;
+  return r && normalize_alignment(alignment, &normalized)
+             ? r->region.allocate(bytes, normalized)
+             : nullptr;
 }
 void hyle_region_clear(hyle_region_o *r) {
   if (r)
@@ -305,16 +365,23 @@ hyle_fixed_region_o *hyle_fixed_region_create(void *storage, size_t size) {
         "hyle_fixed_region_create: invalid storage");
     return nullptr;
   }
-  auto *r = new (std::nothrow) hyle_fixed_region_o(storage, size);
-  if (r == nullptr)
+  const hyle_allocator backing = system_backing();
+  auto *r = allocate_handle<hyle_fixed_region_o>(backing, storage, size);
+  if (r == nullptr || !r->region.valid()) {
+    free_handle(r);
     hyle::platform::vm_set_last_error(
-        "hyle_fixed_region_create: wrapper allocation failed");
+        "hyle_fixed_region_create: invalid storage or control allocation failed");
+    return nullptr;
+  }
   return r;
 }
-void hyle_fixed_region_destroy(hyle_fixed_region_o *r) { delete r; }
+void hyle_fixed_region_destroy(hyle_fixed_region_o *r) { free_handle(r); }
 void *hyle_fixed_region_allocate(hyle_fixed_region_o *r, size_t bytes,
                                  size_t alignment) {
-  return r ? r->region.allocate(bytes, norm_align(alignment)) : nullptr;
+  std::size_t normalized = 0;
+  return r && normalize_alignment(alignment, &normalized)
+             ? r->region.allocate(bytes, normalized)
+             : nullptr;
 }
 void hyle_fixed_region_clear(hyle_fixed_region_o *r) {
   if (r)
@@ -333,19 +400,23 @@ hyle_allocator hyle_fixed_region_as_allocator(hyle_fixed_region_o *r) {
 
 hyle_fixed_pool_o *hyle_fixed_pool_create(void *storage, size_t size) {
   hyle::platform::vm_set_last_error(nullptr);
-  auto *p = new (std::nothrow) hyle_fixed_pool_o(storage, size);
+  const hyle_allocator backing = system_backing();
+  auto *p = allocate_handle<hyle_fixed_pool_o>(backing, storage, size);
   if (p == nullptr || !p->pool.valid()) {
-    delete p;
+    free_handle(p);
     hyle::platform::vm_set_last_error(
-        "hyle_fixed_pool_create: invalid storage or wrapper OOM");
+        "hyle_fixed_pool_create: invalid storage or control OOM");
     return nullptr;
   }
   return p;
 }
-void hyle_fixed_pool_destroy(hyle_fixed_pool_o *p) { delete p; }
+void hyle_fixed_pool_destroy(hyle_fixed_pool_o *p) { free_handle(p); }
 void *hyle_fixed_pool_allocate(hyle_fixed_pool_o *p, size_t bytes,
                                size_t alignment) {
-  return p ? p->pool.allocate(bytes, norm_align(alignment)) : nullptr;
+  std::size_t normalized = 0;
+  return p && normalize_alignment(alignment, &normalized)
+             ? p->pool.allocate(bytes, normalized)
+             : nullptr;
 }
 void hyle_fixed_pool_deallocate(hyle_fixed_pool_o *p, void *ptr) {
   if (p)
@@ -354,8 +425,10 @@ void hyle_fixed_pool_deallocate(hyle_fixed_pool_o *p, void *ptr) {
 void *hyle_fixed_pool_reallocate(hyle_fixed_pool_o *p, void *ptr,
                                  size_t old_size, size_t new_size,
                                  size_t alignment) {
-  return p ? p->pool.reallocate(ptr, old_size, new_size, norm_align(alignment))
-           : nullptr;
+  std::size_t normalized = 0;
+  return p && normalize_alignment(alignment, &normalized)
+             ? p->pool.reallocate(ptr, old_size, new_size, normalized)
+             : nullptr;
 }
 void hyle_fixed_pool_reset(hyle_fixed_pool_o *p) {
   if (p)
@@ -385,15 +458,23 @@ hyle_shared_pool_o *hyle_shared_pool_create(hyle_allocator backing,
         "hyle_shared_pool_create: invalid backing (a fn pointer is null)");
     return nullptr;
   }
-  auto *p = new (std::nothrow) hyle_shared_pool_o(
-      backing, block_size, block_count, norm_align(alignment));
+  std::size_t normalized_alignment = 0;
+  if (!normalize_alignment(alignment, &normalized_alignment) ||
+      !valid_shared_pool_layout(block_size, block_count,
+                                normalized_alignment)) {
+    hyle::platform::vm_set_last_error(
+        "hyle_shared_pool_create: invalid or overflowing pool layout");
+    return nullptr;
+  }
+  auto *p = allocate_handle<hyle_shared_pool_o>(
+      backing, block_size, block_count, normalized_alignment);
   if (p == nullptr) {
     hyle::platform::vm_set_last_error(
-        "hyle_shared_pool_create: wrapper allocation failed (out of memory)");
+        "hyle_shared_pool_create: control allocation failed (out of memory)");
     return nullptr;
   }
   if (!p->pool.valid()) {
-    delete p;
+    free_handle(p);
     hyle::platform::vm_set_last_error(
         "hyle_shared_pool_create: slab allocation failed (out of memory)");
     return nullptr;
@@ -402,7 +483,7 @@ hyle_shared_pool_o *hyle_shared_pool_create(hyle_allocator backing,
   return p;
 }
 
-void hyle_shared_pool_destroy(hyle_shared_pool_o *p) { delete p; }
+void hyle_shared_pool_destroy(hyle_shared_pool_o *p) { free_handle(p); }
 
 void *hyle_shared_pool_allocate(hyle_shared_pool_o *p) {
   return p ? p->pool.allocate() : nullptr;
@@ -444,15 +525,23 @@ hyle_shared_pool_cached_create(hyle_allocator backing, size_t block_size,
                                       "backing (a fn pointer is null)");
     return nullptr;
   }
-  auto *p = new (std::nothrow) hyle_shared_pool_cached_o(
-      backing, block_size, block_count, norm_align(alignment));
+  std::size_t normalized_alignment = 0;
+  if (!normalize_alignment(alignment, &normalized_alignment) ||
+      !valid_shared_pool_layout(block_size, block_count,
+                                normalized_alignment)) {
+    hyle::platform::vm_set_last_error(
+        "hyle_shared_pool_cached_create: invalid or overflowing pool layout");
+    return nullptr;
+  }
+  auto *p = allocate_handle<hyle_shared_pool_cached_o>(
+      backing, block_size, block_count, normalized_alignment);
   if (p == nullptr) {
-    hyle::platform::vm_set_last_error("hyle_shared_pool_cached_create: wrapper "
+    hyle::platform::vm_set_last_error("hyle_shared_pool_cached_create: control "
                                       "allocation failed (out of memory)");
     return nullptr;
   }
   if (!p->pool.valid()) {
-    delete p;
+    free_handle(p);
     hyle::platform::vm_set_last_error("hyle_shared_pool_cached_create: slab "
                                       "allocation failed (out of memory)");
     return nullptr;
@@ -461,7 +550,9 @@ hyle_shared_pool_cached_create(hyle_allocator backing, size_t block_size,
   return p;
 }
 
-void hyle_shared_pool_cached_destroy(hyle_shared_pool_cached_o *p) { delete p; }
+void hyle_shared_pool_cached_destroy(hyle_shared_pool_cached_o *p) {
+  free_handle(p);
+}
 
 void *hyle_shared_pool_cached_allocate(hyle_shared_pool_cached_o *p) {
   return p ? p->pool.allocate() : nullptr;
@@ -504,24 +595,28 @@ hyle_shared_pool_cached_as_allocator(hyle_shared_pool_cached_o *p) {
 hyle_stack_allocator_o *hyle_stack_allocator_create(hyle_allocator backing,
                                                     size_t size) {
   hyle::platform::vm_set_last_error(nullptr);
-  // valid_backing guards a null fn pointer (a raw segfault in the trampoline,
-  // no clean assert). size==0 is a caller-contract violation -> the C++ ctor's
-  // HYLE_FATAL_ASSERT fires (fail-fast, same as a C++ caller); not masked here.
+  // Validate C data before entering the C++ constructor; malformed input does
+  // not expose a C++ assertion across the language boundary.
   if (!valid_backing(backing)) {
     hyle::platform::vm_set_last_error(
         "hyle_stack_allocator_create: invalid backing (a fn pointer is null)");
     return nullptr;
   }
-  auto *s = new (std::nothrow) hyle_stack_allocator_o(backing, size);
+  if (size == 0) {
+    hyle::platform::vm_set_last_error(
+        "hyle_stack_allocator_create: size must be nonzero");
+    return nullptr;
+  }
+  auto *s = allocate_handle<hyle_stack_allocator_o>(backing, size);
   if (s == nullptr) {
-    hyle::platform::vm_set_last_error("hyle_stack_allocator_create: wrapper "
+    hyle::platform::vm_set_last_error("hyle_stack_allocator_create: control "
                                       "allocation failed (out of memory)");
     return nullptr;
   }
   // slab-OOM in the C++ ctor -> invalid (graceful, not abort; followup #2 arch
   // B).
   if (!s->stack.valid()) {
-    delete s;
+    free_handle(s);
     hyle::platform::vm_set_last_error(
         "hyle_stack_allocator_create: slab allocation failed (out of memory)");
     return nullptr;
@@ -530,11 +625,14 @@ hyle_stack_allocator_o *hyle_stack_allocator_create(hyle_allocator backing,
   return s;
 }
 
-void hyle_stack_allocator_destroy(hyle_stack_allocator_o *s) { delete s; }
+void hyle_stack_allocator_destroy(hyle_stack_allocator_o *s) { free_handle(s); }
 
 void *hyle_stack_allocator_allocate(hyle_stack_allocator_o *s, size_t bytes,
                                     size_t alignment) {
-  return s ? s->stack.allocate(bytes, norm_align(alignment)) : nullptr;
+  std::size_t normalized = 0;
+  return s && normalize_alignment(alignment, &normalized)
+             ? s->stack.allocate(bytes, normalized)
+             : nullptr;
 }
 
 void hyle_stack_allocator_reset(hyle_stack_allocator_o *s) {
@@ -569,62 +667,65 @@ hyle_allocator hyle_stack_allocator_as_allocator(hyle_stack_allocator_o *s) {
   return from_cpp(s->stack.as_allocator());
 }
 
-/* ---- Arena -----------------------------------------------------------------
- */
+/* ---- PooledRegion --------------------------------------------------------- */
 
-hyle_arena_o *hyle_arena_create(hyle_shared_pool_o *pool) {
+hyle_pooled_region_o *hyle_pooled_region_create(hyle_shared_pool_o *pool) {
   hyle::platform::vm_set_last_error(nullptr);
   if (!pool) {
-    hyle::platform::vm_set_last_error("hyle_arena_create: pool is NULL");
+    hyle::platform::vm_set_last_error(
+        "hyle_pooled_region_create: pool is NULL");
     return nullptr;
   }
-  auto *a = new (std::nothrow) hyle_arena_o(&pool->pool);
-  if (a == nullptr) { // wrapper OOM
+  auto *r = allocate_handle<hyle_pooled_region_o>(pool->backing, &pool->pool);
+  if (r == nullptr) { // control OOM
     hyle::platform::vm_set_last_error(
-        "hyle_arena_create: wrapper allocation failed (out of memory)");
+        "hyle_pooled_region_create: control allocation failed (out of memory)");
     return nullptr;
   }
   // Pool exhausted (no free block) is a graceful resource failure, not a
   // contract violation: return NULL + set last-error so an FFI caller has a
-  // defensive path (was a fatal abort in the C++ Arena ctor; see
-  // mem-audit-followup #2).
-  if (!a->arena.valid()) {
-    delete a;
+  // defensive path for callers that race for a bounded pool block.
+  if (!r->region.valid()) {
+    free_handle(r);
     hyle::platform::vm_set_last_error(
-        "hyle_arena_create: pool exhausted (no free block)");
+        "hyle_pooled_region_create: pool exhausted (no free block)");
     return nullptr;
   }
   hyle::platform::vm_set_last_error(nullptr);
-  return a;
+  return r;
 }
 
-void hyle_arena_destroy(hyle_arena_o *a) { delete a; }
+void hyle_pooled_region_destroy(hyle_pooled_region_o *r) { free_handle(r); }
 
-void *hyle_arena_allocate(hyle_arena_o *a, size_t bytes, size_t alignment) {
-  return a ? a->arena.allocate(bytes, norm_align(alignment)) : nullptr;
+void *hyle_pooled_region_allocate(hyle_pooled_region_o *r, size_t bytes,
+                                  size_t alignment) {
+  std::size_t normalized = 0;
+  return r && normalize_alignment(alignment, &normalized)
+             ? r->region.allocate(bytes, normalized)
+             : nullptr;
 }
 
-void hyle_arena_reset(hyle_arena_o *a) {
-  if (a)
-    a->arena.reset();
+void hyle_pooled_region_clear(hyle_pooled_region_o *r) {
+  if (r)
+    r->region.clear();
 }
 
-size_t hyle_arena_used(const hyle_arena_o *a) {
-  return a ? a->arena.used() : 0;
+size_t hyle_pooled_region_used(const hyle_pooled_region_o *r) {
+  return r ? r->region.used() : 0;
 }
 
-size_t hyle_arena_remaining(const hyle_arena_o *a) {
-  return a ? a->arena.remaining() : 0;
+size_t hyle_pooled_region_remaining(const hyle_pooled_region_o *r) {
+  return r ? r->region.remaining() : 0;
 }
 
-size_t hyle_arena_block_size(const hyle_arena_o *a) {
-  return a ? a->arena.block_size() : 0;
+size_t hyle_pooled_region_block_size(const hyle_pooled_region_o *r) {
+  return r ? r->region.block_size() : 0;
 }
 
-hyle_allocator hyle_arena_as_allocator(hyle_arena_o *a) {
-  if (!a)
+hyle_allocator hyle_pooled_region_as_allocator(hyle_pooled_region_o *r) {
+  if (!r)
     return hyle_allocator{nullptr, nullptr, nullptr, nullptr};
-  return from_cpp(a->arena.as_allocator());
+  return from_cpp(r->region.as_allocator());
 }
 
 /* ---- GrowablePool ----------------------------------------------------------
@@ -647,17 +748,17 @@ hyle_growable_pool_o *hyle_growable_pool_create(hyle_allocator backing,
         "hyle_growable_pool_create: invalid or overflowing slot layout");
     return nullptr;
   }
-  auto *p = new (std::nothrow)
-      hyle_growable_pool_o(backing, slot_size, normalized_align, initial_slots);
+  auto *p = allocate_handle<hyle_growable_pool_o>(
+      backing, slot_size, normalized_align, initial_slots);
   if (p == nullptr)
     hyle::platform::vm_set_last_error(
-        "hyle_growable_pool_create: wrapper allocation failed (out of memory)");
+        "hyle_growable_pool_create: control allocation failed (out of memory)");
   else
     hyle::platform::vm_set_last_error(nullptr);
   return p;
 }
 
-void hyle_growable_pool_destroy(hyle_growable_pool_o *p) { delete p; }
+void hyle_growable_pool_destroy(hyle_growable_pool_o *p) { free_handle(p); }
 
 void *hyle_growable_pool_acquire(hyle_growable_pool_o *p) {
   if (p == nullptr) {
@@ -711,10 +812,11 @@ hyle_huge_region_o *hyle_huge_region_open(size_t bytes, uint32_t flags,
       hyle::mem::HugeRegion::allocate(bytes, to_huge_flags(flags), numa_node);
   if (!r.valid())
     return nullptr;
-  auto *out = new (std::nothrow) hyle_huge_region_o(std::move(r));
+  const hyle_allocator backing = system_backing();
+  auto *out = allocate_handle<hyle_huge_region_o>(backing, std::move(r));
   if (out == nullptr) {
     hyle::platform::vm_set_last_error(
-        "hyle_huge_region_open: wrapper allocation failed (out of memory)");
+        "hyle_huge_region_open: control allocation failed (out of memory)");
   } else {
     hyle::platform::vm_set_last_error(nullptr);
   }
@@ -736,9 +838,10 @@ hyle_huge_region_o *hyle_huge_region_open_local(size_t bytes, uint32_t flags) {
   auto r = hyle::mem::HugeRegion::allocate_local(bytes, to_huge_flags(flags));
   if (!r.valid())
     return nullptr;
-  auto *out = new (std::nothrow) hyle_huge_region_o(std::move(r));
+  const hyle_allocator backing = system_backing();
+  auto *out = allocate_handle<hyle_huge_region_o>(backing, std::move(r));
   if (out == nullptr) {
-    hyle::platform::vm_set_last_error("hyle_huge_region_open_local: wrapper "
+    hyle::platform::vm_set_last_error("hyle_huge_region_open_local: control "
                                       "allocation failed (out of memory)");
   } else {
     hyle::platform::vm_set_last_error(nullptr);
@@ -751,10 +854,11 @@ hyle_huge_region_o *hyle_huge_region_open_interleaved(size_t bytes) {
   auto r = hyle::mem::HugeRegion::allocate_interleaved(bytes);
   if (!r.valid())
     return nullptr;
-  auto *out = new (std::nothrow) hyle_huge_region_o(std::move(r));
+  const hyle_allocator backing = system_backing();
+  auto *out = allocate_handle<hyle_huge_region_o>(backing, std::move(r));
   if (out == nullptr) {
     hyle::platform::vm_set_last_error(
-        "hyle_huge_region_open_interleaved: wrapper allocation failed (out of "
+        "hyle_huge_region_open_interleaved: control allocation failed (out of "
         "memory)");
   } else {
     hyle::platform::vm_set_last_error(nullptr);
@@ -762,7 +866,7 @@ hyle_huge_region_o *hyle_huge_region_open_interleaved(size_t bytes) {
   return out;
 }
 
-void hyle_huge_region_destroy(hyle_huge_region_o *r) { delete r; }
+void hyle_huge_region_destroy(hyle_huge_region_o *r) { free_handle(r); }
 
 int hyle_huge_region_valid(const hyle_huge_region_o *r) {
   return r && r->region.valid() ? 1 : 0;

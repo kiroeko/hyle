@@ -1,6 +1,6 @@
 # mem 全面收口计划
 
-> 状态：执行中（功能/API freeze 已落地；三平台性能、TSan 与 macOS 尚未签字）
+> 状态：执行中（能力族已落地；公开形状、C draft surface、TSan 与 macOS 尚未签字）
 > 建立日期：2026-07-22
 > 设计源：[`../architecture/mem-design.md`](../architecture/mem-design.md)
 
@@ -10,7 +10,8 @@ mem 收口不是减少功能数量，而是封闭一组完整、正交、可组�
 能力。每个公开类型必须有明确的 allocation shape、storage ownership、并发、容量、
 生命周期和失败合同；benchmark 只验证已经由用户场景确定的形状，不能反向创造 API。
 
-收口完成后，原则上只增加兼容策略或实现，不再反复推翻核心类型。
+首次发布前不承担兼容包袱；有真实场景、成熟库形状和性能证据时允许直接改 API/C surface。
+收口完成后才要求核心类型稳定，避免再次由 synthetic benchmark 反推产品形状。
 
 ## 2. 模块边界
 
@@ -53,7 +54,7 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 ### M0：隔离与基线
 
 - [x] mem 与 compute/Vulkan 改动分别审查，不让 GPU memory 语义回流到 mem。
-- [ ] 保存当前公开 API、C 导出符号、测试和三平台 benchmark 基线。
+- [x] 保存当前公开 surface、C 导出符号、测试和 Win/Linux benchmark 当前证据；它们用于漂移检测，不是兼容承诺。
 - [x] 以 `mem-design.md` 为设计真源，旧 milestone 只保留历史证据。
 
 退出：任意改动都能映射到一个合同与一个验证场景。
@@ -61,9 +62,9 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 ### M1：合同、命名与失败模型
 
 - [x] 为现有公开类型补齐统一合同。
-- [x] 当前单块 `Arena` 改名 `PooledRegion`，保留兼容 alias/C API。
+- [x] 当前单块形状统一命名 `PooledRegion`；发布前删除 `Arena/reset` 兼容壳。
 - [x] `Region` 专指 owned growable bulk-reset region。
-- [x] 固化 C ABI 范围与兼容策略。
+- [ ] 审查并确定首次发布的 C surface；当前 manifest 仅检查草案同步。
 - [x] 统一 invalid argument、exhaustion、backing OOM 的处理。
 
 ### M2：allocator core 与可组合 adapter
@@ -102,7 +103,7 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 
 - [x] 新增 untyped Region、FixedRegion、FixedPool、Quota C API。
 - [x] options struct 使用 `struct_size` 预留 ABI 扩展。
-- [x] `hyle_arena_*` 保留兼容并标记为 pooled single-block 语义。
+- [x] C/C++ 统一为 `hyle_pooled_region_*` / `PooledRegion` 和 `clear()`。
 - [x] 增加 request region、external workspace、hard pool、cached pool、RAII loan、quota、NUMA 示例。
 - [x] 让 graph phase scratch 实际消费通用 `Region`，验证形状但不以内部消费者限制能力存在。
 
@@ -116,7 +117,7 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 - [ ] Windows MSVC、Linux GCC/Clang、macOS arm64。
 - [x] C header self-contained、纯 C 编译和导出符号检查。
 
-### M8：性能认证与 freeze
+### M8：性能认证与发布面收口
 
 benchmark 必须按真实场景组织：request/frame bulk allocation、producer/consumer
 handoff、same-thread batch reuse、hard admission quota、external workspace、expensive
@@ -127,7 +128,7 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
 - [ ] 当前 HYLE 主场景无解释回退不得超过 5%。
 - [ ] throughput-oriented 类型三平台不明显输同语义成熟实现，跨平台几何均值至少持平。
 - [ ] 证书绑定 commit、编译器、参数和原始结果。
-- [x] 建立 C++ source API 与 C binary ABI baseline，进入兼容扩展期。
+- [x] 建立 C++/C current-surface 检查，捕获意外漂移；首次发布前不承诺兼容。
 
 ## 5. 2026-07-22 执行记录
 
@@ -135,7 +136,7 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
 
 - 新增 `QuotaAllocator`、owned `Region`、external `FixedRegion`、external
   variable-size `FixedPool`、`PoolLoan` 与 `PreservingObjectPool`。
-- 单块 `Arena` 精确命名为 `PooledRegion`，保留 C++ alias 与 `hyle_arena_*`。
+- 单块形状精确命名为 `PooledRegion`，C++ 与 C 都删除未发布的 `Arena/reset` 旧名。
 - C ABI 增加 Quota/Region/FixedRegion/FixedPool 和 HugeRegion policy result；Region
   options 带 `struct_size`。
 - graph level-based parallel evaluation 的 phase scratch 改为实际消费 `Region`；异步
@@ -144,9 +145,10 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
   exact usable size。
 - 修正旧 PMR benchmark：MSVC 上 `monotonic_buffer_resource::release()` 不能被当作
   external initial buffer 的可移植 rewind；现在每个 request 在同一 buffer 上重建 resource。
-- 建立 C++ source-compatibility 编译基线，覆盖全部公开 mem 能力族；C++ object layout 不承诺
-  binary ABI。C ABI 以 93 个符号的 manifest 冻结，并同时校验 header 声明、纯 C 消费引用和
-  DLL/ELF 实际导出。
+- 建立 C++ current-surface 编译检查，覆盖全部公开 mem 能力族；C++ object layout 不承诺
+  binary ABI。C manifest 同时校验 header 声明、纯 C 消费引用和 DLL/ELF 实际导出，但只是
+  未发布草案的同步检查。审查已修：有 backing 的 opaque control 也由该 backing 分配；非法
+  C layout/alignment 返回 NULL + last-error；adapter 统一 `*_as_allocator`。
 - `HYLE_TESTING` 为 shared/cached/object/growable pool 增加 liveness、foreign/double
   return/destroy 和 outstanding allocation fail-fast；shipping 构建不含 per-slot 状态和
   热路径诊断指令。
@@ -168,10 +170,10 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
 
 | 环境 | 结果 |
 |---|---|
-| Windows/MSVC Release | mem 165/165；纯 C 与 C ABI 93/93；全仓基线 CTest 50/50 |
-| Windows/MSVC ASan | 非 death mem 147/147；纯 C 通过 |
+| Windows/MSVC Release（当前 delta） | mem 165/165；纯 C 通过；C surface 93/93；全仓 CTest 50/50 |
+| Windows/MSVC ASan（当前 delta） | 非 death mem 147/147；纯 C 通过；C surface 93/93 |
 | Ubuntu 24.04 / GCC 14.2 Debug（当前 delta） | 非 death 147/147；FixedPool 7/7（含 2 death）；纯 C 通过 |
-| Ubuntu 24.04 / GCC 14.2 UBSan（前一基线） | 非 death mem 139/139；纯 C 通过；本轮 delta 待重跑 |
+| Ubuntu 24.04 / GCC 14.2 UBSan（当前 delta） | 非 death mem 147/147；纯 C 通过；C surface/纯 C 引用/ELF 导出均 93/93 |
 | Ubuntu 24.04 / GCC 14.2 TSan（前一基线） | 编译通过；WSL 启动前因 `unexpected memory mapping` 无法运行，不计通过 |
 | compute/Vulkan 隔离观察 | compute 78 pass/2 skip；Vulkan 14 pass/2 skip；GPU await 2/2 |
 
@@ -179,15 +181,18 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
 20.45 ns/op 对 oneTBB 8.66 ns/op 暴露了真实差距；更窄 bins、lazy coalescing 和 metadata
 overlay 候选均未改善并已撤回。路径分解定位到 mixed-size free 后的 coalesce→bin→下一次
 allocate→split→bin 重复维护，最终加入立即合并后的 one-entry recent-free cache，并把 alignment
-改成 block-relative checked arithmetic。Windows/MSVC Release `n=15` 新结果为 HYLE 10.528、
-oneTBB 10.345 ns/op，HYLE/oneTBB throughput ratio 中位数 0.985、范围 0.946–1.044，spread/sign
-均判 TIE。FixedPool 已通过 Windows 性能闸；owned Region 与 FixedPool 跨平台性能尚未签字。
+改成 block-relative checked arithmetic。Windows/MSVC Release `n=15` 新结果为 HYLE 10.314、
+oneTBB 10.094 ns/op，HYLE/oneTBB throughput ratio 中位数 0.983、范围 0.912–1.023，spread/sign
+均判 TIE。Linux/GCC 14.2 为 HYLE 7.555、oneTBB 7.774 ns/op，ratio 1.027、范围
+0.948–1.088，spread TIE / sign WIN（13/15，p=7.4e-3）。两平台在同机错开运行。FixedPool
+已通过 Windows/Linux 性能闸；owned Region 与 macOS 性能尚未签字。
 
 仍未完成：
 
-1. 在 Linux GCC/Clang 与 macOS arm64 重跑同一 F workload，确认 FixedPool 不是平台翻转。
+1. 在 Linux Clang 与 macOS arm64 重跑同一 F workload；GCC 14.2 已补。
 2. 独立 Linux host 上运行 TSan，补 macOS arm64 与 Linux Clang。
-3. allocation/free poison 与新增类型的完整 failpoint matrix；pool foreign/double/outstanding
+3. 完成 C surface 产品审查：独立 mem error channel、strict no-heap C 是否需要 in-place control、
+   Stats/Leak 是否有真实 C 消费者；manifest 在此之前不冻结。allocation/free poison 与新增类型的完整 failpoint matrix；pool foreign/double/outstanding
    diagnostics 已完成。
 4. p50/p95/p99、RSS/fragmentation、三平台原始结果与 commit-bound 证书。
 5. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
@@ -208,11 +213,11 @@ oneTBB 10.345 ns/op，HYLE/oneTBB throughput ratio 中位数 0.985、范围 0.94
 
 建议保持下列独立审查单元，不把功能、性能调优和 GPU 重构混成一次提交：
 
-1. `docs(mem): freeze closure capability matrix and contracts`
+1. `docs(mem): close capability matrix and contracts`
 2. `feat(mem): add quota allocator and failure-model tests`
 3. `feat(mem): add owned and external regions`
 4. `refactor(mem): name pooled single-block region explicitly`
 5. `feat(mem): add external variable-size fixed pool`
 6. `feat(mem): add object-pool loan and preserve policy`
 7. `feat(mem): expose closure primitives through the C ABI`
-8. `test/perf(mem): certify scenarios and freeze the public surface`
+8. `test/perf(mem): certify scenarios and record the current public surface`

@@ -1,13 +1,6 @@
-# Stable extern "C" exports declared by include/hyle/c/mem.h.
-# Any addition/removal/rename is an explicit ABI review, not a drive-by test update.
-hyle_arena_allocate
-hyle_arena_as_allocator
-hyle_arena_block_size
-hyle_arena_create
-hyle_arena_destroy
-hyle_arena_remaining
-hyle_arena_reset
-hyle_arena_used
+# Draft extern "C" surface declared by include/hyle/c/mem.h.
+# This detects accidental drift. Before first release, intentional shape changes
+# update the manifest and do not imply ABI compatibility.
 hyle_default_alignment
 hyle_enable_allocator_hugepages
 hyle_enable_allocator_numa
@@ -46,9 +39,17 @@ hyle_huge_region_requested_numa_node
 hyle_huge_region_size
 hyle_huge_region_valid
 hyle_mem_last_error
+hyle_pooled_region_allocate
+hyle_pooled_region_as_allocator
+hyle_pooled_region_block_size
+hyle_pooled_region_clear
+hyle_pooled_region_create
+hyle_pooled_region_destroy
+hyle_pooled_region_remaining
+hyle_pooled_region_used
 hyle_quota_allocator_create
 hyle_quota_allocator_destroy
-hyle_quota_allocator_get
+hyle_quota_allocator_as_allocator
 hyle_quota_allocator_limit
 hyle_quota_allocator_peak
 hyle_quota_allocator_used

@@ -12,7 +12,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | 任意 backing 的严格 live-byte admission | `QuotaAllocator` | 线程安全；按 requested bytes 精确计量 |
 | request/frame/graph phase 临时对象 | `Region` | owned、单线程、growable、bulk `clear()` |
 | 调用方 buffer 中的临时对象 | `FixedRegion` | external、单线程、bump、无 fallback |
-| 从共享硬池借一个 scratch block | `PooledRegion` | 单线程、固定容量；旧名 `Arena` 仅为兼容 alias |
+| 从共享硬池借一个 scratch block | `PooledRegion` | 单线程、固定容量、析构归还整块 |
 | LIFO checkpoint/rewind scratch | `StackAllocator` | owned fixed slab、单线程 |
 | 外部 buffer 内变长 alloc/free | `FixedPool` | 单线程、individual free、无 fallback、立即合并邻块 |
 | 多线程固定块、严格容量 | `SharedPool` | hard capacity；free 完成后立即全局可见 |
@@ -69,7 +69,7 @@ scratch.clear();
 `FixedRegion` 不拥有 storage、不增长、不 fallback；storage 必须比所有切片长寿。它不可
 copy/move，避免两个 cursor 无意间在同一 buffer 上重叠分配。
 
-`PooledRegion` 语义同样是固定容量 bump，但 storage 来自一个 hard `SharedPool` block；主接口同样用 `clear()`，旧 `reset()` 仅保留给 `Arena` 兼容代码。
+`PooledRegion` 语义同样是固定容量 bump，但 storage 来自一个 hard `SharedPool` block；统一使用 `clear()`。
 析构时整块归还。`StackAllocator` 增加 mark/rewind，适合嵌套 LIFO 临时区。
 
 ## Pool 家族
@@ -102,7 +102,7 @@ if (auto context = contexts.try_loan()) {
 ### External variable-size pool
 
 `FixedPool` 把 block/allocation metadata 放进调用方 storage；free bins、边界和统计属于
-`FixedPool` 控制对象（C ABI 的 opaque handle 也单独分配）。它支持
+`FixedPool` 控制对象（C draft surface 的 opaque handle 由 HYLE system allocator 单独分配）。它支持
 变长 allocate/deallocate/reallocate、精确 requested `used/peak` 和 O(1) 邻块合并；没有
 隐藏 payload heap，也不会 fallback。`reset()` 会一次性使所有旧指针失效，调用前必须
 保证无 live allocation。
@@ -142,20 +142,22 @@ loan 等调用合同错误允许 fail-fast。`StatsAllocator`/`LeakTracker` 可�
 
 ## 如何看性能
 
-benchmark 以场景和合同分组，入口是 `hyle_arena_pool_bench`；用
+benchmark 以场景和合同分组，入口是 `hyle_mem_scenarios_bench`；用
 `HYLE_BENCH_SECTIONS=F` 跑收口 workload。2026-07-22 的 Windows/MSVC Release 本机
-`bench-stat.py -n 15`（不是跨平台证书）显示：
+`bench-stat.py -n 15` 顺序运行显示：
 
 | workload | HYLE | 对照 | 结论 |
 |---|---:|---:|---|
-| external mixed request scratch | FixedRegion 1.190 ns/op | PMR reconstruct 2.019 ns/op | HYLE 约 1.70× throughput |
-| owned mixed request scratch | Region 2.064 ns/op | PMR release 1.900 ns/op | HYLE 约慢 8.6%，需继续解释/优化 |
-| external variable-size window | FixedPool 10.528 ns/op | oneTBB fixed_pool 10.345 ns/op | 0.985× throughput，配对 spread/sign 均 TIE |
-| strict quota decoration | 21.920 ns/op | direct system 9.117 ns/op | 约 12.8 ns/op 原子 admission 成本 |
-| expensive context loan | Preserve 21.016 ns/op | reconstruct 265.169 ns/op | Preserve 约 12.6× throughput |
+| Win external mixed request scratch | FixedRegion 1.202 ns/op | PMR reconstruct 2.014 ns/op | HYLE 约 1.68× throughput |
+| Win owned mixed request scratch | Region 2.157 ns/op | PMR release 2.042 ns/op | HYLE 约慢 5.6%，需继续解释/优化 |
+| Win external variable-size window | FixedPool 10.314 ns/op | oneTBB fixed_pool 10.094 ns/op | ratio 0.983，spread/sign 均 TIE |
+| Linux external variable-size window | FixedPool 7.555 ns/op | oneTBB fixed_pool 7.774 ns/op | ratio 1.027，spread TIE / sign WIN |
+| Win strict quota decoration | 21.899 ns/op | direct system 9.039 ns/op | 约 12.9 ns/op 原子 admission 成本 |
+| Win expensive context loan | Preserve 20.935 ns/op | reconstruct 263.901 ns/op | Preserve 约 12.6× throughput |
 
 这些数据用来暴露 trade-off，不用来改写 API。`FixedPool` 通过立即合并后的 one-entry
 recent-free cache 避免 free→allocate 的重复 bin 往返，并以 block-relative checked alignment
-保留 overflow 合同；15 次 HYLE/oneTBB throughput ratio 中位数 0.985、范围 0.946–1.044，
-Windows 上已达到统计平局。跨平台结论仍须补 Linux/macOS 同源复测。完整收口状态见
+保留 overflow 合同。修正 nanobench GCC 可写左值约束后，Windows ratio 0.983、范围
+0.912–1.023，统计平局；Linux ratio 1.027、范围 0.948–1.088，spread 平局而 sign WIN。
+macOS 同源复测仍待补。完整收口状态见
 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)。
