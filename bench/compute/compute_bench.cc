@@ -1,22 +1,19 @@
-// compute bench (compute-06 #16): the CPU cost of SUBMITTING a kernel, launch vs replay.
+// compute bench (compute-06 #16): sync-bounded iterative throughput, launch vs replay.
 //
 // record/replay (RecordedLaunch) records a command buffer ONCE and re-submits it; a plain
 // launch re-allocates + re-records + frees a command buffer EVERY call. For an iterative
 // workload (same kernel, same buffers, thousands of iterations) the recorded path skips all
-// that per-iteration CPU. This bench measures exactly that CPU: the host-side submit cost,
-// NOT the GPU's execution time.
+// that per-iteration CPU work.
 //
 // Method: a trivially small saxpy (tiny N) so GPU execution is small, over a batch of 64
-// submits per timed op, then ONE sync to drain. The comparison is HONEST: same kernel, same
-// buffers, same dispatch; only "re-record each time (launch)" vs "reuse recording (replay)"
-// differs. Measured ~1.12x for replay on an RTX 4070 (Win).
+// submits per timed op, then ONE sync to drain. The comparison keeps kernel, buffers,
+// dispatch, submit count and synchronization cadence equal; only re-record vs reuse differs.
 //
-// HONEST CAVEAT (don't over-read the number): each op ends with a vkQueueWaitIdle sync whose
-// cost (GPU drain) is FIXED across both rows, so it DILUTES the CPU-record difference replay
-// actually saves -- the true per-submit CPU saving is larger than the 1.12x end-to-end ratio
-// shows. A real iterative consumer that pipelines many replays before syncing (not sync-per-
-// batch like here) sees more of it. We report the measured end-to-end ratio, not an inflated
-// CPU-only microfigure, because that is the number a sync-bounded workload actually gets.
+// INTERPRETATION LIMIT: nanobench reports wall-clock ns/submit after dividing one 64-submit
+// epoch. That number includes host recording/submission, GPU execution, queueing and one
+// sync amortized over 64 submits. It is not a pure CPU-submit measurement and this single
+// tiny-saxpy workload is not an architecture certificate. Device execution timing belongs
+// to Event::create_timing/elapsed_ns and should be reported separately by consumer benches.
 //
 // Skips cleanly if no Vulkan device (record/replay is Vulkan-only; CUDA/host have no separate
 // record cost to amortize -> their RecordedLaunch::record returns Unimplemented by design).
@@ -64,7 +61,8 @@ int main() {
   auto k = Kernel::load_spirv(vk, hyle_test_shaders::kSaxpySpirv, "main");
   if (!k.has_value()) return 0;
 
-  // Tiny problem so GPU time is negligible and the CPU submit path dominates the measurement.
+  // Tiny fixed workload: useful for exposing command-record overhead, but still measured
+  // end-to-end with queue drain; do not label the result as pure CPU time.
   constexpr int kN = 256;
   const std::size_t bytes = kN * sizeof(float);
   BufferType bt = device_buffer_type(vk);
@@ -87,7 +85,7 @@ int main() {
   constexpr int kSubmits = 64;
 
   nb::Bench b;
-  b.title("compute submit CPU cost: launch (re-record) vs replay (reuse), 64 submits/op")
+  b.title("compute iterative throughput: launch vs replay, 64 submits + sync/op")
       .relative(true)
       .batch(kSubmits)
       .minEpochIterations(50);  // submit path + a sync/epoch is slow-ish; 50 keeps err% low

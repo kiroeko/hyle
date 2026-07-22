@@ -9,6 +9,8 @@
 
 > **2026-07-22 P0 契约修正：**上面的长状态行保留历史过程，但其中“非 `ONE_TIME_SUBMIT` 即可异步 replay”“每个 device buffer 等大 staging”“timestamp 只看 `timestampComputeAndGraphics` 且写在 TOP”均不是正确的最终形状。当前实现为：RecordedLaunch 使用 `SIMULTANEOUS_USE` 支持多次在途 replay；timestamp 以所选 queue family 的 `timestampValidBits` 判能力、在 `BOTTOM_OF_PIPE` 写入并按有效位宽做模减；非 ReBAR 同步 staging 懒创建且按最大单次传输增长；Vulkan DevicePool best-fit 缓存完整 native block。异步上传仍必须等待真实消费者后设计 Event-owned backpressure ring。
 >
+> **2026-07-22 compute/Vulkan 独立检修：**typed launch 现在保留任意 buffer/scalar 混合源码顺序（CUDA 不再偷偷改成 buffers-first），标量按 C++ natural alignment 打包，raw `KernelArgs` 在后端解引用前校验结构；`Buffer::clear(offset,size)` 在 Vulkan device-local 路径支持任意合法字节区间（非 4 字节对齐走 staging copy，满足公开合同）；plain Event 使用空 submit，不再为每个 marker 从长命 Stream pool 分配 command buffer，timing Event 自有并复用一个 command buffer，关闭 marker 无界累积；`elapsed_ns` 拒绝 plain event 和跨 device event；push-constant 超设备上限返回 `InvalidArgument`，不再把设备能力差异当进程致命错误。首个 record/replay bench 更名为“64-submit + sync 的端到端吞吐证据”，不再声称是纯 CPU submit 纳秒，也不再用单一 tiny-saxpy 比值证明架构。已知边界：Vulkan 逻辑 Stream 共享一个队列，event/sync 可能等待另一个 Stream 更早提交的工作；timeline semaphore/多队列隔离继续由真实并发消费者驱动。
+>
 > **范围**：给 HYLE 一条**自己的跨厂商通用 GPU 计算路径**——用 Vulkan compute（SPIR-V）把**任意** kernel 跑上 GPU，是 compute-04（CUDA NVRTC「任意 kernel」）的 Vulkan 孪生。**参考库 = kompute**（`C:\public\project-hyle\kompute`，纯 Vulkan 零隐藏运行时），整体照抄其 Vulkan 样板，**唯一实质改动是把阻塞 fence 等待换成非阻塞轮询接 HYLE fiber 调度器**。
 >
 > **一句话定位**（compute-design 发现 5/7/9 固化）：**ggml 只是"AI 推理算子多",不是通用 GPU 计算框架**——普通 CUDA/Vulkan 计算（vecadd/reduce/scan/逐元素/自定义数值核）+ ② CAD/CAE 专用核（几何/网格 stencil/BVH/SpMV）ggml 一概不给，这些**HYLE 自造**。CUDA 侧走 compute-04 NVRTC，跨厂商侧走 compute-06 SPIR-V。
@@ -131,7 +133,7 @@ Manager  ─ vk::Instance / PhysicalDevice / Device / Queue
 | 1 | **PipelineCache** | `Algorithm.cpp:302-307` | **改**：kompute 每 algorithm 建**空** cache = 没优化。HYLE 建 Manager 级共享 cache + 落盘（`getPipelineCacheData` 序列化，带 device UUID 校验，换卡作废） | 省冷启动重编 SPIR-V→ISA（几十 ms/kernel）|
 | 2 | **Specialization constants** | `Algorithm.cpp:268-294` | **抄全**：每常量 `SpecializationMapEntry(id,offset,size)`→`SpecializationInfo`→stage。把 local_size/循环上界/tile 编进 shader | 驱动编译期死代码消除+循环展开,比 push constant 快 |
 | 3 | spec constant 改需 rebuild | `Algorithm.hpp:88-142` | 抄语义（spec 定死不可运行期改）,配 #1 cache 降 rebuild 成本 | 误当运行期可变会踩坑 |
-| 4 | Push constants 布局 | `Algorithm.cpp:252-261` | **抄全**。**本机 `maxPushConstantsSize=256`**（非 kompute 注释的 128）→ 上限 `HYLE_FATAL_ASSERT` | 传标量零开销免 descriptor |
+| 4 | Push constants 布局 | `Algorithm.cpp:252-261` | **抄全**。运行时查询 `maxPushConstantsSize`；超限返回 `InvalidArgument`，大参数块改走 Buffer | 传标量零开销免 descriptor |
 | 5 | push 只在 record 时写 | `OpAlgoDispatch.cpp:47-52` | 抄；知道改 push 值=要重录 cb（影响 #16 replay）| 循环改参数时权衡重录 |
 | 6 | **Memory 4 分支 + ReBAR** | `Memory.cpp:224-258` | **抄全 4 类**。**本机确认有 DEVICE_LOCAL+HOST_VISIBLE+COHERENT（ReBAR）memory type**（vulkaninfo 实证）→ `eDeviceAndHost` 免 staging 拷贝直写显存 | ReBAR 大红利;缺 HOST_CACHED(回读密集)可补 |
 | 7 | memory type 首拟合 + **fallback** | `Tensor.cpp:409-420` | 抄首拟合,**补降级**：eDeviceAndHost 找不到→退 eDevice（kompute 直接 throw 无降级）| ReBAR 不可用的卡 |
@@ -194,7 +196,7 @@ Manager  ─ vk::Instance / PhysicalDevice / Device / Queue
 
 | 不做 | 去向 | 为什么 |
 |---|---|---|
-| **多队列 / async compute 并发** | 📋 待工况驱动调研 | 实测:同构占满型 compute 无收益(0.85x);但 compute+transfer 重叠 / 小 kernel 工况未测、不否定。首版单队列合批,遇驱动工况再补测（§0.2） |
+| **Vulkan Stream 隔离 / 多队列 / async compute 并发** | 📋 待工况驱动调研 | 当前多个逻辑 Stream 共享一个 VkQueue，completion 正确但可能跨 Stream 过度等待。timeline semaphore 可先做队内逻辑隔离；多队列还需 ownership/并发策略。已有单一同构工况数据不足以决定形状，等 compute+transfer 或多租户小 kernel 消费者后补端到端测量。 |
 | **运行时 GLSL→SPIR-V 编译** | 后续（glslang_c_interface）| 首版预编（性能好);CAD/CAE 动态生成 kernel 时再开,依赖已 clone |
 | **ggml-vulkan 接入** | compute-05 桥（借）| 那是"借 AI 算子的 Vulkan 实现",与自造并存不重复（发现 5）|
 | **Image / 纹理** | 按需 | compute 只需 storage buffer;Image 是图形/采样路径 |

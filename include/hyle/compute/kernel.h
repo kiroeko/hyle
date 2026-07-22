@@ -135,10 +135,10 @@ class Kernel {
 
 // ---- C-ABI CORE (exported, one compiled copy) -------------------------------
 // Submit `kernel` to `stream` with `config` and pre-built `args` (KernelArgs, types.h)
-// -- the UNIFIED launch ABI that lowers to BOTH backends: on CUDA the buffers + scalar
-// fields become the cuLaunchKernel `void**` array (each void** entry = a buffer ptr or
-// blob_base+field.offset); on Vulkan the buffers bind to descriptor slots 0..N and the
-// scalar blob becomes push constants (compute-06). `config.grid` is the grid / workgroup
+// -- the UNIFIED launch ABI that lowers to BOTH backends: on CUDA `order` preserves an
+// optional mixed pointer/scalar source order (omitting it retains the raw API's legacy
+// buffers-then-scalars convention); on Vulkan the buffers bind to descriptor slots 0..N
+// and the scalar blob becomes push constants. `config.grid` is the grid / workgroup
 // count (same ceil(n/block) math both sides); `config.block` is the CUDA block dim
 // (Vulkan's local_size lives in the shader). The KernelArgs' arrays are caller-owned
 // (zero heap) and must outlive this call. ⚠️ LIFETIME: the kernel runs ASYNCHRONOUSLY --
@@ -157,9 +157,9 @@ class Kernel {
 //     blocks_for(). VULKAN: exceeding it is undefined behavior with no driver guard, so the
 //     backend HYLE_FATAL_ASSERTs (fail-fast). CUDA: the driver validates the launch config and
 //     an over-limit grid comes back as an error Status (cudaGetLastError), not an assert.
-//   - the packed scalar blob must be <= the device push-constant limit (Vulkan
-//     maxPushConstantsSize; the typed shell caps at 256 B). Vulkan HYLE_FATAL_ASSERTs at
-//     pipeline build. CUDA passes scalars as kernel params (no push-constant limit).
+//   - the packed scalar blob must be <= the device push-constant limit. The typed shell
+//     caps its stack blob at 256 B; a Vulkan device with a smaller limit returns
+//     InvalidArgument. CUDA passes scalars as kernel params (no push-constant limit).
 //   - relaunching the SAME Kernel must keep the SAME arg SHAPE (buffer count + scalar bytes):
 //     the pipeline layout is built once from the first launch and frozen -- Vulkan
 //     HYLE_FATAL_ASSERTs a shape mismatch. (CUDA has no frozen layout; args rebuild per call.)
@@ -167,6 +167,8 @@ class Kernel {
 //     multiple fibers/threads (see stream.h). Use one Stream per fiber for parallelism. This
 //     one CANNOT be asserted (a data race is not locally observable) -- it is a hard caller
 //     contract on every backend.
+//   - raw KernelArgs contains opaque native handles, not Buffer ownership metadata: every
+//     handle must belong to the Stream's backend device. The typed shell checks this.
 //
 // Most callers use the typed `launch(stream, kernel, config, args...)` shell below, which
 // builds KernelArgs at compile time; this raw form is for a caller that already has one.
@@ -243,14 +245,15 @@ class RecordedLaunch {
 };
 
 // ---- TYPED SHELL (header-only, compile-time, zero heap) ----------------------
-// The ergonomic launch: pass kernel arguments DIRECTLY, mixed, like calling the kernel --
-// `launch(s, k, cfg, a, b, c, n, alpha)` where a/b/c are Buffers and n/alpha are scalars.
+// The ergonomic launch: pass kernel arguments DIRECTLY and in source order, including
+// mixed pointer/scalar signatures such as `launch(s,k,cfg,a,n,b,alpha)`.
 // A variadic fold classifies each arg at COMPILE TIME (conventions §7 typed shell over a
 // type-erased C-ABI core, same as CArray): a `Buffer` -> its native_handle() appended to an
 // ordered buffer list (position = binding index); anything trivially-copyable -> memcpy'd
-// into a std430-packed scalar blob (with a {offset,size} descriptor so CUDA can rebuild
-// per-scalar void** entries while Vulkan pushes the whole blob). All storage is STACK
-// (bounded by sizeof...(Args)); nothing hits the heap. Then it calls the C-ABI core above.
+// into a naturally-aligned byte blob (with a {offset,size} descriptor) and emits an
+// argument-order table so CUDA reconstructs the exact original signature. Vulkan pushes
+// the whole blob; its shader declaration must match the C++ byte layout (use raw KernelArgs
+// for explicitly authored offsets). All storage is STACK; nothing hits the heap.
 //
 // This resolves the CUDA(void**)-vs-Vulkan(descriptor+push) split ENTIRELY at compile time
 // -- the consumer writes ONE launch call that works on every backend (compute-04 CUDA /
@@ -261,9 +264,10 @@ template <class T>
 inline constexpr bool is_kernel_scalar_v =
     std::is_trivially_copyable_v<std::remove_cvref_t<T>> &&
     !std::is_same_v<std::remove_cvref_t<T>, Buffer>;
-// Max scalar push-constant blob: 256 B = the RTX 4070's maxPushConstantsSize (measured);
-// Vulkan's guaranteed floor is 128 B, but HYLE targets the real device. A kernel needing
-// more scalars than this should pass them via a uniform Buffer, not push constants.
+// A bounded typed-shell scratch blob, not a portable Vulkan capability claim. The backend
+// checks the selected device's actual maxPushConstantsSize (Vulkan guarantees at least
+// 128 B) and returns InvalidArgument when this 256 B convenience ceiling is too large for
+// that device. Larger parameter blocks belong in a Buffer.
 inline constexpr std::size_t kMaxScalarBlob = 256;
 }  // namespace detail
 
@@ -279,30 +283,38 @@ Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
   void* buffers[kN == 0 ? 1 : kN];             // ordered native handles (stack)
   alignas(16) std::byte blob[detail::kMaxScalarBlob];  // packed scalar bytes (stack)
   ScalarField fields[kN == 0 ? 1 : kN];        // per-scalar {offset,size} (stack)
-  unsigned nb = 0, nf = 0, blob_off = 0;
+  KernelArgRef order[kN == 0 ? 1 : kN];        // exact mixed source order (stack)
+  unsigned nb = 0, nf = 0, na = 0, blob_off = 0;
 
   // Fold over the arg pack: classify + pack each, in order (conventions §7 + the
   // renderer-Mesh-validated variadic-fold + byte-pack + descriptor-array pattern).
   auto pack_one = [&](auto&& a) noexcept {
     using A = std::remove_cvref_t<decltype(a)>;
     if constexpr (std::is_same_v<A, Buffer>) {
+      HYLE_FATAL_ASSERT(a.valid() && a.belongs_to(stream.device()));
+      order[na++] = KernelArgRef{KernelArgKind::kBuffer, nb};
       buffers[nb++] = a.native_handle();          // Buffer -> ordered buffer list
     } else {
       static_assert(detail::is_kernel_scalar_v<A>,
                     "launch arg must be a Buffer or a trivially-copyable scalar");
-      // std430-ish: align each scalar to its own size (<=16), pack into the blob.
+      static_assert(alignof(A) <= 16,
+                    "over-aligned kernel values must be passed through a Buffer");
+      // Preserve the C++ value's natural alignment. `sizeof(T)` is not an alignment
+      // (12-byte structs are the counterexample) and is not necessarily a power of two.
       const std::size_t sz = sizeof(A);
-      const std::size_t al = sz < 16 ? sz : 16;
+      constexpr std::size_t al = alignof(A);
       blob_off = static_cast<unsigned>(mem::align_up(blob_off, al));
       HYLE_FATAL_ASSERT(blob_off + sz <= detail::kMaxScalarBlob);  // scalars overflow -> use a Buffer
       std::memcpy(blob + blob_off, &a, sz);
+      order[na++] = KernelArgRef{KernelArgKind::kScalar, nf};
       fields[nf++] = ScalarField{blob_off, static_cast<unsigned>(sz)};
       blob_off += static_cast<unsigned>(sz);
     }
   };
   (pack_one(std::forward<Args>(args)), ...);
 
-  KernelArgs ka{buffers, nb, nf ? blob : nullptr, blob_off, nf ? fields : nullptr, nf};
+  KernelArgs ka{buffers, nb, nf ? blob : nullptr, blob_off,
+                nf ? fields : nullptr, nf, na ? order : nullptr, na};
   return launch(stream, kernel, config, ka);   // -> C-ABI core (one indirect + backend)
 }
 

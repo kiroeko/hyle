@@ -309,6 +309,21 @@ TEST(ComputeEvent, HostTimingInlineIsZero) {
   EXPECT_EQ(*ns, 0u);  // host runs inline -> no device time
 }
 
+TEST(ComputeEvent, ElapsedRejectsPlainCompletionEvents) {
+  Device devs[8];
+  const std::size_t n = enumerate(devs, 8);
+  const Device* host = nullptr;
+  for (std::size_t i = 0; i < n && i < 8; ++i)
+    if (devs[i].type() == DeviceType::kCpu) host = &devs[i];
+  ASSERT_NE(host, nullptr);
+
+  auto a = Event::create(*host);
+  auto b = Event::create(*host);
+  ASSERT_TRUE(a.has_value() && b.has_value());
+  auto elapsed = elapsed_ns(*a, *b);
+  EXPECT_FALSE(elapsed.has_value());
+}
+
 // GPU-only: bracket a heavy spin kernel with two timing events and read a NONZERO
 // elapsed time. Proves the timestamp-query path (CUDA cudaEventElapsedTime / Vulkan
 // VkQueryPool * timestampPeriod) actually measures device time. SKIPPED without a GPU.

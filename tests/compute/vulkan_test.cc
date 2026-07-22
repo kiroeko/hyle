@@ -161,6 +161,18 @@ TEST(VulkanCompute, ForcedStagingIsLazyAndTransferSized) {
   ASSERT_TRUE(buffer->get(kOffset, output.data(), output.size()).ok());
   EXPECT_EQ(output, input);
   EXPECT_EQ(vk_staging_capacity_for_test(buffer->native_handle()), capacity);
+
+  // Buffer::clear is byte-granular on every backend. vkCmdFillBuffer cannot encode
+  // this unaligned range, so Vulkan must use its transfer-sized staging fallback.
+  constexpr std::size_t kClearOffset = 3;
+  constexpr std::size_t kClearBytes = 7;
+  ASSERT_TRUE(buffer->clear(kOffset + kClearOffset, 0x3C, kClearBytes).ok());
+  ASSERT_TRUE(buffer->get(kOffset, output.data(), output.size()).ok());
+  for (std::size_t i = 0; i < output.size(); ++i) {
+    const std::uint8_t expected =
+        i >= kClearOffset && i < kClearOffset + kClearBytes ? 0x3C : 0xA5;
+    EXPECT_EQ(output[i], expected) << i;
+  }
 }
 
 TEST(VulkanCompute, DevicePoolReusesFreedVkBuffer) {
@@ -619,9 +631,10 @@ TEST(VulkanCompute, BatchedDependentChain) {
   for (int i = 0; i < kN; ++i) ASSERT_NEAR(ho[i], expect, 1e-2f) << "at " << i;
 }
 
-// ---- Vulkan CONTRACT death tests (vulkan_backend.cc:561/665/666/714) ----------
-// The Vulkan backend's launch contracts are HYLE_FATAL_ASSERTs (caller bugs, not
-// recoverable Status). These prove they fire. All GPU-skip if no Vulkan device.
+// ---- Vulkan CONTRACT death tests --------------------------------------------
+// Frozen pipeline shape and grid-limit violations are caller bugs and remain fatal.
+// Device capability differences such as push-constant capacity return Status instead.
+// All GPU-skip if no Vulkan device.
 //
 // Threadsafe death style: on this machine CUDA + Vulkan are both initialized by other
 // tests; re-exec avoids fork-after-driver-init. Each scenario is a named function (the
@@ -656,27 +669,6 @@ void vk_shape_freeze_buffer_count() {
   (void)launch(*s, *k, cfg, bad);
 }
 
-// push_size > maxPushConstantsSize aborts in build_pipeline on the FIRST launch. The typed
-// shell caps scalars at 256B, so bypass it with a raw KernelArgs whose unsigned maximum is
-// above every Vulkan implementation limit (unlike the old device-specific 512-byte guess).
-void vk_push_size_over_limit() {
-  Device vk;
-  if (!find_vulkan(vk)) std::abort();
-  auto s = Stream::create(vk);
-  auto k = load_saxpy(vk);
-  constexpr int kN = 256;
-  const std::size_t bytes = kN * sizeof(float);
-  BufferType bt = device_buffer_type(vk);
-  auto bx = Buffer::create(bt, bytes); auto by = Buffer::create(bt, bytes);
-  auto bo = Buffer::create(bt, bytes);
-  alignas(16) unsigned char scalar = 0;
-  void* three[3] = {bx->native_handle(), by->native_handle(), bo->native_handle()};
-  ScalarField f{0, UINT32_MAX};
-  KernelArgs bad{three, 3, &scalar, UINT32_MAX, &f, 1};
-  LaunchConfig cfg; cfg.grid = {blocks_for(kN, 256), 1, 1};
-  (void)launch(*s, *k, cfg, bad);
-}
-
 // grid.x > maxComputeWorkGroupCount aborts at dispatch record (vulkan_backend.cc:714).
 void vk_grid_over_limit() {
   Device vk;
@@ -703,11 +695,27 @@ TEST(VulkanContractDeathTest, ShapeFreezeBufferCountMismatch) {
   EXPECT_DEATH(vk_shape_freeze_buffer_count(), "HYLE fatal");
 }
 
-TEST(VulkanContractDeathTest, PushConstantSizeOverLimit) {
+TEST(VulkanCompute, PushConstantSizeOverLimitReturnsStatus) {
   Device vk;
   if (!find_vulkan(vk)) GTEST_SKIP() << "no Vulkan device";
-  HYLE_THREADSAFE_DEATH();
-  EXPECT_DEATH(vk_push_size_over_limit(), "HYLE fatal");
+  auto s = Stream::create(vk);
+  auto k = load_saxpy(vk);
+  constexpr int kN = 256;
+  const std::size_t bytes = kN * sizeof(float);
+  BufferType bt = device_buffer_type(vk);
+  auto bx = Buffer::create(bt, bytes);
+  auto by = Buffer::create(bt, bytes);
+  auto bo = Buffer::create(bt, bytes);
+  ASSERT_TRUE(s.has_value() && k.has_value() && bx.has_value() &&
+              by.has_value() && bo.has_value());
+  alignas(16) unsigned char scalar = 0;
+  void* three[3] = {bx->native_handle(), by->native_handle(),
+                    bo->native_handle()};
+  ScalarField f{0, UINT32_MAX};
+  KernelArgs bad{three, 3, &scalar, UINT32_MAX, &f, 1};
+  LaunchConfig cfg;
+  cfg.grid = {blocks_for(kN, 256), 1, 1};
+  EXPECT_FALSE(launch(*s, *k, cfg, bad).ok());
 }
 
 TEST(VulkanContractDeathTest, GridExceedsWorkgroupLimit) {

@@ -35,8 +35,8 @@ Device host_device() {
   return default_device();  // default is the host fallback when no GPU enumerated
 }
 
-// Build a std430-packed scalar blob the way kernel.h's typed shell does: each scalar aligned
-// to its own size (<=16), fields carry {offset,size}. Small helper for the tests below.
+// Build a naturally-aligned scalar blob the way kernel.h's typed shell does; fields carry
+// {offset,size}. Shader-facing callers remain responsible for matching their declared layout.
 struct Blob {
   alignas(16) std::byte data[64];
   ScalarField fields[4];
@@ -45,7 +45,7 @@ struct Blob {
   template <class T>
   void push(T v) {
     const unsigned sz = sizeof(T);
-    const unsigned al = sz < 16 ? sz : 16;
+    const unsigned al = alignof(T);
     off = static_cast<unsigned>((off + al - 1) / al * al);
     std::memcpy(data + off, &v, sz);
     fields[nfields++] = ScalarField{off, sz};

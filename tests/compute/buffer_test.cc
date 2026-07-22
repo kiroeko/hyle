@@ -60,6 +60,20 @@ TEST(ComputeBuffer, HostBufferTypeIsHost) {
   EXPECT_TRUE(bt.is_host());  // pinned host RAM is always host-dereferenceable
 }
 
+TEST(ComputeBuffer, TracksOwningBackendDevice) {
+  Device owner = default_device();
+  auto buffer = Buffer::create(device_buffer_type(owner), 64);
+  ASSERT_TRUE(buffer.has_value());
+  EXPECT_TRUE(buffer->belongs_to(owner));
+
+  Device devices[8];
+  const std::size_t count = enumerate(devices, 8);
+  for (std::size_t i = 0; i < count && i < 8; ++i) {
+    if (devices[i].ordinal() != owner.ordinal())
+      EXPECT_FALSE(buffer->belongs_to(devices[i])) << devices[i].backend();
+  }
+}
+
 // ---- alloc / set / get round-trip -------------------------------------------
 
 TEST(ComputeBuffer, AllocSetGetRoundTrip) {

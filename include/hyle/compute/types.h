@@ -76,23 +76,22 @@ struct LaunchConfig {
 // compute-04/06 UNIFIED kernel arguments (POD, here not kernel.h so the .cu TU can use
 // it without result.h). This is the backend-neutral launch ABI: it lowers to BOTH CUDA
 // cuLaunchKernel `void** args` AND Vulkan descriptor-set + push-constants. Its shape is
-// established by REAL measurement (a saxpy kernel with 3 buffers + 4 mixed scalars run on
-// both models -- see compute-06 spec "统一 launch ABI 真数据") + validated against a
-// real renderer's Mesh(indices, ...vertexArrays) ctor (same variadic-fold + byte-pack +
-// descriptor-array trick). A kernel's arguments are exactly two groups:
-//   • BUFFERS  -- an ORDERED list of device pointers. Position i = CUDA arg-slot i =
-//                 Vulkan descriptor binding i. Both models agree on "ordered buffer list".
+// established by cross-backend use (a saxpy kernel with 3 buffers + 4 scalars run on
+// both models). Argument storage is split into two groups:
+//   • BUFFERS  -- an ORDERED list of device pointers. Position i is Vulkan descriptor
+//                 binding i; CUDA maps it to a source arg slot through `order`.
 //   • SCALARS  -- packed into ONE contiguous byte blob, PLUS a small descriptor array
 //                 {offset,size} per scalar field. This resolves the CUDA-vs-Vulkan split
 //                 the real data exposed: Vulkan pushes the WHOLE blob as push constants
 //                 (ignores the descriptors); CUDA needs ONE void** entry PER scalar, which
-//                 it rebuilds as (blob_base + descriptor[i].offset). The descriptors are
-//                 filled at compile time by the variadic `launch` shell (it knows each
-//                 scalar's offset/size), so neither backend needs a runtime type tag.
-// Zero heap: buffers / scalar blob / descriptors all point at caller-owned STACK storage
+//                 it rebuilds as (blob_base + descriptor[i].offset).
+// The optional order table maps the original mixed source signature onto those groups;
+// Vulkan ignores it, while CUDA needs it to preserve pointer/scalar argument order.
+// Zero heap: buffers / scalar blob / descriptors / order all point at caller-owned STACK storage
 // the typed `launch` shell builds -- same zero-alloc discipline as the old `void** args`.
 // The backend reads them on the submit path (cold vs the kernel's GPU time), never copies.
 //
+// Raw KernelArgs may omit order, meaning buffers-then-scalars for compatibility.
 // A buffers-only kernel: scalar_bytes=0, scalar_count=0. A scalars-only kernel:
 // buffer_count=0. Grid/workgroup stays in LaunchConfig.grid (Vulkan group count == CUDA
 // grid dim, same ceil(n/block) math).
@@ -100,6 +99,18 @@ struct ScalarField {
   unsigned offset;  // byte offset of this scalar within the blob
   unsigned size;    // byte size of this scalar
 };
+
+// Source-order metadata for the typed launch shell. Vulkan consumes buffers and
+// push constants as two separate namespaces, but CUDA's kernelParams array must
+// preserve the caller's exact mixed pointer/scalar order. `index` addresses the
+// corresponding buffers[] or fields[] entry. Raw KernelArgs may omit this table
+// to retain the original buffers-then-scalars convention.
+enum class KernelArgKind : std::uint8_t { kBuffer, kScalar };
+struct KernelArgRef {
+  KernelArgKind kind;
+  unsigned index;
+};
+
 struct KernelArgs {
   void* const* buffers;         // ordered array of buffer device pointers (buffer_count)
   unsigned buffer_count;        // number of buffer arguments
@@ -107,6 +118,8 @@ struct KernelArgs {
   unsigned scalar_bytes;        // total size of the scalar blob, or 0
   const ScalarField* fields;    // per-scalar {offset,size} (scalar_count long), or nullptr
   unsigned scalar_count;        // number of scalar fields (for CUDA void** rebuild)
+  const KernelArgRef* order = nullptr;  // optional mixed source order (arg_count entries)
+  unsigned arg_count = 0;
 };
 
 // A SPECIALIZATION CONSTANT binding (compute-06 #2/#3): maps one GLSL `constant_id` to a

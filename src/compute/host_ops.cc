@@ -9,7 +9,7 @@
 #include "hyle/simd/ops.h"   // dot/saxpy/add f32/f64
 
 // compute-07: CPU operator backend -- library host kernels wrapping hyle simd numeric cores.
-// Each is a Kernel::HostFn: it unpacks the unified KernelArgs (buffers[] + a std430-packed
+// Each is a Kernel::HostFn: it unpacks the unified KernelArgs (buffers[] + a naturally-aligned
 // scalar blob with per-field {offset,size} descriptors) exactly the way the typed-shell in
 // kernel.h packed them, then calls the matching simd core. Synchronous, single-threaded,
 // no allocation (scope: no second runtime). See host_ops.h for each kernel's arg contract.

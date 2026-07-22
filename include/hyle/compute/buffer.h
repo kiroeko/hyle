@@ -105,6 +105,11 @@ class Buffer {
 
   bool valid() const noexcept { return vt_ != nullptr; }
 
+  // Does this allocation belong to `device`? The typed kernel-launch shell uses this
+  // before exposing native_handle() to a backend: CUDA device pointers and Vulkan VkMem*
+  // are not interchangeable even when both devices represent the same physical GPU.
+  HYLE_COMPUTE_API bool belongs_to(const Device& device) const noexcept;
+
   // Opaque backend-native allocation handle. KernelArgs passes this value back to the
   // same backend; callers must never dereference or perform pointer arithmetic on it.
   void* native_handle() const noexcept { return native_; }

@@ -184,6 +184,22 @@ void launch_cross_backend() {
   (void)launch(*s, *k, cfg, empty);  // stream.vt_ != kernel.vt_ -> fatal (compute.cc:580)
 }
 
+void typed_launch_buffer_cross_backend() {
+  Device devices[8];
+  const std::size_t count = enumerate(devices, 8);
+  Device host = default_device();
+  Device other = default_device();
+  for (std::size_t i = 0; i < count && i < 8; ++i)
+    if (devices[i].type() == DeviceType::kCpu) host = devices[i];
+  for (std::size_t i = 0; i < count && i < 8; ++i)
+    if (std::strcmp(devices[i].backend(), host.backend()) != 0) other = devices[i];
+
+  auto kernel = Kernel::load_host(host, &noop_host_kernel);
+  auto stream = Stream::create(host);
+  auto wrong_buffer = Buffer::create(device_buffer_type(other), 64);
+  (void)launch(*stream, *kernel, LaunchConfig{}, *wrong_buffer);
+}
+
 }  // namespace
 
 // ---- Buffer bounds (host-runnable): offset+size must be <= size() ------------
@@ -267,4 +283,13 @@ TEST(ComputeContractDeathTest, LaunchCrossBackend) {
   }
   HYLE_THREADSAFE_DEATH();
   EXPECT_DEATH(launch_cross_backend(), "HYLE fatal");
+}
+
+TEST(ComputeContractDeathTest, TypedLaunchRejectsCrossBackendBuffer) {
+  Device a, b;
+  if (!find_two_backends(&a, &b)) {
+    GTEST_SKIP() << "only one backend enumerated -- cross-backend buffer unreachable";
+  }
+  HYLE_THREADSAFE_DEATH();
+  EXPECT_DEATH(typed_launch_buffer_cross_backend(), "HYLE fatal");
 }

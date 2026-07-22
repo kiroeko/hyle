@@ -421,13 +421,8 @@ void vk_stream_destroy(void* native) noexcept {
   auto* s = static_cast<VkStream*>(native);
   if (s == nullptr) return;
   retire(s, /*force=*/true);  // wait out + free all stream-owned in-flight submissions
-  // Also drain untracked Event marker command buffers before destroying their pool.
-  if (!wait_queue_position().ok()) {
-    // Destructors cannot report allocation/device errors. Fall back to the broader wait so
-    // the command pool is never destroyed while a marker command buffer may still execute.
-    std::lock_guard<std::mutex> lk(ctx().submit_mtx);
-    (void)vkQueueWaitIdle(ctx().queue);
-  }
+  // Completion events use empty submits and timing events own their command buffer,
+  // so no event marker can retain this stream's command pool.
   if (s->pool != VK_NULL_HANDLE) vkDestroyCommandPool(ctx().device, s->pool, nullptr);
   delete s;
 }
@@ -445,6 +440,7 @@ Status vk_stream_sync(void* native) noexcept {
 struct VkEvent {
   VkFence fence = VK_NULL_HANDLE;
   bool recorded = false;
+  bool submit_failed = false;
 };
 Status vk_event_create(int, void** out_native) noexcept {
   auto* event = new (std::nothrow) VkEvent{};
@@ -462,83 +458,50 @@ void vk_event_destroy(void* native) noexcept {
   auto* event = static_cast<VkEvent*>(native);
   if (event == nullptr) return;
   // RAII destruction must not destroy a fence still referenced by a queue submission.
-  if (event->recorded)
+  if (event->recorded && !event->submit_failed)
     vkWaitForFences(ctx().device, 1, &event->fence, VK_TRUE, UINT64_MAX);
   if (event->fence != VK_NULL_HANDLE)
     vkDestroyFence(ctx().device, event->fence, nullptr);
   delete event;
 }
-// Record `event` on `stream`: the Vulkan analog of cudaEventRecord ("mark THIS point in
-// the stream"). Submits an EMPTY command buffer signalling the event's fence. Because all
-// submits on one VkQueue execute in submission order, this fence signals only after every
-// prior launch on the stream has finished -- exactly cudaEventRecord's semantics, so
-// `co_await StreamComplete` (create event -> record -> poll query) works unchanged.
-//
-// LIFETIME (why the marker cb is NOT parked in `inflight`): the event's fence is owned by
-// the Event object, which the awaiting coroutine destroys right after the wait completes.
-// Parking the marker cb in `inflight` keyed on that fence would make a later retire()/
-// stream_destroy vkGetFenceStatus a DESTROYED fence = use-after-free (faults on Windows,
-// silently "works" on Linux -- caught by testing BOTH). Instead the marker cb is left
-// owned by the stream's COMMAND POOL, reclaimed wholesale at vkDestroyCommandPool
-// (stream_destroy force-retires + waits stream-owned fences first). Markers accumulate over
-// the stream's life (bounded by #co_awaits); per-marker reclaim is deferred, not needed
-// for correctness.
+// Record `event` at the current shared-queue position. An empty queue submission can signal
+// the event's fence, and therefore covers every earlier submission (including all earlier
+// work from this logical Stream). Different logical Vulkan Streams currently share one
+// VkQueue, so this may conservatively cover unrelated earlier work from another Stream.
 void vk_event_record(void* stream_native, void* event_native) noexcept {
-  auto* s = static_cast<VkStream*>(stream_native);
+  (void)stream_native;
   auto* event = static_cast<VkEvent*>(event_native);
   VkDevice dev = ctx().device;
   // Re-recording a pending Vulkan fence is illegal. Match reusable Event semantics by
   // completing the previous record before resetting the native fence.
-  if (event->recorded)
+  if (event->recorded && !event->submit_failed)
     vkWaitForFences(dev, 1, &event->fence, VK_TRUE, UINT64_MAX);
   vkResetFences(dev, 1, &event->fence);
-  // Build the marker command buffer. If ANY step fails we must STILL signal the fence (we
-  // already reset it above) -- otherwise the GpuPoller polls it forever and the awaiting
-  // fiber hangs (gpu_await.h contract: a recorded event ALWAYS completes). So on failure
-  // we fall through to a 0-command-buffer submit that just signals the fence: the fiber
-  // resumes and observes completion via its own path, no silent hang.
-  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-  cbai.commandPool = s->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
-  VkCommandBuffer cb = VK_NULL_HANDLE;
-  bool have_cb = vkAllocateCommandBuffers(dev, &cbai, &cb) == VK_SUCCESS;
-  if (have_cb) {
-    VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
-    bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    have_cb = vkBeginCommandBuffer(cb, &bg) == VK_SUCCESS &&
-              vkEndCommandBuffer(cb) == VK_SUCCESS;
-    if (!have_cb) {
-      vkFreeCommandBuffers(dev, s->pool, 1, &cb);
-      cb = VK_NULL_HANDLE;
-    }
-  }
   VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
-  si.commandBufferCount = have_cb ? 1u : 0u;
-  si.pCommandBuffers = have_cb ? &cb : nullptr;
   std::lock_guard<std::mutex> lk(ctx().submit_mtx);
-  // Even the empty (have_cb==false) submit correctly signals the fence AFTER prior stream
-  // launches: those were separate submits already queued, and this marker executes after
-  // them in VkQueue order -- so readback still sees completed data. A submit failure here
-  // is device-lost class (fence can't signal); nothing short of that leaves ev unsignalled.
-  event->recorded =
-      vkQueueSubmit(ctx().queue, 1, &si, event->fence) == VK_SUCCESS;
-  // cb NOT tracked in inflight (see LIFETIME note) -- the command pool reclaims it.
+  const VkResult r = vkQueueSubmit(ctx().queue, 1, &si, event->fence);
+  event->recorded = true;
+  event->submit_failed = r != VK_SUCCESS;
 }
 EventStatus vk_event_query(void* event_native) noexcept {
   auto* event = static_cast<VkEvent*>(event_native);
   HYLE_FATAL_ASSERT(event->recorded);
+  if (event->submit_failed) return EventStatus::kReady;
   VkResult r = vkGetFenceStatus(ctx().device, event->fence);
-  return r == VK_SUCCESS ? EventStatus::kReady : EventStatus::kNotReady;
+  return r == VK_NOT_READY ? EventStatus::kNotReady : EventStatus::kReady;
 }
 void vk_event_sync(void* event_native) noexcept {
   auto* event = static_cast<VkEvent*>(event_native);
   HYLE_FATAL_ASSERT(event->recorded);
-  vkWaitForFences(ctx().device, 1, &event->fence, VK_TRUE, UINT64_MAX);
+  if (!event->submit_failed)
+    vkWaitForFences(ctx().device, 1, &event->fence, VK_TRUE, UINT64_MAX);
 }
 
 // ---- GPU timing (compute-06b #25): timestamp query + fence ---------------------
 // A timing event = a VkFence (completion, like a plain event) + a 1-slot timestamp query
-// pool. record_timing submits a marker cb that resets the pool + writes a timestamp at the
-// bottom of pipe. BOTTOM is essential: a later submit's TOP stage may overlap earlier compute,
+// pool + one event-owned reusable command buffer. record_timing resets that command buffer
+// and writes a timestamp at the bottom of pipe. BOTTOM is essential: a later submit's TOP
+// stage may overlap earlier compute,
 // so TOP does not represent "all work before this event completed". elapsed_ns reads two
 // completed timing events' ticks and
 // scales the difference by the device timestampPeriod. The native_ handle is a heap
@@ -547,8 +510,11 @@ void vk_event_sync(void* event_native) noexcept {
 struct VkTimingEvent {
   VkFence fence = VK_NULL_HANDLE;
   VkQueryPool pool = VK_NULL_HANDLE;
+  VkCommandPool command_pool = VK_NULL_HANDLE;
+  VkCommandBuffer cb = VK_NULL_HANDLE;
   bool recorded = false;
   bool timestamp_written = false;
+  bool submit_failed = false;
 };
 Status vk_event_create_timing(int, void** out_native) noexcept {
   if (ctx().timestamp_period == 0.0f)
@@ -564,66 +530,85 @@ Status vk_event_create_timing(int, void** out_native) noexcept {
   r = vkCreateQueryPool(ctx().device, &qci, nullptr, &t->pool);
   if (r != VK_SUCCESS) { vkDestroyFence(ctx().device, t->fence, nullptr); delete t;
                          return from_vk(r, "vkCreateQueryPool"); }
+  VkCommandPoolCreateInfo pci{VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO};
+  pci.queueFamilyIndex = ctx().compute_qfi;
+  pci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+  r = vkCreateCommandPool(ctx().device, &pci, nullptr, &t->command_pool);
+  if (r == VK_SUCCESS) {
+    VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
+    cbai.commandPool = t->command_pool;
+    cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+    cbai.commandBufferCount = 1;
+    r = vkAllocateCommandBuffers(ctx().device, &cbai, &t->cb);
+  }
+  if (r != VK_SUCCESS) {
+    if (t->command_pool != VK_NULL_HANDLE)
+      vkDestroyCommandPool(ctx().device, t->command_pool, nullptr);
+    vkDestroyQueryPool(ctx().device, t->pool, nullptr);
+    vkDestroyFence(ctx().device, t->fence, nullptr);
+    delete t;
+    return from_vk(r, "vk timing command buffer");
+  }
   *out_native = t;
   return Status();
 }
 void vk_event_destroy_timing(void* native) noexcept {
   auto* t = static_cast<VkTimingEvent*>(native);
   if (t == nullptr) return;
-  if (t->recorded)
+  if (t->recorded && !t->submit_failed)
     vkWaitForFences(ctx().device, 1, &t->fence, VK_TRUE, UINT64_MAX);
+  if (t->command_pool != VK_NULL_HANDLE)
+    vkDestroyCommandPool(ctx().device, t->command_pool, nullptr);
   if (t->pool != VK_NULL_HANDLE) vkDestroyQueryPool(ctx().device, t->pool, nullptr);
   if (t->fence != VK_NULL_HANDLE) vkDestroyFence(ctx().device, t->fence, nullptr);
   delete t;
 }
 void vk_event_record_timing(void* stream_native, void* event_native) noexcept {
-  auto* s = static_cast<VkStream*>(stream_native);
+  (void)stream_native;
   auto* t = static_cast<VkTimingEvent*>(event_native);
   VkDevice dev = ctx().device;
-  if (t->recorded)
+  if (t->recorded && !t->submit_failed)
     vkWaitForFences(dev, 1, &t->fence, VK_TRUE, UINT64_MAX);
   vkResetFences(dev, 1, &t->fence);
-  VkCommandBufferAllocateInfo cbai{VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO};
-  cbai.commandPool = s->pool; cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY; cbai.commandBufferCount = 1;
-  VkCommandBuffer cb = VK_NULL_HANDLE;
-  bool have_cb = vkAllocateCommandBuffers(dev, &cbai, &cb) == VK_SUCCESS;
+  bool have_cb = vkResetCommandBuffer(t->cb, 0) == VK_SUCCESS;
   if (have_cb) {
     VkCommandBufferBeginInfo bg{VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO};
     bg.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    have_cb = vkBeginCommandBuffer(cb, &bg) == VK_SUCCESS;
+    have_cb = vkBeginCommandBuffer(t->cb, &bg) == VK_SUCCESS;
     if (have_cb) {
-      vkCmdResetQueryPool(cb, t->pool, 0, 1);  // must reset before write
-      vkCmdWriteTimestamp(cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, t->pool, 0);
-      have_cb = vkEndCommandBuffer(cb) == VK_SUCCESS;
-    }
-    if (!have_cb) {
-      vkFreeCommandBuffers(dev, s->pool, 1, &cb);
-      cb = VK_NULL_HANDLE;
+      vkCmdResetQueryPool(t->cb, t->pool, 0, 1);  // must reset before write
+      vkCmdWriteTimestamp(t->cb, VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT, t->pool, 0);
+      have_cb = vkEndCommandBuffer(t->cb) == VK_SUCCESS;
     }
   }
   VkSubmitInfo si{VK_STRUCTURE_TYPE_SUBMIT_INFO};
   si.commandBufferCount = have_cb ? 1u : 0u;
-  si.pCommandBuffers = have_cb ? &cb : nullptr;
+  si.pCommandBuffers = have_cb ? &t->cb : nullptr;
   std::lock_guard<std::mutex> lk(ctx().submit_mtx);
   t->timestamp_written = have_cb;
-  t->recorded = vkQueueSubmit(ctx().queue, 1, &si, t->fence) == VK_SUCCESS;
-  // marker cb reclaimed by command pool (see plain event LIFETIME)
+  const VkResult r = vkQueueSubmit(ctx().queue, 1, &si, t->fence);
+  t->recorded = true;
+  t->submit_failed = r != VK_SUCCESS;
 }
 EventStatus vk_event_query_timing(void* event_native) noexcept {
   auto* t = static_cast<VkTimingEvent*>(event_native);
   HYLE_FATAL_ASSERT(t->recorded);
+  if (t->submit_failed) return EventStatus::kReady;
   VkResult r = vkGetFenceStatus(ctx().device, t->fence);
-  return r == VK_SUCCESS ? EventStatus::kReady : EventStatus::kNotReady;
+  return r == VK_NOT_READY ? EventStatus::kNotReady : EventStatus::kReady;
 }
 void vk_event_sync_timing(void* event_native) noexcept {
   auto* t = static_cast<VkTimingEvent*>(event_native);
   HYLE_FATAL_ASSERT(t->recorded);
-  vkWaitForFences(ctx().device, 1, &t->fence, VK_TRUE, UINT64_MAX);
+  if (!t->submit_failed)
+    vkWaitForFences(ctx().device, 1, &t->fence, VK_TRUE, UINT64_MAX);
 }
 Status vk_event_elapsed_ns(void* start_native, void* stop_native,
                            std::uint64_t* out_ns) noexcept {
   auto* a = static_cast<VkTimingEvent*>(start_native);
   auto* b = static_cast<VkTimingEvent*>(stop_native);
+  if (a->submit_failed || b->submit_failed)
+    return Status::Unavailable("vk timing marker submission failed");
   if (!a->timestamp_written || !b->timestamp_written)
     return Status::ResourceExhausted("vk timing marker command buffer unavailable");
   VkDevice dev = ctx().device;
@@ -1072,11 +1057,18 @@ Status vk_buffer_clear(void* base, std::size_t offset, std::uint8_t value,
     std::memset(static_cast<std::byte*>(m->mapped) + offset, value, size);
     return flush_if_needed(m, offset, size);
   }
-  // Device-local: vkCmdFillBuffer writes a 32-bit pattern. buffer_clear fills whole bytes
-  // with `value`, so replicate the byte across the 4-byte word. offset/size are byte-exact
-  // here (the caller's contract keeps them 4-aligned for device buffers; VkFillBuffer
-  // requires 4-aligned offset + size, so assert to fail-fast on a misaligned caller bug).
-  HYLE_FATAL_ASSERT((offset % 4 == 0) && (size % 4 == 0));
+  // vkCmdFillBuffer only accepts 4-byte-aligned ranges. Preserve Buffer's backend-neutral
+  // byte-range contract by using the reusable staging slice for unaligned head/tail ranges.
+  if ((offset % 4) != 0 || (size % 4) != 0) {
+    Status ready = ensure_staging(m, size);
+    if (!ready.ok()) return ready;
+    std::memset(m->staging_mapped, value, size);
+    return staged_submit([&](VkCommandBuffer cb) {
+      record_copy(cb, m->staging_buf, m->buf, 0, offset, size,
+                  /*d2h=*/false);
+    });
+  }
+  // Aligned device-local range: replicate the byte across vkCmdFillBuffer's 32-bit word.
   uint32_t word = value; word |= word << 8; word |= word << 16;
   return staged_submit([&](VkCommandBuffer cb) {
     vkCmdFillBuffer(cb, m->buf, offset, size, word);
@@ -1193,10 +1185,11 @@ Status build_pipeline(VkKernel* k, uint32_t buffer_count, uint32_t push_size) no
   // we waited, use its result (no rebuild -> no leak / no torn k->pipeline write).
   std::lock_guard<std::mutex> lk(ctx().build_mtx);
   if (k->pipeline != VK_NULL_HANDLE) return Status();  // already built by a racing caller
-  // Push-constant blob must fit the device limit (checklist #4). Exceeding it is a caller
-  // contract violation (a kernel with too many scalars should use a uniform buffer) ->
-  // fail-fast, not a silent vkCreatePipelineLayout failure.
-  HYLE_FATAL_ASSERT(push_size <= ctx().max_push);
+  // The portable typed shell may run on devices whose push-constant limit is below its
+  // 256-byte stack cap. Reject the launch at the public Status boundary instead of making
+  // a device capability difference process-fatal.
+  if (push_size > ctx().max_push)
+    return Status::InvalidArgument("vk launch: push constants exceed device limit");
   // Descriptor set layout: `buffer_count` storage buffers at bindings 0..N-1 (checklist:
   // buffer args -> descriptor slots, positional).
   std::vector<VkDescriptorSetLayoutBinding> binds(buffer_count);

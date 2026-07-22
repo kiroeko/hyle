@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include <cstring>
 #include <cstdint>
 #include <vector>
 
@@ -30,11 +31,24 @@ bool has_gpu() {
   return false;
 }
 
+Device host_device() {
+  Device devs[8];
+  const std::size_t n = enumerate(devs, 8);
+  for (std::size_t i = 0; i < n && i < 8; ++i)
+    if (!devs[i].is_gpu()) return devs[i];
+  return default_device();
+}
+
 // The GPU kernel source (extern "C" so the entry name is verbatim).
 constexpr const char* kVecAddSrc = R"(
 extern "C" __global__ void vecadd(const float* a, const float* b, float* c, int n) {
   int i = blockIdx.x * blockDim.x + threadIdx.x;
   if (i < n) c[i] = a[i] + b[i];
+}
+extern "C" __global__ void mixed_order(const float* a, int n, const float* b,
+                                         float* c, float scale) {
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  if (i < n) c[i] = a[i] + scale * b[i];
 }
 )";
 
@@ -48,6 +62,30 @@ void host_vecadd(const LaunchConfig&, const KernelArgs& args) noexcept {
   int n = *reinterpret_cast<const int*>(static_cast<const std::byte*>(args.scalars) +
                                         args.fields[0].offset);
   for (int i = 0; i < n; ++i) c[i] = a[i] + b[i];
+}
+
+struct TwelveByteValue {
+  std::uint32_t x;
+  std::uint32_t y;
+  std::uint32_t z;
+};
+bool g_mixed_order_ok = false;
+
+void host_mixed_order(const LaunchConfig&, const KernelArgs& args) noexcept {
+  TwelveByteValue value{};
+  std::memcpy(&value,
+              static_cast<const std::byte*>(args.scalars) + args.fields[0].offset,
+              sizeof(value));
+  g_mixed_order_ok =
+      args.buffer_count == 2 && args.scalar_count == 2 && args.arg_count == 4 &&
+      args.order != nullptr &&
+      args.order[0].kind == KernelArgKind::kBuffer && args.order[0].index == 0 &&
+      args.order[1].kind == KernelArgKind::kScalar && args.order[1].index == 0 &&
+      args.order[2].kind == KernelArgKind::kBuffer && args.order[2].index == 1 &&
+      args.order[3].kind == KernelArgKind::kScalar && args.order[3].index == 1 &&
+      args.fields[0].size == sizeof(TwelveByteValue) &&
+      args.fields[0].offset % alignof(TwelveByteValue) == 0 &&
+      value.x == 1 && value.y == 2 && value.z == 3;
 }
 
 }  // namespace
@@ -101,6 +139,79 @@ TEST(ComputeKernel, NvrtcVecAddEndToEnd) {
   ASSERT_TRUE(dc->get(0, hc.data(), bytes).ok());
   for (int i = 0; i < kN; ++i)
     EXPECT_FLOAT_EQ(hc[i], float(i) + float(2 * i)) << "at " << i;
+}
+
+TEST(ComputeKernel, TypedShellPreservesMixedOrderOnCuda) {
+  if (!has_gpu()) GTEST_SKIP() << "no CUDA GPU";
+  Device d = default_device();
+  auto k = Kernel::compile(d, kVecAddSrc, "mixed_order");
+  auto s = Stream::create(d);
+  ASSERT_TRUE(k.has_value() && s.has_value());
+
+  constexpr int kN = 1024;
+  const std::size_t bytes = kN * sizeof(float);
+  std::vector<float> a(kN), b(kN), out(kN, 0.0f);
+  for (int i = 0; i < kN; ++i) {
+    a[i] = static_cast<float>(i);
+    b[i] = static_cast<float>(i + 1);
+  }
+  auto da = Buffer::create(device_buffer_type(d), bytes);
+  auto db = Buffer::create(device_buffer_type(d), bytes);
+  auto dc = Buffer::create(device_buffer_type(d), bytes);
+  ASSERT_TRUE(da.has_value() && db.has_value() && dc.has_value());
+  ASSERT_TRUE(da->set(0, a.data(), bytes).ok());
+  ASSERT_TRUE(db->set(0, b.data(), bytes).ok());
+
+  LaunchConfig cfg;
+  cfg.block = {256, 1, 1};
+  cfg.grid = {blocks_for(kN, 256), 1, 1};
+  const float scale = 2.5f;
+  ASSERT_TRUE(launch(*s, *k, cfg, *da, kN, *db, *dc, scale).ok());
+  ASSERT_TRUE(s->sync().ok());
+  ASSERT_TRUE(dc->get(0, out.data(), bytes).ok());
+  for (int i = 0; i < kN; ++i)
+    EXPECT_FLOAT_EQ(out[i], a[i] + scale * b[i]) << i;
+}
+
+TEST(ComputeKernel, TypedShellUsesNaturalAlignmentForTwelveByteValue) {
+  Device d = host_device();
+  auto k = Kernel::load_host(d, &host_mixed_order);
+  auto s = Stream::create(d);
+  auto a = Buffer::create(device_buffer_type(d), 16);
+  auto b = Buffer::create(device_buffer_type(d), 16);
+  ASSERT_TRUE(k.has_value() && s.has_value() && a.has_value() && b.has_value());
+
+  g_mixed_order_ok = false;
+  TwelveByteValue value{1, 2, 3};
+  const std::uint16_t tail = 9;
+  ASSERT_TRUE(launch(*s, *k, LaunchConfig{}, *a, value, *b, tail).ok());
+  EXPECT_TRUE(g_mixed_order_ok);
+}
+
+TEST(ComputeKernel, RawArgsRejectMalformedMetadata) {
+  Device d = host_device();
+  auto k = Kernel::load_host(d, &host_vecadd);
+  auto s = Stream::create(d);
+  ASSERT_TRUE(k.has_value() && s.has_value());
+
+  int scalar = 4;
+  ScalarField field{0, sizeof(scalar)};
+  KernelArgs null_buffers{nullptr, 1, nullptr, 0, nullptr, 0};
+  EXPECT_FALSE(launch(*s, *k, LaunchConfig{}, null_buffers).ok());
+
+  KernelArgs null_blob{nullptr, 0, nullptr, sizeof(scalar), &field, 1};
+  EXPECT_FALSE(launch(*s, *k, LaunchConfig{}, null_blob).ok());
+
+  ScalarField outside{2, sizeof(scalar)};
+  KernelArgs outside_blob{nullptr, 0, &scalar, sizeof(scalar), &outside, 1};
+  EXPECT_FALSE(launch(*s, *k, LaunchConfig{}, outside_blob).ok());
+
+  void* buffers[1] = {&scalar};
+  KernelArgRef duplicate[2] = {{KernelArgKind::kBuffer, 0},
+                               {KernelArgKind::kBuffer, 0}};
+  KernelArgs duplicate_order{buffers, 1, &scalar, sizeof(scalar), &field, 1,
+                             duplicate, 2};
+  EXPECT_FALSE(launch(*s, *k, LaunchConfig{}, duplicate_order).ok());
 }
 
 // ---- compile cache: second compile of same source hits cache ----------------

@@ -755,24 +755,43 @@ void cuda_kernel_destroy(void* module, void* /*func*/) noexcept {
 Status cuda_kernel_launch(void* stream_native, void* /*module*/, void* func,
                           const void* config, const KernelArgs* args) noexcept {
   const auto* cfg = static_cast<const LaunchConfig*>(config);
-  // Rebuild cuLaunchKernel's void** kernelParams from the unified KernelArgs: one entry
-  // per arg, in order -- a buffer entry points at the device-ptr slot, a scalar entry at
-  // its field within the packed blob. (Kernel signature order = buffers first as authored,
-  // then scalars; the HYLE consumer authors the kernel to match its launch() arg order.)
+  // Rebuild cuLaunchKernel's void** kernelParams from the unified KernelArgs. The typed
+  // shell supplies `order` so mixed signatures retain their exact source order; raw
+  // KernelArgs without it keep the original buffers-then-scalars convention.
   // Bounded stack array: total args = buffers + scalar fields (cap mirrors the shell).
   void* params[64];
   unsigned np = 0;
   const unsigned total = args->buffer_count + args->scalar_count;
   if (total > 64) return Status::InvalidArgument("cuda launch: >64 kernel args");
-  // buffers: each void** entry is the ADDRESS of the device pointer (cuLaunchKernel derefs).
-  for (unsigned i = 0; i < args->buffer_count; ++i) {
-    params[np++] = const_cast<void*>(static_cast<const void*>(&args->buffers[i]));
-  }
-  // scalars: each entry points into the blob at the field's offset.
   const auto* blob = static_cast<const std::byte*>(args->scalars);
-  for (unsigned j = 0; j < args->scalar_count; ++j) {
-    params[np++] = const_cast<void*>(
-        static_cast<const void*>(blob + args->fields[j].offset));
+  auto append_buffer = [&](unsigned i) {
+    params[np++] =
+        const_cast<void*>(static_cast<const void*>(&args->buffers[i]));
+  };
+  auto append_scalar = [&](unsigned i) {
+    params[np++] = const_cast<void*>(static_cast<const void*>(
+        blob + args->fields[i].offset));
+  };
+  if (args->order != nullptr) {
+    if (args->arg_count != total)
+      return Status::InvalidArgument("cuda launch: invalid argument-order count");
+    for (unsigned i = 0; i < args->arg_count; ++i) {
+      const KernelArgRef ref = args->order[i];
+      if (ref.kind == KernelArgKind::kBuffer) {
+        if (ref.index >= args->buffer_count)
+          return Status::InvalidArgument("cuda launch: invalid buffer argument index");
+        append_buffer(ref.index);
+      } else if (ref.kind == KernelArgKind::kScalar) {
+        if (ref.index >= args->scalar_count || blob == nullptr || args->fields == nullptr)
+          return Status::InvalidArgument("cuda launch: invalid scalar argument index");
+        append_scalar(ref.index);
+      } else {
+        return Status::InvalidArgument("cuda launch: invalid argument kind");
+      }
+    }
+  } else {
+    for (unsigned i = 0; i < args->buffer_count; ++i) append_buffer(i);
+    for (unsigned i = 0; i < args->scalar_count; ++i) append_scalar(i);
   }
   CUresult r = cuLaunchKernel(
       static_cast<CUfunction>(func), cfg->grid.x, cfg->grid.y, cfg->grid.z,

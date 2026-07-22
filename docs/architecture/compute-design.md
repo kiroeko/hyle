@@ -2,6 +2,8 @@
 
 > 本文档定下 HYLE `compute/` 模块（GPU/异构算力）的设计。上游约束见 [`hyle-scope.md`](./hyle-scope.md)（不特化、贴硬件）、调度对接见 `sched/`。GPU 现状盘点见 [`clay-asset-liability.md`](./clay-asset-liability.md) 第五节。
 
+> **当前收口原则（2026-07-22 审计）：**公开形状由可复述的消费者场景和跨后端合同决定，benchmark 只验证某个实现选择，不反向定义 API。`Stream/Event/Buffer/Kernel` 是稳定主轴；合批服务多算子链，record/replay 服务固定 bindings 的迭代负载，timing event 服务 profiling。一次 tiny-saxpy 的 `ns/op` 不能证明这些形状，更不能单独推出新抽象。当前 Vulkan 多个逻辑 Stream 仍共享一个 `VkQueue`，正确性成立但会保守跨 Stream 排队；真正独立并发需消费者工况 + timeline semaphore/多队列方案及端到端数据后再承诺。
+
 ## 调查事实（真实数据）
 
 1. **infra 本体零自有 GPU 计算**：`.cu/.cuh = 0`，唯一碰 CUDA 的是 `host_device.h`，纯宏门面（`__host__ __device__` 修饰符 + launch-bounds 宏 + `CUDA_KERNEL_ASSERT`，`host_device.h:5-75`），不含 kernel、不调 cuda runtime API。

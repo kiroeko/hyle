@@ -105,6 +105,51 @@ DeviceEntry resolve(const Device& d) noexcept {
   return t.entries[g];
 }
 
+// Validate the pointer-bearing raw ABI before any backend dereferences it. The typed shell
+// always produces this shape, but raw KernelArgs is public specifically for callers that
+// author offsets themselves; malformed metadata must return InvalidArgument, not become
+// backend-specific UB (notably a null descriptor array on CUDA or VkBuffer read on Vulkan).
+Status validate_kernel_args(const KernelArgs& args) noexcept {
+  if (args.buffer_count != 0 && args.buffers == nullptr)
+    return Status::InvalidArgument("compute launch: null buffer argument array");
+  if (args.scalar_bytes != 0 && args.scalars == nullptr)
+    return Status::InvalidArgument("compute launch: null scalar blob");
+  if (args.scalar_count != 0 && (args.fields == nullptr || args.scalars == nullptr))
+    return Status::InvalidArgument("compute launch: null scalar field metadata");
+  if ((args.scalar_count == 0) != (args.scalar_bytes == 0))
+    return Status::InvalidArgument("compute launch: inconsistent scalar shape");
+
+  for (unsigned i = 0; i < args.scalar_count; ++i) {
+    const ScalarField field = args.fields[i];
+    if (field.size == 0 || field.offset > args.scalar_bytes ||
+        field.size > args.scalar_bytes - field.offset)
+      return Status::InvalidArgument("compute launch: scalar field outside blob");
+  }
+
+  const unsigned total = args.buffer_count + args.scalar_count;
+  if (total < args.buffer_count)
+    return Status::InvalidArgument("compute launch: argument count overflow");
+  if (args.order == nullptr) {
+    if (args.arg_count != 0)
+      return Status::InvalidArgument("compute launch: null argument-order table");
+    return Status();
+  }
+  if (args.arg_count != total)
+    return Status::InvalidArgument("compute launch: invalid argument-order count");
+  for (unsigned i = 0; i < args.arg_count; ++i) {
+    const KernelArgRef ref = args.order[i];
+    const bool valid =
+        (ref.kind == KernelArgKind::kBuffer && ref.index < args.buffer_count) ||
+        (ref.kind == KernelArgKind::kScalar && ref.index < args.scalar_count);
+    if (!valid)
+      return Status::InvalidArgument("compute launch: invalid argument-order entry");
+    for (unsigned j = 0; j < i; ++j)
+      if (args.order[j].kind == ref.kind && args.order[j].index == ref.index)
+        return Status::InvalidArgument("compute launch: duplicate argument-order entry");
+  }
+  return Status();
+}
+
 }  // namespace
 
 // ---- Device -----------------------------------------------------------------
@@ -286,9 +331,14 @@ void Event::sync() const noexcept {
 
 Result<std::uint64_t> elapsed_ns(const Event& start, const Event& stop) noexcept {
   HYLE_FATAL_ASSERT(start.vt_ != nullptr && stop.vt_ != nullptr);
-  // Both events must be from the same backend (cross-backend elapsed is meaningless).
-  if (start.vt_ != stop.vt_)
-    return std::unexpected(Status::InvalidArgument("elapsed_ns: events on different backends"));
+  if (!start.timing_ || !stop.timing_)
+    return std::unexpected(
+        Status::InvalidArgument("elapsed_ns: both events must be timing events"));
+  // Same backend is insufficient on a multi-GPU system: native timestamps from two
+  // devices have unrelated counters and native handle ownership.
+  if (start.vt_ != stop.vt_ || start.local_ != stop.local_)
+    return std::unexpected(
+        Status::InvalidArgument("elapsed_ns: events on different devices"));
   if (start.vt_->event_elapsed_ns == nullptr)
     return std::unexpected(Status::Unimplemented("compute: backend has no GPU timing"));
   std::uint64_t ns = 0;
@@ -357,6 +407,12 @@ Buffer& Buffer::operator=(Buffer&& o) noexcept {
 
 Buffer::~Buffer() {
   if (vt_ != nullptr) vt_->buffer_free(ordinal_, kind_, native_);
+}
+
+bool Buffer::belongs_to(const Device& device) const noexcept {
+  if (vt_ == nullptr) return false;
+  const DeviceEntry e = resolve(device);
+  return vt_ == e.vt && ordinal_ == e.local;
 }
 
 Result<Buffer> Buffer::create(const BufferType& type, std::size_t bytes) noexcept {
@@ -603,8 +659,11 @@ Result<Kernel> Kernel::load_host(const Device& device, HostFn fn) noexcept {
 Status launch(Stream& stream, const Kernel& kernel, const LaunchConfig& config,
               const KernelArgs& args) noexcept {
   HYLE_FATAL_ASSERT(stream.vt_ != nullptr && kernel.vt_ != nullptr);
-  // Stream and kernel must be on the same backend (same device family).
-  HYLE_FATAL_ASSERT(stream.vt_ == kernel.vt_);
+  // Native modules/functions are device-owned, not merely backend-owned.
+  HYLE_FATAL_ASSERT(stream.vt_ == kernel.vt_ &&
+                    stream.local_ == kernel.ordinal_);
+  Status valid = validate_kernel_args(args);
+  if (!valid.ok()) return valid;
   return stream.vt_->kernel_launch(stream.native_, kernel.module_, kernel.func_,
                                    &config, &args);
 }
@@ -620,7 +679,10 @@ Status launch_batch(Stream& stream, const BatchItem* items, unsigned count) noex
   KernelArgs args[64];
   for (unsigned i = 0; i < count; ++i) {
     const Kernel* k = items[i].kernel;
-    HYLE_FATAL_ASSERT(k != nullptr && k->vt_ == stream.vt_);  // all on stream's backend
+    HYLE_FATAL_ASSERT(k != nullptr && k->vt_ == stream.vt_ &&
+                      k->ordinal_ == stream.local_);
+    Status valid = validate_kernel_args(items[i].args);
+    if (!valid.ok()) return valid;
     modules[i] = k->module_;
     funcs[i] = k->func_;
     configs[i] = items[i].config;
@@ -659,7 +721,10 @@ Result<RecordedLaunch> RecordedLaunch::record(Stream& stream, const Kernel& kern
                                               const LaunchConfig& config,
                                               const KernelArgs& args) noexcept {
   HYLE_FATAL_ASSERT(stream.vt_ != nullptr && kernel.vt_ != nullptr);
-  HYLE_FATAL_ASSERT(stream.vt_ == kernel.vt_);  // same backend as launch
+  HYLE_FATAL_ASSERT(stream.vt_ == kernel.vt_ &&
+                    stream.local_ == kernel.ordinal_);
+  Status valid = validate_kernel_args(args);
+  if (!valid.ok()) return std::unexpected(std::move(valid));
   // A backend without a recording path (host: inline execution, recording gives nothing) has
   // a null slot -> Unimplemented, so the caller can fall back to launch().
   if (stream.vt_->recorded_create == nullptr)

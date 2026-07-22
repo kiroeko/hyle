@@ -20,8 +20,8 @@
 // the compute pillar's completion PRIMITIVE -- the object that makes GPU work
 // observable as "done yet?" without blocking (compute-design §2, §4).
 //
-// THE COMPLETION MODEL (compute-design §2, decided before this header, verified on
-// RTX 4070): a Stream is an ordered async queue; you enqueue work, then record()
+// THE COMPLETION MODEL (compute-design §2, verified on the GPU backends): a Stream is
+// an ordered async queue; you enqueue work, then record()
 // an Event on it. The Event fires when all prior stream work completes. You learn
 // that by POLLING event.query() -> Ready / NotReady -- the exact shape of CUDA's
 // cudaEventQuery (cudaSuccess / cudaErrorNotReady), mirrored by CCCL's
@@ -137,8 +137,11 @@ class Event {
 // per-stream submission state (command pool + in-flight tracking on the Vulkan backend)
 // is NOT internally locked; concurrent use is a data race + a Vulkan external-sync
 // violation (VkCommandPool). For parallel submission, use ONE Stream PER fiber. Multiple
-// distinct Streams may be used concurrently (their submits are serialized internally at
-// the shared queue). This matches io's "one connection per fiber" model.
+// distinct Streams may be used concurrently. The current Vulkan backend maps them to one
+// shared VkQueue, so submission is serialized and record()/sync() may conservatively wait
+// for earlier work from another Stream; this preserves completion correctness but is not a
+// promise of CUDA-like inter-stream overlap. This matches io's "one connection per fiber"
+// ownership model, not its parallelism model.
 class Stream {
  public:
   Stream() noexcept = default;
@@ -189,8 +192,8 @@ class Stream {
 // COMPLETE (co_await StreamComplete / stream.sync()) before calling this. Mirrors CUDA's
 // cudaEventElapsedTime (there in ms; HYLE reports ns for a common integer unit across the
 // CUDA/Vulkan/host backends). Returns Unimplemented on a backend without timing support,
-// InvalidArgument if the two events are on different backends. On the host backend timing
-// is inline so the result is 0.
+// InvalidArgument unless both are timing events on the same backend device. On the host
+// backend timing is inline so the result is 0.
 HYLE_COMPUTE_API Result<std::uint64_t> elapsed_ns(const Event& start,
                                                   const Event& stop) noexcept;
 
