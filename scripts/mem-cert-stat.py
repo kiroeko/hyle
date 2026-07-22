@@ -24,6 +24,9 @@ ROW = re.compile(
 META = re.compile(
     r"^HYLE_MEM_CERT meta format=(\d+) compiler=(\S+) platform=(\S+)$"
 )
+APPLE_RUNTIME = re.compile(
+    r"^# HYLE_MEM_BENCH apple_main_qos=(\S+) qos_ok=(\d+) affinity=(\S+)$"
+)
 
 PAIRS = {
     "external_region": ("hyle_fixed_region", "pmr_reconstruct"),
@@ -68,14 +71,30 @@ def parse_meta(text):
     return None
 
 
+def parse_apple_runtime(text):
+    for line in text.splitlines():
+        match = APPLE_RUNTIME.match(line.strip())
+        if match:
+            return {
+                "qos": match.group(1),
+                "qos_ok": int(match.group(2)),
+                "affinity": match.group(3),
+            }
+    return None
+
+
 def git_metadata(repo):
     try:
         head = subprocess.check_output(
-            ["git", "-C", repo, "rev-parse", "HEAD"], text=True
+            ["git", "-C", repo, "rev-parse", "HEAD"],
+            text=True,
+            stderr=subprocess.DEVNULL,
         ).strip()
         dirty = bool(
             subprocess.check_output(
-                ["git", "-C", repo, "status", "--porcelain"], text=True
+                ["git", "-C", repo, "status", "--porcelain"],
+                text=True,
+                stderr=subprocess.DEVNULL,
             ).strip()
         )
         return head, dirty
@@ -127,6 +146,15 @@ def main():
             sys.exit(f"run {index}: no HYLE_MEM_CERT rows parsed")
         if current_metadata is None or current_metadata["format"] != 1:
             sys.exit(f"run {index}: missing or unsupported HYLE_MEM_CERT meta")
+        runtime = parse_apple_runtime(result.stdout + result.stderr)
+        if current_metadata["platform"] == "macos":
+            if runtime is None or runtime["qos_ok"] != 1:
+                sys.exit(f"run {index}: Apple QoS metadata missing or unsuccessful")
+            current_metadata.update(runtime)
+        else:
+            current_metadata.update(
+                {"qos": "n/a", "qos_ok": 1, "affinity": "external"}
+            )
         if metadata is not None and current_metadata != metadata:
             sys.exit(f"run {index}: certificate metadata changed across runs")
         current_keys = set(rows)
@@ -146,7 +174,8 @@ def main():
     print(
         f"commit={commit} dirty={int(dirty)} compiler={metadata['compiler']} "
         f"platform={metadata['platform']} cpu={args.cpu or 'unbound'} "
-        f"runs={args.runs} samples={args.samples}"
+        f"qos={metadata['qos']} qos_ok={metadata['qos_ok']} "
+        f"affinity={metadata['affinity']} runs={args.runs} samples={args.samples}"
     )
 
     keys = sorted(expected_keys)
@@ -197,6 +226,9 @@ def main():
                 "compiler",
                 "platform",
                 "cpu",
+                "qos",
+                "qos_ok",
+                "affinity",
                 "run",
                 "scenario",
                 "variant",
@@ -217,6 +249,9 @@ def main():
                             "compiler": metadata["compiler"],
                             "platform": metadata["platform"],
                             "cpu": args.cpu or "unbound",
+                            "qos": metadata["qos"],
+                            "qos_ok": metadata["qos_ok"],
+                            "affinity": metadata["affinity"],
                             "run": run_index,
                             "scenario": scenario,
                             "variant": variant,
