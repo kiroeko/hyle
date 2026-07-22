@@ -95,7 +95,7 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 - **返回值通道**：`hyle_status`（opaque owning handle，`uintptr_t rep`）值返回 + 分支；`HYLE_C_RETURN_IF_ERROR` 传播。`Result<T>`（`std::expected`）是模板，C 侧用 `hyle_status` + 出参表达。
 - **诊断通道**：`hyle_error_report` + 可换 handler（`hyle_error_set_handler` 简单单槽 / `hyle_error_push_handler`+`pop` 嵌套安全，对标 signal old-handler）。
 - **绝不让 C++ 异常跨 C 边界**（UB）。catch 只在 adapter 边界做"外来异常→Status"。
-- **分配器层不走 `hyle_status`**（mem 的刻意分层）：C 句柄工厂的资源失败和可由 FFI 数据表达的非法值/溢出 layout，均**返 NULL + 设 `hyle_mem_last_error` 字符串**；生命周期、并发静默、foreign/double free 等时序契约违反仍 fail-fast。分配器是**最底层基元**，让它依赖上层 error 模块的 `Status` 会**倒置依赖**；故 mem 当前 draft surface 自足用“NULL + thread-local last-error 串”通道，不引入 `hyle_status`。该 error 串目前复用 platform VM 的 TLS 槽，是否拆出 mem 专用通道仍须在首次发布前审定。
+- **分配器层不走 `hyle_status`**（mem 的刻意分层）：C 句柄工厂的资源失败和可由 FFI 数据表达的非法值/溢出 layout，均**返 NULL + 设 `hyle_mem_last_error` 字符串**；生命周期、并发静默、foreign/double free 等时序契约违反仍 fail-fast。分配器是**最底层基元**，让它依赖上层 error 模块的 `Status` 会**倒置依赖**；故 mem 当前 draft surface 自足用“NULL + 独立 mem thread-local last-error 串”通道，不引入 `hyle_status`。HugeRegion 在调用 VM 原语时只复制本次失败原因到 mem 通道，并恢复调用者原有的 platform VM error。
 - **platform 按失败形状分通道**：Thread 构造返回 `hyle_status`；VM/NUMA/
   MappedFile 用 `hyle_vm_last_error`；DynLib 用 `hyle_dynlib_last_error`；
   Parker wrapper 与 fs/fd 用 `hyle_platform_last_error`。所有字符串均线程
@@ -119,6 +119,9 @@ C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零�
 
 ## 7. 落地纪律
 
+- HYLE 主体是 C++23：`include/hyle/<mod>/*.h` 用 `<cstddef>` 与
+  `std::size_t`/`std::byte`。只有语言中立的 `include/hyle/c/*.h` 用 `<stddef.h>` 与
+  全局 `size_t`；这些头必须继续能由 C11/C17 编译器直接消费。
 - 每个对外模块一层 `include/hyle/c/<mod>.h`：纯 C 可编译、`extern "C"`、opaque `_o` 句柄、create/destroy 配对、POD 值类型、显式 allocator 注入。
 - 可扩展输入 POD 以 `struct_size` 开头；值返回 snapshot POD 只用于小而
   稳定的输出。桥接编译单元用 standard-layout/trivially-copyable/offset

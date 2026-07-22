@@ -37,6 +37,11 @@ HYLE 的每条纪律都回溯到四个**约束源**：① ABI 稳定 ② 编译�
 
 - **每模块一个 `decls.h`**：只放前向声明（`struct xxx_api_t;`、`struct Allocator;`）+ 导出宏，自身只 include `macros/platform/visibility/types` 这几个最小头（clay `sys/decls.h` 实证）。
 - **公开头 include 最小化**：能前向声明就不 `#include`；重实现头不进公开头。
+- **按语言边界选择 size 头和名字**：原生 C++ 头 `include/hyle/<mod>/*.h` 使用
+  `<cstddef>`、`std::size_t`、`std::byte`；只有必须被 C11/C17 编译器直接消费的
+  `include/hyle/c/*.h` 使用 `<stddef.h>` 和全局 `size_t`。不要因为 HYLE 有 C ABI 就把
+  C 写法带进主体，也不要把 C ABI 头机械改成 `<cstddef>`（标准只保证
+  `std::size_t`，且 C 编译器不能解析该头）。
 - 全部 `#pragma once`。
 
 **WHY**：切断 include 传递链——降编译期、防依赖环、保证改一个实现头不引发全库重编。
