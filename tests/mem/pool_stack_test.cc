@@ -9,14 +9,17 @@
 
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/fixed_pool.h"
+#include "hyle/mem/growable_pool.h"
 #include "hyle/mem/object_pool.h"
 #include "hyle/mem/region.h"
 #include "hyle/mem/shared_pool.h"
 #include "hyle/mem/stack_allocator.h"
 #include "hyle/platform/thread.h"
 
+using hyle::mem::Allocator;
 using hyle::mem::FixedPool;
 using hyle::mem::FixedRegion;
+using hyle::mem::GrowablePool;
 using hyle::mem::ObjectPool;
 using hyle::mem::ObjectPoolCached;
 using hyle::mem::PreservingObjectPool;
@@ -104,6 +107,91 @@ TEST(ObjectPool, ConstructionOomIsObservable) {
   EXPECT_FALSE(cached.valid());
   EXPECT_EQ(hard.create(1), nullptr);
   EXPECT_EQ(cached.create(1), nullptr);
+  EXPECT_FALSE(hard.try_loan(1));
+}
+
+TEST(SharedPool, EveryConstructorAllocationFailureIsLeakFree) {
+  for (std::size_t fail_at = 0; fail_at != 3; ++fail_at) {
+    FailAllocatorState state;
+    state.fail_at = fail_at;
+    Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
+    {
+      hyle::mem::SharedPool pool(failing, 64, 16, 64);
+      EXPECT_FALSE(pool.valid()) << "fail_at=" << fail_at;
+      EXPECT_EQ(pool.allocate(), nullptr);
+    }
+    EXPECT_EQ(state.outstanding, 0u) << "fail_at=" << fail_at;
+  }
+}
+
+TEST(SharedPoolCached, EveryConstructorAllocationFailureIsLeakFree) {
+  for (std::size_t fail_at = 0; fail_at != 3; ++fail_at) {
+    FailAllocatorState state;
+    state.fail_at = fail_at;
+    Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
+    {
+      hyle::mem::SharedPoolCached pool(failing, 64, 16, 64);
+      EXPECT_FALSE(pool.valid()) << "fail_at=" << fail_at;
+      EXPECT_EQ(pool.allocate(), nullptr);
+    }
+    EXPECT_EQ(state.outstanding, 0u) << "fail_at=" << fail_at;
+  }
+}
+
+TEST(StackAllocator, ConstructorAllocationFailureIsLeakFree) {
+  FailAllocatorState state;
+  state.fail_at = 0;
+  Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
+  {
+    StackAllocator stack(failing, 4096);
+    EXPECT_FALSE(stack.valid());
+    EXPECT_EQ(stack.allocate(32), nullptr);
+  }
+  EXPECT_EQ(state.outstanding, 0u);
+}
+
+TEST(GrowablePool, EveryGrowthAllocationFailureIsRecoverableAndLeakFree) {
+  for (std::size_t fail_at = 0; fail_at != 5; ++fail_at) {
+    FailAllocatorState state;
+    state.fail_at = fail_at;
+    Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
+    {
+      GrowablePool<int> pool(failing, 1);
+      std::vector<int *> live;
+      bool observed_failure = false;
+      for (int value = 0; value != 64; ++value) {
+        int *p = pool.create(value);
+        if (p == nullptr) {
+          EXPECT_FALSE(observed_failure) << "fail_at=" << fail_at;
+          observed_failure = true;
+          continue;
+        }
+        live.push_back(p);
+      }
+      EXPECT_TRUE(observed_failure) << "fail_at=" << fail_at;
+      const std::size_t failed_value = (std::size_t{1} << fail_at) - 1;
+      for (std::size_t i = 0; i < live.size(); ++i)
+        EXPECT_EQ(*live[i],
+                  static_cast<int>(i + (i >= failed_value ? 1 : 0)));
+      for (int *p : live)
+        pool.destroy(p);
+    }
+    EXPECT_EQ(state.outstanding, 0u) << "fail_at=" << fail_at;
+  }
+}
+
+TEST(PreservingObjectPool, EveryBackingAllocationFailureIsLeakFree) {
+  for (std::size_t fail_at = 0; fail_at != 4; ++fail_at) {
+    FailAllocatorState state;
+    state.fail_at = fail_at;
+    Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
+    {
+      PreservingObjectPool<int> pool(failing, 4, 7);
+      EXPECT_FALSE(pool.valid()) << "fail_at=" << fail_at;
+      EXPECT_EQ(pool.acquire(), nullptr);
+    }
+    EXPECT_EQ(state.outstanding, 0u) << "fail_at=" << fail_at;
+  }
 }
 
 TEST(ObjectPool, CreateRunsCtorDestroyRunsDtor) {

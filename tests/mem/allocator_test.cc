@@ -36,6 +36,35 @@ void *quota_oom_realloc(void *, void *, std::size_t, std::size_t,
                         std::size_t) noexcept {
   return nullptr;
 }
+struct QuotaReallocFailState {
+  bool fail_realloc = false;
+  std::size_t outstanding = 0;
+};
+void *quota_fail_alloc(void *opaque, std::size_t size,
+                       std::size_t alignment) noexcept {
+  auto &state = *static_cast<QuotaReallocFailState *>(opaque);
+  void *p = system_allocator().allocate(size, alignment);
+  if (p != nullptr)
+    ++state.outstanding;
+  return p;
+}
+void quota_fail_free(void *opaque, void *ptr, std::size_t size,
+                     std::size_t alignment) noexcept {
+  if (ptr == nullptr)
+    return;
+  auto &state = *static_cast<QuotaReallocFailState *>(opaque);
+  EXPECT_GT(state.outstanding, 0u);
+  --state.outstanding;
+  system_allocator().deallocate(ptr, size, alignment);
+}
+void *quota_fail_realloc(void *opaque, void *ptr, std::size_t old_size,
+                         std::size_t new_size,
+                         std::size_t alignment) noexcept {
+  auto &state = *static_cast<QuotaReallocFailState *>(opaque);
+  if (state.fail_realloc)
+    return nullptr;
+  return system_allocator().reallocate(ptr, old_size, new_size, alignment);
+}
 } // namespace
 
 TEST(Allocator, SystemAllocatorIsValid) {
@@ -286,6 +315,30 @@ TEST(QuotaAllocator, BackingOomRollsReservationBack) {
   EXPECT_EQ(quota.get().allocate(100), nullptr);
   EXPECT_EQ(quota.used(), 0u);
   EXPECT_EQ(quota.peak(), 0u); // failed backing allocation never becomes live
+}
+
+TEST(QuotaAllocator, BackingReallocateFailurePreservesPointerAndAccounting) {
+  QuotaReallocFailState state;
+  Allocator failing(&quota_fail_alloc, &quota_fail_free, &quota_fail_realloc,
+                    &state);
+  QuotaAllocator quota(failing, 1024);
+  Allocator alloc = quota.get();
+  auto *p = static_cast<unsigned char *>(alloc.allocate(64, 16));
+  ASSERT_NE(p, nullptr);
+  p[0] = 0x5a;
+
+  state.fail_realloc = true;
+  EXPECT_EQ(alloc.reallocate(p, 64, 96, 16), nullptr);
+  EXPECT_EQ(p[0], 0x5a);
+  EXPECT_EQ(quota.used(), 64u);
+  EXPECT_EQ(quota.peak(), 64u);
+  EXPECT_EQ(alloc.reallocate(p, 64, 32, 16), nullptr);
+  EXPECT_EQ(p[0], 0x5a);
+  EXPECT_EQ(quota.used(), 64u);
+
+  alloc.deallocate(p, 64, 16);
+  EXPECT_EQ(quota.used(), 0u);
+  EXPECT_EQ(state.outstanding, 0u);
 }
 
 TEST(QuotaAllocator, ConcurrentAdmissionNeverExceedsHardLimit) {

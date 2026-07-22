@@ -97,7 +97,8 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 - [x] HugeRegion 可观察 requested/accepted policy 与 placement result。
 - [x] NUMA local/interleave capability query。
 - [x] best-effort 与 strict policy 分开。
-- [ ] allocation/free poison、failpoint 和统计快照覆盖新增类型。
+- [x] 新增动态类型的逐 allocation-point failpoint 与统计快照覆盖。
+- [ ] allocation/free poison：只考虑 sanitizer/debug 集成，不向 shipping 热路径加分支或填充。
 
 ### M6：C ABI、迁移与使用场景
 
@@ -207,11 +208,18 @@ FixedRegion/FixedPool 增加 caller-owned opaque storage + `init`，control 与 
 no-heap，`create` 继续作为易用工厂。StatsAllocator/LeakTracker 没有真实 C 消费者，裁决为
 保持 C++-only。manifest 继续是同步检查，不在首次发布决定前冻结。
 
+新增类型的 failpoint matrix 已覆盖每个真实 backing allocation point：SharedPool 与
+SharedPoolCached 的 slab/link/head 三点，StackAllocator 的 slab，GrowablePool 连续五次几何
+增长，以及 PreservingObjectPool 的三点 pool control + object index table；Region 与 Quota 的
+逐点回滚同时覆盖 allocate/reallocate failure，FixedRegion/FixedPool 不拥有 backing
+allocation。PoolLoan 在底层 OOM 时保持 empty。Windows mem 174/174；Linux Clang 20 与
+AppleClang 21 非 death 156/156。
+
 仍未完成：
 
 1. 独立 Linux host 上运行 TSan；WSL 的启动前 mapping 失败不计通过也不计产品失败。
-2. allocation/free poison 与新增类型的完整 failpoint matrix；pool foreign/double/outstanding
-   diagnostics 已完成。
+2. 裁决 allocation/free poison 的形状：优先 sanitizer/debug hook，不复制一套会进入 shipping
+   热路径的 per-type memset；failpoint 与 pool foreign/double/outstanding diagnostics 已完成。
 3. p50/p95/p99、RSS/fragmentation、三平台原始结果与 commit-bound 证书。
 4. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
    该设计已经收口。
