@@ -12,7 +12,7 @@
 | [error 实测](./benchmarks-error.md) | **error 2026-07-20 三平台证书**（Status/Result vs absl + std::expected） |
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-20 证书**（Parker/Thread/dir/vm/MappedFile；OS 段 n=15 Win/M4、WSL n=5） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-19 三平台证书**（clock / TimerWheel / CommonTimeoutQueue） |
-| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-22 证书**：Region/FixedRegion request closure + 硬/软共享池 + external FixedPool，按合同记录三平台边界 |
+| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-22 证书**：Region/FixedRegion request closure + 硬/软共享池 + external FixedPool；新增 clean whole-request p50/p95/p99 与 raw CSV |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
 | [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/list/str/path/fuzzy 长表 + 史；**入口见上** |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
@@ -82,6 +82,7 @@
 | **mem** SharedPoolCached request batch=64（软容量） | 3.540/1.754/1.537 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 4.200/2.280/2.024 | **1.171/1.285/1.316x** | ✅Win/WSL sign 赢；➖M4 sign 平（8/9 同侧） |
 | **mem** SharedPoolCached pipelined handoff（软容量） | 4.062/2.414/3.072 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.433/9.239/4.871 | **2.627/3.807/1.586x** | ✅三平台 sign 赢；TLS 128 + magazine 32 + publish，不外推为硬容量合同 |
 | **mem** FixedPool external mixed-size window | 10.314/7.555/8.619 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.094/7.774/9.319 | **0.983/1.027/1.083x** | Win spread/sign TIE；GCC Linux/M4 spread TIE/sign WIN；WSL Clang 1.289x spread/sign WIN；M4 utility 亦赢 |
+| **mem** FixedPool whole-request p50（Win/Lin/M4，µs） | 31.800/30.201/31.250 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 37.300/38.170/38.042 | **1.171/1.277/1.219x** | ✅ clean `4490c40`：三平台 p50/p95/p99 全部 sign WIN；M4 utility 同结论，raw CSV 见 mem 详表 |
 | **mem** reallocate grow chain | 80/83/82 | std::realloc | 200/176/204 | ~2.5x | mi_realloc | 67/77/83 | **0.83/0.92/1.01** | ⚠️Win/Lin 输裸 mi；M4 平 |
 | **container·hash** Hash&lt;T&gt; 16B POD 内联 | 0.43 | std::hash | ~0.9 | ~2x | wyhash | 0.94 | 2.2x | ✅赢(2026-07 改 abseil 单 128 位乘 mix64_2:0.59→0.43,vs wyhash 1.6x→2.2x) |
 | **container·hash** mix64 整数 | 0.44 | std::hash | 1.50 | 3.4x | wyhash64 | 0.57 | 1.27x | ✅赢(已 SOTA=abseil 同款单乘折叠) |

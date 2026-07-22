@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。性能判定信任配对 **[sign]**。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。新增 whole-request tail certificate 绑定 clean commit `4490c40`，FixedPool hot-path 实现为其父提交 `871d9e8`。性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -236,17 +236,44 @@ section G 与 section F 使用相同的 4096 次 mixed-size request，但每次�
 allocation 插时钟，也不是把 nanobench epoch 当用户延迟。每个样本内 HYLE/对照交替先后顺序，
 降低固定执行顺序与温漂偏差；正式证书至少 4096 samples、15 个独立进程，M4 延续 QoS 审计。
 
+2026-07-22 clean commit `4490c40` 正式证书如下。数字均为
+`HYLE / reference` 的 p50/p95/p99，单位 **µs/request**；ratio 是逐进程配对
+`reference/HYLE` 的中位数，三项依次对应 p50/p95/p99：
+
+| 平台 / QoS | request shape | HYLE p50/p95/p99 | reference p50/p95/p99 | paired ratio | 判定 |
+|---|---|---:|---:|---:|---|
+| Win / MSVC 19.50 | external `FixedRegion` / PMR reconstruct | 4.900 / 4.900 / 7.000 | 8.200 / 8.300 / 11.900 | 1.673 / 1.694 / 1.694 | **WIN / WIN / WIN** |
+| Win / MSVC 19.50 | owned `Region` / PMR release | 6.800 / 6.800 / 9.100 | 8.300 / 8.400 / 11.700 | 1.221 / 1.235 / 1.316 | **WIN / WIN / WIN** |
+| Win / MSVC 19.50 | `FixedPool` / oneTBB fixed_pool | 31.800 / 36.600 / 60.800 | 37.300 / 41.600 / 66.500 | 1.171 / 1.121 / 1.103 | **WIN / WIN / WIN** |
+| Linux / Clang 20.1 CPU 2 | external `FixedRegion` / PMR reconstruct | 4.142 / 4.164 / 5.751 | 7.700 / 7.816 / 12.711 | 1.860 / 1.878 / 2.365 | **WIN / WIN / WIN** |
+| Linux / Clang 20.1 CPU 2 | owned `Region` / PMR release | 5.408 / 5.435 / 8.568 | 8.188 / 8.907 / 14.505 | 1.514 / 1.633 / 1.864 | **WIN / WIN / WIN** |
+| Linux / Clang 20.1 CPU 2 | `FixedPool` / oneTBB fixed_pool | 30.201 / 35.406 / 57.118 | 38.170 / 44.483 / 71.844 | 1.277 / 1.270 / 1.194 | **WIN / WIN / WIN** |
+| Apple M4 / interactive | external `FixedRegion` / PMR reconstruct | 3.666 / 3.708 / 3.750 | 6.375 / 6.459 / 6.541 | 1.739 / 1.742 / 1.733 | **WIN / WIN / WIN** |
+| Apple M4 / interactive | owned `Region` / PMR release | 5.667 / 5.791 / 5.833 | 9.959 / 10.084 / 10.167 | 1.757 / 1.741 / 1.750 | **WIN / WIN / WIN** |
+| Apple M4 / interactive | `FixedPool` / oneTBB fixed_pool | 31.250 / 31.666 / 33.917 | 38.042 / 38.916 / 41.375 | 1.219 / 1.228 / 1.222 | **WIN / WIN / WIN** |
+| Apple M4 / utility | external `FixedRegion` / PMR reconstruct | 3.666 / 3.708 / 3.750 | 6.375 / 6.458 / 6.500 | 1.739 / 1.742 / 1.733 | **WIN / WIN / WIN** |
+| Apple M4 / utility | owned `Region` / PMR release | 5.667 / 5.791 / 5.833 | 9.958 / 10.084 / 10.208 | 1.757 / 1.741 / 1.750 | **WIN / WIN / WIN** |
+| Apple M4 / utility | `FixedPool` / oneTBB fixed_pool | 31.167 / 31.583 / 35.625 | 38.167 / 39.041 / 42.917 | 1.224 / 1.236 / 1.207 | **WIN / WIN / WIN** |
+
+原始逐进程 percentile：
+[Windows CSV](./mem-request-latency-win.csv)、
+[Linux CSV](./mem-request-latency-linux.csv)、
+[M4 interactive CSV](./mem-request-latency-m4.csv)、
+[M4 utility CSV](./mem-request-latency-m4-utility.csv)。四份文件的所有行均为同一 commit、
+`dirty=0`、`qos_ok=1`；Windows/Linux 各 15 process，M4 每种 QoS 各 31 process。M4 raw
+行分别记录 `qos=user-interactive/utility` 与 `affinity=unsupported`，不冒充硬 P/E 核绑定。
+
 ```bash
 # Linux：固定同一逻辑 CPU
-scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
+python3 scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
   -n 15 --samples 4096 --cpu 2 \
-  --raw docs/performance/mem-request-latency.csv
+  --raw docs/performance/mem-request-latency-linux.csv
 
 # macOS：无受支持的硬亲和 API，延续 USER_INTERACTIVE / UTILITY 两组 QoS 审计
-scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
+python3 scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
   -n 31 --samples 4096 --raw docs/performance/mem-request-latency-m4.csv
 HYLE_BENCH_APPLE_QOS=utility \
-  scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
+  python3 scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench \
   -n 31 --samples 4096 --raw docs/performance/mem-request-latency-m4-utility.csv
 
 # Windows：oneTBB 的运行时 DLL 在 build tree 的配置目录中
@@ -257,9 +284,7 @@ python scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench.exe \
 ```
 
 脚本保存每个 process/variant 的原始 percentile、HEAD 与 dirty 标记，并对每个 percentile 做
-paired reference/HYLE ratio 与 sign test。dirty run 只允许调试 harness，不进入正式表。当前
-512-sample 可移植性探针已在 MSVC、Clang 20 和 AppleClang 21 跑通。pre-fix dirty
-full-size 诊断暴露过 `FixedPool` 平台翻转；A/B 定位为编译器没有稳定展开 header-only
-allocation/free 的嵌套 bin hot path。完整 hot graph 强制内联后，dirty 诊断中三平台 p50/p95
-均转为领先 oneTBB，Windows p99 仍只判平。dirty run 不进入正式性能表，须在 clean commit
-上复跑后才写产品性能结论。
+paired reference/HYLE ratio 与 sign test。dirty run 只允许调试 harness，不进入正式表。
+pre-fix 诊断曾暴露 `FixedPool` 平台翻转；A/B 定位为编译器没有稳定展开 header-only
+allocation/free 的嵌套 bin hot path。完整 hot graph 强制内联后，上述 clean 证书三平台、两种
+M4 QoS 的 p50/p95/p99 已全部胜 oneTBB。

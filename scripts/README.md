@@ -159,6 +159,8 @@ cargo run --release --config \
 Runs section G of `hyle_mem_scenarios_bench` in independent processes and
 aggregates p50/p95/p99 for complete 4096-operation requests. It preserves
 paired reference/HYLE ratios, records the Git commit and dirty state, and can
-write every raw row with `--raw`. Use at least `-n 15 --samples 4096` for a
-certificate; short runs are harness smoke tests only. See
+write every raw row with `--raw`. On macOS it also records the requested QoS,
+whether the QoS call succeeded, and the unsupported hard-affinity boundary;
+an unsuccessful QoS request rejects the certificate. Use at least
+`-n 15 --samples 4096` for a certificate; short runs are harness smoke tests only. See
 `docs/performance/benchmarks-mem.md` §8 for commands and interpretation.
