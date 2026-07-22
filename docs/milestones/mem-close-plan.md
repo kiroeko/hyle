@@ -1,6 +1,6 @@
 # mem 全面收口计划
 
-> 状态：执行中（能力族、C++ 形状与 C draft 产品审查已落地；独立主机 TSan 尚未签字）
+> 状态：执行中（能力族、C++ 形状、诊断与 sanitizer 闸门已落地；C surface 最终裁决和迭代稳定性尚未签字）
 > 建立日期：2026-07-22
 > 设计源：[`../architecture/mem-design.md`](../architecture/mem-design.md)
 
@@ -26,7 +26,7 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 | object pools | `ObjectPool`、`ObjectPoolCached`、`GrowablePool`、`PoolLoan<T>`、Preserve policy | task/context/node 等对象复用 |
 | topology | `HugeRegion`、NUMA/THP policy 与 capability/result | HPC、模型权重、长驻大块内存 |
 | runtime specialization | `FiberStack`、`FiberStackPool` | scheduler stack |
-| diagnostics | failpoint、liveness、poison、统计快照 | OOM、double return、泄漏与并发诊断 |
+| diagnostics | failpoint、liveness、ASan poison、统计快照 | OOM、use-after-free、double return、泄漏与并发诊断 |
 
 不属于 mem：GPU staging/completion（`compute/transfer`）、graph liveness planner
 （`graph`）、io_uring registered-buffer lifecycle（`io`）和 blocking pool wait
@@ -98,7 +98,9 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 - [x] NUMA local/interleave capability query。
 - [x] best-effort 与 strict policy 分开。
 - [x] 新增动态类型的逐 allocation-point failpoint 与统计快照覆盖。
-- [ ] allocation/free poison：只考虑 sanitizer/debug 集成，不向 shipping 热路径加分支或填充。
+- [x] allocation/free poison 裁决：ASan 构建通过 mimalloc `MI_TRACK_ASAN` 观察
+  `SystemAllocator` 的逻辑释放；不增加公开 poison allocator，也不向 shipping 或各 pool
+  retained-storage 热路径加分支/填充。
 
 ### M6：C ABI、迁移与使用场景
 
@@ -114,7 +116,7 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 - [x] remote free、TLS thread exit、reset/destruction 与 outstanding allocation。
 - [x] foreign pointer、double return、duplicate destroy。
 - [x] randomized reference-model 测试。
-- [ ] ASan、UBSan、TSan。
+- [x] ASan、UBSan、TSan。
 - [x] Windows MSVC、Linux GCC/Clang、macOS arm64。
 - [x] C header self-contained、纯 C 编译和导出符号检查。
 
@@ -174,15 +176,16 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
 | 环境 | 结果 |
 |---|---|
 | Windows/MSVC Release（`7f270bb`） | mem 167/167；纯 C 通过；C surface 93/93；全仓 CTest 50/50 |
-| Windows/MSVC ASan（`7f270bb`） | 非 death mem 149/149；纯 C 通过；C surface 93/93 |
-| Ubuntu 24.04 / GCC 14.2 UBSan（`7f270bb`） | mem 167/167（含 death）；纯 C 通过；C surface/纯 C 引用/ELF 导出均 93/93 |
+| Windows/MSVC ASan（`d635257`） | 全仓 ASan 链接通过；非 death mem 159/159（含 `SystemAllocator` free poison 断言）；纯 C 通过；零 ASan report |
+| Ubuntu 24.04 / GCC 14.2 ASan（`d635257`） | ext4 clean worktree；非 death mem 159/159（含 free poison 断言）；纯 C 通过；零 ASan report |
+| Ubuntu 24.04 / GCC 14.2 UBSan（`d3e4214`） | mem 176/176（含 death）；纯 C 通过；零 UBSan report |
 | Ubuntu 24.04 / Clang 20.1 Release（`803dae6`） | mem CTest 3/3；注册 167 tests，非 death 149/149；纯 C 与 C surface 通过 |
 | Apple M4 / AppleClang 21 Release（`7f270bb`） | mem 167/167；纯 C 与 C surface 通过 |
 | Apple M4 / AppleClang 21 ASan（`7f270bb`） | 非 death mem 149/149；纯 C 通过 |
 | 当前 C draft 增量 / Windows MSVC | mem 168/168；CTest 3/3；纯 C 与 C surface 通过 |
 | 当前 C draft 增量 / Ubuntu Clang 20.1 | 非 death mem 150/150；纯 C 与 C surface 通过 |
 | 当前 C draft 增量 / Apple M4 AppleClang 21 | 非 death mem 150/150；纯 C 与 C surface 通过 |
-| Ubuntu 24.04 / GCC 14.2 TSan（前一基线） | 编译通过；WSL 启动前因 `unexpected memory mapping` 无法运行，不计通过 |
+| Ubuntu 24.04 / GCC 14.2 TSan（`d3e4214`） | ext4 clean worktree，`setarch x86_64 -R`；非 death mem 158/158 连续三轮，纯 C 通过；零 TSan report |
 | compute/Vulkan 隔离观察 | compute 78 pass/2 skip；Vulkan 14 pass/2 skip；GPU await 2/2 |
 
 F workload 的正式结果与解读集中写在 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)。FixedPool 的首轮
@@ -215,11 +218,17 @@ SharedPoolCached 的 slab/link/head 三点，StackAllocator 的 slab，GrowableP
 allocation。PoolLoan 在底层 OOM 时保持 empty。Windows/Linux mem 176/176；
 AppleClang 21 非 death 158/158。
 
+sanitizer 与 poison 裁决：仓库既定 lock-free 闸门是 WSL Ubuntu 24.04 ext4 worktree 上的
+GCC 14 TSan，并要求 `setarch x86_64 -R` 关闭 ASLR；此前的 `unexpected memory mapping`
+来自漏掉该启动条件，不再要求一个与仓库 policy 重复的“独立 Linux host”。ASan 构建现在让
+mimalloc static archive 同时参与插桩并启用官方 `MI_TRACK_ASAN`，测试直接确认 system free 后
+payload 被 poison。该能力编译期隔离，Release 零指令；custom pool 的 retained storage 继续由
+membership/liveness/double-return/outstanding 合同诊断，不为形式统一复制 per-type memset。
+
 仍未完成：
 
-1. 独立 Linux host 上运行 TSan；WSL 的启动前 mapping 失败不计通过也不计产品失败。
-2. 裁决 allocation/free poison 的形状：优先 sanitizer/debug hook，不复制一套会进入 shipping
-   热路径的 per-type memset；failpoint 与 pool foreign/double/outstanding diagnostics 已完成。
+1. 首次发布的 C surface 最终裁决；当前 C manifest 继续只承担 draft 同步检查，不冻结 ABI。
+2. 连续两个功能迭代不再因新真实场景推翻核心类型，才签架构稳定性退出门槛。
 3. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
    该设计已经收口。
 
@@ -262,7 +271,7 @@ mixed-fill / selective-free workload，不外推为任意 allocation distributio
 - [ ] 所有类型具备完整 ownership/concurrency/capacity/lifetime/failure 合同。
 - [ ] resource exhaustion 不因实现方便而 fatal。
 - [ ] C/C++ API、文档和实现一致。
-- [ ] sanitizer、故障注入、并发模型和支持平台测试全部通过。
+- [x] sanitizer、故障注入、并发模型和支持平台测试全部通过。
 - [ ] 性能来自真实 workload，并与同语义成熟实现比较。
 - [ ] 连续两个功能迭代未因新场景推翻核心类型。
 
