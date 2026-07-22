@@ -136,7 +136,10 @@ private:
 
 struct RegionOptions {
   std::size_t initial_block_size = 64 * 1024;
-  std::size_t max_block_size = 1024 * 1024;
+  // Four MiB avoids backing-allocator page/segment amplification from many
+  // one-MiB blocks on large request scratch, while keeping retained tail slack
+  // bounded. Callers with a tighter working-set ceiling can lower it.
+  std::size_t max_block_size = 4 * 1024 * 1024;
   std::size_t large_allocation_threshold = 256 * 1024;
   std::size_t size_limit = std::numeric_limits<std::size_t>::max();
 };

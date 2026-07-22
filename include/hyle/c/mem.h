@@ -159,7 +159,8 @@ typedef struct hyle_region_options {
 } hyle_region_options;
 
 #define HYLE_REGION_OPTIONS_INIT                                               \
-  {sizeof(hyle_region_options), 64u * 1024u, 1024u * 1024u, 256u * 1024u,      \
+  {sizeof(hyle_region_options), 64u * 1024u, 4u * 1024u * 1024u,              \
+   256u * 1024u,                                                              \
    SIZE_MAX}
 
 typedef struct hyle_region_o hyle_region_o;

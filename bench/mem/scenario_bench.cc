@@ -22,6 +22,8 @@
 //     churn, quota decoration, and expensive-context preservation.
 //  G. Request-level latency certification: p50/p95/p99 of whole requests, not
 //     clock-instrumented individual allocations or nanobench epochs.
+//  H. Request-scratch footprint certification: payload, backing reservation,
+//     clear/release retention, and process RSS in isolated processes.
 
 #include <mimalloc.h>
 #include <nanobench.h>
@@ -47,31 +49,48 @@
 #include <utility>
 #include <vector>
 
-#if defined(__APPLE__)
+#if defined(_WIN32)
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
+// clang-format off: psapi.h requires the Windows base declarations first.
+#include <windows.h>
+#include <psapi.h>
+// clang-format on
+#elif defined(__APPLE__)
+#include <mach/mach.h>
 #include <pthread.h>
+#include <sys/resource.h>
+#elif defined(__linux__)
+#include <sys/resource.h>
+#include <unistd.h>
 #endif
 
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/fixed_pool.h"
 #include "hyle/mem/growable_pool.h"
 #include "hyle/mem/object_pool.h"
+#include "hyle/mem/pmr.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/region.h"
 #include "hyle/mem/shared_pool.h"
 #include "hyle/mem/stack_allocator.h"
+#include "hyle/mem/stats.h"
 
 using hyle::mem::Allocator;
 using hyle::mem::FixedPool;
 using hyle::mem::FixedRegion;
 using hyle::mem::GrowablePool;
 using hyle::mem::ObjectPool;
+using hyle::mem::PmrResource;
 using hyle::mem::PooledRegion;
 using hyle::mem::PreservingObjectPool;
 using hyle::mem::QuotaAllocator;
 using hyle::mem::Region;
+using hyle::mem::RegionOptions;
 using hyle::mem::SharedPool;
 using hyle::mem::SharedPoolCached;
 using hyle::mem::StackAllocator;
+using hyle::mem::StatsAllocator;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -145,6 +164,129 @@ int env_int(const char *name, int fallback) {
   const long parsed = std::strtol(value, &end, 10);
   return end != value && *end == '\0' && parsed > 0 ? static_cast<int>(parsed)
                                                     : fallback;
+}
+
+constexpr std::size_t scratch_size(int i) noexcept;
+inline void *require_allocation(void *p) noexcept;
+
+struct ProcessMemory {
+  std::size_t current_rss = 0;
+  std::size_t peak_rss = 0;
+};
+
+ProcessMemory process_memory() noexcept {
+  ProcessMemory result;
+#if defined(_WIN32)
+  PROCESS_MEMORY_COUNTERS counters{};
+  counters.cb = sizeof(counters);
+  if (GetProcessMemoryInfo(GetCurrentProcess(), &counters, sizeof(counters)) !=
+      0) {
+    result.current_rss = static_cast<std::size_t>(counters.WorkingSetSize);
+    result.peak_rss = static_cast<std::size_t>(counters.PeakWorkingSetSize);
+  }
+#elif defined(__APPLE__)
+  mach_task_basic_info info{};
+  mach_msg_type_number_t count = MACH_TASK_BASIC_INFO_COUNT;
+  if (task_info(mach_task_self(), MACH_TASK_BASIC_INFO,
+                reinterpret_cast<task_info_t>(&info), &count) == KERN_SUCCESS)
+    result.current_rss = static_cast<std::size_t>(info.resident_size);
+  rusage usage{};
+  if (getrusage(RUSAGE_SELF, &usage) == 0)
+    result.peak_rss = static_cast<std::size_t>(usage.ru_maxrss);
+#elif defined(__linux__)
+  long resident_pages = 0;
+  if (FILE *statm = std::fopen("/proc/self/statm", "r")) {
+    long total_pages = 0;
+    const int fields =
+        std::fscanf(statm, "%ld %ld", &total_pages, &resident_pages);
+    std::fclose(statm);
+    if (fields != 2)
+      resident_pages = 0;
+  }
+  const long page_size = sysconf(_SC_PAGESIZE);
+  rusage usage{};
+  if (resident_pages > 0 && page_size > 0)
+    result.current_rss = static_cast<std::size_t>(resident_pages) *
+                         static_cast<std::size_t>(page_size);
+  if (getrusage(RUSAGE_SELF, &usage) == 0)
+    result.peak_rss = static_cast<std::size_t>(usage.ru_maxrss) * 1024;
+#endif
+  return result;
+}
+
+void *direct_mi_allocate(void *, std::size_t bytes,
+                         std::size_t alignment) noexcept {
+  return mi_malloc_aligned(bytes, alignment);
+}
+
+void direct_mi_deallocate(void *, void *p, std::size_t, std::size_t) noexcept {
+  mi_free(p);
+}
+
+void *direct_mi_reallocate(void *, void *p, std::size_t, std::size_t new_bytes,
+                           std::size_t alignment) noexcept {
+  if (new_bytes == 0) {
+    mi_free(p);
+    return nullptr;
+  }
+  return mi_realloc_aligned(p, new_bytes, alignment);
+}
+
+Allocator direct_mi_allocator() noexcept {
+  return Allocator(&direct_mi_allocate, &direct_mi_deallocate,
+                   &direct_mi_reallocate, nullptr);
+}
+
+void touch_all_pages(void *allocation, std::size_t bytes) noexcept {
+  auto *data = static_cast<volatile std::byte *>(allocation);
+  constexpr std::size_t kPage = 4096;
+  for (std::size_t offset = 0; offset < bytes; offset += kPage)
+    data[offset] = std::byte{0x5a};
+  data[bytes - 1] = std::byte{0xa5};
+}
+
+template <class Allocate>
+std::size_t fill_scratch_request(std::size_t target_bytes,
+                                 Allocate &&allocate) {
+  constexpr std::size_t sizes[] = {24,  40,   72,   128,   192,
+                                   320, 1024, 4096, 16384, 65536};
+  std::size_t requested = 0;
+  std::size_t allocation = 0;
+  while (requested != target_bytes) {
+    // A service request is dominated by ordinary parser/graph scratch, with
+    // an occasional dedicated 2 MiB staging buffer (about 20% of payload).
+    std::size_t bytes = allocation % 1024 == 1023
+                            ? 2u * 1024u * 1024u
+                            : sizes[allocation % std::size(sizes)];
+    if (bytes > target_bytes - requested)
+      bytes = target_bytes - requested;
+    void *p = require_allocation(allocate(bytes));
+    touch_all_pages(p, bytes);
+    requested += bytes;
+    ++allocation;
+  }
+  return requested;
+}
+
+void print_footprint_row(
+    const char *variant, std::size_t requested, std::size_t reuse_requested,
+    std::size_t region_max_block, std::size_t peak_reserved,
+    std::size_t retained_after_clear, std::size_t reuse_reserved,
+    std::size_t released, const ProcessMemory &baseline,
+    const ProcessMemory &live, const ProcessMemory &cleared,
+    const ProcessMemory &reuse, const ProcessMemory &released_memory) {
+  std::printf(
+      "HYLE_MEM_CERT footprint scenario=request_scratch variant=%s "
+      "requested_bytes=%zu reuse_requested_bytes=%zu "
+      "region_max_block_bytes=%zu "
+      "peak_reserved_bytes=%zu retained_after_clear_bytes=%zu "
+      "reuse_reserved_bytes=%zu released_bytes=%zu "
+      "baseline_rss_bytes=%zu live_rss_bytes=%zu clear_rss_bytes=%zu "
+      "reuse_rss_bytes=%zu release_rss_bytes=%zu process_peak_rss_bytes=%zu\n",
+      variant, requested, reuse_requested, region_max_block, peak_reserved,
+      retained_after_clear, reuse_reserved, released, baseline.current_rss,
+      live.current_rss, cleared.current_rss, reuse.current_rss,
+      released_memory.current_rss, released_memory.peak_rss);
 }
 
 constexpr std::size_t scratch_size(int i) noexcept {
@@ -1146,6 +1288,116 @@ int main() {
           });
     }
 #endif
+  }
+
+  // ---- H. ISOLATED REQUEST-SCRATCH FOOTPRINT CERTIFICATE ------------------
+  // A single child runs exactly one allocator variant. Running both in one
+  // process would let the first allocator's pages and caches contaminate the
+  // second allocator's RSS. scripts/mem-footprint-stat.py owns the alternating
+  // child-process order and commit-bound aggregation.
+  if (want_section('H')) {
+    const char *variant = std::getenv("HYLE_MEM_FOOTPRINT_VARIANT");
+    if (variant == nullptr || variant[0] == '\0') {
+      std::puts("# HYLE_MEM_CERT footprint skipped: set "
+                "HYLE_MEM_FOOTPRINT_VARIANT=hyle_region or pmr_monotonic");
+    } else {
+      const int target_mib = env_int("HYLE_MEM_FOOTPRINT_MIB", 128);
+      constexpr std::size_t kMiB = 1024u * 1024u;
+      if (static_cast<std::size_t>(target_mib) >
+          std::numeric_limits<std::size_t>::max() / kMiB) {
+        std::fputs("mem_scenarios_bench: footprint target overflows size_t\n",
+                   stderr);
+        return 2;
+      }
+      const std::size_t target = static_cast<std::size_t>(target_mib) * kMiB;
+      const std::size_t reuse_target = target / 4;
+      const int block_mib = env_int("HYLE_MEM_FOOTPRINT_BLOCK_MIB", 4);
+      if (static_cast<std::size_t>(block_mib) >
+          std::numeric_limits<std::size_t>::max() / kMiB) {
+        std::fputs(
+            "mem_scenarios_bench: footprint block size overflows size_t\n",
+            stderr);
+        return 2;
+      }
+      const std::size_t region_max_block =
+          static_cast<std::size_t>(block_mib) * kMiB;
+      const Allocator footprint_backing = direct_mi_allocator();
+      print_certificate_metadata();
+
+      if (std::strcmp(variant, "hyle_region") == 0) {
+        RegionOptions options;
+        options.initial_block_size = 64 * 1024;
+        options.max_block_size = region_max_block;
+        options.large_allocation_threshold = 1024 * 1024;
+        Region region(footprint_backing, options);
+        mi_collect(true);
+        const ProcessMemory baseline = process_memory();
+        const std::size_t requested =
+            fill_scratch_request(target, [&](std::size_t bytes) {
+              return region.allocate(bytes, 16);
+            });
+        const std::size_t peak_reserved = region.reserved();
+        const ProcessMemory live = process_memory();
+        region.clear();
+        mi_collect(true);
+        const std::size_t retained_after_clear = region.reserved();
+        const ProcessMemory cleared = process_memory();
+        const std::size_t reuse_requested =
+            fill_scratch_request(reuse_target, [&](std::size_t bytes) {
+              return region.allocate(bytes, 16);
+            });
+        const std::size_t reuse_reserved = region.reserved();
+        const ProcessMemory reuse = process_memory();
+        region.clear();
+        region.release();
+        mi_collect(true);
+        const std::size_t released = region.reserved();
+        const ProcessMemory released_memory = process_memory();
+        print_footprint_row(variant, requested, reuse_requested,
+                            region_max_block, peak_reserved,
+                            retained_after_clear, reuse_reserved, released,
+                            baseline, live, cleared, reuse, released_memory);
+      } else if (std::strcmp(variant, "pmr_monotonic") == 0) {
+        StatsAllocator tracked(footprint_backing);
+        PmrResource upstream(tracked.get());
+        std::pmr::monotonic_buffer_resource region(&upstream);
+        mi_collect(true);
+        const ProcessMemory baseline = process_memory();
+        const std::size_t requested =
+            fill_scratch_request(target, [&](std::size_t bytes) {
+              return region.allocate(bytes, 16);
+            });
+        const std::size_t peak_reserved =
+            static_cast<std::size_t>(tracked.snapshot().live_bytes);
+        const ProcessMemory live = process_memory();
+        region.release();
+        mi_collect(true);
+        const std::size_t retained_after_clear =
+            static_cast<std::size_t>(tracked.snapshot().live_bytes);
+        const ProcessMemory cleared = process_memory();
+        const std::size_t reuse_requested =
+            fill_scratch_request(reuse_target, [&](std::size_t bytes) {
+              return region.allocate(bytes, 16);
+            });
+        const std::size_t reuse_reserved =
+            static_cast<std::size_t>(tracked.snapshot().live_bytes);
+        const ProcessMemory reuse = process_memory();
+        region.release();
+        mi_collect(true);
+        const std::size_t released =
+            static_cast<std::size_t>(tracked.snapshot().live_bytes);
+        const ProcessMemory released_memory = process_memory();
+        print_footprint_row(variant, requested, reuse_requested,
+                            region_max_block, peak_reserved,
+                            retained_after_clear, reuse_reserved, released,
+                            baseline, live, cleared, reuse, released_memory);
+      } else {
+        std::fprintf(stderr,
+                     "mem_scenarios_bench: unknown footprint variant %s\n",
+                     variant);
+        return 2;
+      }
+    }
   }
 
   return 0;

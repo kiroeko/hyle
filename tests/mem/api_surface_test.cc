@@ -35,6 +35,7 @@ static_assert(std::is_trivially_copyable_v<Allocator>);
 static_assert(sizeof(Allocator) == sizeof(void*) * 4);
 static_assert(std::is_empty_v<SystemAllocator>);
 static_assert(std::is_standard_layout_v<RegionOptions>);
+static_assert(RegionOptions{}.max_block_size == 4u * 1024u * 1024u);
 static_assert(std::is_standard_layout_v<AllocStatsSnapshot>);
 static_assert(std::derived_from<PmrResource, std::pmr::memory_resource>);
 

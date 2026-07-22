@@ -166,6 +166,7 @@ int main(void) {
   /* ---- owned growable Region ---- */
   {
     hyle_region_options options = HYLE_REGION_OPTIONS_INIT;
+    CHECK(options.max_block_size == 4u * 1024u * 1024u);
     options.initial_block_size = 128;
     options.max_block_size = 256;
     options.large_allocation_threshold = 192;

@@ -36,7 +36,7 @@ pinned pool”猜测。graph tensor liveness planner 属于 graph；mem 只提�
 
 hyle::mem::RegionOptions options;
 options.initial_block_size = 64 * 1024;
-options.max_block_size = 1024 * 1024;
+options.max_block_size = 4 * 1024 * 1024;
 options.large_allocation_threshold = 256 * 1024;
 options.size_limit = 8 * 1024 * 1024;  // reserved bytes，包含 header/padding
 

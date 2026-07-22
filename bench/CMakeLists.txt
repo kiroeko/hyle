@@ -112,6 +112,9 @@ hyle_add_bench(mem SOURCES mem/allocator_bench.cc DEPS mimalloc_static)
 add_executable(hyle_mem_scenarios_bench mem/scenario_bench.cc)
 target_link_libraries(hyle_mem_scenarios_bench PRIVATE hyle_mem nanobench
                                                        mimalloc_static)
+if(WIN32)
+  target_link_libraries(hyle_mem_scenarios_bench PRIVATE psapi)
+endif()
 hyle_apply_warnings(hyle_mem_scenarios_bench)
 
 # platform primitive bench (red-team gap-fill): Parker park/unpark (futex/

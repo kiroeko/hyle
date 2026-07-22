@@ -288,3 +288,54 @@ paired reference/HYLE ratio 与 sign test。dirty run 只允许调试 harness，
 pre-fix 诊断曾暴露 `FixedPool` 平台翻转；A/B 定位为编译器没有稳定展开 header-only
 allocation/free 的嵌套 bin hot path。完整 hot graph 强制内联后，上述 clean 证书三平台、两种
 M4 QoS 的 p50/p95/p99 已全部胜 oneTBB。
+
+## 9. Request footprint / fragmentation 证书
+
+section H 验证 owned request scratch 的空间行为，不把一个短循环的 allocator 调用次数冒充
+真实 footprint。单次峰值 request 默认写入 128 MiB payload：约 80% 是 24B–64KiB 的普通
+parser/graph scratch，约 20% 是偶发 2 MiB staging buffer；`clear/release` 后再写入 1/4 大小的
+request，最后 full release。HYLE `Region` 与 `std::pmr::monotonic_buffer_resource` 都由同一个
+bench-local mimalloc vtable backing，排除不同 system heap 的影响。
+
+首轮 128 MiB dirty A/B 发现旧默认 1 MiB block 在 Linux 形成大量 backing allocation：虽然
+`reserved/payload=1.007`，live RSS 却约 203 MiB；2/4/16 MiB 上限依次约 172/159/157 MiB，
+同轮 PMR 约 151 MiB。4 MiB 已获得绝大部分 RSS 收益且 `reserved/payload` 仅为 1.031；16 MiB
+只再省约 2 MiB RSS，却把精确 reservation 推到 1.062。Windows 4 MiB 的 live RSS 约 136 MiB，
+PMR 约 135 MiB。因此产品默认上限改为 4 MiB；`--block-mib` 保留作诊断参数，正式证书只签
+当前默认。以上 dirty A/B 是设计依据，不是发布表。
+
+证书把两个概念分开：
+
+- `peak_reserved_bytes / requested_bytes` 是 request live 时的 block slack、header 和 alignment
+  总开销，可用于判断内部 fragmentation；HYLE 直接读取 `Region::reserved()`，PMR 通过
+  `StatsAllocator -> PmrResource` 统计其 upstream block 请求。
+- `retained_after_clear_bytes` 是生命周期策略：`Region::clear()` 有意保留普通块并归还 dedicated
+  大块，PMR `release()` 归还全部 upstream block。保留量用于下一 request 复用，不等同于 live
+  fragmentation；最后的 `released_bytes` 必须为 0。
+- RSS 来自 Windows working set、Linux `/proc/self/statm` 和 Darwin task info。记录 baseline、
+  live、clear、reuse、full release 与 OS high-water 原值；RSS 是 OS 页驻留观察，不替代精确
+  backing 计数，也不要求每个平台在 free 后同步 trim working set。
+
+每个子进程只运行一个 allocator variant，脚本逐轮反转 HYLE/PMR 子进程顺序，避免第一个实现的
+页和 allocator cache 污染第二个实现。脚本绑定 HEAD/dirty、compiler/platform、Linux CPU 与
+Apple QoS，并可把每个 child 的原始字段写入本目录 CSV。dirty 的 Win/Linux 8 MiB smoke 已验证
+编译、解析、`released_bytes=0` 和 RSS 路径；正式三平台 128 MiB clean 数据尚未签入，因此这里
+暂不发布比较表。
+
+```bash
+# Linux：每个 variant 是独立进程，并固定同一 guest CPU
+python3 scripts/mem-footprint-stat.py \
+  build-bench/bin/hyle_mem_scenarios_bench -n 15 --mib 128 --cpu 2 \
+  --raw docs/performance/mem-request-footprint-linux.csv
+
+# macOS：无硬亲和 API；和 latency 证书一样分别跑 interactive / utility
+python3 scripts/mem-footprint-stat.py \
+  build-bench/bin/hyle_mem_scenarios_bench -n 31 --mib 128 \
+  --raw docs/performance/mem-request-footprint-m4.csv
+
+# Windows：按实际 build tree 补 oneTBB DLL 目录
+python scripts/mem-footprint-stat.py \
+  build-bench/bin/hyle_mem_scenarios_bench.exe -n 15 --mib 128 \
+  --dll-dir build-bench/msvc_19.50_cxx23_64_md_release \
+  --raw docs/performance/mem-request-footprint-win.csv
+```
