@@ -71,7 +71,7 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 - [x] 全面使用 checked add/mul/align。
 - [x] 增加确定性 `FailAllocator` 测试夹具，覆盖 Region backing allocation point。
 - [x] 实现 `QuotaAllocator`：`used/peak/limit`、严格 reserve、wrap-safe realloc。
-- [ ] 保证 Quota、Stats、LeakTracker 可叠加且不依赖隐式全局状态。
+- [x] 保证 Quota、Stats、LeakTracker 可叠加且不依赖隐式全局状态。
 
 ### M3：Region 能力族
 
@@ -89,7 +89,7 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 - [x] 实现 `FixedPool(span<byte>)`：external fixed storage、variable-size allocate/free。
 - [x] 实现 move-only `PoolLoan<T>`，自动 destroy/return。
 - [x] 实现名称明确的 Preserve object pool/policy，不与 TLS Cached 混淆。
-- [ ] diagnostics 构建支持 membership、liveness、double return、outstanding loan。
+- [x] diagnostics 构建支持 membership、liveness、double return/destroy、outstanding allocation。
 
 ### M5：Topology 与诊断
 
@@ -110,7 +110,7 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 
 - [x] allocation point OOM、overflow、alignment、zero-size。
 - [x] remote free、TLS thread exit、reset/destruction 与 outstanding allocation。
-- [ ] foreign pointer、double return、duplicate destroy。
+- [x] foreign pointer、double return、duplicate destroy。
 - [x] randomized reference-model 测试。
 - [ ] ASan、UBSan、TSan。
 - [ ] Windows MSVC、Linux GCC/Clang、macOS arm64。
@@ -127,7 +127,7 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
 - [ ] 当前 HYLE 主场景无解释回退不得超过 5%。
 - [ ] throughput-oriented 类型三平台不明显输同语义成熟实现，跨平台几何均值至少持平。
 - [ ] 证书绑定 commit、编译器、参数和原始结果。
-- [ ] 建立 API/ABI baseline，进入兼容扩展期。
+- [x] 建立 C++ source API 与 C binary ABI baseline，进入兼容扩展期。
 
 ## 5. 2026-07-22 执行记录
 
@@ -144,16 +144,35 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
   exact usable size。
 - 修正旧 PMR benchmark：MSVC 上 `monotonic_buffer_resource::release()` 不能被当作
   external initial buffer 的可移植 rewind；现在每个 request 在同一 buffer 上重建 resource。
+- 建立 C++ source-compatibility 编译基线，覆盖全部公开 mem 能力族；C++ object layout 不承诺
+  binary ABI。C ABI 以 93 个符号的 manifest 冻结，并同时校验 header 声明、纯 C 消费引用和
+  DLL/ELF 实际导出。
+- `HYLE_TESTING` 为 shared/cached/object/growable pool 增加 liveness、foreign/double
+  return/destroy 和 outstanding allocation fail-fast；shipping 构建不含 per-slot 状态和
+  热路径诊断指令。
+- allocator composition 已认证 `Stats -> Quota -> SharedPool`、`Quota -> Stats ->
+  SharedPool` 和 `PMR -> Stats -> Quota -> SharedPool`，没有隐式全局状态。
+
+真实场景证据直接绑定功能测试，而不是另造有利 benchmark：
+
+| 用户场景 | 合同证据 |
+|---|---|
+| request/frame bulk lifetime | `Region.GrowsHonorsLimitAndBulkReuses`、graph phase scratch 消费 |
+| external workspace | `FixedRegion.ExternalStorageHasNoFallbackAndResets`、`FixedPool.RandomizedMixedSizeModelPreservesLiveAllocations` |
+| producer/consumer hard handoff | `SharedPool.CrossThreadFreeMigratesAndReclaims`、`RemoteFreeImmediatelyVisibleWhileThreadLives` |
+| same-thread cached reuse + handoff | `SharedPoolCached.SameThreadTlsCacheReusesPointer`、`RemoteTlsSoftThenPublishRestoresHardCapacity` |
+| hard byte admission + observability | `QuotaAllocator.ConcurrentAdmissionNeverExceedsHardLimit`、三组 `AllocatorComposition` 测试 |
+| expensive context preserve + RAII | `PreservingObjectPool.ConstructsOnceAndPreservesStateAcrossLoans`、`ObjectPool.ScopedLoanReturnsOnEarlyExit` |
 
 验证矩阵：
 
 | 环境 | 结果 |
 |---|---|
-| Windows/MSVC Debug | mem 146/146；纯 C 通过；graph 47/47 |
-| Windows/MSVC ASan | 非 death mem 139/139；纯 C 通过 |
-| Ubuntu 24.04 / GCC 14.2 | mem 146/146；纯 C 通过 |
-| Ubuntu 24.04 / GCC 14.2 UBSan | 非 death mem 139/139；纯 C 通过 |
-| Ubuntu 24.04 / GCC 14.2 TSan | 编译通过；WSL 启动前因 `unexpected memory mapping` 无法运行，不计通过 |
+| Windows/MSVC Release | mem 164/164；纯 C 与 C ABI 93/93；全仓 CTest 50/50 |
+| Windows/MSVC ASan | 非 death mem 146/146；纯 C 通过 |
+| Ubuntu 24.04 / GCC 14.2（前一基线） | mem 146/146；纯 C 通过；本轮 delta 待重跑 |
+| Ubuntu 24.04 / GCC 14.2 UBSan（前一基线） | 非 death mem 139/139；纯 C 通过；本轮 delta 待重跑 |
+| Ubuntu 24.04 / GCC 14.2 TSan（前一基线） | 编译通过；WSL 启动前因 `unexpected memory mapping` 无法运行，不计通过 |
 | compute/Vulkan 隔离观察 | compute 78 pass/2 skip；Vulkan 14 pass/2 skip；GPU await 2/2 |
 
 本机 F workload 首轮结果与解读写在 [`../guide/mem.md`](../guide/mem.md)。其中
@@ -165,8 +184,8 @@ FixedPool 与 owned Region 的性能 freeze 尚未签字。
 
 1. FixedPool 的 profiling-driven 优化或真实 SLA 取舍；不能靠更换有利 workload 过门。
 2. 独立 Linux host 上运行 TSan，补 macOS arm64 与 Linux Clang。
-3. 完整 failpoint/foreign-pointer/poison diagnostics，而不只是 Region OOM 与 FixedPool
-   double-return/reference-model。
+3. allocation/free poison 与新增类型的完整 failpoint matrix；pool foreign/double/outstanding
+   diagnostics 已完成。
 4. p50/p95/p99、RSS/fragmentation、三平台原始结果与 commit-bound 证书。
 5. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
    该设计已经收口。

@@ -157,11 +157,24 @@ protected:
         new (&next_[i]) std::atomic<std::uint32_t>(i + 1 < hi ? i + 1 : kNull);
       heads_[s].h.store(pack(lo, 0), std::memory_order_relaxed);
     }
+#if defined(HYLE_TESTING)
+    // TEST-ONLY: per-slot liveness is deliberately absent from shipping pools.
+    // It makes contract violations deterministic under the certification build
+    // without adding an atomic, byte, or branch to the released type.
+    testing_live_ =
+        new (std::nothrow) std::atomic<std::uint8_t>[count_];
+    HYLE_FATAL_ASSERT(testing_live_ != nullptr);
+    for (std::uint32_t i = 0; i < count_; ++i)
+      testing_live_[i].store(0, std::memory_order_relaxed);
+#endif
     valid_ = true;
   }
 
   ~ShardedSlab() {
     if (valid_) {
+#if defined(HYLE_TESTING)
+      testing_assert_no_outstanding();
+#endif
       for (std::uint32_t i = 0; i < count_; ++i)
         next_[i].~atomic();
       for (std::uint32_t s = 0; s < num_shards_; ++s)
@@ -176,7 +189,53 @@ protected:
     if (slab_ != nullptr) {
       alloc_.deallocate(slab_, stride_ * count_, alignment_);
     }
+#if defined(HYLE_TESTING)
+    delete[] testing_live_;
+#endif
   }
+
+  void *checkout(std::uint32_t idx) noexcept {
+    if (idx == kNull)
+      return nullptr;
+#if defined(HYLE_TESTING)
+    HYLE_FATAL_ASSERT(testing_live_ != nullptr && idx < count_);
+    HYLE_FATAL_ASSERT(
+        testing_live_[idx].exchange(1, std::memory_order_acq_rel) == 0);
+#endif
+    return block_at(idx);
+  }
+
+  std::uint32_t return_index(void *p) noexcept {
+    const std::uint32_t idx = idx_of_ptr(p);
+#if defined(HYLE_TESTING)
+    HYLE_FATAL_ASSERT(testing_live_ != nullptr && idx < count_);
+    HYLE_FATAL_ASSERT(
+        testing_live_[idx].exchange(0, std::memory_order_acq_rel) == 1);
+#endif
+    return idx;
+  }
+
+  void assert_checked_out(void *p) const noexcept {
+    const std::uint32_t idx = idx_of_ptr(p);
+#if defined(HYLE_TESTING)
+    HYLE_FATAL_ASSERT(testing_live_ != nullptr && idx < count_);
+    HYLE_FATAL_ASSERT(testing_live_[idx].load(std::memory_order_acquire) == 1);
+#else
+    (void)idx;
+#endif
+  }
+
+#if defined(HYLE_TESTING)
+  void testing_assert_no_outstanding() const noexcept {
+    for (std::uint32_t i = 0; i < count_; ++i)
+      HYLE_FATAL_ASSERT(testing_live_[i].load(std::memory_order_acquire) == 0);
+  }
+
+  void testing_discard_all() noexcept {
+    for (std::uint32_t i = 0; i < count_; ++i)
+      testing_live_[i].store(0, std::memory_order_release);
+  }
+#endif
 
   HYLE_DISABLE_COPY_AND_MOVE(ShardedSlab);
 
@@ -540,16 +599,16 @@ protected:
 
   void *testing_pop_from_shard(std::uint32_t s) noexcept {
     const std::uint32_t idx = pop_shard(s);
-    return idx == kNull ? nullptr : block_at(idx);
+    return checkout(idx);
   }
 
   void testing_push_to_shard(std::uint32_t s, void *p) noexcept {
-    push_shard(s, idx_of_ptr(p));
+    push_shard(s, return_index(p));
   }
 
   void *testing_allocate_from_home(std::uint32_t home) noexcept {
     const std::uint32_t idx = pop_any_shard(home);
-    return idx == kNull ? nullptr : block_at(idx);
+    return checkout(idx);
   }
 
   // Quiescent-only hook: force the no-wrap path without executing billions of
@@ -619,6 +678,7 @@ private:
 #if defined(HYLE_TESTING)
   EmptyScanHook testing_empty_scan_hook_ = nullptr;
   void *testing_empty_scan_state_ = nullptr;
+  std::atomic<std::uint8_t> *testing_live_ = nullptr;
 #endif
 
 protected:
@@ -640,8 +700,9 @@ protected:
 //
 // Lifetime contract: every live block is returned exactly once to the SAME pool
 // before reset/destruction, with alloc/free externally quiesced.
-// Foreign/misaligned pointers fail-fast today; per-slot
-// double-return/live-state detection is diagnostics-only P1.
+// Foreign/misaligned pointers fail-fast in every build. HYLE_TESTING adds
+// per-slot liveness, double-return and outstanding-allocation diagnostics;
+// shipping builds carry no per-slot diagnostic state or instructions.
 class SharedPool : public detail::ShardedSlab {
 public:
   SharedPool(Allocator alloc, std::size_t block_size, std::uint32_t block_count,
@@ -675,7 +736,7 @@ public:
     if (!valid_)
       return nullptr;
     const std::uint32_t idx = pop_any_shard(home_shard());
-    return idx == kNull ? nullptr : block_at(idx);
+    return checkout(idx);
   }
 
   // Return a block from allocate() to the freeing thread's shared home shard.
@@ -685,15 +746,27 @@ public:
   void deallocate(void *p) noexcept {
     if (p == nullptr || !valid_)
       return;
-    push_shard(home_shard(), idx_of_ptr(p));
+    push_shard(home_shard(), return_index(p));
   }
 
-  // Return EVERY block to the pool in one shot. Contract: NO block live;
-  // quiesce concurrent alloc/free first (same rule as Arena::reset).
+  // Return EVERY block to the pool in one shot. All prior pointers are bulk-
+  // invalidated and must never be used again; quiesce concurrent alloc/free.
   void reset() noexcept {
-    if (valid_)
+    if (valid_) {
+#if defined(HYLE_TESTING)
+      testing_discard_all();
+#endif
       reset_shards();
+    }
   }
+
+#if defined(HYLE_TESTING)
+  // TEST-ONLY: assert before a typed wrapper runs the destructor, so a double
+  // destroy traps before invoking user code twice.
+  void testing_assert_checked_out(void *p) const noexcept {
+    assert_checked_out(p);
+  }
+#endif
 
   // Adapt to the complete Allocator contract. A live fixed block resizes in
   // place while the request still fits; an over-capacity grow fails without
@@ -726,7 +799,7 @@ private:
     HYLE_FATAL_ASSERT(is_pow2(alignment) && old_size > 0 &&
                       old_size <= self->block_size_ &&
                       alignment <= self->alignment_);
-    (void)self->idx_of_ptr(ptr); // validate ownership before returning in place
+    self->assert_checked_out(ptr);
     if (new_size == 0) {
       self->deallocate(ptr);
       return nullptr;
@@ -760,7 +833,9 @@ private:
 // (like the registry lock), so a process-stable allocator decouples node
 // lifetime from the pool's injected allocator. Every live block must still be
 // returned exactly once to the SAME pool before reset/ destruction.
-// Foreign/misaligned pointers fail-fast; double-return detection is P1.
+// Foreign/misaligned pointers fail-fast in every build. HYLE_TESTING adds
+// per-slot liveness, double-return and outstanding-allocation diagnostics;
+// shipping builds carry no per-slot diagnostic state or instructions.
 class SharedPoolCached : public detail::ShardedSlab {
 public:
   SharedPoolCached(Allocator alloc, std::size_t block_size,
@@ -796,7 +871,7 @@ public:
       if (tc->count >
           0) { // TLS hit: owner-only pop, zero atomics (steady state)
         const std::uint32_t idx = tc->idxs[--tc->count];
-        return block_at(idx);
+        return checkout(idx);
       }
       // TLS miss: refill a BATCH from the shards in ONE CAS, keep the surplus
       // warm, hand back one. tc->count is 0 here, so the batch lands at
@@ -806,11 +881,11 @@ public:
       if (got == 0)
         return nullptr; // stable all-shard empty snapshot
       tc->count = got;
-      return block_at(tc->idxs[--tc->count]);
+      return checkout(tc->idxs[--tc->count]);
     }
     // No TLS cache (OOM'd node): direct stable-snapshot shard path.
     const std::uint32_t idx = pop_any_shard(home);
-    return idx == kNull ? nullptr : block_at(idx);
+    return checkout(idx);
   }
 
   // Return a block. Same-thread steady state lands in the TLS freelist
@@ -819,7 +894,7 @@ public:
   void deallocate(void *p) noexcept {
     if (p == nullptr || !valid_)
       return;
-    std::uint32_t idx = idx_of_ptr(p);
+    std::uint32_t idx = return_index(p);
     if (ThreadCache *tc = tls_cache(/*create=*/true)) {
       if (tc->count < kTlsCacheCap) {
         tc->idxs[tc->count++] = idx;
@@ -845,15 +920,25 @@ public:
       flush_cache_to_shards(tc);
   }
 
-  // Return EVERY block to the pool in one shot. Contract: NO block live;
-  // quiesce concurrent alloc/free first. Also drains every registered TLS cache
-  // (quiesced threads may still hold free indices in TLS).
+  // Return EVERY block to the pool in one shot. All prior pointers are bulk-
+  // invalidated and must never be used again; quiesce concurrent alloc/free.
+  // Also drains every registered TLS cache.
   void reset() noexcept {
     if (!valid_)
       return;
+#if defined(HYLE_TESTING)
+    testing_discard_all();
+#endif
     flush_all_caches_keep_registered();
     reset_shards();
   }
+
+#if defined(HYLE_TESTING)
+  // TEST-ONLY: see SharedPool::testing_assert_checked_out().
+  void testing_assert_checked_out(void *p) const noexcept {
+    assert_checked_out(p);
+  }
+#endif
 
   Allocator as_allocator() noexcept {
     return Allocator(&pool_alloc, &pool_free, &pool_realloc, this);
@@ -883,7 +968,7 @@ private:
     HYLE_FATAL_ASSERT(is_pow2(alignment) && old_size > 0 &&
                       old_size <= self->block_size_ &&
                       alignment <= self->alignment_);
-    (void)self->idx_of_ptr(ptr); // validate ownership before returning in place
+    self->assert_checked_out(ptr);
     if (new_size == 0) {
       self->deallocate(ptr);
       return nullptr;
@@ -1063,7 +1148,7 @@ private:
 // Bump (region) allocator over ONE borrowed pool block. Borrows a block from a
 // SharedPool, hands out aligned bump slices, returns the whole block on
 // destruction. There is NO per-allocation free: release everything at once by
-// destroying the region (or reset()). Ideal for a transient phase (one
+// destroying the region (or clear()). Ideal for a transient phase (one
 // taskgraph pass, one request) backed by a reusable pool block. Borrows from
 // the HARD SharedPool: a single-block borrow gains nothing from a per-thread
 // cache, and the hard pool's immediate visibility keeps block lifetime simple.
@@ -1111,8 +1196,10 @@ public:
   }
 
   // Release everything (reuse the block from the start); only safe when no
-  // allocations are live.
-  void reset() noexcept { cur_ = block_; }
+  // allocations are live. clear() is the Region-family spelling; reset() is
+  // retained for source compatibility with the original Arena API.
+  void clear() noexcept { cur_ = block_; }
+  void reset() noexcept { clear(); }
 
   std::size_t block_size() const noexcept { return block_size_; }
   std::size_t used() const noexcept {

@@ -41,6 +41,10 @@ static void *oom_realloc(void *st, void *p, size_t os, size_t ns, size_t al) {
 }
 
 int main(void) {
+  /* The mechanical ABI audit counts only references below this marker, excluding
+     declarations pulled from the header. Keep it as code so comment stripping
+     cannot erase it. */
+  (void)"HYLE_C_MEM_COVERAGE_BODY_MARKER";
   CHECK(hyle_default_alignment() >= sizeof(void *));
 
   /* ---- system allocator: alloc / write / realloc / free ---- */
@@ -122,6 +126,8 @@ int main(void) {
     CHECK(p != NULL && ((size_t)p % 64u) == 0u);
     CHECK(hyle_region_used(r) == 80u);
     CHECK(hyle_region_reserved(r) > 0u);
+    CHECK(hyle_region_peak_used(r) >= 80u);
+    CHECK(hyle_region_size_limit(r) == options.size_limit);
     hyle_allocator a = hyle_region_as_allocator(r);
     CHECK(hyle_alloc(&a, 32, 8) != NULL);
     hyle_region_clear(r);
@@ -140,9 +146,12 @@ int main(void) {
     hyle_fixed_region_o *r =
         hyle_fixed_region_create(region_storage, sizeof region_storage);
     CHECK(r != NULL);
+    CHECK(hyle_fixed_region_capacity(r) == sizeof region_storage);
     void *p = hyle_fixed_region_allocate(r, 64, 32);
     CHECK(p != NULL && ((size_t)p % 32u) == 0u);
     CHECK(hyle_fixed_region_used(r) >= 64u);
+    hyle_allocator region_alloc = hyle_fixed_region_as_allocator(r);
+    CHECK(hyle_alloc(&region_alloc, 32, 8) != NULL);
     hyle_fixed_region_clear(r);
     CHECK(hyle_fixed_region_used(r) == 0u);
     hyle_fixed_region_destroy(r);
@@ -151,10 +160,17 @@ int main(void) {
     hyle_fixed_pool_o *pool =
         hyle_fixed_pool_create(pool_storage, sizeof pool_storage);
     CHECK(pool != NULL);
+    CHECK(hyle_fixed_pool_capacity(pool) <= sizeof pool_storage);
     void *a = hyle_fixed_pool_allocate(pool, 100, 64);
     void *b = hyle_fixed_pool_allocate(pool, 200, 32);
     CHECK(a != NULL && b != NULL);
     CHECK(hyle_fixed_pool_used(pool) == 300u);
+    a = hyle_fixed_pool_reallocate(pool, a, 100, 128, 64);
+    CHECK(a != NULL);
+    hyle_allocator pool_alloc = hyle_fixed_pool_as_allocator(pool);
+    void *c = hyle_alloc(&pool_alloc, 64, 16);
+    CHECK(c != NULL);
+    hyle_free(&pool_alloc, c, 64, 16);
     hyle_fixed_pool_deallocate(pool, a);
     hyle_fixed_pool_deallocate(pool, b);
     CHECK(hyle_fixed_pool_used(pool) == 0u);
@@ -220,11 +236,12 @@ int main(void) {
     CHECK(pool != NULL);
     CHECK(hyle_shared_pool_cached_block_size(pool) == sizeof(CachedNode));
     CHECK(hyle_shared_pool_cached_capacity(pool) == 8u);
-    CachedNode *a = HYLE_OBJECT_POOL_CACHED_ACQUIRE(pool, CachedNode);
+    CachedNode *a =
+        (CachedNode *)hyle_shared_pool_cached_allocate(pool);
     CHECK(a != NULL);
     a->bytes[0] = 0x5A;
     CHECK(a->bytes[0] == 0x5A);
-    HYLE_OBJECT_POOL_CACHED_RELEASE(pool, a);
+    hyle_shared_pool_cached_deallocate(pool, a);
     HYLE_OBJECT_POOL_CACHED_PUBLISH(pool);
 
     hyle_allocator pv = hyle_shared_pool_cached_as_allocator(pool);
@@ -441,7 +458,9 @@ int main(void) {
       CHECK(hyle_huge_region_valid(hr));
       CHECK(hyle_huge_region_size(hr) >= bytes);
       CHECK((hyle_huge_region_requested_flags(hr) & HYLE_HUGE_THP_HINT) != 0);
+      CHECK((hyle_huge_region_accepted_flags(hr) & ~HYLE_HUGE_THP_HINT) == 0);
       CHECK(hyle_huge_region_requested_numa_node(hr) == HYLE_MEM_NUMA_ANY);
+      CHECK(hyle_huge_region_numa_placement_applied(hr) == 0);
       unsigned char *d = (unsigned char *)hyle_huge_region_data(hr);
       CHECK(d != NULL);
       d[0] = 0x5A;

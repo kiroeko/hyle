@@ -43,7 +43,9 @@ namespace hyle::mem {
 // T's destructor must be non-throwing so destroy() can always return the slot.
 // The pool must outlive every returned T*, and every live object must be
 // destroy()'d exactly once through the SAME pool before pool destruction.
-// Shipping builds do not track per-slot liveness; P1 diagnostics will.
+// HYLE_TESTING validates per-slot liveness before invoking T's destructor, so
+// double destroy and foreign pointers fail before user code runs. Shipping
+// builds carry no per-slot diagnostic state or instructions.
 template <class T, class Pool> class BasicObjectPool {
 public:
   static_assert(std::is_nothrow_destructible_v<T>,
@@ -72,6 +74,11 @@ public:
   void destroy(T *p) noexcept {
     if (p == nullptr)
       return;
+#if defined(HYLE_TESTING)
+    // TEST-ONLY: validate before invoking user code, so double-destroy and
+    // foreign-pointer bugs trap without running a destructor on invalid storage.
+    pool_.testing_assert_checked_out(p);
+#endif
     p->~T();
     pool_.deallocate(p);
   }
@@ -179,6 +186,11 @@ public:
   void return_object(T *p) noexcept {
     if (p == nullptr)
       return;
+#if defined(HYLE_TESTING)
+    // TEST-ONLY: keep diagnostic failure ahead of counter underflow and pool
+    // mutation. The shipping pool carries no per-slot liveness state.
+    pool_.testing_assert_checked_out(p);
+#endif
     const std::uint32_t before =
         outstanding_.fetch_sub(1, std::memory_order_relaxed);
     HYLE_FATAL_ASSERT(before != 0);

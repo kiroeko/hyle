@@ -69,7 +69,7 @@ scratch.clear();
 `FixedRegion` 不拥有 storage、不增长、不 fallback；storage 必须比所有切片长寿。它不可
 copy/move，避免两个 cursor 无意间在同一 buffer 上重叠分配。
 
-`PooledRegion` 语义同样是固定容量 bump，但 storage 来自一个 hard `SharedPool` block；
+`PooledRegion` 语义同样是固定容量 bump，但 storage 来自一个 hard `SharedPool` block；主接口同样用 `clear()`，旧 `reset()` 仅保留给 `Arena` 兼容代码。
 析构时整块归还。`StackAllocator` 增加 mark/rewind，适合嵌套 LIFO 临时区。
 
 ## Pool 家族

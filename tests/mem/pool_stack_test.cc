@@ -211,6 +211,40 @@ TEST(ObjectPool, ScopedLoanReturnsOnEarlyExit) {
   EXPECT_TRUE(again);
 }
 
+#if defined(HYLE_TESTING)
+TEST(ObjectPoolDiagnosticsDeathTest, DoubleDestroyTrapsBeforeSecondDestructor) {
+  EXPECT_DEATH(
+      {
+        ObjectPool<Counted> pool(system_allocator(), 1);
+        Counted* p = pool.create(1);
+        pool.destroy(p);
+        pool.destroy(p);
+      },
+      ".*");
+}
+
+TEST(ObjectPoolDiagnosticsDeathTest, ForeignPointerTrapsBeforeDestructor) {
+  EXPECT_DEATH(
+      {
+        ObjectPool<Counted> pool(system_allocator(), 1);
+        Counted foreign(1);
+        pool.destroy(&foreign);
+      },
+      ".*");
+}
+
+TEST(ObjectPoolDiagnosticsDeathTest, OutstandingLoanAtPoolDestructionTraps) {
+  EXPECT_DEATH(
+      {
+        auto* pool = new ObjectPool<int>(system_allocator(), 1);
+        auto loan = pool->try_loan(7);
+        ASSERT_TRUE(loan);
+        delete pool;
+      },
+      ".*");
+}
+#endif
+
 TEST(PreservingObjectPool, ConstructsOnceAndPreservesStateAcrossLoans) {
   g_live.store(0);
   {
@@ -244,6 +278,19 @@ TEST(PreservingObjectPool, ConstructorFailureDestroysAndReturnsEveryPriorSlot) {
   EXPECT_EQ(PreserveThrowsOnThird::attempts, 3);
   EXPECT_EQ(PreserveThrowsOnThird::live, 0);
 }
+
+#if defined(HYLE_TESTING)
+TEST(PreservingObjectPoolDiagnosticsDeathTest, DuplicateReturnTraps) {
+  EXPECT_DEATH(
+      {
+        PreservingObjectPool<int> pool(system_allocator(), 2, 7);
+        int* p = pool.acquire();
+        pool.return_object(p);
+        pool.return_object(p);
+      },
+      ".*");
+}
+#endif
 
 // ---- StackAllocator ---------------------------------------------------------
 
@@ -426,6 +473,16 @@ TEST(PooledRegion, ExplicitNameAndArenaAliasShareSingleBlockContract) {
   EXPECT_NE(region.allocate(64, 64), nullptr);
   hyle::mem::Arena exhausted_alias(&pool);
   EXPECT_FALSE(exhausted_alias.valid());
+}
+
+TEST(PooledRegion, ClearUsesRegionFamilySpellingAndReusesBlock) {
+  hyle::mem::SharedPool pool(system_allocator(), 256, 1, 64);
+  hyle::mem::PooledRegion region(&pool);
+  void* first = region.allocate(64, 16);
+  ASSERT_NE(first, nullptr);
+  region.clear();
+  EXPECT_EQ(region.used(), 0u);
+  EXPECT_EQ(region.allocate(64, 16), first);
 }
 
 // ---- external variable-size pool ------------------------------------------

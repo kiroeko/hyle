@@ -91,7 +91,7 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 - `publish_thread_cache()` 是显式可见性边界。
 - 只用于池容量高于并发 working set、同线程复用为主的场景；不得宣传为 hard capacity。
 
-两者保留。默认 shipping 热路径不增加 per-slot bitmap/atomic live counter；foreign/double free、outstanding object 属调用方契约违反。但这些限制必须写入公开 API，并提供 opt-in diagnostics 构建，用 per-slot state/live count fail-fast，不能让默认检查破坏 cached 零原子合同。
+两者保留。默认 shipping 热路径不增加 per-slot bitmap/atomic live counter；foreign/misaligned pointer 仍做无状态 membership fail-fast。double free、outstanding object 属调用方契约违反，`HYLE_TESTING` 用 per-slot state fail-fast；额外状态和指令在 shipping 构建完全剥离，不破坏 cached 零原子合同。
 
 `SharedPool` 始终服从 injected backing。需要 THP/NUMA 的调用方应显式提供相应 allocator/provider；pool 不根据 allocator identity 偷换 storage domain。
 
@@ -105,7 +105,7 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 2. 当前手工 `create/destroy` 保持 `Reconstruct` 合同：borrow 时构造、return 时析构。pool 析构前必须已归还并析构全部 live object；这是调用方合同，不得暗藏。
 3. `PreservingObjectPool<T>` 已作为独立类型实现：池构造时一次性构造全部对象，return 保留状态，池析构时一次性析构；不与 TLS Cached 混名。
 4. 默认 API 仍是 nonblocking try；需要“等到有对象”的调用方在 sched 层用 Semaphore/Channel 包装。
-5. 当前 shipping 已对 foreign/misaligned pointer 做 membership fail-fast；P1 diagnostics 只补 per-slot liveness、double return 与 outstanding loan，shipping 默认不加原子计数税。
+5. 当前 shipping 对 foreign/misaligned pointer 做 membership fail-fast；`HYLE_TESTING` 已补 per-slot liveness、double return/destroy 与析构时 outstanding allocation，shipping 不加原子计数税。
 
 `ObjectPoolCached<T>` 不是待实现项，也不是 Preserve object cache；“cached”只表示 free slot 的 TLS 可见性。Preserve 必须由独立 policy/name 表达。
 
@@ -113,7 +113,7 @@ blocking borrow 不进入 `mem/` 基础池。等待策略依赖 fiber/condition/
 
 ### 7.1 `PooledRegion` 与兼容名 `Arena`
 
-`PooledRegion` 只借 `SharedPool` 的一个 hard block，固定容量、单线程、bulk reset。旧 `Arena` 保留为 source-compatible alias，新增代码使用精确名称。
+`PooledRegion` 只借 `SharedPool` 的一个 hard block，固定容量、单线程、bulk `clear()`；旧 `reset()` 与 `Arena` 保留为 source-compatible 兼容面，新增代码使用 Region 家族的统一命名。
 
 ### 7.2 owned `Region` 与 external `FixedRegion`
 
@@ -164,7 +164,7 @@ external 能力按 allocation model 分成两个类型：
 | `ObjectPool` / `ObjectPoolCached` | Reconstruct core + `PoolLoan` 已实现 | typed bounded reuse、hard/soft visibility 与 RAII return |
 | `PreservingObjectPool` | 已实现独立 Preserve lifetime | 昂贵对象只构析一次，不与 TLS Cached 混淆 |
 | `StackAllocator` | 保留；alignment 加法回绕已修 | 常见 LIFO scratch |
-| `GrowablePool` | 保留；P1 diagnostics | 常见 single-thread typed reuse；当前无生产消费者 |
+| `GrowablePool` | 保留；diagnostics 已实现 | 常见 single-thread typed reuse；当前无生产消费者 |
 | `PooledRegion` / `Arena` alias | 精确命名已完成 | borrowed single hard-pool block |
 | owned `Region(size_limit)` | 已实现 | request/frame/graph phase 的 growable bulk lifetime |
 | `FixedRegion` / `FixedPool` | 已实现为两个正交 external 类型 | bump bulk reset 与 variable individual free 不混合 |
@@ -211,7 +211,7 @@ GPU pinned/mapped host RAM             → compute HostBuffer（native handle + 
 - bump/region：alignment 回绕、owned growth、bulk clear、large block、hard size limit、bytes used/reserved、external storage 无 fallback。
 - fixed pools：耗尽/回收、remote free、hard quota、soft publish、稳定空快照、tag 饱和、authoritative backing、lifetime/TSan/ASan。
 - object pools：Reconstruct + move-only Loan、早退/异常自动归还、hard/soft handoff；Preserve 一次构析与状态保留。
-- diagnostics：当前 membership fail-fast 保留；P1 补 double free、outstanding loan、GrowablePool liveness，shipping 构建验证额外状态完全剥离。
+- diagnostics：membership fail-fast 保留；`HYLE_TESTING` 已覆盖 shared/cached/object/growable pool 的 double return/destroy、foreign pointer 与 outstanding allocation，shipping 构建完全剥离额外状态和指令。
 - performance workload 必须描述 request batch、producer/consumer handoff、quota、expensive-context reuse 等用户行为，并扫描线程、工作集、容量和批次；不能围绕内部阈值造场景。
 
 当前固定池实测见 [`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)。

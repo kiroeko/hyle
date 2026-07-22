@@ -43,7 +43,11 @@ TEST(SharedPool, ExhaustionReturnsNull) {
   ASSERT_NE(p2, nullptr);
   EXPECT_EQ(pool.allocate(), nullptr);  // exhausted
   pool.deallocate(p1);
-  EXPECT_EQ(pool.allocate(), p1);  // freed block is reused
+  void* reused = pool.allocate();
+  EXPECT_EQ(reused, p1);  // freed block is reused
+  pool.deallocate(p0);
+  pool.deallocate(p2);
+  pool.deallocate(reused);
 }
 
 TEST(SharedPool, BlocksAlignedAndNonOverlapping) {
@@ -153,6 +157,7 @@ TEST(SharedPool, ResetReturnsAllBlocks) {
   std::size_t again = 0;
   for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++again;
   EXPECT_EQ(again, 16u);             // full capacity available after reset
+  pool.reset();
 }
 
 // A block allocated on one thread and freed on another migrates to the freeing
@@ -185,6 +190,7 @@ TEST(SharedPool, CrossThreadFreeMigratesAndReclaims) {
   std::size_t again = 0;
   for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++again;
   EXPECT_EQ(again, static_cast<std::size_t>(kN));
+  pool.reset();
 }
 
 // Hard capacity: blocks freed by another still-live thread are immediately visible;
@@ -370,6 +376,7 @@ TEST(SharedPoolCached, TlsCacheOverflowStillReclaimsAll) {
   std::size_t again = 0;
   for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++again;
   EXPECT_EQ(again, static_cast<std::size_t>(kN));
+  pool.reset();
 }
 
 // reset() must clear TLS-held free indices so the rebuilt shard freelist is the
@@ -386,6 +393,7 @@ TEST(SharedPoolCached, ResetClearsTlsCache) {
   std::size_t n = 0;
   for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++n;
   EXPECT_EQ(n, 8u);
+  pool.reset();
 }
 
 // Soft capacity (red-team R1): free-to-TLS on a live thread parks blocks off-shard.
@@ -457,6 +465,7 @@ TEST(SharedPoolCached, ManyPoolLifetimesDoNotBreakTls) {
   std::size_t n = 0;
   for (void* p = live.allocate(); p != nullptr; p = live.allocate()) ++n;
   EXPECT_EQ(n, 4u);
+  live.reset();
 }
 
 // Batched (magazine) refill/flush correctness gate (WSL TSan). Each thread holds
@@ -505,9 +514,13 @@ TEST(SharedPoolCached, ConcurrentBatchedRefillFlushNoLossNoOverlap) {
 
   EXPECT_FALSE(corrupt.load()) << "two threads held the same block (batch chain corruption)";
   // Every block reclaimable exactly once -> batch pop/push preserved the free list.
-  std::size_t drained = 0;
-  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++drained;
-  EXPECT_EQ(drained, static_cast<std::size_t>(kBlocks)) << "leak or double-count in batch transfer";
+  std::vector<void*> drained;
+  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate())
+    drained.push_back(p);
+  EXPECT_EQ(drained.size(), static_cast<std::size_t>(kBlocks))
+      << "leak or double-count in batch transfer";
+  for (void* p : drained) pool.deallocate(p);
+  pool.publish_thread_cache();
 }
 
 TEST(SharedPoolCached, SaturatedTagFallbackSupportsMagazineTransfer) {
@@ -617,6 +630,49 @@ TEST(SharedPoolCached, AllocatorReallocateObeysCompleteContract) {
   alloc.deallocate(reused, 16, 16);
   pool.publish_thread_cache();
 }
+
+#if defined(HYLE_TESTING)
+TEST(SharedPoolDiagnosticsDeathTest, DoubleReturnTraps) {
+  EXPECT_DEATH(
+      {
+        SharedPool pool(system_allocator(), 64, 1);
+        void* p = pool.allocate();
+        pool.deallocate(p);
+        pool.deallocate(p);
+      },
+      ".*");
+}
+
+TEST(SharedPoolDiagnosticsDeathTest, ForeignPointerTraps) {
+  EXPECT_DEATH(
+      {
+        SharedPool pool(system_allocator(), 64, 1);
+        int foreign = 0;
+        pool.deallocate(&foreign);
+      },
+      ".*");
+}
+
+TEST(SharedPoolCachedDiagnosticsDeathTest, DoubleReturnTraps) {
+  EXPECT_DEATH(
+      {
+        SharedPoolCached pool(system_allocator(), 64, 1);
+        void* p = pool.allocate();
+        pool.deallocate(p);
+        pool.deallocate(p);
+      },
+      ".*");
+}
+
+TEST(SharedPoolDiagnosticsDeathTest, OutstandingBlockAtDestructionTraps) {
+  EXPECT_DEATH(
+      {
+        SharedPool pool(system_allocator(), 64, 1);
+        (void)pool.allocate();
+      },
+      ".*");
+}
+#endif
 
 TEST(SharedPool, QuotaCompositionKeepsAccountingAndCapacityTogether) {
   SharedPool pool(system_allocator(), 128, 1, 64);

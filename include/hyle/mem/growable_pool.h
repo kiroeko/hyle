@@ -91,7 +91,12 @@ public:
     stride_ = align_up(usable, slot_align_);
   }
 
-  ~GrowablePoolCore() { free_blocks(); }
+  ~GrowablePoolCore() {
+#if defined(HYLE_TESTING)
+    HYLE_FATAL_ASSERT(live_ == 0);
+#endif
+    free_blocks();
+  }
 
   HYLE_DISABLE_COPY(GrowablePoolCore);
   GrowablePoolCore(GrowablePoolCore &&o) noexcept { steal(o); }
@@ -128,6 +133,9 @@ public:
   void release(void *p) noexcept {
     if (p == nullptr)
       return;
+#if defined(HYLE_TESTING)
+    testing_assert_checked_out(p);
+#endif
     *static_cast<void **>(p) = free_; // intrusive link back onto the free-list
     free_ = p;
     --live_;
@@ -150,6 +158,31 @@ public:
   // Total slots across all blocks currently held (grows geometrically).
   std::size_t capacity() const noexcept { return capacity_; }
   std::size_t slot_stride() const noexcept { return stride_; }
+
+#if defined(HYLE_TESTING)
+  // TEST-ONLY: O(blocks + free slots) validation used only by certification
+  // builds. Shipping retains the zero-metadata intrusive free-list path.
+  void testing_assert_checked_out(const void *p) const noexcept {
+    HYLE_FATAL_ASSERT(p != nullptr);
+    const auto address = reinterpret_cast<std::uintptr_t>(p);
+    bool issued = false;
+    for (const Block *b = blocks_; b != nullptr; b = b->next) {
+      const auto first = reinterpret_cast<std::uintptr_t>(b) + header_bytes();
+      const auto limit = b == blocks_
+                             ? reinterpret_cast<std::uintptr_t>(cur_)
+                             : reinterpret_cast<std::uintptr_t>(b) + b->bytes;
+      if (address >= first && address < limit &&
+          (address - first) % stride_ == 0) {
+        issued = true;
+        break;
+      }
+    }
+    HYLE_FATAL_ASSERT(issued);
+    for (void *free = free_; free != nullptr;
+         free = *static_cast<void **>(free))
+      HYLE_FATAL_ASSERT(free != p);
+  }
+#endif
 
 private:
   struct Block {
@@ -277,6 +310,10 @@ public:
   void destroy(T *p) noexcept {
     if (p == nullptr)
       return;
+#if defined(HYLE_TESTING)
+    // TEST-ONLY: trap before invoking a destructor on a returned/foreign slot.
+    core_.testing_assert_checked_out(p);
+#endif
     p->~T();
     core_.release(p);
   }

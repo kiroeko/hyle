@@ -137,3 +137,35 @@ TEST(GrowablePool, ClearReclaimsAndReusable) {
   EXPECT_EQ(pool.live(), 1u);
   pool.destroy(q);
 }
+
+#if defined(HYLE_TESTING)
+TEST(GrowablePoolDiagnosticsDeathTest, DoubleDestroyTraps) {
+  EXPECT_DEATH(
+      {
+        GrowablePool<int> pool(system_allocator(), 1);
+        int* p = pool.create(7);
+        pool.destroy(p);
+        pool.destroy(p);
+      },
+      ".*");
+}
+
+TEST(GrowablePoolDiagnosticsDeathTest, ForeignPointerTraps) {
+  EXPECT_DEATH(
+      {
+        GrowablePool<int> pool(system_allocator(), 1);
+        int foreign = 0;
+        pool.destroy(&foreign);
+      },
+      ".*");
+}
+
+TEST(GrowablePoolDiagnosticsDeathTest, OutstandingObjectAtDestructionTraps) {
+  EXPECT_DEATH(
+      {
+        GrowablePool<int> pool(system_allocator(), 1);
+        (void)pool.create(7);
+      },
+      ".*");
+}
+#endif
