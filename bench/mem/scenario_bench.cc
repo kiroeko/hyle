@@ -8,8 +8,8 @@
 // plus raw mi_malloc/mi_free (the general malloc = what `new/delete` resolve
 // to, since HYLE's global backing is mimalloc) as the "5-10x" target baseline.
 //
-// Workload families (fair contracts only — no "wrong tool" rows in SOTA
-// tables):
+// Workload families. Rows with weaker/different allocation visibility are
+// throughput references, and are not presented as same-contract SOTA:
 //  A. BUMP: PooledRegion + StackAllocator vs pmr::monotonic vs raw mi.
 //  B. SINGLE-THREAD pool churn: GrowablePool ONLY vs pmr::unsynchronized_pool
 //  vs raw mi. SharedPool/SharedPoolCache belong to cross-thread sharing
@@ -30,7 +30,7 @@
 #include <nanobench.h>
 
 #if defined(HYLE_BENCH_TBB)
-#include <tbb/memory_pool.h>        // fixed_pool: fixed-buffer direct rival
+#include <tbb/memory_pool.h>        // fixed-buffer, TLS-cached reference
 #include <tbb/scalable_allocator.h> // growable MT throughput reference
 #endif
 
@@ -791,9 +791,11 @@ int main() {
   //   (1) per-thread ownership -> GrowablePool per thread vs mimalloc's local
   //   heaps; (2) shared HARD capacity -> SharedPool, with immediate post-free
   //   visibility; (3) explicit owner-local SharedPoolCache over a shared core.
-  // oneTBB fixed_pool is the direct fixed-buffer rival. pmr,
-  // scalable_allocator, mimalloc, and per-worker GrowablePool are growable
-  // throughput references only.
+  // oneTBB fixed_pool shares one caller-owned fixed buffer, but its tbbmalloc
+  // frontend keeps owner-thread private free lists and publishes only remote
+  // frees. It is a mature fixed-buffer throughput reference, not a rival for
+  // SharedPool's immediate post-free visibility. pmr, scalable_allocator,
+  // mimalloc, and per-worker GrowablePool are growable references only.
   if (want_section('C')) {
     const int kThreads = env_int("HYLE_BENCH_THREADS", 8);
     constexpr int kPer = 50000;
@@ -856,8 +858,8 @@ int main() {
     });
 
 #if defined(HYLE_BENCH_TBB)
-    // Direct contract rival: one fixed caller-owned buffer, shared by all
-    // workers.
+    // Fixed-buffer reference: one caller-owned buffer shared by all workers,
+    // with implicit owner-thread locality inside tbbmalloc.
     std::vector<std::byte> tbb_fixed_storage(
         static_cast<std::size_t>(kThreads) * 256 * kObj +
         kTbbFixedBootstrapBytes);

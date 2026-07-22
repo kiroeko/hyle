@@ -256,8 +256,11 @@ protected:
       }
       std::uint32_t nxt = next_[idx].load(std::memory_order_relaxed);
       std::uint64_t desired = pack(nxt, ver_of(old) + 1);
+      // Acquire consumes the releasing push that published `next_[idx]`.
+      // A pop publishes no preceding writes, so acq_rel is unnecessarily
+      // stronger on the successful RMW.
       if (heads_[s].h.compare_exchange_weak(old, desired,
-                                            std::memory_order_acq_rel,
+                                            std::memory_order_acquire,
                                             std::memory_order_acquire))
         return idx;
     }
@@ -265,7 +268,7 @@ protected:
 
   // Push one index back onto shard s.
   void push_shard(std::uint32_t s, std::uint32_t idx) noexcept {
-    std::uint64_t old = heads_[s].h.load(std::memory_order_acquire);
+    std::uint64_t old = heads_[s].h.load(std::memory_order_relaxed);
     for (;;) {
       if (ver_of(old) == kSaturatedVersion) {
         push_shard_saturated(s, idx);
@@ -273,9 +276,11 @@ protected:
       }
       next_[idx].store(idx_of(old), std::memory_order_relaxed);
       std::uint64_t desired = pack(idx, ver_of(old) + 1);
+      // Release publishes the relaxed link store. A failed CAS only supplies
+      // the next head value used to retry, so neither load needs acquire.
       if (heads_[s].h.compare_exchange_weak(old, desired,
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_acquire))
+                                            std::memory_order_release,
+                                            std::memory_order_relaxed))
         return;
     }
   }
@@ -310,8 +315,10 @@ protected:
       }
       std::uint64_t desired =
           pack(nxt, ver_of(old) + 1); // nxt == new top (or kNull)
+      // As in pop_shard(), acquire consumes every link in the detached chain;
+      // the successful pop itself has nothing to publish.
       if (heads_[s].h.compare_exchange_weak(old, desired,
-                                            std::memory_order_acq_rel,
+                                            std::memory_order_acquire,
                                             std::memory_order_acquire)) {
         std::uint32_t cur = first;
         for (std::uint32_t i = 0; i < n; ++i) { // chain now privately owned
@@ -424,7 +431,7 @@ protected:
       next_[idxs[i]].store(idxs[i - 1], std::memory_order_relaxed);
     const std::uint32_t chain_head = idxs[n - 1];
     const std::uint32_t chain_tail = idxs[0];
-    std::uint64_t old = heads_[s].h.load(std::memory_order_acquire);
+    std::uint64_t old = heads_[s].h.load(std::memory_order_relaxed);
     for (;;) {
       if (ver_of(old) == kSaturatedVersion) {
         push_shard_batch_saturated(s, chain_head, chain_tail);
@@ -432,9 +439,11 @@ protected:
       }
       next_[chain_tail].store(idx_of(old), std::memory_order_relaxed);
       std::uint64_t desired = pack(chain_head, ver_of(old) + 1);
+      // Release publishes the entire privately assembled chain. Retry loads
+      // need only the latest packed head value.
       if (heads_[s].h.compare_exchange_weak(old, desired,
-                                            std::memory_order_acq_rel,
-                                            std::memory_order_acquire))
+                                            std::memory_order_release,
+                                            std::memory_order_relaxed))
         return;
     }
   }

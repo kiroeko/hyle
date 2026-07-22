@@ -88,7 +88,20 @@ cache capacity 与 transfer batch 都是构造参数；128/32 只是 convenience
 - **producer → neighbor consumer handoff**：生产者申请，邻居消费者释放；对应 oneTBB cross-thread-free、mimalloc Larson/xmalloc migration。轮次用 producer/consumer sequence 串成流水线，没有每轮全局 barrier。
 - **service quota**：所有 worker 同时申请超过固定容量的对象；对应 bounded service/marl borrow 配额，验证的是准入和回收语义，不拿启动时间宣称吞吐。
 
-直接对手是 oneTBB `fixed_pool`：双方都由调用者提供固定 buffer。fixed_pool 的 buffer 是与 HYLE 相同的 payload capacity，加 oneTBB 自己 fixed-pool 测试采用的 1 MiB bootstrap metadata allowance；不再额外给 2 倍 payload。每次 fixed-pool/HYLE/mimalloc/TBB 分配都检查非 NULL，任何少做工作会使基准直接失败。pmr resource 与其他池一样在计时 lambda 外构造。`scalable_allocator`、mimalloc 和 pmr 是 growable 参考，不能证明硬容量语义。
+oneTBB `fixed_pool` 是成熟的**固定 buffer 吞吐参照**：双方都从调用者提供的有限
+buffer 取 payload；fixed_pool 的 buffer 是与 HYLE 相同的 payload capacity，加 oneTBB
+自己 fixed-pool 测试采用的 1 MiB bootstrap metadata allowance，不再额外给 2 倍 payload。
+但它不是 `SharedPool` 的同契约对手。源码审计绑定 oneTBB `f48775ba`：64B 小对象从
+tbbmalloc 的 owner-thread `freeList`/bump pointer 分配；同 owner free 非原子地回私有链，
+remote free 才 CAS 到 `publicFreeList`，随后由 owner 批量 privatize。因此 fixed buffer
+限制了后端扩容，却不保证 HYLE hard core 的 completed-free 全线程立即可见性。它更接近
+`SharedPoolCache` 的局部性形状，只是 locality policy 隐藏在库内 TLS 中。
+
+每次 fixed-pool/HYLE/mimalloc/TBB 分配都检查非 NULL，任何少做工作会使基准直接失败。
+pmr resource 与其他池一样在计时 lambda 外构造。`scalable_allocator`、mimalloc 和 pmr
+是 growable 参考；oneTBB fixed_pool 证明固定 buffer 下的成熟吞吐水平，但这些行都不能
+证明 `SharedPool` 的硬可见性语义。hard core 的性能目标是把其额外同步成本压到合理范围，
+而不是把 weaker-visibility 数字误标成同契约 SOTA。
 
 ### 3.2 当前显式 cache：Windows / WSL / M4 clean 证书
 

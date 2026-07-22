@@ -488,9 +488,11 @@ if(HYLE_BENCH_TBB)
   add_subdirectory("${HYLE_TBB_DIR}" "${CMAKE_BINARY_DIR}/onetbb" EXCLUDE_FROM_ALL)
   target_compile_definitions(hyle_queue_sota_bench PRIVATE HYLE_BENCH_TBB)
   target_link_libraries(hyle_queue_sota_bench PRIVATE TBB::tbb)
-  # mem_scenarios_bench: oneTBB fixed_pool is the direct fixed-buffer rival;
-  # scalable_allocator remains a growable throughput reference. memory_pool.h is a
-  # oneTBB preview header and requires TBB_PREVIEW_MEMORY_POOL=1.
+  # mem_scenarios_bench: oneTBB fixed_pool is the mature fixed-buffer throughput
+  # reference (its tbbmalloc frontend has implicit thread-local ownership, so it
+  # is not the same immediate-visibility contract as SharedPool);
+  # scalable_allocator remains a growable throughput reference. memory_pool.h
+  # is a oneTBB preview header and requires TBB_PREVIEW_MEMORY_POOL=1.
   target_compile_definitions(hyle_mem_scenarios_bench PRIVATE
                              HYLE_BENCH_TBB TBB_PREVIEW_MEMORY_POOL=1)
   target_link_libraries(hyle_mem_scenarios_bench PRIVATE TBB::tbbmalloc TBB::tbb)
