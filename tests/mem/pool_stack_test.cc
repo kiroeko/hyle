@@ -520,6 +520,26 @@ TEST(FixedPool, ReallocatePreservesBytesAndAllocatorAdapterWorks) {
   EXPECT_EQ(pool.used(), 0u);
 }
 
+TEST(FixedPool, RecentFreeMissPublishesBlockAndResetReclaimsEverything) {
+  alignas(64) std::byte storage[4096];
+  FixedPool pool(storage, sizeof(storage));
+  void *small = pool.allocate(64, 16);
+  void *barrier = pool.allocate(64, 16);
+  ASSERT_NE(small, nullptr);
+  ASSERT_NE(barrier, nullptr);
+
+  pool.deallocate(small); // retained as the one-entry recent free block
+  void *large = pool.allocate(1024, 64); // miss recent, use the large tail
+  ASSERT_NE(large, nullptr);
+  EXPECT_EQ(pool.used(), 1088u);
+
+  pool.deallocate(barrier);
+  pool.deallocate(large);
+  pool.reset();
+  EXPECT_EQ(pool.used(), 0u);
+  EXPECT_NE(pool.allocate(3000, 64), nullptr);
+}
+
 TEST(FixedPool, RejectsUnrepresentableExternalAddressRange) {
   std::byte storage{};
   FixedPool pool(&storage, std::numeric_limits<std::size_t>::max());

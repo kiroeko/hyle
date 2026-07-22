@@ -1,6 +1,6 @@
 # mem 全面收口计划
 
-> 状态：执行中（功能面已落地；性能、TSan、macOS 与 API freeze 尚未签字）
+> 状态：执行中（功能/API freeze 已落地；三平台性能、TSan 与 macOS 尚未签字）
 > 建立日期：2026-07-22
 > 设计源：[`../architecture/mem-design.md`](../architecture/mem-design.md)
 
@@ -168,21 +168,24 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
 
 | 环境 | 结果 |
 |---|---|
-| Windows/MSVC Release | mem 164/164；纯 C 与 C ABI 93/93；全仓 CTest 50/50 |
-| Windows/MSVC ASan | 非 death mem 146/146；纯 C 通过 |
-| Ubuntu 24.04 / GCC 14.2（前一基线） | mem 146/146；纯 C 通过；本轮 delta 待重跑 |
+| Windows/MSVC Release | mem 165/165；纯 C 与 C ABI 93/93；全仓基线 CTest 50/50 |
+| Windows/MSVC ASan | 非 death mem 147/147；纯 C 通过 |
+| Ubuntu 24.04 / GCC 14.2 Debug（当前 delta） | 非 death 147/147；FixedPool 7/7（含 2 death）；纯 C 通过 |
 | Ubuntu 24.04 / GCC 14.2 UBSan（前一基线） | 非 death mem 139/139；纯 C 通过；本轮 delta 待重跑 |
 | Ubuntu 24.04 / GCC 14.2 TSan（前一基线） | 编译通过；WSL 启动前因 `unexpected memory mapping` 无法运行，不计通过 |
 | compute/Vulkan 隔离观察 | compute 78 pass/2 skip；Vulkan 14 pass/2 skip；GPU await 2/2 |
 
-本机 F workload 首轮结果与解读写在 [`../guide/mem.md`](../guide/mem.md)。其中
-FixedPool 约 20.45 ns/op、oneTBB fixed_pool 约 8.66 ns/op，约 2.36 倍差距；两次候选优化
-（更窄 bins、lazy coalescing）均无改善，已撤回，不以增加复杂度换取零收益。因此
-FixedPool 与 owned Region 的性能 freeze 尚未签字。
+本机 F workload 结果与解读写在 [`../guide/mem.md`](../guide/mem.md)。FixedPool 的首轮
+20.45 ns/op 对 oneTBB 8.66 ns/op 暴露了真实差距；更窄 bins、lazy coalescing 和 metadata
+overlay 候选均未改善并已撤回。路径分解定位到 mixed-size free 后的 coalesce→bin→下一次
+allocate→split→bin 重复维护，最终加入立即合并后的 one-entry recent-free cache，并把 alignment
+改成 block-relative checked arithmetic。Windows/MSVC Release `n=15` 新结果为 HYLE 10.528、
+oneTBB 10.345 ns/op，HYLE/oneTBB throughput ratio 中位数 0.985、范围 0.946–1.044，spread/sign
+均判 TIE。FixedPool 已通过 Windows 性能闸；owned Region 与 FixedPool 跨平台性能尚未签字。
 
 仍未完成：
 
-1. FixedPool 的 profiling-driven 优化或真实 SLA 取舍；不能靠更换有利 workload 过门。
+1. 在 Linux GCC/Clang 与 macOS arm64 重跑同一 F workload，确认 FixedPool 不是平台翻转。
 2. 独立 Linux host 上运行 TSan，补 macOS arm64 与 Linux Clang。
 3. allocation/free poison 与新增类型的完整 failpoint matrix；pool foreign/double/outstanding
    diagnostics 已完成。

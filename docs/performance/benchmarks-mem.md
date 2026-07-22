@@ -105,7 +105,22 @@ M4 上 pmr monotonic 更快，不能把 x86 结论外推到 ARM。
 
 硬池精确准入 capacity，释放后立即恢复完整容量。缓存池有 640 块暂存于 8 个活线程的 TLS，导致假耗尽；显式 publish 后才恢复 1024。因此容量紧张的 quota 场景必须选硬池，不能用缓存池的更快吞吐替代契约。
 
-## 4. 选型
+## 4. 外部固定 buffer 的变长分配
+
+2026-07-22 Windows/MSVC Release，section F，`bench-stat.py -n 15`：
+
+| workload | HYLE FixedPool | oneTBB fixed_pool | HYLE/oneTBB throughput | 判定 |
+|---|---:|---:|---:|---|
+| mixed-size sliding live window | 10.528 ns/op | 10.345 ns/op | median 0.985，range 0.946–1.044 | **TIE spread / TIE sign** |
+
+首轮 HYLE 20.45 ns/op 对 oneTBB 8.66 ns/op 的差距没有通过换 workload 掩盖。路径分解显示
+同尺寸稳定复用并非瓶颈，主要成本是 mixed-size free→coalesce→bin 后紧接着
+allocate→split→bin 的重复索引维护。实现现在保留立即邻块合并和精确 requested-byte 统计，
+但用 one-entry recent-free cache 消除紧邻往返；recent block 不匹配时会先发布回普通 size bin。
+alignment/overflow 也改为相对已验证 block end 的 checked arithmetic。Windows 已统计平局，
+Linux/macOS 未复测前不宣称三平台 SOTA。
+
+## 5. 选型
 
 ```text
 默认小对象             → SystemAllocator
@@ -118,7 +133,7 @@ M4 上 pmr monotonic 更快，不能把 x86 结论外推到 ARM。
 通用多线程 malloc       → mimalloc / oneTBB；不要硬套固定 slab
 ```
 
-## 5. 复跑
+## 6. 复跑
 
 ```bash
 # shipping-like bench；oneTBB clone 默认位于仓库同级 ../oneTBB

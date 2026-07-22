@@ -143,18 +143,19 @@ loan 等调用合同错误允许 fail-fast。`StatsAllocator`/`LeakTracker` 可�
 ## 如何看性能
 
 benchmark 以场景和合同分组，入口是 `hyle_arena_pool_bench`；用
-`HYLE_BENCH_SECTIONS=F` 跑收口 workload。2026-07-22 的 Windows/MSVC 本机开发跑（单次，
-不是跨平台证书）显示：
+`HYLE_BENCH_SECTIONS=F` 跑收口 workload。2026-07-22 的 Windows/MSVC Release 本机
+`bench-stat.py -n 15`（不是跨平台证书）显示：
 
 | workload | HYLE | 对照 | 结论 |
 |---|---:|---:|---|
-| external mixed request scratch | FixedRegion 1.21 ns/op | PMR reconstruct 2.05 ns/op | HYLE 约 1.7× throughput |
-| owned mixed request scratch | Region 2.08 ns/op | PMR release 1.87 ns/op | HYLE 约慢 11%，需继续解释/优化 |
-| external variable-size window | FixedPool 20.45 ns/op | oneTBB fixed_pool 8.66 ns/op | 未达到性能 freeze 门槛 |
-| strict quota decoration | 23.0 ns/op | direct system 9.19 ns/op | 约 13.8 ns/op 原子 admission 成本 |
-| expensive context loan | Preserve 21.5 ns/op | reconstruct 260 ns/op | Preserve 约 12.1× throughput |
+| external mixed request scratch | FixedRegion 1.190 ns/op | PMR reconstruct 2.019 ns/op | HYLE 约 1.70× throughput |
+| owned mixed request scratch | Region 2.064 ns/op | PMR release 1.900 ns/op | HYLE 约慢 8.6%，需继续解释/优化 |
+| external variable-size window | FixedPool 10.528 ns/op | oneTBB fixed_pool 10.345 ns/op | 0.985× throughput，配对 spread/sign 均 TIE |
+| strict quota decoration | 21.920 ns/op | direct system 9.117 ns/op | 约 12.8 ns/op 原子 admission 成本 |
+| expensive context loan | Preserve 21.016 ns/op | reconstruct 265.169 ns/op | Preserve 约 12.6× throughput |
 
-这些数据用来暴露 trade-off，不用来改写 API。尤其 FixedPool 当前提供 oneTBB 对照不具备的
-精确统计、release-surviving 检查和立即邻块合并，但约 2.36× throughput 差距仍必须在正式
-freeze 前解决或用真实用户 SLA 证明可以接受。完整收口状态见
+这些数据用来暴露 trade-off，不用来改写 API。`FixedPool` 通过立即合并后的 one-entry
+recent-free cache 避免 free→allocate 的重复 bin 往返，并以 block-relative checked alignment
+保留 overflow 合同；15 次 HYLE/oneTBB throughput ratio 中位数 0.985、范围 0.946–1.044，
+Windows 上已达到统计平局。跨平台结论仍须补 Linux/macOS 同源复测。完整收口状态见
 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)。

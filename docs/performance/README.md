@@ -80,6 +80,7 @@
 | **mem** SharedPool pipelined handoff（硬容量） | 5.304/3.807/12.931 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.433/9.239/4.871 | **1.976/2.380/0.372x** | ⚠️平台翻转：Win/WSL sign 赢，M4 sign 输 |
 | **mem** SharedPoolCached request batch=64（软容量） | 3.540/1.754/1.537 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 4.200/2.280/2.024 | **1.171/1.285/1.316x** | ✅Win/WSL sign 赢；➖M4 sign 平（8/9 同侧） |
 | **mem** SharedPoolCached pipelined handoff（软容量） | 4.062/2.414/3.072 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.433/9.239/4.871 | **2.627/3.807/1.586x** | ✅三平台 sign 赢；TLS 128 + magazine 32 + publish，不外推为硬容量合同 |
+| **mem** FixedPool external mixed-size window | 10.528 (Win) | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.345 | **0.985x** | ➖Win n=15 spread/sign TIE；Linux/macOS 同源复测待补，不外推三平台 |
 | **mem** reallocate grow chain | 80/83/82 | std::realloc | 200/176/204 | ~2.5x | mi_realloc | 67/77/83 | **0.83/0.92/1.01** | ⚠️Win/Lin 输裸 mi；M4 平 |
 | **container·hash** Hash&lt;T&gt; 16B POD 内联 | 0.43 | std::hash | ~0.9 | ~2x | wyhash | 0.94 | 2.2x | ✅赢(2026-07 改 abseil 单 128 位乘 mix64_2:0.59→0.43,vs wyhash 1.6x→2.2x) |
 | **container·hash** mix64 整数 | 0.44 | std::hash | 1.50 | 3.4x | wyhash64 | 0.57 | 1.27x | ✅赢(已 SOTA=abseil 同款单乘折叠) |

@@ -15,12 +15,14 @@
 namespace hyle::mem {
 
 // Single-threaded variable-size allocator over one caller-owned fixed buffer.
-// All allocator metadata lives inside that buffer; construction and every
-// operation perform no hidden heap allocation and there is no fallback. Free
-// blocks are indexed by logarithmic size bins; boundary metadata gives O(1)
-// adjacent coalescing. Allocation normally visits one matching size class
-// instead of scanning every physical block. The storage must outlive the pool
-// and every live allocation.
+// All per-block/allocation metadata lives inside that buffer; the control
+// object owns only indexes and counters. Construction and every operation
+// perform no hidden heap allocation and there is no fallback. Free
+// blocks are indexed by logarithmic size bins; a one-entry recent-free cache
+// avoids an immediate bin round trip on common free-then-allocate churn, while
+// boundary metadata still gives O(1) adjacent coalescing. Allocation normally
+// visits one matching size class instead of scanning every physical block. The
+// storage must outlive the pool and every live allocation.
 class FixedPool {
 public:
   FixedPool() noexcept = default;
@@ -46,58 +48,26 @@ public:
       return nullptr;
     lower += bytes;
 
+    if (recent_free_ != nullptr) {
+      if (void *out = allocate_from(recent_free_, bytes, effective_alignment,
+                                    false);
+          out != nullptr)
+        return out;
+      publish_recent();
+    }
+
     std::uint64_t candidates =
         nonempty_bins_ & (~std::uint64_t{0} << bin_index(lower));
     while (candidates != 0) {
       const unsigned bin = static_cast<unsigned>(std::countr_zero(candidates));
       candidates &= candidates - 1;
       for (Block *b = bins_[bin]; b != nullptr; b = b->free_next) {
+#if defined(HYLE_TESTING)
         validate(b);
-        const auto block_addr = reinterpret_cast<std::uintptr_t>(b);
-        const auto raw_payload =
-            block_addr + sizeof(Block) + sizeof(Allocation);
-        std::uintptr_t payload = 0;
-        if (!detail::try_align_up_address(raw_payload, effective_alignment,
-                                          &payload))
-          continue;
-        if (payload > std::numeric_limits<std::uintptr_t>::max() - bytes)
-          continue;
-        const std::uintptr_t payload_end = payload + bytes;
-        std::uintptr_t split_addr = 0;
-        if (!detail::try_align_up_address(payload_end, alignof(Block),
-                                          &split_addr))
-          continue;
-        const auto block_end = block_addr + b->span;
-        if (split_addr > block_end)
-          continue;
-
-        remove_free(b);
-        std::size_t consumed =
-            static_cast<std::size_t>(split_addr - block_addr);
-        std::size_t remainder = b->span - consumed;
-        if (remainder >= minimum_block_span()) {
-          auto *tail = ::new (reinterpret_cast<void *>(split_addr)) Block;
-          tail->span = remainder;
-          tail->previous_span = consumed;
-          tail->magic = kBlockMagic;
-          tail->free = true;
-          b->span = consumed;
-          if (Block *after = next(tail); after != nullptr)
-            after->previous_span = tail->span;
-          insert_free(tail);
-        }
-
-        b->free = false;
-        auto *a = reinterpret_cast<Allocation *>(payload - sizeof(Allocation));
-        a->block = b;
-        a->requested = bytes;
-        a->magic = kAllocationMagic;
-        HYLE_FATAL_ASSERT(used_ <=
-                          std::numeric_limits<std::size_t>::max() - bytes);
-        used_ += bytes;
-        if (used_ > peak_)
-          peak_ = used_;
-        return reinterpret_cast<void *>(payload);
+#endif
+        if (void *out = allocate_from(b, bytes, effective_alignment, true);
+            out != nullptr)
+          return out;
       }
     }
     return nullptr;
@@ -109,13 +79,16 @@ public:
     Allocation *a = allocation_for(ptr);
     Block *b = a->block;
     HYLE_FATAL_ASSERT(a->magic == kAllocationMagic);
+#if defined(HYLE_TESTING)
     validate(b);
+#endif
+    publish_recent();
     HYLE_FATAL_ASSERT(!b->free);
     HYLE_FATAL_ASSERT(used_ >= a->requested);
     used_ -= a->requested;
     a->magic = 0;
     b->free = true;
-    coalesce(b);
+    recent_free_ = coalesce(b);
   }
 
   void *reallocate(void *ptr, std::size_t old_size, std::size_t new_size,
@@ -152,6 +125,7 @@ public:
     for (Block *&head : bins_)
       head = nullptr;
     nonempty_bins_ = 0;
+    recent_free_ = nullptr;
     insert_free(b);
     used_ = 0;
   }
@@ -238,6 +212,70 @@ private:
     return reinterpret_cast<Allocation *>(header);
   }
 
+  void *allocate_from(Block *b, std::size_t bytes,
+                      std::size_t effective_alignment,
+                      bool indexed) noexcept {
+    const auto block_addr = reinterpret_cast<std::uintptr_t>(b);
+    const auto raw_payload = block_addr + sizeof(Block) + sizeof(Allocation);
+    const auto block_end = block_addr + b->span;
+    if (raw_payload > block_end)
+      return nullptr;
+    const auto payload_padding =
+        (std::uintptr_t{0} - raw_payload) & (effective_alignment - 1);
+    if (payload_padding > block_end - raw_payload)
+      return nullptr;
+    const std::uintptr_t payload = raw_payload + payload_padding;
+    if (bytes > block_end - payload)
+      return nullptr;
+    const std::uintptr_t payload_end = payload + bytes;
+    const auto split_padding =
+        (std::uintptr_t{0} - payload_end) & (alignof(Block) - 1);
+    if (split_padding > block_end - payload_end)
+      return nullptr;
+    const std::uintptr_t split_addr = payload_end + split_padding;
+
+    if (indexed)
+      remove_free(b);
+    else {
+      HYLE_FATAL_ASSERT(recent_free_ == b);
+      recent_free_ = nullptr;
+    }
+    const std::size_t consumed =
+        static_cast<std::size_t>(split_addr - block_addr);
+    const std::size_t remainder = b->span - consumed;
+    if (remainder >= minimum_block_span()) {
+      auto *tail = ::new (reinterpret_cast<void *>(split_addr)) Block;
+      tail->span = remainder;
+      tail->previous_span = consumed;
+      tail->magic = kBlockMagic;
+      tail->free = true;
+      b->span = consumed;
+      if (Block *after = next(tail); after != nullptr)
+        after->previous_span = tail->span;
+      insert_free(tail);
+    }
+
+    b->free = false;
+    auto *a = reinterpret_cast<Allocation *>(payload - sizeof(Allocation));
+    a->block = b;
+    a->requested = bytes;
+    a->magic = kAllocationMagic;
+    HYLE_FATAL_ASSERT(used_ <=
+                      std::numeric_limits<std::size_t>::max() - bytes);
+    used_ += bytes;
+    if (used_ > peak_)
+      peak_ = used_;
+    return reinterpret_cast<void *>(payload);
+  }
+
+  void publish_recent() noexcept {
+    if (recent_free_ == nullptr)
+      return;
+    Block *b = recent_free_;
+    recent_free_ = nullptr;
+    insert_free(b);
+  }
+
   static unsigned bin_index(std::size_t span) noexcept {
     HYLE_FATAL_ASSERT(span != 0);
     return static_cast<unsigned>(std::bit_width(span) - 1);
@@ -267,9 +305,11 @@ private:
       nonempty_bins_ &= ~(std::uint64_t{1} << bin);
     b->free_prev = b->free_next = nullptr;
   }
-  void coalesce(Block *b) noexcept {
+  Block *coalesce(Block *b) noexcept {
     if (Block *n = next(b); n != nullptr) {
+#if defined(HYLE_TESTING)
       validate(n);
+#endif
       if (n->free) {
         remove_free(n);
         b->span += n->span;
@@ -278,7 +318,9 @@ private:
     if (b->previous_span != 0) {
       auto *p = reinterpret_cast<Block *>(reinterpret_cast<std::byte *>(b) -
                                           b->previous_span);
+#if defined(HYLE_TESTING)
       validate(p);
+#endif
       if (p->free) {
         remove_free(p);
         p->span += b->span;
@@ -287,7 +329,7 @@ private:
     }
     if (Block *n = next(b); n != nullptr)
       n->previous_span = b->span;
-    insert_free(b);
+    return b;
   }
 
   static void *pool_alloc(void *state, std::size_t size,
@@ -312,6 +354,7 @@ private:
   std::size_t peak_ = 0;
   Block *bins_[kBinCount]{};
   std::uint64_t nonempty_bins_ = 0;
+  Block *recent_free_ = nullptr;
 };
 
 } // namespace hyle::mem
