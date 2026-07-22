@@ -243,8 +243,11 @@ slack 之间取拐点。C++ 默认、C draft 初始化宏与用户指南已同�
 在 full release 后不随 purge 同步下降，只以 backing 精确归零证明释放，不误报为泄漏。
 
 FixedPool 外部碎片 section I 已落地：按各实现 empty-largest 归一化 75% mixed fill、间隔释放后的
-largest satisfiable object，并验证全释放容量恢复。Win/Linux dirty smoke 为 HYLE availability
-0.687、oneTBB 0.482–0.484，recovery 均为 1.000；正式三平台 clean CSV 待签。
+largest satisfiable object，并验证全释放容量恢复。正式证书绑定 clean commit `f0485c2`：
+Win/Linux 各 `n=15`，M4 interactive / utility 各 `n=31`；HYLE availability 为 0.6874，oneTBB
+为 0.4816–0.4843，HYLE/oneTBB 为 1.419–1.427x，recovery 均为 1.000。该结论只覆盖此
+mixed-fill / selective-free workload，不外推为任意 allocation distribution 的普遍保证；raw CSV
+集中在 `docs/performance`。
 
 ## 6. 收口退出门槛
 

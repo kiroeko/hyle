@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。新增 whole-request tail certificate 绑定 clean commit `4490c40`，FixedPool hot-path 实现为其父提交 `871d9e8`。性能判定信任配对 **[sign]**。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。whole-request tail certificate 绑定 clean commit `4490c40`，FixedPool hot-path 实现为其父提交 `871d9e8`；request footprint 与 FixedPool fragmentation 分别绑定 clean commit `a90326f` / `f0485c2`。性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -380,9 +380,26 @@ workload 以 64B–64KiB mixed-size 对象填到 empty user capacity 的 75%，�
   一个连续对象满足的比例；越高说明外部碎片越低。
 - `recovered_largest / empty_largest`：全部 live allocation 释放后的容量恢复率；应为 1。
 
-Win/Linux dirty smoke 中，两者 empty largest 都约 8 MiB；HYLE fragmented availability 为
-0.687，oneTBB 为 0.482–0.484，HYLE 约 1.42x；两者 recovery 都为 1.000。该结果只用于验证
-harness 与 workload，没有写成正式性能结论。clean 三平台 raw CSV 待下一提交签入。
+2026-07-22 clean commit `f0485c2` 正式结果如下。Windows/Linux 各 `n=15` 独立进程；Apple M4
+在 interactive / utility QoS 各 `n=31`。数值为 median `[min, max]`：
+
+| 平台 / QoS | HYLE availability | oneTBB availability | HYLE / oneTBB | HYLE / oneTBB recovery |
+|---|---:|---:|---:|---:|
+| Windows / MSVC 19.50 | 0.6874 `[0.6874, 0.6874]` | 0.4843 `[0.4816, 0.4843]` | **1.4193x** `[1.4193, 1.4273]` | 1.0000 / 1.0000 |
+| Linux / Clang 20.1，guest CPU 2 | 0.6874 `[0.6874, 0.6874]` | 0.4816 `[0.4816, 0.4816]` | **1.4273x** `[1.4273, 1.4273]` | 1.0000 / 1.0000 |
+| Apple M4 / interactive | 0.6874 `[0.6874, 0.6874]` | 0.4816 `[0.4816, 0.4816]` | **1.4273x** `[1.4273, 1.4273]` | 1.0000 / 1.0000 |
+| Apple M4 / utility | 0.6874 `[0.6874, 0.6874]` | 0.4816 `[0.4816, 0.4816]` | **1.4273x** `[1.4273, 1.4273]` | 1.0000 / 1.0000 |
+
+因此，在这一个明确的 75% mixed-fill / selective-free workload 中，HYLE 留出的最大连续对象
+约为 oneTBB 的 1.42 倍，且两者在全部释放后都完整合并回空池容量。这不是对任意 allocation
+distribution 的普遍碎片保证；Windows 上 oneTBB 的 4 KiB 级变化也保留为原始 range，不用单点
+中位数掩盖。M4 两种 QoS 一致只说明该非吞吐 workload 对调度不敏感，仍不声称 P/E 核绑定。
+
+原始逐进程 CSV：
+[Windows](./mem-fixed-pool-fragmentation-win.csv)、
+[Linux](./mem-fixed-pool-fragmentation-linux.csv)、
+[Apple M4 interactive](./mem-fixed-pool-fragmentation-m4.csv)、
+[Apple M4 utility](./mem-fixed-pool-fragmentation-m4-utility.csv)。
 
 ```bash
 # Linux；Windows 使用与 footprint 证书相同的 --dll-dir
@@ -394,4 +411,8 @@ python3 scripts/mem-fragmentation-stat.py \
 python3 scripts/mem-fragmentation-stat.py \
   build-bench/bin/hyle_mem_scenarios_bench -n 31 --mib 8 \
   --raw docs/performance/mem-fixed-pool-fragmentation-m4.csv
+HYLE_BENCH_APPLE_QOS=utility \
+python3 scripts/mem-fragmentation-stat.py \
+  build-bench/bin/hyle_mem_scenarios_bench -n 31 --mib 8 \
+  --raw docs/performance/mem-fixed-pool-fragmentation-m4-utility.csv
 ```
