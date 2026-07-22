@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；旧共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；当前显式 `SharedPoolCache` 的 Windows 证书绑定 clean commit `5f35ec1`、`n=15`，Linux/M4 尚待重签；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。FixedPool section F、whole-request latency 与 fragmentation 重签 clean commit `d3e4214`；request footprint 绑定 clean commit `02ec81e`。性能判定信任配对 **[sign]**。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；旧共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；当前显式 `SharedPoolCache` 已完成 Windows MSVC 与 WSL GCC 14.2/Clang 20.1 clean `n=15` 证书，Apple M4 尚待重签；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。FixedPool section F、whole-request latency 与 fragmentation 重签 clean commit `d3e4214`；request footprint 绑定 clean commit `02ec81e`。性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -90,25 +90,31 @@ cache capacity 与 transfer batch 都是构造参数；128/32 只是 convenience
 
 直接对手是 oneTBB `fixed_pool`：双方都由调用者提供固定 buffer。fixed_pool 的 buffer 是与 HYLE 相同的 payload capacity，加 oneTBB 自己 fixed-pool 测试采用的 1 MiB bootstrap metadata allowance；不再额外给 2 倍 payload。每次 fixed-pool/HYLE/mimalloc/TBB 分配都检查非 NULL，任何少做工作会使基准直接失败。pmr resource 与其他池一样在计时 lambda 外构造。`scalable_allocator`、mimalloc 和 pmr 是 growable 参考，不能证明硬容量语义。
 
-### 3.2 当前显式 cache：Windows clean 证书
+### 3.2 当前显式 cache：Windows / WSL clean 证书
 
-commit `5f35ec1`，Windows MSVC 19.50 Release，8 workers、64B block、request
-batch=64、working set=容量的 75%、handoff batch=256，`bench-stat.py -n 15`。
-ratio 是每次进程内配对的 **HYLE / oneTBB op/s** 后再跨进程取中位数。
+Windows 绑定 clean commit `5f35ec1`；WSL 原生 ext4 clean clone 绑定 `2056ef8`
+（只比前者多性能文档，mem 代码相同）。三套均为 Release、8 workers、64B block、
+request batch=64、working set=容量的 75%、handoff batch=256，`bench-stat.py -n 15`。
+WSL 关闭不影响 mem 生成代码的可选 HTTP/2、ggml、Vulkan 能力，保留 mimalloc、oneTBB、
+shared library 与 LTO。ratio 是每次进程内配对的 **HYLE / oneTBB op/s** 后再跨进程取中位数。
 
-| 场景 | `SharedPoolCache` | oneTBB `fixed_pool` | HYLE/oneTBB throughput | 判定 |
-|---|---:|---:|---:|---|
-| request batch lifecycle | **1.203 ns/op** | 2.208 ns/op | **1.846x**，range 1.463–2.255 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
-| pipelined producer/consumer handoff | **1.431 ns/op** | 7.288 ns/op | **5.004x**，range 3.794–7.075 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| 平台 / 编译器 | 场景 | `SharedPoolCache` | oneTBB `fixed_pool` | HYLE/oneTBB throughput | 判定 |
+|---|---|---:|---:|---:|---|
+| Windows / MSVC 19.50 | request batch | **1.203 ns/op** | 2.208 ns/op | **1.846x**，range 1.463–2.255 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| Windows / MSVC 19.50 | handoff | **1.431 ns/op** | 7.288 ns/op | **5.004x**，range 3.794–7.075 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| WSL / GCC 14.2 | request batch | **1.279 ns/op** | 1.931 ns/op | **1.543x**，range 1.231–1.950 | spread TIE / **WIN sign**（15/15，p=6.1e-05） |
+| WSL / GCC 14.2 | handoff | **1.785 ns/op** | 8.012 ns/op | **4.923x**，range 3.649–6.040 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| WSL / Clang 20.1 | request batch | **1.193 ns/op** | 2.241 ns/op | **1.891x**，range 1.617–2.098 | spread TIE / **WIN sign**（15/15，p=6.1e-05） |
+| WSL / Clang 20.1 | handoff | **1.571 ns/op** | 6.473 ns/op | **3.893x**，range 3.168–5.118 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
 
-同一 request 表里裸 `mi_malloc/free` 为 1.353 ns/op，显式 cache 仍略快；但
-mimalloc 是 growable general allocator，不是固定 buffer 的直接容量对手。当前只能签
-Windows：Linux 与 Apple M4 必须在各自原生文件系统、同一 clean commit 上复跑，不能沿用
-下节已删除 TLS 类型的旧数字。
+三套 request 表中裸 `mi_malloc/free` 分别为 1.353 / 1.390 / 1.442 ns/op，显式 cache
+都更快；但 mimalloc 是 growable general allocator，不是固定 buffer 的直接容量对手。
+Windows 与两个 Linux 编译器的 paired direction 完全一致。Apple M4 仍必须在原生 APFS、
+显式 QoS 上复跑，不能沿用下节已删除 TLS 类型的旧数字。
 
 ### 3.3 旧 TLS 实现的三平台基线（历史，不代表当前产品）
 
-下表绑定已删除的 `SharedPoolCached`。它证明 soft local-cache 形状值得保留，也暴露隐藏 TLS policy 的产品问题；当前 `SharedPoolCache` 已重签 Windows，Linux/M4 仍必须重测，不能把旧数改名继承。
+下表绑定已删除的 `SharedPoolCached`。它证明 soft local-cache 形状值得保留，也暴露隐藏 TLS policy 的产品问题；当前 `SharedPoolCache` 已重签 Windows/WSL，M4 仍必须重测，不能把旧数改名继承。
 
 配置：8 workers、64B block、request batch=64、working set=容量的 75%；handoff batch=256。表内 ratio 是每轮配对的 **HYLE / oneTBB fixed_pool op/s** 中位数，不是两个绝对中位数相除。
 
