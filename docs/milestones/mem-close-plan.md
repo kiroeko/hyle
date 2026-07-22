@@ -226,7 +226,9 @@ AppleClang 21 非 death 156/156。
 
 Request latency harness 已落地 section G：每个样本计时整个 4096-operation request，两个实现
 交替先后；`mem-cert-stat.py` 跨进程聚合 percentile、paired ratio、commit/dirty 和 raw CSV。
-三平台 512-sample 只完成可移植性探针，不计正式证书；RSS/fragmentation 尚未接入。
+三平台 512-sample 只完成可移植性探针，不计正式证书。后续 A/B 已定位并修复 FixedPool
+嵌套 hot path 未充分内联造成的请求延迟，但仍须在 clean commit 上出正式表；RSS/fragmentation
+尚未接入。
 
 ## 6. 收口退出门槛
 

@@ -169,7 +169,12 @@ RequestLatency summarize_latency(std::vector<std::uint64_t> samples) {
 }
 
 void print_certificate_metadata() {
-#if defined(_MSC_VER)
+#if defined(__clang__) && defined(_MSC_VER)
+  std::printf("HYLE_MEM_CERT meta format=1 compiler=clangcl-%d.%d.%d-msvc%d "
+              "platform=windows\n",
+              __clang_major__, __clang_minor__, __clang_patchlevel__,
+              _MSC_VER);
+#elif defined(_MSC_VER)
   std::printf("HYLE_MEM_CERT meta format=1 compiler=msvc-%d platform=windows\n",
               _MSC_VER);
 #elif defined(__apple_build_version__)

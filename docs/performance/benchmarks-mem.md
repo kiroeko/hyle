@@ -258,6 +258,8 @@ python scripts/mem-cert-stat.py build-bench/bin/hyle_mem_scenarios_bench.exe \
 
 脚本保存每个 process/variant 的原始 percentile、HEAD 与 dirty 标记，并对每个 percentile 做
 paired reference/HYLE ratio 与 sign test。dirty run 只允许调试 harness，不进入正式表。当前
-512-sample 可移植性探针已在 MSVC、Clang 20 和 AppleClang 21 跑通。后续 dirty full-size
-诊断已经暴露 `FixedPool` 平台翻转：Windows/M4 暂时落后、Linux 暂时领先；dirty run 不进入
-正式性能表，须在提交后的 clean commit 上复跑并定位 Windows 差距，暂不写成产品性能结论。
+512-sample 可移植性探针已在 MSVC、Clang 20 和 AppleClang 21 跑通。pre-fix dirty
+full-size 诊断暴露过 `FixedPool` 平台翻转；A/B 定位为编译器没有稳定展开 header-only
+allocation/free 的嵌套 bin hot path。完整 hot graph 强制内联后，dirty 诊断中三平台 p50/p95
+均转为领先 oneTBB，Windows p99 仍只判平。dirty run 不进入正式性能表，须在 clean commit
+上复跑后才写产品性能结论。

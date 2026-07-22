@@ -35,8 +35,12 @@ public:
 
   bool valid() const noexcept { return begin_ != nullptr; }
 
-  void *allocate(std::size_t bytes,
-                 std::size_t alignment = alignof(std::max_align_t)) noexcept {
+  // Keep the complete allocation/free graph inline. MSVC otherwise outlines
+  // nested bin helpers even under /O2, adding several calls to every operation.
+  // The whole-request latency certificate in scenario_bench.cc guards this.
+  HYLE_FORCE_INLINE void *
+  allocate(std::size_t bytes,
+           std::size_t alignment = alignof(std::max_align_t)) noexcept {
     HYLE_FATAL_ASSERT(is_pow2(alignment));
     if (bytes == 0 || !valid())
       return nullptr;
@@ -73,7 +77,7 @@ public:
     return nullptr;
   }
 
-  void deallocate(void *ptr) noexcept {
+  HYLE_FORCE_INLINE void deallocate(void *ptr) noexcept {
     if (ptr == nullptr)
       return;
     Allocation *a = allocation_for(ptr);
@@ -188,7 +192,7 @@ private:
     reset();
   }
 
-  Block *next(Block *b) const noexcept {
+  HYLE_FORCE_INLINE Block *next(Block *b) const noexcept {
     auto *n = reinterpret_cast<std::byte *>(b) + b->span;
     return n < end_ ? reinterpret_cast<Block *>(n) : nullptr;
   }
@@ -201,7 +205,7 @@ private:
     HYLE_FATAL_ASSERT(b->magic == kBlockMagic && b->span >= sizeof(Block));
     HYLE_FATAL_ASSERT(b->span <= static_cast<std::size_t>(end - address));
   }
-  Allocation *allocation_for(void *ptr) const noexcept {
+  HYLE_FORCE_INLINE Allocation *allocation_for(void *ptr) const noexcept {
     const auto address = reinterpret_cast<std::uintptr_t>(ptr);
     const auto begin = reinterpret_cast<std::uintptr_t>(begin_);
     const auto end = reinterpret_cast<std::uintptr_t>(end_);
@@ -212,9 +216,9 @@ private:
     return reinterpret_cast<Allocation *>(header);
   }
 
-  void *allocate_from(Block *b, std::size_t bytes,
-                      std::size_t effective_alignment,
-                      bool indexed) noexcept {
+  HYLE_FORCE_INLINE void *allocate_from(Block *b, std::size_t bytes,
+                                        std::size_t effective_alignment,
+                                        bool indexed) noexcept {
     const auto block_addr = reinterpret_cast<std::uintptr_t>(b);
     const auto raw_payload = block_addr + sizeof(Block) + sizeof(Allocation);
     const auto block_end = block_addr + b->span;
@@ -268,7 +272,7 @@ private:
     return reinterpret_cast<void *>(payload);
   }
 
-  void publish_recent() noexcept {
+  HYLE_FORCE_INLINE void publish_recent() noexcept {
     if (recent_free_ == nullptr)
       return;
     Block *b = recent_free_;
@@ -276,11 +280,11 @@ private:
     insert_free(b);
   }
 
-  static unsigned bin_index(std::size_t span) noexcept {
+  HYLE_FORCE_INLINE static unsigned bin_index(std::size_t span) noexcept {
     HYLE_FATAL_ASSERT(span != 0);
     return static_cast<unsigned>(std::bit_width(span) - 1);
   }
-  void insert_free(Block *b) noexcept {
+  HYLE_FORCE_INLINE void insert_free(Block *b) noexcept {
     HYLE_FATAL_ASSERT(b->free);
     const unsigned bin = bin_index(b->span);
     b->free_prev = nullptr;
@@ -290,7 +294,7 @@ private:
     bins_[bin] = b;
     nonempty_bins_ |= std::uint64_t{1} << bin;
   }
-  void remove_free(Block *b) noexcept {
+  HYLE_FORCE_INLINE void remove_free(Block *b) noexcept {
     HYLE_FATAL_ASSERT(b->free);
     const unsigned bin = bin_index(b->span);
     if (b->free_prev != nullptr)
@@ -305,7 +309,7 @@ private:
       nonempty_bins_ &= ~(std::uint64_t{1} << bin);
     b->free_prev = b->free_next = nullptr;
   }
-  Block *coalesce(Block *b) noexcept {
+  HYLE_FORCE_INLINE Block *coalesce(Block *b) noexcept {
     if (Block *n = next(b); n != nullptr) {
 #if defined(HYLE_TESTING)
       validate(n);

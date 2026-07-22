@@ -15,7 +15,8 @@
 #define HYLE_C_MEM_H_
 
 /* Intentionally the C header: this file is the language-neutral ABI boundary.
- * Native C++ users include hyle/mem/*.h, which use <cstddef> and std::size_t. */
+ * Native C++ users include the hyle/mem headers, which use <cstddef> and
+ * std::size_t. */
 #include <stddef.h>
 #include <stdint.h>
 
