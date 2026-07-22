@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <array>
 #include <atomic>
 #include <cstdint>
 #include <cstring>
@@ -7,12 +8,15 @@
 #include <vector>
 
 #include "hyle/mem/allocator.h"
+#include "hyle/mem/pool_cache.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/shared_pool.h"
 #include "hyle/platform/thread.h"
 
 using hyle::mem::SharedPool;
-using hyle::mem::SharedPoolCached;
+using hyle::mem::SharedPoolCache;
+using hyle::mem::Allocator;
+using hyle::mem::QuotaAllocator;
 using hyle::mem::system_allocator;
 
 namespace {
@@ -81,6 +85,211 @@ TEST(SharedPool, AboveClay64SlotLimit) {
   }
   EXPECT_EQ(pool.allocate(), nullptr);
   for (void* p : ps) pool.deallocate(p);
+}
+
+TEST(SharedPoolCache, CallerStorageReusesLocallyAndPublishes) {
+  SharedPool pool(system_allocator(), 64, 8);
+  std::array<std::uint32_t, 4> storage{};
+  SharedPoolCache cache(pool, storage, 4);
+  ASSERT_TRUE(cache.valid());
+  EXPECT_EQ(cache.capacity(), 4u);
+  EXPECT_EQ(cache.transfer_batch(), 4u);
+
+  void *p = cache.allocate();
+  ASSERT_NE(p, nullptr);
+  cache.deallocate(p);
+  EXPECT_EQ(cache.cached(), 1u);
+  EXPECT_EQ(cache.allocate(), p);
+  cache.deallocate(p);
+
+  cache.publish();
+  EXPECT_EQ(cache.cached(), 0u);
+  std::vector<void *> all;
+  for (std::uint32_t i = 0; i < pool.capacity(); ++i) {
+    void *block = pool.allocate();
+    ASSERT_NE(block, nullptr);
+    all.push_back(block);
+  }
+  EXPECT_EQ(pool.allocate(), nullptr);
+  for (void *block : all)
+    pool.deallocate(block);
+}
+
+TEST(SharedPoolCache, LocalFreeIsSoftUntilExplicitPublish) {
+  SharedPool pool(system_allocator(), 64, 4);
+  std::array<std::uint32_t, 4> storage{};
+  SharedPoolCache cache(pool, storage, 4);
+  std::array<void *, 4> held{};
+
+  for (void *&p : held) {
+    p = cache.allocate();
+    ASSERT_NE(p, nullptr);
+  }
+  for (void *p : held)
+    cache.deallocate(p);
+
+  EXPECT_EQ(cache.cached(), 4u);
+  EXPECT_EQ(pool.allocate(), nullptr);
+  cache.publish();
+
+  for (void *&p : held) {
+    p = pool.allocate();
+    ASSERT_NE(p, nullptr);
+  }
+  for (void *p : held)
+    pool.deallocate(p);
+}
+
+TEST(SharedPoolCache, DestructionPublishesCallerStorage) {
+  SharedPool pool(system_allocator(), 64, 4);
+  std::array<std::uint32_t, 4> storage{};
+  {
+    SharedPoolCache cache(pool, storage, 4);
+    void *p = cache.allocate();
+    ASSERT_NE(p, nullptr);
+    cache.deallocate(p);
+
+    std::array<void *, 3> shared{};
+    for (void *&block : shared) {
+      block = pool.allocate();
+      ASSERT_NE(block, nullptr);
+    }
+    EXPECT_EQ(pool.allocate(), nullptr);
+    for (void *block : shared)
+      pool.deallocate(block);
+  }
+
+  std::array<void *, 4> held{};
+  for (void *&p : held) {
+    p = pool.allocate();
+    ASSERT_NE(p, nullptr);
+  }
+  for (void *p : held)
+    pool.deallocate(p);
+}
+
+TEST(SharedPoolCache, AllocatorViewKeepsFixedBlockContract) {
+  SharedPool pool(system_allocator(), 128, 2, 64);
+  std::array<std::uint32_t, 2> storage{};
+  SharedPoolCache cache(pool, storage, 2);
+  Allocator alloc = cache.as_allocator();
+
+  void *p = alloc.allocate(96, 64);
+  ASSERT_NE(p, nullptr);
+  EXPECT_EQ(alloc.reallocate(p, 96, 128, 64), p);
+  EXPECT_EQ(alloc.reallocate(p, 128, 256, 64), nullptr);
+  alloc.deallocate(p, 128, 64);
+  cache.publish();
+}
+
+TEST(SharedPoolCache, OwnedMetadataOomLeavesInvalidEmptyCache) {
+  SharedPool pool(system_allocator(), 64, 8);
+  QuotaAllocator metadata(system_allocator(), 3 * sizeof(std::uint32_t));
+  SharedPoolCache cache(pool, metadata.get(), 4, 2);
+
+  EXPECT_FALSE(cache.valid());
+  EXPECT_EQ(cache.allocate(), nullptr);
+  EXPECT_EQ(cache.cached(), 0u);
+  EXPECT_EQ(metadata.used(), 0u);
+}
+
+TEST(SharedPoolCache, ZeroTransferBatchSelectsClampedDefault) {
+  SharedPool pool(system_allocator(), 64, 64);
+  std::array<std::uint32_t, 8> storage{};
+  SharedPoolCache cache(pool, storage, 0);
+  EXPECT_TRUE(cache.valid());
+  EXPECT_EQ(cache.transfer_batch(), storage.size());
+}
+
+TEST(SharedPoolCache, ConcurrentOwnersPreserveEveryBlock) {
+  constexpr int kThreads = 8;
+  constexpr int kHold = 80;
+  constexpr int kRounds = 500;
+  constexpr std::uint32_t kBlocks = kThreads * (kHold + 8);
+  SharedPool pool(system_allocator(), 64, kBlocks);
+  std::atomic<bool> corrupt{false};
+
+  struct Args {
+    SharedPool *pool;
+    int tid;
+    std::atomic<bool> *corrupt;
+    std::array<std::uint32_t, 32> storage{};
+  };
+  std::vector<Args> args(kThreads);
+  std::vector<hyle::platform::Thread> threads;
+  for (int t = 0; t < kThreads; ++t) {
+    args[t].pool = &pool;
+    args[t].tid = t;
+    args[t].corrupt = &corrupt;
+    auto thread = hyle::platform::Thread::spawn(
+        [](void *raw) {
+          auto *a = static_cast<Args *>(raw);
+          SharedPoolCache cache(*a->pool, a->storage, 8);
+          const unsigned char mark = static_cast<unsigned char>(0x40 + a->tid);
+          std::array<void *, kHold> held{};
+          for (int round = 0; round < kRounds; ++round) {
+            for (void *&p : held) {
+              p = cache.allocate();
+              if (p != nullptr)
+                std::memset(p, mark, 64);
+            }
+            for (void *p : held) {
+              if (p == nullptr)
+                continue;
+              auto *bytes = static_cast<unsigned char *>(p);
+              for (int i = 0; i < 64; ++i) {
+                if (bytes[i] != mark) {
+                  a->corrupt->store(true, std::memory_order_relaxed);
+                  break;
+                }
+              }
+              cache.deallocate(p);
+            }
+          }
+          cache.publish();
+        },
+        &args[t]);
+    ASSERT_TRUE(thread.has_value());
+    threads.push_back(std::move(*thread));
+  }
+  for (auto &thread : threads)
+    thread.join();
+
+  EXPECT_FALSE(corrupt.load(std::memory_order_relaxed));
+  std::vector<void *> drained;
+  for (void *p = pool.allocate(); p != nullptr; p = pool.allocate())
+    drained.push_back(p);
+  EXPECT_EQ(drained.size(), static_cast<std::size_t>(kBlocks));
+  for (void *p : drained)
+    pool.deallocate(p);
+}
+
+TEST(SharedPoolCache, SaturatedTagFallbackSupportsBatchTransfer) {
+  constexpr std::uint32_t kBlocks = 256;
+  SharedPool pool(system_allocator(), 64, kBlocks);
+  pool.testing_force_tag_saturation();
+  std::array<std::uint32_t, 32> storage{};
+  SharedPoolCache cache(pool, storage, 8);
+  std::vector<void *> blocks;
+
+  for (std::uint32_t i = 0; i < kBlocks; ++i) {
+    void *p = cache.allocate();
+    ASSERT_NE(p, nullptr) << i;
+    blocks.push_back(p);
+  }
+  EXPECT_EQ(cache.allocate(), nullptr);
+  for (void *p : blocks)
+    cache.deallocate(p);
+  cache.publish();
+
+  blocks.clear();
+  for (std::uint32_t i = 0; i < kBlocks; ++i) {
+    void *p = pool.allocate();
+    ASSERT_NE(p, nullptr) << "reclaim " << i;
+    blocks.push_back(p);
+  }
+  for (void *p : blocks)
+    pool.deallocate(p);
 }
 
 // Lock-free correctness gate (WSL TSan). N threads each loop alloc -> write a
@@ -347,209 +556,7 @@ TEST(SharedPool, SaturatedTagFallbackIsConcurrentSafe) {
   EXPECT_FALSE(corrupt.load(std::memory_order_relaxed));
 }
 
-// Same-thread free→alloc must reuse via TLS freelist (non-atomic path). After a
-// free the next allocate returns the same pointer — proves the cache is live and
-// not losing blocks to a second CAS round-trip identity.
-TEST(SharedPoolCached, SameThreadTlsCacheReusesPointer) {
-  SharedPoolCached pool(system_allocator(), 64, 8);
-  void* a = pool.allocate();
-  ASSERT_NE(a, nullptr);
-  pool.deallocate(a);
-  void* b = pool.allocate();
-  EXPECT_EQ(a, b);  // TLS LIFO reuse
-  pool.deallocate(b);
-}
-
-// Fill past kTlsCacheCap (128): overflow must flush without leak or double-free;
-// full capacity remains reclaimable.
-TEST(SharedPoolCached, TlsCacheOverflowStillReclaimsAll) {
-  constexpr std::uint32_t kN = 256;  // > 128 TLS cap
-  SharedPoolCached pool(system_allocator(), 32, kN);
-  std::vector<void*> ps;
-  for (std::uint32_t i = 0; i < kN; ++i) {
-    void* p = pool.allocate();
-    ASSERT_NE(p, nullptr);
-    ps.push_back(p);
-  }
-  EXPECT_EQ(pool.allocate(), nullptr);
-  for (void* p : ps) pool.deallocate(p);  // 128 stay in TLS, rest flush
-  std::size_t again = 0;
-  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++again;
-  EXPECT_EQ(again, static_cast<std::size_t>(kN));
-  pool.reset();
-}
-
-// reset() must clear TLS-held free indices so the rebuilt shard freelist is the
-// sole source of truth (no double-handout of a TLS-cached index).
-TEST(SharedPoolCached, ResetClearsTlsCache) {
-  SharedPoolCached pool(system_allocator(), 64, 8);
-  void* a = pool.allocate();
-  void* b = pool.allocate();
-  ASSERT_NE(a, nullptr);
-  ASSERT_NE(b, nullptr);
-  pool.deallocate(a);  // lands in TLS
-  pool.deallocate(b);
-  pool.reset();  // must drop TLS, rebuild full freelist
-  std::size_t n = 0;
-  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate()) ++n;
-  EXPECT_EQ(n, 8u);
-  pool.reset();
-}
-
-// Soft capacity (red-team R1): free-to-TLS on a live thread parks blocks off-shard.
-// Without publish/join, another thread can see nullptr while free blocks exist.
-// publish_thread_cache() is the explicit handoff barrier.
-TEST(SharedPoolCached, RemoteTlsSoftThenPublishRestoresHardCapacity) {
-  constexpr std::uint32_t kN = 32;
-  SharedPoolCached pool(system_allocator(), 64, kN);
-  std::vector<void*> ptrs(kN, nullptr);
-  struct Ctx {
-    SharedPoolCached* pool;
-    std::vector<void*>* ptrs;
-    std::atomic<int>* phase;
-  };
-  std::atomic<int> phase{0};
-  Ctx c{&pool, &ptrs, &phase};
-  auto free_t = hyle::platform::Thread::spawn(
-      [](void* p) {
-        auto* x = static_cast<Ctx*>(p);
-        while (x->phase->load(std::memory_order_acquire) < 1)
-          hyle::platform::this_thread::yield();
-        for (void* q : *x->ptrs) x->pool->deallocate(q);
-        // Phase 2: frees parked in TLS, not yet published.
-        x->phase->store(2, std::memory_order_release);
-        while (x->phase->load(std::memory_order_acquire) < 3)
-          hyle::platform::this_thread::yield();
-        x->pool->publish_thread_cache();  // handoff barrier
-        x->phase->store(4, std::memory_order_release);
-        while (x->phase->load(std::memory_order_acquire) < 5)
-          hyle::platform::this_thread::yield();
-      },
-      &c);
-  ASSERT_TRUE(free_t.has_value());
-  for (std::uint32_t i = 0; i < kN; ++i) {
-    ptrs[i] = pool.allocate();
-    ASSERT_NE(ptrs[i], nullptr);
-  }
-  phase.store(1, std::memory_order_release);
-  while (phase.load(std::memory_order_acquire) < 2)
-    hyle::platform::this_thread::yield();
-  // Soft window: free thread still live, TLS not published → main may exhaust.
-  EXPECT_EQ(pool.allocate(), nullptr);
-  phase.store(3, std::memory_order_release);
-  while (phase.load(std::memory_order_acquire) < 4)
-    hyle::platform::this_thread::yield();
-  // After publish: full capacity visible on shards.
-  std::vector<void*> held;
-  for (std::uint32_t i = 0; i < kN; ++i) {
-    void* p = pool.allocate();
-    ASSERT_NE(p, nullptr) << "post-publish at " << i;
-    held.push_back(p);
-  }
-  EXPECT_EQ(pool.allocate(), nullptr);
-  for (void* p : held) pool.deallocate(p);
-  phase.store(5, std::memory_order_release);
-  std::move(*free_t).join();
-}
-
-// Churn many cached-pool lifetimes on one thread: ThreadCache zombies
-// (pool==nullptr) must be reclaimed instead of growing an unbounded TLS list.
-TEST(SharedPoolCached, ManyPoolLifetimesDoNotBreakTls) {
-  for (int i = 0; i < 64; ++i) {
-    SharedPoolCached pool(system_allocator(), 32, 8);
-    void* p = pool.allocate();
-    ASSERT_NE(p, nullptr);
-    pool.deallocate(p);
-  }
-  SharedPoolCached live(system_allocator(), 32, 4);
-  std::size_t n = 0;
-  for (void* p = live.allocate(); p != nullptr; p = live.allocate()) ++n;
-  EXPECT_EQ(n, 4u);
-  live.reset();
-}
-
-// Batched (magazine) refill/flush correctness gate (WSL TSan). Each thread holds
-// far past kTlsCacheCap (300 > 128), driving overflow publish and batch refill.
-// Marker-verify catches any block handed to two threads (a batch pop/push that
-// corrupts the next_[] chain); the final full drain catches any leaked or double-
-// counted block (a batch transfer that lost or duplicated an index).
-TEST(SharedPoolCached, ConcurrentBatchedRefillFlushNoLossNoOverlap) {
-  constexpr int kThreads = 8;
-  constexpr int kHold = 300;  // >> kTlsCacheCap (128)
-  constexpr int kRounds = 2000;
-  constexpr std::uint32_t kBlocks = kThreads * (kHold + 8);
-  SharedPoolCached pool(system_allocator(), 64, kBlocks);
-  std::atomic<bool> corrupt{false};
-
-  struct Args { SharedPoolCached* pool; int tid; std::atomic<bool>* corrupt; };
-  std::vector<Args> args(kThreads);
-  std::vector<hyle::platform::Thread> threads;
-  for (int t = 0; t < kThreads; ++t) {
-    args[t] = Args{&pool, t, &corrupt};
-    auto r = hyle::platform::Thread::spawn(
-        [](void* a) {
-          auto* x = static_cast<Args*>(a);
-          const unsigned char mark = static_cast<unsigned char>(0x40 + x->tid);
-          std::vector<void*> held(kHold);
-          for (int r2 = 0; r2 < kRounds; ++r2) {
-            for (int i = 0; i < kHold; ++i) {
-              void* p = x->pool->allocate();
-              held[i] = p;
-              if (p != nullptr) std::memset(p, mark, 64);
-            }
-            for (int i = 0; i < kHold; ++i) {
-              if (held[i] == nullptr) continue;
-              auto* b = static_cast<unsigned char*>(held[i]);
-              for (int k = 0; k < 64; ++k)
-                if (b[k] != mark) { x->corrupt->store(true, std::memory_order_relaxed); break; }
-              x->pool->deallocate(held[i]);
-            }
-          }
-        },
-        &args[t]);
-    ASSERT_TRUE(r.has_value());
-    threads.push_back(std::move(*r));
-  }
-  for (auto& th : threads) th.join();
-
-  EXPECT_FALSE(corrupt.load()) << "two threads held the same block (batch chain corruption)";
-  // Every block reclaimable exactly once -> batch pop/push preserved the free list.
-  std::vector<void*> drained;
-  for (void* p = pool.allocate(); p != nullptr; p = pool.allocate())
-    drained.push_back(p);
-  EXPECT_EQ(drained.size(), static_cast<std::size_t>(kBlocks))
-      << "leak or double-count in batch transfer";
-  for (void* p : drained) pool.deallocate(p);
-  pool.publish_thread_cache();
-}
-
-TEST(SharedPoolCached, SaturatedTagFallbackSupportsMagazineTransfer) {
-  constexpr std::uint32_t kN = 256;  // past TLS capacity -> shared batch paths
-  SharedPoolCached pool(system_allocator(), 64, kN);
-  pool.testing_force_tag_saturation();
-  std::vector<void*> blocks;
-  for (std::uint32_t i = 0; i < kN; ++i) {
-    void* p = pool.allocate();
-    ASSERT_NE(p, nullptr) << i;
-    blocks.push_back(p);
-  }
-  EXPECT_EQ(pool.allocate(), nullptr);
-  for (void* p : blocks) pool.deallocate(p);
-  pool.publish_thread_cache();
-  blocks.clear();
-  for (std::uint32_t i = 0; i < kN; ++i) {
-    void* p = pool.allocate();
-    ASSERT_NE(p, nullptr) << "reclaim " << i;
-    blocks.push_back(p);
-  }
-  for (void* p : blocks) pool.deallocate(p);
-}
-
-// A wrapping Allocator whose backing state lives in a heap block the TEST frees
-// on demand -- mirrors the C-ABI wrapper (hyle_shared_pool_cached_o stores the
-// backing by value and frees it in destroy()). If a ThreadCache node ever freed
-// itself through the pool's injected allocator, it would touch this freed state.
-// A process-stable node allocator must make that impossible.
+// Wrapping allocator used to prove large slabs honor their injected backing.
 struct BackingBox {
   std::atomic<int> live_allocs{0};
   std::atomic<std::size_t> largest_request{0};
@@ -611,26 +618,6 @@ TEST(SharedPool, AllocatorReallocateObeysCompleteContract) {
   alloc.deallocate(reused, 128, 64);
 }
 
-TEST(SharedPoolCached, AllocatorReallocateObeysCompleteContract) {
-  SharedPoolCached pool(system_allocator(), 128, 1, 64);
-  auto alloc = pool.as_allocator();
-
-  auto *p = static_cast<unsigned char *>(
-      alloc.reallocate(nullptr, 0, 32, 16));
-  ASSERT_NE(p, nullptr);
-  p[0] = 0xA5;
-  EXPECT_EQ(alloc.reallocate(p, 32, 96, 16), p);
-  EXPECT_EQ(p[0], 0xA5);
-  EXPECT_EQ(alloc.reallocate(p, 96, 256, 16), nullptr);
-  EXPECT_EQ(p[0], 0xA5);
-  EXPECT_EQ(alloc.reallocate(p, 96, 0, 16), nullptr);
-
-  void *reused = alloc.allocate(16, 16);
-  ASSERT_NE(reused, nullptr);
-  alloc.deallocate(reused, 16, 16);
-  pool.publish_thread_cache();
-}
-
 #if defined(HYLE_TESTING)
 TEST(SharedPoolDiagnosticsDeathTest, DoubleReturnTraps) {
   EXPECT_DEATH(
@@ -649,17 +636,6 @@ TEST(SharedPoolDiagnosticsDeathTest, ForeignPointerTraps) {
         SharedPool pool(system_allocator(), 64, 1);
         int foreign = 0;
         pool.deallocate(&foreign);
-      },
-      ".*");
-}
-
-TEST(SharedPoolCachedDiagnosticsDeathTest, DoubleReturnTraps) {
-  EXPECT_DEATH(
-      {
-        SharedPoolCached pool(system_allocator(), 64, 1);
-        void* p = pool.allocate();
-        pool.deallocate(p);
-        pool.deallocate(p);
       },
       ".*");
 }
@@ -697,44 +673,6 @@ TEST(SharedPool, QuotaCompositionKeepsAccountingAndCapacityTogether) {
   ASSERT_NE(reused, nullptr) << "balanced quota must not hide a leaked pool slot";
   alloc.deallocate(reused, 64, 16);
   EXPECT_EQ(quota.used(), 0u);
-}
-
-// Regression (审计缺陷 1): a SharedPoolCached uses an INJECTED backing whose state
-// is freed at pool destruction. A worker builds a TLS node bound to the pool; the
-// pool and backing die while the worker remains alive, then thread exit runs the
-// TLS-cache dtor. The node must not touch the dead injected backing.
-TEST(SharedPoolCached, InjectedBackingFreedBeforeWorkerExitNoUaf) {
-  struct Ctx {
-    std::atomic<int> phase{0};
-  };
-  Ctx ctx;
-  // Backing box + pool live on the heap so we can destroy them mid-flight.
-  auto* box = new BackingBox();
-  hyle::mem::Allocator backing(&box_alloc, &box_free, &box_realloc, box);
-  auto* pool = new SharedPoolCached(backing, 64, 8);
-
-  struct Args { SharedPoolCached* pool; Ctx* ctx; };
-  Args a{pool, &ctx};
-  auto worker = hyle::platform::Thread::spawn(
-      [](void* p) {
-        auto* x = static_cast<Args*>(p);
-        void* blk = x->pool->allocate();  // builds this thread's TLS node
-        x->pool->deallocate(blk);         // parks the index in the TLS node
-        x->ctx->phase.store(1, std::memory_order_release);  // "node built"
-        while (x->ctx->phase.load(std::memory_order_acquire) < 2)
-          hyle::platform::this_thread::yield();
-        // return -> thread_local TLS-cache dtor runs AFTER the pool is gone.
-      },
-      &a);
-  ASSERT_TRUE(worker.has_value());
-
-  while (ctx.phase.load(std::memory_order_acquire) < 1)
-    hyle::platform::this_thread::yield();
-  // Tear down the pool AND its injected backing while the worker is still alive.
-  delete pool;
-  delete box;  // the injected backing state is now freed
-  ctx.phase.store(2, std::memory_order_release);  // let the worker exit
-  std::move(*worker).join();  // node's TLS dtor must not touch the freed backing
 }
 
 // ---- PooledRegion (bump region over one pool block) -------------------------

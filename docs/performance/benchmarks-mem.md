@@ -71,14 +71,14 @@ virtual CPU 在 Windows 宿主上的实际 P/E core 映射，因此这只消除 
 
 单线程定长对象场景三平台都赢公平标尺；多线程独享池用 `GrowablePool × N`，不要把单个非线程安全实例共享。
 
-## 3. 两种共享固定块池
+## 3. SharedPool hard core 与显式 owner-local cache
 
 | API | 容量契约 | 回收可见性 | 适用场景 |
 |---|---|---|---|
 | `SharedPool` / `ObjectPool<T>` | **硬容量** | `deallocate()` 后立即可被任意线程复用 | 服务配额、严格并发上限、容量紧张的跨线程共享 |
-| `SharedPoolCached` / `ObjectPoolCached<T>` | **软容量** | 释放块可暂存在线程 TLS；`publish_thread_cache()` 或线程退出后公开 | 有容量余量的 request/context 批次、高频同线程复用 |
+| `SharedPoolCache` / `ObjectPoolCache<T>` | **软视图** | free indices 暂存在显式 owner cache；`publish()`/析构后公开 | 有容量余量的 request/context 批次、高频 owner-local 复用 |
 
-`SharedPoolCached` 的 TLS 上限为 128 块、refill magazine 为 32 块。这个窗口是明确的吞吐/容量交换，不是 `SharedPool` 的实现细节。
+cache capacity 与 transfer batch 都是构造参数；128/32 只是 convenience 默认值。caller-owned `span<uint32_t>` 可让 cache metadata 零隐藏分配。这个窗口是明确的吞吐/容量交换，不是 `SharedPool` 的实现细节。
 
 ### 3.1 Workload 来自实际用户形状
 
@@ -90,7 +90,9 @@ virtual CPU 在 Windows 宿主上的实际 P/E core 映射，因此这只消除 
 
 直接对手是 oneTBB `fixed_pool`：双方都由调用者提供固定 buffer。fixed_pool 的 buffer 是与 HYLE 相同的 payload capacity，加 oneTBB 自己 fixed-pool 测试采用的 1 MiB bootstrap metadata allowance；不再额外给 2 倍 payload。每次 fixed-pool/HYLE/mimalloc/TBB 分配都检查非 NULL，任何少做工作会使基准直接失败。pmr resource 与其他池一样在计时 lambda 外构造。`scalable_allocator`、mimalloc 和 pmr 是 growable 参考，不能证明硬容量语义。
 
-### 3.2 三平台基线
+### 3.2 旧 TLS 实现的三平台基线（历史，不代表当前产品）
+
+下表绑定已删除的 `SharedPoolCached`。它证明 soft local-cache 形状值得保留，也暴露隐藏 TLS policy 的产品问题；当前 `SharedPoolCache` 必须重新做三平台签证，不能把旧数改名继承。
 
 配置：8 workers、64B block、request batch=64、working set=容量的 75%；handoff batch=256。表内 ratio 是每轮配对的 **HYLE / oneTBB fixed_pool op/s** 中位数，不是两个绝对中位数相除。
 
@@ -99,7 +101,7 @@ virtual CPU 在 Windows 宿主上的实际 P/E core 映射，因此这只消除 
 | 池 | Win MSVC | WSL GCC 14 | Apple M4 | 判定 |
 |---|---:|---:|---:|---|
 | `SharedPool` | 8.315 / 4.200 ns，**0.515x** | 6.609 / 2.280 ns，**0.338x** | 11.881 / 2.024 ns，**0.170x** | 三平台 **LOSE sign** |
-| `SharedPoolCached` | 3.540 / 4.200 ns，**1.171x** | 1.754 / 2.280 ns，**1.285x** | 1.537 / 2.024 ns，**1.316x** | Win/WSL **WIN sign**；M4 **TIE sign**（8/9 同侧） |
+| `SharedPoolCached`（已删除） | 3.540 / 4.200 ns，**1.171x** | 1.754 / 2.280 ns，**1.285x** | 1.537 / 2.024 ns，**1.316x** | Win/WSL **WIN sign**；M4 **TIE sign**（8/9 同侧） |
 
 硬池为立即可见性付出共享原子与稳定空快照成本，不是本地 request churn 的吞吐选择。缓存池在 Win/WSL 稳赢；M4 中位数更快但有一次反转，按配对闸门只能判平。
 
@@ -108,15 +110,15 @@ virtual CPU 在 Windows 宿主上的实际 P/E core 映射，因此这只消除 
 | 池 | Win MSVC | WSL GCC 14 | Apple M4 | 判定 |
 |---|---:|---:|---:|---|
 | `SharedPool` | 5.304 / 10.433 ns，**1.976x** | 3.807 / 9.239 ns，**2.380x** | 12.931 / 4.871 ns，**0.372x** | Win/WSL **WIN sign**；M4 **LOSE sign** |
-| `SharedPoolCached` | 4.062 / 10.433 ns，**2.627x** | 2.414 / 9.239 ns，**3.807x** | 3.072 / 4.871 ns，**1.586x** | 三平台 **WIN sign** |
+| `SharedPoolCached`（已删除） | 4.062 / 10.433 ns，**2.627x** | 2.414 / 9.239 ns，**3.807x** | 3.072 / 4.871 ns，**1.586x** | 三平台 **WIN sign** |
 
 这里存在真实平台翻转：硬池在 x86 handoff 赢 fixed_pool，在 Apple M4 输约 2.69x。缓存池三平台都赢，但它仍不提供硬容量。
 
-### 3.3 Windows 参数扫描
+### 3.3 旧 TLS 实现的 Windows 参数扫描（历史）
 
 以下均为 `bench-stat.py -n 9`；扫描线程数、块大小和请求批次，避免用一个点代表整个能力面。
 
-| 维度 | `SharedPoolCached` vs fixed_pool | `SharedPool` vs fixed_pool | 结论 |
+| 维度 | 已删除 `SharedPoolCached` vs fixed_pool | `SharedPool` vs fixed_pool | 结论 |
 |---|---|---|---|
 | request，T=1/8/16，64B，batch=64 | **1.232/1.171/1.108 WIN** | **0.720/0.515/0.541 LOSE** | cached 随并发增加优势收窄但仍过 sign 闸门；hard 不适合本地批次 |
 | request，T=8，block=32/64/4096B | **1.636/1.171/1.098 WIN** | **0.669/0.515/0.479 LOSE** | 三个数量级内均保持硬/软分工 |
@@ -126,14 +128,14 @@ virtual CPU 在 Windows 宿主上的实际 P/E core 映射，因此这只消除 
 
 ### 3.4 硬容量证据
 
-配置：8 workers、64B block、capacity=1024、请求 110%（1128 次）。三平台得到相同计数：
+当前显式 cache 的 Windows sanity 配置：8 workers、64B block、capacity=1024、请求 110%（1128 次）：
 
 | 池 | admitted | failed | publish 前可立即重获 | publish 后可重获 |
 |---|---:|---:|---:|---:|
 | `SharedPool` | **1024** | **104** | **1024** | **1024** |
-| `SharedPoolCached` | 910 | 218 | 384 | **1024** |
+| `SharedPoolCache`（128/32） | 929 | 199 | 160 | **1024** |
 
-硬池精确准入 capacity，释放后立即恢复完整容量。缓存池有 640 块暂存于 8 个活线程的 TLS，导致假耗尽；显式 publish 后才恢复 1024。因此容量紧张的 quota 场景必须选硬池，不能用缓存池的更快吞吐替代契约。
+硬池精确准入 capacity，释放后立即恢复完整容量。显式 cache 的 initial admission 与 publish 前可见数受 batch reservation/调度影响，表中只作语义 sanity，不是稳定性能计数；publish 后必须恢复 1024。因此容量紧张的 quota 场景必须选 hard core，不能用 cache 的更快吞吐替代契约。
 
 ## 4. 外部固定 buffer 的变长分配
 
@@ -179,7 +181,7 @@ codec/session 等昂贵对象“构造一次、借还保留状态”的真实生
 单线程同尺寸可增长       → GrowablePool
 多线程、每线程独享       → GrowablePool × N
 共享固定块、严格配额     → SharedPool / ObjectPool<T>
-共享固定块、吞吐优先且有余量 → SharedPoolCached / ObjectPoolCached<T>
+共享固定块、吞吐优先且有余量 → SharedPoolCache / ObjectPoolCache<T> over hard core
 通用多线程 malloc       → mimalloc / oneTBB；不要硬套固定 slab
 ```
 
@@ -203,7 +205,7 @@ scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 9 \
   --pair "oneTBB fixed_pool (fixed-buffer shared)" \
          "HYLE SharedPool (hard capacity)" \
   --pair "oneTBB fixed_pool (fixed-buffer shared)" \
-         "HYLE SharedPoolCached (soft capacity)"
+         "HYLE SharedPoolCache (explicit soft capacity)"
 
 # Win/Linux 使用 n=15；M4 默认 USER_INTERACTIVE，正式复跑把这里改为 n=31
 HYLE_BENCH_SECTIONS=F \

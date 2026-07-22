@@ -47,14 +47,14 @@ g_ctx.use();               // ✓ 在当前线程(B)重新解析
 
 **硬容量默认**：`SharedPool` / `ObjectPool<T>` 不把块藏在 TLS。一次 `deallocate()` 完成后，该块立即对所有线程可见；`allocate()` 通过稳定双快照排除分片扫描期间的假耗尽。容量紧贴工作集、跨线程 handoff 或固定 quota 必须用这组。
 
-**软容量 opt-in**：`SharedPoolCached` / `ObjectPoolCached<T>` 使用每线程 **128-slot TLS cache**，并以 **32-block magazine** 与 shared core 批量交换。同线程 free→alloc 是零原子快路，但 A 线程 TLS 中已 free 的块，在 A 调 `publish_thread_cache()`、cache overflow 或线程退出前，B 看不到。因此软容量窗口最多为 `128 ×` 活跃线程数，B 可以在 shared core 真空时拿到 `nullptr`。
+**软容量 opt-in**：每个 worker 显式构造 `SharedPoolCache`（或 typed `ObjectPoolCache<T>`）并绑定一个 hard pool。cache storage、容量和 transfer batch 是构造参数，不是 TLS 常量。同 owner 的 free→alloc 是零原子快路，但 cache 中已 free 的块在 `publish()`/析构前，其他 cache 与 hard core 看不到；软窗口是所有活跃 cache 当前 `cached()` 的总和。
 
 **怎么调**：
 - 要 completed free 立即共享：直接用 `SharedPool` / `ObjectPool<T>`，无需 publish；
-- 明确选择 cached 版本后要跨线程交接容量：由 free 方调用 `publish_thread_cache()`，或 join free 线程；
-- `reset()` 要求无 live block，并先静默所有并发 alloc/free。cached 版本会清注册 cache 再重建 shard。
+- 选择显式 cache 后要交接容量：owner 调 `publish()`；owner 退出作用域也会发布；
+- `SharedPool::reset()` 前要求无 live block、所有 cache 已 publish/销毁，并静默并发访问。
 
-两组池共用 sharded core；正常走 32-bit tagged CAS，tag 饱和的 shard 永久切入 serialized fallback，绝不回绕。不要把 cached 池的吞吐数据或软容量语义写成硬池合同。
+cache 复用 hard pool 的 batch pop/push；正常走 32-bit tagged CAS，tag 饱和的 shard 永久切入 serialized fallback，绝不回绕。不要把 cache 吞吐数据或软容量语义写成 hard core 合同。
 
 ## 3. SIMD：CPUID 探测器 TU 必须 LTO-free（分发型构建）
 

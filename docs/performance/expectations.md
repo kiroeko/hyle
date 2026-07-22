@@ -22,7 +22,7 @@
 | 组件 vs std | 时间（speedup + 复杂度）| 空间（vs std）|
 |---|---|---|
 | **flat hashmap** vs `unordered_map` | 查找/插入 **2-4×**；均摊 O(1) 同，但常数小（连续布局 cache 命中 + SIMD 16 路探测）| **通常更省**：无 node 的指针 + 每节点分配头；代价是留负载因子（有空槽 + 1 控制字节/槽）。最坏（刚扩容）峰值略高 |
-| **专用分配器** 单线程 bump/pool vs new/delete | 单线程用 `StackAllocator`/`Arena` pointer bump 或 `GrowablePool`；多线程固定池须按合同分开：`SharedPool` 是硬容量，`SharedPoolCached` 以 TLS 128 + magazine 32 换软容量吞吐。最终对标数字见 mem 证书，不把 cached 快路外推给硬池 | **更费**（以空间换时间）：预留 slab、block 尾部与 cached TLS 窗口；硬池不隐藏已 free block |
+| **专用分配器** 单线程 bump/pool vs new/delete | 单线程用 `StackAllocator`/`Region` pointer bump 或 `GrowablePool`；多线程固定池须按合同分层：`SharedPool` 是硬容量，显式 `SharedPoolCache(capacity,batch)` 以 owner-local 软窗口换吞吐。最终对标数字见 mem 证书，不把 cache 快路外推给硬池 | **更费**（以空间换时间）：预留 slab、parallel links 与显式 cache index storage；硬池不隐藏已 free block |
 | **通用分配器** mimalloc vs malloc | 多线程 **1.5-3×** 吞吐、p99 更好；单线程仅 10-30% | 碎片通常 ≤ glibc；大页会增驻留 |
 | **SmallVector** vs `vector` | 小 N 省 malloc（大赢）；大 N 持平 | **更费**（以空间换时间）：inline 存 N 元素，sizeof 变大（没用满也占）；超 N 退化到堆 |
 | **intrusive list/map** vs `list`/`map` | O(1) 摘除、无分配；查找同 | **更省**：hook 内嵌节点，无单独分配 + 无 node 包装 |

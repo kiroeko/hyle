@@ -1,6 +1,6 @@
 # mem-04：ObjectPool + StackAllocator（推倒重写，修 clay bug #3/#4）
 
-> **历史名称边界：**本文中的旧 `MemoryArena` 底座现已由 `SharedPool` / `SharedPoolCached` 取代；`ObjectPool<T>` 当前默认坐硬容量 `SharedPool`，软容量版本另名 `ObjectPoolCached<T>`。旧头与旧 C ABI 已删除。
+> **后续替代（2026-07-22）：**当前为 `SharedPool` / 显式 `SharedPoolCache`；typed 层为 `ObjectPool<T>` / 附着式 `ObjectPoolCache<T>`。本文后文保留历史阶段名称。
 
 | 字段 | 值 |
 |---|---|

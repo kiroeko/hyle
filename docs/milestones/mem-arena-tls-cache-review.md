@@ -1,8 +1,8 @@
 # MemoryArena TLS freelist — 审核包（2026-07-20/21）
 
-> **历史名称边界：**本文记录的 `MemoryArena` TLS 实现现名为 `SharedPoolCached`，只代表软容量缓存池；当前硬容量默认是 `SharedPool`。旧 `memory_arena.h` 与 `hyle_memory_arena_*` 已删除，由 `shared_pool.h`、`hyle_shared_pool_*` / `hyle_shared_pool_cached_*` 取代。
+> **后续替代（2026-07-22）：**本审核包记录的 TLS 实现已经删除；当前产品为 `SharedPool` hard core + 显式 `SharedPoolCache`，本文数字只作历史对照。
 
-> **当前闭环**：生产入口为 `include/hyle/mem/shared_pool.h` + `src/mem/shared_pool.cc`，测试为 `tests/mem/shared_pool_test.cc`，设计与三平台 fixed_pool 证书分别见 `docs/architecture/mem-design.md`、`docs/performance/benchmarks-mem.md`。`cloc`：双池核心 758 行生产代码；对应测试 + allocator/pool benchmark 1122 行；本轮相关八文件 bundle 从 2068 增至 2834 行代码（+766，其中生产 bundle +364）。
+> **当时闭环**：以下生产入口与 cloc 均为 TLS 版本快照，不代表当前文件布局。
 >
 > 下文从 §1 起保留 2026-07-20/21 旧 TLS 实现的审计过程、旧路径与当时数字，用于解释为何最终拆成硬/软两套合同；不得当作现行 API 或性能证书。
 

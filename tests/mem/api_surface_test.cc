@@ -15,6 +15,7 @@
 #include "hyle/mem/hugepage.h"
 #include "hyle/mem/object_pool.h"
 #include "hyle/mem/pmr.h"
+#include "hyle/mem/pool_cache.h"
 #include "hyle/mem/pool_loan.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/region.h"
@@ -67,7 +68,15 @@ concept FixedBlockPoolSurface = requires(P p, void* block) {
   { p.as_allocator() } -> std::same_as<Allocator>;
 };
 static_assert(FixedBlockPoolSurface<SharedPool>);
-static_assert(FixedBlockPoolSurface<SharedPoolCached>);
+
+static_assert(requires(SharedPoolCache cache, void* block) {
+  { cache.valid() } -> std::same_as<bool>;
+  { cache.allocate() } -> std::same_as<void*>;
+  { cache.deallocate(block) } -> std::same_as<void>;
+  { cache.publish() } -> std::same_as<void>;
+  { cache.cached() } -> std::same_as<std::uint32_t>;
+  { cache.as_allocator() } -> std::same_as<Allocator>;
+});
 
 template <class P>
 concept ObjectPoolSurface = requires(P p, int* value) {
@@ -76,7 +85,7 @@ concept ObjectPoolSurface = requires(P p, int* value) {
   { p.try_loan(1) } -> std::same_as<PoolLoan<int, P>>;
 };
 static_assert(ObjectPoolSurface<ObjectPool<int>>);
-static_assert(ObjectPoolSurface<ObjectPoolCached<int>>);
+static_assert(ObjectPoolSurface<ObjectPoolCache<int>>);
 static_assert(ObjectPoolSurface<GrowablePool<int>>);
 
 static_assert(requires(FixedPool p, void* ptr, std::size_t n) {
@@ -106,6 +115,7 @@ static_assert(!std::is_copy_constructible_v<Region>);
 static_assert(!std::is_move_constructible_v<FixedRegion>);
 static_assert(!std::is_move_constructible_v<FixedPool>);
 static_assert(!std::is_move_constructible_v<SharedPool>);
+static_assert(!std::is_move_constructible_v<SharedPoolCache>);
 static_assert(std::is_move_constructible_v<FiberStack>);
 
 TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {

@@ -1,6 +1,6 @@
 # close-01：对外纯 `extern "C"` C-ABI shim（发布给用户的唯一稳定接缝）
 
-> **当前名称边界：**mem C ABI 现为 `hyle_shared_pool_*`（硬容量）与 `hyle_shared_pool_cached_*`（软容量）；旧 `hyle_memory_arena_*` 与旧头已删除，不提供兼容 shim。本文后文旧称保留为当时收口记录。
+> **后续替代（2026-07-22）：**隐式 cached 池已删除；当前 C 面是 `hyle_shared_pool_*` hard core + 显式附着的 `hyle_shared_pool_cache_*`。本文后文保留当时记录。
 
 | 字段 | 值 |
 |---|---|

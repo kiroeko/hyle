@@ -1,6 +1,6 @@
 # platform 剩余事项收口
 
-> **当前名称边界：**本文后文提到的旧 `MemoryArena` 已由 `SharedPool` / `SharedPoolCached` 取代；旧头与 `hyle_memory_arena_*` 已删除。
+> **后续替代（2026-07-22）：**本文后文提到的旧 `MemoryArena` 当前由 `SharedPool` / 显式 `SharedPoolCache` 覆盖；旧头与 C ABI 已删除。
 
 > 2026-07-19。原清单 A1/A2/A3/B1 已实现并完成三平台验证。
 > 本文保留实现边界与仍有意不做的内容，避免后来者把“未知”误读成

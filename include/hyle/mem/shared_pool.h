@@ -12,8 +12,7 @@
 #include "hyle/mem/allocator.h"
 #include "hyle/platform/thread.h" // hardware_concurrency() -> shard count
 
-// Shared fixed-size block pools (allocator-injected). Two public pools over one
-// sharded-slab core, differing ONLY in the alloc/free hot path:
+// Shared fixed-size block pool plus an explicit owner-local cache layer.
 //
 //   SharedPool        HARD capacity. In normal tagged mode, the successful
 //   home-shard
@@ -22,19 +21,8 @@
 //                     completed frees are immediately visible. This is the safe
 //                     default for a bounded quota that is drawn/returned across
 //                     threads (work-stealing handoff, N fixed slots). Pick this
-//                     unless you have measured a same- thread-churn hot spot
-//                     that needs the cached pool below.
-//
-//   SharedPoolCached  SOFT capacity, MAX throughput. Adds a per-thread TLS
-//   freelist
-//                     (owner-only, ZERO atomics on a same-thread free->alloc)
-//                     with magazine batch refill/flush to the shards. Wins big
-//                     when a thread reuses its OWN blocks and the pool is
-//                     provisioned well above the concurrent working set.
-//                     TRADE-OFF: a block freed on thread A is parked in A's TLS
-//                     and is NOT visible to allocate() on other threads until A
-//                     publishes/exits (see "Soft capacity"). Wrong tool for a
-//                     capacity-tight cross-thread quota.
+//                     unless a measured same-thread hot spot justifies an
+//                     explicit SharedPoolCache owned by that worker.
 //
 // Both borrow slab + link array from the injected Allocator. Each shard uses a
 // 32-bit tagged 64-bit-CAS fast path; before the finite tag could wrap, that
@@ -50,29 +38,14 @@
 
 namespace hyle::mem {
 
+class SharedPoolCache;
+
 namespace detail {
-// Process-global (cross-DLL) lock guarding a cached pool's TLS-cache registry.
-// One definition lives in hyle_mem (shared_pool.cc) so every header-inlined
-// consumer serializes on the SAME mutex -- a per-DLL header static would let
-// two parties race on one node through different locks. COLD path only (attach
-// / detach / reset / dtor / thread-exit); the alloc/free hot path never touches
-// it.
-HYLE_MEM_API void tls_registry_lock() noexcept;
-HYLE_MEM_API void tls_registry_unlock() noexcept;
-
-struct TlsRegistryGuard {
-  TlsRegistryGuard() noexcept { tls_registry_lock(); }
-  ~TlsRegistryGuard() noexcept { tls_registry_unlock(); }
-  TlsRegistryGuard(const TlsRegistryGuard &) = delete;
-  TlsRegistryGuard &operator=(const TlsRegistryGuard &) = delete;
-};
-
-// ---- Sharded-slab core (shared by SharedPool + SharedPoolCached)
-// ---------------- Owns the slab + parallel next_[] link array + per-shard
+// ---- Sharded-slab core -----------------------------------------------------
+// Owns the slab + parallel next_[] link array + per-shard
 // cache-line-isolated Treiber heads and their tag-saturation fallback. NOT a
-// standalone type: the two public pools derive from it and add their own
-// alloc/free semantics. No virtuals -- the derived hot paths call these inline,
-// zero indirection.
+// standalone type: SharedPool derives from it and exposes hard operations plus
+// narrow batch hooks to SharedPoolCache. No virtuals or hot-path indirection.
 class ShardedSlab {
 public:
   std::size_t block_size() const noexcept { return block_size_; }
@@ -695,8 +668,7 @@ protected:
 // drawn/returned across threads (fixed slot count, work-stealing handoff) or
 // whenever deterministic capacity matters more than squeezing out the
 // same-thread fast path. Same-thread churn still pays one CAS/op; if that is a
-// measured hot spot and the pool is over-provisioned, use SharedPoolCached
-// instead.
+// measured hot spot and the pool is over-provisioned, attach SharedPoolCache.
 //
 // Lifetime contract: every live block is returned exactly once to the SAME pool
 // before reset/destruction, with alloc/free externally quiesced.
@@ -776,6 +748,30 @@ public:
   }
 
 private:
+  friend class SharedPoolCache;
+
+  // Explicit owner-local caches use these narrow batch hooks. Cached indices
+  // are free (not checked out) while they live outside the shared shards; the
+  // checkout/return hooks preserve the same diagnostics as allocate/free.
+  std::uint32_t cache_refill(std::uint32_t want,
+                             std::uint32_t *out) noexcept {
+    return pop_any_shard_batch(home_shard(), want, out);
+  }
+  void cache_publish(const std::uint32_t *indices,
+                     std::uint32_t count) noexcept {
+    push_shard_batch(home_shard(), indices, count);
+  }
+  void *cache_checkout(std::uint32_t index) noexcept { return checkout(index); }
+  std::uint32_t cache_return(void *p) noexcept { return return_index(p); }
+  void cache_assert_checked_out(void *p) const noexcept {
+    assert_checked_out(p);
+  }
+  bool cache_request_fits(std::size_t size,
+                          std::size_t alignment) const noexcept {
+    return size > 0 && size <= block_size_ && is_pow2(alignment) &&
+           alignment <= alignment_;
+  }
+
   static void *pool_alloc(void *state, std::size_t size,
                           std::size_t alignment) noexcept {
     auto *self = static_cast<SharedPool *>(state);
@@ -808,341 +804,6 @@ private:
       return nullptr;
     return ptr;
   }
-};
-
-// ---- SharedPoolCached: SOFT capacity, per-thread TLS fast path + magazine
-// ---------- Adds a per-(thread,pool) TLS freelist so a same-thread free->alloc
-// is a plain index stack with ZERO atomics -- the steady-state hot path that
-// beats a per-op CAS. TLS miss/overflow transfer to the shared shards in
-// BATCHES (magazine, kRefillBatch): one CAS moves K indices, so a working set
-// past the TLS cap pays ~1/K CAS per block.
-//
-// Soft capacity (intentional, same class as tbb/jemalloc tcache): a block freed
-// on a LIVE thread is parked in that thread's TLS and is invisible to
-// allocate() on other threads until it flushes (publish_thread_cache / overflow
-// / thread-exit / dtor). Window <= kTlsCacheCap per live thread. This means the
-// pool can report empty while free blocks exist off-shard -- fine when the pool
-// is provisioned above the concurrent working set (the intended use), a footgun
-// for a capacity-tight cross-thread quota (use SharedPool for that).
-// publish_thread_cache() / join restore hard capacity.
-//
-// The TLS node is allocated from system_allocator(), NOT the injected backing:
-// a node can outlive the pool (a live thread's cache is freed only when THAT
-// thread exits), and the injected backing may be gone by then (a C-ABI wrapper
-// frees its backing when the pool is destroyed). A node is internal bookkeeping
-// (like the registry lock), so a process-stable allocator decouples node
-// lifetime from the pool's injected allocator. Every live block must still be
-// returned exactly once to the SAME pool before reset/ destruction.
-// Foreign/misaligned pointers fail-fast in every build. HYLE_TESTING adds
-// per-slot liveness, double-return and outstanding-allocation diagnostics;
-// shipping builds carry no per-slot diagnostic state or instructions.
-class SharedPoolCached : public detail::ShardedSlab {
-public:
-  SharedPoolCached(Allocator alloc, std::size_t block_size,
-                   std::uint32_t block_count,
-                   std::size_t alignment = alignof(std::max_align_t))
-      : detail::ShardedSlab(alloc, block_size, block_count, alignment) {}
-
-#if defined(HYLE_TESTING)
-  void testing_force_tag_saturation() noexcept {
-    detail::ShardedSlab::testing_force_tag_saturation();
-  }
-#endif
-
-  ~SharedPoolCached() {
-    // Contract: callers have externally quiesced alloc/free and established the
-    // usual happens-before edge, though worker threads may remain alive. Flush
-    // their free indices, then detach so thread_local dtors see pool==null and
-    // only free the node (no UAF into a dead pool). Runs before ~ShardedSlab
-    // frees the slab.
-    if (valid_)
-      detach_all_caches();
-  }
-
-  // Pop a free block. nullptr if local TLS empty AND every shard empty. Free
-  // blocks still sitting only in OTHER live threads' TLS are invisible (soft
-  // capacity; call their publish_thread_cache or join them to restore hard
-  // capacity).
-  void *allocate() noexcept {
-    if (!valid_)
-      return nullptr;
-    const std::uint32_t home = home_shard();
-    if (ThreadCache *tc = tls_cache(/*create=*/true)) {
-      if (tc->count >
-          0) { // TLS hit: owner-only pop, zero atomics (steady state)
-        const std::uint32_t idx = tc->idxs[--tc->count];
-        return checkout(idx);
-      }
-      // TLS miss: refill a BATCH from the shards in ONE CAS, keep the surplus
-      // warm, hand back one. tc->count is 0 here, so the batch lands at
-      // tc->idxs[0..got).
-      const std::uint32_t got =
-          pop_any_shard_batch(home, kRefillBatch, tc->idxs);
-      if (got == 0)
-        return nullptr; // stable all-shard empty snapshot
-      tc->count = got;
-      return checkout(tc->idxs[--tc->count]);
-    }
-    // No TLS cache (OOM'd node): direct stable-snapshot shard path.
-    const std::uint32_t idx = pop_any_shard(home);
-    return checkout(idx);
-  }
-
-  // Return a block. Same-thread steady state lands in the TLS freelist
-  // (owner-only, no atomics). Overflow publishes a batch to this thread's
-  // shared home. null no-op.
-  void deallocate(void *p) noexcept {
-    if (p == nullptr || !valid_)
-      return;
-    std::uint32_t idx = return_index(p);
-    if (ThreadCache *tc = tls_cache(/*create=*/true)) {
-      if (tc->count < kTlsCacheCap) {
-        tc->idxs[tc->count++] = idx;
-        return;
-      }
-      flush_cache_half(tc); // keep half warm, flush half to shards
-      if (tc->count < kTlsCacheCap) {
-        tc->idxs[tc->count++] = idx;
-        return;
-      }
-    }
-    push_shard(home_shard(), idx); // no TLS (OOM): direct shared-home push
-  }
-
-  // Flush THIS thread's TLS freelist onto its shared home shard -- the explicit
-  // barrier that makes this thread's freed blocks visible to others without
-  // waiting for it to exit (soft-capacity handoff). Owner-only; no cross-thread
-  // use.
-  void publish_thread_cache() noexcept {
-    if (!valid_)
-      return;
-    if (ThreadCache *tc = tls_cache(/*create=*/false))
-      flush_cache_to_shards(tc);
-  }
-
-  // Return EVERY block to the pool in one shot. All prior pointers are bulk-
-  // invalidated and must never be used again; quiesce concurrent alloc/free.
-  // Also drains every registered TLS cache.
-  void reset() noexcept {
-    if (!valid_)
-      return;
-#if defined(HYLE_TESTING)
-    testing_discard_all();
-#endif
-    flush_all_caches_keep_registered();
-    reset_shards();
-  }
-
-#if defined(HYLE_TESTING)
-  // TEST-ONLY: see SharedPool::testing_assert_checked_out().
-  void testing_assert_checked_out(void *p) const noexcept {
-    assert_checked_out(p);
-  }
-#endif
-
-  Allocator as_allocator() noexcept {
-    return Allocator(&pool_alloc, &pool_free, &pool_realloc, this);
-  }
-
-private:
-  static void *pool_alloc(void *state, std::size_t size,
-                          std::size_t alignment) noexcept {
-    auto *self = static_cast<SharedPoolCached *>(state);
-    if (size == 0)
-      return nullptr;
-    HYLE_FATAL_ASSERT(is_pow2(alignment) && size <= self->block_size_ &&
-                      alignment <= self->alignment_);
-    return self->allocate();
-  }
-  static void pool_free(void *state, void *ptr, std::size_t,
-                        std::size_t) noexcept {
-    if (ptr != nullptr)
-      static_cast<SharedPoolCached *>(state)->deallocate(ptr);
-  }
-  static void *pool_realloc(void *state, void *ptr, std::size_t old_size,
-                            std::size_t new_size,
-                            std::size_t alignment) noexcept {
-    auto *self = static_cast<SharedPoolCached *>(state);
-    if (ptr == nullptr)
-      return pool_alloc(state, new_size, alignment);
-    HYLE_FATAL_ASSERT(is_pow2(alignment) && old_size > 0 &&
-                      old_size <= self->block_size_ &&
-                      alignment <= self->alignment_);
-    self->assert_checked_out(ptr);
-    if (new_size == 0) {
-      self->deallocate(ptr);
-      return nullptr;
-    }
-    if (new_size > self->block_size_)
-      return nullptr;
-    return ptr;
-  }
-
-  // TLS freelist depth: bounds soft-capacity (blocks parked off-shard) per live
-  // thread. Folly's mature fixed-pool shape uses local lists up to 200 entries;
-  // 128 covers common request/context batches while bounding this soft pool's
-  // per-thread window.
-  static constexpr std::uint32_t kTlsCacheCap = 128;
-  // One CAS transfers 32 blocks between a TLS cache and its shared home list.
-  static constexpr std::uint32_t kRefillBatch = 32;
-
-  // One node per (thread, pool). Thread owns the node lifetime (thread_local
-  // list + dtor); the pool owns a registry (cache_list_) so free indices never
-  // die with a destroyed pool and never UAF after it. `pool` is ATOMIC: the hot
-  // path loads it lockless to match a node to its pool; cold teardown
-  // (thread-exit detach, dtor detach_all) writes it under the process-global
-  // registry lock -- closing the dtor/thread-exit race. count/idxs are
-  // owner-only on the hot path (no atomics).
-  struct ThreadCache {
-    std::atomic<SharedPoolCached *> pool{nullptr};
-    std::uint32_t count = 0;
-    std::uint32_t idxs[kTlsCacheCap]{};
-    ThreadCache *next_in_thread = nullptr; // owner-thread-only
-    ThreadCache *next_in_pool = nullptr;   // registry-lock-only
-  };
-
-  struct TlsCacheList {
-    ThreadCache *head = nullptr;
-    ~TlsCacheList() {
-      while (head != nullptr) {
-        ThreadCache *c = head;
-        head = c->next_in_thread;
-        c->next_in_thread = nullptr;
-        // Decide + act under the global lock so the pool can't be torn down
-        // between reading c->pool and using it (detach_all_caches nulls it
-        // under the same lock). If pool is already null, it detached us first.
-        {
-          detail::TlsRegistryGuard g;
-          SharedPoolCached *a = c->pool.load(std::memory_order_relaxed);
-          if (a != nullptr)
-            a->detach_cache_locked(c);
-        }
-        free_thread_cache_node(c);
-      }
-    }
-  };
-
-  static TlsCacheList &tls_list() noexcept {
-    thread_local TlsCacheList list;
-    return list;
-  }
-
-  static void free_thread_cache_node(ThreadCache *c) noexcept {
-    c->~ThreadCache();
-    system_allocator().deallocate(c, sizeof(ThreadCache), alignof(ThreadCache));
-  }
-
-  ThreadCache *tls_cache(bool create) noexcept {
-    TlsCacheList &list = tls_list();
-    // Walk + reclaim zombies (pool destroyed, node left with pool==nullptr) so
-    // a long-lived thread churning many pools doesn't leak a node per destroyed
-    // pool. Reads `pool` acquire: observing null means detach finished flushing
-    // -> safe to unlink (owner-only) and free.
-    ThreadCache *prev = nullptr;
-    ThreadCache *c = list.head;
-    while (c != nullptr) {
-      ThreadCache *next = c->next_in_thread;
-      SharedPoolCached *a = c->pool.load(std::memory_order_acquire);
-      if (a == this)
-        return c;
-      if (a == nullptr) {
-        if (prev != nullptr)
-          prev->next_in_thread = next;
-        else
-          list.head = next;
-        free_thread_cache_node(c);
-        c = next;
-        continue;
-      }
-      prev = c;
-      c = next;
-    }
-    if (!create || !valid_)
-      return nullptr;
-    void *mem =
-        system_allocator().allocate(sizeof(ThreadCache), alignof(ThreadCache));
-    if (mem == nullptr)
-      return nullptr; // fall back to pure shard CAS path
-    auto *fresh = new (mem) ThreadCache();
-    fresh->pool.store(this, std::memory_order_relaxed);
-    fresh->next_in_thread = list.head; // owner-only
-    list.head = fresh;
-    {
-      detail::TlsRegistryGuard g;
-      fresh->next_in_pool = cache_list_;
-      cache_list_ = fresh;
-    }
-    return fresh;
-  }
-
-  // Publish tc->idxs[base .. base+n) to the freeing thread's shared home shard
-  // in ONE CAS. This is the mature local-list/global-transfer shape: free
-  // blocks migrate toward the thread using them instead of being scattered by
-  // their slab address. The active cache range is dense, so no bucketing or
-  // O(n^2) search is needed.
-  void flush_range_batched(ThreadCache *tc, std::uint32_t base,
-                           std::uint32_t n) noexcept {
-    push_shard_batch(home_shard(), tc->idxs + base, n);
-    tc->count = base;
-  }
-
-  void flush_cache_to_shards(ThreadCache *tc) noexcept {
-    flush_range_batched(tc, 0, tc->count);
-  }
-
-  void flush_cache_half(ThreadCache *tc) noexcept {
-    const std::uint32_t keep =
-        tc->count - tc->count / 2; // keep the warm lower half
-    flush_range_batched(tc, keep, tc->count - keep);
-  }
-
-  // Called from the thread_local dtor with the global registry lock ALREADY
-  // held: flush this node's blocks to shards, unlink from the registry, null
-  // its pool (release) so a concurrent tls_cache() walk that sees null knows
-  // the flush is done. Caller frees.
-  void detach_cache_locked(ThreadCache *tc) noexcept {
-    flush_cache_to_shards(tc);
-    ThreadCache **pp = &cache_list_;
-    while (*pp != nullptr) {
-      if (*pp == tc) {
-        *pp = tc->next_in_pool;
-        break;
-      }
-      pp = &(*pp)->next_in_pool;
-    }
-    tc->next_in_pool = nullptr;
-    tc->pool.store(nullptr, std::memory_order_release);
-  }
-
-  void detach_all_caches() noexcept {
-    detail::TlsRegistryGuard g;
-    ThreadCache *c = cache_list_;
-    cache_list_ = nullptr;
-    while (c != nullptr) {
-      ThreadCache *next = c->next_in_pool;
-      flush_cache_to_shards(c);
-      c->next_in_pool = nullptr;
-      // Release pairs with the acquire in a concurrent tls_cache() zombie-walk:
-      // the flush above happens-before that thread frees the node.
-      c->pool.store(nullptr, std::memory_order_release);
-      c = next;
-    }
-  }
-
-  // reset(): drop every TLS freelist (reset_shards below reclaims the full
-  // range; TLS-held free indices are not live). Keeps nodes registered. Callers
-  // quiesce first.
-  void flush_all_caches_keep_registered() noexcept {
-    detail::TlsRegistryGuard g;
-    for (ThreadCache *c = cache_list_; c != nullptr; c = c->next_in_pool)
-      c->count = 0;
-  }
-
-  // Registry of this pool's live TLS caches; mutated only under the
-  // process-global detail::tls_registry_lock. NOT read on the hot path
-  // (alloc/free reach the node via the per-thread list and validate ownership
-  // with the node's atomic `pool`).
-  ThreadCache *cache_list_ = nullptr;
 };
 
 // Bump (region) allocator over ONE borrowed pool block. Borrows a block from a

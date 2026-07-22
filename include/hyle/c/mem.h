@@ -282,10 +282,11 @@ hyle_fixed_pool_as_allocator(hyle_fixed_pool *p);
 /* In normal tagged mode, the successful home-shard path and each deallocate use
  * one CAS; allocate scans other shards when needed. A saturated tag safely
  * falls back to a per-shard serialized path rather than wrapping. No block is
- * parked in TLS, so a immediately visible (no cache-induced false exhaustion).
+ * parked in TLS, so a completed free is immediately visible (no
+ * cache-induced false exhaustion).
  * The safe default for a bounded cross-thread quota. For a same-thread-churn
- * hot spot with an over-provisioned pool, see the *_cached family below (soft
- * capacity, faster). */
+ * hot spot with an over-provisioned pool, attach an explicit
+ * hyle_shared_pool_cache below (soft visibility, faster). */
 
 typedef struct hyle_shared_pool_o hyle_shared_pool;
 
@@ -324,57 +325,46 @@ hyle_shared_pool_create_default(size_t block_size, uint32_t block_count,
 }
 
 /* ========================================================================== */
-/* SharedPoolCached — SharedPool + per-thread TLS fast path (SOFT capacity) */
+/* SharedPoolCache — explicit owner-local cache over SharedPool (SOFT view) */
 /* ========================================================================== */
-/* Adds a per-thread TLS freelist so a same-thread free->alloc is ZERO atomics,
- * with magazine batch transfer to the shards -- max throughput when a thread
- * reuses its own blocks and the pool is provisioned above the concurrent
- * working set. TRADE-OFF (soft capacity): a block freed on a live thread is
- * parked in that thread's TLS and is NOT visible to allocate() on other threads
- * until it flushes -- call hyle_shared_pool_cached_publish() on the freeing
- * thread, or join it, to restore hard capacity. Wrong tool for a capacity-tight
- * cross-thread quota (use SharedPool). Same create/OOM contract as SharedPool.
- */
+/* The hard SharedPool owns all blocks. Each worker may attach one cache with
+ * an explicit lifetime, local capacity and transfer batch. Cached free blocks
+ * are invisible through the shared pool until publish/destroy, so use the hard
+ * pool directly for strict capacity admission. `pool` must outlive the cache
+ * and all blocks checked out through it. One cache is owner-thread-only;
+ * distinct caches over the same pool may run concurrently. */
 
-typedef struct hyle_shared_pool_cached_o hyle_shared_pool_cached;
+typedef struct hyle_shared_pool_cache_o hyle_shared_pool_cache;
 
-HYLE_MEM_C_API hyle_shared_pool_cached *
-hyle_shared_pool_cached_create(hyle_allocator backing, size_t block_size,
-                               uint32_t block_count, size_t alignment);
-/* Contract: no live block and all concurrent pool access is quiesced. Worker
- * threads may remain alive after external synchronization; their detached TLS
- * nodes are safe. */
-HYLE_MEM_C_API void
-hyle_shared_pool_cached_destroy(hyle_shared_pool_cached *p);
-/* Pop a free block; NULL if the local TLS AND every shard is empty (blocks
- * parked in OTHER live threads' TLS are invisible -- soft capacity). */
+/* `metadata` owns the opaque handle and uint32_t local-index array.
+ * transfer_batch==0 selects the default (32, clamped to capacity). */
+HYLE_MEM_C_API hyle_shared_pool_cache *
+hyle_shared_pool_cache_create(hyle_shared_pool *pool, hyle_allocator metadata,
+                              uint32_t capacity, uint32_t transfer_batch);
+/* Publishes locally free blocks, then releases metadata. No user-held block. */
+HYLE_MEM_C_API void hyle_shared_pool_cache_destroy(hyle_shared_pool_cache *p);
 HYLE_MEM_C_API void *
-hyle_shared_pool_cached_allocate(hyle_shared_pool_cached *p);
-/* Return a block; lands in THIS thread's TLS (zero atomics), overflow flushes.
- */
+hyle_shared_pool_cache_allocate(hyle_shared_pool_cache *p);
 HYLE_MEM_C_API void
-hyle_shared_pool_cached_deallocate(hyle_shared_pool_cached *p, void *ptr);
-/* Flush THIS thread's TLS freelist to the shards so other threads can see the
- * freed blocks without waiting for this thread to exit (soft-capacity handoff
- * barrier). */
-HYLE_MEM_C_API void
-hyle_shared_pool_cached_publish(hyle_shared_pool_cached *p);
-/* Return EVERY block. Contract: NO block live; quiesce concurrent access first.
- */
-HYLE_MEM_C_API void hyle_shared_pool_cached_reset(hyle_shared_pool_cached *p);
-HYLE_MEM_C_API size_t
-hyle_shared_pool_cached_block_size(const hyle_shared_pool_cached *p);
+hyle_shared_pool_cache_deallocate(hyle_shared_pool_cache *p, void *ptr);
+HYLE_MEM_C_API void hyle_shared_pool_cache_publish(hyle_shared_pool_cache *p);
 HYLE_MEM_C_API uint32_t
-hyle_shared_pool_cached_capacity(const hyle_shared_pool_cached *p);
+hyle_shared_pool_cache_capacity(const hyle_shared_pool_cache *p);
+HYLE_MEM_C_API uint32_t
+hyle_shared_pool_cache_cached(const hyle_shared_pool_cache *p);
+HYLE_MEM_C_API uint32_t
+hyle_shared_pool_cache_transfer_batch(const hyle_shared_pool_cache *p);
+HYLE_MEM_C_API size_t
+hyle_shared_pool_cache_block_size(const hyle_shared_pool_cache *p);
 HYLE_MEM_C_API hyle_allocator
-hyle_shared_pool_cached_as_allocator(hyle_shared_pool_cached *p);
+hyle_shared_pool_cache_as_allocator(hyle_shared_pool_cache *p);
 
-static inline hyle_shared_pool_cached *
-hyle_shared_pool_cached_create_default(size_t block_size,
-                                       uint32_t block_count,
-                                       size_t alignment) {
-  return hyle_shared_pool_cached_create(hyle_system_allocator(), block_size,
-                                        block_count, alignment);
+static inline hyle_shared_pool_cache *
+hyle_shared_pool_cache_create_default(hyle_shared_pool *pool,
+                                      uint32_t capacity,
+                                      uint32_t transfer_batch) {
+  return hyle_shared_pool_cache_create(pool, hyle_system_allocator(), capacity,
+                                       transfer_batch);
 }
 
 /* ---- typed object-pool convenience (header-inline; zero new ABI) ------------
@@ -386,8 +376,8 @@ hyle_shared_pool_cached_create_default(size_t block_size,
  * call would tax every pop). C has no ctor/dtor, so initialize the returned
  * slot yourself and clean it up before release. For real construct/destroy
  * semantics use the C++ hyle::mem::ObjectPool<T>. The unqualified macros bind
- * to the HARD SharedPool (safe default); the *_CACHED_* macros below bind to
- * SharedPoolCached and expose its publish barrier. */
+ * to the HARD SharedPool (safe default); an explicit cache can be layered on
+ * the returned pool with the *_CACHE_* macros below. */
 #define HYLE_OBJECT_POOL_CREATE(backing, T, count)                             \
   hyle_shared_pool_create((backing), sizeof(T), (count), HYLE_ALIGNOF(T))
 /* Acquire a raw T* slot (NULL when the pool is exhausted); release returns it.
@@ -398,18 +388,17 @@ hyle_shared_pool_cached_create_default(size_t block_size,
 #define HYLE_OBJECT_POOL_CREATE_DEFAULT(T, count)                              \
   hyle_shared_pool_create_default(sizeof(T), (count), HYLE_ALIGNOF(T))
 
-/* Cached typed raw-slot counterpart. Same C lifetime model; publish before a
- * cross-thread capacity handoff when the freeing thread remains alive. */
-#define HYLE_OBJECT_POOL_CACHED_CREATE(backing, T, count)                      \
-  hyle_shared_pool_cached_create((backing), sizeof(T), (count), HYLE_ALIGNOF(T))
-#define HYLE_OBJECT_POOL_CACHED_ACQUIRE(pool, T)                               \
-  ((T *)hyle_shared_pool_cached_allocate(pool))
-#define HYLE_OBJECT_POOL_CACHED_RELEASE(pool, p)                               \
-  hyle_shared_pool_cached_deallocate((pool), (p))
-#define HYLE_OBJECT_POOL_CACHED_PUBLISH(pool)                                  \
-  hyle_shared_pool_cached_publish((pool))
-#define HYLE_OBJECT_POOL_CACHED_CREATE_DEFAULT(T, count)                       \
-  hyle_shared_pool_cached_create_default(sizeof(T), (count), HYLE_ALIGNOF(T))
+/* Explicit cached typed raw-slot counterpart over an existing hard pool. */
+#define HYLE_OBJECT_POOL_CACHE_CREATE(pool, metadata, capacity, batch)         \
+  hyle_shared_pool_cache_create((pool), (metadata), (capacity), (batch))
+#define HYLE_OBJECT_POOL_CACHE_ACQUIRE(cache, T)                               \
+  ((T *)hyle_shared_pool_cache_allocate(cache))
+#define HYLE_OBJECT_POOL_CACHE_RELEASE(cache, p)                               \
+  hyle_shared_pool_cache_deallocate((cache), (p))
+#define HYLE_OBJECT_POOL_CACHE_PUBLISH(cache)                                  \
+  hyle_shared_pool_cache_publish((cache))
+#define HYLE_OBJECT_POOL_CACHE_CREATE_DEFAULT(pool, capacity, batch)           \
+  hyle_shared_pool_cache_create_default((pool), (capacity), (batch))
 
 /* ========================================================================== */
 /* StackAllocator — LIFO bump over one owned slab */

@@ -108,7 +108,7 @@ int main(void) {
     /* C inputs are data, not C++ contracts: invalid layouts fail gracefully. */
     CHECK(hyle_shared_pool_create(sys, 0, 1, 0) == NULL);
     CHECK(hyle_shared_pool_create(sys, 16, 1, 3) == NULL);
-    CHECK(hyle_shared_pool_cached_create(sys, 16, 0, 0) == NULL);
+    CHECK(hyle_shared_pool_cache_create(NULL, sys, 8, 2) == NULL);
     CHECK(hyle_stack_allocator_create(sys, 0) == NULL);
     CHECK(hyle_mem_last_error()[0] != '\0');
   }
@@ -293,25 +293,35 @@ int main(void) {
     CHECK(hyle_shared_pool_create(bad, 64, 4, 0) == NULL);
   }
 
-  /* ---- SharedPoolCached: cached API family / publish / allocator view ---- */
+  /* ---- SharedPoolCache: explicit local cache / publish / allocator view -- */
   {
     typedef struct {
       unsigned char bytes[128];
     } CachedNode;
-    hyle_shared_pool_cached *pool =
-        HYLE_OBJECT_POOL_CACHED_CREATE_DEFAULT(CachedNode, 8);
+    hyle_shared_pool *pool = HYLE_OBJECT_POOL_CREATE_DEFAULT(CachedNode, 8);
     CHECK(pool != NULL);
-    CHECK(hyle_shared_pool_cached_block_size(pool) == sizeof(CachedNode));
-    CHECK(hyle_shared_pool_cached_capacity(pool) == 8u);
+    hyle_shared_pool_cache *cache =
+        HYLE_OBJECT_POOL_CACHE_CREATE_DEFAULT(pool, 4, 2);
+    CHECK(cache != NULL);
+    CHECK(hyle_shared_pool_cache_block_size(cache) == sizeof(CachedNode));
+    CHECK(hyle_shared_pool_cache_capacity(cache) == 4u);
+    CHECK(hyle_shared_pool_cache_transfer_batch(cache) == 2u);
     CachedNode *a =
-        (CachedNode *)hyle_shared_pool_cached_allocate(pool);
+        (CachedNode *)hyle_shared_pool_cache_allocate(cache);
     CHECK(a != NULL);
     a->bytes[0] = 0x5A;
     CHECK(a->bytes[0] == 0x5A);
-    hyle_shared_pool_cached_deallocate(pool, a);
-    HYLE_OBJECT_POOL_CACHED_PUBLISH(pool);
+    hyle_shared_pool_cache_deallocate(cache, a);
+    CachedNode *macro_node =
+        HYLE_OBJECT_POOL_CACHE_ACQUIRE(cache, CachedNode);
+    CHECK(macro_node != NULL);
+    HYLE_OBJECT_POOL_CACHE_RELEASE(cache, macro_node);
+    CHECK(hyle_shared_pool_cache_cached(cache) > 0u);
+    CHECK(hyle_shared_pool_cache_cached(cache) <= 2u);
+    HYLE_OBJECT_POOL_CACHE_PUBLISH(cache);
+    CHECK(hyle_shared_pool_cache_cached(cache) == 0u);
 
-    hyle_allocator pv = hyle_shared_pool_cached_as_allocator(pool);
+    hyle_allocator pv = hyle_shared_pool_cache_as_allocator(cache);
     CHECK(pv.alloc != NULL && pv.free != NULL && pv.realloc != NULL);
     void *b = pv.realloc(pv.state, NULL, 0, 64, HYLE_ALIGNOF(CachedNode));
     CHECK(b != NULL);
@@ -321,9 +331,10 @@ int main(void) {
     b = pv.alloc(pv.state, 64, HYLE_ALIGNOF(CachedNode));
     CHECK(b != NULL);
     pv.free(pv.state, b, 64, HYLE_ALIGNOF(CachedNode));
-    hyle_shared_pool_cached_publish(pool);
-    hyle_shared_pool_cached_reset(pool);
-    hyle_shared_pool_cached_destroy(pool);
+    hyle_shared_pool_cache_publish(cache);
+    hyle_shared_pool_cache_destroy(cache);
+    hyle_shared_pool_reset(pool);
+    hyle_shared_pool_destroy(pool);
   }
 
   /* ---- typed object-pool convenience macros (raw slot, user-init) ---- */
@@ -501,8 +512,12 @@ int main(void) {
     CHECK(hyle_shared_pool_create(oom, 64, 4, 0) == NULL);
     CHECK(hyle_mem_last_error_code() == HYLE_MEM_ERROR_OUT_OF_MEMORY);
     CHECK(hyle_mem_last_error()[0] != '\0');
-    CHECK(hyle_shared_pool_cached_create(oom, 64, 4, 0) == NULL);
+    hyle_shared_pool *cache_core =
+        hyle_shared_pool_create_default(64, 4, 0);
+    CHECK(cache_core != NULL);
+    CHECK(hyle_shared_pool_cache_create(cache_core, oom, 4, 2) == NULL);
     CHECK(hyle_mem_last_error()[0] != '\0');
+    hyle_shared_pool_destroy(cache_core);
 
     /* StackAllocator slab OOM -> NULL + last-error */
     CHECK(hyle_stack_allocator_create(oom, 4096) == NULL);

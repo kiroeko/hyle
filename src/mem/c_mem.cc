@@ -26,6 +26,7 @@
 #include "hyle/mem/fixed_pool.h"
 #include "hyle/mem/growable_pool.h"
 #include "hyle/mem/hugepage.h"
+#include "hyle/mem/pool_cache.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/region.h"
 #include "hyle/mem/shared_pool.h"
@@ -245,14 +246,13 @@ struct hyle_fixed_pool_o {
       : backing(b), owns_control(owns), pool(storage, size) {}
 };
 
-struct hyle_shared_pool_cached_o {
+struct hyle_shared_pool_cache_o {
   hyle_allocator backing;
-  hyle::mem::SharedPoolCached pool;
-  hyle_shared_pool_cached_o(hyle_allocator b, std::size_t block_size,
-                            std::uint32_t block_count,
-                            std::size_t alignment) noexcept
-      : backing(b), pool(to_cpp(&backing), block_size, block_count, alignment) {
-  }
+  hyle::mem::SharedPoolCache cache;
+  hyle_shared_pool_cache_o(hyle_allocator m, hyle::mem::SharedPool &pool,
+                           std::uint32_t capacity,
+                           std::uint32_t transfer_batch) noexcept
+      : backing(m), cache(pool, to_cpp(&backing), capacity, transfer_batch) {}
 };
 
 struct hyle_stack_allocator_o {
@@ -632,39 +632,32 @@ hyle_allocator hyle_shared_pool_as_allocator(hyle_shared_pool_o *p) {
   return from_cpp(p->pool.as_allocator());
 }
 
-/* ---- SharedPoolCached (soft capacity) -------------------------------------
+/* ---- SharedPoolCache (explicit owner-local soft capacity) -----------------
  */
 
-hyle_shared_pool_cached_o *
-hyle_shared_pool_cached_create(hyle_allocator backing, size_t block_size,
-                               uint32_t block_count, size_t alignment) {
+hyle_shared_pool_cache_o *
+hyle_shared_pool_cache_create(hyle_shared_pool_o *pool,
+                              hyle_allocator metadata, uint32_t capacity,
+                              uint32_t transfer_batch) {
   set_mem_error(HYLE_MEM_ERROR_NONE, nullptr);
-  if (!valid_backing(backing)) {
+  if (pool == nullptr || !valid_backing(metadata) || capacity == 0) {
     set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-                  "hyle_shared_pool_cached_create: invalid "
-                  "backing (a fn pointer is null)");
+                  "hyle_shared_pool_cache_create: pool, metadata allocator "
+                  "and nonzero capacity are required");
     return nullptr;
   }
-  std::size_t normalized_alignment = 0;
-  if (!normalize_alignment(alignment, &normalized_alignment) ||
-      !valid_shared_pool_layout(block_size, block_count,
-                                normalized_alignment)) {
-    set_mem_error(HYLE_MEM_ERROR_INVALID_ARGUMENT,
-        "hyle_shared_pool_cached_create: invalid or overflowing pool layout");
-    return nullptr;
-  }
-  auto *p = allocate_handle<hyle_shared_pool_cached_o>(
-      backing, block_size, block_count, normalized_alignment);
+  auto *p = allocate_handle<hyle_shared_pool_cache_o>(
+      metadata, pool->pool, capacity, transfer_batch);
   if (p == nullptr) {
     set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_shared_pool_cached_create: control "
+                  "hyle_shared_pool_cache_create: control "
                   "allocation failed (out of memory)");
     return nullptr;
   }
-  if (!p->pool.valid()) {
+  if (!p->cache.valid()) {
     free_handle(p);
     set_mem_error(HYLE_MEM_ERROR_OUT_OF_MEMORY,
-                  "hyle_shared_pool_cached_create: slab "
+                  "hyle_shared_pool_cache_create: index metadata "
                   "allocation failed (out of memory)");
     return nullptr;
   }
@@ -672,43 +665,46 @@ hyle_shared_pool_cached_create(hyle_allocator backing, size_t block_size,
   return p;
 }
 
-void hyle_shared_pool_cached_destroy(hyle_shared_pool_cached_o *p) {
+void hyle_shared_pool_cache_destroy(hyle_shared_pool_cache_o *p) {
   free_handle(p);
 }
 
-void *hyle_shared_pool_cached_allocate(hyle_shared_pool_cached_o *p) {
-  return p ? p->pool.allocate() : nullptr;
+void *hyle_shared_pool_cache_allocate(hyle_shared_pool_cache_o *p) {
+  return p ? p->cache.allocate() : nullptr;
 }
 
-void hyle_shared_pool_cached_deallocate(hyle_shared_pool_cached_o *p,
-                                        void *ptr) {
+void hyle_shared_pool_cache_deallocate(hyle_shared_pool_cache_o *p,
+                                       void *ptr) {
   if (p)
-    p->pool.deallocate(ptr);
+    p->cache.deallocate(ptr);
 }
 
-void hyle_shared_pool_cached_publish(hyle_shared_pool_cached_o *p) {
+void hyle_shared_pool_cache_publish(hyle_shared_pool_cache_o *p) {
   if (p)
-    p->pool.publish_thread_cache();
+    p->cache.publish();
 }
 
-void hyle_shared_pool_cached_reset(hyle_shared_pool_cached_o *p) {
-  if (p)
-    p->pool.reset();
+uint32_t hyle_shared_pool_cache_capacity(const hyle_shared_pool_cache_o *p) {
+  return p ? p->cache.capacity() : 0;
 }
 
-size_t hyle_shared_pool_cached_block_size(const hyle_shared_pool_cached_o *p) {
-  return p ? p->pool.block_size() : 0;
+uint32_t hyle_shared_pool_cache_cached(const hyle_shared_pool_cache_o *p) {
+  return p ? p->cache.cached() : 0;
 }
 
-uint32_t hyle_shared_pool_cached_capacity(const hyle_shared_pool_cached_o *p) {
-  return p ? p->pool.capacity() : 0;
+uint32_t
+hyle_shared_pool_cache_transfer_batch(const hyle_shared_pool_cache_o *p) {
+  return p ? p->cache.transfer_batch() : 0;
 }
 
-hyle_allocator
-hyle_shared_pool_cached_as_allocator(hyle_shared_pool_cached_o *p) {
+size_t hyle_shared_pool_cache_block_size(const hyle_shared_pool_cache_o *p) {
+  return p ? p->cache.block_size() : 0;
+}
+
+hyle_allocator hyle_shared_pool_cache_as_allocator(hyle_shared_pool_cache_o *p) {
   if (!p)
     return hyle_allocator{nullptr, nullptr, nullptr, nullptr};
-  return from_cpp(p->pool.as_allocator());
+  return from_cpp(p->cache.as_allocator());
 }
 
 /* ---- StackAllocator --------------------------------------------------------

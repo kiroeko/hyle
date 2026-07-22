@@ -258,11 +258,11 @@ mem/ 提供一组**专用分配器**,各自为一种分配模式设计。**选�
 | **一个阶段内分配很多、整批一次性释放**(一次 taskgraph pass、一个请求的临时对象) | `Region` / `PooledRegion` / `StackAllocator` | 纯指针 bump，**无 per-object free**，clear/reset/析构整批释放；分别是 growable owned、借一个 SharedPool block、owned slab + mark/rewind。 |
 | **单线程、同一种固定大小对象反复 alloc/free**(对象池) | `GrowablePool<T>` | 单线程 free-list、无原子、按需增长。这是单线程对象池的正解。 |
 | **多线程共享有界固定池，容量必须准确** | `SharedPool` / `ObjectPool<T>` | **硬容量默认**：无 TLS 隐藏，completed free 立即共享；稳定双快照避免分片扫描假耗尽。正常 32-bit tagged CAS，tag 饱和的 shard 永久切入 serialized fallback，绝不回绕。 |
-| **同线程复用热点，池有充足余量** | `SharedPoolCached` / `ObjectPoolCached<T>` | **软容量 opt-in**：每线程 TLS 128 slots，32-block magazine；同线程 free→alloc 零原子。跨线程 handoff 前由 free 方 `publish_thread_cache()`。 |
+| **worker-local 复用热点，池有充足余量** | `SharedPoolCache` / `ObjectPoolCache<T>` over hard pool | **软容量 opt-in**：cache storage/capacity/batch 显式；本地 free→alloc 零原子。handoff/idle 前由 owner `publish()`。 |
 
-**一句话决策树**：单纯 malloc→`SystemAllocator`；request/frame 整批丢→`Region`；借池中固定 scratch block→`PooledRegion`；LIFO scratch→`StackAllocator`；单线程对象池→`GrowablePool`；多线程共享且 quota 必须准确→`SharedPool`/`ObjectPool`；测得同线程 churn 热点且能接受软容量→cached 版本。
+**一句话决策树**：单纯 malloc→`SystemAllocator`；request/frame 整批丢→`Region`；借池中固定 scratch block→`PooledRegion`；LIFO scratch→`StackAllocator`；单线程对象池→`GrowablePool`；多线程共享且 quota 必须准确→`SharedPool`/`ObjectPool`；测得 owner-local churn 热点且能接受软容量→在 hard pool 上显式挂 cache。
 
-硬池与 cached 池共用 sharded core，但合同不同：`SharedPool` 不会因 cache 隐藏 block；`SharedPoolCached` 可以在其他线程 TLS 仍有 free block 时返回 `nullptr`。不要把 cached 池的性能数字冒充硬池性能。最新数字与对手形状见 [`performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)；调用红线见 [`usage-contract.md`](./usage-contract.md) §2.1。
+hard pool 与 cache 是组合层，但合同不同：`SharedPool` 不隐藏 block；`SharedPoolCache` 可能在其他 owner cache 仍有 free block 时返回 `nullptr`。不要把 cache 性能冒充 hard pool 性能。最新数字与对手形状见 [`performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)；调用红线见 [`usage-contract.md`](./usage-contract.md) §2.1。
 
 ### 3.2 container —— SwissTable（对标 absl 追平/超，快 std 2.4-5.3x）
 ```cpp

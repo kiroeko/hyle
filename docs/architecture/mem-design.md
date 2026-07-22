@@ -27,8 +27,8 @@ mem 不提供 pinned allocator 或单块 staging convenience。compute `Buffer` 
 | `HugeRegion` | 显式大块内存调用方 | THP/NUMA 是显式策略，不由 pool 根据 allocator identity 偷换 backing |
 | graph evaluation 临时区 | `parallel_eval` 的 level/handle/outcome 与 wavefront CSR/state | 明确的 phase lifetime，是通用 owned Region 的内部 workload；graph-aware liveness/reserve 仍归 graph |
 | `PooledRegion` / `StackAllocator` / `GrowablePool` | 无生产调用 | 当前仅公开能力、C draft surface、测试与 benchmark |
-| `SharedPool` / `SharedPoolCached` | 无生产实例 | 当前仅公开能力、测试与 benchmark |
-| `ObjectPool<T>` / `ObjectPoolCached<T>` | 无生产实例 | 已实现并测试，不是占位符 |
+| `SharedPool` / `SharedPoolCache` | 无生产实例 | hard core + 显式 owner-local cache；当前仅公开能力、测试与 benchmark |
+| `ObjectPool<T>` / `ObjectPoolCache<T>` | 无生产实例 | typed hard core + 显式 cache，已实现并测试 |
 | compute `Buffer` / `DevicePool` | 当前无生产创建点 | 不归 mem；Buffer 已显式分开 native handle、host mapping 与 coherence 操作 |
 
 内部系统已经坐实“通用 allocator + fiber stack”，但 HYLE 是公开 infra 库，其他能力是否保留必须再看成熟库的广泛用户形状，不能只按内部调用计数裁剪。
@@ -96,7 +96,7 @@ oneTBB、mimalloc、Folly 与 marl 源码快照，不自行下载或更新参考
 
 ## 5. 固定块池
 
-`SharedPool` 与 `SharedPoolCached` 共用 `detail::ShardedSlab`，但公开合同不同。
+`SharedPool` 独占 `detail::ShardedSlab`；`SharedPoolCache` 通过 narrow batch hooks 组合在 hard core 上，不复制 slab，也不另建 TLS registry。
 
 ### 5.1 `SharedPool`：hard bounded
 
@@ -106,30 +106,31 @@ oneTBB、mimalloc、Folly 与 marl 源码快照，不自行下载或更新参考
 - 64-bit packed head；32-bit version 饱和后永久进入该 shard 的 serialized mode，不回绕。
 - 用于严格 object/block quota、跨线程 handoff；本地 request churn 不是它的吞吐强项。
 
-### 5.2 `SharedPoolCached`：soft cached
+### 5.2 `SharedPoolCache`：显式 owner-local soft cache
 
-- 每 `(thread,pool)` TLS 128 slots，32-block magazine。
-- 同线程命中零原子；其他活线程 TLS 中的 free block 暂不可见。
-- `publish_thread_cache()` 是显式可见性边界。
-- 只用于池容量高于并发 working set、同线程复用为主的场景；不得宣传为 hard capacity。
+- 构造时绑定 `SharedPool`；caller-owned `span<uint32_t>` 可做到 cache metadata 零隐藏分配，也可显式注入 metadata allocator。
+- capacity 与 transfer batch 是每个 cache 的公开参数；128/32 只是 convenience 默认值。
+- owner-local 命中零原子；其他 cache 中的 free block 暂不可见；`publish()`/析构是显式可见性边界。
+- cache 本身 single-owner，不维护 TLS node/registry；多个 cache 可并发绑定同一 hard core。
+- 只用于池容量高于并发 working set、owner-local 复用为主的场景；不得宣传为 hard capacity。
 
-两者保留。默认 shipping 热路径不增加 per-slot bitmap/atomic live counter；foreign/misaligned pointer 仍做无状态 membership fail-fast。double free、outstanding object 属调用方契约违反，`HYLE_TESTING` 用 per-slot state fail-fast；额外状态和指令在 shipping 构建完全剥离，不破坏 cached 零原子合同。
+两层保留。默认 shipping 热路径不增加 per-slot bitmap/atomic live counter；foreign/misaligned pointer 仍做无状态 membership fail-fast。double free、outstanding object 属调用方契约违反，`HYLE_TESTING` 用 per-slot state fail-fast；额外状态和指令在 shipping 构建完全剥离，不破坏 cache 零原子合同。
 
 `SharedPool` 始终服从 injected backing。需要 THP/NUMA 的调用方应显式提供相应 allocator/provider；pool 不根据 allocator identity 偷换 storage domain。
 
 ## 6. typed object pool
 
-`ObjectPool<T>` 与 `ObjectPoolCached<T>` 已实现：placement-new、显式析构、构造异常退槽、OOM/耗尽返回 NULL；后者暴露 publish。当前策略固定为每次 create/destroy 都 Reconstruct。
+`ObjectPool<T>` 与附着其上的 `ObjectPoolCache<T>` 已实现：placement-new、显式析构、构造异常退槽、OOM/耗尽返回 NULL；后者暴露 `publish()`。当前策略固定为每次 create/destroy 都 Reconstruct。
 
-产品处置：保留二者的 hard/soft typed shell，并补齐独立的生命周期能力：
+产品处置：保留 hard core / soft cache typed shell，并补齐独立的生命周期能力：
 
 1. move-only `PoolLoan<T>` 已实现，作用域退出自动 destroy/return，减少异常/早退漏还；Pool 必须比 Loan 长寿。
 2. 当前手工 `create/destroy` 保持 `Reconstruct` 合同：borrow 时构造、return 时析构。pool 析构前必须已归还并析构全部 live object；这是调用方合同，不得暗藏。
-3. `PreservingObjectPool<T>` 已作为独立类型实现：池构造时一次性构造全部对象，return 保留状态，池析构时一次性析构；不与 TLS Cached 混名。
+3. `PreservingObjectPool<T>` 已作为独立类型实现：池构造时一次性构造全部对象，return 保留状态，池析构时一次性析构；不与 slot cache 混名。
 4. 默认 API 仍是 nonblocking try；需要“等到有对象”的调用方在 sched 层用 Semaphore/Channel 包装。
 5. 当前 shipping 对 foreign/misaligned pointer 做 membership fail-fast；`HYLE_TESTING` 已补 per-slot liveness、double return/destroy 与析构时 outstanding allocation，shipping 不加原子计数税。
 
-`ObjectPoolCached<T>` 不是待实现项，也不是 Preserve object cache；“cached”只表示 free slot 的 TLS 可见性。Preserve 必须由独立 policy/name 表达。
+`ObjectPoolCache<T>` 不是 Preserve object cache；Cache 只表示 free slot 的 owner-local 可见性。Preserve 必须由独立 policy/name 表达。
 
 ## 7. region、stack 与增长池
 
@@ -183,9 +184,9 @@ external 能力按 allocation model 分成两个类型：
 | `SystemAllocator` / `Allocator` / typed helpers | 保留；typed count 回绕已修 | 内部广泛真实消费者，成熟库共同基础 |
 | `PmrResource` | 保留；validity/full-vtable equality 已修 | std 生态适配边界 |
 | `FiberStackPool` | 保留 | sched 真实热路径 |
-| `SharedPool` / `SharedPoolCached` | 保留；injected backing 始终 authoritative | hard capacity 与 TLS soft visibility 是不同真实合同 |
-| `ObjectPool` / `ObjectPoolCached` | Reconstruct core + `PoolLoan` 已实现 | typed bounded reuse、hard/soft visibility 与 RAII return |
-| `PreservingObjectPool` | 已实现独立 Preserve lifetime | 昂贵对象只构析一次，不与 TLS Cached 混淆 |
+| `SharedPool` / `SharedPoolCache` | 保留；显式组合，injected backing authoritative | hard capacity 与 owner-local soft visibility 是不同真实合同 |
+| `ObjectPool` / `ObjectPoolCache` | Reconstruct core/cache + `PoolLoan` 已实现 | typed bounded reuse、hard/soft visibility 与 RAII return |
+| `PreservingObjectPool` | 已实现独立 Preserve lifetime | 昂贵对象只构析一次，不与 slot cache 混淆 |
 | `StackAllocator` | 保留；alignment 加法回绕已修 | 常见 LIFO scratch |
 | `GrowablePool` | 保留；diagnostics 已实现 | 常见 single-thread typed reuse；当前无生产消费者 |
 | `PooledRegion` | 精确命名已完成，旧兼容名已删除 | borrowed single hard-pool block |
@@ -204,6 +205,7 @@ external 能力按 allocation model 分成两个类型：
 3. `SharedPool` 不再根据 system allocator identity 隐式进入 HugeRegion；THP/NUMA 由显式 backing/provider 表达。
 4. compute Buffer 分开 native handle / mapped host pointer；范围 flush/invalidate 按 Vulkan `nonCoherentAtomSize` 扩边；零长度公共 no-op；async Kernel/Buffer 存活和 producer completion 责任显式。错误 pinned allocator 与单块 staging API 已删除。
 5. `Region`/`FixedRegion`、`FixedPool`、`QuotaAllocator`、`PoolLoan` 与 Preserve 类型均有独立 ownership/capacity/lifetime 合同，并已接入 C ABI（模板对象 policy 除外）。
+6. 隐式 `SharedPoolCached`/`ObjectPoolCached` 与跨 DLL TLS registry 已删除；soft 层改为显式 `SharedPoolCache`/`ObjectPoolCache`，Windows 配对 A/B 同时降低 request/handoff 延迟。
 
 ## 11. 用户选型
 
@@ -217,7 +219,7 @@ request/frame 整批释放                → Region
 固定 slab 上 LIFO scratch             → StackAllocator
 单线程同尺寸对象、按需增长            → GrowablePool<T>
 多线程固定 block/object、严格容量      → SharedPool / ObjectPool<T>
-同线程复用热点、容量有余量             → SharedPoolCached / ObjectPoolCached<T>
+owner-local 复用热点、容量有余量         → SharedPoolCache / ObjectPoolCache<T> over hard core
 昂贵对象保留状态                       → PreservingObjectPool
 phase 临时区严格 reserved-byte limit  → Region(size_limit)
 任意 backing 的严格 live-byte budget  → QuotaAllocator

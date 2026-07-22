@@ -27,7 +27,7 @@
 |---|---|---|---|
 | Allocator 接口 + SYS_* 家族 | `sys/allocator.h` | ✅ 直接继承 | C-ABI 友好，接口层留用 |
 | SystemAllocator / AlignedAllocator | `sys/allocator.cc` | 🔧 改后继承 | 含计数 bug |
-| MemoryArena（clay 原名：无锁定长块池）| `sys/memory_arena.cc` | 🔧 改后继承 | HYLE 当前由同一 sharded core 上的 `SharedPool`（硬容量、completed free 立即共享、稳定双快照）与 `SharedPoolCached`（软容量、TLS 128 + magazine 32 + publish）覆盖；正常 32-bit tagged CAS，tag 饱和永久切 serialized shard，绝不回绕 |
+| MemoryArena（clay 原名：无锁定长块池）| `sys/memory_arena.cc` | 🔧 改后继承 | HYLE 当前由 `SharedPool` hard core（completed free 立即共享、稳定双快照）与显式 `SharedPoolCache` owner-local 层（可配 capacity/batch + publish）覆盖；正常 32-bit tagged CAS，tag 饱和永久切 serialized shard，绝不回绕 |
 | Arena（bump 分配器）| `sys/memory_arena.cc:76` | ✅ 直接继承 | 无锁 bump |
 | MemoryPool（STL 兼容）| `utils/memory_pool.h` | ✅ 继承 | 经典第三方实现 |
 | generic_allocator / alignment | `utils/generic_allocator.h`、`sys/alignment.h` | ✅ 继承 | 薄封装，正确 |
@@ -133,7 +133,7 @@
 
 ## 总账
 
-**继承面（约占 HYLE 1/3，16-18k 行可留用）**：catomics 原子层、flat hashmap + carray + cstring + string_buf 容器、内存分配器家族（clay MemoryArena 能力现由 HYLE `SharedPool` / `SharedPoolCached` 覆盖）、math/utils + consts + host_device 宏、thread_pool（长任务池）、async_value（补 waiter）、taskgraph（剥离特化）。
+**继承面（约占 HYLE 1/3，16-18k 行可留用）**：catomics 原子层、flat hashmap + carray + cstring + string_buf 容器、内存分配器家族（clay MemoryArena 能力现由 HYLE `SharedPool` / `SharedPoolCache` 覆盖）、math/utils + consts + host_device 宏、thread_pool（长任务池）、async_value（补 waiter）、taskgraph（剥离特化）。
 
 **负债面 / 从零造（HYLE 真正"加的东西"，30-50k 行级）**：
 

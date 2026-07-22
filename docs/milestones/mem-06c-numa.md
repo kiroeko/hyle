@@ -1,6 +1,6 @@
 # mem-06c：NUMA 就近放置
 
-> **历史名称边界：**本文中的“大 `MemoryArena` slab”现指 `SharedPool` / `SharedPoolCached` 共用的 sharded core slab；旧 `memory_arena.h` 与 `hyle_memory_arena_*` 已删除。
+> **后续替代（2026-07-22）：**本文中的“大 `MemoryArena` slab”现指 `SharedPool` hard core；soft 层是显式 `SharedPoolCache`，不另有 slab。
 
 | 字段 | 值 |
 |---|---|
@@ -36,4 +36,3 @@ NUMA/大页原语随 platform C ABI v3 导出（`include/hyle/c/platform.h`，`h
 - platform/mem Numa* 全绿；大 MemoryArena 可分配释放  
 - 双平台 mem/platform 回归不破；C ABI `hyle_platform_c_test` v3 smoke 过  
 - Bind 诚实失败：多 node Windows 硬 Bind/Interleave 返 false（`numa_test.cc` 按平台断言）  
-

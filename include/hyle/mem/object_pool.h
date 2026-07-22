@@ -4,15 +4,19 @@
 #include <cstddef>
 #include <cstdint>
 #include <limits>
+#include <span>
 #include <type_traits>
 #include <utility>
 
 #include "hyle/macros.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/pool_loan.h"
+#include "hyle/mem/pool_cache.h"
 #include "hyle/mem/shared_pool.h"
 
 namespace hyle::mem {
+
+template <class T> class ObjectPoolCache;
 
 // Typed object pool: fixed-capacity create/destroy of T with slot reuse, on top
 // of a sharded shared block pool. create() placement-news a T in a pooled slot;
@@ -20,23 +24,9 @@ namespace hyle::mem {
 // global new/delete (fixes clay bug #3, where slots were taken via the
 // allocator but freed with global delete -- an alloc/free mismatch = UB).
 //
-// Two flavors mirror the two pools (see shared_pool.h), differing only in the
-// backing:
-//
-//   ObjectPool<T>        over SharedPool (HARD capacity). A destroyed object's
-//   slot is
-//                        immediately reusable by any thread; never falsely
-//                        exhausts. The safe default -- use it unless you have a
-//                        measured same- thread-churn hot spot.
-//
-//   ObjectPoolCached<T>  over SharedPoolCached (SOFT capacity, per-thread TLS
-//   fast
-//                        path). Max throughput when a thread reuses its own
-//                        objects and the pool is provisioned above the
-//                        concurrent working set; a slot freed on thread A is
-//                        invisible to other threads until A publishes/exits.
-//                        Wrong tool for a capacity-tight cross-thread quota
-//                        (use ObjectPool<T>).
+// ObjectPool<T> owns the hard-capacity SharedPool. Hot workers may explicitly
+// attach an ObjectPoolCache<T>; cache lifetime, capacity, transfer batch and
+// publication are then visible in the object graph instead of hidden in TLS.
 //
 // Both are thread-safe (the backing pool is lock-free): create()/destroy() may
 // run concurrently from many threads. Construction/destruction are explicit;
@@ -94,31 +84,96 @@ public:
   bool valid() const noexcept { return pool_.valid(); }
   std::uint32_t capacity() const noexcept { return pool_.capacity(); }
 
-  // Present only for ObjectPoolCached<T>: publish this thread's destroyed slots
-  // so other threads can acquire them without waiting for this thread to exit.
-  void publish_thread_cache() noexcept
-    requires requires(Pool &p) { p.publish_thread_cache(); }
+private:
+  template <class> friend class ObjectPoolCache;
+
+  SharedPool &shared_pool() noexcept
+    requires std::is_same_v<Pool, SharedPool>
   {
-    pool_.publish_thread_cache();
+    return pool_;
   }
 
-private:
   Pool pool_;
 };
 
 // HARD-capacity typed pool (default, immediate cross-thread visibility).
 template <class T> using ObjectPool = BasicObjectPool<T, SharedPool>;
 
-// SOFT-capacity typed pool (per-thread TLS fast path, max same-thread
-// throughput).
-template <class T>
-using ObjectPoolCached = BasicObjectPool<T, SharedPoolCached>;
+// Explicit owner-local typed cache over an ObjectPool<T>. The hard pool must
+// outlive this cache and every live object created through it. One cache is
+// used by one owner at a time; distinct caches may operate concurrently.
+template <class T> class ObjectPoolCache {
+public:
+  static_assert(std::is_nothrow_destructible_v<T>,
+                "ObjectPoolCache requires a non-throwing destructor");
+
+  ObjectPoolCache(ObjectPool<T> &pool, std::span<std::uint32_t> storage,
+                  std::uint32_t transfer_batch =
+                      SharedPoolCache::kDefaultTransferBatch) noexcept
+      : cache_(pool.shared_pool(), storage, transfer_batch) {}
+
+  ObjectPoolCache(ObjectPool<T> &pool, Allocator metadata,
+                  std::uint32_t capacity = SharedPoolCache::kDefaultCapacity,
+                  std::uint32_t transfer_batch =
+                      SharedPoolCache::kDefaultTransferBatch) noexcept
+      : cache_(pool.shared_pool(), metadata, capacity, transfer_batch) {}
+
+  explicit ObjectPoolCache(
+      ObjectPool<T> &pool,
+      std::uint32_t capacity = SharedPoolCache::kDefaultCapacity,
+      std::uint32_t transfer_batch =
+          SharedPoolCache::kDefaultTransferBatch) noexcept
+      : cache_(pool.shared_pool(), capacity, transfer_batch) {}
+
+  HYLE_DISABLE_COPY_AND_MOVE(ObjectPoolCache);
+
+  template <class... Args> T *create(Args &&...args) {
+    void *slot = cache_.allocate();
+    if (slot == nullptr)
+      return nullptr;
+    try {
+      return ::new (slot) T(std::forward<Args>(args)...);
+    } catch (...) {
+      cache_.deallocate(slot);
+      throw;
+    }
+  }
+
+  void destroy(T *p) noexcept {
+    if (p == nullptr)
+      return;
+#if defined(HYLE_TESTING)
+    cache_.testing_assert_checked_out(p);
+#endif
+    p->~T();
+    cache_.deallocate(p);
+  }
+
+  void return_object(T *p) noexcept { destroy(p); }
+
+  template <class... Args>
+  PoolLoan<T, ObjectPoolCache> try_loan(Args &&...args) {
+    return PoolLoan<T, ObjectPoolCache>(
+        this, create(std::forward<Args>(args)...));
+  }
+
+  bool valid() const noexcept { return cache_.valid(); }
+  std::uint32_t capacity() const noexcept { return cache_.capacity(); }
+  std::uint32_t cached() const noexcept { return cache_.cached(); }
+  std::uint32_t transfer_batch() const noexcept {
+    return cache_.transfer_batch();
+  }
+  void publish() noexcept { cache_.publish(); }
+
+private:
+  SharedPoolCache cache_;
+};
 
 // Fixed-capacity pool for expensive reusable objects. Every T is constructed
 // exactly once during pool construction, acquire/release preserves its state,
 // and every T is destroyed exactly once with the pool. This is intentionally
-// separate from ObjectPoolCached: Preserve is an object-lifetime policy, while
-// Cached is a free-slot visibility/concurrency policy.
+// separate from ObjectPoolCache: Preserve is an object-lifetime policy, while
+// Cache is a free-slot visibility/concurrency policy.
 //
 // Constructor arguments are observed as const lvalues and reused for every T.
 // Use an object with an explicit reset() method when per-slot runtime
@@ -236,9 +291,5 @@ private:
 
 template <class T>
 using PreservingObjectPool = BasicPreservingObjectPool<T, SharedPool>;
-
-template <class T>
-using PreservingObjectPoolCached =
-    BasicPreservingObjectPool<T, SharedPoolCached>;
 
 } // namespace hyle::mem

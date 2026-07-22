@@ -30,7 +30,7 @@ system allocator）；payload 始终只来自调用方 storage，绝不隐藏 fa
 | FixedRegion | `hyle_fixed_region_init(control,storage)` 或 `create` → `destroy` | external bump；init 严格 no-heap |
 | FixedPool | `hyle_fixed_pool_init(control,storage)` 或 `create` → `destroy` | external variable-size alloc/free；init 严格 no-heap |
 | SharedPool | `hyle_shared_pool_create` → `destroy` | **硬容量**；completed free 立即对所有线程可见 |
-| SharedPoolCached | `hyle_shared_pool_cached_create` → `destroy` | **软容量**；每线程 TLS cache，跨线程交接前 publish |
+| SharedPoolCache | `hyle_shared_pool_cache_create(pool, metadata, ...)` → `destroy` | **软视图**；显式 owner/capacity/batch，publish 后回 hard core |
 | StackAllocator | `hyle_stack_allocator_create` → `destroy` | 自有 slab，单线程 LIFO bump |
 | PooledRegion | `hyle_pooled_region_create(pool)` → `destroy` | 借 `SharedPool` 一个块 |
 | GrowablePool | `hyle_growable_pool_create` → `destroy` | 单线程、按需增长的裸槽池 |
@@ -120,29 +120,28 @@ hyle_fixed_pool_destroy(pool); /* 不释放 control 或 payload */
 
 C 宏不运行 ctor/dtor。需要构造/析构语义时用 C++ `hyle::mem::ObjectPool<T>`；它默认同样是硬容量。
 
-## 4. SharedPoolCached：软容量 TLS 快路
+## 4. SharedPoolCache：显式 owner-local 快路
 
-`SharedPoolCached` 与 `SharedPool` 共用同一个 sharded core，但增加每 `(thread,pool)` 的 TLS freelist：每线程最多 **128 slots**，shared core 与 TLS 之间按 **32-block magazine** 批量转移。同线程 free→alloc 热路零原子。
+`SharedPoolCache` 附着到已有的 hard `SharedPool`。cache handle 与 `uint32_t` index array 来自显式 metadata allocator；capacity 与 transfer batch 都是构造参数。一个 cache 同时只由一个 owner 使用，不再有隐藏 TLS node 或跨 DLL registry。
 
-代价是软容量：A 线程 TLS 中已 free 的块，在 A publish、cache overflow 或线程退出前，B 看不到。容量紧贴工作集、或跨线程 free 后必须立即复用时，应直接使用 `SharedPool`。
+代价是软容量：cache 中已 free 的块在 `publish()`/destroy 前，hard core 和其他 cache 看不到。容量紧贴工作集、或跨线程 free 后必须立即复用时，应直接使用 `SharedPool`。
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_shared_pool_cached_create` / `destroy` | 建/销软容量池；资源与契约错误模型同 `SharedPool` |
-| `hyle_shared_pool_cached_allocate` / `deallocate` | TLS 快路 + 32-block magazine；其他线程 TLS 中的 free 块不可见 |
-| `hyle_shared_pool_cached_publish(p)` | 把**当前线程**的 TLS cache 发布到 shared core |
-| `hyle_shared_pool_cached_reset(p)` | 清所有注册 cache 并重建 shard；要求无活块且并发静默 |
-| `hyle_shared_pool_cached_block_size` / `capacity` | 查询 |
-| `hyle_shared_pool_cached_as_allocator(p)` | 借用型 allocator 视图 |
+| `hyle_shared_pool_cache_create(pool, metadata, capacity, batch)` / `destroy` | 绑定 hard pool；destroy 自动 publish；pool 必须更长寿 |
+| `hyle_shared_pool_cache_allocate` / `deallocate` | owner-local 快路；其他 cache 中的 free 块不可见 |
+| `hyle_shared_pool_cache_publish(p)` | 把本地 free indices 发布回 shared core |
+| `capacity` / `cached` / `transfer_batch` / `block_size` | 查询显式 policy 与当前软窗口 |
+| `hyle_shared_pool_cache_as_allocator(p)` | 借用型 allocator 视图 |
 
 对应 typed 裸槽宏：
 
-- `HYLE_OBJECT_POOL_CACHED_CREATE`
-- `HYLE_OBJECT_POOL_CACHED_ACQUIRE`
-- `HYLE_OBJECT_POOL_CACHED_RELEASE`
-- `HYLE_OBJECT_POOL_CACHED_PUBLISH`
+- `HYLE_OBJECT_POOL_CACHE_CREATE`
+- `HYLE_OBJECT_POOL_CACHE_ACQUIRE`
+- `HYLE_OBJECT_POOL_CACHE_RELEASE`
+- `HYLE_OBJECT_POOL_CACHE_PUBLISH`
 
-C++ 对应类型是 `ObjectPoolCached<T>`；它是软容量，不是默认对象池。
+C++ 对应类型是附着到 `ObjectPool<T>` 的 `ObjectPoolCache<T>`。
 
 ## 5. PooledRegion 与 StackAllocator
 
@@ -158,7 +157,7 @@ C++ 对应类型是 `ObjectPoolCached<T>`；它是软容量，不是默认对象
 | `hyle_pooled_region_as_allocator(r)` | alloc=bump、free=no-op、realloc=bump+copy |
 
 C/C++ 使用同一产品名，未发布阶段不保留 `Arena/reset` 兼容壳。它只借 hard
-`SharedPool`，单块 borrow 不从 TLS cache 获益。
+`SharedPool`，单块 borrow 不从 owner-local cache 获益。
 
 ### 5.2 StackAllocator：自有 slab 的 LIFO bump
 
@@ -212,15 +211,17 @@ if (block != NULL) hyle_shared_pool_deallocate(pool, block);
 hyle_shared_pool_destroy(pool);
 ```
 
-### 软容量 cached 池的跨线程交接
+### 显式 cache 的容量交接
 
 ```c
-hyle_shared_pool_cached* pool =
-    hyle_shared_pool_cached_create_default(256, 4096, 0);
-void* block = hyle_shared_pool_cached_allocate(pool);
-hyle_shared_pool_cached_deallocate(pool, block);
-hyle_shared_pool_cached_publish(pool); /* 当前线程已 free 的块现在对其他线程可见 */
-hyle_shared_pool_cached_destroy(pool);
+hyle_shared_pool* pool = hyle_shared_pool_create_default(256, 4096, 0);
+hyle_shared_pool_cache* cache =
+    hyle_shared_pool_cache_create_default(pool, 128, 32);
+void* block = hyle_shared_pool_cache_allocate(cache);
+hyle_shared_pool_cache_deallocate(cache, block);
+hyle_shared_pool_cache_publish(cache); /* 本地 free 块现在对其他 owner 可见 */
+hyle_shared_pool_cache_destroy(cache);
+hyle_shared_pool_destroy(pool);
 ```
 
 ### typed 默认硬池
@@ -241,7 +242,7 @@ hyle_shared_pool_destroy(pool);
 
 当前 mem C surface 是纯 `extern "C"` 自由函数 + opaque 句柄，没有模块 API 表或版本协商。模板、RAII 与 `std::pmr` 不跨边界：
 
-- `ObjectPool<T>` → 默认硬容量 typed 宏；`ObjectPoolCached<T>` → cached typed 宏 + publish；
+- `ObjectPool<T>` → 默认硬容量 typed 宏；`ObjectPoolCache<T>` → 显式 cache typed 宏 + publish；
 - `GrowablePool<T>` → runtime size/align + typed 宏；
 - `Allocator` typed helpers → 裸 `hyle_alloc/free`；
 - `QuotaAllocator` → opaque product adapter；`StatsAllocator` / `LeakTracker` 当前仍是 C++ 诊断设施。

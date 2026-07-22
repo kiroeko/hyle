@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cstdint>
 #include <cstring>
@@ -21,7 +22,7 @@ using hyle::mem::FixedPool;
 using hyle::mem::FixedRegion;
 using hyle::mem::GrowablePool;
 using hyle::mem::ObjectPool;
-using hyle::mem::ObjectPoolCached;
+using hyle::mem::ObjectPoolCache;
 using hyle::mem::PreservingObjectPool;
 using hyle::mem::Region;
 using hyle::mem::RegionOptions;
@@ -104,11 +105,8 @@ void *fail_realloc(void *, void *, std::size_t, std::size_t,
 TEST(ObjectPool, ConstructionOomIsObservable) {
   hyle::mem::Allocator oom(&oom_alloc, &oom_free, &oom_realloc, nullptr);
   ObjectPool<int> hard(oom, 8);
-  ObjectPoolCached<int> cached(oom, 8);
   EXPECT_FALSE(hard.valid());
-  EXPECT_FALSE(cached.valid());
   EXPECT_EQ(hard.create(1), nullptr);
-  EXPECT_EQ(cached.create(1), nullptr);
   EXPECT_FALSE(hard.try_loan(1));
 }
 
@@ -119,20 +117,6 @@ TEST(SharedPool, EveryConstructorAllocationFailureIsLeakFree) {
     Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
     {
       hyle::mem::SharedPool pool(failing, 64, 16, 64);
-      EXPECT_FALSE(pool.valid()) << "fail_at=" << fail_at;
-      EXPECT_EQ(pool.allocate(), nullptr);
-    }
-    EXPECT_EQ(state.outstanding, 0u) << "fail_at=" << fail_at;
-  }
-}
-
-TEST(SharedPoolCached, EveryConstructorAllocationFailureIsLeakFree) {
-  for (std::size_t fail_at = 0; fail_at != 3; ++fail_at) {
-    FailAllocatorState state;
-    state.fail_at = fail_at;
-    Allocator failing(&fail_alloc, &fail_free, &fail_realloc, &state);
-    {
-      hyle::mem::SharedPoolCached pool(failing, 64, 16, 64);
       EXPECT_FALSE(pool.valid()) << "fail_at=" << fail_at;
       EXPECT_EQ(pool.allocate(), nullptr);
     }
@@ -248,13 +232,18 @@ TEST(ObjectPool, ThrowingConstructorReturnsSlot) {
   pool.destroy(b);
 }
 
-TEST(ObjectPoolCached, TypedCachedShellPublishes) {
-  ObjectPoolCached<int> pool(system_allocator(), 4);
-  int *p = pool.create(7);
+TEST(ObjectPoolCache, ExplicitTypedCachePublishes) {
+  ObjectPool<int> pool(system_allocator(), 4);
+  std::array<std::uint32_t, 4> storage{};
+  ObjectPoolCache<int> cache(pool, storage, 2);
+  int *p = cache.create(7);
   ASSERT_NE(p, nullptr);
   EXPECT_EQ(*p, 7);
-  pool.destroy(p);
-  pool.publish_thread_cache();
+  cache.destroy(p);
+  EXPECT_GT(cache.cached(), 0u);
+  EXPECT_LE(cache.cached(), 2u);
+  cache.publish();
+  EXPECT_EQ(cache.cached(), 0u);
 }
 
 TEST(ObjectPool, ConcurrentCreateDestroyBalances) {

@@ -16,7 +16,7 @@ mem 是 host RAM 的基础原语层。它不替业务猜生命周期，也不把
 | LIFO checkpoint/rewind scratch | `StackAllocator` | owned fixed slab、单线程 |
 | 外部 buffer 内变长 alloc/free | `FixedPool` | 单线程、individual free、无 fallback、立即合并邻块 |
 | 多线程固定块、严格容量 | `SharedPool` | hard capacity；free 完成后立即全局可见 |
-| 同线程热点固定块复用 | `SharedPoolCached` | TLS 快路；跨线程可见性是 soft，需 publish |
+| worker-local 热点固定块复用 | `SharedPoolCache` over `SharedPool` | 显式 owner/cache 容量/batch；跨线程可见性是 soft，需 publish |
 | 固定数量 typed 对象，每次重建 | `ObjectPool<T>` | create/destroy；构造失败退槽 |
 | 昂贵对象保留内部状态 | `PreservingObjectPool<T>` | 池建时构造一次，return 不析构 |
 | 单线程 typed 对象、容量可增长 | `GrowablePool<T>` | 指针稳定，按需增加 chunks |
@@ -77,15 +77,24 @@ copy/move，避免两个 cursor 无意间在同一 buffer 上重叠分配。
 
 ## Pool 家族
 
-### Hard 与 cached 不能混称
+### Hard core 与显式 cache 不能混称
 
 - `SharedPool` 是共享 admission primitive。容量 N 就意味着最多 N 个 live block；任何线程
   完成 deallocate 后，其他线程能立即取得该 block。
-- `SharedPoolCached` 优化同线程 free→allocate，把 free slot 暂存在 TLS。它的物理容量固定，
-  但跨线程可见容量是 soft；handoff 前由释放线程调用 `publish_thread_cache()`。
+- `SharedPoolCache` 是附着到 `SharedPool` 的单 owner L1。storage、容量、transfer batch 和
+  生命周期都由用户显式选择；本地 free slot 只有在 `publish()`/析构后才回到共享 core。
 
-typed `ObjectPool<T>` / `ObjectPoolCached<T>` 只是对应 slot pool 加 placement-new 和显式
-析构。名称中的 Cached 指 slot visibility，不代表对象状态被保留。
+typed `ObjectPoolCache<T>` 同样附着到 `ObjectPool<T>`，只增加 placement-new/显式析构的
+typed shell。Cache 指 slot visibility，不代表对象状态被保留。
+
+```cpp
+hyle::mem::SharedPool core(hyle::mem::system_allocator(), 64, 4096);
+std::array<std::uint32_t, 128> local_slots{};
+hyle::mem::SharedPoolCache local(core, local_slots, 32);
+void* p = local.allocate();
+local.deallocate(p);
+local.publish();  // handoff / idle / owner transfer boundary
+```
 
 ### Reconstruct 与 Preserve
 

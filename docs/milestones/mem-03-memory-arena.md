@@ -1,6 +1,6 @@
 # mem-03：MemoryArena 无锁定长块池（clay 最亮资产，packed tagged CAS）
 
-> **历史名称边界：**本文记录的是旧 `MemoryArena` 阶段；当前实现已分为硬容量 `SharedPool` 与软容量 `SharedPoolCached`。旧 `memory_arena.h` / `hyle_memory_arena_*` 已删除，由 `shared_pool.h` 及 `hyle_shared_pool_*` / `hyle_shared_pool_cached_*` 取代。
+> **后续替代（2026-07-22）：**本文记录旧 `MemoryArena` 阶段；当前为 `SharedPool` hard core + 显式 `SharedPoolCache`，C 面为 `hyle_shared_pool_*` / `hyle_shared_pool_cache_*`。
 
 | 字段 | 值 |
 |---|---|

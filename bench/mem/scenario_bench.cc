@@ -12,8 +12,7 @@
 // tables):
 //  A. BUMP: PooledRegion + StackAllocator vs pmr::monotonic vs raw mi.
 //  B. SINGLE-THREAD pool churn: GrowablePool ONLY vs pmr::unsynchronized_pool
-//  vs
-//     raw mi. SharedPool/SharedPoolCached belong to cross-thread sharing
+//  vs raw mi. SharedPool/SharedPoolCache belong to cross-thread sharing
 //     scenarios.
 //  C. 8-thread tight churn: hard pool vs cached pool vs pmr/tbb/mimalloc.
 //  D. Shared-path burst and cross-thread handoff: the same full comparison.
@@ -72,6 +71,7 @@
 #include "hyle/mem/growable_pool.h"
 #include "hyle/mem/object_pool.h"
 #include "hyle/mem/pmr.h"
+#include "hyle/mem/pool_cache.h"
 #include "hyle/mem/quota_allocator.h"
 #include "hyle/mem/region.h"
 #include "hyle/mem/shared_pool.h"
@@ -90,7 +90,7 @@ using hyle::mem::QuotaAllocator;
 using hyle::mem::Region;
 using hyle::mem::RegionOptions;
 using hyle::mem::SharedPool;
-using hyle::mem::SharedPoolCached;
+using hyle::mem::SharedPoolCache;
 using hyle::mem::StackAllocator;
 using hyle::mem::StatsAllocator;
 using hyle::mem::system_allocator;
@@ -562,6 +562,80 @@ QuotaResult run_quota_scenario(Pool &pool, int threads, std::size_t capacity,
   return QuotaResult{attempted, initial_success, before.size(), after.size(),
                      ns / static_cast<double>(attempted)};
 }
+
+QuotaResult run_cached_quota_scenario(SharedPool &pool, int threads,
+                                      std::size_t capacity,
+                                      int request_pct) {
+  const std::size_t requested =
+      (capacity * static_cast<std::size_t>(request_pct) + 99) / 100;
+  const std::size_t per_thread = (requested + threads - 1) / threads;
+  const std::size_t attempted = per_thread * threads;
+  std::vector<std::vector<void *>> held(
+      threads, std::vector<void *>(per_thread, nullptr));
+  std::vector<std::size_t> successes(threads, 0);
+  std::barrier start(threads + 1);
+  std::barrier allocated(threads + 1);
+  std::barrier release(threads + 1);
+  std::barrier freed(threads + 1);
+  std::barrier publish(threads + 1);
+  std::barrier published(threads + 1);
+  std::vector<std::thread> workers;
+  workers.reserve(threads);
+  for (int t = 0; t < threads; ++t) {
+    workers.emplace_back([&, t] {
+      std::array<std::uint32_t, 128> storage{};
+      SharedPoolCache cache(pool, storage, 32);
+      start.arrive_and_wait();
+      for (std::size_t i = 0; i < per_thread; ++i) {
+        held[t][i] = cache.allocate();
+        if (held[t][i] != nullptr)
+          ++successes[t];
+      }
+      allocated.arrive_and_wait();
+      release.arrive_and_wait();
+      for (void *p : held[t])
+        cache.deallocate(p);
+      freed.arrive_and_wait();
+      publish.arrive_and_wait();
+      cache.publish();
+      published.arrive_and_wait();
+    });
+  }
+
+  const auto begin = std::chrono::steady_clock::now();
+  start.arrive_and_wait();
+  allocated.arrive_and_wait();
+  const auto end = std::chrono::steady_clock::now();
+  std::size_t initial_success = 0;
+  for (std::size_t n : successes)
+    initial_success += n;
+
+  release.arrive_and_wait();
+  freed.arrive_and_wait();
+  auto drain = [&] {
+    std::vector<void *> blocks;
+    blocks.reserve(capacity);
+    while (void *p = pool.allocate())
+      blocks.push_back(p);
+    return blocks;
+  };
+  std::vector<void *> before = drain();
+  for (void *p : before)
+    pool.deallocate(p);
+
+  publish.arrive_and_wait();
+  published.arrive_and_wait();
+  std::vector<void *> after = drain();
+  for (void *p : after)
+    pool.deallocate(p);
+  for (auto &worker : workers)
+    worker.join();
+
+  const double ns =
+      std::chrono::duration<double, std::nano>(end - begin).count();
+  return QuotaResult{attempted, initial_success, before.size(), after.size(),
+                     ns / static_cast<double>(attempted)};
+}
 } // namespace
 
 int main() {
@@ -671,7 +745,7 @@ int main() {
 
   // ---- B. SINGLE-THREAD pool churn (fair tools only) ----
   // GrowablePool is the ST same-size free-list tool. Rivals: pmr unsync pool
-  // (std ST pool SOTA) + raw mi (general baseline). SharedPool/SharedPoolCached
+  // (std ST pool SOTA) + raw mi (general baseline). SharedPool/SharedPoolCache
   // are omitted: a single-thread-only owner should use the simpler
   // GrowablePool.
   if (want_section('B')) {
@@ -716,8 +790,7 @@ int main() {
   // slab faster/slower from one misleading denominator:
   //   (1) per-thread ownership -> GrowablePool per thread vs mimalloc's local
   //   heaps; (2) shared HARD capacity -> SharedPool, with immediate post-free
-  //   visibility; (3) shared SOFT capacity -> SharedPoolCached, whose steady
-  //   state is TLS-local.
+  //   visibility; (3) explicit owner-local SharedPoolCache over a shared core.
   // oneTBB fixed_pool is the direct fixed-buffer rival. pmr,
   // scalable_allocator, mimalloc, and per-worker GrowablePool are growable
   // throughput references only.
@@ -755,16 +828,15 @@ int main() {
       });
     });
 
-    // One shared soft-capacity pool, but each worker reuses its own object.
-    // This is Folly CompressionContextPool's get/use/return shape and the
-    // intended TLS case.
-    SharedPoolCached shared_cached(sys, kObj, kThreads * 256);
-    b.run("HYLE SharedPoolCached (soft, worker-local reuse)", [&] {
+    SharedPool shared_cache_core(sys, kObj, kThreads * 256);
+    b.run("HYLE SharedPoolCache (explicit owner-local reuse)", [&] {
       run_threads([&] {
+        std::array<std::uint32_t, 128> storage{};
+        SharedPoolCache cache(shared_cache_core, storage, 32);
         for (int i = 0; i < kPer; ++i) {
-          void *p = require_allocation(shared_cached.allocate());
+          void *p = require_allocation(cache.allocate());
           nb::doNotOptimizeAway(std::as_const(p));
-          shared_cached.deallocate(p);
+          cache.deallocate(p);
         }
       });
     });
@@ -875,7 +947,7 @@ int main() {
         (static_cast<std::uint64_t>(kThreads) * kHold * 100 + capacity_pct -
          1) /
         capacity_pct);
-    SharedPoolCached burst_cached(sys, block_size, pool_capacity);
+    SharedPool burst_cache_core(sys, block_size, pool_capacity);
     SharedPool burst_hard(sys, block_size, pool_capacity);
     {
       nb::Bench b;
@@ -885,14 +957,16 @@ int main() {
           .relative(true)
           .batch(static_cast<std::uint64_t>(kThreads) * kRounds * kHold)
           .minEpochIterations(3);
-      b.run("HYLE SharedPoolCached (soft capacity)", [&] {
+      b.run("HYLE SharedPoolCache (explicit soft capacity)", [&] {
         run_threads([&](int) {
+          std::array<std::uint32_t, 128> storage{};
+          SharedPoolCache cache(burst_cache_core, storage, 32);
           std::vector<void *> held(kHold);
           for (int r = 0; r < kRounds; ++r) {
             for (int i = 0; i < kHold; ++i)
-              held[i] = require_allocation(burst_cached.allocate());
+              held[i] = require_allocation(cache.allocate());
             for (int i = 0; i < kHold; ++i)
-              burst_cached.deallocate(held[i]);
+              cache.deallocate(held[i]);
           }
         });
       });
@@ -973,7 +1047,7 @@ int main() {
     const int kHandoffRounds = env_int("HYLE_BENCH_HANDOFF_ROUNDS", 250);
     const std::uint32_t handoff_capacity =
         static_cast<std::uint32_t>(kThreads * kBatch * 2);
-    SharedPoolCached handoff_cached(sys, block_size, handoff_capacity);
+    SharedPool handoff_cache_core(sys, block_size, handoff_capacity);
     SharedPool handoff_hard(sys, block_size, handoff_capacity);
     struct alignas(64) HandoffState {
       std::atomic<int> produced{0};
@@ -999,6 +1073,28 @@ int main() {
         }
       });
     };
+    auto run_explicit_cache_handoff = [&] {
+      std::vector<std::vector<void *>> slots(kThreads,
+                                             std::vector<void *>(kBatch));
+      auto states = std::make_unique<HandoffState[]>(kThreads);
+      run_threads([&](int t) {
+        std::array<std::uint32_t, 128> storage{};
+        SharedPoolCache cache(handoff_cache_core, storage, 32);
+        const int nbr = (t + 1) % kThreads;
+        for (int r = 0; r < kHandoffRounds; ++r) {
+          while (states[t].consumed.load(std::memory_order_acquire) < r)
+            std::this_thread::yield();
+          for (int i = 0; i < kBatch; ++i)
+            slots[t][i] = require_allocation(cache.allocate());
+          states[t].produced.store(r + 1, std::memory_order_release);
+          while (states[nbr].produced.load(std::memory_order_acquire) < r + 1)
+            std::this_thread::yield();
+          for (int i = 0; i < kBatch; ++i)
+            cache.deallocate(slots[nbr][i]);
+          states[nbr].consumed.store(r + 1, std::memory_order_release);
+        }
+      });
+    };
     {
       nb::Bench b;
       b.title(std::to_string(kThreads) +
@@ -1008,9 +1104,8 @@ int main() {
           .relative(true)
           .batch(static_cast<std::uint64_t>(kThreads) * kHandoffRounds * kBatch)
           .minEpochIterations(3);
-      b.run("HYLE SharedPoolCached (soft capacity)", [&] {
-        run_handoff([&] { return handoff_cached.allocate(); },
-                    [&](void *p) { handoff_cached.deallocate(p); });
+      b.run("HYLE SharedPoolCache (explicit soft capacity)", [&] {
+        run_explicit_cache_handoff();
       });
       b.run("HYLE SharedPool (hard capacity)", [&] {
         run_handoff([&] { return handoff_hard.allocate(); },
@@ -1060,12 +1155,12 @@ int main() {
         static_cast<std::size_t>(env_int("HYLE_BENCH_QUOTA", 1024));
     const int request_pct = env_int("HYLE_BENCH_REQUEST_PCT", 110);
     SharedPool hard(sys, block_size, static_cast<std::uint32_t>(capacity));
-    SharedPoolCached cached(sys, block_size,
-                            static_cast<std::uint32_t>(capacity));
+    SharedPool cached_core(sys, block_size,
+                           static_cast<std::uint32_t>(capacity));
     const QuotaResult hard_result =
         run_quota_scenario(hard, threads, capacity, request_pct);
-    const QuotaResult cached_result =
-        run_quota_scenario(cached, threads, capacity, request_pct);
+    const QuotaResult cached_result = run_cached_quota_scenario(
+        cached_core, threads, capacity, request_pct);
 
     std::printf(
         "\nservice quota: threads=%d, block=%zuB, capacity=%zu, request=%d%%\n",
@@ -1080,7 +1175,7 @@ int main() {
                   r.recovered_after_publish, r.initial_ns_per_attempt);
     };
     print("HYLE SharedPool (hard)", hard_result);
-    print("HYLE SharedPoolCached (soft)", cached_result);
+    print("HYLE SharedPoolCache (explicit soft)", cached_result);
   }
 
   // ---- F. CLOSURE SHAPES: real lifetime/ownership policies ------------------
