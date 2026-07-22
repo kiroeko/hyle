@@ -135,6 +135,10 @@ private:
 };
 
 struct RegionOptions {
+  // Ordinary-block backing allocation targets, including Region's internal
+  // header and worst-case alignment padding. A single allocation may force a
+  // larger block. Treating these as total backing bytes avoids crossing an
+  // allocator size-class boundary merely to store Region metadata.
   std::size_t initial_block_size = 64 * 1024;
   // Four MiB avoids backing-allocator page/segment amplification from many
   // one-MiB blocks on large request scratch, while keeping retained tail slack
@@ -287,7 +291,10 @@ private:
 
     std::size_t payload = bytes;
     if (!large) {
-      payload = next_block_size_;
+      std::size_t overhead = 0;
+      if (!try_block_overhead(alignment, &overhead))
+        return nullptr;
+      payload = next_block_size_ > overhead ? next_block_size_ - overhead : 0;
       if (payload < bytes)
         payload = bytes;
     }
@@ -310,10 +317,9 @@ private:
                    bool large) noexcept {
     const std::size_t alignment =
         request_alignment > alignof(Block) ? request_alignment : alignof(Block);
-    if (request_alignment - 1 >
-        std::numeric_limits<std::size_t>::max() - sizeof(Block))
+    std::size_t overhead = 0;
+    if (!try_block_overhead(request_alignment, &overhead))
       return nullptr;
-    const std::size_t overhead = sizeof(Block) + (request_alignment - 1);
     if (payload > std::numeric_limits<std::size_t>::max() - overhead)
       return nullptr;
     const std::size_t bytes = overhead + payload;
@@ -339,6 +345,15 @@ private:
     blocks_ = b;
     reserved_ += bytes;
     return b;
+  }
+
+  static bool try_block_overhead(std::size_t request_alignment,
+                                 std::size_t *out) noexcept {
+    if (request_alignment - 1 >
+        std::numeric_limits<std::size_t>::max() - sizeof(Block))
+      return false;
+    *out = sizeof(Block) + (request_alignment - 1);
+    return true;
   }
 
   void *account(void *p, std::size_t bytes) noexcept {

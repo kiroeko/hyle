@@ -53,7 +53,10 @@ scratch.release();                      // 确定归还全部 backing capacity
 
 `bytes_used()` 是成功请求的 payload 总数；`reserved()` 是当前 backing bytes；
 `peak_used()` 不因 clear/release 清零。individual deallocate 是 no-op。大于 threshold 的
-dedicated block 在 `clear()` 时归还，普通 block 保留复用。
+dedicated block 在 `clear()` 时归还，普通 block 保留复用。`initial_block_size` / `max_block_size`
+是 ordinary block 的总 backing-byte target，已经包含 Region header 与最坏 alignment padding；
+单个请求放不下时允许为该 block 突破 target。这样 4 MiB target 不会只因内部 header 变成
+`4 MiB + metadata`，`size_limit` 与 allocator size class 也更可预测。
 
 ### External workspace
 

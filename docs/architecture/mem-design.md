@@ -141,7 +141,7 @@ oneTBB、mimalloc、Folly 与 marl 源码快照，不自行下载或更新参考
 
 owned growable `Region` 已提供：
 
-- 按 min block size 增长；
+- 按 total backing-byte block target 增长（包含内部 header/alignment，单个大请求可突破）；
 - `clear()` 复用普通 block，大型专用 block 可释放；
 - 当前 ordinary block 的 cursor/end 是内联热路径，搜索、增长与 backing 分配在慢路径；
 - `bytes_used()` / `reserved()` / hard `size_limit`；

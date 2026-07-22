@@ -152,6 +152,8 @@ hyle_quota_allocator_limit(const hyle_quota_allocator_o *q);
 
 typedef struct hyle_region_options {
   size_t struct_size;
+  /* Ordinary-block total backing-byte targets, including internal metadata
+   * and alignment padding. One user allocation may force a larger block. */
   size_t initial_block_size;
   size_t max_block_size;
   size_t large_allocation_threshold;

@@ -69,12 +69,14 @@ struct FailAllocatorState {
   std::size_t calls = 0;
   std::size_t fail_at = std::numeric_limits<std::size_t>::max();
   std::size_t outstanding = 0;
+  std::size_t last_size = 0;
 };
 
 void *fail_alloc(void *opaque, std::size_t size,
                  std::size_t alignment) noexcept {
   auto &state = *static_cast<FailAllocatorState *>(opaque);
   const std::size_t call = state.calls++;
+  state.last_size = size;
   if (call == state.fail_at)
     return nullptr;
   void *p = system_allocator().allocate(size, alignment);
@@ -518,6 +520,25 @@ TEST(Region, GrowsHonorsLimitAndBulkReuses) {
   EXPECT_NE(region.allocate(80, 64), nullptr);
   region.release();
   EXPECT_EQ(region.reserved(), 0u);
+}
+
+TEST(Region, OrdinaryBlockSizeTargetsTotalBackingBytes) {
+  FailAllocatorState state;
+  {
+    Allocator counting(&fail_alloc, &fail_free, &fail_realloc, &state);
+    RegionOptions options;
+    options.initial_block_size = 4096;
+    options.max_block_size = 4096;
+    options.large_allocation_threshold = 8192;
+    Region region(counting, options);
+
+    void *p = region.allocate(64, 512);
+    ASSERT_NE(p, nullptr);
+    EXPECT_EQ(reinterpret_cast<std::uintptr_t>(p) % 512, 0u);
+    EXPECT_EQ(state.last_size, 4096u);
+    EXPECT_EQ(region.reserved(), 4096u);
+  }
+  EXPECT_EQ(state.outstanding, 0u);
 }
 
 TEST(Region, ClearReusesMultipleRetainedBlocksWithoutBackingAllocation) {
