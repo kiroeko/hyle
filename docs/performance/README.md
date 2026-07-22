@@ -12,7 +12,7 @@
 | [error 实测](./benchmarks-error.md) | **error 2026-07-20 三平台证书**（Status/Result vs absl + std::expected） |
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-20 证书**（Parker/Thread/dir/vm/MappedFile；OS 段 n=15 Win/M4、WSL n=5） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-19 三平台证书**（clock / TimerWheel / CommonTimeoutQueue） |
-| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-22 证书**：Region/FixedRegion request closure + 硬/软共享池 + external FixedPool；clean request latency、footprint 与 FixedPool 外部碎片 raw CSV |
+| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-22 证书**：Region/FixedRegion request closure + hard core/显式 owner cache + external FixedPool；显式 cache 已签 Windows clean `n=15`，Linux/M4 待重签；request latency、footprint 与 FixedPool 外部碎片有 raw CSV |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
 | [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/list/str/path/fuzzy 长表 + 史；**入口见上** |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
@@ -79,7 +79,9 @@
 | **mem** GrowablePool 8t per-thread | 0.93/0.61/0.60 | mi 8t | 1.35/1.28/1.42 | **1.49/2.07/2.38x** | mi per-thread | 同左 | 同左 | ✅三平台 sign 赢 |
 | **mem** SharedPool request batch=64（硬容量） | 8.315/6.609/11.881 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 4.200/2.280/2.024 | **0.515/0.338/0.170x** | ❌三平台 sign 输；为 completed-free 立即共享和精确 quota 付费，不冒充本地 churn 工具 |
 | **mem** SharedPool pipelined handoff（硬容量） | 5.304/3.807/12.931 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.433/9.239/4.871 | **1.976/2.380/0.372x** | ⚠️平台翻转：Win/WSL sign 赢，M4 sign 输 |
-| **mem** SharedPoolCached request batch=64（已删除，历史） | 3.540/1.754/1.537 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 4.200/2.280/2.024 | **1.171/1.285/1.316x** | ⚠️只记录旧 TLS 实现；当前显式 `SharedPoolCache` 需重签三平台 |
+| **mem** SharedPoolCache request batch=64（显式 owner cache） | **1.203/—/—** | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 2.208/—/— | **1.846x/待签/待签** | ✅Windows clean `5f35ec1`、n=15：spread/sign WIN（15/15）；Linux/M4 不继承旧 TLS 数字 |
+| **mem** SharedPoolCache pipelined handoff（显式 owner cache） | **1.431/—/—** | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 7.288/—/— | **5.004x/待签/待签** | ✅Windows clean `5f35ec1`、n=15：spread/sign WIN（15/15）；Linux/M4 待重签 |
+| **mem** SharedPoolCached request batch=64（已删除，历史） | 3.540/1.754/1.537 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 4.200/2.280/2.024 | **1.171/1.285/1.316x** | ⚠️只记录旧 TLS 实现；当前显式 `SharedPoolCache` 已重签 Windows，Linux/M4 待签 |
 | **mem** SharedPoolCached pipelined handoff（已删除，历史） | 4.062/2.414/3.072 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.433/9.239/4.871 | **2.627/3.807/1.586x** | ⚠️只记录旧 TLS 128/32 实现；不可改名继承到当前产品 |
 | **mem** FixedPool external mixed-size window | 6.359/5.760/5.868 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 8.297/7.788/9.318 | **1.305/1.383/1.607x** | ✅ clean `d3e4214`：Win/GCC/Clang/M4 interactive+utility 全部 spread/sign WIN；Clang 1.670x、M4 utility 1.668x |
 | **mem** FixedPool whole-request p50（Win/Lin/M4，µs） | 26.600/24.428/23.584 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 36.100/37.857/40.917 | **1.357/1.554/1.735x** | ✅ clean `d3e4214`：Win/Linux/M4 p50/p95/p99 全 WIN，M4 utility 同结论；split-tail cursor 关闭 Windows tail 缺口 |

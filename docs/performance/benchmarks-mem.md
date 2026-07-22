@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。FixedPool section F、whole-request latency 与 fragmentation 重签 clean commit `d3e4214`；request footprint 绑定 clean commit `02ec81e`。性能判定信任配对 **[sign]**。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；旧共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；当前显式 `SharedPoolCache` 的 Windows 证书绑定 clean commit `5f35ec1`、`n=15`，Linux/M4 尚待重签；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。FixedPool section F、whole-request latency 与 fragmentation 重签 clean commit `d3e4214`；request footprint 绑定 clean commit `02ec81e`。性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -90,9 +90,25 @@ cache capacity 与 transfer batch 都是构造参数；128/32 只是 convenience
 
 直接对手是 oneTBB `fixed_pool`：双方都由调用者提供固定 buffer。fixed_pool 的 buffer 是与 HYLE 相同的 payload capacity，加 oneTBB 自己 fixed-pool 测试采用的 1 MiB bootstrap metadata allowance；不再额外给 2 倍 payload。每次 fixed-pool/HYLE/mimalloc/TBB 分配都检查非 NULL，任何少做工作会使基准直接失败。pmr resource 与其他池一样在计时 lambda 外构造。`scalable_allocator`、mimalloc 和 pmr 是 growable 参考，不能证明硬容量语义。
 
-### 3.2 旧 TLS 实现的三平台基线（历史，不代表当前产品）
+### 3.2 当前显式 cache：Windows clean 证书
 
-下表绑定已删除的 `SharedPoolCached`。它证明 soft local-cache 形状值得保留，也暴露隐藏 TLS policy 的产品问题；当前 `SharedPoolCache` 必须重新做三平台签证，不能把旧数改名继承。
+commit `5f35ec1`，Windows MSVC 19.50 Release，8 workers、64B block、request
+batch=64、working set=容量的 75%、handoff batch=256，`bench-stat.py -n 15`。
+ratio 是每次进程内配对的 **HYLE / oneTBB op/s** 后再跨进程取中位数。
+
+| 场景 | `SharedPoolCache` | oneTBB `fixed_pool` | HYLE/oneTBB throughput | 判定 |
+|---|---:|---:|---:|---|
+| request batch lifecycle | **1.203 ns/op** | 2.208 ns/op | **1.846x**，range 1.463–2.255 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+| pipelined producer/consumer handoff | **1.431 ns/op** | 7.288 ns/op | **5.004x**，range 3.794–7.075 | **WIN spread / WIN sign**（15/15，p=6.1e-05） |
+
+同一 request 表里裸 `mi_malloc/free` 为 1.353 ns/op，显式 cache 仍略快；但
+mimalloc 是 growable general allocator，不是固定 buffer 的直接容量对手。当前只能签
+Windows：Linux 与 Apple M4 必须在各自原生文件系统、同一 clean commit 上复跑，不能沿用
+下节已删除 TLS 类型的旧数字。
+
+### 3.3 旧 TLS 实现的三平台基线（历史，不代表当前产品）
+
+下表绑定已删除的 `SharedPoolCached`。它证明 soft local-cache 形状值得保留，也暴露隐藏 TLS policy 的产品问题；当前 `SharedPoolCache` 已重签 Windows，Linux/M4 仍必须重测，不能把旧数改名继承。
 
 配置：8 workers、64B block、request batch=64、working set=容量的 75%；handoff batch=256。表内 ratio 是每轮配对的 **HYLE / oneTBB fixed_pool op/s** 中位数，不是两个绝对中位数相除。
 
@@ -114,7 +130,7 @@ cache capacity 与 transfer batch 都是构造参数；128/32 只是 convenience
 
 这里存在真实平台翻转：硬池在 x86 handoff 赢 fixed_pool，在 Apple M4 输约 2.69x。缓存池三平台都赢，但它仍不提供硬容量。
 
-### 3.3 旧 TLS 实现的 Windows 参数扫描（历史）
+### 3.4 旧 TLS 实现的 Windows 参数扫描（历史）
 
 以下均为 `bench-stat.py -n 9`；扫描线程数、块大小和请求批次，避免用一个点代表整个能力面。
 
@@ -126,7 +142,7 @@ cache capacity 与 transfer batch 都是构造参数；128/32 只是 convenience
 | handoff，T=1/8/16，64B | **1.134/2.627/2.003 WIN** | **0.691 LOSE / 1.976 WIN / 1.677 WIN** | T=1 退化成同线程；真并发 x86 handoff 两者都强，M4 见上表 |
 | handoff，T=8，block=32/64/4096B | **2.626/2.627/2.029 WIN** | **1.927/1.976/1.506 WIN** | x86 上跨线程迁移对块大小稳定 |
 
-### 3.4 硬容量证据
+### 3.5 硬容量证据
 
 当前显式 cache 的 Windows sanity 配置：8 workers、64B block、capacity=1024、请求 110%（1128 次）：
 
@@ -201,7 +217,7 @@ export HYLE_BENCH_HANDOFF_BATCH=256
 export HYLE_BENCH_QUOTA=1024
 export HYLE_BENCH_REQUEST_PCT=110
 
-scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 9 \
+scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 15 \
   --pair "oneTBB fixed_pool (fixed-buffer shared)" \
          "HYLE SharedPool (hard capacity)" \
   --pair "oneTBB fixed_pool (fixed-buffer shared)" \
