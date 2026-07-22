@@ -176,31 +176,10 @@ public:
       return nullptr;
 
     if (bytes < options_.large_allocation_threshold) {
-      for (Block *b = blocks_; b != nullptr; b = b->next) {
-        if (!b->large) {
-          if (void *p = allocate_from(b, bytes, alignment))
-            return account(p, bytes);
-        }
-      }
+      if (void *p = allocate_current(bytes, alignment))
+        return account(p, bytes);
     }
-
-    const bool large = bytes >= options_.large_allocation_threshold;
-    std::size_t payload = bytes;
-    if (!large) {
-      payload = next_block_size_;
-      if (payload < bytes)
-        payload = bytes;
-    }
-    Block *b = add_block(payload, alignment, large);
-    if (b == nullptr)
-      return nullptr;
-    void *p = allocate_from(b, bytes, alignment);
-    HYLE_FATAL_ASSERT(p != nullptr);
-    if (!large && next_block_size_ < options_.max_block_size) {
-      const std::size_t room = options_.max_block_size - next_block_size_;
-      next_block_size_ += next_block_size_ < room ? next_block_size_ : room;
-    }
-    return account(p, bytes);
+    return allocate_slow(bytes, alignment);
   }
 
   void clear() noexcept {
@@ -216,6 +195,7 @@ public:
         link = &b->next;
       }
     }
+    select_block(blocks_);
     used_ = 0;
   }
 
@@ -227,6 +207,7 @@ public:
       b = next;
     }
     blocks_ = nullptr;
+    select_block(nullptr);
     used_ = reserved_ = 0;
     next_block_size_ = options_.initial_block_size;
   }
@@ -262,6 +243,64 @@ private:
       return nullptr;
     b->cursor = reinterpret_cast<std::byte *>(aligned + bytes);
     return reinterpret_cast<void *>(aligned);
+  }
+
+  void *allocate_current(std::size_t bytes, std::size_t alignment) noexcept {
+    if (cursor_ == nullptr)
+      return nullptr;
+    const auto cur = reinterpret_cast<std::uintptr_t>(cursor_);
+    std::uintptr_t aligned = 0;
+    if (!detail::try_align_up_address(cur, alignment, &aligned))
+      return nullptr;
+    const auto end = reinterpret_cast<std::uintptr_t>(end_);
+    if (aligned > end || bytes > end - aligned)
+      return nullptr;
+    cursor_ = reinterpret_cast<std::byte *>(aligned + bytes);
+    return reinterpret_cast<void *>(aligned);
+  }
+
+  void select_block(Block *b) noexcept {
+    current_block_ = b;
+    cursor_ = b != nullptr ? b->cursor : nullptr;
+    end_ = b != nullptr ? b->end : nullptr;
+  }
+
+  HYLE_NOINLINE void *allocate_slow(std::size_t bytes,
+                                    std::size_t alignment) noexcept {
+    if (current_block_ != nullptr)
+      current_block_->cursor = cursor_;
+
+    const bool large = bytes >= options_.large_allocation_threshold;
+    if (!large) {
+      for (Block *b = blocks_; b != nullptr; b = b->next) {
+        if (b == current_block_ || b->large)
+          continue;
+        if (void *p = allocate_from(b, bytes, alignment)) {
+          select_block(b);
+          return account(p, bytes);
+        }
+      }
+    }
+
+    std::size_t payload = bytes;
+    if (!large) {
+      payload = next_block_size_;
+      if (payload < bytes)
+        payload = bytes;
+    }
+    Block *b = add_block(payload, alignment, large);
+    if (b == nullptr)
+      return nullptr;
+    void *p = allocate_from(b, bytes, alignment);
+    HYLE_FATAL_ASSERT(p != nullptr);
+    if (!large) {
+      select_block(b);
+      if (next_block_size_ < options_.max_block_size) {
+        const std::size_t room = options_.max_block_size - next_block_size_;
+        next_block_size_ += next_block_size_ < room ? next_block_size_ : room;
+      }
+    }
+    return account(p, bytes);
   }
 
   Block *add_block(std::size_t payload, std::size_t request_alignment,
@@ -330,11 +369,15 @@ private:
     backing_ = other.backing_;
     options_ = other.options_;
     blocks_ = other.blocks_;
+    current_block_ = other.current_block_;
+    cursor_ = other.cursor_;
+    end_ = other.end_;
     next_block_size_ = other.next_block_size_;
     used_ = other.used_;
     reserved_ = other.reserved_;
     peak_used_ = other.peak_used_;
     other.blocks_ = nullptr;
+    other.select_block(nullptr);
     other.used_ = other.reserved_ = other.peak_used_ = 0;
     other.next_block_size_ = other.options_.initial_block_size;
   }
@@ -342,6 +385,9 @@ private:
   Allocator backing_;
   RegionOptions options_;
   Block *blocks_ = nullptr;
+  Block *current_block_ = nullptr;
+  std::byte *cursor_ = nullptr;
+  std::byte *end_ = nullptr;
   std::size_t next_block_size_ = 0;
   std::size_t used_ = 0;
   std::size_t reserved_ = 0;

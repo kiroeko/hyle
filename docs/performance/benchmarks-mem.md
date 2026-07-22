@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`，性能判定信任配对 **[sign]**。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win/WSL `bench-stat.py -n 15`。性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -28,6 +28,23 @@
 | vs 裸 mi | **约 7x WIN** | **约 11x WIN** | **约 2.1x WIN** |
 
 M4 上 pmr monotonic 更快，不能把 x86 结论外推到 ARM。
+
+### Region / FixedRegion request scratch
+
+section F 的同一 request workload 每轮执行 4096 次 mixed-size（24–320B）、16B 对齐分配，
+然后 bulk clear/release。Win 与 WSL 同机错开运行；数字是 15 个独立进程的中位 ns/op。
+
+| workload | Windows/MSVC Release | Ubuntu 24.04/GCC 14.2 Release | 判定 |
+|---|---:|---:|---|
+| external caller-owned storage：`FixedRegion` / PMR reconstruct | 1.210 / 2.072，ratio **1.682** | 0.839 / 1.199，ratio **1.432** | 双平台 **spread/sign WIN** |
+| owned retained blocks：`Region` / PMR release | 1.674 / 1.923，ratio **1.126** | 1.137 / 2.033，ratio **1.779** | Win **sign WIN**；Linux **spread/sign WIN**；均 15/15 同侧 |
+
+`Region` 现在缓存当前 ordinary block 的 cursor/end；block 搜索、增长、backing allocation
+隔离在 noinline slow path。相同校正 harness 下，Windows 旧实现为 2.196 ns/op、相对 PMR
+ratio 0.949（sign LOSE）；新路径降至 1.674 ns/op。`clear()` 仍复用全部 ordinary blocks，
+dedicated large block 仍归还 backing；优化没有删除逐次 alignment、hard reserved-byte limit
+或 requested-byte accounting。benchmark 对 HYLE/PMR 都以只读指针左值做观测，避免纳秒路径
+被 prvalue 临时对象或 GCC read-write asm operand 污染。Apple M4 未复测前不外推 x86 结论。
 
 ### GrowablePool
 
@@ -123,7 +140,19 @@ free 的指针以 `std::as_const` 作为只读左值观测：GCC 不再把指针
 MSVC 也不为 const-pointer prvalue 增加临时对象。Windows 平局、Linux sign 胜；macOS 未复测前
 不宣称三平台 SOTA。
 
-## 5. 选型
+## 5. 装饰器与昂贵上下文复用
+
+同一 section F、Windows/MSVC Release、`bench-stat.py -n 15`：
+
+| workload | HYLE | 对照 | 结论 |
+|---|---:|---:|---|
+| strict requested-byte admission | `QuotaAllocator` 22.181 ns/op | direct system 9.144 ns/op | 约 13.0 ns/op 原子 admission 成本 |
+| expensive reusable context loan | `PreservingObjectPool` 20.894 ns/op | reconstruct 266.230 ns/op | HYLE 约 12.7× throughput |
+
+quota 行体现的是可组合 hard admission 的价格，不应拿来替代裸 allocator；Preserve 行对应
+codec/session 等昂贵对象“构造一次、借还保留状态”的真实生命周期。
+
+## 6. 选型
 
 ```text
 默认小对象             → SystemAllocator
@@ -136,7 +165,7 @@ MSVC 也不为 const-pointer prvalue 增加临时对象。Windows 平局、Linux
 通用多线程 malloc       → mimalloc / oneTBB；不要硬套固定 slab
 ```
 
-## 6. 复跑
+## 7. 复跑
 
 ```bash
 # shipping-like bench；使用仓库同级 ../oneTBB 本地源码快照
@@ -157,6 +186,13 @@ scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 9 \
          "HYLE SharedPool (hard capacity)" \
   --pair "oneTBB fixed_pool (fixed-buffer shared)" \
          "HYLE SharedPoolCached (soft capacity)"
+
+HYLE_BENCH_SECTIONS=F \
+scripts/bench-stat.py build-bench/bin/hyle_mem_scenarios_bench -n 15 \
+  --pair "std::pmr::monotonic_buffer_resource (external, reconstruct)" \
+         "HYLE FixedRegion (external, no fallback)" \
+  --pair "std::pmr::monotonic_buffer_resource (release upstream blocks)" \
+         "HYLE Region (retained ordinary blocks)"
 
 # quota 计数是单次语义证据；不把其中线程启动时间当吞吐比较
 HYLE_BENCH_SECTIONS=E build-bench/bin/hyle_mem_scenarios_bench

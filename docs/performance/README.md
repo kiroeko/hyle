@@ -12,7 +12,7 @@
 | [error 实测](./benchmarks-error.md) | **error 2026-07-20 三平台证书**（Status/Result vs absl + std::expected） |
 | [platform 实测](./benchmarks-platform.md) | **platform 2026-07-20 证书**（Parker/Thread/dir/vm/MappedFile；OS 段 n=15 Win/M4、WSL n=5） |
 | [time 实测](./benchmarks-time.md) | **time 2026-07-19 三平台证书**（clock / TimerWheel / CommonTimeoutQueue） |
-| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-21 三平台证书**：硬容量 `SharedPool`、软容量 `SharedPoolCached` 分合同记录 request / pipelined handoff / quota |
+| [mem 实测](./benchmarks-mem.md) | **mem 2026-07-22 证书**：Region/FixedRegion request closure + 硬/软共享池 + external FixedPool，按合同记录三平台边界 |
 | [container 实测](./benchmarks-container.md) | **container 导航证书**：新鲜度、非 SOTA、选型；详表 → [benchmarks-mem-container.md](./benchmarks-mem-container.md) |
 | [container 详表](./benchmarks-mem-container.md) | hash/SwissTable/vec/list/str/path/fuzzy 长表 + 史；**入口见上** |
 | [simd 产品 kernel](./benchmarks-simd.md) | dot/saxpy、math、dtype、gather、vendor 竞争…；**op 全量不在此** |
@@ -74,6 +74,7 @@
 | **mem** SystemAllocator churn(默认) | 7.93/8.04/7.77 | malloc OS | 25/4.7/20 | 大赢 OS | 裸 mimalloc | 7.86/8.04/7.91 | **~1.00x 三平台** | ➖**平 mi SOTA**(2026-07-20 n=15) |
 | **mem** Allocator vtable churn | 8.67/8.67/7.93 | pmr over mi | 8.67/10.3/9.98 | 平/1.22/1.26 | 裸 mi | 7.86/8.04/7.91 | **0.91/0.94/1.00** | ⚠️对 mi Win/Lin **sign 输~6–9%**；✅对 pmr 平/赢 |
 | **mem** PooledRegion/Stack bump | 0.57·0.55/0.36·0.36/2.23 | pmr monotonic | 1.46/0.62/**1.24** | **2.65/1.70/0.56x** | 裸 mi | 3.9/3.9/4.8 | 7–11x/2x | ⚠️**平台翻转**(Win/Lin 赢 pmr；**M4 输 0.56x**) |
+| **mem** Region owned request scratch | 1.674/1.137/— | pmr monotonic release | 1.923/2.033/— | **1.126/1.779/—** | Folly Arena（shape 参考，未同 harness 实测） | n/a | n/a | ✅Win sign 赢、WSL spread/sign 赢；M4 待复测，不外推 |
 | **mem** GrowablePool 单线程 | 2.76/1.38/2.46 | pmr unsync | 5.57/11.3/3.47 | **2.0/8.3/1.4x** | 裸 mi | 4.75/4.31/5.80 | **1.7/3.1/2.4x** | ✅三平台赢公平 ST 标尺；固定共享池不是这条单线程合同的对手 |
 | **mem** GrowablePool 8t per-thread | 0.93/0.61/0.60 | mi 8t | 1.35/1.28/1.42 | **1.49/2.07/2.38x** | mi per-thread | 同左 | 同左 | ✅三平台 sign 赢 |
 | **mem** SharedPool request batch=64（硬容量） | 8.315/6.609/11.881 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 4.200/2.280/2.024 | **0.515/0.338/0.170x** | ❌三平台 sign 输；为 completed-free 立即共享和精确 quota 付费，不冒充本地 churn 工具 |

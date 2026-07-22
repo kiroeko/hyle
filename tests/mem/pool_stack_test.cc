@@ -1,5 +1,6 @@
 #include <gtest/gtest.h>
 
+#include <algorithm>
 #include <atomic>
 #include <cstdint>
 #include <cstring>
@@ -429,6 +430,58 @@ TEST(Region, GrowsHonorsLimitAndBulkReuses) {
   EXPECT_NE(region.allocate(80, 64), nullptr);
   region.release();
   EXPECT_EQ(region.reserved(), 0u);
+}
+
+TEST(Region, ClearReusesMultipleRetainedBlocksWithoutBackingAllocation) {
+  FailAllocatorState state;
+  {
+    hyle::mem::Allocator counting(&fail_alloc, &fail_free, &fail_realloc,
+                                  &state);
+    RegionOptions options;
+    options.initial_block_size = 128;
+    options.max_block_size = 256;
+    options.large_allocation_threshold = 4096;
+    Region region(counting, options);
+
+    constexpr int kAllocations = 12;
+    for (int i = 0; i < kAllocations; ++i)
+      ASSERT_NE(region.allocate(80, 16), nullptr);
+    const std::size_t warmed_calls = state.calls;
+    ASSERT_GT(warmed_calls, 1u);
+
+    region.clear();
+    for (int i = 0; i < kAllocations; ++i)
+      ASSERT_NE(region.allocate(80, 16), nullptr);
+    EXPECT_EQ(state.calls, warmed_calls);
+  }
+  EXPECT_EQ(state.outstanding, 0u);
+}
+
+TEST(Region, MoveTransfersCachedCursorWithoutOverlapOrBackingGrowth) {
+  FailAllocatorState state;
+  {
+    hyle::mem::Allocator counting(&fail_alloc, &fail_free, &fail_realloc,
+                                  &state);
+    RegionOptions options;
+    options.initial_block_size = 512;
+    options.max_block_size = 512;
+    options.large_allocation_threshold = 4096;
+    Region source(counting, options);
+
+    auto *first = static_cast<std::byte *>(source.allocate(96, 16));
+    ASSERT_NE(first, nullptr);
+    std::fill_n(first, 96, std::byte{0x5a});
+    ASSERT_EQ(state.calls, 1u);
+
+    Region moved(std::move(source));
+    auto *second = static_cast<std::byte *>(moved.allocate(96, 16));
+    ASSERT_NE(second, nullptr);
+    EXPECT_NE(second, first);
+    EXPECT_EQ(state.calls, 1u);
+    for (std::size_t i = 0; i < 96; ++i)
+      EXPECT_EQ(first[i], std::byte{0x5a});
+  }
+  EXPECT_EQ(state.outstanding, 0u);
 }
 
 TEST(Region, HardReservedByteLimitReturnsNull) {

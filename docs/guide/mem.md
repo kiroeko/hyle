@@ -143,21 +143,15 @@ loan 等调用合同错误允许 fail-fast。`StatsAllocator`/`LeakTracker` 可�
 ## 如何看性能
 
 benchmark 以场景和合同分组，入口是 `hyle_mem_scenarios_bench`；用
-`HYLE_BENCH_SECTIONS=F` 跑收口 workload。2026-07-22 的 Windows/MSVC Release 本机
-`bench-stat.py -n 15` 顺序运行显示：
+`HYLE_BENCH_SECTIONS=F` 跑收口 workload。正式性能表只维护在
+[`../performance/benchmarks-mem.md`](../performance/benchmarks-mem.md)，本指南不复制数据。
+当前 Win/WSL 的 15 次配对结果中，`Region`/`FixedRegion` 都赢相同 request-shape 的
+PMR 对照；`FixedPool` 与 oneTBB fixed_pool 在 Windows 平、Linux sign 胜，macOS 仍待复测。
 
-| workload | HYLE | 对照 | 结论 |
-|---|---:|---:|---|
-| Win external mixed request scratch | FixedRegion 1.202 ns/op | PMR reconstruct 2.014 ns/op | HYLE 约 1.68× throughput |
-| Win owned mixed request scratch | Region 2.157 ns/op | PMR release 2.042 ns/op | HYLE 约慢 5.6%，需继续解释/优化 |
-| Win external variable-size window | FixedPool 10.314 ns/op | oneTBB fixed_pool 10.094 ns/op | ratio 0.983，spread/sign 均 TIE |
-| Linux external variable-size window | FixedPool 7.555 ns/op | oneTBB fixed_pool 7.774 ns/op | ratio 1.027，spread TIE / sign WIN |
-| Win strict quota decoration | 21.899 ns/op | direct system 9.039 ns/op | 约 12.9 ns/op 原子 admission 成本 |
-| Win expensive context loan | Preserve 20.935 ns/op | reconstruct 263.901 ns/op | Preserve 约 12.6× throughput |
+`Region` 的 ordinary-block 热路径缓存当前 cursor/end，把 block 搜索、增长和 backing
+分配隔离到 slow path；`clear()` 仍复用所有 ordinary block，dedicated large block 仍归还
+backing。这个形状与 Folly Arena 的 current-block bump 路径一致，同时保留 HYLE 的逐次
+alignment、hard reserved-byte limit 与 accounting 能力。
 
-这些数据用来暴露 trade-off，不用来改写 API。`FixedPool` 通过立即合并后的 one-entry
-recent-free cache 避免 free→allocate 的重复 bin 往返，并以 block-relative checked alignment
-保留 overflow 合同。修正 nanobench GCC 可写左值约束后，Windows ratio 0.983、范围
-0.912–1.023，统计平局；Linux ratio 1.027、范围 0.948–1.088，spread 平局而 sign WIN。
-macOS 同源复测仍待补。完整收口状态见
+这些数据用来暴露 trade-off，不用来改写 API。完整收口状态见
 [`../milestones/mem-close-plan.md`](../milestones/mem-close-plan.md)。

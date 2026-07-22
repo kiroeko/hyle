@@ -736,16 +736,19 @@ int main() {
           .minEpochIterations(50);
       b.run("HYLE FixedRegion (external, no fallback)", [&] {
         fixed.clear();
-        for (int i = 0; i < kScratchAllocations; ++i)
-          nb::doNotOptimizeAway(
-              require_allocation(fixed.allocate(scratch_size(i), 16)));
+        for (int i = 0; i < kScratchAllocations; ++i) {
+          void *p = require_allocation(fixed.allocate(scratch_size(i), 16));
+          nb::doNotOptimizeAway(std::as_const(p));
+        }
       });
       b.run("std::pmr::monotonic_buffer_resource (external, reconstruct)", [&] {
         std::pmr::monotonic_buffer_resource pmr(
             pmr_storage.data(), pmr_storage.size(),
             std::pmr::null_memory_resource());
-        for (int i = 0; i < kScratchAllocations; ++i)
-          nb::doNotOptimizeAway(pmr.allocate(scratch_size(i), 16));
+        for (int i = 0; i < kScratchAllocations; ++i) {
+          void *p = pmr.allocate(scratch_size(i), 16);
+          nb::doNotOptimizeAway(std::as_const(p));
+        }
       });
     }
 
@@ -765,17 +768,20 @@ int main() {
           .minEpochIterations(50);
       b.run("HYLE Region (retained ordinary blocks)", [&] {
         region.clear();
-        for (int i = 0; i < kScratchAllocations; ++i)
-          nb::doNotOptimizeAway(
-              require_allocation(region.allocate(scratch_size(i), 16)));
+        for (int i = 0; i < kScratchAllocations; ++i) {
+          void *p = require_allocation(region.allocate(scratch_size(i), 16));
+          nb::doNotOptimizeAway(std::as_const(p));
+        }
       });
 
       std::pmr::monotonic_buffer_resource pmr;
       b.run("std::pmr::monotonic_buffer_resource (release upstream blocks)",
             [&] {
               pmr.release();
-              for (int i = 0; i < kScratchAllocations; ++i)
-                nb::doNotOptimizeAway(pmr.allocate(scratch_size(i), 16));
+              for (int i = 0; i < kScratchAllocations; ++i) {
+                void *p = pmr.allocate(scratch_size(i), 16);
+                nb::doNotOptimizeAway(std::as_const(p));
+              }
             });
     }
 

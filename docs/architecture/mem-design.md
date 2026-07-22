@@ -143,6 +143,7 @@ owned growable `Region` 已提供：
 
 - 按 min block size 增长；
 - `clear()` 复用普通 block，大型专用 block 可释放；
+- 当前 ordinary block 的 cursor/end 是内联热路径，搜索、增长与 backing 分配在慢路径；
 - `bytes_used()` / `reserved()` / hard `size_limit`；
 - individual deallocate 明确 no-op；
 - 单线程默认，不偷偷加锁。
