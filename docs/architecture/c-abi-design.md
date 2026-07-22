@@ -95,7 +95,7 @@ C ABI 要当一等公民，数据模型就得是**运行时参数化**，而非*
 - **返回值通道**：`hyle_status`（opaque owning handle，`uintptr_t rep`）值返回 + 分支；`HYLE_C_RETURN_IF_ERROR` 传播。`Result<T>`（`std::expected`）是模板，C 侧用 `hyle_status` + 出参表达。
 - **诊断通道**：`hyle_error_report` + 可换 handler（`hyle_error_set_handler` 简单单槽 / `hyle_error_push_handler`+`pop` 嵌套安全，对标 signal old-handler）。
 - **绝不让 C++ 异常跨 C 边界**（UB）。catch 只在 adapter 边界做"外来异常→Status"。
-- **分配器层不走 `hyle_status`**（mem 的刻意分层）：C 句柄工厂的资源失败和可由 FFI 数据表达的非法值/溢出 layout，均**返 NULL + 设 `hyle_mem_last_error` 字符串**；生命周期、并发静默、foreign/double free 等时序契约违反仍 fail-fast。分配器是**最底层基元**，让它依赖上层 error 模块的 `Status` 会**倒置依赖**；故 mem 当前 draft surface 自足用“NULL + 独立 mem thread-local last-error 串”通道，不引入 `hyle_status`。HugeRegion 在调用 VM 原语时只复制本次失败原因到 mem 通道，并恢复调用者原有的 platform VM error。
+- **分配器层不走 `hyle_status`**（mem 的刻意分层）：C 句柄工厂的资源失败和可由 FFI 数据表达的非法值/溢出 layout 均直接返 NULL；`hyle_mem_last_error_code()` 以独立 TLS 小枚举区分 INVALID_ARGUMENT、OUT_OF_MEMORY、EXHAUSTED 与 PLATFORM，字符串只作诊断。生命周期、并发静默、foreign/double free 等时序契约违反仍 fail-fast。分配器是**最底层基元**，让它依赖上层 error 模块的 `Status` 会**倒置依赖**。HugeRegion 在调用 VM 原语时只复制本次失败原因到 mem 通道，并恢复调用者原有的 platform VM error。
 - **platform 按失败形状分通道**：Thread 构造返回 `hyle_status`；VM/NUMA/
   MappedFile 用 `hyle_vm_last_error`；DynLib 用 `hyle_dynlib_last_error`；
   Parker wrapper 与 fs/fd 用 `hyle_platform_last_error`。所有字符串均线程
@@ -113,7 +113,7 @@ C++ 用户拿原生 API，易用性靠 C++ 语言特性本身：
 C ABI 用户（第 2 层）的易用性则靠 **header-inline 便利层**（零新导出符号，不进 ABI）：
 - error：全码工厂 `hyle_status_not_found()` 等 + 谓词 `hyle_status_is_*()` + `HYLE_C_RETURN_IF_ERROR`。
 - platform：`hyle_thread_opts_set_*` + `HYLE_THREAD_OPTS_INIT` + `hyle_page_align_up` inline。
-- mem：`hyle_alloc`/`free`/`realloc` 便利转发 + 默认硬容量 `HYLE_OBJECT_POOL_*`、显式软容量 `HYLE_OBJECT_POOL_CACHED_*` typed 宏（`HYLE_ALIGNOF` 跨 C/C++ shim）。
+- mem：`hyle_alloc`/`free`/`realloc` 便利转发 + `*_create_default` system-backing 构造 + 默认硬容量 `HYLE_OBJECT_POOL_*`、显式软容量 `HYLE_OBJECT_POOL_CACHED_*` typed 宏（`HYLE_ALIGNOF` 跨 C/C++ shim）。默认 alignment 在头内常量折叠，不先跨 DLL 查询。
 
 **原则**：两条线各自把易用性做到位——C++ 靠语言特性，C 靠 header-inline 糖 + opaque 句柄。inline 糖不进 DLL 导出、零 ABI 风险，是"给 C 用户便利但不污染稳定面"的标准手法（HYLE 与 ggml/oneDNN 一致）。
 

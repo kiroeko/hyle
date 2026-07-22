@@ -1,6 +1,6 @@
 # mem 全面收口计划
 
-> 状态：执行中（能力族、C++ 形状、诊断与 sanitizer 闸门已落地；C surface 最终裁决和迭代稳定性尚未签字）
+> 状态：执行中（能力族、C++/C 产品形状、诊断与 sanitizer 闸门已落地；迭代稳定性尚未签字）
 > 建立日期：2026-07-22
 > 设计源：[`../architecture/mem-design.md`](../architecture/mem-design.md)
 
@@ -64,7 +64,7 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 - [x] 为现有公开类型补齐统一合同。
 - [x] 当前单块形状统一命名 `PooledRegion`；发布前删除 `Arena/reset` 兼容壳。
 - [x] `Region` 专指 owned growable bulk-reset region。
-- [ ] 审查并确定首次发布的 C surface；当前 manifest 仅检查草案同步。
+- [x] 审查并确定首次发布前的 C 产品 surface；manifest 检查当前同步但不承诺兼容。
 - [x] 统一 invalid argument、exhaustion、backing OOM 的处理。
 
 ### M2：allocator core 与可组合 adapter
@@ -150,7 +150,7 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
   external initial buffer 的可移植 rewind；现在每个 request 在同一 buffer 上重建 resource。
 - 建立 C++ current-surface 编译检查，覆盖全部公开 mem 能力族；C++ object layout 不承诺
   binary ABI。C manifest 同时校验 header 声明、纯 C 消费引用和 DLL/ELF 实际导出，但只是
-  未发布草案的同步检查。审查已修：`FixedRegion`/`FixedPool` 提供 caller-owned in-place
+  首次发布前的同步检查，不是兼容承诺。审查已修：`FixedRegion`/`FixedPool` 提供 caller-owned in-place
   control，strict no-heap 用户不再被 `create()` 的便利分配绑住；mem last-error 与 platform VM
   error 独立，HugeRegion 只拷贝本次 VM 失败原因；非法 C layout/alignment 返回 NULL +
   last-error；adapter 统一 `*_as_allocator`。Stats/Leak 暂不机械镜像到 C，等待真实 C 消费者。
@@ -175,16 +175,14 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
 
 | 环境 | 结果 |
 |---|---|
-| Windows/MSVC Release（`7f270bb`） | mem 167/167；纯 C 通过；C surface 93/93；全仓 CTest 50/50 |
-| Windows/MSVC ASan（`d635257`） | 全仓 ASan 链接通过；非 death mem 159/159（含 `SystemAllocator` free poison 断言）；纯 C 通过；零 ASan report |
-| Ubuntu 24.04 / GCC 14.2 ASan（`d635257`） | ext4 clean worktree；非 death mem 159/159（含 free poison 断言）；纯 C 通过；零 ASan report |
+| Windows/MSVC Release（`9759b54`） | mem 176/176；纯 C 通过；C surface 94/94 |
+| Windows/MSVC ASan（`9759b54`） | 非 death mem 159/159（含 `SystemAllocator` free poison 断言）；纯 C 通过；零 ASan report |
+| Ubuntu 24.04 / GCC 14.2 Release（`9759b54`） | ext4 clean worktree；mem 176/176（含 death）；纯 C 通过；C surface 94/94 |
+| Ubuntu 24.04 / GCC 14.2 ASan（`9759b54`） | ext4 clean worktree；非 death mem 159/159（含 free poison 断言）；纯 C 通过；零 ASan report |
 | Ubuntu 24.04 / GCC 14.2 UBSan（`d3e4214`） | mem 176/176（含 death）；纯 C 通过；零 UBSan report |
 | Ubuntu 24.04 / Clang 20.1 Release（`803dae6`） | mem CTest 3/3；注册 167 tests，非 death 149/149；纯 C 与 C surface 通过 |
 | Apple M4 / AppleClang 21 Release（`7f270bb`） | mem 167/167；纯 C 与 C surface 通过 |
 | Apple M4 / AppleClang 21 ASan（`7f270bb`） | 非 death mem 149/149；纯 C 通过 |
-| 当前 C draft 增量 / Windows MSVC | mem 168/168；CTest 3/3；纯 C 与 C surface 通过 |
-| 当前 C draft 增量 / Ubuntu Clang 20.1 | 非 death mem 150/150；纯 C 与 C surface 通过 |
-| 当前 C draft 增量 / Apple M4 AppleClang 21 | 非 death mem 150/150；纯 C 与 C surface 通过 |
 | Ubuntu 24.04 / GCC 14.2 TSan（`d3e4214`） | ext4 clean worktree，`setarch x86_64 -R`；非 death mem 158/158 连续三轮，纯 C 通过；零 TSan report |
 | compute/Vulkan 隔离观察 | compute 78 pass/2 skip；Vulkan 14 pass/2 skip；GPU await 2/2 |
 
@@ -206,10 +204,15 @@ owned Region、FixedPool 的 paired throughput ratio 中位数分别为 1.899、
 均 15/15 同侧且通过 spread/sign 闸门。WSL 不公开 guest CPU 对宿主 P/E 核的物理映射，故
 这里只签 guest affinity，不声称物理 P-core pin。
 
-C draft 产品审查不以兼容为约束：`hyle_mem_last_error` 已从 platform VM TLS 拆成独立通道；
+C 产品审查不以兼容为约束：opaque handle 隐藏 `_o` implementation tag；常用 owned
+构造增加 header-inline `*_create_default`，显式 backing 只在需要注入/组合时出现；
+`hyle_alloc(..., 0)` 的默认 alignment 在头内常量折叠，不再先跨 DLL；恒真的
+`hyle_huge_region_valid(non-NULL)` 删除。`hyle_mem_last_error_code` 提供 NONE /
+INVALID_ARGUMENT / OUT_OF_MEMORY / EXHAUSTED / PLATFORM typed 控制流，字符串只作诊断。
+`hyle_mem_last_error` 已从 platform VM TLS 拆成独立通道；
 FixedRegion/FixedPool 增加 caller-owned opaque storage + `init`，control 与 payload 可同时严格
 no-heap，`create` 继续作为易用工厂。StatsAllocator/LeakTracker 没有真实 C 消费者，裁决为
-保持 C++-only。manifest 继续是同步检查，不在首次发布决定前冻结。
+保持 C++-only。manifest 继续是同步检查，正式发布前不冻结 ABI。
 
 新增类型的 failpoint matrix 已覆盖每个真实 backing allocation point：SharedPool 与
 SharedPoolCached 的 slab/link/head 三点，StackAllocator 的 slab，GrowablePool 连续五次几何
@@ -227,9 +230,8 @@ membership/liveness/double-return/outstanding 合同诊断，不为形式统一�
 
 仍未完成：
 
-1. 首次发布的 C surface 最终裁决；当前 C manifest 继续只承担 draft 同步检查，不冻结 ABI。
-2. 连续两个功能迭代不再因新真实场景推翻核心类型，才签架构稳定性退出门槛。
-3. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
+1. 连续两个功能迭代不再因新真实场景推翻核心类型，才签架构稳定性退出门槛。
+2. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
    该设计已经收口。
 
 Request latency harness 已落地 section G：每个样本计时整个 4096-operation request，两个实现
@@ -248,7 +250,7 @@ RSS。128 MiB 最新正式证书绑定 clean commit `02ec81e`：Win/Linux 各 `n
 
 128 MiB dirty footprint A/B 还捕获了旧 `Region` 默认 1 MiB block 在 Linux 的 mimalloc
 page/segment 驻留放大；2/4/16 MiB 扫描后选择 4 MiB 默认，在大部分 RSS 收益与 retained tail
-slack 之间取拐点。C++ 默认、C draft 初始化宏与用户指南已同步；自定义上限合同不变。
+slack 之间取拐点。C++ 默认、C 初始化宏与用户指南已同步；自定义上限合同不变。
 
 旧实现把 ordinary `max_block_size` 当 payload，向 backing 实际请求 `target + header/alignment`，
 在 Linux mimalloc 上跨过大块 size class。现在 block size 是 total backing-byte target，4 MiB 就
@@ -270,7 +272,7 @@ mixed-fill / selective-free workload，不外推为任意 allocation distributio
 - [ ] 不存在名称大于实际能力的公开类型。
 - [ ] 所有类型具备完整 ownership/concurrency/capacity/lifetime/failure 合同。
 - [ ] resource exhaustion 不因实现方便而 fatal。
-- [ ] C/C++ API、文档和实现一致。
+- [x] C/C++ API、文档和实现一致。
 - [x] sanitizer、故障注入、并发模型和支持平台测试全部通过。
 - [ ] 性能来自真实 workload，并与同语义成熟实现比较。
 - [ ] 连续两个功能迭代未因新场景推翻核心类型。

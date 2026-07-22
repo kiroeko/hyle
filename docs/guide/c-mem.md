@@ -1,14 +1,16 @@
-# HYLE mem C draft surface
+# HYLE mem C surface
 
 > **发布面**：`include/hyle/c/mem.h`  
 > **实现**：`src/mem/c_mem.cc`（链 `hyle_mem`）  
-> **稳定性**：未发布、未经最终签字；当前 manifest 只做同步检查
+> **稳定性**：首次产品形状审查已完成；正式发布前仍可改，当前 manifest 不承诺 ABI 兼容
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言 / 跨编译器只许绑定本头，不要 include `hyle/mem/*.h`。有 `backing` 参数的 opaque
 control 与内部 storage 都由该 backing 分配。FixedRegion/FixedPool 同时提供 caller-owned
 `*_storage + *_init`（control/payload 都不触堆）和较方便的 `*_create`（control 使用 HYLE
 system allocator）；payload 始终只来自调用方 storage，绝不隐藏 fallback。
+所有 opaque handle 对外使用 `hyle_region *`、`hyle_shared_pool *` 等产品名；尾缀 `_o`
+只存在于不可解引用的内部 struct tag，不进入用户变量和函数签名。
 
 ## 1. 链接与所有权
 
@@ -51,13 +53,18 @@ typedef struct hyle_allocator {
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_default_alignment()` | `alignof(max_align_t)` |
+| `hyle_default_alignment()` | header-inline `alignof(max_align_t)`；常量折叠，不是 DLL 导出 |
 | `hyle_system_allocator()` | mimalloc-backed 进程级句柄 |
 | `hyle_system_usable_size(ptr)` | system 块真实可用字节；NULL→0 |
 | `hyle_system_good_size(size)` | 不分配地给出推荐 request size（≥size）；不承诺等于 alloc(size) 的 usable |
 | `hyle_alloc` / `hyle_free` / `hyle_realloc` | header-inline vtable 转发；alignment==0 使用默认对齐 |
 
 C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
+`hyle_alloc/free/realloc(..., alignment=0)` 在头内直接折叠默认对齐，不再先跨 DLL 查询。
+
+拥有 backing 的构造器同时提供 header-inline `*_create_default(...)`，等价于传
+`hyle_system_allocator()`；常用用户不必为了默认堆手写 allocator injection。显式
+`create(backing, ...)` 继续用于 quota/region/pool 组合与故障注入。
 
 ### 2.1 QuotaAllocator
 
@@ -80,7 +87,7 @@ C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
 ```c
 unsigned char payload[4096];
 hyle_fixed_pool_storage control;
-hyle_fixed_pool_o *pool =
+hyle_fixed_pool *pool =
     hyle_fixed_pool_init(&control, payload, sizeof payload);
 /* allocate/free ... */
 hyle_fixed_pool_destroy(pool); /* 不释放 control 或 payload */
@@ -143,7 +150,7 @@ C++ 对应类型是 `ObjectPoolCached<T>`；它是软容量，不是默认对象
 
 | 符号 | 说明 |
 |---|---|
-| `hyle_pooled_region_create(hyle_shared_pool_o* pool)` | 从硬容量 `SharedPool` 借一块；pool 为空、control OOM 或池耗尽→NULL + last-error |
+| `hyle_pooled_region_create(hyle_shared_pool* pool)` | 从硬容量 `SharedPool` 借一块；pool 为空、control OOM 或池耗尽→NULL + last-error |
 | `hyle_pooled_region_destroy(r)` | 把整块还给 pool |
 | `hyle_pooled_region_allocate(r, bytes, alignment)` | 单线程 pointer bump；放不下→NULL |
 | `hyle_pooled_region_clear(r)` | 游标回块头；要求此前切片不再使用 |
@@ -183,10 +190,11 @@ typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 
 | `hyle_huge_region_open(bytes, flags, numa_node)` | reserve+commit，按 flags/node 放置；失败→NULL |
 | `hyle_huge_region_open_local` | 偏好调用线程 home node |
 | `hyle_huge_region_open_interleaved` | 跨节点条带 + THP |
-| `hyle_huge_region_destroy` / `valid` / `data` / `size` | 生命周期与查询 |
+| `hyle_huge_region_destroy` / `data` / `size` | 生命周期与查询；`open*` 只返回有效 handle 或 NULL，因此不导出恒真的 `valid` 镜像 |
 | `hyle_huge_region_requested_flags` / `accepted_flags` | 区分请求策略与 OS-facing call 已接受策略 |
 | `hyle_huge_region_requested_numa_node` / `numa_placement_applied` | NUMA 请求与实际 placement 结果 |
-| `hyle_mem_last_error()` | 独立 mem TLS error；mem 工厂不污染 platform VM error，HugeRegion 捕获 VM 原因后恢复 platform 通道 |
+| `hyle_mem_last_error_code()` | factory/policy TLS typed code：NONE / INVALID_ARGUMENT / OUT_OF_MEMORY / EXHAUSTED / PLATFORM；供控制流使用，hot allocate/pop 不为清码写 TLS |
+| `hyle_mem_last_error()` | TLS 诊断字符串；不用于程序解析。mem 工厂不污染 platform VM error，HugeRegion 捕获 VM 原因后恢复 platform 通道 |
 | `hyle_enable_allocator_hugepages` | 启用 mimalloc THP / large OS page 策略 |
 | `hyle_enable_allocator_numa` | 配置 mimalloc NUMA node 数 |
 | `hyle_reserve_huge_1g_pages` | 预留 1GiB 大页；无权限/连续 host RAM 时软失败返 0 |
@@ -198,8 +206,7 @@ flags：`HYLE_HUGE_THP_HINT`、`HYLE_HUGE_PREFAULT`、`HYLE_HUGE_NUMA_BIND`、`H
 ### 硬容量共享池
 
 ```c
-hyle_allocator sys = hyle_system_allocator();
-hyle_shared_pool_o* pool = hyle_shared_pool_create(sys, 256, 1024, 0);
+hyle_shared_pool* pool = hyle_shared_pool_create_default(256, 1024, 0);
 void* block = hyle_shared_pool_allocate(pool);
 if (block != NULL) hyle_shared_pool_deallocate(pool, block);
 hyle_shared_pool_destroy(pool);
@@ -208,8 +215,8 @@ hyle_shared_pool_destroy(pool);
 ### 软容量 cached 池的跨线程交接
 
 ```c
-hyle_shared_pool_cached_o* pool =
-    hyle_shared_pool_cached_create(sys, 256, 4096, 0);
+hyle_shared_pool_cached* pool =
+    hyle_shared_pool_cached_create_default(256, 4096, 0);
 void* block = hyle_shared_pool_cached_allocate(pool);
 hyle_shared_pool_cached_deallocate(pool, block);
 hyle_shared_pool_cached_publish(pool); /* 当前线程已 free 的块现在对其他线程可见 */
@@ -220,7 +227,7 @@ hyle_shared_pool_cached_destroy(pool);
 
 ```c
 typedef struct { int a; double b; } Node;
-hyle_shared_pool_o* pool = HYLE_OBJECT_POOL_CREATE(sys, Node, 1024);
+hyle_shared_pool* pool = HYLE_OBJECT_POOL_CREATE_DEFAULT(Node, 1024);
 Node* n = HYLE_OBJECT_POOL_ACQUIRE(pool, Node);
 if (n != NULL) {
   n->a = 7;
@@ -240,7 +247,9 @@ hyle_shared_pool_destroy(pool);
 - `QuotaAllocator` → opaque product adapter；`StatsAllocator` / `LeakTracker` 当前仍是 C++ 诊断设施。
 
 `tests/mem/c_surface_symbols.txt` 只检查声明、纯 C 引用和 DLL/ELF 导出一致。发布前仍可直接
-重塑，不把 manifest 当兼容承诺。产品审查决定：mem 使用独立 error channel；external
-FixedRegion/FixedPool 提供 strict no-heap control；`StatsAllocator`/`LeakTracker` 没有真实 C
-消费者，继续只留 C++，不为机械齐平扩张 ABI。
+重塑，不把 manifest 当兼容承诺。首次产品审查决定：保留能映射真实 C/FFI 场景的 allocator、
+region、pool 与 topology 能力族，但不机械镜像方法；opaque `_o` 名隐藏、默认 backing 走
+header-inline convenience、默认 alignment 不跨 DLL、恒真的 HugeRegion `valid` 删除。mem
+使用独立 typed error code + 诊断字符串；external FixedRegion/FixedPool 提供 strict no-heap
+control；`StatsAllocator`/`LeakTracker` 没有真实 C 消费者，继续只留 C++。
 发布后的冻结策略见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)。
