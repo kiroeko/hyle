@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；旧共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；当前显式 `SharedPoolCache` 已完成 Windows MSVC、WSL GCC 14.2/Clang 20.1 clean `n=15` 与 Apple M4 interactive/utility 各 `n=31` 证书；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。FixedPool section F、whole-request latency 与 fragmentation 重签 clean commit `d3e4214`；request footprint 绑定 clean commit `02ec81e`。性能判定信任配对 **[sign]**。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；旧共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；当前显式 `SharedPoolCache` 已完成 Windows MSVC、WSL GCC 14.2/Clang 20.1 clean `n=15` 与 Apple M4 interactive/utility 各 `n=31` 证书；hard core 的 acquire/release 收紧重签 clean commit `8cf52f9`（Win/WSL `n=15`、M4 两种 QoS 各 `n=31`）。request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。FixedPool section F、whole-request latency 与 fragmentation 重签 clean commit `d3e4214`；request footprint 绑定 clean commit `02ec81e`。性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -133,7 +133,40 @@ Windows、两个 Linux 编译器与 M4 两种 QoS 的 paired direction 一致。
 1/31 次反转且绝对 spread 较高，但中位优势 2.642x、spread/sign 双闸门仍通过；不把它隐去，
 也不把 interactive 数字外推为所有 Darwin 调度状态。
 
-### 3.3 旧 TLS 实现的三平台基线（历史，不代表当前产品）
+### 3.3 当前 hard core：三平台 clean 证书
+
+绑定 clean commit `8cf52f9`，Release shipping-like（`HYLE_BUILD_TESTS=OFF`）；配置与
+3.2 相同。Win MSVC 19.50、WSL GCC 14.2 为 `n=15`，Apple M4 AppleClang 21 的
+interactive/utility 各 `n=31`。本次只收紧 Treiber 发布/消费所需的内存序：push 用
+release 发布 relaxed link，pop 用 acquire 消费；pop 不发布写入，push retry 也不读取
+旧节点内容，因此不需要 acq_rel/acquire。tag 饱和后的 serialized fallback 未改变。
+
+| 平台 / 编译器 | 场景 | `SharedPool` hard | oneTBB `fixed_pool` | HYLE/oneTBB throughput | 判定 |
+|---|---|---:|---:|---:|---|
+| Windows / MSVC 19.50 | request batch | 6.708 ns/op | 2.060 ns/op | 0.308x | **LOSE spread / LOSE sign**（0/15） |
+| Windows / MSVC 19.50 | handoff | **4.150 ns/op** | 9.898 ns/op | **2.326x** | **WIN spread / WIN sign**（15/15） |
+| WSL / GCC 14.2 | request batch | 6.506 ns/op | 1.651 ns/op | 0.257x | **LOSE spread / LOSE sign**（0/15） |
+| WSL / GCC 14.2 | handoff | **4.093 ns/op** | 6.502 ns/op | **1.569x** | spread TIE / **WIN sign**（15/15） |
+| Apple M4 / interactive | request batch | 8.307 ns/op | 2.075 ns/op | 0.251x | **LOSE spread / LOSE sign**（0/31） |
+| Apple M4 / interactive | handoff | 10.286 ns/op | 5.054 ns/op | 0.492x | **LOSE spread / LOSE sign**（0/31） |
+| Apple M4 / utility | request batch | 5.969 ns/op | 2.116 ns/op | 0.351x | **LOSE spread / LOSE sign**（0/31） |
+| Apple M4 / utility | handoff | 10.260 ns/op | 5.051 ns/op | 0.508x | **LOSE spread / LOSE sign**（0/31） |
+
+M4 interactive 的改前 clean `c204a42` hard 基线为 request 11.694 ns、handoff
+12.170 ns；当前分别降到 8.307 ns（**-29.0%**）与 10.286 ns（**-15.5%**）。utility
+request 反而比 interactive 快，进一步说明无公开硬亲和 API 时绝对数会受 macOS 调度影响；
+两种 QoS 的方向一致，但不把其中任一组外推成固定 P/E core 结论。
+
+显式 cache 是本次底层改动的控制组：Win request/handoff 为 1.132/1.414 ns，WSL 为
+1.186/1.785 ns，M4 interactive 为 0.888/1.791 ns、utility 为 0.912/1.819 ns；所有
+配对仍分别 15/15 或 31/31 赢 fixed_pool，没有为 hard 优化牺牲 cache 快路径。
+
+这里的 oneTBB 比值只表示固定 buffer 下的成熟吞吐参照。request 行的 LOSE 不是
+`SharedPool` 同契约失败：oneTBB 的 owner-private free list 不提供 completed-free 全线程
+立即可见性。用户若不需要这个更强保证，应直接选择显式 `SharedPoolCache`，而不是要求
+hard core 模拟隐藏 TLS。
+
+### 3.4 旧 TLS 实现的三平台基线（历史，不代表当前产品）
 
 下表绑定已删除的 `SharedPoolCached`。它证明 soft local-cache 形状值得保留，也暴露隐藏 TLS policy 的产品问题；当前 `SharedPoolCache` 已独立重签 Windows/WSL/M4，不能把旧数改名继承。
 
@@ -157,7 +190,7 @@ Windows、两个 Linux 编译器与 M4 两种 QoS 的 paired direction 一致。
 
 这里存在真实平台翻转：硬池在 x86 handoff 赢 fixed_pool，在 Apple M4 输约 2.69x。缓存池三平台都赢，但它仍不提供硬容量。
 
-### 3.4 旧 TLS 实现的 Windows 参数扫描（历史）
+### 3.5 旧 TLS 实现的 Windows 参数扫描（历史）
 
 以下均为 `bench-stat.py -n 9`；扫描线程数、块大小和请求批次，避免用一个点代表整个能力面。
 
@@ -169,7 +202,7 @@ Windows、两个 Linux 编译器与 M4 两种 QoS 的 paired direction 一致。
 | handoff，T=1/8/16，64B | **1.134/2.627/2.003 WIN** | **0.691 LOSE / 1.976 WIN / 1.677 WIN** | T=1 退化成同线程；真并发 x86 handoff 两者都强，M4 见上表 |
 | handoff，T=8，block=32/64/4096B | **2.626/2.627/2.029 WIN** | **1.927/1.976/1.506 WIN** | x86 上跨线程迁移对块大小稳定 |
 
-### 3.5 硬容量证据
+### 3.6 硬容量证据
 
 当前显式 cache 的 Windows sanity 配置：8 workers、64B block、capacity=1024、请求 110%（1128 次）：
 
