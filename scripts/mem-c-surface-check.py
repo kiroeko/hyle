@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Keep the draft mem C declarations, pure-C use, and exports in sync."""
+"""Keep the pre-release mem C declarations, pure-C use, and exports in sync."""
 
 from __future__ import annotations
 
@@ -14,7 +14,8 @@ from typing import Optional
 
 SYMBOL = re.compile(r"\b(hyle_[a-z0-9_]+)\s*\(")
 EXPORT_DECL = re.compile(
-    r"\bHYLE_MEM_C_API\b.*?\b(hyle_[a-z0-9_]+)\s*\(", re.DOTALL
+    r"\bHYLE_MEM_C_API\b(?:(?![;{]).)*?\b(hyle_[a-z0-9_]+)\s*\(",
+    re.DOTALL,
 )
 TEST_BODY_MARKER = "HYLE_C_MEM_COVERAGE_BODY_MARKER"
 

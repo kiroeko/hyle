@@ -119,11 +119,13 @@ TEST(MemApiSurface, CErrorChannelDoesNotOverwritePlatformVmError) {
   hyle::platform::vm_set_last_error("platform sentinel");
   hyle_allocator invalid{};
   EXPECT_EQ(hyle_shared_pool_create(invalid, 64, 4, 0), nullptr);
+  EXPECT_EQ(hyle_mem_last_error_code(), HYLE_MEM_ERROR_INVALID_ARGUMENT);
   EXPECT_NE(hyle_mem_last_error()[0], '\0');
   EXPECT_STREQ(hyle::platform::vm_last_error(), "platform sentinel");
 
   EXPECT_EQ(hyle_huge_region_open(0, HYLE_HUGE_NONE, HYLE_MEM_NUMA_ANY),
             nullptr);
+  EXPECT_EQ(hyle_mem_last_error_code(), HYLE_MEM_ERROR_INVALID_ARGUMENT);
   EXPECT_NE(hyle_mem_last_error()[0], '\0');
   EXPECT_STREQ(hyle::platform::vm_last_error(), "platform sentinel");
   hyle::platform::vm_set_last_error(nullptr);

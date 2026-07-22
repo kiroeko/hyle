@@ -1,7 +1,6 @@
-# Draft extern "C" surface declared by include/hyle/c/mem.h.
-# This detects accidental drift. Before first release, intentional shape changes
-# update the manifest and do not imply ABI compatibility.
-hyle_default_alignment
+# Product-reviewed pre-release extern "C" surface declared by
+# include/hyle/c/mem.h. This detects accidental drift; before first release,
+# intentional shape changes update the manifest and do not imply compatibility.
 hyle_enable_allocator_hugepages
 hyle_enable_allocator_numa
 hyle_fixed_pool_allocate
@@ -39,7 +38,7 @@ hyle_huge_region_open_local
 hyle_huge_region_requested_flags
 hyle_huge_region_requested_numa_node
 hyle_huge_region_size
-hyle_huge_region_valid
+hyle_mem_last_error_code
 hyle_mem_last_error
 hyle_pooled_region_allocate
 hyle_pooled_region_as_allocator

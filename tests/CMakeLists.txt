@@ -46,7 +46,7 @@ hyle_apply_warnings(hyle_mem_c_test)
 hyle_apply_sanitizer(hyle_mem_c_test)
 add_test(NAME hyle_mem_c_test COMMAND hyle_mem_c_test)
 
-# Keep the draft mem C manifest, pure-C consumer, and DLL/.so exports in sync.
+# Keep the pre-release mem C manifest, pure-C consumer, and DLL/.so exports in sync.
 # Before first release this is drift detection, not a compatibility promise.
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
 if(WIN32)

@@ -1,14 +1,17 @@
 /* SPDX: same as HYLE.
  *
- * Draft pure-C surface for the HYLE mem module. Before the first release,
- * names and signatures may change when product review finds a better shape.
+ * Product-reviewed pure-C surface for the HYLE mem module. Before the first
+ * release, names and signatures may still change when real use finds a better
+ * shape; the current manifest is not an ABI compatibility promise.
  *
  * Naming: every symbol is `hyle_*` / `HYLE_*`.
  * Do NOT include hyle/mem/ headers from C or cross-compiler FFI.
  *
  * Surface: the injectable Allocator vtable, quota/region/external-buffer
  * allocators, hard/soft shared pools, stack/pooled regions, growable raw-slot
- * pools, HugeRegion, and process-wide mimalloc policy knobs. Docs (1:1):
+ * pools, HugeRegion, and process-wide mimalloc policy knobs. Opaque public
+ * aliases hide implementation tags; common constructors have header-inline
+ * system-backing forms. Docs (1:1):
  * docs/guide/c-mem.md
  */
 #ifndef HYLE_C_MEM_H_
@@ -80,9 +83,19 @@ typedef struct hyle_allocator {
   void *state;
 } hyle_allocator;
 
-/* Default alignment when a caller passes 0 (matches alignof(max_align_t)); the
- * backing never returns less than this. */
-HYLE_MEM_C_API size_t hyle_default_alignment(void);
+/* Default alignment when a caller passes 0 (matches alignof(max_align_t)).
+ * Header-inline so the common hyle_alloc(..., 0) path folds this to a constant
+ * instead of paying a DLL call before the allocator dispatch. */
+static inline size_t hyle_default_alignment(void) {
+#if defined(_MSC_VER)
+  /* MSVC's C17 <stddef.h> does not expose max_align_t. HYLE's Windows
+   * allocator ABI and mimalloc backing both guarantee 16-byte fundamental
+   * alignment on the supported MSVC/clang-cl targets. */
+  return 16u;
+#else
+  return HYLE_ALIGNOF(max_align_t);
+#endif
+}
 
 /* Process-wide mimalloc-backed system allocator (the same handle C++ uses). */
 HYLE_MEM_C_API hyle_allocator hyle_system_allocator(void);
@@ -129,22 +142,27 @@ HYLE_MEM_C_API size_t hyle_system_good_size(size_t size);
 /* Allocator adapter — strict requested-byte quota */
 /* ========================================================================== */
 
-typedef struct hyle_quota_allocator_o hyle_quota_allocator_o;
+typedef struct hyle_quota_allocator_o hyle_quota_allocator;
 
 /* Thread-safe strict byte budget over `backing`. The opaque control and the
  * returned allocator borrow `backing`; all must be quiesced and all allocations
  * freed before destroy. */
-HYLE_MEM_C_API hyle_quota_allocator_o *
+HYLE_MEM_C_API hyle_quota_allocator *
 hyle_quota_allocator_create(hyle_allocator backing, size_t limit);
-HYLE_MEM_C_API void hyle_quota_allocator_destroy(hyle_quota_allocator_o *q);
+HYLE_MEM_C_API void hyle_quota_allocator_destroy(hyle_quota_allocator *q);
 HYLE_MEM_C_API hyle_allocator
-hyle_quota_allocator_as_allocator(hyle_quota_allocator_o *q);
+hyle_quota_allocator_as_allocator(hyle_quota_allocator *q);
 HYLE_MEM_C_API size_t
-hyle_quota_allocator_used(const hyle_quota_allocator_o *q);
+hyle_quota_allocator_used(const hyle_quota_allocator *q);
 HYLE_MEM_C_API size_t
-hyle_quota_allocator_peak(const hyle_quota_allocator_o *q);
+hyle_quota_allocator_peak(const hyle_quota_allocator *q);
 HYLE_MEM_C_API size_t
-hyle_quota_allocator_limit(const hyle_quota_allocator_o *q);
+hyle_quota_allocator_limit(const hyle_quota_allocator *q);
+
+static inline hyle_quota_allocator *
+hyle_quota_allocator_create_default(size_t limit) {
+  return hyle_quota_allocator_create(hyle_system_allocator(), limit);
+}
 
 /* ========================================================================== */
 /* Region — owned growable bump allocation + bulk reset */
@@ -165,30 +183,35 @@ typedef struct hyle_region_options {
    256u * 1024u,                                                              \
    SIZE_MAX}
 
-typedef struct hyle_region_o hyle_region_o;
+typedef struct hyle_region_o hyle_region;
 
 /* `options==NULL` selects HYLE_REGION_OPTIONS_INIT. Unknown trailing fields are
  * ignored; struct_size must cover every field through size_limit for this ABI
  * version. */
-HYLE_MEM_C_API hyle_region_o *
+HYLE_MEM_C_API hyle_region *
 hyle_region_create(hyle_allocator backing, const hyle_region_options *options);
-HYLE_MEM_C_API void hyle_region_destroy(hyle_region_o *r);
-HYLE_MEM_C_API void *hyle_region_allocate(hyle_region_o *r, size_t bytes,
+HYLE_MEM_C_API void hyle_region_destroy(hyle_region *r);
+HYLE_MEM_C_API void *hyle_region_allocate(hyle_region *r, size_t bytes,
                                           size_t alignment);
 /* clear retains ordinary blocks; release returns every block to backing. */
-HYLE_MEM_C_API void hyle_region_clear(hyle_region_o *r);
-HYLE_MEM_C_API void hyle_region_release(hyle_region_o *r);
-HYLE_MEM_C_API size_t hyle_region_used(const hyle_region_o *r);
-HYLE_MEM_C_API size_t hyle_region_reserved(const hyle_region_o *r);
-HYLE_MEM_C_API size_t hyle_region_peak_used(const hyle_region_o *r);
-HYLE_MEM_C_API size_t hyle_region_size_limit(const hyle_region_o *r);
-HYLE_MEM_C_API hyle_allocator hyle_region_as_allocator(hyle_region_o *r);
+HYLE_MEM_C_API void hyle_region_clear(hyle_region *r);
+HYLE_MEM_C_API void hyle_region_release(hyle_region *r);
+HYLE_MEM_C_API size_t hyle_region_used(const hyle_region *r);
+HYLE_MEM_C_API size_t hyle_region_reserved(const hyle_region *r);
+HYLE_MEM_C_API size_t hyle_region_peak_used(const hyle_region *r);
+HYLE_MEM_C_API size_t hyle_region_size_limit(const hyle_region *r);
+HYLE_MEM_C_API hyle_allocator hyle_region_as_allocator(hyle_region *r);
+
+static inline hyle_region *
+hyle_region_create_default(const hyle_region_options *options) {
+  return hyle_region_create(hyle_system_allocator(), options);
+}
 
 /* ========================================================================== */
 /* FixedRegion — non-owning bump allocation over caller storage */
 /* ========================================================================== */
 
-typedef struct hyle_fixed_region_o hyle_fixed_region_o;
+typedef struct hyle_fixed_region_o hyle_fixed_region;
 
 /* Caller-owned control storage for a strict no-heap FixedRegion handle. The
  * bytes are intentionally opaque; the pointer member gives the internal
@@ -201,28 +224,28 @@ typedef union hyle_fixed_region_storage {
 
 /* Strict no-heap construction: both control and payload storage are caller
  * owned. destroy() ends the control lifetime but does not free either buffer. */
-HYLE_MEM_C_API hyle_fixed_region_o *
+HYLE_MEM_C_API hyle_fixed_region *
 hyle_fixed_region_init(hyle_fixed_region_storage *control, void *storage,
                        size_t size);
 /* Convenience factory: payload allocation still never falls back, but the
  * small opaque control is allocated from the system allocator. `storage`
  * remains caller-owned and must outlive the control/results. */
-HYLE_MEM_C_API hyle_fixed_region_o *hyle_fixed_region_create(void *storage,
-                                                             size_t size);
-HYLE_MEM_C_API void hyle_fixed_region_destroy(hyle_fixed_region_o *r);
-HYLE_MEM_C_API void *hyle_fixed_region_allocate(hyle_fixed_region_o *r,
+HYLE_MEM_C_API hyle_fixed_region *hyle_fixed_region_create(void *storage,
+                                                           size_t size);
+HYLE_MEM_C_API void hyle_fixed_region_destroy(hyle_fixed_region *r);
+HYLE_MEM_C_API void *hyle_fixed_region_allocate(hyle_fixed_region *r,
                                                 size_t bytes, size_t alignment);
-HYLE_MEM_C_API void hyle_fixed_region_clear(hyle_fixed_region_o *r);
-HYLE_MEM_C_API size_t hyle_fixed_region_used(const hyle_fixed_region_o *r);
-HYLE_MEM_C_API size_t hyle_fixed_region_capacity(const hyle_fixed_region_o *r);
+HYLE_MEM_C_API void hyle_fixed_region_clear(hyle_fixed_region *r);
+HYLE_MEM_C_API size_t hyle_fixed_region_used(const hyle_fixed_region *r);
+HYLE_MEM_C_API size_t hyle_fixed_region_capacity(const hyle_fixed_region *r);
 HYLE_MEM_C_API hyle_allocator
-hyle_fixed_region_as_allocator(hyle_fixed_region_o *r);
+hyle_fixed_region_as_allocator(hyle_fixed_region *r);
 
 /* ========================================================================== */
 /* FixedPool — variable-size segregated-fit allocator over caller storage */
 /* ========================================================================== */
 
-typedef struct hyle_fixed_pool_o hyle_fixed_pool_o;
+typedef struct hyle_fixed_pool_o hyle_fixed_pool;
 
 #define HYLE_FIXED_POOL_CONTROL_BYTES 1024u
 typedef union hyle_fixed_pool_storage {
@@ -232,26 +255,26 @@ typedef union hyle_fixed_pool_storage {
 
 /* Strict no-heap construction: control is caller-owned and allocation metadata
  * lives inside payload storage. destroy() frees neither buffer. */
-HYLE_MEM_C_API hyle_fixed_pool_o *
+HYLE_MEM_C_API hyle_fixed_pool *
 hyle_fixed_pool_init(hyle_fixed_pool_storage *control, void *storage,
                      size_t size);
 /* Convenience factory: no payload fallback, but create() allocates the opaque
  * control from the system allocator. Individual allocations can be freed. */
-HYLE_MEM_C_API hyle_fixed_pool_o *hyle_fixed_pool_create(void *storage,
-                                                         size_t size);
-HYLE_MEM_C_API void hyle_fixed_pool_destroy(hyle_fixed_pool_o *p);
-HYLE_MEM_C_API void *hyle_fixed_pool_allocate(hyle_fixed_pool_o *p,
+HYLE_MEM_C_API hyle_fixed_pool *hyle_fixed_pool_create(void *storage,
+                                                       size_t size);
+HYLE_MEM_C_API void hyle_fixed_pool_destroy(hyle_fixed_pool *p);
+HYLE_MEM_C_API void *hyle_fixed_pool_allocate(hyle_fixed_pool *p,
                                               size_t bytes, size_t alignment);
-HYLE_MEM_C_API void hyle_fixed_pool_deallocate(hyle_fixed_pool_o *p, void *ptr);
-HYLE_MEM_C_API void *hyle_fixed_pool_reallocate(hyle_fixed_pool_o *p, void *ptr,
+HYLE_MEM_C_API void hyle_fixed_pool_deallocate(hyle_fixed_pool *p, void *ptr);
+HYLE_MEM_C_API void *hyle_fixed_pool_reallocate(hyle_fixed_pool *p, void *ptr,
                                                 size_t old_size,
                                                 size_t new_size,
                                                 size_t alignment);
-HYLE_MEM_C_API void hyle_fixed_pool_reset(hyle_fixed_pool_o *p);
-HYLE_MEM_C_API size_t hyle_fixed_pool_used(const hyle_fixed_pool_o *p);
-HYLE_MEM_C_API size_t hyle_fixed_pool_capacity(const hyle_fixed_pool_o *p);
+HYLE_MEM_C_API void hyle_fixed_pool_reset(hyle_fixed_pool *p);
+HYLE_MEM_C_API size_t hyle_fixed_pool_used(const hyle_fixed_pool *p);
+HYLE_MEM_C_API size_t hyle_fixed_pool_capacity(const hyle_fixed_pool *p);
 HYLE_MEM_C_API hyle_allocator
-hyle_fixed_pool_as_allocator(hyle_fixed_pool_o *p);
+hyle_fixed_pool_as_allocator(hyle_fixed_pool *p);
 
 /* ========================================================================== */
 /* SharedPool — sharded fixed-size block pool (HARD capacity) */
@@ -264,34 +287,41 @@ hyle_fixed_pool_as_allocator(hyle_fixed_pool_o *p);
  * hot spot with an over-provisioned pool, see the *_cached family below (soft
  * capacity, faster). */
 
-typedef struct hyle_shared_pool_o hyle_shared_pool_o;
+typedef struct hyle_shared_pool_o hyle_shared_pool;
 
 /* `block_count` blocks of `block_size` bytes each, aligned to `alignment`
  * (0 => default). The opaque control, slab and link arrays all come from
  * `backing`. Invalid/overflowing layout or a resource failure returns NULL and
  * sets hyle_mem_last_error; C input validation does not expose C++ constructor
  * assertions. */
-HYLE_MEM_C_API hyle_shared_pool_o *
+HYLE_MEM_C_API hyle_shared_pool *
 hyle_shared_pool_create(hyle_allocator backing, size_t block_size,
                         uint32_t block_count, size_t alignment);
 /* Contract: no live block and all concurrent pool access is quiesced. */
-HYLE_MEM_C_API void hyle_shared_pool_destroy(hyle_shared_pool_o *p);
+HYLE_MEM_C_API void hyle_shared_pool_destroy(hyle_shared_pool *p);
 /* Pop a block; NULL after this call observes every shard empty (none hide in
  * TLS). */
-HYLE_MEM_C_API void *hyle_shared_pool_allocate(hyle_shared_pool_o *p);
+HYLE_MEM_C_API void *hyle_shared_pool_allocate(hyle_shared_pool *p);
 /* Return a block from allocate(); NULL is a no-op. Immediately visible to all.
  */
-HYLE_MEM_C_API void hyle_shared_pool_deallocate(hyle_shared_pool_o *p,
+HYLE_MEM_C_API void hyle_shared_pool_deallocate(hyle_shared_pool *p,
                                                 void *ptr);
 /* Return EVERY block to the free pool. Contract: NO block may be live. */
-HYLE_MEM_C_API void hyle_shared_pool_reset(hyle_shared_pool_o *p);
-HYLE_MEM_C_API size_t hyle_shared_pool_block_size(const hyle_shared_pool_o *p);
-HYLE_MEM_C_API uint32_t hyle_shared_pool_capacity(const hyle_shared_pool_o *p);
+HYLE_MEM_C_API void hyle_shared_pool_reset(hyle_shared_pool *p);
+HYLE_MEM_C_API size_t hyle_shared_pool_block_size(const hyle_shared_pool *p);
+HYLE_MEM_C_API uint32_t hyle_shared_pool_capacity(const hyle_shared_pool *p);
 /* A vtable view of the pool. realloc resizes in place while new_size fits the
  * fixed block, frees on new_size==0, and otherwise fails without freeing.
  * The handle stays owned by the pool; valid until destroy. */
 HYLE_MEM_C_API hyle_allocator
-hyle_shared_pool_as_allocator(hyle_shared_pool_o *p);
+hyle_shared_pool_as_allocator(hyle_shared_pool *p);
+
+static inline hyle_shared_pool *
+hyle_shared_pool_create_default(size_t block_size, uint32_t block_count,
+                                size_t alignment) {
+  return hyle_shared_pool_create(hyle_system_allocator(), block_size,
+                                 block_count, alignment);
+}
 
 /* ========================================================================== */
 /* SharedPoolCached — SharedPool + per-thread TLS fast path (SOFT capacity) */
@@ -306,38 +336,46 @@ hyle_shared_pool_as_allocator(hyle_shared_pool_o *p);
  * cross-thread quota (use SharedPool). Same create/OOM contract as SharedPool.
  */
 
-typedef struct hyle_shared_pool_cached_o hyle_shared_pool_cached_o;
+typedef struct hyle_shared_pool_cached_o hyle_shared_pool_cached;
 
-HYLE_MEM_C_API hyle_shared_pool_cached_o *
+HYLE_MEM_C_API hyle_shared_pool_cached *
 hyle_shared_pool_cached_create(hyle_allocator backing, size_t block_size,
                                uint32_t block_count, size_t alignment);
 /* Contract: no live block and all concurrent pool access is quiesced. Worker
  * threads may remain alive after external synchronization; their detached TLS
  * nodes are safe. */
 HYLE_MEM_C_API void
-hyle_shared_pool_cached_destroy(hyle_shared_pool_cached_o *p);
+hyle_shared_pool_cached_destroy(hyle_shared_pool_cached *p);
 /* Pop a free block; NULL if the local TLS AND every shard is empty (blocks
  * parked in OTHER live threads' TLS are invisible -- soft capacity). */
 HYLE_MEM_C_API void *
-hyle_shared_pool_cached_allocate(hyle_shared_pool_cached_o *p);
+hyle_shared_pool_cached_allocate(hyle_shared_pool_cached *p);
 /* Return a block; lands in THIS thread's TLS (zero atomics), overflow flushes.
  */
 HYLE_MEM_C_API void
-hyle_shared_pool_cached_deallocate(hyle_shared_pool_cached_o *p, void *ptr);
+hyle_shared_pool_cached_deallocate(hyle_shared_pool_cached *p, void *ptr);
 /* Flush THIS thread's TLS freelist to the shards so other threads can see the
  * freed blocks without waiting for this thread to exit (soft-capacity handoff
  * barrier). */
 HYLE_MEM_C_API void
-hyle_shared_pool_cached_publish(hyle_shared_pool_cached_o *p);
+hyle_shared_pool_cached_publish(hyle_shared_pool_cached *p);
 /* Return EVERY block. Contract: NO block live; quiesce concurrent access first.
  */
-HYLE_MEM_C_API void hyle_shared_pool_cached_reset(hyle_shared_pool_cached_o *p);
+HYLE_MEM_C_API void hyle_shared_pool_cached_reset(hyle_shared_pool_cached *p);
 HYLE_MEM_C_API size_t
-hyle_shared_pool_cached_block_size(const hyle_shared_pool_cached_o *p);
+hyle_shared_pool_cached_block_size(const hyle_shared_pool_cached *p);
 HYLE_MEM_C_API uint32_t
-hyle_shared_pool_cached_capacity(const hyle_shared_pool_cached_o *p);
+hyle_shared_pool_cached_capacity(const hyle_shared_pool_cached *p);
 HYLE_MEM_C_API hyle_allocator
-hyle_shared_pool_cached_as_allocator(hyle_shared_pool_cached_o *p);
+hyle_shared_pool_cached_as_allocator(hyle_shared_pool_cached *p);
+
+static inline hyle_shared_pool_cached *
+hyle_shared_pool_cached_create_default(size_t block_size,
+                                       uint32_t block_count,
+                                       size_t alignment) {
+  return hyle_shared_pool_cached_create(hyle_system_allocator(), block_size,
+                                        block_count, alignment);
+}
 
 /* ---- typed object-pool convenience (header-inline; zero new ABI) ------------
  * A SharedPool with block_size == sizeof(T) IS a fixed-capacity object pool of
@@ -357,6 +395,8 @@ hyle_shared_pool_cached_as_allocator(hyle_shared_pool_cached_o *p);
 #define HYLE_OBJECT_POOL_ACQUIRE(pool, T) ((T *)hyle_shared_pool_allocate(pool))
 #define HYLE_OBJECT_POOL_RELEASE(pool, p)                                      \
   hyle_shared_pool_deallocate((pool), (p))
+#define HYLE_OBJECT_POOL_CREATE_DEFAULT(T, count)                              \
+  hyle_shared_pool_create_default(sizeof(T), (count), HYLE_ALIGNOF(T))
 
 /* Cached typed raw-slot counterpart. Same C lifetime model; publish before a
  * cross-thread capacity handoff when the freeing thread remains alive. */
@@ -368,72 +408,79 @@ hyle_shared_pool_cached_as_allocator(hyle_shared_pool_cached_o *p);
   hyle_shared_pool_cached_deallocate((pool), (p))
 #define HYLE_OBJECT_POOL_CACHED_PUBLISH(pool)                                  \
   hyle_shared_pool_cached_publish((pool))
+#define HYLE_OBJECT_POOL_CACHED_CREATE_DEFAULT(T, count)                       \
+  hyle_shared_pool_cached_create_default(sizeof(T), (count), HYLE_ALIGNOF(T))
 
 /* ========================================================================== */
 /* StackAllocator — LIFO bump over one owned slab */
 /* ========================================================================== */
 
-typedef struct hyle_stack_allocator_o hyle_stack_allocator_o;
+typedef struct hyle_stack_allocator_o hyle_stack_allocator;
 
 /* Owns a `size`-byte slab from `backing`; the opaque control uses the same
  * backing. Invalid backing, zero size, control allocation failure, or slab OOM
  * returns NULL and sets hyle_mem_last_error.
  */
-HYLE_MEM_C_API hyle_stack_allocator_o *
+HYLE_MEM_C_API hyle_stack_allocator *
 hyle_stack_allocator_create(hyle_allocator backing, size_t size);
-HYLE_MEM_C_API void hyle_stack_allocator_destroy(hyle_stack_allocator_o *s);
+HYLE_MEM_C_API void hyle_stack_allocator_destroy(hyle_stack_allocator *s);
 /* Bump `bytes` aligned to `alignment` (0 => default). NULL if it won't fit. */
-HYLE_MEM_C_API void *hyle_stack_allocator_allocate(hyle_stack_allocator_o *s,
+HYLE_MEM_C_API void *hyle_stack_allocator_allocate(hyle_stack_allocator *s,
                                                    size_t bytes,
                                                    size_t alignment);
-HYLE_MEM_C_API void hyle_stack_allocator_reset(hyle_stack_allocator_o *s);
+HYLE_MEM_C_API void hyle_stack_allocator_reset(hyle_stack_allocator *s);
 /* Save the cursor; rewind() returns the slab to exactly this point (LIFO). */
-HYLE_MEM_C_API void *hyle_stack_allocator_mark(const hyle_stack_allocator_o *s);
-HYLE_MEM_C_API void hyle_stack_allocator_rewind(hyle_stack_allocator_o *s,
+HYLE_MEM_C_API void *hyle_stack_allocator_mark(const hyle_stack_allocator *s);
+HYLE_MEM_C_API void hyle_stack_allocator_rewind(hyle_stack_allocator *s,
                                                 void *marker);
 HYLE_MEM_C_API size_t
-hyle_stack_allocator_used(const hyle_stack_allocator_o *s);
+hyle_stack_allocator_used(const hyle_stack_allocator *s);
 HYLE_MEM_C_API size_t
-hyle_stack_allocator_capacity(const hyle_stack_allocator_o *s);
+hyle_stack_allocator_capacity(const hyle_stack_allocator *s);
 HYLE_MEM_C_API size_t
-hyle_stack_allocator_remaining(const hyle_stack_allocator_o *s);
+hyle_stack_allocator_remaining(const hyle_stack_allocator *s);
 /* Vtable view (alloc=bump, free=no-op, realloc=bump+copy). Owned by s. */
 HYLE_MEM_C_API hyle_allocator
-hyle_stack_allocator_as_allocator(hyle_stack_allocator_o *s);
+hyle_stack_allocator_as_allocator(hyle_stack_allocator *s);
+
+static inline hyle_stack_allocator *
+hyle_stack_allocator_create_default(size_t size) {
+  return hyle_stack_allocator_create(hyle_system_allocator(), size);
+}
 
 /* ========================================================================== */
 /* PooledRegion — bump over ONE borrowed SharedPool block */
 /* ========================================================================== */
 
-typedef struct hyle_pooled_region_o hyle_pooled_region_o;
+typedef struct hyle_pooled_region_o hyle_pooled_region;
 
 /* Borrows one block from `pool` (a SharedPool, which must outlive the region).
  * Returns NULL if `pool` is NULL, the control allocation fails, or the pool has
  * no free block (exhausted) -- the exhausted case sets
  * hyle_mem_last_error("...pool exhausted..."). Pool exhaustion is a graceful
  * resource failure (NULL), not a contract violation. */
-HYLE_MEM_C_API hyle_pooled_region_o *
-hyle_pooled_region_create(hyle_shared_pool_o *pool);
+HYLE_MEM_C_API hyle_pooled_region *
+hyle_pooled_region_create(hyle_shared_pool *pool);
 HYLE_MEM_C_API void
-hyle_pooled_region_destroy(hyle_pooled_region_o *r); /* returns block to pool */
-HYLE_MEM_C_API void *hyle_pooled_region_allocate(hyle_pooled_region_o *r,
+hyle_pooled_region_destroy(hyle_pooled_region *r); /* returns block to pool */
+HYLE_MEM_C_API void *hyle_pooled_region_allocate(hyle_pooled_region *r,
                                                  size_t bytes,
                                                  size_t alignment);
-HYLE_MEM_C_API void hyle_pooled_region_clear(hyle_pooled_region_o *r);
-HYLE_MEM_C_API size_t hyle_pooled_region_used(const hyle_pooled_region_o *r);
+HYLE_MEM_C_API void hyle_pooled_region_clear(hyle_pooled_region *r);
+HYLE_MEM_C_API size_t hyle_pooled_region_used(const hyle_pooled_region *r);
 HYLE_MEM_C_API size_t
-hyle_pooled_region_remaining(const hyle_pooled_region_o *r);
+hyle_pooled_region_remaining(const hyle_pooled_region *r);
 HYLE_MEM_C_API size_t
-hyle_pooled_region_block_size(const hyle_pooled_region_o *r);
+hyle_pooled_region_block_size(const hyle_pooled_region *r);
 /* Vtable view (alloc=bump, free=no-op, realloc=bump+copy). Owned by r. */
 HYLE_MEM_C_API hyle_allocator
-hyle_pooled_region_as_allocator(hyle_pooled_region_o *r);
+hyle_pooled_region_as_allocator(hyle_pooled_region *r);
 
 /* ========================================================================== */
 /* GrowablePool — single-threaded, unbounded object pool of raw slots */
 /* ========================================================================== */
 
-typedef struct hyle_growable_pool_o hyle_growable_pool_o;
+typedef struct hyle_growable_pool_o hyle_growable_pool;
 
 /* A pool of raw `slot_size`-byte slots (each aligned to `slot_align`, 0 => the
  * default alignment) that GROWS on demand -- unlike hyle_shared_pool_* it is
@@ -448,25 +495,32 @@ typedef struct hyle_growable_pool_o hyle_growable_pool_o;
  * out RAW uninitialized storage and release() runs NO destructor: the C caller
  * inits the slot and cleans it up before releasing. (The ctor/dtor-running C++
  * hyle::mem::GrowablePool<T> is a C++-only convenience, not a gap here.) */
-HYLE_MEM_C_API hyle_growable_pool_o *
+HYLE_MEM_C_API hyle_growable_pool *
 hyle_growable_pool_create(hyle_allocator backing, size_t slot_size,
                           size_t slot_align, uint32_t initial_slots);
-HYLE_MEM_C_API void hyle_growable_pool_destroy(hyle_growable_pool_o *p);
+HYLE_MEM_C_API void hyle_growable_pool_destroy(hyle_growable_pool *p);
 /* Acquire a raw uninitialized slot (a freed one is reused, else the pool
  * grows). */
-HYLE_MEM_C_API void *hyle_growable_pool_acquire(hyle_growable_pool_o *p);
+HYLE_MEM_C_API void *hyle_growable_pool_acquire(hyle_growable_pool *p);
 /* Return a slot from acquire() to the free-list; runs no destructor. NULL
  * no-op. */
-HYLE_MEM_C_API void hyle_growable_pool_release(hyle_growable_pool_o *p,
+HYLE_MEM_C_API void hyle_growable_pool_release(hyle_growable_pool *p,
                                                void *slot);
 /* Hand every block back to the backing (trim). Contract: NO slot may be live.
  */
-HYLE_MEM_C_API void hyle_growable_pool_reset(hyle_growable_pool_o *p);
+HYLE_MEM_C_API void hyle_growable_pool_reset(hyle_growable_pool *p);
 /* Total slots across all blocks currently held (grows geometrically). */
 HYLE_MEM_C_API size_t
-hyle_growable_pool_capacity(const hyle_growable_pool_o *p);
+hyle_growable_pool_capacity(const hyle_growable_pool *p);
 /* Live (acquired, not yet released) slot count. */
-HYLE_MEM_C_API size_t hyle_growable_pool_live(const hyle_growable_pool_o *p);
+HYLE_MEM_C_API size_t hyle_growable_pool_live(const hyle_growable_pool *p);
+
+static inline hyle_growable_pool *
+hyle_growable_pool_create_default(size_t slot_size, size_t slot_align,
+                                  uint32_t initial_slots) {
+  return hyle_growable_pool_create(hyle_system_allocator(), slot_size,
+                                   slot_align, initial_slots);
+}
 
 /* ---- typed convenience (header-inline; zero new ABI) ------------------------
  * A GrowablePool with slot_size == sizeof(T) is a growable raw-slot pool of T.
@@ -481,6 +535,9 @@ HYLE_MEM_C_API size_t hyle_growable_pool_live(const hyle_growable_pool_o *p);
   ((T *)hyle_growable_pool_acquire(pool))
 #define HYLE_GROWABLE_POOL_RELEASE(pool, p)                                    \
   hyle_growable_pool_release((pool), (p))
+#define HYLE_GROWABLE_POOL_CREATE_DEFAULT(T, initial_slots)                    \
+  hyle_growable_pool_create_default(sizeof(T), HYLE_ALIGNOF(T),                \
+                                    (initial_slots))
 
 /* ========================================================================== */
 /* HugeRegion — huge-page / NUMA-placed span */
@@ -501,38 +558,53 @@ typedef enum hyle_huge_flags {
  * the same FFI discoverability reason. */
 typedef enum hyle_mem_numa_node { HYLE_MEM_NUMA_ANY = -1 } hyle_mem_numa_node;
 
-typedef struct hyle_huge_region_o hyle_huge_region_o;
+typedef struct hyle_huge_region_o hyle_huge_region;
 
 /* Reserve+commit `bytes` (large-page aligned), placed per flags/node.
  * NULL on failure (see hyle_mem_last_error via platform's hyle_vm_last_error).
  */
-HYLE_MEM_C_API hyle_huge_region_o *
+HYLE_MEM_C_API hyle_huge_region *
 hyle_huge_region_open(size_t bytes, uint32_t flags, int numa_node);
 /* Prefer the calling thread's home node. */
-HYLE_MEM_C_API hyle_huge_region_o *hyle_huge_region_open_local(size_t bytes,
-                                                               uint32_t flags);
+HYLE_MEM_C_API hyle_huge_region *hyle_huge_region_open_local(size_t bytes,
+                                                             uint32_t flags);
 /* Interleave across all nodes + THP (shared multi-MB arena). */
-HYLE_MEM_C_API hyle_huge_region_o *
+HYLE_MEM_C_API hyle_huge_region *
 hyle_huge_region_open_interleaved(size_t bytes);
-HYLE_MEM_C_API void hyle_huge_region_destroy(hyle_huge_region_o *r);
-HYLE_MEM_C_API int hyle_huge_region_valid(const hyle_huge_region_o *r);
-HYLE_MEM_C_API void *hyle_huge_region_data(hyle_huge_region_o *r);
-HYLE_MEM_C_API size_t hyle_huge_region_size(const hyle_huge_region_o *r);
+HYLE_MEM_C_API void hyle_huge_region_destroy(hyle_huge_region *r);
+HYLE_MEM_C_API void *hyle_huge_region_data(hyle_huge_region *r);
+HYLE_MEM_C_API size_t hyle_huge_region_size(const hyle_huge_region *r);
 /* Requested versus OS-accepted policy. THP accepted means the advice call
  * succeeded; physical page promotion remains kernel-controlled and may happen
  * later. */
 HYLE_MEM_C_API uint32_t
-hyle_huge_region_requested_flags(const hyle_huge_region_o *r);
+hyle_huge_region_requested_flags(const hyle_huge_region *r);
 HYLE_MEM_C_API uint32_t
-hyle_huge_region_accepted_flags(const hyle_huge_region_o *r);
+hyle_huge_region_accepted_flags(const hyle_huge_region *r);
 HYLE_MEM_C_API int
-hyle_huge_region_requested_numa_node(const hyle_huge_region_o *r);
+hyle_huge_region_requested_numa_node(const hyle_huge_region *r);
 HYLE_MEM_C_API int
-hyle_huge_region_numa_placement_applied(const hyle_huge_region_o *r);
+hyle_huge_region_numa_placement_applied(const hyle_huge_region *r);
 
 /* ========================================================================== */
 /* Diagnostics */
 /* ========================================================================== */
+
+/* Machine-readable reason from the last factory/policy operation that updated
+ * the mem diagnostic channel on this thread. Pointer-returning construction
+ * APIs keep their direct NULL path; this errno-style code distinguishes
+ * expected pool-borrow exhaustion from OOM and bad input without parsing a
+ * string. Hot allocate/free/pop paths deliberately do not write TLS merely to
+ * clear this code; their documented NULL capacity/OOM result remains direct. */
+typedef enum hyle_mem_error {
+  HYLE_MEM_ERROR_NONE = 0,
+  HYLE_MEM_ERROR_INVALID_ARGUMENT = 1,
+  HYLE_MEM_ERROR_OUT_OF_MEMORY = 2,
+  HYLE_MEM_ERROR_EXHAUSTED = 3,
+  HYLE_MEM_ERROR_PLATFORM = 4
+} hyle_mem_error;
+
+HYLE_MEM_C_API hyle_mem_error hyle_mem_last_error_code(void);
 
 /* Last error from a mem C operation on THIS thread, or "" if none. This is an
  * independent mem channel: mem factories do not overwrite hyle_vm_last_error;
