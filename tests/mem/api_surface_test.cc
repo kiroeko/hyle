@@ -6,6 +6,7 @@
 #include <span>
 #include <type_traits>
 
+#include "hyle/c/mem.h"
 #include "hyle/mem/alignment.h"
 #include "hyle/mem/allocator.h"
 #include "hyle/mem/fiber_stack.h"
@@ -21,6 +22,7 @@
 #include "hyle/mem/stack_allocator.h"
 #include "hyle/mem/stats.h"
 #include "hyle/mem/system_inline.h"
+#include "hyle/platform/virtual_memory.h"
 
 namespace {
 
@@ -110,6 +112,20 @@ TEST(MemApiSurface, PublicCapabilityFamiliesCompileTogether) {
   EXPECT_EQ(kFiberStackDefault, 64u * 1024u);
   EXPECT_EQ(kFiberStackLarge, 256u * 1024u);
   EXPECT_GE(kDefaultAlignment, alignof(void*));
+}
+
+TEST(MemApiSurface, CErrorChannelDoesNotOverwritePlatformVmError) {
+  hyle::platform::vm_set_last_error("platform sentinel");
+  hyle_allocator invalid{};
+  EXPECT_EQ(hyle_shared_pool_create(invalid, 64, 4, 0), nullptr);
+  EXPECT_NE(hyle_mem_last_error()[0], '\0');
+  EXPECT_STREQ(hyle::platform::vm_last_error(), "platform sentinel");
+
+  EXPECT_EQ(hyle_huge_region_open(0, HYLE_HUGE_NONE, HYLE_MEM_NUMA_ANY),
+            nullptr);
+  EXPECT_NE(hyle_mem_last_error()[0], '\0');
+  EXPECT_STREQ(hyle::platform::vm_last_error(), "platform sentinel");
+  hyle::platform::vm_set_last_error(nullptr);
 }
 
 }  // namespace

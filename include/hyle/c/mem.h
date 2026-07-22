@@ -6,17 +6,16 @@
  * Naming: every symbol is `hyle_*` / `HYLE_*`.
  * Do NOT include hyle/mem/ headers from C or cross-compiler FFI.
  *
- * Surface: the injectable Allocator vtable (system_allocator + usable/good
- * size), plus opaque handles for SharedPool / SharedPoolCached
- * (hard/soft-capacity sharded fixed-block pools), StackAllocator (LIFO bump),
- * PooledRegion (bump over one pooled block), HugeRegion (huge-page / NUMA
- * span), and
- * the process-wide mimalloc policy knobs. Docs (1:1 with this header):
+ * Surface: the injectable Allocator vtable, quota/region/external-buffer
+ * allocators, hard/soft shared pools, stack/pooled regions, growable raw-slot
+ * pools, HugeRegion, and process-wide mimalloc policy knobs. Docs (1:1):
  * docs/guide/c-mem.md
  */
 #ifndef HYLE_C_MEM_H_
 #define HYLE_C_MEM_H_
 
+/* Intentionally the C header: this file is the language-neutral ABI boundary.
+ * Native C++ users include hyle/mem/*.h, which use <cstddef> and std::size_t. */
 #include <stddef.h>
 #include <stdint.h>
 
@@ -187,9 +186,23 @@ HYLE_MEM_C_API hyle_allocator hyle_region_as_allocator(hyle_region_o *r);
 
 typedef struct hyle_fixed_region_o hyle_fixed_region_o;
 
-/* Payload allocation never falls back or allocates. create() allocates only the
- * small opaque C control; `storage` remains caller-owned and must outlive the
- * control/results. */
+/* Caller-owned control storage for a strict no-heap FixedRegion handle. The
+ * bytes are intentionally opaque; the pointer member gives the internal
+ * pointer/size-only control object its required alignment on supported ABIs. */
+#define HYLE_FIXED_REGION_CONTROL_BYTES 128u
+typedef union hyle_fixed_region_storage {
+  void *alignment;
+  unsigned char bytes[HYLE_FIXED_REGION_CONTROL_BYTES];
+} hyle_fixed_region_storage;
+
+/* Strict no-heap construction: both control and payload storage are caller
+ * owned. destroy() ends the control lifetime but does not free either buffer. */
+HYLE_MEM_C_API hyle_fixed_region_o *
+hyle_fixed_region_init(hyle_fixed_region_storage *control, void *storage,
+                       size_t size);
+/* Convenience factory: payload allocation still never falls back, but the
+ * small opaque control is allocated from the system allocator. `storage`
+ * remains caller-owned and must outlive the control/results. */
 HYLE_MEM_C_API hyle_fixed_region_o *hyle_fixed_region_create(void *storage,
                                                              size_t size);
 HYLE_MEM_C_API void hyle_fixed_region_destroy(hyle_fixed_region_o *r);
@@ -207,9 +220,19 @@ hyle_fixed_region_as_allocator(hyle_fixed_region_o *r);
 
 typedef struct hyle_fixed_pool_o hyle_fixed_pool_o;
 
-/* Single-threaded. Allocation metadata lives inside storage; no payload
- * fallback. create() allocates only the opaque C control. Individual
- * allocations can be freed. */
+#define HYLE_FIXED_POOL_CONTROL_BYTES 1024u
+typedef union hyle_fixed_pool_storage {
+  void *alignment;
+  unsigned char bytes[HYLE_FIXED_POOL_CONTROL_BYTES];
+} hyle_fixed_pool_storage;
+
+/* Strict no-heap construction: control is caller-owned and allocation metadata
+ * lives inside payload storage. destroy() frees neither buffer. */
+HYLE_MEM_C_API hyle_fixed_pool_o *
+hyle_fixed_pool_init(hyle_fixed_pool_storage *control, void *storage,
+                     size_t size);
+/* Convenience factory: no payload fallback, but create() allocates the opaque
+ * control from the system allocator. Individual allocations can be freed. */
 HYLE_MEM_C_API hyle_fixed_pool_o *hyle_fixed_pool_create(void *storage,
                                                          size_t size);
 HYLE_MEM_C_API void hyle_fixed_pool_destroy(hyle_fixed_pool_o *p);
@@ -507,11 +530,11 @@ hyle_huge_region_numa_placement_applied(const hyle_huge_region_o *r);
 /* Diagnostics */
 /* ========================================================================== */
 
-/* Last error from a mem VM-backed op (HugeRegion open / huge-page reservation)
- * on THIS thread, or "" if none. Forwards platform's thread-local vm_last_error
- * so a caller binding only hyle/c/mem.h can read why a hyle_huge_region_open*
- * returned NULL without also binding hyle/c/platform.h. Valid until the next
- * failing VM call on the same thread. */
+/* Last error from a mem C operation on THIS thread, or "" if none. This is an
+ * independent mem channel: mem factories do not overwrite hyle_vm_last_error;
+ * HugeRegion temporarily captures and copies its VM cause here, then restores
+ * the platform channel. Valid until the next mem operation that updates this
+ * thread's channel. */
 HYLE_MEM_C_API const char *hyle_mem_last_error(void);
 
 /* ========================================================================== */

@@ -74,14 +74,14 @@
 | **mem** SystemAllocator churn(默认) | 7.93/8.04/7.77 | malloc OS | 25/4.7/20 | 大赢 OS | 裸 mimalloc | 7.86/8.04/7.91 | **~1.00x 三平台** | ➖**平 mi SOTA**(2026-07-20 n=15) |
 | **mem** Allocator vtable churn | 8.67/8.67/7.93 | pmr over mi | 8.67/10.3/9.98 | 平/1.22/1.26 | 裸 mi | 7.86/8.04/7.91 | **0.91/0.94/1.00** | ⚠️对 mi Win/Lin **sign 输~6–9%**；✅对 pmr 平/赢 |
 | **mem** PooledRegion/Stack bump | 0.57·0.55/0.36·0.36/2.23 | pmr monotonic | 1.46/0.62/**1.24** | **2.65/1.70/0.56x** | 裸 mi | 3.9/3.9/4.8 | 7–11x/2x | ⚠️**平台翻转**(Win/Lin 赢 pmr；**M4 输 0.56x**) |
-| **mem** Region owned request scratch | 1.674/1.137/2.282 | pmr monotonic release | 1.923/2.033/2.444 | **1.126/1.779/1.073** | Folly Arena（shape 参考，未同 harness 实测） | n/a | n/a | ✅三平台 sign 赢；M4 interactive/utility 各 n=31 均赢，无硬核心亲和 |
+| **mem** Region owned request scratch | 1.674/1.137/2.282 | pmr monotonic release | 1.923/2.033/2.444 | **1.126/1.779/1.073** | Folly Arena（shape 参考，未同 harness 实测） | n/a | n/a | ✅三平台 sign 赢；WSL Clang 另为 1.482x；M4 interactive/utility 各 n=31 均赢，无硬核心亲和 |
 | **mem** GrowablePool 单线程 | 2.76/1.38/2.46 | pmr unsync | 5.57/11.3/3.47 | **2.0/8.3/1.4x** | 裸 mi | 4.75/4.31/5.80 | **1.7/3.1/2.4x** | ✅三平台赢公平 ST 标尺；固定共享池不是这条单线程合同的对手 |
 | **mem** GrowablePool 8t per-thread | 0.93/0.61/0.60 | mi 8t | 1.35/1.28/1.42 | **1.49/2.07/2.38x** | mi per-thread | 同左 | 同左 | ✅三平台 sign 赢 |
 | **mem** SharedPool request batch=64（硬容量） | 8.315/6.609/11.881 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 4.200/2.280/2.024 | **0.515/0.338/0.170x** | ❌三平台 sign 输；为 completed-free 立即共享和精确 quota 付费，不冒充本地 churn 工具 |
 | **mem** SharedPool pipelined handoff（硬容量） | 5.304/3.807/12.931 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.433/9.239/4.871 | **1.976/2.380/0.372x** | ⚠️平台翻转：Win/WSL sign 赢，M4 sign 输 |
 | **mem** SharedPoolCached request batch=64（软容量） | 3.540/1.754/1.537 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 4.200/2.280/2.024 | **1.171/1.285/1.316x** | ✅Win/WSL sign 赢；➖M4 sign 平（8/9 同侧） |
 | **mem** SharedPoolCached pipelined handoff（软容量） | 4.062/2.414/3.072 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.433/9.239/4.871 | **2.627/3.807/1.586x** | ✅三平台 sign 赢；TLS 128 + magazine 32 + publish，不外推为硬容量合同 |
-| **mem** FixedPool external mixed-size window | 10.314/7.555/8.619 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.094/7.774/9.319 | **0.983/1.027/1.083x** | Win spread/sign TIE；Linux/M4 spread TIE/sign WIN；M4 为 interactive QoS，utility 亦赢 |
+| **mem** FixedPool external mixed-size window | 10.314/7.555/8.619 | （无同合同 std） | n/a | n/a | oneTBB fixed_pool | 10.094/7.774/9.319 | **0.983/1.027/1.083x** | Win spread/sign TIE；GCC Linux/M4 spread TIE/sign WIN；WSL Clang 1.289x spread/sign WIN；M4 utility 亦赢 |
 | **mem** reallocate grow chain | 80/83/82 | std::realloc | 200/176/204 | ~2.5x | mi_realloc | 67/77/83 | **0.83/0.92/1.01** | ⚠️Win/Lin 输裸 mi；M4 平 |
 | **container·hash** Hash&lt;T&gt; 16B POD 内联 | 0.43 | std::hash | ~0.9 | ~2x | wyhash | 0.94 | 2.2x | ✅赢(2026-07 改 abseil 单 128 位乘 mix64_2:0.59→0.43,vs wyhash 1.6x→2.2x) |
 | **container·hash** mix64 整数 | 0.44 | std::hash | 1.50 | 3.4x | wyhash64 | 0.57 | 1.27x | ✅赢(已 SOTA=abseil 同款单乘折叠) |

@@ -1,6 +1,6 @@
 # mem 全面收口计划
 
-> 状态：执行中（能力族与 C++ 公开形状已落地；C draft surface、Linux Clang 与独立主机 TSan 尚未签字）
+> 状态：执行中（能力族、C++ 形状与 C draft 产品审查已落地；独立主机 TSan 尚未签字）
 > 建立日期：2026-07-22
 > 设计源：[`../architecture/mem-design.md`](../architecture/mem-design.md)
 
@@ -114,7 +114,7 @@ mem 拥有普通 CPU-addressable host RAM 的分配与生命周期原语：
 - [x] foreign pointer、double return、duplicate destroy。
 - [x] randomized reference-model 测试。
 - [ ] ASan、UBSan、TSan。
-- [ ] Windows MSVC、Linux GCC/Clang、macOS arm64。
+- [x] Windows MSVC、Linux GCC/Clang、macOS arm64。
 - [x] C header self-contained、纯 C 编译和导出符号检查。
 
 ### M8：性能认证与发布面收口
@@ -147,8 +147,10 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
   external initial buffer 的可移植 rewind；现在每个 request 在同一 buffer 上重建 resource。
 - 建立 C++ current-surface 编译检查，覆盖全部公开 mem 能力族；C++ object layout 不承诺
   binary ABI。C manifest 同时校验 header 声明、纯 C 消费引用和 DLL/ELF 实际导出，但只是
-  未发布草案的同步检查。审查已修：有 backing 的 opaque control 也由该 backing 分配；非法
-  C layout/alignment 返回 NULL + last-error；adapter 统一 `*_as_allocator`。
+  未发布草案的同步检查。审查已修：`FixedRegion`/`FixedPool` 提供 caller-owned in-place
+  control，strict no-heap 用户不再被 `create()` 的便利分配绑住；mem last-error 与 platform VM
+  error 独立，HugeRegion 只拷贝本次 VM 失败原因；非法 C layout/alignment 返回 NULL +
+  last-error；adapter 统一 `*_as_allocator`。Stats/Leak 暂不机械镜像到 C，等待真实 C 消费者。
 - `HYLE_TESTING` 为 shared/cached/object/growable pool 增加 liveness、foreign/double
   return/destroy 和 outstanding allocation fail-fast；shipping 构建不含 per-slot 状态和
   热路径诊断指令。
@@ -173,8 +175,12 @@ context preserve、adapter overhead、NUMA/大页吞吐与 RSS。
 | Windows/MSVC Release（`7f270bb`） | mem 167/167；纯 C 通过；C surface 93/93；全仓 CTest 50/50 |
 | Windows/MSVC ASan（`7f270bb`） | 非 death mem 149/149；纯 C 通过；C surface 93/93 |
 | Ubuntu 24.04 / GCC 14.2 UBSan（`7f270bb`） | mem 167/167（含 death）；纯 C 通过；C surface/纯 C 引用/ELF 导出均 93/93 |
+| Ubuntu 24.04 / Clang 20.1 Release（`803dae6`） | mem CTest 3/3；注册 167 tests，非 death 149/149；纯 C 与 C surface 通过 |
 | Apple M4 / AppleClang 21 Release（`7f270bb`） | mem 167/167；纯 C 与 C surface 通过 |
 | Apple M4 / AppleClang 21 ASan（`7f270bb`） | 非 death mem 149/149；纯 C 通过 |
+| 当前 C draft 增量 / Windows MSVC | mem 168/168；CTest 3/3；纯 C 与 C surface 通过 |
+| 当前 C draft 增量 / Ubuntu Clang 20.1 | 非 death mem 150/150；纯 C 与 C surface 通过 |
+| 当前 C draft 增量 / Apple M4 AppleClang 21 | 非 death mem 150/150；纯 C 与 C surface 通过 |
 | Ubuntu 24.04 / GCC 14.2 TSan（前一基线） | 编译通过；WSL 启动前因 `unexpected memory mapping` 无法运行，不计通过 |
 | compute/Vulkan 隔离观察 | compute 78 pass/2 skip；Vulkan 14 pass/2 skip；GPU await 2/2 |
 
@@ -191,15 +197,23 @@ oneTBB 10.094 ns/op，HYLE/oneTBB throughput ratio 中位数 0.983、范围 0.91
 FixedPool 均通过 sign 闸门。Darwin 无受支持的硬亲和/实际 core-class 证明，因此 M4 只签
 application QoS 边界，不写成所有 P/E 核组合均已认证。
 
+Ubuntu 24.04 / Clang 20.1 shipping-like section F 固定到 WSL guest CPU 2，`n=15`。FixedRegion、
+owned Region、FixedPool 的 paired throughput ratio 中位数分别为 1.899、1.482、1.289，三组
+均 15/15 同侧且通过 spread/sign 闸门。WSL 不公开 guest CPU 对宿主 P/E 核的物理映射，故
+这里只签 guest affinity，不声称物理 P-core pin。
+
+C draft 产品审查不以兼容为约束：`hyle_mem_last_error` 已从 platform VM TLS 拆成独立通道；
+FixedRegion/FixedPool 增加 caller-owned opaque storage + `init`，control 与 payload 可同时严格
+no-heap，`create` 继续作为易用工厂。StatsAllocator/LeakTracker 没有真实 C 消费者，裁决为
+保持 C++-only。manifest 继续是同步检查，不在首次发布决定前冻结。
+
 仍未完成：
 
-1. 在 Linux Clang 重跑正确性与同一 F workload；GCC 14.2、AppleClang 21 已补。
-2. 独立 Linux host 上运行 TSan；WSL 的启动前 mapping 失败不计通过也不计产品失败。
-3. 完成 C surface 产品审查：独立 mem error channel、strict no-heap C 是否需要 in-place control、
-   Stats/Leak 是否有真实 C 消费者；manifest 在此之前不冻结。allocation/free poison 与新增类型的完整 failpoint matrix；pool foreign/double/outstanding
+1. 独立 Linux host 上运行 TSan；WSL 的启动前 mapping 失败不计通过也不计产品失败。
+2. allocation/free poison 与新增类型的完整 failpoint matrix；pool foreign/double/outstanding
    diagnostics 已完成。
-4. p50/p95/p99、RSS/fragmentation、三平台原始结果与 commit-bound 证书。
-5. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
+3. p50/p95/p99、RSS/fragmentation、三平台原始结果与 commit-bound 证书。
+4. compute/Vulkan staging/completion 架构与纳秒 benchmark 单独复审；现有测试通过不等于
    该设计已经收口。
 
 ## 6. 收口退出门槛

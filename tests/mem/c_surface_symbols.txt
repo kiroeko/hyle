@@ -10,6 +10,7 @@ hyle_fixed_pool_capacity
 hyle_fixed_pool_create
 hyle_fixed_pool_deallocate
 hyle_fixed_pool_destroy
+hyle_fixed_pool_init
 hyle_fixed_pool_reallocate
 hyle_fixed_pool_reset
 hyle_fixed_pool_used
@@ -19,6 +20,7 @@ hyle_fixed_region_capacity
 hyle_fixed_region_clear
 hyle_fixed_region_create
 hyle_fixed_region_destroy
+hyle_fixed_region_init
 hyle_fixed_region_used
 hyle_growable_pool_acquire
 hyle_growable_pool_capacity

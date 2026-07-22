@@ -193,8 +193,10 @@ int main(void) {
   /* ---- external fixed Region + variable-size FixedPool ---- */
   {
     unsigned char region_storage[512];
+    hyle_fixed_region_storage region_control;
     hyle_fixed_region_o *r =
-        hyle_fixed_region_create(region_storage, sizeof region_storage);
+        hyle_fixed_region_init(&region_control, region_storage,
+                               sizeof region_storage);
     CHECK(r != NULL);
     CHECK(hyle_fixed_region_capacity(r) == sizeof region_storage);
     void *p = hyle_fixed_region_allocate(r, 64, 32);
@@ -206,9 +208,16 @@ int main(void) {
     CHECK(hyle_fixed_region_used(r) == 0u);
     hyle_fixed_region_destroy(r);
 
+    /* Convenience create/destroy remains available when hidden control
+       allocation is acceptable. */
+    r = hyle_fixed_region_create(region_storage, sizeof region_storage);
+    CHECK(r != NULL);
+    hyle_fixed_region_destroy(r);
+
     unsigned char pool_storage[4096];
+    hyle_fixed_pool_storage pool_control;
     hyle_fixed_pool_o *pool =
-        hyle_fixed_pool_create(pool_storage, sizeof pool_storage);
+        hyle_fixed_pool_init(&pool_control, pool_storage, sizeof pool_storage);
     CHECK(pool != NULL);
     CHECK(hyle_fixed_pool_capacity(pool) <= sizeof pool_storage);
     void *a = hyle_fixed_pool_allocate(pool, 100, 64);
@@ -226,6 +235,10 @@ int main(void) {
     CHECK(hyle_fixed_pool_used(pool) == 0u);
     CHECK(hyle_fixed_pool_allocate(pool, 2048, 64) != NULL);
     hyle_fixed_pool_reset(pool); /* caller has discarded every allocation */
+    hyle_fixed_pool_destroy(pool);
+
+    pool = hyle_fixed_pool_create(pool_storage, sizeof pool_storage);
+    CHECK(pool != NULL);
     hyle_fixed_pool_destroy(pool);
   }
 

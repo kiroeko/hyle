@@ -6,9 +6,9 @@
 > **命名**：全部 `hyle_*` / `HYLE_*`
 
 跨语言 / 跨编译器只许绑定本头，不要 include `hyle/mem/*.h`。有 `backing` 参数的 opaque
-control 与内部 storage 都由该 backing 分配；FixedRegion/FixedPool/HugeRegion 没有 control
-backing 参数，控制对象使用 HYLE system allocator。FixedRegion/FixedPool 的 payload 始终只
-来自调用方 storage，绝不隐藏 fallback。
+control 与内部 storage 都由该 backing 分配。FixedRegion/FixedPool 同时提供 caller-owned
+`*_storage + *_init`（control/payload 都不触堆）和较方便的 `*_create`（control 使用 HYLE
+system allocator）；payload 始终只来自调用方 storage，绝不隐藏 fallback。
 
 ## 1. 链接与所有权
 
@@ -25,8 +25,8 @@ backing 参数，控制对象使用 HYLE system allocator。FixedRegion/FixedPoo
 | system 分配器 | `hyle_system_allocator` | 进程级；alloc/free 携带相同 size/alignment |
 | QuotaAllocator | `hyle_quota_allocator_create` → `destroy` | 任意 backing 的严格 requested live-byte 上限 |
 | Region | `hyle_region_create` → `destroy` | owned growable bump；clear 保留普通 blocks |
-| FixedRegion | `hyle_fixed_region_create(storage)` → `destroy` | external bump；无 payload fallback |
-| FixedPool | `hyle_fixed_pool_create(storage)` → `destroy` | external variable-size alloc/free；单线程 |
+| FixedRegion | `hyle_fixed_region_init(control,storage)` 或 `create` → `destroy` | external bump；init 严格 no-heap |
+| FixedPool | `hyle_fixed_pool_init(control,storage)` 或 `create` → `destroy` | external variable-size alloc/free；init 严格 no-heap |
 | SharedPool | `hyle_shared_pool_create` → `destroy` | **硬容量**；completed free 立即对所有线程可见 |
 | SharedPoolCached | `hyle_shared_pool_cached_create` → `destroy` | **软容量**；每线程 TLS cache，跨线程交接前 publish |
 | StackAllocator | `hyle_stack_allocator_create` → `destroy` | 自有 slab，单线程 LIFO bump |
@@ -69,11 +69,22 @@ C/C++ 两面通过 trampoline 显式构造，不 reinterpret 布局。
 
 - `hyle_region_create` 的 options 以 `HYLE_REGION_OPTIONS_INIT` 初始化，并带
   `struct_size`。`clear` 保留普通 blocks、释放 dedicated large blocks；`release` 归还全部。
-- `hyle_fixed_region_create(storage,size)` 是 bulk-reset bump。旧切片在 clear 后全部失效。
-- `hyle_fixed_pool_create(storage,size)` 支持 individual allocate/free/realloc。reset 前必须
+- `hyle_fixed_region_init(&control,storage,size)` 是严格 no-heap bulk-reset bump；
+  `create` 只是为愿意接受 system control allocation 的用户保留的便利工厂。旧切片在 clear 后全部失效。
+- `hyle_fixed_pool_init(&control,storage,size)` 的 control/payload 都由调用方持有；`create` 是
+  control-owning 便利工厂。两者都支持 individual allocate/free/realloc。reset 前必须
   无 live allocation；foreign/double return 是合同错误并 fail-fast。
 
 三者都单线程。它们的 `as_allocator` 句柄借用 opaque object；destroy 后失效。
+
+```c
+unsigned char payload[4096];
+hyle_fixed_pool_storage control;
+hyle_fixed_pool_o *pool =
+    hyle_fixed_pool_init(&control, payload, sizeof payload);
+/* allocate/free ... */
+hyle_fixed_pool_destroy(pool); /* 不释放 control 或 payload */
+```
 
 ## 3. SharedPool：硬容量共享定长块池
 
@@ -175,7 +186,7 @@ typed 宏为 `HYLE_GROWABLE_POOL_CREATE/ACQUIRE/RELEASE`。需要 ctor/dtor 的 
 | `hyle_huge_region_destroy` / `valid` / `data` / `size` | 生命周期与查询 |
 | `hyle_huge_region_requested_flags` / `accepted_flags` | 区分请求策略与 OS-facing call 已接受策略 |
 | `hyle_huge_region_requested_numa_node` / `numa_placement_applied` | NUMA 请求与实际 placement 结果 |
-| `hyle_mem_last_error()` | 当前线程最近一次 mem 资源失败原因；成功工厂/acquire 清旧错误 |
+| `hyle_mem_last_error()` | 独立 mem TLS error；mem 工厂不污染 platform VM error，HugeRegion 捕获 VM 原因后恢复 platform 通道 |
 | `hyle_enable_allocator_hugepages` | 启用 mimalloc THP / large OS page 策略 |
 | `hyle_enable_allocator_numa` | 配置 mimalloc NUMA node 数 |
 | `hyle_reserve_huge_1g_pages` | 预留 1GiB 大页；无权限/连续 host RAM 时软失败返 0 |
@@ -228,6 +239,8 @@ hyle_shared_pool_destroy(pool);
 - `Allocator` typed helpers → 裸 `hyle_alloc/free`；
 - `QuotaAllocator` → opaque product adapter；`StatsAllocator` / `LeakTracker` 当前仍是 C++ 诊断设施。
 
-`tests/mem/c_surface_symbols.txt` 只检查声明、纯 C 引用和 DLL/ELF 导出一致。发布前可直接
-重塑；独立 error channel、strict no-heap C control 和 Stats/Leak C 产品面仍待真实场景签字。
+`tests/mem/c_surface_symbols.txt` 只检查声明、纯 C 引用和 DLL/ELF 导出一致。发布前仍可直接
+重塑，不把 manifest 当兼容承诺。产品审查决定：mem 使用独立 error channel；external
+FixedRegion/FixedPool 提供 strict no-heap control；`StatsAllocator`/`LeakTracker` 没有真实 C
+消费者，继续只留 C++，不为机械齐平扩张 ABI。
 发布后的冻结策略见 [`../architecture/c-abi-design.md`](../architecture/c-abi-design.md)。

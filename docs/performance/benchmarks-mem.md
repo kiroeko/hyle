@@ -2,7 +2,7 @@
 
 > 本页是 [performance 总账](./README.md) 的 **mem 模块**详节。
 > 源：`bench/mem/allocator_bench.cc`、`bench/mem/scenario_bench.cc`。
-> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win/WSL `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`。性能判定信任配对 **[sign]**。
+> 通用分配器数据来自 2026-07-20 的 Win MSVC / WSL GCC 14 / Apple M4 AppleClang 实测；共享池数据来自 2026-07-21 的同三平台 Release shipping-like 构建（`HYLE_BUILD_TESTS=OFF`），`bench-stat.py -n 9`；request closure 数据来自 2026-07-22 的 Win、WSL GCC 14/Clang 20 `n=15` 与 Apple M4 每种 QoS `n=31`，mem 实现绑定 commit `7f270bb`，调度审计绑定 `803dae6`。性能判定信任配对 **[sign]**。
 
 ## 1. 通用路径（`hyle_mem_bench`）
 
@@ -36,10 +36,10 @@ section F 的同一 request workload 每轮执行 4096 次 mixed-size（24–320
 分别显式请求 `USER_INTERACTIVE` 与 `UTILITY` QoS。数字是独立进程的中位 ns/op，表内 ratio
 是逐进程配对 throughput ratio 的中位数。
 
-| workload | Windows/MSVC，n=15 | Ubuntu/GCC 14.2，n=15 | Apple M4 interactive / utility，各 n=31 | 判定 |
+| workload | Windows/MSVC，n=15 | Ubuntu GCC 14.2 / Clang 20.1，均 n=15 | Apple M4 interactive / utility，各 n=31 | 判定 |
 |---|---:|---:|---:|---|
-| external caller-owned storage：`FixedRegion` / PMR reconstruct | 1.210 / 2.072，**1.682x** | 0.839 / 1.199，**1.432x** | 1.010 / 1.551，**1.537x**（30/31）；1.007 / 1.552，**1.540x**（31/31） | 三平台 **sign WIN**；Win/Linux spread WIN |
-| owned retained blocks：`Region` / PMR release | 1.674 / 1.923，**1.126x** | 1.137 / 2.033，**1.779x** | 2.282 / 2.444，**1.073x**；2.270 / 2.450，**1.083x**（均 31/31） | 三平台 **sign WIN**；Linux spread WIN |
+| external caller-owned storage：`FixedRegion` / PMR reconstruct | 1.210 / 2.072，**1.682x** | GCC 0.839 / 1.199，**1.432x**；Clang 0.915 / 1.736，**1.899x** | 1.010 / 1.551，**1.537x**（30/31）；1.007 / 1.552，**1.540x**（31/31） | 全平台/编译器 **sign WIN**；Win/Linux spread WIN |
+| owned retained blocks：`Region` / PMR release | 1.674 / 1.923，**1.126x** | GCC 1.137 / 2.033，**1.779x**；Clang 1.239 / 1.838，**1.482x** | 2.282 / 2.444，**1.073x**；2.270 / 2.450，**1.083x**（均 31/31） | 全平台/编译器 **sign WIN**；Linux spread WIN |
 
 `Region` 现在缓存当前 ordinary block 的 cursor/end；block 搜索、增长、backing allocation
 隔离在 noinline slow path。相同校正 harness 下，Windows 旧实现为 2.196 ns/op、相对 PMR
@@ -54,6 +54,10 @@ benchmark 内证明实际 core class。harness 因此默认请求 `USER_INTERACT
 `taskpolicy -b` background 审计出现 100% 以上绝对 spread，`FixedRegion` 仅 23/31 同侧，
 不满足闸门。故这里签的是前台/application QoS 下的 M4 结论，不外推为所有 QoS 或硬绑定
 P/E 核的结论。
+
+WSL Clang 20.1 shipping-like 构建固定到 guest CPU 2；三组均 15/15 同侧。WSL 不公开该
+virtual CPU 在 Windows 宿主上的实际 P/E core 映射，因此这只消除 guest 内迁移，不写成
+物理 P-core 证书。
 
 ### GrowablePool
 
@@ -139,6 +143,7 @@ P/E 核的结论。
 |---|---:|---:|---:|---|
 | Windows/MSVC Release | 10.314 ns/op | 10.094 ns/op | median 0.983，range 0.912–1.023 | **TIE spread / TIE sign** |
 | Ubuntu 24.04/GCC 14.2 Release | 7.555 ns/op | 7.774 ns/op | median 1.027，range 0.948–1.088 | **TIE spread / WIN sign**（13/15，p=7.4e-3） |
+| Ubuntu 24.04/Clang 20.1 Release，guest CPU 2 | 6.818 ns/op | 8.700 ns/op | median 1.289，range 1.142–1.373 | **WIN spread / WIN sign**（15/15，p=6.1e-5） |
 | Apple M4 / AppleClang 21，interactive | 8.619 ns/op | 9.319 ns/op | median 1.083，range 1.046–1.339 | **TIE spread / WIN sign**（31/31） |
 | Apple M4 / AppleClang 21，utility | 8.566 ns/op | 9.316 ns/op | median 1.095，range 1.057–1.185 | **TIE spread / WIN sign**（31/31） |
 
@@ -153,12 +158,12 @@ MSVC 也不为 const-pointer prvalue 增加临时对象。Windows 平局，Linux
 
 ## 5. 装饰器与昂贵上下文复用
 
-同一 section F；Windows 为 `n=15`，M4 为 interactive QoS `n=31`：
+同一 section F；Windows/WSL Clang 为 `n=15`，M4 为 interactive QoS `n=31`：
 
-| workload | Windows/MSVC | Apple M4/AppleClang 21 | 结论 |
-|---|---:|---:|---|
-| strict requested-byte admission：`QuotaAllocator` / direct system | 22.181 / 9.144 ns/op | 9.498 / 7.680 ns/op | 可组合 hard admission 有明确原子 accounting 成本；不替代裸 allocator |
-| expensive reusable context loan：`PreservingObjectPool` / reconstruct | 20.894 / 266.230 ns/op，**12.7x** | 8.900 / 70.247 ns/op，**7.9x** | 构造昂贵、归还后保留状态的 context 值得复用 |
+| workload | Windows/MSVC | Ubuntu/Clang 20.1 | Apple M4/AppleClang 21 | 结论 |
+|---|---:|---:|---:|---|
+| strict requested-byte admission：`QuotaAllocator` / direct system | 22.181 / 9.144 ns/op | 19.529 / 6.004 ns/op | 9.498 / 7.680 ns/op | 可组合 hard admission 有明确原子 accounting 成本；不替代裸 allocator |
+| expensive reusable context loan：`PreservingObjectPool` / reconstruct | 20.894 / 266.230 ns/op，**12.7x** | 18.173 / 93.788 ns/op，**5.2x** | 8.900 / 70.247 ns/op，**7.9x** | 构造昂贵、归还后保留状态的 context 值得复用 |
 
 quota 行体现的是可组合 hard admission 的价格，不应拿来替代裸 allocator；Preserve 行对应
 codec/session 等昂贵对象“构造一次、借还保留状态”的真实生命周期。
